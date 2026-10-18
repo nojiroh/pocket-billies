@@ -27,14 +27,18 @@ import { BLD_SH, bldArt, bldAtlas } from './buildings.js';
 expose({
   LOW_POLY_TEXTURE_CELLS: [() => LOW_POLY_TEXTURE_CELLS],
   VOX: [() => VOX],
+  VOXEL_KEY_OFFSET: [() => VOXEL_KEY_OFFSET],
+  VOXEL_KEY_SPAN: [() => VOXEL_KEY_SPAN],
+  VOXEL_TEXTURE_GRAIN: [() => VOXEL_TEXTURE_GRAIN],
   VOX_GLSL_SPIN: [() => VOX_GLSL_SPIN],
-  VOX_K: [() => VOX_K],
-  VOX_O: [() => VOX_O],
   VOX_SH: [() => VOX_SH],
   VOX_SHAPES: [() => VOX_SHAPES],
-  VOX_TEX: [() => VOX_TEX],
   VOX_TEXTURES: [() => VOX_TEXTURES],
+  addRawVoxels: [() => addRawVoxels, v => (addRawVoxels = v)],
+  decodeRawVoxels: [() => decodeRawVoxels, v => (decodeRawVoxels = v)],
   drawLowPolyModels: [() => drawLowPolyModels, v => (drawLowPolyModels = v)],
+  drawSpinningParts: [() => drawSpinningParts, v => (drawSpinningParts = v)],
+  greedyVoxelMesh: [() => greedyVoxelMesh, v => (greedyVoxelMesh = v)],
   lowPolyFragmentShader: [() => lowPolyFragmentShader, v => (lowPolyFragmentShader = v)],
   lowPolyFromRecipe: [() => lowPolyFromRecipe, v => (lowPolyFromRecipe = v)],
   lowPolyOn: [() => lowPolyOn, v => (lowPolyOn = v)],
@@ -46,31 +50,27 @@ expose({
   voxEl: [() => voxEl, v => (voxEl = v)],
   voxFlush: [() => voxFlush, v => ((voxFlush = v), provide({ voxFlush }))],
   voxGuard: [() => voxGuard, v => (voxGuard = v)],
-  voxHash: [() => voxHash, v => (voxHash = v)],
   voxImageItems: [() => voxImageItems, v => ((voxImageItems = v), provide({ voxImageItems }))],
   voxInvalidate: [() => voxInvalidate, v => (voxInvalidate = v)],
-  voxKey: [() => voxKey, v => (voxKey = v)],
-  voxMesh: [() => voxMesh, v => (voxMesh = v)],
   voxMeshFor: [() => voxMeshFor, v => (voxMeshFor = v)],
   voxOn: [() => voxOn, v => (voxOn = v)],
   voxPaths: [() => voxPaths, v => ((voxPaths = v), provide({ voxPaths }))],
-  voxRawDecode: [() => voxRawDecode, v => (voxRawDecode = v)],
-  voxRawInto: [() => voxRawInto, v => (voxRawInto = v)],
   voxRecipe: [() => voxRecipe, v => (voxRecipe = v)],
-  voxRes: [() => voxRes, v => (voxRes = v)],
   voxShaders: [() => voxShaders, v => ((voxShaders = v), provide({ voxShaders }))],
   voxShadow: [() => voxShadow, v => ((voxShadow = v), provide({ voxShadow }))],
-  voxSpins: [() => voxSpins, v => (voxSpins = v)],
   voxTag: [() => voxTag, v => ((voxTag = v), provide({ voxTag }))],
   voxU: [() => voxU, v => (voxU = v)],
-  voxUnkey: [() => voxUnkey, v => (voxUnkey = v)],
+  voxelFromKey: [() => voxelFromKey, v => (voxelFromKey = v)],
+  voxelHash: [() => voxelHash, v => (voxelHash = v)],
+  voxelKey: [() => voxelKey, v => (voxelKey = v)],
+  voxelResolution: [() => voxelResolution, v => (voxelResolution = v)],
   voxelise: [() => voxelise, v => (voxelise = v)],
 });
 /* eslint-enable no-func-assign */
 provide({ voxDraw, voxFlush, voxImageItems, voxPaths, voxShaders, voxShadow, voxTag });
 /* to-module: end */
 export const VOX = { recipes: new Map(), meshes: new Map(), fail: '', drawn: 0, VPM: 32, res: 0, fr: -1, bt: 0 };
-const VOX_TEX = {
+const VOXEL_TEXTURE_GRAIN = {
   plain: 0,
   grain: 0.1,
   wood: 0.14,
@@ -159,7 +159,7 @@ export function voxRecipe(path) {
     });
   return null;
 }
-function voxHash(a, b, c) {
+function voxelHash(a, b, c) {
   let h = (a * 374761393 + b * 668265263 + c * 1013904223) ^ 0x5bd1e995;
   h = Math.imul(h ^ (h >>> 13), 1274126177);
   return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
@@ -167,24 +167,24 @@ function voxHash(a, b, c) {
 /* alpha 0.4: voxels at the art's own scale: one voxel is one pixel of the art, 32 to the metre (Engine > World >
    "Chunky voxels" builds them at eight to the metre, as before, for slow phones). Only the skin of each shape is kept
    (a voxel with its six neighbours inside its own shape can never be seen), and a face toward a cell inside any shape
-   is never made, so a fine model costs what its outside costs. Voxels are kept by number (voxKey), colours as 0xRRGGBB. */
-function voxRes() {
+   is never made, so a fine model costs what its outside costs. Voxels are kept by number (voxelKey), colours as 0xRRGGBB. */
+function voxelResolution() {
   return typeof eng === 'function' && eng('world', 'voxelChunky') ? 8 : VOX.VPM;
 }
-const VOX_K = 4096,
-  VOX_O = 2048;
-function voxKey(x, y, z) {
-  return ((x + VOX_O) * VOX_K + (y + VOX_O)) * VOX_K + (z + VOX_O);
+const VOXEL_KEY_SPAN = 4096,
+  VOXEL_KEY_OFFSET = 2048;
+function voxelKey(x, y, z) {
+  return ((x + VOXEL_KEY_OFFSET) * VOXEL_KEY_SPAN + (y + VOXEL_KEY_OFFSET)) * VOXEL_KEY_SPAN + (z + VOXEL_KEY_OFFSET);
 }
-function voxUnkey(k) {
-  const z = k % VOX_K,
-    r = (k - z) / VOX_K,
-    y = r % VOX_K;
-  return [(r - y) / VOX_K - VOX_O, y - VOX_O, z - VOX_O];
+function voxelFromKey(k) {
+  const z = k % VOXEL_KEY_SPAN,
+    r = (k - z) / VOXEL_KEY_SPAN,
+    y = r % VOXEL_KEY_SPAN;
+  return [(r - y) / VOXEL_KEY_SPAN - VOXEL_KEY_OFFSET, y - VOXEL_KEY_OFFSET, z - VOXEL_KEY_OFFSET];
 }
 /* voxels from a recipe at R to the metre: Map key -> colour (x across, y depth, z up); V.ins: the shapes' insides */
 function voxelise(rec, R) {
-  R = R || voxRes();
+  R = R || voxelResolution();
   const V = new Map(),
     ins = [];
   V.ins = ins;
@@ -195,11 +195,11 @@ function voxelise(rec, R) {
   (rec.layers || []).forEach((L, li) => {
     if (L.k === 'img' || L.hide) return;
     if (L.k === 'raw') {
-      voxRawInto(V, L, R, rec);
+      addRawVoxels(V, L, R, rec);
       return;
     }
     const c = hexA(L.col || '#888888'),
-      g = VOX_TEX[L.tex || 'plain'] || 0,
+      g = VOXEL_TEXTURE_GRAIN[L.tex || 'plain'] || 0,
       t = L.tex,
       x0 = L.x || 0,
       y0 = L.y || 0,
@@ -294,17 +294,17 @@ function voxelise(rec, R) {
               hy = fl(y / bl);
               hz = fl(z / bl);
             }
-            if (voxHash(hx + li * 97, hy, hz) < g) cc = tone(c, voxHash(hz, hx, hy + li) < 0.5 ? 0.82 : 1.14);
+            if (voxelHash(hx + li * 97, hy, hz) < g) cc = tone(c, voxelHash(hz, hx, hy + li) < 0.5 ? 0.82 : 1.14);
           }
-          V.set(voxKey(x, y, z), cc);
+          V.set(voxelKey(x, y, z), cc);
         }
   });
   return V;
 }
 /* a raw layer (voxels imported from a .vox, at L.vpm to the metre, else the recipe's, else eight) into V at R to the
    metre: a finer build makes each voxel a block (its skin only), a coarser one drops the voxels into bigger cells */
-function voxRawInto(V, L, R, rec) {
-  const d = voxRawDecode(L);
+function addRawVoxels(V, L, R, rec) {
+  const d = decodeRawVoxels(L);
   if (!d.length) return;
   const lv = L.vpm || rec.vpm || 8,
     f = R / lv,
@@ -314,11 +314,11 @@ function voxRawInto(V, L, R, rec) {
     pk = c => (c[0] << 16) | (c[1] << 8) | c[2];
   if (f <= 1.001) {
     for (const [x, y, z, c] of d)
-      V.set(voxKey(Math.floor(x * f) + sx, Math.floor(y * f) + sy, Math.floor(z * f) + sz), pk(c));
+      V.set(voxelKey(Math.floor(x * f) + sx, Math.floor(y * f) + sy, Math.floor(z * f) + sz), pk(c));
     return;
   }
   const k = Math.round(f),
-    S = new Set(d.map(q => voxKey(q[0], q[1], q[2])));
+    S = new Set(d.map(q => voxelKey(q[0], q[1], q[2])));
   let b = [1e9, -1e9, 1e9, -1e9, 1e9, -1e9];
   for (const [x, y, z, c] of d) {
     const cc = pk(c),
@@ -341,21 +341,21 @@ function voxRawInto(V, L, R, rec) {
       [0, 0, 1],
       [0, 0, -1],
     ]) {
-      if (S.has(voxKey(x + dx, y + dy, z + dz))) continue;
+      if (S.has(voxelKey(x + dx, y + dy, z + dz))) continue;
       for (let i = 0; i < k; i++)
         for (let j = 0; j < k; j++) {
           const p = dx ? [dx > 0 ? k - 1 : 0, i, j] : dy ? [i, dy > 0 ? k - 1 : 0, j] : [i, j, dz > 0 ? k - 1 : 0];
-          V.set(voxKey(X + p[0], Y + p[1], Z + p[2]), cc);
+          V.set(voxelKey(X + p[0], Y + p[1], Z + p[2]), cc);
         }
     }
   }
   V.ins.push({
     b,
-    f: (X, Y, Z) => S.has(voxKey(Math.floor((X - sx) / k), Math.floor((Y - sy) / k), Math.floor((Z - sz) / k))),
+    f: (X, Y, Z) => S.has(voxelKey(Math.floor((X - sx) / k), Math.floor((Y - sy) / k), Math.floor((Z - sz) / k))),
   });
 }
 /* a raw layer: voxels packed as base64 of (x,y,z,r,g,b) bytes, offset by L.ox/oy/oz (the Studio's .vox import makes these) */
-function voxRawDecode(L) {
+function decodeRawVoxels(L) {
   try {
     const b = atob(L.data || ''),
       out = [];
@@ -374,7 +374,7 @@ function voxRawDecode(L) {
 /* greedy meshing: every face of a voxel toward an empty cell outside every shape (and above the ground) is put in its
    slice, and each slice's faces are merged into the largest rectangles of one colour; a quad is four corners (position
    in voxels, its normal, its colour; 16 bytes each) and six indices */
-function voxMesh(V, R) {
+function greedyVoxelMesh(V, R) {
   if (!V || !V.size) return null;
   const ins = V.ins || [],
     hidden = (x, y, z) => {
@@ -401,7 +401,7 @@ function voxMesh(V, R) {
     y1 = -1e9,
     z1 = -1e9;
   for (const [k, c] of V) {
-    const p = voxUnkey(k),
+    const p = voxelFromKey(k),
       x = p[0],
       y = p[1],
       z = p[2];
@@ -416,7 +416,7 @@ function voxMesh(V, R) {
         nx = x + q[0],
         ny = y + q[1],
         nz = z + q[2];
-      if (V.has(voxKey(nx, ny, nz)) || hidden(nx, ny, nz)) continue;
+      if (V.has(voxelKey(nx, ny, nz)) || hidden(nx, ny, nz)) continue;
       const a = d >> 1,
         bk = d * 16384 + p[a] + 8192;
       let L = S.get(bk);
@@ -555,10 +555,10 @@ function voxMeshFor(path, rec) {
     return m;
   }
   const gl = EGL.gl,
-    R = voxRes(),
+    R = voxelResolution(),
     L = rec.layers || [],
     still = L.some(l => l.spin) ? { ...rec, layers: L.filter(l => !l.spin) } : rec,
-    M = voxMesh(voxelise(still, R), R);
+    M = greedyVoxelMesh(voxelise(still, R), R);
   if (!M) {
     VOX.meshes.set(path, null);
     return null;
@@ -587,7 +587,7 @@ function voxMeshFor(path, rec) {
   /* alpha 0.4: parts that turn (the airships' propellers): a layer with spin {x, y, z: its pivot in metres; axis: 'x' across, 'y' depth, 'z' up, or [x, y, z] any way at all; rps: turns a second} */
   for (const l of L)
     if (l.spin && !l.hide) {
-      const S = voxMesh(voxelise({ vpm: rec.vpm, layers: [{ ...l, spin: undefined }] }, R), R),
+      const S = greedyVoxelMesh(voxelise({ vpm: rec.vpm, layers: [{ ...l, spin: undefined }] }, R), R),
         ax = l.spin.axis,
         a = Array.isArray(ax)
           ? [ax[0] || 0, ax[2] || 0, ax[1] || 0]
@@ -609,7 +609,7 @@ function voxMeshFor(path, rec) {
   return m;
 }
 /* the turning parts of a voxel prop, drawn after its still mesh (p: the program, its uniforms set for the item) */
-function voxSpins(p, m) {
+function drawSpinningParts(p, m) {
   if (!m.spins || !m.spins.length) return;
   const gl = EGL.gl,
     t = (RM ? 0 : walkView.t || 0) / 1000;
@@ -861,7 +861,7 @@ function lowPolyFromRecipe(rec) {
         const a = (2 * Math.PI * (j % n)) / n,
           lu =
             lumpy && i > 0 && i < NR - 1
-              ? 1 + 0.22 * (voxHash(i * 7 + li3, j % n, 13) - 0.5) + 0.12 * Math.sin(a * 3 + i)
+              ? 1 + 0.22 * (voxelHash(i * 7 + li3, j % n, 13) - 0.5) + 0.12 * Math.sin(a * 3 + i)
               : 1;
         row.push([x0 + Math.cos(a) * r * f * lu, y, y0 + Math.sin(a) * ry * f * lu]);
       }
@@ -1083,7 +1083,7 @@ function drawLowPolyModels(C, X, L) {
     gl.uniform3f(p.U.uSpinC, 0, 0, 0);
     voxEl(m);
     for (const q of m.more || []) voxEl(q);
-    voxSpins(p, m);
+    drawSpinningParts(p, m);
     VOX.drawn++;
   }
   gl.bindVertexArray(null);
@@ -1126,7 +1126,7 @@ function voxTag(it) {
     rec = voxRecipe(spec);
     path = spec;
   }
-  const R = voxRes() + (eng('world', 'voxelLowPoly') ? 1000 : 0);
+  const R = voxelResolution() + (eng('world', 'voxelLowPoly') ? 1000 : 0);
   if (VOX.res !== R) {
     if (VOX.res) voxFlush();
     VOX.res = R;
@@ -1257,7 +1257,7 @@ function voxDraw(C, items, X, hits, labels, PPU) {
       gl.uniform4f(p.U.uSpin, 1, 0, 0, 0);
       gl.uniform3f(p.U.uSpinC, 0, 0, 0);
       voxEl(m);
-      voxSpins(p, m);
+      drawSpinningParts(p, m);
       VOX.drawn++;
       if (hits && !it.far) addHitTarget(it, C, hits, labels, PPU);
     }
@@ -1290,7 +1290,7 @@ function voxShadow(SH, items) {
       gl.uniform3f(p.U.uSpinC, 0, 0, 0);
       voxEl(m);
       for (const q of m.more || []) voxEl(q);
-      voxSpins(p, m);
+      drawSpinningParts(p, m);
     }
     gl.bindVertexArray(null);
   });
