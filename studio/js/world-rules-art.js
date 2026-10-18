@@ -547,12 +547,12 @@ function worldEggs() {
   return Object.entries(D.eggs)
     .map(([k, E]) =>
       card(
-        `${k} km egg`,
+        `${E.need / 1000} km egg`,
         grid(
-          numberField('Steps to hatch', `eggs.${k}.need`, {
+          numberField('Metres to hatch', `eggs.${k}.need`, {
             min: 100,
             step: 100,
-            help: `${(E.need / D.rules.steps.stepsPerKm).toFixed(1)} km at ${D.rules.steps.stepsPerKm} steps per km.`,
+            help: `${(E.need / 1000).toFixed(1)} km walked outdoors with it in an incubator.`,
           }),
           numberField('Hatches at level', `eggs.${k}.lv`, { min: 1, max: 100, step: 1 })
         ) + weightTable(`eggs.${k}`, E),
@@ -746,7 +746,7 @@ SECTIONS.rules = () => {
      selectField(
        'Free egg',
        `${s}.starterEgg`,
-       Object.keys(D.eggs).map(k => [k, k + ' km']),
+       Object.keys(D.eggs).map(k => [k, D.eggs[k].need / 1000 + ' km']),
        { num: 1, none: 'None', opt: 1 }
      )
    ) +

@@ -44,6 +44,7 @@ import {
   canEvolve,
   canRide,
   cleanName,
+  eggKm,
   eggSlotCount,
   encounterBuild,
   encounterStock,
@@ -524,7 +525,7 @@ function runEvolution(m, note, path = 'A') {
 }
 function hatchModal(e) {
   modal({
-    title: `A ${e.tier} km egg is hatching`,
+    title: `A ${eggKm(e.tier)} km egg is hatching`,
     top: `<div class="hatch" id="hatchBox">${eggHTML(e.tier, 96, 'wob')}</div>`,
     html: '<p>Something is moving inside.</p>',
     lock: 1,
@@ -810,7 +811,7 @@ function eggSlots() {
       if (!e)
         return `<div class="slot px empty"><span class="egg-e"></span><b>Empty incubator</b><span class="note">Win battles to find eggs.</span></div>`;
       const T = EGGS[e.tier];
-      return `<div class="slot px">${eggHTML(e.tier, 48, 'wob')}<b>${e.tier} km egg</b>${progressBarHTML(e.prog / T.need, 'live')}<span class="note tnum">${metresToKm(e.prog)} of ${metresToKm(T.need)} km</span></div>`;
+      return `<div class="slot px">${eggHTML(e.tier, 48, 'wob')}<b>${eggKm(e.tier)} km egg</b>${progressBarHTML(e.prog / T.need, 'live')}<span class="note tnum">${metresToKm(e.prog)} of ${metresToKm(T.need)} km</span></div>`;
     })
     .join('');
   const pipe = saveData.eggs.filter(e => e.slot == null);
@@ -1865,7 +1866,7 @@ function renderDexEntry(id) {
   ];
   const eggs = Object.keys(EGGS)
     .filter(k => EGGS[k].list.some(([x]) => x === id))
-    .map(k => k + ' km egg');
+    .map(k => eggKm(k) + ' km egg');
   const strong = TYPES.filter(x => s.types.some(t => typeEffectiveness(t, [x]) > 1)),
     weak = TYPES.filter(x => typeEffectiveness(x, s.types) > 1),
     res = TYPES.filter(x => typeEffectiveness(x, s.types) < 1);
@@ -2320,7 +2321,7 @@ export function startGame(l, o = {}) {
   const W = {
     title: `${SPECIES[m.sp].name} joined your team`,
     top: `<div class="sheet-art">${rigCanvasHTML(m.sp, 128)}</div>`,
-    html: `${nE ? `<p>${words[nE] || nE} Billie${nE === 1 ? ' is' : 's are'} already rustling in the grass. Tap one to battle it, then flick a coin.</p>` : ''}${egg ? `<p>Professor Hazel also gave you a ${R.starterEgg} km egg. It’s warming up in an incubator, and every step you walk helps it hatch.</p>` : ''}`,
+    html: `${nE ? `<p>${words[nE] || nE} Billie${nE === 1 ? ' is' : 's are'} already rustling in the grass. Tap one to battle it, then flick a coin.</p>` : ''}${egg ? `<p>Professor Hazel also gave you a ${eggKm(R.starterEgg)} km egg. It’s warming up in an incubator, and every step you walk helps it hatch.</p>` : ''}`,
     btns: [{ l: 'Let’s go', c: 'dark', f: closeModal }],
   };
   if (o.rival && TRAINERS.blake0 && typeof storyRivalBattle === 'function') {

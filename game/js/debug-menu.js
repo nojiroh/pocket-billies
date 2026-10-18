@@ -33,6 +33,7 @@ import {
   addEgg,
   addSteps,
   addWalked,
+  eggKm,
   encounterStock,
   encountersHere,
   gainXp,
@@ -126,7 +127,7 @@ function debugHTML() {
   ${uiState.testRes ? `<ul class="dbg-warn">${uiState.testRes.map(r => `<li>${r.ok ? '✓' : '✗'} ${escapeHtml(r.what)}${r.ok ? '' : ` (expected ${r.reach ? 'reachable' : 'not reachable'})`}</li>`).join('')}</ul>` : ''}</details>
  <details><summary>Eggs and evolution</summary><div class="dbg-row">${debugSelectHTML(
    'dbgEgg',
-   EGG_TIERS.map(t => [t, t + ' km']),
+   EGG_TIERS.map(t => [t, eggKm(t) + ' km']),
    EGG_TIERS[0]
  )}${debugButtonHTML('egg', 'Add egg')}${debugButtonHTML('hatch', 'Finish all incubators')}</div>
   <div class="dbg-row">${debugButtonHTML('idle', 'Age storage by a day')}${debugButtonHTML('streak', 'Lead +3 win streak')}</div></details>

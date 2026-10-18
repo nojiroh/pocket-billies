@@ -40,6 +40,7 @@ import {
   addEgg,
   billyName,
   dropEncounter,
+  eggKm,
   findBilly,
   formatNumber,
   healAll,
@@ -1054,7 +1055,7 @@ export function endBattle() {
       after.push({
         title: 'It dropped an egg',
         top: `<div class="sheet-art">${eggHTML(tier, 72, 'wob')}</div>`,
-        html: `<p>A ${tier} km egg rolled out of the grass. Walk ${tier} km with it in an incubator to see what hatches.</p>`,
+        html: `<p>A ${eggKm(tier)} km egg rolled out of the grass. Walk ${eggKm(tier)} km with it in an incubator to see what hatches.</p>`,
         btns: [{ l: 'Nice', c: 'dark', f: closeModal }],
       });
   }
@@ -1063,7 +1064,7 @@ export function endBattle() {
     const first = !saveData.flags[tid];
     saveData.flags[tid] = 1;
     let extra = '';
-    if (first && T.egg && addEgg(T.egg)) extra += ` and a ${T.egg} km egg`;
+    if (first && T.egg && addEgg(T.egg)) extra += ` and a ${eggKm(T.egg)} km egg`;
     const st = T.seat;
     if (st) {
       const nu = !saveData.seats.includes(st.id);

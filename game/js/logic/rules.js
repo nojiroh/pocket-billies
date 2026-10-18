@@ -77,6 +77,7 @@ expose({
   cleanName: [() => cleanName],
   // @ts-expect-error -- replaced on purpose
   dropEncounter: [() => dropEncounter, v => (dropEncounter = v)],
+  eggKm: [() => eggKm],
   eggSlotCount: [() => eggSlotCount],
   // @ts-expect-error -- replaced on purpose
   encounterBuild: [() => encounterBuild, v => (encounterBuild = v)],
@@ -605,6 +606,8 @@ export function addWalked(m) {
   }
 }
 export const metresToKm = m => (m / 1000).toFixed(1);
+/* an egg's name comes from the distance it needs ("2 km egg"); its tier id is only a key */
+export const eggKm = tier => Math.round((EGGS[tier] ? EGGS[tier].need : 0) / 100) / 10;
 /* ---------- Seed Rounds ---------- */
 export const eggSlotCount = () => Math.max(1, RULES.eggs.slots);
 export function autoSlot() {
