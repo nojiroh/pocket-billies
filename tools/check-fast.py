@@ -120,7 +120,11 @@ def no_errors(errs):
 def node_check(cmd):
     r = subprocess.run(['node', *cmd], cwd=ROOT, capture_output=True, text=True)
     out = (r.stdout + r.stderr).strip().splitlines()
-    if r.returncode: raise Exception(' | '.join([l for l in out if 'not ok' in l or 'fail' in l.lower() or ':' in l][:4]) or 'failed')
+    if r.returncode:
+        # node --test: the tests that failed and why; anything else: its last lines
+        failed = [l.strip()[7:] for l in out if l.strip().startswith('not ok')]
+        why = [l.strip() for l in out if l.strip().startswith(("error: '", 'error: "'))]
+        raise Exception('; '.join(failed[:3] + why[:2]) if failed else ' | '.join(out[-3:]) or 'failed')
     return out[-1][:160] if out else 'fine'
 
 
@@ -212,7 +216,7 @@ def debug_log(pg, base):
 
 def studio(pg, base):
     """the Studio as GitHub Pages serves it: its scripts and the shared renderer load, it asks for a token"""
-    pg.wait_for_selector('#ghTok', state='attached', timeout=60000)
+    if not until(pg, "!!document.getElementById('ghTok')", 60): raise Exception('the GitHub sign-in never showed')
     ok = pg.evaluate("[typeof openSection==='function',typeof githubMode==='object',typeof propLook==='function']")
     if not all(ok): raise Exception(f'Studio scripts missing (openSection, githubMode, the shared renderer): {ok}')
     return 'scripts and the shared renderer loaded, the GitHub sign-in is there'
@@ -253,8 +257,12 @@ def run_page(b, fixture, checks, bases):
         for i, (name, fn) in enumerate(checks):
             n0 = len(errs)
             def one(fn=fn, n0=n0, first=i == 0):
-                if first: pg.goto(url)   # the first check's time holds the boot
-                note = fn(pg, base)
+                try:
+                    if first: pg.goto(url)   # the first check's time holds the boot
+                    note = fn(pg, base)
+                except Exception as e:
+                    if errs[n0:]: raise Exception(f'{str(e).splitlines()[0]}; errors: ' + ' | '.join(errs[n0:][:4]))
+                    raise
                 no_errors(errs[n0:])
                 return note
             record(name, one)
