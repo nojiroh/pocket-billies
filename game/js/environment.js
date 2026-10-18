@@ -16,18 +16,18 @@ import { mapById, walkView } from './walk-view.js';
 /* eslint-disable no-func-assign */
 expose({
   CLIMATE_WEATHER_ODDS: [() => CLIMATE_WEATHER_ODDS],
-  ENVIRONMENT_LIKES: [() => ENVIRONMENT_LIKES],
+  ENVIRONMENT_ENGINE_MODIFIERS: [() => ENVIRONMENT_ENGINE_MODIFIERS],
   PINNED_HOURS: [() => PINNED_HOURS],
   SEASON_BY_MONTH: [() => SEASON_BY_MONTH],
+  SKY_TINT_PALETTES: [() => SKY_TINT_PALETTES],
   TIME_OF_DAY_CHOICES: [() => TIME_OF_DAY_CHOICES],
-  WEATHER_ENGINE_MODIFIERS: [() => WEATHER_ENGINE_MODIFIERS],
   WEATHER_LOOKS: [() => WEATHER_LOOKS],
   WEATHER_NAMES: [() => WEATHER_NAMES],
-  WEATHER_SKY_PALETTES: [() => WEATHER_SKY_PALETTES],
+  WILD_TYPE_BOOSTS: [() => WILD_TYPE_BOOSTS],
+  activeWildTypeBoosts: [() => activeWildTypeBoosts, v => (activeWildTypeBoosts = v)],
   currentLocationMap: [() => currentLocationMap, v => ((currentLocationMap = v), provide({ currentLocationMap }))],
   environment: [() => environment],
   environmentClimate: [() => environmentClimate, v => (environmentClimate = v)],
-  environmentFactors: [() => environmentFactors, v => (environmentFactors = v)],
   environmentForecast: [() => environmentForecast, v => (environmentForecast = v)],
   environmentFrame: [() => environmentFrame, v => (environmentFrame = v)],
   environmentHash: [() => environmentHash, v => (environmentHash = v)],
@@ -36,7 +36,6 @@ expose({
   environmentHour: [() => environmentHour, v => (environmentHour = v)],
   environmentIcon: [() => environmentIcon, v => (environmentIcon = v)],
   environmentLabel: [() => environmentLabel, v => (environmentLabel = v)],
-  environmentLikes: [() => environmentLikes, v => (environmentLikes = v)],
   environmentLitFraction: [() => environmentLitFraction, v => (environmentLitFraction = v)],
   environmentMixRgb: [() => environmentMixRgb, v => (environmentMixRgb = v)],
   environmentOdds: [() => environmentOdds, v => ((environmentOdds = v), provide({ environmentOdds }))],
@@ -50,6 +49,7 @@ expose({
   environmentWeatherFor: [() => environmentWeatherFor, v => (environmentWeatherFor = v)],
   environmentWindowLit: [() => environmentWindowLit, v => (environmentWindowLit = v)],
   weatherHistory: [() => weatherHistory],
+  wildTypeBoosts: [() => wildTypeBoosts, v => (wildTypeBoosts = v)],
 });
 /* eslint-enable no-func-assign */
 provide({ currentLocationMap, environmentOdds, environmentSeason, environmentState, environmentSun });
@@ -93,7 +93,7 @@ const SEASON_BY_MONTH = [
   'autumn',
   'winter',
 ];
-const WEATHER_SKY_PALETTES = {
+const SKY_TINT_PALETTES = {
   night: ['#070B22', '#121A3C', '#232B52'],
   dusk: ['#34407E', '#C77C7A', '#FFB070'],
   dawn: ['#6E8ECA', '#EEB2A6', '#FFD4A0'],
@@ -138,7 +138,7 @@ const TIME_OF_DAY_CHOICES = [
 ];
 const PINNED_HOURS = { morning: 8.2, day: 13, evening: 19.6, night: 23.4 };
 /* who comes out when (multiplies a billionaire's odds in the wild by its types) */
-export const ENVIRONMENT_LIKES = {
+export const WILD_TYPE_BOOSTS = {
   night: { Psychic: 2, Dragon: 1.6, Steel: 1.2, Grass: 0.8 },
   dusk: { Flying: 1.4, Psychic: 1.2 },
   sunny: { Grass: 1.25, Fire: 1.2 },
@@ -436,7 +436,7 @@ function environmentMixRgb(a, b, t) {
 export function environmentSky(sky, indoor) {
   const c = sky.map(s => s.slice());
   if (indoor) return c;
-  const P = k => WEATHER_SKY_PALETTES[k].map(h => hexToRgb(h).map(v => v / 255));
+  const P = k => SKY_TINT_PALETTES[k].map(h => hexToRgb(h).map(v => v / 255));
   const du = P('dusk'),
     da = P('dawn'),
     gr = P(environment.storm > 0.5 ? 'storm' : environment.ash > 0.5 ? 'ash' : 'grey'),
@@ -457,7 +457,7 @@ export function environmentSky(sky, indoor) {
   return c;
 }
 /* engine dials the time and weather lean on (read through engineSetting(); see settings.js) */
-const WEATHER_ENGINE_MODIFIERS = {
+const ENVIRONMENT_ENGINE_MODIFIERS = {
   sun: {
     strength: v =>
       environment.on || environment.force ? v * (1 - environment.grey * 0.55) * (1 - environment.fog * 0.25) : v,
@@ -492,7 +492,7 @@ const WEATHER_ENGINE_MODIFIERS = {
   world: { groundShine: v => v * (1 + environment.wet * 1.6) },
   water: { ripples: v => v * (1 + environment.rain * 0.7 + environment.storm * 0.8) },
 };
-provide({ WEATHER_ENGINE_MODIFIERS }); /* to-module */
+provide({ ENVIRONMENT_ENGINE_MODIFIERS }); /* to-module */
 /* the light of the moment: a low warm sun at dusk, the moon at night */
 function environmentSun(a, h, col) {
   const day = 1 - environment.night,
@@ -514,15 +514,15 @@ function environmentSun(a, h, col) {
   return { a, h, col };
 }
 /* the odds of meeting each billionaire, tilted by the hour and the weather */
-function environmentLikes() {
-  const L = Object.assign({}, ENVIRONMENT_LIKES),
+function wildTypeBoosts() {
+  const L = Object.assign({}, WILD_TYPE_BOOSTS),
     R = environmentRules().likes || {};
   for (const k in R) L[k] = Object.assign({}, L[k] || {}, R[k]);
   return L;
 }
 /* which of the likes apply where you are now */
-function environmentFactors(st) {
-  const L = environmentLikes(),
+function activeWildTypeBoosts(st) {
+  const L = wildTypeBoosts(),
     f = [];
   if (st.night > 0.5) f.push(['night', L.night]);
   else if (st.dusk > 0.4 || st.dawn > 0.4) f.push(['dusk', L.dusk]);
@@ -534,7 +534,7 @@ function environmentOdds(list, sc) {
   if (!environment.on || !list || environmentRules().off) return list;
   const sc2 = sc || currentLocationMap();
   if (sc2 && sc2.indoor) return list;
-  const f = environmentFactors(environmentState(sc2));
+  const f = activeWildTypeBoosts(environmentState(sc2));
   if (!f.length) return list;
   return list.map(([id, w]) => {
     const t = (typeof SP !== 'undefined' && SP[id] && SP[id].types) || [];
@@ -610,7 +610,7 @@ export function environmentHint(sc) {
   const s = sc || currentLocationMap();
   if (s && s.indoor) return '';
   const up = new Set();
-  for (const [, F] of environmentFactors(environmentState(s)))
+  for (const [, F] of activeWildTypeBoosts(environmentState(s)))
     for (const [t, m] of Object.entries(F)) if (m > 1.2) up.add(t);
   return up.size ? `${[...up].join(' and ')} Billies are about.` : '';
 }

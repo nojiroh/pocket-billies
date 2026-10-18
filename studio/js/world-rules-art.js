@@ -5,7 +5,7 @@ import { expose } from '../../game/js/test-globals.js';
 import { worldPaint } from '../../game/js/hooks.js';
 import { $, clamp } from '../../game/js/util.js';
 import { makeCanvas } from '../../game/js/art.js';
-import { ENVIRONMENT_LIKES } from '../../game/js/environment.js';
+import { WILD_TYPE_BOOSTS } from '../../game/js/environment.js';
 import { esc } from './game-stand-ins.js';
 import {
   ACTIONS,
@@ -842,7 +842,7 @@ SECTIONS.rules = () => {
      })
    ) +
      `<details class="sub-d"><summary>Who comes out when (how much more often, by type; empty = the built-in value)</summary>${Object.entries(
-       typeof ENVIRONMENT_LIKES !== 'undefined' ? ENVIRONMENT_LIKES : {}
+       typeof WILD_TYPE_BOOSTS !== 'undefined' ? WILD_TYPE_BOOSTS : {}
      )
        .map(
          ([k, F]) =>
