@@ -1518,7 +1518,7 @@ function stDiagScenes() {
 const DIAG_PASSES = {
   shadows: ['dglShadowPass'],
   ground: ['dglGround'],
-  grass: ['dglGrass'],
+  grass: ['drawGrass'],
   props: ['dglSprites', 'p3dDraw', 'voxDraw', 'bldDraw', 'dglBoxFaces', 'strDraw'],
   water: ['reflectionPass', 'drawWater'],
   effects: ['dglFxPass'],

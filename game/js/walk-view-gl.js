@@ -186,11 +186,8 @@ expose({
   DGL_FIXED: [() => DGL_FIXED],
   DGL_FIXED_BACK: [() => DGL_FIXED_BACK],
   DGL_FLAG: [() => DGL_FLAG],
-  DGL_FLW: [() => DGL_FLW],
-  DGL_FLW_OF: [() => DGL_FLW_OF],
   DGL_FOL: [() => DGL_FOL],
   DGL_FR: [() => DGL_FR],
-  DGL_GKIND: [() => DGL_GKIND],
   DGL_HUG: [() => DGL_HUG],
   DGL_HUGC: [() => DGL_HUGC],
   DGL_IMID: [() => DGL_IMID],
@@ -200,11 +197,14 @@ expose({
   DGL_LOOK: [() => DGL_LOOK],
   DGL_MOOD0: [() => DGL_MOOD0],
   DGL_PRINT_COL: [() => DGL_PRINT_COL],
-  DGL_PUSH: [() => DGL_PUSH],
   DGL_SINK_BOX: [() => DGL_SINK_BOX],
   DGL_STILL: [() => DGL_STILL],
   DGL_VARY_ANY: [() => DGL_VARY_ANY],
   DGL_VARY_DEF: [() => DGL_VARY_DEF],
+  FLOWER_COLORS: [() => FLOWER_COLORS],
+  FLOWER_SET_BY_LOCATION: [() => FLOWER_SET_BY_LOCATION],
+  GRASS_KINDS: [() => GRASS_KINDS],
+  GRASS_PUSHER_BUFFER: [() => GRASS_PUSHER_BUFFER],
   NEAR_RING_CHUNK_M: [() => NEAR_RING_CHUNK_M],
   NEAR_RING_SIZE: [() => NEAR_RING_SIZE],
   NO_PAD_PROPS: [() => NO_PAD_PROPS],
@@ -224,6 +224,8 @@ expose({
   baseStopWalkView: [() => baseStopWalkView],
   battleCamera: [() => battleCamera, v => (battleCamera = v)],
   bindGestures: [() => bindGestures, v => (bindGestures = v)],
+  buildFarProps: [() => buildFarProps, v => (buildFarProps = v)],
+  buildGrass: [() => buildGrass, v => setBuildGrass(v)],
   buildGroundMesh: [() => buildGroundMesh, v => (buildGroundMesh = v)],
   buildGroundSteps: [() => buildGroundSteps, v => (buildGroundSteps = v)],
   buildingPads: [() => buildingPads, v => (buildingPads = v)],
@@ -240,19 +242,14 @@ expose({
   dglBoxFaces: [() => dglBoxFaces, v => (dglBoxFaces = v)],
   dglBoxInfo: [() => dglBoxInfo, v => (dglBoxInfo = v)],
   dglBudget: [() => dglBudget, v => ((dglBudget = v), provide({ dglBudget }))],
-  dglBuildFar: [() => dglBuildFar, v => (dglBuildFar = v)],
-  dglBuildGrass: [() => dglBuildGrass, v => setDglBuildGrass(v)],
   dglCull: [() => dglCull, v => (dglCull = v)],
   dglFlat: [() => dglFlat, v => (dglFlat = v)],
-  dglFlowers: [() => dglFlowers, v => (dglFlowers = v)],
   dglFol: [() => dglFol, v => (dglFol = v)],
   dglFountainFx: [() => dglFountainFx, v => (dglFountainFx = v)],
   dglFrame: [() => dglFrame, v => (dglFrame = v)],
   dglFrameIn: [() => dglFrameIn, v => (dglFrameIn = v)],
   dglFrustum: [() => dglFrustum, v => (dglFrustum = v)],
   dglFxPass: [() => dglFxPass, v => setDglFxPass(v)],
-  dglGrass: [() => dglGrass, v => setDglGrass(v)],
-  dglGrassWork: [() => dglGrassWork, v => setDglGrassWork(v)],
   dglGround: [() => dglGround, v => setDglGround(v)],
   dglHands: [() => dglHands, v => (dglHands = v)],
   dglHeat: [() => dglHeat, v => (dglHeat = v)],
@@ -279,7 +276,6 @@ expose({
   dglPrints: [() => dglPrints, v => (dglPrints = v)],
   dglPropGrid: [() => dglPropGrid, v => (dglPropGrid = v)],
   dglPropY: [() => dglPropY, v => (dglPropY = v)],
-  dglPushers: [() => dglPushers, v => (dglPushers = v)],
   dglRebuild: [() => dglRebuild, v => ((dglRebuild = v), provide({ dglRebuild }))],
   dglRiseK: [() => dglRiseK, v => (dglRiseK = v)],
   dglRiseStart: [() => dglRiseStart, v => (dglRiseStart = v)],
@@ -303,7 +299,6 @@ expose({
   dglSprU: [() => dglSprU, v => (dglSprU = v)],
   dglSprites: [() => dglSprites, v => setDglSprites(v)],
   dglStill: [() => dglStill, v => (dglStill = v)],
-  dglTrail: [() => dglTrail, v => (dglTrail = v)],
   dglUse: [() => dglUse, v => (dglUse = v)],
   dglVaryOf: [() => dglVaryOf, v => (dglVaryOf = v)],
   dglWeather: [() => dglWeather, v => (dglWeather = v)],
@@ -312,9 +307,13 @@ expose({
   dglWinShare: [() => dglWinShare, v => (dglWinShare = v)],
   dglWindAt: [() => dglWindAt, v => (dglWindAt = v)],
   dglWorldTex: [() => dglWorldTex, v => (dglWorldTex = v)],
+  drawGrass: [() => drawGrass, v => setDrawGrass(v)],
   drawWater: [() => drawWater, v => setDrawWater(v)],
   freeCameraOn: [() => freeCameraOn],
   freeNearRing: [() => freeNearRing, v => (freeNearRing = v)],
+  grassPushers: [() => grassPushers, v => (grassPushers = v)],
+  grassTrail: [() => grassTrail, v => (grassTrail = v)],
+  grassWork: [() => grassWork, v => setGrassWork(v)],
   groundCacheKey: [() => groundCacheKey, v => (groundCacheKey = v)],
   groundHeightAt: [() => groundHeightAt, v => ((groundHeightAt = v), provide({ groundHeightAt }))],
   groundNormalTexture: [() => groundNormalTexture, v => (groundNormalTexture = v)],
@@ -330,6 +329,7 @@ expose({
   labelLayer: [() => labelLayer, v => (labelLayer = v)],
   listenDeviceTilt: [() => listenDeviceTilt, v => (listenDeviceTilt = v)],
   makeTextureMipmaps: [() => makeTextureMipmaps, v => (makeTextureMipmaps = v)],
+  mapFlowers: [() => mapFlowers, v => (mapFlowers = v)],
   mirrorInView: [() => mirrorInView, v => (mirrorInView = v)],
   mountWalkView: [() => mountWalkView, v => setMountWalkView(v)],
   newNearRing: [() => newNearRing, v => (newNearRing = v)],
@@ -379,21 +379,13 @@ provide({
   rawHeightAt,
   standingHeightAt,
 });
-export function setDglBuildGrass(v) {
-  dglBuildGrass = v; // eslint-disable-line no-func-assign
-  provide({ dglBuildGrass });
+export function setBuildGrass(v) {
+  buildGrass = v; // eslint-disable-line no-func-assign
+  provide({ buildGrass });
 }
 export function setDglFxPass(v) {
   dglFxPass = v; // eslint-disable-line no-func-assign
   provide({ dglFxPass });
-}
-export function setDglGrass(v) {
-  dglGrass = v; // eslint-disable-line no-func-assign
-  provide({ dglGrass });
-}
-export function setDglGrassWork(v) {
-  dglGrassWork = v; // eslint-disable-line no-func-assign
-  provide({ dglGrassWork });
 }
 export function setDglGround(v) {
   dglGround = v; // eslint-disable-line no-func-assign
@@ -411,9 +403,17 @@ export function setDglSprites(v) {
   dglSprites = v; // eslint-disable-line no-func-assign
   provide({ dglSprites });
 }
+export function setDrawGrass(v) {
+  drawGrass = v; // eslint-disable-line no-func-assign
+  provide({ drawGrass });
+}
 export function setDrawWater(v) {
   drawWater = v; // eslint-disable-line no-func-assign
   provide({ drawWater });
+}
+export function setGrassWork(v) {
+  grassWork = v; // eslint-disable-line no-func-assign
+  provide({ grassWork });
 }
 export function setGroundOcclusion(v) {
   groundOcclusion = v; // eslint-disable-line no-func-assign
@@ -2092,7 +2092,7 @@ function* buildGroundSteps(sc, G, T) {
       )
     : null;
   if (T === walkRenderer) {
-    dglBuildGrass();
+    buildGrass();
     T.farKey = '';
   }
 }
@@ -3049,7 +3049,7 @@ function repeatingTexture(im, old) {
 /* v22: grass with variety. Every blade has a kind (thin, broad, clover, dry straw, flower head, tall hiding grass) and
    a tint: patches of lush and dry grass follow a slow noise, it is darker and greener near water, shorter where paths
    and doors wear it down, taller round fences, rocks and tree trunks, and tufts creep onto the edges of paths */
-const DGL_GKIND = {
+const GRASS_KINDS = {
   g: [
     [0, 0.66],
     [1, 0.2],
@@ -3089,9 +3089,9 @@ const DGL_GKIND = {
     [1, 0.1],
   ],
 }; /* v47: sunburnt grass (mostly dry straw), wildflower meadow (flower heads) */
-/* v39: planting is spread over frames: each frame plants rows for a few milliseconds (dglGrassWork), and the blades
+/* v39: planting is spread over frames: each frame plants rows for a few milliseconds (grassWork), and the blades
    appear when the last row is in, so a big meadow no longer costs one long frame when the scene opens */
-export function dglBuildGrass() {
+export function buildGrass() {
   const gl = EGL.gl,
     sc = walkView.sc;
   walkRenderer.grassDrawn = 0;
@@ -3150,7 +3150,7 @@ export function dglBuildGrass() {
     return false;
   };
   const pick = (ch, r) => {
-    const L = DGL_GKIND[ch] || DGL_GKIND.g;
+    const L = GRASS_KINDS[ch] || GRASS_KINDS.g;
     let a = 0;
     for (const [kk, w] of L) {
       a += w;
@@ -3285,9 +3285,9 @@ export function dglBuildGrass() {
     walkRenderer.grass = { vao, vb, ib, n: I.length / 8, chunks };
   };
   walkRenderer.grassJob = J;
-  dglGrassWork(12);
+  grassWork(12);
 }
-export function dglGrassWork(ms = 4) {
+export function grassWork(ms = 4) {
   const J = walkRenderer.grassJob;
   if (!J) return;
   if (J.sc !== walkView.sc) {
@@ -3307,7 +3307,7 @@ export function dglGrassWork(ms = 4) {
 }
 
 /* distant trees, rocks or cacti scattered on the land around the scene (taken from the scene's own props) */
-function dglBuildFar() {
+function buildFarProps() {
   const sc = walkView.sc,
     C0 = walkData().sc,
     pool = [],
@@ -3629,9 +3629,9 @@ function dglFrameIn(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
     dglSceneSwap(old, hk);
   }
   navGrid();
-  if (walkRenderer.grassKey !== eng('grass', 'density')) dglBuildGrass();
-  else dglGrassWork(4);
-  if (walkRenderer.farKey !== walkView.id + '|' + Math.round(eng('world', 'farProps'))) dglBuildFar();
+  if (walkRenderer.grassKey !== eng('grass', 'density')) buildGrass();
+  else grassWork(4);
+  if (walkRenderer.farKey !== walkView.id + '|' + Math.round(eng('world', 'farProps'))) buildFarProps();
   /* a battle (battle-3d.js) borrows the scene: its own camera, the fighters as lit sprites, props in the way hidden */
   const BT =
     (walkView.battle && walkView.battle.frame ? walkView.battle.frame() : null) ||
@@ -3694,7 +3694,7 @@ function dglFrameIn(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   dglSky(C, sun, 0);
   dglGround(C, X);
   dglRoomFront(C, X);
-  if (walkRenderer.grass && !D.noGrass) dglGrass(C, X);
+  if (walkRenderer.grass && !D.noGrass) drawGrass(C, X);
   dglSprites(C, items, X, hits, labels, PPU);
   if (typeof p3dDraw === 'function') p3dDraw(C, items, X, hits, labels, PPU);
   if (typeof voxDraw === 'function') voxDraw(C, items, X, null, null, PPU);
@@ -5690,7 +5690,7 @@ export function dglGround(C, X) {
   gl.bindVertexArray(null);
 }
 /* where you walked through the grass lately (16 spots, the blades spring back over four seconds) */
-function dglTrail() {
+function grassTrail() {
   const P = walkView.pl,
     t = walkView.t,
     T = walkRenderer.trail || (walkRenderer.trail = []);
@@ -5712,9 +5712,9 @@ function dglTrail() {
 }
 /* who else parts the grass this frame (up to 8, nearest the player first): the buddy, the wild ones hiding in it, folk,
    and in a battle on the 3D stage the billionaires themselves */
-const DGL_PUSH = new Float32Array(24);
-function dglPushers() {
-  const A = DGL_PUSH,
+const GRASS_PUSHER_BUFFER = new Float32Array(24);
+function grassPushers() {
+  const A = GRASS_PUSHER_BUFFER,
     P = walkView.pl,
     L = [];
   A.fill(0);
@@ -5736,7 +5736,7 @@ function dglPushers() {
 }
 /* alpha 0.4: the flowers in a place's grass, by its character: daisies and clover by the towns, poppies and cornflowers
    in the meadows, heather on the hills, teal and pink in the Meadowlands, glowing caps in the Spore Forest */
-const DGL_FLW = {
+const FLOWER_COLORS = {
   town: ['#F6F2E8', '#F8E27A', '#F2C4DA', '#FFFFFF'],
   meadow: ['#E8483C', '#5A7AE8', '#F6F2E8', '#F8D040'],
   hill: ['#B87AC8', '#9A5AB8', '#E2C8EE', '#F6F2E8'],
@@ -5745,7 +5745,7 @@ const DGL_FLW = {
   warm: ['#F8D040', '#F08A3C', '#F6F2E8', '#E8483C'],
   cool: ['#8AB8F0', '#E8F0F8', '#B8A0E8', '#F6F2E8'],
 };
-const DGL_FLW_OF = {
+const FLOWER_SET_BY_LOCATION = {
   twofold: 'pastel',
   festival: 'pastel',
   blossom: 'pastel',
@@ -5766,25 +5766,25 @@ const DGL_FLW_OF = {
   canyon: 'warm',
   farm: 'meadow',
 };
-function dglFlowers(sc) {
+function mapFlowers(sc) {
   const id = (sc && (sc.place || sc.baseId)) || '',
-    k = DGL_FLW_OF[id] || (sc && sc.kind === 'town' ? 'town' : 'meadow');
-  return { c: DGL_FLW[k].map(h => hexA(h).map(v => v / 255)), glow: k === 'spore' ? 0.55 : 0 };
+    k = FLOWER_SET_BY_LOCATION[id] || (sc && sc.kind === 'town' ? 'town' : 'meadow');
+  return { c: FLOWER_COLORS[k].map(h => hexA(h).map(v => v / 255)), glow: k === 'spore' ? 0.55 : 0 };
 }
-export function dglGrass(C, X) {
+export function drawGrass(C, X) {
   const gl = EGL.gl,
     p = dglUse('grass', C, X),
     U = p.U,
     sc = walkView.sc,
     P = walkView.pl;
   if (U['uFlw[0]'] || U.uFlw) {
-    const F = dglFlowers(sc),
+    const F = mapFlowers(sc),
       loc = U.uFlw || U['uFlw[0]'];
     gl.uniform3fv(loc, new Float32Array(F.c.flat()));
     gl.uniform1f(U.uFlwGlow, F.glow);
   }
-  if (U.uTrail) gl.uniform3fv(U.uTrail, walkRenderer.bt ? new Float32Array(48) : dglTrail());
-  if (U.uPush) gl.uniform3fv(U.uPush, dglPushers());
+  if (U.uTrail) gl.uniform3fv(U.uTrail, walkRenderer.bt ? new Float32Array(48) : grassTrail());
+  if (U.uPush) gl.uniform3fv(U.uPush, grassPushers());
   gl.uniform3fv(U.uRight, C.right);
   gl.uniform3f(U.uPl, P.x, 0, P.z);
   gl.uniform1f(U.uT, RM ? 0 : walkView.t);
