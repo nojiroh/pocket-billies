@@ -47,7 +47,6 @@ expose({
   PLAN_INFO: [() => PLAN_INFO],
   Q_FIELDS: [() => Q_FIELDS],
   ROLE_HELP: [() => ROLE_HELP],
-  SK: [() => SK],
   allocRect: [() => allocRect, v => (allocRect = v)],
   blobPart: [() => blobPart, v => (blobPart = v)],
   cutRect: [() => cutRect, v => (cutRect = v)],
@@ -83,13 +82,14 @@ expose({
   skSide: [() => skSide, v => (skSide = v)],
   skTopo: [() => skTopo, v => (skTopo = v)],
   skTree: [() => skTree, v => (skTree = v)],
+  skeletonEditor: [() => skeletonEditor],
   swapLR: [() => swapLR],
   uniqBone: [() => uniqBone],
 });
 /* eslint-enable no-func-assign */
 provide({ makeBlankBody, openSkeleton, skNeutral });
 /* to-module: end */
-const SK = {
+const skeletonEditor = {
   sp: null,
   view: 'front',
   sel: null,
@@ -197,8 +197,8 @@ function planRoles(plan, q) {
     return [];
   }
 }
-function skMeta(view = SK.view) {
-  return studioState.rigs[SK.sp] && studioState.rigs[SK.sp][view];
+function skMeta(view = skeletonEditor.view) {
+  return studioState.rigs[skeletonEditor.sp] && studioState.rigs[skeletonEditor.sp][view];
 }
 export function skNeutral() {
   const P = rigPose(null, 0, 0, 0);
@@ -217,14 +217,15 @@ export function skNeutral() {
   return P;
 }
 function skPose(ts, tickOff = 0) {
-  if (!SK.anim) return skNeutral();
-  let tau = ts - SK.t0;
-  if (SK.paused) tau = (SK.tick * 1000) / 12;
-  if (SK.grid12 || SK.paused) tau = Math.floor(tau / (1000 / 12)) * (1000 / 12);
+  if (!skeletonEditor.anim) return skNeutral();
+  let tau = ts - skeletonEditor.t0;
+  if (skeletonEditor.paused) tau = (skeletonEditor.tick * 1000) / 12;
+  if (skeletonEditor.grid12 || skeletonEditor.paused) tau = Math.floor(tau / (1000 / 12)) * (1000 / 12);
   tau += (tickOff * 1000) / 12;
-  const t2 = SK.paused || SK.grid12 ? SK.t0 + tau : ts;
-  const act = SK.act && (SK.act === 'faint' ? tau < 1600 : tau < 1100) ? SK.act : null;
-  if (SK.act && !act && !SK.paused) SK.t0 = ts;
+  const t2 = skeletonEditor.paused || skeletonEditor.grid12 ? skeletonEditor.t0 + tau : ts;
+  const act =
+    skeletonEditor.act && (skeletonEditor.act === 'faint' ? tau < 1600 : tau < 1100) ? skeletonEditor.act : null;
+  if (skeletonEditor.act && !act && !skeletonEditor.paused) skeletonEditor.t0 = ts;
   return rigPose(act, Math.max(0, tau), t2, 1);
 }
 const mInv = m => {
@@ -370,11 +371,11 @@ function skGeo(sp) {
 }
 /* ---------- open ---------- */
 async function openSkeleton(sp, view = 'front') {
-  SK.sp = sp;
-  SK.view = view;
-  SK.sel = null;
-  SK.anim = false;
-  SK.act = null;
+  skeletonEditor.sp = sp;
+  skeletonEditor.view = view;
+  skeletonEditor.sel = null;
+  skeletonEditor.anim = false;
+  skeletonEditor.act = null;
   try {
     await Promise.all(
       ['front', 'back'].flatMap(v => [
@@ -398,44 +399,44 @@ async function openSkeleton(sp, view = 'front') {
   <span class="px-tools"><button class="seg" data-sk="zoom" data-z="-.5">−</button><span id="skZoom"></span><button class="seg" data-sk="zoom" data-z=".5">+</button></span>
   <span class="grow"></span><button class="btn" data-sk="paint">Paint pixels</button><button class="btn primary" data-sk="close">Done</button></header>
  <div class="sk-body"><aside class="sk-tree"><div class="sk-tree-head"><b>Parts</b><small>Drag a part to move it. Drag its dot to move only the pivot. Shift-drag to tilt.</small></div><div id="skTree"></div>
-  <div class="sk-adds"><button class="btn" data-sk="add">+ Blank part</button><button class="btn" data-sk="addPng">+ Part from PNG</button><button class="btn" data-sk="importSheet" title="v35: a piece sheet (one PNG) with its layout JSON: every piece becomes a part">Import piece sheet</button><label class="fld chk"><input type="checkbox" id="skBoth" ${SK.both ? 'checked' : ''}><span>Also add to the other view</span></label></div></aside>
+  <div class="sk-adds"><button class="btn" data-sk="add">+ Blank part</button><button class="btn" data-sk="addPng">+ Part from PNG</button><button class="btn" data-sk="importSheet" title="v35: a piece sheet (one PNG) with its layout JSON: every piece becomes a part">Import piece sheet</button><label class="fld chk"><input type="checkbox" id="skBoth" ${skeletonEditor.both ? 'checked' : ''}><span>Also add to the other view</span></label></div></aside>
   <div class="px-stage sk-stage" id="skStage"><canvas id="skCv"></canvas></div>
   <aside class="px-side" id="skSide"></aside></div></div>`;
-  $('#skBoth').addEventListener('change', e => (SK.both = e.target.checked));
+  $('#skBoth').addEventListener('change', e => (skeletonEditor.both = e.target.checked));
   $('#skScrub').addEventListener('input', e => {
-    SK.paused = true;
+    skeletonEditor.paused = true;
     $('[data-sk=pause]').classList.add('on');
-    SK.anim = true;
+    skeletonEditor.anim = true;
     $('[data-sk=anim]').classList.add('on');
-    SK.tick = +e.target.value;
+    skeletonEditor.tick = +e.target.value;
     skDraw();
   });
   m.querySelector('.skel').addEventListener('click', skClick);
   skBindCanvas();
   skLoadView();
-  cancelAnimationFrame(SK.raf);
-  SK.raf = requestAnimationFrame(skLoop);
+  cancelAnimationFrame(skeletonEditor.raf);
+  skeletonEditor.raf = requestAnimationFrame(skLoop);
 }
 function skLoadView() {
-  $$('[data-sk=view]').forEach(b => b.classList.toggle('on', b.dataset.v === SK.view));
+  $$('[data-sk=view]').forEach(b => b.classList.toggle('on', b.dataset.v === skeletonEditor.view));
   const meta = skMeta();
-  if (SK.sel && !meta.bones.some(b => b.n === SK.sel)) SK.sel = null;
+  if (skeletonEditor.sel && !meta.bones.some(b => b.n === skeletonEditor.sel)) skeletonEditor.sel = null;
   skTree();
   skSide();
   skDraw(performance.now());
 }
 function skLoop(ts) {
   if (!$('.skel')) return;
-  if ((SK.anim && !SK.paused) || SK.drag) skDraw(ts);
-  SK.raf = requestAnimationFrame(skLoop);
+  if ((skeletonEditor.anim && !skeletonEditor.paused) || skeletonEditor.drag) skDraw(ts);
+  skeletonEditor.raf = requestAnimationFrame(skLoop);
 }
 /* ---------- canvas ---------- */
 function skDraw(ts) {
   const c = $('#skCv');
   if (!c) return;
-  const R = rigFor(SK.sp, SK.view, false);
+  const R = rigFor(skeletonEditor.sp, skeletonEditor.view, false);
   if (!R) return;
-  const Z = SK.zoom,
+  const Z = skeletonEditor.zoom,
     W = R.BW * Z,
     Hh = R.BH * Z;
   if (c.width !== W || c.height !== Hh) {
@@ -443,7 +444,7 @@ function skDraw(ts) {
     c.height = Hh;
   }
   $('#skZoom').textContent = Z + '×';
-  const buf = SK.buf || (SK.buf = makeCanvas(1, 1));
+  const buf = skeletonEditor.buf || (skeletonEditor.buf = makeCanvas(1, 1));
   if (buf.width !== R.BW || buf.height !== R.BH) {
     buf.width = R.BW;
     buf.height = R.BH;
@@ -457,13 +458,13 @@ function skDraw(ts) {
   x.setTransform(1, 0, 0, 1, 0, 0);
   x.clearRect(0, 0, W, Hh);
   x.imageSmoothingEnabled = false;
-  if (SK.onion && SK.anim) {
+  if (skeletonEditor.onion && skeletonEditor.anim) {
     for (const [off, al] of [
       [-2, 0.18],
       [-1, 0.32],
     ]) {
       bx.clearRect(0, 0, R.BW, R.BH);
-      drawRig(bx, R, skPose(now, off), SK.view);
+      drawRig(bx, R, skPose(now, off), skeletonEditor.view);
       bx.save();
       bx.globalCompositeOperation = 'source-atop';
       bx.fillStyle = off === -1 ? '#C8323C' : '#1F6E6F';
@@ -476,11 +477,14 @@ function skDraw(ts) {
     bx.clearRect(0, 0, R.BW, R.BH);
   }
   const P = skPose(now);
-  drawRig(bx, R, P, SK.view);
+  drawRig(bx, R, P, skeletonEditor.view);
   x.drawImage(buf, 0, 0, W, Hh);
   const tk = $('#skTick');
-  if (tk) tk.textContent = 'tick ' + (SK.paused ? SK.tick : Math.floor(((now - SK.t0) / (1000 / 12)) % 24));
-  if (SK.paused && $('#skScrub')) $('#skScrub').value = SK.tick;
+  if (tk)
+    tk.textContent =
+      'tick ' +
+      (skeletonEditor.paused ? skeletonEditor.tick : Math.floor(((now - skeletonEditor.t0) / (1000 / 12)) % 24));
+  if (skeletonEditor.paused && $('#skScrub')) $('#skScrub').value = skeletonEditor.tick;
   x.strokeStyle = 'rgba(31,110,111,.5)';
   x.setLineDash([6, 4]);
   x.strokeRect(0.5, 0.5, W - 1, Hh - 1);
@@ -489,10 +493,10 @@ function skDraw(ts) {
   x.lineTo(W, R.base * Z + 0.5);
   x.stroke();
   x.setLineDash([]);
-  const { W: Wm, list } = rigMatrices(R, P, SK.view),
+  const { W: Wm, list } = rigMatrices(R, P, skeletonEditor.view),
     meta = skMeta();
-  if (SK.sel) {
-    const e = list.find(l => l[5].n === SK.sel);
+  if (skeletonEditor.sel) {
+    const e = list.find(l => l[5].n === skeletonEditor.sel);
     if (e) {
       const [z, m, img] = e,
         w = img.c.width,
@@ -526,7 +530,7 @@ function skDraw(ts) {
     x.moveTo(pm[4] * Z, pm[5] * Z);
     x.lineTo(X, Y);
     x.stroke();
-    const on = b.n === SK.sel;
+    const on = b.n === skeletonEditor.sel;
     x.fillStyle = on ? '#C8323C' : b.i < 0 ? '#9C8CD8' : '#F2C14E';
     x.strokeStyle = '#1F2E36';
     x.beginPath();
@@ -549,10 +553,10 @@ function skDraw(ts) {
   x.stroke();
 }
 function skAlphaAt(c, x, y) {
-  let d = SK.alpha.get(c);
+  let d = skeletonEditor.alpha.get(c);
   if (!d) {
     d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
-    SK.alpha.set(c, d);
+    skeletonEditor.alpha.set(c, d);
   }
   x = Math.floor(x);
   y = Math.floor(y);
@@ -560,12 +564,12 @@ function skAlphaAt(c, x, y) {
   return d[(y * c.width + x) * 4 + 3];
 }
 function skHit(bx, by) {
-  const R = rigFor(SK.sp, SK.view, false),
-    { W, list } = rigMatrices(R, skNeutral(), SK.view),
+  const R = rigFor(skeletonEditor.sp, skeletonEditor.view, false),
+    { W, list } = rigMatrices(R, skNeutral(), skeletonEditor.view),
     meta = skMeta();
   for (const b of meta.bones) {
     const m = W[b.n];
-    if (m && Math.hypot(m[4] - bx, m[5] - by) * SK.zoom < 9) return { b, mode: 'pivot' };
+    if (m && Math.hypot(m[4] - bx, m[5] - by) * skeletonEditor.zoom < 9) return { b, mode: 'pivot' };
   }
   for (let i = list.length - 1; i >= 0; i--) {
     const [z, m, img, v, al, b] = list[i],
@@ -588,22 +592,22 @@ function skBindCanvas() {
   const pos = ev => {
     const r = c.getBoundingClientRect();
     return [
-      (((ev.clientX - r.left) / r.width) * c.width) / SK.zoom,
-      (((ev.clientY - r.top) / r.height) * c.height) / SK.zoom,
+      (((ev.clientX - r.left) / r.width) * c.width) / skeletonEditor.zoom,
+      (((ev.clientY - r.top) / r.height) * c.height) / skeletonEditor.zoom,
     ];
   };
   c.addEventListener('pointerdown', ev => {
     const [x, y] = pos(ev),
       h = skHit(x, y);
     if (!h) {
-      SK.sel = null;
+      skeletonEditor.sel = null;
       skTree();
       skSide();
       skDraw();
       return;
     }
     c.setPointerCapture(ev.pointerId);
-    SK.sel = h.b.n;
+    skeletonEditor.sel = h.b.n;
     let mode = ev.shiftKey ? 'rotate' : h.mode;
     const meta = skMeta();
     if (mode === 'pivot' && h.b.i >= 0 && imgUsers(meta, h.b.i).length > 1) {
@@ -611,13 +615,13 @@ function skBindCanvas() {
       h.b.i = meta.imgs.length - 1;
       studioState.rigVer = (studioState.rigVer || 0) + 1;
     }
-    SK.drag = { b: h.b, mode, last: [x, y], ang: null, moved: false };
+    skeletonEditor.drag = { b: h.b, mode, last: [x, y], ang: null, moved: false };
     skTree();
     skSide();
     skDraw();
   });
   c.addEventListener('pointermove', ev => {
-    const D = SK.drag;
+    const D = skeletonEditor.drag;
     if (!D) return;
     const [x, y] = pos(ev),
       dx = x - D.last[0],
@@ -628,8 +632,8 @@ function skBindCanvas() {
     const meta = skMeta(),
       b = D.b,
       k = meta.k,
-      R = rigFor(SK.sp, SK.view, false),
-      { W } = rigMatrices(R, skNeutral(), SK.view);
+      R = rigFor(skeletonEditor.sp, skeletonEditor.view, false),
+      { W } = rigMatrices(R, skNeutral(), skeletonEditor.view);
     const pm = W[b.par || 'root'] || W.root,
       pinv = mInv(pm),
       [pdx, pdy] = mApplyL(pinv, dx, dy);
@@ -665,10 +669,10 @@ function skBindCanvas() {
     studioState.rigsDirty = true;
   });
   const up = () => {
-    const D = SK.drag;
-    SK.drag = null;
+    const D = skeletonEditor.drag;
+    skeletonEditor.drag = null;
     if (D && D.moved) {
-      skGeo(SK.sp);
+      skGeo(skeletonEditor.sp);
       changed(true);
       commit(true);
       skSide();
@@ -682,7 +686,7 @@ function skBindCanvas() {
     ev => {
       if (!ev.ctrlKey && !ev.metaKey) return;
       ev.preventDefault();
-      SK.zoom = clamp(SK.zoom + (ev.deltaY < 0 ? 0.5 : -0.5), 1, 8);
+      skeletonEditor.zoom = clamp(skeletonEditor.zoom + (ev.deltaY < 0 ? 0.5 : -0.5), 1, 8);
       skDraw();
     },
     { passive: false }
@@ -701,7 +705,7 @@ function skTree() {
     const role = b.a || b.n,
       anim = roles.includes(role);
     return (
-      `<button class="sk-row ${b.n === SK.sel ? 'on' : ''}" data-sk="sel" data-n="${esc(b.n)}" style="padding-left:${8 + d * 14}px"><span class="sk-dot ${b.i < 0 ? 'piv' : ''}"></span><b>${esc(b.n)}</b>${b.a && b.a !== b.n ? `<small>moves as ${esc(b.a)}</small>` : anim ? '' : '<small>still</small>'}${SK.view === 'back' && b.hideB ? '<small>hidden</small>' : ''}</button>` +
+      `<button class="sk-row ${b.n === skeletonEditor.sel ? 'on' : ''}" data-sk="sel" data-n="${esc(b.n)}" style="padding-left:${8 + d * 14}px"><span class="sk-dot ${b.i < 0 ? 'piv' : ''}"></span><b>${esc(b.n)}</b>${b.a && b.a !== b.n ? `<small>moves as ${esc(b.a)}</small>` : anim ? '' : '<small>still</small>'}${skeletonEditor.view === 'back' && b.hideB ? '<small>hidden</small>' : ''}</button>` +
       (kids[b.n] || []).map(c => row(c, d + 1)).join('')
     );
   };
@@ -710,13 +714,13 @@ function skTree() {
 /* ---------- properties ---------- */
 function skSide() {
   const meta = skMeta(),
-    base = `@rigs.${SK.sp}.${SK.view}`,
+    base = `@rigs.${skeletonEditor.sp}.${skeletonEditor.view}`,
     roles = planRoles(meta.plan, meta.q),
     side = $('#skSide');
   if (!side) return;
   let h = '';
-  if (SK.sel) {
-    const bi = meta.bones.findIndex(b => b.n === SK.sel),
+  if (skeletonEditor.sel) {
+    const bi = meta.bones.findIndex(b => b.n === skeletonEditor.sel),
       b = meta.bones[bi],
       p = `${base}.bones.${bi}`,
       desc = new Set();
@@ -747,8 +751,8 @@ function skSide() {
      .join(
        ''
      )}<option value="-" ${b.a === '-' ? 'selected' : ''}>Nothing: stays still</option></select><small class="help">Each body plan animates parts by role. Pick one to borrow a motion.</small></label>
-   <div class="grid sk-grid">${numberField('Across', `${p}.at.0`, { step: 0.25 })}${numberField('Up / down', `${p}.at.1`, { step: 0.25 })}${numberField('Tilt', `${p}.rr`, { step: 0.02, opt: 1, ph: '0' })}${numberField(SK.view === 'back' ? 'Layer (back)' : 'Layer', `${p}.${SK.view === 'back' ? 'zb' : 'z'}`, { step: 0.5, help: 'Higher draws on top.' })}</div>
-   ${SK.view === 'back' ? checkboxField('Hidden in the back view', `${p}.hideB`, { num: 1 }) : ''}
+   <div class="grid sk-grid">${numberField('Across', `${p}.at.0`, { step: 0.25 })}${numberField('Up / down', `${p}.at.1`, { step: 0.25 })}${numberField('Tilt', `${p}.rr`, { step: 0.02, opt: 1, ph: '0' })}${numberField(skeletonEditor.view === 'back' ? 'Layer (back)' : 'Layer', `${p}.${skeletonEditor.view === 'back' ? 'zb' : 'z'}`, { step: 0.5, help: 'Higher draws on top.' })}</div>
+   ${skeletonEditor.view === 'back' ? checkboxField('Hidden in the back view', `${p}.hideB`, { num: 1 }) : ''}
    <div class="seg-row"><button class="btn sm" data-sk="dup">Duplicate</button><button class="btn sm" data-sk="mirror">Mirror copy</button><button class="btn sm" data-sk="child">+ Child part</button><button class="btn sm danger" data-sk="del">Delete</button></div></div>`;
     if (b.i >= 0 && img) {
       const r = img.f.idle || img.f.main || Object.values(img.f)[0];
@@ -761,7 +765,7 @@ function skSide() {
   } else
     h += `<div class="px-sec"><h4>No part selected</h4><p class="help">Click a part or a dot on the creature, or pick one from the list.</p></div>`;
   try {
-    const au = typeof rigAudit === 'function' ? rigAudit(SK.sp, SK.view) : null;
+    const au = typeof rigAudit === 'function' ? rigAudit(skeletonEditor.sp, skeletonEditor.view) : null;
     if (au) {
       const top = Object.entries(au.poses)
         .map(
@@ -786,14 +790,14 @@ function skSide() {
     .join('')}</select></label>
   ${(Q_FIELDS[meta.plan] || []).map(([k, l, mn, mx, st]) => numberField(l, `${base}.q.${k}`, { min: mn, max: mx, step: st })).join('')}
   <p class="help">Parts animate when their name or “Moves like” matches one of: ${roles.map(esc).join(', ')}.</p>
-  <button class="btn sm" data-sk="copyView">Copy this layout to the ${SK.view === 'front' ? 'back' : 'front'} view</button></div>`;
+  <button class="btn sm" data-sk="copyView">Copy this layout to the ${skeletonEditor.view === 'front' ? 'back' : 'front'} view</button></div>`;
   side.innerHTML = h;
   const pc = $('#skPic');
-  if (pc && SK.sel) {
-    const b = meta.bones.find(x => x.n === SK.sel),
+  if (pc && skeletonEditor.sel) {
+    const b = meta.bones.find(x => x.n === skeletonEditor.sel),
       img = meta.imgs[b.i],
       r = img.f.idle || img.f.main || Object.values(img.f)[0],
-      src = cutRect(SK.sp, SK.view, r);
+      src = cutRect(skeletonEditor.sp, skeletonEditor.view, r);
     pc.width = src.width;
     pc.height = src.height;
     pc.getContext('2d').drawImage(src, 0, 0);
@@ -805,7 +809,7 @@ function skSide() {
   const ro = $('#skRole');
   if (ro)
     ro.addEventListener('change', () => {
-      const b = skMeta().bones.find(x => x.n === SK.sel);
+      const b = skMeta().bones.find(x => x.n === skeletonEditor.sel);
       if (ro.value) b.a = ro.value;
       else delete b.a;
       skDone();
@@ -815,7 +819,7 @@ function skSide() {
 studioState.hooks._skel = null;
 function skDone() {
   studioState.rigVer = (studioState.rigVer || 0) + 1;
-  skGeo(SK.sp);
+  skGeo(skeletonEditor.sp);
   changed(true);
   commit(true);
   skTree();
@@ -832,7 +836,7 @@ document.addEventListener('input', ev => {
 });
 document.addEventListener('change', ev => {
   if (ev.target.closest('.skel') && ev.target.dataset.p) {
-    skGeo(SK.sp);
+    skGeo(skeletonEditor.sp);
     skTree();
     if (ev.target.type === 'checkbox') skSide();
     skDraw();
@@ -850,7 +854,7 @@ document.addEventListener(
       ev.stopImmediatePropagation();
       k === 'y' || ev.shiftKey ? redo() : undo();
       skLoadView();
-    } else if (!mod && (k === 'delete' || k === 'backspace') && SK.sel) {
+    } else if (!mod && (k === 'delete' || k === 'backspace') && skeletonEditor.sel) {
       ev.preventDefault();
       $('[data-sk=del]') && $('[data-sk=del]').click();
     }
@@ -861,7 +865,7 @@ document.addEventListener(
 function skRename(n) {
   n = n.trim().replace(/[^A-Za-z0-9_]/g, '');
   const meta = skMeta(),
-    b = meta.bones.find(x => x.n === SK.sel);
+    b = meta.bones.find(x => x.n === skeletonEditor.sel);
   if (!n || n === b.n) return;
   if (meta.bones.some(x => x.n === n)) return toast('Another part already has that name.', 'err');
   const roles = planRoles(meta.plan, meta.q);
@@ -870,14 +874,14 @@ function skRename(n) {
     if (x.par === b.n) x.par = n;
   });
   b.n = n;
-  SK.sel = n;
+  skeletonEditor.sel = n;
   skDone();
 }
 function skReparent(p) {
   const meta = skMeta(),
-    b = meta.bones.find(x => x.n === SK.sel),
-    R = rigFor(SK.sp, SK.view, false),
-    { W } = rigMatrices(R, skNeutral(), SK.view),
+    b = meta.bones.find(x => x.n === skeletonEditor.sel),
+    R = rigFor(skeletonEditor.sp, skeletonEditor.view, false),
+    { W } = rigMatrices(R, skNeutral(), skeletonEditor.view),
     me = W[b.n],
     np = W[p] || W.root;
   const inv = mInv(np),
@@ -894,7 +898,7 @@ function skSetPlan(plan) {
   (Q_FIELDS[plan] || []).forEach(([k, l, mn, mx]) => {
     if (meta.q[k] == null) meta.q[k] = k === 'n' ? 3 : k === 'per' ? 300 : k === 'flapMs' ? 300 : mn;
   });
-  const other = studioState.rigs[SK.sp][SK.view === 'front' ? 'back' : 'front'];
+  const other = studioState.rigs[skeletonEditor.sp][skeletonEditor.view === 'front' ? 'back' : 'front'];
   if (other) {
     other.plan = plan;
     other.q = clone(meta.q);
@@ -925,9 +929,9 @@ function skMirror(meta, b, par, orig) {
     const img = meta.imgs[b.i],
       f = {};
     for (const [v, r] of Object.entries(img.f)) {
-      const src = flipped(cutRect(SK.sp, SK.view, r)),
-        nr = allocRect(SK.sp, SK.view, r[2], r[3]);
-      putPart(SK.sp, SK.view, nr, src);
+      const src = flipped(cutRect(skeletonEditor.sp, skeletonEditor.view, r)),
+        nr = allocRect(skeletonEditor.sp, skeletonEditor.view, r[2], r[3]);
+      putPart(skeletonEditor.sp, skeletonEditor.view, nr, src);
       f[v] = nr;
     }
     const r0 = img.f.idle || img.f.main || Object.values(img.f)[0];
@@ -960,10 +964,10 @@ function skPlaceholder(w, h, col = '#B8A8E0') {
 /* add a part: a new picture strip, a new bone, optionally mirrored into the other view */
 function skAddPart(src, opts = {}) {
   const meta = skMeta(),
-    sp = SK.sp,
-    view = SK.view,
+    sp = skeletonEditor.sp,
+    view = skeletonEditor.view,
     k = meta.k;
-  const par = opts.par || SK.sel || 'root',
+  const par = opts.par || skeletonEditor.sel || 'root',
     name = uniqBone(meta, opts.name || 'part');
   const rect = allocRect(sp, view, src.width, src.height);
   putPart(sp, view, rect, src);
@@ -998,7 +1002,7 @@ function skAddPart(src, opts = {}) {
   if (opts.faces) b.face = true;
   meta.bones.push(b);
   skTopo(meta);
-  if (SK.both && !opts.abs) {
+  if (skeletonEditor.both && !opts.abs) {
     const ov = view === 'front' ? 'back' : 'front',
       om = studioState.rigs[sp][ov];
     if (om && !om.bones.some(x => x.n === name)) {
@@ -1017,7 +1021,7 @@ function skAddPart(src, opts = {}) {
       skTopo(om);
     }
   }
-  SK.sel = name;
+  skeletonEditor.sel = name;
   skDone();
   return b;
 }
@@ -1026,83 +1030,83 @@ function skClick(ev) {
   if (!el) return;
   const a = el.dataset.sk,
     meta = skMeta(),
-    b = SK.sel && meta.bones.find(x => x.n === SK.sel);
+    b = skeletonEditor.sel && meta.bones.find(x => x.n === skeletonEditor.sel);
   const run = {
     view: () => {
-      SK.view = el.dataset.v;
+      skeletonEditor.view = el.dataset.v;
       skLoadView();
     },
     anim: () => {
-      SK.anim = !SK.anim;
-      el.classList.toggle('on', SK.anim);
-      SK.t0 = performance.now();
+      skeletonEditor.anim = !skeletonEditor.anim;
+      el.classList.toggle('on', skeletonEditor.anim);
+      skeletonEditor.t0 = performance.now();
       skDraw();
     },
     act: () => {
-      SK.anim = true;
+      skeletonEditor.anim = true;
       $('[data-sk=anim]').classList.add('on');
-      SK.act = el.dataset.a;
-      SK.t0 = performance.now();
+      skeletonEditor.act = el.dataset.a;
+      skeletonEditor.t0 = performance.now();
     },
     grid12: () => {
-      SK.grid12 = !SK.grid12;
-      el.classList.toggle('on', SK.grid12);
+      skeletonEditor.grid12 = !skeletonEditor.grid12;
+      el.classList.toggle('on', skeletonEditor.grid12);
       skDraw();
     },
     pause: () => {
-      SK.paused = !SK.paused;
-      el.classList.toggle('on', SK.paused);
-      if (SK.paused) {
-        SK.anim = true;
+      skeletonEditor.paused = !skeletonEditor.paused;
+      el.classList.toggle('on', skeletonEditor.paused);
+      if (skeletonEditor.paused) {
+        skeletonEditor.anim = true;
         $('[data-sk=anim]').classList.add('on');
-        SK.tick = Math.floor(((performance.now() - SK.t0) / (1000 / 12)) % 24);
-      } else SK.t0 = performance.now() - (SK.tick * 1000) / 12;
+        skeletonEditor.tick = Math.floor(((performance.now() - skeletonEditor.t0) / (1000 / 12)) % 24);
+      } else skeletonEditor.t0 = performance.now() - (skeletonEditor.tick * 1000) / 12;
       skDraw();
     },
     tick: () => {
-      SK.paused = true;
+      skeletonEditor.paused = true;
       $('[data-sk=pause]').classList.add('on');
-      SK.anim = true;
+      skeletonEditor.anim = true;
       $('[data-sk=anim]').classList.add('on');
-      SK.tick = (SK.tick + +el.dataset.d + 24) % 24;
+      skeletonEditor.tick = (skeletonEditor.tick + +el.dataset.d + 24) % 24;
       skDraw();
     },
     onion: () => {
-      SK.onion = !SK.onion;
-      el.classList.toggle('on', SK.onion);
+      skeletonEditor.onion = !skeletonEditor.onion;
+      el.classList.toggle('on', skeletonEditor.onion);
       skDraw();
     },
     importSheet: () => skImportSheet(),
     zoom: () => {
-      SK.zoom = clamp(SK.zoom + +el.dataset.z, 1, 8);
+      skeletonEditor.zoom = clamp(skeletonEditor.zoom + +el.dataset.z, 1, 8);
       skDraw();
     },
     sel: () => {
-      SK.sel = el.dataset.n;
+      skeletonEditor.sel = el.dataset.n;
       skTree();
       skSide();
       skDraw();
     },
     close: () => {
-      cancelAnimationFrame(SK.raf);
+      cancelAnimationFrame(skeletonEditor.raf);
       $('#modal').innerHTML = '';
       previewsDirty();
       render();
     },
     paint: () => {
-      const sp = SK.sp,
-        v = SK.view;
+      const sp = skeletonEditor.sp,
+        v = skeletonEditor.view;
       openPixelEditor(sp, v, false).then(() => {
         pixelEditor.back = () => openSkeleton(sp, v);
       });
     },
     paintPart: () => {
-      const sp = SK.sp,
-        v = SK.view;
+      const sp = skeletonEditor.sp,
+        v = skeletonEditor.view;
       openPixelEditor(sp, v, false, { i: b.i, v: b.face ? 'idle' : null }).then(() => {
         pixelEditor.back = () => {
           openSkeleton(sp, v).then(() => {
-            SK.sel = b.n;
+            skeletonEditor.sel = b.n;
             skLoadView();
           });
         };
@@ -1111,7 +1115,7 @@ function skClick(ev) {
     add: async () => {
       const r = await dialog(
         'New blank part',
-        `<div class="grid"><label class="fld"><span>Name</span><input id="npName" value="part" maxlength="16"></label><label class="fld"><span>Width (px)</span><input id="npW" type="number" value="${Math.round(10 * meta.k)}" min="2" max="200"></label><label class="fld"><span>Height (px)</span><input id="npH" type="number" value="${Math.round(10 * meta.k)}" min="2" max="200"></label></div><p class="help">It hangs from ${esc(SK.sel || 'the ground')}. You’ll paint it next.</p>`,
+        `<div class="grid"><label class="fld"><span>Name</span><input id="npName" value="part" maxlength="16"></label><label class="fld"><span>Width (px)</span><input id="npW" type="number" value="${Math.round(10 * meta.k)}" min="2" max="200"></label><label class="fld"><span>Height (px)</span><input id="npH" type="number" value="${Math.round(10 * meta.k)}" min="2" max="200"></label></div><p class="help">It hangs from ${esc(skeletonEditor.sel || 'the ground')}. You’ll paint it next.</p>`,
         [
           { l: 'Cancel', v: false },
           {
@@ -1159,14 +1163,14 @@ function skClick(ev) {
       n.at = [+(b.at[0] + 3).toFixed(3), b.at[1]];
       meta.bones.push(n);
       skTopo(meta);
-      SK.sel = n.n;
+      skeletonEditor.sel = n.n;
       skDone();
     },
     mirror: () => {
       if (!b) return;
       const n = skMirror(meta, b, b.par || 'root', new Set(meta.bones));
       skTopo(meta);
-      SK.sel = n.n;
+      skeletonEditor.sel = n.n;
       skDone();
       toast('Mirrored copy added' + (meta.bones.some(x => x.par === n.n) ? ' with its child parts' : '') + '.');
     },
@@ -1183,7 +1187,7 @@ function skClick(ev) {
           x.at = [+(x.at[0] + b.at[0]).toFixed(3), +(x.at[1] + b.at[1]).toFixed(3)];
         });
       meta.bones = meta.bones.filter(x => x !== b);
-      SK.sel = null;
+      skeletonEditor.sel = null;
       skDone();
     },
     unshare: () => {
@@ -1191,8 +1195,8 @@ function skClick(ev) {
       const img = meta.imgs[b.i],
         f = {};
       for (const [v, r] of Object.entries(img.f)) {
-        const nr = allocRect(SK.sp, SK.view, r[2], r[3]);
-        putPart(SK.sp, SK.view, nr, cutRect(SK.sp, SK.view, r));
+        const nr = allocRect(skeletonEditor.sp, skeletonEditor.view, r[2], r[3]);
+        putPart(skeletonEditor.sp, skeletonEditor.view, nr, cutRect(skeletonEditor.sp, skeletonEditor.view, r));
         f[v] = nr;
       }
       meta.imgs.push({ ox: img.ox, oy: img.oy, f });
@@ -1203,8 +1207,8 @@ function skClick(ev) {
     givePic: () => {
       if (!b) return;
       const src = skPlaceholder(Math.round(10 * meta.k), Math.round(10 * meta.k)),
-        r = allocRect(SK.sp, SK.view, src.width, src.height);
-      putPart(SK.sp, SK.view, r, src);
+        r = allocRect(skeletonEditor.sp, skeletonEditor.view, src.width, src.height);
+      putPart(skeletonEditor.sp, skeletonEditor.view, r, src);
       meta.imgs.push({ ox: -src.width / 2, oy: -src.height / 2, f: { main: r } });
       b.i = meta.imgs.length - 1;
       skDone();
@@ -1220,10 +1224,10 @@ function skClick(ev) {
       if (c.width <= r[2] && c.height <= r[3]) {
         const t = makeCanvas(r[2], r[3]);
         t.getContext('2d').drawImage(c, 0, 0);
-        putPart(SK.sp, SK.view, r, t);
+        putPart(skeletonEditor.sp, skeletonEditor.view, r, t);
       } else {
-        const nr = allocRect(SK.sp, SK.view, c.width, c.height);
-        putPart(SK.sp, SK.view, nr, c);
+        const nr = allocRect(skeletonEditor.sp, skeletonEditor.view, c.width, c.height);
+        putPart(skeletonEditor.sp, skeletonEditor.view, nr, c);
         img.f[v] = nr;
       }
       skDone();
@@ -1247,11 +1251,11 @@ function skClick(ev) {
       );
       if (!r) return;
       for (const [v, rr] of Object.entries(img.f)) {
-        const src = cutRect(SK.sp, SK.view, rr),
-          nr = allocRect(SK.sp, SK.view, r.w, r.h),
+        const src = cutRect(skeletonEditor.sp, skeletonEditor.view, rr),
+          nr = allocRect(skeletonEditor.sp, skeletonEditor.view, r.w, r.h),
           t = makeCanvas(r.w, r.h);
         t.getContext('2d').drawImage(src, 0, 0);
-        putPart(SK.sp, SK.view, nr, t);
+        putPart(skeletonEditor.sp, skeletonEditor.view, nr, t);
         img.f[v] = nr;
       }
       skDone();
@@ -1266,8 +1270,8 @@ function skClick(ev) {
       const r0 = img.f.idle;
       for (const v of ['blink', 'happy', 'hurt', 'shout'])
         if (!img.f[v]) {
-          const nr = allocRect(SK.sp, SK.view, r0[2], r0[3]);
-          putPart(SK.sp, SK.view, nr, cutRect(SK.sp, SK.view, r0));
+          const nr = allocRect(skeletonEditor.sp, skeletonEditor.view, r0[2], r0[3]);
+          putPart(skeletonEditor.sp, skeletonEditor.view, nr, cutRect(skeletonEditor.sp, skeletonEditor.view, r0));
           img.f[v] = nr;
         }
       b.face = 1;
@@ -1275,8 +1279,8 @@ function skClick(ev) {
       toast('Expression pictures added as copies. Paint the eyes and mouth for each one.');
     },
     copyView: async () => {
-      const ov = SK.view === 'front' ? 'back' : 'front',
-        om = studioState.rigs[SK.sp][ov];
+      const ov = skeletonEditor.view === 'front' ? 'back' : 'front',
+        om = studioState.rigs[skeletonEditor.sp][ov];
       if (
         !(await ask(
           `Copy part positions, parents and tilts to the ${ov} view? Parts it doesn’t have yet are added with scaled copies of these pictures.`,
@@ -1292,9 +1296,9 @@ function skClick(ev) {
             const img = meta.imgs[b2.i],
               f = {};
             for (const [v, r] of Object.entries(img.f)) {
-              const s2 = scaled(cutRect(SK.sp, SK.view, r), om.k / meta.k),
-                nr = allocRect(SK.sp, ov, s2.width, s2.height);
-              putPart(SK.sp, ov, nr, s2);
+              const s2 = scaled(cutRect(skeletonEditor.sp, skeletonEditor.view, r), om.k / meta.k),
+                nr = allocRect(skeletonEditor.sp, ov, s2.width, s2.height);
+              putPart(skeletonEditor.sp, ov, nr, s2);
               f[v] = nr;
             }
             om.imgs.push({ ox: Math.round((img.ox * om.k) / meta.k), oy: Math.round((img.oy * om.k) / meta.k), f });
@@ -1542,7 +1546,7 @@ async function skImportSheet() {
     return;
   }
   const im = await loadImage(URL.createObjectURL(png));
-  const view = SK.view,
+  const view = skeletonEditor.view,
     group = view;
   const L = (lay.pieces || []).filter(p => (p.group || 'front') === group && !p.face);
   if (!L.length) {
@@ -1561,7 +1565,7 @@ async function skImportSheet() {
     return;
   meta.bones = [];
   meta.imgs = [];
-  SK.sel = null;
+  skeletonEditor.sel = null;
   const faces = (lay.pieces || []).filter(p => p.face && (p.group || 'front') === group);
   const order = [];
   const seen = new Set();
@@ -1602,7 +1606,7 @@ async function skImportSheet() {
         );
         vars[f.face] = fc;
       }
-    SK.sel = opts.par === 'root' ? null : opts.par;
+    skeletonEditor.sel = opts.par === 'root' ? null : opts.par;
     opts.abs = true;
     spriteCacheClear();
     skAddPart(c, Object.assign(opts, Object.keys(vars).length ? { faces: vars } : {}));
