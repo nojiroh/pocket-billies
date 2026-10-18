@@ -15,7 +15,6 @@ import {
   LD,
   LIFE,
   LIFE_KIND,
-  P3D,
   P3D_PARTS,
   P3D_SH,
   RM,
@@ -55,6 +54,7 @@ import {
   riderOf,
   seamlessLookTick,
   sfxAt,
+  solidPropState,
   stampDraw,
   strDraw,
   strShadow,
@@ -3856,7 +3856,7 @@ export function rebuildFromSettings() {
   walkRenderer.itemGen = (walkRenderer.itemGen || 0) + 1;
   walkView.gkey = '';
   if (typeof GROUND_CACHE !== 'undefined') GROUND_CACHE.clear();
-  if (typeof P3D !== 'undefined' && P3D.meshes) P3D.meshes = new WeakMap();
+  if (typeof solidPropState !== 'undefined' && solidPropState.meshes) solidPropState.meshes = new WeakMap();
   if (typeof flushPropModelMeshes === 'function') flushPropModelMeshes();
 }
 function swapMapCache(oldKey, key) {

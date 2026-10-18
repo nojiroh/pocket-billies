@@ -30,7 +30,6 @@ import {
 } from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
 expose({
-  P3D: [() => P3D],
   P3D_AUTO: [() => P3D_AUTO],
   P3D_GLSL_V: [() => P3D_GLSL_V],
   P3D_KINDS: [() => P3D_KINDS],
@@ -52,6 +51,7 @@ expose({
   p3dTreeKind: [() => p3dTreeKind, v => (p3dTreeKind = v)],
   p3dU: [() => p3dU, v => (p3dU = v)],
   p3dUpload: [() => p3dUpload, v => (p3dUpload = v)],
+  solidPropState: [() => solidPropState],
 });
 /* eslint-enable no-func-assign */
 provide({ p3dDraw, p3dLod, p3dShadow, p3dTag });
@@ -68,8 +68,8 @@ export function setP3dTreeBuild(v) {
   provide({ p3dTreeBuild });
 }
 /* to-module: end */
-export const P3D = { meshes: new WeakMap(), fail: '', drawn: 0 };
-provide({ P3D }); /* to-module */
+export const solidPropState = { meshes: new WeakMap(), fail: '', drawn: 0 };
+provide({ solidPropState }); /* to-module */
 /* by prop group (or key): the kind of body and its depth at scale 1, in metres */
 export const P3D_AUTO = {
   crate: ['block', 0.9],
@@ -179,7 +179,7 @@ export const P3D_KINDS = [
   ['lathe', 'Round (turned)'],
 ];
 function p3dOn() {
-  return typeof eng === 'function' && eng('world', 'solidProps') !== false && !P3D.fail;
+  return typeof eng === 'function' && eng('world', 'solidProps') !== false && !solidPropState.fail;
 }
 /* v20: a prop can be built from parts: rectangles of its picture, each with its own shape. "flat" lays a band of the
    picture down as a horizontal surface (a basin's water, a table top drawn in three-quarter view); pixels outside every
@@ -263,10 +263,10 @@ function p3dKind(k, M) {
 /* the body for one picture, built from its pixels; cached per picture and spec */
 function p3dMesh(im, spec) {
   if (!im || !(im.naturalWidth || im.width)) return null;
-  /* v44: not loaded yet: nothing is cached, the picture draws meanwhile */ let per = P3D.meshes.get(im);
+  /* v44: not loaded yet: nothing is cached, the picture draws meanwhile */ let per = solidPropState.meshes.get(im);
   if (!per) {
     per = new Map();
-    P3D.meshes.set(im, per);
+    solidPropState.meshes.set(im, per);
   }
   if (per.has(spec.key)) return per.get(spec.key);
   let M = null;
@@ -1101,13 +1101,13 @@ precision highp float;in vec2 vUV;in float vId;uniform sampler2D uTex;uniform fl
 };
 provide({ P3D_SH }); /* to-module */
 function p3dGuard(fn) {
-  if (P3D.fail) return;
+  if (solidPropState.fail) return;
   try {
     fn();
   } catch (e) {
-    P3D.fail = String((e && e.message) || e);
-    console.error('Solid props off: ' + P3D.fail);
-    if (typeof NWLOG !== 'undefined') NWLOG.add('webgl', 'Solid props off: ' + P3D.fail);
+    solidPropState.fail = String((e && e.message) || e);
+    console.error('Solid props off: ' + solidPropState.fail);
+    if (typeof NWLOG !== 'undefined') NWLOG.add('webgl', 'Solid props off: ' + solidPropState.fail);
   }
 }
 /* which items get a body this frame (filled in by gatherFrameItems) */
@@ -1160,7 +1160,7 @@ function p3dLod(items, C) {
   let built = 0;
   for (const it of items) {
     if (!it.vol) continue;
-    const per = P3D.meshes.get(it.im);
+    const per = solidPropState.meshes.get(it.im);
     if (per && per.has(it.vol.key)) continue;
     if (built && typeof frameBudgetLeft === 'function' && !frameBudgetLeft()) {
       it.vol = null;
@@ -1208,7 +1208,7 @@ function p3dTex(it, M) {
   return eglImg(M && M.tex ? M.tex : it.im);
 }
 export function p3dDraw(C, items, X, hits, labels, PPU) {
-  P3D.drawn = 0;
+  solidPropState.drawn = 0;
   if (!p3dOn()) return;
   p3dGuard(() => {
     const gl = EGL.gl;
@@ -1262,7 +1262,7 @@ export function p3dDraw(C, items, X, hits, labels, PPU) {
       gl.bindVertexArray(M.vao);
       gl.drawArrays(gl.TRIANGLES, 0, M.n);
       gl.bindVertexArray(null);
-      P3D.drawn++;
+      solidPropState.drawn++;
       if (it.M && it.M.blades) {
         const b = it.M.blades,
           BT = eglImg(artImage(b.img));

@@ -67,7 +67,15 @@ import {
   walkRenderer,
 } from './walk-view-gl.js';
 import { BLD, bldDraw, bldItems, setBldDraw, setBldItems } from './buildings.js';
-import { P3D, p3dBuild, p3dDraw, p3dTreeBuild, setP3dBuild, setP3dDraw, setP3dTreeBuild } from './solid-props.js';
+import {
+  p3dBuild,
+  p3dDraw,
+  p3dTreeBuild,
+  setP3dBuild,
+  setP3dDraw,
+  setP3dTreeBuild,
+  solidPropState,
+} from './solid-props.js';
 import { LIFE, lifeStep, setLifeStep } from './ambient-life.js';
 import { pwState } from './ground-paint-worker.js';
 import {
@@ -100,7 +108,6 @@ Object.defineProperties(GAME, {
   FRAME: { get: () => FRAME },
   GD: { get: () => GD },
   LIFE: { get: () => LIFE },
-  P3D: { get: () => P3D },
   ROUTE: { get: () => ROUTE },
   S: { get: () => S },
   TR_CACHE: { get: () => TR_CACHE },
@@ -149,6 +156,7 @@ Object.defineProperties(GAME, {
   save: { get: () => save, set: setSave },
   setTrip: { get: () => setTrip, set: setSetTrip },
   shadowPass: { get: () => shadowPass, set: setShadowPass },
+  solidPropState: { get: () => solidPropState },
   stampCount: { get: () => stampCount },
   toast: { get: () => toast },
   updateFolk: { get: () => updateFolk, set: setUpdateFolk },

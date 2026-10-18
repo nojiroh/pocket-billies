@@ -1392,7 +1392,7 @@ def desktop_steps(b, base, R):
             shot(pg, 'v44-land')
             # 2. props: every kind draws (pictures, solids, voxels, buildings) and no draw is refused
             bench('test_light_props', 16, 20, 7, 0); time.sleep(1)
-            c = json.loads(pg.evaluate("JSON.stringify({bld:BLD.drawn,vox:propModelState.drawn,p3d:P3D.drawn,spr:walkRenderer.sprN||null,placed:(walkView.sc.props||[]).length,fails:[BLD.fail,propModelState.fail,P3D.fail].filter(Boolean)})"))
+            c = json.loads(pg.evaluate("JSON.stringify({bld:BLD.drawn,vox:propModelState.drawn,p3d:solidPropState.drawn,spr:walkRenderer.sprN||null,placed:(walkView.sc.props||[]).length,fails:[BLD.fail,propModelState.fail,solidPropState.fail].filter(Boolean)})"))
             if c['fails']: raise Exception('renderers off: ' + ' | '.join(c['fails']))
             if c['bld'] < 3 or c['vox'] < 4 or c['p3d'] < 1: raise Exception(f'props scene: {c}')
             shot(pg, 'v44-props'); out.append(f'props: {c["bld"]} buildings, {c["vox"]} voxel props, {c["p3d"]} solid props drawn of {c["placed"]} placed')

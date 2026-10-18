@@ -42,7 +42,7 @@ import { environment } from './environment.js';
 import { WALK_SHADERS, roomDimming, standingHeightAt, walkRenderer } from './walk-view-gl.js';
 import { BLD, BLD_SH } from './buildings.js';
 import { STR, strHas } from './structures.js';
-import { P3D, P3D_SH } from './solid-props.js';
+import { P3D_SH, solidPropState } from './solid-props.js';
 import { propModelState } from './prop-models.js';
 import { buddyTap, companionSpecies, worldBillies } from './world-billies.js';
 import { seamlessRoomMap, seamlessTripView, seamlessWorld } from './seamless-world.js';
@@ -461,7 +461,9 @@ async function runFullTest(mode) {
             `opened in ${open != null ? open + ' ms' : 'over 3 s'}`,
             `${(sc.props || []).length} props`,
             gl && typeof BLD !== 'undefined' && BLD.drawn ? `${BLD.drawn} 3D buildings` : '',
-            gl && typeof P3D !== 'undefined' && P3D.drawn ? `${P3D.drawn} solid props` : '',
+            gl && typeof solidPropState !== 'undefined' && solidPropState.drawn
+              ? `${solidPropState.drawn} solid props`
+              : '',
             gl && walkRenderer.grassDrawn ? `${walkRenderer.grassDrawn} grass patches` : '',
             (walkView.folk || []).length ? `${walkView.folk.length} folk` : '',
             typeof worldBillies !== 'undefined' && worldBillies.bud ? 'buddy along' : '',
@@ -963,7 +965,7 @@ async function runFullTest(mode) {
               await stSleep(300);
               const b = typeof BLD !== 'undefined' ? BLD.drawn || 0 : 0,
                 v = typeof propModelState !== 'undefined' ? propModelState.drawn || 0 : 0,
-                p = typeof P3D !== 'undefined' ? P3D.drawn || 0 : 0,
+                p = typeof solidPropState !== 'undefined' ? solidPropState.drawn || 0 : 0,
                 lm = ((walkRenderer.X && walkRenderer.X.lampSh) || []).length,
                 sc = walkView.sc;
               /* what the camera can see: a phone held upright sees the middle of the scene only, so the props check counts the
