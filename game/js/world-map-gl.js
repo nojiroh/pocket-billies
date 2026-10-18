@@ -20,7 +20,7 @@ import { EASE } from './battle-stage.js';
 import { artImage, hash2d, imageReady, mapById, stepRaiseAt, walkData, walkView } from './walk-view.js';
 import { engineContext, engineDataSource, engineSetting } from './engine/settings.js';
 import { EGL, eglBindQuad, eglFree, eglImg, eglInit, eglMesh, eglOK, eglPrograms, eglTarget } from './engine/webgl.js';
-import { EGL_POST_SH, eglPost, eglScreenOf } from './engine/post-effects.js';
+import { POST_EFFECT_SHADERS, drawPostEffects, projectToScreenUv } from './engine/post-effects.js';
 import { rawHeightAt, walkRenderer, worldMapTexture } from './walk-view-gl.js';
 import {
   LOCATION_VECTORS,
@@ -197,7 +197,7 @@ function worldMapGlReady() {
   }
   try {
     eglPrograms(WORLD_MAP_GL_SHADERS);
-    eglPrograms(EGL_POST_SH);
+    eglPrograms(POST_EFFECT_SHADERS);
   } catch (e) {
     console.error(e);
     EGL.fail = 1;
@@ -683,7 +683,7 @@ export function worldMapGlRender(t) {
   const P = worldMap.focus || worldMapPlayerPosition(),
     fd = Math.max(0.02, vector3.dot(vector3.sub(P, cam.C), cam.fw));
   worldMapGl.fd = worldMapGl.fd == null ? fd : worldMapGl.fd + (fd - worldMapGl.fd) * 0.2;
-  eglPost(
+  drawPostEffects(
     S,
     { near: WORLD_MAP_GL_NEAR, far: WORLD_MAP_GL_FAR, df: worldMapGl.fd * 1.6, F: (cam.foc * rw) / worldMapWidth },
     worldMapGl.fd,
@@ -693,7 +693,7 @@ export function worldMapGlRender(t) {
       blur: worldMapGl.flat ? 0 : 0.5,
       fast: rw * rh > 1.2e6,
       noAO: true,
-      sun: worldMapGl.flat ? null : eglScreenOf(worldMapGlMatrix(cam), [0, 0, 0]),
+      sun: worldMapGl.flat ? null : projectToScreenUv(worldMapGlMatrix(cam), [0, 0, 0]),
       sunCol: [1, 0.9, 0.7],
     }
   );

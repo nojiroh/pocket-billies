@@ -699,7 +699,7 @@ NWLOG.hook = () => {
     ['drawGrass', 'grass'],
     ['drawSolidProps', 'solid props'],
     ['drawBuildings', 'buildings'],
-    ['eglPost', 'post'],
+    ['drawPostEffects', 'post'],
     ['drawGround', 'ground'],
     ['reflectionPass', 'reflections'],
     ['drawWater', 'water'],

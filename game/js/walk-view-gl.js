@@ -174,7 +174,7 @@ import {
   setLightUniforms,
   sunLight,
 } from './engine/light.js';
-import { EGL_POST_SH, eglPost, eglSnapshot, eglSunScreen } from './engine/post-effects.js';
+import { POST_EFFECT_SHADERS, drawPostEffects, screenSnapshot, sunScreenPosition } from './engine/post-effects.js';
 import {
   WEATHER_LOOKS,
   environment,
@@ -809,7 +809,7 @@ export function walkGlContext(cv) {
   }
   try {
     eglPrograms(WALK_SHADERS);
-    eglPrograms(EGL_POST_SH);
+    eglPrograms(POST_EFFECT_SHADERS);
     for (const d of [
       typeof BUILDING_SHADERS !== 'undefined' && BUILDING_SHADERS,
       typeof SOLID_PROP_SHADERS !== 'undefined' && SOLID_PROP_SHADERS,
@@ -3737,7 +3737,7 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
     gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, null);
     gl.blitFramebuffer(0, 0, rw, rh, 0, 0, rw, rh, gl.COLOR_BUFFER_BIT, gl.NEAREST);
   } else
-    eglPost(S, C, walkRenderer.focus, rw, rh, {
+    drawPostEffects(S, C, walkRenderer.focus, rw, rh, {
       blur: BT ? BT.blur : (sc.blur ?? 1) * (walkView.opt.blur ?? 1) * (st.focusY != null ? 0.6 : 1),
       fast: walkView.R < 0.75 || QE >= 1,
       noAO: QE >= 1,
@@ -3747,7 +3747,7 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
       heat: heatHaze(sc),
       heatS: heatSources(C),
       mood: easedMood(sc),
-      sun: sc.indoor ? null : eglSunScreen(C, sun.dir, 300),
+      sun: sc.indoor ? null : sunScreenPosition(C, sun.dir, 300),
       X,
       ivp: C.ivp,
       noVol: QE >= 3 || (!!sc.indoor && !dark),
@@ -3780,7 +3780,7 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
     const cb = walkRenderer.photoReq;
     walkRenderer.photoReq = null;
     try {
-      cb(eglSnapshot(rw, rh, null, 2048));
+      cb(screenSnapshot(rw, rh, null, 2048));
     } catch (e) {
       cb(null);
     }
@@ -3788,7 +3788,7 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   if (walkRenderer.snapReq && typeof NWLOG !== 'undefined') {
     walkRenderer.snapReq = 0;
     try {
-      const c = eglSnapshot(rw, rh, walkRenderer.ui);
+      const c = screenSnapshot(rw, rh, walkRenderer.ui);
       NWLOG.shot = { t: NWLOG.now(), what: walkView.id, jpeg: c.toDataURL('image/jpeg', 0.72) };
     } catch (e) {
       NWLOG.shot = { t: NWLOG.now(), error: String(e.message || e) };

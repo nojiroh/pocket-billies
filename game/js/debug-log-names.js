@@ -35,7 +35,7 @@ import {
   setEglNormal,
   setEglPrograms,
 } from './engine/webgl.js';
-import { eglPost, setEglPost } from './engine/post-effects.js';
+import { drawPostEffects, setDrawPostEffects } from './engine/post-effects.js';
 import { environment } from './environment.js';
 import {
   buildGrass,
@@ -126,6 +126,7 @@ Object.defineProperties(GAME, {
   drawBuildings: { get: () => drawBuildings, set: setDrawBuildings },
   drawGrass: { get: () => drawGrass, set: setDrawGrass },
   drawGround: { get: () => drawGround, set: setDrawGround },
+  drawPostEffects: { get: () => drawPostEffects, set: setDrawPostEffects },
   drawSolidProps: { get: () => drawSolidProps, set: setDrawSolidProps },
   drawSprites: { get: () => drawSprites, set: setDrawSprites },
   drawWater: { get: () => drawWater, set: setDrawWater },
@@ -133,7 +134,6 @@ Object.defineProperties(GAME, {
   eglFinish: { get: () => eglFinish, set: setEglFinish },
   eglNormWork: { get: () => eglNormWork, set: setEglNormWork },
   eglNormal: { get: () => eglNormal, set: setEglNormal },
-  eglPost: { get: () => eglPost, set: setEglPost },
   eglPrograms: { get: () => eglPrograms, set: setEglPrograms },
   endBattle: { get: () => endBattle, set: setEndBattle },
   environment: { get: () => environment },

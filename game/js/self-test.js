@@ -37,7 +37,7 @@ import {
 } from './walk-view.js';
 import { engineSetting } from './engine/settings.js';
 import { EGL, eglAttrClashes } from './engine/webgl.js';
-import { EGL_POST_SH } from './engine/post-effects.js';
+import { POST_EFFECT_SHADERS } from './engine/post-effects.js';
 import { environment } from './environment.js';
 import { WALK_SHADERS, roomDimming, standingHeightAt, walkRenderer } from './walk-view-gl.js';
 import { BUILDING_SHADERS, buildingState } from './buildings.js';
@@ -390,7 +390,7 @@ async function runFullTest(mode) {
           {},
           typeof WALK_SHADERS !== 'undefined' ? WALK_SHADERS : {},
           typeof BUILDING_SHADERS !== 'undefined' ? BUILDING_SHADERS : {},
-          typeof EGL_POST_SH !== 'undefined' ? EGL_POST_SH : {},
+          typeof POST_EFFECT_SHADERS !== 'undefined' ? POST_EFFECT_SHADERS : {},
           typeof WORLD_MAP_GL_SHADERS !== 'undefined' ? WORLD_MAP_GL_SHADERS : {},
           typeof SOLID_PROP_SHADERS !== 'undefined' ? SOLID_PROP_SHADERS : {}
         );
@@ -1547,7 +1547,7 @@ const DIAG_PASSES = {
   props: ['drawSprites', 'drawSolidProps', 'drawPropModels', 'drawBuildings', 'drawBoxFaces', 'drawStructures'],
   water: ['reflectionPass', 'drawWater'],
   effects: ['effectsPass'],
-  'final pass': ['eglPost'],
+  'final pass': ['drawPostEffects'],
 };
 function diagTimersOn() {
   const gl = typeof EGL !== 'undefined' ? EGL.gl : null,
