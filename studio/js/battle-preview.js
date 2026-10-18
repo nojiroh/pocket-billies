@@ -29,7 +29,7 @@ import { mountWalkView } from '../../game/js/walk-view-gl.js';
 import { battleGLAttach, battleGLStop } from '../../game/js/battle-3d.js';
 import { esc } from './game-stand-ins.js';
 import {
-  ACTS,
+  ACTIONS,
   SECTIONS,
   after,
   card,
@@ -311,7 +311,7 @@ function bpMove(si) {
   if (onFoe && !an.miss && !an.blocked && fx.status)
     setTimeout(() => battleStagePlay({ k: 'status', si: 1 - si, st: fx.status }, bpEv()), 1100 / battleStage.speed);
 }
-ACTS.bp = d => {
+ACTIONS.bp = d => {
   if (!battleStage.L) return;
   const x = d.x,
     ev = bpEv(),
@@ -431,16 +431,16 @@ ACTS.bp = d => {
   }
 };
 /* shortcuts from other sections */
-ACTS.bpFoe = d => {
+ACTIONS.bpFoe = d => {
   BP.foe = d.sp;
   openSection('preview');
 };
-ACTS.bpMove = d => {
+ACTIONS.bpMove = d => {
   BP.move = d.id;
   openSection('preview');
-  setTimeout(() => ACTS.bp({ x: 'move0' }), 900);
+  setTimeout(() => ACTIONS.bp({ x: 'move0' }), 900);
 };
-ACTS.bpArea = d => {
+ACTIONS.bpArea = d => {
   BP.area = d.k;
   openSection('preview');
 };

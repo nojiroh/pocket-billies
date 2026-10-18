@@ -14,7 +14,7 @@ import { VP, provide } from '../../game/js/hooks.js';
 import { $ } from '../../game/js/util.js';
 import { walkView } from '../../game/js/walk-view.js';
 import { esc } from './game-stand-ins.js';
-import { ACTS, ask, changed, clone, commit, dialog, render, studioState, toast, uniqueKey } from './studio-app.js';
+import { ACTIONS, ask, changed, clone, commit, dialog, render, studioState, toast, uniqueKey } from './studio-app.js';
 import { SCN, scCur, scD, scMapDraw, scPropAt, scSetTile } from './map-editor.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -291,11 +291,11 @@ function scxMultiCard() {
   return `<div class="sc-sel"><b>${n} props selected</b><p class="help">Drag one of them to move them all. Ctrl/Cmd+C copies them, Ctrl/Cmd+V pastes where the mouse is, Delete removes them. Escape clears the selection.</p>
   <div class="seg-row"><button class="btn sm" data-act="scxCopy">Copy</button><button class="btn sm" data-act="scxPaste" ${SCN.clip ? '' : 'disabled'}>Paste</button><button class="btn sm primary" data-act="scxSaveBlock">Save as a building block</button><button class="btn sm danger subtle" data-act="scxDelMulti">Remove them</button></div></div>`;
 }
-ACTS.scxCopy = () => scxCopy();
-ACTS.scxPaste = () => scxPaste();
-ACTS.scxDelMulti = () => scxDeleteMulti();
+ACTIONS.scxCopy = () => scxCopy();
+ACTIONS.scxPaste = () => scxPaste();
+ACTIONS.scxDelMulti = () => scxDeleteMulti();
 /* ---------- building blocks ---------- */
-ACTS.scxSaveBlock = async () => {
+ACTIONS.scxSaveBlock = async () => {
   const sc = scCur(),
     L = [...SCN.multi].map(i => sc.props[i]).filter(Boolean);
   if (L.length < 2) return;
@@ -353,11 +353,11 @@ function scxBlocksBar() {
     ks = Object.keys(B);
   return `<div class="sc-hbar">${ks.length ? ks.map(k => `<button class="seg ${SCN.block === k ? 'on' : ''}" data-act="scxBlock" data-k="${esc(k)}">${esc(B[k].name || k)} <small>(${B[k].props.length})</small></button>`).join('') : '<span class="help">No blocks yet. Select some props (shift-drag with “Place & move props”) and save them as a block.</span>'}${SCN.block && B[SCN.block] ? `<button class="btn sm danger subtle" data-act="scxBlockDel">Delete “${esc(B[SCN.block].name)}”</button>` : ''}</div>`;
 }
-ACTS.scxBlock = d => {
+ACTIONS.scxBlock = d => {
   SCN.block = d.k;
   render();
 };
-ACTS.scxBlockDel = async () => {
+ACTIONS.scxBlockDel = async () => {
   const B = scxBlocks();
   if (
     !B[SCN.block] ||
@@ -519,7 +519,7 @@ function scxRoadLay(sc) {
   scMapDraw();
   toast('Road laid.');
 }
-ACTS.scxSmoothPath = () => {
+ACTIONS.scxSmoothPath = () => {
   const sc = scCur();
   if (!sc || !sc.path || sc.path.length < 3) return toast('The path needs at least three points to curve.');
   sc.path = scxCurve(sc.path, 1.2).map(([a, b]) => [+a.toFixed(2), +b.toFixed(2)]);

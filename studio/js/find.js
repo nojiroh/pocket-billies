@@ -10,7 +10,7 @@ import { linkNote } from '../../game/js/hooks.js';
 import { $, $$ } from '../../game/js/util.js';
 import { ENGINE_SPEC } from '../../game/js/engine/settings.js';
 import { esc } from './game-stand-ins.js';
-import { ACTS, SECTIONS, SECTION_LIST, clone, openSection, studioState, toast } from './studio-app.js';
+import { ACTIONS, SECTIONS, SECTION_LIST, clone, openSection, studioState, toast } from './studio-app.js';
 import { ENS, engRefresh } from './engine-editor.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -193,7 +193,7 @@ function findBuild() {
       'prop',
       () => {
         openSection('scenes');
-        if (ACTS.scEditProp) ACTS.scEditProp({ k });
+        if (ACTIONS.scEditProp) ACTIONS.scEditProp({ k });
       },
       k
     )
@@ -323,7 +323,7 @@ function findPick(i) {
     toast('Couldn’t open that: ' + err.message, 'err');
   }
 }
-ACTS.find = () => findOpen();
+ACTIONS.find = () => findOpen();
 document.addEventListener('keydown', ev => {
   const mod = ev.ctrlKey || ev.metaKey;
   if (mod && ev.key.toLowerCase() === 'k') {

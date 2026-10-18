@@ -13,7 +13,7 @@ import { provide } from '../../game/js/hooks.js';
 import { $ } from '../../game/js/util.js';
 import { ENGINE_DEFAULTS, ENGINE_PRESETS, ENGINE_SPEC } from '../../game/js/engine/settings.js';
 import { esc } from './game-stand-ins.js';
-import { ACTS, openSection, render, setRender, speciesName, studioState } from './studio-app.js';
+import { ACTIONS, openSection, render, setRender, speciesName, studioState } from './studio-app.js';
 import { curLine } from './data-editors.js';
 import { SCN, scId } from './map-editor.js';
 import { ENS, engD, engFmt } from './engine-editor.js';
@@ -230,7 +230,7 @@ function lnkNode(kind, id) {
         sub: 'Prop',
         go: () => {
           openSection('scenes');
-          if (ACTS.scEditProp) ACTS.scEditProp({ k: id });
+          if (ACTIONS.scEditProp) ACTIONS.scEditProp({ k: id });
         },
       };
     case 'type':
@@ -576,7 +576,7 @@ function linkNote(p) {
   clearTimeout(LNK.t);
   LNK.t = setTimeout(linkRefresh, 120);
 }
-ACTS.links = () => {
+ACTIONS.links = () => {
   LNK.open = !LNK.open;
   document.body.classList.toggle('lnk-open', LNK.open);
   if (LNK.open) linkRefresh();
@@ -593,7 +593,7 @@ document.addEventListener('focusin', ev => {
 document.addEventListener('keydown', ev => {
   if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 'l') {
     ev.preventDefault();
-    ACTS.links();
+    ACTIONS.links();
   }
 });
 addEventListener('resize', () => {

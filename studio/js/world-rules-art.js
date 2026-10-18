@@ -8,7 +8,7 @@ import { makeCanvas } from '../../game/js/art.js';
 import { ENVIRONMENT_LIKES } from '../../game/js/environment.js';
 import { esc } from './game-stand-ins.js';
 import {
-  ACTS,
+  ACTIONS,
   SECTIONS,
   after,
   api,
@@ -183,7 +183,7 @@ SECTIONS.world = () => {
   }[tab]();
   return `<div class="ed-col solo"><div class="ed-head"><h2>World & encounters</h2></div><div class="seg-row tabs">${tabs.map(([k, n]) => `<button class="seg ${k === tab ? 'on' : ''}" data-act="wtab" data-t="${k}">${n}</button>`).join('')}</div>${body}</div>`;
 };
-ACTS.wtab = d => {
+ACTIONS.wtab = d => {
   studioState.sel.wtab = d.t;
   render();
 };
@@ -329,7 +329,7 @@ function roadsHTML(i) {
    .map(([j, n]) => `<option value="${j}">${esc(n)}</option>`)
    .join('')}</select><button class="btn" data-act="roadAdd" data-i="${i}">+ Add a road</button></div>`;
 }
-ACTS.roadAdd = d => {
+ACTIONS.roadAdd = d => {
   const D = studioState.D,
     i = +d.i,
     j = +$('#roadTo').value;
@@ -355,17 +355,17 @@ document.addEventListener('change', ev => {
   commit(true);
   render();
 });
-ACTS.roadDel = d => {
+ACTIONS.roadDel = d => {
   studioState.D.links.splice(+d.k, 1);
   changed();
   commit(true);
   render();
 };
-ACTS.pickStop = d => {
+ACTIONS.pickStop = d => {
   studioState.sel.stop = +d.i;
   render();
 };
-ACTS.stopMove = d => {
+ACTIONS.stopMove = d => {
   const D = studioState.D,
     i = +d.i,
     j = i + +d.d;
@@ -385,7 +385,7 @@ ACTS.stopMove = d => {
   changed();
   render();
 };
-ACTS.stopAdd = () => {
+ACTIONS.stopAdd = () => {
   const D = studioState.D,
     i = typeof studioState.sel.stop === 'number' ? studioState.sel.stop : D.route.length - 1,
     a = D.route[i],
@@ -412,7 +412,7 @@ ACTS.stopAdd = () => {
   changed();
   render();
 };
-ACTS.stopDel = async () => {
+ACTIONS.stopDel = async () => {
   const D = studioState.D,
     i = studioState.sel.stop;
   if (D.route.length < 2) return toast('The route needs at least one stop.');
@@ -448,12 +448,12 @@ function weightTable(base, P) {
     )
     .join('')}</tbody></table><button class="btn" data-act="wAdd" data-b="${base}">Add a Billie</button>`;
 }
-ACTS.wDel = d => {
+ACTIONS.wDel = d => {
   readPath(d.b).list.splice(+d.j, 1);
   changed();
   render();
 };
-ACTS.wAdd = d => {
+ACTIONS.wAdd = d => {
   readPath(d.b).list.push([studioState.D.lines[0].id + '0', 10]);
   changed();
   render();
@@ -521,20 +521,20 @@ function worldFishing() {
       .join('')
   );
 }
-ACTS.fishAdd = d => {
+ACTIONS.fishAdd = d => {
   const D = studioState.D;
   (D.fishing = D.fishing || {})[d.k] = { lv: [0, 2], list: [[D.lines[0].id + '0', 10]] };
   changed();
   render();
 };
-ACTS.poolNew = () => {
+ACTIONS.poolNew = () => {
   const D = studioState.D,
     k = uniqueKey($('#newPool').value || 'pool', x => !!D.pools[x]);
   D.pools[k] = { lv: [5, 8], list: [[D.lines[0].id + '0', 10]] };
   changed();
   render();
 };
-ACTS.poolDel = async d => {
+ACTIONS.poolDel = async d => {
   const D = studioState.D;
   if (D.route.some(r => r.pool === d.k))
     return toast('A route stop still uses this pool. Pick another pool for it first.', 'err');
@@ -683,7 +683,7 @@ function worldBackdrops() {
     })
     .join('');
 }
-ACTS.bdDup = d => {
+ACTIONS.bdDup = d => {
   const D = studioState.D,
     k = uniqueKey(d.k + 'b', x => !!D.backdrops[x]);
   D.backdrops[k] = clone(D.backdrops[d.k]);
@@ -1000,13 +1000,13 @@ document.addEventListener('change', ev => {
   commit(true);
   if (k === 'starter') render();
 });
-ACTS.brAdd = () => {
+ACTIONS.brAdd = () => {
   const b = studioState.D.rules.steps.brackets;
   b.splice(Math.max(0, b.length - 1), 0, { upTo: (b[b.length - 2] || { upTo: 5000 }).upTo + 5000, rate: 0.25 });
   changed();
   render();
 };
-ACTS.brDel = d => {
+ACTIONS.brDel = d => {
   const b = studioState.D.rules.steps.brackets;
   if (b.length < 2) return;
   b.splice(+d.i, 1);
@@ -1045,15 +1045,15 @@ SECTIONS.art = () => {
  )}
  ${g === 'background' ? card('Title picture for the web', `<p class="help">The game shows <code>background/sundown.webp</code>, a lighter copy of <code>sundown.png</code>. After replacing sundown.png, rebuild the web copy here.</p><button class="btn primary" data-act="rebuildWebp">Rebuild sundown.webp</button>`) : ''}</div>`;
 };
-ACTS.agroup = d => {
+ACTIONS.agroup = d => {
   studioState.sel.agroup = d.g;
   render();
 };
-ACTS.artRefresh = async () => {
+ACTIONS.artRefresh = async () => {
   studioState.files = await api('files?dir=');
   render();
 };
-ACTS.artReplace = async d => {
+ACTIONS.artReplace = async d => {
   const f = await pickFile('image/png,image/webp');
   if (!f) return;
   const c = await fileToCanvas(f);
@@ -1074,7 +1074,7 @@ ACTS.artReplace = async d => {
   toast('Replaced in the Studio. Save to game to write it.');
   render();
 };
-ACTS.rebuildWebp = async () => {
+ACTIONS.rebuildWebp = async () => {
   const im = await loadImage('../game/art/background/sundown.png?v=' + Date.now());
   const w = 1280,
     h = Math.round((im.naturalHeight * w) / im.naturalWidth),

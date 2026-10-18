@@ -44,7 +44,7 @@ import { environment } from '../../game/js/environment.js';
 import { WALL_MATERIALS, mountWalkView, rawHeightAt, walkRenderer } from '../../game/js/walk-view-gl.js';
 import { esc } from './game-stand-ins.js';
 import {
-  ACTS,
+  ACTIONS,
   SECTIONS,
   after,
   ask,
@@ -959,13 +959,13 @@ function scPreview() {
     if (l) l.hidden = true;
   });
 }
-ACTS.scPv = d => {
+ACTIONS.scPv = d => {
   SCN.pv = d.m;
   walkView.pl.fresh = true;
   walkView.pl.pk = '';
   render();
 };
-ACTS.scPvHub = () => {
+ACTIONS.scPvHub = () => {
   SCN.pvPos = null;
   walkView.pl.fresh = true;
   walkView.pl.route = null;
@@ -1506,11 +1506,11 @@ function scHeightAt(sc, m) {
   }, 120);
   scMapDraw();
 }
-ACTS.scHMode = d => {
+ACTIONS.scHMode = d => {
   SCN.hmode = d.m;
   render();
 };
-ACTS.scHFlat = async () => {
+ACTIONS.scHFlat = async () => {
   const sc = scCur();
   if (!(await ask('Make the whole scene flat?', 'Flatten'))) return;
   delete sc.heights;
@@ -1604,16 +1604,16 @@ studioState.hooks.scenes = path => {
   }
 };
 /* ---------- actions ---------- */
-ACTS.scPick = d => {
+ACTIONS.scPick = d => {
   studioState.sel.scene = d.k;
   SCN.sel = null;
   render();
 };
-ACTS.scKindF = d => {
+ACTIONS.scKindF = d => {
   SCN.kindF = d.k || '';
   render();
 };
-ACTS.scTool = d => {
+ACTIONS.scTool = d => {
   SCN.tool = d.t;
   render();
 };
@@ -1627,29 +1627,29 @@ function scEnvApply() {
   if (e.season) f.season = e.season;
   environment.force = Object.keys(f).length ? Object.assign({ time: 13, weather: 'clear', now: 1 }, f) : null;
 }
-ACTS.scEnv = () => {
+ACTIONS.scEnv = () => {
   SCN.env = { time: $('#scEnvT').value, weather: $('#scEnvW').value, season: $('#scEnvS').value };
   scEnvApply();
 };
-ACTS.scTer = d => {
+ACTIONS.scTer = d => {
   SCN.ter = d.c;
   SCN.tool = SCN.tool === 'fill' ? 'fill' : 'paint';
   render();
 };
-ACTS.scProp = d => {
+ACTIONS.scProp = d => {
   SCN.prop = d.k;
   if (SCN.tool !== 'props') SCN.tool = 'props';
   render();
 };
-ACTS.scTag = d => {
+ACTIONS.scTag = d => {
   SCN.tag = d.t;
   render();
 };
-ACTS.scZoom = d => {
+ACTIONS.scZoom = d => {
   SCN.zoom = clamp(SCN.zoom + +d.z, 8, 48);
   scMapDraw();
 };
-ACTS.scDupProp = () => {
+ACTIONS.scDupProp = () => {
   const sc = scCur(),
     p = sc.props[SCN.sel];
   if (!p) return;
@@ -1659,7 +1659,7 @@ ACTS.scDupProp = () => {
   commit(true);
   render();
 };
-ACTS.scOwnRoom = () => {
+ACTIONS.scOwnRoom = () => {
   const D = studioState.D,
     id = scId(),
     sc = scCur(),
@@ -1694,7 +1694,7 @@ ACTS.scOwnRoom = () => {
   SCN.sel = null;
   render();
 };
-ACTS.scVar = d => {
+ACTIONS.scVar = d => {
   const sc = scCur(),
     p = sc.props[SCN.sel];
   if (!p) return;
@@ -1705,7 +1705,7 @@ ACTS.scVar = d => {
   commit(true);
   render();
 };
-ACTS.scDelProp = () => {
+ACTIONS.scDelProp = () => {
   const sc = scCur();
   if (SCN.sel == null) return;
   sc.props.splice(SCN.sel, 1);
@@ -1750,7 +1750,7 @@ function blankScene(name) {
     folk: 0,
   };
 }
-ACTS.scNew = async () => {
+ACTIONS.scNew = async () => {
   const D = studioState.D,
     r = await dialog(
       'New scene',
@@ -1787,7 +1787,7 @@ ACTS.scNew = async () => {
   render();
   toast('Scene created. Pick it for a stop under World & encounters → Route stops.');
 };
-ACTS.scDup = () => {
+ACTIONS.scDup = () => {
   const D = studioState.D,
     id = scId(),
     k = uniqueKey(id + 'b', x => !!D.scenes[x]);
@@ -1797,7 +1797,7 @@ ACTS.scDup = () => {
   commit(true);
   render();
 };
-ACTS.scDel = async () => {
+ACTIONS.scDel = async () => {
   const D = studioState.D,
     id = scId(),
     u = scUsers(id);
@@ -1813,7 +1813,7 @@ ACTS.scDel = async () => {
   commit(true);
   render();
 };
-ACTS.scResize = () => {
+ACTIONS.scResize = () => {
   const sc = scCur(),
     w = clamp(+$('#scW').value || sc.w, 10, 240),
     h = clamp(+$('#scH').value || sc.h, 8, 200);
@@ -1969,7 +1969,7 @@ const SC_TER_KEYS =
     ...Array.from({ length: 0x180 - 0xc0 }, (_, i) => 0xc0 + i).filter(c => c !== 0xd7 && c !== 0xf7)
   );
 const scTerKeyOk = k => k.length === 1 && SC_TER_KEYS.includes(k);
-ACTS.scNewTer = async () => {
+ACTIONS.scNewTer = async () => {
   const C = scD(),
     used = Object.keys(C.terrains).join('');
   const r = await dialog(
@@ -2009,12 +2009,12 @@ ACTS.scNewTer = async () => {
   render();
   scOpenPe('art/' + path, { kind: 'tile', c: r.k });
 };
-ACTS.scEditTile = d => scOpenPe('art/' + scD().terrains[d.c].tile, { kind: 'tile', c: d.c });
-ACTS.scEditProp = d => {
+ACTIONS.scEditTile = d => scOpenPe('art/' + scD().terrains[d.c].tile, { kind: 'tile', c: d.c });
+ACTIONS.scEditProp = d => {
   const M = scD().props[d.k];
   if (M) scOpenPe('art/' + M.img, { kind: 'prop', k: d.k });
 };
-ACTS.scNewProp = async () => {
+ACTIONS.scNewProp = async () => {
   const r = await dialog(
     'New prop',
     `<div class="grid"><label class="fld"><span>Name</span><input id="npN" value="Lamp"></label><label class="fld"><span>Width (px)</span><input id="npW" type="number" value="40" min="4" max="320"></label><label class="fld"><span>Height (px)</span><input id="npH" type="number" value="60" min="4" max="320"></label></div><p class="help">34 pixels is one meter in the scene. A person is about 58 pixels tall.</p>`,
@@ -2038,7 +2038,7 @@ ACTS.scNewProp = async () => {
   x.fillRect(Math.round(r.w * 0.2), Math.round(r.h * 0.1), Math.round(r.w * 0.6), Math.round(r.h * 0.9));
   scAddProp(r.n, c);
 };
-ACTS.scImportProp = async () => {
+ACTIONS.scImportProp = async () => {
   const f = await pickFile('image/png');
   if (!f) return;
   const c = await fileToCanvas(f);
@@ -2313,7 +2313,7 @@ function scPePalette() {
     })
     .join('');
 }
-ACTS.scPeSw = d => {
+ACTIONS.scPeSw = d => {
   SCN.peColor = d.c;
   const c = $('#scPeColor');
   if (c) c.value = d.c;
@@ -2322,15 +2322,15 @@ ACTS.scPeSw = d => {
     render();
   }
 };
-ACTS.scPeTool = d => {
+ACTIONS.scPeTool = d => {
   SCN.peTool = d.t;
   $$('[data-act=scPeTool]').forEach(b => b.classList.toggle('on', b.dataset.t === d.t));
 };
-ACTS.scPeZoom = d => {
+ACTIONS.scPeZoom = d => {
   SCN.peZoom = clamp(SCN.peZoom + +d.z * (SCN.peZoom >= 8 ? 2 : 1), 1, 32);
   scPeDraw();
 };
-ACTS.scPeUndo = () => {
+ACTIONS.scPeUndo = () => {
   const c = atlasNow(SCN.pe.path),
     u = SCN.peUndo.pop();
   if (!u) return toast('Nothing to undo in this picture.');
@@ -2338,17 +2338,17 @@ ACTS.scPeUndo = () => {
   scPeDone();
   scPeDraw();
 };
-ACTS.scPeClose = () => {
+ACTIONS.scPeClose = () => {
   SCN.pe = null;
   render();
 };
-ACTS.scGlowAdd = () => {
+ACTIONS.scGlowAdd = () => {
   scD().props[SCN.pe.k].glow = { c: '#FFD27A', r: 1.4, y: 1.6 };
   changed();
   commit(true);
   render();
 };
-ACTS.scPeResize = async () => {
+ACTIONS.scPeResize = async () => {
   const c = atlasNow(SCN.pe.path),
     r = await dialog(
       'Resize the picture',
@@ -2375,7 +2375,7 @@ ACTS.scPeResize = async () => {
   commit(true);
   render();
 };
-ACTS.scPeReplace = async () => {
+ACTIONS.scPeReplace = async () => {
   const f = await pickFile('image/png');
   if (!f) return;
   const c = await fileToCanvas(f),
@@ -2464,7 +2464,7 @@ function scStepsBar() {
           : '';
   return `<div class="sc-hbar">${modes}${opt}<label class="fld chk"><input type="checkbox" id="scWalkOv" ${SCN.walkOv ? 'checked' : ''}><span>Can I walk there?</span></label></div>`;
 }
-ACTS.scSMode = d => {
+ACTIONS.scSMode = d => {
   SCN.smode = d.m;
   render();
 };
@@ -2763,11 +2763,11 @@ function scWaterBar(p) {
  <label class="mp-size"><span>The rest of the water</span><select id="scWDef">${[['', 'Guess (caves: spring, towns: canal, else pond)'], ...SC_WK.filter(w => w[0] !== 'stream').map(([k, n]) => [k, n])].map(([k, n]) => `<option value="${k}" ${(sc.waterKind || '') === k ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select></label>
  ${(sc.waters || []).length ? `<button class="btn sm subtle" data-act="scWClear">Remove all ${(sc.waters || []).length}</button>` : ''}</div>`;
 }
-ACTS.scWK = d => {
+ACTIONS.scWK = d => {
   SCN.wk = d.k;
   render();
 };
-ACTS.scWClear = async () => {
+ACTIONS.scWClear = async () => {
   const sc = scCur();
   if (!(await ask('Remove every water rectangle in this scene?', 'Remove'))) return;
   delete sc.waters;
@@ -2853,9 +2853,9 @@ function scDrawWaters(x, sc, Z) {
   }
 }
 document.addEventListener('change', ev => {
-  if (ev.target && ev.target.dataset && ev.target.dataset.actChange === 'scEnv') ACTS.scEnv();
+  if (ev.target && ev.target.dataset && ev.target.dataset.actChange === 'scEnv') ACTIONS.scEnv();
 });
-ACTS.scTestRun = () => {
+ACTIONS.scTestRun = () => {
   const id = scId();
   if (!id) return;
   window.open(`../game/index.html?test=1&scene=${encodeURIComponent(id)}`, '_blank');
@@ -2863,7 +2863,7 @@ ACTS.scTestRun = () => {
 };
 
 /* alpha 0.4: people who stand in a scene and talk (scene.people) */
-ACTS.scPplAdd = () => {
+ACTIONS.scPplAdd = () => {
   const sc = scCur(),
     h = sc.hub || [sc.w / 2, sc.h / 2],
     ids = new Set((sc.people || []).map(q => q.id));
@@ -2883,7 +2883,7 @@ ACTS.scPplAdd = () => {
   commit(true);
   render();
 };
-ACTS.scPplDel = d => {
+ACTIONS.scPplDel = d => {
   const sc = scCur();
   if (!sc.people) return;
   sc.people.splice(+d.i, 1);
@@ -2893,7 +2893,7 @@ ACTS.scPplDel = d => {
   render();
 };
 
-ACTS.scJoined = () => {
+ACTIONS.scJoined = () => {
   SCN.joined = !SCN.joined;
   SCN.pvPos = null;
   SCN.pvId = null;

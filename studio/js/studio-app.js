@@ -11,7 +11,7 @@ import { engineContext } from '../../game/js/engine/settings.js';
 import { esc } from './game-stand-ins.js';
 /* eslint-disable no-func-assign */
 expose({
-  ACTS: [() => ACTS],
+  ACTIONS: [() => ACTIONS],
   LIVE_UPDATE_CHANNEL: [() => LIVE_UPDATE_CHANNEL],
   RANGE_FORMATS: [() => RANGE_FORMATS],
   SECTIONS: [() => SECTIONS],
@@ -497,8 +497,8 @@ export function openSection(s, sel) {
   } catch (e) {}
 }
 export const SECTIONS = {};
-export const ACTS = {};
-ACTS.navFold = d => {
+export const ACTIONS = {};
+ACTIONS.navFold = d => {
   foldedSectionGroups[d.g] = !foldedSectionGroups[d.g];
   try {
     localStorage.setItem('studio-fold', JSON.stringify(foldedSectionGroups));
@@ -545,7 +545,7 @@ document.addEventListener('click', ev => {
     window.open('../game/index.html?debug', 'networth-game');
     return;
   }
-  const f = ACTS[a];
+  const f = ACTIONS[a];
   if (f) {
     ev.preventDefault();
     f(el.dataset, el, ev);

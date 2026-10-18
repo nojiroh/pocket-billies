@@ -14,7 +14,7 @@ import { TR_CACHE, TR_PRESETS, cleanLook, trFrame, trRig, trSliders } from '../.
 import { rigMatrices } from '../../game/js/skeleton-rig.js';
 import { esc } from './game-stand-ins.js';
 import {
-  ACTS,
+  ACTIONS,
   SECTIONS,
   after,
   ask,
@@ -699,7 +699,7 @@ function wdAddRegion(src, c, m) {
   }
   return [1, out[0], c.width, c.height];
 }
-ACTS.wdAdd = d => {
+ACTIONS.wdAdd = d => {
   const src = wdCur(),
     bone = $('#wdBone').value,
     v = WDS.view,
@@ -759,7 +759,7 @@ const WD_EXPR = [
   ['talk', 'Talking'],
 ];
 /* expressions: a copy of the selected piece, shown instead of the normal pieces of this item while the face makes that expression */
-ACTS.wdPieceX = async () => {
+ACTIONS.wdPieceX = async () => {
   const src = wdCur(),
     P = src.pieces[WDS.piece];
   if (!P) return;
@@ -783,7 +783,7 @@ ACTS.wdPieceX = async () => {
   render();
   toast(`Added a ${free[0][1].toLowerCase()} copy. Repaint it, or change when it shows.`);
 };
-ACTS.wdPieceDel = async () => {
+ACTIONS.wdPieceDel = async () => {
   const src = wdCur();
   if (!(await ask('Remove this piece? Its pixels stay in the picture file but aren’t used.', 'Remove'))) return;
   wdSnap(src);
@@ -794,7 +794,7 @@ ACTS.wdPieceDel = async () => {
   TR_CACHE.clear();
   render();
 };
-ACTS.wdUndo = () => {
+ACTIONS.wdUndo = () => {
   const u = WDS.undo.pop();
   if (!u) return toast('Nothing to undo in this picture.');
   const src = u.src,
@@ -822,7 +822,7 @@ async function wdCopySheets(from, to) {
     markArt('art/' + to[k], n);
   }
 }
-ACTS.wdNew = async () => {
+ACTIONS.wdNew = async () => {
   const W = wdW(),
     r = await dialog(
       'New wardrobe item',
@@ -863,7 +863,7 @@ ACTS.wdNew = async () => {
   commit(true);
   render();
 };
-ACTS.wdDup = async () => {
+ACTIONS.wdDup = async () => {
   const W = wdW(),
     it = W.items[WDS.sel],
     k = uniqueKey(it.name + '2', x => !!W.items[x]),
@@ -880,7 +880,7 @@ ACTS.wdDup = async () => {
   commit(true);
   render();
 };
-ACTS.wdDel = async () => {
+ACTIONS.wdDel = async () => {
   const W = wdW(),
     k = WDS.sel;
   if (
@@ -896,49 +896,49 @@ ACTS.wdDel = async () => {
   commit(true);
   render();
 };
-ACTS.wdPick = d => {
+ACTIONS.wdPick = d => {
   WDS.sel = d.k;
   WDS.piece = 0;
   WDS.undo = [];
   render();
 };
-ACTS.wdView = d => {
+ACTIONS.wdView = d => {
   WDS.view = d.v;
   WDS.piece = -1;
   render();
 };
-ACTS.wdPiece = d => {
+ACTIONS.wdPiece = d => {
   WDS.piece = +d.i;
   render();
 };
-ACTS.wdTool = d => {
+ACTIONS.wdTool = d => {
   WDS.tool = d.t;
   render();
 };
-ACTS.wdArea = d => {
+ACTIONS.wdArea = d => {
   WDS.area = +d.a;
   render();
 };
-ACTS.wdZoom = d => {
+ACTIONS.wdZoom = d => {
   WDS.zoom = clamp(WDS.zoom + +d.z, 3, 14);
   wdDraw();
 };
-ACTS.wdExpr = d => {
+ACTIONS.wdExpr = d => {
   WDS.pvExpr = d.e || null;
   $$('[data-act=wdExpr]').forEach(b => b.classList.toggle('on', b.dataset.e === (d.e || '')));
 };
-ACTS.wdAct = d => {
+ACTIONS.wdAct = d => {
   WDS.pvAct = d.a;
   $$('[data-act=wdAct]').forEach(b => b.classList.toggle('on', b.dataset.a === d.a));
 };
-ACTS.wdTurn = d => {
+ACTIONS.wdTurn = d => {
   WDS.pvView = (((WDS.pvView + +d.d) % 4) + 4) % 4;
 };
-ACTS.wdSkin = d => {
+ACTIONS.wdSkin = d => {
   WDS.test = wdTestLook();
   WDS.test.skin = d.c;
 };
-ACTS.wdColAdd = () => {
+ACTIONS.wdColAdd = () => {
   const it = wdW().items[WDS.sel];
   if (it.colors.length < 3) {
     it.colors.push(['Detail', '#F2EEE4']);
@@ -947,7 +947,7 @@ ACTS.wdColAdd = () => {
     render();
   }
 };
-ACTS.wdColDel = d => {
+ACTIONS.wdColDel = d => {
   const it = wdW().items[WDS.sel];
   it.colors.splice(+d.i, 1);
   if (it.link) {

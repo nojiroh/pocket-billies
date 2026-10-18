@@ -14,7 +14,7 @@ import { artImage } from '../../game/js/walk-view.js';
 import { PROP_MODEL_TEXTURES, invalidatePropModel, loadPropModelRecipe } from '../../game/js/prop-models.js';
 import { esc } from './game-stand-ins.js';
 import {
-  ACTS,
+  ACTIONS,
   ask,
   changed,
   checkboxField,
@@ -157,7 +157,7 @@ function pedVoxHTML(k) {
   <div class="seg-row"><button class="btn sm subtle" data-act="vxeExport">Download as .json</button><button class="btn sm subtle danger" data-act="vxeOff">Remove the model</button></div>`;
 }
 /* a first model: a box the size of the picture, a third as deep */
-ACTS.vxeNew = () => {
+ACTIONS.vxeNew = () => {
   const M = pedM();
   if (!M) return;
   const im = artImage(M.img),
@@ -214,7 +214,7 @@ function vxeMainColour(M) {
     return null;
   }
 }
-ACTS.vxeAdd = d => {
+ACTIONS.vxeAdd = d => {
   const M = pedM(),
     rec = vxeOwn(M);
   if (!rec) return;
@@ -239,11 +239,11 @@ ACTS.vxeAdd = d => {
   vxeBump(M);
   render();
 };
-ACTS.vxeSel = d => {
+ACTIONS.vxeSel = d => {
   VXE.sel = VXE.sel === +d.i ? null : +d.i;
   render();
 };
-ACTS.vxeMove = d => {
+ACTIONS.vxeMove = d => {
   const M = pedM(),
     rec = vxeOwn(M);
   if (!rec) return;
@@ -255,7 +255,7 @@ ACTS.vxeMove = d => {
   vxeBump(M);
   render();
 };
-ACTS.vxeDup = d => {
+ACTIONS.vxeDup = d => {
   const M = pedM(),
     rec = vxeOwn(M);
   if (!rec) return;
@@ -267,7 +267,7 @@ ACTS.vxeDup = d => {
   vxeBump(M);
   render();
 };
-ACTS.vxeDel = d => {
+ACTIONS.vxeDel = d => {
   const M = pedM(),
     rec = vxeOwn(M);
   if (!rec) return;
@@ -276,7 +276,7 @@ ACTS.vxeDel = d => {
   vxeBump(M);
   render();
 };
-ACTS.vxeOff = async () => {
+ACTIONS.vxeOff = async () => {
   const M = pedM();
   if (
     !M ||
@@ -293,7 +293,7 @@ ACTS.vxeOff = async () => {
   commit(true);
   render();
 };
-ACTS.vxeExport = () => {
+ACTIONS.vxeExport = () => {
   const M = pedM(),
     rec = vxeRec(M);
   if (!rec) return;
@@ -303,7 +303,7 @@ ACTS.vxeExport = () => {
   a.download = `${SCN.ped}.json`;
   a.click();
 };
-ACTS.vxeImgPick = async d => {
+ACTIONS.vxeImgPick = async d => {
   const M = pedM(),
     rec = vxeOwn(M),
     k = SCN.ped;
@@ -321,7 +321,7 @@ ACTS.vxeImgPick = async d => {
   render();
 };
 /* MagicaVoxel import: SIZE + XYZI + RGBA chunks of the first model; the voxels become one raw layer, centred on the base point */
-ACTS.vxeImport = async () => {
+ACTIONS.vxeImport = async () => {
   const M = pedM();
   if (!M) return;
   const f = await pickFile('.vox');
@@ -397,7 +397,7 @@ document.addEventListener('input', ev => {
 });
 
 /* alpha 0.4: a layer that turns, or stops turning */
-ACTS.vxeSpin = d => {
+ACTIONS.vxeSpin = d => {
   const M = scD().props[SCN.ped],
     rec = M && vxeOwn(M);
   if (!rec) return;

@@ -9,7 +9,7 @@
 import { expose } from '../../game/js/test-globals.js';
 import { esc } from './game-stand-ins.js';
 import {
-  ACTS,
+  ACTIONS,
   SECTIONS,
   ask,
   card,
@@ -249,11 +249,11 @@ SECTIONS.lore = () => {
   }
   return `<div class="ed-col solo"><div class="ed-head"><h2>Lore & story</h2></div>${tabs}<p class="help">${sub}</p>${body}</div>`;
 };
-ACTS.loreTab = d => {
+ACTIONS.loreTab = d => {
   studioState.sel.ltab = d.k;
   render();
 };
-ACTS.loreAdd = async d => {
+ACTIONS.loreAdd = async d => {
   const L = (studioState.D.lore = studioState.D.lore || {}),
     k = d.k;
   if (k === 'people' || k === 'books') {
@@ -277,7 +277,7 @@ ACTS.loreAdd = async d => {
   changed();
   render();
 };
-ACTS.loreDel = async d => {
+ACTIONS.loreDel = async d => {
   if (
     !(await ask('Delete this entry? Anything that names it (a room’s book, a story flag) stops finding it.', 'Delete'))
   )
@@ -289,7 +289,7 @@ ACTS.loreDel = async d => {
   changed();
   render();
 };
-ACTS.loreChatAdd = async d => {
+ACTIONS.loreChatAdd = async d => {
   const v = await dialog(
     'Lines for a stage',
     `<label class="fld"><span>From stage (badges, 0–9)</span><input type="number" id="loreStage" min="0" max="9" step="1" value="0"></label>`,

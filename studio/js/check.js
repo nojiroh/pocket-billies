@@ -8,7 +8,7 @@ import { $ } from '../../game/js/util.js';
 import { decodeBase64Array } from '../../game/js/walk-view.js';
 import { esc } from './game-stand-ins.js';
 import {
-  ACTS,
+  ACTIONS,
   SECTIONS,
   after,
   api,
@@ -392,7 +392,7 @@ function renderCheckList() {
     : '<li class="ok"><span>All good</span><p>No problems found. The game will load every Billie, move and rule.</p></li>';
   studioState.lastCheck = P;
 }
-ACTS.fix = d => {
+ACTIONS.fix = d => {
   const p = studioState.lastCheck[+d.i];
   if (p) openSection(p.go, p.sel || {});
 };
@@ -424,7 +424,7 @@ async function loadBackups() {
     el.textContent = e.message;
   }
 }
-ACTS.restore = async d => {
+ACTIONS.restore = async d => {
   if (studioState.dirty || studioState.rigsDirty || studioState.artDirty.size) {
     if (
       !(await ask('You have unsaved changes. Restoring will reload the Studio and they’ll be lost.', 'Restore anyway'))
@@ -441,7 +441,7 @@ ACTS.restore = async d => {
     toast(e.message, 'err');
   }
 };
-ACTS.exportData = () => {
+ACTIONS.exportData = () => {
   const b = new Blob([JSON.stringify(studioState.D, (k, v) => (k[0] === '_' && k.length > 1 ? undefined : v), 1)], {
       type: 'application/json',
     }),
@@ -450,7 +450,7 @@ ACTS.exportData = () => {
   a.download = 'pocket-billies-gamedata.json';
   a.click();
 };
-ACTS.importData = async () => {
+ACTIONS.importData = async () => {
   const f = await pickFile('.json,application/json');
   if (!f) return;
   try {

@@ -25,7 +25,7 @@ import {
 } from '../../game/js/walk-view-gl.js';
 import { esc } from './game-stand-ins.js';
 import {
-  ACTS,
+  ACTIONS,
   SECTIONS,
   after,
   ask,
@@ -259,29 +259,29 @@ const engPrune = () => {
   }
   if (ENS.scope !== 'game' && !Object.keys(base).length) writePath(engBase(), undefined);
 };
-ACTS.engScope = d => {
+ACTIONS.engScope = d => {
   ENS.scope = d.s;
   engRefresh();
 };
-ACTS.engOpen = d => {
+ACTIONS.engOpen = d => {
   ENS.open[d.g] = !ENS.open[d.g];
   engRefresh();
 };
-ACTS.engReset = d => {
+ACTIONS.engReset = d => {
   writePath(d.p, undefined);
   engPrune();
   changed();
   commit(true);
   engRefresh();
 };
-ACTS.engResetG = d => {
+ACTIONS.engResetG = d => {
   writePath(`${engBase()}.${d.g}`, undefined);
   engPrune();
   changed();
   commit(true);
   engRefresh();
 };
-ACTS.engClear = async () => {
+ACTIONS.engClear = async () => {
   if (!readPath(engBase())) return toast('Nothing is set here.');
   if (
     !(await ask(`Clear every engine setting on ${ENS.scope === 'scene' ? 'this scene' : 'the whole game'}?`, 'Clear'))
@@ -292,7 +292,7 @@ ACTS.engClear = async () => {
   commit(true);
   engRefresh();
 };
-ACTS.engPromote = async () => {
+ACTIONS.engPromote = async () => {
   const look = readPath(engBase());
   if (!look) return;
   if (!(await ask('Copy this scene’s settings to the whole game and clear them from the scene?', 'Copy'))) return;
@@ -306,7 +306,7 @@ ACTS.engPromote = async () => {
   ENS.scope = 'game';
   engRefresh();
 };
-ACTS.engPreset = d => {
+ACTIONS.engPreset = d => {
   const P = d.own ? (engD().presets || {})[d.k] : ENGINE_PRESETS[d.k];
   if (!P) return;
   for (const [g, o] of Object.entries(P.v || {}))
@@ -317,7 +317,7 @@ ACTS.engPreset = d => {
   engRefresh();
   toast(`${P.name || d.k} applied${ENS.scope === 'scene' ? ' to this scene' : ''}.`);
 };
-ACTS.engPresetSave = async () => {
+ACTIONS.engPresetSave = async () => {
   const cur = readPath(engBase());
   if (!cur || !Object.keys(cur).length) return toast('Set a few dials first; a preset saves the ones you’ve set here.');
   const name = await dialog(
@@ -337,7 +337,7 @@ ACTS.engPresetSave = async () => {
   engRefresh();
   toast('Preset saved.');
 };
-ACTS.engPresetDel = async d => {
+ACTIONS.engPresetDel = async d => {
   if (!(await ask(`Delete the preset “${(engD().presets[d.k] || {}).name || d.k}”?`, 'Delete'))) return;
   delete engD().presets[d.k];
   changed();
@@ -369,7 +369,7 @@ function engGrab() {
     }, 4000);
   });
 }
-ACTS.engLookPreviews = async () => {
+ACTIONS.engLookPreviews = async () => {
   if (!$('#engPv')) return;
   const own = engD().presets || {},
     all = [

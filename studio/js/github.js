@@ -13,7 +13,7 @@ import { expose } from '../../game/js/test-globals.js';
 import { $ } from '../../game/js/util.js';
 import { esc } from './game-stand-ins.js';
 import {
-  ACTS,
+  ACTIONS,
   ask,
   boot,
   dialog,
@@ -204,7 +204,7 @@ async function ghStart() {
     sb.title = 'Send everything you changed to the owner as a pull request (Ctrl+S)';
   }
 }
-ACTS.ghOut = async () => {
+ACTIONS.ghOut = async () => {
   if (studioState.dirty || studioState.rigsDirty || studioState.artDirty.size) {
     if (!(await ask('You have changes you haven’t proposed yet. Sign out anyway? They will be lost.', 'Sign out')))
       return;

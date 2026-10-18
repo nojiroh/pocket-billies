@@ -201,7 +201,7 @@ def check_studio(pw, results):
         pg.screenshot(path=str(OUT / 'studio-skeleton.png'))
         pg.click('[data-sk=close]'); time.sleep(.4)
         # the battle preview, with the new billionaire as the opponent
-        pg.evaluate("BP.foe='checko1';openSection('preview')"); time.sleep(2.5); pg.evaluate("ACTS.bp({x:'move1'})"); time.sleep(.6)
+        pg.evaluate("BP.foe='checko1';openSection('preview')"); time.sleep(2.5); pg.evaluate("ACTIONS.bp({x:'move1'})"); time.sleep(.6)
         pg.screenshot(path=str(OUT / 'studio-preview-new.png'))
         # map art: repaint the trail along the stops
         pg.evaluate("openSection('world',{wtab:'paint'})"); time.sleep(2.5); pg.click('[data-mp=paintTrail]'); time.sleep(1)

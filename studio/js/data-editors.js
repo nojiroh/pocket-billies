@@ -9,7 +9,7 @@ import { TR_CACHE, cleanLook, humanSheet, lookFromOld, trColorsOf, trSliders } f
 import { drawRig, rigPose } from '../../game/js/skeleton-rig.js';
 import { esc } from './game-stand-ins.js';
 import {
-  ACTS,
+  ACTIONS,
   SECTIONS,
   after,
   ask,
@@ -357,69 +357,69 @@ const poolPct = (P, j) => {
   const t = P.list.reduce((a, b) => a + (+b[1] || 0), 0);
   return t ? Math.round(((+P.list[j][1] || 0) / t) * 100) + '%' : '—';
 };
-ACTS.pickLine = d => {
+ACTIONS.pickLine = d => {
   studioState.sel.line = d.id;
   studioState.sel.stage = 0;
   render();
 };
-ACTS.stage = d => {
+ACTIONS.stage = d => {
   studioState.sel.stage = +d.i;
   render();
 };
-ACTS.goldToggle = (d, el) => {
+ACTIONS.goldToggle = (d, el) => {
   studioState.sel.gold = el.checked;
   render();
 };
-ACTS.anim = d => {
+ACTIONS.anim = d => {
   $$('canvas.spr-prev.big').forEach(c => prevAct(c, d.a));
 };
-ACTS.pixels = d => openPixelEditor(d.sp, 'front', !!studioState.sel.gold);
-ACTS.skeleton = d => openSkeleton(d.sp, 'front');
-ACTS.learnAdd = () => {
+ACTIONS.pixels = d => openPixelEditor(d.sp, 'front', !!studioState.sel.gold);
+ACTIONS.skeleton = d => openSkeleton(d.sp, 'front');
+ACTIONS.learnAdd = () => {
   const L = studioState.D.lines[curLine()],
     last = L.learn[L.learn.length - 1];
   L.learn.push([Math.min(100, (last ? last[0] : 1) + 4), Object.keys(studioState.D.moves)[0]]);
   changed();
   render();
 };
-ACTS.learnDel = d => {
+ACTIONS.learnDel = d => {
   const L = studioState.D.lines[curLine()];
   L.learn.splice(+d.i, 1);
   changed();
   render();
 };
-ACTS.learnSort = () => {
+ACTIONS.learnSort = () => {
   const L = studioState.D.lines[curLine()];
   L.learn.sort((a, b) => a[0] - b[0]);
   changed();
   render();
 };
-ACTS.baseOn = () => {
+ACTIONS.baseOn = () => {
   const L = studioState.D.lines[curLine()];
   L.base = L.names.map((n, st) => baseStats(L, st).slice());
   changed();
   render();
 };
-ACTS.baseOff = async () => {
+ACTIONS.baseOff = async () => {
   if (!(await ask('Switch back to rarity totals and the stat profile? The exact numbers will be lost.', 'Switch back')))
     return;
   delete studioState.D.lines[curLine()].base;
   changed();
   render();
 };
-ACTS.whereDel = d => {
+ACTIONS.whereDel = d => {
   studioState.D[d.kind][d.k].list.splice(+d.j, 1);
   changed();
   render();
 };
-ACTS.whereAdd = () => {
+ACTIONS.whereAdd = () => {
   const [kind, k] = $('#whereTo').value.split(':'),
     sp = $('#whereSp').value;
   studioState.D[kind][k].list.push([sp, 15]);
   changed();
   render();
 };
-ACTS.lineMove = d => {
+ACTIONS.lineMove = d => {
   const D = studioState.D,
     i = curLine(),
     j = i + +d.d;
@@ -428,7 +428,7 @@ ACTS.lineMove = d => {
   changed();
   render();
 };
-ACTS.lineDel = async () => {
+ACTIONS.lineDel = async () => {
   const D = studioState.D,
     i = curLine(),
     L = D.lines[i],
@@ -479,7 +479,7 @@ async function cloneSpeciesArt(fromId, toId, hue = 0, sat = 1) {
       markArt(atlasPath(toId, view, gold), hueShift(src, hue, sat));
     }
 }
-ACTS.stageAdd = async () => {
+ACTIONS.stageAdd = async () => {
   const D = studioState.D,
     L = D.lines[curLine()],
     n = L.names.length;
@@ -510,7 +510,7 @@ ACTS.stageAdd = async () => {
   render();
   toast('Stage added with recolored art from the previous stage. Edit its pixels next.');
 };
-ACTS.stageDel = async () => {
+ACTIONS.stageDel = async () => {
   const D = studioState.D,
     L = D.lines[curLine()],
     n = L.names.length - 1,
@@ -534,7 +534,7 @@ ACTS.stageDel = async () => {
   changed(true);
   render();
 };
-ACTS.lineDup = async () => {
+ACTIONS.lineDup = async () => {
   const D = studioState.D,
     L = D.lines[curLine()],
     id = uniqueKey(L.id, k => D.lines.some(l => l.id === k));
@@ -549,7 +549,7 @@ ACTS.lineDup = async () => {
   render();
   toast('Duplicated with shifted colors.');
 };
-ACTS.recolor = async d => {
+ACTIONS.recolor = async d => {
   const sp = d.sp;
   const srcs = {};
   for (const v of ['front', 'back'])
@@ -605,7 +605,7 @@ ACTS.recolor = async d => {
   toast('Recolored. Save to game to keep it.');
 };
 /* ---------- new billionaire wizard ---------- */
-ACTS.newLine = async () => {
+ACTIONS.newLine = async () => {
   const D = studioState.D;
   const blanks = Object.keys(BODY_TPL);
   const html = `<p class="help">Start from a <b>blank body</b> to design a new shape from scratch, or copy an existing Billie’s skeleton, animations and recolored art. Either way it works in the game right away.</p>
@@ -857,14 +857,14 @@ studioState.hooks.moves = path => {
     if (b) b.innerHTML = LISTS.mq();
   }
 };
-ACTS.pickMove = d => {
+ACTIONS.pickMove = d => {
   studioState.sel.move = d.id;
   render();
 };
-ACTS.gotoLine = d => {
+ACTIONS.gotoLine = d => {
   openSection('billionaires', { line: d.id, stage: 0 });
 };
-ACTS.moveNew = () => {
+ACTIONS.moveNew = () => {
   const D = studioState.D,
     k = uniqueKey('newmove', x => !!D.moves[x]);
   D.moves[k] = { n: 'New Move', t: 'None', c: 'H', p: 50, a: 100, d: 'Describe what it does.' };
@@ -872,7 +872,7 @@ ACTS.moveNew = () => {
   changed();
   render();
 };
-ACTS.moveDup = () => {
+ACTIONS.moveDup = () => {
   const D = studioState.D,
     k = uniqueKey(studioState.sel.move, x => !!D.moves[x]);
   D.moves[k] = clone(D.moves[studioState.sel.move]);
@@ -881,7 +881,7 @@ ACTS.moveDup = () => {
   changed();
   render();
 };
-ACTS.moveDel = async () => {
+ACTIONS.moveDel = async () => {
   const D = studioState.D,
     k = studioState.sel.move,
     users = D.lines.filter(L => L.learn.some(([, m]) => m === k));
@@ -957,7 +957,7 @@ SECTIONS.types = () => {
   ).join('');
   return `<div class="ed-col solo"><div class="ed-head"><h2>Types</h2><button class="btn primary" data-act="typeNew">+ New type</button></div>${card('Matchups', matrix)}${card('Types', rows + `<div class="type-row">${typeChipHTML('None')}${grid(colorField('Normal color', 'untyped.color'), colorField('Normal text', 'untyped.text'))}</div>`, { sub: 'Each type can have one ability. Abilities and their numbers are tuned under Rules → Battle.' })}</div>`;
 };
-ACTS.mx = d => {
+ACTIONS.mx = d => {
   const t = studioState.D.types[+d.a],
     b = d.b;
   const s = t.strong.includes(b),
@@ -969,7 +969,7 @@ ACTS.mx = d => {
   changed();
   render();
 };
-ACTS.typeFx = d => {
+ACTIONS.typeFx = d => {
   const t = studioState.D.types[+d.i];
   t.fx = t.fx || [];
   const k = d.k;
@@ -977,7 +977,7 @@ ACTS.typeFx = d => {
   changed();
   render();
 };
-ACTS.typeNew = () => {
+ACTIONS.typeNew = () => {
   const D = studioState.D,
     id = uniqueKey('New', k => D.types.some(t => t.id.toLowerCase() === k));
   D.types.push({
@@ -992,7 +992,7 @@ ACTS.typeNew = () => {
   changed();
   render();
 };
-ACTS.typeDel = async d => {
+ACTIONS.typeDel = async d => {
   const D = studioState.D,
     t = D.types[+d.i];
   if (!(await ask(`Delete the ${esc(t.id)} type? Moves of this type become Normal and Billies lose it.`, 'Delete')))
@@ -1084,14 +1084,14 @@ SECTIONS.items = () => {
     .join('');
   return `<div class="ed-col solo"><div class="ed-head"><h2>Items & coins</h2><button class="btn primary" data-act="itemNew">+ New item</button></div>${card('Items', items, { sub: 'An item can combine effects, like the Full Remedy (cure + heal).' })}${card('Tax coins', coins, { sub: 'Coin art is art/coins/<id>_16.png and _32.png. Replace it under Art files.' })}</div>`;
 };
-ACTS.itemNew = () => {
+ACTIONS.itemNew = () => {
   const D = studioState.D,
     k = uniqueKey('item', x => !!D.items[x]);
   D.items[k] = { n: 'New Item', price: 200, hp: 30, d: 'Restores 30 HP.', icon: 'taxbreak', mint: true };
   changed();
   render();
 };
-ACTS.itemDel = async d => {
+ACTIONS.itemDel = async d => {
   const D = studioState.D;
   if (!(await ask(`Delete ${esc(D.items[d.k].n)}? It’s removed from shops and starting items.`, 'Delete'))) return;
   delete D.items[d.k];
@@ -1100,7 +1100,7 @@ ACTS.itemDel = async d => {
   changed();
   render();
 };
-ACTS.itemImg = async d => {
+ACTIONS.itemImg = async d => {
   const f = await pickFile('image/png');
   if (!f) return;
   const c = await fileToCanvas(f);
@@ -1112,7 +1112,7 @@ ACTS.itemImg = async d => {
   render();
   toast('Icon added. Save to game to keep it.');
 };
-ACTS.itemImgOff = d => {
+ACTIONS.itemImgOff = d => {
   delete studioState.D.items[d.k].img;
   changed();
   render();
@@ -1230,21 +1230,21 @@ document.addEventListener('change', ev => {
     render();
   }
 });
-ACTS.pickShop = d => {
+ACTIONS.pickShop = d => {
   studioState.sel.shop = d.id;
   render();
 };
-ACTS.stockAdd = () => {
+ACTIONS.stockAdd = () => {
   studioState.D.shops[studioState.sel.shop].stock.push({ item: Object.keys(studioState.D.items)[0] });
   changed();
   render();
 };
-ACTS.stockDel = d => {
+ACTIONS.stockDel = d => {
   studioState.D.shops[studioState.sel.shop].stock.splice(+d.i, 1);
   changed();
   render();
 };
-ACTS.stockMove = d => {
+ACTIONS.stockMove = d => {
   const a = studioState.D.shops[studioState.sel.shop].stock,
     i = +d.i,
     j = i - 1;
@@ -1253,7 +1253,7 @@ ACTS.stockMove = d => {
   changed();
   render();
 };
-ACTS.boutiqueNew = () => {
+ACTIONS.boutiqueNew = () => {
   const D = studioState.D,
     k = uniqueKey('boutique', x => !!(D.shops || {})[x]);
   D.shops = D.shops || {};
@@ -1268,7 +1268,7 @@ ACTS.boutiqueNew = () => {
   changed();
   render();
 };
-ACTS.shopNew = () => {
+ACTIONS.shopNew = () => {
   const D = studioState.D,
     k = uniqueKey('shop', x => !!(D.shops || {})[x]);
   D.shops = D.shops || {};
@@ -1283,7 +1283,7 @@ ACTS.shopNew = () => {
   changed();
   render();
 };
-ACTS.shopDel = async () => {
+ACTIONS.shopDel = async () => {
   const D = studioState.D,
     k = studioState.sel.shop;
   if (!(await ask(`Delete ${esc(D.shops[k].name)}? Route stops that used it lose their shop.`, 'Delete'))) return;
@@ -1395,11 +1395,11 @@ studioState.hooks.people = path => {
     if (b) b.innerHTML = personPrev(studioState.sel.person);
   }
 };
-ACTS.pickPerson = d => {
+ACTIONS.pickPerson = d => {
   studioState.sel.person = d.id;
   render();
 };
-ACTS.personNew = () => {
+ACTIONS.personNew = () => {
   const D = studioState.D,
     k = uniqueKey('npc', x => !!D.people[x]);
   D.people[k] = { look: clone(personLook('gini') || cleanLook(null)) };
@@ -1407,7 +1407,7 @@ ACTS.personNew = () => {
   changed();
   render();
 };
-ACTS.personDel = async () => {
+ACTIONS.personDel = async () => {
   const D = studioState.D,
     k = studioState.sel.person;
   if (!(await ask(`Delete the look “${esc(k)}”? Anyone using it falls back to Professor Hazel’s look.`, 'Delete')))
@@ -1417,7 +1417,7 @@ ACTS.personDel = async () => {
   changed();
   render();
 };
-ACTS.wdGo = d => {
+ACTIONS.wdGo = d => {
   WDS.sel = d.k;
   openSection('wardrobe');
 };
@@ -1460,14 +1460,14 @@ document.addEventListener('change', ev => {
     render();
   }
 });
-ACTS.jobNew = () => {
+ACTIONS.jobNew = () => {
   const D = studioState.D,
     k = uniqueKey('job', x => !!D.jobs[x]);
   D.jobs[k] = { n: 'New job', where: 'Somewhere', out: ['se', 'se', 100], pay: '$100', quip: 'worked a full shift.' };
   changed();
   render();
 };
-ACTS.jobDel = async d => {
+ACTIONS.jobDel = async d => {
   if (!(await ask('Delete this job? Anyone working it keeps working until the shift ends.', 'Delete'))) return;
   delete studioState.D.jobs[d.k];
   changed();
@@ -1623,22 +1623,22 @@ setWritePath(function (path, v, o) {
   }
   return writePathBeforeTrainerLines(path, v, o);
 });
-ACTS.pickTrainer = d => {
+ACTIONS.pickTrainer = d => {
   studioState.sel.trainer = d.id;
   render();
 };
-ACTS.teamAdd = () => {
+ACTIONS.teamAdd = () => {
   const T = studioState.D.trainers[studioState.sel.trainer];
   T.team.push({ sp: studioState.D.lines[0].id + '0', lvl: (T.team[T.team.length - 1] || { lvl: 10 }).lvl });
   changed();
   render();
 };
-ACTS.teamDel = d => {
+ACTIONS.teamDel = d => {
   studioState.D.trainers[studioState.sel.trainer].team.splice(+d.i, 1);
   changed();
   render();
 };
-ACTS.seatOn = () => {
+ACTIONS.seatOn = () => {
   const T = studioState.D.trainers[studioState.sel.trainer];
   const n = Object.values(studioState.D.trainers).filter(t => t.seat).length + 1;
   T.seat = {
@@ -1653,26 +1653,26 @@ ACTS.seatOn = () => {
   changed();
   render();
 };
-ACTS.seatOff = () => {
+ACTIONS.seatOff = () => {
   studioState.D.trainers[studioState.sel.trainer].seat = null;
   changed();
   render();
 };
-ACTS.marketOn = () => {
+ACTIONS.marketOn = () => {
   const T = studioState.D.trainers[studioState.sel.trainer];
   T.market = { k: 'sand', n: studioState.D.rules.battle.shockTurns || 5 };
   T.marketText = `The arena is caught in a sandstorm. ${studioState.D.rules.battle.shockType} moves hit harder, and everyone else takes a little damage each turn.`;
   changed();
   render();
 };
-ACTS.marketOff = () => {
+ACTIONS.marketOff = () => {
   const T = studioState.D.trainers[studioState.sel.trainer];
   T.market = null;
   delete T.marketText;
   changed();
   render();
 };
-ACTS.trainerNew = () => {
+ACTIONS.trainerNew = () => {
   const D = studioState.D,
     k = uniqueKey('trainer', x => !!D.trainers[x]);
   D.trainers[k] = {
@@ -1695,7 +1695,7 @@ ACTS.trainerNew = () => {
   changed();
   render();
 };
-ACTS.trainerDel = async () => {
+ACTIONS.trainerDel = async () => {
   const D = studioState.D,
     k = studioState.sel.trainer,
     T = D.trainers[k];

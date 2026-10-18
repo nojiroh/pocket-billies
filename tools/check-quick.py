@@ -1941,16 +1941,16 @@ def studio_round_trip(pw, R):
                 if sec in ('scenes', 'check'): shot(pg, f'studio-{sec}')
                 if sec == 'lore':   # v47: every tab of Lore & story opens
                     for t in ['world', 'story', 'people', 'places', 'legends', 'clues', 'books', 'loading', 'chat']:
-                        pg.evaluate(f"ACTS.loreTab({{k:'{t}'}});0"); time.sleep(.2)
+                        pg.evaluate(f"ACTIONS.loreTab({{k:'{t}'}});0"); time.sleep(.2)
                     shot(pg, 'studio-lore')
             # v29 scene tools: scatter, copy and paste, a block stamp, a curved road, a smooth path; then a test run that sees the edits live
             extra = ''
             if pg.evaluate("typeof scxScatter==='function'"):
-                pg.evaluate("openSection('scenes');ACTS.scPick({k:'pond'});0"); time.sleep(2.5)
+                pg.evaluate("openSection('scenes');ACTIONS.scPick({k:'pond'});0"); time.sleep(2.5)
                 r = pg.evaluate("""(()=>{const sc=scCur(),n0=sc.props.length,t0=sc.tiles.join('');SCN.prop=Object.keys(scD().props).find(k=>/bush|flower/.test(k));SCN.scat.dens=1.5;SCN.brush=3;
                   const D={n:0};for(let i=0;i<4;i++)scxScatter(sc,{x:6+i,z:6},D);const n1=sc.props.length;SCN.multi=new Set([0,1]);scxCopy();SCN.mouse=[sc.w/2,sc.h/2];scxPaste();const n2=sc.props.length;
                   scxStampAt(sc,{name:'t',props:[{k:sc.props[0].k,x:0,z:0},{k:sc.props[1].k,x:1,z:0}]},4,4,false);const n3=sc.props.length;
-                  SCN.ter='p';SCN.road=[[2,3],[sc.w/2,sc.h/2],[sc.w-3,4]];scxRoadLay(sc);const roadOk=sc.tiles.join('')!==t0;const p0=(sc.path||[]).length;ACTS.scxSmoothPath();changed();
+                  SCN.ter='p';SCN.road=[[2,3],[sc.w/2,sc.h/2],[sc.w-3,4]];scxRoadLay(sc);const roadOk=sc.tiles.join('')!==t0;const p0=(sc.path||[]).length;ACTIONS.scxSmoothPath();changed();
                   return {scattered:n1-n0,pasted:n2-n1,stamped:n3-n2,road:roadOk,path:[p0,(sc.path||[]).length],n:sc.props.length}})()""")
                 if r['scattered'] < 3 or r['pasted'] != 2 or r['stamped'] != 2 or not r['road']: raise Exception(f'scene tools: {r}')
                 pg.evaluate("openSection('rules');0")          # the Studio's scene preview would otherwise share the software renderer with the test run

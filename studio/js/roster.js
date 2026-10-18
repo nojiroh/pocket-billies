@@ -11,7 +11,7 @@ import { $, $$ } from '../../game/js/util.js';
 import { makeCanvas } from '../../game/js/art.js';
 import { drawRig } from '../../game/js/skeleton-rig.js';
 import { esc } from './game-stand-ins.js';
-import { ACTS, SECTIONS, after, changed, commit, render, studioState } from './studio-app.js';
+import { ACTIONS, SECTIONS, after, changed, commit, render, studioState } from './studio-app.js';
 import { downloadCanvas, loadImage, rigFor } from './sprites.js';
 import { skNeutral } from './skeleton.js';
 /* eslint-disable no-func-assign */
@@ -83,12 +83,12 @@ SECTIONS.roster = () => {
   <p class="help">${all} Billies · ${sil} silhouettes approved · ${sheets} piece sheets drawn · ${done} complete. Tick a box when that step is done; the design line is editable. A piece sheet goes in <code>art/next/billionaires/&lt;id&gt;.png</code> with its layout <code>&lt;id&gt;.json</code> (Skeleton builder → Import piece sheet).</p>
   <div class="ro-grid">${roList().map(roCard).join('')}</div></div>`;
 };
-ACTS.roFilter = d => {
+ACTIONS.roFilter = d => {
   RO.filter = d.f;
   render();
 };
-ACTS.roSheet = () => roSilSheet();
-ACTS.roExport = () => {
+ACTIONS.roSheet = () => roSilSheet();
+ACTIONS.roExport = () => {
   const L = studioState.D.roster || [];
   const csv =
     'no,name,line,stage,kind,parody,types,design,silhouette,sheet,rig,portrait\n' +
@@ -273,9 +273,9 @@ async function roSilSheet() {
   cx2.drawImage(c, 0, 0, cv.width, cv.height);
   RO.sheetCanvas = c;
 }
-ACTS.roSheetSave = () => {
+ACTIONS.roSheetSave = () => {
   if (RO.sheetCanvas) downloadCanvas(RO.sheetCanvas, 'silhouettes.png');
 };
-ACTS.roSheetClose = () => {
+ACTIONS.roSheetClose = () => {
   $('#modal').innerHTML = '';
 };

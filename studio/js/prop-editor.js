@@ -16,7 +16,7 @@ import { BUILDING_ROOM_NAMES, BUILDING_TEXTURE_NAMES } from '../../game/js/build
 import { SOLID_PROP_BODIES, SOLID_PROP_KINDS, SOLID_PROP_PARTS, solidTreeKind } from '../../game/js/solid-props.js';
 import { esc } from './game-stand-ins.js';
 import {
-  ACTS,
+  ACTIONS,
   ask,
   card,
   changed,
@@ -643,7 +643,7 @@ async function pedMount() {
   });
 }
 /* ---------- actions ---------- */
-ACTS.pedOpen = d => {
+ACTIONS.pedOpen = d => {
   SCN.ped = d.k;
   PED.sel = null;
   PED.layer = null;
@@ -655,7 +655,7 @@ ACTS.pedOpen = d => {
     if (e) e.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, 60);
 };
-ACTS.pedClose = () => {
+ACTIONS.pedClose = () => {
   SCN.ped = null;
   PED.sel = null;
   if (typeof walkRenderer !== 'undefined') {
@@ -664,15 +664,15 @@ ACTS.pedClose = () => {
   walkView.id = null;
   render();
 };
-ACTS.pedTool = d => {
+ACTIONS.pedTool = d => {
   PED.tool = d.t;
   render();
 };
-ACTS.pedFx = d => {
+ACTIONS.pedFx = d => {
   PED.fxk = d.k;
   render();
 };
-ACTS.pedFxDel = () => {
+ACTIONS.pedFxDel = () => {
   const M = pedM();
   if (M && M.fx && PED.sel != null) {
     M.fx.splice(PED.sel, 1);
@@ -682,23 +682,23 @@ ACTS.pedFxDel = () => {
     render();
   }
 };
-ACTS.pedZoom = d => {
+ACTIONS.pedZoom = d => {
   PED.zoom = clamp((PED.zoom || 4) + +d.z, 1, 14);
   pedDraw();
 };
-ACTS.pedSpin = () => {
+ACTIONS.pedSpin = () => {
   PED.spin = !PED.spin;
   if (!PED.spin && typeof walkRenderer !== 'undefined') walkRenderer.yawT = 0;
   render();
 };
-ACTS.pedGlowDel = () => {
+ACTIONS.pedGlowDel = () => {
   const M = pedM();
   delete M.glow;
   changed();
   commit(true);
   render();
 };
-ACTS.pedVaryReset = () => {
+ACTIONS.pedVaryReset = () => {
   const M = pedM();
   delete M.vary;
   delete M.wear;
@@ -706,7 +706,7 @@ ACTS.pedVaryReset = () => {
   commit(true);
   render();
 };
-ACTS.scGlowAdd2 = () => {
+ACTIONS.scGlowAdd2 = () => {
   const M = pedM();
   const ppu = scD().ppu || 34,
     im = artImage(M.img);
@@ -715,7 +715,7 @@ ACTS.scGlowAdd2 = () => {
   commit(true);
   render();
 };
-ACTS.pedLayerAdd = async d => {
+ACTIONS.pedLayerAdd = async d => {
   const M = pedM(),
     k = SCN.ped;
   let c;
@@ -752,7 +752,7 @@ ACTS.pedLayerAdd = async d => {
       'Copied. Erase what shouldn’t be on this layer with “Pixels”, and from the main picture what should only be here.'
     );
 };
-ACTS.pedLayerDel = async d => {
+ACTIONS.pedLayerDel = async d => {
   const M = pedM();
   if (!(await ask('Remove this layer? Its picture file stays in art/scene/props.', 'Remove'))) return;
   M.layers.splice(+d.i, 1);
@@ -762,7 +762,7 @@ ACTS.pedLayerDel = async d => {
   commit(true);
   render();
 };
-ACTS.pedLayerMove = d => {
+ACTIONS.pedLayerMove = d => {
   const M = pedM(),
     i = +d.i,
     j = i + +d.d;
@@ -773,7 +773,7 @@ ACTS.pedLayerMove = d => {
   commit(true);
   render();
 };
-ACTS.pedLayerPx = d => {
+ACTIONS.pedLayerPx = d => {
   const M = pedM(),
     l = M.layers[+d.i];
   PED.layer = +d.i;
@@ -880,7 +880,7 @@ function pedVolHTML(k) {
   <div class="seg-row"><button class="btn sm" data-act="pedPartsOn">Build it from parts…</button></div>`;
 }
 const PED_PART_COL = ['#E0457B', '#2F9F5B', '#3E8FE0', '#E8A02E', '#8E6CCB', '#1FA8A0', '#C8323C', '#6B8E23'];
-ACTS.pedPartsOn = () => {
+ACTIONS.pedPartsOn = () => {
   const M = pedM();
   if (!M) return;
   const im = artImage(M.img),
@@ -891,7 +891,7 @@ ACTS.pedPartsOn = () => {
   commit(true);
   render();
 };
-ACTS.pedPartsOff = () => {
+ACTIONS.pedPartsOff = () => {
   const M = pedM();
   if (!M) return;
   delete M.parts;
@@ -899,7 +899,7 @@ ACTS.pedPartsOff = () => {
   commit(true);
   render();
 };
-ACTS.pedPartAdd = () => {
+ACTIONS.pedPartAdd = () => {
   const M = pedM();
   if (!M || !M.parts) return;
   const im = artImage(M.img),
@@ -910,7 +910,7 @@ ACTS.pedPartAdd = () => {
   commit(true);
   render();
 };
-ACTS.pedPartDel = d => {
+ACTIONS.pedPartDel = d => {
   const M = pedM();
   if (!M || !M.parts) return;
   M.parts.splice(+d.i, 1);
@@ -984,7 +984,7 @@ function pedBuildHTML(k) {
   <p class="help">${(B.win || []).length} see-through panes found in the picture (tools/build-buildings.py finds them by their glass colours). Rooms behind the glass: ${(B.rooms || [0]).map(i => BUILDING_ROOM_NAMES[i] || i).join(', ')}.</p>
   <div class="seg-row"><button class="btn sm subtle" data-act="pedBuildRooms">Other rooms</button><button class="btn sm subtle" data-act="pedBuildNoWin">No see-through panes</button><button class="btn sm subtle danger" data-act="pedBuildOff">Use the picture instead</button></div>`;
 }
-ACTS.pedBuildOn = () => {
+ACTIONS.pedBuildOn = () => {
   const M = pedM(),
     im = artImage(M.img);
   if (!M || !im) return;
@@ -1014,7 +1014,7 @@ ACTS.pedBuildOn = () => {
   commit(true);
   render();
 };
-ACTS.pedBuildOff = async () => {
+ACTIONS.pedBuildOff = async () => {
   const M = pedM();
   if (!M || !(await ask('Show this building as its picture again? Its 3D settings are removed.', 'Use the picture')))
     return;
@@ -1023,7 +1023,7 @@ ACTS.pedBuildOff = async () => {
   commit(true);
   render();
 };
-ACTS.pedBuildNoWin = () => {
+ACTIONS.pedBuildNoWin = () => {
   const M = pedM();
   if (!M || !M.build) return;
   M.build.win = [];
@@ -1031,7 +1031,7 @@ ACTS.pedBuildNoWin = () => {
   commit(true);
   render();
 };
-ACTS.pedBuildRooms = () => {
+ACTIONS.pedBuildRooms = () => {
   const M = pedM();
   if (!M || !M.build) return;
   const r = M.build.rooms || [0];
