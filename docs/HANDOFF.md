@@ -101,8 +101,10 @@ Decisions); no full quick check for either phase; 04e starts in a new session fr
     about "Sundown" there in 04d.
   - No full quick check at the end, and 04e in a new session, as you asked.
 - Questions waiting for the owner:
-  - Push the tag `phase-05-done` if my push was refused (it also makes the CI picture baseline), or run the check
-    workflow by hand with "Make the picture baseline".
+  - Push the tag `phase-05-done`: my push was refused (the remote hangs up on tag pushes). It goes on the commit that
+    adds this line ("Docs: HANDOFF, phase 05: the tag to push"), the branch head at the end of the session. The tag
+    push also makes the CI picture baseline; without it, run the check workflow by hand with "Make the picture
+    baseline".
   - Still open from before: check-studio-github.py in CI (about a minute)? Studio local mode (start-studio.py); tags
     phase-01/02/03-done and legacy-final.
 - Claims checked (CLAUDE.md asks me to treat figures as claims):
