@@ -33,7 +33,7 @@ expose({
   rigTick: [() => rigTick, v => (rigTick = v)],
   rigTint: [() => rigTint, v => (rigTint = v)],
   setRigParts: [() => setRigParts, v => (setRigParts = v)],
-  smoothCurve: [() => smoothCurve],
+  smoothStepUnclamped: [() => smoothStepUnclamped],
 });
 /* eslint-enable no-func-assign */
 provide({ drawRig });
@@ -114,7 +114,7 @@ export function rigTint(ctx, w, h, col, a) {
   ctx.fillRect(0, 0, w, h);
   ctx.restore();
 }
-const smoothCurve = x => x * x * (3 - 2 * x);
+const smoothStepUnclamped = x => x * x * (3 - 2 * x);
 /* ---- shared pose channels (design space faces left: forward is -x) ---- */
 export function rigPose(act, tau, t, seed) {
   const P = {
@@ -162,9 +162,9 @@ export function rigPose(act, tau, t, seed) {
   }
   switch (act) {
     case 'attack': {
-      const w = smoothCurve(ph(0, 150)),
-        s = smoothCurve(ph(150, 240)),
-        r = smoothCurve(ph(300, 580)),
+      const w = smoothStepUnclamped(ph(0, 150)),
+        s = smoothStepUnclamped(ph(150, 240)),
+        r = smoothStepUnclamped(ph(300, 580)),
         q = 1 - r;
       P.k = s * q;
       P.sq = w > 0.5 && s < 0.3 ? 'squash' : s > 0.5 && r < 0.5 ? 'stretch' : null;
@@ -182,8 +182,8 @@ export function rigPose(act, tau, t, seed) {
       break;
     }
     case 'cast': {
-      const u = smoothCurve(ph(0, 220)),
-        r = smoothCurve(ph(560, 820)),
+      const u = smoothStepUnclamped(ph(0, 220)),
+        r = smoothStepUnclamped(ph(560, 820)),
         q = u * (1 - r);
       P.k = q;
       P.aL += (2.4 + 0.25 * Math.sin(tau / 70)) * q;
@@ -212,11 +212,11 @@ export function rigPose(act, tau, t, seed) {
       break;
     }
     case 'faint': {
-      const q = smoothCurve(ph(0, 650)),
-        w = smoothCurve(ph(0, 160));
+      const q = smoothStepUnclamped(ph(0, 650)),
+        w = smoothStepUnclamped(ph(0, 160));
       P.k = q;
       P.sq = w > 0.5 && q < 0.6 ? 'squash' : null;
-      P.r = 1.2 * smoothCurve(ph(120, 620));
+      P.r = 1.2 * smoothStepUnclamped(ph(120, 620));
       P.body = -0.1 * w;
       P.head = 0.35 * q;
       P.lL = -0.3 * q;
@@ -224,7 +224,7 @@ export function rigPose(act, tau, t, seed) {
       P.aL = -0.9 * q;
       P.aR = 1.1 * q;
       P.flap = 1 - q;
-      P.fall = smoothCurve(ph(80, 600));
+      P.fall = smoothStepUnclamped(ph(80, 600));
       P.face = 'hurt';
       break;
     }
@@ -241,7 +241,7 @@ export function rigPose(act, tau, t, seed) {
       break;
     }
     case 'buff': {
-      const q = tau < 760 ? smoothCurve(ph(0, 140)) : 0,
+      const q = tau < 760 ? smoothStepUnclamped(ph(0, 140)) : 0,
         pump = Math.sin(tau / 95) * 0.3;
       P.k = q;
       P.aL += (1.9 + pump) * q;
@@ -254,7 +254,7 @@ export function rigPose(act, tau, t, seed) {
       break;
     }
     case 'block': {
-      const q = tau < 700 ? smoothCurve(ph(0, 120)) : 0;
+      const q = tau < 700 ? smoothStepUnclamped(ph(0, 120)) : 0;
       P.k = q;
       P.aL += 1.3 * q;
       P.aR += 1.1 * q;
@@ -274,7 +274,7 @@ export function rigPose(act, tau, t, seed) {
       break;
     }
     case 'enter': {
-      const q = 1 - smoothCurve(ph(100, 600));
+      const q = 1 - smoothStepUnclamped(ph(100, 600));
       P.k = q;
       P.aL += 1.2 * q;
       P.aR -= 1.2 * q;
