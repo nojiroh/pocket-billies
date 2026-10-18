@@ -19,10 +19,10 @@ Starters keep their split final stage. Names are parodies; the `parody` field is
 | 1 | Emberox → Boostox → Marsox / Memeox | Elon Musk | muskox, quad | Fire (→ Fire/Dragon or Fire/Psychic) | 3, split | medium → heavy | **existing, all 4** |
 | 2 | Cartotter → Primotter → Orbitotter / Everyotter | Jeff Bezos | otter, biped | Water (→ Water/Flying or Water/Steel) | 3, split | light → medium | **existing, all 4** |
 | 3 | Kidling → Billgoat → Windowgoat / Harvestgoat | Bill Gates | goat, quad | Grass (→ Grass/Electric or Grass/Ground) | 3, split | light → medium | **existing, all 4** |
-| 4 | Swiftlet → Versewift → Erastar | Taylor Swift | swift (the bird), bird | Flying/Psychic | 3 | featherweight | placeholder (part kit: bird; or jay line recolour) |
-| 5 | Kontourlet → Filterleon → Kardashleon | Kim Kardashian | chameleon, upright lizard | Psychic → Psychic/Steel | 3 | light | placeholder (part kit: reptile; or gecko line recolour) |
-| 6 | Gildlet → Gildslug → Tremendoslug | Donald Trump | giant slug, blob (Jabba-style: huge body, tiny arms, slug tail) | Ground → Ground/Steel | 3 | super-heavy | placeholder (part kit: L bear body, S arms, reptile tail, mane crest) |
-| 7 | Facelet → Feedopus → Metapus | Mark Zuckerberg | octopus, octo | Electric → Electric/Water | 3 | medium | placeholder (Studio blank `octo`) |
+| 4 | Swiftlet → Versewift → Erastar | Taylor Swift | swift (the bird), bird | Flying/Psychic | 3 | featherweight | placeholder: jay line recolour, jay rig |
+| 5 | Kontourlet → Filterleon → Kardashleon | Kim Kardashian | chameleon, quad | Psychic → Psychic/Steel | 3 | light | placeholder: gecko line recolour, gecko rig |
+| 6 | Gildlet → Gildslug → Tremendoslug | Donald Trump | giant slug, blob (Jabba-style: huge body, tiny arms, slug tail) | Ground → Ground/Steel | 3 | super-heavy | placeholder: built from the part kit (big bear body, small arms, reptile tail as the slug tail, mane as the golden crest) |
+| 7 | Facelet → Feedopus → Metapus | Mark Zuckerberg | octopus, octo | Electric → Electric/Water | 3 | medium | placeholder: built from the fish kit until octopus parts exist |
 
 Why these seven: three starters with finished art, four new faces you named (plus one open slot), seven different weight classes from featherweight to super-heavy, and all nine types are touched except Dragon, which stays on the starter splits.
 
@@ -142,33 +142,31 @@ The fish kit has no prototype line yet; it is ready for a fish Billie or abomina
 
 Style difference: the kits are drawn straight-on, upright and with softer shading; the existing Billie sheets are side-on 3/4 views with harder 4-band shading. Both are allowed in the prototype (decided); pick one before the full build.
 
-### Recolour placeholders
-`tools/build-rework-placeholders.py` recolours an existing sheet with the same body plan, keeps outlines, eyes and highlights, and copies the piece map, so the existing rig works unchanged. Files are in `game/art/next/placeholders/`. They are the fallback if the kit style is not used. Nothing in the game loads them or the kit yet.
+### Placeholder sheets and rigs (built)
+`tools/build-rework-placeholders.py` makes every new Billie's sheet, Gold-Plated sheet and piece layout in `game/art/next/billionaires/` (where the Studio looks for them) and adds its rig to `game/art/next/rigs-next.js`, marked `"placeholder"`. Swift and Kardashian are recolours of the jay and gecko lines on their rigs. Trump and Zuckerberg are put together from the part kits on a biped rig. Replace any of them in the Studio; running the tool again rebuilds them.
 
-| New Billie | Placeholder from | Recolour | Final art needs |
-|------------|------------------|----------|-----------------|
-| Swiftlet | jaylet | violet | swift silhouette: forked tail, slim crescent wings |
-| Versewift | hovajay | violet | sparkly tail fan, microphone crest |
-| Erastar | hovajay | magenta | stage-3 size, era-coloured feathers |
-| Kontourlet | siliclet | warm beige | chameleon curled tail, turret eyes |
-| Filterleon | jenzard | rose | ring-light crest, colour-shift scales |
-| Kardashleon | gigajenzard | rose | larger frame, gem scales, phone-tail |
-| Gildlet / Gildslug / Tremendoslug | none (part kit instead, see above) | — | all new art: golden swept fur crest, orange-tan hide, huge body, tiny arms, slug tail |
-| Facelet / Feedopus / Metapus | none (no octo art yet) | — | make in the Studio from the blank `octo` body; all new art |
+| New Billie | Placeholder | Final art needs |
+|------------|-------------|-----------------|
+| Swiftlet / Versewift / Erastar | jaylet, hovajay, hovajay recoloured | swift silhouette (forked tail, crescent wings), blonde feather fringe, microphone crest, era-coloured feathers |
+| Kontourlet / Filterleon / Kardashleon | siliclet, jenzard, gigajenzard recoloured | chameleon curled tail and turret eyes, long dark crest, ring-shaped glowing crest, contour-shaded scales |
+| Gildlet / Gildslug / Tremendoslug | part kit (bear, reptile tail, mane) in gold-orange | golden swept fur crest, orange-tan hide, huge slug body, tiny arms, slug tail |
+| Facelet / Feedopus / Metapus | part kit (carp, koi, piranha, shark, mane) in pale blue | octopus with curly fur crest, unblinking eyes, visor-shaped brow ridge |
 
 ### Old art that becomes free for parts and abominations
-The other 51 lines are cut from the prototype but their sheets stay. Their pieces become a **part library** (decided) for abominations and later species (wings from birds, horns from quads, claws from crabs), so nothing drawn is wasted. The elephant line is the obvious first source of heavy parts.
+The other 55 lines are in `game/data/legacy/` (built 2026-10-18); their sheets stay. Their pieces become a **part library** (decided) for abominations and later species (wings from birds, horns from quads, claws from crabs), so nothing drawn is wasted. The elephant line is the obvious first source of heavy parts.
 
 ## Testing (phase 13)
 Follow docs/TESTING.md: where new tests go, what must pass before the phase ends, and its section for phase 16.
 
 ## 5. Prototype scope (replaces old task 8)
-1. The 7 lines above in data, with parts, sizes, weight math and Prime check.
-2. Part swap and size on the summary screen (debug UI is fine).
-3. Battle uses weight-adjusted stats, the 7 passives and quirks, and the 7 Prime moves.
-4. One breed function and one abomination (for example Kardashleon × Tremendoslug).
-5. Unit tests for the weight formula, the caps and the Prime check; a quick simulation of all-S vs all-L builds for each line.
-6. Studio: part list per species with native size and weight shares.
+Built on 2026-10-18 (the ✓ items):
+1. ✓ The 7 lines in data (`game/data/lines/`); the other 55 moved to `game/data/legacy/` (art kept as the part library). The game stands a new-line Billie of the same stage in for any legacy species still named elsewhere (`game-data.js` standInSpecies; the data check and the Studio check accept them).
+2. ✓ The starting area's wild pools (Copperleaf, Hedgerow Lane, Marigold, Tallgrass Meadow, Old Fairway, Thicket, Fizzwell) use the 7 lines.
+3. ✓ Parts: every Billie has a build (`m.build`, rules.js). Every wild Billie (spawns, debug, story and old queue entries) and every egg rolls one; starters and trainers are all M (Prime). Sizes are drawn by scaling the rig's pieces (skeleton-rig.js), everywhere a Billie shows: battle, grass, buddy, follower, menus, friends.
+4. ✓ Weight and Prime change the stats (`game/js/logic/parts.js`, shared with the Studio); a Billie's details show its parts, weight and Prime.
+5. ✓ Studio: a **Parts** section (size odds, scales, weights, shares, effects, a live preview with readouts), a **Part slot** picker per bone in the skeleton builder, previews draw builds, and the Check warns about part rules and slots.
+6. ✓ Unit tests and a 20,000-roll simulation (`tools/test/parts.test.mjs`).
+7. To do: the starter split by body size (decided: L → heavy branch, S → light branch, M → the player picks); the 7 passives, quirks and Prime moves; one breed function and one abomination.
 
 Stop and show me the result before scaling.
 
