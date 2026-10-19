@@ -19,7 +19,6 @@ import { expose } from '../test-globals.js';
 expose({
   HISTORY_ART_BYTES: [() => HISTORY_ART_BYTES],
   HISTORY_STEPS: [() => HISTORY_STEPS],
-  NO_PIXELS: [() => NO_PIXELS],
   // @ts-expect-error -- replaced on purpose
   historyArt: [() => historyArt, v => (historyArt = v)],
   // @ts-expect-error -- replaced on purpose
@@ -33,6 +32,7 @@ expose({
   historyTrim: [() => historyTrim, v => (historyTrim = v)],
   // @ts-expect-error -- replaced on purpose
   historyUndo: [() => historyUndo, v => (historyUndo = v)],
+  noPixels: [() => noPixels],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -46,10 +46,16 @@ export const historyBytes = (/** @type {string | ArtStep} */ s) =>
     : s.group
       ? s.group.reduce((n, g) => n + historyBytes(g), 0)
       : s.before.data.length + s.after.data.length;
-export const NO_PIXELS = { x: 0, y: 0, width: 0, height: 0, data: new Uint8ClampedArray(0) };
+export const noPixels = () => ({ x: 0, y: 0, width: 0, height: 0, data: new Uint8ClampedArray(0) });
 /** several picture steps as one (undone and redone together) */
 export function historyArtGroup(/** @type {History} */ H, /** @type {ArtStep[]} */ steps) {
-  if (steps.length) historyArt(H, { art: '', before: NO_PIXELS, after: NO_PIXELS, group: steps });
+  if (steps.length)
+    historyArt(H, {
+      art: '',
+      before: noPixels(),
+      after: noPixels(),
+      group: steps,
+    }); /* two objects: undo and redo tell them apart */
 }
 export function historyTrim(/** @type {History} */ H) {
   let bytes = H.undo.reduce((n, s) => n + historyBytes(s), 0);

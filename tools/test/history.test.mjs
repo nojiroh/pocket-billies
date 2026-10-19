@@ -70,5 +70,9 @@ test('a group of picture steps is one step, and counts all its pictures', () => 
   assert.equal(H.historyBytes(h.undo[0]), 4 + 4 + 0 + 8);
   const u = H.historyUndo(h);
   assert.deepEqual(u.step.group, [a, b]);
-  assert.equal(H.historyRedo(h).step.group.length, 2);
+  assert.equal(u.put, u.step.before);
+  const r = H.historyRedo(h);
+  assert.equal(r.step.group.length, 2);
+  assert.equal(r.put, r.step.after);
+  assert.notEqual(r.step.before, r.step.after, 'undo and redo can tell which way they go');
 });
