@@ -63,6 +63,18 @@ Branch `ccr-72e8ad56-lpn1x3`, from main.
 - Next session starts with: "start 08b" (docs/phases/08a-plan.md, Part B), after this branch is merged; the full quick
   check and a picture baseline first, since none exists yet.
 
+### Phase 09 batch 2, parts 1 and 2 - Copperleaf and Route 1: flat plants, 14 trees - 2026-10-19
+Owner's request: start on the rest of Copperleaf and Route 1 (Hedgerow Lane), the first 10%, then another 10%.
+- Changed (tools/build-props-batch2.py, swapped in under their own keys like batch 1):
+  - the 54 flat plants of the two places stay flat and move to 32 px/m;
+  - trees with the tree tool: rowan, blossom, elm, chestnut, maple, fruit, birch, birch_gold, poplar; the hazel and
+    birch_b as shrubs of several stems (a new stems mode: each limb a stem from the ground, no trunk or roots);
+    autumn hazel, autumn poplar and autumn beech as their summer tree with the leaves recoloured.
+  - Their rows are on the showcase map test_props_next.
+- Left in the two places: willow, larch, the fallen tree (a log model); 7 bushes; 9 old-style 3D props; 13 small
+  things; the hedge, two cottages, the lab and the log.
+- Verified: data check, lint, type-check, unit tests, the smoke check; low-resolution shots of the new rows.
+
 ### Phase 09 batch 1 swapped in - 2026-10-19
 Owner's go-ahead: replace the finished props in the game.
 - Changed: the 24 old props the batch covers now are the new ones, under their own keys (tools/build-props-batch1.py

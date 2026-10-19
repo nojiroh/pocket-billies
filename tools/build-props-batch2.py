@@ -41,9 +41,18 @@ TREES = {
     'tree_blossom': ('tree_blossom', 7, [((65, 125), (64, 88), 15, 13), ((60, 86), (47, 68), 10, 6), ((70, 86), (81, 68), 10, 6)], False),
     'tree_hazel': ('tree_hazel', 6, [((33.5, 88), (27.5, 56), 6, 5), ((42.5, 88), (40.5, 56), 7, 5),
                                      ((53.5, 88), (55.5, 56), 7, 5), ((62.5, 88), (69.5, 56), 6, 5)], True),
+    # second part
+    'tree_elm': ('tree_elm', 9, [((84, 180), (83, 118), 24, 18), ((78, 110), (54, 86), 14, 7), ((88, 110), (89, 88), 12, 7)], False),
+    'tree_chestnut': ('tree_chestnut', 9, [((90, 164), (90, 112), 28, 21), ((82, 104), (65, 84), 16, 8), ((96, 104), (98, 88), 12, 7)], False),
+    'tree_maple': ('tree_maple', 8, [((70, 144), (70, 96), 24, 14), ((66, 90), (52, 78), 12, 7), ((74, 90), (90, 72), 12, 6)], False),
+    'tree_fruit': ('tree_fruit', 6, [((52, 120), (51.5, 74), 14, 11), ((48, 72), (42, 60), 8, 5), ((56, 72), (62, 58), 8, 5)], False),
+    'tree_birch': ('tree_birch', 5, [((34, 154), (33.5, 108), 9, 7), ((34, 110), (34, 85), 6, 3)], False),
+    'tree_birch_b': ('tree_birch_b', 5, [((31.5, 166), (31, 96), 8, 4), ((43.5, 166), (46, 108), 6, 4)], True),
+    'tree_birch_gold': ('tree_birch_gold', 6, [((48.5, 148), (49, 70), 10, 6), ((49, 72), (50, 50), 5, 3)], False),
+    'tree_poplar': ('tree_poplar', 4, [((20.5, 175), (20.5, 143), 11, 9), ((20.5, 145), (20.5, 90), 6, 3)], False),
 }
 # looks that are another tree's model with its leaves recoloured: key -> (the tree it uses)
-AUTUMN = {'tree_hazel_autumn': 'tree_hazel'}
+AUTUMN = {'tree_hazel_autumn': 'tree_hazel', 'tree_poplar_autumn': 'tree_poplar', 'tree_beech_autumn': 'tree_beech'}
 
 ROWS = [
     ('flat plants', [(k, 0) for k in FLAT[:12]], None, 1.6),
@@ -51,6 +60,9 @@ ROWS = [
     ('rowan', [('tree_rowan', 0)] * 3, None, 4.5),
     ('blossom', [('tree_blossom', 0)] * 2, None, 5.5),
     ('hazel', [('tree_hazel', 0), ('tree_hazel_autumn', 0)], None, 4.5),
+    ('birches', [('tree_birch', 0), ('tree_birch_b', 0), ('tree_birch_gold', 0), ('tree_poplar', 0), ('tree_poplar_autumn', 0)], None, 3.6),
+    ('fruit and maple', [('tree_fruit', 0), ('tree_maple', 0), ('tree_beech_autumn', 0)], None, 6.0),
+    ('elm and chestnut', [('tree_elm', 0), ('tree_chestnut', 0)], None, 7.5),
 ]
 
 
@@ -68,7 +80,12 @@ def main():
         rec, sheet_path, sheet, canopy = B1.tree_recipe(key.replace('tree_', ''), pic, k, limbs, leaves, 400 + i, stems=stems)
         built[key] = (B1.write_recipe(key, rec), sheet_path, sheet)
     for key, base in AUTUMN.items():
-        model, sheet_path, sheet = built[base]
+        if base in built:
+            model, sheet_path, sheet = built[base][:3]
+        else:  # a tree an earlier batch built (the beech): its model and its leaf picture as they are
+            model = C[base]['model']
+            sheet_path = 'scene/next/leaves/' + base.replace('tree_', '') + '.png'
+            sheet = B1.rgba(B1.ART / sheet_path)
         own = B1.rgba(B1.PROPS / f'{key}.png'); _, oc = B1.split_trunk(own)
         src = B1.rgba(B1.PROPS / f'{base}.png'); _, sc = B1.split_trunk(src)
         swapped = B1.save_png(B1.recolour(sheet, B1.leaf_colours(src, sc), B1.leaf_colours(own, oc)),

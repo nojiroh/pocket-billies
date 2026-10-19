@@ -1574,10 +1574,8 @@
    "tags": ["farm","route","town"],
    "group": "tree_fruit",
    "solid": 0.35,
-   "layers": [
-    {"img":"scene/props/layers/tree_fruit_lb.png","dz":0.6,"sway":0.7,"shadow":0},
-    {"img":"scene/props/layers/tree_fruit_lf.png","dz":-0.42,"sway":1.4,"shadow":0}
-   ]
+   "model": "scene/next/models/tree_fruit.json",
+   "ppm": 32
   },
   "tree_birch": {
    "name": "Birch tree",
@@ -1590,10 +1588,8 @@
    "tags": ["route"],
    "group": "tree_birch",
    "solid": 0.3,
-   "layers": [
-    {"img":"scene/props/layers/tree_birch_lb.png","dz":0.37,"sway":0.7,"shadow":0},
-    {"img":"scene/props/layers/tree_birch_lf.png","dz":-0.26,"sway":1.4,"shadow":0}
-   ]
+   "model": "scene/next/models/tree_birch.json",
+   "ppm": 32
   },
   "bush_round": {
    "name": "Round bush",
@@ -2188,10 +2184,8 @@
    "tags": ["route"],
    "group": "tree_birch",
    "solid": 0.35,
-   "layers": [
-    {"img":"scene/props/layers/tree_birch_b_lb.png","dz":0.44,"sway":0.7,"shadow":0},
-    {"img":"scene/props/layers/tree_birch_b_lf.png","dz":-0.3,"sway":1.4,"shadow":0}
-   ]
+   "model": "scene/next/models/tree_birch_b.json",
+   "ppm": 32
   },
   "tree_fruit_b": {
    "name": "Apple tree",
@@ -4395,10 +4389,8 @@
    "tags": ["route","town"],
    "group": "tree_maple",
    "solid": 0.45,
-   "layers": [
-    {"img":"scene/props/layers/tree_maple_lb.png","dz":0.6,"sway":0.7,"shadow":0},
-    {"img":"scene/props/layers/tree_maple_lf.png","dz":-0.45,"sway":1.4,"shadow":0}
-   ]
+   "model": "scene/next/models/tree_maple.json",
+   "ppm": 32
   },
   "birdhouse": {
    "name": "Birdhouse",
@@ -6577,7 +6569,9 @@
    "solid": 0.3,
    "family": "trees",
    "grow": "gGo",
-   "weight": 0.8
+   "weight": 0.8,
+   "model": "scene/next/models/tree_poplar.json",
+   "ppm": 32
   },
   "tree_beech": {
    "name": "Beech",
@@ -6656,7 +6650,9 @@
    "solid": 0.5,
    "family": "trees",
    "grow": "gGl",
-   "weight": 0.8
+   "weight": 0.8,
+   "model": "scene/next/models/tree_elm.json",
+   "ppm": 32
   },
   "tree_chestnut": {
    "name": "Horse chestnut",
@@ -6671,7 +6667,9 @@
    "solid": 0.5,
    "family": "trees",
    "grow": "gGyl",
-   "weight": 0.8
+   "weight": 0.8,
+   "model": "scene/next/models/tree_chestnut.json",
+   "ppm": 32
   },
   "tree_larch": {
    "name": "Larch",
@@ -6949,7 +6947,10 @@
    "solid": 0.5,
    "family": "seasons",
    "grow": "gGy",
-   "weight": 0.5
+   "weight": 0.5,
+   "model": "scene/next/models/tree_beech.json",
+   "ppm": 32,
+   "swap": {"scene/next/leaves/beech.png":"scene/next/leaves/beech_autumn.png"}
   },
   "tree_poplar_autumn": {
    "name": "Poplar in autumn",
@@ -6964,7 +6965,10 @@
    "solid": 0.3,
    "family": "seasons",
    "grow": "gGo",
-   "weight": 0.4
+   "weight": 0.4,
+   "model": "scene/next/models/tree_poplar.json",
+   "ppm": 32,
+   "swap": {"scene/next/leaves/poplar.png":"scene/next/leaves/poplar_autumn.png"}
   },
   "tree_hazel_autumn": {
    "name": "Hazel in autumn",
@@ -6997,7 +7001,9 @@
    "solid": 0.3,
    "family": "seasons",
    "grow": "gGyr",
-   "weight": 0.5
+   "weight": 0.5,
+   "model": "scene/next/models/tree_birch_gold.json",
+   "ppm": 32
   },
   "bush_hawthorn_autumn": {
    "name": "Hawthorn with haws",
