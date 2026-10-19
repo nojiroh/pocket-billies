@@ -90,6 +90,28 @@ export interface DataFiles {
   format(value: unknown, pad?: string): string;
   /** format() and a newline: a file's whole text */
   text(value: unknown): string;
+  /** phase 08b: a road of D.roads, read the same whatever shape roads.json has */
+  road(data: Record<string, any>, road: any): RoadView;
+  /** set one end of a road: its place (null keeps it) and its exit (undefined keeps it, null clears it) */
+  setRoadEnd(
+    data: Record<string, any>,
+    road: any,
+    end: 'a' | 'b',
+    node: LocationNode | null,
+    exit?: string | null
+  ): void;
+  /** a new road between two places, added to data.roads */
+  addRoad(data: Record<string, any>, a: LocationNode, b: LocationNode): any;
+}
+
+/** a road as PB_DATA.road() reads it: its two places (nodes) and the exit each leaves by */
+export interface RoadView {
+  a: LocationNode;
+  b: LocationNode;
+  exitA: string | null;
+  exitB: string | null;
+  id: string | null;
+  name: string | null;
 }
 
 /* ---------- Billies: types, stats, moves, lines ---------- */

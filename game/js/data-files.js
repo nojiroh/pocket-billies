@@ -101,5 +101,30 @@ self.PB_DATA = (() => {
   }
   const text = v => format(v) + '\n';
 
-  return { SPLIT, files, assemble, split, format, text };
+  // phase 08b: a road between two places (an entry of D.roads), whatever shape roads.json has. The Studio and the tools
+  // read and change roads only through these, so the record's shape is known here (and in game-data.js ROADS) alone.
+  // A place is its position in D.locations (a node).
+  /** @param {any} D @param {any} l @returns {import('../types/game-data').RoadView} */
+  function road(D, l) {
+    const J = l[3] || {};
+    return { a: l[0], b: l[1], exitA: J.a || null, exitB: J.b || null, id: J.id || null, name: J.name || null };
+  }
+  // one end of a road: its place (a node; null keeps it) and the exit it leaves by (undefined keeps it, null clears it)
+  /** @param {any} D @param {any} l @param {'a' | 'b'} end @param {number | null} node @param {string | null} [exit] */
+  function setRoadEnd(D, l, end, node, exit) {
+    if (node != null) l[end === 'a' ? 0 : 1] = node;
+    if (exit === undefined) return;
+    const J = l[3] || (l[3] = {});
+    if (exit) J[end] = exit;
+    else delete J[end];
+  }
+  // a new road from place a to place b, added to D.roads; its exits are set with setRoadEnd
+  /** @param {any} D @param {number} a @param {number} b */
+  function addRoad(D, a, b) {
+    const l = [a, b, 800];
+    (D.roads || (D.roads = [])).push(l);
+    return l;
+  }
+
+  return { SPLIT, files, assemble, split, format, text, road, setRoadEnd, addRoad };
 })();
