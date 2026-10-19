@@ -201,7 +201,7 @@ export function drawSprites(C, items, X, hits, labels, PPU) {
     gl.bindTexture(gl.TEXTURE_2D, T.t);
     gl.activeTexture(gl.TEXTURE1);
     gl.bindTexture(gl.TEXTURE_2D, T.n);
-    setSpriteUniforms(p, rk !== 1 ? Object.assign({}, it, { oy: it.oy * rk, h: it.h * rk }) : it);
+    setSpriteUniforms(p, it, null, it.z, rk);
     if (it.wave) {
       gl.uniform3fv(U.uWave, it.wave);
       bindGridQuad();

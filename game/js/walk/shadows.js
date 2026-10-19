@@ -214,7 +214,7 @@ function drawShadowSprites(SH, L, sun, ca, lamp) {
       const d = it.M.box[1] * (it.p.s || 1),
         n = 6;
       for (let i = 0; i < n; i++) {
-        setSpriteUniforms(p, Object.assign({}, it, { z: it.z + (d * i) / (n - 1) }));
+        setSpriteUniforms(p, it, null, it.z + (d * i) / (n - 1));
         gl.drawArrays(gl.TRIANGLES, 0, 6);
       }
       gl.uniform3fv(p.U.uRight, Rs);
@@ -329,7 +329,7 @@ function fittedShadowPass(items0, sun, C) {
         const d = it.M.box[1] * (it.p.s || 1),
           n = 6;
         for (let i = 0; i < n; i++) {
-          setSpriteUniforms(p, Object.assign({}, it, { z: it.z + (d * i) / (n - 1) }));
+          setSpriteUniforms(p, it, null, it.z + (d * i) / (n - 1));
           gl.drawArrays(gl.TRIANGLES, 0, 6);
         }
         gl.uniform3fv(p.U.uRight, Rs);

@@ -10,6 +10,7 @@ import { gpuState } from '../engine/webgl.js';
 import { setLightUniforms } from '../engine/light.js';
 /* eslint-disable no-func-assign */
 expose({
+  FULL_UV: [() => FULL_UV],
   setSpriteUniforms: [() => setSpriteUniforms, v => (setSpriteUniforms = v)],
   useWalkProgram: [() => useWalkProgram, v => (useWalkProgram = v)],
   worldCurveArgs: [() => worldCurveArgs, v => (worldCurveArgs = v)],
@@ -37,13 +38,18 @@ export function useWalkProgram(name, C, X) {
   if (X) setLightUniforms(p, X);
   return p;
 }
-export function setSpriteUniforms(p, it, uv) {
+/* phase 20 C2: z and rk stand in for a copy of the item (a slice of a thick sprite at another depth, a picture rising
+   with its town at rk of its height), so nothing is made per draw */
+const FULL_UV = new Float32Array([0, 0, 1, 1]);
+export function setSpriteUniforms(p, it, uv, z = it.z, rk = 1) {
   const gl = gpuState.gl,
     U = p.U,
-    s = it.mpp;
-  gl.uniform3f(U.uBase, it.x, it.y, it.z);
-  gl.uniform4f(U.uOff, it.ox * s, it.oy * s, it.w * s, it.h * s);
-  gl.uniform4fv(U.uUV, uv || [0, 0, 1, 1]);
+    s = it.mpp,
+    oy = rk === 1 ? it.oy : it.oy * rk,
+    h = rk === 1 ? it.h : it.h * rk;
+  gl.uniform3f(U.uBase, it.x, it.y, z);
+  gl.uniform4f(U.uOff, it.ox * s, oy * s, it.w * s, h * s);
+  gl.uniform4fv(U.uUV, uv || FULL_UV);
   gl.uniform1f(U.uFlip, it.flip);
   if (U.uSlope) gl.uniform1f(U.uSlope, it.slope || 0);
   gl.uniform1f(U.uShear, it.shear || 0);
