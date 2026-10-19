@@ -155,7 +155,8 @@ export function lightContext(o) {
     cloudSpd: engineSetting('sun', 'cloudSpeed'),
     contact: engineSetting('shadows', 'contact'),
     shLift,
-    shPx: engineSetting('shadows', 'pixel') ? 16 : 0,
+    shPx: engineSetting('shadows', 'pixel') ? (engineSetting('shadows', 'pixelSize') ?? 32) : 0,
+    shSteps: engineSetting('shadows', 'pixelSteps') ?? 2,
     roomB: o.roomB || [0, 0, 0, 0],
     roomDim: o.roomDim || 0,
     shadow: o.shadow || null,
@@ -216,6 +217,7 @@ export function setLightUniforms(p, X) {
     gl.uniform1f(U.uContact, X.contact);
   }
   if (U.uShPx) gl.uniform1f(U.uShPx, X.shPx || 0);
+  if (U.uShSteps) gl.uniform1f(U.uShSteps, X.shSteps ?? 2);
   if (U.uShLift) gl.uniform3fv(U.uShLift, X.shLift || [0, 0, 0]);
   /* the shadow samplers: every one of them is always given its own unit (a sampler left at unit 0 next to a plain
     sampler2D there makes the card refuse the draw), with the frame's maps or a stand-in depth texture */

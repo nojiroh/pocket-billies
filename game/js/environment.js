@@ -464,7 +464,12 @@ const ENVIRONMENT_ENGINE_MODIFIERS = {
   sun: {
     strength: v =>
       environment.on || environment.force ? v * (1 - environment.grey * 0.55) * (1 - environment.fog * 0.25) : v,
-    clouds: v => (environment.on || environment.force ? Math.max(v, environment.cloud) : v),
+    /* the dial is how cloudy a clear day is; cloudier weather scales it up (at the default 0.45: 0.87 cloudy, 0.99 in a
+       storm, as when the weather was a floor under the dial, which left its lower third doing nothing) */
+    clouds: v =>
+      environment.on || environment.force
+        ? Math.min(1, v * (1 + Math.max(0, environment.cloud - 0.35) * (1.2 / 0.65)))
+        : v,
     cloudShadows: v => v * (1 - environment.grey * 0.8),
     shafts: v => v * (1 - environment.grey) * (1 + environment.dusk * 0.8 + environment.dawn * 0.5),
   },

@@ -233,17 +233,7 @@ export const GRAPHICS_DIALS = [
     'Light and shadow',
     [
       ['shadows.strength', 'Shadows', 'How dark the shade under trees and houses is', 'medium', 0, 1, 0.05],
-      [
-        'shadows.selfShade',
-        'Trees shade themselves',
-        'Trunks and lower leaves in the crown’s shade',
-        'low',
-        0,
-        1,
-        0.05,
-      ],
-      ['sun.shafts', 'Light shafts', 'Rays from bright places toward the sun', 'medium', 0, 2, 0.05],
-      ['air.godRays', 'God rays', 'Beams of light through leaves and between roofs', 'high', 0, 2, 0.05],
+      ['air.godRays', 'Sun rays', 'Beams of sunlight through leaves and between roofs', 'high', 0, 2, 0.05],
       ['lights.brightness', 'Lamps', 'How bright lamps and windows shine at night', 'low', 0.3, 2, 0.05],
     ],
   ],
@@ -253,15 +243,15 @@ export const GRAPHICS_DIALS = [
       ['air.mist', 'Low mist', 'Mist lying low over the ground', 'low', 0, 0.6, 0.02],
       ['sun.clouds', 'Clouds', 'How cloudy the sky is (and how much cloud shadow)', 'low', 0, 1, 0.05],
       ['sun.cloudShadows', 'Cloud shadows', 'How dark the drifting cloud shadows are', 'low', 0, 0.6, 0.02],
-      ['air.particles', 'Particles', 'Pollen, leaves, snow and rain drops in the air', 'medium', 0, 1, 0.05],
+      ['air.particles', 'Particles', 'How many butterflies, bees, fireflies and falling leaves', 'medium', 0, 1, 0.05],
     ],
   ],
   [
     'Ground and grass',
     [
       ['grass.density', 'Grass', 'How thick the grass grows', 'high', 0, 2, 0.05, 1],
-      ['world.farProps', 'Far trees and hills', 'Things beyond the edge of the place', 'medium', 0, 600, 10, 1],
-      ['water.reflection', 'Water reflections', 'How much the water mirrors', 'medium', 0, 1, 0.05],
+      ['world.farProps', 'Far trees and hills', 'Things beyond the edge of the place', 'medium', 0, 300, 10, 1],
+      ['water.reflection', 'Water reflections', 'How much the water mirrors', 'medium', 0, 1.5, 0.05],
     ],
   ],
   [

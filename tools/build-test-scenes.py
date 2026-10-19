@@ -421,8 +421,10 @@ def t_graphics():
     s.patches('G', .6, 6, seed=6)
     # where the test stands: [x, z, camera turn, zoom]; the rest of the stations' setup lives with the test
     st = {'control': [10, 6, 0, .6], 'shadows': [30, 5.5, 0, 1], 'pond': [50, 5, 0, 1],
-          'sun': [10.5, 20, 0, 1.1], 'lamps': [30, 20, 0, 1], 'meadow': [50, 20, 0, 1],
-          'everything': [10, 32.5, 0, 1.3], 'depth': [30, 33, 0, 1.6], 'sky': [50, 33, 0, 1.7]}
+          'sun': [10.5, 20, 0, 1.1], 'lamps': [30, 20, 0, 1], 'meadow': [50, 23.5, 0, 1],
+          'everything': [10, 32.5, 0, 1.3], 'depth': [30, 35.5, 0, 1.3], 'sky': [50, 33, 0, 1.7]}
+    # (2026-10-19: the meadow spot moved into the grass, so the pond's trees no longer stand in front of it, and the depth
+    # spot into the avenue's mouth at a closer zoom, so the avenue, not the lamp square, fills the picture)
     s.d['bench'] = st
     for k, (x, z, y, _) in st.items(): shot(s, x, z, k, y)
     check(s, (30, 3), (10, 32.5), True, 'from where you arrive to the far corner')
