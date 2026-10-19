@@ -18,6 +18,7 @@ node_modules/
 
 # Quick check output: generated on every run, uploaded by CI as artifacts
 validation/quick/
+validation/rooms/
 validation/quick-baseline/
 validation/fast/
 validation/sim/
