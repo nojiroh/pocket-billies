@@ -115,16 +115,16 @@ Branch `ccr-9b6f14fb-6t1w6i`, from main at 09ae2ba. The phase file is now docs/p
     run in Chrome would separate the browser from the rest.
 - Still missing for A8: the debug logs (a walk in Copperleaf at night on each device) and the iPad's diagnostics test.
   Neither blocks the budgets.
-- Questions waiting for the owner (A8, "Ask me before"):
-  - Run the Graphics test and the diagnostics at the Sun gap, the depth corridor and Copperleaf by night, on the iPad
-    and the Android phone, and send the reports and the debug logs.
-  - Then the budgets, once the Android numbers are in (the iPad shows draws are not its limit, so the draw budget is
-    for the Android phone's processor). My proposal stays 150 draws a frame on phones including the shadow passes, and
-    30 fps on the Android phone at the game's own values; if the Android phone shows ~1,000 draws costing it little
-    processor time too, a looser draw target (400) and the pixel work (stage D) first would be the better order.
-  - Tag this as `phase-20a-done`?
-- Next session starts with: the A8 numbers into this file, the budgets decided, then stage B (the file split, "Ask me
-  before" the file list), or stage D first, since the Android phone is held back by pixels.
+- Decided by the owner (A8, 2026-10-19): at most **400 draws a frame on phones** (shadow passes included); **60 fps in
+  towns on the Android phone at the game's own values**; next stage **B**. Also in the phase file's "Decided".
+  - My caution on 60 fps: towns run 27-28 fps today with automatic quality already lowering things, and the phone
+    waits on its graphics chip. Stage D (sky last, mediump, invalidate, phone pixel budget, grove overdraw) is
+    unlikely to double the frame rate on its own; expect to also need cheaper effects at the game's own values on
+    phones, which changes the look. Each such change is yours to approve on the phone.
+- Still to send (not blocking): a debug log from a walk in Copperleaf at night on each device; the iPad's diagnostics.
+- Tag: `phase-20a-done` not set (no answer yet).
+- Next session starts with: stage B in Plan Mode, the file list first ("Ask me before"), then the moves one commit
+  each, leaves first (phase file B2).
 
 ### Phase 08a-3 - UI, text, Studio, running - 2026-10-19
 Plan approved at the start (docs/phases/08a-plan.md, section 08a-3, now marked done with the corrections found).
