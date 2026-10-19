@@ -453,7 +453,6 @@ section > h2,
 .screen.enter .mon,
 .screen.enter .dex,
 .screen.enter .ware,
-.screen.enter .job,
 .screen.enter section,
 .screen.enter .today {
   animation: rise 0.42s cubic-bezier(0.2, 0.9, 0.3, 1.15) backwards;
@@ -512,31 +511,6 @@ section > h2,
 }
 .se {
   text-align: right;
-}
-.brackets {
-  display: flex;
-  gap: 4px;
-  margin-top: 16px;
-}
-.brackets i {
-  height: 10px;
-  background: var(--panel2);
-  box-shadow: 0 0 0 2px var(--line);
-  display: block;
-  overflow: hidden;
-}
-.brackets b {
-  display: block;
-  height: 100%;
-  transition: width 0.8s cubic-bezier(0.2, 0.9, 0.3, 1);
-}
-.brk-l {
-  display: flex;
-  gap: 4px;
-  font-size: 12px;
-  color: var(--text2);
-  margin-top: 6px;
-  font-weight: 600;
 }
 /* bars */
 .pbar {
@@ -888,35 +862,6 @@ section > h2,
 }
 .mon .pbar {
   margin: 4px 2px 0;
-}
-.jobs {
-  display: grid;
-  gap: 10px;
-  margin-top: 10px;
-}
-.job {
-  display: flex;
-  gap: 12px;
-  align-items: flex-start;
-  padding: 12px;
-}
-.job b {
-  font-family: var(--disp);
-  font-weight: 400;
-  font-size: 17px;
-}
-.job.empty {
-  flex-direction: column;
-  gap: 4px;
-  background: var(--panel2);
-}
-.jt {
-  flex: 1;
-  min-width: 0;
-}
-.jt .note {
-  display: block;
-  margin-top: 2px;
 }
 /* ledger */
 .grid {
@@ -3616,7 +3561,7 @@ nav#nav[hidden] {
   -webkit-backdrop-filter: blur(14px) saturate(1.4);
   backdrop-filter: blur(14px) saturate(1.4);
 }
-:is(.today, .mon, .ware, .buddy, .job, .dlg, .mapcard).px {
+:is(.today, .mon, .ware, .buddy, .dlg, .mapcard).px {
   background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0) 38%);
 }
 /* sticky status bar */
@@ -4079,9 +4024,6 @@ nav#nav .ind::before {
   .s-team .mons {
     grid-template-columns: 1fr 1fr;
   }
-  .s-team .jobs {
-    grid-template-columns: repeat(3, 1fr);
-  }
   .s-ledger .ledger,
   .s-ledger .ledsum,
   .s-ledger .fchips,
@@ -4265,17 +4207,6 @@ body.on-walk .wh-foot > * {
 }
 .wh-down .uico {
   transform: rotate(90deg);
-}
-.wh-steps {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 9px 12px;
-  border-radius: 999px;
-  font-weight: 600;
-  font-size: 13px;
-  background: color-mix(in srgb, var(--panel-s) 86%, transparent);
-  box-shadow: 0 0 0 2px var(--line);
 }
 @keyframes whBob {
   50% {

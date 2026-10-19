@@ -190,7 +190,7 @@ section > h2::before,
 }
 
 /* ---------- cards: faint pixel texture and top highlight ---------- */
-:is(.today, .mon, .ware, .buddy, .job, .dlg, .mapcard, .slot, .vit, .starter, .trainer-intro).px {
+:is(.today, .mon, .ware, .buddy, .dlg, .mapcard, .slot, .vit, .starter, .trainer-intro).px {
   background-image:
     linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0) 38%),
     radial-gradient(var(--dither) 1px, transparent 1.2px);
@@ -198,15 +198,14 @@ section > h2::before,
     auto,
     4px 4px;
 }
-:root[data-theme='dark']
-  :is(.today, .mon, .ware, .buddy, .job, .dlg, .mapcard, .slot, .vit, .starter, .trainer-intro).px {
+:root[data-theme='dark'] :is(.today, .mon, .ware, .buddy, .dlg, .mapcard, .slot, .vit, .starter, .trainer-intro).px {
   background-image:
     linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0) 38%),
     radial-gradient(var(--dither) 1px, transparent 1.2px);
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light'])
-    :is(.today, .mon, .ware, .buddy, .job, .dlg, .mapcard, .slot, .vit, .starter, .trainer-intro).px {
+    :is(.today, .mon, .ware, .buddy, .dlg, .mapcard, .slot, .vit, .starter, .trainer-intro).px {
     background-image:
       linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0) 38%),
       radial-gradient(var(--dither) 1px, transparent 1.2px);
@@ -246,14 +245,12 @@ section > h2::before,
     0 0 0 2px var(--line),
     inset 0 -2px 0 var(--lo);
 }
-.pbar,
-.brackets i {
+.pbar {
   box-shadow:
     0 0 0 2px var(--line),
     inset 0 2px 0 rgba(0, 0, 0, 0.08);
 }
-.pbar i,
-.brackets b {
+.pbar i {
   box-shadow:
     inset 0 -3px 0 rgba(0, 0, 0, 0.18),
     inset 0 2px 0 rgba(255, 255, 255, 0.35);
@@ -552,7 +549,6 @@ body:has(.topbar) .toast {
   /* cards and chips */
   .ware,
   .ware2,
-  .job,
   .slot,
   .vit,
   .fchip,
@@ -591,19 +587,19 @@ body:has(.topbar) .toast {
     animation: rise 0.42s var(--out) backwards;
     animation-delay: var(--d, 0ms);
   }
-  .screen.enter :is(.shop > .ware, .slots > .slot, .jobs > .job, .vitals > .vit):nth-child(2) {
+  .screen.enter :is(.shop > .ware, .slots > .slot, .vitals > .vit):nth-child(2) {
     --d: 50ms;
   }
-  .screen.enter :is(.shop > .ware, .slots > .slot, .jobs > .job, .vitals > .vit):nth-child(3) {
+  .screen.enter :is(.shop > .ware, .slots > .slot, .vitals > .vit):nth-child(3) {
     --d: 100ms;
   }
-  .screen.enter :is(.shop > .ware, .slots > .slot, .jobs > .job, .vitals > .vit):nth-child(4) {
+  .screen.enter :is(.shop > .ware, .slots > .slot, .vitals > .vit):nth-child(4) {
     --d: 150ms;
   }
-  .screen.enter :is(.shop > .ware, .slots > .slot, .jobs > .job, .vitals > .vit):nth-child(5) {
+  .screen.enter :is(.shop > .ware, .slots > .slot, .vitals > .vit):nth-child(5) {
     --d: 200ms;
   }
-  .screen.enter :is(.shop > .ware, .slots > .slot, .jobs > .job, .vitals > .vit):nth-child(n + 6) {
+  .screen.enter :is(.shop > .ware, .slots > .slot, .vitals > .vit):nth-child(n + 6) {
     --d: 240ms;
   }
   .screen.enter .ledger > li {

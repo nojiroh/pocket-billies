@@ -66,7 +66,6 @@ body.on-scene .screen > p.note {
 .tm-stage,
 .tm-spr,
 .bx-spr,
-.job-spr,
 .ms-plate {
   background:
     radial-gradient(ellipse 34% 9% at 50% 88%, rgba(0, 0, 0, 0.22), transparent 72%),
@@ -374,73 +373,6 @@ body.on-scene .screen > p.note {
   box-shadow:
     0 0 0 2px var(--line),
     0 2px 0 0 var(--line);
-}
-
-/* ---------- Team: day jobs ---------- */
-.tm-jobs .jobs {
-  margin-top: 12px;
-}
-.tm-jobs .jobs > .job.empty:only-child {
-  grid-column: 1/-1;
-}
-.tm-jobs .job {
-  border-radius: 10px;
-  padding: 10px 12px;
-  margin: 0;
-  background: var(--panel-s);
-  box-shadow:
-    0 0 0 2px var(--line),
-    inset 0 2px 0 var(--hi);
-}
-.tm-jobs .job.empty {
-  flex-direction: row;
-  align-items: center;
-  gap: 12px;
-  background: color-mix(in srgb, var(--panel2) 75%, transparent);
-  box-shadow: none;
-  outline: 2px dashed color-mix(in srgb, var(--line) 35%, transparent);
-  outline-offset: -2px;
-}
-.tm-jobs .job.empty .pb {
-  margin: 3px 3px 3px auto;
-  flex: none;
-}
-.tm-jobs .job b {
-  font-size: 16px;
-}
-.tm-jobs .jt .note {
-  margin-top: 2px;
-  font-size: 12.5px;
-}
-.job-ic {
-  flex: none;
-  display: grid;
-  place-items: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  color: var(--text2);
-  background: var(--panel-s);
-  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--line) 30%, transparent);
-}
-.job-spr {
-  flex: none;
-  display: grid;
-  place-items: end center;
-  width: 64px;
-  height: 64px;
-  padding: 0 0 4px;
-  border: 0;
-  border-radius: 8px;
-  overflow: hidden;
-  cursor: pointer;
-  box-shadow: 0 0 0 2px var(--line);
-}
-.tm-jobs .jt .pbar {
-  margin: 6px 2px 2px;
-}
-.tm-jobs .racts {
-  margin-top: 6px;
 }
 
 /* ---------- Team: storage ---------- */
@@ -1144,12 +1076,10 @@ body.on-scene .screen > p.note {
       box-shadow 0.2s,
       background-color 0.2s;
   }
-  .tm-stage,
-  .job-spr {
+  .tm-stage {
     transition: transform 0.22s var(--spring, ease);
   }
-  .tm-stage:hover,
-  .job-spr:hover {
+  .tm-stage:hover {
     transform: translateY(-2px);
   }
   .screen.enter :is(.tm-card, .bx, .pf-tile, .bdg) {
