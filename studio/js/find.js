@@ -312,7 +312,7 @@ function findShow() {
           )
           .join('')
       : '<p class="help find-none">Nothing found. Try another word.</p>'
-    : `<p class="help find-none">Type part of a name. Settings are found by their label and by what their help text says, so “night”, “shadow” or “steps” all work.</p>`;
+    : `<p class="help find-none">Type part of a name. Settings are found by their label and by what their help text says, so “night”, “shadow” or “coin” all work.</p>`;
 }
 function findMark() {
   $$('#findL .find-r').forEach((b, i) => {
