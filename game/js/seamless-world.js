@@ -58,6 +58,7 @@ expose({
   seamlessGate: [() => seamlessGate, v => (seamlessGate = v)],
   seamlessGetReady: [() => seamlessGetReady, v => (seamlessGetReady = v)],
   seamlessHash: [() => seamlessHash, v => (seamlessHash = v)],
+  seamlessHeldEnds: [() => seamlessHeldEnds, v => (seamlessHeldEnds = v)],
   seamlessHubMap: [() => seamlessHubMap, v => (seamlessHubMap = v)],
   seamlessHubParts: [() => seamlessHubParts, v => (seamlessHubParts = v)],
   seamlessJoin: [() => seamlessJoin, v => (seamlessJoin = v)],
@@ -85,7 +86,14 @@ expose({
 /* eslint-enable no-func-assign */
 provide({ seamlessLookTick, seamlessMapById });
 /* to-module: end */
-export const seamlessWorld = { cache: new Map(), max: 5, gen: 0 };
+/* stats (phase 08b, for the debug log): crossings that waited for the next view (held, their total and longest wait in
+   ms), ones built on the spot because it wasn't ready (late), and views made ready ahead of an exit (ahead) */
+export const seamlessWorld = {
+  cache: new Map(),
+  max: 5,
+  gen: 0,
+  stats: { held: 0, heldMs: 0, heldMaxMs: 0, late: 0, ahead: 0 },
+};
 provide({ seamlessWorld }); /* to-module */
 function seamlessHash(x, y, s) {
   let h = (Math.floor(x) * 374761393 + Math.floor(y) * 668265263 + (s || 0) * 1013904223) ^ 0x5bd1e995;
@@ -1546,6 +1554,7 @@ export function seamlessGetReady(id, urgent, focus) {
 export function seamlessGate(v) {
   if (!v || v.id === walkView.id || !walkView.ready || !walkView.sc || !walkView.pl || walkView.pl.fresh) return v;
   if (seamlessGetReady(v.id, true, v.pos)) {
+    if (seamlessWorld.heldFor === v.id) seamlessHeldEnds();
     seamlessWorld.heldFor = null;
     if (typeof walkRenderer !== 'undefined') walkRenderer.prepBoost = 1;
     return v;
@@ -1563,13 +1572,24 @@ export function seamlessGate(v) {
   if (typeof walkRenderer !== 'undefined') walkRenderer.prepBoost = room < 6 ? 4 : room < 12 ? 2 : 1;
   /* closer to the edge, bigger slices */ if (room < 0) {
     if (typeof debugLog !== 'undefined') debugLog.add('scene', `${v.id} wasn't ready in time; built on the spot`);
+    if (seamlessWorld.heldFor === v.id) seamlessHeldEnds();
+    seamlessWorld.heldFor = null;
+    seamlessWorld.stats.late++;
     return v;
   }
   if (seamlessWorld.heldFor !== v.id) {
     seamlessWorld.heldFor = v.id;
-    seamlessWorld.holds = (seamlessWorld.holds || 0) + 1;
+    seamlessWorld.heldAt = performance.now();
+    seamlessWorld.stats.held++;
   }
   return Object.assign({}, v, { id: walkView.id, pos: [x, z], held: v.id });
+}
+/* a crossing that waited for its view has its view (or gave up waiting): how long it waited */
+function seamlessHeldEnds() {
+  const S = seamlessWorld.stats,
+    ms = performance.now() - (seamlessWorld.heldAt || performance.now());
+  S.heldMs += ms;
+  S.heldMaxMs = Math.max(S.heldMaxMs, ms);
 }
 /* move everything that is in the scene by (dx, dz) and carry on in the next composite without a cut */
 /* alpha 0.2: going into or out of an underground place the picture dips to dark for a moment (you step into a cave) */

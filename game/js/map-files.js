@@ -43,7 +43,7 @@ provide({ mapsOfView });
 /* busy: the fetches under way or done, by map; touched: maps a view was made from while lite; all: loadAllMaps;
    ms and n: time spent and maps loaded; failed: maps that did not load */
 /** @type {{ busy: Map<string, Promise<void>>, touched: Set<string>, all: Promise<void> | null, ms: number, n: number, failed: string[] }} */
-const mapFiles = { busy: new Map(), touched: new Set(), all: null, ms: 0, n: 0, failed: [] };
+export const mapFiles = { busy: new Map(), touched: new Set(), all: null, ms: 0, n: 0, failed: [] };
 provide({ mapFiles }); /* to-module */
 /** @type {MapFileField[]} */
 const MAP_FIELDS = ['heights', 'steps', 'stepm', 'tiles', 'props'];

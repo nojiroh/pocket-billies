@@ -489,6 +489,19 @@ debugLog.more = () => {
     targets: typeof GAME.gpuState !== 'undefined' ? Object.keys(GAME.gpuState.fb || {}).length : null,
     prints: typeof GAME.walkRenderer !== 'undefined' && GAME.walkRenderer.prints ? GAME.walkRenderer.prints.length : 0,
   }));
+  /* phase 08b: the walking world: map files (loaded, time, failed, whole of all), the views kept, and how crossings
+     went (waited for the next view, built on the spot, made ready ahead) */
+  t('world', () => {
+    const F = typeof GAME.mapFiles !== 'undefined' ? GAME.mapFiles : null,
+      W = typeof GAME.seamlessWorld !== 'undefined' ? GAME.seamlessWorld : null,
+      maps = typeof GAME.gameData !== 'undefined' ? Object.values(GAME.gameData.maps || {}) : [];
+    return {
+      mapFiles: F ? { loaded: F.n, ms: Math.round(F.ms), failed: F.failed.length } : null,
+      mapsWhole: maps.filter(m => !m._lite).length + ' of ' + maps.length,
+      viewsKept: W ? W.cache.size : null,
+      crossings: W && W.stats ? Object.fromEntries(Object.entries(W.stats).map(([k, v]) => [k, Math.round(v)])) : null,
+    };
+  });
   t('memoryMB', () =>
     performance.memory
       ? {
