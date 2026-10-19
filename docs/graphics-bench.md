@@ -20,14 +20,14 @@ one at its low settings.
 | Station | Where (x, z) | What is there | Settings it measures |
 |---|---|---|---|
 | Control pad | 10, 6 · zoom 0.6 | Bare pavers, nothing on them, seen close up | Sharpness (resolution), Dark corners, Film grain |
-| Shadow court | 30, 5.5 | A plaza with trees, a lamp, a flag, a sign, crates, a bench, a boulder, a vending machine; three houses behind. Sun from the side | Shadows, Trees shade themselves, Shadow detail (map size), Near shadow map (cascades), Ambient occlusion, Contact shadows |
+| Shadow court | 30, 5.5 | A plaza with trees, a lamp, a flag, a sign, crates, a bench, a boulder, a vending machine; three houses behind. Sun from the side | Shadows, Shadow detail (map size), Near shadow map (cascades), Ambient occlusion, Contact shadows |
 | Pond | 50, 5 | A still pond; five trees and a house on the far bank to mirror | Water reflections |
-| Sun gap | 10.5, 20 | A tight grove with one path through it and two roofs in front; low sun straight ahead | Light shafts, God rays |
-| Lamp square | 30, 20 | Brick paving, ten lamps and lanterns, two fires, crystals, three houses with windows; measured at night | Glow (bloom), Glow size, Lamps |
-| Meadow | 50, 20 | Deep grass with flowers, open to the air | Grass (rebuilds), Particles, Low mist |
+| Sun gap | 10.5, 20 | A tight grove with one path through it and two roofs in front; low sun straight ahead | Sun rays (`air.godRays`) |
+| Lamp square | 30, 20 | Brick paving, ten lamps and lanterns, two fires, crystals, three houses with windows; measured at night | Glow (bloom), Lamps |
+| Meadow | 50, 23.5 | Deep grass with flowers, open to the air | Grass (rebuilds), Particles, Low mist |
 | Everything | 10, 32.5 · zoom 1.3 | A small grove, a pond, a grass patch, four lamps, a house | All settings at their lowest, at the game's own values and at their highest |
-| Depth corridor | 30, 33 · zoom 1.6 | An avenue of trees from close by to the hills past the edge | Depth of field, Far trees and hills (rebuilds) |
-| Open sky | 50, 33 · zoom 1.7 | A wide, empty plain | Clouds, Cloud shadows |
+| Depth corridor | 30, 35.5 · zoom 1.3 | An avenue of trees from close by to the hills past the edge | Depth of field, Far trees and hills (rebuilds) |
+| Open sky | 50, 33 · zoom 1.7 | A wide, empty plain (the walk camera looks down, so no sky is in the picture: the clouds show as their light and shadows on the plain) | Clouds, Cloud shadows |
 
 The map's own light is a mid sun (angle 35, height 40). A station that needs another light sets it for its steps:
 the shadow court a side sun (angle 30, height 30), the sun gap a low sun ahead (angle -90, height 18), the lamp
@@ -35,12 +35,18 @@ square the night (22:00). Everything else is clear summer weather at 14:00.
 
 ## The settings
 
-The 17 Expert dials (Settings → Graphics → Expert) and five hidden ones that cost the most:
+The 15 Expert dials (Settings → Graphics → Expert) and four hidden ones that cost the most:
 
-- Expert: Shadows, Trees shade themselves, Light shafts, God rays, Lamps, Low mist, Clouds, Cloud shadows,
+- Expert: Shadows, Sun rays, Lamps, Low mist, Clouds, Cloud shadows,
   Particles, Grass, Far trees and hills, Water reflections, Depth of field, Glow, Dark corners, Film grain, Sharpness.
+- Light shafts (`sun.shafts`) was a dial of its own until 2026-10-19: it smears only bright sky pixels, and the
+  camera, looking down, never has the sky in the picture, so it showed nothing. Sun rays (`air.godRays`, the beams
+  through the shadow maps) is the one dial for both now; `sun.shafts` stays an engine setting the looks can set.
+- Trees shade themselves (`shadows.selfShade`) was a dial until 2026-10-19: only flat sprite trees read it, the
+  solid trees within 20 m never do, and it showed no difference either way. It stays an engine setting.
 - Hidden: Shadow detail (`quality.shadowMap`: 1024, 2048, 4096), Near shadow map (`shadows.cascades`: off, on),
-  Ambient occlusion (`shadows.ao`), Contact shadows (`shadows.contact`), Glow size (`color.bloomSize`).
+  Ambient occlusion (`shadows.ao`), Contact shadows (`shadows.contact`). Glow size (`color.bloomSize`) was
+  measured until 2026-10-19; it barely changes the picture even at full Glow, so it was dropped.
 
 A dial with a range is measured at 5 steps: its lowest, 25 %, 50 %, 75 % and its highest. A choice is measured at
 each of its values.
@@ -55,7 +61,7 @@ each of its values.
   the chip has timers (EXT_disjoint_timer_query_webgl2).
 - **Per step:** set the value, wait 1 s, then measure for 3 s.
 - **Settling:** a station's first step and every step that rebuilds (and the step after one, which rebuilds back)
-  first wait until nothing is left to prepare or paint (the ground's helper thread included) and two whole seconds in
+  first wait until nothing is left to prepare, plant (the grass) or paint (the ground’s helper thread included) and two whole seconds in
   a row agree within 10 %: at most 10 s, 12 s after a rebuild. Without it a station's first look came out slow while
   its ground was still painting, and the step after a rebuild was measured during the rebuild back.
 - **Drift and noise:** each station measures its untouched look first, midway (stations with two or more settings)
@@ -89,7 +95,7 @@ table (lowest step → highest).
 
 ## Time
 
-132 measured steps (105 setting steps, two or three untouched looks per station, everything lowest and highest) at
+116 measured steps (90 setting steps, two or three untouched looks per station, everything lowest and highest) at
 about 4.5 s each, plus settling and rebuilds: about 11 to 12 minutes.
 
 ## Findings so far (format 1 reports, 2026-10-19)

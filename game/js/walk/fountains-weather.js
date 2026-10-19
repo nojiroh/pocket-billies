@@ -410,7 +410,7 @@ export function drawFootprints(quad, U, R, Up, dt) {
 /* v47: a living world, in the effects pass. Bees round the hives by day; fireflies over the grass on warm nights
    (glowing moths in the Spore Forest); in autumn, leaves skittering along the streets in the wind. Each is a handful
    of sprites near you, so they cost next to nothing. */
-export function drawLifeEffects(quad, glows, t, rm, dt, sc, C0) {
+export function drawLifeEffects(quad, glows, t, rm, dt, sc, C0, pk = 1) {
   const L = walkView.life;
   if (!L) return;
   const P = walkView.pl,
@@ -432,7 +432,7 @@ export function drawLifeEffects(quad, glows, t, rm, dt, sc, C0) {
   /* bees */ if (night < 0.5 && !(E && E.rain > 0.3))
     L.hv.forEach((p, h) => {
       if (Math.hypot(p.x - P.x, p.z - P.z) > 18) return;
-      for (let n = 0; n < 5; n++) {
+      for (let n = 0; n < Math.round(5 * pk); n++) {
         const a = (t * rm) / (380 + n * 55) + n * 1.3 + h,
           r = 0.45 + 0.35 * Math.sin((t * rm) / 900 + n * 2),
           x = p.x + Math.cos(a) * r,
@@ -453,7 +453,7 @@ export function drawLifeEffects(quad, glows, t, rm, dt, sc, C0) {
     String(sc.biome || sc.far || '')
   );
   if (night > 0.45 && (moth || ss === 'summer' || ss === 'spring') && !(E && E.rain > 0.3) && L.gr.length) {
-    const near = L.gr.filter(p => Math.abs(p.x - P.x) < 14 && Math.abs(p.z - P.z) < 12).slice(0, 14),
+    const near = L.gr.filter(p => Math.abs(p.x - P.x) < 14 && Math.abs(p.z - P.z) < 12).slice(0, Math.round(14 * pk)),
       k = Math.min(1, (night - 0.45) * 3);
     near.forEach((p, i) => {
       const sd = p.x * 3.1 + p.z * 1.7,
@@ -473,7 +473,7 @@ export function drawLifeEffects(quad, glows, t, rm, dt, sc, C0) {
   /* autumn leaves along the ground, blown across the paving near you */ if (ss === 'autumn' && rm && L.tr.length) {
     const W = (sc.wind || 1) * (0.7 + windGustAt(P.x, P.z, t * rm)),
       sk = L.sk || (L.sk = []);
-    if (sk.length < 7 && Math.random() < dt * 1.6) {
+    if (sk.length < Math.round(7 * pk) && Math.random() < dt * 1.6) {
       const a = Math.random() * 6.283,
         r = 3 + Math.random() * 7,
         x = P.x + Math.cos(a) * r,

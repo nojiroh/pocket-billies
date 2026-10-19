@@ -143,12 +143,7 @@ def main():
         elif base not in NEW and sc.get('name'):
             t = swap(sc['name'])
             if t != sc['name']: changes.append((f'maps/{sid}/name', sc['name'], t)); sc['name'] = t
-    # the links between places: the route they belong to (or the town they lead into)
-    rid = {r['id']: r for r in D['locations']}
-    for L in D['roads']:
-        m = L[3]; a, b = m.get('from'), m.get('to')
-        lab = (NEW.get(b) or (None, None))[1] or (NEW.get(a) or (None, None))[1] or (NEW.get(b) or ('',))[0]
-        if lab and m.get('name') != lab: changes.append((f"roads/{m.get('id')}", m.get('name'), lab)); m['name'] = lab
+    # (the links' names were renamed here too, in alpha 0.4; phase 08b took that part out: they all have their new names)
     # every other text: signposts first, then the swap
     def walk(v, path):
         if isinstance(v, dict):

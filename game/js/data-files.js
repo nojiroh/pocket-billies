@@ -101,5 +101,47 @@ self.PB_DATA = (() => {
   }
   const text = v => format(v) + '\n';
 
-  return { SPLIT, files, assemble, split, format, text };
+  // phase 08b: the roads between places. roads.json is a list of typed links,
+  //   { id, name, kind: 'seam' | 'lift', a: { map, exit }, b: { map, exit } }
+  // a seam joins two places' edges at the exits; a lift (no exits) is the glass lift between them.
+  // each end naming a place by its map (the place's mapId, or its id when it has none; either is found) and the edge
+  // exit it leaves by.
+  // The Studio and the tools read and change roads only through these (the game through game-data.js ROADS); they
+  // speak of a place as its position in D.locations (a node), as the rest of the data does.
+  /** @param {any} D @param {string} map */
+  const placeOf = (D, map) => (D.locations || []).findIndex(/** @param {any} r */ r => r.mapId === map || r.id === map);
+  /** @param {any} D @param {number} node */
+  const mapOf = (D, node) => (D.locations[node] ? D.locations[node].mapId || D.locations[node].id : null);
+  /** @param {any} D @param {any} l @returns {import('../types/game-data').RoadView} */
+  function road(D, l) {
+    const A = l.a || {},
+      B = l.b || {};
+    return {
+      a: placeOf(D, A.map),
+      b: placeOf(D, B.map),
+      exitA: A.exit || null,
+      exitB: B.exit || null,
+      id: l.id || null,
+      name: l.name || null,
+      kind: l.kind || 'seam',
+    };
+  }
+  // one end of a road: its place (a node; null keeps it) and the exit it leaves by (undefined keeps it, null clears it)
+  /** @param {any} D @param {any} l @param {'a' | 'b'} end @param {number | null} node @param {string | null} [exit] */
+  function setRoadEnd(D, l, end, node, exit) {
+    const E = l[end] || (l[end] = {});
+    if (node != null) E.map = mapOf(D, node);
+    if (exit === undefined) return;
+    if (exit) E.exit = exit;
+    else delete E.exit;
+  }
+  // a new road from place a to place b, added to D.roads; its exits are set with setRoadEnd
+  /** @param {any} D @param {number} a @param {number} b */
+  function addRoad(D, a, b) {
+    const l = { kind: 'seam', a: { map: mapOf(D, a) }, b: { map: mapOf(D, b) } };
+    (D.roads || (D.roads = [])).push(l);
+    return l;
+  }
+
+  return { SPLIT, files, assemble, split, format, text, road, setRoadEnd, addRoad };
 })();

@@ -38,7 +38,6 @@ import {
   reducedMotion,
   saveData,
   seamlessMapById,
-  seamlessNearestRoadPoint,
   smooth01,
   soundEffect,
   soundEffectAt,
@@ -75,7 +74,9 @@ expose({
   PAINT_WORKER_WAIT: [() => PAINT_WORKER_WAIT],
   PROP_CLOCK: [() => PROP_CLOCK],
   PROP_VARIANT_CACHE: [() => PROP_VARIANT_CACHE],
+  ROOF_MODEL: [() => ROOF_MODEL],
   ROOF_STYLES: [() => ROOF_STYLES],
+  ROOF_VARIANT_CACHE: [() => ROOF_VARIANT_CACHE],
   RUN_FACTOR: [() => RUN_FACTOR],
   STEP_GRID_CACHE: [() => STEP_GRID_CACHE],
   TILE_PIXEL_CACHE: [() => TILE_PIXEL_CACHE],
@@ -158,6 +159,7 @@ expose({
   mapHub: [() => mapHub, v => (mapHub = v)],
   mapMoodName: [() => mapMoodName, v => (mapMoodName = v)],
   mapWaterCells: [() => mapWaterCells, v => (mapWaterCells = v)],
+  modelRoofVariant: [() => modelRoofVariant, v => (modelRoofVariant = v)],
   movePlayer: [() => movePlayer, v => (movePlayer = v)],
   navCellAt: [() => navCellAt, v => (navCellAt = v)],
   navCostAt: [() => navCostAt, v => (navCostAt = v)],
@@ -468,7 +470,30 @@ function plainPropVariant(n, M) {
   }
   return out;
 }
+/* phase 09: a modelled building's roof in a town's solarpunk style (a placement's roof: moss, solar, chrome): the
+   model's roof parts (roof: 1) take that colour and material, on top of any variant's colours */
+const ROOF_MODEL = {
+  moss: { col: '#76AA50', tex: 'leaves' },
+  solar: { col: '#3A4C7E', tex: 'solar' },
+  chrome: { col: '#8FC4CE', tex: 'metal' },
+};
+const ROOF_VARIANT_CACHE = new WeakMap();
+function modelRoofVariant(p, M) {
+  const B = M.variants && p.v | 0 ? plainPropVariant(p.v | 0, M) : M;
+  let c = ROOF_VARIANT_CACHE.get(B);
+  if (!c) ROOF_VARIANT_CACHE.set(B, (c = new Map()));
+  let out = c.get(p.roof);
+  if (!out) {
+    out = Object.assign({}, B, {
+      swap: Object.assign({}, B.swap || {}, { '@roof': ROOF_MODEL[p.roof] }),
+      _vk: (B._vk || 0) + '|' + p.roof,
+    });
+    c.set(p.roof, out);
+  }
+  return out;
+}
 export function propWithVariant(p, M) {
+  if (M && !M.build && M.model && p && p.roof && ROOF_MODEL[p.roof]) return modelRoofVariant(p, M);
   if (M && !M.build && M.variants && p && p.v | 0) return plainPropVariant(p.v | 0, M);
   const n = p && p.v | 0,
     rf = M && M.build && p && p.roof ? ROOF_STYLES[p.roof] : null;
@@ -745,28 +770,17 @@ export function stableCells(sc, cx0, cy0, cw, ch) {
         }
       }
       if (hit) continue;
-      if (!S.roads.length) {
-        /* alpha 0.2: the countryside round a joined view takes the nearest place's metres */ let b = null;
-        for (const r of S.scenes) {
-          const k = r.clip || [r.x, r.z, r.x + r.w, r.z + r.h],
-            d = Math.hypot(x + 0.5 - clamp(x + 0.5, k[0], k[2]), z + 0.5 - clamp(z + 0.5, k[1], k[3]));
-          if (!b || d < b.d) b = { d, r };
-        }
-        if (b) {
-          ox[q] = -b.r.x;
-          oz[q] = -b.r.z;
-          salt[q] = b.r.salt | 0;
-        }
-        continue;
+      /* alpha 0.2: the countryside round a joined view takes the nearest place's metres */ let b = null;
+      for (const r of S.scenes) {
+        const k = r.clip || [r.x, r.z, r.x + r.w, r.z + r.h],
+          d = Math.hypot(x + 0.5 - clamp(x + 0.5, k[0], k[2]), z + 0.5 - clamp(z + 0.5, k[1], k[3]));
+        if (!b || d < b.d) b = { d, r };
       }
-      let best = null;
-      for (const r of S.roads) {
-        const n = seamlessNearestRoadPoint(r.R, x + 0.5 - r.o[0], z + 0.5 - r.o[1]);
-        if (!best || n.d < best.d) best = { d: n.d, r };
+      if (b) {
+        ox[q] = -b.r.x;
+        oz[q] = -b.r.z;
+        salt[q] = b.r.salt | 0;
       }
-      ox[q] = -best.r.o[0];
-      oz[q] = -best.r.o[1];
-      salt[q] = best.r.salt | 0;
     }
   return { ox, oz, salt };
 }

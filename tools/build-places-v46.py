@@ -215,8 +215,7 @@ ROWFILL = {'house_red', 'house_green', 'house_blue', 'house_cottage', 'house_lar
 
 
 def exits_for(s, D, i, hub, keep_roads=True, **kw):
-    Dx = {'locations': D['locations'], 'roads': [L[:3] for L in D['roads']]}
-    n0 = len(s.roads); ex = s.hub_exits(Dx, i, hub, road=None, **kw)
+    n0 = len(s.roads); ex = s.hub_exits(D, i, hub, road=None, **kw)
     if not keep_roads: del s.roads[n0:]
     return ex
 
@@ -759,16 +758,14 @@ def finish(sc, D, i, nature, cat):
     sc['props'] = [p for p in sc['props'] if p['k'] in cat]
     # the edge exits, named, and the road table pointing at them
     W, H = sc['w'], sc['h']; exs = sc.get('exits') or []
-    nb = [(n, L[1] if L[0] == i else L[0]) for n, L in enumerate(D['roads']) if i in (L[0], L[1])]
+    nb = [(n, r['b'] if r['a'] == i else r['a']) for n, r in enumerate(gamedata.road(D, L) for L in D['roads']) if r['kind'] == 'seam' and i in (r['a'], r['b'])]
     E, used = [], {}
     for (n, j), e in zip(nb, exs):
         d = {'W': e[0], 'E': W - e[0], 'S': e[1], 'N': H - e[1]}; side = min(d, key=d.get); t = e[0] / W if side in 'NS' else e[1] / H
         base = {'N': 'north', 'S': 'south', 'E': 'east', 'W': 'west'}[side]; used[base] = used.get(base, 0) + 1
         eid = base if used[base] == 1 else base + str(used[base])
         E.append({'id': eid, 'side': side, 't': round(t, 4), 'in': round(d[side], 2), 'width': 2})
-        J = D['roads'][n][3]
-        if D['roads'][n][0] == i: J['a'] = eid
-        else: J['b'] = eid
+        gamedata.set_road_end(D, D['roads'][n], 'a' if gamedata.road(D, D['roads'][n])['a'] == i else 'b', exit=eid)
     sc['edgeExits'] = E
     # ladders where a cliff faces the camera (tools/build-v28.py's finder, reaching farther in the bigger places)
     want = {'kitewind': 2, 'stepstone_canyon': 2, 'hornpass': 2, 'frostcrown': 1, 'cinderpeak': 1, 'thicket': 1}.get(sc.get('locationId'))

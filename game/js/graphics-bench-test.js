@@ -70,7 +70,6 @@ const GRAPHICS_TEST_HIDDEN = [
   ['shadows.cascades', 'Near shadow map', { values: [false, true] }],
   ['shadows.ao', 'Ambient occlusion', { range: [0, 1.5, 0.05] }],
   ['shadows.contact', 'Contact shadows', { range: [0, 1, 0.01] }],
-  ['color.bloomSize', 'Glow size', { range: [0.3, 2, 0.05] }],
 ];
 /* the stations, in the order the test walks them; their spots are the map's `bench` ([x, z, camera turn, zoom]) */
 const GRAPHICS_TEST_STATIONS = [
@@ -79,18 +78,11 @@ const GRAPHICS_TEST_STATIONS = [
     id: 'shadows',
     name: 'Shadow court',
     sun: { angle: 30, height: 30 },
-    dials: [
-      'shadows.strength',
-      'shadows.selfShade',
-      'quality.shadowMap',
-      'shadows.cascades',
-      'shadows.ao',
-      'shadows.contact',
-    ],
+    dials: ['shadows.strength', 'quality.shadowMap', 'shadows.cascades', 'shadows.ao', 'shadows.contact'],
   },
   { id: 'pond', name: 'Pond', dials: ['water.reflection'] },
-  { id: 'sun', name: 'Sun gap', sun: { angle: -90, height: 18 }, dials: ['sun.shafts', 'air.godRays'] },
-  { id: 'lamps', name: 'Lamp square', time: 22, dials: ['color.bloom', 'color.bloomSize', 'lights.brightness'] },
+  { id: 'sun', name: 'Sun gap', sun: { angle: -90, height: 18 }, dials: ['air.godRays'] },
+  { id: 'lamps', name: 'Lamp square', time: 22, dials: ['color.bloom', 'lights.brightness'] },
   { id: 'meadow', name: 'Meadow', dials: ['grass.density', 'air.particles', 'air.mist'] },
   { id: 'depth', name: 'Depth corridor', dials: ['lens.blur', 'world.farProps'] },
   { id: 'sky', name: 'Open sky', dials: ['sun.clouds', 'sun.cloudShadows'] },
@@ -348,14 +340,15 @@ async function runGraphicsBench() {
   debugLog.add('bench', graphicsTest.stop ? 'graphics test stopped' : 'graphics test done');
   graphicsTestShow();
 }
-/* waits until the place is ready to measure: nothing left to prepare or paint (the ground's helper thread included),
+/* waits until the place is ready to measure: nothing left to prepare, plant (the grass) or paint (the ground's helper
+   thread included),
    then two whole seconds in a row whose frame times agree within 10 %; `sec` seconds at most in all */
 async function graphicsTestSettle(sc, st, sec) {
   const t0 = performance.now(),
     left = () => sec * 1000 - (performance.now() - t0),
     busy = () =>
       !graphicsTestOpen() ||
-      !!(typeof walkRenderer !== 'undefined' && walkRenderer.prep) ||
+      !!(typeof walkRenderer !== 'undefined' && (walkRenderer.prep || walkRenderer.grassJob)) ||
       !!(typeof paintWorkerState !== 'undefined' && paintWorkerState && paintWorkerState.jobs.size);
   while (busy() && left() > 0 && !graphicsTest.stop) await selfTestSleep(100);
   graphicsTestStand(sc, st);

@@ -236,7 +236,10 @@ export function effectsPass(C, items, X, dark, t, dt) {
       ]);
     }
   }
-  if (!sc.indoor && engineSetting('air', 'particles') > 0) {
+  /* Particles is how many: at 1 six butterflies, seven falling leaves, five bees a hive, fourteen fireflies (it was
+     only on or off: any value above 0 drew them all) */
+  const pk = engineSetting('air', 'particles');
+  if (!sc.indoor && pk > 0) {
     if (!walkView.life || walkView.life.id !== walkView.id) {
       const fl = [],
         tr = [];
@@ -249,11 +252,11 @@ export function effectsPass(C, items, X, dark, t, dt) {
       }
       walkView.life = {
         id: walkView.id,
-        fl: fl.filter((_, i) => i % 2 === 0).slice(0, 6),
-        tr: tr.filter((_, i) => i % 2 === 0).slice(0, 7),
+        fl: fl.filter((_, i) => i % 2 === 0).slice(0, 12),
+        tr: tr.filter((_, i) => i % 2 === 0).slice(0, 14),
       };
     }
-    walkView.life.fl.forEach((p, i) => {
+    walkView.life.fl.slice(0, Math.round(6 * pk)).forEach((p, i) => {
       const bx = p.x + Math.sin((t * rm) / 1500 + i * 1.7) * 1.1 + Math.sin((t * rm) / 610 + i) * 0.25,
         bz = p.z + Math.cos((t * rm) / 1900 + i * 2) * 0.7;
       quad(
@@ -267,7 +270,7 @@ export function effectsPass(C, items, X, dark, t, dt) {
         1
       );
     });
-    walkView.life.tr.forEach((p, i) => {
+    walkView.life.tr.slice(0, Math.round(7 * pk)).forEach((p, i) => {
       const M = C0.props[p.k],
         per = 6500 + i * 700,
         ph = ((t * rm) / per + i * 0.37) % 1,
@@ -285,7 +288,7 @@ export function effectsPass(C, items, X, dark, t, dt) {
         Math.min(1, (1 - ph) * 4) * Math.min(1, ph * 8)
       );
     });
-    drawLifeEffects(quad, glows, t, rm, dt, sc, C0);
+    drawLifeEffects(quad, glows, t, rm, dt, sc, C0, pk);
   }
   /* v18: spray and mist where water falls over a step */
   if (walkRenderer.falls && walkRenderer.falls.length) {

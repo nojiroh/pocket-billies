@@ -22,6 +22,7 @@ import {
   propModelShaders,
   provide,
   seamlessLookTick,
+  seamlessPrepareAhead,
   worldBillyLabels,
 } from './hooks.js';
 import { gpuPass } from './engine/gpu-counters.js';
@@ -362,6 +363,7 @@ function drawWalkFrame(ts, dtm) {
 }
 function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   if (typeof seamlessLookTick === 'function') seamlessLookTick();
+  if (typeof seamlessPrepareAhead === 'function') seamlessPrepareAhead(performance.now());
   const gl = gpuState.gl,
     sc = walkView.sc,
     cv = walkView.cv;
@@ -500,6 +502,9 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
       noRays: QE >= 3,
       bloomN: QE >= 3 ? 3 : 5,
       noDof: QE >= 4,
+      /* the sharp zone and the blur's growth in metres as if the camera stood 16 m off, whatever the zoom: measured
+         from the real distance (36 m at zoom 1, 58 m at 1.6) the blur only built up past the edge of the place */
+      dofRef: BT ? null : 16,
       heat: heatHaze(sc),
       heatS: heatSources(C),
       mood: easedMood(sc),

@@ -212,6 +212,118 @@ Branch `ccr-72e8ad56-lpn1x3`, from main.
 - Next session starts with: "start 08b" (docs/phases/08a-plan.md, Part B), after this branch is merged; the full quick
   check and a picture baseline first, since none exists yet.
 
+### Phase 09 batches 6 and 7 - Marigold, parts 2 and 3: the rest of the town - 2026-10-19
+Owner's request: do the remaining props of Marigold, in the clinic and market's style. Keep the old pine trees.
+- Changed (tools/build-props-batch6.py and batch7.py; run batch1 to 7 in order; showcase rows on
+  `test_props_marigold`):
+  - Nature: bush_box (a clipped ball), bush_hawthorn_autumn (the hawthorn model with autumn leaves), dry_grass,
+    pebbles and puddle (flat, only the scale). The three pines stay as drawn, by request.
+  - Made: clock_tower (brick, quoins, a clock stage with four faces, an open belfry with a bell, a verdigris spire and
+    vane; it now has a 2.3 x 2.3 m footprint with its front at its base point, where the game draws its moving hands),
+    fountain, solar_canopy, solar_tree, vertical_garden, streetlamp and streetlamp_b (globe lamps under verdigris hoods
+    with solar cells), bin (now a three-bin recycling station under a solar roof), flag_pole (the town's flag kept),
+    bike_rack (two modelled bikes), sign_shop (a twin of the clinic's sign).
+  - Buildings, from one kit of parts (class House in batch 7): the five houses, both townhouses, bakery, shop, inn,
+    library and greenhouse. Plinth, walls with corner posts, floor bands, hip / gable / front-gable roofs with a
+    wall-coloured gable, square windows with crossed frames, sills, shutters and flower boxes, roof windows under
+    hoods, round plank doors and panelled doors under canopies, lamps, chimneys with smoke, copper gutters. Shop,
+    bakery, library and inn have their name in the chunky lettering. Each keeps its town colour looks (the old
+    variants' wall, roof and trim colours, as colour swaps).
+  - Engine (two separate commits): a modelled clock tower keeps its moving hands; a placement's roof style (moss,
+    solar, chrome) now also restyles a modelled building's roof parts (layers marked roof: 1).
+  - Data (separate commit): a double street lamp in Palmhaven moved 0.2 m off the new shop's window
+    (tools/clear-windows.py --fix).
+- Risky: these are the most used buildings in the game (house_cottage 46 placements, house_red 27, the townhouses 39,
+  shops 12, inns 10); door positions moved a little with the new fronts. Check towns on your phone, at night too
+  (window glows and smoke were placed anew).
+- Verified: data check, lint, unit tests, smoke check (after the lamp move, the windows step again); a few
+  low-resolution looks at the showcase and at Marigold.
+- Marigold is now all in the new style except the pines.
+
+### Phase 09 batch 5 - Marigold, part 1: the clinic and the market, redesigned - 2026-10-19
+Owner's request: begin Marigold; rework the clinic and the market to be more Unova (Pokémon gen 5) inspired, keeping
+the retro-futuristic solarpunk vibe. Original designs: no emblem, sign or shape copied.
+- Changed (tools/build-props-batch5.py; run batch1 to 5 in order; its own showcase map `test_props_marigold`, since
+  `test_props_next` is full):
+  - clinic: the same in every town, so it is known at a glance (its old per-town colour looks are dropped). A rounded
+    white two-storey block under a thick coral eave with mint lines; a glass lobby with sliding doors under a solar
+    canopy on brass posts with globe lamps; a coral name band reading CLINIC; a ribbon window with flower boxes;
+    portholes; a roof garden with a glass dome on brass ribs, solar panels and a little turning wind turbine; the
+    emblem (a mint plus on white in a copper ring) standing over the door. Footprint 4.6 x 2.6 m (was 4 x 2.6).
+  - sign_clinic: the emblem hanging from a brass post, a globe lamp on top, a planter at its foot.
+  - market_hall: a brick arcade with stone quoins and cornice, three arches with iron fanlights and produce counters,
+    globe lamps and hanging baskets, a verdigris barrel vault with iron ribs and a solar-glass ridge, a weathervane,
+    a clock pediment and a MARKET board. Its four town looks are now colour swaps of the model (variants).
+  - stall, market_cart, bread_rack: a striped tent awning with scallops over crates of fruit, a chalkboard and a scale;
+    a rounded cream-and-verdigris cart on spoked wheels under a striped parasol with a solar cell; a bread rack.
+  - Lettering (CLINIC, MARKET) is drawn in a chunky 7 px capital font made by the script; the globe lamps glow at night.
+  - Separate commit: the quick check's in-game full test now waits for the save write-back (up to 12 s) instead of a
+    fixed 2.5 s; it failed about one run in three on these branches because the write's timer ran late headless.
+- Risky: these props are in many towns and rooms (clinics in 15 towns; stalls and carts in the market rooms). The
+  clinic is wider by 0.6 m; check Marigold and Pepperpot on your phone. Interiors are not redesigned.
+- Verified: data check, lint, unit tests, smoke check (the full-test step 3 of 3 after the fix); a few low-resolution
+  looks at the showcase map.
+- Next in Marigold: the houses (one kit of parts for the five types), the other buildings, the made things, nature.
+
+### Phase 09 batch 4 - the last made things of Copperleaf and Route 1 - 2026-10-19
+Owner's request: finish the rest of Copperleaf and Route 1.
+- Changed (tools/build-props-batch4.py; run batch1, 2, 3, 4 in that order): 18 props modelled and swapped in under
+  their own keys, so every placement in every scene draws the new one (they are used well beyond Copperleaf: signposts
+  in nearly every scene, fences, planters, benches and barrels in most towns):
+  barrel_wood, beehive, bench_wood, birdhouse, dock_post, fence_wood, flowerpot, garden_gnome, picket_fence,
+  planter_box, planter_round, rowboat, scarecrow, signpost, waystone, well, wheelbarrow, banner_bunting.
+  Only the bunting's pennants are drawn (they flutter); all else is modelled. Fences, benches, planters, signposts,
+  the well, the waystone, the boat and the bunting no longer turn or lean at random (vary rot/lean 0).
+  - Gable roofs (birdhouse, well) use the hip-roof cone with its top drawn out to a full ridge; no engine change.
+  - The showcase map has two new rows (made-small, made-big); the map may be at most 400 tiles deep, so it is full.
+- Not changed: the airship and its station were already models; their pictures and effects are at 34 px/m, so they
+  keep the scenery's scale. The old voxel recipes in game/art/scene/vox for the nine converted props are no longer
+  used; delete them in a separate commit if you agree.
+- Risky: fence lengths now have a post at each end and the middle, so two lengths side by side show a double post (as
+  the old picture did). The rowboat and dock posts sit on the ground plane; check them on the water in Willowmere,
+  Copperleaf and Palmhaven on your phone.
+- Verified: data check, lint, type-check, unit tests, smoke check; a few low-resolution looks at the new rows.
+- Copperleaf and Route 1 are now all in the new style. Next: the pixel-art and wind plan for 3D props (waiting for
+  your go-ahead), or Route 2.
+
+### Phase 09 batch 3 - the buildings of Copperleaf and Route 1 - 2026-10-19
+Owner's request: the buildings next, in the art style and setting, learning from the cottage.
+- Changed (tools/build-props-batch3.py; run batch1, batch2, batch3 in that order, each rebuilds the showcase map):
+  - cottage_moss: a smaller cousin of Juniper's: mossy dome with tufts, thatch edge and copper gutter, a dormer roof
+    window, a green round door in a stone surround, a porthole with a flower box, a lamp, a chimney with a copper hat,
+    a bench and a water butt round the side, a potted plant, side and back portholes.
+  - cottage_solar: pale green board-and-batten walls, a hip roof of solar panels with copper fascia and ridge, a brick
+    chimney, a little vertical wind turbine turning on the ridge, a coral round door, a porthole, a window with
+    frame, mullions and a flower box, a copper lamp, a vine climbing the corner, a rain barrel under a downpipe.
+  - lab (Professor Hazel's): white wall panels with a teal band and trim on a lavender plinth, a checkered roof
+    edge, teal double glass doors under a lamp with plants either side, side and back windows; on the roof a cooling
+    unit, an antenna with a red beacon, a tipped-up satellite dish, solar panels and planters. The big window keeps
+    its drawn view inside (desk, plant, machines) behind a modelled frame.
+  - Engine: a cone can be turned (rot) and narrow differently in depth (ry1), so a 4-sided cone is a hip roof with a
+    ridge; models can use the building sheet's own materials by name (plaster, siding, brick, battens, panels,
+    corrugated, tilewall, rooftiles, shingles, slate, solar). Both in the Studio's model editor.
+  - Fix: props with a footprint (box) now have their front at the base point and their body behind it, as the
+    building pictures always did, so walls and the footprint people walk round match: Juniper's cottage, the hedge
+    and the log were centred and are moved back.
+- Verified: data check, lint, type-check, unit tests, smoke check; one low-resolution look at each building.
+
+### Phase 09 batch 2, parts 1 and 2 - Copperleaf and Route 1: flat plants, 14 trees - 2026-10-19
+Owner's request: start on the rest of Copperleaf and Route 1 (Hedgerow Lane), the first 10%, then another 10%.
+- Changed (tools/build-props-batch2.py, swapped in under their own keys like batch 1):
+  - the 54 flat plants of the two places stay flat and move to 32 px/m;
+  - trees with the tree tool: rowan, blossom, elm, chestnut, maple, fruit, birch, birch_gold, poplar; the hazel and
+    birch_b as shrubs of several stems (a new stems mode: each limb a stem from the ground, no trunk or roots);
+    autumn hazel, autumn poplar and autumn beech as their summer tree with the leaves recoloured.
+  - Their rows are on the showcase map test_props_next.
+- Part 3 (owner: do the rest of the nature now): willow; larch (a new 0-clump mode: the tiered crown stays whole
+  on a modelled trunk); the 7 bushes (berry, holly, juniper, bramble, rosemary, hawthorn, rhododendron) as clumps;
+  modelled from shapes: the hedge, the fallen tree, the log, the stump, the lichen boulder, the flat rock and the
+  stepping stones (still flat and walkable; a flat prop with a model no longer also draws its picture on the ground).
+  All the nature in Copperleaf and Hedgerow Lane is now in the new style.
+- Left in the two places: 23 man-made props (fences, benches, planters, flowerpots, wheelbarrow, barrel, dock post,
+  beehive, signpost, scarecrow, well, birdhouse, gnome, bunting, rowboat, waystone), two cottages and the lab.
+- Verified: data check, lint, type-check, unit tests, the smoke check; low-resolution shots of the new rows.
+
 ### Phase 09 batch 1 swapped in - 2026-10-19
 Owner's go-ahead: replace the finished props in the game.
 - Changed: the 24 old props the batch covers now are the new ones, under their own keys (tools/build-props-batch1.py

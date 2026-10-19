@@ -40,6 +40,45 @@ def save(D):
                    input=json.dumps(D, ensure_ascii=False).encode('utf-8'), check=True)
 
 
+# phase 08b: the roads between places. roads.json is a list of typed links,
+#   {'id', 'name', 'kind': 'seam' | 'lift', 'a': {'map', 'exit'}, 'b': {'map', 'exit'}}
+# a seam joins two places' edges at the exits; a lift (no exits) is the glass lift between them.
+# each end naming a place by its map (the place's mapId, or its id when it has none) and the edge exit it leaves by.
+# The tools read and change roads only through these (as the Studio does through game/js/data-files.js); they speak of
+# a place as its position in D['locations'] (a node), as the rest of the data does.
+_KEEP = object()
+
+
+def _place_of(D, m):
+    return next((i for i, r in enumerate(D['locations']) if m in (r.get('mapId'), r.get('id'))), -1)
+
+
+def _map_of(D, node):
+    r = D['locations'][node]; return r.get('mapId') or r.get('id')
+
+
+def road(D, L):
+    """A road as {'a', 'b'} (the two places' nodes), 'exit_a', 'exit_b', 'id', 'name', 'kind'."""
+    A, B = L.get('a') or {}, L.get('b') or {}
+    return {'a': _place_of(D, A.get('map')), 'b': _place_of(D, B.get('map')), 'exit_a': A.get('exit'), 'exit_b': B.get('exit'),
+            'id': L.get('id'), 'name': L.get('name'), 'kind': L.get('kind') or 'seam'}
+
+
+def set_road_end(D, L, end, node=None, exit=_KEEP):
+    """One end ('a' or 'b') of a road: its place (a node; None keeps it) and the exit it leaves by (None clears it)."""
+    E = L.setdefault(end, {})
+    if node is not None: E['map'] = _map_of(D, node)
+    if exit is _KEEP: return
+    if exit: E['exit'] = exit
+    else: E.pop('exit', None)
+
+
+def add_road(D, a, b, id=None, name=None):
+    """A new road from place a to place b, added to D['roads']; its exits are set with set_road_end."""
+    L = {k: v for k, v in (('id', id), ('name', name)) if v}
+    L.update(kind='seam', a={'map': _map_of(D, a)}, b={'map': _map_of(D, b)}); D['roads'].append(L); return L
+
+
 HEAD = '/* Pocket Billies game data, put together from the files in game/data by tools/gamedata.py */\n'
 
 

@@ -679,8 +679,7 @@
   "v47region": 1,
   "town": 1,
   "shop": "kelpport",
-  "music": "trench",
-  "lift": "pearlantis"
+  "music": "trench"
  },
  {
   "name": "Abyssal Trench",
@@ -908,7 +907,6 @@
   "music": "trench",
   "shop": "pearlantis",
   "noFly": 1,
-  "lift": "kelpport",
   "region": "coraltrench",
   "a04pearl": 1
  }

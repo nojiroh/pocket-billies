@@ -57,7 +57,7 @@ export interface GameData {
   /** every walkable map: towns, routes, rooms (int_*) and test maps (test_*) */
   maps: Record<DataId, MapData>;
   /** without roads the locations make one chain, in order (game-data.js) */
-  roads?: Road[];
+  roads?: RoadLink[];
   engine: Engine;
   wardrobe: Wardrobe;
   /** fishing spots' encounter lists, keyed by the water ('pond', 'sea'...) */
@@ -90,6 +90,29 @@ export interface DataFiles {
   format(value: unknown, pad?: string): string;
   /** format() and a newline: a file's whole text */
   text(value: unknown): string;
+  /** phase 08b: a road of D.roads, read the same whatever shape roads.json has */
+  road(data: Record<string, any>, road: any): RoadView;
+  /** set one end of a road: its place (null keeps it) and its exit (undefined keeps it, null clears it) */
+  setRoadEnd(
+    data: Record<string, any>,
+    road: any,
+    end: 'a' | 'b',
+    node: LocationNode | null,
+    exit?: string | null
+  ): void;
+  /** a new road between two places, added to data.roads */
+  addRoad(data: Record<string, any>, a: LocationNode, b: LocationNode): any;
+}
+
+/** a road as PB_DATA.road() reads it: its two places (nodes) and the exit each leaves by */
+export interface RoadView {
+  a: LocationNode;
+  b: LocationNode;
+  exitA: string | null;
+  exitB: string | null;
+  id: string | null;
+  name: string | null;
+  kind: 'seam' | 'lift';
 }
 
 /* ---------- Billies: types, stats, moves, lines ---------- */
@@ -298,8 +321,6 @@ export interface LocationData {
   gateText?: string;
   ride?: number;
   noFly?: number;
-  /** the glass lift's other end */
-  lift?: DataId;
   v47region?: number;
   a04place?: number;
   a04pearl?: number;
@@ -313,8 +334,21 @@ export interface LocationEntry extends LocationData {
   board: DataId | null;
 }
 
-/** roads.json: [from node, to node, length, the two ends]. The data's length (old steps) is not read: game-data.js
-    ROADS measures it in metres from the two exits (roadMetres) */
+/** roads.json (phase 08b): a typed link between two places, each end naming a place by its map (the place's mapId,
+    or its id when it has none) and the edge exit it leaves by. The Studio and the tools read it through
+    PB_DATA.road(); the game through ROADS */
+export interface RoadLink {
+  /** 'road:<a's id>-<b's id>' */
+  id?: string;
+  name?: string;
+  /** 'seam': the two places' edges meet at the exits; 'lift': the glass lift (no exits; the lift props' `to`) */
+  kind?: 'seam' | 'lift';
+  a: { map: DataId; exit?: string };
+  b: { map: DataId; exit?: string };
+}
+
+/** a road as the game reads it (game-data.js ROADS): [from node, to node, length in metres (roadMetres), the two
+    ends] */
 export type Road = [from: LocationNode, to: LocationNode, length: number, ends?: RoadEnds];
 
 /** a road as one end sees it (game-data.js ROADS_BY_NODE): the other end, the length and the road's index */

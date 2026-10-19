@@ -233,7 +233,7 @@ export function windBendAt(x, z, t, g) {
 export const LIGHT_GLSL = `
 uniform vec3 uEye,uSunDir,uSunCol,uAmbTop,uAmbBot,uFogCol,uTint,uShTint;
 uniform vec4 uRoomB;uniform float uRoomDim;
-uniform vec2 uValley;uniform float uFogStart,uFogD,uTintAmt,uMist,uMistY,uTime,uShStr,uShPen,uCloudSh,uCloudSpd,uCloudCov,uContact,uAmbK,uShLite,uShPx;uniform vec3 uShLift;
+uniform vec2 uValley;uniform float uFogStart,uFogD,uTintAmt,uMist,uMistY,uTime,uShStr,uShPen,uCloudSh,uCloudSpd,uCloudCov,uContact,uAmbK,uShLite,uShPx,uShSteps;uniform vec3 uShLift;
 uniform highp sampler2DShadow uShadow;uniform highp sampler2D uShadowD;uniform mat4 uShadowM;uniform float uShadowOn;uniform vec2 uShadowTexel;
 uniform highp sampler2DShadow uShadow2;uniform highp sampler2D uShadowD2;uniform mat4 uShadowM2;uniform float uShadow2On,uShPen2;uniform vec2 uShadowTexel2;
 uniform vec4 uLP[16];uniform vec4 uLC[16];uniform int uNL;
@@ -247,19 +247,20 @@ float lnoise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(l
 float cloudShade(vec3 p){if(uCloudSh<=0.)return 1.;vec2 q=p.xz*.045+vec2(uTime,uTime*.6)*.000012*uCloudSpd;float n=lnoise(q)*.65+lnoise(q*2.3+7.)*.35;float e=.72-uCloudCov*.34;return 1.-uCloudSh*smoothstep(e,e+.2,n);}/* alpha 0.4.1: the Clouds dial sets how much of the ground the cloud shadows cover */
 /* v19: pixel-art shadows. The lookup point is snapped to the world's pixel grid within its own surface (so edges step
    in whole pixels like the art, and nothing slips into the surface), and the soft edge is stepped into three tones with
-   an ordered dither, the way a pixel artist shades a penumbra. uShPx is pixels per metre; 0 keeps the smooth shadows. */
+   an ordered dither, the way a pixel artist shades a penumbra. uShPx is pixels per metre; 0 keeps the smooth shadows.
+   uShSteps is how many steps the soft edge takes (2: three tones); 0 snaps the edge but keeps it smooth. */
 float shBayer(vec2 p){ivec2 i=ivec2(mod(p,4.));int b[16]=int[16](0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5);return (float(b[i.y*4+i.x])+.5)/16.;}
 float shadowAtN(vec3 p,vec3 n,float bias){if(uShadowOn<.5)return cloudShade(p);vec2 cell=vec2(0.);
  if(uShPx>0.){vec3 q=(floor(p*uShPx)+.5)/uShPx,d=q-p;d-=n*dot(d,n);p+=d;vec3 cc=floor(p*uShPx);cell=abs(n.y)>.6?cc.xz:abs(n.x)>abs(n.z)?cc.zy:cc.xy;}
  vec4 q=uShadowM*vec4(p,1.);vec3 c=q.xyz/q.w*.5+.5;
  /* v43: outside the near map, the far cascade (coarser, fewer taps) */
  if(c.x<.01||c.y<.01||c.x>.99||c.y>.99||c.z>1.){if(uShadow2On<.5)return cloudShade(p);vec4 q2=uShadowM2*vec4(p,1.);vec3 c2=q2.xyz/q2.w*.5+.5;if(c2.x<0.||c2.y<0.||c2.x>1.||c2.y>1.||c2.z>1.)return cloudShade(p);
-  float rot2=lhash(c2.xy*913.)*6.283;mat2 R2=mat2(cos(rot2),sin(rot2),-sin(rot2),cos(rot2));float s2=0.;for(int i=0;i<6;i++){s2+=texture(uShadow2,vec3(c2.xy+R2*PD[i]*uShadowTexel2*2.2,c2.z-bias*1.5));}s2/=6.;if(uShPx>0.)s2=clamp(floor(s2*2.+shBayer(cell)),0.,2.)*.5;return mix(1.,s2,uShStr)*cloudShade(p);}
+  float rot2=lhash(c2.xy*913.)*6.283;mat2 R2=mat2(cos(rot2),sin(rot2),-sin(rot2),cos(rot2));float s2=0.;for(int i=0;i<6;i++){s2+=texture(uShadow2,vec3(c2.xy+R2*PD[i]*uShadowTexel2*2.2,c2.z-bias*1.5));}s2/=6.;if(uShPx>0.&&uShSteps>0.)s2=clamp(floor(s2*uShSteps+shBayer(cell)),0.,uShSteps)/uShSteps;return mix(1.,s2,uShStr)*cloudShade(p);}
  float rot=lhash(c.xy*913.)*6.283;mat2 R=mat2(cos(rot),sin(rot),-sin(rot),cos(rot));
  int nb=uShLite>.5?4:8,np=uShLite>.5?6:12;float bs=0.,bn=0.;for(int i=0;i<8;i++){if(i>=nb)break;float d=texture(uShadowD,c.xy+R*PD[i]*uShadowTexel*7.).r;if(d<c.z-bias){bs+=d;bn+=1.;}}
  if(bn<.5)return cloudShade(p);
  float r=clamp((c.z-bs/bn)*uShPen,1.2,uShPx>0.?8.:14.);float s=0.;for(int i=0;i<12;i++){if(i>=np)break;s+=texture(uShadow,vec3(c.xy+R*PD[i]*uShadowTexel*r,c.z-bias));}
- s/=float(np);if(uShPx>0.)s=clamp(floor(s*2.+shBayer(cell)),0.,2.)*.5;
+ s/=float(np);if(uShPx>0.&&uShSteps>0.)s=clamp(floor(s*uShSteps+shBayer(cell)),0.,uShSteps)/uShSteps;
  return mix(1.,s,uShStr)*cloudShade(p);}
 float shadowAt(vec3 p,float bias){return shadowAtN(p,vec3(0.,1.,0.),bias);}
 float contactAO(vec3 p){float a=1.;for(int i=0;i<64;i++){if(i>=uNAO)break;vec4 b=uAO[i];vec2 d=(p.xz-b.xy)/b.zw;float e=dot(d,d);if(e<1.){float k=1.-e;a=min(a,1.-k*k*uContact);}}return a;}

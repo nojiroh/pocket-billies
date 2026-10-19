@@ -1,0 +1,32 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "roads.schema.json",
+ "title": "game/data/roads.json: the links between places (phase 08b). A seam joins two places' edges at the exits; a lift is the glass lift (no exits)",
+ "type": "array",
+ "items": {
+  "type": "object",
+  "required": ["id", "kind", "a", "b"],
+  "additionalProperties": false,
+  "properties": {
+   "id": {"description": "'road:<a's place>-<b's place>', or 'lift:...'", "type": "string", "pattern": "^(road|lift):[a-z0-9_]+-[a-z0-9_]+$"},
+   "name": {"type": "string"},
+   "kind": {"enum": ["seam", "lift"]},
+   "a": {"$ref": "#/$defs/end"},
+   "b": {"$ref": "#/$defs/end"}
+  },
+  "if": {"properties": {"kind": {"const": "seam"}}},
+  "then": {"properties": {"a": {"required": ["exit"]}, "b": {"required": ["exit"]}}},
+  "else": {"properties": {"a": {"not": {"required": ["exit"]}}, "b": {"not": {"required": ["exit"]}}}}
+ },
+ "$defs": {
+  "end": {
+   "type": "object",
+   "required": ["map"],
+   "additionalProperties": false,
+   "properties": {
+    "map": {"description": "the place's map (its mapId, or its id when it has none)", "type": "string", "pattern": "^[a-z0-9_]+$"},
+    "exit": {"description": "the edge exit of that map the link leaves by (an edgeExits id)", "type": "string"}
+   }
+  }
+ }
+}

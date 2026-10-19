@@ -140,7 +140,6 @@ import {
   seamlessDelta,
   seamlessGate,
   seamlessGetReady,
-  seamlessOn,
   seamlessRoamView,
   seamlessRoomId,
   seamlessRoomMap,
@@ -242,8 +241,7 @@ expose({
   learnModal: [() => learnModal, v => (learnModal = v)],
   leaveRoom: [() => leaveRoom, v => (leaveRoom = v)],
   locationCardHTML: [() => locationCardHTML, v => (locationCardHTML = v)],
-  mapExits: [() => mapExits, v => ((mapExits = v), provide({ mapExits }))],
-  mapExitsByBearing: [() => mapExitsByBearing, v => (mapExitsByBearing = v)],
+  mapExits: [() => mapExits, v => (mapExits = v)],
   mapIdAt: [() => mapIdAt, v => ((mapIdAt = v), provide({ mapIdAt }))],
   mapOffsetInView: [() => mapOffsetInView, v => ((mapOffsetInView = v), provide({ mapOffsetInView }))],
   meter: [() => meter],
@@ -306,7 +304,6 @@ expose({
 /* eslint-enable no-func-assign */
 provide({
   closeModal,
-  mapExits,
   mapIdAt,
   mapOffsetInView,
   modal,
@@ -896,8 +893,8 @@ export function mapIdAt(i) {
   if (r && r.mapId && S0[r.mapId]) return r.mapId;
   return Object.keys(S0)[0] || null;
 }
-/* which road leaves a stop's scene through which exit: matched by compass direction on the world map */
-/* v42: the join table first (a road names the exit at each end, by id); roads without one fall back to the bearing */
+/* which road leaves a stop's scene through which exit: each link names the exit at each end, by id (phase 08b: a link
+   without both is a data error, check-data.mjs) */
 function mapExits(node) {
   const sc = mapById(mapIdAt(node)),
     ex = (sc && sc.exits) || [],
@@ -912,31 +909,6 @@ function mapExits(node) {
       k = id ? E.findIndex(q => q.id === id) : -1;
     if (k >= 0) out[e.to] = k;
   }
-  return mapExitsByBearing(node, sc, ex, out);
-}
-function mapExitsByBearing(node, sc, ex, out) {
-  out = out || {};
-  const hub = mapHub(sc),
-    me = LOCATIONS[node],
-    pairs = [];
-  for (const e of ROADS_BY_NODE[node]) {
-    if (e.to in out) continue;
-    const o = LOCATIONS[e.to],
-      a = Math.atan2((o.lat || 0) - (me.lat || 0), (o.lon || 0) - (me.lon || 0));
-    ex.forEach((p, k) => {
-      let d = Math.abs(a - Math.atan2(p[1] - hub[1], p[0] - hub[0])) % (2 * Math.PI);
-      if (d > Math.PI) d = 2 * Math.PI - d;
-      pairs.push([d, e.to, k]);
-    });
-  }
-  pairs.sort((a, b) => a[0] - b[0]);
-  const taken = new Set(Object.values(out));
-  for (const [, to, k] of pairs) {
-    if (to in out || taken.has(k)) continue;
-    out[to] = k;
-    taken.add(k);
-  }
-  for (const [, to, k] of pairs) if (!(to in out)) out[to] = k;
   return out;
 }
 /* what the walk scene shows: the stop you're at (walk around freely), or you walking out toward the next stop
@@ -1015,7 +987,6 @@ function enterRoom(a, p) {
 function roomLayIn(id, p, fresh) {
   if (
     typeof seamlessRoomMap !== 'function' ||
-    !seamlessOn() ||
     !walkView.ready ||
     !walkView.sc ||
     !walkView.sc.parts ||

@@ -15,6 +15,8 @@ My firm art commitments: terrain textures and the airship style (low-poly models
 - Batch 1 done, waiting for approval: ten props in the new style on the test map `test_props_next`, built by
   tools/build-props-batch1.py (see HANDOFF.md). Trees are a low-poly trunk and branches with flat leaf clumps cut
   from the old picture, in one model; the recipe format, variants and the Studio's model editor grew what that needed.
+- Batches 1-4 (2026-10-19): every prop of Copperleaf Town and Route 1 is in the new style and swapped in under its
+  own key (tools/build-props-batch1.py to batch4.py, run in order). See HANDOFF.md.
 
 ## Tasks: scope first
 1. List which props the maps, rooms, the opening, the ranch and the world map still use. Delete the unused ones.
