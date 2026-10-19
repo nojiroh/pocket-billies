@@ -1,5 +1,5 @@
 {
- "about": "Project Story: the story layer's own data. flags: every story flag the game keeps in saveData.story, and what it means. patterns: flags made from an id. kept: the story's own records in the same object (not flags). speakers: the names a script may write before a line, and whose portrait and name they stand for. quests: each quest's stages in order. presets: start points for ?story=<preset> (test runs only): place, story flags, trainers beaten (with their badges), coins, items, team.",
+ "about": "Project Story: the story layer's own data. flags: every story flag the game keeps in saveData.story, and what it means. patterns: flags made from an id. kept: the story's own records in the same object (not flags). speakers: the names a script may write before a line, and whose portrait and name they stand for. quests: each quest's stages in order. presets: start points for ?story=name (test runs only): place, story flags, trainers beaten (with their badges), coins, items, team.",
  "flags": {
   "rival0": "how Blake's first battle went: win, lose or skip (story.js storyAfterRival)",
   "copperleafNote": "the note that Hazel's lab moved to Copperleaf has been read (story.js storyMovedCheck, ui.js; legacy, goes in S2)",
@@ -24,8 +24,8 @@
   "clue_<clue>": "a clue found, for a clue whose unlock isn't a flag (lore.js loreClue)"
  },
  "kept": {
-  "talks": "times you have talked to each person (conditions: visits:<person>)",
-  "quests": "each quest's stage (conditions: quest:<id>)",
+  "talks": "times you have talked to each person (conditions: visits:person)",
+  "quests": "each quest's stage (conditions: quest:id)",
   "once": "the once blocks and [once] options already played",
   "cycles": "where each cycle and seq is",
   "resume": "a script saved halfway: which one, and where it goes on from"
