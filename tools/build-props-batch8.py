@@ -701,7 +701,8 @@ def opening_map():
     """The city opening's set, small: one avenue running away from the camera between towers (a canyon), the hero
     tower closing the view at its end, a 5 m alley off to the right two thirds up where the rift opens. Not joined to
     the world (test: 1). Its `cutscene` block holds the named spots and camera shots the opening's script will use
-    (`walk you <spot>`, `camera <shot>`; the commands are played from S2); nothing reads it yet.
+    (`walk you <spot>`, `camera <shot>`; the commands are played from S2). Owner, 2026-10-19: this street
+    replaces the fall's first leg; the figure reaches toward the light; nothing reads it yet.
     Units: metres; x across, z away from the camera; a shot's eye and target are [x, height, z]."""
     W, H = 64, 130
     tiles = [['i'] * W for _ in range(H)]
@@ -721,7 +722,10 @@ def opening_map():
     P += [{'k': 'city_sign_open', 'x': 41.5, 'z': 30.5}, {'k': 'city_sign_hotel', 'x': 22.6, 'z': 34},
           {'k': 'city_sign_hotel', 'x': 41.8, 'z': 76}, {'k': 'city_vending', 'x': 42.2, 'z': 49.5},
           {'k': 'city_flying_car', 'x': 30, 'z': 40}, {'k': 'city_flying_car', 'x': 34, 'z': 70, 'f': 1},
-          {'k': 'city_flying_car', 'x': 31, 'z': 96}]
+          {'k': 'city_flying_car', 'x': 31, 'z': 96},
+          # the ad slot, opposite the alley in the gap between two towers: its advert is one picture
+          # (city_billboard_holo.png), so what it shows stays open and is changed by swapping that picture
+          {'k': 'city_billboard', 'x': 20, 'z': 61}]
     # the alley: x 44 to 59, z 59 to 64, between the slabs at z 54 and z 69, closed by a slab across its end
     P += [{'k': 'city_sign_bar', 'x': 44.6, 'z': 60.0}, {'k': 'city_vending', 'x': 48.5, 'z': 63.0},
           {'k': 'puddle', 'x': 47.0, 'z': 61.4}, {'k': 'puddle', 'x': 51.5, 'z': 62.2}, {'k': 'puddle', 'x': 38.5, 'z': 44},
@@ -733,7 +737,7 @@ def opening_map():
         'exits': [], 'checks': [], 'hub': [32, 4], 'tiles': [''.join(r) for r in tiles], 'props': P, 'kind': 'test',
         'cutscene': {
             'spots': {
-                'walkFrom': [40.6, 24], 'alleyMouth': [41.4, 61.5], 'lean': [44.5, 61.6], 'stumble': [53.2, 61.6],
+                'walkFrom': [40.6, 24], 'alleyMouth': [41.4, 61.5], 'lean': [44.5, 61.6], 'reach': [53.8, 61.6],
                 'rift': [55.6, 61.6], 'logo': [57.6, 60.0],
             },
             'shots': {

@@ -191,6 +191,7 @@
   {"k":"city_flying_car","x":30,"z":40},
   {"k":"city_flying_car","x":34,"z":70,"f":1},
   {"k":"city_flying_car","x":31,"z":96},
+  {"k":"city_billboard","x":20,"z":61},
   {"k":"city_sign_bar","x":44.6,"z":60},
   {"k":"city_vending","x":48.5,"z":63},
   {"k":"puddle","x":47,"z":61.4},
@@ -205,7 +206,7 @@
    "walkFrom": [40.6,24],
    "alleyMouth": [41.4,61.5],
    "lean": [44.5,61.6],
-   "stumble": [53.2,61.6],
+   "reach": [53.8,61.6],
    "rift": [55.6,61.6],
    "logo": [57.6,60]
   },

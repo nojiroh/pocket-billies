@@ -11,6 +11,16 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 - Questions waiting for the owner: 
 - Next session starts with: 
 
+### Phase 09 batch 8, part 3 - the owner's answers to the beat sheet - 2026-10-19
+- Changed: docs/city-opening-beats.md now 21 s with the owner's decisions (the city replaces the fall's first leg,
+  done in S8 so the opening keeps working until then; the figure reaches toward the light; the billboard's advert
+  stays open); project-story.md's decisions table points to it. Map `city_opening`: the spot `stumble` is now
+  `reach`; one billboard placed opposite the alley as the ad slot (its advert is one picture,
+  city_billboard_holo.png, swapped to change it).
+- Verified: the script in the beat sheet parses (parseScript, no problems); the billboard clears the towers (from
+  the data); data check.
+- Next session starts with: S7's remaining owner checks on the phone (the set at night in the rain), then S8.
+
 ### Phase 09 batch 8, part 2 - towers lit on every side; the city opening's draft set and beat sheet - 2026-10-19
 Owner's request: "the 3D version of the building and a small map for the cutscene", keeping Project Story's system
 in mind. Chosen: lit windows on every side, the portal in a side alley, the rift, the layout plus a draft beat sheet.
