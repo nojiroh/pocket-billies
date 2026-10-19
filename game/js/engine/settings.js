@@ -132,6 +132,10 @@ export const ENGINE_DEFAULTS = {
     propTurn: 1,
     texDetail: 1,
     moods: 1,
+    /* phase 20 C1: read in the code with no default here; the values are its own fallbacks (room light dims to 0.68
+       inside, rooms open in place unless false) */
+    roomDim: 0.68,
+    seamlessRooms: true,
   },
   grass: { density: 1, height: 1, low: '#2E6A33', high: '#7FC456', wind: 1, gusts: 1, bend: 0.85 },
   water: {
@@ -177,6 +181,10 @@ export const ENGINE_DEFAULTS = {
     battleLite: true,
     sharpTex: true,
     edgeBleed: true,
+    /* phase 20 C1: the same, as the code's fallbacks (walk scenes kept ready; the ground painted in a worker unless
+       false) */
+    keepScenes: 3,
+    paintWorker: true,
   },
 };
 provide({ ENGINE_DEFAULTS }); /* to-module */
