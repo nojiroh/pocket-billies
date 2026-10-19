@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { GAME_DATA, fn } from './setup-real.mjs';
-import { storyChecks } from '../story-checks.mjs';
+import { storyChecks, storyFindings } from '../story-checks.mjs';
 
 const L = Object.fromEntries(
   ['parseScript', 'conditionTree', 'conditionProblem', 'conditionNames'].map(k => [k, fn(k)])
@@ -82,4 +82,35 @@ test('the reach check: a gate opens when a script the player can get to sets its
   delete G.story.flags.gate_open;
   G.maps.copperleaf.people[0].script.push('set gate_open');
   assert.deepEqual(run(G).problems, [], 'set by Juniper, in Copperleaf, where the game starts');
+});
+
+test('a finding says where it is: file, script and line, or the thing and field', () => {
+  const G = copy();
+  G.trainers.crude.script.push('sett met_x');
+  G.maps.copperleaf.people[0].when = 'beat:nobody';
+  G.locations.find(l => l.id === 'marigold').requires = 'item:nope';
+  const F = storyFindings(G, L);
+  const at = word => F.find(f => f.message.includes(word));
+  const n = G.trainers.crude.script.length - 1;
+  assert.deepEqual(
+    { ...at('did you mean "set"') },
+    {
+      level: 'problem',
+      file: 'trainers/crude.json',
+      script: 'trainer:crude',
+      line: n,
+      message: 'unknown command "sett", did you mean "set"?',
+      text: `trainers/crude.json trainer:crude, line ${n + 1}: unknown command "sett", did you mean "set"?`,
+    }
+  );
+  assert.deepEqual(
+    [at('beat:nobody').file, at('beat:nobody').thing, at('beat:nobody').field],
+    ['maps/copperleaf.json', 'person:' + G.maps.copperleaf.people[0].id, 'when']
+  );
+  assert.deepEqual([at('item:nope').thing, at('item:nope').field], ['place:marigold', 'requires']);
+  assert.deepEqual(
+    run(G).problems,
+    F.filter(f => f.level === 'problem').map(f => f.text),
+    'the strings are the findings’ texts'
+  );
 });

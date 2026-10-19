@@ -28,6 +28,8 @@ expose({
   scriptsOf: [() => scriptsOf, v => (scriptsOf = v)],
   // @ts-expect-error -- replaced on purpose
   storyChecks: [() => storyChecks, v => (storyChecks = v)],
+  // @ts-expect-error -- replaced on purpose
+  storyFindings: [() => storyFindings, v => (storyFindings = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -117,11 +119,36 @@ export function scriptsOf(G) {
   return out;
 }
 
-/** the checks; L: the logic they use (parseScript, conditionTree, conditionProblem, conditionNames; the tests may
- * hand in their own) @returns {{ problems: string[], warnings: string[] }} */
-export function storyChecks(G, L = { parseScript, conditionTree, conditionProblem, conditionNames }) {
-  const problems = [],
-    warnings = [];
+/** where a finding is: its file, the script (person:<id>, trainer:<id>, story:<key>) and line (from 0) when it is in
+ * one, the thing and field when it is a condition (when, unless, requires); written as the label in the text
+ * @typedef {{ file: string | null, script?: string, line?: number, thing?: string, field?: string }} StorySpot */
+/** one finding: level problem (fails the data check) or warning, where, the message, and the text check-data prints
+ * @typedef {StorySpot & { level: 'problem' | 'warning', message: string, text: string }} StoryFinding */
+
+/** the checks as strings, for check-data.mjs and the tests @returns {{ problems: string[], warnings: string[] }} */
+export function storyChecks(G, L = undefined) {
+  const F = storyFindings(G, L);
+  return {
+    problems: F.filter(f => f.level === 'problem').map(f => f.text),
+    warnings: F.filter(f => f.level === 'warning').map(f => f.text),
+  };
+}
+
+/** the checks, each finding with where it is (the Studio points at the field and line); L: the logic they use
+ * (parseScript, conditionTree, conditionProblem, conditionNames; the tests may hand in their own)
+ * @returns {StoryFinding[]} */
+export function storyFindings(G, L = { parseScript, conditionTree, conditionProblem, conditionNames }) {
+  /** @type {StoryFinding[]} */
+  const found = [];
+  /** a spot reads as its label in a text @param {string} label @param {StorySpot} o */
+  const spot = (label, o) => ({ ...o, toString: () => label });
+  /** @param {'problem' | 'warning'} level @param {any} at @param {string} message */
+  const add = (level, at, message) => {
+    const { toString, ...where } = typeof at === 'string' ? { file: null, toString: null } : at;
+    found.push({ level, ...where, message, text: `${at}: ${message}` });
+  };
+  const problems = { push: (/** @type {any} */ at, /** @type {string} */ m) => add('problem', at, m) },
+    warnings = { push: (/** @type {any} */ at, /** @type {string} */ m) => add('warning', at, m) };
   const S = G.story || {},
     places = new Set(G.locations.map(l => l.id)),
     trainers = G.trainers || {},
@@ -149,21 +176,20 @@ export function storyChecks(G, L = { parseScript, conditionTree, conditionProble
   /* a condition: reads, and its names exist */
   const condition = (c, at) => {
     const p = L.conditionProblem(c);
-    if (p) return problems.push(`${at}: ${p.message} (in "${c}")`);
+    if (p) return problems.push(at, `${p.message} (in "${c}")`);
     const N = L.conditionNames(L.conditionTree(c));
     for (const f of N.flag || []) note(read, f, at);
-    for (const t of N.beat || []) if (!trainers[t]) problems.push(`${at}: beat:${t}, no such trainer`);
-    for (const i of N.item || []) if (!items[i]) problems.push(`${at}: item:${i}, no such item`);
-    for (const i of N.coin || []) if (!coins[i]) problems.push(`${at}: coin:${i}, no such coin`);
-    for (const v of N.visited || []) if (!places.has(v)) problems.push(`${at}: visited:${v}, no such place`);
+    for (const t of N.beat || []) if (!trainers[t]) problems.push(at, `beat:${t}, no such trainer`);
+    for (const i of N.item || []) if (!items[i]) problems.push(at, `item:${i}, no such item`);
+    for (const i of N.coin || []) if (!coins[i]) problems.push(at, `coin:${i}, no such coin`);
+    for (const v of N.visited || []) if (!places.has(v)) problems.push(at, `visited:${v}, no such place`);
     for (const b of N.billie || [])
-      if (!lines.has(b) && !species.has(b)) problems.push(`${at}: billie:${b}, no such Billie`);
-    for (const q of N.quest || [])
-      if (!quests[q]) problems.push(`${at}: quest:${q}, no such quest (story.json quests)`);
+      if (!lines.has(b) && !species.has(b)) problems.push(at, `billie:${b}, no such Billie`);
+    for (const q of N.quest || []) if (!quests[q]) problems.push(at, `quest:${q}, no such quest (story.json quests)`);
   };
   const who = (w, at) => {
     if (w && !(w in speakers) && !(G.people || {})[w] && w !== 'me')
-      problems.push(`${at}: speaker ${w}, not in story.json speakers nor a person`);
+      problems.push(at, `speaker ${w}, not in story.json speakers nor a person`);
   };
 
   for (const sc of scripts) {
@@ -173,12 +199,15 @@ export function storyChecks(G, L = { parseScript, conditionTree, conditionProble
     } catch (err) {
       const e = /** @type {Error & { line: number }} */ (err);
       if (e.name !== 'ScriptError') throw e;
-      problems.push(`${sc.where} ${sc.id}, line ${e.line + 1}: ${e.message}`);
+      problems.push(
+        spot(`${sc.where} ${sc.id}, line ${e.line + 1}`, { file: sc.where, script: sc.id, line: e.line }),
+        e.message
+      );
       continue;
     }
     const walk = blk => {
       for (const n of blk) {
-        const at = `${sc.where} ${sc.id}, line ${n.line + 1}`;
+        const at = spot(`${sc.where} ${sc.id}, line ${n.line + 1}`, { file: sc.where, script: sc.id, line: n.line });
         if (n.k === 'say') who(n.who, at);
         else if (n.k === 'if')
           for (const c of n.clauses) {
@@ -187,13 +216,17 @@ export function storyChecks(G, L = { parseScript, conditionTree, conditionProble
           }
         else if (n.k === 'choice')
           for (const o of n.options) {
-            if (o.cond) condition(o.cond, `${sc.where} ${sc.id}, line ${o.line + 1}`);
+            if (o.cond)
+              condition(
+                o.cond,
+                spot(`${sc.where} ${sc.id}, line ${o.line + 1}`, { file: sc.where, script: sc.id, line: o.line })
+              );
             walk(o.body);
           }
         else if (n.k === 'once') {
           if (n.key) {
             const was = onceKeys.get(n.key);
-            if (was && was !== sc.id) warnings.push(`${at}: once key ${n.key} is also used by ${was}`);
+            if (was && was !== sc.id) warnings.push(at, `once key ${n.key} is also used by ${was}`);
             else onceKeys.set(n.key, sc.id);
           }
           walk(n.body);
@@ -204,15 +237,15 @@ export function storyChecks(G, L = { parseScript, conditionTree, conditionProble
           else if (n.name === 'give' || n.name === 'take') {
             const coin = a.startsWith('coin:');
             if (coin ? !coins[a.slice(5)] : !items[a])
-              problems.push(`${at}: ${n.name} ${a}, no such ${coin ? 'coin' : 'item'}`);
+              problems.push(at, `${n.name} ${a}, no such ${coin ? 'coin' : 'item'}`);
             if (n.name === 'give') given.add(a);
             else note(taken, a, at);
-          } else if (n.name === 'battle' && !trainers[a]) problems.push(`${at}: battle ${a}, no such trainer`);
-          else if (n.name === 'call' && !ids.has(a)) problems.push(`${at}: call ${a}, no such script`);
-          else if (n.name === 'go' && !places.has(a)) problems.push(`${at}: go ${a}, no such place`);
+          } else if (n.name === 'battle' && !trainers[a]) problems.push(at, `battle ${a}, no such trainer`);
+          else if (n.name === 'call' && !ids.has(a)) problems.push(at, `call ${a}, no such script`);
+          else if (n.name === 'go' && !places.has(a)) problems.push(at, `go ${a}, no such place`);
           else if (n.name === 'quest') {
-            if (!quests[a]) problems.push(`${at}: quest ${a}, no such quest (story.json quests)`);
-            else if (!quests[a].stages.includes(b)) problems.push(`${at}: quest ${a} has no stage ${b}`);
+            if (!quests[a]) problems.push(at, `quest ${a}, no such quest (story.json quests)`);
+            else if (!quests[a].stages.includes(b)) problems.push(at, `quest ${a} has no stage ${b}`);
             else (questSet.get(a) || questSet.set(a, new Set()).get(a)).add(b);
           } else if ((n.name === 'walk' || n.name === 'face') && a) who(a, at);
         }
@@ -220,34 +253,68 @@ export function storyChecks(G, L = { parseScript, conditionTree, conditionProble
     };
     walk(tree);
   }
-  for (const p of lineIdProblems(scripts)) problems.push(`${p.script}, line ${p.line + 1}: ${p.problem}`);
+  const fileOf = Object.fromEntries(scripts.map(sc => [sc.id, sc.where]));
+  for (const p of lineIdProblems(scripts))
+    problems.push(
+      spot(`${p.script}, line ${p.line + 1}`, { file: fileOf[p.script], script: p.script, line: p.line }),
+      p.problem
+    );
 
   /* when, unless, requires and chapters: their conditions read */
   for (const [mid, M] of Object.entries(G.maps || {})) {
     for (const P of M.people || [])
-      for (const k of ['when', 'unless']) if (P[k]) condition(P[k], `maps/${mid}.json person ${P.id} ${k}`);
-    for (const p of M.props || [])
-      for (const k of ['when', 'unless']) if (p[k]) condition(p[k], `maps/${mid}.json prop ${p.k} ${k}`);
+      for (const k of ['when', 'unless'])
+        if (P[k])
+          condition(
+            P[k],
+            spot(`maps/${mid}.json person ${P.id} ${k}`, {
+              file: `maps/${mid}.json`,
+              thing: 'person:' + P.id,
+              field: k,
+            })
+          );
+    (M.props || []).forEach((p, i) => {
+      for (const k of ['when', 'unless'])
+        if (p[k])
+          condition(
+            p[k],
+            spot(`maps/${mid}.json prop ${p.k} ${k}`, { file: `maps/${mid}.json`, thing: 'prop:' + i, field: k })
+          );
+    });
   }
   for (const [id, T] of Object.entries(trainers))
-    for (const k of ['when', 'unless']) if (T[k]) condition(T[k], `trainers/${id}.json ${k}`);
-  for (const l of G.locations) if (l.requires) condition(l.requires, `locations.json ${l.id} requires`);
+    for (const k of ['when', 'unless'])
+      if (T[k])
+        condition(
+          T[k],
+          spot(`trainers/${id}.json ${k}`, { file: `trainers/${id}.json`, thing: 'trainer:' + id, field: k })
+        );
+  for (const l of G.locations)
+    if (l.requires)
+      condition(
+        l.requires,
+        spot(`locations.json ${l.id} requires`, { file: 'locations.json', thing: 'place:' + l.id, field: 'requires' })
+      );
   for (const [id, C] of Object.entries(S.chapters || {})) {
-    condition(C.when, `story.json chapter ${id}`);
+    const at = spot(`story.json chapter ${id}`, { file: 'story.json', thing: 'chapter:' + id, field: 'when' });
+    condition(C.when, at);
     for (const v of Object.values(C.maps || {}))
-      if (!(G.maps || {})[v] && !/^[a-z0-9_]+$/.test(v)) problems.push(`story.json chapter ${id}: map ${v}`);
+      if (!(G.maps || {})[v] && !/^[a-z0-9_]+$/.test(v)) problems.push(at, `map ${v}`);
   }
 
   /* the flags */
-  for (const [f, at] of read) if (!set.has(f) && !known(f)) warnings.push(`${at}: reads flag ${f}, set nowhere`);
+  for (const [f, at] of read) if (!set.has(f) && !known(f)) warnings.push(at, `reads flag ${f}, set nowhere`);
   /* a flag story.json lists may be read by the game itself; one it doesn't is the scripts' own */
   for (const [f, w] of set)
-    if (!known(f))
-      warnings.push(`${w.at}: sets flag ${f}, not in story.json${read.has(f) ? '' : ', and read nowhere'}`);
-  for (const [i, at] of taken) if (!given.has(i)) warnings.push(`${at}: takes ${i}, given nowhere`);
+    if (!known(f)) warnings.push(w.at, `sets flag ${f}, not in story.json${read.has(f) ? '' : ', and read nowhere'}`);
+  for (const [i, at] of taken) if (!given.has(i)) warnings.push(at, `takes ${i}, given nowhere`);
   for (const [q, Q] of Object.entries(quests))
     for (const st of Q.stages)
-      if (!(questSet.get(q) || new Set()).has(st)) warnings.push(`story.json quest ${q}: no script moves it to ${st}`);
+      if (!(questSet.get(q) || new Set()).has(st))
+        warnings.push(
+          spot(`story.json quest ${q}`, { file: 'story.json', thing: 'quest:' + q }),
+          `no script moves it to ${st}`
+        );
 
   /* the reach check: from the start, along roads and lifts, into places whose requires can come true by then (a flag
      some reachable script sets, or the game sets; trainers there beaten; other terms taken as earnable) */
@@ -297,8 +364,9 @@ export function storyChecks(G, L = { parseScript, conditionTree, conditionProble
     for (const l of gated)
       if (!can.has(l.id))
         problems.push(
-          `locations.json ${l.id}: requires ${l.requires}, which can't come true anywhere the player can get to`
+          spot(`locations.json ${l.id}`, { file: 'locations.json', thing: 'place:' + l.id, field: 'requires' }),
+          `requires ${l.requires}, which can't come true anywhere the player can get to`
         );
   }
-  return { problems, warnings };
+  return found;
 }
