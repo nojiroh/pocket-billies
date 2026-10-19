@@ -22,7 +22,12 @@ import {
   scatterToolBarHTML,
 } from '../../game/js/hooks.js';
 import { $, $$, clamp } from '../../game/js/util.js';
-import { storyNamesIn, storyPreviewAllows, storyPreviewSave } from '../../game/js/logic/story-checks.js';
+import {
+  storyNamesIn,
+  storyPreviewAllows,
+  storyPreviewSave,
+  storySwitchesText,
+} from '../../game/js/logic/story-checks.js';
 import { ART_CACHE, makeCanvas } from '../../game/js/art.js';
 import {
   MAX_STEP_RISE,
@@ -65,6 +70,7 @@ import {
   rangeField,
   render,
   selectField,
+  studioBroadcast,
   studioState,
   textField,
   toast,
@@ -110,6 +116,8 @@ expose({
   paintMapTile: [() => paintMapTile, v => (paintMapTile = v)],
   paintStepCells: [() => paintStepCells, v => (paintStepCells = v)],
   parseMapLife: [() => parseMapLife, v => (parseMapLife = v)],
+  playFromHereURL: [() => playFromHereURL, v => (playFromHereURL = v)],
+  playSpot: [() => playSpot, v => (playSpot = v)],
   plotSceneryPixel: [() => plotSceneryPixel, v => (plotSceneryPixel = v)],
   previewPeople: [() => previewPeople, v => (previewPeople = v)],
   propAtPointer: [() => propAtPointer, v => (propAtPointer = v)],
@@ -935,7 +943,7 @@ function storyPreviewBarHTML() {
     )
     .join(
       ''
-    )}</select><label class="fld chk"><input type="checkbox" id="scStoryFaded" ${st.faded ? 'checked' : ''}><span>Show hidden faded on the map</span></label><button class="btn sm primary" data-act="scPlayHere" title="Open the game here, at the preview's preset and flags, with your unsaved changes">▶ Play from here</button>
+    )}</select><label class="fld chk"><input type="checkbox" id="scStoryFaded" ${st.faded ? 'checked' : ''}><span>Show hidden faded on the map</span></label><button class="btn sm primary" data-act="scPlayHere" title="Open the game here, at the preview's preset and flags, with your unsaved changes">▶ Play from here</button><button class="btn sm ${mapEditor.pickPlay ? 'primary' : ''}" data-act="scPlaySpot" aria-pressed="${!!mapEditor.pickPlay}">${mapEditor.pickPlay ? 'Click the map…' : 'Pick the spot'}</button><span class="hint">${playSpot().why}</span>
   ${st.on ? `<div class="sc-story-flags"><span class="hint">${N.flags.length || N.beat.length ? 'Read here:' : 'Nothing here has a when or unless.'}</span>${N.flags.map(flagChip).join('')}${N.beat.map(beatChip).join('')}${more.length ? `<details><summary class="hint">More story flags</summary>${more.map(flagChip).join('')}</details>` : ''}<span class="hint">${hid ? `${hid} hidden for these flags` : 'Everyone is here'}</span></div>` : ''}`;
 }
 /* after a change: the bar, the map and (it asks each frame) the 3D preview */
@@ -945,6 +953,41 @@ function storyPreviewChanged() {
   if (el) el.innerHTML = storyPreviewBarHTML();
   drawEditorMap();
 }
+/* Play from here: the game in this scene's place, on the spot you picked on the map, else where the preview's walker
+   stands, else the hub; at the preview's preset and flags, with your unsaved changes (a scene no stop uses, like a
+   room, opens as a scene test run) */
+function playSpot() {
+  const sc = currentMap() || {},
+    id = currentMapId(),
+    P = mapEditor.playAt && mapEditor.playAt.id === id ? mapEditor.playAt : null;
+  if (P) return { at: [P.x, P.z], why: `Starts on the spot you picked (${P.x}, ${P.z}).` };
+  if (mapEditor.pvPos && mapEditor.pvId === id)
+    return { at: mapEditor.pvPos.map(v => +v.toFixed(1)), why: 'Starts where the preview’s walker stands.' };
+  return { at: sc.w ? mapHub(sc).map(v => +(+v).toFixed(1)) : null, why: 'Starts on the hub.' };
+}
+function playFromHereURL(D, sceneId, at, story) {
+  const loc = (D.locations || []).find(l => l.mapId === sceneId),
+    q = new URLSearchParams({ test: '1' });
+  if (story.on && story.preset) q.set('story', story.preset);
+  if (loc) q.set('place', loc.id);
+  else q.set('scene', sceneId);
+  if (at) q.set('at', at.join(','));
+  const F = story.on ? storySwitchesText(story.flags || {}) : '';
+  if (F) q.set('flags', F);
+  q.set('draft', '1');
+  return '../game/index.html?' + q.toString();
+}
+ACTIONS.scPlayHere = () => {
+  const id = currentMapId();
+  if (!id) return;
+  studioBroadcast();
+  window.open(playFromHereURL(studioState.D, id, playSpot().at, mapEditor.story), 'networth-game');
+  toast('Opening the game here with your unsaved changes. Nothing there is saved.');
+};
+ACTIONS.scPlaySpot = () => {
+  mapEditor.pickPlay = !mapEditor.pickPlay;
+  storyPreviewChanged();
+};
 ACTIONS.scStoryFlag = d => {
   const save = storyPvNow(),
     f = d.f,
@@ -1165,6 +1208,24 @@ export function drawEditorMap() {
     }
   }
   drawScenePeople(x, sc, Z, H);
+  const PA = mapEditor.playAt && mapEditor.playAt.id === currentMapId() ? mapEditor.playAt : null;
+  if (PA) {
+    /* the spot Play from here starts on */
+    const px = PA.x * Z,
+      py = (H - PA.z) * Z;
+    x.save();
+    x.fillStyle = '#f2c14e';
+    x.strokeStyle = '#1f2e36';
+    x.lineWidth = 2;
+    x.beginPath();
+    x.moveTo(px, py);
+    x.lineTo(px - 7, py - 14);
+    x.lineTo(px + 7, py - 14);
+    x.closePath();
+    x.fill();
+    x.stroke();
+    x.restore();
+  }
   if (mapEditor.sel != null && sc.props[mapEditor.sel]) {
     const b = mapEditor.boxes.find(b => b.i === mapEditor.sel);
     if (b) {
@@ -1302,6 +1363,12 @@ function bindEditorMap() {
     const sc = currentMap(),
       m = mapPointer(ev);
     cv.setPointerCapture(ev.pointerId);
+    if (mapEditor.pickPlay) {
+      mapEditor.pickPlay = false;
+      mapEditor.playAt = { id: currentMapId(), x: +m.x.toFixed(1), z: +m.z.toFixed(1) };
+      storyPreviewChanged();
+      return;
+    }
     if (typeof extraToolPointerDown === 'function' && extraToolPointerDown(sc, m, ev)) return;
     if (mapEditor.tool === 'paint' || mapEditor.tool === 'fill') {
       if (ev.altKey) {

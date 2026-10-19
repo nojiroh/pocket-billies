@@ -23,6 +23,34 @@ class Quiet(SimpleHTTPRequestHandler):
     def log_message(self, *a): pass
 
 
+def play_from_here(pg, errs):
+    """Project Story S3: Play from here opens the game in Copperleaf on the picked spot, at the preview's preset with a
+    trainer switched to beaten, and with the Studio's unsaved script; nothing is saved there."""
+    pg.evaluate("studioState.D.trainers.crude.script.splice(1, 0, '  set s3_draft'); mapEditor.story.flags = {'beat:chad': true}; mapEditor.story.v++")
+    pg.locator('#scStory [data-act="scPlaySpot"]').click()
+    pg.locator('#scMap').scroll_into_view_if_needed()
+    box = pg.locator('#scMap').bounding_box()
+    pg.mouse.click(box['x'] + min(box['width'], 800) * 0.4, box['y'] + min(box['height'], 600) * 0.5)
+    spot = pg.evaluate("[mapEditor.playAt.x, mapEditor.playAt.z]")
+    with pg.context.expect_page(timeout=10000) as info:
+        pg.locator('#scStory [data-act="scPlayHere"]').click()
+    gp = info.value
+    gp.on('pageerror', lambda e: errs.append('game: ' + str(e)[:300]))
+    t0 = time.time()
+    while time.time() - t0 < 120:
+        try:
+            if gp.evaluate("typeof saveData!=='undefined' && typeof uiState!=='undefined' && uiState.tab==='walk' && !!saveData.started"): break
+        except Exception: pass
+        time.sleep(0.5)
+    got = gp.evaluate("""[LOCATIONS[saveData.trip.node].id, uiState.roam && [uiState.roam.x, uiState.roam.z], saveData.story.rival0,
+        saveData.flags.chad, gameData.trainers.crude.script.includes('  set s3_draft'), Object.keys(localStorage).filter(k => k.startsWith('networth-save'))]""")
+    want = ['copperleaf', spot, 'win', 1, True, []]
+    if got != want: errs.append(f'story: Play from here gave {got}, wanted {want}')
+    else: print(f'Play from here: Copperleaf at {spot}, after-opening, chad beaten, the draft script, no save', flush=True)
+    gp.close()
+    pg.evaluate("studioState.D.trainers.crude.script.splice(1, 1); mapEditor.story.flags = {}; mapEditor.playAt = null; mapEditor.story.v++")
+
+
 def story_steps(pg, errs):
     """Project Story S3: a trainer's script says what is wrong as you type, with the line; Add line ids gives the new
     line one; the command reference opens and puts a command in the script; a scene's person has a script field."""
@@ -71,6 +99,7 @@ def story_steps(pg, errs):
     c = pg.locator('#scStory').inner_text()
     if '1 hidden' not in a or 'Everyone is here' not in b or '1 hidden' not in c:
         errs.append(f'story: the preview hides {a!r} / {b!r} / {c!r}')
+    play_from_here(pg, errs)
     pg.locator('#scStoryOn').uncheck()
     pg.evaluate("delete studioState.D.maps.copperleaf.people[0].when")
     pg.evaluate("void openSection('story')")
@@ -113,8 +142,9 @@ def main():
     errs = []
     with sync_playwright() as pw:
         b = pw.chromium.launch(args=['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'])
-        pg = b.new_page(viewport={'width': 1400, 'height': 900})
-        pg.add_init_script('window.PB_TEST_GLOBALS=true')  # phase 04d: the modules' names on window, for evaluate()
+        ctx = b.new_context(viewport={'width': 1400, 'height': 900})
+        ctx.add_init_script('window.PB_TEST_GLOBALS=true')  # phase 04d: the modules' names on window, for evaluate()
+        pg = ctx.new_page()
         pg.on('console', lambda m: errs.append(m.text[:300]) if m.type == 'error' else None)
         pg.on('pageerror', lambda e: errs.append(str(e)[:400]))
         pg.route('https://api.github.com/**', api)

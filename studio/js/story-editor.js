@@ -26,6 +26,7 @@ import {
   selectField,
   setReadPath,
   setWritePath,
+  studioBroadcast,
   studioState,
   textField,
   toast,
@@ -380,7 +381,12 @@ SECTIONS.story = () => {
      ['Preset', 'About', 'Place', 'Flags', 'Beaten']
    ),
    {
-     sub: 'Play from here (Walk scenes) starts a throwaway game at one of these. They are edited in story.json for now.',
+     sub: 'Play from here (Walk scenes) starts a throwaway game at one of these, with your unsaved changes. They are edited in story.json for now.',
+     acts: Object.keys(P).length
+       ? `<span class="seg-row"><select id="storyPlayPreset" aria-label="Preset">${Object.keys(P)
+           .map(n => `<option>${escapeHtml(n)}</option>`)
+           .join('')}</select><button class="btn sm primary" data-act="storyPlay">▶ Play</button></span>`
+       : '',
    }
  )}
  ${card(
@@ -487,3 +493,11 @@ document.addEventListener('change', ev => {
   const el = ev.target;
   if (el && el.dataset && /^maps\.[^.]+\.people\.\d+\.id$/.test(el.dataset.p || '')) render();
 });
+/* a preset's place, with the unsaved changes (Walk scenes → Play from here picks the spot too) */
+ACTIONS.storyPlay = () => {
+  const el = document.getElementById('storyPlayPreset');
+  if (!el) return;
+  studioBroadcast();
+  window.open(`../game/index.html?story=${encodeURIComponent(el.value)}&draft=1`, 'networth-game');
+  toast('Opening the game at that preset with your unsaved changes. Nothing there is saved.');
+};

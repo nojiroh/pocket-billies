@@ -160,3 +160,13 @@ test('the Studio’s story preview reads a preset as the game does after applySt
     beat: ['chad'],
   });
 });
+
+test('Play from here: the switches go through the address and into a save as the preview reads them', () => {
+  const { storySwitches, storySwitchesText, storySwitchesOf } = modules['story-checks'];
+  const F = { met_x: true, rival0: false, 'beat:chad': true };
+  assert.equal(storySwitchesText(F), 'met_x,!rival0,beat:chad');
+  assert.deepEqual(storySwitchesOf('met_x,!rival0,beat:chad, ,<b>,'), F);
+  const save = storySwitches({ story: { rival0: 'win' } }, GAME_DATA, F);
+  assert.deepEqual([save.story.met_x, save.story.rival0, save.flags.chad], [1, undefined, 1]);
+  assert.ok(save.seats.includes(GAME_DATA.trainers.chad.seat?.id) || !GAME_DATA.trainers.chad.seat);
+});

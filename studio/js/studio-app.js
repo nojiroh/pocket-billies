@@ -191,7 +191,8 @@ export function changed(rigs) {
   if (!rigs) studioBroadcast();
 }
 /* v29: live update. A game tab open from this Studio (a test run, or the game on the same address) gets your scenes,
-   props and engine settings half a second after each change, before you save */
+   props and engine settings (Project Story S3: and the story and trainers) half a second after each change, before
+   you save */
 const LIVE_UPDATE_CHANNEL = (() => {
   try {
     const c = new BroadcastChannel('networth-studio');
@@ -203,14 +204,20 @@ const LIVE_UPDATE_CHANNEL = (() => {
     return null;
   }
 })();
-function studioBroadcast() {
+export function studioBroadcast() {
   if (!LIVE_UPDATE_CHANNEL || !studioState.D) return;
   clearTimeout(studioBroadcast.t);
   studioBroadcast.t = setTimeout(() => {
     try {
       LIVE_UPDATE_CHANNEL.postMessage({
         type: 'data',
-        D: { maps: studioState.D.maps, scenery: studioState.D.scenery, engine: studioState.D.engine },
+        D: {
+          maps: studioState.D.maps,
+          scenery: studioState.D.scenery,
+          engine: studioState.D.engine,
+          story: studioState.D.story,
+          trainers: studioState.D.trainers,
+        },
       });
     } catch (e) {}
   }, 500);
