@@ -69,6 +69,7 @@ import {
 } from './hooks.js';
 import { clamp } from './util.js';
 import { gpuPass } from './engine/gpu-counters.js';
+import { nearestFirst, pooledQuad } from './engine/frame-lists.js';
 import { frameCount, frameScheduler, frameTask, userFps } from './frame-scheduler.js';
 import { hexToRgb, makeCanvas } from './art.js';
 import { folkFrames, personBattlePose, personWalkFrames, pickWalkFrame, warmPerson } from './person-art.js';
@@ -200,6 +201,9 @@ import {
 /* eslint-disable no-func-assign */
 expose({
   ALTERNATE_PROPS: [() => ALTERNATE_PROPS],
+  AO_ALL: [() => AO_ALL],
+  AO_NEAR: [() => AO_NEAR],
+  AO_POOL: [() => AO_POOL],
   BOBBING_PROPS: [() => BOBBING_PROPS],
   BOX_INFO_CACHE: [() => BOX_INFO_CACHE],
   EVERGREEN_PROPS: [() => EVERGREEN_PROPS],
@@ -5143,7 +5147,12 @@ function windowLit(x, z) {
     ? environmentWindowLit(x, z, environment.tod)
     : true;
 }
+/* phase 20 C2: the contact-shadow blobs, refilled in place each frame (engine/frame-lists.js) */
+const AO_POOL = [],
+  AO_ALL = [],
+  AO_NEAR = [];
 function walkLightContext(C, sun, dark, items, shadow, BT) {
+  AO_ALL.length = 0;
   const dark0L = dark;
   const sc = walkView.sc,
     t = walkView.t,
@@ -5153,7 +5162,7 @@ function walkLightContext(C, sun, dark, items, shadow, BT) {
     flick = engineSetting('lights', 'flicker'),
     winDay = engineSetting('lights', 'windowsDay');
   const L = [],
-    ao = [],
+    ao = AO_ALL,
     RR = sc.roomRect,
     dOut = RR && typeof environment !== 'undefined' && engineContext.env ? environment.lampK || 0 : 0;
   for (const it of items) {
@@ -5166,8 +5175,15 @@ function walkLightContext(C, sun, dark, items, shadow, BT) {
       const box = M.box;
       ao.push(
         box
-          ? [it.x, it.z + box[1] * 0.5 * (it.p.s || 1), box[0] * 0.62 * (it.p.s || 1), box[1] * 0.75 * (it.p.s || 1)]
-          : [it.x, it.z, Math.max(0.25, it.sh * 0.62), Math.max(0.2, it.sh * 0.47)]
+          ? pooledQuad(
+              AO_POOL,
+              ao.length,
+              it.x,
+              it.z + box[1] * 0.5 * (it.p.s || 1),
+              box[0] * 0.62 * (it.p.s || 1),
+              box[1] * 0.75 * (it.p.s || 1)
+            )
+          : pooledQuad(AO_POOL, ao.length, it.x, it.z, Math.max(0.25, it.sh * 0.62), Math.max(0.2, it.sh * 0.47))
       );
     }
     const at = (fx, fy) => [it.x + R[0] * fx * s * it.flip, it.y - fy * s, it.z + R[2] * fx * s * it.flip];
@@ -5248,10 +5264,9 @@ function walkLightContext(C, sun, dark, items, shadow, BT) {
   }
   for (const it of items)
     if (it.person || it.k === 'enc' || (it.k === 'life' && it.sh > 0))
-      ao.push([it.x, it.z, it.aoR || 0.34, (it.aoR || 0.34) * 0.76]);
+      ao.push(pooledQuad(AO_POOL, ao.length, it.x, it.z, it.aoR || 0.34, (it.aoR || 0.34) * 0.76));
   if (BT) for (const l of BT.lights) L.push(l);
-  ao.forEach(a => (a.d = Math.hypot(a[0] - P.x, a[1] - P.z)));
-  ao.sort((a, b) => a.d - b.d);
+  nearestFirst(ao, P.x, P.z, AO_NEAR, 64);
   /* v26: dark caves (and the night) — you carry a lantern */
   const E = typeof environment !== 'undefined' && engineContext.env ? environment : null,
     cave = (sc.dark ?? (sc.indoor && sc.far === 'cave' ? 1 : 0)) * engineSetting('air', 'caveDark'),
@@ -5334,7 +5349,7 @@ function walkLightContext(C, sun, dark, items, shadow, BT) {
     lite: walkView.R < 0.75,
     shadow,
     lights,
-    ao: ao.slice(0, 64).map(a => [a[0], a[1], a[2], a[3]]),
+    ao: AO_NEAR,
     curve: worldCurveArgs(),
     season: E ? E.sk : [0, 0, 0, 0],
   });
