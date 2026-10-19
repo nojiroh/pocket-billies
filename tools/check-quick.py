@@ -1210,7 +1210,15 @@ def desktop_steps(b, base, R):
         out.append('place card closes and comes back')
         # the map: drag the land, turn, zoom right down to the miniatures
         pg.evaluate("uiState.tab='map';render();0"); time.sleep(6)
-        if pg.evaluate("worldMap.gl"):
+        if pg.evaluate("typeof worldBowl!=='undefined'&&worldBowl.on"):
+            # phase 10: the bowl map (game/js/world-bowl.js): drag, turn and zoom with its own camera, then Home
+            c0 = pg.evaluate("JSON.stringify(worldBowl.cam)")
+            pg.evaluate("(()=>{const W=worldMapWidth,H=worldMapHeight;let c=bowlCamPan(worldBowl.cam,bowlCamView(worldBowl.cam,W,H),-120,40);c=bowlCamTurn(c,.8,.2);for(let i=0;i<20;i++)c=bowlCamZoom(c,.8);worldBowl.goal=null;worldBowl.cam=c;worldBowl.dirty=true})();0"); time.sleep(2); shot(pg, 'map-close')
+            m = pg.evaluate("(()=>{const c=worldBowl.cam,v=bowlCamView(c,worldMapWidth,worldMapHeight);return [JSON.stringify(c),c.dist,v.C[1]]})()")
+            pg.evaluate("worldMapReset();0")
+            if m[0] == c0 or m[1] > .46 or m[2] < .37: raise Exception(f'bowl map camera: {m}')
+            out.append(f'the bowl map pans, turns and zooms to {m[1]:.2f}, the eye {m[2]:.2f} up (above the rim)')
+        elif pg.evaluate("worldMap.gl"):
             f0 = pg.evaluate("JSON.stringify(worldMap.focus)"); y0 = pg.evaluate("worldMap.yaw")
             pg.evaluate("worldMapGlPanTo({focus:worldMap.focus||worldMapPlayerPosition(),cam:worldMap.cam},-120,40);worldMapGlAction('mturn',{k:'1'});for(let i=0;i<20;i++)worldMapZoom(.8);worldMap.tilt=.35;0"); time.sleep(2); shot(pg, 'map-close')
             m = pg.evaluate("[JSON.stringify(worldMap.focus),worldMap.yaw,worldMap.alt,worldMap.free]")
@@ -1262,7 +1270,8 @@ def desktop_steps(b, base, R):
         pg.evaluate("(()=>{const sc=walkView.sc,C0=walkData().sc,b=(sc.props||[]).find(p=>{const M=C0.props[p.k];return M&&M.box&&M.door});if(!b)return;walkView.pl.route=null;const q=walkablePointNear(b.x,b.z-2.5);walkView.pl.x=q[0];walkView.pl.z=q[1];walkRenderer.zoomT=walkRenderer.zoom=.7})();0"); time.sleep(2.5); shot(pg, 'wear-building')
         # the map's 3D miniatures
         pg.evaluate("uiState.tab='map';render();0"); time.sleep(3)
-        if pg.evaluate("worldMap.gl&&typeof worldMapMinisOn==='function'&&worldMapMinisOn()"):
+        if pg.evaluate("typeof worldBowl!=='undefined'&&worldBowl.on"): out.append('the bowl map has no miniatures yet (phase 10)')
+        elif pg.evaluate("worldMap.gl&&typeof worldMapMinisOn==='function'&&worldMapMinisOn()"):
             pg.evaluate("worldMap.alt=.04;worldMap.tilt=.45;worldMapGl.altT=null;worldMap.dirty=true;0"); time.sleep(4)
             n = pg.evaluate("[...worldMapMinis.cache.values()].filter(e=>e.m).length"); shot(pg, 'map-minis')
             pg.evaluate("worldMapReset();0")

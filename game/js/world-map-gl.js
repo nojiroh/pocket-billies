@@ -723,7 +723,7 @@ export function setWorldMapGlRender(v) {
 }
 /* the miniatures: loaded the first time the map opens; size in world units per pixel (about 3 degrees across) */
 const MINI_PICTURE_SCALE = 0.0004;
-export function worldMapGlMiniPicture(i) {
+function worldMapGlMiniPicture(i) {
   const r = LOCATIONS[i];
   if (!r || !r.mapId) return null;
   const p = `map/mini/${r.mapId}.png`,

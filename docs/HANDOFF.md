@@ -11,6 +11,28 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 - Questions waiting for the owner: 
 - Next session starts with: 
 
+### Phase 10 (world map: the bowl), E-map-3 follow-up - the bowl always on, pins, the bowl map test - 2026-10-19
+Owner's request: "Have it activated always. Lose the miniatures for now. Make a debug test specific for it."
+- Changed:
+  - The bowl is the world map (no switch). The old sphere map still draws only with no WebGL and during an airship
+    flight (the flight is drawn over the old map until E-map-5); the debug menu's preview switch is gone.
+  - Places are pins (stalk and head; a house for towns; gold here, grey locked, white picked; a pink dot when new);
+    no miniatures, no map/mini pictures loaded by the bowl. Pearlantis stays a small marker under Kelpport.
+  - `game/js/bowl-map-test.js`, debug menu (Trainers and world) -> "Bowl map test": on the device, shaders, the Map
+    tab opening as the bowl, every place on the bowl, a tap on each of the 49 pins opens that card, 48 camera moves
+    never below the rim line, Home, frame rate (whole bowl turning, close up turning, panning: fps, worst gap, draw
+    ms), errors. Saves nothing; puts the map back; "Save the report" (JSON, no save data or names).
+  - Fast check: new "The world map opens as the bowl" (small page, graphics off, no pictures): opens, every place
+    has a spot, a tap opens Tallgrass Meadow's card, Home comes back.
+  - Quick check v31 drives the bowl camera when the bowl is on; v32 and the full test's miniatures step skip with
+    "the bowl map has no miniatures yet".
+- Risky or unfinished: not seen on a device (no graphics run). The airship flight still shows the old map.
+- Verified: lint, typecheck, check:data, check:modules, format:check, npm test (132 pass); the ground shader compiles
+  headless; check-fast 11 of 12, the new bowl check passes. "A battle plays to the end" fails the same way on main
+  (stuck at playing in a full parallel run, passes alone): not from this change.
+- Questions waiting for the owner: run the Bowl map test on the phone and send the report or debug log.
+- Next session starts with: E-map-4, the ground and routes.
+
 ### Phase 10 (world map: the bowl), session E-map-3 - camera and controls (preview) - 2026-10-19
 Plan approved ("Go"); owner chose: opening tilt about 50 degrees, zoom from the whole bowl down to about one region.
 - Changed:

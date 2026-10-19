@@ -18,6 +18,8 @@ centre, the ground generated from region terrain, seen from above like a diorama
 - **Underground / sealed places:** Pearlantis is a small marker under Kelpport with a dashed lift line, not its own spot
   on the ground.
 - **Kept from today's map:** the Places list.
+- **Markers (2026-10-19):** pins for now, no miniatures; the bowl is always the map (the old map only without WebGL
+  and during an airship flight, until E-map-5).
 - **Dropped:** Flat view; the CPU-drawn fallback (when the GPU context is lost, show the Places list and a "map
   reloading" note); the gold trip line and the pins.
 - **Depth:** medium. A flat-ish floor, walls rising to about 45 degrees at the rim.
@@ -60,7 +62,7 @@ layout, and any adjacency the bowl cannot honour listed. Owner picks one.
 0-1 from centre to rim; lon/lat removed once nothing reads them). Road curves rebuilt on the bowl surface. New Node
 test: every seam's exit direction agrees with the layout (within a tolerance). The graph test stays green.
 
-**E-map-3 Camera and controls (done 2026-10-19, as a preview switched on in the debug menu).** Drag to orbit, pinch or wheel to zoom, smooth easing, limits so the camera stays above
+**E-map-3 Camera and controls (done 2026-10-19; the bowl is always on, places are pins, debug menu → Bowl map test).** Drag to orbit, pinch or wheel to zoom, smooth easing, limits so the camera stays above
 the rim line and out of the terrain, a Home button that recentres on the current place, tap a miniature to open the
 card with a Travel button. Locked and visited states shown on the miniature and the card (pins are gone).
 

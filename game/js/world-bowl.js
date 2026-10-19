@@ -1,11 +1,13 @@
 'use strict';
-/* ================= THE BOWL WORLD MAP, PREVIEW (phase 10, session E-map-3) =================
-   The lower half of the Hollow Earth seen from above, like a tabletop (docs/phases/10-world-map-bowl.md). For now it
-   is a preview next to the old sphere map: the debug menu switches it on for this device ("Bowl world map"), and the
-   old map stays the default until the bowl replaces it (session E-map-6).
-   This session: the camera and its controls. One finger drags the land; two fingers pinch to zoom, twist to turn and
+/* ================= THE BOWL WORLD MAP (phase 10, sessions E-map-3 on) =================
+   The lower half of the Hollow Earth seen from above, like a tabletop (docs/phases/10-world-map-bowl.md). It is the
+   world map (owner, 2026-10-19: always on). The old sphere map still draws where the bowl can't: no WebGL, and an
+   airship flight (until session E-map-5 moves the flight onto the bowl); session E-map-6 deletes it.
+   Places are pins for now (owner: no miniatures yet). The debug menu's "Bowl map test" (bowl-map-test.js) checks it
+   on a device.
+   Controls: One finger drags the land; two fingers pinch to zoom, twist to turn and
    slide up or down to tilt; on a computer the wheel zooms and the right button (or Shift) turns and tilts. Home goes
-   back to where you are; tapping a place's miniature opens its card (Travel is the card's own button).
+   back to where you are; tapping a place's pin opens its card (Travel is the card's own button).
    The ground is a placeholder: plain floor and walls tinted by region, with the Inner Sun overhead. The real ground,
    routes in the ground, clouds and the airship hop come in sessions E-map-4 and E-map-5.
    The camera's arithmetic is logic/bowl-camera.js; where each place sits is locations.json "bowl" (logic/bowl.js). */
@@ -35,7 +37,7 @@ import {
 import { reducedMotion, saveData, uiState } from './game-state.js';
 import { frameCount, frameStop, frameTask } from './frame-scheduler.js';
 import { personWalkFrames } from './person-art.js';
-import { bindQuad, ensurePrograms, gpuState, imageTexture, renderTarget } from './engine/webgl.js';
+import { bindQuad, ensurePrograms, gpuState, renderTarget } from './engine/webgl.js';
 import { drawPostEffects, projectToScreenUv } from './engine/post-effects.js';
 import {
   setWorldMapLabels,
@@ -51,38 +53,29 @@ import {
   worldMapWidth,
   worldMapZoom,
 } from './world-map.js';
-import {
-  worldMapGl,
-  worldMapGlChrome,
-  worldMapGlMiniPicture,
-  worldMapGlReady,
-  worldMapGlSize,
-} from './world-map-gl.js';
+import { worldMapGl, worldMapGlChrome, worldMapGlReady, worldMapGlSize } from './world-map-gl.js';
 /* eslint-disable no-func-assign */
 expose({
   BOWL_HAZE: [() => BOWL_HAZE],
-  BOWL_MINI_SIZE: [() => BOWL_MINI_SIZE],
-  BOWL_PREVIEW_KEY: [() => BOWL_PREVIEW_KEY],
+  BOWL_PIN: [() => BOWL_PIN],
   BOWL_REGION_COLORS: [() => BOWL_REGION_COLORS],
   BOWL_SUN: [() => BOWL_SUN],
   BOWL_WATER: [() => BOWL_WATER],
   WORLD_BOWL_SHADERS: [() => WORLD_BOWL_SHADERS],
   bowlDepth: [() => bowlDepth],
-  bowlMapPreview: [() => bowlMapPreview, v => (bowlMapPreview = v)],
   oldWorldMapLabels: [() => oldWorldMapLabels],
   oldWorldMapMount: [() => oldWorldMapMount],
   oldWorldMapReset: [() => oldWorldMapReset],
   oldWorldMapZoom: [() => oldWorldMapZoom],
-  switchBowlMapPreview: [() => switchBowlMapPreview, v => (switchBowlMapPreview = v)],
   worldBowl: [() => worldBowl],
   worldBowlBind: [() => worldBowlBind, v => (worldBowlBind = v)],
   worldBowlChrome: [() => worldBowlChrome, v => (worldBowlChrome = v)],
   worldBowlDot: [() => worldBowlDot, v => (worldBowlDot = v)],
   worldBowlLock: [() => worldBowlLock, v => (worldBowlLock = v)],
   worldBowlLoop: [() => worldBowlLoop, v => (worldBowlLoop = v)],
-  worldBowlMarkerTop: [() => worldBowlMarkerTop, v => (worldBowlMarkerTop = v)],
   worldBowlOverlay: [() => worldBowlOverlay, v => (worldBowlOverlay = v)],
   worldBowlPick: [() => worldBowlPick, v => (worldBowlPick = v)],
+  worldBowlPin: [() => worldBowlPin, v => (worldBowlPin = v)],
   worldBowlPlaceColors: [() => worldBowlPlaceColors, v => (worldBowlPlaceColors = v)],
   worldBowlRender: [() => worldBowlRender, v => (worldBowlRender = v)],
   worldBowlSpots: [() => worldBowlSpots, v => (worldBowlSpots = v)],
@@ -90,25 +83,7 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-/* the switch: per device, in the browser's storage, never in the save (a preview, not a setting) */
-const BOWL_PREVIEW_KEY = 'pb-bowl-map-preview';
-export function bowlMapPreview() {
-  try {
-    return localStorage.getItem(BOWL_PREVIEW_KEY) === '1';
-  } catch {
-    return false;
-  }
-}
-export function switchBowlMapPreview(on) {
-  try {
-    if (on) localStorage.setItem(BOWL_PREVIEW_KEY, '1');
-    else localStorage.removeItem(BOWL_PREVIEW_KEY);
-  } catch {
-    /* storage blocked: the preview stays off */
-  }
-}
-
-const worldBowl = {
+export const worldBowl = {
   on: false,
   /** the camera now and where it is easing to (null: nowhere) */
   cam: null,
@@ -123,6 +98,14 @@ const worldBowl = {
   /** each place's spot seen from above, in node order (Pearlantis: Kelpport's, with under = 1) */
   spots: null,
   roads: null,
+  /** frames drawn, and the last few draw times in ms (for the bowl map test) */
+  frames: 0,
+  ms: [],
+  ts: [],
+  /** the bowl map test: keep drawing every frame and turn by this many radians a second */
+  bench: null,
+  /** where each pin is on screen, last drawn: { i, base, top, z } */
+  marks: [],
 };
 
 /* region colours for the placeholder ground (session E-map-4 replaces them with terrain) */
@@ -139,11 +122,11 @@ const BOWL_REGION_COLORS = {
 const BOWL_WATER = { sea: 1, pond: 1, lake: 1, island: 1 };
 const BOWL_SUN = [0, 1.7, 0];
 const BOWL_HAZE = [0.69, 0.73, 0.92];
-const BOWL_MINI_SIZE = 0.075; /* a miniature's width on the ground, in bowl radii (towns a little bigger) */
+const BOWL_PIN = 22; /* a pin's height on screen, in pixels */
 
 const bowlDepth = n =>
   `((${((BOWL_CAMERA.far + BOWL_CAMERA.near) / (BOWL_CAMERA.far - BOWL_CAMERA.near)).toFixed(6)})-(${((2 * BOWL_CAMERA.far * BOWL_CAMERA.near) / (BOWL_CAMERA.far - BOWL_CAMERA.near)).toFixed(6)})/max(${n},1e-4))*.5+.5`;
-const WORLD_BOWL_SHADERS = {
+export const WORLD_BOWL_SHADERS = {
   /* the ground and the sky: one full-screen pass that finds where each pixel's ray meets the bowl */
   mbowl: [
     `#version 300 es
@@ -173,15 +156,6 @@ void main(){vec2 px=gl_FragCoord.xy/uR;float dx=(px.x-uWH.x*.5)/uFoc,dy=(px.y-uW
   z=th;}
  float fk=1.-exp(-max(0.,z-.6)*.35);col=mix(col,uHaze,clamp(fk,0.,.7));
  o=vec4(col,1.);float zz=z*dot(d,uFw);gl_FragDepth=${bowlDepth('zz')};}`,
-  ],
-  /* a miniature standing on the ground, facing the camera */
-  mbspr: [
-    `#version 300 es
-precision highp float;in vec2 aC;uniform mat4 uVP;uniform vec3 uP,uRt,uUp;uniform vec2 uS;out vec2 vUV;out vec3 vW;
-void main(){vec3 p=uP+uRt*(aC.x-.5)*uS.x+uUp*aC.y*uS.y;vW=p;vUV=vec2(aC.x,1.-aC.y);gl_Position=uVP*vec4(p,1.);}`,
-    `#version 300 es
-precision highp float;in vec2 vUV;in vec3 vW;out vec4 o;uniform sampler2D uTex;uniform vec3 uC,uHaze;uniform float uDim;
-void main(){vec4 c=texture(uTex,vUV);if(c.a<.5)discard;vec3 k=mix(c.rgb,vec3(dot(c.rgb,vec3(.3,.59,.11)))*.7,uDim);float d=length(vW-uC),fk=1.-exp(-max(0.,d-.6)*.35);o=vec4(mix(k,uHaze,clamp(fk,0.,.7)),1.);}`,
   ],
 };
 
@@ -217,8 +191,9 @@ function worldBowlPlaceColors() {
 }
 
 /* ---------- mount, size, loop ---------- */
-/* the map uses the bowl when the preview is on, WebGL works, and no airship flight is showing over the old map */
-const worldBowlWanted = () => bowlMapPreview() && !worldMap.fly && worldMapGlReady();
+/* the bowl, unless an airship flight is starting or showing (the flight draws over the old map until E-map-5), or
+   WebGL isn't there */
+const worldBowlWanted = () => !document.body.classList.contains('flying') && !worldMap.fly && worldMapGlReady();
 const oldWorldMapMount = worldMapMount,
   oldWorldMapZoom = worldMapZoom,
   oldWorldMapReset = worldMapReset,
@@ -290,7 +265,9 @@ function worldBowlLoop(ts) {
     }
     worldBowl.dirty = true;
   }
-  let moving = !!worldBowl.drag;
+  let moving = !!(worldBowl.drag || worldBowl.bench);
+  if (worldBowl.bench && worldBowl.bench.turn)
+    worldBowl.cam = bowlCamTurn(worldBowl.cam, (worldBowl.bench.turn * dt) / 1000, 0);
   if (worldBowl.goal) {
     worldBowl.cam = bowlCamEase(worldBowl.cam, worldBowl.goal, reducedMotion ? 1 : 1 - Math.exp(-dt / 110));
     if (bowlCamGap(worldBowl.cam, worldBowl.goal) < 1e-3) {
@@ -307,7 +284,12 @@ function worldBowlLoop(ts) {
   worldBowl.view = bowlCamView(worldBowl.cam, worldMapWidth, worldMapHeight);
   worldBowlRender(ts);
   worldBowlOverlay(ts);
-  frameCount(performance.now() - w0);
+  const ms = performance.now() - w0;
+  worldBowl.frames++;
+  worldBowl.ms.push(ms);
+  worldBowl.ts.push(ts);
+  if (worldBowl.ms.length > 240) (worldBowl.ms.shift(), worldBowl.ts.shift());
+  frameCount(ms);
 }
 
 /* ---------- drawing ---------- */
@@ -352,34 +334,8 @@ function worldBowlRender(t) {
   gl.uniform3fv(U.uPc, worldBowl.pc.C);
   gl.uniform1i(U.uNPl, worldBowl.pc.n);
   gl.drawArrays(gl.TRIANGLES, 0, 6);
-  /* the miniatures, standing up and facing the camera */
   gl.depthFunc(gl.LEQUAL);
-  p = gpuState.P.mbspr;
-  U = p.U;
-  gl.useProgram(p.p);
   const VP = bowlCamMatrix(v);
-  gl.uniformMatrix4fv(U.uVP, false, VP);
-  gl.uniform3fv(U.uC, v.C);
-  gl.uniform3fv(U.uHaze, BOWL_HAZE);
-  gl.uniform1i(U.uTex, 0);
-  gl.activeTexture(gl.TEXTURE0);
-  const flatRt = [v.rt[0], 0, v.rt[2]],
-    up = [0, 1, 0];
-  worldBowl.spots.forEach((s, i) => {
-    if (s.under) return;
-    const im = worldMapGlMiniPicture(i);
-    if (!im) return;
-    const T = imageTexture(im, { noNormal: true });
-    if (!T) return;
-    const w = BOWL_MINI_SIZE * (LOCATIONS[i].town ? 1.2 : 1);
-    gl.uniform3fv(U.uP, bowlToGpu(s.x, s.y, s.h));
-    gl.uniform3fv(U.uRt, flatRt);
-    gl.uniform3fv(U.uUp, up);
-    gl.uniform2f(U.uS, w, (w * im.height) / im.width);
-    gl.uniform1f(U.uDim, canEnter(i) ? 0 : 0.75);
-    gl.bindTexture(gl.TEXTURE_2D, T.t);
-    gl.drawArrays(gl.TRIANGLES, 0, 6);
-  });
   const fd = Math.max(0.05, v.foc ? worldBowl.cam.dist : 1);
   drawPostEffects(
     S,
@@ -389,14 +345,6 @@ function worldBowlRender(t) {
     rh,
     { blur: 0, fast: rw * rh > 1.2e6, noAO: true, sun: projectToScreenUv(VP, BOWL_SUN), sunCol: [1, 0.9, 0.7] }
   );
-}
-/* the top of a place's miniature, for its marker and label (GPU coordinates) */
-function worldBowlMarkerTop(i) {
-  const s = worldBowl.spots[i],
-    im = worldMapGlMiniPicture(i),
-    w = BOWL_MINI_SIZE * (LOCATIONS[i].town ? 1.2 : 1),
-    h = im ? (w * im.height) / im.width : w * 0.6;
-  return bowlToGpu(s.x, s.y, s.h + h);
 }
 /* roads, labels, the state of each place, and you */
 function worldBowlOverlay(t) {
@@ -454,7 +402,7 @@ function worldBowlOverlay(t) {
     const s = worldBowl.spots[i],
       base = bowlCamProject(v, bowlToGpu(s.x, s.y, s.h));
     if (!base) return;
-    let top = bowlCamProject(v, worldBowlMarkerTop(i)) || base;
+    let top = { x: base.x, y: base.y - BOWL_PIN, z: base.z };
     if (s.under) {
       /* reached by lift: a small marker just under its parent, a dashed line up to it */
       const y = base.y + 26;
@@ -468,7 +416,7 @@ function worldBowlOverlay(t) {
       c.setLineDash([]);
       top = { x: base.x, y: y, z: base.z };
       worldBowlDot(c, top.x, top.y, 6, '#9fd3ff');
-    }
+    } else worldBowlPin(c, base.x, base.y, l, i);
     worldBowl.marks.push({ i, base, top, z: base.z });
     const here = i === saveData.trip.node,
       locked = !canEnter(i),
@@ -524,6 +472,35 @@ function worldBowlOverlay(t) {
       Math.round(f.width * k),
       Math.round(f.height * k)
     );
+  }
+}
+/* a place's pin: a stalk standing on its spot and a round head, a house for a town; locked grey, here gold, picked
+   white */
+function worldBowlPin(c, x, y, l, i) {
+  const locked = !canEnter(i),
+    here = i === saveData.trip.node,
+    head = y - BOWL_PIN,
+    col = locked ? '#9a93a6' : here ? '#FFE27A' : l.town ? '#ffb46b' : '#8fd18a';
+  c.fillStyle = 'rgba(20,10,40,.3)';
+  c.beginPath();
+  c.ellipse(x, y, 5, 2, 0, 0, 7);
+  c.fill();
+  c.strokeStyle = 'rgba(20,14,30,.75)';
+  c.lineWidth = 3;
+  c.beginPath();
+  c.moveTo(x, y);
+  c.lineTo(x, head);
+  c.stroke();
+  worldBowlDot(c, x, head, l.town ? 8 : 6, uiState.mapSel === i ? '#ffffff' : col);
+  if (l.town) {
+    c.fillStyle = 'rgba(20,14,30,.85)';
+    c.beginPath();
+    c.moveTo(x - 4, head + 0.5);
+    c.lineTo(x, head - 4);
+    c.lineTo(x + 4, head + 0.5);
+    c.closePath();
+    c.fill();
+    c.fillRect(x - 3, head, 6, 3.5);
   }
 }
 function worldBowlDot(c, x, y, r, col) {
@@ -681,8 +658,8 @@ function worldBowlBind(cv) {
     true
   );
 }
-/* a tap: the nearest miniature under the finger (its whole height counts), else the place nearest the ground tapped */
-function worldBowlPick(e) {
+/* a tap: the nearest pin under the finger (its whole height counts), else the place nearest the ground tapped */
+export function worldBowlPick(e) {
   const r = worldMap.cv.getBoundingClientRect(),
     x = e.clientX - r.left,
     y = e.clientY - r.top;

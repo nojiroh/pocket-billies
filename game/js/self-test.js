@@ -74,6 +74,7 @@ import {
   worldMapMinis,
   worldMapMinisOn,
 } from './world-map-gl.js';
+import { worldBowl } from './world-bowl.js';
 import { talkBox, talkHide } from './talk.js';
 import { cutscene, cutsceneTeardown } from './cutscene.js';
 import { battleTipHide, fallOverWorldMap, fallWorldMapCanvas } from './opening-fall.js';
@@ -1380,6 +1381,8 @@ async function runFullTest(mode) {
       'map',
       async () => {
         if (typeof worldMapMinisOn !== 'function' || !worldMapMinisOn()) return 'switched off';
+        /* phase 10: the bowl map shows pins, not miniatures, for now (its own checks: debug menu, Bowl map test) */
+        if (typeof worldBowl !== 'undefined') return 'the bowl map has no miniatures yet';
         uiState.tab = 'map';
         render();
         await selfTestSleep(2500);
