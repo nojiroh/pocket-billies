@@ -102,7 +102,7 @@ export function pxClip(/** @type {Pixels} */ im, /** @type {Box | null | undefin
   return x1 > x0 && y1 > y0 ? /** @type {Box} */ ([x0, y0, x1 - x0, y1 - y0]) : null;
 }
 /* two pixels are the same colour for the fill when their RGBA match, or when both are fully clear */
-const sameAt = (/** @type {Uint8ClampedArray} */ d, /** @type {number} */ i, /** @type {Rgba} */ t) =>
+const pxSame = (/** @type {Uint8ClampedArray} */ d, /** @type {number} */ i, /** @type {Rgba} */ t) =>
   (d[i + 3] === 0 && t[3] === 0) || (d[i] === t[0] && d[i + 1] === t[1] && d[i + 2] === t[2] && d[i + 3] === t[3]);
 /** flood fill (4 neighbours) from x, y with the colour (null clears), staying inside the box (a part); the number of
  * pixels changed */
@@ -117,7 +117,7 @@ export function pxFill(
     t = pxGet(im, x, y);
   if (!b || !t || x < b[0] || y < b[1] || x >= b[0] + b[2] || y >= b[1] + b[3]) return 0;
   const rep = c || /** @type {Rgba} */ ([0, 0, 0, 0]);
-  if (sameAt(Uint8ClampedArray.from(rep), 0, t)) return 0;
+  if (pxSame(Uint8ClampedArray.from(rep), 0, t)) return 0;
   const W = im.width,
     d = im.data,
     seen = new Uint8Array(W * im.height),
@@ -128,7 +128,7 @@ export function pxFill(
       px = /** @type {number} */ (st.pop());
     if (px < b[0] || py < b[1] || px >= b[0] + b[2] || py >= b[1] + b[3]) continue;
     const k = py * W + px;
-    if (seen[k] || !sameAt(d, k * 4, t)) continue;
+    if (seen[k] || !pxSame(d, k * 4, t)) continue;
     seen[k] = 1;
     d.set(rep, k * 4);
     n++;

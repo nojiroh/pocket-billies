@@ -9,6 +9,7 @@ import { ICON_ATLAS, artLoad } from '../../game/js/art.js';
 import { battleStageStop } from '../../game/js/battle-stage.js';
 import { engineContext } from '../../game/js/engine/settings.js';
 import { escapeHtml } from './game-stand-ins.js';
+import { historyCommit, historyRedo, historyUndo } from '../../game/js/logic/history.js';
 /* eslint-disable no-func-assign */
 expose({
   ACTIONS: [() => ACTIONS],
@@ -176,13 +177,7 @@ const snapshot = () => JSON.stringify({ D: studioState.D, R: studioState.rigs })
 export function commit(now) {
   clearTimeout(studioState.snapT);
   const go = () => {
-    const s = snapshot();
-    if (s === studioState.last) return;
-    if (studioState.last) studioState.undo.push(studioState.last);
-    if (studioState.undo.length > 80) studioState.undo.shift();
-    studioState.redo = [];
-    studioState.last = s;
-    updateTopBar();
+    if (historyCommit(studioState, snapshot())) updateTopBar();
   };
   if (now) go();
   else studioState.snapT = setTimeout(go, 450);
@@ -236,18 +231,16 @@ const blurField = () => {
 export function undo() {
   blurField();
   commit(true);
-  if (!studioState.undo.length) return toast('Nothing to undo.');
-  studioState.redo.push(studioState.last);
-  studioState.last = studioState.undo.pop();
-  restore(studioState.last);
+  const u = historyUndo(studioState);
+  if (!u) return toast('Nothing to undo.');
+  restore(u.snap);
   toast('Undone.');
 }
 export function redo() {
   blurField();
-  if (!studioState.redo.length) return toast('Nothing to redo.');
-  studioState.undo.push(studioState.last);
-  studioState.last = studioState.redo.pop();
-  restore(studioState.last);
+  const u = historyRedo(studioState);
+  if (!u) return toast('Nothing to redo.');
+  restore(u.snap);
   toast('Redone.');
 }
 function restore(s) {
