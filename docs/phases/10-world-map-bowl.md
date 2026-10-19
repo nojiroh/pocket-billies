@@ -60,7 +60,7 @@ layout, and any adjacency the bowl cannot honour listed. Owner picks one.
 0-1 from centre to rim; lon/lat removed once nothing reads them). Road curves rebuilt on the bowl surface. New Node
 test: every seam's exit direction agrees with the layout (within a tolerance). The graph test stays green.
 
-**E-map-3 Camera and controls.** Drag to orbit, pinch or wheel to zoom, smooth easing, limits so the camera stays above
+**E-map-3 Camera and controls (done 2026-10-19, as a preview switched on in the debug menu).** Drag to orbit, pinch or wheel to zoom, smooth easing, limits so the camera stays above
 the rim line and out of the terrain, a Home button that recentres on the current place, tap a miniature to open the
 card with a Travel button. Locked and visited states shown on the miniature and the card (pins are gone).
 
@@ -81,7 +81,6 @@ painter code. Node tests pass; then the owner's phone test.
 - Phone frame times after E-map-4 and E-map-5 (graphics are tested only on the owner's devices; no headless graphics).
 
 ## Still open (ask before the session that needs it)
-- E-map-3: exact zoom range and the default camera tilt.
 - E-map-4: how strongly regions differ in height (flat floor with raised walls, or each region its own relief).
 - E-map-5: cloud count and heights per quality level.
 

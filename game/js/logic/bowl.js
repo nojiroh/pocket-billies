@@ -9,7 +9,32 @@
    Depth (medium): a flat floor out to BOWL_FLOOR, then walls rising to 45 degrees at the rim.
    Logic only: no DOM, runs in Node. The renderer, the Studio and the tests read the same numbers. */
 /** @import { BowlSpot, LocationData } from '../../types/game-data' */
-
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from '../test-globals.js';
+/* eslint-disable no-func-assign */
+expose({
+  BOWL_FLOOR: [() => BOWL_FLOOR],
+  BOWL_RIM_HEIGHT: [() => BOWL_RIM_HEIGHT],
+  EXIT: [() => EXIT],
+  // @ts-expect-error -- replaced on purpose
+  bowlCompass: [() => bowlCompass, v => (bowlCompass = v)],
+  // @ts-expect-error -- replaced on purpose
+  bowlExitSide: [() => bowlExitSide, v => (bowlExitSide = v)],
+  // @ts-expect-error -- replaced on purpose
+  bowlGround: [() => bowlGround, v => (bowlGround = v)],
+  // @ts-expect-error -- replaced on purpose
+  bowlHeight: [() => bowlHeight, v => (bowlHeight = v)],
+  // @ts-expect-error -- replaced on purpose
+  bowlRoad: [() => bowlRoad, v => (bowlRoad = v)],
+  // @ts-expect-error -- replaced on purpose
+  bowlSeamTurn: [() => bowlSeamTurn, v => (bowlSeamTurn = v)],
+  // @ts-expect-error -- replaced on purpose
+  bowlSpotOf: [() => bowlSpotOf, v => (bowlSpotOf = v)],
+  // @ts-expect-error -- replaced on purpose
+  bowlXY: [() => bowlXY, v => (bowlXY = v)],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
 /** the flat floor's radius, as a share of the bowl's */
 export const BOWL_FLOOR = 0.35;
 /** the rim's height above the floor, as a share of the bowl's radius (the walls reach 45 degrees at the rim) */
@@ -60,7 +85,7 @@ export function bowlCompass(x, y) {
 }
 
 /** @type {Record<string, [number, number]>} */
-const EXIT = { east: [1, 0], west: [-1, 0], north: [0, 1], south: [0, -1] };
+export const EXIT = { east: [1, 0], west: [-1, 0], north: [0, 1], south: [0, -1] };
 /** a map exit's side, without its number ('south2' is on the south side) @param {string} exit
  * @returns {[number, number]} */
 export function bowlExitSide(exit) {

@@ -11,6 +11,37 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 - Questions waiting for the owner: 
 - Next session starts with: 
 
+### Phase 10 (world map: the bowl), session E-map-3 - camera and controls (preview) - 2026-10-19
+Plan approved ("Go"); owner chose: opening tilt about 50 degrees, zoom from the whole bowl down to about one region.
+- Changed:
+  - `game/js/logic/bowl-camera.js` (no DOM): the camera circles a target on the ground (yaw, tilt, dist); limits
+    (never below the rim line, target inside the bowl, zoom 0.45-2.6 radii, tilt 35-89.5 degrees, rising when zoomed
+    in so the eye stays above the rim); view and GPU matrix; projection; ground pick under a tap; pan (the land follows
+    the finger), zoom, turn, ease, Home (centred on a place, looking outward at the wall) and the whole-bowl view.
+  - `game/js/world-bowl.js`: the bowl map as a **preview**, switched per device in the debug menu (Trainers and world
+    -> "Bowl world map"; browser storage, not the save). It wraps the map's mount, zoom, Home and labels; the old map
+    runs unchanged when the switch is off, when WebGL is missing, or while an airship flight is showing.
+    Placeholder ground (one full-screen pass: floor and walls, tinted by the nearest places' regions, water blue, lit
+    from the Inner Sun overhead, faint height lines); the 2D miniatures standing on their spots (greyed when locked);
+    roads, your trip in gold, labels (towns always, others when picked or zoomed in), here / picked rings, lock and
+    "new" marks, Pearlantis as a small marker under Kelpport, you beside your place. Turn left / whole bowl / turn
+    right buttons; the Places list stays; Flat view and the old turn/tilt bar are hidden.
+  - Controls: one finger drags; two pinch (zoom), twist (turn), slide up or down (tilt); mouse wheel zooms, right
+    button or Shift turns and tilts; arrows / WASD pan, Q and E turn, + and - zoom. Tap a miniature (or the ground
+    near a place) for its card; picking from the card or the Places list brings the camera over it.
+- Risky or unfinished: not seen on a device yet (no graphics run here). Ground, routes in the ground and 3D
+  miniatures are session E-map-4; clouds and the airship hop E-map-5. The ground pass loops over 48 places per pixel
+  once it hits the ground (fine on a PC; watch the phone frame time).
+- Verified: lint, typecheck, check:data, check:modules, format:check, npm test (132 pass; 7 new camera tests: limits
+  over 2000 random states, matrix = projection, a tap finds the ground it shows, the land stays under the finger,
+  easing takes the short way). The two new shaders compile and link in a headless WebGL2 context (no drawing).
+  check-fast: 10 of 11 at once; "A battle plays to the end" stuck once under load and passed twice on its own (this
+  change does not touch battles).
+- Decisions I made (and why): a preview switch rather than replacing the map now, so the game never has a half-built
+  map; the camera looks outward from the place it centres on, so the rising wall behind reads at once.
+- Questions waiting for the owner: how the preview feels on the phone (drag, pinch, twist, tilt, Home, tap).
+- Next session starts with: E-map-4, the ground and routes.
+
 ### Phase 10 (world map: the bowl), sessions E-map-1 and E-map-2 - layout and bowl data - 2026-10-19
 Plan in docs/phases/10-world-map-bowl.md (rewritten with the owner's answers). Branch `world-map-bowl-plan`, PR #53.
 - Changed:
