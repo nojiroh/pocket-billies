@@ -105,7 +105,7 @@ canvas {
 }
 #studio {
   display: grid;
-  grid-template-columns: 232px 1fr;
+  grid-template-columns: var(--nav-w, 232px) 1fr;
   grid-template-rows: 56px 1fr;
   height: 100vh;
 }
@@ -250,7 +250,7 @@ main {
 }
 .split {
   display: grid;
-  grid-template-columns: 300px minmax(0, 1fr);
+  grid-template-columns: var(--list-w, 300px) minmax(0, 1fr);
   gap: 20px;
   align-items: start;
 }
@@ -349,9 +349,6 @@ canvas.missing {
   flex-direction: column;
   gap: 16px;
   min-width: 0;
-}
-.ed-col.solo {
-  max-width: 1180px;
 }
 .ed-head {
   display: flex;
@@ -1144,7 +1141,7 @@ canvas.spr-prev.big {
 .px-body {
   flex: 1;
   display: grid;
-  grid-template-columns: 1fr 330px;
+  grid-template-columns: 1fr var(--side-w, 330px);
   min-height: 0;
 }
 .px-stage {
@@ -1183,21 +1180,134 @@ canvas.spr-prev.big {
     linear-gradient(to right, rgba(0, 0, 0, 0.12) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(0, 0, 0, 0.12) 1px, transparent 1px);
 }
-#pxParts {
+.pc-art {
+  image-rendering: pixelated;
+}
+.pan-ready .px-wrap,
+.pan-ready {
+  cursor: grab;
+}
+.panning,
+.panning .px-wrap {
+  cursor: grabbing;
+}
+.pc-over {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   pointer-events: none;
 }
-#pxParts rect {
+.pc-over rect {
   fill: none;
   stroke: rgba(31, 110, 111, 0.55);
   stroke-width: 1;
   vector-effect: non-scaling-stroke;
   stroke-dasharray: 4 3;
 }
-#pxParts rect.hov {
+.dlg.keys-dlg {
+  width: min(1180px, 94vw);
+  max-width: none;
+}
+.keys-sheet {
+  columns: 3 320px;
+  column-gap: 28px;
+}
+.keys-sheet section {
+  break-inside: avoid;
+  margin-bottom: 14px;
+}
+.keys-sheet h3 {
+  margin: 0 0 6px;
+  font-size: 14px;
+}
+table.keys {
+  border-collapse: collapse;
+  font-size: 13px;
+}
+table.keys th {
+  text-align: left;
+  font-weight: 400;
+  white-space: nowrap;
+  padding: 3px 12px 3px 0;
+  vertical-align: top;
+}
+table.keys td {
+  padding: 3px 0;
+  color: var(--text2);
+}
+.pc-base {
+  fill: none;
+  stroke: #c8323c;
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+.sc-pe-stage .px-wrap {
+  margin: auto;
+}
+.pc-zoom {
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+  min-width: 30px;
+  text-align: center;
+}
+.pc-axis {
+  stroke: #d0347c;
+  stroke-width: 1.5;
+  stroke-dasharray: 6 3;
+  vector-effect: non-scaling-stroke;
+}
+.pc-ramps {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 3px 10px;
+  margin-top: 8px;
+}
+.pc-ramp {
+  display: grid;
+  grid-template-columns: repeat(8, 16px);
+  gap: 2px;
+}
+.pc-ramp .sw {
+  border-radius: 2px;
+}
+.pc-panel .sw.on {
+  outline: 2px solid var(--text);
+  outline-offset: 1px;
+}
+.pc-panel .chk {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 13px;
+  margin: 4px 0;
+}
+.pc-shift {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font-size: 12px;
+}
+.pc-shift input {
+  width: 56px;
+}
+.pc-over rect.pc-sel {
+  fill: rgba(40, 120, 220, 0.08);
+  stroke: #2878dc;
+  stroke-width: 1.5;
+  stroke-dasharray: 5 4;
+  animation: pc-ants 0.8s linear infinite;
+}
+@keyframes pc-ants {
+  to {
+    stroke-dashoffset: -9;
+  }
+}
+.px-wrap[data-tool='select'],
+.px-wrap[data-tool='line'] {
+  cursor: crosshair;
+}
+.pc-over rect.hov {
   stroke: #c8323c;
   stroke-width: 2;
   stroke-dasharray: none;
@@ -1316,7 +1426,7 @@ canvas.spr-prev.big {
 .sk-body {
   flex: 1;
   display: grid;
-  grid-template-columns: 250px minmax(0, 1fr) 330px;
+  grid-template-columns: var(--list-w, 250px) minmax(0, 1fr) var(--side-w, 330px);
   min-height: 0;
 }
 .sk-tree {
@@ -1443,7 +1553,7 @@ canvas.spr-prev.big {
 }
 @media (max-width: 1100px) {
   .sk-body {
-    grid-template-columns: 200px minmax(0, 1fr) 290px;
+    grid-template-columns: var(--list-w, 200px) minmax(0, 1fr) var(--side-w, 290px);
   }
 }
 @media (max-width: 860px) {
@@ -1464,7 +1574,7 @@ canvas.spr-prev.big {
 /* ---------- battle preview ---------- */
 .bp-wrap {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 340px;
+  grid-template-columns: minmax(0, 1fr) var(--side-w, 340px);
   gap: 16px;
   align-items: start;
 }
@@ -1473,6 +1583,8 @@ canvas.spr-prev.big {
   top: 0;
   aspect-ratio: 16/10;
   max-height: calc(100vh - 150px);
+  /* ST-1: no column cap any more, so the stage keeps 16:10 by its height */
+  max-width: calc((100vh - 150px) * 1.6);
   width: 100%;
   border-radius: 14px;
   overflow: hidden;
@@ -1931,7 +2043,7 @@ select.sm {
 }
 .sc-pe-body {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 300px;
+  grid-template-columns: minmax(0, 1fr) var(--side-w, 300px);
   gap: 14px;
   align-items: start;
 }
@@ -1942,14 +2054,6 @@ select.sm {
   border-radius: 10px;
   background: repeating-conic-gradient(color-mix(in srgb, var(--line) 70%, transparent) 0 25%, transparent 0 50%) 0
     0/16px 16px;
-}
-.sc-pe-stage canvas {
-  display: block;
-  margin: auto;
-  image-rendering: pixelated;
-  cursor: crosshair;
-  touch-action: none;
-  box-shadow: 0 0 0 1px var(--line2);
 }
 @media (max-width: 1100px) {
   .sc-pe-body {
@@ -3261,7 +3365,7 @@ body.vp-has-big::after {
 /* phase 09 batch 1: Props (studio/js/props-editor.js) */
 .props-sec {
   display: grid;
-  grid-template-columns: minmax(240px, 300px) 1fr;
+  grid-template-columns: minmax(240px, var(--list-w, 300px)) 1fr;
   gap: 16px;
   align-items: start;
 }
@@ -3427,4 +3531,223 @@ body.vp-has-big::after {
 .sc-free {
   align-items: center;
   margin-top: 8px;
+}
+/* studio track ST-1: a narrow pane (one side of a split, or a small window) stacks its columns as a small window
+   does; the pane's width class comes from studio/js/layout.js */
+.pane[data-w='narrow'] .split,
+.pane[data-w='narrow'] .props-sec,
+.pane[data-w='narrow'] .bp-wrap,
+.pane[data-w='narrow'] .eng-split,
+.pane[data-w='narrow'] .ped {
+  grid-template-columns: 1fr;
+}
+.pane[data-w='narrow'] .list-col {
+  position: static;
+  max-height: 300px;
+}
+.pane[data-w='narrow'] .bp-stage {
+  position: relative;
+  max-height: none;
+}
+/* studio track ST-1: the resize handles (studio/js/layout.js), on the left edge of the grid column after the edge */
+#studio,
+.split,
+.props-sec,
+.bp-wrap {
+  position: relative;
+}
+.lay-h {
+  position: absolute;
+  grid-row: 1;
+  top: 0;
+  bottom: 0;
+  left: -15px;
+  width: 10px;
+  cursor: col-resize;
+  touch-action: none;
+  z-index: 2;
+}
+.props-sec > .lay-h,
+.bp-wrap > .lay-h {
+  left: -13px;
+}
+.lay-h::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  border-radius: 1px;
+}
+.lay-h:hover::after,
+.lay-h:focus-visible::after,
+body.lay-drag .lay-h::after {
+  background: var(--acc);
+}
+.lay-h:focus-visible {
+  outline: none;
+}
+.lay-h.lay-nav {
+  grid-column: 2;
+  grid-row: 2;
+  left: -5px;
+}
+body.lay-drag {
+  cursor: col-resize;
+  user-select: none;
+}
+.pane[data-w='narrow'] .lay-h {
+  display: none;
+}
+@media (max-width: 1000px) {
+  .lay-h {
+    display: none;
+  }
+}
+@media (max-width: 1180px) {
+  .bp-wrap > .lay-h {
+    display: none;
+  }
+}
+/* studio track ST-1: wide panes (about a 1920 px window) and ultrawide ones (2560 px and up). A size dragged on a
+   handle or set by a preset is put on the pane itself, so it wins over these defaults */
+.pane[data-w='wide'] {
+  --list-w: 340px;
+  --side-w: 400px;
+}
+.pane[data-w='ultra'] {
+  --list-w: 400px;
+  --side-w: 480px;
+}
+/* the battle preview: the stage as big as the height allows, the controls take the rest in columns */
+.pane[data-w='wide'] .bp-wrap,
+.pane[data-w='ultra'] .bp-wrap {
+  grid-template-columns: minmax(0, calc((100vh - 150px) * 1.6)) minmax(var(--side-w), 1fr);
+}
+.pane[data-w='wide'] .bp-ctl,
+.pane[data-w='ultra'] .bp-ctl {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  align-items: start;
+}
+.pane[data-w='wide'] .bp-wrap > .lay-h,
+.pane[data-w='ultra'] .bp-wrap > .lay-h {
+  display: none;
+}
+/* an ultrawide editor beside its list puts its cards in two columns; the head and the tabs stay across */
+.pane[data-w='ultra'] .split > .ed-col {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+}
+.pane[data-w='ultra'] .split > .ed-col > :not(.card) {
+  grid-column: 1 / -1;
+}
+/* the skeleton builder and the pixel editor fill the window: wider tree and inspector on big screens */
+@media (min-width: 1900px) {
+  .sk-body {
+    grid-template-columns: var(--list-w, 300px) minmax(0, 1fr) var(--side-w, 400px);
+  }
+  .px-body {
+    grid-template-columns: 1fr var(--side-w, 400px);
+  }
+}
+@media (min-width: 2500px) {
+  .sk-body {
+    grid-template-columns: var(--list-w, 340px) minmax(0, 1fr) var(--side-w, 480px);
+  }
+  .px-body {
+    grid-template-columns: 1fr var(--side-w, 480px);
+  }
+}
+/* studio track ST-1: two sections side by side; the second pane has a bar to swap or close it */
+#studio.two {
+  grid-template-columns: var(--nav-w, 232px) var(--pane-cols, minmax(0, 1fr) minmax(0, 1fr));
+}
+#main2 {
+  border-left: 1px solid var(--line);
+}
+.pane-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin: -6px 0 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+  font: 400 15px var(--disp);
+  color: var(--text2);
+}
+.lay-h.lay-panes {
+  display: none;
+  grid-column: 3;
+  grid-row: 2;
+  left: -5px;
+}
+#studio.two > .lay-h.lay-panes {
+  display: block;
+}
+.nav-row {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+.nav.on2 {
+  background: var(--panel2);
+  box-shadow: inset 3px 0 0 var(--line2);
+}
+.nav-beside {
+  position: absolute;
+  right: 4px;
+  top: 4px;
+  width: 26px;
+  height: 24px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel);
+  color: var(--text2);
+  cursor: pointer;
+  opacity: 0;
+}
+.nav-row:hover .nav-beside:not(:disabled),
+.nav-beside:focus-visible {
+  opacity: 1;
+}
+.nav-beside:hover {
+  color: var(--acc);
+  border-color: var(--acc);
+}
+@media (max-width: 1000px) {
+  #main2,
+  .nav-beside,
+  #studio.two > .lay-h.lay-panes {
+    display: none;
+  }
+  #studio.two {
+    grid-template-columns: 1fr;
+  }
+}
+.lay-pick {
+  flex-shrink: 0;
+}
+@media (max-width: 1400px) {
+  .lay-pick > span {
+    display: none;
+  }
+}
+/* a tablet's top bar has no room: Save comes first (the handles still work) */
+@media (max-width: 1200px) {
+  .lay-pick {
+    display: none;
+  }
+}
+.lay-pick select {
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  padding: 0;
+  min-height: 0;
+  cursor: pointer;
 }

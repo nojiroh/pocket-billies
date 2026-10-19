@@ -36,6 +36,7 @@ import {
   grid,
   numberField,
   render,
+  sectionShown,
   selectField,
   studioState,
   textField,
@@ -285,7 +286,7 @@ function wardrobeEditorHTML(src) {
 /* ---------- mount, drawing ---------- */
 async function mountWardrobe() {
   if (!wardrobeEditor.loaded) await loadWardrobe();
-  if (studioState.sec !== 'wardrobe') return;
+  if (!sectionShown('wardrobe')) return;
   drawWardrobeThumbs();
   drawWardrobeEditor();
   bindWardrobeCanvas();
@@ -347,7 +348,7 @@ function drawWardrobeThumbs() {
 }
 function wardrobePreviewLoop(ts) {
   const cv = $('#wdPv');
-  if (!cv || !cv.isConnected || studioState.sec !== 'wardrobe') {
+  if (!cv || !cv.isConnected || !sectionShown('wardrobe')) {
     frameStop('wdpv');
     return;
   }

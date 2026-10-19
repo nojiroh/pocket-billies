@@ -52,6 +52,7 @@ import { walkRenderer } from '../../game/js/walk/walk-state.js';
 import { WALL_MATERIALS, rawHeightAt } from '../../game/js/walk/heights.js';
 import { mountWalkView } from '../../game/js/walk-view-gl.js';
 import { PEOPLE, escapeHtml } from './game-stand-ins.js';
+import { pixelKeyAction } from '../../game/js/logic/pixel-ops.js';
 import {
   ACTIONS,
   SECTIONS,
@@ -76,6 +77,18 @@ import {
   toast,
   uniqueKey,
 } from './studio-app.js';
+import {
+  artStep,
+  drawPixelCanvas,
+  pictureImage,
+  pixelCanvas,
+  pixelCanvasAct,
+  pixelCanvasColor,
+  pixelCanvasDeselect,
+  pixelCanvasPanel,
+  pixelCanvasPanelHTML,
+  pixelCanvasToolsHTML,
+} from './pixel-canvas.js';
 import { conditionField, lineIdHash, scriptField } from './story-editor.js';
 import { atlasGet, atlasVersion, fileToCanvas, loadedAtlas, markArt, pickFile } from './sprites.js';
 import { freeCameraBarHTML, freeCameraLook, freeCameraSpot } from './free-camera.js';
@@ -92,7 +105,6 @@ expose({
   currentMapId: [() => currentMapId],
   drawEditorMap: [() => drawEditorMap, v => (drawEditorMap = v)],
   drawScenePeople: [() => drawScenePeople, v => (drawScenePeople = v)],
-  drawSceneryPixelEditor: [() => drawSceneryPixelEditor, v => (drawSceneryPixelEditor = v)],
   drawSceneryThumbs: [() => drawSceneryThumbs, v => (drawSceneryThumbs = v)],
   drawStepsOverlay: [() => drawStepsOverlay, v => (drawStepsOverlay = v)],
   drawWatersOverlay: [() => drawWatersOverlay, v => (drawWatersOverlay = v)],
@@ -100,7 +112,6 @@ expose({
   edgeExitId: [() => edgeExitId, v => (edgeExitId = v)],
   ensureHeightGrid: [() => ensureHeightGrid, v => (ensureHeightGrid = v)],
   exitChecks: [() => exitChecks, v => (exitChecks = v)],
-  fillSceneryPixels: [() => fillSceneryPixels, v => (fillSceneryPixels = v)],
   floodFillGround: [() => floodFillGround, v => (floodFillGround = v)],
   isGroundKey: [() => isGroundKey],
   locationsUsingMap: [() => locationsUsingMap],
@@ -119,7 +130,6 @@ expose({
   parseMapLife: [() => parseMapLife, v => (parseMapLife = v)],
   playFromHereURL: [() => playFromHereURL, v => (playFromHereURL = v)],
   playSpot: [() => playSpot, v => (playSpot = v)],
-  plotSceneryPixel: [() => plotSceneryPixel, v => (plotSceneryPixel = v)],
   previewPeople: [() => previewPeople, v => (previewPeople = v)],
   propAtPointer: [() => propAtPointer, v => (propAtPointer = v)],
   resizeReport: [() => resizeReport, v => (resizeReport = v)],
@@ -184,7 +194,8 @@ export const mapEditor = {
   peZoom: 12,
   peTool: 'pen',
   peColor: '#2A2238',
-  peUndo: [],
+  peKeep: null /* studio track ST-2: the painter's zoom, grid, symmetry and palette lock across redraws */,
+  pePc: null,
   /* Project Story S3: the story preview (a start preset and flags switched on or off; v counts the changes) */
   story: { on: false, preset: '', flags: {}, faded: true, v: 0 },
 };
@@ -2230,7 +2241,7 @@ export async function openSceneryPixelEditor(path, o) {
   const c = await atlasGet(path).catch(() => null);
   if (!c) return toast('Could not open ' + path, 'err');
   mapEditor.pe = { path, ...o };
-  mapEditor.peUndo = [];
+  mapEditor.peKeep = null;
   mapEditor.peZoom = o.kind === 'tile' ? 16 : clamp(Math.floor(420 / Math.max(c.width, c.height)), 2, 16);
   render();
   setTimeout(() => {
@@ -2247,21 +2258,12 @@ export function sceneryPixelCardHTML() {
     pe.kind === 'prop'
       ? `Prop: ${escapeHtml(M ? M.name : pe.k)}`
       : `Ground tile: ${escapeHtml((C.terrains[pe.c] || {}).name || pe.c)}`,
-    `<div class="sc-pe" id="scPe"><div class="sc-pe-bar"><span class="px-tools">${[
-      ['pen', 'Pencil'],
-      ['erase', 'Eraser'],
-      ['fill', 'Fill'],
-      ['pick', 'Pick color'],
-    ]
-      .concat(pe.kind === 'prop' && pe.layer == null ? [['anchor', 'Set the base point']] : [])
-      .map(
-        ([k, n]) =>
-          `<button class="seg ${mapEditor.peTool === k ? 'on' : ''}" data-act="scPeTool" data-t="${k}">${n}</button>`
-      )
-      .join('')}</span>
-  <span class="colw"><input type="color" id="scPeColor" value="${mapEditor.peColor}"></span><span class="px-tools"><button class="seg" data-act="scPeZoom" data-z="-1">−</button><button class="seg" data-act="scPeZoom" data-z="1">+</button><button class="seg" data-act="scPeUndo" title="Undo">↶</button></span>
+    `<div class="sc-pe" id="scPe"><div class="sc-pe-bar">${pixelCanvasToolsHTML(
+      pe.kind === 'prop' && pe.layer == null ? [['anchor', 'Set the base point']] : []
+    )}
+  <span class="colw"><input type="color" id="scPeColor" value="${mapEditor.peColor}"></span>
   ${pe.kind === 'prop' && pe.layer == null ? '<button class="btn sm" data-act="scPeResize">Resize…</button><button class="btn sm" data-act="scPeReplace">Replace from PNG…</button>' : ''}<span class="grow"></span><button class="btn sm primary" data-act="scPeClose">Done</button></div>
-  <div class="sc-pe-body"><div class="sc-pe-stage"><canvas id="scPeCv"></canvas></div><div class="sc-pe-side"><div class="px-pal" id="scPePal"></div>
+  <div class="sc-pe-body"><div class="sc-pe-stage" id="scPeStage"></div><div class="sc-pe-side"><div class="px-pal" id="scPePal"></div>${pixelCanvasPanelHTML()}
   ${
     M
       ? grid(
@@ -2281,12 +2283,58 @@ export function sceneryPixelCardHTML() {
   );
 }
 export function mountSceneryPixelEditor() {
-  const cv = $('#scPeCv');
-  if (!cv) return;
-  drawSceneryPixelEditor();
+  const st = $('#scPeStage');
+  if (!st) return;
+  const pe = mapEditor.pe,
+    keep = mapEditor.peKeep || {};
+  const P = pixelCanvas(st, {
+    get: () => loadedAtlas(pe.path),
+    path: () => pe.path,
+    repeat: pe.kind === 'tile' ? 3 : 1,
+    tool: mapEditor.peTool,
+    color: mapEditor.peColor,
+    overlay: () => {
+      const M = pe.kind === 'prop' ? sceneryCatalog().props[pe.k] : null;
+      if (!M || pe.layer != null) return '';
+      const x = -M.ox + 0.5,
+        y = -M.oy + 0.5;
+      return `<path class="pc-base" d="M${x - 3} ${y}H${x + 3}M${x} ${y - 3}V${y + 3}"/>`;
+    },
+    hostTool: (P, t, x, y) => {
+      if (t !== 'anchor') return false;
+      const M = sceneryCatalog().props[pe.k];
+      M.ox = -x;
+      M.oy = -y;
+      changed();
+      commit(true);
+      render();
+      return true;
+    },
+    changed: sceneryPixelsChanged,
+    toolChanged: P => (mapEditor.peTool = P.tool),
+    colorChanged: P => {
+      mapEditor.peColor = P.color;
+      const c = $('#scPeColor');
+      if (c) c.value = P.color;
+    },
+    drawn: P => {
+      mapEditor.peKeep = {
+        zoom: P.zoom,
+        showGrid: P.showGrid,
+        symMode: P.symMode,
+        symShift: P.symShift,
+        lock: P.lock,
+        showOff: P.showOff,
+      };
+    },
+  });
+  Object.assign(P, keep, { zoom: keep.zoom || mapEditor.peZoom });
+  mapEditor.pePc = P;
+  pixelCanvasPanel(P, $('#scPe'));
+  drawPixelCanvas(P);
   sceneryPixelPalette();
   const col = $('#scPeColor');
-  col.addEventListener('input', () => (mapEditor.peColor = col.value.toUpperCase()));
+  col.addEventListener('input', () => pixelCanvasColor(P, col.value));
   const tg = $('[data-p$=".tagsTxt"]');
   if (tg)
     tg.addEventListener('change', () => {
@@ -2299,98 +2347,23 @@ export function mountSceneryPixelEditor() {
       changed();
       commit(true);
     });
-  let down = false;
-  const pos = ev => {
-    const r = cv.getBoundingClientRect(),
-      c = loadedAtlas(mapEditor.pe.path),
-      Z = mapEditor.peZoom,
-      m = (v, n) => ((v % n) + n) % n,
-      x = Math.floor((((ev.clientX - r.left) / r.width) * cv.width) / Z),
-      y = Math.floor((((ev.clientY - r.top) / r.height) * cv.height) / Z);
-    return mapEditor.pe.kind === 'tile' ? [m(x, c.width), m(y, c.height)] : [x, y];
-  };
-  cv.addEventListener('pointerdown', ev => {
-    const [x, y] = pos(ev),
-      c = loadedAtlas(mapEditor.pe.path),
-      X = c.getContext('2d');
-    if (mapEditor.peTool === 'pick') {
-      const d = X.getImageData(x, y, 1, 1).data;
-      if (d[3]) {
-        mapEditor.peColor =
-          '#' +
-          [d[0], d[1], d[2]]
-            .map(v => v.toString(16).padStart(2, '0'))
-            .join('')
-            .toUpperCase();
-        $('#scPeColor').value = mapEditor.peColor;
-      }
-      return;
-    }
-    if (mapEditor.peTool === 'anchor') {
-      const M = sceneryCatalog().props[mapEditor.pe.k];
-      M.ox = -x;
-      M.oy = -y;
-      changed();
-      commit(true);
-      render();
-      return;
-    }
-    mapEditor.peUndo.push(X.getImageData(0, 0, c.width, c.height));
-    if (mapEditor.peUndo.length > 40) mapEditor.peUndo.shift();
-    if (mapEditor.peTool === 'fill') {
-      fillSceneryPixels(c, x, y);
-      sceneryPixelsChanged();
-      return;
-    }
-    down = true;
-    cv.setPointerCapture(ev.pointerId);
-    plotSceneryPixel(x, y);
-  });
-  cv.addEventListener('pointermove', ev => {
-    if (!down) return;
-    const [x, y] = pos(ev);
-    plotSceneryPixel(x, y);
-  });
-  const up = () => {
-    if (down) {
-      down = false;
-      sceneryPixelsChanged();
-    }
-  };
-  cv.addEventListener('pointerup', up);
-  cv.addEventListener('pointercancel', up);
 }
-function plotSceneryPixel(x, y) {
-  const c = loadedAtlas(mapEditor.pe.path),
-    X = c.getContext('2d');
-  if (x < 0 || y < 0 || x >= c.width || y >= c.height) return;
-  if (mapEditor.peTool === 'erase') X.clearRect(x, y, 1, 1);
-  else {
-    X.fillStyle = mapEditor.peColor;
-    X.fillRect(x, y, 1, 1);
-  }
-  drawSceneryPixelEditor();
-}
-function fillSceneryPixels(c, x, y) {
-  const X = c.getContext('2d'),
-    im = X.getImageData(0, 0, c.width, c.height),
-    d = new Uint32Array(im.data.buffer),
-    W = c.width,
-    H = c.height,
-    t = d[y * W + x],
-    n = parseInt(mapEditor.peColor.slice(1), 16),
-    col = ((255 << 24) | ((n & 255) << 16) | (n & 0xff00) | (n >> 16)) >>> 0;
-  if (t === col) return;
-  const st = [[x, y]];
-  while (st.length) {
-    const [a, b] = st.pop();
-    if (a < 0 || b < 0 || a >= W || b >= H || d[b * W + a] !== t) continue;
-    d[b * W + a] = col;
-    st.push([a + 1, b], [a - 1, b], [a, b + 1], [a, b - 1]);
-  }
-  X.putImageData(im, 0, 0);
-  drawSceneryPixelEditor();
-}
+/* the painter's keys (the pixel canvas's) while the pointer is over it; the map's own keys otherwise */
+document.addEventListener(
+  'keydown',
+  ev => {
+    const pe = $('#scPe'),
+      P = mapEditor.pePc;
+    if (!pe || !P || !P.cv.isConnected || !pe.matches(':hover') || $('#dlg').innerHTML) return;
+    if (ev.target.closest('input,select,textarea')) return;
+    const a = pixelKeyAction(ev);
+    if (!a || a === 'undo' || a === 'redo' || a === 'onion') return;
+    if (a === 'deselect' ? !pixelCanvasDeselect(P) : !pixelCanvasAct(P, a)) return;
+    ev.preventDefault();
+    ev.stopImmediatePropagation();
+  },
+  true
+);
 function sceneryPixelsChanged() {
   const c = loadedAtlas(mapEditor.pe.path);
   markArt(mapEditor.pe.path, c);
@@ -2399,57 +2372,6 @@ function sceneryPixelsChanged() {
   drawSceneryThumbs();
   drawEditorMap();
   sceneryPixelPalette();
-}
-function drawSceneryPixelEditor() {
-  const cv = $('#scPeCv'),
-    c = loadedAtlas(mapEditor.pe && mapEditor.pe.path);
-  if (!cv || !c) return;
-  const Z = mapEditor.peZoom,
-    rep = mapEditor.pe.kind === 'tile' ? 3 : 1;
-  cv.width = c.width * Z * rep;
-  cv.height = c.height * Z * rep;
-  const x = cv.getContext('2d');
-  x.imageSmoothingEnabled = false;
-  for (let a = 0; a < rep; a++)
-    for (let b = 0; b < rep; b++) {
-      x.globalAlpha = rep > 1 && !(a === 1 && b === 1) ? 0.45 : 1;
-      x.drawImage(c, a * c.width * Z, b * c.height * Z, c.width * Z, c.height * Z);
-    }
-  x.globalAlpha = 1;
-  if (Z >= 6) {
-    x.strokeStyle = 'rgba(0,0,0,.1)';
-    for (let i = 0; i <= c.width * rep; i++) {
-      x.beginPath();
-      x.moveTo(i * Z + 0.5, 0);
-      x.lineTo(i * Z + 0.5, cv.height);
-      x.stroke();
-    }
-    for (let j = 0; j <= c.height * rep; j++) {
-      x.beginPath();
-      x.moveTo(0, j * Z + 0.5);
-      x.lineTo(cv.width, j * Z + 0.5);
-      x.stroke();
-    }
-  }
-  if (mapEditor.pe.kind === 'prop') {
-    const M = sceneryCatalog().props[mapEditor.pe.k];
-    if (M) {
-      x.strokeStyle = '#C8323C';
-      x.lineWidth = 2;
-      const ax = -M.ox * Z + Z / 2,
-        ay = -M.oy * Z + Z / 2;
-      x.beginPath();
-      x.moveTo(ax - 8, ay);
-      x.lineTo(ax + 8, ay);
-      x.moveTo(ax, ay - 8);
-      x.lineTo(ax, ay + 8);
-      x.stroke();
-    }
-  }
-  /* tile edits are drawn in the middle copy: map clicks there */
-  if (rep > 1 && !cv._rep) {
-    cv._rep = 1;
-  }
 }
 function sceneryPixelPalette() {
   const el = $('#scPePal'),
@@ -2473,29 +2395,7 @@ function sceneryPixelPalette() {
     .join('');
 }
 ACTIONS.scPeSw = d => {
-  mapEditor.peColor = d.c;
-  const c = $('#scPeColor');
-  if (c) c.value = d.c;
-  if (mapEditor.peTool === 'pick' || mapEditor.peTool === 'erase') {
-    mapEditor.peTool = 'pen';
-    render();
-  }
-};
-ACTIONS.scPeTool = d => {
-  mapEditor.peTool = d.t;
-  $$('[data-act=scPeTool]').forEach(b => b.classList.toggle('on', b.dataset.t === d.t));
-};
-ACTIONS.scPeZoom = d => {
-  mapEditor.peZoom = clamp(mapEditor.peZoom + +d.z * (mapEditor.peZoom >= 8 ? 2 : 1), 1, 32);
-  drawSceneryPixelEditor();
-};
-ACTIONS.scPeUndo = () => {
-  const c = loadedAtlas(mapEditor.pe.path),
-    u = mapEditor.peUndo.pop();
-  if (!u) return toast('Nothing to undo in this picture.');
-  c.getContext('2d').putImageData(u, 0, 0);
-  sceneryPixelsChanged();
-  drawSceneryPixelEditor();
+  if (mapEditor.pePc) pixelCanvasColor(mapEditor.pePc, d.c);
 };
 ACTIONS.scPeClose = () => {
   mapEditor.pe = null;
@@ -2530,6 +2430,7 @@ ACTIONS.scPeResize = async () => {
   M.ox -= dx;
   M.oy -= dy;
   markArt(mapEditor.pe.path, n);
+  artStep(mapEditor.pe.path, pictureImage(c), pictureImage(n));
   changed();
   commit(true);
   render();
@@ -2538,8 +2439,10 @@ ACTIONS.scPeReplace = async () => {
   const f = await pickFile('image/png');
   if (!f) return;
   const c = await fileToCanvas(f),
-    M = sceneryCatalog().props[mapEditor.pe.k];
+    M = sceneryCatalog().props[mapEditor.pe.k],
+    before = pictureImage(loadedAtlas(mapEditor.pe.path));
   markArt(mapEditor.pe.path, c);
+  artStep(mapEditor.pe.path, before, pictureImage(c));
   M.ox = -Math.floor(c.width / 2);
   M.oy = -(c.height - 1);
   changed();
