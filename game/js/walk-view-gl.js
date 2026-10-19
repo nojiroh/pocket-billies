@@ -210,13 +210,16 @@ expose({
   FIXED_BACK: [() => FIXED_BACK],
   FIXED_RIGHT: [() => FIXED_RIGHT],
   FLOWER_COLORS: [() => FLOWER_COLORS],
+  FLOWER_PACKED: [() => FLOWER_PACKED],
   FLOWER_SET_BY_LOCATION: [() => FLOWER_SET_BY_LOCATION],
   FOLIAGE_PROPS: [() => FOLIAGE_PROPS],
   FOOTPRINT_COLORS: [() => FOOTPRINT_COLORS],
   FRUSTUM_PLANES: [() => FRUSTUM_PLANES],
   FULL_UV: [() => FULL_UV],
   GRASS_KINDS: [() => GRASS_KINDS],
+  GRASS_NO_TRAIL: [() => GRASS_NO_TRAIL],
   GRASS_PUSHER_BUFFER: [() => GRASS_PUSHER_BUFFER],
+  GRASS_TRAIL_BUFFER: [() => GRASS_TRAIL_BUFFER],
   IMAGE_IDS: [() => IMAGE_IDS],
   MAP_CACHE_FIELDS: [() => MAP_CACHE_FIELDS],
   NEAR_RING_CHUNK_M: [() => NEAR_RING_CHUNK_M],
@@ -5878,16 +5881,31 @@ function grassTrail() {
     T.push({ x: P.x, z: P.z, t });
     if (T.length > 16) T.shift();
   }
-  const a = new Float32Array(48),
-    E = (walkRenderer.encPos || []).slice(0, 4),
-    T2 = T.slice(-(16 - E.length));
-  T2.forEach((q, i) => a.set([q.x, q.z, Math.max(0, 1 - (t - q.t) / 4000)], i * 3));
-  E.forEach((e, k) => a.set([e[0], e[1], 0.85], (T2.length + k) * 3));
+  /* phase 20 C2: written into one kept buffer: the last steps of the trail, then up to 4 wild ones */
+  const a = GRASS_TRAIL_BUFFER,
+    E = walkRenderer.encPos || [],
+    ne = Math.min(4, E.length),
+    t0 = Math.max(0, T.length - (16 - ne));
+  a.fill(0);
+  let j = 0;
+  for (let i = t0; i < T.length; i++, j += 3) {
+    const q = T[i];
+    a[j] = q.x;
+    a[j + 1] = q.z;
+    a[j + 2] = Math.max(0, 1 - (t - q.t) / 4000);
+  }
+  for (let k = 0; k < ne; k++, j += 3) {
+    a[j] = E[k][0];
+    a[j + 1] = E[k][1];
+    a[j + 2] = 0.85;
+  }
   return a;
 }
 /* who else parts the grass this frame (up to 8, nearest the player first): the buddy, the wild ones hiding in it, folk,
    and in a battle on the 3D stage the billionaires themselves */
-const GRASS_PUSHER_BUFFER = new Float32Array(24);
+const GRASS_PUSHER_BUFFER = new Float32Array(24),
+  GRASS_TRAIL_BUFFER = new Float32Array(48),
+  GRASS_NO_TRAIL = new Float32Array(48);
 function grassPushers() {
   const A = GRASS_PUSHER_BUFFER,
     P = walkView.pl,
@@ -5941,10 +5959,18 @@ const FLOWER_SET_BY_LOCATION = {
   stepstone_canyon: 'warm',
   clovercrest: 'meadow',
 };
+/* phase 20 C2: each flower set's colours worked out once, packed for uFlw (they were remade every frame) */
+const FLOWER_PACKED = new Map();
 function mapFlowers(sc) {
   const id = (sc && (sc.locationId || sc.baseId)) || '',
     k = FLOWER_SET_BY_LOCATION[id] || (sc && sc.kind === 'town' ? 'town' : 'meadow');
-  return { c: FLOWER_COLORS[k].map(h => hexToRgb(h).map(v => v / 255)), glow: k === 'spore' ? 0.55 : 0 };
+  let F = FLOWER_PACKED.get(k);
+  if (!F) {
+    const c = FLOWER_COLORS[k].map(h => hexToRgb(h).map(v => v / 255));
+    F = { c, packed: new Float32Array(c.flat()), glow: k === 'spore' ? 0.55 : 0 };
+    FLOWER_PACKED.set(k, F);
+  }
+  return F;
 }
 export function drawGrass(C, X) {
   const gl = gpuState.gl,
@@ -5955,10 +5981,10 @@ export function drawGrass(C, X) {
   if (U['uFlw[0]'] || U.uFlw) {
     const F = mapFlowers(sc),
       loc = U.uFlw || U['uFlw[0]'];
-    gl.uniform3fv(loc, new Float32Array(F.c.flat()));
+    gl.uniform3fv(loc, F.packed);
     gl.uniform1f(U.uFlwGlow, F.glow);
   }
-  if (U.uTrail) gl.uniform3fv(U.uTrail, walkRenderer.bt ? new Float32Array(48) : grassTrail());
+  if (U.uTrail) gl.uniform3fv(U.uTrail, walkRenderer.bt ? GRASS_NO_TRAIL : grassTrail());
   if (U.uPush) gl.uniform3fv(U.uPush, grassPushers());
   gl.uniform3fv(U.uRight, C.right);
   gl.uniform3f(U.uPl, P.x, 0, P.z);

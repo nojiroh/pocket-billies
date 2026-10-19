@@ -112,3 +112,48 @@ test('shadow lists: filterInto keeps what filter keeps, in order, in the one arr
     for (let i = 0; i < got.length; i++) assert.equal(got[i], items.filter(keep)[i]); // the same objects
   }
 });
+
+test('grass: the trail buffer and the flower colours are what the per-frame arrays held', () => {
+  const oldTrail = (T, E0, t) => {
+    const a = new Float32Array(48),
+      E = E0.slice(0, 4),
+      T2 = T.slice(-(16 - E.length));
+    T2.forEach((q, i) => a.set([q.x, q.z, Math.max(0, 1 - (t - q.t) / 4000)], i * 3));
+    E.forEach((e, k) => a.set([e[0], e[1], 0.85], (T2.length + k) * 3));
+    return a;
+  };
+  const { walkView: V, walkRenderer: W } = G,
+    keep = { pl: V.pl, t: V.t, id: V.id, trail: W.trail, trailId: W.trailId, encPos: W.encPos };
+  try {
+    V.pl = { x: 0, z: 0, walk: false };
+    V.t = 9000;
+    V.id = 'here';
+    W.trailId = 'here';
+    for (const [nt, ne] of [
+      [0, 0],
+      [3, 0],
+      [16, 0],
+      [16, 2],
+      [14, 6],
+      [5, 9],
+      [0, 3],
+    ]) {
+      W.trail = Array.from({ length: nt }, (_, i) => ({ x: i * 0.37, z: -i * 0.21, t: 9000 - i * 700 }));
+      W.encPos = Array.from({ length: ne }, (_, i) => [i + 0.5, i * 2.25, 'e' + i]);
+      assert.deepEqual(Array.from(G.grassTrail()), Array.from(oldTrail(W.trail, W.encPos, V.t)));
+    }
+  } finally {
+    Object.assign(V, { pl: keep.pl, t: keep.t, id: keep.id });
+    Object.assign(W, { trail: keep.trail, trailId: keep.trailId, encPos: keep.encPos });
+  }
+  for (const sc of [{ locationId: 'mirrormere' }, { kind: 'town' }, {}, null]) {
+    const F = G.mapFlowers(sc),
+      id = (sc && (sc.locationId || sc.baseId)) || '',
+      k = G.FLOWER_SET_BY_LOCATION[id] || (sc && sc.kind === 'town' ? 'town' : 'meadow');
+    const c = G.FLOWER_COLORS[k].map(h => G.hexToRgb(h).map(v => v / 255));
+    assert.deepEqual(F.c, c);
+    assert.deepEqual(Array.from(F.packed), Array.from(new Float32Array(c.flat())));
+    assert.equal(F.glow, k === 'spore' ? 0.55 : 0);
+    assert.equal(G.mapFlowers(sc), F, 'made once per set');
+  }
+});
