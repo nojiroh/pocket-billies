@@ -3,7 +3,8 @@
 // translation can point at it, and once / cycle / seq / [once] without a key remember by it (docs/SCRIPTS.md).
 //   npm run story:ids           gives every line without an id one (and a second copy of an id a new one)
 //   node tools/story-ids.mjs --check    only lists what is missing or doubled (check-data.mjs runs this)
-// The scripts: a map's people (maps/<id>.json), a trainer (trainers/<id>.json), story.json scripts.
+// The scripts: a map's people (maps/<id>.json), a trainer (trainers/<id>.json), story.json scripts, a cutscene
+// (cutscenes/<id>.json).
 import { createHash } from 'node:crypto';
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -30,6 +31,13 @@ export function storyScripts(dir = DATA) {
       T = json(p);
     if (T.script)
       out.push({ id: 'trainer:' + f.slice(0, -5), file: p, data: T, lines: T.script, put: L => (T.script = L) });
+  }
+  for (const f of readdirSync(join(dir, 'cutscenes'))
+    .filter(f => f.endsWith('.json'))
+    .sort()) {
+    const p = 'cutscenes/' + f,
+      C = json(p);
+    out.push({ id: 'cutscene:' + f.slice(0, -5), file: p, data: C, lines: C.script, put: L => (C.script = L) });
   }
   const S = json('story.json');
   for (const [k, v] of Object.entries(S.scripts || {}))

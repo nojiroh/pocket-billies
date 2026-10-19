@@ -13,7 +13,7 @@
 self.PB_DATA = (() => {
   // the sections with a file per entry: an array (each entry has an id) or an object (the key is the id)
   /** @type {DataFiles['SPLIT']} */
-  const SPLIT = { lines: 'array', people: 'object', trainers: 'object', maps: 'object' };
+  const SPLIT = { lines: 'array', people: 'object', trainers: 'object', maps: 'object', cutscenes: 'object' };
   const ID = /^[a-z0-9_]+$/;
 
   // index.json -> [{ section, id, path }] in load order
