@@ -12,7 +12,7 @@ Lint enforces what it can (see the end). Every old -> new name of phase 05 is in
 | The 3D overview of the whole world | `worldMap` (world-map.js, world-map-gl.js, `worldMap*`, `worldMapGl*`, `worldMapMini*`) | was map, MAP, mgl, mm |
 | A walkable area: a town, a route area, a room | `map` (data section `maps`, files `maps/<id>.json`, `mapById`, a location's `mapId`) | was scene |
 | The view of a map you walk in | `walkView` (walk-view.js) | was DIO, dio*, diorama |
-| Its WebGL renderer | `walkRenderer` (walk-view-gl.js) and descriptive names (`drawGround`, `shadowPass`) | was DGL, dgl* |
+| Its WebGL renderer | `walkRenderer` (walk/walk-state.js) and descriptive names (`drawGround`, `shadowPass`) | was DGL, dgl* |
 | The renderer's 3D scene, a cutscene or story scene | `scene` | the only meanings `scene` keeps |
 | A named place on the world map | `location` (data section `locations`, `LOCATIONS`, `LOCATION_BY_ID`, a map's `locationId`) | was place, stop, route.json; never a bare top-level `location` (that is window.location) |
 | A location's position in LOCATIONS | `node` | saves (`saveData.trip.node`), trainers and roads refer to locations by node |

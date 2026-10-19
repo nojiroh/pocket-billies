@@ -11,6 +11,40 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 - Questions waiting for the owner: 
 - Next session starts with: 
 
+### Phase 20 stage B - walk-view-gl.js split into game/js/walk/ (moves only) - 2026-10-19
+Plan approved at the start (the file list was the "Ask me before"). Branch `ccr-9b6f14fb-6t1w6i`.
+- Changed (12 move commits, leaves first as in the phase file's B2, plus one tool fix and this docs commit):
+  - walk-view-gl.js 8,196 -> 570 lines (the canvas, mounting a place, the context restore, the walk view's overrides,
+    drawWalkFrame and drawWalkFrameInner). 23 new files in game/js/walk/, in page order before it: walk-state,
+    heights, walk-shaders, draw-common, water-data, ground-textures, grass-build, ground-mesh (918 lines, the largest),
+    map-cache, quality-cull, sky, rooms, water, prop-look, frame-items, sprites, camera, lighting, shadows,
+    ground-draw, fountains-weather, effects, input. Script tags in game/index.html and studio/index.html.
+  - Each statement moved byte for byte with the comments before it (a scratch script cut them out; npm run modules
+    wrote the imports, exports and setters). Proof, after every commit: the top-level statements of walk-view-gl.js
+    and game/js/walk/ together are the same 186 statements and 233 comments as before, plus one banner per new file.
+  - hooks.js 234 -> 238 names, each a call at run time into code that loads later: groundOcclusionTexture (ground
+    textures -> near ring), freeNearRing (ground mesh -> near ring, the one the phase file named), setPropLookUniforms
+    (rooms, water -> prop looks), propBaseHeight (into frame items). No load-time read crosses a file.
+  - vite.config.js removes the emptied game/js/walk folder after bundling (like game/js/engine); tools/rename-ids.mjs
+    points at FLOWER_SET_BY_LOCATION in walk/ground-draw.js.
+  - Tool fix (own commit): to-module writes the no-func-assign comment round expose() only where an entry assigns a
+    function itself; effects.js (one function with a setter) got an unused one and a lint warning. No other
+    generated file changed.
+  - Docs and comments that named walk-view-gl.js for code that moved: README's file guide, ART-NOTES (wall colours,
+    the town rise), NAMING (walkRenderer), and comments in seamless-world.js, walk-view.js, build-flags.py.
+- Risky: nothing should behave differently; the risk is a module order problem that only shows on a page or a path
+  the checks don't open. The game, the Studio and the build all load.
+- Verified, after every move commit: lint, typecheck, 72 unit tests, check:data, check:modules, format:check, no new
+  duplicate top-level name (the 18 game/Studio pairs from before stay), smoke 15/15. Build after commits 1 and 12
+  (no walk folder left in dist). At the end: check-studio-github.py (21 sections, the proposal goes through); the
+  smoke run's debug log has the same sections and fields, every timed pass (models, box faces, structures included)
+  and the same 104 entries in its error list.
+- Not done: no line was reformatted (long lines stay; CLAUDE.md wants that in its own no-op commit).
+- Questions waiting for the owner: on your phone, the game should look and run as before (a Graphics test step off by
+  more than its noise would mean something went wrong). Tags `phase-20a-done` / `phase-20b-done`?
+- Next session starts with: stage C (CPU per frame: frame settings, allocations, one uniform block, flat items and
+  blades grouped, light picking) in Plan Mode; or D first if you'd rather go at the pixels, given the 60 fps aim.
+
 ### Phase 20 stage A - Measure (GPU counters) - 2026-10-19
 Plan approved at the start (Stage A only: phase 19 is not done, and the phase file lets only Stage A run early).
 Branch `ccr-9b6f14fb-6t1w6i`, from main at 09ae2ba. The phase file is now docs/phases/20-renderer-batching.md.
