@@ -9,6 +9,7 @@
 import { expose } from './test-globals.js';
 import { TEST_RUN, closeModal, modal, provide, render, toast } from './hooks.js';
 import { TEST_BOOT } from './test-boot.js';
+import { LOCATIONS } from './game-data.js';
 import { metresToKm } from './logic/rules.js';
 import { SAVE_NEW_MSG, SAVE_VERSION, loadSave, saveAge } from './logic/saves.js';
 import {
@@ -23,33 +24,42 @@ import {
   saveHold,
   setSaveData,
   setSaveHold,
+  uiState,
   writeStoredSave,
 } from './game-state.js';
 import { cleanTrainer } from './person-art.js';
 import { applyPreferences, settingsRefresh } from './settings-screen.js';
-import { titleScreen, titleStart } from './title.js';
+import { titleAutoCheck, titleScreen, titleStart } from './title.js';
 import { initFriends } from './friends.js';
 /* eslint-disable no-func-assign */
 expose({
   FIREBASE_SDK_URL: [() => FIREBASE_SDK_URL],
   GOOGLE_ICON_SVG: [() => GOOGLE_ICON_SVG],
+  SAVES_APART_MS: [() => SAVES_APART_MS],
+  SET_ASIDE_KEY: [() => SET_ASIDE_KEY],
   account: [() => account],
   accountAvatarHTML: [() => accountAvatarHTML],
   accountChanged: [() => accountChanged, v => (accountChanged = v)],
   accountChipHTML: [() => accountChipHTML, v => ((accountChipHTML = v), provide({ accountChipHTML }))],
   accountError: [() => accountError, v => (accountError = v)],
   accountOn: [() => accountOn, v => ((accountOn = v), provide({ accountOn }))],
+  accountPickSave: [() => accountPickSave, v => (accountPickSave = v)],
+  accountSaveCardHTML: [() => accountSaveCardHTML, v => (accountSaveCardHTML = v)],
+  accountSetAside: [() => accountSetAside, v => (accountSetAside = v)],
+  accountSetAsideHTML: [() => accountSetAsideHTML, v => ((accountSetAsideHTML = v), provide({ accountSetAsideHTML }))],
+  accountSetAsideRead: [() => accountSetAsideRead, v => (accountSetAsideRead = v)],
   accountSettingsHTML: [() => accountSettingsHTML, v => ((accountSettingsHTML = v), provide({ accountSettingsHTML }))],
   accountSignIn: [() => accountSignIn, v => (accountSignIn = v)],
-  accountSignOut: [() => accountSignOut, v => (accountSignOut = v)],
+  accountSignOut: [() => accountSignOut, v => ((accountSignOut = v), provide({ accountSignOut }))],
   flushAccountSave: [() => flushAccountSave, v => ((flushAccountSave = v), provide({ flushAccountSave }))],
   initAccount: [() => initAccount, v => (initAccount = v)],
   loadAccountScript: [() => loadAccountScript, v => (loadAccountScript = v)],
   pullAccountSave: [() => pullAccountSave, v => (pullAccountSave = v)],
+  pullAccountSaveNow: [() => pullAccountSaveNow, v => (pullAccountSaveNow = v)],
   refreshAccount: [() => refreshAccount, v => (refreshAccount = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ accountChipHTML, accountOn, accountSettingsHTML, flushAccountSave });
+provide({ accountChipHTML, accountOn, accountSetAsideHTML, accountSettingsHTML, accountSignOut, flushAccountSave });
 /* to-module: end */
 export const account = {
   cfg: window.PB_FIREBASE || null,
@@ -60,6 +70,8 @@ export const account = {
   t: null,
   busy: false,
   err: '',
+  /* the save online has been looked at (and any question about it answered): the title may continue by itself */
+  pulled: false,
 };
 provide({ account }); /* to-module */
 const FIREBASE_SDK_URL = 'https://cdn.jsdelivr.net/npm/firebase@10.12.5/';
@@ -127,8 +139,16 @@ function accountChanged(u) {
   }
   refreshAccount();
 }
-/* the save online against the one here: the newer one wins */
+/* the save online against the one here. 2026-10-19 (the owner): when both are games and they were saved more than a
+   minute apart (someone played on another device), you choose which to keep and the other is set aside in this
+   browser (Settings > Save can restore or download it); otherwise the newer one wins, as before */
+const SAVES_APART_MS = 60000;
 async function pullAccountSave() {
+  await pullAccountSaveNow();
+  account.pulled = true;
+  refreshAccount();
+}
+async function pullAccountSaveNow() {
   if (!account.user || !account.db) return;
   let snap = null;
   try {
@@ -169,6 +189,16 @@ async function pullAccountSave() {
         if (localStorage.getItem(k) == null) localStorage.setItem(k, snap.data().json);
       } catch (e) {}
       toast('Your account’s save is from an older version of the game, so this is a new game. Playing on replaces it.');
+    }
+    if (
+      remote &&
+      remote.started &&
+      saveData.started &&
+      Math.abs((remote.savedAt || 0) - (saveData.savedAt || 0)) > SAVES_APART_MS &&
+      !activeBattle
+    ) {
+      await accountPickSave(remote, snap.data().json);
+      return;
     }
     if (
       remote &&
@@ -218,6 +248,84 @@ async function pullAccountSave() {
       ],
     });
   } else if (saveData.started) flushAccountSave(true);
+}
+/* the two saves side by side: keep the one online or the one in this browser; the other is set aside here first */
+function accountSaveCardHTML(S, where) {
+  const nm = (S.avatar && S.avatar.name) || 'Trainer',
+    place = S.trip && LOCATIONS[S.trip.node] ? LOCATIONS[S.trip.node].name : '',
+    m = Math.floor((S.playMs || 0) / 60000),
+    played = m < 60 ? `${m} min` : `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')} min`,
+    when = S.savedAt ? new Date(S.savedAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : '';
+  return `<div class="acc-pick-card"><small>${escapeHtml(where)}</small><b>${escapeHtml(nm)}</b><span>${escapeHtml(place)}</span><span>${played} played</span><span class="note">Last played ${escapeHtml(when)}</span></div>`;
+}
+function accountPickSave(remote, remoteJson) {
+  if (typeof titleScreen !== 'undefined') titleScreen.autoOff = true;
+  setSaveHold(true);
+  return new Promise(res => {
+    const done = () => {
+      setSaveHold(false);
+      closeModal();
+      res();
+    };
+    modal({
+      title: 'Which game do you want to keep?',
+      html: `<p>Your account and this browser have different games: one was played on another device since.</p><div class="acc-pick">${accountSaveCardHTML(remote, 'On your account')}${accountSaveCardHTML(saveData, 'In this browser')}</div><p class="note">The one you don’t keep is set aside in this browser: Settings → Save can bring it back or download it.</p>`,
+      btns: [
+        {
+          l: 'Keep the one on my account',
+          c: 'gold',
+          f: () => {
+            accountSetAside(JSON.stringify(saveData), 'this browser');
+            setSaveData(remote);
+            saveData.avatar = cleanTrainer(saveData.avatar, saveData.gender);
+            applyPreferences();
+            writeStoredSave(saveData);
+            done();
+            render();
+            toast('Your game is loaded from your account.');
+          },
+        },
+        {
+          l: 'Keep the one in this browser',
+          c: 'quiet',
+          f: () => {
+            accountSetAside(remoteJson, 'your account');
+            done();
+            flushAccountSave(true);
+            render();
+            toast('This browser’s game is on your account now.');
+          },
+        },
+      ],
+    });
+  });
+}
+/* a save set aside in this browser (one, the latest): Settings > Save restores it or downloads it */
+const SET_ASIDE_KEY = () => SAVE_KEY + '-set-aside';
+function accountSetAside(json, from) {
+  try {
+    localStorage.setItem(SET_ASIDE_KEY(), JSON.stringify({ json, from, at: Date.now() }));
+  } catch (e) {
+    console.warn(e);
+  }
+}
+function accountSetAsideRead() {
+  try {
+    const v = JSON.parse(localStorage.getItem(SET_ASIDE_KEY()) || 'null');
+    return v && v.json ? v : null;
+  } catch (e) {
+    return null;
+  }
+}
+function accountSetAsideHTML() {
+  const A = accountSetAsideRead();
+  if (!A) return '';
+  let S = null;
+  try {
+    S = loadSave(JSON.parse(A.json));
+  } catch (e) {}
+  if (!S) return '';
+  return `<div class="acc-box acc-aside"><div class="acc-t"><b>Set aside: ${escapeHtml((S.avatar && S.avatar.name) || 'Trainer')}</b><span class="note">The game from ${escapeHtml(A.from)}, set aside ${escapeHtml(new Date(A.at).toLocaleDateString())}. Bringing it back sets this one aside instead.</span></div><div class="two"><button class="pb small" data-a="acc-aside-back">Bring it back</button><button class="pb small quiet" data-a="acc-aside-save">Download it</button></div></div>`;
 }
 /* called by save()'s flush: writes to the account (a moment later, so a burst of saves is one write) */
 function flushAccountSave(now) {
@@ -313,6 +421,7 @@ const accountAvatarHTML = u =>
     : `<span class="acc-ph acc-ini">${escapeHtml((u.name || '?')[0].toUpperCase())}</span>`;
 const GOOGLE_ICON_SVG =
   '<svg class="acc-g" viewBox="0 0 18 18" aria-hidden="true"><path fill="#4285F4" d="M17.6 9.2c0-.6-.1-1.2-.2-1.7H9v3.3h4.8a4.1 4.1 0 0 1-1.8 2.7v2.2h2.9c1.7-1.6 2.7-3.9 2.7-6.5z"/><path fill="#34A853" d="M9 18c2.4 0 4.5-.8 5.9-2.2l-2.9-2.2c-.8.5-1.8.9-3 .9-2.3 0-4.3-1.6-5-3.7H1v2.3A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M4 10.8a5.4 5.4 0 0 1 0-3.5V5H1a9 9 0 0 0 0 8.1l3-2.3z"/><path fill="#EA4335" d="M9 3.6c1.3 0 2.5.5 3.4 1.3l2.6-2.6A9 9 0 0 0 1 5l3 2.3c.7-2.1 2.7-3.7 5-3.7z"/></svg>';
+provide({ GOOGLE_ICON_SVG }); /* to-module */
 /* the corner of the title: who's playing, or a sign-in button */
 function accountChipHTML() {
   if (!accountOn()) return '';
@@ -330,18 +439,54 @@ function accountSettingsHTML() {
   return `<div class="acc-box"><div class="acc-t"><b>Play on your own save</b><span class="note">Sign in with Google and your game is kept online, so you can carry on from any device. Everyone who signs in gets their own save.</span></div><button class="pb small acc-gbtn" data-a="acc-in">${GOOGLE_ICON_SVG} Sign in with Google</button></div>${account.err ? `<p class="note warn">${escapeHtml(account.err)}</p>` : ''}`;
 }
 function refreshAccount() {
-  const c = document.querySelector('.ttl-acc');
-  if (c) c.innerHTML = accountChipHTML();
+  /* the title shows the account in several places (the corner, the sign-in card): draw it again, then it may continue */
+  if (typeof titleScreen !== 'undefined' && titleScreen.on && !uiState.modal) {
+    render();
+    if (typeof titleAutoCheck === 'function') titleAutoCheck();
+  }
   if (typeof settingsRefresh === 'function') settingsRefresh();
 }
 document.addEventListener(
   'click',
   ev => {
-    const el = ev.target.closest && ev.target.closest('[data-a="acc-in"],[data-a="acc-out"],[data-a="acc-menu"]');
+    const el =
+      ev.target.closest &&
+      ev.target.closest(
+        '[data-a="acc-in"],[data-a="acc-out"],[data-a="acc-menu"],[data-a="acc-aside-back"],[data-a="acc-aside-save"]'
+      );
     if (!el) return;
     ev.stopPropagation();
     ev.preventDefault();
     const a = el.dataset.a;
+    if (a === 'acc-aside-back' || a === 'acc-aside-save') {
+      const A = accountSetAsideRead();
+      if (!A) return;
+      if (a === 'acc-aside-save') {
+        const u = URL.createObjectURL(new Blob([A.json], { type: 'application/json' })),
+          l = document.createElement('a');
+        l.href = u;
+        l.download = 'pocket-billies-set-aside.json';
+        l.click();
+        setTimeout(() => URL.revokeObjectURL(u), 1000);
+        return;
+      }
+      let S = null;
+      try {
+        S = loadSave(JSON.parse(A.json));
+      } catch (e) {}
+      if (!S) return;
+      accountSetAside(JSON.stringify(saveData), 'before you brought the other back');
+      setSaveData(S);
+      saveData.avatar = cleanTrainer(saveData.avatar, saveData.gender);
+      saveData.savedAt = Date.now();
+      applyPreferences();
+      writeStoredSave(saveData);
+      flushAccountSave(true);
+      render();
+      if (typeof settingsRefresh === 'function') settingsRefresh();
+      toast('The set-aside game is back.');
+      return;
+    }
     if (a === 'acc-in') accountSignIn();
     else if (a === 'acc-out') accountSignOut();
     else
