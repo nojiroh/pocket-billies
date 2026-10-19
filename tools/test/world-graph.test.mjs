@@ -5,9 +5,12 @@
 //   node --test --test-update-snapshots tools/test/world-graph.test.mjs
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { PB_DATA } from '../data-files.mjs';
 import { data, GAME_DATA } from './setup-real.mjs';
 
-const { locations, maps, roads, trainers } = GAME_DATA;
+const { locations, maps, trainers } = GAME_DATA;
+// phase 08b: the roads as the Studio and the tools read them (PB_DATA.road), whatever shape roads.json has
+const roads = GAME_DATA.roads.map(l => PB_DATA.road(GAME_DATA, l));
 const at = i => locations[i];
 const mapOf = loc => maps[loc.mapId];
 const lifts = locations.filter(l => l.lift).map(l => [l.id, l.lift]);
@@ -24,7 +27,7 @@ test('every location has its own id and its map, and the map names it back', () 
 test('every road joins two different places once, and names them as its numbers do', () => {
   const seenIds = new Set(),
     pairs = new Set();
-  for (const [a, b, , r] of roads) {
+  roads.forEach(({ a, b, ...r }, k) => {
     assert.ok(at(a) && at(b), `${r.id}: a place it joins does not exist`);
     assert.notEqual(a, b, `${r.id} goes nowhere`);
     assert.ok(!seenIds.has(r.id), `two roads are ${r.id}`);
@@ -33,17 +36,18 @@ test('every road joins two different places once, and names them as its numbers 
     assert.ok(!pairs.has(pair), `${at(a).id} and ${at(b).id} are joined twice`);
     pairs.add(pair);
     // the roads point at places by their number in locations.json: a reordered list would re-point them silently
-    assert.equal(r.from, at(a).id, `${r.id} starts at ${at(a).id}, not ${r.from}`);
-    assert.equal(r.to, at(b).id, `${r.id} ends at ${at(b).id}, not ${r.to}`);
-  }
+    const J = GAME_DATA.roads[k][3];
+    assert.equal(J.from, at(a).id, `${r.id} starts at ${at(a).id}, not ${J.from}`);
+    assert.equal(J.to, at(b).id, `${r.id} ends at ${at(b).id}, not ${J.to}`);
+  });
 });
 
 test('each road leaves by an exit on the edge of each map, and each map exit has exactly one road', () => {
   const used = new Map();
-  for (const [a, b, , r] of roads)
+  for (const r of roads)
     for (const [loc, exit] of [
-      [at(a), r.a],
-      [at(b), r.b],
+      [at(r.a), r.exitA],
+      [at(r.b), r.exitB],
     ]) {
       const m = mapOf(loc),
         e = (m.edgeExits || []).find(x => x.id === exit);
@@ -89,7 +93,7 @@ test('every gate has the trainer whose badge opens it; lifts go both ways', () =
 
 test('every place can be reached from the start, by road or by lift', () => {
   const next = locations.map(() => []);
-  for (const [a, b] of roads) (next[a].push(b), next[b].push(a));
+  for (const { a, b } of roads) (next[a].push(b), next[b].push(a));
   for (const [from, to] of lifts)
     next[locations.findIndex(l => l.id === from)].push(locations.findIndex(l => l.id === to));
   const seen = new Set([data.START_NODE]),
@@ -105,7 +109,7 @@ test('the graph is the one in the snapshot (places, roads with their exits, gate
   t.assert.snapshot({
     start: at(data.START_NODE).id,
     places: locations.map(l => `${l.id} (${l.kind})${l.gate ? ' gate ' + l.gate : ''}${l.ride ? ' ride' : ''}`),
-    roads: roads.map(([a, b, , r]) => `${r.id}: ${at(a).id}.${r.a} - ${at(b).id}.${r.b}`).sort(),
+    roads: roads.map(r => `${r.id}: ${at(r.a).id}.${r.exitA} - ${at(r.b).id}.${r.exitB}`).sort(),
     lifts: lifts.map(([a, b]) => `${a} -> ${b}`).sort(),
   });
 });

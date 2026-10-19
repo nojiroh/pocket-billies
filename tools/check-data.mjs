@@ -101,8 +101,9 @@ route.forEach((r, i) => {
   if (r.mapId && !S[r.mapId]) problem('locations.json', `stop ${i} (${r.name}) has map ${r.mapId}, no such map`);
   if (r.pool && !pools[r.pool]) problem('locations.json', `stop ${i} (${r.name}) has pool ${r.pool}, no such pool`);
 });
-(D.roads || []).forEach((l, i) => {
-  if (!route[l[0]] || !route[l[1]]) problem('roads.json', `link ${i} joins ${l[0]} and ${l[1]}, not both stops`);
+(D.roads || []).forEach((L, i) => {
+  const l = PB_DATA.road(D, L);
+  if (!route[l.a] || !route[l.b]) problem('roads.json', `link ${i} joins ${l.a} and ${l.b}, not both stops`);
 });
 // phase 17: robot parts and gems: the schema, then the moves and types they name and the slot each part fits
 const robots = D.robots || { parts: {}, gems: {} },
