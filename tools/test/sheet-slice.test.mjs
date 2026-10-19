@@ -43,6 +43,10 @@ test('masks: the magenta key, a colour key, clear pixels; erosion and dilation w
   // the picture's edge counts as background when eroding (scipy's border_value 0)
   assert.deepEqual(maskRows(S.maskErode(new Uint8Array(9).fill(1), 3, 3), 3), ['000', '010', '000']);
   assert.deepEqual(S.sheetEdgeColor(im), [255, 0, 255]);
+  // background colour inside the art stays art when only background joining the edge counts
+  const ring = pic(['.....', '.###.', '.#.#.', '.###.', '.....']);
+  assert.deepEqual(maskRows(S.sheetMask(ring, 'magenta'), 5)[2], '01010');
+  assert.deepEqual(maskRows(S.sheetMask(ring, 'magenta', true), 5)[2], '01110');
 });
 
 test('islands: numbered in scan order, 4- or 8-connected, joined across a gap, specks dropped', () => {

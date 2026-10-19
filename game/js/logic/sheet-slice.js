@@ -31,6 +31,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   maskLabel: [() => maskLabel, v => (maskLabel = v)],
   // @ts-expect-error -- replaced on purpose
+  maskOutsideOnly: [() => maskOutsideOnly, v => (maskOutsideOnly = v)],
+  // @ts-expect-error -- replaced on purpose
   premultiply: [() => premultiply, v => (premultiply = v)],
   // @ts-expect-error -- replaced on purpose
   roundHalfEven: [() => roundHalfEven, v => (roundHalfEven = v)],
@@ -90,8 +92,8 @@ export function roundThousandths(/** @type {number} */ x) {
 }
 
 /* ---------- background and art ---------- */
-/** 1 where the picture is art, 0 where it is background */
-export function sheetMask(/** @type {Pixels} */ img, /** @type {SheetKey} */ key = 'clear') {
+/** 1 where the picture is art, 0 where it is background (with `outside`, only background that joins the edge) */
+export function sheetMask(/** @type {Pixels} */ img, /** @type {SheetKey} */ key = 'clear', outside = false) {
   const { width: w, height: h, data: d } = img,
     m = new Uint8Array(w * h);
   for (let i = 0; i < w * h; i++) {
@@ -108,7 +110,27 @@ export function sheetMask(/** @type {Pixels} */ img, /** @type {SheetKey} */ key
     }
     m[i] = bg ? 0 : 1;
   }
-  return m;
+  return outside ? maskOutsideOnly(m, w, h) : m;
+}
+/** background only where it joins the picture's edge: background colour inside the art (a cream belly on a cream
+    sheet) stays art */
+export function maskOutsideOnly(/** @type {Uint8Array} */ m, /** @type {number} */ w, /** @type {number} */ h) {
+  const out = new Uint8Array(w * h).fill(1),
+    todo = [];
+  const see = (/** @type {number} */ i) => {
+    if (!m[i] && out[i]) ((out[i] = 0), todo.push(i));
+  };
+  for (let x = 0; x < w; x++) (see(x), see((h - 1) * w + x));
+  for (let y = 0; y < h; y++) (see(y * w), see(y * w + w - 1));
+  while (todo.length) {
+    const i = /** @type {number} */ (todo.pop()),
+      x = i % w;
+    if (x > 0) see(i - 1);
+    if (x < w - 1) see(i + 1);
+    if (i >= w) see(i - w);
+    if (i < w * (h - 1)) see(i + w);
+  }
+  return out;
 }
 /** the most common colour along the picture's edge (the likely background), as [r, g, b] */
 export function sheetEdgeColor(/** @type {Pixels} */ img) {
@@ -228,11 +250,12 @@ export function maskLabel(
 }
 
 /* ---------- islands, rows, grid ---------- */
-/** the art's islands: { key, clean (an opening of this many steps), gap (pieces this close are one), minArea, conn } */
+/** the art's islands: { key, outside, clean (an opening of this many steps), gap (pieces this close are one), minArea,
+    conn } */
 export function sheetIslands(/** @type {Pixels} */ img, o = /** @type {any} */ ({})) {
   const { width: w, height: h } = img;
   /** @type {Uint8Array} */
-  let fg = sheetMask(img, o.key);
+  let fg = sheetMask(img, o.key, o.outside);
   if (o.clean) fg = maskDilate(maskErode(fg, w, h, o.clean), w, h, o.clean);
   const grouped = o.gap ? maskDilate(fg, w, h, o.gap, o.conn === 8) : fg,
     { labels, count } = maskLabel(grouped, w, h, o.conn || 4),
@@ -309,14 +332,19 @@ export function sheetGridBoxes(o = /** @type {any} */ ({})) {
   return out;
 }
 /** a template cell's art as an island (background left out, trimmed to the art), or null when the cell is empty */
-export function sheetCellIsland(/** @type {Pixels} */ img, /** @type {SheetBox} */ b, /** @type {SheetKey} */ key) {
+export function sheetCellIsland(
+  /** @type {Pixels} */ img,
+  /** @type {SheetBox} */ b,
+  /** @type {SheetKey} */ key,
+  outside = false
+) {
   const bx = Math.max(0, b.x),
     by = Math.max(0, b.y),
     bw = Math.min(img.width, b.x + b.w) - bx,
     bh = Math.min(img.height, b.y + b.h) - by;
   if (bw <= 0 || bh <= 0) return null;
   const cell = sheetCrop(img, { x: bx, y: by, w: bw, h: bh }),
-    m = sheetMask(cell, key);
+    m = sheetMask(cell, key, outside);
   let x0 = bw,
     y0 = bh,
     x1 = 0,
