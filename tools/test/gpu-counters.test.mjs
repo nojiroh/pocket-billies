@@ -95,6 +95,7 @@ test('uploads count their bytes, in both argument forms', () => {
   gl.bufferData(0, new Float32Array(256), 0); /* 1024 */
   gl.bufferData(0, 2048, 0);
   gl.bufferSubData(0, 0, new Float32Array(100), 0, 10); /* 40 */
+  gl.drawArrays(4, 0, 3); /* a tick that drew nothing is not kept */
   countersOff();
   gpuFrameDone(2000);
   assert.equal(sumOf('other', 'texBytes'), 512 + 4096 + 128 + 8 + 400);
@@ -123,6 +124,18 @@ test('off leaves the context as it was: plain methods again, a wrapper that was 
   countersOff();
   assert.deepEqual(Object.keys(gl), ['ran']);
   assert.equal(countersOff(), null);
+});
+
+test('a counted tick that drew nothing is not kept', () => {
+  const gl = new FakeGL();
+  gpuCounters.lastT = 0;
+  const before = gpuCounters.last;
+  countersOn(gl);
+  gl.uniform1f('u', 1);
+  countersOff();
+  gpuFrameDone(9000);
+  assert.equal(gpuCounters.last, before);
+  assert.equal(gpuCounters.lastT, 0);
 });
 
 test('calls made while counting is off are not counted', () => {

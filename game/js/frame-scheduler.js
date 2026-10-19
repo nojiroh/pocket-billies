@@ -4,7 +4,8 @@
    Each task has its own cap; the battle and map follow the 30 / 60 / 120 FPS setting. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { debugFps, saveData } from './hooks.js';
+import { debugFps, gpuState, saveData } from './hooks.js';
+import { countersOff, countersOn, gpuCountDue, gpuFrameDone } from './engine/gpu-counters.js';
 /* eslint-disable no-func-assign */
 expose({
   frameCount: [() => frameCount, v => (frameCount = v)],
@@ -13,6 +14,7 @@ expose({
   frameScheduler: [() => frameScheduler],
   frameStop: [() => frameStop, v => (frameStop = v)],
   frameTask: [() => frameTask, v => (frameTask = v)],
+  runFrameTasks: [() => runFrameTasks, v => (runFrameTasks = v)],
   userFps: [() => userFps, v => (userFps = v)],
 });
 /* eslint-enable no-func-assign */
@@ -76,6 +78,21 @@ function frameLoop(ts) {
   frameScheduler.last = ts;
   if (document.hidden) return;
   const w0 = performance.now();
+  /* phase 20: one tick a second (every tick while a test measures) has its graphics calls counted; the counters are
+     put on and taken off within this tick, so no other frame carries them (engine/gpu-counters.js) */
+  const gl = typeof gpuState !== 'undefined' && !gpuState.lost ? gpuState.gl : null,
+    counted = !!gl && gpuCountDue(ts) && countersOn(gl);
+  try {
+    runFrameTasks(ts);
+  } finally {
+    if (counted) {
+      countersOff();
+      gpuFrameDone(ts);
+    }
+  }
+  frameScheduler.lastWork = performance.now() - w0;
+}
+function runFrameTasks(ts) {
   for (const [name, t] of frameScheduler.tasks) {
     const iv = 1000 / Math.max(1, framePace(t.cap()));
     if (ts < t.next - 1.2) continue;
@@ -91,7 +108,6 @@ function frameLoop(ts) {
     }
     if (typeof debugLog !== 'undefined') debugLog.task(name, performance.now() - a, ts);
   }
-  frameScheduler.lastWork = performance.now() - w0;
 }
 /* frame-rate meter for the debug overlay (counts battle or map frames) */
 export function frameCount(work) {

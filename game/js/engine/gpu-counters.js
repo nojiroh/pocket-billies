@@ -177,7 +177,7 @@ function uniformNames(gl) {
   return names;
 }
 /* start counting on this context: each method is wrapped round whatever it was (a test's own wrapper included) */
-function countersOn(gl) {
+export function countersOn(gl) {
   if (!gl || gpuCounters.on) return false;
   const saved = [];
   const wrap = (k, count) => {
@@ -201,7 +201,7 @@ function countersOn(gl) {
   return true;
 }
 /* stop counting: every method is put back exactly as it was (the prototype's again, or the wrapper that was there) */
-function countersOff() {
+export function countersOff() {
   if (!gpuCounters.on) return null;
   const gl = gpuCounters.gl;
   for (let i = gpuCounters.saved.length - 1; i >= 0; i--) {
@@ -217,12 +217,16 @@ function countersOff() {
   return gpuCounters.cur;
 }
 /* the scheduler's side: is this tick a counted one (one a second, or every tick while a test asks) */
-function gpuCountDue(ts) {
+export function gpuCountDue(ts) {
   return gpuCounters.want > 0 || ts - gpuCounters.lastT >= gpuCounters.everyMs;
 }
-/* a counted tick ended: keep it as the last one, and add it to a test's sum */
-function gpuFrameDone(ts) {
+/* a counted tick ended: keep it as the last one, and add it to a test's sum. A tick that drew nothing (no task was due
+   in it, or the screen draws no WebGL) is not kept, and the next tick is counted instead */
+export function gpuFrameDone(ts) {
   const c = gpuCounters.cur;
+  let draws = 0;
+  for (let p = 0; p < GPU_PASSES.length; p++) draws += c[p * FIELD_COUNT + F_DRAW];
+  if (!draws) return;
   gpuCounters.last = c.slice();
   gpuCounters.lastT = ts;
   if (gpuCounters.want > 0) {
