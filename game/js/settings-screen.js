@@ -243,7 +243,7 @@ export const GRAPHICS_DIALS = [
       ['air.mist', 'Low mist', 'Mist lying low over the ground', 'low', 0, 0.6, 0.02],
       ['sun.clouds', 'Clouds', 'How cloudy the sky is (and how much cloud shadow)', 'low', 0, 1, 0.05],
       ['sun.cloudShadows', 'Cloud shadows', 'How dark the drifting cloud shadows are', 'low', 0, 0.6, 0.02],
-      ['air.particles', 'Particles', 'Pollen, leaves, snow and rain drops in the air', 'medium', 0, 1, 0.05],
+      ['air.particles', 'Particles', 'How many butterflies, bees, fireflies and falling leaves', 'medium', 0, 1, 0.05],
     ],
   ],
   [
