@@ -2692,9 +2692,9 @@ export function navGrid() {
     walkView.navT === tk
   )
     return walkView.nav;
-  const K = walkView.navKeep;
-  if (K && K.sc === sc && K.G === walkView.gkey && K.P === (sc.props || []).length && K.T === tk) {
-    Object.assign(walkView, { navSc: sc, navG: K.G, navP: K.P, navT: K.T, navKey: K.key, navKeep: null });
+  const K = (walkView.navKeep || []).find(k => k.sc === sc);
+  if (K && K.G === walkView.gkey && K.P === (sc.props || []).length && K.T === tk) {
+    Object.assign(walkView, { navSc: sc, navG: K.G, navP: K.P, navT: K.T, navKey: K.key });
     return (walkView.nav = K.nav);
   }
   const C = walkData().sc,

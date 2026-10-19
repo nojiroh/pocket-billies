@@ -1750,17 +1750,18 @@ export function shiftWalkView(id, dx, dz) {
   walkView.sc = sc;
   walkView.gkey = '';
   walkView.cand = null;
-  /* phase 08b: the walking grid of the view you leave is kept for coming back (out of a room: at once) */
-  walkView.navKeep = walkView.nav
-    ? {
+  /* phase 08b: the walking grids of the last two views you left are kept for coming back (out of a room: at once) */
+  if (walkView.nav)
+    walkView.navKeep = [
+      {
         sc: walkView.navSc,
         nav: walkView.nav,
         G: walkView.navG,
         P: walkView.navP,
         T: walkView.navT,
         key: walkView.navKey,
-      }
-    : null;
+      },
+    ].concat((walkView.navKeep || []).filter(k => k.sc !== walkView.navSc).slice(0, 1));
   walkView.nav = null;
   walkView.npcAt = {};
   if (typeof debugLog !== 'undefined') debugLog.add('scene', 'seamless to ' + id);
