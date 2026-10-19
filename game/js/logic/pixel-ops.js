@@ -248,14 +248,16 @@ export function pixelFlip(/** @type {Pixels} */ im, /** @type {Box | null} */ bo
     }
 }
 /** turns a box a quarter clockwise (dir 1) or anticlockwise (-1) about its middle; a box that is not square turns
- * into one the other way round, clipped to the picture. The box the art is in afterwards */
+ * into one the other way round, clipped to the picture (art turned onto a neighbour's pixels covers them). The box
+ * the art is in afterwards */
 export function pixelRotate(/** @type {Pixels} */ im, /** @type {Box | null} */ box, /** @type {number} */ dir = 1) {
   const b = pixelClip(im, box);
   if (!b) return null;
   const p = pixelCopy(im, b),
     [x, y, w, h] = b,
-    nx = x + Math.floor((w - h) / 2),
-    ny = y + Math.floor((h - w) / 2);
+    /* halves cut towards zero both ways, so four turns come back to the same box */
+    nx = x + Math.trunc((w - h) / 2),
+    ny = y + Math.trunc((h - w) / 2);
   for (let r = 0; r < h; r++) im.data.fill(0, ((y + r) * im.width + x) * 4, ((y + r) * im.width + x + w) * 4);
   const out = { x: nx, y: ny, ...pixelNew(h, w) };
   for (let r = 0; r < h; r++)
@@ -266,7 +268,16 @@ export function pixelRotate(/** @type {Pixels} */ im, /** @type {Box | null} */ 
         s = (r * w + q) * 4;
       out.data.set(p.data.subarray(s, s + 4), (ty * h + tx) * 4);
     }
-  pixelPaste(im, out);
+  /* outside the box it came from, only the art lands: clear pixels leave the neighbours' art alone */
+  for (let r = 0; r < w; r++)
+    for (let q = 0; q < h; q++) {
+      const X = nx + q,
+        Y = ny + r,
+        s = (r * h + q) * 4;
+      if (X < 0 || Y < 0 || X >= im.width || Y >= im.height) continue;
+      if (!out.data[s + 3] && (X < x || Y < y || X >= x + w || Y >= y + h)) continue;
+      im.data.set(out.data.subarray(s, s + 4), (Y * im.width + X) * 4);
+    }
   return pixelClip(im, [nx, ny, h, w]);
 }
 /** every colour of the game palette (next/palette.js ramps, and its single colours) as '#RRGGBB', darkest first */

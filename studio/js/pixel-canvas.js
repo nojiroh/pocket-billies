@@ -28,14 +28,16 @@ import {
   pixelCopy,
   pixelDiffBox,
   pixelFill,
+  pixelFlip,
   pixelGet,
   pixelHex,
   pixelLine,
   pixelRgba,
+  pixelRotate,
   pixelSet,
   pixelZoomNext,
 } from '../../game/js/logic/pixel-ops.js';
-import { commit, studioState, updateTopBar } from './studio-app.js';
+import { commit, studioState, toast, updateTopBar } from './studio-app.js';
 /* eslint-disable no-func-assign */
 expose({
   artStep: [() => artStep, v => (artStep = v)],
@@ -53,6 +55,7 @@ expose({
   pixelCanvasPoint: [() => pixelCanvasPoint, v => (pixelCanvasPoint = v)],
   pixelCanvasRepeat: [() => pixelCanvasRepeat],
   pixelCanvasTool: [() => pixelCanvasTool, v => (pixelCanvasTool = v)],
+  pixelCanvasTransform: [() => pixelCanvasTransform, v => (pixelCanvasTransform = v)],
   pixelCanvasZoom: [() => pixelCanvasZoom, v => (pixelCanvasZoom = v)],
   strokeEnd: [() => strokeEnd, v => (strokeEnd = v)],
   strokeLineTo: [() => strokeLineTo, v => (strokeLineTo = v)],
@@ -233,6 +236,17 @@ function pixelCanvasBox(P) {
   if (!c) return null;
   if (P.sel) return P.sel;
   return P.o.focusBox ? P.o.focusBox(P) : [0, 0, c.width, c.height];
+}
+/* flipH, flipV or rotate (a quarter clockwise) on the selection or the part in focus, as one step */
+export function pixelCanvasTransform(P, kind) {
+  const box = pixelCanvasBox(P);
+  if (!box) return toast('Point at a part, or select a box (M), first.');
+  strokeStart(P);
+  if (kind === 'rotate') {
+    const nb = pixelRotate(P.stroke.work, box, 1);
+    if (P.sel) P.sel = nb;
+  } else pixelFlip(P.stroke.work, box, kind === 'flipV' ? 'v' : 'h');
+  strokeEnd(P);
 }
 export function pixelCanvasDeselect(P) {
   if (!P.sel) return false;

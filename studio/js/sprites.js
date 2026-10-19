@@ -23,6 +23,7 @@ import {
   pixelCanvasDeselect,
   pixelCanvasFit,
   pixelCanvasTool,
+  pixelCanvasTransform,
   pixelCanvasZoom,
 } from './pixel-canvas.js';
 /* eslint-disable no-func-assign */
@@ -417,6 +418,13 @@ export async function openPixelEditor(sp, view = 'front', focus = null) {
     .map(([k, l, s]) => `<button class="seg" data-pe="tool" data-t="${k}" title="${l} (${s})">${l}</button>`)
     .join('')}</span>
   <span class="px-tools"><button class="seg" data-pe="zoom" data-z="-1" title="Zoom out (−)">−</button><span id="pxZoom"></span><button class="seg" data-pe="zoom" data-z="1" title="Zoom in (+)">+</button><button class="seg" data-pe="grid" title="Pixel grid">Grid</button><button class="seg" data-pe="parts" title="Part outlines">Parts</button></span>
+  <span class="px-tools">${[
+    ['flipH', 'Flip ↔', 'Flip the selection, or the part under the pointer, left-right (Shift+H)'],
+    ['flipV', 'Flip ↕', 'Flip upside down (Shift+V)'],
+    ['rotate', 'Turn ⟳', 'Turn a quarter right (Shift+R)'],
+  ]
+    .map(([k, l, t]) => `<button class="seg" data-pe="xf" data-x="${k}" title="${t}">${l}</button>`)
+    .join('')}</span>
   <span class="px-tools"><button class="seg" data-pe="undo" title="Undo (Ctrl+Z)">↶</button><button class="seg" data-pe="redo" title="Redo (Ctrl+Y)">↷</button></span>
   <span class="grow"></span><button class="btn" data-pe="skel" title="Add, move and connect body parts">Skeleton builder</button><button class="btn" data-pe="close">Done</button></header>
  <div class="px-body"><div class="px-stage" id="pxStage"></div>
@@ -603,6 +611,8 @@ function bindPixelEditor() {
     } else if (k === 'parts') {
       E.parts = !E.parts;
       drawPixelEditor();
+    } else if (k === 'xf') {
+      if (E.pc) pixelCanvasTransform(E.pc, b.dataset.x);
     } else if (k === 'undo') {
       undoPixels();
     } else if (k === 'redo') {
@@ -687,7 +697,9 @@ function pixelEditorKeys(ev) {
   const T = { p: 'pen', b: 'pen', e: 'erase', f: 'fill', g: 'fill', i: 'pick', l: 'line', m: 'select' },
     P = pixelEditor.pc;
   if (!P) return;
-  if (T[k]) pixelCanvasTool(P, T[k]);
+  const X = { h: 'flipH', v: 'flipV', r: 'rotate' };
+  if (ev.shiftKey && X[k]) pixelCanvasTransform(P, X[k]);
+  else if (T[k]) pixelCanvasTool(P, T[k]);
   else if (k === '+' || k === '=') {
     pixelCanvasZoom(P, pixelZoomNext(P.zoom, 1));
   } else if (k === '-') pixelCanvasZoom(P, pixelZoomNext(P.zoom, -1));

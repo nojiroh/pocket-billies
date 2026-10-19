@@ -82,6 +82,15 @@ test('a flip and a quarter turn move only the box', () => {
   const box = P.pixelRotate(wide, [1, 1, 3, 1], 1);
   assert.deepEqual(box, [2, 0, 1, 3], 'a 3x1 box turns into a 1x3 one on the same middle');
   assert.deepEqual(rowsOf(wide), ['..r..', '..r..', '..b..']);
+  const odd = pic(['......', '......', '.rrb..', '.bb...', '......', '......']),
+    was = rowsOf(odd);
+  let b = [1, 2, 3, 2];
+  for (let i = 0; i < 4; i++) b = P.pixelRotate(odd, b, 1);
+  assert.deepEqual(b, [1, 2, 3, 2], 'four turns of an odd box come back to it');
+  assert.deepEqual(rowsOf(odd), was);
+  const nb = pic(['.b.', '..r', '...']);
+  P.pixelRotate(nb, [0, 1, 3, 1], 1);
+  assert.deepEqual(rowsOf(nb), ['.b.', '...', '.r.'], 'a clear pixel turned onto a neighbour leaves it be');
 });
 
 test('a patch is the box that changed, and puts it back', () => {
