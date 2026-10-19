@@ -28,6 +28,7 @@ VIEWS = {
     'preview': ('preview', '', '#cvWorld'),
     'skeleton': ('billionaires', "void openSkeleton(studioState.D.lines[0].id + '0', 'front')", '.pxed.skel'),
     'pixels': ('billionaires', "void openPixelEditor(studioState.D.lines[0].id + '0', 'front')", '#pxCv'),
+    'split': ('billionaires', "ACTIONS.openBeside({ s: 'moves' })", '#main2 .split'),
 }
 
 
@@ -90,6 +91,7 @@ def main():
             for name in a.views.split(','):
                 sec, js, sel = VIEWS[name]
                 pg.evaluate("document.querySelectorAll('.pxed [data-pe=close], .pxed [data-sk=close]').forEach(b => b.click())")
+                pg.evaluate("if (studioState.sec2 && typeof ACTIONS.paneClose === 'function') ACTIONS.paneClose()")
                 pg.evaluate(f"void openSection({json.dumps(sec)})")
                 if js: pg.evaluate(js)
                 try: pg.wait_for_selector(sel, timeout=20000)
