@@ -7,9 +7,10 @@
 import { expose } from './test-globals.js';
 import { provide } from './hooks.js';
 import { TEST_BOOT } from './test-boot.js';
-import { DATA_WARN, RULES, SPECIES, START_NODE, gameData } from './game-data.js';
+import { DATA_WARN, LOCATIONS, RULES, SPECIES, START_NODE, gameData } from './game-data.js';
 import { SAVE_NEW_MSG, SAVE_OLD_MSG, newSave } from './logic/saves.js';
 import { battleStageKey } from './logic/battle-engine.js';
+import { storySwitches, storySwitchesOf } from './logic/story-checks.js';
 import { applyStoryPreset } from './logic/script.js';
 import { loadAllMaps, loadMapsAhead, watchMapsAhead } from './map-files.js';
 import {
@@ -77,6 +78,7 @@ expose({
   noWebGL: [() => noWebGL, v => ((noWebGL = v), provide({ noWebGL }))],
   preloadAll: [() => preloadAll, v => (preloadAll = v)],
   studioChannel: [() => studioChannel, v => (studioChannel = v)],
+  studioDraftReady: [() => studioDraftReady, v => (studioDraftReady = v)],
   studioLive: [() => studioLive, v => (studioLive = v)],
   studioTestStart: [() => studioTestStart, v => (studioTestStart = v)],
   townPaths: [() => townPaths, v => (townPaths = v)],
@@ -740,11 +742,24 @@ function loaderHide() {
 /* v29: Pocket Billies Studio and an open game tab. A test run (?test=1&scene=<id>) is a throwaway game that starts in that
    scene and never touches your save; while the Studio is open, its edits to scenes, props and the engine reach the
    game as you make them (no saving needed to see them). Project Story: ?story=<preset> is a test run that starts at a
-   point in the story (story.json presets), alone or with ?test=1. */
+   point in the story (story.json presets), alone or with ?test=1. S3, the Studio's Play from here: &place=<location>
+   starts you in the real place (its people, trainers and exits; not the scene alone), &at=x,z on that spot,
+   &flags=a,!b,beat:chad switches flags and trainers on top of the preset, and &draft=1 waits for the open Studio's
+   unsaved data (2 s at most) before starting. */
 const TEST_RUN = (() => {
   try {
-    const q = new URLSearchParams(location.search);
-    return q.get('test') || q.get('story') ? { scene: q.get('scene'), story: q.get('story') } : null;
+    const q = new URLSearchParams(location.search),
+      at = (q.get('at') || '').split(',').map(Number);
+    return q.get('test') || q.get('story')
+      ? {
+          scene: q.get('scene'),
+          story: q.get('story'),
+          place: q.get('place'),
+          at: at.length === 2 && at.every(Number.isFinite) ? at : null,
+          flags: storySwitchesOf(q.get('flags')),
+          draft: q.get('draft') === '1',
+        }
+      : null;
   } catch (e) {
     return null;
   }
@@ -762,16 +777,43 @@ function studioTestStart() {
   uiState.modal = null;
   uiState.mq = [];
   renderOverlay();
-  /* a preset says which story flags hold, from none */
-  if (TEST_RUN.story) saveData.story = {};
+  /* a preset (and Play from here) says which story flags hold, from none */
+  if (TEST_RUN.story || TEST_RUN.place) saveData.story = {};
   const preset = TEST_RUN.story ? applyStoryPreset(saveData, TEST_RUN.story) : null;
   if (TEST_RUN.story && !preset) toast(`No story preset “${TEST_RUN.story}” (story.json presets).`);
-  if (TEST_RUN.scene && mapById(TEST_RUN.scene)) uiState.bench = { id: TEST_RUN.scene };
+  storySwitches(saveData, gameData, TEST_RUN.flags);
+  const node = TEST_RUN.place ? LOCATIONS.findIndex(r => r.id === TEST_RUN.place) : -1;
+  if (node >= 0) {
+    /* Play from here: the place itself, on the spot picked in the Studio */
+    saveData.trip = { node, plan: [] };
+    saveData.visited[node] = 1;
+    saveData.mapSeen = null;
+    uiState.roam = TEST_RUN.at ? { node, id: mapIdAt(node), x: TEST_RUN.at[0], z: TEST_RUN.at[1] } : null;
+  } else if (TEST_RUN.scene && mapById(TEST_RUN.scene)) uiState.bench = { id: TEST_RUN.scene };
   uiState.tab = 'walk';
   render();
+  const where =
+    node >= 0
+      ? LOCATIONS[node].name
+      : TEST_RUN.scene && mapById(TEST_RUN.scene)
+        ? mapById(TEST_RUN.scene).name || TEST_RUN.scene
+        : '';
   toast(
-    `Test run${preset ? ' at ' + TEST_RUN.story : ''}${TEST_RUN.scene && mapById(TEST_RUN.scene) ? ' of ' + (mapById(TEST_RUN.scene).name || TEST_RUN.scene) : ''}. Nothing here is saved.`
+    `Test run${preset ? ' at ' + TEST_RUN.story : ''}${where ? ' in ' + where : ''}${TEST_RUN.draft ? (studioLive.told ? ' with your Studio edits' : ' (the Studio’s edits didn’t come: saved data)') : ''}. Nothing here is saved.`
   );
+}
+/* &draft=1: the open Studio's unsaved data first (it answers hello), 2 s at most */
+function studioDraftReady() {
+  if (!TEST_RUN || !TEST_RUN.draft || !studioChannel) return Promise.resolve();
+  return new Promise(res => {
+    studioDraftReady.done = res;
+    setTimeout(res, 2000);
+    try {
+      studioChannel.postMessage({ type: 'hello' });
+    } catch (e) {
+      res();
+    }
+  });
 }
 function studioLive(D) {
   let any = false;
@@ -780,6 +822,14 @@ function studioLive(D) {
       gameData[k] = D[k];
       any = true;
     }
+  /* Project Story S3: the story and the trainers, in place (STORY_DATA and TRAINERS are these objects) */
+  for (const k of ['story', 'trainers'])
+    if (D[k] && gameData[k]) {
+      for (const x of Object.keys(gameData[k])) delete gameData[k][x];
+      Object.assign(gameData[k], D[k]);
+      any = true;
+    }
+  if (studioDraftReady.done) studioDraftReady.done();
   if (!any) return;
   if (typeof seamlessWorld !== 'undefined') {
     seamlessWorld.gen++;
@@ -846,6 +896,7 @@ else
       const quickOpening = TEST_BOOT && !TEST_RUN && !FIXTURE && !saveData.started;
       if (quickOpening && !(typeof cutsceneWanted === 'function' && cutsceneWanted())) uiState.openingFailed = 'cant';
       render();
+      if (TEST_RUN) await studioDraftReady();
       if (TEST_RUN) studioTestStart();
       if (FIXTURE) fixtureStart();
       /* an open Studio sends its unsaved edits */ if (studioChannel)

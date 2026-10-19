@@ -60,6 +60,15 @@ Project Story is its own track. It runs alongside phases A to E; A2 and E3 point
 - `when` / `unless` (people, trainers, props), `requires` / `locked` (places), chapters (map variants), line ids,
   the story checks in check-data. Doors have no `requires` of their own yet (a door prop can carry `when`).
 
+## After S3 (2026-10-19)
+- The parser and the format's tables are in `logic/script-parse.js` (the runner stays in `logic/script.js`); the story
+  checks are `logic/story-checks.js` (`storyFindings`, each with file, script, line, thing and field); check-data and
+  the Studio run the same ones. `scriptReference()` builds the Studio's command reference from the tables.
+- Studio: `studio/js/story-editor.js` (script field, condition field, line ids, reference, Story scripts section);
+  the map editor's People card, story preview and Play from here; the Check's story findings.
+- Play from here: `?test=1&story=<preset>&place=<loc>&at=x,z&flags=a,!b,beat:t&draft=1`; the live channel now carries
+  the story and the trainers.
+
 ## Sessions
 Sized in sessions and owner decisions, like the roadmap. Each session starts in Plan Mode and ends with HANDOFF.
 

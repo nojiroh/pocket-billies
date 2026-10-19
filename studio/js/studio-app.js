@@ -191,7 +191,8 @@ export function changed(rigs) {
   if (!rigs) studioBroadcast();
 }
 /* v29: live update. A game tab open from this Studio (a test run, or the game on the same address) gets your scenes,
-   props and engine settings half a second after each change, before you save */
+   props and engine settings (Project Story S3: and the story and trainers) half a second after each change, before
+   you save */
 const LIVE_UPDATE_CHANNEL = (() => {
   try {
     const c = new BroadcastChannel('networth-studio');
@@ -203,14 +204,20 @@ const LIVE_UPDATE_CHANNEL = (() => {
     return null;
   }
 })();
-function studioBroadcast() {
+export function studioBroadcast() {
   if (!LIVE_UPDATE_CHANNEL || !studioState.D) return;
   clearTimeout(studioBroadcast.t);
   studioBroadcast.t = setTimeout(() => {
     try {
       LIVE_UPDATE_CHANNEL.postMessage({
         type: 'data',
-        D: { maps: studioState.D.maps, scenery: studioState.D.scenery, engine: studioState.D.engine },
+        D: {
+          maps: studioState.D.maps,
+          scenery: studioState.D.scenery,
+          engine: studioState.D.engine,
+          story: studioState.D.story,
+          trainers: studioState.D.trainers,
+        },
       });
     } catch (e) {}
   }, 500);
@@ -443,6 +450,7 @@ export const SECTION_LIST = [
   ['wardrobe', 'Wardrobe', 'Trainer body, hairstyles, faces and clothes'],
   ['trainers', 'Trainers', 'Rivals and arena leaders'],
   ['lore', 'Lore & story', 'The world, the story, people, places, legends, clues, books and what people say'],
+  ['story', 'Story scripts', 'The story’s own scripts (story.json), its flags, start presets and quests'],
   ['people', 'People', 'Looks for trainers and shopkeepers'],
   ['jobs', 'Jobs', 'What working Billies earn (not in the game until the ranch)'],
   ['rules', 'Rules', 'Every number that tunes the game'],
@@ -454,7 +462,7 @@ export const SECTION_LIST = [
 const SECTION_GROUPS = [
   ['Billies & battles', ['billionaires', 'parts', 'coats', 'robots', 'roster', 'moves', 'preview', 'types']],
   ['World & places', ['scenes', 'props', 'engine', 'world']],
-  ['People & story', ['trainers', 'people', 'wardrobe', 'lore']],
+  ['People & story', ['trainers', 'people', 'wardrobe', 'lore', 'story']],
   ['Money', ['items', 'shops', 'jobs']],
   ['Game', ['rules', 'art', 'check']],
 ];

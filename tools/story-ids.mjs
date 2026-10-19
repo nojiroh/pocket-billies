@@ -8,16 +8,9 @@ import { createHash } from 'node:crypto';
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { DATA, PB_DATA } from './data-files.mjs';
+import { giveLineIds as giveIds, lineIdProblems, lineKind } from '../game/js/logic/story-checks.js';
 
-export const LINE_ID = /\s+#l:([0-9a-z]{4,8})$/;
-/** what a line of a script is, for ids: 'say' (dialogue), 'option' (> text), or null (a command or a keyword) */
-export function lineKind(raw) {
-  let s = raw.trim();
-  if (s.startsWith('>')) return 'option';
-  if (/^-(\s|$)/.test(s)) s = s.slice(1).trim();
-  if (!s || /^[a-z][a-z-]*(\s|$)/.test(s)) return null;
-  return 'say';
-}
+export { lineIdProblems, lineKind };
 /** every script in the data: { id, file, lines, put(lines) } */
 export function storyScripts(dir = DATA) {
   const out = [];
@@ -43,54 +36,8 @@ export function storyScripts(dir = DATA) {
     out.push({ id: 'story:' + k, file: 'story.json', data: S, lines: v.script, put: L => (v.script = L) });
   return out;
 }
-/** the lines without an id, and the ids used twice: [{ script, line, problem }] */
-export function lineIdProblems(scripts) {
-  const seen = new Map(),
-    out = [];
-  for (const sc of scripts)
-    sc.lines.forEach((raw, i) => {
-      if (typeof raw !== 'string' || !lineKind(raw)) return;
-      const m = LINE_ID.exec(raw);
-      if (!m) return out.push({ script: sc.id, line: i, problem: 'has no line id (npm run story:ids)' });
-      if (seen.has(m[1]))
-        out.push({ script: sc.id, line: i, problem: `line id ${m[1]} is also ${seen.get(m[1])} (npm run story:ids)` });
-      else seen.set(m[1], `${sc.id} line ${i + 1}`);
-    });
-  return out;
-}
 /** gives each line without an id (or with an id seen before) a new one; returns how many */
-export function giveLineIds(scripts) {
-  const used = new Set();
-  for (const sc of scripts) for (const raw of sc.lines) if (LINE_ID.test(raw)) used.add(LINE_ID.exec(raw)[1]);
-  const seen = new Set();
-  let n = 0;
-  for (const sc of scripts) {
-    const L = sc.lines.map((raw, i) => {
-      if (typeof raw !== 'string' || !lineKind(raw)) return raw;
-      const m = LINE_ID.exec(raw);
-      if (m && !seen.has(m[1])) {
-        seen.add(m[1]);
-        return raw;
-      }
-      const text = m ? raw.slice(0, m.index) : raw.trimEnd();
-      let id,
-        k = 0;
-      do
-        id = createHash('sha1')
-          .update(`${sc.id}|${i}|${text}|${k++}`)
-          .digest('hex')
-          .slice(0, k > 50 ? 6 : 4);
-      while (used.has(id));
-      used.add(id);
-      seen.add(id);
-      n++;
-      return `${text} #l:${id}`;
-    });
-    sc.put(L);
-    sc.lines = L;
-  }
-  return n;
-}
+export const giveLineIds = scripts => giveIds(scripts, seed => createHash('sha1').update(seed).digest('hex'));
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   const scripts = storyScripts();

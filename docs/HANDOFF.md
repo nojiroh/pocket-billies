@@ -11,6 +11,80 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 - Questions waiting for the owner: 
 - Next session starts with: 
 
+### Project Story S3 - the Studio story editor, Play from here; and a free camera for the scene preview - 2026-10-19
+Plan approved at the start (S3 of docs/phases/project-story.md); the free camera was asked for during the session and
+planned and approved separately (estimate given: one session, 3-5 h, 250-450k tokens). Branch `ccr-aa8542b9-r8vfua`,
+from main at c7c5ad3 (S2 merged).
+- Changed:
+  - Moves first, no behaviour change: the parser and the format's tables into `logic/script-parse.js` (the runner
+    stays in `logic/script.js`); the story checks and the line id rules into `logic/story-checks.js` (browser-safe;
+    tools/story-checks.mjs and tools/story-ids.mjs keep their exports; check:data printed the same, story:ids gives
+    the same ids).
+  - One check for the Studio and the command line: `storyFindings` gives each finding its file, script, line, thing
+    and field; `storyChecks` makes the same strings from it.
+  - Fix: a place's `requires` that doesn't read was a crash of the reach check; now it is reported.
+  - `scriptReference()` builds the command reference from SCRIPT_COMMANDS, KEYWORD_ABOUT, SCRIPT_SLOTS and
+    CONDITION_KINDS (which now say what each does).
+  - Studio (`studio/js/story-editor.js`): one script field for every script (trainer Dialogue, a scene's People card,
+    story.json's), the parser's error at once and the story checks a moment later, each on its line (click to go
+    there); Tab / Shift+Tab / Enter keep the indent; Add line ids (same rule as npm run story:ids); Commands panel
+    (finder, a row puts itself in the script). Condition fields check as you type: a trainer's and a person's `when` /
+    `unless`, a place's `requires` and `locked` line (World). New section Story scripts (story.json scripts: add,
+    rename, remove, edit; flags, presets with ▶ Play, quests to read). The Check lists the story findings; Show me opens
+    the script with the line selected.
+  - The scene editor's People card edits today's data (id, look, name, spot, facing, when, unless, script); the dead
+    `first` / `lines` editor is gone.
+  - Story preview (Walk scenes → Preview): a start preset plus flags and beaten trainers switched; hidden people and
+    props are left out of the 3D preview and drawn faded with a red dashed outline on the map. People now show on the
+    map and in the 3D preview. The Studio gives the walk view its `storyAllows` (a prop with `when` would have thrown
+    in the Studio before).
+  - Play from here: the game in the scene's place (people, trainers, exits), on the spot you pick (Pick the spot, the
+    free camera's spot, the walker's, or the hub), at the preview's preset and switches, with the unsaved draft:
+    `?test=1&story=<p>&place=<loc>&at=x,z&flags=a,!b,beat:t&draft=1`; the game waits up to 2 s for the Studio's data.
+    The live channel now carries the story and the trainers (replaced in place). Nothing is saved in that tab.
+  - Free camera (`game/js/logic/free-camera.js` maths, `studio/js/free-camera.js`): leaves the walker and flies like
+    a map app: drag moves (the ground stays under the pointer), right-drag turns and tilts, wheel zooms towards the
+    pointer, double-click looks there; one finger, pinch, twist, two-finger tilt on a phone; W A S D, Q E, R F, Page
+    Up/Down; Top view, ▲ ▼, Walker here, Back to the walker; each scene keeps its camera. The walk view draws through
+    a view's own camera when its options pass `look()` (walk-view-gl.js; nothing in the game passes it).
+- Where the plan or the phase file was wrong (checked in the code):
+  - The Studio could not import the parser at all (script.js needs the game's data and save), and story-checks.mjs
+    could not load in a browser (Node imports through story-ids.mjs): hence the two moves.
+  - The scene People card still edited `first` / `lines`, which S2 had removed from the data.
+  - The live channel sent only maps, scenery and engine; `?test=1&scene=` starts a bench with no people or exits, so
+    Play from here starts in the place itself instead.
+  - The preview's old "free camera" only turned round the walker.
+- Risky or unfinished:
+  - Play from here puts you in a place: a scene no stop uses (rooms, test scenes) opens as the old scene test run at
+    its hub, not on the spot.
+  - The draft carries maps, scenery, engine, story and trainers; a change to locations (a place's `requires`) reaches
+    the game only after saving.
+  - Story presets are read-only in the Studio (story.json by hand), as planned; ask if you want an editor.
+  - Free camera: from straight above, standing pictures (trees, people) look flat, as billboards do; flying far from
+    the walker relies on the near ring following the camera (it does); a click without a drag still walks the walker.
+  - The tag `project-story-s1-done` (S2's note) is still only in that session's clone, if the proxy refuses tags
+    again it will be the same for `project-story-s3-done` (see below).
+- Verified:
+  - After each change: lint, typecheck, unit tests (152, new: the reference, findings with their place, the requires
+    fix, the preview against the game's applyStoryPreset / storyAllows, the switches, the free camera's maths),
+    check:data (same output as before the moves), check:modules, format.
+  - tools/check-studio-github.py (GitHub mode, fake API): types `sett` in a trainer's script and sees "did you mean
+    set" on its line, Add line ids, the reference finds and inserts `heal`, the People and Story fields, the Check's
+    Show me selects the line, the story preview hides and shows Juniper, Play from here opens a game tab in
+    Copperleaf on the picked spot at after-opening with chad beaten and the draft script, no save written; the free
+    camera by mouse, keys and two fingers (the ground stays under the pointer within 0.75 m). Green twice in a row.
+  - Smoke 15/15 (twice). Full quick check: 45 of 54 steps; the 9 red are the same known ones as S2 (v35, v38, v39/v40
+    roster counts; v46 building plans; v31 fountain wait; v44 props scene; alpha 0.4 bush recipes; phase 08 running),
+    none from this session. It ran while the free camera was being written in the tree (the game page only gained an
+    unused `look` hook then).
+  - Not done: anything on a phone (touch feel of the free camera, the Studio on a phone).
+- Decisions I made: free camera's left-drag flies the camera while it is on (the plan's recommendation; walking stays
+  with it off or by click); key C switches it; story presets stay read-only.
+- Questions waiting for the owner: try the Studio (S3's "Needs from you"): a script with a mistake, the story preview,
+  Play from here, the free camera on your phone. Tag project-story-s1-done if it still isn't on GitHub.
+- Next session starts with: Project Story S4, the story bible and parody fixes (writing, no code; every naming and
+  lore choice is yours).
+
 ### Phase 10 (world map: the bowl) - fixes from the owner's phone test - 2026-10-19
 From the owner's world map test report (Adreno 750, 60 fps, 1.6 ms a frame) and notes.
 - Changed:
