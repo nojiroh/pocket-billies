@@ -11,6 +11,34 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 - Questions waiting for the owner: 
 - Next session starts with: 
 
+### Phase 07 part 1 (in progress) - portrait kit, slicer, portraits.json - 2026-10-19
+Branch `phase-07-portraits` (not merged, no PR yet). Plan agreed in chat with the owner; written up in
+docs/phases/07-plan.md (decisions, data format, status, next steps).
+- Owner's decisions: portraits are 64×64; the face kit is cut from AI-drawn part sheets; the body stays still and the
+  head moves freely (sub-pixel and rotating, NOT on the pixel grid: this replaces the phase file's whole-pixel
+  motion); everything is placed by data so it can be edited in a Studio "Portraits" section; the old portrait
+  system stays until the owner says otherwise.
+- Changed:
+  - `tools/art-source/portrait-kit/`: the 15 source sheets and `kit.json`; `prototype/`: the prototype renderer and
+    test page, reference only (eslint now ignores `tools/art-source/`).
+  - `tools/slice-portrait-kit.py`: cuts the sheets into 311 pictures in `game/art/next/portraits/` and seeds or
+    merges `game/data/portraits.json` (keeps existing data; `--reset` starts over), written in the Studio's layout.
+  - `game/data/portraits.json` (12 heads, 93 parts, 13 eye styles, 2 mouth sets, 7 expressions, motion, palettes,
+    4 sample faces), listed in `index.json` after `wardrobe`; `game/data/schema/portraits.schema.json`;
+    `PortraitData` and friends in `game/types/game-data.d.ts`.
+  - `tools/check-data.mjs`: validates portraits.json and checks every head, part, eye frame, mouth frame and face it
+    names exists (tried: removing one picture is reported).
+  - Docs: docs/phases/07-plan.md (new), a pointer at the top of 07-portraits.md, an ART-NOTES section.
+- Nothing in the game or the Studio uses the portraits yet: the data loads into GAMEDATA.portraits and is unused.
+- Risky or unfinished: no renderer, no Studio section, no tests of the portraits themselves yet. The cut art has known
+  rough spots (07-plan.md, last section). The source sheets add about 20 MB to the repository.
+- Verified: lint, typecheck, unit tests (72 pass), check:data (212 files), format:check. Not run: smoke (a data
+  section only; the owner prefers no headless graphics runs).
+- Questions waiting for the owner: none now. Later: deleting the old system; how the 64 px portrait fills 06's
+  96×96 slot (1×, 2× or a canvas at device pixels).
+- Next session starts with: 07-plan.md "What is left", step 1 (the renderer: logic/portrait-layout.js and
+  portrait-art.js), then step 2 (the Studio section), then step 3 (tests).
+
 ### Phase 20 stage B - walk-view-gl.js split into game/js/walk/ (moves only) - 2026-10-19
 Plan approved at the start (the file list was the "Ask me before"). Branch `ccr-9b6f14fb-6t1w6i`.
 - Changed (12 move commits, leaves first as in the phase file's B2, plus one tool fix and this docs commit):

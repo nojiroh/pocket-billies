@@ -497,3 +497,18 @@ the legs' hip knob under the torso, the head's neck on the torso's top, each arm
 (about 62% up), the gem in the chest socket (half way up, front only). Any arm fits either side. A part without a
 picture is drawn as a stand-in from its colour and shape. They are stand-ins for the modular low-poly parts of the
 art pipeline (phase 17 task 11).
+
+## Portraits (phase 07, in progress)
+- Talking heads, 64×64 art pixels: a still body and a head that moves (sub-pixel, rotating round the neck). Details and
+  the data format: docs/phases/07-plan.md.
+- `tools/art-source/portrait-kit/`: the 15 AI-drawn part sheets on magenta (heads, hair short/long front/long back,
+  hats, clothes, lashes eye frames, eye styles, brows, noses, two mouth sets, face marks, accessories) and `kit.json`
+  (each sheet's kind, grid and cell ids). Never shipped.
+- `tools/slice-portrait-kit.py` cuts them into `game/art/next/portraits/<id>.png` (311 pictures), resampling the
+  sheets' uneven "pixels" to one grid: skull 30 px wide, an eye about 9, a mouth about 11. Clothes are cut three times
+  (shoulders 53, 59 and 64 px; a head's `top` picks one). Pairs (eyes, brows, earrings...) are split into `_l`/`_r`.
+  Single-frame eye styles get half, closed and happy frames drawn from their darkest colour.
+- Placement lives in `game/data/portraits.json` (edited in the Studio once its Portraits section exists). Running the
+  tool again re-cuts the pictures and keeps the data; `--reset` starts the data over.
+- Parts are drawn in neutral colours (greys, a mid brown for hair) and tinted in the game; heads keep their own skin
+  unless a face sets one.
