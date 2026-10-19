@@ -6,6 +6,7 @@
 import { expose } from '../test-globals.js';
 import { loadingScreen, provide, reducedMotion, requestAsker } from '../hooks.js';
 import { clamp } from '../util.js';
+import { filterInto } from '../engine/frame-lists.js';
 import { makeCanvas } from '../art.js';
 import {
   actionLabel,
@@ -29,8 +30,12 @@ import { foliageAmount, setPropLookUniforms } from './prop-look.js';
 expose({
   BOX_INFO_CACHE: [() => BOX_INFO_CACHE],
   IMAGE_IDS: [() => IMAGE_IDS],
+  SPRITE_LIST: [() => SPRITE_LIST],
+  TURNED_BACK: [() => TURNED_BACK],
+  TURNED_RIGHT: [() => TURNED_RIGHT],
   addHitTarget: [() => addHitTarget, v => (addHitTarget = v)],
   boxInfo: [() => boxInfo, v => (boxInfo = v)],
+  byImageId: [() => byImageId],
   drawBoxFaces: [() => drawBoxFaces, v => setDrawBoxFaces(v)],
   drawClockHands: [() => drawClockHands, v => (drawClockHands = v)],
   drawFlatItem: [() => drawFlatItem, v => (drawFlatItem = v)],
@@ -39,6 +44,7 @@ expose({
   imageId: [() => imageId, v => (imageId = v)],
   imageIdCount: [() => imageIdCount, v => (imageIdCount = v)],
   landmarkTilt: [() => landmarkTilt, v => (landmarkTilt = v)],
+  spriteDrawn: [() => spriteDrawn],
   startTownRise: [() => startTownRise, v => (startTownRise = v)],
   townRiseAmount: [() => townRiseAmount, v => (townRiseAmount = v)],
 });
@@ -101,6 +107,12 @@ function townRiseAmount(it) {
     c = 1.7;
   return 1 + (c + 1) * Math.pow(k - 1, 3) + c * Math.pow(k - 1, 2);
 }
+/* phase 20 C2: the sprite pass's list and a turned picture's axes, kept from frame to frame (engine/frame-lists.js) */
+const SPRITE_LIST = [],
+  TURNED_RIGHT = new Float32Array(3),
+  TURNED_BACK = new Float32Array(3),
+  spriteDrawn = it => !(it.flat || it.vol || it.vis === false),
+  byImageId = (a, b) => imageId(a.im) - imageId(b.im);
 export function drawSprites(C, items, X, hits, labels, PPU) {
   const gl = gpuState.gl,
     p = useWalkProgram('sprite', C, X),
@@ -125,7 +137,8 @@ export function drawSprites(C, items, X, hits, labels, PPU) {
   gl.uniform1f(U.uFlipN, 1);
   gl.uniform1f(U.uFixed, 0);
   const me = worldToScreen(C, P.x, 0.9, P.z);
-  walkRenderer.bfade = new Map();
+  if (walkRenderer.bfade) walkRenderer.bfade.clear();
+  else walkRenderer.bfade = new Map();
   const sd = sun.dir,
     sl = Math.hypot(sd[0] * C.right[0] + sd[2] * C.right[2], sd[1]) || 1,
     selfD = [(sd[0] * C.right[0] + sd[2] * C.right[2]) / sl, -sd[1] / sl],
@@ -137,9 +150,8 @@ export function drawSprites(C, items, X, hits, labels, PPU) {
   gl.depthMask(true);
   gl.disable(gl.BLEND);
   /* v32: drawn grouped by picture (fewer texture switches); depth decides what is in front, so order doesn't matter */
-  const L = [];
-  for (const it of items) if (!(it.flat || it.vol || it.vis === false)) L.push(it);
-  L.sort((a, b) => imageId(a.im) - imageId(b.im));
+  const L = filterInto(items, spriteDrawn, SPRITE_LIST);
+  L.sort(byImageId);
   for (const it of L) {
     if (it.vox) {
       if (!it.far) addHitTarget(it, C, hits, labels, PPU);
@@ -171,8 +183,14 @@ export function drawSprites(C, items, X, hits, labels, PPU) {
       const ro = it.fixed && it.lk && it.lk.rot && !it.M.box && !it.bld3 ? it.lk.rot * 0.6 : 0,
         cr = Math.cos(ro),
         sr = Math.sin(ro);
-      gl.uniform3fv(U.uRight, it.fixed ? (ro ? [cr, 0, sr] : FIXED_RIGHT) : C.right);
-      gl.uniform3fv(U.uBack, it.fixed ? (ro ? [sr, 0, -cr] : FIXED_BACK) : C.back);
+      if (ro) {
+        TURNED_RIGHT[0] = cr;
+        TURNED_RIGHT[2] = sr;
+        TURNED_BACK[0] = sr;
+        TURNED_BACK[2] = -cr;
+      }
+      gl.uniform3fv(U.uRight, it.fixed ? (ro ? TURNED_RIGHT : FIXED_RIGHT) : C.right);
+      gl.uniform3fv(U.uBack, it.fixed ? (ro ? TURNED_BACK : FIXED_BACK) : C.back);
     }
     gl.uniform1f(U.uFixed, it.fixed && it.plane ? 1 : 0);
     /* phase 09 batch 1: a tree's leaf clumps take no shadows from the shadow map (their crown's own shadow would
