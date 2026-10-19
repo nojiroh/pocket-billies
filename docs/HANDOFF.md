@@ -11,6 +11,35 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 - Questions waiting for the owner: 
 - Next session starts with: 
 
+### Cutscene tools, session 1 - cutscenes as data; the opening plays from its file - 2026-10-19
+Plan approved at the start (the owner's picks: both intros in order, Hazel's opening moved with today's words first, a
+script and step list in the Studio, one file per cutscene, a cutscene/ folder, lines and walks wait, map coordinates).
+Branch `project-story-opening`, from main at 88fadcf (S3 merged).
+- Changed (one cause per commit):
+  - Move only: cutscene.js split into `game/js/cutscene/` (director, starter-pick, staged-fight, opening).
+  - Story layer: cutscene commands, read once by `game/js/logic/cutscene-set.js` for the stage, the checks and the
+    Studio (actor, act, caption, blink, screen, effect, hide, sound; camera <shot> [s] [on ...], walk <who> <spot>
+    [s] [nowait], wait <who>; the opening's dressing-room, throw-coins, pick-starter, staged-fight, rival-battle).
+    Slots in commands; {place} {starter} {counter} {foe}. The story checks read cutscene scripts and their names.
+    S1's unused placeholders shot, hot-take and tip are gone.
+  - Data: `game/data/cutscenes/<id>.json` (schema, check-data, line ids): `opening.json` holds Copperleaf's spots and
+    shots (moved from the lab-door offsets to map coordinates), what is cleared while filming, and the script.
+  - The opening plays from its file (`cutscene/stage.js`); cutsceneScript, CUTSCENE_SPOTS and Hazel's moved tables
+    (blakeArrives, afterFight, blakeTakes) are gone; the starters and coins are the opening's own drawing layer.
+  - docs/CUTSCENES.md; SCRIPTS.md; stale headers (Sundown, the step-by-step intro) fixed.
+- Risky or unfinished:
+  - Camera heights are now above the ground under each point, not above the lab door's ground: a shot whose eye
+    stands on higher or lower ground than the door sits a little differently. Look at the opening on your phone.
+  - The staged fight's shot moved into the script (`camera coins 0.9` before `staged-fight`), same as before.
+  - The no-Blake ending branch of the old code (blake0 missing) is gone; blake0 is in the data.
+  - tools/check-studio-github.py stops at the story preview switch (#scStoryOn): the same on main 88fadcf, not from
+    this session (likely the free camera covering it); not fixed here.
+- Verified: lint, typecheck, unit tests (163; new tools/test/opening-script.test.mjs: the opening says what the old
+  code said, word for word and in order, recorded from it; commands; the set's maths; planted faults), check:data,
+  check:modules, format, build; smoke 15/15 after the split and again on the final code. No headless renders.
+- Questions waiting for the owner: play the opening on your phone (New game) and send a debug log.
+- Next session starts with: session 2, the Studio's cutscene tools (Save as shot, spot pins, the step list and Preview).
+
 ### Project Story S3 - the Studio story editor, Play from here; and a free camera for the scene preview - 2026-10-19
 Plan approved at the start (S3 of docs/phases/project-story.md); the free camera was asked for during the session and
 planned and approved separately (estimate given: one session, 3-5 h, 250-450k tokens). Branch `ccr-aa8542b9-r8vfua`,
@@ -84,6 +113,29 @@ from main at c7c5ad3 (S2 merged).
   Play from here, the free camera on your phone. Tag project-story-s1-done if it still isn't on GitHub.
 - Next session starts with: Project Story S4, the story bible and parody fixes (writing, no code; every naming and
   lore choice is yours).
+
+### Phase 10 (world map: the bowl) - curves only, real terrain - 2026-10-19
+Owner's asks: no grey edge; the inside only curves; high-resolution real terrain.
+- Changed:
+  - Shape (`logic/bowl.js`): part of a sphere (radius sqrt 2), lowest at the centre, curving up to 45 degrees at the
+    rim (rim height sqrt 2 - 1); no flat floor. The ground ends at the rim: no land beyond it (the grey edge is gone);
+    the mesh's corners past the rim are pulled onto it, so the edge is a clean circle. 320 cells.
+  - Terrain (`world-bowl.js`): a 2048 x 2048 map of terrain kinds (about a metre a square at 1000 m to the radius)
+    drawn with the walk scenes' own terrain pictures (all 78, 16 px each, sharp, mipmapped), and their average colours
+    from far away (1024 x 1024) so it doesn't shimmer. Between places each region's own grounds in patches with a
+    dithered edge (from what its maps are made of), some kinds' own round them (sea, volcano, summit, canyon...), snow
+    on the highest tops, rock at the rim, paths along the roads. Each place's own walk map is laid on it square by
+    square, turned the way it sits (north to the centre), as its map file comes in (one at a time while the map is
+    open). Filled 96 rows a frame; uploads at most twice a second.
+  - Pins: close in (zoom under 0.62) other places are small tags; the picked place and yours keep their pins.
+  - World map test: a new step times the terrain map and the places' own ground.
+  - Studio: the floor circle is gone from the bowl editor.
+- Risky: not seen on a device. The 2048 terrain map is 4 MB on the GPU plus the 1024 colours; the first opening fills
+  it over about 21 frames. Places' maps load in the background while the map is open.
+- Verified: lint, typecheck, check:data, check:modules, format:check, npm test (158 pass); the shaders compile
+  headless; check-fast 12 of 12 (the bowl step waits for the terrain); a lite page lays all 48 places' ground and
+  Marigold's centre square on the bowl is its map's centre square (cobblestone).
+- Next: landmarks far out, real buildings close in, tree clumps; then clouds.
 
 ### Phase 10 (world map: the bowl) - fixes from the owner's phone test - 2026-10-19
 From the owner's world map test report (Adreno 750, 60 fps, 1.6 ms a frame) and notes.

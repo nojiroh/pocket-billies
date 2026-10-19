@@ -164,6 +164,8 @@ export async function runScript(tree, stage, o) {
   /** @param {CmdNode} n @param {number[]} at @param {number[] | null} inner
    * @param {(b: ScriptNode[], k: number) => Promise<any>} into */
   const runCommand = async (n, at, inner, into) => {
+    /* slots in a command are filled in too: "caption 3 The Hollow Earth | {place}" */
+    if (n.args.some(x => x.includes('{'))) n = { ...n, args: n.args.map(fill) };
     const [a, b] = n.args,
       count = (/** @type {string | undefined} */ s) => (s == null ? 1 : +s);
     const bag = (/** @type {string} */ thing) =>
@@ -201,7 +203,6 @@ export async function runScript(tree, stage, o) {
       case 'walk':
       case 'face':
       case 'camera':
-      case 'shot':
       case 'fade':
         if (!control.skipping) await play(n.name, n.args);
         else if (stage.skipTo) await stage.skipTo(n.name, n.args);

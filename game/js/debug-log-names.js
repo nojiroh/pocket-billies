@@ -74,7 +74,7 @@ import { endBattle, openBattle, paintActions, setEndBattle, setOpenBattle, setPa
 import { setWorldBowlRender, setWorldMapMount, worldBowlRender, worldMapMount } from './world-bowl.js';
 import { openShop, setOpenShop } from './shop.js';
 import { ambience, soundEngine } from './sound.js';
-import { cutsceneStart, setCutsceneStart } from './cutscene.js';
+import { cutsceneStart, setCutsceneStart } from './cutscene/opening.js';
 import { account } from './account.js';
 import { challengesToday, stampCount } from './things-to-do.js';
 import { render, renderOverlay, setRender, setRenderOverlay, toast } from './ui.js';

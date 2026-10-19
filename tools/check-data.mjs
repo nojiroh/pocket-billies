@@ -32,6 +32,7 @@ const ENTRY = {
   lines: 'line.schema.json',
   trainers: 'trainer.schema.json',
   people: 'person.schema.json',
+  cutscenes: 'cutscene.schema.json',
 };
 
 // the files: listed, present, JSON, laid out the Studio's way
@@ -81,6 +82,13 @@ for (const [section, schema] of Object.entries(ENTRY)) {
   }
   const entries = Array.isArray(v) ? v.map(e => [e.id, e]) : Object.entries(v);
   for (const [id, e] of entries) if (e) check(schema, e, `${section}/${id}.json`);
+}
+
+// cutscenes: the map each is filmed on, the spots its paths join (their scripts: the story checks below)
+for (const [id, C] of Object.entries(D.cutscenes || {})) {
+  if (!(D.maps || {})[C.map]) problem(`cutscenes/${id}.json`, `filmed on map ${C.map}, no such map`);
+  for (const [a, b] of (C.clear && C.clear.paths) || [])
+    for (const s of [a, b]) if (!C.spots[s]) problem(`cutscenes/${id}.json`, `clear path names spot ${s}, no such spot`);
 }
 
 // what refers to what

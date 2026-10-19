@@ -67,7 +67,7 @@ import { seamlessRoomMap, seamlessWorld } from './seamless-world.js';
 import { endBattle, pickMove, pickTarget, stopTimers, tapMessage } from './battle.js';
 import { WORLD_BOWL_SHADERS, worldBowl, worldMap, worldMapReset } from './world-bowl.js';
 import { talkBox, talkHide } from './talk.js';
-import { cutscene, cutsceneTeardown } from './cutscene.js';
+import { cutscene, cutsceneTeardown } from './cutscene/director.js';
 import { battleTipHide, fallOverWorldMap, fallWorldMapCanvas } from './opening-fall.js';
 import {
   closeModal,

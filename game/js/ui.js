@@ -185,7 +185,8 @@ import {
 import { openShop } from './shop.js';
 import { soundEffect } from './sound.js';
 import { talkHazel } from './talk.js';
-import { cutscene, cutsceneStart, cutsceneWanted } from './cutscene.js';
+import { cutscene } from './cutscene/director.js';
+import { cutsceneStart, cutsceneWanted } from './cutscene/opening.js';
 import { tutorPicked } from './opening-fall.js';
 import { renderTitle, titleMount } from './title.js';
 import { loreBook, renderLore } from './lore.js';

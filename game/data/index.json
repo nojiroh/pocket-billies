@@ -32,7 +32,8 @@
   "fishing",
   "moods",
   "lore",
-  "story"
+  "story",
+  "cutscenes"
  ],
  "split": {
   "lines": {"array":true,"ids":["musk","bezos","gates","swift","kardashian","trump","zuck"]},
@@ -224,6 +225,7 @@
     "test_props_next",
     "test_props_marigold"
    ]
-  }
+  },
+  "cutscenes": {"ids":["opening"]}
  }
 }

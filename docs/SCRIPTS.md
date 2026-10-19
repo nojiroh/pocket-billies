@@ -7,6 +7,8 @@ JSON array of lines in the data, next to the thing that owns it:
 - a trainer, `game/data/trainers/<id>.json`: `script` (id `trainer:<id>`).
 - the story itself, `game/data/story.json` `scripts`: `{ "who": <who talks>, "script": [...] }` (id `story:<id>`):
   Hazel in the lab, after Blake's first battle, the ending.
+- a cutscene, `game/data/cutscenes/<id>.json` `script` (id `cutscene:<id>`): the opening. A cutscene has commands of
+  its own (people, named shots and spots, captions): docs/CUTSCENES.md.
 
 A line or a choice waits until the windows on screen (a battle's result) are closed. Each talk with a person or a
 trainer counts one visit (`visits:<id>`).
@@ -33,8 +35,9 @@ One string per line. Indentation is two spaces per level, inside the string.
 | `Hazel: Another one!` / `[happy] Hazel: ...` | said by someone else: a speaker from story.json `speakers` (Hazel, Blake, Juniper, Nacre, Cass, You) or a person id (`gini: ...`) |
 | `set met_juniper` | a command (below) |
 
-A line may hold slots, filled in as it is said: `{name}` (your name; Trainer before you have one), `{caught}`
-(kinds of Billie caught) and `{badges}`. Any other `{word}` is an error.
+A line (or a command) may hold slots, filled in as it is said: `{name}` (your name; Trainer before you have one),
+`{caught}` (kinds of Billie caught) and `{badges}`; in a cutscene also `{place}` (where it is filmed), and in the
+opening `{starter}`, `{counter}` and `{foe}` (docs/CUTSCENES.md). Any other `{word}` is an error.
 
 A line that starts with a small letter is a command or a keyword. An unknown one is an error ("unknown command
 "sett", did you mean "set"?"), never a line of dialogue. A line of dialogue starts with a capital, a quote, a digit,
@@ -111,9 +114,10 @@ Combine with `and`, `or`, `not` / `!` and parentheses; `and` binds tighter than 
 | `camera run-up` | someone runs up to you: the walk scene you stand in becomes a scene, with you and the one who talks (out of sight beyond you) on it; a battle, or the script's end, ends it |
 | `walk who beside me` | the one who ran up comes over to stand beside you |
 | `face who me`, `face who dir` | the two of you turn to each other; or up, down, side, sideR |
-| `fade [in/out]` | the scene fades out, or back in |
+| `fade [in/out] [#colour]` | the scene fades out (to a colour), or back in |
 | `go place [entrance]` | a checkpoint; from S2 |
-| `shot`, `dressing-room`, `pick-starter`, `hot-take`, `tip`, `fall` | the openings' commands (S5, S7) |
+| `actor`, `act`, `caption`, `blink`, `screen`, `effect`, `hide`, `sound`, `walk who spot`, `camera shot`, `wait who` | a cutscene's: docs/CUTSCENES.md (only in a cutscene) |
+| `dressing-room`, `throw-coins`, `pick-starter`, `staged-fight`, `rival-battle`, `fall` | the opening's: docs/CUTSCENES.md |
 
 The command table is `SCRIPT_COMMANDS` in logic/script-parse.js (with the parser; the runner is logic/script.js);
 the Studio's command reference is built from it, the keywords (`KEYWORD_ABOUT`), the slots and the condition terms

@@ -281,7 +281,7 @@ def copperleaf_data():
     if 'juniper' not in (LO.get('people') or {}): bad.append('Granny Juniper has no page in the Lore')
     sd = S_['marigold']; sign = [p.get('say') for p in sd['props'] if p.get('act') == 'sign']
     if 'Route 1 · Hedgerow Lane this way.' not in sign: bad.append(f'Marigold Town’s signposts: {sign}')
-    # the opening's stage: east and south of the lab's door, as cutscene.js CUTSCENE_SPOTS has it (door [7.4, 15.4])
+    # the opening's stage: east and south of the lab's door, where game/data/cutscenes/opening.json has its spots
     lab = next(p for p in cl['props'] if p.get('act') == 'lab'); M = C[lab['k']]; dx = M['door']['x'] / 34 * lab.get('s', 1) * (-1 if lab.get('f') else 1)
     d = (lab['x'] + dx, lab['z'])
     for p in cl['props']:

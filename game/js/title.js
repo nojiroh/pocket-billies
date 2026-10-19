@@ -41,7 +41,7 @@ import { walkRenderer } from './walk/walk-state.js';
 import { standingHeightAt } from './walk/heights.js';
 import { mountWalkView } from './walk-view-gl.js';
 import { music, musicFor } from './sound.js';
-import { cutsceneMapId, cutsceneStart, cutsceneStartName, cutsceneWanted } from './cutscene.js';
+import { cutsceneMapId, cutsceneStart, cutsceneStartName, cutsceneWanted } from './cutscene/opening.js';
 /* eslint-disable no-func-assign */
 expose({
   playSeenEncounters: [() => playSeenEncounters, v => (playSeenEncounters = v)],

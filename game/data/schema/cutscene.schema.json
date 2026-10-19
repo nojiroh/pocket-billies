@@ -1,0 +1,49 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "cutscene.schema.json",
+ "title": "game/data/cutscenes/<id>.json: one cutscene: the map it is filmed on, its named spots, shots and lanes, what is cleared away while filming, and its script (docs/CUTSCENES.md)",
+ "type": "object",
+ "required": ["map", "spots", "shots", "script"],
+ "additionalProperties": false,
+ "$defs": {
+  "point": {"description": "a place on the map: [x, z] in metres, the map's own coordinates", "type": "array", "prefixItems": [{"type": "number"}, {"type": "number"}], "items": false, "minItems": 2},
+  "point3": {"description": "[x, height above the ground there, z] in metres", "type": "array", "prefixItems": [{"type": "number"}, {"type": "number"}, {"type": "number"}], "items": false, "minItems": 3},
+  "name": {"type": "string", "pattern": "^[a-zA-Z][a-zA-Z0-9_-]*$"}
+ },
+ "properties": {
+  "about": {"description": "what the cutscene is and when it plays", "type": "string"},
+  "map": {"description": "the map it is filmed on (game/data/maps/<map>.json); when the map is part of a bigger view (a place's hub), its coordinates move with it", "type": "string", "pattern": "^[a-z0-9_]+$"},
+  "who": {"description": "who says a line that names nobody (a speaker in story.json)", "type": "string"},
+  "spots": {"description": "named places people stand or walk to", "type": "object", "propertyNames": {"$ref": "#/$defs/name"}, "additionalProperties": {"$ref": "#/$defs/point"}},
+  "shots": {
+   "description": "named camera shots",
+   "type": "object",
+   "propertyNames": {"$ref": "#/$defs/name"},
+   "additionalProperties": {
+    "type": "object",
+    "required": ["eye", "tgt"],
+    "additionalProperties": false,
+    "properties": {
+     "eye": {"$ref": "#/$defs/point3"},
+     "tgt": {"$ref": "#/$defs/point3"},
+     "fov": {"description": "field of view in degrees (40 if left out)", "type": "number", "exclusiveMinimum": 5, "exclusiveMaximum": 120},
+     "w": {"description": "a width in metres round the target that stays in frame on a narrow phone (0 if left out)", "type": "number", "minimum": 0}
+    }
+   }
+  },
+  "lanes": {"description": "named paths for traffic (flying cars): [x, height, z] points", "type": "object", "propertyNames": {"$ref": "#/$defs/name"}, "additionalProperties": {"type": "array", "minItems": 2, "items": {"$ref": "#/$defs/point3"}}},
+  "clear": {
+   "description": "props put out of the way while filming (not flat ones): inside an area, near a path between two spots, or near a point the camera stands at (props without a footprint only)",
+   "type": "object",
+   "additionalProperties": false,
+   "properties": {
+    "areas": {"type": "array", "items": {"type": "array", "prefixItems": [{"type": "number"}, {"type": "number"}, {"type": "number"}, {"type": "number"}], "items": false, "minItems": 4}},
+    "paths": {"type": "array", "items": {"type": "array", "prefixItems": [{"$ref": "#/$defs/name"}, {"$ref": "#/$defs/name"}], "items": false, "minItems": 2}},
+    "pathWidth": {"type": "number", "minimum": 0},
+    "eyes": {"type": "array", "items": {"$ref": "#/$defs/point"}},
+    "eyeRadius": {"type": "number", "minimum": 0}
+   }
+  },
+  "script": {"description": "the story layer's lines and commands (docs/SCRIPTS.md, docs/CUTSCENES.md)", "type": "array", "items": {"type": "string"}}
+ }
+}

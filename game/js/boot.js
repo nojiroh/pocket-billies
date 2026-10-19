@@ -33,7 +33,7 @@ import { environment } from './environment.js';
 import { walkRenderer } from './walk/walk-state.js';
 import { startTownRise } from './walk/sprites.js';
 import { seamlessWorld } from './seamless-world.js';
-import { cutsceneStart, cutsceneWanted } from './cutscene.js';
+import { cutsceneStart, cutsceneWanted } from './cutscene/opening.js';
 import { titleMount, titleScreen, titleStart, titleWanted } from './title.js';
 import { loreLoadingLines } from './lore.js';
 import { initAccount } from './account.js';

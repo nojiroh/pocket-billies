@@ -8,7 +8,7 @@
    its own small data there before it imports this module. */
 /**
  * @import { EggTier, Evolution, GameData, LocationData, LocationEntry, Pool, Road, RoadFromNode } from '../types/game-data'
- * @import { Seat, Species, TrainerEntry } from '../types/game-data'
+ * @import { CutsceneData, Seat, Species, TrainerEntry } from '../types/game-data'
  */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
@@ -18,6 +18,7 @@ expose({
   BATTLE_STAGES: [() => BATTLE_STAGES],
   COATS: [() => COATS],
   COINS: [() => COINS],
+  CUTSCENES: [() => CUTSCENES],
   DATA_WARN: [() => DATA_WARN],
   DEFAULT_EVOLUTIONS: [() => DEFAULT_EVOLUTIONS],
   DEX_ORDER: [() => DEX_ORDER],
@@ -383,6 +384,8 @@ provide({ PEOPLE }); /* to-module */
 export const SHOPS = gameData.shops || {};
 /* Project Story: the story layer's flags, speakers, quests and start presets (story.json) */
 export const STORY_DATA = gameData.story;
+/* cutscenes, one file each (game/data/cutscenes/<id>.json, docs/CUTSCENES.md) */
+export const CUTSCENES = /** @type {Record<string, CutsceneData>} */ (gameData.cutscenes || {});
 /* ---------- trainers: plain data, turned into teams when a battle starts ---------- */
 export const TRAINERS = /** @type {Record<string, TrainerEntry>} */ (gameData.trainers || {});
 /* v47: a "tutorial" trainer only battles in a story scene (blake0, in the opening); it stands on no stop */

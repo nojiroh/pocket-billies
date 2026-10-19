@@ -1,14 +1,14 @@
 'use strict';
 /* ================= THE OPENING: THE FALL =================
-   v47: the first minute of the story, before Sundown (lore.story: the fall).
+   v47: the first minute of the story, before Copperleaf (lore.story: the fall).
    1. The surface, late: a street under a billboard for Vinylla's Forever Tour. You walk by with a lanyard round your
       neck, looking at your phone; the pavement gives way. (pixel art on a small canvas, a few screen pixels to one)
    2. Through the crust: soil, rock, pipes, a crate from Legacy Labs, a seam of magma, tumbling, light below.
    3. The inner sky: you come out high in the Hollow Earth, fall past the Inner Sun and down into the bowl (the world
       map's own ground, world-bowl.js), towards Copperleaf.
-   4. A white flash, and the walk scene takes over (cutscene.js): you wake in the dust outside Hazel's lab, the papers
-      that fell with you still fluttering down.
-   Skip ends the fall at once; without the fall, the step-by-step intro tells it in words. */
+   4. A white flash, and the walk scene takes over (cutscene/opening.js, playing game/data/cutscenes/opening.json): you
+      wake in the dust outside Hazel's lab, the papers that fell with you still fluttering down.
+   Skip ends the fall at once; if the opening can't run, a Try again screen (ui.js renderIntro). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { openingDone, provide } from './hooks.js';
@@ -28,7 +28,7 @@ import { canvasForContext, ensureWalkGl } from './walk-view-gl.js';
 import { endBattle, stopTimers } from './battle.js';
 import { WORLD_BOWL_SHADERS, worldBowlFilm, worldMapSpot } from './world-bowl.js';
 import { music, soundEffect } from './sound.js';
-import { cutscene, cutsceneCaption } from './cutscene.js';
+import { cutscene, cutsceneCaption } from './cutscene/director.js';
 /* eslint-disable no-func-assign */
 expose({
   FALL_BANDS: [() => FALL_BANDS],
@@ -91,7 +91,7 @@ function fallCanvas() {
   cv.hidden = false;
   return cv;
 }
-/* the walk scene's canvas, ready for the world map's renderer (the map is drawn on it before Sundown is mounted) */
+/* the walk scene's canvas, ready for the world map's renderer (the map is drawn on it before Copperleaf is mounted) */
 export function fallWorldMapCanvas() {
   if (typeof worldBowlFilm !== 'function' || typeof ensureWalkGl !== 'function' || gpuState.fail || gpuState.lost)
     return null;
@@ -650,7 +650,7 @@ export function fallOverWorldMap(run, ms) {
     openingFall.raf = requestAnimationFrame(step);
   });
 }
-/* the whole fall; resolves on a white screen, ready for Sundown */
+/* the whole fall; resolves on a white screen, ready for Copperleaf */
 async function fallPlay(run) {
   const alive = () => cutscene.on && cutscene.run === run && !cutscene.skip;
   openingFall.run = run;
