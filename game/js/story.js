@@ -17,7 +17,7 @@ import {
   storyWorldOK,
 } from './hooks.js';
 import { RULES, SPECIES, TRAINERS, trainersAt } from './game-data.js';
-import { encountersHere, healAll, today } from './logic/rules.js';
+import { encountersHere, today } from './logic/rules.js';
 import { startTrainer, startWild } from './logic/battle-engine.js';
 import { setStoryFlag } from './logic/script.js';
 import { activeBattle, escapeHtml, save, saveData, uiState } from './game-state.js';
@@ -26,7 +26,7 @@ import { baseMapId, walkView } from './walk-view.js';
 import { gpuState } from './engine/webgl.js';
 import { walkRenderer } from './walk/walk-state.js';
 import { music } from './sound.js';
-import { talk, talkBox } from './talk.js';
+import { talkBox } from './talk.js';
 import { cutscene } from './cutscene.js';
 import { loreClue, loreData } from './lore.js';
 /* eslint-disable no-func-assign */
@@ -200,42 +200,16 @@ export function storyRivalBattle(o = {}) {
   };
   setTimeout(poll, 150);
 }
-/* win or lose: Blake has his say and goes off to train, Hazel heals your team and points you down the road */
-async function storyAfterRival(o, T) {
-  const F = storyFlags();
+/* win or lose: Blake has his say and goes off to train, Hazel heals your team and points you down the road (story.json
+   scripts.blake-first-battle, which reads rival0) */
+async function storyAfterRival(o) {
   setStoryFlag('rival0', o === 'win' ? 'win' : o === 'lose' ? 'lose' : 'skip');
   setStoryFlag('met_blake0');
   save();
   if (o) openingMark();
-  T = T || TRAINERS.blake0 || {};
-  const who = T.who || 'chad';
   const W = uiState.welcome;
   uiState.welcome = null;
-  const lines = [];
-  if (o === 'win')
-    lines.push(
-      [who, '[surprised] What? I lost to someone who fell out of the sky an hour ago?'],
-      [who, '[angry] Mine only knows Tackle. That’s my excuse and I’m sticking to it.']
-    );
-  else if (o === 'lose')
-    lines.push([who, '[happy] Ha! Told you. Mine beats yours.'], [who, 'Don’t feel bad. You only got here today.']);
-  if (o) lines.push([who, 'I’m off to train on the golf course. Next time I’ll have a whole team. Try to keep up!']);
-  if (lines.length && typeof talk === 'function') await talk(lines);
-  healAll();
-  save();
-  const after = [
-    [
-      'gini',
-      '[happy] There, good as new. Any time they’re hurt, the clinic in Marigold Town patches them up for free. It’s just down Hedgerow Lane.',
-    ],
-    ['gini', 'Granny Juniper has made up a room for you in her cottage, by the hives. A rest there does wonders.'],
-    [
-      'gini',
-      'One more thing. When someone falls in, their things come down too, and they scatter along Tallgrass Meadow, past Marigold Town. If anything of yours made it, that’s where it’ll be.',
-    ],
-    ['gini', 'Now go and explore! The road teaches more than any book. Come back and see me any time.'],
-  ];
-  if (typeof talk === 'function') await talk(after);
+  await playStoryScript('story:blake-first-battle');
   if (W) modal(W);
   else if (typeof showPendingWindows === 'function') showPendingWindows();
 }
@@ -251,9 +225,8 @@ async function storyAfterWin(T) {
   else if (typeof showPendingWindows === 'function') showPendingWindows();
 }
 async function storyEnding(T) {
-  const L = T.endLines || [];
   if (typeof music === 'function') music('title');
-  if (L.length && typeof talk === 'function') await talk(L.map(l => [l[0], l[1]]));
+  await playStoryScript('story:ending');
   const E = ((typeof loreData === 'function' && loreData().story) || []).find(s => s.id === 'ending');
   if (typeof loreClue === 'function')
     loreClue('who'); /* the last clue: its flag, "ending", is the story's last stage */
