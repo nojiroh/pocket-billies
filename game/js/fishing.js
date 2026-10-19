@@ -60,7 +60,7 @@ const fishing = {
 };
 const FISH_KINDS = ['pond', 'stream', 'canal', 'spring', 'swamp', 'lake', 'sea', 'lava', 'ice'];
 function fishRules() {
-  return Object.assign({ biteMin: 2.5, biteMax: 8, reactTime: 0.9, reelTime: 12, goldOdds: 64 }, RULES.fishing || {});
+  return Object.assign({ biteMin: 2.5, biteMax: 8, reactTime: 0.9, reelTime: 12 }, RULES.fishing || {});
 }
 /* the water in front of you (or close beside you): {x,z,y,kind} or null */
 function fishSpot() {
@@ -118,7 +118,6 @@ function fishPick(kind) {
     id: newUid(),
     sp,
     lvl: Math.max(2, lv),
-    gold: random() < 1 / fishRules().goldOdds,
     no: ++saveData.serial,
     fished: 1,
   };

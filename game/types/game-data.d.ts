@@ -658,8 +658,6 @@ export interface Rules {
     refillMs: number;
     /** prize money for beating a wild Billie, per level */
     prizePerLevel: number;
-    /** a wild one is Golden once in this many */
-    goldOdds: number;
     /** a wild one is an Alpha once in this many (with two Billies on your team) */
     alphaOdds: number;
   };
@@ -676,8 +674,6 @@ export interface Rules {
   eggs: {
     capacity: number;
     slots: number;
-    goldOdds: number;
-    goldOdds10: number;
     mythOdds: number;
     mythSpecies: SpeciesId;
     dropChance: number;
@@ -752,7 +748,7 @@ export interface Rules {
     alpha: number;
   };
   ride: { minHeight: number; types: TypeId[] };
-  fishing: { biteMin: number; biteMax: number; reactTime: number; reelTime: number; goldOdds: number };
+  fishing: { biteMin: number; biteMax: number; reactTime: number; reelTime: number };
   /** the legendary encounters, one per map (scene is a map id) */
   legends: { sp: SpeciesId; scene: DataId; lvl: number; title: string; text: string; line: string }[];
   /** phase 16: part sizes, weight and Prime (rules.js) */

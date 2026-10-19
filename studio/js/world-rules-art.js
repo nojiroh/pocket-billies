@@ -776,7 +776,6 @@ SECTIONS.rules = () => {
        unit: 'ms',
        help: 'Of play time, until the place is full again.',
      }),
-     numberField('Golden odds: 1 in', `rules.encounters.goldOdds`, { min: 2, step: 1 }),
      numberField('Alpha odds: 1 in', `rules.encounters.alphaOdds`, {
        min: 2,
        step: 1,
@@ -823,8 +822,6 @@ SECTIONS.rules = () => {
    grid(
      numberField('Eggs carried', `${eg}.capacity`, { min: 1, max: 30, step: 1 }),
      numberField('Incubators', `${eg}.slots`, { min: 1, max: 6, step: 1 }),
-     numberField('Golden odds: 1 in', `${eg}.goldOdds`, { min: 2, step: 1 }),
-     numberField('Golden odds, biggest egg: 1 in', `${eg}.goldOdds10`, { min: 2, step: 1 }),
      numberField('Mythical odds, biggest egg: 1 in', `${eg}.mythOdds`, { min: 2, step: 1 }),
      selectField('The mythical', `${eg}.mythSpecies`, speciesOptions()),
      numberField('Wild drop chance', `${eg}.dropChance`, { min: 0, max: 1, step: 0.01 })

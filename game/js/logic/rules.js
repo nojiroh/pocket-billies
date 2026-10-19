@@ -739,7 +739,6 @@ export function spawn(gentle, force, node = saveData.trip.node) {
     id: newUid(),
     sp,
     lvl,
-    gold: random() < 1 / RULES.encounters.goldOdds,
     no: ++saveData.serial,
     build: rollBuild(),
   };
@@ -805,13 +804,9 @@ export function hatchEgg(e) {
   const T = EGGS[e.tier],
     R = RULES.eggs,
     top = e.tier === EGG_TIERS[EGG_TIERS.length - 1];
-  let sp = pickWeighted(T.list),
-    gold = random() < 1 / (top ? R.goldOdds10 : R.goldOdds);
-  if (top && SPECIES[R.mythSpecies] && random() < 1 / R.mythOdds) {
-    sp = R.mythSpecies;
-    gold = false;
-  }
-  const m = makeBilly(sp, T.lv, { gold, wild: true });
+  let sp = pickWeighted(T.list);
+  if (top && SPECIES[R.mythSpecies] && random() < 1 / R.mythOdds) sp = R.mythSpecies;
+  const m = makeBilly(sp, T.lv, { wild: true });
   saveData.eggs = saveData.eggs.filter(x => x !== e);
   saveData.hatched = (saveData.hatched || 0) + 1;
   autoSlot();
