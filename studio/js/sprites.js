@@ -22,6 +22,7 @@ import {
   pixelCanvasColor,
   pixelCanvasDeselect,
   pixelCanvasFit,
+  pixelCanvasLock,
   pixelCanvasPanel,
   pixelCanvasPanelHTML,
   pixelCanvasSymmetry,
@@ -706,6 +707,7 @@ function pixelEditorKeys(ev) {
   const X = { h: 'flipH', v: 'flipV', r: 'rotate' };
   if (ev.shiftKey && X[k]) pixelCanvasTransform(P, X[k]);
   else if (k === 'y') pixelCanvasSymmetry(P);
+  else if (k === 'k') pixelCanvasLock(P);
   else if (T[k]) pixelCanvasTool(P, T[k]);
   else if (k === '+' || k === '=') {
     pixelCanvasZoom(P, pixelZoomNext(P.zoom, 1));

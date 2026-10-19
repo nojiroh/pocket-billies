@@ -24,6 +24,9 @@ import { makeCanvas } from '../../game/js/art.js';
 import { historyArt } from '../../game/js/logic/history.js';
 import {
   PIXEL_GRID_FROM,
+  offPalette,
+  paletteColors,
+  paletteNearest,
   pixelClip,
   pixelCopy,
   pixelDiffBox,
@@ -47,6 +50,8 @@ expose({
   artStepPut: [() => artStepPut, v => ((artStepPut = v), provide({ artStepPut }))],
   bindPixelCanvasEvents: [() => bindPixelCanvasEvents, v => (bindPixelCanvasEvents = v)],
   drawPixelCanvas: [() => drawPixelCanvas, v => (drawPixelCanvas = v)],
+  gamePalette: [() => gamePalette, v => (gamePalette = v)],
+  gamePaletteMemo: [() => gamePaletteMemo, v => (gamePaletteMemo = v)],
   imageOf: [() => imageOf],
   pictureImage: [() => pictureImage],
   pixelCanvas: [() => pixelCanvas, v => (pixelCanvas = v)],
@@ -55,6 +60,7 @@ expose({
   pixelCanvasDeselect: [() => pixelCanvasDeselect, v => (pixelCanvasDeselect = v)],
   pixelCanvasFit: [() => pixelCanvasFit, v => (pixelCanvasFit = v)],
   pixelCanvasInk: [() => pixelCanvasInk],
+  pixelCanvasLock: [() => pixelCanvasLock, v => (pixelCanvasLock = v)],
   pixelCanvasPanel: [() => pixelCanvasPanel, v => (pixelCanvasPanel = v)],
   pixelCanvasPanelHTML: [() => pixelCanvasPanelHTML, v => (pixelCanvasPanelHTML = v)],
   pixelCanvasPanelSync: [() => pixelCanvasPanelSync, v => (pixelCanvasPanelSync = v)],
@@ -95,6 +101,8 @@ export function pixelCanvas(stage, o) {
     hoverAt: null,
     symMode: 'off',
     symShift: [0, 0] /* the axes moved, in half pixels */,
+    lock: false /* colours snap to the game palette */,
+    showOff: false /* pixels not on the game palette show in magenta */,
   };
   bindPixelCanvasEvents(P);
   const onArt = ev => {
@@ -114,7 +122,16 @@ export function pixelCanvasPanelHTML() {
       `<button class="seg sm" data-pc="sym" data-m="${k}" title="Symmetry: ${k === 'v' ? 'left-right' : k === 'h' ? 'top-bottom' : k} (Y)">${l}</button>`
   ).join(
     ''
-  )}</div><p class="help">Mirrors about the middle of the selection, else of the part under the pointer.</p><div class="pc-shift"><label>Move the axis ↔ <input type="number" step="1" data-pc="shift" data-i="0" value="0" title="In half pixels"></label><label>↕ <input type="number" step="1" data-pc="shift" data-i="1" value="0" title="In half pixels"></label></div></div>`;
+  )}</div><p class="help">Mirrors about the middle of the selection, else of the part under the pointer.</p><div class="pc-shift"><label>Move the axis ↔ <input type="number" step="1" data-pc="shift" data-i="0" value="0" title="In half pixels"></label><label>↕ <input type="number" step="1" data-pc="shift" data-i="1" value="0" title="In half pixels"></label></div></div>
+  <div class="px-sec pc-panel"><h4>Game palette</h4><label class="chk"><input type="checkbox" data-pc="lock"> Lock to the game palette (K)</label><label class="chk"><input type="checkbox" data-pc="off"> Show colours not on it <span class="pc-offn"></span></label><div class="pc-ramps" hidden>${Object.entries(
+    (window.NW_PALETTE && window.NW_PALETTE.ramps) || {}
+  )
+    .filter(([, v]) => Array.isArray(v))
+    .map(
+      ([k, v]) =>
+        `<div class="pc-ramp" title="${k}">${v.map(h => `<button class="sw" style="background:${h}" data-pc="sw" data-c="${h}" title="${k} ${h}"></button>`).join('')}</div>`
+    )
+    .join('')}</div></div>`;
 }
 export function pixelCanvasPanel(P, root) {
   P.panel = root;
@@ -122,6 +139,16 @@ export function pixelCanvasPanel(P, root) {
     const b = ev.target.closest('[data-pc]');
     if (!b || !P.cv.isConnected) return;
     if (b.dataset.pc === 'sym') pixelCanvasSymmetry(P, b.dataset.m);
+    else if (b.dataset.pc === 'sw') pixelCanvasColor(P, b.dataset.c);
+  });
+  root.addEventListener('change', ev => {
+    const b = ev.target.closest('[data-pc=lock], [data-pc=off]');
+    if (!b || !P.cv.isConnected) return;
+    if (b.dataset.pc === 'lock') pixelCanvasLock(P, b.checked);
+    else {
+      P.showOff = b.checked;
+      drawPixelCanvas(P);
+    }
   });
   root.addEventListener('input', ev => {
     const b = ev.target.closest('[data-pc=shift]');
@@ -136,6 +163,13 @@ function pixelCanvasPanelSync(P) {
   if (!r) return;
   r.querySelectorAll('[data-pc=sym]').forEach(b => b.classList.toggle('on', b.dataset.m === (P.symMode || 'off')));
   r.querySelectorAll('.pc-shift').forEach(e => (e.hidden = !P.symMode || P.symMode === 'off'));
+  r.querySelectorAll('[data-pc=lock]').forEach(e => (e.checked = !!P.lock));
+  r.querySelectorAll('[data-pc=off]').forEach(e => (e.checked = !!P.showOff));
+  r.querySelectorAll('.pc-ramps').forEach(e => (e.hidden = !P.lock));
+  r.querySelectorAll('.pc-offn').forEach(
+    e => (e.textContent = P.showOff && !P.stroke ? `(${P.offCount || 0} pixels)` : '')
+  );
+  r.querySelectorAll('[data-pc=sw]').forEach(e => e.classList.toggle('on', e.dataset.c.toUpperCase() === P.color));
 }
 /* a symmetry mode, or the next one */
 export function pixelCanvasSymmetry(P, mode) {
@@ -220,6 +254,19 @@ export function drawPixelCanvas(P) {
       x.drawImage(c, a * c.width, b * c.height);
     }
   x.globalAlpha = 1;
+  /* the pixels that are not game palette colours, in magenta */
+  P.offCount = 0;
+  if (P.showOff && !P.stroke) {
+    const m = offPalette(c.getContext('2d').getImageData(0, 0, c.width, c.height), gamePalette()),
+      ox = n > 1 ? c.width : 0,
+      oy = n > 1 ? c.height : 0;
+    x.fillStyle = '#FF00FF';
+    for (let i = 0; i < m.length; i++)
+      if (m[i]) {
+        P.offCount++;
+        x.fillRect(ox + (i % c.width), oy + Math.floor(i / c.width), 1, 1);
+      }
+  }
   P.wrap.style.width = W * P.zoom + 'px';
   P.wrap.style.height = H * P.zoom + 'px';
   P.wrap.dataset.tool = P.tool;
@@ -338,10 +385,24 @@ export function pixelCanvasDeselect(P) {
   drawPixelCanvas(P);
   return true;
 }
+/* ---------- the game palette (next/palette.js): every colour in its ramps ---------- */
+let gamePaletteMemo = null;
+function gamePalette() {
+  const ramps = window.NW_PALETTE && window.NW_PALETTE.ramps;
+  if (!gamePaletteMemo || gamePaletteMemo.ramps !== ramps) gamePaletteMemo = { ramps, colors: paletteColors(ramps) };
+  return gamePaletteMemo.colors;
+}
+/* locked to the palette: a colour becomes its nearest palette shade */
+export function pixelCanvasLock(P, on = !P.lock) {
+  P.lock = !!on && gamePalette().length > 0;
+  if (P.lock) pixelCanvasColor(P, P.color);
+  drawPixelCanvas(P);
+}
 export function pixelCanvasColor(P, hex) {
-  P.color = hex.toUpperCase();
+  P.color = (P.lock ? paletteNearest(hex, gamePalette()) : hex).toUpperCase();
   if (P.tool === 'erase' || P.tool === 'pick') P.tool = 'pen';
   if (P.o.colorChanged) P.o.colorChanged(P);
+  pixelCanvasPanelSync(P);
 }
 export function pixelCanvasTool(P, t) {
   P.tool = t;

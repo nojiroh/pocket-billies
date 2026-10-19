@@ -1211,6 +1211,31 @@ canvas.spr-prev.big {
   stroke-dasharray: 6 3;
   vector-effect: non-scaling-stroke;
 }
+.pc-ramps {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 3px 10px;
+  margin-top: 8px;
+}
+.pc-ramp {
+  display: grid;
+  grid-template-columns: repeat(8, 16px);
+  gap: 2px;
+}
+.pc-ramp .sw {
+  border-radius: 2px;
+}
+.pc-panel .sw.on {
+  outline: 2px solid var(--text);
+  outline-offset: 1px;
+}
+.pc-panel .chk {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 13px;
+  margin: 4px 0;
+}
 .pc-shift {
   display: flex;
   gap: 10px;
