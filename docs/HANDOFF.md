@@ -11,6 +11,40 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 - Questions waiting for the owner: 
 - Next session starts with: 
 
+### Studio track ST-2 - the shared pixel canvas - 2026-10-19
+Plan approved at the start. Owner's pick: the Walk scenes prop and tile painter moves onto the canvas now too.
+- Changed (one cause per commit):
+  - logic/pixel-ops.js (+ tests; then a rename commit: `px*` is a retired prefix, so `pixel*`) and logic/history.js
+    (+ tests): the Studio's undo stack, data snapshots and picture patches in one order.
+  - studio/js/pixel-canvas.js; the sheet editor draws through it (same look: element boxes compared at 1024, 1920,
+    3440), then: strokes as patch steps of the Studio's undo (uploads and reverts too; its own undo gone); grid from
+    8x, zoom on the pointer, Space/middle-button pan; line and box selection; flips and quarter turns; symmetry;
+    palette lock and off-palette pixels; onion skin; Aseprite-style keys from one table; the `?` key sheet
+    (studio/js/shortcuts.js); the prop and tile painter on the canvas.
+  - A fix found on the way: the undo snapshot kept `_` caches (a map's `_hg` height cache with a clock), so in Walk
+    scenes every Ctrl+Z only took back the cache's clock. Snapshots now leave `_` keys out, as saving does.
+  - The Studio check paints (strokes and a bone undone and redone in order across Front/Back, line, flips and turns,
+    selection, symmetry, palette lock, keys, `?`, the tile painter). STUDIO.md, CHANGELOG, studio-track.md.
+- Risky or unfinished:
+  - Wardrobe still paints on its own and Ctrl+Z there reverts its pieces but not its art (ST-6).
+  - A resize or a new PNG for a prop is two undo steps (the picture, then the base point).
+  - A quarter turn of a box that is not square can cover a neighbour's art (clear pixels don't); a turn that runs off
+    the sheet is clipped. Undo brings either back.
+  - Onion skin is centred on the part's box (pivots differ between views; lining them up looked wrong).
+  - Each redraw of Walk scenes makes a new canvas; old listeners go on their next event (no build-up seen).
+  - Headless only: not seen on a tablet, a phone or the 3440 screen. Swiftshader makes the Walk scenes preview slow
+    in the checks (the painter's step waits up to 2 minutes).
+- Verified: lint, typecheck, check:modules, format, 190 unit tests (pixel-ops, history), check:smoke after the undo
+  change, check-studio-github (all steps, new pixel and tile painter steps, a proposed PR), element boxes of the
+  pixel editor before/after the move. The full quick check: see the line below.
+- Decisions I made (and why): `?` lists every key, the open tool's first (one place to look); the canvas's keys work
+  in the tile painter only while the pointer is over it (B and E also paint the map); K and O for the palette lock
+  and onion skin (Aseprite has none); flips and turns act on the part under the pointer in a sheet, never the whole
+  sheet (it would scramble every part).
+- Questions waiting for the owner: try painting on the tablet (Space-pan has no touch twin yet: a two-finger pan?);
+  is the onion skin useful centred, or should it mirror the back view?
+- Next session starts with: ST-3, Workbench Sheet mode (build it on `pixelCanvas`).
+
 ### Studio track ST-1 - the layout shell - 2026-10-19
 Plan approved at the start. Owner's picks: the second pane is "light" (no 3D sections there; one undo and save for
 both); PR #61's merge conflict left to its own branch (it has since merged; see below).
