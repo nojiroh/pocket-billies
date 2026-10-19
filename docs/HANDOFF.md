@@ -26,7 +26,7 @@ d2f9721.
     heights, walls and things laid in, but its ground is the place's (`groundOf`: same picture, mesh and near ring;
     groundKey and the scene cache follow it). The place's ground, grass, water and their shadows leave a hole where
     the room is; the room's floor and walls, built from the room alone (`roomScene`, painted at the near ring's size),
-    are drawn there at the floor's height (walk-view-gl.js roomHole, roomFloorReady; three rooms' floors kept).
+    are drawn there at the floor's height (walk/ground-draw.js roomHole, roomFloorReady; three rooms' floors kept).
     Nothing is cropped any more (roomCut is gone).
   - Speed: in a room the walking grid works out heights for the room only; the heights grid is the place's with the
     floor laid in; the last two views' walking grids are kept (coming out is a swap).
