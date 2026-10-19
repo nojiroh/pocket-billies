@@ -35,7 +35,7 @@ export const ENGINE_DEFAULTS = {
     bokeh: 1,
     aberration: 0.5,
     vignette: 0.3,
-    grain: 0.025,
+    grain: 0.045,
     sharpen: 0.15,
   },
   color: {
