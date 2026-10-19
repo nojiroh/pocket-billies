@@ -482,6 +482,15 @@ def billboard():
     return L
 
 
+def sign_blank():
+    """Where the organization's logo will hang (S4's clue plan): a pale lit panel on a bracket, blank until S4."""
+    k, L = 'city_sign_blank', []
+    mast(L, 3.0, 0.08)
+    L += [box(0, 0, 3.0, 1.9, 0.18, 1.9, CHROME, 'metal', 'frame'),
+          box(0, -0.06, 3.1, 1.7, 0.1, 1.7, '#E6EBF0', 'plain', 'logo panel (blank until S4)')]
+    return L
+
+
 def streetlight():
     k, L = 'city_streetlight', []
     L += [box(0, 0, 0, 0.5, 0.5, 0.7, '#E8B030', 'stripes', 'hazard foot'),
@@ -687,6 +696,62 @@ def showcase():
     }
 
 
+# ---------------------------------------------------------------- the opening's street (Project Story S7, a draft)
+def opening_map():
+    """The city opening's set, small: one avenue running away from the camera between towers (a canyon), the hero
+    tower closing the view at its end, a 5 m alley off to the right two thirds up where the rift opens. Not joined to
+    the world (test: 1). Its `cutscene` block holds the named spots and camera shots the opening's script will use
+    (`walk you <spot>`, `camera <shot>`; the commands are played from S2); nothing reads it yet.
+    Units: metres; x across, z away from the camera; a shot's eye and target are [x, height, z]."""
+    W, H = 64, 130
+    tiles = [['i'] * W for _ in range(H)]
+    for z in range(H):
+        for x in range(26, 38): tiles[z][x] = 'a'
+    P = []
+    left = [('city_tower_mega', 10, 10), ('city_tower_slab', 13, 24), ('city_tower_mega', 10, 40), ('city_tower_slab', 13, 54),
+            ('city_tower_mega', 10, 70), ('city_tower_slab', 13, 86), ('city_tower_mega', 10, 100)]
+    right = [('city_tower_slab', 51, 10), ('city_tower_mega', 54, 26), ('city_tower_slab', 51, 42), ('city_tower_slab', 51, 54),
+             ('city_tower_slab', 51, 69), ('city_tower_mega', 54, 84), ('city_tower_slab', 51, 101), ('city_tower_slab', 66, 61.5)]
+    for k, x, z in left + right:
+        P.append({'k': k, 'x': x, 'z': z})
+    P.append({'k': 'city_tower_hero', 'x': 32, 'z': 118})
+    for z in range(8, 108, 12):
+        P.append({'k': 'city_streetlight', 'x': 25.2, 'z': z})
+        if z + 6 < 106: P.append({'k': 'city_streetlight', 'x': 38.8, 'z': z + 6, 'f': 1})
+    P += [{'k': 'city_sign_open', 'x': 41.5, 'z': 30.5}, {'k': 'city_sign_hotel', 'x': 22.6, 'z': 34},
+          {'k': 'city_sign_hotel', 'x': 41.8, 'z': 76}, {'k': 'city_vending', 'x': 42.2, 'z': 49.5},
+          {'k': 'city_flying_car', 'x': 30, 'z': 40}, {'k': 'city_flying_car', 'x': 34, 'z': 70, 'f': 1},
+          {'k': 'city_flying_car', 'x': 31, 'z': 96}]
+    # the alley: x 44 to 59, z 59 to 64, between the slabs at z 54 and z 69, closed by a slab across its end
+    P += [{'k': 'city_sign_bar', 'x': 44.6, 'z': 60.0}, {'k': 'city_vending', 'x': 48.5, 'z': 63.0},
+          {'k': 'puddle', 'x': 47.0, 'z': 61.4}, {'k': 'puddle', 'x': 51.5, 'z': 62.2}, {'k': 'puddle', 'x': 38.5, 'z': 44},
+          {'k': 'city_sign_blank', 'x': 57.6, 'z': 60.0}, {'k': 'portal_rift', 'x': 55.6, 'z': 61.6}]
+    return {
+        'name': 'City opening (draft set, Project Story S7)', 'w': W, 'h': H, 'edge': 'i',
+        'sky': ['#141428', '#2A2E52', '#5A4E86'], 'haze': '#3A3458', 'hazeD': 70, 'cam': {'pitch': 30, 'h': 12, 'fov': 1},
+        'blur': 0, 'amb': None, 'tint': None, 'indoor': 0, 'far': 'town', 'farH': 8, 'folk': 0, 'test': 1,
+        'exits': [], 'checks': [], 'hub': [32, 4], 'tiles': [''.join(r) for r in tiles], 'props': P, 'kind': 'test',
+        'cutscene': {
+            'spots': {
+                'walkFrom': [40.6, 24], 'alleyMouth': [41.4, 61.5], 'lean': [44.5, 61.6], 'stumble': [53.2, 61.6],
+                'rift': [55.6, 61.6], 'logo': [57.6, 60.0],
+            },
+            'shots': {
+                'above': {'eye': [32, 118, 30], 'tgt': [32, 70, 118], 'fov': 50},
+                'canyon': {'eye': [32, 34, 14], 'tgt': [32, 22, 70], 'fov': 45},
+                'street': {'eye': [37.2, 2.6, 18], 'tgt': [40.6, 1.6, 30], 'fov': 40},
+                'alleyMouth': {'eye': [38.0, 2.2, 57.5], 'tgt': [46, 1.8, 61.6], 'fov': 40},
+                'rift': {'eye': [47.5, 1.6, 62.8], 'tgt': [55.6, 1.9, 61.6], 'fov': 38},
+                'through': {'eye': [53.6, 1.7, 61.6], 'tgt': [57, 1.8, 61.6], 'fov': 28},
+            },
+            'lanes': {
+                'high': [[-20, 40, 50], [32, 44, 60], [90, 40, 70]],
+                'low': [[90, 16, 34], [32, 14, 46], [-20, 16, 58]],
+            },
+        },
+    }
+
+
 def main():
     for f in OUT.glob('*.png') if OUT.exists() else []: f.unlink()
     D = gamedata.load()
@@ -701,6 +766,8 @@ def main():
     C['city_sign_bar'] = entry('city_sign_bar', 'City sign: bar (mockup)', sign_bar(), 0.4, solid=0.4, glow=glow(CYAN, 2.4))
     C['city_sign_open'] = entry('city_sign_open', 'City sign: open arrow (mockup)', sign_open(), 0.4, solid=0.4, glow=glow(AMBER, 2.8))
     C['city_billboard'] = entry('city_billboard', 'City billboard (mockup)', billboard(), 1.2, box_=(9.6, 0.8), glow=glow(PINK, 6.5, 4.0))
+    C['city_sign_blank'] = entry('city_sign_blank', 'City sign: logo spot, blank until S4 (mockup)', sign_blank(), 0.3, solid=0.3,
+                                 glow=glow('#E6EBF0', 3.9, 1.6, 0.05))
     C['city_streetlight'] = entry('city_streetlight', 'City street light (mockup)', streetlight(), 0.3, solid=0.3, glow=glow(CYAN, 7.4))
     C['city_vending'] = entry('city_vending', 'Vending machine (mockup)', vending(), 0.5, box_=(1.1, 0.85), glow=glow(PINK, 1.6, 2.0))
     C['city_flying_car'] = entry('city_flying_car', 'Flying car (mockup)', flying_car(), 1.0, glow=glow(CYAN, 2.2))
@@ -716,6 +783,7 @@ def main():
     C['portal_hole'] = entry('portal_hole', 'Portal: hole in the pavement (mockup)', L, 0.6, glow=glow(VOID[2], 1.2, 3.5, 0.4),
                              variants=[{'swap': sw, 'glow': glow(INNER[2], 1.2, 3.5, 0.4), 'name': 'Portal: hole in the pavement (inner light, mockup)'}])
     D['maps']['test_props_city'] = showcase()
+    D['maps']['city_opening'] = opening_map()
     gamedata.save(D)
     print('city mockups:', ', '.join(k for k in C if k.startswith(('city_', 'portal_'))))
 

@@ -9184,6 +9184,22 @@
      "name": "Portal: hole in the pavement (inner light, mockup)"
     }
    ]
+  },
+  "city_sign_blank": {
+   "name": "City sign: logo spot, blank until S4 (mockup)",
+   "img": "scene/next/city/city_sign_blank_front.png",
+   "ox": -30,
+   "oy": -157,
+   "shadow": 0.3,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["test","city"],
+   "group": "city_sign_blank",
+   "model": "scene/next/models/city_sign_blank.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0},
+   "solid": 0.3,
+   "glow": {"c":"#E6EBF0","r":1.6,"y":3.9,"day":0.05}
   }
  },
  "person": 1.75,
