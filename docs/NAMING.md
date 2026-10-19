@@ -17,6 +17,7 @@ Lint enforces what it can (see the end). Every old -> new name of phase 05 is in
 | A named place on the world map | `location` (data section `locations`, `LOCATIONS`, `LOCATION_BY_ID`, a map's `locationId`) | was place, stop, route.json; never a bare top-level `location` (that is window.location) |
 | A location's position in LOCATIONS | `node` | saves (`saveData.trip.node`) and trainers refer to locations by node (roads by map since phase 08b) |
 | A link between two locations | `road` (data section `roads`, `ROADS`, ids `road:<a>-<b>`); its kind `seam` (edges meet at the exits) or `lift` (the glass lift, ids `lift:<a>-<b>`) | was link, LINKS; NOT route (see below). roads.json: `{id, name, kind, a: {map, exit}, b: {map, exit}}`, read through `PB_DATA.road` (Studio, tools) and `ROADS` (game) |
+| A building's way into its room | `door` (`doorOf(p)`: the door point, the way out, the front's middle; `doorLinkOf(p, act, map)`: the same link shape as a road, `{kind: 'door', a: {map, exit}, b: {map: room, exit: 0}}`) | the room is the prop's `room`, else its kind's `room` in scenery.json, else the one for what it does (`PB_DATA.doorRooms`, `ROOM_BY_USE`) |
 | A route-kind location and its "Route N" label | `route` (kind `route`, a road's `name`) | kept: players read "Route 2" as the area |
 | The player's position and travel along roads | `trip` (`saveData.trip`: node, plan) | was saveData.route |
 | The shared strip where two maps join | `seam` | not border: CSS uses that word everywhere |

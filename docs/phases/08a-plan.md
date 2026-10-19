@@ -327,6 +327,9 @@ field (it sits in the Encounters card, edits rules.battle.restCost).
   w/2, 6.4-7.0 with the keeper behind).
 
 ### Part B tasks
+Status: 08b-1 (2026-10-19) did 1, the roads half of 2, 3, 4, 5 and 6. 08b-2 (2026-10-19, see HANDOFF "Phase 08b-2")
+did the doors half of 2 (doorOf / doorLinkOf, a kind's room in scenery.json, check-data), 7 and 8. Left for 08b-3: 9
+and 10.
 1. Remove the road frame and the switches; an unjoined road is a data error (check-data.mjs; the Studio forces
    exits).
 2. roads.json becomes typed links `{id, name, kind: 'seam' | 'lift', a: {map, exit}, b: {map, exit}}` by map id; the
