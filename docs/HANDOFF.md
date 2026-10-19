@@ -11,6 +11,61 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 - Questions waiting for the owner: 
 - Next session starts with: 
 
+### Phase 20 stage C, session C-3 - Light picking (C5) - 2026-10-19
+Plan approved at the start ("Sounds good"; phone limit: option (a), 16 everywhere for now). Branch
+`claude/confident-bardeen-ipoyjg`, from main at fe52cce.
+- Changed (one cause per commit):
+  - **C5** `game/js/engine/light-pick.js` (no WebGL): a picker that keeps its state between frames. Each light is keyed
+    by what it comes from and its kind; the lit set is chosen again every 200 ms (the nearest `max` in view, kept in a
+    list at most `max` long: no sort, nothing made); a lit light counts 1.5 m nearer; lights fade in and out over
+    250 ms (a light fading out keeps its slot until it is dark; one that leaves the list fades out where it was); a jump
+    of more than 20 m starts again with no fades. Output nearest first. The three timings are constants at the top.
+  - **C5** Keys on every light: a prop's fires (per fx entry), windows' light, glow, lamp and their pools; your
+    lantern; a room's wall lamps and pools (by room) and windows (by window prop); the battle stage's lights.
+  - **C5** `quality.stableLights` (off by default; Studio Quality "Steady lamps") picks the lights with it; lights whose
+    reach (`r`) is out of view are skipped (the view's planes, not when "Skip what's off screen" is off). The walk and
+    the battle stage keep separate pickers. `quality.lights` (Studio "Lamps lit at once", 1-16, default 16) caps both
+    paths. The shaders keep their 16 and the `uNL` break.
+  - **C5** Lamp shadows: the choice moved into `pickShadowLamps` (walk/shadows.js), which keeps last frame's lamps
+    1.5 m nearer. It works only when the lamps are the same objects frame to frame, i.e. with the switch on; off, it
+    chooses exactly what it did.
+  - Graphics test: "Steady lamps" off/on at the Lamp square and the Depth corridor, "Lamps lit at once" 8/16 at the
+    Lamp square; all kept out of "everything lowest / highest" (126 steps over 22 settings).
+- Where the phase file was wrong or I went another way (checked in the code):
+  - There is no phone test at walk-view-gl.js 475; the only device test is the user-agent check for the texture cache
+    (engine/webgl.js). With 16 everywhere for now none was needed; the shared helper waits for the phone limit.
+  - `inFrustum` is in walk/quality-cull.js, not light.js, and has no far side. A light is tested by the sphere of its
+    reach, so a lamp behind you that lights the ground in front stays lit. The frame's prop list is already cut to the
+    view plus 8 m (frame-items.js), so lamps well behind you were never candidates.
+  - The list order matters: the god-ray pass reads the first 6 lights and the lamp shadows pick from the front, so the
+    output stays nearest first.
+  - The old fade was only at the 16th light's distance and only with more than 16 candidates; the time fade replaces
+    it (with the switch on).
+  - Not done: the light objects of walkLightContext are still made new every frame (the `.map` colours, the position
+    arrays). Left for a later session so the path with the switch off stays exactly the same.
+- Risky:
+  - With the switch on, a lamp coming into range lights up to 200 ms + 250 ms later than before, and one leaving keeps
+    shining for up to 450 ms. Lamps switching on at dusk (lampLit) are unaffected: their colour fades as before.
+  - The output light objects are reused frame to frame. Code that keeps a frame's light list and reads it a frame later
+    sees the new values (nothing does today; lampShadowMaps reads them the same frame).
+  - A teleport of less than 20 m (a door into a room laid into the place) keeps the fades: the place's lamps outside
+    fade out over 250 ms instead of going at once.
+  - Off by default: what the phone draws is unchanged until you switch it on.
+- Verified: after every commit lint, typecheck, unit tests (125 -> 127; 9 new in tools/test/light-pick.test.mjs),
+  check:modules, format:check, check:data, build; smoke 15/15 for every commit touching game/. Settled, with nothing
+  out of view, the stable picker lights the same set, in the same order and at full strength, as pickPointLights (four
+  layouts); a scripted to-and-fro walk between two equal lamps swaps the old picker 5+ times and the new one never;
+  fade and slot limits; memory stays small on a 2000-lamp street; off, `pickLights` and the lamp-shadow choice equal
+  the old code. Planted faults (no hold, no fade-out removal, no slot limit, no shadow hold) fail the tests. No
+  headless graphics test was run.
+- Questions waiting for the owner:
+  - Merge this session's PR.
+  - On your phones: the graphics test's "Steady lamps" and "Lamps lit at once" steps, and walking at night (Lamp square,
+    a town street): do lamps still pop, does anything flicker, and does 8 look acceptable? That sets the phone limit
+    (proposal: 8) and whether "Steady lamps" becomes the default (the old picker then goes, in its own commit).
+  - Still open from C-2: "One light block per frame" on your phones; tags `phase-20a-done` / `phase-20b-done`.
+- Next session starts with: stage D (pixels: D1 sky last, then D2-D6 with your answers), or the phone limit and the
+  light-object reuse if your numbers ask for it first.
 ### Phase 20 stage C, session C-2 - One light block per frame (C3), flat things and blades (C4) - 2026-10-19
 Plan approved at the start ("Yes, let's go"), after sorting out the branches. Branch `ccr-9d72271f-j72y94`.
 - Branches first (nothing of stage B or C-1 was in main at the start):

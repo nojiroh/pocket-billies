@@ -71,6 +71,12 @@ kept aside in the browser).
   of again for each kind of thing drawn; the graphics test compares it off and on at the Lamp square and the Depth
   corridor. Rugs, lily pads and other flat things are drawn as one group, and windmill sails and clock hands no longer
   send the light again each. Nothing looks different.
+- Steadier lamps (phase 20, stage C, third part): a test switch, Studio → Quality → "Steady lamps" (off for now). The
+  lamps, windows and fires that light the scene are chosen five times a second instead of every frame, a lit one stays
+  lit until another is clearly nearer (no more flicker when you stand between two equal lamps, and the lamp shadows
+  don't jump between them), ones out of view are skipped, and each fades in and out instead of popping. A new dial,
+  "Lamps lit at once" (16, as before), sets how many may light the scene. The graphics test compares the switch off and
+  on, and 8 lamps against 16, at the Lamp square.
 - New: the **graphics test** (Settings → Help, and the debug menu), about ten minutes on a new test place, the Graphics
   bench. It measures what each graphics setting costs on your device: the 17 Expert dials and five hidden ones, five
   steps each, then everything at its lowest and highest. It ends with a table, costliest first, and Save the report.
