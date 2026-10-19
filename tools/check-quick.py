@@ -263,9 +263,9 @@ def copperleaf_data():
     if (R[ix.get('hedgerow', 0)] or {}).get('route') != 'Route 1': bad.append('Hedgerow Lane is not Route 1')
     S_ = D['maps']; C = D['scenery']['props']
     for rid, a, b in (('road:marigold-hedgerow', 'marigold', 'hedgerow'), ('road:hedgerow-copperleaf', 'hedgerow', 'copperleaf')):
-        L = next((L for L in D['roads'] if len(L) > 3 and (L[3] or {}).get('id') == rid), None)
+        L = next((r for r in (GAMEDATA.road(D, L) for L in D['roads']) if r['id'] == rid), None)
         if not L: bad.append(f'no road {rid}'); continue
-        sa = next((e['side'] for e in S_[a].get('edgeExits') or [] if e['id'] == L[3].get('a')), None); sb = next((e['side'] for e in S_[b].get('edgeExits') or [] if e['id'] == L[3].get('b')), None)
+        sa = next((e['side'] for e in S_[a].get('edgeExits') or [] if e['id'] == L['exit_a']), None); sb = next((e['side'] for e in S_[b].get('edgeExits') or [] if e['id'] == L['exit_b']), None)
         if (sa, sb) != ('N', 'S'): bad.append(f'{rid}: exits {sa} and {sb} don’t face each other north to south')
     outdoor = {k: v for k, v in S_.items() if '@' not in k and v.get('kind') in ('town', 'route')}
     for act in ('lab', 'home'):
@@ -1685,7 +1685,7 @@ def desktop_steps(b, base, R):
         import collections
         out = []; D = gamedata(); RT = D['locations']; rid = [r['id'] for r in RT]
         adj = collections.defaultdict(set)
-        for L in D['roads']: adj[L[0]].add(L[1]); adj[L[1]].add(L[0])
+        for r in (GAMEDATA.road(D, L) for L in D['roads']): adj[r['a']].add(r['b']); adj[r['b']].add(r['a'])
         for i, r in enumerate(RT):   # alpha 0.4: a glass lift joins two places too (Kelpport and Pearlantis)
             if r.get('lift') in rid: j = rid.index(r['lift']); adj[i].add(j); adj[j].add(i)
         seen = {0}; todo = [0]
