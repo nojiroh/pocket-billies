@@ -11,6 +11,40 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 - Questions waiting for the owner: 
 - Next session starts with: 
 
+### Phase 10 - World map, the look, session 1: sea and coasts - 2026-10-19
+Owner's request: the living diorama look (B), an inland sea with bays, about 40% of the bowl water; "Go" for session 1.
+Branch `world-map-look`.
+- Changed:
+  - `logic/bowl.js`: the sea. `bowlSeaInput` (each place with its walk map's half-diagonal, each road),
+    `bowlCoastGrid` (distance past the nearest place or road, plus a three-octave noise, minus a rise towards the rim
+    so the land wraps round the sea; the line drawn at the 60% quantile, so 40.0% of the bowl is sea), then a hard
+    margin so every place's map and every road stays dry. `bowlGroundGrid(F, n, sea)` returns the coast as `c`: the
+    land's relief fades to the water's edge, the sea floor sinks up to `BOWL_SEA_DEPTH` (0.035) below it.
+    `bowlWaterLevel` is the bowl's own curve (things fall towards the shell, so water lies on the bowl).
+  - `world-bowl.js`: a water sheet over every sea cell (`worldBowlWaterMesh`, each corner with its depth and coast
+    value) and its shader `mwater`: shallow, mid and deep colours, four moving waves, the sky reflected at glancing
+    angles, the sun's glint, foam at the shore, see-through shallows. The terrain map gets beaches (sand, then wet sand)
+    and a sea floor (sand or coral sand in the shallows, pebbles and rock further out). The map redraws at about 30
+    frames a second while the sea shows (600 ms beats with reduced motion, waves still). The walk scenes' far wall
+    sees the water's level and colour.
+  - Tests: `tools/test/bowl-sea.test.mjs` (sea 35-45%; every square of every place's walk map and every road on land;
+    the sea floor below the water and not too deep). The world map test (Settings > Help) has a new step "The sea and
+    the coasts" (share, places dry, triangles, how long it took). The fast check asks for the water sheet.
+- Risky or unfinished:
+  - Not seen on a screen (no headless graphics): the water's colours, foam width and wave strength are first guesses.
+  - Working out the coast takes about 120 ms on this machine once per session when the map or the far wall first
+    needs the ground; on a phone maybe 300 ms. The world map test reports it.
+  - Redrawing at 30 fps while the map is open costs battery; the draw was about 1 ms a frame on the owner's phone.
+  - `check-fast.py --only=map` on its own fails its touch check (a canvas without an id on top) on main as well; in the
+    full run it passes. Not from this work.
+- Verified: npm test 180 pass; lint, types, modules, format clean; full lite fast check: the world map step passes
+  (the battle step stuck at "playing" once under load, as before, and passed in the other run).
+- Decisions I made (and why): the land rises towards the rim so the sea is an inland sea, not a ring along the edge
+  (owner's choice); a few small islands and lakes are kept, they read as natural. The highlight uses the overhead sun
+  for now; the slanted sun comes in session 2 with the shadows.
+- Questions waiting for the owner: on the phone, does the water read as water, and is 30 fps animation fine?
+- Next session starts with: session 2, the look and the routes (cliffs, rivers, bold routes, slanted sun, shadows).
+
 ### Cutscene tools, session 3 - the city opening; the title with accounts back - 2026-10-19
 Owner's request: "begin session 3 now, explain session 2 in handoff"; then the title with the account, on the new UI
 direction, Continue pressing itself when signed in (answers in the questions of this session, listed below).

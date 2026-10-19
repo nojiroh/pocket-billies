@@ -118,7 +118,7 @@ the sea as an **inland sea with bays** (the open side of the bowl, about 40% of 
 **slanted light** for readable shadows; clouds and weather from **the game's own weather** and time of day.
 
 Sessions, in order:
-1. **Sea and coasts.** About 40% ocean in the ground data (logic/bowl.js: a sea level and a coastline from the
+1. **Sea and coasts (done 2026-10-19; 40.0% sea, test step in the world map test).** About 40% ocean in the ground data (logic/bowl.js: a sea level and a coastline from the
    distance to places and roads plus noise; every place and road on land, enforced by a test). Water: depth colours,
    moving waves, foam along the coasts, sky reflections; beaches, shallows. The walk scenes' far wall shows the sea.
 2. **The look and the routes.** Natural ground between places: beaches, cliffs on steep coasts, rivers from the high
