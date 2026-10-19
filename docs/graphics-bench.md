@@ -23,7 +23,7 @@ one at its low settings.
 | Shadow court | 30, 5.5 | A plaza with trees, a lamp, a flag, a sign, crates, a bench, a boulder, a vending machine; three houses behind. Sun from the side | Shadows, Shadow detail (map size), Near shadow map (cascades), Ambient occlusion, Contact shadows |
 | Pond | 50, 5 | A still pond; five trees and a house on the far bank to mirror | Water reflections |
 | Sun gap | 10.5, 20 | A tight grove with one path through it and two roofs in front; low sun straight ahead | Sun rays (`air.godRays`) |
-| Lamp square | 30, 20 | Brick paving, ten lamps and lanterns, two fires, crystals, three houses with windows; measured at night | Glow (bloom), Glow size, Lamps |
+| Lamp square | 30, 20 | Brick paving, ten lamps and lanterns, two fires, crystals, three houses with windows; measured at night | Glow (bloom), Lamps |
 | Meadow | 50, 23.5 | Deep grass with flowers, open to the air | Grass (rebuilds), Particles, Low mist |
 | Everything | 10, 32.5 · zoom 1.3 | A small grove, a pond, a grass patch, four lamps, a house | All settings at their lowest, at the game's own values and at their highest |
 | Depth corridor | 30, 35.5 · zoom 1.3 | An avenue of trees from close by to the hills past the edge | Depth of field, Far trees and hills (rebuilds) |
@@ -35,7 +35,7 @@ square the night (22:00). Everything else is clear summer weather at 14:00.
 
 ## The settings
 
-The 15 Expert dials (Settings → Graphics → Expert) and five hidden ones that cost the most:
+The 15 Expert dials (Settings → Graphics → Expert) and four hidden ones that cost the most:
 
 - Expert: Shadows, Sun rays, Lamps, Low mist, Clouds, Cloud shadows,
   Particles, Grass, Far trees and hills, Water reflections, Depth of field, Glow, Dark corners, Film grain, Sharpness.
@@ -45,7 +45,8 @@ The 15 Expert dials (Settings → Graphics → Expert) and five hidden ones that
 - Trees shade themselves (`shadows.selfShade`) was a dial until 2026-10-19: only flat sprite trees read it, the
   solid trees within 20 m never do, and it showed no difference either way. It stays an engine setting.
 - Hidden: Shadow detail (`quality.shadowMap`: 1024, 2048, 4096), Near shadow map (`shadows.cascades`: off, on),
-  Ambient occlusion (`shadows.ao`), Contact shadows (`shadows.contact`), Glow size (`color.bloomSize`).
+  Ambient occlusion (`shadows.ao`), Contact shadows (`shadows.contact`). Glow size (`color.bloomSize`) was
+  measured until 2026-10-19; it barely changes the picture even at full Glow, so it was dropped.
 
 A dial with a range is measured at 5 steps: its lowest, 25 %, 50 %, 75 % and its highest. A choice is measured at
 each of its values.
@@ -88,7 +89,7 @@ costs, the station's noise and whether the cost is within it (`unclear`). It has
 
 ## Time
 
-121 measured steps (95 setting steps, two or three untouched looks per station, everything lowest and highest) at
+116 measured steps (90 setting steps, two or three untouched looks per station, everything lowest and highest) at
 about 4.5 s each, plus settling and rebuilds: about 11 to 12 minutes.
 
 ## Findings so far (format 1 reports, 2026-10-19)

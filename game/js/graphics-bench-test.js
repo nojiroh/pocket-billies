@@ -69,7 +69,6 @@ const GRAPHICS_TEST_HIDDEN = [
   ['shadows.cascades', 'Near shadow map', { values: [false, true] }],
   ['shadows.ao', 'Ambient occlusion', { range: [0, 1.5, 0.05] }],
   ['shadows.contact', 'Contact shadows', { range: [0, 1, 0.01] }],
-  ['color.bloomSize', 'Glow size', { range: [0.3, 2, 0.05] }],
 ];
 /* the stations, in the order the test walks them; their spots are the map's `bench` ([x, z, camera turn, zoom]) */
 const GRAPHICS_TEST_STATIONS = [
@@ -82,7 +81,7 @@ const GRAPHICS_TEST_STATIONS = [
   },
   { id: 'pond', name: 'Pond', dials: ['water.reflection'] },
   { id: 'sun', name: 'Sun gap', sun: { angle: -90, height: 18 }, dials: ['air.godRays'] },
-  { id: 'lamps', name: 'Lamp square', time: 22, dials: ['color.bloom', 'color.bloomSize', 'lights.brightness'] },
+  { id: 'lamps', name: 'Lamp square', time: 22, dials: ['color.bloom', 'lights.brightness'] },
   { id: 'meadow', name: 'Meadow', dials: ['grass.density', 'air.particles', 'air.mist'] },
   { id: 'depth', name: 'Depth corridor', dials: ['lens.blur', 'world.farProps'] },
   { id: 'sky', name: 'Open sky', dials: ['sun.clouds', 'sun.cloudShadows'] },
