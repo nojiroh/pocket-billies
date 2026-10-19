@@ -97,7 +97,8 @@ function drawWorldMarkers() {
   const D = studioState.D;
   let h = '';
   const pts = D.locations.map(r => lonLatToWorldMapXY(r.lon || 0, r.lat || 0));
-  (D.roads || []).forEach(([a, b]) => {
+  (D.roads || []).forEach(l => {
+    const { a, b } = PB_DATA.road(D, l);
     if (pts[a] && pts[b])
       h += `<line x1="${pts[a][0]}" y1="${pts[a][1]}" x2="${pts[b][0]}" y2="${pts[b][1]}" class="trail"/>`;
   });
@@ -305,20 +306,24 @@ function worldLocations() {
    to the exit it leaves by (the exits' len) */
 function roadLengthText(k) {
   const D = studioState.D,
-    l = D.roads[k],
-    J = l[3] || {},
+    r = PB_DATA.road(D, D.roads[k]),
     len = (node, id) => {
       const sc = D.maps[(D.locations[node] || {}).mapId],
         e = sc && id ? (sc.edgeExits || []).find(x => x.id === id) : null;
       return e && Number.isFinite(e.len) ? e.len : null;
     },
-    a = len(l[0], J.a),
-    b = len(l[1], J.b);
+    a = len(r.a, r.exitA),
+    b = len(r.b, r.exitB);
   return a != null && b != null ? `${Math.round(a + b)} m` : 'not joined (100 m)';
 }
+/* the roads of stop i: [the other stop, the road's index] */
 function locationRoads(i) {
-  return (studioState.D.roads || [])
-    .map((l, k) => (l[0] === i ? [l[1], l[2], k] : l[1] === i ? [l[0], l[2], k] : null))
+  const D = studioState.D;
+  return (D.roads || [])
+    .map((l, k) => {
+      const r = PB_DATA.road(D, l);
+      return r.a === i ? [r.b, k] : r.b === i ? [r.a, k] : null;
+    })
     .filter(Boolean);
 }
 function roadsHTML(i) {
@@ -326,13 +331,13 @@ function roadsHTML(i) {
     R = locationRoads(i),
     opts = D.locations.map((r, j) => [j, `${j + 1}. ${r.name}`]).filter(([j]) => j !== i);
   return `<table class="tbl"><thead><tr><th>Road to</th><th>Length</th><th>Leaves by</th><th></th></tr></thead><tbody>${R.map(
-    ([o, c, k]) => {
-      const side = D.roads[k][0] === i ? 1 : 0,
-        end = side ? 'a' : 'b',
-        J = D.roads[k][3] || {},
+    ([o, k]) => {
+      const r = PB_DATA.road(D, D.roads[k]),
+        end = r.a === i ? 'a' : 'b',
+        exit = end === 'a' ? r.exitA : r.exitB,
         sc = D.maps[(D.locations[i] || {}).mapId],
         ids = ((sc && sc.edgeExits) || []).map(e => e.id);
-      return `<tr><td><select data-p="roads.${k}.${side}" data-k="num" data-rr="1">${opts.map(([j, n]) => `<option value="${j}" ${j === o ? 'selected' : ''}>${escapeHtml(n)}</option>`).join('')}</select></td><td><small>${roadLengthText(k)}</small></td><td><select data-join="${k}" data-end="${end}" title="Which exit of this stop’s scene the road uses (v42 join table); ‘by direction’ matches it by compass bearing as before"><option value="">by direction</option>${ids.map(id => `<option value="${escapeHtml(id)}" ${J[end] === id ? 'selected' : ''}>${escapeHtml(id)}</option>`).join('')}</select></td><td><button class="x" data-act="roadDel" data-k="${k}" title="Remove this road">×</button></td></tr>`;
+      return `<tr><td><select data-road-to="${k}" data-end="${end === 'a' ? 'b' : 'a'}">${opts.map(([j, n]) => `<option value="${j}" ${j === o ? 'selected' : ''}>${escapeHtml(n)}</option>`).join('')}</select></td><td><small>${roadLengthText(k)}</small></td><td><select data-join="${k}" data-end="${end}" title="Which exit of this stop’s scene the road uses (v42 join table); ‘by direction’ matches it by compass bearing as before"><option value="">by direction</option>${ids.map(id => `<option value="${escapeHtml(id)}" ${exit === id ? 'selected' : ''}>${escapeHtml(id)}</option>`).join('')}</select></td><td><button class="x" data-act="roadDel" data-k="${k}" title="Remove this road">×</button></td></tr>`;
     }
   ).join('')}</tbody></table>
  <div class="seg-row"><select id="roadTo">${opts
@@ -345,23 +350,19 @@ ACTIONS.roadAdd = d => {
     i = +d.i,
     j = +$('#roadTo').value;
   if (!Number.isFinite(j) || j === i) return;
-  (D.roads || (D.roads = [])).push([i, j, 800]);
+  PB_DATA.addRoad(D, i, j);
   changed();
   commit(true);
   render();
 };
 document.addEventListener('change', ev => {
   const t = ev.target;
-  if (!t || t.dataset.join == null) return;
-  const l = studioState.D.roads[+t.dataset.join];
+  if (!t || (t.dataset.join == null && t.dataset.roadTo == null)) return;
+  const D = studioState.D,
+    l = D.roads[+(t.dataset.join ?? t.dataset.roadTo)];
   if (!l) return;
-  const J = l[3] || {};
-  if (t.value) J[t.dataset.end] = t.value;
-  else delete J[t.dataset.end];
-  if (J.a || J.b) {
-    if (l.length > 3) l[3] = J;
-    else l.push(J);
-  } else l.length = 3;
+  if (t.dataset.join != null) PB_DATA.setRoadEnd(D, l, t.dataset.end, null, t.value || null);
+  else PB_DATA.setRoadEnd(D, l, t.dataset.end, +t.value);
   changed();
   commit(true);
   render();
@@ -383,10 +384,10 @@ ACTIONS.stopMove = d => {
   if (j < 0 || j >= D.locations.length) return;
   [D.locations[i], D.locations[j]] = [D.locations[j], D.locations[i]];
   (D.roads || []).forEach(l => {
-    for (const q of [0, 1]) {
-      if (l[q] === i) l[q] = j;
-      else if (l[q] === j) l[q] = i;
-    }
+    const r = PB_DATA.road(D, l);
+    for (const end of /** @type {const} */ (['a', 'b']))
+      if (r[end] === i) PB_DATA.setRoadEnd(D, l, end, j);
+      else if (r[end] === j) PB_DATA.setRoadEnd(D, l, end, i);
   });
   Object.values(D.trainers || {}).forEach(T => {
     if (T.node === i) T.node = j;
@@ -415,10 +416,11 @@ ACTIONS.stopAdd = () => {
   Object.values(D.trainers || {}).forEach(T => {
     if (T.node > i) T.node++;
   });
-  (D.roads || (D.roads = [])).forEach(l => {
-    for (const q of [0, 1]) if (l[q] > i) l[q]++;
+  (D.roads || []).forEach(l => {
+    const r = PB_DATA.road(D, l);
+    for (const end of /** @type {const} */ (['a', 'b'])) if (r[end] > i) PB_DATA.setRoadEnd(D, l, end, r[end] + 1);
   });
-  D.roads.push([i, i + 1, 800]);
+  PB_DATA.addRoad(D, i, i + 1);
   studioState.sel.stop = i + 1;
   changed();
   render();
@@ -439,9 +441,14 @@ ACTIONS.stopDel = async () => {
   Object.values(D.trainers || {}).forEach(t => {
     if (t.node >= i) t.node = Math.max(0, t.node - 1);
   });
-  D.roads = (D.roads || [])
-    .filter(l => l[0] !== i && l[1] !== i)
-    .map(l => l.map((v, q) => (q < 2 && v > i ? v - 1 : v)));
+  D.roads = (D.roads || []).filter(l => {
+    const r = PB_DATA.road(D, l);
+    return r.a !== i && r.b !== i;
+  });
+  D.roads.forEach(l => {
+    const r = PB_DATA.road(D, l);
+    for (const end of /** @type {const} */ (['a', 'b'])) if (r[end] > i) PB_DATA.setRoadEnd(D, l, end, r[end] - 1);
+  });
   studioState.sel.stop = Math.max(0, i - 1);
   changed();
   render();
