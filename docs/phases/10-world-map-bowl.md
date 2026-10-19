@@ -25,7 +25,7 @@ centre, the ground generated from region terrain, seen from above like a diorama
 - **Opening the map from a walk scene:** the walk camera rises, then the bowl pulls back from right above you.
 - **Dropped:** Flat view; the CPU-drawn fallback (when the GPU context is lost, show the Places list and a "map
   reloading" note); the gold trip line and the pins.
-- **Depth:** medium. A flat-ish floor, walls rising to about 45 degrees at the rim.
+- **Shape (2026-10-19):** only curves: part of a sphere, rising to 45 degrees at the rim; the land ends at the rim.
 - **Relief:** each region has its own low-poly relief (volcano peak, canyon cut, trench dip, Cloudspire terraces).
 - **Driftwreck:** Palmhaven is placed south of Driftwreck to match the walkable maps; no map data changes.
 - **New links:** allowed, but only as notes for now (`10-proposed-links.md`). Each needs edges, a story check and a
@@ -96,7 +96,7 @@ and a miniature; travel plans unchanged by the move. No screenshot baselines.
 The bowl replaces the old map, the Node tests pass, the owner has reported phone frame times, the Studio editor works
 on the bowl, and the old map code is deleted.
 
-## Ground and landmarks (planned 2026-10-19, owner's answers)
+## Ground and landmarks (planned 2026-10-19, owner's answers; the ground is done, buildings next)
 - **Each place's real ground** drawn on the bowl as pixel art at about 1.5 m a pixel, sharp (no blur), each walk map
   turned the way it sits on the bowl (north to the centre), so its roads, water, plazas and cliffs show where they are.
 - **Between places:** each region's real ground textures (their average colours) with a pixel-art dither, not a soft

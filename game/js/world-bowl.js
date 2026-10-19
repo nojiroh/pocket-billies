@@ -15,12 +15,13 @@
 import { expose } from './test-globals.js';
 import { airshipFlight, flyDraw, flySkip, flyTick, paintWorldMapCard, provide, render } from './hooks.js';
 import { $ } from './util.js';
-import { LOCATIONS, LOCATION_BY_ID, ROADS, locationSubtitle } from './game-data.js';
+import { LOCATIONS, LOCATION_BY_ID, ROADS, gameData, locationSubtitle } from './game-data.js';
 import { canEnter, distanceText, tripTo } from './logic/rules.js';
 import {
   BOWL_GROUND_EXTENT,
   bowlGridHeight,
   bowlGroundGrid,
+  bowlHeight,
   bowlRelief,
   bowlReliefFeatures,
   bowlSpotOf,
@@ -44,9 +45,10 @@ import {
   bowlSurface,
   bowlToGpu,
 } from './logic/bowl-camera.js';
+import { isLiteMap, loadMapFile } from './map-files.js';
 import { escapeHtml, reducedMotion, saveData, uiState } from './game-state.js';
 import { frameCount, frameStop, frameTask } from './frame-scheduler.js';
-import { uiIconHTML } from './art.js';
+import { artPixels, uiIconHTML } from './art.js';
 import { personWalkFrames } from './person-art.js';
 import { walkView } from './walk-view.js';
 import {
@@ -64,19 +66,22 @@ import { walkRenderer } from './walk/walk-state.js';
 import { clampZoom } from './walk/camera.js';
 /* eslint-disable no-func-assign */
 expose({
-  BOWL_COLOR_CELLS: [() => BOWL_COLOR_CELLS],
+  BOWL_BAYER: [() => BOWL_BAYER],
   BOWL_HAZE: [() => BOWL_HAZE],
-  BOWL_PAINT: [() => BOWL_PAINT],
+  BOWL_INDEX: [() => BOWL_INDEX],
+  BOWL_KIND_GROUND: [() => BOWL_KIND_GROUND],
+  BOWL_METRES: [() => BOWL_METRES],
+  BOWL_MIX: [() => BOWL_MIX],
   BOWL_PIN: [() => BOWL_PIN],
-  BOWL_REGION_COLORS: [() => BOWL_REGION_COLORS],
+  BOWL_REGION_GROUND: [() => BOWL_REGION_GROUND],
   BOWL_SUN: [() => BOWL_SUN],
   BOWL_WALL_W: [() => BOWL_WALL_W],
-  BOWL_WATER: [() => BOWL_WATER],
   WORLD_BOWL_SHADERS: [() => WORLD_BOWL_SHADERS],
+  bowlHash: [() => bowlHash],
+  bowlNoise: [() => bowlNoise, v => (bowlNoise = v)],
   bowlWallTexture: [() => bowlWallTexture, v => ((bowlWallTexture = v), provide({ bowlWallTexture }))],
   worldBowl: [() => worldBowl],
   worldBowlColorAt: [() => worldBowlColorAt, v => (worldBowlColorAt = v)],
-  worldBowlColors: [() => worldBowlColors, v => (worldBowlColors = v)],
   worldBowlDot: [() => worldBowlDot, v => (worldBowlDot = v)],
   worldBowlFilm: [() => worldBowlFilm, v => (worldBowlFilm = v)],
   worldBowlGpu: [() => worldBowlGpu, v => (worldBowlGpu = v)],
@@ -84,11 +89,17 @@ expose({
   worldBowlLock: [() => worldBowlLock, v => (worldBowlLock = v)],
   worldBowlMesh: [() => worldBowlMesh, v => (worldBowlMesh = v)],
   worldBowlOverlay: [() => worldBowlOverlay, v => (worldBowlOverlay = v)],
-  worldBowlPaint: [() => worldBowlPaint, v => (worldBowlPaint = v)],
   worldBowlPick: [() => worldBowlPick, v => (worldBowlPick = v)],
   worldBowlPin: [() => worldBowlPin, v => (worldBowlPin = v)],
   worldBowlRender: [() => worldBowlRender, v => setWorldBowlRender(v)],
+  worldBowlRoadsInto: [() => worldBowlRoadsInto, v => (worldBowlRoadsInto = v)],
   worldBowlSpots: [() => worldBowlSpots, v => (worldBowlSpots = v)],
+  worldBowlStampMap: [() => worldBowlStampMap, v => (worldBowlStampMap = v)],
+  worldBowlStampMaps: [() => worldBowlStampMaps, v => (worldBowlStampMaps = v)],
+  worldBowlTerrainGpu: [() => worldBowlTerrainGpu, v => (worldBowlTerrainGpu = v)],
+  worldBowlTerrainKinds: [() => worldBowlTerrainKinds, v => (worldBowlTerrainKinds = v)],
+  worldBowlTerrainPictures: [() => worldBowlTerrainPictures, v => (worldBowlTerrainPictures = v)],
+  worldBowlTerrainStart: [() => worldBowlTerrainStart, v => (worldBowlTerrainStart = v)],
   worldMap: [() => worldMap],
   worldMapAction: [() => worldMapAction, v => (worldMapAction = v)],
   worldMapBackToWalk: [() => worldMapBackToWalk, v => (worldMapBackToWalk = v)],
@@ -153,24 +164,14 @@ export const worldBowl = {
   marks: [],
 };
 
-/* region colours of the ground */
-const BOWL_REGION_COLORS = {
-  starter: [0.5, 0.68, 0.35],
-  meadowlands: [0.76, 0.82, 0.38],
-  goldenhills: [0.86, 0.66, 0.3],
-  sporeforest: [0.6, 0.47, 0.72],
-  crystalcaverns: [0.42, 0.7, 0.78],
-  coraltrench: [0.3, 0.52, 0.72],
-  cloudspire: [0.74, 0.77, 0.85],
-  innersun: [0.93, 0.8, 0.36],
-};
-const BOWL_WATER = { sea: 1, pond: 1, lake: 1, island: 1 };
 const BOWL_SUN = [0, 1.7, 0];
 const BOWL_HAZE = [0.69, 0.73, 0.92];
 const BOWL_PIN = 22; /* a pin's height on screen, in pixels */
-const BOWL_COLOR_CELLS = 256; /* the ground's colours are worked out on this grid, then roads drawn over at 4x */
-const BOWL_PAINT = 1024;
 
+/* the ground's scale: metres to the bowl's radius, squares across the terrain map, and the far-colours' size */
+const BOWL_METRES = 1000;
+const BOWL_INDEX = 2048;
+const BOWL_MIX = 1024;
 export const WORLD_BOWL_SHADERS = {
   /* the sky: pale towards the rim line, the Inner Sun overhead (depth at the very back) */
   msky: [
@@ -182,15 +183,18 @@ void main(){vec2 px=gl_FragCoord.xy/uR;vec3 d=normalize(uFw+uRt*(px.x-uWH.x*.5)/
  vec3 c=mix(vec3(.98,.87,.72),vec3(.6,.71,.95),smoothstep(-.05,.7,d.y));
  vec3 sd=normalize(uSun-uC);float a=max(0.,dot(d,sd));c+=vec3(1.,.9,.6)*(pow(a,900.)*3.+pow(a,40.)*.35);o=vec4(c,1.);}`,
   ],
-  /* the ground: one low-poly mesh, lit facet by facet by the Inner Sun, its colours (regions, water, roads) from a
-     picture painted from above */
+  /* the ground: one low-poly mesh, lit facet by facet by the Inner Sun, painted with the walk scenes' terrain
+     pictures (a square a metre, 16 px each, sharp) close up and their average colours far away */
   mground: [
     `#version 300 es
 precision highp float;in vec3 aPos;uniform mat4 uVP;out vec3 vW;void main(){vW=aPos;gl_Position=uVP*vec4(aPos,1.);}`,
     `#version 300 es
-precision highp float;in vec3 vW;out vec4 o;uniform sampler2D uCol;uniform vec3 uC,uSun,uHaze;uniform float uExt;
+precision highp float;precision highp sampler2DArray;in vec3 vW;out vec4 o;uniform sampler2D uIdx,uMix;uniform sampler2DArray uLay;uniform vec3 uC,uSun,uHaze;uniform float uOn;
 void main(){vec3 n=normalize(cross(dFdx(vW),dFdy(vW)));if(n.y<0.)n=-n;
- vec2 uv=vec2(vW.x,-vW.z)/(2.*uExt)+.5;vec3 c=texture(uCol,uv).rgb;
+ vec2 q=vec2(vW.x,-vW.z),uv=vec2(q.x*.5+.5,.5-q.y*.5);vec3 far=uOn>.5?texture(uMix,uv).rgb:vec3(.5,.63,.38),c=far;
+ vec2 m=q*${BOWL_METRES.toFixed(1)};float px=max(length(dFdx(m)),length(dFdy(m)));
+ if(uOn>.5&&px<4.){float L=floor(texelFetch(uIdx,ivec2(clamp(uv*${BOWL_INDEX.toFixed(1)},vec2(0.),vec2(${(BOWL_INDEX - 1).toFixed(1)}))),0).r*255.+.5);
+  vec3 near=textureGrad(uLay,vec3(fract(m),L),dFdx(m),dFdy(m)).rgb;c=mix(near,far,smoothstep(1.4,4.,px));}
  float lit=.58+.5*max(0.,dot(n,normalize(uSun-vW)))-.1*(1.-n.y);c*=lit;
  float d=length(vW-uC),fk=1.-exp(-max(0.,d-.7)*.32);o=vec4(mix(c,uHaze,clamp(fk,0.,.6)),1.);}`,
   ],
@@ -202,6 +206,41 @@ provide({ WORLD_BOWL_SHADERS }); /* to-module */
 export function worldMapSpot(i) {
   return worldBowlSpots()[i] || { x: 0, y: 0, h: 0, under: 0 };
 }
+/* ---------- the ground's terrain (owner, 2026-10-19: high resolution, real terrain) ----------
+   The ground is painted with the walk scenes' own terrain pictures (scenery.json terrains, 16 px a square), on a map of
+   which terrain lies where: one square of it about a metre (BOWL_METRES to the bowl's radius). Each place's own walk
+   map is laid on it square by square, turned the way it sits on the bowl (its north to the centre), as soon as its map
+   file is in; between places each region's own grounds in patches with a pixel-art dither, water in the dips, snow on
+   the highest tops, and paths along the roads. From far away, where a square is smaller than a pixel, each terrain's
+   average colour stands in (BOWL_MIX texture) so the ground doesn't shimmer. */
+/* each region's grounds between places (from what its walk maps are made of), and some kinds' own around them */
+const BOWL_REGION_GROUND = {
+  starter: 'gGlCtg',
+  meadowlands: 'gEERCg',
+  goldenhills: 'BAB4gB',
+  sporeforest: 'JyLMJy',
+  crystalcaverns: 'krXvkr',
+  coraltrench: 'N3N2gN',
+  cloudspire: 'UgUvtU',
+  innersun: 'YWYBYW',
+};
+const BOWL_KIND_GROUND = {
+  sea: 'dwdS',
+  pond: 'wwgR',
+  lake: 'wdwl',
+  island: 'sSws',
+  volcano: 'zjzZ',
+  canyon: 'srsP',
+  summit: 'nnIr',
+  pass: 'rnrv',
+  ridge: 'rgHr',
+  trench: 'dd3N',
+  thicket: 'yLyM',
+  farm: 'oGol',
+  golf: 'lGlg',
+  bins: 'xvxu',
+  grotto: 'krkM',
+};
 function worldBowlSpots() {
   if (worldBowl.spots) return worldBowl.spots;
   const F = bowlReliefFeatures(LOCATIONS),
@@ -213,121 +252,303 @@ function worldBowlSpots() {
       [x, y] = bowlXY(s.a, s.r);
     return { x, y, under: s.under, h: bowlGridHeight(G, x, y) };
   });
-  worldBowl.ground = { F, G, col: worldBowlColors(F), mesh: null, tex: null };
+  worldBowl.ground = { F, G, mesh: null, terrain: null };
   return worldBowl.spots;
 }
-/* the ground's colour seen from above, on a coarse grid: region tints mixed softly between places, water blue,
-   snow on the high tops, sand by the water. Kept for the far wall the walk scenes see (bowlWallTexture). */
-function worldBowlColors(F) {
-  const n = BOWL_COLOR_CELLS,
-    e = BOWL_GROUND_EXTENT,
-    out = new Float32Array(n * n * 3),
-    P = [];
-  LOCATIONS.forEach((l, i) => {
-    const s = worldBowl.spots[i];
-    if (s.under) return;
-    P.push({
-      x: s.x,
-      y: s.y,
-      c: BOWL_WATER[l.t] ? [0.34, 0.58, 0.78] : BOWL_REGION_COLORS[l.region] || BOWL_REGION_COLORS.starter,
-      water: !!BOWL_WATER[l.t],
-    });
-  });
-  for (let j = 0; j < n; j++)
-    for (let i = 0; i < n; i++) {
-      const x = -e + ((i + 0.5) / n) * 2 * e,
-        y = e - ((j + 0.5) / n) * 2 * e,
-        r = Math.hypot(x, y);
-      let ws = 0,
-        dmin = 9,
-        c0 = 0,
-        c1 = 0,
-        c2 = 0,
-        wet = 0;
-      for (const p of P) {
-        const d = Math.hypot(x - p.x, y - p.y),
-          w = 1 / (d ** 4 + 2e-5);
-        dmin = Math.min(dmin, d);
-        c0 += p.c[0] * w;
-        c1 += p.c[1] * w;
-        c2 += p.c[2] * w;
-        if (p.water) wet += w;
-        ws += w;
+/* the terrain kinds: their keys in a fixed order (a layer each), their pictures' pixels and average colours */
+function worldBowlTerrainKinds() {
+  const T = (gameData.scenery && gameData.scenery.terrains) || {},
+    keys = Object.keys(T);
+  return { T, keys, layer: Object.fromEntries(keys.map((k, n) => [k, n])) };
+}
+/* a hash in 0-1 for a square, and a smooth value noise (patches of ground) */
+const bowlHash = (i, j) => {
+  const v = Math.sin(i * 127.1 + j * 311.7) * 43758.5453;
+  return v - Math.floor(v);
+};
+function bowlNoise(x, y) {
+  const i = Math.floor(x),
+    j = Math.floor(y),
+    u = x - i,
+    v = y - j,
+    a = bowlHash(i, j),
+    b = bowlHash(i + 1, j),
+    c = bowlHash(i, j + 1),
+    d = bowlHash(i + 1, j + 1),
+    su = u * u * (3 - 2 * u),
+    sv = v * v * (3 - 2 * v);
+  return (a * (1 - su) + b * su) * (1 - sv) + (c * (1 - su) + d * su) * sv;
+}
+const BOWL_BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map(v => (v + 0.5) / 16);
+/* the terrain between places, worked out in rows a frame at a time (the map shows its colours meanwhile) */
+function worldBowlTerrainStart() {
+  const g = worldBowl.ground;
+  if (g.terrain) return g.terrain;
+  const K = worldBowlTerrainKinds(),
+    N = BOWL_INDEX,
+    idx = new Uint8Array(N * N),
+    S = worldBowl.spots,
+    /* the nearest place on a coarse grid, for each region's and kind's ground */
+    C = 256,
+    near = new Uint8Array(C * C),
+    own = [];
+  S.forEach((s, i) => !s.under && own.push(i));
+  for (let j = 0; j < C; j++)
+    for (let i = 0; i < C; i++) {
+      const x = -1 + ((i + 0.5) / C) * 2,
+        y = 1 - ((j + 0.5) / C) * 2;
+      let best = 0,
+        bd = 9;
+      for (const k of own) {
+        const d = (x - S[k].x) ** 2 + (y - S[k].y) ** 2;
+        if (d < bd) {
+          bd = d;
+          best = k;
+        }
       }
-      let c = [c0 / ws, c1 / ws, c2 / ws];
-      const far = Math.min(1, Math.max(0, (dmin - 0.12) / 0.18)),
-        rel = bowlRelief(F, x, y);
-      c = c.map((v, k) => v * (1 - far) + [0.6, 0.55, 0.45][k] * far);
-      if (wet / ws > 0.4 && rel < -0.006) c = c.map((v, k) => v * 0.4 + [0.3, 0.55, 0.78][k] * 0.6);
-      else if (wet / ws > 0.25) c = c.map((v, k) => v * 0.6 + [0.86, 0.8, 0.62][k] * 0.4);
-      if (rel > 0.05) c = c.map(v => v + (0.97 - v) * Math.min(1, (rel - 0.05) / 0.025));
-      if (r > 1) c = c.map((v, k) => v * 0.55 + [0.46, 0.43, 0.42][k] * 0.45);
-      out.set(c, (j * n + i) * 3);
+      near[j * C + i] = best;
     }
-  return out;
-}
-/* the ground's colour at a point, from the coarse grid @param {number} x @param {number} y */
-function worldBowlColorAt(x, y) {
-  const n = BOWL_COLOR_CELLS,
-    e = BOWL_GROUND_EXTENT,
-    C = worldBowl.ground.col,
-    i = Math.max(0, Math.min(n - 1, Math.floor(((x + e) / (2 * e)) * n))),
-    j = Math.max(0, Math.min(n - 1, Math.floor(((e - y) / (2 * e)) * n))),
-    k = (j * n + i) * 3;
-  return [C[k], C[k + 1], C[k + 2]];
-}
-/* the picture the ground is painted with: the colours, then each road as a path with its edges, a small clearing at
-   each place */
-function worldBowlPaint() {
-  const n = BOWL_COLOR_CELLS,
-    e = BOWL_GROUND_EXTENT,
-    small = document.createElement('canvas');
-  small.width = small.height = n;
-  const sx = small.getContext('2d'),
-    im = sx.createImageData(n, n),
-    C = worldBowl.ground.col;
-  for (let k = 0; k < n * n; k++) {
-    im.data[k * 4] = Math.round(Math.min(1, C[k * 3]) * 255);
-    im.data[k * 4 + 1] = Math.round(Math.min(1, C[k * 3 + 1]) * 255);
-    im.data[k * 4 + 2] = Math.round(Math.min(1, C[k * 3 + 2]) * 255);
-    im.data[k * 4 + 3] = 255;
-  }
-  sx.putImageData(im, 0, 0);
-  const cv = document.createElement('canvas');
-  cv.width = cv.height = BOWL_PAINT;
-  const c = cv.getContext('2d');
-  c.imageSmoothingEnabled = true;
-  c.drawImage(small, 0, 0, BOWL_PAINT, BOWL_PAINT);
-  const px = (x, y) => [((x + e) / (2 * e)) * BOWL_PAINT, ((e - y) / (2 * e)) * BOWL_PAINT],
-    S = worldBowl.spots;
-  c.lineJoin = c.lineCap = 'round';
-  for (const [w, col] of [
-    [6, 'rgba(70,52,36,.55)'],
-    [3.4, 'rgba(236,220,178,.95)'],
-  ]) {
-    c.strokeStyle = col;
-    c.lineWidth = w;
-    for (const [a, b] of ROADS) {
-      if (!S[a] || !S[b] || S[a].under || S[b].under) continue;
-      const [x0, y0] = px(S[a].x, S[a].y),
-        [x1, y1] = px(S[b].x, S[b].y);
-      c.beginPath();
-      c.moveTo(x0, y0);
-      c.lineTo(x1, y1);
-      c.stroke();
-    }
-  }
-  S.forEach((s, i) => {
-    if (s.under) return;
-    const [x, y] = px(s.x, s.y);
-    c.fillStyle = 'rgba(236,220,178,.9)';
-    c.beginPath();
-    c.arc(x, y, LOCATIONS[i].town ? 7 : 4.5, 0, 7);
-    c.fill();
+  const lists = LOCATIONS.map(l => {
+    const r = (BOWL_REGION_GROUND[l.region] || BOWL_REGION_GROUND.starter).split(''),
+      k = (BOWL_KIND_GROUND[l.t] || '').split('');
+    return { r: r.filter(c => c in K.layer).map(c => K.layer[c]), k: k.filter(c => c in K.layer).map(c => K.layer[c]) };
   });
-  return cv;
+  const L = K.layer;
+  g.terrain = { K, idx, near, lists, row: 0, ready: false, stamped: new Set(), dirty: true, gl: null };
+  g.terrain.fill = rows => {
+    const T = g.terrain,
+      end = Math.min(N, T.row + rows);
+    for (let j = T.row; j < end; j++)
+      for (let i = 0; i < N; i++) {
+        const x = -1 + ((i + 0.5) / N) * 2,
+          y = 1 - ((j + 0.5) / N) * 2,
+          r = Math.hypot(x, y);
+        if (r > 1.01) continue;
+        /* the place this square belongs to, its edges dithered so regions meet in a pixel-art border */
+        const ci = Math.min(C - 1, Math.max(0, Math.floor(((x + 1) / 2) * C + (bowlHash(i, j) - 0.5) * 3))),
+          cj = Math.min(C - 1, Math.max(0, Math.floor(((1 - y) / 2) * C + (bowlHash(j, i) - 0.5) * 3))),
+          p = T.near[cj * C + ci],
+          s = S[p],
+          ls = T.lists[p],
+          d = Math.hypot(x - s.x, y - s.y),
+          rel = bowlGridHeight(g.G, x, y) - bowlHeight(Math.min(1, r)) /* the relief, read from the grid: cheap */,
+          m = (x * BOWL_METRES) / 9,
+          n = (y * BOWL_METRES) / 9,
+          pick = list => list[Math.min(list.length - 1, Math.floor(bowlNoise(m + p * 7.3, n) * list.length))],
+          th = BOWL_BAYER[(j & 3) * 4 + (i & 3)];
+        let t = ls.k.length && d < 0.09 + bowlNoise(m * 0.3, n * 0.3) * 0.04 ? pick(ls.k) : pick(ls.r);
+        /* second pick for a dithered patch edge */
+        if (ls.r.length > 1 && Math.abs(bowlNoise(m * 1.7, n * 1.7) - 0.5) < 0.06 && th < 0.5)
+          t = pick(ls.r.slice().reverse());
+        if (rel > 0.05 + th * 0.012 && 'n' in L) t = L.n;
+        if (r > 0.985) t = L.r ?? t;
+        T.idx[j * N + i] = t;
+      }
+    T.row = end;
+    T.dirty = true;
+    if (T.row >= N) {
+      worldBowlRoadsInto(T);
+      T.ready = true;
+    }
+  };
+  return g.terrain;
 }
-/* the mesh: the grid's cells out to the edge of the land beyond the rim, two triangles each */
+/* paths along the roads, a few squares wide (the places' own maps lie over their ends) */
+function worldBowlRoadsInto(T) {
+  const N = BOWL_INDEX,
+    S = worldBowl.spots,
+    path = T.K.layer.p ?? T.K.layer.u;
+  if (path == null) return;
+  for (const [a, b] of ROADS) {
+    const A = S[a],
+      B = S[b];
+    if (!A || !B || A.under || B.under) continue;
+    const len = Math.hypot(B.x - A.x, B.y - A.y) * (N / 2),
+      steps = Math.ceil(len * 2);
+    for (let k = 0; k <= steps; k++) {
+      const f = k / steps,
+        cx = ((A.x + (B.x - A.x) * f + 1) / 2) * N,
+        cy = ((1 - (A.y + (B.y - A.y) * f)) / 2) * N;
+      for (let dy = -1; dy <= 1; dy++)
+        for (let dx = -1; dx <= 1; dx++) {
+          const i = Math.floor(cx + dx),
+            j = Math.floor(cy + dy);
+          if (i >= 0 && j >= 0 && i < N && j < N) T.idx[j * N + i] = path;
+        }
+    }
+  }
+}
+/* a place's own walk map laid on the ground: each square of the bowl in its turned footprint takes the map's square */
+function worldBowlStampMap(T, i) {
+  const l = LOCATIONS[i],
+    s = worldBowl.spots[i],
+    M = l && gameData.maps && gameData.maps[l.mapId];
+  if (!M || !M.tiles || !M.tiles.length || s.under || T.stamped.has(i)) return false;
+  T.stamped.add(i);
+  const N = BOWL_INDEX,
+    r = Math.hypot(s.x, s.y),
+    north = r < 1e-6 ? [0, 1] : [-s.x / r, -s.y / r],
+    east = [north[1], -north[0]],
+    w = M.w,
+    h = M.h,
+    half = Math.hypot(w, h) / 2 / BOWL_METRES,
+    i0 = Math.max(0, Math.floor(((s.x - half + 1) / 2) * N)),
+    i1 = Math.min(N - 1, Math.ceil(((s.x + half + 1) / 2) * N)),
+    j0 = Math.max(0, Math.floor(((1 - (s.y + half)) / 2) * N)),
+    j1 = Math.min(N - 1, Math.ceil(((1 - (s.y - half)) / 2) * N)),
+    L = T.K.layer;
+  for (let j = j0; j <= j1; j++)
+    for (let ii = i0; ii <= i1; ii++) {
+      const x = -1 + ((ii + 0.5) / N) * 2 - s.x,
+        y = 1 - ((j + 0.5) / N) * 2 - s.y,
+        mx = (x * east[0] + y * east[1]) * BOWL_METRES + w / 2,
+        mz = (x * north[0] + y * north[1]) * BOWL_METRES + h / 2;
+      if (mx < 0 || mz < 0 || mx >= w || mz >= h) continue;
+      const ch = (M.tiles[h - 1 - Math.floor(mz)] || '')[Math.floor(mx)],
+        t = L[ch];
+      if (t != null) T.idx[j * N + ii] = t;
+    }
+  T.dirty = true;
+  return true;
+}
+/* the places' maps, loaded a few at a time while the map is open (the walk scenes load the near ones anyway) */
+function worldBowlStampMaps(T) {
+  if (T.loading) return;
+  for (let i = 0; i < LOCATIONS.length; i++) {
+    if (T.stamped.has(i) || worldBowl.spots[i].under) continue;
+    const id = LOCATIONS[i].mapId;
+    if (!id || !gameData.maps[id]) {
+      T.stamped.add(i);
+      continue;
+    }
+    if (typeof isLiteMap === 'function' && isLiteMap(id)) {
+      T.loading = true;
+      loadMapFile(id)
+        .catch(() => {})
+        .finally(() => {
+          T.loading = false;
+          worldBowlStampMap(T, i);
+          worldBowl.dirty = true;
+        });
+      return;
+    }
+    worldBowlStampMap(T, i);
+  }
+}
+/* the terrain pictures as one stack of layers, and each one's average colour */
+async function worldBowlTerrainPictures(T) {
+  if (T.pix) return T.pix;
+  const n = T.K.keys.length,
+    data = new Uint8Array(16 * 16 * 4 * n),
+    avg = new Float32Array(n * 3);
+  await Promise.all(
+    T.K.keys.map(async (k, layer) => {
+      const tile = T.K.T[k].tile;
+      let px = null;
+      try {
+        px = tile ? new Uint8Array((await artPixels(tile)).buffer) : null;
+      } catch (e) {
+        px = null;
+      }
+      let r = 0,
+        g = 0,
+        b = 0;
+      for (let p = 0; p < 256; p++) {
+        /* tiles are 16 x 16; anything else is sampled to fit */
+        const q = px ? p * 4 : -1,
+          col = q >= 0 && q + 3 < px.length ? [px[q], px[q + 1], px[q + 2]] : [128, 128, 128];
+        data.set([col[0], col[1], col[2], 255], (layer * 256 + p) * 4);
+        r += col[0];
+        g += col[1];
+        b += col[2];
+      }
+      avg.set([r / 256 / 255, g / 256 / 255, b / 256 / 255], layer * 3);
+    })
+  );
+  T.pix = { data, avg };
+  return T.pix;
+}
+/* the GPU's copies: the terrain map (one byte a square), the layers, and the far-away colours */
+function worldBowlTerrainGpu(T) {
+  const gl = gpuState.gl;
+  if (!T.pix) return false;
+  if (T.gl !== gl) {
+    T.gl = gl;
+    T.tIdx = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, T.tIdx);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, BOWL_INDEX, BOWL_INDEX, 0, gl.RED, gl.UNSIGNED_BYTE, null);
+    for (const [k, v] of [
+      [gl.TEXTURE_MIN_FILTER, gl.NEAREST],
+      [gl.TEXTURE_MAG_FILTER, gl.NEAREST],
+      [gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE],
+      [gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE],
+    ])
+      gl.texParameteri(gl.TEXTURE_2D, k, v);
+    T.tLay = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D_ARRAY, T.tLay);
+    gl.texImage3D(gl.TEXTURE_2D_ARRAY, 0, gl.RGBA8, 16, 16, T.K.keys.length, 0, gl.RGBA, gl.UNSIGNED_BYTE, T.pix.data);
+    gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MIN_FILTER, gl.NEAREST_MIPMAP_LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.generateMipmap(gl.TEXTURE_2D_ARRAY);
+    T.tMix = gl.createTexture();
+    T.dirty = true;
+  }
+  /* new squares go up at most twice a second (the terrain fills and the maps come in a bit at a time) */
+  const now = performance.now();
+  if (T.dirty && now - (T.upAt || 0) > 500) {
+    T.dirty = false;
+    T.upAt = now;
+    gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+    gl.bindTexture(gl.TEXTURE_2D, T.tIdx);
+    gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, BOWL_INDEX, BOWL_INDEX, gl.RED, gl.UNSIGNED_BYTE, T.idx);
+    gl.pixelStorei(gl.UNPACK_ALIGNMENT, 4);
+    const M = BOWL_MIX,
+      k = BOWL_INDEX / M,
+      mix = new Uint8Array(M * M * 4),
+      A = T.pix.avg;
+    for (let j = 0; j < M; j++)
+      for (let i = 0; i < M; i++) {
+        let r = 0,
+          g = 0,
+          b = 0;
+        for (let dj = 0; dj < k; dj++)
+          for (let di = 0; di < k; di++) {
+            const t = T.idx[(j * k + dj) * BOWL_INDEX + i * k + di] * 3;
+            r += A[t];
+            g += A[t + 1];
+            b += A[t + 2];
+          }
+        const q = (j * M + i) * 4;
+        mix[q] = (r / (k * k)) * 255;
+        mix[q + 1] = (g / (k * k)) * 255;
+        mix[q + 2] = (b / (k * k)) * 255;
+        mix[q + 3] = 255;
+      }
+    T.mix = mix;
+    gl.bindTexture(gl.TEXTURE_2D, T.tMix);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, M, M, 0, gl.RGBA, gl.UNSIGNED_BYTE, mix);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.generateMipmap(gl.TEXTURE_2D);
+    if (worldBowl.wall) worldBowl.wall.node = -1; /* the walk scenes' far wall takes the new colours */
+  }
+  return true;
+}
+/* the ground's colour at a point, from the far-away colours (or a region's, before they are made) */
+function worldBowlColorAt(x, y) {
+  const T = worldBowl.ground && worldBowl.ground.terrain;
+  if (T && T.mix) {
+    const M = BOWL_MIX,
+      i = Math.max(0, Math.min(M - 1, Math.floor(((x + 1) / 2) * M))),
+      j = Math.max(0, Math.min(M - 1, Math.floor(((1 - y) / 2) * M))),
+      q = (j * M + i) * 4;
+    return [T.mix[q] / 255, T.mix[q + 1] / 255, T.mix[q + 2] / 255];
+  }
+  return [0.5, 0.62, 0.38];
+}
+/* the mesh: the grid's cells over the bowl; corners beyond the rim are pulled onto it, so the edge is a clean circle */
 function worldBowlMesh() {
   const { n, e, h } = worldBowl.ground.G,
     w = n + 1,
@@ -335,15 +556,24 @@ function worldBowlMesh() {
     I = [];
   for (let j = 0; j <= n; j++)
     for (let i = 0; i <= n; i++) {
-      const x = -e + (2 * e * i) / n,
+      let x = -e + (2 * e * i) / n,
         y = -e + (2 * e * j) / n;
-      V.set(bowlToGpu(x, y, h[j * w + i]), (j * w + i) * 3);
+      const r = Math.hypot(x, y);
+      if (r > 1) {
+        x /= r;
+        y /= r;
+      }
+      V.set(
+        bowlToGpu(x, y, r > 1 ? bowlHeight(1) + bowlRelief(worldBowl.ground.F, x, y) : h[j * w + i]),
+        (j * w + i) * 3
+      );
     }
+  const cell = (2 * e) / n;
   for (let j = 0; j < n; j++)
     for (let i = 0; i < n; i++) {
-      const x = -e + (2 * e * (i + 0.5)) / n,
-        y = -e + (2 * e * (j + 0.5)) / n;
-      if (Math.hypot(x, y) > e) continue;
+      const x = -e + cell * (i + 0.5),
+        y = -e + cell * (j + 0.5);
+      if (Math.hypot(x, y) > 1 + cell) continue;
       const a = j * w + i,
         b = a + 1,
         c = a + w,
@@ -358,17 +588,18 @@ function worldBowlGpu() {
   if (!g.mesh || g.gl !== gpuState.gl) {
     g.gl = gpuState.gl;
     g.mesh = worldBowlMesh();
-    const gl = gpuState.gl,
-      t = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, t);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, worldBowlPaint());
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.generateMipmap(gl.TEXTURE_2D);
-    g.tex = t;
   }
+  const T = worldBowlTerrainStart();
+  if (!T.ready) {
+    T.fill(96);
+    worldBowl.dirty = true;
+  } else worldBowlStampMaps(T);
+  if (!T.pix && !T.pixLoading) {
+    T.pixLoading = true;
+    worldBowlTerrainPictures(T).then(() => (worldBowl.dirty = true));
+  }
+  g.ok = T.ready && worldBowlTerrainGpu(T);
+  if (T.dirty) worldBowl.dirty = true;
   return g;
 }
 
@@ -677,10 +908,18 @@ export function worldBowlRender(t) {
   gl.uniform3fv(U.uC, v.C);
   gl.uniform3fv(U.uSun, BOWL_SUN);
   gl.uniform3fv(U.uHaze, BOWL_HAZE);
-  gl.uniform1f(U.uExt, BOWL_GROUND_EXTENT);
+  const T = g.terrain || worldBowl.ground.terrain;
+  gl.uniform1f(U.uOn, g.ok ? 1 : 0);
   gl.activeTexture(gl.TEXTURE0);
-  gl.bindTexture(gl.TEXTURE_2D, g.tex);
-  gl.uniform1i(U.uCol, 0);
+  gl.bindTexture(gl.TEXTURE_2D, g.ok ? T.tIdx : gpuState.white);
+  gl.uniform1i(U.uIdx, 0);
+  gl.activeTexture(gl.TEXTURE1);
+  gl.bindTexture(gl.TEXTURE_2D, g.ok ? T.tMix : gpuState.white);
+  gl.uniform1i(U.uMix, 1);
+  gl.activeTexture(gl.TEXTURE2);
+  gl.bindTexture(gl.TEXTURE_2D_ARRAY, g.ok ? T.tLay : null);
+  gl.uniform1i(U.uLay, 2);
+  gl.activeTexture(gl.TEXTURE0);
   gl.bindVertexArray(g.mesh.vao);
   gl.drawElements(gl.TRIANGLES, g.mesh.n, gl.UNSIGNED_INT, 0);
   gl.bindVertexArray(null);
@@ -725,6 +964,7 @@ function worldBowlOverlay(t) {
   }
   /* each place: its pin, its name for towns (all when close, or picked), its state */
   const close = worldBowl.cam.dist < 0.8,
+    tags = worldBowl.cam.dist < 0.62,
     dest = saveData.trip.plan.length ? saveData.trip.plan[saveData.trip.plan.length - 1] : null;
   worldBowl.marks = [];
   LOCATIONS.forEach((l, i) => {
@@ -745,6 +985,10 @@ function worldBowlOverlay(t) {
       c.setLineDash([]);
       top = { x: base.x, y, z: base.z };
       worldBowlDot(c, top.x, top.y, 6, '#9fd3ff');
+    } else if (tags && i !== sel && i !== saveData.trip.node) {
+      /* close in, the ground speaks for itself: a small tag instead of a pin (the picked place and yours keep theirs) */
+      top = { x: base.x, y: base.y - 6, z: base.z };
+      worldBowlDot(c, base.x, base.y - 3, 3, canEnter(i) ? (l.town ? '#ffb46b' : '#8fd18a') : '#9a93a6');
     } else worldBowlPin(c, base.x, base.y, l, i);
     worldBowl.marks.push({ i, base, top, z: base.z });
     const here = i === saveData.trip.node,
