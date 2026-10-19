@@ -50,6 +50,10 @@ kept aside in the browser).
   lamps and the reflection apart); also the lights in the frame, programs compiled after a place had settled, and a
   rough sign of garbage-collection hitches (Chrome). The graphics test and the diagnostics report the draws per step
   (a Draws column). Fix: their pass timers had skipped the 3D models, box faces and structures.
+- Less work per frame (phase 20, stage C, first part): the graphics settings are looked up once a frame instead of
+  thousands of times, and the walk view stops making new lists and arrays every frame for the shadow passes, the
+  contact shadows, the sprites and the grass, which leaves less for the browser's garbage collector. Nothing looks
+  different.
 - New: the **graphics test** (Settings → Help, and the debug menu), about ten minutes on a new test place, the Graphics
   bench. It measures what each graphics setting costs on your device: the 17 Expert dials and five hidden ones, five
   steps each, then everything at its lowest and highest. It ends with a table, costliest first, and Save the report.
