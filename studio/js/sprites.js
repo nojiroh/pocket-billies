@@ -13,6 +13,14 @@ import { animFor } from '../../game/js/body-plan-animation.js';
 import { coatAtlas, drawRig, rigPose, setCoatRigData } from '../../game/js/skeleton-rig.js';
 import { escapeHtml } from './game-stand-ins.js';
 import { ask, render, speciesName, studioState, toast, updateTopBar } from './studio-app.js';
+import {
+  drawPixelCanvas,
+  pixelCanvas,
+  pixelCanvasColor,
+  pixelCanvasFit,
+  pixelCanvasTool,
+  pixelCanvasZoom,
+} from './pixel-canvas.js';
 /* eslint-disable no-func-assign */
 expose({
   ATLAS_CACHE: [() => ATLAS_CACHE],
@@ -23,7 +31,6 @@ expose({
   atlasGet: [() => atlasGet, v => (atlasGet = v)],
   atlasPath: [() => atlasPath],
   atlasVersion: [() => atlasVersion, v => (atlasVersion = v)],
-  bindPixelCanvas: [() => bindPixelCanvas, v => (bindPixelCanvas = v)],
   bindPixelEditor: [() => bindPixelEditor, v => (bindPixelEditor = v)],
   canvasCopy: [() => canvasCopy, v => (canvasCopy = v)],
   choosePixelColor: [() => choosePixelColor, v => (choosePixelColor = v)],
@@ -35,7 +42,6 @@ expose({
   drawPixelEditor: [() => drawPixelEditor, v => (drawPixelEditor = v)],
   drawSpritePreview: [() => drawSpritePreview, v => (drawSpritePreview = v)],
   fileToCanvas: [() => fileToCanvas, v => (fileToCanvas = v)],
-  fillPixels: [() => fillPixels, v => (fillPixels = v)],
   hsvToRgb: [() => hsvToRgb, v => (hsvToRgb = v)],
   hueShift: [() => hueShift, v => (hueShift = v)],
   loadImage: [() => loadImage, v => (loadImage = v)],
@@ -50,12 +56,10 @@ expose({
   pixelEditorBones: [() => pixelEditorBones, v => (pixelEditorBones = v)],
   pixelEditorCanvas: [() => pixelEditorCanvas, v => (pixelEditorCanvas = v)],
   pixelEditorChanged: [() => pixelEditorChanged, v => (pixelEditorChanged = v)],
+  pixelEditorHover: [() => pixelEditorHover, v => (pixelEditorHover = v)],
   pixelEditorKeys: [() => pixelEditorKeys, v => (pixelEditorKeys = v)],
   pixelEditorPalette: [() => pixelEditorPalette, v => (pixelEditorPalette = v)],
-  pixelEditorPoint: [() => pixelEditorPoint, v => (pixelEditorPoint = v)],
   playSpritePreviewAction: [() => playSpritePreviewAction, v => (playSpritePreviewAction = v)],
-  plotPixel: [() => plotPixel, v => (plotPixel = v)],
-  plotPixelLine: [() => plotPixelLine, v => (plotPixelLine = v)],
   previewsDirty: [() => previewsDirty, v => (previewsDirty = v)],
   pushPixelUndo: [() => pushPixelUndo, v => (pushPixelUndo = v)],
   redoPixels: [() => redoPixels, v => (redoPixels = v)],
@@ -377,11 +381,10 @@ export async function openPixelEditor(sp, view = 'front', focus = null) {
     view,
     tool: 'pen',
     color: '#2A1E2E',
-    zoom: 0,
     undo: [],
     redo: [],
-    grid: true,
     parts: true,
+    pc: null,
     act: 'idle',
     hover: null,
     focus,
@@ -412,7 +415,7 @@ export async function openPixelEditor(sp, view = 'front', focus = null) {
   <span class="px-tools"><button class="seg" data-pe="zoom" data-z="-1" title="Zoom out (−)">−</button><span id="pxZoom"></span><button class="seg" data-pe="zoom" data-z="1" title="Zoom in (+)">+</button><button class="seg" data-pe="grid" title="Pixel grid">Grid</button><button class="seg" data-pe="parts" title="Part outlines">Parts</button></span>
   <span class="px-tools"><button class="seg" data-pe="undo" title="Undo (Ctrl+Z)">↶</button><button class="seg" data-pe="redo" title="Redo (Ctrl+Y)">↷</button></span>
   <span class="grow"></span><button class="btn" data-pe="skel" title="Add, move and connect body parts">Skeleton builder</button><button class="btn" data-pe="close">Done</button></header>
- <div class="px-body"><div class="px-stage" id="pxStage"><div class="px-wrap" id="pxWrap"><canvas id="pxCv"></canvas><div class="px-grid" id="pxGrid"></div><svg id="pxParts"></svg></div></div>
+ <div class="px-body"><div class="px-stage" id="pxStage"></div>
  <aside class="px-side">
   <div class="px-sec"><h4>Color</h4><div class="px-color"><input type="color" id="pxColor" value="${E.color}"><span id="pxHex">${E.color}</span></div><div class="px-pal" id="pxPal"></div></div>
   <div class="px-sec"><h4>Preview</h4><div class="px-prev"><canvas id="pxPrev"></canvas></div><div class="seg-row">${['idle', 'attack', 'cast', 'hurt', 'cheer', 'faint'].map(a => `<button class="seg sm" data-pe="act" data-a="${a}">${a}</button>`).join('')}</div></div>
@@ -433,20 +436,49 @@ function refreshPixelEditor() {
   const E = pixelEditor,
     c = pixelEditorCanvas();
   $$('.pxed [data-pe=atlas]').forEach(b => b.classList.toggle('on', b.dataset.v === E.view));
-  $$('.pxed [data-pe=tool]').forEach(b => b.classList.toggle('on', b.dataset.t === E.tool));
   if (!c) {
     $('#pxStage').innerHTML = '<p class="help">This sheet doesn’t exist yet.</p>';
     return;
   }
-  if (!$('#pxCv')) {
-    $('#pxStage').innerHTML =
-      '<div class="px-wrap" id="pxWrap"><canvas id="pxCv"></canvas><div class="px-grid" id="pxGrid"></div><svg id="pxParts"></svg></div>';
-    bindPixelCanvas();
-  }
-  if (!E.zoom) {
-    const st = $('#pxStage').getBoundingClientRect();
-    E.zoom = clamp(Math.floor(Math.min((st.width - 40) / c.width, (st.height - 40) / c.height)), 2, 24);
-  }
+  if (!E.pc || !E.pc.cv.isConnected)
+    E.pc = pixelCanvas($('#pxStage'), {
+      ids: 'px',
+      tool: E.tool,
+      color: E.color,
+      get: pixelEditorCanvas,
+      boxAt: (x, y) => {
+        const p = partsOf(E.sp, E.view).find(
+          q => x >= q.r[0] && y >= q.r[1] && x < q.r[0] + q.r[2] && y < q.r[1] + q.r[3]
+        );
+        return p ? p.r : null;
+      },
+      overlay: () =>
+        E.parts
+          ? partsOf(E.sp, E.view)
+              .map(
+                (p, k) =>
+                  `<rect data-k="${k}" x="${p.r[0]}" y="${p.r[1]}" width="${p.r[2]}" height="${p.r[3]}" class="${E.hover === k ? 'hov' : ''}"/>`
+              )
+              .join('')
+          : '',
+      hover: (P, x, y) => pixelEditorHover(x, y),
+      changed: (P, before) => {
+        pushPixelUndo(before);
+        pixelEditorChanged();
+      },
+      toolChanged: refreshPixelTools,
+      drawn: P => {
+        $('#pxZoom').textContent = P.zoom + '×';
+        $$('.pxed [data-pe=grid]').forEach(b => b.classList.toggle('on', P.showGrid));
+        $$('.pxed [data-pe=parts]').forEach(b => b.classList.toggle('on', E.parts));
+      },
+      colorChanged: P => {
+        E.color = P.color;
+        $('#pxColor').value = P.color;
+        $('#pxHex').textContent = P.color;
+        refreshPixelTools();
+      },
+    });
   E.undo = [];
   E.redo = [];
   if (E.focus) {
@@ -454,17 +486,19 @@ function refreshPixelEditor() {
     if (k >= 0) {
       E.hover = k;
       const r = partsOf(E.sp, E.view)[k].r;
-      E.zoom = Math.max(E.zoom, clamp(Math.floor(220 / Math.max(r[2], r[3])), 2, 16));
+      E.pc.zoom = Math.max(E.pc.zoom || pixelCanvasFit(E.pc), clamp(Math.floor(220 / Math.max(r[2], r[3])), 2, 16));
       setTimeout(() => {
-        const st = $('#pxStage');
+        const st = $('#pxStage'),
+          Z = E.pc.zoom;
         if (st)
           st.scrollTo({
-            left: r[0] * E.zoom - st.clientWidth / 2 + (r[2] * E.zoom) / 2 + 20,
-            top: r[1] * E.zoom - st.clientHeight / 2 + (r[3] * E.zoom) / 2 + 20,
+            left: r[0] * Z - st.clientWidth / 2 + (r[2] * Z) / 2 + 20,
+            top: r[1] * Z - st.clientHeight / 2 + (r[3] * Z) / 2 + 20,
           });
       }, 30);
     }
   }
+  refreshPixelTools();
   drawPixelEditor();
   pixelEditorPalette();
   pixelEditorBones();
@@ -480,34 +514,9 @@ function refreshPixelEditor() {
   mountPreviews($('.pxed'));
 }
 function drawPixelEditor() {
-  const E = pixelEditor,
-    c = pixelEditorCanvas(),
-    v = $('#pxCv');
-  if (!c || !v) return;
-  v.width = c.width;
-  v.height = c.height;
-  const x = v.getContext('2d');
-  x.clearRect(0, 0, v.width, v.height);
-  x.drawImage(c, 0, 0);
-  const W = c.width * E.zoom,
-    Hh = c.height * E.zoom;
-  $('#pxWrap').style.width = W + 'px';
-  $('#pxWrap').style.height = Hh + 'px';
-  $('#pxZoom').textContent = E.zoom + '×';
-  const g = $('#pxGrid');
-  g.hidden = !(E.grid && E.zoom >= 6);
-  g.style.backgroundSize = `${E.zoom}px ${E.zoom}px`;
-  const sv = $('#pxParts');
-  sv.setAttribute('viewBox', `0 0 ${c.width} ${c.height}`);
-  sv.style.display = E.parts ? '' : 'none';
-  sv.innerHTML = partsOf(E.sp, E.view)
-    .map(
-      (p, k) =>
-        `<rect data-k="${k}" x="${p.r[0]}" y="${p.r[1]}" width="${p.r[2]}" height="${p.r[3]}" class="${E.hover === k ? 'hov' : ''}"/>`
-    )
-    .join('');
-  $$('.pxed [data-pe=grid]').forEach(b => b.classList.toggle('on', E.grid));
-  $$('.pxed [data-pe=parts]').forEach(b => b.classList.toggle('on', E.parts));
+  const E = pixelEditor;
+  if (!E.pc || !pixelEditorCanvas()) return;
+  drawPixelCanvas(E.pc);
 }
 function pixelEditorPalette() {
   const c = pixelEditorCanvas();
@@ -544,19 +553,19 @@ function pixelEditorBones() {
       )
       .join('')}</tbody></table>`;
 }
-function pixelEditorPoint(ev) {
-  const v = $('#pxCv'),
-    r = v.getBoundingClientRect(),
-    c = pixelEditorCanvas();
-  return [
-    Math.floor(((ev.clientX - r.left) / r.width) * c.width),
-    Math.floor(((ev.clientY - r.top) / r.height) * c.height),
-  ];
+function pixelEditorHover(x, y) {
+  const E = pixelEditor,
+    parts = partsOf(E.sp, E.view),
+    k = parts.findIndex(q => x >= q.r[0] && y >= q.r[1] && x < q.r[0] + q.r[2] && y < q.r[1] + q.r[3]);
+  if (k !== E.hover) {
+    E.hover = k;
+    $('#pxHover').textContent = k >= 0 ? parts[k].label : 'Empty space';
+    $$('#pxParts rect').forEach(r => r.classList.toggle('hov', +r.dataset.k === k));
+  }
 }
-function pushPixelUndo() {
-  const c = pixelEditorCanvas(),
-    E = pixelEditor;
-  E.undo.push(c.getContext('2d').getImageData(0, 0, c.width, c.height));
+function pushPixelUndo(before) {
+  const E = pixelEditor;
+  E.undo.push(before);
   if (E.undo.length > 40) E.undo.shift();
   E.redo = [];
 }
@@ -565,147 +574,16 @@ function pixelEditorChanged() {
   markArt(pixelEditorAtlasPath(), c);
   drawPixelEditor();
 }
-function plotPixel(x, y) {
-  const E = pixelEditor,
-    c = pixelEditorCanvas(),
-    cx = c.getContext('2d');
-  if (x < 0 || y < 0 || x >= c.width || y >= c.height) return;
-  if (E.tool === 'erase') cx.clearRect(x, y, 1, 1);
-  else {
-    cx.fillStyle = E.color;
-    cx.fillRect(x, y, 1, 1);
-  }
-}
-function plotPixelLine(a, b) {
-  let [x0, y0] = a;
-  const [x1, y1] = b,
-    dx = Math.abs(x1 - x0),
-    dy = -Math.abs(y1 - y0),
-    sx = x0 < x1 ? 1 : -1,
-    sy = y0 < y1 ? 1 : -1;
-  let e = dx + dy;
-  for (;;) {
-    plotPixel(x0, y0);
-    if (x0 === x1 && y0 === y1) break;
-    const e2 = 2 * e;
-    if (e2 >= dy) {
-      e += dy;
-      x0 += sx;
-    }
-    if (e2 <= dx) {
-      e += dx;
-      y0 += sy;
-    }
-  }
-}
-function fillPixels(x, y) {
-  const E = pixelEditor,
-    c = pixelEditorCanvas(),
-    cx = c.getContext('2d'),
-    W = c.width,
-    Hh = c.height,
-    im = cx.getImageData(0, 0, W, Hh),
-    d = new Uint32Array(im.data.buffer);
-  const part = partsOf(E.sp, E.view).find(
-      p => x >= p.r[0] && y >= p.r[1] && x < p.r[0] + p.r[2] && y < p.r[1] + p.r[3]
-    ),
-    bx = part ? part.r : [0, 0, W, Hh];
-  const t = d[y * W + x],
-    n = parseInt(E.color.slice(1), 16),
-    rep = (255 << 24) | ((n & 255) << 16) | (n & 0xff00) | (n >> 16);
-  if (t === rep) return;
-  const st = [[x, y]];
-  while (st.length) {
-    const [px, py] = st.pop();
-    if (px < bx[0] || py < bx[1] || px >= bx[0] + bx[2] || py >= bx[1] + bx[3]) continue;
-    const i = py * W + px;
-    if (d[i] !== t) continue;
-    d[i] = rep;
-    st.push([px + 1, py], [px - 1, py], [px, py + 1], [px, py - 1]);
-  }
-  cx.putImageData(im, 0, 0);
-}
 function choosePixelColor(h) {
-  pixelEditor.color = h.toUpperCase();
-  $('#pxColor').value = h;
-  $('#pxHex').textContent = pixelEditor.color;
-  if (pixelEditor.tool === 'erase' || pixelEditor.tool === 'pick') {
-    pixelEditor.tool = 'pen';
-    refreshPixelTools();
-  }
+  pixelCanvasColor(pixelEditor.pc, h);
 }
 function refreshPixelTools() {
-  $$('.pxed [data-pe=tool]').forEach(b => b.classList.toggle('on', b.dataset.t === pixelEditor.tool));
-  const w = $('#pxWrap');
-  if (w) w.dataset.tool = pixelEditor.tool;
-}
-function bindPixelCanvas() {
-  const w = $('#pxWrap');
-  let down = false,
-    last = null;
-  w.addEventListener('pointerdown', ev => {
-    if (ev.button !== 0) return;
-    const E = pixelEditor,
-      p = pixelEditorPoint(ev),
-      c = pixelEditorCanvas();
-    if (!c) return;
-    w.setPointerCapture(ev.pointerId);
-    if (E.tool === 'pick') {
-      const d = c.getContext('2d').getImageData(p[0], p[1], 1, 1).data;
-      if (d[3]) choosePixelColor('#' + [d[0], d[1], d[2]].map(v => v.toString(16).padStart(2, '0')).join(''));
-      return;
-    }
-    pushPixelUndo();
-    if (E.tool === 'fill') {
-      fillPixels(p[0], p[1]);
-      pixelEditorChanged();
-      return;
-    }
-    down = true;
-    last = p;
-    plotPixel(p[0], p[1]);
-    drawPixelEditor();
-  });
-  w.addEventListener('pointermove', ev => {
-    const E = pixelEditor,
-      p = pixelEditorPoint(ev);
-    if (down) {
-      plotPixelLine(last, p);
-      last = p;
-      drawPixelEditor();
-      return;
-    }
-    const parts = partsOf(E.sp, E.view),
-      k = parts.findIndex(q => p[0] >= q.r[0] && p[1] >= q.r[1] && p[0] < q.r[0] + q.r[2] && p[1] < q.r[1] + q.r[3]);
-    if (k !== E.hover) {
-      E.hover = k;
-      $('#pxHover').textContent = k >= 0 ? parts[k].label : 'Empty space';
-      $$('#pxParts rect').forEach(r => r.classList.toggle('hov', +r.dataset.k === k));
-    }
-  });
-  const up = () => {
-    if (down) {
-      down = false;
-      pixelEditorChanged();
-    }
-  };
-  w.addEventListener('pointerup', up);
-  w.addEventListener('pointercancel', up);
-  $('#pxStage').addEventListener(
-    'wheel',
-    ev => {
-      if (!ev.ctrlKey && !ev.metaKey) return;
-      ev.preventDefault();
-      pixelEditor.zoom = clamp(pixelEditor.zoom + (ev.deltaY < 0 ? 1 : -1), 1, 32);
-      drawPixelEditor();
-    },
-    { passive: false }
-  );
-  refreshPixelTools();
+  const E = pixelEditor;
+  if (E.pc) E.tool = E.pc.tool;
+  $$('.pxed [data-pe=tool]').forEach(b => b.classList.toggle('on', b.dataset.t === E.tool));
 }
 function bindPixelEditor() {
   const m = $('.pxed');
-  bindPixelCanvas();
   $('#pxColor').addEventListener('input', e => choosePixelColor(e.target.value));
   m.addEventListener('click', async ev => {
     const b = ev.target.closest('[data-pe]');
@@ -714,17 +592,15 @@ function bindPixelEditor() {
       k = b.dataset.pe;
     if (k === 'atlas') {
       E.view = b.dataset.v;
-      E.zoom = 0;
+      if (E.pc) E.pc.zoom = 0;
       E.hover = null;
       refreshPixelEditor();
     } else if (k === 'tool') {
-      E.tool = b.dataset.t;
-      refreshPixelTools();
+      if (E.pc) pixelCanvasTool(E.pc, b.dataset.t);
     } else if (k === 'zoom') {
-      E.zoom = clamp(E.zoom + +b.dataset.z, 1, 32);
-      drawPixelEditor();
+      if (E.pc) pixelCanvasZoom(E.pc, E.pc.zoom + +b.dataset.z);
     } else if (k === 'grid') {
-      E.grid = !E.grid;
+      if (E.pc) E.pc.showGrid = !E.pc.showGrid;
       drawPixelEditor();
     } else if (k === 'parts') {
       E.parts = !E.parts;
@@ -755,7 +631,7 @@ function bindPixelEditor() {
         ))
       )
         return;
-      if (c) pushPixelUndo();
+      if (c) pushPixelUndo(c.getContext('2d').getImageData(0, 0, c.width, c.height));
       markArt(pixelEditorAtlasPath(), up);
       refreshPixelEditor();
       toast('Sheet replaced. Save to game to keep it.');
@@ -817,17 +693,14 @@ function pixelEditorKeys(ev) {
     return;
   }
   if (mod) return;
-  const T = { p: 'pen', b: 'pen', e: 'erase', f: 'fill', g: 'fill', i: 'pick' };
-  if (T[k]) {
-    pixelEditor.tool = T[k];
-    refreshPixelTools();
-  } else if (k === '+' || k === '=') {
-    pixelEditor.zoom = Math.min(32, pixelEditor.zoom + 1);
-    drawPixelEditor();
-  } else if (k === '-') {
-    pixelEditor.zoom = Math.max(1, pixelEditor.zoom - 1);
-    drawPixelEditor();
-  } else if (k === 'escape') {
+  const T = { p: 'pen', b: 'pen', e: 'erase', f: 'fill', g: 'fill', i: 'pick' },
+    P = pixelEditor.pc;
+  if (!P) return;
+  if (T[k]) pixelCanvasTool(P, T[k]);
+  else if (k === '+' || k === '=') {
+    pixelCanvasZoom(P, P.zoom + 1);
+  } else if (k === '-') pixelCanvasZoom(P, P.zoom - 1);
+  else if (k === 'escape') {
     $('#modal').innerHTML = '';
     render();
   }

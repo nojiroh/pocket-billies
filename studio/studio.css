@@ -1180,21 +1180,24 @@ canvas.spr-prev.big {
     linear-gradient(to right, rgba(0, 0, 0, 0.12) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(0, 0, 0, 0.12) 1px, transparent 1px);
 }
-#pxParts {
+.pc-art {
+  image-rendering: pixelated;
+}
+.pc-over {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   pointer-events: none;
 }
-#pxParts rect {
+.pc-over rect {
   fill: none;
   stroke: rgba(31, 110, 111, 0.55);
   stroke-width: 1;
   vector-effect: non-scaling-stroke;
   stroke-dasharray: 4 3;
 }
-#pxParts rect.hov {
+.pc-over rect.hov {
   stroke: #c8323c;
   stroke-width: 2;
   stroke-dasharray: none;

@@ -9,7 +9,57 @@
 /** @typedef {[number, number, number, number]} Box x, y, width, height */
 /** @typedef {[number, number, number, number]} Rgba */
 /** @typedef {{ mode: string, sx: number, sy: number }} Symmetry mode off / v / h / both; a mirrored x is sx - x */
-
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from '../test-globals.js';
+/* eslint-disable no-func-assign */
+expose({
+  PIXEL_GRID_FROM: [() => PIXEL_GRID_FROM],
+  PIXEL_KEYS: [() => PIXEL_KEYS],
+  PIXEL_ZOOMS: [() => PIXEL_ZOOMS],
+  // @ts-expect-error -- replaced on purpose
+  offPalette: [() => offPalette, v => (offPalette = v)],
+  // @ts-expect-error -- replaced on purpose
+  paletteColors: [() => paletteColors, v => (paletteColors = v)],
+  // @ts-expect-error -- replaced on purpose
+  paletteNearest: [() => paletteNearest, v => (paletteNearest = v)],
+  // @ts-expect-error -- replaced on purpose
+  pixelClip: [() => pixelClip, v => (pixelClip = v)],
+  // @ts-expect-error -- replaced on purpose
+  pixelCopy: [() => pixelCopy, v => (pixelCopy = v)],
+  // @ts-expect-error -- replaced on purpose
+  pixelDiffBox: [() => pixelDiffBox, v => (pixelDiffBox = v)],
+  // @ts-expect-error -- replaced on purpose
+  pixelFill: [() => pixelFill, v => (pixelFill = v)],
+  // @ts-expect-error -- replaced on purpose
+  pixelFlip: [() => pixelFlip, v => (pixelFlip = v)],
+  // @ts-expect-error -- replaced on purpose
+  pixelGet: [() => pixelGet, v => (pixelGet = v)],
+  // @ts-expect-error -- replaced on purpose
+  pixelHex: [() => pixelHex, v => (pixelHex = v)],
+  // @ts-expect-error -- replaced on purpose
+  pixelKeyAction: [() => pixelKeyAction, v => (pixelKeyAction = v)],
+  // @ts-expect-error -- replaced on purpose
+  pixelLine: [() => pixelLine, v => (pixelLine = v)],
+  // @ts-expect-error -- replaced on purpose
+  pixelMirrored: [() => pixelMirrored, v => (pixelMirrored = v)],
+  // @ts-expect-error -- replaced on purpose
+  pixelNew: [() => pixelNew, v => (pixelNew = v)],
+  // @ts-expect-error -- replaced on purpose
+  pixelPaste: [() => pixelPaste, v => (pixelPaste = v)],
+  // @ts-expect-error -- replaced on purpose
+  pixelRgba: [() => pixelRgba, v => (pixelRgba = v)],
+  // @ts-expect-error -- replaced on purpose
+  pixelRotate: [() => pixelRotate, v => (pixelRotate = v)],
+  pixelSame: [() => pixelSame],
+  // @ts-expect-error -- replaced on purpose
+  pixelSet: [() => pixelSet, v => (pixelSet = v)],
+  // @ts-expect-error -- replaced on purpose
+  pixelSymmetryFor: [() => pixelSymmetryFor, v => (pixelSymmetryFor = v)],
+  // @ts-expect-error -- replaced on purpose
+  pixelTopColors: [() => pixelTopColors, v => (pixelTopColors = v)],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
 /** a new transparent picture */
 export function pixelNew(/** @type {number} */ width, /** @type {number} */ height) {
   return { width, height, data: new Uint8ClampedArray(width * height * 4) };
@@ -102,7 +152,7 @@ export function pixelClip(/** @type {Pixels} */ im, /** @type {Box | null | unde
   return x1 > x0 && y1 > y0 ? /** @type {Box} */ ([x0, y0, x1 - x0, y1 - y0]) : null;
 }
 /* two pixels are the same colour for the fill when their RGBA match, or when both are fully clear */
-const pixelSame = (/** @type {Uint8ClampedArray} */ d, /** @type {number} */ i, /** @type {Rgba} */ t) =>
+export const pixelSame = (/** @type {Uint8ClampedArray} */ d, /** @type {number} */ i, /** @type {Rgba} */ t) =>
   (d[i + 3] === 0 && t[3] === 0) || (d[i] === t[0] && d[i + 1] === t[1] && d[i + 2] === t[2] && d[i + 3] === t[3]);
 /** flood fill (4 neighbours) from x, y with the colour (null clears), staying inside the box (a part); the number of
  * pixels changed */
