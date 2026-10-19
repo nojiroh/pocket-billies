@@ -17,6 +17,7 @@ import { parseScript } from '../logic/script-parse.js';
 import { runScript } from '../logic/script.js';
 import { lookOf } from '../person-art.js';
 import { directionOf, walkView } from '../walk-view.js';
+import { environment } from '../environment.js';
 import { standingHeightAt } from '../walk/heights.js';
 import { music, soundEffect } from '../sound.js';
 import { talkChoose } from '../talk.js';
@@ -30,16 +31,19 @@ import {
   cutsceneSay,
   cutsceneShot,
   cutsceneSparkle,
+  cutsceneTraffic,
   cutsceneWait,
   cutsceneWalk,
 } from './director.js';
 /* eslint-disable no-func-assign */
 expose({
+  cutsceneHidden: [() => cutsceneHidden, v => (cutsceneHidden = v)],
   cutsceneLook: [() => cutsceneLook, v => (cutsceneLook = v)],
   cutscenePlace: [() => cutscenePlace, v => (cutscenePlace = v)],
   cutscenePlayScript: [() => cutscenePlayScript, v => (cutscenePlayScript = v)],
   cutsceneShotNamed: [() => cutsceneShotNamed, v => (cutsceneShotNamed = v)],
   cutsceneStage: [() => cutsceneStage, v => (cutsceneStage = v)],
+  nearestProp: [() => nearestProp, v => (nearestProp = v)],
   placeOrFail: [() => placeOrFail],
 });
 /* eslint-enable no-func-assign */
@@ -111,7 +115,7 @@ function cutsceneStage(extra = {}) {
       const S = step('actor', a),
         who = /** @type {string} */ (S.who),
         look = cutsceneLook(who);
-      cutsceneActor(look, look, placeOrFail(/** @type {string} */ (S.spot)), S.dir || 'down');
+      cutsceneActor(look, look, placeOrFail(/** @type {string} */ (S.spot)), S.dir || 'down', !!S.dark);
     },
     walk: async (/** @type {string[]} */ a) => {
       const S = step('walk', a),
@@ -168,7 +172,25 @@ function cutsceneStage(extra = {}) {
     hide: (/** @type {string[]} */ a) => {
       const S = step('hide', a);
       if (S.box) cutsceneHideDialogue();
+      else if (S.at) cutsceneHidden(nearestProp(S.at), true);
       else actor(/** @type {string} */ (S.who)).hidden = true;
+    },
+    show: (/** @type {string[]} */ a) => {
+      const S = step('show', a);
+      if (S.at) cutsceneHidden(nearestProp(S.at), false);
+      else actor(/** @type {string} */ (S.who)).hidden = false;
+    },
+    traffic: (/** @type {string[]} */ a) => {
+      const S = step('traffic', a),
+        L = cutscene.set && (cutscene.set.lanes || {})[/** @type {string} */ (S.lane)];
+      if (!L) throw new Error(`no lane "${S.lane}" in this cutscene`);
+      const off = cutscene.off;
+      cutsceneTraffic(
+        L.map(p => [p[0] + off[0], p[1], p[2] + off[1]]),
+        /** @type {string} */ (S.prop),
+        /** @type {number} */ (S.s),
+        S.count || 1
+      );
     },
     fade: (/** @type {string[]} */ a) => {
       const S = step('fade', a),
@@ -187,6 +209,25 @@ function cutsceneStage(extra = {}) {
   };
 }
 
+/** the prop standing nearest a place (within 3 m), for hide prop / show prop @param {string} name */
+function nearestProp(name) {
+  const at = placeOrFail(name);
+  let best = null,
+    bd = 3;
+  for (const p of (walkView.sc && walkView.sc.props) || []) {
+    const d = Math.hypot(p.x - at[0], p.z - at[1]);
+    if (d < bd) [best, bd] = [p, d];
+  }
+  if (!best) throw new Error(`no prop near ${name}`);
+  return best;
+}
+/** a prop put out of sight while filming, or back @param {any} p @param {boolean} on */
+function cutsceneHidden(p, on) {
+  if (!cutscene.hide) cutscene.hide = new Set();
+  if (on) cutscene.hide.add(p);
+  else cutscene.hide.delete(p);
+}
+
 /** plays a cutscene's script on the director, already mounted on its map's view; resolves when it is over
  * @param {string} id @param {{ extra?: Record<string, (args: string[]) => any>, slots?: Record<string, () => any>,
  *   save?: any }} [o] */
@@ -198,13 +239,20 @@ export async function cutscenePlayScript(id, o = {}) {
   cutscene.set = C;
   cutscene.off = off;
   if (typeof debugLog !== 'undefined') debugLog.add('scene', `cutscene ${id}`);
-  await runScript(parseScript(C.script), cutsceneStage(o.extra), {
-    save: o.save || { story: {} },
-    id: 'cutscene:' + id,
-    speaker: C.who || null,
-    slots: {
-      name: () => lookOf('me').name || 'Trainer',
-      ...(o.slots || {}),
-    },
-  });
+  /* its own time of day and weather while it plays (the city: night, rain), whatever Settings say; then back */
+  const was = environment.force;
+  if (C.look) environment.force = { ...(was || {}), ...C.look };
+  try {
+    await runScript(parseScript(C.script), cutsceneStage(o.extra), {
+      save: o.save || { story: {} },
+      id: 'cutscene:' + id,
+      speaker: C.who || null,
+      slots: {
+        name: () => lookOf('me').name || 'Trainer',
+        ...(o.slots || {}),
+      },
+    });
+  } finally {
+    if (C.look) environment.force = was;
+  }
 }

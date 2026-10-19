@@ -642,6 +642,12 @@ function worldRegions() {
     ) +
     card('Map', worldMapHTML()) +
     card(
+      'What’s new',
+      grid(textField('Version', 'meta.whatsNew.0.version', { opt: 1, ph: '0.1.0 alpha' })) +
+        textField('What changed (a line each)', 'meta.whatsNew.0.text', { area: 1, rows: 4, opt: 1 }),
+      { sub: 'Shown on the title under What’s new: the newest version, a few lines for players.' }
+    ) +
+    card(
       'End of the road',
       textField('Message at the last stop', 'meta.endText', {
         area: 1,

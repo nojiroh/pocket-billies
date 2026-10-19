@@ -651,7 +651,9 @@ export function fallOverWorldMap(run, ms) {
   });
 }
 /* the whole fall; resolves on a white screen, ready for Copperleaf */
-async function fallPlay(run) {
+/* o.from 'crust': the city opening (cutscenes/city.json) came before, so the fall starts in the crust; the street
+   under the billboard plays only when the city couldn't */
+async function fallPlay(run, o = {}) {
   const alive = () => cutscene.on && cutscene.run === run && !cutscene.skip;
   openingFall.run = run;
   if (typeof music === 'function') music('fall');
@@ -677,25 +679,34 @@ async function fallPlay(run) {
       };
       tick();
     });
-  setTimeout(() => {
-    if (alive()) cutsceneCaption('The surface', 'Late, after the show', 3000);
-  }, 700);
+  const street = o.from !== 'crust';
+  if (!street && fade) {
+    /* out of the city's flash: the crust comes up from it */
+    fade.classList.remove('on');
+    setTimeout(() => (fade.style.background = ''), 700);
+    if (typeof soundEffect === 'function' && alive()) soundEffect('whoosh', { dur: 2.4 });
+  }
+  if (street)
+    setTimeout(() => {
+      if (alive()) cutsceneCaption('The surface', 'Late, after the show', 3000);
+    }, 700);
   let snd = 0;
-  await anim(t => {
-    fallStreet(t);
-    if (!snd && t > 5) {
-      snd = 1;
-      if (typeof soundEffect === 'function') soundEffect('rumble');
-    }
-    if (snd === 1 && t > 5.6) {
-      snd = 2;
-      if (typeof soundEffect === 'function') soundEffect('crack');
-    }
-    if (snd === 2 && t > 6.5) {
-      snd = 3;
-      if (typeof soundEffect === 'function') soundEffect('whoosh', { dur: 2.4 });
-    }
-  }, 7600);
+  if (street)
+    await anim(t => {
+      fallStreet(t);
+      if (!snd && t > 5) {
+        snd = 1;
+        if (typeof soundEffect === 'function') soundEffect('rumble');
+      }
+      if (snd === 1 && t > 5.6) {
+        snd = 2;
+        if (typeof soundEffect === 'function') soundEffect('crack');
+      }
+      if (snd === 2 && t > 6.5) {
+        snd = 3;
+        if (typeof soundEffect === 'function') soundEffect('whoosh', { dur: 2.4 });
+      }
+    }, 7600);
   if (alive()) await anim(t => fallCrust(t), 2900);
   const gcv = alive() && !reducedMotion ? fallWorldMapCanvas() : null;
   if (!gcv && alive()) {

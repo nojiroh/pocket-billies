@@ -126,7 +126,8 @@ export function reflectionPass(items, C, rw, rh, X) {
     if (cut && !it.person && !mirrorInView(FR, it, L)) continue;
     const T = imageTexture(it.im);
     if (!T) continue;
-    gl.uniform3fv(U.uRight, it.fixed ? FIXED_RIGHT : C.right);
+    if (it.fixed && it.yaw) gl.uniform3f(U.uRight, Math.cos(it.yaw), 0, Math.sin(it.yaw));
+    else gl.uniform3fv(U.uRight, it.fixed ? FIXED_RIGHT : C.right);
     gl.uniform3f(U.uBaseP, it.x, it.y, it.z);
     setPropLookUniforms(U, it.lk);
     gl.activeTexture(gl.TEXTURE0);

@@ -104,7 +104,9 @@ export function gatherFrameItems(st, C, PPU, C0) {
     const mat = S ? S.mat : propMaterial(p.k, M);
     im.__mat = mat;
     /* v27: boats and buoys bob and roll on the water; flags, banners and washing flutter in the wind */
-    let y2 = y,
+    /* the cutscene tools: a placement may float (lift, metres up: a flying car in a cutscene's traffic) and move each
+       frame (moving: its shadow is drawn each frame, not cached with the still ones) */
+    let y2 = y + (p.lift || 0),
       sw2 = sw;
     if (!far && !reducedMotion) {
       const ph = p.x * 1.3 + p.z * 0.7,
@@ -117,7 +119,7 @@ export function gatherFrameItems(st, C, PPU, C0) {
     /* v34: a flat picture (a sign, a painted board) stands upright: no random lean, only the wind */
     out.push({
       k: far ? 'farp' : 'prop',
-      still: !far && !M.sway && !S.bob && !S.flag,
+      still: !far && !M.sway && !S.bob && !S.flag && !p.moving,
       lk,
       p,
       M,
@@ -133,7 +135,7 @@ export function gatherFrameItems(st, C, PPU, C0) {
       flip: p.f ? -1 : 1,
       shear: sw2 + (lk && !M.box && !M.build && !M.flat ? lk.lean : 0),
       flat: M.flat,
-      sh: (M.shadow || 0) * (p.s || 1),
+      sh: (p.lift || 0) > 3 ? 0 : (M.shadow || 0) * (p.s || 1),
       far,
       fixed: M.face !== 'billboard',
       mat,

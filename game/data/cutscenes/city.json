@@ -1,0 +1,53 @@
+{
+ "about": "The city opening, before the fall (docs/city-opening-beats.md): night, rain, the neon canyon, a figure in silhouette walks up the pavement, violet light from the alley, it reaches for the rift and is taken; the fall goes on from the crust. Played by cutscene/opening.js on New game.",
+ "map": "city_opening",
+ "look": {"time":23,"weather":"rain"},
+ "spots": {
+  "walkFrom": [40.6,53],
+  "alleyMouth": [41.4,61.5],
+  "lean": [44.5,61.6],
+  "reach": [53.8,61.6],
+  "rift": [55.6,61.6],
+  "logo": [57.6,60]
+ },
+ "shots": {
+  "above": {"eye":[32,118,30],"tgt":[32,70,118],"fov":50},
+  "canyon": {"eye":[32,34,14],"tgt":[32,22,70],"fov":45},
+  "street": {"eye":[37.6,2.4,46.5],"tgt":[41,1.5,57.5],"fov":40},
+  "alleyMouth": {"eye":[38,2.2,57.5],"tgt":[46,1.8,61.6],"fov":40},
+  "rift": {"eye":[47.5,1.6,62.8],"tgt":[55.6,1.9,61.6],"fov":38},
+  "through": {"eye":[53.6,1.7,61.6],"tgt":[57,1.8,61.6],"fov":28}
+ },
+ "lanes": {
+  "high": [[-20,40,50],[32,44,60],[90,40,70]],
+  "low": [[90,16,34],[32,14,46],[-20,16,58]]
+ },
+ "script": [
+  "music fall",
+  "camera above",
+  "actor you at walkFrom up silhouette",
+  "hide prop rift",
+  "traffic high city_flying_car 9 3",
+  "traffic low city_flying_car 7 2",
+  "fade in",
+  "wait 1",
+  "camera canyon 3",
+  "wait 3",
+  "camera street 3",
+  "wait 3",
+  "walk you alleyMouth 4",
+  "face you sideR",
+  "show prop rift",
+  "effect sparkle at rift",
+  "camera alleyMouth 1",
+  "wait 3",
+  "camera rift 2",
+  "walk you lean 1.5",
+  "walk you reach 2",
+  "act you reach 2",
+  "camera through 1.2",
+  "wait 1.5",
+  "fade out #F2E8FF",
+  "wait 1"
+ ]
+}

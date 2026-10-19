@@ -5,8 +5,9 @@ Each one is a single file, `game/data/cutscenes/<id>.json`, holding everything i
 named spots and shots, and its script. Maps stay pure level data, and a cutscene can be read, copied or deleted as a
 whole. The story layer's scripts (docs/SCRIPTS.md) are the language; this page covers what a cutscene adds.
 
-Today: `opening` (Copperleaf, after the fall). The Studio's cutscene tools (save the free camera as a shot, drop spots
-as pins, a step list with Preview) come in the next session of the cutscene tools plan.
+Today: `city` (the city at night, before the fall; New game plays it) and `opening` (Copperleaf, after the fall). The
+Studio's cutscene tools (save the free camera as a shot, drop spots as pins, a step list with Preview) are the plan's
+session 2, not built yet (docs/HANDOFF.md).
 
 ## The file
 
@@ -30,6 +31,7 @@ as pins, a step list with Preview) come in the next session of the cutscene tool
 | `lanes` | named paths of `[x, height, z]` points for traffic (the flying cars of the city opening). |
 | `clear` | props put out of the way while filming (never flat ones): inside an `area` `[x0, z0, x1, z1]`, within `pathWidth` (1.1 m) of a `path` between two spots, or, for props without a footprint, within `eyeRadius` (2.3 m) of an `eye` point the camera stands at. |
 | `who` | who says a line that names nobody (a speaker); usually every line names its speaker. |
+| `look` | its own time of day (0-24), weather (clear, rain, storm, fog, snow ...) and season while it plays, whatever Settings say: the city is `{ "time": 23, "weather": "rain" }`. |
 | `script` | the lines and commands, docs/SCRIPTS.md's format. |
 
 Schema: `game/data/schema/cutscene.schema.json`. Types: `CutsceneData` in `game/types/game-data.d.ts`.
@@ -42,18 +44,21 @@ a spot, someone in the scene (where they stand now), or a place the cutscene nam
 | Command | Does | Waits? |
 |---|---|---|
 | `actor Hazel at door down` | puts someone in the scene at a spot, facing up, down, side or sideR | no |
+| `actor you at walkFrom up silhouette` | the same, drawn as a dark figure (who it is stays hidden) | no |
 | `camera trio 1.1` | glides to a shot in that many seconds (0 or none: a cut) | no: the camera moves on while the next step starts |
 | `camera picked 0.9 on starter you` | the same, aimed at a place, or between two | no |
 | `walk Blake blake 1.5` | walks someone to a place; no time given: 1.6 m a second | yes, till they arrive |
 | `walk Blake blake 1.5 nowait` | the same, while the script goes on | no |
 | `face Hazel sideR` / `face Hazel Blake` | turns someone, or towards someone or a spot | no |
-| `act Hazel throw 0.9` | a pose for a while: throw, cheer, react | no |
+| `act Hazel throw 0.9` | a pose for a while: throw, cheer, react, reach (an arm held out the way they face) | no |
 | `wait 1.5` / `wait Blake` | pauses for seconds, or till Blake stops walking | yes |
 | `caption 3.4 The Hollow Earth \| {place}` | a caption for seconds: the small line, then the big one | no |
 | `blink` | the letterbox closes and opens like eyelids | yes |
 | `screen dazed` / `waking` / `clear` | the look of the whole picture, coming round after the fall | no |
 | `effect landing at me` / `effect sparkle at Hazel` | a little effect at a place | no |
 | `hide box` / `hide Blake` | the dialogue box goes away / someone leaves the scene | no |
+| `hide prop rift` / `show prop rift` | the prop standing nearest a spot (within 3 m) out of the scene, and back; `show Blake` too | no |
+| `traffic high city_flying_car 9 3` | that many of a prop along one of the cutscene's lanes, end to end in that many seconds, again and again, floating at the lane's height | no |
 | `fade out #0B0912` / `fade in` | the screen fades out (to a colour) or back in | no |
 | `music rival` / `sound throw` | music, a sound effect | no |
 | `Hazel: text`, `[happy] Hazel: text` | a line in the dialogue box | yes, till the tap |

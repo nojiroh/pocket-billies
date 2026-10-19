@@ -984,6 +984,8 @@ export interface CutsceneData {
   map: DataId;
   /** who says a line that names nobody (a speaker in story.json) */
   who?: string;
+  /** its own time of day (0-24), weather and season while it plays, whatever Settings say */
+  look?: { time?: number; weather?: string; season?: string };
   spots: Record<string, [x: number, z: number]>;
   shots: Record<string, CutsceneShot>;
   lanes?: Record<string, [x: number, h: number, z: number][]>;
