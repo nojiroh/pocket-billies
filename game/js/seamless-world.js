@@ -1484,7 +1484,6 @@ export function seamlessRoomMap(baseId, roomId, door) {
     roomOf: roomId,
     roomBase: baseId,
     roomDoor: [door[0], door[1]],
-    roomCut: [0, 0],
     roomFloor: fh,
     /* phase 08b: what is drawn: the place's own ground (groundOf: its picture, mesh and near ring, as they are), with
        the room's floor over it (roomScene) */

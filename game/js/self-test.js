@@ -1005,9 +1005,8 @@ async function runFullTest(mode) {
               throw new Error('the shop’s room didn’t open (still ' + walkView.id + ')');
             await selfTestSleep(1200);
             const sc = walkView.sc,
-              c = sc.roomCut,
               I = uiState.inside,
-              ex = [sc.exits[0][0] + c[0], sc.exits[0][1] + c[1]],
+              ex = sc.exits[0],
               off = I && I.door ? Math.hypot(ex[0] - I.door[0], ex[1] - I.door[1]) : 9,
               RD = roomDimming(sc);
             if (off > 0.8) throw new Error(`the room’s doorway is ${off.toFixed(1)} m from the shop’s door`);
