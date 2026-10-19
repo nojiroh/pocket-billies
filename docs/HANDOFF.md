@@ -11,6 +11,45 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 - Questions waiting for the owner: 
 - Next session starts with: 
 
+### Phase 06-4 - the last screens, floating sheets, gallery, dead CSS, accessibility, safety - 2026-10-19
+Branch `phase-06-4`, based on main as of 2026-10-19 (main and `phase-07-portraits` merged in, both clean).
+- Changed:
+  - Every sheet floats (one `.scrim .sheet` rule in ui-kit.css; the per-sheet copies are gone). New `menus.css`: the
+    Field Guide (84 px rows, sideways filter chips, prose font for notes), Trainer card, friends, Settings, shop and
+    dressing room on the tokens.
+  - Dialogue portrait drawn at 1.5× (64 → 96 px) in whole device pixels (talk.js). This answers 07's open question
+    "how the 64 px portrait fills the 96×96 slot": the new renderer only has to draw a 64 px picture.
+  - Battle: the classic corner cards' code removed; what they showed that the plates did not (stat stages, robot
+    limb HP, party dots, the low-HP glow) moved onto the plates. Wide screens (owner, 2026-10-19): the message and
+    menu cards sit in a right-hand column, clear of the edge, centred top to bottom. Fixes cards off screen on iPad
+    and against the right edge on laptops: style.css zooms the dock 1.18 / 1.35 on big screens, and floatTick now
+    allows for that zoom.
+  - Studio "UI gallery" (studio/gallery.html): every kit component, theme / width (320, 390, wide) / reduced-motion
+    switches, built from the game's own CSS and ui-kit.js.
+  - Dead CSS: about 840 lines removed (old team cards, Stats tab, old pick card, step intro, old Workshop list, hcard
+    family). `tools/unused-css.mjs` lists the rest: 36 older candidates, left on purpose (each needs a look).
+  - Accessibility: every control ≥ 40 px or an icon with a 14 px larger tap area; type pills darkened just enough
+    for 4.5:1 contrast (`logic/colors.js`, unit-tested on every type colour); arrow keys, Home and End on tab rows.
+  - Safety: the friend code is escaped; new full-check step "Safety" puts a hostile name in every player-written
+    field and opens 13 screens (fails on a planted fault); new step "Tap targets" measures 9 screens.
+- Risky or unfinished:
+  - **The 06 plan is not fully met.** Every screen is on the tokens, but the plan also said "one module per screen"
+    and "old CSS files deleted when empty". Not done: `ui.js` is still ~3,000 lines (pop-ups, top bar, walk and
+    rooms, world map, Team, Guide, Trainer card, the button switch), and ~10,000 of 12,600 CSS lines sit in
+    style.css, screens.css, polish.css and v05.css, which override each other in layers.
+  - The Walking seam step fails, as it does on untouched main (not from this work).
+  - Animations and the wide-screen battle layout are untested on real devices.
+- Verified: lint, type-check, 74 unit tests, module check, format, data check, build, after both merges. Smoke and
+  the Messages, Team, Safety and Tap-target steps: see the PR. Battle cards measured (low render) at 390×844,
+  820×1180, 1180×820, 1440×900 and 1600×1050: both cards fully on screen, right margins 35-48 px in landscape.
+- Decisions I made: kept the big-screen zoom (bigger text on big screens) and corrected for it rather than removing
+  it; left the 36 unused-CSS candidates for a hand check rather than deleting them blind.
+- Questions waiting for the owner: (1) Is splitting ui.js and the four old CSS files part of phase 06 (a session
+  06-5, before the tag) or a later phase? Recommendation: 06-5, before phase-06-done. (2) Tag phase-06-done once
+  that's settled (tag pushes are refused from here). (3) Delete `codex/playable-ui-graphics-poc` on GitHub.
+- Next session starts with: the owner's answer to (1). If 06-5: one commit per screen moved out of ui.js into its own
+  module, its CSS moved out of the old files with it, moves only, smoke after each.
+
 ### Phase 07 part 1 (in progress) - portrait kit, slicer, portraits.json - 2026-10-19
 Branch `phase-07-portraits` (not merged, no PR yet). Plan agreed in chat with the owner; written up in
 docs/phases/07-plan.md (decisions, data format, status, next steps).
