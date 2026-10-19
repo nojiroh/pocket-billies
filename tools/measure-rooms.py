@@ -6,6 +6,7 @@ and drawing, the first time (cold) and again (warm), and how the game says it we
 """
 import importlib.util
 import json
+import subprocess
 import time
 from pathlib import Path
 
@@ -58,6 +59,7 @@ def main():
     from playwright.sync_api import sync_playwright
     out_dir = ROOT / 'validation' / 'rooms'
     out_dir.mkdir(parents=True, exist_ok=True)
+    subprocess.run(['node', str(ROOT / 'tools' / 'build-data.mjs')], check=True)  # data/gamedata.js from the files as they are
     srv, base = Q.serve(Q.GAME)
     errs = []
     res = []
