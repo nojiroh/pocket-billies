@@ -11,10 +11,11 @@ const { FRAME_BLOCK_BYTES, FRAME_BLOCK_GLSL, FRAME_BLOCK_LAYOUT, packFrameBlock,
 const { setLightUniforms, LIGHT_GLSL, gpuState } = G;
 
 const SAMPLERS = ['uShadow', 'uShadowD', 'uShadow2', 'uShadowD2', 'uLampSh0', 'uLampSh1'];
-// every uniform LIGHT_GLSL declares, by name: [type, array length]
+// every uniform LIGHT_GLSL declares without the block (its #else branch), by name: [type, array length]
 function lightUniforms() {
-  const out = {};
-  for (const m of LIGHT_GLSL.matchAll(/uniform\s+(?:highp\s+)?(\w+)\s+([^;]+);/g))
+  const out = {},
+    plain = LIGHT_GLSL.replace(/\/\*[\s\S]*?\*\//g, '').replace(/#ifdef PB_FRAME_BLOCK[\s\S]*?#else/, '');
+  for (const m of plain.matchAll(/uniform\s+(?:highp\s+)?(\w+)\s+([^;]+);/g))
     for (const part of m[2].split(',')) {
       const [, name, n] = part.trim().match(/^(\w+)(?:\[(\d+)\])?$/);
       out[name] = [m[1], n ? +n : 0];
@@ -187,4 +188,45 @@ test('packing: one cascade, one lamp, no lights or contact shadows; a second pac
   assert.equal(n[FRAME_BLOCK_LAYOUT.members.uNLS[0] / 4], 1);
   assert.equal(f[FRAME_BLOCK_LAYOUT.members.uLP[0] / 4], 0, 'last frame’s first light is gone');
   assert.equal(f[FRAME_BLOCK_LAYOUT.members.uLampM1[0] / 4], 0, 'last frame’s second lamp matrix is gone');
+});
+
+test('a program with the block: packed and sent once per light context, bound again only when the slot changes', () => {
+  const gl = recordingGL();
+  gpuState.gl = gl;
+  gpuState.samp = { cmp: 'cmp', raw: 'raw' };
+  gpuState.fb = {};
+  gpuState.depthStub = 'stub';
+  const prog = names => ({ ...fakeProgram(names), frame: true }),
+    A = prog(['uCurve', 'uCurveD0', 'uFol', ...SAMPLERS]),
+    B = prog(['uCurve', 'uCurveD0', 'uFol', 'uShadow', 'uShadowD']),
+    X = fixture(),
+    calls = k => gl.calls.filter(c => c[0] === k);
+  setLightUniforms(A, X);
+  // only the vertex curve, the per-thing foliage and the sampler units go as plain uniforms
+  const plain = new Set(gl.calls.filter(c => /^uniform/.test(c[0])).map(c => c[1]));
+  assert.deepEqual([...plain].sort(), ['uCurve', 'uCurveD0', 'uFol', ...SAMPLERS].sort());
+  const [up] = calls('bufferSubData'),
+    want = new Float32Array(FRAME_BLOCK_BYTES / 4);
+  packFrameBlock(X, want, new Int32Array(want.buffer));
+  assert.deepEqual(up.slice(1, 3), ['UNIFORM_BUFFER', 0]);
+  assert.deepEqual(up[3], Array.from(want));
+  assert.deepEqual(calls('bindBufferRange')[0].slice(1), ['UNIFORM_BUFFER', 0, null, 0, FRAME_BLOCK_BYTES]);
+  setLightUniforms(B, X);
+  assert.equal(calls('bufferSubData').length, 1, 'the same context is not sent again');
+  assert.equal(calls('bindBufferRange').length, 1, 'nor bound again');
+  // the reflection's copy (no shadow map) takes the next slot; going back to the frame's context binds its slot again
+  const R = Object.assign({}, X, { shadow: null });
+  setLightUniforms(B, R);
+  assert.deepEqual(calls('bufferSubData')[1].slice(1, 3), ['UNIFORM_BUFFER', 2304]);
+  setLightUniforms(B, X);
+  assert.deepEqual(
+    calls('bindBufferRange').map(c => c[4]),
+    [0, 2304, 0]
+  );
+  assert.equal(calls('bufferSubData').length, 2);
+  // a context changed after it was sent (the lamps) is packed again
+  G.frameBlockStale(X);
+  X.lampSh = [];
+  setLightUniforms(B, X);
+  assert.equal(calls('bufferSubData').length, 3);
 });

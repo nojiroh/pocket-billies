@@ -22,7 +22,7 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-const FRAME_BLOCK_GLSL = `layout(std140) uniform Frame{
+export const FRAME_BLOCK_GLSL = `layout(std140) uniform Frame{
 mat4 uShadowM;mat4 uShadowM2;mat4 uLampM0;mat4 uLampM1;
 vec4 uLP[16];vec4 uLC[16];vec4 uAO[64];vec4 uSH[9];
 vec3 uEye;float uTime;vec3 uSunDir;float uFogStart;vec3 uSunCol;float uFogD;vec3 uAmbTop;float uAmbK;
@@ -54,7 +54,7 @@ function std140Layout(glsl) {
   return { members: out, size: Math.ceil(at / 16) * 16 };
 }
 const FRAME_BLOCK_LAYOUT = std140Layout(FRAME_BLOCK_GLSL);
-const FRAME_BLOCK_BYTES = FRAME_BLOCK_LAYOUT.size;
+export const FRAME_BLOCK_BYTES = FRAME_BLOCK_LAYOUT.size;
 /* each member's offset in floats (the block is packed through a Float32Array and an Int32Array over the same bytes) */
 const FB = Object.fromEntries(Object.entries(FRAME_BLOCK_LAYOUT.members).map(([k, v]) => [k, v[0] / 4]));
 const put = (f, at, v, n) => {
@@ -63,7 +63,7 @@ const put = (f, at, v, n) => {
 /* the light context X (light.js lightContext, after lampShadowMaps) into f (Float32Array) and n (Int32Array over the
    same buffer), with the values setLightUniforms sends; what it leaves as it was (a shadow map's matrix with no map)
    is 0 here, and the shaders don't read it */
-function packFrameBlock(X, f, n) {
+export function packFrameBlock(X, f, n) {
   f.fill(0);
   const S = X.shadow,
     F = S && S.far,

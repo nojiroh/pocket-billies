@@ -189,6 +189,8 @@ export const ENGINE_DEFAULTS = {
        false) */
     keepScenes: 3,
     paintWorker: true,
+    /* phase 20 C3: the frame's light values in one uniform block (off: each lit program is sent them, as before) */
+    frameBlock: false,
   },
 };
 provide({ ENGINE_DEFAULTS }); /* to-module */
@@ -721,6 +723,12 @@ export const ENGINE_SPEC = [
         'Keep still shadows',
         'bool',
         'Shadows of things that never move are drawn once and kept; only moving things are drawn each frame.',
+      ],
+      [
+        'frameBlock',
+        'One light block per frame',
+        'bool',
+        'Everything lit reads the frame’s light (sun, sky, fog, shadow maps, lamps) from one block sent once a frame, instead of being sent it again for each kind of thing drawn. A test switch (phase 20): it should look the same.',
       ],
       [
         'gpuTimer',

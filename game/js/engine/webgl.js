@@ -7,6 +7,7 @@
 import { expose } from '../test-globals.js';
 import { artCacheVersion, onGlContextRestored, provide, walkRenderer } from '../hooks.js';
 import { clamp } from '../util.js';
+import { FRAME_BLOCK_GLSL } from './frame-block.js';
 import { makeCanvas } from '../art.js';
 import { imageReady } from '../walk-view.js';
 import { engineSetting } from './settings.js';
@@ -29,6 +30,7 @@ expose({
   ensureNormalMapWorker: [() => ensureNormalMapWorker, v => (ensureNormalMapWorker = v)],
   ensurePrograms: [() => ensurePrograms, v => setEnsurePrograms(v)],
   finishProgramCompile: [() => finishProgramCompile, v => setFinishProgramCompile(v)],
+  frameBlockBinding: [() => frameBlockBinding, v => (frameBlockBinding = v)],
   freeMesh: [() => freeMesh, v => (freeMesh = v)],
   gpuLoading: [() => gpuLoading, v => (gpuLoading = v)],
   gpuState: [() => gpuState],
@@ -41,8 +43,10 @@ expose({
   pollGpuTimers: [() => pollGpuTimers, v => (pollGpuTimers = v)],
   pollPendingPrograms: [() => pollPendingPrograms, v => (pollPendingPrograms = v)],
   precompilePrograms: [() => precompilePrograms, v => (precompilePrograms = v)],
+  programSource: [() => programSource],
   renderTarget: [() => renderTarget, v => (renderTarget = v)],
   runNormalMapJobs: [() => runNormalMapJobs, v => setRunNormalMapJobs(v)],
+  setFrameBlockMode: [() => setFrameBlockMode, v => (setFrameBlockMode = v)],
   setTextureParams: [() => setTextureParams, v => (setTextureParams = v)],
   smooth01: [() => smooth01],
   startProgramCompile: [() => startProgramCompile, v => (startProgramCompile = v)],
@@ -232,7 +236,12 @@ export function windBendAt(x, z, t, g) {
    occlusion, point lights (window lights only light what is in front of them), sky and ground ambient, haze and mist */
 export const LIGHT_GLSL = `
 uniform highp sampler2DShadow uShadow,uShadow2,uLampSh0,uLampSh1;uniform highp sampler2D uShadowD,uShadowD2;uniform vec2 uFol;
-/* the frame's light values, the same for every lit program in a frame (SHV: one of the nine sky terms as a vec3) */
+/* the frame's light values, the same for every lit program in a frame (SHV: one of the nine sky terms as a vec3); with
+   quality.frameBlock on (phase 20 C3), one uniform block sent once per frame (engine/frame-block.js) */
+#ifdef PB_FRAME_BLOCK
+${FRAME_BLOCK_GLSL}
+#define SHV(i) uSH[i].rgb
+#else
 uniform vec3 uEye,uSunDir,uSunCol,uAmbTop,uAmbBot,uFogCol,uTint,uShTint;
 uniform vec4 uRoomB;uniform float uRoomDim;
 uniform vec2 uValley;uniform float uFogStart,uFogD,uTintAmt,uMist,uMistY,uTime,uShStr,uShPen,uCloudSh,uCloudSpd,uCloudCov,uContact,uAmbK,uShLite,uShPx,uShSteps;uniform vec3 uShLift;
@@ -244,6 +253,7 @@ uniform vec4 uAO[64];uniform int uNAO;
 uniform vec4 uSeason;
 uniform vec3 uSH[9];uniform float uSHK,uFogSun;
 #define SHV(i) uSH[i]
+#endif
 const vec2 PD[12]=vec2[12](vec2(-.326,-.406),vec2(-.840,-.074),vec2(-.696,.457),vec2(-.203,.621),vec2(.962,-.195),vec2(.473,-.480),vec2(.519,.767),vec2(.185,-.893),vec2(.507,.064),vec2(.896,.412),vec2(-.322,-.933),vec2(-.792,-.598));
 float lhash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
 float lnoise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(lhash(i),lhash(i+vec2(1,0)),f.x),mix(lhash(i+vec2(0,1)),lhash(i+vec2(1,1)),f.x),f.y);}
@@ -333,6 +343,33 @@ vec3 lookOn(vec3 c,vec2 px,float hgt,vec3 bp){
 /* v32: compiling is split in two: start (the GPU driver can work on it in the background) and finish (read the result).
    Shader sets that are needed later (buildings, solid props, the map) are started when a scene opens and finished a
    few at a time, so the first frame with a building in it no longer stalls while they compile. */
+/* phase 20 C3: with quality.frameBlock on, a program with the light code reads the frame's light from the Frame block */
+const programSource = src =>
+  gpuState.frameBlock && src.includes('PB_FRAME_BLOCK')
+    ? src.replace('#version 300 es', '#version 300 es\n#define PB_FRAME_BLOCK')
+    : src;
+/* the Frame block on binding point 0 (light.js bindFrameBlock fills it); false when the program has none */
+function frameBlockBinding(gl, p) {
+  const i = gl.getUniformBlockIndex(p, 'Frame');
+  if (i === gl.INVALID_INDEX || i == null) return false;
+  gl.uniformBlockBinding(p, i, 0);
+  return true;
+}
+/* the mode the programs are compiled in; on a change, every program with the light code is deleted, to be compiled
+   again in the new mode (true when it changed) */
+export function setFrameBlockMode(on) {
+  on = !!on;
+  if (!!gpuState.frameBlock === on) return false;
+  gpuState.frameBlock = on;
+  const gl = gpuState.gl;
+  for (const [k, P] of Object.entries(gpuState.P || {}))
+    if (P.lit) {
+      if (gl) gl.deleteProgram(P.p);
+      delete gpuState.P[k];
+    }
+  for (const [k, j] of gpuState.pend || []) if (j.lit) gpuState.pend.delete(k);
+  return true;
+}
 function startProgramCompile([vs, fs], name) {
   if (gpuState.loaded) gpuState.pcl[1]++;
   const gl = gpuState.gl,
@@ -343,8 +380,8 @@ function startProgramCompile([vs, fs], name) {
       return s;
     };
   const p = gl.createProgram(),
-    a = mk(gl.VERTEX_SHADER, vs),
-    b = mk(gl.FRAGMENT_SHADER, fs);
+    a = mk(gl.VERTEX_SHADER, programSource(vs)),
+    b = mk(gl.FRAGMENT_SHADER, programSource(fs));
   gl.attachShader(p, a);
   gl.attachShader(p, b);
   [
@@ -363,7 +400,7 @@ function startProgramCompile([vs, fs], name) {
       gl.bindAttribLocation(p, l, n);
   });
   gl.linkProgram(p);
-  return { p, a, b, name, gl };
+  return { p, a, b, name, gl, lit: fs.includes('PB_FRAME_BLOCK') };
 }
 export function finishProgramCompile(j) {
   const gl = gpuState.gl,
@@ -381,7 +418,7 @@ export function finishProgramCompile(j) {
       nm = u.name.replace(/\[0\]$/, '');
     U[nm] = gl.getUniformLocation(p, u.name);
   }
-  return { p, U, name: j.name };
+  return { p, U, name: j.name, lit: j.lit, frame: frameBlockBinding(gl, p) };
 }
 export function precompilePrograms(defs) {
   if (!gpuState.gl || !defs) return;
@@ -422,8 +459,8 @@ function compileProgram([vs, fs], name) {
       return s;
     };
   const p = gl.createProgram();
-  gl.attachShader(p, mk(gl.VERTEX_SHADER, vs));
-  gl.attachShader(p, mk(gl.FRAGMENT_SHADER, fs));
+  gl.attachShader(p, mk(gl.VERTEX_SHADER, programSource(vs)));
+  gl.attachShader(p, mk(gl.FRAGMENT_SHADER, programSource(fs)));
   /* standard locations for the engine's own inputs; an input that declares layout(location=…) keeps its own (some
     GPUs, Adreno for one, refuse to link when a bound location clashes with another input's) */
   [
@@ -450,7 +487,7 @@ function compileProgram([vs, fs], name) {
       nm = u.name.replace(/\[0\]$/, '');
     U[nm] = gl.getUniformLocation(p, u.name);
   }
-  return { p, U, name };
+  return { p, U, name, lit: fs.includes('PB_FRAME_BLOCK'), frame: frameBlockBinding(gl, p) };
 }
 /* the input locations a vertex shader ends up with (its own layout(location=…), else the engine's standard one);
    two inputs on one location is a link error on some GPUs (Adreno) that others forgive, so the full test checks it */
@@ -505,6 +542,7 @@ export function initWebgl(cv) {
     gpuState.gl = gl;
     gpuState.cv = cv;
     gpuState.P = {};
+    gpuState.frameBlock = false;
     gpuState.texL = new Map();
     gpuState.texB = 0;
     gpuState.gpuX = undefined;

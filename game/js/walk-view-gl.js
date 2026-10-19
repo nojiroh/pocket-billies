@@ -65,6 +65,7 @@ import {
   precompilePrograms,
   renderTarget,
   runNormalMapJobs,
+  setFrameBlockMode,
   smooth01,
   trimTextures,
   webgl2Supported,
@@ -98,6 +99,7 @@ expose({
   canvasForContext: [() => canvasForContext, v => (canvasForContext = v)],
   drawWalkFrame: [() => drawWalkFrame, v => (drawWalkFrame = v)],
   drawWalkFrameInner: [() => drawWalkFrameInner, v => (drawWalkFrameInner = v)],
+  ensureLitPrograms: [() => ensureLitPrograms, v => (ensureLitPrograms = v)],
   ensureWalkGl: [() => ensureWalkGl, v => (ensureWalkGl = v)],
   labelLayer: [() => labelLayer, v => (labelLayer = v)],
   mountWalkView: [() => mountWalkView, v => setMountWalkView(v)],
@@ -228,6 +230,7 @@ export function ensureWalkGl(cv) {
     gpuState.fail = 1;
     return false;
   }
+  setFrameBlockMode(engineSetting('quality', 'frameBlock'));
   try {
     ensurePrograms(WALK_SHADERS);
     ensurePrograms(POST_EFFECT_SHADERS);
@@ -252,6 +255,17 @@ export function ensureWalkGl(cv) {
   walkRenderer.wtex = null;
   for (const k of MAP_CACHE_FIELDS) walkRenderer[k] = null;
   return true;
+}
+/* every program with the light code, now (the Frame block was switched; a few frames' stall, only when it is) */
+function ensureLitPrograms() {
+  for (const d of [
+    WALK_SHADERS,
+    POST_EFFECT_SHADERS,
+    typeof BUILDING_SHADERS !== 'undefined' && BUILDING_SHADERS,
+    typeof SOLID_PROP_SHADERS !== 'undefined' && SOLID_PROP_SHADERS,
+    typeof propModelShaders === 'function' && propModelShaders(),
+  ])
+    if (d) ensurePrograms(d);
 }
 function onGlContextRestored(cv) {
   if (walkView.id && walkView.cv === cv) {
@@ -367,6 +381,8 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   if (typeof seamlessPrepareAhead === 'function') seamlessPrepareAhead(performance.now());
   /* phase 20 C1: every dial looked up once for this frame (settings.js) */
   beginFrameSettings();
+  /* phase 20 C3: the Frame block switched on or off: the lit programs compile again in the new mode, here */
+  if (setFrameBlockMode(engineSetting('quality', 'frameBlock'))) ensureLitPrograms();
   const gl = gpuState.gl,
     sc = walkView.sc,
     cv = walkView.cv;
