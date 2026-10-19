@@ -2,6 +2,8 @@
 """The Studio in GitHub mode against a local stand-in for the GitHub API (phase 04c): it signs in, reads the game data
 files, opens every section, then makes an edit and proposes it (blobs, a tree, a commit, a branch and a pull request
 reach the stand-in). Any error on the page fails it. Nothing leaves the machine; nothing in the repository changes.
+Project Story S3: on the way it writes in a trainer's script (an error on its line, line ids, the command reference),
+follows the Check's Show me, uses the story preview and plays from here in a second tab (the game gets the draft).
 
     python3 tools/check-studio-github.py           # the repository as it is (run `npm run data` first)
     python3 tools/check-studio-github.py dist      # the build (`npm run build` first)
