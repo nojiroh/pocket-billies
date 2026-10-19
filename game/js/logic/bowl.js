@@ -20,10 +20,19 @@ expose({
   BOWL_RELIEF_KINDS: [() => BOWL_RELIEF_KINDS],
   BOWL_RELIEF_MAX: [() => BOWL_RELIEF_MAX],
   BOWL_RIM_HEIGHT: [() => BOWL_RIM_HEIGHT],
+  BOWL_SEA_DEPTH: [() => BOWL_SEA_DEPTH],
+  BOWL_SEA_RIM_LAND: [() => BOWL_SEA_RIM_LAND],
+  BOWL_SEA_SHARE: [() => BOWL_SEA_SHARE],
   BOWL_SPHERE: [() => BOWL_SPHERE],
   EXIT: [() => EXIT],
   // @ts-expect-error -- replaced on purpose
   bowlBaseHeight: [() => bowlBaseHeight, v => (bowlBaseHeight = v)],
+  // @ts-expect-error -- replaced on purpose
+  bowlCoastAt: [() => bowlCoastAt, v => (bowlCoastAt = v)],
+  // @ts-expect-error -- replaced on purpose
+  bowlCoastGrid: [() => bowlCoastGrid, v => (bowlCoastGrid = v)],
+  // @ts-expect-error -- replaced on purpose
+  bowlCoastNoise: [() => bowlCoastNoise, v => (bowlCoastNoise = v)],
   // @ts-expect-error -- replaced on purpose
   bowlCompass: [() => bowlCompass, v => (bowlCompass = v)],
   // @ts-expect-error -- replaced on purpose
@@ -45,9 +54,13 @@ expose({
   // @ts-expect-error -- replaced on purpose
   bowlRoll: [() => bowlRoll, v => (bowlRoll = v)],
   // @ts-expect-error -- replaced on purpose
+  bowlSeaInput: [() => bowlSeaInput, v => (bowlSeaInput = v)],
+  // @ts-expect-error -- replaced on purpose
   bowlSeamTurn: [() => bowlSeamTurn, v => (bowlSeamTurn = v)],
   // @ts-expect-error -- replaced on purpose
   bowlSpotOf: [() => bowlSpotOf, v => (bowlSpotOf = v)],
+  // @ts-expect-error -- replaced on purpose
+  bowlWaterLevel: [() => bowlWaterLevel, v => (bowlWaterLevel = v)],
   // @ts-expect-error -- replaced on purpose
   bowlXY: [() => bowlXY, v => (bowlXY = v)],
 });
@@ -233,7 +246,7 @@ export function bowlRelief(F, x, y) {
    The map draws the ground as a low-poly mesh over a square grid (two triangles a cell, split from the cell's
    south-west to its north-east corner); the camera, the pins and a tap read the height the same way, so everything
    agrees with what is drawn. Beyond the rim the land runs on flat for a short way. */
-/** @typedef {{ n: number, e: number, h: Float32Array }} BowlGround */
+/** @typedef {{ n: number, e: number, h: Float32Array, c?: Float32Array }} BowlGround */
 /** how far the grid reaches from the centre (the rim: the land ends there) and its cells across */
 export const BOWL_GROUND_EXTENT = 1;
 export const BOWL_GROUND_CELLS = 320;
@@ -242,18 +255,129 @@ export function bowlBaseHeight(x, y) {
   const r = Math.hypot(x, y);
   return r <= 1 ? bowlHeight(r) : BOWL_RIM_HEIGHT;
 }
-/** the grid's heights for these features @param {BowlFeature[]} F @param {number} [n] cells across
- * @returns {BowlGround} */
-export function bowlGroundGrid(F, n = BOWL_GROUND_CELLS) {
+/** the grid's heights for these features, and with a sea its coast (logic below) @param {BowlFeature[]} F
+ * @param {number} [n] cells across @param {BowlSeaInput | null} [sea] @returns {BowlGround} */
+export function bowlGroundGrid(F, n = BOWL_GROUND_CELLS, sea = null) {
   const e = BOWL_GROUND_EXTENT,
-    h = new Float32Array((n + 1) * (n + 1));
+    w = n + 1,
+    h = new Float32Array(w * w),
+    c = sea ? bowlCoastGrid(sea, n) : null;
   for (let j = 0; j <= n; j++)
     for (let i = 0; i <= n; i++) {
       const x = -e + (2 * e * i) / n,
         y = -e + (2 * e * j) / n;
-      h[j * (n + 1) + i] = bowlBaseHeight(x, y) + bowlRelief(F, x, y);
+      let rel = bowlRelief(F, x, y);
+      if (c) {
+        /* the land comes down to the water's edge, the sea floor falls away from it */
+        const k = c[j * w + i];
+        rel = k > 0 ? -Math.min(BOWL_SEA_DEPTH, 0.004 + k * 0.5) : rel * Math.min(1, -k / 0.03) + 0.0015;
+      }
+      h[j * w + i] = bowlBaseHeight(x, y) + rel;
     }
-  return { n, e, h };
+  return c ? { n, e, h, c } : { n, e, h };
+}
+
+/* ---------- the sea (session 1 of the look, 2026-10-19: an inland sea with bays, about 40% of the bowl) ----------
+   In the Hollow Earth things fall towards the shell, so water lies on the bowl's curve: the sea's surface is the bowl
+   itself (bowlHeight), the land rises above it and the sea floor sinks below. Where the sea is comes from the places
+   and the roads: land round every place (out past its walk map's corners) and along every road, the rest of the bowl
+   sea, its coast roughened by a little noise, the line drawn so about BOWL_SEA_SHARE of the bowl is water. So the open
+   side of the bowl becomes a sea and bays reach in between the regions; no place and no road is ever under water. */
+export const BOWL_SEA_SHARE = 0.4;
+/** how deep the sea floor goes below the water, in bowl radii */
+export const BOWL_SEA_DEPTH = 0.035;
+/** how strongly the land rises towards the rim (so the sea is an inland sea, not a ring round the edge) */
+export const BOWL_SEA_RIM_LAND = 0.45;
+/** @typedef {{ places: { x: number, y: number, reach: number }[], roads: [number, number, number, number][] }} BowlSeaInput */
+/** the land the sea must leave alone: each place with its walk map's half-diagonal (w, h in metres, BOWL_METRES to the
+ * radius), and each road @param {LocationData[]} places @param {[number, number][]} roads pairs of place numbers
+ * @param {(p: LocationData) => { w: number, h: number } | null} mapOf @param {number} [metres]
+ * @returns {BowlSeaInput} */
+export function bowlSeaInput(places, roads, mapOf, metres = 1000) {
+  const byId = (/** @type {string} */ id) => places.find(p => p.id === id),
+    at = places.map(p => {
+      const s = bowlSpotOf(p, byId);
+      return { xy: bowlXY(s.a, s.r), under: s.under };
+    });
+  return {
+    places: places
+      .map((p, i) => {
+        const m = mapOf(p),
+          half = m ? Math.hypot(m.w, m.h) / 2 / metres : 0.06;
+        return at[i].under ? null : { x: at[i].xy[0], y: at[i].xy[1], reach: half + 0.012 };
+      })
+      .filter(o => o !== null),
+    roads: roads
+      .filter(([a, b]) => at[a] && at[b] && !at[a].under && !at[b].under)
+      .map(([a, b]) => [at[a].xy[0], at[a].xy[1], at[b].xy[0], at[b].xy[1]]),
+  };
+}
+/** the coast's roughness: a few octaves of the same value noise as the roll */
+export function bowlCoastNoise(/** @type {number} */ x, /** @type {number} */ y) {
+  return bowlRoll(x / 4.5, y / 4.5) * 0.16 + bowlRoll(x / 1.5, y / 1.5) * 0.06 + bowlRoll(x * 1.8, y * 1.8) * 0.018;
+}
+/** the coast on the ground's grid: per corner, below 0 land, above 0 sea, about BOWL_SEA_SHARE of the bowl at sea,
+ * every place's ground and every road on land. How far a corner is from being land: its distance past the nearest
+ * place's ground or road, plus the coast's noise; the line is then drawn at the share's quantile.
+ * @param {BowlSeaInput} S @param {number} n @returns {Float32Array} */
+export function bowlCoastGrid(S, n) {
+  const e = BOWL_GROUND_EXTENT,
+    w = n + 1,
+    raw = new Float32Array(w * w),
+    keep = new Float32Array(w * w),
+    inside = new Float32Array(w * w),
+    /* flat arrays: the loop below runs about 100 000 corners times 100 places and roads */
+    P = Float64Array.from(S.places.flatMap(p => [p.x, p.y, p.reach])),
+    R = Float64Array.from(S.roads.flatMap(([ax, ay, bx, by]) => [ax, ay, bx - ax, by - ay])),
+    np = P.length,
+    nr = R.length;
+  let count = 0;
+  for (let j = 0; j <= n; j++)
+    for (let i = 0; i <= n; i++) {
+      const x = -e + (2 * e * i) / n,
+        y = -e + (2 * e * j) / n;
+      let dp = 81,
+        dr = 81;
+      for (let k = 0; k < np; k += 3) {
+        const dx = x - P[k],
+          dy = y - P[k + 1],
+          q = Math.sqrt(dx * dx + dy * dy) - P[k + 2];
+        if (q < dp) dp = q;
+      }
+      for (let k = 0; k < nr; k += 4) {
+        const vx = R[k + 2],
+          vy = R[k + 3],
+          ux = x - R[k],
+          uy = y - R[k + 1];
+        let t = (ux * vx + uy * vy) / (vx * vx + vy * vy || 1);
+        t = t < 0 ? 0 : t > 1 ? 1 : t;
+        const dx = ux - vx * t,
+          dy = uy - vy * t,
+          q = dx * dx + dy * dy;
+        if (q < dr) dr = q;
+      }
+      dr = Math.sqrt(dr) - 0.022;
+      /* the land rises towards the rim, so the continent wraps round the sea and the sea stays inland */
+      const rr = Math.sqrt(x * x + y * y),
+        v = Math.min(dp, dr) + 0.02 + bowlCoastNoise(x, y) - BOWL_SEA_RIM_LAND * Math.max(0, (rr - 0.8) / 0.2);
+      raw[j * w + i] = v;
+      keep[j * w + i] = Math.min(dp, dr);
+      if (x * x + y * y <= 1) inside[count++] = v;
+    }
+  const sorted = inside.subarray(0, count).sort(),
+    T = sorted[Math.floor(count * (1 - BOWL_SEA_SHARE))],
+    c = new Float32Array(w * w);
+  for (let k = 0; k < w * w; k++) c[k] = Math.min(raw[k] - T, keep[k] - 0.004);
+  return c;
+}
+/** the coast at a point, read from the grid like the heights @param {BowlGround} G @param {number} x @param {number} y */
+export function bowlCoastAt(G, x, y) {
+  if (!G.c) return -1;
+  return bowlGridHeight({ n: G.n, e: G.e, h: G.c }, x, y);
+}
+/** the water's surface at a point: the bowl's own curve @param {number} x @param {number} y */
+export function bowlWaterLevel(x, y) {
+  return bowlHeight(Math.min(1, Math.hypot(x, y)));
 }
 /** the height of the drawn ground at a point (the triangle it falls in) @param {BowlGround} G @param {number} x
  * @param {number} y */
