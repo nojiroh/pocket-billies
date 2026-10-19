@@ -462,6 +462,16 @@ export function settingsHTML() {
         ])
       ) +
       settingsRowHTML(
+        'World map clouds',
+        'Clouds, rain, snow and lightning over the world map, from each place’s own weather. Auto follows the look above.',
+        segmentedHTML('mapClouds', p.mapClouds || 'auto', [
+          ['auto', 'Auto'],
+          ['off', 'Off'],
+          ['low', 'Low'],
+          ['high', 'High'],
+        ])
+      ) +
+      settingsRowHTML(
         'Expert',
         'Every dial, with what it does and what it costs. “See it” shows the dial in the Graphics gallery.',
         switchHTML('expert', !!p.expert, '1', '')

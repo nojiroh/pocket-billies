@@ -25,6 +25,7 @@ import {
 } from './studio-app.js';
 import { storyFindingPlace } from './story-editor.js';
 import { atlasPath, pickFile } from './sprites.js';
+import { wmlSeaShare } from './worldmap-look.js';
 /* eslint-disable no-func-assign */
 expose({
   checkTimer: [() => checkTimer, v => (checkTimer = v)],
@@ -140,6 +141,39 @@ function runCheck() {
     if (!['town', 'route'].includes(r.kind))
       err(`Stop ${i + 1}, ${r.name}: doesn’t say whether it’s a town or a route.`, 'world');
   });
+  /* phase 10, session 5: the world map's look (worldmap.json) and each place's landmark */
+  const WM = D.worldmap,
+    TR = (D.scenery && D.scenery.terrains) || {};
+  (D.locations || []).forEach((r, i) => {
+    const M = D.maps && D.maps[r.mapId];
+    if (r.landmark && M && M.props && !M.props.some(q => q.k === r.landmark))
+      warn(`Stop ${i + 1}, ${r.name}: its landmark ${r.landmark} isn’t in its walk scene (it still shows).`, 'world', {
+        wtab: 'route',
+        stop: i,
+      });
+    if (WM && r.region && !WM.regions[r.region])
+      warn(
+        `Stop ${i + 1}, ${r.name}: region ${r.region} has no ground on the world map (it uses starter’s).`,
+        'world',
+        {
+          wtab: 'look',
+        }
+      );
+  });
+  if (WM) {
+    for (const [k, R] of Object.entries(WM.regions))
+      for (const f of ['ground', 'wet', 'dry', 'high'])
+        for (const ch of R[f] || '')
+          if (!TR[ch])
+            err(`World map look: region ${k} (${f}) names a ground “${ch}” that doesn’t exist.`, 'world', {
+              wtab: 'look',
+            });
+    const sh = typeof wmlSeaShare === 'function' ? wmlSeaShare() : null;
+    if (sh != null && (sh < 0.3 || sh > 0.5))
+      warn(`World map look: ${Math.round(sh * 100)}% of the bowl is sea; between 30% and 50% reads best.`, 'world', {
+        wtab: 'look',
+      });
+  }
   (D.roads || []).forEach((L, i) => {
     const r = PB_DATA.road(D, L);
     if (!r.id)

@@ -76,7 +76,10 @@ test('the grid holds the heights at its corners and runs flat between them', () 
     [0.5, 0.3],
     [-0.2, 0.9],
   ])
-    assert.ok(Math.abs(bowlGridHeight(flat, x, y) - bowlBaseHeight(x, y)) < 0.02, 'the bare grid is the bowl');
+    assert.ok(
+      Math.abs(bowlGridHeight(flat, x, y) - bowlBaseHeight(x, y)) < 0.025,
+      'the bare grid is the bowl (and its rolling hills)'
+    );
 });
 
 test('the camera, the pins and a tap read the drawn ground', () => {

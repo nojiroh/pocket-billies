@@ -72,6 +72,24 @@ Cuts a sheet of art into parts (Billies & battles → Art workbench). Part, Pixe
   (kind, slot, pivot, size M, sockets worked out from the outline; a view not on these sheets stays as it was). Then
   Save. One undo takes the pictures back (new ones go away), one more the parts.
 
+## World map look (phase 10)
+
+World & encounters → **World map look** edits game/data/worldmap.json, the world map's look.
+
+- **The bowl from above.** A picture worked out with the game's own code as you edit: sea and land, rivers, routes,
+  trees in clumps, places (▲: it has a landmark). **Open the 3D bowl** opens the game's world map with your unsaved
+  changes (nothing there is saved).
+- **Brush.** Land brush (L) and Sea brush (W) force land or sea where a stroke passes; Remove strokes (X) takes away
+  the strokes you click; Look (V) does nothing; [ and ] change the size. The keys work while the pointer is over the
+  picture. A place's own ground and the routes always stay dry. Each stroke is one step of Undo.
+- **The sea.** How much of the bowl is sea (before painting), how rough the coast is, how much the land rises towards
+  the rim (high: an inland sea), how deep it is, and a seed for another coast. The Check warns outside 30-50% sea.
+- **Relief.** How much each kind of place lifts or lowers the ground round it, and its own ground there.
+- **Regions.** Each region's ground between places, its wet lowland, dry slopes and high ground (the game's terrain
+  tiles; ✎ opens one in the pixel canvas), and the trees in its clumps.
+- **Landmarks.** On a stop (Route stops), **Landmark on the world map**: Auto (the biggest landmark in its walk scene)
+  or one of its scene's landmarks and buildings; far out the map shows it standing up as its own picture.
+
 ## Sections
 
 | Section | What you can do |

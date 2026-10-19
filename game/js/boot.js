@@ -33,6 +33,7 @@ import { environment } from './environment.js';
 import { walkRenderer } from './walk/walk-state.js';
 import { startTownRise } from './walk/sprites.js';
 import { seamlessWorld } from './seamless-world.js';
+import { worldBowlReset } from './world-bowl.js';
 import { cutsceneStart, cutsceneWanted } from './cutscene/opening.js';
 import { titleMount, titleScreen, titleStart, titleWanted } from './title.js';
 import { loreLoadingLines } from './lore.js';
@@ -739,7 +740,8 @@ function loaderHide() {
     };
   setTimeout(go, reducedMotion ? 0 : Math.max(0, 900 - (performance.now() - (loaderIsland.doneAt || 0))));
 }
-/* v29: Pocket Billies Studio and an open game tab. A test run (?test=1&scene=<id>) is a throwaway game that starts in that
+/* phase 10, session 5: &tab=map opens the world map (the Studio's "Open the 3D bowl").
+   v29: Pocket Billies Studio and an open game tab. A test run (?test=1&scene=<id>) is a throwaway game that starts in that
    scene and never touches your save; while the Studio is open, its edits to scenes, props and the engine reach the
    game as you make them (no saving needed to see them). Project Story: ?story=<preset> is a test run that starts at a
    point in the story (story.json presets), alone or with ?test=1. S3, the Studio's Play from here: &place=<location>
@@ -758,6 +760,7 @@ const TEST_RUN = (() => {
           at: at.length === 2 && at.every(Number.isFinite) ? at : null,
           flags: storySwitchesOf(q.get('flags')),
           draft: q.get('draft') === '1',
+          tab: q.get('tab'),
         }
       : null;
   } catch (e) {
@@ -791,6 +794,11 @@ function studioTestStart() {
     uiState.roam = TEST_RUN.at ? { node, id: mapIdAt(node), x: TEST_RUN.at[0], z: TEST_RUN.at[1] } : null;
   } else if (TEST_RUN.scene && mapById(TEST_RUN.scene)) uiState.bench = { id: TEST_RUN.scene };
   uiState.tab = 'walk';
+  /* phase 10, the Studio's "Open the 3D bowl": &tab=map opens the world map, every place seen */
+  if (TEST_RUN.tab === 'map') {
+    LOCATIONS.forEach((l, i) => (saveData.visited[i] = 1));
+    uiState.tab = 'map';
+  }
   render();
   const where =
     node >= 0
@@ -822,6 +830,18 @@ function studioLive(D) {
       gameData[k] = D[k];
       any = true;
     }
+  /* phase 10, session 5: the world map's look and the places' landmarks; the bowl is worked out again */
+  if (D.worldmap) {
+    gameData.worldmap = D.worldmap;
+    any = true;
+  }
+  if (D.landmarks)
+    for (const l of LOCATIONS) {
+      if (D.landmarks[l.id]) l.landmark = D.landmarks[l.id];
+      else delete l.landmark;
+      any = true;
+    }
+  if ((D.worldmap || D.landmarks) && typeof worldBowlReset === 'function') worldBowlReset();
   /* Project Story S3: the story and the trainers, in place (STORY_DATA and TRAINERS are these objects) */
   for (const k of ['story', 'trainers'])
     if (D[k] && gameData[k]) {

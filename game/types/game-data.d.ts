@@ -44,6 +44,8 @@ export interface GameData {
   coats?: Record<DataId, Coat>;
   /** studio track ST-3: the phase 16 part kits, sliced by the Studio's Art workbench (game/data/partKits.json) */
   partKits?: PartKits;
+  /** phase 10: the world map's look: the sea, the relief, each region's ground and trees (game/data/worldmap.json) */
+  worldmap?: WorldMapLook;
   lines: Line[];
   /** the world map's places, in node order */
   locations: LocationData[];
@@ -1163,4 +1165,19 @@ export interface PortraitFace {
   mouth: DataId;
   items: DataId[];
   colors: Partial<Record<'skin' | 'hair' | 'iris' | 'top' | 'hat' | 'acc', string>>;
+}
+
+/** worldmap.json: the world map's look (phase 10; the Studio's World map look tab edits it) */
+export interface WorldMapLook {
+  sea: {
+    share: number;
+    depth: number;
+    rimLand: number;
+    rough: number;
+    seed: number;
+    paint?: { land: boolean; r: number; pts: [number, number][] }[];
+  };
+  relief: { max: number; default: [number, number]; kinds: Record<string, [number, number]> };
+  regions: Record<string, { ground: string; wet: string; dry: string; high: string; trees: string[] }>;
+  kinds: Record<string, string>;
 }

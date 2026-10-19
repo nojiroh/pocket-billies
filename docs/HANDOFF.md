@@ -52,6 +52,177 @@ tools/art-source and are sliced again by dropping them (settings kept per kit).
   parts of the kit that are no longer on the sheets? Should islands be named row by row instead of by first pixel?
 - Next session starts with: ST-4, Part mode (start from partKits.json parts and the workbench's pieces).
 
+### Phase 10 - World map: fixes for the weird textures - 2026-10-19
+Owner: "the map textures look weird on main". Found with small low-graphics pictures of the map (lite page, no
+graphics test); branch `world-map-fix` on top of `world-map-look-5`. Only #62 (sessions 1-2) had reached main; #65,
+#66 and #68 merged into their stacked bases, so this branch's PR to main carries sessions 3-5 too.
+- Fixed:
+  - **Camouflage ground**: ground patches were about 9 m with an outline ring of a second ground, and wet, dry and high
+    ground switched in 6 m blocks (nearest grid corner). Now a list's first ground with others in patches about 40 m
+    across, no rings, wetness and steepness read smoothly between corners. Single-square specks in the middle of the
+    map: 9.5% before, 4.5% after (the fast check fails above 7%).
+  - **Striped sea glare from far**: each wave fades out once it is under about two pixels; the sun's glint fades with
+    distance and is weaker; foam bands blur into a steady edge from far.
+  - **Town water as a tile**: a place's own water and the rivers (terrain w and d) are drawn as water (colours,
+    a slow ripple, foam where they meet land); far away their colour is water's.
+  - **Black trees and buildings** (sessions 3-5, found on the way): some shapes' normals pointed inward, so the facets
+    were lit from behind. Each facet is now lit from the side we see.
+  - Shadow lookups are offset along the surface's normal (less self-shadowing).
+- Verified: npm test 214; lint, types, format clean; full lite fast check 13 of 13 (the battle step passed on its own
+  rerun; it sticks at "playing" under load now and then, as before).
+- Next: the owner's phone look; then tag `phase-10-done`.
+
+### Phase 10 - World map, the look, session 5: the Studio and the finish - 2026-10-19
+Owner's answers: **worldmap.json**, the sea with **sliders and a brush**, the preview **both** (2D in the Studio, a
+button for the 3D bowl in the game). Branch `world-map-look-5`, on top of `world-map-look-4` (PR #66); main (studio
+track ST-0 to ST-2) merged into the chain first (only HANDOFF.md conflicted; both entries kept).
+- Changed:
+  - `logic/bowl.js`: the sea's settings travel with the sea input (`bowlSeaInput(..., opt)`: share, depth, rimLand,
+    rough, seed, paint); `bowlPaintStroke` (a brush stroke on the coast, applied after the line is drawn, then the
+    places and routes are kept dry); `bowlReliefFeatures(places, relief)` (kinds, default, max). `bowlClumps(...,
+    trees)` takes each region's trees.
+  - New `game/data/worldmap.json` (+ schema, data check: terrain keys, regions; types `WorldMapLook`): the sea, the
+    relief, each region's ground/wet/dry/high/trees, each kind's own ground. The map reads it through
+    `worldMapLook()` (the code's tables are the fallback). Moving it was a no-op: the same heights and coast to the
+    corner (checked before committing).
+  - Studio, World & encounters → **World map look** (`studio/js/worldmap-look.js`): the bowl from above (2D, the
+    game's own logic, cached), land/sea brush, remove strokes, sizes; sea sliders; relief per kind with its own
+    ground; region grounds as tile chips (✎ opens the tile in the ST-2 pixel canvas, + add) and tree kinds; "Open the
+    3D bowl" (`?test=1&place=copperleaf&tab=map&draft=1`). Route stops → **Landmark on the world map** (Auto shows what
+    it picks, the choices from the stop's scene, a thumbnail). Keys V L W X [ ] in the `?` sheet, only over the
+    picture. Check: a landmark not in its scene, a region without ground, a terrain key that doesn't exist, the sea
+    outside 30-50%.
+  - Game: `&tab=map` for a test run; the Studio's live data now carries `worldmap` and the places' landmarks, and the
+    bowl is worked out again (`worldBowlReset`).
+  - Tests: two sea tests (settings, brush); fast check "The Studio's world map look" (the bowl drawn, a brush stroke
+    and its undo, the landmark field offering Auto (Windmill) at Clovercrest).
+- How it fits ST-2: every edit (a slider, a chip, a brush stroke) is a data edit through `changed()`/`commit()`, so it
+  is one step of the one undo in order with pixel strokes; brush strokes are data, not picture patches. The tab has
+  no 3D view and its ids are `wml*`, so it opens in either pane; `.pane[data-w='narrow']` stacks the picture.
+- Risky or unfinished:
+  - The 2D picture and the 3D map share the logic but not the colours (the picture is a sketch palette).
+  - Working out the picture takes about 100-300 ms when the data changed (the time is shown under it).
+- Verified: npm test 214 pass; lint, types, modules, data, format clean; full lite fast check 13 of 13.
+- Next: the owner's phone test of the whole look (world map test in Settings > Help), then tag `phase-10-done`.
+
+### Phase 10 - World map, the look, session 4: landmarks, buildings, trees, town lights - 2026-10-19
+Owner's answers: **bigger buildings** (about 3x, today's zoom kept), landmarks as **pixel-art standees**, trees
+**from the maps plus clumps**. Branch `world-map-look-4`, on top of `world-map-look-3` (PR #65).
+- Changed:
+  - New `logic/bowl-things.js` (page script added): `BOWL_THING_SCALE` 3; `bowlMapPoint` and `bowlMapTurn` (a walk
+    map's point on the bowl, as the terrain stamps it); `bowlPropClass` (tree, building or nothing); `bowlLandmarkPick`
+    (locations.json `landmark` if set, else the biggest landmark prop in the map by picture size, else the biggest
+    building; 47 of 49 places get one); `bowlTreeStyle`; `bowlClumps` (forest patches on dry land between places, off
+    the routes and the places' ground, each region's kinds, deterministic).
+  - `world-bowl.js`: things built a place at a time as its map file comes in. Far out: each place's landmark as a
+    standee of its own picture, at least 46 px tall on screen. Close in (camera nearer than about 0.95, fully at
+    0.7, when the pins turn to tags): each map's buildings (19 kinds as their low-poly recipe, simplified: small parts
+    dropped, 8 sides at most; the rest as picture standees), its landmark props, its trees (8 low-poly tree styles),
+    all 3x size, fading in with a pixel dither. Clumps always. Everything instanced (one draw per shape), lit by the
+    sun and clouds, casting into the shadow map (drawn again at most every 2 s while things come in). Night: building
+    models' walls get lit windows, coming on one by one (environmentLitFraction). Atlas of pictures: 2048 px, each
+    scaled down by whole steps to at most 192 px high, sharp.
+  - `prop-models.js`: `lowPolyFromRecipe` is now exported (made by the module tool; no behaviour change).
+  - Tests: `tools/test/bowl-things.test.mjs`; world map test step "Landmarks, buildings and trees" (counts, update
+    time, triangles); the fast check zooms over Marigold Town and asks for landmarks, models and trees, then for no
+    GPU error.
+- Risky or unfinished:
+  - Not seen on a screen: tree colours and sizes, standee lighting, where 3x buildings overlap in dense towns.
+  - Picture standees don't light their windows at night (only the models do).
+  - Cost: about 4,700 map trees and 365 buildings drawn instanced when close; the world map test reports triangles.
+- Verified: npm test 197 pass; lint, types, modules, format clean; full lite fast check 12 of 12.
+- Next session starts with: session 5, Studio landmark picker, sea and region terrain editing, the phone test, tag.
+
+### Phase 10 - World map, the look, session 3: clouds, weather, the Inner Sun's day - 2026-10-19
+Owner's answers: night **circles and dims**; clouds **as proposed** (Low 12 in one layer, High 40 in two with full
+rain, snow, ash and lightning, Off none). Branch `world-map-look-3`, on top of `world-map-look-2` (PR #64).
+- Changed:
+  - New `logic/bowl-weather.js` (page script added to game/index.html): each place's weather spread over the bowl
+    and blended (`bowlSkyAt`, `bowlSkyGrid`), the cloud layout per setting (`BOWL_CLOUD_LEVELS`, `bowlCloudLayout`,
+    deterministic), clouds circling the bowl with the wind (`bowlCloudAt`), shown by local cover (`bowlCloudShow`),
+    the Inner Sun's day (`bowlSunAt`: once round a day, 135 degrees at 13:00, dims to 15% red at night), the setting
+    (`bowlCloudLevel`: Auto follows Beautiful/Balanced).
+  - `world-bowl.js`: the weather from `environmentState` for every place's scene every 5 s, eased so fronts build;
+    a 32 x 32 weather map for the shaders (fog in the low ground and over the water, snow dusting the tops, light
+    dimmed under cloud); low-poly cloud puffs (instanced icosahedra) with moving shadows on land and sea; rain, snow
+    and ash as falling lines under the clouds that carry them; lightning flashes in storms (High); night: dusk-blue
+    ambient, dark sky, the sun a red ember, red glints. The shadow map is drawn again when the sun has moved 1.5
+    degrees (about every 6 minutes). Clouds clear away when the camera zooms in.
+  - Settings > Graphics: "World map clouds" (Auto, Off, Low, High; `preferences.mapClouds`).
+  - Tests: `tools/test/bowl-sky.test.mjs`; world map test step "Clouds and weather" (setting, clouds showing, drops,
+    weather by place, the sun); the fast check switches Off and High, forces a storm (clouds and rain must show) and
+    checks for GPU errors.
+- Risky or unfinished:
+  - Not seen on a screen: cloud colours, sizes, rain density, night darkness are first guesses.
+  - Cloud shadows loop over up to 40 clouds per pixel (12 on Low); watch the frame time on High.
+  - The map follows "My clock": in the evening it is night on the map now (owner's choice).
+- Verified: npm test 193 pass; lint, types, modules, format clean; full lite fast check 12 of 12 (with a forced storm).
+- Next session starts with: session 4, landmarks, buildings, trees (and town lights at night).
+
+### Phase 10 - World map, the look, session 2: the land, the routes, the light - 2026-10-19
+Owner's request: "Next session"; light option **A** (the Inner Sun off the centre, the light from where it hangs).
+Branch `world-map-look-2`, on top of `world-map-look` (PR #62, not merged yet).
+- Changed:
+  - `logic/bowl.js`: relief about 40% taller (limit 0.115) with broad hills between places; land never sinks below
+    the water (dips flatten into low ground); headland stretches of coast stand up and drop to the sea as cliffs,
+    low coasts slope to beaches. Rivers (`bowlRivers`): a priority flood from the sea over the height above the
+    water, springs on the highest land, up to 10 courses, each falling all the way, ending in the sea, clear of the
+    places' ground and the rim, beds cut 2 m. Wetness (`bowlWetness`, `bowlWetAt`). The sun: `bowlSun` (40 degrees
+    slant, azimuth 135 for now, hanging inside the hollow sphere).
+  - `world-bowl.js`: ground lit by the slanted sun with a sky fill and cast shadows (`mshadow`, a 2048 shadow map
+    drawn once, the ground never moves); the water takes the shadows and the glint follows the sun. A line map
+    (`worldBowlLineMap`, RGBA 1024): routes drawn as bold cream paths with a dark outline that stay a few pixels wide
+    at any zoom (hidden up close inside a place's own ground, where its paths show), rivers as blue lines when far.
+    Terrain: region borders wander and dither; wet lowland, dry slopes, high ground per region (`BOWL_REGION_SHADE`),
+    rock on steep ground and cliffs, snow higher than before; rivers painted with muddy and sandy banks; routes
+    painted over them as fords.
+  - `opening-fall.js`: the fall passes close by the Inner Sun where it now hangs.
+  - Tests: `tools/test/bowl-land.test.mjs` (rivers, cliffs and beaches, land above water, wetness, the sun); world
+    map test step "Light, shadows, routes and rivers"; the fast check asks for the shadow map, line map, rivers and no
+    GPU error.
+- Risky or unfinished:
+  - Not seen on a screen: colours, shadow softness, route width and river colour are first guesses.
+  - The ground now takes about 250-300 ms to work out here (sea, relief, rivers), once per session; maybe 0.6 s on
+    a phone, on first opening the map or the first far wall. If it shows, it can move to idle time.
+  - Shadow map: 2048 x 2048 depth, drawn once (time shown in the world map test).
+- Verified: npm test 187 pass; lint, types, modules, format clean; full lite fast check 12 of 12.
+- Decisions I made: the sun stays at azimuth 135 until session 3 ties it to the time of day; rivers avoid the places'
+  ground entirely and the rim; routes cross rivers as fords (painted over them).
+- Next session starts with: session 3, clouds and weather (and the sun moving with the time of day).
+
+### Phase 10 - World map, the look, session 1: sea and coasts - 2026-10-19
+Owner's request: the living diorama look (B), an inland sea with bays, about 40% of the bowl water; "Go" for session 1.
+Branch `world-map-look`.
+- Changed:
+  - `logic/bowl.js`: the sea. `bowlSeaInput` (each place with its walk map's half-diagonal, each road),
+    `bowlCoastGrid` (distance past the nearest place or road, plus a three-octave noise, minus a rise towards the rim
+    so the land wraps round the sea; the line drawn at the 60% quantile, so 40.0% of the bowl is sea), then a hard
+    margin so every place's map and every road stays dry. `bowlGroundGrid(F, n, sea)` returns the coast as `c`: the
+    land's relief fades to the water's edge, the sea floor sinks up to `BOWL_SEA_DEPTH` (0.035) below it.
+    `bowlWaterLevel` is the bowl's own curve (things fall towards the shell, so water lies on the bowl).
+  - `world-bowl.js`: a water sheet over every sea cell (`worldBowlWaterMesh`, each corner with its depth and coast
+    value) and its shader `mwater`: shallow, mid and deep colours, four moving waves, the sky reflected at glancing
+    angles, the sun's glint, foam at the shore, see-through shallows. The terrain map gets beaches (sand, then wet sand)
+    and a sea floor (sand or coral sand in the shallows, pebbles and rock further out). The map redraws at about 30
+    frames a second while the sea shows (600 ms beats with reduced motion, waves still). The walk scenes' far wall
+    sees the water's level and colour.
+  - Tests: `tools/test/bowl-sea.test.mjs` (sea 35-45%; every square of every place's walk map and every road on land;
+    the sea floor below the water and not too deep). The world map test (Settings > Help) has a new step "The sea and
+    the coasts" (share, places dry, triangles, how long it took). The fast check asks for the water sheet.
+- Risky or unfinished:
+  - Not seen on a screen (no headless graphics): the water's colours, foam width and wave strength are first guesses.
+  - Working out the coast takes about 120 ms on this machine once per session when the map or the far wall first
+    needs the ground; on a phone maybe 300 ms. The world map test reports it.
+  - Redrawing at 30 fps while the map is open costs battery; the draw was about 1 ms a frame on the owner's phone.
+  - `check-fast.py --only=map` on its own fails its touch check (a canvas without an id on top) on main as well; in the
+    full run it passes. Not from this work.
+- Verified: npm test 180 pass; lint, types, modules, format clean; full lite fast check: the world map step passes
+  (the battle step stuck at "playing" once under load, as before, and passed in the other run).
+- Decisions I made (and why): the land rises towards the rim so the sea is an inland sea, not a ring along the edge
+  (owner's choice); a few small islands and lakes are kept, they read as natural. The highlight uses the overhead sun
+  for now; the slanted sun comes in session 2 with the shadows.
+- Questions waiting for the owner: on the phone, does the water read as water, and is 30 fps animation fine?
+- Next session starts with: session 2, the look and the routes (cliffs, rivers, bold routes, slanted sun, shadows).
 ### Studio track ST-2 - the shared pixel canvas - 2026-10-19
 Plan approved at the start. Owner's pick: the Walk scenes prop and tile painter moves onto the canvas now too.
 - Changed (one cause per commit):

@@ -86,7 +86,7 @@ painter code. Node tests pass; then the owner's phone test.
 - Phone frame times after E-map-4 and E-map-5 (graphics are tested only on the owner's devices; no headless graphics).
 
 ## Still open (ask before the session that needs it)
-- E-map-5: cloud count and heights per quality level.
+- ~~E-map-5: cloud count and heights per quality level.~~ Answered 2026-10-19: Low 12 (one layer, 70 m), High 40 (70 m and 160 m), Off none.
 
 ## Tests
 Node only: graph unchanged; every place reachable; seam directions match the layout; every place has bowl coordinates
@@ -109,4 +109,24 @@ on the bowl, and the old map code is deleted.
 - **Pins (owner: fade when close):** pins far out; up close a small name tag and the buildings take over; the picked
   place and you always show.
 - **World map test:** the new ground, models and draw time.
+
+## The look: living diorama (chosen 2026-10-19)
+Concept sketches (top-down, offline, from the real spots and roads): `10-bowl/option-atlas.png`,
+`option-diorama.png` (chosen), `option-pixel.png`.
+Owner's answers: **B, living diorama** (strong low-poly relief, cast shadows, animated reflective water, little 3D towns);
+the sea as an **inland sea with bays** (the open side of the bowl, about 40% of it; one continent wrapping round it);
+**slanted light** for readable shadows; clouds and weather from **the game's own weather** and time of day.
+
+Sessions, in order:
+1. **Sea and coasts (done 2026-10-19; 40.0% sea, test step in the world map test).** About 40% ocean in the ground data (logic/bowl.js: a sea level and a coastline from the
+   distance to places and roads plus noise; every place and road on land, enforced by a test). Water: depth colours,
+   moving waves, foam along the coasts, sky reflections; beaches, shallows. The walk scenes' far wall shows the sea.
+2. **The look and the routes (done 2026-10-19; light option A: the Inner Sun off the centre, slanted light).** Natural ground between places: beaches, cliffs on steep coasts, rivers from the high
+   ground to the sea, regions blending by height and wetness. Routes as bold outlined paths in the ground, always
+   clear. Stronger relief; hill shading and cast shadows from a slanted sun (a shadow map over the bowl).
+3. **Clouds and weather (done 2026-10-19; night: the sun circles and dims; clouds Low 12, High 40 in two layers).** Simplified low-poly clouds at a few heights with moving shadows; rain showers, fog and snow
+   over the peaks from the game's weather; time of day; quality off/low/high.
+4. **Landmarks, buildings, trees (done 2026-10-19; buildings and trees 3x size, landmarks as pixel-art standees, map trees plus clumps).** Oversized landmarks far out, each town's real buildings close in, tree clumps.
+5. **Studio and finish (built 2026-10-19: worldmap.json, the World map look tab with a 2D picture, brush and sliders, the landmark picker, Open the 3D bowl; waiting for the owner's phone test and the tag).** Landmark per place, sea and region terrain editing; world map test steps for each part;
+   the owner's phone test; tag.
 

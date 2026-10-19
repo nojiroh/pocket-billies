@@ -258,7 +258,8 @@ export let ALTERNATE_PROPS,
   worldBillies,
   worldBillyGlows,
   worldBillyItem,
-  worldBillyLabels;
+  worldBillyLabels,
+  worldMapLookTab;
 const set = {
   ALTERNATE_PROPS: v => (ALTERNATE_PROPS = v),
   BATTLE_STAGES: v => (BATTLE_STAGES = v),
@@ -517,6 +518,7 @@ const set = {
   worldBillyGlows: v => (worldBillyGlows = v),
   worldBillyItem: v => (worldBillyItem = v),
   worldBillyLabels: v => (worldBillyLabels = v),
+  worldMapLookTab: v => (worldMapLookTab = v),
 };
 // a setter hands its new value over whether or not another module reads it through here
 export function provide(names) {

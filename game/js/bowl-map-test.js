@@ -18,7 +18,7 @@ import { expose } from './test-globals.js';
 import { provide } from './hooks.js';
 import { $ } from './util.js';
 import { LOCATIONS } from './game-data.js';
-import { BOWL_RIM_HEIGHT } from './logic/bowl.js';
+import { BOWL_RIM_HEIGHT, bowlCoastAt } from './logic/bowl.js';
 import {
   BOWL_CAMERA,
   bowlCamHome,
@@ -30,12 +30,14 @@ import {
   bowlCamZoom,
   bowlToGpu,
 } from './logic/bowl-camera.js';
+import { BOWL_CLOUD_LEVELS } from './logic/bowl-weather.js';
 import { activeBattle, escapeHtml, pauseSaving, resumeSaving, saveData, uiState } from './game-state.js';
 import { ensurePrograms, gpuState } from './engine/webgl.js';
 import {
   WORLD_BOWL_SHADERS,
   worldBowl,
   worldBowlPick,
+  worldBowlSunNow,
   worldMap,
   worldMapHeight,
   worldMapReset,
@@ -186,6 +188,70 @@ async function runBowlMapTest() {
         T = worldBowl.ground.terrain;
       while (T.stamped.size < LOCATIONS.length - 1 && performance.now() - t < 30000) await bowlTestWait(200);
       return `${T.K.keys.length} terrain pictures; ready in ${ready} ms; ${T.stamped.size} of ${LOCATIONS.length} places' own ground laid on it in ${Math.round(performance.now() - t)} ms`;
+    });
+    await step('The sea and the coasts', () => {
+      const g = worldBowl.ground,
+        G = g && g.G;
+      if (!G || !G.c) return { ok: false, note: 'the ground has no sea' };
+      let sea = 0,
+        all = 0;
+      for (let j = 0; j <= G.n; j++)
+        for (let i = 0; i <= G.n; i++) {
+          const x = -1 + (2 * i) / G.n,
+            y = -1 + (2 * j) / G.n;
+          if (x * x + y * y > 1) continue;
+          all++;
+          if (G.c[j * (G.n + 1) + i] > 0) sea++;
+        }
+      const wet = LOCATIONS.filter((l, i) => {
+        const s = worldBowl.spots[i];
+        return s && !s.under && bowlCoastAt(G, s.x, s.y) > 0;
+      });
+      const share = Math.round((sea / all) * 100);
+      if (wet.length) return { ok: false, note: `under water: ${wet.map(l => l.id).join(', ')}` };
+      if (!g.water) return { ok: false, note: "the water isn't drawn" };
+      if (share < 35 || share > 45) return { ok: false, note: `the sea is ${share}% of the bowl` };
+      return `${share}% of the bowl is sea, every place on land; worked out in ${g.seaMs} ms; the water is ${g.water.n / 3} triangles`;
+    });
+    await step('Light, shadows, routes and rivers', async () => {
+      const g = worldBowl.ground,
+        t = performance.now();
+      while (!(g.shadow && g.lines) && performance.now() - t < 5000) await bowlTestFrames(1);
+      if (!g.shadow || !g.shadow.t) return { ok: false, note: 'no shadow map (the ground is lit without shadows)' };
+      if (!g.lines) return { ok: false, note: "the routes' line map is missing" };
+      const n = (g.G.rivers || []).length;
+      if (n < 4) return { ok: false, note: `only ${n} rivers` };
+      return `shadow map drawn in ${g.shadow.ms} ms; route and river lines made in ${g.lines.ms} ms; ${n} rivers`;
+    });
+    await step('Clouds and weather', async () => {
+      await bowlTestFrames(4);
+      const S = worldBowl.skyState;
+      if (!S || !S.places) return { ok: false, note: 'the sky never worked out the weather' };
+      const kinds = {};
+      for (const q of S.places) kinds[q.wx] = (kinds[q.wx] || 0) + 1;
+      const sun = worldBowlSunNow(),
+        list = Object.entries(kinds)
+          .map(([k, n]) => `${k} ${n}`)
+          .join(', ');
+      if (S.clouds.length !== BOWL_CLOUD_LEVELS[S.level].count)
+        return { ok: false, note: `${S.clouds.length} clouds for the ${S.level} setting` };
+      return `clouds ${S.level}: ${S.shown || 0} of ${S.clouds.length} showing, ${Math.round((S.nFall || 0) / 2)} drops falling; weather by place: ${list}; the sun at ${Math.round(sun.az)} degrees, ${Math.round(sun.light * 100)}% light, night ${sun.night.toFixed(2)}`;
+    });
+    await step('Landmarks, buildings and trees', async () => {
+      const t = performance.now();
+      let W = worldBowl.ground.things;
+      while (!(W && W.gpu && W.done.size >= LOCATIONS.length - 2) && performance.now() - t < 20000) {
+        await bowlTestWait(250);
+        W = worldBowl.ground.things;
+      }
+      if (!W || !W.gpu) return { ok: false, note: 'nothing was built' };
+      const kinds = Object.entries(W.gpu.kinds),
+        models = kinds.filter(([k]) => k.startsWith('m:')).length,
+        n = kinds.reduce((a, [, K]) => a + K.n, 0),
+        far = W.stand.filter(q => q.g === 0).length,
+        near = W.stand.length - far;
+      if (!far) return { ok: false, note: 'no landmarks' };
+      return `${far} landmarks; ${n} trees and buildings (${models} building models, ${W.clumps} trees in clumps), ${near} standees close in; ${W.done.size} places in, last update ${W.ms} ms; ${Math.round((W.tris || 0) / 1000)}k triangles last frame`;
     });
     await step('Every place is on the bowl', async () => {
       const S = worldBowl.spots || [],
