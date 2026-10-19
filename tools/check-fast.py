@@ -178,6 +178,9 @@ def bowl_map(pg, base):
     pg.set_viewport_size({'width': 400, 'height': 300})
     # the ground's terrain map fills and the terrain pictures go up (graphics off: nothing is judged by eye)
     if not until(pg, "!!(worldBowl.ground&&worldBowl.ground.terrain&&worldBowl.ground.terrain.ready&&worldBowl.ground.ok)", 60): raise Exception('the terrain never got ready')
+    # calm ground (fix 2026-10-19): few single squares of another ground in the middle of the map (it read as camouflage)
+    sp = pg.evaluate("(()=>{const I=worldBowl.ground.terrain.idx,N=2048;let s=0,n=0;for(let j=600;j<1450;j++)for(let i=600;i<1450;i++){const v=I[j*N+i];n++;if(I[j*N+i+1]!==v&&I[j*N+i-1]!==v&&I[(j+1)*N+i]!==v&&I[(j-1)*N+i]!==v)s++}return s/n})()")
+    if sp > 0.07: raise Exception(f'the ground is speckled: {sp * 100:.1f}% single squares')
     # the sea (look session 1): a water sheet over about 40% of the bowl, its shader in the same programs
     if not pg.evaluate("!!(worldBowl.ground.water&&gpuState.P.mwater)"): raise Exception('the sea isn’t drawn')
     # look session 2: the shadow map, the routes' and rivers' line map and the rivers
