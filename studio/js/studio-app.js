@@ -3,7 +3,7 @@
    State, server calls, undo, form fields bound to paths in the game data, navigation, toasts and dialogs. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
-import { mountPreviews, provide, runCheck, scheduleCheck, spriteCacheClear } from '../../game/js/hooks.js';
+import { artStepPut, mountPreviews, provide, runCheck, scheduleCheck, spriteCacheClear } from '../../game/js/hooks.js';
 import { $, $$ } from '../../game/js/util.js';
 import { ICON_ATLAS, artLoad } from '../../game/js/art.js';
 import { battleStageStop } from '../../game/js/battle-stage.js';
@@ -233,14 +233,20 @@ export function undo() {
   commit(true);
   const u = historyUndo(studioState);
   if (!u) return toast('Nothing to undo.');
-  restore(u.snap);
+  if (u.kind === 'art') {
+    artStepPut(u.step, u.put);
+    updateTopBar();
+  } else restore(u.snap);
   toast('Undone.');
 }
 export function redo() {
   blurField();
   const u = historyRedo(studioState);
   if (!u) return toast('Nothing to redo.');
-  restore(u.snap);
+  if (u.kind === 'art') {
+    artStepPut(u.step, u.put);
+    updateTopBar();
+  } else restore(u.snap);
   toast('Redone.');
 }
 function restore(s) {

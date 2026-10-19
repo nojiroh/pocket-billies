@@ -12,9 +12,11 @@ import { makeCanvas } from '../../game/js/art.js';
 import { animFor } from '../../game/js/body-plan-animation.js';
 import { coatAtlas, drawRig, rigPose, setCoatRigData } from '../../game/js/skeleton-rig.js';
 import { escapeHtml } from './game-stand-ins.js';
-import { ask, render, speciesName, studioState, toast, updateTopBar } from './studio-app.js';
+import { ask, redo, render, speciesName, studioState, toast, undo, updateTopBar } from './studio-app.js';
 import {
+  artStep,
   drawPixelCanvas,
+  pictureImage,
   pixelCanvas,
   pixelCanvasColor,
   pixelCanvasFit,
@@ -46,7 +48,7 @@ expose({
   hueShift: [() => hueShift, v => (hueShift = v)],
   loadImage: [() => loadImage, v => (loadImage = v)],
   loadedAtlas: [() => loadedAtlas],
-  markArt: [() => markArt, v => (markArt = v)],
+  markArt: [() => markArt, v => ((markArt = v), provide({ markArt }))],
   mountPreviews: [() => mountPreviews, v => ((mountPreviews = v), provide({ mountPreviews }))],
   openPixelEditor: [() => openPixelEditor, v => (openPixelEditor = v)],
   partsOf: [() => partsOf, v => (partsOf = v)],
@@ -61,7 +63,6 @@ expose({
   pixelEditorPalette: [() => pixelEditorPalette, v => (pixelEditorPalette = v)],
   playSpritePreviewAction: [() => playSpritePreviewAction, v => (playSpritePreviewAction = v)],
   previewsDirty: [() => previewsDirty, v => (previewsDirty = v)],
-  pushPixelUndo: [() => pushPixelUndo, v => (pushPixelUndo = v)],
   redoPixels: [() => redoPixels, v => (redoPixels = v)],
   refreshPixelEditor: [() => refreshPixelEditor, v => (refreshPixelEditor = v)],
   refreshPixelTools: [() => refreshPixelTools, v => (refreshPixelTools = v)],
@@ -74,7 +75,7 @@ expose({
   undoPixels: [() => undoPixels, v => (undoPixels = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ mountPreviews, spriteCacheClear });
+provide({ markArt, mountPreviews, spriteCacheClear });
 /* to-module: end */
 export const ATLAS_CACHE = new Map(); /* path -> canvas */
 const ATLAS_LOADS = new Map();
@@ -117,6 +118,7 @@ export function atlasGet(path) {
   return p;
 }
 export const loadedAtlas = path => studioState.artDirty.get(path) || ATLAS_CACHE.get(path) || null;
+provide({ loadedAtlas }); /* to-module */
 /* assemble a skeleton like skeleton-rig.js rigParts(), but from the Studio's editable atlas */
 /* studio track ST-0: the coats being edited (coats.json); a coat edit bumps coatVersion so previews recolour again */
 let coatVersion = 0;
@@ -381,8 +383,6 @@ export async function openPixelEditor(sp, view = 'front', focus = null) {
     view,
     tool: 'pen',
     color: '#2A1E2E',
-    undo: [],
-    redo: [],
     parts: true,
     pc: null,
     act: 'idle',
@@ -462,10 +462,8 @@ function refreshPixelEditor() {
               .join('')
           : '',
       hover: (P, x, y) => pixelEditorHover(x, y),
-      changed: (P, before) => {
-        pushPixelUndo(before);
-        pixelEditorChanged();
-      },
+      path: pixelEditorAtlasPath,
+      changed: pixelEditorChanged,
       toolChanged: refreshPixelTools,
       drawn: P => {
         $('#pxZoom').textContent = P.zoom + '×';
@@ -479,8 +477,6 @@ function refreshPixelEditor() {
         refreshPixelTools();
       },
     });
-  E.undo = [];
-  E.redo = [];
   if (E.focus) {
     const k = partsOf(E.sp, E.view).findIndex(p => p.i === E.focus.i && (!E.focus.v || p.v === E.focus.v));
     if (k >= 0) {
@@ -563,16 +559,10 @@ function pixelEditorHover(x, y) {
     $$('#pxParts rect').forEach(r => r.classList.toggle('hov', +r.dataset.k === k));
   }
 }
-function pushPixelUndo(before) {
-  const E = pixelEditor;
-  E.undo.push(before);
-  if (E.undo.length > 40) E.undo.shift();
-  E.redo = [];
-}
 function pixelEditorChanged() {
   const c = pixelEditorCanvas();
-  markArt(pixelEditorAtlasPath(), c);
-  drawPixelEditor();
+  if (c) markArt(pixelEditorAtlasPath(), c);
+  pixelEditorPalette();
 }
 function choosePixelColor(h) {
   pixelCanvasColor(pixelEditor.pc, h);
@@ -631,16 +621,18 @@ function bindPixelEditor() {
         ))
       )
         return;
-      if (c) pushPixelUndo(c.getContext('2d').getImageData(0, 0, c.width, c.height));
+      const before = pictureImage(c);
       markArt(pixelEditorAtlasPath(), up);
+      artStep(pixelEditorAtlasPath(), before, pictureImage(up));
       refreshPixelEditor();
       toast('Sheet replaced. Save to game to keep it.');
     } else if (k === 'revert') {
       const p = pixelEditorAtlasPath();
       if (!(await ask('Throw away unsaved edits to this sheet?', 'Revert'))) return;
+      const before = pictureImage(loadedAtlas(p));
       studioState.artDirty.delete(p);
       ATLAS_CACHE.delete(p);
-      await atlasGet(p).catch(() => null);
+      artStep(p, before, pictureImage(await atlasGet(p).catch(() => null)));
       previewsDirty();
       updateTopBar();
       refreshPixelEditor();
@@ -656,23 +648,14 @@ function bindPixelEditor() {
   });
   document.addEventListener('keydown', pixelEditorKeys);
 }
+/* the pixel editor's undo is the Studio's: it takes pixels and the skeleton table's numbers back in order */
 function undoPixels() {
-  const E = pixelEditor,
-    c = pixelEditorCanvas();
-  if (!E.undo.length || !c) return;
-  const x = c.getContext('2d');
-  E.redo.push(x.getImageData(0, 0, c.width, c.height));
-  x.putImageData(E.undo.pop(), 0, 0);
-  pixelEditorChanged();
+  undo();
+  pixelEditorBones();
 }
 function redoPixels() {
-  const E = pixelEditor,
-    c = pixelEditorCanvas();
-  if (!E.redo.length || !c) return;
-  const x = c.getContext('2d');
-  E.undo.push(x.getImageData(0, 0, c.width, c.height));
-  x.putImageData(E.redo.pop(), 0, 0);
-  pixelEditorChanged();
+  redo();
+  pixelEditorBones();
 }
 function pixelEditorKeys(ev) {
   if (!$('.pxed:not(.skel)')) {
