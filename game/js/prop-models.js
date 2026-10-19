@@ -1445,7 +1445,8 @@ function tagPropModel(it) {
    batch 1, for trees with a modelled trunk and drawn leaf clumps: a layer may say shadow (1: it casts its cut-out
    shadow), recv (0: it takes no shadows from the shadow map, for a crown that would shade its own clumps in stripes),
    sway (how much the wind moves it, times the prop's sway; the model itself stays still), glow (it lights up
-   when the lamps come on, a lantern's glass), and the recipe its art's scale (ppm: pixels to the metre; else the scenery's) */
+   when the lamps come on, a lantern's glass), yaw (with face fixed: which way it faces, radians, pi/2 the right side,
+   pi the back; batch 8, a tower's windows on every face), and the recipe its art's scale (ppm: pixels to the metre; else the scenery's) */
 function propModelImageItems(it, out) {
   const rec = it.vox;
   if (!rec) return;
@@ -1489,6 +1490,7 @@ function propModelImageItems(it, out) {
       noRecv: L.recv === 0,
       fixed: L.face === 'fixed',
       plane: L.face === 'fixed',
+      yaw: L.face === 'fixed' ? +L.yaw || 0 : 0,
       mat: it.mat,
       layer: L,
       still: it.still,

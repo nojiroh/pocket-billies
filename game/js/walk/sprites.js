@@ -181,7 +181,11 @@ export function drawSprites(C, items, X, hits, labels, PPU) {
       continue;
     }
     {
-      const ro = it.fixed && it.lk && it.lk.rot && !it.M.box && !it.bld3 ? it.lk.rot * 0.6 : 0,
+      /* phase 09 batch 8: a model's picture layer may face another way than the front (yaw, radians: pi/2 the right
+         side, pi the back), a tower's windows on every face */
+      const ro =
+          (it.fixed && it.lk && it.lk.rot && !it.M.box && !it.bld3 ? it.lk.rot * 0.6 : 0) +
+          (it.fixed ? it.yaw || 0 : 0),
         cr = Math.cos(ro),
         sr = Math.sin(ro);
       if (ro) {
