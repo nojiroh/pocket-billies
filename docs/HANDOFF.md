@@ -36,7 +36,7 @@ Plan approved at the start. Owner's pick: the Walk scenes prop and tile painter 
     in the checks (the painter's step waits up to 2 minutes).
 - Verified: lint, typecheck, check:modules, format, 190 unit tests (pixel-ops, history), check:smoke after the undo
   change, check-studio-github (all steps, new pixel and tile painter steps, a proposed PR), element boxes of the
-  pixel editor before/after the move. The full quick check: see the line below.
+  pixel editor before/after the move. The full quick check was skipped on the owner's word (it had passed its phone step).
 - Decisions I made (and why): `?` lists every key, the open tool's first (one place to look); the canvas's keys work
   in the tile painter only while the pointer is over it (B and E also paint the map); K and O for the palette lock
   and onion skin (Aseprite has none); flips and turns act on the part under the pointer in a sheet, never the whole
