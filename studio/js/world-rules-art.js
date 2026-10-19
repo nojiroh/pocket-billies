@@ -317,13 +317,13 @@ function roadLengthText(k) {
     b = len(r.b, r.exitB);
   return a != null && b != null ? `${Math.round(a + b)} m` : 'not joined (100 m)';
 }
-/* the roads of stop i: [the other stop, the road's index] */
+/* the roads of stop i: [the other stop, the road's index] (a glass lift is set on its lift prop, "Goes to") */
 function locationRoads(i) {
   const D = studioState.D;
   return (D.roads || [])
     .map((l, k) => {
       const r = PB_DATA.road(D, l);
-      return r.a === i ? [r.b, k] : r.b === i ? [r.a, k] : null;
+      return r.kind !== 'seam' ? null : r.a === i ? [r.b, k] : r.b === i ? [r.a, k] : null;
     })
     .filter(Boolean);
 }

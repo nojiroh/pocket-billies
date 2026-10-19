@@ -41,7 +41,8 @@ def save(D):
 
 
 # phase 08b: the roads between places. roads.json is a list of typed links,
-#   {'id', 'name', 'kind': 'seam', 'a': {'map', 'exit'}, 'b': {'map', 'exit'}}
+#   {'id', 'name', 'kind': 'seam' | 'lift', 'a': {'map', 'exit'}, 'b': {'map', 'exit'}}
+# a seam joins two places' edges at the exits; a lift (no exits) is the glass lift between them.
 # each end naming a place by its map (the place's mapId, or its id when it has none) and the edge exit it leaves by.
 # The tools read and change roads only through these (as the Studio does through game/js/data-files.js); they speak of
 # a place as its position in D['locations'] (a node), as the rest of the data does.
@@ -57,10 +58,10 @@ def _map_of(D, node):
 
 
 def road(D, L):
-    """A road as {'a', 'b'} (the two places' nodes), 'exit_a', 'exit_b', 'id', 'name'."""
+    """A road as {'a', 'b'} (the two places' nodes), 'exit_a', 'exit_b', 'id', 'name', 'kind'."""
     A, B = L.get('a') or {}, L.get('b') or {}
     return {'a': _place_of(D, A.get('map')), 'b': _place_of(D, B.get('map')), 'exit_a': A.get('exit'), 'exit_b': B.get('exit'),
-            'id': L.get('id'), 'name': L.get('name')}
+            'id': L.get('id'), 'name': L.get('name'), 'kind': L.get('kind') or 'seam'}
 
 
 def set_road_end(D, L, end, node=None, exit=_KEEP):

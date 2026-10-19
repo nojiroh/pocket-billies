@@ -758,7 +758,7 @@ def finish(sc, D, i, nature, cat):
     sc['props'] = [p for p in sc['props'] if p['k'] in cat]
     # the edge exits, named, and the road table pointing at them
     W, H = sc['w'], sc['h']; exs = sc.get('exits') or []
-    nb = [(n, r['b'] if r['a'] == i else r['a']) for n, r in enumerate(gamedata.road(D, L) for L in D['roads']) if i in (r['a'], r['b'])]
+    nb = [(n, r['b'] if r['a'] == i else r['a']) for n, r in enumerate(gamedata.road(D, L) for L in D['roads']) if r['kind'] == 'seam' and i in (r['a'], r['b'])]
     E, used = [], {}
     for (n, j), e in zip(nb, exs):
         d = {'W': e[0], 'E': W - e[0], 'S': e[1], 'N': H - e[1]}; side = min(d, key=d.get); t = e[0] / W if side in 'NS' else e[1] / H

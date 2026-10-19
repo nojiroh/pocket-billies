@@ -102,7 +102,8 @@ self.PB_DATA = (() => {
   const text = v => format(v) + '\n';
 
   // phase 08b: the roads between places. roads.json is a list of typed links,
-  //   { id, name, kind: 'seam', a: { map, exit }, b: { map, exit } }
+  //   { id, name, kind: 'seam' | 'lift', a: { map, exit }, b: { map, exit } }
+  // a seam joins two places' edges at the exits; a lift (no exits) is the glass lift between them.
   // each end naming a place by its map (the place's mapId, or its id when it has none; either is found) and the edge
   // exit it leaves by.
   // The Studio and the tools read and change roads only through these (the game through game-data.js ROADS); they
@@ -122,6 +123,7 @@ self.PB_DATA = (() => {
       exitB: B.exit || null,
       id: l.id || null,
       name: l.name || null,
+      kind: l.kind || 'seam',
     };
   }
   // one end of a road: its place (a node; null keeps it) and the exit it leaves by (undefined keeps it, null clears it)

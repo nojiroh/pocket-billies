@@ -362,7 +362,9 @@ function runCheck() {
     });
     const users = D.locations.map((r, i) => [r, i]).filter(([r]) => r.mapId === k);
     users.forEach(([r, i]) => {
-      const n = (D.roads || []).map(l => PB_DATA.road(D, l)).filter(l => l.a === i || l.b === i).length;
+      const n = (D.roads || [])
+        .map(l => PB_DATA.road(D, l))
+        .filter(l => l.kind === 'seam' && (l.a === i || l.b === i)).length;
       if (n > (s.exits || []).length)
         warn(
           `${r.name} has ${n} road${n === 1 ? '' : 's'} but its scene ${s.name || k} has ${(s.exits || []).length} exit${(s.exits || []).length === 1 ? '' : 's'}, so some roads share an exit.`,

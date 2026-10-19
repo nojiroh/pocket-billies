@@ -1685,9 +1685,7 @@ def desktop_steps(b, base, R):
         import collections
         out = []; D = gamedata(); RT = D['locations']; rid = [r['id'] for r in RT]
         adj = collections.defaultdict(set)
-        for r in (GAMEDATA.road(D, L) for L in D['roads']): adj[r['a']].add(r['b']); adj[r['b']].add(r['a'])
-        for i, r in enumerate(RT):   # alpha 0.4: a glass lift joins two places too (Kelpport and Pearlantis)
-            if r.get('lift') in rid: j = rid.index(r['lift']); adj[i].add(j); adj[j].add(i)
+        for r in (GAMEDATA.road(D, L) for L in D['roads']): adj[r['a']].add(r['b']); adj[r['b']].add(r['a'])   # phase 08b: the glass lift is a link too (Kelpport and Pearlantis)
         seen = {0}; todo = [0]
         while todo:
             for m in adj[todo.pop()] - seen: seen.add(m); todo.append(m)

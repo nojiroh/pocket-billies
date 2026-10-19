@@ -9,11 +9,18 @@ import { PB_DATA } from '../data-files.mjs';
 import { data, GAME_DATA } from './setup-real.mjs';
 
 const { locations, maps, trainers } = GAME_DATA;
-// phase 08b: the roads as the Studio and the tools read them (PB_DATA.road), whatever shape roads.json has
-const roads = GAME_DATA.roads.map(l => PB_DATA.road(GAME_DATA, l));
 const at = i => locations[i];
 const mapOf = loc => maps[loc.mapId];
-const lifts = locations.filter(l => l.lift).map(l => [l.id, l.lift]);
+// phase 08b: the roads as the Studio and the tools read them (PB_DATA.road): seams and the glass lift
+const links = GAME_DATA.roads.map(l => PB_DATA.road(GAME_DATA, l)),
+  roads = links.filter(r => r.kind === 'seam'),
+  // the glass lift goes both ways: [from place id, to place id] each way
+  lifts = links
+    .filter(r => r.kind === 'lift')
+    .flatMap(r => [
+      [at(r.a).id, at(r.b).id],
+      [at(r.b).id, at(r.a).id],
+    ]);
 
 test('every location has its own id and its map, and the map names it back', () => {
   const ids = locations.map(l => l.id);
@@ -27,7 +34,7 @@ test('every location has its own id and its map, and the map names it back', () 
 test('every road joins two different places once, and names them as its numbers do', () => {
   const seenIds = new Set(),
     pairs = new Set();
-  roads.forEach(({ a, b, ...r }) => {
+  links.forEach(({ a, b, ...r }) => {
     assert.ok(at(a) && at(b), `${r.id}: a place it joins does not exist`);
     assert.notEqual(a, b, `${r.id} goes nowhere`);
     assert.ok(!seenIds.has(r.id), `two roads are ${r.id}`);
@@ -36,7 +43,11 @@ test('every road joins two different places once, and names them as its numbers 
     assert.ok(!pairs.has(pair), `${at(a).id} and ${at(b).id} are joined twice`);
     pairs.add(pair);
     // phase 08b: a road names its places by their maps, and its id by their ids
-    assert.equal(r.id, `road:${at(a).id}-${at(b).id}`, `${r.id} joins ${at(a).id} and ${at(b).id}`);
+    assert.equal(
+      r.id,
+      `${r.kind === 'lift' ? 'lift' : 'road'}:${at(a).id}-${at(b).id}`,
+      `${r.id} joins ${at(a).id} and ${at(b).id}`
+    );
   });
 });
 
@@ -74,7 +85,7 @@ test('every exit lies on its side of the map, where its path ends', () => {
   }
 });
 
-test('every gate has the trainer whose badge opens it; lifts go both ways', () => {
+test('every gate has the trainer whose badge opens it; a lift link has a lift at each end, to the other', () => {
   const seats = new Set(
     Object.values(trainers)
       .map(t => t.seat && t.seat.id)
@@ -84,8 +95,8 @@ test('every gate has the trainer whose badge opens it; lifts go both ways', () =
     assert.ok(seats.has(l.gate), `${l.id}: nobody holds the ${l.gate} gate`);
   for (const [from, to] of lifts)
     assert.ok(
-      lifts.some(([a, b]) => a === to && b === from),
-      `the lift from ${from} to ${to} has no way back`
+      (mapOf(locations.find(l => l.id === from)).props || []).some(p => p.act === 'lift' && p.to === to),
+      `${from} has no lift to ${to}`
     );
 });
 

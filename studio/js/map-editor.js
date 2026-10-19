@@ -778,7 +778,7 @@ export function mapExitNames(id) {
   /* v42: the join table first: a road that names its exit here keeps it */
   (D.roads || []).forEach(L => {
     const l = PB_DATA.road(D, L),
-      o = l.a === i ? l.b : l.b === i ? l.a : null;
+      o = l.kind === 'seam' ? (l.a === i ? l.b : l.b === i ? l.a : null) : null;
     if (o == null || !D.locations[o]) return;
     const id = l.a === i ? l.exitA : l.exitB,
       k = id ? E.findIndex(q => q.id === id) : -1;
@@ -786,7 +786,7 @@ export function mapExitNames(id) {
   });
   (D.roads || []).forEach(L => {
     const l = PB_DATA.road(D, L),
-      o = l.a === i ? l.b : l.b === i ? l.a : null;
+      o = l.kind === 'seam' ? (l.a === i ? l.b : l.b === i ? l.a : null) : null;
     if (o == null || !D.locations[o] || o in out) return;
     const a = Math.atan2((D.locations[o].lat || 0) - (me.lat || 0), (D.locations[o].lon || 0) - (me.lon || 0));
     ex.forEach((p, k) => {

@@ -390,5 +390,12 @@
   "kind": "seam",
   "a": {"map":"hedgerow","exit":"north"},
   "b": {"map":"copperleaf","exit":"south"}
+ },
+ {
+  "id": "lift:kelpport-pearlantis",
+  "name": "Glass lift",
+  "kind": "lift",
+  "a": {"map":"kelpport"},
+  "b": {"map":"pearlantis"}
  }
 ]

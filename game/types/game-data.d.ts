@@ -112,6 +112,7 @@ export interface RoadView {
   exitB: string | null;
   id: string | null;
   name: string | null;
+  kind: 'seam' | 'lift';
 }
 
 /* ---------- Billies: types, stats, moves, lines ---------- */
@@ -320,8 +321,6 @@ export interface LocationData {
   gateText?: string;
   ride?: number;
   noFly?: number;
-  /** the glass lift's other end */
-  lift?: DataId;
   v47region?: number;
   a04place?: number;
   a04pearl?: number;
@@ -342,8 +341,8 @@ export interface RoadLink {
   /** 'road:<a's id>-<b's id>' */
   id?: string;
   name?: string;
-  /** 'seam': the two places' edges meet at the exits */
-  kind?: 'seam';
+  /** 'seam': the two places' edges meet at the exits; 'lift': the glass lift (no exits; the lift props' `to`) */
+  kind?: 'seam' | 'lift';
   a: { map: DataId; exit?: string };
   b: { map: DataId; exit?: string };
 }
