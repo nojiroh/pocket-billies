@@ -857,7 +857,7 @@ const LOW_POLY_TEXTURE_CELLS = {
   slate: 10,
   solar: 17,
 };
-function lowPolyFromRecipe(rec) {
+export function lowPolyFromRecipe(rec) {
   const V = [],
     I = [];
   let nv = 0;
