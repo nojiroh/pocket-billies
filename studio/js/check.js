@@ -140,10 +140,10 @@ function runCheck() {
       err(`Stop ${i + 1}, ${r.name}: doesn’t say whether it’s a town or a route.`, 'world');
   });
   (D.roads || []).forEach((L, i) => {
-    const J = L[3] || {};
-    if (!J.id || !J.from || !J.to)
+    const r = PB_DATA.road(D, L);
+    if (!r.id)
       warn(
-        `Road ${i + 1} (${(D.locations[L[0]] || {}).name} – ${(D.locations[L[1]] || {}).name}) has no name yet.`,
+        `Road ${i + 1} (${(D.locations[r.a] || {}).name} – ${(D.locations[r.b] || {}).name}) has no name yet.`,
         'world'
       );
   });
@@ -263,19 +263,18 @@ function runCheck() {
   if (R.catching.offerMin > R.catching.offerMax) warn('Bargain: least is above most.', 'rules');
   if (!types.has(R.battle.shockType)) err('The sandstorm type doesn’t exist.', 'rules');
   if (!types.has(R.battle.spinType)) err('The Soak type doesn’t exist.', 'rules');
-  const LK = D.roads || [];
+  const LK = (D.roads || []).map(l => PB_DATA.road(D, l));
   LK.forEach((l, k) => {
-    if (!D.locations[l[0]] || !D.locations[l[1]])
+    if (!D.locations[l.a] || !D.locations[l.b])
       err(`Road ${k + 1} connects a stop that doesn’t exist.`, 'world', { wtab: 'route' });
-    else if (l[0] === l[1])
-      err(`${D.locations[l[0]].name} has a road to itself.`, 'world', { wtab: 'route', stop: l[0] });
+    else if (l.a === l.b) err(`${D.locations[l.a].name} has a road to itself.`, 'world', { wtab: 'route', stop: l.a });
   });
   if (LK.length) {
     const seen = new Set([0]),
       st = [0];
     while (st.length) {
       const a = st.pop();
-      LK.forEach(([x, y]) => {
+      LK.forEach(({ a: x, b: y }) => {
         const b = x === a ? y : y === a ? x : null;
         if (b != null && !seen.has(b) && D.locations[b]) {
           seen.add(b);
@@ -363,7 +362,7 @@ function runCheck() {
     });
     const users = D.locations.map((r, i) => [r, i]).filter(([r]) => r.mapId === k);
     users.forEach(([r, i]) => {
-      const n = (D.roads || []).filter(l => l[0] === i || l[1] === i).length;
+      const n = (D.roads || []).map(l => PB_DATA.road(D, l)).filter(l => l.a === i || l.b === i).length;
       if (n > (s.exits || []).length)
         warn(
           `${r.name} has ${n} road${n === 1 ? '' : 's'} but its scene ${s.name || k} has ${(s.exits || []).length} exit${(s.exits || []).length === 1 ? '' : 's'}, so some roads share an exit.`,
@@ -371,16 +370,16 @@ function runCheck() {
           g
         );
       /* v42: the join table names an exit this scene has, and both ends face each other */
-      (D.roads || []).forEach(l => {
-        const J = l[3];
-        if (!J) return;
-        const end = l[0] === i ? 'a' : l[1] === i ? 'b' : null;
-        if (!end || !J[end]) return;
-        const e = (s.edgeExits || []).find(q => q.id === J[end]),
-          o = end === 'a' ? l[1] : l[0];
+      (D.roads || []).forEach(L => {
+        const l = PB_DATA.road(D, L),
+          end = l.a === i ? 'a' : l.b === i ? 'b' : null,
+          id = end === 'a' ? l.exitA : end === 'b' ? l.exitB : null;
+        if (!id) return;
+        const e = (s.edgeExits || []).find(q => q.id === id),
+          o = end === 'a' ? l.b : l.a;
         if (!e) {
           warn(
-            `${r.name}: the road to ${(D.locations[o] || {}).name} leaves by “${J[end]}”, but scene ${s.name || k} has no exit with that name.`,
+            `${r.name}: the road to ${(D.locations[o] || {}).name} leaves by “${id}”, but scene ${s.name || k} has no exit with that name.`,
             'scenes',
             g
           );
