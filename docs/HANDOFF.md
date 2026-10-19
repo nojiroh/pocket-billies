@@ -11,6 +11,35 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 - Questions waiting for the owner: 
 - Next session starts with: 
 
+### Phase 09 batch 8, part 2 - towers lit on every side; the city opening's draft set and beat sheet - 2026-10-19
+Owner's request: "the 3D version of the building and a small map for the cutscene", keeping Project Story's system
+in mind. Chosen: lit windows on every side, the portal in a side alley, the rift, the layout plus a draft beat sheet.
+- Changed (one cause per commit):
+  - Engine: a fixed picture layer on a model can face any way (`yaw`, radians: pi/2 the right side, pi the back), in
+    the sprite pass and in water reflections (prop-models.js, walk/sprites.js, walk/water.js). Nothing used it
+    before, so nothing else changes.
+  - The towers' window pictures and neon strips on all four faces (front and back share a picture, the sides
+    another); the hero needle's eight faces in two pictures, its crown strip all round.
+  - Map `city_opening` (a draft, test: 1, not joined to the world): one avenue between 15 towers, the hero needle
+    closing the view, street lights, signs, hovering cars, a 5 m alley on the right two thirds up with the BAR sign,
+    puddles, a vending machine, the rift and a new `city_sign_blank` (the organization's logo spot, blank until S4).
+    You start at the near end. A `cutscene` block holds what the opening's script will name: spots (walkFrom,
+    alleyMouth, lean, stumble, rift, logo), camera shots (above, canyon, street, alleyMouth, rift, through: eye and
+    target as [x, height, z], fov) and two car lanes. Nothing reads it yet (camera and walk play from S2).
+  - docs/city-opening-beats.md: a 26 s beat sheet, the beats as a script in the story layer's format (it parses with
+    today's parseScript, no problems), and the decisions it needs from you.
+- Risky or unfinished:
+  - Fill rate: each tower now draws about 10 large window pictures and the set has 16 towers. Not measured on a
+    phone; walk the avenue at night and send a debug log.
+  - The rift stands there always; appearing on a beat needs `when` / `unless` on props (S2) or a show/hide command.
+  - Part 1's notes about front-only windows are superseded by this entry; the low-poly setting note still holds.
+- Verified: each recipe meshed in Node (city_sign_blank 58 triangles, towers unchanged), the layout checked from the
+  data (no tower overlaps another, no prop inside a tower), data check, lint (the frame-block.js note from main),
+  type-check, 118 unit tests, format, modules, build, smoke check (result in the next commit). No headless renders.
+- Questions waiting for the owner: the four in docs/city-opening-beats.md ("For you to decide"); how the set and the
+  lit sides look on your phone (Settings > Time of day: night, Weather: rain).
+- Next session starts with: your answers to the beat sheet; then S7's script and the scene's commands once S2 is in.
+
 ### Phase 09 batch 8 - city opening mockups: towers, signs, street things, portals (provisional) - 2026-10-19
 Owner's request: start the city opening's buildings and props, as mockups to judge before S4 and S7-S8 (Project
 Story's "Ask me before": the city mockups before S8 builds the scene). Look chosen 2026-10-19: only tall buildings
