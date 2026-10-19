@@ -186,11 +186,13 @@ function modelEditorHTML(k) {
    picture the model uses, and those its variants swap in (the autumn oak's), with the clumps drawn on it, and opens
    it in the pixel editor or replaces it. Painting it changes every clump at once, on the turntable as you paint. */
 function leafSheets(M, L) {
-  const own = [...new Set(L.filter(l => l.k === 'img' && (l.clip || l.shade) && l.img).map(l => l.img))],
+  /* a prop whose model swaps its pictures (the autumn oak: the oak's model, its own leaves) shows its own leaves */
+  const sw = path => (M.swap && M.swap[path]) || path,
+    own = [...new Set(L.filter(l => l.k === 'img' && (l.clip || l.shade) && l.img).map(l => sw(l.img)))],
     out = own.map(path => ({
       path,
       who: 'This prop',
-      clips: L.filter(l => l.img === path && l.clip).map(l => l.clip),
+      clips: L.filter(l => sw(l.img) === path && l.clip).map(l => l.clip),
     }));
   for (const V of M.variants || [])
     for (const [a, b] of Object.entries(V.swap || {}))

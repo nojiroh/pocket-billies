@@ -6227,7 +6227,8 @@ function drawBoxFaces(C, items, X) {
       it.flat ||
       it.mat !== 'building' ||
       it.vis === false ||
-      it.vol
+      it.vol ||
+      it.vox /* phase 09: a prop drawn as a 3D model gets no box made from its picture */
     )
       continue;
     if (walkRenderer.bt && walkRenderer.bt.hide && walkRenderer.bt.hide.has(it.p)) continue;

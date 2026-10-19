@@ -63,6 +63,19 @@ Branch `ccr-72e8ad56-lpn1x3`, from main.
 - Next session starts with: "start 08b" (docs/phases/08a-plan.md, Part B), after this branch is merged; the full quick
   check and a picture baseline first, since none exists yet.
 
+### Phase 09 batch 1 swapped in - 2026-10-19
+Owner's go-ahead: replace the finished props in the game.
+- Changed: the 24 old props the batch covers now are the new ones, under their own keys (tools/build-props-batch1.py
+  swap_in), so all 4,801 placements in 62 scenes draw them without any placement changing: tree_beech; tree_oak,
+  tree_oak_b, tree_oak_small, tree_oak_autumn; tree_giant_swing; bush_roses; bush_round, _b, _c; rocks, _b, _c,
+  _mossy, _snow; mushroom, _brown, _blue; cottage_juniper; lantern; laundry_line; tallgrass, _b, _c. Each keeps its
+  old name, group, tags, the scene builders' fields and its collision radius; its picture stays as the fallback (3D
+  models off, far view). The next_* entries are gone; test_props_next is now a showcase of the swapped props.
+- Risky: these props now draw at 32 px/m, about 6% bigger than before (tall grass included), until the rest of the
+  catalogue moves to 32. Trees cost 10 to 18 sprites each and are now on every route that has them; not measured on a
+  phone. The old depth layers of the oaks and round bushes (scene/props/layers/*_lb/_lf.png) are no longer used.
+- Verified: data check, lint, type-check, modules, 59 unit tests, check-quick.py --smoke (no problems).
+
 ### Phase 09 batch 1, part 2 - natural trunks, editable leaves, the great oak, a Props section - 2026-10-19
 Owner's requests: stop the rest of the batch; rework the trees' trunks to look natural; leaves easy to edit in the
 Studio; redo the great oak with the swing (Copperleaf); a clear prop part in the Studio with all its tools; no graphic
@@ -89,6 +102,19 @@ effects when looking at props.
   the Studio (GitHub stand-in): the Props list and filter, the Leaves part lists both oak pictures, painting a leaf
   picture marks it changed and bumps its version. Not done: a screenshot of the Props section with the turntable
   running (the software renderer is too slow for it), the smoke check after this part.
+- Cottage redone in the airship's manner (owner's request): fully modelled, few polygons, the sheet's materials and
+  the airship's palette. Stone footing, plaster walls with honey-wood corner posts and wall plate, a thatch skirt under
+  a 16-sided mossy dome, a round plank door (planks stepped to the circle, iron hinges, brass knob), copper-ringed
+  portholes with brass crosses (front, both sides, back, two on the roof), a square window with frame, mullions and a
+  flower box, a stone chimney with a verdigris hat, a copper stove pipe, a brass weathervane, a door lamp that lights
+  with the lamps. Only the shop sign stays a drawing. Its window, lamp and smoke effects are placed for the new model,
+  and it no longer carries the old picture's building plan. Checked with one low-resolution shot.
+- Cottage, second pass (owner: more polygons, less chunky, more like the fifth-generation Pokémon games, more detail):
+  smooth 32-sided dome with moss tufts and flowers, a copper gutter and turned-out thatch lip, thatched dormer hoods
+  round the roof windows, slim posts and frames, half-timbered side walls, a stone surround and canopy on brackets
+  round the door, eight planks with iron straps, a knocker, verdigris shutters, a stone sill with honey jars, a
+  flower bed and stepping stones, a rain barrel under a copper downpipe, a woodpile and Granny Juniper's straw skep.
+  About 200 parts. One low-resolution check shot; not measured on a phone.
 - Variants count: the 11 new props have 22 looks in all: beech 1, oak 4 (oak, spreading, sapling, autumn), great oak
   1, wild roses 1, round bush 3, rocks 5 (3 shapes, mossy, snowy), mushrooms 3, cottage 1, lantern 1, washing line 1,
   tall grass 3.
