@@ -786,6 +786,8 @@ def phone_flow(b, base, R):
         if not isinstance(dlog, dict) or not dlog: raise Exception('the exported debug log is empty')
         names = [n for n in ('Checker', 'Zorblax') if n.lower() in Path(d.path()).read_text(encoding='utf-8').lower()]
         if names: raise Exception(f'the exported debug log holds a name: {names}')
+        # kept for comparing logs across a phase (validation/ is not committed)
+        shutil.copyfile(d.path(), OUT / 'phone-debug-log.json')
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return f'the fall, Hazel, dressing room, Hazel’s fight, starter, Blake’s first battle (HOT TIP) and the talk after, five screens, shop, battle, speech kept out of the debug picture, debug log ({len(json.dumps(dlog)) // 1024} KB, no names)'
     finally:
