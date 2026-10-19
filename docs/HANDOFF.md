@@ -11,6 +11,39 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 - Questions waiting for the owner: 
 - Next session starts with: 
 
+### Phase 10 - World map, the look, session 5: the Studio and the finish - 2026-10-19
+Owner's answers: **worldmap.json**, the sea with **sliders and a brush**, the preview **both** (2D in the Studio, a
+button for the 3D bowl in the game). Branch `world-map-look-5`, on top of `world-map-look-4` (PR #66); main (studio
+track ST-0 to ST-2) merged into the chain first (only HANDOFF.md conflicted; both entries kept).
+- Changed:
+  - `logic/bowl.js`: the sea's settings travel with the sea input (`bowlSeaInput(..., opt)`: share, depth, rimLand,
+    rough, seed, paint); `bowlPaintStroke` (a brush stroke on the coast, applied after the line is drawn, then the
+    places and routes are kept dry); `bowlReliefFeatures(places, relief)` (kinds, default, max). `bowlClumps(...,
+    trees)` takes each region's trees.
+  - New `game/data/worldmap.json` (+ schema, data check: terrain keys, regions; types `WorldMapLook`): the sea, the
+    relief, each region's ground/wet/dry/high/trees, each kind's own ground. The map reads it through
+    `worldMapLook()` (the code's tables are the fallback). Moving it was a no-op: the same heights and coast to the
+    corner (checked before committing).
+  - Studio, World & encounters → **World map look** (`studio/js/worldmap-look.js`): the bowl from above (2D, the
+    game's own logic, cached), land/sea brush, remove strokes, sizes; sea sliders; relief per kind with its own
+    ground; region grounds as tile chips (✎ opens the tile in the ST-2 pixel canvas, + add) and tree kinds; "Open the
+    3D bowl" (`?test=1&place=copperleaf&tab=map&draft=1`). Route stops → **Landmark on the world map** (Auto shows what
+    it picks, the choices from the stop's scene, a thumbnail). Keys V L W X [ ] in the `?` sheet, only over the
+    picture. Check: a landmark not in its scene, a region without ground, a terrain key that doesn't exist, the sea
+    outside 30-50%.
+  - Game: `&tab=map` for a test run; the Studio's live data now carries `worldmap` and the places' landmarks, and the
+    bowl is worked out again (`worldBowlReset`).
+  - Tests: two sea tests (settings, brush); fast check "The Studio's world map look" (the bowl drawn, a brush stroke
+    and its undo, the landmark field offering Auto (Windmill) at Clovercrest).
+- How it fits ST-2: every edit (a slider, a chip, a brush stroke) is a data edit through `changed()`/`commit()`, so it
+  is one step of the one undo in order with pixel strokes; brush strokes are data, not picture patches. The tab has
+  no 3D view and its ids are `wml*`, so it opens in either pane; `.pane[data-w='narrow']` stacks the picture.
+- Risky or unfinished:
+  - The 2D picture and the 3D map share the logic but not the colours (the picture is a sketch palette).
+  - Working out the picture takes about 100-300 ms when the data changed (the time is shown under it).
+- Verified: npm test 214 pass; lint, types, modules, data, format clean; full lite fast check 13 of 13.
+- Next: the owner's phone test of the whole look (world map test in Settings > Help), then tag `phase-10-done`.
+
 ### Phase 10 - World map, the look, session 4: landmarks, buildings, trees, town lights - 2026-10-19
 Owner's answers: **bigger buildings** (about 3x, today's zoom kept), landmarks as **pixel-art standees**, trees
 **from the maps plus clumps**. Branch `world-map-look-4`, on top of `world-map-look-3` (PR #65).

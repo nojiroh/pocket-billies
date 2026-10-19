@@ -127,6 +127,6 @@ Sessions, in order:
 3. **Clouds and weather (done 2026-10-19; night: the sun circles and dims; clouds Low 12, High 40 in two layers).** Simplified low-poly clouds at a few heights with moving shadows; rain showers, fog and snow
    over the peaks from the game's weather; time of day; quality off/low/high.
 4. **Landmarks, buildings, trees (done 2026-10-19; buildings and trees 3x size, landmarks as pixel-art standees, map trees plus clumps).** Oversized landmarks far out, each town's real buildings close in, tree clumps.
-5. **Studio and finish.** Landmark per place, sea and region terrain editing; world map test steps for each part;
+5. **Studio and finish (built 2026-10-19: worldmap.json, the World map look tab with a 2D picture, brush and sliders, the landmark picker, Open the 3D bowl; waiting for the owner's phone test and the tag).** Landmark per place, sea and region terrain editing; world map test steps for each part;
    the owner's phone test; tag.
 
