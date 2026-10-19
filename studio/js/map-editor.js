@@ -78,6 +78,7 @@ import {
 } from './studio-app.js';
 import { conditionField, lineIdHash, scriptField } from './story-editor.js';
 import { atlasGet, atlasVersion, fileToCanvas, loadedAtlas, markArt, pickFile } from './sprites.js';
+import { freeCameraBarHTML, freeCameraLook, freeCameraSpot } from './free-camera.js';
 /* eslint-disable no-func-assign */
 expose({
   GROUND_KEYS: [() => GROUND_KEYS],
@@ -440,6 +441,7 @@ SECTIONS.scenes = () => {
     .join(
       ''
     )}</select><span class="hint">How it looks at other times and in other weather (the game follows the clock)</span></div>
+  <div class="sc-free seg-row" id="scFreeCam">${freeCameraBarHTML()}</div>
   <div class="sc-story" id="scStory">${storyPreviewBarHTML()}</div>
   <div class="grid">${mapEditor.pv === 'path' ? `<label class="fld range"><span>Walker position <output id="scTO">${Math.round(mapEditor.t * 100)}%</output></span><input type="range" id="scT" min="0" max="1" step=".01" value="${mapEditor.t}"></label>` : ''}
   <label class="fld chk"><input type="checkbox" id="scEnc" ${mapEditor.enc ? 'checked' : ''}><span>Show hidden encounters</span></label><label class="fld chk"><input type="checkbox" id="scNpc" ${mapEditor.npc ? 'checked' : ''}><span>Show a trainer</span></label></div>`,
@@ -961,6 +963,8 @@ function playSpot() {
     id = currentMapId(),
     P = mapEditor.playAt && mapEditor.playAt.id === id ? mapEditor.playAt : null;
   if (P) return { at: [P.x, P.z], why: `Starts on the spot you picked (${P.x}, ${P.z}).` };
+  const F = freeCameraSpot();
+  if (F) return { at: F.map(v => +v.toFixed(1)), why: 'Starts where the free camera looks.' };
   if (mapEditor.pvPos && mapEditor.pvId === id)
     return { at: mapEditor.pvPos.map(v => +v.toFixed(1)), why: 'Starts where the preview’s walker stands.' };
   return { at: sc.w ? mapHub(sc).map(v => +(+v).toFixed(1)) : null, why: 'Starts on the hub.' };
@@ -983,6 +987,13 @@ ACTIONS.scPlayHere = () => {
   studioBroadcast();
   window.open(playFromHereURL(studioState.D, id, playSpot().at, mapEditor.story), 'networth-game');
   toast('Opening the game here with your unsaved changes. Nothing there is saved.');
+};
+/* the free camera's Walker here: the walker stands where the camera looks */
+ACTIONS.fcWalker = () => {
+  const F = freeCameraSpot();
+  if (!F) return;
+  mapEditor.pvPos = F;
+  walkView.pl.fresh = true;
 };
 ACTIONS.scPlaySpot = () => {
   mapEditor.pickPlay = !mapEditor.pickPlay;
@@ -1069,6 +1080,7 @@ function mountMapPreview() {
                 : 'Click the ground to walk there.'
       ),
     cap: () => (studioState.sec === 'scenes' ? 30 : 0),
+    look: freeCameraLook,
   }).then(() => {
     const l = $('#scPvLoad');
     if (l) l.hidden = true;

@@ -420,13 +420,22 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
     walkView.folkAll = [];
   }
   if (!BT && typeof lifeStep === 'function') lifeStep(dt);
-  const C = BT ? (BT.look ? cutsceneCamera(rw, rh, BT.look) : battleCamera(rw, rh, BT)) : walkCamera(rw, rh, st, dt);
+  /* the Studio's free camera (studio/js/free-camera.js): a view's own eye and target instead of following the walker */
+  const look = !BT && walkView.opt.look ? walkView.opt.look(dt) : null;
+  const C = BT
+    ? BT.look
+      ? cutsceneCamera(rw, rh, BT.look)
+      : battleCamera(rw, rh, BT)
+    : look
+      ? cutsceneCamera(rw, rh, look)
+      : walkCamera(rw, rh, st, dt);
   walkView.C = C;
   const sun = mapSun(sc, sunLight(!!sc.indoor));
   walkRenderer.sun = sun;
   /* v46: the near ring follows the camera's focus (in a battle, the stage) */
   {
-    const bc = BT && (BT.center || (BT.look && [BT.look.tgt[0], BT.look.tgt[2]])),
+    const bc =
+        (BT && (BT.center || (BT.look && [BT.look.tgt[0], BT.look.tgt[2]]))) || (look && [look.tgt[0], look.tgt[2]]),
       T = walkRenderer.camT;
     const fx = bc ? bc[0] : T ? T[0] : walkView.pl.x,
       fz = bc ? bc[1] : T ? T[1] : walkView.pl.z;

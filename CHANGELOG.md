@@ -23,6 +23,8 @@ kept aside in the browser).
   section; a story preview in the scene editor (pick a point in the story: who is there and who isn't); **Play from
   here** opens the game in that place, on a spot you pick, at that point in the story, with your unsaved changes.
   The scene editor's People card edits today's people (script, when, unless), and the Check lists the story checks.
+- The Studio's scene preview has a free camera: fly over the scene and look at any corner from any angle, with the
+  mouse, the keys or two fingers on a phone; a top view; put the walker where you look.
 - Robots (phase 17 prototype): build your own from a gem and four parts (torso with head, left arm, right arm,
   legs). They join the same team and the same battles as Billies. Their moves come from their parts; a hit on a robot
   also lands on a part, aimed moves pick the part, a broken arm loses its move and broken legs are slow; healing and

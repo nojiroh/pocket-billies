@@ -4,6 +4,7 @@ files, opens every section, then makes an edit and proposes it (blobs, a tree, a
 reach the stand-in). Any error on the page fails it. Nothing leaves the machine; nothing in the repository changes.
 Project Story S3: on the way it writes in a trainer's script (an error on its line, line ids, the command reference),
 follows the Check's Show me, uses the story preview and plays from here in a second tab (the game gets the draft).
+And it flies the Walk scenes preview's free camera with the mouse, the keys and two fingers.
 
     python3 tools/check-studio-github.py           # the repository as it is (run `npm run data` first)
     python3 tools/check-studio-github.py dist      # the build (`npm run build` first)
@@ -51,6 +52,60 @@ def play_from_here(pg, errs):
     else: print(f'Play from here: Copperleaf at {spot}, after-opening, chad beaten, the draft script, no save', flush=True)
     gp.close()
     pg.evaluate("studioState.D.trainers.crude.script.splice(1, 1); mapEditor.story.flags = {}; mapEditor.playAt = null; mapEditor.story.v++")
+
+
+def free_camera_steps(pg, errs):
+    """The Walk scenes preview's free camera: a drag keeps the ground under the pointer, the wheel zooms, a right-drag
+    turns and tilts, Top view looks down, W moves, two fingers pinch and twist, and it hands back to the walker."""
+    pg.evaluate("studioState.sel.scene='copperleaf'; void openSection('scenes')")
+    time.sleep(4)
+    pg.locator('#scPv').scroll_into_view_if_needed()
+    pg.locator('#scFreeCam [data-act="fcOn"]').click()
+    time.sleep(1.5)
+    G = lambda: pg.evaluate("JSON.parse(JSON.stringify(freeCamera.goal))")
+    ground = lambda x, y: pg.evaluate(f"(() => {{ const p = canvasPoint({{ clientX: {x}, clientY: {y} }}); const g = screenToGround(p[0], p[1]); return g && [g.x, g.z]; }})()")
+    b = pg.locator('#scPv').bounding_box()
+    cx, cy = b['x'] + b['width'] / 2, b['y'] + b['height'] / 2
+    a = ground(cx, cy)
+    pg.mouse.move(cx, cy)
+    pg.mouse.down()
+    for i in range(12): pg.mouse.move(cx + 10 * (i + 1), cy + 5 * (i + 1))
+    pg.mouse.up()
+    time.sleep(1.5)
+    z = ground(cx + 120, cy + 60)
+    if not a or not z or abs(a[0] - z[0]) > 0.4 or abs(a[1] - z[1]) > 0.4: errs.append(f'free camera: the ground under the pointer moved: {a} -> {z}')
+    g0 = G()
+    pg.mouse.move(cx, cy)
+    pg.mouse.wheel(0, -500)
+    time.sleep(0.5)
+    if not G()['dist'] < g0['dist'] * 0.8: errs.append('free camera: the wheel didn\'t zoom in')
+    g0 = G()
+    pg.mouse.down(button='right')
+    pg.mouse.move(cx + 120, cy - 40, steps=6)
+    pg.mouse.up(button='right')
+    g1 = G()
+    if not (g1['yaw'] > g0['yaw'] + 0.3 and g1['pitch'] < g0['pitch']): errs.append(f'free camera: right-drag {g0} -> {g1}')
+    pg.locator('#scFreeCam [data-act="fcTop"]').click()
+    if G()['pitch'] != 89: errs.append('free camera: Top view doesn\'t look down')
+    g0 = G()
+    pg.mouse.move(cx, cy)
+    pg.keyboard.down('w')
+    time.sleep(0.5)
+    pg.keyboard.up('w')
+    g1 = G()
+    if abs(g1['tgt'][0] - g0['tgt'][0]) + abs(g1['tgt'][2] - g0['tgt'][2]) < 0.5: errs.append('free camera: W didn\'t move it')
+    # two fingers: apart (closer) and turned a quarter
+    g0 = G()
+    pg.evaluate(f"""(() => {{ const cv = document.getElementById('scPv'), e = (t, id, x, y) => cv.dispatchEvent(new PointerEvent(t, {{ pointerId: id, pointerType: 'touch', clientX: x, clientY: y, bubbles: true, isPrimary: id === 11 }}));
+      e('pointerdown', 11, {cx - 40}, {cy}); e('pointerdown', 12, {cx + 40}, {cy});
+      for (let i = 1; i <= 8; i++) {{ const r = 40 + i * 10, a = (i / 8) * Math.PI / 2; e('pointermove', 11, {cx} - r * Math.cos(a), {cy} - r * Math.sin(a)); e('pointermove', 12, {cx} + r * Math.cos(a), {cy} + r * Math.sin(a)); }}
+      e('pointerup', 11, 0, 0); e('pointerup', 12, 0, 0); }})()""")
+    g1 = G()
+    if not (g1['dist'] < g0['dist'] * 0.7 and abs(abs(g1['yaw'] - g0['yaw']) - 3.14159 / 2) < 0.2): errs.append(f'free camera: pinch and twist {g0} -> {g1}')
+    pg.locator('#scFreeCam [data-act="fcOn"]').first.click()
+    time.sleep(0.5)
+    if pg.evaluate("freeCamera.on") or pg.evaluate("walkView.opt.look(0.016)") is not None: errs.append('free camera: still on after Back to the walker')
+    print('free camera: drag keeps the ground, wheel, right-drag, top view, keys, pinch and twist, back to the walker', flush=True)
 
 
 def story_steps(pg, errs):
@@ -165,6 +220,7 @@ def main():
             if len(errs) > n: errs[n:] = [f'{k}: {e}' for e in errs[n:]]
         print(f'{len(sections)} sections opened', flush=True)
         story_steps(pg, errs)
+        free_camera_steps(pg, errs)
         pg.evaluate("const k = Object.keys(studioState.D.moves)[0]; studioState.D.moves[k].name += ' Test'; studioState.dirty = true; void saveAll()")
         t0 = time.time()
         while time.time() - t0 < 60 and 'pulls' not in posts:

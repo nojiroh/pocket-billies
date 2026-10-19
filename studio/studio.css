@@ -3381,3 +3381,8 @@ body.vp-has-big::after {
   gap: 4px;
   width: 100%;
 }
+/* the free camera's row under the Walk scenes preview (free-camera.js) */
+.sc-free {
+  align-items: center;
+  margin-top: 8px;
+}
