@@ -101,6 +101,7 @@ import {
   runTurn,
   startWild,
 } from './logic/battle-engine.js';
+import { storyAllows } from './logic/script.js';
 import {
   activeBattle,
   escapeHtml,
@@ -1239,7 +1240,7 @@ export function walkState() {
       o = sc.baseOff || [0, 0];
     if (base && bid === mapIdAt(v.node))
       for (const P of base.people || [])
-        if (PEOPLE[P.who])
+        if (PEOPLE[P.who] && ((!P.when && !P.unless) || storyAllows(P)))
           v.npcs.push({
             who: P.who,
             id: '_talk:' + P.id,

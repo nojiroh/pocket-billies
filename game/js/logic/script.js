@@ -15,7 +15,7 @@
    unknown one is an error with "did you mean", never a line of dialogue. Logic only: no DOM, runs in Node. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { saveData } from '../hooks.js';
+import { provide, saveData } from '../hooks.js';
 import { LOCATIONS, STORY_DATA, TRAINERS, warnData } from '../game-data.js';
 import { makeBilly } from './rules.js';
 import { conditionHolds, conditionProblem, conditionTree, didYouMean, storyStateOf } from './conditions.js';
@@ -49,13 +49,14 @@ expose({
   // @ts-expect-error -- replaced on purpose
   setStoryFlag: [() => setStoryFlag, v => (setStoryFlag = v)],
   // @ts-expect-error -- replaced on purpose
-  storyAllows: [() => storyAllows, v => (storyAllows = v)],
+  storyAllows: [() => storyAllows, v => ((storyAllows = v), provide({ storyAllows }))],
   // @ts-expect-error -- replaced on purpose
   storyFlagKnown: [() => storyFlagKnown, v => (storyFlagKnown = v)],
   // @ts-expect-error -- replaced on purpose
   storyHolds: [() => storyHolds, v => (storyHolds = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ storyAllows });
 /* to-module: end */
 /** @typedef {{ k: 'say', line: number, who: string | null, expr: string | null, text: string }} SayNode */
 /** @typedef {{ k: 'cmd', line: number, name: string, args: string[] }} CmdNode */

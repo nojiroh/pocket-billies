@@ -19,6 +19,8 @@
   "win": {"type": "string"},
   "lose": {"type": "string"},
   "double": {"type": "boolean"},
+  "when": {"description": "there only while this condition holds (docs/SCRIPTS.md)", "type": "string"},
+  "unless": {"description": "not there while this condition holds", "type": "string"},
   "runsUp": {"description": "they run up to you the first time you come where they wait (story.js storyCheck)", "type": "boolean"},
   "script": {"description": "what they say before a battle (docs/SCRIPTS.md); it ends with the battle", "type": "array", "items": {"type": "string"}}
  }

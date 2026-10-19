@@ -21,6 +21,7 @@
   "heights": {"description": "the land's height at each metre corner ((h+1) rows of w+1)", "type": "array", "items": {"type": "array", "items": {"type": "number"}}},
   "steps": {"description": "the step grid (raised cells), base64", "type": "string"},
   "stepm": {"description": "the step grid's material, base64", "type": "string"},
+  "people": {"description": "people who only talk (Project Story: their script; when / unless: there only while the story allows)", "type": "array", "items": {"type": "object", "required": ["id", "who"], "properties": {"id": {"type": "string"}, "who": {"type": "string"}, "script": {"type": "array", "items": {"type": "string"}}, "when": {"type": "string"}, "unless": {"type": "string"}}}},
   "props": {
    "type": "array",
    "items": {"type": "object", "required": ["k", "x", "z"], "properties": {"k": {"type": "string", "minLength": 1}, "x": {"type": "number"}, "z": {"type": "number"}, "s": {"type": "number"}}}
