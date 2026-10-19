@@ -11,12 +11,13 @@ import { modules, ROOT } from './setup-real.mjs';
 
 const S = modules['sheet-slice'];
 const SRC = join(ROOT, 'tools/art-source/part-kit');
-const cfg = JSON.parse(readFileSync(join(SRC, 'kits.json'), 'utf8'));
-const want = JSON.parse(readFileSync(join(ROOT, 'game/data/partKits.json'), 'utf8')).parts;
+const cfg = JSON.parse(readFileSync(join(ROOT, 'game/data/partKits.json'), 'utf8'));
+const want = cfg.parts;
 
 test('the kits slice exactly as tools/slice-part-kit.py sliced them', () => {
   const made = {};
-  for (const kit of cfg.kits)
+  for (const [name, k] of Object.entries(cfg.kits)) {
+    const kit = { name, ...k };
     for (const view of ['front', 'back']) {
       const r = S.sheetSliceKit(readPng(join(SRC, `${kit.name}-${view}.png`)), kit, cfg, view);
       assert.equal(r.problem, '', `${kit.name} ${view}`);
@@ -36,5 +37,6 @@ test('the kits slice exactly as tools/slice-part-kit.py sliced them', () => {
         }
       }
     }
+  }
   assert.equal(JSON.stringify(made), JSON.stringify(want)); // same entries, same order
 });

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Phase 16: slice the placeholder part kits into separate pieces.
 
-Input:  tools/art-source/part-kit/kits.json and, per kit, <name>-front.png and
+Input:  the kits in game/data/partKits.json and, per kit, <name>-front.png and
         <name>-back.png (six animals as columns on a magenta background, one row
         per slot, then a row of extras). Kept out of the game folder so they
         never ship.
@@ -140,8 +140,9 @@ def auto_sockets(kind, slot, img, view):
 
 
 def main():
-    with open(f'{SRC}/kits.json') as f:
+    with open('game/data/partKits.json') as f:
         cfg = json.load(f)
+    cfg['kits'] = [dict(k, name=n) for n, k in cfg['kits'].items()]
     manifest = {}
     for view in ('front', 'back'):
         os.makedirs(f'{ROOT}/{view}', exist_ok=True)
@@ -159,9 +160,11 @@ def main():
                 sk.update((cfg.get('sockets', {}).get(pid, {}) or {}).get(view, {}))
                 e['views'][view] = {'file': f'next/parts/{view}/{pid}.png', 'w': small.size[0], 'h': small.size[1],
                                     'sockets': sk}
+    with open('game/data/partKits.json') as f:
+        data = json.load(f)
+    data['parts'] = manifest
     with open('game/data/partKits.json', 'w') as f:
-        json.dump({'note': 'Placeholder part kits, phase 16. Made by tools/slice-part-kit.py from '
-                           'tools/art-source/part-kit. Do not edit by hand.', 'parts': manifest}, f, indent=1)
+        json.dump(data, f, indent=1)
     print(len(manifest), 'parts in', len(cfg['kits']), 'kits')
 
 
