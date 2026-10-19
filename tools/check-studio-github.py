@@ -67,6 +67,19 @@ def main():
             time.sleep(1)
             if len(errs) > n: errs[n:] = [f'{k}: {e}' for e in errs[n:]]
         print(f'{len(sections)} sections opened', flush=True)
+        # the art tools (studio track): the pixel editor on both views, the skeleton builder, the battle preview
+        n = len(errs)
+        sp = pg.evaluate("studioState.D.lines[0].id + '0'")
+        pg.evaluate(f"void openPixelEditor({json.dumps(sp)}, 'front')")
+        pg.wait_for_selector('#pxCv', timeout=20000)
+        pg.click('.pxed [data-pe=atlas][data-v=back]'); time.sleep(0.5)
+        pg.click('.pxed [data-pe=close]'); time.sleep(0.3)
+        pg.evaluate(f"void openSkeleton({json.dumps(sp)}, 'front')")
+        pg.wait_for_selector('.pxed.skel', timeout=20000); time.sleep(0.5)
+        pg.click('.pxed.skel [data-sk=close]'); time.sleep(0.3)
+        pg.evaluate("void openSection('preview')"); pg.wait_for_selector('#cvWorld', timeout=20000); time.sleep(2)
+        if len(errs) > n: errs[n:] = [f'art tools: {e}' for e in errs[n:]]
+        print('art tools opened: pixel editor (front, back), skeleton builder, battle preview', flush=True)
         pg.evaluate("const k = Object.keys(studioState.D.moves)[0]; studioState.D.moves[k].name += ' Test'; studioState.dirty = true; void saveAll()")
         t0 = time.time()
         while time.time() - t0 < 60 and 'pulls' not in posts:
