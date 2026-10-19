@@ -10,9 +10,8 @@ Scenes get
   kind      'town' | 'route' | 'room' | 'test'
   place     the place they belong to (a room: the town it was made for, or None for the shared rooms)
   building  on rooms: the kind of building they are the inside of (shop, clinic, lab, house, home)
-Roads (the `links` list; each entry stays [a, b, cost, {...}] so nothing that reads them by position changes) get in
-their record
-  id, name, from, to  e.g. 'road:marigold-tallgrass_meadow', 'Route 1', 'marigold', 'tallgrass_meadow'
+Roads were given their id and name here too (v46); every road has them now, so phase 08b took that part out and
+--check only reports a road without an id or with a place that doesn't exist.
 
     python3 tools/migrate-places.py           # fills what is missing; never changes a value that is already set
     python3 tools/migrate-places.py --check   # only reports what is missing or inconsistent
@@ -46,8 +45,8 @@ def problems(D):
             elif pl.get('kind') != k: out.append(f'scene {sid}: kind {k} but its place is a {pl.get("kind")}')
         if k == 'room' and not sc.get('building'): out.append(f'scene {sid}: a room without a building')
     for i, L in enumerate(D['roads']):
-        J = L[3] if len(L) > 3 and isinstance(L[3], dict) else {}
-        if not J.get('id') or J.get('from') not in ids or J.get('to') not in ids: out.append(f'road {i}: not named or its places unknown')
+        r = gamedata.road(D, L)
+        if not r['id'] or not all(isinstance(r[e], int) and 0 <= r[e] < len(places) for e in 'ab'): out.append(f'road {i}: not named or its places unknown')
     return out
 
 
@@ -68,13 +67,6 @@ def main():
         elif sid in by_scene: sc['kind'] = by_scene[sid]['kind']; sc['locationId'] = sid
         else: print(f'  {sid}: no place uses it; left without a kind'); continue
         n += 1
-    for i, L in enumerate(D['roads']):
-        if len(L) < 4 or not isinstance(L[3], dict): L[3:] = [{}]
-        a, b, J = places[L[0]], places[L[1]], L[3]
-        named = {'id': f'road:{a["id"]}-{b["id"]}', 'from': a['id'], 'to': b['id'],
-                 'name': b.get('routeName') if b['kind'] == 'route' else a.get('routeName') or b.get('route') or a.get('route')}
-        for k, v in named.items():
-            if J.get(k) is None: J[k] = v; n += 1
     gamedata.save_js(head + 'window.GAMEDATA=' + json.dumps(D, ensure_ascii=False, indent=1) + ';\n')
     p = problems(D)
     print(f'{n} fields filled; ' + ('all consistent' if not p else f'{len(p)} problems:\n  ' + '\n  '.join(p)))
