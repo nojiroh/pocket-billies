@@ -2,8 +2,8 @@
 // a fault planted for each check makes that check speak.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { GAME_DATA, fn } from './setup-real.mjs';
-import { storyChecks } from '../story-checks.mjs';
+import { GAME_DATA, fn, modules } from './setup-real.mjs';
+import { storyChecks, storyFindings } from '../story-checks.mjs';
 
 const L = Object.fromEntries(
   ['parseScript', 'conditionTree', 'conditionProblem', 'conditionNames'].map(k => [k, fn(k)])
@@ -82,4 +82,91 @@ test('the reach check: a gate opens when a script the player can get to sets its
   delete G.story.flags.gate_open;
   G.maps.copperleaf.people[0].script.push('set gate_open');
   assert.deepEqual(run(G).problems, [], 'set by Juniper, in Copperleaf, where the game starts');
+});
+
+test('a finding says where it is: file, script and line, or the thing and field', () => {
+  const G = copy();
+  G.trainers.crude.script.push('sett met_x');
+  G.maps.copperleaf.people[0].when = 'beat:nobody';
+  G.locations.find(l => l.id === 'marigold').requires = 'item:nope';
+  const F = storyFindings(G, L);
+  const at = word => F.find(f => f.message.includes(word));
+  const n = G.trainers.crude.script.length - 1;
+  assert.deepEqual(
+    { ...at('did you mean "set"') },
+    {
+      level: 'problem',
+      file: 'trainers/crude.json',
+      script: 'trainer:crude',
+      line: n,
+      message: 'unknown command "sett", did you mean "set"?',
+      text: `trainers/crude.json trainer:crude, line ${n + 1}: unknown command "sett", did you mean "set"?`,
+    }
+  );
+  assert.deepEqual(
+    [at('beat:nobody').file, at('beat:nobody').thing, at('beat:nobody').field],
+    ['maps/copperleaf.json', 'person:' + G.maps.copperleaf.people[0].id, 'when']
+  );
+  assert.deepEqual([at('item:nope').thing, at('item:nope').field], ['place:marigold', 'requires']);
+  assert.deepEqual(
+    run(G).problems,
+    F.filter(f => f.level === 'problem').map(f => f.text),
+    'the strings are the findings’ texts'
+  );
+});
+
+test('a requires that doesn’t read is a problem, not a crash of the reach check', () => {
+  const G = copy();
+  G.locations.find(l => l.id === 'marigold').requires = 'itme:x';
+  assert.ok(run(G).problems.some(m => m.includes('did you mean "item:"')));
+});
+
+test('the Studio’s story preview reads a preset as the game does after applyStoryPreset', () => {
+  const { storyPreviewSave, storyPreviewAllows, storyNamesIn } = modules['story-checks'];
+  const conds = [
+    'rival0 = win',
+    'met_blake0',
+    '!met_chad',
+    'beat:chad',
+    'beat:blake0 and !beat:chad',
+    'badges >= 3',
+    'visited:copperleaf',
+    'visited:vinyl_works',
+    'billie:musk',
+    'billie:swift1',
+    'coin:gold >= 3',
+  ];
+  for (const preset of Object.keys(GAME_DATA.story.presets)) {
+    const game = fn('newSave')();
+    game.story = {};
+    fn('applyStoryPreset')(game, preset);
+    const pv = storyPreviewSave(GAME_DATA, { preset });
+    for (const c of conds)
+      assert.equal(
+        storyPreviewAllows(GAME_DATA, { when: c }, pv),
+        fn('storyAllows')({ when: c }, game),
+        `${preset}: ${c}`
+      );
+  }
+  const pv = storyPreviewSave(GAME_DATA, {
+    preset: 'after-opening',
+    flags: { met_blake0: false, x: true, 'beat:chad': true },
+  });
+  assert.deepEqual([pv.story.met_blake0, pv.story.x, pv.flags.chad], [undefined, 1, 1]);
+  assert.equal(storyPreviewAllows(GAME_DATA, { when: 'beat:chad', unless: 'x' }, pv), false);
+  assert.equal(storyPreviewAllows(GAME_DATA, { when: 'itme:x' }, pv), false, 'a when that doesn’t read hides it');
+  assert.deepEqual(storyNamesIn([{ when: 'a and beat:chad' }, { unless: '!b or a' }, {}]), {
+    flags: ['a', 'b'],
+    beat: ['chad'],
+  });
+});
+
+test('Play from here: the switches go through the address and into a save as the preview reads them', () => {
+  const { storySwitches, storySwitchesText, storySwitchesOf } = modules['story-checks'];
+  const F = { met_x: true, rival0: false, 'beat:chad': true };
+  assert.equal(storySwitchesText(F), 'met_x,!rival0,beat:chad');
+  assert.deepEqual(storySwitchesOf('met_x,!rival0,beat:chad, ,<b>,'), F);
+  const save = storySwitches({ story: { rival0: 'win' } }, GAME_DATA, F);
+  assert.deepEqual([save.story.met_x, save.story.rival0, save.flags.chad], [1, undefined, 1]);
+  assert.ok(save.seats.includes(GAME_DATA.trainers.chad.seat?.id) || !GAME_DATA.trainers.chad.seat);
 });

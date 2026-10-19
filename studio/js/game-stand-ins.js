@@ -53,7 +53,7 @@ const liveMap = f =>
       },
     }
   );
-const BATTLE_STAGES = liveMap(D => D.battleStages),
+export const BATTLE_STAGES = liveMap(D => D.battleStages),
   MOVES = liveMap(D => D.moves),
   PEOPLE = liveMap(D => D.people),
   /* phase 16: the rig drawing reads RULES.parts (part sizes) */

@@ -115,7 +115,9 @@ Combine with `and`, `or`, `not` / `!` and parentheses; `and` binds tighter than 
 | `go place [entrance]` | a checkpoint; from S2 |
 | `shot`, `dressing-room`, `pick-starter`, `hot-take`, `tip`, `fall` | the openings' commands (S5, S7) |
 
-The command table is `SCRIPT_COMMANDS` in logic/script.js; the Studio's reference (S3) is built from it.
+The command table is `SCRIPT_COMMANDS` in logic/script-parse.js (with the parser; the runner is logic/script.js);
+the Studio's command reference is built from it, the keywords (`KEYWORD_ABOUT`), the slots and the condition terms
+(`CONDITION_KINDS`) by `scriptReference()`, so it can't drift from what the parser reads.
 
 ## Flags
 
@@ -139,6 +141,10 @@ point in the story by story.json `presets` (place, story flags, trainers beaten 
 team). `after-opening`: Copperleaf, Blake's first battle won. `before-cass`: every badge, a team near level 55, at
 the pressing plant.
 
+The Studio's Play from here adds (S3): `&place=<location>` starts you in the place itself (its people, trainers and
+exits) and `&at=x,z` on a spot of its scene; `&flags=met_x,!rival0,beat:chad` switches flags and trainers on or off
+on top of the preset; `&draft=1` waits up to 2 s for the open Studio's unsaved data first.
+
 ## Line ids
 
 Every line of dialogue and every choice option ends with a short id: `There you are, dear. #l:3fa9`. It is not
@@ -146,7 +152,7 @@ shown; it stays with the line when the text is edited or moved, so the debug log
 Studio and a translation can point at the line. `once`, `cycle`, `seq` and `[once]` without a key remember by their
 (first) line's id, so lines added above them move nothing. `npm run story:ids` gives every new line an id (and a
 second copy of an id a new one); the data check fails on a line without one. Write new lines without an id and run
-it.
+it, or press **Add line ids** under a script in the Studio (the same rule).
 
 ## The story-dependent world
 
@@ -158,10 +164,26 @@ it.
 
 ## Story checks
 
-`npm run check:data` runs `tools/story-checks.mjs` on the data. It fails on: a script that doesn't read (file, line,
+`npm run check:data` runs the story checks (game/js/logic/story-checks.js, through tools/story-checks.mjs) on the
+data; the Studio runs the same ones as you type and in its Check. It fails on: a script that doesn't read (file, line,
 "did you mean"), a line without an id or an id used twice, a speaker, trainer, place, item, coin, Billie, quest or
 script that doesn't exist, a quest stage the quest lacks, a `when` / `unless` / `requires` / chapter condition that
 doesn't read, and a place whose `requires` can't come true anywhere the player can get to (the reach check: along
 roads and lifts from the start, opening places as the flags the scripts there set allow; a flag story.json lists
 counts as one the game sets). It warns about: a flag read that nothing sets, a flag a script sets that story.json
 doesn't list, items taken but never given, a `once` key two scripts share, a quest stage no script moves to.
+
+## In the Studio (S3)
+
+- **Every script has one field**: a trainer's (Trainers → Dialogue), a person's in a scene (Walk scenes → People who
+  talk: id, look, name, spot, facing, `when`, `unless`, script) and story.json's (Story scripts). The parser's error
+  shows at once, the story checks for that script a moment later, each with its line; click one to select the line.
+  Tab / Shift+Tab indent by two spaces (Esc first to leave the box with Tab); Enter keeps the indent, one more after
+  a line that opens a block. **Commands** opens the reference; a row puts itself in the script.
+- **Condition fields** (`when`, `unless`, a place's `requires`) say at once when a condition doesn't read, and what
+  the checks find (a trainer or item that doesn't exist).
+- **The Check** lists every story finding; Show me opens the script with the line selected.
+- **Story preview** (Walk scenes → Preview): a start preset and flags (and trainers beaten) switched on or off; who
+  and what isn't there for them is hidden in the 3D preview and faded on the map.
+- **Play from here** (Walk scenes → Preview, or a preset in Story scripts): the game in this place, on the spot you
+  pick, at the preview's preset and flags, with your unsaved changes; nothing is saved there.

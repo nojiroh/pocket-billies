@@ -61,6 +61,7 @@ import {
   updateTopBar,
   writePath,
 } from './studio-app.js';
+import { conditionField, scriptField } from './story-editor.js';
 import {
   ATLAS_CACHE,
   atlasGet,
@@ -1572,14 +1573,21 @@ SECTIONS.trainers = () => {
  ${card('Team', `<table class="tbl"><thead><tr><th>Billie</th><th>Lv</th><th></th></tr></thead><tbody>${team}</tbody></table><div class="seg-row"><button class="btn" data-act="teamAdd">Add a Billie</button></div>`, { sub: 'They send them out in this order.' })}
  ${card(
    'Dialogue',
-   textField(
-     'What they say before the battle: their script, one line each, two spaces per level (docs/SCRIPTS.md; it ends with battle ' +
+   scriptField(
+     'What they say before the battle: their script, one line each, two spaces per level (it ends with battle ' +
        k +
        ')',
-     '@tscript.' + k,
-     { area: 1, rows: 10 }
+     'trainer:' + k,
+     { rows: 10 }
    ) +
      checkboxField('Runs up to you the first time you come where they wait', `${p}.runsUp`) +
+     grid(
+       conditionField('Only there when', `${p}.when`, 'trainer:' + k, 'when', {
+         ph: 'always',
+         help: 'A condition (docs/SCRIPTS.md), e.g. met_hazel and !rival0',
+       }),
+       conditionField('Gone when', `${p}.unless`, 'trainer:' + k, 'unless', { ph: 'never' })
+     ) +
      grid(
        textField('When you win', `${p}.win`),
        textField('When you lose', `${p}.lose`),
@@ -1596,31 +1604,6 @@ SECTIONS.trainers = () => {
  ${card('Sandstorm', T.market ? grid(numberField('Lasts', `${p}.market.n`, { unit: 'turns', min: 1, max: 20, step: 1 })) + textField('Announcement', `${p}.marketText`, { area: 1, rows: 2 }) + '<button class="btn danger subtle" data-act="marketOff">No sandstorm</button>' : `<p class="help">The battle starts in clear weather.</p><button class="btn" data-act="marketOn">Start the battle in a sandstorm</button>`)}
  ${card('Badge', seat)}</div></div>`;
 };
-/* Project Story S2: a trainer's script as one text, a line each; the indent is kept (two spaces per level) */
-{
-  const g = readPath,
-    st = writePath;
-  setReadPath(function (path, o) {
-    if (path && path.startsWith('@tscript.')) {
-      const T = studioState.D.trainers[path.slice(9)];
-      return T && T.script ? T.script.join('\n') : '';
-    }
-    return g(path, o);
-  });
-  setWritePath(function (path, v, o) {
-    if (path && path.startsWith('@tscript.')) {
-      const T = studioState.D.trainers[path.slice(9)],
-        L = String(v || '')
-          .split('\n')
-          .map(x => x.trimEnd())
-          .filter(x => x.trim());
-      if (L.length) T.script = L;
-      else delete T.script;
-      return;
-    }
-    return st(path, v, o);
-  });
-}
 ACTIONS.pickTrainer = d => {
   studioState.sel.trainer = d.id;
   render();

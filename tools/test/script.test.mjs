@@ -1,9 +1,11 @@
-// Project Story S1: the story's scripts, read and played with a stub stage (game/js/logic/script.js).
+// Project Story S1: the story's scripts, read (game/js/logic/script-parse.js) and played with a stub stage
+// (game/js/logic/script.js).
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { modules } from './setup-real.mjs';
 
-const { parseScript, scriptProblem, runScript } = modules.script;
+const { parseScript, scriptProblem } = modules['script-parse'];
+const { runScript } = modules.script;
 
 /** a stage that writes down what it is asked to play; choose() takes the answers given, in order */
 function stub(answers = []) {
@@ -221,4 +223,21 @@ test('line ids: kept apart from the text; once, cycle and [once] remember by the
   const save = { story: {}, items: {}, coins: {} };
   assert.deepEqual((await play(v1, { save })).said, ['First time.', 'One.', '? Ask. | Go.']);
   assert.deepEqual((await play(v2, { save })).said, ['Something new above.', 'Two.', '? Go.']);
+});
+
+test('the Studio’s reference is built from the tables: every command, keyword, slot and condition kind', () => {
+  const { scriptReference, SCRIPT_COMMANDS, KEYWORDS, SCRIPT_SLOTS } = modules['script-parse'];
+  const { CONDITION_KINDS } = modules.conditions;
+  const R = scriptReference(),
+    uses = R.flatMap(s => s.rows.map(r => r.use.split(/[\s:]/)[0]));
+  for (const k of [...Object.keys(SCRIPT_COMMANDS), ...KEYWORDS, ...Object.keys(CONDITION_KINDS)])
+    assert.ok(uses.includes(k), k);
+  for (const k of Object.keys(SCRIPT_SLOTS)) assert.ok(uses.includes(`{${k}}`), k);
+  assert.ok(
+    R.flatMap(s => s.rows).every(r => r.about),
+    'each row says what it does'
+  );
+  const set = R.find(s => s.title === 'Commands').rows.find(r => r.use.startsWith('set '));
+  assert.equal(set.use, 'set flag [value]');
+  assert.equal(R.find(s => s.title === 'Commands').rows.find(r => r.use.startsWith('battle')).tag, 'checkpoint');
 });

@@ -56,18 +56,19 @@ expose({
  *   visited: Record<string, any>, lines: Record<string, any>, robots: number, badges: number, caught: number,
  *   questStages?: Record<string, string[]> }} StoryState */
 
-/** each term kind: whether it takes an id after the colon, and whether it is a count (compared as a number) */
+/** each term kind: whether it takes an id after the colon, whether it is a count (compared as a number), and what it
+ * reads, for the Studio's reference (Project Story S3) */
 export const CONDITION_KINDS = {
-  beat: { id: true, count: false },
-  item: { id: true, count: true },
-  coin: { id: true, count: true },
-  quest: { id: true, count: false },
-  visits: { id: true, count: true },
-  visited: { id: true, count: false },
-  billie: { id: true, count: false },
-  robot: { id: false, count: true },
-  badges: { id: false, count: true },
-  caught: { id: false, count: true },
+  beat: { id: true, count: false, about: 'you beat this trainer: beat:chad' },
+  item: { id: true, count: true, about: 'how many of an item you carry: item:honey >= 2' },
+  coin: { id: true, count: true, about: 'how many of a coin you have: coin:gold >= 3' },
+  quest: { id: true, count: false, about: 'a quest’s stage, in the quest’s order: quest:lost_cat >= found' },
+  visits: { id: true, count: true, about: 'times you have talked to someone: visits:juniper >= 2' },
+  visited: { id: true, count: false, about: 'you have been to a place: visited:copperleaf' },
+  billie: { id: true, count: false, about: 'a Billie of that line caught: billie:musk' },
+  robot: { id: false, count: true, about: 'you have a robot' },
+  badges: { id: false, count: true, about: 'badges won: badges >= 3' },
+  caught: { id: false, count: true, about: 'kinds of Billie caught (the Index)' },
 };
 export const OPS = ['>=', '<=', '!=', '==', '=', '>', '<'];
 export const WORDS = new Set(['and', 'or', 'not']);
