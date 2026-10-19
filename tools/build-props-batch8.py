@@ -277,11 +277,23 @@ def strip(col, w, h=4):
     return a
 
 
-def decal(L, a, name, x, y, z, glow=1, face='fixed', **kw):
-    """A picture laid on a front face (y: that face's depth, a little out from it) or, face None, a billboard."""
+def decal(L, a, name, x, y, z, glow=1, face='fixed', yaw=0, **kw):
+    """A picture laid on a face, a little out from it: the front (yaw 0), the right side (pi/2), the back (pi), the left
+    (-pi/2); or, face None, a billboard. The same picture used twice is saved once."""
     k = dict(glow=glow, recv=0, sway=0, name=name, **kw)
     if face: k['face'] = face
-    L.append(img(save(a, name), x, y, z, **k))
+    if yaw: k['yaw'] = r2(yaw)
+    L.append(img(a if isinstance(a, str) else save(a, name), x, y, z, **k))
+
+
+def around(L, name, cx, w, d, z, front, side, out=0.02):
+    """Pictures on all four faces of a box w wide and d deep: front and back share one picture, the sides another."""
+    f = save(front, f'{name}_fb') if not isinstance(front, str) else front
+    sd = save(side, f'{name}_lr') if not isinstance(side, str) else side
+    decal(L, f, name, cx, -d / 2 - out, z)
+    decal(L, f, name, cx, d / 2 + out, z, yaw=math.pi)
+    decal(L, sd, name, cx + w / 2 + out, 0, z, yaw=math.pi / 2)
+    decal(L, sd, name, cx - w / 2 - out, 0, z, yaw=-math.pi / 2)
 
 
 # ---------------------------------------------------------------- the tower kit
@@ -295,7 +307,8 @@ def grimy(L, cx, w, d, z0, z1, seed, key, shop=True, balconies=False):
         L.append(box(cx, 0, z, w + 0.12, d + 0.12, 0.16, CON_D, 'stone', 'floor slab'))
         z += 3.2
     wz = z0 + (4.5 if shop else 0)
-    decal(L, facade(w - 0.8, z1 - wz, 3.2, 2.4, seed, 'grimy'), f'{key}_lower_windows', cx, fy - 0.02, wz)
+    around(L, f'{key}_lower_windows', cx, w, d, wz, facade(w - 0.8, z1 - wz, 3.2, 2.4, seed, 'grimy'),
+           facade(d - 0.8, z1 - wz, 3.2, 2.4, seed + 50, 'grimy'))
     if shop:
         L += [box(cx, fy + 0.25, z0, w * 0.8, 0.5, 3.2, '#1A2030', 'plain', 'shop glass'),
               box(cx - w * 0.28, fy - 0.02, z0 + 1.6, w * 0.22, 0.08, 1.6, '#6E6A70', 'corrugated', 'shutter'),
@@ -338,12 +351,13 @@ def sleek(L, cx, w, d, z0, z1, seed, key):
     for sx in (-1, 1):
         for sy in (-1, 1):
             L.append(box(cx + sx * (w / 2 - 0.1), sy * (d / 2 - 0.1), z0, 0.34, 0.34, z1 - z0, FIN, 'metal', 'fin'))
-    decal(L, facade(w - 0.8, z1 - z0 - 0.4, 3.6, 1.8, seed, 'sleek'), f'{key}_glass_{int(z0)}', cx, fy - 0.02, z0 + 0.2)
+    around(L, f'{key}_glass_{int(z0)}', cx, w, d, z0 + 0.2, facade(w - 0.8, z1 - z0 - 0.4, 3.6, 1.8, seed, 'sleek'),
+           facade(d - 0.8, z1 - z0 - 0.4, 3.6, 1.8, seed + 50, 'sleek'))
 
 
 def ledge(L, key, cx, w, d, z, col, neon):
     L.append(box(cx, 0, z, w, d, 0.5, CHROME if col == 'chrome' else CON_D, 'metal' if col == 'chrome' else 'stone', 'ledge'))
-    decal(L, strip(neon, w - 0.4), f'{key}_ledge_{int(z)}', cx, -d / 2 - 0.03, z + 0.15)
+    around(L, f'{key}_ledge_{int(z)}', cx, w, d, z + 0.15, strip(neon, w - 0.4), strip(neon, d - 0.4), out=0.03)
 
 
 def antenna(L, key, x, y, z, h):
@@ -358,7 +372,7 @@ def tower_slab():
     ledge(L, k, 0, 14.4, 10.4, 20, 'concrete', CYAN)
     sleek(L, 0, 12.6, 8.6, 20.5, 74, 802, k)
     L.append(box(0, 0, 74, 11.6, 7.8, 3, '#9FD8FF', 'plain', 'lit crown'))
-    decal(L, strip(CYAN, 11.2, 6), f'{k}_crown', 0, -3.93, 75.2)
+    around(L, f'{k}_crown', 0, 11.6, 7.8, 75.2, strip(CYAN, 11.2, 6), strip(CYAN, 7.4, 6), out=0.03)
     L += [box(-3, 1, 77, 2.4, 1.6, 1.2, AC, 'metal', 'roof plant'), cyl(3, 1.5, 77, 1.2, 2.2, '#6E6A70', 'metal', 'water tank', 10)]
     antenna(L, k, 1.5, -1, 77, 13)
     return L, (14, 10)
@@ -394,14 +408,22 @@ def tower_hero():
     for i in range(8):  # pale light strips down the needle's eight edges, so its sides read at night too
         a = (i + 0.5) / 8 * 2 * math.pi + math.pi / 8 - math.pi / 8
         L.append(box((R + 0.05) * math.cos(a), (R + 0.05) * math.sin(a), 14.5, 0.3, 0.3, 86, '#9FD8FF', 'plain', 'edge light'))
-    decal(L, facade(fw - 0.5, 85, 3.6, 1.8, 822, 'sleek'), f'{k}_needle_windows', 0, fy - 0.03, 14.7)
+    ap = R * math.cos(math.pi / 8) + 0.03
+    for i in range(8):  # the needle's eight faces (outward at i * 45 degrees; i = 6 is the front), two pictures in turn
+        phi = i * math.pi / 4
+        pic = save(facade(fw - 0.5, 85, 3.6, 1.8, 822 + i % 2, 'sleek'), f'{k}_needle_windows_{i % 2}')
+        decal(L, pic, f'{k}_needle_windows', ap * math.cos(phi), ap * math.sin(phi), 14.7, yaw=phi + math.pi / 2 if i != 6 else 0)
     decal(L, holo(3.4, 22, 823, vertical=True), f'{k}_holo_band', 0, fy - 0.08, 44)
     L += [box(0, fy - 0.15, 83.5, fw + 0.9, 0.3, 7.4, CHROME, 'metal', 'logo frame'),
           box(0, fy - 0.3, 84, fw + 0.2, 0.3, 6.4, '#E6EBF0', 'plain', 'logo panel (blank until S4)')]
     L += [cyl(0, 0, 100.5, R, 5, GLASS_L, 'panels', 'crown taper', 8, k='cone', r1=5.2, rot=rot),
           cyl(0, 0, 105.5, 5.2, 4, '#BFE6FF', 'plain', 'lit crown', 8, rot=rot),
           cyl(0, 0, 109.5, 5.2, 13, CHROME, 'metal', 'spire', 8, k='cone', r1=0.4, rot=rot)]
-    decal(L, strip(CYAN, 3.6, 6), f'{k}_crown_strip', 0, -5.2 * math.cos(math.pi / 8) - 0.03, 107)
+    cs = save(strip(CYAN, 3.6, 6), f'{k}_crown_strip')
+    for i in range(8):
+        phi = i * math.pi / 4
+        ac = 5.2 * math.cos(math.pi / 8) + 0.03
+        decal(L, cs, f'{k}_crown_strip', ac * math.cos(phi), ac * math.sin(phi), 107, yaw=phi + math.pi / 2 if i != 6 else 0)
     antenna(L, k, 0, 0, 122.5, 4)
     return L, (20, 16)
 
@@ -586,6 +608,7 @@ def front_picture(L, name):
         if k == 'limb':
             return min(l['x'], l['x2']) - l['r'], max(l['x'], l['x2']) + l['r'], min(l['z'], l['z2']), max(l['z'], l['z2'])
         return None
+    L = [l for l in L if not l.get('yaw')]  # only what faces the front
     pics = {}
     for l in L:
         if l['k'] == 'img':
