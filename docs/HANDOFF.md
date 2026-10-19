@@ -60,7 +60,14 @@ d2f9721.
     on the place's ground (hidden by the hole).
   - 303 of 342 room footprints cover another building's footprint (from the 08a audit); those buildings are left out
     while you're inside, as before.
-- Verified: (the end-of-session checks were still running at this commit; see the next commit)
+- Verified: every commit lint, typecheck, unit tests (72), check:data, check:modules, format:check. Before merging
+  main: smoke 15/15, check-fast 11/11, the quick check's room steps (rooms, time and weather and rooms, things to do,
+  v31, v46, v47, alpha 0.1's windows) all green. After merging main (phase 20 stage B's walk/ split, props batches
+  4-7): smoke 15/15, check-fast 11/11, the full test's room step (in 0.7 s; doorway 0.02 m along from the door), v31
+  green (alone; in a run after other steps its 90 s wait for the fountain's water timed out once), **v46 red on main
+  too**: "buildings without a plan: bakery, inn, market_hall, library, greenhouse" (props batch 7 made them models
+  from the house kit; the step still expects build plans). Not fixed here. The full quick check and the in-game full
+  test whole were not run (08b-3 ends the phase with them).
 - Questions waiting for the owner:
   - Try rooms on your phone (the Marigold shop, your room, a mansion) and send a debug log.
   - Merge this branch to main, then "start 08b-3" (tasks 9 and 10: room templates and slot sets, home from the save,
