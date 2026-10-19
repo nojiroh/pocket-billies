@@ -11,6 +11,19 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 - Questions waiting for the owner: 
 - Next session starts with: 
 
+### Studio track ST-4 - the Art workbench, Part mode - 2026-10-19
+Written at the start of ST-5 (the ST-4 session merged as PR #71 without this entry or its tag); taken from its commits
+and the track file's ST-4 notes, not from that session's own report.
+- Changed: partKits.json room for joints (per view pivot, S/L pictures, z, turns, sides, socket rules, mirrorOf; all
+  optional) and kind defaults; logic/part-joints.js (+ tests); pixel-canvas host tools follow a drag; Sheet mode's
+  Write keeps Part mode's work; studio/js/workbench-part.js (Part mode); a Studio check step on cat_leg; STUDIO.md,
+  CHANGELOG, track file.
+- Risky or unfinished: any Studio save drops `_help` from partKits.json, portraits.json, robots.json and rules.json
+  (the undo snapshot and Save leave out `_` keys; older than ST-4, not fixed).
+- Verified: per its commits, unit tests and the Studio check's Part mode step. Re-checked at ST-5's start: 236 unit
+  tests pass on 9b731cf.
+- Next session starts with: ST-5, robots on the workbench.
+
 ### Studio track ST-3 - the Art workbench, Sheet mode - 2026-10-19
 Plan approved at the start. Owner's picks: the part list becomes data (game/data/partKits.json); kit sources stay in
 tools/art-source and are sliced again by dropping them (settings kept per kit).
