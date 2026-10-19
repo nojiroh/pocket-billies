@@ -225,6 +225,7 @@ async function storySceneEnd(outro) {
 const storyGameStage = {
   say: async l => {
     await storyWindowsClosed();
+    storyRun.line = l.id || null;
     const who = storySpeaker(l.who || 'me');
     return storySceneOn() ? cutsceneSay(who, l.text, l.expr) : talkLine(who, l.text, l.expr, {});
   },
@@ -292,7 +293,8 @@ const storyGameStage = {
 storyGameStage.shot = args => {
   if (typeof debugLog !== 'undefined') debugLog.add('story', `shot ${args.join(' ')}: not played yet (S5)`);
 };
-const storyRun = { on: false, id: null, speaker: null, base: null, path: null, control: null };
+/* line: the id of the line on screen (tools/story-ids.mjs), for the debug log */
+const storyRun = { on: false, id: null, speaker: null, line: null, base: null, path: null, control: null };
 provide({ storyRun }); /* to-module */
 const storySlots = { name: () => lookOf('me').name || 'Trainer' };
 /* plays a script by id; resume: where a saved run goes on from */
@@ -346,13 +348,14 @@ async function playStoryScript(id, o = {}) {
     });
   } catch (e) {
     console.error(e);
-    if (typeof debugLog !== 'undefined') debugLog.add('story', `script ${id} stopped: ${e.message}`);
+    if (typeof debugLog !== 'undefined')
+      debugLog.add('story', `script ${id} stopped${storyRun.line ? ` after #l:${storyRun.line}` : ''}: ${e.message}`);
     toast('The story stopped here: ' + e.message);
   } finally {
     delete S.toJSON;
     await storySceneEnd(false).catch(e => console.error(e));
     talkHide();
-    Object.assign(storyRun, { on: false, id: null, speaker: null, base: null, path: null, control: null });
+    Object.assign(storyRun, { on: false, id: null, speaker: null, line: null, base: null, path: null, control: null });
     save();
   }
   return true;
@@ -375,7 +378,8 @@ document.addEventListener('pointerdown', ev => {
     storyRun.control.skipping = true;
     if (talkBox.cur) talkBox.cur.done();
     if (talkBox.choice) talkBox.choice.pick(0);
-    if (typeof debugLog !== 'undefined') debugLog.add('story', `skipped the rest of ${storyRun.id}`);
+    if (typeof debugLog !== 'undefined')
+      debugLog.add('story', `skipped the rest of ${storyRun.id}${storyRun.line ? ` from #l:${storyRun.line}` : ''}`);
   }, 600);
 });
 for (const t of ['pointerup', 'pointercancel', 'pointerleave'])
