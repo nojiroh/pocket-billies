@@ -149,24 +149,12 @@ export function legendCheck() {
 }
 const storyState = { pending: null };
 provide({ storyState }); /* to-module */
-/* alpha 0.4: someone who only talks (scene.people: Granny Juniper): what they say the first time, then a line or two */
+/* someone who only talks (a map's people: Granny Juniper, Curator Nacre): their script */
 export async function personTalk(P) {
-  if (!P || talkBox.on || (typeof cutscene !== 'undefined' && cutscene.on)) return;
-  const F = storyFlags(),
-    k = 'met_' + P.id,
-    first = !F[k] && P.first && P.first.length;
-  let lines;
-  if (first) lines = P.first;
-  else {
-    const L = P.lines || [];
-    setStoryFlag('talk_' + P.id, ((F['talk_' + P.id] || 0) + 1) % Math.max(1, L.length));
-    const a = L[F['talk_' + P.id]];
-    lines = a ? [a] : [];
-  }
-  setStoryFlag(k);
-  save();
-  if (lines.length && typeof talk === 'function') await talk(lines.map(l => [P.who, l]));
+  if (!P || talkBox.on || storyRun.on || (typeof cutscene !== 'undefined' && cutscene.on)) return;
+  if (P.script) await playStoryScript('person:' + P.id);
 }
+
 /* ================= v47: BLAKE'S FIRST BATTLE, AND WHAT COMES AFTER =================
    The opening ends with Blake wanting a battle (cutscene.js); it starts as soon as Sundown is back on screen. */
 /* what Blake says when he runs in (the opening's scene, or the step-by-step intro's conversation before the battle) */
