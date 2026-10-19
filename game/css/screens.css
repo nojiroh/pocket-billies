@@ -854,6 +854,19 @@ body.map-gl.on-map #dio {
   transform: none !important;
   opacity: 1;
 }
+/* phase 10: the bowl is drawn on #dio but touched through #mapcv; #dio can end up on top of it (both fixed at z-index
+   0, the later one wins), so on the Map tab it lets every touch through */
+body.on-map #dio {
+  pointer-events: none;
+}
+/* phase 10: the Map tab's screen must not slide in: its enter animation (v05.css, fill-mode both) leaves a transform
+   on .screen, which makes the fixed .map-full inside it size itself to .screen (0 px high), so the map's touch and
+   pin layer had no height */
+.screen.s-map,
+.screen.s-map.enter {
+  animation: none !important;
+  transform: none !important;
+}
 body.map-gl .map-full #mapcv {
   background: transparent;
   image-rendering: auto;

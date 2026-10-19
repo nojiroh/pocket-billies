@@ -95,3 +95,18 @@ and a miniature; travel plans unchanged by the move. No screenshot baselines.
 ## Done when
 The bowl replaces the old map, the Node tests pass, the owner has reported phone frame times, the Studio editor works
 on the bowl, and the old map code is deleted.
+
+## Ground and landmarks (planned 2026-10-19, owner's answers)
+- **Each place's real ground** drawn on the bowl as pixel art at about 1.5 m a pixel, sharp (no blur), each walk map
+  turned the way it sits on the bowl (north to the centre), so its roads, water, plazas and cliffs show where they are.
+- **Between places:** each region's real ground textures (their average colours) with a pixel-art dither, not a soft
+  blend. Mesh about 320 cells; each place's own hills and slopes from its map.
+- **Buildings, by zoom (owner: both):** far out, one oversized landmark per place (Copperleaf's oak, the clinic dome,
+  Verdigris' towers, windmills, airship masts, Cinderpeak's smoke, Frostcrown's snowy top), chosen per place and set in
+  the Studio; closer in, each town's real buildings to scale from its walk map, using the low-poly prop models.
+- **Trees (owner: clumps):** groups of low-poly trees where the walk maps have woods, in each region's kinds (pines,
+  mushrooms in the Spore Forest, crystals in the caverns).
+- **Pins (owner: fade when close):** pins far out; up close a small name tag and the buildings take over; the picked
+  place and you always show.
+- **World map test:** the new ground, models and draw time.
+

@@ -91,6 +91,7 @@ expose({
   worldBowlSpots: [() => worldBowlSpots, v => (worldBowlSpots = v)],
   worldMap: [() => worldMap],
   worldMapAction: [() => worldMapAction, v => (worldMapAction = v)],
+  worldMapBackToWalk: [() => worldMapBackToWalk, v => (worldMapBackToWalk = v)],
   worldMapBind: [() => worldMapBind, v => (worldMapBind = v)],
   worldMapCanvasGl: [() => worldMapCanvasGl, v => (worldMapCanvasGl = v)],
   worldMapChrome: [() => worldMapChrome, v => (worldMapChrome = v)],
@@ -560,6 +561,7 @@ function worldMapLoop(ts) {
     worldBowl.on = false;
     document.body.classList.remove('map-bowl');
     frameStop('map');
+    worldMapBackToWalk();
     return;
   }
   if (gpuState.lost) return;
@@ -1057,6 +1059,8 @@ export function worldMapOpenFromWalk() {
   )
     return false;
   worldBowl.opening = true;
+  /* the walk camera's zoom, put back when you come back to the walk scene */
+  worldBowl.walkZoom = walkRenderer.zoomT;
   walkRenderer.zoomT = clampZoom(walkRenderer.zoom * 3);
   worldMapFade(true);
   setTimeout(() => {
@@ -1069,6 +1073,15 @@ export function worldMapOpenFromWalk() {
     scrollTo(0, 0);
   }, 380);
   return true;
+}
+/* back in the walk scene: the walk camera's zoom as it was before the map, eased in from far out (the zoom out in
+   reverse); without the zoom out it is just put back */
+function worldMapBackToWalk() {
+  const z = worldBowl.walkZoom;
+  if (z == null || typeof walkRenderer === 'undefined' || uiState.tab !== 'walk') return;
+  worldBowl.walkZoom = null;
+  if (!reducedMotion) walkRenderer.zoom = clampZoom(z * 3);
+  walkRenderer.zoomT = z;
 }
 /* a veil in the haze's colour over the switch, so the walk scene's last frame never cuts to the map */
 function worldMapFade(on) {

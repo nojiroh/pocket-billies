@@ -11,6 +11,23 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 - Questions waiting for the owner: 
 - Next session starts with: 
 
+### Phase 10 (world map: the bowl) - fixes from the owner's phone test - 2026-10-19
+From the owner's world map test report (Adreno 750, 60 fps, 1.6 ms a frame) and notes.
+- Changed:
+  - Touch didn't move the map: the Map tab's screen kept its slide-in animation's end transform (v05.css,
+    fill-mode both), which made the fixed `.map-full` size itself to `.screen`, 0 px high, so the touch and pin layer
+    had no height (the bowl itself draws on #dio, full screen, so it looked fine). `.screen.s-map` no longer animates;
+    #dio also lets touches through on the Map tab.
+  - The walk camera stayed zoomed out after the map: the zoom out now remembers the walk zoom, and coming back to the
+    walk scene eases back in from far out to it.
+  - The world map test's "shaders compile" step looked for the old program name; it now checks every bowl program,
+    and its opening step checks that touches reach the map.
+  - Fast check: the bowl step checks the map layer fills the screen and takes touches (on a phone-sized page), and that
+    the walk zoom comes back. It fails without the CSS fix (checked).
+- Verified: lint, typecheck, check:modules, format:check, npm test (148 pass); check-fast bowl step; a lite touch
+  drag (CDP touch events, graphics off) moves the camera.
+- Next: the terrain and buildings plan (docs/phases/10-world-map-bowl.md, "Ground and landmarks").
+
 ### Phase 10 (world map: the bowl), session E-map-4 - ground and routes; the old map gone - 2026-10-19
 Plan approved ("Go"). Owner chose: the walk sky shows the bowl's far wall; the opening falls into the bowl; gentle
 relief. Owner's asks: lose the old map, a fluid zoom out from the walk scene into the map, the world map test in

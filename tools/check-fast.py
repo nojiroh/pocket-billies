@@ -165,10 +165,17 @@ def bowl_map(pg, base):
     Bowl map test checks the rest (frame rate, every place)"""
     # from the walk scene by its tab button: the walk camera rises, the bowl pulls back from right above you
     if not until(pg, "!!document.querySelector('[data-a=tab][data-t=map]')&&typeof walkRenderer!=='undefined'&&walkRenderer.on", 90): raise Exception('the walk scene never got ready')
+    z0 = pg.evaluate("typeof walkRenderer!=='undefined'?walkRenderer.zoomT:null")
     pg.evaluate("uiState.mapSel=null;document.querySelector('[data-a=tab][data-t=map]').click();0")
     if not until(pg, "typeof worldBowl!=='undefined'&&worldBowl.on&&worldBowl.frames>=3", 30):
         raise Exception('the map didn’t open as the bowl' + (' (the old map opened)' if pg.evaluate("worldMap.gl") else ''))
     if not until(pg, "!worldBowl.tween&&!document.getElementById('mapfade')", 10): raise Exception('the zoom out from the walk scene never settled')
+    # touches must reach the map: its layer fills the screen and some of it is not under the card or the buttons (on a
+    # phone-sized page: this page's 300 px are mostly card)
+    pg.set_viewport_size({'width': 400, 'height': 760}); time.sleep(.5)
+    hit = pg.evaluate("(()=>{const r=worldMap.cv.getBoundingClientRect();if(r.height<innerHeight*.9)return 'a map layer '+Math.round(r.height)+' px high';for(const fy of [.2,.3,.4,.5])for(const fx of [.3,.5,.7]){const e=document.elementFromPoint(innerWidth*fx,innerHeight*fy);if(e===worldMap.cv)return ''}const e=document.elementFromPoint(innerWidth/2,innerHeight/2);return e?e.tagName+'#'+e.id:'nothing'})()")
+    if hit: raise Exception(f'a touch on the map lands on {hit}, not the map')
+    pg.set_viewport_size({'width': 400, 'height': 300})
     n = pg.evaluate("LOCATIONS.length"); s = pg.evaluate("(worldBowl.spots||[]).filter(s=>isFinite(s.x)&&isFinite(s.y)).length")
     if s != n: raise Exception(f'{s} of {n} places have a spot on the bowl')
     pick = pg.evaluate("""(()=>{const t=LOCATIONS.findIndex(l=>l.id==='tallgrass_meadow'),p=worldBowl.spots[t];worldBowl.goal=null;worldBowl.cam=bowlCamHome(p.x,p.y);worldBowl.dirty=true;return t})()""")
@@ -184,6 +191,7 @@ def bowl_map(pg, base):
     # the opening fall films the bowl (one frame of it, mid-fall)
     pg.evaluate("worldBowlFilm(fallCamera(.5,400,300),performance.now());0")
     pg.evaluate("uiState.tab='walk';render();0")
+    if z0 is not None and not until(pg, f"Math.abs(walkRenderer.zoomT-{z0})<1e-6", 10): raise Exception(f'the walk camera’s zoom didn’t come back ({pg.evaluate("walkRenderer.zoomT")}, was {z0})')
     # an airship flight over the bowl, skipped to the end: you land in the other town
     to = pg.evaluate("(()=>{const i=LOCATIONS.findIndex(l=>l.id==='copperleaf');saveData.visited[i]=1;saveData.se+=100000;startAirshipFlight(i);return i})()")
     if not until(pg, "airshipFlight.on&&worldBowl.on", 15): raise Exception('the flight didn’t show on the bowl')
