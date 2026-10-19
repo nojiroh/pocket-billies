@@ -67,6 +67,10 @@ each of its values.
   chip (a frame of 25 ms with 3 ms of processor time), so it ranked the settings wrongly. Below the frame cap nothing
   shows: a setting that fits in the frame's spare time costs 0.
 - **Background:** like the full test, it waits while the app is in the background and runs that station again.
+- **Draw calls (phase 20):** while a step measures, every frame's graphics calls are counted
+  (game/js/engine/gpu-counters.js): draws, instances, program switches, and the draws of each render pass. Counting
+  wraps the context's methods for each counted frame, so it adds a little processor time to the frames it counts; every
+  step pays it alike, so the costs between steps still compare.
 
 ## What it leaves behind
 
@@ -79,7 +83,9 @@ A table of settings sorted by cost (the highest step's cost), each with its curv
 `pocket-billies-graphics-YYYYMMDD-HHMM.json`. The report has the build, the device and its graphics chip, the
 frame cap, and per setting each step's value, fps, frame ms, worst fps, processor ms, graphics-chip ms (or null), their
 costs, the station's noise and whether the cost is within it (`unclear`). It has no save data and no names. Format 2
-(October 2026) added frameMs, frameCost, noise and unclear, and the midway look.
+(October 2026) added frameMs, frameCost, noise and unclear, and the midway look. Phase 20 added, per step, `draws`,
+`instances`, `programs` (switches) and `passDraws` (draws per pass) as averages per frame, and a Draws column to the
+table (lowest step → highest).
 
 ## Time
 

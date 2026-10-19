@@ -45,6 +45,11 @@ kept aside in the browser).
   (`openHitchMs`, `openHitchCause`), and the first and last second of the other steps are left out (they read low).
   The debug log now names the opening hitch (setting up the ground, building the ground mesh, the walk grid, reading
   the picture back) instead of "outside the marked steps".
+- Draw counts (phase 20, stage A): the debug log says, once a second, how many draw calls, instances, program
+  switches, texture binds and uniform calls a frame made, and how many draws each render pass made (shadow maps,
+  lamps and the reflection apart); also the lights in the frame, programs compiled after a place had settled, and a
+  rough sign of garbage-collection hitches (Chrome). The graphics test and the diagnostics report the draws per step
+  (a Draws column). Fix: their pass timers had skipped the 3D models, box faces and structures.
 - New: the **graphics test** (Settings → Help, and the debug menu), about ten minutes on a new test place, the Graphics
   bench. It measures what each graphics setting costs on your device: the 17 Expert dials and five hidden ones, five
   steps each, then everything at its lowest and highest. It ends with a table, costliest first, and Save the report.
