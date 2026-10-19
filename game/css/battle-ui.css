@@ -5,8 +5,15 @@
    readable in the dark and the rain. Only tokens from css/tokens.css. */
 
 /* the dock is just the layer the cards float in */
-.battle.ui3d .dock {
+/* phase 06-4: the layer covers the whole screen in every layout (the older landscape and wide-screen rules made it a
+   300-420 px column on the right, which clipped the cards on an iPad) */
+.battle.ui3d .dock,
+.battle.ui3d[data-layout] .dock {
   inset: 0;
+  width: auto;
+  max-height: none;
+  overflow: visible;
+  transform: none;
   padding: 0;
   border-radius: 0;
   background: none !important;
