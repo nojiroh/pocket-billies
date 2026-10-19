@@ -223,6 +223,7 @@ expose({
   closeModal: [() => closeModal, v => ((closeModal = v), provide({ closeModal }))],
   dexStatus: [() => dexStatus, v => (dexStatus = v)],
   donateItem: [() => donateItem, v => (donateItem = v)],
+  doorBuildingOf: [() => doorBuildingOf, v => (doorBuildingOf = v)],
   eggSlots: [() => eggSlots, v => (eggSlots = v)],
   encounterCardHTML: [() => encounterCardHTML, v => (encounterCardHTML = v)],
   enterRoom: [() => enterRoom, v => (enterRoom = v)],
@@ -919,7 +920,26 @@ function roomFor(a, p) {
   const L = doorLinkOf(p, a, walkView.id);
   return L ? L.b.map : null;
 }
+/* phase 08b: a sign with no building of its own (Marigold's shop and clinic signs) leads into the building it stands by:
+   the nearest one within 6 m that does the same */
+function doorBuildingOf(a, p) {
+  const C = walkData().sc,
+    M = p && C.props[p.k];
+  if (!p || p.x == null || (M && M.box) || !walkView.sc) return p;
+  let best = null,
+    bd = 6;
+  for (const q of walkView.sc.props || []) {
+    const Q = C.props[q.k],
+      d = Math.hypot(q.x - p.x, q.z - p.z);
+    if (q.act === a && Q && Q.box && d < bd) {
+      best = q;
+      bd = d;
+    }
+  }
+  return best || p;
+}
 function enterRoom(a, p) {
+  p = doorBuildingOf(a, p);
   const id = roomFor(a, p);
   if (!id || !walkView.pl) return false;
   const here = LOCATIONS[saveData.trip.node];
@@ -1006,8 +1026,9 @@ function roomRefresh() {
 function roomAim(h) {
   if (!h || h.k !== 'act' || !ROOM_BY_USE[h.act] || uiState.inside) return;
   if (typeof isOpenNow === 'function' && !isOpenNow(openingHoursKind(h.act, h.p))) return;
-  const id = roomFor(h.act, h.p);
-  if (id) roomLayIn(id, h.p);
+  const q = doorBuildingOf(h.act, h.p),
+    id = roomFor(h.act, q);
+  if (id) roomLayIn(id, q);
 }
 function roomStepIn(info, n = 0) {
   if (uiState.goingIn !== info) return;
