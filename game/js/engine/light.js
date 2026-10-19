@@ -155,7 +155,7 @@ export function lightContext(o) {
     cloudSpd: engineSetting('sun', 'cloudSpeed'),
     contact: engineSetting('shadows', 'contact'),
     shLift,
-    shPx: engineSetting('shadows', 'pixel') ? (engineSetting('shadows', 'pixelSize') ?? 16) : 0,
+    shPx: engineSetting('shadows', 'pixel') ? (engineSetting('shadows', 'pixelSize') ?? 32) : 0,
     shSteps: engineSetting('shadows', 'pixelSteps') ?? 2,
     roomB: o.roomB || [0, 0, 0, 0],
     roomDim: o.roomDim || 0,

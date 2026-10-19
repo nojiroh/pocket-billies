@@ -81,7 +81,7 @@ export const ENGINE_DEFAULTS = {
     ao: 0.55,
     aoRadius: 0.5,
     pixel: true,
-    pixelSize: 16,
+    pixelSize: 32,
     pixelSteps: 2,
     hue: 0.6,
     fit: true,
