@@ -57,7 +57,7 @@ test('a Billie gets its build: wild ones roll, starters and trainers are Prime',
   assert.deepEqual(fn('makeBilly')(sp, 10, { build: given }).build, given);
   const q = fn('spawn')();
   assert.ok(q.build && P.slots.every(k => P.sizes[q.build[k]]), 'a spawned Billie has a size for every slot');
-  const old = { id: 'x', sp, lvl: 5, gold: false, no: 1 };
+  const old = { id: 'x', sp, lvl: 5, no: 1 };
   const b = fn('encounterBuild')(old);
   assert.deepEqual(b, old.build, 'an old queued Billie gets sizes once and keeps them');
   assert.deepEqual(fn('cleanBuild')({ head: 'Q', body: 'L' }), { ...allSize('M'), body: 'L' });

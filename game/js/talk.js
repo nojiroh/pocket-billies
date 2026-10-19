@@ -279,7 +279,6 @@ document.addEventListener('keydown', ev => {
 /* ---------- people in the walk scenes ---------- */
 const FOLK_TALK = [
   '[happy] Oh, hi! Out for a walk too?',
-  'Did you hear? Someone saw a Golden one near the pond.',
   'My feet are tired, but I’ve seen three towns today.',
   '[surprised] Is that a trainer card? Fancy!',
   'I used to have a Billie. It bought my house and moved me out.',

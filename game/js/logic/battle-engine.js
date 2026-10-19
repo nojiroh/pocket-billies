@@ -43,6 +43,7 @@ import { ROBOT_LIMBS, ROBOT_SLOT_NAMES, isRobot, moveSources, robotGemDef, robot
 import {
   billyName,
   brokenParts,
+  coatPrefix,
   encounterBuild,
   findBilly,
   formatNumber,
@@ -231,8 +232,8 @@ export function actorSnapshot(k) {
     hp: m.hp,
     max: maxHp(m),
     st: m.status,
-    gold: m.gold,
     build: m.build,
+    coat: m.coat,
     alpha: !!(m.boss || m.alpha),
     boss: !!m.boss,
     ty: actorTypes(k).slice(),
@@ -955,19 +956,18 @@ export function makeAlpha(sp, lvl, o = {}) {
   return m;
 }
 export function startWild(q) {
-  const o = { gold: q.gold, build: encounterBuild(q) },
+  const o = { build: encounterBuild(q), coat: q.coat },
     foe = q.alpha ? makeAlpha(q.sp, q.lvl, o) : makeBilly(q.sp, q.lvl, o);
   if (!newBattle('wild', [foe], { qid: q.id, area: battleStageKey(), fmt: q.alpha ? 'alpha' : 'single' })) return;
   const nm = SPECIES[q.sp].name;
   if (q.alpha) {
-    battleSay(`An Alpha ${q.gold ? 'Golden ' : ''}${nm} rose out of the grass!`, { k: 'wild', alpha: 1 });
+    battleSay(`An Alpha ${coatPrefix(q.coat)}${nm} rose out of the grass!`, { k: 'wild', alpha: 1 });
     battleSay(`“${nm}!!”`, { k: 'cry', si: 1 });
     battleSay(`It’s huge, and it acts twice a turn. Your team steps up together.`);
   } else {
-    battleSay(`A wild ${q.gold ? 'Golden ' : ''}${nm} appeared.`, { k: 'wild' });
+    battleSay(`A wild ${coatPrefix(q.coat)}${nm} appeared.`, { k: 'wild' });
     battleSay(`“${nm}!”`, { k: 'cry', si: 1 });
   }
-  if (q.gold) battleSay(`It shimmers. Golden Billies turn up once in ${formatNumber(RULES.encounters.goldOdds)}.`);
   if (CATCH_RULES.luxury.includes(SPECIES[q.sp].line))
     battleSay(`It looks too picky for ${COINS.penny ? 'a ' + COINS.penny.n : 'cheap coins'}.`);
   const K = liveActors(0);

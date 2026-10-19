@@ -96,10 +96,6 @@ body.on-scene .screen > p.note {
 .tm-ribbon + .tm-ribbon + .tm-ribbon {
   top: 58px;
 }
-.tm-ribbon.gold {
-  background: linear-gradient(180deg, #fffbe6, #ffe7a0);
-  color: #7a4a06;
-}
 .tm-ribbon.bud {
   background: var(--rose);
   color: #fff;

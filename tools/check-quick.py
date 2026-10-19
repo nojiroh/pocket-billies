@@ -431,7 +431,7 @@ def check_ground():
 def report_unused():
     """v47: lists pictures and sounds no code, page or data names, and catalogue props no place uses and no code
     names, so old things don't build up again. A report, not a failure. A folder the code builds names in (battle/
-    plus a stage, a billionaire plus _gold) counts as named as a whole, so the list holds only what nothing reaches"""
+    plus a stage) counts as named as a whole, so the list holds only what nothing reaches"""
     D = gamedata(); SY = D['scenery']
     srcs = list((GAME / 'js').rglob('*.js')) + list((ROOT / 'studio' / 'js').glob('*.js')) + list((GAME / 'data').glob('*.js')) + list((GAME / 'art').rglob('*.json'))
     srcs += [f for f in GAME.glob('*') if f.suffix in ('.html', '.json', '.webmanifest', '.css', '.js')] + list((ROOT / 'studio').glob('*.html')) + list((ROOT / 'studio').glob('*.css'))
@@ -735,7 +735,7 @@ def safety_step(b, base, R):
         pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();document.querySelector('[data-a=inbox]')?.click();0"); time.sleep(.4); check('inbox'); shown.append('inbox')
         pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();toast(saveData.team[0].nick+' leads the team now.');talkLine('me',saveData.avatar.name+' says hi.');0"); time.sleep(.6); check('toast and dialogue'); shown.append('toast'); shown.append('dialogue')
         pg.evaluate("talkHide();uiState.modal=null;uiState.mq=[];renderOverlay();openDressingRoom({});0"); time.sleep(1); check('dressing room'); shown.append('dressing room')
-        pg.evaluate("typeof closeDressingRoom==='function'&&closeDressingRoom();screenWipe=f=>f();saveData.team.forEach(m=>{m.hp=maxHp(m)});const q={id:'tq',sp:saveData.team[0].sp,lvl:3,gold:false,no:1};saveData.queue=[q];startWild(q);0")
+        pg.evaluate("typeof closeDressingRoom==='function'&&closeDressingRoom();screenWipe=f=>f();saveData.team.forEach(m=>{m.hp=maxHp(m)});const q={id:'tq',sp:saveData.team[0].sp,lvl:3,no:1};saveData.queue=[q];startWild(q);0")
         if wait_phase(pg, ('choose',), 120) != 'choose': raise Exception('the battle never reached the move menu')
         time.sleep(.5); check('battle'); shown.append('battle')
         pg.evaluate("stopTimers();activeBattle=null;battleStageStop();render();0")
@@ -874,7 +874,7 @@ def phone_flow(b, base, R):
         for tab in ['walk', 'map', 'team', 'ledger', 'profile']:
             pg.evaluate(f"uiState.tab='{tab}';render();scrollTo(0,0);0"); time.sleep(2.5 if tab in ('walk', 'map') else .6); shot(pg, f'phone-{tab}')
         pg.evaluate("uiState.tab='walk';saveData.trip.node=0;render();openShop('marigold');0"); time.sleep(.6); shot(pg, 'phone-shop')
-        pg.evaluate("closeModal();screenWipe=f=>f();activeBattle=null;const q={id:'tq',sp:'swift1',lvl:12,gold:false,no:1};encountersHere().splice(0,1e9,q);saveData.team.forEach(m=>{m.hp=maxHp(m)});startWild(q);0")
+        pg.evaluate("closeModal();screenWipe=f=>f();activeBattle=null;const q={id:'tq',sp:'swift1',lvl:12,no:1};encountersHere().splice(0,1e9,q);saveData.team.forEach(m=>{m.hp=maxHp(m)});startWild(q);0")
         if wait_phase(pg) != 'choose': raise Exception('a wild battle never reached the move menu')
         shot(pg, 'phone-battle')
         pg.evaluate("stopTimers();activeBattle=null;battleStageStop();render();0")
@@ -1148,7 +1148,7 @@ def desktop_steps(b, base, R):
             if at[3] or abs(at[0] - r[0]) > .4 or abs(at[1] - r[1]) > .4 or abs(at[2] - r[2]) > .3: raise Exception(f'climbing the ladder ended at {[round(v, 2) for v in at[:3]]}, not on top at {[round(v, 2) for v in r[:3]]}')
             out.append(f'climbed a {r[3]} m ladder')
         # rain in battle
-        go_scene(pg, 0); pg.evaluate("environment.force={time:15,weather:'rain'};const q={id:'twx',sp:'swift1',lvl:8,gold:false,no:1};encountersHere().splice(0,1e9,q);saveData.team.forEach(m=>{m.hp=maxHp(m)});startWild(q);0")
+        go_scene(pg, 0); pg.evaluate("environment.force={time:15,weather:'rain'};const q={id:'twx',sp:'swift1',lvl:8,no:1};encountersHere().splice(0,1e9,q);saveData.team.forEach(m=>{m.hp=maxHp(m)});startWild(q);0")
         wait_phase(pg, sec=60); bw = pg.evaluate("(()=>{const w=battleWeather();return w?[w.k,battleWeatherMultiplier('Water'),battleWeatherMultiplier('Fire'),document.getElementById('camWorld')?document.getElementById('camWorld').dataset.wx:''] :null})()")
         time.sleep(1); shot(pg, 'battle-rain'); pg.evaluate("stopTimers();activeBattle=null;battleStageStop();environment.force=null;render();0")
         if not bw or bw[0] != 'rain' or bw[1] <= 1 or bw[2] >= 1: raise Exception(f'rain didn’t change the battle ({bw})')
@@ -1280,7 +1280,7 @@ def desktop_steps(b, base, R):
                 if not tid: out.append('no trainer for a double battle'); continue
                 pg.evaluate(f"startTrainer('{tid}',{{talked:true,double:true}});0")
             else:
-                pg.evaluate("(()=>{const sp=Object.keys(SPECIES).find(k=>SPECIES[k].stage===0&&!RULES.start.starters.includes(SPECIES[k].line));const q={id:'cq-alpha',sp,lvl:6,gold:false,no:1,alpha:true};encountersHere().push(q);startWild(q)})()")
+                pg.evaluate("(()=>{const sp=Object.keys(SPECIES).find(k=>SPECIES[k].stage===0&&!RULES.start.starters.includes(SPECIES[k].line));const q={id:'cq-alpha',sp,lvl:6,no:1,alpha:true};encountersHere().push(q);startWild(q)})()")
             if not until(pg, "activeBattle&&activeBattle.phase==='choose'", 90, tap): raise Exception(f'{kind}: never reached the move menu (phase {pg.evaluate("activeBattle&&activeBattle.phase")})')
             # the plates fade in with their billionaires; in software drawing that can take a few seconds
             until(pg, "document.querySelectorAll('#plates .bplate:not(.off):not(.gone)').length>=liveActors(0).length+liveActors(1).length", 12); time.sleep(.5)
@@ -1334,7 +1334,7 @@ def desktop_steps(b, base, R):
         shot(pg, 'v34-verdigris')
         out.append(f"ground {r['tp']} px a tile, {r['mb']} MB of pictures on the card; shadow cache {r['sh'][0]} kept / {r['sh'][1]} drawn; {r['grid']} props skipped by the grid; GPU {r['gpu']}")
         # walk cycles per body plan, front and back only
-        w = pg.evaluate("""(()=>{const plans={};for(const sp of Object.keys(SPECIES)){const R=typeof rigParts==='function'?rigParts(sp,false,1):null;if(!R||plans[R.plan])continue;const a=worldBillyFrame(sp,false,'front','walk',0,1),b=worldBillyFrame(sp,false,'front','walk',280,1);if(!a||!b)continue;
+        w = pg.evaluate("""(()=>{const plans={};for(const sp of Object.keys(SPECIES)){const R=typeof rigParts==='function'?rigParts(sp,1):null;if(!R||plans[R.plan])continue;const a=worldBillyFrame(sp,false,'front','walk',0,1),b=worldBillyFrame(sp,false,'front','walk',280,1);if(!a||!b)continue;
           const d=(c)=>c.getContext('2d').getImageData(0,0,c.width,c.height).data;const x=d(a),y=d(b);let diff=0;for(let i=3;i<x.length;i+=16)if(x[i]!==y[i])diff++;plans[R.plan]=diff}return plans})()""")
         still = [k for k, v in w.items() if v == 0]
         if still: raise Exception(f'walk cycle doesn’t move for: {", ".join(still)}')
@@ -1389,11 +1389,11 @@ def desktop_steps(b, base, R):
         miss = [i for i in ids if not pg.evaluate(f"!!(SPECIES['{i}']&&RIGS['{i}']&&RIGS['{i}'].front&&RIGS['{i}'].back)")]
         if miss: raise Exception(f'missing species or rigs: {miss}')
         nx = ROOT / 'game' / 'art' / 'next' / 'billionaires'
-        sheets = [n for n in ('emberox', 'boostox', 'marsox', 'memeox', 'cartotter', 'primotter', 'orbitotter', 'everyotter', 'kidling', 'billgoat', 'windowgoat', 'harvestgoat') if (nx / f'{n}.png').exists() and (nx / f'{n}.json').exists() and (nx / f'{n}_gold.png').exists()]
-        if len(sheets) < 12: raise Exception(f'only {len(sheets)} piece sheets with layout and gold')
-        out.append('12 starter species, 12 sheets (png + json + gold), rigs for front and back')
-        pg.evaluate("rigPreload(%s.flatMap(id=>[[id,false,1],[id,false,1.4],[id,true,1]]))" % json.dumps(ids)); time.sleep(3)
-        r = json.loads(pg.evaluate("""(ids=>{const out={};for(const id of ids){const o={};for(const [v,k] of [['front',1],['back',1.4]]){const R=rigParts(id,false,k);if(!R){o[v]=null;continue}
+        sheets = [n for n in ('emberox', 'boostox', 'marsox', 'memeox', 'cartotter', 'primotter', 'orbitotter', 'everyotter', 'kidling', 'billgoat', 'windowgoat', 'harvestgoat') if (nx / f'{n}.png').exists() and (nx / f'{n}.json').exists()]
+        if len(sheets) < 12: raise Exception(f'only {len(sheets)} piece sheets with layout')
+        out.append('12 starter species, 12 sheets (png + json), rigs for front and back')
+        pg.evaluate("rigPreload(%s.flatMap(id=>[[id,1],[id,1.4]]))" % json.dumps(ids)); time.sleep(3)
+        r = json.loads(pg.evaluate("""(ids=>{const out={};for(const id of ids){const o={};for(const [v,k] of [['front',1],['back',1.4]]){const R=rigParts(id,k);if(!R){o[v]=null;continue}
           const c=makeCanvas(R.BW,R.BH),x=c.getContext('2d');const n=(P)=>{x.clearRect(0,0,R.BW,R.BH);drawRig(x,R,P,v);const d=x.getImageData(0,0,R.BW,R.BH).data;let s=0;for(let i=3;i<d.length;i+=4)if(d[i]>0)s++;return s};
           const a=n(rigFrame(R,null,0,1000,1)),b=n(rigFrame(R,null,0,1030,1)),c2=n(rigFrame(R,'hurt',60,1200,1));o[v]={px:a,sameTick:a===b,hurt:c2,clock:R.clock,lag:R.lag,sq:rigFrame(R,'hurt',60,1200,1).sq||null}}out[id]=o}return JSON.stringify(out)})(%s)""" % json.dumps(ids)))
         bad = [k for k, v in r.items() if not v['front'] or not v['back'] or v['front']['px'] < 800 or v['back']['px'] < 500]
@@ -1415,7 +1415,7 @@ def desktop_steps(b, base, R):
         if not any(t.startswith('Build') for t in e['btns']) or not any(t.startswith('Hype') for t in e['btns']): raise Exception(f"the evolution window doesn't offer both paths: {e['btns']}")
         out.append(f"split at 32: Build → Marsox, Hype → Memeox (“{e['hint'][:60]}…”)")
         # a battle with the new starter on the 3D stage: the player's rig buffer has pixels
-        pg.evaluate("saveData.team.unshift(makeBilly('gates0',14));saveData.team[0].hp=maxHp(saveData.team[0]);const q={id:'cq36',sp:'bezos1',lvl:12,gold:false,no:1};encountersHere().push(q);startWild(q);0")
+        pg.evaluate("saveData.team.unshift(makeBilly('gates0',14));saveData.team[0].hp=maxHp(saveData.team[0]);const q={id:'cq36',sp:'bezos1',lvl:12,no:1};encountersHere().push(q);startWild(q);0")
         if not until(pg, "activeBattle&&activeBattle.phase==='choose'", 90, "activeBattle&&activeBattle.phase==='playing'&&tapMessage()"): raise Exception('the starter battle never reached the move menu')
         until(pg, "(()=>{const a=actorBuffer(0),b=actorBuffer(1);return !!(a&&b)})()", 15); time.sleep(2)
         px = json.loads(pg.evaluate("(()=>{const o={};for(const i of [0,1]){const Bf=actorBuffer(i);if(!Bf){o[i]=0;continue}const d=Bf.buf.getContext('2d').getImageData(0,0,Bf.buf.width,Bf.buf.height).data;let n=0;for(let k=3;k<d.length;k+=4)if(d[k]>0)n++;o[i]=n}return JSON.stringify(o)})()"))
@@ -1457,13 +1457,13 @@ def desktop_steps(b, base, R):
         if miss: raise Exception(f'missing rigs: {miss[:6]}')
         nx = ROOT / 'game' / 'art' / 'next' / 'billionaires'
         names = json.loads(pg.evaluate("JSON.stringify(gameData.roster.filter(e=>%s.includes(e.line)).map(e=>e.id))" % json.dumps(lines)))
-        bad = [n for n in names if not ((nx / f'{n}.png').exists() and (nx / f'{n}.json').exists() and (nx / f'{n}_gold.png').exists())]
+        bad = [n for n in names if not ((nx / f'{n}.png').exists() and (nx / f'{n}.json').exists())]
         if bad: raise Exception(f'sheets missing: {bad[:6]}')
         st = pg.evaluate("gameData.roster.filter(e=>e.state&&e.state.sheet&&e.state.rig).length")
         if st < 73: raise Exception(f'roster board marks only {st} species as drawn and rigged')
-        out.append(f'61 species in 23 lines, numbered {pg.evaluate("SPECIES.huang0.no")} to {pg.evaluate("SPECIES.saylor1.no")}; {len(names)} sheets (png + json + gold); roster board: {st} drawn and rigged')
-        pg.evaluate("rigPreload(%s.flatMap(id=>[[id,false,1],[id,true,1]]))" % json.dumps(ids)); time.sleep(4)
-        r = json.loads(pg.evaluate("""(ids=>{const out={};for(const id of ids){const o={};for(const v of ['front','back']){const R=rigParts(id,false,1);if(!R){o[v]=null;continue}
+        out.append(f'61 species in 23 lines, numbered {pg.evaluate("SPECIES.huang0.no")} to {pg.evaluate("SPECIES.saylor1.no")}; {len(names)} sheets (png + json); roster board: {st} drawn and rigged')
+        pg.evaluate("rigPreload(%s.map(id=>[id,1]))" % json.dumps(ids)); time.sleep(4)
+        r = json.loads(pg.evaluate("""(ids=>{const out={};for(const id of ids){const o={};for(const v of ['front','back']){const R=rigParts(id,1);if(!R){o[v]=null;continue}
           const c=makeCanvas(R.BW,R.BH),x=c.getContext('2d');x.clearRect(0,0,R.BW,R.BH);drawRig(x,R,rigFrame(R,null,0,1000,1),v);const d=x.getImageData(0,0,R.BW,R.BH).data;let s=0;for(let i=3;i<d.length;i+=4)if(d[i]>0)s++;o[v]=s}out[id]=o}return JSON.stringify(out)})(%s)""" % json.dumps(ids)))
         weak = [k for k, v in r.items() if not v['front'] or v['front'] < 600 or not v['back'] or v['back'] < 400]
         if weak: raise Exception(f'rigs draw too little: {weak[:6]} ({ {k: r[k] for k in weak[:3]} })')
@@ -1481,7 +1481,7 @@ def desktop_steps(b, base, R):
         if len(new_pools) < 12: raise Exception(f'only {len(new_pools)} pools filled with the new roster')
         out.append(f'{len(new_pools)} regions filled with the new roster, {len(pools) - len(new_pools)} still old, none mixed')
         # a wild battle with a new species on the 3D stage
-        pg.evaluate("(()=>{const q={id:'cq38',sp:'swift0',lvl:8,gold:false,no:1};encountersHere().push(q);saveData.team.forEach(m=>{m.hp=maxHp(m);m.status=null});startWild(q)})()")
+        pg.evaluate("(()=>{const q={id:'cq38',sp:'swift0',lvl:8,no:1};encountersHere().push(q);saveData.team.forEach(m=>{m.hp=maxHp(m);m.status=null});startWild(q)})()")
         until(pg, "(()=>{const a=actorBuffer(0),b=actorBuffer(1);return !!(a&&b)})()", 15); time.sleep(2)
         px = json.loads(pg.evaluate("(()=>{const o={};for(const i of [0,1]){const Bf=actorBuffer(i);if(!Bf){o[i]=0;continue}const d=Bf.buf.getContext('2d').getImageData(0,0,Bf.buf.width,Bf.buf.height).data;let n=0;for(let k=3;k<d.length;k+=4)if(d[k]>0)n++;o[i]=n}return JSON.stringify(o)})()"))
         shot(pg, 'v38-battle')
@@ -1503,7 +1503,7 @@ def desktop_steps(b, base, R):
         miss = [i for i in ids if not pg.evaluate(f"!!(RIGS['{i}']&&RIGS['{i}'].front&&RIGS['{i}'].back&&RIGS['{i}'].front.sheet&&RIGS['{i}'].front.portrait)")]
         if miss: raise Exception(f'rigs or busts missing: {miss[:6]}')
         nx = ROOT / 'game' / 'art' / 'next' / 'billionaires'
-        sheets = len([f for f in nx.glob('*.png') if not f.stem.endswith('_gold')])
+        sheets = len(list(nx.glob('*.png')))
         if sheets < 117: raise Exception(f'{sheets} sheets')
         out.append(f'117 species in 58 lines, every one with a sheet, a rig and a bust; old roster and art/billionaires gone')
         pools = json.loads(pg.evaluate("JSON.stringify(Object.values(POOLS).concat(Object.values(EGGS||{}),Object.values(gameData.fishing||{})).map(p=>p.list.map(x=>x[0])))"))
@@ -2298,7 +2298,7 @@ def desktop_steps(b, base, R):
     @step('Battles: on the 3D stage, and a trainer battle played to the end', 330)
     def battles():
         pg.evaluate("screenWipe=f=>f();saveData.trip={node:0,plan:[]};uiState.tab='walk';render();0"); time.sleep(2)
-        pg.evaluate("const q={id:'t3d',sp:'swift1',lvl:12,gold:false,no:1};encountersHere().splice(0,1e9,q);saveData.team.forEach(m=>{m.hp=maxHp(m)});startWild(q);0")
+        pg.evaluate("const q={id:'t3d',sp:'swift1',lvl:12,no:1};encountersHere().splice(0,1e9,q);saveData.team.forEach(m=>{m.hp=maxHp(m)});startWild(q);0")
         if wait_phase(pg, sec=60) != 'choose': raise Exception('the 3D-stage battle never reached the move menu')
         shot(pg, 'battle-3d'); stage = pg.evaluate("!!battleStage.gl")
         pg.evaluate("stopTimers();activeBattle=null;battleStageStop();render();0")

@@ -181,7 +181,7 @@ function loadList() {
   for (const sp of Object.keys(SPECIES)) {
     const R = RIGS[sp];
     if (!R) continue;
-    for (const v of ['front', 'back']) if (R[v]) for (const g of [0, 1]) add(rigAtlas(sp, g, v), 1);
+    for (const v of ['front', 'back']) if (R[v]) add(rigAtlas(sp, v), 1);
   }
   try {
     const D = walkData();

@@ -176,6 +176,8 @@ def bowl_map(pg, base):
     hit = pg.evaluate("(()=>{const r=worldMap.cv.getBoundingClientRect();if(r.height<innerHeight*.9)return 'a map layer '+Math.round(r.height)+' px high';for(const fy of [.2,.3,.4,.5])for(const fx of [.3,.5,.7]){const e=document.elementFromPoint(innerWidth*fx,innerHeight*fy);if(e===worldMap.cv)return ''}const e=document.elementFromPoint(innerWidth/2,innerHeight/2);return e?e.tagName+'#'+e.id:'nothing'})()")
     if hit: raise Exception(f'a touch on the map lands on {hit}, not the map')
     pg.set_viewport_size({'width': 400, 'height': 300})
+    # the ground's terrain map fills and the terrain pictures go up (graphics off: nothing is judged by eye)
+    if not until(pg, "!!(worldBowl.ground&&worldBowl.ground.terrain&&worldBowl.ground.terrain.ready&&worldBowl.ground.ok)", 60): raise Exception('the terrain never got ready')
     n = pg.evaluate("LOCATIONS.length"); s = pg.evaluate("(worldBowl.spots||[]).filter(s=>isFinite(s.x)&&isFinite(s.y)).length")
     if s != n: raise Exception(f'{s} of {n} places have a spot on the bowl')
     pick = pg.evaluate("""(()=>{const t=LOCATIONS.findIndex(l=>l.id==='tallgrass_meadow'),p=worldBowl.spots[t];worldBowl.goal=null;worldBowl.cam=bowlCamHome(p.x,p.y);worldBowl.dirty=true;return t})()""")

@@ -2,7 +2,7 @@
 /* ================= POCKET BILLIES STUDIO · skeleton builder =================
    A billionaire is a tree of parts (bones). Each part has a picture cut from the sprite sheet, a pivot it turns
    around, a parent it hangs from, a draw layer and an animation role (which motion of its body plan it follows).
-   Front and back views have their own skeletons and sheets; the Gold-Plated sheets share the same layout. */
+   Front and back views have their own skeletons and sheets. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
 import { provide } from '../../game/js/hooks.js';
@@ -30,7 +30,6 @@ import {
   atlasGet,
   atlasPath,
   fileToCanvas,
-  goldFrom,
   loadImage,
   loadedAtlas,
   markArt,
@@ -241,12 +240,10 @@ const uniqueBoneName = (meta, base) => {
   while (meta.bones.some(b => b.n === base + n)) n++;
   return base + n;
 };
-/* ---------- sheet space: new parts get a strip at the bottom of both the normal and gold sheets ---------- */
+/* ---------- sheet space: new parts get a strip at the bottom of the sheet ---------- */
 function allocRect(sp, view, w, h) {
-  const pN = atlasPath(sp, view, false),
-    pG = atlasPath(sp, view, true),
-    N = loadedAtlas(pN),
-    G = loadedAtlas(pG);
+  const pN = atlasPath(sp, view),
+    N = loadedAtlas(pN);
   if (!N) throw new Error('Sheet not loaded');
   const x = 1,
     y = N.height + 1,
@@ -258,29 +255,22 @@ function allocRect(sp, view, w, h) {
     return n;
   };
   markArt(pN, grow(N));
-  markArt(pG, grow(G || N));
   const meta = studioState.rigs[sp][view];
   meta.size = [W, Hh];
   return [x, y, w, h];
 }
-/* paint pixels into a rect of the normal sheet, and a gold version into the gold sheet */
+/* paint pixels into a rect of the sheet */
 function putPart(sp, view, rect, src) {
-  const pN = atlasPath(sp, view, false),
-    pG = atlasPath(sp, view, true);
-  for (const [p, gold] of [
-    [pN, 0],
-    [pG, 1],
-  ]) {
-    const c = loadedAtlas(p);
-    if (!c) continue;
-    const x = c.getContext('2d');
-    x.clearRect(rect[0], rect[1], rect[2], rect[3]);
-    x.drawImage(gold ? goldFrom(src, 0.6) : src, rect[0], rect[1]);
-    markArt(p, c);
-  }
+  const p = atlasPath(sp, view),
+    c = loadedAtlas(p);
+  if (!c) return;
+  const x = c.getContext('2d');
+  x.clearRect(rect[0], rect[1], rect[2], rect[3]);
+  x.drawImage(src, rect[0], rect[1]);
+  markArt(p, c);
 }
-function cutRect(sp, view, rect, gold = false) {
-  const c = loadedAtlas(atlasPath(sp, view, gold)),
+function cutRect(sp, view, rect) {
+  const c = loadedAtlas(atlasPath(sp, view)),
     o = makeCanvas(rect[2], rect[3]);
   if (c) o.getContext('2d').drawImage(c, rect[0], rect[1], rect[2], rect[3], 0, 0, rect[2], rect[3]);
   return o;
@@ -330,7 +320,7 @@ function skeletonFraming(sp) {
   for (const view of ['front', 'back']) {
     const meta = studioState.rigs[sp] && studioState.rigs[sp][view];
     if (!meta) continue;
-    const R = rigFor(sp, view, false);
+    const R = rigFor(sp, view);
     if (!R) continue;
     const { list } = rigMatrices(R, neutralPose(), view);
     let x0 = 1e9,
@@ -378,12 +368,7 @@ async function openSkeleton(sp, view = 'front') {
   skeletonEditor.anim = false;
   skeletonEditor.act = null;
   try {
-    await Promise.all(
-      ['front', 'back'].flatMap(v => [
-        atlasGet(atlasPath(sp, v, false)),
-        atlasGet(atlasPath(sp, v, true)).catch(() => null),
-      ])
-    );
+    await Promise.all(['front', 'back'].map(v => atlasGet(atlasPath(sp, v))));
   } catch (e) {
     toast(e.message, 'err');
     return;
@@ -435,7 +420,7 @@ function skeletonLoop(ts) {
 function drawSkeleton(ts) {
   const c = $('#skCv');
   if (!c) return;
-  const R = rigFor(skeletonEditor.sp, skeletonEditor.view, false);
+  const R = rigFor(skeletonEditor.sp, skeletonEditor.view);
   if (!R) return;
   const Z = skeletonEditor.zoom,
     W = R.BW * Z,
@@ -565,7 +550,7 @@ function skeletonAlphaAt(c, x, y) {
   return d[(y * c.width + x) * 4 + 3];
 }
 function skeletonHitTest(bx, by) {
-  const R = rigFor(skeletonEditor.sp, skeletonEditor.view, false),
+  const R = rigFor(skeletonEditor.sp, skeletonEditor.view),
     { W, list } = rigMatrices(R, neutralPose(), skeletonEditor.view),
     meta = skeletonMeta();
   for (const b of meta.bones) {
@@ -633,7 +618,7 @@ function bindSkeletonCanvas() {
     const meta = skeletonMeta(),
       b = D.b,
       k = meta.k,
-      R = rigFor(skeletonEditor.sp, skeletonEditor.view, false),
+      R = rigFor(skeletonEditor.sp, skeletonEditor.view),
       { W } = rigMatrices(R, neutralPose(), skeletonEditor.view);
     const pm = W[b.par || 'root'] || W.root,
       pinv = invert2x2(pm),
@@ -902,7 +887,7 @@ function renameBone(n) {
 function reparentBone(p) {
   const meta = skeletonMeta(),
     b = meta.bones.find(x => x.n === skeletonEditor.sel),
-    R = rigFor(skeletonEditor.sp, skeletonEditor.view, false),
+    R = rigFor(skeletonEditor.sp, skeletonEditor.view),
     { W } = rigMatrices(R, neutralPose(), skeletonEditor.view),
     me = W[b.n],
     np = W[p] || W.root;
@@ -1006,7 +991,7 @@ function addPart(src, opts = {}) {
   let at = opts.at || [0, -6];
   if (opts.abs) {
     try {
-      const R = rigFor(sp, view, false),
+      const R = rigFor(sp, view),
         { W } = rigMatrices(R, neutralPose(), view),
         pm = W[par] || W.root;
       at = [(at[0] - pm[4]) / k, (at[1] - pm[5]) / k];
@@ -1114,14 +1099,14 @@ function skeletonClick(ev) {
     paint: () => {
       const sp = skeletonEditor.sp,
         v = skeletonEditor.view;
-      openPixelEditor(sp, v, false).then(() => {
+      openPixelEditor(sp, v).then(() => {
         pixelEditor.back = () => openSkeleton(sp, v);
       });
     },
     paintPart: () => {
       const sp = skeletonEditor.sp,
         v = skeletonEditor.view;
-      openPixelEditor(sp, v, false, { i: b.i, v: b.face ? 'idle' : null }).then(() => {
+      openPixelEditor(sp, v, { i: b.i, v: b.face ? 'idle' : null }).then(() => {
         pixelEditor.back = () => {
           openSkeleton(sp, v).then(() => {
             skeletonEditor.sel = b.n;
@@ -1485,7 +1470,6 @@ function blobPart(w, h, col, face, back) {
 function makeBlankBody(id, plan, col, scale = 1) {
   const T = BODY_TEMPLATES[plan] || BODY_TEMPLATES.biped,
     cols = { main: col, dark: shadeHex(col, 0.6), accent: shadeHex(col, 1.3) },
-    gcols = { main: '#D6A23A', dark: '#8E6420', accent: '#F2CE6E' },
     rig = {};
   for (const [view, k, BW, BH, cx, base] of [
     ['front', 2, 224, 208, 112, 200],
@@ -1505,9 +1489,8 @@ function makeBlankBody(id, plan, col, scale = 1) {
         vs = face ? ['idle', 'blink', 'happy', 'hurt', 'shout'] : ['main'];
       const f = {};
       vs.forEach(v => {
-        const c = blobPart(w, h, cols[colK] || col, face ? v : null, view === 'back'),
-          g = blobPart(w, h, gcols[colK] || gcols.main, face ? v : null, view === 'back');
-        pk.push({ c, g, w, h, ref: [f, v] });
+        const c = blobPart(w, h, cols[colK] || col, face ? v : null, view === 'back');
+        pk.push({ c, w, h, ref: [f, v] });
       });
       imgs.push({ ox: -Math.round(piv[0] * w), oy: -Math.round(piv[1] * h), f });
       const b = { n, par, at: at.map(v => +(v * scale).toFixed(3)), z, zb, i: imgs.length - 1 };
@@ -1532,17 +1515,13 @@ function makeBlankBody(id, plan, col, scale = 1) {
     });
     const Hh = y + rowH + 1,
       sheet = makeCanvas(W, Hh),
-      sx = sheet.getContext('2d'),
-      gold = makeCanvas(W, Hh),
-      gx = gold.getContext('2d');
+      sx = sheet.getContext('2d');
     pk.forEach(p => {
       sx.drawImage(p.c, p.x, p.y);
-      gx.drawImage(p.g, p.x, p.y);
       p.ref[0][p.ref[1]] = [p.x, p.y, p.w, p.h];
     });
     rig[view] = { k, BW, BH, cx, base, tipX: 0, plan, q: clone(T.q), geo: {}, size: [W, Hh], imgs, bones };
-    markArt(atlasPath(id, view, false), sheet);
-    markArt(atlasPath(id, view, true), gold);
+    markArt(atlasPath(id, view), sheet);
   }
   studioState.rigs[id] = rig;
   studioState.rigVer = (studioState.rigVer || 0) + 1;

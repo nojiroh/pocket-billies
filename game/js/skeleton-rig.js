@@ -3,8 +3,9 @@
 /* ---- matrices ---- */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { ROBOTS, RULES, SPECIES, activeBattle, provide, reducedMotion } from './hooks.js';
+import { COATS, ROBOTS, RULES, SPECIES, activeBattle, provide, reducedMotion } from './hooks.js';
 import { clamp, random } from './util.js';
+import { coatArt, coatColorMap, coatRecolor } from './logic/coats.js';
 import { frameTask, userFps } from './frame-scheduler.js';
 import { ART_CACHE, artImg, artLoad, artReady, artURL, makeCanvas } from './art.js';
 import { robotArtFiles, robotRig } from './robot-art.js';
@@ -12,6 +13,7 @@ import { animFor } from './body-plan-animation.js';
 /* eslint-disable no-func-assign */
 expose({
   BONE_SLOT_RULES: [() => BONE_SLOT_RULES],
+  COAT_ATLASES: [() => COAT_ATLASES],
   GROUNDED: [() => GROUNDED],
   RIG_BACK_VIEW: [() => RIG_BACK_VIEW],
   RIG_CANVAS_SIZE: [() => RIG_CANVAS_SIZE],
@@ -26,6 +28,10 @@ expose({
   buildFromCode: [() => buildFromCode, v => (buildFromCode = v)],
   buildScales: [() => buildScales, v => (buildScales = v)],
   bustHTML: [() => bustHTML, v => (bustHTML = v)],
+  coatAtlas: [() => coatAtlas, v => (coatAtlas = v)],
+  coatAtlasURL: [() => coatAtlasURL, v => (coatAtlasURL = v)],
+  coatRigData: [() => coatRigData, v => setCoatRigData(v)],
+  coatsForRigs: [() => coatsForRigs],
   drawDomRig: [() => drawDomRig, v => (drawDomRig = v)],
   drawRig: [() => drawRig, v => ((drawRig = v), provide({ drawRig }))],
   rigAtlas: [() => rigAtlas, v => (rigAtlas = v)],
@@ -42,6 +48,7 @@ expose({
   rigTint: [() => rigTint, v => (rigTint = v)],
   robotRigData: [() => robotRigData, v => setRobotRigData(v)],
   robotRigParts: [() => robotRigParts, v => (robotRigParts = v)],
+  setCoatRigData: [() => setCoatRigData, v => (setCoatRigData = v)],
   setRigParts: [() => setRigParts, v => (setRigParts = v)],
   setRobotRigData: [() => setRobotRigData, v => (setRobotRigData = v)],
   smoothStepUnclamped: [() => smoothStepUnclamped],
@@ -409,7 +416,7 @@ export function rigFrame(R, act, tau, t, seed) {
    fails a species whose legs, head or tail never move. */
 const RIG_POSES = ['idle', 'walk', 'attack', 'cast', 'hurt', 'faint', 'cheer', 'buff', 'dizzy'];
 export function rigAudit(sp, view = 'front') {
-  const R = rigParts(sp, false, view === 'back' ? RIG_BACK_VIEW : 1);
+  const R = rigParts(sp, view === 'back' ? RIG_BACK_VIEW : 1);
   if (!R) return null;
   const out = {};
   for (const act of RIG_POSES) {
@@ -449,23 +456,59 @@ if (typeof window !== 'undefined' && window.RIGS_NEXT) {
   window.RIGS = window.RIGS || {};
   for (const k in window.RIGS_NEXT) if (!window.RIGS[k]) window.RIGS[k] = window.RIGS_NEXT[k];
 }
-export function rigAtlas(sp, gold, view) {
+export function rigAtlas(sp, view, coat) {
+  const own = coat ? coatArt(coatsForRigs()[coat], sp, view) : null;
+  if (own) return own;
   const m = typeof RIGS !== 'undefined' && RIGS[sp] && RIGS[sp][view];
-  if (m && m.sheet) return gold ? m.sheet.replace(/\.png$/, '_gold.png') : m.sheet;
-  return `billionaires/${sp}${view === 'back' ? '_back' : ''}${gold ? '_gold' : ''}.png`;
+  if (m && m.sheet) return m.sheet;
+  return `billionaires/${sp}${view === 'back' ? '_back' : ''}.png`;
 }
-export function rigParts(sp, gold, k = 1) {
+/* studio track ST-0: a coat recolours the sheet once (logic/coats.js) unless the coat has its own picture for it; the
+   game hands over coats.json as COATS, the Studio its own copy (setCoatRigData) */
+let coatRigData = null;
+const COAT_ATLASES = new Map();
+const coatsForRigs = () => coatRigData || (typeof COATS !== 'undefined' ? COATS : null) || {};
+export function setCoatRigData(D) {
+  coatRigData = D;
+  COAT_ATLASES.clear();
+  for (const k of Object.keys(RIG_PARTS_CACHE)) if (k.includes('#')) delete RIG_PARTS_CACHE[k];
+}
+export function coatAtlas(img, path, sp, view, coat) {
+  const C = coat && coatsForRigs()[coat];
+  if (!C || !img || coatArt(C, sp, view)) return img;
+  const key = path + '#' + coat,
+    had = COAT_ATLASES.get(key);
+  if (had && had.src === img) return had.c;
+  const c = makeCanvas(img.width, img.height),
+    x = c.getContext('2d');
+  x.drawImage(img, 0, 0);
+  const im = x.getImageData(0, 0, c.width, c.height),
+    pal = typeof window !== 'undefined' ? window.NW_PALETTE : null;
+  coatRecolor(im.data, coatColorMap(C, pal), pal);
+  x.putImageData(im, 0, 0);
+  COAT_ATLASES.set(key, { src: img, c, url: '' });
+  return c;
+}
+/* the recoloured sheet as a URL for a CSS bust, once the sheet has loaded (until then the plain sheet) */
+function coatAtlasURL(path, sp, view, coat) {
+  const C = coat && coatsForRigs()[coat];
+  if (!C || coatArt(C, sp, view) || !artReady(path)) return artURL(path);
+  coatAtlas(ART_CACHE.img[path], path, sp, view, coat);
+  const e = COAT_ATLASES.get(path + '#' + coat);
+  return e.url || (e.url = e.c.toDataURL());
+}
+export function rigParts(sp, k = 1, coat) {
   const view = k === 1 ? 'front' : 'back',
-    key = sp + (gold ? 'g' : '') + view;
+    key = sp + view + (coat ? '#' + coat : '');
   if (RIG_PARTS_CACHE[key]) return RIG_PARTS_CACHE[key];
   /* phase 17: a robot is drawn from its parts */
-  if (typeof sp === 'string' && sp.startsWith('bot:')) return robotRigParts(sp, gold, k);
+  if (typeof sp === 'string' && sp.startsWith('bot:')) return robotRigParts(sp, k);
   const meta = RIGS[sp] && RIGS[sp][view];
   if (!meta) return null;
-  const path = rigAtlas(sp, gold, view);
+  const path = rigAtlas(sp, view, coat);
   artImg(path);
   if (!artReady(path)) return null;
-  const atlas = ART_CACHE.img[path];
+  const atlas = coatAtlas(ART_CACHE.img[path], path, sp, view, coat);
   const cut = ([x, y, w, h]) => {
     const c = makeCanvas(w, h);
     c.getContext('2d').drawImage(atlas, x, y, w, h, 0, 0, w, h);
@@ -496,7 +539,7 @@ export function rigParts(sp, gold, k = 1) {
 }
 /* phase 17: a robot's rig, drawn from its parts (robot-art.js); the game hands over robots.json as ROBOTS, the Studio
    its own copy (setRobotRigData). While its pictures load it is drawn with stand-ins and asked for again. */
-export function robotRigParts(sp, gold, k = 1) {
+export function robotRigParts(sp, k = 1) {
   const key = sp + (k === 1 ? 'front' : 'back');
   if (RIG_PARTS_CACHE[key]) return RIG_PARTS_CACHE[key];
   const R = robotRig(sp, robotRigData || (typeof ROBOTS !== 'undefined' ? ROBOTS : null));
@@ -520,8 +563,8 @@ export function rigPreload(list) {
   /* phase 17: a robot loads its parts' pictures */
   const D = robotRigData || (typeof ROBOTS !== 'undefined' ? ROBOTS : null);
   return artLoad(
-    list.flatMap(([sp, gold, k]) =>
-      String(sp).startsWith('bot:') ? robotArtFiles(sp, D) : [rigAtlas(sp, gold, k === 1 ? 'front' : 'back')]
+    list.flatMap(([sp, k, coat]) =>
+      String(sp).startsWith('bot:') ? robotArtFiles(sp, D) : [rigAtlas(sp, k === 1 ? 'front' : 'back', coat)]
     )
   );
 }
@@ -543,7 +586,7 @@ export function rigCanvasHTML(sp, size, o = {}) {
     h = Math.round((w * RIG_CANVAS_SIZE.h) / RIG_CANVAS_SIZE.w),
     st = SPECIES[sp] ? (SPECIES[sp].rar === 'mythical' ? 2 : SPECIES[sp].stage) : 2,
     f = [1.3, 1.1, 1][st];
-  return `<canvas class="rig${o.sil ? ' sil' : ''}" width="${RIG_CANVAS_SIZE.w * 2}" height="${RIG_CANVAS_SIZE.h * 2}" data-sp="${sp}" data-g="${o.gold ? 1 : 0}" data-v="${o.view || 'front'}"${o.build ? ` data-b="${buildCode(o.build)}"` : ''}${o.still || o.sil ? ' data-still="1"' : ''}${o.act ? ` data-act="${o.act}"` : ''} style="width:${w}px;height:${h}px;margin:${-Math.round((h - size) / 2)}px ${-Math.round((w - size) / 2)}px;transform:scale(${f});transform-origin:50% 94%" aria-hidden="true"></canvas>`;
+  return `<canvas class="rig${o.sil ? ' sil' : ''}" width="${RIG_CANVAS_SIZE.w * 2}" height="${RIG_CANVAS_SIZE.h * 2}" data-sp="${sp}"${o.coat ? ` data-coat="${o.coat}"` : ''} data-v="${o.view || 'front'}"${o.build ? ` data-b="${buildCode(o.build)}"` : ''}${o.still || o.sil ? ' data-still="1"' : ''}${o.act ? ` data-act="${o.act}"` : ''} style="width:${w}px;height:${h}px;margin:${-Math.round((h - size) / 2)}px ${-Math.round((w - size) / 2)}px;transform:scale(${f});transform-origin:50% 94%" aria-hidden="true"></canvas>`;
 }
 /* v39: the 64x64 bust from a species' piece sheet (rig meta "portrait"), as an <img> cropped by CSS; falls back to the
    rest-pose rig for a species without one */
@@ -552,16 +595,18 @@ export function bustHTML(sp, size, o = {}) {
     pr = R && R.portrait,
     sh = R && R.sheet;
   if (!pr || !sh) return rigCanvasHTML(sp, size, o);
+  const own = o.coat ? rigAtlas(sp, 'front', o.coat) : sh,
+    url = own !== sh ? artURL(own) : o.coat ? coatAtlasURL(sh, sp, 'front', o.coat) : artURL(sh);
   const k = size / 64,
     [x, y, w, h] = pr,
     W = R.size ? R.size[0] : 512,
     H = R.size ? R.size[1] : 512;
-  return `<span class="bust${o.sil ? ' sil' : ''}" style="width:${size}px;height:${size}px;background-image:url('${artURL(o.gold ? sh.replace(/\.png$/, '_gold.png') : sh)}');background-position:${-x * k}px ${-y * k}px;background-size:${W * k}px ${H * k}px" aria-hidden="true"></span>`;
+  return `<span class="bust${o.sil ? ' sil' : ''}" style="width:${size}px;height:${size}px;background-image:url('${url}');background-position:${-x * k}px ${-y * k}px;background-size:${W * k}px ${H * k}px" aria-hidden="true"></span>`;
 }
 function drawDomRig(c, ts) {
   const sp = c.dataset.sp;
   if (!sp.startsWith('bot:') && !(SPECIES && SPECIES[sp])) return;
-  const R = rigParts(sp, c.dataset.g === '1', 1);
+  const R = rigParts(sp, 1, c.dataset.coat);
   if (!R) return;
   const x = c.getContext('2d');
   if (c._seed == null) {

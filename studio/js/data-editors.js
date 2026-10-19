@@ -173,7 +173,7 @@ SECTIONS.billionaires = () => {
     p = `lines.${li}`,
     st = Math.min(studioState.sel.stage || 0, L.names.length - 1),
     sp = L.id + st,
-    gold = !!studioState.sel.gold;
+    coat = studioState.sel.billyCoat || '';
   studioState.sel.stage = st;
   const stageTabs = L.names
     .map(
@@ -181,8 +181,14 @@ SECTIONS.billionaires = () => {
         `<button class="seg ${i === st ? 'on' : ''}" data-act="stage" data-i="${i}">${STAGE_LABEL[i]}: ${escapeHtml(n)}</button>`
     )
     .join('');
-  const prev = `<div class="prev-row"><figure>${spritePreviewHTML({ sp, view: 'front', gold, cls: 'big' })}<figcaption>Front (foes, Field Guide)</figcaption></figure><figure>${spritePreviewHTML({ sp, view: 'back', gold, cls: 'big' })}<figcaption>Back (your side in battle)</figcaption></figure></div>
-  <div class="seg-row">${['attack', 'cast', 'hurt', 'cheer', 'buff', 'dizzy', 'faint'].map(a => `<button class="seg sm" data-act="anim" data-a="${a}">${a}</button>`).join('')}<span class="grow"></span><label class="fld chk inline"><input type="checkbox" data-act="goldToggle" ${gold ? 'checked' : ''}><span>Golden</span></label></div>
+  const prev = `<div class="prev-row"><figure>${spritePreviewHTML({ sp, view: 'front', coat, cls: 'big' })}<figcaption>Front (foes, Field Guide)</figcaption></figure><figure>${spritePreviewHTML({ sp, view: 'back', coat, cls: 'big' })}<figcaption>Back (your side in battle)</figcaption></figure></div>
+  <div class="seg-row">${['attack', 'cast', 'hurt', 'cheer', 'buff', 'dizzy', 'faint'].map(a => `<button class="seg sm" data-act="anim" data-a="${a}">${a}</button>`).join('')}<span class="grow"></span><label class="fld inline"><span>Coat</span><select id="billyCoat"><option value="">None</option>${Object.entries(
+    studioState.D.coats || {}
+  )
+    .map(
+      ([k, c]) => `<option value="${escapeHtml(k)}" ${k === coat ? 'selected' : ''}>${escapeHtml(c.name || k)}</option>`
+    )
+    .join('')}</select></label></div>
   <div class="seg-row"><button class="btn primary" data-act="pixels" data-sp="${sp}">Edit pixels and skeleton</button><button class="btn" data-act="skeleton" data-sp="${sp}">Skeleton builder</button><button class="btn" data-act="recolor" data-sp="${sp}">Recolor this stage…</button><button class="btn" data-act="bpFoe" data-sp="${sp}">See it in battle</button>${studioState.rigs[sp] ? '' : '<span class="warn">No skeleton for this stage: it can’t be drawn.</span>'}</div>`;
   const tsel = i => {
     const ts = L.types[st] || [];
@@ -373,14 +379,10 @@ ACTIONS.stage = d => {
   studioState.sel.stage = +d.i;
   render();
 };
-ACTIONS.goldToggle = (d, el) => {
-  studioState.sel.gold = el.checked;
-  render();
-};
 ACTIONS.anim = d => {
   $$('canvas.spr-prev.big').forEach(c => playSpritePreviewAction(c, d.a));
 };
-ACTIONS.pixels = d => openPixelEditor(d.sp, 'front', !!studioState.sel.gold);
+ACTIONS.pixels = d => openPixelEditor(d.sp, 'front');
 ACTIONS.skeleton = d => openSkeleton(d.sp, 'front');
 ACTIONS.learnAdd = () => {
   const L = studioState.D.lines[selectedLineIndex()],
@@ -480,12 +482,11 @@ function removeRefs(ids) {
 /* ---------- copying art between species (new billionaires, new stages, duplicates) ---------- */
 async function cloneSpeciesArt(fromId, toId, hue = 0, sat = 1) {
   studioState.rigs[toId] = clone(studioState.rigs[fromId]);
-  for (const view of ['front', 'back'])
-    for (const gold of [false, true]) {
-      const src = await atlasGet(atlasPath(fromId, view, gold)).catch(() => null);
-      if (!src) continue;
-      markArt(atlasPath(toId, view, gold), hueShift(src, hue, sat));
-    }
+  for (const view of ['front', 'back']) {
+    const src = await atlasGet(atlasPath(fromId, view)).catch(() => null);
+    if (!src) continue;
+    markArt(atlasPath(toId, view), hueShift(src, hue, sat));
+  }
 }
 ACTIONS.stageAdd = async () => {
   const D = studioState.D,
@@ -560,9 +561,8 @@ ACTIONS.lineDup = async () => {
 ACTIONS.recolor = async d => {
   const sp = d.sp;
   const srcs = {};
-  for (const v of ['front', 'back'])
-    for (const g of [0, 1]) srcs[v + g] = await atlasGet(atlasPath(sp, v, !!g)).catch(() => null);
-  const html = `<p class="help">Rotate the colors of all four sheets of this stage. Skin tones and greys are kept unless you untick that.</p><div class="prev-row"><canvas id="rcPrev" class="spr-prev big"></canvas></div>
+  for (const v of ['front', 'back']) srcs[v] = await atlasGet(atlasPath(sp, v)).catch(() => null);
+  const html = `<p class="help">Rotate the colors of both sheets of this stage. Skin tones and greys are kept unless you untick that.</p><div class="prev-row"><canvas id="rcPrev" class="spr-prev big"></canvas></div>
   <label class="fld range"><span>Hue <output id="rcH">0°</output></span><input type="range" id="rcHue" min="-180" max="180" value="0"></label><label class="fld range"><span>Saturation <output id="rcS">100%</output></span><input type="range" id="rcSat" min="0" max="200" value="100"></label><label class="fld chk"><input type="checkbox" id="rcSkin" checked><span>Keep skin tones</span></label>`;
   const show = () => {
     const h = +$('#rcHue').value,
@@ -570,9 +570,9 @@ ACTIONS.recolor = async d => {
       k = $('#rcSkin').checked;
     $('#rcH').textContent = h + '°';
     $('#rcS').textContent = Math.round(s * 100) + '%';
-    const R = rigFor(sp, 'front', false);
+    const R = rigFor(sp, 'front');
     if (!R) return;
-    const tmp = hueShift(srcs.front0, h, s, k);
+    const tmp = hueShift(srcs.front, h, s, k);
     const c = $('#rcPrev');
     c.width = R.BW;
     c.height = R.BH;
@@ -607,8 +607,7 @@ ACTIONS.recolor = async d => {
     },
   ]);
   if (!ok) return;
-  for (const v of ['front', 'back'])
-    for (const g of [0, 1]) if (srcs[v + g]) markArt(atlasPath(sp, v, !!g), hueShift(srcs[v + g], ok.h, ok.s, ok.k));
+  for (const v of ['front', 'back']) if (srcs[v]) markArt(atlasPath(sp, v), hueShift(srcs[v], ok.h, ok.s, ok.k));
   render();
   toast('Recolored. Save to game to keep it.');
 };
@@ -664,8 +663,8 @@ ACTIONS.newLine = async () => {
     if (blank) {
       const saved = { rigs: studioState.rigs[tmpId], dirty: new Map(studioState.artDirty) };
       makeBlankBody(tmpId, from.slice(6), $('#nwCol').value);
-      const R = rigFor(tmpId, 'front', false);
-      draw(R, studioState.rigs[tmpId].front, loadedAtlas(atlasPath(tmpId, 'front', false)));
+      const R = rigFor(tmpId, 'front');
+      draw(R, studioState.rigs[tmpId].front, loadedAtlas(atlasPath(tmpId, 'front')));
       delete studioState.rigs[tmpId];
       for (const k of [...studioState.artDirty.keys()])
         if (k.includes(tmpId)) {
@@ -675,9 +674,9 @@ ACTIONS.newLine = async () => {
       updateTopBar();
       return;
     }
-    atlasGet(atlasPath(from + '0', 'front', false))
+    atlasGet(atlasPath(from + '0', 'front'))
       .then(src => {
-        const R = rigFor(from + '0', 'front', false);
+        const R = rigFor(from + '0', 'front');
         if (!R) return;
         draw(R, studioState.rigs[from + '0'].front, hueShift(src, h));
       })
@@ -1736,3 +1735,10 @@ ACTIONS.trainerDel = async () => {
   changed();
   render();
 };
+/* studio track ST-0: preview a Billie in a coat (Coats section) */
+document.addEventListener('change', ev => {
+  if (ev.target && ev.target.id === 'billyCoat') {
+    studioState.sel.billyCoat = ev.target.value;
+    render();
+  }
+});

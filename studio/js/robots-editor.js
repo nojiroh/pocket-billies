@@ -411,7 +411,7 @@ function rbAnimate(ts) {
   }
   for (const c of cvs) {
     const view = c.dataset.v,
-      R = robotRigParts(c.dataset.bot, false, view === 'back' ? RIG_BACK_VIEW : 1),
+      R = robotRigParts(c.dataset.bot, view === 'back' ? RIG_BACK_VIEW : 1),
       x = c.getContext('2d');
     x.imageSmoothingEnabled = false;
     x.setTransform(1, 0, 0, 1, 0, 0);

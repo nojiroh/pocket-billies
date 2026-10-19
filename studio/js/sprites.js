@@ -1,15 +1,16 @@
 'use strict';
 /* ================= POCKET BILLIES STUDIO · sprites =================
-   Billionaire art lives in four atlases per species (front, back, and their Gold-Plated versions), cut into
+   Billionaire art lives in atlases per species (front and back views), cut into
    parts by art/rigs.js. The Studio loads those atlases into editable canvases, assembles the skeleton exactly like
-   the game does, animates previews, and provides the pixel editor, gold regeneration and recoloring. */
+   the game does, animates previews, and provides the pixel editor and recoloring. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
 import { openSkeleton, provide } from '../../game/js/hooks.js';
 import { $, $$, clamp } from '../../game/js/util.js';
+import { coatArt } from '../../game/js/logic/coats.js';
 import { makeCanvas } from '../../game/js/art.js';
 import { animFor } from '../../game/js/body-plan-animation.js';
-import { drawRig, rigPose } from '../../game/js/skeleton-rig.js';
+import { coatAtlas, drawRig, rigPose, setCoatRigData } from '../../game/js/skeleton-rig.js';
 import { escapeHtml } from './game-stand-ins.js';
 import { ask, render, speciesName, studioState, toast, updateTopBar } from './studio-app.js';
 /* eslint-disable no-func-assign */
@@ -17,7 +18,6 @@ expose({
   ATLAS_CACHE: [() => ATLAS_CACHE],
   ATLAS_LOADS: [() => ATLAS_LOADS],
   FACE_FRAMES: [() => FACE_FRAMES],
-  GOLD_RAMP: [() => GOLD_RAMP],
   RIG_CACHE: [() => RIG_CACHE],
   SPRITE_PREVIEWS: [() => SPRITE_PREVIEWS],
   atlasGet: [() => atlasGet, v => (atlasGet = v)],
@@ -27,17 +27,19 @@ expose({
   bindPixelEditor: [() => bindPixelEditor, v => (bindPixelEditor = v)],
   canvasCopy: [() => canvasCopy, v => (canvasCopy = v)],
   choosePixelColor: [() => choosePixelColor, v => (choosePixelColor = v)],
+  coatRigDataSet: [() => coatRigDataSet, v => (coatRigDataSet = v)],
+  coatVersion: [() => coatVersion, v => (coatVersion = v)],
+  coatedAtlas: [() => coatedAtlas, v => (coatedAtlas = v)],
+  coatsChanged: [() => coatsChanged, v => (coatsChanged = v)],
   downloadCanvas: [() => downloadCanvas, v => (downloadCanvas = v)],
   drawPixelEditor: [() => drawPixelEditor, v => (drawPixelEditor = v)],
   drawSpritePreview: [() => drawSpritePreview, v => (drawSpritePreview = v)],
   fileToCanvas: [() => fileToCanvas, v => (fileToCanvas = v)],
   fillPixels: [() => fillPixels, v => (fillPixels = v)],
-  goldFrom: [() => goldFrom, v => (goldFrom = v)],
   hsvToRgb: [() => hsvToRgb, v => (hsvToRgb = v)],
   hueShift: [() => hueShift, v => (hueShift = v)],
   loadImage: [() => loadImage, v => (loadImage = v)],
   loadedAtlas: [() => loadedAtlas],
-  luminance: [() => luminance],
   markArt: [() => markArt, v => (markArt = v)],
   mountPreviews: [() => mountPreviews, v => ((mountPreviews = v), provide({ mountPreviews }))],
   openPixelEditor: [() => openPixelEditor, v => (openPixelEditor = v)],
@@ -56,7 +58,6 @@ expose({
   plotPixelLine: [() => plotPixelLine, v => (plotPixelLine = v)],
   previewsDirty: [() => previewsDirty, v => (previewsDirty = v)],
   pushPixelUndo: [() => pushPixelUndo, v => (pushPixelUndo = v)],
-  rampAt: [() => rampAt, v => (rampAt = v)],
   redoPixels: [() => redoPixels, v => (redoPixels = v)],
   refreshPixelEditor: [() => refreshPixelEditor, v => (refreshPixelEditor = v)],
   refreshPixelTools: [() => refreshPixelTools, v => (refreshPixelTools = v)],
@@ -75,10 +76,10 @@ export const ATLAS_CACHE = new Map(); /* path -> canvas */
 const ATLAS_LOADS = new Map();
 const RIG_CACHE = new Map(); /* key -> {ver,R} */
 export let atlasVersion = 0;
-export const atlasPath = (sp, view, gold) => {
+export const atlasPath = (sp, view) => {
   const m = studioState.rigs && studioState.rigs[sp] && studioState.rigs[sp][view];
-  if (m && m.sheet) return 'art/' + (gold ? m.sheet.replace(/\.png$/, '_gold.png') : m.sheet);
-  return `art/billionaires/${sp}${view === 'back' ? '_back' : ''}${gold ? '_gold' : ''}.png`;
+  if (m && m.sheet) return 'art/' + m.sheet;
+  return `art/billionaires/${sp}${view === 'back' ? '_back' : ''}.png`;
 };
 export function spriteCacheClear() {
   RIG_CACHE.clear();
@@ -113,17 +114,38 @@ export function atlasGet(path) {
 }
 export const loadedAtlas = path => studioState.artDirty.get(path) || ATLAS_CACHE.get(path) || null;
 /* assemble a skeleton like skeleton-rig.js rigParts(), but from the Studio's editable atlas */
-export function rigFor(sp, view, gold) {
-  const path = atlasPath(sp, view, gold),
+/* studio track ST-0: the coats being edited (coats.json); a coat edit bumps coatVersion so previews recolour again */
+let coatVersion = 0;
+export function coatsChanged() {
+  coatVersion++;
+  setCoatRigData(studioState.D.coats || {});
+  previewsDirty();
+}
+/* the sheet a coat draws from: its own hand-painted one, or the normal sheet recoloured */
+function coatedAtlas(sp, view, coat) {
+  const C = coat && studioState.D.coats && studioState.D.coats[coat],
+    own = C ? coatArt(C, sp, view) : null,
+    path = own ? 'art/' + own : atlasPath(sp, view),
     atlas = loadedAtlas(path);
   if (!atlas) {
     atlasGet(path).catch(() => {});
-    return null;
+    return { path, atlas: null };
   }
+  if (!C || own) return { path, atlas };
+  if (coatRigDataSet !== studioState.D.coats) {
+    coatRigDataSet = studioState.D.coats;
+    setCoatRigData(coatRigDataSet);
+  }
+  return { path, atlas: coatAtlas(atlas, `${path}@${atlas._ver || 0}:${atlasVersion}:${coatVersion}`, sp, view, coat) };
+}
+let coatRigDataSet = null;
+export function rigFor(sp, view, coat) {
+  const { path, atlas } = coatedAtlas(sp, view, coat);
+  if (!atlas) return null;
   const meta = studioState.rigs[sp] && studioState.rigs[sp][view];
   if (!meta) return null;
-  const key = path,
-    ver = (studioState.rigVer || 0) + ':' + atlasVersion + ':' + (atlas._ver || 0),
+  const key = path + (coat ? '#' + coat : ''),
+    ver = (studioState.rigVer || 0) + ':' + atlasVersion + ':' + (atlas._ver || 0) + ':' + (coat ? coatVersion : 0),
     hit = RIG_CACHE.get(key);
   if (hit && hit.ver === ver) return hit.R;
   const cut = ([x, y, w, h]) => {
@@ -181,12 +203,12 @@ export function playSpritePreviewAction(c, act) {
 }
 function drawSpritePreview(c, ts) {
   const o = c._p,
-    R = rigFor(o.sp, o.view || 'front', !!o.gold);
+    R = rigFor(o.sp, o.view || 'front', o.coat);
   const x = c.getContext('2d');
   if (!R) {
     if (!o.miss) {
       o.miss = 1;
-      atlasGet(atlasPath(o.sp, o.view || 'front', !!o.gold))
+      atlasGet(coatedAtlas(o.sp, o.view || 'front', o.coat).path)
         .then(() => {
           o.miss = 0;
           drawSpritePreview(c, performance.now());
@@ -233,53 +255,6 @@ export function previewsDirty() {
   for (const c of SPRITE_PREVIEWS) c._p.dirty = 1;
 }
 /* ---------- color tools ---------- */
-const luminance = (r, g, b) => (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-const GOLD_RAMP = [
-  [0, [64, 40, 14]],
-  [0.35, [150, 100, 30]],
-  [0.6, [214, 162, 58]],
-  [0.8, [244, 206, 110]],
-  [1, [255, 246, 206]],
-];
-function rampAt(L) {
-  for (let i = 1; i < GOLD_RAMP.length; i++) {
-    const [a, ca] = GOLD_RAMP[i - 1],
-      [b, cb] = GOLD_RAMP[i];
-    if (L <= b) {
-      const t = (L - a) / (b - a);
-      return ca.map((v, k) => v + (cb[k] - v) * t);
-    }
-  }
-  return GOLD_RAMP[GOLD_RAMP.length - 1][1];
-}
-/* Gold-Plated version from the normal art: tint toward a gold ramp by brightness; outlines, eyes and highlights keep most of their color */
-export function goldFrom(src, strength = 0.6) {
-  const c = makeCanvas(src.width, src.height),
-    x = c.getContext('2d');
-  x.drawImage(src, 0, 0);
-  const im = x.getImageData(0, 0, c.width, c.height),
-    d = im.data;
-  for (let i = 0; i < d.length; i += 4) {
-    if (!d[i + 3]) continue;
-    const r = d[i],
-      g = d[i + 1],
-      b = d[i + 2],
-      L = luminance(r, g, b),
-      mx = Math.max(r, g, b),
-      mn = Math.min(r, g, b),
-      sat = mx ? (mx - mn) / mx : 0;
-    let k = strength;
-    if (L < 0.13) k *= 0.3;
-    else if (L > 0.93) k *= 0.35;
-    if (b > r * 1.6 && b > g * 1.25 && sat > 0.45) k *= 0.15;
-    const t = rampAt(L);
-    d[i] = r + (t[0] - r) * k;
-    d[i + 1] = g + (t[1] - g) * k;
-    d[i + 2] = b + (t[2] - b) * k;
-  }
-  x.putImageData(im, 0, 0);
-  return c;
-}
 function rgbToHsv(r, g, b) {
   r /= 255;
   g /= 255;
@@ -395,12 +370,11 @@ function partsOf(sp, view) {
   });
   return out;
 }
-export async function openPixelEditor(sp, view = 'front', gold = false, focus = null) {
+export async function openPixelEditor(sp, view = 'front', focus = null) {
   const E = pixelEditor;
   Object.assign(E, {
     sp,
     view,
-    gold,
     tool: 'pen',
     color: '#2A1E2E',
     zoom: 0,
@@ -414,12 +388,7 @@ export async function openPixelEditor(sp, view = 'front', gold = false, focus = 
     back: null,
   });
   try {
-    await Promise.all([
-      atlasGet(atlasPath(sp, 'front', false)),
-      atlasGet(atlasPath(sp, 'back', false)),
-      atlasGet(atlasPath(sp, 'front', true)).catch(() => null),
-      atlasGet(atlasPath(sp, 'back', true)).catch(() => null),
-    ]);
+    await Promise.all([atlasGet(atlasPath(sp, 'front')), atlasGet(atlasPath(sp, 'back'))]);
   } catch (e) {
     toast(e.message, 'err');
     return;
@@ -427,12 +396,10 @@ export async function openPixelEditor(sp, view = 'front', gold = false, focus = 
   const m = $('#modal');
   m.innerHTML = `<div class="pxed" role="dialog" aria-modal="true" aria-label="Pixel editor">
  <header class="px-top"><b>${escapeHtml(speciesName(sp))}</b><span class="px-tabs">${[
-   ['front', 0, 'Front'],
-   ['back', 0, 'Back'],
-   ['front', 1, 'Front · golden'],
-   ['back', 1, 'Back · golden'],
+   ['front', 'Front'],
+   ['back', 'Back'],
  ]
-   .map(([v, g, l]) => `<button class="seg" data-pe="atlas" data-v="${v}" data-g="${g}">${l}</button>`)
+   .map(([v, l]) => `<button class="seg" data-pe="atlas" data-v="${v}">${l}</button>`)
    .join('')}</span>
   <span class="px-tools">${[
     ['pen', 'Pencil', 'P'],
@@ -450,7 +417,6 @@ export async function openPixelEditor(sp, view = 'front', gold = false, focus = 
   <div class="px-sec"><h4>Color</h4><div class="px-color"><input type="color" id="pxColor" value="${E.color}"><span id="pxHex">${E.color}</span></div><div class="px-pal" id="pxPal"></div></div>
   <div class="px-sec"><h4>Preview</h4><div class="px-prev"><canvas id="pxPrev"></canvas></div><div class="seg-row">${['idle', 'attack', 'cast', 'hurt', 'cheer', 'faint'].map(a => `<button class="seg sm" data-pe="act" data-a="${a}">${a}</button>`).join('')}</div></div>
   <div class="px-sec"><h4>Under the cursor</h4><p class="px-hover" id="pxHover">Point at a part of the sheet.</p></div>
-  <div class="px-sec" id="pxGoldSec"><h4>Golden version</h4><p class="help">Rebuild the gold sheet from the normal one. Hand edits on the gold sheet are replaced.</p><label class="fld range"><span>Gold strength <output id="pxGS">60%</output></span><input type="range" id="pxGoldK" min="20" max="100" value="60"></label><button class="btn" data-pe="gold">Rebuild gold from normal</button></div>
   <div class="px-sec"><h4>Whole sheet</h4><p class="help">Edit in another app (Aseprite, Photoshop…): download, edit, upload. Keep the size and layout so the parts line up.</p><div class="seg-row"><button class="btn" data-pe="dl">Download PNG</button><button class="btn" data-pe="ul">Upload PNG</button></div><button class="btn subtle" data-pe="revert">Revert to the saved file</button></div>
   <div class="px-sec"><h4>Skeleton</h4><p class="help">Nudge where each part attaches and how parts stack. Changes animate live.</p><div id="pxBones"></div></div>
  </aside></div></div>`;
@@ -458,7 +424,7 @@ export async function openPixelEditor(sp, view = 'front', gold = false, focus = 
   refreshPixelEditor();
 }
 function pixelEditorAtlasPath() {
-  return atlasPath(pixelEditor.sp, pixelEditor.view, pixelEditor.gold);
+  return atlasPath(pixelEditor.sp, pixelEditor.view);
 }
 function pixelEditorCanvas() {
   return loadedAtlas(pixelEditorAtlasPath());
@@ -466,14 +432,10 @@ function pixelEditorCanvas() {
 function refreshPixelEditor() {
   const E = pixelEditor,
     c = pixelEditorCanvas();
-  $$('.pxed [data-pe=atlas]').forEach(b =>
-    b.classList.toggle('on', b.dataset.v === E.view && (+b.dataset.g === 1) === E.gold)
-  );
+  $$('.pxed [data-pe=atlas]').forEach(b => b.classList.toggle('on', b.dataset.v === E.view));
   $$('.pxed [data-pe=tool]').forEach(b => b.classList.toggle('on', b.dataset.t === E.tool));
-  $('#pxGoldSec').hidden = !E.gold;
   if (!c) {
-    $('#pxStage').innerHTML =
-      '<p class="help">This sheet doesn’t exist yet. Switch to the normal sheet and use “Rebuild gold from normal”.</p>';
+    $('#pxStage').innerHTML = '<p class="help">This sheet doesn’t exist yet.</p>';
     return;
   }
   if (!$('#pxCv')) {
@@ -510,7 +472,6 @@ function refreshPixelEditor() {
   pv.dataset.prev = JSON.stringify({
     sp: E.sp,
     view: E.view,
-    gold: E.gold,
     act: E.act === 'idle' ? null : E.act,
     loop: 1,
   });
@@ -746,7 +707,6 @@ function bindPixelEditor() {
   const m = $('.pxed');
   bindPixelCanvas();
   $('#pxColor').addEventListener('input', e => choosePixelColor(e.target.value));
-  $('#pxGoldK').addEventListener('input', e => ($('#pxGS').textContent = e.target.value + '%'));
   m.addEventListener('click', async ev => {
     const b = ev.target.closest('[data-pe]');
     if (!b) return;
@@ -754,7 +714,6 @@ function bindPixelEditor() {
       k = b.dataset.pe;
     if (k === 'atlas') {
       E.view = b.dataset.v;
-      E.gold = b.dataset.g === '1';
       E.zoom = 0;
       E.hover = null;
       refreshPixelEditor();
@@ -779,14 +738,6 @@ function bindPixelEditor() {
       E.act = b.dataset.a;
       playSpritePreviewAction($('#pxPrev'), E.act === 'idle' ? null : E.act);
       $('#pxPrev')._p.loop = 1;
-    } else if (k === 'gold') {
-      const src = loadedAtlas(atlasPath(E.sp, E.view, false));
-      if (!src) return;
-      const g = goldFrom(src, +$('#pxGoldK').value / 100);
-      if (pixelEditorCanvas()) pushPixelUndo();
-      markArt(pixelEditorAtlasPath(), g);
-      refreshPixelEditor();
-      toast('Gold sheet rebuilt. Save to game to keep it.');
     } else if (k === 'dl') {
       const c = pixelEditorCanvas();
       if (c) downloadCanvas(c, pixelEditorAtlasPath().split('/').pop());

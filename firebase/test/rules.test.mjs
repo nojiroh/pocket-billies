@@ -53,7 +53,7 @@ test('codes cannot be listed, taken over, or point at someone else', async () =>
 });
 
 /* ---------- users (what friends see) ---------- */
-const me = { name: 'Ann', avatar: { name: 'Ann' }, partner: { sp: 'hood0', gold: false, name: 'Hood', lvl: 5 },
+const me = { name: 'Ann', avatar: { name: 'Ann' }, partner: { sp: 'hood0', name: 'Hood', lvl: 5 },
   at: { node: 3, place: 'Marigold Town', sid: 'w:marigold', x: 1, z: 2, t: 1 }, v: 1 };
 test('a player writes their own page, merges into it, and reads it back', async () => {
   await assertSucceeds(getDoc(doc(db('ann'), 'users/ann')));                    // not there yet

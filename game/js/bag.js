@@ -122,7 +122,7 @@ document.addEventListener('click', ev => {
     }
     modal({
       title: `Use ${escapeHtml(I.n)} on…`,
-      html: `<div class="list">${L.map(m => `<button class="pickrow" data-a="bag-on" data-k="${escapeHtml(k)}" data-u="${m.uid}">${bustHTML(m.sp, 40, { gold: m.gold })}<span><b>${escapeHtml(billyName(m))}</b><small class="tnum">HP ${m.hp}/${maxHp(m)}${m.status ? ' · ' + escapeHtml(STATUS_NAMES[m.status] || m.status) : ''}</small></span></button>`).join('')}</div>`,
+      html: `<div class="list">${L.map(m => `<button class="pickrow" data-a="bag-on" data-k="${escapeHtml(k)}" data-u="${m.uid}">${bustHTML(m.sp, 40, { coat: m.coat })}<span><b>${escapeHtml(billyName(m))}</b><small class="tnum">HP ${m.hp}/${maxHp(m)}${m.status ? ' · ' + escapeHtml(STATUS_NAMES[m.status] || m.status) : ''}</small></span></button>`).join('')}</div>`,
       btns: [{ l: 'Never mind', c: 'quiet', f: closeModal }],
     });
     return;

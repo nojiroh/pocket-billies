@@ -6,7 +6,6 @@ import { test } from 'node:test';
 import { PB_DATA } from '../data-files.mjs';
 import { GAME_DATA } from './setup-real.mjs';
 import {
-  BOWL_FLOOR,
   BOWL_RIM_HEIGHT,
   bowlCompass,
   bowlHeight,
@@ -30,9 +29,15 @@ const own = locations.filter(l => !('under' in l.bowl));
 const MAX_TURN = 30;
 const MIN_GAP = 0.08;
 
-test('the bowl: a flat floor, walls rising to 45 degrees at the rim', () => {
+test('the bowl: curves only, rising to 45 degrees at the rim', () => {
   assert.equal(bowlHeight(0), 0);
-  assert.equal(bowlHeight(BOWL_FLOOR), 0);
+  /* only curves: the slope grows all the way out, no flat floor */
+  let last = -1;
+  for (let r = 0.05; r <= 1; r += 0.05) {
+    const s = (bowlHeight(r) - bowlHeight(r - 0.01)) / 0.01;
+    assert.ok(s > last, `the slope stops growing at ${r.toFixed(2)}`);
+    last = s;
+  }
   assert.ok(Math.abs(bowlHeight(1) - BOWL_RIM_HEIGHT) < 1e-12);
   const slope = (bowlHeight(1) - bowlHeight(1 - 1e-6)) / 1e-6;
   assert.ok(Math.abs(slope - 1) < 1e-3, `slope at the rim ${slope}`);
