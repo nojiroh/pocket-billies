@@ -2437,7 +2437,7 @@ document.addEventListener('click', ev => {
     case 'rest': {
       const c = RULES.battle.restCost;
       if (saveData.se < c) {
-        toast(`A rest stop costs $${formatNumber(c)}. Walk a bit first.`);
+        toast(`A rest stop costs $${formatNumber(c)}. Win a battle first.`);
         break;
       }
       saveData.se -= c;
