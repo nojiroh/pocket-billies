@@ -26,3 +26,75 @@ test('robotRig with nothing stored places every build as before, with pictures a
     assert.deepEqual(changed(bare(BEFORE.data), {}, BEFORE.standIns, k), []);
   }
 });
+
+const RJ = await import('../../game/js/logic/robot-joints.js');
+const PJ = await import('../../game/js/logic/part-joints.js');
+const both = (f, b = f) => ({ front: f, back: b });
+
+test('computed joints: a torso’s sockets by the socket standard, each piece’s pivot and draw order', () => {
+  const T = RJ.robotJointComputed('torso', 29, 27);
+  assert.deepEqual(T.pivot, [14, 27]);
+  assert.deepEqual(T.sockets, {
+    neck: [14, 3],
+    shoulderL: [0, 10],
+    shoulderR: [28, 10],
+    hipL: [7, 25],
+    hipR: [21, 25],
+    hip: [14, 25],
+    gem: [14, 13],
+  });
+  assert.deepEqual(RJ.robotJointComputed('head', 21, 20).pivot, [10, 18]);
+  assert.deepEqual(RJ.robotJointComputed('arm', 14, 29).pivot, [7, 0]);
+  assert.deepEqual(RJ.robotJointComputed('gem', 7, 7).pivot, [3, 3]);
+  assert.equal(RJ.robotJointComputed('arm', 14, 29, 'back').z, 2);
+  for (const n of Object.keys(T.sockets)) assert.ok(RJ.ROBOT_SOCKET_SLOTS[n], n);
+});
+
+test('a back socket not stored keeps the front’s offset from the pivot; a stored one wins; stand-ins ignore stored', () => {
+  const size = { front: [29, 27], back: [30, 27] },
+    own = both(true),
+    B = RJ.robotJoint('torso', undefined, 'back', size, own);
+  assert.deepEqual(B.pivot, [15, 27]);
+  assert.deepEqual(B.sockets.shoulderL, [1, 10]);
+  const stored = { front: { sockets: { shoulderL: [0.1, 0.5] } }, back: { pivot: [0.5, 0.9] } };
+  const F = RJ.robotJoint('torso', stored, 'front', size, own);
+  assert.deepEqual(F.sockets.shoulderL, [3, 14]);
+  const B2 = RJ.robotJoint('torso', stored, 'back', size, own);
+  assert.deepEqual(B2.pivot, [15, 24]);
+  assert.deepEqual(B2.sockets.shoulderL, [15 + 3 - 14, 24 + 14 - 27]);
+  assert.deepEqual(RJ.robotJoint('torso', stored, 'front', size, both(false)), RJ.robotJointComputed('torso', 29, 27));
+  /* a back with no picture of its own draws the front picture, so it joins as the front does */
+  assert.deepEqual(RJ.robotJoint('torso', stored, 'back', size, { front: true, back: false }), F);
+});
+
+test('fractions round-trip to the same pixels; robotJointSet sets and clears one point', () => {
+  for (let w = 1; w <= 64; w++)
+    for (let x = -w; x <= 2 * w; x++) assert.deepEqual(RJ.robotPx(RJ.robotFrac([x, x], w, w), w, w), [x, x]);
+  let J = RJ.robotJointSet(undefined, 'front', 'shoulderL', [0.1, 0.2]);
+  J = RJ.robotJointSet(J, 'back', 'pivot', [0.5, 1]);
+  J = RJ.robotJointSet(J, 'back', 'z', 3);
+  assert.deepEqual(J, { front: { sockets: { shoulderL: [0.1, 0.2] } }, back: { pivot: [0.5, 1], z: 3 } });
+  J = RJ.robotJointSet(J, 'front', 'shoulderL', null);
+  J = RJ.robotJointSet(J, 'back', 'pivot', null);
+  assert.deepEqual(J, { back: { z: 3 } });
+  assert.equal(RJ.robotJointSet(J, 'back', 'z', null), undefined);
+});
+
+test('robotKit: robots.json as a part kit that partFit fits as the rig joins it (arms not mirrored on the right)', () => {
+  const size = p => BEFORE.sizes[p] || null,
+    K = RJ.robotKit(BEFORE.data, size);
+  assert.ok(K.parts['bulwark:head'] && K.parts['gem:ember'] && K.parts.piston_r?.hidden);
+  assert.deepEqual(PJ.partSocketsFor(K, 'bulwark', 'piston', 'front'), ['shoulderL', 'shoulderR']);
+  assert.deepEqual(PJ.partSocketsFor(K, 'bulwark', 'treads', 'front'), ['hipL', 'hipR', 'hip']);
+  assert.deepEqual(PJ.partSocketsFor(K, 'bulwark', 'bulwark:head', 'back'), ['neck']);
+  for (const socket of ['shoulderL', 'shoulderR']) {
+    const fit = PJ.partFit(K, 'bulwark', socket, 'piston', 'front');
+    assert.equal(fit.flip, false);
+    const arm = fit.draws.find(d => !d.body);
+    /* the torso's top left is 0, 0: the arm's top middle (7, 0) sits on the shoulder */
+    const T = RJ.robotJointComputed('torso', 29, 27).sockets[socket];
+    assert.deepEqual([Math.round(arm.x - arm.px[0]), Math.round(arm.y - arm.px[1])], [T[0] - 7, T[1]]);
+  }
+  /* a stand-in (no picture) is not in the kit */
+  assert.equal(RJ.robotKit(bare(BEFORE.data), () => null).parts.bulwark, undefined);
+});
