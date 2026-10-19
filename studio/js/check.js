@@ -146,6 +146,13 @@ function runCheck() {
         `Road ${i + 1} (${(D.locations[r.a] || {}).name} – ${(D.locations[r.b] || {}).name}) has no name yet.`,
         'world'
       );
+    /* phase 08b: a road joins two places at an exit of each; without both it joins nothing */
+    if (r.kind === 'seam' && (!r.exitA || !r.exitB) && D.locations[r.a] && D.locations[r.b])
+      err(
+        `The road between ${D.locations[r.a].name} and ${D.locations[r.b].name} doesn’t say which exit it leaves by at ${!r.exitA ? D.locations[r.a].name : D.locations[r.b].name}.`,
+        'world',
+        { wtab: 'route', stop: !r.exitA ? r.a : r.b }
+      );
   });
   /* v26: the rooms you walk into */
   const people = new Set(Array.isArray(D.people) ? D.people.map(x => x.id) : Object.keys(D.people || {}));
@@ -387,6 +394,16 @@ function runCheck() {
           );
           return;
         }
+        /* phase 08b: and the other end's exit faces it (east to west, north to south), or the places can't join */
+        const os = D.maps[(D.locations[o] || {}).mapId],
+          oe = os && (os.edgeExits || []).find(q => q.id === (end === 'a' ? l.exitB : l.exitA)),
+          OPP = { E: 'W', W: 'E', N: 'S', S: 'N' };
+        if (end === 'a' && oe && OPP[e.side] !== oe.side)
+          err(
+            `${r.name}: the road to ${D.locations[o].name} leaves by ${id} (${e.side}), which doesn’t face ${oe.id} (${oe.side}) there, so the two can’t join.`,
+            'scenes',
+            g
+          );
       });
     });
   }

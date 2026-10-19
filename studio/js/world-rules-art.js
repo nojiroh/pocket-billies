@@ -338,7 +338,7 @@ function roadsHTML(i) {
         exit = end === 'a' ? r.exitA : r.exitB,
         sc = D.maps[(D.locations[i] || {}).mapId],
         ids = ((sc && sc.edgeExits) || []).map(e => e.id);
-      return `<tr><td><select data-road-to="${k}" data-end="${end === 'a' ? 'b' : 'a'}">${opts.map(([j, n]) => `<option value="${j}" ${j === o ? 'selected' : ''}>${escapeHtml(n)}</option>`).join('')}</select></td><td><small>${roadLengthText(k)}</small></td><td><select data-join="${k}" data-end="${end}" title="Which exit of this stop’s scene the road uses (v42 join table); ‘by direction’ matches it by compass bearing as before"><option value="">by direction</option>${ids.map(id => `<option value="${escapeHtml(id)}" ${exit === id ? 'selected' : ''}>${escapeHtml(id)}</option>`).join('')}</select></td><td><button class="x" data-act="roadDel" data-k="${k}" title="Remove this road">×</button></td></tr>`;
+      return `<tr><td><select data-road-to="${k}" data-end="${end === 'a' ? 'b' : 'a'}">${opts.map(([j, n]) => `<option value="${j}" ${j === o ? 'selected' : ''}>${escapeHtml(n)}</option>`).join('')}</select></td><td><small>${roadLengthText(k)}</small></td><td><select data-join="${k}" data-end="${end}" title="Which exit of this stop’s map the road leaves by: the other end’s exit must face it (phase 08b: a road without both exits joins nothing)"><option value="">pick an exit</option>${ids.map(id => `<option value="${escapeHtml(id)}" ${exit === id ? 'selected' : ''}>${escapeHtml(id)}</option>`).join('')}</select></td><td><button class="x" data-act="roadDel" data-k="${k}" title="Remove this road">×</button></td></tr>`;
     }
   ).join('')}</tbody></table>
  <div class="seg-row"><select id="roadTo">${opts

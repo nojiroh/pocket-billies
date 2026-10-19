@@ -1896,8 +1896,8 @@ function exitChecks(sc) {
           oe.side === opp[e.side]
             ? { ok: 1, t: `${nm}: faces ${D.locations[o].name}'s ${oe.id}, a straight road` }
             : {
-                ok: 1,
-                t: `${nm} (${e.side}) meets ${D.locations[o].name}'s ${oe.id} (${oe.side}): the road bends to join them`,
+                ok: 0,
+                t: `${nm} (${e.side}) meets ${D.locations[o].name}'s ${oe.id} (${oe.side}): they don't face each other, so the places can't join`,
               }
         );
     });
