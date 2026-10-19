@@ -6,6 +6,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
 import { $, $$ } from '../../game/js/util.js';
+import { escapeHtml } from './game-stand-ins.js';
 import {
   LAYOUT_LIMITS,
   layoutClamp,
@@ -15,9 +16,23 @@ import {
   layoutSizes,
   paneWidthClass,
 } from '../../game/js/logic/studio-layout.js';
-import { render, setRender, studioState } from './studio-app.js';
+import {
+  ACTIONS,
+  PANE2_REFUSED,
+  SECTIONS,
+  SECTION_LIST,
+  besideRefusal,
+  openSection,
+  render,
+  renderPane,
+  renderSide,
+  setRender,
+  studioState,
+  toast,
+} from './studio-app.js';
 /* eslint-disable no-func-assign */
 expose({
+  HANDLE_LABELS: [() => HANDLE_LABELS],
   PANE_HANDLES: [() => PANE_HANDLES],
   applyLayout: [() => applyLayout, v => (applyLayout = v)],
   handleColumn: [() => handleColumn],
@@ -26,9 +41,12 @@ expose({
   mountHandles: [() => mountHandles, v => (mountHandles = v)],
   paneSection: [() => paneSection],
   paneSizes: [() => paneSizes],
+  panesWidth: [() => panesWidth],
+  renderSecondPane: [() => renderSecondPane, v => (renderSecondPane = v)],
   resetHandle: [() => resetHandle, v => (resetHandle = v)],
   saveLayout: [() => saveLayout, v => (saveLayout = v)],
   setHandleSize: [() => setHandleSize, v => (setHandleSize = v)],
+  setSecond: [() => setSecond, v => (setSecond = v)],
   studioLayout: [() => studioLayout],
   updateLayoutButton: [() => updateLayoutButton, v => (updateLayoutButton = v)],
 });
@@ -64,6 +82,8 @@ function applyLayout() {
     st = $('#studio');
   if (lay.nav) st.style.setProperty('--nav-w', lay.nav + 'px');
   else st.style.removeProperty('--nav-w');
+  const f = lay.split || 0.5;
+  st.style.setProperty('--pane-cols', `minmax(0, ${f}fr) minmax(0, ${Math.round((1 - f) * 1000) / 1000}fr)`);
   $$('.pane').forEach(p => {
     const z = layoutSizes(lay, paneSection(p));
     for (const k of ['list-w', 'side-w'])
@@ -94,26 +114,33 @@ function handleLabel(h) {
   const c = handleColumn(h);
   h.setAttribute('role', 'separator');
   h.setAttribute('aria-orientation', 'vertical');
-  h.setAttribute(
-    'aria-label',
-    h.dataset.k === 'nav-w'
-      ? 'Width of the section list'
-      : h.dataset.k === 'list-w'
-        ? 'Width of the list'
-        : 'Width of the side panel'
-  );
+  h.setAttribute('aria-label', HANDLE_LABELS[h.dataset.k]);
   h.tabIndex = 0;
   h.title = 'Drag to resize (or the arrow keys). Double-click to reset.';
   if (c) h.setAttribute('aria-valuenow', String(Math.round(c.getBoundingClientRect().width)));
 }
+const HANDLE_LABELS = {
+  'nav-w': 'Width of the section list',
+  'list-w': 'Width of the list',
+  'side-w': 'Width of the side panel',
+  split: 'Width of the two panes',
+};
 const handleColumn = h =>
   h.dataset.k === 'nav-w'
     ? $('#side')
-    : h.dataset.col === 'last'
-      ? h.parentElement.lastElementChild.previousElementSibling
-      : h.parentElement.firstElementChild;
+    : h.dataset.k === 'split'
+      ? $('#main')
+      : h.dataset.col === 'last'
+        ? h.parentElement.lastElementChild.previousElementSibling
+        : h.parentElement.firstElementChild;
 /* the size a handle's drag or key asks for, kept inside its limits and the room in the pane (an editor keeps 360 px) */
 function setHandleSize(h, v) {
+  if (h.dataset.k === 'split') {
+    studioLayout.lay.split = layoutClamp('split', v / panesWidth());
+    applyLayout();
+    handleLabel(h);
+    return updateLayoutButton();
+  }
   const key = h.dataset.k,
     nav = key === 'nav-w',
     p = h.closest('.pane'),
@@ -133,6 +160,7 @@ function resetHandle(h) {
   const key = h.dataset.k,
     lay = studioLayout.lay;
   if (key === 'nav-w') lay.nav = layoutPreset(lay, lay.preset).nav;
+  else if (key === 'split') lay.split = layoutPreset(lay, lay.preset).split;
   else {
     const sec = paneSection(h.closest('.pane')),
       s = lay.sizes[sec];
@@ -176,7 +204,7 @@ document.addEventListener('keydown', ev => {
   const w = handleColumn(h).getBoundingClientRect().width,
     sgn = h.dataset.col === 'last' ? -1 : 1,
     step = ev.shiftKey ? 32 : 8,
-    L = LAYOUT_LIMITS[h.dataset.k];
+    L = LAYOUT_LIMITS[h.dataset.k].map(x => (h.dataset.k === 'split' ? x * panesWidth() : x));
   let v = null;
   if (ev.key === 'ArrowRight') v = w + sgn * step;
   else if (ev.key === 'ArrowLeft') v = w - sgn * step;
@@ -193,17 +221,73 @@ document.addEventListener('keydown', ev => {
 });
 /* the layout button in the top bar says which preset is on (presets come in a later step) */
 function updateLayoutButton() {}
+
+/* ---------- the split: a second section beside the first (studioState.sec2) ---------- */
+const panesWidth = () => $('#main').getBoundingClientRect().width + $('#main2').getBoundingClientRect().width;
+function renderSecondPane() {
+  const m2 = $('#main2'),
+    s = studioState.sec2;
+  $('#studio').classList.toggle('two', !!s);
+  m2.hidden = !s;
+  if (!s) return void (m2.innerHTML = '');
+  renderPane(m2, s);
+  const n = (SECTION_LIST.find(x => x[0] === s) || [s, s])[1],
+    swap = PANE2_REFUSED[studioState.sec]
+      ? 'disabled title="The left section has a 3D view, so it stays on the left"'
+      : 'title="Swap the two sections"';
+  m2.insertAdjacentHTML(
+    'afterbegin',
+    `<div class="pane-bar"><b>${escapeHtml(n)}</b><span><button class="btn sm" data-act="paneSwap" ${swap}>⇄ Swap</button> <button class="btn sm" data-act="paneClose" title="Close this pane">✕ Close</button></span></div>`
+  );
+}
+function setSecond(s) {
+  studioState.sec2 = s;
+  studioLayout.lay.sec2 = s;
+  saveLayout();
+  renderSide();
+  render();
+  $('#main2').scrollTop = 0;
+}
+ACTIONS.openBeside = d => {
+  const why = besideRefusal(d.s);
+  if (why) return toast(why);
+  setSecond(d.s);
+};
+ACTIONS.paneClose = () => setSecond(null);
+ACTIONS.paneSwap = () => {
+  if (studioState.sec2 && !PANE2_REFUSED[studioState.sec]) openSection(studioState.sec2);
+};
 addEventListener('load', () => {
-  const nav = document.createElement('div');
-  nav.className = 'lay-h lay-nav';
-  nav.dataset.k = 'nav-w';
-  $('#studio').appendChild(nav);
-  handleLabel(nav);
+  for (const [cls, k] of [
+    ['lay-nav', 'nav-w'],
+    ['lay-panes', 'split'],
+  ]) {
+    const h = document.createElement('div');
+    h.className = 'lay-h ' + cls;
+    h.dataset.k = k;
+    $('#studio').appendChild(h);
+    handleLabel(h);
+  }
   applyLayout();
-  /* follow the Studio: each section drawn gets its sizes and handles */
+  /* follow the Studio: each section drawn gets its sizes and handles, and the second pane is drawn too. The split
+     you left comes back with the first drawing */
+  let first = true;
   const r0 = render;
   setRender(function () {
+    if (first) {
+      first = false;
+      const s = studioLayout.lay.sec2;
+      if (s && SECTIONS[s] && !besideRefusal(s)) {
+        studioState.sec2 = s;
+        renderSide();
+      }
+    }
     r0.apply(this, arguments);
+    if (studioLayout.lay.sec2 !== studioState.sec2) {
+      studioLayout.lay.sec2 = studioState.sec2; // a swap moved it
+      saveLayout();
+    }
+    renderSecondPane();
     applyLayout();
     $$('.pane').forEach(mountHandles);
   });
