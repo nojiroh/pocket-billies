@@ -1,0 +1,221 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "worldmap.schema.json",
+ "title": "game/data/worldmap.json: the world map's look (phase 10): the sea, the relief, each region's ground and trees",
+ "type": "object",
+ "additionalProperties": false,
+ "required": [
+  "sea",
+  "relief",
+  "regions",
+  "kinds"
+ ],
+ "properties": {
+  "sea": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "share",
+    "depth",
+    "rimLand",
+    "rough",
+    "seed"
+   ],
+   "properties": {
+    "share": {
+     "description": "how much of the bowl is sea before painting (0.4: 40%)",
+     "type": "number",
+     "minimum": 0,
+     "maximum": 0.8
+    },
+    "depth": {
+     "description": "how deep the sea floor goes below the water, bowl radii",
+     "type": "number",
+     "minimum": 0.005,
+     "maximum": 0.1
+    },
+    "rimLand": {
+     "description": "how strongly the land rises towards the rim (0: the sea may reach the rim)",
+     "type": "number",
+     "minimum": 0,
+     "maximum": 1
+    },
+    "rough": {
+     "description": "how rough the coast is (1 as made; 0 smooth round the places)",
+     "type": "number",
+     "minimum": 0,
+     "maximum": 3
+    },
+    "seed": {
+     "description": "another coast with the same roughness",
+     "type": "integer",
+     "minimum": 0,
+     "maximum": 9999
+    },
+    "paint": {
+     "description": "brush strokes forcing land or sea: points seen from above, bowl radii",
+     "type": "array",
+     "items": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+       "land",
+       "r",
+       "pts"
+      ],
+      "properties": {
+       "land": {
+        "type": "boolean"
+       },
+       "r": {
+        "type": "number",
+        "minimum": 0.002,
+        "maximum": 0.3
+       },
+       "pts": {
+        "type": "array",
+        "minItems": 1,
+        "items": {
+         "type": "array",
+         "items": {
+          "type": "number"
+         },
+         "minItems": 2,
+         "maxItems": 2
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "relief": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "max",
+    "default",
+    "kinds"
+   ],
+   "properties": {
+    "max": {
+     "description": "the most the relief adds or takes, bowl radii",
+     "type": "number",
+     "minimum": 0,
+     "maximum": 0.3
+    },
+    "default": {
+     "description": "[height, reach] for kinds not listed",
+     "allOf": [
+      {
+       "type": "array",
+       "items": {
+        "type": "number"
+       },
+       "minItems": 2,
+       "maxItems": 2
+      }
+     ]
+    },
+    "kinds": {
+     "description": "a place kind (locations.json t): [height, reach]; below 0 a dip",
+     "type": "object",
+     "additionalProperties": {
+      "type": "array",
+      "items": {
+       "type": "number"
+      },
+      "minItems": 2,
+      "maxItems": 2
+     }
+    }
+   }
+  },
+  "regions": {
+   "description": "by region (locations.json region; places without one use starter)",
+   "type": "object",
+   "required": [
+    "starter"
+   ],
+   "additionalProperties": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+     "ground",
+     "wet",
+     "dry",
+     "high",
+     "trees"
+    ],
+    "properties": {
+     "ground": {
+      "description": "terrain keys (scenery.json terrains) for the ground between places",
+      "allOf": [
+       {
+        "type": "string",
+        "pattern": "^[^\\s]+$",
+        "minLength": 1
+       }
+      ]
+     },
+     "wet": {
+      "description": "terrain keys for wet lowland",
+      "allOf": [
+       {
+        "type": "string",
+        "pattern": "^[^\\s]+$",
+        "minLength": 1
+       }
+      ]
+     },
+     "dry": {
+      "description": "terrain keys for dry slopes",
+      "allOf": [
+       {
+        "type": "string",
+        "pattern": "^[^\\s]+$",
+        "minLength": 1
+       }
+      ]
+     },
+     "high": {
+      "description": "terrain keys for high ground",
+      "allOf": [
+       {
+        "type": "string",
+        "pattern": "^[^\\s]+$",
+        "minLength": 1
+       }
+      ]
+     },
+     "trees": {
+      "description": "tree kinds for the clumps between places",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+       "enum": [
+        "round",
+        "cone",
+        "tall",
+        "mushroom",
+        "palm",
+        "bush",
+        "crystal",
+        "dry"
+       ]
+      }
+     }
+    }
+   }
+  },
+  "kinds": {
+   "description": "a place kind's own ground round it: terrain keys",
+   "type": "object",
+   "additionalProperties": {
+    "type": "string",
+    "pattern": "^[^\\s]+$",
+    "minLength": 1
+   }
+  }
+ }
+}

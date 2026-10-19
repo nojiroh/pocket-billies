@@ -272,6 +272,18 @@ for (const [id, G] of Object.entries(robots.gems || {})) {
   if (!types.has(G.type)) problem('robots.json', `gem ${id} is type ${G.type}, no such type`);
   if (!moves[G.move]) problem('robots.json', `gem ${id} gives ${G.move}, no such move`);
 }
+// phase 10: the world map's look: the schema, then the terrain keys it names and the regions it covers
+if (D.worldmap && check('worldmap.schema.json', D.worldmap, 'worldmap.json')) {
+  const terr = new Set(Object.keys((D.scenery && D.scenery.terrains) || {}));
+  const keysOk = (where, s) => {
+    for (const ch of s) if (!terr.has(ch)) problem('worldmap.json', `${where}: no terrain "${ch}" (scenery.json terrains)`);
+  };
+  for (const [r, R] of Object.entries(D.worldmap.regions))
+    for (const f of ['ground', 'wet', 'dry', 'high']) keysOk(`regions.${r}.${f}`, R[f]);
+  for (const [k, s] of Object.entries(D.worldmap.kinds)) keysOk(`kinds.${k}`, s);
+  for (const l of D.locations || [])
+    if (l.region && !D.worldmap.regions[l.region]) problem('worldmap.json', `no region ${l.region} (place ${l.id})`);
+}
 // studio track ST-0: coats: the schema, then the palette ramps, Billies and pictures they name
 if (D.coats && check('coats.schema.json', D.coats, 'coats.json')) {
   const pal = JSON.parse(readFileSync(join(DATA, '..', 'art', 'next', 'palette.js'), 'utf8').replace(/^[^=]*=/, '').replace(/;\s*$/, ''));
