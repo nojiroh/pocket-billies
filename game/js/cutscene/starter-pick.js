@@ -5,29 +5,30 @@
    hot take (opening.js). Split from cutscene.js. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { hazelHotTake, provide, typeBadgeHTML } from '../hooks.js';
+import { hazelHotTake, typeBadgeHTML } from '../hooks.js';
 import { $, clamp } from '../util.js';
 import { SPECIES, TYPES, typeEffectiveness } from '../game-data.js';
 import { HAZEL } from '../logic/hazel.js';
+import { cutscenePoint } from '../logic/cutscene-set.js';
 import { escapeHtml } from '../game-state.js';
 import { makeCanvas } from '../art.js';
 import { drawRig, rigFrame, rigParts, rigTint } from '../skeleton-rig.js';
 import { walkView, worldToScreen } from '../walk-view.js';
 import { standingHeightAt } from '../walk/heights.js';
 import { cutscene, cutsceneNow, cutsceneShot } from './director.js';
+import { cutsceneLook } from './stage.js';
 /* eslint-disable no-func-assign */
 expose({
   chooseStarter: [() => chooseStarter, v => (chooseStarter = v)],
-  cutsceneStarterItem: [() => cutsceneStarterItem, v => ((cutsceneStarterItem = v), provide({ cutsceneStarterItem }))],
+  cutsceneStarterItem: [() => cutsceneStarterItem, v => (cutsceneStarterItem = v)],
   starterPickerFocus: [() => starterPickerFocus, v => (starterPickerFocus = v)],
   starterPickerHTML: [() => starterPickerHTML, v => (starterPickerHTML = v)],
   starterPickerSelect: [() => starterPickerSelect, v => (starterPickerSelect = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ cutsceneStarterItem });
 /* to-module: end */
 /* the starter billionaires, drawn with their rigs every frame */
-function cutsceneStarterItem(s, t) {
+export function cutsceneStarterItem(s, t) {
   const R = rigParts(s.sp, false, 1);
   if (!R) return null;
   if (!s.buf) s.buf = makeCanvas(R.BW, R.BH);
@@ -91,10 +92,12 @@ function starterPickerFocus() {
   if (!s) return;
   s.act = 'cheer';
   s.actT = cutsceneNow();
+  /* framed from in front of the middle one (star2), leaning towards the one you look at */
+  const mid = cutscenePoint(cutscene.set.spots.star2, cutscene.off);
   cutsceneShot(
     {
-      eye: [s.x * 0.6 + (10.15 + (cutscene.o || [0, 0])[0]) * 0.4 + 0.1, 1.35 + (cutscene.dy || 0), s.z - 3.6],
-      tgt: [s.x, 0.55 + (cutscene.dy || 0), s.z + 0.2],
+      eye: [s.x * 0.6 + mid[0] * 0.4 + 0.1, standingHeightAt(s.x, s.z) + 0.85, s.z - 3.6],
+      tgt: [s.x, standingHeightAt(s.x, s.z) + 0.05, s.z + 0.2],
       fov: 36,
       w: 2.6,
       abs: 1,
@@ -183,7 +186,7 @@ document.addEventListener('pointerup', ev => {
   let best = -1,
     bd = 1e9;
   /* phase 06-2b: Hazel, nearer than any starter, gives a hot take */
-  const g = cutscene.actors.gini,
+  const g = cutscene.actors[cutsceneLook('Hazel')],
     hq = g && worldToScreen(walkView.C, g.x, 1.0 + standingHeightAt(g.x, g.z), g.z),
     hd = hq ? Math.hypot(hq.x - sx, hq.y - sy) : 1e9;
   cutscene.stars.forEach((s, i) => {

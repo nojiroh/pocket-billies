@@ -4,59 +4,59 @@
    engine: you wake in the dust outside Professor Hazel's lab and she comes running; you make yourself up in the dressing
    room; Blake barges in and Hazel fights him herself; three coins pop open into the starters; you pick one, Blake takes
    the one that beats it and battles you on the spot (opening-fall.js battleTutor, story.js storyAfterRival). If it can't
-   run or stops, a Try again screen (ui.js renderIntro). Split from cutscene.js. */
+   run or stops, a Try again screen (ui.js renderIntro). What happens and in which order is the cutscene's file,
+   game/data/cutscenes/opening.json (docs/CUTSCENES.md); this module mounts the view, clears the set, plays it on the
+   cutscene stage (stage.js) with the opening's own commands (the dressing room, the coins, the pick, the staged fight,
+   Blake's battle after) and starts the game. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { fallPlay, landing, landingBurst, mapIdAt, provide, render, startGame, updateNav } from '../hooks.js';
+import { fallPlay, landing, mapIdAt, provide, render, startGame, updateNav } from '../hooks.js';
 import { $, clamp } from '../util.js';
-import { LOCATIONS, RULES, SPECIES, START_NODE, TRAINERS, locationFullName } from '../game-data.js';
-import { FAST_SKIPS, FAST_SKIP_MS, HAZEL, fillLine, hotTake, speedWatch } from '../logic/hazel.js';
-import { reducedMotion, uiState } from '../game-state.js';
+import { CUTSCENES, LOCATIONS, RULES, SPECIES, START_NODE, locationFullName } from '../game-data.js';
+import { FAST_SKIPS, FAST_SKIP_MS, HAZEL, hotTake, speedWatch } from '../logic/hazel.js';
+import { cutsceneCleared, cutsceneOffset, cutscenePoint } from '../logic/cutscene-set.js';
+import { uiState } from '../game-state.js';
 import { userFps } from '../frame-scheduler.js';
 import { artLoad } from '../art.js';
-import { LOOK_PRESETS, cleanLook, lookOf } from '../person-art.js';
+import { LOOK_PRESETS, cleanLook } from '../person-art.js';
 import { dressingRoom, openDressingRoom, saveDressingLook } from '../dressing-room.js';
 import { rigPreload } from '../skeleton-rig.js';
 import { buzz } from '../battle-stage.js';
-import { mapById, prepareMap, walkData, walkView, worldToScreen } from '../walk-view.js';
+import { artImage, imageReady, mapById, prepareMap, walkData, walkView, worldToScreen } from '../walk-view.js';
 import { gpuState, webgl2Supported } from '../engine/webgl.js';
 import { walkRenderer } from '../walk/walk-state.js';
 import { standingHeightAt } from '../walk/heights.js';
 import { mountWalkView } from '../walk-view-gl.js';
 import { seamlessRoamView } from '../seamless-world.js';
-import { music, soundEffect } from '../sound.js';
+import { soundEffect } from '../sound.js';
 import {
   cutscene,
   cutsceneAct,
-  cutsceneActor,
-  cutsceneBlink,
-  cutsceneCaption,
   cutsceneFrame,
   cutsceneHTML,
   cutsceneHideDialogue,
   cutsceneNow,
-  cutsceneSay,
-  cutsceneShot,
   cutsceneSparkle,
   cutsceneTeardown,
   cutsceneWait,
-  cutsceneWalk,
 } from './director.js';
-import { chooseStarter } from './starter-pick.js';
+import { cutsceneLook, cutscenePlayScript } from './stage.js';
+import { chooseStarter, cutsceneStarterItem } from './starter-pick.js';
 import { hazelFight } from './staged-fight.js';
 /* eslint-disable no-func-assign */
 expose({
-  CUTSCENE_SPOTS: [() => CUTSCENE_SPOTS],
-  blakeArrives: [() => blakeArrives, v => (blakeArrives = v)],
   cutsceneAbort: [() => cutsceneAbort, v => (cutsceneAbort = v)],
   cutsceneEnd: [() => cutsceneEnd, v => (cutsceneEnd = v)],
   cutsceneMapId: [() => cutsceneMapId, v => (cutsceneMapId = v)],
-  cutsceneScript: [() => cutsceneScript, v => (cutsceneScript = v)],
   cutsceneStart: [() => cutsceneStart, v => setCutsceneStart(v)],
   cutsceneStartName: [() => cutsceneStartName],
   cutsceneWanted: [() => cutsceneWanted, v => (cutsceneWanted = v)],
   hazelHotTake: [() => hazelHotTake, v => ((hazelHotTake = v), provide({ hazelHotTake }))],
-  placeCutsceneSpots: [() => placeCutsceneSpots, v => (placeCutsceneSpots = v)],
+  openingDressingRoom: [() => openingDressingRoom, v => (openingDressingRoom = v)],
+  openingLayer: [() => openingLayer, v => (openingLayer = v)],
+  openingPickStarter: [() => openingPickStarter, v => (openingPickStarter = v)],
+  openingScript: [() => openingScript, v => (openingScript = v)],
+  openingThrowCoins: [() => openingThrowCoins, v => (openingThrowCoins = v)],
 });
 /* eslint-enable no-func-assign */
 provide({ hazelHotTake });
@@ -65,47 +65,7 @@ export function setCutsceneStart(v) {
   provide({ cutsceneStart });
 }
 /* to-module: end */
-const CUTSCENE_SPOTS = {
-  door: [7.4, 15.4],
-  hazel: [9.3, 13.25],
-  me: [11.05, 12.95],
-  meFrom: [14.6, 12.4],
-  stars: [
-    [8.8, 11.55],
-    [10.15, 11.2],
-    [11.5, 11.55],
-  ],
-  blake: [12.55, 12.7],
-  blakeFrom: [16.4, 12.1],
-};
-/* v46: where the opening scene is filmed: in front of the lab's door, wherever the lab stands in Sundown */
-function placeCutsceneSpots(sc) {
-  let o = [0, 0];
-  cutscene.dy = 0;
-  const C0 = walkData().sc,
-    L = ((sc && sc.props) || []).find(p => p.act === 'lab');
-  if (L) {
-    const M = C0.props[L.k] || {},
-      dx = (((M.door && M.door.x) || 0) / (C0.ppu || 34)) * (L.s || 1) * (L.f ? -1 : 1);
-    o = [L.x + dx - CUTSCENE_SPOTS.door[0], L.z - CUTSCENE_SPOTS.door[1]];
-    /* alpha 0.4: the shots were framed for a lab on ground half a metre up (Marigold Town's); they rise and fall with the ground at the door */
-    if (typeof standingHeightAt === 'function') cutscene.dy = standingHeightAt(L.x + dx, L.z - 0.6) - 0.5;
-  }
-  cutscene.o = o;
-  const sh = p => [p[0] + o[0], p[1] + o[1]];
-  cutscene.A = {
-    door: sh(CUTSCENE_SPOTS.door),
-    hazel: sh(CUTSCENE_SPOTS.hazel),
-    me: sh(CUTSCENE_SPOTS.me),
-    meFrom: sh(CUTSCENE_SPOTS.meFrom),
-    stars: CUTSCENE_SPOTS.stars.map(sh),
-    blake: sh(CUTSCENE_SPOTS.blake),
-    blakeFrom: sh(CUTSCENE_SPOTS.blakeFrom),
-  };
-  cutscene.center = sh([10.1, 12.3]);
-  return o;
-}
-/* v47b: the opening (and the title behind it) is filmed in the same view of Sundown the game then walks in: the town
+/* v47b: the opening (and the title behind it) is filmed in the same view of Copperleaf the game then walks in: the town
    with the first stretch of each road. So nothing is built again between the title, the opening, Blake's battle
    and your first steps (it was a pause of most of a second as the battle began) */
 export function cutsceneMapId() {
@@ -133,7 +93,7 @@ export const cutsceneStartName = () =>
     ? locationFullName(LOCATIONS[START_NODE])
     : 'the Hollow Earth';
 
-/* ---------- the script ---------- */
+/* ---------- the cutscene ---------- */
 /* opts.quick (phase 16 test boot, js/test-boot.js): no fall, and the dressing room keeps a random look on its own,
    so the game opens on Hazel's scene and goes on to the coins and the starter pick */
 export async function cutsceneStart(opts) {
@@ -179,7 +139,7 @@ export async function cutsceneStart(opts) {
     artLoad(['coins/penny_32.png']),
     prepareMap(id),
   ]).catch(() => {});
-  /* v47: the fall, from the surface down to Sundown (opening-fall.js); it ends on a white screen */
+  /* v47: the fall, from the surface down to Copperleaf (opening-fall.js); it ends on a white screen */
   if (typeof fallPlay === 'function' && !cutscene.test && !cutscene.quick) {
     try {
       await fallPlay(run);
@@ -222,34 +182,17 @@ export async function cutsceneStart(opts) {
   cv.classList.add('in');
   const sc = walkView.sc,
     C0 = walkData().sc,
-    o = placeCutsceneSpots(sc);
-  const eyes = [
-    [12.6, 6.2],
-    [10.5, 8.4],
-    [10.4, 8.0],
-    [10.15, 7.3],
-  ].map(e => [e[0] + o[0], e[1] + o[1]]);
-  /* out of the way while filming: what stands where it all happens, on Blake's way in, or right in front of a camera */
-  const seg = (x, z, a, b) => {
-    const dx = b[0] - a[0],
-      dz = b[1] - a[1],
-      k = clamp(((x - a[0]) * dx + (z - a[1]) * dz) / (dx * dx + dz * dz), 0, 1);
-    return Math.hypot(x - a[0] - dx * k, z - a[1] - dz * k);
-  };
-  cutscene.hide = new Set(
-    (sc.props || []).filter(p => {
-      const M = C0.props[p.k];
-      return (
-        M &&
-        !M.flat &&
-        ((p.x > 7.9 + o[0] && p.x < 12.9 + o[0] && p.z > 9.6 + o[1] && p.z < 13.9 + o[1]) ||
-          seg(p.x, p.z, cutscene.A.blakeFrom, cutscene.A.blake) < 1.1 ||
-          (!M.box && eyes.some(e => Math.hypot(p.x - e[0], p.z - e[1]) < 2.3)))
-      );
-    })
-  );
-  if (typeof debugLog !== 'undefined') debugLog.add('scene', 'opening cutscene');
-  if (typeof music === 'function') music('hazel');
+    C = CUTSCENES.opening,
+    off = C && cutsceneOffset(sc, C.map);
+  if (!off) {
+    if (typeof debugLog !== 'undefined')
+      debugLog.add('error', 'cutscene: the opening (cutscenes/opening.json) has no place here');
+    cutsceneAbort();
+    return;
+  }
+  /* out of the way while filming: what the cutscene's file clears (logic/cutscene-set.js) */
+  cutscene.hide = cutsceneCleared(C, sc.props || [], C0.props, off);
+  cutscene.layers.push(openingLayer);
   /* the town's ground is laid and drawn before the white fades */
   const f0 = walkRenderer.frames,
     t0 = performance.now();
@@ -261,67 +204,41 @@ export async function cutsceneStart(opts) {
   )
     await new Promise(r => setTimeout(r, 120));
   try {
-    await cutsceneScript(run);
+    await openingScript(run);
   } catch (e) {
     console.error(e);
     if (typeof debugLog !== 'undefined') debugLog.add('error', 'cutscene: ' + (e.message || e));
     if (cutscene.on && cutscene.run === run) cutsceneAbort();
   }
 }
-async function cutsceneScript(run) {
-  const alive = () => cutscene.on && cutscene.run === run,
-    A = cutscene.A || CUTSCENE_SPOTS,
-    O = cutscene.o || [0, 0],
-    M = A.me,
-    gy = standingHeightAt(M[0], M[1]),
-    body = document.body,
-    fade = $('#csFade');
-  const pov = (h, tgt, fov, ms) =>
-    cutsceneShot({ eye: [M[0] + 0.06, gy + h, M[1] - 0.32], tgt, fov, w: 1.3, abs: 1 }, ms);
-  /* 1. you wake in the dust outside the lab, the papers that fell with you still coming down */
-  pov(0.4, [M[0] + 2.4, gy + 3.9, M[1] + 5.4], 58);
-  if (typeof landingBurst === 'function') landingBurst(M[0], M[1]);
-  if (cutscene.skip) body.classList.remove('cs-dazed');
-  if (fade) fade.classList.remove('on');
-  setTimeout(() => {
-    if (alive()) cutsceneCaption('The Hollow Earth', cutsceneStartName(), 3400);
-  }, 1400);
-  await cutsceneWait(1700);
-  await cutsceneBlink();
-  await cutsceneWait(420);
-  await cutsceneBlink();
+/* the opening plays game/data/cutscenes/opening.json on the cutscene stage, with its own commands below; Blake's
+   battle follows when it says rival-battle, then the game starts with the Billie you picked */
+async function openingScript(run) {
+  const alive = () => cutscene.on && cutscene.run === run;
+  await cutscenePlayScript('opening', {
+    extra: {
+      'dressing-room': openingDressingRoom,
+      'throw-coins': openingThrowCoins,
+      'pick-starter': openingPickStarter,
+      'staged-fight': () => hazelFight(cutsceneLook('Blake')),
+      'rival-battle': () => {
+        cutscene.rival = true;
+      },
+    },
+    slots: {
+      place: () => cutsceneStartName(),
+      starter: () => cutscene.picked.starter,
+      counter: () => cutscene.picked.counter,
+      foe: () => cutscene.foeName || 'mine',
+    },
+  });
   if (!alive()) return;
-  body.classList.add('cs-waking');
-  body.classList.remove('cs-dazed');
-  const dy = standingHeightAt(A.door[0], A.door[1]);
-  pov(0.62, [A.door[0], dy + 1.25, A.door[1]], 52, 3200);
-  await cutsceneWait(2600);
-  if (!alive()) return;
-  /* 2. the Professor comes running */
-  const hy = standingHeightAt(A.hazel[0], A.hazel[1]);
-  cutsceneActor('gini', 'gini', A.door, 'down');
-  pov(0.78, [A.hazel[0], hy + 1.08, A.hazel[1]], 58, 1900);
-  await cutsceneWalk('gini', A.hazel, 1500);
-  cutscene.actors.gini.dir = 'down';
-  if (!alive()) return;
-  await cutsceneSay('gini', 'Oh! Another one! Are you all right? That was quite a landing.', 'surprised');
-  await cutsceneSay(
-    'gini',
-    'You came down through the crust. Things do, now and then. Mostly furniture. You’re the first this week who can talk.'
-  );
-  await cutsceneSay('gini', 'Can you tell me your name?');
-  if (!alive()) return;
-  cutsceneHideDialogue();
-  await cutsceneWait(1300);
-  await cutsceneSay('gini', 'No? Nothing at all?', 'surprised');
-  await cutsceneSay(
-    'gini',
-    'Classic fall-related amnesia. Very common down here. It usually comes back, a bit at a time.'
-  );
-  await cutsceneSay('gini', 'Let’s start with what we can see. Sit up, let me get a good look at you.', 'happy');
-  if (!alive()) return;
-  body.classList.remove('cs-dazed', 'cs-blink');
-  /* 3. make yourself up (skipping stops here) */
+  cutsceneEnd(cutscene.picked.line);
+}
+/* ---------- the opening's own commands ---------- */
+/* dressing-room: you make yourself up; skipping stops here */
+async function openingDressingRoom() {
+  const body = document.body;
   cutscene.skip = false;
   cutsceneHideDialogue();
   cutscene.dressing = true;
@@ -340,58 +257,16 @@ async function cutsceneScript(run) {
   });
   cutscene.dressing = false;
   body.classList.remove('cs-dress', 'cs-waking');
-  if (!alive()) return;
   uiState.avatarDraft = cleanLook(uiState.trainerDraft || LOOK_PRESETS[0]);
   uiState.trainerDraft = uiState.avatarDraft;
-  /* 4. on your feet */
-  cutsceneActor('me', 'me', M, 'side');
-  cutscene.actors.gini.dir = 'sideR';
-  cutsceneShot({ eye: [10.4, 1.75, 8.0], tgt: [10.2, 1.05, 12.9], fov: 40, w: 3.8 });
-  cutsceneAct('me', 'react', 900);
-  if (!alive()) return;
-  const nm = lookOf('me').name || 'Trainer';
-  await cutsceneSay('gini', `${nm}? It suits you. If it isn’t your name, it is now.`, 'happy');
-  await cutsceneSay('gini', 'I’m Professor Hazel. I study Billies, the most common wildlife here in the Hollow Earth.');
-  await cutsceneSay(
-    'gini',
-    'Clones of the richest people up top. A lab backed them up and filled the gaps with animals, then shipped the results down here. They went wild.'
-  );
-  await cutsceneSay(
-    'gini',
-    'They live in the long grass, in caves and canyons, even in the malls. Walk, and they come to you. Tax them with a coin, train a team, earn badges from the arena leaders.'
-  );
-  await cutsceneSay(
-    'gini',
-    'Nobody should walk the Hollow Earth alone. Luckily for you, I have three of them right here.',
-    'happy'
-  );
-  if (!alive()) return;
-  cutsceneHideDialogue();
-  /* 4b. phase 06-2b: Blake barges in before you have a Billie, and Hazel fights him herself */
-  const T0 = TRAINERS.blake0,
-    who = (T0 && T0.who) || 'chad';
-  if (T0) {
-    await blakeArrives(who, A);
-    if (!alive()) return;
-    await hazelFight(who, A);
-    if (!alive()) return;
-    for (const [w, t] of HAZEL.afterFight(who)) {
-      await cutsceneSay(w, t);
-      if (!alive()) return;
-    }
-    cutsceneHideDialogue();
-    cutscene.actors.rival.dir = 'side';
-  }
-  /* 5. three coins, three billionaires */
-  cutscene.actors.gini.dir = 'down';
-  cutscene.actors.me.dir = 'down';
-  cutsceneShot({ eye: [10.15, 1.5, 7.3], tgt: [10.15, 0.7, 11.9], fov: 40, w: 4.4 }, 900);
-  await cutsceneWait(500);
-  cutsceneAct('gini', 'throw', 900);
-  await cutsceneWait(380);
+}
+/* throw-coins: Hazel's three coins fly to the starters' spots (star1-3) and pop open into the three Billies */
+async function openingThrowCoins() {
+  const C = cutscene.set,
+    H = cutscene.actors[cutsceneLook('Hazel')];
   if (typeof soundEffect === 'function') soundEffect('throw');
   cutscene.pickList.forEach((l, i) => {
-    const p = A.stars[i],
+    const p = cutscenePoint(C.spots['star' + (i + 1)], cutscene.off),
       s = {
         sp: l + '0',
         x: p[0],
@@ -406,7 +281,7 @@ async function cutsceneScript(run) {
       };
     cutscene.stars.push(s);
     cutscene.coins.push({
-      a: [cutscene.actors.gini.x + 0.2, standingHeightAt(A.hazel[0], A.hazel[1]) + 1.35, cutscene.actors.gini.z - 0.1],
+      a: [H.x + 0.2, standingHeightAt(H.x, H.z) + 1.35, H.z - 0.1],
       b: [p[0], standingHeightAt(p[0], p[1]) + 0.1, p[1]],
       t0: cutsceneNow() + i * 140,
       dur: 650,
@@ -430,124 +305,72 @@ async function cutsceneScript(run) {
     }
   });
   cutscene.coins = [];
-  if (!alive()) return;
-  await cutsceneSay(
-    'gini',
-    'Three Billies, three types. Each one beats one of the others. Take a good look before you choose!'
-  );
-  cutsceneHideDialogue();
+}
+/* pick-starter: the pick card; skipping stops here. The one you pick cheers, the others go; {starter} and {counter}
+   (the one Blake will take) are known from here, and "starter" names the picked one's place */
+async function openingPickStarter() {
   cutscene.skip = false;
-  /* 6. pick one */
   const l = await chooseStarter();
-  if (!alive()) return;
   cutscene.choosing = false;
   document.body.classList.remove('cs-choosing');
   $('#csPick').hidden = true;
   const si = cutscene.pickList.indexOf(l),
     star = cutscene.stars[si],
-    sp = SPECIES[l + '0'];
+    rv = RULES.start.rival && RULES.start.rival[l];
   star.act = 'cheer';
   star.actT = cutsceneNow();
   cutscene.stars.forEach((s, i) => {
     if (i !== si) s.leave = cutsceneNow() + i * 90;
   });
-  cutsceneShot(
-    {
-      eye: [10.4 + O[0], 1.45 + (cutscene.dy || 0), 8.0 + O[1]],
-      tgt: [(star.x + A.me[0]) / 2, 0.85 + (cutscene.dy || 0), 12.2 + O[1]],
-      fov: 40,
-      w: 3.6,
-      abs: 1,
-    },
-    900
-  );
-  cutsceneAct('me', 'cheer', 1300);
-  await cutsceneWait(900);
-  await cutsceneSay('gini', `${sp.name}! ${nm} and ${sp.name}. I like the sound of that.`, 'happy');
-  if (!alive()) return;
-  /* 7. phase 06-2b: Blake (already here since Hazel's fight) takes the one that beats yours and wants a battle */
-  if (!T0) {
-    await cutsceneSay(
-      'gini',
-      'Now go and explore! The road teaches more than any book. Come back and see me any time.',
-      'happy'
-    );
-    if (!alive()) return;
-    cutsceneHideDialogue();
-    if (fade) fade.classList.add('on');
-    await new Promise(r => setTimeout(r, reducedMotion ? 50 : 700));
-    if (!alive()) return;
-    cutsceneEnd(l);
-    return;
-  }
-  const by = standingHeightAt(A.blake[0], A.blake[1]);
-  cutsceneShot(
-    {
-      eye: [(A.hazel[0] + A.blake[0]) / 2, by + 1.9, A.me[1] - 5.2],
-      tgt: [(A.hazel[0] + A.blake[0]) / 2, by + 1, A.me[1]],
-      fov: 40,
-      w: 5.9,
-      abs: 1,
-    },
-    1100
-  );
-  if (typeof music === 'function') music('rival');
-  cutscene.actors.me.dir = 'sideR';
-  cutscene.actors.gini.dir = 'sideR';
-  const rv = RULES.start.rival && RULES.start.rival[l],
-    vars = {
-      foe: cutscene.foeName || 'mine',
-      counter: (rv && SPECIES[rv] && SPECIES[rv].name) || 'the one that beats yours',
-      yours: sp.name,
-    };
-  for (const [w, t] of HAZEL.blakeTakes(who)) {
-    await cutsceneSay(w, fillLine(t, vars));
-    if (!alive()) return;
-  }
-  cutsceneHideDialogue();
-  cutscene.rival = true;
-  cutsceneAct('rival', 'cheer', 800);
-  await cutsceneWait(700);
-  if (fade) {
-    fade.style.background = '#0B0912';
-    fade.classList.add('on');
-  }
-  await new Promise(r => setTimeout(r, reducedMotion ? 50 : 600));
-  if (!alive()) return;
-  cutsceneEnd(l);
+  cutscene.named.starter = [star.x, star.z];
+  cutscene.picked = {
+    line: l,
+    starter: SPECIES[l + '0'].name,
+    counter: (rv && SPECIES[rv] && SPECIES[rv].name) || 'the one that beats yours',
+  };
 }
-/* ---------- phase 06-2b: Blake arrives early, and Hazel fights him herself ---------- */
-/* Blake runs in from the side and stands by Hazel */
-async function blakeArrives(who, A) {
-  cutsceneActor('rival', who, A.blakeFrom, 'side');
-  const by = standingHeightAt(A.blake[0], A.blake[1]);
-  cutsceneShot(
-    {
-      eye: [(A.hazel[0] + A.blake[0]) / 2, by + 1.9, A.me[1] - 5.2],
-      tgt: [(A.hazel[0] + A.blake[0]) / 2, by + 1, A.me[1]],
-      fov: 40,
-      w: 5.9,
-      abs: 1,
-    },
-    1100
-  );
-  if (typeof music === 'function') music('rival');
-  const L = HAZEL.blakeArrives(who),
-    walk = cutsceneWalk('rival', A.blake, 1500);
-  cutscene.actors.me.dir = 'sideR';
-  cutscene.actors.gini.dir = 'sideR';
-  await cutsceneSay(L[0][0], L[0][1]);
-  await walk;
-  if (cutscene.actors.rival) cutscene.actors.rival.dir = 'side';
-  for (const [w, t] of L.slice(1)) {
-    if (!cutscene.on) return;
-    await cutsceneSay(w, t);
+/* what the opening draws of its own each frame: the starters (and Blake's first Billie) popping, cheering and going,
+   the light on the one you're looking at, the coins in the air */
+function openingLayer(items, parts, lights, now, t) {
+  const drawn = cutscene.foe ? [...cutscene.stars, cutscene.foe] : cutscene.stars;
+  drawn.forEach((s, i) => {
+    if (s.popT) {
+      s.pop = cutscene.skip ? 1 : clamp((now - s.popT) / 420, 0, 1);
+      s.white = Math.max(0, 1 - (now - s.popT) / 300);
+    }
+    if (s.leave) {
+      const k = clamp((now - s.leave) / 500, 0, 1);
+      s.a = 1 - k;
+      s.hop = Math.sin(k * Math.PI) * 0.4;
+    }
+    if (s.pop > 0 && s.a > 0) {
+      const it = cutsceneStarterItem(s, t);
+      if (it) items.push(it);
+    }
+    if (cutscene.choosing && s !== cutscene.foe && i === cutscene.sel)
+      lights.push({ p: [s.x, 0.35 + standingHeightAt(s.x, s.z), s.z - 0.2], r: 1.7, c: [0.55, 0.48, 0.3] });
+  });
+  const coin = artImage('coins/penny_32.png');
+  for (const c of cutscene.coins) {
+    const k = cutscene.skip ? 1 : clamp((now - c.t0) / c.dur, 0, 1);
+    if (k >= 1) {
+      if (!c.landed) {
+        c.landed = 1;
+        c.onLand();
+      }
+      continue;
+    }
+    const x = c.a[0] + (c.b[0] - c.a[0]) * k,
+      z = c.a[2] + (c.b[2] - c.a[2]) * k,
+      y = c.a[1] + (c.b[1] - c.a[1]) * k + Math.sin(k * Math.PI) * 1.25,
+      sp = Math.abs(Math.cos(k * 14));
+    if (imageReady(coin)) parts.push({ im: coin, x, y, z, w: 0.24 * Math.max(0.15, sp), h: 0.24, a: 1, glow: false });
+    lights.push({ p: [x, y, z], r: 1.1, c: [0.5, 0.4, 0.12] });
   }
-  cutsceneHideDialogue();
 }
 /* during the pick: tap Hazel for a hot take about the starter you're looking at, in a bubble over her head */
 function hazelHotTake() {
-  const g = cutscene.actors.gini,
+  const g = cutscene.actors[cutsceneLook('Hazel')],
     b = $('#csBubble');
   if (!g || !b || !walkView.C || !walkView.cv) return;
   const line = cutscene.pickList[cutscene.sel],
@@ -566,7 +389,7 @@ function hazelHotTake() {
   b.classList.remove('m-pop');
   void b.offsetWidth;
   b.classList.add('m-pop');
-  cutsceneAct('gini', 'react', 700);
+  cutsceneAct(cutsceneLook('Hazel'), 'react', 700);
   clearTimeout(b._t);
   b._t = setTimeout(() => (b.hidden = true), 3600);
 }

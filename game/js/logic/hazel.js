@@ -1,9 +1,10 @@
 // @ts-check
 'use strict';
 /* ================= HAZEL (phase 06-2b) =================
-   Everything Professor Hazel and Blake say in the new opening (docs/phases/06-plan.md "The new opening"), in one table
-   so the lines are easy to change, and the small rules around them: which hot take comes next when you tap her during
-   the pick, her (wrong on purpose) type tips in Blake's battle, and when she comments on tapping too fast.
+   What Professor Hazel says around the opening that isn't a line of its script (game/data/cutscenes/opening.json
+   holds those): the staged fight's log, the pick card's note, her hot takes, her tips in Blake's battle and her
+   comments on tapping too fast, in one table, and the small rules around them: which hot take comes next when you tap
+   her during the pick, her (wrong on purpose) type tips, and when she comments on tapping too fast.
    A line may start with [expression] (talk.js). Logic only: no DOM, runs in Node. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
@@ -26,24 +27,8 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-/** @typedef {[who: string, text: string]} Line */
 
 export const HAZEL = {
-  /** Blake barges in before you have a Billie; who is Blake's character id */
-  blakeArrives: (/** @type {string} */ who) =>
-    /** @type {Line[]} */ ([
-      [who, '[surprised] Professor! Professor! Did another one fall in?'],
-      [
-        who,
-        '[happy] I’m Blake. Blake Sterling. My father is Sterling Sterling the Third. Sterling Capital? You’ve heard of it.',
-      ],
-      [who, 'New kids have to battle me. It’s a tradition. I started it this morning.'],
-      ['gini', 'They don’t have a Billie yet, Blake.'],
-      [who, '[angry] Then they forfeit! Unless somebody wants to fight for them.'],
-      ['gini', '[happy] Oh, I’d love to.'],
-      [who, 'You don’t even have a Billie.'],
-      ['gini', 'I have tenure.'],
-    ]),
   /** Hazel's own fight: the log lines under the plates ({foe} is Blake's Billie) */
   fight: {
     start: 'Professor Hazel wants to battle! She sent out… herself.',
@@ -54,22 +39,6 @@ export const HAZEL = {
     effective: 'It’s super effective. Everything is, when she does it.',
     faint: '{foe} fainted! It’s fine. It’s having a little lie-down.',
   },
-  /** after the fight, before the coins */
-  afterFight: (/** @type {string} */ who) =>
-    /** @type {Line[]} */ ([
-      [who, '[angry] That’s not fair! You don’t even have a type!'],
-      ['gini', 'Everyone has a type, Blake. Mine is “tenured”.'],
-      ['gini', '[happy] Now. Where was I? Ah, yes. Three of them, right here.'],
-    ]),
-  /** Blake takes the starter that beats yours ({counter}, {yours}) */
-  blakeTakes: (/** @type {string} */ who) =>
-    /** @type {Line[]} */ ([
-      [
-        who,
-        '[happy] Since SOMEONE flattened {foe}, I’m taking {counter}. It beats {yours}. No offence. Well, a little offence.',
-      ],
-      [who, '[angry] Come on, surface stray. Battle me! A real one this time!'],
-    ]),
   /** the note on the pick card */
   pickNote: 'Tap Professor Hazel for her (biased) opinion.',
   /** her hot takes per starter line, then annoyed ones for any line */

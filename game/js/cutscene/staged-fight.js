@@ -8,11 +8,13 @@ import { $ } from '../util.js';
 import { RULES, SPECIES } from '../game-data.js';
 import { formatNumber, maxHp } from '../logic/rules.js';
 import { HAZEL, fillLine } from '../logic/hazel.js';
+import { cutscenePoint } from '../logic/cutscene-set.js';
 import { escapeHtml } from '../game-state.js';
 import { buzz } from '../battle-stage.js';
 import { standingHeightAt } from '../walk/heights.js';
 import { soundEffect } from '../sound.js';
-import { cutscene, cutsceneAct, cutsceneNow, cutsceneShot, cutsceneSparkle, cutsceneWait } from './director.js';
+import { cutscene, cutsceneAct, cutsceneNow, cutsceneSparkle, cutsceneWait } from './director.js';
+import { cutsceneLook } from './stage.js';
 /* eslint-disable no-func-assign */
 expose({
   blakeFirstBillie: [() => blakeFirstBillie, v => (blakeFirstBillie = v)],
@@ -60,7 +62,8 @@ function fightLog(text) {
 function fightPlate(cls, name, lvl, hp, max) {
   return `<div class="csf-plate ${cls}"><div class="csf-top"><b>${escapeHtml(name)}</b><span class="tnum">${escapeHtml(lvl)}</span></div><span class="csf-hp"><i style="width:${max ? (hp / max) * 100 : 100}%"></i></span><small class="tnum">${formatNumber(hp)}/${formatNumber(max)}</small></div>`;
 }
-export async function hazelFight(who, A) {
+/* who: Blake's look (story.json speakers); his first Billie pops out on the middle starter's spot (star2) */
+export async function hazelFight(who) {
   const id = blakeFirstBillie(),
     box = $('#csFight');
   if (!id || !box) return;
@@ -73,14 +76,14 @@ export async function hazelFight(who, A) {
     max = maxHp({ sp: id, lvl: 4 }) || max;
   } catch (e) {}
   /* Blake throws a coin and his Billie pops out between them */
-  const p = A.stars[1],
+  const R = cutscene.actors[who],
+    p = cutscenePoint(cutscene.set.spots.star2, cutscene.off),
     foe = { sp: id, x: p[0], z: p[1], pop: 0, a: 1, act: null, actT: 0, seed: 3.1, flip: -1, white: 0 };
   cutscene.foe = foe;
-  cutsceneShot({ eye: [10.15, 1.5, 7.3], tgt: [10.15, 0.7, 11.9], fov: 40, w: 4.4 }, 900);
-  if (cutscene.actors.rival) cutsceneAct('rival', 'throw', 900);
+  if (R) cutsceneAct(who, 'throw', 900);
   if (typeof soundEffect === 'function') soundEffect('throw');
   cutscene.coins.push({
-    a: [cutscene.actors.rival.x - 0.2, standingHeightAt(A.blake[0], A.blake[1]) + 1.35, cutscene.actors.rival.z - 0.1],
+    a: [R.x - 0.2, standingHeightAt(R.x, R.z) + 1.35, R.z - 0.1],
     b: [p[0], standingHeightAt(p[0], p[1]) + 0.1, p[1]],
     t0: cutsceneNow(),
     dur: 650,
@@ -112,7 +115,7 @@ export async function hazelFight(who, A) {
   await fightLog(fillLine(F.tackle, vars));
   const mv = box.querySelector('.csf-moves');
   if (mv) mv.hidden = false;
-  cutsceneAct('gini', 'throw', 700);
+  cutsceneAct(cutsceneLook('Hazel'), 'throw', 700);
   await fightLog(F.hit);
   if (mv) mv.hidden = true;
   /* one hit: the plate drains to zero, the Billie flashes white and goes */

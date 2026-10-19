@@ -6,14 +6,13 @@
    in the shared box (talk.js), skipping and the teardown. Split from cutscene.js (Project Story, the cutscene tools). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { cutsceneStarterItem, landing, landingFrame, openingFall, provide } from '../hooks.js';
+import { landing, landingFrame, openingFall, provide } from '../hooks.js';
 import { $, clamp } from '../util.js';
 import { reducedMotion } from '../game-state.js';
 import { personBattlePose, personWalkFrames } from '../person-art.js';
 import { particleSprite } from '../battle-stage.js';
-import { artImage, directionOf, imageReady, stopWalkView, walkData, walkView } from '../walk-view.js';
+import { directionOf, stopWalkView, walkData, walkView } from '../walk-view.js';
 import { walkRenderer } from '../walk/walk-state.js';
-import { standingHeightAt } from '../walk/heights.js';
 import { personItem } from '../walk/frame-items.js';
 import { talkBox, talkHide, talkLine } from '../talk.js';
 /* eslint-disable no-func-assign */
@@ -62,8 +61,13 @@ export const cutscene = {
   say: null,
   por: { who: null, expr: null, t: 0 },
   flashes: [],
-  center: [10.1, 12.3],
   ui: null,
+  /* the cutscene playing (game/data/cutscenes), where its map's corner is in the view, its places by name beyond its
+     spots (the starter you picked), and what it draws of its own each frame */
+  set: null,
+  off: [0, 0],
+  named: {},
+  layers: [],
 };
 provide({ cutscene }); /* to-module */
 export const cutsceneNow = () => performance.now();
@@ -107,15 +111,6 @@ function cutsceneCameraNow() {
 }
 export function cutsceneShot(K, ms = 0) {
   K = Object.assign({ fov: 40, w: 0 }, K);
-  /* v46: the shots were framed for the lab's door at CUTSCENE_SPOTS.door; they move with the lab (placeCutsceneSpots) */ if (
-    !K.abs &&
-    cutscene.o
-  ) {
-    const o = cutscene.o,
-      dy = cutscene.dy || 0;
-    K.eye = [K.eye[0] + o[0], K.eye[1] + dy, K.eye[2] + o[1]];
-    K.tgt = [K.tgt[0] + o[0], K.tgt[1] + dy, K.tgt[2] + o[1]];
-  }
   const a = cutsceneCameraNow() || K;
   cutscene.cam = { a, b: K, t0: cutsceneNow(), dur: ms };
   return cutsceneWait(ms);
@@ -169,41 +164,8 @@ export function cutsceneFrame() {
   parts.length = 0;
   lights.length = 0;
   for (const a of Object.values(cutscene.actors)) if (!a.hidden) items.push(cutscenePersonItem(a, t, C0));
-  const drawn = cutscene.foe ? [...cutscene.stars, cutscene.foe] : cutscene.stars;
-  drawn.forEach((s, i) => {
-    if (s.popT) {
-      s.pop = cutscene.skip ? 1 : clamp((now - s.popT) / 420, 0, 1);
-      s.white = Math.max(0, 1 - (now - s.popT) / 300);
-    }
-    if (s.leave) {
-      const k = clamp((now - s.leave) / 500, 0, 1);
-      s.a = 1 - k;
-      s.hop = Math.sin(k * Math.PI) * 0.4;
-    }
-    if (s.pop > 0 && s.a > 0) {
-      const it = cutsceneStarterItem(s, t);
-      if (it) items.push(it);
-    }
-    if (cutscene.choosing && s !== cutscene.foe && i === cutscene.sel)
-      lights.push({ p: [s.x, 0.35 + standingHeightAt(s.x, s.z), s.z - 0.2], r: 1.7, c: [0.55, 0.48, 0.3] });
-  });
-  const coin = artImage('coins/penny_32.png');
-  for (const c of cutscene.coins) {
-    const k = cutscene.skip ? 1 : clamp((now - c.t0) / c.dur, 0, 1);
-    if (k >= 1) {
-      if (!c.landed) {
-        c.landed = 1;
-        c.onLand();
-      }
-      continue;
-    }
-    const x = c.a[0] + (c.b[0] - c.a[0]) * k,
-      z = c.a[2] + (c.b[2] - c.a[2]) * k,
-      y = c.a[1] + (c.b[1] - c.a[1]) * k + Math.sin(k * Math.PI) * 1.25,
-      sp = Math.abs(Math.cos(k * 14));
-    if (imageReady(coin)) parts.push({ im: coin, x, y, z, w: 0.24 * Math.max(0.15, sp), h: 0.24, a: 1, glow: false });
-    lights.push({ p: [x, y, z], r: 1.1, c: [0.5, 0.4, 0.12] });
-  }
+  /* what a cutscene adds of its own (the opening's starters and coins: opening.js) */
+  for (const f of cutscene.layers) f(items, parts, lights, now, t);
   const spark = typeof particleSprite === 'function' ? particleSprite('sparkle') : null;
   cutscene.fx = cutscene.fx.filter(f => now - f.t0 < f.life);
   for (const f of cutscene.fx) {
@@ -346,6 +308,9 @@ export function cutsceneTeardown() {
   }
   if (typeof landing !== 'undefined') landing.bits = [];
   cutscene.foe = null;
+  cutscene.layers = [];
+  cutscene.set = null;
+  cutscene.named = {};
   document.body.classList.remove(
     'in-cs',
     'cs-choosing',
