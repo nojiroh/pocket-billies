@@ -7,7 +7,7 @@ reach the stand-in). Any error on the page fails it. Nothing leaves the machine;
     python3 tools/check-studio-github.py dist      # the build (`npm run build` first)
 
 Needs Python 3 and Playwright (tools/requirements-check.txt). About a minute."""
-import json, sys, threading, time
+import json, re, sys, threading, time
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -21,6 +21,55 @@ ROOT = REPO / sys.argv[1] if len(sys.argv) > 1 else REPO
 
 class Quiet(SimpleHTTPRequestHandler):
     def log_message(self, *a): pass
+
+
+def story_steps(pg, errs):
+    """Project Story S3: a trainer's script says what is wrong as you type, with the line; Add line ids gives the new
+    line one; the command reference opens and puts a command in the script; a scene's person has a script field."""
+    pg.evaluate("studioState.sel.trainer='crude'; void openSection('trainers')")
+    ta = pg.locator('textarea[data-script="trainer:crude"]')
+    ta.click()
+    pg.keyboard.press('Control+End')
+    pg.keyboard.press('Enter')
+    pg.keyboard.type('sett met_x')
+    time.sleep(0.5)
+    msg = pg.locator('.scriptf[data-sf="trainer:crude"] .sf-msgs').inner_text()
+    n = pg.evaluate("document.querySelector('textarea[data-script=\"trainer:crude\"]').value.split('\\n').length")
+    if 'did you mean "set"' not in msg or f'line {n}' not in msg: errs.append(f'story: no "did you mean" on line {n}: {msg!r}')
+    for _ in range(len('sett met_x')): pg.keyboard.press('Backspace')
+    pg.keyboard.type('A new line.')
+    time.sleep(0.6)
+    msg = pg.locator('.scriptf[data-sf="trainer:crude"] .sf-msgs').inner_text()
+    if 'has no line id' not in msg: errs.append(f'story: a new line without an id isn\'t named: {msg!r}')
+    pg.locator('.scriptf[data-sf="trainer:crude"] [data-act="sfIds"]').click()
+    time.sleep(0.6)
+    last = pg.evaluate("studioState.D.trainers.crude.script.at(-1)")
+    msg = pg.locator('.scriptf[data-sf="trainer:crude"] .sf-msgs').inner_text()
+    if not re.search(r'^A new line\. #l:[0-9a-f]{4}$', last) or 'Reads fine' not in msg:
+        errs.append(f'story: Add line ids: {last!r}, {msg!r}')
+    pg.locator('.scriptf[data-sf="trainer:crude"] [data-act="sfRef"]').click()
+    pg.fill('#sfRefQ', 'heal')
+    vis = pg.evaluate("[...document.querySelectorAll('#sfRef li[data-q]')].filter(l => !l.hidden).map(l => l.textContent)")
+    if len(vis) != 1 or not vis[0].startswith('heal'): errs.append(f'story: the reference finds {vis}')
+    pg.locator('#sfRef [data-act="sfInsert"]', has_text='heal').click()
+    if pg.evaluate("studioState.D.trainers.crude.script.at(-1)") != 'heal': errs.append('story: the reference didn\'t put heal in the script')
+    pg.locator('#sfRef header [data-act="sfRef"]').click()
+    pg.evaluate("studioState.sel.scene='copperleaf'; void openSection('scenes')")
+    time.sleep(1)
+    if not pg.locator('textarea[data-script="person:juniper"]').count(): errs.append('story: no script field for Juniper in Copperleaf')
+    pg.evaluate("void openSection('story')")
+    if not pg.locator('textarea[data-script^="story:"]').count(): errs.append('story: the Story section has no script field')
+    pg.evaluate("studioState.D.trainers.crude.script.splice(2, 0, '  sett x'); void openSection('check')")
+    time.sleep(0.8)
+    i = pg.evaluate("studioState.lastCheck.findIndex(p => p.msg.startsWith('Story:') && p.msg.includes('sett'))")
+    if i < 0: errs.append('story: the Check doesn\'t list the story problem')
+    else:
+        pg.locator(f'[data-act="fix"][data-i="{i}"]').click()
+        time.sleep(0.8)
+        got = pg.evaluate("[studioState.sec, document.activeElement.dataset.script, document.activeElement.value.slice(document.activeElement.selectionStart, document.activeElement.selectionEnd)]")
+        if got != ['trainers', 'trainer:crude', '  sett x']: errs.append(f'story: Show me went to {got}')
+    pg.evaluate("void undo(); void undo(); void undo(); void undo(); void undo()")
+    print('story editor: messages, line ids, reference, people, story section, the Check', flush=True)
 
 
 def main():
@@ -67,6 +116,7 @@ def main():
             time.sleep(1)
             if len(errs) > n: errs[n:] = [f'{k}: {e}' for e in errs[n:]]
         print(f'{len(sections)} sections opened', flush=True)
+        story_steps(pg, errs)
         pg.evaluate("const k = Object.keys(studioState.D.moves)[0]; studioState.D.moves[k].name += ' Test'; studioState.dirty = true; void saveAll()")
         t0 = time.time()
         while time.time() - t0 < 60 and 'pulls' not in posts:

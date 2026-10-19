@@ -32,6 +32,7 @@ import {
   typeOptions,
   uniqueKey,
 } from './studio-app.js';
+import { conditionField } from './story-editor.js';
 import { fileToCanvas, loadImage, markArt, mountPreviews, pickFile, spritePreviewHTML } from './sprites.js';
 import { RARITY_LABELS } from './data-editors.js';
 /* eslint-disable no-func-assign */
@@ -262,6 +263,11 @@ function worldLocations() {
         rr: 1,
         help: 'Walking past this point needs that badge.',
       }),
+      conditionField('Open only when (story)', `${p}.requires`, 'place:' + r.id, 'requires', {
+        ph: 'always',
+        help: 'A story condition (docs/SCRIPTS.md), e.g. met_hazel; the Check says if it can never come true.',
+      }),
+      textField('What the gate says while it is shut', `${p}.locked`, { opt: 1, ph: `${r.name} is closed for now.` }),
       checkboxField('Water crossing: you ride a Billie', `${p}.ride`, {
         num: 1,
         rr: 1,

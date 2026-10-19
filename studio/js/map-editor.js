@@ -69,6 +69,7 @@ import {
   toast,
   uniqueKey,
 } from './studio-app.js';
+import { conditionField, lineIdHash, scriptField } from './story-editor.js';
 import { atlasGet, atlasVersion, fileToCanvas, loadedAtlas, markArt, pickFile } from './sprites.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -597,15 +598,24 @@ SECTIONS.scenes = () => {
  )}
  ${card(
    'People who talk',
-   `<p class="help">alpha 0.4: someone who stands here and talks when you tap them (no battle), like Granny Juniper in Copperleaf. What they say the first time, then one of the other lines each time after; a line can start with an expression like <span class="mono">[happy]</span>.</p>
+   `<p class="help">Someone who stands here and talks when you tap them (no battle), like Granny Juniper in Copperleaf. What they say is a script (docs/SCRIPTS.md); their id is what <span class="mono">visits:id</span> and <span class="mono">met_id</span> count by. The story preview above shows who is here for the flags you pick.</p>
   ${(sc.people || [])
     .map(
-      (
-        q,
-        i
-      ) => `<div class="sc-person">${grid(selectField('Look', `${p}.people.${i}.who`, peopleOptions()), textField('Name', `${p}.people.${i}.name`), numberField('Across (m)', `${p}.people.${i}.x`, { step: 0.1 }), numberField('Depth (m)', `${p}.people.${i}.z`, { step: 0.1 }))}
-   <label class="fld wide"><span>The first time (one line each)</span><textarea data-scppl="${i}" data-f="first" rows="3">${escapeHtml((q.first || []).join('\n'))}</textarea></label>
-   <label class="fld wide"><span>After that (one line each, one at a time)</span><textarea data-scppl="${i}" data-f="lines" rows="3">${escapeHtml((q.lines || []).join('\n'))}</textarea></label>
+      (q, i) => `<div class="sc-person">${grid(
+        textField('Id', `${p}.people.${i}.id`, { cls: 'mono' }),
+        selectField('Look', `${p}.people.${i}.who`, peopleOptions()),
+        textField('Name', `${p}.people.${i}.name`),
+        numberField('Across (m)', `${p}.people.${i}.x`, { step: 0.1 }),
+        numberField('Depth (m)', `${p}.people.${i}.z`, { step: 0.1 }),
+        selectField('Facing', `${p}.people.${i}.dir`, [
+          ['down', 'Down'],
+          ['up', 'Up'],
+          ['left', 'Left'],
+          ['right', 'Right'],
+        ])
+      )}
+   ${grid(conditionField('Only here when', `${p}.people.${i}.when`, 'person:' + q.id, 'when', { ph: 'always' }), conditionField('Gone when', `${p}.people.${i}.unless`, 'person:' + q.id, 'unless', { ph: 'never' }))}
+   ${scriptField('What they say', 'person:' + q.id, { rows: 8 })}
    <div class="seg-row"><button class="btn sm danger subtle" data-act="scPplDel" data-i="${i}">Remove</button></div></div>`
     )
     .join('')}
@@ -700,18 +710,6 @@ async function mountMapEditor() {
         L = parseMapLife(lf.value);
       if (L.length) sc.life = L;
       else delete sc.life;
-      changed();
-      commit(true);
-    });
-  for (const ta of document.querySelectorAll('[data-scppl]'))
-    ta.addEventListener('change', () => {
-      const sc = currentMap(),
-        q = (sc.people || [])[+ta.dataset.scppl];
-      if (!q) return;
-      q[ta.dataset.f] = ta.value
-        .split('\n')
-        .map(x => x.trim())
-        .filter(Boolean);
       changed();
       commit(true);
     });
@@ -2801,11 +2799,12 @@ ACTIONS.scTestRun = () => {
   toast('Opening a test run. Edits here show up there as you make them.');
 };
 
-/* alpha 0.4: people who stand in a scene and talk (scene.people) */
+/* alpha 0.4: people who stand in a scene and talk (scene.people); Project Story S3: what they say is a script, and
+   their id is unique in the whole game (the checks and visits:id name them by it) */
 ACTIONS.scPplAdd = () => {
   const sc = currentMap(),
     h = sc.hub || [sc.w / 2, sc.h / 2],
-    ids = new Set((sc.people || []).map(q => q.id));
+    ids = new Set(Object.values(studioState.D.maps || {}).flatMap(M => (M.people || []).map(q => q.id)));
   let n = 1;
   while (ids.has('person' + n)) n++;
   (sc.people || (sc.people = [])).push({
@@ -2815,8 +2814,7 @@ ACTIONS.scPplAdd = () => {
     x: +(h[0] + 1.5).toFixed(2),
     z: +(h[1] + 1).toFixed(2),
     dir: 'down',
-    first: ['Hello there.'],
-    lines: ['Nice day for it.'],
+    script: ['Hello there. #l:' + lineIdHash(currentMapId() + '|person' + n).slice(0, 4)],
   });
   changed();
   commit(true);

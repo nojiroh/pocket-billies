@@ -442,6 +442,7 @@ export const SECTION_LIST = [
   ['wardrobe', 'Wardrobe', 'Trainer body, hairstyles, faces and clothes'],
   ['trainers', 'Trainers', 'Rivals and arena leaders'],
   ['lore', 'Lore & story', 'The world, the story, people, places, legends, clues, books and what people say'],
+  ['story', 'Story scripts', 'The story’s own scripts (story.json), its flags, start presets and quests'],
   ['people', 'People', 'Looks for trainers and shopkeepers'],
   ['jobs', 'Jobs', 'What working Billies earn (not in the game until the ranch)'],
   ['rules', 'Rules', 'Every number that tunes the game'],
@@ -453,7 +454,7 @@ export const SECTION_LIST = [
 const SECTION_GROUPS = [
   ['Billies & battles', ['billionaires', 'parts', 'robots', 'roster', 'moves', 'preview', 'types']],
   ['World & places', ['scenes', 'props', 'engine', 'world']],
-  ['People & story', ['trainers', 'people', 'wardrobe', 'lore']],
+  ['People & story', ['trainers', 'people', 'wardrobe', 'lore', 'story']],
   ['Money', ['items', 'shops', 'jobs']],
   ['Game', ['rules', 'art', 'check']],
 ];

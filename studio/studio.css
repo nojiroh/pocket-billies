@@ -3256,3 +3256,102 @@ body.vp-has-big::after {
   margin: 6px 0;
   border-radius: 6px;
 }
+/* Project Story S3: the script field, the condition field and the command reference (story-editor.js) */
+.scriptf > label,
+.condf > label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.scriptf > label > span,
+.condf > label > span {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text2);
+}
+.scriptf textarea {
+  font-size: 13px;
+  line-height: 1.5;
+  tab-size: 2;
+  white-space: pre;
+  overflow-x: auto;
+}
+.sf-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.sf-bar .sf-at {
+  margin-right: auto;
+  color: var(--text2);
+}
+.sf-msgs {
+  list-style: none;
+  margin: 2px 0 0;
+  padding: 0;
+  font-size: 12px;
+}
+.sf-msgs li,
+.sf-msgs span {
+  padding: 2px 0;
+}
+.sf-msgs .problem {
+  color: var(--red);
+}
+.sf-msgs .warning {
+  color: var(--warn);
+}
+.sf-msgs .ok {
+  color: var(--ok);
+}
+.sf-ref {
+  position: fixed;
+  right: 12px;
+  top: 64px;
+  bottom: 12px;
+  width: min(380px, calc(100vw - 32px));
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+}
+.sf-ref header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.sf-ref h3,
+.sf-ref h4 {
+  margin: 0;
+}
+.sf-ref h4 {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--text2);
+}
+.sf-ref-b {
+  overflow-y: auto;
+}
+.sf-ref ul {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+}
+.sf-ref li {
+  padding: 4px 0;
+  border-bottom: 1px solid var(--line);
+}
+.sf-ref li small {
+  display: block;
+  color: var(--text2);
+}
+.sf-ref li em {
+  font-size: 11px;
+  color: var(--warn);
+}

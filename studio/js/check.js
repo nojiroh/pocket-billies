@@ -8,6 +8,7 @@ import { $ } from '../../game/js/util.js';
 import { boneSlot } from '../../game/js/skeleton-rig.js';
 import { decodeBase64Array } from '../../game/js/walk-view.js';
 import { escapeHtml } from './game-stand-ins.js';
+import { storyFindings } from '../../game/js/logic/story-checks.js';
 import {
   ACTIONS,
   SECTIONS,
@@ -21,6 +22,7 @@ import {
   studioState,
   toast,
 } from './studio-app.js';
+import { storyFindingPlace } from './story-editor.js';
 import { atlasPath, pickFile } from './sprites.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -424,6 +426,15 @@ function runCheck() {
       r.go,
       r.sel
     );
+  /* Project Story S3: the story checks, the same ones check-data runs (game/js/logic/story-checks.js) */
+  try {
+    for (const f of storyFindings(D)) {
+      const [go, sel] = storyFindingPlace(f, D);
+      (f.level === 'problem' ? err : warn)(`Story: ${f.text}`, go, sel);
+    }
+  } catch (e) {
+    err(`The story checks stopped: ${e.message}`, 'story');
+  }
   return P;
 }
 let checkTimer = null;
