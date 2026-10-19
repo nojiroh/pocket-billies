@@ -24,10 +24,10 @@ one at its low settings.
 | Pond | 50, 5 | A still pond; five trees and a house on the far bank to mirror | Water reflections |
 | Sun gap | 10.5, 20 | A tight grove with one path through it and two roofs in front; low sun straight ahead | Sun rays (`air.godRays`) |
 | Lamp square | 30, 20 | Brick paving, ten lamps and lanterns, two fires, crystals, three houses with windows; measured at night | Glow (bloom), Glow size, Lamps |
-| Meadow | 50, 20 | Deep grass with flowers, open to the air | Grass (rebuilds), Particles, Low mist |
+| Meadow | 50, 23.5 | Deep grass with flowers, open to the air | Grass (rebuilds), Particles, Low mist |
 | Everything | 10, 32.5 · zoom 1.3 | A small grove, a pond, a grass patch, four lamps, a house | All settings at their lowest, at the game's own values and at their highest |
-| Depth corridor | 30, 33 · zoom 1.6 | An avenue of trees from close by to the hills past the edge | Depth of field, Far trees and hills (rebuilds) |
-| Open sky | 50, 33 · zoom 1.7 | A wide, empty plain | Clouds, Cloud shadows |
+| Depth corridor | 30, 35.5 · zoom 1.3 | An avenue of trees from close by to the hills past the edge | Depth of field, Far trees and hills (rebuilds) |
+| Open sky | 50, 33 · zoom 1.7 | A wide, empty plain (the walk camera looks down, so no sky is in the picture: the clouds show as their light and shadows on the plain) | Clouds, Cloud shadows |
 
 The map's own light is a mid sun (angle 35, height 40). A station that needs another light sets it for its steps:
 the shadow court a side sun (angle 30, height 30), the sun gap a low sun ahead (angle -90, height 18), the lamp
