@@ -11,6 +11,34 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 - Questions waiting for the owner: 
 - Next session starts with: 
 
+### Phase 10 - World map, the look, session 4: landmarks, buildings, trees, town lights - 2026-10-19
+Owner's answers: **bigger buildings** (about 3x, today's zoom kept), landmarks as **pixel-art standees**, trees
+**from the maps plus clumps**. Branch `world-map-look-4`, on top of `world-map-look-3` (PR #65).
+- Changed:
+  - New `logic/bowl-things.js` (page script added): `BOWL_THING_SCALE` 3; `bowlMapPoint` and `bowlMapTurn` (a walk
+    map's point on the bowl, as the terrain stamps it); `bowlPropClass` (tree, building or nothing); `bowlLandmarkPick`
+    (locations.json `landmark` if set, else the biggest landmark prop in the map by picture size, else the biggest
+    building; 47 of 49 places get one); `bowlTreeStyle`; `bowlClumps` (forest patches on dry land between places, off
+    the routes and the places' ground, each region's kinds, deterministic).
+  - `world-bowl.js`: things built a place at a time as its map file comes in. Far out: each place's landmark as a
+    standee of its own picture, at least 46 px tall on screen. Close in (camera nearer than about 0.95, fully at
+    0.7, when the pins turn to tags): each map's buildings (19 kinds as their low-poly recipe, simplified: small parts
+    dropped, 8 sides at most; the rest as picture standees), its landmark props, its trees (8 low-poly tree styles),
+    all 3x size, fading in with a pixel dither. Clumps always. Everything instanced (one draw per shape), lit by the
+    sun and clouds, casting into the shadow map (drawn again at most every 2 s while things come in). Night: building
+    models' walls get lit windows, coming on one by one (environmentLitFraction). Atlas of pictures: 2048 px, each
+    scaled down by whole steps to at most 192 px high, sharp.
+  - `prop-models.js`: `lowPolyFromRecipe` is now exported (made by the module tool; no behaviour change).
+  - Tests: `tools/test/bowl-things.test.mjs`; world map test step "Landmarks, buildings and trees" (counts, update
+    time, triangles); the fast check zooms over Marigold Town and asks for landmarks, models and trees, then for no
+    GPU error.
+- Risky or unfinished:
+  - Not seen on a screen: tree colours and sizes, standee lighting, where 3x buildings overlap in dense towns.
+  - Picture standees don't light their windows at night (only the models do).
+  - Cost: about 4,700 map trees and 365 buildings drawn instanced when close; the world map test reports triangles.
+- Verified: npm test 197 pass; lint, types, modules, format clean; full lite fast check 12 of 12.
+- Next session starts with: session 5, Studio landmark picker, sea and region terrain editing, the phone test, tag.
+
 ### Phase 10 - World map, the look, session 3: clouds, weather, the Inner Sun's day - 2026-10-19
 Owner's answers: night **circles and dims**; clouds **as proposed** (Low 12 in one layer, High 40 in two with full
 rain, snow, ash and lightning, Off none). Branch `world-map-look-3`, on top of `world-map-look-2` (PR #64).
