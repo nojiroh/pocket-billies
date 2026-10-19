@@ -57,7 +57,7 @@ import { environment } from './environment.js';
 import { walkRenderer } from './walk/walk-state.js';
 import { standingHeightAt } from './walk/heights.js';
 import { WALK_SHADERS } from './walk/walk-shaders.js';
-import { roomDimming } from './walk-view-gl.js';
+import { roomDimming } from './walk/lighting.js';
 import { BUILDING_SHADERS, buildingState } from './buildings.js';
 import { hasStructures, structureState } from './structures.js';
 import { SOLID_PROP_SHADERS, solidPropState } from './solid-props.js';

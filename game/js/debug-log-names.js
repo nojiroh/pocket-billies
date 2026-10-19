@@ -50,6 +50,7 @@ import { setSwapMapCache, setUpdateNearRing, swapMapCache, updateNearRing } from
 import { drawWater, reflectionPass, setDrawWater, setReflectionPass } from './walk/water.js';
 import { gatherFrameItems, setGatherFrameItems } from './walk/frame-items.js';
 import { drawBoxFaces, drawSprites, setDrawBoxFaces, setDrawSprites } from './walk/sprites.js';
+import { setShadowPass, shadowPass } from './walk/shadows.js';
 import {
   drawGrass,
   drawGround,
@@ -59,8 +60,6 @@ import {
   setDrawGround,
   setEffectsPass,
   setMountWalkView,
-  setShadowPass,
-  shadowPass,
 } from './walk-view-gl.js';
 import { buildingItems, buildingState, drawBuildings, setBuildingItems, setDrawBuildings } from './buildings.js';
 import { drawStructures, setDrawStructures } from './structures.js';
