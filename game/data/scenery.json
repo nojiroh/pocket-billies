@@ -1560,10 +1560,8 @@
    "tags": ["route","town"],
    "group": "tree_oak",
    "solid": 0.45,
-   "layers": [
-    {"img":"scene/props/layers/tree_oak_lb.png","dz":0.6,"sway":0.7,"shadow":0},
-    {"img":"scene/props/layers/tree_oak_lf.png","dz":-0.45,"sway":1.4,"shadow":0}
-   ]
+   "ppm": 32,
+   "model": "scene/next/models/tree_oak.json"
   },
   "tree_fruit": {
    "name": "Fruit tree",
@@ -1608,10 +1606,8 @@
    "tags": ["route","town"],
    "group": "bush_round",
    "solid": 0.5,
-   "layers": [
-    {"img":"scene/props/layers/bush_round_lb.png","dz":0.23,"sway":0.7,"shadow":0},
-    {"img":"scene/props/layers/bush_round_lf.png","dz":-0.17,"sway":1.4,"shadow":0}
-   ]
+   "ppm": 32,
+   "model": "scene/next/models/bush_round.json"
   },
   "bush_berry": {
    "name": "Berry bush",
@@ -1655,7 +1651,8 @@
    "flat": 0,
    "tags": ["route"],
    "group": "tallgrass",
-   "solid": 0
+   "solid": 0,
+   "ppm": 32
   },
   "reeds": {
    "name": "Cattail reeds",
@@ -1715,7 +1712,9 @@
    "flat": 0,
    "tags": ["route","cave"],
    "group": "mushroom",
-   "solid": 0
+   "solid": 0,
+   "ppm": 32,
+   "model": "scene/next/models/mushrooms.json"
   },
   "mushroom_giant": {
    "name": "Giant mushroom",
@@ -1775,7 +1774,9 @@
    "flat": 0,
    "tags": ["route","cave"],
    "group": "rocks",
-   "solid": 0
+   "solid": 0,
+   "ppm": 32,
+   "model": "scene/next/models/rocks.json"
   },
   "crystal": {
    "name": "Glow crystals",
@@ -1896,7 +1897,10 @@
    "solid": 0.3,
    "fx": [
     {"k":"glow","x":14,"y":-66}
-   ]
+   ],
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0},
+   "model": "scene/next/models/lantern.json"
   },
   "streetlamp": {
    "name": "Street lamp",
@@ -2103,10 +2107,8 @@
    "tags": ["route","town"],
    "group": "tree_oak",
    "solid": 0.45,
-   "layers": [
-    {"img":"scene/props/layers/tree_oak_b_lb.png","dz":0.6,"sway":0.7,"shadow":0},
-    {"img":"scene/props/layers/tree_oak_b_lf.png","dz":-0.45,"sway":1.4,"shadow":0}
-   ]
+   "ppm": 32,
+   "model": "scene/next/models/tree_oak_b.json"
   },
   "tree_oak_autumn": {
    "name": "Autumn oak",
@@ -2119,10 +2121,9 @@
    "tags": ["route","town"],
    "group": "tree_oak",
    "solid": 0.45,
-   "layers": [
-    {"img":"scene/props/layers/tree_oak_autumn_lb.png","dz":0.6,"sway":0.7,"shadow":0},
-    {"img":"scene/props/layers/tree_oak_autumn_lf.png","dz":-0.45,"sway":1.4,"shadow":0}
-   ]
+   "ppm": 32,
+   "model": "scene/next/models/tree_oak.json",
+   "swap": {"scene/next/leaves/oak.png":"scene/next/leaves/oak_autumn.png"}
   },
   "tree_oak_small": {
    "name": "Oak sapling",
@@ -2130,15 +2131,13 @@
    "ox": -47,
    "oy": -103,
    "shadow": 0.8,
-   "sway": 0.45,
+   "sway": 0.35,
    "flat": 0,
    "tags": ["route","town"],
    "group": "tree_oak",
    "solid": 0.3,
-   "layers": [
-    {"img":"scene/props/layers/tree_oak_small_lb.png","dz":0.54,"sway":0.7,"shadow":0},
-    {"img":"scene/props/layers/tree_oak_small_lf.png","dz":-0.37,"sway":1.4,"shadow":0}
-   ]
+   "ppm": 32,
+   "model": "scene/next/models/tree_oak_small.json"
   },
   "tree_pine_b": {
    "name": "Tall pine",
@@ -2226,15 +2225,13 @@
    "ox": -40,
    "oy": -53,
    "shadow": 0.55,
-   "sway": 0.22,
+   "sway": 0.25,
    "flat": 0,
    "tags": ["route","town"],
    "group": "bush_round",
    "solid": 0.6,
-   "layers": [
-    {"img":"scene/props/layers/bush_round_b_lb.png","dz":0.3,"sway":0.7,"shadow":0},
-    {"img":"scene/props/layers/bush_round_b_lf.png","dz":-0.22,"sway":1.4,"shadow":0}
-   ]
+   "ppm": 32,
+   "model": "scene/next/models/bush_round_b.json"
   },
   "bush_round_c": {
    "name": "Low bush",
@@ -2242,15 +2239,13 @@
    "ox": -29,
    "oy": -25,
    "shadow": 0.35,
-   "sway": 0.28,
+   "sway": 0.25,
    "flat": 0,
    "tags": ["route","town"],
    "group": "bush_round",
    "solid": 0.4,
-   "layers": [
-    {"img":"scene/props/layers/bush_round_c_lb.png","dz":0.26,"sway":0.7,"shadow":0},
-    {"img":"scene/props/layers/bush_round_c_lf.png","dz":-0.19,"sway":1.4,"shadow":0}
-   ]
+   "ppm": 32,
+   "model": "scene/next/models/bush_round_c.json"
   },
   "bush_flower": {
    "name": "Flowering bush",
@@ -2278,7 +2273,8 @@
    "flat": 0,
    "tags": ["route"],
    "group": "tallgrass",
-   "solid": 0
+   "solid": 0,
+   "ppm": 32
   },
   "tallgrass_c": {
    "name": "Tall reedy grass",
@@ -2290,7 +2286,8 @@
    "flat": 0,
    "tags": ["route"],
    "group": "tallgrass",
-   "solid": 0
+   "solid": 0,
+   "ppm": 32
   },
   "flowers_white": {
    "name": "White flowers",
@@ -2338,7 +2335,9 @@
    "flat": 0,
    "tags": ["route","cave"],
    "group": "rocks",
-   "solid": 0
+   "solid": 0,
+   "ppm": 32,
+   "model": "scene/next/models/rocks_b.json"
   },
   "rocks_mossy": {
    "name": "Mossy rocks",
@@ -2350,7 +2349,9 @@
    "flat": 0,
    "tags": ["route"],
    "group": "rocks",
-   "solid": 0
+   "solid": 0,
+   "ppm": 32,
+   "model": "scene/next/models/rocks_mossy.json"
   },
   "boulder_b": {
    "name": "Tall boulder",
@@ -2386,7 +2387,10 @@
    "flat": 0,
    "tags": ["route"],
    "group": "mushroom",
-   "solid": 0
+   "solid": 0,
+   "ppm": 32,
+   "model": "scene/next/models/mushrooms.json",
+   "swap": {"#DE4048":"#B07046","#F9EAC0":"#B07046"}
   },
   "mushroom_blue": {
    "name": "Blue mushrooms",
@@ -2398,7 +2402,10 @@
    "flat": 0,
    "tags": ["cave","route"],
    "group": "mushroom",
-   "solid": 0
+   "solid": 0,
+   "ppm": 32,
+   "model": "scene/next/models/mushrooms.json",
+   "swap": {"#DE4048":"#5492EC","#F9EAC0":"#C8DCF8","#E9DDC8":"#B9AEDC"}
   },
   "house_blue": {
    "name": "Blue-roof cottage",
@@ -4467,7 +4474,10 @@
    "posts": [
     {"x":-60,"r":0.2},
     {"x":60,"r":0.2}
-   ]
+   ],
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0},
+   "model": "scene/next/models/laundry_line.json"
   },
   "garden_gnome": {
    "name": "Garden gnome",
@@ -5374,7 +5384,10 @@
    "flat": 0,
    "tags": ["snow","mountain"],
    "group": "rocks",
-   "solid": 0
+   "solid": 0,
+   "ppm": 32,
+   "model": "scene/next/models/rocks_mossy.json",
+   "swap": {"#8FB866":"#EEF3F8","#8C879A":"#A3A7B6"}
   },
   "ski_sign": {
    "name": "Trail sign",
@@ -5870,7 +5883,9 @@
    "flat": 0,
    "tags": ["route","mountains"],
    "group": "rocks",
-   "solid": 0
+   "solid": 0,
+   "ppm": 32,
+   "model": "scene/next/models/rocks_c.json"
   },
   "crate_stack": {
    "name": "Crate stack",
@@ -6484,7 +6499,8 @@
    "tags": ["route","town","farm"],
    "group": "bush_roses",
    "solid": 0.5,
-   "vol": ["puff",0.5],
+   "ppm": 32,
+   "model": "scene/next/models/bush_roses.json",
    "family": "shrubs",
    "grow": "gGl",
    "weight": 0.8
@@ -6530,6 +6546,8 @@
    "tags": ["route","forest","town"],
    "group": "tree_beech",
    "solid": 0.5,
+   "ppm": 32,
+   "model": "scene/next/models/tree_beech.json",
    "family": "trees",
    "grow": "gGy",
    "weight": 1
@@ -9280,36 +9298,19 @@
    "flat": 0,
    "tags": ["town","village"],
    "group": "cottage_juniper",
-   "box": [4.8,2.8],
-   "door": {"x":-20,"y":0},
+   "box": [5.3,3.4],
+   "door": {"x":-19,"y":0},
    "fx": [
-    {"k":"window","x":36,"y":-43},
-    {"k":"window","x":-58,"y":-51},
-    {"k":"glow","x":-52,"y":-57},
-    {"k":"window","x":-30,"y":-120},
-    {"k":"window","x":22,"y":-118},
-    {"k":"smoke","x":61,"y":-192}
+    {"k":"window","x":42,"y":-43},
+    {"k":"window","x":-62,"y":-50},
+    {"k":"window","x":-32,"y":-110},
+    {"k":"window","x":32,"y":-110},
+    {"k":"glow","x":-57,"y":-50},
+    {"k":"smoke","x":53,"y":-189}
    ],
-   "build": {
-    "kind": "hip",
-    "wall": [-82,82],
-    "eave": -79,
-    "pitch": 48,
-    "over": 0.42,
-    "roofCol": "#7EB254",
-    "roofTex": 16,
-    "wallCol": "#F2DCA0",
-    "wallTex": 0,
-    "trimCol": "#CE7C4C",
-    "floors": 1,
-    "rooms": [1,0,2],
-    "sideWin": true,
-    "chimney": {"x":47,"top":-179,"w":0.46,"col":"#AAA6B4","tex":3,"lean":0.412},
-    "base": {"col":"#AAA6B4","tex":3,"h":0.2},
-    "win": [[-67,-60,18,18],[24,-53,26,20]],
-    "glass": ["#3D5879","#598CAF","#70C4E4","#9BD2DA","#C6E6E8","#746250","#B79E68","#FFDE78","#FFE58F","#FFF0BC"],
-    "roofRamp": ["#425042","#628151","#7EB254","#A5C676","#CBDEAE"]
-   }
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0},
+   "model": "scene/next/models/cottage_juniper.json"
   },
   "wind_sail_flower": {
    "name": "Flower wind sail",
@@ -9352,12 +9353,10 @@
    "tags": ["route","town","village"],
    "group": "tree_giant",
    "solid": 1,
-   "layers": [
-    {"img":"scene/props/layers/tree_giant_lb.png","dz":0.6,"sway":0.7,"shadow":0},
-    {"img":"scene/props/layers/tree_giant_lf.png","dz":-0.45,"sway":1.4,"shadow":0},
-    {"img":"scene/props/layers/tree_giant_swing.png","dz":-0.25,"sway":0,"shadow":0,"swing":0.05,"pivot":5.5}
-   ],
-   "landmark": 1
+   "landmark": 1,
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0},
+   "model": "scene/next/models/tree_giant_swing.json"
   },
   "airship_mast": {
    "name": "Airship mast",
@@ -9609,304 +9608,6 @@
     {"k":"glow","x":0,"y":-308}
    ],
    "about": "An airship station in the open: the mast with a lift, a canopy, a ticket kiosk. Tap it to fly; the airship moors at its mast (same spot)"
-  },
-  "next_beech": {
-   "name": "Beech (new)",
-   "img": "scene/props/tree_beech.png",
-   "ox": -90,
-   "oy": -159,
-   "shadow": 1.5,
-   "sway": 0.35,
-   "flat": 0,
-   "tags": ["test"],
-   "group": "tree_beech",
-   "solid": 0.5,
-   "model": "scene/next/models/tree_beech.json",
-   "ppm": 32
-  },
-  "next_oak": {
-   "name": "Oak tree (new)",
-   "img": "scene/props/tree_oak.png",
-   "ox": -76,
-   "oy": -160,
-   "shadow": 1.3,
-   "sway": 0.35,
-   "flat": 0,
-   "tags": ["test"],
-   "group": "tree_oak",
-   "solid": 0.45,
-   "model": "scene/next/models/tree_oak.json",
-   "ppm": 32,
-   "variants": [
-    {
-     "img": "scene/props/tree_oak_b.png",
-     "ox": -93,
-     "oy": -141,
-     "shadow": 1.4,
-     "name": "Spreading oak",
-     "model": "scene/next/models/tree_oak_b.json"
-    },
-    {
-     "img": "scene/props/tree_oak_small.png",
-     "ox": -47,
-     "oy": -103,
-     "shadow": 0.8,
-     "name": "Oak sapling",
-     "model": "scene/next/models/tree_oak_small.json"
-    },
-    {
-     "img": "scene/props/tree_oak_autumn.png",
-     "ox": -75,
-     "oy": -162,
-     "shadow": 1.3,
-     "name": "Autumn oak",
-     "model": "scene/next/models/tree_oak.json",
-     "swap": {"scene/next/leaves/oak.png":"scene/next/leaves/oak_autumn.png"}
-    }
-   ]
-  },
-  "next_bush_roses": {
-   "name": "Wild roses (new)",
-   "img": "scene/props/bush_roses.png",
-   "ox": -33,
-   "oy": -31,
-   "shadow": 0.5,
-   "sway": 0.25,
-   "flat": 0,
-   "tags": ["test"],
-   "group": "bush_roses",
-   "solid": 0.5,
-   "model": "scene/next/models/bush_roses.json",
-   "ppm": 32
-  },
-  "next_bush_round": {
-   "name": "Round bush (new)",
-   "img": "scene/props/bush_round.png",
-   "ox": -25,
-   "oy": -32,
-   "shadow": 0.4,
-   "sway": 0.25,
-   "flat": 0,
-   "tags": ["test"],
-   "group": "bush_round",
-   "solid": 0.5,
-   "model": "scene/next/models/bush_round.json",
-   "ppm": 32,
-   "variants": [
-    {
-     "img": "scene/props/bush_round_b.png",
-     "ox": -40,
-     "oy": -53,
-     "shadow": 0.55,
-     "name": "Big round bush",
-     "model": "scene/next/models/bush_round_b.json"
-    },
-    {
-     "img": "scene/props/bush_round_c.png",
-     "ox": -29,
-     "oy": -25,
-     "shadow": 0.35,
-     "name": "Low bush",
-     "model": "scene/next/models/bush_round_c.json"
-    }
-   ]
-  },
-  "next_rocks": {
-   "name": "Small rocks (new)",
-   "img": "scene/props/rocks.png",
-   "ox": -28,
-   "oy": -20,
-   "shadow": 0.35,
-   "sway": 0,
-   "flat": 0,
-   "tags": ["test"],
-   "group": "rocks",
-   "solid": 0,
-   "model": "scene/next/models/rocks.json",
-   "ppm": 32,
-   "variants": [
-    {
-     "img": "scene/props/rocks_b.png",
-     "ox": -30,
-     "oy": -22,
-     "shadow": 0.35,
-     "name": "Rock cluster",
-     "model": "scene/next/models/rocks_b.json"
-    },
-    {
-     "img": "scene/props/rocks_c.png",
-     "ox": -38,
-     "oy": -25,
-     "shadow": 0.4,
-     "name": "Rocks and pebbles",
-     "model": "scene/next/models/rocks_c.json"
-    },
-    {
-     "img": "scene/props/rocks_mossy.png",
-     "ox": -31,
-     "oy": -18,
-     "shadow": 0.35,
-     "name": "Mossy rocks",
-     "model": "scene/next/models/rocks_mossy.json"
-    },
-    {
-     "img": "scene/props/rocks_snow.png",
-     "ox": -30,
-     "oy": -22,
-     "shadow": 0.35,
-     "name": "Snowy rocks",
-     "model": "scene/next/models/rocks_mossy.json",
-     "swap": {"#8FB866":"#EEF3F8","#8C879A":"#A3A7B6"}
-    }
-   ]
-  },
-  "next_mushroom": {
-   "name": "Mushrooms (new)",
-   "img": "scene/props/mushroom.png",
-   "ox": -15,
-   "oy": -21,
-   "shadow": 0.2,
-   "sway": 0.12,
-   "flat": 0,
-   "tags": ["test"],
-   "group": "mushroom",
-   "solid": 0,
-   "model": "scene/next/models/mushrooms.json",
-   "ppm": 32,
-   "variants": [
-    {
-     "img": "scene/props/mushroom_brown.png",
-     "ox": -17,
-     "oy": -18,
-     "shadow": 0.2,
-     "name": "Brown mushrooms",
-     "model": "scene/next/models/mushrooms.json",
-     "swap": {"#DE4048":"#B07046","#F9EAC0":"#B07046"}
-    },
-    {
-     "img": "scene/props/mushroom_blue.png",
-     "ox": -20,
-     "oy": -26,
-     "shadow": 0.2,
-     "name": "Blue mushrooms",
-     "model": "scene/next/models/mushrooms.json",
-     "swap": {"#DE4048":"#5492EC","#F9EAC0":"#C8DCF8","#E9DDC8":"#B9AEDC"}
-    }
-   ]
-  },
-  "next_cottage_juniper": {
-   "name": "Beekeeper’s cottage (new)",
-   "img": "scene/props/cottage_juniper.png",
-   "ox": -99,
-   "oy": -192,
-   "shadow": 2,
-   "sway": 0,
-   "flat": 0,
-   "tags": ["test"],
-   "group": "cottage_juniper",
-   "box": [5.3,3.3],
-   "door": {"x":-20,"y":0},
-   "fx": [
-    {"k":"window","x":36,"y":-43},
-    {"k":"window","x":-58,"y":-51},
-    {"k":"glow","x":-52,"y":-57},
-    {"k":"window","x":-30,"y":-120},
-    {"k":"window","x":22,"y":-118},
-    {"k":"smoke","x":61,"y":-192}
-   ],
-   "build": {
-    "kind": "hip",
-    "wall": [-82,82],
-    "eave": -79,
-    "pitch": 48,
-    "over": 0.42,
-    "roofCol": "#7EB254",
-    "roofTex": 16,
-    "wallCol": "#F2DCA0",
-    "wallTex": 0,
-    "trimCol": "#CE7C4C",
-    "floors": 1,
-    "rooms": [1,0,2],
-    "sideWin": true,
-    "chimney": {"x":47,"top":-179,"w":0.46,"col":"#AAA6B4","tex":3,"lean":0.412},
-    "base": {"col":"#AAA6B4","tex":3,"h":0.2},
-    "win": [[-67,-60,18,18],[24,-53,26,20]],
-    "glass": ["#3D5879","#598CAF","#70C4E4","#9BD2DA","#C6E6E8","#746250","#B79E68","#FFDE78","#FFE58F","#FFF0BC"],
-    "roofRamp": ["#425042","#628151","#7EB254","#A5C676","#CBDEAE"]
-   },
-   "model": "scene/next/models/cottage_juniper.json",
-   "ppm": 32,
-   "vary": {"rot":0,"lean":0}
-  },
-  "next_lantern": {
-   "name": "Lantern post (new)",
-   "img": "scene/props/lantern.png",
-   "ox": -23,
-   "oy": -98,
-   "shadow": 0.25,
-   "sway": 0.1,
-   "flat": 0,
-   "tags": ["test"],
-   "group": "lantern",
-   "solid": 0.3,
-   "fx": [
-    {"k":"glow","x":14,"y":-66}
-   ],
-   "model": "scene/next/models/lantern.json",
-   "ppm": 32,
-   "vary": {"rot":0,"lean":0}
-  },
-  "next_laundry_line": {
-   "name": "Laundry line (new)",
-   "img": "scene/props/laundry_line.png",
-   "ox": -64,
-   "oy": -73,
-   "shadow": 0.3,
-   "sway": 0.6,
-   "flat": 0,
-   "tags": ["test"],
-   "group": "laundry_line",
-   "solid": 0,
-   "posts": [
-    {"x":-60,"r":0.2},
-    {"x":60,"r":0.2}
-   ],
-   "model": "scene/next/models/laundry_line.json",
-   "ppm": 32,
-   "vary": {"rot":0,"lean":0}
-  },
-  "next_tallgrass": {
-   "name": "Tall grass (new scale)",
-   "img": "scene/props/tallgrass.png",
-   "ox": -21,
-   "oy": -27,
-   "shadow": 0.3,
-   "sway": 1,
-   "flat": 0,
-   "tags": ["test"],
-   "group": "tallgrass",
-   "solid": 0,
-   "ppm": 32,
-   "variants": [
-    {"img":"scene/props/tallgrass_b.png","ox":-30,"oy":-24,"shadow":0.35,"name":"Lush grass"},
-    {"img":"scene/props/tallgrass_c.png","ox":-25,"oy":-39,"shadow":0.35,"name":"Tall reedy grass"}
-   ]
-  },
-  "next_tree_giant_swing": {
-   "name": "Great oak with a swing (new)",
-   "img": "scene/props/tree_giant.png",
-   "ox": -191,
-   "oy": -396,
-   "shadow": 4.2,
-   "sway": 0.18,
-   "flat": 0,
-   "tags": ["test"],
-   "group": "tree_giant",
-   "solid": 1,
-   "landmark": 1,
-   "model": "scene/next/models/tree_giant_swing.json",
-   "ppm": 32,
-   "vary": {"rot":0,"lean":0,"size":0}
   }
  },
  "person": 1.75,
