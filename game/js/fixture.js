@@ -29,7 +29,7 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-const FIXTURE_NAMES = { trainer: 'Quillonda', nick: 'Zorblax' };
+export const FIXTURE_NAMES = { trainer: 'Quillonda', nick: 'Zorblax' };
 provide({ FIXTURE_NAMES }); /* to-module */
 const FIXTURE_PLACES = {
   town: 'marigold',

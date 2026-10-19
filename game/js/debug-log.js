@@ -4,7 +4,8 @@
    errors, the loading screen's timings, the device and graphics chip, and a small picture of the scene every few
    seconds. Settings → Export debug log saves it as one JSON file (or shares it on phones). Settings → Run the full
    test (self-test.js) plays through everything for about two minutes, stress-tests the device and adds the results.
-   Nothing here leaves the device unless the player exports it. No save data or names are included, and no positions: only which places opened and when. */
+   Nothing here leaves the device unless the player exports or sends it (Send debug log), or has turned on Settings →
+   Send debug logs automatically (phase 13, sendDebugLog below). No save data or names are included, and no positions: only which places opened and when. */
 const BUILD_VERSION = PB_VERSION;
 /* phase 04d: what the log reads and wraps in the game's modules. debug-log.js runs before them (it catches their errors),
    so js/debug-log-names.js (made by tools/to-module.mjs, the last module of the page) fills this in once they have loaded:
@@ -669,6 +670,72 @@ async function exportDebugLog() {
     GAME.toast('The debug log was copied. Paste it into a text file.');
   } catch (e) {
     GAME.toast('This browser can’t save files here.');
+  }
+}
+/* phase 13: send the log to the developer (game/js/log-upload.js, loaded only now): without its picture, names or
+   e-mail addresses, to Firestore under a code the player can pass on. why: test, opening, crash or manual (a press of
+   Send debug log). Never from a test page, a headless browser or a file: page; a tool can set window.PB_LOG_UPLOAD_STUB
+   to a function that takes (code, payload) instead, and then nothing is sent. */
+const LOG_SEND_KEY = 'pb-send-logs',
+  LOG_SENT_KEY = 'pb-sent-log';
+debugLog.sendAuto = () => {
+  try {
+    return localStorage.getItem(LOG_SEND_KEY) === '1';
+  } catch (e) {
+    return false;
+  }
+};
+debugLog.setSendAuto = on => {
+  try {
+    if (on) localStorage.setItem(LOG_SEND_KEY, '1');
+    else localStorage.removeItem(LOG_SEND_KEY);
+  } catch (e) {}
+};
+debugLog.lastSent = () => {
+  try {
+    return localStorage.getItem(LOG_SENT_KEY) || '';
+  } catch (e) {
+    return '';
+  }
+};
+debugLog.canSend = () =>
+  typeof window.PB_LOG_UPLOAD_STUB === 'function' ||
+  (!!(window.PB_FIREBASE && window.PB_FIREBASE.apiKey && window.PB_FIREBASE.projectId) &&
+    !navigator.webdriver &&
+    location.protocol !== 'file:' &&
+    !GAME.TEST_RUN &&
+    !GAME.TEST_BOOT);
+debugLog.sending = false;
+async function sendDebugLog(why = 'manual') {
+  const say = m => why !== 'crash' && typeof GAME.toast === 'function' && GAME.toast(m);
+  if (!debugLog.canSend()) {
+    if (why === 'manual') say('Sending isn’t available here. Export the debug log instead.');
+    return null;
+  }
+  if (debugLog.sending) return null;
+  debugLog.sending = true;
+  try {
+    const mod = await import(/* @vite-ignore */ new URL('js/log-upload.js', document.baseURI).href);
+    const user = GAME.account && GAME.account.user;
+    const code = await mod.uploadDebugLog({
+      cfg: window.PB_FIREBASE,
+      log: debugLog.build(),
+      names: mod.logNames(GAME.saveData, GAME.FIXTURE_NAMES, user),
+      why,
+      stub: window.PB_LOG_UPLOAD_STUB,
+    });
+    debugLog.add('sent', `${code} (${why})`);
+    try {
+      localStorage.setItem(LOG_SENT_KEY, code);
+    } catch (e) {}
+    say(`Debug log sent. Code: ${code}`);
+    return code;
+  } catch (e) {
+    debugLog.add('log', 'the debug log couldn’t be sent: ' + (e.message || e));
+    say('The debug log couldn’t be sent. Check your connection, or export it instead.');
+    return null;
+  } finally {
+    debugLog.sending = false;
   }
 }
 /* hooks into the game, installed once everything has loaded */

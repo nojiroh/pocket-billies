@@ -752,7 +752,7 @@ function loaderHide() {
    scene and never touches your save; while the Studio is open, its edits to scenes, props and the engine reach the
    game as you make them (no saving needed to see them). Project Story: ?story=<preset> is a test run that starts at a
    point in the story (story.json presets), alone or with ?test=1. */
-const TEST_RUN = (() => {
+export const TEST_RUN = (() => {
   try {
     const q = new URLSearchParams(location.search);
     return q.get('test') || q.get('story') ? { scene: q.get('scene'), story: q.get('story') } : null;
@@ -834,11 +834,12 @@ function noWebGL(why) {
   el.id = 'nogl';
   el.setAttribute('role', 'alertdialog');
   el.setAttribute('aria-labelledby', 'nogl-h');
-  el.innerHTML = `<div class="nogl-card"><h1 id="nogl-h">This device can’t run Pocket Billies</h1><p>The game draws its world with WebGL 2, and this browser doesn’t offer it${why === 'failed' ? ' any more (the graphics stopped working)' : ''}. An up-to-date Chrome, Safari or Firefox usually does; on a computer, hardware acceleration must be on.</p><div class="nogl-btns"><button data-ng="retry">Try again</button><button class="q" data-ng="log">Export debug log</button></div></div>`;
+  el.innerHTML = `<div class="nogl-card"><h1 id="nogl-h">This device can’t run Pocket Billies</h1><p>The game draws its world with WebGL 2, and this browser doesn’t offer it${why === 'failed' ? ' any more (the graphics stopped working)' : ''}. An up-to-date Chrome, Safari or Firefox usually does; on a computer, hardware acceleration must be on.</p><div class="nogl-btns"><button data-ng="retry">Try again</button><button class="q" data-ng="log">Export debug log</button>${typeof debugLog !== 'undefined' && debugLog.canSend() ? '<button class="q" data-ng="send">Send debug log</button>' : ''}</div></div>`;
   el.addEventListener('click', ev => {
     const b = ev.target.closest('[data-ng]');
     if (!b) return;
     if (b.dataset.ng === 'retry') location.reload();
+    else if (b.dataset.ng === 'send') sendDebugLog('manual');
     else if (typeof exportDebugLog === 'function') exportDebugLog();
   });
   document.body.appendChild(el);

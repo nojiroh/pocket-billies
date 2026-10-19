@@ -214,6 +214,43 @@ def debug_log(pg, base):
     return f'{len(text) // 1024} KB, no names'
 
 
+SENT = """async () => {
+  let got = null;
+  window.PB_LOG_UPLOAD_STUB = async (code, p) => {
+    const s = new Blob([p.gz]).stream().pipeThrough(new DecompressionStream('gzip'));
+    got = { code, keys: Object.keys(p).sort().join(), why: p.why, text: await new Response(s).text() };
+  };
+  try { const c = await sendDebugLog('test'); return Object.assign({ c }, got); }
+  finally { delete window.PB_LOG_UPLOAD_STUB; }
+}"""
+
+
+def sent_log(pg, base):
+    """phase 13: a sent debug log (sendDebugLog, Firestore stood in for) has no picture and no names, and nothing
+    leaves the page: a headless browser never sends, and the stand-in takes the log instead"""
+    drawing(pg, 1)
+    out = []
+    watch = lambda r: out.append(r.url) if r.url.startswith('http') and not r.url.startswith(base) else None
+    pg.on('request', watch)
+    try:
+        if pg.evaluate('debugLog.canSend()'): raise Exception('sending is on in a headless browser')
+        if pg.evaluate("sendDebugLog('manual')") is not None: raise Exception('a headless browser sent a log')
+        # an error message can carry a name (a console.warn of a stringified object): the upload must take it out
+        pg.evaluate("debugLog.error('check', JSON.stringify({ name: saveData.avatar.name, nick: (buddyBilly() || saveData.team[0]).nick }))")
+        r = pg.evaluate(SENT)
+    finally:
+        pg.remove_listener('request', watch)
+    if not r or not r.get('code') or r['c'] != r['code']: raise Exception(f'nothing was handed to the stand-in: {r}')
+    if r['keys'] != 'build,gz,size,t,v,why' or r['why'] != 'test': raise Exception(f'the payload is wrong: {r["keys"]} {r["why"]}')
+    log_ = json.loads(r['text'])
+    if 'screenshot' in log_ or 'events' not in log_: raise Exception(f'the sent log has the wrong sections: {sorted(log_)}')
+    found = [n for n in NAMES if n.lower() in r['text'].lower()]
+    if found: raise Exception(f'the sent debug log holds a name: {found}')
+    if '[name]' not in r['text']: raise Exception('the planted names never reached the sent log')
+    if out: raise Exception(f'the page reached out: {out[:3]}')
+    return f'{len(r["text"]) // 1024} KB, code {r["code"]}, no picture, no names, no requests'
+
+
 def studio(pg, base):
     """the Studio as GitHub Pages serves it: its scripts and the shared renderer load, it asks for a token"""
     if not until(pg, "!!document.getElementById('ghTok')", 60): raise Exception('the GitHub sign-in never showed')
@@ -226,6 +263,7 @@ NODE_CHECKS = [('Game data is valid', data_valid), ('The world-map graph is unch
 PAGES = [   # (what the page opens, its checks in order); the longest first, so the browsers finish together
     ('town', [('A town opens and draws (Marigold Town)', scene('marigold')),
               ('The exported debug log holds no names', debug_log),
+              ('A sent debug log holds no picture or names, and nothing is sent', sent_log),
               ('A route opens and draws (Tallgrass Meadow)', scene('tallgrass_meadow')),
               ('A cave opens and draws (Gloomwater)', scene('gloomwater'))]),
     ('room', [('A room opens and draws (the shop)', room), ('A save round-trips', save_round_trip)]),

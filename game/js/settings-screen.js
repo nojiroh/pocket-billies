@@ -71,6 +71,7 @@ expose({
   exportSave: [() => exportSave, v => (exportSave = v)],
   graphicsDialHTML: [() => graphicsDialHTML, v => (graphicsDialHTML = v)],
   importSave: [() => importSave, v => (importSave = v)],
+  logSendHTML: [() => logSendHTML, v => (logSendHTML = v)],
   segmentedHTML: [() => segmentedHTML, v => (segmentedHTML = v)],
   settingsHTML: [() => settingsHTML, v => (settingsHTML = v)],
   settingsRefresh: [() => settingsRefresh, v => (settingsRefresh = v)],
@@ -281,6 +282,19 @@ function settingsRowHTML(title, hint, ctl) {
 function segmentedHTML(k, cur, opts) {
   return `<div class="seg" role="radiogroup" aria-label="${escapeHtml(k)}">${opts.map(([v, n]) => `<button type="button" role="radio" aria-checked="${String(cur) === String(v)}" class="${String(cur) === String(v) ? 'on' : ''}" data-pref-set="${k}" data-v="${escapeHtml(String(v))}">${n}</button>`).join('')}</div>`;
 }
+/* phase 13: Settings → Help: send debug logs automatically (debug-log.js, sendDebugLog), only where sending works */
+function logSendHTML() {
+  if (!debugLog.canSend()) return '';
+  const on = debugLog.sendAuto(),
+    last = debugLog.lastSent();
+  return (
+    settingsRowHTML(
+      'Send debug logs automatically',
+      'After a test, or when something breaks, the game sends its debug log to the developer: numbers, errors, and details about your device and graphics. It never includes your save, your name, your Billies’ names or a picture of the screen. Each log gets a code you can pass on.',
+      `<button type="button" class="sw ${on ? 'on' : ''}" role="switch" aria-checked="${on}" aria-label="Send debug logs automatically" data-a="send-logs"><i></i></button>`
+    ) + (last ? `<p class="note">Last log sent: <span class="tnum">${escapeHtml(last)}</span></p>` : '')
+  );
+}
 function switchHTML(k, on, onV, offV) {
   return `<button type="button" class="sw ${on ? 'on' : ''}" role="switch" aria-checked="${!!on}" aria-label="${escapeHtml(k)}" data-pref-set="${k}" data-v="${escapeHtml(String(on ? offV : onV))}"><i></i></button>`;
 }
@@ -476,7 +490,7 @@ export function settingsHTML() {
       (typeof accountSettingsHTML === 'function' ? accountSettingsHTML() : '') +
       `<p class="note">${typeof account !== 'undefined' && account.user ? 'Your progress is saved to your account, and in this browser.' : 'Your progress is saved in this browser. Sign in to keep it online, or download a backup before changing device or clearing browser data.'}</p><div class="two"><button class="pb small" data-a="export-save">Export save</button><button class="pb small" data-a="import-save">Import save</button></div>`;
   else
-    body = `<details class="help" open><summary>How to play</summary><p>Walk through towns and along the roads between them with the joystick, the D-pad or a tap on the ground. Tap a Billie in the grass to battle it; a win pays prize money, and more Billies come out while you play. Walking outdoors hatches your eggs. Lower its HP, then throw a coin to tax it.</p><p>The map shows where to go next; pick a place and gold arrows guide you there.</p></details><div class="dbg-help"><b>Something look wrong or run slowly?</b><p class="note">The full test takes a few minutes: it walks through every place and room, plays battles, the map and the opening, checks each for errors, then piles on more and more until your device can't keep up. Your save isn't changed. The debug log holds those numbers, errors and details about your device and graphics, plus a small picture of the scene. It has no save data or names. Send it to whoever is helping you. The graphics test tries each graphics setting on its own and saves a short report. The graphics cost test measures what each graphics setting costs on your device.</p><div class="two"><button class="pb small" data-a="quicktest">Run the full test</button><button class="pb small" data-a="diagtest">Run the diagnostics test (2 min)</button><button class="pb small" data-a="gfxtest">Run the graphics test</button><button class="pb small" data-a="gfxbench">Run the graphics cost test (10 min)</button><button class="pb small" data-a="dbglog">Export debug log</button></div></div><button class="pb small quiet wide dbg-open" data-a="debug">${uiIconHTML('bug', 14)} Debug menu</button>`;
+    body = `<details class="help" open><summary>How to play</summary><p>Walk through towns and along the roads between them with the joystick, the D-pad or a tap on the ground. Tap a Billie in the grass to battle it; a win pays prize money, and more Billies come out while you play. Walking outdoors hatches your eggs. Lower its HP, then throw a coin to tax it.</p><p>The map shows where to go next; pick a place and gold arrows guide you there.</p></details><div class="dbg-help"><b>Something look wrong or run slowly?</b><p class="note">The full test takes a few minutes: it walks through every place and room, plays battles, the map and the opening, checks each for errors, then piles on more and more until your device can't keep up. Your save isn't changed. The debug log holds those numbers, errors and details about your device and graphics, plus a small picture of the scene. It has no save data or names. Send it to whoever is helping you. The graphics test tries each graphics setting on its own and saves a short report. The graphics cost test measures what each graphics setting costs on your device.</p>${logSendHTML()}<div class="two"><button class="pb small" data-a="quicktest">Run the full test</button><button class="pb small" data-a="diagtest">Run the diagnostics test (2 min)</button><button class="pb small" data-a="gfxtest">Run the graphics test</button><button class="pb small" data-a="gfxbench">Run the graphics cost test (10 min)</button><button class="pb small" data-a="dbglog">Export debug log</button>${debugLog.canSend() ? '<button class="pb small" data-a="dbgsend">Send debug log</button>' : ''}</div></div><button class="pb small quiet wide dbg-open" data-a="debug">${uiIconHTML('bug', 14)} Debug menu</button>`;
   return `<div class="set-tabs" role="tablist">${SETTINGS_TABS.map(([k, n]) => `<button type="button" role="tab" aria-selected="${k === tab}" class="${k === tab ? 'on' : ''}" data-a="set-tab" data-k="${k}">${n}</button>`).join('')}</div><div class="set-body">${body}</div>`;
 }
 /* one preference changed, from a switch, a segment, a slider or a menu */
@@ -592,6 +606,13 @@ document.addEventListener('click', ev => {
       break;
     case 'dbglog':
       exportDebugLog();
+      break;
+    case 'dbgsend':
+      sendDebugLog('manual').then(code => code && settingsRefresh());
+      break;
+    case 'send-logs':
+      debugLog.setSendAuto(!debugLog.sendAuto());
+      settingsRefresh();
       break;
     case 'quicktest':
       uiState.modal = null;

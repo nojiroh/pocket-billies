@@ -129,6 +129,8 @@ Import save|Opslag importeren|Spielstand importieren|Importar partida|Importer u
 How to play|Hoe speel je|Spielanleitung|Cómo jugar|Comment jouer
 Run the full test|De volledige test uitvoeren|Den vollständigen Test starten|Ejecutar la prueba completa|Lancer le test complet
 Export debug log|Foutlogboek exporteren|Debug-Protokoll exportieren|Exportar registro|Exporter le journal
+Send debug log|Foutlogboek versturen|Debug-Protokoll senden|Enviar registro|Envoyer le journal
+Send debug logs automatically|Foutlogboeken automatisch versturen|Debug-Protokolle automatisch senden|Enviar registros automáticamente|Envoyer les journaux automatiquement
 Debug menu|Debugmenu|Debug-Menü|Menú de depuración|Menu de débogage
 Play this one|Deze spelen|Diesen spielen|Jugar esta|Jouer celle-ci
 New game here|Nieuw spel hier|Neues Spiel hier|Partida nueva aquí|Nouvelle partie ici
