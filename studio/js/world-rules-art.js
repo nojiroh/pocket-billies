@@ -2,8 +2,7 @@
 /* ================= POCKET BILLIES STUDIO · world, rules, art ================= */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
-import { worldPaint } from '../../game/js/hooks.js';
-import { $, clamp } from '../../game/js/util.js';
+import { $ } from '../../game/js/util.js';
 import { makeCanvas } from '../../game/js/art.js';
 import { WILD_TYPE_BOOSTS } from '../../game/js/environment.js';
 import { escapeHtml } from './game-stand-ins.js';
@@ -38,12 +37,13 @@ import { RARITY_LABELS } from './data-editors.js';
 expose({
   AMBIENT_PARTICLES: [() => AMBIENT_PARTICLES],
   ART_GROUPS: [() => ART_GROUPS],
+  BOWL_SVG: [() => BOWL_SVG],
   FISHING_WATERS: [() => FISHING_WATERS],
   LOCATION_KINDS: [() => LOCATION_KINDS],
   bindWorldMap: [() => bindWorldMap, v => (bindWorldMap = v)],
+  bowlSpotXY: [() => bowlSpotXY],
   drawWorldMarkers: [() => drawWorldMarkers, v => (drawWorldMarkers = v)],
   locationRoads: [() => locationRoads, v => (locationRoads = v)],
-  lonLatToWorldMapXY: [() => lonLatToWorldMapXY, v => (lonLatToWorldMapXY = v)],
   moveRoadEnds: [() => moveRoadEnds, v => (moveRoadEnds = v)],
   newStopBowlSpot: [() => newStopBowlSpot, v => (newStopBowlSpot = v)],
   roadLengthText: [() => roadLengthText, v => (roadLengthText = v)],
@@ -87,70 +87,73 @@ const LOCATION_KINDS = [
   'vault',
   'spire',
 ];
+/* phase 10: the world map is a bowl seen from above (game/js/logic/bowl.js): the rim is the outer circle, the floor
+   the dashed one, Copperleaf in the middle. A place's spot is { a, r }: degrees counter-clockwise from east and the
+   share of the way out to the rim; a place reached only by lift hangs under another. 100 units here are the rim. */
+const BOWL_SVG = 100;
+const bowlSpotXY = (D, r) => {
+  let b = r && r.bowl;
+  for (let k = 0; b && 'under' in b && k < 4; k++) {
+    const p = D.locations.find(o => o.id === b.under);
+    b = p && p.bowl;
+  }
+  if (!b || !('a' in b)) return [0, 0];
+  const w = (b.a * Math.PI) / 180;
+  return [b.r * Math.cos(w) * BOWL_SVG, -b.r * Math.sin(w) * BOWL_SVG];
+};
 function worldMapHTML() {
-  return `<div class="wmap" id="wmap"><img src="../game/art/map/world.png?v=${(studioState.D.meta || {}).artVersion || 0}" alt="" draggable="false" id="wmapImg"><svg viewBox="0 0 360 180" preserveAspectRatio="none" id="wmapSvg"></svg></div><p class="help">Drag a marker to move a stop. The painted trail and patches are part of the map art: <button class="linkish" data-act="wtab" data-t="paint">paint them under Map art</button>, where moving a stop can carry its patch along and the trail can be repainted to match.</p>`;
-}
-function lonLatToWorldMapXY(lon, lat) {
-  return [((lon % 360) + 360) % 360, 90 - lat];
+  return `<div class="wmap bowl" id="wmap"><svg viewBox="-135 -135 270 270" id="wmapSvg"></svg></div><p class="help">The bowl seen from above: the rim is the outer circle, the flat floor the dashed one, Copperleaf in the middle. Drag a marker to move a place. On the bowl a map's north faces the centre and its east runs counter-clockwise, so roads must leave the way their exits face: the checks (tools/test/bowl-layout.test.mjs) say which road turns too far. A place reached only by lift hangs under its parent and moves with it.</p>`;
 }
 function drawWorldMarkers() {
   const svg = $('#wmapSvg');
   if (!svg) return;
   const D = studioState.D;
-  let h = '';
-  const pts = D.locations.map(r => lonLatToWorldMapXY(r.lon || 0, r.lat || 0));
+  let h = `<circle r="${BOWL_SVG}" class="rim"/><circle r="${BOWL_SVG * 0.35}" class="floor"/>`;
+  const pts = D.locations.map(r => bowlSpotXY(D, r));
   (D.roads || []).forEach(l => {
-    const { a, b } = PB_DATA.road(D, l);
-    if (pts[a] && pts[b])
+    const { a, b, kind } = PB_DATA.road(D, l);
+    if (kind === 'seam' && pts[a] && pts[b])
       h += `<line x1="${pts[a][0]}" y1="${pts[a][1]}" x2="${pts[b][0]}" y2="${pts[b][1]}" class="trail"/>`;
   });
-  D.regions.forEach((g, i) => {
-    if (g.lon == null) return;
-    const [x, y] = lonLatToWorldMapXY(g.lon, g.lat || 0);
-    h += `<g class="mk reg ${studioState.sel.stop === 'r' + i ? 'on' : ''}" data-mk="r${i}" transform="translate(${x},${y})"><circle r="3.2"/><text y="-5">${escapeHtml(g.name)}</text></g>`;
-  });
   D.locations.forEach((r, i) => {
-    const [x, y] = pts[i];
-    h += `<g class="mk ${r.town ? 'town' : ''} ${studioState.sel.stop === i ? 'on' : ''}" data-mk="${i}" transform="translate(${x},${y})"><circle r="${r.town ? 3.2 : 2.6}"/><text y="-5">${i + 1}. ${escapeHtml(r.name)}</text></g>`;
+    const [x, y] = pts[i],
+      under = r.bowl && 'under' in r.bowl;
+    h += `<g class="mk ${r.town ? 'town' : ''} ${under ? 'reg' : ''} ${studioState.sel.stop === i ? 'on' : ''}" ${under ? '' : `data-mk="${i}"`} transform="translate(${x},${y + (under ? 7 : 0)})"><circle r="${r.town ? 3.2 : 2.6}"/><text y="${under ? 9 : -5}">${i + 1}. ${escapeHtml(r.name)}${under ? ' (by lift)' : ''}</text></g>`;
   });
   svg.innerHTML = h;
 }
 function bindWorldMap() {
   const svg = $('#wmapSvg');
   if (!svg) return;
-  const ed = studioState.artDirty.get('art/map/world.png'),
-    im = $('#wmapImg');
-  if (ed && im) im.src = ed.toDataURL();
   drawWorldMarkers();
   let drag = null;
   const pos = ev => {
-    const r = svg.getBoundingClientRect();
-    return [
-      clamp(((ev.clientX - r.left) / r.width) * 360, 0, 360),
-      clamp(((ev.clientY - r.top) / r.height) * 180, 0, 180),
-    ];
+    const m = svg.getScreenCTM();
+    if (!m) return [0, 0];
+    const p = new DOMPoint(ev.clientX, ev.clientY).matrixTransform(m.inverse());
+    return [p.x / BOWL_SVG, -p.y / BOWL_SVG];
   };
   svg.addEventListener('pointerdown', ev => {
     const g = ev.target.closest('[data-mk]');
     if (!g) return;
-    drag = g.dataset.mk;
+    drag = +g.dataset.mk;
     svg.setPointerCapture(ev.pointerId);
-    const v = drag.startsWith('r') ? drag : +drag;
-    if (studioState.sel.stop !== v) {
-      studioState.sel.stop = v;
+    if (studioState.sel.stop !== drag) {
+      studioState.sel.stop = drag;
       render();
     }
   });
   svg.addEventListener('pointermove', ev => {
     if (drag == null) return;
-    const [x, y] = pos(ev),
-      lon = Math.round(x > 180 ? x - 360 : x),
-      lat = Math.round(90 - y);
-    const o = drag.startsWith('r') ? studioState.D.regions[+drag.slice(1)] : studioState.D.locations[+drag];
-    o.lon = lon;
-    o.lat = lat;
+    let [x, y] = pos(ev);
+    const r = Math.hypot(x, y);
+    if (r > 1) {
+      x /= r;
+      y /= r;
+    }
+    const a = Math.round((((Math.atan2(y, x) * 180) / Math.PI + 360) % 360) * 10) / 10;
+    studioState.D.locations[drag].bowl = { a: a % 360, r: Math.round(Math.min(1, r) * 1000) / 1000 };
     drawWorldMarkers();
-    const a = $(`[data-p$=".lon"]`);
   });
   svg.addEventListener('pointerup', () => {
     if (drag != null) {
@@ -171,7 +174,6 @@ SECTIONS.world = () => {
     ['eggs', 'Eggs'],
     ['regions', 'Regions ahead'],
     ['backdrops', 'Battle backdrops'],
-    ['paint', 'Map art'],
   ];
   const body = {
     route: worldLocations,
@@ -180,7 +182,6 @@ SECTIONS.world = () => {
     eggs: worldEggs,
     regions: worldRegions,
     backdrops: worldBackdrops,
-    paint: worldPaint,
   }[tab]();
   return `<div class="ed-col solo"><div class="ed-head"><h2>World & encounters</h2></div><div class="seg-row tabs">${tabs.map(([k, n]) => `<button class="seg ${k === tab ? 'on' : ''}" data-act="wtab" data-t="${k}">${n}</button>`).join('')}</div>${body}</div>`;
 };
@@ -287,8 +288,12 @@ function worldLocations() {
         ph: 'background/sundown.webp',
         help: 'Optional picture for the route card, inside game/art.',
       }),
-      numberField('Longitude', `${p}.lon`, { step: 1 }),
-      numberField('Latitude', `${p}.lat`, { step: 1 })
+      ...(r.bowl && 'under' in r.bowl
+        ? []
+        : [
+            numberField('On the bowl: degrees round from east', `${p}.bowl.a`, { step: 0.1 }),
+            numberField('On the bowl: out from the centre (0) to the rim (1)', `${p}.bowl.r`, { step: 0.005 }),
+          ])
     ) +
     (r.gate ? textField('Locked message', `${p}.gateText`, { opt: 1 }) : '') +
     textField('Description', `${p}.blurb`, { area: 1, rows: 2 });
@@ -440,8 +445,6 @@ ACTIONS.stopAdd = () => {
     route: a.route,
     t: 'grass',
     blurb: 'Describe this place.',
-    lon: b ? Math.round((a.lon + b.lon) / 2) : a.lon + 8,
-    lat: b ? Math.round((a.lat + b.lat) / 2) : a.lat,
     bowl: newStopBowlSpot(a, b),
   };
   moveRoadEnds(
@@ -624,13 +627,7 @@ function worldRegions() {
                 'Look',
                 `regions.${i}.t`,
                 LOCATION_KINDS.concat(['sun']).map(k => [k, k])
-              ),
-              ...(g.t === 'sun'
-                ? []
-                : [
-                    numberField('Longitude', `regions.${i}.lon`, { step: 1 }),
-                    numberField('Latitude', `regions.${i}.lat`, { step: 1 }),
-                  ])
+              )
             )}${textField('Description', `regions.${i}.blurb`, { area: 1, rows: 2 })}</div></div>`
         )
         .join(''),

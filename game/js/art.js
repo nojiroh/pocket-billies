@@ -47,7 +47,6 @@ expose({
   uiIconHTML: [() => uiIconHTML, v => (uiIconHTML = v)],
   uiIconURL: [() => uiIconURL],
   whiteCopy: [() => whiteCopy, v => (whiteCopy = v)],
-  worldMapStamp: [() => worldMapStamp, v => (worldMapStamp = v)],
 });
 /* eslint-enable no-func-assign */
 export function setArtPixels(v) {
@@ -132,7 +131,7 @@ export const hexToRgb = h => {
   const n = parseInt(h.slice(1, 7), 16);
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 };
-export const mixRgb = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+const mixRgb = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
 function mixHex(a, b, t) {
   const c = mixRgb(hexToRgb(a), hexToRgb(b), t);
   return '#' + c.map(v => clamp(Math.round(v), 0, 255).toString(16).padStart(2, '0')).join('');
@@ -143,8 +142,8 @@ export const packHexPixel = h => {
   return packPixel(c[0], c[1], c[2]);
 };
 const BAYER_4X4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
-export const bayerThreshold = (x, y) => BAYER_4X4[(x & 3) + ((y & 3) << 2)] / 16;
-export function makeSeededRandom(n) {
+const bayerThreshold = (x, y) => BAYER_4X4[(x & 3) + ((y & 3) << 2)] / 16;
+function makeSeededRandom(n) {
   let s = n >>> 0 || 1;
   return () => {
     s = (s * 1664525 + 1013904223) >>> 0;
@@ -168,9 +167,6 @@ export function iconCanvas(key, scale = 1) {
 export function iconURL(key, scale = 1) {
   const k = 'u' + key + scale;
   return ICON_CACHE[k] || (ICON_CACHE[k] = iconCanvas(key, scale).toDataURL());
-}
-export function worldMapStamp(k) {
-  return iconCanvas('map_' + k);
 }
 export const uiIconURL = k =>
   window.NW_ART && window.NW_ART[`ui/${k}.svg`]

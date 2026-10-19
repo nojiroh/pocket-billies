@@ -11,6 +11,68 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 - Questions waiting for the owner: 
 - Next session starts with: 
 
+### Phase 10 (world map: the bowl), session E-map-4 - ground and routes; the old map gone - 2026-10-19
+Plan approved ("Go"). Owner chose: the walk sky shows the bowl's far wall; the opening falls into the bowl; gentle
+relief. Owner's asks: lose the old map, a fluid zoom out from the walk scene into the map, the world map test in
+Settings.
+- Changed:
+  - Ground: `logic/bowl.js` relief (each place's kind a gentle bump or dip, a little roll, at most 0.08 of the radius,
+    gone beyond the rim) and a 160-cell grid; `world-bowl.js` draws it as one low-poly mesh (faceted light from the
+    Inner Sun) painted from above: region colours mixed between places, water, sand by water, snow on the highest
+    tops, roads as paths with edges, a clearing at each place. The camera, pins, taps and the flight read the same
+    heights (`bowlCamUseGround`).
+  - The old sphere map is deleted: `world-map.js`, `world-map-gl.js` (renderer, CPU fallback, Flat view, 3D and 2D
+    miniatures, landmark stamps), `art/map/world.png`, `world_h.png`, `map/mini/`, `tools/build-world-relief.py`,
+    `tools/build-map-minis.py`, `studio/js/world-map-painter.js`, and lon/lat from locations.json and its type.
+    `world-bowl.js` now holds the map's API (`worldMapMount`, `worldMapSelect`, `worldMapZoom`, `worldMapReset`,
+    `worldMapFit`, `worldMapAction`, `worldMapWanted`, the Places list). Without WebGL the Map tab is the Places list.
+  - Airship flight on the bowl: 2-3 s by distance, the ship on an arc with its shadow and trail, the camera keeping
+    it in view, tap to skip. Fares now by bowl distance (60 + 540 per radius, rounded, at least 60).
+  - Opening fall: past the Inner Sun and down into the bowl to Copperleaf (`fallCamera` builds a look-at view,
+    `bowlCamLookView`; `worldBowlFilm` draws it).
+  - Walk sky: the far wall round the horizon (`bowlWallTexture`: per direction how high the land rises and its colour,
+    from where you stand; the sky shader draws it under the clouds). Replaces the painted far side overhead.
+  - Zoom out from the walk scene: the Map tab from walk zooms the walk camera out (0.38 s) under a haze veil, then the
+    bowl starts right above you and pulls back to the usual view in 1.3 s (eased). Off with reduced motion.
+  - Settings -> Help: "Run the world map test (1 min)" (the debug menu's Bowl map test).
+  - Studio: World -> the bowl seen from above (rim and floor circles, roads); drag a place to set its spot; fields for
+    the angle and the distance out; the Map art tab is gone. The map editor's fallback exit direction uses the bowl
+    compass.
+  - Full test: the World map step turns round the bowl and comes back; the fall is timed on the bowl; the miniatures
+    step is gone. Quick check: old-map branches and the miniature pictures' check removed. Fast check: the bowl step
+    now opens from the walk scene's tab, waits for the zoom out, films a fall frame and flies to Copperleaf.
+- Risky or unfinished: nothing here is seen on a device (no graphics run). Clouds (E-map-5) and the Studio's region
+  terrain editing (E-map-6) are still to do. tools/build-scenes.py and build-regions-v47.py still read lon/lat (legacy
+  generators; they fall back to 0).
+- Verified: lint, typecheck, check:data, check:modules, format:check, npm test (138 pass; new bowl-ground tests);
+  the bowl's two shaders compile headless; check-fast 12 of 12 (small page, graphics off, no pictures). The Studio's
+  bowl editor renders 48 draggable places and 56 roads and a drag moves a place (headless, no pictures).
+- Questions waiting for the owner: run "the world map test" in Settings on the phone and send the report; look at the
+  zoom out, the fall and the far wall.
+- Next session starts with: E-map-5, clouds.
+
+### Phase 10 (world map: the bowl), E-map-3 follow-up - the bowl always on, pins, the bowl map test - 2026-10-19
+Owner's request: "Have it activated always. Lose the miniatures for now. Make a debug test specific for it."
+- Changed:
+  - The bowl is the world map (no switch). The old sphere map still draws only with no WebGL and during an airship
+    flight (the flight is drawn over the old map until E-map-5); the debug menu's preview switch is gone.
+  - Places are pins (stalk and head; a house for towns; gold here, grey locked, white picked; a pink dot when new);
+    no miniatures, no map/mini pictures loaded by the bowl. Pearlantis stays a small marker under Kelpport.
+  - `game/js/bowl-map-test.js`, debug menu (Trainers and world) -> "Bowl map test": on the device, shaders, the Map
+    tab opening as the bowl, every place on the bowl, a tap on each of the 49 pins opens that card, 48 camera moves
+    never below the rim line, Home, frame rate (whole bowl turning, close up turning, panning: fps, worst gap, draw
+    ms), errors. Saves nothing; puts the map back; "Save the report" (JSON, no save data or names).
+  - Fast check: new "The world map opens as the bowl" (small page, graphics off, no pictures): opens, every place
+    has a spot, a tap opens Tallgrass Meadow's card, Home comes back.
+  - Quick check v31 drives the bowl camera when the bowl is on; v32 and the full test's miniatures step skip with
+    "the bowl map has no miniatures yet".
+- Risky or unfinished: not seen on a device (no graphics run). The airship flight still shows the old map.
+- Verified: lint, typecheck, check:data, check:modules, format:check, npm test (132 pass); the ground shader compiles
+  headless; check-fast 11 of 12, the new bowl check passes. "A battle plays to the end" fails the same way on main
+  (stuck at playing in a full parallel run, passes alone): not from this change.
+- Questions waiting for the owner: run the Bowl map test on the phone and send the report or debug log.
+- Next session starts with: E-map-4, the ground and routes.
+
 ### Project Story S2 - every conversation in scripts, the story-dependent world, line ids, story checks - 2026-10-19
 Plan approved at the start (S2 of docs/phases/project-story.md). Branch `claude/busy-edison-qm2u0l`, from main at
 20c94e1. Owner answers: the S1 line format is agreed (tag `project-story-s1-done` made on 6c4664f, see Risky);

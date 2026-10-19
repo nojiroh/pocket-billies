@@ -18,6 +18,11 @@ centre, the ground generated from region terrain, seen from above like a diorama
 - **Underground / sealed places:** Pearlantis is a small marker under Kelpport with a dashed lift line, not its own spot
   on the ground.
 - **Kept from today's map:** the Places list.
+- **Markers (2026-10-19):** pins for now, no miniatures; the bowl is always the map (without WebGL the Places list).
+- **Walk-scene sky (2026-10-19):** the bowl's far wall rising round the horizon, sky above.
+- **Opening fall:** past the Inner Sun and down into the bowl towards Copperleaf.
+- **Relief:** gentle and readable.
+- **Opening the map from a walk scene:** the walk camera rises, then the bowl pulls back from right above you.
 - **Dropped:** Flat view; the CPU-drawn fallback (when the GPU context is lost, show the Places list and a "map
   reloading" note); the gold trip line and the pins.
 - **Depth:** medium. A flat-ish floor, walls rising to about 45 degrees at the rim.
@@ -60,19 +65,19 @@ layout, and any adjacency the bowl cannot honour listed. Owner picks one.
 0-1 from centre to rim; lon/lat removed once nothing reads them). Road curves rebuilt on the bowl surface. New Node
 test: every seam's exit direction agrees with the layout (within a tolerance). The graph test stays green.
 
-**E-map-3 Camera and controls (done 2026-10-19, as a preview switched on in the debug menu).** Drag to orbit, pinch or wheel to zoom, smooth easing, limits so the camera stays above
+**E-map-3 Camera and controls (done 2026-10-19; the bowl is always on, places are pins, debug menu → Bowl map test).** Drag to orbit, pinch or wheel to zoom, smooth easing, limits so the camera stays above
 the rim line and out of the terrain, a Home button that recentres on the current place, tap a miniature to open the
 card with a Travel button. Locked and visited states shown on the miniature and the card (pins are gone).
 
-**E-map-4 Ground and routes.** A low-poly heightfield per region generated from region data, using the chapter-09
+**E-map-4 Ground and routes (done 2026-10-19, with the old map deleted, the airship flight and the opening fall on the bowl, the walk sky's far wall, the zoom-out from the walk scene, and the world map test in Settings).** A low-poly heightfield per region generated from region data, using the chapter-09
 terrain textures (32 px/m); regions readable at a glance; routes drawn as paths in the ground; labels that stay
 readable; miniatures standing on the ground. Delete `world.png`, `world_h.png` and their loaders.
 
-**E-map-5 Sky, clouds, travel.** Inner Sun above the centre; layered clouds at several heights that fade when the camera
+**E-map-5 Sky, clouds, travel (the airship hop is done; clouds remain).** Inner Sun above the centre; layered clouds at several heights that fade when the camera
 is close; cloud quality setting (off, low, high) with a phone frame-time budget. The airship hop retargeted to the bowl,
 2-3 s, skippable, using the metre-based trip from `tripTo`.
 
-**E-map-6 Studio and clean-up.** The Studio world map becomes a bowl editor: drag places on the bowl surface, edit a
+**E-map-6 Studio and clean-up (old map code, art and painter deleted; the Studio drags places on the bowl; region terrain editing remains).** The Studio world map becomes a bowl editor: drag places on the bowl surface, edit a
 region's terrain and height settings, live preview. Delete the CPU renderer, Flat view, trip line, pins and the old
 painter code. Node tests pass; then the owner's phone test.
 
@@ -81,7 +86,6 @@ painter code. Node tests pass; then the owner's phone test.
 - Phone frame times after E-map-4 and E-map-5 (graphics are tested only on the owner's devices; no headless graphics).
 
 ## Still open (ask before the session that needs it)
-- E-map-4: how strongly regions differ in height (flat floor with raised walls, or each region its own relief).
 - E-map-5: cloud count and heights per quality level.
 
 ## Tests
