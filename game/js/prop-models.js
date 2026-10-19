@@ -1373,12 +1373,18 @@ function swappedRecipe(path, rec, swap) {
   if (c && c.src === rec) return c.rec;
   const up = v => (typeof v === 'string' ? v.toUpperCase() : v),
     S = new Map(Object.entries(swap || {}).map(([a, b]) => [up(a), b])),
+    rf = swap && swap['@roof'],
     out = {
       ...rec,
       layers: (rec.layers || []).map(L => {
         const n = { ...L };
         if (n.col && S.has(up(n.col))) n.col = S.get(up(n.col));
         if (n.img && S.has(up(n.img))) n.img = S.get(up(n.img));
+        /* phase 09: a roof style (the walk view's propWithVariant) on the model's roof parts */
+        if (n.roof && rf) {
+          n.col = rf.col;
+          n.tex = rf.tex;
+        }
         return n;
       }),
     };

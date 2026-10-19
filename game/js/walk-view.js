@@ -467,7 +467,30 @@ function plainPropVariant(n, M) {
   }
   return out;
 }
+/* phase 09: a modelled building's roof in a town's solarpunk style (a placement's roof: moss, solar, chrome): the
+   model's roof parts (roof: 1) take that colour and material, on top of any variant's colours */
+const ROOF_MODEL = {
+  moss: { col: '#76AA50', tex: 'leaves' },
+  solar: { col: '#3A4C7E', tex: 'solar' },
+  chrome: { col: '#8FC4CE', tex: 'metal' },
+};
+const ROOF_VARIANT_CACHE = new WeakMap();
+function modelRoofVariant(p, M) {
+  const B = M.variants && p.v | 0 ? plainPropVariant(p.v | 0, M) : M;
+  let c = ROOF_VARIANT_CACHE.get(B);
+  if (!c) ROOF_VARIANT_CACHE.set(B, (c = new Map()));
+  let out = c.get(p.roof);
+  if (!out) {
+    out = Object.assign({}, B, {
+      swap: Object.assign({}, B.swap || {}, { '@roof': ROOF_MODEL[p.roof] }),
+      _vk: (B._vk || 0) + '|' + p.roof,
+    });
+    c.set(p.roof, out);
+  }
+  return out;
+}
 export function propWithVariant(p, M) {
+  if (M && !M.build && M.model && p && p.roof && ROOF_MODEL[p.roof]) return modelRoofVariant(p, M);
   if (M && !M.build && M.variants && p && p.v | 0) return plainPropVariant(p.v | 0, M);
   const n = p && p.v | 0,
     rf = M && M.build && p && p.roof ? ROOF_STYLES[p.roof] : null;

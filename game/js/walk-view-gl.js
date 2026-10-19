@@ -6045,6 +6045,8 @@ export function drawSprites(C, items, X, hits, labels, PPU) {
   for (const it of L) {
     if (it.vox) {
       if (!it.far) addHitTarget(it, C, hits, labels, PPU);
+      /* phase 09: a modelled clock tower keeps its moving hands (pictures on its modelled face) */
+      if (it.M && it.M.hands && !it.far && !it.layer) drawClockHands(p, it, C, X);
       continue;
     }
     const T = imageTexture(it.im);
