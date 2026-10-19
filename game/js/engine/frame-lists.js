@@ -8,6 +8,7 @@ import { expose } from '../test-globals.js';
 /* eslint-disable no-func-assign */
 expose({
   byDistance: [() => byDistance],
+  filterInto: [() => filterInto, v => (filterInto = v)],
   nearestFirst: [() => nearestFirst, v => (nearestFirst = v)],
   pooledQuad: [() => pooledQuad, v => (pooledQuad = v)],
 });
@@ -31,5 +32,11 @@ export function nearestFirst(L, x, z, out, max) {
   L.sort(byDistance);
   out.length = 0;
   for (let i = 0; i < L.length && i < max; i++) out.push(L[i]);
+  return out;
+}
+/* the entries of L that keep() passes, in order, into out (Array.prototype.filter without a new array) */
+export function filterInto(L, keep, out) {
+  out.length = 0;
+  for (const a of L) if (keep(a)) out.push(a);
   return out;
 }
