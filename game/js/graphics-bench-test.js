@@ -70,6 +70,8 @@ const GRAPHICS_TEST_HIDDEN = [
   ['shadows.cascades', 'Near shadow map', { values: [false, true] }],
   ['shadows.ao', 'Ambient occlusion', { range: [0, 1.5, 0.05] }],
   ['shadows.contact', 'Contact shadows', { range: [0, 1, 0.01] }],
+  /* phase 20 C3: the same look either way, so it is left out of "everything lowest / highest" */
+  ['quality.frameBlock', 'One light block per frame', { values: [false, true], alone: true }],
 ];
 /* the stations, in the order the test walks them; their spots are the map's `bench` ([x, z, camera turn, zoom]) */
 const GRAPHICS_TEST_STATIONS = [
@@ -82,9 +84,9 @@ const GRAPHICS_TEST_STATIONS = [
   },
   { id: 'pond', name: 'Pond', dials: ['water.reflection'] },
   { id: 'sun', name: 'Sun gap', sun: { angle: -90, height: 18 }, dials: ['air.godRays'] },
-  { id: 'lamps', name: 'Lamp square', time: 22, dials: ['color.bloom', 'lights.brightness'] },
+  { id: 'lamps', name: 'Lamp square', time: 22, dials: ['color.bloom', 'lights.brightness', 'quality.frameBlock'] },
   { id: 'meadow', name: 'Meadow', dials: ['grass.density', 'air.particles', 'air.mist'] },
-  { id: 'depth', name: 'Depth corridor', dials: ['lens.blur', 'world.farProps'] },
+  { id: 'depth', name: 'Depth corridor', dials: ['lens.blur', 'world.farProps', 'quality.frameBlock'] },
   { id: 'sky', name: 'Open sky', dials: ['sun.clouds', 'sun.cloudShadows'] },
   { id: 'everything', name: 'Everything', all: true },
 ];
@@ -102,7 +104,7 @@ function graphicsTestDials() {
     for (const [key, label, , , min, max, step, rebuild] of L)
       out.push({ key, label, values: steps(min, max, step), rebuild: !!rebuild });
   for (const [key, label, o] of GRAPHICS_TEST_HIDDEN)
-    out.push({ key, label, values: o.values || steps(...o.range), rebuild: false });
+    out.push({ key, label, values: o.values || steps(...o.range), rebuild: false, alone: !!o.alone });
   return out;
 }
 /* the whole run as a list of steps (the checks build this without running it) */
@@ -121,7 +123,9 @@ function graphicsTestPlan() {
           station: st.id,
           kind: 'all',
           label,
-          set: Object.fromEntries(D.map(d => [d.key, end ? d.values[d.values.length - 1] : d.values[0]])),
+          set: Object.fromEntries(
+            D.filter(d => !d.alone).map(d => [d.key, end ? d.values[d.values.length - 1] : d.values[0]])
+          ),
           rebuild: true,
         });
     const dials = (st.dials || []).filter(k => byKey[k]);
