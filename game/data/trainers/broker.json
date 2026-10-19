@@ -16,5 +16,13 @@
  "win": "“A correction. Happens to the best of us.”",
  "lose": "“Ka-ching. Better luck next quarter.”",
  "hint": "Broker Bea waits on the city plaza with a level 22–24 team.",
- "double": true
+ "double": true,
+ "script": [
+  "if beat:broker",
+  "  [happy] Back for more? All right!",
+  "else",
+  "  [happy] Buy low, battle high!",
+  "  My team is fully diversified.",
+  "battle broker"
+ ]
 }

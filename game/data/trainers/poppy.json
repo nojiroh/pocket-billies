@@ -29,5 +29,13 @@
   "rewardText": "2 Bailouts, 3 Gold Coins and 2 Platinum Coins",
   "unlockText": "The boardwalks of Rootwater Marsh, south-east of Twinpetal Town, are open."
  },
- "v47region": 1
+ "v47region": 1,
+ "script": [
+  "if beat:poppy",
+  "  [happy] Back for more? All right!",
+  "else",
+  "  [happy] Everything here grows back twice as fast. Including my temper, since the merch stalls arrived.",
+  "  Let’s see if your team blooms under pressure.",
+  "battle poppy"
+ ]
 }

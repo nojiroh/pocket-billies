@@ -15,5 +15,12 @@
  "win": "“You don’t get it. Scarcity is the point.”",
  "lose": "“Sold out. Like you.”",
  "hint": "",
- "v47region": 1
+ "v47region": 1,
+ "script": [
+  "if beat:variant_fest2",
+  "  [happy] Back for more? All right!",
+  "else",
+  "  [happy] Low number, see? I was a fan before it was limited.",
+  "battle variant_fest2"
+ ]
 }

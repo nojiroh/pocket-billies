@@ -24,5 +24,23 @@
  "win": "“Fine. Go up the Spire, then. She’ll be delighted. She loves a comeback.”",
  "lose": "“Back down the hole with you.”",
  "hint": "Cass Flow waits at the pressing plant with a team around level 55–57.",
- "v47region": 1
+ "v47region": 1,
+ "runsUp": true,
+ "script": [
+  "if beat:cass",
+  "  [happy] Back for more? All right!",
+  "elif !met_cass",
+  "  set met_cass",
+  "  music rival",
+  "  camera run-up",
+  "  [angry] Stop right there. This is a closed set.",
+  "  walk Cass beside me",
+  "  face Cass me",
+  "  Wait. You? We dropped you. Down a hole. On the surface.",
+  "  [sad] You were the best sound engineer the tour ever had. Then you read the plans.",
+  "  [angry] It doesn’t matter. The press is nearly done, and you’re not on the guest list.",
+  "else",
+  "  [happy] Nothing personal. It’s just the bottom line.",
+  "battle cass"
+ ]
 }

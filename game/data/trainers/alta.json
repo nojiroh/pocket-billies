@@ -25,5 +25,13 @@
   "items": {"bailout":2},
   "rewardText": "2 Bailouts, 3 Gold Coins and a Platinum Coin",
   "unlockText": "Your team can now take on the island leader in Palmhaven Town, across the sea from Marigold Town."
- }
+ },
+ "script": [
+  "if beat:alta",
+  "  [happy] Back for more? All right!",
+  "else",
+  "  [happy] Welcome to the top. The air is thin and so is my patience.",
+  "  My Flying team has never once looked down.",
+  "battle alta"
+ ]
 }

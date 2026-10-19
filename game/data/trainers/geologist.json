@@ -15,5 +15,12 @@
  "win": "“Eroded.”",
  "lose": "“Solid as rock.”",
  "hint": "",
- "v47region": 1
+ "v47region": 1,
+ "script": [
+  "if beat:geologist",
+  "  [happy] Back for more? All right!",
+  "else",
+  "  [happy] These crystals grew a millimetre a century. The Variants are cutting a metre a day.",
+  "battle geologist"
+ ]
 }

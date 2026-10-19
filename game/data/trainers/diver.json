@@ -14,5 +14,13 @@
  "lines": ["“Ahoy! Fancy a dip?”","“My team found this sandbar. Finders keepers!”"],
  "win": "“Sunk! Nice riding.”",
  "lose": "“Splash! Maybe stick to the shallows.”",
- "hint": "Diver Dee suns herself on the sandbar with a level 25–26 team."
+ "hint": "Diver Dee suns herself on the sandbar with a level 25–26 team.",
+ "script": [
+  "if beat:diver",
+  "  [happy] Back for more? All right!",
+  "else",
+  "  [happy] Ahoy! Fancy a dip?",
+  "  My team found this sandbar. Finders keepers!",
+  "battle diver"
+ ]
 }

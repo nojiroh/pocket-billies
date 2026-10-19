@@ -15,5 +15,12 @@
  "win": "“Ding.”",
  "lose": "“Dong!”",
  "hint": "",
- "v47region": 1
+ "v47region": 1,
+ "script": [
+  "if beat:bellringer",
+  "  [happy] Back for more? All right!",
+  "else",
+  "  [happy] I ring the bell when the day is done. The sun never sets here, so I just ring it when I’m tired.",
+  "battle bellringer"
+ ]
 }

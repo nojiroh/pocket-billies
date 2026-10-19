@@ -14,5 +14,13 @@
  "lines": ["“I’m only here for the experience. And the battles.”","“Unpaid, but very motivated!”"],
  "win": "“Can I put this on my résumé anyway?”",
  "lose": "“Promotion, here I come!”",
- "hint": "Intern Ollie is trying to impress the bosses outside Capital Tower."
+ "hint": "Intern Ollie is trying to impress the bosses outside Capital Tower.",
+ "script": [
+  "if beat:intern",
+  "  [happy] Back for more? All right!",
+  "else",
+  "  [happy] I’m only here for the experience. And the battles.",
+  "  Unpaid, but very motivated!",
+  "battle intern"
+ ]
 }

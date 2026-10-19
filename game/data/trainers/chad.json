@@ -24,15 +24,23 @@
   "What happened outside the lab doesn’t count. This one counts.",
   "[angry] Nobody plays through this course until we settle it. Let’s go!"
  ],
+ "runsUp": true,
  "script": [
-  "set met_chad",
-  "camera rival-run-in",
-  "[angry] Hey! Surface stray! Wait up!",
-  "walk Blake beside me",
-  "face Blake me",
-  "[happy] I’ve been training out here all morning. Mine knows a lot more than Tackle now.",
-  "What happened outside the lab doesn’t count. This one counts.",
-  "[angry] Nobody plays through this course until we settle it. Let’s go!",
+  "if beat:chad",
+  "  [happy] Back for more? All right!",
+  "elif !met_chad",
+  "  set met_chad",
+  "  music rival",
+  "  camera run-up",
+  "  [angry] Hey! Surface stray! Wait up!",
+  "  walk Blake beside me",
+  "  face Blake me",
+  "  [happy] I’ve been training out here all morning. Mine knows a lot more than Tackle now.",
+  "  What happened outside the lab doesn’t count. This one counts.",
+  "  [angry] Nobody plays through this course until we settle it. Let’s go!",
+  "else",
+  "  [happy] Hey! I’ve been waiting for you.",
+  "  I picked the starter that beats yours. Let’s see what you’ve got.",
   "battle chad"
  ]
 }

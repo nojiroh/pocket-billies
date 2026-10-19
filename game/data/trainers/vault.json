@@ -29,5 +29,13 @@
   "rewardText": "a Golden Parachute, 4 Gold Coins and 2 Platinum Coins",
   "unlockText": "The Grizzle Badlands, east of Goldvine Town, are open."
  },
- "v47region": 1
+ "v47region": 1,
+ "script": [
+  "if beat:vault",
+  "  [happy] Back for more? All right!",
+  "else",
+  "  [happy] Welcome to Goldvine Town. Everything you can see is mine, and everything you can’t see is in a vault, and also mine.",
+  "  I rented the vaults to a pop star. And myself, as it turns out. Read the small print, child.",
+  "battle vault"
+ ]
 }

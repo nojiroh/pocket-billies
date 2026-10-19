@@ -14,5 +14,12 @@
  "win": "“Out of air.”",
  "lose": "“Deep dive!”",
  "hint": "",
- "v47region": 1
+ "v47region": 1,
+ "script": [
+  "if beat:deepdiver",
+  "  [happy] Back for more? All right!",
+  "else",
+  "  [happy] I’ve dived for the bottom line twenty times. It keeps moving down.",
+  "battle deepdiver"
+ ]
 }

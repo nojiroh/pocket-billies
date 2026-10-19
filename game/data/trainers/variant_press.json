@@ -15,5 +15,12 @@
  "win": "“Off the record.”",
  "lose": "“Pressed!”",
  "hint": "",
- "v47region": 1
+ "v47region": 1,
+ "script": [
+  "if beat:variant_press",
+  "  [happy] Back for more? All right!",
+  "else",
+  "  [happy] Lucky number! I got to stand by the press. I can feel it in my teeth.",
+  "battle variant_press"
+ ]
 }

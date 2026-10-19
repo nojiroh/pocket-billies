@@ -14,5 +14,12 @@
  "win": "“Lights out.”",
  "lose": "“Deep, isn’t it?”",
  "hint": "",
- "v47region": 1
+ "v47region": 1,
+ "script": [
+  "if beat:spelunker",
+  "  [happy] Back for more? All right!",
+  "else",
+  "  [happy] Don’t look into the pool too long. It looks back, and it’s doing your accounts.",
+  "battle spelunker"
+ ]
 }

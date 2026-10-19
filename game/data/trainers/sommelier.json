@@ -14,5 +14,12 @@
  "win": "“A bold finish. Bolder than mine.”",
  "lose": "“You were corked.”",
  "hint": "",
- "v47region": 1
+ "v47region": 1,
+ "script": [
+  "if beat:sommelier",
+  "  [happy] Back for more? All right!",
+  "else",
+  "  [happy] Notes of oak, leather and a very aggressive pricing strategy.",
+  "battle sommelier"
+ ]
 }

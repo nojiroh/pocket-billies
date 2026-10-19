@@ -25,5 +25,13 @@
   "items": {"parachute":1},
   "rewardText": "a Golden Parachute, 3 Gold Coins and 2 Platinum Coins",
   "unlockText": "The path up Mt. Cinderpeak, on the north shore, is open. Bring water."
- }
+ },
+ "script": [
+  "if beat:marina",
+  "  [happy] Back for more? All right!",
+  "else",
+  "  [happy] Welcome to Palmhaven Town. Relax, nobody here asks questions.",
+  "  My Water team flows around every attack.",
+  "battle marina"
+ ]
 }

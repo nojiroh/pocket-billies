@@ -25,5 +25,13 @@
   "items": {},
   "rewardText": "3 Silver Coins and a Platinum Coin",
   "unlockText": "The steps down to Route 5 · Stepstone Canyon and Lanternhall City are open. Silver Coins are now for sale."
- }
+ },
+ "script": [
+  "if beat:crude",
+  "  [happy] Back for more? All right!",
+  "else",
+  "  [happy] Welcome to the Fizzwell arena. Here we battle in a sandstorm.",
+  "  Hope you brought goggles.",
+  "battle crude"
+ ]
 }

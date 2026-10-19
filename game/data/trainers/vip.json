@@ -14,5 +14,12 @@
  "win": "“Access revoked.”",
  "lose": "“Backstage!”",
  "hint": "",
- "v47region": 1
+ "v47region": 1,
+ "script": [
+  "if beat:vip",
+  "  [happy] Back for more? All right!",
+  "else",
+  "  [happy] VIP means Very Important Purchaser. I have every variant. Even the ones that don’t exist yet.",
+  "battle vip"
+ ]
 }

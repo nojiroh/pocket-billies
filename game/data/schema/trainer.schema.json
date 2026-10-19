@@ -19,6 +19,8 @@
   "lines": {"type": "array", "items": {"type": "string"}},
   "win": {"type": "string"},
   "lose": {"type": "string"},
-  "double": {"type": "boolean"}
+  "double": {"type": "boolean"},
+  "runsUp": {"description": "they run up to you the first time you come where they wait (story.js storyCheck)", "type": "boolean"},
+  "script": {"description": "what they say before a battle (docs/SCRIPTS.md); it ends with the battle", "type": "array", "items": {"type": "string"}}
  }
 }

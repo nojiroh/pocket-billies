@@ -22,5 +22,22 @@
  "win": "“Again?! Okay. You’re the real deal. See you at the next arena.”",
  "lose": "“Ha! Told you I’d train harder.”",
  "hint": "Blake waits in Clovercrest Town with an evolved starter. Bring a team around level 18.",
- "double": true
+ "double": true,
+ "runsUp": true,
+ "script": [
+  "if beat:chad2",
+  "  [happy] Back for more? All right!",
+  "elif !met_chad2",
+  "  set met_chad2",
+  "  music rival",
+  "  camera run-up",
+  "  [angry] There you are! I’ve been training on the farm all week.",
+  "  walk Blake beside me",
+  "  face Blake me",
+  "  My starter evolved. Did yours? Doesn’t matter. I’m winning this time.",
+  "  [angry] Rematch. Right here, right now!",
+  "else",
+  "  [happy] Round two. I’ve been waiting all week.",
+  "battle chad2"
+ ]
 }

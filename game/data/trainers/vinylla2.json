@@ -36,5 +36,23 @@
   ["gini","And you. You were the sound engineer on her tour. You read the plans, and Cass made sure you fell."],
   ["gini","[happy] Welcome back. The sun is still up. It will be up tomorrow too."]
  ],
- "v47region": 1
+ "v47region": 1,
+ "runsUp": true,
+ "script": [
+  "if beat:vinylla2",
+  "  [happy] Back for more? All right!",
+  "elif !met_vinylla2",
+  "  set met_vinylla2",
+  "  music rival",
+  "  camera run-up",
+  "  [angry] You came all this way for the release? I’m touched. Truly.",
+  "  walk vinylla beside me",
+  "  face vinylla me",
+  "  One turn of the press and the sun is a record. Gold on one side, darkness on the other.",
+  "  [angry] And every one of them will pay to listen.",
+  "  [happy] This is the last track, darling. Make it count.",
+  "else",
+  "  [happy] Scarcity is the whole song.",
+  "battle vinylla2"
+ ]
 }

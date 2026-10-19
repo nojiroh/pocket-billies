@@ -37,34 +37,12 @@ test('every script in the data reads', () => {
   for (const [id, lines] of all) assert.doesNotThrow(() => parseScript(lines), id);
 });
 
-test('Granny Juniper: the first meeting, then her lines in turn (the same words as today)', async () => {
-  const P = person('juniper'),
-    save = { story: {}, items: {}, coins: {} };
-  assert.deepEqual(await play(P.script, save), P.first);
-  assert.equal(save.story.met_juniper, 1);
-  const later = [];
-  for (let i = 0; i < P.lines.length + 1; i++) later.push(...(await play(P.script, save)));
-  /* today's personTalk starts the second visit on lines[1] (it counts up before it reads); the script starts on [0] */
-  assert.deepEqual(later, [...P.lines, P.lines[0]]);
-});
-
-test('Blake on the golf course: the intro lines in order, then the battle (the same words as today)', async () => {
-  const T = data.TRAINERS.chad,
-    save = { story: {}, items: {}, coins: {} };
-  const said = await play(T.script, save);
-  assert.deepEqual(
-    said.filter(l => !l.startsWith('<')),
-    T.intro
-  );
-  assert.deepEqual(said.at(-1), '<battle chad>');
-  assert.equal(save.story.met_chad, 1);
-});
-
-test('Curator Nacre: the first meeting, a choice once the ledger is read, else her lines in turn', async () => {
+/* the people's and trainers' scripts against what the game said before: story-snapshot.test.mjs */
+test('Curator Nacre: a choice once the ledger is read, its [once] option gone after', async () => {
   const P = person('nacre'),
     save = { story: {}, items: {}, coins: {} };
   assert.deepEqual(await play(P.script, save), P.first);
-  assert.deepEqual(await play(P.script, save), [P.lines[0]]);
+  assert.deepEqual(await play(P.script, save), [P.lines[1]]);
   save.story.read_pearl_ledger = 1;
   const asked = await play(P.script, save, { id: 'person:nacre' });
   assert.deepEqual(asked, [

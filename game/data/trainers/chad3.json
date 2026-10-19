@@ -24,5 +24,23 @@
  "win": "“Okay. I meant it. Go up there and stop her. I’ll hold the stairs.”",
  "lose": "“Ha! Still got it. Now go.”",
  "hint": "Blake waits in Nimbus City with his strongest team, around level 55–57.",
- "v47region": 1
+ "v47region": 1,
+ "runsUp": true,
+ "script": [
+  "if beat:chad3",
+  "  [happy] Back for more? All right!",
+  "elif !met_chad3",
+  "  set met_chad3",
+  "  music rival",
+  "  camera run-up",
+  "  [angry] There you are. Took you long enough.",
+  "  walk Blake beside me",
+  "  face Blake me",
+  "  Vinylla’s people offered to buy my team. All of it. Dad’s clone too, for the collection.",
+  "  [sad] I said no. I think I said no. I’m not used to saying it.",
+  "  [angry] Battle me. If I can still beat you, I meant it.",
+  "else",
+  "  [happy] For the record: this isn’t for sale.",
+  "battle chad3"
+ ]
 }

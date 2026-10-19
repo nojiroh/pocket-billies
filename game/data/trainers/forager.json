@@ -14,5 +14,12 @@
  "win": "“Picked clean.”",
  "lose": "“Foraged!”",
  "hint": "",
- "v47region": 1
+ "v47region": 1,
+ "script": [
+  "if beat:forager",
+  "  [happy] Back for more? All right!",
+  "else",
+  "  [happy] Never eat a mushroom you can’t afford. Most of these cost more than you.",
+  "battle forager"
+ ]
 }

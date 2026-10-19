@@ -14,5 +14,12 @@
  "win": "“...I’ll always be first.”",
  "lose": "“Number one!”",
  "hint": "",
- "v47region": 1
+ "v47region": 1,
+ "script": [
+  "if beat:variant_vip2",
+  "  [happy] Back for more? All right!",
+  "else",
+  "  [happy] Number one. The first fan. I was here before the tower. I watched them build it round me.",
+  "battle variant_vip2"
+ ]
 }

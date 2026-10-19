@@ -14,5 +14,12 @@
  "win": "“Turned over.”",
  "lose": "“Fell for it.”",
  "hint": "",
- "v47region": 1
+ "v47region": 1,
+ "script": [
+  "if beat:peeper",
+  "  [happy] Back for more? All right!",
+  "else",
+  "  [happy] The leaves turn every quarter. I’ve been here forty quarters. I am leaving next quarter.",
+  "battle peeper"
+ ]
 }

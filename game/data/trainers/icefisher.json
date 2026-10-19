@@ -15,5 +15,12 @@
  "win": "“Cold.”",
  "lose": "“Liquid at last!”",
  "hint": "",
- "v47region": 1
+ "v47region": 1,
+ "script": [
+  "if beat:icefisher",
+  "  [happy] Back for more? All right!",
+  "else",
+  "  [happy] I fish for coins through the ice. The safe is frozen solid, but sometimes the interest leaks out.",
+  "battle icefisher"
+ ]
 }

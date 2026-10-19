@@ -24,5 +24,12 @@
  "win": "“Ha, you took an arm off! Good. Now I know where to bolt on the armour.”",
  "lose": "“See? Put the right arm on and anything is possible.”",
  "hint": "Phase 17 prototype: a robot test battle (debug menu).",
- "seat": null
+ "seat": null,
+ "script": [
+  "if beat:tinker",
+  "  [happy] Back for more? All right!",
+  "else",
+  "  [happy] Built them myself. Want to see what they can do?",
+  "battle tinker"
+ ]
 }

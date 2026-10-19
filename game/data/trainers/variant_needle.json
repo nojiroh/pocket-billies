@@ -14,5 +14,12 @@
  "win": "“That’s a scratch.”",
  "lose": "“Flawless. Like the edition.”",
  "hint": "",
- "v47region": 1
+ "v47region": 1,
+ "script": [
+  "if beat:variant_needle",
+  "  [happy] Back for more? All right!",
+  "else",
+  "  [happy] The needle has to be perfect. One scratch and the sun skips.",
+  "battle variant_needle"
+ ]
 }
