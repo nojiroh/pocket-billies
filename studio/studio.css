@@ -105,7 +105,7 @@ canvas {
 }
 #studio {
   display: grid;
-  grid-template-columns: 232px 1fr;
+  grid-template-columns: var(--nav-w, 232px) 1fr;
   grid-template-rows: 56px 1fr;
   height: 100vh;
 }
@@ -250,7 +250,7 @@ main {
 }
 .split {
   display: grid;
-  grid-template-columns: 300px minmax(0, 1fr);
+  grid-template-columns: var(--list-w, 300px) minmax(0, 1fr);
   gap: 20px;
   align-items: start;
 }
@@ -1144,7 +1144,7 @@ canvas.spr-prev.big {
 .px-body {
   flex: 1;
   display: grid;
-  grid-template-columns: 1fr 330px;
+  grid-template-columns: 1fr var(--side-w, 330px);
   min-height: 0;
 }
 .px-stage {
@@ -1316,7 +1316,7 @@ canvas.spr-prev.big {
 .sk-body {
   flex: 1;
   display: grid;
-  grid-template-columns: 250px minmax(0, 1fr) 330px;
+  grid-template-columns: var(--list-w, 250px) minmax(0, 1fr) var(--side-w, 330px);
   min-height: 0;
 }
 .sk-tree {
@@ -1443,7 +1443,7 @@ canvas.spr-prev.big {
 }
 @media (max-width: 1100px) {
   .sk-body {
-    grid-template-columns: 200px minmax(0, 1fr) 290px;
+    grid-template-columns: var(--list-w, 200px) minmax(0, 1fr) var(--side-w, 290px);
   }
 }
 @media (max-width: 860px) {
@@ -1464,7 +1464,7 @@ canvas.spr-prev.big {
 /* ---------- battle preview ---------- */
 .bp-wrap {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 340px;
+  grid-template-columns: minmax(0, 1fr) var(--side-w, 340px);
   gap: 16px;
   align-items: start;
 }
@@ -1931,7 +1931,7 @@ select.sm {
 }
 .sc-pe-body {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 300px;
+  grid-template-columns: minmax(0, 1fr) var(--side-w, 300px);
   gap: 14px;
   align-items: start;
 }
@@ -3261,7 +3261,7 @@ body.vp-has-big::after {
 /* phase 09 batch 1: Props (studio/js/props-editor.js) */
 .props-sec {
   display: grid;
-  grid-template-columns: minmax(240px, 300px) 1fr;
+  grid-template-columns: minmax(240px, var(--list-w, 300px)) 1fr;
   gap: 16px;
   align-items: start;
 }
