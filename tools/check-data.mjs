@@ -300,9 +300,10 @@ if (D.coats && check('coats.schema.json', D.coats, 'coats.json')) {
   }
 }
 // studio track ST-3: the part kits: the schema, then every picture they name is there with the size given
-if (D.partKits && check('partKits.schema.json', D.partKits, 'partKits.json'))
-  for (const [id, P] of Object.entries(D.partKits.parts))
-    for (const [view, V] of Object.entries(P.views)) {
+// (ST-4: and the S/L pictures, turn limits that run least to most, slots the socket rules name, the part mirrored)
+if (D.partKits && check('partKits.schema.json', D.partKits, 'partKits.json')) {
+  const K = D.partKits,
+    picture = (id, view, V) => {
       const png = join(DATA, '..', 'art', V.file);
       if (!existsSync(png)) problem('partKits.json', `part ${id} ${view}: no picture ${V.file}`);
       else {
@@ -311,7 +312,22 @@ if (D.partKits && check('partKits.schema.json', D.partKits, 'partKits.json'))
           problem('partKits.json', `part ${id} ${view}: ${V.file} is ${b.readUInt32BE(16)} x ${b.readUInt32BE(20)}, not ${V.w} x ${V.h}`);
       }
       if (!V.file.includes(`/${view}/`)) problem('partKits.json', `part ${id}: its ${view} picture is in another view's folder`);
+    },
+    turnOk = (where, t) => t && t[0] > t[1] && problem('partKits.json', `${where}: turn limits ${t[0]} to ${t[1]} run backwards`);
+  for (const [k, t] of Object.entries(K.turns || {})) turnOk(`turns.${k}`, t);
+  for (const [id, P] of Object.entries(K.parts)) {
+    for (const [view, V] of Object.entries(P.views)) {
+      picture(id, view, V);
+      for (const [size, S] of Object.entries(V.sizes || {})) {
+        picture(id, `${view} ${size}`, S);
+        if (!S.file.endsWith(`/${id}_${size.toLowerCase()}.png`))
+          problem('partKits.json', `part ${id} ${view}: its ${size} picture should be ${id}_${size.toLowerCase()}.png`);
+      }
     }
+    turnOk(`part ${id}`, P.turn);
+    if (P.mirrorOf && !K.parts[P.mirrorOf]) problem('partKits.json', `part ${id} mirrors ${P.mirrorOf}, no such part`);
+  }
+}
 // phase 07: portraits: the schema, then every picture named is there and every face uses parts that exist
 if (D.portraits) {
   const P = D.portraits,

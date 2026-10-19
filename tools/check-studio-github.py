@@ -11,6 +11,8 @@ the ? sheet) and undoes pictures and data in one order, in the sheet editor and 
 Studio track ST-3: it drops sheets on the Studio: a kit's two sheets slice to exactly the parts the game has (writing
 them changes nothing), and a sheet drawn at 4x on a flat background snaps to its pixels, writes three new parts and
 undoes and redoes them.
+Studio track ST-4: Part mode on a kit part: the pivot dragged and nudged, a socket rule, a test fit, Mirror to other
+side, an L painted, and the kit written again keeping it all; then everything undone.
 
     python3 tools/check-studio-github.py           # the repository as it is (run `npm run data` first)
     python3 tools/check-studio-github.py dist      # the build (`npm run build` first)
@@ -380,6 +382,94 @@ def workbench_steps(pg, errs):
     print(f"workbench: {'a kit sliced as the game has it, ' if kit else ''}a 4x sheet snapped, three parts written, undone and redone", flush=True)
 
 
+def part_mode_steps(pg, errs):
+    """Studio track ST-4: the Art workbench's Part mode on cat_leg: the pivot dragged and nudged with the arrow keys
+    (each one undo step), a socket rule, a test fit on cat_torso's hip, Mirror to other side, an L painted, and the
+    beasts kit written again keeping it all. Everything is undone at the end."""
+    n = len(errs)
+    # as the Studio's undo and save see it: without its _ keys (_help)
+    kits = "JSON.stringify(studioState.D.partKits, (k, v) => (k[0] === '_' && k.length > 1 ? undefined : v))"
+    data0 = pg.evaluate(kits)
+    pg.evaluate("void openSection('workbench'); ACTIONS.wbMode({ m: 'part' }); ACTIONS.wbpPick({ id: 'cat_leg' })")
+    pg.wait_for_selector('#wbpfrontStage .pc-art', timeout=20000); time.sleep(1)
+    steps0 = pg.evaluate("studioState.undo.length")
+    pv = lambda: pg.evaluate("partJoint(studioState.D.partKits, 'cat_leg', 'front').px")
+    Z = pg.evaluate("wbPart.pcs.front.zoom")
+    box = pg.locator('#wbpfrontStage .pc-art').bounding_box()
+    x0, y0 = pv()
+    sx, sy = box['x'] + x0 * Z, box['y'] + y0 * Z
+    pg.mouse.move(sx, sy); pg.mouse.down(); pg.mouse.move(sx + 3 * Z, sy + 2 * Z, steps=4); pg.mouse.up(); time.sleep(0.3)
+    x1, y1 = pv()
+    if (round(x1 - x0), round(y1 - y0)) != (3, 2): errs.append(f'the pivot dragged from {(x0, y0)} to {(x1, y1)}, not by (3, 2)')
+    if pg.evaluate("studioState.D.partKits.parts.cat_leg.views.back.pivot") is not None: errs.append('dragging the front pivot moved the back one')
+    pg.locator('#wbpfrontStage').hover()
+    pg.keyboard.press('ArrowRight'); pg.keyboard.press('Shift+ArrowDown'); time.sleep(0.3)
+    x2, y2 = pv()
+    if (round(x2 - x1, 2), round(y2 - y1, 2)) != (1, 0.25): errs.append(f'the arrow keys moved the pivot by {(x2 - x1, y2 - y1)}')
+    if pg.evaluate("studioState.undo.length") - steps0 != 3: errs.append(f"a drag and two nudges made {pg.evaluate('studioState.undo.length') - steps0} undo steps, not 3")
+    # a socket rule of the part's own: the leg's joint takes a foot
+    pg.evaluate("ACTIONS.wbpAccept({ n: 'joint', s: 'back' })"); time.sleep(0.3)
+    if pg.evaluate("studioState.D.partKits.parts.cat_leg.accepts") != {'joint': ['back']}: errs.append('the socket rule was not kept on the part')
+    # test fit on the torso's left hip, then its right one (mirrored there)
+    pg.evaluate("wbPart.fit.other = 'cat_torso'; wbPart.fit.socket = 'hipL'; render()"); time.sleep(1.5)
+    fit = pg.evaluate("({ z: document.querySelector('#wbpFitfront').dataset.z, w: document.querySelector('#wbpFitfront').width, flip: document.querySelector('#wbpFitfront').dataset.flip })")
+    if fit['z'] != 'body,part' or fit['w'] < 20 or fit['flip'] != 'false': errs.append(f'the test fit on hipL drew {fit}')
+    pg.evaluate("wbPart.fit.socket = 'hipR'; wbPart.fit.angle = 90; render()"); time.sleep(1.5)
+    fit = pg.evaluate("({ flip: document.querySelector('#wbpFitfront').dataset.flip, angle: document.querySelector('#wbpFitfront').dataset.angle })")
+    if fit != {'flip': 'true', 'angle': '35'}: errs.append(f'the test fit on hipR at 90 degrees drew {fit} (mirrored, kept to 35)')
+    # Mirror to other side: cat_leg_r, pictures flipped, the hand sockets mirrored
+    pg.evaluate("ACTIONS.wbpMirror()"); time.sleep(2)
+    got = pg.evaluate("""(() => { const K = studioState.D.partKits, R = K.parts.cat_leg_r; return R && { of: R.mirrorOf, file: R.views.front.file,
+      art: [...studioState.artDirty.keys()].filter(k => k.includes('cat_leg_r')).sort() }; })()""")
+    if got != {'of': 'cat_leg', 'file': 'next/parts/front/cat_leg_r.png', 'art': ['art/next/parts/back/cat_leg_r.png', 'art/next/parts/front/cat_leg_r.png']}:
+        errs.append(f'Mirror to other side made {got}')
+    flipped = pg.evaluate("""(() => { const a = loadedAtlas('art/next/parts/front/cat_leg.png'), b = loadedAtlas('art/next/parts/front/cat_leg_r.png');
+      if (!a || !b) return false; const p = a.getContext('2d').getImageData(0, 0, a.width, a.height).data, q = b.getContext('2d').getImageData(0, 0, b.width, b.height).data;
+      for (let y = 0; y < a.height; y++) for (let x = 0; x < a.width; x++) for (let k = 0; k < 4; k++) if (p[(y * a.width + x) * 4 + k] !== q[(y * a.width + a.width - 1 - x) * 4 + k]) return false; return true; })()""")
+    if not flipped: errs.append('the mirrored picture is not the part flipped')
+    # Paint L: a picture 1.2x, painted on, its own pivot
+    pg.evaluate("ACTIONS.wbpPaint({ s: 'L' })"); time.sleep(2)
+    pg.wait_for_selector('#wbpfrontStage .pc-art', timeout=20000); time.sleep(0.5)
+    L = pg.evaluate("studioState.D.partKits.parts.cat_leg.views.front.sizes?.L")
+    W = pg.evaluate("studioState.D.partKits.parts.cat_leg.views.front.w")
+    if not L or L['file'] != 'next/parts/front/cat_leg_l.png' or L['w'] != round(W * 1.2): errs.append(f'Paint L made {L}')
+    Z = pg.evaluate("wbPart.pcs.front.zoom")
+    box = pg.locator('#wbpfrontStage .pc-art').bounding_box()
+    before = pg.evaluate("studioState.undo.length")
+    pg.mouse.click(box['x'] + 1.5 * Z, box['y'] + 1.5 * Z); time.sleep(0.3)
+    px = pg.evaluate("loadedAtlas('art/next/parts/front/cat_leg_l.png').getContext('2d').getImageData(1, 1, 1, 1).data[3]")
+    if px != 255 or pg.evaluate("studioState.undo.length") != before + 1: errs.append('a pencil click on L did not paint one undoable pixel')
+    # the beasts kit written again keeps Part mode's work
+    pg.evaluate("ACTIONS.wbMode({ m: 'sheet' })")
+    keep = pg.evaluate("JSON.stringify(studioState.D.partKits.parts.cat_leg)")
+    dropped = pg.evaluate("""(async () => { const dt = new DataTransfer(); for (const n of ['beasts-front.png', 'beasts-back.png']) { const r = await fetch('/tools/art-source/part-kit/' + n);
+      if (!r.ok) return false; dt.items.add(new File([await r.blob()], n, { type: 'image/png' })); }
+      document.body.dispatchEvent(new DragEvent('drop', { dataTransfer: dt, bubbles: true, cancelable: true })); return true; })()""")
+    if dropped:
+        t0 = time.time()
+        while time.time() - t0 < 30 and pg.evaluate("workbench.sheets.filter(s => s.name.startsWith('beasts')).length") < 2: time.sleep(0.3)
+        time.sleep(0.5)
+        pg.evaluate("ACTIONS.wbWrite()"); time.sleep(4)
+        if pg.evaluate("JSON.stringify(studioState.D.partKits.parts.cat_leg)") != keep: errs.append('writing the beasts kit again lost Part mode\'s work on cat_leg')
+        pg.evaluate("for (let i = workbench.sheets.length - 1; i >= 0; i--) if (workbench.sheets[i].name.startsWith('beasts')) ACTIONS.wbDrop({ i })")
+    # everything undone: the parts as they were, no picture left changed
+    t0 = time.time()
+    while time.time() - t0 < 30 and pg.evaluate("studioState.undo.length") > steps0: pg.evaluate("undo()")
+    time.sleep(0.5)
+    data1 = pg.evaluate(kits)
+    if data1 != data0:
+        a, b = json.loads(data0), json.loads(data1)
+        diff = [k for k in sorted(set(a) | set(b)) if a.get(k) != b.get(k)]
+        diff += [f'parts.{k}' for k in sorted(set(a['parts']) | set(b['parts'])) if a['parts'].get(k) != b['parts'].get(k)]
+        diff += [f'sockets.{k}' for k in sorted(set(a.get('sockets', {})) | set(b.get('sockets', {}))) if a.get('sockets', {}).get(k) != b.get('sockets', {}).get(k)]
+        errs.append(f'undoing it all did not bring the parts back as they were: {diff[:8]}')
+    left = pg.evaluate("[...studioState.artDirty.keys()].filter(k => k.includes('cat_leg'))")
+    if left: errs.append(f'undoing it all left pictures changed: {left}')
+    pg.evaluate("ACTIONS.wbMode({ m: 'sheet' })")
+    if len(errs) > n: errs[n:] = [f'part mode: {e}' for e in errs[n:]]
+    print('part mode: pivot dragged and nudged, a socket rule, a test fit on both hips, mirrored, L painted, kept on a rewrite, all undone', flush=True)
+
+
 def main():
     srv = ThreadingHTTPServer(('127.0.0.1', 0), partial(Quiet, directory=str(ROOT)))
     threading.Thread(target=srv.serve_forever, daemon=True).start()
@@ -452,6 +542,7 @@ def main():
         tile_painter_steps(pg, errs)
         split_steps(pg, errs)
         workbench_steps(pg, errs)
+        part_mode_steps(pg, errs)
         pg.evaluate("const k = Object.keys(studioState.D.moves)[0]; studioState.D.moves[k].name += ' Test'; studioState.dirty = true; void saveAll()")
         t0 = time.time()
         while time.time() - t0 < 60 and 'pulls' not in posts:

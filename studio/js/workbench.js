@@ -1,15 +1,17 @@
 'use strict';
 /* ================= POCKET BILLIES STUDIO · Art workbench (studio track ST-3: Sheet mode) =================
-   One workbench for art, in modes: Sheet (here), then Part, Pixels and Model (ST-4 to ST-8). Sheet mode cuts a sheet
-   into parts: drop PNGs anywhere on the Studio (and an Aseprite JSON beside its PNG), pick how the parts are found
-   (a phase 16 kit's rows, islands of art, a template grid, or Aseprite's frames and slices), snap art drawn big back
-   to its pixels, name the parts from a template, match front and back, and write them to the game: the pictures to
-   art/next/parts/<view>/<id>.png and the parts to partKits.json (one undo step for the pictures, one for the data).
-   The numbers are in game/js/logic/sheet-slice.js and pixel-snap.js; the sheet shows on the shared pixel canvas.
-   Dropped sheets stay in this browser tab only: the kits' sources live in tools/art-source/part-kit, outside the game,
-   and dropping the same sheet again with the kit's saved settings gives the same parts. */
+   One workbench for art, in modes: Sheet (here), Part (workbench-part.js, ST-4), then Pixels and Model (ST-6 to
+   ST-8). Sheet mode cuts a sheet into parts: drop PNGs anywhere on the Studio (and an Aseprite JSON beside its PNG),
+   pick how the parts are found (a phase 16 kit's rows, islands of art, a template grid, or Aseprite's frames and
+   slices), snap art drawn big back to its pixels, name the parts from a template, match front and back, and write
+   them to the game: the pictures to art/next/parts/<view>/<id>.png and the parts to partKits.json (one undo step for
+   the pictures, one for the data). The numbers are in game/js/logic/sheet-slice.js and pixel-snap.js; the sheet shows
+   on the shared pixel canvas. Dropped sheets stay in this browser tab only: the kits' sources live in
+   tools/art-source/part-kit, outside the game, and dropping the same sheet again with the kit's saved settings gives
+   the same parts. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
+import { wbPartSection } from '../../game/js/hooks.js';
 import { makeCanvas } from '../../game/js/art.js';
 import { escapeHtml } from './game-stand-ins.js';
 import { pixelHex, pixelRgba } from '../../game/js/logic/pixel-ops.js';
@@ -56,6 +58,7 @@ import { atlasGet, fileToCanvas, markArt } from './sprites.js';
 /* eslint-disable no-func-assign */
 expose({
   WB_DEFAULTS: [() => WB_DEFAULTS],
+  WB_JOINT_KEYS: [() => WB_JOINT_KEYS],
   WB_METHODS: [() => WB_METHODS],
   WB_RENDER_KEYS: [() => WB_RENDER_KEYS],
   WB_VIEWS: [() => WB_VIEWS],
@@ -63,6 +66,7 @@ expose({
   wbGuess: [() => wbGuess, v => (wbGuess = v)],
   wbHasFiles: [() => wbHasFiles],
   wbInput: [() => wbInput, v => (wbInput = v)],
+  wbKeepJoints: [() => wbKeepJoints, v => (wbKeepJoints = v)],
   wbKey: [() => wbKey, v => (wbKey = v)],
   wbKinds: [() => wbKinds],
   wbKits: [() => wbKits],
@@ -88,7 +92,7 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-const WB_VIEWS = ['front', 'back'];
+export const WB_VIEWS = ['front', 'back'];
 const WB_METHODS = [
   ['kit', 'Kit rows (animals × kinds, then extras)'],
   ['islands', 'Islands of art'],
@@ -120,7 +124,7 @@ const WB_DEFAULTS = {
   gapX: 0,
   gapY: 0,
 };
-const workbench = {
+export const workbench = {
   sheets: [] /* { name, view, c (a canvas), img (its pixels), json (Aseprite, or null) } */,
   cur: 0,
   kit: '',
@@ -131,14 +135,15 @@ const workbench = {
   cache: null /* the parts of every sheet, made again after a change */,
   pc: null,
   zoom: 0,
+  mode: 'sheet' /* or 'part' (studio track ST-4, workbench-part.js) */,
 };
-const wbKits = () => {
+export const wbKits = () => {
   const P = studioState.D.partKits || (studioState.D.partKits = { parts: {} });
   return P;
 };
 const wbKinds = () => Object.keys(wbKits().slots || {});
 const wbSheet = () => workbench.sheets[workbench.cur] || null;
-function wbPixelsCanvas(p) {
+export function wbPixelsCanvas(p) {
   const c = makeCanvas(p.width, p.height);
   c.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(p.data), p.width, p.height), 0, 0);
   return c;
@@ -175,6 +180,7 @@ async function wbAddFiles(files) {
   }
   workbench.cache = null;
   workbench.zoom = 0;
+  workbench.mode = 'sheet';
   if (!sectionShown('workbench')) openSection('workbench');
   else render();
 }
@@ -409,22 +415,25 @@ function wbPartHTML() {
     workbench.o.method === 'kit'
       ? `<p class="help">Kind ${escapeHtml(p.kind)}, animal ${escapeHtml(p.animal)}: from the kit’s rows.</p>`
       : `<label class="fld"><span>Kind</span><select data-wb-kind="${p.key}">${kinds.map(k => `<option ${k === p.kind ? 'selected' : ''}>${escapeHtml(k)}</option>`).join('')}</select><small class="help">The slot it fills: ${escapeHtml((wbKits().slots || {})[p.kind] || '?')}.</small></label>`
-  }<p class="help">${p.img.width} × ${p.img.height} px · sockets ${Object.keys(p.sockets).map(escapeHtml).join(', ') || 'none'} (Part mode, ST-4, moves them).</p></div>`;
+  }<p class="help">${p.img.width} × ${p.img.height} px · sockets ${Object.keys(p.sockets).map(escapeHtml).join(', ') || 'none'} (Part mode moves them, once written).</p></div>`;
 }
 SECTIONS.workbench = () => {
   const S = wbSheet(),
     modes = [
-      ['sheet', 'Sheet', ''],
-      ['part', 'Part', 'Pivots, sockets and joints (studio track ST-4)'],
-      ['pixels', 'Pixels', 'Painting on the shared canvas (ST-4 and ST-6)'],
+      ['sheet', 'Sheet', 'Cut sheets into parts'],
+      ['part', 'Part', 'Pivots, sockets, turn limits, draw order, test fit, mirror, S and L'],
+      ['pixels', 'Pixels', 'Painting on the shared canvas (ST-6)'],
       ['model', 'Model', '3D models in and out (ST-7, ST-8)'],
-    ];
-  const head = `<div class="ed-head"><div><small class="mono">partKits.json · art/next/parts</small><h2>Art workbench</h2><p class="sub">Drop sheets anywhere on the Studio to cut them into parts.</p></div><div class="seg-row">${modes
-    .map(
-      ([k, l, t]) =>
-        `<button class="seg ${k === 'sheet' ? 'on' : ''}" ${k === 'sheet' ? '' : `disabled title="${t}"`}>${l}</button>`
+    ],
+    on = workbench.mode;
+  const head = `<div class="ed-head"><div><small class="mono">partKits.json · art/next/parts</small><h2>Art workbench</h2><p class="sub">${on === 'part' ? 'A part’s joints: drag the pivot and sockets, test it on a body.' : 'Drop sheets anywhere on the Studio to cut them into parts.'}</p></div><div class="seg-row">${modes
+    .map(([k, l, t]) =>
+      k === 'sheet' || k === 'part'
+        ? `<button class="seg ${k === on ? 'on' : ''}" data-act="wbMode" data-m="${k}" title="${t}">${l}</button>`
+        : `<button class="seg" disabled title="${t}">${l}</button>`
     )
     .join('')}</div></div>`;
+  if (on === 'part') return wbPartSection(head);
   const sheets = workbench.sheets
     .map(
       (s, i) =>
@@ -565,7 +574,7 @@ function wbRefreshSide() {
   });
 }
 /* ---------- writing to the game ---------- */
-const wbSamePicture = (a, b) => {
+export const wbSamePicture = (a, b) => {
   if (!a || a.width !== b.width || a.height !== b.height) return false;
   for (let i = 0; i < a.data.length; i += 4) {
     if (a.data[i + 3] !== b.data[i + 3]) return false;
@@ -633,12 +642,21 @@ async function wbWrite() {
             size: 'M',
             views: {},
           }));
-    e.views[p.view] = { file: `next/parts/${p.view}/${p.id}.png`, w: p.img.width, h: p.img.height, sockets: p.sockets };
+    /* sockets placed by hand in Part mode (partKits `sockets`) win over the ones worked out from the outline */
+    const hand = ((kits.sockets || {})[p.id] || {})[p.view];
+    e.views[p.view] = {
+      file: `next/parts/${p.view}/${p.id}.png`,
+      w: p.img.width,
+      h: p.img.height,
+      sockets: hand ? { ...p.sockets, ...hand } : p.sockets,
+    };
   }
   for (const [id, e] of Object.entries(entries)) {
     const old = have[id];
     /* a view not on these sheets stays as it was */
     if (old) for (const v of WB_VIEWS) if (!e.views[v] && old.views[v]) e.views[v] = old.views[v];
+    /* what Part mode set stays: the pivot per view, the S and L pictures, draw order, turn limits, socket rules */
+    if (old) wbKeepJoints(old, e);
     e.views = Object.fromEntries(WB_VIEWS.filter(v => e.views[v]).map(v => [v, e.views[v]]));
     if (JSON.stringify(old) !== JSON.stringify(e)) have[id] = e;
   }
@@ -699,6 +717,20 @@ async function wbWrite() {
     `${n} part${n === 1 ? '' : 's'} written, ${steps.length} picture${steps.length === 1 ? '' : 's'} changed. Save to put them in the game.`,
     'ok'
   );
+}
+/* Part mode's work on a part carried over to its entry written again from a sheet (studio track ST-4) */
+const WB_JOINT_KEYS = ['z', 'turn', 'accepts', 'mirrorOf'];
+function wbKeepJoints(old, e) {
+  if (old.kind === e.kind) e.pivot = old.pivot;
+  if (old.size) e.size = old.size;
+  for (const k of WB_JOINT_KEYS) if (old[k] !== undefined) e[k] = old[k];
+  for (const v of WB_VIEWS) {
+    const O = old.views[v],
+      V = e.views[v];
+    if (!O || !V || O === V) continue;
+    if (O.pivot) V.pivot = O.pivot;
+    if (O.sizes) V.sizes = O.sizes;
+  }
 }
 /* ---------- actions and inputs ---------- */
 ACTIONS.wbOpen = async () => {

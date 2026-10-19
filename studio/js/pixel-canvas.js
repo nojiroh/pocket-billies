@@ -10,7 +10,8 @@
      repeat       3 for a ground tile: the picture repeats around itself and clicks wrap
      boxAt(x, y)  the box (a part) a pixel is in: fill stays inside it
      overlay(P)   SVG for the outlines, in picture pixels
-     hostTool(P, t, x, y)  a host's own tool (true when it took the click)
+     hostTool(P, t, x, y, ev)  a host's own tool (true when it took the click; ST-4: or { move(P, fx, fy), up(P) } to
+                  follow the drag, in picture pixels with fractions, pixelCanvasPointF)
      hover(P, x, y)    the pointer moved over the picture
      focusBox(P)  the box a flip or turn acts on when nothing is selected (the part in focus; null: none)
      onion(P)     the onion skin: { src: a canvas, from: [x, y, w, h], to: [x, y], clip?: [x, y, w, h] } drawn faint
@@ -71,6 +72,7 @@ expose({
   pixelCanvasPanelHTML: [() => pixelCanvasPanelHTML, v => (pixelCanvasPanelHTML = v)],
   pixelCanvasPanelSync: [() => pixelCanvasPanelSync, v => (pixelCanvasPanelSync = v)],
   pixelCanvasPoint: [() => pixelCanvasPoint, v => (pixelCanvasPoint = v)],
+  pixelCanvasPointF: [() => pixelCanvasPointF, v => (pixelCanvasPointF = v)],
   pixelCanvasRepeat: [() => pixelCanvasRepeat],
   pixelCanvasSymmetry: [() => pixelCanvasSymmetry, v => (pixelCanvasSymmetry = v)],
   pixelCanvasTool: [() => pixelCanvasTool, v => (pixelCanvasTool = v)],
@@ -379,6 +381,13 @@ function pixelCanvasPoint(P, ev) {
   const m = (v, k) => ((v % k) + k) % k;
   return [m(x, c.width), m(y, c.height)];
 }
+/* the point under the pointer in picture pixels, with fractions (not wrapped) */
+export function pixelCanvasPointF(P, ev) {
+  const c = P.o.get(),
+    r = P.cv.getBoundingClientRect(),
+    n = pixelCanvasRepeat(P);
+  return [((ev.clientX - r.left) / r.width) * c.width * n, ((ev.clientY - r.top) / r.height) * c.height * n];
+}
 /* ---------- strokes: painted into a copy of the picture's pixels, shown as they go, kept when the stroke ends ---------- */
 function strokeStart(P) {
   const c = P.o.get(),
@@ -519,14 +528,20 @@ export function pixelCanvasTool(P, t) {
 function bindPixelCanvasEvents(P) {
   const w = P.wrap;
   let last = null,
-    from = null;
+    from = null,
+    drag = null;
   w.addEventListener('pointerdown', ev => {
     if (ev.button !== 0) return;
     const c = P.o.get();
     if (!c) return;
     const [x, y] = pixelCanvasPoint(P, ev);
     P.hoverAt = [x, y];
-    if (P.o.hostTool && P.o.hostTool(P, P.tool, x, y)) return;
+    const took = P.o.hostTool && P.o.hostTool(P, P.tool, x, y, ev);
+    if (took && typeof took === 'object') {
+      drag = took;
+      w.setPointerCapture(ev.pointerId);
+    }
+    if (took) return;
     if (P.tool === 'pick' || ev.altKey) {
       const d = pixelGet(c.getContext('2d').getImageData(0, 0, c.width, c.height), x, y);
       if (d && d[3]) pixelCanvasColor(P, pixelHex(d[0], d[1], d[2]));
@@ -559,6 +574,11 @@ function bindPixelCanvasEvents(P) {
   w.addEventListener('pointermove', ev => {
     const c = P.o.get();
     if (!c) return;
+    if (drag) {
+      const [fx, fy] = pixelCanvasPointF(P, ev);
+      drag.move(P, fx, fy);
+      return;
+    }
     const p = pixelCanvasPoint(P, ev);
     if (from && P.tool === 'select') {
       P.sel = pixelClip(c, [
@@ -590,6 +610,12 @@ function bindPixelCanvasEvents(P) {
     if (P.o.hover) P.o.hover(P, p[0], p[1]);
   });
   const up = ev => {
+    if (drag) {
+      const d = drag;
+      drag = null;
+      d.up(P);
+      return;
+    }
     if (P.stroke) {
       P.lastAt = from && P.stroke.to ? P.stroke.to : last;
       strokeEnd(P);

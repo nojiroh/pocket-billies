@@ -54,6 +54,12 @@ kept aside in the browser).
   image at about 4x) snaps back to its pixels; names from a template; front and back matched by name, then by
   position; Write puts the pictures and the parts in the game (one undo each). The phase 16 kits slice exactly as
   before, so tools/slice-part-kit.py is retired; the part list is now game/data/partKits.json.
+- Art workbench, Part mode (Studio track ST-4): a kit part's front and back side by side; drag the pivot crosshair
+  and the labelled sockets, or nudge them with the arrow keys (Shift for a quarter pixel); pick the slots each socket
+  takes; turn limits and draw order per view; a test fit onto a body with a turn slider and a swing; Mirror to other
+  side makes a copy (<id>_r) with the pictures flipped and the sockets swapped; S and L can be painted by hand,
+  starting from M scaled. Writing a sheet again keeps all of it. Each kind has a draw order, turn limits and the side
+  its art is drawn for in partKits.json; the pivot of a part not moved by hand is its joint, chin or base socket.
 - The Studio's scene preview has a free camera: fly over the scene and look at any corner from any angle, with the
   mouse, the keys or two fingers on a phone; a top view; put the walker where you look.
 - Robots (phase 17 prototype): build your own from a gem and four parts (torso with head, left arm, right arm,

@@ -3938,6 +3938,161 @@ body.wb-dropping::after {
   }
 }
 
+/* studio track ST-4: the Art workbench, Part mode (studio/js/workbench-part.js) */
+.wbp-filter {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+}
+.wbp-filter input[type='search'] {
+  grid-column: 1 / -1;
+}
+.wb-thumb img {
+  max-width: 100%;
+  max-height: 100%;
+  image-rendering: pixelated;
+}
+.wbp-mid {
+  overflow: auto;
+}
+.wbp-hint {
+  margin-left: auto;
+  font-size: 11px;
+}
+.wbp-views {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+  padding: 8px;
+  flex: 1;
+  min-height: 320px;
+}
+.wbp-view {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+.wbp-view h4 {
+  margin: 0 0 4px;
+}
+.wbp-view h4 small {
+  font-weight: 400;
+  color: var(--muted);
+}
+.wbp-stage {
+  flex: 1;
+  min-height: 280px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.pc-over .wbp-pivot circle,
+.pc-over .wbp-pivot path {
+  fill: none;
+  stroke: #1f6e6f;
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+.pc-over .wbp-pivot.on circle,
+.pc-over .wbp-pivot.on path {
+  stroke: #c8323c;
+  stroke-width: 2.5;
+}
+.pc-over .wbp-sock-dot {
+  stroke: #fff;
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+.pc-over .wbp-sock-dot.on {
+  stroke: #111;
+  stroke-width: 2.5;
+}
+.pc-over .wbp-label {
+  paint-order: stroke;
+  stroke: #fff;
+  font-family: ui-monospace, monospace;
+}
+.wbp-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin: 3px 0;
+  flex-wrap: wrap;
+}
+.wbp-row input[type='number'] {
+  width: 72px;
+}
+.wbp-row input[type='text'] {
+  width: 110px;
+}
+.wbp-row.on,
+.wbp-sock.on {
+  background: color-mix(in srgb, #1f6e6f 12%, transparent);
+  border-radius: 6px;
+}
+.wbp-name {
+  min-width: 42px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.wbp-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.wbp-sock {
+  padding: 2px 4px;
+  border-bottom: 1px solid var(--line);
+}
+.wbp-slots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  margin: 2px 0 4px 16px;
+}
+.wbp-slots .seg {
+  font-size: 11px;
+  padding: 1px 6px;
+}
+.wbp-z input {
+  width: 56px;
+  margin-left: 4px;
+}
+.wbp-fit {
+  border-top: 1px solid var(--line);
+  padding: 8px;
+  background: var(--panel);
+}
+.wbp-fit label {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+}
+.wbp-fitviews {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+.wbp-fitviews figure {
+  margin: 0;
+  text-align: center;
+}
+.wbp-fitviews canvas {
+  image-rendering: pixelated;
+  background: repeating-conic-gradient(#ddd 0 25%, #fff 0 50%) 0 0/8px 8px;
+  border-radius: 6px;
+  max-width: 100%;
+}
+.wbp-fitviews figcaption {
+  font-size: 11px;
+  color: var(--muted);
+}
+.pane[data-w='narrow'] .wbp-views {
+  grid-template-columns: 1fr;
+}
+
 /* phase 10, session 5: World & encounters → World map look */
 .wml-top {
   display: grid;
