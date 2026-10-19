@@ -83,6 +83,7 @@ debugLog.marks = [];
 debugLog.causes = {};
 debugLog.slow = [];
 debugLog.prof = {};
+debugLog.gc = { ts: 0, heap: 0, n: 0, freed: 0 }; /* phase 20: see debugLog.task */
 debugLog.mark = (label, t0, t1) => {
   const M = debugLog.marks,
     L = M[M.length - 1];
@@ -177,6 +178,18 @@ debugLog.task = (name, work, ts) => {
     if (g > a.gapMax) a.gapMax = g;
   }
   a.last = ts;
+  /* phase 20: a rough sign of garbage-collection hitches (Chrome only, whose heap figure is coarse and late): a gap of
+     more than 45 ms between ticks while the heap shrank */
+  if (performance.memory && debugLog.gc.ts !== ts) {
+    const G = debugLog.gc,
+      h = performance.memory.usedJSHeapSize;
+    if (G.ts && ts - G.ts > 45 && h < G.heap) {
+      G.n++;
+      G.freed += G.heap - h;
+    }
+    G.ts = ts;
+    G.heap = h;
+  }
   if (ts - debugLog.secT >= 1000) {
     debugLog.flush(ts);
   }
@@ -203,7 +216,22 @@ debugLog.ctx = () => {
         c.shc = [GAME.walkRenderer.shHit || 0, GAME.walkRenderer.shMiss || 0];
         GAME.walkRenderer.shHit = GAME.walkRenderer.shMiss = 0;
       }
+      /* phase 20: the point lights in the frame, and how many of them cast a shadow map */
+      const X = GAME.walkRenderer.X;
+      if (X && X.lights) c.lit = [X.lights.length, (X.lampSh || []).length];
     }
+    /* phase 20: one frame's graphics calls, counted once a second (engine/gpu-counters.js): draws, instances, program
+       switches, texture binds, uniform calls; the draws of each pass; KB uploaded (textures, buffers) */
+    if (typeof GAME.gpuCountSummary === 'function' && performance.now() - GAME.gpuCounters.lastT < 2000) {
+      const g = GAME.gpuCountSummary();
+      if (g) {
+        c.dc = g.dc;
+        c.dcp = g.dcp;
+        c.up = g.up;
+      }
+    }
+    if (typeof GAME.gpuState !== 'undefined' && GAME.gpuState.pcl && (GAME.gpuState.pcl[0] || GAME.gpuState.pcl[1]))
+      c.pcl = GAME.gpuState.pcl.slice();
     if (typeof GAME.gpuState !== 'undefined' && GAME.gpuState.gpuMs)
       c.gpu = [Math.round(GAME.gpuState.gpuMs * 10) / 10, Math.round(GAME.gpuState.gpuMax || 0)];
     if (debugLog.bench && debugLog.bench.step) c.bench = debugLog.bench.step;
@@ -235,6 +263,10 @@ debugLog.flush = ts => {
   }
   if (Object.keys(pr).length) s.prof = pr;
   if (performance.memory) s.mb = Math.round(performance.memory.usedJSHeapSize / 1048576);
+  if (debugLog.gc.n) {
+    s.alloc = [debugLog.gc.n, Math.round(debugLog.gc.freed / 1048576)];
+    debugLog.gc.n = debugLog.gc.freed = 0;
+  }
   debugLog.samples.push(s);
   if (debugLog.samples.length > debugLog.max.samples)
     debugLog.samples.splice(0, debugLog.samples.length - debugLog.max.samples);

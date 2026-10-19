@@ -68,7 +68,7 @@ const GPU_FIELDS = ['draws', 'instances', 'programs', 'textures', 'vaos', 'unifo
 const FIELD_COUNT = GPU_FIELDS.length,
   [F_DRAW, F_INST, F_PROG, F_TEX, F_VAO, F_UNI, F_TEXB, F_BUFB] = GPU_FIELDS.keys(),
   PASS_INDEX = Object.fromEntries(GPU_PASSES.map((p, i) => [p, i]));
-const gpuCounters = {
+export const gpuCounters = {
   on: false,
   pass: 0,
   /* the frame being counted, the last one counted, and a running sum while a test asks (want > 0) */
@@ -235,7 +235,7 @@ export function gpuFrameDone(ts) {
   }
 }
 /* one counted frame (or a sum) read as numbers: totals and the draws of each pass that had any */
-function gpuCountSummary(c = gpuCounters.last, frames = 1) {
+export function gpuCountSummary(c = gpuCounters.last, frames = 1) {
   if (!c) return null;
   const n = Math.max(1, frames),
     tot = new Array(FIELD_COUNT).fill(0),

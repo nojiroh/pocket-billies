@@ -30,6 +30,7 @@ expose({
   ensurePrograms: [() => ensurePrograms, v => setEnsurePrograms(v)],
   finishProgramCompile: [() => finishProgramCompile, v => setFinishProgramCompile(v)],
   freeMesh: [() => freeMesh, v => (freeMesh = v)],
+  gpuLoading: [() => gpuLoading, v => (gpuLoading = v)],
   gpuState: [() => gpuState],
   imageTexture: [() => imageTexture, v => (imageTexture = v)],
   initWebgl: [() => initWebgl, v => (initWebgl = v)],
@@ -87,6 +88,11 @@ export const gpuState = {
   normQ: [],
   lost: 0,
   fail: 0,
+  /* phase 20: programs compiled once a place has settled ([at once, in the background]): each is a stall a warm-up
+     would have avoided; loaded turns on a second after a walk scene is ready (drawWalkFrame) */
+  loaded: false,
+  loadAt: 0,
+  pcl: [0, 0],
 };
 provide({ gpuState }); /* to-module */
 export function webgl2Supported() {
@@ -324,6 +330,7 @@ vec3 lookOn(vec3 c,vec2 px,float hgt,vec3 bp){
    Shader sets that are needed later (buildings, solid props, the map) are started when a scene opens and finished a
    few at a time, so the first frame with a building in it no longer stalls while they compile. */
 function startProgramCompile([vs, fs], name) {
+  if (gpuState.loaded) gpuState.pcl[1]++;
   const gl = gpuState.gl,
     mk = (t, src) => {
       const s = gl.createShader(t);
@@ -401,6 +408,7 @@ export function pollPendingPrograms(max = 2) {
   }
 }
 function compileProgram([vs, fs], name) {
+  if (gpuState.loaded) gpuState.pcl[0]++;
   const gl = gpuState.gl,
     mk = (t, src) => {
       const s = gl.createShader(t);
@@ -474,6 +482,11 @@ export function ensurePrograms(defs) {
     }
 }
 /* ---------- context ---------- */
+/* a place (or the world map) starts loading: what compiles now is part of opening it, not a stall in play */
+export function gpuLoading() {
+  gpuState.loaded = false;
+  gpuState.loadAt = 0;
+}
 export function initWebgl(cv) {
   try {
     const gl = cv.getContext('webgl2', {

@@ -151,6 +151,7 @@ import {
   endGpuTimer,
   ensurePrograms,
   freeMesh,
+  gpuLoading,
   gpuState,
   imageTexture,
   initWebgl,
@@ -768,6 +769,7 @@ export function mountWalkView(cv, id, opt = {}) {
   walkView.sc = mapById(id);
   walkView.ready = false;
   walkView.err = null;
+  gpuLoading();
   cv.classList.add('gl');
   if (!ensureWalkGl(cv)) return mountWalkView(cv, id, opt);
   const ui = labelLayer(cv);
@@ -3604,6 +3606,10 @@ function drawWalkFrame(ts, dtm) {
   const w0 = performance.now(),
     gl = gpuState.gl,
     sc = walkView.sc;
+  if (!gpuState.loaded) {
+    if (!gpuState.loadAt) gpuState.loadAt = w0 + 1000;
+    else if (w0 >= gpuState.loadAt) gpuState.loaded = true;
+  }
   engineContext.look = sc.plain ? PLAIN_LOOK : sc.look || null;
   gpuState.fr = (gpuState.fr || 0) + 1;
   if (gpuState.fr % 120 === 0) trimTextures();

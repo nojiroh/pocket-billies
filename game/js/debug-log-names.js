@@ -5,6 +5,7 @@ import { LOCATIONS, gameData } from './game-data.js';
 import { encountersHere, setSetTrip, setTrip } from './logic/rules.js';
 import { battleStageKey, newBattle, setNewBattle } from './logic/battle-engine.js';
 import { activeBattle, save, saveData, setSave, uiState } from './game-state.js';
+import { gpuCountSummary, gpuCounters } from './engine/gpu-counters.js';
 import { frameScheduler, userFps } from './frame-scheduler.js';
 import { artPixels, setArtPixels } from './art.js';
 import { PERSON_ART_CACHE, personBattleFrames, setPersonBattleFrames } from './person-art.js';
@@ -138,6 +139,8 @@ Object.defineProperties(GAME, {
   frameScheduler: { get: () => frameScheduler },
   gameData: { get: () => gameData },
   gatherFrameItems: { get: () => gatherFrameItems, set: setGatherFrameItems },
+  gpuCountSummary: { get: () => gpuCountSummary },
+  gpuCounters: { get: () => gpuCounters },
   gpuState: { get: () => gpuState },
   grassWork: { get: () => grassWork, set: setGrassWork },
   groundOcclusion: { get: () => groundOcclusion, set: setGroundOcclusion },
