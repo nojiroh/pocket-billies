@@ -347,14 +347,15 @@ async function runGraphicsBench() {
   debugLog.add('bench', graphicsTest.stop ? 'graphics test stopped' : 'graphics test done');
   graphicsTestShow();
 }
-/* waits until the place is ready to measure: nothing left to prepare or paint (the ground's helper thread included),
+/* waits until the place is ready to measure: nothing left to prepare, plant (the grass) or paint (the ground's helper
+   thread included),
    then two whole seconds in a row whose frame times agree within 10 %; `sec` seconds at most in all */
 async function graphicsTestSettle(sc, st, sec) {
   const t0 = performance.now(),
     left = () => sec * 1000 - (performance.now() - t0),
     busy = () =>
       !graphicsTestOpen() ||
-      !!(typeof walkRenderer !== 'undefined' && walkRenderer.prep) ||
+      !!(typeof walkRenderer !== 'undefined' && (walkRenderer.prep || walkRenderer.grassJob)) ||
       !!(typeof paintWorkerState !== 'undefined' && paintWorkerState && paintWorkerState.jobs.size);
   while (busy() && left() > 0 && !graphicsTest.stop) await selfTestSleep(100);
   graphicsTestStand(sc, st);

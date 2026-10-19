@@ -55,7 +55,7 @@ each of its values.
   the chip has timers (EXT_disjoint_timer_query_webgl2).
 - **Per step:** set the value, wait 1 s, then measure for 3 s.
 - **Settling:** a station's first step and every step that rebuilds (and the step after one, which rebuilds back)
-  first wait until nothing is left to prepare or paint (the ground's helper thread included) and two whole seconds in
+  first wait until nothing is left to prepare, plant (the grass) or paint (the ground’s helper thread included) and two whole seconds in
   a row agree within 10 %: at most 10 s, 12 s after a rebuild. Without it a station's first look came out slow while
   its ground was still painting, and the step after a rebuild was measured during the rebuild back.
 - **Drift and noise:** each station measures its untouched look first, midway (stations with two or more settings)
