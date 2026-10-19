@@ -118,7 +118,10 @@ import { applyPreferences, settingsHTML } from './settings-screen.js';
 import { bustHTML, rigCanvasHTML } from './skeleton-rig.js';
 import { EASE, battleStage, battleStageFocus, battleStageTargets, camHome } from './battle-stage.js';
 import {
+  ROOM_BY_USE,
   closedText,
+  doorLinkOf,
+  doorOf,
   isOpenNow,
   mapArtPaths,
   mapById,
@@ -207,7 +210,6 @@ expose({
   BOX_SORTS: [() => BOX_SORTS],
   RARITY_NAMES: [() => RARITY_NAMES],
   ROOM_BY_BUILDING: [() => ROOM_BY_BUILDING],
-  ROOM_BY_USE: [() => ROOM_BY_USE],
   SCREENS: [() => SCREENS],
   TABS: [() => TABS],
   TRACKS: [() => TRACKS],
@@ -913,9 +915,8 @@ function mapExits(node) {
 /* what the walk scene shows: the stop you're at (walk around freely), or you walking out toward the next stop
    (first half of a road) and in from the far end (second half) */
 /* v26: walking into shops, the clinic, the lab and houses. uiState.inside remembers the room and where you came in */
-const ROOM_BY_USE = { shop: 'int_shop', clinic: 'int_clinic', lab: 'int_lab', house: 'int_house', home: 'int_home' };
 /* v46: a building's own room: one set on it in the Studio ("room"), else the room made for its kind of building
-   (a bakery, an inn, a bank...), else the room for what it does (shop, clinic, lab, house) */
+   (a bakery, an inn, a bank...), else the room for what it does (shop, clinic, lab, house); walk-view.js doorLinkOf */
 const ROOM_BY_BUILDING = {
   bakery: 'int_bakery',
   inn: 'int_inn',
@@ -932,14 +933,8 @@ const ROOM_BY_BUILDING = {
 provide({ ROOM_BY_BUILDING }); /* to-module */
 function roomFor(a, p) {
   if ((saveData.preferences || {}).rooms === 'quick' && a !== 'home') return null;
-  if (a !== 'home' && p) {
-    if (p.room && mapById(p.room)) return p.room;
-    const M = walkData().sc.props[p.k],
-      k = ROOM_BY_BUILDING[p.k] || (M && ROOM_BY_BUILDING[M.group]);
-    if (k && mapById(k)) return k;
-  }
-  const id = ROOM_BY_USE[a];
-  return id && mapById(id) ? id : null;
+  const L = doorLinkOf(p, a, walkView.id);
+  return L ? L.b.map : null;
 }
 function enterRoom(a, p) {
   const id = roomFor(a, p);
@@ -997,13 +992,14 @@ function roomLayIn(id, p, fresh) {
   )
     return null;
   if (engineSetting('world', 'seamlessRooms') === false) return null;
-  const C = walkData().sc,
-    M = C.props[p.k];
-  if (!M || !M.box) return null;
-  const s = p.s || 1,
-    f = p.f ? -1 : 1,
-    dx = (((M.door && M.door.x) || 0) / (C.ppu || 34)) * s * f,
-    door = [+(p.x + dx).toFixed(1), +(+p.z).toFixed(1), +(+p.x).toFixed(1)]; /* the door, and the building's middle */
+  const M = walkData().sc.props[p.k],
+    E = doorOf(p);
+  if (!M || !M.box || !E) return null;
+  const door = [
+    +E.at[0].toFixed(1),
+    +E.at[1].toFixed(1),
+    +E.mid[0].toFixed(1),
+  ]; /* the door, and the building's middle */
   if (fresh)
     seamlessWorld.cache.delete(
       seamlessRoomId(walkView.id, id, door) + '|' + seamlessWorld.gen

@@ -75,6 +75,7 @@ expose({
   PROP_CLOCK: [() => PROP_CLOCK],
   PROP_VARIANT_CACHE: [() => PROP_VARIANT_CACHE],
   ROOF_STYLES: [() => ROOF_STYLES],
+  ROOM_BY_USE: [() => ROOM_BY_USE],
   RUN_FACTOR: [() => RUN_FACTOR],
   STEP_GRID_CACHE: [() => STEP_GRID_CACHE],
   TILE_PIXEL_CACHE: [() => TILE_PIXEL_CACHE],
@@ -111,6 +112,8 @@ expose({
   cropGrowth: [() => cropGrowth, v => (cropGrowth = v)],
   decodeBase64Array: [() => decodeBase64Array, v => (decodeBase64Array = v)],
   directionOf: [() => directionOf, v => (directionOf = v)],
+  doorLinkOf: [() => doorLinkOf, v => (doorLinkOf = v)],
+  doorOf: [() => doorOf, v => (doorOf = v)],
   drawBubble: [() => drawBubble, v => (drawBubble = v)],
   drawExitLabels: [() => drawExitLabels, v => (drawExitLabels = v)],
   drawExitMarks: [() => drawExitMarks, v => (drawExitMarks = v)],
@@ -577,6 +580,39 @@ const CLOSED_VENUE_NAMES = {
   greenhouse: 'The greenhouse',
   barn: 'The barn',
 };
+/* phase 08b: a building's door link, in the shape of the links in roads.json: from the place (a) at the building's door
+   to the room's doorway (b, the room's exit 0). The room: the building's own (p.room, set in the Studio), else the
+   room made for its kind of building, else the room for what it does. a.exit: the door, the way out of it (a step
+   of 1 m) and the middle of the building's front, in the place's metres (null for a door with no building) */
+export const ROOM_BY_USE = {
+  shop: 'int_shop',
+  clinic: 'int_clinic',
+  lab: 'int_lab',
+  house: 'int_house',
+  home: 'int_home',
+};
+export function doorLinkOf(p, act, mapId) {
+  const C = walkData().sc,
+    M = p && C.props[p.k];
+  let room = null;
+  if (act !== 'home' && p) {
+    const RK = typeof ROOM_BY_BUILDING !== 'undefined' ? ROOM_BY_BUILDING : {},
+      k = RK[p.k] || (M && RK[M.group]);
+    room = p.room && mapById(p.room) ? p.room : k && mapById(k) ? k : null;
+  }
+  if (!room) room = ROOM_BY_USE[act] && mapById(ROOM_BY_USE[act]) ? ROOM_BY_USE[act] : null;
+  if (!room) return null;
+  return { kind: 'door', a: { map: mapId || null, exit: doorOf(p) }, b: { map: room, exit: 0 } };
+}
+export function doorOf(p) {
+  if (!p || p.x == null) return null;
+  const C = walkData().sc,
+    M = C.props[p.k],
+    s = p.s || 1,
+    f = p.f ? -1 : 1,
+    dx = (((M && M.door && M.door.x) || 0) / (C.ppu || 34)) * s * f;
+  return { at: [p.x + dx, +p.z], out: [0, -1], mid: [+p.x, +p.z] };
+}
 /* v47: the kind a door keeps hours as (not game-data.js locationKind(id), the kind of a place) */
 export function openingHoursKind(a, p) {
   const C = walkData().sc,
@@ -3880,10 +3916,11 @@ export function approachPoint(x, z) {
     l = Math.hypot(dx, dz) || 1;
   return walkablePointNear(x + (dx / l) * 1.1, z + (dz / l) * 1.1);
 }
-export function actionSpot(p, M, PPU) {
-  const s = p.s || 1,
-    f = p.f ? -1 : 1;
-  if (M.door) return walkablePointNear(p.x + ((M.door.x || 0) / PPU) * s * f, p.z - 0.55);
+export function actionSpot(p, M) {
+  if (M.door) {
+    const D = doorOf(p);
+    return walkablePointNear(D.at[0] + D.out[0] * 0.55, D.at[1] + D.out[1] * 0.55);
+  }
   return approachPoint(p.x, p.z - 0.3);
 }
 export function drawExitMarks(C, st, t) {
