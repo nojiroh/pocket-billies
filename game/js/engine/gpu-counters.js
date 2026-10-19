@@ -254,14 +254,14 @@ export function gpuCountSummary(c = gpuCounters.last, frames = 1) {
   };
 }
 /* a test counts every frame while it measures: begin, then end gives the averages per frame */
-function gpuCountBegin() {
+export function gpuCountBegin() {
   if (!gpuCounters.want) {
     gpuCounters.sum.fill(0);
     gpuCounters.frames = 0;
   }
   gpuCounters.want++;
 }
-function gpuCountEnd() {
+export function gpuCountEnd() {
   const s = gpuCounters.frames ? gpuCountSummary(gpuCounters.sum, gpuCounters.frames) : null;
   if (s) s.frames = gpuCounters.frames;
   gpuCounters.want = Math.max(0, gpuCounters.want - 1);

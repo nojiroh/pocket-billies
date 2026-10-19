@@ -28,6 +28,7 @@ import {
   setSaveData,
   uiState,
 } from './game-state.js';
+import { gpuCountBegin, gpuCountEnd } from './engine/gpu-counters.js';
 import { frameScheduler } from './frame-scheduler.js';
 import { PERSON_ART_CACHE } from './person-art.js';
 import { closeDressingRoom, dressingRoom } from './dressing-room.js';
@@ -571,7 +572,14 @@ async function runFullTest(mode) {
                 Object.entries(r.gpu)
                   .map(([k, v]) => `${k} ${v} ms`)
                   .join(', ')
-              : ' · no graphics-chip timers here')
+              : ' · no graphics-chip timers here') +
+            (r.calls
+              ? ` · ${r.calls.dc[0]} draws (${r.calls.dc[1]} instances, ${r.calls.dc[2]} program switches, ` +
+                `${r.calls.dc[4]} uniform calls): ` +
+                Object.entries(r.calls.dcp)
+                  .map(([k, v]) => `${k} ${v}`)
+                  .join(', ')
+              : '')
           );
         },
         6
@@ -1676,6 +1684,8 @@ export function diagnosticsTimersOn() {
       active: false,
       f0: typeof walkRenderer !== 'undefined' ? walkRenderer.frames : 0,
     };
+  /* phase 20: every frame's graphics calls are counted while the timers run (engine/gpu-counters.js) */
+  gpuCountBegin();
   for (const [grp, names] of Object.entries(DIAGNOSTICS_PASSES)) {
     T.cpu[grp] = 0;
     for (const n of names) {
@@ -1712,6 +1722,7 @@ export function diagnosticsTimersOn() {
 }
 export async function diagnosticsTimersOff(T) {
   for (const [n, o] of Object.entries(T.orig)) GAME[n] = o;
+  const calls = gpuCountEnd();
   const frames = Math.max(1, (typeof walkRenderer !== 'undefined' ? walkRenderer.frames : 0) - T.f0),
     cpu = {};
   for (const [k, v] of Object.entries(T.cpu)) if (v > 0) cpu[k] = Math.round((v / frames) * 100) / 100;
@@ -1734,7 +1745,7 @@ export async function diagnosticsTimersOff(T) {
       for (const [k, v] of Object.entries(sum)) gpu[k] = Math.round((v / Math.max(1, frames)) * 100) / 100;
     }
   }
-  return { frames, cpu, gpu };
+  return { frames, cpu, gpu, calls };
 }
 /* the report: what was measured, short, made to be read */
 function diagnosticsSummary() {
