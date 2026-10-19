@@ -20,6 +20,7 @@ import {
   pictureImage,
   pixelCanvas,
   pixelCanvasColor,
+  pixelCanvasDeselect,
   pixelCanvasFit,
   pixelCanvasTool,
   pixelCanvasZoom,
@@ -410,6 +411,8 @@ export async function openPixelEditor(sp, view = 'front', focus = null) {
     ['erase', 'Eraser', 'E'],
     ['fill', 'Fill', 'F'],
     ['pick', 'Pick color', 'I'],
+    ['line', 'Line', 'L'],
+    ['select', 'Select', 'M'],
   ]
     .map(([k, l, s]) => `<button class="seg" data-pe="tool" data-t="${k}" title="${l} (${s})">${l}</button>`)
     .join('')}</span>
@@ -463,6 +466,10 @@ function refreshPixelEditor() {
               .join('')
           : '',
       hover: (P, x, y) => pixelEditorHover(x, y),
+      focusBox: () => {
+        const p = E.hover >= 0 ? partsOf(E.sp, E.view)[E.hover] : null;
+        return p ? p.r : null;
+      },
       path: pixelEditorAtlasPath,
       changed: pixelEditorChanged,
       toolChanged: refreshPixelTools,
@@ -677,7 +684,7 @@ function pixelEditorKeys(ev) {
     return;
   }
   if (mod) return;
-  const T = { p: 'pen', b: 'pen', e: 'erase', f: 'fill', g: 'fill', i: 'pick' },
+  const T = { p: 'pen', b: 'pen', e: 'erase', f: 'fill', g: 'fill', i: 'pick', l: 'line', m: 'select' },
     P = pixelEditor.pc;
   if (!P) return;
   if (T[k]) pixelCanvasTool(P, T[k]);
@@ -685,6 +692,7 @@ function pixelEditorKeys(ev) {
     pixelCanvasZoom(P, pixelZoomNext(P.zoom, 1));
   } else if (k === '-') pixelCanvasZoom(P, pixelZoomNext(P.zoom, -1));
   else if (k === 'escape') {
+    if (pixelCanvasDeselect(P)) return;
     $('#modal').innerHTML = '';
     render();
   }

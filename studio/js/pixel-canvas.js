@@ -12,6 +12,7 @@
      overlay(P)   SVG for the outlines, in picture pixels
      hostTool(P, t, x, y)  a host's own tool (true when it took the click)
      hover(P, x, y)    the pointer moved over the picture
+     focusBox(P)  the box a flip or turn acts on when nothing is selected (the part in focus; null: none)
      path()       where the picture is saved (art/...): a stroke is a step of the Studio's undo for it
      changed(P)   a stroke ended, or an undo or redo changed the picture
      drawn(P)     the canvas was drawn (zoom and grid may have changed) */
@@ -23,6 +24,7 @@ import { makeCanvas } from '../../game/js/art.js';
 import { historyArt } from '../../game/js/logic/history.js';
 import {
   PIXEL_GRID_FROM,
+  pixelClip,
   pixelCopy,
   pixelDiffBox,
   pixelFill,
@@ -43,7 +45,9 @@ expose({
   imageOf: [() => imageOf],
   pictureImage: [() => pictureImage],
   pixelCanvas: [() => pixelCanvas, v => (pixelCanvas = v)],
+  pixelCanvasBox: [() => pixelCanvasBox, v => (pixelCanvasBox = v)],
   pixelCanvasColor: [() => pixelCanvasColor, v => (pixelCanvasColor = v)],
+  pixelCanvasDeselect: [() => pixelCanvasDeselect, v => (pixelCanvasDeselect = v)],
   pixelCanvasFit: [() => pixelCanvasFit, v => (pixelCanvasFit = v)],
   pixelCanvasInk: [() => pixelCanvasInk],
   pixelCanvasPoint: [() => pixelCanvasPoint, v => (pixelCanvasPoint = v)],
@@ -51,6 +55,7 @@ expose({
   pixelCanvasTool: [() => pixelCanvasTool, v => (pixelCanvasTool = v)],
   pixelCanvasZoom: [() => pixelCanvasZoom, v => (pixelCanvasZoom = v)],
   strokeEnd: [() => strokeEnd, v => (strokeEnd = v)],
+  strokeLineTo: [() => strokeLineTo, v => (strokeLineTo = v)],
   strokePlot: [() => strokePlot, v => (strokePlot = v)],
   strokeShow: [() => strokeShow, v => (strokeShow = v)],
   strokeStart: [() => strokeStart, v => (strokeStart = v)],
@@ -73,6 +78,8 @@ export function pixelCanvas(stage, o) {
     zoom: 0,
     showGrid: true,
     stroke: null,
+    sel: null /* the selected box, in picture pixels */,
+    lastAt: null /* where the last stroke ended: Shift-click draws a line from there */,
   };
   bindPixelCanvasEvents(P);
   const onArt = ev => {
@@ -170,7 +177,10 @@ export function drawPixelCanvas(P) {
   P.over.setAttribute('viewBox', `0 0 ${W} ${H}`);
   const off = n > 1 ? c.width : 0,
     offY = n > 1 ? c.height : 0;
-  P.over.innerHTML = `<g transform="translate(${off} ${offY})">${P.o.overlay ? P.o.overlay(P) : ''}</g>`;
+  const sel = P.sel
+    ? `<rect class="pc-sel" x="${P.sel[0]}" y="${P.sel[1]}" width="${P.sel[2]}" height="${P.sel[3]}"/>`
+    : '';
+  P.over.innerHTML = `<g transform="translate(${off} ${offY})">${P.o.overlay ? P.o.overlay(P) : ''}${sel}</g>`;
   if (P.o.drawn) P.o.drawn(P);
 }
 /* the picture pixel under the pointer (a ground tile's repeats wrap onto the picture) */
@@ -209,6 +219,27 @@ const pixelCanvasInk = P => (P.tool === 'erase' ? null : pixelRgba(P.color));
 function strokePlot(P, x, y) {
   pixelSet(P.stroke.work, x, y, pixelCanvasInk(P));
 }
+/* a line from a to b over the picture as it was before the stroke (it follows the pointer until let go) */
+function strokeLineTo(P, a, b) {
+  const s = P.stroke;
+  s.work.data.set(s.before.data);
+  for (const [x, y] of pixelLine(a, b)) strokePlot(P, x, y);
+  s.to = b;
+  strokeShow(P);
+}
+/* the box a flip or turn acts on: the selection, else the host's (the part in focus), else the whole picture */
+function pixelCanvasBox(P) {
+  const c = P.o.get();
+  if (!c) return null;
+  if (P.sel) return P.sel;
+  return P.o.focusBox ? P.o.focusBox(P) : [0, 0, c.width, c.height];
+}
+export function pixelCanvasDeselect(P) {
+  if (!P.sel) return false;
+  P.sel = null;
+  drawPixelCanvas(P);
+  return true;
+}
 export function pixelCanvasColor(P, hex) {
   P.color = hex.toUpperCase();
   if (P.tool === 'erase' || P.tool === 'pick') P.tool = 'pen';
@@ -221,7 +252,8 @@ export function pixelCanvasTool(P, t) {
 }
 function bindPixelCanvasEvents(P) {
   const w = P.wrap;
-  let last = null;
+  let last = null,
+    from = null;
   w.addEventListener('pointerdown', ev => {
     if (ev.button !== 0) return;
     const c = P.o.get();
@@ -233,13 +265,25 @@ function bindPixelCanvasEvents(P) {
       if (d && d[3]) pixelCanvasColor(P, pixelHex(d[0], d[1], d[2]));
       return;
     }
+    w.setPointerCapture(ev.pointerId);
+    if (P.tool === 'select') {
+      from = [x, y];
+      P.sel = pixelClip(c, [x, y, 1, 1]);
+      drawPixelCanvas(P);
+      return;
+    }
     strokeStart(P);
     if (P.tool === 'fill') {
       pixelFill(P.stroke.work, x, y, pixelCanvasInk(P), P.o.boxAt ? P.o.boxAt(x, y) : null);
       strokeEnd(P);
       return;
     }
-    w.setPointerCapture(ev.pointerId);
+    /* the line tool, or Shift with the pencil or eraser from where the last stroke ended */
+    if (P.tool === 'line' || (ev.shiftKey && P.lastAt)) {
+      from = P.tool === 'line' && !ev.shiftKey ? [x, y] : P.lastAt;
+      strokeLineTo(P, from, [x, y]);
+      return;
+    }
     last = [x, y];
     strokePlot(P, x, y);
     strokeShow(P);
@@ -248,6 +292,20 @@ function bindPixelCanvasEvents(P) {
     const c = P.o.get();
     if (!c) return;
     const p = pixelCanvasPoint(P, ev);
+    if (from && P.tool === 'select') {
+      P.sel = pixelClip(c, [
+        Math.min(from[0], p[0]),
+        Math.min(from[1], p[1]),
+        Math.abs(p[0] - from[0]) + 1,
+        Math.abs(p[1] - from[1]) + 1,
+      ]);
+      drawPixelCanvas(P);
+      return;
+    }
+    if (P.stroke && from) {
+      strokeLineTo(P, from, p);
+      return;
+    }
     if (P.stroke && last) {
       for (const [x, y] of pixelLine(last, p)) strokePlot(P, x, y);
       last = p;
@@ -256,9 +314,14 @@ function bindPixelCanvasEvents(P) {
     }
     if (P.o.hover) P.o.hover(P, p[0], p[1]);
   });
-  const up = () => {
-    if (P.stroke) strokeEnd(P);
-    last = null;
+  const up = ev => {
+    if (P.stroke) {
+      P.lastAt = from && P.stroke.to ? P.stroke.to : last;
+      strokeEnd(P);
+    }
+    if (from && P.tool === 'select' && P.o.selected) P.o.selected(P);
+    last = from = null;
+    if (ev.type === 'pointercancel') P.lastAt = null;
   };
   w.addEventListener('pointerup', up);
   w.addEventListener('pointercancel', up);

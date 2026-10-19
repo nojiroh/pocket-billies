@@ -1205,6 +1205,22 @@ canvas.spr-prev.big {
   vector-effect: non-scaling-stroke;
   stroke-dasharray: 4 3;
 }
+.pc-over rect.pc-sel {
+  fill: rgba(40, 120, 220, 0.08);
+  stroke: #2878dc;
+  stroke-width: 1.5;
+  stroke-dasharray: 5 4;
+  animation: pc-ants 0.8s linear infinite;
+}
+@keyframes pc-ants {
+  to {
+    stroke-dashoffset: -9;
+  }
+}
+.px-wrap[data-tool='select'],
+.px-wrap[data-tool='line'] {
+  cursor: crosshair;
+}
 .pc-over rect.hov {
   stroke: #c8323c;
   stroke-width: 2;
