@@ -1664,6 +1664,17 @@ def desktop_steps(b, base, R):
         bad = pg.evaluate(f"Promise.all({json.dumps(b['imgs'])}.map(p=>artLoad([p]).then(()=>imageReady(artImage(p))?null:p).catch(()=>p))).then(L=>L.filter(Boolean))")
         if bad: raise Exception(f'{len(bad)} building colours don’t load: {bad[:3]}')
         out.append(f'{b["plans"]} buildings with 3D plans, {b["vars"]} colour variants load, a room for each new kind')
+        # phase 08b: every door of three towns: its room's doorway within 0.1 m of the door, the room inside the view
+        nd, bad = 0, []
+        for place in ('copperleaf', 'verdigris', 'marigold'):
+            go_scene(pg, pg.evaluate(f"LOCATIONS.findIndex(l=>l.mapId==='{place}')"))
+            d = json.loads(pg.evaluate("""JSON.stringify((()=>{const C=walkData().sc,bad=[];let n=0;
+              for(const p of walkView.sc.props){if(!ROOM_BY_USE[p.act])continue;const M=C.props[p.k],E=doorOf(p),id=roomFor(p.act,p);if(!M||!M.box||!E||!id)continue;
+                const sc=seamlessRoomMap(walkView.id,id,[+E.at[0].toFixed(1),+E.at[1].toFixed(1),+E.mid[0].toFixed(1)]),R=sc&&sc.roomRect,d=sc?Math.abs(sc.exits[0][0]-E.at[0]):9;n++;
+                if(d>.1||!R||R[0]<0||R[1]<0||R[0]+R[2]>sc.w||R[1]+R[3]>sc.h)bad.push(p.k+' at '+p.x+', '+p.z+': '+d.toFixed(2)+' m')}return {n,bad}})())"""))
+            nd += d['n']; bad += [place + ' ' + b for b in d['bad']]
+        if bad: raise Exception(f'{len(bad)} of {nd} doors: the room’s doorway isn’t at the door, or the room leaves the view: {bad[:4]}')
+        out.append(f'{nd} doors in Copperleaf, Verdigris and Marigold: each room’s doorway within 0.1 m of its door')
         # walk into the shop: the room opens in place
         pg.evaluate("uiState.inside=null;uiState.goingIn=null;uiState.bench=null;uiState.modal=null;uiState.mq=[];renderOverlay();environment.force={time:13,weather:'clear',season:'summer'};0"); go_scene(pg, 0); time.sleep(2)
         pg.evaluate("(()=>{const p=walkView.sc.props.find(p=>p.act==='shop'&&p.k==='shop'),C=walkData().sc,g=actionSpot(p,C.props[p.k],C.ppu||34);window.__shop=[p.x,p.z];walkView.pl.route=null;walkView.pl.x=g[0]-2;walkView.pl.z=g[1]-1.5;walkPick({k:'act',p,act:'shop'})})();0")   # a couple of steps from the door (walking is slow here)
