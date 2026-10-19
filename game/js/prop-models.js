@@ -116,6 +116,17 @@ const VOXEL_TEXTURE_GRAIN = {
   rings: 0,
   bark: 0.16,
   rock: 0.2,
+  plaster: 0.06,
+  siding: 0.06,
+  brick: 0.12,
+  battens: 0.06,
+  panels: 0.04,
+  corrugated: 0.04,
+  tilewall: 0.04,
+  rooftiles: 0.1,
+  shingles: 0.1,
+  slate: 0.1,
+  solar: 0.04,
 };
 export const PROP_MODEL_TEXTURES = [
   ['plain', 'Plain'],
@@ -131,6 +142,17 @@ export const PROP_MODEL_TEXTURES = [
   ['rings', 'Rings'],
   ['bark', 'Bark'],
   ['rock', 'Rock'],
+  ['plaster', 'Plaster'],
+  ['siding', 'Siding'],
+  ['brick', 'Brick'],
+  ['battens', 'Battens'],
+  ['panels', 'Wall panels'],
+  ['corrugated', 'Corrugated metal'],
+  ['tilewall', 'Wall tiles'],
+  ['rooftiles', 'Clay roof tiles'],
+  ['shingles', 'Shingles'],
+  ['slate', 'Slate'],
+  ['solar', 'Solar panels'],
 ];
 const PROP_MODEL_SHAPES = [
   ['box', 'Box'],
@@ -822,6 +844,18 @@ const LOW_POLY_TEXTURE_CELLS = {
   rings: 15,
   bark: 22,
   rock: 23,
+  /* phase 09: the building sheet's own materials by name (buildings.js BUILDING_TEXTURE_NAMES) */
+  plaster: 0,
+  siding: 1,
+  brick: 2,
+  battens: 4,
+  panels: 5,
+  corrugated: 6,
+  tilewall: 7,
+  rooftiles: 8,
+  shingles: 9,
+  slate: 10,
+  solar: 17,
 };
 function lowPolyFromRecipe(rec) {
   const V = [],
@@ -1055,12 +1089,15 @@ function lowPolyFromRecipe(rec) {
         y = Math.max(0, (L.z || 0) + k * h),
         row = [];
       for (let j = 0; j <= n; j++) {
-        const a = (2 * Math.PI * (j % n)) / n,
+        const a = (2 * Math.PI * (j % n)) / n + (+L.rot || 0),
           lu =
             lumpy && i > 0 && i < NR - 1
               ? 1 + la * (voxelHash(i * 7 + li3, j % n, 13) - 0.5) + la * 0.545 * Math.sin(a * 3 + i)
               : 1;
-        row.push([x0 + Math.cos(a) * r * f * lu, y, y0 + Math.sin(a) * ry * f * lu]);
+        /* phase 09: a cone may narrow differently in depth (ry1: its depth radius at the top), so a 4-sided cone
+           turned by rot (pi/4) is a hip roof with a ridge */
+        const fy = L.k === 'cone' && L.ry1 != null ? 1 - k + (k * L.ry1) / ry : f;
+        row.push([x0 + Math.cos(a) * r * f * lu, y, y0 + Math.sin(a) * ry * fy * lu]);
       }
       G.push(row);
     }

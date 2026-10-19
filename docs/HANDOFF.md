@@ -63,6 +63,27 @@ Branch `ccr-72e8ad56-lpn1x3`, from main.
 - Next session starts with: "start 08b" (docs/phases/08a-plan.md, Part B), after this branch is merged; the full quick
   check and a picture baseline first, since none exists yet.
 
+### Phase 09 batch 3 - the buildings of Copperleaf and Route 1 - 2026-10-19
+Owner's request: the buildings next, in the art style and setting, learning from the cottage.
+- Changed (tools/build-props-batch3.py; run batch1, batch2, batch3 in that order, each rebuilds the showcase map):
+  - cottage_moss: a smaller cousin of Juniper's: mossy dome with tufts, thatch edge and copper gutter, a dormer roof
+    window, a green round door in a stone surround, a porthole with a flower box, a lamp, a chimney with a copper hat,
+    a bench and a water butt round the side, a potted plant, side and back portholes.
+  - cottage_solar: pale green board-and-batten walls, a hip roof of solar panels with copper fascia and ridge, a brick
+    chimney, a little vertical wind turbine turning on the ridge, a coral round door, a porthole, a window with
+    frame, mullions and a flower box, a copper lamp, a vine climbing the corner, a rain barrel under a downpipe.
+  - lab (Professor Hazel's): white wall panels with a teal band and trim on a lavender plinth, a checkered roof
+    edge, teal double glass doors under a lamp with plants either side, side and back windows; on the roof a cooling
+    unit, an antenna with a red beacon, a tipped-up satellite dish, solar panels and planters. The big window keeps
+    its drawn view inside (desk, plant, machines) behind a modelled frame.
+  - Engine: a cone can be turned (rot) and narrow differently in depth (ry1), so a 4-sided cone is a hip roof with a
+    ridge; models can use the building sheet's own materials by name (plaster, siding, brick, battens, panels,
+    corrugated, tilewall, rooftiles, shingles, slate, solar). Both in the Studio's model editor.
+  - Fix: props with a footprint (box) now have their front at the base point and their body behind it, as the
+    building pictures always did, so walls and the footprint people walk round match: Juniper's cottage, the hedge
+    and the log were centred and are moved back.
+- Verified: data check, lint, type-check, unit tests, smoke check; one low-resolution look at each building.
+
 ### Phase 09 batch 2, parts 1 and 2 - Copperleaf and Route 1: flat plants, 14 trees - 2026-10-19
 Owner's request: start on the rest of Copperleaf and Route 1 (Hedgerow Lane), the first 10%, then another 10%.
 - Changed (tools/build-props-batch2.py, swapped in under their own keys like batch 1):

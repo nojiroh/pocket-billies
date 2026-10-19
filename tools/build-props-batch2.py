@@ -77,7 +77,7 @@ def hedge_recipe():
         x = -w / 2 + 0.25 + (w - 0.5) * i / 6
         L.append(B1.sphere(x, -d / 2 + 0.04 + (i % 2) * 0.05, h * (0.35 + 0.4 * ((i * 37) % 5) / 5), 0.13, GL, 'leaves', 'sprig', 7, 3, 0.35))
         L.append(B1.sphere(x + 0.2, (i % 3 - 1) * 0.15, h + 0.12 + (i % 2) * 0.04, 0.12, GL if i % 2 else G, 'leaves', 'top sprig', 7, 3, 0.35))
-    return {'ppm': PPM, 'cel': 0.7, 'layers': L}
+    return {'ppm': PPM, 'cel': 0.7, 'layers': B1.shift_y(L, d / 2)}
 
 
 def log_layers(x0, x1, z, r, y=0, moss=True, name='log'):
@@ -106,7 +106,7 @@ def log_recipe():
     L = log_layers(-1.15, 1.15, 0.36, 0.36, moss=False)
     L.append(B1.limb((0.6, 0, 0.6), (0.78, -0.05, 1.05), 0.06, 0.04, '#96684A', 'bark', 'twig', 6))
     L.append(B1.sphere(0.79, -0.06, 1.04, 0.045, '#76AA50', 'leaves', 'leaf', 6, 3))
-    return {'ppm': PPM, 'cel': 0.7, 'layers': L}
+    return {'ppm': PPM, 'cel': 0.7, 'layers': B1.shift_y(L, 0.3)}
 
 
 def stump_recipe():

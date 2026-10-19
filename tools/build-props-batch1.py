@@ -486,6 +486,20 @@ AIR = dict(cream='#F2DCA0', copper='#CE7C4C', verd='#62B098', wood='#B27648', dw
            glass='#5E86A8')
 
 
+def shift_y(layers, dy):
+    """Move a model back by dy metres (depth). A prop with a footprint (box) stands with its front at its base point and
+    its footprint behind it, as a building's picture always did; a model built round its middle is moved back by half
+    its depth so its walls and the footprint people walk round are the same place."""
+    for L in layers:
+        for f in ('y', 'y2'):
+            if f in L: L[f] = r2(L[f] + dy)
+        if 'pts' in L:
+            for q in L['pts']: q[1] = r2(q[1] + dy)
+        if isinstance(L.get('spin'), dict) and 'y' in L['spin']:
+            L['spin']['y'] = r2(L['spin']['y'] + dy)
+    return layers
+
+
 def disc(x, y, z, n, r, depth, col, tex='plain', name='', sides=12):
     """A round thing facing along n (a door, a porthole): a short limb from the surface out along its normal."""
     l = math.sqrt(sum(v * v for v in n)) or 1
@@ -690,7 +704,7 @@ def cottage_recipe():
           box(hx - 0.31, hy, 0.36, 0.04, 0.14, 0.08, '#3A2A2A', 'plain', 'skep door')]
     for i in range(4):
         L.append(cyl(hx, hy, 0.43 + i * 0.1, 0.31 - (i == 3) * 0.04, 0.025, '#C49E58', 'hay', 'skep band', 16))
-    return {'ppm': PPM, 'cel': 0.6, 'layers': sorted(L, key=lambda l: l['k'] == 'img')}
+    return {'ppm': PPM, 'cel': 0.6, 'layers': sorted(shift_y(L, d / 2), key=lambda l: l['k'] == 'img')}
 
 
 def cottage_fx():
