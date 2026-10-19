@@ -71,14 +71,14 @@ export const SCRIPT_COMMANDS = {
   end: { args: [], about: 'stop the script here' },
   /* a cutscene's own (game/data/cutscenes, docs/CUTSCENES.md: logic/cutscene-set.js reads them) */
   actor: {
-    args: ['who', 'at', 'spot', 'dir?'],
+    args: ['who', 'at', 'spot', '...'],
     group: 'cutscene',
-    about: 'put someone in the scene: "actor Hazel at door down"',
+    about: 'put someone in the scene: "actor Hazel at door down"; "actor you at street up silhouette" (a dark figure)',
   },
   act: {
     args: ['who', 'pose', 's?'],
     group: 'cutscene',
-    about: 'a pose for a while: throw, cheer, react (doesn’t wait)',
+    about: 'a pose for a while: throw, cheer, react, reach (doesn’t wait)',
   },
   caption: {
     args: ['s', '...'],
@@ -93,9 +93,17 @@ export const SCRIPT_COMMANDS = {
     about: 'a little effect: landing, sparkle; "effect landing at me"',
   },
   hide: {
-    args: ['what'],
+    args: ['what', '...'],
     group: 'cutscene',
-    about: 'hide box: the dialogue box goes away; hide Blake: Blake leaves the scene',
+    about:
+      'hide box: the dialogue box goes away; hide Blake: Blake leaves the scene; hide prop rift: the prop nearest that spot',
+  },
+  show: { args: ['what', '...'], group: 'cutscene', about: 'show Blake, show prop rift: back in the scene' },
+  traffic: {
+    args: ['lane', 'prop', 's', 'n?'],
+    group: 'cutscene',
+    about:
+      'that many of a prop (a flying car) along one of the cutscene’s lanes, end to end in s seconds, again and again (doesn’t wait)',
   },
   sound: { args: ['effect'], group: 'cutscene', about: 'a sound effect (throw, pop, hit: sound.js)' },
   /* the opening's own (cutscene/opening.js) */
