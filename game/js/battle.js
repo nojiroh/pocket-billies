@@ -78,7 +78,6 @@ import { portraitHTML } from './person-art.js';
 import { RIG_BACK_VIEW, bustHTML, rigPreload } from './skeleton-rig.js';
 import {
   AREAS,
-  EASE,
   actorCenter,
   actorTop,
   actorWorldPoint,
@@ -119,9 +118,7 @@ expose({
   billyPickHTML: [() => billyPickHTML, v => (billyPickHTML = v)],
   bindAim: [() => bindAim, v => (bindAim = v)],
   boxAnims: [() => boxAnims, v => (boxAnims = v)],
-  boxShow: [() => boxShow, v => (boxShow = v)],
   chooseMessage: [() => chooseMessage, v => (chooseMessage = v)],
-  countTo: [() => countTo, v => (countTo = v)],
   doThrow: [() => doThrow, v => (doThrow = v)],
   effectivenessLabel: [() => effectivenessLabel, v => (effectivenessLabel = v)],
   endBattle: [() => endBattle, v => setEndBattle(v)],
@@ -129,7 +126,6 @@ expose({
   floatPos: [() => floatPos],
   floatTick: [() => floatTick, v => (floatTick = v)],
   hpMini: [() => hpMini, v => (hpMini = v)],
-  hudCardHTML: [() => hudCardHTML, v => (hudCardHTML = v)],
   hudHit: [() => hudHit, v => ((hudHit = v), provide({ hudHit }))],
   hudPop: [() => hudPop, v => ((hudPop = v), provide({ hudPop }))],
   itemIcon: [() => itemIcon],
@@ -141,9 +137,7 @@ expose({
   openBattle: [() => openBattle, v => setOpenBattle(v)],
   paintActions: [() => paintActions, v => setPaintActions(v)],
   paintBoxes: [() => paintBoxes, v => (paintBoxes = v)],
-  paintParty: [() => paintParty, v => (paintParty = v)],
   paintPlates: [() => paintPlates, v => (paintPlates = v)],
-  paintSide: [() => paintSide, v => (paintSide = v)],
   pickMove: [() => pickMove, v => (pickMove = v)],
   pickPart: [() => pickPart, v => (pickPart = v)],
   pickTarget: [() => pickTarget, v => (pickTarget = v)],
@@ -182,13 +176,6 @@ function battleMode() {
     h = innerHeight;
   return w > h * 1.05 && w >= 600 ? 'landscape' : 'portrait';
 }
-function hudCardHTML(i) {
-  return `<div class="hc-row"><b class="hc-n" id="n${i}"></b><span class="hc-gp" id="gp${i}" hidden>${uiIconHTML('spark', 12)}</span><span class="hc-lv tnum" id="l${i}"></span></div>
- <div class="hc-row2"><span class="hc-t" id="t${i}"></span><span class="hc-st" id="st${i}"></span><span class="hc-sg" id="sg${i}"></span></div>
- <div class="hpbar"><span class="hpl">HP</span><div class="hpt"><i class="ghost" id="g${i}"></i><i class="fill" id="h${i}"></i></div></div>
- <div class="hc-parts" id="pp${i}" hidden></div>
- <div class="hc-row3">${i === 0 ? '<span class="hc-num tnum" id="hn0"></span>' : ''}<span class="hc-pips" id="pips${i}"></span></div>${i === 0 ? '<div class="xpbar"><i id="x0"></i></div>' : ''}`;
-}
 export function battleShell() {
   return `<div class="battle" id="battle" data-layout="${battleMode()}">
  <div class="bstage" id="stage">
@@ -199,10 +186,8 @@ export function battleShell() {
   <div class="bplates" id="plates"></div>
  </div>
  <div class="ticker" aria-hidden="true"><div class="tk-in" id="tk"></div></div>
- <section class="hcard glassy foe" id="hb1" aria-label="Opponent">${hudCardHTML(1)}</section>
  <div class="mk glassy" id="mk"></div>
  <div class="dock glassy" id="dock">
-  <section class="hcard glassy me" id="hb0" aria-label="Your Billie">${hudCardHTML(0)}</section>
   <button class="bmsg" id="msg" data-a="adv" aria-live="polite"><span id="msgT"></span><i class="more"></i></button>
   <div class="cmd" id="acts"></div>
  </div>
@@ -497,120 +482,16 @@ export function tapMessage() {
   }
   if (uiState.evReady) nextEvent();
 }
-function boxShow(i, on) {
-  const b = $('#hb' + i);
-  if (b) b.classList.toggle('on', on);
-}
+/* phase 06-4: the corner cards are gone (the plates in the scene show everything); a Billie coming in repaints them */
 function boxAnims(ev) {
   const an = ev.an;
   if (!an) return;
-  if (an.k === 'trainerIn') {
-    boxShow(0, false);
-    boxShow(1, false);
-  }
-  if (an.k === 'wild')
-    setTimeout(() => {
-      paintBoxes(ev.s, ev.mk, false);
-      boxShow(1, true);
-    }, 620);
-  if (an.k === 'enter')
-    setTimeout(() => {
-      paintSide(an.si, ev.s[an.si], false);
-      boxShow(an.si, true);
-    }, 420);
-  if (an.k === 'faint') setTimeout(() => boxShow(an.si, false), 520);
-  if (an.k === 'recall') setTimeout(() => boxShow(an.si, false), 200);
-}
-function countTo(el, to, dur = 600) {
-  if (!el) return;
-  const from = +(el.dataset.v || to);
-  el.dataset.v = to;
-  const show = v => (el.textContent = el.dataset.fmt ? el.dataset.fmt.replace('#', v) : v);
-  if (from === to || reducedMotion) {
-    show(to);
-    return;
-  }
-  const t0 = performance.now();
-  const st = () => {
-    const k = Math.min(1, (performance.now() - t0) / dur),
-      v = Math.round(from + (to - from) * EASE.out(k));
-    show(v);
-    if (k < 1) requestAnimationFrame(st);
-  };
-  st();
+  if (an.k === 'wild' || an.k === 'enter')
+    setTimeout(() => paintBoxes(ev.s, ev.mk, false), an.k === 'wild' ? 620 : 420);
 }
 const statShortName = k => (STAT_NAMES[k] || k).slice(0, 3).toUpperCase();
-function paintSide(i, s, anim) {
-  if (!s) return;
-  const n = $('#n' + i);
-  if (!n) return;
-  n.textContent = s.name;
-  $('#l' + i).textContent = `Lv ${s.lvl}`;
-  $('#t' + i).innerHTML = s.ty.map(typeBadgeHTML).join('');
-  $('#gp' + i).hidden = !s.gold;
-  $('#st' + i).innerHTML = s.hp <= 0 ? '<span class="stb st-down">Fainted</span>' : statusBadgeHTML(s.st);
-  $('#sg' + i).innerHTML = Object.entries(s.stg || {})
-    .filter(([k, v]) => v)
-    .map(([k, v]) => `<span class="stg ${v > 0 ? 'up' : 'dn'}">${statShortName(k)} ${v > 0 ? '+' : ''}${v}</span>`)
-    .join('');
-  const p = Math.max(0, (s.hp / s.max) * 100),
-    h = $('#h' + i),
-    g = $('#g' + i);
-  if (h.dataset.k !== s.uid) {
-    h.dataset.k = s.uid;
-    for (const e of [h, g]) {
-      e.style.transition = 'none';
-      e.style.width = p + '%';
-      void e.offsetWidth;
-      e.style.transition = '';
-    }
-    h.dataset.p = p;
-  }
-  const prev = +(h.dataset.p || p);
-  h.dataset.p = p;
-  h.style.width = p + '%';
-  h.className = 'fill' + (p < 25 ? ' low' : p < 50 ? ' mid' : '');
-  g.style.transitionDelay = p < prev ? '.45s' : '0s';
-  g.style.width = p + '%';
-  if (p < prev && anim) {
-    const c = $('#hb' + i);
-    c.classList.remove('hit');
-    void c.offsetWidth;
-    c.classList.add('hit');
-  }
-  if (battleStage.s[i] && battleStage.s[i].sp === s.sp) battleStage.s[i].st = s.hp > 0 ? s.st : null;
-  /* phase 17: a robot's limbs, each with its own small HP bar */
-  const pp = $('#pp' + i);
-  if (pp) {
-    pp.hidden = !s.bot;
-    pp.innerHTML = s.bot ? robotPartsHTML(s.bot) : '';
-  }
-  if (i === 0) {
-    const hn = $('#hn0');
-    hn.dataset.fmt = `#/${s.max}`;
-    if (hn.dataset.k !== s.uid) {
-      hn.dataset.k = s.uid;
-      hn.dataset.v = s.hp;
-    }
-    countTo(hn, s.hp);
-    $('#x0').style.width = s.xp * 100 + '%';
-    const lo = $('#lowhp');
-    if (lo) lo.classList.toggle('on', s.hp > 0 && p < 25);
-  }
-}
-function paintParty() {
-  if (!activeBattle) return;
-  const pip = m => `<i class="pip${m.hp <= 0 ? ' out' : ''}${m.status ? ' st' : ''}"></i>`;
-  const a = $('#pips0');
-  if (a) a.innerHTML = saveData.team.map(pip).join('');
-  const b = $('#pips1');
-  if (b) b.innerHTML = activeBattle.kind === 'trainer' ? activeBattle.sides[1].team.map(pip).join('') : '';
-}
 export function paintBoxes(s, mk, anim) {
-  paintSide(0, s[0], anim);
-  paintSide(1, s[1], anim);
   paintPlates(s, anim);
-  paintParty();
   tickerUpdate(s, mk);
   const m = $('#mk');
   if (m) {
@@ -713,8 +594,6 @@ function afterEvents() {
   activeBattle.menuT = performance.now(); /* phase 06-2b: for Hazel's "instant picks" comment (opening-fall.js) */
   chooseMessage();
   paintBoxes(allSnapshots(), activeBattle.market);
-  boxShow(0, true);
-  boxShow(1, true);
   paintActions();
   if (activeBattle.T && activeBattle.T.tutorial && typeof battleTutor === 'function')
     battleTutor(); /* v47: Hazel's tips in Blake's first battle */
@@ -1205,7 +1084,7 @@ function plateElement(k) {
   e.dataset.a = 'btarget';
   e.dataset.t = k;
   e.tabIndex = -1;
-  e.innerHTML = `<span class="pl-top"><b class="pl-n"></b><span class="pl-cr" hidden>${uiIconHTML('spark', 11)}</span><span class="pl-lv tnum"></span></span><span class="pl-hp"><i class="ghost"></i><i class="fill"></i></span><span class="pl-bot"><span class="pl-st"></span><span class="pl-num tnum"></span></span>${ACTOR_SIDE[k] ? '' : '<span class="pl-xp"><i></i></span>'}`;
+  e.innerHTML = `<span class="pl-top"><b class="pl-n"></b><span class="pl-cr" hidden>${uiIconHTML('spark', 11)}</span><span class="pl-lv tnum"></span></span><span class="pl-hp"><i class="ghost"></i><i class="fill"></i></span><span class="pl-bot"><span class="pl-st"></span><span class="pl-sg"></span><span class="pl-num tnum"></span></span><span class="pl-parts" hidden></span><span class="pl-pips" hidden></span>${ACTOR_SIDE[k] ? '' : '<span class="pl-xp"><i></i></span>'}`;
   L.appendChild(e);
   return e;
 }
@@ -1258,11 +1137,29 @@ function paintPlates(s, anim) {
       void e.offsetWidth;
       e.classList.add('hit');
     }
+    /* phase 06-4: what the corner cards used to show: stat changes, a robot's limbs, the party's dots (on the first
+       plate of each side) */
+    e.querySelector('.pl-sg').innerHTML = Object.entries(x.stg || {})
+      .filter(([q, v]) => v)
+      .map(([q, v]) => `<span class="stg ${v > 0 ? 'up' : 'dn'}">${statShortName(q)} ${v > 0 ? '+' : ''}${v}</span>`)
+      .join('');
+    const pr = e.querySelector('.pl-parts');
+    pr.hidden = !x.bot;
+    pr.innerHTML = x.bot ? robotPartsHTML(x.bot) : '';
+    const pips = e.querySelector('.pl-pips'),
+      party = k === 0 ? saveData.team : k === 1 && activeBattle.kind === 'trainer' ? activeBattle.sides[1].team : null;
+    pips.hidden = !party || party.length < 2;
+    if (party)
+      pips.innerHTML = party.map(m => `<i class="pip${m.hp <= 0 ? ' out' : ''}${m.status ? ' st' : ''}"></i>`).join('');
     const num = e.querySelector('.pl-num');
     num.textContent = ACTOR_SIDE[k] ? (x.boss ? Math.round(p) + '%' : '') : `${Math.max(0, x.hp)}/${x.max}`;
     const xp = e.querySelector('.pl-xp i');
     if (xp) xp.style.width = x.xp * 100 + '%';
     if (battleStage.s[k] && battleStage.s[k].sp === x.sp) battleStage.s[k].st = x.hp > 0 ? x.st : null;
+    if (k === 0) {
+      const lo = $('#lowhp');
+      if (lo) lo.classList.toggle('on', x.hp > 0 && p < 25);
+    }
   }
   turnBar();
 }

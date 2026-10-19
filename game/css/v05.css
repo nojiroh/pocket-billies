@@ -457,16 +457,6 @@ nav#nav button[aria-current='page']::after {
 }
 
 /* ---------- Bag ---------- */
-.bag-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin: 6px 4px 10px;
-}
-.bag-head h1 {
-  margin: 0;
-  font-size: 30px;
-}
 .bag-pockets {
   display: flex;
   gap: 4px;
@@ -607,35 +597,11 @@ nav#nav button[aria-current='page']::after {
   border-radius: var(--r3) !important;
   box-shadow: var(--g-in), var(--g-sh) !important;
 }
-.tm-card {
-  border-radius: var(--r2) !important;
-  background: var(--g-bg2) !important;
-  border: 1px solid var(--g-bd);
-  box-shadow:
-    var(--g-in),
-    0 8px 18px -8px rgba(46, 33, 64, 0.42) !important;
-  transition:
-    transform 0.16s var(--spring),
-    box-shadow 0.2s;
-  animation: v05Card 0.35s var(--spring) both;
-  animation-delay: var(--d, 0ms);
-}
 @keyframes v05Card {
   from {
     opacity: 0;
     transform: translateY(8px) scale(0.97);
   }
-}
-@media (hover: hover) {
-  .tm-card:hover {
-    transform: translateY(-3px);
-    box-shadow:
-      var(--g-in),
-      0 16px 26px -10px rgba(46, 33, 64, 0.5) !important;
-  }
-}
-.tm-card:active {
-  transform: scale(0.98);
 }
 .tm-spr {
   border-radius: var(--r1) !important;
@@ -643,21 +609,9 @@ nav#nav button[aria-current='page']::after {
     inset 0 1px 0 rgba(255, 255, 255, 0.6),
     inset 0 -10px 18px -12px rgba(46, 33, 64, 0.35) !important;
 }
-.tm-stage {
-  border-radius: var(--r2) !important;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.6),
-    0 10px 20px -10px rgba(46, 33, 64, 0.5) !important;
-}
 .tm-ribbon {
   border-radius: 8px !important;
   box-shadow: 0 3px 8px -3px rgba(46, 33, 64, 0.4) !important;
-}
-.tm-heart {
-  box-shadow: 0 3px 8px -3px rgba(46, 33, 64, 0.5) !important;
-}
-.tm-quick {
-  border-top: 1px solid rgba(46, 33, 64, 0.08) !important;
 }
 .qk + .qk {
   border-left: 1px solid rgba(46, 33, 64, 0.08) !important;
@@ -782,11 +736,6 @@ nav#nav button[aria-current='page']::after {
 .ms-met .uico {
   color: var(--t-walk);
   flex: none;
-}
-.ms-stats .ms-st small {
-  display: block;
-  font-size: 11.5px;
-  color: var(--text2);
 }
 .ms-line {
   display: flex;
@@ -1055,9 +1004,6 @@ nav#nav button[aria-current='page']::after {
 .battle .bt.fight {
   border-radius: 18px;
 }
-.battle .bt.fight .bt-i {
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
-}
 .battle .bt-row {
   gap: 7px;
 }
@@ -1127,20 +1073,9 @@ nav#nav button[aria-current='page']::after {
   body.on-scene #app .topbar {
     top: 0;
   }
-  body.on-scene .s-team .tm-top,
   body.on-scene .s-profile .pf-top,
   body.on-scene .s-profile .pf-row {
     display: block;
-  }
-  body.on-scene .s-team .tm-hero {
-    grid-template-columns: 150px minmax(0, 1fr);
-    gap: 14px;
-  }
-  body.on-scene .s-team .tm-stage {
-    height: 170px;
-  }
-  body.on-scene .s-team .tm-name h2 {
-    font-size: 26px;
   }
   body.on-scene .s-ledger .ledger,
   body.on-scene .s-ledger .ledsum {
@@ -1284,56 +1219,4 @@ nav#nav button[aria-current='page']::after {
 .tm-ribbon.prime {
   background: linear-gradient(180deg, #f6d36b, #d39b22);
   color: #3a2603;
-}
-.ms-parts {
-  margin: 12px 0 4px;
-  padding: 10px 12px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.55);
-}
-.ms-parts-h {
-  display: flex;
-  gap: 8px;
-  align-items: baseline;
-  flex-wrap: wrap;
-}
-.ms-parts-h span {
-  opacity: 0.75;
-}
-.ms-prime {
-  margin-left: auto;
-  padding: 1px 8px;
-  border-radius: 999px;
-  background: #e8b53a;
-  color: #3a2603;
-  font-weight: 700;
-  opacity: 1 !important;
-}
-.ms-parts-row {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 6px;
-  margin-top: 8px;
-}
-.ms-part {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 6px 2px;
-  border-radius: 8px;
-  background: rgba(0, 0, 0, 0.05);
-  min-width: 0;
-}
-.ms-part small {
-  font-size: 10px;
-  opacity: 0.7;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
-}
-.ms-part.sz-S b {
-  color: #2b8a7e;
-}
-.ms-part.sz-L b {
-  color: #c2552f;
 }

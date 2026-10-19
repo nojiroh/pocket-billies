@@ -22,7 +22,6 @@ import {
 } from './hooks.js';
 import { MOVES, ROBOTS, STAT_IDS } from './game-data.js';
 import {
-  ROBOT_SLOTS,
   ROBOT_SLOT_NAMES,
   fitFromIds,
   isRobot,
@@ -31,7 +30,6 @@ import {
   robotGemDef,
   robotPartDef,
   robotRules,
-  robotWeight,
   speciesOf,
 } from './logic/fighters.js';
 import {
@@ -57,7 +55,6 @@ expose({
   WS_SLOTS: [() => WS_SLOTS],
   giveRobotKit: [() => giveRobotKit, v => ((giveRobotKit = v), provide({ giveRobotKit }))],
   openWorkshop: [() => openWorkshop, v => (openWorkshop = v)],
-  robotPartsPanelHTML: [() => robotPartsPanelHTML, v => (robotPartsPanelHTML = v)],
   workshopAction: [() => workshopAction, v => (workshopAction = v)],
   workshopHTML: [() => workshopHTML, v => (workshopHTML = v)],
   workshopRepaint: [() => workshopRepaint, v => (workshopRepaint = v)],
@@ -115,21 +112,6 @@ export function workshopSectionHTML() {
   return `<section class="tpanel tm-ws"><div class="sec-h"><h2>Workshop</h2><span class="count tnum">${bots.length} robot${bots.length === 1 ? '' : 's'}</span></div><p class="note">Robots battle beside your Billies. Their moves come from their parts: swap an arm and the move changes. A broken part is fixed when you heal.</p>
  <div class="u-list">${bots.map((m, i) => unitRowHTML(billyUnit(m), i, 'wsopen', 'refit')).join('')}</div>
  <p class="note tnum">${spares ? `${spares} spare part${spares === 1 ? '' : 's'}.` : 'No spare parts.'} Parts are found, crafted or won from trainers.</p>${wsCanBuild() ? '<button class="pb small" data-a="wsbuild">Build a robot from spares</button>' : ''}</section>`;
-}
-/** a robot's parts in its details sheet (in place of a Billie's part sizes) */
-function robotPartsPanelHTML(m) {
-  const fit = m.fit,
-    w = robotWeight(fit),
-    carry = robotPartDef(fit.legs.id).carry || 0;
-  return `<div class="ms-parts"><div class="ms-parts-h"><b>Parts</b><span class="tnum">${w} kg of ${carry} kg the legs carry</span></div><div class="ms-parts-row">${ROBOT_SLOTS.map(
-    k => {
-      const P = robotPartDef(fit[k].id),
-        brk = k !== 'torso' && partBroken(m, k);
-      return `<span class="ms-part${brk ? ' sz-S' : ''}"><small>${escapeHtml(wsTitle(k))}</small><b>${escapeHtml(P.name)}${brk ? ' (broken)' : ''}</b></span>`;
-    }
-  ).join(
-    ''
-  )}<span class="ms-part"><small>Gem</small><b>${escapeHtml(robotGemDef(m.gem).name)}</b></span></div><p class="note">Refit it in the Workshop on your Team screen.</p></div>`;
 }
 /** the refit sheet's body */
 function workshopHTML(m) {
