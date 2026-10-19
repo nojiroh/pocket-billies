@@ -101,3 +101,14 @@ test('contact shadows: the nearest 64 blobs from pooled arrays are the old sorte
   }
   assert.ok(pool.length === 300, 'the pool grows to the longest list and is reused after');
 });
+
+test('shadow lists: filterInto keeps what filter keeps, in order, in the one array it is given', () => {
+  const items = Array.from({ length: 200 }, (_, i) => ({ x: (i * 7.3) % 40, z: (i * 3.1) % 30, still: i % 3 === 0 }));
+  const out = [1, 2, 3];
+  for (const keep of [it => Math.hypot(it.x - 20, it.z - 15) < 9, it => it.still, it => !it.still, () => false]) {
+    const got = G.filterInto(items, keep, out);
+    assert.equal(got, out);
+    assert.deepEqual(got, items.filter(keep));
+    for (let i = 0; i < got.length; i++) assert.equal(got[i], items.filter(keep)[i]); // the same objects
+  }
+});

@@ -69,7 +69,7 @@ import {
 } from './hooks.js';
 import { clamp } from './util.js';
 import { gpuPass } from './engine/gpu-counters.js';
-import { nearestFirst, pooledQuad } from './engine/frame-lists.js';
+import { filterInto, nearestFirst, pooledQuad } from './engine/frame-lists.js';
 import { frameCount, frameScheduler, frameTask, userFps } from './frame-scheduler.js';
 import { hexToRgb, makeCanvas } from './art.js';
 import { folkFrames, personBattlePose, personWalkFrames, pickWalkFrame, warmPerson } from './person-art.js';
@@ -228,6 +228,7 @@ expose({
   PROP_LOOK_CACHE: [() => PROP_LOOK_CACHE],
   PROP_VARIETY_DEFAULT: [() => PROP_VARIETY_DEFAULT],
   PROP_VARIETY_RULES: [() => PROP_VARIETY_RULES],
+  SHADOW_LISTS: [() => SHADOW_LISTS],
   SLOPE_HUGGERS: [() => SLOPE_HUGGERS],
   SLOPE_HUG_CACHE: [() => SLOPE_HUG_CACHE],
   STILL_PROP_CACHE: [() => STILL_PROP_CACHE],
@@ -5415,6 +5416,8 @@ function shadowMapArea(C) {
    you walk; the sun's slow travel or any change to the scene draws it again. */
 /* v43: two cascades. The far map is the fitted view as before (cached for what never moves); the near map is a tight
    square round you at a finer texel, drawn every frame from the things in it, so shadows near you are crisp */
+/* phase 20 C2: the shadow passes' lists of what they draw, refilled in place each frame (engine/frame-lists.js) */
+const SHADOW_LISTS = { near: [], far: [], stat: [], dyn: [], lamp: [] };
 export function shadowPass(items0, sun, C) {
   gpuPass('shadowFar');
   const far = fittedShadowPass(items0, sun, C);
@@ -5427,7 +5430,11 @@ export function shadowPass(items0, sun, C) {
     R = engineSetting('shadows', 'nearRadius') ?? 13,
     res = Math.min(1024, engineSetting('quality', 'shadowMap')),
     gl = gpuState.gl,
-    items = items0.filter(it => Math.hypot(it.x - P.x, it.z - P.z) < R + (it.w || 32) * (it.mpp || 0.03) + 3);
+    items = filterInto(
+      items0,
+      it => Math.hypot(it.x - P.x, it.z - P.z) < R + (it.w || 32) * (it.mpp || 0.03) + 3,
+      SHADOW_LISTS.near
+    );
   gpuPass('shadowNear');
   const SH = beginSunShadow(P.x, P.z, R, sun, res, 'shadowN'),
     ca = worldCurveArgs();
@@ -5471,11 +5478,13 @@ function lampShadowMaps(items, X, dark) {
   cand.forEach((l, i) => {
     gpuPass(i ? 'lamp1' : 'lamp0');
     const SH = beginLampShadow([l.p[0], l.p[1] + 0.2, l.p[2]], 512, 'lamp' + i),
-      near = items.filter(
+      near = filterInto(
+        items,
         it =>
           Math.hypot(it.x - l.p[0], it.z - l.p[2]) < 13 &&
           it.p !== l.own &&
-          !(it.k === 'prop' && it.M && it.M.glow && Math.hypot(it.x - l.p[0], it.z - l.p[2]) < 0.6)
+          !(it.k === 'prop' && it.M && it.M.glow && Math.hypot(it.x - l.p[0], it.z - l.p[2]) < 0.6),
+        SHADOW_LISTS.lamp
       ); /* alpha 0.4: nor its own post (it.p!==l.own): the lamp's picture turned black in its own light's shadow */
     {
       const p = gpuState.P.shadowG;
@@ -5577,8 +5586,10 @@ function fittedShadowPass(items0, sun, C) {
   let fit = shadowMapArea(C);
   const cache = (engineSetting('quality', 'shadowCache') ?? true) && !walkRenderer.bt && !!gl.blitFramebuffer;
   if (cache) fit = [Math.round(fit[0] / 3) * 3, Math.round(fit[1] / 3) * 3, fit[2] + 3];
-  const items = items0.filter(
-    it => Math.hypot(it.x - fit[0], it.z - fit[1]) < fit[2] + (it.w || 32) * (it.mpp || 0.03) + 4
+  const items = filterInto(
+    items0,
+    it => Math.hypot(it.x - fit[0], it.z - fit[1]) < fit[2] + (it.w || 32) * (it.mpp || 0.03) + 4,
+    SHADOW_LISTS.far
   );
   const SH = beginSunShadow(fit[0], fit[1], fit[2], sun, res);
   const ca = worldCurveArgs(),
@@ -5591,8 +5602,10 @@ function fittedShadowPass(items0, sun, C) {
     h = normalize3([tr[0], 0, tr[2]]),
     Rs = Math.hypot(tr[0], tr[2]) < 0.05 ? [1, 0, 0] : [-h[2], 0, h[0]];
   const still = it => it.k === 'prop' && it.still && !it.vol,
-    stat = cache ? items.filter(still) : items,
-    dyn = cache ? items.filter(it => !still(it)) : [];
+    stat = cache ? filterInto(items, still, SHADOW_LISTS.stat) : items,
+    dyn = cache
+      ? filterInto(items, it => !still(it), SHADOW_LISTS.dyn)
+      : ((SHADOW_LISTS.dyn.length = 0), SHADOW_LISTS.dyn);
   const q = v => Math.round(v * 500);
   const key = cache
     ? [
