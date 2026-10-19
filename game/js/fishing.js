@@ -15,14 +15,10 @@ import { startWild } from './logic/battle-engine.js';
 import { activeBattle, reducedMotion, save, saveData, uiState } from './game-state.js';
 import { uiIconHTML } from './art.js';
 import { terrainAt, walkView } from './walk-view.js';
-import {
-  WATER_KIND_LOOKS,
-  addRipple,
-  standingHeightAt,
-  walkRenderer,
-  waterAt,
-  worldCurveDrop,
-} from './walk-view-gl.js';
+import { walkRenderer } from './walk/walk-state.js';
+import { standingHeightAt } from './walk/heights.js';
+import { worldCurveDrop } from './walk/draw-common.js';
+import { WATER_KIND_LOOKS, addRipple, waterAt } from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
 expose({
   FISH_KINDS: [() => FISH_KINDS],

@@ -14,15 +14,9 @@ import { artImg, artURL, hexToRgb, makeCanvas } from './art.js';
 import { artImage, walkView } from './walk-view.js';
 import { engineSetting } from './engine/settings.js';
 import { COMMON_GLSL, LIGHT_GLSL, ensurePrograms, gpuState, imageTexture } from './engine/webgl.js';
-import {
-  addHitTarget,
-  lampLit,
-  setPropLookUniforms,
-  useWalkProgram,
-  walkRenderer,
-  windLeanAt,
-  worldCurveArgs,
-} from './walk-view-gl.js';
+import { walkRenderer } from './walk/walk-state.js';
+import { useWalkProgram, worldCurveArgs } from './walk/draw-common.js';
+import { addHitTarget, lampLit, setPropLookUniforms, windLeanAt } from './walk-view-gl.js';
 import { BUILDING_SHADERS, buildingArt, buildingTextureGrid } from './buildings.js';
 /* eslint-disable no-func-assign */
 expose({

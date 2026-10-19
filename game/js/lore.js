@@ -13,7 +13,8 @@ import { LOCATIONS, TRAINERS, gameData } from './game-data.js';
 import { escapeHtml, save, saveData, uiState } from './game-state.js';
 import { personHTML } from './person-art.js';
 import { baseMapId, findPath, mapById, mapHub, walkView, walkablePointNear } from './walk-view.js';
-import { standingHeightAt, walkRenderer } from './walk-view-gl.js';
+import { walkRenderer } from './walk/walk-state.js';
+import { standingHeightAt } from './walk/heights.js';
 import { JINGLES, jingle, soundEffect } from './sound.js';
 /* eslint-disable no-func-assign */
 expose({

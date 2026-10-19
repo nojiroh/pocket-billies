@@ -26,15 +26,14 @@ import {
   gpuState,
   imageTexture,
 } from './engine/webgl.js';
+import { walkRenderer } from './walk/walk-state.js';
+import { useWalkProgram, worldCurveArgs } from './walk/draw-common.js';
 import {
   addHitTarget,
   drawRotatingBlades,
   foliageAmount,
   frameBudgetLeft,
   setPropLookUniforms,
-  useWalkProgram,
-  walkRenderer,
-  worldCurveArgs,
 } from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
 expose({

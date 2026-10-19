@@ -26,7 +26,8 @@ import { frameScheduler, userFps } from './frame-scheduler.js';
 import { GRAPHICS_DIALS } from './settings-screen.js';
 import { mapById, mapHub, walkView } from './walk-view.js';
 import { environment } from './environment.js';
-import { rebuildFromSettings, walkRenderer } from './walk-view-gl.js';
+import { walkRenderer } from './walk/walk-state.js';
+import { rebuildFromSettings } from './walk-view-gl.js';
 import { paintWorkerState } from './ground-paint-worker.js';
 import { closeModal, modal, render, renderOverlay, toast } from './ui.js';
 import {

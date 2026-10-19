@@ -16,13 +16,8 @@ import {
   setEngineDataSource,
 } from '../../game/js/engine/settings.js';
 import { gpuState, webgl2Supported } from '../../game/js/engine/webgl.js';
-import {
-  adaptQuality,
-  mountWalkView,
-  rebuildFromSettings,
-  setAdaptQuality,
-  walkRenderer,
-} from '../../game/js/walk-view-gl.js';
+import { walkRenderer } from '../../game/js/walk/walk-state.js';
+import { adaptQuality, mountWalkView, rebuildFromSettings, setAdaptQuality } from '../../game/js/walk-view-gl.js';
 import { escapeHtml } from './game-stand-ins.js';
 import {
   ACTIONS,

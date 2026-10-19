@@ -42,6 +42,7 @@ import {
 } from './engine/webgl.js';
 import { drawPostEffects, screenSnapshot, setDrawPostEffects, setScreenSnapshot } from './engine/post-effects.js';
 import { environment } from './environment.js';
+import { walkRenderer } from './walk/walk-state.js';
 import {
   buildGrass,
   buildGroundMesh,
@@ -75,7 +76,6 @@ import {
   shadowPass,
   swapMapCache,
   updateNearRing,
-  walkRenderer,
 } from './walk-view-gl.js';
 import { buildingItems, buildingState, drawBuildings, setBuildingItems, setDrawBuildings } from './buildings.js';
 import { drawStructures, setDrawStructures } from './structures.js';

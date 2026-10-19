@@ -24,7 +24,7 @@ import {
   walkView,
 } from './walk-view.js';
 import { environment, environmentHour, environmentState } from './environment.js';
-import { walkRenderer } from './walk-view-gl.js';
+import { walkRenderer } from './walk/walk-state.js';
 /* eslint-disable no-func-assign */
 expose({
   BIRD_CALLS: [() => BIRD_CALLS],

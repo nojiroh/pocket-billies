@@ -133,7 +133,8 @@ import {
 } from './walk-view.js';
 import { engineSetting } from './engine/settings.js';
 import { environment, environmentHint, environmentIcon, environmentLabel } from './environment.js';
-import { mountWalkView, walkRenderer } from './walk-view-gl.js';
+import { walkRenderer } from './walk/walk-state.js';
+import { mountWalkView } from './walk-view-gl.js';
 import { fishStart } from './fishing.js';
 import {
   seamlessDelta,

@@ -54,7 +54,9 @@ import {
   worldToScreen,
 } from './walk-view.js';
 import { gpuState, webgl2Supported } from './engine/webgl.js';
-import { mountWalkView, personItem, standingHeightAt, walkRenderer } from './walk-view-gl.js';
+import { walkRenderer } from './walk/walk-state.js';
+import { standingHeightAt } from './walk/heights.js';
+import { mountWalkView, personItem } from './walk-view-gl.js';
 import { seamlessRoamView } from './seamless-world.js';
 import { music, soundEffect } from './sound.js';
 import { talkBox, talkHide, talkLine } from './talk.js';

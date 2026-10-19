@@ -37,7 +37,8 @@ import {
 } from './walk-view.js';
 import { engineSetting } from './engine/settings.js';
 import { smooth01 } from './engine/webgl.js';
-import { isGroundPrepared, prepareMapGround, walkRenderer } from './walk-view-gl.js';
+import { walkRenderer } from './walk/walk-state.js';
+import { isGroundPrepared, prepareMapGround } from './walk-view-gl.js';
 import { lifeShift } from './ambient-life.js';
 import { shiftWorldBillies } from './world-billies.js';
 /* eslint-disable no-func-assign */

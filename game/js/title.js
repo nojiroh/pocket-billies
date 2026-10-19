@@ -37,7 +37,9 @@ import { uiIconHTML } from './art.js';
 import { personHTML } from './person-art.js';
 import { applyPreferences } from './settings-screen.js';
 import { mapById, stopWalkView, walkView } from './walk-view.js';
-import { mountWalkView, standingHeightAt, walkRenderer } from './walk-view-gl.js';
+import { walkRenderer } from './walk/walk-state.js';
+import { standingHeightAt } from './walk/heights.js';
+import { mountWalkView } from './walk-view-gl.js';
 import { music, musicFor } from './sound.js';
 import { cutsceneMapId, cutsceneStart, cutsceneStartName, cutsceneWanted } from './cutscene.js';
 /* eslint-disable no-func-assign */
