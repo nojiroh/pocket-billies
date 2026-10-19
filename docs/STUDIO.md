@@ -49,7 +49,7 @@ One canvas paints the Billies' sheets (Edit pixels) and props and ground tiles (
 
 ## Art workbench: Sheet mode (studio track ST-3)
 
-Cuts a sheet of art into parts (Billies & battles → Art workbench). Part, Pixels and Model modes come later.
+Cuts a sheet of art into parts (Billies & battles → Art workbench). Part mode is below; Pixels and Model come later.
 
 - **Drop sheets anywhere** on the Studio (or Open sheets…); several at once, with an Aseprite JSON beside its PNG
   (same name). A name ending in front or back sets the sheet's view; the list beside each sheet changes it. Dropped
@@ -71,6 +71,31 @@ Cuts a sheet of art into parts (Billies & battles → Art workbench). Part, Pixe
 - **Write N parts to the game** puts the pictures in art/next/parts/<view>/<id>.png and the parts in partKits.json
   (kind, slot, pivot, size M, sockets worked out from the outline; a view not on these sheets stays as it was). Then
   Save. One undo takes the pictures back (new ones go away), one more the parts.
+
+## Art workbench: Part mode (studio track ST-4)
+
+Art workbench → **Part**: a part written by Sheet mode, its joints. The numbers are in game/js/logic/part-joints.js.
+
+- **The list** filters by kit and kind, or finds a part by name; front and back thumbnails.
+- **Front and back side by side**, each on the shared pixel canvas. The **pivot** is the crosshair; until moved it is
+  the joint (a limb), chin (a head) or base (a tail) socket, else the part's pivot. **Sockets** are coloured dots,
+  labelled with the slots they take. Drag one, or click it and nudge it with the arrow keys (1 px; Shift ¼ px). Each
+  view has its own pivot. Every drag or nudge is one undo step. Moved sockets are kept in partKits.json `sockets`, so
+  slicing the sheet again doesn't move them back.
+- **Sockets** (side panel): rename, remove, add (it starts on the pivot in both views); the slots each one takes. A
+  part starts with the kit's rule for that socket name (`socketRules`); changing it makes the part's own (`accepts`,
+  ↺ goes back).
+- **Turn and draw order**: how far the part turns about its pivot (degrees, clockwise positive) and its z per view
+  (higher in front; from behind, arms go under the body). Each kind has defaults (`turns`, `z`); ↺ goes back to them.
+- **Test fit**: the part on a body (the same animal's torso first) at a socket that takes it, both views, at the size
+  shown (S, M, L). The turn slider stays inside the limits; Swing moves it back and forth. A body part picks a part
+  to hang on itself instead. On the other side of the body the part is mirrored, or its copy is used.
+- **Mirror to other side** makes `<id>_r`: the pictures (and painted sizes) flipped, the pivot and sockets mirrored,
+  L and R names swapped (shoulderL ↔ shoulderR), turn limits mirrored. Mirroring the copy gives the part back.
+  `sides` says which side each kind's art is drawn for (arms right, legs left, as the rework placeholders draw them).
+- **S, M, L**: S and L are M scaled about the pivot (rules.json `parts.sizes`). **Paint S/L** makes its own picture
+  beside M (`<id>_s.png`, `_l.png`), starting from M scaled: Points, Pencil, Eraser, Fill and Pick in the bar, and a
+  colour. Points moved there belong to that size. **Back to scaled** stops using it (the picture stays in art/).
 
 ## World map look (phase 10)
 

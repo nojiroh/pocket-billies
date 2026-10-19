@@ -54,6 +54,23 @@ polish tasks. Each session is tagged `st-N-done`.
 - Pixel editing: three editors (sprites.js, wardrobe.js, skeleton painting), each with its own undo, art outside the
   global undo, no vertical flip, no symmetry.
 
+## ST-4: the Art workbench, Part mode (2026-10-19)
+- partKits.json gained, all optional: per kind `z` (front/back), `turns`, `sides` (the side its art is drawn for);
+  `socketRules` (socket name -> slots); per part `z`, `turn`, `accepts`, `mirrorOf`; per view `pivot` and `sizes`
+  (S/L pictures beside M). Kind defaults: z from the rework placeholders' bones (arms 8/2, legs 7/7, tail 1/8, head
+  9/9, crests 10/10), turns first guesses (arms ±60, legs ±35, tails ±30, heads ±20).
+- game/js/logic/part-joints.js: `partJoint` (a view at a size), `partSocketsFor`, `partFit` (draw list), `partMirror`,
+  `partScaledPixels`; tests in tools/test/part-joints.test.mjs. studio/js/workbench-part.js: the mode.
+  pixel-canvas.js: `hostTool` may return `{ move, up }` to follow a drag (`pixelCanvasPointF`).
+- Corrections: the kits' pivot per kind is not where the game joins parts; tools/build-rework-placeholders.py joins a
+  limb by its joint socket, a head by its chin, a tail by its base. So an unmoved pivot is that socket. The kit draws
+  arms for the right side and legs for the left (the placeholders mirror arms on the left shoulder, legs on the right
+  hip), now `sides`. Write rebuilt every entry from scratch, which would have lost Part mode's work; it keeps it now.
+- Found, not fixed: the Studio's undo snapshot and its Save leave out keys starting with `_`, so any Studio save drops
+  `_help` from partKits.json, portraits.json, robots.json and rules.json (older than ST-4).
+- For ST-5: robot sockets can be stored the same way (per view sockets, `socketRules`); `partFit` takes any part with
+  views. For ST-6: Part mode's overlay and drag are the model for rig rects and pivots.
+
 ## ST-3: the Art workbench, Sheet mode (done 2026-10-19)
 - The part list moved: game/art/next/parts/parts.json is now the data file game/data/partKits.json (key `partKits`,
   schema, data check), and kits.json's kits, slots, pivots and sockets moved into it. The Studio can save only pictures
