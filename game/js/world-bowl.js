@@ -29,6 +29,7 @@ import {
   bowlSpotOf,
   bowlSun,
   bowlWaterLevel,
+  bowlWetAt,
   bowlXY,
 } from './logic/bowl.js';
 import {
@@ -279,14 +280,20 @@ void main(){vec2 px=gl_FragCoord.xy/uR;vec3 d=normalize(uFw+uRt*(px.x-uWH.x*.5)/
     `#version 300 es
 precision highp float;in vec3 aPos;uniform mat4 uVP;out vec3 vW;void main(){vW=aPos;gl_Position=uVP*vec4(aPos,1.);}`,
     `#version 300 es
-precision highp float;precision highp sampler2DArray;precision highp sampler2DShadow;in vec3 vW;out vec4 o;uniform sampler2D uIdx,uMix,uRoute;uniform sampler2DArray uLay;uniform vec3 uC,uLd,uHaze;uniform float uOn;
+precision highp float;precision highp sampler2DArray;precision highp sampler2DShadow;in vec3 vW;out vec4 o;uniform sampler2D uIdx,uMix,uRoute;uniform sampler2DArray uLay;uniform vec3 uC,uLd,uHaze;uniform float uOn,uT;uniform vec2 uWaterL;
 ${BOWL_SHADOW_GLSL}
 ${BOWL_SKY_GLSL}
 void main(){vec3 n=normalize(cross(dFdx(vW),dFdy(vW)));if(n.y<0.)n=-n;
  vec2 q=vec2(vW.x,-vW.z),uv=vec2(q.x*.5+.5,.5-q.y*.5);vec3 far=uOn>.5?texture(uMix,uv).rgb:vec3(.5,.63,.38),c=far,near=far;
  vec2 m=q*${BOWL_METRES.toFixed(1)};float px=max(length(dFdx(m)),length(dFdy(m))),pb=px/${BOWL_METRES.toFixed(1)};
- if(uOn>.5&&px<4.){float L=floor(texelFetch(uIdx,ivec2(clamp(uv*${BOWL_INDEX.toFixed(1)},vec2(0.),vec2(${(BOWL_INDEX - 1).toFixed(1)}))),0).r*255.+.5);
-  near=textureGrad(uLay,vec3(fract(m),L),dFdx(m),dFdy(m)).rgb;c=mix(near,far,smoothstep(1.4,4.,px));}
+ if(uOn>.5&&px<4.){ivec2 ti=ivec2(clamp(uv*${BOWL_INDEX.toFixed(1)},vec2(0.),vec2(${(BOWL_INDEX - 1).toFixed(1)})));float L=floor(texelFetch(uIdx,ti,0).r*255.+.5);
+  near=textureGrad(uLay,vec3(fract(m),L),dFdx(m),dFdy(m)).rgb;
+  /* a place's own water and the rivers (fix 2026-10-19): drawn as water, not as a tile; foam where it meets land */
+  if(abs(L-uWaterL.x)<.5||abs(L-uWaterL.y)<.5){near=abs(L-uWaterL.y)<.5?vec3(.1,.45,.66):vec3(.26,.66,.74);
+   near*=.93+.07*sin(m.x*.7+m.y*.5+uT*1.3)*sin(m.y*.9-m.x*.3-uT*.9);
+   float sh=0.;for(int k=0;k<4;k++){ivec2 o=ivec2(k==0?1:k==1?-1:0,k==2?1:k==3?-1:0);float Ln=floor(texelFetch(uIdx,clamp(ti+o,ivec2(0),ivec2(${BOWL_INDEX - 1})),0).r*255.+.5);sh+=(abs(Ln-uWaterL.x)<.5||abs(Ln-uWaterL.y)<.5)?0.:1.;}
+   near=mix(near,vec3(.9,.95,.97),min(1.,sh)*.55);}
+  c=mix(near,far,smoothstep(1.4,4.,px));}
  if(uOn>.5){vec3 rq=texture(uRoute,uv).rgb;float aa=pb*.75+1e-5;
   float rv=rq.b*${BOWL_RIVER_FIELD.toFixed(3)},rw=max(.0012,pb*.9);
   c=mix(c,mix(vec3(.2,.47,.72),near,1.-smoothstep(1.,3.,px)),(1.-smoothstep(rw-aa,rw+aa,rv))*smoothstep(.6,2.,px));
@@ -295,7 +302,7 @@ void main(){vec3 n=normalize(cross(dFdx(vW),dFdy(vW)));if(n.y<0.)n=-n;
   c=mix(c,vec3(.22,.15,.1),(1.-smoothstep(ow-aa,ow+aa,rd))*vis*.85);c=mix(c,rc,(1.-smoothstep(hw-aa,hw+aa,rd))*vis);}
  vec4 wx=texture(uSky,uv);float rh=vW.y-bowlH(q);
  c=mix(c,vec3(.94,.96,1.),wx.a*smoothstep(.55,.9,n.y)*smoothstep(.0,.03,rh)*.6);
- float nl=max(0.,dot(n,uLd)),sh=bowlShadow(vW,nl)*bowlCloudShade(q);
+ float nl=max(0.,dot(n,uLd)),sh=bowlShadow(vW+n*.0015,nl)*bowlCloudShade(q);
  c*=bowlAmb(n.y)+bowlSunCol()*nl*sh*(1.-.4*max(0.,wx.r-.35)/.65);
  c=mix(c,mix(vec3(.82,.85,.88),vec3(.2,.22,.3),uNight),wx.b*(.22+.5*(1.-smoothstep(.0,.035,rh))));
  float d=length(vW-uC),fk=1.-exp(-max(0.,d-.7)*.32);o=vec4(mix(c,uHaze,clamp(fk,0.,.6)),1.);}`,
@@ -337,8 +344,9 @@ ${BOWL_SHADOW_GLSL}
 ${BOWL_SKY_GLSL}
 float bayer4(vec2 p){ivec2 q=ivec2(mod(p,4.));int i=q.x+q.y*4;int b[16]=int[16](0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5);return (float(b[i])+.5)/16.;}
 void main(){if(vK.x>.5&&uNear<bayer4(gl_FragCoord.xy))discard;if(uShadowPass>.5){o=vec4(1.);return;}
- vec3 n=normalize(vN);if(!gl_FrontFacing)n=-n;float nl=max(0.,dot(n,uLd)),sh=bowlShadow(vW,nl)*bowlCloudShade(vec2(vW.x,-vW.z));
- vec3 c=vC*(bowlAmb(n.y)+bowlSunCol()*nl*sh);
+ /* each facet lit from the side we see (fix 2026-10-19: some shapes' normals pointed in, so trees came out black) */
+ vec3 n=normalize(vN);if(dot(n,uC-vW)<0.)n=-n;float nl=max(0.,dot(n,uLd)),sh=bowlShadow(vW+n*.003,nl)*bowlCloudShade(vec2(vW.x,-vW.z));
+ vec3 c=vC*(bowlAmb(n.y)*1.1+bowlSunCol()*nl*sh);
  if(vK.y>0.&&vK.y<uLit&&abs(n.y)<.5){float wy=step(.45,fract(vL.y/1.1)),wx=step(.5,fract((vL.x+vL.z)/1.25));c+=vec3(1.,.72,.38)*wy*wx*uNight*1.3;}
  float d=length(vW-uC),fk=1.-exp(-max(0.,d-.7)*.32);o=vec4(mix(c,uHaze,clamp(fk,0.,.6)),1.);}`,
   ],
@@ -379,13 +387,14 @@ ${BOWL_SKY_GLSL}
 float wv(vec2 p,vec2 d,float f,float s,float t){return sin(dot(p,d)*f+t*s);}
 void main(){vec2 q=vec2(vW.x,-vW.z)*${BOWL_METRES.toFixed(1)};float t=uT;
  vec3 up=normalize(vec3(0.,${Math.SQRT2.toFixed(6)},0.)-vW);
- vec2 g=vec2(0.);
- g+=vec2(.8,.6)*cos(dot(q,vec2(.8,.6))*.09+t*1.1)*.09;
- g+=vec2(-.5,.86)*cos(dot(q,vec2(-.5,.86))*.17+t*1.7)*.06;
- g+=vec2(.2,-.98)*cos(dot(q,vec2(.2,-.98))*.31+t*2.3)*.035;
- g+=vec2(-.94,-.34)*cos(dot(q,vec2(-.94,-.34))*.6+t*3.1)*.02;
+ /* each wave fades out once it is smaller than about two pixels (fix 2026-10-19: from far away they made stripes) */
+ float px=max(length(dFdx(q)),length(dFdy(q)));vec2 g=vec2(0.);
+ g+=vec2(.8,.6)*cos(dot(q,vec2(.8,.6))*.09+t*1.1)*.09*(1.-smoothstep(.2,.45,px*.09/6.283));
+ g+=vec2(-.5,.86)*cos(dot(q,vec2(-.5,.86))*.17+t*1.7)*.06*(1.-smoothstep(.2,.45,px*.17/6.283));
+ g+=vec2(.2,-.98)*cos(dot(q,vec2(.2,-.98))*.31+t*2.3)*.035*(1.-smoothstep(.2,.45,px*.31/6.283));
+ g+=vec2(-.94,-.34)*cos(dot(q,vec2(-.94,-.34))*.6+t*3.1)*.02*(1.-smoothstep(.2,.45,px*.6/6.283));
  vec3 n=normalize(up+vec3(-g.x,0.,g.y)*.35);
- vec3 v=normalize(uC-vW),l=uLd;vec2 qb=vec2(vW.x,-vW.z);vec4 wx=texture(uSky,vec2(qb.x*.5+.5,.5-qb.y*.5));float sh=bowlShadow(vW,1.)*bowlCloudShade(qb);
+ vec3 v=normalize(uC-vW),l=uLd;vec2 qb=vec2(vW.x,-vW.z);vec4 wx=texture(uSky,vec2(qb.x*.5+.5,.5-qb.y*.5));float sh=bowlShadow(vW+vec3(0.,.0015,0.),1.)*bowlCloudShade(qb);
  float dep=vS.x,c=vS.y;
  vec3 shallow=vec3(.33,.78,.78),mid=vec3(.1,.48,.68),deep=vec3(.04,.2,.42);
  vec3 col=mix(shallow,mid,smoothstep(.0,.006,dep));col=mix(col,deep,smoothstep(.008,.032,dep));
@@ -393,9 +402,10 @@ void main(){vec2 q=vec2(vW.x,-vW.z)*${BOWL_METRES.toFixed(1)};float t=uT;
  vec3 r=reflect(-v,n);float ry=dot(r,up);
  vec3 sky=mix(vec3(.98,.87,.72),vec3(.6,.71,.95),smoothstep(-.05,.7,ry));sky=mix(sky,vec3(.62,.66,.72),wx.r*.5);sky=mix(sky,vec3(.06,.08,.18),uNight);
  float fr=.04+.96*pow(1.-max(0.,dot(n,v)),5.);col=mix(col,sky,clamp(fr,0.,.85));
- float sp=pow(max(0.,dot(reflect(-l,n),v)),120.);col+=mix(vec3(1.,.95,.8),vec3(.9,.35,.2),uNight)*sp*1.6*sh*uLight;
+ float sp=pow(max(0.,dot(reflect(-l,n),v)),120.)*(1.-smoothstep(2.,10.,px));col+=mix(vec3(1.,.95,.8),vec3(.9,.35,.2),uNight)*sp*.9*sh*uLight;
  col=mix(col,mix(vec3(.82,.85,.88),vec3(.2,.22,.3),uNight),wx.b*.35);
  float fb=1.-smoothstep(.0,.0035,dep),fw=.5+.5*sin(dep*2600.-t*2.2+wv(q,vec2(.6,.8),.4,0.,0.)*1.5);
+ fw=mix(fw,.55,smoothstep(.3,1.5,px)); /* far away the foam bands blur into a steady edge */
  float foam=fb*smoothstep(.35,.75,fw)+(1.-smoothstep(0.,.0008,dep))*.8;col=mix(col,vec3(.95,.98,1.),clamp(foam,0.,1.)*.85);
  float a=mix(.45,.92,smoothstep(.0,.006,dep));a=max(a,clamp(foam,0.,1.)*.9);
  float d=length(vW-uC),fk=1.-exp(-max(0.,d-.7)*.32);o=vec4(mix(col,uHaze,clamp(fk,0.,.6)),a);}`,
@@ -580,9 +590,7 @@ function worldBowlTerrainStart() {
     slope = new Float32Array(gw * gw);
   for (let k = gw + 1; k < gw * gw - gw - 1; k++)
     slope[k] = Math.hypot(relAt(k + 1) - relAt(k - 1), relAt(k + gw) - relAt(k - gw)) / (2 * step);
-  const cornerOf = (/** @type {number} */ x, /** @type {number} */ y) =>
-    Math.max(0, Math.min(G.n, Math.round((x + G.e) / step))) +
-    Math.max(0, Math.min(G.n, Math.round((y + G.e) / step))) * gw;
+  const slopeG = { n: G.n, e: G.e, h: slope };
   const L = K.layer;
   g.terrain = { K, idx, near, lists, row: 0, ready: false, stamped: new Set(), dirty: true, gl: null };
   g.terrain.fill = rows => {
@@ -607,24 +615,30 @@ function worldBowlTerrainStart() {
           rel = bowlGridHeight(g.G, x, y) - bowlHeight(Math.min(1, r)) /* the relief, read from the grid: cheap */,
           m = (x * BOWL_METRES) / 9,
           n = (y * BOWL_METRES) / 9,
-          pick = list => list[Math.min(list.length - 1, Math.floor(bowlNoise(m + p * 7.3, n) * list.length))],
-          th = BOWL_BAYER[(j & 3) * 4 + (i & 3)];
+          th = BOWL_BAYER[(j & 3) * 4 + (i & 3)],
+          /* calm ground (fix 2026-10-19: it read as camouflage): mostly a list's first ground, the others in broad
+             patches some 40 m across, their edges dithered over a few squares; no outline rings */
+          patch = bowlNoise(m * 0.22 + p * 1.7, n * 0.22) * 0.75 + bowlNoise(m * 0.6, n * 0.6 + 9.1) * 0.25,
+          pick = list =>
+            list.length < 2 || patch < 0.58 + (th - 0.5) * 0.05
+              ? list[0]
+              : list[
+                  1 + Math.min(list.length - 2, Math.floor(bowlNoise(m * 0.1 + 4.4, n * 0.1 + p) * (list.length - 1)))
+                ];
         let t = ls.k.length && d < 0.09 + bowlNoise(m * 0.3, n * 0.3) * 0.04 ? pick(ls.k) : pick(ls.r);
-        /* second pick for a dithered patch edge */
-        if (ls.r.length > 1 && Math.abs(bowlNoise(m * 1.7, n * 1.7) - 0.5) < 0.06 && th < 0.5)
-          t = pick(ls.r.slice().reverse());
         /* away from the places' own ground: wet lowland, dry slopes, high ground, rock on the steep, snow on top */
-        const ck = cornerOf(x, y),
-          wet = G.wet ? G.wet[ck] : 0,
-          steep = slope[ck],
-          inPlace = d < 0.07;
+        /* read smoothly between the grid's corners (not the nearest corner: that made blocks), changes dithered */
+        const wet = G.wet ? bowlWetAt(G, x, y) : 0,
+          steep = bowlGridHeight(slopeG, x, y),
+          inPlace = d < 0.07,
+          dz = (th - 0.5) * 0.12;
         if (!inPlace) {
-          if (wet > 0.5 + th * 0.3 && rel < 0.03 && ls.wet.length) t = pick(ls.wet);
-          else if (wet < 0.1 + th * 0.1 && rel > 0.012 && ls.dry.length) t = pick(ls.dry);
-          if (rel > 0.045 + th * 0.012 && ls.high.length) t = pick(ls.high);
+          if (wet > 0.55 + dz && rel < 0.03 && ls.wet.length) t = pick(ls.wet);
+          else if (wet < 0.08 + dz * 0.3 && rel > 0.014 && ls.dry.length) t = pick(ls.dry);
+          if (rel > 0.048 + dz * 0.05 && ls.high.length) t = pick(ls.high);
         }
-        if (steep > 1.5 + th * 0.6) t = L.r ?? t;
-        if (rel > 0.085 + th * 0.012 && 'n' in L) t = L.n;
+        if (steep > 1.6 + dz * 3) t = L.r ?? t;
+        if (rel > 0.088 + dz * 0.05 && 'n' in L) t = L.n;
         /* the coast: a beach of dry then wet sand down to the water, and under it the sea floor (sand in the shallows,
            pebbles and rock further out, coral sand in the coral regions) */
         const cv = bowlCoastAt(g.G, x, y);
@@ -854,10 +868,10 @@ function worldBowlShadows(g) {
    in clumps between places. Built a place at a time as its map comes in, drawn instanced (one shape per kind). */
 /* a tree of each style, in metres (true size), as flat-faced triangles: [x, y up, z, nx, ny, nz, r, g, b] */
 const BOWL_TREE_LOOK = {
-  round: { crown: [0.29, 0.5, 0.24], trunk: [0.42, 0.3, 0.2], h: 6 },
-  tall: { crown: [0.33, 0.52, 0.27], trunk: [0.45, 0.33, 0.22], h: 8 },
-  cone: { crown: [0.17, 0.38, 0.25], trunk: [0.4, 0.28, 0.18], h: 8 },
-  bush: { crown: [0.3, 0.46, 0.22], trunk: [0.36, 0.26, 0.17], h: 2 },
+  round: { crown: [0.3, 0.52, 0.24], trunk: [0.44, 0.31, 0.2], h: 6 },
+  tall: { crown: [0.35, 0.55, 0.27], trunk: [0.46, 0.33, 0.22], h: 8 },
+  cone: { crown: [0.18, 0.4, 0.27], trunk: [0.42, 0.29, 0.18], h: 8 },
+  bush: { crown: [0.32, 0.5, 0.23], trunk: [0.38, 0.27, 0.17], h: 2 },
   mushroom: { crown: [0.78, 0.33, 0.3], trunk: [0.92, 0.88, 0.8], h: 5 },
   palm: { crown: [0.3, 0.55, 0.22], trunk: [0.55, 0.42, 0.28], h: 7 },
   crystal: { crown: [0.55, 0.75, 0.95], trunk: [0.45, 0.6, 0.85], h: 4 },
@@ -1460,7 +1474,10 @@ function worldBowlTerrainGpu(T) {
     const M = BOWL_MIX,
       k = BOWL_INDEX / M,
       mix = new Uint8Array(M * M * 4),
-      A = T.pix.avg;
+      A = T.pix.avg.slice();
+    /* far away a place's water reads as the water the near view draws */
+    if (T.K.layer.w != null) A.set([0.26, 0.66, 0.74], T.K.layer.w * 3);
+    if (T.K.layer.d != null) A.set([0.1, 0.45, 0.66], T.K.layer.d * 3);
     for (let j = 0; j < M; j++)
       for (let i = 0; i < M; i++) {
         let r = 0,
@@ -1933,6 +1950,8 @@ export function worldBowlRender(t) {
   gl.uniform3fv(U.uHaze, haze);
   const T = g.terrain || worldBowl.ground.terrain;
   gl.uniform1f(U.uOn, g.ok ? 1 : 0);
+  gl.uniform1f(U.uT, reducedMotion ? 0 : (t % 600000) / 1000);
+  gl.uniform2f(U.uWaterL, T && T.K.layer.w != null ? T.K.layer.w : -9, T && T.K.layer.d != null ? T.K.layer.d : -9);
   gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, g.ok ? T.tIdx : gpuState.white);
   gl.uniform1i(U.uIdx, 0);
