@@ -371,12 +371,17 @@ export function settingsHTML() {
       `<h3 class="set-sub">Moving about</h3>` +
       settingsRowHTML(
         'Moving about',
-        'Joystick: drag anywhere on the scene and a stick appears under your thumb. D-pad: a fixed pad in the corner. Either way, tapping the ground walks you there too.',
+        'Joystick: drag anywhere on the scene and a stick appears under your thumb; push past its rim into the outer ring to run. D-pad: a fixed pad in the corner; hold its centre to run. Either way, tapping the ground walks you there too.',
         segmentedHTML('control', p.control || 'stick', [
           ['stick', 'Joystick'],
           ['dpad', 'D-pad'],
           ['tap', 'Tap only'],
         ])
+      ) +
+      settingsRowHTML(
+        'Always run',
+        'A full push of the stick, the D-pad, the keys and tapping the ground all run. A light push still walks.',
+        switchHTML('alwaysRun', !!p.alwaysRun, '1', '')
       ) +
       settingsRowHTML(
         'Scene tilt',
@@ -391,7 +396,7 @@ export function settingsHTML() {
             switchHTML('haptics', p.haptics !== false, 'on', 'off')
           )
         : '') +
-      `<details class="help"><summary>Moving around</summary><p>Drag on the scene for the joystick (or use the D-pad), or tap the ground to walk there. Tap people to talk and glowing spots to act. Two fingers turn the camera and pinch to zoom; with a mouse, drag with the right button to turn and Ctrl+scroll to zoom. On a keyboard: arrow keys or WASD walk, Q and E turn, Enter talks.</p></details>` +
+      `<details class="help"><summary>Moving around</summary><p>Drag on the scene for the joystick (or use the D-pad), or tap the ground to walk there. Tap people to talk and glowing spots to act. Two fingers turn the camera and pinch to zoom; with a mouse, drag with the right button to turn and Ctrl+scroll to zoom. On a keyboard: arrow keys or WASD walk, hold Shift to run, Q and E turn, Enter talks.</p></details>` +
       `<h3 class="set-sub">Screen and comfort</h3>` +
       settingsRowHTML(
         'Theme',
@@ -519,7 +524,7 @@ function changePreference(k, v) {
     return;
   }
   if (k === 'haptics') v = v !== 'off';
-  if (k === 'bigTargets') v = v === '1';
+  if (k === 'bigTargets' || k === 'alwaysRun') v = v === '1';
   if (k === 'tilt') {
     v = v === 'on';
     if (v)

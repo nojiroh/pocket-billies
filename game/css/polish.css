@@ -1276,6 +1276,31 @@ body.on-walk #dio {
     0 2px 6px rgba(0, 0, 0, 0.35),
     0 0 0 3px rgba(201, 154, 30, 0.7);
 }
+/* phase 08: the outer ring: push into it to run */
+.joy-ring {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 168px;
+  height: 168px;
+  margin: -84px 0 0 -84px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.22) inset;
+  transition:
+    box-shadow 0.12s,
+    background-color 0.12s;
+}
+.joy.run .joy-ring {
+  background: rgba(240, 190, 60, 0.12);
+  box-shadow: 0 0 0 3px rgba(240, 190, 60, 0.8) inset;
+}
+.joy.run .joy-knob {
+  background: rgba(255, 226, 140, 0.95);
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.35),
+    0 0 0 3px rgba(240, 190, 60, 1),
+    0 0 14px rgba(240, 190, 60, 0.7);
+}
 .dpad {
   position: fixed;
   z-index: 40;
@@ -1327,8 +1352,21 @@ body.on-walk #dio {
   top: 44px;
   width: 44px;
   height: 44px;
+  display: grid;
+  place-items: center;
   border-radius: 8px;
   background: rgba(30, 26, 44, 0.45);
+  color: rgba(255, 248, 230, 0.7);
+  font: 700 18px/1 sans-serif;
+  font-style: normal;
+}
+/* phase 08: hold the centre to run */
+.dpad i::after {
+  content: '»';
+}
+.dpad.run i {
+  background: rgba(240, 190, 60, 0.85);
+  color: rgba(30, 26, 44, 0.95);
 }
 .dpad[data-dir='2'] .u,
 .dpad[data-dir='1'] .u,

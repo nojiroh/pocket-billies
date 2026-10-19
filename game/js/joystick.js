@@ -2,11 +2,13 @@
 /* ================= JOYSTICK AND D-PAD (alpha 0.4.1) =================
    Walking yourself, like a classic RPG. Settings → Moving about:
    - Joystick (the default): put a thumb anywhere on the scene and drag; a stick appears where you touched and you walk
-     the way you push it, slowly near the middle, at a run at the rim. Let go and you stop. A tap without a drag is still
+     the way you push it, slowly near the middle. Push past the rim into the outer ring and you run (phase 08). Let go
+     and you stop. A tap without a drag is still
      a tap (walk there, open a door, talk). A second finger turns it back into a pinch.
-   - D-pad: a fixed eight-way pad in the lower left corner.
+   - D-pad: a fixed eight-way pad in the lower left corner; hold its centre with another finger to run.
    - Tap only: neither; tap where to go.
-   Both set walkView.stick {x right, y up, length 0-1}; walk-view.js walks along the camera's own right and forward. */
+   Both set walkView.stick {x right, y up, length 0-1} and walkView.run; walk-view.js walks along the camera's own right
+   and forward. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { activeBattle, saveData, uiState } from './game-state.js';
@@ -17,6 +19,8 @@ import { cutscene } from './cutscene.js';
 import { airshipFlight, glassLift } from './airship.js';
 /* eslint-disable no-func-assign */
 expose({
+  JOY_RIM: [() => JOY_RIM],
+  JOY_RING: [() => JOY_RING],
   joystick: [() => joystick],
   joystickAllowed: [() => joystickAllowed, v => (joystickAllowed = v)],
   joystickDpad: [() => joystickDpad, v => (joystickDpad = v)],
@@ -24,10 +28,28 @@ expose({
   joystickEnd: [() => joystickEnd, v => (joystickEnd = v)],
   joystickInput: [() => joystickInput, v => (joystickInput = v)],
   joystickPreference: [() => joystickPreference, v => (joystickPreference = v)],
+  joystickRun: [() => joystickRun, v => (joystickRun = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-const joystick = { id: null, x0: 0, y0: 0, on: false, el: null, knob: null, pad: null, padId: null, quiet: 0 };
+const joystick = {
+  id: null,
+  x0: 0,
+  y0: 0,
+  on: false,
+  el: null,
+  knob: null,
+  pad: null,
+  padId: null,
+  runId: null,
+  quiet: 0,
+};
+/* the stick's rim (walking at full push) and its outer ring (running), in CSS pixels */
+const JOY_RIM = 56,
+  JOY_RING = 84;
+function joystickRun(on) {
+  if (typeof walkView !== 'undefined') walkView.run = on;
+}
 function joystickPreference() {
   return (typeof saveData !== 'undefined' && saveData.preferences && saveData.preferences.control) || 'stick';
 }
@@ -59,10 +81,10 @@ function joystickElement() {
   const e = document.createElement('div');
   e.className = 'joy';
   e.setAttribute('aria-hidden', 'true');
-  e.innerHTML = '<i class="joy-knob"></i>';
+  e.innerHTML = '<i class="joy-ring"></i><i class="joy-knob"></i>';
   document.body.appendChild(e);
   joystick.el = e;
-  joystick.knob = e.firstChild;
+  joystick.knob = e.lastChild;
   return e;
 }
 function joystickEnd() {
@@ -73,7 +95,8 @@ function joystickEnd() {
   joystick.id = null;
   joystick.on = false;
   joystickInput(0, 0);
-  if (joystick.el) joystick.el.classList.remove('on');
+  joystickRun(false);
+  if (joystick.el) joystick.el.classList.remove('on', 'run');
 }
 document.addEventListener(
   'pointerdown',
@@ -111,10 +134,13 @@ document.addEventListener(
       e.style.top = joystick.y0 + 'px';
       e.classList.add('on');
     }
-    const R = 56,
-      k = Math.min(1, d / R),
-      m = Math.min(d, R);
+    const k = Math.min(1, d / JOY_RIM),
+      m = Math.min(d, JOY_RING),
+      /* past the rim into the ring: run; a little give either way so it doesn't flicker at the edge */
+      run = d > JOY_RIM + (typeof walkView !== 'undefined' && walkView.run ? 4 : 12);
     joystickInput((dx / d) * k, (-dy / d) * k);
+    joystickRun(run);
+    joystick.el.classList.toggle('run', run);
     joystick.knob.style.transform = `translate(${(dx / d) * m}px,${(dy / d) * m}px)`;
     ev.preventDefault();
   },
@@ -146,7 +172,7 @@ function joystickDpad() {
   e.className = 'dpad';
   e.setAttribute('role', 'group');
   e.setAttribute('aria-label', 'Walk');
-  e.innerHTML = '<b class="u">▲</b><b class="l">◀</b><b class="r">▶</b><b class="d">▼</b><i></i>';
+  e.innerHTML = '<b class="u">▲</b><b class="l">◀</b><b class="r">▶</b><b class="d">▼</b><i aria-label="Run"></i>';
   document.body.appendChild(e);
   joystick.pad = e;
   const at = ev => {
@@ -162,16 +188,32 @@ function joystickDpad() {
     e.dataset.dir = Math.round(a / (Math.PI / 4));
   };
   e.addEventListener('pointerdown', ev => {
-    joystick.padId = ev.pointerId;
-    e.setPointerCapture(ev.pointerId);
-    at(ev);
+    try {
+      e.setPointerCapture(ev.pointerId);
+    } catch (err) {
+      /* a pointer the browser no longer tracks; the press still counts */
+    }
     ev.preventDefault();
+    /* phase 08: a finger on the centre runs (while another holds a direction) */
+    if (ev.target === e.lastChild) {
+      joystick.runId = ev.pointerId;
+      joystickRun(true);
+      e.classList.add('run');
+      return;
+    }
+    joystick.padId = ev.pointerId;
+    at(ev);
   });
   e.addEventListener('pointermove', ev => {
     if (ev.pointerId === joystick.padId) at(ev);
   });
   for (const k of ['pointerup', 'pointercancel', 'lostpointercapture'])
     e.addEventListener(k, ev => {
+      if (ev.pointerId === joystick.runId) {
+        joystick.runId = null;
+        joystickRun(false);
+        e.classList.remove('run');
+      }
       if (ev.pointerId === joystick.padId) {
         joystick.padId = null;
         joystickInput(0, 0);
@@ -185,6 +227,11 @@ setInterval(() => {
   if (show || joystick.pad) {
     const e = joystickDpad();
     e.classList.toggle('on', show);
+    if (!show && joystick.runId != null) {
+      joystick.runId = null;
+      joystickRun(false);
+      e.classList.remove('run');
+    }
     if (!show && joystick.padId == null && typeof walkView !== 'undefined' && walkView.stick && joystick.id == null)
       joystickInput(0, 0);
   }

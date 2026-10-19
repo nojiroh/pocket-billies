@@ -109,6 +109,8 @@ export interface Preferences {
   lang?: string;
   expert?: boolean;
   control?: string;
+  /** phase 08: a full push (stick, d-pad, keys) and tap-to-walk run */
+  alwaysRun?: boolean;
   skipTitle?: boolean;
   cardClosed?: any;
   /** the player's own engine settings: group -> setting -> value (engine/settings.js) */

@@ -36,6 +36,7 @@ import {
   provide,
   rawHeightAt,
   reducedMotion,
+  saveData,
   seamlessMapById,
   seamlessNearestRoadPoint,
   smooth01,
@@ -73,6 +74,7 @@ expose({
   PROP_CLOCK: [() => PROP_CLOCK],
   PROP_VARIANT_CACHE: [() => PROP_VARIANT_CACHE],
   ROOF_STYLES: [() => ROOF_STYLES],
+  RUN_FACTOR: [() => RUN_FACTOR],
   STEP_GRID_CACHE: [() => STEP_GRID_CACHE],
   TILE_PIXEL_CACHE: [() => TILE_PIXEL_CACHE],
   TONE_AMOUNT: [() => TONE_AMOUNT],
@@ -84,6 +86,7 @@ expose({
   WALK_SPEED: [() => WALK_SPEED],
   actionLabel: [() => actionLabel, v => (actionLabel = v)],
   actionSpot: [() => actionSpot, v => (actionSpot = v)],
+  alwaysRun: [() => alwaysRun, v => (alwaysRun = v)],
   applyGroundTone: [() => applyGroundTone, v => (applyGroundTone = v)],
   approachPoint: [() => approachPoint, v => (approachPoint = v)],
   artImage: [() => artImage, v => setArtImage(v)],
@@ -278,6 +281,8 @@ export const walkView = {
   parts: [],
   tap: null,
   keys: {},
+  /* phase 08: running, held by the joystick's outer ring or the d-pad's centre (joystick.js); Shift is keys.run */
+  run: false,
   sh: null,
   chat: 0,
   ff: new Map(),
@@ -291,7 +296,9 @@ const canvasPixels = n => {
 };
 export const GROUND_BORDER_M = 8,
   NAV_CELLS_PER_M = 2,
-  WALK_SPEED = 3.4;
+  WALK_SPEED = 3.4,
+  /* phase 08: running is this much faster than walking (the joystick's outer ring, the d-pad's centre, Shift) */
+  RUN_FACTOR = 1.7;
 /* alpha 0.4: what a painting generator yields while the ground painter's helper thread works (ground-paint-worker.js): whatever
    steps it stops for now and comes back later */
 export const PAINT_WORKER_WAIT = { pw: 1 };
@@ -3189,12 +3196,17 @@ export function turnToPlayer(f) {
   f.dir = directionOf(P.x - f.x, P.z - f.z);
   f.wait = Math.max(f.wait, 3);
 }
-/* keyboard: arrows or WASD while the scene is in view */
+/* phase 08: the player's "Always run" (Settings → Moving about); the Studio has no save */
+function alwaysRun() {
+  return !!(typeof saveData !== 'undefined' && saveData && saveData.preferences && saveData.preferences.alwaysRun);
+}
+/* keyboard: arrows or WASD while the scene is in view; Shift runs */
 const WALK_KEYS = {
   ArrowLeft: 'l',
   ArrowRight: 'r',
   ArrowUp: 'u',
   ArrowDown: 'd',
+  Shift: 'run',
   a: 'l',
   d: 'r',
   w: 'u',
@@ -3212,6 +3224,7 @@ addEventListener('keydown', ev => {
   const t = ev.target;
   if (t && (t.isContentEditable || /INPUT|TEXTAREA|SELECT/.test(t.tagName))) return;
   walkView.keys[k] = 1;
+  if (k === 'run') return;
   walkView.pl.route = null;
   walkView.pl.goal = null;
   ev.preventDefault();
@@ -3458,7 +3471,9 @@ function movePlayer(st, dt) {
         P.route = null;
         P.goal = null;
       }
-      const run = km > 0.92 ? 1.3 : km < 0.5 ? 0.6 : 1,
+      /* phase 08: a light push walks slowly, a full push walks; running (the ring, the d-pad's centre, Shift, or a full
+         push with "Always run") is RUN_FACTOR faster. The keys and the d-pad push fully. */
+      const run = walkView.run || K.run || (km > 0.92 && alwaysRun()) ? RUN_FACTOR : km < 0.5 ? 0.6 : 1,
         s = WALK_SPEED * dt * run * slopeSpeedFactor(P.x, P.z, wx / l, wz / l);
       let nx = P.x + (wx / l) * s,
         nz = P.z + (wz / l) * s;
@@ -3469,7 +3484,12 @@ function movePlayer(st, dt) {
     } else if (P.route) {
       const tg0 = P.route[P.ri],
         d0 = Math.hypot(tg0[0] - P.x, tg0[1] - P.z) || 1;
-      let left = WALK_SPEED * (P.rush || 1) * dt * slopeSpeedFactor(P.x, P.z, (tg0[0] - P.x) / d0, (tg0[1] - P.z) / d0);
+      let left =
+        WALK_SPEED *
+        (P.rush || 1) *
+        (K.run || alwaysRun() ? RUN_FACTOR : 1) *
+        dt *
+        slopeSpeedFactor(P.x, P.z, (tg0[0] - P.x) / d0, (tg0[1] - P.z) / d0);
       while (left > 0 && P.route) {
         const tg = P.route[P.ri],
           dx = tg[0] - P.x,

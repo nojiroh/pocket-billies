@@ -2037,7 +2037,7 @@ def desktop_steps(b, base, R):
         return f'{r["b"]} buildings in 3D by night, {r["on"]} of {r["lamps"]} lamps on, {r["lit"]} of {r["fw"]} front windows lit; a rain front came in (its curtain at {c["e"]:.2f}, coming in: {c["into"]})'
     a04_lights()
 
-    @step('alpha 0.4.1: walk the world yourself — the joystick, the D-pad, walking over the edge from Copperleaf onto Route 1, steps counted', 300)
+    @step('alpha 0.4.1: walk the world yourself — the joystick, the D-pad, walking over the edge from Copperleaf onto Route 1', 300)
     def a041_walk():
         """the classic way (the only way since phase 08). The joystick moves you along the camera, the D-pad shows when chosen, and
         walking out of Copperleaf over its edge makes Route 1 where you are (the trip is only a guide now)"""
@@ -2059,6 +2059,57 @@ def desktop_steps(b, base, R):
         finally:
             pg.evaluate("environment.force=null;0")
     a041_walk()
+
+    @step('phase 08: running — the joystick’s outer ring, the D-pad’s centre, Shift and "Always run"', 180)
+    def run_speeds():
+        """the walk speed a full push gives, and 1.7 times that when running; the ring and the D-pad's centre set the run from
+        real pointer events, a light push walks slowly, and the keys walk at the same speed as a full push"""
+        pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();saveData.preferences.control='stick';saveData.preferences.alwaysRun=false;0")
+        n0 = pg.evaluate("LOCATIONS.findIndex(r=>r.mapId==='marigold')")
+        go_scene(pg, n0, 150); time.sleep(2)
+        hub = pg.evaluate("[walkView.pl.x,walkView.pl.z]")
+
+        def speed(setup, undo):
+            """metres a second over about 0.6 s of game time, back and forth so the player stays near the hub"""
+            out = []
+            for y in (1, -1):
+                pg.evaluate(f"walkView.pl.x={hub[0]};walkView.pl.z={hub[1]};walkView.pl.route=null;0")
+                a = pg.evaluate(f"(()=>{{{setup.replace('Y', str(y))};return [walkView.pl.x,walkView.pl.z,walkView.t]}})()")
+                until(pg, f"walkView.t>={a[2] + 600}", 60)
+                b = pg.evaluate(f"(()=>{{const r=[walkView.pl.x,walkView.pl.z,walkView.t];{undo};return r}})()")
+                out.append(((b[0] - a[0]) ** 2 + (b[1] - a[1]) ** 2) ** .5 / max(.001, (b[2] - a[2]) / 1000))
+            return max(out)
+        walk = speed("walkView.stick={x:0,y:Y}", "walkView.stick=null")
+        light = speed("walkView.stick={x:0,y:Y*0.4}", "walkView.stick=null")
+        ring = speed("walkView.stick={x:0,y:Y};walkView.run=true", "walkView.stick=null;walkView.run=false")
+        keys = speed("walkView.keys[Y>0?'u':'d']=1", "walkView.keys={}")
+        shift = speed("walkView.keys[Y>0?'u':'d']=1;walkView.keys.run=1", "walkView.keys={}")
+        always = speed("saveData.preferences.alwaysRun=true;walkView.stick={x:0,y:Y}", "walkView.stick=null;saveData.preferences.alwaysRun=false")
+        bad = []
+        if not 2.6 < walk < 3.8: bad.append(f'a full push walks at {walk:.2f} m/s (3.4)')
+        for n, v, k in (('a light push', light, .6), ('the ring', ring, 1.7), ('the keys', keys, 1), ('Shift', shift, 1.7), ('Always run', always, 1.7)):
+            if abs(v / walk - k) > .15 * k: bad.append(f'{n}: {v:.2f} m/s, {v / walk:.2f}x a full push (want {k}x)')
+        # the ring and the D-pad's centre from real pointer events
+        r = pg.evaluate("""(()=>{const d=document.getElementById('dio'),R=d.getBoundingClientRect(),x=R.left+R.width/2,y=R.top+R.height/2,
+          ev=(k,dx,dy)=>document.dispatchEvent(new PointerEvent(k,{pointerId:7,clientX:x+dx,clientY:y+dy,bubbles:true,isPrimary:true}));
+          d.dispatchEvent(new PointerEvent('pointerdown',{pointerId:7,clientX:x,clientY:y,bubbles:true,isPrimary:true}));
+          ev('pointermove',0,-40);const a=[walkView.run,!!document.querySelector('.joy.run')];
+          ev('pointermove',0,-75);const b=[walkView.run,!!document.querySelector('.joy.run')];
+          ev('pointermove',0,-62);const c=walkView.run;ev('pointermove',0,-50);const e=walkView.run;
+          ev('pointerup',0,-50);return {inside:a,ring:b,give:c,back:e,after:walkView.run}})()""")
+        if r['inside'] != [False, False] or r['ring'] != [True, True] or not r['give'] or r['back'] or r['after']:
+            bad.append(f'the joystick ring: {r}')
+        pg.evaluate("saveData.preferences.control='dpad';renderOverlay();render();0"); time.sleep(.8)
+        dp = pg.evaluate("""(()=>{const i=document.querySelector('.dpad.on i');if(!i)return null;const R=i.getBoundingClientRect(),
+          o={pointerId:9,clientX:R.left+R.width/2,clientY:R.top+R.height/2,bubbles:true};
+          i.dispatchEvent(new PointerEvent('pointerdown',o));const a=[walkView.run,!!document.querySelector('.dpad.run'),!!walkView.stick];
+          i.dispatchEvent(new PointerEvent('pointerup',o));return [a,walkView.run]})()""")
+        pg.evaluate("saveData.preferences.control='stick';walkView.run=false;renderOverlay();render();0")
+        if dp != [[True, True, False], False]: bad.append(f'the D-pad centre: {dp} (want it to run without walking, and stop on release)')
+        if bad: raise Exception('; '.join(bad))
+        if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
+        return f'full push {walk:.2f} m/s; light push {light / walk:.2f}x, ring {ring / walk:.2f}x, keys {keys / walk:.2f}x, Shift {shift / walk:.2f}x, Always run {always / walk:.2f}x; the ring and the D-pad centre run from pointer events'
+    run_speeds()
 
     @step('Settings: one save and the account box, languages, text size, contrast', 90)
     def settings():
