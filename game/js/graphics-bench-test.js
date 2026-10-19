@@ -27,7 +27,7 @@ import { GRAPHICS_DIALS } from './settings-screen.js';
 import { mapById, mapHub, walkView } from './walk-view.js';
 import { environment } from './environment.js';
 import { walkRenderer } from './walk/walk-state.js';
-import { rebuildFromSettings } from './walk-view-gl.js';
+import { rebuildFromSettings } from './walk/map-cache.js';
 import { paintWorkerState } from './ground-paint-worker.js';
 import { closeModal, modal, render, renderOverlay, toast } from './ui.js';
 import {

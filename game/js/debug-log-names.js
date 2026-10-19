@@ -45,8 +45,9 @@ import { environment } from './environment.js';
 import { walkRenderer } from './walk/walk-state.js';
 import { groundOcclusion, setGroundOcclusion } from './walk/ground-textures.js';
 import { buildGrass, grassWork, setBuildGrass, setGrassWork } from './walk/grass-build.js';
+import { buildGroundMesh, setBuildGroundMesh } from './walk/ground-mesh.js';
+import { setSwapMapCache, setUpdateNearRing, swapMapCache, updateNearRing } from './walk/map-cache.js';
 import {
-  buildGroundMesh,
   drawBoxFaces,
   drawGrass,
   drawGround,
@@ -56,7 +57,6 @@ import {
   gatherFrameItems,
   mountWalkView,
   reflectionPass,
-  setBuildGroundMesh,
   setDrawBoxFaces,
   setDrawGrass,
   setDrawGround,
@@ -67,11 +67,7 @@ import {
   setMountWalkView,
   setReflectionPass,
   setShadowPass,
-  setSwapMapCache,
-  setUpdateNearRing,
   shadowPass,
-  swapMapCache,
-  updateNearRing,
 } from './walk-view-gl.js';
 import { buildingItems, buildingState, drawBuildings, setBuildingItems, setDrawBuildings } from './buildings.js';
 import { drawStructures, setDrawStructures } from './structures.js';
