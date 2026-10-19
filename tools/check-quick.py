@@ -692,6 +692,55 @@ def team_step(b, base, R):
         ctx.close()
 
 
+@step('Safety: hostile names on every screen stay text (phase 06-4)', 240)
+def safety_step(b, base, R):
+    """phase 06 "done when": no untrusted value is built into the page as markup. Names a player or a friend controls get
+    an HTML payload written straight into the save and the friend data (as an imported save or the server could), past
+    the cleaning names get when typed; then every screen opens and nothing the payload carries may exist or have run"""
+    errs = []
+    ctx = b.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=1); ctx.add_init_script(CLOCK); ctx.add_init_script(NO_ACCOUNTS); ctx.add_init_script(TEST_GLOBALS)
+    ctx.set_default_timeout(90000); pg = ctx.new_page(); CUR['pg'] = pg
+    pg.on('pageerror', lambda e: errs.append(str(e)))
+    try:
+        pg.goto(base + '/index.html?fixture=town'); pg.evaluate(LOW_RENDER)
+        if not until(pg, "typeof walkView!=='undefined'&&walkView.ready", 120): raise Exception('the town never opened')
+        pg.evaluate("""(()=>{const X='<img src=x data-pwn=1 onerror="window.__pwn=(window.__pwn||0)+1"><b data-pwn=1>x</b>';window.__X=X;
+          uiState.modal=null;uiState.mq=[];renderOverlay();
+          saveData.avatar.name='Ann'+X;saveData.team[0].nick='Nick'+X;
+          if(saveData.team[1])saveData.team[1].nick=X;
+          /* a friend (as the server would send it) and a friend request */
+          accountOn=()=>true;friendsOn=()=>true;friends.code='C0DE'+X;friends.list=['u1'];
+          friends.data.u1={name:'Friend'+X,at:{place:'Place'+X,node:0,t:Date.now()},partner:{sp:saveData.team[0].sp,name:'Pal'+X,lvl:5}};
+          friends.inc=[{id:'r1'+X,status:'pending',fromName:'Req'+X}];friends.out=[];
+          notice({id:'pwn',title:'A letter',html:'<p>hello</p>'});0})()""")
+        def check(where):
+            n = pg.evaluate("""(()=>{let n=document.querySelectorAll('[data-pwn]').length;
+              for(const h of document.querySelectorAll('*'))if(h.shadowRoot)n+=h.shadowRoot.querySelectorAll('[data-pwn]').length;
+              return n+(window.__pwn||0)})()""")
+            if n: raise Exception(f'markup from a name got into the page at: {where}')
+        shown = []
+        for tab in ['walk', 'team', 'ledger', 'profile', 'bag']:
+            pg.evaluate(f"uiState.tab='{tab}';render();0"); time.sleep(.5); check(tab); shown.append(tab)
+        for k in ['sum', 'build', 'moves', 'evo']:
+            pg.evaluate(f"uiState.modal=null;uiState.mq=[];renderOverlay();billySheet(saveData.team[0]);document.querySelector('[data-a=ms-tab][data-k={k}]')?.click();0"); time.sleep(.3); check('details ' + k)
+        shown.append('details')
+        for k in ['sound', 'graphics', 'game', 'save', 'help']:
+            pg.evaluate(f"uiState.modal=null;uiState.mq=[];renderOverlay();openSettings();document.querySelector('[data-a=set-tab][data-k={k}]')?.click();0"); time.sleep(.3); check('settings ' + k)
+        shown.append('settings')
+        pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();openShop('marigold');0"); time.sleep(.4); check('shop'); shown.append('shop')
+        pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();document.querySelector('[data-a=inbox]')?.click();0"); time.sleep(.4); check('inbox'); shown.append('inbox')
+        pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();toast(saveData.team[0].nick+' leads the team now.');talkLine('me',saveData.avatar.name+' says hi.');0"); time.sleep(.6); check('toast and dialogue'); shown.append('toast'); shown.append('dialogue')
+        pg.evaluate("talkHide();uiState.modal=null;uiState.mq=[];renderOverlay();openDressingRoom({});0"); time.sleep(1); check('dressing room'); shown.append('dressing room')
+        pg.evaluate("typeof closeDressingRoom==='function'&&closeDressingRoom();screenWipe=f=>f();saveData.team.forEach(m=>{m.hp=maxHp(m)});const q={id:'tq',sp:saveData.team[0].sp,lvl:3,gold:false,no:1};saveData.queue=[q];startWild(q);0")
+        if wait_phase(pg, ('choose',), 120) != 'choose': raise Exception('the battle never reached the move menu')
+        time.sleep(.5); check('battle'); shown.append('battle')
+        pg.evaluate("stopTimers();activeBattle=null;battleStageStop();render();0")
+        if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
+        return f'a payload in the trainer, nicknames, a friend, a request and the friend code stayed text on {len(shown)} screens: ' + ', '.join(shown)
+    finally:
+        ctx.close()
+
+
 @step('In-game full test: one step headless, and nothing is saved while it runs', 120)
 def in_game_test_step(b, base, R):
     errs = []; ctx, pg = open_game(b, base, 1100, 700, False, errs)
@@ -2368,6 +2417,7 @@ def main():
             else:
                 messages_step(b, base, R)
                 team_step(b, base, R)
+                safety_step(b, base, R)
                 try:
                     desktop_steps(b, base, R)
                 except Exception as e:
