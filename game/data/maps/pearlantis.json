@@ -428,7 +428,28 @@
    ],
    "x": 44.4,
    "z": 44,
-   "dir": "down"
+   "dir": "down",
+   "script": [
+    "if !met_nacre",
+    "  You came down the lift? Then you’ve seen the pipes. Everyone up there thinks they carry water.",
+    "  They carry gold. Ours. Vinylla’s pressing plant has been pumping the city’s vaults dry for a year to pay for her tour.",
+    "  The ledger is in the Exchange, if you can stomach the numbers. Somebody ought to send her the bill.",
+    "  set met_nacre",
+    "elif read_pearl_ledger",
+    "  [angry] So you’ve read the ledger.",
+    "  choice",
+    "    > [once] Why didn’t anyone stop her?",
+    "      We sank because we wouldn’t spend. Now someone else is spending it for us. There’s a lesson in that, but I’m too cross to learn it.",
+    "    > What are the mirrors for?",
+    "      The mirrors bring the Inner Sun down to us. Nobody can own the sun, not even in Pearlantis. Especially not in Pearlantis.",
+    "    > Just passing.",
+    "else",
+    "  cycle",
+    "    - The mirrors bring the Inner Sun down to us. Nobody can own the sun, not even in Pearlantis. Especially not in Pearlantis.",
+    "    - We sank because we wouldn’t spend. Now someone else is spending it for us. There’s a lesson in that, but I’m too cross to learn it.",
+    "    - The bubble trams run all night. There is no night down here, only the lamps.",
+    "    - Mind your coins on the lift. Things that fall in the trench stay in the trench."
+   ]
   }
  ],
  "edgeExits": [],

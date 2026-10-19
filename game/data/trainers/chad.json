@@ -29,5 +29,16 @@
   "[happy] So you’re Hazel’s other student. I’m Blake. I got my starter a whole hour before you.",
   "I picked the one that beats yours. No offense. Well, a little offense.",
   "[angry] Nobody plays through this course until we settle it. Let’s go!"
+ ],
+ "script": [
+  "set met_chad",
+  "camera rival-run-in",
+  "[angry] Hey! Surface stray! Wait up!",
+  "walk Blake beside me",
+  "face Blake me",
+  "[happy] I’ve been training out here all morning. Mine knows a lot more than Tackle now.",
+  "What happened outside the lab doesn’t count. This one counts.",
+  "[angry] Nobody plays through this course until we settle it. Let’s go!",
+  "battle chad"
  ]
 }
