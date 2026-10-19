@@ -11,7 +11,7 @@
    each step measuring that frames keep coming, the frame rate, the worst frame and any errors.
    The save is never changed (saving is paused and the save is put back, as in self-test.js), and the player's own
    graphics settings are put back when the test ends, is stopped or fails. The report it saves holds no save data,
-   names or step history: only dial names, numbers, errors and the graphics chip; a last row checks it for names. */
+   names or movement history: only dial names, numbers, errors and the graphics chip; a last row checks it for names. */
 
 /* the value a dial is tested at: away from its default, so the step shows what that dial changes */
 const DIAL_UNSET = { hazeDistance: 40, pitch: 55, height: 14 };

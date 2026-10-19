@@ -28,7 +28,8 @@ If something looks wrong or runs slowly, open **Settings** (the gear) and use:
   values and shows what each one costs on your device, costliest first. **Save the report** gives a short
   `pocket-billies-graphics-….json` to send. Your settings and save aren't changed (docs/graphics-bench.md).
 - **Export debug log**: one `.json` file with frame rates per screen and scene, slow frames, errors, loading times,
-  your device and graphics chip, and a small picture of the scene. It contains no save data, names or step history.
+  your device and graphics chip, and a small picture of the scene. It contains no save data, no names and no positions
+  (only which places opened and when).
 
 The full test, the graphics test and the log export are also in the debug menu (add `?debug` to the address).
 
