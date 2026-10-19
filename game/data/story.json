@@ -2,7 +2,6 @@
  "about": "Project Story: the story layer's own data. flags: every story flag the game keeps in saveData.story, and what it means. patterns: flags made from an id. kept: the story's own records in the same object (not flags). speakers: the names a script may write before a line, and whose portrait and name they stand for. quests: each quest's stages in order. presets: start points for ?story=name (test runs only): place, story flags, trainers beaten (with their badges), coins, items, team.",
  "flags": {
   "rival0": "how Blake's first battle went: win, lose or skip (story.js storyAfterRival)",
-  "askLongGrass": "Hazel told you your things scattered along Tallgrass Meadow (story.js storyAfterRival; set, read nowhere yet)",
   "ending": "the last clue: the story's last stage (story.js storyEnding, lore.js loreStage)",
   "flights": "airship flights taken, a count (airship.js)",
   "clueLanyard": "the lanyard clue found (lore.json clues: lanyard)",

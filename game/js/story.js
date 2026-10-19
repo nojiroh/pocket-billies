@@ -367,8 +367,6 @@ async function storyAfterRival(o, T) {
     ['gini', 'Now go and explore! The road teaches more than any book. Come back and see me any time.'],
   ];
   if (typeof talk === 'function') await talk(after);
-  setStoryFlag('askLongGrass');
-  save();
   if (W) modal(W);
   else if (typeof showPendingWindows === 'function') showPendingWindows();
 }
