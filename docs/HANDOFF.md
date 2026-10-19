@@ -71,8 +71,13 @@ Owner's request: start on the rest of Copperleaf and Route 1 (Hedgerow Lane), th
     birch_b as shrubs of several stems (a new stems mode: each limb a stem from the ground, no trunk or roots);
     autumn hazel, autumn poplar and autumn beech as their summer tree with the leaves recoloured.
   - Their rows are on the showcase map test_props_next.
-- Left in the two places: willow, larch, the fallen tree (a log model); 7 bushes; 9 old-style 3D props; 13 small
-  things; the hedge, two cottages, the lab and the log.
+- Part 3 (owner: do the rest of the nature now): willow; larch (a new 0-clump mode: the tiered crown stays whole
+  on a modelled trunk); the 7 bushes (berry, holly, juniper, bramble, rosemary, hawthorn, rhododendron) as clumps;
+  modelled from shapes: the hedge, the fallen tree, the log, the stump, the lichen boulder, the flat rock and the
+  stepping stones (still flat and walkable; a flat prop with a model no longer also draws its picture on the ground).
+  All the nature in Copperleaf and Hedgerow Lane is now in the new style.
+- Left in the two places: 23 man-made props (fences, benches, planters, flowerpots, wheelbarrow, barrel, dock post,
+  beehive, signpost, scarecrow, well, birdhouse, gnome, bunting, rowboat, waystone), two cottages and the lab.
 - Verified: data check, lint, type-check, unit tests, the smoke check; low-resolution shots of the new rows.
 
 ### Phase 09 batch 1 swapped in - 2026-10-19

@@ -239,7 +239,7 @@ def tree_recipe(key, pic, k, limbs, leaves_dir, seed, stems=False):
     sheet = sheet[sy0:ys.max() + 1, sx0:xs.max() + 1]
     sheet_path = save_png(sheet, leaves_dir / f'{key}.png')
     P = np.argwhere(canopy).astype(float)
-    C, lab = kmeans(P, k)
+    C, lab = kmeans(P, k) if k else (None, None)
     clumps = []
     for i in range(k):
         Q = P[lab == i]
@@ -293,8 +293,9 @@ def tree_recipe(key, pic, k, limbs, leaves_dir, seed, stems=False):
                                            [r2(foot[0] + ca * fr * 1.7), r2(sa * fr * 1.7), -0.03, r2(fr * 0.12)]],
                       'sides': 5, 'col': bark, 'tex': 'bark', 'name': 'root'})
     # the crown's core: the whole picture a shade darker, behind the clumps; it casts the crown's shadow
-    L.append({'k': 'img', 'img': sheet_path, 'shade': 0.78, 'x': X(sx0 + sheet.shape[1] / 2), 'y': r2(Rc * 0.3),
-              'z': Z(sy0 + sheet.shape[0] - 1), 'shadow': 1, 'recv': 0, 'sway': 0.7, 'name': 'crown core'})
+    # (k = 0: no clumps, the crown is the picture itself, whole and unshaded: a conifer's tiers)
+    L.append({'k': 'img', 'img': sheet_path, 'shade': 0.78 if k else 1, 'x': X(sx0 + sheet.shape[1] / 2), 'y': r2(Rc * 0.3 if k else 0),
+              'z': Z(sy0 + sheet.shape[0] - 1), 'shadow': 1, 'recv': 0, 'sway': 0.7 if k else 0.8, 'name': 'crown core' if k else 'crown'})
     order = sorted(range(len(clumps)), key=lambda i: -clumps[i]['n'])
     big = W > 120
     for rank, i in enumerate(order):

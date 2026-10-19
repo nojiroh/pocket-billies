@@ -6102,7 +6102,7 @@ export function drawSprites(C, items, X, hits, labels, PPU) {
   gl.uniform1f(U.uEmit, 0);
   gl.uniform1f(U.uFade, 1);
   for (const it of items) {
-    if (!it.flat || it.vis === false) continue;
+    if (!it.flat || it.vis === false || it.vox) continue; /* phase 09: a flat prop drawn as a model (stepping stones) */
     const T = imageTexture(it.im);
     if (!T) continue;
     drawFlatItem(it, T, C, X);

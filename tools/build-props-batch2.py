@@ -16,6 +16,7 @@ first if you run both (it rebuilds that map from its own rows only).
 """
 import importlib.util
 import json
+import math
 import sys
 from pathlib import Path
 
@@ -50,9 +51,107 @@ TREES = {
     'tree_birch_b': ('tree_birch_b', 5, [((31.5, 166), (31, 96), 8, 4), ((43.5, 166), (46, 108), 6, 4)], True),
     'tree_birch_gold': ('tree_birch_gold', 6, [((48.5, 148), (49, 70), 10, 6), ((49, 72), (50, 50), 5, 3)], False),
     'tree_poplar': ('tree_poplar', 4, [((20.5, 175), (20.5, 143), 11, 9), ((20.5, 145), (20.5, 90), 6, 3)], False),
+    # third part: the last trees (the larch keeps its tiered crown whole: 0 clumps) and the bushes (clumps, no trunk)
+    'tree_willow': ('tree_willow', 7, [((73, 155), (71, 88), 24, 20), ((66, 86), (50, 62), 12, 6), ((78, 86), (96, 60), 12, 6)], False),
+    'tree_larch': ('tree_larch', 0, [((44.5, 137), (45, 118), 11, 9), ((45, 120), (45, 40), 6, 2)], False),
+    'bush_berry': ('bush_berry', 3, [], False),
+    'bush_holly': ('bush_holly', 3, [], False),
+    'bush_juniper': ('bush_juniper', 3, [], False),
+    'bush_bramble': ('bush_bramble', 3, [], False),
+    'bush_rosemary': ('bush_rosemary', 2, [], False),
+    'bush_hawthorn': ('bush_hawthorn', 3, [], False),
+    'bush_rhododendron': ('bush_rhododendron', 4, [], False),
 }
 # looks that are another tree's model with its leaves recoloured: key -> (the tree it uses)
 AUTUMN = {'tree_hazel_autumn': 'tree_hazel', 'tree_poplar_autumn': 'tree_poplar', 'tree_beech_autumn': 'tree_beech'}
+
+# the rest of the nature: modelled from shapes (the batch 1 tool's helpers), in the colours of their pictures
+def hedge_recipe():
+    """A clipped hedge: a leafy block with a rounded top, darker at the foot, a few sprigs breaking the line."""
+    G, GL, GD = '#4E964E', '#83B271', '#436F4C'
+    w, d, h = 3.6, 0.66, 1.05
+    L = [B1.box(0, 0, 0, w, d, h * 0.25, GD, 'leaves', 'hedge foot'),
+         B1.box(0, 0, h * 0.25, w, d, h * 0.62, G, 'leaves', 'hedge'),
+         B1.limb((-w / 2, 0, h * 0.86), (w / 2, 0, h * 0.86), d / 2, d / 2, G, 'leaves', 'hedge top', 10)]
+    for i in range(7):
+        x = -w / 2 + 0.25 + (w - 0.5) * i / 6
+        L.append(B1.sphere(x, -d / 2 + 0.04 + (i % 2) * 0.05, h * (0.35 + 0.4 * ((i * 37) % 5) / 5), 0.13, GL, 'leaves', 'sprig', 7, 3, 0.35))
+        L.append(B1.sphere(x + 0.2, (i % 3 - 1) * 0.15, h + 0.12 + (i % 2) * 0.04, 0.12, GL if i % 2 else G, 'leaves', 'top sprig', 7, 3, 0.35))
+    return {'ppm': PPM, 'cel': 0.7, 'layers': L}
+
+
+def log_layers(x0, x1, z, r, y=0, moss=True, name='log'):
+    BARK, END, MOSS = '#96684A', '#DBB27E', '#86B45A'
+    L = [B1.limb((x0, y, z), (x1, y, z), r, r * 0.92, BARK, 'bark', name, 10),
+         B1.limb((x1 - 0.01, y, z), (x1 + 0.03, y, z), r * 0.84, r * 0.84, END, 'plain', name + ' cut end', 10),
+         B1.limb((x0 + 0.01, y, z), (x0 - 0.03, y, z), r * 0.9, r * 0.9, END, 'plain', name + ' cut end', 10)]
+    if moss:
+        for i, f in enumerate((0.2, 0.55, 0.8)):
+            L.append(B1.sphere(x0 + (x1 - x0) * f, y, z + r * 0.75, r * 0.55, MOSS if i % 2 else '#76AA50', 'leaves', 'moss', 8, 3, 0.3, h=r * 0.5))
+    return L
+
+
+def fallen_recipe():
+    """The fallen tree: a long mossy trunk, a broken stub of a branch and three little white toadstools."""
+    L = log_layers(-2.05, 2.05, 0.27, 0.3, name='trunk')
+    L.append(B1.limb((0.5, -0.05, 0.4), (0.8, -0.25, 0.85), 0.07, 0.04, '#96684A', 'bark', 'branch stub', 6))
+    for x in (-1.3, -0.4, 1.1):
+        L += [B1.cyl(x, -0.32, 0, 0.025, 0.12, '#F4F0E8', 'plain', 'toadstool stem', 6),
+              B1.cyl(x, -0.32, 0.1, 0.07, 0.05, '#F4F0E8', 'plain', 'toadstool cap', 8, k='dome')]
+    return {'ppm': PPM, 'cel': 0.7, 'layers': L}
+
+
+def log_recipe():
+    """A sawn log lying on the ground with a little branch sticking up."""
+    L = log_layers(-1.15, 1.15, 0.36, 0.36, moss=False)
+    L.append(B1.limb((0.6, 0, 0.6), (0.78, -0.05, 1.05), 0.06, 0.04, '#96684A', 'bark', 'twig', 6))
+    L.append(B1.sphere(0.79, -0.06, 1.04, 0.045, '#76AA50', 'leaves', 'leaf', 6, 3))
+    return {'ppm': PPM, 'cel': 0.7, 'layers': L}
+
+
+def stump_recipe():
+    """A tree stump: a bark cylinder with its rings on top, four roots into the ground and a tuft of moss."""
+    BARK = '#96684A'
+    L = [B1.cyl(0, 0, 0, 0.38, 0.5, BARK, 'bark', 'stump', 12),
+         B1.cyl(0, 0, 0.5, 0.36, 0.02, '#DBB27E', 'rings', 'rings', 12)]
+    for i in range(4):
+        a = i * math.pi / 2 + 0.5
+        L.append(B1.limb((math.cos(a) * 0.2, math.sin(a) * 0.2, 0.2), (math.cos(a) * 0.62, math.sin(a) * 0.62, -0.04), 0.13, 0.05, BARK, 'bark', 'root', 6))
+    L.append(B1.sphere(-0.2, -0.3, 0.38, 0.13, '#86B45A', 'leaves', 'moss', 7, 3, 0.35, h=0.12))
+    return {'ppm': PPM, 'cel': 0.7, 'layers': L}
+
+
+def boulder_recipe():
+    """The lichen boulder: one big faceted stone, two small ones at its foot, and spots of yellow lichen."""
+    R = '#9C8C92'
+    L = [B1.sphere(0, 0.05, -0.15, 1.05, R, 'rock', 'boulder', 8, 5, 0.3, h=1.7) | {'facet': 1, 'ry': 0.9},
+         B1.sphere(-1.0, -0.25, -0.05, 0.32, '#766879', 'rock', 'stone', 7, 3, 0.3, h=0.45) | {'facet': 1},
+         B1.sphere(1.0, -0.15, -0.05, 0.26, R, 'rock', 'stone', 7, 3, 0.3, h=0.36) | {'facet': 1}]
+    rng = B1.np.random.default_rng(31)
+    for i in range(9):
+        a, k = rng.random() * math.pi - math.pi, 0.25 + rng.random() * 0.55
+        rr = 1.05 * math.sqrt(1 - k * k)
+        L.append(B1.sphere(math.cos(a) * rr, 0.05 + math.sin(a) * rr * 0.86, -0.15 + 0.85 + k * 0.8, 0.09 + rng.random() * 0.05,
+                           '#D8B640' if i % 2 else '#B8A040', 'leaves', 'lichen', 6, 2, h=0.06))
+    return {'ppm': PPM, 'cel': 0.75, 'layers': L}
+
+
+def flat_rock_recipe():
+    return {'ppm': PPM, 'cel': 0.75, 'layers': [
+        B1.sphere(0, 0, -0.1, 1.1, '#9C8C92', 'rock', 'flat rock', 8, 4, 0.25, h=0.62) | {'facet': 1, 'ry': 0.7},
+        B1.sphere(0.7, -0.35, -0.03, 0.2, '#766879', 'rock', 'pebble', 6, 3, 0.3, h=0.2) | {'facet': 1}]}
+
+
+def stepping_recipe():
+    """Stepping stones: three flat stones barely above the ground, to walk on."""
+    L = []
+    for i, (x, y, r) in enumerate(((-0.75, 0.05, 0.3), (0.0, -0.08, 0.34), (0.78, 0.04, 0.28))):
+        L.append(B1.cyl(x, y, 0, r, 0.07, '#AAA6B4' if i % 2 else '#C4BDB9', 'rock', 'stepping stone', 9, ry=r * 0.8))
+    return {'ppm': PPM, 'cel': 0.75, 'layers': L}
+
+
+SHAPED = {'hedge': hedge_recipe, 'tree_fallen': fallen_recipe, 'log': log_recipe, 'stump': stump_recipe,
+          'boulder_lichen': boulder_recipe, 'rock_flat': flat_rock_recipe, 'stepping': stepping_recipe}
 
 ROWS = [
     ('flat plants', [(k, 0) for k in FLAT[:12]], None, 1.6),
@@ -63,6 +162,10 @@ ROWS = [
     ('birches', [('tree_birch', 0), ('tree_birch_b', 0), ('tree_birch_gold', 0), ('tree_poplar', 0), ('tree_poplar_autumn', 0)], None, 3.6),
     ('fruit and maple', [('tree_fruit', 0), ('tree_maple', 0), ('tree_beech_autumn', 0)], None, 6.0),
     ('elm and chestnut', [('tree_elm', 0), ('tree_chestnut', 0)], None, 7.5),
+    ('willow and larch', [('tree_willow', 0), ('tree_larch', 0), ('tree_fallen', 0)], None, 6.0),
+    ('bushes', [(k, 0) for k in ('bush_berry', 'bush_holly', 'bush_juniper', 'bush_bramble', 'bush_rosemary', 'bush_hawthorn', 'bush_rhododendron')], None, 2.6),
+    ('hedge and wood', [('hedge', 0), ('stump', 0), ('log', 0)], None, 4.2),
+    ('stones', [('boulder_lichen', 0), ('rock_flat', 0), ('stepping', 0)], None, 3.6),
 ]
 
 
@@ -91,6 +194,8 @@ def main():
         swapped = B1.save_png(B1.recolour(sheet, B1.leaf_colours(src, sc), B1.leaf_colours(own, oc)),
                               leaves / (key.replace('tree_', '') + '.png'))
         built[key] = (model, None, None, {sheet_path: swapped})
+    for key, fn in SHAPED.items():
+        built[key] = (B1.write_recipe(key, fn()),)
     for key, v in built.items():
         M = C[key]
         for f in ('layers', 'vol', 'volDepth', 'build'):

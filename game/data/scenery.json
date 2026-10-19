@@ -1616,10 +1616,8 @@
    "tags": ["route","farm"],
    "group": "bush_berry",
    "solid": 0.55,
-   "layers": [
-    {"img":"scene/props/layers/bush_berry_lb.png","dz":0.27,"sway":0.7,"shadow":0},
-    {"img":"scene/props/layers/bush_berry_lf.png","dz":-0.2,"sway":1.4,"shadow":0}
-   ]
+   "model": "scene/next/models/bush_berry.json",
+   "ppm": 32
   },
   "hedge": {
    "name": "Hedge",
@@ -1632,10 +1630,8 @@
    "tags": ["town","route"],
    "group": "hedge",
    "box": [3.4,0.7],
-   "layers": [
-    {"img":"scene/props/layers/hedge_lb.png","dz":0.3,"sway":0.7,"shadow":0},
-    {"img":"scene/props/layers/hedge_lf.png","dz":-0.22,"sway":1.4,"shadow":0}
-   ]
+   "model": "scene/next/models/hedge.json",
+   "ppm": 32
   },
   "tallgrass": {
    "name": "Tall grass",
@@ -1738,7 +1734,9 @@
    "flat": 0,
    "tags": ["route"],
    "group": "stump",
-   "solid": 0.45
+   "solid": 0.45,
+   "model": "scene/next/models/stump.json",
+   "ppm": 32
   },
   "log": {
    "name": "Fallen log",
@@ -1750,7 +1748,9 @@
    "flat": 0,
    "tags": ["route"],
    "group": "log",
-   "box": [2.1,0.6]
+   "box": [2.1,0.6],
+   "model": "scene/next/models/log.json",
+   "ppm": 32
   },
   "boulder": {
    "name": "Boulder",
@@ -2064,7 +2064,9 @@
    "tags": ["route","water","town"],
    "group": "stepping",
    "solid": 0,
-   "walk": 0.9
+   "walk": 0.9,
+   "model": "scene/next/models/stepping.json",
+   "ppm": 32
   },
   "statue": {
    "name": "Creature statue",
@@ -4360,7 +4362,9 @@
    "flat": 0,
    "tags": ["route","town"],
    "group": "rock_flat",
-   "solid": 0.6
+   "solid": 0.6,
+   "model": "scene/next/models/rock_flat.json",
+   "ppm": 32
   },
   "tree_willow": {
    "name": "Willow",
@@ -4373,10 +4377,8 @@
    "tags": ["route","water"],
    "group": "tree_willow",
    "solid": 0.45,
-   "layers": [
-    {"img":"scene/props/layers/tree_willow_lb.png","dz":0.6,"sway":0.7,"shadow":0},
-    {"img":"scene/props/layers/tree_willow_lf.png","dz":-0.45,"sway":1.4,"shadow":0}
-   ]
+   "model": "scene/next/models/tree_willow.json",
+   "ppm": 32
   },
   "tree_maple": {
    "name": "Red maple",
@@ -6421,10 +6423,11 @@
    "tags": ["route","farm","town"],
    "group": "bush_hawthorn",
    "solid": 0.55,
-   "vol": ["puff",0.55],
    "family": "shrubs",
    "grow": "gGo",
-   "weight": 1
+   "weight": 1,
+   "model": "scene/next/models/bush_hawthorn.json",
+   "ppm": 32
   },
   "bush_bramble": {
    "name": "Bramble",
@@ -6437,10 +6440,11 @@
    "tags": ["route","forest","farm","junk"],
    "group": "bush_bramble",
    "solid": 0.5,
-   "vol": ["puff",0.5],
    "family": "shrubs",
    "grow": "gGyx",
-   "weight": 1
+   "weight": 1,
+   "model": "scene/next/models/bush_bramble.json",
+   "ppm": 32
   },
   "bush_juniper": {
    "name": "Juniper",
@@ -6453,10 +6457,11 @@
    "tags": ["mountains","route","snow"],
    "group": "bush_juniper",
    "solid": 0.5,
-   "vol": ["puff",0.5],
    "family": "shrubs",
    "grow": "grn",
-   "weight": 1
+   "weight": 1,
+   "model": "scene/next/models/bush_juniper.json",
+   "ppm": 32
   },
   "bush_box": {
    "name": "Box ball",
@@ -6485,10 +6490,11 @@
    "tags": ["route","forest","snow","town"],
    "group": "bush_holly",
    "solid": 0.5,
-   "vol": ["puff",0.5],
    "family": "shrubs",
    "grow": "gGyn",
-   "weight": 0.8
+   "weight": 0.8,
+   "model": "scene/next/models/bush_holly.json",
+   "ppm": 32
   },
   "bush_rhododendron": {
    "name": "Rhododendron",
@@ -6501,10 +6507,11 @@
    "tags": ["route","forest","town","mountains"],
    "group": "bush_rhododendron",
    "solid": 0.6,
-   "vol": ["puff",0.6],
    "family": "shrubs",
    "grow": "gGyr",
-   "weight": 0.7
+   "weight": 0.7,
+   "model": "scene/next/models/bush_rhododendron.json",
+   "ppm": 32
   },
   "bush_rosemary": {
    "name": "Rosemary",
@@ -6517,10 +6524,11 @@
    "tags": ["town","farm","desert","route"],
    "group": "bush_rosemary",
    "solid": 0.4,
-   "vol": ["puff",0.4],
    "family": "shrubs",
    "grow": "lsgv",
-   "weight": 0.8
+   "weight": 0.8,
+   "model": "scene/next/models/bush_rosemary.json",
+   "ppm": 32
   },
   "bush_roses": {
    "name": "Wild roses",
@@ -6684,7 +6692,9 @@
    "solid": 0.35,
    "family": "trees",
    "grow": "rng",
-   "weight": 1
+   "weight": 1,
+   "model": "scene/next/models/tree_larch.json",
+   "ppm": 32
   },
   "tree_fallen": {
    "name": "Fallen tree",
@@ -6697,10 +6707,11 @@
    "tags": ["forest","route"],
    "group": "tree_fallen",
    "solid": 0,
-   "vol": ["block",0.5],
    "family": "trees",
    "grow": "yg",
-   "weight": 0.5
+   "weight": 0.5,
+   "model": "scene/next/models/tree_fallen.json",
+   "ppm": 32
   },
   "iris_yellow": {
    "name": "Yellow iris",
@@ -6854,7 +6865,9 @@
    "solid": 1,
    "family": "rocks",
    "grow": "grsv",
-   "weight": 0.6
+   "weight": 0.6,
+   "model": "scene/next/models/boulder_lichen.json",
+   "ppm": 32
   },
   "stones_flat": {
    "name": "Flat stones",
