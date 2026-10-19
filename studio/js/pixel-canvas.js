@@ -382,7 +382,7 @@ function pixelCanvasPoint(P, ev) {
   return [m(x, c.width), m(y, c.height)];
 }
 /* the point under the pointer in picture pixels, with fractions (not wrapped) */
-function pixelCanvasPointF(P, ev) {
+export function pixelCanvasPointF(P, ev) {
   const c = P.o.get(),
     r = P.cv.getBoundingClientRect(),
     n = pixelCanvasRepeat(P);
