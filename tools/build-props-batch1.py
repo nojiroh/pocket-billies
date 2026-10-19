@@ -215,10 +215,11 @@ def trace(trunk, a, b, w0, w1):
     return out
 
 
-def tree_recipe(key, pic, k, limbs, leaves_dir, seed):
+def tree_recipe(key, pic, k, limbs, leaves_dir, seed, stems=False):
     """A tree (or, with no limbs, a bush): the trunk and limbs traced from the drawing and bent a little in depth,
     roots splaying into the ground, branches curving up to the leaf clumps; the leaves are one picture, the crown as
-    drawn (game/art/scene/next/leaves/<key>.png), and each clump is a circle cut from it at run time."""
+    drawn (game/art/scene/next/leaves/<key>.png), and each clump is a circle cut from it at run time. stems: a shrub
+    of several stems from the ground (a hazel), each limb its own stem, with no trunk and no roots."""
     a = rgba(PROPS / f'{pic}.png')
     H, W = a.shape[:2]
     if limbs:
@@ -254,11 +255,17 @@ def tree_recipe(key, pic, k, limbs, leaves_dir, seed):
         for li, ((x0, y0), (x1, y1), w0, w1) in enumerate(limbs):
             path = trace(trunk, (x0, y0), (x1, y1), w0, w1)
             depth = (0.05 if li == 0 else 0.16) * (1 if rng.random() < 0.5 else -1)
+            if stems:  # each stem leans a little out in depth too, fanning like a coppiced shrub
+                depth = (li - (len(limbs) - 1) / 2) * 0.08 + (rng.random() - 0.5) * 0.06
             pts = []
             for i, (x, y, w) in enumerate(path):
                 t = i / (len(path) - 1)
                 pts.append([X(x), r2(math.sin(t * math.pi) * depth + (0 if li == 0 else depth * t)), Z(y), r2(w / 2 / PPM)])
-            if li == 0:  # the foot: wider at the ground, as a trunk flares into its roots
+            if stems:  # a stem from the ground, thinning up into the leaves
+                pts[0][1] = 0
+                (xa, ya, za, _), (xb, yb, zb, rb) = pts[-2], pts[-1]
+                pts.append([r2(xb + (xb - xa) * 1.4), r2(yb + (yb - ya) * 1.4), r2(zb + (zb - za) * 1.4), r2(rb * 0.55)])
+            elif li == 0:  # the foot: wider at the ground, as a trunk flares into its roots
                 pts[0][3] = r2(pts[0][3] * 1.35)
                 if len(pts) > 2: pts[1][3] = r2(pts[1][3] * 1.1)
                 # the top: no wider than below it (where the arms part, the drawing is both arms wide), then it
@@ -272,12 +279,13 @@ def tree_recipe(key, pic, k, limbs, leaves_dir, seed):
                 pts[0] = [r2(top0[0] + (pts[0][0] - top0[0]) * 0.3), top0[1], r2(top0[2] - 0.3), r2(max(pts[0][3], top0[3] * 0.7))]
                 (xa, ya, za, _), (xb, yb, zb, rb) = pts[-2], pts[-1]
                 pts.append([r2(xb + (xb - xa) * 1.6), r2(yb + (yb - ya) * 1.6), r2(zb + (zb - za) * 1.6), r2(rb * 0.55)])
-            L.append({'k': 'limb', 'pts': pts, 'sides': 7 if li == 0 else 6, 'col': bark, 'tex': 'bark', 'name': 'trunk' if li == 0 else 'limb'})
+            L.append({'k': 'limb', 'pts': pts, 'sides': 7 if li == 0 and not stems else 6, 'col': bark, 'tex': 'bark',
+                      'name': 'stem' if stems else 'trunk' if li == 0 else 'limb'})
             tops += [(q[0], q[1], q[2]) for q in pts[len(pts) // 2:]]
         # roots: a few, splaying out from the foot and down into the ground
         foot = L[0]['pts'][0]
         fr = foot[3]
-        for i in range(5):
+        for i in range(0 if stems else 5):
             an = (i / 5) * 2 * math.pi + rng.random() * 0.6
             ca, sa = math.cos(an), math.sin(an)
             L.append({'k': 'limb', 'pts': [[r2(foot[0] + ca * fr * 0.3), r2(sa * fr * 0.3), r2(fr * 1.1), r2(fr * 0.42)],
