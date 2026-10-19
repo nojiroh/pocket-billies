@@ -59,6 +59,7 @@ const freeCamera = {
   drag: null,
   pts: new Map(),
   pinch: null,
+  at: 0,
 };
 const TURN_PER_PX = 0.006,
   TILT_PER_PX = 0.25;
@@ -85,11 +86,21 @@ function freeCameraSwitch(on = !freeCamera.on) {
   }
   if (!on && freeCamera.on && freeCamera.goal) freeCamera.byScene[id] = freeCamCopy(freeCamera.goal);
   freeCamera.on = on;
+  freeCamera.at = 0;
   freeCamera.keys = {};
   freeCamera.drag = null;
   freeCamera.pts.clear();
   const bar = document.getElementById('scFreeCam');
   if (bar) bar.innerHTML = freeCameraBarHTML();
+  /* the preview's own hint (viewport.js) says how to fly while it flies */
+  const hint =
+    document.querySelector('#scPv') && document.querySelector('#scPv').closest('.sc-pv').querySelector('.vp-hint');
+  if (hint) {
+    if (!hint.dataset.walk) hint.dataset.walk = hint.textContent;
+    hint.textContent = on
+      ? 'Free camera · drag moves · right-drag turns and tilts · wheel zooms · C: back to the walker'
+      : hint.dataset.walk;
+  }
 }
 /** the row under the preview */
 export function freeCameraBarHTML() {
@@ -109,6 +120,10 @@ export function freeCameraBarHTML() {
 /** @param {number} dt seconds @returns {{ eye: number[], tgt: number[], fov: number } | null} */
 export function freeCameraLook(dt) {
   if (!freeCamera.on || !freeCamera.goal) return null;
+  /* by the clock, not the frame's step (the view caps that at 60 ms), so it glides as fast on a slow phone */
+  const now = performance.now();
+  dt = Math.min(0.25, Math.max(dt, (now - (freeCamera.at || now)) / 1000));
+  freeCamera.at = now;
   if (freeCamera.scene !== studioState.sel.scene) {
     freeCameraSwitch(false);
     return null;
@@ -123,7 +138,7 @@ export function freeCameraLook(dt) {
   if (K.up || K.down) freeCamTilt(g, ((K.down ? 1 : 0) - (K.up ? 1 : 0)) * 45 * dt * fast);
   if (K.rise || K.sink) freeCamRise(g, ((K.rise ? 1 : 0) - (K.sink ? 1 : 0)) * Math.max(2, g.dist * 0.4) * dt * fast);
   keep(g);
-  freeCamGlide(freeCamera.cur, g, Math.min(dt, 0.1));
+  freeCamGlide(freeCamera.cur, g, dt);
   keep(freeCamera.cur);
   freeCamera.byScene[freeCamera.scene] = freeCamCopy(g);
   return freeCamLook(freeCamera.cur);

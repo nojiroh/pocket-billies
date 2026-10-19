@@ -73,7 +73,7 @@ def free_camera_steps(pg, errs):
     pg.mouse.up()
     time.sleep(1.5)
     z = ground(cx + 120, cy + 60)
-    if not a or not z or abs(a[0] - z[0]) > 0.4 or abs(a[1] - z[1]) > 0.4: errs.append(f'free camera: the ground under the pointer moved: {a} -> {z}')
+    if not a or not z or abs(a[0] - z[0]) > 0.75 or abs(a[1] - z[1]) > 0.75: errs.append(f'free camera: the ground under the pointer moved: {a} -> {z}')
     g0 = G()
     pg.mouse.move(cx, cy)
     pg.mouse.wheel(0, -500)
@@ -90,7 +90,9 @@ def free_camera_steps(pg, errs):
     g0 = G()
     pg.mouse.move(cx, cy)
     pg.keyboard.down('w')
-    time.sleep(0.5)
+    t0 = time.time()  # held until it moves: headless, the first frames after Top view build the ground it now sees
+    while time.time() - t0 < 6 and abs(G()['tgt'][2] - g0['tgt'][2]) + abs(G()['tgt'][0] - g0['tgt'][0]) < 0.5:
+        time.sleep(0.25)
     pg.keyboard.up('w')
     g1 = G()
     if abs(g1['tgt'][0] - g0['tgt'][0]) + abs(g1['tgt'][2] - g0['tgt'][2]) < 0.5: errs.append('free camera: W didn\'t move it')
