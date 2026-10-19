@@ -147,7 +147,6 @@ function seamlessMemo(key, fn) {
   return v;
 }
 function seamlessJoin(i) {
-  if (typeof engineSetting === 'function' && engineSetting('world', 'joined') === false) return null;
   return seamlessMemo('join' + i, () => {
     const L = ROADS[i];
     if (!L) return null;
