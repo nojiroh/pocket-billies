@@ -33,14 +33,16 @@ import { speciesOf } from './logic/fighters.js';
 import {
   addBilly,
   addEgg,
-  addSteps,
+  addWalked,
+  eggKm,
+  encounterStock,
+  encountersHere,
   gainXp,
   healAll,
   makeBilly,
   maxLevel,
   newUid,
   spawn,
-  today,
   xpFor,
 } from './logic/rules.js';
 import { newSaveKeepingPreferences } from './logic/saves.js';
@@ -101,8 +103,8 @@ function debugHTML() {
           .join('')}</ul>`
       : '<p class="note">Game data loaded with no warnings.</p>'
   }</details>
- <details><summary>Wallet and steps</summary><div class="dbg-row">${debugButtonHTML('se1', '+$1,000')}${debugButtonHTML('se10', '+$10,000')}${debugButtonHTML('st1', '+1,000 steps')}${debugButtonHTML('st10', '+10,000 steps')}</div>
-  <div class="dbg-row">${debugButtonHTML('coins', '+10 of every coin')}${debugButtonHTML('items', '+5 of every item')}${debugButtonHTML('newday', 'Start a new day')}</div></details>
+ <details><summary>Wallet and walking</summary><div class="dbg-row">${debugButtonHTML('se1', '+$1,000')}${debugButtonHTML('se10', '+$10,000')}${debugButtonHTML('walk1', 'Walk 1 km')}</div>
+  <div class="dbg-row">${debugButtonHTML('coins', '+10 of every coin')}${debugButtonHTML('items', '+5 of every item')}</div></details>
  <details><summary>Billies</summary><div class="dbg-row">${debugSelectHTML('dbgSp', debugSpeciesOptions(), uiState.dbgSp || DEX_ORDER[0])}<input id="dbgLv" type="number" min="1" max="${maxLevel()}" value="${uiState.dbgLv || 10}" aria-label="Level"><label class="dbg-ck"><input id="dbgGold" type="checkbox"> Golden</label></div>
   <div class="dbg-row">${debugButtonHTML('give', 'Give it to me', 'gold')}${debugButtonHTML('enc', 'Add as encounter')}${debugButtonHTML('wild', 'Battle it now', 'red')}${debugButtonHTML('alpha', 'As an Alpha', 'red')}</div>
   <div class="dbg-row">${debugButtonHTML('heal', 'Heal everyone')}${debugButtonHTML('lv5', 'Team +5 levels')}${debugButtonHTML('evo', 'Lead evolves now')}${debugButtonHTML('dex', 'Fill the Field Guide')}</div>
@@ -117,7 +119,7 @@ function debugHTML() {
     LOCATIONS.map((r, i) => [i, `${i}. ${r.name}`]),
     node
   )}${debugButtonHTML('jump', 'Go there')}</div>
-  <div class="dbg-row">${debugButtonHTML('seats', 'Earn every badge')}${debugButtonHTML('flags', 'Reset trainer wins')}${debugButtonHTML('fillq', 'Fill encounter queue')}${debugButtonHTML('clearq', 'Clear queue')}</div></details>
+  <div class="dbg-row">${debugButtonHTML('seats', 'Earn every badge')}${debugButtonHTML('flags', 'Reset trainer wins')}${debugButtonHTML('fillq', 'Fill encounters here')}${debugButtonHTML('clearq', 'Clear encounters here')}</div></details>
  <details ${uiState.bench && uiState.bench.test ? 'open' : ''}><summary>Test scenes</summary><p class="note">Small places that each show one tricky situation: stairs, ledges at the limits, bridges, water, shadows, every prop, slopes, the camera in tight spots, night lights, a dense forest, tiny and huge maps, traffic, and the light lab (v44: light on the land, in a room, on props, in the air — the places the quick check measures the lighting in). Checks test the walking rules there (what should and shouldn't be reachable).</p>
   <div class="dbg-row">${debugSelectHTML(
     'dbgTest',
@@ -125,11 +127,11 @@ function debugHTML() {
     uiState.dbgTest || testMaps()[0] || ''
   )}${debugButtonHTML('test', 'Go there')}${debugButtonHTML('testchk', 'Run its checks')}${uiState.bench && uiState.bench.test ? debugButtonHTML('untest', 'Back to the game', 'gold') : ''}</div>
   ${uiState.testRes ? `<ul class="dbg-warn">${uiState.testRes.map(r => `<li>${r.ok ? '✓' : '✗'} ${escapeHtml(r.what)}${r.ok ? '' : ` (expected ${r.reach ? 'reachable' : 'not reachable'})`}</li>`).join('')}</ul>` : ''}</details>
- <details><summary>Eggs and jobs</summary><div class="dbg-row">${debugSelectHTML(
+ <details><summary>Eggs and evolution</summary><div class="dbg-row">${debugSelectHTML(
    'dbgEgg',
-   EGG_TIERS.map(t => [t, t + ' km']),
+   EGG_TIERS.map(t => [t, eggKm(t) + ' km']),
    EGG_TIERS[0]
- )}${debugButtonHTML('egg', 'Add egg')}${debugButtonHTML('hatch', 'Finish all incubators')}${debugButtonHTML('pay', 'Pay all jobs')}</div>
+ )}${debugButtonHTML('egg', 'Add egg')}${debugButtonHTML('hatch', 'Finish all incubators')}</div>
   <div class="dbg-row">${debugButtonHTML('idle', 'Age storage by a day')}${debugButtonHTML('streak', 'Lead +3 win streak')}</div></details>
  <details ${inB ? 'open' : ''}><summary>Battle${inB ? '' : ' (start one first)'}</summary><div class="dbg-row">${debugButtonHTML('win', 'Win now', 'gold')}${debugButtonHTML('lose', 'Lose now')}${debugButtonHTML('foe1', 'Foe to 1 HP')}${debugButtonHTML('catch', uiState.dbgCatch ? 'Taxing works as normal' : 'Every throw taxes')}</div>
   <div class="dbg-row">${[1, 2, 4].map(x => debugButtonHTML('speed' + x, `${x}× speed`, battleStage.speed === x ? 'dark' : '')).join('')}</div></details>
@@ -207,20 +209,15 @@ function debugAction(x) {
     case 'se10':
       saveData.se += 10000;
       break;
-    case 'st1':
-      addSteps(1000, true);
-      return refreshDebugMenu();
-    case 'st10':
-      addSteps(10000, true);
-      return refreshDebugMenu();
+    case 'walk1':
+      /* phase 08: as if you walked a kilometre outdoors (eggs, the distance on your trainer card) */
+      addWalked(1000);
+      break;
     case 'coins':
       Object.keys(COINS).forEach(k => (saveData.coins[k] = (saveData.coins[k] || 0) + 10));
       break;
     case 'items':
       Object.keys(ITEMS).forEach(k => (saveData.items[k] = (saveData.items[k] || 0) + 5));
-      break;
-    case 'newday':
-      saveData.day = { date: today(), steps: 0 };
       break;
     case 'give': {
       const m = makeBilly(sp, lv, { gold: $('#dbgGold').checked });
@@ -229,13 +226,13 @@ function debugAction(x) {
       return refreshDebugMenu(`${SPECIES[sp].name} joined your ${w === 'team' ? 'team' : 'storage'}.`);
     }
     case 'enc': {
-      saveData.queue.push({ id: newUid(), sp, lvl: lv, gold: $('#dbgGold').checked, no: ++saveData.serial });
+      encountersHere().push({ id: newUid(), sp, lvl: lv, gold: $('#dbgGold').checked, no: ++saveData.serial });
       break;
     }
     case 'alpha': {
       if (activeBattle) return toast('Finish the current battle first.');
       const q = { id: newUid(), sp, lvl: lv, gold: $('#dbgGold').checked, no: ++saveData.serial, alpha: true };
-      saveData.queue.push(q);
+      encountersHere().push(q);
       closeModal();
       startWild(q);
       return;
@@ -243,7 +240,7 @@ function debugAction(x) {
     case 'wild': {
       if (activeBattle) return toast('Finish the current battle first.');
       const q = { id: newUid(), sp, lvl: lv, gold: $('#dbgGold').checked, no: ++saveData.serial };
-      saveData.queue.push(q);
+      encountersHere().push(q);
       closeModal();
       startWild(q);
       return;
@@ -332,11 +329,14 @@ function debugAction(x) {
       saveData.flags = {};
       saveData.seats = [];
       break;
-    case 'fillq':
-      while (saveData.queue.length < RULES.steps.maxEncounters) spawn();
+    case 'fillq': {
+      /* a town without wild Billies gets a route's worth, so there is always something to test with */
+      const q = encountersHere();
+      while (q.length < Math.max(encounterStock(saveData.trip.node), RULES.encounters.route)) spawn();
       break;
+    }
     case 'clearq':
-      saveData.queue = [];
+      encountersHere().length = 0;
       break;
     case 'egg':
       addEgg(+v('dbgEgg'));
@@ -344,11 +344,6 @@ function debugAction(x) {
     case 'hatch':
       saveData.eggs.forEach(e => {
         if (e.slot != null) e.prog = EGGS[e.tier].need;
-      });
-      break;
-    case 'pay':
-      saveData.jobs.forEach(j => {
-        if (j.uid) j.pend = Math.max(j.pend, 3);
       });
       break;
     case 'idle':

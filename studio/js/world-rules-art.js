@@ -44,6 +44,7 @@ expose({
   drawWorldMarkers: [() => drawWorldMarkers, v => (drawWorldMarkers = v)],
   locationRoads: [() => locationRoads, v => (locationRoads = v)],
   lonLatToWorldMapXY: [() => lonLatToWorldMapXY, v => (lonLatToWorldMapXY = v)],
+  roadLengthText: [() => roadLengthText, v => (roadLengthText = v)],
   roadsHTML: [() => roadsHTML, v => (roadsHTML = v)],
   weightTable: [() => weightTable, v => (weightTable = v)],
   worldBackdrops: [() => worldBackdrops, v => (worldBackdrops = v)],
@@ -194,8 +195,6 @@ function worldLocations() {
     seatIds = Object.values(D.trainers || {})
       .filter(T => T.seat)
       .map(T => [T.seat.id, `${T.seat.title || T.seat.id} (${T.name})`]);
-  let acc = 0;
-  const steps = D.locations.map(x => (acc += +x.cost || 0));
   const list = `<table class="tbl route"><thead><tr><th>#</th><th>Stop</th><th>Roads to</th><th>Shop</th><th>Trainers</th><th></th></tr></thead><tbody>${D.locations
     .map(
       (
@@ -297,10 +296,25 @@ function worldLocations() {
     }) +
     card(`${i + 1}. ${escapeHtml(r.name)}`, ed) +
     card('Roads from here', roadsHTML(i), {
-      sub: 'Each road is walked in either direction. Steps are how far it is. In the stop’s walk scene, each road leaves through the exit named under “Leaves by”, or, when none is named, the exit that points the same way on the world map.',
+      sub: 'Each road is walked in either direction. Its length is measured from the two exits it joins. In the stop’s walk scene, each road leaves through the exit named under “Leaves by”, or, when none is named, the exit that points the same way on the world map.',
     }) +
     card('Map', worldMapHTML())
   );
+}
+/* phase 08: a road's length is measured, as the game does (game-data.js roadMetres): the walk from each place's middle
+   to the exit it leaves by (the exits' len) */
+function roadLengthText(k) {
+  const D = studioState.D,
+    l = D.roads[k],
+    J = l[3] || {},
+    len = (node, id) => {
+      const sc = D.maps[(D.locations[node] || {}).mapId],
+        e = sc && id ? (sc.edgeExits || []).find(x => x.id === id) : null;
+      return e && Number.isFinite(e.len) ? e.len : null;
+    },
+    a = len(l[0], J.a),
+    b = len(l[1], J.b);
+  return a != null && b != null ? `${Math.round(a + b)} m` : 'not joined (100 m)';
 }
 function locationRoads(i) {
   return (studioState.D.roads || [])
@@ -311,14 +325,14 @@ function roadsHTML(i) {
   const D = studioState.D,
     R = locationRoads(i),
     opts = D.locations.map((r, j) => [j, `${j + 1}. ${r.name}`]).filter(([j]) => j !== i);
-  return `<table class="tbl"><thead><tr><th>Road to</th><th>Steps</th><th>About</th><th>Leaves by</th><th></th></tr></thead><tbody>${R.map(
+  return `<table class="tbl"><thead><tr><th>Road to</th><th>Length</th><th>Leaves by</th><th></th></tr></thead><tbody>${R.map(
     ([o, c, k]) => {
       const side = D.roads[k][0] === i ? 1 : 0,
         end = side ? 'a' : 'b',
         J = D.roads[k][3] || {},
         sc = D.maps[(D.locations[i] || {}).mapId],
         ids = ((sc && sc.edgeExits) || []).map(e => e.id);
-      return `<tr><td><select data-p="roads.${k}.${side}" data-k="num" data-rr="1">${opts.map(([j, n]) => `<option value="${j}" ${j === o ? 'selected' : ''}>${escapeHtml(n)}</option>`).join('')}</select></td><td><input type="number" min="50" step="50" data-p="roads.${k}.2" data-k="num" value="${c}" class="sm-num"></td><td><small>${(c / D.rules.steps.stepsPerKm).toFixed(1)} km</small></td><td><select data-join="${k}" data-end="${end}" title="Which exit of this stop’s scene the road uses (v42 join table); ‘by direction’ matches it by compass bearing as before"><option value="">by direction</option>${ids.map(id => `<option value="${escapeHtml(id)}" ${J[end] === id ? 'selected' : ''}>${escapeHtml(id)}</option>`).join('')}</select></td><td><button class="x" data-act="roadDel" data-k="${k}" title="Remove this road">×</button></td></tr>`;
+      return `<tr><td><select data-p="roads.${k}.${side}" data-k="num" data-rr="1">${opts.map(([j, n]) => `<option value="${j}" ${j === o ? 'selected' : ''}>${escapeHtml(n)}</option>`).join('')}</select></td><td><small>${roadLengthText(k)}</small></td><td><select data-join="${k}" data-end="${end}" title="Which exit of this stop’s scene the road uses (v42 join table); ‘by direction’ matches it by compass bearing as before"><option value="">by direction</option>${ids.map(id => `<option value="${escapeHtml(id)}" ${J[end] === id ? 'selected' : ''}>${escapeHtml(id)}</option>`).join('')}</select></td><td><button class="x" data-act="roadDel" data-k="${k}" title="Remove this road">×</button></td></tr>`;
     }
   ).join('')}</tbody></table>
  <div class="seg-row"><select id="roadTo">${opts
@@ -546,12 +560,12 @@ function worldEggs() {
   return Object.entries(D.eggs)
     .map(([k, E]) =>
       card(
-        `${k} km egg`,
+        `${E.need / 1000} km egg`,
         grid(
-          numberField('Steps to hatch', `eggs.${k}.need`, {
+          numberField('Metres to hatch', `eggs.${k}.need`, {
             min: 100,
             step: 100,
-            help: `${(E.need / D.rules.steps.stepsPerKm).toFixed(1)} km at ${D.rules.steps.stepsPerKm} steps per km.`,
+            help: `${(E.need / 1000).toFixed(1)} km walked outdoors with it in an incubator.`,
           }),
           numberField('Hatches at level', `eggs.${k}.lv`, { min: 1, max: 100, step: 1 })
         ) + weightTable(`eggs.${k}`, E),
@@ -653,10 +667,8 @@ SECTIONS.rules = () => {
   const D = studioState.D,
     R = D.rules,
     s = 'rules.start',
-    st = 'rules.steps',
     pg = 'rules.progression',
     eg = 'rules.eggs',
-    jb = 'rules.jobs',
     bt = 'rules.battle',
     ca = 'rules.catching';
   const starters = `<div class="chips">${D.lines.map(L => `<label class="chk-chip"><input type="checkbox" data-act-chk="starter" value="${L.id}" ${R.start.starters.includes(L.id) ? 'checked' : ''}> ${escapeHtml(L.names[0])}</label>`).join('')}</div>`;
@@ -665,7 +677,6 @@ SECTIONS.rules = () => {
       selectField(`Rival’s pick if you choose ${escapeHtml(speciesName(l + '0'))}`, `${s}.rival.${l}`, speciesOptions())
     )
     .join('');
-  const brackets = `<table class="tbl"><thead><tr><th>Steps today up to</th><th>Money per step</th><th></th></tr></thead><tbody>${R.steps.brackets.map((b, i) => `<tr><td><input type="number" min="0" step="500" data-p="${st}.brackets.${i}.upTo" data-k="num" value="${b.upTo}" ${i === R.steps.brackets.length - 1 ? 'title="0 means no limit"' : ''}></td><td><input type="number" min="0" max="5" step=".05" data-p="${st}.brackets.${i}.rate" data-k="num" value="${b.rate}"></td><td><button class="x" data-act="brDel" data-i="${i}">✕</button></td></tr>`).join('')}</tbody></table><button class="btn subtle" data-act="brAdd">Add a rate bracket</button><p class="help">Daily step rate: money earned per step drops after many steps in a day. Use 0 as the last limit for “and beyond”.</p>`;
   const xpPrev = `<p class="help" id="xpPrev">${xpCurveText()}</p>`;
   const coinsStart = `<div class="grid">${Object.keys(D.coins)
     .map(c => numberField(D.coins[c].n, `${s}.coins.${c}`, { min: 0, step: 1 }))
@@ -706,7 +717,7 @@ SECTIONS.rules = () => {
      selectField(
        'Free egg',
        `${s}.starterEgg`,
-       Object.keys(D.eggs).map(k => [k, k + ' km']),
+       Object.keys(D.eggs).map(k => [k, D.eggs[k].need / 1000 + ' km']),
        { num: 1, none: 'None', opt: 1 }
      )
    ) +
@@ -718,20 +729,36 @@ SECTIONS.rules = () => {
      grid(rival)
  )}
  ${card(
-   'Steps and encounters',
+   'Encounters',
    grid(
-     numberField('Steps per km', `${st}.stepsPerKm`, { min: 500, max: 3000, step: 1 }),
-     numberField('New encounter every ($ earned)', `${st}.encounterEverySE`, { min: 50, step: 50 }),
-     numberField('Encounter queue size', `${st}.maxEncounters`, { min: 1, max: 30, step: 1 }),
-     numberField('Golden odds: 1 in', `${st}.goldOdds`, { min: 2, step: 1 }),
-     numberField('Alpha odds: 1 in', `${st}.alphaOdds`, {
+     numberField('Wild Billies on a route', `rules.encounters.route`, { min: 0, max: 10, step: 1 }),
+     numberField('Wild Billies in a town with tall grass', `rules.encounters.townGrass`, {
+       min: 0,
+       max: 10,
+       step: 1,
+       help: 'Towns without tall grass and rooms have none.',
+     }),
+     numberField('One more wanders over every', `rules.encounters.refillMs`, {
+       min: 5000,
+       step: 5000,
+       unit: 'ms',
+       help: 'Of play time, until the place is full again.',
+     }),
+     numberField('Golden odds: 1 in', `rules.encounters.goldOdds`, { min: 2, step: 1 }),
+     numberField('Alpha odds: 1 in', `rules.encounters.alphaOdds`, {
        min: 2,
        step: 1,
        ph: '45',
        help: 'How rare an Alpha is among new encounters (once you have two Billies).',
      }),
-     numberField('Rest stop price ($)', `${st}.restCost`, { min: 0, step: 10 })
-   ) + brackets
+     numberField('Rest stop price ($)', `${bt}.restCost`, { min: 0, step: 10 }),
+     numberField('Prize for beating a wild Billie', `rules.encounters.prizePerLevel`, {
+       min: 0,
+       step: 1,
+       unit: '$ a level',
+       help: 'A level 10 Billie pays ten times this.',
+     })
+   )
  )}
  ${card(
    'Leveling',
@@ -743,7 +770,6 @@ SECTIONS.rules = () => {
        help: 'XP to reach level L = factor × L³.',
      }),
      numberField('Highest level', `${pg}.maxLevel`, { min: 5, max: 250, step: 1 }),
-     numberField('Buddy steps per XP', `${pg}.buddyStepsPerXp`, { min: 1, max: 100, step: 1 }),
      numberField('Team size', `${pg}.teamSize`, { min: 1, max: 12, step: 1 }),
      numberField('Move slots', `${pg}.moveSlots`, { min: 1, max: 8, step: 1 }),
      ...R.progression.xpYield.map((v, i) =>
@@ -796,7 +822,6 @@ SECTIONS.rules = () => {
        .join('')}</details>`
  )}
  ${card('Riding across water', grid(numberField('Smallest Billie you can ride', `rules.ride.minHeight`, { unit: 'm', min: 0.3, max: 10, step: 0.1, help: 'Its height in the Field Guide. Needed for lake and sea crossings (stops marked as a water crossing).' })))}
- ${card('Jobs', grid(numberField('Steps per pay', `${jb}.stepsPerPay`, { min: 100, step: 100 }), numberField('Pay can pile up to', `${jb}.maxPending`, { min: 1, max: 200, step: 1 }), numberField('Open positions', `${jb}.positions`, { min: 1, max: 8, step: 1 })))}
  ${card(
    'Battle',
    grid(
@@ -945,19 +970,6 @@ document.addEventListener('change', ev => {
   commit(true);
   if (k === 'starter') render();
 });
-ACTIONS.brAdd = () => {
-  const b = studioState.D.rules.steps.brackets;
-  b.splice(Math.max(0, b.length - 1), 0, { upTo: (b[b.length - 2] || { upTo: 5000 }).upTo + 5000, rate: 0.25 });
-  changed();
-  render();
-};
-ACTIONS.brDel = d => {
-  const b = studioState.D.rules.steps.brackets;
-  if (b.length < 2) return;
-  b.splice(+d.i, 1);
-  changed();
-  render();
-};
 /* ================= ART FILES ================= */
 const ART_GROUPS = [
   ['billionaires', 'Billies', 'Four sheets per stage. Edit them in Billies → Edit pixels.'],

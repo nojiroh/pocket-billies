@@ -443,7 +443,7 @@ export const SECTION_LIST = [
   ['trainers', 'Trainers', 'Rivals and arena leaders'],
   ['lore', 'Lore & story', 'The world, the story, people, places, legends, clues, books and what people say'],
   ['people', 'People', 'Looks for trainers and shopkeepers'],
-  ['jobs', 'Jobs', 'What working Billies earn'],
+  ['jobs', 'Jobs', 'What working Billies earn (not in the game until the ranch)'],
   ['rules', 'Rules', 'Every number that tunes the game'],
   ['art', 'Art files', 'Browse and replace any image'],
   ['check', 'Check & backups', 'Problems, backups and restore'],

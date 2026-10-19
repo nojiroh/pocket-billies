@@ -7,7 +7,7 @@
 import { expose } from './test-globals.js';
 import { closeModal, modal, progressBarHTML, provide, render, roomRefresh, toast } from './hooks.js';
 import { clamp } from './util.js';
-import { COINS, ITEMS, LOCATIONS, RULES, gameData } from './game-data.js';
+import { COINS, ITEMS, LOCATIONS, ROADS_BY_NODE, RULES, gameData, isTown } from './game-data.js';
 import { speciesOf } from './logic/fighters.js';
 import { billyName, formatNumber, today } from './logic/rules.js';
 import { battleSay } from './logic/battle-engine.js';
@@ -39,6 +39,7 @@ expose({
   STAMP_SPOTS: [() => STAMP_SPOTS],
   WEATHER_BATTLE_NOTES: [() => WEATHER_BATTLE_NOTES],
   WEATHER_TYPE_BOOSTS: [() => WEATHER_TYPE_BOOSTS],
+  arrivedAt: [() => arrivedAt, v => ((arrivedAt = v), provide({ arrivedAt }))],
   battleWeather: [() => battleWeather, v => (battleWeather = v)],
   battleWeatherMultiplier: [
     () => battleWeatherMultiplier,
@@ -51,6 +52,7 @@ expose({
   claimChallenge: [() => claimChallenge, v => (claimChallenge = v)],
   furnitureFits: [() => furnitureFits],
   homeDecorate: [() => homeDecorate, v => (homeDecorate = v)],
+  letterTown: [() => letterTown, v => (letterTown = v)],
   photoEnd: [() => photoEnd, v => (photoEnd = v)],
   photoFilter: [() => photoFilter, v => (photoFilter = v)],
   photoShot: [() => photoShot, v => (photoShot = v)],
@@ -76,9 +78,10 @@ expose({
   thingsToDo: [() => thingsToDo, v => (thingsToDo = v)],
   thingsToDoReward: [() => thingsToDoReward, v => (thingsToDoReward = v)],
   typeIds: [() => typeIds],
+  visitsToday: [() => visitsToday, v => (visitsToday = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ battleWeatherMultiplier, recordThingsToDoEvent, requestAsker, stampDraw });
+provide({ arrivedAt, battleWeatherMultiplier, recordThingsToDoEvent, requestAsker, stampDraw });
 /* to-module: end */
 function thingsToDo() {
   const X = saveData.x || (saveData.x = {});
@@ -127,10 +130,11 @@ function thingsToDoReward(k = 1) {
 
 /* ---------- daily challenges ---------- */
 const CHALLENGE_KINDS = [
+  /* phase 08: in the place the steps challenge had, so each day's picks stay what they were */
   {
-    k: 'steps',
-    make: r => ({ need: [3000, 5000, 8000][Math.floor(r() * 3)] }),
-    text: c => `Walk ${formatNumber(c.need)} steps today`,
+    k: 'visit',
+    make: r => ({ need: [2, 3, 4][Math.floor(r() * 3)] }),
+    text: c => `Visit ${c.need} different places today`,
   },
   { k: 'catch', make: r => ({ need: 2 + Math.floor(r() * 2) }), text: c => `Tax ${c.need} Billies` },
   {
@@ -160,7 +164,33 @@ export function challengesToday() {
   }
   return X.chal;
 }
-const challengeProgress = c => (c.k === 'steps' ? saveData.day.steps : c.have);
+/* the places you've been in today (the one you were in when the day began counts) */
+function visitsToday() {
+  const X = thingsToDo(),
+    d = today();
+  if (!X.visits || X.visits.date !== d) X.visits = { date: d, ids: [saveData.trip.node] };
+  return X.visits;
+}
+const challengeProgress = c => (c.k === 'visit' ? visitsToday().ids.length : c.have);
+/* phase 08: you came to a place (over a road's edge, by airship or by the glass lift): today's visits, and a letter
+   you carry may have reached its town */
+export function arrivedAt(node) {
+  if (!saveData || !saveData.started) return;
+  const V = visitsToday();
+  if (!V.ids.includes(node)) {
+    V.ids.push(node);
+    recordThingsToDoEvent('visit');
+  }
+  for (const [n, q] of Object.entries(thingsToDo().reqs))
+    if (q.state === 'accepted' && q.k === 'letter' && q.leg === 'out' && q.to === node) {
+      q.leg = 'back';
+      const from = LOCATIONS[+n];
+      toast(
+        `You delivered the letter in ${LOCATIONS[node].name}. Take the reply back to ${from ? from.name : 'its sender'}.`
+      );
+    }
+  save();
+}
 const challengeText = c => (CHALLENGE_KINDS.find(t => t.k === c.k) || { text: () => c.k }).text(c);
 /* something happened: a catch (with its types), a win, a fish landed, a stamp found */
 function recordThingsToDoEvent(k, o = {}) {
@@ -211,8 +241,7 @@ function claimChallenge(i) {
 /* ---------- townsfolk with requests ---------- */
 const REQUEST_KINDS = {
   show: q => `Do you have a ${q.t} Billie with you? I’ve always wanted to see one up close.`,
-  steps: q =>
-    `Could you take my letter for a walk? It needs ${formatNumber(q.n)} steps of fresh air. Bring it back to me after.`,
+  letter: q => `Could you take my letter to ${LOCATIONS[q.to].name}? Bring me back their reply.`,
   catch: q => `I’d love to see a ${q.t} Billie. Tax one and come back to show me?`,
 };
 function requestHere(node = saveData.trip.node) {
@@ -221,7 +250,7 @@ function requestHere(node = saveData.trip.node) {
   const X = thingsToDo(),
     d = today();
   let q = X.reqs[node];
-  if (!q || (q.date !== d && q.state !== 'accepted')) {
+  if (!q || !REQUEST_KINDS[q.k] || (q.date !== d && q.state !== 'accepted')) {
     const r = seededRandom('req' + node + d),
       T = typeIds(),
       ks = Object.keys(REQUEST_KINDS);
@@ -229,11 +258,31 @@ function requestHere(node = saveData.trip.node) {
       date: d,
       k: ks[Math.floor(r() * ks.length)],
       t: T[Math.floor(r() * T.length)],
-      n: [800, 1500, 2500][Math.floor(r() * 3)],
+      n: [1, 2, 3][Math.floor(r() * 3)],
       state: 'open',
     };
+    /* phase 08: a letter goes to the nearest town, the second nearest or the third (by roads); a town with none asks
+       to see a Billie instead */
+    if (q.k === 'letter') {
+      const to = letterTown(node, q.n);
+      if (to == null) q.k = 'show';
+      else q.to = to;
+    }
   }
   return q;
+}
+/* the n-th nearest other town by the number of roads between (ties: the earlier place) */
+function letterTown(node, n) {
+  const hops = { [node]: 0 },
+    order = [node];
+  for (const u of order)
+    for (const e of ROADS_BY_NODE[u] || [])
+      if (!(e.to in hops)) {
+        hops[e.to] = hops[u] + 1;
+        order.push(e.to);
+      }
+  const towns = order.filter(i => i !== node && isTown(i));
+  return towns.length ? towns[Math.min(n, towns.length) - 1] : null;
 }
 /* the first townsperson in a town has the request; a gold ! floats over them until it's done */
 function requestAsker() {
@@ -293,14 +342,14 @@ async function requestTalk(f) {
     } else
       modal({
         title: 'Help out?',
-        html: `<p>${escapeHtml(q.k === 'steps' ? `Walk ${formatNumber(q.n)} steps, then come back and talk to them.` : `Tax a ${q.t} Billie, then come back and talk to them.`)}</p>`,
+        html: `<p>${escapeHtml(q.k === 'letter' ? `Take the letter to ${LOCATIONS[q.to].name}, then come back and talk to them.` : `Tax a ${q.t} Billie, then come back and talk to them.`)}</p>`,
         btns: [
           {
             l: 'I’ll do it',
             c: 'gold',
             f: () => {
               q.state = 'accepted';
-              q.base = saveData.totalSteps;
+              q.leg = 'out';
               q.have = 0;
               save();
               closeModal();
@@ -314,10 +363,9 @@ async function requestTalk(f) {
     return;
   }
   if (q.state === 'accepted') {
-    if (q.k === 'steps') {
-      const left = q.n - (saveData.totalSteps - (q.base || 0));
-      if (left <= 0) return finish('The letter looks so refreshed! Thank you.');
-      await talk([[who, `Only ${formatNumber(left)} more steps for my letter. It’s enjoying the walk.`]]);
+    if (q.k === 'letter') {
+      if (q.leg === 'back') return finish('A reply! Thank you for carrying it all that way.');
+      await talk([[who, `My letter still needs to get to ${LOCATIONS[q.to].name}.`]]);
     } else if (q.k === 'catch') {
       if ((q.have || 0) >= 1) return finish(`You taxed one! A real ${q.t} Billie. I’ll tell everyone.`);
       await talk([[who, `Still hoping you’ll tax a ${q.t} Billie for me.`]]);
@@ -337,8 +385,10 @@ export function requestListHTML() {
     .map(([n, q]) => {
       const where = LOCATIONS[+n] ? LOCATIONS[+n].name : '';
       const txt =
-        q.k === 'steps'
-          ? `Walk ${formatNumber(Math.max(0, q.n - (saveData.totalSteps - (q.base || 0))))} more steps for a letter`
+        q.k === 'letter'
+          ? q.leg === 'back'
+            ? 'Bring the reply back'
+            : `Take a letter to ${LOCATIONS[q.to].name}`
           : q.k === 'catch'
             ? q.have
               ? `Show your ${q.t} Billie`

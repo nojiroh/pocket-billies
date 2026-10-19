@@ -2,7 +2,6 @@
  {
   "name": "Marigold Town",
   "town": 1,
-  "cost": 0,
   "pool": "grass",
   "route": "Town",
   "t": "town",
@@ -20,7 +19,6 @@
  },
  {
   "name": "Tallgrass Meadow",
-  "cost": 840,
   "pool": "grass",
   "route": "Route 2",
   "t": "grass",
@@ -37,7 +35,6 @@
  },
  {
   "name": "Old Fairway",
-  "cost": 1260,
   "pool": "old_fairway",
   "route": "Route 3",
   "t": "golf",
@@ -54,7 +51,6 @@
  },
  {
   "name": "Thornberry Wood",
-  "cost": 1680,
   "pool": "shell",
   "route": "Route 4",
   "t": "thicket",
@@ -72,7 +68,6 @@
  {
   "name": "Fizzwell Town",
   "town": 1,
-  "cost": 2100,
   "pool": "fizzwell",
   "route": "Town",
   "t": "grotto",
@@ -89,7 +84,6 @@
  },
  {
   "name": "Stepstone Canyon",
-  "cost": 2520,
   "pool": "esc",
   "route": "Route 5",
   "gate": "oil",
@@ -108,7 +102,6 @@
  },
  {
   "name": "Rustgear Yard",
-  "cost": 3080,
   "pool": "clear",
   "route": "Route 6",
   "t": "bins",
@@ -128,7 +121,6 @@
  {
   "name": "Pepperpot Town",
   "town": 1,
-  "cost": 3360,
   "pool": "food",
   "route": "Town",
   "t": "food",
@@ -147,7 +139,6 @@
  {
   "name": "Lanternhall City",
   "town": 1,
-  "cost": 3640,
   "pool": "lanternhall",
   "route": "City",
   "t": "mall",
@@ -165,7 +156,6 @@
  },
  {
   "name": "Willowmere",
-  "cost": 980,
   "pool": "willowmere",
   "route": "Route 7",
   "t": "pond",
@@ -183,7 +173,6 @@
  {
   "name": "Clovercrest Town",
   "town": 1,
-  "cost": 1260,
   "pool": "clovercrest",
   "route": "Town",
   "t": "farm",
@@ -199,7 +188,6 @@
  },
  {
   "name": "Kitewind Ridge",
-  "cost": 1820,
   "pool": "kitewind",
   "route": "Route 8",
   "t": "ridge",
@@ -217,7 +205,6 @@
  {
   "name": "Verdigris City",
   "town": 1,
-  "cost": 0,
   "pool": "verdigris",
   "route": "City",
   "t": "city",
@@ -339,7 +326,6 @@
  },
  {
   "name": "Fanfare Fields",
-  "cost": 2600,
   "pool": "fanfare_fields",
   "route": "Route 13",
   "t": "feedl",
@@ -361,7 +347,6 @@
  },
  {
   "name": "Twinpetal Town",
-  "cost": 1500,
   "pool": "twinpetal",
   "route": "Town",
   "t": "feedl",
@@ -382,7 +367,6 @@
  },
  {
   "name": "Petalfall Vale",
-  "cost": 1300,
   "pool": "petalfall",
   "route": "Route 14",
   "t": "feedl",
@@ -402,7 +386,6 @@
  },
  {
   "name": "Rootwater Marsh",
-  "cost": 1700,
   "pool": "rootwater",
   "route": "Route 15",
   "t": "feedl",
@@ -424,7 +407,6 @@
  },
  {
   "name": "Grapevine Hills",
-  "cost": 1600,
   "pool": "grapevine_hills",
   "route": "Route 16",
   "t": "vault",
@@ -444,7 +426,6 @@
  },
  {
   "name": "Goldvine Town",
-  "cost": 1500,
   "pool": "goldvine",
   "route": "Town",
   "t": "vault",
@@ -465,7 +446,6 @@
  },
  {
   "name": "Saltpan Flats",
-  "cost": 1400,
   "pool": "saltpan_flats",
   "route": "Route 17",
   "t": "vault",
@@ -485,7 +465,6 @@
  },
  {
   "name": "Grizzle Badlands",
-  "cost": 1700,
   "pool": "badlands",
   "route": "Route 18",
   "t": "vault",
@@ -507,7 +486,6 @@
  },
  {
   "name": "Puffcap Woods",
-  "cost": 1600,
   "pool": "puffcap",
   "route": "Route 19",
   "t": "spore",
@@ -527,7 +505,6 @@
  },
  {
   "name": "Capshade Town",
-  "cost": 1500,
   "pool": "capshade",
   "route": "Town",
   "t": "spore",
@@ -548,7 +525,6 @@
  },
  {
   "name": "Russetwood",
-  "cost": 1300,
   "pool": "russetwood",
   "route": "Route 20",
   "t": "spore",
@@ -568,7 +544,6 @@
  },
  {
   "name": "Tanglewild Jungle",
-  "cost": 1700,
   "pool": "tanglewild",
   "route": "Route 21",
   "t": "spore",
@@ -590,7 +565,6 @@
  },
  {
   "name": "Prism Chasm",
-  "cost": 1700,
   "pool": "prism_chasm",
   "route": "Route 22",
   "t": "silicon",
@@ -610,7 +584,6 @@
  },
  {
   "name": "Glimmershaft Town",
-  "cost": 1500,
   "pool": "glimmershaft",
   "route": "Town",
   "t": "silicon",
@@ -631,7 +604,6 @@
  },
  {
   "name": "Gloomwater Pool",
-  "cost": 1300,
   "pool": "gloomwater",
   "route": "Route 23",
   "t": "silicon",
@@ -651,7 +623,6 @@
  },
  {
   "name": "Rimefrost Caves",
-  "cost": 1700,
   "pool": "rimefrost",
   "route": "Route 24",
   "t": "silicon",
@@ -673,7 +644,6 @@
  },
  {
   "name": "Conchshell Shoals",
-  "cost": 1600,
   "pool": "conchshell",
   "route": "Route 25",
   "t": "trench",
@@ -693,7 +663,6 @@
  },
  {
   "name": "Kelpport City",
-  "cost": 1300,
   "pool": "kelpport",
   "route": "City",
   "t": "trench",
@@ -715,7 +684,6 @@
  },
  {
   "name": "Abyssal Trench",
-  "cost": 1800,
   "pool": "abyssal_trench",
   "route": "Route 26",
   "t": "trench",
@@ -736,7 +704,6 @@
  },
  {
   "name": "Vinyl Works",
-  "cost": 1600,
   "pool": "vinyl_works",
   "route": "Route 27",
   "t": "trench",
@@ -757,7 +724,6 @@
  },
  {
   "name": "Circuit Terraces",
-  "cost": 1700,
   "pool": "circuit_terraces",
   "route": "Route 28",
   "t": "spire",
@@ -777,7 +743,6 @@
  },
  {
   "name": "Nimbus City",
-  "cost": 1500,
   "pool": "nimbus",
   "route": "City",
   "t": "spire",
@@ -798,7 +763,6 @@
  },
  {
   "name": "Fizzpop Fair",
-  "cost": 1300,
   "pool": "fizzpop",
   "route": "Route 29",
   "t": "spire",
@@ -818,7 +782,6 @@
  },
  {
   "name": "Skygarden Walk",
-  "cost": 1600,
   "pool": "skygarden",
   "route": "Route 30",
   "t": "spire",
@@ -838,7 +801,6 @@
  },
  {
   "name": "Zenith Steps",
-  "cost": 1800,
   "pool": "zenith_steps",
   "route": "Route 31",
   "t": "sun",
@@ -858,7 +820,6 @@
  },
  {
   "name": "Bellwether Rise",
-  "cost": 1600,
   "pool": "bellwether_rise",
   "route": "Route 32",
   "t": "sun",
@@ -878,7 +839,6 @@
  },
  {
   "name": "The Inner Sun",
-  "cost": 1600,
   "pool": "innersun",
   "route": "",
   "t": "sun",
@@ -897,7 +857,6 @@
  },
  {
   "name": "Copperleaf Town",
-  "cost": 0,
   "pool": "hedgerow",
   "route": "Town",
   "t": "town",
@@ -916,7 +875,6 @@
  },
  {
   "name": "Hedgerow Lane",
-  "cost": 0,
   "pool": "hedgerow",
   "route": "Route 1",
   "t": "grass",
@@ -934,7 +892,6 @@
  },
  {
   "name": "Pearlantis City",
-  "cost": 0,
   "pool": "kelpport",
   "route": "City",
   "t": "trench",

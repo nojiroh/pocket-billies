@@ -112,7 +112,7 @@ function postcardShow(n, first) {
   const r = LOCATIONS[n];
   if (!r) return;
   if (first) {
-    postcardsOwned()[r.id] = saveData.day || Date.now();
+    postcardsOwned()[r.id] = Date.now();
     save();
     if (typeof debugLog !== 'undefined') debugLog.add('scene', 'postcard ' + r.id);
   }

@@ -4,7 +4,7 @@
    Phase 04e: the save format, moved here from game-state.js (a new save, filling one out, the load checks) and
    settings-screen.js (the backup check). Where a save is kept (this browser, the account) stays in game-state.js
    and account.js. Logic only (game/js/logic/, see rules.js). */
-/** @import { JobSlot, SaveData } from '../../types/save-data' */
+/** @import { SaveData } from '../../types/save-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { saveData } from '../hooks.js';
@@ -13,7 +13,6 @@ import {
   COINS,
   EGGS,
   ITEMS,
-  JOBS,
   LINES,
   LOCATIONS,
   MOVES,
@@ -24,7 +23,7 @@ import {
   roadCost,
 } from '../game-data.js';
 import { isRobot, robotGemDef, robotPartDef, robotRules, speciesOf } from './fighters.js';
-import { cleanName, emptyJob, jobSlotCount, movesAt, refreshRobot, teamSize, today } from './rules.js';
+import { cleanName, movesAt, refreshRobot, teamSize } from './rules.js';
 /* eslint-disable no-func-assign */
 expose({
   SAVE_NEW_MSG: [() => SAVE_NEW_MSG],
@@ -69,23 +68,17 @@ export function newSave() {
     seen: {},
     caught: {},
     se: R.se,
-    seFrac: 0,
     coins,
     items,
-    day: { date: today(), steps: 0 },
-    totalSteps: 0,
     trip: { node: START_NODE, plan: [] },
     mapSeen: null,
-    meter: 0,
-    queue: [],
+    wild: {},
     buddy: null,
-    buddyRem: 0,
     flags: {},
     seats: [],
     visited: { [START_NODE]: 1 },
     serial: 300,
     eggs: [],
-    jobs: Array.from({ length: jobSlotCount() }, emptyJob),
     savedAt: 0,
     /* trainer card: ID number, start date (0 = unknown, older saves) and eggs hatched */
     tid: 10000 + Math.floor(random() * 90000),
@@ -125,16 +118,6 @@ export function migrate(o) {
   delete p.battleStage;
   delete p.battleHud;
   if (!Array.isArray(s.eggs)) s.eggs = [];
-  if (!Array.isArray(s.jobs)) s.jobs = [];
-  while (s.jobs.length < jobSlotCount()) s.jobs.push(emptyJob());
-  while (s.jobs.length > jobSlotCount()) {
-    const j = /** @type {JobSlot} */ (s.jobs.pop());
-    const m = [...(s.team || []), ...(s.box || [])].find(x => x.uid === j.uid);
-    if (m) {
-      m.job = null;
-      m.boxedAt = Date.now();
-    }
-  }
   if (!SPECIES[s.starter + '0'] && s.started)
     s.starter = RULES.start.starters.find(l => SPECIES[l + '0']) || LINES[0].id;
   s.team = (s.team || []).filter(m => speciesOf(m));
@@ -157,19 +140,12 @@ export function migrate(o) {
   });
   for (const key of ['seen', 'caught'])
     if (s[key] && typeof s[key] === 'object') for (const id of Object.keys(s[key])) if (!SPECIES[id]) delete s[key][id];
-  s.queue = (s.queue || []).filter(q => SPECIES[q.sp]);
+  if (!s.wild || typeof s.wild !== 'object') s.wild = {};
+  for (const w of Object.values(s.wild)) w.list = (w.list || []).filter(q => SPECIES[q.sp]);
   s.eggs = s.eggs.filter(e => EGGS[e.tier]);
-  s.jobs.forEach(j => {
-    if (j.job && !JOBS[j.job]) j.job = Object.keys(JOBS)[0] || null;
-  });
   if (!s.trip || !LOCATIONS[s.trip.node]) s.trip = { node: START_NODE, plan: [] };
   s.trip.plan = (Array.isArray(s.trip.plan) ? s.trip.plan : []).filter(x => LOCATIONS[x]);
   if (s.trip.plan.length && !roadCost(s.trip.node, s.trip.plan[0])) s.trip.plan = [];
-  /* phase 08: travel is walking; a save from before still carries how far along a road its steps had taken it (a field
-     the Trip type no longer has, hence the cast) */
-  const oldTrip = /** @type {any} */ (s.trip);
-  delete oldTrip.prog;
-  delete oldTrip.hold;
   if (!s.visited || typeof s.visited !== 'object') s.visited = {};
   s.visited[s.trip.node] = 1;
   if (s.started && !s.team.length && !s.box.length) return newSave();
@@ -178,10 +154,11 @@ export function migrate(o) {
   s.gameVersion = PB_VERSION;
   return s;
 }
-/* phase 02: every save says which save format it is (saveVersion; raise it when old saves can't be read any more; 2 since phase 05).
+/* phase 02: every save says which save format it is (saveVersion; raise it when old saves can't be read any more; 2 since
+   phase 05, 3 since phase 08: steps are gone, encounters live on each map, no jobs).
    A save without one (alpha 0.5 and earlier) or from a newer format is not loaded: the game says so and starts fresh.
    saveAge: null (no save), 'ok', 'old' or 'new'. A newer save is never written over (saveHold) */
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 /** @param {any} o @returns {'ok' | 'old' | 'new' | null} */
 export function saveAge(o) {
   if (!o || typeof o !== 'object') return null;
@@ -224,31 +201,9 @@ export function validSave(o) {
       return false;
     ids.add(m.uid);
   }
-  if (
-    !o.trip ||
-    !Number.isInteger(o.trip.node) ||
-    !num(o.trip.node, 0, LOCATIONS.length - 1) ||
-    !o.day ||
-    !num(o.day.steps, 0, 1e9) ||
-    !num(o.se, 0, 1e12) ||
-    !num(o.totalSteps, 0, 1e12)
-  )
-    return false;
-  if (
-    !Array.isArray(o.queue) ||
-    o.queue.length > Math.max(10, RULES.steps.maxEncounters) ||
-    o.queue.some(q => !q || !SPECIES[q.sp] || !num(q.lvl, 1, 100))
-  )
+  if (!o.trip || !Number.isInteger(o.trip.node) || !num(o.trip.node, 0, LOCATIONS.length - 1) || !num(o.se, 0, 1e12))
     return false;
   if (!Array.isArray(o.eggs) || o.eggs.some(e => !e || !num(e.prog, 0, 1e12))) return false;
-  if (
-    !Array.isArray(o.jobs) ||
-    o.jobs.length > 12 ||
-    o.jobs.some(
-      j => !j || (j.uid && (!ids.has(j.uid) || !JOBS[j.job])) || !num(j.acc, 0, 1e12) || !num(j.pend, 0, 1e12)
-    )
-  )
-    return false;
   for (const k of ['coins', 'items'])
     if (!o[k] || typeof o[k] !== 'object' || Object.values(o[k]).some(n => !num(n, 0, 1e12))) return false;
   /* phase 17: robot parts you own (missing in a save from before robots) and robots' damaged parts */
@@ -267,6 +222,19 @@ export function validSave(o) {
       return false;
   const record = v => v && typeof v === 'object' && !Array.isArray(v) && !Object.hasOwn(v, '__proto__');
   if (
+    !record(o.wild) ||
+    Object.keys(o.wild).length > LOCATIONS.length ||
+    Object.values(o.wild).some(
+      w =>
+        !w ||
+        !num(w.at, 0, 1e13) ||
+        !Array.isArray(w.list) ||
+        w.list.length > 12 ||
+        w.list.some(q => !q || !SPECIES[q.sp] || !num(q.lvl, 1, 100))
+    )
+  )
+    return false;
+  if (
     !record(o.seen) ||
     !record(o.caught) ||
     !record(o.flags) ||
@@ -275,15 +243,8 @@ export function validSave(o) {
     Object.hasOwn(o, '__proto__')
   )
     return false;
-  if (!num(o.meter, 0, 1e9) || !num(o.serial, 0, 1e12) || !num(o.seFrac, 0, 1) || !num(o.buddyRem, 0, 1e12))
-    return false;
+  if (!num(o.serial, 0, 1e12)) return false;
   for (const m of o.team.concat(o.box))
-    if (
-      typeof (m.nick || '') !== 'string' ||
-      (m.status != null && !STATUS_NAMES[m.status]) ||
-      (m.job != null &&
-        (!Number.isInteger(m.job) || m.job < 0 || m.job >= o.jobs.length || o.jobs[m.job].uid !== m.uid))
-    )
-      return false;
+    if (typeof (m.nick || '') !== 'string' || (m.status != null && !STATUS_NAMES[m.status])) return false;
   return true;
 }

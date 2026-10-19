@@ -35,26 +35,17 @@ export interface SaveData {
   caught: Record<SpeciesId, number>;
   /** money, dollars */
   se: number;
-  /** the part of a dollar the last steps earned */
-  seFrac: number;
   /** how many of each coin and item you have (every key of gameData.coins and gameData.items) */
   coins: Record<DataId, number>;
   items: Record<DataId, number>;
-  /** today's steps (the earnings brackets start again each day) */
-  day: { date: string; steps: number };
-  totalSteps: number;
   /** where you are and where you're going */
   trip: Trip;
   /** never set any more (always null) */
   mapSeen: null;
-  /** money earned toward the next encounter */
-  meter: number;
-  /** the Billies waiting in the grass */
-  queue: Encounter[];
+  /** phase 08: the wild Billies on each place's map, by location id (rules.js encountersHere) */
+  wild: Record<string, WildStock>;
   /** your buddy's uid */
   buddy: string | null;
-  /** steps toward the buddy's next XP */
-  buddyRem: number;
   /** trainers beaten (by id) and story flags: 1 */
   flags: Record<string, number>;
   /** badges (seat ids) */
@@ -64,8 +55,6 @@ export interface SaveData {
   /** the last encounter number */
   serial: number;
   eggs: Egg[];
-  /** a slot per day job position (rules.jobs.positions) */
-  jobs: JobSlot[];
   /** Date.now() at the last save */
   savedAt: number;
   /** the trainer card: ID number, start date (0: unknown) and eggs hatched */
@@ -76,7 +65,7 @@ export interface SaveData {
   playMs?: number;
   /** story flags (story.js, lore.js) */
   story?: Record<string, any>;
-  /** fish caught and the like (fishing.js) */
+  /** fish caught and the like (fishing.js); walked: metres walked outdoors (rules.js addWalked) */
   stats?: Record<string, number>;
   /** things to do: stamps, requests, the home (things-to-do.js) */
   x?: {
@@ -144,13 +133,8 @@ export interface Billy {
   nick: string;
   /** where and when it joined you: a location id (or node), Date.now() */
   met?: { n: DataId | LocationNode; t: number };
-  /** the day job slot it works in, or null */
-  job?: number | null;
   /** when it went into the box (for the 'idle' evolution) */
   boxedAt?: number | null;
-  /** steps walked as your buddy, and in the party */
-  bsteps?: number;
-  psteps?: number;
   /** battles won (the Hype counter), the lead's win streak, items given away */
   wins?: number;
   streak?: number;
@@ -188,6 +172,12 @@ export type PartSize = 'S' | 'M' | 'L';
 export type Build = Record<string, PartSize>;
 
 /** a Billie waiting in the grass (game-state.js spawn) */
+/** a place's wild Billies: at is the play time (playMs) its stock last grew or was full */
+export interface WildStock {
+  at: number;
+  list: Encounter[];
+}
+
 export interface Encounter {
   id: string;
   sp: SpeciesId;
@@ -209,16 +199,4 @@ export interface Egg {
   prog: number;
   /** the incubator slot it is in, or null */
   slot: number | null;
-}
-
-/** a day job position (game-state.js assignJob) */
-export interface JobSlot {
-  /** the Billie working it, or null */
-  uid: string | null;
-  /** a key of gameData.jobs */
-  job: DataId | null;
-  /** steps toward the next pay */
-  acc: number;
-  /** pay waiting to be collected */
-  pend: number;
 }

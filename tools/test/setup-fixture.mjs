@@ -27,21 +27,10 @@ export const FIXTURE = {
       rival: { sparky: 'drip0', sprout: 'sparky0', drip: 'sprout0' },
       locationId: 'meadow',
     },
-    steps: {
-      stepsPerKm: 1000,
-      brackets: [
-        { upTo: 8000, rate: 1 },
-        { upTo: 0, rate: 0.5 },
-      ],
-      encounterEverySE: 500,
-      maxEncounters: 10,
-      goldOdds: 512,
-      alphaOdds: 45,
-    },
+    encounters: { route: 4, townGrass: 2, refillMs: 60000, prizePerLevel: 20, goldOdds: 512, alphaOdds: 45 },
     progression: {
       xpFactor: 0.8,
       maxLevel: 100,
-      buddyStepsPerXp: 5,
       teamSize: 6,
       moveSlots: 4,
       xpYield: [55, 120, 190],
@@ -49,7 +38,6 @@ export const FIXTURE = {
       teamXpShare: 0.5,
     },
     eggs: { capacity: 8, slots: 2, goldOdds: 512, goldOdds10: 128, mythOdds: 1000, mythSpecies: 'sparky0' },
-    jobs: { stepsPerPay: 2000, maxPending: 20, positions: 3 },
     battle: {
       stab: 1.5,
       critChances: [0.0625, 0.125, 0.25, 0.5],

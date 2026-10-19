@@ -83,9 +83,6 @@ Add from storage|Toevoegen uit opslag|Aus dem Lager holen|Añadir del almacén|A
 Make lead|Voorop zetten|Anführen lassen|Poner en cabeza|Mettre en tête
 Lead|Voorop|Anführer|Líder|En tête
 Fainted|Flauwgevallen|Besiegt|Debilitado|K.O.
-Day jobs|Bijbaantjes|Nebenjobs|Trabajos|Petits boulots
-Hire|Aannemen|Einstellen|Contratar|Embaucher
-End shift|Dienst beëindigen|Schicht beenden|Terminar turno|Fin de service
 Items|Spullen|Gegenstände|Objetos|Objets
 In your bag|In je tas|In deiner Tasche|En tu bolsa|Dans ton sac
 No items yet.|Nog geen spullen.|Noch keine Gegenstände.|Aún no hay objetos.|Pas encore d’objets.

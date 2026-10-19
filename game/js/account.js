@@ -9,7 +9,7 @@
 import { expose } from './test-globals.js';
 import { TEST_RUN, closeModal, modal, provide, render, toast } from './hooks.js';
 import { TEST_BOOT } from './test-boot.js';
-import { formatNumber } from './logic/rules.js';
+import { metresToKm } from './logic/rules.js';
 import { SAVE_NEW_MSG, SAVE_VERSION, loadSave, saveAge } from './logic/saves.js';
 import {
   ACCOUNT_ID,
@@ -195,7 +195,7 @@ async function pullAccountSave() {
   if (offer && guest && guest.started && !saveData.started) {
     modal({
       title: 'Bring your game along?',
-      html: `<p>This browser has a game with ${escapeHtml((guest.avatar && guest.avatar.name) || 'your trainer')} (${formatNumber(guest.totalSteps || 0)} steps). Use it as the game on your account, ${escapeHtml(account.user.name)}?</p>`,
+      html: `<p>This browser has a game with ${escapeHtml((guest.avatar && guest.avatar.name) || 'your trainer')} (${metresToKm((guest.stats && guest.stats.walked) || 0)} km walked). Use it as the game on your account, ${escapeHtml(account.user.name)}?</p>`,
       btns: [
         {
           l: 'Yes, use it',

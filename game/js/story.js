@@ -9,7 +9,7 @@ import { expose } from './test-globals.js';
 import { closeModal, modal, notice, provide, render, selfTest, showPendingWindows } from './hooks.js';
 import { $, clamp } from './util.js';
 import { LOCATION_BY_ID, RULES, SPECIES, TRAINERS, trainersAt } from './game-data.js';
-import { healAll, today } from './logic/rules.js';
+import { encountersHere, healAll, today } from './logic/rules.js';
 import { startTrainer, startWild } from './logic/battle-engine.js';
 import { activeBattle, escapeHtml, reducedMotion, save, saveData, uiState } from './game-state.js';
 import { dressingRoom } from './dressing-room.js';
@@ -258,7 +258,7 @@ export function legendCheck() {
           f: () => {
             closeModal();
             const q = { id: 'legend-' + L.sp, sp: L.sp, lvl: L.lvl, gold: false, no: ++saveData.serial, legend: true };
-            saveData.queue.push(q);
+            encountersHere().push(q);
             startWild(q);
           },
         },
