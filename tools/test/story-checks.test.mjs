@@ -2,7 +2,7 @@
 // a fault planted for each check makes that check speak.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { GAME_DATA, fn } from './setup-real.mjs';
+import { GAME_DATA, fn, modules } from './setup-real.mjs';
 import { storyChecks, storyFindings } from '../story-checks.mjs';
 
 const L = Object.fromEntries(
@@ -119,4 +119,44 @@ test('a requires that doesn’t read is a problem, not a crash of the reach chec
   const G = copy();
   G.locations.find(l => l.id === 'marigold').requires = 'itme:x';
   assert.ok(run(G).problems.some(m => m.includes('did you mean "item:"')));
+});
+
+test('the Studio’s story preview reads a preset as the game does after applyStoryPreset', () => {
+  const { storyPreviewSave, storyPreviewAllows, storyNamesIn } = modules['story-checks'];
+  const conds = [
+    'rival0 = win',
+    'met_blake0',
+    '!met_chad',
+    'beat:chad',
+    'beat:blake0 and !beat:chad',
+    'badges >= 3',
+    'visited:copperleaf',
+    'visited:vinyl_works',
+    'billie:musk',
+    'billie:swift1',
+    'coin:gold >= 3',
+  ];
+  for (const preset of Object.keys(GAME_DATA.story.presets)) {
+    const game = fn('newSave')();
+    game.story = {};
+    fn('applyStoryPreset')(game, preset);
+    const pv = storyPreviewSave(GAME_DATA, { preset });
+    for (const c of conds)
+      assert.equal(
+        storyPreviewAllows(GAME_DATA, { when: c }, pv),
+        fn('storyAllows')({ when: c }, game),
+        `${preset}: ${c}`
+      );
+  }
+  const pv = storyPreviewSave(GAME_DATA, {
+    preset: 'after-opening',
+    flags: { met_blake0: false, x: true, 'beat:chad': true },
+  });
+  assert.deepEqual([pv.story.met_blake0, pv.story.x, pv.flags.chad], [undefined, 1, 1]);
+  assert.equal(storyPreviewAllows(GAME_DATA, { when: 'beat:chad', unless: 'x' }, pv), false);
+  assert.equal(storyPreviewAllows(GAME_DATA, { when: 'itme:x' }, pv), false, 'a when that doesn’t read hides it');
+  assert.deepEqual(storyNamesIn([{ when: 'a and beat:chad' }, { unless: '!b or a' }, {}]), {
+    flags: ['a', 'b'],
+    beat: ['chad'],
+  });
 });

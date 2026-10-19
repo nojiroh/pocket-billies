@@ -22,6 +22,7 @@ import {
   scatterToolBarHTML,
 } from '../../game/js/hooks.js';
 import { $, $$, clamp } from '../../game/js/util.js';
+import { storyNamesIn, storyPreviewAllows, storyPreviewSave } from '../../game/js/logic/story-checks.js';
 import { ART_CACHE, makeCanvas } from '../../game/js/art.js';
 import {
   MAX_STEP_RISE,
@@ -45,7 +46,7 @@ import { environment } from '../../game/js/environment.js';
 import { walkRenderer } from '../../game/js/walk/walk-state.js';
 import { WALL_MATERIALS, rawHeightAt } from '../../game/js/walk/heights.js';
 import { mountWalkView } from '../../game/js/walk-view-gl.js';
-import { escapeHtml } from './game-stand-ins.js';
+import { PEOPLE, escapeHtml } from './game-stand-ins.js';
 import {
   ACTIONS,
   SECTIONS,
@@ -83,6 +84,7 @@ expose({
   currentMap: [() => currentMap],
   currentMapId: [() => currentMapId],
   drawEditorMap: [() => drawEditorMap, v => (drawEditorMap = v)],
+  drawScenePeople: [() => drawScenePeople, v => (drawScenePeople = v)],
   drawSceneryPixelEditor: [() => drawSceneryPixelEditor, v => (drawSceneryPixelEditor = v)],
   drawSceneryThumbs: [() => drawSceneryThumbs, v => (drawSceneryThumbs = v)],
   drawStepsOverlay: [() => drawStepsOverlay, v => (drawStepsOverlay = v)],
@@ -109,6 +111,7 @@ expose({
   paintStepCells: [() => paintStepCells, v => (paintStepCells = v)],
   parseMapLife: [() => parseMapLife, v => (parseMapLife = v)],
   plotSceneryPixel: [() => plotSceneryPixel, v => (plotSceneryPixel = v)],
+  previewPeople: [() => previewPeople, v => (previewPeople = v)],
   propAtPointer: [() => propAtPointer, v => (propAtPointer = v)],
   resizeReport: [() => resizeReport, v => (resizeReport = v)],
   sceneryArtPaths: [() => sceneryArtPaths, v => ((sceneryArtPaths = v), provide({ sceneryArtPaths }))],
@@ -121,6 +124,12 @@ expose({
   stepsPointerDown: [() => stepsPointerDown, v => (stepsPointerDown = v)],
   stepsPointerUp: [() => stepsPointerUp, v => (stepsPointerUp = v)],
   stepsToolBarHTML: [() => stepsToolBarHTML, v => (stepsToolBarHTML = v)],
+  storyAllows: [() => storyAllows, v => ((storyAllows = v), provide({ storyAllows }))],
+  storyPreviewBarHTML: [() => storyPreviewBarHTML, v => (storyPreviewBarHTML = v)],
+  storyPreviewChanged: [() => storyPreviewChanged, v => (storyPreviewChanged = v)],
+  storyPvAt: [() => storyPvAt, v => (storyPvAt = v)],
+  storyPvNow: [() => storyPvNow],
+  storyPvSave: [() => storyPvSave, v => (storyPvSave = v)],
   syncEdgeExits: [() => syncEdgeExits, v => (syncEdgeExits = v)],
   waterPointerUp: [() => waterPointerUp, v => (waterPointerUp = v)],
   waterRectAt: [() => waterRectAt, v => (waterRectAt = v)],
@@ -129,7 +138,7 @@ expose({
   workingStepGrid: [() => workingStepGrid, v => (workingStepGrid = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ artCacheVersion, sceneryArtPaths });
+provide({ artCacheVersion, sceneryArtPaths, storyAllows });
 /* to-module: end */
 setWalkData(() => ({
   scenes: (studioState.D && studioState.D.maps) || {},
@@ -167,6 +176,8 @@ export const mapEditor = {
   peTool: 'pen',
   peColor: '#2A2238',
   peUndo: [],
+  /* Project Story S3: the story preview (a start preset and flags switched on or off; v counts the changes) */
+  story: { on: false, preset: '', flags: {}, faded: true, v: 0 },
 };
 /* every picture a scene can use: ground tiles and their variants, props and their layers, 3D building textures, life */
 export function sceneryArtPaths(C) {
@@ -421,6 +432,7 @@ SECTIONS.scenes = () => {
     .join(
       ''
     )}</select><span class="hint">How it looks at other times and in other weather (the game follows the clock)</span></div>
+  <div class="sc-story" id="scStory">${storyPreviewBarHTML()}</div>
   <div class="grid">${mapEditor.pv === 'path' ? `<label class="fld range"><span>Walker position <output id="scTO">${Math.round(mapEditor.t * 100)}%</output></span><input type="range" id="scT" min="0" max="1" step=".01" value="${mapEditor.t}"></label>` : ''}
   <label class="fld chk"><input type="checkbox" id="scEnc" ${mapEditor.enc ? 'checked' : ''}><span>Show hidden encounters</span></label><label class="fld chk"><input type="checkbox" id="scNpc" ${mapEditor.npc ? 'checked' : ''}><span>Show a trainer</span></label></div>`,
    {
@@ -842,6 +854,115 @@ function dropStaleExitJoins(sc) {
     if (users.includes(l.b) && l.exitB && !ids.has(l.exitB)) PB_DATA.setRoadEnd(D, L, 'b', null, null);
   });
 }
+/* ---------- Project Story S3: the story preview ----------
+   Pick a start preset (story.json) and switch flags on or off: people and props whose when / unless don't let them be
+   there are hidden in the 3D preview and drawn faded with a red dashed outline on the map. Off, everything shows. */
+let storyPvSave = null,
+  storyPvAt = -1;
+const storyPvNow = () => {
+  if (storyPvAt !== mapEditor.story.v || !storyPvSave) {
+    storyPvSave = storyPreviewSave(studioState.D, mapEditor.story);
+    storyPvAt = mapEditor.story.v;
+  }
+  return storyPvSave;
+};
+/* the walk view asks this of every prop with a when or unless (in the game: logic/script.js) */
+function storyAllows(thing) {
+  if (!thing) return false;
+  if (!mapEditor.story.on) return true;
+  return storyPreviewAllows(studioState.D, thing, storyPvNow());
+}
+/* the scene's people as the walk view takes them (as ui.js walkState does in the game) */
+function previewPeople(sc) {
+  return (sc.people || [])
+    .filter(P => PEOPLE[P.who] && storyAllows(P))
+    .map(P => ({
+      who: P.who,
+      id: '_talk:' + P.id,
+      talk: P,
+      done: true,
+      exit: null,
+      dir: P.dir || 'down',
+      at: [P.x, P.z],
+    }));
+}
+/* the people on the map: a dot and their name, faded when the preview hides them */
+function drawScenePeople(x, sc, Z, H) {
+  for (const P of sc.people || []) {
+    const gone = !storyAllows(P);
+    if (gone && !mapEditor.story.faded) continue;
+    const px = P.x * Z,
+      py = (H - P.z) * Z;
+    x.save();
+    x.globalAlpha = gone ? 0.35 : 1;
+    x.fillStyle = '#1f6e6f';
+    x.strokeStyle = '#fff';
+    x.lineWidth = 2;
+    x.beginPath();
+    x.arc(px, py, Math.max(5, Z * 0.35), 0, Math.PI * 2);
+    x.fill();
+    x.stroke();
+    x.font = '600 11px system-ui, sans-serif';
+    x.textAlign = 'center';
+    x.lineWidth = 3;
+    x.strokeStyle = 'rgba(0,0,0,.6)';
+    x.strokeText(P.name || P.id, px, py - Math.max(8, Z * 0.5));
+    x.fillStyle = '#fff';
+    x.fillText(P.name || P.id, px, py - Math.max(8, Z * 0.5));
+    x.restore();
+  }
+}
+function storyPreviewBarHTML() {
+  const D = studioState.D,
+    S = D.story || {},
+    st = mapEditor.story,
+    sc = currentMap() || {},
+    things = [...(sc.people || []), ...(sc.props || [])],
+    N = storyNamesIn(things),
+    save = storyPvNow(),
+    more = Object.keys(S.flags || {}).filter(f => !N.flags.includes(f)),
+    chip = (f, on) =>
+      `<button class="seg sm ${on ? 'on' : ''}" data-act="scStoryFlag" data-f="${escapeHtml(f)}" aria-pressed="${on}">${escapeHtml(f)}</button>`,
+    flagChip = f => chip(f, save.story[f] != null && save.story[f] !== 0 && save.story[f] !== false),
+    beatChip = b => chip('beat:' + b, !!save.flags[b]),
+    hid = things.filter(t => (t.when || t.unless) && !storyAllows(t)).length;
+  return `<label class="fld chk"><input type="checkbox" id="scStoryOn" ${st.on ? 'checked' : ''}><span>Story preview</span></label><select id="scStoryPreset" aria-label="Start preset"><option value="">A new game</option>${Object.entries(
+    S.presets || {}
+  )
+    .map(
+      ([k, P]) =>
+        `<option value="${escapeHtml(k)}" ${st.preset === k ? 'selected' : ''} title="${escapeHtml(P.about || '')}">${escapeHtml(k)}</option>`
+    )
+    .join(
+      ''
+    )}</select><label class="fld chk"><input type="checkbox" id="scStoryFaded" ${st.faded ? 'checked' : ''}><span>Show hidden faded on the map</span></label><button class="btn sm primary" data-act="scPlayHere" title="Open the game here, at the preview's preset and flags, with your unsaved changes">▶ Play from here</button>
+  ${st.on ? `<div class="sc-story-flags"><span class="hint">${N.flags.length || N.beat.length ? 'Read here:' : 'Nothing here has a when or unless.'}</span>${N.flags.map(flagChip).join('')}${N.beat.map(beatChip).join('')}${more.length ? `<details><summary class="hint">More story flags</summary>${more.map(flagChip).join('')}</details>` : ''}<span class="hint">${hid ? `${hid} hidden for these flags` : 'Everyone is here'}</span></div>` : ''}`;
+}
+/* after a change: the bar, the map and (it asks each frame) the 3D preview */
+function storyPreviewChanged() {
+  mapEditor.story.v++;
+  const el = $('#scStory');
+  if (el) el.innerHTML = storyPreviewBarHTML();
+  drawEditorMap();
+}
+ACTIONS.scStoryFlag = d => {
+  const save = storyPvNow(),
+    f = d.f,
+    on = f.startsWith('beat:') ? !!save.flags[f.slice(5)] : save.story[f] != null && save.story[f] !== 0;
+  mapEditor.story.flags = { ...mapEditor.story.flags, [f]: !on };
+  storyPreviewChanged();
+};
+document.addEventListener('change', ev => {
+  const el = ev.target;
+  if (!el || !el.id) return;
+  if (el.id === 'scStoryOn') mapEditor.story.on = el.checked;
+  else if (el.id === 'scStoryFaded') mapEditor.story.faded = el.checked;
+  else if (el.id === 'scStoryPreset') {
+    mapEditor.story.preset = el.value;
+    mapEditor.story.flags = {};
+  } else return;
+  storyPreviewChanged();
+});
 function mountMapPreview() {
   const cv = $('#scPv'),
     id0 = currentMapId();
@@ -884,7 +1005,7 @@ function mountMapPreview() {
           })(),
         who: 'boy',
         enc: enc(),
-        npcs: mapEditor.npc ? [{ who: 'gini', id: 'pv', done: false }] : [],
+        npcs: [...(mapEditor.npc ? [{ who: 'gini', id: 'pv', done: false }] : []), ...previewPeople(sc)],
         exits: mapExitNames(id),
       };
     },
@@ -1001,7 +1122,9 @@ export function drawEditorMap() {
   mapEditor.boxes = [];
   for (const [p, i] of order) {
     const M = C.props[p.k],
-      im = M && artImage(M.img);
+      im = M && artImage(M.img),
+      gone = (p.when || p.unless) && !storyAllows(p);
+    if (gone && !mapEditor.story.faded) continue;
     const px = p.x * Z,
       py = (H - p.z) * Z;
     if (!im) {
@@ -1014,6 +1137,7 @@ export function drawEditorMap() {
       h = (im.naturalHeight || im.height) * k;
     x.save();
     x.translate(px, py);
+    if (gone) x.globalAlpha = 0.28;
     if (p.f) x.scale(-1, 1);
     x.imageSmoothingEnabled = k < 1;
     if (M.flat) {
@@ -1031,7 +1155,16 @@ export function drawEditorMap() {
     });
     x.fillStyle = 'rgba(30,26,52,.5)';
     x.fillRect(px - 1.5, py - 1.5, 3, 3);
+    if (gone) {
+      const b = mapEditor.boxes[mapEditor.boxes.length - 1];
+      x.save();
+      x.strokeStyle = 'rgba(200,50,60,.85)';
+      x.setLineDash([4, 3]);
+      x.strokeRect(b.x0, b.y0, b.x1 - b.x0, b.y1 - b.y0);
+      x.restore();
+    }
   }
+  drawScenePeople(x, sc, Z, H);
   if (mapEditor.sel != null && sc.props[mapEditor.sel]) {
     const b = mapEditor.boxes.find(b => b.i === mapEditor.sel);
     if (b) {

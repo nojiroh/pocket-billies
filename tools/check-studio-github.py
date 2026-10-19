@@ -57,6 +57,22 @@ def story_steps(pg, errs):
     pg.evaluate("studioState.sel.scene='copperleaf'; void openSection('scenes')")
     time.sleep(1)
     if not pg.locator('textarea[data-script="person:juniper"]').count(): errs.append('story: no script field for Juniper in Copperleaf')
+    # the story preview: Juniper only while met_blake0 holds; on at a new game she is hidden, the preset brings her back
+    pg.evaluate("studioState.D.maps.copperleaf.people[0].when = 'met_blake0'; render()")
+    time.sleep(1)
+    pg.locator('#scStoryOn').check()
+    time.sleep(0.4)
+    a = pg.locator('#scStory').inner_text()
+    pg.select_option('#scStoryPreset', 'after-opening')
+    time.sleep(0.4)
+    b = pg.locator('#scStory').inner_text()
+    pg.locator('#scStory [data-act="scStoryFlag"][data-f="met_blake0"]').click()
+    time.sleep(0.4)
+    c = pg.locator('#scStory').inner_text()
+    if '1 hidden' not in a or 'Everyone is here' not in b or '1 hidden' not in c:
+        errs.append(f'story: the preview hides {a!r} / {b!r} / {c!r}')
+    pg.locator('#scStoryOn').uncheck()
+    pg.evaluate("delete studioState.D.maps.copperleaf.people[0].when")
     pg.evaluate("void openSection('story')")
     if not pg.locator('textarea[data-script^="story:"]').count(): errs.append('story: the Story section has no script field')
     pg.evaluate("studioState.D.trainers.crude.script.splice(2, 0, '  sett x'); void openSection('check')")
@@ -69,7 +85,7 @@ def story_steps(pg, errs):
         got = pg.evaluate("[studioState.sec, document.activeElement.dataset.script, document.activeElement.value.slice(document.activeElement.selectionStart, document.activeElement.selectionEnd)]")
         if got != ['trainers', 'trainer:crude', '  sett x']: errs.append(f'story: Show me went to {got}')
     pg.evaluate("void undo(); void undo(); void undo(); void undo(); void undo()")
-    print('story editor: messages, line ids, reference, people, story section, the Check', flush=True)
+    print('story editor: messages, line ids, reference, people, story section, the Check, the story preview', flush=True)
 
 
 def main():

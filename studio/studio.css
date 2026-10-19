@@ -3355,3 +3355,29 @@ body.vp-has-big::after {
   font-size: 11px;
   color: var(--warn);
 }
+.sc-story {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+.sc-story-flags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+}
+.sc-story select {
+  width: auto;
+}
+.sc-story-flags details {
+  display: inline;
+}
+.sc-story-flags details[open] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  width: 100%;
+}

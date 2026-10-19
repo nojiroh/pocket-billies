@@ -14,7 +14,7 @@
    dialogue and every choice option ends with " #l:3fa9". Logic only: no DOM, no game data of its own, runs in Node. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { conditionNames, conditionProblem, conditionTree } from './conditions.js';
+import { conditionHolds, conditionNames, conditionProblem, conditionTree, storyStateOf } from './conditions.js';
 import { LINE_ID, parseScript } from './script-parse.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -30,6 +30,16 @@ expose({
   storyChecks: [() => storyChecks, v => (storyChecks = v)],
   // @ts-expect-error -- replaced on purpose
   storyFindings: [() => storyFindings, v => (storyFindings = v)],
+  // @ts-expect-error -- replaced on purpose
+  storyNamesIn: [() => storyNamesIn, v => (storyNamesIn = v)],
+  // @ts-expect-error -- replaced on purpose
+  storyPreviewAllows: [() => storyPreviewAllows, v => (storyPreviewAllows = v)],
+  // @ts-expect-error -- replaced on purpose
+  storyPreviewSave: [() => storyPreviewSave, v => (storyPreviewSave = v)],
+  // @ts-expect-error -- replaced on purpose
+  storySwitches: [() => storySwitches, v => (storySwitches = v)],
+  storySwitchesOf: [() => storySwitchesOf],
+  storySwitchesText: [() => storySwitchesText],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -371,4 +381,98 @@ export function storyFindings(G, L = { parseScript, conditionTree, conditionProb
         );
   }
   return found;
+}
+
+/* ---------- the Studio's story preview (Project Story S3) ----------
+   A stand-in save at a start preset with flags switched on or off, and whether a person, trainer or prop is there in
+   it: the map editor hides what isn't, and Play from here starts the game the same way. */
+
+/** a save as far as conditions read it: a start preset (story.json presets), then flags switched on or off on top
+ * ("beat:<trainer>" switches a trainer beaten) @param {any} G the game data
+ * @param {{ preset?: string, flags?: Record<string, boolean> }} o */
+export function storyPreviewSave(G, o = {}) {
+  const P = ((G.story || {}).presets || {})[o.preset || ''] || {},
+    save = {
+      story: /** @type {Record<string, any>} */ ({ ...(P.flags || {}) }),
+      flags: /** @type {Record<string, number>} */ ({}),
+      seats: /** @type {string[]} */ ([]),
+      items: { ...(P.items || {}) },
+      coins: { ...(P.coins || {}) },
+      visited: /** @type {Record<number, number>} */ ({}),
+      caught: /** @type {Record<string, number>} */ ({}),
+      team: [],
+      box: [],
+    };
+  storySwitches(save, G, Object.fromEntries((P.beaten || []).map((/** @type {string} */ id) => ['beat:' + id, true])));
+  for (const m of P.team || []) save.caught[m.sp] = 1;
+  /* where a new game starts is visited (newSave), and the preset's place */
+  for (const id of [((G.rules || {}).start || {}).locationId, P.place]) {
+    const node = (G.locations || []).findIndex((/** @type {{ id: string }} */ l) => l.id === id);
+    if (node >= 0) save.visited[node] = 1;
+  }
+  storySwitches(save, G, o.flags || {});
+  return save;
+}
+/** flags switched on (to 1, unless already set) or off, and "beat:<trainer>" beaten (with its badge) or not, in a
+ * save: the preview's and, from Play from here, the game's test run @param {any} save @param {any} G
+ * @param {Record<string, boolean>} flags */
+export function storySwitches(save, G, flags) {
+  save.story = save.story || {};
+  save.flags = save.flags || {};
+  save.seats = save.seats || [];
+  for (const [f, on] of Object.entries(flags)) {
+    const T = f.startsWith('beat:') ? (G.trainers || {})[f.slice(5)] : null;
+    if (f.startsWith('beat:')) {
+      if (!T) continue;
+      if (on) {
+        save.flags[f.slice(5)] = 1;
+        if (T.seat && !save.seats.includes(T.seat.id)) save.seats.push(T.seat.id);
+      } else {
+        delete save.flags[f.slice(5)];
+        if (T.seat) save.seats = save.seats.filter((/** @type {string} */ x) => x !== T.seat.id);
+      }
+    } else if (on) save.story[f] = save.story[f] ?? 1;
+    else delete save.story[f];
+  }
+  return save;
+}
+/** switches as Play from here writes them in the address: "met_x,!rival0,beat:chad" @param {Record<string, boolean>} F */
+export const storySwitchesText = F =>
+  Object.entries(F)
+    .map(([f, on]) => (on ? f : '!' + f))
+    .join(',');
+/** @param {string | null} t @returns {Record<string, boolean>} */
+export const storySwitchesOf = t =>
+  Object.fromEntries(
+    String(t || '')
+      .split(',')
+      .map(x => x.trim())
+      .filter(x => /^!?[\w:.-]+$/.test(x))
+      .map(x => (x.startsWith('!') ? [x.slice(1), false] : [x, true]))
+  );
+/** whether a person, trainer or prop is there in that save: its when holds and its unless doesn't (one that doesn't
+ * read counts as false, so a broken when hides it and a broken unless doesn't) @param {any} G
+ * @param {{ when?: string, unless?: string }} thing @param {any} save */
+export function storyPreviewAllows(G, thing, save) {
+  const qs = Object.fromEntries(
+      Object.entries((G.story || {}).quests || {}).map(([k, q]) => [k, /** @type {any} */ (q).stages])
+    ),
+    S = storyStateOf(save, { locations: G.locations, questStages: qs }),
+    holds = (/** @type {string} */ c) => !conditionProblem(c) && conditionHolds(conditionTree(c), S);
+  if (thing.when && !holds(thing.when)) return false;
+  return !(thing.unless && holds(thing.unless));
+}
+/** the flags and trainers the when / unless of these things read, for the preview's switches
+ * @param {{ when?: string, unless?: string }[]} things @returns {{ flags: string[], beat: string[] }} */
+export function storyNamesIn(things) {
+  const flags = new Set(),
+    beat = new Set();
+  for (const t of things)
+    for (const c of [t.when, t.unless])
+      if (c && !conditionProblem(c)) {
+        const N = conditionNames(conditionTree(c));
+        for (const f of N.flag || []) flags.add(f);
+        for (const b of N.beat || []) beat.add(b);
+      }
+  return { flags: [...flags].sort(), beat: [...beat].sort() };
 }

@@ -9,8 +9,8 @@
 import { expose } from '../../game/js/test-globals.js';
 import { conditionProblem } from '../../game/js/logic/conditions.js';
 import { scriptProblem, scriptReference } from '../../game/js/logic/script-parse.js';
-import { escapeHtml } from './game-stand-ins.js';
 import { giveLineIds, scriptsOf, storyFindings } from '../../game/js/logic/story-checks.js';
+import { escapeHtml } from './game-stand-ins.js';
 import {
   ACTIONS,
   SECTIONS,
