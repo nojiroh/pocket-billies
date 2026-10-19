@@ -86,7 +86,7 @@ async function githubFetch(path, opt = {}, raw) {
   }
   return raw ? r.text() : r.status === 204 ? null : r.json();
 }
-const repoApiPath = p => `repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/${p}`;
+const repoApiPath = p => `repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}${p ? '/' + p : ''}`;
 const gameFilePath = p => (GITHUB_CONFIG.game ? GITHUB_CONFIG.game + '/' : '') + p;
 const parseScriptJson = (t, name) => {
   const i = t.indexOf(name + '=');
