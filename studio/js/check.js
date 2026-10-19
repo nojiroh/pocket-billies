@@ -269,8 +269,6 @@ function runCheck() {
       err(`Road ${k + 1} connects a stop that doesn’t exist.`, 'world', { wtab: 'route' });
     else if (l[0] === l[1])
       err(`${D.locations[l[0]].name} has a road to itself.`, 'world', { wtab: 'route', stop: l[0] });
-    if (!(+l[2] > 0))
-      warn(`A road from ${(D.locations[l[0]] || {}).name} has no step count.`, 'world', { wtab: 'route' });
   });
   if (LK.length) {
     const seen = new Set([0]),
