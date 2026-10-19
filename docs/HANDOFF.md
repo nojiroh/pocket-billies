@@ -11,6 +11,47 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 - Questions waiting for the owner: 
 - Next session starts with: 
 
+### Studio track ST-3 - the Art workbench, Sheet mode - 2026-10-19
+Plan approved at the start. Owner's picks: the part list becomes data (game/data/partKits.json); kit sources stay in
+tools/art-source and are sliced again by dropping them (settings kept per kit).
+- Changed (one cause per commit):
+  - Moved game/art/next/parts/parts.json to game/data/partKits.json (key `partKits`); schema, types, data check (every
+    picture there at its size, in its view's folder); kits.json's kits, slots, pivots and sockets moved into it.
+  - logic/sheet-slice.js (+ tests, a PNG reader for Node tests): keys, masks, islands, rows, grid, trim, names,
+    front/back matching, Aseprite JSON, and the kits' steps as the Python slicer ran them (scipy, Pillow's box filter).
+    logic/pixel-snap.js (+ tests): pixel size and grid of art drawn big, most common colour per cell.
+  - The parity test: all 6 kit sheets give the committed 120 parts exactly (240 pictures, sockets, manifest order).
+  - Undo: a group of picture steps is one step; undoing a new picture drops it (pixel-canvas.js `artSteps`,
+    history.js `historyArtGroup`, sprites.js `forgetArt`). A first version had before and after as one object, so
+    a redo of a group undid it; fixed and tested.
+  - studio/js/workbench.js: the Art workbench section (Sheet mode; Part, Pixels, Model shown but off), drop anywhere,
+    Write to game. The Studio check drops sheets on it. tools/slice-part-kit.py retired (README in the kit folder).
+  - STUDIO.md, CHANGELOG, phase 16 and the track file.
+- Risky or unfinished:
+  - Writing is two undo steps (pictures, then parts), not one.
+  - A part that disappears from a sheet is not deleted from partKits.json or art/ (rename or remove by hand for now).
+  - Dropped sheets live in the tab only; a reload loses them (by design: sources are kept outside the game).
+  - Big sheets show at 1x at least (the canvas zooms by whole numbers); a 1161 px kit sheet scrolls on a tablet.
+  - Islands are numbered in reading order of their first pixel, not by rows; use names or Aseprite for exact names.
+  - Snap detection needs a clean grid; heavy AI blur may need the size and start typed in.
+  - Generic parts get kind `head` (or a kind found in the name) and animal `any`; pick the kind per part.
+  - Not tried on a tablet or the 3440 screen by hand; headless pictures only (validation/st3, not in git).
+- Verified: lint, typecheck, check:modules, format, check:data, 202 unit tests (sheet-slice, pixel-snap, history,
+  the parity test), the Python slicer re-run before deleting it (same data, same pixels, also after the kits moved),
+  check-studio-github (all steps, the new workbench step: the beasts kit written again changes nothing in the
+  browser; a 4x sheet on a flat background snaps to 8x9, 11x6, 6x10, writes, undoes and redoes; a proposed PR),
+  pictures at 1024, 1920, 3440. A noisy 4x sheet of three real parts came back with the same shapes (colours within
+  3 of the art). check:smoke (no problems). The full quick check was not run (this session's gate is the parity test).
+- Decisions I made (and why): kit sheets slice by the old steps exactly (parity; their parts keep the old margin),
+  everything else trims; "only background that joins the edge" is on by default outside the kits (a cream belly on a
+  cream AI sheet stayed a hole otherwise); a back part matched by position takes its front part's name; writing the
+  kits stores no settings (so writing them again changes no data), other kits store theirs in `kits.<kit>.slice`.
+  Environment note: Playwright's sync route handlers only answer while the script is inside a Playwright call, so a
+  `time.sleep` wait stalls the GitHub stand-in (my own scripts; the checks poll often enough).
+- Questions waiting for the owner: try dropping a real AI sheet and an Aseprite export; should Write also remove
+  parts of the kit that are no longer on the sheets? Should islands be named row by row instead of by first pixel?
+- Next session starts with: ST-4, Part mode (start from partKits.json parts and the workbench's pieces).
+
 ### Studio track ST-2 - the shared pixel canvas - 2026-10-19
 Plan approved at the start. Owner's pick: the Walk scenes prop and tile painter moves onto the canvas now too.
 - Changed (one cause per commit):

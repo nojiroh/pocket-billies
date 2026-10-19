@@ -16,7 +16,7 @@ polish tasks. Each session is tagged `st-N-done`.
   and jointed parts; no skinning.
 - Robots stay 2D. Their sockets are stored per part instead of computed from picture sizes.
 - Sheets: true-scale pixel art, AI images drawn at about 4x (snap-to-pixels step), Aseprite JSON or other apps. A
-  template grid (like tools/art-source/part-kit/kits.json) or free auto-detect. Front and back on one sheet or two,
+  template grid (like the kits' rows, now partKits.json `kits`) or free auto-detect. Front and back on one sheet or two,
   matched by name, then by position.
 - Parts, in this order: phase 16 kits (parts.json), robots, the current species sheets (rigs-next.js). A joint holds
   a pivot, named sockets, turn limits, draw order per view and socket rules (which slots may attach).
@@ -53,6 +53,25 @@ polish tasks. Each session is tagged `st-N-done`.
   view), robots (separate PNGs, sockets computed in robot-art.js `robotRig`, none stored).
 - Pixel editing: three editors (sprites.js, wardrobe.js, skeleton painting), each with its own undo, art outside the
   global undo, no vertical flip, no symmetry.
+
+## ST-3: the Art workbench, Sheet mode (done 2026-10-19)
+- The part list moved: game/art/next/parts/parts.json is now the data file game/data/partKits.json (key `partKits`,
+  schema, data check), and kits.json's kits, slots, pivots and sockets moved into it. The Studio can save only pictures
+  under art/ and start-studio.py is not in this repository, so the list had to become data (owner's pick).
+- game/js/logic/sheet-slice.js: background keys (a colour, magenta, clear; optionally only background joining the
+  edge), masks, islands (4/8-connected, merge gap, minimum area), rows by their gaps, template grid, trim, names,
+  front/back matching, Aseprite JSON, and the kits' steps (scipy's opening, dilation and labels; Pillow's box filter
+  with its fixed-point rounding; the old double unpremultiply and pink clean-up). logic/pixel-snap.js: pixel size and
+  grid from where edges gather (noise under a threshold ignored), most common colour per cell.
+- Parity: every kit sheet gives the committed parts exactly (240 pictures, sockets, manifest order); in the browser
+  too (writing the beasts kit again changes no picture and no data). Then tools/slice-part-kit.py went.
+- studio/js/workbench.js: section `workbench` (Billies & battles); a drop anywhere opens it. The sheet shows on
+  `pixelCanvas` (a host tool picks parts and the background colour). Write: pictures as one undo group
+  (`artSteps`, `historyArtGroup`; a new picture's undo drops it, `forgetArt`), then the parts as a data step.
+- Corrections: the kit pictures keep a transparent margin of about 1-2 px (the slicer cut the grown box), so a part's
+  box is not its art's box; generic islands are trimmed.
+- For ST-4: Part mode can start from `partKits.parts` (pivot, sockets per view) and `wbParts()`'s pieces; sockets are
+  still worked out from the outline only (the old auto_sockets).
 
 ## ST-2: the shared pixel canvas (done 2026-10-19)
 - game/js/logic/pixel-ops.js: the pixel work as numbers (line, fill inside a box, flips, quarter turns, symmetry,

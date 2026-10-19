@@ -117,7 +117,7 @@ Type advantages stay on the existing chart (`game/data/types.json`). Weight adds
 - All 12 starter sheets (`emberox` … `harvestgoat`), normal and gold, with rigs. Only new work: part-size scaling (code) and Prime rim-light (existing gold tool at low strength).
 
 ### Placeholder part kits (from you, 2026-10-18)
-Your part sheets come in kits. Each kit is a pair of sheets (front and back view) on a magenta background: six animals as columns, one slot per row, and a last row of extras. Sources live in `tools/art-source/part-kit/` (outside the game folder, so they never ship) and are listed in `tools/art-source/part-kit/kits.json`. `tools/slice-part-kit.py` cuts every kit into separate transparent pieces at game scale (1/4 of the source, so a full Billie fits the 128 px stage box) in `game/art/next/parts/front/` and `back/`, and writes `game/art/next/parts/parts.json` with each part's kit, animal, slot, pivot and default size M.
+Your part sheets come in kits. Each kit is a pair of sheets (front and back view) on a magenta background: six animals as columns, one slot per row, and a last row of extras. Sources live in `tools/art-source/part-kit/` (outside the game folder, so they never ship) and are listed in `game/data/partKits.json` (`kits`; studio track ST-3, was tools/art-source/part-kit/kits.json). The Studio's Art workbench (Sheet mode; was `tools/slice-part-kit.py`) cuts every kit into separate transparent pieces at game scale (1/4 of the source, so a full Billie fits the 128 px stage box) in `game/art/next/parts/front/` and `back/`, and writes `game/data/partKits.json` (was game/art/next/parts/parts.json) with each part's kit, animal, slot, pivot and default size M.
 
 | Kit | Animals (columns) | Rows | Extras |
 |-----|-------------------|------|--------|
@@ -125,7 +125,7 @@ Your part sheets come in kits. Each kit is a pair of sheets (front and back view
 | birds | chick, duck, owl, sparrow, eagle, hawk | head, crest, torso, wing, foot, tail | ruff, horn, plume, crown |
 | fish | goldfish, carp, koi, piranha, betta, shark | head, dorsal fin, torso, front fin, back fin, tail fin | sail, spike, scales, lure |
 
-**Room to grow (decided):** a new kit is two PNGs plus one entry in `kits.json` (name, animal per column, slot per row, extras). Part ids are `<animal>_<row>` and `<kit>_<extra>`, so new kits never rename old parts. Planned next kits: octopus (Zuckerberg), slug (Trump), and ox, otter and goat (the starters).
+**Room to grow (decided):** a new kit is two PNGs plus one entry in partKits.json `kits` (name, animal per column, slot per row, extras). Part ids are `<animal>_<row>` and `<kit>_<extra>`, so new kits never rename old parts. Planned next kits: octopus (Zuckerberg), slug (Trump), and ox, otter and goat (the starters).
 
 Front is the view facing the camera (the opponent's Billie), back is the view from behind (the player's Billie), the same as the existing sheets.
 

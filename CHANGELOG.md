@@ -49,6 +49,11 @@ kept aside in the browser).
   the other view, and Aseprite's keys. Painting is in the Studio's one undo, in order with every other edit, and stays
   undoable after switching Front/Back. `?` lists every key. An undo in Walk scenes no longer only takes back a
   height cache the map kept.
+- The Studio's Art workbench (Studio track ST-3), Sheet mode: drop sheets anywhere on the Studio and cut them into
+  parts by a kit's rows, islands of art, a template grid or an Aseprite JSON's frames and slices; art drawn big (an AI
+  image at about 4x) snaps back to its pixels; names from a template; front and back matched by name, then by
+  position; Write puts the pictures and the parts in the game (one undo each). The phase 16 kits slice exactly as
+  before, so tools/slice-part-kit.py is retired; the part list is now game/data/partKits.json.
 - The Studio's scene preview has a free camera: fly over the scene and look at any corner from any angle, with the
   mouse, the keys or two fingers on a phone; a top view; put the walker where you look.
 - Robots (phase 17 prototype): build your own from a gem and four parts (torso with head, left arm, right arm,
