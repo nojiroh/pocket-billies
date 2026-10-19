@@ -18,6 +18,7 @@ Needs Pillow, numpy and scipy.
 """
 import json
 import os
+import subprocess
 import sys
 
 import numpy as np
@@ -442,6 +443,10 @@ def main():
     with open(DATA, 'w') as f:
         json.dump(new, f, indent=1, ensure_ascii=False)
         f.write('\n')
+    # lay the file out as the Studio writes it (game/js/data-files.js), so a Studio save doesn't reformat it
+    subprocess.run(['node', '--input-type=module', '-e',
+                    "import {PB_DATA, readJson, writeFile} from './tools/data-files.mjs';"
+                    "writeFile('portraits.json', PB_DATA.text(readJson('portraits.json')))"], check=True)
     n = len([f for f in os.listdir(OUT) if f.endswith('.png')])
     print(f'{n} pictures in {OUT}; {len(new["heads"])} heads, {len(new["items"])} parts, '
           f'{len(new["eyes"])} eye styles, {len(new["mouths"])} mouths in {DATA}')

@@ -7,6 +7,7 @@
 // - what refers to what exists: moves a line learns, species in pools and teams, a stop's map and wild pool, the
 //   ground kinds and props a map uses, the stops of links and trainers, a trainer's look,
 // - a map's ground is h rows of w, its heights (h+1) rows of w+1,
+// - phase 07: portraits.json against its schema, and every picture, part and frame it names exists,
 // - phase 08b: the links between places (roads.json) join them as the walk needs (below).
 import Ajv2020 from 'ajv/dist/2020.js';
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -25,7 +26,12 @@ const check = (schema, value, where) => {
   if (!ok) for (const e of ajv.errors.slice(0, 5)) problem(where, `${e.instancePath || '(top)'} ${e.message}`);
   return ok;
 };
-const ENTRY = { maps: 'map.schema.json', lines: 'line.schema.json', trainers: 'trainer.schema.json', people: 'person.schema.json' };
+const ENTRY = {
+  maps: 'map.schema.json',
+  lines: 'line.schema.json',
+  trainers: 'trainer.schema.json',
+  people: 'person.schema.json',
+};
 
 // the files: listed, present, JSON, laid out the Studio's way
 const index = JSON.parse(readFileSync(join(DATA, 'index.json'), 'utf8'));
@@ -86,7 +92,8 @@ const S = D.maps || {},
 const species = new Set();
 for (const L of D.lines || []) {
   (L.names || []).forEach((n, i) => species.add(L.id + i));
-  for (const [lv, m] of L.learn || []) if (!moves[m]) problem(`lines/${L.id}.json`, `learns ${m} at ${lv}, no such move`);
+  for (const [lv, m] of L.learn || [])
+    if (!moves[m]) problem(`lines/${L.id}.json`, `learns ${m} at ${lv}, no such move`);
 }
 // phase 16: a species from a line kept in game/data/legacy is fine; the game stands in a new line's Billie for it
 const legacy = new Set();
@@ -114,7 +121,13 @@ check('roads.schema.json', D.roads || [], 'roads.json');
     along = (sc, e) => Math.round(e.t * (e.side === 'N' || e.side === 'S' ? sc.w : sc.h) * 100) / 100,
     at = (sc, e) => {
       const n = e.in == null ? 1.1 : e.in;
-      return e.side === 'N' ? [e.t * sc.w, sc.h - n] : e.side === 'S' ? [e.t * sc.w, n] : e.side === 'E' ? [sc.w - n, e.t * sc.h] : [n, e.t * sc.h];
+      return e.side === 'N'
+        ? [e.t * sc.w, sc.h - n]
+        : e.side === 'S'
+          ? [e.t * sc.w, n]
+          : e.side === 'E'
+            ? [sc.w - n, e.t * sc.h]
+            : [n, e.t * sc.h];
     },
     walkable = (sc, [x, z]) => {
       const ch = ((sc.tiles || [])[sc.h - 1 - Math.floor(z)] || '')[Math.floor(x)] || sc.edge || 'g',
@@ -126,13 +139,23 @@ check('roads.schema.json', D.roads || [], 'roads.json');
   (D.roads || []).forEach((L, i) => {
     const l = PB_DATA.road(D, L),
       name = l.id || `link ${i}`;
-    if (!route[l.a] || !route[l.b]) return problem('roads.json', `${name} joins ${L.a && L.a.map} and ${L.b && L.b.map}, not two places`);
+    if (!route[l.a] || !route[l.b])
+      return problem('roads.json', `${name} joins ${L.a && L.a.map} and ${L.b && L.b.map}, not two places`);
     if (l.a === l.b) problem('roads.json', `${name} joins ${route[l.a].id} to itself`);
     if (ids.has(l.id)) problem('roads.json', `two links are ${l.id}`);
     ids.add(l.id);
-    const ends = [[l.a, l.exitA], [l.b, l.exitB]].map(([n, x]) => {
+    const ends = [
+      [l.a, l.exitA],
+      [l.b, l.exitB],
+    ].map(([n, x]) => {
       const sc = S[route[n].mapId];
-      return { place: route[n].id, mapId: route[n].mapId, sc, x, e: sc && x ? (sc.edgeExits || []).find(q => q.id === x) : null };
+      return {
+        place: route[n].id,
+        mapId: route[n].mapId,
+        sc,
+        x,
+        e: sc && x ? (sc.edgeExits || []).find(q => q.id === x) : null,
+      };
     });
     if (l.kind === 'lift') {
       for (const [E, O] of [ends, [...ends].reverse()])
@@ -146,16 +169,21 @@ check('roads.schema.json', D.roads || [], 'roads.json');
         continue;
       }
       used.set(`${E.mapId}:${E.e.id}`, (used.get(`${E.mapId}:${E.e.id}`) || []).concat(name));
-      if (!walkable(E.sc, at(E.sc, E.e))) problem('roads.json', `${name}: the ground at ${E.mapId}'s exit ${E.e.id} can't be walked on`);
+      if (!walkable(E.sc, at(E.sc, E.e)))
+        problem('roads.json', `${name}: the ground at ${E.mapId}'s exit ${E.e.id} can't be walked on`);
     }
     const [A, B] = ends;
     if (!A.e || !B.e) return;
     if (OPPOSITE[A.e.side] !== B.e.side)
-      problem('roads.json', `${name}: the exits don't face each other (${A.mapId} ${A.e.side}, ${B.mapId} ${B.e.side})`);
+      problem(
+        'roads.json',
+        `${name}: the exits don't face each other (${A.mapId} ${A.e.side}, ${B.mapId} ${B.e.side})`
+      );
     if ((A.e.width || 2) !== (B.e.width || 2))
       problem('roads.json', `${name}: the exits are ${A.e.width || 2} m and ${B.e.width || 2} m wide`);
     const d = along(A.sc, A.e) - along(B.sc, B.e);
-    if (Math.abs(d - Math.round(d)) >= 0.5) problem('roads.json', `${name}: the exits miss each other by ${Math.abs(d - Math.round(d)).toFixed(2)} m`);
+    if (Math.abs(d - Math.round(d)) >= 0.5)
+      problem('roads.json', `${name}: the exits miss each other by ${Math.abs(d - Math.round(d)).toFixed(2)} m`);
   });
   for (const r of route) {
     const sc = S[r.mapId];
@@ -163,13 +191,20 @@ check('roads.schema.json', D.roads || [], 'roads.json');
     const E = sc.edgeExits || [];
     for (const e of E) {
       const u = used.get(`${r.mapId}:${e.id}`) || [];
-      if (u.length !== 1) problem(`maps/${r.mapId}.json`, `exit ${e.id} is used by ${u.length ? u.join(' and ') : 'no link'}`);
+      if (u.length !== 1)
+        problem(`maps/${r.mapId}.json`, `exit ${e.id} is used by ${u.length ? u.join(' and ') : 'no link'}`);
     }
     for (const side of ['N', 'S', 'E', 'W']) {
-      const xs = E.filter(e => e.side === side).map(e => along(sc, e)).sort((a, b) => a - b);
+      const xs = E.filter(e => e.side === side)
+        .map(e => along(sc, e))
+        .sort((a, b) => a - b);
       if (xs.length > 2) problem(`maps/${r.mapId}.json`, `${xs.length} exits on its ${side} side (two at most)`);
       for (let k = 1; k < xs.length; k++)
-        if (xs[k] - xs[k - 1] < 44) problem(`maps/${r.mapId}.json`, `two exits on its ${side} side ${(xs[k] - xs[k - 1]).toFixed(1)} m apart (44 m at least)`);
+        if (xs[k] - xs[k - 1] < 44)
+          problem(
+            `maps/${r.mapId}.json`,
+            `two exits on its ${side} side ${(xs[k] - xs[k - 1]).toFixed(1)} m apart (44 m at least)`
+          );
     }
   }
 }
@@ -187,6 +222,43 @@ for (const [id, G] of Object.entries(robots.gems || {})) {
   if (!types.has(G.type)) problem('robots.json', `gem ${id} is type ${G.type}, no such type`);
   if (!moves[G.move]) problem('robots.json', `gem ${id} gives ${G.move}, no such move`);
 }
+// phase 07: portraits: the schema, then every picture named is there and every face uses parts that exist
+if (D.portraits) {
+  const P = D.portraits,
+    where = 'portraits.json',
+    art = join(DATA, '..', 'art', 'next', 'portraits'),
+    has = img => existsSync(join(art, img + '.png')),
+    pics = v => (typeof v === 'string' ? [v] : Object.values(v)),
+    slots = new Set((P.slots || []).map(s => s.id));
+  if (check('portraits.schema.json', P, where)) {
+    for (const [id, H] of Object.entries(P.heads))
+      for (const img of [H.img, H.body]) if (!has(img)) problem(where, `head ${id}: no picture ${img}.png`);
+    for (const [id, I] of Object.entries(P.items)) {
+      if (!slots.has(I.slot)) problem(where, `part ${id} is in slot ${I.slot}, no such slot`);
+      for (const img of [...pics(I.img), ...(I.back ? [I.back.img] : [])])
+        if (!has(img)) problem(where, `part ${id}: no picture ${img}.png`);
+    }
+    for (const [id, E] of Object.entries(P.eyes))
+      for (const img of Object.values(E.frames))
+        for (const s of ['_l', '_r']) if (!has(img + s)) problem(where, `eyes ${id}: no picture ${img + s}.png`);
+    for (const [id, M] of Object.entries(P.mouths))
+      for (const img of Object.values(M.frames)) if (!has(img)) problem(where, `mouth ${id}: no picture ${img}.png`);
+    for (const [id, X] of Object.entries(P.expressions)) {
+      for (const k of [X.mouth, ...(X.talk || [])])
+        for (const [m, M] of Object.entries(P.mouths))
+          if (!M.frames[k]) problem(where, `expression ${id}: mouth ${m} has no ${k}`);
+      for (const [e, E] of Object.entries(P.eyes))
+        if (!E.frames[X.eyes] && !E.frames[P.eyeFallback[X.eyes]])
+          problem(where, `expression ${id}: eyes ${e} have no ${X.eyes}`);
+    }
+    for (const [id, F] of Object.entries(P.faces)) {
+      if (!P.heads[F.head]) problem(where, `face ${id}: no head ${F.head}`);
+      if (!P.eyes[F.eyes]) problem(where, `face ${id}: no eyes ${F.eyes}`);
+      if (!P.mouths[F.mouth]) problem(where, `face ${id}: no mouth ${F.mouth}`);
+      for (const i of F.items) if (!P.items[i]) problem(where, `face ${id}: no part ${i}`);
+    }
+  }
+} else problem('portraits.json', 'missing');
 const ROBOT_FITS = { torso: 'torso', armL: 'arm', armR: 'arm', legs: 'legs' };
 const robotProblems = R => {
   if (!R) return ['is a robot with no parts (robot)'];
@@ -204,16 +276,19 @@ for (const [id, T] of Object.entries(D.trainers || {})) {
   if (T.who && !people[T.who]) problem(`trainers/${id}.json`, `looks like ${T.who}, no such person`);
   for (const m of T.team || [])
     if (m.sp === 'robot') for (const p of robotProblems(m.robot)) problem(`trainers/${id}.json`, p);
-    else if (!known(m.sp) && !String(m.sp).startsWith('@')) problem(`trainers/${id}.json`, `has ${m.sp}, no such species`);
+    else if (!known(m.sp) && !String(m.sp).startsWith('@'))
+      problem(`trainers/${id}.json`, `has ${m.sp}, no such species`);
 }
 for (const [id, sc] of Object.entries(S)) {
   const where = `maps/${id}.json`,
     rows = sc.tiles || [];
-  if (rows.length !== sc.h || rows.some(r => r.length !== sc.w)) problem(where, `the ground isn't ${sc.h} rows of ${sc.w}`);
+  if (rows.length !== sc.h || rows.some(r => r.length !== sc.w))
+    problem(where, `the ground isn't ${sc.h} rows of ${sc.w}`);
   if (sc.heights && (sc.heights.length !== sc.h + 1 || sc.heights.some(r => r.length !== sc.w + 1)))
     problem(where, `the heights aren't ${sc.h + 1} rows of ${sc.w + 1}`);
   const kinds = new Set(rows.join('') + (sc.edge || ''));
-  for (const c of kinds) if (!scenery.terrains[c]) problem(where, `ground kind ${JSON.stringify(c)} isn't in scenery.terrains`);
+  for (const c of kinds)
+    if (!scenery.terrains[c]) problem(where, `ground kind ${JSON.stringify(c)} isn't in scenery.terrains`);
   const props = new Set((sc.props || []).map(p => p.k));
   for (const k of props) if (!scenery.props[k]) problem(where, `prop ${k} isn't in scenery.props`);
 }
