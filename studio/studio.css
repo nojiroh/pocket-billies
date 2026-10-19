@@ -350,9 +350,6 @@ canvas.missing {
   gap: 16px;
   min-width: 0;
 }
-.ed-col.solo {
-  max-width: 1180px;
-}
 .ed-head {
   display: flex;
   justify-content: space-between;
@@ -1473,6 +1470,8 @@ canvas.spr-prev.big {
   top: 0;
   aspect-ratio: 16/10;
   max-height: calc(100vh - 150px);
+  /* ST-1: no column cap any more, so the stage keeps 16:10 by its height */
+  max-width: calc((100vh - 150px) * 1.6);
   width: 100%;
   border-radius: 14px;
   overflow: hidden;
