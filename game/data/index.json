@@ -29,7 +29,8 @@
   "wardrobe",
   "fishing",
   "moods",
-  "lore"
+  "lore",
+  "story"
  ],
  "split": {
   "lines": {"array":true,"ids":["musk","bezos","gates","swift","kardashian","trump","zuck"]},

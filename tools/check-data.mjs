@@ -7,6 +7,7 @@
 // - what refers to what exists: moves a line learns, species in pools and teams, a stop's map and wild pool, the
 //   ground kinds and props a map uses, the stops of links and trainers, a trainer's look,
 // - a map's ground is h rows of w, its heights (h+1) rows of w+1,
+// - Project Story: story.json's speakers and start presets name real people, places, trainers and Billies,
 // - phase 08b: the links between places (roads.json) join them as the walk needs (below).
 import Ajv2020 from 'ajv/dist/2020.js';
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -173,6 +174,22 @@ check('roads.schema.json', D.roads || [], 'roads.json');
     }
   }
 }
+// Project Story: story.json, the schema, then the people, places, trainers, Billies and coins it names
+if (D.story) {
+  check('story.schema.json', D.story, 'story.json');
+  const places = new Set(route.map(r => r.id)),
+    trainers = D.trainers || {};
+  for (const [name, who] of Object.entries(D.story.speakers || {}))
+    if (who !== 'me' && !people[who]) problem('story.json', `speaker ${name} is ${who}, no such person`);
+  for (const [id, P] of Object.entries(D.story.presets || {})) {
+    const at = `story.json preset ${id}`;
+    if (!places.has(P.place)) problem(at, `starts in ${P.place}, no such place`);
+    for (const t of P.beaten || []) if (!trainers[t]) problem(at, `has beaten ${t}, no such trainer`);
+    for (const m of P.team || []) if (!species.has(m.sp)) problem(at, `has ${m.sp}, no such species`);
+    for (const c of Object.keys(P.coins || {})) if (!(D.coins || {})[c]) problem(at, `has coin ${c}, no such coin`);
+    for (const i of Object.keys(P.items || {})) if (!(D.items || {})[i]) problem(at, `has item ${i}, no such item`);
+  }
+} else problem('story.json', 'missing');
 // phase 17: robot parts and gems: the schema, then the moves and types they name and the slot each part fits
 const robots = D.robots || { parts: {}, gems: {} },
   types = new Set([...(D.types || []).map(t => t.id), 'None']);

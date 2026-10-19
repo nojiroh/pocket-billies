@@ -86,6 +86,7 @@ import {
   xpFor,
 } from './logic/rules.js';
 import { TOAST_MS, toastAdd, toastItem, toastTime } from './logic/messages.js';
+import { setStoryFlag } from './logic/script.js';
 import { pbFloat, pbInboxDot, pbInboxPop } from './ui-kit.js';
 import { newSaveKeepingPreferences } from './logic/saves.js';
 import {
@@ -184,15 +185,7 @@ import { flyMenu, rideGlassLift } from './airship.js';
 import { postcardCheck, renderPostcards } from './postcards.js';
 import { renderBag } from './bag.js';
 import { friendsHTML } from './friends.js';
-import {
-  legendCheck,
-  personTalk,
-  storyCheck,
-  storyFlags,
-  storyMovedCheck,
-  storyRivalBattle,
-  trainerTalk,
-} from './story.js';
+import { legendCheck, personTalk, storyCheck, storyMovedCheck, storyRivalBattle, trainerTalk } from './story.js';
 import {
   arrivedAt,
   challengeCardHTML,
@@ -2288,7 +2281,7 @@ export function startGame(l, o = {}) {
   saveData.trip = { node: START_NODE, plan: [] };
   saveData.visited = { [START_NODE]: 1 };
   saveData.mapSeen = null;
-  if (typeof storyFlags === 'function') storyFlags().copperleafNote = 1;
+  setStoryFlag('copperleafNote');
   for (let i = 0; i < R.starterEncounters; i++) spawn(true);
   const egg = R.starterEgg && EGGS[R.starterEgg] ? addEgg(R.starterEgg) : false;
   save();

@@ -10,6 +10,7 @@ import { expose } from './test-globals.js';
 import { closeModal, modal, provide, storyFlags } from './hooks.js';
 import { clamp } from './util.js';
 import { LOCATIONS, TRAINERS, gameData } from './game-data.js';
+import { setStoryFlag } from './logic/script.js';
 import { escapeHtml, save, saveData, uiState } from './game-state.js';
 import { personHTML } from './person-art.js';
 import { baseMapId, findPath, mapById, mapHub, walkView, walkablePointNear } from './walk-view.js';
@@ -39,7 +40,7 @@ expose({
 provide({ clueDraw, loreFlags, mapChatLines });
 /* to-module: end */
 export const loreData = () => (typeof gameData !== 'undefined' && gameData.lore) || {};
-export function loreFlags() {
+function loreFlags() {
   return typeof storyFlags === 'function' ? storyFlags() : saveData.story || (saveData.story = {});
 }
 function loreStage() {
@@ -91,7 +92,7 @@ export function loreBook(id, page = 0) {
   if (!B) return;
   const F = loreFlags();
   if (!F['read_' + id]) {
-    F['read_' + id] = 1;
+    setStoryFlag('read_' + id);
     save();
   }
   const n = B.pages.length,
@@ -117,7 +118,7 @@ export function loreClue(id) {
   const F = loreFlags(),
     flag = C.unlock && C.unlock.startsWith('flag:') ? C.unlock.slice(5) : 'clue_' + id;
   if (F[flag]) return;
-  F[flag] = 1;
+  setStoryFlag(flag);
   save();
   if (typeof jingle === 'function' && typeof JINGLES !== 'undefined' && JINGLES.item) jingle(JINGLES.item, 120);
   modal({

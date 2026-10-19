@@ -64,6 +64,8 @@ export interface GameData {
   fishing: Record<string, Pool>;
   moods: Record<DataId, Mood>;
   lore: Lore;
+  /** Project Story: the story layer's flags, speakers, quests and start presets */
+  story: StoryData;
 }
 
 /* ---------- the files: index.json and the split sections ---------- */
@@ -923,6 +925,34 @@ export interface Engine {
 export interface Wardrobe {
   version: number;
   [key: string]: any;
+}
+
+/* ---------- Project Story ---------- */
+
+/** story.json: every story flag (saveData.story) and what it means, the names scripts write before a line, quests,
+    and the start points for ?story=<preset> (test runs only) */
+export interface StoryData {
+  about?: string;
+  flags: Record<string, string>;
+  /** flags made from an id: 'met_<id>' */
+  patterns: Record<string, string>;
+  /** saveData.story's records that aren't flags (talks, quests, once, cycles, resume) */
+  kept: Record<string, string>;
+  /** a name a script writes before a line -> a person id, or 'me' */
+  speakers: Record<string, DataId>;
+  quests: Record<DataId, { about?: string; stages: string[] }>;
+  presets: Record<string, StoryPreset>;
+}
+export interface StoryPreset {
+  about: string;
+  /** a location id */
+  place: DataId;
+  flags?: Record<string, any>;
+  /** trainer ids; a leader's badge comes with them */
+  beaten?: DataId[];
+  coins?: Record<DataId, number>;
+  items?: Record<DataId, number>;
+  team: { sp: string; lvl: number }[];
 }
 
 /* ---------- lore ---------- */

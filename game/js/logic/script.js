@@ -14,6 +14,8 @@
    unknown one is an error with "did you mean", never a line of dialogue. Logic only: no DOM, runs in Node. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { saveData } from '../hooks.js';
+import { STORY_DATA, warnData } from '../game-data.js';
 import { conditionHolds, conditionProblem, conditionTree, didYouMean, storyStateOf } from './conditions.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -22,6 +24,7 @@ expose({
   SCRIPT_COMMANDS: [() => SCRIPT_COMMANDS],
   // @ts-expect-error -- replaced on purpose
   checkedCondition: [() => checkedCondition, v => (checkedCondition = v)],
+  flagWarned: [() => flagWarned],
   // @ts-expect-error -- replaced on purpose
   parseScript: [() => parseScript, v => (parseScript = v)],
   // @ts-expect-error -- replaced on purpose
@@ -32,6 +35,10 @@ expose({
   scriptError: [() => scriptError, v => (scriptError = v)],
   // @ts-expect-error -- replaced on purpose
   scriptProblem: [() => scriptProblem, v => (scriptProblem = v)],
+  // @ts-expect-error -- replaced on purpose
+  setStoryFlag: [() => setStoryFlag, v => (setStoryFlag = v)],
+  // @ts-expect-error -- replaced on purpose
+  storyFlagKnown: [() => storyFlagKnown, v => (storyFlagKnown = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -387,4 +394,23 @@ export async function runScript(tree, stage, o) {
     }
   };
   await runBlock(tree, [], o.resume && o.resume.length ? o.resume : null);
+}
+
+/* ---------- the story flags (story.json flags, patterns, kept) ---------- */
+/** a flag story.json lists, by name or by pattern (met_<id> takes every met_...) @param {string} k */
+export function storyFlagKnown(k) {
+  const S = STORY_DATA || {};
+  if (k in (S.flags || {}) || k in (S.kept || {})) return true;
+  return Object.keys(S.patterns || {}).some(p => k.startsWith(p.slice(0, p.indexOf('<'))) && k.length > p.indexOf('<'));
+}
+/** @type {Set<string>} */
+export const flagWarned = new Set();
+/** every story flag the game sets goes through here: one story.json doesn't list is a warning (the debug log's data
+ * list), once @param {string} k @param {any} [v] */
+export function setStoryFlag(k, v = 1) {
+  if (!storyFlagKnown(k) && !flagWarned.has(k)) {
+    flagWarned.add(k);
+    warnData(`story flag ${k} is not in story.json`);
+  }
+  (saveData.story || (saveData.story = {}))[k] = v;
 }
