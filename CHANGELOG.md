@@ -60,6 +60,10 @@ kept aside in the browser).
   side makes a copy (<id>_r) with the pictures flipped and the sockets swapped; S and L can be painted by hand,
   starting from M scaled. Writing a sheet again keeps all of it. Each kind has a draw order, turn limits and the side
   its art is drawn for in partKits.json; the pivot of a part not moved by hand is its joint, chin or base socket.
+- Robots on the workbench (Studio track ST-5): Part mode shows robot parts, heads and gems with the points the game
+  joins their pictures at (neck, shoulders, hips, gem); drag or nudge one to store it in robots.json, or go back to
+  the computed point. Robots look exactly as before until a point is moved. The Robots section opens a part there,
+  and the battle preview can put robots on the stage (Try a build and the trainers' robots).
 - The Studio's scene preview has a free camera: fly over the scene and look at any corner from any angle, with the
   mouse, the keys or two fingers on a phone; a top view; put the walker where you look.
 - Robots (phase 17 prototype): build your own from a gem and four parts (torso with head, left arm, right arm,

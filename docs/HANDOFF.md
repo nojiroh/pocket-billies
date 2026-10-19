@@ -11,6 +11,48 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 - Questions waiting for the owner: 
 - Next session starts with: 
 
+### Studio track ST-5 - robots on the workbench - 2026-10-19
+Plan approved at the start (owner: "Sounds good"), with my recommendations: sockets per part in robots.json `art`,
+stand-ins always computed, draw order and turn limits stored too, the ST-4 entry and tag first.
+- Changed (one cause per commit):
+  - The missing ST-4 handoff entry; tag `st-4-done` made locally (see Risky).
+  - A parity test before any change: tools/test/robot-rig-before.json, a hash of every build's rig as robotRig made
+    it (972 builds, with pictures and as stand-ins, front and back), its data and picture sizes frozen inside.
+  - robots.json schema, types and data check: optional `art.joints` / `art.headJoints` (per view pivot, a torso's
+    sockets by the socket standard, z), `turn`, `headTurn`. No data changed.
+  - game/js/logic/robot-joints.js (+ tests): computed joints (today's numbers), stored-or-computed per view, robots.json
+    as a part kit for Part mode, setting one point.
+  - robot-art.js `robotRig(sp, D, k)`: the pictures join at their joints; view k's joints place the bones
+    (skeleton-rig.js passes k). Identical to before for every build, also with every point stored.
+  - Part mode: a Robots source (drag or nudge in whole pixels, Back to computed, turn and z, test fit on a torso,
+    never mirrored); the robots redraw after each change. Part mode now works in the second pane (it looked its
+    elements up in the left pane after loading pictures; an ST-4 bug).
+  - Battle preview: robots can fight (the Robots section's Try a build and the trainers' robots); before, its
+    pickers took Billies only and it loaded Billie sheets for any fighter.
+  - Robots section: where each part's pictures join, and "Edit joints on the workbench" / "The head's joints".
+  - Studio check step (robots in Part mode beside the battle preview); STUDIO.md, CHANGELOG, track file.
+- Risky or unfinished:
+  - Tags can't be pushed from these sessions (git push of a tag gets HTTP 403; only the session branch is
+    allowed). `st-4-done` and `st-5-done` exist only in this container; please tag them yourself (st-4-done on the
+    ST-4 handoff commit, st-5-done on this branch's last commit after merging, or tell me which commit). The other
+    st-N-done tags were never pushed either.
+  - Turn limits are stored and used by the test fit only; the game's biped poses don't read them.
+  - The back view's `at` used to be the front's; it now comes from the back view's joints (the same numbers unless
+    a back point is stored). geo.top stays from the front view.
+  - Sheet mode (workbench.js) still uses paneRoot() in code that runs after drawing; untested in the second pane.
+  - A gem's point is always its centre (nothing stored).
+- Verified: npm test 243 pass (the robot build tests in robots.test.mjs, the new robot-joints tests including the
+  972-build parity, also with every point stored); lint, typecheck, check:modules, format, check:data clean. The full
+  Studio check passes (all steps, the new robot step: opened from Robots, two robots in the battle preview, bulwark's
+  shoulder dragged and nudged moves the arm the stage draws front and back, the test fit, back to computed, all
+  undone; a proposed PR). It had been hanging: the workbench step left its blobs sheet in, so Part mode's step
+  stopped at a "replace?" question; the workbench step now drops its sheets. check:smoke: 1 problem, the in-game full
+  test's "Shaders: mthing: aCol sets location 7, the engine's standard is 2" (world-bowl.js); main 9b731cf fails the
+  same way, so it is not from this session and not fixed here. Not tried by hand on a tablet or the 3440 screen.
+- Questions waiting for the owner: should the game's poses respect the turn limits? Do you want gems' points
+  editable too? Should I fix the mthing shader location (phase 10) in its own session?
+- Next session starts with: ST-6, species sheets in Part mode.
+
 ### Studio track ST-4 - the Art workbench, Part mode - 2026-10-19
 Written at the start of ST-5 (the ST-4 session merged as PR #71 without this entry or its tag); taken from its commits
 and the track file's ST-4 notes, not from that session's own report.

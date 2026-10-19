@@ -97,6 +97,28 @@ Art workbench → **Part**: a part written by Sheet mode, its joints. The number
   beside M (`<id>_s.png`, `_l.png`), starting from M scaled: Points, Pencil, Eraser, Fill and Pick in the bar, and a
   colour. Points moved there belong to that size. **Back to scaled** stops using it (the picture stays in art/).
 
+## Art workbench: robots in Part mode (studio track ST-5)
+
+Part mode's **Robots** source (beside **Kits** above the list) shows robots.json the same way; the numbers are in
+game/js/logic/robot-joints.js. The Robots section's **Edit joints on the workbench** (and, for a torso, **The head's
+joints**) opens it on that part, in the pane the Robots section is in.
+
+- **The list**: every robot part with a picture, a torso's head as `<torso>:head`, each gem as `gem:<id>`.
+- **Points** are where the game joins the pictures. A torso's sockets follow the socket standard: `neck` (the head),
+  `shoulderL`, `shoulderR` (arms), `hipL`, `hipR` (legs), `hip` (treads and hover), `gem`. An arm, legs or head has a
+  pivot only: the point it hangs from and turns around. Until moved they are worked out from the picture, as the game
+  always placed them; a back point not moved keeps the front's offset from the pivot.
+- Drag or nudge (1 px; robots are whole pixels) and the point is stored in the part's `art.joints` (a head's in its
+  torso's `art.headJoints`), per view; every drag or nudge is one undo step. **Back to computed** drops a view's
+  stored points. Draw order per view and turn limits (for the test fit only: the game's poses don't read them yet)
+  are stored too (`turn`, `headTurn`). Gems sit on their centre and store nothing.
+- **Test fit**: arms and legs are drawn the same on both sides, not mirrored. The battle preview (and the Robots
+  section) redraw the robots after every change.
+- Stored points belong to the part's own pictures; a stand-in (a part without a picture) always uses computed points.
+  Socket names, socket rules, S/L and Mirror are kit-only.
+
+The battle preview offers robots too: the Robots section's Try a build and every trainer's robots.
+
 ## World map look (phase 10)
 
 World & encounters → **World map look** edits game/data/worldmap.json, the world map's look.
