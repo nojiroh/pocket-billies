@@ -6,33 +6,20 @@
    "animal": "cat",
    "kind": "head",
    "slot": "head",
-   "pivot": [
-    0.5,
-    0.92
-   ],
+   "pivot": [0.5,0.92],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/cat_head.png",
      "w": 43,
      "h": 39,
-     "sockets": {
-      "chin": [
-       0.493,
-       0.897
-      ]
-     }
+     "sockets": {"chin":[0.493,0.897]}
     },
     "back": {
      "file": "next/parts/back/cat_head.png",
      "w": 44,
      "h": 38,
-     "sockets": {
-      "chin": [
-       0.476,
-       0.895
-      ]
-     }
+     "sockets": {"chin":[0.476,0.895]}
     }
    }
   },
@@ -41,33 +28,20 @@
    "animal": "rabbit",
    "kind": "head",
    "slot": "head",
-   "pivot": [
-    0.5,
-    0.92
-   ],
+   "pivot": [0.5,0.92],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/rabbit_head.png",
      "w": 42,
      "h": 38,
-     "sockets": {
-      "chin": [
-       0.491,
-       0.895
-      ]
-     }
+     "sockets": {"chin":[0.491,0.895]}
     },
     "back": {
      "file": "next/parts/back/rabbit_head.png",
      "w": 45,
      "h": 38,
-     "sockets": {
-      "chin": [
-       0.478,
-       0.895
-      ]
-     }
+     "sockets": {"chin":[0.478,0.895]}
     }
    }
   },
@@ -76,33 +50,20 @@
    "animal": "fox",
    "kind": "head",
    "slot": "head",
-   "pivot": [
-    0.5,
-    0.92
-   ],
+   "pivot": [0.5,0.92],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/fox_head.png",
      "w": 44,
      "h": 40,
-     "sockets": {
-      "chin": [
-       0.492,
-       0.9
-      ]
-     }
+     "sockets": {"chin":[0.492,0.9]}
     },
     "back": {
      "file": "next/parts/back/fox_head.png",
      "w": 44,
      "h": 40,
-     "sockets": {
-      "chin": [
-       0.48,
-       0.9
-      ]
-     }
+     "sockets": {"chin":[0.48,0.9]}
     }
    }
   },
@@ -111,33 +72,20 @@
    "animal": "bear",
    "kind": "head",
    "slot": "head",
-   "pivot": [
-    0.5,
-    0.92
-   ],
+   "pivot": [0.5,0.92],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/bear_head.png",
      "w": 44,
      "h": 38,
-     "sockets": {
-      "chin": [
-       0.489,
-       0.895
-      ]
-     }
+     "sockets": {"chin":[0.489,0.895]}
     },
     "back": {
      "file": "next/parts/back/bear_head.png",
      "w": 44,
      "h": 38,
-     "sockets": {
-      "chin": [
-       0.489,
-       0.895
-      ]
-     }
+     "sockets": {"chin":[0.489,0.895]}
     }
    }
   },
@@ -146,33 +94,20 @@
    "animal": "bird",
    "kind": "head",
    "slot": "head",
-   "pivot": [
-    0.5,
-    0.92
-   ],
+   "pivot": [0.5,0.92],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/bird_head.png",
      "w": 42,
      "h": 39,
-     "sockets": {
-      "chin": [
-       0.488,
-       0.897
-      ]
-     }
+     "sockets": {"chin":[0.488,0.897]}
     },
     "back": {
      "file": "next/parts/back/bird_head.png",
      "w": 43,
      "h": 40,
-     "sockets": {
-      "chin": [
-       0.488,
-       0.9
-      ]
-     }
+     "sockets": {"chin":[0.488,0.9]}
     }
    }
   },
@@ -181,33 +116,20 @@
    "animal": "reptile",
    "kind": "head",
    "slot": "head",
-   "pivot": [
-    0.5,
-    0.92
-   ],
+   "pivot": [0.5,0.92],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/reptile_head.png",
      "w": 42,
      "h": 36,
-     "sockets": {
-      "chin": [
-       0.484,
-       0.889
-      ]
-     }
+     "sockets": {"chin":[0.484,0.889]}
     },
     "back": {
      "file": "next/parts/back/reptile_head.png",
      "w": 44,
      "h": 38,
-     "sockets": {
-      "chin": [
-       0.484,
-       0.895
-      ]
-     }
+     "sockets": {"chin":[0.484,0.895]}
     }
    }
   },
@@ -216,10 +138,7 @@
    "animal": "cat",
    "kind": "ear",
    "slot": "head-extra",
-   "pivot": [
-    0.5,
-    0.95
-   ],
+   "pivot": [0.5,0.95],
    "size": "M",
    "views": {
     "front": {
@@ -241,10 +160,7 @@
    "animal": "rabbit",
    "kind": "ear",
    "slot": "head-extra",
-   "pivot": [
-    0.5,
-    0.95
-   ],
+   "pivot": [0.5,0.95],
    "size": "M",
    "views": {
     "front": {
@@ -266,10 +182,7 @@
    "animal": "fox",
    "kind": "ear",
    "slot": "head-extra",
-   "pivot": [
-    0.5,
-    0.95
-   ],
+   "pivot": [0.5,0.95],
    "size": "M",
    "views": {
     "front": {
@@ -291,10 +204,7 @@
    "animal": "bear",
    "kind": "ear",
    "slot": "head-extra",
-   "pivot": [
-    0.5,
-    0.95
-   ],
+   "pivot": [0.5,0.95],
    "size": "M",
    "views": {
     "front": {
@@ -316,10 +226,7 @@
    "animal": "bird",
    "kind": "ear",
    "slot": "head-extra",
-   "pivot": [
-    0.5,
-    0.95
-   ],
+   "pivot": [0.5,0.95],
    "size": "M",
    "views": {
     "front": {
@@ -341,10 +248,7 @@
    "animal": "reptile",
    "kind": "ear",
    "slot": "head-extra",
-   "pivot": [
-    0.5,
-    0.95
-   ],
+   "pivot": [0.5,0.95],
    "size": "M",
    "views": {
     "front": {
@@ -366,10 +270,7 @@
    "animal": "cat",
    "kind": "torso",
    "slot": "body",
-   "pivot": [
-    0.5,
-    0.5
-   ],
+   "pivot": [0.5,0.5],
    "size": "M",
    "views": {
     "front": {
@@ -377,30 +278,12 @@
      "w": 43,
      "h": 53,
      "sockets": {
-      "neck": [
-       0.497,
-       0.057
-      ],
-      "shoulderL": [
-       0.209,
-       0.226
-      ],
-      "shoulderR": [
-       0.791,
-       0.226
-      ],
-      "hipL": [
-       0.267,
-       0.811
-      ],
-      "hipR": [
-       0.709,
-       0.811
-      ],
-      "tail": [
-       0.837,
-       0.755
-      ]
+      "neck": [0.497,0.057],
+      "shoulderL": [0.209,0.226],
+      "shoulderR": [0.791,0.226],
+      "hipL": [0.267,0.811],
+      "hipR": [0.709,0.811],
+      "tail": [0.837,0.755]
      }
     },
     "back": {
@@ -408,30 +291,12 @@
      "w": 44,
      "h": 54,
      "sockets": {
-      "neck": [
-       0.493,
-       0.056
-      ],
-      "shoulderL": [
-       0.227,
-       0.222
-      ],
-      "shoulderR": [
-       0.773,
-       0.222
-      ],
-      "hipL": [
-       0.267,
-       0.815
-      ],
-      "hipR": [
-       0.71,
-       0.815
-      ],
-      "tail": [
-       0.489,
-       0.854
-      ]
+      "neck": [0.493,0.056],
+      "shoulderL": [0.227,0.222],
+      "shoulderR": [0.773,0.222],
+      "hipL": [0.267,0.815],
+      "hipR": [0.71,0.815],
+      "tail": [0.489,0.854]
      }
     }
    }
@@ -441,10 +306,7 @@
    "animal": "rabbit",
    "kind": "torso",
    "slot": "body",
-   "pivot": [
-    0.5,
-    0.5
-   ],
+   "pivot": [0.5,0.5],
    "size": "M",
    "views": {
     "front": {
@@ -452,30 +314,12 @@
      "w": 43,
      "h": 52,
      "sockets": {
-      "neck": [
-       0.493,
-       0.058
-      ],
-      "shoulderL": [
-       0.279,
-       0.212
-      ],
-      "shoulderR": [
-       0.698,
-       0.212
-      ],
-      "hipL": [
-       0.267,
-       0.808
-      ],
-      "hipR": [
-       0.709,
-       0.808
-      ],
-      "tail": [
-       0.837,
-       0.769
-      ]
+      "neck": [0.493,0.058],
+      "shoulderL": [0.279,0.212],
+      "shoulderR": [0.698,0.212],
+      "hipL": [0.267,0.808],
+      "hipR": [0.709,0.808],
+      "tail": [0.837,0.769]
      }
     },
     "back": {
@@ -483,30 +327,12 @@
      "w": 45,
      "h": 53,
      "sockets": {
-      "neck": [
-       0.485,
-       0.057
-      ],
-      "shoulderL": [
-       0.289,
-       0.226
-      ],
-      "shoulderR": [
-       0.689,
-       0.226
-      ],
-      "hipL": [
-       0.267,
-       0.811
-      ],
-      "hipR": [
-       0.711,
-       0.811
-      ],
-      "tail": [
-       0.489,
-       0.853
-      ]
+      "neck": [0.485,0.057],
+      "shoulderL": [0.289,0.226],
+      "shoulderR": [0.689,0.226],
+      "hipL": [0.267,0.811],
+      "hipR": [0.711,0.811],
+      "tail": [0.489,0.853]
      }
     }
    }
@@ -516,10 +342,7 @@
    "animal": "fox",
    "kind": "torso",
    "slot": "body",
-   "pivot": [
-    0.5,
-    0.5
-   ],
+   "pivot": [0.5,0.5],
    "size": "M",
    "views": {
     "front": {
@@ -527,30 +350,12 @@
      "w": 44,
      "h": 53,
      "sockets": {
-      "neck": [
-       0.5,
-       0.057
-      ],
-      "shoulderL": [
-       0.205,
-       0.226
-      ],
-      "shoulderR": [
-       0.773,
-       0.226
-      ],
-      "hipL": [
-       0.267,
-       0.811
-      ],
-      "hipR": [
-       0.71,
-       0.811
-      ],
-      "tail": [
-       0.841,
-       0.755
-      ]
+      "neck": [0.5,0.057],
+      "shoulderL": [0.205,0.226],
+      "shoulderR": [0.773,0.226],
+      "hipL": [0.267,0.811],
+      "hipR": [0.71,0.811],
+      "tail": [0.841,0.755]
      }
     },
     "back": {
@@ -558,30 +363,12 @@
      "w": 44,
      "h": 54,
      "sockets": {
-      "neck": [
-       0.493,
-       0.056
-      ],
-      "shoulderL": [
-       0.227,
-       0.222
-      ],
-      "shoulderR": [
-       0.75,
-       0.222
-      ],
-      "hipL": [
-       0.267,
-       0.815
-      ],
-      "hipR": [
-       0.71,
-       0.815
-      ],
-      "tail": [
-       0.489,
-       0.854
-      ]
+      "neck": [0.493,0.056],
+      "shoulderL": [0.227,0.222],
+      "shoulderR": [0.75,0.222],
+      "hipL": [0.267,0.815],
+      "hipR": [0.71,0.815],
+      "tail": [0.489,0.854]
      }
     }
    }
@@ -591,10 +378,7 @@
    "animal": "bear",
    "kind": "torso",
    "slot": "body",
-   "pivot": [
-    0.5,
-    0.5
-   ],
+   "pivot": [0.5,0.5],
    "size": "M",
    "views": {
     "front": {
@@ -602,30 +386,12 @@
      "w": 47,
      "h": 53,
      "sockets": {
-      "neck": [
-       0.489,
-       0.057
-      ],
-      "shoulderL": [
-       0.234,
-       0.226
-      ],
-      "shoulderR": [
-       0.745,
-       0.226
-      ],
-      "hipL": [
-       0.266,
-       0.811
-      ],
-      "hipR": [
-       0.713,
-       0.811
-      ],
-      "tail": [
-       0.851,
-       0.755
-      ]
+      "neck": [0.489,0.057],
+      "shoulderL": [0.234,0.226],
+      "shoulderR": [0.745,0.226],
+      "hipL": [0.266,0.811],
+      "hipR": [0.713,0.811],
+      "tail": [0.851,0.755]
      }
     },
     "back": {
@@ -633,30 +399,12 @@
      "w": 47,
      "h": 53,
      "sockets": {
-      "neck": [
-       0.493,
-       0.057
-      ],
-      "shoulderL": [
-       0.234,
-       0.226
-      ],
-      "shoulderR": [
-       0.745,
-       0.226
-      ],
-      "hipL": [
-       0.266,
-       0.811
-      ],
-      "hipR": [
-       0.713,
-       0.811
-      ],
-      "tail": [
-       0.489,
-       0.853
-      ]
+      "neck": [0.493,0.057],
+      "shoulderL": [0.234,0.226],
+      "shoulderR": [0.745,0.226],
+      "hipL": [0.266,0.811],
+      "hipR": [0.713,0.811],
+      "tail": [0.489,0.853]
      }
     }
    }
@@ -666,10 +414,7 @@
    "animal": "bird",
    "kind": "torso",
    "slot": "body",
-   "pivot": [
-    0.5,
-    0.5
-   ],
+   "pivot": [0.5,0.5],
    "size": "M",
    "views": {
     "front": {
@@ -677,30 +422,12 @@
      "w": 46,
      "h": 52,
      "sockets": {
-      "neck": [
-       0.489,
-       0.058
-      ],
-      "shoulderL": [
-       0.239,
-       0.212
-      ],
-      "shoulderR": [
-       0.739,
-       0.212
-      ],
-      "hipL": [
-       0.277,
-       0.808
-      ],
-      "hipR": [
-       0.701,
-       0.808
-      ],
-      "tail": [
-       0.848,
-       0.769
-      ]
+      "neck": [0.489,0.058],
+      "shoulderL": [0.239,0.212],
+      "shoulderR": [0.739,0.212],
+      "hipL": [0.277,0.808],
+      "hipR": [0.701,0.808],
+      "tail": [0.848,0.769]
      }
     },
     "back": {
@@ -708,30 +435,12 @@
      "w": 47,
      "h": 53,
      "sockets": {
-      "neck": [
-       0.489,
-       0.057
-      ],
-      "shoulderL": [
-       0.234,
-       0.226
-      ],
-      "shoulderR": [
-       0.745,
-       0.226
-      ],
-      "hipL": [
-       0.282,
-       0.811
-      ],
-      "hipR": [
-       0.718,
-       0.811
-      ],
-      "tail": [
-       0.489,
-       0.853
-      ]
+      "neck": [0.489,0.057],
+      "shoulderL": [0.234,0.226],
+      "shoulderR": [0.745,0.226],
+      "hipL": [0.282,0.811],
+      "hipR": [0.718,0.811],
+      "tail": [0.489,0.853]
      }
     }
    }
@@ -741,10 +450,7 @@
    "animal": "reptile",
    "kind": "torso",
    "slot": "body",
-   "pivot": [
-    0.5,
-    0.5
-   ],
+   "pivot": [0.5,0.5],
    "size": "M",
    "views": {
     "front": {
@@ -752,30 +458,12 @@
      "w": 44,
      "h": 53,
      "sockets": {
-      "neck": [
-       0.496,
-       0.057
-      ],
-      "shoulderL": [
-       0.273,
-       0.226
-      ],
-      "shoulderR": [
-       0.727,
-       0.226
-      ],
-      "hipL": [
-       0.267,
-       0.811
-      ],
-      "hipR": [
-       0.71,
-       0.811
-      ],
-      "tail": [
-       0.841,
-       0.755
-      ]
+      "neck": [0.496,0.057],
+      "shoulderL": [0.273,0.226],
+      "shoulderR": [0.727,0.226],
+      "hipL": [0.267,0.811],
+      "hipR": [0.71,0.811],
+      "tail": [0.841,0.755]
      }
     },
     "back": {
@@ -783,30 +471,12 @@
      "w": 46,
      "h": 54,
      "sockets": {
-      "neck": [
-       0.485,
-       0.056
-      ],
-      "shoulderL": [
-       0.261,
-       0.222
-      ],
-      "shoulderR": [
-       0.717,
-       0.222
-      ],
-      "hipL": [
-       0.266,
-       0.815
-      ],
-      "hipR": [
-       0.712,
-       0.815
-      ],
-      "tail": [
-       0.489,
-       0.854
-      ]
+      "neck": [0.485,0.056],
+      "shoulderL": [0.261,0.222],
+      "shoulderR": [0.717,0.222],
+      "hipL": [0.266,0.815],
+      "hipR": [0.712,0.815],
+      "tail": [0.489,0.854]
      }
     }
    }
@@ -816,41 +486,20 @@
    "animal": "cat",
    "kind": "arm",
    "slot": "front",
-   "pivot": [
-    0.5,
-    0.08
-   ],
+   "pivot": [0.5,0.08],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/cat_arm.png",
      "w": 33,
      "h": 41,
-     "sockets": {
-      "joint": [
-       0.648,
-       0.049
-      ],
-      "end": [
-       0.291,
-       0.927
-      ]
-     }
+     "sockets": {"joint":[0.648,0.049],"end":[0.291,0.927]}
     },
     "back": {
      "file": "next/parts/back/cat_arm.png",
      "w": 31,
      "h": 42,
-     "sockets": {
-      "joint": [
-       0.603,
-       0.048
-      ],
-      "end": [
-       0.331,
-       0.929
-      ]
-     }
+     "sockets": {"joint":[0.603,0.048],"end":[0.331,0.929]}
     }
    }
   },
@@ -859,41 +508,20 @@
    "animal": "rabbit",
    "kind": "arm",
    "slot": "front",
-   "pivot": [
-    0.5,
-    0.08
-   ],
+   "pivot": [0.5,0.08],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/rabbit_arm.png",
      "w": 30,
      "h": 43,
-     "sockets": {
-      "joint": [
-       0.676,
-       0.047
-      ],
-      "end": [
-       0.313,
-       0.93
-      ]
-     }
+     "sockets": {"joint":[0.676,0.047],"end":[0.313,0.93]}
     },
     "back": {
      "file": "next/parts/back/rabbit_arm.png",
      "w": 32,
      "h": 44,
-     "sockets": {
-      "joint": [
-       0.69,
-       0.045
-      ],
-      "end": [
-       0.324,
-       0.932
-      ]
-     }
+     "sockets": {"joint":[0.69,0.045],"end":[0.324,0.932]}
     }
    }
   },
@@ -902,41 +530,20 @@
    "animal": "fox",
    "kind": "arm",
    "slot": "front",
-   "pivot": [
-    0.5,
-    0.08
-   ],
+   "pivot": [0.5,0.08],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/fox_arm.png",
      "w": 35,
      "h": 42,
-     "sockets": {
-      "joint": [
-       0.669,
-       0.048
-      ],
-      "end": [
-       0.254,
-       0.929
-      ]
-     }
+     "sockets": {"joint":[0.669,0.048],"end":[0.254,0.929]}
     },
     "back": {
      "file": "next/parts/back/fox_arm.png",
      "w": 33,
      "h": 43,
-     "sockets": {
-      "joint": [
-       0.663,
-       0.047
-      ],
-      "end": [
-       0.308,
-       0.93
-      ]
-     }
+     "sockets": {"joint":[0.663,0.047],"end":[0.308,0.93]}
     }
    }
   },
@@ -945,41 +552,20 @@
    "animal": "bear",
    "kind": "arm",
    "slot": "front",
-   "pivot": [
-    0.5,
-    0.08
-   ],
+   "pivot": [0.5,0.08],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/bear_arm.png",
      "w": 36,
      "h": 42,
-     "sockets": {
-      "joint": [
-       0.694,
-       0.048
-      ],
-      "end": [
-       0.324,
-       0.929
-      ]
-     }
+     "sockets": {"joint":[0.694,0.048],"end":[0.324,0.929]}
     },
     "back": {
      "file": "next/parts/back/bear_arm.png",
      "w": 37,
      "h": 43,
-     "sockets": {
-      "joint": [
-       0.715,
-       0.047
-      ],
-      "end": [
-       0.312,
-       0.93
-      ]
-     }
+     "sockets": {"joint":[0.715,0.047],"end":[0.312,0.93]}
     }
    }
   },
@@ -988,41 +574,20 @@
    "animal": "bird",
    "kind": "arm",
    "slot": "front",
-   "pivot": [
-    0.5,
-    0.08
-   ],
+   "pivot": [0.5,0.08],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/bird_arm.png",
      "w": 40,
      "h": 43,
-     "sockets": {
-      "joint": [
-       0.67,
-       0.047
-      ],
-      "end": [
-       0.384,
-       0.93
-      ]
-     }
+     "sockets": {"joint":[0.67,0.047],"end":[0.384,0.93]}
     },
     "back": {
      "file": "next/parts/back/bird_arm.png",
      "w": 38,
      "h": 44,
-     "sockets": {
-      "joint": [
-       0.643,
-       0.045
-      ],
-      "end": [
-       0.325,
-       0.932
-      ]
-     }
+     "sockets": {"joint":[0.643,0.045],"end":[0.325,0.932]}
     }
    }
   },
@@ -1031,41 +596,20 @@
    "animal": "reptile",
    "kind": "arm",
    "slot": "front",
-   "pivot": [
-    0.5,
-    0.08
-   ],
+   "pivot": [0.5,0.08],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/reptile_arm.png",
      "w": 34,
      "h": 42,
-     "sockets": {
-      "joint": [
-       0.719,
-       0.048
-      ],
-      "end": [
-       0.397,
-       0.929
-      ]
-     }
+     "sockets": {"joint":[0.719,0.048],"end":[0.397,0.929]}
     },
     "back": {
      "file": "next/parts/back/reptile_arm.png",
      "w": 38,
      "h": 44,
-     "sockets": {
-      "joint": [
-       0.752,
-       0.045
-      ],
-      "end": [
-       0.382,
-       0.932
-      ]
-     }
+     "sockets": {"joint":[0.752,0.045],"end":[0.382,0.932]}
     }
    }
   },
@@ -1074,41 +618,20 @@
    "animal": "cat",
    "kind": "leg",
    "slot": "back",
-   "pivot": [
-    0.5,
-    0.1
-   ],
+   "pivot": [0.5,0.1],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/cat_leg.png",
      "w": 32,
      "h": 49,
-     "sockets": {
-      "joint": [
-       0.511,
-       0.041
-      ],
-      "end": [
-       0.356,
-       0.939
-      ]
-     }
+     "sockets": {"joint":[0.511,0.041],"end":[0.356,0.939]}
     },
     "back": {
      "file": "next/parts/back/cat_leg.png",
      "w": 31,
      "h": 48,
-     "sockets": {
-      "joint": [
-       0.5,
-       0.042
-      ],
-      "end": [
-       0.509,
-       0.938
-      ]
-     }
+     "sockets": {"joint":[0.5,0.042],"end":[0.509,0.938]}
     }
    }
   },
@@ -1117,41 +640,20 @@
    "animal": "rabbit",
    "kind": "leg",
    "slot": "back",
-   "pivot": [
-    0.5,
-    0.1
-   ],
+   "pivot": [0.5,0.1],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/rabbit_leg.png",
      "w": 32,
      "h": 50,
-     "sockets": {
-      "joint": [
-       0.506,
-       0.04
-      ],
-      "end": [
-       0.37,
-       0.94
-      ]
-     }
+     "sockets": {"joint":[0.506,0.04],"end":[0.37,0.94]}
     },
     "back": {
      "file": "next/parts/back/rabbit_leg.png",
      "w": 32,
      "h": 49,
-     "sockets": {
-      "joint": [
-       0.501,
-       0.041
-      ],
-      "end": [
-       0.517,
-       0.939
-      ]
-     }
+     "sockets": {"joint":[0.501,0.041],"end":[0.517,0.939]}
     }
    }
   },
@@ -1160,41 +662,20 @@
    "animal": "fox",
    "kind": "leg",
    "slot": "back",
-   "pivot": [
-    0.5,
-    0.1
-   ],
+   "pivot": [0.5,0.1],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/fox_leg.png",
      "w": 31,
      "h": 50,
-     "sockets": {
-      "joint": [
-       0.526,
-       0.04
-      ],
-      "end": [
-       0.34,
-       0.94
-      ]
-     }
+     "sockets": {"joint":[0.526,0.04],"end":[0.34,0.94]}
     },
     "back": {
      "file": "next/parts/back/fox_leg.png",
      "w": 30,
      "h": 48,
-     "sockets": {
-      "joint": [
-       0.49,
-       0.042
-      ],
-      "end": [
-       0.505,
-       0.938
-      ]
-     }
+     "sockets": {"joint":[0.49,0.042],"end":[0.505,0.938]}
     }
    }
   },
@@ -1203,41 +684,20 @@
    "animal": "bear",
    "kind": "leg",
    "slot": "back",
-   "pivot": [
-    0.5,
-    0.1
-   ],
+   "pivot": [0.5,0.1],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/bear_leg.png",
      "w": 38,
      "h": 52,
-     "sockets": {
-      "joint": [
-       0.544,
-       0.038
-      ],
-      "end": [
-       0.368,
-       0.942
-      ]
-     }
+     "sockets": {"joint":[0.544,0.038],"end":[0.368,0.942]}
     },
     "back": {
      "file": "next/parts/back/bear_leg.png",
      "w": 34,
      "h": 50,
-     "sockets": {
-      "joint": [
-       0.485,
-       0.04
-      ],
-      "end": [
-       0.536,
-       0.94
-      ]
-     }
+     "sockets": {"joint":[0.485,0.04],"end":[0.536,0.94]}
     }
    }
   },
@@ -1246,41 +706,20 @@
    "animal": "bird",
    "kind": "leg",
    "slot": "back",
-   "pivot": [
-    0.5,
-    0.1
-   ],
+   "pivot": [0.5,0.1],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/bird_leg.png",
      "w": 38,
      "h": 52,
-     "sockets": {
-      "joint": [
-       0.636,
-       0.038
-      ],
-      "end": [
-       0.358,
-       0.942
-      ]
-     }
+     "sockets": {"joint":[0.636,0.038],"end":[0.358,0.942]}
     },
     "back": {
      "file": "next/parts/back/bird_leg.png",
      "w": 36,
      "h": 50,
-     "sockets": {
-      "joint": [
-       0.486,
-       0.04
-      ],
-      "end": [
-       0.479,
-       0.94
-      ]
-     }
+     "sockets": {"joint":[0.486,0.04],"end":[0.479,0.94]}
     }
    }
   },
@@ -1289,41 +728,20 @@
    "animal": "reptile",
    "kind": "leg",
    "slot": "back",
-   "pivot": [
-    0.5,
-    0.1
-   ],
+   "pivot": [0.5,0.1],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/reptile_leg.png",
      "w": 35,
      "h": 51,
-     "sockets": {
-      "joint": [
-       0.633,
-       0.039
-      ],
-      "end": [
-       0.385,
-       0.941
-      ]
-     }
+     "sockets": {"joint":[0.633,0.039],"end":[0.385,0.941]}
     },
     "back": {
      "file": "next/parts/back/reptile_leg.png",
      "w": 34,
      "h": 49,
-     "sockets": {
-      "joint": [
-       0.489,
-       0.041
-      ],
-      "end": [
-       0.444,
-       0.939
-      ]
-     }
+     "sockets": {"joint":[0.489,0.041],"end":[0.444,0.939]}
     }
    }
   },
@@ -1332,41 +750,20 @@
    "animal": "cat",
    "kind": "tail",
    "slot": "signature",
-   "pivot": [
-    0.1,
-    0.5
-   ],
+   "pivot": [0.1,0.5],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/cat_tail.png",
      "w": 42,
      "h": 40,
-     "sockets": {
-      "base": [
-       0.16,
-       0.86
-      ],
-      "tip": [
-       0.62,
-       0.3
-      ]
-     }
+     "sockets": {"base":[0.16,0.86],"tip":[0.62,0.3]}
     },
     "back": {
      "file": "next/parts/back/cat_tail.png",
      "w": 41,
      "h": 41,
-     "sockets": {
-      "base": [
-       0.16,
-       0.86
-      ],
-      "tip": [
-       0.62,
-       0.3
-      ]
-     }
+     "sockets": {"base":[0.16,0.86],"tip":[0.62,0.3]}
     }
    }
   },
@@ -1375,10 +772,7 @@
    "animal": "rabbit",
    "kind": "tail",
    "slot": "signature",
-   "pivot": [
-    0.1,
-    0.5
-   ],
+   "pivot": [0.1,0.5],
    "size": "M",
    "views": {
     "front": {
@@ -1400,41 +794,20 @@
    "animal": "fox",
    "kind": "tail",
    "slot": "signature",
-   "pivot": [
-    0.1,
-    0.5
-   ],
+   "pivot": [0.1,0.5],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/fox_tail.png",
      "w": 42,
      "h": 40,
-     "sockets": {
-      "base": [
-       0.78,
-       0.25
-      ],
-      "tip": [
-       0.14,
-       0.85
-      ]
-     }
+     "sockets": {"base":[0.78,0.25],"tip":[0.14,0.85]}
     },
     "back": {
      "file": "next/parts/back/fox_tail.png",
      "w": 43,
      "h": 42,
-     "sockets": {
-      "base": [
-       0.22,
-       0.25
-      ],
-      "tip": [
-       0.86,
-       0.85
-      ]
-     }
+     "sockets": {"base":[0.22,0.25],"tip":[0.86,0.85]}
     }
    }
   },
@@ -1443,10 +816,7 @@
    "animal": "bear",
    "kind": "tail",
    "slot": "signature",
-   "pivot": [
-    0.1,
-    0.5
-   ],
+   "pivot": [0.1,0.5],
    "size": "M",
    "views": {
     "front": {
@@ -1468,10 +838,7 @@
    "animal": "bird",
    "kind": "tail",
    "slot": "signature",
-   "pivot": [
-    0.1,
-    0.5
-   ],
+   "pivot": [0.1,0.5],
    "size": "M",
    "views": {
     "front": {
@@ -1493,41 +860,20 @@
    "animal": "reptile",
    "kind": "tail",
    "slot": "signature",
-   "pivot": [
-    0.1,
-    0.5
-   ],
+   "pivot": [0.1,0.5],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/reptile_tail.png",
      "w": 42,
      "h": 37,
-     "sockets": {
-      "base": [
-       0.08,
-       0.7
-      ],
-      "tip": [
-       0.94,
-       0.1
-      ]
-     }
+     "sockets": {"base":[0.08,0.7],"tip":[0.94,0.1]}
     },
     "back": {
      "file": "next/parts/back/reptile_tail.png",
      "w": 43,
      "h": 38,
-     "sockets": {
-      "base": [
-       0.92,
-       0.82
-      ],
-      "tip": [
-       0.06,
-       0.12
-      ]
-     }
+     "sockets": {"base":[0.92,0.82],"tip":[0.06,0.12]}
     }
    }
   },
@@ -1536,10 +882,7 @@
    "animal": "any",
    "kind": "horn",
    "slot": "head-extra",
-   "pivot": [
-    0.5,
-    0.95
-   ],
+   "pivot": [0.5,0.95],
    "size": "M",
    "views": {
     "front": {
@@ -1561,10 +904,7 @@
    "animal": "any",
    "kind": "spikes",
    "slot": "signature",
-   "pivot": [
-    0.5,
-    0.95
-   ],
+   "pivot": [0.5,0.95],
    "size": "M",
    "views": {
     "front": {
@@ -1586,10 +926,7 @@
    "animal": "any",
    "kind": "mane",
    "slot": "signature",
-   "pivot": [
-    0.5,
-    0.6
-   ],
+   "pivot": [0.5,0.6],
    "size": "M",
    "views": {
     "front": {
@@ -1611,10 +948,7 @@
    "animal": "any",
    "kind": "shell",
    "slot": "body-extra",
-   "pivot": [
-    0.5,
-    0.6
-   ],
+   "pivot": [0.5,0.6],
    "size": "M",
    "views": {
     "front": {
@@ -1636,33 +970,20 @@
    "animal": "chick",
    "kind": "head",
    "slot": "head",
-   "pivot": [
-    0.5,
-    0.92
-   ],
+   "pivot": [0.5,0.92],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/chick_head.png",
      "w": 46,
      "h": 44,
-     "sockets": {
-      "chin": [
-       0.486,
-       0.909
-      ]
-     }
+     "sockets": {"chin":[0.486,0.909]}
     },
     "back": {
      "file": "next/parts/back/chick_head.png",
      "w": 46,
      "h": 44,
-     "sockets": {
-      "chin": [
-       0.478,
-       0.909
-      ]
-     }
+     "sockets": {"chin":[0.478,0.909]}
     }
    }
   },
@@ -1671,33 +992,20 @@
    "animal": "duck",
    "kind": "head",
    "slot": "head",
-   "pivot": [
-    0.5,
-    0.92
-   ],
+   "pivot": [0.5,0.92],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/duck_head.png",
      "w": 43,
      "h": 43,
-     "sockets": {
-      "chin": [
-       0.488,
-       0.907
-      ]
-     }
+     "sockets": {"chin":[0.488,0.907]}
     },
     "back": {
      "file": "next/parts/back/duck_head.png",
      "w": 44,
      "h": 44,
-     "sockets": {
-      "chin": [
-       0.489,
-       0.909
-      ]
-     }
+     "sockets": {"chin":[0.489,0.909]}
     }
    }
   },
@@ -1706,33 +1014,20 @@
    "animal": "owl",
    "kind": "head",
    "slot": "head",
-   "pivot": [
-    0.5,
-    0.92
-   ],
+   "pivot": [0.5,0.92],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/owl_head.png",
      "w": 46,
      "h": 41,
-     "sockets": {
-      "chin": [
-       0.491,
-       0.902
-      ]
-     }
+     "sockets": {"chin":[0.491,0.902]}
     },
     "back": {
      "file": "next/parts/back/owl_head.png",
      "w": 46,
      "h": 42,
-     "sockets": {
-      "chin": [
-       0.487,
-       0.905
-      ]
-     }
+     "sockets": {"chin":[0.487,0.905]}
     }
    }
   },
@@ -1741,33 +1036,20 @@
    "animal": "sparrow",
    "kind": "head",
    "slot": "head",
-   "pivot": [
-    0.5,
-    0.92
-   ],
+   "pivot": [0.5,0.92],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/sparrow_head.png",
      "w": 45,
      "h": 40,
-     "sockets": {
-      "chin": [
-       0.489,
-       0.9
-      ]
-     }
+     "sockets": {"chin":[0.489,0.9]}
     },
     "back": {
      "file": "next/parts/back/sparrow_head.png",
      "w": 45,
      "h": 40,
-     "sockets": {
-      "chin": [
-       0.478,
-       0.9
-      ]
-     }
+     "sockets": {"chin":[0.478,0.9]}
     }
    }
   },
@@ -1776,33 +1058,20 @@
    "animal": "eagle",
    "kind": "head",
    "slot": "head",
-   "pivot": [
-    0.5,
-    0.92
-   ],
+   "pivot": [0.5,0.92],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/eagle_head.png",
      "w": 44,
      "h": 44,
-     "sockets": {
-      "chin": [
-       0.482,
-       0.909
-      ]
-     }
+     "sockets": {"chin":[0.482,0.909]}
     },
     "back": {
      "file": "next/parts/back/eagle_head.png",
      "w": 45,
      "h": 44,
-     "sockets": {
-      "chin": [
-       0.489,
-       0.909
-      ]
-     }
+     "sockets": {"chin":[0.489,0.909]}
     }
    }
   },
@@ -1811,33 +1080,20 @@
    "animal": "hawk",
    "kind": "head",
    "slot": "head",
-   "pivot": [
-    0.5,
-    0.92
-   ],
+   "pivot": [0.5,0.92],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/hawk_head.png",
      "w": 46,
      "h": 45,
-     "sockets": {
-      "chin": [
-       0.489,
-       0.911
-      ]
-     }
+     "sockets": {"chin":[0.489,0.911]}
     },
     "back": {
      "file": "next/parts/back/hawk_head.png",
      "w": 46,
      "h": 45,
-     "sockets": {
-      "chin": [
-       0.489,
-       0.911
-      ]
-     }
+     "sockets": {"chin":[0.489,0.911]}
     }
    }
   },
@@ -1846,10 +1102,7 @@
    "animal": "chick",
    "kind": "crest",
    "slot": "head-extra",
-   "pivot": [
-    0.5,
-    0.95
-   ],
+   "pivot": [0.5,0.95],
    "size": "M",
    "views": {
     "front": {
@@ -1871,10 +1124,7 @@
    "animal": "duck",
    "kind": "crest",
    "slot": "head-extra",
-   "pivot": [
-    0.5,
-    0.95
-   ],
+   "pivot": [0.5,0.95],
    "size": "M",
    "views": {
     "front": {
@@ -1896,10 +1146,7 @@
    "animal": "owl",
    "kind": "crest",
    "slot": "head-extra",
-   "pivot": [
-    0.5,
-    0.95
-   ],
+   "pivot": [0.5,0.95],
    "size": "M",
    "views": {
     "front": {
@@ -1921,10 +1168,7 @@
    "animal": "sparrow",
    "kind": "crest",
    "slot": "head-extra",
-   "pivot": [
-    0.5,
-    0.95
-   ],
+   "pivot": [0.5,0.95],
    "size": "M",
    "views": {
     "front": {
@@ -1946,10 +1190,7 @@
    "animal": "eagle",
    "kind": "crest",
    "slot": "head-extra",
-   "pivot": [
-    0.5,
-    0.95
-   ],
+   "pivot": [0.5,0.95],
    "size": "M",
    "views": {
     "front": {
@@ -1971,10 +1212,7 @@
    "animal": "hawk",
    "kind": "crest",
    "slot": "head-extra",
-   "pivot": [
-    0.5,
-    0.95
-   ],
+   "pivot": [0.5,0.95],
    "size": "M",
    "views": {
     "front": {
@@ -1996,10 +1234,7 @@
    "animal": "chick",
    "kind": "torso",
    "slot": "body",
-   "pivot": [
-    0.5,
-    0.5
-   ],
+   "pivot": [0.5,0.5],
    "size": "M",
    "views": {
     "front": {
@@ -2007,30 +1242,12 @@
      "w": 46,
      "h": 47,
      "sockets": {
-      "neck": [
-       0.489,
-       0.064
-      ],
-      "shoulderL": [
-       0.261,
-       0.213
-      ],
-      "shoulderR": [
-       0.717,
-       0.213
-      ],
-      "hipL": [
-       0.353,
-       0.809
-      ],
-      "hipR": [
-       0.625,
-       0.809
-      ],
-      "tail": [
-       0.739,
-       0.766
-      ]
+      "neck": [0.489,0.064],
+      "shoulderL": [0.261,0.213],
+      "shoulderR": [0.717,0.213],
+      "hipL": [0.353,0.809],
+      "hipR": [0.625,0.809],
+      "tail": [0.739,0.766]
      }
     },
     "back": {
@@ -2038,30 +1255,12 @@
      "w": 45,
      "h": 47,
      "sockets": {
-      "neck": [
-       0.497,
-       0.064
-      ],
-      "shoulderL": [
-       0.267,
-       0.213
-      ],
-      "shoulderR": [
-       0.733,
-       0.213
-      ],
-      "hipL": [
-       0.344,
-       0.809
-      ],
-      "hipR": [
-       0.633,
-       0.809
-      ],
-      "tail": [
-       0.489,
-       0.847
-      ]
+      "neck": [0.497,0.064],
+      "shoulderL": [0.267,0.213],
+      "shoulderR": [0.733,0.213],
+      "hipL": [0.344,0.809],
+      "hipR": [0.633,0.809],
+      "tail": [0.489,0.847]
      }
     }
    }
@@ -2071,10 +1270,7 @@
    "animal": "duck",
    "kind": "torso",
    "slot": "body",
-   "pivot": [
-    0.5,
-    0.5
-   ],
+   "pivot": [0.5,0.5],
    "size": "M",
    "views": {
     "front": {
@@ -2082,30 +1278,12 @@
      "w": 46,
      "h": 46,
      "sockets": {
-      "neck": [
-       0.489,
-       0.065
-      ],
-      "shoulderL": [
-       0.326,
-       0.217
-      ],
-      "shoulderR": [
-       0.652,
-       0.217
-      ],
-      "hipL": [
-       0.315,
-       0.804
-      ],
-      "hipR": [
-       0.685,
-       0.804
-      ],
-      "tail": [
-       0.804,
-       0.761
-      ]
+      "neck": [0.489,0.065],
+      "shoulderL": [0.326,0.217],
+      "shoulderR": [0.652,0.217],
+      "hipL": [0.315,0.804],
+      "hipR": [0.685,0.804],
+      "tail": [0.804,0.761]
      }
     },
     "back": {
@@ -2113,30 +1291,12 @@
      "w": 46,
      "h": 46,
      "sockets": {
-      "neck": [
-       0.5,
-       0.065
-      ],
-      "shoulderL": [
-       0.326,
-       0.217
-      ],
-      "shoulderR": [
-       0.652,
-       0.217
-      ],
-      "hipL": [
-       0.326,
-       0.804
-      ],
-      "hipR": [
-       0.674,
-       0.804
-      ],
-      "tail": [
-       0.489,
-       0.846
-      ]
+      "neck": [0.5,0.065],
+      "shoulderL": [0.326,0.217],
+      "shoulderR": [0.652,0.217],
+      "hipL": [0.326,0.804],
+      "hipR": [0.674,0.804],
+      "tail": [0.489,0.846]
      }
     }
    }
@@ -2146,10 +1306,7 @@
    "animal": "owl",
    "kind": "torso",
    "slot": "body",
-   "pivot": [
-    0.5,
-    0.5
-   ],
+   "pivot": [0.5,0.5],
    "size": "M",
    "views": {
     "front": {
@@ -2157,30 +1314,12 @@
      "w": 45,
      "h": 48,
      "sockets": {
-      "neck": [
-       0.489,
-       0.062
-      ],
-      "shoulderL": [
-       0.222,
-       0.229
-      ],
-      "shoulderR": [
-       0.778,
-       0.229
-      ],
-      "hipL": [
-       0.322,
-       0.812
-      ],
-      "hipR": [
-       0.656,
-       0.812
-      ],
-      "tail": [
-       0.756,
-       0.75
-      ]
+      "neck": [0.489,0.062],
+      "shoulderL": [0.222,0.229],
+      "shoulderR": [0.778,0.229],
+      "hipL": [0.322,0.812],
+      "hipR": [0.656,0.812],
+      "tail": [0.756,0.75]
      }
     },
     "back": {
@@ -2188,30 +1327,12 @@
      "w": 44,
      "h": 48,
      "sockets": {
-      "neck": [
-       0.492,
-       0.062
-      ],
-      "shoulderL": [
-       0.227,
-       0.229
-      ],
-      "shoulderR": [
-       0.75,
-       0.229
-      ],
-      "hipL": [
-       0.347,
-       0.812
-      ],
-      "hipR": [
-       0.631,
-       0.812
-      ],
-      "tail": [
-       0.477,
-       0.848
-      ]
+      "neck": [0.492,0.062],
+      "shoulderL": [0.227,0.229],
+      "shoulderR": [0.75,0.229],
+      "hipL": [0.347,0.812],
+      "hipR": [0.631,0.812],
+      "tail": [0.477,0.848]
      }
     }
    }
@@ -2221,10 +1342,7 @@
    "animal": "sparrow",
    "kind": "torso",
    "slot": "body",
-   "pivot": [
-    0.5,
-    0.5
-   ],
+   "pivot": [0.5,0.5],
    "size": "M",
    "views": {
     "front": {
@@ -2232,30 +1350,12 @@
      "w": 45,
      "h": 44,
      "sockets": {
-      "neck": [
-       0.489,
-       0.068
-      ],
-      "shoulderL": [
-       0.289,
-       0.227
-      ],
-      "shoulderR": [
-       0.689,
-       0.227
-      ],
-      "hipL": [
-       0.322,
-       0.818
-      ],
-      "hipR": [
-       0.656,
-       0.818
-      ],
-      "tail": [
-       0.778,
-       0.75
-      ]
+      "neck": [0.489,0.068],
+      "shoulderL": [0.289,0.227],
+      "shoulderR": [0.689,0.227],
+      "hipL": [0.322,0.818],
+      "hipR": [0.656,0.818],
+      "tail": [0.778,0.75]
      }
     },
     "back": {
@@ -2263,30 +1363,12 @@
      "w": 44,
      "h": 44,
      "sockets": {
-      "neck": [
-       0.489,
-       0.068
-      ],
-      "shoulderL": [
-       0.273,
-       0.227
-      ],
-      "shoulderR": [
-       0.705,
-       0.227
-      ],
-      "hipL": [
-       0.324,
-       0.818
-      ],
-      "hipR": [
-       0.653,
-       0.818
-      ],
-      "tail": [
-       0.489,
-       0.843
-      ]
+      "neck": [0.489,0.068],
+      "shoulderL": [0.273,0.227],
+      "shoulderR": [0.705,0.227],
+      "hipL": [0.324,0.818],
+      "hipR": [0.653,0.818],
+      "tail": [0.489,0.843]
      }
     }
    }
@@ -2296,10 +1378,7 @@
    "animal": "eagle",
    "kind": "torso",
    "slot": "body",
-   "pivot": [
-    0.5,
-    0.5
-   ],
+   "pivot": [0.5,0.5],
    "size": "M",
    "views": {
     "front": {
@@ -2307,30 +1386,12 @@
      "w": 43,
      "h": 48,
      "sockets": {
-      "neck": [
-       0.488,
-       0.062
-      ],
-      "shoulderL": [
-       0.209,
-       0.229
-      ],
-      "shoulderR": [
-       0.767,
-       0.229
-      ],
-      "hipL": [
-       0.36,
-       0.812
-      ],
-      "hipR": [
-       0.616,
-       0.812
-      ],
-      "tail": [
-       0.744,
-       0.75
-      ]
+      "neck": [0.488,0.062],
+      "shoulderL": [0.209,0.229],
+      "shoulderR": [0.767,0.229],
+      "hipL": [0.36,0.812],
+      "hipR": [0.616,0.812],
+      "tail": [0.744,0.75]
      }
     },
     "back": {
@@ -2338,30 +1399,12 @@
      "w": 44,
      "h": 48,
      "sockets": {
-      "neck": [
-       0.496,
-       0.062
-      ],
-      "shoulderL": [
-       0.205,
-       0.229
-      ],
-      "shoulderR": [
-       0.773,
-       0.229
-      ],
-      "hipL": [
-       0.364,
-       0.812
-      ],
-      "hipR": [
-       0.636,
-       0.812
-      ],
-      "tail": [
-       0.489,
-       0.848
-      ]
+      "neck": [0.496,0.062],
+      "shoulderL": [0.205,0.229],
+      "shoulderR": [0.773,0.229],
+      "hipL": [0.364,0.812],
+      "hipR": [0.636,0.812],
+      "tail": [0.489,0.848]
      }
     }
    }
@@ -2371,10 +1414,7 @@
    "animal": "hawk",
    "kind": "torso",
    "slot": "body",
-   "pivot": [
-    0.5,
-    0.5
-   ],
+   "pivot": [0.5,0.5],
    "size": "M",
    "views": {
     "front": {
@@ -2382,30 +1422,12 @@
      "w": 46,
      "h": 51,
      "sockets": {
-      "neck": [
-       0.489,
-       0.059
-      ],
-      "shoulderL": [
-       0.261,
-       0.216
-      ],
-      "shoulderR": [
-       0.739,
-       0.216
-      ],
-      "hipL": [
-       0.321,
-       0.824
-      ],
-      "hipR": [
-       0.658,
-       0.824
-      ],
-      "tail": [
-       0.804,
-       0.765
-      ]
+      "neck": [0.489,0.059],
+      "shoulderL": [0.261,0.216],
+      "shoulderR": [0.739,0.216],
+      "hipL": [0.321,0.824],
+      "hipR": [0.658,0.824],
+      "tail": [0.804,0.765]
      }
     },
     "back": {
@@ -2413,30 +1435,12 @@
      "w": 46,
      "h": 50,
      "sockets": {
-      "neck": [
-       0.489,
-       0.06
-      ],
-      "shoulderL": [
-       0.239,
-       0.22
-      ],
-      "shoulderR": [
-       0.739,
-       0.22
-      ],
-      "hipL": [
-       0.321,
-       0.82
-      ],
-      "hipR": [
-       0.658,
-       0.82
-      ],
-      "tail": [
-       0.489,
-       0.85
-      ]
+      "neck": [0.489,0.06],
+      "shoulderL": [0.239,0.22],
+      "shoulderR": [0.739,0.22],
+      "hipL": [0.321,0.82],
+      "hipR": [0.658,0.82],
+      "tail": [0.489,0.85]
      }
     }
    }
@@ -2446,41 +1450,20 @@
    "animal": "chick",
    "kind": "wing",
    "slot": "front",
-   "pivot": [
-    0.85,
-    0.08
-   ],
+   "pivot": [0.85,0.08],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/chick_wing.png",
      "w": 38,
      "h": 42,
-     "sockets": {
-      "joint": [
-       0.754,
-       0.048
-      ],
-      "end": [
-       0.43,
-       0.929
-      ]
-     }
+     "sockets": {"joint":[0.754,0.048],"end":[0.43,0.929]}
     },
     "back": {
      "file": "next/parts/back/chick_wing.png",
      "w": 36,
      "h": 44,
-     "sockets": {
-      "joint": [
-       0.727,
-       0.045
-      ],
-      "end": [
-       0.371,
-       0.932
-      ]
-     }
+     "sockets": {"joint":[0.727,0.045],"end":[0.371,0.932]}
     }
    }
   },
@@ -2489,41 +1472,20 @@
    "animal": "duck",
    "kind": "wing",
    "slot": "front",
-   "pivot": [
-    0.85,
-    0.08
-   ],
+   "pivot": [0.85,0.08],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/duck_wing.png",
      "w": 46,
      "h": 50,
-     "sockets": {
-      "joint": [
-       0.772,
-       0.04
-      ],
-      "end": [
-       0.109,
-       0.94
-      ]
-     }
+     "sockets": {"joint":[0.772,0.04],"end":[0.109,0.94]}
     },
     "back": {
      "file": "next/parts/back/duck_wing.png",
      "w": 45,
      "h": 52,
-     "sockets": {
-      "joint": [
-       0.776,
-       0.038
-      ],
-      "end": [
-       0.111,
-       0.942
-      ]
-     }
+     "sockets": {"joint":[0.776,0.038],"end":[0.111,0.942]}
     }
    }
   },
@@ -2532,41 +1494,20 @@
    "animal": "owl",
    "kind": "wing",
    "slot": "front",
-   "pivot": [
-    0.85,
-    0.08
-   ],
+   "pivot": [0.85,0.08],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/owl_wing.png",
      "w": 42,
      "h": 47,
-     "sockets": {
-      "joint": [
-       0.74,
-       0.043
-      ],
-      "end": [
-       0.234,
-       0.936
-      ]
-     }
+     "sockets": {"joint":[0.74,0.043],"end":[0.234,0.936]}
     },
     "back": {
      "file": "next/parts/back/owl_wing.png",
      "w": 42,
      "h": 48,
-     "sockets": {
-      "joint": [
-       0.762,
-       0.042
-      ],
-      "end": [
-       0.245,
-       0.938
-      ]
-     }
+     "sockets": {"joint":[0.762,0.042],"end":[0.245,0.938]}
     }
    }
   },
@@ -2575,41 +1516,20 @@
    "animal": "sparrow",
    "kind": "wing",
    "slot": "front",
-   "pivot": [
-    0.85,
-    0.08
-   ],
+   "pivot": [0.85,0.08],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/sparrow_wing.png",
      "w": 44,
      "h": 43,
-     "sockets": {
-      "joint": [
-       0.763,
-       0.047
-      ],
-      "end": [
-       0.298,
-       0.93
-      ]
-     }
+     "sockets": {"joint":[0.763,0.047],"end":[0.298,0.93]}
     },
     "back": {
      "file": "next/parts/back/sparrow_wing.png",
      "w": 43,
      "h": 45,
-     "sockets": {
-      "joint": [
-       0.758,
-       0.044
-      ],
-      "end": [
-       0.262,
-       0.933
-      ]
-     }
+     "sockets": {"joint":[0.758,0.044],"end":[0.262,0.933]}
     }
    }
   },
@@ -2618,41 +1538,20 @@
    "animal": "eagle",
    "kind": "wing",
    "slot": "front",
-   "pivot": [
-    0.85,
-    0.08
-   ],
+   "pivot": [0.85,0.08],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/eagle_wing.png",
      "w": 48,
      "h": 63,
-     "sockets": {
-      "joint": [
-       0.801,
-       0.032
-      ],
-      "end": [
-       0.128,
-       0.952
-      ]
-     }
+     "sockets": {"joint":[0.801,0.032],"end":[0.128,0.952]}
     },
     "back": {
      "file": "next/parts/back/eagle_wing.png",
      "w": 44,
      "h": 64,
-     "sockets": {
-      "joint": [
-       0.771,
-       0.031
-      ],
-      "end": [
-       0.114,
-       0.953
-      ]
-     }
+     "sockets": {"joint":[0.771,0.031],"end":[0.114,0.953]}
     }
    }
   },
@@ -2661,41 +1560,20 @@
    "animal": "hawk",
    "kind": "wing",
    "slot": "front",
-   "pivot": [
-    0.85,
-    0.08
-   ],
+   "pivot": [0.85,0.08],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/hawk_wing.png",
      "w": 44,
      "h": 52,
-     "sockets": {
-      "joint": [
-       0.757,
-       0.038
-      ],
-      "end": [
-       0.111,
-       0.942
-      ]
-     }
+     "sockets": {"joint":[0.757,0.038],"end":[0.111,0.942]}
     },
     "back": {
      "file": "next/parts/back/hawk_wing.png",
      "w": 44,
      "h": 53,
-     "sockets": {
-      "joint": [
-       0.771,
-       0.038
-      ],
-      "end": [
-       0.124,
-       0.943
-      ]
-     }
+     "sockets": {"joint":[0.771,0.038],"end":[0.124,0.943]}
     }
    }
   },
@@ -2704,41 +1582,20 @@
    "animal": "chick",
    "kind": "foot",
    "slot": "back",
-   "pivot": [
-    0.5,
-    0.05
-   ],
+   "pivot": [0.5,0.05],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/chick_foot.png",
      "w": 32,
      "h": 41,
-     "sockets": {
-      "joint": [
-       0.632,
-       0.049
-      ],
-      "end": [
-       0.342,
-       0.927
-      ]
-     }
+     "sockets": {"joint":[0.632,0.049],"end":[0.342,0.927]}
     },
     "back": {
      "file": "next/parts/back/chick_foot.png",
      "w": 36,
      "h": 41,
-     "sockets": {
-      "joint": [
-       0.514,
-       0.049
-      ],
-      "end": [
-       0.444,
-       0.927
-      ]
-     }
+     "sockets": {"joint":[0.514,0.049],"end":[0.444,0.927]}
     }
    }
   },
@@ -2747,41 +1604,20 @@
    "animal": "duck",
    "kind": "foot",
    "slot": "back",
-   "pivot": [
-    0.5,
-    0.05
-   ],
+   "pivot": [0.5,0.05],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/duck_foot.png",
      "w": 32,
      "h": 43,
-     "sockets": {
-      "joint": [
-       0.503,
-       0.047
-      ],
-      "end": [
-       0.473,
-       0.93
-      ]
-     }
+     "sockets": {"joint":[0.503,0.047],"end":[0.473,0.93]}
     },
     "back": {
      "file": "next/parts/back/duck_foot.png",
      "w": 32,
      "h": 43,
-     "sockets": {
-      "joint": [
-       0.5,
-       0.047
-      ],
-      "end": [
-       0.484,
-       0.93
-      ]
-     }
+     "sockets": {"joint":[0.5,0.047],"end":[0.484,0.93]}
     }
    }
   },
@@ -2790,41 +1626,20 @@
    "animal": "owl",
    "kind": "foot",
    "slot": "back",
-   "pivot": [
-    0.5,
-    0.05
-   ],
+   "pivot": [0.5,0.05],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/owl_foot.png",
      "w": 38,
      "h": 42,
-     "sockets": {
-      "joint": [
-       0.526,
-       0.048
-      ],
-      "end": [
-       0.548,
-       0.929
-      ]
-     }
+     "sockets": {"joint":[0.526,0.048],"end":[0.548,0.929]}
     },
     "back": {
      "file": "next/parts/back/owl_foot.png",
      "w": 40,
      "h": 44,
-     "sockets": {
-      "joint": [
-       0.522,
-       0.045
-      ],
-      "end": [
-       0.5,
-       0.932
-      ]
-     }
+     "sockets": {"joint":[0.522,0.045],"end":[0.5,0.932]}
     }
    }
   },
@@ -2833,41 +1648,20 @@
    "animal": "sparrow",
    "kind": "foot",
    "slot": "back",
-   "pivot": [
-    0.5,
-    0.05
-   ],
+   "pivot": [0.5,0.05],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/sparrow_foot.png",
      "w": 32,
      "h": 43,
-     "sockets": {
-      "joint": [
-       0.5,
-       0.047
-      ],
-      "end": [
-       0.319,
-       0.93
-      ]
-     }
+     "sockets": {"joint":[0.5,0.047],"end":[0.319,0.93]}
     },
     "back": {
      "file": "next/parts/back/sparrow_foot.png",
      "w": 34,
      "h": 42,
-     "sockets": {
-      "joint": [
-       0.497,
-       0.048
-      ],
-      "end": [
-       0.471,
-       0.929
-      ]
-     }
+     "sockets": {"joint":[0.497,0.048],"end":[0.471,0.929]}
     }
    }
   },
@@ -2876,41 +1670,20 @@
    "animal": "eagle",
    "kind": "foot",
    "slot": "back",
-   "pivot": [
-    0.5,
-    0.05
-   ],
+   "pivot": [0.5,0.05],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/eagle_foot.png",
      "w": 36,
      "h": 44,
-     "sockets": {
-      "joint": [
-       0.517,
-       0.045
-      ],
-      "end": [
-       0.608,
-       0.932
-      ]
-     }
+     "sockets": {"joint":[0.517,0.045],"end":[0.608,0.932]}
     },
     "back": {
      "file": "next/parts/back/eagle_foot.png",
      "w": 39,
      "h": 43,
-     "sockets": {
-      "joint": [
-       0.528,
-       0.047
-      ],
-      "end": [
-       0.469,
-       0.93
-      ]
-     }
+     "sockets": {"joint":[0.528,0.047],"end":[0.469,0.93]}
     }
    }
   },
@@ -2919,41 +1692,20 @@
    "animal": "hawk",
    "kind": "foot",
    "slot": "back",
-   "pivot": [
-    0.5,
-    0.05
-   ],
+   "pivot": [0.5,0.05],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/hawk_foot.png",
      "w": 38,
      "h": 44,
-     "sockets": {
-      "joint": [
-       0.458,
-       0.045
-      ],
-      "end": [
-       0.447,
-       0.932
-      ]
-     }
+     "sockets": {"joint":[0.458,0.045],"end":[0.447,0.932]}
     },
     "back": {
      "file": "next/parts/back/hawk_foot.png",
      "w": 38,
      "h": 43,
-     "sockets": {
-      "joint": [
-       0.494,
-       0.047
-      ],
-      "end": [
-       0.487,
-       0.93
-      ]
-     }
+     "sockets": {"joint":[0.494,0.047],"end":[0.487,0.93]}
     }
    }
   },
@@ -2962,41 +1714,20 @@
    "animal": "chick",
    "kind": "tail",
    "slot": "signature",
-   "pivot": [
-    0.1,
-    0.5
-   ],
+   "pivot": [0.1,0.5],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/chick_tail.png",
      "w": 37,
      "h": 35,
-     "sockets": {
-      "base": [
-       0.5,
-       0.08
-      ],
-      "tip": [
-       0.5,
-       0.95
-      ]
-     }
+     "sockets": {"base":[0.5,0.08],"tip":[0.5,0.95]}
     },
     "back": {
      "file": "next/parts/back/chick_tail.png",
      "w": 38,
      "h": 36,
-     "sockets": {
-      "base": [
-       0.5,
-       0.08
-      ],
-      "tip": [
-       0.5,
-       0.95
-      ]
-     }
+     "sockets": {"base":[0.5,0.08],"tip":[0.5,0.95]}
     }
    }
   },
@@ -3005,41 +1736,20 @@
    "animal": "duck",
    "kind": "tail",
    "slot": "signature",
-   "pivot": [
-    0.1,
-    0.5
-   ],
+   "pivot": [0.1,0.5],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/duck_tail.png",
      "w": 38,
      "h": 47,
-     "sockets": {
-      "base": [
-       0.5,
-       0.08
-      ],
-      "tip": [
-       0.5,
-       0.95
-      ]
-     }
+     "sockets": {"base":[0.5,0.08],"tip":[0.5,0.95]}
     },
     "back": {
      "file": "next/parts/back/duck_tail.png",
      "w": 39,
      "h": 48,
-     "sockets": {
-      "base": [
-       0.5,
-       0.08
-      ],
-      "tip": [
-       0.5,
-       0.95
-      ]
-     }
+     "sockets": {"base":[0.5,0.08],"tip":[0.5,0.95]}
     }
    }
   },
@@ -3048,41 +1758,20 @@
    "animal": "owl",
    "kind": "tail",
    "slot": "signature",
-   "pivot": [
-    0.1,
-    0.5
-   ],
+   "pivot": [0.1,0.5],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/owl_tail.png",
      "w": 45,
      "h": 40,
-     "sockets": {
-      "base": [
-       0.5,
-       0.08
-      ],
-      "tip": [
-       0.5,
-       0.95
-      ]
-     }
+     "sockets": {"base":[0.5,0.08],"tip":[0.5,0.95]}
     },
     "back": {
      "file": "next/parts/back/owl_tail.png",
      "w": 45,
      "h": 41,
-     "sockets": {
-      "base": [
-       0.5,
-       0.08
-      ],
-      "tip": [
-       0.5,
-       0.95
-      ]
-     }
+     "sockets": {"base":[0.5,0.08],"tip":[0.5,0.95]}
     }
    }
   },
@@ -3091,41 +1780,20 @@
    "animal": "sparrow",
    "kind": "tail",
    "slot": "signature",
-   "pivot": [
-    0.1,
-    0.5
-   ],
+   "pivot": [0.1,0.5],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/sparrow_tail.png",
      "w": 41,
      "h": 42,
-     "sockets": {
-      "base": [
-       0.5,
-       0.08
-      ],
-      "tip": [
-       0.5,
-       0.95
-      ]
-     }
+     "sockets": {"base":[0.5,0.08],"tip":[0.5,0.95]}
     },
     "back": {
      "file": "next/parts/back/sparrow_tail.png",
      "w": 41,
      "h": 42,
-     "sockets": {
-      "base": [
-       0.5,
-       0.08
-      ],
-      "tip": [
-       0.5,
-       0.95
-      ]
-     }
+     "sockets": {"base":[0.5,0.08],"tip":[0.5,0.95]}
     }
    }
   },
@@ -3134,41 +1802,20 @@
    "animal": "eagle",
    "kind": "tail",
    "slot": "signature",
-   "pivot": [
-    0.1,
-    0.5
-   ],
+   "pivot": [0.1,0.5],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/eagle_tail.png",
      "w": 39,
      "h": 49,
-     "sockets": {
-      "base": [
-       0.5,
-       0.08
-      ],
-      "tip": [
-       0.5,
-       0.95
-      ]
-     }
+     "sockets": {"base":[0.5,0.08],"tip":[0.5,0.95]}
     },
     "back": {
      "file": "next/parts/back/eagle_tail.png",
      "w": 38,
      "h": 50,
-     "sockets": {
-      "base": [
-       0.5,
-       0.08
-      ],
-      "tip": [
-       0.5,
-       0.95
-      ]
-     }
+     "sockets": {"base":[0.5,0.08],"tip":[0.5,0.95]}
     }
    }
   },
@@ -3177,41 +1824,20 @@
    "animal": "hawk",
    "kind": "tail",
    "slot": "signature",
-   "pivot": [
-    0.1,
-    0.5
-   ],
+   "pivot": [0.1,0.5],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/hawk_tail.png",
      "w": 47,
      "h": 45,
-     "sockets": {
-      "base": [
-       0.5,
-       0.08
-      ],
-      "tip": [
-       0.5,
-       0.95
-      ]
-     }
+     "sockets": {"base":[0.5,0.08],"tip":[0.5,0.95]}
     },
     "back": {
      "file": "next/parts/back/hawk_tail.png",
      "w": 47,
      "h": 44,
-     "sockets": {
-      "base": [
-       0.5,
-       0.08
-      ],
-      "tip": [
-       0.5,
-       0.95
-      ]
-     }
+     "sockets": {"base":[0.5,0.08],"tip":[0.5,0.95]}
     }
    }
   },
@@ -3220,10 +1846,7 @@
    "animal": "any",
    "kind": "ruff",
    "slot": "body-extra",
-   "pivot": [
-    0.5,
-    0.2
-   ],
+   "pivot": [0.5,0.2],
    "size": "M",
    "views": {
     "front": {
@@ -3245,10 +1868,7 @@
    "animal": "any",
    "kind": "horn",
    "slot": "head-extra",
-   "pivot": [
-    0.5,
-    0.95
-   ],
+   "pivot": [0.5,0.95],
    "size": "M",
    "views": {
     "front": {
@@ -3270,10 +1890,7 @@
    "animal": "any",
    "kind": "plume",
    "slot": "head-extra",
-   "pivot": [
-    0.5,
-    0.95
-   ],
+   "pivot": [0.5,0.95],
    "size": "M",
    "views": {
     "front": {
@@ -3295,10 +1912,7 @@
    "animal": "any",
    "kind": "crown",
    "slot": "head-extra",
-   "pivot": [
-    0.5,
-    0.95
-   ],
+   "pivot": [0.5,0.95],
    "size": "M",
    "views": {
     "front": {
@@ -3320,33 +1934,20 @@
    "animal": "goldfish",
    "kind": "head",
    "slot": "head",
-   "pivot": [
-    0.5,
-    0.92
-   ],
+   "pivot": [0.5,0.92],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/goldfish_head.png",
      "w": 40,
      "h": 44,
-     "sockets": {
-      "chin": [
-       0.483,
-       0.909
-      ]
-     }
+     "sockets": {"chin":[0.483,0.909]}
     },
     "back": {
      "file": "next/parts/back/goldfish_head.png",
      "w": 40,
      "h": 44,
-     "sockets": {
-      "chin": [
-       0.496,
-       0.909
-      ]
-     }
+     "sockets": {"chin":[0.496,0.909]}
     }
    }
   },
@@ -3355,33 +1956,20 @@
    "animal": "carp",
    "kind": "head",
    "slot": "head",
-   "pivot": [
-    0.5,
-    0.92
-   ],
+   "pivot": [0.5,0.92],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/carp_head.png",
      "w": 43,
      "h": 41,
-     "sockets": {
-      "chin": [
-       0.488,
-       0.902
-      ]
-     }
+     "sockets": {"chin":[0.488,0.902]}
     },
     "back": {
      "file": "next/parts/back/carp_head.png",
      "w": 44,
      "h": 42,
-     "sockets": {
-      "chin": [
-       0.489,
-       0.905
-      ]
-     }
+     "sockets": {"chin":[0.489,0.905]}
     }
    }
   },
@@ -3390,33 +1978,20 @@
    "animal": "koi",
    "kind": "head",
    "slot": "head",
-   "pivot": [
-    0.5,
-    0.92
-   ],
+   "pivot": [0.5,0.92],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/koi_head.png",
      "w": 41,
      "h": 43,
-     "sockets": {
-      "chin": [
-       0.488,
-       0.907
-      ]
-     }
+     "sockets": {"chin":[0.488,0.907]}
     },
     "back": {
      "file": "next/parts/back/koi_head.png",
      "w": 41,
      "h": 43,
-     "sockets": {
-      "chin": [
-       0.492,
-       0.907
-      ]
-     }
+     "sockets": {"chin":[0.492,0.907]}
     }
    }
   },
@@ -3425,33 +2000,20 @@
    "animal": "piranha",
    "kind": "head",
    "slot": "head",
-   "pivot": [
-    0.5,
-    0.92
-   ],
+   "pivot": [0.5,0.92],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/piranha_head.png",
      "w": 42,
      "h": 41,
-     "sockets": {
-      "chin": [
-       0.488,
-       0.902
-      ]
-     }
+     "sockets": {"chin":[0.488,0.902]}
     },
     "back": {
      "file": "next/parts/back/piranha_head.png",
      "w": 42,
      "h": 42,
-     "sockets": {
-      "chin": [
-       0.486,
-       0.905
-      ]
-     }
+     "sockets": {"chin":[0.486,0.905]}
     }
    }
   },
@@ -3460,33 +2022,20 @@
    "animal": "betta",
    "kind": "head",
    "slot": "head",
-   "pivot": [
-    0.5,
-    0.92
-   ],
+   "pivot": [0.5,0.92],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/betta_head.png",
      "w": 46,
      "h": 41,
-     "sockets": {
-      "chin": [
-       0.489,
-       0.902
-      ]
-     }
+     "sockets": {"chin":[0.489,0.902]}
     },
     "back": {
      "file": "next/parts/back/betta_head.png",
      "w": 46,
      "h": 42,
-     "sockets": {
-      "chin": [
-       0.493,
-       0.905
-      ]
-     }
+     "sockets": {"chin":[0.493,0.905]}
     }
    }
   },
@@ -3495,33 +2044,20 @@
    "animal": "shark",
    "kind": "head",
    "slot": "head",
-   "pivot": [
-    0.5,
-    0.92
-   ],
+   "pivot": [0.5,0.92],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/shark_head.png",
      "w": 40,
      "h": 44,
-     "sockets": {
-      "chin": [
-       0.494,
-       0.909
-      ]
-     }
+     "sockets": {"chin":[0.494,0.909]}
     },
     "back": {
      "file": "next/parts/back/shark_head.png",
      "w": 39,
      "h": 44,
-     "sockets": {
-      "chin": [
-       0.487,
-       0.909
-      ]
-     }
+     "sockets": {"chin":[0.487,0.909]}
     }
    }
   },
@@ -3530,10 +2066,7 @@
    "animal": "goldfish",
    "kind": "dorsal",
    "slot": "head-extra",
-   "pivot": [
-    0.5,
-    0.95
-   ],
+   "pivot": [0.5,0.95],
    "size": "M",
    "views": {
     "front": {
@@ -3555,10 +2088,7 @@
    "animal": "carp",
    "kind": "dorsal",
    "slot": "head-extra",
-   "pivot": [
-    0.5,
-    0.95
-   ],
+   "pivot": [0.5,0.95],
    "size": "M",
    "views": {
     "front": {
@@ -3580,10 +2110,7 @@
    "animal": "koi",
    "kind": "dorsal",
    "slot": "head-extra",
-   "pivot": [
-    0.5,
-    0.95
-   ],
+   "pivot": [0.5,0.95],
    "size": "M",
    "views": {
     "front": {
@@ -3605,10 +2132,7 @@
    "animal": "piranha",
    "kind": "dorsal",
    "slot": "head-extra",
-   "pivot": [
-    0.5,
-    0.95
-   ],
+   "pivot": [0.5,0.95],
    "size": "M",
    "views": {
     "front": {
@@ -3630,10 +2154,7 @@
    "animal": "betta",
    "kind": "dorsal",
    "slot": "head-extra",
-   "pivot": [
-    0.5,
-    0.95
-   ],
+   "pivot": [0.5,0.95],
    "size": "M",
    "views": {
     "front": {
@@ -3655,10 +2176,7 @@
    "animal": "shark",
    "kind": "dorsal",
    "slot": "head-extra",
-   "pivot": [
-    0.5,
-    0.95
-   ],
+   "pivot": [0.5,0.95],
    "size": "M",
    "views": {
     "front": {
@@ -3680,10 +2198,7 @@
    "animal": "goldfish",
    "kind": "torso",
    "slot": "body",
-   "pivot": [
-    0.5,
-    0.5
-   ],
+   "pivot": [0.5,0.5],
    "size": "M",
    "views": {
     "front": {
@@ -3691,30 +2206,12 @@
      "w": 39,
      "h": 46,
      "sockets": {
-      "neck": [
-       0.495,
-       0.065
-      ],
-      "shoulderL": [
-       0.231,
-       0.217
-      ],
-      "shoulderR": [
-       0.744,
-       0.217
-      ],
-      "hipL": [
-       0.327,
-       0.804
-      ],
-      "hipR": [
-       0.673,
-       0.804
-      ],
-      "tail": [
-       0.769,
-       0.761
-      ]
+      "neck": [0.495,0.065],
+      "shoulderL": [0.231,0.217],
+      "shoulderR": [0.744,0.217],
+      "hipL": [0.327,0.804],
+      "hipR": [0.673,0.804],
+      "tail": [0.769,0.761]
      }
     },
     "back": {
@@ -3722,30 +2219,12 @@
      "w": 39,
      "h": 47,
      "sockets": {
-      "neck": [
-       0.495,
-       0.064
-      ],
-      "shoulderL": [
-       0.231,
-       0.213
-      ],
-      "shoulderR": [
-       0.744,
-       0.213
-      ],
-      "hipL": [
-       0.321,
-       0.809
-      ],
-      "hipR": [
-       0.654,
-       0.809
-      ],
-      "tail": [
-       0.487,
-       0.847
-      ]
+      "neck": [0.495,0.064],
+      "shoulderL": [0.231,0.213],
+      "shoulderR": [0.744,0.213],
+      "hipL": [0.321,0.809],
+      "hipR": [0.654,0.809],
+      "tail": [0.487,0.847]
      }
     }
    }
@@ -3755,10 +2234,7 @@
    "animal": "carp",
    "kind": "torso",
    "slot": "body",
-   "pivot": [
-    0.5,
-    0.5
-   ],
+   "pivot": [0.5,0.5],
    "size": "M",
    "views": {
     "front": {
@@ -3766,30 +2242,12 @@
      "w": 46,
      "h": 46,
      "sockets": {
-      "neck": [
-       0.5,
-       0.065
-      ],
-      "shoulderL": [
-       0.239,
-       0.217
-      ],
-      "shoulderR": [
-       0.739,
-       0.217
-      ],
-      "hipL": [
-       0.31,
-       0.804
-      ],
-      "hipR": [
-       0.668,
-       0.804
-      ],
-      "tail": [
-       0.804,
-       0.761
-      ]
+      "neck": [0.5,0.065],
+      "shoulderL": [0.239,0.217],
+      "shoulderR": [0.739,0.217],
+      "hipL": [0.31,0.804],
+      "hipR": [0.668,0.804],
+      "tail": [0.804,0.761]
      }
     },
     "back": {
@@ -3797,30 +2255,12 @@
      "w": 46,
      "h": 47,
      "sockets": {
-      "neck": [
-       0.5,
-       0.064
-      ],
-      "shoulderL": [
-       0.239,
-       0.213
-      ],
-      "shoulderR": [
-       0.739,
-       0.213
-      ],
-      "hipL": [
-       0.31,
-       0.809
-      ],
-      "hipR": [
-       0.668,
-       0.809
-      ],
-      "tail": [
-       0.5,
-       0.847
-      ]
+      "neck": [0.5,0.064],
+      "shoulderL": [0.239,0.213],
+      "shoulderR": [0.739,0.213],
+      "hipL": [0.31,0.809],
+      "hipR": [0.668,0.809],
+      "tail": [0.5,0.847]
      }
     }
    }
@@ -3830,10 +2270,7 @@
    "animal": "koi",
    "kind": "torso",
    "slot": "body",
-   "pivot": [
-    0.5,
-    0.5
-   ],
+   "pivot": [0.5,0.5],
    "size": "M",
    "views": {
     "front": {
@@ -3841,30 +2278,12 @@
      "w": 39,
      "h": 48,
      "sockets": {
-      "neck": [
-       0.487,
-       0.062
-      ],
-      "shoulderL": [
-       0.231,
-       0.229
-      ],
-      "shoulderR": [
-       0.744,
-       0.229
-      ],
-      "hipL": [
-       0.314,
-       0.812
-      ],
-      "hipR": [
-       0.686,
-       0.812
-      ],
-      "tail": [
-       0.795,
-       0.75
-      ]
+      "neck": [0.487,0.062],
+      "shoulderL": [0.231,0.229],
+      "shoulderR": [0.744,0.229],
+      "hipL": [0.314,0.812],
+      "hipR": [0.686,0.812],
+      "tail": [0.795,0.75]
      }
     },
     "back": {
@@ -3872,30 +2291,12 @@
      "w": 39,
      "h": 48,
      "sockets": {
-      "neck": [
-       0.496,
-       0.062
-      ],
-      "shoulderL": [
-       0.231,
-       0.229
-      ],
-      "shoulderR": [
-       0.744,
-       0.229
-      ],
-      "hipL": [
-       0.295,
-       0.812
-      ],
-      "hipR": [
-       0.679,
-       0.812
-      ],
-      "tail": [
-       0.487,
-       0.848
-      ]
+      "neck": [0.496,0.062],
+      "shoulderL": [0.231,0.229],
+      "shoulderR": [0.744,0.229],
+      "hipL": [0.295,0.812],
+      "hipR": [0.679,0.812],
+      "tail": [0.487,0.848]
      }
     }
    }
@@ -3905,10 +2306,7 @@
    "animal": "piranha",
    "kind": "torso",
    "slot": "body",
-   "pivot": [
-    0.5,
-    0.5
-   ],
+   "pivot": [0.5,0.5],
    "size": "M",
    "views": {
     "front": {
@@ -3916,30 +2314,12 @@
      "w": 44,
      "h": 47,
      "sockets": {
-      "neck": [
-       0.489,
-       0.064
-      ],
-      "shoulderL": [
-       0.227,
-       0.213
-      ],
-      "shoulderR": [
-       0.75,
-       0.213
-      ],
-      "hipL": [
-       0.324,
-       0.809
-      ],
-      "hipR": [
-       0.653,
-       0.809
-      ],
-      "tail": [
-       0.75,
-       0.766
-      ]
+      "neck": [0.489,0.064],
+      "shoulderL": [0.227,0.213],
+      "shoulderR": [0.75,0.213],
+      "hipL": [0.324,0.809],
+      "hipR": [0.653,0.809],
+      "tail": [0.75,0.766]
      }
     },
     "back": {
@@ -3947,30 +2327,12 @@
      "w": 44,
      "h": 48,
      "sockets": {
-      "neck": [
-       0.496,
-       0.062
-      ],
-      "shoulderL": [
-       0.205,
-       0.229
-      ],
-      "shoulderR": [
-       0.773,
-       0.229
-      ],
-      "hipL": [
-       0.324,
-       0.812
-      ],
-      "hipR": [
-       0.653,
-       0.812
-      ],
-      "tail": [
-       0.489,
-       0.848
-      ]
+      "neck": [0.496,0.062],
+      "shoulderL": [0.205,0.229],
+      "shoulderR": [0.773,0.229],
+      "hipL": [0.324,0.812],
+      "hipR": [0.653,0.812],
+      "tail": [0.489,0.848]
      }
     }
    }
@@ -3980,10 +2342,7 @@
    "animal": "betta",
    "kind": "torso",
    "slot": "body",
-   "pivot": [
-    0.5,
-    0.5
-   ],
+   "pivot": [0.5,0.5],
    "size": "M",
    "views": {
     "front": {
@@ -3991,30 +2350,12 @@
      "w": 45,
      "h": 46,
      "sockets": {
-      "neck": [
-       0.492,
-       0.065
-      ],
-      "shoulderL": [
-       0.2,
-       0.217
-      ],
-      "shoulderR": [
-       0.778,
-       0.217
-      ],
-      "hipL": [
-       0.311,
-       0.804
-      ],
-      "hipR": [
-       0.667,
-       0.804
-      ],
-      "tail": [
-       0.8,
-       0.761
-      ]
+      "neck": [0.492,0.065],
+      "shoulderL": [0.2,0.217],
+      "shoulderR": [0.778,0.217],
+      "hipL": [0.311,0.804],
+      "hipR": [0.667,0.804],
+      "tail": [0.8,0.761]
      }
     },
     "back": {
@@ -4022,30 +2363,12 @@
      "w": 45,
      "h": 47,
      "sockets": {
-      "neck": [
-       0.489,
-       0.064
-      ],
-      "shoulderL": [
-       0.2,
-       0.213
-      ],
-      "shoulderR": [
-       0.778,
-       0.213
-      ],
-      "hipL": [
-       0.317,
-       0.809
-      ],
-      "hipR": [
-       0.683,
-       0.809
-      ],
-      "tail": [
-       0.5,
-       0.847
-      ]
+      "neck": [0.489,0.064],
+      "shoulderL": [0.2,0.213],
+      "shoulderR": [0.778,0.213],
+      "hipL": [0.317,0.809],
+      "hipR": [0.683,0.809],
+      "tail": [0.5,0.847]
      }
     }
    }
@@ -4055,10 +2378,7 @@
    "animal": "shark",
    "kind": "torso",
    "slot": "body",
-   "pivot": [
-    0.5,
-    0.5
-   ],
+   "pivot": [0.5,0.5],
    "size": "M",
    "views": {
     "front": {
@@ -4066,30 +2386,12 @@
      "w": 38,
      "h": 47,
      "sockets": {
-      "neck": [
-       0.492,
-       0.064
-      ],
-      "shoulderL": [
-       0.211,
-       0.213
-      ],
-      "shoulderR": [
-       0.763,
-       0.213
-      ],
-      "hipL": [
-       0.375,
-       0.809
-      ],
-      "hipR": [
-       0.599,
-       0.809
-      ],
-      "tail": [
-       0.632,
-       0.766
-      ]
+      "neck": [0.492,0.064],
+      "shoulderL": [0.211,0.213],
+      "shoulderR": [0.763,0.213],
+      "hipL": [0.375,0.809],
+      "hipR": [0.599,0.809],
+      "tail": [0.632,0.766]
      }
     },
     "back": {
@@ -4097,30 +2399,12 @@
      "w": 39,
      "h": 48,
      "sockets": {
-      "neck": [
-       0.492,
-       0.062
-      ],
-      "shoulderL": [
-       0.205,
-       0.229
-      ],
-      "shoulderR": [
-       0.769,
-       0.229
-      ],
-      "hipL": [
-       0.385,
-       0.812
-      ],
-      "hipR": [
-       0.59,
-       0.812
-      ],
-      "tail": [
-       0.487,
-       0.848
-      ]
+      "neck": [0.492,0.062],
+      "shoulderL": [0.205,0.229],
+      "shoulderR": [0.769,0.229],
+      "hipL": [0.385,0.812],
+      "hipR": [0.59,0.812],
+      "tail": [0.487,0.848]
      }
     }
    }
@@ -4130,41 +2414,20 @@
    "animal": "goldfish",
    "kind": "frontfin",
    "slot": "front",
-   "pivot": [
-    0.15,
-    0.1
-   ],
+   "pivot": [0.15,0.1],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/goldfish_frontfin.png",
      "w": 34,
      "h": 29,
-     "sockets": {
-      "joint": [
-       0.344,
-       0.069
-      ],
-      "end": [
-       0.584,
-       0.897
-      ]
-     }
+     "sockets": {"joint":[0.344,0.069],"end":[0.584,0.897]}
     },
     "back": {
      "file": "next/parts/back/goldfish_frontfin.png",
      "w": 34,
      "h": 29,
-     "sockets": {
-      "joint": [
-       0.334,
-       0.069
-      ],
-      "end": [
-       0.577,
-       0.897
-      ]
-     }
+     "sockets": {"joint":[0.334,0.069],"end":[0.577,0.897]}
     }
    }
   },
@@ -4173,41 +2436,20 @@
    "animal": "carp",
    "kind": "frontfin",
    "slot": "front",
-   "pivot": [
-    0.15,
-    0.1
-   ],
+   "pivot": [0.15,0.1],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/carp_frontfin.png",
      "w": 38,
      "h": 29,
-     "sockets": {
-      "joint": [
-       0.361,
-       0.069
-      ],
-      "end": [
-       0.711,
-       0.897
-      ]
-     }
+     "sockets": {"joint":[0.361,0.069],"end":[0.711,0.897]}
     },
     "back": {
      "file": "next/parts/back/carp_frontfin.png",
      "w": 38,
      "h": 29,
-     "sockets": {
-      "joint": [
-       0.318,
-       0.069
-      ],
-      "end": [
-       0.709,
-       0.897
-      ]
-     }
+     "sockets": {"joint":[0.318,0.069],"end":[0.709,0.897]}
     }
    }
   },
@@ -4216,41 +2458,20 @@
    "animal": "koi",
    "kind": "frontfin",
    "slot": "front",
-   "pivot": [
-    0.15,
-    0.1
-   ],
+   "pivot": [0.15,0.1],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/koi_frontfin.png",
      "w": 32,
      "h": 32,
-     "sockets": {
-      "joint": [
-       0.337,
-       0.062
-      ],
-      "end": [
-       0.573,
-       0.906
-      ]
-     }
+     "sockets": {"joint":[0.337,0.062],"end":[0.573,0.906]}
     },
     "back": {
      "file": "next/parts/back/koi_frontfin.png",
      "w": 32,
      "h": 32,
-     "sockets": {
-      "joint": [
-       0.328,
-       0.062
-      ],
-      "end": [
-       0.571,
-       0.906
-      ]
-     }
+     "sockets": {"joint":[0.328,0.062],"end":[0.571,0.906]}
     }
    }
   },
@@ -4259,41 +2480,20 @@
    "animal": "piranha",
    "kind": "frontfin",
    "slot": "front",
-   "pivot": [
-    0.15,
-    0.1
-   ],
+   "pivot": [0.15,0.1],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/piranha_frontfin.png",
      "w": 34,
      "h": 32,
-     "sockets": {
-      "joint": [
-       0.26,
-       0.062
-      ],
-      "end": [
-       0.506,
-       0.906
-      ]
-     }
+     "sockets": {"joint":[0.26,0.062],"end":[0.506,0.906]}
     },
     "back": {
      "file": "next/parts/back/piranha_frontfin.png",
      "w": 34,
      "h": 32,
-     "sockets": {
-      "joint": [
-       0.248,
-       0.062
-      ],
-      "end": [
-       0.523,
-       0.906
-      ]
-     }
+     "sockets": {"joint":[0.248,0.062],"end":[0.523,0.906]}
     }
    }
   },
@@ -4302,41 +2502,20 @@
    "animal": "betta",
    "kind": "frontfin",
    "slot": "front",
-   "pivot": [
-    0.15,
-    0.1
-   ],
+   "pivot": [0.15,0.1],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/betta_frontfin.png",
      "w": 30,
      "h": 29,
-     "sockets": {
-      "joint": [
-       0.423,
-       0.069
-      ],
-      "end": [
-       0.486,
-       0.897
-      ]
-     }
+     "sockets": {"joint":[0.423,0.069],"end":[0.486,0.897]}
     },
     "back": {
      "file": "next/parts/back/betta_frontfin.png",
      "w": 30,
      "h": 29,
-     "sockets": {
-      "joint": [
-       0.433,
-       0.069
-      ],
-      "end": [
-       0.514,
-       0.897
-      ]
-     }
+     "sockets": {"joint":[0.433,0.069],"end":[0.514,0.897]}
     }
    }
   },
@@ -4345,41 +2524,20 @@
    "animal": "shark",
    "kind": "frontfin",
    "slot": "front",
-   "pivot": [
-    0.15,
-    0.1
-   ],
+   "pivot": [0.15,0.1],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/shark_frontfin.png",
      "w": 36,
      "h": 32,
-     "sockets": {
-      "joint": [
-       0.156,
-       0.062
-      ],
-      "end": [
-       0.696,
-       0.906
-      ]
-     }
+     "sockets": {"joint":[0.156,0.062],"end":[0.696,0.906]}
     },
     "back": {
      "file": "next/parts/back/shark_frontfin.png",
      "w": 36,
      "h": 32,
-     "sockets": {
-      "joint": [
-       0.163,
-       0.062
-      ],
-      "end": [
-       0.709,
-       0.906
-      ]
-     }
+     "sockets": {"joint":[0.163,0.062],"end":[0.709,0.906]}
     }
    }
   },
@@ -4388,41 +2546,20 @@
    "animal": "goldfish",
    "kind": "backfin",
    "slot": "back",
-   "pivot": [
-    0.3,
-    0.05
-   ],
+   "pivot": [0.3,0.05],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/goldfish_backfin.png",
      "w": 24,
      "h": 25,
-     "sockets": {
-      "joint": [
-       0.249,
-       0.08
-      ],
-      "end": [
-       0.583,
-       0.88
-      ]
-     }
+     "sockets": {"joint":[0.249,0.08],"end":[0.583,0.88]}
     },
     "back": {
      "file": "next/parts/back/goldfish_backfin.png",
      "w": 24,
      "h": 25,
-     "sockets": {
-      "joint": [
-       0.24,
-       0.08
-      ],
-      "end": [
-       0.601,
-       0.88
-      ]
-     }
+     "sockets": {"joint":[0.24,0.08],"end":[0.601,0.88]}
     }
    }
   },
@@ -4431,41 +2568,20 @@
    "animal": "carp",
    "kind": "backfin",
    "slot": "back",
-   "pivot": [
-    0.3,
-    0.05
-   ],
+   "pivot": [0.3,0.05],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/carp_backfin.png",
      "w": 22,
      "h": 36,
-     "sockets": {
-      "joint": [
-       0.25,
-       0.056
-      ],
-      "end": [
-       0.579,
-       0.917
-      ]
-     }
+     "sockets": {"joint":[0.25,0.056],"end":[0.579,0.917]}
     },
     "back": {
      "file": "next/parts/back/carp_backfin.png",
      "w": 22,
      "h": 36,
-     "sockets": {
-      "joint": [
-       0.25,
-       0.056
-      ],
-      "end": [
-       0.567,
-       0.917
-      ]
-     }
+     "sockets": {"joint":[0.25,0.056],"end":[0.567,0.917]}
     }
    }
   },
@@ -4474,41 +2590,20 @@
    "animal": "koi",
    "kind": "backfin",
    "slot": "back",
-   "pivot": [
-    0.3,
-    0.05
-   ],
+   "pivot": [0.3,0.05],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/koi_backfin.png",
      "w": 28,
      "h": 29,
-     "sockets": {
-      "joint": [
-       0.319,
-       0.069
-      ],
-      "end": [
-       0.58,
-       0.897
-      ]
-     }
+     "sockets": {"joint":[0.319,0.069],"end":[0.58,0.897]}
     },
     "back": {
      "file": "next/parts/back/koi_backfin.png",
      "w": 27,
      "h": 29,
-     "sockets": {
-      "joint": [
-       0.304,
-       0.069
-      ],
-      "end": [
-       0.588,
-       0.897
-      ]
-     }
+     "sockets": {"joint":[0.304,0.069],"end":[0.588,0.897]}
     }
    }
   },
@@ -4517,41 +2612,20 @@
    "animal": "piranha",
    "kind": "backfin",
    "slot": "back",
-   "pivot": [
-    0.3,
-    0.05
-   ],
+   "pivot": [0.3,0.05],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/piranha_backfin.png",
      "w": 27,
      "h": 35,
-     "sockets": {
-      "joint": [
-       0.215,
-       0.057
-      ],
-      "end": [
-       0.613,
-       0.914
-      ]
-     }
+     "sockets": {"joint":[0.215,0.057],"end":[0.613,0.914]}
     },
     "back": {
      "file": "next/parts/back/piranha_backfin.png",
      "w": 28,
      "h": 34,
-     "sockets": {
-      "joint": [
-       0.21,
-       0.059
-      ],
-      "end": [
-       0.627,
-       0.912
-      ]
-     }
+     "sockets": {"joint":[0.21,0.059],"end":[0.627,0.912]}
     }
    }
   },
@@ -4560,41 +2634,20 @@
    "animal": "betta",
    "kind": "backfin",
    "slot": "back",
-   "pivot": [
-    0.3,
-    0.05
-   ],
+   "pivot": [0.3,0.05],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/betta_backfin.png",
      "w": 20,
      "h": 35,
-     "sockets": {
-      "joint": [
-       0.271,
-       0.057
-      ],
-      "end": [
-       0.534,
-       0.914
-      ]
-     }
+     "sockets": {"joint":[0.271,0.057],"end":[0.534,0.914]}
     },
     "back": {
      "file": "next/parts/back/betta_backfin.png",
      "w": 20,
      "h": 35,
-     "sockets": {
-      "joint": [
-       0.265,
-       0.057
-      ],
-      "end": [
-       0.526,
-       0.914
-      ]
-     }
+     "sockets": {"joint":[0.265,0.057],"end":[0.526,0.914]}
     }
    }
   },
@@ -4603,41 +2656,20 @@
    "animal": "shark",
    "kind": "backfin",
    "slot": "back",
-   "pivot": [
-    0.3,
-    0.05
-   ],
+   "pivot": [0.3,0.05],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/shark_backfin.png",
      "w": 27,
      "h": 36,
-     "sockets": {
-      "joint": [
-       0.208,
-       0.056
-      ],
-      "end": [
-       0.386,
-       0.917
-      ]
-     }
+     "sockets": {"joint":[0.208,0.056],"end":[0.386,0.917]}
     },
     "back": {
      "file": "next/parts/back/shark_backfin.png",
      "w": 27,
      "h": 36,
-     "sockets": {
-      "joint": [
-       0.201,
-       0.056
-      ],
-      "end": [
-       0.35,
-       0.917
-      ]
-     }
+     "sockets": {"joint":[0.201,0.056],"end":[0.35,0.917]}
     }
    }
   },
@@ -4646,41 +2678,20 @@
    "animal": "goldfish",
    "kind": "tailfin",
    "slot": "signature",
-   "pivot": [
-    0.05,
-    0.5
-   ],
+   "pivot": [0.05,0.5],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/goldfish_tailfin.png",
      "w": 45,
      "h": 37,
-     "sockets": {
-      "base": [
-       0.06,
-       0.5
-      ],
-      "tip": [
-       0.95,
-       0.5
-      ]
-     }
+     "sockets": {"base":[0.06,0.5],"tip":[0.95,0.5]}
     },
     "back": {
      "file": "next/parts/back/goldfish_tailfin.png",
      "w": 45,
      "h": 36,
-     "sockets": {
-      "base": [
-       0.06,
-       0.5
-      ],
-      "tip": [
-       0.95,
-       0.5
-      ]
-     }
+     "sockets": {"base":[0.06,0.5],"tip":[0.95,0.5]}
     }
    }
   },
@@ -4689,41 +2700,20 @@
    "animal": "carp",
    "kind": "tailfin",
    "slot": "signature",
-   "pivot": [
-    0.05,
-    0.5
-   ],
+   "pivot": [0.05,0.5],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/carp_tailfin.png",
      "w": 37,
      "h": 40,
-     "sockets": {
-      "base": [
-       0.06,
-       0.5
-      ],
-      "tip": [
-       0.95,
-       0.5
-      ]
-     }
+     "sockets": {"base":[0.06,0.5],"tip":[0.95,0.5]}
     },
     "back": {
      "file": "next/parts/back/carp_tailfin.png",
      "w": 36,
      "h": 40,
-     "sockets": {
-      "base": [
-       0.06,
-       0.5
-      ],
-      "tip": [
-       0.95,
-       0.5
-      ]
-     }
+     "sockets": {"base":[0.06,0.5],"tip":[0.95,0.5]}
     }
    }
   },
@@ -4732,41 +2722,20 @@
    "animal": "koi",
    "kind": "tailfin",
    "slot": "signature",
-   "pivot": [
-    0.05,
-    0.5
-   ],
+   "pivot": [0.05,0.5],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/koi_tailfin.png",
      "w": 44,
      "h": 37,
-     "sockets": {
-      "base": [
-       0.06,
-       0.5
-      ],
-      "tip": [
-       0.95,
-       0.5
-      ]
-     }
+     "sockets": {"base":[0.06,0.5],"tip":[0.95,0.5]}
     },
     "back": {
      "file": "next/parts/back/koi_tailfin.png",
      "w": 42,
      "h": 38,
-     "sockets": {
-      "base": [
-       0.06,
-       0.5
-      ],
-      "tip": [
-       0.95,
-       0.5
-      ]
-     }
+     "sockets": {"base":[0.06,0.5],"tip":[0.95,0.5]}
     }
    }
   },
@@ -4775,41 +2744,20 @@
    "animal": "piranha",
    "kind": "tailfin",
    "slot": "signature",
-   "pivot": [
-    0.05,
-    0.5
-   ],
+   "pivot": [0.05,0.5],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/piranha_tailfin.png",
      "w": 37,
      "h": 39,
-     "sockets": {
-      "base": [
-       0.06,
-       0.5
-      ],
-      "tip": [
-       0.95,
-       0.5
-      ]
-     }
+     "sockets": {"base":[0.06,0.5],"tip":[0.95,0.5]}
     },
     "back": {
      "file": "next/parts/back/piranha_tailfin.png",
      "w": 37,
      "h": 39,
-     "sockets": {
-      "base": [
-       0.06,
-       0.5
-      ],
-      "tip": [
-       0.95,
-       0.5
-      ]
-     }
+     "sockets": {"base":[0.06,0.5],"tip":[0.95,0.5]}
     }
    }
   },
@@ -4818,41 +2766,20 @@
    "animal": "betta",
    "kind": "tailfin",
    "slot": "signature",
-   "pivot": [
-    0.05,
-    0.5
-   ],
+   "pivot": [0.05,0.5],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/betta_tailfin.png",
      "w": 42,
      "h": 42,
-     "sockets": {
-      "base": [
-       0.06,
-       0.5
-      ],
-      "tip": [
-       0.95,
-       0.5
-      ]
-     }
+     "sockets": {"base":[0.06,0.5],"tip":[0.95,0.5]}
     },
     "back": {
      "file": "next/parts/back/betta_tailfin.png",
      "w": 42,
      "h": 42,
-     "sockets": {
-      "base": [
-       0.06,
-       0.5
-      ],
-      "tip": [
-       0.95,
-       0.5
-      ]
-     }
+     "sockets": {"base":[0.06,0.5],"tip":[0.95,0.5]}
     }
    }
   },
@@ -4861,41 +2788,20 @@
    "animal": "shark",
    "kind": "tailfin",
    "slot": "signature",
-   "pivot": [
-    0.05,
-    0.5
-   ],
+   "pivot": [0.05,0.5],
    "size": "M",
    "views": {
     "front": {
      "file": "next/parts/front/shark_tailfin.png",
      "w": 34,
      "h": 42,
-     "sockets": {
-      "base": [
-       0.06,
-       0.5
-      ],
-      "tip": [
-       0.95,
-       0.5
-      ]
-     }
+     "sockets": {"base":[0.06,0.5],"tip":[0.95,0.5]}
     },
     "back": {
      "file": "next/parts/back/shark_tailfin.png",
      "w": 34,
      "h": 42,
-     "sockets": {
-      "base": [
-       0.06,
-       0.5
-      ],
-      "tip": [
-       0.95,
-       0.5
-      ]
-     }
+     "sockets": {"base":[0.06,0.5],"tip":[0.95,0.5]}
     }
    }
   },
@@ -4904,10 +2810,7 @@
    "animal": "any",
    "kind": "sail",
    "slot": "signature",
-   "pivot": [
-    0.2,
-    0.95
-   ],
+   "pivot": [0.2,0.95],
    "size": "M",
    "views": {
     "front": {
@@ -4929,10 +2832,7 @@
    "animal": "any",
    "kind": "spike",
    "slot": "head-extra",
-   "pivot": [
-    0.5,
-    0.95
-   ],
+   "pivot": [0.5,0.95],
    "size": "M",
    "views": {
     "front": {
@@ -4954,10 +2854,7 @@
    "animal": "any",
    "kind": "scales",
    "slot": "body-extra",
-   "pivot": [
-    0.5,
-    0.5
-   ],
+   "pivot": [0.5,0.5],
    "size": "M",
    "views": {
     "front": {
@@ -4979,10 +2876,7 @@
    "animal": "any",
    "kind": "lure",
    "slot": "head-extra",
-   "pivot": [
-    0.1,
-    0.95
-   ],
+   "pivot": [0.1,0.95],
    "size": "M",
    "views": {
     "front": {

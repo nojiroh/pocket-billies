@@ -6,7 +6,7 @@ Input:  tools/art-source/part-kit/kits.json and, per kit, <name>-front.png and
         per slot, then a row of extras). Kept out of the game folder so they
         never ship.
 Output: game/art/next/parts/<view>/<id>.png at game scale and
-        game/art/next/parts/parts.json (kit, animal, slot, pivot per piece).
+        game/data/partKits.json (kit, animal, slot, pivot per piece).
 
 Ids are <animal>_<row> and <kit>_<extra>, so adding a kit never renames old
 parts. Run again after adding or replacing a kit. Needs Pillow, numpy and scipy.
@@ -159,7 +159,7 @@ def main():
                 sk.update((cfg.get('sockets', {}).get(pid, {}) or {}).get(view, {}))
                 e['views'][view] = {'file': f'next/parts/{view}/{pid}.png', 'w': small.size[0], 'h': small.size[1],
                                     'sockets': sk}
-    with open(f'{ROOT}/parts.json', 'w') as f:
+    with open('game/data/partKits.json', 'w') as f:
         json.dump({'note': 'Placeholder part kits, phase 16. Made by tools/slice-part-kit.py from '
                            'tools/art-source/part-kit. Do not edit by hand.', 'parts': manifest}, f, indent=1)
     print(len(manifest), 'parts in', len(cfg['kits']), 'kits')
