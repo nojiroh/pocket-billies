@@ -158,14 +158,14 @@ const LOAD_PHASES = [
   'Unrolling the world map',
 ];
 const LOAD_TIPS = [
-  'Every real step you walk moves you along the road, hatches eggs and brings Billies out of the tall grass.',
-  'You don’t have to travel. Stay in a town and your steps still earn money and encounters.',
+  'Billies wait in the tall grass along the roads. More come out while you play.',
+  'Eggs hatch as you walk outdoors: a 2 km egg after 2 km, an 8 km egg after 8.',
   'Tap the ground to walk around. Tap a building to visit it.',
   'Clinics heal your whole team for free. Just walk up to the door.',
   'A Billie hides in the grass with only its level showing. You find out who it is when the battle starts.',
   'Fire beats Grass, Grass beats Water, Water beats Fire. The classics never go out of style.',
   'Flick a coin at a tired Billie to tax it.',
-  'The world map shows every road. Pick a place, and your steps take you there.',
+  'The world map shows every road. Pick a place, and gold arrows lead you there.',
   'Road signs at the edge of town tell you where each road goes.',
 ];
 /* every art file, grouped by loading phase */
