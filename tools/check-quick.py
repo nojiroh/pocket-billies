@@ -9,6 +9,7 @@
     python3 tools/check-quick.py --closeups      # also close-up pictures of cliffs, stairs, bridges and water
     python3 tools/check-quick.py --scenes=verdigris,willowmere   # only these walk scenes (by id), for a change to one place
     python3 tools/check-quick.py --steps=v34,battle   # only the steps whose names hold these words
+    python3 tools/check-quick.py --seams=all     # phase 08b: the seam walk crosses every seam, not just the six hardest
     python3 tools/check-quick.py --tests         # also draw every test scene and take its pictures (the walking checks
                                                  # of the test scenes always run; they need no drawing)
 
@@ -523,12 +524,16 @@ def go_scene(pg, node, sec=40):
 # does: a path to 6 m past the exit (no search limit: a route view is long), the player put along it at most 0.8 m at a time, walkCross() after each (the a041
 # way: game time is too slow here to walk it for real). Returns the metres walked, the views seen on the way and how
 # often the view was not ready (a remount instead of a shift)
-def cross(pg, n1, sec=90):
+# phase 08b: prep_ms gives the ground a phone's share of work for each 0.8 m step (about 0.24 s of walking at 4 ms a
+# frame; headless software drawing manages two frames a second, so the next view would otherwise take minutes), and
+# meter['waits'] counts those steps' worth spent waiting at the seam for the next view
+def cross(pg, n1, sec=90, look=None, prep_ms=None, meter=None):
     if not until(pg, 'walkView.ready', sec): raise Exception(f'the view {pg.evaluate("walkView.id")} never got ready to walk from')
-    r = pg.evaluate(f"""(()=>{{const v=walkState(),e=(v.exits||[]).find(e=>e.to==={n1});if(!e)return 'no exit to '+LOCATIONS[{n1}].name+' from '+LOCATIONS[saveData.trip.node].name;const sc=walkView.sc,pt=sc.exits[e.i],hub=mapHub(sc),dx=pt[0]-hub[0],dz=pt[1]-hub[1],l=Math.hypot(dx,dz)||1,tg=[pt[0]+dx/l*6,pt[1]+dz/l*6];
+    r = pg.evaluate(f"""(()=>{{const v=walkState(),e=(v.exits||[]).find(e=>e.to==={n1});if(!e)return 'no exit to '+LOCATIONS[{n1}].name+' from '+LOCATIONS[saveData.trip.node].name;const sc=walkView.sc,pt=sc.exits[e.i],hub=mapHub(sc),ee=(sc.edgeExits||(sc.baseId&&mapById(sc.baseId)||{{}}).edgeExits||[])[e.i],sv=ee&&SIDE_VECTORS[ee.side],dx=sv?sv[0]:pt[0]-hub[0],dz=sv?sv[1]:pt[1]-hub[1],l=Math.hypot(dx,dz)||1,tg=[pt[0]+dx/l*6,pt[1]+dz/l*6];/* phase 08b: straight out of the edge the exit is on */
       const P=walkView.pl,R=findPath(P.x,P.z,tg[0],tg[1],{{max:1e6}});return R?{{R}}:'no path to the exit to '+LOCATIONS[{n1}].name}})()""")
     if isinstance(r, str): raise Exception(r)
     R = r['R']; walked = 0; views = [pg.evaluate('walkView.id')]; unready = 0
+    total = sum(((q[0] - p[0]) ** 2 + (q[1] - p[1]) ** 2) ** .5 for p, q in zip(R, R[1:]))
     for a, bb in zip(R, R[1:]):
         d = ((bb[0] - a[0]) ** 2 + (bb[1] - a[1]) ** 2) ** .5; k = max(1, int(d / .8))
         for j in range(1, k + 1):
@@ -536,8 +541,17 @@ def cross(pg, n1, sec=90):
             if not pg.evaluate('walkView.ready'): unready += 1
             if not until(pg, 'walkView.ready', sec): raise Exception(f'the view went unready on the way ({views})')
             st = pg.evaluate(f"(()=>{{walkView.pl.x={x};walkView.pl.z={z};walkView.pl.route=null;walkCross();return [saveData.trip.node==={n1},walkView.id]}})()")
+            if prep_ms: pg.evaluate(f"groundPrepWork({prep_ms});0")
+            if look: look(total - walked, st[1] != views[-1])   # phase 08b: how far is left to the end of the path, and whether the view just changed
             if st[1] != views[-1]: views.append(st[1])
             if st[0]:
+                shown = f"walkView.ready&&(walkView.id===LOCATIONS[{n1}].mapId||(walkView.sc&&walkView.sc.baseId===LOCATIONS[{n1}].mapId))"
+                if prep_ms:   # the player waits at the seam (a real one keeps walking, inside the band the view holds)
+                    waits = 0
+                    while not pg.evaluate(shown) and waits < 400:
+                        pg.evaluate(f"groundPrepWork({prep_ms});render();0"); waits += 1; time.sleep(.05)
+                    if meter is not None: meter['waits'] = waits
+                    if look and waits: look(0, True)   # the view changed while waiting: the picture after it
                 if not until(pg, f"walkView.ready&&(walkView.id===LOCATIONS[{n1}].mapId||(walkView.sc&&walkView.sc.baseId===LOCATIONS[{n1}].mapId))", sec): raise Exception(f'crossed into {pg.evaluate(f"LOCATIONS[{n1}].name")} but its view never showed (still {pg.evaluate("walkView.id")})')
                 v = pg.evaluate('walkView.id')
                 if v != views[-1]: views.append(v)
@@ -1886,6 +1900,54 @@ def desktop_steps(b, base, R):
         if r['out']: raise Exception('; '.join(r['out']))
         return f"{r['n']} links joined edge to edge, every seam crossed straight in both views and the views agree round each exit; {r['walks']} exits with their walk stored; underground: {', '.join(r['und']) or 'none'}; the slowest view built in {r['slow']} ms ({r['slowId']})"
     a02_joins()
+
+    @step('phase 08b: walking across seams — the next view ready ahead, no wait, no jump in the picture', 600)
+    def b08_seams():
+        """walks across seams as a player does, from 45 m before the exit: the next place's view is made ready while you
+        walk up to the exit (phase 08b), so the crossing never waits for it or builds it on the spot; and the picture
+        doesn't jump where the view changes (light, haze, grass, shadows, weather): the change between the two frames
+        either side of the switch is measured against the ones before it and pictured (seam-<a>-<b>-before/after).
+        The six hardest seams on foot (the biggest height differences, a canyon, a change of climate, into a cave; the water seams are ridden); --seams=all walks
+        every seam"""
+        from PIL import Image, ImageChops, ImageStat
+        pairs = [('zenith_steps', 'bellwether_rise'), ('clovercrest', 'verdigris'), ('stepstone_canyon', 'rustgear'), ('thicket', 'clovercrest'), ('hornpass', 'frostcrown'), ('prism_chasm', 'glimmershaft')]
+        if '--seams=all' in ARGS: pairs = [tuple(p) for p in pg.evaluate("ROADS.map(L=>[LOCATIONS[L[0]].mapId,LOCATIONS[L[1]].mapId])")]
+        pg.evaluate("encountersHere().length=0;uiState.inside=null;uiState.modal=null;uiState.mq=[];renderOverlay();environment.force={time:11,weather:'clear',season:'summer'};0")
+        # every gate open and every blocking trainer beaten: the seams are what's walked here, not the story
+        pg.evaluate("(()=>{for(const l of LOCATIONS)if(l.gate&&!saveData.seats.includes(l.gate))saveData.seats.push(l.gate);for(const T of Object.values(gameData.trainers||{}))if(T.blocks)saveData.flags[T.id]=1;return 0})()")
+        out = []; worst = (0, ''); rows = []
+        for a, b in pairs:
+            na, nb = pg.evaluate(f"[LOCATION_BY_ID['{a}'].node,LOCATION_BY_ID['{b}'].node]")
+            go_scene(pg, na)
+            # start 45 m before the exit, on the walk from the hub (or at the hub when the walk is shorter)
+            pg.evaluate(f"""(()=>{{const v=walkState(),e=v.exits.find(e=>e.to==={nb}),sc=walkView.sc,pt=sc.exits[e.i],hub=mapHub(sc),R=findPath(hub[0],hub[1],pt[0],pt[1],{{max:1e6}})||[hub];
+              let L=0;for(let i=1;i<R.length;i++)L+=Math.hypot(R[i][0]-R[i-1][0],R[i][1]-R[i-1][1]);let want=Math.max(0,L-45),s=0,p=R[0];
+              for(let i=1;i<R.length&&s<want;i++){{const d=Math.hypot(R[i][0]-R[i-1][0],R[i][1]-R[i-1][1]);if(s+d>=want){{const k=(want-s)/d;p=[R[i-1][0]+(R[i][0]-R[i-1][0])*k,R[i-1][1]+(R[i][1]-R[i-1][1])*k]}}else p=R[i];s+=d}}
+              p=walkablePointNear(p[0],p[1])||p;walkView.pl.x=p[0];walkView.pl.z=p[1];walkView.pl.route=null;Object.assign(seamlessWorld.stats,{{held:0,heldMs:0,heldMaxMs:0,late:0,ahead:0}});return 0}})()""")
+            time.sleep(.5)
+            frames = []
+            def look(left, changed):
+                if left > 7 and not changed: return
+                pg.evaluate("(()=>{const f=walkRenderer.frames;return new Promise(r=>{const t=()=>walkRenderer.frames>=f+2?r(0):requestAnimationFrame(t);t()})})()")
+                frames.append((Image.open(io.BytesIO(pg.screenshot())).convert('RGB'), changed))
+            meter = {'waits': 0}
+            walked, views, unready = cross(pg, nb, look=look, prep_ms=40, meter=meter)
+            st = pg.evaluate("seamlessWorld.stats")
+            d = [ImageStat.Stat(ImageChops.difference(p[0].convert('L').resize((160, 100)), q[0].convert('L').resize((160, 100)))).mean[0] for p, q in zip(frames, frames[1:])]
+            k = next((i for i, f in enumerate(frames) if f[1]), None)   # the frame taken just after the view changed
+            jump = d[k - 1] if k else 0; usual = sorted(d[:k - 1] or [1])[len(d[:k - 1] or [1]) // 2] if k else 1
+            if k: frames[k - 1][0].save(OUT / f'seam-{a}-{b}-before.webp', 'WEBP', quality=75); frames[k][0].save(OUT / f'seam-{a}-{b}-after.webp', 'WEBP', quality=75)
+            ratio = jump / max(usual, .5)
+            rows.append({'seam': f'{a} → {b}', 'walked': round(walked), 'unready': unready, 'jump': round(jump, 1), 'usual': round(usual, 1), 'waitedPhoneS': round(meter['waits'] * .24, 1), **{k2: round(v) for k2, v in st.items()}})
+            if ratio > worst[0]: worst = (ratio, f'{a} → {b}')
+            if unready: out.append(f'{a} → {b}: the view went unready {unready} time(s)')
+            if st['late']: out.append(f'{a} → {b}: the next view wasn’t ready at the seam, built on the spot')
+        R['seams'] = rows
+        log('     ' + '; '.join(f"{r['seam']}: ahead {r['ahead']}, waited about {r['waitedPhoneS']} s of phone walking, jump {r['jump']} (usual {r['usual']})" for r in rows))
+        if out: raise Exception('; '.join(out))
+        slow = max(rows, key=lambda r: r['waitedPhoneS'])
+        return f"{len(rows)} seams walked from 45 m out, none built the next view on the spot; the longest wait for it at the seam about {slow['waitedPhoneS']} s of phone walking ({slow['seam']}), made ready ahead {sum(r['ahead'] for r in rows)} time(s); the biggest picture change at a switch is {worst[0]:.1f}× an ordinary step ({worst[1]})"
+    b08_seams()
 
     @step('alpha 0.4: Copperleaf — Granny Juniper in her garden, the lab, the lane down to Marigold Town', 240)
     def a04_copperleaf():
