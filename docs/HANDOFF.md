@@ -11,6 +11,58 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 - Questions waiting for the owner: 
 - Next session starts with: 
 
+### Phase 08a-3 - UI, text, Studio, running - 2026-10-19
+Plan approved at the start (docs/phases/08a-plan.md, section 08a-3, now marked done with the corrections found).
+Branch `ccr-72e8ad56-lpn1x3`, from main.
+- Changed (24 commits after the merge, this one included; one cause each, renames apart):
+  - Base: 08a-2 (`ccr-24f4b29c-s6oe4h`) was never merged to main. Merged into this branch; conflicts in HANDOFF (both
+    sides kept) and settings-screen.js (main's gameData import, 08a-2's metresToKm).
+  - Dead CSS deleted (.brackets, .brk-l, .wh-steps, .jobs/.job/.jt, .tm-jobs, .job-spr, .job-ic; .today/.mid/.se kept),
+    `uiState.disp.steps`, three i18n rows.
+  - Text without steps, one commit per group: the tagline ("A classic RPG", page, manifest, title), load tips, four
+    folk lines, the not-enough-money toasts ("Win a few battles first"), the place card, walk note, starter egg
+    ("hatches after 2 km of walking outdoors"), How to play, the airship sheet, Hazel's parting line (same in both
+    openings), room and town chat (and the generators' copies), lore as coins (world entry "Money down here", Route 1,
+    Verdigris, Mirrormere, airships, "The Coin Standard", loading lines, a chat line). Renames: lore world id
+    steps -> money, book steps -> coin_standard (and the library shelf). Physical steps (stairs, canyon) stay.
+  - Studio: **fix**, the Jobs section threw on opening (`rules.jobs.stepsPerPay`, gone since 08a-2; confirmed by
+    putting the old line back); Rest stop price moved to the Battle card; "Step sway" -> "Walk bob" (key `sway`
+    stays); the "road has no step count" warning removed; Find's example; STUDIO.md.
+  - Debug log header, README and the graphics test's note: the log holds no save data, names or positions, only which
+    places opened and when (it does log scene mounts and guide trips, so "no movement history" would be wrong).
+  - Run: past the joystick's rim (56 px) into an outer ring (84 px, gold while running), the D-pad's centre held by a
+    second finger, or Shift. Settings > Moving about > "Always run" (off by default; a full push, the keys and
+    tap-to-walk run). Speeds: light push x0.6, full push 3.4 m/s, run x1.7 (`RUN_FACTOR`); keys and D-pad x1 (were
+    x1.3). A load tip and the help say how.
+  - The walk cycle, footsteps and camera bob follow the metres walked (`walkView.pl.gait`; ladders included, view
+    jumps not): same timings as before at walking speed. Townsfolk keep their clock.
+  - Tests: a quick-check step "phase 08: running" (each speed, gait against distance, the ring and the D-pad centre
+    from pointer events); the phone step keeps its exported log as validation/quick/phone-debug-log.json.
+- Risky or unfinished:
+  - The full quick check and the first picture baseline were NOT run (owner's call). The known red full-check steps
+    from phase 16 (v35, v38, v39 roster counts) are unchanged, as far as anyone knows.
+  - The in-game full test was not run whole headless (smoke runs one step of it: green).
+  - The Studio's --studio round trip can't run: start-studio.py is not in the repository (STUDIO.md says so).
+    tools/check-studio-github.py (every section, GitHub mode) is the Studio check that works: green.
+  - The D-pad's run needs two fingers (direction + centre). If that's awkward on your phone, "Always run" covers it.
+  - A full push now walks at 3.4 m/s (it gave 4.4 before): moving feels slower until you use the ring.
+  - trainers' blockTitle/blockText kept, shown nowhere (phase 15 decides).
+  - Your phone and cloud saves start over (save format 3, from 08a-2).
+- Verified:
+  - Every commit: lint, typecheck, unit tests (65), check:data, check:modules, format:check.
+  - Smoke after the merge, after the text batch and on the final commit: 15/15 green.
+  - The running step: full push 3.48 m/s; light push 0.59x, ring 1.71x, keys 1.00x, Shift 1.71x, Always run 1.71x;
+    gait grows with distance; the ring and D-pad centre set and clear the run.
+  - check-studio-github.py: 21 sections open with no errors, the proposal goes through.
+  - Debug log, start of session vs final (headless phone flow): same sections, state fields and event kinds, the same
+    104 entries in its error list (all phase 16 "is in legacy; X stands in" warnings).
+- Questions waiting for the owner:
+  - Should 08a-2's branch and this one go to main now (one PR from this branch carries both)?
+  - On your phone: try the run ring and "Always run", and send a debug log.
+  - Tags `phase-04-done` and `phase-05-done` still need pushing from your machine.
+- Next session starts with: "start 08b" (docs/phases/08a-plan.md, Part B), after this branch is merged; the full quick
+  check and a picture baseline first, since none exists yet.
+
 ### Phase 09 batch 1, part 2 - natural trunks, editable leaves, the great oak, a Props section - 2026-10-19
 Owner's requests: stop the rest of the batch; rework the trees' trunks to look natural; leaves easy to edit in the
 Studio; redo the great oak with the swing (Copperleaf); a clear prop part in the Studio with all its tools; no graphic

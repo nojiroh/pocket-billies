@@ -244,7 +244,12 @@ same commit, and updates the quick-check steps, self-test checks and debug-menu 
 11. SAVE_VERSION 3, once, after the save changes: your phone and cloud saves are set aside once and a new game
     starts.
 
-### 08a-3: UI, text, Studio, run
+### 08a-3: UI, text, Studio, run (DONE 2026-10-19, see HANDOFF "Phase 08a-3")
+Corrections found while doing it: 08a-2 sat on its own branch, not on main (merged in first); 08a-2 had already done
+most of step 1 (step chips, brackets, trainer card, restore and merge dialogs) and 08a-1 had dropped `tripProgress`;
+the Studio's Jobs section crashed since 08a-2 (it read `rules.jobs`); the debug log does list the places opened, so
+its header says "no positions" rather than "no movement history"; the full quick check and the new picture baseline
+were skipped at the owner's request (smoke only).
 Note (2026-10-18): the UI phase (06) is being built at the same time on its own branch and reworks these screens.
 Before starting, see whether 06 has merged; build 08a-3 on top of it, or ask the owner which goes first.
 Already done in 08a-2: the .wh-steps chips, the Today card's steps and brackets (the card shows only the money), the
