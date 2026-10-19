@@ -97,7 +97,19 @@ Saves: old saves may carry `gold: true`. CLAUDE.md says old saves do not matter;
 6. Delete the 129 `_gold.png` files and the gold output of the two sheet builders; update check-quick.py.
 7. Add variants: format, Studio editor, game drawing (separate commits).
 
-### Variants (proposal)
+### Coats (decided and built, 2026-10-19)
+The owner named them **coats** (not variants: the Variants are a group of people and props have variants) and chose
+ramp swaps plus exact swaps, odds per coat (none at first) and optional hand-painted sheets.
+- game/data/coats.json, keyed by id: `{ name, ramps: { from: to }, swap: { "#old": "#new" }, odds: { wild, egg, fish },
+  art: { <species>: { front, back } } }`; schema game/data/schema/coats.schema.json; check-data checks ramps, species
+  and pictures. game/art/next/palette.js now loads on the game and Studio pages.
+- game/js/logic/coats.js: `coatColorMap`, `coatRecolor` (nearest palette shade within 24, only swapped shades move),
+  `coatRoll` (no odds: no random number drawn), `coatArt`.
+- Game: `rigAtlas(sp, view, coat)`, `rigParts(sp, k, coat)`, `rigPreload([[sp, k, coat]])`, `rigCanvasHTML`/`bustHTML`
+  `{ coat }`; one recoloured sheet per sheet and coat, cached. A Billie or encounter carries `coat`.
+- Studio: the Coats section; coat pickers in Billies and the battle preview.
+
+### Variants (the first proposal, kept for the record)
 A variant is a named palette recolour: `{ id, name, swaps: { "#rrggbb": "#rrggbb", ... }, art?: { view: path } }`
 in a new `game/data/variants.json`, applied as the rig is drawn (a cached recoloured atlas per species and variant).
 Optional hand-painted override sheets replace the recolour. A Billie carries `variant: '<id>'` or nothing.

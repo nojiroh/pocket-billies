@@ -23,6 +23,11 @@ kept aside in the browser).
   section; a story preview in the scene editor (pick a point in the story: who is there and who isn't); **Play from
   here** opens the game in that place, on a spot you pick, at that point in the story, with your unsaved changes.
   The scene editor's People card edits today's people (script, when, unless), and the Check lists the story checks.
+- Golden Billies are gone (Studio track ST-0). In their place, coats: a recolour of a Billie's art, made in the
+  Studio's new Coats section from palette ramp and colour swaps or a hand-painted sheet, each with its own odds in the
+  wild, from eggs and on the line (none yet: the sample coat, Midnight, only comes from the debug menu). A coat's name
+  goes before the Billie's ("A wild Midnight Emberox appeared.") and shows on its card. The Studio's pixel editor
+  loses its Golden tabs; the Billies section and the battle preview pick a coat instead.
 - The Studio's scene preview has a free camera: fly over the scene and look at any corner from any angle, with the
   mouse, the keys or two fingers on a phone; a top view; put the walker where you look.
 - Robots (phase 17 prototype): build your own from a gem and four parts (torso with head, left arm, right arm,
