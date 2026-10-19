@@ -11,10 +11,10 @@
 import { expose } from '../test-globals.js';
 /* eslint-disable no-func-assign */
 expose({
-  FB: [() => FB],
   FRAME_BLOCK_BYTES: [() => FRAME_BLOCK_BYTES],
   FRAME_BLOCK_GLSL: [() => FRAME_BLOCK_GLSL],
   FRAME_BLOCK_LAYOUT: [() => FRAME_BLOCK_LAYOUT],
+  FRAME_OFFSETS: [() => FRAME_OFFSETS],
   STD140: [() => STD140],
   packFrameBlock: [() => packFrameBlock, v => (packFrameBlock = v)],
   put: [() => put],
@@ -56,7 +56,7 @@ function std140Layout(glsl) {
 export const FRAME_BLOCK_LAYOUT = std140Layout(FRAME_BLOCK_GLSL);
 export const FRAME_BLOCK_BYTES = FRAME_BLOCK_LAYOUT.size;
 /* each member's offset in floats (the block is packed through a Float32Array and an Int32Array over the same bytes) */
-const FB = Object.fromEntries(Object.entries(FRAME_BLOCK_LAYOUT.members).map(([k, v]) => [k, v[0] / 4]));
+const FRAME_OFFSETS = Object.fromEntries(Object.entries(FRAME_BLOCK_LAYOUT.members).map(([k, v]) => [k, v[0] / 4]));
 const put = (f, at, v, n) => {
   for (let i = 0; i < n; i++) f[at + i] = v[i];
 };
@@ -69,25 +69,25 @@ export function packFrameBlock(X, f, n) {
     F = S && S.far,
     LS = (S && X.lampSh) || [];
   if (S) {
-    put(f, FB.uShadowM, S.vp, 16);
-    f[FB.uShadowOn] = 1;
-    f[FB.uShLite] = X.lite ? 1 : 0;
-    f[FB.uShadowTexel] = f[FB.uShadowTexel + 1] = 1 / S.size;
-    f[FB.uShPen] = S.pen;
+    put(f, FRAME_OFFSETS.uShadowM, S.vp, 16);
+    f[FRAME_OFFSETS.uShadowOn] = 1;
+    f[FRAME_OFFSETS.uShLite] = X.lite ? 1 : 0;
+    f[FRAME_OFFSETS.uShadowTexel] = f[FRAME_OFFSETS.uShadowTexel + 1] = 1 / S.size;
+    f[FRAME_OFFSETS.uShPen] = S.pen;
   }
   if (F) {
-    put(f, FB.uShadowM2, F.vp, 16);
-    f[FB.uShadow2On] = 1;
-    f[FB.uShadowTexel2] = f[FB.uShadowTexel2 + 1] = 1 / F.size;
-    f[FB.uShPen2] = F.pen;
+    put(f, FRAME_OFFSETS.uShadowM2, F.vp, 16);
+    f[FRAME_OFFSETS.uShadow2On] = 1;
+    f[FRAME_OFFSETS.uShadowTexel2] = f[FRAME_OFFSETS.uShadowTexel2 + 1] = 1 / F.size;
+    f[FRAME_OFFSETS.uShPen2] = F.pen;
   }
-  for (let i = 0; i < 2; i++) if (LS[i]) put(f, i ? FB.uLampM1 : FB.uLampM0, LS[i].vp, 16);
-  n[FB.uNLS] = LS.length;
+  for (let i = 0; i < 2; i++) if (LS[i]) put(f, i ? FRAME_OFFSETS.uLampM1 : FRAME_OFFSETS.uLampM0, LS[i].vp, 16);
+  n[FRAME_OFFSETS.uNLS] = LS.length;
   const L = X.lights;
   for (let i = 0; i < L.length; i++) {
     const l = L[i],
-      p = FB.uLP + i * 4,
-      c = FB.uLC + i * 4;
+      p = FRAME_OFFSETS.uLP + i * 4,
+      c = FRAME_OFFSETS.uLC + i * 4;
     f[p] = l.p[0];
     f[p + 1] = l.p[1];
     f[p + 2] = l.p[2];
@@ -97,39 +97,39 @@ export function packFrameBlock(X, f, n) {
     f[c + 2] = l.c[2];
     f[c + 3] = 1;
   }
-  n[FB.uNL] = L.length;
-  for (let i = 0; i < X.ao.length; i++) put(f, FB.uAO + i * 4, X.ao[i], 4);
-  n[FB.uNAO] = X.ao.length;
+  n[FRAME_OFFSETS.uNL] = L.length;
+  for (let i = 0; i < X.ao.length; i++) put(f, FRAME_OFFSETS.uAO + i * 4, X.ao[i], 4);
+  n[FRAME_OFFSETS.uNAO] = X.ao.length;
   if (X.sh) {
-    for (let i = 0; i < 9; i++) for (let j = 0; j < 3; j++) f[FB.uSH + i * 4 + j] = X.sh[i * 3 + j];
-    f[FB.uSHK] = X.shK;
+    for (let i = 0; i < 9; i++) for (let j = 0; j < 3; j++) f[FRAME_OFFSETS.uSH + i * 4 + j] = X.sh[i * 3 + j];
+    f[FRAME_OFFSETS.uSHK] = X.shK;
   }
-  put(f, FB.uEye, X.eye, 3);
-  put(f, FB.uSunDir, X.sun.dir, 3);
-  put(f, FB.uSunCol, X.sun.col, 3);
-  put(f, FB.uAmbTop, X.ambTop, 3);
-  put(f, FB.uAmbBot, X.ambBot, 3);
-  f[FB.uAmbK] = X.ambK;
-  put(f, FB.uFogCol, X.fog, 3);
-  f[FB.uFogStart] = X.fogStart;
-  f[FB.uFogD] = X.fogD;
-  f[FB.uFogSun] = X.fogSun || 0;
-  put(f, FB.uTint, X.tint, 3);
-  f[FB.uTintAmt] = X.tintAmt;
-  if (X.roomB) put(f, FB.uRoomB, X.roomB, 4);
-  f[FB.uRoomDim] = X.roomDim || 0;
-  f[FB.uMist] = X.mist;
-  f[FB.uMistY] = X.mistY;
-  if (X.valley) put(f, FB.uValley, X.valley, 2);
-  if (X.season) put(f, FB.uSeason, X.season, 4);
-  f[FB.uTime] = X.time;
-  f[FB.uShStr] = X.shStr;
-  put(f, FB.uShTint, X.shTint, 3);
-  f[FB.uCloudSh] = X.cloudSh;
-  f[FB.uCloudSpd] = X.cloudSpd;
-  f[FB.uCloudCov] = X.cloudCov ?? 0.45;
-  f[FB.uContact] = X.contact;
-  f[FB.uShPx] = X.shPx || 0;
-  f[FB.uShSteps] = X.shSteps ?? 2;
-  if (X.shLift) put(f, FB.uShLift, X.shLift, 3);
+  put(f, FRAME_OFFSETS.uEye, X.eye, 3);
+  put(f, FRAME_OFFSETS.uSunDir, X.sun.dir, 3);
+  put(f, FRAME_OFFSETS.uSunCol, X.sun.col, 3);
+  put(f, FRAME_OFFSETS.uAmbTop, X.ambTop, 3);
+  put(f, FRAME_OFFSETS.uAmbBot, X.ambBot, 3);
+  f[FRAME_OFFSETS.uAmbK] = X.ambK;
+  put(f, FRAME_OFFSETS.uFogCol, X.fog, 3);
+  f[FRAME_OFFSETS.uFogStart] = X.fogStart;
+  f[FRAME_OFFSETS.uFogD] = X.fogD;
+  f[FRAME_OFFSETS.uFogSun] = X.fogSun || 0;
+  put(f, FRAME_OFFSETS.uTint, X.tint, 3);
+  f[FRAME_OFFSETS.uTintAmt] = X.tintAmt;
+  if (X.roomB) put(f, FRAME_OFFSETS.uRoomB, X.roomB, 4);
+  f[FRAME_OFFSETS.uRoomDim] = X.roomDim || 0;
+  f[FRAME_OFFSETS.uMist] = X.mist;
+  f[FRAME_OFFSETS.uMistY] = X.mistY;
+  if (X.valley) put(f, FRAME_OFFSETS.uValley, X.valley, 2);
+  if (X.season) put(f, FRAME_OFFSETS.uSeason, X.season, 4);
+  f[FRAME_OFFSETS.uTime] = X.time;
+  f[FRAME_OFFSETS.uShStr] = X.shStr;
+  put(f, FRAME_OFFSETS.uShTint, X.shTint, 3);
+  f[FRAME_OFFSETS.uCloudSh] = X.cloudSh;
+  f[FRAME_OFFSETS.uCloudSpd] = X.cloudSpd;
+  f[FRAME_OFFSETS.uCloudCov] = X.cloudCov ?? 0.45;
+  f[FRAME_OFFSETS.uContact] = X.contact;
+  f[FRAME_OFFSETS.uShPx] = X.shPx || 0;
+  f[FRAME_OFFSETS.uShSteps] = X.shSteps ?? 2;
+  if (X.shLift) put(f, FRAME_OFFSETS.uShLift, X.shLift, 3);
 }
