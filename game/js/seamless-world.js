@@ -1,18 +1,12 @@
 /* seamless-world.js — v43: the seamless world. Scenes stay separate files, but what the walk screen shows is a window onto one
-   continuous ground: a scene with the road leaving its exit, the road itself, or the next scene with the road arriving.
+   continuous ground: a place's own scene with a band of each neighbour where they meet (phase 08b: the only kind of view;
+   the older road frame is gone, every road is a join).
 
-   How it is stitched: a road (a link between two stops) lives in a frame of its own, the "road frame", whose origin is
-   the first scene's corner and in which the road leaves that scene's exit at right angles to its edge, runs straight,
-   turns at right angles when it has to (so the far end arrives at right angles to the far scene's edge too), and the
-   far scene is placed so that its exit sits at the road's end. Every view is an axis-aligned box of that frame made
-   into an ordinary scene object (tiles, heights, steps, props, water, rails...) on the fly — a "composite" — so the
-   renderer, the navigation grid, the encounters and the folk need to know nothing about any of this. Moving from one
-   composite to the next is a translation: the player, the camera and everything moving are shifted by the difference
-   of the two boxes' origins (shiftWalkView), the ground of the next box is painted in the background before it is needed,
-   and nothing fades or cuts.
-
-   (The road frame, seamlessRoad, is unused: every road is a join. Its ground, verges, trees and flowers come from a
-   seed, the link's index, never stored. Phase 08b removes it.) */
+   Every view is an axis-aligned box made into an ordinary scene object (tiles, heights, steps, props, water, rails...)
+   on the fly — a "composite" — so the renderer, the navigation grid, the encounters and the folk need to know nothing
+   about any of this. Moving from one composite to the next is a translation: the player, the camera and everything
+   moving are shifted by the difference of the two boxes' origins (shiftWalkView), the ground of the next box is painted
+   in the background before it is needed, and nothing fades or cuts. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { mapExits, mapIdAt, provide } from './hooks.js';
@@ -28,7 +22,6 @@ import {
   groundKey,
   mapArtPaths,
   mapById,
-  mapHub,
   mapMoodName,
   stepCellAt,
   stepGrid,
@@ -42,7 +35,6 @@ import { lifeShift } from './ambient-life.js';
 import { shiftWorldBillies } from './world-billies.js';
 /* eslint-disable no-func-assign */
 expose({
-  HUB_ROAD_LENGTH: [() => HUB_ROAD_LENGTH],
   LOOK_KEYS: [() => LOOK_KEYS],
   LOOK_MIX_RANGE: [() => LOOK_MIX_RANGE],
   MIXED_LOOK_KEYS: [() => MIXED_LOOK_KEYS],
@@ -59,18 +51,15 @@ expose({
   WALL_DECOR_PATTERN: [() => WALL_DECOR_PATTERN],
   seamlessBuildingWindows: [() => seamlessBuildingWindows, v => (seamlessBuildingWindows = v)],
   seamlessCompose: [() => seamlessCompose, v => (seamlessCompose = v)],
-  seamlessComposeRoad: [() => seamlessComposeRoad, v => (seamlessComposeRoad = v)],
   seamlessCornerHeight: [() => seamlessCornerHeight, v => (seamlessCornerHeight = v)],
   seamlessDelta: [() => seamlessDelta, v => (seamlessDelta = v)],
   seamlessEasedGround: [() => seamlessEasedGround, v => (seamlessEasedGround = v)],
-  seamlessExitPath: [() => seamlessExitPath, v => (seamlessExitPath = v)],
   seamlessExitRaise: [() => seamlessExitRaise, v => (seamlessExitRaise = v)],
   seamlessGate: [() => seamlessGate, v => (seamlessGate = v)],
   seamlessGetReady: [() => seamlessGetReady, v => (seamlessGetReady = v)],
   seamlessHash: [() => seamlessHash, v => (seamlessHash = v)],
   seamlessHubMap: [() => seamlessHubMap, v => (seamlessHubMap = v)],
   seamlessHubParts: [() => seamlessHubParts, v => (seamlessHubParts = v)],
-  seamlessInRect: [() => seamlessInRect],
   seamlessJoin: [() => seamlessJoin, v => (seamlessJoin = v)],
   seamlessLookMix: [() => seamlessLookMix, v => (seamlessLookMix = v)],
   seamlessLookOf: [() => seamlessLookOf, v => (seamlessLookOf = v)],
@@ -78,22 +67,9 @@ expose({
   seamlessMapById: [() => seamlessMapById, v => ((seamlessMapById = v), provide({ seamlessMapById }))],
   seamlessMemo: [() => seamlessMemo, v => (seamlessMemo = v)],
   seamlessMixHex: [() => seamlessMixHex, v => (seamlessMixHex = v)],
-  seamlessNearestRoadPoint: [
-    () => seamlessNearestRoadPoint,
-    v => ((seamlessNearestRoadPoint = v), provide({ seamlessNearestRoadPoint })),
-  ],
   seamlessNoise: [() => seamlessNoise, v => (seamlessNoise = v)],
   seamlessOn: [() => seamlessOn],
-  seamlessPointAlong: [() => seamlessPointAlong, v => (seamlessPointAlong = v)],
-  seamlessRoad: [() => seamlessRoad, v => (seamlessRoad = v)],
   seamlessRoadExit: [() => seamlessRoadExit, v => (seamlessRoadExit = v)],
-  seamlessRoadHeight: [() => seamlessRoadHeight, v => (seamlessRoadHeight = v)],
-  seamlessRoadIndex: [() => seamlessRoadIndex, v => (seamlessRoadIndex = v)],
-  seamlessRoadLength: [() => seamlessRoadLength, v => (seamlessRoadLength = v)],
-  seamlessRoadLook: [() => seamlessRoadLook, v => (seamlessRoadLook = v)],
-  seamlessRoadPointAt: [() => seamlessRoadPointAt, v => (seamlessRoadPointAt = v)],
-  seamlessRoadProps: [() => seamlessRoadProps, v => (seamlessRoadProps = v)],
-  seamlessRoadTile: [() => seamlessRoadTile, v => (seamlessRoadTile = v)],
   seamlessRoamView: [() => seamlessRoamView, v => (seamlessRoamView = v)],
   seamlessRoomId: [() => seamlessRoomId, v => (seamlessRoomId = v)],
   seamlessRoomMap: [() => seamlessRoomMap, v => (seamlessRoomMap = v)],
@@ -103,29 +79,17 @@ expose({
   seamlessSeamOf: [() => seamlessSeamOf, v => (seamlessSeamOf = v)],
   seamlessTrimCache: [() => seamlessTrimCache, v => (seamlessTrimCache = v)],
   seamlessUndergroundVeil: [() => seamlessUndergroundVeil, v => (seamlessUndergroundVeil = v)],
-  seamlessViewFor: [() => seamlessViewFor, v => (seamlessViewFor = v)],
-  seamlessViewMap: [() => seamlessViewMap, v => (seamlessViewMap = v)],
   seamlessViewReady: [() => seamlessViewReady, v => (seamlessViewReady = v)],
   seamlessWorld: [() => seamlessWorld],
   shiftWalkView: [() => shiftWalkView, v => (shiftWalkView = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ seamlessLookTick, seamlessMapById, seamlessNearestRoadPoint });
+provide({ seamlessLookTick, seamlessMapById });
 /* to-module: end */
-export const seamlessWorld = { cache: new Map(), max: 5, gen: 0, LW: 40, MID: 64, BAND: 12, on: true };
+export const seamlessWorld = { cache: new Map(), max: 5, gen: 0, on: true };
 provide({ seamlessWorld }); /* to-module */
 export const seamlessOn = () =>
   seamlessWorld.on && !(typeof engineSetting === 'function' && engineSetting('world', 'seamless') === false);
-function seamlessRoadLength(steps) {
-  return Math.max(24, Math.round((40 * steps) / 500));
-}
-function seamlessRoadIndex(a, b) {
-  for (let i = 0; i < ROADS.length; i++) {
-    const L = ROADS[i];
-    if ((L[0] === a && L[1] === b) || (L[0] === b && L[1] === a)) return i;
-  }
-  return -1;
-}
 function seamlessHash(x, y, s) {
   let h = (Math.floor(x) * 374761393 + Math.floor(y) * 668265263 + (s || 0) * 1013904223) ^ 0x5bd1e995;
   h = Math.imul(h ^ (h >>> 13), 1274126177);
@@ -162,93 +126,6 @@ function seamlessRoadExit(node, i) {
     p = sc.exits[k];
   return { k, side: e.side, p, width: e.width || 2 };
 }
-/* the road of link i: its frame, legs and ends. A = the link's first stop, B its second, whichever way you walk it */
-function seamlessRoad(i) {
-  const key = 'road' + i + '|' + seamlessWorld.gen;
-  let R = seamlessWorld.cache.get(key);
-  if (R) return R;
-  const L = ROADS[i],
-    a = L[0],
-    b = L[1],
-    A = mapById(mapIdAt(a)),
-    B = mapById(mapIdAt(b)),
-    ea = seamlessRoadExit(a, i),
-    eb = seamlessRoadExit(b, i);
-  if (!A || !B || !ea || !eb) return null;
-  const Lr = seamlessRoadLength(L[2]),
-    dA = SIDE_VECTORS[ea.side],
-    dB = SIDE_VECTORS[eb.side],
-    LW = seamlessWorld.LW;
-  /* A sits at (ax, az): room on its west or south for the road when the exit is on that side */
-  const ax = ea.side === 'W' ? LW : 0,
-    az = ea.side === 'S' ? LW : 0;
-  const start =
-    ea.side === 'E'
-      ? [ax + A.w, az + ea.p[1]]
-      : ea.side === 'W'
-        ? [ax, az + ea.p[1]]
-        : ea.side === 'N'
-          ? [ax + ea.p[0], az + A.h]
-          : [ax + ea.p[0], az];
-  /* legs: straight when the exits face each other, one turn when they are at right angles, two when both look the same way */
-  const dEnd = [-dB[0], -dB[1]],
-    dot = dA[0] * dEnd[0] + dA[1] * dEnd[1],
-    legs = [];
-  if (dot > 0.5) legs.push({ d: dA, L: Lr });
-  else if (Math.abs(dot) < 0.5) {
-    legs.push({ d: dA, L: Lr * 0.5 }, { d: dEnd, L: Lr * 0.5 });
-  } else {
-    const perp = [dA[1], -dA[0]],
-      s = seamlessHash(i, 7, 1) < 0.5 ? 1 : -1;
-    legs.push({ d: dA, L: Lr * 0.34 }, { d: [perp[0] * s, perp[1] * s], L: Lr * 0.32 }, { d: dEnd, L: Lr * 0.34 });
-  }
-  const pts = [start.slice()];
-  let p = start.slice(),
-    u = 0;
-  const segs = [];
-  for (const g of legs) {
-    const q = [p[0] + g.d[0] * g.L, p[1] + g.d[1] * g.L];
-    segs.push({ a: p, b: q, d: g.d, u0: u, u1: u + g.L });
-    u += g.L;
-    p = q;
-    pts.push(q);
-  }
-  const end = p,
-    bEdge =
-      eb.side === 'E'
-        ? [B.w, eb.p[1]]
-        : eb.side === 'W'
-          ? [0, eb.p[1]]
-          : eb.side === 'N'
-            ? [eb.p[0], B.h]
-            : [eb.p[0], 0];
-  /* B sits on whole metres (its tiles must line up with the grid); the road's end is within half a metre of its exit */
-  const bx = Math.round(end[0] - bEdge[0]),
-    bz = Math.round(end[1] - bEdge[1]);
-  R = {
-    i,
-    a,
-    b,
-    A: A,
-    B: B,
-    aId: mapIdAt(a),
-    bId: mapIdAt(b),
-    ea,
-    eb,
-    Lr,
-    legs: segs,
-    pts,
-    start,
-    end,
-    aOff: [ax, az],
-    bOff: [bx, bz],
-    seed: i * 131 + 7,
-    edgeA: A.edge || 'g',
-    edgeB: B.edge || 'g',
-  };
-  seamlessWorld.cache.set(key, R);
-  return R;
-}
 /* ---------- alpha 0.2: places joined edge to edge ----------
    Two linked places meet at their exits: B's edge lies against A's, B placed so that its exit is exactly across from
    A's (tools/join-places.py, now on the legacy branch, made every link's two exits face each other, east to west or north to south). A place's
@@ -257,7 +134,7 @@ function seamlessRoad(i) {
    countryside you can't walk into. The ground eases across every seam (heights over 8 m each side, a ragged line
    where two kinds of ground meet). A trip is the walk from the hub to the exit (the path the tool measured,
    edgeExits[k].path) and on from the next place's entrance to its hub, the view changing to the next place's at
-   the seam. A link whose exits don't face each other (one drawn in the Studio since) still gets a road. */
+   the seam. A link whose exits don't face each other is not joined (no view joins it; phase 08b makes it a data error). */
 const OPPOSITE_SIDE = { E: 'W', W: 'E', N: 'S', S: 'N' },
   NEIGHBOR_BAND_DEPTH = 36,
   NEIGHBOR_BAND_HALF_WIDTH = 26;
@@ -461,171 +338,7 @@ function seamlessEasedGround(S, sid) {
     return { G, E };
   });
 }
-/* the walk from a place's hub to one of its exits, in its own metres: the path the tool measured, or a straight line */
-function seamlessExitPath(S, k) {
-  const e = (S.edgeExits || [])[k],
-    p = (S.exits || [])[k],
-    hub = mapHub(S);
-  if (!p) return { pts: [hub, hub], len: 0 };
-  let pts = e && e.path && e.path.length > 1 ? e.path.map(q => q.slice()) : [hub.slice(), p.slice()];
-  const last = pts[pts.length - 1];
-  if (Math.hypot(last[0] - p[0], last[1] - p[1]) > 0.3) pts.push(p.slice());
-  let len = 0;
-  for (let i = 1; i < pts.length; i++) len += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]);
-  return { pts, len };
-}
-function seamlessPointAlong(P, u) {
-  u = clamp(u, 0, P.len);
-  let s = 0;
-  for (let i = 1; i < P.pts.length; i++) {
-    const a = P.pts[i - 1],
-      b = P.pts[i],
-      l = Math.hypot(b[0] - a[0], b[1] - a[1]);
-    if (s + l >= u || i === P.pts.length - 1) {
-      const k = l ? clamp((u - s) / l, 0, 1) : 0;
-      return {
-        x: a[0] + (b[0] - a[0]) * k,
-        z: a[1] + (b[1] - a[1]) * k,
-        d: l ? [(b[0] - a[0]) / l, (b[1] - a[1]) / l] : [0, 1],
-      };
-    }
-    s += l;
-  }
-  return { x: P.pts[0][0], z: P.pts[0][1], d: [0, 1] };
-}
-/* the road point at u metres from A's edge, and the nearest road point to (x, z) in the frame */
-function seamlessRoadPointAt(R, u) {
-  u = clamp(u, 0, R.Lr);
-  for (const s of R.legs)
-    if (u <= s.u1 || s === R.legs[R.legs.length - 1]) {
-      const k = clamp((u - s.u0) / (s.u1 - s.u0 || 1), 0, 1);
-      return { x: s.a[0] + (s.b[0] - s.a[0]) * k, z: s.a[1] + (s.b[1] - s.a[1]) * k, d: s.d };
-    }
-}
-export function seamlessNearestRoadPoint(R, x, z) {
-  let best = null;
-  for (const s of R.legs) {
-    const vx = s.b[0] - s.a[0],
-      vz = s.b[1] - s.a[1],
-      l2 = vx * vx + vz * vz || 1e-9,
-      k = clamp(((x - s.a[0]) * vx + (z - s.a[1]) * vz) / l2, 0, 1),
-      px = s.a[0] + vx * k,
-      pz = s.a[1] + vz * k,
-      d = Math.hypot(px - x, pz - z);
-    if (!best || d < best.d)
-      best = { d, u: s.u0 + Math.sqrt(l2) * k, px, pz, side: (x - px) * vz - (z - pz) * vx > 0 ? 1 : -1 };
-  }
-  return best;
-}
-const seamlessInRect = (x, z, o, sc) => x >= o[0] && z >= o[1] && x < o[0] + sc.w && z < o[1] + sc.h;
-/* the road's ground at a frame point: a path down the middle, verges of grass and tall grass, then the countryside
-   of the nearer scene's edge terrain. Across water (a scene whose edge is sea) the road is a sandy causeway. */
-function seamlessRoadTile(R, x, z) {
-  const n = seamlessNearestRoadPoint(R, x, z),
-    d = n.d,
-    w = 1.4 + 0.5 * seamlessNoise(n.u * 0.11, 3, R.seed),
-    edge = n.u < R.Lr / 2 ? R.edgeA : R.edgeB,
-    wet = 'wd'.includes(edge);
-  if (d < w) return 'p';
-  if (d < w + 0.9 && seamlessHash(x * 2, z * 2, R.seed) < 0.35) return wet ? 's' : 'g';
-  if (d < 5.5) {
-    if (wet) return 's';
-    const t = seamlessNoise(x * 0.21, z * 0.21, R.seed + 3);
-    return t > 0.62 ? 't' : t < 0.18 && !wet ? 'f' : 'g';
-  }
-  if (d < 7 && wet) return 's';
-  if (wet) return edge;
-  const t = seamlessNoise(x * 0.09, z * 0.09, R.seed + 5);
-  return t > 0.7 && 'gGy'.includes(edge) ? 'y' : edge === 'G' || edge === 'g' ? (t < 0.3 ? 'G' : 'g') : edge;
-}
-function seamlessRoadHeight(R, x, z) {
-  const n = seamlessNearestRoadPoint(R, x, z),
-    k = smooth01((n.d - 2) / 6);
-  return (
-    (seamlessNoise(x * 0.07, z * 0.07, R.seed + 9) - 0.5) * 0.5 * k +
-    (seamlessNoise(x * 0.02, z * 0.02, R.seed + 11) - 0.5) * 0.6 * k
-  );
-}
-/* props along the road: a signpost at each end, benches and stones now and then, and the countryside's growth, from the
-   same families and ground letters the wild-growth pass uses */
-function seamlessRoadProps(R, box, C) {
-  const out = [],
-    cat = C.props,
-    nat =
-      seamlessWorld.nat ||
-      (seamlessWorld.nat = Object.entries(cat)
-        .filter(([k, M]) => M.family && M.grow && M.family !== 'water')
-        .map(([k, M]) => [k, M]));
-  if (!nat.length) return out;
-  const x0 = Math.floor(box[0]),
-    z0 = Math.floor(box[1]),
-    x1 = Math.ceil(box[0] + box[2]),
-    z1 = Math.ceil(box[1] + box[3]);
-  for (let z = z0; z < z1; z += 2)
-    for (let x = x0; x < x1; x += 2) {
-      const h = seamlessHash(x, z, R.seed + 21);
-      if (h > 0.42) continue;
-      const px = x + 1 + (seamlessHash(x, z, R.seed + 22) - 0.5) * 1.8,
-        pz = z + 1 + (seamlessHash(x, z, R.seed + 23) - 0.5) * 1.8;
-      if (seamlessInRect(px, pz, R.aOff, R.A) || seamlessInRect(px, pz, R.bOff, R.B)) continue;
-      const n = seamlessNearestRoadPoint(R, px, pz);
-      if (n.d < 2.6) continue;
-      const ch = seamlessRoadTile(R, px, pz);
-      if ('pwd'.includes(ch)) continue;
-      const fam =
-        n.d < 6
-          ? h < 0.2
-            ? 'ground'
-            : 'flowers'
-          : h < 0.07
-            ? 'trees'
-            : h < 0.17
-              ? 'shrubs'
-              : h < 0.22
-                ? 'rocks'
-                : h < 0.3
-                  ? 'ground'
-                  : 'flowers';
-      const ks = nat.filter(([k, M]) => M.family === fam && M.grow.includes(ch));
-      if (!ks.length) continue;
-      let r = seamlessHash(x, z, R.seed + 24) * ks.reduce((s, [, M]) => s + (M.weight || 1), 0),
-        pick = ks[0];
-      for (const q of ks) {
-        r -= q[1].weight || 1;
-        if (r <= 0) {
-          pick = q;
-          break;
-        }
-      }
-      const q = { k: pick[0], x: +px.toFixed(2), z: +pz.toFixed(2), w: 43 };
-      const s = +(0.85 + seamlessHash(x, z, R.seed + 25) * 0.3).toFixed(2);
-      if (Math.abs(s - 1) > 0.02) q.s = s;
-      if (seamlessHash(x, z, R.seed + 26) < 0.45) q.f = 1;
-      out.push(q);
-    }
-  /* the road's furniture: a sign at both ends, a bench or a stone every so often */
-  for (let u = 28; u < R.Lr - 20; u += 36) {
-    const h = seamlessHash(u, 1, R.seed + 31),
-      p = seamlessRoadPointAt(R, u),
-      side = h < 0.5 ? 1 : -1,
-      px = p.x - p.d[1] * 2.6 * side,
-      pz = p.z + p.d[0] * 2.6 * side;
-    if (px < box[0] || pz < box[1] || px > box[0] + box[2] || pz > box[1] + box[3]) continue;
-    const k =
-      h < 0.3 && cat.bench_wood
-        ? 'bench_wood'
-        : h < 0.5 && cat.rocks_b
-          ? 'rocks_b'
-          : h < 0.7 && cat.boulder_lichen
-            ? 'boulder_lichen'
-            : cat.stump
-              ? 'stump'
-              : null;
-    if (k) out.push({ k, x: +px.toFixed(2), z: +pz.toFixed(2), w: 43, f: side > 0 ? 1 : 0 });
-  }
-  return out;
-}
-/* the look of a composite: the scene's own, or the two ends mixed along the road */
+/* the look of a composite: the place's own, its neighbours' eased in near each seam */
 function seamlessMixHex(a, b, t) {
   const A = hexToRgb(a),
     B = hexToRgb(b);
@@ -663,17 +376,6 @@ const LOOK_KEYS = [
   'cliff',
   'grass',
 ];
-function seamlessRoadLook(R, t) {
-  const A = R.A,
-    B = R.B,
-    o = {};
-  for (const k of LOOK_KEYS) o[k] = t < 0.5 ? A[k] : B[k];
-  if (A.sky && B.sky) o.sky = A.sky.map((c, i) => seamlessMixHex(c, B.sky[i] || c, t));
-  if (A.haze && B.haze) o.haze = seamlessMixHex(A.haze, B.haze, t);
-  o.indoor = 0;
-  o.folk = t < 0.5 ? A.folk : B.folk;
-  return o;
-}
 function seamlessLookOf(S) {
   const o = {};
   for (const k of LOOK_KEYS) o[k] = S[k];
@@ -747,12 +449,12 @@ function seamlessLookTick() {
   sc._lk = key;
   Object.assign(sc, seamlessLookMix(sc.look0, best ? best.m.look : null, best ? best.f : 0));
 }
-/* v46: a composite from any number of scenes and roads laid in one frame. F = {box:[x, z, w, h] in the frame,
+/* v46: a composite from any number of scenes laid in one frame. F = {box:[x, z, w, h] in the frame,
    scenes:[{S, id, off:[x, z], clip?, side?}] (where each scene's corner lies; alpha 0.2: a neighbour shown only where it
    meets the place has the stretch shown, clip [x0, z0, x1, z1] in the frame, and the side of the place it meets),
-   roads:[{R, off:[x, z]}] (frame = road frame + off), base (the scene whose hub, exits and folk the view uses), look}.
-   Inside a scene its own tiles, heights, steps and things (alpha 0.2: its eased ground, seamlessEasedGround); elsewhere the nearest
-   road's ground eased to the scenes' rims, or, in a joined view (no road), countryside: the places' own edge ground
+   base (the scene whose hub, exits and folk the view uses), look}.
+   Inside a scene its own tiles, heights, steps and things (alpha 0.2: its eased ground, seamlessEasedGround); elsewhere,
+   in a joined view, countryside: the places' own edge ground
    running on a little, then their surroundings rising gently, with trees, which you can't walk into (sc.inside).
    Where two places meet, the grounds mingle over a couple of metres. Each part is recorded with where its corner lies
    in the composite (parts), so moving from one composite to another that shares a part is a shift. */
@@ -795,23 +497,13 @@ function seamlessCompose(id, F) {
     if (UB && q.band && !q.S.under) q.rock = 1;
   }
   const inCover = (q, x, z) => !!q.cover && x >= q.cover[0] && z >= q.cover[1] && x < q.cover[2] && z < q.cover[3];
-  const RR = F.roads.map(q => ({ R: q.R, o: [q.off[0] - x0, q.off[1] - z0] })),
-    fill = !RR.length && SS.some(q => q.band); /* composite point (x, z) is road-frame point (x - o0, z - o1) */
+  const fill = SS.some(q => q.band);
   for (const q of SS) parts.push({ id: q.id, ox: q.O[0], oz: q.O[1], w: q.S.w, h: q.S.h });
-  for (const q of RR) parts.push({ id: 'road' + q.R.i, ox: q.o[0], oz: q.o[1], road: 1 });
   const inK = (q, x, z) => x >= q.K[0] && z >= q.K[1] && x < q.K[2] && z < q.K[3],
     inS = (x, z) => {
       for (const q of SS) if (inK(q, x, z)) return q;
       return null;
     };
-  const nearRoad = (x, z) => {
-    let best = null;
-    for (const q of RR) {
-      const n = seamlessNearestRoadPoint(q.R, x - q.o[0], z - q.o[1]);
-      if (!best || n.d < best.n.d) best = { q, n };
-    }
-    return best;
-  };
   const nearK = (x, z) => {
     let b = null;
     for (const q of SS) {
@@ -928,16 +620,13 @@ function seamlessCompose(id, F) {
           break;
         }
       } else if (fill) ch = UB ? 'r' : fillTile(nearK(x, zz), x, zz);
-      else {
-        const r = nearRoad(x, zz);
-        ch = r ? seamlessRoadTile(r.q.R, x - r.q.o[0], zz - r.q.o[1]) : F.base.edge || 'g';
-      }
+      else ch = F.base.edge || 'g';
       row += ch;
     }
     tiles.push(row);
   }
-  /* heights: each place's own (eased near its joins); where two places meet they agree half way. Outside them the
-    nearest road's noise eased to the rim over 5 m, or (joined) the rim rising gently into the countryside */
+  /* heights: each place's own (eased near its joins); where two places meet they agree half way. Outside them
+    (joined) the rim rising gently into the countryside, or (no neighbour) the rim eased down over 5 m */
   const cH0 = (q, a, b) => {
     const A = q.adj;
     if (A) return A.G[b * (q.S.w + 1) + a];
@@ -978,7 +667,7 @@ function seamlessCompose(id, F) {
       if (HS[k]) continue;
       const n = nearK(i, zc),
         rim = n ? HV[Math.round(n.cz) * W1 + Math.round(n.cx)] : 0;
-      let v; /* (a road's middle may hold no place at all) */
+      let v;
       if (fill) {
         const q = n.q;
         v =
@@ -988,9 +677,7 @@ function seamlessCompose(id, F) {
             : smooth01((n.d - 1) / 9) *
               (0.8 + 1.8 * seamlessNoise((i - q.O[0]) * 0.07, (zc - q.O[1]) * 0.07, seamlessSalt(q.id) + 9)));
       } else {
-        const rd = nearRoad(i, zc);
-        v = rd ? seamlessRoadHeight(rd.q.R, i - rd.q.o[0], zc - rd.q.o[1]) : 0;
-        if (n && n.d < 6) v = rim + (v - rim) * smooth01(n.d / 5);
+        v = n && n.d < 6 ? rim * (1 - smooth01(n.d / 5)) : 0; /* a place with no neighbour: its rim eased down to 0 */
       }
       HV[k] = v;
     }
@@ -1012,8 +699,6 @@ function seamlessCompose(id, F) {
     hub: null,
     parts,
     comp: {
-      road: RR.length === 1 ? RR[0].R.i : (F.road ?? null),
-      roads: RR.map(q => q.R.i),
       box: [x0, z0, w, h],
       hubOf: F.hubOf ?? null,
       joined: fill ? 1 : 0,
@@ -1211,17 +896,6 @@ function seamlessCompose(id, F) {
     sc.stepsV = 1;
     STEP_GRID_CACHE.set(sc, E);
   }
-  /* the roads' countryside and furniture, kept off every scene in the view */
-  for (const q of RR) {
-    for (const p of seamlessRoadProps(q.R, [-q.o[0], -q.o[1], w, h], C)) {
-      const x = +(p.x + q.o[0]).toFixed(2),
-        z = +(p.z + q.o[1]).toFixed(2);
-      if (inS(x, z)) continue;
-      const r = nearRoad(x, z);
-      if (r && r.q !== q) continue;
-      sc.props.push(Object.assign(p, { x, z }));
-    }
-  }
   /* alpha 0.2: the countryside's growth, thicker away from the places (trees frame the view) */
   if (fill && !UB) {
     const nat =
@@ -1320,8 +994,8 @@ function seamlessCompose(id, F) {
     }));
   }
   sc.under = UB ? 1 : 0;
-  /* v46: where each spot's ground pattern comes from, so it is the same in every view: a scene's own metres inside it,
-    the road's frame on the road (the painter, walk-view.js, seeds its variants and noise from these) */
+  /* v46: where each spot's ground pattern comes from, so it is the same in every view: a scene's own metres inside it
+    (the painter, walk-view.js, seeds its variants and noise from these) */
   sc.stable = {
     scenes: SS.map(q => ({
       id: q.id,
@@ -1335,7 +1009,6 @@ function seamlessCompose(id, F) {
       exits: q.S.exits || [],
       worn: q.S.worn || null,
     })),
-    roads: RR.map(q => ({ o: q.o, R: q.R, salt: seamlessSalt('road' + q.R.i) })),
   };
   return sc;
 }
@@ -1344,30 +1017,13 @@ function seamlessSalt(id) {
   for (const ch of String(id)) h = (h * 131 + ch.charCodeAt(0)) % 100003;
   return (h * 7.31) % 997;
 }
-/* a window of one road (the long ones' middle) */
-function seamlessComposeRoad(id, R, box, base, t) {
-  return seamlessCompose(id, {
-    box,
-    scenes: [
-      { S: R.A, id: R.aId, off: R.aOff },
-      { S: R.B, id: R.bId, off: R.bOff },
-    ],
-    roads: [{ R, off: [0, 0] }],
-    base,
-    look: seamlessRoadLook(R, t),
-    road: R.i,
-  });
-}
-/* v46: a place's hub view: the scene with the first stretch of every road leaving it (and whatever of the next scene
-   that reaches), in the scene's own metres. You roam in it without a single switch; a trip leaves it only when the
-   road runs on past what it holds. */
-const HUB_ROAD_LENGTH = 36;
+/* v46: a place's hub view: the scene with a band of each neighbour where they meet, in the scene's own metres. You roam
+   in it without a single switch; crossing an exit shifts you into the neighbour's hub view. */
 function seamlessHubParts(node) {
   const sid = mapIdAt(node),
     S = mapById(sid);
   if (!S) return null;
   const scenes = [{ S, id: sid, off: [0, 0] }],
-    roads = [],
     bands = [];
   let x0 = 0,
     z0 = 0,
@@ -1375,39 +1031,18 @@ function seamlessHubParts(node) {
     z1 = S.h;
   for (const e of ROADS_BY_NODE[node]) {
     const J = seamlessJoin(e.i);
-    if (J) {
-      const atA = J.a === node,
-        nid = atA ? J.bId : J.aId;
-      if (nid === sid) continue;
-      const ex = atA ? J.ea : J.eb;
-      bands.push({
-        S: atA ? J.B : J.A,
-        id: nid,
-        off: atA ? J.off.slice() : [-J.off[0], -J.off[1]],
-        side: ex.side,
-        at: ex.side === 'E' || ex.side === 'W' ? ex.p[1] : ex.p[0],
-      });
-      continue;
-    }
-    const R = seamlessRoad(e.i);
-    if (!R) continue;
-    const atA = R.a === node,
-      So = atA ? R.aOff : R.bOff;
-    roads.push({ R, off: [-So[0], -So[1]] });
-    const No = atA ? R.bOff : R.aOff,
-      N = atA ? R.B : R.A,
-      nid = atA ? R.bId : R.aId;
-    if (nid !== sid) scenes.push({ S: N, id: nid, off: [No[0] - So[0], No[1] - So[1]] });
-    for (let k = 0; k <= HUB_ROAD_LENGTH; k += 3) {
-      const u = atA ? Math.min(R.Lr, k) : Math.max(0, R.Lr - k),
-        p = seamlessRoadPointAt(R, u),
-        x = p.x - So[0],
-        z = p.z - So[1];
-      x0 = Math.min(x0, x - seamlessWorld.BAND);
-      z0 = Math.min(z0, z - seamlessWorld.BAND);
-      x1 = Math.max(x1, x + seamlessWorld.BAND);
-      z1 = Math.max(z1, z + seamlessWorld.BAND);
-    }
+    if (!J) continue;
+    const atA = J.a === node,
+      nid = atA ? J.bId : J.aId;
+    if (nid === sid) continue;
+    const ex = atA ? J.ea : J.eb;
+    bands.push({
+      S: atA ? J.B : J.A,
+      id: nid,
+      off: atA ? J.off.slice() : [-J.off[0], -J.off[1]],
+      side: ex.side,
+      at: ex.side === 'E' || ex.side === 'W' ? ex.p[1] : ex.p[0],
+    });
   }
   /* alpha 0.2: each neighbour shows where it meets the place, NEIGHBOR_BAND_HALF_WIDTH either side of its exit (past the place's corner
     too, so the view you leave and the one you arrive in agree round the exit); two on one side share it half and half,
@@ -1450,10 +1085,10 @@ function seamlessHubParts(node) {
     x1 = Math.max(x1, clip[2]);
     z1 = Math.max(z1, clip[3]);
   }
-  const M = bands.length && !roads.length ? 6 : 0,
+  const M = bands.length ? 6 : 0,
     bx = Math.floor(x0 - M),
     bz = Math.floor(z0 - M); /* (the camera stops 2 m past a view's edge: 6 m of countryside round it is enough) */
-  return { box: [bx, bz, Math.ceil(x1 + M) - bx, Math.ceil(z1 + M) - bz], scenes, roads, base: S, hubOf: node };
+  return { box: [bx, bz, Math.ceil(x1 + M) - bx, Math.ceil(z1 + M) - bz], scenes, base: S, hubOf: node };
 }
 export function seamlessHubMap(node) {
   const sid = mapIdAt(node),
@@ -1469,69 +1104,18 @@ export function seamlessHubMap(node) {
   seamlessTrimCache();
   return sc;
 }
+/* (the cap is the old one, made when road frames shared the cache; phase 08b measures it before changing it) */
 function seamlessTrimCache() {
-  while (seamlessWorld.cache.size > seamlessWorld.max + ROADS.length) {
-    let k0 = null;
-    for (const k of seamlessWorld.cache.keys())
-      if (!k.startsWith('road')) {
-        k0 = k;
-        break;
-      }
-    if (!k0) break;
-    seamlessWorld.cache.delete(k0);
-  }
+  while (seamlessWorld.cache.size > seamlessWorld.max + ROADS.length)
+    seamlessWorld.cache.delete(seamlessWorld.cache.keys().next().value);
 }
-/* the view for a place on a road: the near end's hub, the far end's hub, or a window in between */
-function seamlessViewFor(R, u, endOnly) {
-  const LW = seamlessWorld.LW,
-    two = R.Lr <= 2 * LW - 8,
-    cut = two ? R.Lr / 2 : 24;
-  if (endOnly === 'a' || (!endOnly && u <= cut))
-    return { id: 'w:' + R.aId + '*', hub: R.a, off: R.aOff, base: R.A, t: 0 };
-  if (endOnly === 'b' || (!endOnly && u >= R.Lr - cut))
-    return { id: 'w:' + R.bId + '*', hub: R.b, off: R.bOff, base: R.B, t: 1 };
-  const M = seamlessWorld.MID,
-    k = Math.round(u / 24),
-    p = seamlessRoadPointAt(R, k * 24);
-  return {
-    id: 'w:road' + R.i + '@' + k,
-    box: [p.x - M / 2, p.z - M / 2, M, M],
-    base: u < R.Lr / 2 ? R.A : R.B,
-    t: u / R.Lr,
-    mid: [p.x, p.z],
-    off: [0, 0],
-  };
-}
-function seamlessViewMap(view, R) {
-  if (view.hub != null) return seamlessHubMap(view.hub);
-  const key = view.id + '|' + seamlessWorld.gen;
-  let sc = seamlessWorld.cache.get(key);
-  if (sc) return sc;
-  sc = seamlessComposeRoad(view.id, R, view.box, view.base, view.t);
-  sc.id = view.id;
-  if (view.mid) {
-    sc.hub = [view.mid[0] - sc.comp.box[0], view.mid[1] - sc.comp.box[1]];
-    sc.folk = 0;
-    sc.exits = [];
-    sc.edgeExits = null;
-  }
-  seamlessWorld.cache.set(key, sc);
-  seamlessTrimCache();
-  return sc;
-}
-/* a composite by id, for mapById(): "w:<scene>*" (a place's hub), "w:road<link>@<k>" (a road's middle); the v43 ids
+/* a composite by id, for mapById(): "w:<scene>*" (a place's hub); the v43 ids
    "w:<scene>><link>" and "w:<scene><<link>" now mean the hub */
 function seamlessMapById(id) {
   if (!id || !id.startsWith('w:')) return null;
   for (const [k, v] of seamlessWorld.cache) if (k === id + '|' + seamlessWorld.gen) return v;
   let m = id.match(/^(w:.+)#([^@#]+)@(-?[\d.]+),(-?[\d.]+)(?:,(-?[\d.]+))?$/);
   if (m) return seamlessRoomMap(m[1], m[2], m[5] != null ? [+m[3], +m[4], +m[5]] : [+m[3], +m[4]]);
-  m = id.match(/^w:road(\d+)@(-?\d+)$/);
-  if (m) {
-    const R = seamlessRoad(+m[1]);
-    if (!R) return null;
-    return seamlessViewMap(seamlessViewFor(R, +m[2] * 24), R);
-  }
   m = id.match(/^w:(.+?)(\*|[<>]\d+)$/);
   if (!m) return null;
   const node = LOCATIONS.findIndex(r => r.mapId === m[1]);
@@ -1890,7 +1474,7 @@ export function seamlessRoomMap(baseId, roomId, door) {
   seamlessTrimCache();
   return sc;
 }
-/* where a point of one composite lands in another (both hold a scene or the road): null when they share nothing */
+/* where a point of one composite lands in another (both hold the same scene): null when they share nothing */
 export function seamlessDelta(fromId, toId) {
   const a = mapById(fromId),
     b = mapById(toId);
@@ -1904,7 +1488,7 @@ export function seamlessDelta(fromId, toId) {
   return null;
 }
 /* --- what the walk shows (called by walkState in ui.js) --- */
-/* roaming at a stop: v46: always the place's hub view (the scene with the first stretch of each road), so walking
+/* roaming at a stop: v46: always the place's hub view (the scene with a band of each neighbour), so walking
    round a place and up to its exits never switches views */
 export function seamlessRoamView(node, pos) {
   if (!seamlessOn()) return null;
@@ -1966,7 +1550,7 @@ export function seamlessGetReady(id, urgent, focus) {
   return false;
 }
 /* v46: show a view only when it is ready; until then stay in the one on screen, as long as where you stand is still
-   well inside it (on a road the views overlap by 40 m, so there is time). If you would walk off its edge the switch
+   well inside it (neighbouring views overlap by 36 m, so there is time). If you would walk off its edge the switch
    happens anyway, built on the spot as before. */
 export function seamlessGate(v) {
   if (

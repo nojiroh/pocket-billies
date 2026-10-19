@@ -45,7 +45,6 @@ import {
 } from './walk-view.js';
 import { engineSetting } from './engine/settings.js';
 import { TERRAIN_MATERIALS } from './walk-view-gl.js';
-import { seamlessNearestRoadPoint } from './seamless-world.js';
 /* eslint-disable no-func-assign */
 expose({
   PAINT_WORKER_MAIN: [() => PAINT_WORKER_MAIN],
@@ -112,7 +111,7 @@ onmessage=ev=>{const m=ev.data;
  if(m.t==='cancel'){if(Q.some(q=>q.id===m.id))GONE.add(m.id);return}
  if(m.t==='prio'){for(const q of Q)if(q.id===m.id)q.pr=m.pr;return}
  if(m.t==='paint'){Q.push(m);if(!busy){busy=true;setTimeout(run,0)}}};`;
-/* the worker's source: the painter and everything it calls, as written in walk-view.js (and seamlessNearestRoadPoint, seamless-world.js) */
+/* the worker's source: the painter and everything it calls, as written in walk-view.js */
 function paintWorkerSource() {
   const fns = [
     hash2d,
@@ -130,7 +129,6 @@ function paintWorkerSource() {
     stepCornerHeight,
     stepCellsJoined,
     paintGroundSteps,
-    seamlessNearestRoadPoint,
   ];
   const consts = {
     GROUND_BORDER_M,
@@ -252,11 +250,6 @@ function sendPaintWorkerView(id, sc) {
           hub: r.hub,
           exits: r.exits,
           worn: r.worn,
-        })),
-        roads: (sc.stable.roads || []).map(q => ({
-          o: q.o,
-          salt: q.salt,
-          R: { legs: ((q.R && q.R.legs) || []).map(s => ({ a: s.a, b: s.b, u0: s.u0 })) },
         })),
       }
     : null;

@@ -38,7 +38,6 @@ import {
   reducedMotion,
   saveData,
   seamlessMapById,
-  seamlessNearestRoadPoint,
   smooth01,
   soundEffect,
   soundEffectAt,
@@ -745,28 +744,17 @@ export function stableCells(sc, cx0, cy0, cw, ch) {
         }
       }
       if (hit) continue;
-      if (!S.roads.length) {
-        /* alpha 0.2: the countryside round a joined view takes the nearest place's metres */ let b = null;
-        for (const r of S.scenes) {
-          const k = r.clip || [r.x, r.z, r.x + r.w, r.z + r.h],
-            d = Math.hypot(x + 0.5 - clamp(x + 0.5, k[0], k[2]), z + 0.5 - clamp(z + 0.5, k[1], k[3]));
-          if (!b || d < b.d) b = { d, r };
-        }
-        if (b) {
-          ox[q] = -b.r.x;
-          oz[q] = -b.r.z;
-          salt[q] = b.r.salt | 0;
-        }
-        continue;
+      /* alpha 0.2: the countryside round a joined view takes the nearest place's metres */ let b = null;
+      for (const r of S.scenes) {
+        const k = r.clip || [r.x, r.z, r.x + r.w, r.z + r.h],
+          d = Math.hypot(x + 0.5 - clamp(x + 0.5, k[0], k[2]), z + 0.5 - clamp(z + 0.5, k[1], k[3]));
+        if (!b || d < b.d) b = { d, r };
       }
-      let best = null;
-      for (const r of S.roads) {
-        const n = seamlessNearestRoadPoint(r.R, x + 0.5 - r.o[0], z + 0.5 - r.o[1]);
-        if (!best || n.d < best.d) best = { d: n.d, r };
+      if (b) {
+        ox[q] = -b.r.x;
+        oz[q] = -b.r.z;
+        salt[q] = b.r.salt | 0;
       }
-      ox[q] = -best.r.o[0];
-      oz[q] = -best.r.o[1];
-      salt[q] = best.r.salt | 0;
     }
   return { ox, oz, salt };
 }

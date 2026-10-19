@@ -14,7 +14,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { provide, saveData, seamlessWorld } from './hooks.js';
-import { LOCATIONS, ROADS, ROADS_BY_NODE, START_NODE, gameData } from './game-data.js';
+import { LOCATIONS, ROADS_BY_NODE, START_NODE, gameData } from './game-data.js';
 /* eslint-disable no-func-assign */
 expose({
   MAP_FIELDS: [() => MAP_FIELDS],
@@ -117,11 +117,6 @@ function mapsOfView(id) {
   let m = id.match(/#([^@#]+)@/);
   if (m) out.push(m[1]);
   if (!id.startsWith('w:')) return out.concat(id.split('#')[0]);
-  m = id.match(/^w:road(\d+)@/);
-  if (m) {
-    const L = ROADS[+m[1]];
-    return L ? out.concat(mapsAround(L[0], 1), mapsAround(L[1], 1)) : out;
-  }
   m = id.match(/^w:(.+?)(\*|[<>]\d+)/);
   const node = m ? nodeOfMap(m[1]) : -1;
   return node >= 0 ? out.concat(mapsAround(node, 1)) : out;
