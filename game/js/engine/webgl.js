@@ -7,7 +7,7 @@
 import { expose } from '../test-globals.js';
 import { artCacheVersion, onGlContextRestored, provide, walkRenderer } from '../hooks.js';
 import { clamp } from '../util.js';
-import { FRAME_BLOCK_GLSL } from './frame-block.js';
+import { FRAME_BLOCK_BYTES, FRAME_BLOCK_GLSL, FRAME_BLOCK_LAYOUT } from './frame-block.js';
 import { makeCanvas } from '../art.js';
 import { imageReady } from '../walk-view.js';
 import { engineSetting } from './settings.js';
@@ -31,6 +31,7 @@ expose({
   ensurePrograms: [() => ensurePrograms, v => setEnsurePrograms(v)],
   finishProgramCompile: [() => finishProgramCompile, v => setFinishProgramCompile(v)],
   frameBlockBinding: [() => frameBlockBinding, v => (frameBlockBinding = v)],
+  frameBlockCheck: [() => frameBlockCheck, v => (frameBlockCheck = v)],
   freeMesh: [() => freeMesh, v => (freeMesh = v)],
   gpuLoading: [() => gpuLoading, v => (gpuLoading = v)],
   gpuState: [() => gpuState],
@@ -488,6 +489,48 @@ function compileProgram([vs, fs], name) {
     U[nm] = gl.getUniformLocation(p, u.name);
   }
   return { p, U, name, lit: fs.includes('PB_FRAME_BLOCK'), frame: frameBlockBinding(gl, p) };
+}
+/* phase 20 C3, for the in-game test: every program with the light code compiles and links with the Frame block, and
+   on this device the block's size and each member's offset are the ones engine/frame-block.js packs to. The test
+   programs are deleted again and don't count as compiled after load. */
+export function frameBlockCheck(defs) {
+  const gl = gpuState.gl,
+    was = gpuState.frameBlock,
+    pcl = gpuState.pcl[0],
+    bad = [];
+  let n = 0;
+  gpuState.frameBlock = true;
+  try {
+    for (const [k, v] of Object.entries(defs)) {
+      if (!Array.isArray(v) || !v[1].includes('PB_FRAME_BLOCK')) continue;
+      let P;
+      try {
+        P = compileProgram(v, k);
+      } catch (e) {
+        bad.push(String(e.message || e).slice(0, 160));
+        continue;
+      }
+      n++;
+      const i = gl.getUniformBlockIndex(P.p, 'Frame');
+      if (!P.frame) bad.push(k + ': no Frame block');
+      else {
+        const size = gl.getActiveUniformBlockParameter(P.p, i, gl.UNIFORM_BLOCK_DATA_SIZE),
+          idx = gl.getActiveUniformBlockParameter(P.p, i, gl.UNIFORM_BLOCK_ACTIVE_UNIFORM_INDICES),
+          at = gl.getActiveUniforms(P.p, idx, gl.UNIFORM_OFFSET);
+        if (size !== FRAME_BLOCK_BYTES) bad.push(`${k}: the block is ${size} bytes, packed as ${FRAME_BLOCK_BYTES}`);
+        Array.from(idx).forEach((u, j) => {
+          const nm = gl.getActiveUniform(P.p, u).name.replace(/\[0\]$/, ''),
+            m = FRAME_BLOCK_LAYOUT.members[nm];
+          if (!m || m[0] !== at[j]) bad.push(`${k}: ${nm} at ${at[j]}, packed at ${m ? m[0] : 'nowhere'}`);
+        });
+      }
+      gl.deleteProgram(P.p);
+    }
+  } finally {
+    gpuState.frameBlock = was;
+    gpuState.pcl[0] = pcl;
+  }
+  return { n, bad };
 }
 /* the input locations a vertex shader ends up with (its own layout(location=…), else the engine's standard one);
    two inputs on one location is a link error on some GPUs (Adreno) that others forgive, so the full test checks it */

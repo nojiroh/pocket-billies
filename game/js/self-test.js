@@ -51,7 +51,7 @@ import {
   walkView,
 } from './walk-view.js';
 import { engineSetting } from './engine/settings.js';
-import { attributeClashes, gpuState } from './engine/webgl.js';
+import { attributeClashes, frameBlockCheck, gpuState } from './engine/webgl.js';
 import { POST_EFFECT_SHADERS } from './engine/post-effects.js';
 import { environment } from './environment.js';
 import { walkRenderer } from './walk/walk-state.js';
@@ -61,7 +61,7 @@ import { roomDimming } from './walk/lighting.js';
 import { BUILDING_SHADERS, buildingState } from './buildings.js';
 import { hasStructures, structureState } from './structures.js';
 import { SOLID_PROP_SHADERS, solidPropState } from './solid-props.js';
-import { propModelState } from './prop-models.js';
+import { propModelShaders, propModelState } from './prop-models.js';
 import { buddyTap, companionSpecies, worldBillies } from './world-billies.js';
 import { seamlessRoomMap, seamlessWorld } from './seamless-world.js';
 import { endBattle, pickMove, pickTarget, stopTimers, tapMessage } from './battle.js';
@@ -466,9 +466,18 @@ async function runFullTest(mode) {
           if (c.length) bad.push(k + ': ' + c.join(', '));
         }
         if (bad.length) throw new Error(bad.join('; '));
+        /* phase 20 C3: the lit programs also build with the Frame block, laid out as it is packed */
+        let fb = '';
+        if (typeof gpuState !== 'undefined' && gpuState.gl) {
+          const r = frameBlockCheck(
+            Object.assign({}, all, typeof propModelShaders === 'function' ? propModelShaders() : {})
+          );
+          if (r.bad.length) throw new Error('Frame block: ' + r.bad.slice(0, 4).join('; '));
+          fb = `; ${r.n} with the Frame block`;
+        }
         if (typeof buildingState !== 'undefined' && buildingState.fail)
           throw new Error('3D buildings are off on this device: ' + String(buildingState.fail).slice(0, 90));
-        return Object.keys(all).length + ' shaders';
+        return Object.keys(all).length + ' shaders' + fb;
       },
       1
     );

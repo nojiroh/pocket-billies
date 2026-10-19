@@ -792,7 +792,8 @@ def in_game_test_step(b, base, R):
         if not after or after[-1]['team'] != st['team']: raise Exception(f'the save wasn’t written back to the account as it was: {after}')
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         g = graphics_test_ready(pg)
-        return f'{", ".join(p["name"] for p in r["phases"])} passed in {r["seconds"]} s; nothing written during it, the save written back after; {g}'
+        names = ', '.join(p['name'] + (' (' + p['why'] + ')' if p['ok'] and p.get('why') else '') for p in r['phases'])
+        return f'{names} passed in {r["seconds"]} s; nothing written during it, the save written back after; {g}'
     finally:
         ctx.close()
 

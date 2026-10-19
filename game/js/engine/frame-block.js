@@ -53,7 +53,7 @@ function std140Layout(glsl) {
   }
   return { members: out, size: Math.ceil(at / 16) * 16 };
 }
-const FRAME_BLOCK_LAYOUT = std140Layout(FRAME_BLOCK_GLSL);
+export const FRAME_BLOCK_LAYOUT = std140Layout(FRAME_BLOCK_GLSL);
 export const FRAME_BLOCK_BYTES = FRAME_BLOCK_LAYOUT.size;
 /* each member's offset in floats (the block is packed through a Float32Array and an Int32Array over the same bytes) */
 const FB = Object.fromEntries(Object.entries(FRAME_BLOCK_LAYOUT.members).map(([k, v]) => [k, v[0] / 4]));
