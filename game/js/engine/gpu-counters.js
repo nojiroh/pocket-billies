@@ -84,7 +84,7 @@ const gpuCounters = {
   saved: null,
 };
 /* which pass the calls that follow belong to (one store; free while counting is off) */
-function gpuPass(name) {
+export function gpuPass(name) {
   gpuCounters.pass = PASS_INDEX[name] ?? 0;
 }
 const countInPass = (f, n) => {
