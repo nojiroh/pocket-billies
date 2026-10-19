@@ -43,8 +43,9 @@ import {
 import { drawPostEffects, screenSnapshot, setDrawPostEffects, setScreenSnapshot } from './engine/post-effects.js';
 import { environment } from './environment.js';
 import { walkRenderer } from './walk/walk-state.js';
+import { groundOcclusion, setGroundOcclusion } from './walk/ground-textures.js';
+import { buildGrass, grassWork, setBuildGrass, setGrassWork } from './walk/grass-build.js';
 import {
-  buildGrass,
   buildGroundMesh,
   drawBoxFaces,
   drawGrass,
@@ -53,11 +54,8 @@ import {
   drawWater,
   effectsPass,
   gatherFrameItems,
-  grassWork,
-  groundOcclusion,
   mountWalkView,
   reflectionPass,
-  setBuildGrass,
   setBuildGroundMesh,
   setDrawBoxFaces,
   setDrawGrass,
@@ -66,8 +64,6 @@ import {
   setDrawWater,
   setEffectsPass,
   setGatherFrameItems,
-  setGrassWork,
-  setGroundOcclusion,
   setMountWalkView,
   setReflectionPass,
   setShadowPass,

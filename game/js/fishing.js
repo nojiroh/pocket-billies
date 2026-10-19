@@ -18,7 +18,8 @@ import { terrainAt, walkView } from './walk-view.js';
 import { walkRenderer } from './walk/walk-state.js';
 import { standingHeightAt } from './walk/heights.js';
 import { worldCurveDrop } from './walk/draw-common.js';
-import { WATER_KIND_LOOKS, addRipple, waterAt } from './walk-view-gl.js';
+import { WATER_KIND_LOOKS } from './walk/water-data.js';
+import { addRipple, waterAt } from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
 expose({
   FISH_KINDS: [() => FISH_KINDS],

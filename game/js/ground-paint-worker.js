@@ -44,7 +44,7 @@ import {
   worldPatchTilesOn,
 } from './walk-view.js';
 import { engineSetting } from './engine/settings.js';
-import { TERRAIN_MATERIALS } from './walk-view-gl.js';
+import { TERRAIN_MATERIALS } from './walk/ground-textures.js';
 import { seamlessNearestRoadPoint } from './seamless-world.js';
 /* eslint-disable no-func-assign */
 expose({
