@@ -144,8 +144,9 @@ export function bowlThingHash(/** @type {number} */ i, /** @type {number} */ j) 
  * @param {{ x: number, y: number, reach: number, region: string }[]} places
  * @param {[number, number, number, number][]} roads segments seen from above
  * @param {(x: number, y: number) => number} relAt the height above the water at a point
- * @param {number} [spacing] between clump centres, in bowl radii @returns {BowlTree[]} */
-export function bowlClumps(G, places, roads, relAt, spacing = 0.026) {
+ * @param {number} [spacing] between clump centres, in bowl radii
+ * @param {Record<string, string[]>} [trees] each region's tree kinds (worldmap.json regions.*.trees) @returns {BowlTree[]} */
+export function bowlClumps(G, places, roads, relAt, spacing = 0.026, trees = BOWL_REGION_TREES) {
   /** @type {BowlTree[]} */
   const out = [];
   if (!G.c) return out;
@@ -193,7 +194,8 @@ export function bowlClumps(G, places, roads, relAt, spacing = 0.026) {
         }
       }
       const kinds =
-          BOWL_REGION_TREES[/** @type {keyof typeof BOWL_REGION_TREES} */ (near && near.region)] ||
+          /** @type {Record<string, string[]>} */ (trees)[(near && near.region) || 'starter'] ||
+          /** @type {Record<string, string[]>} */ (trees).starter ||
           BOWL_REGION_TREES.starter,
         count = 3 + Math.floor(bowlThingHash(i + 11, j) * 6);
       for (let q = 0; q < count; q++) {
