@@ -237,6 +237,22 @@ async function runBowlMapTest() {
         return { ok: false, note: `${S.clouds.length} clouds for the ${S.level} setting` };
       return `clouds ${S.level}: ${S.shown || 0} of ${S.clouds.length} showing, ${Math.round((S.nFall || 0) / 2)} drops falling; weather by place: ${list}; the sun at ${Math.round(sun.az)} degrees, ${Math.round(sun.light * 100)}% light, night ${sun.night.toFixed(2)}`;
     });
+    await step('Landmarks, buildings and trees', async () => {
+      const t = performance.now();
+      let W = worldBowl.ground.things;
+      while (!(W && W.gpu && W.done.size >= LOCATIONS.length - 2) && performance.now() - t < 20000) {
+        await bowlTestWait(250);
+        W = worldBowl.ground.things;
+      }
+      if (!W || !W.gpu) return { ok: false, note: 'nothing was built' };
+      const kinds = Object.entries(W.gpu.kinds),
+        models = kinds.filter(([k]) => k.startsWith('m:')).length,
+        n = kinds.reduce((a, [, K]) => a + K.n, 0),
+        far = W.stand.filter(q => q.g === 0).length,
+        near = W.stand.length - far;
+      if (!far) return { ok: false, note: 'no landmarks' };
+      return `${far} landmarks; ${n} trees and buildings (${models} building models, ${W.clumps} trees in clumps), ${near} standees close in; ${W.done.size} places in, last update ${W.ms} ms; ${Math.round((W.tris || 0) / 1000)}k triangles last frame`;
+    });
     await step('Every place is on the bowl', async () => {
       const S = worldBowl.spots || [],
         bad = LOCATIONS.filter(
