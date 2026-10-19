@@ -18,7 +18,7 @@ import { expose } from './test-globals.js';
 import { provide } from './hooks.js';
 import { $ } from './util.js';
 import { LOCATIONS } from './game-data.js';
-import { BOWL_RIM_HEIGHT } from './logic/bowl.js';
+import { BOWL_RIM_HEIGHT, bowlCoastAt } from './logic/bowl.js';
 import {
   BOWL_CAMERA,
   bowlCamHome,
@@ -186,6 +186,30 @@ async function runBowlMapTest() {
         T = worldBowl.ground.terrain;
       while (T.stamped.size < LOCATIONS.length - 1 && performance.now() - t < 30000) await bowlTestWait(200);
       return `${T.K.keys.length} terrain pictures; ready in ${ready} ms; ${T.stamped.size} of ${LOCATIONS.length} places' own ground laid on it in ${Math.round(performance.now() - t)} ms`;
+    });
+    await step('The sea and the coasts', () => {
+      const g = worldBowl.ground,
+        G = g && g.G;
+      if (!G || !G.c) return { ok: false, note: 'the ground has no sea' };
+      let sea = 0,
+        all = 0;
+      for (let j = 0; j <= G.n; j++)
+        for (let i = 0; i <= G.n; i++) {
+          const x = -1 + (2 * i) / G.n,
+            y = -1 + (2 * j) / G.n;
+          if (x * x + y * y > 1) continue;
+          all++;
+          if (G.c[j * (G.n + 1) + i] > 0) sea++;
+        }
+      const wet = LOCATIONS.filter((l, i) => {
+        const s = worldBowl.spots[i];
+        return s && !s.under && bowlCoastAt(G, s.x, s.y) > 0;
+      });
+      const share = Math.round((sea / all) * 100);
+      if (wet.length) return { ok: false, note: `under water: ${wet.map(l => l.id).join(', ')}` };
+      if (!g.water) return { ok: false, note: "the water isn't drawn" };
+      if (share < 35 || share > 45) return { ok: false, note: `the sea is ${share}% of the bowl` };
+      return `${share}% of the bowl is sea, every place on land; worked out in ${g.seaMs} ms; the water is ${g.water.n / 3} triangles`;
     });
     await step('Every place is on the bowl', async () => {
       const S = worldBowl.spots || [],
