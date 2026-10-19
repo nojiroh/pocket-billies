@@ -64,7 +64,6 @@
 .u-tag.bud {
   color: var(--t-profile);
 }
-.u-tag.gold,
 .u-tag.prime {
   color: var(--goldink, #3a2408);
   background: linear-gradient(180deg, var(--gold-a), var(--gold-b));

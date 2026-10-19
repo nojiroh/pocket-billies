@@ -385,7 +385,7 @@ function fishCaught() {
   saveData.stats.fished = (saveData.stats.fished || 0) + 1;
   if (typeof recordThingsToDoEvent === 'function') recordThingsToDoEvent('fish');
   save();
-  toast(`You hooked a ${q.gold ? 'Golden ' : ''}${nm}!`);
+  toast(`You hooked a ${nm}!`);
   setTimeout(() => startWild(q), 350);
 }
 function fishEnd(msg) {

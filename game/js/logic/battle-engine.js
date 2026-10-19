@@ -960,11 +960,11 @@ export function startWild(q) {
   if (!newBattle('wild', [foe], { qid: q.id, area: battleStageKey(), fmt: q.alpha ? 'alpha' : 'single' })) return;
   const nm = SPECIES[q.sp].name;
   if (q.alpha) {
-    battleSay(`An Alpha ${q.gold ? 'Golden ' : ''}${nm} rose out of the grass!`, { k: 'wild', alpha: 1 });
+    battleSay(`An Alpha ${nm} rose out of the grass!`, { k: 'wild', alpha: 1 });
     battleSay(`“${nm}!!”`, { k: 'cry', si: 1 });
     battleSay(`It’s huge, and it acts twice a turn. Your team steps up together.`);
   } else {
-    battleSay(`A wild ${q.gold ? 'Golden ' : ''}${nm} appeared.`, { k: 'wild' });
+    battleSay(`A wild ${nm} appeared.`, { k: 'wild' });
     battleSay(`“${nm}!”`, { k: 'cry', si: 1 });
   }
   if (CATCH_RULES.luxury.includes(SPECIES[q.sp].line))
