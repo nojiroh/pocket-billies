@@ -35,6 +35,7 @@ import { lifeShift } from './ambient-life.js';
 import { shiftWorldBillies } from './world-billies.js';
 /* eslint-disable no-func-assign */
 expose({
+  AHEAD_M: [() => AHEAD_M],
   LOOK_KEYS: [() => LOOK_KEYS],
   LOOK_MIX_RANGE: [() => LOOK_MIX_RANGE],
   MIXED_LOOK_KEYS: [() => MIXED_LOOK_KEYS],
@@ -69,6 +70,10 @@ expose({
   seamlessMemo: [() => seamlessMemo, v => (seamlessMemo = v)],
   seamlessMixHex: [() => seamlessMixHex, v => (seamlessMixHex = v)],
   seamlessNoise: [() => seamlessNoise, v => (seamlessNoise = v)],
+  seamlessPrepareAhead: [
+    () => seamlessPrepareAhead,
+    v => ((seamlessPrepareAhead = v), provide({ seamlessPrepareAhead })),
+  ],
   seamlessRoadExit: [() => seamlessRoadExit, v => (seamlessRoadExit = v)],
   seamlessRoamView: [() => seamlessRoamView, v => (seamlessRoamView = v)],
   seamlessRoomId: [() => seamlessRoomId, v => (seamlessRoomId = v)],
@@ -84,7 +89,7 @@ expose({
   shiftWalkView: [() => shiftWalkView, v => (shiftWalkView = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ seamlessLookTick, seamlessMapById });
+provide({ seamlessLookTick, seamlessMapById, seamlessPrepareAhead });
 /* to-module: end */
 /* stats (phase 08b, for the debug log): crossings that waited for the next view (held, their total and longest wait in
    ms), ones built on the spot because it wasn't ready (late), and views made ready ahead of an exit (ahead) */
@@ -1529,15 +1534,17 @@ export function seamlessGetReady(id, urgent, focus) {
   const key = groundKey(sc),
     G = GROUND_CACHE.get(key);
   if (!G) {
-    if (!seamlessWorld.busy) {
+    /* phase 08b: one painting at a time, but a view needed now doesn't wait behind one only looked ahead to */
+    if (!seamlessWorld.busy || (urgent && !seamlessWorld.busyUrgent && seamlessWorld.busyId !== id)) {
       seamlessWorld.busy = true;
       seamlessWorld.busyId = id;
+      seamlessWorld.busyUrgent = !!urgent;
       const t0 = performance.now();
       artLoad(mapArtPaths(sc))
         .then(() => buildGroundAsync(sc, urgent ? -5 : 10))
         .catch(() => {})
         .then(() => {
-          seamlessWorld.busy = false;
+          if (seamlessWorld.busyId === id) seamlessWorld.busy = false; /* (an urgent one may have started since) */
           if (typeof debugLog !== 'undefined')
             debugLog.add('scene', `painted ${id} ahead (${Math.round(performance.now() - t0)} ms in the background)`);
         });
@@ -1583,6 +1590,45 @@ export function seamlessGate(v) {
     seamlessWorld.stats.held++;
   }
   return Object.assign({}, v, { id: walkView.id, pos: [x, z], held: v.id });
+}
+/* phase 08b: walking toward an exit, the next place's view is made ready while you are still AHEAD_M away (its ground
+   painted, then built on the card, in the background), so crossing the seam rarely waits. Looked at twice a second;
+   the exit is the one most in line with the way you walked since (within 45 degrees; the nearest may be beside you) */
+const AHEAD_M = 40;
+function seamlessPrepareAhead(now) {
+  if (now - (seamlessWorld.aheadAt || 0) < 500) return;
+  seamlessWorld.aheadAt = now;
+  const sc = walkView.sc,
+    P = walkView.pl;
+  if (!sc || !P || !walkView.ready || !sc.comp || sc.comp.hubOf == null || sc.roomRect || P.fresh) return;
+  const node = sc.comp.hubOf,
+    o = sc.baseOff || [0, 0],
+    was = seamlessWorld.aheadFrom && seamlessWorld.aheadFrom[2] === walkView.id ? seamlessWorld.aheadFrom : null,
+    mx = was ? P.x - was[0] : 0,
+    mz = was ? P.z - was[1] : 0,
+    m = Math.hypot(mx, mz);
+  seamlessWorld.aheadFrom = [P.x, P.z, walkView.id];
+  if (m < 0.3) return; /* standing still */
+  let best = null;
+  for (const e of ROADS_BY_NODE[node]) {
+    const J = seamlessJoin(e.i);
+    if (!J) continue;
+    const atA = J.a === node,
+      ex = atA ? J.ea : J.eb,
+      dx = ex.p[0] + o[0] - P.x,
+      dz = ex.p[1] + o[1] - P.z,
+      d = Math.hypot(dx, dz),
+      cos = d ? (dx * mx + dz * mz) / (d * m) : 1;
+    if (d < AHEAD_M && cos > 0.7 && (!best || cos > best.cos)) best = { cos, to: atA ? J.b : J.a };
+  }
+  if (!best) return;
+  const id = 'w:' + mapIdAt(best.to) + '*';
+  if (seamlessViewReady(id)) return;
+  if (seamlessWorld.aheadFor !== id) {
+    seamlessWorld.aheadFor = id;
+    seamlessWorld.stats.ahead++;
+  }
+  seamlessGetReady(id, false);
 }
 /* a crossing that waited for its view has its view (or gave up waiting): how long it waited */
 function seamlessHeldEnds() {

@@ -54,6 +54,7 @@ import {
   riderOf,
   saveData,
   seamlessLookTick,
+  seamlessPrepareAhead,
   solidPropLevelOfDetail,
   soundEffectAt,
   stampDraw,
@@ -3641,6 +3642,7 @@ function drawWalkFrame(ts, dtm) {
 }
 function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   if (typeof seamlessLookTick === 'function') seamlessLookTick();
+  if (typeof seamlessPrepareAhead === 'function') seamlessPrepareAhead(performance.now());
   const gl = gpuState.gl,
     sc = walkView.sc,
     cv = walkView.cv;
