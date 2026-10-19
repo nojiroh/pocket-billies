@@ -380,6 +380,9 @@ def workbench_steps(pg, errs):
     if have() or pg.evaluate("studioState.artDirty.size"): errs.append('workbench: two undos left the new parts or pictures')
     pg.evaluate("redo(); redo()"); time.sleep(0.5)
     if have() != 3 or pg.evaluate("studioState.artDirty.size") != 3: errs.append('workbench: two redos did not bring the parts and pictures back')
+    # its sheets go, so a later Write (Part mode's step) only writes the sheets it drops (blobs left in would ask
+    # whether to replace parts of another kit, and nobody answers)
+    pg.evaluate("while (workbench.sheets.length) ACTIONS.wbDrop({ i: 0 })")
     if len(errs) > n: errs[n:] = [f'workbench: {e}' for e in errs[n:]]
     print(f"workbench: {'a kit sliced as the game has it, ' if kit else ''}a 4x sheet snapped, three parts written, undone and redone", flush=True)
 
