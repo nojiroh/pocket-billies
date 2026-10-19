@@ -173,7 +173,10 @@ export function setWritePath(v) {
   provide({ writePath });
 }
 /* ---------- undo / dirty ---------- */
-const snapshot = () => JSON.stringify({ D: studioState.D, R: studioState.rigs });
+/* caches kept on the data (keys starting with _, as the height cache's clock in a map) are left out, as saving does:
+   otherwise the snapshot changes on its own and an undo only takes that back */
+const snapshot = () =>
+  JSON.stringify({ D: studioState.D, R: studioState.rigs }, (k, v) => (k[0] === '_' && k.length > 1 ? undefined : v));
 export function commit(now) {
   clearTimeout(studioState.snapT);
   const go = () => {
