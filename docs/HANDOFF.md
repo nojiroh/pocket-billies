@@ -110,6 +110,27 @@ Branch `ccr-72e8ad56-lpn1x3`, from main.
 - Next session starts with: "start 08b" (docs/phases/08a-plan.md, Part B), after this branch is merged; the full quick
   check and a picture baseline first, since none exists yet.
 
+### Phase 09 batch 4 - the last made things of Copperleaf and Route 1 - 2026-10-19
+Owner's request: finish the rest of Copperleaf and Route 1.
+- Changed (tools/build-props-batch4.py; run batch1, 2, 3, 4 in that order): 18 props modelled and swapped in under
+  their own keys, so every placement in every scene draws the new one (they are used well beyond Copperleaf: signposts
+  in nearly every scene, fences, planters, benches and barrels in most towns):
+  barrel_wood, beehive, bench_wood, birdhouse, dock_post, fence_wood, flowerpot, garden_gnome, picket_fence,
+  planter_box, planter_round, rowboat, scarecrow, signpost, waystone, well, wheelbarrow, banner_bunting.
+  Only the bunting's pennants are drawn (they flutter); all else is modelled. Fences, benches, planters, signposts,
+  the well, the waystone, the boat and the bunting no longer turn or lean at random (vary rot/lean 0).
+  - Gable roofs (birdhouse, well) use the hip-roof cone with its top drawn out to a full ridge; no engine change.
+  - The showcase map has two new rows (made-small, made-big); the map may be at most 400 tiles deep, so it is full.
+- Not changed: the airship and its station were already models; their pictures and effects are at 34 px/m, so they
+  keep the scenery's scale. The old voxel recipes in game/art/scene/vox for the nine converted props are no longer
+  used; delete them in a separate commit if you agree.
+- Risky: fence lengths now have a post at each end and the middle, so two lengths side by side show a double post (as
+  the old picture did). The rowboat and dock posts sit on the ground plane; check them on the water in Willowmere,
+  Copperleaf and Palmhaven on your phone.
+- Verified: data check, lint, type-check, unit tests, smoke check; a few low-resolution looks at the new rows.
+- Copperleaf and Route 1 are now all in the new style. Next: the pixel-art and wind plan for 3D props (waiting for
+  your go-ahead), or Route 2.
+
 ### Phase 09 batch 3 - the buildings of Copperleaf and Route 1 - 2026-10-19
 Owner's request: the buildings next, in the art style and setting, learning from the cottage.
 - Changed (tools/build-props-batch3.py; run batch1, batch2, batch3 in that order, each rebuilds the showcase map):

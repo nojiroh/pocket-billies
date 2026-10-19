@@ -1770,7 +1770,10 @@
    "flat": 0,
    "tags": ["town","farm"],
    "group": "well",
-   "solid": 0.85
+   "solid": 0.85,
+   "model": "scene/next/models/well.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "crate": {
    "name": "Crate",
@@ -1834,7 +1837,10 @@
    "flat": 0,
    "tags": ["route","town"],
    "group": "signpost",
-   "solid": 0.3
+   "solid": 0.3,
+   "model": "scene/next/models/signpost.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "lantern": {
    "name": "Lantern post",
@@ -2698,7 +2704,9 @@
    "tags": ["route","farm","town"],
    "group": "fence_wood",
    "box": [2.2,0.25],
-   "model": "scene/vox/fence_wood.json"
+   "model": "scene/next/models/fence_wood.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "fence_wood_post": {
    "name": "Fence post",
@@ -2724,7 +2732,8 @@
    "tags": ["town","farm","junk"],
    "group": "crates",
    "solid": 0.4,
-   "model": "scene/vox/barrel_wood.json"
+   "model": "scene/next/models/barrel_wood.json",
+   "ppm": 32
   },
   "sack": {
    "name": "Grain sacks",
@@ -2817,7 +2826,9 @@
    "tags": ["town","mall","route"],
    "group": "bench_wood",
    "box": [1.6,0.6],
-   "model": "scene/vox/bench_wood.json"
+   "model": "scene/next/models/bench_wood.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "flowerpot": {
    "name": "Flower pot",
@@ -2830,7 +2841,8 @@
    "tags": ["town","mall"],
    "group": "flowerpot",
    "solid": 0.25,
-   "model": "scene/vox/flowerpot.json"
+   "model": "scene/next/models/flowerpot.json",
+   "ppm": 32
   },
   "mailbox_red": {
    "name": "Mailbox",
@@ -2946,7 +2958,9 @@
    "tags": ["town","mall"],
    "group": "planter_box",
    "box": [1.5,0.5],
-   "model": "scene/vox/planter_box.json"
+   "model": "scene/next/models/planter_box.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "streetlamp_b": {
    "name": "Double street lamp",
@@ -4053,7 +4067,8 @@
    "tags": ["city","town"],
    "group": "planter_round",
    "solid": 0.45,
-   "model": "scene/vox/planter_round.json"
+   "model": "scene/next/models/planter_round.json",
+   "ppm": 32
   },
   "banner_pole": {
    "name": "Banner lamp",
@@ -4355,7 +4370,10 @@
    "flat": 0,
    "tags": ["town","farm","route"],
    "group": "birdhouse",
-   "solid": 0.15
+   "solid": 0.15,
+   "model": "scene/next/models/birdhouse.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "beehive": {
    "name": "Beehives",
@@ -4367,7 +4385,10 @@
    "flat": 0,
    "tags": ["farm"],
    "group": "beehive",
-   "solid": 0.35
+   "solid": 0.35,
+   "model": "scene/next/models/beehive.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "scarecrow": {
    "name": "Scarecrow",
@@ -4379,7 +4400,10 @@
    "flat": 0,
    "tags": ["farm"],
    "group": "scarecrow",
-   "solid": 0.2
+   "solid": 0.2,
+   "model": "scene/next/models/scarecrow.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "wheelbarrow": {
    "name": "Wheelbarrow",
@@ -4392,7 +4416,9 @@
    "tags": ["farm","town"],
    "group": "wheelbarrow",
    "solid": 0.4,
-   "model": "scene/vox/wheelbarrow.json"
+   "model": "scene/next/models/wheelbarrow.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "firewood": {
    "name": "Firewood stack",
@@ -4416,7 +4442,10 @@
    "flat": 0,
    "tags": ["water"],
    "group": "rowboat",
-   "solid": 0.9
+   "solid": 0.9,
+   "model": "scene/next/models/rowboat.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "laundry_line": {
    "name": "Laundry line",
@@ -4447,7 +4476,9 @@
    "flat": 0,
    "tags": ["town","farm"],
    "group": "garden_gnome",
-   "solid": 0
+   "solid": 0,
+   "model": "scene/next/models/garden_gnome.json",
+   "ppm": 32
   },
   "picket_fence": {
    "name": "Picket fence",
@@ -4460,7 +4491,9 @@
    "tags": ["town","farm"],
    "group": "picket_fence",
    "box": [2.2,0.25],
-   "model": "scene/vox/picket_fence.json"
+   "model": "scene/next/models/picket_fence.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "stone_wall": {
    "name": "Stone wall",
@@ -4486,7 +4519,8 @@
    "tags": ["water"],
    "group": "dock_post",
    "solid": 0.15,
-   "model": "scene/vox/dock_post.json"
+   "model": "scene/next/models/dock_post.json",
+   "ppm": 32
   },
   "tree": {
    "name": "Battle tree",
@@ -8227,8 +8261,9 @@
    "group": "waystone",
    "solid": 0.6,
    "landmark": 1,
-   "vol": "puff",
-   "volDepth": 0.9
+   "model": "scene/next/models/waystone.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "golden_cushion": {
    "name": "Golden cushion",
@@ -9275,7 +9310,10 @@
    "posts": [
     {"x":-80,"r":0.15},
     {"x":80,"r":0.15}
-   ]
+   ],
+   "model": "scene/next/models/banner_bunting.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "tree_giant_swing": {
    "name": "Great oak with a swing",
