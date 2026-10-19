@@ -344,6 +344,24 @@ if (D.story) {
     for (const i of Object.keys(P.items || {})) if (!(D.items || {})[i]) problem(at, `has item ${i}, no such item`);
   }
 } else problem('story.json', 'missing');
+// Project Story S2: the story checks (tools/story-checks.mjs) on the game data, with the game's own parser and
+// conditions (loaded as the tests load them)
+{
+  const { readGameData } = await import('./data-files.mjs');
+  const { loadLogic } = await import('./test/load-logic.mjs');
+  const { storyChecks } = await import('./story-checks.mjs');
+  const G = readGameData(),
+    quiet = { log: console.log, warn: console.warn, info: console.info };
+  /* the loader's own notes (legacy stand-ins) are the game's business, not the data check's */
+  console.log = console.warn = console.info = () => {};
+  const { fn } = await loadLogic(G).finally(() => Object.assign(console, quiet));
+  const L = Object.fromEntries(
+    ['parseScript', 'conditionTree', 'conditionProblem', 'conditionNames'].map(k => [k, fn(k)])
+  );
+  const R = storyChecks(G, L);
+  for (const p of R.problems) bad.push(`story: ${p}`);
+  for (const w of R.warnings) console.log(`  story warning: ${w}`);
+}
 if (bad.length) {
   for (const b of bad.slice(0, 60)) console.log('  ' + b);
   console.log(`game data: ${bad.length} problem(s) in ${n} files`);
