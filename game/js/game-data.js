@@ -67,6 +67,7 @@ expose({
   // @ts-expect-error -- replaced on purpose
   rivalSpecies: [() => rivalSpecies, v => (rivalSpecies = v)],
   roadCost: [() => roadCost],
+  roadEndNode: [() => roadEndNode],
   // @ts-expect-error -- replaced on purpose
   roadMetres: [() => roadMetres, v => (roadMetres = v)],
   standInList: [() => standInList],
@@ -275,19 +276,40 @@ export function roadMetres(a, b, j) {
     lb = j ? exitLength(b, j.b) : null;
   return la != null && lb != null ? Math.max(1, Math.round(la + lb)) : 100;
 }
-/* the walking network: links between stops (both directions), with their length in metres; older data is a single
-   chain */
+/* the walking network: links between stops (both directions), with their length in metres. roads.json is a list of
+   typed links, {id, name, kind: 'seam', a: {map, exit}, b: {map, exit}}, each end naming a place by its map (phase 08b;
+   the Studio and the tools read it through data-files.js PB_DATA.road). Here each becomes [a node, b node, metres,
+   {a: exit, b: exit, id, from, to, name}], the form the game reads. Without roads the locations make one chain */
+export const roadEndNode = (/** @type {string} */ m) => LOCATIONS.findIndex(r => r.mapId === m || r.id === m);
 /** @type {Road[]} */
 export const ROADS = (
   gameData.roads && gameData.roads.length
     ? gameData.roads
+        .filter(l => (l.kind || 'seam') === 'seam')
+        .map(l => {
+          const a = roadEndNode(l.a && l.a.map),
+            b = roadEndNode(l.b && l.b.map);
+          return /** @type {Road} */ ([
+            a,
+            b,
+            0,
+            {
+              a: l.a.exit,
+              b: l.b.exit,
+              id: l.id,
+              from: LOCATIONS[a] && LOCATIONS[a].id,
+              to: LOCATIONS[b] && LOCATIONS[b].id,
+              name: l.name,
+            },
+          ]);
+        })
     : LOCATIONS.slice(1).map((r, i) => /** @type {Road} */ ([i, i + 1, 0]))
 )
   .filter(l => LOCATIONS[l[0]] && LOCATIONS[l[1]] && l[0] !== l[1])
   .map(
     /** @returns {Road} */ ([a, b, , j]) =>
       j && typeof j === 'object' ? [a, b, roadMetres(a, b, j), j] : [a, b, roadMetres(a, b, null)]
-  ); /* v42: a fourth entry {a,b} names the exit at each end (the join table); the third, the old step count, is not read */
+  );
 /* v46: what each place, scene and road is (tools/migrate-places.py fills these): use these instead of id prefixes */
 /* copies made before board is filled in (below), so they have none: read LOCATIONS[node].board */
 /** @type {Record<string, LocationData & { node: number, trainers: string[] }>} */

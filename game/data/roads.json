@@ -1,436 +1,394 @@
 [
- [
-  0,
-  1,
-  2040,
-  {
-   "a": "east",
-   "b": "south",
-   "id": "road:marigold-tallgrass_meadow",
-   "from": "marigold",
-   "to": "tallgrass_meadow",
-   "name": "Route 2"
-  }
- ],
- [
-  1,
-  2,
-  1960,
-  {
-   "a": "south2",
-   "b": "west",
-   "id": "road:tallgrass_meadow-old_fairway",
-   "from": "tallgrass_meadow",
-   "to": "old_fairway",
-   "name": "Route 3"
-  }
- ],
- [
-  2,
-  3,
-  1490,
-  {"a":"north","b":"south","id":"road:old_fairway-thicket","from":"old_fairway","to":"thicket","name":"Route 4"}
- ],
- [
-  3,
-  4,
-  1800,
-  {"a":"south2","b":"west","id":"road:thicket-fizzwell","from":"thicket","to":"fizzwell","name":"Route 4"}
- ],
- [
-  4,
-  5,
-  1540,
-  {
-   "a": "south",
-   "b": "west",
-   "id": "road:fizzwell-stepstone_canyon",
-   "from": "fizzwell",
-   "to": "stepstone_canyon",
-   "name": "Route 5"
-  }
- ],
- [
-  5,
-  6,
-  1510,
-  {
-   "a": "north",
-   "b": "south",
-   "id": "road:stepstone_canyon-rustgear",
-   "from": "stepstone_canyon",
-   "to": "rustgear",
-   "name": "Route 6"
-  }
- ],
- [
-  6,
-  7,
-  1620,
-  {"a":"east","b":"south","id":"road:rustgear-pepperpot","from":"rustgear","to":"pepperpot","name":"Route 6"}
- ],
- [
-  7,
-  8,
-  1580,
-  {
-   "a": "south2",
-   "b": "west",
-   "id": "road:pepperpot-lanternhall",
-   "from": "pepperpot",
-   "to": "lanternhall",
-   "name": "Lanternhall City"
-  }
- ],
- [
-  1,
-  9,
-  1380,
-  {
-   "a": "north",
-   "b": "south",
-   "id": "road:tallgrass_meadow-willowmere",
-   "from": "tallgrass_meadow",
-   "to": "willowmere",
-   "name": "Route 7"
-  }
- ],
- [
-  9,
-  2,
-  1530,
-  {"a":"south2","b":"north2","id":"road:willowmere-old_fairway","from":"willowmere","to":"old_fairway","name":"Route 3"}
- ],
- [
-  3,
-  10,
-  1480,
-  {"a":"north","b":"south","id":"road:thicket-clovercrest","from":"thicket","to":"clovercrest","name":"Route 4"}
- ],
- [
-  10,
-  4,
-  2010,
-  {"a":"south2","b":"north","id":"road:clovercrest-fizzwell","from":"clovercrest","to":"fizzwell","name":"Fizzwell Town"}
- ],
- [
-  5,
-  11,
-  1230,
-  {
-   "a": "south",
-   "b": "north",
-   "id": "road:stepstone_canyon-kitewind",
-   "from": "stepstone_canyon",
-   "to": "kitewind",
-   "name": "Route 8"
-  }
- ],
- [
-  10,
-  12,
-  2160,
-  {"a":"east","b":"west","id":"road:clovercrest-verdigris","from":"clovercrest","to":"verdigris","name":"Verdigris City"}
- ],
- [
-  4,
-  12,
-  1640,
-  {"a":"north2","b":"south","id":"road:fizzwell-verdigris","from":"fizzwell","to":"verdigris","name":"Verdigris City"}
- ],
- [
-  12,
-  6,
-  1670,
-  {"a":"south2","b":"north","id":"road:verdigris-rustgear","from":"verdigris","to":"rustgear","name":"Route 6"}
- ],
- [
-  0,
-  13,
-  1890,
-  {"a":"west","b":"east","id":"road:marigold-driftwreck","from":"marigold","to":"driftwreck","name":"Route 9"}
- ],
- [
-  13,
-  14,
-  1860,
-  {"a":"south","b":"east","id":"road:driftwreck-palmhaven","from":"driftwreck","to":"palmhaven","name":"Route 9"}
- ],
- [
-  14,
-  15,
-  1290,
-  {"a":"north","b":"south","id":"road:palmhaven-cinderpeak","from":"palmhaven","to":"cinderpeak","name":"Route 10"}
- ],
- [
-  12,
-  16,
-  1830,
-  {"a":"north","b":"south","id":"road:verdigris-hornpass","from":"verdigris","to":"hornpass","name":"Route 11"}
- ],
- [
-  16,
-  17,
-  1360,
-  {"a":"north","b":"south","id":"road:hornpass-frostcrown","from":"hornpass","to":"frostcrown","name":"Route 11"}
- ],
- [
-  10,
-  18,
-  1540,
-  {"a":"north","b":"south","id":"road:clovercrest-mirrormere","from":"clovercrest","to":"mirrormere","name":"Route 12"}
- ],
- [
-  18,
-  17,
-  1790,
-  {"a":"east","b":"west","id":"road:mirrormere-frostcrown","from":"mirrormere","to":"frostcrown","name":"Route 12"}
- ],
- [
-  8,
-  19,
-  1710,
-  {
-   "a": "east",
-   "b": "south",
-   "id": "road:lanternhall-fanfare_fields",
-   "from": "lanternhall",
-   "to": "fanfare_fields",
-   "name": "Route 13"
-  }
- ],
- [
-  19,
-  20,
-  1510,
-  {"a":"east","b":"south","id":"road:fanfare_fields-twinpetal","from":"fanfare_fields","to":"twinpetal","name":"Route 13"}
- ],
- [
-  20,
-  21,
-  1560,
-  {"a":"north","b":"south","id":"road:twinpetal-petalfall","from":"twinpetal","to":"petalfall","name":"Route 14"}
- ],
- [
-  21,
-  19,
-  1510,
-  {
-   "a": "south2",
-   "b": "north",
-   "id": "road:petalfall-fanfare_fields",
-   "from": "petalfall",
-   "to": "fanfare_fields",
-   "name": "Route 13"
-  }
- ],
- [
-  20,
-  22,
-  1640,
-  {"a":"south2","b":"north","id":"road:twinpetal-rootwater","from":"twinpetal","to":"rootwater","name":"Route 15"}
- ],
- [
-  22,
-  23,
-  2130,
-  {
-   "a": "east",
-   "b": "south",
-   "id": "road:rootwater-grapevine_hills",
-   "from": "rootwater",
-   "to": "grapevine_hills",
-   "name": "Route 16"
-  }
- ],
- [
-  23,
-  24,
-  1810,
-  {"a":"east","b":"west","id":"road:grapevine_hills-goldvine","from":"grapevine_hills","to":"goldvine","name":"Route 16"}
- ],
- [
-  24,
-  25,
-  1350,
-  {"a":"south","b":"north","id":"road:goldvine-saltpan_flats","from":"goldvine","to":"saltpan_flats","name":"Route 17"}
- ],
- [
-  25,
-  23,
-  1310,
-  {
-   "a": "north2",
-   "b": "south2",
-   "id": "road:saltpan_flats-grapevine_hills",
-   "from": "saltpan_flats",
-   "to": "grapevine_hills",
-   "name": "Route 16"
-  }
- ],
- [
-  24,
-  26,
-  1790,
-  {"a":"east","b":"west","id":"road:goldvine-badlands","from":"goldvine","to":"badlands","name":"Route 18"}
- ],
- [
-  26,
-  27,
-  1900,
-  {"a":"east","b":"west","id":"road:badlands-puffcap","from":"badlands","to":"puffcap","name":"Route 19"}
- ],
- [
-  27,
-  28,
-  1480,
-  {"a":"east","b":"south","id":"road:puffcap-capshade","from":"puffcap","to":"capshade","name":"Route 19"}
- ],
- [
-  28,
-  29,
-  1450,
-  {"a":"north","b":"south","id":"road:capshade-russetwood","from":"capshade","to":"russetwood","name":"Route 20"}
- ],
- [
-  29,
-  27,
-  1620,
-  {"a":"south2","b":"north","id":"road:russetwood-puffcap","from":"russetwood","to":"puffcap","name":"Route 19"}
- ],
- [
-  28,
-  30,
-  1600,
-  {"a":"south2","b":"north","id":"road:capshade-tanglewild","from":"capshade","to":"tanglewild","name":"Route 21"}
- ],
- [
-  30,
-  31,
-  2030,
-  {"a":"south","b":"west","id":"road:tanglewild-prism_chasm","from":"tanglewild","to":"prism_chasm","name":"Route 22"}
- ],
- [
-  31,
-  32,
-  1470,
-  {"a":"east","b":"south","id":"road:prism_chasm-glimmershaft","from":"prism_chasm","to":"glimmershaft","name":"Route 22"}
- ],
- [
-  32,
-  33,
-  1490,
-  {"a":"north","b":"south","id":"road:glimmershaft-gloomwater","from":"glimmershaft","to":"gloomwater","name":"Route 23"}
- ],
- [
-  33,
-  31,
-  1760,
-  {"a":"south2","b":"north","id":"road:gloomwater-prism_chasm","from":"gloomwater","to":"prism_chasm","name":"Route 22"}
- ],
- [
-  32,
-  34,
-  1440,
-  {"a":"south2","b":"west","id":"road:glimmershaft-rimefrost","from":"glimmershaft","to":"rimefrost","name":"Route 24"}
- ],
- [
-  34,
-  35,
-  2010,
-  {"a":"south","b":"west","id":"road:rimefrost-conchshell","from":"rimefrost","to":"conchshell","name":"Route 25"}
- ],
- [
-  35,
-  36,
-  1440,
-  {"a":"north","b":"south","id":"road:conchshell-kelpport","from":"conchshell","to":"kelpport","name":"Route 25"}
- ],
- [
-  36,
-  37,
-  1700,
-  {"a":"south2","b":"north","id":"road:kelpport-abyssal_trench","from":"kelpport","to":"abyssal_trench","name":"Route 26"}
- ],
- [
-  37,
-  38,
-  1150,
-  {
-   "a": "south",
-   "b": "north",
-   "id": "road:abyssal_trench-vinyl_works",
-   "from": "abyssal_trench",
-   "to": "vinyl_works",
-   "name": "Route 27"
-  }
- ],
- [
-  38,
-  39,
-  2030,
-  {
-   "a": "south",
-   "b": "west",
-   "id": "road:vinyl_works-circuit_terraces",
-   "from": "vinyl_works",
-   "to": "circuit_terraces",
-   "name": "Route 28"
-  }
- ],
- [
-  39,
-  40,
-  1440,
-  {"a":"north","b":"south","id":"road:circuit_terraces-nimbus","from":"circuit_terraces","to":"nimbus","name":"Route 28"}
- ],
- [
-  40,
-  41,
-  1470,
-  {"a":"south2","b":"north","id":"road:nimbus-fizzpop","from":"nimbus","to":"fizzpop","name":"Route 29"}
- ],
- [
-  40,
-  42,
-  1580,
-  {"a":"north","b":"south","id":"road:nimbus-skygarden","from":"nimbus","to":"skygarden","name":"Route 30"}
- ],
- [
-  42,
-  43,
-  2040,
-  {"a":"south2","b":"west","id":"road:skygarden-zenith_steps","from":"skygarden","to":"zenith_steps","name":"Route 31"}
- ],
- [
-  43,
-  44,
-  2150,
-  {
-   "a": "south",
-   "b": "west",
-   "id": "road:zenith_steps-bellwether_rise",
-   "from": "zenith_steps",
-   "to": "bellwether_rise",
-   "name": "Route 32"
-  }
- ],
- [
-  44,
-  45,
-  2020,
-  {"a":"east","b":"south","id":"road:bellwether_rise-innersun","from":"bellwether_rise","to":"innersun","name":"Route 32"}
- ],
- [
-  0,
-  47,
-  1530,
-  {"a":"north","b":"south","id":"road:marigold-hedgerow","from":"marigold","to":"hedgerow","name":"Route 1"}
- ],
- [
-  47,
-  46,
-  1330,
-  {"a":"north","b":"south","id":"road:hedgerow-copperleaf","from":"hedgerow","to":"copperleaf","name":"Route 1"}
- ]
+ {
+  "id": "road:marigold-tallgrass_meadow",
+  "name": "Route 2",
+  "kind": "seam",
+  "a": {"map":"marigold","exit":"east"},
+  "b": {"map":"tallgrass_meadow","exit":"south"}
+ },
+ {
+  "id": "road:tallgrass_meadow-old_fairway",
+  "name": "Route 3",
+  "kind": "seam",
+  "a": {"map":"tallgrass_meadow","exit":"south2"},
+  "b": {"map":"old_fairway","exit":"west"}
+ },
+ {
+  "id": "road:old_fairway-thicket",
+  "name": "Route 4",
+  "kind": "seam",
+  "a": {"map":"old_fairway","exit":"north"},
+  "b": {"map":"thicket","exit":"south"}
+ },
+ {
+  "id": "road:thicket-fizzwell",
+  "name": "Route 4",
+  "kind": "seam",
+  "a": {"map":"thicket","exit":"south2"},
+  "b": {"map":"fizzwell","exit":"west"}
+ },
+ {
+  "id": "road:fizzwell-stepstone_canyon",
+  "name": "Route 5",
+  "kind": "seam",
+  "a": {"map":"fizzwell","exit":"south"},
+  "b": {"map":"stepstone_canyon","exit":"west"}
+ },
+ {
+  "id": "road:stepstone_canyon-rustgear",
+  "name": "Route 6",
+  "kind": "seam",
+  "a": {"map":"stepstone_canyon","exit":"north"},
+  "b": {"map":"rustgear","exit":"south"}
+ },
+ {
+  "id": "road:rustgear-pepperpot",
+  "name": "Route 6",
+  "kind": "seam",
+  "a": {"map":"rustgear","exit":"east"},
+  "b": {"map":"pepperpot","exit":"south"}
+ },
+ {
+  "id": "road:pepperpot-lanternhall",
+  "name": "Lanternhall City",
+  "kind": "seam",
+  "a": {"map":"pepperpot","exit":"south2"},
+  "b": {"map":"lanternhall","exit":"west"}
+ },
+ {
+  "id": "road:tallgrass_meadow-willowmere",
+  "name": "Route 7",
+  "kind": "seam",
+  "a": {"map":"tallgrass_meadow","exit":"north"},
+  "b": {"map":"willowmere","exit":"south"}
+ },
+ {
+  "id": "road:willowmere-old_fairway",
+  "name": "Route 3",
+  "kind": "seam",
+  "a": {"map":"willowmere","exit":"south2"},
+  "b": {"map":"old_fairway","exit":"north2"}
+ },
+ {
+  "id": "road:thicket-clovercrest",
+  "name": "Route 4",
+  "kind": "seam",
+  "a": {"map":"thicket","exit":"north"},
+  "b": {"map":"clovercrest","exit":"south"}
+ },
+ {
+  "id": "road:clovercrest-fizzwell",
+  "name": "Fizzwell Town",
+  "kind": "seam",
+  "a": {"map":"clovercrest","exit":"south2"},
+  "b": {"map":"fizzwell","exit":"north"}
+ },
+ {
+  "id": "road:stepstone_canyon-kitewind",
+  "name": "Route 8",
+  "kind": "seam",
+  "a": {"map":"stepstone_canyon","exit":"south"},
+  "b": {"map":"kitewind","exit":"north"}
+ },
+ {
+  "id": "road:clovercrest-verdigris",
+  "name": "Verdigris City",
+  "kind": "seam",
+  "a": {"map":"clovercrest","exit":"east"},
+  "b": {"map":"verdigris","exit":"west"}
+ },
+ {
+  "id": "road:fizzwell-verdigris",
+  "name": "Verdigris City",
+  "kind": "seam",
+  "a": {"map":"fizzwell","exit":"north2"},
+  "b": {"map":"verdigris","exit":"south"}
+ },
+ {
+  "id": "road:verdigris-rustgear",
+  "name": "Route 6",
+  "kind": "seam",
+  "a": {"map":"verdigris","exit":"south2"},
+  "b": {"map":"rustgear","exit":"north"}
+ },
+ {
+  "id": "road:marigold-driftwreck",
+  "name": "Route 9",
+  "kind": "seam",
+  "a": {"map":"marigold","exit":"west"},
+  "b": {"map":"driftwreck","exit":"east"}
+ },
+ {
+  "id": "road:driftwreck-palmhaven",
+  "name": "Route 9",
+  "kind": "seam",
+  "a": {"map":"driftwreck","exit":"south"},
+  "b": {"map":"palmhaven","exit":"east"}
+ },
+ {
+  "id": "road:palmhaven-cinderpeak",
+  "name": "Route 10",
+  "kind": "seam",
+  "a": {"map":"palmhaven","exit":"north"},
+  "b": {"map":"cinderpeak","exit":"south"}
+ },
+ {
+  "id": "road:verdigris-hornpass",
+  "name": "Route 11",
+  "kind": "seam",
+  "a": {"map":"verdigris","exit":"north"},
+  "b": {"map":"hornpass","exit":"south"}
+ },
+ {
+  "id": "road:hornpass-frostcrown",
+  "name": "Route 11",
+  "kind": "seam",
+  "a": {"map":"hornpass","exit":"north"},
+  "b": {"map":"frostcrown","exit":"south"}
+ },
+ {
+  "id": "road:clovercrest-mirrormere",
+  "name": "Route 12",
+  "kind": "seam",
+  "a": {"map":"clovercrest","exit":"north"},
+  "b": {"map":"mirrormere","exit":"south"}
+ },
+ {
+  "id": "road:mirrormere-frostcrown",
+  "name": "Route 12",
+  "kind": "seam",
+  "a": {"map":"mirrormere","exit":"east"},
+  "b": {"map":"frostcrown","exit":"west"}
+ },
+ {
+  "id": "road:lanternhall-fanfare_fields",
+  "name": "Route 13",
+  "kind": "seam",
+  "a": {"map":"lanternhall","exit":"east"},
+  "b": {"map":"fanfare_fields","exit":"south"}
+ },
+ {
+  "id": "road:fanfare_fields-twinpetal",
+  "name": "Route 13",
+  "kind": "seam",
+  "a": {"map":"fanfare_fields","exit":"east"},
+  "b": {"map":"twinpetal","exit":"south"}
+ },
+ {
+  "id": "road:twinpetal-petalfall",
+  "name": "Route 14",
+  "kind": "seam",
+  "a": {"map":"twinpetal","exit":"north"},
+  "b": {"map":"petalfall","exit":"south"}
+ },
+ {
+  "id": "road:petalfall-fanfare_fields",
+  "name": "Route 13",
+  "kind": "seam",
+  "a": {"map":"petalfall","exit":"south2"},
+  "b": {"map":"fanfare_fields","exit":"north"}
+ },
+ {
+  "id": "road:twinpetal-rootwater",
+  "name": "Route 15",
+  "kind": "seam",
+  "a": {"map":"twinpetal","exit":"south2"},
+  "b": {"map":"rootwater","exit":"north"}
+ },
+ {
+  "id": "road:rootwater-grapevine_hills",
+  "name": "Route 16",
+  "kind": "seam",
+  "a": {"map":"rootwater","exit":"east"},
+  "b": {"map":"grapevine_hills","exit":"south"}
+ },
+ {
+  "id": "road:grapevine_hills-goldvine",
+  "name": "Route 16",
+  "kind": "seam",
+  "a": {"map":"grapevine_hills","exit":"east"},
+  "b": {"map":"goldvine","exit":"west"}
+ },
+ {
+  "id": "road:goldvine-saltpan_flats",
+  "name": "Route 17",
+  "kind": "seam",
+  "a": {"map":"goldvine","exit":"south"},
+  "b": {"map":"saltpan_flats","exit":"north"}
+ },
+ {
+  "id": "road:saltpan_flats-grapevine_hills",
+  "name": "Route 16",
+  "kind": "seam",
+  "a": {"map":"saltpan_flats","exit":"north2"},
+  "b": {"map":"grapevine_hills","exit":"south2"}
+ },
+ {
+  "id": "road:goldvine-badlands",
+  "name": "Route 18",
+  "kind": "seam",
+  "a": {"map":"goldvine","exit":"east"},
+  "b": {"map":"badlands","exit":"west"}
+ },
+ {
+  "id": "road:badlands-puffcap",
+  "name": "Route 19",
+  "kind": "seam",
+  "a": {"map":"badlands","exit":"east"},
+  "b": {"map":"puffcap","exit":"west"}
+ },
+ {
+  "id": "road:puffcap-capshade",
+  "name": "Route 19",
+  "kind": "seam",
+  "a": {"map":"puffcap","exit":"east"},
+  "b": {"map":"capshade","exit":"south"}
+ },
+ {
+  "id": "road:capshade-russetwood",
+  "name": "Route 20",
+  "kind": "seam",
+  "a": {"map":"capshade","exit":"north"},
+  "b": {"map":"russetwood","exit":"south"}
+ },
+ {
+  "id": "road:russetwood-puffcap",
+  "name": "Route 19",
+  "kind": "seam",
+  "a": {"map":"russetwood","exit":"south2"},
+  "b": {"map":"puffcap","exit":"north"}
+ },
+ {
+  "id": "road:capshade-tanglewild",
+  "name": "Route 21",
+  "kind": "seam",
+  "a": {"map":"capshade","exit":"south2"},
+  "b": {"map":"tanglewild","exit":"north"}
+ },
+ {
+  "id": "road:tanglewild-prism_chasm",
+  "name": "Route 22",
+  "kind": "seam",
+  "a": {"map":"tanglewild","exit":"south"},
+  "b": {"map":"prism_chasm","exit":"west"}
+ },
+ {
+  "id": "road:prism_chasm-glimmershaft",
+  "name": "Route 22",
+  "kind": "seam",
+  "a": {"map":"prism_chasm","exit":"east"},
+  "b": {"map":"glimmershaft","exit":"south"}
+ },
+ {
+  "id": "road:glimmershaft-gloomwater",
+  "name": "Route 23",
+  "kind": "seam",
+  "a": {"map":"glimmershaft","exit":"north"},
+  "b": {"map":"gloomwater","exit":"south"}
+ },
+ {
+  "id": "road:gloomwater-prism_chasm",
+  "name": "Route 22",
+  "kind": "seam",
+  "a": {"map":"gloomwater","exit":"south2"},
+  "b": {"map":"prism_chasm","exit":"north"}
+ },
+ {
+  "id": "road:glimmershaft-rimefrost",
+  "name": "Route 24",
+  "kind": "seam",
+  "a": {"map":"glimmershaft","exit":"south2"},
+  "b": {"map":"rimefrost","exit":"west"}
+ },
+ {
+  "id": "road:rimefrost-conchshell",
+  "name": "Route 25",
+  "kind": "seam",
+  "a": {"map":"rimefrost","exit":"south"},
+  "b": {"map":"conchshell","exit":"west"}
+ },
+ {
+  "id": "road:conchshell-kelpport",
+  "name": "Route 25",
+  "kind": "seam",
+  "a": {"map":"conchshell","exit":"north"},
+  "b": {"map":"kelpport","exit":"south"}
+ },
+ {
+  "id": "road:kelpport-abyssal_trench",
+  "name": "Route 26",
+  "kind": "seam",
+  "a": {"map":"kelpport","exit":"south2"},
+  "b": {"map":"abyssal_trench","exit":"north"}
+ },
+ {
+  "id": "road:abyssal_trench-vinyl_works",
+  "name": "Route 27",
+  "kind": "seam",
+  "a": {"map":"abyssal_trench","exit":"south"},
+  "b": {"map":"vinyl_works","exit":"north"}
+ },
+ {
+  "id": "road:vinyl_works-circuit_terraces",
+  "name": "Route 28",
+  "kind": "seam",
+  "a": {"map":"vinyl_works","exit":"south"},
+  "b": {"map":"circuit_terraces","exit":"west"}
+ },
+ {
+  "id": "road:circuit_terraces-nimbus",
+  "name": "Route 28",
+  "kind": "seam",
+  "a": {"map":"circuit_terraces","exit":"north"},
+  "b": {"map":"nimbus","exit":"south"}
+ },
+ {
+  "id": "road:nimbus-fizzpop",
+  "name": "Route 29",
+  "kind": "seam",
+  "a": {"map":"nimbus","exit":"south2"},
+  "b": {"map":"fizzpop","exit":"north"}
+ },
+ {
+  "id": "road:nimbus-skygarden",
+  "name": "Route 30",
+  "kind": "seam",
+  "a": {"map":"nimbus","exit":"north"},
+  "b": {"map":"skygarden","exit":"south"}
+ },
+ {
+  "id": "road:skygarden-zenith_steps",
+  "name": "Route 31",
+  "kind": "seam",
+  "a": {"map":"skygarden","exit":"south2"},
+  "b": {"map":"zenith_steps","exit":"west"}
+ },
+ {
+  "id": "road:zenith_steps-bellwether_rise",
+  "name": "Route 32",
+  "kind": "seam",
+  "a": {"map":"zenith_steps","exit":"south"},
+  "b": {"map":"bellwether_rise","exit":"west"}
+ },
+ {
+  "id": "road:bellwether_rise-innersun",
+  "name": "Route 32",
+  "kind": "seam",
+  "a": {"map":"bellwether_rise","exit":"east"},
+  "b": {"map":"innersun","exit":"south"}
+ },
+ {
+  "id": "road:marigold-hedgerow",
+  "name": "Route 1",
+  "kind": "seam",
+  "a": {"map":"marigold","exit":"north"},
+  "b": {"map":"hedgerow","exit":"south"}
+ },
+ {
+  "id": "road:hedgerow-copperleaf",
+  "name": "Route 1",
+  "kind": "seam",
+  "a": {"map":"hedgerow","exit":"north"},
+  "b": {"map":"copperleaf","exit":"south"}
+ }
 ]

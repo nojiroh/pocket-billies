@@ -27,7 +27,7 @@ test('every location has its own id and its map, and the map names it back', () 
 test('every road joins two different places once, and names them as its numbers do', () => {
   const seenIds = new Set(),
     pairs = new Set();
-  roads.forEach(({ a, b, ...r }, k) => {
+  roads.forEach(({ a, b, ...r }) => {
     assert.ok(at(a) && at(b), `${r.id}: a place it joins does not exist`);
     assert.notEqual(a, b, `${r.id} goes nowhere`);
     assert.ok(!seenIds.has(r.id), `two roads are ${r.id}`);
@@ -35,10 +35,8 @@ test('every road joins two different places once, and names them as its numbers 
     const pair = [a, b].sort((x, y) => x - y).join('-');
     assert.ok(!pairs.has(pair), `${at(a).id} and ${at(b).id} are joined twice`);
     pairs.add(pair);
-    // the roads point at places by their number in locations.json: a reordered list would re-point them silently
-    const J = GAME_DATA.roads[k][3];
-    assert.equal(J.from, at(a).id, `${r.id} starts at ${at(a).id}, not ${J.from}`);
-    assert.equal(J.to, at(b).id, `${r.id} ends at ${at(b).id}, not ${J.to}`);
+    // phase 08b: a road names its places by their maps, and its id by their ids
+    assert.equal(r.id, `road:${at(a).id}-${at(b).id}`, `${r.id} joins ${at(a).id} and ${at(b).id}`);
   });
 });
 

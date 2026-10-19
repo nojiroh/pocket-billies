@@ -414,7 +414,10 @@ ACTIONS.stopAdd = () => {
     i = typeof studioState.sel.stop === 'number' ? studioState.sel.stop : D.locations.length - 1,
     a = D.locations[i],
     b = D.locations[i + 1];
+  let k = 1;
+  while (D.locations.some(r => r.id === 'new_stop' + k)) k++;
   const n = {
+    id: 'new_stop' + k /* phase 08b: a road names its places (by map, or by id until it has one) */,
     name: 'New Stop',
     pool: a.pool,
     battleStage: a.battleStage,

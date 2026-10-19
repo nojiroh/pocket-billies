@@ -57,7 +57,7 @@ export interface GameData {
   /** every walkable map: towns, routes, rooms (int_*) and test maps (test_*) */
   maps: Record<DataId, MapData>;
   /** without roads the locations make one chain, in order (game-data.js) */
-  roads?: Road[];
+  roads?: RoadLink[];
   engine: Engine;
   wardrobe: Wardrobe;
   /** fishing spots' encounter lists, keyed by the water ('pond', 'sea'...) */
@@ -335,8 +335,21 @@ export interface LocationEntry extends LocationData {
   board: DataId | null;
 }
 
-/** roads.json: [from node, to node, length, the two ends]. The data's length (old steps) is not read: game-data.js
-    ROADS measures it in metres from the two exits (roadMetres) */
+/** roads.json (phase 08b): a typed link between two places, each end naming a place by its map (the place's mapId,
+    or its id when it has none) and the edge exit it leaves by. The Studio and the tools read it through
+    PB_DATA.road(); the game through ROADS */
+export interface RoadLink {
+  /** 'road:<a's id>-<b's id>' */
+  id?: string;
+  name?: string;
+  /** 'seam': the two places' edges meet at the exits */
+  kind?: 'seam';
+  a: { map: DataId; exit?: string };
+  b: { map: DataId; exit?: string };
+}
+
+/** a road as the game reads it (game-data.js ROADS): [from node, to node, length in metres (roadMetres), the two
+    ends] */
 export type Road = [from: LocationNode, to: LocationNode, length: number, ends?: RoadEnds];
 
 /** a road as one end sees it (game-data.js ROADS_BY_NODE): the other end, the length and the road's index */

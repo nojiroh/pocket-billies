@@ -158,8 +158,8 @@ export const FIXTURE = {
   },
   battleStages: { grass: { name: 'Long grass' }, meadow: { name: 'Meadow' } },
   roads: [
-    [0, 1, 100],
-    [1, 2, 200],
+    { kind: 'seam', a: { map: 'home' }, b: { map: 'meadow' } },
+    { kind: 'seam', a: { map: 'meadow' }, b: { map: 'lake' } },
   ],
   eggs: { 2: { need: 100, lv: 5, list: [['sprout0', 1]] } },
   coins: { penny: { n: 'Copper Coin', m: 1 }, tbtf: { n: 'Platinum Coin', m: 0 } },
