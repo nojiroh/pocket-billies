@@ -1,8 +1,8 @@
 # Pocket Billies: Gotta tax 'em all! — 0.1.0 alpha
 
 A classic RPG inside the Hollow Earth, where the Billies are the wildlife. You walk the seamless maps yourself with a
-joystick, step into rooms that are bigger on the inside, battle, make friends, and edit everything in
-**Pocket Billies Studio**.
+joystick (push it past its rim to run), step into rooms that are bigger on the inside, battle, make friends, and edit
+everything in **Pocket Billies Studio**.
 
 0.1.0 alpha is a fresh base: numbering starts over here and old saves don't carry over. What changes from release to
 release is in [CHANGELOG.md](CHANGELOG.md); where the game is going is in [docs/VISION.md](docs/VISION.md). The earlier

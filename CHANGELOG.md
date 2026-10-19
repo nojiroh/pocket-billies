@@ -20,8 +20,23 @@ kept aside in the browser).
   can accept a friend request. Names lose characters that could break the screen.
 - The game needs WebGL 2. Without it, a screen says this device can't run the game, with Try again and Export debug
   log. Lite mode and Settings → Graphics → Battery saver are gone (a save with it on comes back at full effects).
-- Real-world step counting is gone: no "Count my steps with motion" and no demo step buttons. Walking with the joystick
-  still counts as before until the step-driven parts (money, encounters, eggs) are replaced.
+- Steps are gone (phase 08 Part A). Nothing counts steps any more, real or in the game:
+  - Wild Billies live on each map: 4 on a route, 2 in a town with tall grass, none in other towns and rooms; full on
+    your first visit, then one more a minute of play.
+  - Money: a wild win pays level x $20; trainers, bribes and challenges pay as before.
+  - Eggs hatch by the real metres you walk outdoors: 2 / 4 / 8 km eggs. Distance walked on the trainer card is real km.
+  - Your buddy gets the full XP of a win even when it sat out. At level 32 a starter's evolution asks you: Build or
+    Hype. Day jobs are gone until the ranch.
+  - The daily challenge is "Visit N different places today"; a letter goes to a town 1 to 3 roads away and back.
+  - Roads are measured in metres from the maps ("90 m"); the gold arrows guide by metres.
+  - All the step text is rewritten (tips, people, Hazel, rooms, lore: money is coins now).
+  - Saves of format 2 start over (save format 3).
+- Run: push the joystick past its rim into the outer ring (it turns gold), hold the D-pad's centre, or hold Shift.
+  Settings → Moving about → Always run makes a full push, the keys and tapping the ground run. The keys and the D-pad
+  walk at walking speed (they were a little faster). The walk cycle, footsteps and camera bob keep pace with your
+  speed.
+- Studio: the Jobs section opens again (it broke when the jobs' rules went); Rest stop price is in the Battle card;
+  the camera dial "Step sway" is called "Walk bob".
 - Removed: the single-file Claude-artifact version, the old train station prop, the v45 backup scenes in the game data
   (1.5 MB), importing a legacy Net Worth backup.
 - Smoother towns on phones: props no longer all recheck their height and look in the same frame twice a second, and
