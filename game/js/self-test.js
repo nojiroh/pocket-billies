@@ -998,18 +998,9 @@ async function runFullTest(mode) {
             walkView.pl.z = g[1];
             const t0 = performance.now();
             walkPick({ k: 'act', p, act: 'shop' });
-            for (
-              let i = 0;
-              i < 150 && !(walkView.ready && (walkView.sc.roomOf === 'int_shop' || walkView.id === 'int_shop'));
-              i++
-            )
+            for (let i = 0; i < 150 && !(walkView.ready && walkView.sc.roomOf === 'int_shop'); i++)
               await selfTestSleep(100);
             const ms = performance.now() - t0;
-            if (walkView.id === 'int_shop') {
-              leaveRoom();
-              await selfTestSleep(1500);
-              return `the room wasn’t ready in time and opened on its own (${(ms / 1000).toFixed(1)} s)`;
-            }
             if (walkView.sc.roomOf !== 'int_shop')
               throw new Error('the shop’s room didn’t open (still ' + walkView.id + ')');
             await selfTestSleep(1200);

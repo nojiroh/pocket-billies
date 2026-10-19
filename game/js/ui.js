@@ -938,7 +938,7 @@ function doorBuildingOf(a, p) {
   }
   return best || p;
 }
-function enterRoom(a, p) {
+export function enterRoom(a, p) {
   p = doorBuildingOf(a, p);
   const id = roomFor(a, p);
   if (!id || !walkView.pl) return false;
@@ -971,12 +971,7 @@ function enterRoom(a, p) {
     else roomStepIn(info);
     return true;
   }
-  uiState.inside = info;
-  uiState.roam = null;
-  if (typeof soundEffect === 'function') soundEffect('door');
-  if (typeof debugLog !== 'undefined') debugLog.add('scene', 'inside ' + id);
-  render();
-  return true;
+  return false;
 }
 /* v46: seamless rooms (seamless-world.js seamlessRoomMap). The room's view is the place's own view with the room laid in at the
    building's door, so going in and out is a shift of nothing. roomLayIn makes (and starts preparing) that view;
@@ -1077,37 +1072,31 @@ export function leaveRoom() {
   const I = uiState.inside;
   if (!I) return;
   uiState.inside = null;
-  if (I.view) {
-    /* out through the door: you stand just in front of it, facing out (phase 08b: the way the building faces), and the
-       camera is as it was when you went in */
-    const P = walkView.pl,
-      at = I.at || I.door,
-      out = I.out || [0, -1],
-      fr = [at[0] + out[0] * 0.6, at[1] + out[1] * 0.6];
-    if (P && walkView.id === I.view) {
-      P.x = fr[0];
-      P.z = fr[1];
-      P.route = null;
-      P.goal = null;
-      P.dir = Math.abs(out[0]) > Math.abs(out[1]) ? (out[0] > 0 ? 'right' : 'left') : out[1] < 0 ? 'down' : 'up';
-    }
-    const B = mapById(I.base),
-      o = (B && B.baseOff) || [0, 0];
-    uiState.roam = { id: (B && B.baseId) || I.back.id, node: I.node, x: fr[0] - o[0], z: fr[1] - o[1] };
-    uiState.backAt = null;
-    if (typeof soundEffect === 'function') soundEffect('door');
-    render();
-    if (I.cam && typeof walkRenderer !== 'undefined') {
-      walkRenderer.camT = I.cam.T.slice();
-      if (I.cam.cpe) walkRenderer.cpe = I.cam.cpe.slice();
-      walkRenderer.yawT = walkRenderer.yaw = I.cam.yaw;
-      walkRenderer.zoomT = walkRenderer.zoom = I.cam.zoom;
-    }
-    return;
+  /* out through the door: you stand just in front of it, facing out (phase 08b: the way the building faces), and the
+     camera is as it was when you went in */
+  const P = walkView.pl,
+    at = I.at || I.door,
+    out = I.out || [0, -1],
+    fr = [at[0] + out[0] * 0.6, at[1] + out[1] * 0.6];
+  if (P && walkView.id === I.view) {
+    P.x = fr[0];
+    P.z = fr[1];
+    P.route = null;
+    P.goal = null;
+    P.dir = Math.abs(out[0]) > Math.abs(out[1]) ? (out[0] > 0 ? 'right' : 'left') : out[1] < 0 ? 'down' : 'up';
   }
-  uiState.roam = uiState.backAt = { id: I.back.id, node: I.node, x: I.back.x, z: I.back.z };
+  const B = mapById(I.base),
+    o = (B && B.baseOff) || [0, 0];
+  uiState.roam = { id: (B && B.baseId) || I.back.id, node: I.node, x: fr[0] - o[0], z: fr[1] - o[1] };
+  uiState.backAt = null;
   if (typeof soundEffect === 'function') soundEffect('door');
   render();
+  if (I.cam && typeof walkRenderer !== 'undefined') {
+    walkRenderer.camT = I.cam.T.slice();
+    if (I.cam.cpe) walkRenderer.cpe = I.cam.cpe.slice();
+    walkRenderer.yawT = walkRenderer.yaw = I.cam.yaw;
+    walkRenderer.zoomT = walkRenderer.zoom = I.cam.zoom;
+  }
 }
 function roomAct(h) {
   const I = uiState.inside;
@@ -1159,38 +1148,15 @@ function roomAct(h) {
 function roomState() {
   const I = uiState.inside;
   if (!I) return null;
-  if (I.node !== saveData.trip.node) {
-    uiState.inside = null;
-    return null;
-  }
-  if (I.view) {
-    const sc = mapById(I.view);
-    if (!sc) {
-      uiState.inside = null;
-      return null;
-    }
-    const dr = sc.roomDoor || I.door,
-      pos = walkView.id === I.view && walkView.pl ? [walkView.pl.x, walkView.pl.z] : [dr[0], dr[1] - 0.45];
-    return {
-      id: I.view,
-      node: saveData.trip.node,
-      mode: 'roam',
-      pos,
-      roam: true,
-      who: 'me',
-      enc: [],
-      npcs: sc.keeper ? [{ who: sc.keeper, id: '_keeper:' + I.id, done: true, exit: null, dir: 'down' }] : [],
-      exits: [{ i: 0, to: -1, name: 'Outside', out: 1 }],
-    };
-  }
-  const sc = mapById(I.id);
+  const sc = I.node === saveData.trip.node && I.view ? mapById(I.view) : null;
   if (!sc) {
     uiState.inside = null;
     return null;
   }
-  const pos = uiState.roam && uiState.roam.id === I.id ? [uiState.roam.x, uiState.roam.z] : mapHub(sc);
+  const dr = sc.roomDoor || I.door,
+    pos = walkView.id === I.view && walkView.pl ? [walkView.pl.x, walkView.pl.z] : [dr[0], dr[1] - 0.45];
   return {
-    id: I.id,
+    id: I.view,
     node: saveData.trip.node,
     mode: 'roam',
     pos,
