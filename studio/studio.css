@@ -3445,3 +3445,64 @@ body.vp-has-big::after {
   position: relative;
   max-height: none;
 }
+/* studio track ST-1: the resize handles (studio/js/layout.js), on the left edge of the grid column after the edge */
+#studio,
+.split,
+.props-sec,
+.bp-wrap {
+  position: relative;
+}
+.lay-h {
+  position: absolute;
+  grid-row: 1;
+  top: 0;
+  bottom: 0;
+  left: -15px;
+  width: 10px;
+  cursor: col-resize;
+  touch-action: none;
+  z-index: 2;
+}
+.props-sec > .lay-h,
+.bp-wrap > .lay-h {
+  left: -13px;
+}
+.lay-h::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  border-radius: 1px;
+}
+.lay-h:hover::after,
+.lay-h:focus-visible::after,
+body.lay-drag .lay-h::after {
+  background: var(--acc);
+}
+.lay-h:focus-visible {
+  outline: none;
+}
+.lay-h.lay-nav {
+  grid-column: 2;
+  grid-row: 2;
+  left: -5px;
+}
+body.lay-drag {
+  cursor: col-resize;
+  user-select: none;
+}
+.pane[data-w='narrow'] .lay-h {
+  display: none;
+}
+@media (max-width: 1000px) {
+  .lay-h {
+    display: none;
+  }
+}
+@media (max-width: 1180px) {
+  .bp-wrap > .lay-h {
+    display: none;
+  }
+}

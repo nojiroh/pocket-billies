@@ -44,7 +44,7 @@ test('the saved layout is read back from anything without throwing', () => {
     sizes: { billionaires: { 'list-w': 400 } },
   });
   assert.equal(L.layoutRead('{"preset":"nope"}').preset, 'auto');
-  assert.equal(L.layoutRead('{"preset":"custom"}').preset, 'custom');
+  assert.equal(L.layoutRead('{"preset":"custom"}').preset, 'auto');
 });
 
 test('a preset sets every section and clears the per-section sizes', () => {
@@ -55,6 +55,9 @@ test('a preset sets every section and clears the per-section sizes', () => {
   assert.equal(u.sec2, 'moves', 'the second section is kept');
   assert.deepEqual(L.layoutSizes(u, 'moves'), L.LAYOUT_PRESETS.ultrawide.sizes);
   assert.equal(L.layoutPreset(lay, 'split').split, 0.5);
+  assert.ok(L.layoutAdjusted(lay));
+  assert.ok(!L.layoutAdjusted(u));
+  assert.ok(L.layoutAdjusted({ ...u, nav: 300 }));
   assert.equal(L.layoutPreset(lay, 'nope'), lay);
   for (const [id, P] of Object.entries(L.LAYOUT_PRESETS))
     for (const [k, v] of Object.entries(P.sizes))

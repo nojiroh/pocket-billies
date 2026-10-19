@@ -13,6 +13,8 @@ expose({
   LAYOUT_PRESETS: [() => LAYOUT_PRESETS],
   PANE_WIDTHS: [() => PANE_WIDTHS],
   // @ts-expect-error -- replaced on purpose
+  layoutAdjusted: [() => layoutAdjusted, v => (layoutAdjusted = v)],
+  // @ts-expect-error -- replaced on purpose
   layoutClamp: [() => layoutClamp, v => (layoutClamp = v)],
   // @ts-expect-error -- replaced on purpose
   layoutEmpty: [() => layoutEmpty, v => (layoutEmpty = v)],
@@ -90,7 +92,7 @@ export function layoutRead(text) {
   out.nav = layoutClamp('nav-w', o.nav);
   out.split = layoutClamp('split', o.split);
   if (typeof o.sec2 === 'string' && /^[a-z0-9_-]{1,40}$/i.test(o.sec2)) out.sec2 = o.sec2;
-  if (typeof o.preset === 'string' && (o.preset === 'custom' || LAYOUT_PRESETS[o.preset])) out.preset = o.preset;
+  if (typeof o.preset === 'string' && LAYOUT_PRESETS[o.preset]) out.preset = o.preset;
   if (o.sizes && typeof o.sizes === 'object')
     for (const sec of Object.keys(o.sizes)) {
       const s = o.sizes[sec];
@@ -108,6 +110,12 @@ export function layoutPreset(lay, id) {
   const P = LAYOUT_PRESETS[id];
   if (!P) return lay;
   return { nav: P.nav || null, sizes: {}, split: P.split || null, sec2: lay.sec2, preset: id };
+}
+
+/** whether sizes were dragged since the preset was picked */
+export function layoutAdjusted(lay) {
+  const P = LAYOUT_PRESETS[lay.preset];
+  return Object.keys(lay.sizes).length > 0 || (lay.nav || null) !== ((P && P.nav) || null);
 }
 
 /** the sizes a section shows with: the preset's, then the ones saved for that section */
