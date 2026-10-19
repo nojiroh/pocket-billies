@@ -38,6 +38,22 @@ test('every kind has a draw order and turn limits, and every rule names a slot',
     for (const slot of list) assert.ok(slots.has(slot), `${s}: ${slot}`);
 });
 
+test("the pivot: the view's own, else the joint, chin or base socket, else the part's", () => {
+  const K = real(),
+    L = K.parts.cat_leg.views.front;
+  assert.deepEqual(J.partJoint(K, 'cat_leg', 'front').pivot, L.sockets.joint);
+  assert.deepEqual(J.partJoint(K, 'cat_head', 'front').pivot, K.parts.cat_head.views.front.sockets.chin);
+  assert.deepEqual(J.partJoint(K, 'fox_tail', 'back').pivot, K.parts.fox_tail.views.back.sockets.base);
+  assert.deepEqual(J.partJoint(K, 'cat_torso', 'front').pivot, K.parts.cat_torso.pivot, 'a torso has none of them');
+  L.pivot = [0.25, 0.5];
+  assert.deepEqual(J.partJoint(K, 'cat_leg', 'front').pivot, [0.25, 0.5]);
+  assert.deepEqual(
+    J.partJoint(K, 'cat_leg', 'back').pivot,
+    K.parts.cat_leg.views.back.sockets.joint,
+    'each view its own'
+  );
+});
+
 test('a torso takes a head at its neck, front limbs at its shoulders, back limbs at its hips', () => {
   const K = real();
   assert.deepEqual(J.partSocketsFor(K, 'cat_torso', 'cat_head', 'front'), ['neck']);
@@ -59,7 +75,7 @@ test('a leg fitted on a hip: its pivot lands on the socket, and draw order follo
   const leg = f.draws.find(d => !d.body);
   assert.equal(leg.x, T.sockets.hipL[0] * T.w);
   assert.equal(leg.y, T.sockets.hipL[1] * T.h);
-  assert.deepEqual(leg.px, [K.parts.cat_leg.pivot[0] * L.w, K.parts.cat_leg.pivot[1] * L.h]);
+  assert.deepEqual(leg.px, [L.sockets.joint[0] * L.w, L.sockets.joint[1] * L.h], 'a leg turns about its joint');
   assert.deepEqual(
     f.draws.map(d => d.body),
     [true, false],
@@ -82,7 +98,7 @@ test('the other side mirrors the part, or uses its copy; the angle stays inside 
   assert.equal(R.flip, true);
   assert.equal(R.angle, 35, 'legs turn at most 35 degrees');
   assert.equal(leg.rot, -35, 'mirrored, the turn goes the other way on screen');
-  assert.ok(Math.abs(leg.px[0] - (1 - K.parts.cat_leg.pivot[0]) * L.w) < 1e-9);
+  assert.ok(Math.abs(leg.px[0] - (1 - L.sockets.joint[0]) * L.w) < 1e-9);
   /* arms are drawn for the right: the left shoulder mirrors them */
   assert.equal(J.partFit(K, 'cat_torso', 'shoulderL', 'cat_arm', 'front').flip, true);
   assert.equal(J.partFit(K, 'cat_torso', 'shoulderR', 'cat_arm', 'front').flip, false);
@@ -139,7 +155,7 @@ test('S and L: M scaled about the pivot, or the hand-painted picture', () => {
   assert.equal(s.w, Math.round(V.w * 0.5));
   assert.equal(s.file, V.file);
   assert.equal(s.painted, false);
-  assert.deepEqual(s.pivot, K.parts.cat_leg.pivot, 'the pivot stays at the same place in the picture');
+  assert.deepEqual(s.pivot, V.sockets.joint, 'the pivot stays at the same place in the picture');
   assert.equal(l.h, Math.round(V.h * 1.2));
   V.sizes = { L: { file: 'next/parts/front/cat_leg_l.png', w: 40, h: 60, pivot: [0.5, 0.1] } };
   const p = J.partJoint(K, 'cat_leg', 'front', 'L');

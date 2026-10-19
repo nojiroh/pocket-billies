@@ -12,6 +12,7 @@
 import { expose } from '../test-globals.js';
 /* eslint-disable no-func-assign */
 expose({
+  PART_ATTACH: [() => PART_ATTACH],
   PART_SIZE_SCALE: [() => PART_SIZE_SCALE],
   PART_TURN_FREE: [() => PART_TURN_FREE],
   mirrorPoint: [() => mirrorPoint],
@@ -54,6 +55,9 @@ expose({
 /* to-module: end */
 /** S and L as M scaled about the pivot, when rules.json parts.sizes is not at hand (phase 16: 85% and 120%) */
 export const PART_SIZE_SCALE = /** @type {Record<string, number>} */ ({ S: 0.85, M: 1, L: 1.2 });
+/** the sockets a part joins by when its view has no pivot of its own: a limb its joint, a head its chin, a tail its
+ * base (as tools/build-rework-placeholders.py joins them); else the part's pivot */
+export const PART_ATTACH = ['joint', 'chin', 'base'];
 /** turn limits of a kind with none given */
 export const PART_TURN_FREE = /** @type {[number, number]} */ ([-180, 180]);
 
@@ -118,7 +122,8 @@ export function partForSide(K, id, side) {
  *   scale: number, painted: boolean, pivot: [number, number], px: [number, number], sockets: Record<string, [number, number]>,
  *   z: number, turn: [number, number] }} PartJoint
  * w and h are the picture's size as drawn; scale is how much the file's pixels are scaled to get there (1 for M and
- * for a hand-painted S or L); px is the pivot in drawn pixels.
+ * for a hand-painted S or L); px is the pivot in drawn pixels: the view's own, else its joint, chin or base socket,
+ * else the part's.
  */
 /** a part's joint in one view at one size, or null when it has no picture in that view
  * @param {PartKits} K @param {string} id @param {string} view @param {string} [size] @param {any} [rules]
@@ -132,8 +137,9 @@ export function partJoint(K, id, view, size = 'M', rules) {
     file = S ? S.file : V.file,
     w = S ? S.w : Math.max(1, Math.round(V.w * sc)),
     h = S ? S.h : Math.max(1, Math.round(V.h * sc)),
-    pivot = /** @type {[number, number]} */ ((S && S.pivot) || V.pivot || P.pivot),
-    sockets = (S && S.sockets) || V.sockets || {};
+    sockets = (S && S.sockets) || V.sockets || {},
+    by = PART_ATTACH.find(n => sockets[n]),
+    pivot = /** @type {[number, number]} */ ((S && S.pivot) || V.pivot || (by && sockets[by]) || P.pivot);
   return {
     id,
     view,
