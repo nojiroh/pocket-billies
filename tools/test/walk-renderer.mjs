@@ -15,6 +15,8 @@ globalThis.localStorage ??= { getItem: () => null, setItem() {} };
 globalThis.requestAnimationFrame ??= () => 0;
 globalThis.cancelAnimationFrame ??= () => {};
 globalThis.devicePixelRatio ??= 1;
+// the page's classic data-files.js script (walk-view.js reads PB_DATA when it loads), as the Node tools run it
+globalThis.PB_DATA ??= (await import('../data-files.mjs')).PB_DATA;
 
 await import('../../game/js/walk-view-gl.js');
 

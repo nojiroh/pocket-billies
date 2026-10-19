@@ -118,7 +118,6 @@ Vibration|Trillen|Vibration|Vibración|Vibration
 Time of day|Tijd van de dag|Tageszeit|Hora del día|Moment de la journée
 Weather|Weer|Wetter|Tiempo|Météo
 Season|Seizoen|Jahreszeit|Estación|Saison
-Shops and houses|Winkels en huizen|Läden und Häuser|Tiendas y casas|Boutiques et maisons
 Text size|Tekstgrootte|Textgröße|Tamaño del texto|Taille du texte
 Contrast|Contrast|Kontrast|Contraste|Contraste
 Flashes|Flitsen|Blitze|Destellos|Flashs
@@ -157,7 +156,6 @@ Spring|Lente|Frühling|Primavera|Printemps
 Summer|Zomer|Sommer|Verano|Été
 Autumn|Herfst|Herbst|Otoño|Automne
 Winter|Winter|Winter|Invierno|Hiver
-Walk inside|Naar binnen lopen|Hineingehen|Entrar|Entrer
 Open the counter right away|Meteen de toonbank openen|Sofort die Theke öffnen|Abrir el mostrador directamente|Ouvrir le comptoir tout de suite
 Match device|Zoals het apparaat|Wie das Gerät|Como el dispositivo|Comme l’appareil
 Daylight|Daglicht|Tageslicht|Luz de día|Jour

@@ -120,7 +120,10 @@ import { applyPreferences, settingsHTML } from './settings-screen.js';
 import { bustHTML, rigCanvasHTML } from './skeleton-rig.js';
 import { EASE, battleStage, battleStageFocus, battleStageTargets, camHome } from './battle-stage.js';
 import {
+  ROOM_BY_USE,
   closedText,
+  doorLinkOf,
+  doorOf,
   isOpenNow,
   mapArtPaths,
   mapById,
@@ -133,9 +136,9 @@ import {
   walkView,
   walkablePointNear,
 } from './walk-view.js';
-import { engineSetting } from './engine/settings.js';
 import { environment, environmentHint, environmentIcon, environmentLabel } from './environment.js';
 import { walkRenderer } from './walk/walk-state.js';
+import { roomFloorReady } from './walk/ground-draw.js';
 import { mountWalkView } from './walk-view-gl.js';
 import { fishStart } from './fishing.js';
 import {
@@ -203,8 +206,6 @@ expose({
   BOX_SORTS: [() => BOX_SORTS],
   PILL_COLORS: [() => PILL_COLORS],
   RARITY_NAMES: [() => RARITY_NAMES],
-  ROOM_BY_BUILDING: [() => ROOM_BY_BUILDING],
-  ROOM_BY_USE: [() => ROOM_BY_USE],
   SCREENS: [() => SCREENS],
   TABS: [() => TABS],
   TRACKS: [() => TRACKS],
@@ -219,6 +220,7 @@ expose({
   closeModal: [() => closeModal, v => ((closeModal = v), provide({ closeModal }))],
   dexStatus: [() => dexStatus, v => (dexStatus = v)],
   donateItem: [() => donateItem, v => (donateItem = v)],
+  doorBuildingOf: [() => doorBuildingOf, v => (doorBuildingOf = v)],
   eggSlots: [() => eggSlots, v => (eggSlots = v)],
   encounterCardHTML: [() => encounterCardHTML, v => (encounterCardHTML = v)],
   enterRoom: [() => enterRoom, v => (enterRoom = v)],
@@ -914,35 +916,30 @@ function mapExits(node) {
 /* what the walk scene shows: the stop you're at (walk around freely), or you walking out toward the next stop
    (first half of a road) and in from the far end (second half) */
 /* v26: walking into shops, the clinic, the lab and houses. uiState.inside remembers the room and where you came in */
-const ROOM_BY_USE = { shop: 'int_shop', clinic: 'int_clinic', lab: 'int_lab', house: 'int_house', home: 'int_home' };
-/* v46: a building's own room: one set on it in the Studio ("room"), else the room made for its kind of building
-   (a bakery, an inn, a bank...), else the room for what it does (shop, clinic, lab, house) */
-const ROOM_BY_BUILDING = {
-  bakery: 'int_bakery',
-  inn: 'int_inn',
-  bank: 'int_bank',
-  library: 'int_library',
-  school: 'int_school',
-  fire_station: 'int_fire_station',
-  mansion: 'int_mansion',
-  barn: 'int_barn',
-  greenhouse: 'int_greenhouse',
-  ski_lodge: 'int_ski_lodge',
-  market_hall: 'int_market_hall',
-};
-provide({ ROOM_BY_BUILDING }); /* to-module */
 function roomFor(a, p) {
-  if ((saveData.preferences || {}).rooms === 'quick' && a !== 'home') return null;
-  if (a !== 'home' && p) {
-    if (p.room && mapById(p.room)) return p.room;
-    const M = walkData().sc.props[p.k],
-      k = ROOM_BY_BUILDING[p.k] || (M && ROOM_BY_BUILDING[M.group]);
-    if (k && mapById(k)) return k;
-  }
-  const id = ROOM_BY_USE[a];
-  return id && mapById(id) ? id : null;
+  const L = doorLinkOf(p, a, walkView.id);
+  return L ? L.b.map : null;
 }
-function enterRoom(a, p) {
+/* phase 08b: a sign with no building of its own (Marigold's shop and clinic signs) leads into the building it stands by:
+   the nearest one within 6 m that does the same */
+function doorBuildingOf(a, p) {
+  const C = walkData().sc,
+    M = p && C.props[p.k];
+  if (!p || p.x == null || (M && M.box) || !walkView.sc) return p;
+  let best = null,
+    bd = 6;
+  for (const q of walkView.sc.props || []) {
+    const Q = C.props[q.k],
+      d = Math.hypot(q.x - p.x, q.z - p.z);
+    if (q.act === a && Q && Q.box && d < bd) {
+      best = q;
+      bd = d;
+    }
+  }
+  return best || p;
+}
+export function enterRoom(a, p) {
+  p = doorBuildingOf(a, p);
   const id = roomFor(a, p);
   if (!id || !walkView.pl) return false;
   const here = LOCATIONS[saveData.trip.node];
@@ -974,12 +971,7 @@ function enterRoom(a, p) {
     else roomStepIn(info);
     return true;
   }
-  uiState.inside = info;
-  uiState.roam = null;
-  if (typeof soundEffect === 'function') soundEffect('door');
-  if (typeof debugLog !== 'undefined') debugLog.add('scene', 'inside ' + id);
-  render();
-  return true;
+  return false;
 }
 /* v46: seamless rooms (seamless-world.js seamlessRoomMap). The room's view is the place's own view with the room laid in at the
    building's door, so going in and out is a shift of nothing. roomLayIn makes (and starts preparing) that view;
@@ -997,14 +989,14 @@ function roomLayIn(id, p, fresh) {
     !p
   )
     return null;
-  if (engineSetting('world', 'seamlessRooms') === false) return null;
-  const C = walkData().sc,
-    M = C.props[p.k];
-  if (!M || !M.box) return null;
-  const s = p.s || 1,
-    f = p.f ? -1 : 1,
-    dx = (((M.door && M.door.x) || 0) / (C.ppu || 34)) * s * f,
-    door = [+(p.x + dx).toFixed(1), +(+p.z).toFixed(1), +(+p.x).toFixed(1)]; /* the door, and the building's middle */
+  const M = walkData().sc.props[p.k],
+    E = doorOf(p);
+  if (!M || !M.box || !E) return null;
+  const door = [
+    +E.at[0].toFixed(1),
+    +E.at[1].toFixed(1),
+    +E.mid[0].toFixed(1),
+  ]; /* the door, and the building's middle */
   if (fresh)
     seamlessWorld.cache.delete(
       seamlessRoomId(walkView.id, id, door) + '|' + seamlessWorld.gen
@@ -1012,7 +1004,7 @@ function roomLayIn(id, p, fresh) {
   const sc = seamlessRoomMap(walkView.id, id, door);
   if (!sc) return null;
   seamlessGetReady(sc.id, true, door);
-  return { view: sc.id, door, base: walkView.id };
+  return { view: sc.id, door, base: walkView.id, at: E.at, out: E.out };
 }
 /* the room's things changed while you're in it (your room's decorations): lay it in again */
 function roomRefresh() {
@@ -1028,8 +1020,9 @@ function roomRefresh() {
 function roomAim(h) {
   if (!h || h.k !== 'act' || !ROOM_BY_USE[h.act] || uiState.inside) return;
   if (typeof isOpenNow === 'function' && !isOpenNow(openingHoursKind(h.act, h.p))) return;
-  const id = roomFor(h.act, h.p);
-  if (id) roomLayIn(id, h.p);
+  const q = doorBuildingOf(h.act, h.p),
+    id = roomFor(h.act, q);
+  if (id) roomLayIn(id, q);
 }
 function roomStepIn(info, n = 0) {
   if (uiState.goingIn !== info) return;
@@ -1039,18 +1032,30 @@ function roomStepIn(info, n = 0) {
     uiState.goingIn = null;
     return;
   } /* you walked off, or the view moved on */
+  /* phase 08b: the room's floor is painted in a moment; after 2 s at the door it is painted at once */
   if (!seamlessGetReady(info.view, true, info.door)) {
-    if (typeof walkRenderer !== 'undefined') walkRenderer.prepBoost = Math.max(walkRenderer.prepBoost || 1, 3);
-    /* you're standing at the door: bigger slices */ if (n < (uiState.roomWait || 90)) {
+    if (n < 20) {
       setTimeout(() => roomStepIn(info, n + 1), 100);
       return;
     }
-    info.view = null;
-    if (typeof debugLog !== 'undefined') debugLog.add('scene', `room ${info.id} wasn't ready in 9 s; shown on its own`);
+    const sc = mapById(info.view);
+    if (!sc || !roomFloorReady(sc.roomScene, -5, true)) {
+      uiState.goingIn = null;
+      if (typeof debugLog !== 'undefined') debugLog.add('scene', `room ${info.id}: its floor couldn't be made`);
+      return;
+    }
   }
   uiState.goingIn = null;
   uiState.inside = info;
   uiState.roam = null;
+  /* phase 08b: the camera as it was at the door, for coming out */
+  if (typeof walkRenderer !== 'undefined' && walkRenderer.camT)
+    info.cam = {
+      T: walkRenderer.camT.slice(),
+      cpe: walkRenderer.cpe ? walkRenderer.cpe.slice() : null,
+      yaw: walkRenderer.yawT,
+      zoom: walkRenderer.zoomT,
+    };
   if (typeof walkRenderer !== 'undefined') walkRenderer.prepBoost = 1;
   if (typeof soundEffect === 'function') soundEffect('door');
   if (typeof debugLog !== 'undefined')
@@ -1066,28 +1071,31 @@ export function leaveRoom() {
   const I = uiState.inside;
   if (!I) return;
   uiState.inside = null;
-  if (I.view) {
-    /* out through the door: you stand in front of it, where you came in */ const P = walkView.pl,
-      fr = [I.door[0], I.door[1] - 0.6],
-      rv = walkView.id === I.view && walkView.sc && walkView.sc.roomCut;
-    if (P && rv) {
-      P.x = fr[0] - rv[0];
-      P.z = fr[1] - rv[1];
-      P.route = null;
-      P.goal = null;
-      P.dir = 'down';
-    }
-    const B = mapById(I.base),
-      o = (B && B.baseOff) || [0, 0];
-    uiState.roam = { id: (B && B.baseId) || I.back.id, node: I.node, x: fr[0] - o[0], z: fr[1] - o[1] };
-    uiState.backAt = null;
-    if (typeof soundEffect === 'function') soundEffect('door');
-    render();
-    return;
+  /* out through the door: you stand just in front of it, facing out (phase 08b: the way the building faces), and the
+     camera is as it was when you went in */
+  const P = walkView.pl,
+    at = I.at || I.door,
+    out = I.out || [0, -1],
+    fr = [at[0] + out[0] * 0.6, at[1] + out[1] * 0.6];
+  if (P && walkView.id === I.view) {
+    P.x = fr[0];
+    P.z = fr[1];
+    P.route = null;
+    P.goal = null;
+    P.dir = Math.abs(out[0]) > Math.abs(out[1]) ? (out[0] > 0 ? 'right' : 'left') : out[1] < 0 ? 'down' : 'up';
   }
-  uiState.roam = uiState.backAt = { id: I.back.id, node: I.node, x: I.back.x, z: I.back.z };
+  const B = mapById(I.base),
+    o = (B && B.baseOff) || [0, 0];
+  uiState.roam = { id: (B && B.baseId) || I.back.id, node: I.node, x: fr[0] - o[0], z: fr[1] - o[1] };
+  uiState.backAt = null;
   if (typeof soundEffect === 'function') soundEffect('door');
   render();
+  if (I.cam && typeof walkRenderer !== 'undefined') {
+    walkRenderer.camT = I.cam.T.slice();
+    if (I.cam.cpe) walkRenderer.cpe = I.cam.cpe.slice();
+    walkRenderer.yawT = walkRenderer.yaw = I.cam.yaw;
+    walkRenderer.zoomT = walkRenderer.zoom = I.cam.zoom;
+  }
 }
 function roomAct(h) {
   const I = uiState.inside;
@@ -1139,38 +1147,15 @@ function roomAct(h) {
 function roomState() {
   const I = uiState.inside;
   if (!I) return null;
-  if (I.node !== saveData.trip.node) {
-    uiState.inside = null;
-    return null;
-  }
-  if (I.view) {
-    const sc = mapById(I.view);
-    if (!sc) {
-      uiState.inside = null;
-      return null;
-    }
-    const dr = sc.roomDoor || I.door,
-      pos = walkView.id === I.view && walkView.pl ? [walkView.pl.x, walkView.pl.z] : [dr[0], dr[1] - 0.45];
-    return {
-      id: I.view,
-      node: saveData.trip.node,
-      mode: 'roam',
-      pos,
-      roam: true,
-      who: 'me',
-      enc: [],
-      npcs: sc.keeper ? [{ who: sc.keeper, id: '_keeper:' + I.id, done: true, exit: null, dir: 'down' }] : [],
-      exits: [{ i: 0, to: -1, name: 'Outside', out: 1 }],
-    };
-  }
-  const sc = mapById(I.id);
+  const sc = I.node === saveData.trip.node && I.view ? mapById(I.view) : null;
   if (!sc) {
     uiState.inside = null;
     return null;
   }
-  const pos = uiState.roam && uiState.roam.id === I.id ? [uiState.roam.x, uiState.roam.z] : mapHub(sc);
+  const dr = sc.roomDoor || I.door,
+    pos = walkView.id === I.view && walkView.pl ? [walkView.pl.x, walkView.pl.z] : [dr[0], dr[1] - 0.45];
   return {
-    id: I.id,
+    id: I.view,
     node: saveData.trip.node,
     mode: 'roam',
     pos,

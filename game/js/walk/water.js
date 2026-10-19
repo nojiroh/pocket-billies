@@ -4,7 +4,7 @@
    walk-view-gl.js as they were. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { ambientLife, provide, reducedMotion, setPropLookUniforms, soundEffectAt } from '../hooks.js';
+import { ambientLife, provide, reducedMotion, roomHole, setPropLookUniforms, soundEffectAt } from '../hooks.js';
 import { walkData, walkView } from '../walk-view.js';
 import { engineColor, engineSetting } from '../engine/settings.js';
 import { bindQuad, gpuState, imageTexture, matrix4, renderTarget } from '../engine/webgl.js';
@@ -297,6 +297,7 @@ export function drawWater(C, X, rw, rh) {
   gl.uniform1f(U.uLevel, walkRenderer.wlevelR ?? walkRenderer.wlevel ?? 0);
   setWaterUniforms(U);
   setShoreUniforms(U, sc);
+  if (U.uHole) gl.uniform4fv(U.uHole, roomHole(sc));
   gl.enable(gl.BLEND);
   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
   gl.depthMask(false);

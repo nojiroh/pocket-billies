@@ -44,11 +44,11 @@ export function setBuildGroundMesh(v) {
 /* v46: the ground of a scene, built a slice at a time into T. With T = walkRenderer it runs to the end at once (opening a scene);
    with a fresh T it runs a few milliseconds a frame for the view that comes next (prepareMapGround), so walking from one view
    to the next finds everything ready: the textures go up to the card in strips, the mesh and water are built in slices */
-export function* buildGroundMeshSteps(sc, G, T) {
+export function* buildGroundMeshSteps(sc, G, T, bare) {
   const gl = gpuState.gl,
     W = sc.w,
     H = sc.h,
-    P = GROUND_BORDER_M,
+    P = bare ? 0 : GROUND_BORDER_M /* phase 08b: a room's floor over its place: the room alone, no land round it */,
     res = 0.5,
     ter = (x, z) => {
       const i = Math.floor(x),
@@ -411,7 +411,7 @@ export function* buildGroundMeshSteps(sc, G, T) {
     fnx = Math.round((fx1 - fx0) / R),
     fnz = Math.round((fz1 - fz0) / R),
     fb = nv;
-  for (let j = 0; j <= fnz; j++) {
+  for (let j = 0; j <= fnz && !bare; j++) {
     if (j % 12 === 11) yield;
     for (let i = 0; i <= fnx; i++) {
       const x = fx0 + i * R,
@@ -424,7 +424,7 @@ export function* buildGroundMeshSteps(sc, G, T) {
       vtx(x, h, z, n[0], n[1], n[2], 0, 0, 0);
     }
   }
-  for (let j = 0; j < fnz; j++)
+  for (let j = 0; j < fnz && !bare; j++)
     for (let i = 0; i < fnx; i++) {
       const x = fx0 + i * R,
         z = fz0 + j * R;
@@ -866,7 +866,7 @@ export function* buildGroundMeshSteps(sc, G, T) {
   }
 }
 export function buildGroundMesh() {
-  const it = buildGroundMeshSteps(walkView.sc, walkView.ground, walkRenderer);
+  const it = buildGroundMeshSteps(walkView.sc.groundOf || walkView.sc, walkView.ground, walkRenderer);
   let r = it.next();
   while (!r.done) r = it.next();
 }

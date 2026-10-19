@@ -4,10 +4,19 @@
    were. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { provide, reducedMotion, worldBillies } from '../hooks.js';
+import { paintGroundRect, provide, reducedMotion, waitForPaintWorker, worldBillies } from '../hooks.js';
 import { clamp } from '../util.js';
 import { hexToRgb } from '../art.js';
-import { GROUND_BORDER_M, artImage, walkData, walkView } from '../walk-view.js';
+import {
+  GROUND_BORDER_M,
+  PAINT_WORKER_WAIT,
+  artImage,
+  bigTilesOn,
+  groundKey,
+  paintGroundSteps,
+  walkData,
+  walkView,
+} from '../walk-view.js';
 import { engineColor, engineContext, engineSetting } from '../engine/settings.js';
 import { gpuState, imageTexture } from '../engine/webgl.js';
 import { environment } from '../environment.js';
@@ -15,7 +24,8 @@ import { walkRenderer } from './walk-state.js';
 import { WALL_COLORS, defaultWallMaterial, standingHeightAt } from './heights.js';
 import { useWalkProgram, worldCurveDrop } from './draw-common.js';
 import { setShoreUniforms } from './water-data.js';
-import { setNearRingUniforms } from './map-cache.js';
+import { buildGroundMeshSteps } from './ground-mesh.js';
+import { freeMapCacheEntry, setNearRingUniforms } from './map-cache.js';
 import { computeFrustum, inFrustum } from './quality-cull.js';
 import { skyColors } from './sky.js';
 import { roomBoxOf } from './rooms.js';
@@ -27,13 +37,22 @@ expose({
   GRASS_NO_TRAIL: [() => GRASS_NO_TRAIL],
   GRASS_PUSHER_BUFFER: [() => GRASS_PUSHER_BUFFER],
   GRASS_TRAIL_BUFFER: [() => GRASS_TRAIL_BUFFER],
+  ROOM_FLOORS_KEPT: [() => ROOM_FLOORS_KEPT],
+  ROOM_PICTURES: [() => ROOM_PICTURES],
+  ROOM_PICTURES_PENDING: [() => ROOM_PICTURES_PENDING],
   drawGrass: [() => drawGrass, v => setDrawGrass(v)],
   drawGround: [() => drawGround, v => setDrawGround(v)],
+  drawGroundDepth: [() => drawGroundDepth, v => ((drawGroundDepth = v), provide({ drawGroundDepth }))],
   grassPushers: [() => grassPushers, v => (grassPushers = v)],
   grassTrail: [() => grassTrail, v => (grassTrail = v)],
   mapFlowers: [() => mapFlowers, v => (mapFlowers = v)],
+  paintRoomFloor: [() => paintRoomFloor, v => (paintRoomFloor = v)],
+  roomFloorOf: [() => roomFloorOf, v => ((roomFloorOf = v), provide({ roomFloorOf }))],
+  roomFloorReady: [() => roomFloorReady, v => (roomFloorReady = v)],
+  roomHole: [() => roomHole, v => ((roomHole = v), provide({ roomHole }))],
 });
 /* eslint-enable no-func-assign */
+provide({ drawGroundDepth, roomFloorOf, roomHole });
 export function setDrawGrass(v) {
   drawGrass = v; // eslint-disable-line no-func-assign
   provide({ drawGrass });
@@ -119,9 +138,136 @@ export function drawGround(C, X) {
   gl.enable(gl.DEPTH_TEST);
   gl.depthFunc(gl.LEQUAL);
   gl.disable(gl.BLEND);
+  if (U.uOrg) gl.uniform3f(U.uOrg, 0, 0, 0);
+  if (U.uHole) gl.uniform4fv(U.uHole, roomHole(sc));
   gl.bindVertexArray(walkRenderer.mesh.vao);
   gl.drawElements(gl.TRIANGLES, walkRenderer.mesh.n, gl.UNSIGNED_INT, 0);
+  /* phase 08b: the room's own floor and walls where the place left its hole: the room's picture, no near ring, no
+     shore, no shade from the place's ground */
+  const RT = roomFloorOf(sc);
+  if (RT) {
+    const R = sc.roomRect;
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, RT.gtex);
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, RT.ftex);
+    gl.activeTexture(gl.TEXTURE2);
+    gl.bindTexture(gl.TEXTURE_2D, RT.ctex);
+    gl.activeTexture(gl.TEXTURE3);
+    gl.bindTexture(gl.TEXTURE_2D, RT.gntex || gpuState.flatN);
+    gl.uniform4f(U.uGRect, R[0], R[1] + R[3], 1 / R[2], 1 / R[3]);
+    if (U.uCanvas) gl.uniform3f(U.uCanvas, 1, 1, 0);
+    if (U.uShoreR) gl.uniform3f(U.uShoreR, 0, 0, 0);
+    if (U.uGAOR) gl.uniform3f(U.uGAOR, 0, 0, 0);
+    if (U.uOrg) gl.uniform3f(U.uOrg, R[0], sc.roomFloor || 0, R[1]);
+    if (U.uHole) gl.uniform4f(U.uHole, 0, 0, 0, 0);
+    gl.bindVertexArray(RT.mesh.vao);
+    gl.drawElements(gl.TRIANGLES, RT.mesh.n, gl.UNSIGNED_INT, 0);
+  }
   gl.bindVertexArray(null);
+}
+/* phase 08b: a room over its place (seamless-world.js seamlessRoomMap). The place's ground stays as it is (its picture,
+   its mesh and its near ring are the place's own, nothing is made again); where the room stands it leaves a hole
+   (roomHole: ground, grass, water, their shadows), and the room's floor and walls, a small ground of their own built
+   from the room alone (sc.roomScene, in the room's own metres), are drawn there at the floor's height */
+function roomHole(sc) {
+  const R = sc && sc.roomScene && sc.roomRect;
+  return R ? [R[0], R[1], R[0] + R[2], R[1] + R[3]] : [0, 0, 0, 0];
+}
+function roomFloorOf(sc) {
+  const RS = sc && sc.roomScene,
+    T = RS && walkRenderer.roomFloors && walkRenderer.roomFloors.get(RS.id);
+  return T && T.mesh ? T : null;
+}
+/* the ground and its walls into a depth map (the shadowG program in use): the place's with its hole, then the room's */
+function drawGroundDepth(p, sc) {
+  const gl = gpuState.gl;
+  if (p.U.uOrg) gl.uniform3f(p.U.uOrg, 0, 0, 0);
+  if (p.U.uHole) gl.uniform4fv(p.U.uHole, roomHole(sc));
+  gl.bindVertexArray(walkRenderer.mesh.vao);
+  gl.drawElements(gl.TRIANGLES, walkRenderer.mesh.n, gl.UNSIGNED_INT, 0);
+  const RT = roomFloorOf(sc);
+  if (RT) {
+    const R = sc.roomRect;
+    if (p.U.uOrg) gl.uniform3f(p.U.uOrg, R[0], sc.roomFloor || 0, R[1]);
+    if (p.U.uHole) gl.uniform4f(p.U.uHole, 0, 0, 0, 0);
+    gl.bindVertexArray(RT.mesh.vao);
+    gl.drawElements(gl.TRIANGLES, RT.mesh.n, gl.UNSIGNED_INT, 0);
+  }
+  gl.bindVertexArray(null);
+}
+/* is the room's floor ready to show? If not, get it ready: its picture painted (at the near ring's size: it is seen up
+   close), then its mesh built on the card (a room is small: at once). Rooms you were in lately are kept (three) */
+const ROOM_FLOORS_KEPT = 3;
+export function roomFloorReady(RS, pr = -5, now = false) {
+  if (!RS || !walkRenderer.on || !gpuState.gl) return false;
+  const M = walkRenderer.roomFloors || (walkRenderer.roomFloors = new Map());
+  if (M.has(RS.id)) return true;
+  const TP = bigTilesOn() ? 32 : 16,
+    key = groundKey(RS) + '|' + TP,
+    P = GROUND_BORDER_M;
+  let G = ROOM_PICTURES.get(key);
+  if (!G && now) {
+    /* you've stood at the door a while (the helper is busy): painted here, now (a room is small) */
+    const it = paintGroundSteps(RS, { TP, rect: [P, P, RS.w, RS.h], margin: 0 });
+    let r = it.next();
+    while (!r.done) r = it.next();
+    G = { width: r.value.w, height: r.value.h, _px: new Uint8Array(r.value.px.buffer), _nrm: r.value.nrm };
+    ROOM_PICTURES.set(key, G);
+  }
+  if (!G) {
+    if (!ROOM_PICTURES_PENDING.has(key)) {
+      const p = paintRoomFloor(RS, TP, pr)
+        .then(g => {
+          ROOM_PICTURES.set(key, g);
+          while (ROOM_PICTURES.size > ROOM_FLOORS_KEPT) ROOM_PICTURES.delete(ROOM_PICTURES.keys().next().value);
+        })
+        .catch(e => {
+          if (typeof debugLog !== 'undefined') debugLog.add('webgl', 'room floor: ' + ((e && e.message) || e));
+        })
+        .finally(() => ROOM_PICTURES_PENDING.delete(key));
+      ROOM_PICTURES_PENDING.set(key, p);
+    }
+    return false;
+  }
+  const T = {},
+    it = buildGroundMeshSteps(RS, G, T, true);
+  let r = it.next();
+  while (!r.done) r = it.next();
+  M.set(RS.id, T);
+  while (M.size > ROOM_FLOORS_KEPT) {
+    const k0 = M.keys().next().value;
+    freeMapCacheEntry(M.get(k0));
+    M.delete(k0);
+  }
+  return true;
+}
+const ROOM_PICTURES = new Map(),
+  ROOM_PICTURES_PENDING = new Map();
+async function paintRoomFloor(RS, TP, pr) {
+  const P = GROUND_BORDER_M,
+    it =
+      typeof paintGroundRect === 'function'
+        ? paintGroundRect(RS, { TP, rect: [P, P, RS.w, RS.h], margin: 0, pr })
+        : paintGroundSteps(RS, { TP, rect: [P, P, RS.w, RS.h], margin: 0 });
+  let r,
+    t0 = performance.now();
+  for (;;) {
+    r = it.next();
+    if (r.done) break;
+    if (r.value === PAINT_WORKER_WAIT) {
+      await waitForPaintWorker();
+      t0 = performance.now();
+      continue;
+    }
+    if (performance.now() - t0 > 8) {
+      await new Promise(res => setTimeout(res, 0));
+      t0 = performance.now();
+    }
+  }
+  const g = { width: r.value.w, height: r.value.h, _px: new Uint8Array(r.value.px.buffer) };
+  g._nrm = r.value.nrm;
+  return g;
 }
 /* where you walked through the grass lately (16 spots, the blades spring back over four seconds) */
 function grassTrail() {
@@ -234,6 +380,7 @@ export function drawGrass(C, X) {
     U = p.U,
     sc = walkView.sc,
     P = walkView.pl;
+  if (U.uHole) gl.uniform4fv(U.uHole, roomHole(sc));
   if (U['uFlw[0]'] || U.uFlw) {
     const F = mapFlowers(sc),
       loc = U.uFlw || U['uFlw[0]'];

@@ -60,6 +60,22 @@ function buildingPads(sc) {
 function heightGrid(sc) {
   const H = sc.heights;
   if (!H || !H.length) return null;
+  /* phase 08b: a room's view: its place's grid with the room's floor laid in (the place isn't worked out again) */
+  if (sc.groundOf && sc.roomRect) {
+    const B = heightGrid(sc.groundOf),
+      c = sc._hg;
+    if (B && B.W === sc.w && B.Hh === sc.h) {
+      if (c && c.base === B.G && c.H === H) return c;
+      const G = new Float32Array(B.G),
+        R = sc.roomRect,
+        W = sc.w;
+      for (let b = Math.max(0, R[1]); b <= Math.min(sc.h, R[1] + R[3]); b++) {
+        const r = H[sc.h - b];
+        for (let a = Math.max(0, R[0]); a <= Math.min(W, R[0] + R[2]); a++) G[b * (W + 1) + a] = r ? +r[a] || 0 : 0;
+      }
+      return (sc._hg = { H, sig: 'room', t: performance.now(), G, W, Hh: sc.h, base: B.G });
+    }
+  }
   const now = performance.now(),
     c = sc._hg;
   if (c && now - c.t < 120 && c.H === H) return c;
@@ -216,6 +232,7 @@ setNavGrid(function () {
   const { N, gw, gh, blk } = n;
   for (let j = 0; j < gh; j++)
     for (let i = 0; i < gw; i++) {
+      if (blk[j * gw + i]) continue; /* (already blocked: in a room, all of the place outside it) */
       const x = (i + 0.5) / N,
         z = (j + 0.5) / N,
         e = 0.3,

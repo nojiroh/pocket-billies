@@ -32,6 +32,7 @@ import { ENGINE_DEFAULTS } from './engine/settings.js';
 import { smooth01 } from './engine/webgl.js';
 import { walkRenderer } from './walk/walk-state.js';
 import { isGroundPrepared, prepareMapGround } from './walk/map-cache.js';
+import { roomFloorReady } from './walk/ground-draw.js';
 import { lifeShift } from './ambient-life.js';
 import { shiftWorldBillies } from './world-billies.js';
 /* eslint-disable no-func-assign */
@@ -1311,29 +1312,11 @@ export function seamlessRoomMap(baseId, roomId, door) {
     key = id + '|' + seamlessWorld.gen;
   let sc = seamlessWorld.cache.get(key);
   if (sc) return sc;
-  const B0 = mapById(baseId),
+  const B = mapById(baseId),
     R = mapById(roomId);
-  if (!B0 || !B0.w || !R || !R.w) return null;
+  if (!B || !B.w || !R || !R.w) return null;
   const C = walkData().sc,
-    [rx, rz] = seamlessRoomPlacement(B0, R, door);
-  /* only a window of the place round the room is made again (the rest isn't seen from inside): far less to prepare */
-  let B = B0,
-    cx = 0,
-    cz = 0;
-  const F = B0.comp && B0.comp.hubOf != null ? seamlessHubParts(B0.comp.hubOf) : null;
-  if (F) {
-    const x0 = Math.max(0, rx - 18),
-      z0 = Math.max(0, rz - 14),
-      x1 = Math.min(B0.w, rx + R.w + 18),
-      z1 = Math.min(B0.h, rz + R.h + 20);
-    if ((x1 - x0) * (z1 - z0) < B0.w * B0.h * 0.8) {
-      cx = x0;
-      cz = z0;
-      B = seamlessCompose(id, Object.assign({}, F, { box: [F.box[0] + x0, F.box[1] + z0, x1 - x0, z1 - z0] }));
-    }
-  }
-  const ox = rx - cx,
-    oz = rz - cz,
+    [ox, oz] = seamlessRoomPlacement(B, R, door),
     W = B.w,
     H = B.h;
   /* each building's room is its own: mirrored or not and a wall colour picked by where its door is (not your room, or a room set to stay as made) */
@@ -1343,19 +1326,17 @@ export function seamlessRoomMap(baseId, roomId, door) {
     mx = x => (mir ? R.w - x : x),
     WALLS = ['#E6CFA2', '#D9B79C', '#DCD2BC', '#E4D3B8', '#CBD6DC', '#E8CDBA', '#D8CCDC', '#D2DCC4'];
   /* the doorway, in the room's own metres: right where the building's door is */
-  const ex = clamp(door[0] - cx - ox, 2.2, R.w - 2.2),
+  const ex = clamp(door[0] - ox, 2.2, R.w - 2.2),
     gap = ROOM_GAP_BY_KIND[R.building] || ROOM_GAP_BY_KIND[R.room] || 2,
     fl = (() => {
       const n = {};
       for (const ch of (R.tiles || [])[Math.floor(R.h / 2)] || '') n[ch] = (n[ch] || 0) + 1;
       return Object.keys(n).sort((a, b) => n[b] - n[a])[0] || R.edge || 'b';
     })();
-  /* ground: the room's floor in its rectangle (rows run from the far side down) */
-  const tiles = (B.tiles || []).slice();
+  /* phase 08b: the room's floor, in its own metres (rows run from the far side down): drawn as a ground of its own over
+     the place (walk-view-gl.js roomFloorReady), and laid into the view's tiles so what stands on it reads the room */
+  const rt = [];
   for (let lz = 0; lz < R.h; lz++) {
-    const j = H - 1 - (oz + lz),
-      row = tiles[j];
-    if (row == null) continue;
     const rr = (R.tiles || [])[R.h - 1 - lz] || '';
     let out = '';
     for (let i = 0; i < R.w; i++) {
@@ -1364,7 +1345,13 @@ export function seamlessRoomMap(baseId, roomId, door) {
       if (lz <= 1 && i + 0.5 > ex - gap / 2 && i + 0.5 < ex + gap / 2) ch = 'q';
       out += ch;
     }
-    tiles[j] = row.slice(0, ox) + out + row.slice(ox + R.w);
+    rt[R.h - 1 - lz] = out;
+  }
+  const tiles = (B.tiles || []).slice();
+  for (let lz = 0; lz < R.h; lz++) {
+    const j = H - 1 - (oz + lz),
+      row = tiles[j];
+    if (row != null) tiles[j] = row.slice(0, ox) + rt[R.h - 1 - lz] + row.slice(ox + R.w);
   }
   /* heights: the floor lies flat at the door's height */
   const hv = (i, zc) => {
@@ -1372,7 +1359,7 @@ export function seamlessRoomMap(baseId, roomId, door) {
         row = (B.heights || [])[r];
       return row ? (row[i] ?? 0) : 0;
     },
-    fh = hv(clamp(Math.round(door[0] - cx), 0, W), clamp(Math.round(door[1] - cz), 0, H));
+    fh = hv(clamp(Math.round(door[0]), 0, W), clamp(Math.round(door[1]), 0, H));
   const heights = (B.heights || []).map(r => r.slice());
   if (heights.length)
     for (let zc = oz; zc <= oz + R.h; zc++) {
@@ -1383,7 +1370,7 @@ export function seamlessRoomMap(baseId, roomId, door) {
         heights[r][i] = +(fh + rh).toFixed(2);
       }
     }
-  /* steps: the place's, with the room's walls stamped in */
+  /* steps: the room's walls (mirrored with it), on their own and stamped into the place's */
   const SB = stepGrid(B),
     SR = stepGrid(R),
     E = {
@@ -1393,15 +1380,42 @@ export function seamlessRoomMap(baseId, roomId, door) {
       h: H * 2,
       H: SB ? new Float32Array(SB.H) : new Float32Array(W * H * 4),
       M: SB ? new Uint8Array(SB.M) : new Uint8Array(W * H * 4),
+    },
+    ER = {
+      s: '@' + id + '|floor',
+      m0: '@' + id + '|floor',
+      w: R.w * 2,
+      h: R.h * 2,
+      H: new Float32Array(R.w * R.h * 4),
+      M: new Uint8Array(R.w * R.h * 4),
     };
-  for (let j = oz * 2; j < (oz + R.h) * 2 && j < E.h; j++)
-    for (let i = ox * 2; i < (ox + R.w) * 2 && i < E.w; i++) {
-      const q = j * E.w + i,
-        ii = i - ox * 2,
-        r = SR ? (j - oz * 2) * SR.w + (mir ? SR.w - 1 - ii : ii) : -1;
-      E.H[q] = SR ? SR.H[r] : 0;
-      E.M[q] = SR ? SR.M[r] : 0;
+  for (let j = 0; j < ER.h; j++)
+    for (let i = 0; i < ER.w; i++) {
+      const q = j * ER.w + i,
+        r = SR ? j * SR.w + (mir ? SR.w - 1 - i : i) : -1;
+      ER.H[q] = SR ? SR.H[r] : 0;
+      ER.M[q] = SR ? SR.M[r] : 0;
+      const jj = j + oz * 2,
+        ii = i + ox * 2;
+      if (jj < E.h && ii < E.w) {
+        E.H[jj * E.w + ii] = ER.H[q];
+        E.M[jj * E.w + ii] = ER.M[q];
+      }
     }
+  const wallCol =
+    vary && R.wallCol
+      ? R.wallCol.map((c, i) => (i === 10 ? WALLS[Math.floor(vs * 997) % WALLS.length] : c))
+      : R.wallCol;
+  const floor = Object.assign({}, R, {
+    id: id + '|floor',
+    tiles: rt,
+    props: [],
+    wallCol,
+    steps: ER.s,
+    stepm: ER.m0,
+    stepsV: 1,
+  });
+  STEP_GRID_CACHE.set(floor, ER);
   /* things: the place's, less what the room covers (and a strip in front of it, so nothing stands between you and the room), plus the room's */
   const x0 = ox - 0.6,
     x1 = ox + R.w + 0.6,
@@ -1442,7 +1456,7 @@ export function seamlessRoomMap(baseId, roomId, door) {
   }
   /* alpha 0.1: the room's windows are the building's own (seamlessRoomWindows) */
   if (R.winMatch !== 0) {
-    const bp = (B0.props || []).find(p => {
+    const bp = (B.props || []).find(p => {
       const M = C.props[p.k];
       return (
         M &&
@@ -1459,24 +1473,24 @@ export function seamlessRoomMap(baseId, roomId, door) {
   Object.assign(sc, {
     indoor: R.indoor || 1,
     room: R.room || true,
-    wallCol:
-      vary && R.wallCol
-        ? R.wallCol.map((c, i) => (i === 10 ? WALLS[Math.floor(vs * 997) % WALLS.length] : c))
-        : R.wallCol,
+    wallCol,
     keeper: R.keeper,
     folk: 0,
     life: (B.life || []).filter(o => !o.area || o.area[2] < x0 || o.area[0] > x1 || o.area[3] < z0 || o.area[1] > z1),
     hub: [ex + ox, (R.hub || [R.w / 2, 2.2])[1] + oz],
-    exits: [[ex + ox, Math.max(oz + 0.3, Math.min(oz + 1.2, door[1] - cz))]],
+    exits: [[ex + ox, Math.max(oz + 0.3, Math.min(oz + 1.2, door[1]))]],
     roomGap: gap,
     /* the doorway exactly at the door, also front to back */ edgeExits: null,
     npcSpots: (R.npcSpots || []).map(q => (Array.isArray(q) ? [mx(q[0]) + ox, q[1] + oz] : q)),
     roomRect: [ox, oz, R.w, R.h],
     roomOf: roomId,
     roomBase: baseId,
-    roomDoor: [door[0] - cx, door[1] - cz],
-    roomCut: [cx, cz],
+    roomDoor: [door[0], door[1]],
     roomFloor: fh,
+    /* phase 08b: what is drawn: the place's own ground (groundOf: its picture, mesh and near ring, as they are), with
+       the room's floor over it (roomScene) */
+    groundOf: B,
+    roomScene: floor,
     arches: (B.arches || []).filter(o => !hits(o.x - 1, o.z - 1, o.x + 1, o.z + 1)),
     name: R.name,
   });
@@ -1523,6 +1537,8 @@ function seamlessViewReady(id) {
   if (id === walkView.id) return true;
   const sc = mapById(id);
   if (!sc) return false;
+  /* phase 08b: a room needs only its own floor (the place's ground is the one on screen) */
+  if (sc.roomScene) return typeof roomFloorReady === 'function' && roomFloorReady(sc.roomScene);
   const key = groundKey(sc);
   if (!GROUND_CACHE.has(key)) return false;
   return (
@@ -1535,7 +1551,7 @@ function seamlessViewReady(id) {
 export function seamlessGetReady(id, urgent, focus) {
   if (seamlessViewReady(id)) return true;
   const sc = mapById(id);
-  if (!sc) return false;
+  if (!sc || sc.roomScene) return false;
   const key = groundKey(sc),
     G = GROUND_CACHE.get(key);
   if (!G) {
@@ -1735,6 +1751,18 @@ export function shiftWalkView(id, dx, dz) {
   walkView.sc = sc;
   walkView.gkey = '';
   walkView.cand = null;
+  /* phase 08b: the walking grids of the last two views you left are kept for coming back (out of a room: at once) */
+  if (walkView.nav)
+    walkView.navKeep = [
+      {
+        sc: walkView.navSc,
+        nav: walkView.nav,
+        G: walkView.navG,
+        P: walkView.navP,
+        T: walkView.navT,
+        key: walkView.navKey,
+      },
+    ].concat((walkView.navKeep || []).filter(k => k.sc !== walkView.navSc).slice(0, 1));
   walkView.nav = null;
   walkView.npcAt = {};
   if (typeof debugLog !== 'undefined') debugLog.add('scene', 'seamless to ' + id);

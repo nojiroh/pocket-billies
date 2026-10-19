@@ -25,6 +25,7 @@ import { $, $$, clamp } from '../../game/js/util.js';
 import { ART_CACHE, makeCanvas } from '../../game/js/art.js';
 import {
   MAX_STEP_RISE,
+  ROOM_BY_USE,
   artImage,
   canStepBetween,
   exitEdge,
@@ -363,22 +364,9 @@ SECTIONS.scenes = () => {
       .filter(([k, v]) => v.kind === 'room' || /^int_/.test(k))
       .map(([k, v]) => [k, v.name || k]);
     const kindRoom =
-      {
-        bakery: 'int_bakery',
-        inn: 'int_inn',
-        bank: 'int_bank',
-        library: 'int_library',
-        school: 'int_school',
-        station: 'int_station',
-        fire_station: 'int_fire_station',
-        mansion: 'int_mansion',
-        barn: 'int_barn',
-        greenhouse: 'int_greenhouse',
-        ski_lodge: 'int_ski_lodge',
-        market_hall: 'int_market_hall',
-      }[sel.k] ||
-      { shop: 'int_shop', clinic: 'int_clinic', lab: 'int_lab', house: 'int_house', home: 'int_home' }[sel.act] ||
-      '';
+      ((studioState.D.scenery.props || {})[sel.k] || {}).room ||
+      ROOM_BY_USE[sel.act] ||
+      ''; /* walk-view.js doorLinkOf */
     return `<div class="sc-room">${grid(selectField('Room inside', `${p}.props.${mapEditor.sel}.room`, rooms, { none: kindRoom ? 'The one for its kind (' + ((studioState.D.maps[kindRoom] || {}).name || kindRoom) + ')' : 'None', opt: 1, rr: 1, help: 'Where you walk in when you tap it (it needs “When tapped” set). Rooms open in place, larger than the building, with the town dimmed around them.' }))}<div class="seg-row"><button class="btn sm" data-act="scOwnRoom">Give it a room of its own</button>${sel.room || kindRoom ? `<button class="btn sm subtle" data-act="scPick" data-k="${escapeHtml(sel.room || kindRoom)}">Open its room</button>` : ''}</div></div>`;
   })()}
   ${(() => {
@@ -1631,23 +1619,7 @@ ACTIONS.scOwnRoom = () => {
     sc = currentMap(),
     p = sc.props[mapEditor.sel];
   if (!p) return;
-  const kr =
-    {
-      bakery: 'int_bakery',
-      inn: 'int_inn',
-      bank: 'int_bank',
-      library: 'int_library',
-      school: 'int_school',
-      station: 'int_station',
-      fire_station: 'int_fire_station',
-      mansion: 'int_mansion',
-      barn: 'int_barn',
-      greenhouse: 'int_greenhouse',
-      ski_lodge: 'int_ski_lodge',
-      market_hall: 'int_market_hall',
-    }[p.k] ||
-    { shop: 'int_shop', clinic: 'int_clinic', lab: 'int_lab', home: 'int_home' }[p.act] ||
-    'int_house';
+  const kr = ((D.scenery.props || {})[p.k] || {}).room || ROOM_BY_USE[p.act] || 'int_house';
   const from = D.maps[p.room] || D.maps[kr];
   if (!from) return;
   const k = uniqueKey('int_' + id + '_' + p.k, x => !!D.maps[x]);
