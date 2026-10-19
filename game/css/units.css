@@ -367,14 +367,6 @@
 }
 
 /* ---------- the details sheet: room to breathe, clear of the edges (like the evolution sheet) ---------- */
-.scrim .sheet.mon-sheet {
-  width: calc(100% - 2 * var(--gutter));
-  max-width: 520px;
-  margin: 0 var(--gutter) calc(var(--gutter) + env(safe-area-inset-bottom, 0px));
-  padding: var(--s5) var(--pad-panel) var(--pad-panel) !important;
-  border-radius: var(--r-lg) !important;
-  box-shadow: var(--depth-float) !important;
-}
 .sheet.mon-sheet .ms-tabs {
   margin: var(--s4) 0;
 }
@@ -618,14 +610,6 @@
 }
 
 /* the Workshop's refit sheet: a floating card like the details sheet, readable stats, roomy slot rows */
-.scrim .sheet.ws-sheet {
-  width: calc(100% - 2 * var(--gutter));
-  max-width: 520px;
-  margin: 0 var(--gutter) calc(var(--gutter) + env(safe-area-inset-bottom, 0px));
-  padding: var(--s5) var(--pad-panel) var(--pad-panel) !important;
-  border-radius: var(--r-lg) !important;
-  box-shadow: var(--depth-float) !important;
-}
 .sheet.ws-sheet .ws-top {
   display: grid;
   grid-template-columns: 112px minmax(0, 1fr);
