@@ -9,6 +9,7 @@
 //   ground kinds and props a map uses, the stops of links and trainers, a trainer's look,
 // - a map's ground is h rows of w, its heights (h+1) rows of w+1,
 // - phase 07: portraits.json against its schema, and every picture, part and frame it names exists,
+// - studio track ST-3: partKits.json against its schema, and every part's picture is there at its size,
 // - phase 08b: the links between places (roads.json) join them as the walk needs, and every door opens a room (below).
 import Ajv2020 from 'ajv/dist/2020.js';
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -298,6 +299,19 @@ if (D.coats && check('coats.schema.json', D.coats, 'coats.json')) {
     }
   }
 }
+// studio track ST-3: the part kits: the schema, then every picture they name is there with the size given
+if (D.partKits && check('partKits.schema.json', D.partKits, 'partKits.json'))
+  for (const [id, P] of Object.entries(D.partKits.parts))
+    for (const [view, V] of Object.entries(P.views)) {
+      const png = join(DATA, '..', 'art', V.file);
+      if (!existsSync(png)) problem('partKits.json', `part ${id} ${view}: no picture ${V.file}`);
+      else {
+        const b = readFileSync(png);
+        if (b.readUInt32BE(16) !== V.w || b.readUInt32BE(20) !== V.h)
+          problem('partKits.json', `part ${id} ${view}: ${V.file} is ${b.readUInt32BE(16)} x ${b.readUInt32BE(20)}, not ${V.w} x ${V.h}`);
+      }
+      if (!V.file.includes(`/${view}/`)) problem('partKits.json', `part ${id}: its ${view} picture is in another view's folder`);
+    }
 // phase 07: portraits: the schema, then every picture named is there and every face uses parts that exist
 if (D.portraits) {
   const P = D.portraits,

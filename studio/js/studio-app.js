@@ -449,6 +449,7 @@ export const SECTION_LIST = [
   ['roster', 'Roster board', 'The Billies in the game and how far their art is'],
   ['parts', 'Parts', 'Part sizes, weight and Prime Billies'],
   ['coats', 'Coats', 'Recolours of a Billie’s art, and how often each turns up'],
+  ['workbench', 'Art workbench', 'Cut sheets into parts (drop a PNG anywhere); parts, pixels and models next'],
   ['robots', 'Robots', 'Robot parts, gems, their pictures and the rules behind them'],
   ['moves', 'Moves', 'Attacks and their effects'],
   ['preview', 'Battle preview', 'Watch moves, backdrops and Billies on the real battle stage'],
@@ -472,7 +473,10 @@ export const SECTION_LIST = [
 /* alpha 0.4.1: the sections in five groups that fold away; the one you're in always shows. The descriptions show as
    a tooltip and under the section you're in, so the list is short enough to see at once */
 const SECTION_GROUPS = [
-  ['Billies & battles', ['billionaires', 'parts', 'coats', 'robots', 'roster', 'moves', 'preview', 'types']],
+  [
+    'Billies & battles',
+    ['billionaires', 'parts', 'workbench', 'coats', 'robots', 'roster', 'moves', 'preview', 'types'],
+  ],
   ['World & places', ['scenes', 'props', 'engine', 'world']],
   ['People & story', ['trainers', 'people', 'wardrobe', 'lore', 'story']],
   ['Money', ['items', 'shops', 'jobs']],

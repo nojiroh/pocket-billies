@@ -140,14 +140,14 @@ def paste(canvas, im, x, y):
 
 
 # where a tail points from the front (degrees, 0 = out to the right, 90 = up); from behind it mirrors. Its base and
-# tip come from parts.json sockets, so it turns around the point where it grows. Poms (not listed) just sit on the socket.
+# tip come from partKits.json sockets, so it turns around the point where it grows. Poms (not listed) just sit on the socket.
 TAIL_AIM = {
     'fox_tail': 60,       # bushy: sweeps up beside the hip
     'cat_tail': 45,
     'reptile_tail': -15,  # heavy: trails out and down to the ground
     'shark_tailfin': 10,  # a fin sticks straight out behind
 }
-with open(f'{PARTS}/parts.json') as _f:
+with open('game/data/partKits.json') as _f:
     _PARTS = json.load(_f)['parts']
 
 

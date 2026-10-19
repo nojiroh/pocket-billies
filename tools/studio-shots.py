@@ -29,6 +29,8 @@ VIEWS = {
     'skeleton': ('billionaires', "void openSkeleton(studioState.D.lines[0].id + '0', 'front')", '.pxed.skel'),
     'pixels': ('billionaires', "void openPixelEditor(studioState.D.lines[0].id + '0', 'front')", '#pxCv'),
     'split': ('billionaires', "ACTIONS.openBeside({ s: 'moves' })", '#main2 .split'),
+    'workbench': ('workbench', """(async () => { const fs = []; for (const n of ['beasts-front.png', 'beasts-back.png']) {
+      const r = await fetch('/tools/art-source/part-kit/' + n); fs.push(new File([await r.blob()], n)); } await wbAddFiles(fs); })()""", '#wbCv'),
 }
 
 

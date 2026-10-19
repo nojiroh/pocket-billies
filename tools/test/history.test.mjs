@@ -58,3 +58,21 @@ test('a new step drops the redo; the caps drop the oldest', () => {
   assert.equal(big.undo.length, 2, 'two steps of a quarter each fit, a third goes over');
   assert.equal(big.undo[1].art, 'p4');
 });
+
+test('a group of picture steps is one step, and counts all its pictures', () => {
+  const h = { undo: [], redo: [], last: null },
+    px = n => ({ x: 0, y: 0, width: n, height: 1, data: new Uint8ClampedArray(n * 4) }),
+    a = { art: 'art/a.png', before: px(1), after: px(1) },
+    b = { art: 'art/b.png', before: px(0), after: px(2), whole: true, made: true };
+  H.historyArtGroup(h, [a, b]);
+  H.historyArtGroup(h, []);
+  assert.equal(h.undo.length, 1, 'an empty group is no step');
+  assert.equal(H.historyBytes(h.undo[0]), 4 + 4 + 0 + 8);
+  const u = H.historyUndo(h);
+  assert.deepEqual(u.step.group, [a, b]);
+  assert.equal(u.put, u.step.before);
+  const r = H.historyRedo(h);
+  assert.equal(r.step.group.length, 2);
+  assert.equal(r.put, r.step.after);
+  assert.notEqual(r.step.before, r.step.after, 'undo and redo can tell which way they go');
+});

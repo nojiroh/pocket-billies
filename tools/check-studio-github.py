@@ -8,6 +8,9 @@ And it flies the Walk scenes preview's free camera with the mouse, the keys and 
 Studio track ST-1: it shows two sections side by side and tries the presets and the handles.
 Studio track ST-2: it paints on the shared pixel canvas (strokes, lines, flips, symmetry, the palette lock, the keys,
 the ? sheet) and undoes pictures and data in one order, in the sheet editor and the ground tile painter.
+Studio track ST-3: it drops sheets on the Studio: a kit's two sheets slice to exactly the parts the game has (writing
+them changes nothing), and a sheet drawn at 4x on a flat background snaps to its pixels, writes three new parts and
+undoes and redoes them.
 
     python3 tools/check-studio-github.py           # the repository as it is (run `npm run data` first)
     python3 tools/check-studio-github.py dist      # the build (`npm run build` first)
@@ -328,6 +331,55 @@ def tile_painter_steps(pg, errs):
     print('tile painter: paints through a repeat, its keys, undo', flush=True)
 
 
+def workbench_steps(pg, errs):
+    """Studio track ST-3: the Art workbench's Sheet mode, with sheets dropped on the page (not on a drop zone)."""
+    drop = """async ([names, made]) => { const dt = new DataTransfer();
+      for (const n of names) { const r = await fetch('/tools/art-source/part-kit/' + n); if (!r.ok) return false; dt.items.add(new File([await r.blob()], n, { type: 'image/png' })); }
+      if (made) dt.items.add(made);
+      document.body.dispatchEvent(new DragEvent('drop', { dataTransfer: dt, bubbles: true, cancelable: true })); return true; }"""
+    n = len(errs)
+    kit = pg.evaluate(f"({drop})([['beasts-front.png', 'beasts-back.png'], null])")
+    if kit:  # the repository (the build has no kit sources): the kit slices to exactly the game's parts
+        t0 = time.time()
+        while time.time() - t0 < 30 and pg.evaluate("workbench.sheets.length") < 2: time.sleep(0.3)
+        time.sleep(0.5)
+        if pg.evaluate("studioState.sec") != 'workbench': errs.append('workbench: a drop did not open the workbench')
+        got = pg.evaluate("({ kit: workbench.kit, method: workbench.o.method, ids: new Set(wbParts().all.map(p => p.id)).size, problems: wbParts().per.map(r => r.problem).join('') })")
+        if (got['kit'], got['method'], got['ids'], got['problems']) != ('beasts', 'kit', 40, ''): errs.append(f'workbench: the beasts kit sliced as {got}')
+        data = pg.evaluate("JSON.stringify(studioState.D.partKits)")
+        steps = pg.evaluate("studioState.undo.length")
+        pg.evaluate("ACTIONS.wbWrite()"); time.sleep(4)
+        if pg.evaluate("studioState.artDirty.size") or pg.evaluate("JSON.stringify(studioState.D.partKits)") != data or pg.evaluate("studioState.undo.length") != steps:
+            errs.append(f"workbench: writing the beasts kit again changed {pg.evaluate('studioState.artDirty.size')} pictures or the parts")
+        pg.evaluate("ACTIONS.wbDrop({ i: 1 }); ACTIONS.wbDrop({ i: 0 })")
+    # a sheet drawn at 4x on a flat cream background: three blobs of art, snapped back to their pixels
+    made = """(() => { const c = document.createElement('canvas'); c.width = 4 * 40 + 2; c.height = 4 * 14 + 3; const x = c.getContext('2d');
+      x.fillStyle = '#eee8d6'; x.fillRect(0, 0, c.width, c.height);
+      [['#c83c28', 2, 2, 8, 9], ['#2a5ac8', 15, 3, 6, 10], ['#30a050', 26, 2, 11, 6]].forEach(([f, a, b, w, h]) => { x.fillStyle = f; x.fillRect(2 + a * 4, 3 + b * 4, w * 4, h * 4); });
+      x.fillStyle = '#eee8d6'; x.fillRect(2 + 4 * 4, 3 + 5 * 4, 4, 4);
+      return new Promise(r => c.toBlob(b => r(new File([b], 'blobs-front.png', { type: 'image/png' })))); })()"""
+    pg.evaluate(f"(async () => ({drop})([[], await {made}]))()")
+    t0 = time.time()
+    while time.time() - t0 < 30 and not pg.evaluate("workbench.sheets.some(s => s.name === 'blobs-front.png')"): time.sleep(0.3)
+    time.sleep(0.5)
+    got = pg.evaluate("({ kit: workbench.kit, scale: workbench.o.scale, s: workbench.o.snapScale, parts: wbParts().all.map(p => [p.id, p.img.width, p.img.height]) })")
+    want = {'kit': 'blobs', 'scale': 'snap', 's': 4, 'parts': [['blobs_1', 8, 9], ['blobs_2', 11, 6], ['blobs_3', 6, 10]]}
+    if got != want: errs.append(f'workbench: the 4x sheet sliced as {got}')
+    hole = pg.evaluate("wbParts().all[0].img.data[(3 * 8 + 2) * 4 + 3]")
+    if hole != 255: errs.append('workbench: background colour inside a part was cut out')
+    pg.evaluate("ACTIONS.wbWrite()"); time.sleep(3)
+    paths = sorted(pg.evaluate("[...studioState.artDirty.keys()]"))
+    if paths != [f'art/next/parts/front/blobs_{i}.png' for i in (1, 2, 3)]: errs.append(f'workbench: wrote the pictures {paths}')
+    have = lambda: pg.evaluate("Object.keys(studioState.D.partKits.parts).filter(k => k.startsWith('blobs_')).length")
+    if have() != 3: errs.append('workbench: the parts are not in partKits.json')
+    pg.evaluate("undo(); undo()"); time.sleep(0.5)
+    if have() or pg.evaluate("studioState.artDirty.size"): errs.append('workbench: two undos left the new parts or pictures')
+    pg.evaluate("redo(); redo()"); time.sleep(0.5)
+    if have() != 3 or pg.evaluate("studioState.artDirty.size") != 3: errs.append('workbench: two redos did not bring the parts and pictures back')
+    if len(errs) > n: errs[n:] = [f'workbench: {e}' for e in errs[n:]]
+    print(f"workbench: {'a kit sliced as the game has it, ' if kit else ''}a 4x sheet snapped, three parts written, undone and redone", flush=True)
+
+
 def main():
     srv = ThreadingHTTPServer(('127.0.0.1', 0), partial(Quiet, directory=str(ROOT)))
     threading.Thread(target=srv.serve_forever, daemon=True).start()
@@ -399,6 +451,7 @@ def main():
         free_camera_steps(pg, errs)
         tile_painter_steps(pg, errs)
         split_steps(pg, errs)
+        workbench_steps(pg, errs)
         pg.evaluate("const k = Object.keys(studioState.D.moves)[0]; studioState.D.moves[k].name += ' Test'; studioState.dirty = true; void saveAll()")
         t0 = time.time()
         while time.time() - t0 < 60 and 'pulls' not in posts:

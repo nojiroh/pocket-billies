@@ -20,10 +20,10 @@
      drawn(P)     the canvas was drawn (zoom and grid may have changed) */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
-import { loadedAtlas, markArt, openShortcutSheet, provide } from '../../game/js/hooks.js';
+import { forgetArt, loadedAtlas, markArt, openShortcutSheet, provide } from '../../game/js/hooks.js';
 import { clamp } from '../../game/js/util.js';
 import { makeCanvas } from '../../game/js/art.js';
-import { historyArt } from '../../game/js/logic/history.js';
+import { historyArt, historyArtGroup } from '../../game/js/logic/history.js';
 import {
   PIXEL_GRID_FROM,
   offPalette,
@@ -49,7 +49,9 @@ import { commit, redo, studioState, toast, undo, updateTopBar } from './studio-a
 expose({
   PIXEL_SYMMETRY: [() => PIXEL_SYMMETRY],
   artStep: [() => artStep, v => (artStep = v)],
+  artStepOf: [() => artStepOf, v => (artStepOf = v)],
   artStepPut: [() => artStepPut, v => ((artStepPut = v), provide({ artStepPut }))],
+  artSteps: [() => artSteps, v => (artSteps = v)],
   bindPixelCanvasEvents: [() => bindPixelCanvasEvents, v => (bindPixelCanvasEvents = v)],
   drawPixelCanvas: [() => drawPixelCanvas, v => (drawPixelCanvas = v)],
   gamePalette: [() => gamePalette, v => (gamePalette = v)],
@@ -219,26 +221,55 @@ const imageOf = c => c.getContext('2d').getImageData(0, 0, c.width, c.height);
 /* a picture at `path` changed from `before` to `after` (ImageData): a step of the undo, after any data edit still
    waiting to be one */
 export function artStep(path, before, after) {
-  if (!path || !before || !after) return;
+  const step = artStepOf(path, before, after);
+  if (!step) return;
   commit(true);
+  historyArt(studioState, step);
+  updateTopBar();
+}
+/* studio track ST-3: several pictures changed at once, one step of the undo; [path, before, after] each, before null
+   for a new picture (undoing it drops the picture) */
+export function artSteps(list) {
+  const steps = list.map(([path, before, after]) => artStepOf(path, before, after)).filter(Boolean);
+  if (!steps.length) return;
+  commit(true);
+  historyArtGroup(studioState, steps);
+  updateTopBar();
+}
+function artStepOf(path, before, after) {
+  if (!path || !after) return null;
+  if (!before)
+    return {
+      art: path,
+      whole: true,
+      made: true,
+      before: { x: 0, y: 0, width: 0, height: 0, data: new Uint8ClampedArray(0) },
+      after: { x: 0, y: 0, width: after.width, height: after.height, data: after.data },
+    };
   if (before.width !== after.width || before.height !== after.height)
-    historyArt(studioState, {
+    return {
       art: path,
       whole: true,
       before: { x: 0, y: 0, width: before.width, height: before.height, data: before.data },
       after: { x: 0, y: 0, width: after.width, height: after.height, data: after.data },
-    });
-  else {
-    const box = pixelDiffBox(before, after);
-    if (!box) return;
-    historyArt(studioState, { art: path, before: pixelCopy(before, box), after: pixelCopy(after, box) });
-  }
-  updateTopBar();
+    };
+  const box = pixelDiffBox(before, after);
+  return box ? { art: path, before: pixelCopy(before, box), after: pixelCopy(after, box) } : null;
 }
 /* the whole picture now, for a step around a change made elsewhere (an upload, a revert) */
 export const pictureImage = c => (c ? imageOf(c) : null);
 /* undo or redo put a step's pixels back on its picture */
 function artStepPut(step, put) {
+  if (step.group) {
+    const back = put === step.before;
+    for (const s of back ? [...step.group].reverse() : step.group) artStepPut(s, back ? s.before : s.after);
+    return;
+  }
+  if (!put.width) {
+    forgetArt(step.art);
+    document.dispatchEvent(new CustomEvent('studio-art', { detail: { path: step.art } }));
+    return;
+  }
   const im = new ImageData(new Uint8ClampedArray(put.data), put.width, put.height);
   let c = loadedAtlas(step.art);
   if (step.whole || !c) {

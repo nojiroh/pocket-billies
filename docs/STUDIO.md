@@ -47,6 +47,31 @@ One canvas paints the Billies' sheets (Edit pixels) and props and ground tiles (
   other edit (a skeleton number, a field). Switching Front/Back or closing the editor keeps them.
 - **`?`** anywhere outside a text field lists every key in the Studio, the open tool's first.
 
+## Art workbench: Sheet mode (studio track ST-3)
+
+Cuts a sheet of art into parts (Billies & battles → Art workbench). Part, Pixels and Model modes come later.
+
+- **Drop sheets anywhere** on the Studio (or Open sheets…); several at once, with an Aseprite JSON beside its PNG
+  (same name). A name ending in front or back sets the sheet's view; the list beside each sheet changes it. Dropped
+  sheets stay in this tab only and are never saved: keep the sources yourself (the kits' are in
+  tools/art-source/part-kit).
+- **Kit.** Parts go in a kit (partKits.json `kits`). A kit's own sheet (`beasts-front.png`) takes its settings: the
+  phase 16 kits slice by **kit rows** (magenta, one animal a column, one kind a row, then the extras, a quarter of the
+  size), exactly as tools/slice-part-kit.py did, so writing them again changes nothing.
+- **Other ways to find parts.** Islands of art (touching at edges and corners or edges only, pieces closer than a gap
+  joined, specks under a size left out), a template grid (columns, rows, cell size, start, gaps; optional trim), or
+  an Aseprite JSON's slices (else its frames), named by them.
+- **Background.** The colour around the edge (guessed), clear pixels, magenta, or a colour you pick on the sheet; with
+  how close a colour counts. "Only background that joins the edge" keeps background colour inside a part.
+- **Snap to pixels.** Art drawn big (an AI image at about 4x) is found on dropping: its pixel size and where the grid
+  starts, drawn over the sheet and nudgeable. Each cell becomes one pixel of its most common colour.
+- **Names.** A template: {kit} {n} {row} {col} {name} {view}; a name ending in _front or _back puts the part in that
+  view (front and back on one sheet). Click a part (on the sheet or in the list) to rename it or pick its kind. Back
+  parts take the name of the front part they match by position.
+- **Write N parts to the game** puts the pictures in art/next/parts/<view>/<id>.png and the parts in partKits.json
+  (kind, slot, pivot, size M, sockets worked out from the outline; a view not on these sheets stays as it was). Then
+  Save. One undo takes the pictures back (new ones go away), one more the parts.
+
 ## World map look (phase 10)
 
 World & encounters → **World map look** edits game/data/worldmap.json, the world map's look.

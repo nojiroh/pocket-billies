@@ -1,0 +1,91 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "partKits.schema.json",
+ "title": "game/data/partKits.json: the phase 16 part kits, sliced from sheets by the Studio's Art workbench (studio track ST-3)",
+ "type": "object",
+ "required": ["parts"],
+ "additionalProperties": false,
+ "$defs": {
+  "point": {
+   "description": "a fraction of the picture, x right and y down",
+   "type": "array",
+   "items": {"type":"number","minimum":-0.5,"maximum":1.5},
+   "minItems": 2,
+   "maxItems": 2
+  },
+  "sockets": {
+   "type": "object",
+   "propertyNames": {"pattern":"^[a-zA-Z][a-zA-Z0-9_]*$"},
+   "additionalProperties": {"$ref":"#/$defs/point"}
+  },
+  "view": {
+   "type": "object",
+   "required": ["file","w","h"],
+   "additionalProperties": false,
+   "properties": {
+    "file": {"description":"the picture, under game/art","type":"string","pattern":"^next/parts/(front|back)/[a-z0-9_]+\\.png$"},
+    "w": {"type":"integer","minimum":1},
+    "h": {"type":"integer","minimum":1},
+    "sockets": {"$ref":"#/$defs/sockets"}
+   }
+  }
+ },
+ "properties": {
+  "note": {"type":"string"},
+  "_help": {"type":"string"},
+  "kits": {
+   "description": "how each kit's sheets are sliced, so dropping the same sheet on the workbench again gives the same parts",
+   "type": "object",
+   "propertyNames": {"pattern":"^[a-z][a-z0-9_]*$"},
+   "additionalProperties": {"type":"object"}
+  },
+  "slots": {
+   "description": "the slot each kind of part fills",
+   "type": "object",
+   "additionalProperties": {"enum":["head","head-extra","body","body-extra","front","back","signature"]}
+  },
+  "pivots": {
+   "description": "each kind's turning point",
+   "type": "object",
+   "additionalProperties": {"$ref":"#/$defs/point"}
+  },
+  "sockets": {
+   "description": "sockets given by hand per part and view; they replace the ones worked out from the outline",
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+     "front": {"$ref":"#/$defs/sockets"},
+     "back": {"$ref":"#/$defs/sockets"}
+    }
+   }
+  },
+  "parts": {
+   "type": "object",
+   "propertyNames": {"pattern":"^[a-z][a-z0-9_]*$"},
+   "additionalProperties": {
+    "type": "object",
+    "required": ["kit","animal","kind","slot","pivot","size","views"],
+    "additionalProperties": false,
+    "properties": {
+     "kit": {"type":"string"},
+     "animal": {"description":"the animal it comes from, or any (a kit's extras)","type":"string"},
+     "kind": {"type":"string"},
+     "slot": {"enum":["head","head-extra","body","body-extra","front","back","signature"]},
+     "pivot": {"$ref":"#/$defs/point"},
+     "size": {"enum":["S","M","L"]},
+     "views": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": false,
+      "properties": {
+       "front": {"$ref":"#/$defs/view"},
+       "back": {"$ref":"#/$defs/view"}
+      }
+     }
+    }
+   }
+  }
+ }
+}
