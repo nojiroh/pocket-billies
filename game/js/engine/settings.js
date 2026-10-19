@@ -191,7 +191,7 @@ export const ENGINE_SPEC = [
         0,
         1,
         0.01,
-        'How deep the in-focus zone is, as a share of the camera distance.',
+        'How deep the in-focus zone is, as a share of the camera distance (in the walk view, of 16 m at any zoom).',
       ],
       ['blurFar', 'Blur growth behind', 0.1, 3, 0.05],
       ['blurNear', 'Blur growth in front', 0.1, 3, 0.05],

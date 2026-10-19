@@ -192,10 +192,11 @@ export function drawPostEffects(S, C, focusDist, rw, rh, o = {}) {
     gl.uniform1f(U.uN, C.near);
     gl.uniform1f(U.uF, C.far);
     gl.uniform1f(U.uFocus, focusDist);
-    gl.uniform1f(U.uBand, C.df * engineSetting('lens', 'focusBand'));
-    gl.uniform1f(U.uRampF, C.df * engineSetting('lens', 'blurFar'));
-    gl.uniform1f(U.uRampN, C.df * engineSetting('lens', 'blurNear'));
-    gl.uniform1f(U.uMaxR, Math.max(3, hh / 70) * blur);
+    const dr = o.dofRef ?? C.df;
+    gl.uniform1f(U.uBand, dr * engineSetting('lens', 'focusBand'));
+    gl.uniform1f(U.uRampF, dr * engineSetting('lens', 'blurFar'));
+    gl.uniform1f(U.uRampN, dr * engineSetting('lens', 'blurNear'));
+    gl.uniform1f(U.uMaxR, Math.max(3, hh / (o.dofRef ? 50 : 70)) * blur); /* (the walk view's blur a little wider) */
     gl.uniform1f(U.uBokeh, engineSetting('lens', 'bokeh'));
     gl.uniform1i(U.uTaps, o.fast ? 14 : 28);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
