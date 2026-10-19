@@ -68,6 +68,8 @@ export interface GameData {
   lore: Lore;
   /** Project Story: the story layer's flags, speakers, quests and start presets */
   story: StoryData;
+  /** cutscenes, one file each (game/data/cutscenes/<id>.json, docs/CUTSCENES.md) */
+  cutscenes?: Record<DataId, CutsceneData>;
 }
 
 /* ---------- the files: index.json and the split sections ---------- */
@@ -961,6 +963,34 @@ export interface StoryData {
   /** a chapter swaps maps for variant files while its condition holds */
   chapters?: Record<DataId, { about?: string; when: string; maps: Record<DataId, string> }>;
   presets: Record<string, StoryPreset>;
+}
+/** a cutscene: the map it is filmed on, its named spots, shots and lanes, what is cleared away while filming, its
+    script (cutscene.schema.json). Points are the map's own coordinates in metres; a shot's heights are above the
+    ground under each point */
+export interface CutsceneData {
+  about?: string;
+  map: DataId;
+  /** who says a line that names nobody (a speaker in story.json) */
+  who?: string;
+  spots: Record<string, [x: number, z: number]>;
+  shots: Record<string, CutsceneShot>;
+  lanes?: Record<string, [x: number, h: number, z: number][]>;
+  clear?: {
+    areas?: [x0: number, z0: number, x1: number, z1: number][];
+    paths?: [from: string, to: string][];
+    pathWidth?: number;
+    eyes?: [x: number, z: number][];
+    eyeRadius?: number;
+  };
+  script: string[];
+}
+export interface CutsceneShot {
+  eye: [x: number, h: number, z: number];
+  tgt: [x: number, h: number, z: number];
+  /** degrees, 40 if left out */
+  fov?: number;
+  /** metres round the target kept in frame on a narrow phone */
+  w?: number;
 }
 export interface StoryPreset {
   about: string;

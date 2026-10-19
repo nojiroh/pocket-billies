@@ -15,7 +15,8 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { conditionHolds, conditionNames, conditionProblem, conditionTree, storyStateOf } from './conditions.js';
-import { LINE_ID, parseScript } from './script-parse.js';
+import { CUTSCENE_YOU, cutsceneNames, cutsceneStep } from './cutscene-set.js';
+import { LINE_ID, SCRIPT_COMMANDS, parseScript } from './script-parse.js';
 /* eslint-disable no-func-assign */
 expose({
   // @ts-expect-error -- replaced on purpose
@@ -126,6 +127,15 @@ export function scriptsOf(G) {
       });
   for (const [k, v] of Object.entries((G.story || {}).scripts || {}))
     out.push({ id: 'story:' + k, where: 'story.json', owner: v, lines: v.script, place: null });
+  for (const [k, C] of Object.entries(G.cutscenes || {}))
+    out.push({
+      id: 'cutscene:' + k,
+      where: `cutscenes/${k}.json`,
+      owner: C,
+      lines: C.script,
+      place: null,
+      cutscene: C,
+    });
   return out;
 }
 
@@ -202,6 +212,54 @@ export function storyFindings(G, L = { parseScript, conditionTree, conditionProb
       problems.push(at, `speaker ${w}, not in story.json speakers nor a person`);
   };
 
+  /* a cutscene's own commands: only in a cutscene; there, every spot, shot and person it names is its own or a
+     speaker (logic/cutscene-set.js reads them) */
+  const CMD = /** @type {Record<string, { group?: string }>} */ (SCRIPT_COMMANDS);
+  const cutsceneChecks = (/** @type {any} */ sc, /** @type {any[]} */ tree) => {
+    const at = (/** @type {number} */ line) =>
+      spot(`${sc.where} ${sc.id}, line ${line + 1}`, { file: sc.where, script: sc.id, line });
+    const C = sc.cutscene;
+    const each = (/** @type {any[]} */ blk, /** @type {(n: any) => void} */ f) => {
+      for (const n of blk) {
+        f(n);
+        for (const c of n.clauses || []) each(c.body, f);
+        for (const o of n.options || []) each(o.body, f);
+        if (n.body) each(n.body, f);
+        for (const e of n.entries || []) each(e, f);
+      }
+    };
+    if (!C) {
+      each(tree, n => {
+        if (n.k !== 'cmd') return;
+        const g = CMD[n.name] && CMD[n.name].group;
+        if (g) problems.push(at(n.line), `${n.name} plays only in a cutscene (game/data/cutscenes)`);
+        else if (n.name === 'wait' && !/^\d+(\.\d+)?$/.test(n.args[0]))
+          problems.push(at(n.line), `wait ${n.args[0]}: seconds (waiting for someone is a cutscene's)`);
+      });
+      return;
+    }
+    each(tree, n => {
+      if (n.k !== 'cmd' || !['camera', 'walk', 'face', 'wait', 'fade'].includes(n.name)) return;
+      const p = cutsceneStep(n).problem;
+      if (p) problems.push(at(n.line), p);
+    });
+    const people = new Set([CUTSCENE_YOU, ...Object.keys(speakers)]);
+    for (const x of cutsceneNames(tree)) {
+      const ok =
+        x.kind === 'shot'
+          ? !!C.shots[x.name]
+          : x.kind === 'spot'
+            ? !!C.spots[x.name] || people.has(x.name) || x.name === 'starter'
+            : people.has(x.name);
+      if (!ok)
+        problems.push(
+          at(x.line),
+          x.kind === 'who'
+            ? `${x.name}: not a speaker (story.json) nor ${CUTSCENE_YOU}`
+            : `${x.kind} ${x.name}: not one of this cutscene's ${x.kind}s`
+        );
+    }
+  };
   for (const sc of scripts) {
     let tree;
     try {
@@ -257,11 +315,12 @@ export function storyFindings(G, L = { parseScript, conditionTree, conditionProb
             if (!quests[a]) problems.push(at, `quest ${a}, no such quest (story.json quests)`);
             else if (!quests[a].stages.includes(b)) problems.push(at, `quest ${a} has no stage ${b}`);
             else (questSet.get(a) || questSet.set(a, new Set()).get(a)).add(b);
-          } else if ((n.name === 'walk' || n.name === 'face') && a) who(a, at);
+          } else if ((n.name === 'walk' || n.name === 'face') && a && !sc.cutscene) who(a, at);
         }
       }
     };
     walk(tree);
+    cutsceneChecks(sc, tree);
   }
   const fileOf = Object.fromEntries(scripts.map(sc => [sc.id, sc.where]));
   for (const p of lineIdProblems(scripts))

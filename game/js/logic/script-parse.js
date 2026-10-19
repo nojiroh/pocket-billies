@@ -8,6 +8,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { CONDITION_KINDS, conditionProblem, didYouMean } from './conditions.js';
+import { cutsceneStep } from './cutscene-set.js';
 /* eslint-disable no-func-assign */
 expose({
   KEYWORDS: [() => KEYWORDS],
@@ -51,22 +52,73 @@ export const SCRIPT_COMMANDS = {
   quest: { args: ['id', 'stage'], about: 'move a quest to a stage' },
   battle: { args: ['trainer'], checkpoint: true, about: 'battle a trainer; the script goes on after it' },
   heal: { args: [], about: 'heal the team' },
-  walk: { args: ['who', '...'], about: 'walk someone in the scene: "walk Blake beside me" (after camera run-up)' },
+  walk: {
+    args: ['who', '...'],
+    about:
+      'walk someone: in a cutscene "walk Hazel door 1.5 [nowait]" (waits till they arrive unless nowait); in the walk scene "walk Blake beside me" (after camera run-up)',
+  },
   face: { args: ['who', 'dir'], about: 'turn someone (up, down, side, sideR, or toward someone)' },
-  camera: { args: ['...'], about: 'a camera shot: "run-up" (someone runs up to you in the walk scene)' },
-  wait: { args: ['s'], about: 'wait, in seconds' },
+  camera: {
+    args: ['...'],
+    about:
+      'a camera shot: in a cutscene one of its shots, "camera trio 1.1 [on Blake [you]]" (glides that many seconds, 0 cuts; doesn’t wait); in the walk scene "run-up" (someone runs up to you)',
+  },
+  wait: { args: ['seconds|who'], about: 'wait, in seconds; in a cutscene also "wait Blake": till Blake stops walking' },
   music: { args: ['piece'], about: 'play a piece of music (rival, title, ...: sound.js)' },
-  fade: { args: ['dir?'], about: 'fade the screen out, or back in' },
+  fade: { args: ['dir?', 'colour?'], about: 'fade the screen out (to a colour, #0B0912), or back in' },
   go: { args: ['place', 'entrance?'], checkpoint: true, about: 'go to a place' },
   call: { args: ['script'], about: 'play another script, then go on' },
   end: { args: [], about: 'stop the script here' },
-  /* the openings' commands (Project Story S5, S7): the stage plays them */
-  shot: { args: ['...'], opening: true, about: 'a camera shot of the opening' },
-  'dressing-room': { args: [], opening: true, checkpoint: true, about: 'open the dressing room' },
-  'pick-starter': { args: [], opening: true, checkpoint: true, about: 'the starter pick' },
-  'hot-take': { args: ['...'], opening: true, about: 'one of Hazel’s hot takes' },
-  tip: { args: ['...'], opening: true, about: 'a HOT TIP card in battle' },
-  fall: { args: [], opening: true, checkpoint: true, about: 'the fall through the crust' },
+  /* a cutscene's own (game/data/cutscenes, docs/CUTSCENES.md: logic/cutscene-set.js reads them) */
+  actor: {
+    args: ['who', 'at', 'spot', 'dir?'],
+    group: 'cutscene',
+    about: 'put someone in the scene: "actor Hazel at door down"',
+  },
+  act: {
+    args: ['who', 'pose', 's?'],
+    group: 'cutscene',
+    about: 'a pose for a while: throw, cheer, react (doesn’t wait)',
+  },
+  caption: {
+    args: ['s', '...'],
+    group: 'cutscene',
+    about: 'a caption for a while: "caption 3.4 The Hollow Earth | {place}" (small line | big line; doesn’t wait)',
+  },
+  blink: { args: [], group: 'cutscene', about: 'the letterbox closes and opens like eyelids' },
+  screen: { args: ['look'], group: 'cutscene', about: 'the look of the picture: dazed, waking, clear' },
+  effect: {
+    args: ['name', '...'],
+    group: 'cutscene',
+    about: 'a little effect: landing, sparkle; "effect landing at me"',
+  },
+  hide: {
+    args: ['what'],
+    group: 'cutscene',
+    about: 'hide box: the dialogue box goes away; hide Blake: Blake leaves the scene',
+  },
+  sound: { args: ['effect'], group: 'cutscene', about: 'a sound effect (throw, pop, hit: sound.js)' },
+  /* the opening's own (cutscene/opening.js) */
+  'dressing-room': {
+    args: [],
+    group: 'opening',
+    checkpoint: true,
+    about: 'you make yourself up (skipping stops here)',
+  },
+  'throw-coins': { args: [], group: 'opening', about: 'Hazel’s three coins pop open into the starters' },
+  'pick-starter': {
+    args: [],
+    group: 'opening',
+    checkpoint: true,
+    about: 'the starter pick (skipping stops here); {starter} and {counter} after it',
+  },
+  'staged-fight': {
+    args: [],
+    group: 'opening',
+    about: 'Hazel fights Blake herself, staged (Project Story S6 makes it a real battle); {foe} after it',
+  },
+  'rival-battle': { args: [], group: 'opening', about: 'Blake’s battle starts when the opening ends' },
+  fall: { args: [], group: 'opening', checkpoint: true, about: 'the fall through the crust' },
 };
 /** the keywords, with how each is written and what it does, for the Studio's reference (S3) */
 export const KEYWORD_ABOUT = {
@@ -109,6 +161,11 @@ export const SCRIPT_SLOTS = {
   name: 'your name (Trainer before you have one)',
   caught: 'kinds of Billie caught (the Index)',
   badges: 'badges won',
+  /* the opening's (cutscene/opening.js) */
+  place: 'the place a cutscene is filmed in (Copperleaf Town)',
+  starter: 'the opening: the Billie you picked',
+  counter: 'the opening: the one Blake takes, that beats yours',
+  foe: 'the opening: Blake’s first Billie, the one Hazel flattens',
 };
 
 /** an error in a script, with the line (from 0) it is on @param {string} message @param {number} line */
@@ -277,7 +334,17 @@ export function parseScript(lines) {
       if (v != null && ['n', 's'].includes(b) && !/^-?\d+(\.\d+)?$/.test(v))
         throw scriptError(`"${name}": ${b} is a number, not "${v}"`, line);
     });
-    return { k: 'cmd', line, name, args };
+    /** @type {CmdNode} */
+    const n = { k: 'cmd', line, name, args };
+    /* a cutscene's own commands read the same way here, in the stage and in the Studio (logic/cutscene-set.js) */
+    if (/** @type {Record<string, { group?: string }>} */ (SCRIPT_COMMANDS)[name].group === 'cutscene') {
+      const p = cutsceneStep(n).problem;
+      if (p) throw scriptError(p, line);
+    }
+    for (const a of args)
+      for (const [, k] of a.matchAll(/\{(\w*)\}/g))
+        if (!(k in SCRIPT_SLOTS)) throw scriptError(`unknown slot "{${k}}"`, line);
+    return n;
   };
   const tree = block(0);
   if (p < L.length) throw scriptError('indented further than the line above allows', L[p].line);
@@ -301,12 +368,12 @@ export function scriptProblem(lines) {
 export function scriptReference() {
   /** @param {string[]} args */
   const usage = args => args.map(a => (a.endsWith('?') ? `[${a.slice(0, -1)}]` : a === '...' ? '…' : a)).join(' ');
-  const C = /** @type {Record<string, { args: string[], about: string, opening?: boolean, checkpoint?: boolean }>} */ (
+  const C = /** @type {Record<string, { args: string[], about: string, group?: string, checkpoint?: boolean }>} */ (
     SCRIPT_COMMANDS
   );
-  const commands = (/** @type {boolean} */ opening) =>
+  const commands = (/** @type {string | undefined} */ group) =>
     Object.entries(C)
-      .filter(([, c]) => !!c.opening === opening)
+      .filter(([, c]) => c.group === group)
       .map(([k, c]) => ({
         use: `${k} ${usage(c.args)}`.trim(),
         about: c.about,
@@ -331,8 +398,9 @@ export function scriptReference() {
         { use: '> [once] text', about: 'an option that goes away once picked', tag: '' },
       ],
     },
-    { title: 'Commands', rows: commands(false) },
-    { title: 'Opening commands', rows: commands(true) },
+    { title: 'Commands', rows: commands(undefined) },
+    { title: 'Cutscene commands', rows: commands('cutscene') },
+    { title: 'Opening commands', rows: commands('opening') },
     {
       title: 'Conditions',
       rows: [

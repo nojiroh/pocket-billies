@@ -27,7 +27,7 @@ import { gpuState } from './engine/webgl.js';
 import { walkRenderer } from './walk/walk-state.js';
 import { music } from './sound.js';
 import { talkBox } from './talk.js';
-import { cutscene } from './cutscene.js';
+import { cutscene } from './cutscene/director.js';
 import { loreClue, loreData } from './lore.js';
 /* eslint-disable no-func-assign */
 expose({
