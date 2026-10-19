@@ -40,3 +40,4 @@ game/data/gamedata.js
 
 # ESLint cache (npm run lint, phase 04e)
 .eslintcache
+validation/st1/

@@ -5,6 +5,7 @@ reach the stand-in). Any error on the page fails it. Nothing leaves the machine;
 Project Story S3: on the way it writes in a trainer's script (an error on its line, line ids, the command reference),
 follows the Check's Show me, uses the story preview and plays from here in a second tab (the game gets the draft).
 And it flies the Walk scenes preview's free camera with the mouse, the keys and two fingers.
+Studio track ST-1: it shows two sections side by side and tries the presets and the handles.
 
     python3 tools/check-studio-github.py           # the repository as it is (run `npm run data` first)
     python3 tools/check-studio-github.py dist      # the build (`npm run build` first)
@@ -176,6 +177,43 @@ def story_steps(pg, errs):
     print('story editor: messages, line ids, reference, people, story section, the Check, the story preview', flush=True)
 
 
+def split_steps(pg, errs):
+    """Studio track ST-1: two sections side by side. No two sections the second pane can show share an element id;
+    an edit in the second pane is an edit (and undoes); a 3D section stays on the left beside a light one; the second
+    pane refuses a 3D section and the one already on the left; the presets and the handles answer."""
+    shared = pg.evaluate("""(() => { const by = {}, keep = studioState.sec;
+      for (const k of Object.keys(SECTIONS)) { if (PANE2_REFUSED[k]) continue; openSection(k);
+        for (const i of new Set([...document.querySelectorAll('#main [id]')].map(e => e.id))) (by[i] = by[i] || []).push(k); }
+      openSection(keep); return Object.entries(by).filter(([i, ks]) => ks.length > 1).map(([i, ks]) => i + ' in ' + ks.join(', ')); })()""")
+    if shared: errs.append('split: sections share ids: ' + '; '.join(shared[:5]))
+    pg.evaluate("void openSection('billionaires')"); time.sleep(0.3)
+    pg.locator('.nav[data-s=moves]').click(modifiers=['Shift']); time.sleep(0.8)
+    if pg.evaluate("[studioState.sec, studioState.sec2, document.querySelector('#main2').hidden]") != ['billionaires', 'moves', False]:
+        errs.append('split: Shift-click did not open Moves beside Billies')
+    f = pg.locator('#main2 input[data-p]').first
+    path, v0 = f.get_attribute('data-p'), f.input_value()
+    f.fill(v0 + ' Split'); f.dispatch_event('change'); time.sleep(0.4)
+    got = pg.evaluate(f"[readPath({json.dumps(path)}), studioState.dirty]")
+    pg.evaluate("void undo()"); time.sleep(0.4)
+    back = pg.evaluate(f"readPath({json.dumps(path)})")
+    if got != [v0 + ' Split', True] or back != v0: errs.append(f'split: an edit in the second pane gave {got}, undo {back!r}')
+    pg.evaluate("void openSection('preview')"); pg.wait_for_selector('#cvWorld', timeout=20000); time.sleep(1.5)
+    if pg.evaluate("[studioState.sec, studioState.sec2]") != ['preview', 'moves']: errs.append('split: the battle preview did not open beside Moves')
+    pg.evaluate("ACTIONS.openBeside({ s: 'scenes' })"); pg.evaluate("ACTIONS.openBeside({ s: 'preview' })"); time.sleep(0.3)
+    if pg.evaluate("studioState.sec2") != 'moves': errs.append('split: the second pane took a 3D section')
+    pg.select_option('#layPick', 'compact'); time.sleep(0.4)
+    if pg.evaluate("[studioState.sec2, getComputedStyle(document.querySelector('#side')).width]") != [None, '200px']: errs.append('split: the Compact preset did not close the split or set the sizes')
+    pg.select_option('#layPick', 'auto'); time.sleep(0.3)
+    pg.evaluate("void openSection('billionaires')"); time.sleep(0.3)
+    h = pg.locator('#main .split > .lay-h'); h.focus(); pg.keyboard.press('Shift+ArrowRight'); time.sleep(0.2)
+    w = pg.evaluate("Math.round(document.querySelector('#main .list-col').getBoundingClientRect().width)")
+    pg.keyboard.press('Delete'); time.sleep(0.2)
+    w0 = pg.evaluate("Math.round(document.querySelector('#main .list-col').getBoundingClientRect().width)")
+    if w != w0 + 32: errs.append(f'split: the list handle moved it to {w} from {w0}')
+    pg.evaluate("localStorage.removeItem('studio-layout')")
+    print('split: no shared ids, an edit and undo in the second pane, preview beside Moves, 3D refused, presets, handles', flush=True)
+
+
 def main():
     srv = ThreadingHTTPServer(('127.0.0.1', 0), partial(Quiet, directory=str(ROOT)))
     threading.Thread(target=srv.serve_forever, daemon=True).start()
@@ -244,6 +282,7 @@ def main():
         print(f'art tools opened: pixel editor (front, back), skeleton builder, battle preview, coats ({diff} pixels recoloured)', flush=True)
         story_steps(pg, errs)
         free_camera_steps(pg, errs)
+        split_steps(pg, errs)
         pg.evaluate("const k = Object.keys(studioState.D.moves)[0]; studioState.D.moves[k].name += ' Test'; studioState.dirty = true; void saveAll()")
         t0 = time.time()
         while time.time() - t0 < 60 and 'pulls' not in posts:

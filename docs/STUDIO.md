@@ -10,6 +10,23 @@ straight into `game/data` and `game/art`.
 Double-click `Start-Studio.bat` / `Start-Studio.command`, or run
 `python3 start-studio.py`. It opens at **http://localhost:8001**.
 
+## Layout (studio track ST-1)
+
+The Studio is built for wide screens (up to 3440 x 1440) and still works on a tablet.
+
+- **Handles.** Drag the edge of the section list, of a section's list (Billies, Moves, Props and the others with a
+  list) and of the battle preview's side panel. A handle also takes the keyboard: Tab to it, then the arrow keys (8 px,
+  Shift 32 px), Home and End for the smallest and largest, Delete or a double-click to go back. Each section keeps its
+  own sizes (in this browser).
+- **Wide screens.** On a window of about 1920 px lists and side panels get wider; from about 2560 px an editor beside
+  its list puts its cards in two columns, and the battle preview's stage fills the height with the controls beside it.
+- **Two sections side by side.** The ⇥ button next to a section in the list (or Shift-click) opens it on the right.
+  Drag the line between the two panes; **Swap** or **Close** on the right pane's bar. Walk scenes, Props, Engine and the
+  Battle preview have a 3D view (there is one), so they only open on the left. Undo and Save cover both panes. The
+  split comes back when you open the Studio again; below 1000 px the right pane hides.
+- **Layout presets** (top bar, from 1200 px): Auto (sizes follow the window), Compact, Wide, Ultrawide and Split (two
+  sections). A preset sets every section's sizes; after a drag it says "adjusted", and Reset sizes goes back to it.
+
 ## Sections
 
 | Section | What you can do |

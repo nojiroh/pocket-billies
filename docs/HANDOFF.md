@@ -11,6 +11,52 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 - Questions waiting for the owner: 
 - Next session starts with: 
 
+### Studio track ST-1 - the layout shell - 2026-10-19
+Plan approved at the start. Owner's picks: the second pane is "light" (no 3D sections there; one undo and save for
+both); PR #61's merge conflict left to its own branch (it has since merged; see below).
+- Changed (one cause per commit):
+  - No-op: the nav, list and side-panel widths read custom properties (element boxes unchanged at 1000-3440 px).
+  - `#main` is a pane; sections draw through `renderPane(root, sec)`; `paneRoot()` for afterRender; lookups and the
+    field listeners match `.pane`.
+  - Pane width classes (`data-w` narrow / wide / ultra, from a ResizeObserver; logic/studio-layout.js). Not CSS
+    container queries: those make the pane the containing box of the big 3D view and the story reference.
+  - Handles (drag, keys, double-click/Delete resets) on the section list, a section's list and the battle preview's
+    panel; sizes saved per section (localStorage `studio-layout`).
+  - The 1180 px cap is gone; the battle stage keeps 16:10 by its height.
+  - Wide and ultrawide layouts (wider lists and panels; an ultrawide editor's cards in two columns; the battle
+    preview's controls in columns beside a full-height stage; wider skeleton builder and pixel editor).
+  - `sectionShown()` for the robots animation, wardrobe preview and Check list; the second pane (`#main2`,
+    `studioState.sec2`): ⇥ / Shift-click, Swap, Close, a handle between panes, restored after a reload.
+  - Layout presets in the top bar (Auto, Compact, Wide, Ultrawide, Split), hidden below 1200 px so Save stays on a
+    tablet's top bar.
+  - tools/studio-shots.py (pictures and element boxes at any widths; `--compare`); the Studio check's split steps;
+    tools/test/studio-layout.test.mjs. STUDIO.md, CHANGELOG, studio-track.md.
+- Risky or unfinished:
+  - The Connections drawer still follows the left pane only, and overlays the right pane when open.
+  - The skeleton builder and pixel editor have no handles (wider defaults only) and the skeleton zoom stays 2.5x on
+    a big screen: ST-2's shared canvas.
+  - An ultrawide editor's two card columns leave gaps under short cards (grid rows); fine to read, not a masonry.
+  - A light section on a sub-tab not covered by the id check could still share an id with another section.
+  - Not seen on a device or a real 3440 screen; headless pictures only.
+- Verified: lint, typecheck, check:modules, format, 178 unit tests, check:smoke (no problems), check-studio-github
+  (23 sections, art tools, story, free camera, the new split steps, a proposed PR), pictures at 1024, 1920 and 3440
+  (tools/studio-shots.py validation/st1: Billies, Moves, World, Rules, battle preview, skeleton, pixel editor, split).
+  The full quick check: see the next entry line (running when this was written).
+- Merge conflicts: PR #61 (project-story-city) conflicted with main only in docs/HANDOFF.md (ST-0 and #61 each added
+  a top entry). #61 was then merged by its owner; merging main into this branch hit the same file only, kept both
+  entries (this one on top). world-rules-art.js (#61's What's new, this session's `paneRoot()`) merged by itself.
+  The current world map branch, world-map-look (6 commits on main c865974: the inland sea), touches bowl.js,
+  world-bowl.js, bowl-map-test.js, check-fast.py and its own test, none of which this track touches; a trial merge
+  of it onto this branch conflicts in docs/HANDOFF.md only (each adds a top entry). Whichever lands second keeps
+  both entries. The cutscene tools' Studio session (#61's session 2) should build its section to fit a pane.
+- Decisions I made (and why): a preset clears the per-section sizes (a fresh layout; "adjusted" plus Reset sizes make
+  it clear); non-split presets close the right pane (a preset sets the split too); the second pane's section is
+  saved with the layout, not in the URL hash (the hash stays one section, as links and the checks use it); a section
+  opened on the left that is on the right swaps them.
+- Questions waiting for the owner: try it on the 3440 screen (Layout → Ultrawide or Split; drag the edges); the
+  ultrawide two-column cards in Billies: keep, or prefer one wide column?
+- Next session starts with: ST-2, the shared pixel canvas.
+
 ### Cutscene tools, session 3 - the city opening; the title with accounts back - 2026-10-19
 Owner's request: "begin session 3 now, explain session 2 in handoff"; then the title with the account, on the new UI
 direction, Continue pressing itself when signed in (answers in the questions of this session, listed below).

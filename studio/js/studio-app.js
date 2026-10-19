@@ -13,6 +13,7 @@ import { escapeHtml } from './game-stand-ins.js';
 expose({
   ACTIONS: [() => ACTIONS],
   LIVE_UPDATE_CHANNEL: [() => LIVE_UPDATE_CHANNEL],
+  PANE2_REFUSED: [() => PANE2_REFUSED],
   RANGE_FORMATS: [() => RANGE_FORMATS],
   SECTIONS: [() => SECTIONS],
   SECTION_GROUPS: [() => SECTION_GROUPS],
@@ -21,6 +22,7 @@ expose({
   afterRender: [() => afterRender],
   api: [() => api, v => setApi(v)],
   ask: [() => ask],
+  besideRefusal: [() => besideRefusal, v => (besideRefusal = v)],
   blurField: [() => blurField],
   boot: [() => boot, v => (boot = v)],
   card: [() => card],
@@ -41,15 +43,19 @@ expose({
   numberField: [() => numberField, v => (numberField = v)],
   onField: [() => onField, v => (onField = v)],
   openSection: [() => openSection, v => (openSection = v)],
+  paneRoot: [() => paneRoot],
   peopleOptions: [() => peopleOptions],
   rangeField: [() => rangeField, v => (rangeField = v)],
   readField: [() => readField, v => (readField = v)],
   readPath: [() => readPath, v => setReadPath(v)],
   redo: [() => redo, v => (redo = v)],
   render: [() => render, v => setRender(v)],
+  renderPane: [() => renderPane, v => (renderPane = v)],
   renderSide: [() => renderSide, v => (renderSide = v)],
+  renderingPane: [() => renderingPane, v => (renderingPane = v)],
   restore: [() => restore, v => (restore = v)],
   saveAll: [() => saveAll, v => setSaveAll(v)],
+  sectionShown: [() => sectionShown],
   selectField: [() => selectField, v => (selectField = v)],
   setApi: [() => setApi, v => (setApi = v)],
   setReadPath: [() => setReadPath, v => (setReadPath = v)],
@@ -80,6 +86,7 @@ export const studioState = {
   rigs: null,
   files: [],
   sec: 'billionaires',
+  sec2: null /* studio track ST-1: the section in the second pane, or none */,
   sel: {},
   dirty: false,
   rigsDirty: false,
@@ -473,7 +480,7 @@ const foldedSectionGroups = (() => {
     return {};
   }
 })();
-function renderSide() {
+export function renderSide() {
   const N = Object.fromEntries(SECTION_LIST.map(n => [n[0], n])),
     used = new Set(SECTION_GROUPS.flatMap(g => g[1])),
     G = SECTION_GROUPS.concat([['More', SECTION_LIST.map(n => n[0]).filter(k => !used.has(k))]]).filter(g =>
@@ -488,17 +495,28 @@ function renderSide() {
           ? ''
           : L.filter(k => N[k])
               .map(k => {
-                const [, n, d] = N[k];
-                return `<button class="nav ${studioState.sec === k ? 'on' : ''}" data-act="go" data-s="${k}" title="${escapeHtml(d)}"><b>${n}</b>${studioState.sec === k ? `<small>${d}</small>` : ''}</button>`;
+                const [, n, d] = N[k],
+                  why = besideRefusal(k);
+                return `<div class="nav-row"><button class="nav ${studioState.sec === k ? 'on' : studioState.sec2 === k ? 'on2' : ''}" data-act="go" data-s="${k}" title="${escapeHtml(d)} (Shift-click: open beside)"><b>${n}</b>${studioState.sec === k ? `<small>${d}</small>` : ''}</button><button class="nav-beside" data-act="openBeside" data-s="${k}" ${why ? `disabled title="${escapeHtml(why)}"` : `title="Open ${escapeHtml(n)} beside this section"`}>⇥</button></div>`;
               })
               .join('')
       }</div>`;
     }).join('') +
     `<div class="side-foot"><small><kbd>Ctrl K</kbd> finds any setting · <kbd>Ctrl L</kbd> shows connections · <kbd>Ctrl S</kbd> saves.<br>Saves go to <code>game/data</code> and <code>game/art</code>, with backups in <code>backups/</code>.</small></div>`;
 }
+/* studio track ST-1: the second pane shows any section but the four with a 3D view (they share one) and the one in
+   the first pane (its ids would clash); why not, or '' */
+export const PANE2_REFUSED = { scenes: 1, props: 1, engine: 1, preview: 1 };
+export function besideRefusal(s) {
+  if (PANE2_REFUSED[s]) return 'Has a 3D view, so it only opens on the left';
+  if (s === studioState.sec) return 'Already open on the left';
+  return '';
+}
 export function openSection(s, sel) {
   if (studioState.sec === 'preview' && s !== 'preview' && typeof battleStageStop === 'function') battleStageStop();
   if (typeof engineContext !== 'undefined') engineContext.bypass = false;
+  /* the second pane's section moves to the first: the two swap (or the second pane closes, for a 3D one) */
+  if (studioState.sec2 === s) studioState.sec2 = PANE2_REFUSED[studioState.sec] ? null : studioState.sec;
   studioState.sec = s;
   if (sel) Object.assign(studioState.sel, sel);
   renderSide();
@@ -517,14 +535,26 @@ ACTIONS.navFold = d => {
   } catch (e) {}
   renderSide();
 };
+/* studio track ST-1: whether a section is on screen, in either pane */
+export const sectionShown = k => studioState.sec === k || studioState.sec2 === k;
+/* studio track ST-1: a section draws into a pane (#main); paneRoot() is the pane being drawn, for afterRender */
+let renderingPane = null;
+export const paneRoot = () => renderingPane || $('#main');
 export function render() {
-  const S = SECTIONS[studioState.sec];
+  renderPane($('#main'), studioState.sec);
+}
+export function renderPane(m, sec) {
+  const S = SECTIONS[sec];
   if (!S) return;
-  studioState.after = [];
-  const m = $('#main');
-  m.innerHTML = S();
-  studioState.after.forEach(f => f());
-  mountPreviews(m);
+  renderingPane = m;
+  try {
+    studioState.after = [];
+    m.innerHTML = S();
+    studioState.after.forEach(f => f());
+    mountPreviews(m);
+  } finally {
+    renderingPane = null;
+  }
 }
 /* phase 04d: github.js takes the GitHub route, connections.js redraws the links */
 export function setRender(v) {
@@ -536,10 +566,10 @@ export const afterRender = f => {
 };
 /* ---------- events ---------- */
 document.addEventListener('input', ev => {
-  if (ev.target.closest('#main,#modal,#dlg')) onField(ev);
+  if (ev.target.closest('.pane,#modal,#dlg')) onField(ev);
 });
 document.addEventListener('change', ev => {
-  if (ev.target.closest('#main,#modal,#dlg') && ev.target.dataset.p) {
+  if (ev.target.closest('.pane,#modal,#dlg') && ev.target.dataset.p) {
     onField(ev);
     commit(true);
   }
@@ -548,6 +578,8 @@ document.addEventListener('click', ev => {
   const el = ev.target.closest('[data-act]');
   if (!el) return;
   const a = el.dataset.act;
+  if (a === 'go' && ev.shiftKey && ACTIONS.openBeside && !besideRefusal(el.dataset.s))
+    return ACTIONS.openBeside(el.dataset);
   if (a === 'go') return openSection(el.dataset.s);
   if (a === 'undo') return undo();
   if (a === 'redo') return redo();

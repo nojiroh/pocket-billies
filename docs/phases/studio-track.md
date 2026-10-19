@@ -54,6 +54,23 @@ polish tasks. Each session is tagged `st-N-done`.
 - Pixel editing: three editors (sprites.js, wardrobe.js, skeleton painting), each with its own undo, art outside the
   global undo, no vertical flip, no symmetry.
 
+## ST-1: the layout shell (done 2026-10-19)
+- Sizes are custom properties (`--nav-w`, `--list-w`, `--side-w`, `--pane-cols`). game/js/logic/studio-layout.js holds
+  the numbers (width classes, limits, the saved layout, presets; tested in Node); studio/js/layout.js puts them on the
+  page (handles, presets, the second pane). Saved in localStorage `studio-layout`.
+- Not CSS container queries: `container-type` on a pane makes it the box its fixed children are placed in (the big
+  3D view, the story reference), so a ResizeObserver gives each pane `data-w` = narrow / wide / ultra and the CSS keys
+  off that. Window-level media queries stay as they were.
+- The second pane is `#main2` (`studioState.sec2`); `renderPane(root, sec)` draws a section into either, `paneRoot()`
+  is the pane being drawn (for afterRender), `sectionShown(k)` replaces `studioState.sec === k` in gates that must run
+  in either pane. `PANE2_REFUSED` keeps the four 3D sections on the left; a section is never in both panes (its ids).
+  The Studio check fails if two sections the second pane can show share an element id.
+- Handles: the section list, `.split` and `.props-sec` lists, the battle preview's side panel, between the panes. Not
+  yet: the skeleton builder and pixel editor (they get wider defaults; ST-2 rebuilds them on the shared canvas).
+- tools/studio-shots.py: pictures and element boxes at any widths (`--compare` for a no-op check).
+- For ST-2 to ST-4: the workbench should use `--list-w`/`--side-w` and `.pane[data-w]` so it fits a pane of the split;
+  the skeleton builder's zoom is still 2.5x on a 3440 window (the shared canvas fixes that).
+
 ## ST-0: every use of Golden (2026-10-19, on main 4cd4fb6)
 Golden is a game feature, not only art. "gold" is also a colour, a coin and a button style (`c: 'gold'`, `pb gold`,
 `kind='gold'`); those stay.

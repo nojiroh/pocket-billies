@@ -29,6 +29,7 @@ import {
   grid,
   numberField,
   render,
+  sectionShown,
   selectField,
   studioState,
   textField,
@@ -399,12 +400,12 @@ studioState.hooks.robots = () => {
 /* the robots on this page, in their idle pose, at the game's own frame steps */
 const rbAnim = { on: false };
 function rbAnimStart() {
-  if (studioState.sec !== 'robots' || rbAnim.on) return;
+  if (!sectionShown('robots') || rbAnim.on) return;
   rbAnim.on = true;
   requestAnimationFrame(rbAnimate);
 }
 function rbAnimate(ts) {
-  const cvs = document.querySelectorAll('#main .rb-cv');
+  const cvs = document.querySelectorAll('.pane .rb-cv');
   if (!cvs.length) {
     rbAnim.on = false;
     return;

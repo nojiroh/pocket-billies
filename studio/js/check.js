@@ -19,6 +19,7 @@ import {
   changed,
   openSection,
   render,
+  sectionShown,
   studioState,
   toast,
 } from './studio-app.js';
@@ -447,7 +448,7 @@ function scheduleCheck(now) {
       b.textContent = n || w || '✓';
       b.className = 'badge' + (n ? ' err' : w ? ' warn' : ' ok');
       studioState.lastCheck = P;
-      if (studioState.sec === 'check' && !now) renderCheckList();
+      if (sectionShown('check') && !now) renderCheckList();
     },
     now ? 0 : 500
   );
