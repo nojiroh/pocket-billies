@@ -773,6 +773,7 @@ def main():
     D = gamedata.load()
     C = D['scenery']['props']
     add_catalogue(C, built)
+    swap_in(C)
     D['maps']['test_props_next'] = test_map(C)
     gamedata.save(D)
     return built
@@ -850,25 +851,48 @@ ROWS = [
 ]
 
 
+# the swap (approved 2026-10-19): each old prop takes on its new version, under its own key, so every placement in
+# every scene draws the new one. Kept from the old entry: its name, group, tags, the scene builders' fields and its
+# collision radius; the rest (picture fallback, size, base point, model, scale, effects, footprint) is the new one's.
+KEEP_OLD = ('name', 'group', 'tags', 'family', 'grow', 'weight', 'landmark', 'posts', 'solid')
+
+
+def swap_in(C):
+    for _, pairs, new, _ in ROWS:
+        N = C.pop(new, None)
+        if not N: continue
+        for old, v in dict.fromkeys(pairs):
+            O = C.get(old, {})
+            M = json.loads(json.dumps(N))
+            V = (M.pop('variants', None) or [None] * 9)[v - 1] if v else None
+            M.pop('variants', None)
+            if V: M.update(V)
+            M.pop('build', None)
+            for f in KEEP_OLD:
+                if f in O: M[f] = O[f]
+                elif f in M and f != 'name': M.pop(f)
+            if 'tags' in M and M['tags'] == ['test']: M.pop('tags')
+            C[old] = M
+
+
 def test_map(C):
+    """A showcase of the swapped props in the plain look: each row one family, every look of it side by side."""
     W, H = 56, 8 + 15 * len(ROWS)
     tiles = [['g'] * W for _ in range(H)]
     props, shots = [], []
     for y in range(4): tiles[y] = ['p'] * W
     z = 9.0
     for name, pairs, new, gap in ROWS:
-        n = 2 * len(pairs)
-        x0 = W / 2 - gap * (n - 1) / 2
-        for i, (old, v) in enumerate(pairs):
-            props.append({'k': old, 'x': round(x0 + gap * 2 * i, 2), 'z': z})
-            p = {'k': new, 'x': round(x0 + gap * (2 * i + 1), 2), 'z': z}
-            if v: p['v'] = v
-            props.append(p)
+        keys = list(dict.fromkeys(o for o, _ in pairs))
+        keys = (keys * 2)[:max(len(keys), 2)]
+        x0 = W / 2 - gap * (len(keys) - 1) / 2
+        for i, k in enumerate(keys):
+            props.append({'k': k, 'x': round(x0 + gap * i, 2), 'z': z})
         shots += [{'x': W / 2, 'z': z - 3, 'yaw': 0, 'label': name},
                   {'x': W / 2 + 4, 'z': z - 2, 'yaw': 0.9, 'label': f'{name}-turned'}]
         z += 15
     return {
-        'name': 'Test: props batch 1 (phase 09)', 'w': W, 'h': H, 'edge': 'g',
+        'name': 'Test: props in the new style (phase 09)', 'w': W, 'h': H, 'edge': 'g',
         'sky': ['#8CC6E6', '#BFE3EE', '#F4E8C8'], 'haze': '#EAD9C0', 'hazeD': 34, 'cam': {'pitch': 30, 'h': 12, 'fov': 1},
         'blur': 0, 'amb': None, 'plain': 1, 'tint': None, 'indoor': 0, 'far': 'hills', 'farH': 8, 'folk': 0, 'test': 1,
         'exits': [], 'checks': [], 'shots': shots, 'hub': [W / 2, 2.5],

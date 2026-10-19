@@ -11,6 +11,19 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 - Questions waiting for the owner: 
 - Next session starts with: 
 
+### Phase 09 batch 1 swapped in - 2026-10-19
+Owner's go-ahead: replace the finished props in the game.
+- Changed: the 24 old props the batch covers now are the new ones, under their own keys (tools/build-props-batch1.py
+  swap_in), so all 4,801 placements in 62 scenes draw them without any placement changing: tree_beech; tree_oak,
+  tree_oak_b, tree_oak_small, tree_oak_autumn; tree_giant_swing; bush_roses; bush_round, _b, _c; rocks, _b, _c,
+  _mossy, _snow; mushroom, _brown, _blue; cottage_juniper; lantern; laundry_line; tallgrass, _b, _c. Each keeps its
+  old name, group, tags, the scene builders' fields and its collision radius; its picture stays as the fallback (3D
+  models off, far view). The next_* entries are gone; test_props_next is now a showcase of the swapped props.
+- Risky: these props now draw at 32 px/m, about 6% bigger than before (tall grass included), until the rest of the
+  catalogue moves to 32. Trees cost 10 to 18 sprites each and are now on every route that has them; not measured on a
+  phone. The old depth layers of the oaks and round bushes (scene/props/layers/*_lb/_lf.png) are no longer used.
+- Verified: data check, lint, type-check, modules, 59 unit tests, check-quick.py --smoke (no problems).
+
 ### Phase 09 batch 1, part 2 - natural trunks, editable leaves, the great oak, a Props section - 2026-10-19
 Owner's requests: stop the rest of the batch; rework the trees' trunks to look natural; leaves easy to edit in the
 Studio; redo the great oak with the swing (Copperleaf); a clear prop part in the Studio with all its tools; no graphic
