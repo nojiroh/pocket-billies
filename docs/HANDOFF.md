@@ -78,8 +78,43 @@ Branch `ccr-9b6f14fb-6t1w6i`, from main at 09ae2ba. The phase file is now docs/p
     this is probably a one-off hitch in that 3 s window (its worst fps was 39). Watch for it on the next run.
   - The headless smoke run's 2,250 draws were Marigold, a full town; the bench places are smaller. A real town by
     night (Copperleaf) is still to be measured on the devices.
-- Still missing for A8: the Android phone's Graphics test; the diagnostics test (it measures the busiest town) and the
-  debug logs on both devices.
+- **A8 baseline, Android phone** (Graphics test 05:04 and diagnostics 05:05, 2026-10-19; Adreno 750, Opera on
+  Chromium 152, 411x727 at DPR 3.5, 60 Hz, no GPU timers; 116 steps, no errors; diagnostics passed).
+
+  | Station | fps | frame ms | CPU ms | Draws | Shadow + lamp draws | Biggest passes |
+  |---|---|---|---|---|---|---|
+  | Control pad | 52 | 19.2 | 7.5 | 630 | 200 | sprites 232, far sun 158, effects 69 |
+  | Shadow court | 47.5 | 21.1 | 8.2 | 470 | 230 | far sun 196, effects 99, sprites 52 |
+  | Pond | 53 | 18.9 | 6.5 | 347 | 123 | far sun 83, sprites 78, effects 49, reflection 47 |
+  | Sun gap | 32.5 | 30.8 | 13.1 | 883 | 317 | sprites 346, far sun 171, near sun 146, effects 82 |
+  | Lamp square (night) | 33.5 | 29.9 | 10.7 | 685 | 378 | far sun 203, effects 113, near 105, sprites 102, lamps 70 |
+  | Meadow | 49 | 20.4 | 6.2 | 368 | 145 | sprites 85, far sun 81, near sun 64 |
+  | Depth corridor | 42 | 23.8 | 8.7 | 579 | 306 | far sun 196, near sun 110, sprites 103, effects 99 |
+  | Open sky | 49 | 20.4 | 6.8 | 383 | 152 | sprites 97, far sun 89, near sun 63 |
+  | Everything: own values / lowest / highest | 24 / 60 / 25.5 | 41.7 / 16.7 / 39.2 | 14.9 / 7.3 / 15.7 | 884 / 637 / 905 | 332 / 158 / 332 | sprites 325-371 |
+
+  Diagnostics (automatic quality on, resolution 0.9, level 2): Clovercrest 27 fps (998 props), Thornberry Wood 28,
+  the shop 60, Fizzwell 27, Driftwreck Bay 32, Pearlantis 28.5. Frame budget in the busiest town (Clovercrest, at
+  05:05, so after dark): 378 draws, 6,163 instances, 41 program switches, 403 texture binds, **4,093 uniform calls**
+  a frame (about 11 per draw); processor time in the passes about 4 ms. Clear day 35 fps, **rain 25**, night 29.
+  Battle 36.8 fps, one 701 ms hitch (drawing x3, setting up the ground). 79 MB of pictures on the card.
+
+  What it says:
+  - The phone waits on its graphics chip almost everywhere: frames of 19-42 ms against 6-15 ms of processor time.
+    The same scene with everything lowest runs 60 fps with 637 draws, and at the game's own values 24 fps with 884
+    draws: the gap is pixels and effects, not draws. The phase file's order (pixels first, stage D) holds.
+  - Draws still cost this phone's processor about twice the iPad's: roughly 1.1-1.5 ms per 100 draws (883 draws ->
+    13 ms at the Sun gap). At the Sun gap and the lamp square the processor time (11-13 ms) is close to a 60 fps
+    frame, so draws become the limit as soon as the pixel cost comes down.
+  - Shadow maps are again 30-55% of all draws; "effects" 47-113; the Sun gap's sprites 346.
+  - Uniform calls (~11 per draw) are a CPU cost of their own: C3 (one uniform block) and E (instancing) cut them.
+  - Rain costs 10 fps in town; worth a look in stage D (it is not a Graphics test setting).
+  - Better than the format 1 Android report on the same chip (own values 15.5 -> 24, lowest 42 -> 60, highest 16.5 ->
+    25.5; Sharpness 1.0 at the control pad 29.5 -> 51.5). Not explained by this phase (it changed no drawing); the
+    browser differs (Chrome then, Opera now), format 1's settling was flawed, and phases 08a/09 came in between. A
+    run in Chrome would separate the browser from the rest.
+- Still missing for A8: the debug logs (a walk in Copperleaf at night on each device) and the iPad's diagnostics test.
+  Neither blocks the budgets.
 - Questions waiting for the owner (A8, "Ask me before"):
   - Run the Graphics test and the diagnostics at the Sun gap, the depth corridor and Copperleaf by night, on the iPad
     and the Android phone, and send the reports and the debug logs.
