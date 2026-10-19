@@ -250,8 +250,8 @@ export const GRAPHICS_DIALS = [
     'Ground and grass',
     [
       ['grass.density', 'Grass', 'How thick the grass grows', 'high', 0, 2, 0.05, 1],
-      ['world.farProps', 'Far trees and hills', 'Things beyond the edge of the place', 'medium', 0, 600, 10, 1],
-      ['water.reflection', 'Water reflections', 'How much the water mirrors', 'medium', 0, 1, 0.05],
+      ['world.farProps', 'Far trees and hills', 'Things beyond the edge of the place', 'medium', 0, 300, 10, 1],
+      ['water.reflection', 'Water reflections', 'How much the water mirrors', 'medium', 0, 1.5, 0.05],
     ],
   ],
   [
