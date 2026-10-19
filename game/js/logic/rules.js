@@ -24,6 +24,7 @@ import {
   saveData,
   showPendingWindows,
   soundEffect,
+  storyHolds,
   toast,
   uiState,
 } from '../hooks.js';
@@ -584,6 +585,8 @@ export function gateOwner(seat) {
   return Object.values(TRAINERS).find(T => T.seat && T.seat.id === seat);
 }
 export function gateText(n) {
+  /* Project Story S2: a place the story keeps closed (requires), and what you are told (locked) */
+  if (n.requires && !storyHolds(n.requires)) return n.locked || `${n.name} is closed for now.`;
   if (n.gate && !saveData.seats.includes(n.gate) && n.gateText) return n.gateText;
   if (n.ride && !canRide()) {
     const R = RULES.ride || { minHeight: 1.5 };
@@ -615,7 +618,9 @@ export const riderName = () => {
   return m ? m.nick || speciesOf(m).name : '';
 };
 export const canEnter = n =>
-  (!LOCATIONS[n].gate || saveData.seats.includes(LOCATIONS[n].gate)) && (!LOCATIONS[n].ride || canRide());
+  (!LOCATIONS[n].gate || saveData.seats.includes(LOCATIONS[n].gate)) &&
+  (!LOCATIONS[n].ride || canRide()) &&
+  (!LOCATIONS[n].requires || storyHolds(LOCATIONS[n].requires));
 export const nextTripNode = () => (saveData.trip.plan.length ? saveData.trip.plan[0] : null);
 /* shortest walk (in metres) between stops, entering only stops you may enter; returns {d,prev} */
 export function walkDistances(from) {

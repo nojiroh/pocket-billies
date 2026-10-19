@@ -53,10 +53,10 @@ expose({
   // @ts-expect-error -- replaced on purpose
   storyFlagKnown: [() => storyFlagKnown, v => (storyFlagKnown = v)],
   // @ts-expect-error -- replaced on purpose
-  storyHolds: [() => storyHolds, v => (storyHolds = v)],
+  storyHolds: [() => storyHolds, v => ((storyHolds = v), provide({ storyHolds }))],
 });
 /* eslint-enable no-func-assign */
-provide({ storyAllows });
+provide({ storyAllows, storyHolds });
 /* to-module: end */
 /** @typedef {{ k: 'say', line: number, who: string | null, expr: string | null, text: string }} SayNode */
 /** @typedef {{ k: 'cmd', line: number, name: string, args: string[] }} CmdNode */

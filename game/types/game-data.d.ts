@@ -327,6 +327,9 @@ export interface LocationData {
   /** a gym badge (a trainer's seat id) needed to go on */
   gate?: string;
   gateText?: string;
+  /** Project Story S2: closed until this condition holds (docs/SCRIPTS.md), and what you are told meanwhile */
+  requires?: string;
+  locked?: string;
   ride?: number;
   noFly?: number;
   v47region?: number;

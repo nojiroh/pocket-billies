@@ -51,3 +51,19 @@ test('when / unless and chapters read the save', () => {
     S.chapters = was;
   }
 });
+
+test('a place with requires is closed until it holds, with its locked line', () => {
+  const s = startedSave('musk0'),
+    L = data.LOCATIONS,
+    i = L.findIndex(l => !l.gate && !l.ride);
+  Object.assign(L[i], { requires: 'met_cass', locked: 'The gate is shut.' });
+  try {
+    assert.equal(fn('canEnter')(i), false);
+    assert.equal(fn('gateText')(L[i]), 'The gate is shut.');
+    s.story.met_cass = 1;
+    assert.equal(fn('canEnter')(i), true);
+  } finally {
+    delete L[i].requires;
+    delete L[i].locked;
+  }
+});
