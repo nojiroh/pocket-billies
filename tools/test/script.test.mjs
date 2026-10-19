@@ -197,3 +197,28 @@ test('skipping: lines and camera work are skipped, every change is still made, a
   assert.deepEqual(save.items.honey, 1);
   assert.equal(control.skipping, false);
 });
+
+test('line ids: kept apart from the text; once, cycle and [once] remember by them, so lines added above move nothing', async () => {
+  assert.deepEqual(parseScript(['[happy] Juniper: Hi. #l:3fa9'])[0], {
+    k: 'say',
+    line: 0,
+    who: 'Juniper',
+    expr: 'happy',
+    text: 'Hi.',
+    id: '3fa9',
+  });
+  const v1 = [
+    'once',
+    '  First time. #l:aa01',
+    'cycle',
+    '  - One. #l:aa02',
+    '  - Two. #l:aa03',
+    'choice',
+    '  > [once] Ask. #l:aa04',
+    '  > Go. #l:aa05',
+  ];
+  const v2 = ['Something new above. #l:bb01', ...v1];
+  const save = { story: {}, items: {}, coins: {} };
+  assert.deepEqual((await play(v1, { save })).said, ['First time.', 'One.', '? Ask. | Go.']);
+  assert.deepEqual((await play(v2, { save })).said, ['Something new above.', 'Two.', '? Go.']);
+});
