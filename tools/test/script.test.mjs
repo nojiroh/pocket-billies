@@ -1,9 +1,11 @@
-// Project Story S1: the story's scripts, read and played with a stub stage (game/js/logic/script.js).
+// Project Story S1: the story's scripts, read (game/js/logic/script-parse.js) and played with a stub stage
+// (game/js/logic/script.js).
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { modules } from './setup-real.mjs';
 
-const { parseScript, scriptProblem, runScript } = modules.script;
+const { parseScript, scriptProblem } = modules['script-parse'];
+const { runScript } = modules.script;
 
 /** a stage that writes down what it is asked to play; choose() takes the answers given, in order */
 function stub(answers = []) {
