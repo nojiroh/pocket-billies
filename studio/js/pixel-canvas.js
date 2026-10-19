@@ -13,6 +13,8 @@
      hostTool(P, t, x, y)  a host's own tool (true when it took the click)
      hover(P, x, y)    the pointer moved over the picture
      focusBox(P)  the box a flip or turn acts on when nothing is selected (the part in focus; null: none)
+     onion(P)     the onion skin: { src: a canvas, from: [x, y, w, h], to: [x, y], clip?: [x, y, w, h] } drawn faint
+                  under the art
      path()       where the picture is saved (art/...): a stroke is a step of the Studio's undo for it
      changed(P)   a stroke ended, or an undo or redo changed the picture
      drawn(P)     the canvas was drawn (zoom and grid may have changed) */
@@ -61,6 +63,7 @@ expose({
   pixelCanvasFit: [() => pixelCanvasFit, v => (pixelCanvasFit = v)],
   pixelCanvasInk: [() => pixelCanvasInk],
   pixelCanvasLock: [() => pixelCanvasLock, v => (pixelCanvasLock = v)],
+  pixelCanvasOnion: [() => pixelCanvasOnion, v => (pixelCanvasOnion = v)],
   pixelCanvasPanel: [() => pixelCanvasPanel, v => (pixelCanvasPanel = v)],
   pixelCanvasPanelHTML: [() => pixelCanvasPanelHTML, v => (pixelCanvasPanelHTML = v)],
   pixelCanvasPanelSync: [() => pixelCanvasPanelSync, v => (pixelCanvasPanelSync = v)],
@@ -103,6 +106,7 @@ export function pixelCanvas(stage, o) {
     symShift: [0, 0] /* the axes moved, in half pixels */,
     lock: false /* colours snap to the game palette */,
     showOff: false /* pixels not on the game palette show in magenta */,
+    showOnion: false,
   };
   bindPixelCanvasEvents(P);
   const onArt = ev => {
@@ -116,14 +120,14 @@ export function pixelCanvas(stage, o) {
   return P;
 }
 /* ---------- the panel the hosts put beside the canvas: symmetry (and the palette and onion skin) ---------- */
-export function pixelCanvasPanelHTML() {
+export function pixelCanvasPanelHTML(opts = {}) {
   return `<div class="px-sec pc-panel"><h4>Symmetry</h4><div class="seg-row">${PIXEL_SYMMETRY.map(
     ([k, l]) =>
       `<button class="seg sm" data-pc="sym" data-m="${k}" title="Symmetry: ${k === 'v' ? 'left-right' : k === 'h' ? 'top-bottom' : k} (Y)">${l}</button>`
   ).join(
     ''
   )}</div><p class="help">Mirrors about the middle of the selection, else of the part under the pointer.</p><div class="pc-shift"><label>Move the axis ↔ <input type="number" step="1" data-pc="shift" data-i="0" value="0" title="In half pixels"></label><label>↕ <input type="number" step="1" data-pc="shift" data-i="1" value="0" title="In half pixels"></label></div></div>
-  <div class="px-sec pc-panel"><h4>Game palette</h4><label class="chk"><input type="checkbox" data-pc="lock"> Lock to the game palette (K)</label><label class="chk"><input type="checkbox" data-pc="off"> Show colours not on it <span class="pc-offn"></span></label><div class="pc-ramps" hidden>${Object.entries(
+  <div class="px-sec pc-panel"><h4>Game palette</h4><label class="chk"><input type="checkbox" data-pc="lock"> Lock to the game palette (K)</label><label class="chk"><input type="checkbox" data-pc="off"> Show colours not on it <span class="pc-offn"></span></label></div>${opts.onion ? '<div class="px-sec pc-panel"><h4>Onion skin</h4><label class="chk"><input type="checkbox" data-pc="onion"> The other view faint underneath (O)</label><p class="help">The same part from the back (or front), centred under the part you point at.</p>' : ''}<div class="pc-ramps" hidden>${Object.entries(
     (window.NW_PALETTE && window.NW_PALETTE.ramps) || {}
   )
     .filter(([, v]) => Array.isArray(v))
@@ -142,9 +146,10 @@ export function pixelCanvasPanel(P, root) {
     else if (b.dataset.pc === 'sw') pixelCanvasColor(P, b.dataset.c);
   });
   root.addEventListener('change', ev => {
-    const b = ev.target.closest('[data-pc=lock], [data-pc=off]');
+    const b = ev.target.closest('[data-pc=lock], [data-pc=off], [data-pc=onion]');
     if (!b || !P.cv.isConnected) return;
     if (b.dataset.pc === 'lock') pixelCanvasLock(P, b.checked);
+    else if (b.dataset.pc === 'onion') pixelCanvasOnion(P, b.checked);
     else {
       P.showOff = b.checked;
       drawPixelCanvas(P);
@@ -165,11 +170,16 @@ function pixelCanvasPanelSync(P) {
   r.querySelectorAll('.pc-shift').forEach(e => (e.hidden = !P.symMode || P.symMode === 'off'));
   r.querySelectorAll('[data-pc=lock]').forEach(e => (e.checked = !!P.lock));
   r.querySelectorAll('[data-pc=off]').forEach(e => (e.checked = !!P.showOff));
+  r.querySelectorAll('[data-pc=onion]').forEach(e => (e.checked = !!P.showOnion));
   r.querySelectorAll('.pc-ramps').forEach(e => (e.hidden = !P.lock));
   r.querySelectorAll('.pc-offn').forEach(
     e => (e.textContent = P.showOff && !P.stroke ? `(${P.offCount || 0} pixels)` : '')
   );
   r.querySelectorAll('[data-pc=sw]').forEach(e => e.classList.toggle('on', e.dataset.c.toUpperCase() === P.color));
+}
+export function pixelCanvasOnion(P, on = !P.showOnion) {
+  P.showOnion = !!on;
+  drawPixelCanvas(P);
 }
 /* a symmetry mode, or the next one */
 export function pixelCanvasSymmetry(P, mode) {
@@ -248,6 +258,23 @@ export function drawPixelCanvas(P) {
   }
   const x = v.getContext('2d');
   x.clearRect(0, 0, W, H);
+  /* onion skin: the host's other view of the part, faint, under the art */
+  const on = P.showOnion && P.o.onion ? P.o.onion(P) : null;
+  if (on && on.src) {
+    const [sx, sy, sw, sh] = on.from,
+      ox = n > 1 ? c.width : 0,
+      oy = n > 1 ? c.height : 0;
+    x.save();
+    if (on.clip) {
+      x.beginPath();
+      x.rect(ox + on.clip[0], oy + on.clip[1], on.clip[2], on.clip[3]);
+      x.clip();
+    }
+    x.globalAlpha = 0.35;
+    x.drawImage(on.src, sx, sy, sw, sh, ox + on.to[0], oy + on.to[1], sw, sh);
+    x.restore();
+  }
+  P.onionShown = !!(on && on.src);
   for (let a = 0; a < n; a++)
     for (let b = 0; b < n; b++) {
       x.globalAlpha = n > 1 && !(a === 1 && b === 1) ? 0.45 : 1;

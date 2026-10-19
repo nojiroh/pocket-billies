@@ -23,6 +23,7 @@ import {
   pixelCanvasDeselect,
   pixelCanvasFit,
   pixelCanvasLock,
+  pixelCanvasOnion,
   pixelCanvasPanel,
   pixelCanvasPanelHTML,
   pixelCanvasSymmetry,
@@ -67,6 +68,7 @@ expose({
   pixelEditorChanged: [() => pixelEditorChanged, v => (pixelEditorChanged = v)],
   pixelEditorHover: [() => pixelEditorHover, v => (pixelEditorHover = v)],
   pixelEditorKeys: [() => pixelEditorKeys, v => (pixelEditorKeys = v)],
+  pixelEditorOnion: [() => pixelEditorOnion, v => (pixelEditorOnion = v)],
   pixelEditorPalette: [() => pixelEditorPalette, v => (pixelEditorPalette = v)],
   playSpritePreviewAction: [() => playSpritePreviewAction, v => (playSpritePreviewAction = v)],
   previewsDirty: [() => previewsDirty, v => (previewsDirty = v)],
@@ -434,7 +436,7 @@ export async function openPixelEditor(sp, view = 'front', focus = null) {
  <div class="px-body"><div class="px-stage" id="pxStage"></div>
  <aside class="px-side">
   <div class="px-sec"><h4>Color</h4><div class="px-color"><input type="color" id="pxColor" value="${E.color}"><span id="pxHex">${E.color}</span></div><div class="px-pal" id="pxPal"></div></div>
-  ${pixelCanvasPanelHTML()}
+  ${pixelCanvasPanelHTML({ onion: true })}
   <div class="px-sec"><h4>Preview</h4><div class="px-prev"><canvas id="pxPrev"></canvas></div><div class="seg-row">${['idle', 'attack', 'cast', 'hurt', 'cheer', 'faint'].map(a => `<button class="seg sm" data-pe="act" data-a="${a}">${a}</button>`).join('')}</div></div>
   <div class="px-sec"><h4>Under the cursor</h4><p class="px-hover" id="pxHover">Point at a part of the sheet.</p></div>
   <div class="px-sec"><h4>Whole sheet</h4><p class="help">Edit in another app (Aseprite, Photoshop…): download, edit, upload. Keep the size and layout so the parts line up.</p><div class="seg-row"><button class="btn" data-pe="dl">Download PNG</button><button class="btn" data-pe="ul">Upload PNG</button></div><button class="btn subtle" data-pe="revert">Revert to the saved file</button></div>
@@ -479,6 +481,7 @@ function refreshPixelEditor() {
               .join('')
           : '',
       hover: (P, x, y) => pixelEditorHover(x, y),
+      onion: () => pixelEditorOnion(),
       focusBox: () => {
         const p = E.hover >= 0 ? partsOf(E.sp, E.view)[E.hover] : null;
         return p ? p.r : null;
@@ -572,6 +575,30 @@ function pixelEditorBones() {
       )
       .join('')}</tbody></table>`;
 }
+/* the onion skin: the part under the pointer as the other view draws it (the bone of the same name), centred on the
+   part's box (lining up the pivots put most back parts beside their front ones: the views place them differently); a
+   face frame shows the same frame there when it has one */
+function pixelEditorOnion() {
+  const E = pixelEditor,
+    p = E.hover >= 0 ? partsOf(E.sp, E.view)[E.hover] : null,
+    other = E.view === 'back' ? 'front' : 'back',
+    R = studioState.rigs[E.sp] || {},
+    A = R[E.view],
+    B = R[other];
+  if (!p || !A || !B) return null;
+  const names = A.bones.filter(b => b.i === p.i).map(b => b.n),
+    ob = B.bones.find(b => names.includes(b.n) && b.i >= 0);
+  if (!ob) return null;
+  const theirs = B.imgs[ob.i],
+    r2 = theirs && (theirs.f[p.v] || theirs.f.main || theirs.f.idle || Object.values(theirs.f)[0]);
+  if (!r2) return null;
+  return {
+    src: loadedAtlas(atlasPath(E.sp, other)),
+    from: r2,
+    to: [p.r[0] + Math.round((p.r[2] - r2[2]) / 2), p.r[1] + Math.round((p.r[3] - r2[3]) / 2)],
+    clip: p.r,
+  };
+}
 function pixelEditorHover(x, y) {
   const E = pixelEditor,
     parts = partsOf(E.sp, E.view),
@@ -580,6 +607,7 @@ function pixelEditorHover(x, y) {
     E.hover = k;
     $('#pxHover').textContent = k >= 0 ? parts[k].label : 'Empty space';
     $$('#pxParts rect').forEach(r => r.classList.toggle('hov', +r.dataset.k === k));
+    if (E.pc && E.pc.showOnion) drawPixelCanvas(E.pc);
   }
 }
 function pixelEditorChanged() {
@@ -708,6 +736,7 @@ function pixelEditorKeys(ev) {
   if (ev.shiftKey && X[k]) pixelCanvasTransform(P, X[k]);
   else if (k === 'y') pixelCanvasSymmetry(P);
   else if (k === 'k') pixelCanvasLock(P);
+  else if (k === 'o') pixelCanvasOnion(P);
   else if (T[k]) pixelCanvasTool(P, T[k]);
   else if (k === '+' || k === '=') {
     pixelCanvasZoom(P, pixelZoomNext(P.zoom, 1));
