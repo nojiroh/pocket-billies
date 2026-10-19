@@ -3505,3 +3505,54 @@ body.lay-drag {
     display: none;
   }
 }
+/* studio track ST-1: wide panes (about a 1920 px window) and ultrawide ones (2560 px and up). A size dragged on a
+   handle or set by a preset is put on the pane itself, so it wins over these defaults */
+.pane[data-w='wide'] {
+  --list-w: 340px;
+  --side-w: 400px;
+}
+.pane[data-w='ultra'] {
+  --list-w: 400px;
+  --side-w: 480px;
+}
+/* the battle preview: the stage as big as the height allows, the controls take the rest in columns */
+.pane[data-w='wide'] .bp-wrap,
+.pane[data-w='ultra'] .bp-wrap {
+  grid-template-columns: minmax(0, calc((100vh - 150px) * 1.6)) minmax(var(--side-w), 1fr);
+}
+.pane[data-w='wide'] .bp-ctl,
+.pane[data-w='ultra'] .bp-ctl {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  align-items: start;
+}
+.pane[data-w='wide'] .bp-wrap > .lay-h,
+.pane[data-w='ultra'] .bp-wrap > .lay-h {
+  display: none;
+}
+/* an ultrawide editor beside its list puts its cards in two columns; the head and the tabs stay across */
+.pane[data-w='ultra'] .split > .ed-col {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+}
+.pane[data-w='ultra'] .split > .ed-col > :not(.card) {
+  grid-column: 1 / -1;
+}
+/* the skeleton builder and the pixel editor fill the window: wider tree and inspector on big screens */
+@media (min-width: 1900px) {
+  .sk-body {
+    grid-template-columns: var(--list-w, 300px) minmax(0, 1fr) var(--side-w, 400px);
+  }
+  .px-body {
+    grid-template-columns: 1fr var(--side-w, 400px);
+  }
+}
+@media (min-width: 2500px) {
+  .sk-body {
+    grid-template-columns: var(--list-w, 340px) minmax(0, 1fr) var(--side-w, 480px);
+  }
+  .px-body {
+    grid-template-columns: 1fr var(--side-w, 480px);
+  }
+}
