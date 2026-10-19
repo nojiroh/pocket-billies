@@ -85,6 +85,29 @@ from main at c7c5ad3 (S2 merged).
 - Next session starts with: Project Story S4, the story bible and parody fixes (writing, no code; every naming and
   lore choice is yours).
 
+### Phase 10 (world map: the bowl) - curves only, real terrain - 2026-10-19
+Owner's asks: no grey edge; the inside only curves; high-resolution real terrain.
+- Changed:
+  - Shape (`logic/bowl.js`): part of a sphere (radius sqrt 2), lowest at the centre, curving up to 45 degrees at the
+    rim (rim height sqrt 2 - 1); no flat floor. The ground ends at the rim: no land beyond it (the grey edge is gone);
+    the mesh's corners past the rim are pulled onto it, so the edge is a clean circle. 320 cells.
+  - Terrain (`world-bowl.js`): a 2048 x 2048 map of terrain kinds (about a metre a square at 1000 m to the radius)
+    drawn with the walk scenes' own terrain pictures (all 78, 16 px each, sharp, mipmapped), and their average colours
+    from far away (1024 x 1024) so it doesn't shimmer. Between places each region's own grounds in patches with a
+    dithered edge (from what its maps are made of), some kinds' own round them (sea, volcano, summit, canyon...), snow
+    on the highest tops, rock at the rim, paths along the roads. Each place's own walk map is laid on it square by
+    square, turned the way it sits (north to the centre), as its map file comes in (one at a time while the map is
+    open). Filled 96 rows a frame; uploads at most twice a second.
+  - Pins: close in (zoom under 0.62) other places are small tags; the picked place and yours keep their pins.
+  - World map test: a new step times the terrain map and the places' own ground.
+  - Studio: the floor circle is gone from the bowl editor.
+- Risky: not seen on a device. The 2048 terrain map is 4 MB on the GPU plus the 1024 colours; the first opening fills
+  it over about 21 frames. Places' maps load in the background while the map is open.
+- Verified: lint, typecheck, check:data, check:modules, format:check, npm test (158 pass); the shaders compile
+  headless; check-fast 12 of 12 (the bowl step waits for the terrain); a lite page lays all 48 places' ground and
+  Marigold's centre square on the bowl is its map's centre square (cobblestone).
+- Next: landmarks far out, real buildings close in, tree clumps; then clouds.
+
 ### Phase 10 (world map: the bowl) - fixes from the owner's phone test - 2026-10-19
 From the owner's world map test report (Adreno 750, 60 fps, 1.6 ms a frame) and notes.
 - Changed:

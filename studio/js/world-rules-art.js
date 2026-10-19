@@ -103,13 +103,13 @@ const bowlSpotXY = (D, r) => {
   return [b.r * Math.cos(w) * BOWL_SVG, -b.r * Math.sin(w) * BOWL_SVG];
 };
 function worldMapHTML() {
-  return `<div class="wmap bowl" id="wmap"><svg viewBox="-135 -135 270 270" id="wmapSvg"></svg></div><p class="help">The bowl seen from above: the rim is the outer circle, the flat floor the dashed one, Copperleaf in the middle. Drag a marker to move a place. On the bowl a map's north faces the centre and its east runs counter-clockwise, so roads must leave the way their exits face: the checks (tools/test/bowl-layout.test.mjs) say which road turns too far. A place reached only by lift hangs under its parent and moves with it.</p>`;
+  return `<div class="wmap bowl" id="wmap"><svg viewBox="-135 -135 270 270" id="wmapSvg"></svg></div><p class="help">The bowl seen from above: the rim is the circle, Copperleaf in the middle (the bowl curves up all the way to the rim). Drag a marker to move a place. On the bowl a map's north faces the centre and its east runs counter-clockwise, so roads must leave the way their exits face: the checks (tools/test/bowl-layout.test.mjs) say which road turns too far. A place reached only by lift hangs under its parent and moves with it.</p>`;
 }
 function drawWorldMarkers() {
   const svg = $('#wmapSvg');
   if (!svg) return;
   const D = studioState.D;
-  let h = `<circle r="${BOWL_SVG}" class="rim"/><circle r="${BOWL_SVG * 0.35}" class="floor"/>`;
+  let h = `<circle r="${BOWL_SVG}" class="rim"/>`;
   const pts = D.locations.map(r => bowlSpotXY(D, r));
   (D.roads || []).forEach(l => {
     const { a, b, kind } = PB_DATA.road(D, l);

@@ -6,20 +6,21 @@
    0 at the centre of the floor to 1 at the rim. A place reached only by lift sits under another: { under: id }.
    The walkable maps keep their own compass. On the bowl each map turns with the curve: its north faces the centre and
    its east runs counter-clockwise, so the seams between maps line up all the way round (docs/phases/10-world-map-bowl.md).
-   Depth (medium): a flat floor out to BOWL_FLOOR, then walls rising to 45 degrees at the rim.
+   Shape (owner, 2026-10-19: only curves inside): a part of a sphere, lowest at the centre and curving up to 45 degrees
+   at the rim, where the land ends against the sky (no flat floor, no land beyond the rim).
    Logic only: no DOM, runs in Node. The renderer, the Studio and the tests read the same numbers. */
 /** @import { BowlSpot, LocationData } from '../../types/game-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 /* eslint-disable no-func-assign */
 expose({
-  BOWL_FLOOR: [() => BOWL_FLOOR],
   BOWL_GROUND_CELLS: [() => BOWL_GROUND_CELLS],
   BOWL_GROUND_EXTENT: [() => BOWL_GROUND_EXTENT],
   BOWL_RELIEF_DEFAULT: [() => BOWL_RELIEF_DEFAULT],
   BOWL_RELIEF_KINDS: [() => BOWL_RELIEF_KINDS],
   BOWL_RELIEF_MAX: [() => BOWL_RELIEF_MAX],
   BOWL_RIM_HEIGHT: [() => BOWL_RIM_HEIGHT],
+  BOWL_SPHERE: [() => BOWL_SPHERE],
   EXIT: [() => EXIT],
   // @ts-expect-error -- replaced on purpose
   bowlBaseHeight: [() => bowlBaseHeight, v => (bowlBaseHeight = v)],
@@ -53,14 +54,16 @@ expose({
 /* eslint-enable no-func-assign */
 /* to-module: end */
 /** the flat floor's radius, as a share of the bowl's */
-export const BOWL_FLOOR = 0.35;
-/** the rim's height above the floor, as a share of the bowl's radius (the walls reach 45 degrees at the rim) */
-export const BOWL_RIM_HEIGHT = (1 - BOWL_FLOOR) / 2;
+/** the sphere the bowl is part of: its radius, in bowl radii (the slope reaches 45 degrees at the rim) */
+export const BOWL_SPHERE = Math.SQRT2;
+/** the rim's height above the bowl's lowest point, as a share of its radius */
+export const BOWL_RIM_HEIGHT = BOWL_SPHERE - 1;
 
-/** the ground's height at r (0 centre to 1 rim) @param {number} r @returns {number} */
+/** the ground's height at r (0 centre to 1 rim): a curve all the way, no flat part @param {number} r
+ * @returns {number} */
 export function bowlHeight(r) {
-  const k = Math.max(0, r - BOWL_FLOOR);
-  return (k * k) / (2 * (1 - BOWL_FLOOR));
+  const k = Math.min(1, Math.abs(r));
+  return BOWL_SPHERE - Math.sqrt(BOWL_SPHERE * BOWL_SPHERE - k * k);
 }
 
 /** a spot's place seen from above, x east and y north of the bowl @param {number} a @param {number} r
@@ -231,9 +234,9 @@ export function bowlRelief(F, x, y) {
    south-west to its north-east corner); the camera, the pins and a tap read the height the same way, so everything
    agrees with what is drawn. Beyond the rim the land runs on flat for a short way. */
 /** @typedef {{ n: number, e: number, h: Float32Array }} BowlGround */
-/** how far the grid reaches from the centre (rim 1) and its cells across */
-export const BOWL_GROUND_EXTENT = 1.3;
-export const BOWL_GROUND_CELLS = 160;
+/** how far the grid reaches from the centre (the rim: the land ends there) and its cells across */
+export const BOWL_GROUND_EXTENT = 1;
+export const BOWL_GROUND_CELLS = 320;
 /** the ground's height with no relief: the bowl inside the rim, flat land beyond @param {number} x @param {number} y */
 export function bowlBaseHeight(x, y) {
   const r = Math.hypot(x, y);

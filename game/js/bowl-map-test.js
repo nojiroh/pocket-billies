@@ -120,7 +120,7 @@ async function runBowlMapTest() {
   };
   const stepEl = box.querySelector('.nb-step'),
     bar = box.querySelector('.nb-bar i'),
-    TOTAL = 8;
+    TOTAL = 9;
   const step = async (name, fn) => {
     if (bowlMapTest.stop) return;
     stepEl.textContent = name;
@@ -176,6 +176,17 @@ async function runBowlMapTest() {
         : { ok: false, note: `${n} frames in 4 s` };
     });
     if (!worldBowl.on) bowlMapTest.stop = true;
+    await step('The ground’s terrain', async () => {
+      const t = performance.now();
+      while (!(worldBowl.ground && worldBowl.ground.terrain && worldBowl.ground.terrain.ready && worldBowl.ground.ok)) {
+        if (performance.now() - t > 15000) return { ok: false, note: 'the terrain map never got ready' };
+        await bowlTestFrames(1);
+      }
+      const ready = Math.round(performance.now() - t),
+        T = worldBowl.ground.terrain;
+      while (T.stamped.size < LOCATIONS.length - 1 && performance.now() - t < 30000) await bowlTestWait(200);
+      return `${T.K.keys.length} terrain pictures; ready in ${ready} ms; ${T.stamped.size} of ${LOCATIONS.length} places' own ground laid on it in ${Math.round(performance.now() - t)} ms`;
+    });
     await step('Every place is on the bowl', async () => {
       const S = worldBowl.spots || [],
         bad = LOCATIONS.filter(
