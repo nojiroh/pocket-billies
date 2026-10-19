@@ -233,15 +233,6 @@ export const GRAPHICS_DIALS = [
     'Light and shadow',
     [
       ['shadows.strength', 'Shadows', 'How dark the shade under trees and houses is', 'medium', 0, 1, 0.05],
-      [
-        'shadows.selfShade',
-        'Trees shade themselves',
-        'Trunks and lower leaves in the crown’s shade',
-        'low',
-        0,
-        1,
-        0.05,
-      ],
       ['air.godRays', 'Sun rays', 'Beams of sunlight through leaves and between roofs', 'high', 0, 2, 0.05],
       ['lights.brightness', 'Lamps', 'How bright lamps and windows shine at night', 'low', 0.3, 2, 0.05],
     ],

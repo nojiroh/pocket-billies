@@ -20,7 +20,7 @@ one at its low settings.
 | Station | Where (x, z) | What is there | Settings it measures |
 |---|---|---|---|
 | Control pad | 10, 6 · zoom 0.6 | Bare pavers, nothing on them, seen close up | Sharpness (resolution), Dark corners, Film grain |
-| Shadow court | 30, 5.5 | A plaza with trees, a lamp, a flag, a sign, crates, a bench, a boulder, a vending machine; three houses behind. Sun from the side | Shadows, Trees shade themselves, Shadow detail (map size), Near shadow map (cascades), Ambient occlusion, Contact shadows |
+| Shadow court | 30, 5.5 | A plaza with trees, a lamp, a flag, a sign, crates, a bench, a boulder, a vending machine; three houses behind. Sun from the side | Shadows, Shadow detail (map size), Near shadow map (cascades), Ambient occlusion, Contact shadows |
 | Pond | 50, 5 | A still pond; five trees and a house on the far bank to mirror | Water reflections |
 | Sun gap | 10.5, 20 | A tight grove with one path through it and two roofs in front; low sun straight ahead | Sun rays (`air.godRays`) |
 | Lamp square | 30, 20 | Brick paving, ten lamps and lanterns, two fires, crystals, three houses with windows; measured at night | Glow (bloom), Glow size, Lamps |
@@ -35,13 +35,15 @@ square the night (22:00). Everything else is clear summer weather at 14:00.
 
 ## The settings
 
-The 16 Expert dials (Settings → Graphics → Expert) and five hidden ones that cost the most:
+The 15 Expert dials (Settings → Graphics → Expert) and five hidden ones that cost the most:
 
-- Expert: Shadows, Trees shade themselves, Sun rays, Lamps, Low mist, Clouds, Cloud shadows,
+- Expert: Shadows, Sun rays, Lamps, Low mist, Clouds, Cloud shadows,
   Particles, Grass, Far trees and hills, Water reflections, Depth of field, Glow, Dark corners, Film grain, Sharpness.
 - Light shafts (`sun.shafts`) was a dial of its own until 2026-10-19: it smears only bright sky pixels, and the
   camera, looking down, never has the sky in the picture, so it showed nothing. Sun rays (`air.godRays`, the beams
   through the shadow maps) is the one dial for both now; `sun.shafts` stays an engine setting the looks can set.
+- Trees shade themselves (`shadows.selfShade`) was a dial until 2026-10-19: only flat sprite trees read it, the
+  solid trees within 20 m never do, and it showed no difference either way. It stays an engine setting.
 - Hidden: Shadow detail (`quality.shadowMap`: 1024, 2048, 4096), Near shadow map (`shadows.cascades`: off, on),
   Ambient occlusion (`shadows.ao`), Contact shadows (`shadows.contact`), Glow size (`color.bloomSize`).
 
@@ -86,7 +88,7 @@ costs, the station's noise and whether the cost is within it (`unclear`). It has
 
 ## Time
 
-126 measured steps (100 setting steps, two or three untouched looks per station, everything lowest and highest) at
+121 measured steps (95 setting steps, two or three untouched looks per station, everything lowest and highest) at
 about 4.5 s each, plus settling and rebuilds: about 11 to 12 minutes.
 
 ## Findings so far (format 1 reports, 2026-10-19)
