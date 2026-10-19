@@ -9,6 +9,7 @@
 /** @import { Coat } from '../../types/game-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { provide } from '../hooks.js';
 /* eslint-disable no-func-assign */
 expose({
   COAT_NEAR: [() => COAT_NEAR],
@@ -19,10 +20,11 @@ expose({
   // @ts-expect-error -- replaced on purpose
   coatRecolor: [() => coatRecolor, v => (coatRecolor = v)],
   // @ts-expect-error -- replaced on purpose
-  coatRoll: [() => coatRoll, v => (coatRoll = v)],
+  coatRoll: [() => coatRoll, v => ((coatRoll = v), provide({ coatRoll }))],
   hex6: [() => hex6],
 });
 /* eslint-enable no-func-assign */
+provide({ coatRoll });
 /* to-module: end */
 /** a pixel this close (RGB distance) to a palette shade counts as that shade, so art drawn slightly off the palette
  * still recolours; anything further stays as it is */

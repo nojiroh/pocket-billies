@@ -139,13 +139,13 @@ export function rideMountItem(P, t) {
     riderOf() || saveData.team.find(x => SPECIES[x.sp] && SPECIES[x.sp].types.includes('Water')) || saveData.team[0];
   if (!m || !SPECIES[m.sp]) return null;
   const back = P.dir === 'up',
-    R = rigParts(m.sp, back ? 2 : 1);
+    R = rigParts(m.sp, back ? 2 : 1, m.coat);
   if (!R) {
     if (!walkRenderer.mountLoad) {
       walkRenderer.mountLoad = 1;
       rigPreload([
-        [m.sp, 1],
-        [m.sp, 2],
+        [m.sp, 1, m.coat],
+        [m.sp, 2, m.coat],
       ]).then(() => {
         walkRenderer.mountLoad = 0;
       });

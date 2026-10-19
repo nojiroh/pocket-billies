@@ -9,8 +9,9 @@
 import { expose } from './test-globals.js';
 import { recordThingsToDoEvent, soundEffect, toast } from './hooks.js';
 import { clamp, random } from './util.js';
-import { RULES, SPECIES, gameData } from './game-data.js';
-import { encounterPoolHere, newUid, pickWeighted } from './logic/rules.js';
+import { COATS, RULES, SPECIES, gameData } from './game-data.js';
+import { coatPrefix, encounterPoolHere, newUid, pickWeighted } from './logic/rules.js';
+import { coatRoll } from './logic/coats.js';
 import { startWild } from './logic/battle-engine.js';
 import { activeBattle, reducedMotion, save, saveData, uiState } from './game-state.js';
 import { uiIconHTML } from './art.js';
@@ -114,13 +115,17 @@ function fishPick(kind) {
       P.lv[0] +
       (F.lv ? F.lv[0] : 0) +
       Math.floor(random() * (P.lv[1] + (F.lv ? F.lv[1] : 0) - (P.lv[0] + (F.lv ? F.lv[0] : 0)) + 1));
-  return {
+  const q = {
     id: newUid(),
     sp,
     lvl: Math.max(2, lv),
     no: ++saveData.serial,
     fished: 1,
   };
+  /* studio track ST-0: a coat, once in its odds for fishing (none: never) */
+  const coat = coatRoll(COATS, 'fish', random);
+  if (coat) q.coat = coat;
+  return q;
 }
 /* the Fish button on the walk screen comes and goes as you walk past water */
 function fishPoll() {
@@ -385,7 +390,7 @@ function fishCaught() {
   saveData.stats.fished = (saveData.stats.fished || 0) + 1;
   if (typeof recordThingsToDoEvent === 'function') recordThingsToDoEvent('fish');
   save();
-  toast(`You hooked a ${nm}!`);
+  toast(`You hooked a ${coatPrefix(q.coat)}${nm}!`);
   setTimeout(() => startWild(q), 350);
 }
 function fishEnd(msg) {

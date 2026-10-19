@@ -575,7 +575,7 @@ export function actorCenter(i) {
     s = battleStage.s[i];
   let h = 1.4;
   if (s && s.sp) {
-    const R = rigParts(s.sp, ACTOR_RIG_SCALES[i]);
+    const R = rigParts(s.sp, ACTOR_RIG_SCALES[i], s.coat);
     if (R) h = ((R.geo.base - R.geo.mid) * actorMetersPerPixel[i] * s.sc * (s.big || 1) * (s.fs || 1)) / R.k;
   }
   return { x: w.x, y: w.y + h, z: w.z };
@@ -752,7 +752,7 @@ function spawnAmbientParticles(dt) {
     const sd = battleStage.s[i];
     if (sd.boss && sd.show && sd.a > 0.5 && random() < dt / 90) {
       const w = actorWorldPoint(i),
-        R = sd.sp ? rigParts(sd.sp, ACTOR_RIG_SCALES[i]) : null,
+        R = sd.sp ? rigParts(sd.sp, ACTOR_RIG_SCALES[i], sd.coat) : null,
         hw = R ? (R.geo.hw * actorMetersPerPixel[i] * sd.big * (sd.fs || 1)) / R.k : 1,
         a = random() * 6.283;
       addParticle({
@@ -870,7 +870,7 @@ function cameraOverflow(C) {
     if (!s.show || s.a < 0.3) continue;
     const w = actorWorldPoint(i),
       c = actorCenter(i),
-      R = s.sp ? rigParts(s.sp, ACTOR_RIG_SCALES[i]) : null,
+      R = s.sp ? rigParts(s.sp, ACTOR_RIG_SCALES[i], s.coat) : null,
       hw = R
         ? (Math.max(R.geo.hw, (R.geo.base - R.geo.top) * 0.5) *
             actorMetersPerPixel[i] *
@@ -1066,7 +1066,7 @@ export function actorBuffer(i) {
   if (!s.show || !s.sp || s.a <= 0.01 || s.sc <= 0.01) return null;
   if (battleStage.t < s.blinkUntil && Math.floor(battleStage.t / 60) % 2) return null;
   const k = ACTOR_RIG_SCALES[i],
-    R = rigParts(s.sp, k),
+    R = rigParts(s.sp, k, s.coat),
     view = actorTeam(i) === 0 ? 'back' : 'front',
     buf = battleStage.buf[i] || (battleStage.buf[i] = makeCanvas(10, 10));
   if (!R) return null;
@@ -1230,7 +1230,7 @@ function drawSelectionRing(c, i, col, pulse) {
     g = battleStageProject(w.x, 0, w.z);
   if (!g) return;
   const s = battleStage.s[i],
-    R = s && s.sp ? rigParts(s.sp, ACTOR_RIG_SCALES[i]) : null,
+    R = s && s.sp ? rigParts(s.sp, ACTOR_RIG_SCALES[i], s.coat) : null,
     hw = R ? (R.geo.hw * actorMetersPerPixel[i] * (s.big || 1) * (s.fs || 1) * 0.8) / R.k2 : 0.5;
   const r = Math.max(6, hw * g.s * (1 + 0.06 * Math.sin(battleStage.t / 180) * pulse)),
     ry = r * clamp(battleStage.V.y / g.z, 0.2, 0.6);
@@ -1449,6 +1449,7 @@ export function battleStagePlay(an, ev) {
     if (sn && battleStage.s[i]) {
       battleStage.s[i].sp = sn.sp;
       battleStage.s[i].build = sn.build || null;
+      battleStage.s[i].coat = sn.coat || null;
       battleStage.s[i].st = sn.st;
       battleStage.s[i].boss = !!sn.boss;
       battleStage.s[i].big = sn.boss ? 1.6 : sn.alpha ? 1.12 : 1;

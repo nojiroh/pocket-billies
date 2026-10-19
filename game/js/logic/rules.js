@@ -16,6 +16,7 @@ import { expose } from '../test-globals.js';
 import {
   JINGLES,
   activeBattle,
+  coatRoll,
   environmentOdds,
   jingle,
   provide,
@@ -30,6 +31,7 @@ import {
 } from '../hooks.js';
 import { random } from '../util.js';
 import {
+  COATS,
   EGGS,
   EGG_TIERS,
   ITEMS,
@@ -95,6 +97,7 @@ expose({
   // @ts-expect-error -- replaced on purpose
   cleanBuild: [() => cleanBuild, v => (cleanBuild = v)],
   cleanName: [() => cleanName],
+  coatPrefix: [() => coatPrefix],
   distanceText: [() => distanceText],
   // @ts-expect-error -- replaced on purpose
   dropEncounter: [() => dropEncounter, v => (dropEncounter = v)],
@@ -303,6 +306,9 @@ export function movesAt(lid, lvl) {
   for (const [lv, mv] of LINE_BY_ID[lid].learn) if (lv <= lvl && !out.includes(mv)) out.push(mv);
   return out.slice(-moveSlotCount());
 }
+/** studio track ST-0: a coat's name before a Billie's, for the player's words ("Midnight "), or nothing
+ * @param {string | undefined} coat */
+export const coatPrefix = coat => (coat && COATS[coat] ? COATS[coat].name + ' ' : '');
 /* alpha 0.5: a Billie remembers where and when it joined you (shown in its details) */
 export function makeBilly(sp, lvl, o = {}) {
   const m = {
@@ -318,6 +324,7 @@ export function makeBilly(sp, lvl, o = {}) {
     /* phase 16: sizes given (a wild one's), rolled (o.wild) or all M (starters, trainers) */
     build: o.build ? cleanBuild(o.build) : o.wild ? rollBuild() : primeBuild(),
   };
+  if (o.coat && COATS[o.coat]) m.coat = o.coat;
   m.hp = maxHp(m);
   try {
     if (typeof saveData !== 'undefined' && saveData && saveData.trip && LOCATIONS[saveData.trip.node])
@@ -740,6 +747,9 @@ export function spawn(gentle, force, node = saveData.trip.node) {
     no: ++saveData.serial,
     build: rollBuild(),
   };
+  /* studio track ST-0: a coat, once in its odds (none: never) */
+  const coat = coatRoll(COATS, 'wild', random);
+  if (coat) q.coat = coat;
   /* v33: now and then an Alpha (once you have two billionaires to stand with your lead) */
   if (!gentle && !force && saveData.team.length >= 2 && random() < 1 / (RULES.encounters.alphaOdds || 45))
     q.alpha = true;
@@ -804,7 +814,7 @@ export function hatchEgg(e) {
     top = e.tier === EGG_TIERS[EGG_TIERS.length - 1];
   let sp = pickWeighted(T.list);
   if (top && SPECIES[R.mythSpecies] && random() < 1 / R.mythOdds) sp = R.mythSpecies;
-  const m = makeBilly(sp, T.lv, { wild: true });
+  const m = makeBilly(sp, T.lv, { wild: true, coat: coatRoll(COATS, 'egg', random) });
   saveData.eggs = saveData.eggs.filter(x => x !== e);
   saveData.hatched = (saveData.hatched || 0) + 1;
   autoSlot();

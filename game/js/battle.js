@@ -240,7 +240,9 @@ export function openBattle() {
   const bs = (saveData.preferences || {}).battleSpeed;
   if (bs && !uiState.dbgSpeed) battleStage.speed = bs === 'fast' ? 1.6 : bs === 'faster' ? 2.2 : 1;
   const area = activeBattle.area || 'grass',
-    list = saveData.team.map(m => [m.sp, RIG_BACK_VIEW]).concat(activeBattle.sides[1].team.map(m => [m.sp, 1]));
+    list = saveData.team
+      .map(m => [m.sp, RIG_BACK_VIEW, m.coat])
+      .concat(activeBattle.sides[1].team.map(m => [m.sp, 1, m.coat]));
   const b = activeBattle;
   Promise.all([battleStagePrepare(area), rigPreload(list)])
     .then(() => {
@@ -707,7 +709,7 @@ function hpMini(m) {
   return `<span class="hpmini"><i class="${p < 0.25 ? 'low' : p < 0.5 ? 'mid' : ''}" style="width:${p * 100}%"></i></span>`;
 }
 function billyPickHTML(m, act, attrs, dis, note) {
-  return `<button class="pick" ${attrs} ${dis ? 'disabled' : ''}>${bustHTML(m.sp, 40)}<span class="pk-t"><b>${escapeHtml(billyName(m))}</b><span class="pk-m">${speciesOf(m).types.map(typeBadgeHTML).join('')}<small class="tnum">Lv ${m.lvl}</small></span>${hpMini(m)}<small class="tnum">${Math.max(0, m.hp)}/${maxHp(m)}</small></span><span class="pk-s">${note || ''}</span></button>`;
+  return `<button class="pick" ${attrs} ${dis ? 'disabled' : ''}>${bustHTML(m.sp, 40, { coat: m.coat })}<span class="pk-t"><b>${escapeHtml(billyName(m))}</b><span class="pk-m">${speciesOf(m).types.map(typeBadgeHTML).join('')}<small class="tnum">Lv ${m.lvl}</small></span>${hpMini(m)}<small class="tnum">${Math.max(0, m.hp)}/${maxHp(m)}</small></span><span class="pk-s">${note || ''}</span></button>`;
 }
 function teamPick(back) {
   const on = activeBattle.sides[0].f.filter(f => f.on).map(f => f.act),

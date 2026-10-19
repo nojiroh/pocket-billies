@@ -130,6 +130,8 @@ export interface Billy {
   /** turns left on the status */
   sTurns: number;
   moves: MoveId[];
+  /** studio track ST-0: its coat (gameData.coats), or none */
+  coat?: string;
   nick: string;
   /** where and when it joined you: a location id (or node), Date.now() */
   met?: { n: DataId | LocationNode; t: number };
@@ -182,6 +184,8 @@ export interface Encounter {
   id: string;
   sp: SpeciesId;
   lvl: number;
+  /** studio track ST-0: its coat (gameData.coats), or none */
+  coat?: string;
   /** its encounter number (serial) */
   no: number;
   alpha?: boolean;

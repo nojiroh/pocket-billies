@@ -376,6 +376,7 @@ export const COINS = gameData.coins;
 provide({ COINS }); /* to-module */
 /* studio track ST-0: coats, a recolour of a Billie's art (game/js/logic/coats.js) */
 export const COATS = gameData.coats || {};
+provide({ COATS }); /* to-module */
 export const ITEMS = gameData.items;
 export const PEOPLE = gameData.people;
 provide({ PEOPLE }); /* to-module */
