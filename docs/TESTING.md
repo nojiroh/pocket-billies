@@ -95,6 +95,9 @@ same phase:
   once, started in the background] once a place has settled (a second after it is ready; counted since the page
   loaded, and the per-dial graphics test's shader check adds to it), `alloc` [hitches, MB freed]: ticks more than
   45 ms apart while the heap shrank (Chrome only, a rough sign of garbage collection). Numbers only.
+- **(Phase 20 C3)** The full test's Shaders step also builds every program with the light code with the Frame uniform
+  block (`frameBlockCheck`, engine/webgl.js) and checks the block's size and each member's offset, as this device's
+  driver lays them out, against what engine/frame-block.js packs; smoke shows "N shaders; 14 with the Frame block".
 - **(13c)** The full test and the debug menu load on demand; the recording part of the debug log stays loaded.
 - The graphics test (Settings → Help → Run the graphics test, and the debug menu; `game/js/graphics-test.js`, loaded on
   demand) is run only by a person, by hand, on their own device: never from Claude Code, CI, a headless browser or
