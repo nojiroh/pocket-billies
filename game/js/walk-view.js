@@ -2790,9 +2790,14 @@ export function navGrid() {
   const lv = new Float32Array(gw * gh),
     hop = new Uint8Array(gw * gh),
     E = stepGrid(sc),
-    BR = mapBridges(sc);
-  for (let j = 0; j < gh; j++)
-    for (let i = 0; i < gw; i++) {
+    BR = mapBridges(sc),
+    RW = sc.roomRect /* phase 08b: in a room only its floor and a metre round it (the rest is blocked already) */,
+    i0 = RW ? Math.max(0, Math.floor((RW[0] - 1) * N)) : 0,
+    i1 = RW ? Math.min(gw, Math.ceil((RW[0] + RW[2] + 1) * N)) : gw,
+    j0 = RW ? Math.max(0, Math.floor((RW[1] - 1) * N)) : 0,
+    j1 = RW ? Math.min(gh, Math.ceil((RW[1] + RW[3] + 1) * N)) : gh;
+  for (let j = j0; j < j1; j++)
+    for (let i = i0; i < i1; i++) {
       const x = (i + 0.5) / N,
         z = (j + 0.5) / N,
         q = j * gw + i;
