@@ -26,8 +26,57 @@
     "file": {"description":"the picture, under game/art","type":"string","pattern":"^next/parts/(front|back)/[a-z0-9_]+\\.png$"},
     "w": {"type":"integer","minimum":1},
     "h": {"type":"integer","minimum":1},
+    "sockets": {"$ref":"#/$defs/sockets"},
+    "pivot": {"description":"this view's turning point (Part mode, studio track ST-4); the part's pivot when not given","$ref":"#/$defs/point"},
+    "sizes": {
+     "description":"hand-painted S and L pictures; a size not here is M scaled about the pivot",
+     "type":"object",
+     "additionalProperties": false,
+     "properties": {
+      "S": {"$ref":"#/$defs/sizeView"},
+      "L": {"$ref":"#/$defs/sizeView"}
+     }
+    }
+   }
+  },
+  "sizeView": {
+   "type": "object",
+   "required": ["file","w","h"],
+   "additionalProperties": false,
+   "properties": {
+    "file": {"description":"the picture, under game/art, beside the M one: <id>_s.png or <id>_l.png","type":"string","pattern":"^next/parts/(front|back)/[a-z0-9_]+_[sl]\\.png$"},
+    "w": {"type":"integer","minimum":1},
+    "h": {"type":"integer","minimum":1},
+    "pivot": {"$ref":"#/$defs/point"},
     "sockets": {"$ref":"#/$defs/sockets"}
    }
+  },
+  "z": {
+   "description": "draw order per view: higher is drawn later (in front)",
+   "type": "object",
+   "additionalProperties": false,
+   "properties": {
+    "front": {"type":"integer","minimum":-50,"maximum":50},
+    "back": {"type":"integer","minimum":-50,"maximum":50}
+   }
+  },
+  "turn": {
+   "description": "how far the part may turn about its pivot, [least, most] in degrees, clockwise positive",
+   "type": "array",
+   "items": {"type":"number","minimum":-180,"maximum":180},
+   "minItems": 2,
+   "maxItems": 2
+  },
+  "slotList": {
+   "type": "array",
+   "items": {"enum":["head","head-extra","body","body-extra","front","back","signature"]},
+   "uniqueItems": true
+  },
+  "rules": {
+   "description": "socket name: the slots that may attach there",
+   "type": "object",
+   "propertyNames": {"pattern":"^[a-zA-Z][a-zA-Z0-9_]*$"},
+   "additionalProperties": {"$ref":"#/$defs/slotList"}
   }
  },
  "properties": {
@@ -48,6 +97,20 @@
    "description": "each kind's turning point",
    "type": "object",
    "additionalProperties": {"$ref":"#/$defs/point"}
+  },
+  "z": {
+   "description": "each kind's draw order per view (Part mode, studio track ST-4)",
+   "type": "object",
+   "additionalProperties": {"$ref":"#/$defs/z"}
+  },
+  "turns": {
+   "description": "how far each kind may turn about its pivot",
+   "type": "object",
+   "additionalProperties": {"$ref":"#/$defs/turn"}
+  },
+  "socketRules": {
+   "description": "which slots may attach at each socket, by socket name",
+   "$ref": "#/$defs/rules"
   },
   "sockets": {
    "description": "sockets given by hand per part and view; they replace the ones worked out from the outline",
@@ -75,6 +138,10 @@
      "slot": {"enum":["head","head-extra","body","body-extra","front","back","signature"]},
      "pivot": {"$ref":"#/$defs/point"},
      "size": {"enum":["S","M","L"]},
+     "z": {"description":"its draw order, in place of its kind's","$ref":"#/$defs/z"},
+     "turn": {"description":"its turn limits, in place of its kind's","$ref":"#/$defs/turn"},
+     "accepts": {"description":"its own socket rules, in place of socketRules for these sockets","$ref":"#/$defs/rules"},
+     "mirrorOf": {"description":"the part this is the other side of (Mirror to other side)","type":"string","pattern":"^[a-z][a-z0-9_]*$"},
      "views": {
       "type": "object",
       "minProperties": 1,

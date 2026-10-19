@@ -811,7 +811,18 @@ export interface PartKits {
   pivots?: Record<string, [number, number]>;
   /** sockets given by hand, per part and view; they replace the ones worked out from the outline */
   sockets?: Record<DataId, { front?: Record<string, [number, number]>; back?: Record<string, [number, number]> }>;
+  /** each kind's draw order per view (studio track ST-4) */
+  z?: Record<string, PartZ>;
+  /** each kind's turn limits, [least, most] degrees */
+  turns?: Record<string, [number, number]>;
+  /** socket name: the slots that may attach there */
+  socketRules?: Record<string, PartSlot[]>;
   parts: Record<DataId, KitPart>;
+}
+/** draw order per view: higher is drawn in front */
+export interface PartZ {
+  front?: number;
+  back?: number;
 }
 export type PartSlot = 'head' | 'head-extra' | 'body' | 'body-extra' | 'front' | 'back' | 'signature';
 export interface KitPart {
@@ -823,12 +834,32 @@ export interface KitPart {
   pivot: [number, number];
   size: 'S' | 'M' | 'L';
   views: { front?: KitPartView; back?: KitPartView };
+  /** its own draw order, in place of its kind's */
+  z?: PartZ;
+  /** its own turn limits, in place of its kind's */
+  turn?: [number, number];
+  /** its own socket rules, in place of socketRules for these sockets */
+  accepts?: Record<string, PartSlot[]>;
+  /** the part this is the other side of (Mirror to other side) */
+  mirrorOf?: DataId;
 }
 export interface KitPartView {
   /** the picture, under game/art */
   file: string;
   w: number;
   h: number;
+  sockets?: Record<string, [number, number]>;
+  /** this view's turning point; the part's pivot when not given */
+  pivot?: [number, number];
+  /** hand-painted S and L pictures; a size not here is M scaled about the pivot */
+  sizes?: { S?: KitPartSize; L?: KitPartSize };
+}
+export interface KitPartSize {
+  /** next/parts/<view>/<id>_s.png or _l.png */
+  file: string;
+  w: number;
+  h: number;
+  pivot?: [number, number];
   sockets?: Record<string, [number, number]>;
 }
 
