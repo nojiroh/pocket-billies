@@ -11,6 +11,7 @@ import { $, clamp } from './util.js';
 import { LOCATION_BY_ID, RULES, SPECIES, TRAINERS, trainersAt } from './game-data.js';
 import { encountersHere, healAll, today } from './logic/rules.js';
 import { startTrainer, startWild } from './logic/battle-engine.js';
+import { setStoryFlag } from './logic/script.js';
 import { activeBattle, escapeHtml, reducedMotion, save, saveData, uiState } from './game-state.js';
 import { dressingRoom } from './dressing-room.js';
 import { baseMapId, walkView, walkablePointNear } from './walk-view.js';
@@ -31,7 +32,7 @@ import {
   cutsceneWait,
   cutsceneWalk,
 } from './cutscene.js';
-import { loreClue, loreData, loreFlags } from './lore.js';
+import { loreClue, loreData } from './lore.js';
 /* eslint-disable no-func-assign */
 expose({
   cutsceneWorldBegin: [() => cutsceneWorldBegin, v => (cutsceneWorldBegin = v)],
@@ -55,7 +56,7 @@ expose({
 /* eslint-enable no-func-assign */
 provide({ openingDone, storyAfterRival, storyAfterWin, storyFlags });
 /* to-module: end */
-export function storyFlags() {
+function storyFlags() {
   return saveData.story || (saveData.story = {});
 }
 /* tap a trainer in the scene, or their Battle button: they talk first, then the battle starts */
@@ -138,7 +139,7 @@ async function rivalScene(T) {
     P = walkView.pl,
     sc = walkView.sc,
     F = storyFlags();
-  F['met_' + T.id] = 1;
+  setStoryFlag('met_' + T.id);
   save();
   /* v47: "intro0" is for a game begun before the opening had Blake's first battle in it */
   const intro = T.intro0 && T.intro0.length && !F.rival0 ? T.intro0 : T.intro;
@@ -247,7 +248,7 @@ export function legendCheck() {
       baseMapId() !== L.scene
     )
       return;
-    F['legend_' + L.sp] = today();
+    setStoryFlag('legend_' + L.sp, today());
     save();
     modal({
       title: L.title,
@@ -280,11 +281,11 @@ export async function personTalk(P) {
   if (first) lines = P.first;
   else {
     const L = P.lines || [];
-    F['talk_' + P.id] = ((F['talk_' + P.id] || 0) + 1) % Math.max(1, L.length);
+    setStoryFlag('talk_' + P.id, ((F['talk_' + P.id] || 0) + 1) % Math.max(1, L.length));
     const a = L[F['talk_' + P.id]];
     lines = a ? [a] : [];
   }
-  F[k] = 1;
+  setStoryFlag(k);
   save();
   if (lines.length && typeof talk === 'function') await talk(lines.map(l => [P.who, l]));
 }
@@ -310,7 +311,7 @@ export function storyMovedCheck() {
     title: 'Copperleaf Town',
     html: '<p>Professor Hazel has moved her lab to Copperleaf Town, the hamlet up Route 1 · Hedgerow Lane, north of Marigold Town. Your room went with her: it is in Granny Juniper’s cottage there now, among the beehives.</p><p class="note">Marigold Town keeps its shop and its clinic. Copperleaf has the swing.</p>',
     onRead: () => {
-      F.copperleafNote = 1;
+      setStoryFlag('copperleafNote');
       save();
     },
   });
@@ -364,8 +365,8 @@ export function storyRivalBattle(o = {}) {
 /* win or lose: Blake has his say and goes off to train, Hazel heals your team and points you down the road */
 async function storyAfterRival(o, T) {
   const F = storyFlags();
-  F.rival0 = o === 'win' ? 'win' : o === 'lose' ? 'lose' : 'skip';
-  F.met_blake0 = 1;
+  setStoryFlag('rival0', o === 'win' ? 'win' : o === 'lose' ? 'lose' : 'skip');
+  setStoryFlag('met_blake0');
   save();
   if (o) openingMark();
   T = T || TRAINERS.blake0 || {};
@@ -397,7 +398,7 @@ async function storyAfterRival(o, T) {
     ['gini', 'Now go and explore! The road teaches more than any book. Come back and see me any time.'],
   ];
   if (typeof talk === 'function') await talk(after);
-  if (typeof loreFlags === 'function') loreFlags().askLongGrass = 1;
+  setStoryFlag('askLongGrass');
   save();
   if (W) modal(W);
   else if (typeof showPendingWindows === 'function') showPendingWindows();
@@ -421,7 +422,7 @@ async function storyEnding(T) {
   if (typeof loreClue === 'function')
     loreClue('who'); /* the last clue: its flag, "ending", is the story's last stage */
   else {
-    storyFlags().ending = 1;
+    setStoryFlag('ending');
   }
   if (E)
     modal({

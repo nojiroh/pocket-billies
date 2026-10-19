@@ -338,7 +338,7 @@ function timeAgo(t) {
 }
 /* ---------- the Trainer screen ---------- */
 export function friendsHTML() {
-  const head = `<div class="sec-h"><h2>Friends</h2>${friends.code ? `<span class="fr-code">Your code <b class="tnum">${friends.code}</b></span>` : ''}</div>`;
+  const head = `<div class="sec-h"><h2>Friends</h2>${friends.code ? `<span class="fr-code">Your code <b class="tnum">${escapeHtml(friends.code)}</b></span>` : ''}</div>`;
   if (typeof accountOn !== 'function' || !accountOn())
     return `<section class="tpanel pf-friends">${head}<p class="note">Friends work when you’re signed in, and this copy of the game has no accounts.</p></section>`;
   if (!friendsOn())

@@ -9,6 +9,11 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- Story scripts (Project Story S1, not played by the game on its own yet): conversations can be written as lines in
+  the data, with choices, conditions, once-only and rotating lines, and commands (docs/SCRIPTS.md). Three are written
+  (Granny Juniper, Blake on the golf course, Curator Nacre) and play from the debug menu. Hold the dialogue box to
+  skip. A save taken mid-conversation keeps the state from before it and plays it again on Continue. Test runs can
+  start at a point in the story (`?story=after-opening`, `?story=before-cass`).
 - Robots (phase 17 prototype): build your own from a gem and four parts (torso with head, left arm, right arm,
   legs). They join the same team and the same battles as Billies. Their moves come from their parts; a hit on a robot
   also lands on a part, aimed moves pick the part, a broken arm loses its move and broken legs are slow; healing and
@@ -57,6 +62,10 @@ kept aside in the browser).
   lamps and the reflection apart); also the lights in the frame, programs compiled after a place had settled, and a
   rough sign of garbage-collection hitches (Chrome). The graphics test and the diagnostics report the draws per step
   (a Draws column). Fix: their pass timers had skipped the 3D models, box faces and structures.
+- Less work per frame (phase 20, stage C, first part): the graphics settings are looked up once a frame instead of
+  thousands of times, and the walk view stops making new lists and arrays every frame for the shadow passes, the
+  contact shadows, the sprites and the grass, which leaves less for the browser's garbage collector. Nothing looks
+  different.
 - New: the **graphics test** (Settings → Help, and the debug menu), about ten minutes on a new test place, the Graphics
   bench. It measures what each graphics setting costs on your device: the 17 Expert dials and five hidden ones, five
   steps each, then everything at its lowest and highest. It ends with a table, costliest first, and Save the report.

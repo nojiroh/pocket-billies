@@ -1,5 +1,9 @@
 # Phase 07 - Portraits (animated eyes and mouth)
 
+> **2026-10-19: work started on the branch `phase-07-portraits`.** The owner chose 64 px, a face kit cut from AI part
+> sheets, and a head that moves freely (sub-pixel, rotating) on a still body, which replaces the "whole pixels only"
+> motion below. Decisions, data format, status and next steps: [07-plan.md](07-plan.md).
+
 ## Goal
 A new portrait system, replacing the old one. Only the eyes and mouth animate; the head may move a little. 32-bit pixel art (full colour with transparency).
 

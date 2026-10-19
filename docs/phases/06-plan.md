@@ -182,7 +182,7 @@ Order follows the roadmap's priority on Billies and robots: the screens they nee
 | **06-2** ✓ (PR #26) | A card and details sheet shared by Billies and bots (parts, sizes, weight, the Prime badge), Team screen, the starter pick card redone, the fallback starter list and step-by-step intro removed, the old money toasts trimmed | Team, details and the pick on the new look; UI tests for them |
 | **06-2b** ✓ (PR #28) | The new opening (section above): Hazel fights Blake herself, then the pick (tap Hazel for hot takes), then Blake's battle with her bad, obtrusive tips and her "too fast" comments | The opening plays through; the smoke phone flow follows it |
 | **06-3** ✓ (PR #29) | Dialogue box with portrait slot, battle menus and battle text, Bag, the robot builder shell (phase 17); remove the painted battle stage and the classic HUD (section above) | Battle reads one line at a time; every battle on the 3D stage, rooms included |
-| **06-4** | Guide, Trainer card, Settings, shops, dressing room, friends; Studio gallery; delete the emptied CSS; accessibility pass | All screens moved, no innerHTML with untrusted values, tag `phase-06-done` |
+| **06-4** ✓ | Guide, Trainer card, Settings, shops, dressing room, friends; Studio gallery; delete the emptied CSS; accessibility pass | Done 2026-10-19 except the module split (ui.js and the four old CSS files remain); see docs/HANDOFF.md |
 
 Each session: lint, type-check, module check, unit tests, the UI tests for the screens it moved, screenshots of those
 screens at 390 px in both themes attached to the handoff.

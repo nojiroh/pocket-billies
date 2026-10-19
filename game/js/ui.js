@@ -86,6 +86,7 @@ import {
   xpFor,
 } from './logic/rules.js';
 import { TOAST_MS, toastAdd, toastItem, toastTime } from './logic/messages.js';
+import { readableBg } from './logic/colors.js';
 import { pbFloat, pbInboxDot, pbInboxPop } from './ui-kit.js';
 import { newSaveKeepingPreferences } from './logic/saves.js';
 import {
@@ -100,6 +101,7 @@ import {
   runTurn,
   startWild,
 } from './logic/battle-engine.js';
+import { setStoryFlag } from './logic/script.js';
 import {
   activeBattle,
   escapeHtml,
@@ -188,15 +190,8 @@ import { flyMenu, rideGlassLift } from './airship.js';
 import { postcardCheck, renderPostcards } from './postcards.js';
 import { renderBag } from './bag.js';
 import { friendsHTML } from './friends.js';
-import {
-  legendCheck,
-  personTalk,
-  storyCheck,
-  storyFlags,
-  storyMovedCheck,
-  storyRivalBattle,
-  trainerTalk,
-} from './story.js';
+import { legendCheck, personTalk, storyCheck, storyMovedCheck, storyRivalBattle, trainerTalk } from './story.js';
+import { storyResumeCheck } from './story-stage.js';
 import {
   arrivedAt,
   challengeCardHTML,
@@ -209,6 +204,7 @@ import { workshopAction, workshopSectionHTML } from './workshop.js';
 /* eslint-disable no-func-assign */
 expose({
   BOX_SORTS: [() => BOX_SORTS],
+  PILL_COLORS: [() => PILL_COLORS],
   RARITY_NAMES: [() => RARITY_NAMES],
   SCREENS: [() => SCREENS],
   TABS: [() => TABS],
@@ -256,6 +252,7 @@ expose({
   openInbox: [() => openInbox, v => (openInbox = v)],
   openSettings: [() => openSettings, v => ((openSettings = v), provide({ openSettings }))],
   paintWorldMapCard: [() => paintWorldMapCard, v => ((paintWorldMapCard = v), provide({ paintWorldMapCard }))],
+  pillColor: [() => pillColor],
   pixelSky: [() => pixelSky],
   pixelSkyTick: [() => pixelSkyTick, v => (pixelSkyTick = v)],
   plateVars: [() => plateVars],
@@ -331,8 +328,11 @@ export function setRenderOverlay(v) {
   provide({ renderOverlay });
 }
 /* to-module: end */
+/* phase 06-4: the pill's colour is the type's, deepened just enough for its label to read at 4.5:1 (logic/colors.js) */
+const PILL_COLORS = {};
+const pillColor = t => (PILL_COLORS[t] = PILL_COLORS[t] || readableBg(TYPE_COLORS[t][0], TYPE_COLORS[t][1]));
 export const typeBadgeHTML = t =>
-  `<span class="chip" style="--tc:${TYPE_COLORS[t][0]};--tf:${TYPE_COLORS[t][1]}">${t === 'None' ? 'Normal' : t}</span>`;
+  `<span class="chip" style="--tc:${pillColor(t)};--tf:${TYPE_COLORS[t][1]}">${t === 'None' ? 'Normal' : t}</span>`;
 provide({ typeBadgeHTML }); /* to-module */
 const statusBadgeHTML = st => (st ? `<span class="stb st-${st}">${STATUS_NAMES[st]}</span>` : '');
 provide({ statusBadgeHTML }); /* to-module */
@@ -1364,6 +1364,7 @@ function exitPrompt(e) {
 }
 setInterval(() => {
   try {
+    if (typeof storyResumeCheck === 'function') storyResumeCheck();
     if (typeof storyCheck === 'function') storyCheck();
     if (typeof legendCheck === 'function') legendCheck();
     if (typeof storyMovedCheck === 'function') storyMovedCheck();
@@ -1732,12 +1733,15 @@ function dexStatus(id) {
 }
 function guideTabs() {
   const t = uiState.guideTab || 'dex';
-  return `<div class="seg guide-tabs">${[
+  return `<div class="seg guide-tabs" role="tablist" aria-label="Field Guide">${[
     ['dex', 'Billies'],
     ['lore', 'Lore'],
     ['cards', 'Postcards'],
   ]
-    .map(([k, n]) => `<button class="${k === t ? 'on' : ''}" data-a="guidetab" data-k="${k}">${n}</button>`)
+    .map(
+      ([k, n]) =>
+        `<button class="${k === t ? 'on' : ''}" role="tab" aria-selected="${k === t}" data-a="guidetab" data-k="${k}">${n}</button>`
+    )
     .join('')}</div>`;
 }
 function renderGuide() {
@@ -2274,7 +2278,7 @@ export function startGame(l, o = {}) {
   saveData.trip = { node: START_NODE, plan: [] };
   saveData.visited = { [START_NODE]: 1 };
   saveData.mapSeen = null;
-  if (typeof storyFlags === 'function') storyFlags().copperleafNote = 1;
+  setStoryFlag('copperleafNote');
   for (let i = 0; i < R.starterEncounters; i++) spawn(true);
   const egg = R.starterEgg && EGGS[R.starterEgg] ? addEgg(R.starterEgg) : false;
   save();

@@ -46,6 +46,7 @@ expose({
   STATUS_NAMES: [() => STATUS_NAMES],
   STAT_IDS: [() => STAT_IDS],
   STAT_NAMES: [() => STAT_NAMES],
+  STORY_DATA: [() => STORY_DATA],
   TRAINERS: [() => TRAINERS],
   TYPES: [() => TYPES],
   TYPE_COLORS: [() => TYPE_COLORS],
@@ -376,6 +377,8 @@ export const ITEMS = gameData.items;
 export const PEOPLE = gameData.people;
 provide({ PEOPLE }); /* to-module */
 export const SHOPS = gameData.shops || {};
+/* Project Story: the story layer's flags, speakers, quests and start presets (story.json) */
+export const STORY_DATA = gameData.story;
 /* ---------- trainers: plain data, turned into teams when a battle starts ---------- */
 export const TRAINERS = /** @type {Record<string, TrainerEntry>} */ (gameData.trainers || {});
 /* v47: a "tutorial" trainer only battles in a story scene (blake0, in the opening); it stands on no stop */
