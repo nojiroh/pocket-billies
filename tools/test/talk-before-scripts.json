@@ -1,0 +1,2721 @@
+{
+ "about": "Project Story S2: what the game said before its conversations moved into scripts, recorded in the real game (?fixture=town, headless) with talkLine, startTrainer and healAll swapped for recorders, on main at 509c990: personTalk (each person, visit after visit), trainerTalk (first meeting, met, beaten; a trainer with intro lines runs rivalScene), talkHazel (Index 1/6/20, badges 0/1/3, Blake beaten on the golf course or not, the player named Rae), storyAfterRival (win, lose, skipped) and storyEnding. tools/test/story-snapshot.test.mjs plays the scripts against it.",
+ "person:juniper": [
+  [
+   {
+    "who": "juniper",
+    "expr": "happy",
+    "text": "There you are, dear. Up and about already? You came down in my lavender. Flattened half of it."
+   },
+   {
+    "who": "juniper",
+    "expr": null,
+    "text": "Hazel looked you over and says you’ll live. I’ve made up the little room in my cottage. It’s yours for as long as you want it."
+   },
+   {
+    "who": "juniper",
+    "expr": null,
+    "text": "Come in whenever you like. Have a rest, and your Billies will feel better for it too."
+   }
+  ],
+  [
+   {
+    "who": "juniper",
+    "expr": "happy",
+    "text": "Honey’s in the jar by the door. Don’t tell the bees I said so."
+   }
+  ],
+  [
+   {
+    "who": "juniper",
+    "expr": null,
+    "text": "Hazel works too hard. Take her some honey if you’re passing the lab."
+   }
+  ],
+  [
+   {
+    "who": "juniper",
+    "expr": null,
+    "text": "The wind sail turns all day and keeps the lanterns lit all night. Copper, sun and a bit of wind: that’s all a village needs."
+   }
+  ],
+  [
+   {
+    "who": "juniper",
+    "expr": null,
+    "text": "Marigold Town is down Hedgerow Lane. Mind the stepping stones; the middle one wobbles."
+   }
+  ],
+  [
+   {
+    "who": "juniper",
+    "expr": null,
+    "text": "Things fall into Copperleaf every week or so. Mostly furniture. You’re the first one I’ve kept."
+   }
+  ],
+  [
+   {
+    "who": "juniper",
+    "expr": "happy",
+    "text": "You’ve been walking! I can tell. You’ve got that Hollow Earth colour in your cheeks."
+   }
+  ],
+  [
+   {
+    "who": "juniper",
+    "expr": null,
+    "text": "The bees know everyone in Copperleaf. They’ll get used to you."
+   }
+  ],
+  [
+   {
+    "who": "juniper",
+    "expr": "happy",
+    "text": "Honey’s in the jar by the door. Don’t tell the bees I said so."
+   }
+  ]
+ ],
+ "person:nacre": [
+  [
+   {
+    "who": "nacre",
+    "expr": null,
+    "text": "You came down the lift? Then you’ve seen the pipes. Everyone up there thinks they carry water."
+   },
+   {
+    "who": "nacre",
+    "expr": null,
+    "text": "They carry gold. Ours. Vinylla’s pressing plant has been pumping the city’s vaults dry for a year to pay for her tour."
+   },
+   {
+    "who": "nacre",
+    "expr": null,
+    "text": "The ledger is in the Exchange, if you can stomach the numbers. Somebody ought to send her the bill."
+   }
+  ],
+  [
+   {
+    "who": "nacre",
+    "expr": null,
+    "text": "We sank because we wouldn’t spend. Now someone else is spending it for us. There’s a lesson in that, but I’m too cross to learn it."
+   }
+  ],
+  [
+   {
+    "who": "nacre",
+    "expr": null,
+    "text": "The bubble trams run all night. There is no night down here, only the lamps."
+   }
+  ],
+  [
+   {
+    "who": "nacre",
+    "expr": null,
+    "text": "Mind your coins on the lift. Things that fall in the trench stay in the trench."
+   }
+  ],
+  [
+   {
+    "who": "nacre",
+    "expr": null,
+    "text": "The mirrors bring the Inner Sun down to us. Nobody can own the sun, not even in Pearlantis. Especially not in Pearlantis."
+   }
+  ],
+  [
+   {
+    "who": "nacre",
+    "expr": null,
+    "text": "We sank because we wouldn’t spend. Now someone else is spending it for us. There’s a lesson in that, but I’m too cross to learn it."
+   }
+  ]
+ ],
+ "trainer:chad": [
+  [
+   {
+    "who": "chad",
+    "expr": "angry",
+    "text": "Hey! Surface stray! Wait up!"
+   },
+   {
+    "who": "chad",
+    "expr": "happy",
+    "text": "I’ve been training out here all morning. Mine knows a lot more than Tackle now."
+   },
+   {
+    "who": "chad",
+    "expr": null,
+    "text": "What happened outside the lab doesn’t count. This one counts."
+   },
+   {
+    "who": "chad",
+    "expr": "angry",
+    "text": "Nobody plays through this course until we settle it. Let’s go!"
+   },
+   {
+    "cmd": "battle chad"
+   }
+  ],
+  [
+   {
+    "who": "chad",
+    "expr": "happy",
+    "text": "Hey! I’ve been waiting for you."
+   },
+   {
+    "who": "chad",
+    "expr": null,
+    "text": "I picked the starter that beats yours. Let’s see what you’ve got."
+   },
+   {
+    "cmd": "battle chad"
+   }
+  ],
+  [
+   {
+    "who": "chad",
+    "expr": "happy",
+    "text": "Back for more? All right!"
+   },
+   {
+    "cmd": "battle chad"
+   }
+  ]
+ ],
+ "trainer:crude": [
+  [
+   {
+    "who": "crude",
+    "expr": "happy",
+    "text": "Welcome to the Fizzwell arena. Here we battle in a sandstorm."
+   },
+   {
+    "who": "crude",
+    "expr": null,
+    "text": "Hope you brought goggles."
+   },
+   {
+    "cmd": "battle crude"
+   }
+  ],
+  [
+   {
+    "who": "crude",
+    "expr": "happy",
+    "text": "Welcome to the Fizzwell arena. Here we battle in a sandstorm."
+   },
+   {
+    "who": "crude",
+    "expr": null,
+    "text": "Hope you brought goggles."
+   },
+   {
+    "cmd": "battle crude"
+   }
+  ],
+  [
+   {
+    "who": "crude",
+    "expr": "happy",
+    "text": "Back for more? All right!"
+   },
+   {
+    "cmd": "battle crude"
+   }
+  ]
+ ],
+ "trainer:markdown": [
+  [
+   {
+    "who": "markdown",
+    "expr": "happy",
+    "text": "Welcome to the Lanternhall arena. Polished floors, polished team."
+   },
+   {
+    "who": "markdown",
+    "expr": null,
+    "text": "Every Steel Billie on my team makes the others hit harder."
+   },
+   {
+    "cmd": "battle markdown"
+   }
+  ],
+  [
+   {
+    "who": "markdown",
+    "expr": "happy",
+    "text": "Welcome to the Lanternhall arena. Polished floors, polished team."
+   },
+   {
+    "who": "markdown",
+    "expr": null,
+    "text": "Every Steel Billie on my team makes the others hit harder."
+   },
+   {
+    "cmd": "battle markdown"
+   }
+  ],
+  [
+   {
+    "who": "markdown",
+    "expr": "happy",
+    "text": "Back for more? All right!"
+   },
+   {
+    "cmd": "battle markdown"
+   }
+  ]
+ ],
+ "trainer:chad2": [
+  [
+   {
+    "who": "chad",
+    "expr": "angry",
+    "text": "There you are! I’ve been training on the farm all week."
+   },
+   {
+    "who": "chad",
+    "expr": null,
+    "text": "My starter evolved. Did yours? Doesn’t matter. I’m winning this time."
+   },
+   {
+    "who": "chad",
+    "expr": "angry",
+    "text": "Rematch. Right here, right now!"
+   },
+   {
+    "cmd": "battle chad2"
+   }
+  ],
+  [
+   {
+    "who": "chad",
+    "expr": "happy",
+    "text": "Round two. I’ve been waiting all week."
+   },
+   {
+    "cmd": "battle chad2"
+   }
+  ],
+  [
+   {
+    "who": "chad",
+    "expr": "happy",
+    "text": "Back for more? All right!"
+   },
+   {
+    "cmd": "battle chad2"
+   }
+  ]
+ ],
+ "trainer:broker": [
+  [
+   {
+    "who": "broker",
+    "expr": "happy",
+    "text": "Buy low, battle high!"
+   },
+   {
+    "who": "broker",
+    "expr": null,
+    "text": "My team is fully diversified."
+   },
+   {
+    "cmd": "battle broker"
+   }
+  ],
+  [
+   {
+    "who": "broker",
+    "expr": "happy",
+    "text": "Buy low, battle high!"
+   },
+   {
+    "who": "broker",
+    "expr": null,
+    "text": "My team is fully diversified."
+   },
+   {
+    "cmd": "battle broker"
+   }
+  ],
+  [
+   {
+    "who": "broker",
+    "expr": "happy",
+    "text": "Back for more? All right!"
+   },
+   {
+    "cmd": "battle broker"
+   }
+  ]
+ ],
+ "trainer:intern": [
+  [
+   {
+    "who": "intern",
+    "expr": "happy",
+    "text": "I’m only here for the experience. And the battles."
+   },
+   {
+    "who": "intern",
+    "expr": null,
+    "text": "Unpaid, but very motivated!"
+   },
+   {
+    "cmd": "battle intern"
+   }
+  ],
+  [
+   {
+    "who": "intern",
+    "expr": "happy",
+    "text": "I’m only here for the experience. And the battles."
+   },
+   {
+    "who": "intern",
+    "expr": null,
+    "text": "Unpaid, but very motivated!"
+   },
+   {
+    "cmd": "battle intern"
+   }
+  ],
+  [
+   {
+    "who": "intern",
+    "expr": "happy",
+    "text": "Back for more? All right!"
+   },
+   {
+    "cmd": "battle intern"
+   }
+  ]
+ ],
+ "trainer:alta": [
+  [
+   {
+    "who": "alta",
+    "expr": "happy",
+    "text": "Welcome to the top. The air is thin and so is my patience."
+   },
+   {
+    "who": "alta",
+    "expr": null,
+    "text": "My Flying team has never once looked down."
+   },
+   {
+    "cmd": "battle alta"
+   }
+  ],
+  [
+   {
+    "who": "alta",
+    "expr": "happy",
+    "text": "Welcome to the top. The air is thin and so is my patience."
+   },
+   {
+    "who": "alta",
+    "expr": null,
+    "text": "My Flying team has never once looked down."
+   },
+   {
+    "cmd": "battle alta"
+   }
+  ],
+  [
+   {
+    "who": "alta",
+    "expr": "happy",
+    "text": "Back for more? All right!"
+   },
+   {
+    "cmd": "battle alta"
+   }
+  ]
+ ],
+ "trainer:marina": [
+  [
+   {
+    "who": "marina",
+    "expr": "happy",
+    "text": "Welcome to Palmhaven Town. Relax, nobody here asks questions."
+   },
+   {
+    "who": "marina",
+    "expr": null,
+    "text": "My Water team flows around every attack."
+   },
+   {
+    "cmd": "battle marina"
+   }
+  ],
+  [
+   {
+    "who": "marina",
+    "expr": "happy",
+    "text": "Welcome to Palmhaven Town. Relax, nobody here asks questions."
+   },
+   {
+    "who": "marina",
+    "expr": null,
+    "text": "My Water team flows around every attack."
+   },
+   {
+    "cmd": "battle marina"
+   }
+  ],
+  [
+   {
+    "who": "marina",
+    "expr": "happy",
+    "text": "Back for more? All right!"
+   },
+   {
+    "cmd": "battle marina"
+   }
+  ]
+ ],
+ "trainer:hiker": [
+  [
+   {
+    "who": "hiker",
+    "expr": "happy",
+    "text": "Nice day for a climb!"
+   },
+   {
+    "who": "hiker",
+    "expr": null,
+    "text": "My Billies carry all my gear."
+   },
+   {
+    "cmd": "battle hiker"
+   }
+  ],
+  [
+   {
+    "who": "hiker",
+    "expr": "happy",
+    "text": "Nice day for a climb!"
+   },
+   {
+    "who": "hiker",
+    "expr": null,
+    "text": "My Billies carry all my gear."
+   },
+   {
+    "cmd": "battle hiker"
+   }
+  ],
+  [
+   {
+    "who": "hiker",
+    "expr": "happy",
+    "text": "Back for more? All right!"
+   },
+   {
+    "cmd": "battle hiker"
+   }
+  ]
+ ],
+ "trainer:diver": [
+  [
+   {
+    "who": "diver",
+    "expr": "happy",
+    "text": "Ahoy! Fancy a dip?"
+   },
+   {
+    "who": "diver",
+    "expr": null,
+    "text": "My team found this sandbar. Finders keepers!"
+   },
+   {
+    "cmd": "battle diver"
+   }
+  ],
+  [
+   {
+    "who": "diver",
+    "expr": "happy",
+    "text": "Ahoy! Fancy a dip?"
+   },
+   {
+    "who": "diver",
+    "expr": null,
+    "text": "My team found this sandbar. Finders keepers!"
+   },
+   {
+    "cmd": "battle diver"
+   }
+  ],
+  [
+   {
+    "who": "diver",
+    "expr": "happy",
+    "text": "Back for more? All right!"
+   },
+   {
+    "cmd": "battle diver"
+   }
+  ]
+ ],
+ "trainer:geo": [
+  [
+   {
+    "who": "geo",
+    "expr": "happy",
+    "text": "Careful, the ground is literally melting."
+   },
+   {
+    "who": "geo",
+    "expr": null,
+    "text": "I study volcanoes. Mostly I study running away."
+   },
+   {
+    "cmd": "battle geo"
+   }
+  ],
+  [
+   {
+    "who": "geo",
+    "expr": "happy",
+    "text": "Careful, the ground is literally melting."
+   },
+   {
+    "who": "geo",
+    "expr": null,
+    "text": "I study volcanoes. Mostly I study running away."
+   },
+   {
+    "cmd": "battle geo"
+   }
+  ],
+  [
+   {
+    "who": "geo",
+    "expr": "happy",
+    "text": "Back for more? All right!"
+   },
+   {
+    "cmd": "battle geo"
+   }
+  ]
+ ],
+ "trainer:skipper": [
+  [
+   {
+    "who": "skipper",
+    "expr": "happy",
+    "text": "Welcome aboard! Er, I mean, a-lake."
+   },
+   {
+    "who": "skipper",
+    "expr": null,
+    "text": "This lake is so liquid you can ride right across it."
+   },
+   {
+    "cmd": "battle skipper"
+   }
+  ],
+  [
+   {
+    "who": "skipper",
+    "expr": "happy",
+    "text": "Welcome aboard! Er, I mean, a-lake."
+   },
+   {
+    "who": "skipper",
+    "expr": null,
+    "text": "This lake is so liquid you can ride right across it."
+   },
+   {
+    "cmd": "battle skipper"
+   }
+  ],
+  [
+   {
+    "who": "skipper",
+    "expr": "happy",
+    "text": "Back for more? All right!"
+   },
+   {
+    "cmd": "battle skipper"
+   }
+  ]
+ ],
+ "trainer:blake0": [
+  [
+   {
+    "who": "chad",
+    "expr": "happy",
+    "text": "Mine beats yours. Watch."
+   },
+   {
+    "cmd": "battle blake0"
+   }
+  ],
+  [
+   {
+    "who": "chad",
+    "expr": "happy",
+    "text": "Mine beats yours. Watch."
+   },
+   {
+    "cmd": "battle blake0"
+   }
+  ],
+  [
+   {
+    "who": "chad",
+    "expr": "happy",
+    "text": "Back for more? All right!"
+   },
+   {
+    "cmd": "battle blake0"
+   }
+  ]
+ ],
+ "trainer:poppy": [
+  [
+   {
+    "who": "poppy",
+    "expr": "happy",
+    "text": "Everything here grows back twice as fast. Including my temper, since the merch stalls arrived."
+   },
+   {
+    "who": "poppy",
+    "expr": null,
+    "text": "Let’s see if your team blooms under pressure."
+   },
+   {
+    "cmd": "battle poppy"
+   }
+  ],
+  [
+   {
+    "who": "poppy",
+    "expr": "happy",
+    "text": "Everything here grows back twice as fast. Including my temper, since the merch stalls arrived."
+   },
+   {
+    "who": "poppy",
+    "expr": null,
+    "text": "Let’s see if your team blooms under pressure."
+   },
+   {
+    "cmd": "battle poppy"
+   }
+  ],
+  [
+   {
+    "who": "poppy",
+    "expr": "happy",
+    "text": "Back for more? All right!"
+   },
+   {
+    "cmd": "battle poppy"
+   }
+  ]
+ ],
+ "trainer:variant_fest1": [
+  [
+   {
+    "who": "variant",
+    "expr": "happy",
+    "text": "I bought the festival ticket, the upgrade, the upgrade to the upgrade and the shirt that says I did."
+   },
+   {
+    "cmd": "battle variant_fest1"
+   }
+  ],
+  [
+   {
+    "who": "variant",
+    "expr": "happy",
+    "text": "I bought the festival ticket, the upgrade, the upgrade to the upgrade and the shirt that says I did."
+   },
+   {
+    "cmd": "battle variant_fest1"
+   }
+  ],
+  [
+   {
+    "who": "variant",
+    "expr": "happy",
+    "text": "Back for more? All right!"
+   },
+   {
+    "cmd": "battle variant_fest1"
+   }
+  ]
+ ],
+ "trainer:variant_fest2": [
+  [
+   {
+    "who": "variant",
+    "expr": "happy",
+    "text": "Low number, see? I was a fan before it was limited."
+   },
+   {
+    "cmd": "battle variant_fest2"
+   }
+  ],
+  [
+   {
+    "who": "variant",
+    "expr": "happy",
+    "text": "Low number, see? I was a fan before it was limited."
+   },
+   {
+    "cmd": "battle variant_fest2"
+   }
+  ],
+  [
+   {
+    "who": "variant",
+    "expr": "happy",
+    "text": "Back for more? All right!"
+   },
+   {
+    "cmd": "battle variant_fest2"
+   }
+  ]
+ ],
+ "trainer:gardener": [
+  [
+   {
+    "who": "hiker",
+    "expr": "happy",
+    "text": "I sweep the petals every morning. They fall again by lunch. I think that’s the job."
+   },
+   {
+    "cmd": "battle gardener"
+   }
+  ],
+  [
+   {
+    "who": "hiker",
+    "expr": "happy",
+    "text": "I sweep the petals every morning. They fall again by lunch. I think that’s the job."
+   },
+   {
+    "cmd": "battle gardener"
+   }
+  ],
+  [
+   {
+    "who": "hiker",
+    "expr": "happy",
+    "text": "Back for more? All right!"
+   },
+   {
+    "cmd": "battle gardener"
+   }
+  ]
+ ],
+ "trainer:birder": [
+  [
+   {
+    "who": "skipper",
+    "expr": "happy",
+    "text": "Shh. A Kashingcrane. They only nest where the harbour fees are low."
+   },
+   {
+    "cmd": "battle birder"
+   }
+  ],
+  [
+   {
+    "who": "skipper",
+    "expr": "happy",
+    "text": "Shh. A Kashingcrane. They only nest where the harbour fees are low."
+   },
+   {
+    "cmd": "battle birder"
+   }
+  ],
+  [
+   {
+    "who": "skipper",
+    "expr": "happy",
+    "text": "Back for more? All right!"
+   },
+   {
+    "cmd": "battle birder"
+   }
+  ]
+ ],
+ "trainer:vault": [
+  [
+   {
+    "who": "vault",
+    "expr": "happy",
+    "text": "Welcome to Goldvine Town. Everything you can see is mine, and everything you can’t see is in a vault, and also mine."
+   },
+   {
+    "who": "vault",
+    "expr": null,
+    "text": "I rented the vaults to a pop star. And myself, as it turns out. Read the small print, child."
+   },
+   {
+    "cmd": "battle vault"
+   }
+  ],
+  [
+   {
+    "who": "vault",
+    "expr": "happy",
+    "text": "Welcome to Goldvine Town. Everything you can see is mine, and everything you can’t see is in a vault, and also mine."
+   },
+   {
+    "who": "vault",
+    "expr": null,
+    "text": "I rented the vaults to a pop star. And myself, as it turns out. Read the small print, child."
+   },
+   {
+    "cmd": "battle vault"
+   }
+  ],
+  [
+   {
+    "who": "vault",
+    "expr": "happy",
+    "text": "Back for more? All right!"
+   },
+   {
+    "cmd": "battle vault"
+   }
+  ]
+ ],
+ "trainer:variant_vault": [
+  [
+   {
+    "who": "variant",
+    "expr": "happy",
+    "text": "These vaults are full of variants. Vinyl ones. Of the same record. You wouldn’t understand."
+   },
+   {
+    "cmd": "battle variant_vault"
+   }
+  ],
+  [
+   {
+    "who": "variant",
+    "expr": "happy",
+    "text": "These vaults are full of variants. Vinyl ones. Of the same record. You wouldn’t understand."
+   },
+   {
+    "cmd": "battle variant_vault"
+   }
+  ],
+  [
+   {
+    "who": "variant",
+    "expr": "happy",
+    "text": "Back for more? All right!"
+   },
+   {
+    "cmd": "battle variant_vault"
+   }
+  ]
+ ],
+ "trainer:sommelier": [
+  [
+   {
+    "who": "concierge",
+    "expr": "happy",
+    "text": "Notes of oak, leather and a very aggressive pricing strategy."
+   },
+   {
+    "cmd": "battle sommelier"
+   }
+  ],
+  [
+   {
+    "who": "concierge",
+    "expr": "happy",
+    "text": "Notes of oak, leather and a very aggressive pricing strategy."
+   },
+   {
+    "cmd": "battle sommelier"
+   }
+  ],
+  [
+   {
+    "who": "concierge",
+    "expr": "happy",
+    "text": "Back for more? All right!"
+   },
+   {
+    "cmd": "battle sommelier"
+   }
+  ]
+ ],
+ "trainer:accountant": [
+  [
+   {
+    "who": "broker",
+    "expr": "happy",
+    "text": "Flat tax! Everyone pays the same. I have a form explaining why that’s fair. It’s very long."
+   },
+   {
+    "cmd": "battle accountant"
+   }
+  ],
+  [
+   {
+    "who": "broker",
+    "expr": "happy",
+    "text": "Flat tax! Everyone pays the same. I have a form explaining why that’s fair. It’s very long."
+   },
+   {
+    "cmd": "battle accountant"
+   }
+  ],
+  [
+   {
+    "who": "broker",
+    "expr": "happy",
+    "text": "Back for more? All right!"
+   },
+   {
+    "cmd": "battle accountant"
+   }
+  ]
+ ],
+ "trainer:prospector": [
+  [
+   {
+    "who": "miner",
+    "expr": "happy",
+    "text": "Struck gold in ’98. Struck it again in ’99. It was the same gold. I keep losing it."
+   },
+   {
+    "cmd": "battle prospector"
+   }
+  ],
+  [
+   {
+    "who": "miner",
+    "expr": "happy",
+    "text": "Struck gold in ’98. Struck it again in ’99. It was the same gold. I keep losing it."
+   },
+   {
+    "cmd": "battle prospector"
+   }
+  ],
+  [
+   {
+    "who": "miner",
+    "expr": "happy",
+    "text": "Back for more? All right!"
+   },
+   {
+    "cmd": "battle prospector"
+   }
+  ]
+ ],
+ "trainer:morel": [
+  [
+   {
+    "who": "morel",
+    "expr": "happy",
+    "text": "The forest remembers every spore. The Variants are grinding up its memory to make a record shine."
+   },
+   {
+    "who": "morel",
+    "expr": null,
+    "text": "Breathe in. Now battle."
+   },
+   {
+    "cmd": "battle morel"
+   }
+  ],
+  [
+   {
+    "who": "morel",
+    "expr": "happy",
+    "text": "The forest remembers every spore. The Variants are grinding up its memory to make a record shine."
+   },
+   {
+    "who": "morel",
+    "expr": null,
+    "text": "Breathe in. Now battle."
+   },
+   {
+    "cmd": "battle morel"
+   }
+  ],
+  [
+   {
+    "who": "morel",
+    "expr": "happy",
+    "text": "Back for more? All right!"
+   },
+   {
+    "cmd": "battle morel"
+   }
+  ]
+ ],
+ "trainer:variant_spore": [
+  [
+   {
+    "who": "variant",
+    "expr": "happy",
+    "text": "Every spore we grind makes the record shine a little brighter. The forest doesn’t mind. We asked it. It didn’t answer."
+   },
+   {
+    "cmd": "battle variant_spore"
+   }
+  ],
+  [
+   {
+    "who": "variant",
+    "expr": "happy",
+    "text": "Every spore we grind makes the record shine a little brighter. The forest doesn’t mind. We asked it. It didn’t answer."
+   },
+   {
+    "cmd": "battle variant_spore"
+   }
+  ],
+  [
+   {
+    "who": "variant",
+    "expr": "happy",
+    "text": "Back for more? All right!"
+   },
+   {
+    "cmd": "battle variant_spore"
+   }
+  ]
+ ],
+ "trainer:forager": [
+  [
+   {
+    "who": "girl",
+    "expr": "happy",
+    "text": "Never eat a mushroom you can’t afford. Most of these cost more than you."
+   },
+   {
+    "cmd": "battle forager"
+   }
+  ],
+  [
+   {
+    "who": "girl",
+    "expr": "happy",
+    "text": "Never eat a mushroom you can’t afford. Most of these cost more than you."
+   },
+   {
+    "cmd": "battle forager"
+   }
+  ],
+  [
+   {
+    "who": "girl",
+    "expr": "happy",
+    "text": "Back for more? All right!"
+   },
+   {
+    "cmd": "battle forager"
+   }
+  ]
+ ],
+ "trainer:peeper": [
+  [
+   {
+    "who": "hiker",
+    "expr": "happy",
+    "text": "The leaves turn every quarter. I’ve been here forty quarters. I am leaving next quarter."
+   },
+   {
+    "cmd": "battle peeper"
+   }
+  ],
+  [
+   {
+    "who": "hiker",
+    "expr": "happy",
+    "text": "The leaves turn every quarter. I’ve been here forty quarters. I am leaving next quarter."
+   },
+   {
+    "cmd": "battle peeper"
+   }
+  ],
+  [
+   {
+    "who": "hiker",
+    "expr": "happy",
+    "text": "Back for more? All right!"
+   },
+   {
+    "cmd": "battle peeper"
+   }
+  ]
+ ],
+ "trainer:founder": [
+  [
+   {
+    "who": "intern",
+    "expr": "happy",
+    "text": "We’re pre-revenue. Pre-product. Pre-office, now the jungle has it. But the vision is huge."
+   },
+   {
+    "cmd": "battle founder"
+   }
+  ],
+  [
+   {
+    "who": "intern",
+    "expr": "happy",
+    "text": "We’re pre-revenue. Pre-product. Pre-office, now the jungle has it. But the vision is huge."
+   },
+   {
+    "cmd": "battle founder"
+   }
+  ],
+  [
+   {
+    "who": "intern",
+    "expr": "happy",
+    "text": "Back for more? All right!"
+   },
+   {
+    "cmd": "battle founder"
+   }
+  ]
+ ],
+ "trainer:carat": [
+  [
+   {
+    "who": "carat",
+    "expr": "happy",
+    "text": "The Variants want one perfect needle, long enough to play the sun. I’m cutting it. I didn’t ask what for."
+   },
+   {
+    "who": "carat",
+    "expr": null,
+    "text": "I’m asking now. Show me what you’re made of."
+   },
+   {
+    "cmd": "battle carat"
+   }
+  ],
+  [
+   {
+    "who": "carat",
+    "expr": "happy",
+    "text": "The Variants want one perfect needle, long enough to play the sun. I’m cutting it. I didn’t ask what for."
+   },
+   {
+    "who": "carat",
+    "expr": null,
+    "text": "I’m asking now. Show me what you’re made of."
+   },
+   {
+    "cmd": "battle carat"
+   }
+  ],
+  [
+   {
+    "who": "carat",
+    "expr": "happy",
+    "text": "Back for more? All right!"
+   },
+   {
+    "cmd": "battle carat"
+   }
+  ]
+ ],
+ "trainer:variant_needle": [
+  [
+   {
+    "who": "variant",
+    "expr": "happy",
+    "text": "The needle has to be perfect. One scratch and the sun skips."
+   },
+   {
+    "cmd": "battle variant_needle"
+   }
+  ],
+  [
+   {
+    "who": "variant",
+    "expr": "happy",
+    "text": "The needle has to be perfect. One scratch and the sun skips."
+   },
+   {
+    "cmd": "battle variant_needle"
+   }
+  ],
+  [
+   {
+    "who": "variant",
+    "expr": "happy",
+    "text": "Back for more? All right!"
+   },
+   {
+    "cmd": "battle variant_needle"
+   }
+  ]
+ ],
+ "trainer:geologist": [
+  [
+   {
+    "who": "geo",
+    "expr": "happy",
+    "text": "These crystals grew a millimetre a century. The Variants are cutting a metre a day."
+   },
+   {
+    "cmd": "battle geologist"
+   }
+  ],
+  [
+   {
+    "who": "geo",
+    "expr": "happy",
+    "text": "These crystals grew a millimetre a century. The Variants are cutting a metre a day."
+   },
+   {
+    "cmd": "battle geologist"
+   }
+  ],
+  [
+   {
+    "who": "geo",
+    "expr": "happy",
+    "text": "Back for more? All right!"
+   },
+   {
+    "cmd": "battle geologist"
+   }
+  ]
+ ],
+ "trainer:spelunker": [
+  [
+   {
+    "who": "miner",
+    "expr": "happy",
+    "text": "Don’t look into the pool too long. It looks back, and it’s doing your accounts."
+   },
+   {
+    "cmd": "battle spelunker"
+   }
+  ],
+  [
+   {
+    "who": "miner",
+    "expr": "happy",
+    "text": "Don’t look into the pool too long. It looks back, and it’s doing your accounts."
+   },
+   {
+    "cmd": "battle spelunker"
+   }
+  ],
+  [
+   {
+    "who": "miner",
+    "expr": "happy",
+    "text": "Back for more? All right!"
+   },
+   {
+    "cmd": "battle spelunker"
+   }
+  ]
+ ],
+ "trainer:icefisher": [
+  [
+   {
+    "who": "girl",
+    "expr": "happy",
+    "text": "I fish for coins through the ice. The safe is frozen solid, but sometimes the interest leaks out."
+   },
+   {
+    "cmd": "battle icefisher"
+   }
+  ],
+  [
+   {
+    "who": "girl",
+    "expr": "happy",
+    "text": "I fish for coins through the ice. The safe is frozen solid, but sometimes the interest leaks out."
+   },
+   {
+    "cmd": "battle icefisher"
+   }
+  ],
+  [
+   {
+    "who": "girl",
+    "expr": "happy",
+    "text": "Back for more? All right!"
+   },
+   {
+    "cmd": "battle icefisher"
+   }
+  ]
+ ],
+ "trainer:sailor": [
+  [
+   {
+    "who": "skipper",
+    "expr": "happy",
+    "text": "See that shell? Four hundred companies live in it. None of them have ever been seen."
+   },
+   {
+    "cmd": "battle sailor"
+   }
+  ],
+  [
+   {
+    "who": "skipper",
+    "expr": "happy",
+    "text": "See that shell? Four hundred companies live in it. None of them have ever been seen."
+   },
+   {
+    "cmd": "battle sailor"
+   }
+  ],
+  [
+   {
+    "who": "skipper",
+    "expr": "happy",
+    "text": "Back for more? All right!"
+   },
+   {
+    "cmd": "battle sailor"
+   }
+  ]
+ ],
+ "trainer:yachtbroker": [
+  [
+   {
+    "who": "broker",
+    "expr": "happy",
+    "text": "Every yacht in this harbour has a smaller yacht, to get to the bigger yacht. I sell the smallest ones."
+   },
+   {
+    "cmd": "battle yachtbroker"
+   }
+  ],
+  [
+   {
+    "who": "broker",
+    "expr": "happy",
+    "text": "Every yacht in this harbour has a smaller yacht, to get to the bigger yacht. I sell the smallest ones."
+   },
+   {
+    "cmd": "battle yachtbroker"
+   }
+  ],
+  [
+   {
+    "who": "broker",
+    "expr": "happy",
+    "text": "Back for more? All right!"
+   },
+   {
+    "cmd": "battle yachtbroker"
+   }
+  ]
+ ],
+ "trainer:variant_press": [
+  [
+   {
+    "who": "variant",
+    "expr": "happy",
+    "text": "Lucky number! I got to stand by the press. I can feel it in my teeth."
+   },
+   {
+    "cmd": "battle variant_press"
+   }
+  ],
+  [
+   {
+    "who": "variant",
+    "expr": "happy",
+    "text": "Lucky number! I got to stand by the press. I can feel it in my teeth."
+   },
+   {
+    "cmd": "battle variant_press"
+   }
+  ],
+  [
+   {
+    "who": "variant",
+    "expr": "happy",
+    "text": "Back for more? All right!"
+   },
+   {
+    "cmd": "battle variant_press"
+   }
+  ]
+ ],
+ "trainer:cass": [
+  [
+   {
+    "who": "cass",
+    "expr": "angry",
+    "text": "Stop right there. This is a closed set."
+   },
+   {
+    "who": "cass",
+    "expr": null,
+    "text": "Wait. You? We dropped you. Down a hole. On the surface."
+   },
+   {
+    "who": "cass",
+    "expr": "sad",
+    "text": "You were the best sound engineer the tour ever had. Then you read the plans."
+   },
+   {
+    "who": "cass",
+    "expr": "angry",
+    "text": "It doesn’t matter. The press is nearly done, and you’re not on the guest list."
+   },
+   {
+    "cmd": "battle cass"
+   }
+  ],
+  [
+   {
+    "who": "cass",
+    "expr": "happy",
+    "text": "Nothing personal. It’s just the bottom line."
+   },
+   {
+    "cmd": "battle cass"
+   }
+  ],
+  [
+   {
+    "who": "cass",
+    "expr": "happy",
+    "text": "Back for more? All right!"
+   },
+   {
+    "cmd": "battle cass"
+   }
+  ]
+ ],
+ "trainer:sysadmin": [
+  [
+   {
+    "who": "intern",
+    "expr": "happy",
+    "text": "Have you tried turning the Cloud off and on again? I have. It rained for a week."
+   },
+   {
+    "cmd": "battle sysadmin"
+   }
+  ],
+  [
+   {
+    "who": "intern",
+    "expr": "happy",
+    "text": "Have you tried turning the Cloud off and on again? I have. It rained for a week."
+   },
+   {
+    "cmd": "battle sysadmin"
+   }
+  ],
+  [
+   {
+    "who": "intern",
+    "expr": "happy",
+    "text": "Back for more? All right!"
+   },
+   {
+    "cmd": "battle sysadmin"
+   }
+  ]
+ ],
+ "trainer:chad3": [
+  [
+   {
+    "who": "chad",
+    "expr": "angry",
+    "text": "There you are. Took you long enough."
+   },
+   {
+    "who": "chad",
+    "expr": null,
+    "text": "Vinylla’s people offered to buy my team. All of it. Dad’s clone too, for the collection."
+   },
+   {
+    "who": "chad",
+    "expr": "sad",
+    "text": "I said no. I think I said no. I’m not used to saying it."
+   },
+   {
+    "who": "chad",
+    "expr": "angry",
+    "text": "Battle me. If I can still beat you, I meant it."
+   },
+   {
+    "cmd": "battle chad3"
+   }
+  ],
+  [
+   {
+    "who": "chad",
+    "expr": "happy",
+    "text": "For the record: this isn’t for sale."
+   },
+   {
+    "cmd": "battle chad3"
+   }
+  ],
+  [
+   {
+    "who": "chad",
+    "expr": "happy",
+    "text": "Back for more? All right!"
+   },
+   {
+    "cmd": "battle chad3"
+   }
+  ]
+ ],
+ "trainer:vip": [
+  [
+   {
+    "who": "variant",
+    "expr": "happy",
+    "text": "VIP means Very Important Purchaser. I have every variant. Even the ones that don’t exist yet."
+   },
+   {
+    "cmd": "battle vip"
+   }
+  ],
+  [
+   {
+    "who": "variant",
+    "expr": "happy",
+    "text": "VIP means Very Important Purchaser. I have every variant. Even the ones that don’t exist yet."
+   },
+   {
+    "cmd": "battle vip"
+   }
+  ],
+  [
+   {
+    "who": "variant",
+    "expr": "happy",
+    "text": "Back for more? All right!"
+   },
+   {
+    "cmd": "battle vip"
+   }
+  ]
+ ],
+ "trainer:mascot": [
+  [
+   {
+    "who": "boy",
+    "expr": "happy",
+    "text": "I was Bubbles the Bubble for nine years. They never told me it burst. I found out from the newspaper."
+   },
+   {
+    "cmd": "battle mascot"
+   }
+  ],
+  [
+   {
+    "who": "boy",
+    "expr": "happy",
+    "text": "I was Bubbles the Bubble for nine years. They never told me it burst. I found out from the newspaper."
+   },
+   {
+    "cmd": "battle mascot"
+   }
+  ],
+  [
+   {
+    "who": "boy",
+    "expr": "happy",
+    "text": "Back for more? All right!"
+   },
+   {
+    "cmd": "battle mascot"
+   }
+  ]
+ ],
+ "trainer:variant_vip2": [
+  [
+   {
+    "who": "variant",
+    "expr": "happy",
+    "text": "Number one. The first fan. I was here before the tower. I watched them build it round me."
+   },
+   {
+    "cmd": "battle variant_vip2"
+   }
+  ],
+  [
+   {
+    "who": "variant",
+    "expr": "happy",
+    "text": "Number one. The first fan. I was here before the tower. I watched them build it round me."
+   },
+   {
+    "cmd": "battle variant_vip2"
+   }
+  ],
+  [
+   {
+    "who": "variant",
+    "expr": "happy",
+    "text": "Back for more? All right!"
+   },
+   {
+    "cmd": "battle variant_vip2"
+   }
+  ]
+ ],
+ "trainer:vinylla1": [
+  [
+   {
+    "who": "vinylla",
+    "expr": "angry",
+    "text": "Oh! The sound engineer. Cass said you’d bounced. I love a comeback; they chart so well."
+   },
+   {
+    "who": "vinylla",
+    "expr": null,
+    "text": "You know what I’m pressing. A lid for the sun, gold on one side. Light, by subscription."
+   },
+   {
+    "who": "vinylla",
+    "expr": "angry",
+    "text": "People pay for scarcity. I’m making the scarcest thing there is."
+   },
+   {
+    "who": "vinylla",
+    "expr": "happy",
+    "text": "Let’s do a little soundcheck, darling."
+   },
+   {
+    "cmd": "battle vinylla1"
+   }
+  ],
+  [
+   {
+    "who": "vinylla",
+    "expr": "happy",
+    "text": "Every limited edition needs a launch."
+   },
+   {
+    "cmd": "battle vinylla1"
+   }
+  ],
+  [
+   {
+    "who": "vinylla",
+    "expr": "happy",
+    "text": "Back for more? All right!"
+   },
+   {
+    "cmd": "battle vinylla1"
+   }
+  ]
+ ],
+ "trainer:daytrader": [
+  [
+   {
+    "who": "clerk",
+    "expr": "happy",
+    "text": "I bought at the all-time high. I’m waiting for it to come back. It’s been eleven years."
+   },
+   {
+    "cmd": "battle daytrader"
+   }
+  ],
+  [
+   {
+    "who": "clerk",
+    "expr": "happy",
+    "text": "I bought at the all-time high. I’m waiting for it to come back. It’s been eleven years."
+   },
+   {
+    "cmd": "battle daytrader"
+   }
+  ],
+  [
+   {
+    "who": "clerk",
+    "expr": "happy",
+    "text": "Back for more? All right!"
+   },
+   {
+    "cmd": "battle daytrader"
+   }
+  ]
+ ],
+ "trainer:bellringer": [
+  [
+   {
+    "who": "hiker",
+    "expr": "happy",
+    "text": "I ring the bell when the day is done. The sun never sets here, so I just ring it when I’m tired."
+   },
+   {
+    "cmd": "battle bellringer"
+   }
+  ],
+  [
+   {
+    "who": "hiker",
+    "expr": "happy",
+    "text": "I ring the bell when the day is done. The sun never sets here, so I just ring it when I’m tired."
+   },
+   {
+    "cmd": "battle bellringer"
+   }
+  ],
+  [
+   {
+    "who": "hiker",
+    "expr": "happy",
+    "text": "Back for more? All right!"
+   },
+   {
+    "cmd": "battle bellringer"
+   }
+  ]
+ ],
+ "trainer:variant_one": [
+  [
+   {
+    "who": "variant",
+    "expr": "happy",
+    "text": "Number one. Not the first fan; the first variant. She made me before she made the record."
+   },
+   {
+    "cmd": "battle variant_one"
+   }
+  ],
+  [
+   {
+    "who": "variant",
+    "expr": "happy",
+    "text": "Number one. Not the first fan; the first variant. She made me before she made the record."
+   },
+   {
+    "cmd": "battle variant_one"
+   }
+  ],
+  [
+   {
+    "who": "variant",
+    "expr": "happy",
+    "text": "Back for more? All right!"
+   },
+   {
+    "cmd": "battle variant_one"
+   }
+  ]
+ ],
+ "trainer:vinylla2": [
+  [
+   {
+    "who": "vinylla",
+    "expr": "angry",
+    "text": "You came all this way for the release? I’m touched. Truly."
+   },
+   {
+    "who": "vinylla",
+    "expr": null,
+    "text": "One turn of the press and the sun is a record. Gold on one side, darkness on the other."
+   },
+   {
+    "who": "vinylla",
+    "expr": "angry",
+    "text": "And every one of them will pay to listen."
+   },
+   {
+    "who": "vinylla",
+    "expr": "happy",
+    "text": "This is the last track, darling. Make it count."
+   },
+   {
+    "cmd": "battle vinylla2"
+   }
+  ],
+  [
+   {
+    "who": "vinylla",
+    "expr": "happy",
+    "text": "Scarcity is the whole song."
+   },
+   {
+    "cmd": "battle vinylla2"
+   }
+  ],
+  [
+   {
+    "who": "vinylla",
+    "expr": "happy",
+    "text": "Back for more? All right!"
+   },
+   {
+    "cmd": "battle vinylla2"
+   }
+  ]
+ ],
+ "trainer:deepdiver": [
+  [
+   {
+    "who": "diver",
+    "expr": "happy",
+    "text": "I’ve dived for the bottom line twenty times. It keeps moving down."
+   },
+   {
+    "cmd": "battle deepdiver"
+   }
+  ],
+  [
+   {
+    "who": "diver",
+    "expr": "happy",
+    "text": "I’ve dived for the bottom line twenty times. It keeps moving down."
+   },
+   {
+    "cmd": "battle deepdiver"
+   }
+  ],
+  [
+   {
+    "who": "diver",
+    "expr": "happy",
+    "text": "Back for more? All right!"
+   },
+   {
+    "cmd": "battle deepdiver"
+   }
+  ]
+ ],
+ "trainer:tinker": [
+  [
+   {
+    "who": "geo",
+    "expr": "happy",
+    "text": "Built them myself. Want to see what they can do?"
+   },
+   {
+    "cmd": "battle tinker"
+   }
+  ],
+  [
+   {
+    "who": "geo",
+    "expr": "happy",
+    "text": "Built them myself. Want to see what they can do?"
+   },
+   {
+    "cmd": "battle tinker"
+   }
+  ],
+  [
+   {
+    "who": "geo",
+    "expr": "happy",
+    "text": "Back for more? All right!"
+   },
+   {
+    "cmd": "battle tinker"
+   }
+  ]
+ ],
+ "hazel": [
+  {
+   "caught": 1,
+   "badges": 0,
+   "blake": "none",
+   "said": [
+    {
+     "who": "gini",
+     "expr": "happy",
+     "text": "Rae! How's your Index coming along? 1 taxed so far."
+    },
+    {
+     "who": "gini",
+     "expr": null,
+     "text": "Try the tall grass on Hedgerow Lane, just down the road. Walk, and they come to you."
+    },
+    {
+     "who": "gini",
+     "expr": null,
+     "text": "When your team is ready, try an arena. The first one is in Fizzwell Town."
+    }
+   ]
+  },
+  {
+   "caught": 1,
+   "badges": 0,
+   "blake": "chad",
+   "said": [
+    {
+     "who": "gini",
+     "expr": "happy",
+     "text": "Rae! How's your Index coming along? 1 taxed so far."
+    },
+    {
+     "who": "gini",
+     "expr": null,
+     "text": "Try the tall grass on Hedgerow Lane, just down the road. Walk, and they come to you."
+    },
+    {
+     "who": "gini",
+     "expr": null,
+     "text": "When your team is ready, try an arena. The first one is in Fizzwell Town."
+    },
+    {
+     "who": "gini",
+     "expr": null,
+     "text": "Blake was here earlier, bragging. He said he’d wait for you in Clovercrest Town."
+    }
+   ]
+  },
+  {
+   "caught": 1,
+   "badges": 0,
+   "blake": "chad2",
+   "said": [
+    {
+     "who": "gini",
+     "expr": "happy",
+     "text": "Rae! How's your Index coming along? 1 taxed so far."
+    },
+    {
+     "who": "gini",
+     "expr": null,
+     "text": "Try the tall grass on Hedgerow Lane, just down the road. Walk, and they come to you."
+    },
+    {
+     "who": "gini",
+     "expr": null,
+     "text": "When your team is ready, try an arena. The first one is in Fizzwell Town."
+    }
+   ]
+  },
+  {
+   "caught": 1,
+   "badges": 1,
+   "blake": "none",
+   "said": [
+    {
+     "who": "gini",
+     "expr": "happy",
+     "text": "Rae! How's your Index coming along? 1 taxed so far."
+    },
+    {
+     "who": "gini",
+     "expr": null,
+     "text": "Try the tall grass on Hedgerow Lane, just down the road. Walk, and they come to you."
+    },
+    {
+     "who": "gini",
+     "expr": null,
+     "text": "1 badge already. The arena leaders talk about you, you know."
+    }
+   ]
+  },
+  {
+   "caught": 1,
+   "badges": 1,
+   "blake": "chad",
+   "said": [
+    {
+     "who": "gini",
+     "expr": "happy",
+     "text": "Rae! How's your Index coming along? 1 taxed so far."
+    },
+    {
+     "who": "gini",
+     "expr": null,
+     "text": "Try the tall grass on Hedgerow Lane, just down the road. Walk, and they come to you."
+    },
+    {
+     "who": "gini",
+     "expr": null,
+     "text": "1 badge already. The arena leaders talk about you, you know."
+    },
+    {
+     "who": "gini",
+     "expr": null,
+     "text": "Blake was here earlier, bragging. He said he’d wait for you in Clovercrest Town."
+    }
+   ]
+  },
+  {
+   "caught": 1,
+   "badges": 1,
+   "blake": "chad2",
+   "said": [
+    {
+     "who": "gini",
+     "expr": "happy",
+     "text": "Rae! How's your Index coming along? 1 taxed so far."
+    },
+    {
+     "who": "gini",
+     "expr": null,
+     "text": "Try the tall grass on Hedgerow Lane, just down the road. Walk, and they come to you."
+    },
+    {
+     "who": "gini",
+     "expr": null,
+     "text": "1 badge already. The arena leaders talk about you, you know."
+    }
+   ]
+  },
+  {
+   "caught": 1,
+   "badges": 3,
+   "blake": "none",
+   "said": [
+    {
+     "who": "gini",
+     "expr": "happy",
+     "text": "Rae! How's your Index coming along? 1 taxed so far."
+    },
+    {
+     "who": "gini",
+     "expr": null,
+     "text": "Try the tall grass on Hedgerow Lane, just down the road. Walk, and they come to you."
+    },
+    {
+     "who": "gini",
+     "expr": null,
+     "text": "3 badges already. The arena leaders talk about you, you know."
+    }
+   ]
+  },
+  {
+   "caught": 1,
+   "badges": 3,
+   "blake": "chad",
+   "said": [
+    {
+     "who": "gini",
+     "expr": "happy",
+     "text": "Rae! How's your Index coming along? 1 taxed so far."
+    },
+    {
+     "who": "gini",
+     "expr": null,
+     "text": "Try the tall grass on Hedgerow Lane, just down the road. Walk, and they come to you."
+    },
+    {
+     "who": "gini",
+     "expr": null,
+     "text": "3 badges already. The arena leaders talk about you, you know."
+    },
+    {
+     "who": "gini",
+     "expr": null,
+     "text": "Blake was here earlier, bragging. He said he’d wait for you in Clovercrest Town."
+    }
+   ]
+  },
+  {
+   "caught": 1,
+   "badges": 3,
+   "blake": "chad2",
+   "said": [
+    {
+     "who": "gini",
+     "expr": "happy",
+     "text": "Rae! How's your Index coming along? 1 taxed so far."
+    },
+    {
+     "who": "gini",
+     "expr": null,
+     "text": "Try the tall grass on Hedgerow Lane, just down the road. Walk, and they come to you."
+    },
+    {
+     "who": "gini",
+     "expr": null,
+     "text": "3 badges already. The arena leaders talk about you, you know."
+    }
+   ]
+  },
+  {
+   "caught": 6,
+   "badges": 0,
+   "blake": "none",
+   "said": [
+    {
+     "who": "gini",
+     "expr": "happy",
+     "text": "Rae! How's your Index coming along? 6 taxed so far."
+    },
+    {
+     "who": "gini",
+     "expr": "surprised",
+     "text": "You’re getting good at this. Some of them only show up in caves or in the malls."
+    },
+    {
+     "who": "gini",
+     "expr": null,
+     "text": "When your team is ready, try an arena. The first one is in Fizzwell Town."
+    }
+   ]
+  },
+  {
+   "caught": 6,
+   "badges": 0,
+   "blake": "chad",
+   "said": [
+    {
+     "who": "gini",
+     "expr": "happy",
+     "text": "Rae! How's your Index coming along? 6 taxed so far."
+    },
+    {
+     "who": "gini",
+     "expr": "surprised",
+     "text": "You’re getting good at this. Some of them only show up in caves or in the malls."
+    },
+    {
+     "who": "gini",
+     "expr": null,
+     "text": "When your team is ready, try an arena. The first one is in Fizzwell Town."
+    },
+    {
+     "who": "gini",
+     "expr": null,
+     "text": "Blake was here earlier, bragging. He said he’d wait for you in Clovercrest Town."
+    }
+   ]
+  },
+  {
+   "caught": 6,
+   "badges": 0,
+   "blake": "chad2",
+   "said": [
+    {
+     "who": "gini",
+     "expr": "happy",
+     "text": "Rae! How's your Index coming along? 6 taxed so far."
+    },
+    {
+     "who": "gini",
+     "expr": "surprised",
+     "text": "You’re getting good at this. Some of them only show up in caves or in the malls."
+    },
+    {
+     "who": "gini",
+     "expr": null,
+     "text": "When your team is ready, try an arena. The first one is in Fizzwell Town."
+    }
+   ]
+  },
+  {
+   "caught": 6,
+   "badges": 1,
+   "blake": "none",
+   "said": [
+    {
+     "who": "gini",
+     "expr": "happy",
+     "text": "Rae! How's your Index coming along? 6 taxed so far."
+    },
+    {
+     "who": "gini",
+     "expr": "surprised",
+     "text": "You’re getting good at this. Some of them only show up in caves or in the malls."
+    },
+    {
+     "who": "gini",
+     "expr": null,
+     "text": "1 badge already. The arena leaders talk about you, you know."
+    }
+   ]
+  },
+  {
+   "caught": 6,
+   "badges": 1,
+   "blake": "chad",
+   "said": [
+    {
+     "who": "gini",
+     "expr": "happy",
+     "text": "Rae! How's your Index coming along? 6 taxed so far."
+    },
+    {
+     "who": "gini",
+     "expr": "surprised",
+     "text": "You’re getting good at this. Some of them only show up in caves or in the malls."
+    },
+    {
+     "who": "gini",
+     "expr": null,
+     "text": "1 badge already. The arena leaders talk about you, you know."
+    },
+    {
+     "who": "gini",
+     "expr": null,
+     "text": "Blake was here earlier, bragging. He said he’d wait for you in Clovercrest Town."
+    }
+   ]
+  },
+  {
+   "caught": 6,
+   "badges": 1,
+   "blake": "chad2",
+   "said": [
+    {
+     "who": "gini",
+     "expr": "happy",
+     "text": "Rae! How's your Index coming along? 6 taxed so far."
+    },
+    {
+     "who": "gini",
+     "expr": "surprised",
+     "text": "You’re getting good at this. Some of them only show up in caves or in the malls."
+    },
+    {
+     "who": "gini",
+     "expr": null,
+     "text": "1 badge already. The arena leaders talk about you, you know."
+    }
+   ]
+  },
+  {
+   "caught": 6,
+   "badges": 3,
+   "blake": "none",
+   "said": [
+    {
+     "who": "gini",
+     "expr": "happy",
+     "text": "Rae! How's your Index coming along? 6 taxed so far."
+    },
+    {
+     "who": "gini",
+     "expr": "surprised",
+     "text": "You’re getting good at this. Some of them only show up in caves or in the malls."
+    },
+    {
+     "who": "gini",
+     "expr": null,
+     "text": "3 badges already. The arena leaders talk about you, you know."
+    }
+   ]
+  },
+  {
+   "caught": 6,
+   "badges": 3,
+   "blake": "chad",
+   "said": [
+    {
+     "who": "gini",
+     "expr": "happy",
+     "text": "Rae! How's your Index coming along? 6 taxed so far."
+    },
+    {
+     "who": "gini",
+     "expr": "surprised",
+     "text": "You’re getting good at this. Some of them only show up in caves or in the malls."
+    },
+    {
+     "who": "gini",
+     "expr": null,
+     "text": "3 badges already. The arena leaders talk about you, you know."
+    },
+    {
+     "who": "gini",
+     "expr": null,
+     "text": "Blake was here earlier, bragging. He said he’d wait for you in Clovercrest Town."
+    }
+   ]
+  },
+  {
+   "caught": 6,
+   "badges": 3,
+   "blake": "chad2",
+   "said": [
+    {
+     "who": "gini",
+     "expr": "happy",
+     "text": "Rae! How's your Index coming along? 6 taxed so far."
+    },
+    {
+     "who": "gini",
+     "expr": "surprised",
+     "text": "You’re getting good at this. Some of them only show up in caves or in the malls."
+    },
+    {
+     "who": "gini",
+     "expr": null,
+     "text": "3 badges already. The arena leaders talk about you, you know."
+    }
+   ]
+  },
+  {
+   "caught": 20,
+   "badges": 0,
+   "blake": "none",
+   "said": [
+    {
+     "who": "gini",
+     "expr": "happy",
+     "text": "Rae! How's your Index coming along? 20 taxed so far."
+    },
+    {
+     "who": "gini",
+     "expr": "happy",
+     "text": "That’s a proper collection. I might have to cite you in my paper."
+    },
+    {
+     "who": "gini",
+     "expr": null,
+     "text": "When your team is ready, try an arena. The first one is in Fizzwell Town."
+    }
+   ]
+  },
+  {
+   "caught": 20,
+   "badges": 0,
+   "blake": "chad",
+   "said": [
+    {
+     "who": "gini",
+     "expr": "happy",
+     "text": "Rae! How's your Index coming along? 20 taxed so far."
+    },
+    {
+     "who": "gini",
+     "expr": "happy",
+     "text": "That’s a proper collection. I might have to cite you in my paper."
+    },
+    {
+     "who": "gini",
+     "expr": null,
+     "text": "When your team is ready, try an arena. The first one is in Fizzwell Town."
+    },
+    {
+     "who": "gini",
+     "expr": null,
+     "text": "Blake was here earlier, bragging. He said he’d wait for you in Clovercrest Town."
+    }
+   ]
+  },
+  {
+   "caught": 20,
+   "badges": 0,
+   "blake": "chad2",
+   "said": [
+    {
+     "who": "gini",
+     "expr": "happy",
+     "text": "Rae! How's your Index coming along? 20 taxed so far."
+    },
+    {
+     "who": "gini",
+     "expr": "happy",
+     "text": "That’s a proper collection. I might have to cite you in my paper."
+    },
+    {
+     "who": "gini",
+     "expr": null,
+     "text": "When your team is ready, try an arena. The first one is in Fizzwell Town."
+    }
+   ]
+  },
+  {
+   "caught": 20,
+   "badges": 1,
+   "blake": "none",
+   "said": [
+    {
+     "who": "gini",
+     "expr": "happy",
+     "text": "Rae! How's your Index coming along? 20 taxed so far."
+    },
+    {
+     "who": "gini",
+     "expr": "happy",
+     "text": "That’s a proper collection. I might have to cite you in my paper."
+    },
+    {
+     "who": "gini",
+     "expr": null,
+     "text": "1 badge already. The arena leaders talk about you, you know."
+    }
+   ]
+  },
+  {
+   "caught": 20,
+   "badges": 1,
+   "blake": "chad",
+   "said": [
+    {
+     "who": "gini",
+     "expr": "happy",
+     "text": "Rae! How's your Index coming along? 20 taxed so far."
+    },
+    {
+     "who": "gini",
+     "expr": "happy",
+     "text": "That’s a proper collection. I might have to cite you in my paper."
+    },
+    {
+     "who": "gini",
+     "expr": null,
+     "text": "1 badge already. The arena leaders talk about you, you know."
+    },
+    {
+     "who": "gini",
+     "expr": null,
+     "text": "Blake was here earlier, bragging. He said he’d wait for you in Clovercrest Town."
+    }
+   ]
+  },
+  {
+   "caught": 20,
+   "badges": 1,
+   "blake": "chad2",
+   "said": [
+    {
+     "who": "gini",
+     "expr": "happy",
+     "text": "Rae! How's your Index coming along? 20 taxed so far."
+    },
+    {
+     "who": "gini",
+     "expr": "happy",
+     "text": "That’s a proper collection. I might have to cite you in my paper."
+    },
+    {
+     "who": "gini",
+     "expr": null,
+     "text": "1 badge already. The arena leaders talk about you, you know."
+    }
+   ]
+  },
+  {
+   "caught": 20,
+   "badges": 3,
+   "blake": "none",
+   "said": [
+    {
+     "who": "gini",
+     "expr": "happy",
+     "text": "Rae! How's your Index coming along? 20 taxed so far."
+    },
+    {
+     "who": "gini",
+     "expr": "happy",
+     "text": "That’s a proper collection. I might have to cite you in my paper."
+    },
+    {
+     "who": "gini",
+     "expr": null,
+     "text": "3 badges already. The arena leaders talk about you, you know."
+    }
+   ]
+  },
+  {
+   "caught": 20,
+   "badges": 3,
+   "blake": "chad",
+   "said": [
+    {
+     "who": "gini",
+     "expr": "happy",
+     "text": "Rae! How's your Index coming along? 20 taxed so far."
+    },
+    {
+     "who": "gini",
+     "expr": "happy",
+     "text": "That’s a proper collection. I might have to cite you in my paper."
+    },
+    {
+     "who": "gini",
+     "expr": null,
+     "text": "3 badges already. The arena leaders talk about you, you know."
+    },
+    {
+     "who": "gini",
+     "expr": null,
+     "text": "Blake was here earlier, bragging. He said he’d wait for you in Clovercrest Town."
+    }
+   ]
+  },
+  {
+   "caught": 20,
+   "badges": 3,
+   "blake": "chad2",
+   "said": [
+    {
+     "who": "gini",
+     "expr": "happy",
+     "text": "Rae! How's your Index coming along? 20 taxed so far."
+    },
+    {
+     "who": "gini",
+     "expr": "happy",
+     "text": "That’s a proper collection. I might have to cite you in my paper."
+    },
+    {
+     "who": "gini",
+     "expr": null,
+     "text": "3 badges already. The arena leaders talk about you, you know."
+    }
+   ]
+  }
+ ],
+ "after-rival:win": [
+  [
+   {
+    "who": "chad",
+    "expr": "surprised",
+    "text": "What? I lost to someone who fell out of the sky an hour ago?"
+   },
+   {
+    "who": "chad",
+    "expr": "angry",
+    "text": "Mine only knows Tackle. That’s my excuse and I’m sticking to it."
+   },
+   {
+    "who": "chad",
+    "expr": null,
+    "text": "I’m off to train on the golf course. Next time I’ll have a whole team. Try to keep up!"
+   },
+   {
+    "cmd": "heal"
+   },
+   {
+    "who": "gini",
+    "expr": "happy",
+    "text": "There, good as new. Any time they’re hurt, the clinic in Marigold Town patches them up for free. It’s just down Hedgerow Lane."
+   },
+   {
+    "who": "gini",
+    "expr": null,
+    "text": "Granny Juniper has made up a room for you in her cottage, by the hives. A rest there does wonders."
+   },
+   {
+    "who": "gini",
+    "expr": null,
+    "text": "One more thing. When someone falls in, their things come down too, and they scatter along Tallgrass Meadow, past Marigold Town. If anything of yours made it, that’s where it’ll be."
+   },
+   {
+    "who": "gini",
+    "expr": null,
+    "text": "Now go and explore! The road teaches more than any book. Come back and see me any time."
+   }
+  ]
+ ],
+ "after-rival:lose": [
+  [
+   {
+    "who": "chad",
+    "expr": "happy",
+    "text": "Ha! Told you. Mine beats yours."
+   },
+   {
+    "who": "chad",
+    "expr": null,
+    "text": "Don’t feel bad. You only got here today."
+   },
+   {
+    "who": "chad",
+    "expr": null,
+    "text": "I’m off to train on the golf course. Next time I’ll have a whole team. Try to keep up!"
+   },
+   {
+    "cmd": "heal"
+   },
+   {
+    "who": "gini",
+    "expr": "happy",
+    "text": "There, good as new. Any time they’re hurt, the clinic in Marigold Town patches them up for free. It’s just down Hedgerow Lane."
+   },
+   {
+    "who": "gini",
+    "expr": null,
+    "text": "Granny Juniper has made up a room for you in her cottage, by the hives. A rest there does wonders."
+   },
+   {
+    "who": "gini",
+    "expr": null,
+    "text": "One more thing. When someone falls in, their things come down too, and they scatter along Tallgrass Meadow, past Marigold Town. If anything of yours made it, that’s where it’ll be."
+   },
+   {
+    "who": "gini",
+    "expr": null,
+    "text": "Now go and explore! The road teaches more than any book. Come back and see me any time."
+   }
+  ]
+ ],
+ "after-rival:null": [
+  [
+   {
+    "cmd": "heal"
+   },
+   {
+    "who": "gini",
+    "expr": "happy",
+    "text": "There, good as new. Any time they’re hurt, the clinic in Marigold Town patches them up for free. It’s just down Hedgerow Lane."
+   },
+   {
+    "who": "gini",
+    "expr": null,
+    "text": "Granny Juniper has made up a room for you in her cottage, by the hives. A rest there does wonders."
+   },
+   {
+    "who": "gini",
+    "expr": null,
+    "text": "One more thing. When someone falls in, their things come down too, and they scatter along Tallgrass Meadow, past Marigold Town. If anything of yours made it, that’s where it’ll be."
+   },
+   {
+    "who": "gini",
+    "expr": null,
+    "text": "Now go and explore! The road teaches more than any book. Come back and see me any time."
+   }
+  ]
+ ],
+ "ending:vinylla2": [
+  [
+   {
+    "who": "vinylla",
+    "expr": "sad",
+    "text": "Gold. Everywhere. On the floor, on the press, on the record..."
+   },
+   {
+    "who": "gini",
+    "expr": "happy",
+    "text": "Aurumansa. The golden caravan. It always comes when something is about to get rare."
+   },
+   {
+    "who": "gini",
+    "expr": null,
+    "text": "Look at it, Vinylla. Gold all over the pressing floor. Nothing here is limited any more."
+   },
+   {
+    "who": "vinylla",
+    "expr": "angry",
+    "text": "Do you know what a record is worth if everyone can have one?"
+   },
+   {
+    "who": "chad",
+    "expr": "happy",
+    "text": "About what it’s worth to listen to it. Turns out that was the point."
+   },
+   {
+    "who": "gini",
+    "expr": null,
+    "text": "And you. You were the sound engineer on her tour. You read the plans, and Cass made sure you fell."
+   },
+   {
+    "who": "gini",
+    "expr": "happy",
+    "text": "Welcome back. The sun is still up. It will be up tomorrow too."
+   }
+  ]
+ ]
+}
