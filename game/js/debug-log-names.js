@@ -51,16 +51,8 @@ import { drawWater, reflectionPass, setDrawWater, setReflectionPass } from './wa
 import { gatherFrameItems, setGatherFrameItems } from './walk/frame-items.js';
 import { drawBoxFaces, drawSprites, setDrawBoxFaces, setDrawSprites } from './walk/sprites.js';
 import { setShadowPass, shadowPass } from './walk/shadows.js';
-import {
-  drawGrass,
-  drawGround,
-  effectsPass,
-  mountWalkView,
-  setDrawGrass,
-  setDrawGround,
-  setEffectsPass,
-  setMountWalkView,
-} from './walk-view-gl.js';
+import { drawGrass, drawGround, setDrawGrass, setDrawGround } from './walk/ground-draw.js';
+import { effectsPass, mountWalkView, setEffectsPass, setMountWalkView } from './walk-view-gl.js';
 import { buildingItems, buildingState, drawBuildings, setBuildingItems, setDrawBuildings } from './buildings.js';
 import { drawStructures, setDrawStructures } from './structures.js';
 import {
