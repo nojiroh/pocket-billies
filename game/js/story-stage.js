@@ -40,7 +40,7 @@ import {
   cutsceneShot,
   cutsceneWait,
   cutsceneWalk,
-} from './cutscene.js';
+} from './cutscene/director.js';
 /* eslint-disable no-func-assign */
 expose({
   cutsceneWorldBegin: [() => cutsceneWorldBegin, v => (cutsceneWorldBegin = v)],

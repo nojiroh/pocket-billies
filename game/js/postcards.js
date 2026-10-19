@@ -13,7 +13,7 @@ import { artURL } from './art.js';
 import { flagPicturePath, mapById, walkView } from './walk-view.js';
 import { soundEffect } from './sound.js';
 import { talkBox } from './talk.js';
-import { cutscene } from './cutscene.js';
+import { cutscene } from './cutscene/director.js';
 import { airshipFlight } from './airship.js';
 /* eslint-disable no-func-assign */
 expose({

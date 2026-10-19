@@ -28,7 +28,7 @@ import { canvasForContext, ensureWalkGl } from './walk-view-gl.js';
 import { endBattle, stopTimers } from './battle.js';
 import { WORLD_BOWL_SHADERS, worldBowlFilm, worldMapSpot } from './world-bowl.js';
 import { music, soundEffect } from './sound.js';
-import { cutscene, cutsceneCaption } from './cutscene.js';
+import { cutscene, cutsceneCaption } from './cutscene/director.js';
 /* eslint-disable no-func-assign */
 expose({
   FALL_BANDS: [() => FALL_BANDS],
