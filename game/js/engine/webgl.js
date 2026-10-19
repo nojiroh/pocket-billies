@@ -231,16 +231,19 @@ export function windBendAt(x, z, t, g) {
 /* lighting shared by everything lit in the world: sun with soft contact-hardening shadows and cloud shadows, contact
    occlusion, point lights (window lights only light what is in front of them), sky and ground ambient, haze and mist */
 export const LIGHT_GLSL = `
+uniform highp sampler2DShadow uShadow,uShadow2,uLampSh0,uLampSh1;uniform highp sampler2D uShadowD,uShadowD2;uniform vec2 uFol;
+/* the frame's light values, the same for every lit program in a frame (SHV: one of the nine sky terms as a vec3) */
 uniform vec3 uEye,uSunDir,uSunCol,uAmbTop,uAmbBot,uFogCol,uTint,uShTint;
 uniform vec4 uRoomB;uniform float uRoomDim;
 uniform vec2 uValley;uniform float uFogStart,uFogD,uTintAmt,uMist,uMistY,uTime,uShStr,uShPen,uCloudSh,uCloudSpd,uCloudCov,uContact,uAmbK,uShLite,uShPx,uShSteps;uniform vec3 uShLift;
-uniform highp sampler2DShadow uShadow;uniform highp sampler2D uShadowD;uniform mat4 uShadowM;uniform float uShadowOn;uniform vec2 uShadowTexel;
-uniform highp sampler2DShadow uShadow2;uniform highp sampler2D uShadowD2;uniform mat4 uShadowM2;uniform float uShadow2On,uShPen2;uniform vec2 uShadowTexel2;
+uniform mat4 uShadowM;uniform float uShadowOn;uniform vec2 uShadowTexel;
+uniform mat4 uShadowM2;uniform float uShadow2On,uShPen2;uniform vec2 uShadowTexel2;
 uniform vec4 uLP[16];uniform vec4 uLC[16];uniform int uNL;
-uniform highp sampler2DShadow uLampSh0,uLampSh1;uniform mat4 uLampM0,uLampM1;uniform int uNLS;
+uniform mat4 uLampM0,uLampM1;uniform int uNLS;
 uniform vec4 uAO[64];uniform int uNAO;
-uniform vec4 uSeason;uniform vec2 uFol;
+uniform vec4 uSeason;
 uniform vec3 uSH[9];uniform float uSHK,uFogSun;
+#define SHV(i) uSH[i]
 const vec2 PD[12]=vec2[12](vec2(-.326,-.406),vec2(-.840,-.074),vec2(-.696,.457),vec2(-.203,.621),vec2(.962,-.195),vec2(.473,-.480),vec2(.519,.767),vec2(.185,-.893),vec2(.507,.064),vec2(.896,.412),vec2(-.322,-.933),vec2(-.792,-.598));
 float lhash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
 float lnoise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(lhash(i),lhash(i+vec2(1,0)),f.x),mix(lhash(i+vec2(0,1)),lhash(i+vec2(1,1)),f.x),f.y);}
@@ -272,7 +275,7 @@ vec3 points(vec3 p,vec3 n){vec3 a=vec3(0.);for(int i=0;i<16;i++){if(i>=uNL)break
 /* v43: the ambient light as nine spherical-harmonic terms of the sky, the ground's bounce and a broad warm lobe on the
    sun's side (light.js skyHarmonics): a face turned to the sky is sky-coloured, one turned down takes the ground's bounce,
    one turned toward the sun is warmer, even in shade */
-vec3 shAmb(vec3 n){float x=n.x,y=n.y,z=n.z;vec3 e=.429043*uSH[8]*(x*x-y*y)+.743125*uSH[6]*z*z+.886227*uSH[0]-.247708*uSH[6]+.858086*(uSH[4]*x*y+uSH[7]*x*z+uSH[5]*y*z)+1.023328*(uSH[3]*x+uSH[1]*y+uSH[2]*z);return max(e*.3183,vec3(0.));}
+vec3 shAmb(vec3 n){float x=n.x,y=n.y,z=n.z;vec3 e=.429043*SHV(8)*(x*x-y*y)+.743125*SHV(6)*z*z+.886227*SHV(0)-.247708*SHV(6)+.858086*(SHV(4)*x*y+SHV(7)*x*z+SHV(5)*y*z)+1.023328*(SHV(3)*x+SHV(1)*y+SHV(2)*z);return max(e*.3183,vec3(0.));}
 vec3 ambient(vec3 n,float occ,float sh){vec3 a=mix(mix(uAmbBot,uAmbTop,n.y*.5+.5),shAmb(n),uSHK)*uAmbK*occ;return a*mix(uShTint,vec3(1.),sh)+uShLift*(1.-sh)*occ;}
 /* v43: one shading for every surface in the world. Albedo a at p with normal n, in shadow sh (0 dark .. 1 lit) and
    occlusion ao; mat = (specular, shininess, translucency, wrap); wrapK softens the terminator (leaves, cloth);
