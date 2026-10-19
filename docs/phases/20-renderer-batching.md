@@ -278,6 +278,25 @@ D7. **Cheap god rays for the lowest setting.** A few placed light shafts (one ad
     automatically at gaps in tree cover. The volumetric pass stays the default.
 
 ### Stage E - Sprites instanced
+E0. **Sprite shadows** (owner, 2026-10-19; found while fixing the shadows' pixel size, docs/graphics-bench.md). Done
+    first, on today's path, so E1's snapshot and the instanced program carry the fixed lookup. What is wrong
+    (walk-view-gl.js sprite shader, `sp` and `shadowAt`, about 1132-1133):
+    - A picture that faces the camera (the trainer, people, most flat props) is looked up 0.35 m toward the sun plus
+      0.9 x the texel's distance from the picture's middle (`abs(vPx)`), so its edges look farther away than its middle:
+      a shadow crossing the trainer bends into a V and does not meet the same shadow on the ground beside them. (The
+      shift is there because the picture is also in the shadow map, as a card turned to the sun.)
+    - `shadowAt` passes "up" as the surface normal, so the pixel-art snap and its dither cell are worked out on the
+      ground plane: on an upright picture every texel of a column gets the same dither value, and the soft edge shows
+      as vertical stripes instead of a checker.
+    - A fixed picture (`uFixed`, signs and doors on their own plane) is looked up 6 cm in front of its plane with a
+      small bias; with the sun along the plane it likely catches its own shadow (streaks). Not yet seen on screen.
+    - Past 13 m the far map takes over (about 6 cm texels, 6 taps): coarser on every surface, sprites included.
+    Fix: snap and dither in the picture's own plane (`shadowAtN` with the picture's back vector), so a sprite's shadow
+    steps form the 32 px/m grid of its art; one shift toward the sun for the whole picture (from its middle, not
+    growing with `abs(vPx)`), so shadows crossing it stay straight and still miss its own card; for fixed pictures a
+    bias that grows as the sun runs along the plane. Behind an engine setting (`shadows.spriteFix`), off until the owner
+    compares the trainer and flat props in the shadow court on the phone; then on, and the old lookup deleted.
+    **Ask me before** switching it on by default.
 E1. Extract `spriteDrawList(items)` (filter and `imageId` sort) and `spriteRecord(item, frame)` (the exact uniform
     values of today plus a mode: quad, grid, skip, hit-only). `drawSprites` sets uniforms from the records. Test: a
     fixture covering every branch (vox, bld3, wave, cross, far, layer, glow, person, rotation, noRecv, flip -1, town
