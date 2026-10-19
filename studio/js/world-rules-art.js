@@ -44,6 +44,7 @@ expose({
   drawWorldMarkers: [() => drawWorldMarkers, v => (drawWorldMarkers = v)],
   locationRoads: [() => locationRoads, v => (locationRoads = v)],
   lonLatToWorldMapXY: [() => lonLatToWorldMapXY, v => (lonLatToWorldMapXY = v)],
+  moveRoadEnds: [() => moveRoadEnds, v => (moveRoadEnds = v)],
   roadLengthText: [() => roadLengthText, v => (roadLengthText = v)],
   roadsHTML: [() => roadsHTML, v => (roadsHTML = v)],
   weightTable: [() => weightTable, v => (weightTable = v)],
@@ -377,18 +378,29 @@ ACTIONS.pickStop = d => {
   studioState.sel.stop = +d.i;
   render();
 };
+/* phase 08b: the stops are renumbered by change(); each road's ends are read before it and set after it to where their
+   stop went (where(node): its new node, or null to drop the road), so this holds whatever shape roads.json has */
+function moveRoadEnds(D, where, change) {
+  const ends = (D.roads || []).map(l => /** @type {const} */ ([l, PB_DATA.road(D, l)]));
+  change();
+  D.roads = ends
+    .filter(([, r]) => where(r.a) != null && where(r.b) != null)
+    .map(([l, r]) => {
+      PB_DATA.setRoadEnd(D, l, 'a', where(r.a));
+      PB_DATA.setRoadEnd(D, l, 'b', where(r.b));
+      return l;
+    });
+}
 ACTIONS.stopMove = d => {
   const D = studioState.D,
     i = +d.i,
     j = i + +d.d;
   if (j < 0 || j >= D.locations.length) return;
-  [D.locations[i], D.locations[j]] = [D.locations[j], D.locations[i]];
-  (D.roads || []).forEach(l => {
-    const r = PB_DATA.road(D, l);
-    for (const end of /** @type {const} */ (['a', 'b']))
-      if (r[end] === i) PB_DATA.setRoadEnd(D, l, end, j);
-      else if (r[end] === j) PB_DATA.setRoadEnd(D, l, end, i);
-  });
+  moveRoadEnds(
+    D,
+    n => (n === i ? j : n === j ? i : n),
+    () => ([D.locations[i], D.locations[j]] = [D.locations[j], D.locations[i]])
+  );
   Object.values(D.trainers || {}).forEach(T => {
     if (T.node === i) T.node = j;
     else if (T.node === j) T.node = i;
@@ -412,13 +424,13 @@ ACTIONS.stopAdd = () => {
     lon: b ? Math.round((a.lon + b.lon) / 2) : a.lon + 8,
     lat: b ? Math.round((a.lat + b.lat) / 2) : a.lat,
   };
-  D.locations.splice(i + 1, 0, n);
+  moveRoadEnds(
+    D,
+    k => (k > i ? k + 1 : k),
+    () => D.locations.splice(i + 1, 0, n)
+  );
   Object.values(D.trainers || {}).forEach(T => {
     if (T.node > i) T.node++;
-  });
-  (D.roads || []).forEach(l => {
-    const r = PB_DATA.road(D, l);
-    for (const end of /** @type {const} */ (['a', 'b'])) if (r[end] > i) PB_DATA.setRoadEnd(D, l, end, r[end] + 1);
   });
   PB_DATA.addRoad(D, i, i + 1);
   studioState.sel.stop = i + 1;
@@ -437,17 +449,13 @@ ACTIONS.stopDel = async () => {
     ))
   )
     return;
-  D.locations.splice(i, 1);
+  moveRoadEnds(
+    D,
+    k => (k === i ? null : k > i ? k - 1 : k),
+    () => D.locations.splice(i, 1)
+  );
   Object.values(D.trainers || {}).forEach(t => {
     if (t.node >= i) t.node = Math.max(0, t.node - 1);
-  });
-  D.roads = (D.roads || []).filter(l => {
-    const r = PB_DATA.road(D, l);
-    return r.a !== i && r.b !== i;
-  });
-  D.roads.forEach(l => {
-    const r = PB_DATA.road(D, l);
-    for (const end of /** @type {const} */ (['a', 'b'])) if (r[end] > i) PB_DATA.setRoadEnd(D, l, end, r[end] - 1);
   });
   studioState.sel.stop = Math.max(0, i - 1);
   changed();
