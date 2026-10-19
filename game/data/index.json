@@ -218,7 +218,8 @@
     "test_windows",
     "gallery",
     "test_graphics",
-    "test_props_next"
+    "test_props_next",
+    "test_props_marigold"
    ]
   }
  }

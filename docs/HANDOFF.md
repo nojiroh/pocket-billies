@@ -14,6 +14,10 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 ### Phase 20 stage C, session C-1 - Frame settings and allocations (C1, C2) - 2026-10-19
 Plan approved at the start with "continue" on my recommendation: C1 and C2 now (no look change), before stage A's A8
 numbers and before phase 19, which the phase file puts first. Branch `ccr-ca9ccdfe-oyecc9`, from main at d2f9721.
+- Merged with main after stage B (2026-10-19): this session's changes to walk-view-gl.js now sit where stage B moved
+  each function: worldCurveDrop and setSpriteUniforms in walk/draw-common.js, walkLightContext in walk/lighting.js,
+  the shadow passes in walk/shadows.js, the grass trail and flowers in walk/ground-draw.js, drawSprites in
+  walk/sprites.js; beginFrameSettings/endFrameSettings stay in walk-view-gl.js. Same code, moved; checks green.
 - Changed (one cause per commit):
   - Main's last merge (#41) left an unused import in seamless-world.js, so `check:modules` failed on main. Regenerated.
   - **C1** Defaults for the four dials the code read with none (the phase file named two): `quality.keepScenes` 3,
@@ -66,6 +70,40 @@ numbers and before phase 19, which the phase file puts first. Branch `ccr-ca9ccd
 - Next session starts with: C-2 (C3, the Frame uniform block, behind `quality.frameBlock`; C4, flat items and blades
   grouped by program). Or stage D first, if the A8 numbers say pixels.
 
+### Phase 20 stage B - walk-view-gl.js split into game/js/walk/ (moves only) - 2026-10-19
+Plan approved at the start (the file list was the "Ask me before"). Branch `ccr-9b6f14fb-6t1w6i`.
+- Changed (12 move commits, leaves first as in the phase file's B2, plus one tool fix and this docs commit):
+  - walk-view-gl.js 8,196 -> 570 lines (the canvas, mounting a place, the context restore, the walk view's overrides,
+    drawWalkFrame and drawWalkFrameInner). 23 new files in game/js/walk/, in page order before it: walk-state,
+    heights, walk-shaders, draw-common, water-data, ground-textures, grass-build, ground-mesh (918 lines, the largest),
+    map-cache, quality-cull, sky, rooms, water, prop-look, frame-items, sprites, camera, lighting, shadows,
+    ground-draw, fountains-weather, effects, input. Script tags in game/index.html and studio/index.html.
+  - Each statement moved byte for byte with the comments before it (a scratch script cut them out; npm run modules
+    wrote the imports, exports and setters). Proof, after every commit: the top-level statements of walk-view-gl.js
+    and game/js/walk/ together are the same 186 statements and 233 comments as before, plus one banner per new file.
+  - hooks.js 234 -> 238 names, each a call at run time into code that loads later: groundOcclusionTexture (ground
+    textures -> near ring), freeNearRing (ground mesh -> near ring, the one the phase file named), setPropLookUniforms
+    (rooms, water -> prop looks), propBaseHeight (into frame items). No load-time read crosses a file.
+  - vite.config.js removes the emptied game/js/walk folder after bundling (like game/js/engine); tools/rename-ids.mjs
+    points at FLOWER_SET_BY_LOCATION in walk/ground-draw.js.
+  - Tool fix (own commit): to-module writes the no-func-assign comment round expose() only where an entry assigns a
+    function itself; effects.js (one function with a setter) got an unused one and a lint warning. No other
+    generated file changed.
+  - Docs and comments that named walk-view-gl.js for code that moved: README's file guide, ART-NOTES (wall colours,
+    the town rise), NAMING (walkRenderer), and comments in seamless-world.js, walk-view.js, build-flags.py.
+- Risky: nothing should behave differently; the risk is a module order problem that only shows on a page or a path
+  the checks don't open. The game, the Studio and the build all load.
+- Verified, after every move commit: lint, typecheck, 72 unit tests, check:data, check:modules, format:check, no new
+  duplicate top-level name (the 18 game/Studio pairs from before stay), smoke 15/15. Build after commits 1 and 12
+  (no walk folder left in dist). At the end: check-studio-github.py (21 sections, the proposal goes through); the
+  smoke run's debug log has the same sections and fields, every timed pass (models, box faces, structures included)
+  and the same 104 entries in its error list.
+- Not done: no line was reformatted (long lines stay; CLAUDE.md wants that in its own no-op commit).
+- Questions waiting for the owner: on your phone, the game should look and run as before (a Graphics test step off by
+  more than its noise would mean something went wrong). Tags `phase-20a-done` / `phase-20b-done`?
+- Next session starts with: stage C (CPU per frame: frame settings, allocations, one uniform block, flat items and
+  blades grouped, light picking) in Plan Mode; or D first if you'd rather go at the pixels, given the 60 fps aim.
+
 ### Phase 20 stage A - Measure (GPU counters) - 2026-10-19
 Plan approved at the start (Stage A only: phase 19 is not done, and the phase file lets only Stage A run early).
 Branch `ccr-9b6f14fb-6t1w6i`, from main at 09ae2ba. The phase file is now docs/phases/20-renderer-batching.md.
@@ -103,15 +141,83 @@ Branch `ccr-9b6f14fb-6t1w6i`, from main at 09ae2ba. The phase file is now docs/p
 - Verified: every commit lint, typecheck, unit tests (65 -> 72), check:data, check:modules, format:check; smoke at the
   end 15/15 green; its exported phone log has `dc`/`dcp`/`up`/`lit` in 69 of 85 samples and the same 104 entries in
   its error list as before (all phase 16 "is in legacy" warnings). No headless graphics test was run.
-- Questions waiting for the owner (A8, "Ask me before"):
-  - Run the Graphics test and the diagnostics at the Sun gap, the depth corridor and Copperleaf by night, on the iPad
-    and the Android phone, and send the reports and the debug logs.
-  - Then the budgets. My proposal: 150 draws a frame on phones including the shadow passes, 30 fps on the Android phone
-    at the game's own values. (If 2,000+ draws holds on the phone, 150 needs stage E's instancing and phase 21's
-    atlases; a nearer first target would be 600.)
-  - Tag this as `phase-20a-done`?
-- Next session starts with: the A8 numbers into this file, the budgets decided, then stage B (the file split, "Ask me
-  before" the file list), or stage D first, since the Android phone is held back by pixels.
+- **A8 baseline, iPad** (Graphics test, 2026-10-19 04:47, Chrome on iPadOS 26.7, Apple GPU, 1366x886 at DPR 2,
+  60 Hz, no GPU timers; 116 steps, no errors). The station's untouched look, per frame:
+
+  | Station | fps | CPU ms | Draws | Shadow + lamp draws | Biggest passes |
+  |---|---|---|---|---|---|
+  | Control pad | 51.5 | 4.2 | 471 | 215 | far sun 173, effects 86, models 44, sprites 43 |
+  | Shadow court | 46 | 5.0 | 633 | 270 | far sun 236, effects 106, sprites 85 |
+  | Pond | 50.5 | 3.5 | 429 | 136 | far sun 96, sprites 91, effects 82, reflection 47 |
+  | Sun gap | 42 | 6.0 | 955 | 343 | sprites 360, far sun 195, near sun 148, effects 96 |
+  | Lamp square (night) | 37.5 | 5.4 | 789 | 410 | far sun 235, sprites 116, effects 114, near 105, lamps 70 |
+  | Meadow | 50.5 | 3.5 | 436 | 160 | sprites 116, far sun 96, effects 70 |
+  | Depth corridor | 45 | 4.8 | 699 | 343 | far sun 233, sprites 143, near sun 110, effects 100 |
+  | Open sky | 51 | 3.9 | 500 | 171 | sprites 165, far sun 108, effects 88 |
+  | Everything: own values / lowest / highest | 40 / 60 / 39.5 | 6.1 / 5.4 / 6.7 | 1006 / 733 / 1039 | 363 / 187 / 363 | sprites 395-428 |
+
+  What it says:
+  - The iPad is not held back by draw calls: about 1,000 draws cost 6-7 ms of processor time, and "everything
+    lowest" runs 60 fps with 733 draws. Its frames (19-25 ms) wait on the graphics chip. Sharpness 0.4-0.55 holds 60
+    fps; 1.0 gives 50.5.
+  - The shadow maps are 35-52% of all draws. The far sun map draws 96-236 a frame even though it is meant to be
+    cached for what never moves: the swaying props miss the cache (the phase file's claim, confirmed). Stages E11
+    (sway in the shader) and F (casters) aim at this.
+  - "Effects" makes 70-114 draws at every station: the flat items and blades drawn one by one (C4).
+  - The Sun gap's 360 sprite draws are the grove itself (the phase file's claim, confirmed).
+  - Same frame rates as the earlier iPad report (38.5 / 57.5 / 37 then; 40 / 60 / 39.5 now), so counting every frame
+    during the test costs no visible speed here.
+  - One odd step: Film grain at 0.15 cost 3.5 ms where 0.11 cost 0.6 ms; grain is one uniform in the final pass, so
+    this is probably a one-off hitch in that 3 s window (its worst fps was 39). Watch for it on the next run.
+  - The headless smoke run's 2,250 draws were Marigold, a full town; the bench places are smaller. A real town by
+    night (Copperleaf) is still to be measured on the devices.
+- **A8 baseline, Android phone** (Graphics test 05:04 and diagnostics 05:05, 2026-10-19; Adreno 750, Opera on
+  Chromium 152, 411x727 at DPR 3.5, 60 Hz, no GPU timers; 116 steps, no errors; diagnostics passed).
+
+  | Station | fps | frame ms | CPU ms | Draws | Shadow + lamp draws | Biggest passes |
+  |---|---|---|---|---|---|---|
+  | Control pad | 52 | 19.2 | 7.5 | 630 | 200 | sprites 232, far sun 158, effects 69 |
+  | Shadow court | 47.5 | 21.1 | 8.2 | 470 | 230 | far sun 196, effects 99, sprites 52 |
+  | Pond | 53 | 18.9 | 6.5 | 347 | 123 | far sun 83, sprites 78, effects 49, reflection 47 |
+  | Sun gap | 32.5 | 30.8 | 13.1 | 883 | 317 | sprites 346, far sun 171, near sun 146, effects 82 |
+  | Lamp square (night) | 33.5 | 29.9 | 10.7 | 685 | 378 | far sun 203, effects 113, near 105, sprites 102, lamps 70 |
+  | Meadow | 49 | 20.4 | 6.2 | 368 | 145 | sprites 85, far sun 81, near sun 64 |
+  | Depth corridor | 42 | 23.8 | 8.7 | 579 | 306 | far sun 196, near sun 110, sprites 103, effects 99 |
+  | Open sky | 49 | 20.4 | 6.8 | 383 | 152 | sprites 97, far sun 89, near sun 63 |
+  | Everything: own values / lowest / highest | 24 / 60 / 25.5 | 41.7 / 16.7 / 39.2 | 14.9 / 7.3 / 15.7 | 884 / 637 / 905 | 332 / 158 / 332 | sprites 325-371 |
+
+  Diagnostics (automatic quality on, resolution 0.9, level 2): Clovercrest 27 fps (998 props), Thornberry Wood 28,
+  the shop 60, Fizzwell 27, Driftwreck Bay 32, Pearlantis 28.5. Frame budget in the busiest town (Clovercrest, at
+  05:05, so after dark): 378 draws, 6,163 instances, 41 program switches, 403 texture binds, **4,093 uniform calls**
+  a frame (about 11 per draw); processor time in the passes about 4 ms. Clear day 35 fps, **rain 25**, night 29.
+  Battle 36.8 fps, one 701 ms hitch (drawing x3, setting up the ground). 79 MB of pictures on the card.
+
+  What it says:
+  - The phone waits on its graphics chip almost everywhere: frames of 19-42 ms against 6-15 ms of processor time.
+    The same scene with everything lowest runs 60 fps with 637 draws, and at the game's own values 24 fps with 884
+    draws: the gap is pixels and effects, not draws. The phase file's order (pixels first, stage D) holds.
+  - Draws still cost this phone's processor about twice the iPad's: roughly 1.1-1.5 ms per 100 draws (883 draws ->
+    13 ms at the Sun gap). At the Sun gap and the lamp square the processor time (11-13 ms) is close to a 60 fps
+    frame, so draws become the limit as soon as the pixel cost comes down.
+  - Shadow maps are again 30-55% of all draws; "effects" 47-113; the Sun gap's sprites 346.
+  - Uniform calls (~11 per draw) are a CPU cost of their own: C3 (one uniform block) and E (instancing) cut them.
+  - Rain costs 10 fps in town; worth a look in stage D (it is not a Graphics test setting).
+  - Better than the format 1 Android report on the same chip (own values 15.5 -> 24, lowest 42 -> 60, highest 16.5 ->
+    25.5; Sharpness 1.0 at the control pad 29.5 -> 51.5). Not explained by this phase (it changed no drawing); the
+    browser differs (Chrome then, Opera now), format 1's settling was flawed, and phases 08a/09 came in between. A
+    run in Chrome would separate the browser from the rest.
+- Still missing for A8: the debug logs (a walk in Copperleaf at night on each device) and the iPad's diagnostics test.
+  Neither blocks the budgets.
+- Decided by the owner (A8, 2026-10-19): at most **400 draws a frame on phones** (shadow passes included); **60 fps in
+  towns on the Android phone at the game's own values**; next stage **B**. Also in the phase file's "Decided".
+  - My caution on 60 fps: towns run 27-28 fps today with automatic quality already lowering things, and the phone
+    waits on its graphics chip. Stage D (sky last, mediump, invalidate, phone pixel budget, grove overdraw) is
+    unlikely to double the frame rate on its own; expect to also need cheaper effects at the game's own values on
+    phones, which changes the look. Each such change is yours to approve on the phone.
+- Still to send (not blocking): a debug log from a walk in Copperleaf at night on each device; the iPad's diagnostics.
+- Tag: `phase-20a-done` not set (no answer yet).
+- Next session starts with: stage B in Plan Mode, the file list first ("Ask me before"), then the moves one commit
+  each, leaves first (phase file B2).
 
 ### Phase 08a-3 - UI, text, Studio, running - 2026-10-19
 Plan approved at the start (docs/phases/08a-plan.md, section 08a-3, now marked done with the corrections found).
@@ -164,6 +270,80 @@ Branch `ccr-72e8ad56-lpn1x3`, from main.
   - Tags `phase-04-done` and `phase-05-done` still need pushing from your machine.
 - Next session starts with: "start 08b" (docs/phases/08a-plan.md, Part B), after this branch is merged; the full quick
   check and a picture baseline first, since none exists yet.
+
+### Phase 09 batches 6 and 7 - Marigold, parts 2 and 3: the rest of the town - 2026-10-19
+Owner's request: do the remaining props of Marigold, in the clinic and market's style. Keep the old pine trees.
+- Changed (tools/build-props-batch6.py and batch7.py; run batch1 to 7 in order; showcase rows on
+  `test_props_marigold`):
+  - Nature: bush_box (a clipped ball), bush_hawthorn_autumn (the hawthorn model with autumn leaves), dry_grass,
+    pebbles and puddle (flat, only the scale). The three pines stay as drawn, by request.
+  - Made: clock_tower (brick, quoins, a clock stage with four faces, an open belfry with a bell, a verdigris spire and
+    vane; it now has a 2.3 x 2.3 m footprint with its front at its base point, where the game draws its moving hands),
+    fountain, solar_canopy, solar_tree, vertical_garden, streetlamp and streetlamp_b (globe lamps under verdigris hoods
+    with solar cells), bin (now a three-bin recycling station under a solar roof), flag_pole (the town's flag kept),
+    bike_rack (two modelled bikes), sign_shop (a twin of the clinic's sign).
+  - Buildings, from one kit of parts (class House in batch 7): the five houses, both townhouses, bakery, shop, inn,
+    library and greenhouse. Plinth, walls with corner posts, floor bands, hip / gable / front-gable roofs with a
+    wall-coloured gable, square windows with crossed frames, sills, shutters and flower boxes, roof windows under
+    hoods, round plank doors and panelled doors under canopies, lamps, chimneys with smoke, copper gutters. Shop,
+    bakery, library and inn have their name in the chunky lettering. Each keeps its town colour looks (the old
+    variants' wall, roof and trim colours, as colour swaps).
+  - Engine (two separate commits): a modelled clock tower keeps its moving hands; a placement's roof style (moss,
+    solar, chrome) now also restyles a modelled building's roof parts (layers marked roof: 1).
+  - Data (separate commit): a double street lamp in Palmhaven moved 0.2 m off the new shop's window
+    (tools/clear-windows.py --fix).
+- Risky: these are the most used buildings in the game (house_cottage 46 placements, house_red 27, the townhouses 39,
+  shops 12, inns 10); door positions moved a little with the new fronts. Check towns on your phone, at night too
+  (window glows and smoke were placed anew).
+- Verified: data check, lint, unit tests, smoke check (after the lamp move, the windows step again); a few
+  low-resolution looks at the showcase and at Marigold.
+- Marigold is now all in the new style except the pines.
+
+### Phase 09 batch 5 - Marigold, part 1: the clinic and the market, redesigned - 2026-10-19
+Owner's request: begin Marigold; rework the clinic and the market to be more Unova (Pokémon gen 5) inspired, keeping
+the retro-futuristic solarpunk vibe. Original designs: no emblem, sign or shape copied.
+- Changed (tools/build-props-batch5.py; run batch1 to 5 in order; its own showcase map `test_props_marigold`, since
+  `test_props_next` is full):
+  - clinic: the same in every town, so it is known at a glance (its old per-town colour looks are dropped). A rounded
+    white two-storey block under a thick coral eave with mint lines; a glass lobby with sliding doors under a solar
+    canopy on brass posts with globe lamps; a coral name band reading CLINIC; a ribbon window with flower boxes;
+    portholes; a roof garden with a glass dome on brass ribs, solar panels and a little turning wind turbine; the
+    emblem (a mint plus on white in a copper ring) standing over the door. Footprint 4.6 x 2.6 m (was 4 x 2.6).
+  - sign_clinic: the emblem hanging from a brass post, a globe lamp on top, a planter at its foot.
+  - market_hall: a brick arcade with stone quoins and cornice, three arches with iron fanlights and produce counters,
+    globe lamps and hanging baskets, a verdigris barrel vault with iron ribs and a solar-glass ridge, a weathervane,
+    a clock pediment and a MARKET board. Its four town looks are now colour swaps of the model (variants).
+  - stall, market_cart, bread_rack: a striped tent awning with scallops over crates of fruit, a chalkboard and a scale;
+    a rounded cream-and-verdigris cart on spoked wheels under a striped parasol with a solar cell; a bread rack.
+  - Lettering (CLINIC, MARKET) is drawn in a chunky 7 px capital font made by the script; the globe lamps glow at night.
+  - Separate commit: the quick check's in-game full test now waits for the save write-back (up to 12 s) instead of a
+    fixed 2.5 s; it failed about one run in three on these branches because the write's timer ran late headless.
+- Risky: these props are in many towns and rooms (clinics in 15 towns; stalls and carts in the market rooms). The
+  clinic is wider by 0.6 m; check Marigold and Pepperpot on your phone. Interiors are not redesigned.
+- Verified: data check, lint, unit tests, smoke check (the full-test step 3 of 3 after the fix); a few low-resolution
+  looks at the showcase map.
+- Next in Marigold: the houses (one kit of parts for the five types), the other buildings, the made things, nature.
+
+### Phase 09 batch 4 - the last made things of Copperleaf and Route 1 - 2026-10-19
+Owner's request: finish the rest of Copperleaf and Route 1.
+- Changed (tools/build-props-batch4.py; run batch1, 2, 3, 4 in that order): 18 props modelled and swapped in under
+  their own keys, so every placement in every scene draws the new one (they are used well beyond Copperleaf: signposts
+  in nearly every scene, fences, planters, benches and barrels in most towns):
+  barrel_wood, beehive, bench_wood, birdhouse, dock_post, fence_wood, flowerpot, garden_gnome, picket_fence,
+  planter_box, planter_round, rowboat, scarecrow, signpost, waystone, well, wheelbarrow, banner_bunting.
+  Only the bunting's pennants are drawn (they flutter); all else is modelled. Fences, benches, planters, signposts,
+  the well, the waystone, the boat and the bunting no longer turn or lean at random (vary rot/lean 0).
+  - Gable roofs (birdhouse, well) use the hip-roof cone with its top drawn out to a full ridge; no engine change.
+  - The showcase map has two new rows (made-small, made-big); the map may be at most 400 tiles deep, so it is full.
+- Not changed: the airship and its station were already models; their pictures and effects are at 34 px/m, so they
+  keep the scenery's scale. The old voxel recipes in game/art/scene/vox for the nine converted props are no longer
+  used; delete them in a separate commit if you agree.
+- Risky: fence lengths now have a post at each end and the middle, so two lengths side by side show a double post (as
+  the old picture did). The rowboat and dock posts sit on the ground plane; check them on the water in Willowmere,
+  Copperleaf and Palmhaven on your phone.
+- Verified: data check, lint, type-check, unit tests, smoke check; a few low-resolution looks at the new rows.
+- Copperleaf and Route 1 are now all in the new style. Next: the pixel-art and wind plan for 3D props (waiting for
+  your go-ahead), or Route 2.
 
 ### Phase 09 batch 3 - the buildings of Copperleaf and Route 1 - 2026-10-19
 Owner's request: the buildings next, in the art style and setting, learning from the cottage.

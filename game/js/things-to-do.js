@@ -25,7 +25,8 @@ import {
 } from './walk-view.js';
 import { engineSetting } from './engine/settings.js';
 import { currentLocationMap, environment, environmentState } from './environment.js';
-import { standingHeightAt, walkRenderer } from './walk-view-gl.js';
+import { walkRenderer } from './walk/walk-state.js';
+import { standingHeightAt } from './walk/heights.js';
 import { endBattle, openBattle, setEndBattle, setOpenBattle } from './battle.js';
 import { soundEffect } from './sound.js';
 import { setTalkFolk, talk, talkBox, talkFolk } from './talk.js';

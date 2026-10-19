@@ -242,7 +242,7 @@ const CODE = [
   // musicFor: the map ids holding mall or food were mall and foodcourt
   { file: 'game/js/sound.js', snip: '/mall|food/.test(id', replace: '/lanternhall|pepperpot/.test(id', count: 2 },
   { file: 'game/js/sound.js', snip: "id === 'city'", n: 1 },
-  { file: 'game/js/walk-view-gl.js', block: { from: 'const FLOWER_SET_BY_LOCATION = {', to: '};' }, n: 15 },
+  { file: 'game/js/walk/ground-draw.js', block: { from: 'const FLOWER_SET_BY_LOCATION = {', to: '};' }, n: 15 },
   // the checks
   {
     file: 'tools/check-quick.py',

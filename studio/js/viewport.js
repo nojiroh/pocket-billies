@@ -7,7 +7,8 @@
 import { expose } from '../../game/js/test-globals.js';
 import { provide } from '../../game/js/hooks.js';
 import { $, $$, clamp } from '../../game/js/util.js';
-import { mountWalkView, setMountWalkView, walkRenderer } from '../../game/js/walk-view-gl.js';
+import { walkRenderer } from '../../game/js/walk/walk-state.js';
+import { mountWalkView, setMountWalkView } from '../../game/js/walk-view-gl.js';
 /* eslint-disable no-func-assign */
 expose({
   attachViewportBar: [() => attachViewportBar, v => (attachViewportBar = v)],
