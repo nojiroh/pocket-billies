@@ -10,6 +10,7 @@
      visits:juniper >= 2    times you have talked to someone
      visited:copperleaf     a place you have been        billie:musk                    a Billie of that line caught
      robot                  you have a robot             badges >= 2                    badges won
+     caught >= 15           kinds of Billie caught (the Index)
    combined with `and`, `or`, `not` / `!` and parentheses (`and` binds tighter than `or`). A bare count term
    (`item:honey`, `visits:juniper`, `badges`) means more than 0. Logic only: no DOM, runs in Node. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
@@ -52,7 +53,7 @@ expose({
 /** @typedef {Term | { t: 'and', a: Cond, b: Cond } | { t: 'or', a: Cond, b: Cond } | { t: 'not', a: Cond }} Cond */
 /** @typedef {{ flags: Record<string, any>, beaten: Record<string, any>, items: Record<string, number>,
  *   coins: Record<string, number>, quests: Record<string, string>, visits: Record<string, number>,
- *   visited: Record<string, any>, lines: Record<string, any>, robots: number, badges: number,
+ *   visited: Record<string, any>, lines: Record<string, any>, robots: number, badges: number, caught: number,
  *   questStages?: Record<string, string[]> }} StoryState */
 
 /** each term kind: whether it takes an id after the colon, and whether it is a count (compared as a number) */
@@ -66,6 +67,7 @@ export const CONDITION_KINDS = {
   billie: { id: true, count: false },
   robot: { id: false, count: true },
   badges: { id: false, count: true },
+  caught: { id: false, count: true },
 };
 export const OPS = ['>=', '<=', '!=', '==', '=', '>', '<'];
 export const WORDS = new Set(['and', 'or', 'not']);
@@ -294,6 +296,8 @@ export function termValue(c, S) {
       return S.robots;
     case 'badges':
       return S.badges;
+    case 'caught':
+      return S.caught;
   }
 }
 /** whether a condition holds for the state @param {Cond | string} c @param {StoryState} S @returns {boolean} */
@@ -342,6 +346,7 @@ export function storyStateOf(save, o = {}) {
     lines,
     robots: all.filter(m => m && m.kind === 'robot').length,
     badges: (save.seats || []).length,
+    caught: Object.keys(save.caught || {}).length,
     questStages: o.questStages,
   };
 }

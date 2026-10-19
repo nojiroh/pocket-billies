@@ -16,6 +16,7 @@ const state = (o = {}) => ({
   lines: { musk: 1, musk0: 1 },
   robots: 0,
   badges: 1,
+  caught: 6,
   questStages: { ledger: ['found', 'asked', 'paid'] },
   ...o,
 });
@@ -52,6 +53,9 @@ test('every term reads the state it names', () => {
     'badges',
     'badges >= 1',
     'badges < 2',
+    'caught',
+    'caught >= 5',
+    'caught < 15',
   ];
   for (const c of yes) assert.equal(conditionHolds(c, S), true, c);
   for (const c of yes.slice(1)) assert.equal(conditionHolds('not (' + c + ')', S), false, 'not ' + c);
