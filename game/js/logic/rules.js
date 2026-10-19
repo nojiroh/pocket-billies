@@ -617,7 +617,7 @@ export const riderName = () => {
 export const canEnter = n =>
   (!LOCATIONS[n].gate || saveData.seats.includes(LOCATIONS[n].gate)) && (!LOCATIONS[n].ride || canRide());
 export const nextTripNode = () => (saveData.trip.plan.length ? saveData.trip.plan[0] : null);
-/* shortest walk (in steps) between stops, entering only stops you may enter; returns {d,prev} */
+/* shortest walk (in metres) between stops, entering only stops you may enter; returns {d,prev} */
 export function walkDistances(from) {
   const N = LOCATIONS.length,
     d = Array(N).fill(Infinity),
