@@ -43,41 +43,18 @@ import {
 } from './engine/webgl.js';
 import { drawPostEffects, screenSnapshot, setDrawPostEffects, setScreenSnapshot } from './engine/post-effects.js';
 import { environment } from './environment.js';
-import {
-  buildGrass,
-  buildGroundMesh,
-  drawBoxFaces,
-  drawGrass,
-  drawGround,
-  drawSprites,
-  drawWater,
-  effectsPass,
-  gatherFrameItems,
-  grassWork,
-  groundOcclusion,
-  mountWalkView,
-  reflectionPass,
-  setBuildGrass,
-  setBuildGroundMesh,
-  setDrawBoxFaces,
-  setDrawGrass,
-  setDrawGround,
-  setDrawSprites,
-  setDrawWater,
-  setEffectsPass,
-  setGatherFrameItems,
-  setGrassWork,
-  setGroundOcclusion,
-  setMountWalkView,
-  setReflectionPass,
-  setShadowPass,
-  setSwapMapCache,
-  setUpdateNearRing,
-  shadowPass,
-  swapMapCache,
-  updateNearRing,
-  walkRenderer,
-} from './walk-view-gl.js';
+import { walkRenderer } from './walk/walk-state.js';
+import { groundOcclusion, setGroundOcclusion } from './walk/ground-textures.js';
+import { buildGrass, grassWork, setBuildGrass, setGrassWork } from './walk/grass-build.js';
+import { buildGroundMesh, setBuildGroundMesh } from './walk/ground-mesh.js';
+import { setSwapMapCache, setUpdateNearRing, swapMapCache, updateNearRing } from './walk/map-cache.js';
+import { drawWater, reflectionPass, setDrawWater, setReflectionPass } from './walk/water.js';
+import { gatherFrameItems, setGatherFrameItems } from './walk/frame-items.js';
+import { drawBoxFaces, drawSprites, setDrawBoxFaces, setDrawSprites } from './walk/sprites.js';
+import { setShadowPass, shadowPass } from './walk/shadows.js';
+import { drawGrass, drawGround, setDrawGrass, setDrawGround } from './walk/ground-draw.js';
+import { effectsPass, setEffectsPass } from './walk/effects.js';
+import { mountWalkView, setMountWalkView } from './walk-view-gl.js';
 import { buildingItems, buildingState, drawBuildings, setBuildingItems, setDrawBuildings } from './buildings.js';
 import { drawStructures, setDrawStructures } from './structures.js';
 import {

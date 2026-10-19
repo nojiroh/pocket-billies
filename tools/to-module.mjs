@@ -375,7 +375,6 @@ export async function run(args) {
     for (const [g, names] of im)
       if (g !== HOOKS) lines.push(`import { ${[...names].sort().join(', ')} } from '${spec(f, g)}';`);
     const names = [...own.keys()].sort();
-    const fns = names.some(n => own.get(n).kind === 'function');
     // a module's own setter (setSaveData for saveData) also hands the value to hooks.js, so the test globals use it
     const setterOf = n => {
       const k = setterName(n);
@@ -394,6 +393,9 @@ export async function run(args) {
       // only an arrow that assigns the name itself (v => (n = v)), not one that calls the module's own setter
       return `${replaces(n) && set.startsWith('v => (') ? `\n${EXPECT}\n` : ''}${n}: [() => ${n}, ${set}]`;
     };
+    // phase 20: the eslint comment only where an entry assigns a function itself (a module whose functions all have
+    // their own setter needs none, and eslint warns about an unused one)
+    const fns = names.some(n => own.get(n).kind === 'function' && setterOf(n).startsWith('v => ('));
     if (names.length) {
       // the setters replace functions on purpose: the checks and the console set them (only with the test globals on)
       if (fns) lines.push('/* eslint-disable no-func-assign */');

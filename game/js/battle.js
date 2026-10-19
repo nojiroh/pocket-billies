@@ -97,7 +97,8 @@ import {
 } from './battle-stage.js';
 import { walkView } from './walk-view.js';
 import { WEATHER_NAMES, currentLocationMap, environment, environmentState } from './environment.js';
-import { addRipple, walkRenderer, waterAt } from './walk-view-gl.js';
+import { walkRenderer } from './walk/walk-state.js';
+import { addRipple, waterAt } from './walk/water.js';
 import { battle3d, battle3dWanted } from './battle-3d.js';
 /* eslint-disable no-func-assign */
 expose({

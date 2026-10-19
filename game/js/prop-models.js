@@ -14,15 +14,11 @@ import { artImg, artURL, hexToRgb, makeCanvas } from './art.js';
 import { artImage, walkView } from './walk-view.js';
 import { engineSetting } from './engine/settings.js';
 import { COMMON_GLSL, LIGHT_GLSL, ensurePrograms, gpuState, imageTexture } from './engine/webgl.js';
-import {
-  addHitTarget,
-  lampLit,
-  setPropLookUniforms,
-  useWalkProgram,
-  walkRenderer,
-  windLeanAt,
-  worldCurveArgs,
-} from './walk-view-gl.js';
+import { walkRenderer } from './walk/walk-state.js';
+import { useWalkProgram, worldCurveArgs } from './walk/draw-common.js';
+import { setPropLookUniforms, windLeanAt } from './walk/prop-look.js';
+import { addHitTarget } from './walk/sprites.js';
+import { lampLit } from './walk/lighting.js';
 import { BUILDING_SHADERS, buildingArt, buildingTextureGrid } from './buildings.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -1373,12 +1369,18 @@ function swappedRecipe(path, rec, swap) {
   if (c && c.src === rec) return c.rec;
   const up = v => (typeof v === 'string' ? v.toUpperCase() : v),
     S = new Map(Object.entries(swap || {}).map(([a, b]) => [up(a), b])),
+    rf = swap && swap['@roof'],
     out = {
       ...rec,
       layers: (rec.layers || []).map(L => {
         const n = { ...L };
         if (n.col && S.has(up(n.col))) n.col = S.get(up(n.col));
         if (n.img && S.has(up(n.img))) n.img = S.get(up(n.img));
+        /* phase 09: a roof style (the walk view's propWithVariant) on the model's roof parts */
+        if (n.roof && rf) {
+          n.col = rf.col;
+          n.tex = rf.tex;
+        }
         return n;
       }),
     };

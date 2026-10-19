@@ -24,7 +24,8 @@ import {
 } from './battle-stage.js';
 import { stopWalkView, walkData, walkView } from './walk-view.js';
 import { gpuState } from './engine/webgl.js';
-import { standingHeightAt, walkRenderer } from './walk-view-gl.js';
+import { walkRenderer } from './walk/walk-state.js';
+import { standingHeightAt } from './walk/heights.js';
 /* eslint-disable no-func-assign */
 expose({
   battle3d: [() => battle3d],

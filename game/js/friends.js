@@ -17,7 +17,7 @@ import { escapeHtml, saveData, saveHold, uiState } from './game-state.js';
 import { personWalkFrames, portraitHTML, warmPerson } from './person-art.js';
 import { rigCanvasHTML } from './skeleton-rig.js';
 import { directionOf, walkView } from './walk-view.js';
-import { personItem } from './walk-view-gl.js';
+import { personItem } from './walk/frame-items.js';
 import { buddyBilly, worldBillyItem } from './world-billies.js';
 import { worldMap, worldMapSelect } from './world-map.js';
 /* eslint-disable no-func-assign */

@@ -93,6 +93,8 @@ function copySite() {
       for (const f of sources) rmSync(resolve(outDir, f));
       // the folder the engine's modules came from, now empty (phase 04e: and the logic's, once it has modules)
       rmdirSync(resolve(outDir, 'game/js/engine'));
+      // phase 20: and the walk renderer's (walk-view-gl.js split into game/js/walk/)
+      rmdirSync(resolve(outDir, 'game/js/walk'));
       if (existsSync(resolve(outDir, 'game/js/logic'))) rmdirSync(resolve(outDir, 'game/js/logic'));
     },
   };
