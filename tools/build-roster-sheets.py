@@ -684,7 +684,7 @@ def main():
                 meta[g]['q'] = dict(q) if q else ({'lift': 0, 'flapMs': 300} if plan == 'biped' else {}); meta[g]['geo']['lift'] = q.get('lift', 0) if q else 0
             f = OUT / f'{sid}.png'; fresh = a.force or not f.exists(); key = f"{line['line']}{st}"
             if fresh:
-                sheet.save(f); gold_recolour(sheet).save(OUT / f'{sid}_gold.png'); (OUT / f'{sid}.json').write_text(json.dumps(lay, separators=(',', ':'))); made += 1
+                sheet.save(f); (OUT / f'{sid}.json').write_text(json.dumps(lay, separators=(',', ':'))); made += 1
             if fresh or key not in have: rigs[key] = meta
             comp = Image.new('RGBA', (canvas, canvas), (0, 0, 0, 0))
             for n in sorted(parts, key=lambda n: parts[n]['z']):

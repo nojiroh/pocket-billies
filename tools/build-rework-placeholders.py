@@ -6,7 +6,7 @@
 - Trump (a blob: huge body, tiny arms, slug tail) and Zuckerberg (an octopus stand-in): a sheet and a biped rig put
   together from the part kits (game/art/next/parts, tools/slice-part-kit.py), one size per stage.
 
-Writes game/art/next/billionaires/<name>.png, <name>_gold.png and the <name>.json piece layout (where the Studio
+Writes game/art/next/billionaires/<name>.png and the <name>.json piece layout (where the Studio
 looks for every Billie's sheet), and adds the rigs (<line><stage>) to game/art/next/rigs-next.js, each marked
 "placeholder". Replace any of it with real art in the Studio; run again to rebuild the placeholders.
 Needs Pillow and numpy.
@@ -78,11 +78,6 @@ def recolour(im, hue, sat, val=1.0):
         res[i] = colorsys.hsv_to_rgb(hue, ss, vv)
     a[..., :3] = res.reshape(h, w, 3)
     return Image.fromarray((a * 255).round().astype(np.uint8), 'RGBA')
-
-
-def gold(im):
-    """a Gold-Plated version: brightness mapped onto a gold ramp, outlines kept"""
-    return recolour(im, 0.12, 1.4, 1.08)
 
 
 def read_rigs():
@@ -279,7 +274,6 @@ def main():
         P = json.load(f)['parts']
     for key, (src_key, src, new, hue, sat) in RECOLOURS.items():
         recolour(Image.open(f'{SRC}/{src}.png'), hue, sat).save(f'{OUT}/{new}.png', optimize=True)
-        Image.open(f'{SRC}/{src}_gold.png').save(f'{OUT}/{new}_gold.png', optimize=True)
         with open(f'{SRC}/{src}.json') as f:
             lay = json.load(f)
         lay['id'] = new
@@ -298,7 +292,6 @@ def main():
             sheet, r = kit_rig(line, spec, stage, pivots)
             name = spec['names'][stage]
             sheet.save(f'{OUT}/{name}.png', optimize=True)
-            gold(sheet).save(f'{OUT}/{name}_gold.png', optimize=True)
             rigs[f'{line}{stage}'] = r
             with open(f'{OUT}/{name}.json', 'w') as f:
                 json.dump(kit_layout(name, r), f, separators=(',', ':'))

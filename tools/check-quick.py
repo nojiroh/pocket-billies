@@ -431,7 +431,7 @@ def check_ground():
 def report_unused():
     """v47: lists pictures and sounds no code, page or data names, and catalogue props no place uses and no code
     names, so old things don't build up again. A report, not a failure. A folder the code builds names in (battle/
-    plus a stage, a billionaire plus _gold) counts as named as a whole, so the list holds only what nothing reaches"""
+    plus a stage) counts as named as a whole, so the list holds only what nothing reaches"""
     D = gamedata(); SY = D['scenery']
     srcs = list((GAME / 'js').rglob('*.js')) + list((ROOT / 'studio' / 'js').glob('*.js')) + list((GAME / 'data').glob('*.js')) + list((GAME / 'art').rglob('*.json'))
     srcs += [f for f in GAME.glob('*') if f.suffix in ('.html', '.json', '.webmanifest', '.css', '.js')] + list((ROOT / 'studio').glob('*.html')) + list((ROOT / 'studio').glob('*.css'))
@@ -1389,10 +1389,10 @@ def desktop_steps(b, base, R):
         miss = [i for i in ids if not pg.evaluate(f"!!(SPECIES['{i}']&&RIGS['{i}']&&RIGS['{i}'].front&&RIGS['{i}'].back)")]
         if miss: raise Exception(f'missing species or rigs: {miss}')
         nx = ROOT / 'game' / 'art' / 'next' / 'billionaires'
-        sheets = [n for n in ('emberox', 'boostox', 'marsox', 'memeox', 'cartotter', 'primotter', 'orbitotter', 'everyotter', 'kidling', 'billgoat', 'windowgoat', 'harvestgoat') if (nx / f'{n}.png').exists() and (nx / f'{n}.json').exists() and (nx / f'{n}_gold.png').exists()]
-        if len(sheets) < 12: raise Exception(f'only {len(sheets)} piece sheets with layout and gold')
-        out.append('12 starter species, 12 sheets (png + json + gold), rigs for front and back')
-        pg.evaluate("rigPreload(%s.flatMap(id=>[[id,false,1],[id,false,1.4],[id,true,1]]))" % json.dumps(ids)); time.sleep(3)
+        sheets = [n for n in ('emberox', 'boostox', 'marsox', 'memeox', 'cartotter', 'primotter', 'orbitotter', 'everyotter', 'kidling', 'billgoat', 'windowgoat', 'harvestgoat') if (nx / f'{n}.png').exists() and (nx / f'{n}.json').exists()]
+        if len(sheets) < 12: raise Exception(f'only {len(sheets)} piece sheets with layout')
+        out.append('12 starter species, 12 sheets (png + json), rigs for front and back')
+        pg.evaluate("rigPreload(%s.flatMap(id=>[[id,1],[id,1.4]]))" % json.dumps(ids)); time.sleep(3)
         r = json.loads(pg.evaluate("""(ids=>{const out={};for(const id of ids){const o={};for(const [v,k] of [['front',1],['back',1.4]]){const R=rigParts(id,k);if(!R){o[v]=null;continue}
           const c=makeCanvas(R.BW,R.BH),x=c.getContext('2d');const n=(P)=>{x.clearRect(0,0,R.BW,R.BH);drawRig(x,R,P,v);const d=x.getImageData(0,0,R.BW,R.BH).data;let s=0;for(let i=3;i<d.length;i+=4)if(d[i]>0)s++;return s};
           const a=n(rigFrame(R,null,0,1000,1)),b=n(rigFrame(R,null,0,1030,1)),c2=n(rigFrame(R,'hurt',60,1200,1));o[v]={px:a,sameTick:a===b,hurt:c2,clock:R.clock,lag:R.lag,sq:rigFrame(R,'hurt',60,1200,1).sq||null}}out[id]=o}return JSON.stringify(out)})(%s)""" % json.dumps(ids)))
@@ -1457,12 +1457,12 @@ def desktop_steps(b, base, R):
         if miss: raise Exception(f'missing rigs: {miss[:6]}')
         nx = ROOT / 'game' / 'art' / 'next' / 'billionaires'
         names = json.loads(pg.evaluate("JSON.stringify(gameData.roster.filter(e=>%s.includes(e.line)).map(e=>e.id))" % json.dumps(lines)))
-        bad = [n for n in names if not ((nx / f'{n}.png').exists() and (nx / f'{n}.json').exists() and (nx / f'{n}_gold.png').exists())]
+        bad = [n for n in names if not ((nx / f'{n}.png').exists() and (nx / f'{n}.json').exists())]
         if bad: raise Exception(f'sheets missing: {bad[:6]}')
         st = pg.evaluate("gameData.roster.filter(e=>e.state&&e.state.sheet&&e.state.rig).length")
         if st < 73: raise Exception(f'roster board marks only {st} species as drawn and rigged')
-        out.append(f'61 species in 23 lines, numbered {pg.evaluate("SPECIES.huang0.no")} to {pg.evaluate("SPECIES.saylor1.no")}; {len(names)} sheets (png + json + gold); roster board: {st} drawn and rigged')
-        pg.evaluate("rigPreload(%s.flatMap(id=>[[id,false,1],[id,true,1]]))" % json.dumps(ids)); time.sleep(4)
+        out.append(f'61 species in 23 lines, numbered {pg.evaluate("SPECIES.huang0.no")} to {pg.evaluate("SPECIES.saylor1.no")}; {len(names)} sheets (png + json); roster board: {st} drawn and rigged')
+        pg.evaluate("rigPreload(%s.map(id=>[id,1]))" % json.dumps(ids)); time.sleep(4)
         r = json.loads(pg.evaluate("""(ids=>{const out={};for(const id of ids){const o={};for(const v of ['front','back']){const R=rigParts(id,1);if(!R){o[v]=null;continue}
           const c=makeCanvas(R.BW,R.BH),x=c.getContext('2d');x.clearRect(0,0,R.BW,R.BH);drawRig(x,R,rigFrame(R,null,0,1000,1),v);const d=x.getImageData(0,0,R.BW,R.BH).data;let s=0;for(let i=3;i<d.length;i+=4)if(d[i]>0)s++;o[v]=s}out[id]=o}return JSON.stringify(out)})(%s)""" % json.dumps(ids)))
         weak = [k for k, v in r.items() if not v['front'] or v['front'] < 600 or not v['back'] or v['back'] < 400]
@@ -1503,7 +1503,7 @@ def desktop_steps(b, base, R):
         miss = [i for i in ids if not pg.evaluate(f"!!(RIGS['{i}']&&RIGS['{i}'].front&&RIGS['{i}'].back&&RIGS['{i}'].front.sheet&&RIGS['{i}'].front.portrait)")]
         if miss: raise Exception(f'rigs or busts missing: {miss[:6]}')
         nx = ROOT / 'game' / 'art' / 'next' / 'billionaires'
-        sheets = len([f for f in nx.glob('*.png') if not f.stem.endswith('_gold')])
+        sheets = len(list(nx.glob('*.png')))
         if sheets < 117: raise Exception(f'{sheets} sheets')
         out.append(f'117 species in 58 lines, every one with a sheet, a rig and a bust; old roster and art/billionaires gone')
         pools = json.loads(pg.evaluate("JSON.stringify(Object.values(POOLS).concat(Object.values(EGGS||{}),Object.values(gameData.fishing||{})).map(p=>p.list.map(x=>x[0])))"))
