@@ -751,7 +751,6 @@ SECTIONS.rules = () => {
        ph: '45',
        help: 'How rare an Alpha is among new encounters (once you have two Billies).',
      }),
-     numberField('Rest stop price ($)', `${bt}.restCost`, { min: 0, step: 10 }),
      numberField('Prize for beating a wild Billie', `rules.encounters.prizePerLevel`, {
        min: 0,
        step: 1,
@@ -850,6 +849,7 @@ SECTIONS.rules = () => {
        step: 0.05,
        help: 'Chance a trainer picks its best move.',
      }),
+     numberField('Rest stop price ($)', `${bt}.restCost`, { min: 0, step: 10 }),
      numberField('Losing fee', `${bt}.loseFee`, {
        min: 0,
        max: 1,
