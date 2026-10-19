@@ -59,10 +59,18 @@ import {
   bowlSkyGrid,
   bowlSunAt,
 } from './logic/bowl-weather.js';
+import {
+  BOWL_THING_SCALE,
+  bowlClumps,
+  bowlLandmarkPick,
+  bowlMapPoint,
+  bowlPropClass,
+  bowlTreeStyle,
+} from './logic/bowl-things.js';
 import { isLiteMap, loadMapFile } from './map-files.js';
 import { escapeHtml, reducedMotion, saveData, uiState } from './game-state.js';
 import { frameCount, frameStop, frameTask } from './frame-scheduler.js';
-import { artPixels, uiIconHTML } from './art.js';
+import { ART_CACHE, artLoad, artPixels, makeCanvas, uiIconHTML } from './art.js';
 import { personWalkFrames } from './person-art.js';
 import { walkView } from './walk-view.js';
 import {
@@ -76,9 +84,10 @@ import {
   webgl2Supported,
 } from './engine/webgl.js';
 import { POST_EFFECT_SHADERS, drawPostEffects, projectToScreenUv } from './engine/post-effects.js';
-import { WEATHER_LOOKS, environmentState } from './environment.js';
+import { WEATHER_LOOKS, environmentLitFraction, environmentState } from './environment.js';
 import { walkRenderer } from './walk/walk-state.js';
 import { clampZoom } from './walk/camera.js';
+import { loadPropModelRecipe, lowPolyFromRecipe } from './prop-models.js';
 /* eslint-disable no-func-assign */
 expose({
   BOWL_BAYER: [() => BOWL_BAYER],
@@ -99,13 +108,16 @@ expose({
   BOWL_SKY_GLSL: [() => BOWL_SKY_GLSL],
   BOWL_SUN: [() => BOWL_SUN],
   BOWL_SUN_NOW: [() => BOWL_SUN_NOW],
+  BOWL_TREE_LOOK: [() => BOWL_TREE_LOOK],
   BOWL_WALL_W: [() => BOWL_WALL_W],
   WORLD_BOWL_SHADERS: [() => WORLD_BOWL_SHADERS],
   bowlHash: [() => bowlHash],
   bowlNoise: [() => bowlNoise, v => (bowlNoise = v)],
   bowlWallTexture: [() => bowlWallTexture, v => ((bowlWallTexture = v), provide({ bowlWallTexture }))],
   worldBowl: [() => worldBowl],
+  worldBowlAtlas: [() => worldBowlAtlas, v => (worldBowlAtlas = v)],
   worldBowlCloudsNow: [() => worldBowlCloudsNow, v => (worldBowlCloudsNow = v)],
+  worldBowlClumpsInto: [() => worldBowlClumpsInto, v => (worldBowlClumpsInto = v)],
   worldBowlColorAt: [() => worldBowlColorAt, v => (worldBowlColorAt = v)],
   worldBowlDot: [() => worldBowlDot, v => (worldBowlDot = v)],
   worldBowlDrawSky: [() => worldBowlDrawSky, v => (worldBowlDrawSky = v)],
@@ -117,6 +129,7 @@ expose({
   worldBowlLineMap: [() => worldBowlLineMap, v => (worldBowlLineMap = v)],
   worldBowlLock: [() => worldBowlLock, v => (worldBowlLock = v)],
   worldBowlMesh: [() => worldBowlMesh, v => (worldBowlMesh = v)],
+  worldBowlModelShape: [() => worldBowlModelShape, v => (worldBowlModelShape = v)],
   worldBowlOverlay: [() => worldBowlOverlay, v => (worldBowlOverlay = v)],
   worldBowlPick: [() => worldBowlPick, v => (worldBowlPick = v)],
   worldBowlPin: [() => worldBowlPin, v => (worldBowlPin = v)],
@@ -139,6 +152,10 @@ expose({
   worldBowlTerrainKinds: [() => worldBowlTerrainKinds, v => (worldBowlTerrainKinds = v)],
   worldBowlTerrainPictures: [() => worldBowlTerrainPictures, v => (worldBowlTerrainPictures = v)],
   worldBowlTerrainStart: [() => worldBowlTerrainStart, v => (worldBowlTerrainStart = v)],
+  worldBowlThingsDraw: [() => worldBowlThingsDraw, v => (worldBowlThingsDraw = v)],
+  worldBowlThingsOfPlace: [() => worldBowlThingsOfPlace, v => (worldBowlThingsOfPlace = v)],
+  worldBowlThingsTick: [() => worldBowlThingsTick, v => (worldBowlThingsTick = v)],
+  worldBowlTreeShape: [() => worldBowlTreeShape, v => (worldBowlTreeShape = v)],
   worldBowlWaterMesh: [() => worldBowlWaterMesh, v => (worldBowlWaterMesh = v)],
   worldMap: [() => worldMap],
   worldMapAction: [() => worldMapAction, v => (worldMapAction = v)],
@@ -301,6 +318,42 @@ precision highp float;in vec3 aPos;layout(location=6) in float aKind;uniform mat
     `#version 300 es
 precision highp float;in float vK;out vec4 o;uniform float uNight;
 void main(){vec3 c=vK<.5?vec3(.72,.8,.92):vK<1.5?vec3(1.):vec3(.35,.32,.3);c*=1.-uNight*.6;o=vec4(c,vK<.5?.55:.85);}`,
+  ],
+  /* buildings and trees (look session 4): one low-poly shape per kind, drawn once per thing (instanced): where it
+     stands (iP: GPU base and scale), the map's east and north on the bowl (iR), its group (0 clumps, always; 1 a
+     map's own, close in) and when its windows light at night (iK). uShadowPass draws them into the shadow map. */
+  mthing: [
+    `#version 300 es
+precision highp float;in vec3 aPos;in vec3 aNrm;layout(location=7) in vec3 aCol;layout(location=8) in vec4 iP;layout(location=9) in vec4 iR;layout(location=10) in vec4 iK;
+uniform mat4 uVP;uniform float uNear;out vec3 vW,vN,vC,vL;out vec2 vK;
+void main(){vec3 E=vec3(iR.x,0.,-iR.y),N=vec3(iR.z,0.,-iR.w);float k=iP.w*(iK.x>.5?mix(.3,1.,uNear):1.);
+ vec3 p=iP.xyz+(E*aPos.x+N*aPos.z)*k+vec3(0.,aPos.y*k,0.);vN=E*aNrm.x+N*aNrm.z+vec3(0.,aNrm.y,0.);vW=p;vC=aCol;vL=aPos;vK=iK.xy;gl_Position=uVP*vec4(p,1.);}`,
+    `#version 300 es
+precision highp float;precision highp sampler2DShadow;in vec3 vW,vN,vC,vL;in vec2 vK;out vec4 o;uniform vec3 uC,uLd,uHaze;uniform float uNear,uLit,uShadowPass;
+${BOWL_SHADOW_GLSL}
+${BOWL_SKY_GLSL}
+float bayer4(vec2 p){ivec2 q=ivec2(mod(p,4.));int i=q.x+q.y*4;int b[16]=int[16](0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5);return (float(b[i])+.5)/16.;}
+void main(){if(vK.x>.5&&uNear<bayer4(gl_FragCoord.xy))discard;if(uShadowPass>.5){o=vec4(1.);return;}
+ vec3 n=normalize(vN);if(!gl_FrontFacing)n=-n;float nl=max(0.,dot(n,uLd)),sh=bowlShadow(vW,nl)*bowlCloudShade(vec2(vW.x,-vW.z));
+ vec3 c=vC*(bowlAmb(n.y)+bowlSunCol()*nl*sh);
+ if(vK.y>0.&&vK.y<uLit&&abs(n.y)<.5){float wy=step(.45,fract(vL.y/1.1)),wx=step(.5,fract((vL.x+vL.z)/1.25));c+=vec3(1.,.72,.38)*wy*wx*uNight*1.3;}
+ float d=length(vW-uC),fk=1.-exp(-max(0.,d-.7)*.32);o=vec4(mix(c,uHaze,clamp(fk,0.,.6)),1.);}`,
+  ],
+  /* pixel-art standees (owner: landmarks as their own pictures, upright): far out each place's landmark, kept at least
+     a readable size on screen (uPx: world per pixel per unit of distance); close in the buildings and landmarks that
+     have no model. They turn to face the camera round the upright. */
+  mstandee: [
+    `#version 300 es
+precision highp float;in vec3 aPos;layout(location=7) in vec4 aQ;layout(location=8) in vec4 aT;layout(location=9) in float aG;
+uniform mat4 uVP;uniform vec3 uRt,uC;uniform float uPx,uMinPx;out vec2 vUV;out float vG;out vec3 vW;
+void main(){float hh=aQ.w,ww=aQ.z;if(aG<.5){float s=max(1.,uPx*length(aPos-uC)*uMinPx/hh);hh*=s;ww*=s;}
+ vec3 r=normalize(vec3(uRt.x,0.,uRt.z));vec3 p=aPos+r*aQ.x*ww+vec3(0.,aQ.y*hh,0.);
+ vUV=mix(aT.xy,aT.zw,vec2(aQ.x+.5,1.-aQ.y));vG=aG;vW=p;gl_Position=uVP*vec4(p,1.);}`,
+    `#version 300 es
+precision highp float;in vec2 vUV;in float vG;in vec3 vW;out vec4 o;uniform sampler2D uAtlas;uniform vec3 uC,uHaze;uniform float uFar,uNear,uLight,uNight;
+float bayer4(vec2 p){ivec2 q=ivec2(mod(p,4.));int i=q.x+q.y*4;int b[16]=int[16](0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5);return (float(b[i])+.5)/16.;}
+void main(){vec4 t=texture(uAtlas,vUV);if(t.a<.5)discard;float f=vG<.5?uFar:uNear;if(f<bayer4(gl_FragCoord.xy))discard;
+ vec3 c=t.rgb*mix(.92,.3,uNight)*mix(.7,1.08,uLight);float d=length(vW-uC),fk=1.-exp(-max(0.,d-.7)*.32);o=vec4(mix(c,uHaze,clamp(fk,0.,.5)),1.);}`,
   ],
   /* the shadow map: the ground seen from the sun, depth only */
   mshadow: [
@@ -699,11 +752,19 @@ function worldBowlShadows(g) {
   const gl = gpuState.gl;
   const sun = worldBowlSunNow();
   /* the sun moves with the clock: draw the shadows again once it has gone round a little (about 6 minutes) */
-  if (g.shadow && g.shadow.gl === gl && Math.abs(g.shadow.az - sun.az) < 1.5) return g.shadow;
+  const ver = g.things ? g.things.ver : 0;
+  if (
+    g.shadow &&
+    g.shadow.gl === gl &&
+    Math.abs(g.shadow.az - sun.az) < 1.5 &&
+    (g.shadow.ver === ver || performance.now() - g.shadow.at < 2000)
+  )
+    return g.shadow;
   if (g.shadow && g.shadow.gl === gl && g.shadow.t) gl.deleteTexture(g.shadow.t);
   const t0 = performance.now(),
     Z = BOWL_SHADOW_SIZE,
     tex = gl.createTexture();
+  gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, tex);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.DEPTH_COMPONENT24, Z, Z, 0, gl.DEPTH_COMPONENT, gl.UNSIGNED_INT, null);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
@@ -717,6 +778,11 @@ function worldBowlShadows(g) {
   gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, tex, 0);
   gl.drawBuffers([gl.NONE]);
   gl.readBuffer(gl.NONE);
+  /* nothing being drawn may read the map being drawn into (or another texture where a shadow sampler looks) */
+  gl.bindTexture(gl.TEXTURE_2D, null);
+  gl.activeTexture(gl.TEXTURE3);
+  gl.bindTexture(gl.TEXTURE_2D, null);
+  gl.activeTexture(gl.TEXTURE0);
   const ok = gl.checkFramebufferStatus(gl.FRAMEBUFFER) === gl.FRAMEBUFFER_COMPLETE,
     SM = worldBowlLightMatrix();
   if (ok) {
@@ -732,14 +798,482 @@ function worldBowlShadows(g) {
     gl.uniformMatrix4fv(p.U.uSM, false, SM);
     gl.bindVertexArray(g.mesh.vao);
     gl.drawElements(gl.TRIANGLES, g.mesh.n, gl.UNSIGNED_INT, 0);
+    /* the buildings and trees cast shadows too */
+    if (g.things && g.things.gpu) worldBowlThingsDraw(g.things, SM, null, true);
     gl.bindVertexArray(null);
     gl.disable(gl.POLYGON_OFFSET_FILL);
   }
   gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   gl.deleteFramebuffer(fb);
   if (!ok) gl.deleteTexture(tex);
-  g.shadow = { gl, t: ok ? tex : null, SM, az: sun.az, ms: Math.round(performance.now() - t0) };
+  g.shadow = {
+    gl,
+    t: ok ? tex : null,
+    SM,
+    az: sun.az,
+    ver,
+    at: performance.now(),
+    ms: Math.round(performance.now() - t0),
+  };
   return g.shadow;
+}
+/* ---------- landmarks, buildings, trees (look session 4) ----------
+   Owner: far out one landmark per place as its own picture standing upright (logic/bowl-things.js picks it); close in
+   each map's own buildings (their low-poly models, else their pictures) and trees, about three times their size; trees
+   in clumps between places. Built a place at a time as its map comes in, drawn instanced (one shape per kind). */
+/* a tree of each style, in metres (true size), as flat-faced triangles: [x, y up, z, nx, ny, nz, r, g, b] */
+const BOWL_TREE_LOOK = {
+  round: { crown: [0.29, 0.5, 0.24], trunk: [0.42, 0.3, 0.2], h: 6 },
+  tall: { crown: [0.33, 0.52, 0.27], trunk: [0.45, 0.33, 0.22], h: 8 },
+  cone: { crown: [0.17, 0.38, 0.25], trunk: [0.4, 0.28, 0.18], h: 8 },
+  bush: { crown: [0.3, 0.46, 0.22], trunk: [0.36, 0.26, 0.17], h: 2 },
+  mushroom: { crown: [0.78, 0.33, 0.3], trunk: [0.92, 0.88, 0.8], h: 5 },
+  palm: { crown: [0.3, 0.55, 0.22], trunk: [0.55, 0.42, 0.28], h: 7 },
+  crystal: { crown: [0.55, 0.75, 0.95], trunk: [0.45, 0.6, 0.85], h: 4 },
+  dry: { crown: [0.55, 0.52, 0.28], trunk: [0.45, 0.35, 0.24], h: 3 },
+};
+function worldBowlTreeShape(style) {
+  const L = BOWL_TREE_LOOK[style] || BOWL_TREE_LOOK.round,
+    out = [],
+    tri = (a, b, c, col) => {
+      const u = [b[0] - a[0], b[1] - a[1], b[2] - a[2]],
+        v = [c[0] - a[0], c[1] - a[1], c[2] - a[2]],
+        n = [u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]],
+        l = Math.hypot(...n) || 1;
+      for (const p of [a, b, c]) out.push(...p, n[0] / l, n[1] / l, n[2] / l, ...col);
+    },
+    /* a ring of n points at height y, radius r */
+    ring = (n, r, y, rot = 0) =>
+      Array.from({ length: n }, (_, i) => [
+        Math.cos(rot + (i / n) * Math.PI * 2) * r,
+        y,
+        Math.sin(rot + (i / n) * Math.PI * 2) * r,
+      ]),
+    prism = (n, r0, r1, y0, y1, col) => {
+      const A = ring(n, r0, y0),
+        B = ring(n, r1, y1);
+      for (let i = 0; i < n; i++) {
+        const j = (i + 1) % n;
+        tri(A[i], B[j], B[i], col);
+        tri(A[i], A[j], B[j], col);
+        if (r1 < 1e-3) continue;
+      }
+      if (r1 > 1e-3) for (let i = 1; i < n - 1; i++) tri(B[0], B[i + 1], B[i], col);
+    },
+    shade = (c, k) => c.map(v => Math.min(1, v * k)),
+    blob = (cy, rx, ry, col) => {
+      /* an octahedron squashed and turned: eight faces, lit facet by facet */
+      const top = [0, cy + ry, 0],
+        bot = [0, cy - ry * 0.7, 0],
+        M = ring(4, rx, cy, Math.PI / 4);
+      for (let i = 0; i < 4; i++) {
+        const j = (i + 1) % 4;
+        tri(top, M[j], M[i], col);
+        tri(bot, M[i], M[j], shade(col, 0.85));
+      }
+    },
+    h = L.h;
+  if (style === 'cone') {
+    prism(4, 0.18, 0.12, 0, h * 0.25, L.trunk);
+    prism(6, h * 0.22, 0, h * 0.2, h * 0.7, L.crown);
+    prism(6, h * 0.16, 0, h * 0.5, h, shade(L.crown, 1.12));
+  } else if (style === 'mushroom') {
+    prism(5, 0.35, 0.28, 0, h * 0.62, L.trunk);
+    prism(7, h * 0.4, 0.2, h * 0.55, h, L.crown);
+  } else if (style === 'palm') {
+    prism(4, 0.18, 0.12, 0, h * 0.9, L.trunk);
+    for (let i = 0; i < 5; i++) {
+      const a = (i / 5) * Math.PI * 2,
+        tip = [Math.cos(a) * h * 0.38, h * 0.72, Math.sin(a) * h * 0.38],
+        s1 = [Math.cos(a + 0.5) * 0.5, h * 0.92, Math.sin(a + 0.5) * 0.5],
+        s2 = [Math.cos(a - 0.5) * 0.5, h * 0.92, Math.sin(a - 0.5) * 0.5];
+      tri(s1, tip, s2, L.crown);
+      tri(s2, tip, s1, L.crown);
+    }
+  } else if (style === 'crystal') {
+    const spike = (x, z, r, hh, col) => {
+      const top = [x, hh, z],
+        M = ring(4, r, hh * 0.25).map(p => [p[0] + x, p[1], p[2] + z]),
+        bot = [x, 0, z];
+      for (let i = 0; i < 4; i++) {
+        const j = (i + 1) % 4;
+        tri(top, M[j], M[i], col);
+        tri(bot, M[i], M[j], shade(col, 0.8));
+      }
+    };
+    spike(0, 0, 0.6, h, L.crown);
+    spike(0.7, 0.3, 0.35, h * 0.6, L.trunk);
+    spike(-0.5, -0.4, 0.3, h * 0.5, L.crown);
+  } else if (style === 'bush' || style === 'dry') {
+    blob(h * 0.45, h * 0.6, h * 0.45, L.crown);
+  } else {
+    prism(4, 0.22, 0.15, 0, h * 0.45, L.trunk);
+    blob(
+      h * (style === 'tall' ? 0.62 : 0.6),
+      h * (style === 'tall' ? 0.22 : 0.36),
+      h * (style === 'tall' ? 0.42 : 0.34),
+      L.crown
+    );
+  }
+  return new Float32Array(out);
+}
+/* a building's low-poly model from its recipe (prop-models.js lowPolyFromRecipe), kept simple for the map: small
+   parts left out, round parts with few sides; unpacked to floats [x, y up, z, normal, colour] */
+function worldBowlModelShape(path) {
+  const rec = loadPropModelRecipe(path);
+  if (!rec) return null;
+  const layers = (rec.layers || [])
+    .filter(l => l.k !== 'img' && l.k !== 'limb' && !l.hide)
+    .filter(l => Math.max(l.w || 0, l.d || 0, l.h || 0, (l.r || 0) * 2) >= 0.35)
+    .map(l => ({ ...l, sides: Math.min(l.sides || 8, 8), rings: Math.min(l.rings || 4, 4), lump: 0 }));
+  const M = layers.length ? lowPolyFromRecipe({ ...rec, layers }) : null;
+  if (!M) return new Float32Array(0);
+  const i16 = new Int16Array(M.vb),
+    i8 = new Int8Array(M.vb),
+    u8 = new Uint8Array(M.vb),
+    I = M.ib,
+    out = new Float32Array(I.length * 9);
+  for (let k = 0; k < I.length; k++) {
+    const o = I[k] * 24;
+    out.set(
+      [
+        i16[o / 2] / 256,
+        i16[o / 2 + 1] / 256,
+        i16[o / 2 + 2] / 256,
+        i8[o + 8] / 127,
+        i8[o + 9] / 127,
+        i8[o + 10] / 127,
+        u8[o + 20] / 255,
+        u8[o + 21] / 255,
+        u8[o + 22] / 255,
+      ],
+      k * 9
+    );
+  }
+  return out;
+}
+/* the things of one place, from its map: its landmark (far), its buildings and trees (close) */
+function worldBowlThingsOfPlace(W, i) {
+  const l = LOCATIONS[i],
+    s = worldBowl.spots[i],
+    M = l && gameData.maps && gameData.maps[l.mapId],
+    A = (gameData.scenery && gameData.scenery.props) || {};
+  if (!M || !M.props || s.under) return false;
+  const k = BOWL_THING_SCALE / BOWL_METRES,
+    r = Math.hypot(s.x, s.y),
+    north = r < 1e-6 ? [0, 1] : [-s.x / r, -s.y / r],
+    east = [north[1], -north[0]],
+    base = (x, y) => bowlToGpu(x, y, worldBowlSkyFloor(x, y)),
+    lm = bowlLandmarkPick(l, M, A);
+  if (lm && A[lm.k] && A[lm.k].img) W.stand.push({ i, k: lm.k, x: s.x, y: s.y, g: 0, s: lm.s || 1 });
+  let n = 0;
+  for (const p of M.props) {
+    const art = A[p.k],
+      cls = bowlPropClass(p.k, art);
+    if (!cls && !(art && art.landmark)) continue;
+    const [x, y] = bowlMapPoint(s, M, p.x, p.z, BOWL_METRES);
+    if (Math.hypot(x, y) > 0.99) continue;
+    n++;
+    if (cls === 'tree') {
+      const style = bowlTreeStyle(p.k);
+      (W.inst[style] = W.inst[style] || []).push([
+        ...base(x, y),
+        k * (p.s || 1),
+        east[0],
+        east[1],
+        north[0],
+        north[1],
+        1,
+        0,
+        0,
+        0,
+      ]);
+    } else if (cls === 'building' && art.model && /\.json$/.test(art.model)) {
+      const key = 'm:' + art.model;
+      W.models.add(art.model);
+      (W.inst[key] = W.inst[key] || []).push([
+        ...base(x, y),
+        k * (p.s || 1),
+        east[0],
+        east[1],
+        north[0],
+        north[1],
+        1,
+        0.05 + ((0.9 * (((Math.sin(x * 9137.1 + y * 5711.3) * 43758.5) % 1) + 1)) % 1),
+        0,
+        0,
+      ]);
+    } else if (art && art.img) W.stand.push({ i, k: p.k, x, y, g: 1, s: p.s || 1 });
+  }
+  W.counts[i] = n;
+  return true;
+}
+/* the clumps between places (once, when the ground is ready) */
+function worldBowlClumpsInto(W) {
+  const S = worldBowl.spots,
+    G = worldBowl.ground.G,
+    places = [],
+    roads = [];
+  LOCATIONS.forEach((l, i) => {
+    const s = S[i],
+      m = gameData.maps && gameData.maps[l.mapId];
+    if (s && !s.under)
+      places.push({
+        x: s.x,
+        y: s.y,
+        reach: m ? Math.hypot(m.w, m.h) / 2 / BOWL_METRES : 0.06,
+        region: l.region || 'starter',
+      });
+  });
+  for (const [a, b] of ROADS)
+    if (S[a] && S[b] && !S[a].under && !S[b].under) roads.push([S[a].x, S[a].y, S[b].x, S[b].y]);
+  const T = bowlClumps(G, places, roads, (x, y) => bowlGridHeight(G, x, y) - bowlWaterLevel(x, y)),
+    k = BOWL_THING_SCALE / BOWL_METRES;
+  for (const t of T) {
+    const a = Math.sin(t.x * 733.1 + t.y * 197.7) * Math.PI;
+    (W.inst[t.style] = W.inst[t.style] || []).push([
+      ...bowlToGpu(t.x, t.y, worldBowlSkyFloor(t.x, t.y)),
+      k * t.s,
+      Math.cos(a),
+      Math.sin(a),
+      -Math.sin(a),
+      Math.cos(a),
+      0,
+      0,
+      0,
+      0,
+    ]);
+  }
+  W.clumps = T.length;
+}
+/* the standees' pictures in one atlas (each scaled down by whole steps to at most 192 px high, kept sharp) */
+function worldBowlAtlas(W) {
+  const A = (gameData.scenery && gameData.scenery.props) || {},
+    keys = [...new Set(W.stand.map(q => q.k))].filter(k => A[k] && A[k].img),
+    paths = keys.map(k => A[k].img);
+  if (W.atlasKeys === keys.join()) return W.atlas;
+  if (!paths.every(p => ART_CACHE.img[p] && ART_CACHE.img[p].naturalWidth)) {
+    if (!W.atlasLoading) {
+      W.atlasLoading = true;
+      Promise.resolve(artLoad(paths))
+        .catch(() => {})
+        .finally(() => {
+          W.atlasLoading = false;
+          W.dirty = true;
+          worldBowl.dirty = true;
+        });
+    }
+    return W.atlas;
+  }
+  const S = 2048,
+    c = makeCanvas(S, S),
+    x = c.getContext('2d'),
+    uv = {};
+  x.imageSmoothingEnabled = false;
+  let px = 0,
+    py = 0,
+    row = 0;
+  for (const k of keys) {
+    const im = ART_CACHE.img[A[k].img],
+      f = Math.max(1, Math.ceil(im.naturalHeight / 192), Math.ceil(im.naturalWidth / 256)),
+      w = Math.ceil(im.naturalWidth / f),
+      h = Math.ceil(im.naturalHeight / f);
+    if (px + w + 2 > S) {
+      px = 0;
+      py += row + 2;
+      row = 0;
+    }
+    if (py + h > S) break;
+    x.drawImage(im, px, py, w, h);
+    uv[k] = {
+      u0: px / S,
+      v0: py / S,
+      u1: (px + w) / S,
+      v1: (py + h) / S,
+      w: im.naturalWidth / 32,
+      h: im.naturalHeight / 32,
+    };
+    px += w + 2;
+    row = Math.max(row, h);
+  }
+  W.atlasKeys = keys.join();
+  W.atlas = { c, uv, gl: null, t: null };
+  return W.atlas;
+}
+/* each frame: take in the places whose maps have come, and (now and then) send the changes to the GPU */
+function worldBowlThingsTick(g) {
+  const gl = gpuState.gl;
+  let W = g.things;
+  if (!W) {
+    W = g.things = { inst: {}, stand: [], models: new Set(), done: new Set(), counts: {}, ver: 0, dirty: true, at: 0 };
+    worldBowlClumpsInto(W);
+  }
+  for (let i = 0; i < LOCATIONS.length; i++)
+    if (!W.done.has(i) && worldBowl.spots[i] && !worldBowl.spots[i].under && worldBowlThingsOfPlace(W, i)) {
+      W.done.add(i);
+      W.dirty = true;
+    }
+  const now = performance.now();
+  if (W.gpu && W.gpu.gl !== gl) W.gpu = null;
+  if (!(W.dirty || !W.gpu) || (W.gpu && now - W.at < 1000)) return;
+  const t0 = now;
+  /* the shapes: one per tree style and building model (a model whose recipe is still loading waits) */
+  const G = W.gpu && W.gpu.gl === gl ? W.gpu : { gl, kinds: {} };
+  let waiting = false;
+  for (const key of Object.keys(W.inst)) {
+    if (G.kinds[key] && G.kinds[key].shape) continue;
+    const shape = key.startsWith('m:') ? worldBowlModelShape(key.slice(2)) : worldBowlTreeShape(key);
+    if (!shape) {
+      waiting = true;
+      continue;
+    }
+    const vao = gl.createVertexArray(),
+      vb = gl.createBuffer(),
+      ib = gl.createBuffer();
+    gl.bindVertexArray(vao);
+    gl.bindBuffer(gl.ARRAY_BUFFER, vb);
+    gl.bufferData(gl.ARRAY_BUFFER, shape, gl.STATIC_DRAW);
+    for (const [loc, size, off] of [
+      [0, 3, 0],
+      [1, 3, 12],
+      [7, 3, 24],
+    ]) {
+      gl.enableVertexAttribArray(loc);
+      gl.vertexAttribPointer(loc, size, gl.FLOAT, false, 36, off);
+    }
+    gl.bindBuffer(gl.ARRAY_BUFFER, ib);
+    for (const [loc, off] of [
+      [8, 0],
+      [9, 16],
+      [10, 32],
+    ]) {
+      gl.enableVertexAttribArray(loc);
+      gl.vertexAttribPointer(loc, 4, gl.FLOAT, false, 48, off);
+      gl.vertexAttribDivisor(loc, 1);
+    }
+    gl.bindVertexArray(null);
+    G.kinds[key] = { shape, vao, ib, nv: shape.length / 9, n: 0 };
+  }
+  for (const [key, list] of Object.entries(W.inst)) {
+    const K = G.kinds[key];
+    if (!K || K.n === list.length) continue;
+    gl.bindBuffer(gl.ARRAY_BUFFER, K.ib);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(list.flat()), gl.STATIC_DRAW);
+    K.n = list.length;
+  }
+  /* the standees: six corners each, from the atlas */
+  const at = worldBowlAtlas(W);
+  if (at) {
+    if (at.gl !== gl) {
+      at.gl = gl;
+      at.t = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, at.t);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, at.c);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST_MIPMAP_NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.generateMipmap(gl.TEXTURE_2D);
+    }
+    const V = [];
+    for (const q of W.stand) {
+      const u = at.uv[q.k];
+      if (!u) continue;
+      const b = bowlToGpu(q.x, q.y, worldBowlSkyFloor(q.x, q.y)),
+        w = (u.w * q.s * BOWL_THING_SCALE) / BOWL_METRES,
+        h = (u.h * q.s * BOWL_THING_SCALE) / BOWL_METRES;
+      for (const [cx, cy] of [
+        [-0.5, 0],
+        [0.5, 0],
+        [0.5, 1],
+        [-0.5, 0],
+        [0.5, 1],
+        [-0.5, 1],
+      ])
+        V.push(...b, cx, cy, w, h, u.u0, u.v0, u.u1, u.v1, q.g);
+    }
+    if (!G.svao) {
+      G.svao = gl.createVertexArray();
+      G.sb = gl.createBuffer();
+      gl.bindVertexArray(G.svao);
+      gl.bindBuffer(gl.ARRAY_BUFFER, G.sb);
+      for (const [loc, size, off] of [
+        [0, 3, 0],
+        [7, 4, 12],
+        [8, 4, 28],
+        [9, 1, 44],
+      ]) {
+        gl.enableVertexAttribArray(loc);
+        gl.vertexAttribPointer(loc, size, gl.FLOAT, false, 48, off);
+      }
+      gl.bindVertexArray(null);
+    }
+    gl.bindBuffer(gl.ARRAY_BUFFER, G.sb);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(V), gl.STATIC_DRAW);
+    G.ns = V.length / 12;
+  }
+  W.gpu = G;
+  W.at = now;
+  W.dirty = waiting || !at;
+  W.ver++;
+  W.ms = Math.round(performance.now() - t0);
+  worldBowl.dirty = true;
+}
+/* draws the things: into the shadow map (SM is the light's matrix, only the shapes) or into the view */
+function worldBowlThingsDraw(W, VP, F, shadowPass) {
+  const gl = gpuState.gl,
+    G = W.gpu,
+    dist = worldBowl.cam ? worldBowl.cam.dist : 2,
+    near = shadowPass ? 1 : 1 - Math.max(0, Math.min(1, (dist - 0.7) / 0.25)),
+    far = Math.max(0, Math.min(1, (dist - 0.62) / 0.23));
+  let p = gpuState.P.mthing,
+    U = p.U;
+  gl.useProgram(p.p);
+  gl.uniformMatrix4fv(U.uVP, false, VP);
+  gl.uniform1f(U.uNear, near);
+  gl.uniform1f(U.uShadowPass, shadowPass ? 1 : 0);
+  if (shadowPass) {
+    gl.uniform1i(U.uSh, 3);
+    gl.uniform1i(U.uSky, 7);
+  } else {
+    gl.uniform3fv(U.uC, F.v.C);
+    gl.uniform3fv(U.uLd, F.sun.ld);
+    gl.uniform3fv(U.uHaze, F.haze);
+    gl.uniform1f(U.uLit, typeof environmentLitFraction === 'function' ? environmentLitFraction(F.sky.hour ?? 13) : 0);
+    worldBowlShadowUniforms(U, worldBowl.ground);
+    worldBowlSkyUniforms(U, F.sky, F.sun);
+  }
+  let tris = 0;
+  for (const [key, K] of Object.entries(G.kinds)) {
+    if (!K.n || !K.nv) continue;
+    /* close in only: the maps' own things (clumps are group 0 and share the tree shapes, so trees always draw) */
+    if (near <= 0 && key.startsWith('m:')) continue;
+    gl.bindVertexArray(K.vao);
+    gl.drawArraysInstanced(gl.TRIANGLES, 0, K.nv, K.n);
+    tris += (K.nv / 3) * K.n;
+  }
+  W.tris = tris;
+  if (shadowPass || !G.ns || !W.atlas || !W.atlas.t) return;
+  p = gpuState.P.mstandee;
+  U = p.U;
+  gl.useProgram(p.p);
+  gl.uniformMatrix4fv(U.uVP, false, VP);
+  gl.uniform3fv(U.uRt, F.v.rt);
+  gl.uniform3fv(U.uC, F.v.C);
+  gl.uniform3fv(U.uHaze, F.haze);
+  gl.uniform1f(U.uPx, (2 * Math.tan((BOWL_CAMERA.fov * Math.PI) / 360)) / Math.max(1, worldMapHeight));
+  gl.uniform1f(U.uMinPx, 46);
+  gl.uniform1f(U.uFar, far);
+  gl.uniform1f(U.uNear, near);
+  gl.uniform1f(U.uLight, F.sun.light);
+  gl.uniform1f(U.uNight, F.sun.night);
+  gl.activeTexture(gl.TEXTURE6);
+  gl.bindTexture(gl.TEXTURE_2D, W.atlas.t);
+  gl.uniform1i(U.uAtlas, 6);
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindVertexArray(G.svao);
+  gl.drawArrays(gl.TRIANGLES, 0, G.ns);
+  gl.bindVertexArray(null);
 }
 /* paths along the roads, a few squares wide (the places' own maps lie over their ends) */
 function worldBowlRoadsInto(T) {
@@ -1044,6 +1578,7 @@ function worldBowlGpu() {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     g.lines = { gl, t, ms: Math.round(performance.now() - t0) };
   }
+  if (g.ok) worldBowlThingsTick(g);
   worldBowlShadows(g);
   if (T.dirty) worldBowl.dirty = true;
   return g;
@@ -1400,6 +1935,8 @@ export function worldBowlRender(t) {
     gl.depthMask(true);
     gl.disable(gl.BLEND);
   }
+  /* the landmarks, buildings and trees */
+  if (g.things && g.things.gpu) worldBowlThingsDraw(g.things, VP, { v, sun, sky, haze }, false);
   /* rain, snow and ash, then the clouds over everything */
   worldBowlDrawSky(sky, sun, VP, v, haze);
   gl.bindVertexArray(null);
