@@ -54,6 +54,27 @@ polish tasks. Each session is tagged `st-N-done`.
 - Pixel editing: three editors (sprites.js, wardrobe.js, skeleton painting), each with its own undo, art outside the
   global undo, no vertical flip, no symmetry.
 
+## ST-2: the shared pixel canvas (done 2026-10-19)
+- game/js/logic/pixel-ops.js: the pixel work as numbers (line, fill inside a box, flips, quarter turns, symmetry,
+  palette colours and the nearest one, what is off the palette, patches, zoom steps) and the key table PIXEL_KEYS;
+  game/js/logic/history.js: the Studio's one undo stack (data snapshots and picture patches in one order, 80 steps and
+  64 MB of pictures). Both tested in Node.
+- studio/js/pixel-canvas.js: `pixelCanvas(stage, o)` (o: get, path, ids, repeat, boxAt, focusBox, overlay, onion,
+  hostTool, hover, changed, drawn), `pixelCanvasPanelHTML` / `pixelCanvasPanel` (symmetry, palette, onion),
+  `pixelCanvasToolsHTML` (a tool bar for a host without one), `pixelCanvasAct` (what a key does), `artStep` (a
+  picture step: the box that changed, before and after; a size change keeps the whole picture) and `artStepPut`.
+  A picture undone or redone fires `studio-art` on document; an open canvas of that path redraws.
+- Users: sprites.js (the sheet editor; skeleton.js's Paint pixels opens it) and map-editor.js (props and ground
+  tiles; its keys go to the canvas only while the pointer is over it, so B and E still paint the map elsewhere).
+  wardrobe.js still paints on its own (ST-6).
+- Corrections: skeleton.js never had a painter of its own; there were three painters (sheets, wardrobe, props and
+  tiles). The undo snapshot now leaves out `_` keys as saving does: the map's height cache (`_hg`, with a clock) made
+  every undo in Walk scenes only take that back.
+- Onion skin: centred on the part's box, not on the pivot (front and back place their pivots differently, so the
+  pivot put most back parts beside the front ones).
+- For ST-3 and ST-4: build Sheet and Part modes on `pixelCanvas` (a `boxAt` per part, `overlay` for pivots and
+  sockets, `hostTool` for the pivot drag); `artStep` for anything that changes pixels outside a stroke.
+
 ## ST-1: the layout shell (done 2026-10-19)
 - Sizes are custom properties (`--nav-w`, `--list-w`, `--side-w`, `--pane-cols`). game/js/logic/studio-layout.js holds
   the numbers (width classes, limits, the saved layout, presets; tested in Node); studio/js/layout.js puts them on the

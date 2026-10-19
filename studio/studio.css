@@ -1180,21 +1180,134 @@ canvas.spr-prev.big {
     linear-gradient(to right, rgba(0, 0, 0, 0.12) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(0, 0, 0, 0.12) 1px, transparent 1px);
 }
-#pxParts {
+.pc-art {
+  image-rendering: pixelated;
+}
+.pan-ready .px-wrap,
+.pan-ready {
+  cursor: grab;
+}
+.panning,
+.panning .px-wrap {
+  cursor: grabbing;
+}
+.pc-over {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   pointer-events: none;
 }
-#pxParts rect {
+.pc-over rect {
   fill: none;
   stroke: rgba(31, 110, 111, 0.55);
   stroke-width: 1;
   vector-effect: non-scaling-stroke;
   stroke-dasharray: 4 3;
 }
-#pxParts rect.hov {
+.dlg.keys-dlg {
+  width: min(1180px, 94vw);
+  max-width: none;
+}
+.keys-sheet {
+  columns: 3 320px;
+  column-gap: 28px;
+}
+.keys-sheet section {
+  break-inside: avoid;
+  margin-bottom: 14px;
+}
+.keys-sheet h3 {
+  margin: 0 0 6px;
+  font-size: 14px;
+}
+table.keys {
+  border-collapse: collapse;
+  font-size: 13px;
+}
+table.keys th {
+  text-align: left;
+  font-weight: 400;
+  white-space: nowrap;
+  padding: 3px 12px 3px 0;
+  vertical-align: top;
+}
+table.keys td {
+  padding: 3px 0;
+  color: var(--text2);
+}
+.pc-base {
+  fill: none;
+  stroke: #c8323c;
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+.sc-pe-stage .px-wrap {
+  margin: auto;
+}
+.pc-zoom {
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+  min-width: 30px;
+  text-align: center;
+}
+.pc-axis {
+  stroke: #d0347c;
+  stroke-width: 1.5;
+  stroke-dasharray: 6 3;
+  vector-effect: non-scaling-stroke;
+}
+.pc-ramps {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 3px 10px;
+  margin-top: 8px;
+}
+.pc-ramp {
+  display: grid;
+  grid-template-columns: repeat(8, 16px);
+  gap: 2px;
+}
+.pc-ramp .sw {
+  border-radius: 2px;
+}
+.pc-panel .sw.on {
+  outline: 2px solid var(--text);
+  outline-offset: 1px;
+}
+.pc-panel .chk {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 13px;
+  margin: 4px 0;
+}
+.pc-shift {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font-size: 12px;
+}
+.pc-shift input {
+  width: 56px;
+}
+.pc-over rect.pc-sel {
+  fill: rgba(40, 120, 220, 0.08);
+  stroke: #2878dc;
+  stroke-width: 1.5;
+  stroke-dasharray: 5 4;
+  animation: pc-ants 0.8s linear infinite;
+}
+@keyframes pc-ants {
+  to {
+    stroke-dashoffset: -9;
+  }
+}
+.px-wrap[data-tool='select'],
+.px-wrap[data-tool='line'] {
+  cursor: crosshair;
+}
+.pc-over rect.hov {
   stroke: #c8323c;
   stroke-width: 2;
   stroke-dasharray: none;
@@ -1941,14 +2054,6 @@ select.sm {
   border-radius: 10px;
   background: repeating-conic-gradient(color-mix(in srgb, var(--line) 70%, transparent) 0 25%, transparent 0 50%) 0
     0/16px 16px;
-}
-.sc-pe-stage canvas {
-  display: block;
-  margin: auto;
-  image-rendering: pixelated;
-  cursor: crosshair;
-  touch-action: none;
-  box-shadow: 0 0 0 1px var(--line2);
 }
 @media (max-width: 1100px) {
   .sc-pe-body {

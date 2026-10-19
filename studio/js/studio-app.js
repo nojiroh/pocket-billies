@@ -3,12 +3,13 @@
    State, server calls, undo, form fields bound to paths in the game data, navigation, toasts and dialogs. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
-import { mountPreviews, provide, runCheck, scheduleCheck, spriteCacheClear } from '../../game/js/hooks.js';
+import { artStepPut, mountPreviews, provide, runCheck, scheduleCheck, spriteCacheClear } from '../../game/js/hooks.js';
 import { $, $$ } from '../../game/js/util.js';
 import { ICON_ATLAS, artLoad } from '../../game/js/art.js';
 import { battleStageStop } from '../../game/js/battle-stage.js';
 import { engineContext } from '../../game/js/engine/settings.js';
 import { escapeHtml } from './game-stand-ins.js';
+import { historyCommit, historyRedo, historyUndo } from '../../game/js/logic/history.js';
 /* eslint-disable no-func-assign */
 expose({
   ACTIONS: [() => ACTIONS],
@@ -172,17 +173,14 @@ export function setWritePath(v) {
   provide({ writePath });
 }
 /* ---------- undo / dirty ---------- */
-const snapshot = () => JSON.stringify({ D: studioState.D, R: studioState.rigs });
+/* caches kept on the data (keys starting with _, as the height cache's clock in a map) are left out, as saving does:
+   otherwise the snapshot changes on its own and an undo only takes that back */
+const snapshot = () =>
+  JSON.stringify({ D: studioState.D, R: studioState.rigs }, (k, v) => (k[0] === '_' && k.length > 1 ? undefined : v));
 export function commit(now) {
   clearTimeout(studioState.snapT);
   const go = () => {
-    const s = snapshot();
-    if (s === studioState.last) return;
-    if (studioState.last) studioState.undo.push(studioState.last);
-    if (studioState.undo.length > 80) studioState.undo.shift();
-    studioState.redo = [];
-    studioState.last = s;
-    updateTopBar();
+    if (historyCommit(studioState, snapshot())) updateTopBar();
   };
   if (now) go();
   else studioState.snapT = setTimeout(go, 450);
@@ -236,18 +234,22 @@ const blurField = () => {
 export function undo() {
   blurField();
   commit(true);
-  if (!studioState.undo.length) return toast('Nothing to undo.');
-  studioState.redo.push(studioState.last);
-  studioState.last = studioState.undo.pop();
-  restore(studioState.last);
+  const u = historyUndo(studioState);
+  if (!u) return toast('Nothing to undo.');
+  if (u.kind === 'art') {
+    artStepPut(u.step, u.put);
+    updateTopBar();
+  } else restore(u.snap);
   toast('Undone.');
 }
 export function redo() {
   blurField();
-  if (!studioState.redo.length) return toast('Nothing to redo.');
-  studioState.undo.push(studioState.last);
-  studioState.last = studioState.redo.pop();
-  restore(studioState.last);
+  const u = historyRedo(studioState);
+  if (!u) return toast('Nothing to redo.');
+  if (u.kind === 'art') {
+    artStepPut(u.step, u.put);
+    updateTopBar();
+  } else restore(u.snap);
   toast('Redone.');
 }
 function restore(s) {
@@ -502,7 +504,7 @@ export function renderSide() {
               .join('')
       }</div>`;
     }).join('') +
-    `<div class="side-foot"><small><kbd>Ctrl K</kbd> finds any setting · <kbd>Ctrl L</kbd> shows connections · <kbd>Ctrl S</kbd> saves.<br>Saves go to <code>game/data</code> and <code>game/art</code>, with backups in <code>backups/</code>.</small></div>`;
+    `<div class="side-foot"><small><kbd>Ctrl K</kbd> finds any setting · <kbd>Ctrl L</kbd> shows connections · <kbd>Ctrl S</kbd> saves · <kbd>?</kbd> lists the keys.<br>Saves go to <code>game/data</code> and <code>game/art</code>, with backups in <code>backups/</code>.</small></div>`;
 }
 /* studio track ST-1: the second pane shows any section but the four with a 3D view (they share one) and the one in
    the first pane (its ids would clash); why not, or '' */
