@@ -18,6 +18,9 @@ No engine swap (CLAUDE.md). The look must not change except where a task says so
   the lite/low-render settings. Refactors are proven by Node data tests instead (section "How each step is proven").
 - The lighting findings from Luminati go in this phase (stage I).
 - Work in Claude Code, one stage per session or a few, Plan Mode first (CLAUDE.md).
+- A8 budgets (owner, 2026-10-19, after the iPad and Android baselines in HANDOFF): **at most 400 draw calls a frame
+  on phones, shadow passes included**; **60 fps in towns on the Android phone at the game's own values**. Next stage:
+  **B** (the file split), then the rest.
 
 ## What the owner's graphics test already says (docs/graphics-bench.md)
 - Game's own values / everything lowest / highest: iPad 38.5 / 57.5 / 37 fps; Android 15.5 / 42 / 16.5 fps.

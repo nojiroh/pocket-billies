@@ -42,7 +42,9 @@ import {
   walkView,
 } from '../../game/js/walk-view.js';
 import { environment } from '../../game/js/environment.js';
-import { WALL_MATERIALS, mountWalkView, rawHeightAt, walkRenderer } from '../../game/js/walk-view-gl.js';
+import { walkRenderer } from '../../game/js/walk/walk-state.js';
+import { WALL_MATERIALS, rawHeightAt } from '../../game/js/walk/heights.js';
+import { mountWalkView } from '../../game/js/walk-view-gl.js';
 import { escapeHtml } from './game-stand-ins.js';
 import {
   ACTIONS,

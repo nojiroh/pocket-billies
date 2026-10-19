@@ -1231,72 +1231,14 @@
    "box": [3.3,2.2],
    "door": {"x":18,"y":0},
    "fx": [
-    {"k":"window","x":-25,"y":-49},
-    {"k":"smoke","x":32,"y":-142},
-    {"k":"glow","x":-2,"y":-54}
+    {"k":"window","x":-26,"y":-42},
+    {"k":"window","x":0,"y":-99},
+    {"k":"glow","x":-2,"y":-51},
+    {"k":"smoke","x":34,"y":-166}
    ],
-   "build": {
-    "kind": "gableF",
-    "wall": [-53,53],
-    "eave": -74,
-    "apex": -125,
-    "over": 0.3,
-    "wallCol": "#F8D6B2",
-    "wallTex": 0,
-    "roofCol": "#E86256",
-    "roofTex": 8,
-    "trimCol": "#84543C",
-    "chimney": {"x":32,"top":-138,"w":0.42,"col":"#AAA6B4","tex":3},
-    "rooms": [0,2],
-    "win": [[-7,-110,14,14],[-37,-57,26,18]],
-    "glass": ["#3D5879","#598CAF","#70C4E4","#9BD2DA","#C6E6E8","#746250","#B79E68","#FFDE78","#FFE58F","#FFF0BC"],
-    "roofRamp": ["#6B3242","#A84C51","#E86256","#EF8E77","#F6BEAF"],
-    "floors": 1,
-    "pitch": 40,
-    "sideWin": true,
-    "variants": [
-     {
-      "wallCol": "#F6E6BE",
-      "roofCol": "#A05040",
-      "trimCol": "#84543C",
-      "roofRamp": ["#502B3A","#794143","#A05040","#BC8168","#D9B7A6"],
-      "extra": ["window boxes"],
-      "img": "scene/props/house_red_v1.png"
-     },
-     {
-      "wallCol": "#DEECD6",
-      "roofCol": "#547854",
-      "trimCol": "#6E543C",
-      "roofRamp": ["#323B42","#475B51","#547854","#879D76","#BBC7AE"],
-      "extra": [],
-      "img": "scene/props/house_red_v2.png"
-     },
-     {
-      "wallCol": "#F0D6D6",
-      "roofCol": "#785478",
-      "trimCol": "#604860",
-      "roofRamp": ["#402D50","#5E4368","#785478","#A0848F","#C9B9BC"],
-      "extra": ["window boxes"],
-      "img": "scene/props/house_red_v3.png"
-     },
-     {
-      "wallCol": "#D6E2F0",
-      "roofCol": "#465A82",
-      "trimCol": "#5A463C",
-      "roofRamp": ["#2D2F53","#3E486E","#465A82","#7E8896","#B5BBC0"],
-      "extra": [],
-      "img": "scene/props/house_red_v4.png"
-     },
-     {
-      "wallCol": "#ECDEB0",
-      "roofCol": "#B06E40",
-      "trimCol": "#785038",
-      "roofRamp": ["#55373A","#845443","#B06E40","#C89668","#DFC3A6"],
-      "extra": ["window boxes"],
-      "img": "scene/props/house_red_v5.png"
-     }
-    ]
-   }
+   "model": "scene/next/models/house_red.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0}
   },
   "shop": {
    "name": "General store",
@@ -1311,60 +1253,11 @@
    "box": [3.8,2.4],
    "door": {"x":30,"y":0},
    "fx": [
-    {"k":"window","x":-26,"y":-81}
+    {"k":"window","x":-22,"y":-38}
    ],
-   "build": {
-    "kind": "hip",
-    "wall": [-62,62],
-    "eave": -123,
-    "pitch": 34,
-    "over": 0.3,
-    "wallCol": "#F8D6B2",
-    "wallTex": 1,
-    "roofCol": "#4E9AD6",
-    "roofTex": 8,
-    "trimCol": "#7ED4AC",
-    "rooms": [3],
-    "win": [[-50,-97,50,32]],
-    "glass": ["#3D5879","#598CAF","#70C4E4","#9BD2DA","#C6E6E8","#746250","#B79E68","#FFDE78","#FFE58F","#FFF0BC"],
-    "roofRamp": ["#2F4774","#4371A6","#4E9AD6","#83B5D1","#B8D5E2"],
-    "floors": 1,
-    "sideWin": true,
-    "variants": [
-     {
-      "wallCol": "#F0E2C8",
-      "roofCol": "#545C70",
-      "trimCol": "#60402C",
-      "roofRamp": ["#32304C","#474863","#545C70","#878A89","#BBBCB9"],
-      "extra": ["window boxes"],
-      "img": "scene/props/shop_v1.png"
-     },
-     {
-      "wallCol": "#D4B496",
-      "roofCol": "#8C4034",
-      "trimCol": "#E8DEC8",
-      "roofRamp": ["#482535","#6C363C","#8C4034","#AE765F","#D1B1A1"],
-      "extra": [],
-      "img": "scene/props/shop_v2.png"
-     },
-     {
-      "wallCol": "#C8D8DC",
-      "roofCol": "#3C4E78",
-      "trimCol": "#E8E8E8",
-      "roofRamp": ["#292A50","#373F68","#3C4E78","#76808F","#B1B6BC"],
-      "extra": ["window boxes"],
-      "img": "scene/props/shop_v3.png"
-     },
-     {
-      "wallCol": "#E8D2A0",
-      "roofCol": "#607850",
-      "trimCol": "#60402C",
-      "roofRamp": ["#363B40","#4F5B4E","#607850","#909D73","#BFC7AC"],
-      "extra": [],
-      "img": "scene/props/shop_v4.png"
-     }
-    ]
-   }
+   "model": "scene/next/models/shop.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0}
   },
   "clinic": {
    "name": "Clinic",
@@ -1376,75 +1269,17 @@
    "flat": 0,
    "tags": ["town"],
    "group": "clinic",
-   "box": [4,2.6],
+   "box": [4.6,2.6],
    "door": {"x":0,"y":0},
    "fx": [
-    {"k":"window","x":-44,"y":-95},
-    {"k":"window","x":-44,"y":-49},
-    {"k":"window","x":44,"y":-95},
-    {"k":"window","x":44,"y":-49}
+    {"k":"window","x":0,"y":-32},
+    {"k":"window","x":-32,"y":-96},
+    {"k":"window","x":32,"y":-96},
+    {"k":"glow","x":0,"y":-147}
    ],
-   "build": {
-    "kind": "flat",
-    "wall": [-66,66],
-    "eave": -124,
-    "wallCol": "#EAEEEC",
-    "wallTex": 5,
-    "roofCol": "#A698CC",
-    "roofTex": 13,
-    "trimCol": "#7ED4AC",
-    "floors": 2,
-    "rooms": [5],
-    "win": [[-50,-105,14,22],[38,-105,14,22],[-50,-59,14,22],[38,-59,14,22],[-14,-51,12,42],[2,-51,12,42]],
-    "glass": ["#3D5879","#598CAF","#70C4E4","#9BD2DA","#C6E6E8","#746250","#B79E68","#FFDE78","#FFE58F","#FFF0BC"],
-    "roofRamp": ["#524770","#7D709F","#A698CC","#C1B4CA","#DBD4DE"],
-    "over": 0.25,
-    "pitch": 40,
-    "sideWin": true,
-    "variants": [
-     {
-      "wallCol": "#F0E2C8",
-      "roofCol": "#545C70",
-      "trimCol": "#60402C",
-      "roofRamp": ["#32304C","#474863","#545C70","#878A89","#BBBCB9"],
-      "extra": ["window boxes"],
-      "img": "scene/props/clinic_v1.png"
-     },
-     {
-      "wallCol": "#D4B496",
-      "roofCol": "#8C4034",
-      "trimCol": "#E8DEC8",
-      "roofRamp": ["#482535","#6C363C","#8C4034","#AE765F","#D1B1A1"],
-      "extra": [],
-      "img": "scene/props/clinic_v2.png"
-     },
-     {
-      "wallCol": "#C8D8DC",
-      "roofCol": "#3C4E78",
-      "trimCol": "#E8E8E8",
-      "roofRamp": ["#292A50","#373F68","#3C4E78","#76808F","#B1B6BC"],
-      "extra": ["window boxes"],
-      "img": "scene/props/clinic_v3.png"
-     },
-     {
-      "wallCol": "#E8D2A0",
-      "roofCol": "#607850",
-      "trimCol": "#60402C",
-      "roofRamp": ["#363B40","#4F5B4E","#607850","#909D73","#BFC7AC"],
-      "extra": [],
-      "img": "scene/props/clinic_v4.png"
-     },
-     {
-      "wallCol": "#F2F6F6",
-      "roofCol": "#A698CC",
-      "trimCol": "#4FB8A8",
-      "roofRamp": ["#524770","#7D709F","#A698CC","#C1B4CA","#DBD4DE"],
-      "extra": [],
-      "img": "scene/props/clinic_pearl.png",
-      "pearl": 1
-     }
-    ]
-   }
+   "model": "scene/next/models/clinic.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0}
   },
   "lab": {
    "name": "Research lab",
@@ -1770,7 +1605,10 @@
    "flat": 0,
    "tags": ["town","farm"],
    "group": "well",
-   "solid": 0.85
+   "solid": 0.85,
+   "model": "scene/next/models/well.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "crate": {
    "name": "Crate",
@@ -1834,7 +1672,10 @@
    "flat": 0,
    "tags": ["route","town"],
    "group": "signpost",
-   "solid": 0.3
+   "solid": 0.3,
+   "model": "scene/next/models/signpost.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "lantern": {
    "name": "Lantern post",
@@ -1866,8 +1707,11 @@
    "group": "streetlamp",
    "solid": 0.3,
    "fx": [
-    {"k":"glow","x":0,"y":-106}
-   ]
+    {"k":"glow","x":0,"y":-104}
+   ],
+   "model": "scene/next/models/streetlamp.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0}
   },
   "tent": {
    "name": "Market tent",
@@ -1891,7 +1735,10 @@
    "flat": 0,
    "tags": ["town","farm","mall"],
    "group": "stall",
-   "box": [3.4,1.4]
+   "box": [3.4,1.4],
+   "model": "scene/next/models/stall.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0}
   },
   "picnic": {
    "name": "Picnic table",
@@ -2375,72 +2222,14 @@
    "box": [3.4,2.2],
    "door": {"x":-23,"y":0},
    "fx": [
-    {"k":"window","x":21,"y":-55},
-    {"k":"window","x":1,"y":-105},
-    {"k":"glow","x":-4,"y":-55},
-    {"k":"smoke","x":-29,"y":-144}
+    {"k":"window","x":21,"y":-42},
+    {"k":"window","x":0,"y":-94},
+    {"k":"glow","x":-4,"y":-51},
+    {"k":"smoke","x":-30,"y":-150}
    ],
-   "build": {
-    "kind": "hip",
-    "wall": [-53,53],
-    "eave": -78,
-    "pitch": 42,
-    "over": 0.28,
-    "wallCol": "#EAEEEC",
-    "wallTex": 0,
-    "roofCol": "#608CEC",
-    "roofTex": 9,
-    "trimCol": "#84543C",
-    "chimney": {"x":-29,"top":-140,"w":0.42,"col":"#AAA6B4","tex":3},
-    "rooms": [1,0,2],
-    "win": [[7,-63,30,18]],
-    "glass": ["#3D5879","#598CAF","#70C4E4","#9BD2DA","#C6E6E8","#746250","#B79E68","#FFDE78","#FFE58F","#FFF0BC"],
-    "roofRamp": ["#36427C","#4F68B4","#608CEC","#90ABE0","#BFCFEB"],
-    "floors": 1,
-    "sideWin": true,
-    "variants": [
-     {
-      "wallCol": "#F6E6BE",
-      "roofCol": "#A05040",
-      "trimCol": "#84543C",
-      "roofRamp": ["#502B3A","#794143","#A05040","#BC8168","#D9B7A6"],
-      "extra": ["window boxes"],
-      "img": "scene/props/house_blue_v1.png"
-     },
-     {
-      "wallCol": "#F0D6D6",
-      "roofCol": "#785478",
-      "trimCol": "#604860",
-      "roofRamp": ["#402D50","#5E4368","#785478","#A0848F","#C9B9BC"],
-      "extra": [],
-      "img": "scene/props/house_blue_v2.png"
-     },
-     {
-      "wallCol": "#D6E2F0",
-      "roofCol": "#465A82",
-      "trimCol": "#5A463C",
-      "roofRamp": ["#2D2F53","#3E486E","#465A82","#7E8896","#B5BBC0"],
-      "extra": ["window boxes"],
-      "img": "scene/props/house_blue_v3.png"
-     },
-     {
-      "wallCol": "#ECDEB0",
-      "roofCol": "#B06E40",
-      "trimCol": "#785038",
-      "roofRamp": ["#55373A","#845443","#B06E40","#C89668","#DFC3A6"],
-      "extra": [],
-      "img": "scene/props/house_blue_v4.png"
-     },
-     {
-      "wallCol": "#F6E6BE",
-      "roofCol": "#A05040",
-      "trimCol": "#84543C",
-      "roofRamp": ["#502B3A","#794143","#A05040","#BC8168","#D9B7A6"],
-      "extra": ["window boxes"],
-      "img": "scene/props/house_blue_v5.png"
-     }
-    ]
-   }
+   "model": "scene/next/models/house_blue.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0}
   },
   "house_green": {
    "name": "Green-roof cottage",
@@ -2455,72 +2244,14 @@
    "box": [3.2,2.2],
    "door": {"x":-22,"y":0},
    "fx": [
-    {"k":"window","x":-1,"y":-101},
-    {"k":"window","x":23,"y":-49},
-    {"k":"smoke","x":-35,"y":-136}
+    {"k":"window","x":23,"y":-42},
+    {"k":"window","x":0,"y":-99},
+    {"k":"window","x":0,"y":-99},
+    {"k":"smoke","x":-32,"y":-164}
    ],
-   "build": {
-    "kind": "gableF",
-    "wall": [-51,51],
-    "eave": -74,
-    "apex": -123,
-    "over": 0.3,
-    "wallCol": "#E0D4EE",
-    "wallTex": 4,
-    "roofCol": "#6CB262",
-    "roofTex": 9,
-    "trimCol": "#84543C",
-    "chimney": {"x":-35,"top":-132,"w":0.42,"col":"#C46C54","tex":2},
-    "rooms": [2,0],
-    "win": [[-6,-107,12,14],[15,-57,18,18]],
-    "glass": ["#3D5879","#598CAF","#70C4E4","#9BD2DA","#C6E6E8","#746250","#B79E68","#FFDE78","#FFE58F","#FFF0BC"],
-    "roofRamp": ["#3B5047","#57815A","#6CB262","#98C67F","#C4DEB4"],
-    "floors": 1,
-    "pitch": 40,
-    "sideWin": true,
-    "variants": [
-     {
-      "wallCol": "#F6E6BE",
-      "roofCol": "#A05040",
-      "trimCol": "#84543C",
-      "roofRamp": ["#502B3A","#794143","#A05040","#BC8168","#D9B7A6"],
-      "extra": ["window boxes"],
-      "img": "scene/props/house_green_v1.png"
-     },
-     {
-      "wallCol": "#DEECD6",
-      "roofCol": "#547854",
-      "trimCol": "#6E543C",
-      "roofRamp": ["#323B42","#475B51","#547854","#879D76","#BBC7AE"],
-      "extra": [],
-      "img": "scene/props/house_green_v2.png"
-     },
-     {
-      "wallCol": "#F0D6D6",
-      "roofCol": "#785478",
-      "trimCol": "#604860",
-      "roofRamp": ["#402D50","#5E4368","#785478","#A0848F","#C9B9BC"],
-      "extra": ["window boxes"],
-      "img": "scene/props/house_green_v3.png"
-     },
-     {
-      "wallCol": "#D6E2F0",
-      "roofCol": "#465A82",
-      "trimCol": "#5A463C",
-      "roofRamp": ["#2D2F53","#3E486E","#465A82","#7E8896","#B5BBC0"],
-      "extra": [],
-      "img": "scene/props/house_green_v4.png"
-     },
-     {
-      "wallCol": "#ECDEB0",
-      "roofCol": "#B06E40",
-      "trimCol": "#785038",
-      "roofRamp": ["#55373A","#845443","#B06E40","#C89668","#DFC3A6"],
-      "extra": ["window boxes"],
-      "img": "scene/props/house_green_v5.png"
-     }
-    ]
-   }
+   "model": "scene/next/models/house_green.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0}
   },
   "house_large": {
    "name": "Two-storey house",
@@ -2535,77 +2266,19 @@
    "box": [5.4,3],
    "door": {"x":0,"y":0},
    "fx": [
-    {"k":"window","x":-30,"y":-167},
-    {"k":"window","x":30,"y":-167},
-    {"k":"window","x":-58,"y":-107},
-    {"k":"window","x":0,"y":-107},
-    {"k":"window","x":58,"y":-107},
-    {"k":"window","x":-58,"y":-45},
-    {"k":"window","x":58,"y":-45},
-    {"k":"glow","x":26,"y":-45},
-    {"k":"smoke","x":55,"y":-208}
+    {"k":"window","x":-58,"y":-42},
+    {"k":"window","x":58,"y":-42},
+    {"k":"window","x":-58,"y":-106},
+    {"k":"window","x":0,"y":-106},
+    {"k":"window","x":58,"y":-106},
+    {"k":"window","x":-30,"y":-161},
+    {"k":"window","x":30,"y":-161},
+    {"k":"glow","x":26,"y":-51},
+    {"k":"smoke","x":54,"y":-224}
    ],
-   "build": {
-    "kind": "hip",
-    "wall": [-90,90],
-    "eave": -134,
-    "pitch": 38,
-    "over": 0.32,
-    "wallCol": "#F8D6B2",
-    "wallTex": 0,
-    "roofCol": "#B288E2",
-    "roofTex": 10,
-    "trimCol": "#84543C",
-    "floors": 2,
-    "chimney": {"x":55,"top":-204,"w":0.5,"col":"#C46C54","tex":2},
-    "rooms": [0,1,2,7],
-    "win": [[-68,-117,20,22],[-10,-117,20,22],[48,-117,20,22],[-68,-55,20,20],[48,-55,20,20]],
-    "glass": ["#3D5879","#598CAF","#70C4E4","#9BD2DA","#C6E6E8","#746250","#B79E68","#FFDE78","#FFE58F","#FFF0BC"],
-    "roofRamp": ["#564078","#8565AE","#B288E2","#C9A8D9","#E0CEE7"],
-    "sideWin": true,
-    "variants": [
-     {
-      "wallCol": "#F6E6BE",
-      "roofCol": "#A05040",
-      "trimCol": "#84543C",
-      "roofRamp": ["#502B3A","#794143","#A05040","#BC8168","#D9B7A6"],
-      "extra": ["window boxes"],
-      "img": "scene/props/house_large_v1.png"
-     },
-     {
-      "wallCol": "#DEECD6",
-      "roofCol": "#547854",
-      "trimCol": "#6E543C",
-      "roofRamp": ["#323B42","#475B51","#547854","#879D76","#BBC7AE"],
-      "extra": [],
-      "img": "scene/props/house_large_v2.png"
-     },
-     {
-      "wallCol": "#F0D6D6",
-      "roofCol": "#785478",
-      "trimCol": "#604860",
-      "roofRamp": ["#402D50","#5E4368","#785478","#A0848F","#C9B9BC"],
-      "extra": ["window boxes"],
-      "img": "scene/props/house_large_v3.png"
-     },
-     {
-      "wallCol": "#D6E2F0",
-      "roofCol": "#465A82",
-      "trimCol": "#5A463C",
-      "roofRamp": ["#2D2F53","#3E486E","#465A82","#7E8896","#B5BBC0"],
-      "extra": [],
-      "img": "scene/props/house_large_v4.png"
-     },
-     {
-      "wallCol": "#F6E6BE",
-      "roofCol": "#A05040",
-      "trimCol": "#84543C",
-      "roofRamp": ["#502B3A","#794143","#A05040","#BC8168","#D9B7A6"],
-      "extra": ["window boxes"],
-      "img": "scene/props/house_large_v5.png"
-     }
-    ]
-   }
+   "model": "scene/next/models/house_large.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0}
   },
   "house_cottage": {
    "name": "Thatched cottage",
@@ -2620,72 +2293,13 @@
    "box": [3,2.2],
    "door": {"x":21,"y":0},
    "fx": [
-    {"k":"window","x":-23,"y":-37},
-    {"k":"window","x":-3,"y":-91},
-    {"k":"smoke","x":25,"y":-140}
+    {"k":"window","x":-22,"y":-40},
+    {"k":"window","x":0,"y":-98},
+    {"k":"smoke","x":27,"y":-167}
    ],
-   "build": {
-    "kind": "hip",
-    "wall": [-47,47],
-    "eave": -59,
-    "pitch": 52,
-    "over": 0.42,
-    "wallCol": "#F6E6BE",
-    "wallTex": 0,
-    "roofCol": "#D6AC5E",
-    "roofTex": 11,
-    "trimCol": "#84543C",
-    "chimney": {"x":25,"top":-136,"w":0.45,"col":"#AAA6B4","tex":3},
-    "rooms": [0,1],
-    "base": {"col":"#AAA6B4","tex":3,"h":0.65},
-    "win": [[-33,-45,20,16]],
-    "glass": ["#3D5879","#598CAF","#70C4E4","#9BD2DA","#C6E6E8","#746250","#B79E68","#FFDE78","#FFE58F","#FFF0BC"],
-    "roofRamp": ["#644E45","#9D7D57","#D6AC5E","#E2C27D","#EFDCB2"],
-    "floors": 1,
-    "sideWin": true,
-    "variants": [
-     {
-      "wallCol": "#F6E6BE",
-      "roofCol": "#A05040",
-      "trimCol": "#84543C",
-      "roofRamp": ["#502B3A","#794143","#A05040","#BC8168","#D9B7A6"],
-      "extra": ["window boxes"],
-      "img": "scene/props/house_cottage_v1.png"
-     },
-     {
-      "wallCol": "#DEECD6",
-      "roofCol": "#547854",
-      "trimCol": "#6E543C",
-      "roofRamp": ["#323B42","#475B51","#547854","#879D76","#BBC7AE"],
-      "extra": [],
-      "img": "scene/props/house_cottage_v2.png"
-     },
-     {
-      "wallCol": "#F0D6D6",
-      "roofCol": "#785478",
-      "trimCol": "#604860",
-      "roofRamp": ["#402D50","#5E4368","#785478","#A0848F","#C9B9BC"],
-      "extra": ["window boxes"],
-      "img": "scene/props/house_cottage_v3.png"
-     },
-     {
-      "wallCol": "#D6E2F0",
-      "roofCol": "#465A82",
-      "trimCol": "#5A463C",
-      "roofRamp": ["#2D2F53","#3E486E","#465A82","#7E8896","#B5BBC0"],
-      "extra": [],
-      "img": "scene/props/house_cottage_v4.png"
-     },
-     {
-      "wallCol": "#ECDEB0",
-      "roofCol": "#B06E40",
-      "trimCol": "#785038",
-      "roofRamp": ["#55373A","#845443","#B06E40","#C89668","#DFC3A6"],
-      "extra": ["window boxes"],
-      "img": "scene/props/house_cottage_v5.png"
-     }
-    ]
-   }
+   "model": "scene/next/models/house_cottage.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0}
   },
   "fence_wood": {
    "name": "Rail fence",
@@ -2698,7 +2312,9 @@
    "tags": ["route","farm","town"],
    "group": "fence_wood",
    "box": [2.2,0.25],
-   "model": "scene/vox/fence_wood.json"
+   "model": "scene/next/models/fence_wood.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "fence_wood_post": {
    "name": "Fence post",
@@ -2724,7 +2340,8 @@
    "tags": ["town","farm","junk"],
    "group": "crates",
    "solid": 0.4,
-   "model": "scene/vox/barrel_wood.json"
+   "model": "scene/next/models/barrel_wood.json",
+   "ppm": 32
   },
   "sack": {
    "name": "Grain sacks",
@@ -2817,7 +2434,9 @@
    "tags": ["town","mall","route"],
    "group": "bench_wood",
    "box": [1.6,0.6],
-   "model": "scene/vox/bench_wood.json"
+   "model": "scene/next/models/bench_wood.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "flowerpot": {
    "name": "Flower pot",
@@ -2830,7 +2449,8 @@
    "tags": ["town","mall"],
    "group": "flowerpot",
    "solid": 0.25,
-   "model": "scene/vox/flowerpot.json"
+   "model": "scene/next/models/flowerpot.json",
+   "ppm": 32
   },
   "mailbox_red": {
    "name": "Mailbox",
@@ -2921,7 +2541,10 @@
    "flat": 0,
    "tags": ["town"],
    "group": "sign_shop",
-   "solid": 0.3
+   "solid": 0.3,
+   "model": "scene/next/models/sign_shop.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0}
   },
   "sign_clinic": {
    "name": "Clinic sign",
@@ -2933,7 +2556,10 @@
    "flat": 0,
    "tags": ["town"],
    "group": "sign_clinic",
-   "solid": 0.3
+   "solid": 0.3,
+   "model": "scene/next/models/sign_clinic.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0}
   },
   "planter_box": {
    "name": "Planter box",
@@ -2946,7 +2572,9 @@
    "tags": ["town","mall"],
    "group": "planter_box",
    "box": [1.5,0.5],
-   "model": "scene/vox/planter_box.json"
+   "model": "scene/next/models/planter_box.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "streetlamp_b": {
    "name": "Double street lamp",
@@ -2960,9 +2588,12 @@
    "group": "streetlamp",
    "solid": 0.3,
    "fx": [
-    {"k":"glow","x":-18,"y":-109},
-    {"k":"glow","x":17,"y":-109}
-   ]
+    {"k":"glow","x":-18,"y":-102},
+    {"k":"glow","x":18,"y":-102}
+   ],
+   "model": "scene/next/models/streetlamp_b.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0}
   },
   "market_cart": {
    "name": "Vegetable cart",
@@ -2974,7 +2605,10 @@
    "flat": 0,
    "tags": ["town","farm"],
    "group": "market_cart",
-   "box": [2.6,1]
+   "box": [2.6,1],
+   "model": "scene/next/models/market_cart.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0}
   },
   "fountain": {
    "name": "Fountain",
@@ -2988,8 +2622,11 @@
    "group": "fountain",
    "solid": 1.6,
    "fx": [
-    {"k":"spray","x":0,"y":-83}
-   ]
+    {"k":"spray","x":0,"y":-80}
+   ],
+   "model": "scene/next/models/fountain.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0}
   },
   "windmill_tower": {
    "name": "Windmill tower",
@@ -3417,58 +3054,16 @@
    "box": [3.4,3.6],
    "door": {"x":-26,"y":0},
    "fx": [
-    {"k":"window","x":-29,"y":-135},
-    {"k":"window","x":27,"y":-135},
-    {"k":"window","x":-29,"y":-211},
-    {"k":"window","x":27,"y":-211},
-    {"k":"window","x":27,"y":-57},
-    {"k":"glow","x":-6,"y":-47}
+    {"k":"window","x":27,"y":-42},
+    {"k":"window","x":-28,"y":-119},
+    {"k":"window","x":27,"y":-119},
+    {"k":"window","x":-28,"y":-194},
+    {"k":"window","x":27,"y":-194},
+    {"k":"window","x":0,"y":-264}
    ],
-   "build": {
-    "kind": "gableF",
-    "wall": [-58,58],
-    "eave": -245,
-    "apex": -308,
-    "over": 0.3,
-    "roofCol": "#465470",
-    "roofTex": 10,
-    "wallCol": "#C46C54",
-    "wallTex": 2,
-    "trimCol": "#EAEEEC",
-    "floors": 3,
-    "rooms": [0,2,1,7],
-    "win": [[-6,-285,12,12],[-38,-225,20,30],[18,-225,20,30],[-38,-149,20,30],[18,-149,20,30],[14,-71,26,30]],
-    "glass": ["#3D5879","#598CAF","#70C4E4","#9BD2DA","#C6E6E8","#746250","#B79E68","#FFDE78","#FFE58F","#FFF0BC"],
-    "roofRamp": ["#2D2D4C","#3E4363","#465470","#7E8489","#B5B9B9"],
-    "pitch": 40,
-    "sideWin": true,
-    "variants": [
-     {
-      "wallCol": "#D69C80",
-      "roofCol": "#545C70",
-      "trimCol": "#E8E8E8",
-      "roofRamp": ["#32304C","#474863","#545C70","#878A89","#BBBCB9"],
-      "extra": ["window boxes"],
-      "img": "scene/props/townhouse_red_v1.png"
-     },
-     {
-      "wallCol": "#BEC4CE",
-      "roofCol": "#3C404A",
-      "trimCol": "#E8E8E8",
-      "roofRamp": ["#29253E","#37364A","#3C404A","#76766F","#B1B1AA"],
-      "extra": [],
-      "img": "scene/props/townhouse_red_v2.png"
-     },
-     {
-      "wallCol": "#E8D8B4",
-      "roofCol": "#78543C",
-      "trimCol": "#5A463C",
-      "roofRamp": ["#402D39","#5E4341","#78543C","#A08465","#C9B9A4"],
-      "extra": ["window boxes"],
-      "img": "scene/props/townhouse_red_v3.png"
-     }
-    ]
-   }
+   "model": "scene/next/models/townhouse_red.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0}
   },
   "townhouse_blue": {
    "name": "Blue townhouse",
@@ -3549,58 +3144,16 @@
    "box": [3.4,3.6],
    "door": {"x":-26,"y":0},
    "fx": [
-    {"k":"window","x":-29,"y":-135},
-    {"k":"window","x":27,"y":-135},
-    {"k":"window","x":-29,"y":-211},
-    {"k":"window","x":27,"y":-211},
-    {"k":"window","x":27,"y":-57},
-    {"k":"glow","x":-6,"y":-47}
+    {"k":"window","x":27,"y":-42},
+    {"k":"window","x":-28,"y":-119},
+    {"k":"window","x":27,"y":-119},
+    {"k":"window","x":-28,"y":-194},
+    {"k":"window","x":27,"y":-194},
+    {"k":"window","x":0,"y":-264}
    ],
-   "build": {
-    "kind": "gableF",
-    "wall": [-58,58],
-    "eave": -245,
-    "apex": -308,
-    "over": 0.3,
-    "roofCol": "#6CB262",
-    "roofTex": 10,
-    "wallCol": "#F6E6BE",
-    "wallTex": 0,
-    "trimCol": "#84543C",
-    "floors": 3,
-    "rooms": [0,2,1,7],
-    "win": [[-6,-285,12,12],[-38,-225,20,30],[18,-225,20,30],[-38,-149,20,30],[18,-149,20,30],[14,-71,26,30]],
-    "glass": ["#3D5879","#598CAF","#70C4E4","#9BD2DA","#C6E6E8","#746250","#B79E68","#FFDE78","#FFE58F","#FFF0BC"],
-    "roofRamp": ["#3B5047","#57815A","#6CB262","#98C67F","#C4DEB4"],
-    "pitch": 40,
-    "sideWin": true,
-    "variants": [
-     {
-      "wallCol": "#D69C80",
-      "roofCol": "#545C70",
-      "trimCol": "#E8E8E8",
-      "roofRamp": ["#32304C","#474863","#545C70","#878A89","#BBBCB9"],
-      "extra": ["window boxes"],
-      "img": "scene/props/townhouse_yellow_v1.png"
-     },
-     {
-      "wallCol": "#BEC4CE",
-      "roofCol": "#3C404A",
-      "trimCol": "#E8E8E8",
-      "roofRamp": ["#29253E","#37364A","#3C404A","#76766F","#B1B1AA"],
-      "extra": [],
-      "img": "scene/props/townhouse_yellow_v2.png"
-     },
-     {
-      "wallCol": "#E8D8B4",
-      "roofCol": "#78543C",
-      "trimCol": "#5A463C",
-      "roofRamp": ["#402D39","#5E4341","#78543C","#A08465","#C9B9A4"],
-      "extra": ["window boxes"],
-      "img": "scene/props/townhouse_yellow_v3.png"
-     }
-    ]
-   }
+   "model": "scene/next/models/townhouse_yellow.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0}
   },
   "shop_cafe": {
    "name": "Corner café",
@@ -3998,7 +3551,9 @@
    "tags": ["city"],
    "group": "bike_rack",
    "solid": 0.4,
-   "model": "scene/vox/bike_rack.json"
+   "model": "scene/next/models/bike_rack.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0}
   },
   "bench_metal": {
    "name": "Park bench",
@@ -4053,7 +3608,8 @@
    "tags": ["city","town"],
    "group": "planter_round",
    "solid": 0.45,
-   "model": "scene/vox/planter_round.json"
+   "model": "scene/next/models/planter_round.json",
+   "ppm": 32
   },
   "banner_pole": {
    "name": "Banner lamp",
@@ -4159,7 +3715,9 @@
    "group": "flag_pole",
    "solid": 0.2,
    "flag": {"dx":0.059,"h":4.59,"w":1.41,"fh":0.94},
-   "model": "scene/vox/flag_pole.json"
+   "model": "scene/next/models/flag_pole.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0}
   },
   "statue_coin": {
    "name": "Golden coin sculpture",
@@ -4289,7 +3847,8 @@
    "flat": 1,
    "tags": ["route","town"],
    "group": "pebbles",
-   "solid": 0
+   "solid": 0,
+   "ppm": 32
   },
   "puddle": {
    "name": "Puddle",
@@ -4301,7 +3860,8 @@
    "flat": 1,
    "tags": ["route","town","city"],
    "group": "puddle",
-   "solid": 0
+   "solid": 0,
+   "ppm": 32
   },
   "rock_flat": {
    "name": "Flat stone",
@@ -4355,7 +3915,10 @@
    "flat": 0,
    "tags": ["town","farm","route"],
    "group": "birdhouse",
-   "solid": 0.15
+   "solid": 0.15,
+   "model": "scene/next/models/birdhouse.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "beehive": {
    "name": "Beehives",
@@ -4367,7 +3930,10 @@
    "flat": 0,
    "tags": ["farm"],
    "group": "beehive",
-   "solid": 0.35
+   "solid": 0.35,
+   "model": "scene/next/models/beehive.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "scarecrow": {
    "name": "Scarecrow",
@@ -4379,7 +3945,10 @@
    "flat": 0,
    "tags": ["farm"],
    "group": "scarecrow",
-   "solid": 0.2
+   "solid": 0.2,
+   "model": "scene/next/models/scarecrow.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "wheelbarrow": {
    "name": "Wheelbarrow",
@@ -4392,7 +3961,9 @@
    "tags": ["farm","town"],
    "group": "wheelbarrow",
    "solid": 0.4,
-   "model": "scene/vox/wheelbarrow.json"
+   "model": "scene/next/models/wheelbarrow.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "firewood": {
    "name": "Firewood stack",
@@ -4416,7 +3987,10 @@
    "flat": 0,
    "tags": ["water"],
    "group": "rowboat",
-   "solid": 0.9
+   "solid": 0.9,
+   "model": "scene/next/models/rowboat.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "laundry_line": {
    "name": "Laundry line",
@@ -4447,7 +4021,9 @@
    "flat": 0,
    "tags": ["town","farm"],
    "group": "garden_gnome",
-   "solid": 0
+   "solid": 0,
+   "model": "scene/next/models/garden_gnome.json",
+   "ppm": 32
   },
   "picket_fence": {
    "name": "Picket fence",
@@ -4460,7 +4036,9 @@
    "tags": ["town","farm"],
    "group": "picket_fence",
    "box": [2.2,0.25],
-   "model": "scene/vox/picket_fence.json"
+   "model": "scene/next/models/picket_fence.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "stone_wall": {
    "name": "Stone wall",
@@ -4486,7 +4064,8 @@
    "tags": ["water"],
    "group": "dock_post",
    "solid": 0.15,
-   "model": "scene/vox/dock_post.json"
+   "model": "scene/next/models/dock_post.json",
+   "ppm": 32
   },
   "tree": {
    "name": "Battle tree",
@@ -4649,7 +4228,10 @@
    "flat": 0,
    "tags": ["battle"],
    "group": "bin",
-   "box": [1.8,1]
+   "box": [1.8,1],
+   "model": "scene/next/models/bin.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0}
   },
   "cartS": {
    "name": "Shopping cart",
@@ -6234,7 +5816,8 @@
    "solid": 0,
    "family": "ground",
    "grow": "svu",
-   "weight": 1.4
+   "weight": 1.4,
+   "ppm": 32
   },
   "bracken": {
    "name": "Bracken",
@@ -6425,10 +6008,11 @@
    "tags": ["town","farm"],
    "group": "bush_box",
    "solid": 0.45,
-   "vol": ["puff",0.45],
    "family": "shrubs",
    "grow": "l",
-   "weight": 0.6
+   "weight": 0.6,
+   "model": "scene/next/models/bush_box.json",
+   "ppm": 32
   },
   "bush_holly": {
    "name": "Holly",
@@ -6980,10 +6564,12 @@
    "tags": ["route","farm","town"],
    "group": "bush_hawthorn",
    "solid": 0.55,
-   "vol": ["puff",0.55],
    "family": "seasons",
    "grow": "gGo",
-   "weight": 0.5
+   "weight": 0.5,
+   "model": "scene/next/models/bush_hawthorn.json",
+   "ppm": 32,
+   "swap": {"scene/next/leaves/bush_hawthorn.png":"scene/next/leaves/bush_hawthorn_autumn.png"}
   },
   "seedheads": {
    "name": "Dry seed heads",
@@ -7029,66 +6615,14 @@
    "box": [4,2.8],
    "door": {"x":30,"y":0},
    "fx": [
-    {"k":"window","x":-40,"y":-119},
-    {"k":"window","x":38,"y":-119},
-    {"k":"window","x":-28,"y":-41},
-    {"k":"glow","x":10,"y":-45},
-    {"k":"smoke","x":34,"y":-214}
+    {"k":"window","x":-22,"y":-38},
+    {"k":"window","x":-38,"y":-108},
+    {"k":"window","x":38,"y":-108},
+    {"k":"smoke","x":37,"y":-231}
    ],
-   "build": {
-    "kind": "hip",
-    "wall": [-68,68],
-    "eave": -147,
-    "pitch": 36,
-    "over": 0.32,
-    "roofCol": "#D6704A",
-    "roofTex": 8,
-    "wallCol": "#ECC4A0",
-    "wallTex": 0,
-    "trimCol": "#84543C",
-    "floors": 2,
-    "rooms": [3,0],
-    "base": {"col":"#AAA6B4","tex":3,"h":2},
-    "chimney": {"x":34,"top":-211,"w":0.36,"col":"#C46C54","tex":2},
-    "win": [[-50,-131,22,26],[28,-131,22,26],[-56,-58,58,33]],
-    "glass": ["#3D5879","#598CAF","#70C4E4","#9BD2DA","#C6E6E8","#746250","#B79E68","#FFDE78","#FFE58F","#FFF0BC"],
-    "roofRamp": ["#64373E","#9D564A","#D6704A","#E2986F","#EFC4AA"],
-    "sideWin": true,
-    "variants": [
-     {
-      "wallCol": "#F0E2C8",
-      "roofCol": "#545C70",
-      "trimCol": "#60402C",
-      "roofRamp": ["#32304C","#474863","#545C70","#878A89","#BBBCB9"],
-      "extra": ["window boxes"],
-      "img": "scene/props/bakery_v1.png"
-     },
-     {
-      "wallCol": "#D4B496",
-      "roofCol": "#8C4034",
-      "trimCol": "#E8DEC8",
-      "roofRamp": ["#482535","#6C363C","#8C4034","#AE765F","#D1B1A1"],
-      "extra": [],
-      "img": "scene/props/bakery_v2.png"
-     },
-     {
-      "wallCol": "#C8D8DC",
-      "roofCol": "#3C4E78",
-      "trimCol": "#E8E8E8",
-      "roofRamp": ["#292A50","#373F68","#3C4E78","#76808F","#B1B6BC"],
-      "extra": ["window boxes"],
-      "img": "scene/props/bakery_v3.png"
-     },
-     {
-      "wallCol": "#E8D2A0",
-      "roofCol": "#607850",
-      "trimCol": "#60402C",
-      "roofRamp": ["#363B40","#4F5B4E","#607850","#909D73","#BFC7AC"],
-      "extra": [],
-      "img": "scene/props/bakery_v4.png"
-     }
-    ]
-   },
+   "model": "scene/next/models/bakery.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0},
    "room": "int_bakery"
   },
   "inn": {
@@ -7104,70 +6638,18 @@
    "box": [5.6,3.4],
    "door": {"x":0,"y":0},
    "fx": [
-    {"k":"window","x":-66,"y":-141},
-    {"k":"window","x":-12,"y":-141},
-    {"k":"window","x":10,"y":-141},
-    {"k":"window","x":64,"y":-141},
-    {"k":"window","x":-62,"y":-57},
-    {"k":"window","x":60,"y":-57},
-    {"k":"glow","x":-26,"y":-49},
-    {"k":"glow","x":26,"y":-49},
-    {"k":"smoke","x":-57,"y":-260}
+    {"k":"window","x":-62,"y":-40},
+    {"k":"window","x":62,"y":-40},
+    {"k":"window","x":-64,"y":-108},
+    {"k":"window","x":0,"y":-108},
+    {"k":"window","x":64,"y":-108},
+    {"k":"glow","x":-30,"y":-54},
+    {"k":"glow","x":30,"y":-54},
+    {"k":"smoke","x":-59,"y":-241}
    ],
-   "build": {
-    "kind": "hip",
-    "wall": [-94,94],
-    "eave": -183,
-    "pitch": 40,
-    "over": 0.36,
-    "roofCol": "#545C70",
-    "roofTex": 10,
-    "wallCol": "#E8DEC8",
-    "wallTex": 0,
-    "trimCol": "#60402C",
-    "floors": 2,
-    "rooms": [0,5],
-    "base": {"col":"#AAA6B4","tex":3,"h":2.7},
-    "chimney": {"x":-57,"top":-257,"w":0.42,"col":"#AAA6B4","tex":3},
-    "win": [[-76,-155,20,28],[-22,-155,42,28],[54,-155,20,28],[-74,-73,26,32],[48,-73,26,32]],
-    "glass": ["#3D5879","#598CAF","#70C4E4","#9BD2DA","#C6E6E8","#746250","#B79E68","#FFDE78","#FFE58F","#FFF0BC"],
-    "roofRamp": ["#32304C","#474863","#545C70","#878A89","#BBBCB9"],
-    "sideWin": true,
-    "variants": [
-     {
-      "wallCol": "#D4B496",
-      "roofCol": "#8C4034",
-      "trimCol": "#E8DEC8",
-      "roofRamp": ["#482535","#6C363C","#8C4034","#AE765F","#D1B1A1"],
-      "extra": ["window boxes"],
-      "img": "scene/props/inn_v1.png"
-     },
-     {
-      "wallCol": "#C8D8DC",
-      "roofCol": "#3C4E78",
-      "trimCol": "#E8E8E8",
-      "roofRamp": ["#292A50","#373F68","#3C4E78","#76808F","#B1B6BC"],
-      "extra": [],
-      "img": "scene/props/inn_v2.png"
-     },
-     {
-      "wallCol": "#E8D2A0",
-      "roofCol": "#607850",
-      "trimCol": "#60402C",
-      "roofRamp": ["#363B40","#4F5B4E","#607850","#909D73","#BFC7AC"],
-      "extra": ["window boxes"],
-      "img": "scene/props/inn_v3.png"
-     },
-     {
-      "wallCol": "#D4B496",
-      "roofCol": "#8C4034",
-      "trimCol": "#E8DEC8",
-      "roofRamp": ["#482535","#6C363C","#8C4034","#AE765F","#D1B1A1"],
-      "extra": [],
-      "img": "scene/props/inn_v4.png"
-     }
-    ]
-   },
+   "model": "scene/next/models/inn.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0},
    "room": "int_inn"
   },
   "market_hall": {
@@ -7182,58 +6664,16 @@
    "group": "market_hall",
    "box": [6.4,3.6],
    "door": {"x":0,"y":0},
-   "build": {
-    "kind": "gable",
-    "wall": [-110,110],
-    "eave": -127,
-    "pitch": 30,
-    "over": 0.4,
-    "roofCol": "#D6704A",
-    "roofTex": 8,
-    "wallCol": "#DEC896",
-    "wallTex": 3,
-    "trimCol": "#84543C",
-    "floors": 1,
-    "rooms": [3],
-    "sideWin": false,
-    "win": [],
-    "glass": ["#3D5879","#598CAF","#70C4E4","#9BD2DA","#C6E6E8","#746250","#B79E68","#FFDE78","#FFE58F","#FFF0BC"],
-    "roofRamp": ["#64373E","#9D564A","#D6704A","#E2986F","#EFC4AA"],
-    "variants": [
-     {
-      "wallCol": "#F0E2C8",
-      "roofCol": "#545C70",
-      "trimCol": "#60402C",
-      "roofRamp": ["#32304C","#474863","#545C70","#878A89","#BBBCB9"],
-      "extra": [],
-      "img": "scene/props/market_hall_v1.png"
-     },
-     {
-      "wallCol": "#D4B496",
-      "roofCol": "#8C4034",
-      "trimCol": "#E8DEC8",
-      "roofRamp": ["#482535","#6C363C","#8C4034","#AE765F","#D1B1A1"],
-      "extra": [],
-      "img": "scene/props/market_hall_v2.png"
-     },
-     {
-      "wallCol": "#C8D8DC",
-      "roofCol": "#3C4E78",
-      "trimCol": "#E8E8E8",
-      "roofRamp": ["#292A50","#373F68","#3C4E78","#76808F","#B1B6BC"],
-      "extra": [],
-      "img": "scene/props/market_hall_v3.png"
-     },
-     {
-      "wallCol": "#E8D2A0",
-      "roofCol": "#607850",
-      "trimCol": "#60402C",
-      "roofRamp": ["#363B40","#4F5B4E","#607850","#909D73","#BFC7AC"],
-      "extra": [],
-      "img": "scene/props/market_hall_v4.png"
-     }
-    ]
-   },
+   "model": "scene/next/models/market_hall.json",
+   "ppm": 32,
+   "fx": [
+    {"k":"window","x":-67,"y":-61},
+    {"k":"window","x":0,"y":-61},
+    {"k":"window","x":67,"y":-61},
+    {"k":"glow","x":0,"y":-125}
+   ],
+   "variants": [],
+   "vary": {"rot":0,"lean":0,"size":0},
    "room": "int_market_hall"
   },
   "bank": {
@@ -7313,55 +6753,14 @@
    "box": [5.4,3.4],
    "door": {"x":0,"y":0},
    "fx": [
-    {"k":"window","x":-58,"y":-99},
-    {"k":"window","x":-22,"y":-99},
-    {"k":"window","x":16,"y":-99},
-    {"k":"window","x":52,"y":-99}
+    {"k":"window","x":-59,"y":-64},
+    {"k":"window","x":-30,"y":-64},
+    {"k":"window","x":30,"y":-64},
+    {"k":"window","x":59,"y":-64}
    ],
-   "build": {
-    "kind": "hip",
-    "wall": [-86,86],
-    "eave": -173,
-    "pitch": 34,
-    "over": 0.3,
-    "roofCol": "#545C70",
-    "roofTex": 10,
-    "wallCol": "#C46C54",
-    "wallTex": 2,
-    "trimCol": "#EAEEEC",
-    "floors": 2,
-    "rooms": [4,4],
-    "win": [[-68,-162,22,115],[42,-162,22,115],[-32,-161,20,114],[8,-158,20,111]],
-    "glass": ["#3D5879","#598CAF","#70C4E4","#9BD2DA","#C6E6E8","#746250","#B79E68","#FFDE78","#FFE58F","#FFF0BC"],
-    "roofRamp": ["#32304C","#474863","#545C70","#878A89","#BBBCB9"],
-    "sideWin": true,
-    "variants": [
-     {
-      "wallCol": "#D69C80",
-      "roofCol": "#545C70",
-      "trimCol": "#E8E8E8",
-      "roofRamp": ["#32304C","#474863","#545C70","#878A89","#BBBCB9"],
-      "extra": ["window boxes"],
-      "img": "scene/props/library_v1.png"
-     },
-     {
-      "wallCol": "#BEC4CE",
-      "roofCol": "#3C404A",
-      "trimCol": "#E8E8E8",
-      "roofRamp": ["#29253E","#37364A","#3C404A","#76766F","#B1B1AA"],
-      "extra": [],
-      "img": "scene/props/library_v2.png"
-     },
-     {
-      "wallCol": "#E8D8B4",
-      "roofCol": "#78543C",
-      "trimCol": "#5A463C",
-      "roofRamp": ["#402D39","#5E4341","#78543C","#A08465","#C9B9A4"],
-      "extra": ["window boxes"],
-      "img": "scene/props/library_v3.png"
-     }
-    ]
-   },
+   "model": "scene/next/models/library.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0},
    "room": "int_library"
   },
   "school": {
@@ -7724,59 +7123,9 @@
    "group": "greenhouse",
    "box": [4.8,3],
    "door": {"x":0,"y":0},
-   "build": {
-    "kind": "gableF",
-    "wall": [-78,78],
-    "eave": -65,
-    "apex": -123,
-    "over": 0.1,
-    "roofCol": "#B0D6E6",
-    "roofTex": 12,
-    "wallCol": "#B0D6E6",
-    "wallTex": 5,
-    "trimCol": "#EAEEEC",
-    "floors": 1,
-    "rooms": [6],
-    "sideWin": false,
-    "win": [],
-    "glass": ["#3D5879","#598CAF","#70C4E4","#9BD2DA","#C6E6E8","#746250","#B79E68","#FFDE78","#FFE58F","#FFF0BC"],
-    "roofRamp": ["#555E7A","#8499B0","#B0D6E6","#C8DFDC","#DFEDE8"],
-    "pitch": 40,
-    "variants": [
-     {
-      "wallCol": "#F0E2C8",
-      "roofCol": "#545C70",
-      "trimCol": "#60402C",
-      "roofRamp": ["#32304C","#474863","#545C70","#878A89","#BBBCB9"],
-      "extra": [],
-      "img": "scene/props/greenhouse_v1.png"
-     },
-     {
-      "wallCol": "#D4B496",
-      "roofCol": "#8C4034",
-      "trimCol": "#E8DEC8",
-      "roofRamp": ["#482535","#6C363C","#8C4034","#AE765F","#D1B1A1"],
-      "extra": [],
-      "img": "scene/props/greenhouse_v2.png"
-     },
-     {
-      "wallCol": "#C8D8DC",
-      "roofCol": "#3C4E78",
-      "trimCol": "#E8E8E8",
-      "roofRamp": ["#292A50","#373F68","#3C4E78","#76808F","#B1B6BC"],
-      "extra": [],
-      "img": "scene/props/greenhouse_v3.png"
-     },
-     {
-      "wallCol": "#E8D2A0",
-      "roofCol": "#607850",
-      "trimCol": "#60402C",
-      "roofRamp": ["#363B40","#4F5B4E","#607850","#909D73","#BFC7AC"],
-      "extra": [],
-      "img": "scene/props/greenhouse_v4.png"
-     }
-    ]
-   },
+   "model": "scene/next/models/greenhouse.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0},
    "room": "int_greenhouse"
   },
   "ski_lodge": {
@@ -7887,7 +7236,10 @@
    "flat": 0,
    "tags": ["indoor"],
    "group": "bread_rack",
-   "box": [1.4,0.6]
+   "box": [1.4,0.6],
+   "model": "scene/next/models/bread_rack.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0}
   },
   "bed_inn": {
    "name": "Bed",
@@ -8109,17 +7461,18 @@
    "tags": ["town"],
    "group": "clock_tower",
    "fx": [
-    {"k":"window","x":0,"y":-118},
-    {"k":"glow","x":0,"y":-189}
+    {"k":"window","x":0,"y":-110},
+    {"k":"glow","x":0,"y":-210}
    ],
-   "solid": 1.25,
    "hands": [
-    {"img":"scene/props/clock_tower_hh.png","x":0,"y":-189,"w":33,"h":33,"px":16,"py":16,"per":43200},
-    {"img":"scene/props/clock_tower_hm.png","x":0,"y":-189,"w":33,"h":33,"px":16,"py":16,"per":3600}
+    {"img":"scene/props/clock_tower_hh.png","x":0,"y":-210,"w":33,"h":33,"px":16,"py":16,"per":43200},
+    {"img":"scene/props/clock_tower_hm.png","x":0,"y":-210,"w":33,"h":33,"px":16,"py":16,"per":3600}
    ],
    "landmark": 1,
-   "vol": "block",
-   "volDepth": 2.6
+   "model": "scene/next/models/clock_tower.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0},
+   "box": [2.3,2.3]
   },
   "tree_giant": {
    "name": "Giant tree",
@@ -8238,8 +7591,9 @@
    "group": "waystone",
    "solid": 0.6,
    "landmark": 1,
-   "vol": "puff",
-   "volDepth": 0.9
+   "model": "scene/next/models/waystone.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "golden_cushion": {
    "name": "Golden cushion",
@@ -9286,7 +8640,10 @@
    "posts": [
     {"x":-80,"r":0.15},
     {"x":80,"r":0.15}
-   ]
+   ],
+   "model": "scene/next/models/banner_bunting.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "tree_giant_swing": {
    "name": "Great oak with a swing",
@@ -9352,7 +8709,10 @@
    "fx": [
     {"k":"glow","x":0,"y":-87}
    ],
-   "solid": 0.45
+   "solid": 0.45,
+   "model": "scene/next/models/solar_tree.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0}
   },
   "vertical_garden": {
    "name": "Garden wall",
@@ -9365,8 +8725,9 @@
    "tags": ["town","city","mall"],
    "group": "vertical_garden",
    "box": [1.9,0.35],
-   "vol": "slab",
-   "volDepth": 0.3
+   "model": "scene/next/models/vertical_garden.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0}
   },
   "solar_canopy": {
    "name": "Solar canopy",
@@ -9384,7 +8745,10 @@
    "posts": [
     {"x":-42,"r":0.12},
     {"x":42,"r":0.12}
-   ]
+   ],
+   "model": "scene/next/models/solar_canopy.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0}
   },
   "heat_dome": {
    "name": "Heat dome",

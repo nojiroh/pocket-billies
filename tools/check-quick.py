@@ -704,7 +704,10 @@ def in_game_test_step(b, base, R):
         start_for_in_game_test(pg)
         pg.evaluate(SAVE_SPY)
         r = run_in_game_test(pg, ['Shaders'], False, 120)
-        time.sleep(2.5)   # the account write waits 1.5 s after the test puts the save back
+        # the account write waits 1.5 s after the test puts the save back; on a slow headless page its timer can run late,
+        # so wait for it (up to 12 s) instead of a fixed 2.5 s
+        until(pg, "__st.w.some(w=>w.c==='saves'&&!w.during)", 12)
+        time.sleep(0.5)
         st = pg.evaluate('__st')
         during = [w['c'] for w in st['w'] if w['during']]
         if during or st['ls']: raise Exception(f'written while the test ran: account {during}, this browser {st["ls"]}')

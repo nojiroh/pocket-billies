@@ -135,7 +135,9 @@ import {
   walkablePointNear,
 } from './walk-view.js';
 import { environment, environmentHint, environmentIcon, environmentLabel } from './environment.js';
-import { mountWalkView, roomFloorReady, walkRenderer } from './walk-view-gl.js';
+import { walkRenderer } from './walk/walk-state.js';
+import { roomFloorReady } from './walk/ground-draw.js';
+import { mountWalkView } from './walk-view-gl.js';
 import { fishStart } from './fishing.js';
 import {
   seamlessDelta,
