@@ -11,6 +11,32 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 - Questions waiting for the owner: 
 - Next session starts with: 
 
+### Phase 10 - World map, the look, session 3: clouds, weather, the Inner Sun's day - 2026-10-19
+Owner's answers: night **circles and dims**; clouds **as proposed** (Low 12 in one layer, High 40 in two with full
+rain, snow, ash and lightning, Off none). Branch `world-map-look-3`, on top of `world-map-look-2` (PR #64).
+- Changed:
+  - New `logic/bowl-weather.js` (page script added to game/index.html): each place's weather spread over the bowl
+    and blended (`bowlSkyAt`, `bowlSkyGrid`), the cloud layout per setting (`BOWL_CLOUD_LEVELS`, `bowlCloudLayout`,
+    deterministic), clouds circling the bowl with the wind (`bowlCloudAt`), shown by local cover (`bowlCloudShow`),
+    the Inner Sun's day (`bowlSunAt`: once round a day, 135 degrees at 13:00, dims to 15% red at night), the setting
+    (`bowlCloudLevel`: Auto follows Beautiful/Balanced).
+  - `world-bowl.js`: the weather from `environmentState` for every place's scene every 5 s, eased so fronts build;
+    a 32 x 32 weather map for the shaders (fog in the low ground and over the water, snow dusting the tops, light
+    dimmed under cloud); low-poly cloud puffs (instanced icosahedra) with moving shadows on land and sea; rain, snow
+    and ash as falling lines under the clouds that carry them; lightning flashes in storms (High); night: dusk-blue
+    ambient, dark sky, the sun a red ember, red glints. The shadow map is drawn again when the sun has moved 1.5
+    degrees (about every 6 minutes). Clouds clear away when the camera zooms in.
+  - Settings > Graphics: "World map clouds" (Auto, Off, Low, High; `preferences.mapClouds`).
+  - Tests: `tools/test/bowl-sky.test.mjs`; world map test step "Clouds and weather" (setting, clouds showing, drops,
+    weather by place, the sun); the fast check switches Off and High, forces a storm (clouds and rain must show) and
+    checks for GPU errors.
+- Risky or unfinished:
+  - Not seen on a screen: cloud colours, sizes, rain density, night darkness are first guesses.
+  - Cloud shadows loop over up to 40 clouds per pixel (12 on Low); watch the frame time on High.
+  - The map follows "My clock": in the evening it is night on the map now (owner's choice).
+- Verified: npm test 193 pass; lint, types, modules, format clean; full lite fast check 12 of 12 (with a forced storm).
+- Next session starts with: session 4, landmarks, buildings, trees (and town lights at night).
+
 ### Phase 10 - World map, the look, session 2: the land, the routes, the light - 2026-10-19
 Owner's request: "Next session"; light option **A** (the Inner Sun off the centre, the light from where it hangs).
 Branch `world-map-look-2`, on top of `world-map-look` (PR #62, not merged yet).

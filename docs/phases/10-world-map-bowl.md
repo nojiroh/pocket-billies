@@ -86,7 +86,7 @@ painter code. Node tests pass; then the owner's phone test.
 - Phone frame times after E-map-4 and E-map-5 (graphics are tested only on the owner's devices; no headless graphics).
 
 ## Still open (ask before the session that needs it)
-- E-map-5: cloud count and heights per quality level.
+- ~~E-map-5: cloud count and heights per quality level.~~ Answered 2026-10-19: Low 12 (one layer, 70 m), High 40 (70 m and 160 m), Off none.
 
 ## Tests
 Node only: graph unchanged; every place reachable; seam directions match the layout; every place has bowl coordinates
@@ -124,7 +124,7 @@ Sessions, in order:
 2. **The look and the routes (done 2026-10-19; light option A: the Inner Sun off the centre, slanted light).** Natural ground between places: beaches, cliffs on steep coasts, rivers from the high
    ground to the sea, regions blending by height and wetness. Routes as bold outlined paths in the ground, always
    clear. Stronger relief; hill shading and cast shadows from a slanted sun (a shadow map over the bowl).
-3. **Clouds and weather.** Simplified low-poly clouds at a few heights with moving shadows; rain showers, fog and snow
+3. **Clouds and weather (done 2026-10-19; night: the sun circles and dims; clouds Low 12, High 40 in two layers).** Simplified low-poly clouds at a few heights with moving shadows; rain showers, fog and snow
    over the peaks from the game's weather; time of day; quality off/low/high.
 4. **Landmarks, buildings, trees.** Oversized landmarks far out, each town's real buildings close in, tree clumps.
 5. **Studio and finish.** Landmark per place, sea and region terrain editing; world map test steps for each part;
