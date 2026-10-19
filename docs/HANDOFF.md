@@ -11,6 +11,26 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 - Questions waiting for the owner: 
 - Next session starts with: 
 
+### Phase 10 - World map: fixes for the weird textures - 2026-10-19
+Owner: "the map textures look weird on main". Found with small low-graphics pictures of the map (lite page, no
+graphics test); branch `world-map-fix` on top of `world-map-look-5`. Only #62 (sessions 1-2) had reached main; #65,
+#66 and #68 merged into their stacked bases, so this branch's PR to main carries sessions 3-5 too.
+- Fixed:
+  - **Camouflage ground**: ground patches were about 9 m with an outline ring of a second ground, and wet, dry and high
+    ground switched in 6 m blocks (nearest grid corner). Now a list's first ground with others in patches about 40 m
+    across, no rings, wetness and steepness read smoothly between corners. Single-square specks in the middle of the
+    map: 9.5% before, 4.5% after (the fast check fails above 7%).
+  - **Striped sea glare from far**: each wave fades out once it is under about two pixels; the sun's glint fades with
+    distance and is weaker; foam bands blur into a steady edge from far.
+  - **Town water as a tile**: a place's own water and the rivers (terrain w and d) are drawn as water (colours,
+    a slow ripple, foam where they meet land); far away their colour is water's.
+  - **Black trees and buildings** (sessions 3-5, found on the way): some shapes' normals pointed inward, so the facets
+    were lit from behind. Each facet is now lit from the side we see.
+  - Shadow lookups are offset along the surface's normal (less self-shadowing).
+- Verified: npm test 214; lint, types, format clean; full lite fast check 13 of 13 (the battle step passed on its own
+  rerun; it sticks at "playing" under load now and then, as before).
+- Next: the owner's phone look; then tag `phase-10-done`.
+
 ### Phase 10 - World map, the look, session 5: the Studio and the finish - 2026-10-19
 Owner's answers: **worldmap.json**, the sea with **sliders and a brush**, the preview **both** (2D in the Studio, a
 button for the 3D bowl in the game). Branch `world-map-look-5`, on top of `world-map-look-4` (PR #66); main (studio
