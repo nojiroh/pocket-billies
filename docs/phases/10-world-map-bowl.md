@@ -121,7 +121,7 @@ Sessions, in order:
 1. **Sea and coasts (done 2026-10-19; 40.0% sea, test step in the world map test).** About 40% ocean in the ground data (logic/bowl.js: a sea level and a coastline from the
    distance to places and roads plus noise; every place and road on land, enforced by a test). Water: depth colours,
    moving waves, foam along the coasts, sky reflections; beaches, shallows. The walk scenes' far wall shows the sea.
-2. **The look and the routes.** Natural ground between places: beaches, cliffs on steep coasts, rivers from the high
+2. **The look and the routes (done 2026-10-19; light option A: the Inner Sun off the centre, slanted light).** Natural ground between places: beaches, cliffs on steep coasts, rivers from the high
    ground to the sea, regions blending by height and wetness. Routes as bold outlined paths in the ground, always
    clear. Stronger relief; hill shading and cast shadows from a slanted sun (a shadow map over the bowl).
 3. **Clouds and weather.** Simplified low-poly clouds at a few heights with moving shadows; rain showers, fog and snow

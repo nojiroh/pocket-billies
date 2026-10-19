@@ -11,6 +11,37 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 - Questions waiting for the owner: 
 - Next session starts with: 
 
+### Phase 10 - World map, the look, session 2: the land, the routes, the light - 2026-10-19
+Owner's request: "Next session"; light option **A** (the Inner Sun off the centre, the light from where it hangs).
+Branch `world-map-look-2`, on top of `world-map-look` (PR #62, not merged yet).
+- Changed:
+  - `logic/bowl.js`: relief about 40% taller (limit 0.115) with broad hills between places; land never sinks below
+    the water (dips flatten into low ground); headland stretches of coast stand up and drop to the sea as cliffs,
+    low coasts slope to beaches. Rivers (`bowlRivers`): a priority flood from the sea over the height above the
+    water, springs on the highest land, up to 10 courses, each falling all the way, ending in the sea, clear of the
+    places' ground and the rim, beds cut 2 m. Wetness (`bowlWetness`, `bowlWetAt`). The sun: `bowlSun` (40 degrees
+    slant, azimuth 135 for now, hanging inside the hollow sphere).
+  - `world-bowl.js`: ground lit by the slanted sun with a sky fill and cast shadows (`mshadow`, a 2048 shadow map
+    drawn once, the ground never moves); the water takes the shadows and the glint follows the sun. A line map
+    (`worldBowlLineMap`, RGBA 1024): routes drawn as bold cream paths with a dark outline that stay a few pixels wide
+    at any zoom (hidden up close inside a place's own ground, where its paths show), rivers as blue lines when far.
+    Terrain: region borders wander and dither; wet lowland, dry slopes, high ground per region (`BOWL_REGION_SHADE`),
+    rock on steep ground and cliffs, snow higher than before; rivers painted with muddy and sandy banks; routes
+    painted over them as fords.
+  - `opening-fall.js`: the fall passes close by the Inner Sun where it now hangs.
+  - Tests: `tools/test/bowl-land.test.mjs` (rivers, cliffs and beaches, land above water, wetness, the sun); world
+    map test step "Light, shadows, routes and rivers"; the fast check asks for the shadow map, line map, rivers and no
+    GPU error.
+- Risky or unfinished:
+  - Not seen on a screen: colours, shadow softness, route width and river colour are first guesses.
+  - The ground now takes about 250-300 ms to work out here (sea, relief, rivers), once per session; maybe 0.6 s on
+    a phone, on first opening the map or the first far wall. If it shows, it can move to idle time.
+  - Shadow map: 2048 x 2048 depth, drawn once (time shown in the world map test).
+- Verified: npm test 187 pass; lint, types, modules, format clean; full lite fast check 12 of 12.
+- Decisions I made: the sun stays at azimuth 135 until session 3 ties it to the time of day; rivers avoid the places'
+  ground entirely and the rim; routes cross rivers as fords (painted over them).
+- Next session starts with: session 3, clouds and weather (and the sun moving with the time of day).
+
 ### Phase 10 - World map, the look, session 1: sea and coasts - 2026-10-19
 Owner's request: the living diorama look (B), an inland sea with bays, about 40% of the bowl water; "Go" for session 1.
 Branch `world-map-look`.
