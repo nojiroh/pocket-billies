@@ -29,6 +29,7 @@ Lint enforces what it can (see the end). Every old -> new name of phase 05 is in
 | Solid props made from a prop's picture | `solidProp*` (solid-props.js) | was p3d, props3d.js |
 | Creatures | `billy`, `billies` (`billyName`, `worldBillies`, `buddyBilly`) | was mon, owm, ow, owmon.js |
 | A Billie's recolour | `coat` (data section `coats`, `COATS`, a Billie's or encounter's `coat` id, logic/coats.js `coat*`) | studio track ST-0, in place of Golden (`gold`); not `variant`: the Variants are a group of people, and props have `variants` |
+| The world map's look | `worldmap` (data section `worldmap`: `sea`, `relief`, `regions`, `kinds`; a place's `landmark` prop key; Studio `wml*`) | phase 10; the map itself is the bowl (`bowl*` in logic/bowl*.js, `worldBowl*` in world-bowl.js) |
 | Drawn people | `person*` (person-art.js) | was tr*, trainer.js |
 | The save | `saveData` (`setSaveData`) | was S |
 | UI state | `uiState` | was U |

@@ -2,8 +2,10 @@
 /* ================= POCKET BILLIES STUDIO · world, rules, art ================= */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
+import { worldMapLookTab } from '../../game/js/hooks.js';
 import { $ } from '../../game/js/util.js';
-import { makeCanvas } from '../../game/js/art.js';
+import { bowlLandmarkPick, bowlPropClass } from '../../game/js/logic/bowl-things.js';
+import { artURL, makeCanvas } from '../../game/js/art.js';
 import { WILD_TYPE_BOOSTS } from '../../game/js/environment.js';
 import { escapeHtml } from './game-stand-ins.js';
 import {
@@ -45,6 +47,7 @@ expose({
   bindWorldMap: [() => bindWorldMap, v => (bindWorldMap = v)],
   bowlSpotXY: [() => bowlSpotXY],
   drawWorldMarkers: [() => drawWorldMarkers, v => (drawWorldMarkers = v)],
+  landmarkField: [() => landmarkField, v => (landmarkField = v)],
   locationRoads: [() => locationRoads, v => (locationRoads = v)],
   moveRoadEnds: [() => moveRoadEnds, v => (moveRoadEnds = v)],
   newStopBowlSpot: [() => newStopBowlSpot, v => (newStopBowlSpot = v)],
@@ -176,6 +179,7 @@ SECTIONS.world = () => {
     ['eggs', 'Eggs'],
     ['regions', 'Regions ahead'],
     ['backdrops', 'Battle backdrops'],
+    ['look', 'World map look'],
   ];
   const body = {
     route: worldLocations,
@@ -184,6 +188,7 @@ SECTIONS.world = () => {
     eggs: worldEggs,
     regions: worldRegions,
     backdrops: worldBackdrops,
+    look: worldMapLookTab,
   }[tab]();
   return `<div class="ed-col solo"><div class="ed-head"><h2>World & encounters</h2></div><div class="seg-row tabs">${tabs.map(([k, n]) => `<button class="seg ${k === tab ? 'on' : ''}" data-act="wtab" data-t="${k}">${n}</button>`).join('')}</div>${body}</div>`;
 };
@@ -290,6 +295,7 @@ function worldLocations() {
         `${p}.t`,
         LOCATION_KINDS.map(k => [k, k])
       ),
+      landmarkField(r, p),
       textField('Banner picture', `${p}.banner`, {
         opt: 1,
         ph: 'background/sundown.webp',
@@ -314,6 +320,34 @@ function worldLocations() {
       sub: 'Each road is walked in either direction. Its length is measured from the two exits it joins. In the stop’s walk scene, each road leaves through the exit named under “Leaves by”, or, when none is named, the exit that points the same way on the world map.',
     }) +
     card('Map', worldMapHTML())
+  );
+}
+/* phase 10, session 5: the place's landmark on the world map: Auto (the biggest landmark prop in its walk scene, else
+   its biggest building; logic/bowl-things.js bowlLandmarkPick) or one of the landmarks and buildings in its scene */
+function landmarkField(r, p) {
+  const D = studioState.D,
+    A = (D.scenery && D.scenery.props) || {},
+    M = D.maps && D.maps[r.mapId],
+    seen = new Set(),
+    opts = [];
+  for (const q of (M && M.props) || []) {
+    const a = A[q.k];
+    if (!a || !a.img || seen.has(q.k) || !(a.landmark || bowlPropClass(q.k, a) === 'building')) continue;
+    seen.add(q.k);
+    opts.push([q.k, `${a.name || q.k}${a.landmark ? ' (landmark)' : ''}`]);
+  }
+  opts.sort((x, y) => (A[y[0]].landmark ? 1 : 0) - (A[x[0]].landmark ? 1 : 0));
+  if (r.landmark && !seen.has(r.landmark)) opts.push([r.landmark, `${r.landmark} (not in this scene)`]);
+  const auto = bowlLandmarkPick({}, M, A),
+    shown = r.landmark ? A[r.landmark] : auto && A[auto.k],
+    pic = shown && shown.img ? `<img class="wml-lm" src="${escapeHtml(artURL(shown.img))}" alt="">` : '';
+  return (
+    selectField('Landmark on the world map', `${p}.landmark`, opts, {
+      none: `Auto${auto && A[auto.k] ? ` (${A[auto.k].name || auto.k})` : ' (none: the pin only)'}`,
+      opt: 1,
+      rr: 1,
+      help: 'Far out each place shows one landmark, standing up as its own picture. Auto picks the biggest landmark in its walk scene.',
+    }) + pic
   );
 }
 /* phase 08: a road's length is measured, as the game does (game-data.js roadMetres): the walk from each place's middle

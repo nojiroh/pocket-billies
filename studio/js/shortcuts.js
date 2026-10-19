@@ -8,7 +8,7 @@ import { provide } from '../../game/js/hooks.js';
 import { $ } from '../../game/js/util.js';
 import { escapeHtml } from './game-stand-ins.js';
 import { PIXEL_KEYS } from '../../game/js/logic/pixel-ops.js';
-import { dialog, sectionShown } from './studio-app.js';
+import { dialog, sectionShown, studioState } from './studio-app.js';
 /* eslint-disable no-func-assign */
 expose({
   STUDIO_KEYS: [() => STUDIO_KEYS],
@@ -38,6 +38,17 @@ const STUDIO_KEYS = [
       ['Tab, then ← →', 'Move the edge 8 px (Shift: 32 px)'],
       ['Home / End', 'Smallest / largest'],
       ['Delete or double-click', 'Back to the preset’s size'],
+    ],
+  },
+  {
+    name: 'World map look (over the picture of the bowl)',
+    when: () => sectionShown('world') && studioState.sel.wtab === 'look',
+    keys: [
+      ['V', 'Look (no brush)'],
+      ['L', 'Land brush'],
+      ['W', 'Sea brush'],
+      ['X', 'Remove strokes'],
+      ['[ and ]', 'Smaller and bigger brush'],
     ],
   },
   {

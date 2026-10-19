@@ -222,6 +222,9 @@ export function studioBroadcast() {
           engine: studioState.D.engine,
           story: studioState.D.story,
           trainers: studioState.D.trainers,
+          /* phase 10, session 5: the world map's look and each place's landmark */
+          worldmap: studioState.D.worldmap,
+          landmarks: Object.fromEntries((studioState.D.locations || []).map(l => [l.id, l.landmark || ''])),
         },
       });
     } catch (e) {}
