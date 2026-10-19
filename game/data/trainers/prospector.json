@@ -10,9 +10,15 @@
  ],
  "reward": 1300,
  "market": null,
- "lines": ["“Struck gold in ’98. Struck it again in ’99. It was the same gold. I keep losing it.”"],
  "win": "“Bust!”",
  "lose": "“Pay dirt.”",
  "hint": "",
- "v47region": 1
+ "v47region": 1,
+ "script": [
+  "if beat:prospector",
+  "  [happy] Back for more? All right! #l:4c18",
+  "else",
+  "  [happy] Struck gold in ’98. Struck it again in ’99. It was the same gold. I keep losing it. #l:300c",
+  "battle prospector"
+ ]
 }

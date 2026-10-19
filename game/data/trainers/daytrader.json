@@ -10,9 +10,15 @@
  ],
  "reward": 2400,
  "market": null,
- "lines": ["“I bought at the all-time high. I’m waiting for it to come back. It’s been eleven years.”"],
  "win": "“Correction.”",
  "lose": "“To the moon!”",
  "hint": "",
- "v47region": 1
+ "v47region": 1,
+ "script": [
+  "if beat:daytrader",
+  "  [happy] Back for more? All right! #l:4cf0",
+  "else",
+  "  [happy] I bought at the all-time high. I’m waiting for it to come back. It’s been eleven years. #l:62b6",
+  "battle daytrader"
+ ]
 }

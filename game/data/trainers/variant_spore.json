@@ -10,11 +10,15 @@
  ],
  "reward": 1300,
  "market": null,
- "lines": [
-  "“Every spore we grind makes the record shine a little brighter. The forest doesn’t mind. We asked it. It didn’t answer.”"
- ],
  "win": "“Ground down.”",
  "lose": "“Polished off.”",
  "hint": "",
- "v47region": 1
+ "v47region": 1,
+ "script": [
+  "if beat:variant_spore",
+  "  [happy] Back for more? All right! #l:c299",
+  "else",
+  "  [happy] Every spore we grind makes the record shine a little brighter. The forest doesn’t mind. We asked it. It didn’t answer. #l:cf5a",
+  "battle variant_spore"
+ ]
 }

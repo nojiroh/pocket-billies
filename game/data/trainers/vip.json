@@ -10,9 +10,15 @@
  ],
  "reward": 2000,
  "market": null,
- "lines": ["“VIP means Very Important Purchaser. I have every variant. Even the ones that don’t exist yet.”"],
  "win": "“Access revoked.”",
  "lose": "“Backstage!”",
  "hint": "",
- "v47region": 1
+ "v47region": 1,
+ "script": [
+  "if beat:vip",
+  "  [happy] Back for more? All right! #l:1fa4",
+  "else",
+  "  [happy] VIP means Very Important Purchaser. I have every variant. Even the ones that don’t exist yet. #l:86f7",
+  "battle vip"
+ ]
 }

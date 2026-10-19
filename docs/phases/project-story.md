@@ -50,6 +50,16 @@ Project Story is its own track. It runs alongside phases A to E; A2 and E3 point
 - Stale: the header of cutscene.js still says the step-by-step intro in ui.js runs if the cutscene fails; that intro
   was removed in 06-2 (now a Try again screen). Fix in session S5.
 
+## After S2 (2026-10-19)
+- Every person, trainer, run-up scene, Hazel's lab talk, the talk after Blake's first battle and the ending play from
+  scripts (docs/SCRIPTS.md); `personTalk`, `trainerTalk`, `talkHazel`, `storyAfterRival`, `storyEnding` only start
+  them; `rivalScene` is gone (its staging is the stage's `camera run-up`, `walk ... beside me`, `face`). The opening
+  itself (cutscene.js, `HAZEL`, `battleTutor`) is untouched: S5.
+- Townsfolk chatter (`talkFolk`) and favours (things-to-do.js) stay lists (owner, 2026-10-19). Prop `say` toasts
+  (shops, clinic, rest) are not conversations and are not scripts.
+- `when` / `unless` (people, trainers, props), `requires` / `locked` (places), chapters (map variants), line ids,
+  the story checks in check-data. Doors have no `requires` of their own yet (a door prop can carry `when`).
+
 ## Sessions
 Sized in sessions and owner decisions, like the roadmap. Each session starts in Plan Mode and ends with HANDOFF.
 

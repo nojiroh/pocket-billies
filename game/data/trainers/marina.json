@@ -13,7 +13,6 @@
  "reward": 3400,
  "egg": 10,
  "market": null,
- "lines": ["“Welcome to Palmhaven Town. Relax, nobody here asks questions.”","“My Water team flows around every attack.”"],
  "win": "“Okay, you made a splash. The Water Badge is yours.”",
  "lose": "“Washed out! Come back when the tide turns.”",
  "hint": "Leader Marina’s Water team is level 29–31. Grass and Electric moves soak them, and Fire barely makes them steam.",
@@ -25,5 +24,13 @@
   "items": {"parachute":1},
   "rewardText": "a Golden Parachute, 3 Gold Coins and 2 Platinum Coins",
   "unlockText": "The path up Mt. Cinderpeak, on the north shore, is open. Bring water."
- }
+ },
+ "script": [
+  "if beat:marina",
+  "  [happy] Back for more? All right! #l:a209",
+  "else",
+  "  [happy] Welcome to Palmhaven Town. Relax, nobody here asks questions. #l:30d5",
+  "  My Water team flows around every attack. #l:669f",
+  "battle marina"
+ ]
 }

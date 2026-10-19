@@ -7,43 +7,72 @@
      and where to carry on (logic/script.js saveDuringRun); Continue plays it again from there (storyResumeCheck).
    - Hold the dialogue box (0.6 s) to skip: the rest runs at once and still makes every change; a battle stops it.
    - ?story=<preset> (with ?test=1 only, nothing saved): a test game at a point in the story (story.json presets).
-   S1 plays lines, choices, waits, heal and battle. Walk, face, camera, fade and shot come with S2 and S5: until then
-   they do nothing but say so in the debug log; go and the openings' other commands stop a script with an error. */
-/* the script lines of a person or a trainer: person:<id> (in a map's people), trainer:<id> */
+   - S2: the scene in the walk scene you stand in: `camera run-up` borrows the opening's director (cutscene.js) and
+     puts you and the one who talks on it, `walk <who> beside me` brings them over, `face`, `music`, `fade`; a battle
+     ends the scene first. A line waits for open windows (a battle's result) to close.
+   - story:<id> scripts belong to the story, not to someone (story.json scripts: Hazel in the lab, the ending).
+   Shot and the openings' other commands come with S5 and S7: go and those stop a script with an error. */
+/* the script lines of a person, a trainer or the story: person:<id> (in a map's people), trainer:<id>, story:<id> */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { provide, toast } from './hooks.js';
+import { provide, render, toast } from './hooks.js';
+import { $, clamp } from './util.js';
 import { LOCATIONS, STORY_DATA, TRAINERS, gameData } from './game-data.js';
 import { healAll } from './logic/rules.js';
 import { startTrainer } from './logic/battle-engine.js';
 import { parseScript, runBase, runScript, saveDuringRun } from './logic/script.js';
 import { activeBattle, reducedMotion, save, saveData, uiState } from './game-state.js';
-import { walkView } from './walk-view.js';
+import { lookOf } from './person-art.js';
+import { walkView, walkablePointNear } from './walk-view.js';
+import { walkRenderer } from './walk/walk-state.js';
+import { standingHeightAt } from './walk/heights.js';
+import { music } from './sound.js';
 import { talkBox, talkChoose, talkHide, talkLine } from './talk.js';
-import { cutscene } from './cutscene.js';
+import {
+  cutscene,
+  cutsceneActor,
+  cutsceneFlush,
+  cutsceneFrame,
+  cutsceneHideDialogue,
+  cutsceneNow,
+  cutsceneSay,
+  cutsceneShot,
+  cutsceneWait,
+  cutsceneWalk,
+} from './cutscene.js';
 /* eslint-disable no-func-assign */
 expose({
+  cutsceneWorldBegin: [() => cutsceneWorldBegin, v => (cutsceneWorldBegin = v)],
+  cutsceneWorldEnd: [() => cutsceneWorldEnd, v => (cutsceneWorldEnd = v)],
   playStoryScript: [() => playStoryScript, v => ((playStoryScript = v), provide({ playStoryScript }))],
   storyGameStage: [() => storyGameStage],
   storyHold: [() => storyHold, v => (storyHold = v)],
   storyOwner: [() => storyOwner, v => (storyOwner = v)],
   storyResumeCheck: [() => storyResumeCheck, v => (storyResumeCheck = v)],
   storyRun: [() => storyRun],
+  storyRunUp: [() => storyRunUp, v => (storyRunUp = v)],
+  storyScene: [() => storyScene],
+  storySceneEnd: [() => storySceneEnd, v => (storySceneEnd = v)],
+  storySceneOn: [() => storySceneOn],
   storyScriptIds: [() => storyScriptIds, v => ((storyScriptIds = v), provide({ storyScriptIds }))],
   storyScriptLines: [() => storyScriptLines, v => (storyScriptLines = v)],
+  storySlots: [() => storySlots],
   storySpeaker: [() => storySpeaker, v => (storySpeaker = v)],
   storyTree: [() => storyTree, v => (storyTree = v)],
   storyTrees: [() => storyTrees],
   storyWait: [() => storyWait],
+  storyWindowsClosed: [() => storyWindowsClosed, v => (storyWindowsClosed = v)],
+  storyWorldOK: [() => storyWorldOK, v => ((storyWorldOK = v), provide({ storyWorldOK }))],
 });
 /* eslint-enable no-func-assign */
-provide({ playStoryScript, storyScriptIds });
+provide({ playStoryScript, storyScriptIds, storyWorldOK });
 /* to-module: end */
 function storyScriptLines(id) {
   const i = id.indexOf(':'),
     kind = id.slice(0, i),
     key = id.slice(i + 1);
   if (kind === 'trainer') return (TRAINERS[key] && TRAINERS[key].script) || null;
+  if (kind === 'story') return ((STORY_DATA.scripts || {})[key] || {}).script || null;
   if (kind === 'person')
     for (const sc of Object.values(gameData.maps)) {
       const P = (sc.people || []).find(p => p.id === key && p.script);
@@ -57,12 +86,14 @@ function storyScriptIds() {
   for (const sc of Object.values(gameData.maps))
     for (const P of sc.people || []) if (P.script) ids.push('person:' + P.id);
   for (const [id, T] of Object.entries(TRAINERS)) if (T.script) ids.push('trainer:' + id);
+  for (const id of Object.keys(STORY_DATA.scripts || {})) ids.push('story:' + id);
   return ids;
 }
-/* who says a line that names nobody: the person or trainer the script belongs to */
+/* who says a line that names nobody: the person or trainer the script belongs to, a story script's `who` */
 function storyOwner(id) {
   const key = id.slice(id.indexOf(':') + 1);
   if (id.startsWith('trainer:')) return (TRAINERS[key] && TRAINERS[key].who) || null;
+  if (id.startsWith('story:')) return ((STORY_DATA.scripts || {})[key] || {}).who || null;
   for (const sc of Object.values(gameData.maps)) {
     const P = (sc.people || []).find(p => p.id === key);
     if (P) return P.who || P.id;
@@ -81,36 +112,218 @@ function storyTree(id) {
   if (!t) storyTrees.set(lines, (t = parseScript(lines)));
   return t;
 }
+function storyWorldOK() {
+  return (
+    typeof walkRenderer !== 'undefined' &&
+    walkRenderer.on &&
+    walkView.ready &&
+    walkView.cv &&
+    !activeBattle &&
+    typeof cutsceneFrame === 'function'
+  );
+}
+/* the director, borrowed for a scene in the current walk scene (no remount, no letterbox fade-in) */
+function cutsceneWorldBegin() {
+  cutscene.on = true;
+  cutscene.run++;
+  cutscene.skip = false;
+  cutscene.actors = {};
+  cutscene.stars = [];
+  cutscene.coins = [];
+  cutscene.fx = [];
+  cutscene.flashes = [];
+  cutscene.cam = null;
+  cutscene.hide = null;
+  cutscene.world = true;
+  let el = $('#cs');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'cs';
+    el.className = 'cs';
+    document.body.appendChild(el);
+  }
+  el.innerHTML =
+    '<div class="cs-bars" aria-hidden="true"><i></i><i></i></div><button class="cs-skip pb small quiet" data-a="cs-skip">Skip ›</button><div class="cs-fade" id="csFade"></div>';
+  el.hidden = false;
+  document.body.classList.add('in-cs', 'cs-world');
+  walkView.director = { frame: cutsceneFrame };
+  return cutscene.run;
+}
+function cutsceneWorldEnd() {
+  talkHide();
+  cutscene.on = false;
+  cutscene.run++;
+  cutscene.skip = false;
+  cutscene.world = false;
+  cutsceneFlush();
+  walkView.director = null;
+  walkRenderer.bt = null;
+  walkRenderer.camT = null;
+  walkRenderer.focus = null;
+  const el = $('#cs');
+  if (el) {
+    el.hidden = true;
+    el.innerHTML = '';
+  }
+  document.body.classList.remove('in-cs', 'cs-world');
+  render();
+}
 const storyWait = ms => new Promise(r => setTimeout(r, reducedMotion ? 0 : ms));
+/* a line, a choice or a scene waits until the windows on screen (a battle's result) are closed */
+async function storyWindowsClosed() {
+  while (uiState.modal || activeBattle) await storyWait(200);
+}
+/* ---------- the scene in the walk scene you stand in ---------- */
+const storyScene = { on: false, run: 0, side: 1, to: /** @type {number[] | null} */ (null) };
+/* `camera run-up`: someone runs up to you (Blake, Cass, Vinylla): the director on the walk scene, you and them on it,
+   them out of sight beyond you, a wide shot */
+async function storyRunUp() {
+  if (storyScene.on || !storyWorldOK()) return;
+  const who = storyRun.speaker || 'chad',
+    run = cutsceneWorldBegin(),
+    P = walkView.pl,
+    sc = walkView.sc,
+    side = P.x < sc.w / 2 ? 1 : -1,
+    to = walkablePointNear(P.x + side * 1.4, P.z + 0.3),
+    from = walkablePointNear(clamp(P.x + side * 7, 1, sc.w - 1), clamp(P.z + 4.5, 1, sc.h - 1));
+  Object.assign(storyScene, { on: true, run, side, to });
+  cutsceneActor('me', 'me', [P.x, P.z], side > 0 ? 'sideR' : 'side');
+  cutsceneActor(who, who, from, 'down');
+  cutscene.actors[who].hidden = true;
+  const m = [(P.x + to[0]) / 2, (P.z + to[1]) / 2],
+    gy = standingHeightAt(m[0], m[1]);
+  cutsceneShot({ eye: [m[0], gy + 3.6, m[1] - 8.5], tgt: [m[0], gy + 1, m[1] + 1.5], fov: 38, w: 6 });
+  await cutsceneWait(300);
+}
+const storySceneOn = () => storyScene.on && cutscene.on && cutscene.run === storyScene.run;
+/* the scene's end: the one who ran up cheers, the screen fades, the walk scene is yours again */
+async function storySceneEnd(outro) {
+  if (!storyScene.on) return;
+  try {
+    const who = storyRun.speaker,
+      A = who && cutscene.actors[who];
+    if (outro && storySceneOn()) {
+      cutsceneHideDialogue();
+      if (A) {
+        A.act = 'cheer';
+        A.actT = cutsceneNow();
+      }
+      await cutsceneWait(700);
+      const f = $('#csFade');
+      if (f) {
+        f.style.background = '#0B0912';
+        f.classList.add('on');
+      }
+      await new Promise(r => setTimeout(r, reducedMotion ? 50 : 450));
+    }
+  } finally {
+    storyScene.on = false;
+    cutsceneWorldEnd();
+  }
+}
 /* the game's stage for the runner */
 const storyGameStage = {
-  say: l => talkLine(storySpeaker(l.who || 'me'), l.text, l.expr, {}),
-  choose: options => talkChoose(options),
+  say: async l => {
+    await storyWindowsClosed();
+    storyRun.line = l.id || null;
+    const who = storySpeaker(l.who || 'me');
+    return storySceneOn() ? cutsceneSay(who, l.text, l.expr) : talkLine(who, l.text, l.expr, {});
+  },
+  choose: async options => {
+    await storyWindowsClosed();
+    return talkChoose(options);
+  },
   wait: ([s]) => storyWait(+s * 1000),
+  music: ([piece]) => {
+    if (typeof music === 'function') music(piece);
+  },
   heal: () => {
     healAll();
     save();
   },
-  /* the battle starts after the box closes; the script goes on once it is over and its windows are closed */
+  /* the battle starts after the box closes (and the scene, if one is on); the script goes on once it is over */
   battle: async ([id]) => {
-    talkHide();
     if (!TRAINERS[id]) throw new Error(`no trainer ${id}`);
+    await storySceneEnd(true);
+    talkHide();
     startTrainer(id, { talked: true });
-    while (activeBattle || uiState.modal) await storyWait(250);
+    while (activeBattle) await storyWait(250);
+  },
+  camera: async ([shot]) => {
+    if (shot === 'run-up') return storyRunUp();
+    if (typeof debugLog !== 'undefined') debugLog.add('story', `camera ${shot}: no such shot`);
+  },
+  /* walk <who> beside me: the one who ran up comes over to stand beside you */
+  walk: async ([name, ...where]) => {
+    const who = storySpeaker(name);
+    if (!storySceneOn() || !cutscene.actors[who]) return;
+    if (where.join(' ') !== 'beside me') throw new Error(`walk ${name} ${where.join(' ')}: only "beside me" for now`);
+    talkHide();
+    const P = walkView.pl,
+      to = /** @type {number[]} */ (storyScene.to),
+      m = [(P.x + to[0]) / 2, (P.z + to[1]) / 2],
+      gy = standingHeightAt(m[0], m[1]);
+    cutscene.actors[who].hidden = false;
+    cutsceneShot({ eye: [m[0], gy + 2.3, m[1] - 5.2], tgt: [m[0], gy + 1.05, m[1] + 0.4], fov: 38, w: 4 }, 1600);
+    await cutsceneWalk(who, to, 1500);
+  },
+  /* face <who> me: the two of you turn to each other; face <who> up/down/side/sideR */
+  face: ([name, dir]) => {
+    const who = storySpeaker(name),
+      A = cutscene.actors[who];
+    if (!storySceneOn() || !A) return;
+    const toMe = storyScene.side > 0 ? 'side' : 'sideR';
+    if (dir === 'me') {
+      A.dir = toMe;
+      if (cutscene.actors.me) cutscene.actors.me.dir = toMe === 'side' ? 'sideR' : 'side';
+    } else A.dir = dir;
+  },
+  fade: ([dir]) => {
+    const f = $('#csFade');
+    if (f) f.classList.toggle('on', dir !== 'in');
+  },
+  /* skipping (hold the box): the scene's camera work and walks are passed over; a walk lands where it was going */
+  skipTo: (cmd, args) => {
+    if (cmd === 'walk' && storySceneOn() && storyScene.to) {
+      const A = cutscene.actors[storySpeaker(args[0])];
+      if (A) [A.x, A.z, A.hidden] = [storyScene.to[0], storyScene.to[1], false];
+    }
   },
 };
-for (const c of ['walk', 'face', 'camera', 'fade', 'shot'])
-  storyGameStage[c] = args => {
-    if (typeof debugLog !== 'undefined') debugLog.add('story', `${c} ${args.join(' ')}: not played yet (S2)`);
-  };
-const storyRun = { on: false, id: null, base: null, path: null, control: null };
+storyGameStage.shot = args => {
+  if (typeof debugLog !== 'undefined') debugLog.add('story', `shot ${args.join(' ')}: not played yet (S5)`);
+};
+/* line: the id of the line on screen (tools/story-ids.mjs), for the debug log */
+const storyRun = { on: false, id: null, speaker: null, line: null, base: null, path: null, control: null };
+provide({ storyRun }); /* to-module */
+const storySlots = { name: () => lookOf('me').name || 'Trainer' };
 /* plays a script by id; resume: where a saved run goes on from */
 async function playStoryScript(id, o = {}) {
   const tree = storyTree(id);
-  if (!tree || storyRun.on) return false;
+  if (!tree) return false;
+  /* a script started while another plays (the ending, from a battle's result) plays inside it */
+  if (storyRun.on) {
+    await runScript(tree, storyGameStage, {
+      save: saveData,
+      id,
+      speaker: o.speaker || storyOwner(id),
+      scripts: storyTree,
+      locations: LOCATIONS,
+      control: storyRun.control || undefined,
+      slots: storySlots,
+    });
+    return true;
+  }
   const S = saveData,
     control = { skipping: false };
-  Object.assign(storyRun, { on: true, id, base: runBase(S), path: o.resume || null, control });
+  const speaker = o.speaker || storyOwner(id);
+  Object.assign(storyRun, { on: true, id, speaker, base: runBase(S), path: o.resume || null, control });
+  /* visits:<who> counts the talks with someone (a person's or a trainer's script) */
+  if (!o.resume && /^(person|trainer):/.test(id)) {
+    const T = (S.story || (S.story = {})).talks || (S.story.talks = {}),
+      k = id.slice(id.indexOf(':') + 1);
+    T[k] = (T[k] || 0) + 1;
+  }
   Object.defineProperty(S, 'toJSON', {
     configurable: true,
     value: () => saveDuringRun(S, storyRun.base, { script: id, path: storyRun.path }),
@@ -120,9 +333,10 @@ async function playStoryScript(id, o = {}) {
     await runScript(tree, storyGameStage, {
       save: S,
       id,
-      speaker: o.speaker || storyOwner(id),
+      speaker,
       scripts: storyTree,
       locations: LOCATIONS,
+      slots: storySlots,
       questStages: Object.fromEntries(Object.entries(STORY_DATA.quests || {}).map(([k, q]) => [k, q.stages])),
       resume: o.resume || null,
       control,
@@ -134,12 +348,14 @@ async function playStoryScript(id, o = {}) {
     });
   } catch (e) {
     console.error(e);
-    if (typeof debugLog !== 'undefined') debugLog.add('story', `script ${id} stopped: ${e.message}`);
+    if (typeof debugLog !== 'undefined')
+      debugLog.add('story', `script ${id} stopped${storyRun.line ? ` after #l:${storyRun.line}` : ''}: ${e.message}`);
     toast('The story stopped here: ' + e.message);
   } finally {
     delete S.toJSON;
+    await storySceneEnd(false).catch(e => console.error(e));
     talkHide();
-    Object.assign(storyRun, { on: false, id: null, base: null, path: null, control: null });
+    Object.assign(storyRun, { on: false, id: null, speaker: null, line: null, base: null, path: null, control: null });
     save();
   }
   return true;
@@ -162,7 +378,8 @@ document.addEventListener('pointerdown', ev => {
     storyRun.control.skipping = true;
     if (talkBox.cur) talkBox.cur.done();
     if (talkBox.choice) talkBox.choice.pick(0);
-    if (typeof debugLog !== 'undefined') debugLog.add('story', `skipped the rest of ${storyRun.id}`);
+    if (typeof debugLog !== 'undefined')
+      debugLog.add('story', `skipped the rest of ${storyRun.id}${storyRun.line ? ` from #l:${storyRun.line}` : ''}`);
   }, 600);
 });
 for (const t of ['pointerup', 'pointercancel', 'pointerleave'])

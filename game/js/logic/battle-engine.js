@@ -995,10 +995,6 @@ export function startTrainer(id, o = {}) {
   )
     return;
   battleSay(dbl ? `${T.name} wants a double battle!` : `${T.name} wants to battle.`, { k: 'trainerIn', who: T.who });
-  if (!o.talked)
-    (T.lines || []).forEach((l, i) => {
-      battleSay(l).face = { who: T.who, expr: i ? null : 'happy' };
-    });
   if (T.market) {
     activeBattle.market = { k: 'sand', n: T.market.n || BATTLE_RULES.shockTurns };
     battleSay(T.marketText || `The battle opened in a ${shockName().toLowerCase()}.`, { k: 'market' });

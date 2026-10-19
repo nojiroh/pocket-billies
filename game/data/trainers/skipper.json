@@ -11,8 +11,15 @@
  "reward": 1100,
  "egg": 5,
  "market": null,
- "lines": ["“Welcome aboard! Er, I mean, a-lake.”","“This lake is so liquid you can ride right across it.”"],
  "win": "“Man overboard! Well played.”",
  "lose": "“Ship shape! Better luck next voyage.”",
- "hint": "Skipper Sam runs the floating market with a level 33–34 team."
+ "hint": "Skipper Sam runs the floating market with a level 33–34 team.",
+ "script": [
+  "if beat:skipper",
+  "  [happy] Back for more? All right! #l:87f0",
+  "else",
+  "  [happy] Welcome aboard! Er, I mean, a-lake. #l:dfd1",
+  "  This lake is so liquid you can ride right across it. #l:5f55",
+  "battle skipper"
+ ]
 }

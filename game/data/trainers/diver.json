@@ -11,8 +11,15 @@
  "reward": 1300,
  "egg": 5,
  "market": null,
- "lines": ["“Ahoy! Fancy a dip?”","“My team found this sandbar. Finders keepers!”"],
  "win": "“Sunk! Nice riding.”",
  "lose": "“Splash! Maybe stick to the shallows.”",
- "hint": "Diver Dee suns herself on the sandbar with a level 25–26 team."
+ "hint": "Diver Dee suns herself on the sandbar with a level 25–26 team.",
+ "script": [
+  "if beat:diver",
+  "  [happy] Back for more? All right! #l:a077",
+  "else",
+  "  [happy] Ahoy! Fancy a dip? #l:f4b3",
+  "  My team found this sandbar. Finders keepers! #l:326f",
+  "battle diver"
+ ]
 }

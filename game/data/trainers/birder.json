@@ -11,9 +11,15 @@
  ],
  "reward": 1000,
  "market": null,
- "lines": ["“Shh. A Kashingcrane. They only nest where the harbour fees are low.”"],
  "win": "“Flew the coop.”",
  "lose": "“Spotted you a mile off.”",
  "hint": "",
- "v47region": 1
+ "v47region": 1,
+ "script": [
+  "if beat:birder",
+  "  [happy] Back for more? All right! #l:f616",
+  "else",
+  "  [happy] Shh. A Kashingcrane. They only nest where the harbour fees are low. #l:84cd",
+  "battle birder"
+ ]
 }

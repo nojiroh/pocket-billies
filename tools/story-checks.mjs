@@ -1,0 +1,223 @@
+// Project Story S2: the story checks (check-data.mjs runs them; tools/test/story-checks.test.mjs plants a fault for
+// each). Problems fail the data check; warnings are listed.
+// Problems: a script that doesn't read (file, line), a line without a line id or one used twice, a speaker, trainer,
+// place, item, coin, Billie or script that doesn't exist, a quest stage that isn't one of the quest's, a condition
+// (when, unless, requires, a chapter's when) that doesn't read, a place whose `requires` can never come true where
+// the player can get to (the reach check).
+// Warnings: a flag read but set nowhere (no script sets it and story.json doesn't list it, so the game doesn't
+// either), a flag a script sets that story.json doesn't list, a flag set but read nowhere, items taken but never
+// given, a once key two scripts share, a quest stage nothing moves to.
+import { lineIdProblems } from './story-ids.mjs';
+
+/** every script in the game data: { id, where, owner, lines, place } (place: the location id it is met at) */
+export function scriptsOf(G) {
+  const out = [],
+    placeOfMap = Object.fromEntries(G.locations.filter(l => l.mapId).map(l => [l.mapId, l.id]));
+  for (const [mid, M] of Object.entries(G.maps || {}))
+    for (const P of M.people || [])
+      if (P.script)
+        out.push({
+          id: 'person:' + P.id,
+          where: `maps/${mid}.json`,
+          owner: P,
+          lines: P.script,
+          place: placeOfMap[mid],
+        });
+  for (const [id, T] of Object.entries(G.trainers || {}))
+    if (T.script)
+      out.push({
+        id: 'trainer:' + id,
+        where: `trainers/${id}.json`,
+        owner: T,
+        lines: T.script,
+        place: (G.locations[T.node] || {}).id,
+      });
+  for (const [k, v] of Object.entries((G.story || {}).scripts || {}))
+    out.push({ id: 'story:' + k, where: 'story.json', owner: v, lines: v.script, place: null });
+  return out;
+}
+
+/** the checks; L: the logic (parseScript, conditionTree, conditionProblem, conditionNames)
+ * @returns {{ problems: string[], warnings: string[] }} */
+export function storyChecks(G, L) {
+  const problems = [],
+    warnings = [];
+  const S = G.story || {},
+    places = new Set(G.locations.map(l => l.id)),
+    trainers = G.trainers || {},
+    items = G.items || {},
+    coins = G.coins || {},
+    speakers = S.speakers || {},
+    quests = S.quests || {},
+    lines = new Set((G.lines || []).map(l => l.id)),
+    species = new Set((G.lines || []).flatMap(l => (l.names || []).map((_, i) => l.id + i)));
+  /* a flag story.json lists (by name, by pattern, or a record it keeps), as logic/script.js storyFlagKnown reads it */
+  const known = f =>
+    f in (S.flags || {}) ||
+    f in (S.kept || {}) ||
+    Object.keys(S.patterns || {}).some(p => f.startsWith(p.slice(0, p.indexOf('<'))) && f.length > p.indexOf('<'));
+  const scripts = scriptsOf(G),
+    ids = new Set(scripts.map(s => s.id));
+  const set = new Map(), // flag -> where set
+    read = new Map(), // flag -> where read
+    given = new Set(),
+    taken = new Map(),
+    onceKeys = new Map(),
+    questSet = new Map(); // quest -> stages moved to
+  const note = (m, k, at) => m.has(k) || m.set(k, at);
+
+  /* a condition: reads, and its names exist */
+  const condition = (c, at) => {
+    const p = L.conditionProblem(c);
+    if (p) return problems.push(`${at}: ${p.message} (in "${c}")`);
+    const N = L.conditionNames(L.conditionTree(c));
+    for (const f of N.flag || []) note(read, f, at);
+    for (const t of N.beat || []) if (!trainers[t]) problems.push(`${at}: beat:${t}, no such trainer`);
+    for (const i of N.item || []) if (!items[i]) problems.push(`${at}: item:${i}, no such item`);
+    for (const i of N.coin || []) if (!coins[i]) problems.push(`${at}: coin:${i}, no such coin`);
+    for (const v of N.visited || []) if (!places.has(v)) problems.push(`${at}: visited:${v}, no such place`);
+    for (const b of N.billie || [])
+      if (!lines.has(b) && !species.has(b)) problems.push(`${at}: billie:${b}, no such Billie`);
+    for (const q of N.quest || [])
+      if (!quests[q]) problems.push(`${at}: quest:${q}, no such quest (story.json quests)`);
+  };
+  const who = (w, at) => {
+    if (w && !(w in speakers) && !(G.people || {})[w] && w !== 'me')
+      problems.push(`${at}: speaker ${w}, not in story.json speakers nor a person`);
+  };
+
+  for (const sc of scripts) {
+    let tree;
+    try {
+      tree = L.parseScript(sc.lines);
+    } catch (e) {
+      if (e.name !== 'ScriptError') throw e;
+      problems.push(`${sc.where} ${sc.id}, line ${e.line + 1}: ${e.message}`);
+      continue;
+    }
+    const walk = blk => {
+      for (const n of blk) {
+        const at = `${sc.where} ${sc.id}, line ${n.line + 1}`;
+        if (n.k === 'say') who(n.who, at);
+        else if (n.k === 'if')
+          for (const c of n.clauses) {
+            if (c.cond) condition(c.cond, at);
+            walk(c.body);
+          }
+        else if (n.k === 'choice')
+          for (const o of n.options) {
+            if (o.cond) condition(o.cond, `${sc.where} ${sc.id}, line ${o.line + 1}`);
+            walk(o.body);
+          }
+        else if (n.k === 'once') {
+          if (n.key) {
+            const was = onceKeys.get(n.key);
+            if (was && was !== sc.id) warnings.push(`${at}: once key ${n.key} is also used by ${was}`);
+            else onceKeys.set(n.key, sc.id);
+          }
+          walk(n.body);
+        } else if (n.k === 'cycle' || n.k === 'seq') n.entries.forEach(walk);
+        else if (n.k === 'cmd') {
+          const [a, b] = n.args;
+          if (n.name === 'set') note(set, a, { at, place: sc.place });
+          else if (n.name === 'give' || n.name === 'take') {
+            const coin = a.startsWith('coin:');
+            if (coin ? !coins[a.slice(5)] : !items[a])
+              problems.push(`${at}: ${n.name} ${a}, no such ${coin ? 'coin' : 'item'}`);
+            if (n.name === 'give') given.add(a);
+            else note(taken, a, at);
+          } else if (n.name === 'battle' && !trainers[a]) problems.push(`${at}: battle ${a}, no such trainer`);
+          else if (n.name === 'call' && !ids.has(a)) problems.push(`${at}: call ${a}, no such script`);
+          else if (n.name === 'go' && !places.has(a)) problems.push(`${at}: go ${a}, no such place`);
+          else if (n.name === 'quest') {
+            if (!quests[a]) problems.push(`${at}: quest ${a}, no such quest (story.json quests)`);
+            else if (!quests[a].stages.includes(b)) problems.push(`${at}: quest ${a} has no stage ${b}`);
+            else (questSet.get(a) || questSet.set(a, new Set()).get(a)).add(b);
+          } else if ((n.name === 'walk' || n.name === 'face') && a) who(a, at);
+        }
+      }
+    };
+    walk(tree);
+  }
+  for (const p of lineIdProblems(scripts)) problems.push(`${p.script}, line ${p.line + 1}: ${p.problem}`);
+
+  /* when, unless, requires and chapters: their conditions read */
+  for (const [mid, M] of Object.entries(G.maps || {})) {
+    for (const P of M.people || [])
+      for (const k of ['when', 'unless']) if (P[k]) condition(P[k], `maps/${mid}.json person ${P.id} ${k}`);
+    for (const p of M.props || [])
+      for (const k of ['when', 'unless']) if (p[k]) condition(p[k], `maps/${mid}.json prop ${p.k} ${k}`);
+  }
+  for (const [id, T] of Object.entries(trainers))
+    for (const k of ['when', 'unless']) if (T[k]) condition(T[k], `trainers/${id}.json ${k}`);
+  for (const l of G.locations) if (l.requires) condition(l.requires, `locations.json ${l.id} requires`);
+  for (const [id, C] of Object.entries(S.chapters || {})) {
+    condition(C.when, `story.json chapter ${id}`);
+    for (const v of Object.values(C.maps || {}))
+      if (!(G.maps || {})[v] && !/^[a-z0-9_]+$/.test(v)) problems.push(`story.json chapter ${id}: map ${v}`);
+  }
+
+  /* the flags */
+  for (const [f, at] of read) if (!set.has(f) && !known(f)) warnings.push(`${at}: reads flag ${f}, set nowhere`);
+  /* a flag story.json lists may be read by the game itself; one it doesn't is the scripts' own */
+  for (const [f, w] of set)
+    if (!known(f))
+      warnings.push(`${w.at}: sets flag ${f}, not in story.json${read.has(f) ? '' : ', and read nowhere'}`);
+  for (const [i, at] of taken) if (!given.has(i)) warnings.push(`${at}: takes ${i}, given nowhere`);
+  for (const [q, Q] of Object.entries(quests))
+    for (const st of Q.stages)
+      if (!(questSet.get(q) || new Set()).has(st)) warnings.push(`story.json quest ${q}: no script moves it to ${st}`);
+
+  /* the reach check: from the start, along roads and lifts, into places whose requires can come true by then (a flag
+     some reachable script sets, or the game sets; trainers there beaten; other terms taken as earnable) */
+  const gated = G.locations.filter(l => l.requires);
+  if (gated.length) {
+    const byMap = Object.fromEntries(G.locations.filter(l => l.mapId).map(l => [l.mapId, l.id])),
+      next = new Map();
+    for (const r of G.roads || []) {
+      const a = byMap[r.a && r.a.map],
+        b = byMap[r.b && r.b.map];
+      if (!a || !b) continue;
+      (next.get(a) || next.set(a, []).get(a)).push(b);
+      (next.get(b) || next.set(b, []).get(b)).push(a);
+    }
+    const start = (G.rules.start && G.rules.start.locationId) || G.locations[0].id,
+      can = new Set([start]);
+    const flagsHere = () => new Set([...set].filter(([, w]) => !w.place || can.has(w.place)).map(([f]) => f));
+    const holds = c => {
+      const F = flagsHere(),
+        ok = t =>
+          t.t === 'and'
+            ? ok(t.a) && ok(t.b)
+            : t.t === 'or'
+              ? ok(t.a) || ok(t.b)
+              : t.t === 'not'
+                ? true
+                : t.kind === 'flag'
+                  ? F.has(t.id) || known(t.id)
+                  : t.kind === 'beat'
+                    ? can.has((G.locations[(trainers[t.id] || {}).node] || {}).id)
+                    : t.kind === 'visited'
+                      ? can.has(t.id)
+                      : true;
+      return ok(L.conditionTree(c));
+    };
+    for (let grew = true; grew;) {
+      grew = false;
+      for (const p of [...can])
+        for (const q of next.get(p) || []) {
+          const Q = G.locations.find(l => l.id === q);
+          if (!can.has(q) && (!Q.requires || holds(Q.requires))) {
+            can.add(q);
+            grew = true;
+          }
+        }
+    }
+    for (const l of gated)
+      if (!can.has(l.id))
+        problems.push(
+          `locations.json ${l.id}: requires ${l.requires}, which can't come true anywhere the player can get to`
+        );
+  }
+  return { problems, warnings };
+}

@@ -10,9 +10,15 @@
  ],
  "reward": 1700,
  "market": null,
- "lines": ["“I’ve dived for the bottom line twenty times. It keeps moving down.”"],
  "win": "“Out of air.”",
  "lose": "“Deep dive!”",
  "hint": "",
- "v47region": 1
+ "v47region": 1,
+ "script": [
+  "if beat:deepdiver",
+  "  [happy] Back for more? All right! #l:1901",
+  "else",
+  "  [happy] I’ve dived for the bottom line twenty times. It keeps moving down. #l:2ad2",
+  "battle deepdiver"
+ ]
 }

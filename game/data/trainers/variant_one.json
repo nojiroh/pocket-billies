@@ -11,9 +11,15 @@
  ],
  "reward": 2600,
  "market": null,
- "lines": ["“Number one. Not the first fan; the first variant. She made me before she made the record.”"],
  "win": "“One of a kind. Still.”",
  "lose": "“Number one!”",
  "hint": "",
- "v47region": 1
+ "v47region": 1,
+ "script": [
+  "if beat:variant_one",
+  "  [happy] Back for more? All right! #l:85a3",
+  "else",
+  "  [happy] Number one. Not the first fan; the first variant. She made me before she made the record. #l:b7ef",
+  "battle variant_one"
+ ]
 }

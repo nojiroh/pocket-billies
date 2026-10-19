@@ -11,6 +11,85 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 - Questions waiting for the owner: 
 - Next session starts with: 
 
+### Project Story S2 - every conversation in scripts, the story-dependent world, line ids, story checks - 2026-10-19
+Plan approved at the start (S2 of docs/phases/project-story.md). Branch `claude/busy-edison-qm2u0l`, from main at
+20c94e1. Owner answers: the S1 line format is agreed (tag `project-story-s1-done` made on 6c4664f, see Risky);
+townsfolk chatter and favours stay lists.
+- Changed (one cause per commit, 30 commits):
+  - Fix first: lint was red on main (engine/frame-block.js `FB`, a two-letter top-level name): renamed `FRAME_FLOAT_AT`;
+    main fixed it at the same time as `FRAME_OFFSETS`, and the merge keeps main's.
+  - Deleted legacy: Blake's `intro0`, `storyMovedCheck` and the `copperleafNote` flag, the `askLongGrass` flag.
+  - A recording of what every conversation said before the move (`tools/test/talk-before-scripts.json`: made in the
+    game, headless, with the dialogue box and battle start swapped for recorders): 2 people visit after visit, 49
+    trainers met / again / beaten, 27 Hazel lab states, Blake's after-battle talk won / lost / skipped, the ending.
+    `story-snapshot.test.mjs` plays every script against it: same words, expressions, speakers, order, battle.
+  - Every conversation is a script: each trainer's `script` (ends with `battle <id>`; `runsUp: true` for the six who
+    run up to you: chad, chad2, chad3, cass, vinylla1, vinylla2), the people's (Juniper's and Nacre's cycles start
+    where today's code started: visit 2 says lines[1]), story.json `scripts`: `hazel`, `blake-first-battle`, `ending`.
+    `trainerTalk`, `personTalk`, `talkHazel`, `storyAfterRival`, `storyEnding` only start them; `storyCheck` starts a
+    `runsUp` trainer's. `rivalScene` is gone: the stage plays its staging (`camera run-up`, `walk Blake beside me`,
+    `face Blake me`, `music rival`; a battle ends the scene with the cheer and the fade, as before).
+  - Story layer: `caught` condition, slots `{name}` `{caught}` `{badges}`, `music`, `story:<id>` scripts, a script
+    started during another plays inside it, lines wait for open windows (a battle's result), `visits:` counted.
+  - Old fields deleted: trainers' `lines`, `intro`, `endLines`; people's `first`, `lines`. The Studio's trainer
+    Dialogue card edits the script (one text, indent kept) and a "Runs up to you" box. Fixture, postcards and the
+    quick check read `runsUp`. story.json: `talk_<person>` gone (visits replaced it).
+  - The story-dependent world: `when` / `unless` on people (walkState), trainers (trainersAt) and props (propShown:
+    drawn, solid and the nav grid); `requires` / `locked` on a place (canEnter and gateText: walking in, the world
+    map, the airship, route finding); story.json `chapters` (a map loads its variant file's props and people while
+    the chapter holds; variant files `<map>__<chapter>.json`, not in index.json).
+  - Line ids: `npm run story:ids` (tools/story-ids.mjs) gave 183 lines and options an id (` #l:3fa9`); the parser
+    keeps it apart; keyless once / cycle / seq / [once] remember by it; the debug log names it when a script stops or
+    is skipped.
+  - Story checks in check:data (tools/story-checks.mjs, with the game's own parser): problems and warnings as in
+    docs/SCRIPTS.md, the reach check for `requires`; `story-checks.test.mjs` plants a fault for each (16).
+  - Data types, schemas (trainer `script` / `runsUp` / `when` / `unless`, map `people`, story `scripts` /
+    `chapters`), docs/SCRIPTS.md, CHANGELOG, project-story.md ("After S2").
+- Where the phase file or S1 was wrong (checked in the code):
+  - There are only 2 people with lines in all 94 maps, 49 trainers, and three hard-coded talks (Hazel's lab, after
+    Blake's first battle, the ending); no sign or event data type exists.
+  - `nw-opening-done` is not legacy: it is the per-device "seen Blake's first battle, offer Skip" key, and NAMING.md
+    keeps localStorage key values. Kept.
+  - `copperleaf@ch2` can't be a map id (data ids are `[a-z0-9_]`, and `@` already marks view ids): `copperleaf__ch2`.
+  - Doors have no `requires` of their own (a door prop can carry `when`); places do.
+- Behaviour that changed on purpose (small):
+  - A battle started without talking (debug menu, `?fixture=battle`) no longer prints the trainer's two opening lines
+    into the battle log (they live in the script now).
+  - A run-up trainer met when the walk scene isn't ready says the run-up lines in the box (before: the short lines).
+  - The rival scene's first line now shows in the scene's box style (cutsceneSay) like the rest of it.
+- Risky or unfinished:
+  - The tag `project-story-s1-done` exists only in this session's clone: the git proxy refused to push a tag. Please
+    tag 6c4664f yourself (or tell me to try again).
+  - A script's safe run keeps a battle's result only once the battle is over (the checkpoint comes when activeBattle
+    clears); closing the app on the battle screen of a scripted battle means the battle plays again on Continue.
+  - Chapters are chosen when a map loads (once per start); nothing ships with one yet.
+  - New lines written in the Studio's Script field have no id until `npm run story:ids` runs; check:data says so.
+  - Story text still has the old plot (you were Vinylla's sound engineer, Cass dropped you): S4's business.
+- Verified:
+  - Every commit: lint, typecheck, unit tests (118 -> 128), check:data, check:modules, format:check.
+  - Smoke (`--smoke`) after the legacy deletions, after wiring the trainers / people / Hazel / after-battle / ending,
+    and after deleting the old fields: 15/15 each (the phone flow plays the opening, Blake's first battle and the talk
+    after, now from story.json). Not before every single game commit (several small ones shared a run).
+  - Headless, lowest graphics, `?story=after-opening`: Juniper (first meeting, then her lines in turn), Hazel's lab,
+    Blake on the golf course (the run-up scene with you and Blake on it, his lines, then his battle; the scene closed
+    after), holding the box skips to the battle, a save mid-talk writes `resume`, visits counted; no console errors;
+    no line id shows on screen. A chapter swap tested in the page (a map loaded another file's props and people).
+  - Planted faults: each story check (unit test), and one through `npm run check:data` (a misspelt command fails).
+  - Full quick check: 45 of 54 steps passed. The 9 red: v35, v38, v39/v40 (roster counts, known since phase 16), v46
+    (building plans, known since 08b-2), v31's fountain wait (known to time out in a full run; green alone), v44
+    props scene, alpha 0.4 shapes (bush recipes empty), phase 08 running: these three are red on main 20c94e1 too
+    (ran there alone), from the props batches, not this session. Every story step is green (Juniper, the lab).
+  - In-game full test (`--selftest`, headless, 18 min): played whole; one red step, "Light lab: props in view: 0 of
+    0 buildings" (no buildings in its props scene), the same as the full check's v44 props scene, which is red on
+    main too. Nothing in it is from the story.
+  - Not run: anything on a phone.
+- Questions waiting for the owner:
+  - Tag `project-story-s1-done` (6c4664f) and, once you agree, `project-story-s2-done`.
+  - Try on your phone: Blake at Old Fairway (the run-up), Granny Juniper,
+    Hazel in the lab, a plain trainer; send a debug log.
+- Next session starts with: S3, the Studio story editor (the Script field with errors and the command reference,
+  story preview, Play from here; it should also give new lines their ids).
+
 ### Phase 10 (world map: the bowl), session E-map-3 - camera and controls (preview) - 2026-10-19
 Plan approved ("Go"); owner chose: opening tilt about 50 degrees, zoom from the whole bowl down to about one region.
 - Changed:

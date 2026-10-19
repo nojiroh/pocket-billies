@@ -11,9 +11,15 @@
  ],
  "reward": 1800,
  "market": null,
- "lines": ["“Every yacht in this harbour has a smaller yacht, to get to the bigger yacht. I sell the smallest ones.”"],
  "win": "“Sunk cost.”",
  "lose": "“Sold!”",
  "hint": "",
- "v47region": 1
+ "v47region": 1,
+ "script": [
+  "if beat:yachtbroker",
+  "  [happy] Back for more? All right! #l:8e75",
+  "else",
+  "  [happy] Every yacht in this harbour has a smaller yacht, to get to the bigger yacht. I sell the smallest ones. #l:8c42",
+  "battle yachtbroker"
+ ]
 }

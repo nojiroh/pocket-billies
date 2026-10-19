@@ -37,40 +37,20 @@ test('every script in the data reads', () => {
   for (const [id, lines] of all) assert.doesNotThrow(() => parseScript(lines), id);
 });
 
-test('Granny Juniper: the first meeting, then her lines in turn (the same words as today)', async () => {
-  const P = person('juniper'),
-    save = { story: {}, items: {}, coins: {} };
-  assert.deepEqual(await play(P.script, save), P.first);
-  assert.equal(save.story.met_juniper, 1);
-  const later = [];
-  for (let i = 0; i < P.lines.length + 1; i++) later.push(...(await play(P.script, save)));
-  /* today's personTalk starts the second visit on lines[1] (it counts up before it reads); the script starts on [0] */
-  assert.deepEqual(later, [...P.lines, P.lines[0]]);
-});
-
-test('Blake on the golf course: the intro lines in order, then the battle (the same words as today)', async () => {
-  const T = data.TRAINERS.chad,
-    save = { story: {}, items: {}, coins: {} };
-  const said = await play(T.script, save);
-  assert.deepEqual(
-    said.filter(l => !l.startsWith('<')),
-    T.intro
-  );
-  assert.deepEqual(said.at(-1), '<battle chad>');
-  assert.equal(save.story.met_chad, 1);
-});
-
-test('Curator Nacre: the first meeting, a choice once the ledger is read, else her lines in turn', async () => {
+/* the people's and trainers' scripts against what the game said before: story-snapshot.test.mjs */
+test('Curator Nacre: a choice once the ledger is read, its [once] option gone after', async () => {
   const P = person('nacre'),
     save = { story: {}, items: {}, coins: {} };
-  assert.deepEqual(await play(P.script, save), P.first);
-  assert.deepEqual(await play(P.script, save), [P.lines[0]]);
+  const SANK =
+    'We sank because we wouldn’t spend. Now someone else is spending it for us. There’s a lesson in that, but I’m too cross to learn it.';
+  assert.equal((await play(P.script, save)).length, 3, 'the first meeting');
+  assert.deepEqual(await play(P.script, save), [SANK]);
   save.story.read_pearl_ledger = 1;
   const asked = await play(P.script, save, { id: 'person:nacre' });
   assert.deepEqual(asked, [
     '[angry] So you’ve read the ledger.',
     '? Why didn’t anyone stop her? | What are the mirrors for? | Just passing.',
-    P.lines[1],
+    SANK,
   ]);
   const again = await play(P.script, save, { id: 'person:nacre', pick: 1 });
   assert.equal(again[1], '? What are the mirrors for? | Just passing.', 'the [once] option is gone');

@@ -95,7 +95,6 @@ expose({
   poolName: [() => poolName],
   poolPercent: [() => poolPercent],
   readPathBeforeShopThanks: [() => readPathBeforeShopThanks],
-  readPathBeforeTrainerLines: [() => readPathBeforeTrainerLines],
   refsTo: [() => refsTo, v => (refsTo = v)],
   removeRefs: [() => removeRefs, v => (removeRefs = v)],
   renameType: [() => renameType, v => (renameType = v)],
@@ -104,7 +103,6 @@ expose({
   trainerRobotHTML: [() => trainerRobotHTML, v => (trainerRobotHTML = v)],
   whereCard: [() => whereCard, v => (whereCard = v)],
   writePathBeforeShopThanks: [() => writePathBeforeShopThanks],
-  writePathBeforeTrainerLines: [() => writePathBeforeTrainerLines],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -1574,12 +1572,14 @@ SECTIONS.trainers = () => {
  ${card('Team', `<table class="tbl"><thead><tr><th>Billie</th><th>Lv</th><th></th></tr></thead><tbody>${team}</tbody></table><div class="seg-row"><button class="btn" data-act="teamAdd">Add a Billie</button></div>`, { sub: 'They send them out in this order.' })}
  ${card(
    'Dialogue',
-   textField('Opening lines in battle (one per line)', '@tlines.' + k, { area: 1, rows: 3 }) +
-     textField(
-       'Scene when you first meet (one line each; start a line with [happy], [angry], [sad] or [surprised] for the face)',
-       '@tintro.' + k,
-       { area: 1, rows: 4 }
-     ) +
+   textField(
+     'What they say before the battle: their script, one line each, two spaces per level (docs/SCRIPTS.md; it ends with battle ' +
+       k +
+       ')',
+     '@tscript.' + k,
+     { area: 1, rows: 10 }
+   ) +
+     checkboxField('Runs up to you the first time you come where they wait', `${p}.runsUp`) +
      grid(
        textField('When you win', `${p}.win`),
        textField('When you lose', `${p}.lose`),
@@ -1596,50 +1596,31 @@ SECTIONS.trainers = () => {
  ${card('Sandstorm', T.market ? grid(numberField('Lasts', `${p}.market.n`, { unit: 'turns', min: 1, max: 20, step: 1 })) + textField('Announcement', `${p}.marketText`, { area: 1, rows: 2 }) + '<button class="btn danger subtle" data-act="marketOff">No sandstorm</button>' : `<p class="help">The battle starts in clear weather.</p><button class="btn" data-act="marketOn">Start the battle in a sandstorm</button>`)}
  ${card('Badge', seat)}</div></div>`;
 };
-const readPathBeforeTrainerLines = readPath;
-setReadPath(function (path, o) {
-  if (path && path.startsWith('@tlines.')) {
-    const T = studioState.D.trainers[path.slice(8)];
-    return T && T.lines ? T.lines.join('\n') : '';
-  }
-  return readPathBeforeTrainerLines(path, o);
-});
+/* Project Story S2: a trainer's script as one text, a line each; the indent is kept (two spaces per level) */
 {
   const g = readPath,
     st = writePath;
   setReadPath(function (path, o) {
-    if (path && path.startsWith('@tintro.')) {
-      const T = studioState.D.trainers[path.slice(8)];
-      return T && T.intro ? T.intro.join('\n') : '';
+    if (path && path.startsWith('@tscript.')) {
+      const T = studioState.D.trainers[path.slice(9)];
+      return T && T.script ? T.script.join('\n') : '';
     }
     return g(path, o);
   });
   setWritePath(function (path, v, o) {
-    if (path && path.startsWith('@tintro.')) {
-      const T = studioState.D.trainers[path.slice(8)],
+    if (path && path.startsWith('@tscript.')) {
+      const T = studioState.D.trainers[path.slice(9)],
         L = String(v || '')
           .split('\n')
-          .map(x => x.trim())
-          .filter(Boolean);
-      if (L.length) T.intro = L;
-      else delete T.intro;
+          .map(x => x.trimEnd())
+          .filter(x => x.trim());
+      if (L.length) T.script = L;
+      else delete T.script;
       return;
     }
     return st(path, v, o);
   });
 }
-const writePathBeforeTrainerLines = writePath;
-setWritePath(function (path, v, o) {
-  if (path && path.startsWith('@tlines.')) {
-    const T = studioState.D.trainers[path.slice(8)];
-    T.lines = String(v || '')
-      .split('\n')
-      .map(x => x.trim())
-      .filter(Boolean);
-    return;
-  }
-  return writePathBeforeTrainerLines(path, v, o);
-});
 ACTIONS.pickTrainer = d => {
   studioState.sel.trainer = d.id;
   render();

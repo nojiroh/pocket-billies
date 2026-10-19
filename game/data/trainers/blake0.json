@@ -10,9 +10,15 @@
  ],
  "reward": 0,
  "market": null,
- "lines": ["“Mine beats yours. Watch.”"],
  "win": "“What? It only knows Tackle! That’s my excuse and I’m sticking to it.”",
  "lose": "“Ha! Told you. Mine beats yours.”",
  "hint": "",
- "seat": null
+ "seat": null,
+ "script": [
+  "if beat:blake0",
+  "  [happy] Back for more? All right! #l:85be",
+  "else",
+  "  [happy] Mine beats yours. Watch. #l:b4ee",
+  "battle blake0"
+ ]
 }

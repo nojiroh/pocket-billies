@@ -41,6 +41,7 @@ import {
   soundEffect,
   soundEffectAt,
   standingHeightAt,
+  storyAllows,
   talkFolk,
   uiState,
   waitForPaintWorker,
@@ -544,7 +545,9 @@ export function cropGrowth(p) {
   return st === 0 ? 0 : Math.min(1, 0.3 + st * 0.14);
 }
 export function propShown(p) {
-  if (!p || (!p.hours && !p.days && !p.season && p.grow == null && !p.dry)) return true;
+  if (!p || (!p.hours && !p.days && !p.season && p.grow == null && !p.dry && !p.when && !p.unless)) return true;
+  /* Project Story S2: "when" / "unless": only while the story allows (logic/script.js storyAllows) */
+  if ((p.when || p.unless) && !storyAllows(p)) return false;
   if (p.grow != null && !cropGrowth(p)) return false;
   /* v47: "dry": only while the ground is dry and clear (chalk drawings wash away in the rain and come back after) */
   if (
@@ -569,7 +572,9 @@ export function propShown(p) {
 function timedPropsKey(sc) {
   let L = sc._timed;
   if (!L || sc._timedN !== (sc.props || []).length) {
-    L = sc._timed = (sc.props || []).filter(p => (p.hours || p.days || p.season) && !/^fallen|^crops/.test(p.k));
+    L = sc._timed = (sc.props || []).filter(
+      p => (p.hours || p.days || p.season || p.when || p.unless) && !/^fallen|^crops/.test(p.k)
+    );
     sc._timedN = (sc.props || []).length;
     sc._tkAt = -1e9;
   }

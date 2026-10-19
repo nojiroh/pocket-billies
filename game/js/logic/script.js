@@ -10,11 +10,12 @@
      once [key]                                the lines under it, the first time only
      cycle [key] / seq [key] with - entries    a different entry each time (cycle starts over, seq stays on the last)
      set flag [value], give item n, battle chad, ...   commands (SCRIPT_COMMANDS)
+     {name} {caught} {badges}                  slots in a line (SCRIPT_SLOTS), filled in as it is said
    Indentation is two spaces inside the strings. A line that starts with a small letter is a command or a keyword; an
    unknown one is an error with "did you mean", never a line of dialogue. Logic only: no DOM, runs in Node. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { saveData } from '../hooks.js';
+import { provide, saveData } from '../hooks.js';
 import { LOCATIONS, STORY_DATA, TRAINERS, warnData } from '../game-data.js';
 import { makeBilly } from './rules.js';
 import { conditionHolds, conditionProblem, conditionTree, didYouMean, storyStateOf } from './conditions.js';
@@ -22,11 +23,16 @@ import { conditionHolds, conditionProblem, conditionTree, didYouMean, storyState
 expose({
   END: [() => END],
   KEYWORDS: [() => KEYWORDS],
+  LINE_ID: [() => LINE_ID],
   SCRIPT_COMMANDS: [() => SCRIPT_COMMANDS],
+  SCRIPT_SLOTS: [() => SCRIPT_SLOTS],
   // @ts-expect-error -- replaced on purpose
   applyStoryPreset: [() => applyStoryPreset, v => (applyStoryPreset = v)],
   // @ts-expect-error -- replaced on purpose
+  chapterMap: [() => chapterMap, v => (chapterMap = v)],
+  // @ts-expect-error -- replaced on purpose
   checkedCondition: [() => checkedCondition, v => (checkedCondition = v)],
+  firstId: [() => firstId],
   flagWarned: [() => flagWarned],
   // @ts-expect-error -- replaced on purpose
   parseScript: [() => parseScript, v => (parseScript = v)],
@@ -45,17 +51,23 @@ expose({
   // @ts-expect-error -- replaced on purpose
   setStoryFlag: [() => setStoryFlag, v => (setStoryFlag = v)],
   // @ts-expect-error -- replaced on purpose
+  storyAllows: [() => storyAllows, v => ((storyAllows = v), provide({ storyAllows }))],
+  // @ts-expect-error -- replaced on purpose
   storyFlagKnown: [() => storyFlagKnown, v => (storyFlagKnown = v)],
+  // @ts-expect-error -- replaced on purpose
+  storyHolds: [() => storyHolds, v => ((storyHolds = v), provide({ storyHolds }))],
+  withoutId: [() => withoutId],
 });
 /* eslint-enable no-func-assign */
+provide({ storyAllows, storyHolds });
 /* to-module: end */
-/** @typedef {{ k: 'say', line: number, who: string | null, expr: string | null, text: string }} SayNode */
+/** @typedef {{ k: 'say', line: number, who: string | null, expr: string | null, text: string, id?: string }} SayNode */
 /** @typedef {{ k: 'cmd', line: number, name: string, args: string[] }} CmdNode */
-/** @typedef {{ text: string, cond: string | null, once: boolean, line: number, body: ScriptNode[] }} ChoiceOption */
+/** @typedef {{ text: string, cond: string | null, once: boolean, line: number, body: ScriptNode[], id?: string }} ChoiceOption */
 /** @typedef {{ k: 'choice', line: number, options: ChoiceOption[] }} ChoiceNode */
 /** @typedef {{ k: 'if', line: number, clauses: { cond: string | null, body: ScriptNode[] }[] }} IfNode */
-/** @typedef {{ k: 'once', line: number, key: string | null, body: ScriptNode[] }} OnceNode */
-/** @typedef {{ k: 'cycle' | 'seq', line: number, key: string | null, entries: ScriptNode[][] }} CycleNode */
+/** @typedef {{ k: 'once', line: number, key: string | null, body: ScriptNode[], lid?: string }} OnceNode */
+/** @typedef {{ k: 'cycle' | 'seq', line: number, key: string | null, entries: ScriptNode[][], lid?: string }} CycleNode */
 /** @typedef {SayNode | CmdNode | ChoiceNode | IfNode | OnceNode | CycleNode} ScriptNode */
 
 /** the commands: their arguments (`?` optional, `...` the rest, `n` and `s` numbers), whether they are a checkpoint
@@ -68,10 +80,11 @@ export const SCRIPT_COMMANDS = {
   quest: { args: ['id', 'stage'], about: 'move a quest to a stage' },
   battle: { args: ['trainer'], checkpoint: true, about: 'battle a trainer; the script goes on after it' },
   heal: { args: [], about: 'heal the team' },
-  walk: { args: ['who', '...'], about: 'walk someone somewhere in the scene (where: S2)' },
+  walk: { args: ['who', '...'], about: 'walk someone in the scene: "walk Blake beside me" (after camera run-up)' },
   face: { args: ['who', 'dir'], about: 'turn someone (up, down, side, sideR, or toward someone)' },
-  camera: { args: ['...'], about: 'move the camera (a named shot, or follow / back)' },
+  camera: { args: ['...'], about: 'a camera shot: "run-up" (someone runs up to you in the walk scene)' },
   wait: { args: ['s'], about: 'wait, in seconds' },
+  music: { args: ['piece'], about: 'play a piece of music (rival, title, ...: sound.js)' },
   fade: { args: ['dir?'], about: 'fade the screen out, or back in' },
   go: { args: ['place', 'entrance?'], checkpoint: true, about: 'go to a place' },
   call: { args: ['script'], about: 'play another script, then go on' },
@@ -85,6 +98,37 @@ export const SCRIPT_COMMANDS = {
   fall: { args: [], opening: true, checkpoint: true, about: 'the fall through the crust' },
 };
 export const KEYWORDS = ['choice', 'if', 'elif', 'else', 'once', 'cycle', 'seq'];
+/** a line's id at its end, " #l:3fa9" (tools/story-ids.mjs gives them): kept when the text changes or moves */
+export const LINE_ID = /\s+#l:([0-9a-z]{4,8})$/;
+/** a text and its line id, apart @param {string} t @returns {[string, string | null]} */
+export const withoutId = t => {
+  const m = LINE_ID.exec(t);
+  return m ? [t.slice(0, m.index), m[1]] : [t, null];
+};
+/** the first line id in a block, for once / cycle / seq without a key @param {ScriptNode[]} b @returns {string | undefined} */
+export const firstId = b => {
+  for (const n of b) {
+    const id =
+      n.k === 'say'
+        ? n.id
+        : n.k === 'choice'
+          ? n.options.map(o => o.id || firstId(o.body)).find(Boolean)
+          : n.k === 'if'
+            ? n.clauses.map(c => firstId(c.body)).find(Boolean)
+            : n.k === 'once'
+              ? n.lid
+              : n.k === 'cycle' || n.k === 'seq'
+                ? n.lid
+                : undefined;
+    if (id) return id;
+  }
+};
+/** the slots a line may hold, filled in as it is said: {name} from the stage (o.slots), the counts from the save */
+export const SCRIPT_SLOTS = {
+  name: 'your name (Trainer before you have one)',
+  caught: 'kinds of Billie caught (the Index)',
+  badges: 'badges won',
+};
 
 /** an error in a script, with the line (from 0) it is on @param {string} message @param {number} line */
 export function scriptError(message, line) {
@@ -93,13 +137,20 @@ export function scriptError(message, line) {
 
 /** @param {string} s @param {number} line */
 export function sayLine(s, line) {
+  const [t, id] = withoutId(s);
   /** @type {SayNode} */
-  const n = { k: 'say', line, who: null, expr: null, text: s };
+  const n = { k: 'say', line, who: null, expr: null, text: t };
+  if (id) n.id = id;
   const e = /^\[([\w-]+)\]\s*/.exec(n.text);
   if (e) [n.expr, n.text] = [e[1], n.text.slice(e[0].length)];
   const w = /^([A-Za-z][\w-]*):\s+/.exec(n.text);
   if (w) [n.who, n.text] = [w[1], n.text.slice(w[0].length)];
   if (!n.text) throw scriptError('a line with nothing to say', line);
+  for (const [, k] of n.text.matchAll(/\{(\w*)\}/g))
+    if (!(k in SCRIPT_SLOTS)) {
+      const near = didYouMean(k, Object.keys(SCRIPT_SLOTS));
+      throw scriptError(`unknown slot "{${k}}"${near ? `, did you mean "{${near}}"?` : ''}`, line);
+    }
   return n;
 }
 /** @param {string} cond @param {number} line */
@@ -156,10 +207,19 @@ export function parseScript(lines) {
         }
         out.push(n);
       } else if (word === 'elif' || word === 'else') throw scriptError(`"${word}" without an "if" above it`, line);
-      else if (word === 'once') out.push({ k: 'once', line, key: key(rest, line), body: body(ind + 2, line) });
-      else if (word === 'cycle' || word === 'seq')
-        out.push({ k: word, line, key: key(rest, line), entries: entries(ind + 2, line, word) });
-      else if (word in SCRIPT_COMMANDS) out.push(command(word, rest, line));
+      else if (word === 'once') {
+        /** @type {OnceNode} */
+        const n = { k: 'once', line, key: key(rest, line), body: body(ind + 2, line) },
+          lid = firstId(n.body);
+        if (lid) n.lid = lid;
+        out.push(n);
+      } else if (word === 'cycle' || word === 'seq') {
+        /** @type {CycleNode} */
+        const n = { k: word, line, key: key(rest, line), entries: entries(ind + 2, line, word) },
+          lid = firstId(n.entries.flat());
+        if (lid) n.lid = lid;
+        out.push(n);
+      } else if (word in SCRIPT_COMMANDS) out.push(command(word, rest, line));
       else {
         const near = didYouMean(word, [...KEYWORDS, ...Object.keys(SCRIPT_COMMANDS)]);
         throw scriptError(
@@ -187,7 +247,7 @@ export function parseScript(lines) {
     const out = [];
     while (p < L.length && L[p].ind === ind && L[p].s.startsWith('>')) {
       const { s, line: l } = L[p++];
-      let t = s.slice(1).trim(),
+      let [t, oid] = withoutId(s.slice(1).trim()),
         cond = /** @type {string | null} */ (null),
         once = false,
         m;
@@ -197,7 +257,10 @@ export function parseScript(lines) {
         t = t.slice(m[0].length);
       }
       if (!t) throw scriptError('an option with no text', l);
-      out.push({ text: t, cond, once, line: l, body: p < L.length && L[p].ind > ind ? block(ind + 2) : [] });
+      /** @type {ChoiceOption} */
+      const op = { text: t, cond, once, line: l, body: p < L.length && L[p].ind > ind ? block(ind + 2) : [] };
+      if (oid) op.id = oid;
+      out.push(op);
     }
     if (p < L.length && L[p].ind === ind) throw scriptError('only options ("> ...") go under a choice', L[p].line);
     if (out.length < 1) throw scriptError('a choice needs options ("> ..." under it)', line);
@@ -261,12 +324,13 @@ export function scriptProblem(lines) {
    runner hands onCheckpoint the path of the statement after it, and a run started with that path (resume) carries
    on from there without asking again (conditions, choices and counters are not read twice). */
 
-/** @typedef {{ say: (l: { who: string | null, expr: string | null, text: string, line: number }) => any,
+/** @typedef {{ say: (l: { who: string | null, expr: string | null, text: string, line: number, id?: string }) => any,
  *   choose: (options: { text: string, line: number }[]) => number | Promise<number>,
  *   [cmd: string]: any }} Stage */
 /** @typedef {{ save: any, id?: string, speaker?: string | null, scripts?: (id: string) => ScriptNode[] | null,
  *   locations?: { id: string }[], questStages?: Record<string, string[]>, resume?: number[] | null,
- *   onCheckpoint?: (path: number[]) => void, control?: { skipping: boolean } }} RunOptions */
+ *   onCheckpoint?: (path: number[]) => void, control?: { skipping: boolean },
+ *   slots?: Record<string, () => string | number> }} RunOptions */
 
 export const END = Symbol('end');
 /** plays a script; resolves when it is over @param {ScriptNode[]} tree @param {Stage} stage @param {RunOptions} o */
@@ -277,7 +341,18 @@ export async function runScript(tree, stage, o) {
     id = o.id || 'script';
   const holds = (/** @type {string} */ c) =>
     conditionHolds(conditionTree(c), storyStateOf(save, { locations: o.locations, questStages: o.questStages }));
-  const keyOf = (/** @type {{ key?: string | null, line: number }} */ n) => n.key || `${id}@${n.line}`;
+  /* what once / cycle / seq / [once] remember by: their key, else their (first) line id, else the line number */
+  const keyOf = (/** @type {{ key?: string | null, lid?: string, id?: string, line: number }} */ n) =>
+    n.key || (n.lid || n.id ? `${id}#${n.lid || n.id}` : `${id}@${n.line}`);
+  const fill = (/** @type {string} */ text) =>
+    text.includes('{')
+      ? text.replace(/\{(\w+)\}/g, (_, k) => {
+          const f = o.slots && o.slots[k];
+          if (f) return String(f());
+          const S = storyStateOf(save);
+          return k === 'caught' ? String(S.caught) : k === 'badges' ? String(S.badges) : 'Trainer';
+        })
+      : text;
   const play = async (/** @type {string} */ cmd, /** @type {any} */ arg) => {
     if (typeof stage[cmd] !== 'function') throw new Error(`the stage can't play "${cmd}" yet`);
     return stage[cmd](arg);
@@ -299,7 +374,13 @@ export async function runScript(tree, stage, o) {
     switch (n.k) {
       case 'say':
         if (!control.skipping)
-          await stage.say({ who: n.who || o.speaker || null, expr: n.expr, text: n.text, line: n.line });
+          await stage.say({
+            who: n.who || o.speaker || null,
+            expr: n.expr,
+            text: fill(n.text),
+            line: n.line,
+            id: n.id,
+          });
         return;
       case 'if': {
         const k = await branch(inner, () => n.clauses.findIndex(c => c.cond === null || holds(c.cond)));
@@ -330,14 +411,14 @@ export async function runScript(tree, stage, o) {
           const taken = story.once || (story.once = {}),
             shown = n.options
               .map((op, i) => ({ op, i }))
-              .filter(({ op }) => (!op.cond || holds(op.cond)) && !(op.once && taken[`${id}@${op.line}`]));
+              .filter(({ op }) => (!op.cond || holds(op.cond)) && !(op.once && taken[keyOf(op)]));
           if (!shown.length) return -1;
           /* skipping: the first option shown, the one a hurried tap would take */
           const pick = control.skipping
             ? 0
             : await stage.choose(shown.map(({ op }) => ({ text: op.text, line: op.line })));
           const c = shown[Math.max(0, Math.min(shown.length - 1, pick | 0))];
-          if (c.op.once) taken[`${id}@${c.op.line}`] = 1;
+          if (c.op.once) taken[keyOf(c.op)] = 1;
           return c.i;
         });
         return k >= 0 ? into(n.options[k].body, k) : undefined;
@@ -420,6 +501,34 @@ export function setStoryFlag(k, v = 1) {
     warnData(`story flag ${k} is not in story.json`);
   }
   (saveData.story || (saveData.story = {}))[k] = v;
+}
+
+/* ---------- the story-dependent world (Project Story S2) ----------
+   People, trainers and props can carry `when` and `unless` (conditions); exits and doors `requires` (and a `locked`
+   line for when it doesn't hold); a chapter (story.json chapters) swaps a map for a variant file while its condition
+   holds. Read against the game's save (saveData) unless a save is given. */
+/** whether a condition holds now @param {string} cond @param {any} [save] */
+export function storyHolds(cond, save = saveData) {
+  const qs = Object.fromEntries(
+    Object.entries((STORY_DATA || {}).quests || {}).map(([k, q]) => [k, /** @type {any} */ (q).stages])
+  );
+  return conditionHolds(conditionTree(cond), storyStateOf(save, { locations: LOCATIONS, questStages: qs }));
+}
+/** whether a person, trainer or prop is there: its `when` holds (if it has one) and its `unless` doesn't
+ * @param {{ when?: string, unless?: string } | null | undefined} thing @param {any} [save] */
+export function storyAllows(thing, save = saveData) {
+  if (!thing) return false;
+  if (thing.when && !storyHolds(thing.when, save)) return false;
+  return !(thing.unless && storyHolds(thing.unless, save));
+}
+/** the map file to load for a map id: a chapter's variant while its condition holds (the first that holds, in
+ * story.json's order), else the map itself @param {string} id @param {any} [save] */
+export function chapterMap(id, save = saveData) {
+  for (const C of Object.values((STORY_DATA || {}).chapters || {})) {
+    const c = /** @type {{ when: string, maps?: Record<string, string> }} */ (C);
+    if (c.maps && c.maps[id] && storyHolds(c.when, save)) return c.maps[id];
+  }
+  return id;
 }
 
 /* ---------- safe runs ----------

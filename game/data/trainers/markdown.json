@@ -13,10 +13,6 @@
  "reward": 2000,
  "egg": 10,
  "market": null,
- "lines": [
-  "“Welcome to the Lanternhall arena. Polished floors, polished team.”",
-  "“Every Steel Billie on my team makes the others hit harder.”"
- ],
  "win": "“Brilliant. The Steel Badge is yours.”",
  "lose": "“Not a scratch on them. Come back stronger.”",
  "hint": "Leader Iris’s Steel team is level 19–21. Fire and Ground moves hit Steel hard, and Steel shrugs off Psychic and Flying.",
@@ -29,5 +25,13 @@
   "rewardText": "a Shining Stone, 2 Gold Coins and a Platinum Coin",
   "unlockText": "Route 11 · Hornpass, north of Verdigris City, is open, and snowy Frostcrown Town beyond it. A Billie big enough to ride can also carry you across Mirrormere Lake and the sea west of Marigold Town."
  },
- "double": true
+ "double": true,
+ "script": [
+  "if beat:markdown",
+  "  [happy] Back for more? All right! #l:aa0b",
+  "else",
+  "  [happy] Welcome to the Lanternhall arena. Polished floors, polished team. #l:27ff",
+  "  Every Steel Billie on my team makes the others hit harder. #l:5f38",
+  "battle markdown"
+ ]
 }
