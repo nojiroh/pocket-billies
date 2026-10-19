@@ -42,6 +42,12 @@ test('finds the size and grid of the big pixels, not a multiple of it', () => {
     const d = P.snapDetect(upscale(s, ox, oy, 6));
     assert.deepEqual([d.scale, d.ox, d.oy], [s, ox, oy], `${s}x at ${ox}, ${oy}`);
   }
+  // on a noisy opaque background (an AI image): the noise is not taken for edges
+  const im = upscale(4, 3, 2, 6);
+  for (let i = 0; i < im.data.length; i += 4)
+    if (!im.data[i + 3]) im.data.set([238, 232, 214].map(v => v + Math.round((rnd() * 2 - 1) * 5)).concat(255), i);
+  const d = P.snapDetect(im);
+  assert.deepEqual([d.scale, d.ox, d.oy], [4, 3, 2], 'on a background');
   // true-scale art has no grid to find
   assert.equal(P.snapDetect(upscale(1, 0, 0, 0)).scale, 1);
 });

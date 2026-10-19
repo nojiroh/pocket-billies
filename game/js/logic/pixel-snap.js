@@ -10,6 +10,7 @@
 import { expose } from '../test-globals.js';
 /* eslint-disable no-func-assign */
 expose({
+  SNAP_EDGE: [() => SNAP_EDGE],
   SNAP_NEAR: [() => SNAP_NEAR],
   // @ts-expect-error -- replaced on purpose
   edgeEnergy: [() => edgeEnergy, v => (edgeEnergy = v)],
@@ -24,6 +25,8 @@ expose({
 /* to-module: end */
 /** how far (a channel) a pixel may be from its cell's colour to count towards it */
 export const SNAP_NEAR = 20;
+/** a change between neighbours under this (the four channels added up) is noise, not an edge */
+export const SNAP_EDGE = 48;
 /** how much the colour changes between neighbours along x (axis 0) or y (axis 1), summed over the other axis */
 export function edgeEnergy(/** @type {Pixels} */ img, /** @type {number} */ axis) {
   const { width: w, height: h, data: d } = img,
@@ -36,7 +39,7 @@ export function edgeEnergy(/** @type {Pixels} */ img, /** @type {number} */ axis
         j = axis ? i - w * 4 : i - 4;
       let s = 0;
       for (let c = 0; c < 4; c++) s += Math.abs(d[i + c] - d[j + c]);
-      e[axis ? y : x] += s;
+      if (s > SNAP_EDGE) e[axis ? y : x] += s;
     }
   return e;
 }
