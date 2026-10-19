@@ -5,6 +5,11 @@ JSON array of lines in the data, next to the thing that owns it:
 
 - a person in a map's `people` list: `script` (id `person:<id>`),
 - a trainer, `game/data/trainers/<id>.json`: `script` (id `trainer:<id>`).
+- the story itself, `game/data/story.json` `scripts`: `{ "who": <who talks>, "script": [...] }` (id `story:<id>`):
+  Hazel in the lab, after Blake's first battle, the ending.
+
+A line or a choice waits until the windows on screen (a battle's result) are closed. Each talk with a person or a
+trainer counts one visit (`visits:<id>`).
 
 S1 adds the format, the runner and three scripts (Granny Juniper, Blake on the golf course, Curator Nacre). They sit
 next to the old fields and the game does not play them on its own yet: the debug menu's "Story scripts" row plays
@@ -100,7 +105,10 @@ Combine with `and`, `or`, `not` / `!` and parentheses; `and` binds tighter than 
 | `music piece` | plays a piece of music (`rival`, `title`, ...: sound.js) |
 | `call script` | plays another script, then goes on |
 | `end` | stops the script |
-| `walk who ...`, `face who dir`, `camera ...`, `fade [in/out]` | the scene's people and camera: written now, played from S2 (until then the debug log notes them) |
+| `camera run-up` | someone runs up to you: the walk scene you stand in becomes a scene, with you and the one who talks (out of sight beyond you) on it; a battle, or the script's end, ends it |
+| `walk who beside me` | the one who ran up comes over to stand beside you |
+| `face who me`, `face who dir` | the two of you turn to each other; or up, down, side, sideR |
+| `fade [in/out]` | the scene fades out, or back in |
 | `go place [entrance]` | a checkpoint; from S2 |
 | `shot`, `dressing-room`, `pick-starter`, `hot-take`, `tip`, `fall` | the openings' commands (S5, S7) |
 
