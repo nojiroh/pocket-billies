@@ -114,3 +114,9 @@ test('a finding says where it is: file, script and line, or the thing and field'
     'the strings are the findings’ texts'
   );
 });
+
+test('a requires that doesn’t read is a problem, not a crash of the reach check', () => {
+  const G = copy();
+  G.locations.find(l => l.id === 'marigold').requires = 'itme:x';
+  assert.ok(run(G).problems.some(m => m.includes('did you mean "item:"')));
+});

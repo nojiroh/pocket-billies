@@ -318,7 +318,9 @@ export function storyFindings(G, L = { parseScript, conditionTree, conditionProb
 
   /* the reach check: from the start, along roads and lifts, into places whose requires can come true by then (a flag
      some reachable script sets, or the game sets; trainers there beaten; other terms taken as earnable) */
-  const gated = G.locations.filter(l => l.requires);
+  /* a requires that doesn't read is a problem above already; the reach check takes it as open */
+  const reads = c => !L.conditionProblem(c),
+    gated = G.locations.filter(l => l.requires && reads(l.requires));
   if (gated.length) {
     const byMap = Object.fromEntries(G.locations.filter(l => l.mapId).map(l => [l.mapId, l.id])),
       next = new Map();
@@ -355,7 +357,7 @@ export function storyFindings(G, L = { parseScript, conditionTree, conditionProb
       for (const p of [...can])
         for (const q of next.get(p) || []) {
           const Q = G.locations.find(l => l.id === q);
-          if (!can.has(q) && (!Q.requires || holds(Q.requires))) {
+          if (!can.has(q) && (!Q.requires || !reads(Q.requires) || holds(Q.requires))) {
             can.add(q);
             grew = true;
           }
