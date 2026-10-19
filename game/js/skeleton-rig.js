@@ -409,7 +409,7 @@ export function rigFrame(R, act, tau, t, seed) {
    fails a species whose legs, head or tail never move. */
 const RIG_POSES = ['idle', 'walk', 'attack', 'cast', 'hurt', 'faint', 'cheer', 'buff', 'dizzy'];
 export function rigAudit(sp, view = 'front') {
-  const R = rigParts(sp, false, view === 'back' ? RIG_BACK_VIEW : 1);
+  const R = rigParts(sp, view === 'back' ? RIG_BACK_VIEW : 1);
   if (!R) return null;
   const out = {};
   for (const act of RIG_POSES) {
@@ -449,20 +449,20 @@ if (typeof window !== 'undefined' && window.RIGS_NEXT) {
   window.RIGS = window.RIGS || {};
   for (const k in window.RIGS_NEXT) if (!window.RIGS[k]) window.RIGS[k] = window.RIGS_NEXT[k];
 }
-export function rigAtlas(sp, gold, view) {
+export function rigAtlas(sp, view) {
   const m = typeof RIGS !== 'undefined' && RIGS[sp] && RIGS[sp][view];
-  if (m && m.sheet) return gold ? m.sheet.replace(/\.png$/, '_gold.png') : m.sheet;
-  return `billionaires/${sp}${view === 'back' ? '_back' : ''}${gold ? '_gold' : ''}.png`;
+  if (m && m.sheet) return m.sheet;
+  return `billionaires/${sp}${view === 'back' ? '_back' : ''}.png`;
 }
-export function rigParts(sp, gold, k = 1) {
+export function rigParts(sp, k = 1) {
   const view = k === 1 ? 'front' : 'back',
-    key = sp + (gold ? 'g' : '') + view;
+    key = sp + view;
   if (RIG_PARTS_CACHE[key]) return RIG_PARTS_CACHE[key];
   /* phase 17: a robot is drawn from its parts */
-  if (typeof sp === 'string' && sp.startsWith('bot:')) return robotRigParts(sp, gold, k);
+  if (typeof sp === 'string' && sp.startsWith('bot:')) return robotRigParts(sp, k);
   const meta = RIGS[sp] && RIGS[sp][view];
   if (!meta) return null;
-  const path = rigAtlas(sp, gold, view);
+  const path = rigAtlas(sp, view);
   artImg(path);
   if (!artReady(path)) return null;
   const atlas = ART_CACHE.img[path];
@@ -496,7 +496,7 @@ export function rigParts(sp, gold, k = 1) {
 }
 /* phase 17: a robot's rig, drawn from its parts (robot-art.js); the game hands over robots.json as ROBOTS, the Studio
    its own copy (setRobotRigData). While its pictures load it is drawn with stand-ins and asked for again. */
-export function robotRigParts(sp, gold, k = 1) {
+export function robotRigParts(sp, k = 1) {
   const key = sp + (k === 1 ? 'front' : 'back');
   if (RIG_PARTS_CACHE[key]) return RIG_PARTS_CACHE[key];
   const R = robotRig(sp, robotRigData || (typeof ROBOTS !== 'undefined' ? ROBOTS : null));
@@ -520,8 +520,8 @@ export function rigPreload(list) {
   /* phase 17: a robot loads its parts' pictures */
   const D = robotRigData || (typeof ROBOTS !== 'undefined' ? ROBOTS : null);
   return artLoad(
-    list.flatMap(([sp, gold, k]) =>
-      String(sp).startsWith('bot:') ? robotArtFiles(sp, D) : [rigAtlas(sp, gold, k === 1 ? 'front' : 'back')]
+    list.flatMap(([sp, k]) =>
+      String(sp).startsWith('bot:') ? robotArtFiles(sp, D) : [rigAtlas(sp, k === 1 ? 'front' : 'back')]
     )
   );
 }
@@ -543,7 +543,7 @@ export function rigCanvasHTML(sp, size, o = {}) {
     h = Math.round((w * RIG_CANVAS_SIZE.h) / RIG_CANVAS_SIZE.w),
     st = SPECIES[sp] ? (SPECIES[sp].rar === 'mythical' ? 2 : SPECIES[sp].stage) : 2,
     f = [1.3, 1.1, 1][st];
-  return `<canvas class="rig${o.sil ? ' sil' : ''}" width="${RIG_CANVAS_SIZE.w * 2}" height="${RIG_CANVAS_SIZE.h * 2}" data-sp="${sp}" data-g="${o.gold ? 1 : 0}" data-v="${o.view || 'front'}"${o.build ? ` data-b="${buildCode(o.build)}"` : ''}${o.still || o.sil ? ' data-still="1"' : ''}${o.act ? ` data-act="${o.act}"` : ''} style="width:${w}px;height:${h}px;margin:${-Math.round((h - size) / 2)}px ${-Math.round((w - size) / 2)}px;transform:scale(${f});transform-origin:50% 94%" aria-hidden="true"></canvas>`;
+  return `<canvas class="rig${o.sil ? ' sil' : ''}" width="${RIG_CANVAS_SIZE.w * 2}" height="${RIG_CANVAS_SIZE.h * 2}" data-sp="${sp}" data-v="${o.view || 'front'}"${o.build ? ` data-b="${buildCode(o.build)}"` : ''}${o.still || o.sil ? ' data-still="1"' : ''}${o.act ? ` data-act="${o.act}"` : ''} style="width:${w}px;height:${h}px;margin:${-Math.round((h - size) / 2)}px ${-Math.round((w - size) / 2)}px;transform:scale(${f});transform-origin:50% 94%" aria-hidden="true"></canvas>`;
 }
 /* v39: the 64x64 bust from a species' piece sheet (rig meta "portrait"), as an <img> cropped by CSS; falls back to the
    rest-pose rig for a species without one */
@@ -556,12 +556,12 @@ export function bustHTML(sp, size, o = {}) {
     [x, y, w, h] = pr,
     W = R.size ? R.size[0] : 512,
     H = R.size ? R.size[1] : 512;
-  return `<span class="bust${o.sil ? ' sil' : ''}" style="width:${size}px;height:${size}px;background-image:url('${artURL(o.gold ? sh.replace(/\.png$/, '_gold.png') : sh)}');background-position:${-x * k}px ${-y * k}px;background-size:${W * k}px ${H * k}px" aria-hidden="true"></span>`;
+  return `<span class="bust${o.sil ? ' sil' : ''}" style="width:${size}px;height:${size}px;background-image:url('${artURL(sh)}');background-position:${-x * k}px ${-y * k}px;background-size:${W * k}px ${H * k}px" aria-hidden="true"></span>`;
 }
 function drawDomRig(c, ts) {
   const sp = c.dataset.sp;
   if (!sp.startsWith('bot:') && !(SPECIES && SPECIES[sp])) return;
-  const R = rigParts(sp, c.dataset.g === '1', 1);
+  const R = rigParts(sp, 1);
   if (!R) return;
   const x = c.getContext('2d');
   if (c._seed == null) {

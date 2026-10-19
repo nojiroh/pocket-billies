@@ -295,7 +295,7 @@ function cutscenePersonItem(a, t, C0) {
 }
 /* the starter billionaires, drawn with their rigs every frame */
 function cutsceneStarterItem(s, t) {
-  const R = rigParts(s.sp, false, 1);
+  const R = rigParts(s.sp, 1);
   if (!R) return null;
   if (!s.buf) s.buf = makeCanvas(R.BW, R.BH);
   const b = s.buf;

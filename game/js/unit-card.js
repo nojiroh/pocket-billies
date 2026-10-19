@@ -82,7 +82,7 @@ function billyUnit(m) {
     types: s.types,
     hp: m.hp,
     max: maxHp(m),
-    art: px => rigCanvasHTML(m.sp, px, { gold: m.gold, build: m.build }),
+    art: px => rigCanvasHTML(m.sp, px, { build: m.build }),
     plate: plateVars(m),
     down: m.hp <= 0,
     lead: saveData.team[0] === m,

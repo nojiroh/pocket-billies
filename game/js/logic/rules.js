@@ -314,7 +314,6 @@ export function makeBilly(sp, lvl, o = {}) {
     status: null,
     sTurns: 0,
     moves: movesAt(SPECIES[sp].line, lvl),
-    gold: !!o.gold,
     nick: '',
     /* phase 16: sizes given (a wild one's), rolled (o.wild) or all M (starters, trainers) */
     build: o.build ? cleanBuild(o.build) : o.wild ? rollBuild() : primeBuild(),
@@ -347,7 +346,6 @@ export function makeRobot(gem, fit, lvl, o = {}) {
     status: null,
     sTurns: 0,
     moves: robotMoves(gem, f),
-    gold: false,
     nick: o.nick || '',
     partDmg: {},
   };

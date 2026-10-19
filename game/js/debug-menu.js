@@ -108,7 +108,7 @@ function debugHTML() {
   }</details>
  <details><summary>Wallet and walking</summary><div class="dbg-row">${debugButtonHTML('se1', '+$1,000')}${debugButtonHTML('se10', '+$10,000')}${debugButtonHTML('walk1', 'Walk 1 km')}</div>
   <div class="dbg-row">${debugButtonHTML('coins', '+10 of every coin')}${debugButtonHTML('items', '+5 of every item')}</div></details>
- <details><summary>Billies</summary><div class="dbg-row">${debugSelectHTML('dbgSp', debugSpeciesOptions(), uiState.dbgSp || DEX_ORDER[0])}<input id="dbgLv" type="number" min="1" max="${maxLevel()}" value="${uiState.dbgLv || 10}" aria-label="Level"><label class="dbg-ck"><input id="dbgGold" type="checkbox"> Golden</label></div>
+ <details><summary>Billies</summary><div class="dbg-row">${debugSelectHTML('dbgSp', debugSpeciesOptions(), uiState.dbgSp || DEX_ORDER[0])}<input id="dbgLv" type="number" min="1" max="${maxLevel()}" value="${uiState.dbgLv || 10}" aria-label="Level"></div>
   <div class="dbg-row">${debugButtonHTML('give', 'Give it to me', 'gold')}${debugButtonHTML('enc', 'Add as encounter')}${debugButtonHTML('wild', 'Battle it now', 'red')}${debugButtonHTML('alpha', 'As an Alpha', 'red')}</div>
   <div class="dbg-row">${debugButtonHTML('heal', 'Heal everyone')}${debugButtonHTML('lv5', 'Team +5 levels')}${debugButtonHTML('evo', 'Lead evolves now')}${debugButtonHTML('dex', 'Fill the Field Guide')}</div>
   <div class="dbg-row">${debugButtonHTML('bots', 'Give the robot kit (phase 17)', 'gold')}</div><p class="note">Two robots and one of every robot part and gem. Battle Tinker Rho (under Trainers) for a mixed team.</p></details>
@@ -229,18 +229,18 @@ function debugAction(x) {
       Object.keys(ITEMS).forEach(k => (saveData.items[k] = (saveData.items[k] || 0) + 5));
       break;
     case 'give': {
-      const m = makeBilly(sp, lv, { gold: $('#dbgGold').checked });
+      const m = makeBilly(sp, lv);
       const w = addBilly(m);
       save();
       return refreshDebugMenu(`${SPECIES[sp].name} joined your ${w === 'team' ? 'team' : 'storage'}.`);
     }
     case 'enc': {
-      encountersHere().push({ id: newUid(), sp, lvl: lv, gold: $('#dbgGold').checked, no: ++saveData.serial });
+      encountersHere().push({ id: newUid(), sp, lvl: lv, no: ++saveData.serial });
       break;
     }
     case 'alpha': {
       if (activeBattle) return toast('Finish the current battle first.');
-      const q = { id: newUid(), sp, lvl: lv, gold: $('#dbgGold').checked, no: ++saveData.serial, alpha: true };
+      const q = { id: newUid(), sp, lvl: lv, no: ++saveData.serial, alpha: true };
       encountersHere().push(q);
       closeModal();
       startWild(q);
@@ -248,7 +248,7 @@ function debugAction(x) {
     }
     case 'wild': {
       if (activeBattle) return toast('Finish the current battle first.');
-      const q = { id: newUid(), sp, lvl: lv, gold: $('#dbgGold').checked, no: ++saveData.serial };
+      const q = { id: newUid(), sp, lvl: lv, no: ++saveData.serial };
       encountersHere().push(q);
       closeModal();
       startWild(q);

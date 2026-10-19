@@ -58,8 +58,8 @@ expose({
 /* eslint-enable no-func-assign */
 provide({ battleFreeArea, battleLayoutChanged, hudHit, hudPop });
 /* to-module: end */
-setRigParts((sp, gold, k) =>
-  String(sp).startsWith('bot:') ? robotRigParts(sp, gold, k) : rigFor(sp, k === 1 ? 'front' : 'back', !!gold)
+setRigParts((sp, k) =>
+  String(sp).startsWith('bot:') ? robotRigParts(sp, k) : rigFor(sp, k === 1 ? 'front' : 'back', false)
 );
 const battlePreview = {
   stage: 'backdrop',

@@ -130,8 +130,6 @@ export interface Billy {
   /** turns left on the status */
   sTurns: number;
   moves: MoveId[];
-  /** a gold one */
-  gold: boolean;
   nick: string;
   /** where and when it joined you: a location id (or node), Date.now() */
   met?: { n: DataId | LocationNode; t: number };
@@ -184,7 +182,6 @@ export interface Encounter {
   id: string;
   sp: SpeciesId;
   lvl: number;
-  gold: boolean;
   /** its encounter number (serial) */
   no: number;
   alpha?: boolean;

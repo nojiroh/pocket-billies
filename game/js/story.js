@@ -137,7 +137,7 @@ export function legendCheck() {
           c: 'primary',
           f: () => {
             closeModal();
-            const q = { id: 'legend-' + L.sp, sp: L.sp, lvl: L.lvl, gold: false, no: ++saveData.serial, legend: true };
+            const q = { id: 'legend-' + L.sp, sp: L.sp, lvl: L.lvl, no: ++saveData.serial, legend: true };
             encountersHere().push(q);
             startWild(q);
           },

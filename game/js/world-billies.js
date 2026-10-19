@@ -67,33 +67,33 @@ export const worldBillies = {
 };
 provide({ worldBillies }); /* to-module */
 const BILLY_FRAME_CACHE_MAX = 320;
-function worldBillyRig(sp, gold, view) {
+function worldBillyRig(sp, view) {
   if (!SPECIES[sp] || typeof rigParts !== 'function') return null;
   const k = view === 'back' ? RIG_BACK_VIEW : 1;
   let R = null;
   try {
-    R = rigParts(sp, !!gold, k);
+    R = rigParts(sp, k);
   } catch (e) {
     R = null;
   }
   if (R) return R;
-  const key = sp + (gold ? 'g' : '') + view;
+  const key = sp + view;
   if (!worldBillies.req.has(key) && typeof rigPreload === 'function') {
     worldBillies.req.add(key);
-    rigPreload([[sp, !!gold, k]]).catch(() => {});
+    rigPreload([[sp, k]]).catch(() => {});
   }
   return null;
 }
 /* a frame: pose null = idle loop (8 frames over 1.6 s); a named pose plays once over ~0.9 s */
-function worldBillyFrame(sp, gold, view, pose, t, seed, build) {
-  const R = worldBillyRig(sp, gold, view);
+function worldBillyFrame(sp, view, pose, t, seed, build) {
+  const R = worldBillyRig(sp, view);
   if (!R) return null;
   const wk = pose === 'walk',
     n = wk ? 8 : pose ? 9 : 8,
     dur = wk ? 560 : pose ? 900 : 1600,
     fi = pose && !wk ? clamp(Math.floor(t / 100), 0, n - 1) : Math.floor(((((t % dur) + dur) % dur) / dur) * n);
   const bc = build ? buildCode(build) : '',
-    key = sp + '|' + (gold ? 1 : 0) + '|' + view + '|' + (pose || '') + '|' + fi + '|' + ((seed % 4) | 0) + '|' + bc;
+    key = sp + '|' + view + '|' + (pose || '') + '|' + fi + '|' + ((seed % 4) | 0) + '|' + bc;
   let c = worldBillies.cache.get(key);
   if (c) {
     worldBillies.cache.delete(key);
@@ -134,8 +134,8 @@ function worldBillyMetersPerPixel(sp, R, big = 1) {
     mq = 1 / (rq * 68);
   return Math.abs(mq / m - 1) <= 0.06 ? mq : m;
 }
-export function worldBillyItem(k, sp, gold, view, pose, t, seed, x, z, o = {}) {
-  const im = worldBillyFrame(sp, gold, view, pose, t, seed, o.build);
+export function worldBillyItem(k, sp, view, pose, t, seed, x, z, o = {}) {
+  const im = worldBillyFrame(sp, view, pose, t, seed, o.build);
   if (!im) return null;
   const R = im.__R,
     mpp = worldBillyMetersPerPixel(sp, R, o.big || 1),
@@ -290,7 +290,6 @@ function buddyItems(out, t, dt) {
     it = worldBillyItem(
       'buddy',
       m.sp,
-      m.gold,
       b.back && !pose ? 'back' : 'front',
       pose || (walk ? 'walk' : null),
       pose ? rt : t + b.seed * 37,
@@ -377,7 +376,7 @@ function companionItems(out, t, npcPos) {
       z = pos[1] + 0.15,
       fl = P.x > x ? -1 : 1,
       seed = String(n.id).length * 7;
-    const it = worldBillyItem('pet', sp, false, 'front', null, t + seed * 91, seed, x, z, { flip: fl, extra: { n } });
+    const it = worldBillyItem('pet', sp, 'front', null, t + seed * 91, seed, x, z, { flip: fl, extra: { n } });
     if (it) out.push(it);
   }
 }
@@ -412,7 +411,6 @@ function wildBillyItem(out, e, s, t, dt) {
   /* how much of it is hidden: a hop shows it whole for a moment */
   const im = worldBillyFrame(
     e.sp,
-    e.gold,
     'front',
     w.popT > 0 ? 'cheer' : null,
     w.popT > 0 ? (0.9 - w.popT) * 1000 : t + w.seed * 53,
@@ -430,7 +428,6 @@ function wildBillyItem(out, e, s, t, dt) {
   const it = worldBillyItem(
     'encm',
     e.sp,
-    e.gold,
     'front',
     w.popT > 0 ? 'cheer' : moving ? 'walk' : null,
     w.popT > 0 ? (0.9 - w.popT) * 1000 : t + w.seed * 53,
@@ -480,31 +477,31 @@ function worldBillyLabels(C, labels) {
 function warmWorldBillies() {
   try {
     const L = [];
-    for (const q of encountersHere()) L.push([q.sp, q.gold, 1]);
+    for (const q of encountersHere()) L.push([q.sp, 1]);
     const m = buddyBilly();
     if (m) {
-      L.push([m.sp, m.gold, 1]);
-      L.push([m.sp, m.gold, RIG_BACK_VIEW]);
+      L.push([m.sp, 1]);
+      L.push([m.sp, RIG_BACK_VIEW]);
     }
     if (typeof trainersAt === 'function')
       for (const T of trainersAt(saveData.trip.node)) {
         const sp = companionSpecies(T);
-        if (sp) L.push([sp, false, 1]);
+        if (sp) L.push([sp, 1]);
         for (const e of T.team || []) {
           const s2 = /^@rival\d?$/.test(e.sp) && typeof rivalSpecies === 'function' ? rivalSpecies(e.sp) : e.sp;
-          if (SPECIES[s2]) L.push([s2, false, 1]);
+          if (SPECIES[s2]) L.push([s2, 1]);
         }
       }
     /* v34: what a battle here would need, loaded now while you walk (a battle used to start by loading it: 4 fps at worst) */
-    for (const m of saveData.team.slice(0, 3)) L.push([m.sp, m.gold, RIG_BACK_VIEW]);
+    for (const m of saveData.team.slice(0, 3)) L.push([m.sp, RIG_BACK_VIEW]);
     if (L.length && typeof rigPreload === 'function')
       setTimeout(
         () =>
           rigPreload(L)
             .then(() => {
-              for (const [sp, g, k] of L)
+              for (const [sp, k] of L)
                 try {
-                  rigParts(sp, !!g, k);
+                  rigParts(sp, k);
                 } catch (e) {}
             })
             .catch(() => {}),

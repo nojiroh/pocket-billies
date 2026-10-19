@@ -47,7 +47,7 @@ test('a double battle: two a side, and each move hits the foe it was aimed at', 
 test('an Alpha battle: your team against one; below half it raises its shield', () => {
   const s = teamOfThree();
   const sp = Object.keys(SPECIES).find(k => SPECIES[k].stage === 0 && !RULES.start.starters.includes(SPECIES[k].line));
-  const q = { id: 'alpha', sp, lvl: 6, gold: false, no: 1, alpha: true };
+  const q = { id: 'alpha', sp, lvl: 6, no: 1, alpha: true };
   fn('encountersHere')().push(q);
   fn('startWild')(q);
   const B = hooks.activeBattle,
@@ -96,7 +96,7 @@ test('partner AI: in a double, two foes pile onto a fighter that is already goin
 test('phase 08: your buddy gets the full XP of a win even when it sat out; the rest of the bench gets the share', () => {
   const s = teamOfThree();
   s.buddy = s.team[2].uid;
-  const q = { id: 'xp', sp: s.team[0].sp, lvl: 10, gold: false, no: 1 };
+  const q = { id: 'xp', sp: s.team[0].sp, lvl: 10, no: 1 };
   fn('encountersHere')().push(q);
   fn('startWild')(q);
   const xp = s.team.map(m => m.xp);

@@ -240,9 +240,7 @@ export function openBattle() {
   const bs = (saveData.preferences || {}).battleSpeed;
   if (bs && !uiState.dbgSpeed) battleStage.speed = bs === 'fast' ? 1.6 : bs === 'faster' ? 2.2 : 1;
   const area = activeBattle.area || 'grass',
-    list = saveData.team
-      .map(m => [m.sp, m.gold, RIG_BACK_VIEW])
-      .concat(activeBattle.sides[1].team.map(m => [m.sp, m.gold, 1]));
+    list = saveData.team.map(m => [m.sp, RIG_BACK_VIEW]).concat(activeBattle.sides[1].team.map(m => [m.sp, 1]));
   const b = activeBattle;
   Promise.all([battleStagePrepare(area), rigPreload(list)])
     .then(() => {
@@ -709,7 +707,7 @@ function hpMini(m) {
   return `<span class="hpmini"><i class="${p < 0.25 ? 'low' : p < 0.5 ? 'mid' : ''}" style="width:${p * 100}%"></i></span>`;
 }
 function billyPickHTML(m, act, attrs, dis, note) {
-  return `<button class="pick" ${attrs} ${dis ? 'disabled' : ''}>${bustHTML(m.sp, 40, { gold: m.gold })}<span class="pk-t"><b>${escapeHtml(billyName(m))}</b><span class="pk-m">${speciesOf(m).types.map(typeBadgeHTML).join('')}<small class="tnum">Lv ${m.lvl}</small></span>${hpMini(m)}<small class="tnum">${Math.max(0, m.hp)}/${maxHp(m)}</small></span><span class="pk-s">${note || ''}</span></button>`;
+  return `<button class="pick" ${attrs} ${dis ? 'disabled' : ''}>${bustHTML(m.sp, 40)}<span class="pk-t"><b>${escapeHtml(billyName(m))}</b><span class="pk-m">${speciesOf(m).types.map(typeBadgeHTML).join('')}<small class="tnum">Lv ${m.lvl}</small></span>${hpMini(m)}<small class="tnum">${Math.max(0, m.hp)}/${maxHp(m)}</small></span><span class="pk-s">${note || ''}</span></button>`;
 }
 function teamPick(back) {
   const on = activeBattle.sides[0].f.filter(f => f.on).map(f => f.act),
@@ -1111,7 +1109,6 @@ function paintPlates(s, anim) {
     e.querySelector('.pl-lv').textContent = 'Lv ' + x.lvl;
     e.querySelector('.pl-cr').hidden = !x.alpha;
     e.classList.toggle('alpha', !!x.boss);
-    e.classList.toggle('gold', !!x.gold);
     e.querySelector('.pl-st').innerHTML =
       x.hp <= 0 ? '<span class="stb st-down">Fainted</span>' : statusBadgeHTML(x.st);
     const p = Math.max(0, (x.hp / x.max) * 100),
