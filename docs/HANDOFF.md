@@ -48,12 +48,45 @@ Branch `ccr-9b6f14fb-6t1w6i`, from main at 09ae2ba. The phase file is now docs/p
 - Verified: every commit lint, typecheck, unit tests (65 -> 72), check:data, check:modules, format:check; smoke at the
   end 15/15 green; its exported phone log has `dc`/`dcp`/`up`/`lit` in 69 of 85 samples and the same 104 entries in
   its error list as before (all phase 16 "is in legacy" warnings). No headless graphics test was run.
+- **A8 baseline, iPad** (Graphics test, 2026-10-19 04:47, Chrome on iPadOS 26.7, Apple GPU, 1366x886 at DPR 2,
+  60 Hz, no GPU timers; 116 steps, no errors). The station's untouched look, per frame:
+
+  | Station | fps | CPU ms | Draws | Shadow + lamp draws | Biggest passes |
+  |---|---|---|---|---|---|
+  | Control pad | 51.5 | 4.2 | 471 | 215 | far sun 173, effects 86, models 44, sprites 43 |
+  | Shadow court | 46 | 5.0 | 633 | 270 | far sun 236, effects 106, sprites 85 |
+  | Pond | 50.5 | 3.5 | 429 | 136 | far sun 96, sprites 91, effects 82, reflection 47 |
+  | Sun gap | 42 | 6.0 | 955 | 343 | sprites 360, far sun 195, near sun 148, effects 96 |
+  | Lamp square (night) | 37.5 | 5.4 | 789 | 410 | far sun 235, sprites 116, effects 114, near 105, lamps 70 |
+  | Meadow | 50.5 | 3.5 | 436 | 160 | sprites 116, far sun 96, effects 70 |
+  | Depth corridor | 45 | 4.8 | 699 | 343 | far sun 233, sprites 143, near sun 110, effects 100 |
+  | Open sky | 51 | 3.9 | 500 | 171 | sprites 165, far sun 108, effects 88 |
+  | Everything: own values / lowest / highest | 40 / 60 / 39.5 | 6.1 / 5.4 / 6.7 | 1006 / 733 / 1039 | 363 / 187 / 363 | sprites 395-428 |
+
+  What it says:
+  - The iPad is not held back by draw calls: about 1,000 draws cost 6-7 ms of processor time, and "everything
+    lowest" runs 60 fps with 733 draws. Its frames (19-25 ms) wait on the graphics chip. Sharpness 0.4-0.55 holds 60
+    fps; 1.0 gives 50.5.
+  - The shadow maps are 35-52% of all draws. The far sun map draws 96-236 a frame even though it is meant to be
+    cached for what never moves: the swaying props miss the cache (the phase file's claim, confirmed). Stages E11
+    (sway in the shader) and F (casters) aim at this.
+  - "Effects" makes 70-114 draws at every station: the flat items and blades drawn one by one (C4).
+  - The Sun gap's 360 sprite draws are the grove itself (the phase file's claim, confirmed).
+  - Same frame rates as the earlier iPad report (38.5 / 57.5 / 37 then; 40 / 60 / 39.5 now), so counting every frame
+    during the test costs no visible speed here.
+  - One odd step: Film grain at 0.15 cost 3.5 ms where 0.11 cost 0.6 ms; grain is one uniform in the final pass, so
+    this is probably a one-off hitch in that 3 s window (its worst fps was 39). Watch for it on the next run.
+  - The headless smoke run's 2,250 draws were Marigold, a full town; the bench places are smaller. A real town by
+    night (Copperleaf) is still to be measured on the devices.
+- Still missing for A8: the Android phone's Graphics test; the diagnostics test (it measures the busiest town) and the
+  debug logs on both devices.
 - Questions waiting for the owner (A8, "Ask me before"):
   - Run the Graphics test and the diagnostics at the Sun gap, the depth corridor and Copperleaf by night, on the iPad
     and the Android phone, and send the reports and the debug logs.
-  - Then the budgets. My proposal: 150 draws a frame on phones including the shadow passes, 30 fps on the Android phone
-    at the game's own values. (If 2,000+ draws holds on the phone, 150 needs stage E's instancing and phase 21's
-    atlases; a nearer first target would be 600.)
+  - Then the budgets, once the Android numbers are in (the iPad shows draws are not its limit, so the draw budget is
+    for the Android phone's processor). My proposal stays 150 draws a frame on phones including the shadow passes, and
+    30 fps on the Android phone at the game's own values; if the Android phone shows ~1,000 draws costing it little
+    processor time too, a looser draw target (400) and the pixel work (stage D) first would be the better order.
   - Tag this as `phase-20a-done`?
 - Next session starts with: the A8 numbers into this file, the budgets decided, then stage B (the file split, "Ask me
   before" the file list), or stage D first, since the Android phone is held back by pixels.
