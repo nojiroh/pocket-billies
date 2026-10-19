@@ -6,7 +6,7 @@
    ground a sky lift goes up to the mooring; in Verdigris City the old station is the airship terminal, its ticket
    window inside. Any prop with act 'fly' does it. Once you have been to a town you can fly back to it from any mast:
    the flight is shown over the world map, the airship carrying you along an arc above the land, and a ticket costs
-   money, so your steps stay for walking new ground. */
+   money. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { arrivedAt, closeModal, mapIdAt, modal, provide, render, storyFlags, toast } from './hooks.js';
@@ -72,7 +72,7 @@ export function flyMenu(p) {
     title: escapeHtml((p && p.label) || 'Airship mast'),
     cls: 'fly-sheet',
     html: L.length
-      ? `<p class="note">The airships fly to the towns you’ve been to. A ticket is paid in money, so your steps stay for walking new ground. You have $${formatNumber(saveData.se)}.</p><div class="list">${rows}</div>`
+      ? `<p class="note">The airships fly to the towns you’ve been to. A ticket is paid in money. You have $${formatNumber(saveData.se)}.</p><div class="list">${rows}</div>`
       : `<p>The airships fly to the towns you’ve already been to. Walk on to another town, and you can fly back here from its mast whenever you like.</p>`,
     btns: [{ l: 'Not now', c: 'quiet', f: closeModal }],
   });
