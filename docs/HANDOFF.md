@@ -11,6 +11,63 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 - Questions waiting for the owner: 
 - Next session starts with: 
 
+### Phase 20 stage C, session C-1 - Frame settings and allocations (C1, C2) - 2026-10-19
+Plan approved at the start with "continue" on my recommendation: C1 and C2 now (no look change), before stage A's A8
+numbers and before phase 19, which the phase file puts first. Branch `ccr-ca9ccdfe-oyecc9`, from main at d2f9721.
+(Ported in session C-2 onto stage B's split, PR #43: each walk view change sits in the game/js/walk/ file its code
+moved to; the 146 changed lines match C-1's exactly.)
+- Changed (one cause per commit):
+  - Main's last merge (#41) left an unused import in seamless-world.js, so `check:modules` failed on main. Regenerated
+    (main had fixed it by the time of the port, so that commit was dropped there).
+  - **C1** Defaults for the four dials the code read with none (the phase file named two): `quality.keepScenes` 3,
+    `quality.paintWorker` true, `world.roomDim` 0.68, `world.seamlessRooms` true, each at the code's own fallback.
+  - **C1** `FRAME_SETTINGS` (engine/settings.js): `beginFrameSettings()` runs once per walk frame, after the
+    environment update and the seamless look. It looks every dial up once (11 groups, 149 keys), and `engineSetting`
+    answers from that table while the frame is open, but only if the look and the environment flag are still the ones it
+    was filled with, and never while the Studio's defaults switch is on. Unknown keys, other screens and code between
+    frames take the full lookup. `drawWalkFrame`'s finally closes it.
+  - **C2**, one commit each:
+    - Sprite uniforms take a slice's depth and a rising picture's height share as arguments. Before, the shadow passes
+      made 6 item copies per building, and the sprite pass made 1 per rising picture.
+    - `worldCurveDrop` no longer makes an array (it runs per grid cell and item).
+    - Contact-shadow blobs come from a pool. The same sort keeps the same order, ties included.
+    - The shadow passes filter into kept lists.
+    - The sprite pass's list, its building-fade map and a turned picture's axes are kept between frames.
+    - The grass trail buffer and each flower set's colours are kept.
+    - New module `game/js/engine/frame-lists.js` (no WebGL): `pooledQuad`, `nearestFirst`, `filterInto`. Its script
+      tag is on both pages.
+  - Tests: `tools/test/frame-settings.test.mjs` checks every key, fast path against full lookup, with player, look,
+    game-data and environment sources and the Studio switch. `tools/test/frame-allocations.test.mjs` checks each C2
+    change against the old code, kept in the test. `tools/test/walk-renderer.mjs` loads walk-view-gl.js in Node with a
+    stand-in GL that records calls.
+- Not done from C1 and C2, and why:
+  - **gatherFrameItems item pool:** I'm pushing back on this one. About 20 functions in several modules add fields to
+    the items (vol, vox, bld3, cross, layer, wave...) and some splice the list. A pool would carry stale fields from
+    the previous frame unless every field is reset, and items of mixed shapes in one pool slow V8 down. The items live
+    for one frame, which is the cheap case for V8's young-generation collector. Do it only if your `alloc` numbers
+    (stage A) show garbage-collection hitches.
+  - Hot derived values in a frame table (curve args, wind, brightness): with FRAME_SETTINGS a dial is a property read,
+    so this saves little.
+  - `matrix4` writing into a given array, and the reflection's two `Object.assign` calls: about 15 small objects a
+    frame in total.
+  - The basin key: a few strings a frame, only where there are fountains. Its `toFixed(2)` rounding is the
+    behaviour, so comparing by numbers would change it slightly.
+  - The light lists in `walkLightContext` and `pickPointLights`: those get rewritten in C5.
+- Risky:
+  - A dial changed in the middle of a frame is seen next frame. Nothing does that today: the environment changes only
+    in `environmentFrame`, before the table fills, and the graphics tests, the Studio and Settings change dials between
+    frames. Code that starts doing it must call `beginFrameSettings()` again.
+  - The kept lists are only safe while each function runs once per frame and nobody keeps the list (checked:
+    `walkLightContext` and `drawSprites` have one caller each, and the shadow drawers don't store what they get).
+- Verified: lint, typecheck, unit tests (72 -> 86), check:modules, check:data and format:check after every commit.
+  Smoke 15/15 after C1 (248 s) and on the final code (231 s). No headless graphics test was run (as the phase file
+  says).
+- Questions waiting for the owner:
+  - Your phone: does the walk view look and run the same? The diagnostics' long frames and the log's `alloc`, before
+    and after (main vs this branch), would show whether C2 helped.
+  - Still open from stage A: the A8 numbers, the budgets, the `phase-20a-done` tag.
+- Next session starts with: C-2 (C3, the Frame uniform block, behind `quality.frameBlock`; C4, flat items and blades
+  grouped by program). Or stage D first, if the A8 numbers say pixels.
 ### Phase 20 stage B - walk-view-gl.js split into game/js/walk/ (moves only) - 2026-10-19
 Plan approved at the start (the file list was the "Ask me before"). Branch `ccr-9b6f14fb-6t1w6i`.
 - Changed (12 move commits, leaves first as in the phase file's B2, plus one tool fix and this docs commit):
