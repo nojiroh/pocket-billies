@@ -659,7 +659,7 @@ export const ENGINE_SPEC = [
       ],
       ['fov', 'Zoom', 0.5, 2, 0.02],
       ['lead', 'Leads your walk (m)', 0, 4, 0.1],
-      ['sway', 'Step sway', 0, 2, 0.05],
+      ['sway', 'Walk bob', 0, 2, 0.05],
       ['tilt', 'Phone tilt', 0, 3, 0.05],
       ['turn', 'Turn limit (degrees)', 0, 80, 1],
       ['zoomMin', 'Closest zoom', 0.3, 1, 0.05],
