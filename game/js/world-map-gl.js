@@ -35,7 +35,7 @@ import {
 import { POST_EFFECT_SHADERS, drawPostEffects, projectToScreenUv } from './engine/post-effects.js';
 import { walkRenderer } from './walk/walk-state.js';
 import { rawHeightAt } from './walk/heights.js';
-import { worldMapTexture } from './walk-view-gl.js';
+import { worldMapTexture } from './walk/sky.js';
 import {
   LOCATION_VECTORS,
   RADIANS_PER_DEGREE,

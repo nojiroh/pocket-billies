@@ -25,7 +25,7 @@ import {
   walkView,
 } from './walk-view.js';
 import { groundHeightAt, rawHeightAt, standingHeightAt } from './walk/heights.js';
-import { addRipple } from './walk-view-gl.js';
+import { addRipple } from './walk/water.js';
 /* eslint-disable no-func-assign */
 expose({
   LIFE_KIND: [() => LIFE_KIND],

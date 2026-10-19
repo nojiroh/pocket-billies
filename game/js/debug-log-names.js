@@ -47,25 +47,22 @@ import { groundOcclusion, setGroundOcclusion } from './walk/ground-textures.js';
 import { buildGrass, grassWork, setBuildGrass, setGrassWork } from './walk/grass-build.js';
 import { buildGroundMesh, setBuildGroundMesh } from './walk/ground-mesh.js';
 import { setSwapMapCache, setUpdateNearRing, swapMapCache, updateNearRing } from './walk/map-cache.js';
+import { drawWater, reflectionPass, setDrawWater, setReflectionPass } from './walk/water.js';
 import {
   drawBoxFaces,
   drawGrass,
   drawGround,
   drawSprites,
-  drawWater,
   effectsPass,
   gatherFrameItems,
   mountWalkView,
-  reflectionPass,
   setDrawBoxFaces,
   setDrawGrass,
   setDrawGround,
   setDrawSprites,
-  setDrawWater,
   setEffectsPass,
   setGatherFrameItems,
   setMountWalkView,
-  setReflectionPass,
   setShadowPass,
   shadowPass,
 } from './walk-view-gl.js';
