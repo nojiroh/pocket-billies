@@ -7,6 +7,9 @@ rules_version = '2';
 //   users/<uid>             what friends see of a player: name, look, partner, last place, friend list, code
 //   codes/<CODE>            { uid }: a friend code finds a player, and nothing else does
 //   requests/<from>_<to>    a friend request: { from, to, fromName, status, t }
+//   debugLogs/<CODE>        a debug log a player sent (js/log-upload.js): { v, build, t, why, size, gz }, gzipped,
+//                           with no picture, names or e-mail. Added only; the developer reads them with the admin SDK
+//                           (firebase/fetch-debug-log.mjs), never from the game.
 // Nobody can list users/ or codes/, so a player is found by their code only, and only their friends see them.
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -61,6 +64,18 @@ service cloud.firestore {
     function validRequest(d) {
       return d.keys().hasOnly(['from', 'to', 'fromName', 'status', 't'])
         && d.from is string && d.to is string && shortText(d.fromName, 40) && d.t is number;
+    }
+
+    // Anyone signed in (an anonymous sign-in counts) adds a log under a free code; a code already taken is an update,
+    // which nobody may do. No get, list or delete from the game.
+    match /debugLogs/{code} {
+      allow create: if signedIn() && code.matches('^[A-HJ-NP-Z2-9]{6}$') && validLog(request.resource.data);
+    }
+    function validLog(d) {
+      return d.keys().hasOnly(['v', 'build', 't', 'why', 'size', 'gz']) && d.keys().hasAll(['v', 'why', 'gz'])
+        && d.v == 1 && shortText(d.build, 40) && d.t is number && d.size is int
+        && d.why in ['test', 'opening', 'crash', 'manual']
+        && d.gz is bytes && d.gz.size() < 900000;
     }
   }
 }

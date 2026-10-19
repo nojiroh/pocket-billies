@@ -3,7 +3,7 @@
 import { test, before, after, beforeEach } from 'node:test';
 import { readFileSync } from 'node:fs';
 import { initializeTestEnvironment, assertSucceeds, assertFails } from '@firebase/rules-unit-testing';
-import { doc, getDoc, setDoc, updateDoc, deleteDoc, collection, getDocs, query, where } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, deleteDoc, collection, getDocs, query, where, Bytes } from 'firebase/firestore';
 
 let env;
 const db = uid => env.authenticatedContext(uid).firestore();
@@ -118,4 +118,33 @@ test('requests cannot be forged, rerouted, read by others or listed', async () =
   await assertFails(updateDoc(doc(db('eve'), 'requests/ann_bob'), { status: 'declined' }));
   await assertFails(deleteDoc(doc(db('eve'), 'requests/ann_bob')));
   await assertFails(getDocs(collection(db('eve'), 'requests')));
+});
+
+/* ---------- debug logs (js/log-upload.js) ---------- */
+const log = (extra = {}) => ({ v: 1, build: '0.1.0', t: 1, why: 'test', size: 10, gz: Bytes.fromUint8Array(new Uint8Array([31, 139, 8])), ...extra });
+test('anyone signed in, anonymous included, adds a log under a free code', async () => {
+  await assertSucceeds(setDoc(doc(db('anon1'), 'debugLogs/K7Q2MX'), log()));
+  await assertFails(setDoc(doc(guest(), 'debugLogs/K7Q2MY'), log()));
+});
+test('a log cannot be read, listed, changed, replaced or deleted from the game', async () => {
+  await seed('debugLogs/K7Q2MX', log());
+  for (const who of [db('anon1'), db('ann')]) {
+    await assertFails(getDoc(doc(who, 'debugLogs/K7Q2MX')));
+    await assertFails(getDocs(collection(who, 'debugLogs')));
+    await assertFails(setDoc(doc(who, 'debugLogs/K7Q2MX'), log()));
+    await assertFails(updateDoc(doc(who, 'debugLogs/K7Q2MX'), { why: 'crash' }));
+    await assertFails(deleteDoc(doc(who, 'debugLogs/K7Q2MX')));
+  }
+});
+test('a log must have a code, its own fields, and gzipped bytes under 900 KB', async () => {
+  const a = db('anon1');
+  await assertFails(setDoc(doc(a, 'debugLogs/k7q2mx'), log()));
+  await assertFails(setDoc(doc(a, 'debugLogs/K7Q2M0'), log()));
+  await assertFails(setDoc(doc(a, 'debugLogs/K7Q2MXX'), log()));
+  await assertFails(setDoc(doc(a, 'debugLogs/K7Q2MA'), log({ name: 'Ann' })));
+  await assertFails(setDoc(doc(a, 'debugLogs/K7Q2MB'), log({ why: 'other' })));
+  await assertFails(setDoc(doc(a, 'debugLogs/K7Q2MC'), log({ gz: 'not bytes' })));
+  await assertFails(setDoc(doc(a, 'debugLogs/K7Q2MD'), log({ gz: Bytes.fromUint8Array(new Uint8Array(900000)) })));
+  await assertFails(setDoc(doc(a, 'debugLogs/K7Q2ME'), log({ v: 2 })));
+  await assertSucceeds(setDoc(doc(a, 'debugLogs/K7Q2MF'), log({ gz: Bytes.fromUint8Array(new Uint8Array(899000)) })));
 });
