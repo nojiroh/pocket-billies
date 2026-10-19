@@ -60,6 +60,7 @@ import {
   stampDraw,
   tagPropModel,
   tagSolidProp,
+  waitForPaintWorker,
   warmWorldBillies,
   wildBillyItem,
   worldBillies,
@@ -215,6 +216,9 @@ expose({
   PROP_LOOK_CACHE: [() => PROP_LOOK_CACHE],
   PROP_VARIETY_DEFAULT: [() => PROP_VARIETY_DEFAULT],
   PROP_VARIETY_RULES: [() => PROP_VARIETY_RULES],
+  ROOM_FLOORS_KEPT: [() => ROOM_FLOORS_KEPT],
+  ROOM_PICTURES: [() => ROOM_PICTURES],
+  ROOM_PICTURES_PENDING: [() => ROOM_PICTURES_PENDING],
   SLOPE_HUGGERS: [() => SLOPE_HUGGERS],
   SLOPE_HUG_CACHE: [() => SLOPE_HUG_CACHE],
   STILL_PROP_CACHE: [() => STILL_PROP_CACHE],
@@ -259,6 +263,7 @@ expose({
   drawFountainEffects: [() => drawFountainEffects, v => (drawFountainEffects = v)],
   drawGrass: [() => drawGrass, v => setDrawGrass(v)],
   drawGround: [() => drawGround, v => setDrawGround(v)],
+  drawGroundDepth: [() => drawGroundDepth, v => (drawGroundDepth = v)],
   drawLifeEffects: [() => drawLifeEffects, v => (drawLifeEffects = v)],
   drawRoomEffects: [() => drawRoomEffects, v => (drawRoomEffects = v)],
   drawRoomFront: [() => drawRoomFront, v => (drawRoomFront = v)],
@@ -319,6 +324,7 @@ expose({
   newNearRing: [() => newNearRing, v => (newNearRing = v)],
   onGlContextRestored: [() => onGlContextRestored, v => ((onGlContextRestored = v), provide({ onGlContextRestored }))],
   paintNearRingChunk: [() => paintNearRingChunk, v => (paintNearRingChunk = v)],
+  paintRoomFloor: [() => paintRoomFloor, v => (paintRoomFloor = v)],
   personItem: [() => personItem, v => (personItem = v)],
   prepareMapGround: [() => prepareMapGround, v => (prepareMapGround = v)],
   propBaseHeight: [() => propBaseHeight, v => (propBaseHeight = v)],
@@ -336,6 +342,9 @@ expose({
   rideMountItem: [() => rideMountItem, v => (rideMountItem = v)],
   roomBoxOf: [() => roomBoxOf, v => (roomBoxOf = v)],
   roomDimming: [() => roomDimming, v => (roomDimming = v)],
+  roomFloorOf: [() => roomFloorOf, v => (roomFloorOf = v)],
+  roomFloorReady: [() => roomFloorReady, v => (roomFloorReady = v)],
+  roomHole: [() => roomHole, v => (roomHole = v)],
   roomLamps: [() => roomLamps, v => (roomLamps = v)],
   roomLights: [() => roomLights, v => (roomLights = v)],
   roomSkyLight: [() => roomSkyLight, v => (roomSkyLight = v)],
@@ -843,6 +852,7 @@ export function ensureWalkGl(cv) {
   walkRenderer.gkey = '';
   walkRenderer.farKey = '';
   walkRenderer.sceneCache = null;
+  walkRenderer.roomFloors = null;
   walkRenderer.wtex = null;
   for (const k of MAP_CACHE_FIELDS) walkRenderer[k] = null;
   return true;
@@ -1066,17 +1076,18 @@ function askDeviceTilt() {
 export const WALK_SHADERS = {
   ground: [
     `#version 300 es
-precision highp float;in vec3 aPos;in vec3 aNrm;layout(location=2) in vec3 aWall;uniform mat4 uVP;out vec3 vW;out vec3 vN;out vec3 vWall;out vec4 vClip;${COMMON_GLSL}
-void main(){vec3 p=aPos;p.y+=curveY(p.xz);vW=p;vN=aNrm;vWall=aWall;gl_Position=uVP*vec4(p,1.);vClip=gl_Position;}`,
+precision highp float;in vec3 aPos;in vec3 aNrm;layout(location=2) in vec3 aWall;uniform mat4 uVP;uniform vec3 uOrg;out vec3 vW;out vec3 vN;out vec3 vWall;out vec4 vClip;${COMMON_GLSL}
+void main(){vec3 p=aPos+uOrg;p.y+=curveY(p.xz);vW=p;vN=aNrm;vWall=aWall;gl_Position=uVP*vec4(p,1.);vClip=gl_Position;}`,
     `#version 300 es
-precision highp float;in vec3 vW;in vec3 vN;in vec3 vWall;in vec4 vClip;out vec4 o;uniform sampler2D uGround,uFar,uCliff,uGNrm,uWallA;uniform vec4 uGRect;uniform vec3 uFarTint;uniform float uGStr,uGShine,uWallDef,uAspect;uniform vec3 uWallCol[12];uniform vec3 uPlC;uniform sampler2D uShore;uniform vec3 uShoreR,uBed;uniform vec4 uRoom;uniform float uRoomY;uniform sampler2D uGAO;uniform vec3 uGAOR,uSkyW;uniform float uWet,uRainK,uCausW;uniform sampler2D uRing,uRingN;uniform vec2 uRingC[16];uniform vec4 uRingBox;uniform vec3 uCanvas;${LIGHT_GLSL}
+precision highp float;in vec3 vW;in vec3 vN;in vec3 vWall;in vec4 vClip;out vec4 o;uniform sampler2D uGround,uFar,uCliff,uGNrm,uWallA;uniform vec4 uGRect;uniform vec3 uFarTint;uniform float uGStr,uGShine,uWallDef,uAspect;uniform vec3 uWallCol[12];uniform vec3 uPlC;uniform sampler2D uShore;uniform vec3 uShoreR,uBed;uniform vec4 uRoom;uniform float uRoomY;uniform sampler2D uGAO;uniform vec3 uGAOR,uSkyW;uniform float uWet,uRainK,uCausW;uniform sampler2D uRing,uRingN;uniform vec2 uRingC[16];uniform vec4 uRingBox;uniform vec3 uCanvas;uniform vec4 uHole;${LIGHT_GLSL}
 /* v46: the near ring: the 16 m squares round you at full size (4 x 4 of them in one texture, each in the slot its
    position mod 4 gives); the view's whole ground is the small distant picture. 0 = not in the ring */
 float ringAt(vec2 cc,out vec2 ruv){ruv=vec2(0.);if(uCanvas.z<.5)return 0.;vec2 ch=floor(cc/16.),s=mod(ch,4.);int si=int(s.x+.5)+int(s.y+.5)*4;vec2 h=uRingC[si];if(abs(h.x-ch.x)>.5||abs(h.y-ch.y)>.5)return 0.;
  ruv=(s*16.+(cc-ch*16.))/64.;vec2 e=min(cc-uRingBox.xy,uRingBox.zw-cc);return clamp(min(e.x,e.y)/3.,0.,1.);}
 vec3 rampW(vec3 b,float t){vec3 d0=mix(b*.55,vec3(.235,.165,.439),.30),d1=mix(b*.79,vec3(.376,.29,.596),.17),l3=mix(b,vec3(1.,.957,.769),.30),l4=mix(b,vec3(1.,.988,.918),.60);return t<.5?d0:t<1.5?d1:t<2.5?b:t<3.5?l3:l4;}
 float bayerG(vec2 p){ivec2 i=ivec2(mod(p,4.));int b[16]=int[16](0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5);return (float(b[i.y*4+i.x])+.5)/16.;}
-void main(){vec3 n=normalize(vN);vec2 rcc=vec2((vW.x-uGRect.x)*uGRect.z,(uGRect.y-vW.z)*uGRect.w)*uCanvas.xy,rdx=dFdx(rcc)/64.,rdy=dFdy(rcc)/64.;vec2 ruv;float rw=ringAt(rcc,ruv);
+void main(){/* phase 08b: a room drawn over the place: the place's ground leaves a hole there */if(vW.x>uHole.x&&vW.x<uHole.z&&vW.z>uHole.y&&vW.z<uHole.w)discard;
+ vec3 n=normalize(vN);vec2 rcc=vec2((vW.x-uGRect.x)*uGRect.z,(uGRect.y-vW.z)*uGRect.w)*uCanvas.xy,rdx=dFdx(rcc)/64.,rdy=dFdy(rcc)/64.;vec2 ruv;float rw=ringAt(rcc,ruv);
  if(vWall.z>0.){/* a wall: between the camera and you it thins out so you stay in view */vec2 nd=vClip.xy/vClip.w;if(vClip.w<uPlC.z-.6&&length((nd-uPlC.xy)*vec2(uAspect,1.))<.26&&bayerG(gl_FragCoord.xy)<.62)discard;
   int m=int((vWall.x<.5?uWallDef:vWall.x)+.5);m=clamp(m,0,11);vec2 tc=abs(n.x)>abs(n.z)?vec2(vW.z,-vW.y):vec2(vW.x,-vW.y);vec2 gg=tc*.5,cell=vec2(float(m%4),float(m/4));
   vec2 aa=(cell+fract(gg))/vec2(4.,3.);float lv=textureGrad(uWallA,aa,dFdx(gg)/vec2(4.,3.),dFdy(gg)/vec2(4.,3.)).r*4.;vec3 a=rampW(uWallCol[m],floor(lv+.5));
@@ -1163,10 +1174,10 @@ precision highp float;in vec2 vUV;uniform sampler2D uTex;out vec4 o;void main(){
   ],
   shadowG: [
     `#version 300 es
-precision highp float;in vec3 aPos;uniform mat4 uVP;${COMMON_GLSL}
-void main(){vec3 p=aPos;p.y+=curveY(p.xz);gl_Position=uVP*vec4(p,1.);}`,
+precision highp float;in vec3 aPos;uniform mat4 uVP;uniform vec3 uOrg;out vec2 vH;${COMMON_GLSL}
+void main(){vec3 p=aPos+uOrg;vH=p.xz;p.y+=curveY(p.xz);gl_Position=uVP*vec4(p,1.);}`,
     `#version 300 es
-precision highp float;out vec4 o;void main(){o=vec4(1.);}`,
+precision highp float;in vec2 vH;uniform vec4 uHole;out vec4 o;void main(){if(vH.x>uHole.x&&vH.x<uHole.z&&vH.y>uHole.y&&vH.y<uHole.w)discard;o=vec4(1.);}`,
   ],
   sky: [
     `#version 300 es
@@ -1201,10 +1212,10 @@ precision highp float;in vec3 aPos;in float aShore;layout(location=2) in vec2 aF
 void main(){vec3 p=aPos;p.y+=curveY(p.xz);vW=p;vS=aShore;vF=aFlow;vDK=aDK;gl_Position=uVP*vec4(p,1.);}`,
     `#version 300 es
 precision highp float;in vec3 vW;in float vS;in vec2 vF;in vec2 vDK;out vec4 o;uniform sampler2D uRefl;uniform vec2 uRes;uniform vec3 uDeep,uShallow,uSkyR;uniform float uReflK,uRip,uFoam,uGlint,uLevel,uCaus,uClar;
-uniform vec3 uKD[9],uKS[9];uniform vec4 uKA[9],uKB[9];uniform vec4 uFish[4];uniform vec4 uRings[8];uniform sampler2D uShore;uniform vec3 uShoreR;${LIGHT_GLSL}
+uniform vec3 uKD[9],uKS[9];uniform vec4 uKA[9],uKB[9];uniform vec4 uFish[4];uniform vec4 uRings[8];uniform sampler2D uShore;uniform vec3 uShoreR;uniform vec4 uHole;${LIGHT_GLSL}
 /* sunlight focused by the ripples onto the bed: thin bright lines that wander */
 float caust(vec2 p,float t){vec2 q=p+vec2(lnoise(p*.7+t*.21),lnoise(p.yx*.7-t*.17))*1.6;float a=sin(q.x*4.1+t*.9)+sin(q.y*3.7-t*.7)+sin((q.x+q.y)*2.9+t*.5);return pow(clamp(1.-abs(a)*.42,0.,1.),5.);}
-void main(){float t=uTime*.001;int K=int(vDK.y+.5);vec4 ka=uKA[K],kb=uKB[K];float dep=clamp(vDK.x,0.,1.);
+void main(){if(vW.x>uHole.x&&vW.x<uHole.z&&vW.z>uHole.y&&vW.z<uHole.w)discard;float t=uTime*.001;int K=int(vDK.y+.5);vec4 ka=uKA[K],kb=uKB[K];float dep=clamp(vDK.x,0.,1.);
  vec2 wp=floor(vW.xz*16.)/16.;vec2 w=wp-vF*t*1.4;float flowing=clamp(length(vF),0.,1.);float rk=ka.w*uRip;
  /* v31: fill to the curved shoreline, lapping a little in still water */
  float vS2=vS;if(uShoreR.z>.5){vec2 su=(wp+1./32.)*uShoreR.xy;float sf=(su.x>0.&&su.y>0.&&su.x<1.&&su.y<1.)?texture(uShore,su).r:1.;float lap=(1.-flowing)*.016*sin(t*1.2+dot(wp,vec2(2.3,1.7)));if(sf<.5+lap)discard;vS2=max(vS,1.-smoothstep(.5,.68,sf-lap));}
@@ -1268,8 +1279,8 @@ void main(){vec2 b=aI.xy;float kind=aCol.x,h=aI.z*uHK*(uCut.z>0.?smoothstep(uCut
  float bend=y*y;vec3 p=vec3(b.x,0.,b.y)+uRight*((aC.x-.5)*wid*(1.-y*(kind>1.5&&kind<2.5?.3:1.)));p.x+=(sw*.9+push.x)*bend*h;p.z+=(sw*.25+push.y)*bend*h;p.y=aCol.z+y*h*(1.-pu*.6);
  p.y+=curveY(p.xz);vW=p;vY=y;vK=vec4(kind,aCol.y,aCol.w,gust);gl_Position=uVP*vec4(p,1.);}`,
     `#version 300 es
-precision highp float;in vec4 vK;in vec3 vW;in float vY;out vec4 o;uniform vec3 uGlo,uGhi;uniform vec3 uFlw[4];uniform float uFlwGlow;${LIGHT_GLSL}
-void main(){float kind=vK.x,rn=vK.y,tint=vK.z;vec3 c=mix(uGlo,uGhi,vY)*(.86+rn*.28);vec3 dry=vec3(.78,.7,.38)*mix(.72,1.05,vY);
+precision highp float;in vec4 vK;in vec3 vW;in float vY;out vec4 o;uniform vec3 uGlo,uGhi;uniform vec3 uFlw[4];uniform float uFlwGlow;uniform vec4 uHole;${LIGHT_GLSL}
+void main(){if(vW.x>uHole.x&&vW.x<uHole.z&&vW.z>uHole.y&&vW.z<uHole.w)discard;float kind=vK.x,rn=vK.y,tint=vK.z;vec3 c=mix(uGlo,uGhi,vY)*(.86+rn*.28);vec3 dry=vec3(.78,.7,.38)*mix(.72,1.05,vY);
  if(tint>0.)c=mix(c,dry,tint*.6);else c*=vec3(1.+tint*.2,1.+tint*.06,1.+tint*.12);
  if(kind>2.5&&kind<3.5)c=mix(c,dry,.75);
  /* alpha 0.4: the flowers in the grass are the place's own (uFlw: four colours; uFlwGlow: they glow at night, as the Spore Forest's caps do) */
@@ -1302,11 +1313,11 @@ provide({ WALK_SHADERS }); /* to-module */
 /* v46: the ground of a scene, built a slice at a time into T. With T = walkRenderer it runs to the end at once (opening a scene);
    with a fresh T it runs a few milliseconds a frame for the view that comes next (prepareMapGround), so walking from one view
    to the next finds everything ready: the textures go up to the card in strips, the mesh and water are built in slices */
-function* buildGroundMeshSteps(sc, G, T) {
+function* buildGroundMeshSteps(sc, G, T, bare) {
   const gl = gpuState.gl,
     W = sc.w,
     H = sc.h,
-    P = GROUND_BORDER_M,
+    P = bare ? 0 : GROUND_BORDER_M /* phase 08b: a room's floor over its place: the room alone, no land round it */,
     res = 0.5,
     ter = (x, z) => {
       const i = Math.floor(x),
@@ -1669,7 +1680,7 @@ function* buildGroundMeshSteps(sc, G, T) {
     fnx = Math.round((fx1 - fx0) / R),
     fnz = Math.round((fz1 - fz0) / R),
     fb = nv;
-  for (let j = 0; j <= fnz; j++) {
+  for (let j = 0; j <= fnz && !bare; j++) {
     if (j % 12 === 11) yield;
     for (let i = 0; i <= fnx; i++) {
       const x = fx0 + i * R,
@@ -1682,7 +1693,7 @@ function* buildGroundMeshSteps(sc, G, T) {
       vtx(x, h, z, n[0], n[1], n[2], 0, 0, 0);
     }
   }
-  for (let j = 0; j < fnz; j++)
+  for (let j = 0; j < fnz && !bare; j++)
     for (let i = 0; i < fnx; i++) {
       const x = fx0 + i * R,
         z = fz0 + j * R;
@@ -5405,9 +5416,7 @@ export function shadowPass(items0, sun, C) {
     gl.uniformMatrix4fv(p.U.uVP, false, SH.vp);
     gl.uniform3f(p.U.uCurve, ca[0], ca[1], ca[2]);
     gl.uniform1f(p.U.uCurveD0, ca[3]);
-    gl.bindVertexArray(walkRenderer.mesh.vao);
-    gl.drawElements(gl.TRIANGLES, walkRenderer.mesh.n, gl.UNSIGNED_INT, 0);
-    gl.bindVertexArray(null);
+    drawGroundDepth(p, walkView.sc);
   }
   drawShadowSprites(SH, items, sun, ca);
   if (typeof drawBuildingShadows === 'function') drawBuildingShadows(SH, items);
@@ -5451,9 +5460,7 @@ function lampShadowMaps(items, X, dark) {
       gl.uniformMatrix4fv(p.U.uVP, false, SH.vp);
       gl.uniform3f(p.U.uCurve, ca[0], ca[1], ca[2]);
       gl.uniform1f(p.U.uCurveD0, ca[3]);
-      gl.bindVertexArray(walkRenderer.mesh.vao);
-      gl.drawElements(gl.TRIANGLES, walkRenderer.mesh.n, gl.UNSIGNED_INT, 0);
-      gl.bindVertexArray(null);
+      drawGroundDepth(p, walkView.sc);
     }
     drawShadowSprites(SH, near, null, ca, l.p);
     if (typeof drawBuildingShadows === 'function') drawBuildingShadows(SH, near);
@@ -5575,6 +5582,7 @@ function fittedShadowPass(items0, sun, C) {
         walkRenderer.itemGen || 0,
         solid ? 1 : 0,
         walkRenderer.mesh && walkRenderer.mesh.n,
+        roomFloorOf(sc) ? sc.roomScene.id : '',
         sc.heights ? sc.heights.length : 0,
         typeof buildingsOn === 'function' && buildingsOn() ? 1 : 0,
         typeof buildingState !== 'undefined' ? buildingState.made || 0 : 0,
@@ -5654,9 +5662,7 @@ function fittedShadowPass(items0, sun, C) {
     gl.useProgram(p.p);
     gl.uniformMatrix4fv(p.U.uVP, false, SH.vp);
     curve(p);
-    gl.bindVertexArray(walkRenderer.mesh.vao);
-    gl.drawElements(gl.TRIANGLES, walkRenderer.mesh.n, gl.UNSIGNED_INT, 0);
-    gl.bindVertexArray(null);
+    drawGroundDepth(p, sc);
     sprites(stat);
     if (typeof drawBuildingShadows === 'function') drawBuildingShadows(SH, stat);
     if (typeof drawStructureShadows === 'function') drawStructureShadows(SH);
@@ -5810,9 +5816,127 @@ export function drawGround(C, X) {
   gl.enable(gl.DEPTH_TEST);
   gl.depthFunc(gl.LEQUAL);
   gl.disable(gl.BLEND);
+  if (U.uOrg) gl.uniform3f(U.uOrg, 0, 0, 0);
+  if (U.uHole) gl.uniform4fv(U.uHole, roomHole(sc));
   gl.bindVertexArray(walkRenderer.mesh.vao);
   gl.drawElements(gl.TRIANGLES, walkRenderer.mesh.n, gl.UNSIGNED_INT, 0);
+  /* phase 08b: the room's own floor and walls where the place left its hole: the room's picture, no near ring, no
+     shore, no shade from the place's ground */
+  const RT = roomFloorOf(sc);
+  if (RT) {
+    const R = sc.roomRect;
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, RT.gtex);
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, RT.ftex);
+    gl.activeTexture(gl.TEXTURE2);
+    gl.bindTexture(gl.TEXTURE_2D, RT.ctex);
+    gl.activeTexture(gl.TEXTURE3);
+    gl.bindTexture(gl.TEXTURE_2D, RT.gntex || gpuState.flatN);
+    gl.uniform4f(U.uGRect, R[0], R[1] + R[3], 1 / R[2], 1 / R[3]);
+    if (U.uCanvas) gl.uniform3f(U.uCanvas, 1, 1, 0);
+    if (U.uShoreR) gl.uniform3f(U.uShoreR, 0, 0, 0);
+    if (U.uGAOR) gl.uniform3f(U.uGAOR, 0, 0, 0);
+    if (U.uOrg) gl.uniform3f(U.uOrg, R[0], sc.roomFloor || 0, R[1]);
+    if (U.uHole) gl.uniform4f(U.uHole, 0, 0, 0, 0);
+    gl.bindVertexArray(RT.mesh.vao);
+    gl.drawElements(gl.TRIANGLES, RT.mesh.n, gl.UNSIGNED_INT, 0);
+  }
   gl.bindVertexArray(null);
+}
+/* phase 08b: a room over its place (seamless-world.js seamlessRoomMap). The place's ground stays as it is (its picture,
+   its mesh and its near ring are the place's own, nothing is made again); where the room stands it leaves a hole
+   (roomHole: ground, grass, water, their shadows), and the room's floor and walls, a small ground of their own built
+   from the room alone (sc.roomScene, in the room's own metres), are drawn there at the floor's height */
+function roomHole(sc) {
+  const R = sc && sc.roomScene && sc.roomRect;
+  return R ? [R[0], R[1], R[0] + R[2], R[1] + R[3]] : [0, 0, 0, 0];
+}
+function roomFloorOf(sc) {
+  const RS = sc && sc.roomScene,
+    T = RS && walkRenderer.roomFloors && walkRenderer.roomFloors.get(RS.id);
+  return T && T.mesh ? T : null;
+}
+/* the ground and its walls into a depth map (the shadowG program in use): the place's with its hole, then the room's */
+function drawGroundDepth(p, sc) {
+  const gl = gpuState.gl;
+  if (p.U.uOrg) gl.uniform3f(p.U.uOrg, 0, 0, 0);
+  if (p.U.uHole) gl.uniform4fv(p.U.uHole, roomHole(sc));
+  gl.bindVertexArray(walkRenderer.mesh.vao);
+  gl.drawElements(gl.TRIANGLES, walkRenderer.mesh.n, gl.UNSIGNED_INT, 0);
+  const RT = roomFloorOf(sc);
+  if (RT) {
+    const R = sc.roomRect;
+    if (p.U.uOrg) gl.uniform3f(p.U.uOrg, R[0], sc.roomFloor || 0, R[1]);
+    if (p.U.uHole) gl.uniform4f(p.U.uHole, 0, 0, 0, 0);
+    gl.bindVertexArray(RT.mesh.vao);
+    gl.drawElements(gl.TRIANGLES, RT.mesh.n, gl.UNSIGNED_INT, 0);
+  }
+  gl.bindVertexArray(null);
+}
+/* is the room's floor ready to show? If not, get it ready: its picture painted (at the near ring's size: it is seen up
+   close), then its mesh built on the card (a room is small: at once). Rooms you were in lately are kept (three) */
+const ROOM_FLOORS_KEPT = 3;
+function roomFloorReady(RS, pr = -5) {
+  if (!RS || !walkRenderer.on || !gpuState.gl) return false;
+  const M = walkRenderer.roomFloors || (walkRenderer.roomFloors = new Map());
+  if (M.has(RS.id)) return true;
+  const TP = bigTilesOn() ? 32 : 16,
+    key = groundKey(RS) + '|' + TP,
+    G = ROOM_PICTURES.get(key);
+  if (!G) {
+    if (!ROOM_PICTURES_PENDING.has(key)) {
+      const p = paintRoomFloor(RS, TP, pr)
+        .then(g => {
+          ROOM_PICTURES.set(key, g);
+          while (ROOM_PICTURES.size > ROOM_FLOORS_KEPT) ROOM_PICTURES.delete(ROOM_PICTURES.keys().next().value);
+        })
+        .catch(e => {
+          if (typeof debugLog !== 'undefined') debugLog.add('webgl', 'room floor: ' + ((e && e.message) || e));
+        })
+        .finally(() => ROOM_PICTURES_PENDING.delete(key));
+      ROOM_PICTURES_PENDING.set(key, p);
+    }
+    return false;
+  }
+  const T = {},
+    it = buildGroundMeshSteps(RS, G, T, true);
+  let r = it.next();
+  while (!r.done) r = it.next();
+  M.set(RS.id, T);
+  while (M.size > ROOM_FLOORS_KEPT) {
+    const k0 = M.keys().next().value;
+    freeMapCacheEntry(M.get(k0));
+    M.delete(k0);
+  }
+  return true;
+}
+const ROOM_PICTURES = new Map(),
+  ROOM_PICTURES_PENDING = new Map();
+async function paintRoomFloor(RS, TP, pr) {
+  const P = GROUND_BORDER_M,
+    it =
+      typeof paintGroundRect === 'function'
+        ? paintGroundRect(RS, { TP, rect: [P, P, RS.w, RS.h], margin: 0, pr })
+        : paintGroundSteps(RS, { TP, rect: [P, P, RS.w, RS.h], margin: 0 });
+  let r,
+    t0 = performance.now();
+  for (;;) {
+    r = it.next();
+    if (r.done) break;
+    if (r.value === PAINT_WORKER_WAIT) {
+      await waitForPaintWorker();
+      t0 = performance.now();
+      continue;
+    }
+    if (performance.now() - t0 > 8) {
+      await new Promise(res => setTimeout(res, 0));
+      t0 = performance.now();
+    }
+  }
+  const g = { width: r.value.w, height: r.value.h, _px: new Uint8Array(r.value.px.buffer) };
+  g._nrm = r.value.nrm;
+  return g;
 }
 /* where you walked through the grass lately (16 spots, the blades spring back over four seconds) */
 function grassTrail() {
@@ -5902,6 +6026,7 @@ export function drawGrass(C, X) {
     U = p.U,
     sc = walkView.sc,
     P = walkView.pl;
+  if (U.uHole) gl.uniform4fv(U.uHole, roomHole(sc));
   if (U['uFlw[0]'] || U.uFlw) {
     const F = mapFlowers(sc),
       loc = U.uFlw || U['uFlw[0]'];
@@ -6745,6 +6870,7 @@ export function drawWater(C, X, rw, rh) {
   gl.uniform1f(U.uLevel, walkRenderer.wlevelR ?? walkRenderer.wlevel ?? 0);
   setWaterUniforms(U);
   setShoreUniforms(U, sc);
+  if (U.uHole) gl.uniform4fv(U.uHole, roomHole(sc));
   gl.enable(gl.BLEND);
   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
   gl.depthMask(false);
