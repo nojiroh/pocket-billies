@@ -589,7 +589,7 @@ ACTIONS.links = () => {
 };
 document.addEventListener('focusin', ev => {
   const el = ev.target.closest && ev.target.closest('[data-p],[data-path]');
-  if (el && ev.target.closest('#main'))
+  if (el && ev.target.closest('.pane'))
     noteConnectionsField(el.dataset.p || (el.closest('[data-path]') && el.closest('[data-path]').dataset.path));
 });
 document.addEventListener('keydown', ev => {
