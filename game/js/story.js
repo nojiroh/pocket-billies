@@ -10,8 +10,8 @@ import { closeModal, modal, notice, provide, render, selfTest, showPendingWindow
 import { $, clamp } from './util.js';
 import { LOCATION_BY_ID, RULES, SPECIES, TRAINERS, trainersAt } from './game-data.js';
 import { encountersHere, healAll, today } from './logic/rules.js';
-import { setStoryFlag } from './logic/script.js';
 import { startTrainer, startWild } from './logic/battle-engine.js';
+import { setStoryFlag } from './logic/script.js';
 import { activeBattle, escapeHtml, reducedMotion, save, saveData, uiState } from './game-state.js';
 import { dressingRoom } from './dressing-room.js';
 import { baseMapId, walkView, walkablePointNear } from './walk-view.js';

@@ -8,9 +8,9 @@ import { expose } from './test-globals.js';
 import { provide } from './hooks.js';
 import { TEST_BOOT } from './test-boot.js';
 import { DATA_WARN, RULES, SPECIES, START_NODE, gameData } from './game-data.js';
-import { applyStoryPreset } from './logic/script.js';
 import { SAVE_NEW_MSG, SAVE_OLD_MSG, newSave } from './logic/saves.js';
 import { battleStageKey } from './logic/battle-engine.js';
+import { applyStoryPreset } from './logic/script.js';
 import { loadAllMaps, loadMapsAhead, watchMapsAhead } from './map-files.js';
 import {
   FIXTURE,

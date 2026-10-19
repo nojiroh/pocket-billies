@@ -86,7 +86,6 @@ import {
   xpFor,
 } from './logic/rules.js';
 import { TOAST_MS, toastAdd, toastItem, toastTime } from './logic/messages.js';
-import { setStoryFlag } from './logic/script.js';
 import { pbFloat, pbInboxDot, pbInboxPop } from './ui-kit.js';
 import { newSaveKeepingPreferences } from './logic/saves.js';
 import {
@@ -101,6 +100,7 @@ import {
   runTurn,
   startWild,
 } from './logic/battle-engine.js';
+import { setStoryFlag } from './logic/script.js';
 import {
   activeBattle,
   escapeHtml,
