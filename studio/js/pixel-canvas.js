@@ -57,6 +57,7 @@ expose({
   imageOf: [() => imageOf],
   pictureImage: [() => pictureImage],
   pixelCanvas: [() => pixelCanvas, v => (pixelCanvas = v)],
+  pixelCanvasAct: [() => pixelCanvasAct, v => (pixelCanvasAct = v)],
   pixelCanvasBox: [() => pixelCanvasBox, v => (pixelCanvasBox = v)],
   pixelCanvasColor: [() => pixelCanvasColor, v => (pixelCanvasColor = v)],
   pixelCanvasDeselect: [() => pixelCanvasDeselect, v => (pixelCanvasDeselect = v)],
@@ -96,6 +97,7 @@ export function pixelCanvas(stage, o) {
     over: stage.querySelector('.pc-over'),
     tool: o.tool || 'pen',
     color: o.color || '#2A1E2E',
+    color2: '#FFFFFF' /* X swaps it with the colour */,
     zoom: 0,
     showGrid: true,
     stroke: null,
@@ -177,12 +179,12 @@ function pixelCanvasPanelSync(P) {
   );
   r.querySelectorAll('[data-pc=sw]').forEach(e => e.classList.toggle('on', e.dataset.c.toUpperCase() === P.color));
 }
-export function pixelCanvasOnion(P, on = !P.showOnion) {
+function pixelCanvasOnion(P, on = !P.showOnion) {
   P.showOnion = !!on;
   drawPixelCanvas(P);
 }
 /* a symmetry mode, or the next one */
-export function pixelCanvasSymmetry(P, mode) {
+function pixelCanvasSymmetry(P, mode) {
   const ks = PIXEL_SYMMETRY.map(m => m[0]);
   P.symMode = mode || ks[(ks.indexOf(P.symMode) + 1) % ks.length];
   drawPixelCanvas(P);
@@ -406,6 +408,27 @@ export function pixelCanvasTransform(P, kind) {
   } else pixelFlip(P.stroke.work, box, kind === 'flipV' ? 'v' : 'h');
   strokeEnd(P);
 }
+/* what a key does (logic/pixel-ops.js PIXEL_KEYS): true when the canvas did it */
+export function pixelCanvasAct(P, a) {
+  if (!a) return false;
+  if (a.startsWith('tool:')) pixelCanvasTool(P, a.slice(5));
+  else if (a.startsWith('zoom:')) pixelCanvasZoom(P, +a.slice(5));
+  else if (a === 'zoomIn' || a === 'zoomOut') pixelCanvasZoom(P, pixelZoomNext(P.zoom, a === 'zoomIn' ? 1 : -1));
+  else if (a === 'zoomFit') pixelCanvasZoom(P, pixelCanvasFit(P, 1, 32));
+  else if (a === 'flipH' || a === 'flipV' || a === 'rotate') pixelCanvasTransform(P, a);
+  else if (a === 'symmetry') pixelCanvasSymmetry(P);
+  else if (a === 'lock') pixelCanvasLock(P);
+  else if (a === 'onion') pixelCanvasOnion(P);
+  else if (a === 'grid') {
+    P.showGrid = !P.showGrid;
+    drawPixelCanvas(P);
+  } else if (a === 'swap') {
+    const c = P.color;
+    pixelCanvasColor(P, P.color2 || '#FFFFFF');
+    P.color2 = c;
+  } else return false;
+  return true;
+}
 export function pixelCanvasDeselect(P) {
   if (!P.sel) return false;
   P.sel = null;
@@ -420,7 +443,7 @@ function gamePalette() {
   return gamePaletteMemo.colors;
 }
 /* locked to the palette: a colour becomes its nearest palette shade */
-export function pixelCanvasLock(P, on = !P.lock) {
+function pixelCanvasLock(P, on = !P.lock) {
   P.lock = !!on && gamePalette().length > 0;
   if (P.lock) pixelCanvasColor(P, P.color);
   drawPixelCanvas(P);
@@ -447,7 +470,7 @@ function bindPixelCanvasEvents(P) {
     const [x, y] = pixelCanvasPoint(P, ev);
     P.hoverAt = [x, y];
     if (P.o.hostTool && P.o.hostTool(P, P.tool, x, y)) return;
-    if (P.tool === 'pick') {
+    if (P.tool === 'pick' || ev.altKey) {
       const d = pixelGet(c.getContext('2d').getImageData(0, 0, c.width, c.height), x, y);
       if (d && d[3]) pixelCanvasColor(P, pixelHex(d[0], d[1], d[2]));
       return;

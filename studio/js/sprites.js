@@ -12,21 +12,19 @@ import { makeCanvas } from '../../game/js/art.js';
 import { animFor } from '../../game/js/body-plan-animation.js';
 import { coatAtlas, drawRig, rigPose, setCoatRigData } from '../../game/js/skeleton-rig.js';
 import { escapeHtml } from './game-stand-ins.js';
-import { pixelZoomNext } from '../../game/js/logic/pixel-ops.js';
+import { pixelKeyAction, pixelZoomNext } from '../../game/js/logic/pixel-ops.js';
 import { ask, redo, render, speciesName, studioState, toast, undo, updateTopBar } from './studio-app.js';
 import {
   artStep,
   drawPixelCanvas,
   pictureImage,
   pixelCanvas,
+  pixelCanvasAct,
   pixelCanvasColor,
   pixelCanvasDeselect,
   pixelCanvasFit,
-  pixelCanvasLock,
-  pixelCanvasOnion,
   pixelCanvasPanel,
   pixelCanvasPanelHTML,
-  pixelCanvasSymmetry,
   pixelCanvasTool,
   pixelCanvasTransform,
   pixelCanvasZoom,
@@ -716,34 +714,15 @@ function pixelEditorKeys(ev) {
     return;
   }
   if (ev.target.closest('input')) return;
-  const k = ev.key.toLowerCase(),
-    mod = ev.ctrlKey || ev.metaKey;
-  if (mod && k === 'z') {
-    ev.preventDefault();
-    ev.shiftKey ? redoPixels() : undoPixels();
-    return;
-  }
-  if (mod && k === 'y') {
-    ev.preventDefault();
-    redoPixels();
-    return;
-  }
-  if (mod) return;
-  const T = { p: 'pen', b: 'pen', e: 'erase', f: 'fill', g: 'fill', i: 'pick', l: 'line', m: 'select' },
-    P = pixelEditor.pc;
-  if (!P) return;
-  const X = { h: 'flipH', v: 'flipV', r: 'rotate' };
-  if (ev.shiftKey && X[k]) pixelCanvasTransform(P, X[k]);
-  else if (k === 'y') pixelCanvasSymmetry(P);
-  else if (k === 'k') pixelCanvasLock(P);
-  else if (k === 'o') pixelCanvasOnion(P);
-  else if (T[k]) pixelCanvasTool(P, T[k]);
-  else if (k === '+' || k === '=') {
-    pixelCanvasZoom(P, pixelZoomNext(P.zoom, 1));
-  } else if (k === '-') pixelCanvasZoom(P, pixelZoomNext(P.zoom, -1));
-  else if (k === 'escape') {
+  const P = pixelEditor.pc,
+    a = pixelKeyAction(ev);
+  if (!P || !a) return;
+  ev.preventDefault();
+  if (a === 'undo') undoPixels();
+  else if (a === 'redo') redoPixels();
+  else if (a === 'deselect') {
     if (pixelCanvasDeselect(P)) return;
     $('#modal').innerHTML = '';
     render();
-  }
+  } else pixelCanvasAct(P, a);
 }
