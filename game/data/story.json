@@ -2,7 +2,6 @@
  "about": "Project Story: the story layer's own data. flags: every story flag the game keeps in saveData.story, and what it means. patterns: flags made from an id. kept: the story's own records in the same object (not flags). speakers: the names a script may write before a line, and whose portrait and name they stand for. quests: each quest's stages in order. presets: start points for ?story=name (test runs only): place, story flags, trainers beaten (with their badges), coins, items, team.",
  "flags": {
   "rival0": "how Blake's first battle went: win, lose or skip (story.js storyAfterRival)",
-  "copperleafNote": "the note that Hazel's lab moved to Copperleaf has been read (story.js storyMovedCheck, ui.js; legacy, goes in S2)",
   "askLongGrass": "Hazel told you your things scattered along Tallgrass Meadow (story.js storyAfterRival; set, read nowhere yet)",
   "ending": "the last clue: the story's last stage (story.js storyEnding, lore.js loreStage)",
   "flights": "airship flights taken, a count (airship.js)",
@@ -36,7 +35,7 @@
   "after-opening": {
    "about": "Blake's first battle won, in Copperleaf, before anyone else is met",
    "place": "copperleaf",
-   "flags": {"rival0":"win","met_blake0":1,"copperleafNote":1},
+   "flags": {"rival0":"win","met_blake0":1},
    "beaten": ["blake0"],
    "team": [
     {"sp":"musk0","lvl":6}
@@ -45,7 +44,7 @@
   "before-cass": {
    "about": "every badge and a team near level 55, at the pressing plant where Cass waits",
    "place": "vinyl_works",
-   "flags": {"rival0":"win","met_blake0":1,"met_chad":1,"met_chad2":1,"met_chad3":1,"copperleafNote":1},
+   "flags": {"rival0":"win","met_blake0":1,"met_chad":1,"met_chad2":1,"met_chad3":1},
    "beaten": ["blake0","chad","chad2","chad3","crude","markdown","marina","alta","poppy","vault","morel","carat"],
    "coins": {"gold":3},
    "team": [

@@ -6,9 +6,9 @@
    battle. saveData.story remembers which scenes you have seen. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { closeModal, modal, notice, provide, render, selfTest, showPendingWindows } from './hooks.js';
+import { closeModal, modal, provide, render, selfTest, showPendingWindows } from './hooks.js';
 import { $, clamp } from './util.js';
-import { LOCATION_BY_ID, RULES, SPECIES, TRAINERS, trainersAt } from './game-data.js';
+import { RULES, SPECIES, TRAINERS, trainersAt } from './game-data.js';
 import { encountersHere, healAll, today } from './logic/rules.js';
 import { startTrainer, startWild } from './logic/battle-engine.js';
 import { setStoryFlag } from './logic/script.js';
@@ -47,7 +47,6 @@ expose({
   storyCheck: [() => storyCheck, v => (storyCheck = v)],
   storyEnding: [() => storyEnding, v => (storyEnding = v)],
   storyFlags: [() => storyFlags, v => ((storyFlags = v), provide({ storyFlags }))],
-  storyMovedCheck: [() => storyMovedCheck, v => (storyMovedCheck = v)],
   storyRivalBattle: [() => storyRivalBattle, v => (storyRivalBattle = v)],
   storyState: [() => storyState],
   storyWorldOK: [() => storyWorldOK, v => (storyWorldOK = v)],
@@ -287,34 +286,6 @@ export async function personTalk(P) {
   save();
   if (lines.length && typeof talk === 'function') await talk(lines.map(l => [P.who, l]));
 }
-/* alpha 0.4: a game begun before Copperleaf: the lab and your room have moved, and you are told once */
-export function storyMovedCheck() {
-  if (
-    !saveData.started ||
-    activeBattle ||
-    uiState.modal ||
-    uiState.title ||
-    talkBox.on ||
-    (typeof cutscene !== 'undefined' && cutscene.on) ||
-    (typeof selfTest !== 'undefined' && selfTest.on) ||
-    uiState.bench
-  )
-    return;
-  const F = storyFlags();
-  if (F.copperleafNote) return;
-  if (!LOCATION_BY_ID.copperleaf) return;
-  /* phase 06: a notice, not a choice: it waits behind the dot on the portrait, and counts as seen once read */
-  notice({
-    id: 'copperleaf-note',
-    title: 'Copperleaf Town',
-    html: '<p>Professor Hazel has moved her lab to Copperleaf Town, the hamlet up Route 1 · Hedgerow Lane, north of Marigold Town. Your room went with her: it is in Granny Juniper’s cottage there now, among the beehives.</p><p class="note">Marigold Town keeps its shop and its clinic. Copperleaf has the swing.</p>',
-    onRead: () => {
-      setStoryFlag('copperleafNote');
-      save();
-    },
-  });
-}
-
 /* ================= v47: BLAKE'S FIRST BATTLE, AND WHAT COMES AFTER =================
    The opening ends with Blake wanting a battle (cutscene.js); it starts as soon as Sundown is back on screen. */
 /* what Blake says when he runs in (the opening's scene, or the step-by-step intro's conversation before the battle) */

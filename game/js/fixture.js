@@ -62,7 +62,7 @@ function fixtureSave() {
   s.buddy = lead.uid;
   for (const m of s.team) s.caught[m.sp] = s.seen[m.sp] = 1;
   /* the people who would stop you to talk have met you already */
-  s.story = { met_chad: 1, met_chad2: 1, copperleafNote: 1, rival0: 1 };
+  s.story = { met_chad: 1, met_chad2: 1, rival0: 1 };
   for (const T of Object.values(TRAINERS)) if (T.intro) s.story['met_' + T.id] = 1;
   return s;
 }
