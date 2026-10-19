@@ -41,13 +41,16 @@ expose({
   numberField: [() => numberField, v => (numberField = v)],
   onField: [() => onField, v => (onField = v)],
   openSection: [() => openSection, v => (openSection = v)],
+  paneRoot: [() => paneRoot],
   peopleOptions: [() => peopleOptions],
   rangeField: [() => rangeField, v => (rangeField = v)],
   readField: [() => readField, v => (readField = v)],
   readPath: [() => readPath, v => setReadPath(v)],
   redo: [() => redo, v => (redo = v)],
   render: [() => render, v => setRender(v)],
+  renderPane: [() => renderPane, v => (renderPane = v)],
   renderSide: [() => renderSide, v => (renderSide = v)],
+  renderingPane: [() => renderingPane, v => (renderingPane = v)],
   restore: [() => restore, v => (restore = v)],
   saveAll: [() => saveAll, v => setSaveAll(v)],
   selectField: [() => selectField, v => (selectField = v)],
@@ -517,14 +520,24 @@ ACTIONS.navFold = d => {
   } catch (e) {}
   renderSide();
 };
+/* studio track ST-1: a section draws into a pane (#main); paneRoot() is the pane being drawn, for afterRender */
+let renderingPane = null;
+export const paneRoot = () => renderingPane || $('#main');
 export function render() {
-  const S = SECTIONS[studioState.sec];
+  renderPane($('#main'), studioState.sec);
+}
+function renderPane(m, sec) {
+  const S = SECTIONS[sec];
   if (!S) return;
-  studioState.after = [];
-  const m = $('#main');
-  m.innerHTML = S();
-  studioState.after.forEach(f => f());
-  mountPreviews(m);
+  renderingPane = m;
+  try {
+    studioState.after = [];
+    m.innerHTML = S();
+    studioState.after.forEach(f => f());
+    mountPreviews(m);
+  } finally {
+    renderingPane = null;
+  }
 }
 /* phase 04d: github.js takes the GitHub route, connections.js redraws the links */
 export function setRender(v) {
@@ -536,10 +549,10 @@ export const afterRender = f => {
 };
 /* ---------- events ---------- */
 document.addEventListener('input', ev => {
-  if (ev.target.closest('#main,#modal,#dlg')) onField(ev);
+  if (ev.target.closest('.pane,#modal,#dlg')) onField(ev);
 });
 document.addEventListener('change', ev => {
-  if (ev.target.closest('#main,#modal,#dlg') && ev.target.dataset.p) {
+  if (ev.target.closest('.pane,#modal,#dlg') && ev.target.dataset.p) {
     onField(ev);
     commit(true);
   }

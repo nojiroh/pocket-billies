@@ -20,6 +20,7 @@ import {
   formatThousands,
   grid,
   numberField,
+  paneRoot,
   readPath,
   render,
   selectField,
@@ -515,7 +516,7 @@ ACTIONS.wAdd = d => {
 };
 function worldPools() {
   const D = studioState.D;
-  afterRender(() => mountPreviews($('#main')));
+  afterRender(() => mountPreviews(paneRoot()));
   return (
     Object.entries(D.pools)
       .map(([k, P]) =>
@@ -554,7 +555,7 @@ const FISHING_WATERS = {
 function worldFishing() {
   const D = studioState.D;
   D.fishing = D.fishing || {};
-  afterRender(() => mountPreviews($('#main')));
+  afterRender(() => mountPreviews(paneRoot()));
   return (
     `<p class="help">Fishing: stand by water on the Walk screen and tap Fish. What bites depends on the kind of water (set in Walk scenes → Kinds of water). Levels are the place’s own wild levels plus these.</p>` +
     Object.entries(FISHING_WATERS)
@@ -600,7 +601,7 @@ ACTIONS.poolDel = async d => {
 };
 function worldEggs() {
   const D = studioState.D;
-  afterRender(() => mountPreviews($('#main')));
+  afterRender(() => mountPreviews(paneRoot()));
   return Object.entries(D.eggs)
     .map(([k, E]) =>
       card(

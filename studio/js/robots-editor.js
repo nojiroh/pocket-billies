@@ -404,7 +404,7 @@ function rbAnimStart() {
   requestAnimationFrame(rbAnimate);
 }
 function rbAnimate(ts) {
-  const cvs = document.querySelectorAll('#main .rb-cv');
+  const cvs = document.querySelectorAll('.pane .rb-cv');
   if (!cvs.length) {
     rbAnim.on = false;
     return;

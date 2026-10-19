@@ -104,7 +104,7 @@ document.addEventListener('keydown', ev => {
     toggleBigViewport(previewViewport.big);
 });
 addEventListener('load', () => {
-  const m = $('#main');
-  if (m) new MutationObserver(() => scanViewports()).observe(m, { childList: true, subtree: true });
+  const seen = new MutationObserver(() => scanViewports());
+  $$('.pane').forEach(m => seen.observe(m, { childList: true, subtree: true }));
   scanViewports();
 });
