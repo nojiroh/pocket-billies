@@ -49,17 +49,14 @@ import { buildGroundMesh, setBuildGroundMesh } from './walk/ground-mesh.js';
 import { setSwapMapCache, setUpdateNearRing, swapMapCache, updateNearRing } from './walk/map-cache.js';
 import { drawWater, reflectionPass, setDrawWater, setReflectionPass } from './walk/water.js';
 import { gatherFrameItems, setGatherFrameItems } from './walk/frame-items.js';
+import { drawBoxFaces, drawSprites, setDrawBoxFaces, setDrawSprites } from './walk/sprites.js';
 import {
-  drawBoxFaces,
   drawGrass,
   drawGround,
-  drawSprites,
   effectsPass,
   mountWalkView,
-  setDrawBoxFaces,
   setDrawGrass,
   setDrawGround,
-  setDrawSprites,
   setEffectsPass,
   setMountWalkView,
   setShadowPass,

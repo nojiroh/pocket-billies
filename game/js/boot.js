@@ -29,7 +29,7 @@ import { mapArtPaths, mapById, walkData, walkView } from './walk-view.js';
 import { gpuState, webgl2Supported } from './engine/webgl.js';
 import { environment } from './environment.js';
 import { walkRenderer } from './walk/walk-state.js';
-import { startTownRise } from './walk-view-gl.js';
+import { startTownRise } from './walk/sprites.js';
 import { seamlessWorld } from './seamless-world.js';
 import { WORLD_ART, worldMapPrepare } from './world-map.js';
 import { WORLD_RELIEF } from './world-map-gl.js';

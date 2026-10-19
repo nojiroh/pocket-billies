@@ -17,7 +17,8 @@ import { COMMON_GLSL, LIGHT_GLSL, ensurePrograms, gpuState, imageTexture } from 
 import { walkRenderer } from './walk/walk-state.js';
 import { useWalkProgram, worldCurveArgs } from './walk/draw-common.js';
 import { setPropLookUniforms, windLeanAt } from './walk/prop-look.js';
-import { addHitTarget, lampLit } from './walk-view-gl.js';
+import { addHitTarget } from './walk/sprites.js';
+import { lampLit } from './walk-view-gl.js';
 import { BUILDING_SHADERS, buildingArt, buildingTextureGrid } from './buildings.js';
 /* eslint-disable no-func-assign */
 expose({
