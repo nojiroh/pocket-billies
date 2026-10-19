@@ -22,7 +22,7 @@ import { filterInto } from '../engine/frame-lists.js';
 import { walkView } from '../walk-view.js';
 import { engineSetting } from '../engine/settings.js';
 import { bindQuad, gpuState, imageTexture, normalize3, renderTarget } from '../engine/webgl.js';
-import { beginLampShadow, beginSunShadow, endShadow } from '../engine/light.js';
+import { beginLampShadow, beginSunShadow, endShadow, frameBlockStale } from '../engine/light.js';
 import { FIXED_RIGHT, walkRenderer } from './walk-state.js';
 import { standingHeightAt } from './heights.js';
 import { setSpriteUniforms, worldCurveArgs } from './draw-common.js';
@@ -132,6 +132,7 @@ export function lampShadowMaps(items, X, dark) {
   X.lights = cand.concat(L.filter(l => !cand.includes(l)));
   X._lp = null;
   X._lc = null;
+  frameBlockStale(X);
   X.lampSh = [];
   const gl = gpuState.gl,
     ca = worldCurveArgs();

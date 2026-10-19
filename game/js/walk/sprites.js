@@ -47,6 +47,7 @@ expose({
   spriteDrawn: [() => spriteDrawn],
   startTownRise: [() => startTownRise, v => (startTownRise = v)],
   townRiseAmount: [() => townRiseAmount, v => (townRiseAmount = v)],
+  useFxProgram: [() => useFxProgram, v => (useFxProgram = v)],
 });
 /* eslint-enable no-func-assign */
 export function setDrawBoxFaces(v) {
@@ -260,12 +261,15 @@ export function drawSprites(C, items, X, hits, labels, PPU) {
   gl.uniform3fv(U.uBack, C.back);
   gl.uniform1f(U.uEmit, 0);
   gl.uniform1f(U.uFade, 1);
+  /* phase 20 C4: the flat things as one group on the fx program, then back to the sprite program once */
+  let fp = null;
   for (const it of items) {
     if (!it.flat || it.vis === false || it.vox) continue; /* phase 09: a flat prop drawn as a model (stepping stones) */
     const T = imageTexture(it.im);
     if (!T) continue;
-    drawFlatItem(it, T, C, X);
+    drawFlatItem((fp = fp || useFxProgram(C, X)), it, T);
   }
+  if (fp) gl.useProgram(p.p);
 }
 /* ---------- buildings in 3D: side walls and a roof top behind the front picture ----------
    Worked out once per picture: where the walls stand at the base, which rows reach each wall (so a gable or an
@@ -441,6 +445,20 @@ export function drawBoxFaces(C, items, X) {
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   }
 }
+/* phase 20 C4: the fx program's camera and light are the same for every blade, clock hand and flat thing in a frame: sent
+   the first time it is bound with this frame's camera and light context, after that it is only switched to (the shadow
+   map units it reads are bound with the same frame's maps by every lit program) */
+function useFxProgram(C, X) {
+  const fp = gpuState.P.fx;
+  if (fp.lastC === C && fp.lastX === X) {
+    gpuState.gl.useProgram(fp.p);
+    return fp;
+  }
+  useWalkProgram('fx', C, X);
+  fp.lastC = C;
+  fp.lastX = X;
+  return fp;
+}
 export function drawRotatingBlades(p, it, b, BT, rot, C, X, lift) {
   const gl = gpuState.gl,
     s = it.mpp,
@@ -451,7 +469,7 @@ export function drawRotatingBlades(p, it, b, BT, rot, C, X, lift) {
     bs = b.w * s,
     c = Math.cos(rot),
     sn = Math.sin(rot),
-    fp = useWalkProgram('fx', C, X);
+    fp = useFxProgram(C, X);
   const R = C.right,
     r2 = [R[0] * c, sn, R[2] * c],
     u2 = [-R[0] * sn, c, -R[2] * sn];
@@ -507,9 +525,8 @@ export function landmarkTilt(P, sc) {
   }
   return best;
 }
-function drawFlatItem(it, T, C, X) {
+function drawFlatItem(fp, it, T) {
   const gl = gpuState.gl,
-    fp = useWalkProgram('fx', C, X),
     U = fp.U,
     s = it.mpp,
     w = it.w * s,
@@ -532,7 +549,6 @@ function drawFlatItem(it, T, C, X) {
   gl.bindTexture(gl.TEXTURE_2D, T.t);
   gl.uniform1i(U.uTex, 0);
   gl.drawArrays(gl.TRIANGLES, 0, 6);
-  gl.useProgram(gpuState.P.sprite.p);
 }
 export function addHitTarget(it, C, hits, labels, PPU) {
   const q = worldToScreen(C, it.x, 0, it.z);

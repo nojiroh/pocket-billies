@@ -11,6 +11,61 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 - Questions waiting for the owner: 
 - Next session starts with: 
 
+### Phase 20 stage C, session C-2 - One light block per frame (C3), flat things and blades (C4) - 2026-10-19
+Plan approved at the start ("Yes, let's go"), after sorting out the branches. Branch `ccr-9d72271f-j72y94`.
+- Branches first (nothing of stage B or C-1 was in main at the start):
+  - Stage B and the A8 decisions had been pushed onto stage A's branch after #39 merged, so no PR showed them.
+    Main had changed walk-view-gl.js since: merged into B with each change put in the game/js/walk/ file its code
+    moved to (the 38 changed lines match main's exactly). Merged as **PR #43**.
+  - C-1 reached main through #45 (its own branch, ported onto the split by another session). My own port of it
+    (#44) merged into B's branch, not main, and is superseded. This session's commits were then replayed onto main
+    by themselves: the 6 code commits applied with no conflict.
+- Changed (one cause per commit):
+  - No-op: LIGHT_GLSL's declarations grouped (samplers and uFol first, then the light values), the sky terms read
+    through `SHV(i)`. The same 54 uniforms before and after.
+  - **C3** `game/js/engine/frame-block.js` (no WebGL): `FRAME_BLOCK_GLSL`, the std140 offsets worked out from that
+    text (2208 bytes), `packFrameBlock` (a light context into the block, with setLightUniforms' values and defaults).
+  - **C3** `quality.frameBlock` (off by default; Studio Quality "One light block per frame"): the 14 lit programs
+    compile with `PB_FRAME_BLOCK` and read the Frame block on binding point 0. setLightUniforms packs a light context
+    and sends it once (one of four slots of one buffer; the reflection's copy takes its own slot) and binds a slot only
+    when another was in use; lampShadowMaps marks a packed context stale. Switching it compiles the lit programs again
+    at the start of the next frame (a stall of a few frames, only then).
+  - **C3** The full test's Shaders step builds each lit program with the block and checks the block's size and each
+    member's offset as the device lays them out (smoke: "27 shaders; 14 with the Frame block"). Smoke's line for the
+    in-game test now shows each step's note.
+  - **C3** Graphics test: the switch off and on at the Lamp square and the Depth corridor (120 steps over 20 settings),
+    kept out of "everything lowest / highest".
+  - **C4** Flat things: one group on the fx program (bound once, the sprite program again once after). Blades and clock
+    hands: the fx program's camera and light sent once per frame and light context, then only switched to.
+- Where the phase file was wrong or I went another way (checked in the code):
+  - `uCurve`/`uCurveD0` are not in the block: only the vertex shaders read them (COMMON_GLSL), and the shadow passes
+    set them before the frame's light context exists. The block is 2208 bytes, not 2224, and has `uShSteps` (the
+    file's layout missed it). No vertex shader declares a light value, so only fragment shaders hold the block.
+  - The file's program list: `shadow`, `shadowG`, `p3dS`, `voxS`, `bshadow` don't take the block (no light code).
+  - C4: blades and clock hands are not moved into a group after the sprites. Each shares a plane with its own picture
+    and with any picture at the same depth (billboards at the same z), where the later draw wins, so moving them
+    would change the look in places. They still switch programs; the light re-send was most of their cost.
+  - The sampler units are still set per program bind (the file says once at link): unchanged here.
+- Risky:
+  - With the switch on, a light context changed after its first lit draw would show last state; only lampShadowMaps
+    changes it, before any lit draw, and it marks it stale. A new caller that changes a context mid-frame must call
+    `frameBlockStale(X)`.
+  - useFxProgram skips the light re-send by the identity of the camera and the light context; both are made new
+    every frame. Code that binds a texture to units 6-13 between lit draws (only setLightUniforms does today) would
+    break it.
+  - Off by default: what the phone draws is unchanged until you switch it on.
+- Verified: after every commit lint, typecheck, unit tests (86 -> 94), check:modules, format:check; check:data and
+  build; smoke 15/15 for every commit touching game/. Off sends exactly what it sent before (setLightUniforms' calls
+  recorded for three light contexts and three program shapes: identical). All programs compile and link in both
+  modes (headless compile only, no drawing). Planted faults fail each new test, and a planted layout fault fails
+  smoke's in-game Shaders step. No headless graphics test was run.
+- Questions waiting for the owner:
+  - Merge this session's PR (C-2 only, from main).
+  - On your phones: the Graphics test's two "One light block per frame" steps (Lamp square, Depth corridor), and does
+    it look the same switched on? If it holds up, it becomes the default and the old path goes (its own commit).
+  - Tags `phase-20a-done` / `phase-20b-done` (and C) once merged?
+- Next session starts with: C5 (light picking: stable keys, a persistent lit set with fades, partial top-k every
+  ~200 ms, view test, hysteresis, `quality.lights` 16 / 8 on phones), or stage D (pixels) if the numbers say so.
 ### Phase 08b-2 - rooms in their own space, drawn at the door - 2026-10-19
 Plan approved at the start (Part B tasks 7, 8 and the doors half of 2). Branch `ccr-4fc4790e-8depsm`, from main at
 d2f9721.

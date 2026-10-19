@@ -66,6 +66,11 @@ kept aside in the browser).
   thousands of times, and the walk view stops making new lists and arrays every frame for the shadow passes, the
   contact shadows, the sprites and the grass, which leaves less for the browser's garbage collector. Nothing looks
   different.
+- Less work per frame (phase 20, stage C, second part): a test switch, Studio → Quality → "One light block per frame"
+  (off for now), sends the frame's light (sun, sky, fog, shadow maps, lamps) to the graphics card once a frame instead
+  of again for each kind of thing drawn; the graphics test compares it off and on at the Lamp square and the Depth
+  corridor. Rugs, lily pads and other flat things are drawn as one group, and windmill sails and clock hands no longer
+  send the light again each. Nothing looks different.
 - New: the **graphics test** (Settings → Help, and the debug menu), about ten minutes on a new test place, the Graphics
   bench. It measures what each graphics setting costs on your device: the 17 Expert dials and five hidden ones, five
   steps each, then everything at its lowest and highest. It ends with a table, costliest first, and Save the report.
