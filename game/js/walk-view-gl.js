@@ -5896,13 +5896,22 @@ function drawGroundDepth(p, sc) {
 /* is the room's floor ready to show? If not, get it ready: its picture painted (at the near ring's size: it is seen up
    close), then its mesh built on the card (a room is small: at once). Rooms you were in lately are kept (three) */
 const ROOM_FLOORS_KEPT = 3;
-export function roomFloorReady(RS, pr = -5) {
+export function roomFloorReady(RS, pr = -5, now = false) {
   if (!RS || !walkRenderer.on || !gpuState.gl) return false;
   const M = walkRenderer.roomFloors || (walkRenderer.roomFloors = new Map());
   if (M.has(RS.id)) return true;
   const TP = bigTilesOn() ? 32 : 16,
     key = groundKey(RS) + '|' + TP,
-    G = ROOM_PICTURES.get(key);
+    P = GROUND_BORDER_M;
+  let G = ROOM_PICTURES.get(key);
+  if (!G && now) {
+    /* you've stood at the door a while (the helper is busy): painted here, now (a room is small) */
+    const it = paintGroundSteps(RS, { TP, rect: [P, P, RS.w, RS.h], margin: 0 });
+    let r = it.next();
+    while (!r.done) r = it.next();
+    G = { width: r.value.w, height: r.value.h, _px: new Uint8Array(r.value.px.buffer), _nrm: r.value.nrm };
+    ROOM_PICTURES.set(key, G);
+  }
   if (!G) {
     if (!ROOM_PICTURES_PENDING.has(key)) {
       const p = paintRoomFloor(RS, TP, pr)

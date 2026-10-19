@@ -136,7 +136,7 @@ import {
 } from './walk-view.js';
 import { engineSetting } from './engine/settings.js';
 import { environment, environmentHint, environmentIcon, environmentLabel } from './environment.js';
-import { mountWalkView, walkRenderer } from './walk-view-gl.js';
+import { mountWalkView, roomFloorReady, walkRenderer } from './walk-view-gl.js';
 import { fishStart } from './fishing.js';
 import {
   seamlessDelta,
@@ -1038,14 +1038,18 @@ function roomStepIn(info, n = 0) {
     uiState.goingIn = null;
     return;
   } /* you walked off, or the view moved on */
+  /* phase 08b: the room's floor is painted in a moment; after 2 s at the door it is painted at once */
   if (!seamlessGetReady(info.view, true, info.door)) {
-    if (typeof walkRenderer !== 'undefined') walkRenderer.prepBoost = Math.max(walkRenderer.prepBoost || 1, 3);
-    /* you're standing at the door: bigger slices */ if (n < (uiState.roomWait || 90)) {
+    if (n < 20) {
       setTimeout(() => roomStepIn(info, n + 1), 100);
       return;
     }
-    info.view = null;
-    if (typeof debugLog !== 'undefined') debugLog.add('scene', `room ${info.id} wasn't ready in 9 s; shown on its own`);
+    const sc = mapById(info.view);
+    if (!sc || !roomFloorReady(sc.roomScene, -5, true)) {
+      uiState.goingIn = null;
+      if (typeof debugLog !== 'undefined') debugLog.add('scene', `room ${info.id}: its floor couldn't be made`);
+      return;
+    }
   }
   uiState.goingIn = null;
   uiState.inside = info;
