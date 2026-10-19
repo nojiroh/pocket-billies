@@ -26,8 +26,33 @@ Do the phases in order. Each phase is one session (or a few for the big ones). E
 | 19 | 19-battle-core | Seeded RNG owned by the battle, own state, two-sided inputs, replay log, effect handlers | 10-18 h | 13, 17 prototype |
 | 20 | 20-renderer-batching | Draw counters, split walk-view-gl.js, uniform block, instancing, battle rigs on GPU, context loss | 15-30 h | 19 |
 | 21 | 21-texture-atlases-and-ktx2 | Atlas pages, build-time normal maps, KTX2 (Basis) with PNG fallback | 10-20 h | 20 |
+| 22 | 22-story-layer | Conditions, dialogue/choices/quests as scripts in data, when/unless, story checks, Studio preview | 12-24 h | 19 (seeded runs), before 15 content |
 
 Rough total: about 190-370 hours at a careful, gated pace (plan first, approvals, tests, tags). These are guesses, not measurements, and are probably too high: the legacy game was built in about six days (file dates run 2026-10-10 to 2026-10-15) with roughly 50 releases. Treat the numbers as upper bounds and recalibrate after phases 01 and 03 using real usage. Phases 00-05 give a stable, modern, fresh base. Look at the game on my phone before starting phase 06.
+
+## What to do next (proposed 2026-10-19, owner to confirm the order)
+1. **Owner decisions, no code:** approve phase 09 batch 1 (and how new props replace old ones); play the phase 17
+   prototype and answer its "Ask me before" list and balance bounds; the phase 19 questions (mid-battle quit,
+   Lullaby turns).
+2. **Finish and tag the phase 17 prototype** (`phase-17-prototype-done`). Phase 19 rewrites the same file, and no phase
+   starts from an untagged state.
+3. **Small, early, separate: the draw counters** (phase 20 task 1). A few hours; gives a phone baseline while the
+   battle work goes on, so phase 20 starts from numbers.
+4. **Phase 19 - battle core** (now with seeded wild encounters).
+5. **Phase 22 - story layer.** Before phase 15's story content is written, so it is written once, in data.
+6. **Phase 20 - renderer** (counters done; batches by count and size, shadow-only casters, sky last, light picking,
+   GPU rigs, context loss), proven by Node data tests and the owner's phone.
+7. **Phase 21 - atlases and KTX2.**
+8. Then phases 15-18 as planned, on top of the handler table and the story layer.
+
+Small jobs that fit between phases (an hour or two each):
+- `docs/KNOWN_ISSUES.md`: risks and bugs with ids (BAT-01, REN-01 ...) and a status, pulled out of HANDOFF, which
+  keeps growing.
+- Two or three playbooks in docs/: add a Billie line, add a map or room, add a move effect (after phase 19).
+- `--check` mode for the generators (`tools/build-*.py`, `build-data.mjs`): regenerate and fail if anything differs.
+- A backup of the save kept on each travel (one previous copy), restored if the save fails to load.
+- Later, content: upper floors and cellars as rooms linked by stairs; a data check that furniture never reaches into
+  walls.
 
 ## What "remove the walking" means
 It means the FITNESS STEP TRACKING (real-world steps driving travel, hatching and pace) is removed. In-game walking with the joystick, the seamless maps and the rooms stay. That is phase 08 (Part A removes steps, Part B improves maps and rooms).
@@ -56,5 +81,7 @@ Priority order: 01, 02, 03, the cheap parts of 04 (.gitignore, CI, README, tooli
 - Live real-time friend battles (18).
 - Who is trusted with a friend battle's result: server replay or clients cross-checking (18; 19 makes either possible).
 - Mid-battle quit behaviour and the Lullaby sleep length (19).
-- The walk-view-gl.js file split (20).
+- The walk-view-gl.js file split (20), and a draw-call budget for phones (20).
+- Story scripts as JSON arrays or `.story` files; a quest journal or not (22).
+- The order in "What to do next".
 - What stays out of the atlases, and UASTC vs ETC1S per kind of picture (21).

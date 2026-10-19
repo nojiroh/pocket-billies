@@ -47,17 +47,35 @@ One uniform buffer (std140) for camera, sun, fog, sky light, the 16 lights and 6
 binding 0 and declared in the shared GLSL chunk. Programs keep only per-object uniforms. Settings read by draws are
 resolved once per frame into this block or a frame table (no `engineSetting` walk inside draw loops).
 
+### 3b. Light picking
+`pickPointLights` (engine/light.js) sorts every lamp every frame. Keep its distance fade; add: skip lamps whose
+sphere is outside the view, a bonus for lamps already lit (no flicker between two lamps), re-ranking about five
+times a second without allocating, and a lower limit on phones (8) since the per-pixel light loop is the real cost.
+
+### 3c. Sky last
+Draw the sky after the opaque scene, at the far plane, so its shader only runs on pixels nothing covered (Luminati
+measured 0.6 ms down to 0.01 ms). Anything opaque that writes no depth moves after the sky.
+
 ### 4. Instanced sprites
 - Static sprites (props drawn as pictures, leaf clumps, decals) are grouped per texture into instance buffers, built
   when a grid cell or scene loads and kept until it unloads. Per instance: position, size, UV rectangle, tint, sway,
   flags (shadow receive, glow, lamp-lit).
 - Moving sprites (people, Billies, NPCs) stay one draw each at first; they are few.
 - Reuse the per-frame item objects instead of creating them each frame.
+- Groups are not the 6 m culling cells as they are: split a place's static sprites into pieces by count and size
+  (split at the median along the longer side until each piece is under a limit), and cull each piece by its box,
+  not a sphere: under a tilted camera a sphere round a flat, wide batch stays "visible" far too long. Luminati's
+  first try with plain fixed chunks raised draw calls; budgets by count and size fixed it.
 - After phase 21 the grouping key becomes the atlas page, so most of a place draws in a handful of calls.
 
 ### 5. Instanced solid props and models
 Props sharing a mesh (solid-props.js, prop-models.js, structures) are drawn with `drawElementsInstanced`, one call
 per mesh per pass (main, shadow, reflection). Per-instance transform and tint.
+
+### 5b. Shadow-only merged casters
+Solid props and building volumes in a piece are baked into one depth-only mesh (positions only), drawn by every depth
+pass: the near and far sun maps, the lamp maps and the reflection. The props themselves stop casting one by one.
+Pocket Billies has more shadow passes than Luminati, where this cut the shadow draws by about a third to a half.
 
 ### 6. Draw order
 Opaque: by program, then texture/atlas page, then roughly front to back. Transparent: back to front, as now. The
@@ -72,23 +90,37 @@ keeps working (it may keep its canvas preview). Portraits are not touched (phase
 A small registry: every GPU resource (programs, buffers, textures, render targets, instance buffers) is created
 through it with a way to rebuild it. On restore, everything rebuilds, the walk view, battle and world map included.
 Listeners are added once. The memory budget counts render targets, ground textures and meshes, not only pictures.
+A replaced resource is freed one frame after its replacement has drawn. Restore runs the same warm-up as loading.
+
+### 9. Warm-up
+New programs (instanced, uniform block, shadow-only) join the parallel precompile list; one or two frames are drawn
+behind the place-load fade; the debug log records "programs compiled after load" (should stay 0 after a tour).
+
+### 10. Proving refactors without pictures
+A Node unit test builds the batches for a fixture place and checks they hold exactly the items the unbatched path
+would draw (same pictures, positions, tints), then snapshots a hash of them. Batching, sorting and atlas changes are
+proven by data, never by headless screenshots.
 
 ## Tasks
-1. Counters in the debug log and the graphics test (section 1). The owner records a baseline on their phone.
+1. Counters in the debug log and the graphics test (section 1), including shadow-pass draws, lights lit and programs
+   compiled after load. The owner records a baseline on their phone. (Can be done early, on its own: see ROADMAP.)
+1b. The batch equivalence test harness (section 10), before any batching.
 2. Split walk-view-gl.js (section 2), moves only.
 3. Per-frame uniform block and per-frame settings (section 3).
 4. Reuse per-frame item objects.
 5. Instanced static sprites (section 4).
 6. Instanced solid props and models (section 5).
-7. Draw order (section 6).
+6b. Shadow-only merged casters (section 5b).
+7. Draw order (section 6); sky last (3c); light picking (3b).
 8. Battle rigs on the GPU (section 7).
 9. Context loss and resource registry (section 8); a debug-menu button that forces a context loss
-   (`WEBGL_lose_context`) to test it.
+   (`WEBGL_lose_context`) to test it. Warm-up (section 9).
 10. The owner runs the graphics test and the diagnostics test after tasks 3, 5, 6 and 8; numbers go into HANDOFF.
 
 ## Ask me before
 - The file list for the split (task 2).
 - Whether instanced sprites may change shadow or sway details where matching them exactly would cost much.
+- A written budget for phones (for example 150 draw calls per frame including shadow passes), once the baseline is in.
 
 ## Done when
 All tiers pass with no headless graphics runs at full settings; the owner's graphics test shows fewer draw calls and

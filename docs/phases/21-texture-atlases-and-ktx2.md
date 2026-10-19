@@ -43,7 +43,8 @@ thing people edit; atlases and KTX2 files are built from them.
 ### 3. Normal maps at build time
 A compressed texture can't be read back to make normal maps. Move the normal-map code into the build (one copy,
 removing the worker/main-thread duplicate): the build writes a normal-map page next to each atlas page, compressed
-the same way. In dev, single pictures keep the run-time path.
+the same way. In dev, single pictures keep the run-time path. Where the guess from brightness is wrong, an artist
+can add an optional height picture next to the original; the manifest stores a normal strength per picture.
 
 ### 4. Memory budget
 The budget counts compressed sizes (and, from phase 20, render targets and meshes). The debug log reports texture MB

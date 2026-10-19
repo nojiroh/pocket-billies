@@ -50,7 +50,10 @@ log, replays, `onX` event handlers on each effect), pkmn/engine (fixed RNG for r
   seed for normal battles, a given one for tests, replays and friend battles.
 - Every random draw in `logic/` battle code goes through `b.rng`. The battle screen's cosmetic randomness gets its own
   `fxRandom()` that never touches `b.rng`, so animations can't shift the results.
-- Out of scope: random draws outside battles (encounters, uids in `rules.js`, `saves.js`). They stay on `random()`.
+- Wild encounters get a seed too: from the place id plus an encounter counter kept in the save (idea from
+  Luminati's creature zones). Which Billie appears, its level and the battle seed then come from that, so a wild
+  battle in a debug log can be replayed like a trainer battle. Catch odds and ball strength stay data.
+- Out of scope: other random draws outside battles (uids in `rules.js`, `saves.js`). They stay on `random()`.
 
 ### 2. The battle works on its own state
 - `createBattle({ sides, seed, rules, kind })` copies each fighter into a plain battle object (JSON-safe: no getters,
@@ -116,6 +119,7 @@ Order matters: refactors first with results unchanged, then the one commit that 
 8. **Seeded PRNG** (`prng.js`, `b.rng`, `fxRandom` for the screen). This changes every random result: regenerate the
    golden record in this commit and say so in the message. Check the robot simulation's win rates stay within the
    bounds agreed in phase 17.
+8b. **Seeded wild encounters** (place id + counter, section 1).
 9. **Log and replay** (`b.log`, `replayBattle`, version and rules hash). Event text moves to `battle.js` / `i18n.js`.
 10. **Mid-battle quit**, as the owner decides (see "Ask me before").
 11. **Fix the Lullaby text** or the rule, as the owner decides (rules.json says sleep lasts 2-4 turns, the move text
