@@ -911,9 +911,30 @@ export interface RobotPart {
     imgB?: string;
     head?: string;
     headB?: string;
+    /** studio track ST-5: where its picture joins, per view; the rest is worked out from the picture's size */
+    joints?: RobotJoints;
+    /** a torso's head: where its picture joins the neck */
+    headJoints?: RobotJoints;
+    /** how far it may turn, [least, most] degrees (the workbench's test fit) */
+    turn?: [number, number];
+    headTurn?: [number, number];
   };
   d?: string;
 }
+export interface RobotJoints {
+  front?: RobotJoint;
+  back?: RobotJoint;
+}
+/** points are fractions of the picture, x right and y down */
+export interface RobotJoint {
+  /** the point it hangs from and turns around */
+  pivot?: [number, number];
+  /** a torso's sockets: neck, shoulderL, shoulderR, hipL, hipR, hip, gem */
+  sockets?: Partial<Record<RobotSocket, [number, number]>>;
+  /** draw order in this view: higher is drawn in front */
+  z?: number;
+}
+export type RobotSocket = 'neck' | 'shoulderL' | 'shoulderR' | 'hipL' | 'hipR' | 'hip' | 'gem';
 export interface RobotGem {
   name: string;
   short?: string;

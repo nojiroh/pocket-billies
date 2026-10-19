@@ -268,6 +268,18 @@ for (const [id, P] of Object.entries(robots.parts || {})) {
   if (!types.has(P.type)) problem('robots.json', `part ${id} is type ${P.type}, no such type`);
   if (P.slot !== 'torso' && !moves[P.move]) problem('robots.json', `part ${id} gives ${P.move}, no such move`);
   if (P.slot === 'legs' && !(P.carry > 0)) problem('robots.json', `legs ${id} carry nothing (carry)`);
+  // studio track ST-5: stored joints belong to a picture in that view; only a torso has sockets and a head
+  const A = P.art || {};
+  for (const [key, pics] of [
+    ['joints', { front: A.img, back: A.imgB }],
+    ['headJoints', { front: A.head, back: A.headB }],
+  ])
+    for (const [view, J] of Object.entries(A[key] || {})) {
+      if (!pics[view]) problem('robots.json', `part ${id} has ${key}.${view} but no ${view} picture`);
+      if (J.sockets && (P.slot !== 'torso' || key === 'headJoints'))
+        problem('robots.json', `part ${id} ${key}.${view} has sockets; only a torso has sockets`);
+    }
+  if (P.slot !== 'torso' && (A.headJoints || A.headTurn)) problem('robots.json', `part ${id} is not a torso but has a head`);
 }
 for (const [id, G] of Object.entries(robots.gems || {})) {
   if (!types.has(G.type)) problem('robots.json', `gem ${id} is type ${G.type}, no such type`);
