@@ -18,7 +18,7 @@ function stub(answers = []) {
       return answers.shift() ?? 0;
     },
   };
-  for (const c of ['battle', 'heal', 'walk', 'face', 'camera', 'wait', 'fade', 'go', 'shot', 'dressing-room', 'music'])
+  for (const c of ['battle', 'heal', 'walk', 'face', 'camera', 'wait', 'fade', 'go', 'dressing-room', 'music'])
     stage[c] = args => said.push(`<${c}${args && args.length ? ' ' + args.join(' ') : ''}>`);
   return stage;
 }

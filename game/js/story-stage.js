@@ -11,7 +11,8 @@
      puts you and the one who talks on it, `walk <who> beside me` brings them over, `face`, `music`, `fade`; a battle
      ends the scene first. A line waits for open windows (a battle's result) to close.
    - story:<id> scripts belong to the story, not to someone (story.json scripts: Hazel in the lab, the ending).
-   Shot and the openings' other commands come with S5 and S7: go and those stop a script with an error. */
+   A cutscene's own commands (actor, caption, ...) and the opening's play on the cutscene stage (cutscene/stage.js): go
+   and those stop a script here with an error. */
 /* the script lines of a person, a trainer or the story: person:<id> (in a map's people), trainer:<id>, story:<id> */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
@@ -290,9 +291,6 @@ const storyGameStage = {
       if (A) [A.x, A.z, A.hidden] = [storyScene.to[0], storyScene.to[1], false];
     }
   },
-};
-storyGameStage.shot = args => {
-  if (typeof debugLog !== 'undefined') debugLog.add('story', `shot ${args.join(' ')}: not played yet (S5)`);
 };
 /* line: the id of the line on screen (tools/story-ids.mjs), for the debug log */
 const storyRun = { on: false, id: null, speaker: null, line: null, base: null, path: null, control: null };
