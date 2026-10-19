@@ -11,9 +11,15 @@
  ],
  "reward": 2000,
  "market": null,
- "lines": ["“I was Bubbles the Bubble for nine years. They never told me it burst. I found out from the newspaper.”"],
  "win": "“Pop.”",
  "lose": "“Bubbly!”",
  "hint": "",
- "v47region": 1
+ "v47region": 1,
+ "script": [
+  "if beat:mascot",
+  "  [happy] Back for more? All right! #l:9e50",
+  "else",
+  "  [happy] I was Bubbles the Bubble for nine years. They never told me it burst. I found out from the newspaper. #l:d64b",
+  "battle mascot"
+ ]
 }

@@ -10,9 +10,15 @@
  ],
  "reward": 1200,
  "market": null,
- "lines": ["“These vaults are full of variants. Vinyl ones. Of the same record. You wouldn’t understand.”"],
  "win": "“My collection is incomplete without that loss.”",
  "lose": "“Mint condition. Unlike your team.”",
  "hint": "",
- "v47region": 1
+ "v47region": 1,
+ "script": [
+  "if beat:variant_vault",
+  "  [happy] Back for more? All right! #l:d2ce",
+  "else",
+  "  [happy] These vaults are full of variants. Vinyl ones. Of the same record. You wouldn’t understand. #l:fb12",
+  "battle variant_vault"
+ ]
 }

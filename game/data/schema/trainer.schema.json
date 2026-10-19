@@ -3,7 +3,7 @@
  "$id": "trainer.schema.json",
  "title": "game/data/trainers/<id>.json: a trainer you can battle",
  "type": "object",
- "required": ["name", "who", "node", "team", "reward", "lines", "win", "lose"],
+ "required": ["name", "who", "node", "team", "reward", "win", "lose"],
  "properties": {
   "name": {"type": "string", "minLength": 1},
   "who": {"description": "their look (a person id)", "type": "string"},
@@ -16,9 +16,12 @@
    "items": {"type": "object", "required": ["sp", "lvl"], "properties": {"sp": {"description": "a species id, @rival, or robot (phase 17: robot then names its gem and parts)", "type": "string"}, "lvl": {"type": "integer", "minimum": 1, "maximum": 100}, "robot": {"description": "phase 17: a robot's gem and parts (keys of robots.json)", "type": "object", "required": ["gem", "torso", "armL", "armR", "legs"], "additionalProperties": false, "properties": {"gem": {"type": "string"}, "torso": {"type": "string"}, "armL": {"type": "string"}, "armR": {"type": "string"}, "legs": {"type": "string"}}}}}
   },
   "reward": {"type": "number", "minimum": 0},
-  "lines": {"type": "array", "items": {"type": "string"}},
   "win": {"type": "string"},
   "lose": {"type": "string"},
-  "double": {"type": "boolean"}
+  "double": {"type": "boolean"},
+  "when": {"description": "there only while this condition holds (docs/SCRIPTS.md)", "type": "string"},
+  "unless": {"description": "not there while this condition holds", "type": "string"},
+  "runsUp": {"description": "they run up to you the first time you come where they wait (story.js storyCheck)", "type": "boolean"},
+  "script": {"description": "what they say before a battle (docs/SCRIPTS.md); it ends with the battle", "type": "array", "items": {"type": "string"}}
  }
 }

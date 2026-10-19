@@ -101,7 +101,7 @@ import {
   runTurn,
   startWild,
 } from './logic/battle-engine.js';
-import { setStoryFlag } from './logic/script.js';
+import { storyAllows } from './logic/script.js';
 import {
   activeBattle,
   escapeHtml,
@@ -192,7 +192,7 @@ import { flyMenu, rideGlassLift } from './airship.js';
 import { postcardCheck, renderPostcards } from './postcards.js';
 import { renderBag } from './bag.js';
 import { friendsHTML } from './friends.js';
-import { legendCheck, personTalk, storyCheck, storyMovedCheck, storyRivalBattle, trainerTalk } from './story.js';
+import { legendCheck, personTalk, storyCheck, storyRivalBattle, trainerTalk } from './story.js';
 import { storyResumeCheck } from './story-stage.js';
 import {
   arrivedAt,
@@ -250,7 +250,7 @@ expose({
   nextModal: [() => nextModal, v => (nextModal = v)],
   nextToast: [() => nextToast, v => (nextToast = v)],
   nodeActions: [() => nodeActions, v => (nodeActions = v)],
-  notice: [() => notice, v => ((notice = v), provide({ notice }))],
+  notice: [() => notice, v => (notice = v)],
   openInbox: [() => openInbox, v => (openInbox = v)],
   openSettings: [() => openSettings, v => ((openSettings = v), provide({ openSettings }))],
   paintWorldMapCard: [() => paintWorldMapCard, v => ((paintWorldMapCard = v), provide({ paintWorldMapCard }))],
@@ -308,7 +308,6 @@ provide({
   mapIdAt,
   mapOffsetInView,
   modal,
-  notice,
   openSettings,
   paintWorldMapCard,
   progressBarHTML,
@@ -1243,7 +1242,7 @@ export function walkState() {
       o = sc.baseOff || [0, 0];
     if (base && bid === mapIdAt(v.node))
       for (const P of base.people || [])
-        if (PEOPLE[P.who])
+        if (PEOPLE[P.who] && ((!P.when && !P.unless) || storyAllows(P)))
           v.npcs.push({
             who: P.who,
             id: '_talk:' + P.id,
@@ -1369,7 +1368,6 @@ setInterval(() => {
     if (typeof storyResumeCheck === 'function') storyResumeCheck();
     if (typeof storyCheck === 'function') storyCheck();
     if (typeof legendCheck === 'function') legendCheck();
-    if (typeof storyMovedCheck === 'function') storyMovedCheck();
     if (typeof postcardCheck === 'function') postcardCheck();
   } catch (e) {
     console.error(e);
@@ -2280,7 +2278,6 @@ export function startGame(l, o = {}) {
   saveData.trip = { node: START_NODE, plan: [] };
   saveData.visited = { [START_NODE]: 1 };
   saveData.mapSeen = null;
-  setStoryFlag('copperleafNote');
   for (let i = 0; i < R.starterEncounters; i++) spawn(true);
   const egg = R.starterEgg && EGGS[R.starterEgg] ? addEgg(R.starterEgg) : false;
   save();

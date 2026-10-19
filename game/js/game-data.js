@@ -12,7 +12,7 @@
  */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { makeBilly, makeRobot, provide, saveData } from './hooks.js';
+import { makeBilly, makeRobot, provide, saveData, storyAllows } from './hooks.js';
 /* eslint-disable no-func-assign */
 expose({
   BATTLE_STAGES: [() => BATTLE_STAGES],
@@ -440,8 +440,10 @@ export function trainerTeam(T) {
   });
 }
 export const trainerById = id => TRAINERS[id] || null;
-/* a trainer with "after" only turns up once you've beaten that one */
+/* a trainer with "after" only turns up once you've beaten that one; Project Story S2: one with "when" / "unless"
+   only while the story allows (logic/script.js storyAllows) */
 export const trainersAt = i =>
   ((LOCATIONS[i] && LOCATIONS[i].trainers) || [])
     .map(id => TRAINERS[id])
-    .filter(T => !T.after || (typeof saveData !== 'undefined' && saveData.flags && saveData.flags[T.after]));
+    .filter(T => !T.after || (typeof saveData !== 'undefined' && saveData.flags && saveData.flags[T.after]))
+    .filter(T => (!T.when && !T.unless) || storyAllows(T));

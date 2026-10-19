@@ -6,9 +6,9 @@
    "[happy] Nice to meet you!" (happy, surprised, sad, angry, blink, talk). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { mapChatLines, provide } from './hooks.js';
+import { mapChatLines, playStoryScript, provide } from './hooks.js';
 import { PEOPLE, TRAINERS } from './game-data.js';
-import { reducedMotion, saveData } from './game-state.js';
+import { reducedMotion } from './game-state.js';
 import { frameStop, frameTask } from './frame-scheduler.js';
 import { drawPortrait, lookOf } from './person-art.js';
 import { turnToPlayer, walkView } from './walk-view.js';
@@ -310,23 +310,8 @@ export function setTalkFolk(v) {
   talkFolk = v; // eslint-disable-line no-func-assign
   provide({ talkFolk });
 }
-export async function talkHazel(p) {
+/* Hazel in her lab: her script (story.json scripts.hazel): your Index, your badges, where Blake went */
+export async function talkHazel() {
   if (talkBox.on) return;
-  const caught = Object.keys(saveData.caught).length,
-    badges = (saveData.seats || []).length,
-    nm = lookOf('me').name || 'Trainer';
-  const tips = [
-    `[happy] ${nm}! How's your Index coming along? ${caught} taxed so far.`,
-    caught < 5
-      ? 'Try the tall grass on Hedgerow Lane, just down the road. Walk, and they come to you.'
-      : caught < 15
-        ? '[surprised] You’re getting good at this. Some of them only show up in caves or in the malls.'
-        : '[happy] That’s a proper collection. I might have to cite you in my paper.',
-    badges
-      ? `${badges} badge${badges > 1 ? 's' : ''} already. The arena leaders talk about you, you know.`
-      : 'When your team is ready, try an arena. The first one is in Fizzwell Town.',
-  ];
-  if (saveData.flags && saveData.flags.chad && !saveData.flags.chad2)
-    tips.push('Blake was here earlier, bragging. He said he’d wait for you in Clovercrest Town.');
-  await talk(tips.map(t => ['gini', t]));
+  await playStoryScript('story:hazel');
 }

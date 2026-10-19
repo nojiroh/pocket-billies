@@ -30,3 +30,40 @@ test('setStoryFlag sets the flag in the save; one story.json lacks is a data war
   assert.deepEqual(hooks.saveData.story, { met_juniper: 1, rival0: 'win', made_up_flag: 2 });
   assert.equal(s, hooks.saveData);
 });
+
+test('when / unless and chapters read the save', () => {
+  const allows = fn('storyAllows'),
+    chapterMap = fn('chapterMap'),
+    s = { story: { met_cass: 1 }, flags: { chad: 1 }, items: {}, coins: {}, caught: {}, seats: [] };
+  assert.equal(allows({}, s), true);
+  assert.equal(allows({ when: 'met_cass' }, s), true);
+  assert.equal(allows({ when: 'met_cass', unless: 'beat:chad' }, s), false);
+  assert.equal(allows({ unless: 'beat:chad2' }, s), true);
+  assert.equal(allows(null, s), false);
+  const S = data.STORY_DATA,
+    was = S.chapters;
+  S.chapters = { two: { when: 'beat:chad', maps: { copperleaf: 'copperleaf@two' } } };
+  try {
+    assert.equal(chapterMap('copperleaf', s), 'copperleaf@two');
+    assert.equal(chapterMap('marigold', s), 'marigold');
+    assert.equal(chapterMap('copperleaf', { ...s, flags: {} }), 'copperleaf');
+  } finally {
+    S.chapters = was;
+  }
+});
+
+test('a place with requires is closed until it holds, with its locked line', () => {
+  const s = startedSave('musk0'),
+    L = data.LOCATIONS,
+    i = L.findIndex(l => !l.gate && !l.ride);
+  Object.assign(L[i], { requires: 'met_cass', locked: 'The gate is shut.' });
+  try {
+    assert.equal(fn('canEnter')(i), false);
+    assert.equal(fn('gateText')(L[i]), 'The gate is shut.');
+    s.story.met_cass = 1;
+    assert.equal(fn('canEnter')(i), true);
+  } finally {
+    delete L[i].requires;
+    delete L[i].locked;
+  }
+});

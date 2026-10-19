@@ -13,10 +13,6 @@
  "reward": 4200,
  "egg": 10,
  "market": null,
- "lines": [
-  "“Welcome to Goldvine Town. Everything you can see is mine, and everything you can’t see is in a vault, and also mine.”",
-  "“I rented the vaults to a pop star. And myself, as it turns out. Read the small print, child.”"
- ],
  "win": "“Burned. Take the Fire Badge. I’ll invoice you for it later.”",
  "lose": "“Money talks. Mine just won the argument.”",
  "hint": "Baron Vault’s Fire team is level 41–43. Water and Ground moves put Fire Billies out.",
@@ -29,5 +25,13 @@
   "rewardText": "a Golden Parachute, 4 Gold Coins and 2 Platinum Coins",
   "unlockText": "The Grizzle Badlands, east of Goldvine Town, are open."
  },
- "v47region": 1
+ "v47region": 1,
+ "script": [
+  "if beat:vault",
+  "  [happy] Back for more? All right! #l:ec6f",
+  "else",
+  "  [happy] Welcome to Goldvine Town. Everything you can see is mine, and everything you can’t see is in a vault, and also mine. #l:c4ae",
+  "  I rented the vaults to a pop star. And myself, as it turns out. Read the small print, child. #l:a020",
+  "battle vault"
+ ]
 }

@@ -10,9 +10,15 @@
  ],
  "reward": 900,
  "market": null,
- "lines": ["“I bought the festival ticket, the upgrade, the upgrade to the upgrade and the shirt that says I did.”"],
  "win": "“That’s fine. I have a variant of that loss at home.”",
  "lose": "“Collect them all! Especially the losses.”",
  "hint": "",
- "v47region": 1
+ "v47region": 1,
+ "script": [
+  "if beat:variant_fest1",
+  "  [happy] Back for more? All right! #l:2acb",
+  "else",
+  "  [happy] I bought the festival ticket, the upgrade, the upgrade to the upgrade and the shirt that says I did. #l:4383",
+  "battle variant_fest1"
+ ]
 }

@@ -9,11 +9,15 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
-- Story scripts (Project Story S1, not played by the game on its own yet): conversations can be written as lines in
-  the data, with choices, conditions, once-only and rotating lines, and commands (docs/SCRIPTS.md). Three are written
-  (Granny Juniper, Blake on the golf course, Curator Nacre) and play from the debug menu. Hold the dialogue box to
-  skip. A save taken mid-conversation keeps the state from before it and plays it again on Continue. Test runs can
-  start at a point in the story (`?story=after-opening`, `?story=before-cass`).
+- Story scripts (Project Story S1, S2): every conversation is written as lines in the data, with choices,
+  conditions, once-only and rotating lines, and commands (docs/SCRIPTS.md): people, trainers before a battle, Blake,
+  Cass and Vinylla running up to you, Hazel in the lab, the talk after Blake's first battle and the ending. Same words
+  as before. Hold the dialogue box to skip. A save taken mid-conversation keeps the state from before it and plays it
+  again on Continue. Test runs can start at a point in the story (`?story=after-opening`, `?story=before-cass`).
+  People, trainers and props can appear only at some points of the story, places can stay closed until a point, and a
+  chapter can swap a map for another version. Every line has an id the debug log names. The data check checks the
+  story (names, flags, line ids, places that could never open). A battle started from the debug menu no longer shows
+  the trainer's opening lines.
 - Robots (phase 17 prototype): build your own from a gem and four parts (torso with head, left arm, right arm,
   legs). They join the same team and the same battles as Billies. Their moves come from their parts; a hit on a robot
   also lands on a part, aimed moves pick the part, a broken arm loses its move and broken legs are slow; healing and

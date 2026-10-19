@@ -10,9 +10,15 @@
  ],
  "reward": 800,
  "market": null,
- "lines": ["“I sweep the petals every morning. They fall again by lunch. I think that’s the job.”"],
  "win": "“Blown away. Like the petals.”",
  "lose": "“Back to sweeping, then.”",
  "hint": "",
- "v47region": 1
+ "v47region": 1,
+ "script": [
+  "if beat:gardener",
+  "  [happy] Back for more? All right! #l:1a36",
+  "else",
+  "  [happy] I sweep the petals every morning. They fall again by lunch. I think that’s the job. #l:0e10",
+  "battle gardener"
+ ]
 }

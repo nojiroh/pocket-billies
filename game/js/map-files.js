@@ -15,6 +15,7 @@
 import { expose } from './test-globals.js';
 import { provide, saveData, seamlessWorld } from './hooks.js';
 import { LOCATIONS, ROADS_BY_NODE, START_NODE, gameData } from './game-data.js';
+import { chapterMap } from './logic/script.js';
 /* eslint-disable no-func-assign */
 expose({
   MAP_FIELDS: [() => MAP_FIELDS],
@@ -58,9 +59,13 @@ export function loadMapFile(id) {
     let last = null;
     for (let k = 0; k < 3; k++) {
       try {
-        const r = await fetch('data/maps/' + id + '.json');
-        if (!r.ok) throw new Error(`data/maps/${id}.json: ${r.status}`);
+        /* Project Story S2: a chapter's variant file while its condition holds (story.json chapters), its props and
+           people in place of the map's own; chosen when the map loads, so a new chapter shows on the next start */
+        const file = chapterMap(id);
+        const r = await fetch('data/maps/' + file + '.json');
+        if (!r.ok) throw new Error(`data/maps/${file}.json: ${r.status}`);
         const full = await r.json();
+        if (file !== id && full.people) sc.people = full.people;
         /* only into the map it was asked for: the Studio's play test may have put its own (whole) maps in since */
         if (!sc._lite) return;
         for (const f of MAP_FIELDS) if (full[f] !== undefined) sc[f] = full[f];

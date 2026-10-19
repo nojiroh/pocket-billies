@@ -11,9 +11,15 @@
  ],
  "reward": 1400,
  "market": null,
- "lines": ["“These crystals grew a millimetre a century. The Variants are cutting a metre a day.”"],
  "win": "“Eroded.”",
  "lose": "“Solid as rock.”",
  "hint": "",
- "v47region": 1
+ "v47region": 1,
+ "script": [
+  "if beat:geologist",
+  "  [happy] Back for more? All right! #l:c3b8",
+  "else",
+  "  [happy] These crystals grew a millimetre a century. The Variants are cutting a metre a day. #l:ad65",
+  "battle geologist"
+ ]
 }

@@ -12,9 +12,16 @@
  "reward": 900,
  "egg": 5,
  "market": null,
- "lines": ["“Buy low, battle high!”","“My team is fully diversified.”"],
  "win": "“A correction. Happens to the best of us.”",
  "lose": "“Ka-ching. Better luck next quarter.”",
  "hint": "Broker Bea waits on the city plaza with a level 22–24 team.",
- "double": true
+ "double": true,
+ "script": [
+  "if beat:broker",
+  "  [happy] Back for more? All right! #l:8e22",
+  "else",
+  "  [happy] Buy low, battle high! #l:2b3d",
+  "  My team is fully diversified. #l:9c96",
+  "battle broker"
+ ]
 }

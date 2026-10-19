@@ -11,9 +11,15 @@
  ],
  "reward": 1600,
  "market": null,
- "lines": ["“I fish for coins through the ice. The safe is frozen solid, but sometimes the interest leaks out.”"],
  "win": "“Cold.”",
  "lose": "“Liquid at last!”",
  "hint": "",
- "v47region": 1
+ "v47region": 1,
+ "script": [
+  "if beat:icefisher",
+  "  [happy] Back for more? All right! #l:262d",
+  "else",
+  "  [happy] I fish for coins through the ice. The safe is frozen solid, but sometimes the interest leaks out. #l:2864",
+  "battle icefisher"
+ ]
 }

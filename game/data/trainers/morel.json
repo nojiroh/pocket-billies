@@ -13,10 +13,6 @@
  "reward": 4800,
  "egg": 10,
  "market": null,
- "lines": [
-  "“The forest remembers every spore. The Variants are grinding up its memory to make a record shine.”",
-  "“Breathe in. Now battle.”"
- ],
  "win": "“The forest thanks you. It will not say so; it is a forest. The Psychic Badge is yours.”",
  "lose": "“Rest. Rot a little. Grow back.”",
  "hint": "Mother Morel’s Psychic team is level 46–48. Steel and Dragon Billies shrug off Psychic moves.",
@@ -29,5 +25,13 @@
   "rewardText": "3 Bailouts, 4 Gold Coins and 2 Platinum Coins",
   "unlockText": "Tanglewild Jungle, east of Capshade Town, is open."
  },
- "v47region": 1
+ "v47region": 1,
+ "script": [
+  "if beat:morel",
+  "  [happy] Back for more? All right! #l:6074",
+  "else",
+  "  [happy] The forest remembers every spore. The Variants are grinding up its memory to make a record shine. #l:8946",
+  "  Breathe in. Now battle. #l:3a63",
+  "battle morel"
+ ]
 }

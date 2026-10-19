@@ -10,9 +10,15 @@
  ],
  "reward": 1100,
  "market": null,
- "lines": ["“Never eat a mushroom you can’t afford. Most of these cost more than you.”"],
  "win": "“Picked clean.”",
  "lose": "“Foraged!”",
  "hint": "",
- "v47region": 1
+ "v47region": 1,
+ "script": [
+  "if beat:forager",
+  "  [happy] Back for more? All right! #l:926c",
+  "else",
+  "  [happy] Never eat a mushroom you can’t afford. Most of these cost more than you. #l:1cba",
+  "battle forager"
+ ]
 }

@@ -11,9 +11,15 @@
  ],
  "reward": 1300,
  "market": null,
- "lines": ["“Flat tax! Everyone pays the same. I have a form explaining why that’s fair. It’s very long.”"],
  "win": "“I’ll claim that as a loss.”",
  "lose": "“Deducted.”",
  "hint": "",
- "v47region": 1
+ "v47region": 1,
+ "script": [
+  "if beat:accountant",
+  "  [happy] Back for more? All right! #l:9138",
+  "else",
+  "  [happy] Flat tax! Everyone pays the same. I have a form explaining why that’s fair. It’s very long. #l:25a7",
+  "battle accountant"
+ ]
 }

@@ -10,9 +10,15 @@
  ],
  "reward": 1500,
  "market": null,
- "lines": ["“The needle has to be perfect. One scratch and the sun skips.”"],
  "win": "“That’s a scratch.”",
  "lose": "“Flawless. Like the edition.”",
  "hint": "",
- "v47region": 1
+ "v47region": 1,
+ "script": [
+  "if beat:variant_needle",
+  "  [happy] Back for more? All right! #l:22c5",
+  "else",
+  "  [happy] The needle has to be perfect. One scratch and the sun skips. #l:8eae",
+  "battle variant_needle"
+ ]
 }

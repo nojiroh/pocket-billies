@@ -330,6 +330,9 @@ export interface LocationData {
   /** a gym badge (a trainer's seat id) needed to go on */
   gate?: string;
   gateText?: string;
+  /** Project Story S2: closed until this condition holds (docs/SCRIPTS.md), and what you are told meanwhile */
+  requires?: string;
+  locked?: string;
   ride?: number;
   noFly?: number;
   v47region?: number;
@@ -575,7 +578,6 @@ export interface Trainer {
   egg?: number;
   market?: { k: string; n: number } | null;
   marketText?: string;
-  lines: string[];
   win: string;
   lose: string;
   hint?: string;
@@ -583,8 +585,13 @@ export interface Trainer {
   blockText?: string;
   /** a gym badge */
   seat?: Seat | null;
-  intro?: string[];
-  intro0?: string[];
+  /** what they say before a battle (docs/SCRIPTS.md); it ends with the battle */
+  script?: string[];
+  /** they run up to you the first time you come where they wait */
+  runsUp?: boolean;
+  /** Project Story S2: there only while this condition holds / unless it holds */
+  when?: string;
+  unless?: string;
   double?: boolean;
   /** only there once you've beaten this trainer */
   after?: DataId;
@@ -592,7 +599,6 @@ export interface Trainer {
   tutorial?: boolean;
   clue?: string;
   ending?: number;
-  endLines?: [who: string, line: string][];
   v47region?: number;
 }
 
@@ -950,6 +956,10 @@ export interface StoryData {
   /** a name a script writes before a line -> a person id, or 'me' */
   speakers: Record<string, DataId>;
   quests: Record<DataId, { about?: string; stages: string[] }>;
+  /** scripts that belong to the story, not to someone: story:<id> */
+  scripts?: Record<DataId, { about?: string; who: DataId; script: string[] }>;
+  /** a chapter swaps maps for variant files while its condition holds */
+  chapters?: Record<DataId, { about?: string; when: string; maps: Record<DataId, string> }>;
   presets: Record<string, StoryPreset>;
 }
 export interface StoryPreset {
