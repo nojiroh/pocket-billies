@@ -7,7 +7,8 @@ import { expose } from '../../game/js/test-globals.js';
 import { provide, sceneryArtPaths, sceneryCatalog } from '../../game/js/hooks.js';
 import { $, $$ } from '../../game/js/util.js';
 import { COIN_ART, artLoad } from '../../game/js/art.js';
-import { robotRigParts, setRigParts } from '../../game/js/skeleton-rig.js';
+import { robotArtFiles } from '../../game/js/robot-art.js';
+import { robotRigParts, setRigParts, setRobotRigData } from '../../game/js/skeleton-rig.js';
 import {
   AREAS,
   actorTop,
@@ -50,10 +51,15 @@ expose({
   battlePreviewDefaults: [() => battlePreviewDefaults, v => (battlePreviewDefaults = v)],
   battlePreviewEvent: [() => battlePreviewEvent],
   coatOptions: [() => coatOptions],
+  fighterOptions: [() => fighterOptions],
   hudHit: [() => hudHit, v => ((hudHit = v), provide({ hudHit }))],
   hudPop: [() => hudPop, v => ((hudPop = v), provide({ hudPop }))],
+  isRobotFighter: [() => isRobotFighter],
+  loadFighterArt: [() => loadFighterArt],
   mountBattlePreviewMap: [() => mountBattlePreviewMap, v => (mountBattlePreviewMap = v)],
   playBattlePreviewMove: [() => playBattlePreviewMove, v => (playBattlePreviewMove = v)],
+  robotFighterOk: [() => robotFighterOk, v => (robotFighterOk = v)],
+  robotOptions: [() => robotOptions, v => (robotOptions = v)],
   startBattlePreview: [() => startBattlePreview, v => (startBattlePreview = v)],
 });
 /* eslint-enable no-func-assign */
@@ -62,6 +68,38 @@ provide({ battleFreeArea, battleLayoutChanged, hudHit, hudPop });
 setRigParts((sp, k, coat) =>
   String(sp).startsWith('bot:') ? robotRigParts(sp, k) : rigFor(sp, k === 1 ? 'front' : 'back', coat)
 );
+/* studio track ST-5: robots can fight in the preview too: the trainers' robots and the Robots section's Try a build */
+const isRobotFighter = sp => String(sp).startsWith('bot:');
+function robotFighterOk(sp) {
+  const R = studioState.D.robots,
+    a = String(sp).slice(4).split('.');
+  return !!(R && a.length === 5 && R.gems[a[0]] && a.slice(1).every(id => R.parts[id]));
+}
+function robotOptions() {
+  const R = studioState.D.robots,
+    out = new Map(),
+    label = (a, who) =>
+      `Robot: ${a
+        .slice(1)
+        .map(id => R.parts[id].short || R.parts[id].name)
+        .join(' · ')}, ${R.gems[a[0]].name} (${who})`;
+  const add = (sp, who) => {
+    if (robotFighterOk(sp) && !out.has(sp)) out.set(sp, label(sp.slice(4).split('.'), who));
+  };
+  const B = studioState.sel.rbBuild;
+  if (B) add(`bot:${B.gem}.${B.torso}.${B.armL}.${B.armR}.${B.legs}`, 'Try a build');
+  for (const T of Object.values(studioState.D.trainers || {}))
+    for (const m of T.team || [])
+      if (m.sp === 'robot' && m.robot) {
+        const r = m.robot;
+        add(`bot:${r.gem}.${r.torso}.${r.armL}.${r.armR}.${r.legs}`, T.name);
+      }
+  return [...out];
+}
+const fighterOptions = () => [...speciesOptions(), ...robotOptions()];
+/* what a fighter's picture needs: a Billie's sheet, a robot's part pictures */
+const loadFighterArt = (sp, view) =>
+  isRobotFighter(sp) ? artLoad(robotArtFiles(sp, studioState.D.robots)) : atlasGet(atlasPath(sp, view));
 const coatOptions = () => [
   ['', 'No coat'],
   ...Object.entries(studioState.D.coats || {}).map(([k, c]) => [k, c.name || k]),
@@ -113,9 +151,9 @@ function battlePreviewDefaults() {
     ids = D.lines.flatMap(L => L.names.map((n, i) => L.id + i)).filter(id => studioState.rigs[id]);
   if (!battlePreview.area || !D.battleStages[battlePreview.area])
     battlePreview.area = D.locations[0].battleStage || Object.keys(D.battleStages)[0];
-  if (!battlePreview.me || !studioState.rigs[battlePreview.me])
-    battlePreview.me = (D.rules.start.starters[0] || D.lines[0].id) + '0';
-  if (!battlePreview.foe || !studioState.rigs[battlePreview.foe]) battlePreview.foe = ids[3] || ids[0];
+  const ok = sp => !!sp && (isRobotFighter(sp) ? robotFighterOk(sp) : !!studioState.rigs[sp]);
+  if (!ok(battlePreview.me)) battlePreview.me = (D.rules.start.starters[0] || D.lines[0].id) + '0';
+  if (!ok(battlePreview.foe)) battlePreview.foe = ids[3] || ids[0];
   if (!battlePreview.move || !D.moves[battlePreview.move]) battlePreview.move = Object.keys(D.moves)[1];
 }
 const battlePreviewEvent = () => ({
@@ -139,8 +177,8 @@ SECTIONS.preview = () => {
  <aside class="bp-ctl">
   ${card(
     'Who’s fighting',
-    `<label class="fld"><span>Your Billie (back view)</span><select data-bp="me">${opt(speciesOptions(), battlePreview.me)}</select></label><label class="fld"><span>Its coat</span><select data-bp="meCoat">${opt(coatOptions(), battlePreview.meCoat)}</select></label>
-   <label class="fld"><span>Opponent (front view)</span><select data-bp="foe">${opt(speciesOptions(), battlePreview.foe)}</select></label><label class="fld"><span>Its coat</span><select data-bp="foeCoat">${opt(coatOptions(), battlePreview.foeCoat)}</select></label>
+    `<label class="fld"><span>Your Billie or robot (back view)</span><select data-bp="me">${opt(fighterOptions(), battlePreview.me)}</select></label><label class="fld"><span>Its coat</span><select data-bp="meCoat">${opt(coatOptions(), battlePreview.meCoat)}</select></label>
+   <label class="fld"><span>Opponent (front view)</span><select data-bp="foe">${opt(fighterOptions(), battlePreview.foe)}</select></label><label class="fld"><span>Its coat</span><select data-bp="foeCoat">${opt(coatOptions(), battlePreview.foeCoat)}</select></label>
    <div class="seg-row"><button class="btn sm" data-act="bp" data-x="wild">Wild appears</button><button class="btn sm" data-act="bp" data-x="trainer">Trainer intro</button><select data-bp="who" class="sm">${opt(peopleOptions(), battlePreview.who)}</select></div>
    <div class="seg-row"><button class="btn sm" data-act="bp" data-x="enter0">Send yours out</button><button class="btn sm" data-act="bp" data-x="enter1">Send theirs out</button><button class="btn sm" data-act="bp" data-x="recall">Recall</button></div>`
   )}
@@ -205,14 +243,15 @@ SECTIONS.preview = () => {
 async function startBattlePreview() {
   const D = studioState.D;
   if (!$('#cvWorld')) return;
+  setRobotRigData(D.robots);
   const load = $('#bpLoad');
   if (load) load.hidden = false;
   try {
     await Promise.all([
       battleStagePrepare(battlePreview.area),
       artLoad(COIN_ART),
-      atlasGet(atlasPath(battlePreview.me, 'back')),
-      atlasGet(atlasPath(battlePreview.foe, 'front')),
+      loadFighterArt(battlePreview.me, 'back'),
+      loadFighterArt(battlePreview.foe, 'front'),
     ]);
   } catch (e) {
     if (load) load.textContent = 'Couldn’t load this stage: ' + e.message;
