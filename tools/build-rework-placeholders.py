@@ -4,7 +4,7 @@
 - Swift and Kardashian: a recolour of an existing sheet with the same body plan (outlines, eyes and highlights keep
   their value), and a copy of that species' rig pointing at the new sheet.
 - Trump (a blob: huge body, tiny arms, slug tail) and Zuckerberg (an octopus stand-in): a sheet and a biped rig put
-  together from the part kits (game/art/next/parts, tools/slice-part-kit.py), one size per stage.
+  together from the part kits (game/art/next/parts, sliced by the Studio's Art workbench), one size per stage.
 
 Writes game/art/next/billionaires/<name>.png and the <name>.json piece layout (where the Studio
 looks for every Billie's sheet), and adds the rigs (<line><stage>) to game/art/next/rigs-next.js, each marked
@@ -152,7 +152,7 @@ def kit_rig(line, spec, stage, pivots):
         imgs, idx = [], {}
 
         def socket(slot, name, mirror=False):
-            """a part's socket in pixels of its picture here (game/data/partKits.json, worked out by tools/slice-part-kit.py)"""
+            """a part's socket in pixels of its picture here (game/data/partKits.json, worked out by the Studio's Art workbench)"""
             _, _, _, im, _, _ = get[(slot, mirror)]
             fx, fy = PART_SOCKETS[spec['parts'][slot][0]][view][name]
             return ((1 - fx) if mirror else fx) * im.size[0], fy * im.size[1]

@@ -1,5 +1,5 @@
-// Studio track ST-3: the Studio slices the phase 16 kits exactly as tools/slice-part-kit.py did. Every kit sheet in
-// tools/art-source/part-kit is cut with game/js/logic/sheet-slice.js and compared with what the Python slicer wrote
+// Studio track ST-3: the Studio slices the phase 16 kits exactly as tools/slice-part-kit.py did (retired in ST-3;
+// the parts in the game are what it made). Every kit sheet in tools/art-source/part-kit is cut with game/js/logic/sheet-slice.js and compared with what the Python slicer wrote
 // (game/data/partKits.json and game/art/next/parts): the same parts in the same order, sizes, sockets and manifest,
 // and every pixel the same (alpha exactly; colour where the pixel shows).
 import assert from 'node:assert/strict';
