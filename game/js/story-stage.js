@@ -42,8 +42,8 @@ import {
 } from './cutscene.js';
 /* eslint-disable no-func-assign */
 expose({
-  cutsceneWorldBegin: [() => cutsceneWorldBegin, v => ((cutsceneWorldBegin = v), provide({ cutsceneWorldBegin }))],
-  cutsceneWorldEnd: [() => cutsceneWorldEnd, v => ((cutsceneWorldEnd = v), provide({ cutsceneWorldEnd }))],
+  cutsceneWorldBegin: [() => cutsceneWorldBegin, v => (cutsceneWorldBegin = v)],
+  cutsceneWorldEnd: [() => cutsceneWorldEnd, v => (cutsceneWorldEnd = v)],
   playStoryScript: [() => playStoryScript, v => ((playStoryScript = v), provide({ playStoryScript }))],
   storyGameStage: [() => storyGameStage],
   storyHold: [() => storyHold, v => (storyHold = v)],
@@ -65,7 +65,7 @@ expose({
   storyWorldOK: [() => storyWorldOK, v => ((storyWorldOK = v), provide({ storyWorldOK }))],
 });
 /* eslint-enable no-func-assign */
-provide({ cutsceneWorldBegin, cutsceneWorldEnd, playStoryScript, storyScriptIds, storyWorldOK });
+provide({ playStoryScript, storyScriptIds, storyWorldOK });
 /* to-module: end */
 function storyScriptLines(id) {
   const i = id.indexOf(':'),
@@ -293,6 +293,7 @@ storyGameStage.shot = args => {
   if (typeof debugLog !== 'undefined') debugLog.add('story', `shot ${args.join(' ')}: not played yet (S5)`);
 };
 const storyRun = { on: false, id: null, speaker: null, base: null, path: null, control: null };
+provide({ storyRun }); /* to-module */
 const storySlots = { name: () => lookOf('me').name || 'Trainer' };
 /* plays a script by id; resume: where a saved run goes on from */
 async function playStoryScript(id, o = {}) {

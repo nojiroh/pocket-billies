@@ -1,44 +1,33 @@
 'use strict';
 /* ================= STORY SCENES IN THE WALK SCENES =================
-   Short scenes filmed in the walk scene you are standing in, with the same director as the opening (cutscene.js):
-   your rival Blake runs up the first time you reach him and talks before the battle; trainers talk with their
-   portrait before a fight. A trainer's "intro" lines (game data) make the scene; "lines" are what they say in
-   battle. saveData.story remembers which scenes you have seen. */
+   Project Story S2: what people and trainers say is their script (docs/SCRIPTS.md), played by story-stage.js. A
+   trainer's script ends with their battle; the ones who run up to you (runsUp: Blake, Cass, Vinylla) start theirs
+   when you arrive, filmed in the walk scene you stand in (the stage's camera run-up). saveData.story remembers who
+   you have met. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import {
   closeModal,
-  cutsceneWorldBegin,
-  cutsceneWorldEnd,
   modal,
+  playStoryScript,
   provide,
   selfTest,
   showPendingWindows,
+  storyRun,
   storyWorldOK,
 } from './hooks.js';
-import { $, clamp } from './util.js';
 import { RULES, SPECIES, TRAINERS, trainersAt } from './game-data.js';
 import { encountersHere, healAll, today } from './logic/rules.js';
 import { startTrainer, startWild } from './logic/battle-engine.js';
 import { setStoryFlag } from './logic/script.js';
-import { activeBattle, escapeHtml, reducedMotion, save, saveData, uiState } from './game-state.js';
+import { activeBattle, escapeHtml, save, saveData, uiState } from './game-state.js';
 import { dressingRoom } from './dressing-room.js';
-import { baseMapId, walkView, walkablePointNear } from './walk-view.js';
+import { baseMapId, walkView } from './walk-view.js';
 import { gpuState } from './engine/webgl.js';
 import { walkRenderer } from './walk/walk-state.js';
-import { standingHeightAt } from './walk/heights.js';
 import { music } from './sound.js';
-import { talk, talkBox, talkHide, talkLine } from './talk.js';
-import {
-  cutscene,
-  cutsceneActor,
-  cutsceneHideDialogue,
-  cutsceneNow,
-  cutsceneSay,
-  cutsceneShot,
-  cutsceneWait,
-  cutsceneWalk,
-} from './cutscene.js';
+import { talk, talkBox } from './talk.js';
+import { cutscene } from './cutscene.js';
 import { loreClue, loreData } from './lore.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -46,7 +35,6 @@ expose({
   openingDone: [() => openingDone, v => ((openingDone = v), provide({ openingDone }))],
   openingMark: [() => openingMark, v => (openingMark = v)],
   personTalk: [() => personTalk, v => (personTalk = v)],
-  rivalScene: [() => rivalScene, v => (rivalScene = v)],
   storyAfterRival: [() => storyAfterRival, v => ((storyAfterRival = v), provide({ storyAfterRival }))],
   storyAfterWin: [() => storyAfterWin, v => ((storyAfterWin = v), provide({ storyAfterWin }))],
   storyCheck: [() => storyCheck, v => (storyCheck = v)],
@@ -62,76 +50,15 @@ provide({ openingDone, storyAfterRival, storyAfterWin, storyFlags });
 function storyFlags() {
   return saveData.story || (saveData.story = {});
 }
-/* tap a trainer in the scene, or their Battle button: they talk first, then the battle starts */
+/* tap a trainer in the scene, or their Battle button: they talk first (their script), then the battle starts */
 export async function trainerTalk(id) {
   const T = TRAINERS[id];
   if (!T) return;
-  if (talkBox.on || (typeof cutscene !== 'undefined' && cutscene.on)) return;
-  const F = storyFlags();
-  if (T.intro && T.intro.length && !F['met_' + id] && !saveData.flags[id] && storyWorldOK()) {
-    await rivalScene(T);
-    return;
-  }
-  const lines = (
-    saveData.flags[id] ? ['[happy] Back for more? All right!'] : (T.lines || []).map(l => l.replace(/^[“"]|[”"]$/g, ''))
-  ).slice(0, 2);
-  if (lines.length && typeof talk === 'function')
-    await talk(lines.map((l, i) => [T.who, i ? l : l.startsWith('[') ? l : '[happy] ' + l]));
-  startTrainer(id, { talked: true });
+  if (talkBox.on || storyRun.on || (typeof cutscene !== 'undefined' && cutscene.on)) return;
+  if (T.script) await playStoryScript('trainer:' + id);
+  else startTrainer(id, { talked: true });
 }
-/* Blake (or any trainer with intro lines) runs up to you, talks, and the battle starts */
-async function rivalScene(T) {
-  const run = cutsceneWorldBegin(),
-    alive = () => cutscene.on && cutscene.run === run,
-    P = walkView.pl,
-    sc = walkView.sc;
-  setStoryFlag('met_' + T.id);
-  save();
-  const intro = T.intro;
-  if (typeof music === 'function') music('rival');
-  try {
-    /* where he comes from: the side of the scene away from the camera, a little to one side of you */
-    const side = P.x < sc.w / 2 ? 1 : -1,
-      to = walkablePointNear(P.x + side * 1.4, P.z + 0.3),
-      from = walkablePointNear(clamp(P.x + side * 7, 1, sc.w - 1), clamp(P.z + 4.5, 1, sc.h - 1));
-    cutsceneActor('me', 'me', [P.x, P.z], side > 0 ? 'sideR' : 'side');
-    cutsceneActor('rival', T.who, from, 'down');
-    cutscene.actors.rival.hidden = true;
-    const mid = () => [(P.x + to[0]) / 2, (P.z + to[1]) / 2],
-      m = mid(),
-      gy = standingHeightAt(m[0], m[1]);
-    cutsceneShot({ eye: [m[0], gy + 3.6, m[1] - 8.5], tgt: [m[0], gy + 1, m[1] + 1.5], fov: 38, w: 6 });
-    await cutsceneWait(300);
-    if (!alive()) return;
-    /* "!" and he runs in */
-    await talkLine(T.who, (intro[0] || 'Hey!').replace(/^\[\w+\]\s*/, ''), 'angry', {});
-    talkHide();
-    cutscene.actors.rival.hidden = false;
-    cutsceneShot({ eye: [m[0], gy + 2.3, m[1] - 5.2], tgt: [m[0], gy + 1.05, m[1] + 0.4], fov: 38, w: 4 }, 1600);
-    await cutsceneWalk('rival', to, 1500);
-    if (!alive()) return;
-    cutscene.actors.rival.dir = side > 0 ? 'side' : 'sideR';
-    cutscene.actors.me.dir = side > 0 ? 'sideR' : 'side';
-    for (const l of intro.slice(1)) {
-      await cutsceneSay(T.who, l);
-      if (!alive()) return;
-    }
-    cutsceneHideDialogue();
-    cutscene.actors.rival.act = 'cheer';
-    cutscene.actors.rival.actT = cutsceneNow();
-    await cutsceneWait(700);
-    const f = $('#csFade');
-    if (f) {
-      f.style.background = '#0B0912';
-      f.classList.add('on');
-    }
-    await new Promise(r => setTimeout(r, reducedMotion ? 50 : 450));
-  } finally {
-    cutsceneWorldEnd();
-  }
-  startTrainer(T.id, { talked: true });
-}
-/* when you arrive somewhere a story trainer waits, the scene starts by itself */
+/* when you arrive where someone waits to run up to you (runsUp: Blake, Cass, Vinylla), their script starts by itself */
 export function storyCheck() {
   if (
     (typeof selfTest !== 'undefined' && selfTest.on) ||
@@ -148,16 +75,22 @@ export function storyCheck() {
     return;
   if (saveData.trip.plan && saveData.trip.plan.length) return;
   const F = storyFlags();
-  const T = trainersAt(saveData.trip.node).find(
-    T => T.intro && T.intro.length && !saveData.flags[T.id] && !F['met_' + T.id]
-  );
+  const T = trainersAt(saveData.trip.node).find(T => T.runsUp && !saveData.flags[T.id] && !F['met_' + T.id]);
   if (!T) return;
   if (storyState.pending === T.id) return;
   storyState.pending = T.id;
   setTimeout(() => {
     storyState.pending = null;
-    if (walkView.ready && !activeBattle && uiState.tab === 'walk' && !uiState.modal && !talkBox.on && !cutscene.on)
-      rivalScene(T);
+    if (
+      walkView.ready &&
+      !activeBattle &&
+      uiState.tab === 'walk' &&
+      !uiState.modal &&
+      !talkBox.on &&
+      !cutscene.on &&
+      !storyRun.on
+    )
+      playStoryScript('trainer:' + T.id);
   }, 1400);
 }
 /* v39: the legendary encounters (rules.legends): one per scene, met when you arrive, once a day until caught */
