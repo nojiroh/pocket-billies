@@ -216,6 +216,7 @@ expose({
   PROP_LOOK_CACHE: [() => PROP_LOOK_CACHE],
   PROP_VARIETY_DEFAULT: [() => PROP_VARIETY_DEFAULT],
   PROP_VARIETY_RULES: [() => PROP_VARIETY_RULES],
+  ROOM_DIM: [() => ROOM_DIM],
   ROOM_FLOORS_KEPT: [() => ROOM_FLOORS_KEPT],
   ROOM_PICTURES: [() => ROOM_PICTURES],
   ROOM_PICTURES_PENDING: [() => ROOM_PICTURES_PENDING],
@@ -5120,9 +5121,10 @@ function mapSun(sc, sun) {
 }
 /* v46: inside a building laid into the place (seamless-world.js seamlessRoomMap) the town around the room dims over 0.6 s; walking
    out it brightens again over 0.7 s, as your eyes adjust */
+const ROOM_DIM = 0.68; /* how far the place round a room dims */
 export function roomDimming(sc) {
   const now = performance.now(),
-    k0 = engineSetting('world', 'roomDim') ?? 0.68;
+    k0 = ROOM_DIM;
   let R = sc.roomRect,
     k = 0;
   if (R) {
