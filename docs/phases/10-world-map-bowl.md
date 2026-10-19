@@ -56,7 +56,7 @@ Sketches and data in `docs/phases/10-bowl/` (made by `tools/layout/`).
 flat top-down sketch: every region placed, Copperleaf at the centre, every seam's exit direction checked against the
 layout, and any adjacency the bowl cannot honour listed. Owner picks one.
 
-**E-map-2 Geometry and data.** Bowl positions in `locations.json` (proposal: `bowl: { a, r }`, azimuth in degrees and
+**E-map-2 Geometry and data (done 2026-10-19).** Bowl positions in `locations.json` (proposal: `bowl: { a, r }`, azimuth in degrees and
 0-1 from centre to rim; lon/lat removed once nothing reads them). Road curves rebuilt on the bowl surface. New Node
 test: every seam's exit direction agrees with the layout (within a tolerance). The graph test stays green.
 

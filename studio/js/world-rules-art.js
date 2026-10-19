@@ -45,6 +45,7 @@ expose({
   locationRoads: [() => locationRoads, v => (locationRoads = v)],
   lonLatToWorldMapXY: [() => lonLatToWorldMapXY, v => (lonLatToWorldMapXY = v)],
   moveRoadEnds: [() => moveRoadEnds, v => (moveRoadEnds = v)],
+  newStopBowlSpot: [() => newStopBowlSpot, v => (newStopBowlSpot = v)],
   roadLengthText: [() => roadLengthText, v => (roadLengthText = v)],
   roadsHTML: [() => roadsHTML, v => (roadsHTML = v)],
   weightTable: [() => weightTable, v => (weightTable = v)],
@@ -409,6 +410,21 @@ ACTIONS.stopMove = d => {
   changed();
   render();
 };
+/* phase 10: a new stop's spot on the bowl (game/js/logic/bowl.js): halfway between its neighbours seen from above, or
+   a little further out than the one it follows; the bowl editor moves it from there */
+function newStopBowlSpot(a, b) {
+  const xy = s =>
+      s && 'a' in s ? [s.r * Math.cos((s.a * Math.PI) / 180), s.r * Math.sin((s.a * Math.PI) / 180)] : null,
+    p = xy(a.bowl),
+    q = xy(b && b.bowl);
+  if (!p) return a.bowl && 'under' in a.bowl ? { under: a.bowl.under } : { a: 0, r: 0.5 };
+  const [x, y] = q ? [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2] : [p[0] * 1.1 + 0.02, p[1] * 1.1],
+    r = Math.min(1, Math.hypot(x, y));
+  return {
+    a: (Math.round((((Math.atan2(y, x) * 180) / Math.PI + 360) % 360) * 10) / 10) % 360,
+    r: Math.round(r * 1000) / 1000,
+  };
+}
 ACTIONS.stopAdd = () => {
   const D = studioState.D,
     i = typeof studioState.sel.stop === 'number' ? studioState.sel.stop : D.locations.length - 1,
@@ -426,6 +442,7 @@ ACTIONS.stopAdd = () => {
     blurb: 'Describe this place.',
     lon: b ? Math.round((a.lon + b.lon) / 2) : a.lon + 8,
     lat: b ? Math.round((a.lat + b.lat) / 2) : a.lat,
+    bowl: newStopBowlSpot(a, b),
   };
   moveRoadEnds(
     D,

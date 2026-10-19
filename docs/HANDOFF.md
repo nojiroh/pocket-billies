@@ -11,6 +11,26 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 - Questions waiting for the owner: 
 - Next session starts with: 
 
+### Phase 10 (world map: the bowl), sessions E-map-1 and E-map-2 - layout and bowl data - 2026-10-19
+Plan in docs/phases/10-world-map-bowl.md (rewritten with the owner's answers). Branch `world-map-bowl-plan`, PR #53.
+- Changed:
+  - E-map-1: two top-down layouts (docs/phases/10-bowl/, made by tools/layout/). Owner chose layout 1, the spiral.
+    Proposed region links (5 roads, 2 Copperleaf specials) are notes only: docs/phases/10-proposed-links.md.
+  - E-map-2: every place in locations.json has `bowl: {a, r}` (Pearlantis `{under: "kelpport"}`), type `BowlSpot`.
+    New `game/js/logic/bowl.js` (no DOM): depth profile (flat floor to 0.35, 45 degrees at the rim), spots, a map's
+    compass on the bowl (north faces the centre, east counter-clockwise), seam turn, roads over the ground.
+    `tools/check-data.mjs` checks every spot. The Studio's "add stop" gives a new stop a bowl spot.
+- Risky or unfinished: nothing reads `bowl` in the game yet; the sphere map still runs on lon/lat. lon/lat go when
+  E-map-3/4 replace the renderer. bowl.js is not loaded by any page yet (the renderer will import it).
+- Verified: lint, typecheck, check:data, check:modules, format:check, npm test (125 pass, 7 new in
+  tools/test/bowl-layout.test.mjs: every seam within 30 degrees (largest 20.8), no road crossings, places 0.08 apart,
+  Copperleaf on the floor's centre). The test fails a mirrored layout (25 seams off). check-fast: data, graph, Studio
+  loads. No graphics run.
+- Decisions I made (and why): the place data keeps lon/lat until the old map is deleted, so the game never breaks in
+  between; spots are stored as angle and radius (stable when the bowl's size or depth changes).
+- Questions waiting for the owner: zoom range and default tilt (before E-map-3).
+- Next session starts with: E-map-3, camera and controls over the bowl.
+
 ### Phase 20 stage C, session C-2 - One light block per frame (C3), flat things and blades (C4) - 2026-10-19
 Plan approved at the start ("Yes, let's go"), after sorting out the branches. Branch `ccr-9d72271f-j72y94`.
 - Branches first (nothing of stage B or C-1 was in main at the start):
