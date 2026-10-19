@@ -16,6 +16,7 @@ import { pixelHex, pixelRgba } from '../../game/js/logic/pixel-ops.js';
 import { snapDetect, snapToPixels } from '../../game/js/logic/pixel-snap.js';
 import {
   asepriteBoxes,
+  sheetArtBox,
   sheetAutoSockets,
   sheetCellIsland,
   sheetCrop,
@@ -287,9 +288,13 @@ function wbSliceSheet(sheet, si) {
   }
   const kinds = wbKinds(),
     slots = kits.slots || {};
-  const parts = found.map(({ it, vars }, k) => {
-    const key = `${si}:${k}`,
-      img = sheetPiece(base, it),
+  const parts = found.map(({ it: found1, vars }, k) => {
+    /* islands carry the margin their merge gap grew; trimmed to the art (a template cell only when asked) */
+    const whole = sheetPiece(base, found1),
+      ab = (o.method === 'islands' || o.trim) && sheetArtBox(whole),
+      it = ab ? { ...found1, x: found1.x + ab.x, y: found1.y + ab.y, w: ab.w, h: ab.h } : found1,
+      key = `${si}:${k}`,
+      img = ab ? sheetCrop(whole, ab) : whole,
       named = wbSplitView(
         sheetName(o.name, { kit: workbench.kit, view: sheet.view, ...vars }) || `${workbench.kit}_${k + 1}`,
         sheet.view
