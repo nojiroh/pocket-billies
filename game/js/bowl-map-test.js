@@ -211,6 +211,16 @@ async function runBowlMapTest() {
       if (share < 35 || share > 45) return { ok: false, note: `the sea is ${share}% of the bowl` };
       return `${share}% of the bowl is sea, every place on land; worked out in ${g.seaMs} ms; the water is ${g.water.n / 3} triangles`;
     });
+    await step('Light, shadows, routes and rivers', async () => {
+      const g = worldBowl.ground,
+        t = performance.now();
+      while (!(g.shadow && g.lines) && performance.now() - t < 5000) await bowlTestFrames(1);
+      if (!g.shadow || !g.shadow.t) return { ok: false, note: 'no shadow map (the ground is lit without shadows)' };
+      if (!g.lines) return { ok: false, note: "the routes' line map is missing" };
+      const n = (g.G.rivers || []).length;
+      if (n < 4) return { ok: false, note: `only ${n} rivers` };
+      return `shadow map drawn in ${g.shadow.ms} ms; route and river lines made in ${g.lines.ms} ms; ${n} rivers`;
+    });
     await step('Every place is on the bowl', async () => {
       const S = worldBowl.spots || [],
         bad = LOCATIONS.filter(

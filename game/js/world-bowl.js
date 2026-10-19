@@ -27,6 +27,7 @@ import {
   bowlReliefFeatures,
   bowlSeaInput,
   bowlSpotOf,
+  bowlSun,
   bowlWaterLevel,
   bowlXY,
 } from './logic/bowl.js';
@@ -73,12 +74,19 @@ expose({
   BOWL_HAZE: [() => BOWL_HAZE],
   BOWL_INDEX: [() => BOWL_INDEX],
   BOWL_KIND_GROUND: [() => BOWL_KIND_GROUND],
+  BOWL_LIGHT: [() => BOWL_LIGHT],
   BOWL_METRES: [() => BOWL_METRES],
   BOWL_MIX: [() => BOWL_MIX],
   BOWL_PIN: [() => BOWL_PIN],
   BOWL_REGION_GROUND: [() => BOWL_REGION_GROUND],
+  BOWL_REGION_SHADE: [() => BOWL_REGION_SHADE],
+  BOWL_RIVER_FIELD: [() => BOWL_RIVER_FIELD],
+  BOWL_ROUTE_FIELD: [() => BOWL_ROUTE_FIELD],
   BOWL_SEA_FAR: [() => BOWL_SEA_FAR],
+  BOWL_SHADOW_GLSL: [() => BOWL_SHADOW_GLSL],
+  BOWL_SHADOW_SIZE: [() => BOWL_SHADOW_SIZE],
   BOWL_SUN: [() => BOWL_SUN],
+  BOWL_SUN_NOW: [() => BOWL_SUN_NOW],
   BOWL_WALL_W: [() => BOWL_WALL_W],
   WORLD_BOWL_SHADERS: [() => WORLD_BOWL_SHADERS],
   bowlHash: [() => bowlHash],
@@ -89,14 +97,19 @@ expose({
   worldBowlDot: [() => worldBowlDot, v => (worldBowlDot = v)],
   worldBowlFilm: [() => worldBowlFilm, v => (worldBowlFilm = v)],
   worldBowlGpu: [() => worldBowlGpu, v => (worldBowlGpu = v)],
+  worldBowlLightMatrix: [() => worldBowlLightMatrix, v => (worldBowlLightMatrix = v)],
   worldBowlLine: [() => worldBowlLine, v => (worldBowlLine = v)],
+  worldBowlLineMap: [() => worldBowlLineMap, v => (worldBowlLineMap = v)],
   worldBowlLock: [() => worldBowlLock, v => (worldBowlLock = v)],
   worldBowlMesh: [() => worldBowlMesh, v => (worldBowlMesh = v)],
   worldBowlOverlay: [() => worldBowlOverlay, v => (worldBowlOverlay = v)],
   worldBowlPick: [() => worldBowlPick, v => (worldBowlPick = v)],
   worldBowlPin: [() => worldBowlPin, v => (worldBowlPin = v)],
   worldBowlRender: [() => worldBowlRender, v => setWorldBowlRender(v)],
+  worldBowlRiversInto: [() => worldBowlRiversInto, v => (worldBowlRiversInto = v)],
   worldBowlRoadsInto: [() => worldBowlRoadsInto, v => (worldBowlRoadsInto = v)],
+  worldBowlShadowUniforms: [() => worldBowlShadowUniforms, v => (worldBowlShadowUniforms = v)],
+  worldBowlShadows: [() => worldBowlShadows, v => (worldBowlShadows = v)],
   worldBowlSpots: [() => worldBowlSpots, v => (worldBowlSpots = v)],
   worldBowlStampMap: [() => worldBowlStampMap, v => (worldBowlStampMap = v)],
   worldBowlStampMaps: [() => worldBowlStampMaps, v => (worldBowlStampMaps = v)],
@@ -169,7 +182,11 @@ export const worldBowl = {
   marks: [],
 };
 
-const BOWL_SUN = [0, 1.7, 0];
+/* the Inner Sun (owner chose A, 2026-10-19): off the centre, the light slanted from where it hangs (logic/bowl.js
+   bowlSun); in GPU space its place and the way to it. Session 3 moves it with the time of day. */
+const BOWL_SUN_NOW = bowlSun(),
+  BOWL_SUN = bowlToGpu(...BOWL_SUN_NOW.at),
+  BOWL_LIGHT = bowlToGpu(...BOWL_SUN_NOW.dir);
 const BOWL_HAZE = [0.69, 0.73, 0.92];
 const BOWL_PIN = 22; /* a pin's height on screen, in pixels */
 const BOWL_SEA_FAR = [0.16, 0.42, 0.62]; /* the sea's colour far away (the walk scenes' far wall) */
@@ -178,6 +195,17 @@ const BOWL_SEA_FAR = [0.16, 0.42, 0.62]; /* the sea's colour far away (the walk 
 const BOWL_METRES = 1000;
 const BOWL_INDEX = 2048;
 const BOWL_MIX = 1024;
+/* the routes' and rivers' line map: distance to the nearest route (red, up to BOWL_ROUTE_FIELD), whether a place's own
+   ground is there (green: up close its own paths show instead), distance to the nearest river (blue) */
+const BOWL_ROUTE_FIELD = 0.06;
+const BOWL_RIVER_FIELD = 0.03;
+const BOWL_SHADOW_SIZE = 2048;
+/* the shadow lookup shared by the ground and the water: four taps of the hardware-filtered shadow map */
+const BOWL_SHADOW_GLSL = `uniform sampler2DShadow uSh;uniform mat4 uSM;uniform float uShOn;
+float bowlShadow(vec3 p,float nl){if(uShOn<.5)return 1.;vec4 s=uSM*vec4(p,1.);vec3 t=s.xyz*.5+.5;
+ if(any(lessThan(t.xy,vec2(0.)))||any(greaterThan(t.xy,vec2(1.))))return 1.;float b=.0006+.0012*(1.-nl),k=1./${BOWL_SHADOW_SIZE.toFixed(1)};
+ float r=texture(uSh,vec3(t.xy+vec2(-k,-k)*.75,t.z-b))+texture(uSh,vec3(t.xy+vec2(k,-k)*.75,t.z-b))+texture(uSh,vec3(t.xy+vec2(-k,k)*.75,t.z-b))+texture(uSh,vec3(t.xy+vec2(k,k)*.75,t.z-b));
+ return r*.25;}`;
 export const WORLD_BOWL_SHADERS = {
   /* the sky: pale towards the rim line, the Inner Sun overhead (depth at the very back) */
   msky: [
@@ -191,18 +219,37 @@ void main(){vec2 px=gl_FragCoord.xy/uR;vec3 d=normalize(uFw+uRt*(px.x-uWH.x*.5)/
   ],
   /* the ground: one low-poly mesh, lit facet by facet by the Inner Sun, painted with the walk scenes' terrain
      pictures (a square a metre, 16 px each, sharp) close up and their average colours far away */
+  /* the ground: one low-poly mesh lit by the slanted sun, with the shadows it casts on itself (a shadow map made once,
+     the ground never moves), painted with the walk scenes' terrain pictures (a square a metre, 16 px each, sharp)
+     close up and their average colours far away; the routes and rivers drawn over it as lines that keep a few pixels
+     wide at any zoom (look session 2: routes always clear) */
   mground: [
     `#version 300 es
 precision highp float;in vec3 aPos;uniform mat4 uVP;out vec3 vW;void main(){vW=aPos;gl_Position=uVP*vec4(aPos,1.);}`,
     `#version 300 es
-precision highp float;precision highp sampler2DArray;in vec3 vW;out vec4 o;uniform sampler2D uIdx,uMix;uniform sampler2DArray uLay;uniform vec3 uC,uSun,uHaze;uniform float uOn;
+precision highp float;precision highp sampler2DArray;precision highp sampler2DShadow;in vec3 vW;out vec4 o;uniform sampler2D uIdx,uMix,uRoute;uniform sampler2DArray uLay;uniform vec3 uC,uLd,uHaze;uniform float uOn;
+${BOWL_SHADOW_GLSL}
 void main(){vec3 n=normalize(cross(dFdx(vW),dFdy(vW)));if(n.y<0.)n=-n;
- vec2 q=vec2(vW.x,-vW.z),uv=vec2(q.x*.5+.5,.5-q.y*.5);vec3 far=uOn>.5?texture(uMix,uv).rgb:vec3(.5,.63,.38),c=far;
- vec2 m=q*${BOWL_METRES.toFixed(1)};float px=max(length(dFdx(m)),length(dFdy(m)));
+ vec2 q=vec2(vW.x,-vW.z),uv=vec2(q.x*.5+.5,.5-q.y*.5);vec3 far=uOn>.5?texture(uMix,uv).rgb:vec3(.5,.63,.38),c=far,near=far;
+ vec2 m=q*${BOWL_METRES.toFixed(1)};float px=max(length(dFdx(m)),length(dFdy(m))),pb=px/${BOWL_METRES.toFixed(1)};
  if(uOn>.5&&px<4.){float L=floor(texelFetch(uIdx,ivec2(clamp(uv*${BOWL_INDEX.toFixed(1)},vec2(0.),vec2(${(BOWL_INDEX - 1).toFixed(1)}))),0).r*255.+.5);
-  vec3 near=textureGrad(uLay,vec3(fract(m),L),dFdx(m),dFdy(m)).rgb;c=mix(near,far,smoothstep(1.4,4.,px));}
- float lit=.58+.5*max(0.,dot(n,normalize(uSun-vW)))-.1*(1.-n.y);c*=lit;
+  near=textureGrad(uLay,vec3(fract(m),L),dFdx(m),dFdy(m)).rgb;c=mix(near,far,smoothstep(1.4,4.,px));}
+ if(uOn>.5){vec3 rq=texture(uRoute,uv).rgb;float aa=pb*.75+1e-5;
+  float rv=rq.b*${BOWL_RIVER_FIELD.toFixed(3)},rw=max(.0012,pb*.9);
+  c=mix(c,mix(vec3(.2,.47,.72),near,1.-smoothstep(1.,3.,px)),(1.-smoothstep(rw-aa,rw+aa,rv))*smoothstep(.6,2.,px));
+  float rd=rq.r*${BOWL_ROUTE_FIELD.toFixed(3)},hw=max(.0018,pb*1.6),ow=hw+max(.0011,pb*1.1),vis=1.-rq.g*(1.-smoothstep(1.5,4.,px));
+  vec3 rc=mix(vec3(.95,.87,.66),near*1.08,1.-smoothstep(1.,3.,px));
+  c=mix(c,vec3(.22,.15,.1),(1.-smoothstep(ow-aa,ow+aa,rd))*vis*.85);c=mix(c,rc,(1.-smoothstep(hw-aa,hw+aa,rd))*vis);}
+ float nl=max(0.,dot(n,uLd)),sh=bowlShadow(vW,nl);
+ c*=vec3(.4,.45,.56)+.16*n.y+vec3(1.,.94,.82)*.74*nl*sh;
  float d=length(vW-uC),fk=1.-exp(-max(0.,d-.7)*.32);o=vec4(mix(c,uHaze,clamp(fk,0.,.6)),1.);}`,
+  ],
+  /* the shadow map: the ground seen from the sun, depth only */
+  mshadow: [
+    `#version 300 es
+precision highp float;in vec3 aPos;uniform mat4 uSM;void main(){gl_Position=uSM*vec4(aPos,1.);}`,
+    `#version 300 es
+precision highp float;out vec4 o;void main(){o=vec4(1.);}`,
   ],
 };
 provide({ WORLD_BOWL_SHADERS }); /* to-module */
@@ -212,7 +259,8 @@ WORLD_BOWL_SHADERS.mwater = [
   `#version 300 es
 precision highp float;in vec3 aPos;in vec2 aShore;uniform mat4 uVP;out vec3 vW;out vec2 vS;void main(){vW=aPos;vS=aShore;gl_Position=uVP*vec4(aPos,1.);}`,
   `#version 300 es
-precision highp float;in vec3 vW;in vec2 vS;out vec4 o;uniform vec3 uC,uSun,uHaze;uniform float uT;
+precision highp float;precision highp sampler2DShadow;in vec3 vW;in vec2 vS;out vec4 o;uniform vec3 uC,uLd,uHaze;uniform float uT;
+${BOWL_SHADOW_GLSL}
 float wv(vec2 p,vec2 d,float f,float s,float t){return sin(dot(p,d)*f+t*s);}
 void main(){vec2 q=vec2(vW.x,-vW.z)*${BOWL_METRES.toFixed(1)};float t=uT;
  vec3 up=normalize(vec3(0.,${Math.SQRT2.toFixed(6)},0.)-vW);
@@ -222,15 +270,15 @@ void main(){vec2 q=vec2(vW.x,-vW.z)*${BOWL_METRES.toFixed(1)};float t=uT;
  g+=vec2(.2,-.98)*cos(dot(q,vec2(.2,-.98))*.31+t*2.3)*.035;
  g+=vec2(-.94,-.34)*cos(dot(q,vec2(-.94,-.34))*.6+t*3.1)*.02;
  vec3 n=normalize(up+vec3(-g.x,0.,g.y)*.35);
- vec3 v=normalize(uC-vW),l=normalize(uSun-vW);
+ vec3 v=normalize(uC-vW),l=uLd;float sh=bowlShadow(vW,1.);
  float dep=vS.x,c=vS.y;
  vec3 shallow=vec3(.33,.78,.78),mid=vec3(.1,.48,.68),deep=vec3(.04,.2,.42);
  vec3 col=mix(shallow,mid,smoothstep(.0,.006,dep));col=mix(col,deep,smoothstep(.008,.032,dep));
- col*=.78+.3*max(0.,dot(n,l));
+ col*=(.62+.3*max(0.,dot(n,l)))*(.72+.28*sh);
  vec3 r=reflect(-v,n);float ry=dot(r,up);
  vec3 sky=mix(vec3(.98,.87,.72),vec3(.6,.71,.95),smoothstep(-.05,.7,ry));
  float fr=.04+.96*pow(1.-max(0.,dot(n,v)),5.);col=mix(col,sky,clamp(fr,0.,.85));
- float sp=pow(max(0.,dot(reflect(-l,n),v)),120.);col+=vec3(1.,.95,.8)*sp*1.6;
+ float sp=pow(max(0.,dot(reflect(-l,n),v)),120.);col+=vec3(1.,.95,.8)*sp*1.6*sh;
  float fb=1.-smoothstep(.0,.0035,dep),fw=.5+.5*sin(dep*2600.-t*2.2+wv(q,vec2(.6,.8),.4,0.,0.)*1.5);
  float foam=fb*smoothstep(.35,.75,fw)+(1.-smoothstep(0.,.0008,dep))*.8;col=mix(col,vec3(.95,.98,1.),clamp(foam,0.,1.)*.85);
  float a=mix(.45,.92,smoothstep(.0,.006,dep));a=max(a,clamp(foam,0.,1.)*.9);
@@ -259,6 +307,18 @@ const BOWL_REGION_GROUND = {
   coraltrench: 'N3N2gN',
   cloudspire: 'UgUvtU',
   innersun: 'YWYBYW',
+};
+/* the land between places by height and wetness (look session 2): each region's wet lowland, dry slopes and high
+   ground; cliffs and steep slopes are rock, the highest tops snow */
+const BOWL_REGION_SHADE = {
+  starter: ['RlG', 'BH', 'rv'],
+  meadowlands: ['RGE', 'HB', 'rv'],
+  goldenhills: ['gGl', 'AB', 'Wr'],
+  sporeforest: ['DMR', 'Ly', 'rM'],
+  crystalcaverns: ['kM', 'rv', 'Xr'],
+  coraltrench: ['SR', 'sP', 'r'],
+  cloudspire: ['UV', 'Vv', 'Vn'],
+  innersun: ['Y', 'AZ', 'jz'],
 };
 const BOWL_KIND_GROUND = {
   sea: 'dwdS',
@@ -356,8 +416,29 @@ function worldBowlTerrainStart() {
   const lists = LOCATIONS.map(l => {
     const r = (BOWL_REGION_GROUND[l.region] || BOWL_REGION_GROUND.starter).split(''),
       k = (BOWL_KIND_GROUND[l.t] || '').split('');
-    return { r: r.filter(c => c in K.layer).map(c => K.layer[c]), k: k.filter(c => c in K.layer).map(c => K.layer[c]) };
+    const sh = BOWL_REGION_SHADE[l.region] || BOWL_REGION_SHADE.starter,
+      keys = (/** @type {string} */ str) =>
+        str
+          .split('')
+          .filter(c => c in K.layer)
+          .map(c => K.layer[c]);
+    return { r: keys(r.join('')), k: keys(k.join('')), wet: keys(sh[0]), dry: keys(sh[1]), high: keys(sh[2]) };
   });
+  /* how steep the ground is at each of the grid's corners (rise over run, above the water's curve) */
+  const G = g.G,
+    gw = G.n + 1,
+    step = (2 * G.e) / G.n,
+    relAt = (/** @type {number} */ k) => {
+      const x = -G.e + (k % gw) * step,
+        y = -G.e + Math.floor(k / gw) * step;
+      return G.h[k] - bowlHeight(Math.min(1, Math.hypot(x, y)));
+    },
+    slope = new Float32Array(gw * gw);
+  for (let k = gw + 1; k < gw * gw - gw - 1; k++)
+    slope[k] = Math.hypot(relAt(k + 1) - relAt(k - 1), relAt(k + gw) - relAt(k - gw)) / (2 * step);
+  const cornerOf = (/** @type {number} */ x, /** @type {number} */ y) =>
+    Math.max(0, Math.min(G.n, Math.round((x + G.e) / step))) +
+    Math.max(0, Math.min(G.n, Math.round((y + G.e) / step))) * gw;
   const L = K.layer;
   g.terrain = { K, idx, near, lists, row: 0, ready: false, stamped: new Set(), dirty: true, gl: null };
   g.terrain.fill = rows => {
@@ -369,9 +450,12 @@ function worldBowlTerrainStart() {
           y = 1 - ((j + 0.5) / N) * 2,
           r = Math.hypot(x, y);
         if (r > 1.01) continue;
-        /* the place this square belongs to, its edges dithered so regions meet in a pixel-art border */
-        const ci = Math.min(C - 1, Math.max(0, Math.floor(((x + 1) / 2) * C + (bowlHash(i, j) - 0.5) * 3))),
-          cj = Math.min(C - 1, Math.max(0, Math.floor(((1 - y) / 2) * C + (bowlHash(j, i) - 0.5) * 3))),
+        /* the place this square belongs to: borders wander (a slow warp) and are dithered, so regions blend over a few
+           squares in a pixel-art way, never along a straight line */
+        const wx = (bowlNoise(x * 6 + 3.1, y * 6) - 0.5) * 7,
+          wy = (bowlNoise(x * 6, y * 6 - 5.7) - 0.5) * 7,
+          ci = Math.min(C - 1, Math.max(0, Math.floor(((x + 1) / 2) * C + wx + (bowlHash(i, j) - 0.5) * 3))),
+          cj = Math.min(C - 1, Math.max(0, Math.floor(((1 - y) / 2) * C + wy + (bowlHash(j, i) - 0.5) * 3))),
           p = T.near[cj * C + ci],
           s = S[p],
           ls = T.lists[p],
@@ -385,13 +469,25 @@ function worldBowlTerrainStart() {
         /* second pick for a dithered patch edge */
         if (ls.r.length > 1 && Math.abs(bowlNoise(m * 1.7, n * 1.7) - 0.5) < 0.06 && th < 0.5)
           t = pick(ls.r.slice().reverse());
-        if (rel > 0.05 + th * 0.012 && 'n' in L) t = L.n;
+        /* away from the places' own ground: wet lowland, dry slopes, high ground, rock on the steep, snow on top */
+        const ck = cornerOf(x, y),
+          wet = G.wet ? G.wet[ck] : 0,
+          steep = slope[ck],
+          inPlace = d < 0.07;
+        if (!inPlace) {
+          if (wet > 0.5 + th * 0.3 && rel < 0.03 && ls.wet.length) t = pick(ls.wet);
+          else if (wet < 0.1 + th * 0.1 && rel > 0.012 && ls.dry.length) t = pick(ls.dry);
+          if (rel > 0.045 + th * 0.012 && ls.high.length) t = pick(ls.high);
+        }
+        if (steep > 1.5 + th * 0.6) t = L.r ?? t;
+        if (rel > 0.085 + th * 0.012 && 'n' in L) t = L.n;
         /* the coast: a beach of dry then wet sand down to the water, and under it the sea floor (sand in the shallows,
            pebbles and rock further out, coral sand in the coral regions) */
         const cv = bowlCoastAt(g.G, x, y);
         if (cv > -0.012 + th * 0.004) {
           const coral = ls.r.includes(L.N);
-          if (cv <= -0.004) t = L.s ?? t;
+          if (cv <= 0 && rel > 0.01) t = L.r ?? t; /* a cliff, no beach */
+          else if (cv <= -0.004) t = L.s ?? t;
           else if (cv <= 0.006 + th * 0.004) t = L.S ?? t;
           else if (cv <= 0.03 + th * 0.01) t = (coral ? L.N : L.s) ?? t;
           else t = (bowlNoise(m * 0.2, n * 0.2) > 0.55 ? L.r : L.P) ?? t;
@@ -402,11 +498,185 @@ function worldBowlTerrainStart() {
     T.row = end;
     T.dirty = true;
     if (T.row >= N) {
+      worldBowlRiversInto(T);
       worldBowlRoadsInto(T);
       T.ready = true;
     }
   };
   return g.terrain;
+}
+/* the rivers: water a few squares wide (wider and deeper as rivers join), muddy or sandy banks; the roads go over them
+   afterwards, as fords and bridges */
+function worldBowlRiversInto(T) {
+  const G = worldBowl.ground.G,
+    N = BOWL_INDEX,
+    L = T.K.layer;
+  if (!G.rivers || L.w == null) return;
+  const gw = G.n + 1,
+    flowAt = (x, y) =>
+      G.flow[Math.round(((x + G.e) / (2 * G.e)) * G.n) + Math.round(((y + G.e) / (2 * G.e)) * G.n) * gw] || 1,
+    paint = (cx, cy, rad, t) => {
+      for (let dy = -Math.ceil(rad); dy <= Math.ceil(rad); dy++)
+        for (let dx = -Math.ceil(rad); dx <= Math.ceil(rad); dx++) {
+          if (dx * dx + dy * dy > rad * rad) continue;
+          const i = Math.floor(cx + dx),
+            j = Math.floor(cy + dy);
+          if (i >= 0 && j >= 0 && i < N && j < N) T.idx[j * N + i] = t;
+        }
+    };
+  for (const pass of [0, 1])
+    for (const course of G.rivers)
+      for (let k = 0; k + 1 < course.length; k++) {
+        const [ax, ay] = course[k],
+          [bx, by] = course[k + 1],
+          f = Math.min(4, flowAt(ax, ay)),
+          steps = Math.ceil(Math.hypot(bx - ax, by - ay) * (N / 2) * 2);
+        for (let q = 0; q <= steps; q++) {
+          const x = ax + ((bx - ax) * q) / steps,
+            y = ay + ((by - ay) * q) / steps,
+            cx = ((x + 1) / 2) * N,
+            cy = ((1 - y) / 2) * N,
+            rad = 1.6 + f * 0.9;
+          if (pass === 0) paint(cx, cy, rad + 1.5, (q + k) % 3 ? (L.D ?? L.S ?? L.w) : (L.S ?? L.w));
+          else paint(cx, cy, rad, f >= 3 && L.d != null ? L.d : L.w);
+        }
+      }
+}
+/* the routes' and rivers' line map (see BOWL_ROUTE_FIELD): distances worked out once, near each line only */
+function worldBowlLineMap() {
+  const M = BOWL_MIX,
+    S = worldBowl.spots,
+    G = worldBowl.ground.G,
+    rd = new Float32Array(M * M).fill(BOWL_ROUTE_FIELD),
+    vd = new Float32Array(M * M).fill(BOWL_RIVER_FIELD),
+    inPlace = new Uint8Array(M * M),
+    texel = 2 / M,
+    seg = (D, cap, ax, ay, bx, by, extra) => {
+      const i0 = Math.max(0, Math.floor(((Math.min(ax, bx) - cap + 1) / 2) * M)),
+        i1 = Math.min(M - 1, Math.ceil(((Math.max(ax, bx) + cap + 1) / 2) * M)),
+        j0 = Math.max(0, Math.floor(((1 - Math.max(ay, by) - cap) / 2) * M)),
+        j1 = Math.min(M - 1, Math.ceil(((1 - Math.min(ay, by) + cap) / 2) * M)),
+        vx = bx - ax,
+        vy = by - ay,
+        vv = vx * vx + vy * vy || 1;
+      for (let j = j0; j <= j1; j++)
+        for (let i = i0; i <= i1; i++) {
+          const x = -1 + (i + 0.5) * texel - ax,
+            y = 1 - (j + 0.5) * texel - ay,
+            t = Math.max(0, Math.min(1, (x * vx + y * vy) / vv)),
+            dd = Math.hypot(x - vx * t, y - vy * t) - extra;
+          if (dd < D[j * M + i]) D[j * M + i] = Math.max(0, dd);
+        }
+    };
+  for (const [a, b] of ROADS) {
+    const A = S[a],
+      B = S[b];
+    if (A && B && !A.under && !B.under) seg(rd, BOWL_ROUTE_FIELD, A.x, A.y, B.x, B.y, 0);
+  }
+  if (G.rivers) {
+    const gw = G.n + 1;
+    for (const course of G.rivers)
+      for (let k = 0; k + 1 < course.length; k++) {
+        const [ax, ay] = course[k],
+          [bx, by] = course[k + 1],
+          f = G.flow[Math.round(((ax + 1) / 2) * G.n) + Math.round(((ay + 1) / 2) * G.n) * gw] || 1;
+        seg(vd, BOWL_RIVER_FIELD, ax, ay, bx, by, 0.0006 * Math.min(4, f));
+      }
+  }
+  /* each place's own ground (its walk map, turned), where its own paths take over up close */
+  LOCATIONS.forEach((l, i) => {
+    const s = S[i],
+      m = gameData.maps && gameData.maps[l.mapId];
+    if (!s || s.under || !m) return;
+    const half = Math.min(m.w, m.h) / 2 / BOWL_METRES,
+      i0 = Math.max(0, Math.floor(((s.x - half + 1) / 2) * M)),
+      i1 = Math.min(M - 1, Math.ceil(((s.x + half + 1) / 2) * M)),
+      j0 = Math.max(0, Math.floor(((1 - s.y - half) / 2) * M)),
+      j1 = Math.min(M - 1, Math.ceil(((1 - s.y + half) / 2) * M));
+    for (let j = j0; j <= j1; j++)
+      for (let ii = i0; ii <= i1; ii++)
+        if (Math.hypot(-1 + (ii + 0.5) * texel - s.x, 1 - (j + 0.5) * texel - s.y) < half) inPlace[j * M + ii] = 1;
+  });
+  const px = new Uint8Array(M * M * 4);
+  for (let k = 0; k < M * M; k++) {
+    px[k * 4] = Math.round((rd[k] / BOWL_ROUTE_FIELD) * 255);
+    px[k * 4 + 1] = inPlace[k] * 255;
+    px[k * 4 + 2] = Math.round((vd[k] / BOWL_RIVER_FIELD) * 255);
+    px[k * 4 + 3] = 255;
+  }
+  return px;
+}
+/* the light's view of the bowl for the shadow map: straight along the light, everything inside the rim in the square.
+   Column-major, as WebGL reads it */
+function worldBowlLightMatrix() {
+  const f = BOWL_LIGHT.map(v => -v),
+    hint = Math.abs(f[2]) > 0.9 ? [1, 0, 0] : [0, 0, 1],
+    cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]],
+    norm = a => {
+      const l = Math.hypot(...a);
+      return a.map(v => v / l);
+    },
+    r = norm(cross(f, hint)),
+    u = cross(r, f),
+    c = [0, 0.3, 0],
+    E = 1.25,
+    Z = 2,
+    m = new Float32Array(16),
+    row = (k, a, s) => {
+      m[k] = a[0] * s;
+      m[4 + k] = a[1] * s;
+      m[8 + k] = a[2] * s;
+      m[12 + k] = -(a[0] * c[0] + a[1] * c[1] + a[2] * c[2]) * s;
+    };
+  row(0, r, 1 / E);
+  row(1, u, 1 / E);
+  row(2, f, 1 / Z);
+  m[15] = 1;
+  return m;
+}
+/* the shadow map: drawn once for the ground (it never moves) and again only if the GPU starts over */
+function worldBowlShadows(g) {
+  const gl = gpuState.gl;
+  if (g.shadow && g.shadow.gl === gl) return g.shadow;
+  const t0 = performance.now(),
+    Z = BOWL_SHADOW_SIZE,
+    tex = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, tex);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.DEPTH_COMPONENT24, Z, Z, 0, gl.DEPTH_COMPONENT, gl.UNSIGNED_INT, null);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_COMPARE_MODE, gl.COMPARE_REF_TO_TEXTURE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_COMPARE_FUNC, gl.LEQUAL);
+  const fb = gl.createFramebuffer();
+  gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, tex, 0);
+  gl.drawBuffers([gl.NONE]);
+  gl.readBuffer(gl.NONE);
+  const ok = gl.checkFramebufferStatus(gl.FRAMEBUFFER) === gl.FRAMEBUFFER_COMPLETE,
+    SM = worldBowlLightMatrix();
+  if (ok) {
+    gl.viewport(0, 0, Z, Z);
+    gl.enable(gl.DEPTH_TEST);
+    gl.depthFunc(gl.LEQUAL);
+    gl.depthMask(true);
+    gl.clear(gl.DEPTH_BUFFER_BIT);
+    gl.enable(gl.POLYGON_OFFSET_FILL);
+    gl.polygonOffset(1.5, 2);
+    const p = gpuState.P.mshadow;
+    gl.useProgram(p.p);
+    gl.uniformMatrix4fv(p.U.uSM, false, SM);
+    gl.bindVertexArray(g.mesh.vao);
+    gl.drawElements(gl.TRIANGLES, g.mesh.n, gl.UNSIGNED_INT, 0);
+    gl.bindVertexArray(null);
+    gl.disable(gl.POLYGON_OFFSET_FILL);
+  }
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  gl.deleteFramebuffer(fb);
+  if (!ok) gl.deleteTexture(tex);
+  g.shadow = { gl, t: ok ? tex : null, SM, ms: Math.round(performance.now() - t0) };
+  return g.shadow;
 }
 /* paths along the roads, a few squares wide (the places' own maps lie over their ends) */
 function worldBowlRoadsInto(T) {
@@ -686,6 +956,8 @@ function worldBowlGpu() {
     g.gl = gpuState.gl;
     g.mesh = worldBowlMesh();
     g.water = worldBowlWaterMesh();
+    g.shadow = null;
+    g.lines = null;
   }
   const T = worldBowlTerrainStart();
   if (!T.ready) {
@@ -697,6 +969,19 @@ function worldBowlGpu() {
     worldBowlTerrainPictures(T).then(() => (worldBowl.dirty = true));
   }
   g.ok = T.ready && worldBowlTerrainGpu(T);
+  if (g.ok && (!g.lines || g.lines.gl !== gpuState.gl)) {
+    const gl = gpuState.gl,
+      t = gl.createTexture(),
+      t0 = performance.now();
+    gl.bindTexture(gl.TEXTURE_2D, t);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, BOWL_MIX, BOWL_MIX, 0, gl.RGBA, gl.UNSIGNED_BYTE, worldBowlLineMap());
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    g.lines = { gl, t, ms: Math.round(performance.now() - t0) };
+  }
+  worldBowlShadows(g);
   if (T.dirty) worldBowl.dirty = true;
   return g;
 }
@@ -1006,7 +1291,8 @@ export function worldBowlRender(t) {
   gl.useProgram(p.p);
   gl.uniformMatrix4fv(U.uVP, false, VP);
   gl.uniform3fv(U.uC, v.C);
-  gl.uniform3fv(U.uSun, BOWL_SUN);
+  gl.uniform3fv(U.uLd, BOWL_LIGHT);
+  worldBowlShadowUniforms(U, g);
   gl.uniform3fv(U.uHaze, BOWL_HAZE);
   const T = g.terrain || worldBowl.ground.terrain;
   gl.uniform1f(U.uOn, g.ok ? 1 : 0);
@@ -1019,6 +1305,9 @@ export function worldBowlRender(t) {
   gl.activeTexture(gl.TEXTURE2);
   gl.bindTexture(gl.TEXTURE_2D_ARRAY, g.ok ? T.tLay : null);
   gl.uniform1i(U.uLay, 2);
+  gl.activeTexture(gl.TEXTURE4);
+  gl.bindTexture(gl.TEXTURE_2D, g.lines ? g.lines.t : gpuState.white);
+  gl.uniform1i(U.uRoute, 4);
   gl.activeTexture(gl.TEXTURE0);
   gl.bindVertexArray(g.mesh.vao);
   gl.drawElements(gl.TRIANGLES, g.mesh.n, gl.UNSIGNED_INT, 0);
@@ -1029,7 +1318,8 @@ export function worldBowlRender(t) {
     gl.useProgram(p.p);
     gl.uniformMatrix4fv(U.uVP, false, VP);
     gl.uniform3fv(U.uC, v.C);
-    gl.uniform3fv(U.uSun, BOWL_SUN);
+    gl.uniform3fv(U.uLd, BOWL_LIGHT);
+    worldBowlShadowUniforms(U, g);
     gl.uniform3fv(U.uHaze, BOWL_HAZE);
     gl.uniform1f(U.uT, reducedMotion ? 0 : (t % 600000) / 1000);
     gl.enable(gl.BLEND);
@@ -1050,6 +1340,17 @@ export function worldBowlRender(t) {
     rh,
     { blur: 0, fast: rw * rh > 1.2e6, noAO: true, sun: projectToScreenUv(VP, BOWL_SUN), sunCol: [1, 0.9, 0.7] }
   );
+}
+/* the shadow map for a program that reads it (texture unit 3) */
+function worldBowlShadowUniforms(U, g) {
+  const gl = gpuState.gl,
+    sh = g.shadow && g.shadow.t ? g.shadow : null;
+  gl.activeTexture(gl.TEXTURE3);
+  gl.bindTexture(gl.TEXTURE_2D, sh ? sh.t : null);
+  gl.uniform1i(U.uSh, 3);
+  gl.uniform1f(U.uShOn, sh ? 1 : 0);
+  if (sh) gl.uniformMatrix4fv(U.uSM, false, sh.SM);
+  gl.activeTexture(gl.TEXTURE0);
 }
 /* the bowl seen from any eye, for the opening fall: the ground and the sky, no pins */
 export function worldBowlFilm(view, t) {
