@@ -1490,16 +1490,16 @@ def desktop_steps(b, base, R):
     @step('v43: the seamless world, flags, voxel props, the new light', 240)
     def v43():
         out = []
-        # every road composes at both ends and in the middle: no cut tiles, offsets on whole metres, sizes the card can hold
-        r = json.loads(pg.evaluate("""JSON.stringify((()=>{const out=[];let n=0,mx=0;for(let i=0;i<ROADS.length;i++){const R=seamlessRoad(i);if(!R){out.push('link '+i+': no road');continue}
-         for(const u of [0,R.Lr/2,R.Lr]){const v=seamlessViewFor(R,u),sc=seamlessViewMap(v,R);n++;mx=Math.max(mx,sc.w,sc.h);if((sc.w+16)*8>4096||(sc.h+16)*8>4096)out.push(v.id+': '+sc.w+'x'+sc.h+' is too big for its distant ground picture');/* v46: the near ring paints the full size round you */
-          if(sc.tiles.length!==sc.h||sc.tiles.some(r=>r.length!==sc.w))out.push(v.id+': ragged tiles');if(!(sc.props||[]).length)out.push(v.id+': no props');
-          for(const P of sc.parts)if(!P.road&&(P.ox%1||P.oz%1))out.push(v.id+': '+P.id+' off the metre grid')}
-         const a=seamlessViewMap(seamlessViewFor(R,0,'a'),R),b=seamlessViewMap(seamlessViewFor(R,0,'b'),R);const pa=a.parts.find(p=>p.id===R.aId),pb=b.parts.find(p=>p.id===R.bId);
-         const A=mapById(R.aId),B=mapById(R.bId);for(let j=0;j<4;j++){/* alpha 0.2: away from the edges, where two places' grounds mingle */let i0=Math.floor(A.w/4*j)+4,z0=Math.floor(A.h/3)+1;if(a.tiles[a.h-1-(z0+pa.oz)][i0+pa.ox]!==A.tiles[A.h-1-z0][i0])out.push(a.id+': scene tiles don’t match');i0=Math.floor(B.w/4*j)+4;z0=Math.floor(B.h/3)+1;/* v46: B's own size */if(b.tiles[b.h-1-(z0+pb.oz)][i0+pb.ox]!==B.tiles[B.h-1-z0][i0])out.push(b.id+': scene tiles don’t match')}}
+        # every place's view composes (phase 08b: the only kind of view; the road frame and its middle views are gone): no cut
+        # tiles, parts on whole metres, sizes the distant ground picture can hold, the place's own tiles carried over exactly
+        r = json.loads(pg.evaluate("""JSON.stringify((()=>{const out=[];let n=0,mx=0;for(let k=0;k<LOCATIONS.length;k++){const sid=mapIdAt(k),A=mapById(sid);if(!A)continue;const sc=seamlessHubMap(k);if(!sc){out.push(sid+': no view');continue}n++;mx=Math.max(mx,sc.w,sc.h);
+         if((sc.w+16)*8>4096||(sc.h+16)*8>4096)out.push(sc.id+': '+sc.w+'x'+sc.h+' is too big for its distant ground picture');/* v46: the near ring paints the full size round you */
+         if(sc.tiles.length!==sc.h||sc.tiles.some(r=>r.length!==sc.w))out.push(sc.id+': ragged tiles');if(!(sc.props||[]).length)out.push(sc.id+': no props');
+         for(const P of sc.parts)if(P.ox%1||P.oz%1)out.push(sc.id+': '+P.id+' off the metre grid');
+         const pa=sc.parts.find(p=>p.id===sid);for(let j=0;j<4;j++){/* alpha 0.2: away from the edges, where two places' grounds mingle */const i0=Math.floor(A.w/4*j)+4,z0=Math.floor(A.h/3)+1;if(sc.tiles[sc.h-1-(z0+pa.oz)][i0+pa.ox]!==A.tiles[A.h-1-z0][i0]){out.push(sc.id+': scene tiles don’t match');break}}}
          return {out:out.slice(0,6),n,mx}})())"""))
-        if r['out']: raise Exception('roads: ' + '; '.join(r['out']))
-        out.append(f'{r["n"]} road views composed for {pg.evaluate("ROADS.length")} roads, the biggest {r["mx"]} m, scene tiles carried over exactly')
+        if r['out']: raise Exception('views: ' + '; '.join(r['out']))
+        out.append(f'{r["n"]} place views composed, the biggest {r["mx"]} m, scene tiles carried over exactly')
         # a trip seen on the ground: leave Marigold Town, cross the road, arrive at Tallgrass Meadow without a remount
         go_scene(pg, 0); pg.evaluate("(()=>{const h=mapHub(mapById('marigold'));uiState.roam={id:'marigold',node:0,x:h[0],z:h[1]}})();render();0")   # alpha 0.2: places grew; start at the hub
         if not until(pg, "walkView.id==='w:marigold*'&&walkView.ready", 30): raise Exception('Marigold Town is not shown with its roads (' + pg.evaluate('walkView.id') + ')')   # v46: a place is always shown with the first stretch of its roads
