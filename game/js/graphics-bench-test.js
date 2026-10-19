@@ -88,7 +88,7 @@ const GRAPHICS_TEST_STATIONS = [
     ],
   },
   { id: 'pond', name: 'Pond', dials: ['water.reflection'] },
-  { id: 'sun', name: 'Sun gap', sun: { angle: -90, height: 18 }, dials: ['sun.shafts', 'air.godRays'] },
+  { id: 'sun', name: 'Sun gap', sun: { angle: -90, height: 18 }, dials: ['air.godRays'] },
   { id: 'lamps', name: 'Lamp square', time: 22, dials: ['color.bloom', 'color.bloomSize', 'lights.brightness'] },
   { id: 'meadow', name: 'Meadow', dials: ['grass.density', 'air.particles', 'air.mist'] },
   { id: 'depth', name: 'Depth corridor', dials: ['lens.blur', 'world.farProps'] },

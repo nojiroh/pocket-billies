@@ -24,7 +24,6 @@ provide({ galleryOpen });
 const GALLERY_STATIONS = {
   'shadows.strength': 'grove',
   'shadows.selfShade': 'grove',
-  'sun.shafts': 'grove',
   'air.godRays': 'grove',
   'lights.brightness': 'cottage',
   'color.bloom': 'cottage',
