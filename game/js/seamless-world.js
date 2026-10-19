@@ -28,7 +28,7 @@ import {
   walkData,
   walkView,
 } from './walk-view.js';
-import { ENGINE_DEFAULTS, engineSetting } from './engine/settings.js';
+import { ENGINE_DEFAULTS } from './engine/settings.js';
 import { smooth01 } from './engine/webgl.js';
 import { isGroundPrepared, prepareMapGround, walkRenderer } from './walk-view-gl.js';
 import { lifeShift } from './ambient-life.js';
