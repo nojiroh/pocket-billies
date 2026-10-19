@@ -140,7 +140,15 @@ import {
   walkablePointNear,
   worldToScreen,
 } from './walk-view.js';
-import { ENGINE_DEFAULTS, PLAIN_LOOK, engineColor, engineContext, engineSetting } from './engine/settings.js';
+import {
+  ENGINE_DEFAULTS,
+  PLAIN_LOOK,
+  beginFrameSettings,
+  endFrameSettings,
+  engineColor,
+  engineContext,
+  engineSetting,
+} from './engine/settings.js';
 import {
   COMMON_GLSL,
   LIGHT_GLSL,
@@ -3647,6 +3655,7 @@ function drawWalkFrame(ts, dtm) {
   try {
     drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0);
   } finally {
+    endFrameSettings();
     engineContext.env = false;
     endGpuTimer(gq);
   }
@@ -3654,6 +3663,8 @@ function drawWalkFrame(ts, dtm) {
 function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   if (typeof seamlessLookTick === 'function') seamlessLookTick();
   if (typeof seamlessPrepareAhead === 'function') seamlessPrepareAhead(performance.now());
+  /* phase 20 C1: every dial looked up once for this frame (settings.js) */
+  beginFrameSettings();
   const gl = gpuState.gl,
     sc = walkView.sc,
     cv = walkView.cv;
