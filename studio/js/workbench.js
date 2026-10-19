@@ -56,6 +56,7 @@ import { atlasGet, fileToCanvas, markArt } from './sprites.js';
 /* eslint-disable no-func-assign */
 expose({
   WB_DEFAULTS: [() => WB_DEFAULTS],
+  WB_JOINT_KEYS: [() => WB_JOINT_KEYS],
   WB_METHODS: [() => WB_METHODS],
   WB_RENDER_KEYS: [() => WB_RENDER_KEYS],
   WB_VIEWS: [() => WB_VIEWS],
@@ -63,6 +64,7 @@ expose({
   wbGuess: [() => wbGuess, v => (wbGuess = v)],
   wbHasFiles: [() => wbHasFiles],
   wbInput: [() => wbInput, v => (wbInput = v)],
+  wbKeepJoints: [() => wbKeepJoints, v => (wbKeepJoints = v)],
   wbKey: [() => wbKey, v => (wbKey = v)],
   wbKinds: [() => wbKinds],
   wbKits: [() => wbKits],
@@ -633,12 +635,21 @@ async function wbWrite() {
             size: 'M',
             views: {},
           }));
-    e.views[p.view] = { file: `next/parts/${p.view}/${p.id}.png`, w: p.img.width, h: p.img.height, sockets: p.sockets };
+    /* sockets placed by hand in Part mode (partKits `sockets`) win over the ones worked out from the outline */
+    const hand = ((kits.sockets || {})[p.id] || {})[p.view];
+    e.views[p.view] = {
+      file: `next/parts/${p.view}/${p.id}.png`,
+      w: p.img.width,
+      h: p.img.height,
+      sockets: hand ? { ...p.sockets, ...hand } : p.sockets,
+    };
   }
   for (const [id, e] of Object.entries(entries)) {
     const old = have[id];
     /* a view not on these sheets stays as it was */
     if (old) for (const v of WB_VIEWS) if (!e.views[v] && old.views[v]) e.views[v] = old.views[v];
+    /* what Part mode set stays: the pivot per view, the S and L pictures, draw order, turn limits, socket rules */
+    if (old) wbKeepJoints(old, e);
     e.views = Object.fromEntries(WB_VIEWS.filter(v => e.views[v]).map(v => [v, e.views[v]]));
     if (JSON.stringify(old) !== JSON.stringify(e)) have[id] = e;
   }
@@ -699,6 +710,20 @@ async function wbWrite() {
     `${n} part${n === 1 ? '' : 's'} written, ${steps.length} picture${steps.length === 1 ? '' : 's'} changed. Save to put them in the game.`,
     'ok'
   );
+}
+/* Part mode's work on a part carried over to its entry written again from a sheet (studio track ST-4) */
+const WB_JOINT_KEYS = ['z', 'turn', 'accepts', 'mirrorOf'];
+function wbKeepJoints(old, e) {
+  if (old.kind === e.kind) e.pivot = old.pivot;
+  if (old.size) e.size = old.size;
+  for (const k of WB_JOINT_KEYS) if (old[k] !== undefined) e[k] = old[k];
+  for (const v of WB_VIEWS) {
+    const O = old.views[v],
+      V = e.views[v];
+    if (!O || !V || O === V) continue;
+    if (O.pivot) V.pivot = O.pivot;
+    if (O.sizes) V.sizes = O.sizes;
+  }
 }
 /* ---------- actions and inputs ---------- */
 ACTIONS.wbOpen = async () => {
