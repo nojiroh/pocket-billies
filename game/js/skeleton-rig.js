@@ -468,12 +468,12 @@ export function rigAtlas(sp, view, coat) {
 let coatRigData = null;
 const COAT_ATLASES = new Map();
 const coatsForRigs = () => coatRigData || (typeof COATS !== 'undefined' ? COATS : null) || {};
-function setCoatRigData(D) {
+export function setCoatRigData(D) {
   coatRigData = D;
   COAT_ATLASES.clear();
   for (const k of Object.keys(RIG_PARTS_CACHE)) if (k.includes('#')) delete RIG_PARTS_CACHE[k];
 }
-function coatAtlas(img, path, sp, view, coat) {
+export function coatAtlas(img, path, sp, view, coat) {
   const C = coat && coatsForRigs()[coat];
   if (!C || !img || coatArt(C, sp, view)) return img;
   const key = path + '#' + coat,

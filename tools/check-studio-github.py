@@ -78,8 +78,16 @@ def main():
         pg.wait_for_selector('.pxed.skel', timeout=20000); time.sleep(0.5)
         pg.click('.pxed.skel [data-sk=close]'); time.sleep(0.3)
         pg.evaluate("void openSection('preview')"); pg.wait_for_selector('#cvWorld', timeout=20000); time.sleep(2)
+        # studio track ST-0: the Coats section recolours its preview; a new coat and a ramp swap are edits
+        pg.evaluate("void openSection('coats')"); pg.wait_for_selector('canvas.spr-prev', timeout=20000); time.sleep(1.5)
+        diff = pg.evaluate("""(()=>{const [a,b]=[...document.querySelectorAll('#main canvas.spr-prev')];if(!a||!b)return -1;
+          const d=c=>c.getContext('2d').getImageData(0,0,c.width,c.height).data,x=d(a),y=d(b);let n=0;for(let i=0;i<x.length;i+=4)if(x[i]!==y[i]||x[i+1]!==y[i+1]||x[i+2]!==y[i+2])n++;return n})()""")
+        if diff < 20: errs.append(f'coats: the coat preview looks like the normal one ({diff} pixels differ)')
+        pg.evaluate("document.querySelector('[data-act=coatRampAdd]').click()"); time.sleep(0.3)
+        if pg.evaluate("Object.keys(studioState.D.coats[studioState.sel.coat].ramps).length") < 2: errs.append('coats: + Swap a ramp added nothing')
+        pg.evaluate("void openSection('preview')"); time.sleep(1)
         if len(errs) > n: errs[n:] = [f'art tools: {e}' for e in errs[n:]]
-        print('art tools opened: pixel editor (front, back), skeleton builder, battle preview', flush=True)
+        print(f'art tools opened: pixel editor (front, back), skeleton builder, battle preview, coats ({diff} pixels recoloured)', flush=True)
         pg.evaluate("const k = Object.keys(studioState.D.moves)[0]; studioState.D.moves[k].name += ' Test'; studioState.dirty = true; void saveAll()")
         t0 = time.time()
         while time.time() - t0 < 60 and 'pulls' not in posts:

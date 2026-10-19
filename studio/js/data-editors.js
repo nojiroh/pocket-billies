@@ -171,7 +171,8 @@ SECTIONS.billionaires = () => {
     L = D.lines[li],
     p = `lines.${li}`,
     st = Math.min(studioState.sel.stage || 0, L.names.length - 1),
-    sp = L.id + st;
+    sp = L.id + st,
+    coat = studioState.sel.billyCoat || '';
   studioState.sel.stage = st;
   const stageTabs = L.names
     .map(
@@ -179,8 +180,14 @@ SECTIONS.billionaires = () => {
         `<button class="seg ${i === st ? 'on' : ''}" data-act="stage" data-i="${i}">${STAGE_LABEL[i]}: ${escapeHtml(n)}</button>`
     )
     .join('');
-  const prev = `<div class="prev-row"><figure>${spritePreviewHTML({ sp, view: 'front', cls: 'big' })}<figcaption>Front (foes, Field Guide)</figcaption></figure><figure>${spritePreviewHTML({ sp, view: 'back', cls: 'big' })}<figcaption>Back (your side in battle)</figcaption></figure></div>
-  <div class="seg-row">${['attack', 'cast', 'hurt', 'cheer', 'buff', 'dizzy', 'faint'].map(a => `<button class="seg sm" data-act="anim" data-a="${a}">${a}</button>`).join('')}<span class="grow"></span></div>
+  const prev = `<div class="prev-row"><figure>${spritePreviewHTML({ sp, view: 'front', coat, cls: 'big' })}<figcaption>Front (foes, Field Guide)</figcaption></figure><figure>${spritePreviewHTML({ sp, view: 'back', coat, cls: 'big' })}<figcaption>Back (your side in battle)</figcaption></figure></div>
+  <div class="seg-row">${['attack', 'cast', 'hurt', 'cheer', 'buff', 'dizzy', 'faint'].map(a => `<button class="seg sm" data-act="anim" data-a="${a}">${a}</button>`).join('')}<span class="grow"></span><label class="fld inline"><span>Coat</span><select id="billyCoat"><option value="">None</option>${Object.entries(
+    studioState.D.coats || {}
+  )
+    .map(
+      ([k, c]) => `<option value="${escapeHtml(k)}" ${k === coat ? 'selected' : ''}>${escapeHtml(c.name || k)}</option>`
+    )
+    .join('')}</select></label></div>
   <div class="seg-row"><button class="btn primary" data-act="pixels" data-sp="${sp}">Edit pixels and skeleton</button><button class="btn" data-act="skeleton" data-sp="${sp}">Skeleton builder</button><button class="btn" data-act="recolor" data-sp="${sp}">Recolor this stage…</button><button class="btn" data-act="bpFoe" data-sp="${sp}">See it in battle</button>${studioState.rigs[sp] ? '' : '<span class="warn">No skeleton for this stage: it can’t be drawn.</span>'}</div>`;
   const tsel = i => {
     const ts = L.types[st] || [];
@@ -1745,3 +1752,10 @@ ACTIONS.trainerDel = async () => {
   changed();
   render();
 };
+/* studio track ST-0: preview a Billie in a coat (Coats section) */
+document.addEventListener('change', ev => {
+  if (ev.target && ev.target.id === 'billyCoat') {
+    studioState.sel.billyCoat = ev.target.value;
+    render();
+  }
+});

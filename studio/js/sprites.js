@@ -7,9 +7,10 @@
 import { expose } from '../../game/js/test-globals.js';
 import { openSkeleton, provide } from '../../game/js/hooks.js';
 import { $, $$, clamp } from '../../game/js/util.js';
+import { coatArt } from '../../game/js/logic/coats.js';
 import { makeCanvas } from '../../game/js/art.js';
 import { animFor } from '../../game/js/body-plan-animation.js';
-import { drawRig, rigPose } from '../../game/js/skeleton-rig.js';
+import { coatAtlas, drawRig, rigPose, setCoatRigData } from '../../game/js/skeleton-rig.js';
 import { escapeHtml } from './game-stand-ins.js';
 import { ask, render, speciesName, studioState, toast, updateTopBar } from './studio-app.js';
 /* eslint-disable no-func-assign */
@@ -26,6 +27,10 @@ expose({
   bindPixelEditor: [() => bindPixelEditor, v => (bindPixelEditor = v)],
   canvasCopy: [() => canvasCopy, v => (canvasCopy = v)],
   choosePixelColor: [() => choosePixelColor, v => (choosePixelColor = v)],
+  coatRigDataSet: [() => coatRigDataSet, v => (coatRigDataSet = v)],
+  coatVersion: [() => coatVersion, v => (coatVersion = v)],
+  coatedAtlas: [() => coatedAtlas, v => (coatedAtlas = v)],
+  coatsChanged: [() => coatsChanged, v => (coatsChanged = v)],
   downloadCanvas: [() => downloadCanvas, v => (downloadCanvas = v)],
   drawPixelEditor: [() => drawPixelEditor, v => (drawPixelEditor = v)],
   drawSpritePreview: [() => drawSpritePreview, v => (drawSpritePreview = v)],
@@ -109,17 +114,38 @@ export function atlasGet(path) {
 }
 export const loadedAtlas = path => studioState.artDirty.get(path) || ATLAS_CACHE.get(path) || null;
 /* assemble a skeleton like skeleton-rig.js rigParts(), but from the Studio's editable atlas */
-export function rigFor(sp, view) {
-  const path = atlasPath(sp, view),
+/* studio track ST-0: the coats being edited (coats.json); a coat edit bumps coatVersion so previews recolour again */
+let coatVersion = 0;
+export function coatsChanged() {
+  coatVersion++;
+  setCoatRigData(studioState.D.coats || {});
+  previewsDirty();
+}
+/* the sheet a coat draws from: its own hand-painted one, or the normal sheet recoloured */
+function coatedAtlas(sp, view, coat) {
+  const C = coat && studioState.D.coats && studioState.D.coats[coat],
+    own = C ? coatArt(C, sp, view) : null,
+    path = own ? 'art/' + own : atlasPath(sp, view),
     atlas = loadedAtlas(path);
   if (!atlas) {
     atlasGet(path).catch(() => {});
-    return null;
+    return { path, atlas: null };
   }
+  if (!C || own) return { path, atlas };
+  if (coatRigDataSet !== studioState.D.coats) {
+    coatRigDataSet = studioState.D.coats;
+    setCoatRigData(coatRigDataSet);
+  }
+  return { path, atlas: coatAtlas(atlas, `${path}@${atlas._ver || 0}:${atlasVersion}:${coatVersion}`, sp, view, coat) };
+}
+let coatRigDataSet = null;
+export function rigFor(sp, view, coat) {
+  const { path, atlas } = coatedAtlas(sp, view, coat);
+  if (!atlas) return null;
   const meta = studioState.rigs[sp] && studioState.rigs[sp][view];
   if (!meta) return null;
-  const key = path,
-    ver = (studioState.rigVer || 0) + ':' + atlasVersion + ':' + (atlas._ver || 0),
+  const key = path + (coat ? '#' + coat : ''),
+    ver = (studioState.rigVer || 0) + ':' + atlasVersion + ':' + (atlas._ver || 0) + ':' + (coat ? coatVersion : 0),
     hit = RIG_CACHE.get(key);
   if (hit && hit.ver === ver) return hit.R;
   const cut = ([x, y, w, h]) => {
@@ -177,12 +203,12 @@ export function playSpritePreviewAction(c, act) {
 }
 function drawSpritePreview(c, ts) {
   const o = c._p,
-    R = rigFor(o.sp, o.view || 'front');
+    R = rigFor(o.sp, o.view || 'front', o.coat);
   const x = c.getContext('2d');
   if (!R) {
     if (!o.miss) {
       o.miss = 1;
-      atlasGet(atlasPath(o.sp, o.view || 'front'))
+      atlasGet(coatedAtlas(o.sp, o.view || 'front', o.coat).path)
         .then(() => {
           o.miss = 0;
           drawSpritePreview(c, performance.now());
