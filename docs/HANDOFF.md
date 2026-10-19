@@ -39,7 +39,7 @@ portal shapes".
   - Triangles (meshed in Node, no rendering): towers 714 / 2,536 / 848, everything else under 330. Not measured on a
     phone; the largest window picture is 378 x 1,699 px (the slab's glass).
 - Verified: data check, lint (one naming note in game/js/engine/frame-block.js, already on main), type-check, 118
-  unit tests, module and format checks, smoke check (result in the next commit); each recipe meshed in Node; the generated pictures looked at as
+  unit tests, module and format checks, smoke check (15 of 15; its unused note names detail-a04.png and airship_mast, both from before); each recipe meshed in Node; the generated pictures looked at as
   flat sheets. No headless renders of the props (graphics are for your devices).
 - Decisions I made (and why): towers 90-125 m so they read as megacity at street level; sign words kept generic;
   steady glow, no flicker (no engine change; flicker can come with S8).
