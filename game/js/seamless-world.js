@@ -1750,6 +1750,17 @@ export function shiftWalkView(id, dx, dz) {
   walkView.sc = sc;
   walkView.gkey = '';
   walkView.cand = null;
+  /* phase 08b: the walking grid of the view you leave is kept for coming back (out of a room: at once) */
+  walkView.navKeep = walkView.nav
+    ? {
+        sc: walkView.navSc,
+        nav: walkView.nav,
+        G: walkView.navG,
+        P: walkView.navP,
+        T: walkView.navT,
+        key: walkView.navKey,
+      }
+    : null;
   walkView.nav = null;
   walkView.npcAt = {};
   if (typeof debugLog !== 'undefined') debugLog.add('scene', 'seamless to ' + id);
