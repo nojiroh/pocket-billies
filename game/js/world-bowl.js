@@ -19,12 +19,15 @@ import { LOCATIONS, LOCATION_BY_ID, ROADS, gameData, locationSubtitle } from './
 import { canEnter, distanceText, tripTo } from './logic/rules.js';
 import {
   BOWL_GROUND_EXTENT,
+  bowlCoastAt,
   bowlGridHeight,
   bowlGroundGrid,
   bowlHeight,
   bowlRelief,
   bowlReliefFeatures,
+  bowlSeaInput,
   bowlSpotOf,
+  bowlWaterLevel,
   bowlXY,
 } from './logic/bowl.js';
 import {
@@ -74,6 +77,7 @@ expose({
   BOWL_MIX: [() => BOWL_MIX],
   BOWL_PIN: [() => BOWL_PIN],
   BOWL_REGION_GROUND: [() => BOWL_REGION_GROUND],
+  BOWL_SEA_FAR: [() => BOWL_SEA_FAR],
   BOWL_SUN: [() => BOWL_SUN],
   BOWL_WALL_W: [() => BOWL_WALL_W],
   WORLD_BOWL_SHADERS: [() => WORLD_BOWL_SHADERS],
@@ -100,6 +104,7 @@ expose({
   worldBowlTerrainKinds: [() => worldBowlTerrainKinds, v => (worldBowlTerrainKinds = v)],
   worldBowlTerrainPictures: [() => worldBowlTerrainPictures, v => (worldBowlTerrainPictures = v)],
   worldBowlTerrainStart: [() => worldBowlTerrainStart, v => (worldBowlTerrainStart = v)],
+  worldBowlWaterMesh: [() => worldBowlWaterMesh, v => (worldBowlWaterMesh = v)],
   worldMap: [() => worldMap],
   worldMapAction: [() => worldMapAction, v => (worldMapAction = v)],
   worldMapBackToWalk: [() => worldMapBackToWalk, v => (worldMapBackToWalk = v)],
@@ -167,6 +172,7 @@ export const worldBowl = {
 const BOWL_SUN = [0, 1.7, 0];
 const BOWL_HAZE = [0.69, 0.73, 0.92];
 const BOWL_PIN = 22; /* a pin's height on screen, in pixels */
+const BOWL_SEA_FAR = [0.16, 0.42, 0.62]; /* the sea's colour far away (the walk scenes' far wall) */
 
 /* the ground's scale: metres to the bowl's radius, squares across the terrain map, and the far-colours' size */
 const BOWL_METRES = 1000;
@@ -200,6 +206,36 @@ void main(){vec3 n=normalize(cross(dFdx(vW),dFdy(vW)));if(n.y<0.)n=-n;
   ],
 };
 provide({ WORLD_BOWL_SHADERS }); /* to-module */
+/* the sea (look session 1, owner: water that looks like water): clear and pale in the shallows, deep blue further out,
+   small waves moving over it, the sky in it at a glancing angle, the sun's glint, and foam where it meets the land */
+WORLD_BOWL_SHADERS.mwater = [
+  `#version 300 es
+precision highp float;in vec3 aPos;in vec2 aShore;uniform mat4 uVP;out vec3 vW;out vec2 vS;void main(){vW=aPos;vS=aShore;gl_Position=uVP*vec4(aPos,1.);}`,
+  `#version 300 es
+precision highp float;in vec3 vW;in vec2 vS;out vec4 o;uniform vec3 uC,uSun,uHaze;uniform float uT;
+float wv(vec2 p,vec2 d,float f,float s,float t){return sin(dot(p,d)*f+t*s);}
+void main(){vec2 q=vec2(vW.x,-vW.z)*${BOWL_METRES.toFixed(1)};float t=uT;
+ vec3 up=normalize(vec3(0.,${Math.SQRT2.toFixed(6)},0.)-vW);
+ vec2 g=vec2(0.);
+ g+=vec2(.8,.6)*cos(dot(q,vec2(.8,.6))*.09+t*1.1)*.09;
+ g+=vec2(-.5,.86)*cos(dot(q,vec2(-.5,.86))*.17+t*1.7)*.06;
+ g+=vec2(.2,-.98)*cos(dot(q,vec2(.2,-.98))*.31+t*2.3)*.035;
+ g+=vec2(-.94,-.34)*cos(dot(q,vec2(-.94,-.34))*.6+t*3.1)*.02;
+ vec3 n=normalize(up+vec3(-g.x,0.,g.y)*.35);
+ vec3 v=normalize(uC-vW),l=normalize(uSun-vW);
+ float dep=vS.x,c=vS.y;
+ vec3 shallow=vec3(.33,.78,.78),mid=vec3(.1,.48,.68),deep=vec3(.04,.2,.42);
+ vec3 col=mix(shallow,mid,smoothstep(.0,.006,dep));col=mix(col,deep,smoothstep(.008,.032,dep));
+ col*=.78+.3*max(0.,dot(n,l));
+ vec3 r=reflect(-v,n);float ry=dot(r,up);
+ vec3 sky=mix(vec3(.98,.87,.72),vec3(.6,.71,.95),smoothstep(-.05,.7,ry));
+ float fr=.04+.96*pow(1.-max(0.,dot(n,v)),5.);col=mix(col,sky,clamp(fr,0.,.85));
+ float sp=pow(max(0.,dot(reflect(-l,n),v)),120.);col+=vec3(1.,.95,.8)*sp*1.6;
+ float fb=1.-smoothstep(.0,.0035,dep),fw=.5+.5*sin(dep*2600.-t*2.2+wv(q,vec2(.6,.8),.4,0.,0.)*1.5);
+ float foam=fb*smoothstep(.35,.75,fw)+(1.-smoothstep(0.,.0008,dep))*.8;col=mix(col,vec3(.95,.98,1.),clamp(foam,0.,1.)*.85);
+ float a=mix(.45,.92,smoothstep(.0,.006,dep));a=max(a,clamp(foam,0.,1.)*.9);
+ float d=length(vW-uC),fk=1.-exp(-max(0.,d-.7)*.32);o=vec4(mix(col,uHaze,clamp(fk,0.,.6)),a);}`,
+];
 
 /* ---------- the places and the ground ---------- */
 /* where a place is on the bowl: x, y seen from above and the ground's height there */
@@ -243,8 +279,17 @@ const BOWL_KIND_GROUND = {
 };
 function worldBowlSpots() {
   if (worldBowl.spots) return worldBowl.spots;
-  const F = bowlReliefFeatures(LOCATIONS),
-    G = bowlGroundGrid(F);
+  /* the sea (look session 1): every place's walk map and every road on land, the rest of the line drawn so about 40%
+     of the bowl is water */
+  const t0 = performance.now(),
+    sea = bowlSeaInput(
+      LOCATIONS,
+      ROADS.map(r => [r[0], r[1]]),
+      l => (gameData.maps && gameData.maps[l.mapId]) || null,
+      BOWL_METRES
+    ),
+    F = bowlReliefFeatures(LOCATIONS),
+    G = bowlGroundGrid(F, undefined, sea);
   bowlCamUseGround(G);
   const byId = id => LOCATION_BY_ID[id];
   worldBowl.spots = LOCATIONS.map(l => {
@@ -252,7 +297,7 @@ function worldBowlSpots() {
       [x, y] = bowlXY(s.a, s.r);
     return { x, y, under: s.under, h: bowlGridHeight(G, x, y) };
   });
-  worldBowl.ground = { F, G, mesh: null, terrain: null };
+  worldBowl.ground = { F, G, mesh: null, water: null, terrain: null, seaMs: Math.round(performance.now() - t0) };
   return worldBowl.spots;
 }
 /* the terrain kinds: their keys in a fixed order (a layer each), their pictures' pixels and average colours */
@@ -341,7 +386,17 @@ function worldBowlTerrainStart() {
         if (ls.r.length > 1 && Math.abs(bowlNoise(m * 1.7, n * 1.7) - 0.5) < 0.06 && th < 0.5)
           t = pick(ls.r.slice().reverse());
         if (rel > 0.05 + th * 0.012 && 'n' in L) t = L.n;
-        if (r > 0.985) t = L.r ?? t;
+        /* the coast: a beach of dry then wet sand down to the water, and under it the sea floor (sand in the shallows,
+           pebbles and rock further out, coral sand in the coral regions) */
+        const cv = bowlCoastAt(g.G, x, y);
+        if (cv > -0.012 + th * 0.004) {
+          const coral = ls.r.includes(L.N);
+          if (cv <= -0.004) t = L.s ?? t;
+          else if (cv <= 0.006 + th * 0.004) t = L.S ?? t;
+          else if (cv <= 0.03 + th * 0.01) t = (coral ? L.N : L.s) ?? t;
+          else t = (bowlNoise(m * 0.2, n * 0.2) > 0.55 ? L.r : L.P) ?? t;
+        }
+        if (r > 0.985 && cv <= 0) t = L.r ?? t;
         T.idx[j * N + i] = t;
       }
     T.row = end;
@@ -583,11 +638,54 @@ function worldBowlMesh() {
     }
   return uploadMesh(V, new Uint32Array(I), [['aPos', 3, 0]], 12);
 }
+/* the water: a sheet on the bowl's curve over every cell that touches the sea, each corner with how deep the water is
+   there and how far out to sea (the shader's colours, foam and shallows come from them) */
+function worldBowlWaterMesh() {
+  const { n, e, h, c } = worldBowl.ground.G;
+  if (!c) return null;
+  const w = n + 1,
+    V = new Float32Array(w * w * 5),
+    I = [];
+  for (let j = 0; j <= n; j++)
+    for (let i = 0; i <= n; i++) {
+      let x = -e + (2 * e * i) / n,
+        y = -e + (2 * e * j) / n;
+      const r = Math.hypot(x, y);
+      if (r > 1) {
+        x /= r;
+        y /= r;
+      }
+      const top = bowlWaterLevel(x, y) - 0.0004;
+      V.set([...bowlToGpu(x, y, top), Math.max(0, top - h[j * w + i]), c[j * w + i]], (j * w + i) * 5);
+    }
+  const cell = (2 * e) / n;
+  for (let j = 0; j < n; j++)
+    for (let i = 0; i < n; i++) {
+      const a = j * w + i,
+        b = a + 1,
+        q = a + w,
+        d = q + 1;
+      if (Math.max(c[a], c[b], c[q], c[d]) <= 0) continue;
+      if (Math.hypot(-e + cell * (i + 0.5), -e + cell * (j + 0.5)) > 1 + cell) continue;
+      I.push(a, b, d, a, d, q);
+    }
+  if (!I.length) return null;
+  return uploadMesh(
+    V,
+    new Uint32Array(I),
+    [
+      ['aPos', 3, 0],
+      ['aShore', 2, 12],
+    ],
+    20
+  );
+}
 function worldBowlGpu() {
   const g = worldBowl.ground;
   if (!g.mesh || g.gl !== gpuState.gl) {
     g.gl = gpuState.gl;
     g.mesh = worldBowlMesh();
+    g.water = worldBowlWaterMesh();
   }
   const T = worldBowlTerrainStart();
   if (!T.ready) {
@@ -633,7 +731,7 @@ function bowlWallTexture() {
       const x = P.x + dx * s,
         y = P.y + dy * s;
       if (Math.hypot(x, y) > BOWL_GROUND_EXTENT) break;
-      const el = (bowlSurface(x, y) - eye) / s;
+      const el = (Math.max(bowlSurface(x, y), bowlWaterLevel(x, y)) - eye) / s;
       if (el > best) {
         best = el;
         bx = x;
@@ -641,7 +739,7 @@ function bowlWallTexture() {
       }
     }
     const top = best > 0 ? Math.sin(Math.atan(best)) : 0,
-      c = worldBowlColorAt(bx, by);
+      c = worldBowl.ground.G.c && bowlCoastAt(worldBowl.ground.G, bx, by) > 0 ? BOWL_SEA_FAR : worldBowlColorAt(bx, by);
     for (let row = 0; row < 4; row++) {
       const o = (row * BOWL_WALL_W + k) * 4;
       px[o] = Math.round(Math.min(1, c[0]) * 255);
@@ -837,7 +935,9 @@ function worldMapLoop(ts) {
     }
     moving = true;
   }
-  const breathe = Math.floor(ts / 600) !== Math.floor((ts - dt) / 600);
+  /* the sea moves: about 30 frames a second while it shows (still with reduced motion) */
+  const beat = worldBowl.ground && worldBowl.ground.water && !reducedMotion ? 33 : 600,
+    breathe = Math.floor(ts / beat) !== Math.floor((ts - dt) / beat);
   if (!moving && !worldBowl.dirty && !breathe) return;
   worldBowl.dirty = false;
   const w0 = performance.now();
@@ -922,6 +1022,24 @@ export function worldBowlRender(t) {
   gl.activeTexture(gl.TEXTURE0);
   gl.bindVertexArray(g.mesh.vao);
   gl.drawElements(gl.TRIANGLES, g.mesh.n, gl.UNSIGNED_INT, 0);
+  /* the sea over it, see-through in the shallows */
+  if (g.water) {
+    p = gpuState.P.mwater;
+    U = p.U;
+    gl.useProgram(p.p);
+    gl.uniformMatrix4fv(U.uVP, false, VP);
+    gl.uniform3fv(U.uC, v.C);
+    gl.uniform3fv(U.uSun, BOWL_SUN);
+    gl.uniform3fv(U.uHaze, BOWL_HAZE);
+    gl.uniform1f(U.uT, reducedMotion ? 0 : (t % 600000) / 1000);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    gl.depthMask(false);
+    gl.bindVertexArray(g.water.vao);
+    gl.drawElements(gl.TRIANGLES, g.water.n, gl.UNSIGNED_INT, 0);
+    gl.depthMask(true);
+    gl.disable(gl.BLEND);
+  }
   gl.bindVertexArray(null);
   const fd = Math.max(0.05, worldBowl.cam ? worldBowl.cam.dist : 1);
   drawPostEffects(
