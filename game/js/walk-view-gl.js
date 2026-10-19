@@ -136,7 +136,7 @@ import {
   walkablePointNear,
   worldToScreen,
 } from './walk-view.js';
-import { PLAIN_LOOK, engineColor, engineContext, engineSetting } from './engine/settings.js';
+import { ENGINE_DEFAULTS, PLAIN_LOOK, engineColor, engineContext, engineSetting } from './engine/settings.js';
 import {
   COMMON_GLSL,
   LIGHT_GLSL,
@@ -5278,7 +5278,12 @@ function walkLightContext(C, sun, dark, items, shadow, BT) {
     fogD: (engineSetting('air', 'hazeDistance') ?? (sc.hazeD || 34)) * 1.15 * fogK,
     tint,
     valley: walkRenderer.valley || null,
-    mist: sc.mist != null ? sc.mist + (E && !sc.indoor ? E.fog * 0.18 : 0) : engineSetting('air', 'mist'),
+    /* a place with mist of its own: the dial scales it (it was ignored there: 24 of 93 maps) */
+    mist:
+      sc.mist != null
+        ? Math.min(1, sc.mist * (engineSetting('air', 'mist') / (ENGINE_DEFAULTS.air.mist || 0.12))) +
+          (E && !sc.indoor ? E.fog * 0.18 : 0)
+        : engineSetting('air', 'mist'),
     mistY: (walkRenderer.wlevel || 0) + engineSetting('air', 'mistHeight'),
     time: t,
     indoor: sc.indoor,

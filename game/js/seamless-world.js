@@ -36,7 +36,7 @@ import {
   walkData,
   walkView,
 } from './walk-view.js';
-import { engineSetting } from './engine/settings.js';
+import { ENGINE_DEFAULTS, engineSetting } from './engine/settings.js';
 import { smooth01 } from './engine/webgl.js';
 import { isGroundPrepared, prepareMapGround, walkRenderer } from './walk-view-gl.js';
 import { lifeShift } from './ambient-life.js';
@@ -720,7 +720,11 @@ function seamlessLookMix(A, B, f) {
   o.mist =
     A.mist == null && B.mist == null
       ? A.mist
-      : n(A.mist, B.mist, typeof engineSetting === 'function' ? engineSetting('air', 'mist') : 0);
+      : n(
+          A.mist,
+          B.mist,
+          typeof ENGINE_DEFAULTS !== 'undefined' ? ENGINE_DEFAULTS.air.mist : 0
+        ); /* (the walk view scales it by the dial) */
   o.blur = n(A.blur, B.blur, 1);
   o.wind = n(A.wind, B.wind, 1);
   const ca = A.cam || {},
