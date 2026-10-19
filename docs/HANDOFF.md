@@ -11,6 +11,52 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 - Questions waiting for the owner: 
 - Next session starts with: 
 
+### Phase 13 (part) - Send debug logs (task 4, opt-in error reporting) - 2026-10-19
+Plan approved at the start. Branch `claude/vibrant-feynman-j50n6s`. The owner chose: opt-in and off by default, no
+picture of the screen, the existing export unchanged. Storage: Firestore, not Firebase Storage (the project's
+`*.firebasestorage.app` bucket would need the Blaze plan; Firestore works on Spark).
+- Changed (one cause per commit):
+  - `game/js/log-upload.js` (loaded only when a log is sent, like graphics-test.js; on no page): the payload is the
+    debug log without `screenshot`, every name (graphicsNames: planted, trainer, nicknames; plus the account's name
+    and e-mail) and any e-mail address replaced in every string, gzipped, refused at 900 KB or over. Sent to
+    `debugLogs/<CODE>` (six friend-code letters) under a Firebase app of its own ('logs') with anonymous sign-in, so
+    the player's account and save are never touched and a log is never tied to a Google account. A taken code is
+    retried. Unit tests in tools/test/log-upload.test.mjs.
+  - `firebase/firestore.rules`: `debugLogs/{code}` create only (signed in, anonymous counts), exact fields, `gz` bytes
+    under 900 KB; no get, list, update or delete. Three rules tests (16/16 on the emulator).
+  - `debug-log.js`: `sendDebugLog(why)`, `debugLog.canSend/sendAuto/setSendAuto/lastSent/autoSend`. Never sends on a
+    test page (TEST_RUN, TEST_BOOT), in a headless browser (navigator.webdriver), on file:, or with no PB_FIREBASE.
+    `window.PB_LOG_UPLOAD_STUB` (tools only) takes the payload instead and nothing is sent.
+  - Send debug log button: Settings → Help, debug menu, opening-failed screen, no-WebGL screen. Settings → Help: switch
+    "Send debug logs automatically" (localStorage `pb-send-logs`, per device) with the approved wording, and the last
+    code sent (`pb-sent-log`). Both show only where sending works, so headless pictures are unchanged. Two i18n rows.
+  - Automatic (switch on, once per session per reason): the end of the full or diagnostics test, the opening-failed
+    screen, the first thrown error or unhandled rejection (not a file that didn't load), sent 10 s later.
+  - `firebase/fetch-debug-log.mjs <CODE>|--list` (firebase-admin, key in `PB_DEBUG_LOG_KEY`) writes
+    `validation/logs/<CODE>.json` (gitignored). README: what is sent, and the one-time setup.
+- Where the plan changed (checked in the code):
+  - The pure payload code is in log-upload.js, not a new `game/js/logic/` file: vite.config.js removes that folder
+    after bundling the page's modules, so a logic file on no page would break the build. It is still tested in Node.
+  - The headless check is permanent: check-fast.py "A sent debug log holds no picture or names, and nothing is sent"
+    (plants both fixture names in an error first; a planted fault, an empty name list, fails it).
+- Risky:
+  - Needs the owner's setup before it works on the published game: Anonymous sign-in on, the new rules published.
+    Until then a send says "couldn't be sent" (and logs why); nothing breaks.
+  - CompressionStream needs iOS 16.4+ / a 2023 browser; older ones can't send (they can still export).
+  - The scrub knows the names in the save and the account. A name typed somewhere else and never saved would not be
+    caught; the debug log does not record typed text today.
+  - Rate: nothing stops a script from adding logs under anonymous sign-in. App Check would; not added.
+- Verified: after each commit lint (eslint; the naming check fails on main already: `FB` in engine/frame-block.js,
+  not touched here), typecheck, unit tests (118 -> 124), check:modules, format:check; check-fast 12/12; smoke
+  (no problems, 191 s; base 206 s) after each game commit; rules tests 16/16; build and check:data. Headless with the
+  stand-in: switch off sends nothing; on, three errors send one crash log 10 s later; test and opening send once
+  each; no request leaves the page. fetch-debug-log.mjs on the emulator: list, fetch (any case), unknown code.
+  Settings looked at on a 390 px page. Not verified: a real send to Firebase (needs the setup above).
+- Questions waiting for the owner: none.
+- Next session starts with: the owner's setup (Anonymous sign-in, publish the rules, a read-only service-account key
+  as PB_DEBUG_LOG_KEY, network access to firestore.googleapis.com and oauth2.googleapis.com); then on the phone: turn
+  on the switch, run the full test, pass on the code; fetch it and check it is complete.
+
 ### Phase 20 stage C, session C-2 - One light block per frame (C3), flat things and blades (C4) - 2026-10-19
 Plan approved at the start ("Yes, let's go"), after sorting out the branches. Branch `ccr-9d72271f-j72y94`.
 - Branches first (nothing of stage B or C-1 was in main at the start):
