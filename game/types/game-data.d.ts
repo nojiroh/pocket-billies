@@ -40,6 +40,8 @@ export interface GameData {
   /** phase 07: talking-head portraits (game/data/portraits.json) */
   portraits?: PortraitData;
   rarities: Record<string, { totals: number[] }>;
+  /** studio track ST-0: a Billie's coat, a recolour in place of the old Golden sheets (game/data/coats.json) */
+  coats?: Record<DataId, Coat>;
   lines: Line[];
   /** the world map's places, in node order */
   locations: LocationData[];
@@ -791,6 +793,20 @@ export interface RobotRules {
 export type RobotSlot = 'torso' | 'armL' | 'armR' | 'legs';
 
 /** robots.json (phase 17): robot parts and gems */
+/** coats.json: a recolour of a Billie's art (game/js/logic/coats.js) */
+export interface Coat {
+  /** shown to the player */
+  name: string;
+  /** whole palette ramps swapped step for step: { ember: 'indigo' } */
+  ramps?: Record<string, string>;
+  /** exact colours swapped after the ramps: { '#d94c21': '#3f3980' } */
+  swap?: Record<Color, Color>;
+  /** found once in this many; none means never */
+  odds?: { wild?: number; egg?: number; fish?: number };
+  /** hand-painted sheets per species and view, in place of the recolour (paths under game/art) */
+  art?: Record<SpeciesId, { front?: string; back?: string }>;
+}
+
 export interface RobotData {
   _help?: string;
   parts: Record<DataId, RobotPart>;
