@@ -313,10 +313,10 @@ const FOLK_CHAT = [
   'Lovely day for a walk.',
   'Mind the tall grass. Something’s rustling in there.',
   'I heard a Billie tried to buy the sun once.',
-  'My grandma walks ten thousand steps before breakfast.',
+  'My grandma walks to the next town and back before breakfast.',
   'The clinic patches up your team for free, you know.',
   'Have you seen the windmill turn? Very relaxing.',
-  'Every step counts, they say. Literally, here.',
+  'Every coin counts, they say. Literally, here.',
   'I’m saving up for a fancy hat.',
   'Watch out, trainers like to battle anyone who looks at them.',
 ];

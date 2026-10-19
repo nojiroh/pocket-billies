@@ -207,10 +207,10 @@ document.addEventListener('keydown', ev => {
 const FOLK_TALK = [
   '[happy] Oh, hi! Out for a walk too?',
   'Did you hear? Someone saw a Golden one near the pond.',
-  'My feet are tired, but my step counter is happy.',
+  'My feet are tired, but I’ve seen three towns today.',
   '[surprised] Is that a trainer card? Fancy!',
   'I used to have a Billie. It bought my house and moved me out.',
-  'Every step counts, they say. I counted. They do.',
+  'A coin saved is a coin taxed, they say. I never know who says it.',
   '[happy] Lovely day under the Inner Sun.',
   'Careful in the tall grass. They hide in there.',
 ];
