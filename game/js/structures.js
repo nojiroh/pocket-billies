@@ -14,14 +14,8 @@ import { clamp } from './util.js';
 import { hexToRgb } from './art.js';
 import { artImage, mapBridges, walkView } from './walk-view.js';
 import { ensurePrograms, gpuState, imageTexture } from './engine/webgl.js';
-import {
-  WALL_COLORS,
-  defaultWallMaterial,
-  groundHeightAt,
-  standingHeightAt,
-  useWalkProgram,
-  worldCurveArgs,
-} from './walk-view-gl.js';
+import { WALL_COLORS, defaultWallMaterial, groundHeightAt, standingHeightAt } from './walk/heights.js';
+import { useWalkProgram, worldCurveArgs } from './walk/draw-common.js';
 import { BUILDING_SHADERS, buildingArt, buildingGuard } from './buildings.js';
 /* eslint-disable no-func-assign */
 expose({

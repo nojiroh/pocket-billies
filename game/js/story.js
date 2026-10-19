@@ -16,7 +16,8 @@ import { activeBattle, escapeHtml, reducedMotion, save, saveData, uiState } from
 import { dressingRoom } from './dressing-room.js';
 import { baseMapId, walkView, walkablePointNear } from './walk-view.js';
 import { gpuState } from './engine/webgl.js';
-import { standingHeightAt, walkRenderer } from './walk-view-gl.js';
+import { walkRenderer } from './walk/walk-state.js';
+import { standingHeightAt } from './walk/heights.js';
 import { music } from './sound.js';
 import { talk, talkBox, talkHide, talkLine } from './talk.js';
 import {

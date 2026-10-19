@@ -21,7 +21,7 @@ import { RIG_BACK_VIEW, buildCode, drawRig, rigFrame, rigParts, rigPreload } fro
 import { battleStagePrepare } from './battle-stage.js';
 import { walkView, walkablePointNear, worldToScreen } from './walk-view.js';
 import { environment } from './environment.js';
-import { standingHeightAt } from './walk-view-gl.js';
+import { standingHeightAt } from './walk/heights.js';
 /* eslint-disable no-func-assign */
 expose({
   BILLY_FRAME_CACHE_MAX: [() => BILLY_FRAME_CACHE_MAX],
