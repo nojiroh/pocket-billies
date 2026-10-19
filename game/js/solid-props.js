@@ -28,13 +28,8 @@ import {
 } from './engine/webgl.js';
 import { walkRenderer } from './walk/walk-state.js';
 import { useWalkProgram, worldCurveArgs } from './walk/draw-common.js';
-import {
-  addHitTarget,
-  drawRotatingBlades,
-  foliageAmount,
-  frameBudgetLeft,
-  setPropLookUniforms,
-} from './walk-view-gl.js';
+import { frameBudgetLeft } from './walk/quality-cull.js';
+import { addHitTarget, drawRotatingBlades, foliageAmount, setPropLookUniforms } from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
 expose({
   SOLID_PROP_BODIES: [() => SOLID_PROP_BODIES],

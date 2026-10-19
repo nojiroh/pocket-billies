@@ -18,7 +18,8 @@ import {
 import { gpuState, webgl2Supported } from '../../game/js/engine/webgl.js';
 import { walkRenderer } from '../../game/js/walk/walk-state.js';
 import { rebuildFromSettings } from '../../game/js/walk/map-cache.js';
-import { adaptQuality, mountWalkView, setAdaptQuality } from '../../game/js/walk-view-gl.js';
+import { adaptQuality, setAdaptQuality } from '../../game/js/walk/quality-cull.js';
+import { mountWalkView } from '../../game/js/walk-view-gl.js';
 import { escapeHtml } from './game-stand-ins.js';
 import {
   ACTIONS,
