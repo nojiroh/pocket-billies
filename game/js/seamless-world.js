@@ -9,7 +9,7 @@
    in the background before it is needed, and nothing fades or cuts. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { mapExits, mapIdAt, provide } from './hooks.js';
+import { mapIdAt, provide } from './hooks.js';
 import { clamp } from './util.js';
 import { LOCATIONS, ROADS, ROADS_BY_NODE } from './game-data.js';
 import { uiState } from './game-state.js';
@@ -105,7 +105,7 @@ function seamlessNoise(x, y, s) {
   return a + (b - a) * u(fx) + (c - a) * u(fy) + (a - b - c + d) * u(fx) * u(fy);
 }
 const SIDE_VECTORS = { E: [1, 0], W: [-1, 0], N: [0, 1], S: [0, -1] };
-/* which exit of a stop's scene a link uses: the join table first, then the compass match (ui.js mapExits) */
+/* which exit of a stop's scene a link uses: the one it names (phase 08b: every link names both) */
 function seamlessRoadExit(node, i) {
   const sc = mapById(mapIdAt(node));
   if (!sc || !(sc.exits || []).length) return null;
@@ -113,11 +113,7 @@ function seamlessRoadExit(node, i) {
     J = L[3],
     id = J ? (L[0] === node ? J.a : J.b) : null,
     E = sc.edgeExits || [];
-  let k = id ? E.findIndex(q => q.id === id) : -1;
-  if (k < 0 && typeof mapExits === 'function') {
-    const to = L[0] === node ? L[1] : L[0];
-    k = mapExits(node)[to] ?? -1;
-  }
+  const k = id ? E.findIndex(q => q.id === id) : -1;
   if (k < 0) return null;
   const e = E[k] || exitEdge(sc, sc.exits[k]),
     p = sc.exits[k];
