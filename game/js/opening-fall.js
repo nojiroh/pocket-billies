@@ -16,6 +16,7 @@ import { $, clamp } from './util.js';
 import { START_NODE, typeEffectiveness } from './game-data.js';
 import { FAST_PICKS, FAST_PICK_MS, HAZEL, hazelTip, speedWatch } from './logic/hazel.js';
 import { actorTypes } from './logic/battle-engine.js';
+import { bowlSun } from './logic/bowl.js';
 import { bowlCamLookView, bowlToGpu } from './logic/bowl-camera.js';
 import { activeBattle, escapeHtml, reducedMotion } from './game-state.js';
 import { portraitHTML } from './person-art.js';
@@ -580,11 +581,12 @@ function fallSky(t) {
 function fallCamera(k, W, H) {
   const S = worldMapSpot(START_NODE),
     T = bowlToGpu(S.x, S.y, S.h),
-    sun = [0, 1.7, 0],
+    /* the Inner Sun hangs off the centre (look session 2): come in high behind it and pass close by it */
+    sun = bowlToGpu(...bowlSun().at),
     L = (a, b, f) => [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f],
     ease = f => f * f * (3 - 2 * f),
-    P0 = [-0.55, 2.35, 0.7],
-    P1 = [0.12, 1.62, 0.22],
+    P0 = [sun[0] * 0.2 - 0.55, sun[1] + 0.65, sun[2] * 0.2 + 0.7],
+    P1 = [sun[0] + 0.14, sun[1] - 0.08, sun[2] + 0.2],
     P2 = [T[0] * 0.6 + 0.2, 1.05, T[2] * 0.6 + 0.12],
     P3 = [T[0] + 0.008, T[1] + 0.03, T[2] + 0.012];
   let C, look;

@@ -178,6 +178,13 @@ def bowl_map(pg, base):
     pg.set_viewport_size({'width': 400, 'height': 300})
     # the ground's terrain map fills and the terrain pictures go up (graphics off: nothing is judged by eye)
     if not until(pg, "!!(worldBowl.ground&&worldBowl.ground.terrain&&worldBowl.ground.terrain.ready&&worldBowl.ground.ok)", 60): raise Exception('the terrain never got ready')
+    # the sea (look session 1): a water sheet over about 40% of the bowl, its shader in the same programs
+    if not pg.evaluate("!!(worldBowl.ground.water&&gpuState.P.mwater)"): raise Exception('the sea isn’t drawn')
+    # look session 2: the shadow map, the routes' and rivers' line map and the rivers
+    if not until(pg, "!!(worldBowl.ground.shadow&&worldBowl.ground.shadow.t&&worldBowl.ground.lines&&(worldBowl.ground.G.rivers||[]).length>=4)", 20): raise Exception('no shadow map, route lines or rivers')
+    f1 = pg.evaluate("worldBowl.frames"); until(pg, f"worldBowl.frames>={f1 + 2}", 10)
+    err = pg.evaluate("gpuState.gl.getError()")
+    if err: raise Exception(f'the GPU reports error {err} while drawing the bowl')
     n = pg.evaluate("LOCATIONS.length"); s = pg.evaluate("(worldBowl.spots||[]).filter(s=>isFinite(s.x)&&isFinite(s.y)).length")
     if s != n: raise Exception(f'{s} of {n} places have a spot on the bowl')
     pick = pg.evaluate("""(()=>{const t=LOCATIONS.findIndex(l=>l.id==='tallgrass_meadow'),p=worldBowl.spots[t];worldBowl.goal=null;worldBowl.cam=bowlCamHome(p.x,p.y);worldBowl.dirty=true;return t})()""")

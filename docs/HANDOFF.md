@@ -11,6 +11,70 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 - Questions waiting for the owner: 
 - Next session starts with: 
 
+### Phase 10 - World map, the look, session 2: the land, the routes, the light - 2026-10-19
+Owner's request: "Next session"; light option **A** (the Inner Sun off the centre, the light from where it hangs).
+Branch `world-map-look-2`, on top of `world-map-look` (PR #62, not merged yet).
+- Changed:
+  - `logic/bowl.js`: relief about 40% taller (limit 0.115) with broad hills between places; land never sinks below
+    the water (dips flatten into low ground); headland stretches of coast stand up and drop to the sea as cliffs,
+    low coasts slope to beaches. Rivers (`bowlRivers`): a priority flood from the sea over the height above the
+    water, springs on the highest land, up to 10 courses, each falling all the way, ending in the sea, clear of the
+    places' ground and the rim, beds cut 2 m. Wetness (`bowlWetness`, `bowlWetAt`). The sun: `bowlSun` (40 degrees
+    slant, azimuth 135 for now, hanging inside the hollow sphere).
+  - `world-bowl.js`: ground lit by the slanted sun with a sky fill and cast shadows (`mshadow`, a 2048 shadow map
+    drawn once, the ground never moves); the water takes the shadows and the glint follows the sun. A line map
+    (`worldBowlLineMap`, RGBA 1024): routes drawn as bold cream paths with a dark outline that stay a few pixels wide
+    at any zoom (hidden up close inside a place's own ground, where its paths show), rivers as blue lines when far.
+    Terrain: region borders wander and dither; wet lowland, dry slopes, high ground per region (`BOWL_REGION_SHADE`),
+    rock on steep ground and cliffs, snow higher than before; rivers painted with muddy and sandy banks; routes
+    painted over them as fords.
+  - `opening-fall.js`: the fall passes close by the Inner Sun where it now hangs.
+  - Tests: `tools/test/bowl-land.test.mjs` (rivers, cliffs and beaches, land above water, wetness, the sun); world
+    map test step "Light, shadows, routes and rivers"; the fast check asks for the shadow map, line map, rivers and no
+    GPU error.
+- Risky or unfinished:
+  - Not seen on a screen: colours, shadow softness, route width and river colour are first guesses.
+  - The ground now takes about 250-300 ms to work out here (sea, relief, rivers), once per session; maybe 0.6 s on
+    a phone, on first opening the map or the first far wall. If it shows, it can move to idle time.
+  - Shadow map: 2048 x 2048 depth, drawn once (time shown in the world map test).
+- Verified: npm test 187 pass; lint, types, modules, format clean; full lite fast check 12 of 12.
+- Decisions I made: the sun stays at azimuth 135 until session 3 ties it to the time of day; rivers avoid the places'
+  ground entirely and the rim; routes cross rivers as fords (painted over them).
+- Next session starts with: session 3, clouds and weather (and the sun moving with the time of day).
+
+### Phase 10 - World map, the look, session 1: sea and coasts - 2026-10-19
+Owner's request: the living diorama look (B), an inland sea with bays, about 40% of the bowl water; "Go" for session 1.
+Branch `world-map-look`.
+- Changed:
+  - `logic/bowl.js`: the sea. `bowlSeaInput` (each place with its walk map's half-diagonal, each road),
+    `bowlCoastGrid` (distance past the nearest place or road, plus a three-octave noise, minus a rise towards the rim
+    so the land wraps round the sea; the line drawn at the 60% quantile, so 40.0% of the bowl is sea), then a hard
+    margin so every place's map and every road stays dry. `bowlGroundGrid(F, n, sea)` returns the coast as `c`: the
+    land's relief fades to the water's edge, the sea floor sinks up to `BOWL_SEA_DEPTH` (0.035) below it.
+    `bowlWaterLevel` is the bowl's own curve (things fall towards the shell, so water lies on the bowl).
+  - `world-bowl.js`: a water sheet over every sea cell (`worldBowlWaterMesh`, each corner with its depth and coast
+    value) and its shader `mwater`: shallow, mid and deep colours, four moving waves, the sky reflected at glancing
+    angles, the sun's glint, foam at the shore, see-through shallows. The terrain map gets beaches (sand, then wet sand)
+    and a sea floor (sand or coral sand in the shallows, pebbles and rock further out). The map redraws at about 30
+    frames a second while the sea shows (600 ms beats with reduced motion, waves still). The walk scenes' far wall
+    sees the water's level and colour.
+  - Tests: `tools/test/bowl-sea.test.mjs` (sea 35-45%; every square of every place's walk map and every road on land;
+    the sea floor below the water and not too deep). The world map test (Settings > Help) has a new step "The sea and
+    the coasts" (share, places dry, triangles, how long it took). The fast check asks for the water sheet.
+- Risky or unfinished:
+  - Not seen on a screen (no headless graphics): the water's colours, foam width and wave strength are first guesses.
+  - Working out the coast takes about 120 ms on this machine once per session when the map or the far wall first
+    needs the ground; on a phone maybe 300 ms. The world map test reports it.
+  - Redrawing at 30 fps while the map is open costs battery; the draw was about 1 ms a frame on the owner's phone.
+  - `check-fast.py --only=map` on its own fails its touch check (a canvas without an id on top) on main as well; in the
+    full run it passes. Not from this work.
+- Verified: npm test 180 pass; lint, types, modules, format clean; full lite fast check: the world map step passes
+  (the battle step stuck at "playing" once under load, as before, and passed in the other run).
+- Decisions I made (and why): the land rises towards the rim so the sea is an inland sea, not a ring along the edge
+  (owner's choice); a few small islands and lakes are kept, they read as natural. The highlight uses the overhead sun
+  for now; the slanted sun comes in session 2 with the shadows.
+- Questions waiting for the owner: on the phone, does the water read as water, and is 30 fps animation fine?
+- Next session starts with: session 2, the look and the routes (cliffs, rivers, bold routes, slanted sun, shadows).
 ### Studio track ST-2 - the shared pixel canvas - 2026-10-19
 Plan approved at the start. Owner's pick: the Walk scenes prop and tile painter moves onto the canvas now too.
 - Changed (one cause per commit):
