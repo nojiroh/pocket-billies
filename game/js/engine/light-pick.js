@@ -25,7 +25,7 @@ expose({
 /* eslint-enable no-func-assign */
 /* to-module: end */
 /* how long a light takes to fade in or out, how often the lit set is chosen again, how much nearer a lit light counts */
-const LIGHT_FADE_MS = 250,
+export const LIGHT_FADE_MS = 250,
   LIGHT_RANK_MS = 200,
   LIGHT_HOLD_M = 1.5;
 /* a jump farther than this in one frame (a door, a warp) starts again with no fades */
