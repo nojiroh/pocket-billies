@@ -76,3 +76,28 @@ test('the world curve drop is the one worldCurveArgs gives, everywhere in and ro
     G.walkView.sc = sc0;
   }
 });
+
+test('contact shadows: the nearest 64 blobs from pooled arrays are the old sorted, sliced copies, in the same order', () => {
+  let seed = 7;
+  const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const pool = [],
+    all = [],
+    near = [];
+  for (const n of [0, 5, 64, 65, 300, 41]) {
+    // blobs on a coarse grid, so many lie at the same distance (ties must keep their order)
+    const blobs = Array.from({ length: n }, () => [Math.round(rnd() * 20), Math.round(rnd() * 20), rnd(), rnd()]);
+    const old = blobs.map(b => b.slice());
+    old.forEach(a => (a.d = Math.hypot(a[0] - 10, a[1] - 10)));
+    old.sort((a, b) => a.d - b.d);
+    const want = old.slice(0, 64).map(a => [a[0], a[1], a[2], a[3]]);
+    all.length = 0;
+    for (const b of blobs) all.push(G.pooledQuad(pool, all.length, b[0], b[1], b[2], b[3]));
+    const got = G.nearestFirst(all, 10, 10, near, 64);
+    assert.equal(got, near);
+    assert.deepEqual(
+      got.map(a => [a[0], a[1], a[2], a[3]]),
+      want
+    );
+  }
+  assert.ok(pool.length === 300, 'the pool grows to the longest list and is reused after');
+});
