@@ -42,6 +42,8 @@ export interface GameData {
   rarities: Record<string, { totals: number[] }>;
   /** studio track ST-0: a Billie's coat, a recolour in place of the old Golden sheets (game/data/coats.json) */
   coats?: Record<DataId, Coat>;
+  /** studio track ST-3: the phase 16 part kits, sliced by the Studio's Art workbench (game/data/partKits.json) */
+  partKits?: PartKits;
   lines: Line[];
   /** the world map's places, in node order */
   locations: LocationData[];
@@ -795,6 +797,39 @@ export interface RobotRules {
 export type RobotSlot = 'torso' | 'armL' | 'armR' | 'legs';
 
 /** robots.json (phase 17): robot parts and gems */
+/** partKits.json (studio track ST-3): parts cut from kit sheets; x and y are fractions of the picture, y down */
+export interface PartKits {
+  note?: string;
+  _help?: string;
+  /** how each kit's sheets are sliced (the workbench's settings, kept so the same sheet slices the same way) */
+  kits?: Record<string, Record<string, unknown>>;
+  /** the slot each kind fills */
+  slots?: Record<string, PartSlot>;
+  /** each kind's turning point */
+  pivots?: Record<string, [number, number]>;
+  /** sockets given by hand, per part and view; they replace the ones worked out from the outline */
+  sockets?: Record<DataId, { front?: Record<string, [number, number]>; back?: Record<string, [number, number]> }>;
+  parts: Record<DataId, KitPart>;
+}
+export type PartSlot = 'head' | 'head-extra' | 'body' | 'body-extra' | 'front' | 'back' | 'signature';
+export interface KitPart {
+  kit: string;
+  /** the animal it comes from, or 'any' (a kit's extras) */
+  animal: string;
+  kind: string;
+  slot: PartSlot;
+  pivot: [number, number];
+  size: 'S' | 'M' | 'L';
+  views: { front?: KitPartView; back?: KitPartView };
+}
+export interface KitPartView {
+  /** the picture, under game/art */
+  file: string;
+  w: number;
+  h: number;
+  sockets?: Record<string, [number, number]>;
+}
+
 /** coats.json: a recolour of a Billie's art (game/js/logic/coats.js) */
 export interface Coat {
   /** shown to the player */
