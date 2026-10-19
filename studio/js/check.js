@@ -81,13 +81,11 @@ function runCheck() {
         ['front', 'back'].forEach(v => {
           if (!studioState.rigs[id][v]) err(`${n} has no ${v} view.`, 'billionaires', { line: L.id, stage: i });
         });
-      ['front', 'back'].forEach(v =>
-        [0, 1].forEach(gd => {
-          const path = atlasPath(id, v, gd);
-          if (!studioState.artDirty.has(path) && !studioState.files.some(f => f.path === path))
-            err(`${n}: missing art file ${path}.`, 'billionaires', { line: L.id, stage: i });
-        })
-      );
+      ['front', 'back'].forEach(v => {
+        const path = atlasPath(id, v);
+        if (!studioState.artDirty.has(path) && !studioState.files.some(f => f.path === path))
+          err(`${n}: missing art file ${path}.`, 'billionaires', { line: L.id, stage: i });
+      });
       const ts = L.types[i] || [];
       if (!ts.length) warn(`${n} has no type.`, 'billionaires', g);
       ts.forEach(t => {

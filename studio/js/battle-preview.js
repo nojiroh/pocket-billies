@@ -58,16 +58,12 @@ expose({
 /* eslint-enable no-func-assign */
 provide({ battleFreeArea, battleLayoutChanged, hudHit, hudPop });
 /* to-module: end */
-setRigParts((sp, k) =>
-  String(sp).startsWith('bot:') ? robotRigParts(sp, k) : rigFor(sp, k === 1 ? 'front' : 'back', false)
-);
+setRigParts((sp, k) => (String(sp).startsWith('bot:') ? robotRigParts(sp, k) : rigFor(sp, k === 1 ? 'front' : 'back')));
 const battlePreview = {
   stage: 'backdrop',
   area: null,
   me: null,
   foe: null,
-  meGold: false,
-  foeGold: false,
   move: null,
   res: 'hit',
   who: 'chad',
@@ -115,8 +111,8 @@ function battlePreviewDefaults() {
 }
 const battlePreviewEvent = () => ({
   s: [
-    { sp: battlePreview.me, gold: battlePreview.meGold, st: null },
-    { sp: battlePreview.foe, gold: battlePreview.foeGold, st: null },
+    { sp: battlePreview.me, st: null },
+    { sp: battlePreview.foe, st: null },
   ],
 });
 SECTIONS.preview = () => {
@@ -134,8 +130,8 @@ SECTIONS.preview = () => {
  <aside class="bp-ctl">
   ${card(
     'Who’s fighting',
-    `<label class="fld"><span>Your Billie (back view)</span><select data-bp="me">${opt(speciesOptions(), battlePreview.me)}</select></label><label class="fld chk"><input type="checkbox" data-bp="meGold" ${battlePreview.meGold ? 'checked' : ''}><span>Golden</span></label>
-   <label class="fld"><span>Opponent (front view)</span><select data-bp="foe">${opt(speciesOptions(), battlePreview.foe)}</select></label><label class="fld chk"><input type="checkbox" data-bp="foeGold" ${battlePreview.foeGold ? 'checked' : ''}><span>Golden</span></label>
+    `<label class="fld"><span>Your Billie (back view)</span><select data-bp="me">${opt(speciesOptions(), battlePreview.me)}</select></label>
+   <label class="fld"><span>Opponent (front view)</span><select data-bp="foe">${opt(speciesOptions(), battlePreview.foe)}</select></label>
    <div class="seg-row"><button class="btn sm" data-act="bp" data-x="wild">Wild appears</button><button class="btn sm" data-act="bp" data-x="trainer">Trainer intro</button><select data-bp="who" class="sm">${opt(peopleOptions(), battlePreview.who)}</select></div>
    <div class="seg-row"><button class="btn sm" data-act="bp" data-x="enter0">Send yours out</button><button class="btn sm" data-act="bp" data-x="enter1">Send theirs out</button><button class="btn sm" data-act="bp" data-x="recall">Recall</button></div>`
   )}
@@ -206,8 +202,8 @@ async function startBattlePreview() {
     await Promise.all([
       battleStagePrepare(battlePreview.area),
       artLoad(COIN_ART),
-      atlasGet(atlasPath(battlePreview.me, 'back', battlePreview.meGold)),
-      atlasGet(atlasPath(battlePreview.foe, 'front', battlePreview.foeGold)),
+      atlasGet(atlasPath(battlePreview.me, 'back')),
+      atlasGet(atlasPath(battlePreview.foe, 'front')),
     ]);
   } catch (e) {
     if (load) load.textContent = 'Couldn’t load this stage: ' + e.message;
@@ -236,8 +232,8 @@ async function startBattlePreview() {
     });
   battlePreview.ro.disconnect();
   battlePreview.ro.observe($('#battle'));
-  Object.assign(battleStage.s[0], { sp: battlePreview.me, gold: battlePreview.meGold, show: true, sc: 1, a: 1 });
-  Object.assign(battleStage.s[1], { sp: battlePreview.foe, gold: battlePreview.foeGold, show: true, sc: 1, a: 1 });
+  Object.assign(battleStage.s[0], { sp: battlePreview.me, show: true, sc: 1, a: 1 });
+  Object.assign(battleStage.s[1], { sp: battlePreview.foe, show: true, sc: 1, a: 1 });
   battleStage.oil = battlePreview.shock;
 }
 /* the engine stage: the chosen walk scene, mounted on its own canvas inside the battle stage */
@@ -275,7 +271,7 @@ document.addEventListener('change', ev => {
     render();
     return;
   }
-  if (['me', 'foe', 'meGold', 'foeGold'].includes(k)) startBattlePreview();
+  if (['me', 'foe'].includes(k)) startBattlePreview();
 });
 function playBattlePreviewMove(si) {
   const D = studioState.D,
@@ -308,7 +304,6 @@ ACTIONS.bp = d => {
   const reset = () => {
     Object.assign(battleStage.s[0], {
       sp: battlePreview.me,
-      gold: battlePreview.meGold,
       show: true,
       sc: 1,
       a: 1,
@@ -320,7 +315,6 @@ ACTIONS.bp = d => {
     });
     Object.assign(battleStage.s[1], {
       sp: battlePreview.foe,
-      gold: battlePreview.foeGold,
       show: true,
       sc: 1,
       a: 1,
