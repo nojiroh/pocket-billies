@@ -4,5 +4,11 @@
  "dataVersion": 1,
  "notes": "Edit with Pocket Billies Studio. Rules and data are read by the game at start-up.",
  "endText": "This is the end of the road for now. The Meadowlands lie ahead.",
- "worldV24": 1
+ "worldV24": 1,
+ "whatsNew": [
+  {
+   "version": "0.1.0 alpha",
+   "text": "A new opening: a city at night, a rift in an alley, and a long fall.\nSign in with Google on the title to keep your game online; signed in, it carries on by itself.\nThe opening with Professor Hazel and Blake is now made the way every cutscene will be."
+  }
+ ]
 }
