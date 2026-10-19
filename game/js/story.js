@@ -393,7 +393,7 @@ async function storyAfterRival(o, T) {
       'gini',
       'One more thing. When someone falls in, their things come down too, and they scatter along Tallgrass Meadow, past Marigold Town. If anything of yours made it, that’s where it’ll be.',
     ],
-    ['gini', 'Now go and walk! Every step counts. Come back and see me any time.'],
+    ['gini', 'Now go and explore! The road teaches more than any book. Come back and see me any time.'],
   ];
   if (typeof talk === 'function') await talk(after);
   if (typeof loreFlags === 'function') loreFlags().askLongGrass = 1;

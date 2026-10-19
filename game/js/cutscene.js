@@ -896,7 +896,11 @@ async function cutsceneScript(run) {
   if (!alive()) return;
   /* 7. phase 06-2b: Blake (already here since Hazel's fight) takes the one that beats yours and wants a battle */
   if (!T0) {
-    await cutsceneSay('gini', 'Now go and walk! Every step counts. Come back and see me any time.', 'happy');
+    await cutsceneSay(
+      'gini',
+      'Now go and explore! The road teaches more than any book. Come back and see me any time.',
+      'happy'
+    );
     if (!alive()) return;
     cutsceneHideDialogue();
     if (fade) fade.classList.add('on');
