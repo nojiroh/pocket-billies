@@ -3428,3 +3428,20 @@ body.vp-has-big::after {
   align-items: center;
   margin-top: 8px;
 }
+/* studio track ST-1: a narrow pane (one side of a split, or a small window) stacks its columns as a small window
+   does; the pane's width class comes from studio/js/layout.js */
+.pane[data-w='narrow'] .split,
+.pane[data-w='narrow'] .props-sec,
+.pane[data-w='narrow'] .bp-wrap,
+.pane[data-w='narrow'] .eng-split,
+.pane[data-w='narrow'] .ped {
+  grid-template-columns: 1fr;
+}
+.pane[data-w='narrow'] .list-col {
+  position: static;
+  max-height: 300px;
+}
+.pane[data-w='narrow'] .bp-stage {
+  position: relative;
+  max-height: none;
+}
