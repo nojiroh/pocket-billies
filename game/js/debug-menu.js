@@ -8,10 +8,12 @@ import {
   closeModal,
   giveRobotKit,
   modal,
+  playStoryScript,
   provide,
   render,
   renderOverlay,
   runEvolution,
+  storyScriptIds,
   testMapChecks,
   testMaps,
   toast,
@@ -120,6 +122,11 @@ function debugHTML() {
     node
   )}${debugButtonHTML('jump', 'Go there')}</div>
   <div class="dbg-row">${debugButtonHTML('seats', 'Earn every badge')}${debugButtonHTML('flags', 'Reset trainer wins')}${debugButtonHTML('fillq', 'Fill encounters here')}${debugButtonHTML('clearq', 'Clear encounters here')}</div></details>
+ <details><summary>Story scripts (Project Story)</summary><div class="dbg-row">${debugSelectHTML(
+   'dbgScript',
+   storyScriptIds().map(id => [id, id]),
+   ''
+ )}${debugButtonHTML('script', 'Play it')}</div><p class="note">The conversations written in the new script format. They play as written, flags and all; hold the dialogue box to skip. Walking and camera lines do nothing yet (S2).</p></details>
  <details ${uiState.bench && uiState.bench.test ? 'open' : ''}><summary>Test scenes</summary><p class="note">Small places that each show one tricky situation: stairs, ledges at the limits, bridges, water, shadows, every prop, slopes, the camera in tight spots, night lights, a dense forest, tiny and huge maps, traffic, and the light lab (v44: light on the land, in a room, on props, in the air — the places the quick check measures the lighting in). Checks test the walking rules there (what should and shouldn't be reachable).</p>
   <div class="dbg-row">${debugSelectHTML(
     'dbgTest',
@@ -278,6 +285,12 @@ function debugAction(x) {
       if (activeBattle) return toast('Finish the current battle first.');
       closeModal();
       startTrainer(id, { double: true });
+      return;
+    }
+    case 'script': {
+      if (activeBattle) return toast('Finish the current battle first.');
+      closeModal();
+      playStoryScript(v('dbgScript'));
       return;
     }
     case 'trainer': {

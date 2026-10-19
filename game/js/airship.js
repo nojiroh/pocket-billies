@@ -13,6 +13,7 @@ import { arrivedAt, closeModal, mapIdAt, modal, provide, render, storyFlags, toa
 import { $, clamp } from './util.js';
 import { LOCATIONS, LOCATION_BY_ID, isTown, locationFullName } from './game-data.js';
 import { canEnter, formatNumber } from './logic/rules.js';
+import { setStoryFlag } from './logic/script.js';
 import { isLiteMap, loadMapFile, loadMapsAhead } from './map-files.js';
 import { escapeHtml, reducedMotion, save, saveData, uiState } from './game-state.js';
 import { artLoad, uiIconHTML } from './art.js';
@@ -98,7 +99,7 @@ function startAirshipFlight(i) {
   uiState.mapSel = null;
   if (typeof storyFlags === 'function') {
     const F = storyFlags();
-    F.flights = (F.flights || 0) + 1;
+    setStoryFlag('flights', (F.flights || 0) + 1);
   }
   save();
   closeModal();

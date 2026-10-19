@@ -101,6 +101,7 @@ import {
   runTurn,
   startWild,
 } from './logic/battle-engine.js';
+import { setStoryFlag } from './logic/script.js';
 import {
   activeBattle,
   escapeHtml,
@@ -186,15 +187,8 @@ import { flyMenu, rideGlassLift } from './airship.js';
 import { postcardCheck, renderPostcards } from './postcards.js';
 import { renderBag } from './bag.js';
 import { friendsHTML } from './friends.js';
-import {
-  legendCheck,
-  personTalk,
-  storyCheck,
-  storyFlags,
-  storyMovedCheck,
-  storyRivalBattle,
-  trainerTalk,
-} from './story.js';
+import { legendCheck, personTalk, storyCheck, storyMovedCheck, storyRivalBattle, trainerTalk } from './story.js';
+import { storyResumeCheck } from './story-stage.js';
 import {
   arrivedAt,
   challengeCardHTML,
@@ -1385,6 +1379,7 @@ function exitPrompt(e) {
 }
 setInterval(() => {
   try {
+    if (typeof storyResumeCheck === 'function') storyResumeCheck();
     if (typeof storyCheck === 'function') storyCheck();
     if (typeof legendCheck === 'function') legendCheck();
     if (typeof storyMovedCheck === 'function') storyMovedCheck();
@@ -2298,7 +2293,7 @@ export function startGame(l, o = {}) {
   saveData.trip = { node: START_NODE, plan: [] };
   saveData.visited = { [START_NODE]: 1 };
   saveData.mapSeen = null;
-  if (typeof storyFlags === 'function') storyFlags().copperleafNote = 1;
+  setStoryFlag('copperleafNote');
   for (let i = 0; i < R.starterEncounters; i++) spawn(true);
   const egg = R.starterEgg && EGGS[R.starterEgg] ? addEgg(R.starterEgg) : false;
   save();

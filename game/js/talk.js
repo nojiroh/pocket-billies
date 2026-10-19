@@ -24,6 +24,7 @@ expose({
   setTalkFolk: [() => setTalkFolk, v => (setTalkFolk = v)],
   talk: [() => talk, v => (talk = v)],
   talkBox: [() => talkBox],
+  talkChoose: [() => talkChoose, v => (talkChoose = v)],
   talkEl: [() => talkEl, v => (talkEl = v)],
   talkFolk: [() => talkFolk, v => setTalkFolk(v)],
   talkHazel: [() => talkHazel, v => (talkHazel = v)],
@@ -42,6 +43,8 @@ export const talkBox = {
   por: { who: null, expr: null, t: 0 },
   el: null,
   onType: /** @type {((e: { who: string, ch: string, n: number, done: boolean }) => void)[]} */ ([]),
+  /* Project Story: the choice on screen (talkChoose), if any */
+  choice: /** @type {{ pick: (i: number) => void, n: number } | null} */ (null),
 };
 const SPEAKER_NAMES = { gini: 'Professor Hazel' };
 const FOLK_NAMES = [
@@ -172,6 +175,44 @@ export function talkHide() {
   talkBox.on = false;
   document.body.classList.remove('talking');
 }
+/* Project Story: a choice after a line, its options as buttons over the box's top corner; tap one, or press 1-9. The
+   line before it stays on screen. Resolves with the option's index. */
+export function talkChoose(options) {
+  const el = talkEl(),
+    box = el.querySelector('.talk-box');
+  el.hidden = false;
+  talkBox.on = true;
+  document.body.classList.add('talking');
+  box.classList.add('done');
+  box.querySelector('.talk-choices')?.remove();
+  const list = document.createElement('div');
+  list.className = 'talk-choices';
+  list.setAttribute('role', 'group');
+  return new Promise(res => {
+    const pick = i => {
+      if (talkBox.choice !== C) return;
+      talkBox.choice = null;
+      list.remove();
+      if (typeof soundEffect === 'function') soundEffect('tick');
+      res(i);
+    };
+    const C = { pick, n: options.length };
+    options.forEach((o, i) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'talk-choice';
+      b.textContent = o.text;
+      b.addEventListener('click', ev => {
+        ev.stopPropagation();
+        pick(i);
+      });
+      list.appendChild(b);
+    });
+    box.appendChild(list);
+    talkBox.choice = C;
+    list.querySelector('button').focus({ preventScroll: true });
+  });
+}
 /* a whole conversation: [[who,text,expr],…] or [{who,text,expr}] */
 export async function talk(lines, o = {}) {
   for (const l of lines) {
@@ -223,6 +264,11 @@ function talkTick(ts) {
   } catch (e) {}
 }
 document.addEventListener('keydown', ev => {
+  if (talkBox.choice && /^[1-9]$/.test(ev.key) && +ev.key <= talkBox.choice.n) {
+    ev.preventDefault();
+    talkBox.choice.pick(+ev.key - 1);
+    return;
+  }
   if (!talkBox.cur || talkBox.el.hidden) return;
   if (ev.key === 'Enter' || ev.key === ' ') {
     ev.preventDefault();

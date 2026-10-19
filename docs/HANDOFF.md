@@ -11,6 +11,66 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 - Questions waiting for the owner: 
 - Next session starts with: 
 
+### Project Story S1 - the story layer - 2026-10-19
+Plan approved at the start (S1 of docs/phases/project-story.md). Branch `ccr-f321762c-zuw15s`, from main at d2f9721.
+- Changed (one cause per commit):
+  - Fix first: check:modules was red on main (an unused import in seamless-world.js since PR #41); regenerated.
+  - `game/js/logic/conditions.js`: the condition grammar (flag, !flag, flag = word, beat:, item:, coin:, quest:,
+    visits:, visited:, billie:, robot, badges; and/or/not, parentheses), parsed once, never run as code; errors
+    with a column and "did you mean"; `storyStateOf(save)`.
+  - `game/js/logic/script.js`: the script parser (lines with [expression] and Name:, choice with [if]/[once] options,
+    if/elif/else, once, cycle, seq, a command table `SCRIPT_COMMANDS`), the runner on a stage interface (runs in
+    Node with a stub), checkpoints and resume paths, skipping, `setStoryFlag`, safe-run saves, start presets.
+  - `game/data/story.json` (+ schema, check-data): every story flag and what it means, flag patterns, the story's own
+    records, speakers, quests (none yet), presets. Every place the game sets a story flag goes through
+    `setStoryFlag` (same keys in the save); a flag story.json lacks is a data warning in the debug log.
+  - `game/js/story-stage.js`: the game's stage (lines in the dialogue box, a new choice box in talk.js and
+    css/dialogue.css, wait, heal, battle), safe runs (while a script plays, JSON.stringify(saveData) writes the state
+    from before it plus `story.resume`; `storyResumeCheck` plays it again on Continue), hold the box 0.6 s to skip.
+  - `?story=<preset>`: a test run (nothing saved) at `after-opening` or `before-cass`.
+  - Three scripts in the data, next to the old fields, not played by the game on its own: Granny Juniper
+    (copperleaf.json people), Blake on the golf course (trainers/chad.json), Curator Nacre (pearlantis.json people,
+    with a choice once the Pearl ledger is read). Debug menu > Story scripts plays them.
+  - docs/SCRIPTS.md (the format), CHANGELOG.
+- Where the phase file was wrong or thin (checked in the code):
+  - `saveData.flags` is trainers beaten, not story flags; it stays, read as `beat:<id>`. `saveData.story` is the one
+    story-flag object (`storyFlags()` and `loreFlags()` are the same object).
+  - Coins aren't items: `coin:gold`, not `item:coin_gold`.
+  - `visits:` had nothing behind it (`talk_<id>` is a line index): `story.talks` is reserved for it; S2 counts.
+  - No sign or event data type exists; books are lore.json `books`. Scripts live on people and trainers for now.
+  - `stage:id >= found` folded into `quest:id >= found`; `badge:n` is `badges >= n`.
+  - `walk who x z`: the rival scene walks relative to you, so walk takes free arguments; S2 settles them.
+- Found while listing the flags: lore.json unlocks entries with `planKnown`, `metVariants` and `region:*`, which
+  nothing sets (those entries never open); `askLongGrass` is set and read nowhere. Juniper today starts her second
+  visit on her second line (personTalk counts up before it reads); the script starts on the first.
+- Legacy to delete in S2 (deletion-only commits): `intro0`, `storyMovedCheck` / `copperleafNote`, the
+  `nw-opening-done` key.
+- Risky or unfinished:
+  - The game plays no script by itself yet; S2 wires people, trainers and rival scenes to them.
+  - walk, face, camera, fade and shot do nothing yet (a debug-log note); go and the openings' other commands stop a
+    script with an error.
+  - A safe run keeps aside the story, items, coins and trainers beaten; team changes (heal, battle XP) are kept as
+    they happen. A battle is a checkpoint, so a save after it keeps the battle's result.
+  - `once`/`cycle`/`[once]` without a key are remembered by script and line number: editing lines above one moves it
+    (S2's line ids fix that).
+  - The choice box is new UI; look at it on your phone (debug menu > Story scripts > person:nacre, after reading the
+    Pearl ledger in Pearlantis, or set the flag with the debug console).
+- Verified:
+  - Every commit: lint, typecheck, unit tests (72 -> 94: conditions, script, story-data, story-scripts), check:data,
+    check:modules, format:check. Planted faults: a bad species, place and speaker in story.json each fail check:data.
+  - The three scripts play on a stub with today's words (Juniper's first meeting and lines, Blake's intro then the
+    battle, Nacre's first meeting and lines); Nacre's choice appears once the ledger is read, its [once] option goes.
+  - Headless (lowest graphics): `?story=after-opening` opens in Copperleaf with Blake beaten; Juniper, Nacre (choice
+    box, tap an option) and Blake (lines, then his battle starts) play from the stage; a save while Nacre's choice is
+    open writes `resume` and the live save keeps none; holding the box skips the rest; a saved `resume` plays again
+    from its line. No console errors (only gamedata.js 404, expected when it isn't built). One screenshot of the
+    choice box at 390 px.
+  - Smoke (`check-quick.py --smoke`) on the final code: 15/15, the opening and Blake's battle as before, debug log
+    with no names.
+  - Not run: the full quick check, the in-game full test whole, anything on a phone.
+- Questions waiting for the owner ("Ask me before"): the line format, from the three scripts (docs/SCRIPTS.md and the
+  data). Tag `project-story-s1-done` once you agree.
+- Next session starts with: S2, after the format is agreed: every person, trainer and rival scene moved into scripts.
 ### Phase 06-4 - the last screens, floating sheets, gallery, dead CSS, accessibility, safety - 2026-10-19
 Branch `phase-06-4`, based on main as of 2026-10-19 (main and `phase-07-portraits` merged in, both clean).
 - Changed:

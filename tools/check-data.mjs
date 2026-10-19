@@ -3,7 +3,8 @@
 //   node tools/check-data.mjs --fix    also rewrites files that are laid out differently from how the Studio writes them
 // - index.json lists exactly the files there are (none missing, none left over),
 // - every file is JSON, laid out as game/js/data-files.js writes it (so a Studio save doesn't reformat it),
-// - every map, line, trainer and person matches its schema (game/data/schema/*.schema.json), and robots.json its own,
+// - every map, line, trainer and person matches its schema (game/data/schema/*.schema.json), robots.json and story.json
+//   their own (story.json's speakers and start presets name real people, places, trainers and Billies),
 // - what refers to what exists: moves a line learns, species in pools and teams, a stop's map and wild pool, the
 //   ground kinds and props a map uses, the stops of links and trainers, a trainer's look,
 // - a map's ground is h rows of w, its heights (h+1) rows of w+1,
@@ -295,6 +296,22 @@ for (const [id, sc] of Object.entries(S)) {
 
 const n = listed.size;
 if (fixed) console.log(`${fixed} file(s) laid out again`);
+// Project Story: story.json, the schema, then the people, places, trainers, Billies and coins it names
+if (D.story) {
+  check('story.schema.json', D.story, 'story.json');
+  const places = new Set(route.map(r => r.id)),
+    trainers = D.trainers || {};
+  for (const [name, who] of Object.entries(D.story.speakers || {}))
+    if (who !== 'me' && !people[who]) problem('story.json', `speaker ${name} is ${who}, no such person`);
+  for (const [id, P] of Object.entries(D.story.presets || {})) {
+    const at = `story.json preset ${id}`;
+    if (!places.has(P.place)) problem(at, `starts in ${P.place}, no such place`);
+    for (const t of P.beaten || []) if (!trainers[t]) problem(at, `has beaten ${t}, no such trainer`);
+    for (const m of P.team || []) if (!species.has(m.sp)) problem(at, `has ${m.sp}, no such species`);
+    for (const c of Object.keys(P.coins || {})) if (!(D.coins || {})[c]) problem(at, `has coin ${c}, no such coin`);
+    for (const i of Object.keys(P.items || {})) if (!(D.items || {})[i]) problem(at, `has item ${i}, no such item`);
+  }
+} else problem('story.json', 'missing');
 if (bad.length) {
   for (const b of bad.slice(0, 60)) console.log('  ' + b);
   console.log(`game data: ${bad.length} problem(s) in ${n} files`);

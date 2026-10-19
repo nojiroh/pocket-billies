@@ -57,6 +57,34 @@
   bottom: var(--s3);
   color: var(--gold-b);
 }
+/* Project Story: a choice's options, over the box's top right corner, thumb-sized */
+.talk-choices {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + var(--s3));
+  display: grid;
+  gap: var(--s2);
+  min-width: min(240px, 100%);
+  max-width: 100%;
+  cursor: default;
+}
+.talk-choice {
+  min-height: 44px;
+  padding: var(--s2) var(--s4);
+  border: 1px solid var(--g-bd);
+  border-radius: var(--r-md);
+  font: 600 var(--fs-body) / 1.25 var(--font-prose);
+  text-align: left;
+  color: var(--text);
+  background: var(--g-solid);
+  box-shadow: var(--depth-float);
+  cursor: pointer;
+}
+.talk-choice:hover,
+.talk-choice:focus-visible {
+  outline: 2px solid var(--gold-b);
+  outline-offset: 1px;
+}
 @media (max-width: 560px) {
   .talk-box {
     gap: var(--s3);
