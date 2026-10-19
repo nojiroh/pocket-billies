@@ -7,7 +7,7 @@
 // - what refers to what exists: moves a line learns, species in pools and teams, a stop's map and wild pool, the
 //   ground kinds and props a map uses, the stops of links and trainers, a trainer's look,
 // - a map's ground is h rows of w, its heights (h+1) rows of w+1,
-// - phase 08b: the links between places (roads.json) join them as the walk needs (below).
+// - phase 08b: the links between places (roads.json) join them as the walk needs, and every door opens a room (below).
 import Ajv2020 from 'ajv/dist/2020.js';
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -170,6 +170,38 @@ check('roads.schema.json', D.roads || [], 'roads.json');
       if (xs.length > 2) problem(`maps/${r.mapId}.json`, `${xs.length} exits on its ${side} side (two at most)`);
       for (let k = 1; k < xs.length; k++)
         if (xs[k] - xs[k - 1] < 44) problem(`maps/${r.mapId}.json`, `two exits on its ${side} side ${(xs[k] - xs[k - 1]).toFixed(1)} m apart (44 m at least)`);
+    }
+  }
+}
+// phase 08b: the doors. A kind of building's room is a room; every door on a place (a building or sign that opens a
+// shop, the clinic, the lab, a house or your room) leads to a room that exists, has a doorway (its exit 0) at its
+// front, and the door lies on the building's front.
+{
+  const P = scenery.props || {},
+    ppu = scenery.ppu || 34,
+    isRoom = id => S[id] && S[id].kind === 'room',
+    seen = new Set();
+  for (const [k, M] of Object.entries(P))
+    if (M && M.room && !isRoom(M.room)) problem('scenery.json', `${k}'s room ${M.room} isn't a room`);
+  for (const r of route) {
+    const sc = S[r.mapId];
+    if (!sc || sc.kind === 'room') continue;
+    for (const p of sc.props || []) {
+      if (!PB_DATA.ROOM_BY_USE[p.act]) continue;
+      const M = P[p.k],
+        at = `maps/${r.mapId}.json`,
+        id = PB_DATA.doorRooms(p, M, p.act).find(isRoom),
+        R = S[id];
+      if (p.room && !isRoom(p.room)) problem(at, `${p.k} at ${p.x}, ${p.z} opens ${p.room}, not a room`);
+      if (!R) {
+        problem(at, `${p.k} at ${p.x}, ${p.z} opens no room`);
+        continue;
+      }
+      const ex = (R.exits || [])[0];
+      if (!seen.has(id) && (!ex || ex[1] > 1.5)) problem(`maps/${id}.json`, 'has no doorway at its front (exit 0)');
+      if (!seen.has(p.k) && M && M.box && M.door && Math.abs((M.door.x || 0) / ppu) > M.box[0] / 2)
+        problem('scenery.json', `${p.k}'s door is off its front (${((M.door.x || 0) / ppu).toFixed(2)} m from the middle)`);
+      seen.add(id).add(p.k);
     }
   }
 }

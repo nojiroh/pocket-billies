@@ -102,6 +102,10 @@ export interface DataFiles {
   ): void;
   /** a new road between two places, added to data.roads */
   addRoad(data: Record<string, any>, a: LocationNode, b: LocationNode): any;
+  /** phase 08b: the room for what a door does (shop, clinic, lab, house, home) */
+  ROOM_BY_USE: Record<string, string>;
+  /** the rooms a building's door may lead to, in order: its own, its kind's, the one for what it does */
+  doorRooms(p: any, kind: any, act: string | null): string[];
 }
 
 /** a road as PB_DATA.road() reads it: its two places (nodes) and the exit each leaves by */

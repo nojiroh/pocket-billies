@@ -580,24 +580,14 @@ const CLOSED_VENUE_NAMES = {
   barn: 'The barn',
 };
 /* phase 08b: a building's door link, in the shape of the links in roads.json: from the place (a) at the building's door
-   to the room's doorway (b, the room's exit 0). The room: the building's own (p.room, set in the Studio), else the
-   room made for its kind of building (scenery.json, the kind's room), else the room for what it does. a.exit: the door, the way out of it (a step
-   of 1 m) and the middle of the building's front, in the place's metres (null for a door with no building) */
-export const ROOM_BY_USE = {
-  shop: 'int_shop',
-  clinic: 'int_clinic',
-  lab: 'int_lab',
-  house: 'int_house',
-  home: 'int_home',
-};
+   to the room's doorway (b, the room's exit 0). The room: the first that exists of data-files.js doorRooms (its own,
+   its kind's, the one for what it does). a.exit (doorOf): the door, the way out of it (a step of 1 m) and the middle
+   of the building's front, in the place's metres (null for a door with no building) */
+export const ROOM_BY_USE = PB_DATA.ROOM_BY_USE;
 export function doorLinkOf(p, act, mapId) {
-  const C = walkData().sc,
-    M = p && C.props[p.k];
-  let room = null;
-  if (act !== 'home' && p) room = p.room && mapById(p.room) ? p.room : M && M.room && mapById(M.room) ? M.room : null;
-  if (!room) room = ROOM_BY_USE[act] && mapById(ROOM_BY_USE[act]) ? ROOM_BY_USE[act] : null;
-  if (!room) return null;
-  return { kind: 'door', a: { map: mapId || null, exit: doorOf(p) }, b: { map: room, exit: 0 } };
+  const M = p && walkData().sc.props[p.k],
+    room = PB_DATA.doorRooms(p, M, act).find(id => mapById(id)) || null;
+  return room ? { kind: 'door', a: { map: mapId || null, exit: doorOf(p) }, b: { map: room, exit: 0 } } : null;
 }
 export function doorOf(p) {
   if (!p || p.x == null) return null;
