@@ -110,6 +110,31 @@ Branch `ccr-72e8ad56-lpn1x3`, from main.
 - Next session starts with: "start 08b" (docs/phases/08a-plan.md, Part B), after this branch is merged; the full quick
   check and a picture baseline first, since none exists yet.
 
+### Phase 09 batch 5 - Marigold, part 1: the clinic and the market, redesigned - 2026-10-19
+Owner's request: begin Marigold; rework the clinic and the market to be more Unova (Pokémon gen 5) inspired, keeping
+the retro-futuristic solarpunk vibe. Original designs: no emblem, sign or shape copied.
+- Changed (tools/build-props-batch5.py; run batch1 to 5 in order; its own showcase map `test_props_marigold`, since
+  `test_props_next` is full):
+  - clinic: the same in every town, so it is known at a glance (its old per-town colour looks are dropped). A rounded
+    white two-storey block under a thick coral eave with mint lines; a glass lobby with sliding doors under a solar
+    canopy on brass posts with globe lamps; a coral name band reading CLINIC; a ribbon window with flower boxes;
+    portholes; a roof garden with a glass dome on brass ribs, solar panels and a little turning wind turbine; the
+    emblem (a mint plus on white in a copper ring) standing over the door. Footprint 4.6 x 2.6 m (was 4 x 2.6).
+  - sign_clinic: the emblem hanging from a brass post, a globe lamp on top, a planter at its foot.
+  - market_hall: a brick arcade with stone quoins and cornice, three arches with iron fanlights and produce counters,
+    globe lamps and hanging baskets, a verdigris barrel vault with iron ribs and a solar-glass ridge, a weathervane,
+    a clock pediment and a MARKET board. Its four town looks are now colour swaps of the model (variants).
+  - stall, market_cart, bread_rack: a striped tent awning with scallops over crates of fruit, a chalkboard and a scale;
+    a rounded cream-and-verdigris cart on spoked wheels under a striped parasol with a solar cell; a bread rack.
+  - Lettering (CLINIC, MARKET) is drawn in a chunky 7 px capital font made by the script; the globe lamps glow at night.
+  - Separate commit: the quick check's in-game full test now waits for the save write-back (up to 12 s) instead of a
+    fixed 2.5 s; it failed about one run in three on these branches because the write's timer ran late headless.
+- Risky: these props are in many towns and rooms (clinics in 15 towns; stalls and carts in the market rooms). The
+  clinic is wider by 0.6 m; check Marigold and Pepperpot on your phone. Interiors are not redesigned.
+- Verified: data check, lint, unit tests, smoke check (the full-test step 3 of 3 after the fix); a few low-resolution
+  looks at the showcase map.
+- Next in Marigold: the houses (one kit of parts for the five types), the other buildings, the made things, nature.
+
 ### Phase 09 batch 4 - the last made things of Copperleaf and Route 1 - 2026-10-19
 Owner's request: finish the rest of Copperleaf and Route 1.
 - Changed (tools/build-props-batch4.py; run batch1, 2, 3, 4 in that order): 18 props modelled and swapped in under

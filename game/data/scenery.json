@@ -1376,75 +1376,17 @@
    "flat": 0,
    "tags": ["town"],
    "group": "clinic",
-   "box": [4,2.6],
+   "box": [4.6,2.6],
    "door": {"x":0,"y":0},
    "fx": [
-    {"k":"window","x":-44,"y":-95},
-    {"k":"window","x":-44,"y":-49},
-    {"k":"window","x":44,"y":-95},
-    {"k":"window","x":44,"y":-49}
+    {"k":"window","x":0,"y":-32},
+    {"k":"window","x":-32,"y":-96},
+    {"k":"window","x":32,"y":-96},
+    {"k":"glow","x":0,"y":-147}
    ],
-   "build": {
-    "kind": "flat",
-    "wall": [-66,66],
-    "eave": -124,
-    "wallCol": "#EAEEEC",
-    "wallTex": 5,
-    "roofCol": "#A698CC",
-    "roofTex": 13,
-    "trimCol": "#7ED4AC",
-    "floors": 2,
-    "rooms": [5],
-    "win": [[-50,-105,14,22],[38,-105,14,22],[-50,-59,14,22],[38,-59,14,22],[-14,-51,12,42],[2,-51,12,42]],
-    "glass": ["#3D5879","#598CAF","#70C4E4","#9BD2DA","#C6E6E8","#746250","#B79E68","#FFDE78","#FFE58F","#FFF0BC"],
-    "roofRamp": ["#524770","#7D709F","#A698CC","#C1B4CA","#DBD4DE"],
-    "over": 0.25,
-    "pitch": 40,
-    "sideWin": true,
-    "variants": [
-     {
-      "wallCol": "#F0E2C8",
-      "roofCol": "#545C70",
-      "trimCol": "#60402C",
-      "roofRamp": ["#32304C","#474863","#545C70","#878A89","#BBBCB9"],
-      "extra": ["window boxes"],
-      "img": "scene/props/clinic_v1.png"
-     },
-     {
-      "wallCol": "#D4B496",
-      "roofCol": "#8C4034",
-      "trimCol": "#E8DEC8",
-      "roofRamp": ["#482535","#6C363C","#8C4034","#AE765F","#D1B1A1"],
-      "extra": [],
-      "img": "scene/props/clinic_v2.png"
-     },
-     {
-      "wallCol": "#C8D8DC",
-      "roofCol": "#3C4E78",
-      "trimCol": "#E8E8E8",
-      "roofRamp": ["#292A50","#373F68","#3C4E78","#76808F","#B1B6BC"],
-      "extra": ["window boxes"],
-      "img": "scene/props/clinic_v3.png"
-     },
-     {
-      "wallCol": "#E8D2A0",
-      "roofCol": "#607850",
-      "trimCol": "#60402C",
-      "roofRamp": ["#363B40","#4F5B4E","#607850","#909D73","#BFC7AC"],
-      "extra": [],
-      "img": "scene/props/clinic_v4.png"
-     },
-     {
-      "wallCol": "#F2F6F6",
-      "roofCol": "#A698CC",
-      "trimCol": "#4FB8A8",
-      "roofRamp": ["#524770","#7D709F","#A698CC","#C1B4CA","#DBD4DE"],
-      "extra": [],
-      "img": "scene/props/clinic_pearl.png",
-      "pearl": 1
-     }
-    ]
-   }
+   "model": "scene/next/models/clinic.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0}
   },
   "lab": {
    "name": "Research lab",
@@ -1897,7 +1839,10 @@
    "flat": 0,
    "tags": ["town","farm","mall"],
    "group": "stall",
-   "box": [3.4,1.4]
+   "box": [3.4,1.4],
+   "model": "scene/next/models/stall.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0}
   },
   "picnic": {
    "name": "Picnic table",
@@ -2945,7 +2890,10 @@
    "flat": 0,
    "tags": ["town"],
    "group": "sign_clinic",
-   "solid": 0.3
+   "solid": 0.3,
+   "model": "scene/next/models/sign_clinic.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0}
   },
   "planter_box": {
    "name": "Planter box",
@@ -2988,7 +2936,10 @@
    "flat": 0,
    "tags": ["town","farm"],
    "group": "market_cart",
-   "box": [2.6,1]
+   "box": [2.6,1],
+   "model": "scene/next/models/market_cart.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0}
   },
   "fountain": {
    "name": "Fountain",
@@ -7214,58 +7165,16 @@
    "group": "market_hall",
    "box": [6.4,3.6],
    "door": {"x":0,"y":0},
-   "build": {
-    "kind": "gable",
-    "wall": [-110,110],
-    "eave": -127,
-    "pitch": 30,
-    "over": 0.4,
-    "roofCol": "#D6704A",
-    "roofTex": 8,
-    "wallCol": "#DEC896",
-    "wallTex": 3,
-    "trimCol": "#84543C",
-    "floors": 1,
-    "rooms": [3],
-    "sideWin": false,
-    "win": [],
-    "glass": ["#3D5879","#598CAF","#70C4E4","#9BD2DA","#C6E6E8","#746250","#B79E68","#FFDE78","#FFE58F","#FFF0BC"],
-    "roofRamp": ["#64373E","#9D564A","#D6704A","#E2986F","#EFC4AA"],
-    "variants": [
-     {
-      "wallCol": "#F0E2C8",
-      "roofCol": "#545C70",
-      "trimCol": "#60402C",
-      "roofRamp": ["#32304C","#474863","#545C70","#878A89","#BBBCB9"],
-      "extra": [],
-      "img": "scene/props/market_hall_v1.png"
-     },
-     {
-      "wallCol": "#D4B496",
-      "roofCol": "#8C4034",
-      "trimCol": "#E8DEC8",
-      "roofRamp": ["#482535","#6C363C","#8C4034","#AE765F","#D1B1A1"],
-      "extra": [],
-      "img": "scene/props/market_hall_v2.png"
-     },
-     {
-      "wallCol": "#C8D8DC",
-      "roofCol": "#3C4E78",
-      "trimCol": "#E8E8E8",
-      "roofRamp": ["#292A50","#373F68","#3C4E78","#76808F","#B1B6BC"],
-      "extra": [],
-      "img": "scene/props/market_hall_v3.png"
-     },
-     {
-      "wallCol": "#E8D2A0",
-      "roofCol": "#607850",
-      "trimCol": "#60402C",
-      "roofRamp": ["#363B40","#4F5B4E","#607850","#909D73","#BFC7AC"],
-      "extra": [],
-      "img": "scene/props/market_hall_v4.png"
-     }
-    ]
-   }
+   "model": "scene/next/models/market_hall.json",
+   "ppm": 32,
+   "fx": [
+    {"k":"window","x":-67,"y":-61},
+    {"k":"window","x":0,"y":-61},
+    {"k":"window","x":67,"y":-61},
+    {"k":"glow","x":0,"y":-125}
+   ],
+   "variants": [],
+   "vary": {"rot":0,"lean":0,"size":0}
   },
   "bank": {
    "name": "Savings & Loan",
@@ -7910,7 +7819,10 @@
    "flat": 0,
    "tags": ["indoor"],
    "group": "bread_rack",
-   "box": [1.4,0.6]
+   "box": [1.4,0.6],
+   "model": "scene/next/models/bread_rack.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0}
   },
   "bed_inn": {
    "name": "Bed",
