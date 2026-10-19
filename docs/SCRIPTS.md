@@ -1,6 +1,6 @@
 # Story scripts
 
-Project Story's story layer (docs/phases/project-story.md, S1). A script is what someone says and does, written as a
+Project Story's story layer (docs/phases/project-story.md, S1 and S2). A script is what someone says and does, written as a
 JSON array of lines in the data, next to the thing that owns it:
 
 - a person in a map's `people` list: `script` (id `person:<id>`),
@@ -11,13 +11,16 @@ JSON array of lines in the data, next to the thing that owns it:
 A line or a choice waits until the windows on screen (a battle's result) are closed. Each talk with a person or a
 trainer counts one visit (`visits:<id>`).
 
-S1 adds the format, the runner and three scripts (Granny Juniper, Blake on the golf course, Curator Nacre). They sit
-next to the old fields and the game does not play them on its own yet: the debug menu's "Story scripts" row plays
-them. S2 moves every conversation over.
+Since S2 every conversation is a script: people, trainers (what they say before a battle; the battle ends the
+script), the ones who run up to you (`"runsUp": true` on the trainer: Blake, Cass, Vinylla), Hazel in the lab, what
+comes after Blake's first battle and the ending. Townsfolk chatter and favours stay as they are (made up from lists).
+The debug menu's "Story scripts" row plays any of them.
 
 Code: `game/js/logic/conditions.js` (conditions), `game/js/logic/script.js` (parser, runner, flags, presets, safe
-runs), `game/js/story-stage.js` (the game's stage). Data: `game/data/story.json`. Tests: `tools/test/conditions`,
-`script`, `story-data` and `story-scripts`.
+runs, `when` / `unless`, chapters), `game/js/story-stage.js` (the game's stage). Data: `game/data/story.json`.
+Tools: `npm run story:ids` (line ids), `tools/story-checks.mjs` (run by `npm run check:data`). Tests:
+`tools/test/conditions`, `script`, `story-data`, `story-scripts`, `story-snapshot` (every conversation against what
+the game said before S2, `talk-before-scripts.json`) and `story-checks`.
 
 ## Lines
 
@@ -135,3 +138,30 @@ makes every change (a choice takes its first option); a battle stops the skip.
 point in the story by story.json `presets` (place, story flags, trainers beaten with their badges, coins, items,
 team). `after-opening`: Copperleaf, Blake's first battle won. `before-cass`: every badge, a team near level 55, at
 the pressing plant.
+
+## Line ids
+
+Every line of dialogue and every choice option ends with a short id: `There you are, dear. #l:3fa9`. It is not
+shown; it stays with the line when the text is edited or moved, so the debug log ("stopped after #l:3fa9"), the
+Studio and a translation can point at the line. `once`, `cycle`, `seq` and `[once]` without a key remember by their
+(first) line's id, so lines added above them move nothing. `npm run story:ids` gives every new line an id (and a
+second copy of an id a new one); the data check fails on a line without one. Write new lines without an id and run
+it.
+
+## The story-dependent world
+
+| Field | On | Means |
+|---|---|---|
+| `when`, `unless` | a map's people, a trainer, a prop | there only while the condition holds / doesn't (a prop is neither drawn nor solid) |
+| `requires`, `locked` | a place (locations.json) | closed until the condition holds: walking in, the world map, the airship and the route finder all refuse, and you are told `locked` (or "<place> is closed for now.") |
+| `chapters` | story.json | `{ "<id>": { "when": cond, "maps": { "copperleaf": "copperleaf__ch2" } } }`: while `when` holds, the map loads the variant file's props and people (game/data/maps/copperleaf__ch2.json, not listed in index.json). Chosen as the map loads: a new chapter shows the next time the game starts |
+
+## Story checks
+
+`npm run check:data` runs `tools/story-checks.mjs` on the data. It fails on: a script that doesn't read (file, line,
+"did you mean"), a line without an id or an id used twice, a speaker, trainer, place, item, coin, Billie, quest or
+script that doesn't exist, a quest stage the quest lacks, a `when` / `unless` / `requires` / chapter condition that
+doesn't read, and a place whose `requires` can't come true anywhere the player can get to (the reach check: along
+roads and lifts from the start, opening places as the flags the scripts there set allow; a flag story.json lists
+counts as one the game sets). It warns about: a flag read that nothing sets, a flag a script sets that story.json
+doesn't list, items taken but never given, a `once` key two scripts share, a quest stage no script moves to.
