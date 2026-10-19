@@ -9,6 +9,8 @@ import { $, $$ } from '../../game/js/util.js';
 import { escapeHtml } from './game-stand-ins.js';
 import {
   LAYOUT_LIMITS,
+  LAYOUT_PRESETS,
+  layoutAdjusted,
   layoutClamp,
   layoutEmpty,
   layoutPreset,
@@ -37,11 +39,13 @@ expose({
   applyLayout: [() => applyLayout, v => (applyLayout = v)],
   handleColumn: [() => handleColumn],
   handleLabel: [() => handleLabel, v => (handleLabel = v)],
+  layoutPickHTML: [() => layoutPickHTML, v => (layoutPickHTML = v)],
   markPaneWidth: [() => markPaneWidth, v => (markPaneWidth = v)],
   mountHandles: [() => mountHandles, v => (mountHandles = v)],
   paneSection: [() => paneSection],
   paneSizes: [() => paneSizes],
   panesWidth: [() => panesWidth],
+  pickLayout: [() => pickLayout, v => (pickLayout = v)],
   renderSecondPane: [() => renderSecondPane, v => (renderSecondPane = v)],
   resetHandle: [() => resetHandle, v => (resetHandle = v)],
   saveLayout: [() => saveLayout, v => (saveLayout = v)],
@@ -219,8 +223,41 @@ document.addEventListener('keydown', ev => {
   setHandleSize(h, v);
   saveLayout();
 });
-/* the layout button in the top bar says which preset is on (presets come in a later step) */
-function updateLayoutButton() {}
+/* ---------- presets: the Layout picker in the top bar ---------- */
+function layoutPickHTML() {
+  const lay = studioLayout.lay,
+    adj = layoutAdjusted(lay);
+  return (
+    Object.entries(LAYOUT_PRESETS)
+      .map(
+        ([id, P]) =>
+          `<option value="${id}" title="${escapeHtml(P.note)}" ${id === lay.preset ? 'selected' : ''}>${escapeHtml(P.name)}${id === lay.preset && adj ? ' (adjusted)' : ''}</option>`
+      )
+      .join('') +
+    `<option value="reset" ${adj ? '' : 'disabled'}>Reset sizes to ${escapeHtml(LAYOUT_PRESETS[lay.preset].name)}</option>`
+  );
+}
+function updateLayoutButton() {
+  const p = $('#layPick');
+  if (p) p.innerHTML = layoutPickHTML();
+}
+/* a preset sets the sizes everywhere and whether two sections show; Reset drops what was dragged since */
+function pickLayout(id) {
+  const lay = studioLayout.lay;
+  studioLayout.lay = layoutPreset(lay, id === 'reset' ? lay.preset : id);
+  const P = LAYOUT_PRESETS[studioLayout.lay.preset];
+  let sec2 = studioState.sec2;
+  if (P.split && !sec2)
+    sec2 = [lay.sec2, 'moves', 'billionaires', 'rules'].find(s => s && SECTIONS[s] && !besideRefusal(s)) || null;
+  if (!P.split && id !== 'reset') sec2 = null;
+  saveLayout();
+  if (sec2 !== studioState.sec2) setSecond(sec2);
+  else applyLayout();
+  updateLayoutButton();
+}
+document.addEventListener('change', ev => {
+  if (ev.target.id === 'layPick') pickLayout(ev.target.value);
+});
 
 /* ---------- the split: a second section beside the first (studioState.sec2) ---------- */
 const panesWidth = () => $('#main').getBoundingClientRect().width + $('#main2').getBoundingClientRect().width;
@@ -268,6 +305,13 @@ addEventListener('load', () => {
     $('#studio').appendChild(h);
     handleLabel(h);
   }
+  const a = $('.top-acts'),
+    l = $('#lnkBtn');
+  if (a)
+    (l || a.firstChild).insertAdjacentHTML(
+      l ? 'afterend' : 'beforebegin',
+      `<label class="tb lay-pick" title="Layout presets: sizes for your screen, or two sections side by side">Layout <select id="layPick" aria-label="Layout">${layoutPickHTML()}</select></label>`
+    );
   applyLayout();
   /* follow the Studio: each section drawn gets its sizes and handles, and the second pane is drawn too. The split
      you left comes back with the first drawing */
