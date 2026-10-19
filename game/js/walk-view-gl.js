@@ -930,12 +930,12 @@ export function worldCurveArgs() {
   const sc = walkView.sc;
   return [sc.w / 2, sc.h / 2, engineSetting('world', 'curve'), Math.max(sc.w, sc.h) * 0.55 + 4];
 }
+/* phase 20 C2: worldCurveArgs's numbers worked out here, without its array (this runs per grid cell and item) */
 export function worldCurveDrop(x, z) {
   const sc = walkView.sc;
   if (!sc) return 0;
-  const c = worldCurveArgs(),
-    d = Math.max(0, Math.hypot(x - c[0], z - c[1]) - c[3]);
-  return c[2] * d * d;
+  const d = Math.max(0, Math.hypot(x - sc.w / 2, z - sc.h / 2) - (Math.max(sc.w, sc.h) * 0.55 + 4));
+  return engineSetting('world', 'curve') * d * d;
 }
 /* ---------- input: taps (focus follows them), two-finger turn and pinch, Ctrl+wheel zoom, Q/E/R, phone tilt ---------- */
 /* alpha 0.4.1: a preview that asks for a free camera (the Studio's) turns all the way round, zooms further and zooms with the plain wheel */

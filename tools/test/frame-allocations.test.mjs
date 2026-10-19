@@ -52,3 +52,27 @@ test('sprite uniforms: a slice at another depth and a rising picture send what t
     assert.deepEqual(got.calls, want.calls);
   }
 });
+
+test('the world curve drop is the one worldCurveArgs gives, everywhere in and round a place', () => {
+  const old = (x, z) => {
+    const c = G.worldCurveArgs(),
+      d = Math.max(0, Math.hypot(x - c[0], z - c[1]) - c[3]);
+    return c[2] * d * d;
+  };
+  const sc0 = G.walkView.sc;
+  try {
+    for (const [w, h] of [
+      [60, 46],
+      [173, 91],
+      [33.3, 120.7],
+    ]) {
+      G.walkView.sc = { w, h };
+      for (let x = -80; x <= w + 80; x += 7.3)
+        for (let z = -80; z <= h + 80; z += 5.9) assert.equal(G.worldCurveDrop(x, z), old(x, z));
+    }
+    G.walkView.sc = null;
+    assert.equal(G.worldCurveDrop(1, 2), 0);
+  } finally {
+    G.walkView.sc = sc0;
+  }
+});
