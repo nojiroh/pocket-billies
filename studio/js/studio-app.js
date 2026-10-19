@@ -53,6 +53,7 @@ expose({
   renderingPane: [() => renderingPane, v => (renderingPane = v)],
   restore: [() => restore, v => (restore = v)],
   saveAll: [() => saveAll, v => setSaveAll(v)],
+  sectionShown: [() => sectionShown],
   selectField: [() => selectField, v => (selectField = v)],
   setApi: [() => setApi, v => (setApi = v)],
   setReadPath: [() => setReadPath, v => (setReadPath = v)],
@@ -83,6 +84,7 @@ export const studioState = {
   rigs: null,
   files: [],
   sec: 'billionaires',
+  sec2: null /* studio track ST-1: the section in the second pane, or none */,
   sel: {},
   dirty: false,
   rigsDirty: false,
@@ -520,6 +522,8 @@ ACTIONS.navFold = d => {
   } catch (e) {}
   renderSide();
 };
+/* studio track ST-1: whether a section is on screen, in either pane */
+export const sectionShown = k => studioState.sec === k || studioState.sec2 === k;
 /* studio track ST-1: a section draws into a pane (#main); paneRoot() is the pane being drawn, for afterRender */
 let renderingPane = null;
 export const paneRoot = () => renderingPane || $('#main');
