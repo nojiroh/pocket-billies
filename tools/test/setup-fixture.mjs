@@ -27,7 +27,7 @@ export const FIXTURE = {
       rival: { sparky: 'drip0', sprout: 'sparky0', drip: 'sprout0' },
       locationId: 'meadow',
     },
-    encounters: { route: 4, townGrass: 2, refillMs: 60000, prizePerLevel: 20, goldOdds: 512, alphaOdds: 45 },
+    encounters: { route: 4, townGrass: 2, refillMs: 60000, prizePerLevel: 20, alphaOdds: 45 },
     progression: {
       xpFactor: 0.8,
       maxLevel: 100,
@@ -37,7 +37,7 @@ export const FIXTURE = {
       trainerXpMult: 1.5,
       teamXpShare: 0.5,
     },
-    eggs: { capacity: 8, slots: 2, goldOdds: 512, goldOdds10: 128, mythOdds: 1000, mythSpecies: 'sparky0' },
+    eggs: { capacity: 8, slots: 2, mythOdds: 1000, mythSpecies: 'sparky0' },
     battle: {
       stab: 1.5,
       critChances: [0.0625, 0.125, 0.25, 0.5],

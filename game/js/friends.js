@@ -11,7 +11,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { account, accountOn, closeModal, mapIdAt, mapOffsetInView, modal, provide, render, toast } from './hooks.js';
-import { LOCATIONS, SPECIES } from './game-data.js';
+import { COATS, LOCATIONS, SPECIES } from './game-data.js';
 import { billyName, cleanName, plural } from './logic/rules.js';
 import { escapeHtml, saveData, saveHold, uiState } from './game-state.js';
 import { personWalkFrames, portraitHTML, warmPerson } from './person-art.js';
@@ -185,7 +185,7 @@ function cleanFriend(d) {
       p && typeof p.sp === 'string'
         ? {
             sp: p.sp,
-            gold: !!p.gold,
+            coat: typeof p.coat === 'string' && COATS[p.coat] ? p.coat : undefined,
             name: cleanName(p.name, 16),
             lvl: Math.max(1, Math.min(100, Math.round(num(p.lvl) || 1))),
           }
@@ -226,7 +226,7 @@ function publishToFriends(now) {
     z = +uiState.roam.z.toFixed(1);
   }
   const m = typeof buddyBilly === 'function' ? buddyBilly() : saveData.team && saveData.team[0],
-    pt = m ? { sp: m.sp, gold: !!m.gold, name: billyName(m), lvl: m.lvl } : null;
+    pt = m ? { sp: m.sp, ...(m.coat ? { coat: m.coat } : {}), name: billyName(m), lvl: m.lvl } : null;
   const doc = {
     name: (saveData.avatar && saveData.avatar.name) || account.user.name || 'Trainer',
     avatar: saveData.avatar || null,
@@ -353,7 +353,7 @@ export function friendsHTML() {
       return `<div class="fr-row">
   <span class="fr-face">${typeof portraitHTML === 'function' ? portraitHTML('friend:' + u, 44) : ''}</span>
   <span class="fr-t"><b>${escapeHtml(d.name || 'Friend')}</b><small>${a.place ? `In ${escapeHtml(a.place)} · ${timeAgo(a.t)}` : 'Not seen yet'}</small>${p && SPECIES[p.sp] ? `<small class="fr-pt">with ${escapeHtml(p.name || SPECIES[p.sp].n)} · Lv ${p.lvl || 1}</small>` : ''}</span>
-  ${p && SPECIES[p.sp] ? `<span class="fr-mon">${rigCanvasHTML(p.sp, 48, { gold: p.gold, build: p.build })}</span>` : ''}
+  ${p && SPECIES[p.sp] ? `<span class="fr-mon">${rigCanvasHTML(p.sp, 48, { build: p.build, coat: p.coat })}</span>` : ''}
   <span class="fr-acts">${a.node != null && LOCATIONS[a.node] ? `<button class="pb small" data-a="fr-map" data-n="${a.node}">Map</button>` : ''}<button class="pb small quiet" data-a="fr-rm" data-u="${escapeHtml(u)}" aria-label="Remove ${escapeHtml(d.name || 'friend')}">✕</button></span></div>`;
     })
     .join('');
@@ -451,8 +451,9 @@ function friendWorldItems(out, t, C0) {
     const p = d.partner;
     if (p && SPECIES[p.sp] && typeof worldBillyItem === 'function') {
       const seed = u.length * 13 + 7,
-        it = worldBillyItem('fpet', p.sp, !!p.gold, 'front', null, t + seed * 91, seed, x + 0.9, z + 0.2, {
+        it = worldBillyItem('fpet', p.sp, 'front', null, t + seed * 91, seed, x + 0.9, z + 0.2, {
           build: p.build,
+          coat: p.coat,
           flip: P && P.x > x ? -1 : 1,
         });
       if (it) out.push(it);

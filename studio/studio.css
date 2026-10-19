@@ -3176,6 +3176,27 @@ body.vp-has-big::after {
   margin: 6px 0;
   font-weight: 600;
 }
+/* studio track ST-0: Coats */
+.coat-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 0 0 8px;
+}
+.coat-ramp {
+  display: inline-flex;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 0 0 1px var(--line);
+}
+.coat-ramp i {
+  width: 12px;
+  height: 18px;
+}
+.coat-arrow {
+  color: var(--text2);
+}
 
 /* ===================== phase 17: Robots ===================== */
 .rb-prev {

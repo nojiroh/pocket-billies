@@ -27,9 +27,10 @@ New interface icons are in `ui/` (12×12 masks). The app icons are in `app/`. Th
 shopkeepers are drawn by the shared trainer renderer from looks in the game data, so
 they have no image files. Edit them in the Studio's People section.
 
-Billionaire sheets can be edited in the Studio. Gold-Plated sheets can be rebuilt from
-the normal ones with an adjustable strength. The rebuild tints toward a gold ramp by
-brightness and keeps most of the outline, eye and highlight colors.
+Billionaire sheets can be edited in the Studio. (Studio track ST-0, 2026-10-19: the Gold-Plated sheets are gone.
+A coat, game/data/coats.json, recolours a sheet as it is drawn: whole palette ramps swapped step for step, then exact
+colours, or a hand-painted sheet at `art/next/coats/<species>_<coat>[_back].png`. The notes below about gold sheets
+are history.)
 
 ## Version 8
 

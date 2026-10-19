@@ -51,6 +51,7 @@ import {
   canEvolve,
   canRide,
   cleanName,
+  coatPrefix,
   distanceText,
   eggKm,
   eggSlotCount,
@@ -535,7 +536,7 @@ function evolutionModal(m) {
   modal({
     title: `${escapeHtml(billyName(m))} is evolving`,
     cls: 'evo-sheet',
-    top: `<div class="evo">${rigCanvasHTML(m.sp, 128, { gold: m.gold, build: m.build })}</div>`,
+    top: `<div class="evo">${rigCanvasHTML(m.sp, 128, { build: m.build, coat: m.coat })}</div>`,
     html: `<p>${why} Something bigger is coming.</p>`,
     lock: 1,
     btns: [
@@ -569,7 +570,7 @@ function runEvolution(m, note, path = 'A') {
   uiState.modal = null;
   modal({
     title: `What? ${escapeHtml(fromName)} is evolving!`,
-    top: `<div class="evo run" id="evoBox"><span class="ea">${rigCanvasHTML(from.id, 128, { gold: m.gold, still: 1 })}</span><span class="eb">${rigCanvasHTML(to.id, 128, { gold: m.gold, still: 1 })}</span></div>`,
+    top: `<div class="evo run" id="evoBox"><span class="ea">${rigCanvasHTML(from.id, 128, { still: 1, coat: m.coat })}</span><span class="eb">${rigCanvasHTML(to.id, 128, { still: 1, coat: m.coat })}</span></div>`,
     html: '<p class="note">Don’t look away.</p>',
     btns: [],
     lock: 1,
@@ -595,7 +596,7 @@ function runEvolution(m, note, path = 'A') {
             uiState.modal = null;
             modal({
               title: `${escapeHtml(fromName)} became ${escapeHtml(to.name)}`,
-              top: `<div class="evo done">${rigCanvasHTML(m.sp, 128, { gold: m.gold, build: m.build })}</div>`,
+              top: `<div class="evo done">${rigCanvasHTML(m.sp, 128, { build: m.build, coat: m.coat })}</div>`,
               html: `<p>${escapeHtml(to.blurb)}</p><p>${to.types.map(typeBadgeHTML).join('')}</p>${note ? `<p class="note">${note}</p>` : ''}`,
               btns: [{ l: 'Nice', c: 'dark', f: closeModal }],
             });
@@ -624,8 +625,8 @@ function hatchModal(e) {
           const done = () => {
             uiState.modal = null;
             modal({
-              title: `It’s ${/^[AEIOU]/.test(s.name) ? 'an' : 'a'} ${m.gold ? 'Golden ' : ''}${escapeHtml(s.name)}`,
-              top: `<div class="hatch done">${rigCanvasHTML(m.sp, 128, { gold: m.gold, build: m.build })}</div>`,
+              title: `It’s ${/^[AEIOU]/.test(s.name) ? 'an' : 'a'} ${escapeHtml(coatPrefix(m.coat) + s.name)}`,
+              top: `<div class="hatch done">${rigCanvasHTML(m.sp, 128, { build: m.build, coat: m.coat })}</div>`,
               html: `<p>${s.types.map(typeBadgeHTML).join('')} <b class="tnum">Lv ${m.lvl}</b></p><p>${escapeHtml(s.blurb)}</p>${res.where === 'box' ? '<p class="note">It went to storage because your team is full.</p>' : ''}`,
               btns: [{ l: 'Welcome aboard', c: 'dark', f: closeModal }],
             });
@@ -829,7 +830,7 @@ function buddyCard() {
   if (!m) return '';
   const a = xpFor(m.lvl),
     b = xpFor(m.lvl + 1);
-  return `<section><div class="sec-h"><h2>Buddy</h2></div><div class="buddy px" data-a="mon" data-u="${m.uid}" role="button" tabindex="0">${rigCanvasHTML(m.sp, 80, { gold: m.gold, build: m.build })}<div class="bd"><div class="bn">${escapeHtml(billyName(m))} <span class="lv tnum">Lv ${m.lvl}</span></div><div class="note">Gets the full XP of every battle you win, even when it sits one out. ${formatNumber(b - m.xp)} XP to level ${m.lvl + 1}.</div>${progressBarHTML((m.xp - a) / (b - a), 'xpb')}</div></div></section>`;
+  return `<section><div class="sec-h"><h2>Buddy</h2></div><div class="buddy px" data-a="mon" data-u="${m.uid}" role="button" tabindex="0">${rigCanvasHTML(m.sp, 80, { build: m.build, coat: m.coat })}<div class="bd"><div class="bn">${escapeHtml(billyName(m))} <span class="lv tnum">Lv ${m.lvl}</span></div><div class="note">Gets the full XP of every battle you win, even when it sits one out. ${formatNumber(b - m.xp)} XP to level ${m.lvl + 1}.</div>${progressBarHTML((m.xp - a) / (b - a), 'xpb')}</div></div></section>`;
 }
 function roomHero() {
   const I = uiState.inside,
@@ -1259,7 +1260,6 @@ export function walkState() {
     id: q.id,
     lvl: q.lvl,
     sp: q.sp,
-    gold: q.gold,
     alpha: !!q.alpha,
     build: encounterBuild(q),
   }));
@@ -1688,7 +1688,7 @@ function boxSection() {
       ? `<p class="note">Billies resting here don’t battle. Tap one for details.</p>${tools}
  <div class="bx-grid">${L.map(
    m =>
-     `<div class="bx"><button class="bx-main" data-a="mon" data-u="${m.uid}"><span class="bx-spr" style="${plateVars(m)}">${rigCanvasHTML(m.sp, 60, { gold: m.gold, build: m.build })}</span><b>${escapeHtml(billyName(m))}</b><span class="bx-sub tnum">Lv ${m.lvl}<span class="bx-dots">${speciesOf(
+     `<div class="bx"><button class="bx-main" data-a="mon" data-u="${m.uid}"><span class="bx-spr" style="${plateVars(m)}">${rigCanvasHTML(m.sp, 60, { build: m.build, coat: m.coat })}</span><b>${escapeHtml(billyName(m))}</b><span class="bx-sub tnum">Lv ${m.lvl}<span class="bx-dots">${speciesOf(
        m
      )
        .types.map(t => `<i style="--tc:${TYPE_COLORS[t][0]}" title="${t}"></i>`)
@@ -1923,7 +1923,7 @@ function renderProfile() {
   ${tile(uiIconHTML('ledger', 14), 'Seen', `${seen}/${DEX_ORDER.length}`, null, seen / DEX_ORDER.length)}${tile(coinHTML('penny', 14), 'Taxed', `${got}/${DEX_ORDER.length}`, null, got / DEX_ORDER.length)}
   ${tile(uiIconHTML('fight', 14), 'Trainers beaten', formatNumber(beat))}${tile(eggHTML(2, 12), 'Eggs hatched', formatNumber(saveData.hatched || 0), saveData.eggs.length ? `${plural(saveData.eggs.length, 'egg')} on the way` : 'No eggs right now')}${typeof stampTile === 'function' ? stampTile(tile) : ''}
  </div></section></div>
- <div class="pf-row">${bud ? `<section class="tpanel pf-buddy"><div class="sec-h"><h2>Buddy</h2></div><button class="pf-bud" data-a="mon" data-u="${bud.uid}"><span class="tm-spr" style="${plateVars(bud)}">${rigCanvasHTML(bud.sp, 72, { gold: bud.gold, build: bud.build })}</span><span class="pf-bt"><b>${escapeHtml(billyName(bud))}</b><span class="tnum">Lv ${bud.lvl}</span><small>Gets the full XP of every battle you win.</small></span></button></section>` : ''}
+ <div class="pf-row">${bud ? `<section class="tpanel pf-buddy"><div class="sec-h"><h2>Buddy</h2></div><button class="pf-bud" data-a="mon" data-u="${bud.uid}"><span class="tm-spr" style="${plateVars(bud)}">${rigCanvasHTML(bud.sp, 72, { build: bud.build, coat: bud.coat })}</span><span class="pf-bt"><b>${escapeHtml(billyName(bud))}</b><span class="tnum">Lv ${bud.lvl}</span><small>Gets the full XP of every battle you win.</small></span></button></section>` : ''}
  <section class="tpanel pf-bag"><div class="sec-h"><h2>Bag</h2></div>
   <div class="pf-coins">${Object.keys(COINS)
     .map(
@@ -2136,7 +2136,7 @@ function billySheet(m) {
     title: escapeHtml(billyName(m)),
     cls: 'mon-sheet',
     acts,
-    top: `<div class="ms-plate" style="${plateVars(m)}">${lead ? '<span class="tm-ribbon">Lead</span>' : ''}${bud ? `<span class="tm-ribbon bud">${uiIconHTML('heart', 11)} Buddy</span>` : ''}${m.gold ? '<span class="tm-ribbon gold">Golden</span>' : ''}${!isRobot(m) && isPrime(billyBuild(m)) ? '<span class="tm-ribbon prime">Prime</span>' : ''}${rigCanvasHTML(m.sp, 128, { gold: m.gold, build: m.build })}</div>`,
+    top: `<div class="ms-plate" style="${plateVars(m)}">${lead ? '<span class="tm-ribbon">Lead</span>' : ''}${bud ? `<span class="tm-ribbon bud">${uiIconHTML('heart', 11)} Buddy</span>` : ''}${!isRobot(m) && isPrime(billyBuild(m)) ? '<span class="tm-ribbon prime">Prime</span>' : ''}${rigCanvasHTML(m.sp, 128, { build: m.build, coat: m.coat })}</div>`,
     html: `<p class="row ms-chips">${s.types.map(typeBadgeHTML).join('')}${billyConditionHTML(m)}<b class="lv tnum">Lv ${m.lvl}</b>${m.nick ? `<span class="ms-sp">${escapeHtml(s.name)}</span>` : ''}</p>
   <div class="ms-tabs" role="tablist" aria-label="About ${escapeHtml(billyName(m))}" data-on="sum">${tabs.map(([k, l]) => `<button role="tab" data-a="ms-tab" data-k="${k}" aria-selected="${k === 'sum'}">${l}</button>`).join('')}</div>
   <div class="ms-pane" data-k="sum"><div class="ms-meters">${meter('HP', hpBar(m.hp, mx), `${m.hp}/${mx}`)}${meter('XP', progressBarHTML(xpProgress(m), 'xpb'), xpLeft(m))}</div>
@@ -2192,7 +2192,7 @@ function healPick(m, back) {
 function swapPick(m) {
   modal({
     title: `Swap in ${escapeHtml(billyName(m))}`,
-    html: `<p class="note">Your team is full. Pick who rests in storage instead.</p><div class="list">${saveData.team.map((o, i) => `<button class="pickrow" data-a="mswap" data-u="${m.uid}" data-o="${o.uid}">${rigCanvasHTML(o.sp, 40, { gold: o.gold, build: o.build })}<span class="pr-t"><b>${escapeHtml(billyName(o))}</b><small>Lv ${o.lvl}${i === 0 ? ', your lead' : ''}${o.uid === saveData.buddy ? ', buddy' : ''}</small></span></button>`).join('')}</div>`,
+    html: `<p class="note">Your team is full. Pick who rests in storage instead.</p><div class="list">${saveData.team.map((o, i) => `<button class="pickrow" data-a="mswap" data-u="${m.uid}" data-o="${o.uid}">${rigCanvasHTML(o.sp, 40, { build: o.build, coat: o.coat })}<span class="pr-t"><b>${escapeHtml(billyName(o))}</b><small>Lv ${o.lvl}${i === 0 ? ', your lead' : ''}${o.uid === saveData.buddy ? ', buddy' : ''}</small></span></button>`).join('')}</div>`,
     btns: [{ l: 'Cancel', c: 'quiet', f: closeModal }],
   });
 }
@@ -2204,7 +2204,7 @@ function addPick() {
       free
         .map(
           m =>
-            `<button class="pickrow" data-a="tmaddon" data-u="${m.uid}">${rigCanvasHTML(m.sp, 40, { gold: m.gold, build: m.build })}<span class="pr-t"><b>${escapeHtml(billyName(m))}</b><small>Lv ${m.lvl}, ${speciesOf(
+            `<button class="pickrow" data-a="tmaddon" data-u="${m.uid}">${rigCanvasHTML(m.sp, 40, { build: m.build, coat: m.coat })}<span class="pr-t"><b>${escapeHtml(billyName(m))}</b><small>Lv ${m.lvl}, ${speciesOf(
               m
             )
               .types.map(t => (t === 'None' ? 'Normal' : t))

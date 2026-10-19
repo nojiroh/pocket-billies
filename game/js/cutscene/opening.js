@@ -135,7 +135,7 @@ export async function cutsceneStart(opts) {
   $('#app').innerHTML = '';
   updateNav(false);
   const pre = Promise.all([
-    rigPreload(cutscene.pickList.map(l => [l + '0', false, 1])),
+    rigPreload(cutscene.pickList.map(l => [l + '0', 1])),
     artLoad(['coins/penny_32.png']),
     prepareMap(id),
   ]).catch(() => {});

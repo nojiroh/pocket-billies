@@ -1,0 +1,77 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "coats.schema.json",
+ "title": "game/data/coats.json: a Billie's coat, a recolour of its art (studio track ST-0)",
+ "type": "object",
+ "propertyNames": {
+  "pattern": "^[a-z][a-z0-9_]*$"
+ },
+ "additionalProperties": {
+  "type": "object",
+  "required": [
+   "name"
+  ],
+  "additionalProperties": false,
+  "properties": {
+   "name": {
+    "description": "shown to the player (\"a Midnight Emberox\")",
+    "type": "string",
+    "minLength": 1,
+    "maxLength": 24
+   },
+   "ramps": {
+    "description": "whole palette ramps swapped, step for step (next/palette.js): {\"ember\": \"indigo\"}",
+    "type": "object",
+    "additionalProperties": {
+     "type": "string"
+    }
+   },
+   "swap": {
+    "description": "exact colours swapped, after the ramps: {\"#d94c21\": \"#3f3980\"}",
+    "type": "object",
+    "propertyNames": {
+     "pattern": "^#[0-9a-fA-F]{6}$"
+    },
+    "additionalProperties": {
+     "type": "string",
+     "pattern": "^#[0-9a-fA-F]{6}$"
+    }
+   },
+   "odds": {
+    "description": "found in the wild, in eggs or on the line once in this many; none means never",
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+     "wild": {
+      "type": "integer",
+      "minimum": 2
+     },
+     "egg": {
+      "type": "integer",
+      "minimum": 2
+     },
+     "fish": {
+      "type": "integer",
+      "minimum": 2
+     }
+    }
+   },
+   "art": {
+    "description": "hand-painted sheets in place of the recolour, per species and view (paths under game/art)",
+    "type": "object",
+    "additionalProperties": {
+     "type": "object",
+     "additionalProperties": false,
+     "properties": {
+      "front": {
+       "type": "string"
+      },
+      "back": {
+       "type": "string"
+      }
+     }
+    }
+   }
+  }
+ }
+}

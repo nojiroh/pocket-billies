@@ -28,6 +28,7 @@ Lint enforces what it can (see the end). Every old -> new name of phase 05 is in
 | Low-poly meshes made from a recipe | `lowPoly*` (`lowPolyFromRecipe`) | |
 | Solid props made from a prop's picture | `solidProp*` (solid-props.js) | was p3d, props3d.js |
 | Creatures | `billy`, `billies` (`billyName`, `worldBillies`, `buddyBilly`) | was mon, owm, ow, owmon.js |
+| A Billie's recolour | `coat` (data section `coats`, `COATS`, a Billie's or encounter's `coat` id, logic/coats.js `coat*`) | studio track ST-0, in place of Golden (`gold`); not `variant`: the Variants are a group of people, and props have `variants` |
 | Drawn people | `person*` (person-art.js) | was tr*, trainer.js |
 | The save | `saveData` (`setSaveData`) | was S |
 | UI state | `uiState` | was U |

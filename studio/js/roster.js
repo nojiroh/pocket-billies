@@ -167,7 +167,7 @@ async function silhouetteOf(id, size = 24) {
     } catch (e) {}
   }
   if (!src) {
-    const R = rigFor(rosterSpeciesId(id), 'front', false);
+    const R = rigFor(rosterSpeciesId(id), 'front');
     if (R) {
       const c = makeCanvas(R.BW, R.BH),
         x = c.getContext('2d');

@@ -3,8 +3,8 @@
 tools/pixkit.py: four-tone cel shading lit from the top left, rim light, fur fringes, sel-out outlines, big anime eyes
 with two highlights, brows that carry the expression, and a prop or two per species that says who it parodies.
 ~20 pieces per species on ONE sheet with a layout JSON, four face pieces (composited onto four heads), a three-step torso
-(rest, squashed, stretched), the back view and a 64x64 portrait. Writes game/art/next/billionaires/<name>.png, .json,
-_gold.png and game/art/next/rigs-next.js. A sheet that exists is kept (paint over it by hand); --force remakes it.
+(rest, squashed, stretched), the back view and a 64x64 portrait. Writes game/art/next/billionaires/<name>.png, .json
+and game/art/next/rigs-next.js. A sheet that exists is kept (paint over it by hand); --force remakes it.
 
     python3 tools/build-starter-sheets.py [--force] [--sheet validation/v36-starters.png]"""
 import argparse, json, math, sys
@@ -361,7 +361,7 @@ def main():
             parts, canvas, base = fn(st); sheet, lay, meta = build(sid, parts, canvas, base, plan)
             fresh = a.force or not f.exists()
             if fresh:
-                sheet.save(f); gold_recolour(sheet).save(OUT / f'{sid}_gold.png'); (OUT / f'{sid}.json').write_text(json.dumps(lay, separators=(',', ':'))); made += 1
+                sheet.save(f); (OUT / f'{sid}.json').write_text(json.dumps(lay, separators=(',', ':'))); made += 1
             if fresh or f'{line}{st}' not in have: rigs[f'{line}{st}'] = meta  # the game's species id is line + stage index; the sheet keeps the readable name; a rig the Studio edited is kept
             # a rest-pose composite for the review sheet
             comp = Image.new('RGBA', (canvas, canvas), (0, 0, 0, 0))

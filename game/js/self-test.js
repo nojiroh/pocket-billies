@@ -737,7 +737,7 @@ async function runFullTest(mode) {
       saveData.team.forEach(m => {
         m.hp = maxHp(m);
       });
-      const q = { id: 'selftest', sp: foeSp, lvl: 5, gold: false, no: 1 };
+      const q = { id: 'selftest', sp: foeSp, lvl: 5, no: 1 };
       encountersHere().unshift(q);
       startWild(q);
       const g0 = selfTest.gen || 0;
@@ -798,7 +798,7 @@ async function runFullTest(mode) {
         if (!id) return 'no trainer with two Billies';
         startTrainer(id, { talked: true, double: true });
       } else {
-        const q = { id: 'selftest-alpha', sp: foeSp, lvl: 5, gold: false, no: 1, alpha: true };
+        const q = { id: 'selftest-alpha', sp: foeSp, lvl: 5, no: 1, alpha: true };
         encountersHere().unshift(q);
         startWild(q);
       }

@@ -25,6 +25,7 @@ import {
   billyName,
   billyWeight,
   buildLean,
+  coatPrefix,
   formatNumber,
   isPrime,
   maxHp,
@@ -58,7 +59,7 @@ provide({ billyUnit, unitBotBuildHTML, unitBuildHTML, unitCarryHTML, unitHeroHTM
 /** @typedef {{
  *   kind: 'billy' | 'bot', id: string, name: string, sub: string, lvl: number, types: string[],
  *   hp: number, max: number, art: (px: number) => string, plate: string, down: boolean,
- *   lead: boolean, buddy: boolean, gold: boolean, prime: boolean, care: boolean,
+ *   lead: boolean, buddy: boolean, coat: string, prime: boolean, care: boolean,
  *   build: Record<string, string>, kg: number, wclass: string, slotNames: Record<string, string>
  * }} Unit */
 
@@ -82,12 +83,12 @@ function billyUnit(m) {
     types: s.types,
     hp: m.hp,
     max: maxHp(m),
-    art: px => rigCanvasHTML(m.sp, px, { gold: m.gold, build: m.build }),
+    art: px => rigCanvasHTML(m.sp, px, { build: m.build, coat: m.coat }),
     plate: plateVars(m),
     down: m.hp <= 0,
     lead: saveData.team[0] === m,
     buddy: saveData.buddy === m.uid,
-    gold: !!m.gold,
+    coat: coatPrefix(m.coat).trim(),
     prime: !bot && isPrime(b),
     care: needsCare(m),
     build: b,
@@ -102,7 +103,7 @@ function unitHpHTML(u) {
   return `<span class="u-hp${p < 0.25 ? ' low' : p < 0.5 ? ' mid' : ''}" role="meter" aria-label="HP" aria-valuemin="0" aria-valuemax="${u.max}" aria-valuenow="${u.hp}"><i style="width:${p * 100}%"></i></span><span class="u-hpn tnum">${u.hp}/${u.max}</span>`;
 }
 function unitTagsHTML(u) {
-  return `${u.lead ? '<span class="u-tag lead">Lead</span>' : ''}${u.buddy ? `<span class="u-tag bud">${uiIconHTML('heart', 11)} Buddy</span>` : ''}${u.gold ? '<span class="u-tag gold">Golden</span>' : ''}${u.prime ? '<span class="u-tag prime">Prime</span>' : ''}`;
+  return `${u.lead ? '<span class="u-tag lead">Lead</span>' : ''}${u.buddy ? `<span class="u-tag bud">${uiIconHTML('heart', 11)} Buddy</span>` : ''}${u.coat ? `<span class="u-tag coat">${escapeHtml(u.coat)}</span>` : ''}${u.prime ? '<span class="u-tag prime">Prime</span>' : ''}`;
 }
 
 /** the lead's big card at the top of a team */

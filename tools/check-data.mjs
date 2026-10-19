@@ -272,6 +272,20 @@ for (const [id, G] of Object.entries(robots.gems || {})) {
   if (!types.has(G.type)) problem('robots.json', `gem ${id} is type ${G.type}, no such type`);
   if (!moves[G.move]) problem('robots.json', `gem ${id} gives ${G.move}, no such move`);
 }
+// studio track ST-0: coats: the schema, then the palette ramps, Billies and pictures they name
+if (D.coats && check('coats.schema.json', D.coats, 'coats.json')) {
+  const pal = JSON.parse(readFileSync(join(DATA, '..', 'art', 'next', 'palette.js'), 'utf8').replace(/^[^=]*=/, '').replace(/;\s*$/, ''));
+  const species = new Set((D.lines || []).flatMap(L => L.names.map((_, i) => L.id + i)));
+  for (const [id, C] of Object.entries(D.coats)) {
+    for (const [a, b] of Object.entries(C.ramps || {}))
+      for (const r of [a, b]) if (!pal.ramps[r]) problem('coats.json', `coat ${id} swaps ramp ${r}, no such palette ramp`);
+    for (const [sp, views] of Object.entries(C.art || {})) {
+      if (!species.has(sp)) problem('coats.json', `coat ${id} has art for ${sp}, no such Billie`);
+      for (const p of Object.values(views))
+        if (!existsSync(join(DATA, '..', 'art', p))) problem('coats.json', `coat ${id}: no picture ${p}`);
+    }
+  }
+}
 // phase 07: portraits: the schema, then every picture named is there and every face uses parts that exist
 if (D.portraits) {
   const P = D.portraits,

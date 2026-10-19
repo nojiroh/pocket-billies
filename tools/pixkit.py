@@ -175,15 +175,6 @@ def box(w, h, ramp='straw', tape='skin_deep', arrow=True):
 def rocket_window(pc, x, y, r): pc.blob('steel', x, y, r + 1, r + 1, 5, flat=True); pc.blob('sky', x, y, r, r, 4, flat=True); pc.dot(WHITE, int(x - r * .5), int(y - r * .5), 1, 1)
 def screen(pc, x, y, w, h, ramp='cobalt'):
     pc.rrect('steel', x, y, w, h, 1, 2, shade=False); pc.rrect(ramp, x + 1, y + 1, w - 2, h - 2, 0, 3, shade=False); pc.dot(C(ramp, 6), x + 2, y + 2, w - 5, 1); pc.dot(C(ramp, 5), x + 2, y + 3, 2, 1)
-def gold_recolour(im):
-    import numpy as np
-    GOLD = [(0, (64, 40, 14)), (.35, (150, 100, 30)), (.6, (214, 162, 58)), (.8, (244, 206, 110)), (1, (255, 246, 206))]
-    a = np.asarray(im).astype(np.float64); L = (a[..., 0] * .299 + a[..., 1] * .587 + a[..., 2] * .114) / 255; out = a.copy()
-    for i in range(1, len(GOLD)):
-        (t0, c0), (t1, c1) = GOLD[i - 1], GOLD[i]; m = (L >= t0) & (L <= t1); t = ((L - t0) / (t1 - t0))[..., None]
-        for ch in range(3): out[..., ch] = np.where(m, c0[ch] + (c1[ch] - c0[ch]) * t[..., 0], out[..., ch])
-    out[..., 3] = a[..., 3]; return Image.fromarray(out.astype(np.uint8))
-
 def horn_arc(pc, ramp, cx, cy, R, thick, a0, a1, step=4, tip_step=6):
     """a curled horn: a thick arc of a circle from angle a0 to a1 (degrees, 0 = right, 90 = down), ridged, pale tip"""
     p = pc.im.load(); a0r, a1r = math.radians(a0), math.radians(a1)
