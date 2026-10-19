@@ -27,7 +27,8 @@ centre, the ground generated from region terrain, seen from above like a diorama
   graph-test update before it enters the game.
 - **Feel:** the layout should feel authentic and natural.
 
-## E-map-1 result (2026-10-19, waiting for the owner's pick)
+## E-map-1 result (2026-10-19): owner chose layout 1; the proposed links are kept as notes
+Copperleaf also gets proposed special links (canal to Kelpport, sky lift to Nimbus); see `10-proposed-links.md`.
 Sketches and data in `docs/phases/10-bowl/` (made by `tools/layout/`).
 - **Layout 1, spiral (recommended).** On the bowl a map's north faces the centre and its east runs counter-clockwise.
   Today's order rolls round the bowl and rises up the wall; the Inner Sun ends high at the rim. All 56 seams point

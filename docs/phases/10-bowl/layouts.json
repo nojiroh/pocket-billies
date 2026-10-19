@@ -455,5 +455,18 @@
    "exit_a": "east",
    "exit_b": "west"
   }
+ ],
+ "chosen": "1-spiral",
+ "special_links": [
+  {
+   "a": "copperleaf",
+   "b": "kelpport",
+   "kind": "canal"
+  },
+  {
+   "a": "copperleaf",
+   "b": "nimbus",
+   "kind": "sky lift"
+  }
  ]
 }

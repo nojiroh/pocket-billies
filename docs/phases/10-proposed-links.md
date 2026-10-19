@@ -15,6 +15,18 @@ would cross no existing road, and whose land suits each other.
 | 4 | Kelpport City <-> Skygarden Walk | A sky lift from the harbour up into Cloudspire | Kelpport `east` (free) <-> Skygarden `west` (free) | Post-game: once Cloudspire is open |
 | 5 | Nimbus City <-> Zenith Steps | Cloudspire's town opens straight onto the climb to the Inner Sun | Nimbus `east` (free) <-> Zenith Steps `west2` (west taken) | Post-game: the Inner Sun story beat |
 
+## Special links from Copperleaf (owner's request)
+These are not walking roads. Like the existing glass lift (Kelpport <-> Pearlantis, `kind: lift`), they need no map
+edges: each is a station you enter in one town and leave in the other. That keeps the seams and the bowl layout as they
+are; on the bowl they show as a dotted arc, not a road.
+
+| # | Link | Why it feels natural | Kind | Story check before it opens |
+|---|------|----------------------|------|-----------------------------|
+| 6 | Copperleaf Town <-> Kelpport City | Water runs down the walls to the floor; an old canal under Copperleaf leads up to the harbour by boat | `lift`-style (canal), station in each town | Post-game: once the Coral Trench is open; maybe needs the Ride rule |
+| 7 | Copperleaf Town <-> Nimbus City | A sky lift (cable car) from home up to Cloudspire, a quick way back after the long climb | `lift`-style (sky lift), station in each town | Post-game: once Cloudspire is open |
+
+More of this kind can be added the same way (a station in Copperleaf, one in the far town).
+
 For each link, when it is added:
 - Build the two edge strips on the walkable maps (the seam must line up, phase 08 checks).
 - Add the road to `roads.json` with its gate or story flag.

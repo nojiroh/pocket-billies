@@ -83,6 +83,17 @@ for name, pos in D['layouts'].items():
         for a, b in PROPS:
             A, B = P[a], P[b]
             ax.plot([A[0], B[0]], [A[1], B[1]], color='#ff9ec4', lw=1.8, ls=(0, (4, 3)), zorder=1)
+    SPECIAL = D.get('special_by_layout', {}).get(name, [])
+    for a, b, kind in SPECIAL:
+        A, B = P[a], P[b]
+        mid = 0.5 * (A + B); v = B - A; nrm = np.array([-v[1], v[0]])
+        ctrl = mid + 0.28 * nrm * (1 if kind == 'canal' else -1)
+        t = np.linspace(0, 1, 60)[:, None]
+        pts = (1 - t) ** 2 * A + 2 * (1 - t) * t * ctrl + t ** 2 * B
+        ax.plot(pts[:, 0], pts[:, 1], color='#7fe0ff', lw=1.8, ls=(0, (1, 2.5)), zorder=1)
+        q = pts[30]
+        ax.text(q[0], q[1], kind, color='#7fe0ff', fontsize=7, ha='center', va='center',
+                bbox=dict(boxstyle='round,pad=0.15', fc='#1d2130', ec='none', alpha=0.8), zorder=4)
     # region hulls as soft blobs
     for reg in REG_COL:
         pts = np.array([P[l['id']] for l in L if region(l) == reg and l['id'] not in D['sub']])
@@ -109,6 +120,8 @@ for name, pos in D['layouts'].items():
              'N': 'Layout 2 · Natural basin: north up the wall: sea and ponds on the floor, peaks and sky high, regions rising clockwise'}[name]
     ax.set_title(title, color='#f4efe2', fontsize=11, pad=12)
     hs = [plt.Line2D([], [], marker='o', ls='', color=REG_COL[k], label=REG_NAME[k]) for k in REG_COL]
+    if SPECIAL:
+        hs.append(plt.Line2D([], [], color='#7fe0ff', ls=':', label='proposed special link (no map edges)'))
     if PROPS:
         hs.append(plt.Line2D([], [], color='#ff9ec4', ls='--', label='proposed link (not in the game yet)'))
     hs += [plt.Line2D([], [], marker='s', ls='', color='#cccccc', label='town (square), [n] = badge'),
