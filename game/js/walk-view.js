@@ -74,7 +74,9 @@ expose({
   PAINT_WORKER_WAIT: [() => PAINT_WORKER_WAIT],
   PROP_CLOCK: [() => PROP_CLOCK],
   PROP_VARIANT_CACHE: [() => PROP_VARIANT_CACHE],
+  ROOF_MODEL: [() => ROOF_MODEL],
   ROOF_STYLES: [() => ROOF_STYLES],
+  ROOF_VARIANT_CACHE: [() => ROOF_VARIANT_CACHE],
   RUN_FACTOR: [() => RUN_FACTOR],
   STEP_GRID_CACHE: [() => STEP_GRID_CACHE],
   TILE_PIXEL_CACHE: [() => TILE_PIXEL_CACHE],
@@ -157,6 +159,7 @@ expose({
   mapHub: [() => mapHub, v => (mapHub = v)],
   mapMoodName: [() => mapMoodName, v => (mapMoodName = v)],
   mapWaterCells: [() => mapWaterCells, v => (mapWaterCells = v)],
+  modelRoofVariant: [() => modelRoofVariant, v => (modelRoofVariant = v)],
   movePlayer: [() => movePlayer, v => (movePlayer = v)],
   navCellAt: [() => navCellAt, v => (navCellAt = v)],
   navCostAt: [() => navCostAt, v => (navCostAt = v)],
@@ -1021,7 +1024,7 @@ export function tileSetPixels(T, TP) {
    the Lite renderer (no 3D walls) also gets the wall faces painted below each edge.
    v46: any rectangle of the scene's picture (canvas cells, padding included; row 0 the far edge) at any size: TP pixels
    a metre. The 3D renderer paints a view's whole ground small (its distance) and the 16 m squares round you at full
-   size (walk-view-gl.js, the near ring). Patterns and noise come from each cell's own scene or road metres. */
+   size (walk/map-cache.js, the near ring). Patterns and noise come from each cell's own scene or road metres. */
 export function* paintGroundSteps(sc, o) {
   const C = walkData().sc,
     W = sc.w,
@@ -2836,7 +2839,7 @@ export function navGrid() {
   walkView.navKey = key;
   return (walkView.nav = { N, gw, gh, blk, cost, lv, hop });
 }
-/* phase 04d: walk-view-gl.js puts the 3D version in place */
+/* phase 04d: walk/heights.js puts the 3D version in place */
 export function setNavGrid(v) {
   navGrid = v; // eslint-disable-line no-func-assign
   provide({ navGrid });

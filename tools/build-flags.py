@@ -3,7 +3,7 @@
 
 The flag pole used to be one picture (pole and a teal flag) that swayed as a whole. Now the pole is rigid
 (art/scene/props/flag_mast.png, a new file; the old flag_pole.png stays on disk) and the cloth is a separate picture
-the game drapes from the top of the mast and waves in the wind (walk-view-gl.js, item kind 'flag'). Each stop's scene
+the game drapes from the top of the mast and waves in the wind (walk/frame-items.js, item kind 'flag'). Each stop's scene
 flies its own flag: art/scene/flags/<scene>.png, 48 x 32, a two-colour field with the town's emblem, plus default.png.
 Only towns have a flag of their own (scenery.flags lists them); every other pole flies the coin ring. A scene can pick
 another with "flag": "<name>" in the Studio (Walk scenes -> Look). Existing pictures are kept.

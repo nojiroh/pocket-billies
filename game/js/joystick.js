@@ -13,7 +13,7 @@
 import { expose } from './test-globals.js';
 import { activeBattle, saveData, uiState } from './game-state.js';
 import { walkView } from './walk-view.js';
-import { walkRenderer } from './walk-view-gl.js';
+import { walkRenderer } from './walk/walk-state.js';
 import { talkBox } from './talk.js';
 import { cutscene } from './cutscene.js';
 import { airshipFlight, glassLift } from './airship.js';

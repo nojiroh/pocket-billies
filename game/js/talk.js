@@ -12,7 +12,7 @@ import { reducedMotion, saveData } from './game-state.js';
 import { frameStop, frameTask } from './frame-scheduler.js';
 import { drawPortrait, lookOf } from './person-art.js';
 import { turnToPlayer, walkView } from './walk-view.js';
-import { walkRenderer } from './walk-view-gl.js';
+import { walkRenderer } from './walk/walk-state.js';
 import { soundEffect } from './sound.js';
 /* eslint-disable no-func-assign */
 expose({

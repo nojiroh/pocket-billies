@@ -28,9 +28,10 @@ import {
   walkData,
   walkView,
 } from './walk-view.js';
-import { ENGINE_DEFAULTS, engineSetting } from './engine/settings.js';
+import { ENGINE_DEFAULTS } from './engine/settings.js';
 import { smooth01 } from './engine/webgl.js';
-import { isGroundPrepared, prepareMapGround, walkRenderer } from './walk-view-gl.js';
+import { walkRenderer } from './walk/walk-state.js';
+import { isGroundPrepared, prepareMapGround } from './walk/map-cache.js';
 import { lifeShift } from './ambient-life.js';
 import { shiftWorldBillies } from './world-billies.js';
 /* eslint-disable no-func-assign */
@@ -1132,7 +1133,7 @@ function seamlessMapById(id) {
 }
 /* v46: seamless rooms. Walking into a building doesn't leave the place: the room is laid into the place's own view
    where the building stands, larger than the building (as in classic RPGs), with its door at the building's door.
-   Everything else of the place stays, dimmed (the room box in the light, walk-view-gl.js); the building itself and what
+   Everything else of the place stays, dimmed (the room box in the light, walk/lighting.js); the building itself and what
    stands on the room's floor or just in front of it are left out while you're inside. The view shares the place's
    parts, so going in and out is a shift of nothing: you never leave where you were.
    id: "<the place's view>#<room scene>@<door x>,<door z>" */
