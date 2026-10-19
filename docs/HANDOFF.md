@@ -63,6 +63,23 @@ Branch `ccr-72e8ad56-lpn1x3`, from main.
 - Next session starts with: "start 08b" (docs/phases/08a-plan.md, Part B), after this branch is merged; the full quick
   check and a picture baseline first, since none exists yet.
 
+### Phase 09 batch 2, parts 1 and 2 - Copperleaf and Route 1: flat plants, 14 trees - 2026-10-19
+Owner's request: start on the rest of Copperleaf and Route 1 (Hedgerow Lane), the first 10%, then another 10%.
+- Changed (tools/build-props-batch2.py, swapped in under their own keys like batch 1):
+  - the 54 flat plants of the two places stay flat and move to 32 px/m;
+  - trees with the tree tool: rowan, blossom, elm, chestnut, maple, fruit, birch, birch_gold, poplar; the hazel and
+    birch_b as shrubs of several stems (a new stems mode: each limb a stem from the ground, no trunk or roots);
+    autumn hazel, autumn poplar and autumn beech as their summer tree with the leaves recoloured.
+  - Their rows are on the showcase map test_props_next.
+- Part 3 (owner: do the rest of the nature now): willow; larch (a new 0-clump mode: the tiered crown stays whole
+  on a modelled trunk); the 7 bushes (berry, holly, juniper, bramble, rosemary, hawthorn, rhododendron) as clumps;
+  modelled from shapes: the hedge, the fallen tree, the log, the stump, the lichen boulder, the flat rock and the
+  stepping stones (still flat and walkable; a flat prop with a model no longer also draws its picture on the ground).
+  All the nature in Copperleaf and Hedgerow Lane is now in the new style.
+- Left in the two places: 23 man-made props (fences, benches, planters, flowerpots, wheelbarrow, barrel, dock post,
+  beehive, signpost, scarecrow, well, birdhouse, gnome, bunting, rowboat, waystone), two cottages and the lab.
+- Verified: data check, lint, type-check, unit tests, the smoke check; low-resolution shots of the new rows.
+
 ### Phase 09 batch 1 swapped in - 2026-10-19
 Owner's go-ahead: replace the finished props in the game.
 - Changed: the 24 old props the batch covers now are the new ones, under their own keys (tools/build-props-batch1.py

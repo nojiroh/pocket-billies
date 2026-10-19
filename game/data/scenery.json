@@ -1574,10 +1574,8 @@
    "tags": ["farm","route","town"],
    "group": "tree_fruit",
    "solid": 0.35,
-   "layers": [
-    {"img":"scene/props/layers/tree_fruit_lb.png","dz":0.6,"sway":0.7,"shadow":0},
-    {"img":"scene/props/layers/tree_fruit_lf.png","dz":-0.42,"sway":1.4,"shadow":0}
-   ]
+   "model": "scene/next/models/tree_fruit.json",
+   "ppm": 32
   },
   "tree_birch": {
    "name": "Birch tree",
@@ -1590,10 +1588,8 @@
    "tags": ["route"],
    "group": "tree_birch",
    "solid": 0.3,
-   "layers": [
-    {"img":"scene/props/layers/tree_birch_lb.png","dz":0.37,"sway":0.7,"shadow":0},
-    {"img":"scene/props/layers/tree_birch_lf.png","dz":-0.26,"sway":1.4,"shadow":0}
-   ]
+   "model": "scene/next/models/tree_birch.json",
+   "ppm": 32
   },
   "bush_round": {
    "name": "Round bush",
@@ -1620,10 +1616,8 @@
    "tags": ["route","farm"],
    "group": "bush_berry",
    "solid": 0.55,
-   "layers": [
-    {"img":"scene/props/layers/bush_berry_lb.png","dz":0.27,"sway":0.7,"shadow":0},
-    {"img":"scene/props/layers/bush_berry_lf.png","dz":-0.2,"sway":1.4,"shadow":0}
-   ]
+   "model": "scene/next/models/bush_berry.json",
+   "ppm": 32
   },
   "hedge": {
    "name": "Hedge",
@@ -1636,10 +1630,8 @@
    "tags": ["town","route"],
    "group": "hedge",
    "box": [3.4,0.7],
-   "layers": [
-    {"img":"scene/props/layers/hedge_lb.png","dz":0.3,"sway":0.7,"shadow":0},
-    {"img":"scene/props/layers/hedge_lf.png","dz":-0.22,"sway":1.4,"shadow":0}
-   ]
+   "model": "scene/next/models/hedge.json",
+   "ppm": 32
   },
   "tallgrass": {
    "name": "Tall grass",
@@ -1664,7 +1656,8 @@
    "flat": 0,
    "tags": ["water","route"],
    "group": "reeds",
-   "solid": 0
+   "solid": 0,
+   "ppm": 32
   },
   "flowers_red": {
    "name": "Red flowers",
@@ -1676,7 +1669,8 @@
    "flat": 0,
    "tags": ["route","town"],
    "group": "flowers",
-   "solid": 0
+   "solid": 0,
+   "ppm": 32
   },
   "flowers_blue": {
    "name": "Blue flowers",
@@ -1688,7 +1682,8 @@
    "flat": 0,
    "tags": ["route","town"],
    "group": "flowers",
-   "solid": 0
+   "solid": 0,
+   "ppm": 32
   },
   "flowers_yellow": {
    "name": "Yellow flowers",
@@ -1700,7 +1695,8 @@
    "flat": 0,
    "tags": ["route","town","farm"],
    "group": "flowers",
-   "solid": 0
+   "solid": 0,
+   "ppm": 32
   },
   "mushroom": {
    "name": "Mushrooms",
@@ -1738,7 +1734,9 @@
    "flat": 0,
    "tags": ["route"],
    "group": "stump",
-   "solid": 0.45
+   "solid": 0.45,
+   "model": "scene/next/models/stump.json",
+   "ppm": 32
   },
   "log": {
    "name": "Fallen log",
@@ -1750,7 +1748,9 @@
    "flat": 0,
    "tags": ["route"],
    "group": "log",
-   "box": [2.1,0.6]
+   "box": [2.1,0.6],
+   "model": "scene/next/models/log.json",
+   "ppm": 32
   },
   "boulder": {
    "name": "Boulder",
@@ -1870,7 +1870,8 @@
    "flat": 0,
    "tags": ["farm"],
    "group": "crops",
-   "solid": 0
+   "solid": 0,
+   "ppm": 32
   },
   "signpost": {
    "name": "Signpost",
@@ -2049,7 +2050,8 @@
    "flat": 1,
    "tags": ["water"],
    "group": "pond_lily",
-   "solid": 0
+   "solid": 0,
+   "ppm": 32
   },
   "stepping": {
    "name": "Stepping stones",
@@ -2062,7 +2064,9 @@
    "tags": ["route","water","town"],
    "group": "stepping",
    "solid": 0,
-   "walk": 0.9
+   "walk": 0.9,
+   "model": "scene/next/models/stepping.json",
+   "ppm": 32
   },
   "statue": {
    "name": "Creature statue",
@@ -2182,10 +2186,8 @@
    "tags": ["route"],
    "group": "tree_birch",
    "solid": 0.35,
-   "layers": [
-    {"img":"scene/props/layers/tree_birch_b_lb.png","dz":0.44,"sway":0.7,"shadow":0},
-    {"img":"scene/props/layers/tree_birch_b_lf.png","dz":-0.3,"sway":1.4,"shadow":0}
-   ]
+   "model": "scene/next/models/tree_birch_b.json",
+   "ppm": 32
   },
   "tree_fruit_b": {
    "name": "Apple tree",
@@ -2214,10 +2216,8 @@
    "tags": ["town","route"],
    "group": "tree_blossom",
    "solid": 0.35,
-   "layers": [
-    {"img":"scene/props/layers/tree_blossom_lb.png","dz":0.6,"sway":0.7,"shadow":0},
-    {"img":"scene/props/layers/tree_blossom_lf.png","dz":-0.45,"sway":1.4,"shadow":0}
-   ]
+   "model": "scene/next/models/tree_blossom.json",
+   "ppm": 32
   },
   "bush_round_b": {
    "name": "Big round bush",
@@ -2261,7 +2261,8 @@
    "layers": [
     {"img":"scene/props/layers/bush_flower_lb.png","dz":0.27,"sway":0.7,"shadow":0},
     {"img":"scene/props/layers/bush_flower_lf.png","dz":-0.2,"sway":1.4,"shadow":0}
-   ]
+   ],
+   "ppm": 32
   },
   "tallgrass_b": {
    "name": "Lush grass",
@@ -2299,7 +2300,8 @@
    "flat": 0,
    "tags": ["route","town"],
    "group": "flowers",
-   "solid": 0
+   "solid": 0,
+   "ppm": 32
   },
   "flowers_purple": {
    "name": "Purple flowers",
@@ -2311,7 +2313,8 @@
    "flat": 0,
    "tags": ["route","town"],
    "group": "flowers",
-   "solid": 0
+   "solid": 0,
+   "ppm": 32
   },
   "flowers_mixed": {
    "name": "Mixed flowers",
@@ -2323,7 +2326,8 @@
    "flat": 0,
    "tags": ["route","town","farm"],
    "group": "flowers",
-   "solid": 0
+   "solid": 0,
+   "ppm": 32
   },
   "rocks_b": {
    "name": "Rock cluster",
@@ -2940,7 +2944,8 @@
    "flat": 0,
    "tags": ["water","route"],
    "group": "reeds",
-   "solid": 0
+   "solid": 0,
+   "ppm": 32
   },
   "lily_flowers": {
    "name": "Flowering lilies",
@@ -2952,7 +2957,8 @@
    "flat": 1,
    "tags": ["water"],
    "group": "pond_lily",
-   "solid": 0
+   "solid": 0,
+   "ppm": 32
   },
   "sign_shop": {
    "name": "Shop sign",
@@ -4293,7 +4299,8 @@
    "flat": 0,
    "tags": ["route","forest"],
    "group": "fern",
-   "solid": 0
+   "solid": 0,
+   "ppm": 32
   },
   "fern_b": {
    "name": "Young fern",
@@ -4305,7 +4312,8 @@
    "flat": 0,
    "tags": ["route","forest"],
    "group": "fern",
-   "solid": 0
+   "solid": 0,
+   "ppm": 32
   },
   "fallen_leaves": {
    "name": "Fallen leaves",
@@ -4317,7 +4325,8 @@
    "flat": 1,
    "tags": ["route","forest","town"],
    "group": "fallen_leaves",
-   "solid": 0
+   "solid": 0,
+   "ppm": 32
   },
   "pebbles": {
    "name": "Pebbles",
@@ -4353,7 +4362,9 @@
    "flat": 0,
    "tags": ["route","town"],
    "group": "rock_flat",
-   "solid": 0.6
+   "solid": 0.6,
+   "model": "scene/next/models/rock_flat.json",
+   "ppm": 32
   },
   "tree_willow": {
    "name": "Willow",
@@ -4366,10 +4377,8 @@
    "tags": ["route","water"],
    "group": "tree_willow",
    "solid": 0.45,
-   "layers": [
-    {"img":"scene/props/layers/tree_willow_lb.png","dz":0.6,"sway":0.7,"shadow":0},
-    {"img":"scene/props/layers/tree_willow_lf.png","dz":-0.45,"sway":1.4,"shadow":0}
-   ]
+   "model": "scene/next/models/tree_willow.json",
+   "ppm": 32
   },
   "tree_maple": {
    "name": "Red maple",
@@ -4382,10 +4391,8 @@
    "tags": ["route","town"],
    "group": "tree_maple",
    "solid": 0.45,
-   "layers": [
-    {"img":"scene/props/layers/tree_maple_lb.png","dz":0.6,"sway":0.7,"shadow":0},
-    {"img":"scene/props/layers/tree_maple_lf.png","dz":-0.45,"sway":1.4,"shadow":0}
-   ]
+   "model": "scene/next/models/tree_maple.json",
+   "ppm": 32
   },
   "birdhouse": {
    "name": "Birdhouse",
@@ -5871,7 +5878,8 @@
    "flat": 0,
    "tags": ["route","town"],
    "group": "flowers",
-   "solid": 0
+   "solid": 0,
+   "ppm": 32
   },
   "rocks_c": {
    "name": "Rocks and pebbles",
@@ -5939,7 +5947,8 @@
    "solid": 0,
    "family": "flowers",
    "grow": "gfl",
-   "weight": 0.8
+   "weight": 0.8,
+   "ppm": 32
   },
   "tulips_yellow": {
    "name": "Yellow tulips",
@@ -5954,7 +5963,8 @@
    "solid": 0,
    "family": "flowers",
    "grow": "gfl",
-   "weight": 0.8
+   "weight": 0.8,
+   "ppm": 32
   },
   "tulips_pink": {
    "name": "Pink tulips",
@@ -5969,7 +5979,8 @@
    "solid": 0,
    "family": "flowers",
    "grow": "gfl",
-   "weight": 0.8
+   "weight": 0.8,
+   "ppm": 32
   },
   "daisies": {
    "name": "Daisies",
@@ -5984,7 +5995,8 @@
    "solid": 0,
    "family": "flowers",
    "grow": "gGfl",
-   "weight": 1.4
+   "weight": 1.4,
+   "ppm": 32
   },
   "bluebells": {
    "name": "Bluebells",
@@ -5999,7 +6011,8 @@
    "solid": 0,
    "family": "flowers",
    "grow": "gGy",
-   "weight": 1.2
+   "weight": 1.2,
+   "ppm": 32
   },
   "poppies": {
    "name": "Poppies",
@@ -6014,7 +6027,8 @@
    "solid": 0,
    "family": "flowers",
    "grow": "gGfo",
-   "weight": 1
+   "weight": 1,
+   "ppm": 32
   },
   "sunflowers": {
    "name": "Sunflowers",
@@ -6029,7 +6043,8 @@
    "solid": 0.2,
    "family": "flowers",
    "grow": "gof",
-   "weight": 0.4
+   "weight": 0.4,
+   "ppm": 32
   },
   "lavender": {
    "name": "Lavender",
@@ -6044,7 +6059,8 @@
    "solid": 0,
    "family": "flowers",
    "grow": "gfls",
-   "weight": 1
+   "weight": 1,
+   "ppm": 32
   },
   "foxgloves": {
    "name": "Foxgloves",
@@ -6059,7 +6075,8 @@
    "solid": 0,
    "family": "flowers",
    "grow": "gGy",
-   "weight": 0.7
+   "weight": 0.7,
+   "ppm": 32
   },
   "lupins": {
    "name": "Lupins",
@@ -6074,7 +6091,8 @@
    "solid": 0,
    "family": "flowers",
    "grow": "gGr",
-   "weight": 0.7
+   "weight": 0.7,
+   "ppm": 32
   },
   "dandelions": {
    "name": "Dandelions",
@@ -6089,7 +6107,8 @@
    "solid": 0,
    "family": "flowers",
    "grow": "gGflv",
-   "weight": 1.6
+   "weight": 1.6,
+   "ppm": 32
   },
   "dandelion_clocks": {
    "name": "Dandelion clocks",
@@ -6104,7 +6123,8 @@
    "solid": 0,
    "family": "flowers",
    "grow": "gGflv",
-   "weight": 1
+   "weight": 1,
+   "ppm": 32
   },
   "clover_white": {
    "name": "White clover",
@@ -6119,7 +6139,8 @@
    "solid": 0,
    "family": "flowers",
    "grow": "gGl",
-   "weight": 1.4
+   "weight": 1.4,
+   "ppm": 32
   },
   "buttercups": {
    "name": "Buttercups",
@@ -6134,7 +6155,8 @@
    "solid": 0,
    "family": "flowers",
    "grow": "gGfo",
-   "weight": 1.5
+   "weight": 1.5,
+   "ppm": 32
   },
   "cornflowers": {
    "name": "Cornflowers",
@@ -6149,7 +6171,8 @@
    "solid": 0,
    "family": "flowers",
    "grow": "gGfo",
-   "weight": 1
+   "weight": 1,
+   "ppm": 32
   },
   "marigolds": {
    "name": "Marigolds",
@@ -6164,7 +6187,8 @@
    "solid": 0,
    "family": "flowers",
    "grow": "gfl",
-   "weight": 0.8
+   "weight": 0.8,
+   "ppm": 32
   },
   "snowdrops": {
    "name": "Snowdrops",
@@ -6179,7 +6203,8 @@
    "solid": 0,
    "family": "flowers",
    "grow": "ngy",
-   "weight": 1.2
+   "weight": 1.2,
+   "ppm": 32
   },
   "crocuses": {
    "name": "Crocuses",
@@ -6194,7 +6219,8 @@
    "solid": 0,
    "family": "flowers",
    "grow": "ngl",
-   "weight": 1
+   "weight": 1,
+   "ppm": 32
   },
   "tussock": {
    "name": "Tussock",
@@ -6209,7 +6235,8 @@
    "solid": 0,
    "family": "ground",
    "grow": "gGro",
-   "weight": 1.4
+   "weight": 1.4,
+   "ppm": 32
   },
   "sedge": {
    "name": "Sedge",
@@ -6224,7 +6251,8 @@
    "solid": 0,
    "family": "ground",
    "grow": "gGw",
-   "weight": 1
+   "weight": 1,
+   "ppm": 32
   },
   "wild_wheat": {
    "name": "Wild wheat",
@@ -6239,7 +6267,8 @@
    "solid": 0,
    "family": "ground",
    "grow": "gGo",
-   "weight": 1
+   "weight": 1,
+   "ppm": 32
   },
   "dry_grass": {
    "name": "Dry grass",
@@ -6269,7 +6298,8 @@
    "solid": 0,
    "family": "ground",
    "grow": "ygG",
-   "weight": 1.2
+   "weight": 1.2,
+   "ppm": 32
   },
   "thistles": {
    "name": "Thistles",
@@ -6284,7 +6314,8 @@
    "solid": 0,
    "family": "ground",
    "grow": "gGrov",
-   "weight": 0.9
+   "weight": 0.9,
+   "ppm": 32
   },
   "heather": {
    "name": "Heather",
@@ -6299,7 +6330,8 @@
    "solid": 0,
    "family": "ground",
    "grow": "grn",
-   "weight": 1.2
+   "weight": 1.2,
+   "ppm": 32
   },
   "moss_patch": {
    "name": "Moss patch",
@@ -6314,7 +6346,8 @@
    "solid": 0,
    "family": "ground",
    "grow": "ygGk",
-   "weight": 1
+   "weight": 1,
+   "ppm": 32
   },
   "clover_patch": {
    "name": "Clover patch",
@@ -6329,7 +6362,8 @@
    "solid": 0,
    "family": "ground",
    "grow": "gGl",
-   "weight": 1.2
+   "weight": 1.2,
+   "ppm": 32
   },
   "nettles": {
    "name": "Nettles",
@@ -6344,7 +6378,8 @@
    "solid": 0,
    "family": "ground",
    "grow": "gGyx",
-   "weight": 1
+   "weight": 1,
+   "ppm": 32
   },
   "horsetail": {
    "name": "Horsetail",
@@ -6359,7 +6394,8 @@
    "solid": 0,
    "family": "ground",
    "grow": "gwu",
-   "weight": 0.8
+   "weight": 0.8,
+   "ppm": 32
   },
   "grass_snow": {
    "name": "Snowy grass",
@@ -6387,10 +6423,11 @@
    "tags": ["route","farm","town"],
    "group": "bush_hawthorn",
    "solid": 0.55,
-   "vol": ["puff",0.55],
    "family": "shrubs",
    "grow": "gGo",
-   "weight": 1
+   "weight": 1,
+   "model": "scene/next/models/bush_hawthorn.json",
+   "ppm": 32
   },
   "bush_bramble": {
    "name": "Bramble",
@@ -6403,10 +6440,11 @@
    "tags": ["route","forest","farm","junk"],
    "group": "bush_bramble",
    "solid": 0.5,
-   "vol": ["puff",0.5],
    "family": "shrubs",
    "grow": "gGyx",
-   "weight": 1
+   "weight": 1,
+   "model": "scene/next/models/bush_bramble.json",
+   "ppm": 32
   },
   "bush_juniper": {
    "name": "Juniper",
@@ -6419,10 +6457,11 @@
    "tags": ["mountains","route","snow"],
    "group": "bush_juniper",
    "solid": 0.5,
-   "vol": ["puff",0.5],
    "family": "shrubs",
    "grow": "grn",
-   "weight": 1
+   "weight": 1,
+   "model": "scene/next/models/bush_juniper.json",
+   "ppm": 32
   },
   "bush_box": {
    "name": "Box ball",
@@ -6451,10 +6490,11 @@
    "tags": ["route","forest","snow","town"],
    "group": "bush_holly",
    "solid": 0.5,
-   "vol": ["puff",0.5],
    "family": "shrubs",
    "grow": "gGyn",
-   "weight": 0.8
+   "weight": 0.8,
+   "model": "scene/next/models/bush_holly.json",
+   "ppm": 32
   },
   "bush_rhododendron": {
    "name": "Rhododendron",
@@ -6467,10 +6507,11 @@
    "tags": ["route","forest","town","mountains"],
    "group": "bush_rhododendron",
    "solid": 0.6,
-   "vol": ["puff",0.6],
    "family": "shrubs",
    "grow": "gGyr",
-   "weight": 0.7
+   "weight": 0.7,
+   "model": "scene/next/models/bush_rhododendron.json",
+   "ppm": 32
   },
   "bush_rosemary": {
    "name": "Rosemary",
@@ -6483,10 +6524,11 @@
    "tags": ["town","farm","desert","route"],
    "group": "bush_rosemary",
    "solid": 0.4,
-   "vol": ["puff",0.4],
    "family": "shrubs",
    "grow": "lsgv",
-   "weight": 0.8
+   "weight": 0.8,
+   "model": "scene/next/models/bush_rosemary.json",
+   "ppm": 32
   },
   "bush_roses": {
    "name": "Wild roses",
@@ -6518,7 +6560,9 @@
    "solid": 0.35,
    "family": "trees",
    "grow": "gGr",
-   "weight": 1
+   "weight": 1,
+   "model": "scene/next/models/tree_rowan.json",
+   "ppm": 32
   },
   "tree_poplar": {
    "name": "Poplar",
@@ -6533,7 +6577,9 @@
    "solid": 0.3,
    "family": "trees",
    "grow": "gGo",
-   "weight": 0.8
+   "weight": 0.8,
+   "model": "scene/next/models/tree_poplar.json",
+   "ppm": 32
   },
   "tree_beech": {
    "name": "Beech",
@@ -6565,7 +6611,9 @@
    "solid": 0.35,
    "family": "trees",
    "grow": "gGyo",
-   "weight": 1
+   "weight": 1,
+   "model": "scene/next/models/tree_hazel.json",
+   "ppm": 32
   },
   "tree_olive": {
    "name": "Olive tree",
@@ -6610,7 +6658,9 @@
    "solid": 0.5,
    "family": "trees",
    "grow": "gGl",
-   "weight": 0.8
+   "weight": 0.8,
+   "model": "scene/next/models/tree_elm.json",
+   "ppm": 32
   },
   "tree_chestnut": {
    "name": "Horse chestnut",
@@ -6625,7 +6675,9 @@
    "solid": 0.5,
    "family": "trees",
    "grow": "gGyl",
-   "weight": 0.8
+   "weight": 0.8,
+   "model": "scene/next/models/tree_chestnut.json",
+   "ppm": 32
   },
   "tree_larch": {
    "name": "Larch",
@@ -6640,7 +6692,9 @@
    "solid": 0.35,
    "family": "trees",
    "grow": "rng",
-   "weight": 1
+   "weight": 1,
+   "model": "scene/next/models/tree_larch.json",
+   "ppm": 32
   },
   "tree_fallen": {
    "name": "Fallen tree",
@@ -6653,10 +6707,11 @@
    "tags": ["forest","route"],
    "group": "tree_fallen",
    "solid": 0,
-   "vol": ["block",0.5],
    "family": "trees",
    "grow": "yg",
-   "weight": 0.5
+   "weight": 0.5,
+   "model": "scene/next/models/tree_fallen.json",
+   "ppm": 32
   },
   "iris_yellow": {
    "name": "Yellow iris",
@@ -6671,7 +6726,8 @@
    "solid": 0,
    "family": "water",
    "grow": "wg",
-   "weight": 1
+   "weight": 1,
+   "ppm": 32
   },
   "iris_purple": {
    "name": "Purple iris",
@@ -6686,7 +6742,8 @@
    "solid": 0,
    "family": "water",
    "grow": "wg",
-   "weight": 0.8
+   "weight": 0.8,
+   "ppm": 32
   },
   "bulrush": {
    "name": "Bulrushes",
@@ -6776,7 +6833,8 @@
    "solid": 0,
    "family": "water",
    "grow": "wg",
-   "weight": 1
+   "weight": 1,
+   "ppm": 32
   },
   "water_mint": {
    "name": "Water mint",
@@ -6791,7 +6849,8 @@
    "solid": 0,
    "family": "water",
    "grow": "wg",
-   "weight": 0.9
+   "weight": 0.9,
+   "ppm": 32
   },
   "boulder_lichen": {
    "name": "Lichen boulder",
@@ -6806,7 +6865,9 @@
    "solid": 1,
    "family": "rocks",
    "grow": "grsv",
-   "weight": 0.6
+   "weight": 0.6,
+   "model": "scene/next/models/boulder_lichen.json",
+   "ppm": 32
   },
   "stones_flat": {
    "name": "Flat stones",
@@ -6821,7 +6882,8 @@
    "solid": 0,
    "family": "rocks",
    "grow": "grsvw",
-   "weight": 1
+   "weight": 1,
+   "ppm": 32
   },
   "scree": {
    "name": "Scree",
@@ -6851,7 +6913,8 @@
    "solid": 0,
    "family": "rocks",
    "grow": "gGlo",
-   "weight": 0.8
+   "weight": 0.8,
+   "ppm": 32
   },
   "roots": {
    "name": "Exposed roots",
@@ -6866,7 +6929,8 @@
    "solid": 0,
    "family": "rocks",
    "grow": "yg",
-   "weight": 0.6
+   "weight": 0.6,
+   "ppm": 32
   },
   "tree_rowan_autumn": {
    "name": "Rowan in autumn",
@@ -6896,7 +6960,10 @@
    "solid": 0.5,
    "family": "seasons",
    "grow": "gGy",
-   "weight": 0.5
+   "weight": 0.5,
+   "model": "scene/next/models/tree_beech.json",
+   "ppm": 32,
+   "swap": {"scene/next/leaves/beech.png":"scene/next/leaves/beech_autumn.png"}
   },
   "tree_poplar_autumn": {
    "name": "Poplar in autumn",
@@ -6911,7 +6978,10 @@
    "solid": 0.3,
    "family": "seasons",
    "grow": "gGo",
-   "weight": 0.4
+   "weight": 0.4,
+   "model": "scene/next/models/tree_poplar.json",
+   "ppm": 32,
+   "swap": {"scene/next/leaves/poplar.png":"scene/next/leaves/poplar_autumn.png"}
   },
   "tree_hazel_autumn": {
    "name": "Hazel in autumn",
@@ -6926,7 +6996,10 @@
    "solid": 0.35,
    "family": "seasons",
    "grow": "gGyo",
-   "weight": 0.5
+   "weight": 0.5,
+   "model": "scene/next/models/tree_hazel.json",
+   "ppm": 32,
+   "swap": {"scene/next/leaves/hazel.png":"scene/next/leaves/hazel_autumn.png"}
   },
   "tree_birch_gold": {
    "name": "Birch in autumn",
@@ -6941,7 +7014,9 @@
    "solid": 0.3,
    "family": "seasons",
    "grow": "gGyr",
-   "weight": 0.5
+   "weight": 0.5,
+   "model": "scene/next/models/tree_birch_gold.json",
+   "ppm": 32
   },
   "bush_hawthorn_autumn": {
    "name": "Hawthorn with haws",
@@ -6972,7 +7047,8 @@
    "solid": 0,
    "family": "seasons",
    "grow": "gGrov",
-   "weight": 0.8
+   "weight": 0.8,
+   "ppm": 32
   },
   "tussock_rust": {
    "name": "Rust tussock",
@@ -8273,7 +8349,8 @@
    "sway": 0,
    "flat": 1,
    "tags": ["town"],
-   "group": "chalk_sun"
+   "group": "chalk_sun",
+   "ppm": 32
   },
   "tree_mangrove": {
    "name": "Mangrove",
@@ -9325,7 +9402,8 @@
    "solid": 0.35,
    "blades": {"img":"scene/props/wind_sail_flower_blades.png","x":0,"y":-164,"w":124,"h":124,"px":62,"py":62},
    "vol": "slab",
-   "volDepth": 0.3
+   "volDepth": 0.3,
+   "ppm": 32
   },
   "banner_bunting": {
    "name": "Bunting",
