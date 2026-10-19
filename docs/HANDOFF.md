@@ -11,6 +11,54 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 - Questions waiting for the owner: 
 - Next session starts with: 
 
+### Cutscene tools, session 3 - the city opening; the title with accounts back - 2026-10-19
+Owner's request: "begin session 3 now, explain session 2 in handoff"; then the title with the account, on the new UI
+direction, Continue pressing itself when signed in (answers in the questions of this session, listed below).
+Branch `project-story-city`, from `project-story-opening` (PR #59) with PR #52 (batch 8) merged in.
+- **Session 2 (not built; next):** the Studio's cutscene tools. A Cutscenes section listing game/data/cutscenes;
+  in its preview (the Walk scenes 3D view with the free camera), **Save as shot** (name it; eye, target, field of
+  view from the free camera), a Shots list (look through, retake, rename, field of view, delete), **spots as pins**
+  (click the map or the 3D view to drop a named pin, drag to move), the clear areas drawn on the map; the script field
+  (S3's) with a **step list** beside it (each step with its time, click to jump the camera there) and **▶ Preview**
+  playing the cutscene in the Studio (the director and stage.js on the preview's view, lines in a box); insert buttons
+  (this camera as a shot, walk to a pin, a line); Play from here for a cutscene. Its checks are the same reading
+  (logic/cutscene-set.js) and story checks. Start from docs/CUTSCENES.md and studio/js/free-camera.js.
+- Changed (one cause per commit):
+  - Merge PR #52; fix hazel.js's generated module block (also pushed to PR #59).
+  - Engine: a placement may float (`lift`, metres up) and move (`moving`: shadow drawn each frame).
+  - Cutscene commands: `actor ... silhouette`, `act <who> reach`, `hide/show prop <spot>`, `show <who>`,
+    `traffic <lane> <prop> <s> [n]`; a cutscene's `look` (time, weather) holds while it plays.
+  - `game/data/cutscenes/city.json`: the city's spots, shots and lanes (out of the map's block), night and rain, the
+    beat sheet's script; New game plays it before the fall, which then starts in the crust (the street under the
+    billboard only when the city can't). The batch 8 builder no longer writes a cutscene block.
+  - Test boot off (`?boot=test` turns it on): the title, saves and accounts are back.
+  - Accounts: saves more than a minute apart: you choose which to keep (two cards); the other is set aside in this
+    browser; Settings > Save brings it back or downloads it.
+  - Title on the new look: signed out a glass sign-in card (Sign in with Google / Play without an account); signed in
+    an account chip (tap: email, Sign out); the Continue card's ring fills for 4 s and it continues unless you touch
+    anything (also right after signing in); new players see the city at night behind the title, returning ones
+    Copperleaf; the version and What's new (meta.json whatsNew, the Studio's World page). The New game warning no
+    longer mentions save slots (there are none).
+  - Docs: CUTSCENES.md, city-opening-beats.md (built), CHANGELOG.
+- Owner's answers this session: test boot off with ?boot=test; a sign-in card whenever signed out; 4 s with a ring,
+  any touch stops it; signed-in only, also right after signing in; city behind the title for new players, Copperleaf
+  for returning ones; Continue card plus a quiet row; account chip with a sign-out sheet; ask which save to keep, the
+  other set aside (no slots exist); "other device played since" = saved more than a minute apart; the city title
+  camera drifts down the avenue; What's new from meta.json; version and What's new on the title.
+- Risky or unfinished:
+  - Not seen on a phone: the city (look, traffic, the silhouette, the reach pose is the throw's wind-up held), the
+    title's new look, the ring. Traffic moves placements each frame; watch for stray shadows or flicker.
+  - Sign-in, auto-continue and the which-save sheet need Firebase, which this sandbox can't reach: untested.
+  - The city has no lite version yet and no rain or hum sounds (the fall's music plays).
+  - tools/check-studio-github.py still stops at the story preview switch, as on main (see session 1).
+- Verified: lint, typecheck, 164 unit tests (the city: commands, names, it runs through, length), check:data,
+  check:modules, format, build. A headless look at phone size (360 x 640, pixel ratio 1; the page's state only, no
+  pictures): the title shows the sign-in card (sign-in unreachable here) and What's new; New game plays the city, the
+  fall from the crust, then Hazel's lines, no errors. **Not run: the smoke check on the final code** (stopped by the
+  owner; the last smoke, after session 1, passed 15/15).
+- Next session starts with: your look at the city and the title on your phone (and a sign-in test); then session 2,
+  the Studio's cutscene tools.
+
 ### Cutscene tools, session 1 - cutscenes as data; the opening plays from its file - 2026-10-19
 Plan approved at the start (the owner's picks: both intros in order, Hazel's opening moved with today's words first, a
 script and step list in the Studio, one file per cutscene, a cutscene/ folder, lines and walks wait, map coordinates).
