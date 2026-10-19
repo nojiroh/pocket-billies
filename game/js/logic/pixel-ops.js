@@ -11,18 +11,18 @@
 /** @typedef {{ mode: string, sx: number, sy: number }} Symmetry mode off / v / h / both; a mirrored x is sx - x */
 
 /** a new transparent picture */
-export function pxNew(/** @type {number} */ width, /** @type {number} */ height) {
+export function pixelNew(/** @type {number} */ width, /** @type {number} */ height) {
   return { width, height, data: new Uint8ClampedArray(width * height * 4) };
 }
 /** '#rrggbb' (or '#rgb') as RGBA, opaque */
-export function pxRgba(/** @type {string} */ hex) {
+export function pixelRgba(/** @type {string} */ hex) {
   let h = String(hex || '').replace('#', '');
   if (h.length === 3) h = [...h].map(c => c + c).join('');
   const n = parseInt(h.slice(0, 6), 16);
   return /** @type {Rgba} */ (Number.isFinite(n) ? [(n >> 16) & 255, (n >> 8) & 255, n & 255, 255] : [0, 0, 0, 255]);
 }
 /** RGB as '#RRGGBB' */
-export function pxHex(/** @type {number} */ r, /** @type {number} */ g, /** @type {number} */ b) {
+export function pixelHex(/** @type {number} */ r, /** @type {number} */ g, /** @type {number} */ b) {
   return (
     '#' +
     [r, g, b]
@@ -32,14 +32,14 @@ export function pxHex(/** @type {number} */ r, /** @type {number} */ g, /** @typ
   );
 }
 /** the pixel's RGBA, or null outside the picture */
-export function pxGet(/** @type {Pixels} */ im, /** @type {number} */ x, /** @type {number} */ y) {
+export function pixelGet(/** @type {Pixels} */ im, /** @type {number} */ x, /** @type {number} */ y) {
   if (x < 0 || y < 0 || x >= im.width || y >= im.height) return null;
   const i = (y * im.width + x) * 4,
     d = im.data;
   return /** @type {Rgba} */ ([d[i], d[i + 1], d[i + 2], d[i + 3]]);
 }
 /** paints one pixel (null clears it); false outside the picture */
-export function pxSet(
+export function pixelSet(
   /** @type {Pixels} */ im,
   /** @type {number} */ x,
   /** @type {number} */ y,
@@ -51,7 +51,7 @@ export function pxSet(
   return true;
 }
 /** the pixels of a straight line, both ends included (Bresenham) */
-export function pxLine(/** @type {number[]} */ a, /** @type {number[]} */ b) {
+export function pixelLine(/** @type {number[]} */ a, /** @type {number[]} */ b) {
   let [x0, y0] = a;
   const [x1, y1] = b,
     dx = Math.abs(x1 - x0),
@@ -76,11 +76,11 @@ export function pxLine(/** @type {number[]} */ a, /** @type {number[]} */ b) {
   return out;
 }
 /** the symmetry axes in the middle of a box (a picture's or a part's): a mirrored x is sx - x */
-export function pxSymmetryFor(/** @type {string} */ mode, /** @type {Box} */ box) {
+export function pixelSymmetryFor(/** @type {string} */ mode, /** @type {Box} */ box) {
   return { mode, sx: 2 * box[0] + box[2] - 1, sy: 2 * box[1] + box[3] - 1 };
 }
 /** a pixel and its mirror images under the symmetry (no repeats) */
-export function pxMirrored(/** @type {number} */ x, /** @type {number} */ y, /** @type {Symmetry | null} */ sym) {
+export function pixelMirrored(/** @type {number} */ x, /** @type {number} */ y, /** @type {Symmetry | null} */ sym) {
   const out = [[x, y]],
     m = sym ? sym.mode : 'off',
     add = (/** @type {number} */ a, /** @type {number} */ b) => {
@@ -93,7 +93,7 @@ export function pxMirrored(/** @type {number} */ x, /** @type {number} */ y, /**
   return out;
 }
 /** the box clipped to the picture, or null when nothing is left */
-export function pxClip(/** @type {Pixels} */ im, /** @type {Box | null | undefined} */ box) {
+export function pixelClip(/** @type {Pixels} */ im, /** @type {Box | null | undefined} */ box) {
   const b = box || [0, 0, im.width, im.height],
     x0 = Math.max(0, Math.floor(b[0])),
     y0 = Math.max(0, Math.floor(b[1])),
@@ -102,22 +102,22 @@ export function pxClip(/** @type {Pixels} */ im, /** @type {Box | null | undefin
   return x1 > x0 && y1 > y0 ? /** @type {Box} */ ([x0, y0, x1 - x0, y1 - y0]) : null;
 }
 /* two pixels are the same colour for the fill when their RGBA match, or when both are fully clear */
-const pxSame = (/** @type {Uint8ClampedArray} */ d, /** @type {number} */ i, /** @type {Rgba} */ t) =>
+const pixelSame = (/** @type {Uint8ClampedArray} */ d, /** @type {number} */ i, /** @type {Rgba} */ t) =>
   (d[i + 3] === 0 && t[3] === 0) || (d[i] === t[0] && d[i + 1] === t[1] && d[i + 2] === t[2] && d[i + 3] === t[3]);
 /** flood fill (4 neighbours) from x, y with the colour (null clears), staying inside the box (a part); the number of
  * pixels changed */
-export function pxFill(
+export function pixelFill(
   /** @type {Pixels} */ im,
   /** @type {number} */ x,
   /** @type {number} */ y,
   /** @type {Rgba | null} */ c,
   /** @type {Box | null} */ box = null
 ) {
-  const b = pxClip(im, box),
-    t = pxGet(im, x, y);
+  const b = pixelClip(im, box),
+    t = pixelGet(im, x, y);
   if (!b || !t || x < b[0] || y < b[1] || x >= b[0] + b[2] || y >= b[1] + b[3]) return 0;
   const rep = c || /** @type {Rgba} */ ([0, 0, 0, 0]);
-  if (pxSame(Uint8ClampedArray.from(rep), 0, t)) return 0;
+  if (pixelSame(Uint8ClampedArray.from(rep), 0, t)) return 0;
   const W = im.width,
     d = im.data,
     seen = new Uint8Array(W * im.height),
@@ -128,7 +128,7 @@ export function pxFill(
       px = /** @type {number} */ (st.pop());
     if (px < b[0] || py < b[1] || px >= b[0] + b[2] || py >= b[1] + b[3]) continue;
     const k = py * W + px;
-    if (seen[k] || !pxSame(d, k * 4, t)) continue;
+    if (seen[k] || !pixelSame(d, k * 4, t)) continue;
     seen[k] = 1;
     d.set(rep, k * 4);
     n++;
@@ -137,9 +137,9 @@ export function pxFill(
   return n;
 }
 /** a copy of a box of the picture (a patch: { x, y, width, height, data }) */
-export function pxCopy(/** @type {Pixels} */ im, /** @type {Box} */ box) {
-  const b = pxClip(im, box) || /** @type {Box} */ ([0, 0, 0, 0]),
-    out = { x: b[0], y: b[1], ...pxNew(b[2], b[3]) };
+export function pixelCopy(/** @type {Pixels} */ im, /** @type {Box} */ box) {
+  const b = pixelClip(im, box) || /** @type {Box} */ ([0, 0, 0, 0]),
+    out = { x: b[0], y: b[1], ...pixelNew(b[2], b[3]) };
   for (let r = 0; r < b[3]; r++) {
     const s = ((b[1] + r) * im.width + b[0]) * 4;
     out.data.set(im.data.subarray(s, s + b[2] * 4), r * b[2] * 4);
@@ -147,7 +147,7 @@ export function pxCopy(/** @type {Pixels} */ im, /** @type {Box} */ box) {
   return out;
 }
 /** puts a patch back where it came from (the parts outside the picture are dropped) */
-export function pxPaste(
+export function pixelPaste(
   /** @type {Pixels} */ im,
   /** @type {{ x: number, y: number, width: number, height: number, data: Uint8ClampedArray }} */ p
 ) {
@@ -163,7 +163,7 @@ export function pxPaste(
   }
 }
 /** the smallest box holding every pixel that differs between two pictures of one size, or null when none does */
-export function pxDiffBox(/** @type {Pixels} */ a, /** @type {Pixels} */ b) {
+export function pixelDiffBox(/** @type {Pixels} */ a, /** @type {Pixels} */ b) {
   if (a.width !== b.width || a.height !== b.height) return /** @type {Box} */ ([0, 0, b.width, b.height]);
   const W = a.width,
     A = new Uint32Array(a.data.buffer, a.data.byteOffset, a.data.length >> 2),
@@ -184,10 +184,10 @@ export function pxDiffBox(/** @type {Pixels} */ a, /** @type {Pixels} */ b) {
   return x1 < 0 ? null : /** @type {Box} */ ([x0, y0, x1 - x0 + 1, y1 - y0 + 1]);
 }
 /** flips a box of the picture left-right ('h') or upside down ('v') */
-export function pxFlip(/** @type {Pixels} */ im, /** @type {Box | null} */ box, /** @type {string} */ axis) {
-  const b = pxClip(im, box);
+export function pixelFlip(/** @type {Pixels} */ im, /** @type {Box | null} */ box, /** @type {string} */ axis) {
+  const b = pixelClip(im, box);
   if (!b) return;
-  const p = pxCopy(im, b),
+  const p = pixelCopy(im, b),
     [x, y, w, h] = b;
   for (let r = 0; r < h; r++)
     for (let q = 0; q < w; q++) {
@@ -197,15 +197,15 @@ export function pxFlip(/** @type {Pixels} */ im, /** @type {Box | null} */ box, 
 }
 /** turns a box a quarter clockwise (dir 1) or anticlockwise (-1) about its middle; a box that is not square turns
  * into one the other way round, clipped to the picture. The box the art is in afterwards */
-export function pxRotate(/** @type {Pixels} */ im, /** @type {Box | null} */ box, /** @type {number} */ dir = 1) {
-  const b = pxClip(im, box);
+export function pixelRotate(/** @type {Pixels} */ im, /** @type {Box | null} */ box, /** @type {number} */ dir = 1) {
+  const b = pixelClip(im, box);
   if (!b) return null;
-  const p = pxCopy(im, b),
+  const p = pixelCopy(im, b),
     [x, y, w, h] = b,
     nx = x + Math.floor((w - h) / 2),
     ny = y + Math.floor((h - w) / 2);
   for (let r = 0; r < h; r++) im.data.fill(0, ((y + r) * im.width + x) * 4, ((y + r) * im.width + x + w) * 4);
-  const out = { x: nx, y: ny, ...pxNew(h, w) };
+  const out = { x: nx, y: ny, ...pixelNew(h, w) };
   for (let r = 0; r < h; r++)
     for (let q = 0; q < w; q++) {
       /* clockwise: (q, r) goes to (h - 1 - r, q) */
@@ -214,8 +214,8 @@ export function pxRotate(/** @type {Pixels} */ im, /** @type {Box | null} */ box
         s = (r * w + q) * 4;
       out.data.set(p.data.subarray(s, s + 4), (ty * h + tx) * 4);
     }
-  pxPaste(im, out);
-  return pxClip(im, [nx, ny, h, w]);
+  pixelPaste(im, out);
+  return pixelClip(im, [nx, ny, h, w]);
 }
 /** every colour of the game palette (next/palette.js ramps, and its single colours) as '#RRGGBB', darkest first */
 export function paletteColors(/** @type {Record<string, string | string[]> | null | undefined} */ ramps) {
@@ -223,20 +223,20 @@ export function paletteColors(/** @type {Record<string, string | string[]> | nul
   for (const v of Object.values(ramps || {}))
     for (const h of Array.isArray(v) ? v : [v]) {
       if (typeof h !== 'string') continue;
-      const c = pxRgba(h),
-        x = pxHex(c[0], c[1], c[2]);
+      const c = pixelRgba(h),
+        x = pixelHex(c[0], c[1], c[2]);
       if (!out.includes(x)) out.push(x);
     }
   return out;
 }
 /** the palette colour nearest to a colour (RGB distance weighted for the eye), as '#RRGGBB' */
 export function paletteNearest(/** @type {string} */ hex, /** @type {string[]} */ colors) {
-  if (!colors.length) return pxHex(.../** @type {[number, number, number]} */ (pxRgba(hex).slice(0, 3)));
-  const [r, g, b] = pxRgba(hex);
+  if (!colors.length) return pixelHex(.../** @type {[number, number, number]} */ (pixelRgba(hex).slice(0, 3)));
+  const [r, g, b] = pixelRgba(hex);
   let best = colors[0],
     bd = Infinity;
   for (const h of colors) {
-    const [R, G, B] = pxRgba(h),
+    const [R, G, B] = pixelRgba(h),
       d = 3 * (R - r) ** 2 + 4 * (G - g) ** 2 + 2 * (B - b) ** 2;
     if (d < bd) {
       bd = d;
@@ -255,7 +255,7 @@ export function offPalette(/** @type {Pixels} */ im, /** @type {string[]} */ col
   return out;
 }
 /** the colours a picture uses most, most first, as '#RRGGBB' (pixels that show) */
-export function pxTopColors(/** @type {Pixels} */ im, /** @type {number} */ n = 48) {
+export function pixelTopColors(/** @type {Pixels} */ im, /** @type {number} */ n = 48) {
   const d = im.data,
     cnt = new Map();
   for (let i = 0; i < d.length; i += 4) {
