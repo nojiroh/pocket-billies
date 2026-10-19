@@ -68,7 +68,7 @@ import { battleStage, battleStageResize, battleStageStop } from './battle-stage.
 import { mapById } from './walk-view.js';
 import { gpuState } from './engine/webgl.js';
 import { paintBoxes, playTurnEvents, stopTimers } from './battle.js';
-import { worldMap } from './world-map.js';
+import { worldMap } from './world-bowl.js';
 /* eslint-disable no-func-assign */
 expose({
   debugAction: [() => debugAction, v => (debugAction = v)],

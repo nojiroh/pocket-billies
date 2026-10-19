@@ -5,31 +5,33 @@
    textures, art/scene/models/airship_mast.json, tools/build-airship.py). Under the
    ground a sky lift goes up to the mooring; in Verdigris City the old station is the airship terminal, its ticket
    window inside. Any prop with act 'fly' does it. Once you have been to a town you can fly back to it from any mast:
-   the flight is shown over the world map, the airship carrying you along an arc above the land, and a ticket costs
-   money. */
+   the flight is shown over the world map (the bowl, world-bowl.js), the airship carrying you along an arc above the
+   land in 2-3 s (tap to skip), and a ticket costs money. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { arrivedAt, closeModal, mapIdAt, modal, provide, render, storyFlags, toast } from './hooks.js';
 import { $, clamp } from './util.js';
 import { LOCATIONS, LOCATION_BY_ID, isTown, locationFullName } from './game-data.js';
 import { canEnter, formatNumber } from './logic/rules.js';
+import { bowlSurface } from './logic/bowl-camera.js';
 import { setStoryFlag } from './logic/script.js';
 import { isLiteMap, loadMapFile, loadMapsAhead } from './map-files.js';
 import { escapeHtml, reducedMotion, save, saveData, uiState } from './game-state.js';
 import { artLoad, uiIconHTML } from './art.js';
 import { artImage, imageReady, mapById, prepareMap, walkData } from './walk-view.js';
 import { seamlessHubMap } from './seamless-world.js';
-import { LOCATION_VECTORS, RADIANS_PER_DEGREE, slerp, vector3, worldMap } from './world-map.js';
-import { worldMapGl } from './world-map-gl.js';
+import { worldMap, worldMapSpot } from './world-bowl.js';
 import { soundEffect } from './sound.js';
 /* eslint-disable no-func-assign */
 expose({
   airshipFlight: [() => airshipFlight],
+  flyDistance: [() => flyDistance, v => (flyDistance = v)],
   flyDraw: [() => flyDraw, v => ((flyDraw = v), provide({ flyDraw }))],
   flyFare: [() => flyFare, v => (flyFare = v)],
   flyLand: [() => flyLand, v => (flyLand = v)],
   flyMenu: [() => flyMenu, v => (flyMenu = v)],
-  flySkip: [() => flySkip, v => (flySkip = v)],
+  flyPoint: [() => flyPoint, v => (flyPoint = v)],
+  flySkip: [() => flySkip, v => ((flySkip = v), provide({ flySkip }))],
   flyTick: [() => flyTick, v => ((flyTick = v), provide({ flyTick }))],
   flyTowns: [() => flyTowns, v => (flyTowns = v)],
   glassLift: [() => glassLift],
@@ -37,9 +39,10 @@ expose({
   startAirshipFlight: [() => startAirshipFlight, v => (startAirshipFlight = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ flyDraw, flyTick });
+provide({ flyDraw, flySkip, flyTick });
 /* to-module: end */
 export const airshipFlight = { on: false, a: -1, b: -1, t0: 0, dur: 0, lastX: null, dir: 1 };
+provide({ airshipFlight }); /* to-module */
 /* where the airships go from here: the towns you've been to (and may enter), nearest first */
 function flyTowns() {
   const here = saveData.trip.node;
@@ -55,10 +58,15 @@ function flyTowns() {
     )
     .sort((x, y) => flyFare(here, x) - flyFare(here, y));
 }
+/* how far apart two places lie on the bowl, in bowl radii */
+function flyDistance(a, b) {
+  const A = worldMapSpot(a),
+    B = worldMapSpot(b);
+  return Math.hypot(B.x - A.x, B.y - A.y);
+}
 /* a ticket: by how far apart the two towns lie on the world */
 function flyFare(a, b) {
-  const d = Math.acos(clamp(vector3.dot(LOCATION_VECTORS[a], LOCATION_VECTORS[b]), -1, 1)) / RADIANS_PER_DEGREE;
-  return Math.max(60, Math.round((60 + d * 6) / 10) * 10);
+  return Math.max(60, Math.round((60 + flyDistance(a, b) * 540) / 10) * 10);
 }
 export function flyMenu(p) {
   if (airshipFlight.on || !saveData.started) return;
@@ -105,13 +113,16 @@ function startAirshipFlight(i) {
   closeModal();
   if (typeof debugLog !== 'undefined')
     debugLog.add('scene', `airship ${LOCATIONS[a].id} to ${LOCATIONS[i].id} ($${f})`);
-  const d = Math.acos(clamp(vector3.dot(LOCATION_VECTORS[a], LOCATION_VECTORS[i]), -1, 1)) / RADIANS_PER_DEGREE;
+  const d = flyDistance(a, i);
   Object.assign(airshipFlight, {
     on: true,
     a,
     b: i,
     t0: performance.now() + 500,
-    dur: reducedMotion ? 400 : 2600 + Math.min(1, d / 120) * 2600,
+    /* 2-3 s by how far (owner, phase 10), tap to skip */
+    dur: reducedMotion ? 400 : 2000 + Math.min(1, d / 1.2) * 1000,
+    span: Math.max(0.8, d * 0.9),
+    pos: null,
     lastX: null,
     dir: 1,
   });
@@ -126,14 +137,7 @@ function startAirshipFlight(i) {
   uiState.mglFrom = null;
   uiState.tab = 'map';
   render();
-  worldMap.anim = null;
-  worldMap.fT = null;
-  worldMap.free = false;
-  worldMap.me = LOCATION_VECTORS[a];
-  worldMap.focus = LOCATION_VECTORS[a];
-  worldMap.fly = { a: LOCATION_VECTORS[a], b: LOCATION_VECTORS[i] };
   worldMap.dirty = true;
-  if (typeof worldMapGl !== 'undefined' && !worldMapGl.flat) worldMapGl.altT = 0.42;
   const host = $('.map-full');
   if (host && !$('#flycap')) {
     const c = document.createElement('div');
@@ -144,36 +148,40 @@ function startAirshipFlight(i) {
   }
   if (typeof soundEffect === 'function') soundEffect('throw');
 }
-/* the map loops ask this each frame while flying: where the airship is (worldMap.me follows it, so the camera does) */
+/* the map asks this each frame while flying: where the airship is (airshipFlight.pos: x, y on the bowl and its
+   height), so the camera can keep it in view */
+function flyPoint(k) {
+  const A = worldMapSpot(airshipFlight.a),
+    B = worldMapSpot(airshipFlight.b),
+    e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2,
+    x = A.x + (B.x - A.x) * e,
+    y = A.y + (B.y - A.y) * e;
+  return [x, y, bowlSurface(x, y) + 0.02 + 0.12 * Math.sin(Math.PI * Math.min(1, k * 1.15))];
+}
 function flyTick(ts) {
-  if (!airshipFlight.on || !worldMap.fly) return false;
-  const k = clamp((ts - airshipFlight.t0) / airshipFlight.dur, 0, 1),
-    e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
-  worldMap.me = vector3.norm(slerp(worldMap.fly.a, worldMap.fly.b, e));
-  worldMap.face = 'up';
-  worldMap.dirty = true;
+  if (!airshipFlight.on) return false;
+  const k = clamp((ts - airshipFlight.t0) / airshipFlight.dur, 0, 1);
   airshipFlight.k = k;
+  airshipFlight.pos = flyPoint(k);
+  worldMap.dirty = true;
   if (k >= 1) {
     flyLand();
     return false;
   }
   return true;
 }
-/* drawn instead of you on the map: the airship, lifted above the ground on an arc, its shadow on the land, the way behind */
+/* drawn instead of you on the map: the airship on its arc, its shadow on the land, the way behind;
+   proj(x, y, h) gives a point of the bowl on the screen */
 function flyDraw(c, t, proj) {
   const k = airshipFlight.k || 0,
-    g = worldMap.me,
-    H = 0.05 * Math.sin(Math.PI * Math.min(1, k * 1.15)),
-    lift = vector3.mul(g, 1 - H),
-    q = proj(lift),
-    qg = proj(g);
+    p = airshipFlight.pos || flyPoint(k),
+    q = proj(p[0], p[1], p[2]),
+    qg = proj(p[0], p[1], bowlSurface(p[0], p[1]));
   if (!q) return;
   const trail = [];
   for (let f = 0; f <= k + 1e-6; f += 0.02) {
-    const e = f < 0.5 ? 2 * f * f : 1 - Math.pow(-2 * f + 2, 2) / 2,
-      p = vector3.norm(slerp(worldMap.fly.a, worldMap.fly.b, e)),
-      h = 0.05 * Math.sin(Math.PI * Math.min(1, f * 1.15)),
-      qq = proj(vector3.mul(p, 1 - h));
+    const w = flyPoint(f),
+      qq = proj(w[0], w[1], w[2]);
     if (qq) trail.push(qq);
   }
   if (trail.length > 1) {
@@ -183,7 +191,7 @@ function flyDraw(c, t, proj) {
     c.setLineDash([3, 6]);
     c.lineDashOffset = -t / 50;
     c.beginPath();
-    trail.forEach((p, i) => (i ? c.lineTo(p.x, p.y) : c.moveTo(p.x, p.y)));
+    trail.forEach((pt, i) => (i ? c.lineTo(pt.x, pt.y) : c.moveTo(pt.x, pt.y)));
     c.stroke();
     c.restore();
   }
@@ -230,9 +238,7 @@ function flyLand() {
   }
   const b = airshipFlight.b;
   airshipFlight.on = false;
-  worldMap.fly = null;
-  worldMap.me = LOCATION_VECTORS[b];
-  worldMap.anim = null;
+  airshipFlight.pos = null;
   document.body.classList.remove('flying');
   const cap = $('#flycap');
   if (cap) cap.remove();
@@ -249,7 +255,6 @@ function flyLand() {
     uiState.roam = { id: sid, node: b, x: m.x + (bx / 2 + 0.9) * f, z: m.z - 0.9 };
   }
   uiState.tab = 'walk';
-  if (typeof worldMapGl !== 'undefined') worldMapGl.altT = null;
   save();
   render();
   toast(`Welcome to ${LOCATIONS[b].name}.`);

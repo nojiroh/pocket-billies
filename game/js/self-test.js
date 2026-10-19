@@ -65,16 +65,7 @@ import { propModelShaders, propModelState } from './prop-models.js';
 import { buddyTap, companionSpecies, worldBillies } from './world-billies.js';
 import { seamlessRoomMap, seamlessWorld } from './seamless-world.js';
 import { endBattle, pickMove, pickTarget, stopTimers, tapMessage } from './battle.js';
-import { worldMap } from './world-map.js';
-import {
-  WORLD_MAP_GL_SHADERS,
-  setWorldMapGlRender,
-  worldMapGl,
-  worldMapGlRender,
-  worldMapMinis,
-  worldMapMinisOn,
-} from './world-map-gl.js';
-import { worldBowl } from './world-bowl.js';
+import { WORLD_BOWL_SHADERS, worldBowl, worldMap, worldMapReset } from './world-bowl.js';
 import { talkBox, talkHide } from './talk.js';
 import { cutscene, cutsceneTeardown } from './cutscene.js';
 import { battleTipHide, fallOverWorldMap, fallWorldMapCanvas } from './opening-fall.js';
@@ -458,7 +449,7 @@ async function runFullTest(mode) {
           typeof WALK_SHADERS !== 'undefined' ? WALK_SHADERS : {},
           typeof BUILDING_SHADERS !== 'undefined' ? BUILDING_SHADERS : {},
           typeof POST_EFFECT_SHADERS !== 'undefined' ? POST_EFFECT_SHADERS : {},
-          typeof WORLD_MAP_GL_SHADERS !== 'undefined' ? WORLD_MAP_GL_SHADERS : {},
+          typeof WORLD_BOWL_SHADERS !== 'undefined' ? WORLD_BOWL_SHADERS : {},
           typeof SOLID_PROP_SHADERS !== 'undefined' ? SOLID_PROP_SHADERS : {}
         );
         const bad = [];
@@ -1184,7 +1175,7 @@ async function runFullTest(mode) {
     await phase('Battle on the 3D stage', 'scene', () => battle(), 7, 120);
     await phase('Double battle with a trainer', 'scene', () => teamBattle('double'), 8, 150);
     await phase('Alpha battle: your team against one', 'scene', () => teamBattle('alpha'), 8, 150);
-    /* v47: the opening's fall across the Hollow Earth (the world map's renderer, flying past the Inner Sun), timed */
+    /* v47: the opening's fall into the Hollow Earth (the bowl's own ground, past the Inner Sun), timed */
     if (typeof fallOverWorldMap === 'function' && !selfTest.stop)
       await phase(
         'Opening: falling across the Hollow Earth',
@@ -1205,18 +1196,22 @@ async function runFullTest(mode) {
           cutscene.run++;
           const run = cutscene.run,
             fr = [],
-            mr = worldMapGlRender;
-          let last = performance.now();
-          setWorldMapGlRender(t => {
-            const n = performance.now();
-            fr.push(n - last);
-            last = n;
-            mr(t);
-          });
+            f0 = worldBowl.frames;
+          let last = performance.now(),
+            seen = f0;
+          /* phase 10: frames counted as the bowl draws them (worldBowlFilm) */
+          const watch = setInterval(() => {
+            if (worldBowl.frames !== seen) {
+              const n = performance.now();
+              fr.push(n - last);
+              last = n;
+              seen = worldBowl.frames;
+            }
+          }, 4);
           try {
             await fallOverWorldMap(run, 6000);
           } finally {
-            setWorldMapGlRender(mr);
+            clearInterval(watch);
             cutscene.on = false;
             cutscene.run++;
           }
@@ -1354,59 +1349,34 @@ async function runFullTest(mode) {
         },
         6
       );
-    /* 3. the world map, 3D and flat */
+    /* 3. the world map: the bowl opens, a turn round it and back (its own checks: debug menu or Settings, Bowl map
+       test) */
     await phase(
       'World map',
       'map',
       async () => {
         uiState.tab = 'map';
         render();
-        await selfTestSleep(3500);
-        const fl = document.querySelector('[data-a=mflat]');
-        if (fl) {
-          fl.click();
-          await selfTestSleep(2500);
-          fl.click();
-        }
-        await selfTestSleep(1500);
-        uiState.tab = 'walk';
-        render();
-        await selfTestSleep(500);
-      },
-      8
-    );
-    /* v32: the stops as 3D miniatures, looked at from close by */
-    await phase(
-      'World map: 3D miniatures up close',
-      'map',
-      async () => {
-        if (typeof worldMapMinisOn !== 'function' || !worldMapMinisOn()) return 'switched off';
-        /* phase 10: the bowl map shows pins, not miniatures, for now (its own checks: debug menu, Bowl map test) */
-        if (typeof worldBowl !== 'undefined') return 'the bowl map has no miniatures yet';
-        uiState.tab = 'map';
-        render();
-        await selfTestSleep(2500);
-        if (!worldMap.gl) {
+        await selfTestSleep(3000);
+        if (!worldBowl.on) {
           uiState.tab = 'walk';
           render();
-          return 'the map is in its simple mode here';
+          return worldMap.gl ? 'the bowl didn’t open' : 'no WebGL here: the Places list';
         }
-        const a0 = worldMap.alt;
-        worldMap.alt = 0.035;
-        worldMap.tilt = 0.4;
-        worldMapGl.altT = null;
-        worldMap.dirty = true;
-        await selfTestSleep(3000);
-        const n = [...worldMapMinis.cache.values()].filter(e => e.m).length;
-        worldMap.alt = a0;
-        worldMap.tilt = 0.5733;
-        worldMap.dirty = true;
+        const f0 = worldBowl.frames;
+        worldBowl.bench = { turn: 0.8 };
+        await selfTestSleep(2500);
+        worldBowl.bench = null;
+        worldMapReset();
+        await selfTestSleep(1200);
+        const n = worldBowl.frames - f0;
         uiState.tab = 'walk';
         render();
         await selfTestSleep(500);
-        return n ? `${n} miniatures built` : false;
+        if (n < 5) throw new Error(`the bowl drew ${n} frames while turning`);
+        return `the bowl drew ${n} frames turning round and coming back`;
       },
-      6
+      8
     );
     /* v41: what the run left behind: pictures on the graphics card, the ground pictures kept, the JS heap */
     await phase(

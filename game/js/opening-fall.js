@@ -4,8 +4,8 @@
    1. The surface, late: a street under a billboard for Vinylla's Forever Tour. You walk by with a lanyard round your
       neck, looking at your phone; the pavement gives way. (pixel art on a small canvas, a few screen pixels to one)
    2. Through the crust: soil, rock, pipes, a crate from Legacy Labs, a seam of magma, tumbling, light below.
-   3. The inner sky: you come out on the far side of the Hollow Earth and fall right across it, past the Inner Sun, down
-      to Sundown, filmed with the world map's renderer, the real Hollow Earth (world-map-gl.js).
+   3. The inner sky: you come out high in the Hollow Earth, fall past the Inner Sun and down into the bowl (the world
+      map's own ground, world-bowl.js), towards Copperleaf.
    4. A white flash, and the walk scene takes over (cutscene.js): you wake in the dust outside Hazel's lab, the papers
       that fell with you still fluttering down.
    Skip ends the fall at once; without the fall, the step-by-step intro tells it in words. */
@@ -16,8 +16,8 @@ import { $, clamp } from './util.js';
 import { START_NODE, typeEffectiveness } from './game-data.js';
 import { FAST_PICKS, FAST_PICK_MS, HAZEL, hazelTip, speedWatch } from './logic/hazel.js';
 import { actorTypes } from './logic/battle-engine.js';
+import { bowlCamLookView, bowlToGpu } from './logic/bowl-camera.js';
 import { activeBattle, escapeHtml, reducedMotion } from './game-state.js';
-import { artLoad } from './art.js';
 import { portraitHTML } from './person-art.js';
 import { particleSprite } from './battle-stage.js';
 import { walkView } from './walk-view.js';
@@ -26,8 +26,7 @@ import { POST_EFFECT_SHADERS } from './engine/post-effects.js';
 import { standingHeightAt } from './walk/heights.js';
 import { canvasForContext, ensureWalkGl } from './walk-view-gl.js';
 import { endBattle, stopTimers } from './battle.js';
-import { LOCATION_VECTORS, WORLD_ART, vector3, worldMap, worldMapHeight, worldMapWidth } from './world-map.js';
-import { WORLD_MAP_GL_SHADERS, worldMapGl, worldMapGlRender, worldMapGlSize } from './world-map-gl.js';
+import { WORLD_BOWL_SHADERS, worldBowlFilm, worldMapSpot } from './world-bowl.js';
 import { music, soundEffect } from './sound.js';
 import { cutscene, cutsceneCaption } from './cutscene.js';
 /* eslint-disable no-func-assign */
@@ -94,7 +93,7 @@ function fallCanvas() {
 }
 /* the walk scene's canvas, ready for the world map's renderer (the map is drawn on it before Sundown is mounted) */
 export function fallWorldMapCanvas() {
-  if (typeof worldMapGlRender !== 'function' || typeof ensureWalkGl !== 'function' || gpuState.fail || gpuState.lost)
+  if (typeof worldBowlFilm !== 'function' || typeof ensureWalkGl !== 'function' || gpuState.fail || gpuState.lost)
     return null;
   let cv = $('#dio');
   if (!cv) {
@@ -105,7 +104,7 @@ export function fallWorldMapCanvas() {
   cv = canvasForContext(cv, 'gl');
   if (!ensureWalkGl(cv)) return null;
   try {
-    ensurePrograms(WORLD_MAP_GL_SHADERS);
+    ensurePrograms(WORLD_BOWL_SHADERS);
     ensurePrograms(POST_EFFECT_SHADERS);
   } catch (e) {
     console.error(e);
@@ -577,68 +576,48 @@ function fallSky(t) {
   drawFallingPlayer(-3, -8, 1, false);
   x.restore();
 }
-/* ---- 3. the inner sky: across the Hollow Earth, past the Inner Sun, down to Sundown ---- */
-function fallCamera(k) {
-  const S0 = LOCATION_VECTORS[START_NODE],
-    e = vector3.norm(vector3.cross(S0, [0, 1, 0])),
-    n = vector3.norm(vector3.cross(e, S0)),
-    L = (a, b, f) => vector3.add(vector3.mul(a, 1 - f), vector3.mul(b, f)),
-    ease = f => f * f * (3 - 2 * f);
-  const P0 = vector3.add(vector3.mul(S0, -0.82), vector3.mul(e, 0.16)),
-    P1 = vector3.add(vector3.mul(S0, -0.16), vector3.mul(e, 0.14)),
-    P2 = vector3.add(vector3.add(vector3.mul(S0, 0.3), vector3.mul(e, 0.1)), vector3.mul(n, 0.03)),
-    P3 = vector3.add(vector3.mul(S0, 0.962), vector3.mul(n, 0.004));
+/* ---- 3. the inner sky: past the Inner Sun, then down into the bowl to the start ---- */
+function fallCamera(k, W, H) {
+  const S = worldMapSpot(START_NODE),
+    T = bowlToGpu(S.x, S.y, S.h),
+    sun = [0, 1.7, 0],
+    L = (a, b, f) => [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f],
+    ease = f => f * f * (3 - 2 * f),
+    P0 = [-0.55, 2.35, 0.7],
+    P1 = [0.12, 1.62, 0.22],
+    P2 = [T[0] * 0.6 + 0.2, 1.05, T[2] * 0.6 + 0.12],
+    P3 = [T[0] + 0.008, T[1] + 0.03, T[2] + 0.012];
   let C, look;
   if (k < 0.36) {
     const f = ease(k / 0.36);
     C = L(P0, P1, f);
-    look = vector3.norm(vector3.mul(C, -1));
+    look = L(sun, T, f * 0.25);
   } else if (k < 0.6) {
     const f = ease((k - 0.36) / 0.24);
     C = L(P1, P2, f);
-    look = vector3.norm(L(vector3.norm(vector3.mul(C, -1)), vector3.norm(vector3.sub(S0, C)), f));
+    look = L(L(sun, T, 0.25), T, f);
   } else {
-    const f = (k - 0.6) / 0.4,
-      g = f * f;
-    C = L(P2, P3, g);
-    look = vector3.norm(vector3.add(vector3.norm(vector3.sub(S0, C)), vector3.mul(n, 0.25 * (1 - f))));
+    const f = (k - 0.6) / 0.4;
+    C = L(P2, P3, f * f);
+    look = T;
   }
-  const roll = (k > 0.55 ? (k - 0.55) * 5.5 : 0) + Math.sin(k * 9) * 0.12,
-    base = Math.abs(vector3.dot(look, n)) > 0.95 ? e : n,
-    rt0 = vector3.norm(vector3.cross(look, base)),
-    up0 = vector3.cross(rt0, look),
-    cr = Math.cos(roll),
-    sr = Math.sin(roll);
-  const rt = vector3.norm(vector3.add(vector3.mul(rt0, cr), vector3.mul(up0, sr))),
-    up = vector3.cross(rt, look);
-  return { C, fw: look, rt, up, P: S0, foc: Math.min(worldMapWidth * 0.55, worldMapHeight * 0.42) };
+  const roll = (k > 0.55 ? (k - 0.55) * 5.5 : 0) + Math.sin(k * 9) * 0.12;
+  return bowlCamLookView(C, look, W, H, roll);
 }
 export function fallOverWorldMap(run, ms) {
-  return new Promise(res0 => {
-    const flat = worldMapGl.flat,
-      focus = worldMap.focus,
-      res = () => {
-        worldMapGl.flat = flat;
-        worldMapGl.noClouds = false;
-        worldMap.focus = focus;
-        worldMap.dirty = true;
-        res0();
-      };
-    if (typeof worldMapGlRender !== 'function' || !gpuState.gl) {
+  return new Promise(res => {
+    if (typeof worldBowlFilm !== 'function' || !gpuState.gl) {
       res();
       return;
     }
     try {
-      ensurePrograms(WORLD_MAP_GL_SHADERS);
+      ensurePrograms(WORLD_BOWL_SHADERS);
     } catch (e) {
       console.error(e);
       res();
       return;
     }
     const t0 = performance.now();
-    worldMap.focus = LOCATION_VECTORS[START_NODE];
-    worldMapGl.flat = false;
-    worldMapGl.noClouds = true;
     let capA = 0,
       capB = 0;
     const step = ts => {
@@ -648,9 +627,7 @@ export function fallOverWorldMap(run, ms) {
       }
       const k = Math.min(1, (performance.now() - t0) / ms);
       try {
-        worldMapGlSize();
-        worldMap.cam = fallCamera(k);
-        worldMapGlRender(ts);
+        worldBowlFilm(fallCamera(k, innerWidth, innerHeight), ts);
       } catch (e) {
         console.error(e);
         res();
@@ -678,8 +655,6 @@ async function fallPlay(run) {
   const alive = () => cutscene.on && cutscene.run === run && !cutscene.skip;
   openingFall.run = run;
   if (typeof music === 'function') music('fall');
-  if (typeof artLoad === 'function')
-    artLoad([typeof WORLD_ART !== 'undefined' ? WORLD_ART : 'map/world.png', 'map/world_h.png']).catch(() => {});
   fallCanvas();
   const fade = $('#csFade');
   document.body.classList.add('cs-falling');

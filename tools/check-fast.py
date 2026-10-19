@@ -163,9 +163,12 @@ def bowl_map(pg, base):
     """phase 10: the Map tab opens as the bowl (world-bowl.js) and keeps drawing; a tap on a place's pin opens its card,
     and Home brings the camera back over you. Small page, graphics off, no pictures: on a device, the debug menu's
     Bowl map test checks the rest (frame rate, every place)"""
-    pg.evaluate("uiState.mapSel=null;uiState.tab='map';render();0")
+    # from the walk scene by its tab button: the walk camera rises, the bowl pulls back from right above you
+    if not until(pg, "!!document.querySelector('[data-a=tab][data-t=map]')&&typeof walkRenderer!=='undefined'&&walkRenderer.on", 90): raise Exception('the walk scene never got ready')
+    pg.evaluate("uiState.mapSel=null;document.querySelector('[data-a=tab][data-t=map]').click();0")
     if not until(pg, "typeof worldBowl!=='undefined'&&worldBowl.on&&worldBowl.frames>=3", 30):
         raise Exception('the map didn’t open as the bowl' + (' (the old map opened)' if pg.evaluate("worldMap.gl") else ''))
+    if not until(pg, "!worldBowl.tween&&!document.getElementById('mapfade')", 10): raise Exception('the zoom out from the walk scene never settled')
     n = pg.evaluate("LOCATIONS.length"); s = pg.evaluate("(worldBowl.spots||[]).filter(s=>isFinite(s.x)&&isFinite(s.y)).length")
     if s != n: raise Exception(f'{s} of {n} places have a spot on the bowl')
     pick = pg.evaluate("""(()=>{const t=LOCATIONS.findIndex(l=>l.id==='tallgrass_meadow'),p=worldBowl.spots[t];worldBowl.goal=null;worldBowl.cam=bowlCamHome(p.x,p.y);worldBowl.dirty=true;return t})()""")
@@ -178,8 +181,17 @@ def bowl_map(pg, base):
     if not until(pg, "!worldBowl.goal&&(()=>{const p=worldBowl.spots[saveData.trip.node];return Math.hypot(worldBowl.cam.tx-p.x,worldBowl.cam.ty-p.y)<.01})()", 15):
         raise Exception('Home didn’t bring the camera back')
     fr = pg.evaluate("worldBowl.frames")
+    # the opening fall films the bowl (one frame of it, mid-fall)
+    pg.evaluate("worldBowlFilm(fallCamera(.5,400,300),performance.now());0")
     pg.evaluate("uiState.tab='walk';render();0")
-    return f'{n} places on the bowl, {fr} frames; a tap opens the card, Home comes back'
+    # an airship flight over the bowl, skipped to the end: you land in the other town
+    to = pg.evaluate("(()=>{const i=LOCATIONS.findIndex(l=>l.id==='copperleaf');saveData.visited[i]=1;saveData.se+=100000;startAirshipFlight(i);return i})()")
+    if not until(pg, "airshipFlight.on&&worldBowl.on", 15): raise Exception('the flight didn’t show on the bowl')
+    f1 = pg.evaluate("worldBowl.frames")
+    if not until(pg, f"worldBowl.frames>{f1}||!airshipFlight.on", 15): raise Exception('the bowl stopped drawing during the flight')
+    pg.evaluate("flySkip();0")
+    if not until(pg, f"!airshipFlight.on&&saveData.trip.node==={to}&&uiState.tab==='walk'", 30): raise Exception('the flight never landed')
+    return f'{n} places on the bowl, {fr} frames; opened from the walk scene; a tap opens the card, Home comes back; the fall films it; a flight lands'
 
 
 def room(pg, base):

@@ -1,6 +1,7 @@
 'use strict';
-/* ================= BOWL MAP TEST (phase 10) =================
-   Debug menu → "Bowl map test": checks the bowl world map (world-bowl.js) on this device, by hand. It is not part of
+/* ================= WORLD MAP TEST (phase 10) =================
+   Settings → Help → "Run the world map test", and the debug menu's "Bowl map test": checks the bowl world map
+   (world-bowl.js) on this device, by hand. It is not part of
    any check, CI job or hook: in a headless browser the bowl is drawn in software and the frame numbers mean nothing.
    1. the bowl's shaders compile and link,
    2. the Map tab opens as the bowl and keeps drawing,
@@ -31,8 +32,15 @@ import {
 } from './logic/bowl-camera.js';
 import { activeBattle, escapeHtml, pauseSaving, resumeSaving, saveData, uiState } from './game-state.js';
 import { ensurePrograms, gpuState } from './engine/webgl.js';
-import { worldMap, worldMapHeight, worldMapReset, worldMapWidth } from './world-map.js';
-import { WORLD_BOWL_SHADERS, worldBowl, worldBowlPick } from './world-bowl.js';
+import {
+  WORLD_BOWL_SHADERS,
+  worldBowl,
+  worldBowlPick,
+  worldMap,
+  worldMapHeight,
+  worldMapReset,
+  worldMapWidth,
+} from './world-bowl.js';
 import { closeModal, modal, render, toast } from './ui.js';
 import { selfTest, shareReportFile } from './self-test.js';
 /* eslint-disable no-func-assign */
@@ -154,8 +162,7 @@ async function runBowlMapTest() {
       render();
       const t = performance.now();
       while (!worldBowl.on && performance.now() - t < 4000) await bowlTestWait(100);
-      if (!worldBowl.on)
-        return { ok: false, note: worldMap.gl ? 'the old map opened instead' : 'the map has no WebGL here' };
+      if (!worldBowl.on) return { ok: false, note: 'no WebGL here: the map shows the Places list' };
       const n = await bowlTestFrames(10, 4000);
       return n >= 10
         ? `opened in ${Math.round(performance.now() - t)} ms, drawing`

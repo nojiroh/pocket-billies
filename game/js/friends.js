@@ -19,7 +19,7 @@ import { rigCanvasHTML } from './skeleton-rig.js';
 import { directionOf, walkView } from './walk-view.js';
 import { personItem } from './walk/frame-items.js';
 import { buddyBilly, worldBillyItem } from './world-billies.js';
-import { worldMap, worldMapSelect } from './world-map.js';
+import { worldMap, worldMapSelect } from './world-bowl.js';
 /* eslint-disable no-func-assign */
 expose({
   FRIEND_CODE_ALPHABET: [() => FRIEND_CODE_ALPHABET],

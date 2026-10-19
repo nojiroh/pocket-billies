@@ -8,7 +8,7 @@
    renderer). Logic only: no DOM, runs in Node; the map draws with what bowlCamView returns. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { BOWL_RIM_HEIGHT, bowlHeight } from './bowl.js';
+import { BOWL_RIM_HEIGHT, bowlBaseHeight, bowlGridHeight } from './bowl.js';
 /* eslint-disable no-func-assign */
 expose({
   BOWL_CAMERA: [() => BOWL_CAMERA],
@@ -21,8 +21,11 @@ expose({
   bowlCamEase: [() => bowlCamEase, v => (bowlCamEase = v)],
   // @ts-expect-error -- replaced on purpose
   bowlCamGap: [() => bowlCamGap, v => (bowlCamGap = v)],
+  bowlCamGround: [() => bowlCamGround, v => (bowlCamGround = v)],
   // @ts-expect-error -- replaced on purpose
   bowlCamHome: [() => bowlCamHome, v => (bowlCamHome = v)],
+  // @ts-expect-error -- replaced on purpose
+  bowlCamLookView: [() => bowlCamLookView, v => (bowlCamLookView = v)],
   // @ts-expect-error -- replaced on purpose
   bowlCamMatrix: [() => bowlCamMatrix, v => (bowlCamMatrix = v)],
   bowlCamOverview: [() => bowlCamOverview],
@@ -33,6 +36,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   bowlCamRay: [() => bowlCamRay, v => (bowlCamRay = v)],
   bowlCamTurn: [() => bowlCamTurn],
+  // @ts-expect-error -- replaced on purpose
+  bowlCamUseGround: [() => bowlCamUseGround, v => (bowlCamUseGround = v)],
   // @ts-expect-error -- replaced on purpose
   bowlCamView: [() => bowlCamView, v => (bowlCamView = v)],
   bowlCamZoom: [() => bowlCamZoom],
@@ -82,12 +87,17 @@ export const BOWL_CAMERA = {
 
 /** the GPU's point for a point of the bowl @param {number} x @param {number} y @param {number} h @returns {V3} */
 export const bowlToGpu = (x, y, h) => [x, h, -y];
-/** the ground's height anywhere: the bowl inside the rim, flat land beyond it @param {number} x @param {number} y */
-export function bowlSurface(x, y) {
-  const r = Math.hypot(x, y);
-  return r <= 1 ? bowlHeight(r) : BOWL_RIM_HEIGHT;
+/** the drawn ground (logic/bowl.js bowlGroundGrid), once the map has made it; until then the bowl without relief */
+/** @type {import('./bowl.js').BowlGround | null} */
+export let bowlCamGround = null;
+/** @param {import('./bowl.js').BowlGround | null} G */
+export function bowlCamUseGround(G) {
+  bowlCamGround = G;
 }
-
+/** the ground's height anywhere, as drawn @param {number} x @param {number} y */
+export function bowlSurface(x, y) {
+  return bowlCamGround ? bowlGridHeight(bowlCamGround, x, y) : bowlBaseHeight(x, y);
+}
 /** a state kept inside every limit @param {BowlCamState} s @returns {BowlCamState} */
 export function bowlCamClamp(s) {
   const K = BOWL_CAMERA;
@@ -281,4 +291,19 @@ export function cross(a, b) {
 export function norm(a) {
   const l = Math.hypot(a[0], a[1], a[2]) || 1;
   return [a[0] / l, a[1] / l, a[2] / l];
+}
+
+/** a view from an eye looking at a target (the opening fall films the bowl this way), tipped by roll radians
+ * @param {V3} C @param {V3} T @param {number} W @param {number} H @param {number} [roll] @returns {BowlView} */
+export function bowlCamLookView(C, T, W, H, roll = 0) {
+  const K = BOWL_CAMERA,
+    fw = norm(sub(T, C)),
+    /** @type {V3} */ ref = Math.abs(fw[1]) > 0.98 ? [0, 0, -1] : [0, 1, 0],
+    rt0 = norm(cross(fw, ref)),
+    up0 = cross(rt0, fw),
+    c = Math.cos(roll),
+    s = Math.sin(roll),
+    rt = norm(add(mul(rt0, c), mul(up0, s))),
+    up = cross(rt, fw);
+  return { C, fw, rt, up, foc: H / 2 / Math.tan((K.fov * DEG) / 2), W, H, near: K.near, far: K.far };
 }

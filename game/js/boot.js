@@ -32,8 +32,6 @@ import { environment } from './environment.js';
 import { walkRenderer } from './walk/walk-state.js';
 import { startTownRise } from './walk/sprites.js';
 import { seamlessWorld } from './seamless-world.js';
-import { WORLD_ART, worldMapPrepare } from './world-map.js';
-import { WORLD_RELIEF } from './world-map-gl.js';
 import { cutsceneStart, cutsceneWanted } from './cutscene.js';
 import { titleMount, titleScreen, titleStart, titleWanted } from './title.js';
 import { loreLoadingLines } from './lore.js';
@@ -195,8 +193,6 @@ function loadList() {
   } catch (e) {
     console.error(e);
   }
-  add(WORLD_ART, 4);
-  if (typeof WORLD_RELIEF !== 'undefined') add(WORLD_RELIEF, 1);
   try {
     personArtPaths().forEach(p => add(p, 0));
   } catch (e) {
@@ -585,14 +581,7 @@ async function preloadAll(onTown) {
         console.error(e);
       }
   }
-  /* the map needs its pixels, the first scene needs its ground built */
-  if (location.protocol !== 'file:') {
-    try {
-      await worldMapPrepare();
-    } catch (e) {
-      fails.push(WORLD_ART + ' (pixels: ' + e.message + ')');
-    }
-  }
+  /* the first scene needs its ground built (phase 10: the bowl map paints its own ground when it first opens) */
   loaderSet(++done, total);
   try {
     if (saveData.started) {

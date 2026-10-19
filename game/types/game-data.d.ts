@@ -320,9 +320,6 @@ export interface LocationData {
   biome: string;
   mood: DataId;
   blurb: string;
-  /** where it is on the world map, degrees (the sphere map; replaced by bowl in phase 10) */
-  lon: number;
-  lat: number;
   /** phase 10: where it sits on the bowl world map */
   bowl: BowlSpot;
   region?: string;
