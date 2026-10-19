@@ -10,6 +10,7 @@
      once [key]                                the lines under it, the first time only
      cycle [key] / seq [key] with - entries    a different entry each time (cycle starts over, seq stays on the last)
      set flag [value], give item n, battle chad, ...   commands (SCRIPT_COMMANDS)
+     {name} {caught} {badges}                  slots in a line (SCRIPT_SLOTS), filled in as it is said
    Indentation is two spaces inside the strings. A line that starts with a small letter is a command or a keyword; an
    unknown one is an error with "did you mean", never a line of dialogue. Logic only: no DOM, runs in Node. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
@@ -23,6 +24,7 @@ expose({
   END: [() => END],
   KEYWORDS: [() => KEYWORDS],
   SCRIPT_COMMANDS: [() => SCRIPT_COMMANDS],
+  SCRIPT_SLOTS: [() => SCRIPT_SLOTS],
   // @ts-expect-error -- replaced on purpose
   applyStoryPreset: [() => applyStoryPreset, v => (applyStoryPreset = v)],
   // @ts-expect-error -- replaced on purpose
@@ -72,6 +74,7 @@ export const SCRIPT_COMMANDS = {
   face: { args: ['who', 'dir'], about: 'turn someone (up, down, side, sideR, or toward someone)' },
   camera: { args: ['...'], about: 'move the camera (a named shot, or follow / back)' },
   wait: { args: ['s'], about: 'wait, in seconds' },
+  music: { args: ['piece'], about: 'play a piece of music (rival, title, ...: sound.js)' },
   fade: { args: ['dir?'], about: 'fade the screen out, or back in' },
   go: { args: ['place', 'entrance?'], checkpoint: true, about: 'go to a place' },
   call: { args: ['script'], about: 'play another script, then go on' },
@@ -85,6 +88,12 @@ export const SCRIPT_COMMANDS = {
   fall: { args: [], opening: true, checkpoint: true, about: 'the fall through the crust' },
 };
 export const KEYWORDS = ['choice', 'if', 'elif', 'else', 'once', 'cycle', 'seq'];
+/** the slots a line may hold, filled in as it is said: {name} from the stage (o.slots), the counts from the save */
+export const SCRIPT_SLOTS = {
+  name: 'your name (Trainer before you have one)',
+  caught: 'kinds of Billie caught (the Index)',
+  badges: 'badges won',
+};
 
 /** an error in a script, with the line (from 0) it is on @param {string} message @param {number} line */
 export function scriptError(message, line) {
@@ -100,6 +109,11 @@ export function sayLine(s, line) {
   const w = /^([A-Za-z][\w-]*):\s+/.exec(n.text);
   if (w) [n.who, n.text] = [w[1], n.text.slice(w[0].length)];
   if (!n.text) throw scriptError('a line with nothing to say', line);
+  for (const [, k] of n.text.matchAll(/\{(\w*)\}/g))
+    if (!(k in SCRIPT_SLOTS)) {
+      const near = didYouMean(k, Object.keys(SCRIPT_SLOTS));
+      throw scriptError(`unknown slot "{${k}}"${near ? `, did you mean "{${near}}"?` : ''}`, line);
+    }
   return n;
 }
 /** @param {string} cond @param {number} line */
@@ -266,7 +280,8 @@ export function scriptProblem(lines) {
  *   [cmd: string]: any }} Stage */
 /** @typedef {{ save: any, id?: string, speaker?: string | null, scripts?: (id: string) => ScriptNode[] | null,
  *   locations?: { id: string }[], questStages?: Record<string, string[]>, resume?: number[] | null,
- *   onCheckpoint?: (path: number[]) => void, control?: { skipping: boolean } }} RunOptions */
+ *   onCheckpoint?: (path: number[]) => void, control?: { skipping: boolean },
+ *   slots?: Record<string, () => string | number> }} RunOptions */
 
 export const END = Symbol('end');
 /** plays a script; resolves when it is over @param {ScriptNode[]} tree @param {Stage} stage @param {RunOptions} o */
@@ -278,6 +293,15 @@ export async function runScript(tree, stage, o) {
   const holds = (/** @type {string} */ c) =>
     conditionHolds(conditionTree(c), storyStateOf(save, { locations: o.locations, questStages: o.questStages }));
   const keyOf = (/** @type {{ key?: string | null, line: number }} */ n) => n.key || `${id}@${n.line}`;
+  const fill = (/** @type {string} */ text) =>
+    text.includes('{')
+      ? text.replace(/\{(\w+)\}/g, (_, k) => {
+          const f = o.slots && o.slots[k];
+          if (f) return String(f());
+          const S = storyStateOf(save);
+          return k === 'caught' ? String(S.caught) : k === 'badges' ? String(S.badges) : 'Trainer';
+        })
+      : text;
   const play = async (/** @type {string} */ cmd, /** @type {any} */ arg) => {
     if (typeof stage[cmd] !== 'function') throw new Error(`the stage can't play "${cmd}" yet`);
     return stage[cmd](arg);
@@ -299,7 +323,7 @@ export async function runScript(tree, stage, o) {
     switch (n.k) {
       case 'say':
         if (!control.skipping)
-          await stage.say({ who: n.who || o.speaker || null, expr: n.expr, text: n.text, line: n.line });
+          await stage.say({ who: n.who || o.speaker || null, expr: n.expr, text: fill(n.text), line: n.line });
         return;
       case 'if': {
         const k = await branch(inner, () => n.clauses.findIndex(c => c.cond === null || holds(c.cond)));

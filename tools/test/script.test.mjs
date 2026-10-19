@@ -16,7 +16,7 @@ function stub(answers = []) {
       return answers.shift() ?? 0;
     },
   };
-  for (const c of ['battle', 'heal', 'walk', 'face', 'camera', 'wait', 'fade', 'go', 'shot', 'dressing-room'])
+  for (const c of ['battle', 'heal', 'walk', 'face', 'camera', 'wait', 'fade', 'go', 'shot', 'dressing-room', 'music'])
     stage[c] = args => said.push(`<${c}${args && args.length ? ' ' + args.join(' ') : ''}>`);
   return stage;
 }
@@ -55,6 +55,8 @@ test('mistakes are errors on their line, with "did you mean" for a command', () 
     [['battle'], '"battle" takes trainer', 0],
     [['heal now'], '"heal" takes nothing', 0],
     [['choice', '  > [if itme:x] Hm'], 'unknown term "itme:", did you mean "item:"? (in "itme:x", at 1)', 1],
+    [['Hi, {nmae}.'], 'unknown slot "{nmae}", did you mean "{name}"?', 0],
+    [['music'], '"music" takes piece', 0],
   ];
   for (const [lines, message, line] of cases)
     assert.deepEqual(scriptProblem(lines), { message, line }, lines.join(' / '));
@@ -133,6 +135,16 @@ test('once, cycle and seq remember, by key or by script and line', async () => {
   for (let i = 0; i < 4; i++) runs.push((await play(lines, { save })).said.join(' '));
   assert.deepEqual(runs, ['Hi, new face. One. A.', 'Two. And a half. B.', 'One. B.', 'Two. And a half. B.']);
   assert.deepEqual(save.story, { once: { hello: 1 }, cycles: { 'test@2': 0, 'test@6': 1 } });
+});
+
+test('slots: {name} from the stage, {caught} and {badges} from the save; music is played', async () => {
+  const save = { story: {}, items: {}, coins: {}, caught: { musk0: 1, swift0: 1 }, seats: ['a'] };
+  const lines = ['music rival', '{name}! {caught} taxed, {badges} badge.'];
+  assert.deepEqual((await play(lines, { save, slots: { name: () => 'Rae' } })).said, [
+    '<music rival>',
+    'Rae! 2 taxed, 1 badge.',
+  ]);
+  assert.equal((await play(['Hi, {name}.'], { save })).said[0], 'Hi, Trainer.');
 });
 
 test('call plays another script; the speaker comes from the run when a line names none', async () => {

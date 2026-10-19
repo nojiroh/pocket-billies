@@ -25,6 +25,9 @@ One string per line. Indentation is two spaces per level, inside the string.
 | `Hazel: Another one!` / `[happy] Hazel: ...` | said by someone else: a speaker from story.json `speakers` (Hazel, Blake, Juniper, Nacre, Cass, You) or a person id (`gini: ...`) |
 | `set met_juniper` | a command (below) |
 
+A line may hold slots, filled in as it is said: `{name}` (your name; Trainer before you have one), `{caught}`
+(kinds of Billie caught) and `{badges}`. Any other `{word}` is an error.
+
 A line that starts with a small letter is a command or a keyword. An unknown one is an error ("unknown command
 "sett", did you mean "set"?"), never a line of dialogue. A line of dialogue starts with a capital, a quote, a digit,
 `[expression]` or `Name:`.
@@ -94,6 +97,7 @@ Combine with `and`, `or`, `not` / `!` and parentheses; `and` binds tighter than 
 | `battle trainer` | a battle; the script goes on after it (a checkpoint) |
 | `heal` | heals the team |
 | `wait s` | waits, in seconds |
+| `music piece` | plays a piece of music (`rival`, `title`, ...: sound.js) |
 | `call script` | plays another script, then goes on |
 | `end` | stops the script |
 | `walk who ...`, `face who dir`, `camera ...`, `fade [in/out]` | the scene's people and camera: written now, played from S2 (until then the debug log notes them) |
