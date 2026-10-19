@@ -37,6 +37,8 @@ export interface GameData {
   moves: Record<MoveId, Move>;
   /** phase 17: robot parts and gems */
   robots?: RobotData;
+  /** phase 07: talking-head portraits (game/data/portraits.json) */
+  portraits?: PortraitData;
   rarities: Record<string, { totals: number[] }>;
   lines: Line[];
   /** the world map's places, in node order */
@@ -971,4 +973,98 @@ export interface Lore {
   loading: string[];
   /** townsfolk chatter, keyed by map */
   chat: Record<DataId, any>;
+}
+
+/** portraits.json (phase 07): 64x64 talking heads. Pictures are art/next/portraits/<img>.png */
+export interface PortraitData {
+  _help?: string;
+  /** art pixels a side */
+  size: number;
+  /** what a face can wear, in drawing order */
+  slots: { id: DataId; name: string; one: boolean; layer?: 'body' | 'head' }[];
+  heads: Record<DataId, PortraitHead>;
+  items: Record<DataId, PortraitItem>;
+  eyes: Record<DataId, { name: string; frames: Record<string, string>; mid: string[]; dx: number; dy: number }>;
+  mouths: Record<DataId, { name: string; frames: Record<string, string>; dx: number; dy: number }>;
+  /** an eye frame a style lacks -> the one it uses */
+  eyeFallback: Record<string, string>;
+  expressions: Record<string, PortraitExpression>;
+  motion: {
+    sway: number;
+    talkSway: number;
+    nod: number;
+    nodChance: number;
+    hits: number;
+    hairLag: number;
+    follow: number;
+  };
+  palettes: Record<'skin' | 'hair' | 'iris' | 'cloth', string[]> & Record<string, string[]>;
+  faces: Record<DataId, PortraitFace>;
+}
+/** a head: its pictures and the points on it parts hang from (art px in the 64x64 frame) */
+export interface PortraitHead {
+  name: string;
+  img: string;
+  body: string;
+  x: number;
+  y: number;
+  bodyY: number;
+  cx: number;
+  crown: number;
+  forehead: number;
+  eyeY: number;
+  noseY: number;
+  mouthY: number;
+  /** the point the head turns around */
+  neck: number;
+  bottom: number;
+  /** from the middle to each eye */
+  eyeGap: number;
+  earL: number;
+  earR: number;
+  earY: number;
+  lobeY: number;
+  /** which cut of the clothes fits */
+  top: 's' | 'm' | 'l';
+  /** item id -> [dx, dy] on this head only */
+  nudge: Record<DataId, [number, number]>;
+}
+export interface PortraitItem {
+  slot: DataId;
+  name: string;
+  /** one picture, a left/right pair, or one per clothes cut */
+  img: string | { l: string; r: string } | { s: string; m: string; l: string };
+  /** the head's point it hangs on; a pair uses <at>L and <at>R */
+  at: string;
+  /** which point of the picture sits there (0..1) */
+  ax: number;
+  ay: number;
+  /** px; on a pair, outwards */
+  dx: number;
+  dy: number;
+  tint?: 'skin' | 'hair' | 'iris' | 'top' | 'hat' | 'acc';
+  layer?: 'body' | 'head';
+  /** hair: the part behind the body */
+  back?: { img: string; dx: number; dy: number };
+}
+export interface PortraitExpression {
+  eyes: string;
+  mouth: string;
+  browTilt: number;
+  browLift: number;
+  blush?: boolean;
+  talk?: string[];
+  /** where the head settles: x, y (art px), angle (degrees) */
+  pose: [number, number, number];
+  sway: number;
+  hit?: 'bounce' | 'shake' | 'jolt' | 'recoil' | 'nod';
+}
+/** a face: a head, eyes, a mouth, the parts it wears and its colours (no skin colour: the head's own) */
+export interface PortraitFace {
+  name: string;
+  head: DataId;
+  eyes: DataId;
+  mouth: DataId;
+  items: DataId[];
+  colors: Partial<Record<'skin' | 'hair' | 'iris' | 'top' | 'hat' | 'acc', string>>;
 }

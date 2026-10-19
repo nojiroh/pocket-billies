@@ -71,6 +71,130 @@ Plan approved at the start (S1 of docs/phases/project-story.md). Branch `ccr-f32
 - Questions waiting for the owner ("Ask me before"): the line format, from the three scripts (docs/SCRIPTS.md and the
   data). Tag `project-story-s1-done` once you agree.
 - Next session starts with: S2, after the format is agreed: every person, trainer and rival scene moved into scripts.
+### Phase 06-4 - the last screens, floating sheets, gallery, dead CSS, accessibility, safety - 2026-10-19
+Branch `phase-06-4`, based on main as of 2026-10-19 (main and `phase-07-portraits` merged in, both clean).
+- Changed:
+  - Every sheet floats (one `.scrim .sheet` rule in ui-kit.css; the per-sheet copies are gone). New `menus.css`: the
+    Field Guide (84 px rows, sideways filter chips, prose font for notes), Trainer card, friends, Settings, shop and
+    dressing room on the tokens.
+  - Dialogue portrait drawn at 1.5× (64 → 96 px) in whole device pixels (talk.js). This answers 07's open question
+    "how the 64 px portrait fills the 96×96 slot": the new renderer only has to draw a 64 px picture.
+  - Battle: the classic corner cards' code removed; what they showed that the plates did not (stat stages, robot
+    limb HP, party dots, the low-HP glow) moved onto the plates. Wide screens (owner, 2026-10-19): the message and
+    menu cards sit in a right-hand column, clear of the edge, centred top to bottom. Fixes cards off screen on iPad
+    and against the right edge on laptops: style.css zooms the dock 1.18 / 1.35 on big screens, and floatTick now
+    allows for that zoom.
+  - Studio "UI gallery" (studio/gallery.html): every kit component, theme / width (320, 390, wide) / reduced-motion
+    switches, built from the game's own CSS and ui-kit.js.
+  - Dead CSS: about 840 lines removed (old team cards, Stats tab, old pick card, step intro, old Workshop list, hcard
+    family). `tools/unused-css.mjs` lists the rest: 36 older candidates, left on purpose (each needs a look).
+  - Accessibility: every control ≥ 40 px or an icon with a 14 px larger tap area; type pills darkened just enough
+    for 4.5:1 contrast (`logic/colors.js`, unit-tested on every type colour); arrow keys, Home and End on tab rows.
+  - Safety: the friend code is escaped; new full-check step "Safety" puts a hostile name in every player-written
+    field and opens 13 screens (fails on a planted fault); new step "Tap targets" measures 9 screens.
+- Risky or unfinished:
+  - **The 06 plan is not fully met.** Every screen is on the tokens, but the plan also said "one module per screen"
+    and "old CSS files deleted when empty". Not done: `ui.js` is still ~3,000 lines (pop-ups, top bar, walk and
+    rooms, world map, Team, Guide, Trainer card, the button switch), and ~10,000 of 12,600 CSS lines sit in
+    style.css, screens.css, polish.css and v05.css, which override each other in layers.
+  - The Walking seam step fails, as it does on untouched main (not from this work).
+  - Animations and the wide-screen battle layout are untested on real devices.
+- Verified: lint, type-check, 74 unit tests, module check, format, data check, build, after both merges. Smoke and
+  the Messages, Team, Safety and Tap-target steps: see the PR. Battle cards measured (low render) at 390×844,
+  820×1180, 1180×820, 1440×900 and 1600×1050: both cards fully on screen, right margins 35-48 px in landscape.
+- Decisions I made: kept the big-screen zoom (bigger text on big screens) and corrected for it rather than removing
+  it; left the 36 unused-CSS candidates for a hand check rather than deleting them blind.
+- Questions waiting for the owner: (1) Is splitting ui.js and the four old CSS files part of phase 06 (a session
+  06-5, before the tag) or a later phase? Recommendation: 06-5, before phase-06-done. (2) Tag phase-06-done once
+  that's settled (tag pushes are refused from here). (3) Delete `codex/playable-ui-graphics-poc` on GitHub.
+- Next session starts with: the owner's answer to (1). If 06-5: one commit per screen moved out of ui.js into its own
+  module, its CSS moved out of the old files with it, moves only, smoke after each.
+
+### Phase 07 part 1 (in progress) - portrait kit, slicer, portraits.json - 2026-10-19
+Branch `phase-07-portraits` (not merged, no PR yet). Plan agreed in chat with the owner; written up in
+docs/phases/07-plan.md (decisions, data format, status, next steps).
+- Owner's decisions: portraits are 64×64; the face kit is cut from AI-drawn part sheets; the body stays still and the
+  head moves freely (sub-pixel and rotating, NOT on the pixel grid: this replaces the phase file's whole-pixel
+  motion); everything is placed by data so it can be edited in a Studio "Portraits" section; the old portrait
+  system stays until the owner says otherwise.
+- Changed:
+  - `tools/art-source/portrait-kit/`: the 15 source sheets and `kit.json`; `prototype/`: the prototype renderer and
+    test page, reference only (eslint now ignores `tools/art-source/`).
+  - `tools/slice-portrait-kit.py`: cuts the sheets into 311 pictures in `game/art/next/portraits/` and seeds or
+    merges `game/data/portraits.json` (keeps existing data; `--reset` starts over), written in the Studio's layout.
+  - `game/data/portraits.json` (12 heads, 93 parts, 13 eye styles, 2 mouth sets, 7 expressions, motion, palettes,
+    4 sample faces), listed in `index.json` after `wardrobe`; `game/data/schema/portraits.schema.json`;
+    `PortraitData` and friends in `game/types/game-data.d.ts`.
+  - `tools/check-data.mjs`: validates portraits.json and checks every head, part, eye frame, mouth frame and face it
+    names exists (tried: removing one picture is reported).
+  - Docs: docs/phases/07-plan.md (new), a pointer at the top of 07-portraits.md, an ART-NOTES section.
+- Nothing in the game or the Studio uses the portraits yet: the data loads into GAMEDATA.portraits and is unused.
+- Risky or unfinished: no renderer, no Studio section, no tests of the portraits themselves yet. The cut art has known
+  rough spots (07-plan.md, last section). The source sheets add about 20 MB to the repository.
+- Verified: lint, typecheck, unit tests (72 pass), check:data (212 files), format:check. Not run: smoke (a data
+  section only; the owner prefers no headless graphics runs).
+- Questions waiting for the owner: none now. Later: deleting the old system; how the 64 px portrait fills 06's
+  96×96 slot (1×, 2× or a canvas at device pixels).
+- Next session starts with: 07-plan.md "What is left", step 1 (the renderer: logic/portrait-layout.js and
+  portrait-art.js), then step 2 (the Studio section), then step 3 (tests).
+### Phase 20 stage C, session C-1 - Frame settings and allocations (C1, C2) - 2026-10-19
+Plan approved at the start with "continue" on my recommendation: C1 and C2 now (no look change), before stage A's A8
+numbers and before phase 19, which the phase file puts first. Branch `ccr-ca9ccdfe-oyecc9`, from main at d2f9721.
+- Merged with main after stage B (2026-10-19): this session's changes to walk-view-gl.js now sit where stage B moved
+  each function: worldCurveDrop and setSpriteUniforms in walk/draw-common.js, walkLightContext in walk/lighting.js,
+  the shadow passes in walk/shadows.js, the grass trail and flowers in walk/ground-draw.js, drawSprites in
+  walk/sprites.js; beginFrameSettings/endFrameSettings stay in walk-view-gl.js. Same code, moved; checks green.
+- Changed (one cause per commit):
+  - Main's last merge (#41) left an unused import in seamless-world.js, so `check:modules` failed on main. Regenerated.
+  - **C1** Defaults for the four dials the code read with none (the phase file named two): `quality.keepScenes` 3,
+    `quality.paintWorker` true, `world.roomDim` 0.68, `world.seamlessRooms` true, each at the code's own fallback.
+  - **C1** `FRAME_SETTINGS` (engine/settings.js): `beginFrameSettings()` runs once per walk frame, after the
+    environment update and the seamless look. It looks every dial up once (11 groups, 149 keys), and `engineSetting`
+    answers from that table while the frame is open, but only if the look and the environment flag are still the ones it
+    was filled with, and never while the Studio's defaults switch is on. Unknown keys, other screens and code between
+    frames take the full lookup. `drawWalkFrame`'s finally closes it.
+  - **C2**, one commit each:
+    - Sprite uniforms take a slice's depth and a rising picture's height share as arguments. Before, the shadow passes
+      made 6 item copies per building, and the sprite pass made 1 per rising picture.
+    - `worldCurveDrop` no longer makes an array (it runs per grid cell and item).
+    - Contact-shadow blobs come from a pool. The same sort keeps the same order, ties included.
+    - The shadow passes filter into kept lists.
+    - The sprite pass's list, its building-fade map and a turned picture's axes are kept between frames.
+    - The grass trail buffer and each flower set's colours are kept.
+    - New module `game/js/engine/frame-lists.js` (no WebGL): `pooledQuad`, `nearestFirst`, `filterInto`. Its script
+      tag is on both pages.
+  - Tests: `tools/test/frame-settings.test.mjs` checks every key, fast path against full lookup, with player, look,
+    game-data and environment sources and the Studio switch. `tools/test/frame-allocations.test.mjs` checks each C2
+    change against the old code, kept in the test. `tools/test/walk-renderer.mjs` loads walk-view-gl.js in Node with a
+    stand-in GL that records calls.
+- Not done from C1 and C2, and why:
+  - **gatherFrameItems item pool:** I'm pushing back on this one. About 20 functions in several modules add fields to
+    the items (vol, vox, bld3, cross, layer, wave...) and some splice the list. A pool would carry stale fields from
+    the previous frame unless every field is reset, and items of mixed shapes in one pool slow V8 down. The items live
+    for one frame, which is the cheap case for V8's young-generation collector. Do it only if your `alloc` numbers
+    (stage A) show garbage-collection hitches.
+  - Hot derived values in a frame table (curve args, wind, brightness): with FRAME_SETTINGS a dial is a property read,
+    so this saves little.
+  - `matrix4` writing into a given array, and the reflection's two `Object.assign` calls: about 15 small objects a
+    frame in total.
+  - The basin key: a few strings a frame, only where there are fountains. Its `toFixed(2)` rounding is the
+    behaviour, so comparing by numbers would change it slightly.
+  - The light lists in `walkLightContext` and `pickPointLights`: those get rewritten in C5.
+- Risky:
+  - A dial changed in the middle of a frame is seen next frame. Nothing does that today: the environment changes only
+    in `environmentFrame`, before the table fills, and the graphics tests, the Studio and Settings change dials between
+    frames. Code that starts doing it must call `beginFrameSettings()` again.
+  - The kept lists are only safe while each function runs once per frame and nobody keeps the list (checked:
+    `walkLightContext` and `drawSprites` have one caller each, and the shadow drawers don't store what they get).
+- Verified: lint, typecheck, unit tests (72 -> 86), check:modules, check:data and format:check after every commit.
+  Smoke 15/15 after C1 (248 s) and on the final code (231 s). No headless graphics test was run (as the phase file
+  says).
+- Questions waiting for the owner:
+  - Your phone: does the walk view look and run the same? The diagnostics' long frames and the log's `alloc`, before
+    and after (main vs this branch), would show whether C2 helped.
+  - Still open from stage A: the A8 numbers, the budgets, the `phase-20a-done` tag.
+- Next session starts with: C-2 (C3, the Frame uniform block, behind `quality.frameBlock`; C4, flat items and blades
+  grouped by program). Or stage D first, if the A8 numbers say pixels.
 
 ### Phase 20 stage B - walk-view-gl.js split into game/js/walk/ (moves only) - 2026-10-19
 Plan approved at the start (the file list was the "Ask me before"). Branch `ccr-9b6f14fb-6t1w6i`.

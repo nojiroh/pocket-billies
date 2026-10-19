@@ -10,7 +10,8 @@ import { buildData } from './tools/build-data.mjs';
 const ROOT = import.meta.dirname;
 const SITE = ['index.html', 'game', 'studio'];
 const EMPTY = '\0pb-empty-entry';
-const PAGES = ['game/index.html', 'studio/index.html'];
+// phase 06-4: the Studio's UI gallery (studio/gallery.html) is bundled too, so it works in the built site
+const PAGES = ['game/index.html', 'studio/index.html', 'studio/gallery.html'];
 const MODULE_TAG = /<script type="module" src="([^"]+)"><\/script>\n?/g;
 
 // Phase 04c: a page's module scripts become one file, js/<page>-<hash>.js next to the page, in place of the first

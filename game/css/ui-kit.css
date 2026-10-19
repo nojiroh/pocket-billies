@@ -70,15 +70,39 @@
   white-space: nowrap;
 }
 
-/* the evolution sheet (phase 06): a floating card that keeps clear of the screen's edges, with room to breathe.
-   The other sheets follow when their screens move over (06-2 to 06-4). */
-.scrim .sheet.evo-sheet {
+/* phase 06-4: every sheet is a floating card that keeps clear of the screen's edges, with room to breathe (on wide
+   screens style.css centres it in the middle of the screen) */
+.scrim .sheet {
   width: calc(100% - 2 * var(--gutter));
-  max-width: 440px;
+  max-width: 520px;
   margin: 0 var(--gutter) calc(var(--gutter) + env(safe-area-inset-bottom, 0px));
   padding: var(--s5) var(--pad-panel) var(--pad-panel) !important;
   border-radius: var(--r-lg) !important;
   box-shadow: var(--depth-float) !important;
+}
+.scrim .sheet > h2 {
+  font-size: var(--fs-title);
+  line-height: 1.2;
+}
+.scrim .sheet .body {
+  margin-top: var(--s3);
+}
+.scrim .sheet .btns {
+  gap: var(--s3);
+  margin-top: var(--s5);
+  padding-top: var(--s5);
+}
+.scrim .sheet .btns .pb {
+  min-height: var(--tap);
+}
+@media (min-width: 700px) {
+  .scrim .sheet {
+    margin: auto;
+  }
+}
+/* the evolution sheet: a small, centred card */
+.scrim .sheet.evo-sheet {
+  max-width: 440px;
   text-align: center;
 }
 .sheet.evo-sheet::before {
@@ -90,8 +114,6 @@
 .sheet.evo-sheet > h2 {
   justify-content: center;
   margin: 0;
-  font-size: var(--fs-title);
-  line-height: 1.2;
 }
 .sheet.evo-sheet .body {
   margin-top: var(--s3);
@@ -100,12 +122,6 @@
   line-height: var(--lh-prose);
   color: var(--text2);
 }
-.sheet.evo-sheet .btns {
-  gap: var(--s3);
-  margin-top: var(--s5);
-  padding-top: var(--s5);
-}
 .sheet.evo-sheet .btns .pb {
-  min-height: var(--tap);
   font-size: 15px !important;
 }

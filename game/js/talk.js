@@ -19,6 +19,8 @@ expose({
   FOLK_NAMES: [() => FOLK_NAMES],
   FOLK_TALK: [() => FOLK_TALK],
   SPEAKER_NAMES: [() => SPEAKER_NAMES],
+  TALK_PORTRAIT_SCALE: [() => TALK_PORTRAIT_SCALE],
+  drawTalkPortrait: [() => drawTalkPortrait, v => (drawTalkPortrait = v)],
   setTalkFolk: [() => setTalkFolk, v => (setTalkFolk = v)],
   talk: [() => talk, v => (talk = v)],
   talkBox: [() => talkBox],
@@ -219,6 +221,31 @@ export async function talk(lines, o = {}) {
   }
   talkHide();
 }
+/* phase 06-4: portraits are 64 art pixels (owner, 2026-10-19), shown 1.5× (96 CSS px) in the dialogue box. To stay crisp
+   the picture is scaled by a whole number of device pixels per art pixel, near 1.5× and never much over it, so a 64 px
+   portrait stays inside the 96 px slot (exactly
+   1.5× on a 2× phone), and the canvas is sized to match */
+const TALK_PORTRAIT_SCALE = 1.5;
+function drawTalkPortrait(cv, who, ex, ts) {
+  if (!cv) return;
+  const src = talkBox.src || (talkBox.src = document.createElement('canvas'));
+  drawPortrait(src, who, ex, ts);
+  if (!src.width || !src.height) return;
+  const dpr = devicePixelRatio || 1,
+    k = Math.max(1, Math.floor(TALK_PORTRAIT_SCALE * dpr + 0.25)),
+    w = src.width * k,
+    h = src.height * k;
+  if (cv.width !== w || cv.height !== h) {
+    cv.width = w;
+    cv.height = h;
+    cv.style.width = w / dpr + 'px';
+    cv.style.height = h / dpr + 'px';
+  }
+  const x = cv.getContext('2d');
+  x.imageSmoothingEnabled = false;
+  x.clearRect(0, 0, w, h);
+  x.drawImage(src, 0, 0, w, h);
+}
 function talkTick(ts) {
   const P = talkBox.por,
     el = talkBox.el;
@@ -233,7 +260,7 @@ function talkTick(ts) {
     blink = ts % 3700 < 130 && P.expr !== 'happy';
   const ex = blink ? 'blink' : typing && !P.expr && Math.floor(ts / 120) % 2 ? 'talk' : P.expr;
   try {
-    drawPortrait(el.querySelector('.talk-por'), P.who, ex, ts);
+    drawTalkPortrait(el.querySelector('.talk-por'), P.who, ex, ts);
   } catch (e) {}
 }
 document.addEventListener('keydown', ev => {

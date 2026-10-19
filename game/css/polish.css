@@ -529,9 +529,6 @@ body:has(.topbar) .toast {
   border-bottom: 0;
   opacity: 0.8;
 }
-.talk-art {
-  filter: drop-shadow(0 10px 18px var(--shadow));
-}
 
 /* ---------- motion (only when the viewer allows it) ---------- */
 @media (prefers-reduced-motion: no-preference) {

@@ -1,0 +1,448 @@
+<title>Pocket Billies Portrait Lab</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600&family=Pixelify+Sans:wght@500;700&display=swap">
+<style>
+/* Layout: one column on phones (stage, dialogue, then the parts list); stage left / controls right when wide. */
+:root {
+  --bg: #eef2ea;        /* pale leaf paper */
+  --panel: #fbfcf8;
+  --ink: #1f2a26;
+  --muted: #5d6b64;
+  --line: #cfd8cf;
+  --accent: #127a64;    /* solar teal */
+  --accent-ink: #ffffff;
+  --stage: #28403a;     /* dark glass behind the portrait */
+  --stage-grid: #33504a;
+  --chip: #e2e9e1;
+  --font-display: "Pixelify Sans", "Chakra Petch", system-ui, sans-serif;
+  --font-body: "Chakra Petch", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #111816; --panel: #18211e; --ink: #e4ece6; --muted: #98a8a0; --line: #2c3a35; --accent: #3cc6a3; --accent-ink: #0b1311;
+  --stage: #0b1311; --stage-grid: #15211d; --chip: #22302b; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #111816; --panel: #18211e; --ink: #e4ece6; --muted: #98a8a0; --line: #2c3a35; --accent: #3cc6a3; --accent-ink: #0b1311;
+  --stage: #0b1311; --stage-grid: #15211d; --chip: #22302b; color-scheme: dark }
+* { box-sizing: border-box }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.45;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 16px 40px }
+h1, h2 { font-family: var(--font-display); font-weight: 700; margin: 0; text-wrap: balance }
+h1 { font-size: 22px; letter-spacing: .01em }
+h2 { font-size: 15px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted) }
+.wrap { max-width: 1060px; margin: 0 auto; display: grid; gap: 20px; grid-template-columns: minmax(0, 1fr) }
+@media (min-width: 860px) { .wrap { grid-template-columns: minmax(0, 420px) minmax(0, 1fr); align-items: start } .left { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px) } }
+header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px; grid-column: 1 / -1 }
+header p { margin: 0; color: var(--muted); font-size: 13px }
+.left, .right { display: grid; gap: 14px; min-width: 0 }
+.stage { background: var(--stage); border-radius: 10px; padding: 14px; display: grid; justify-items: center; gap: 10px;
+  background-image: linear-gradient(var(--stage-grid) 1px, transparent 1px), linear-gradient(90deg, var(--stage-grid) 1px, transparent 1px);
+  background-size: 16px 16px }
+canvas { image-rendering: pixelated; image-rendering: crisp-edges; display: block; max-width: 100% }
+.dialogue { width: 100%; background: rgba(250, 252, 248, .94); color: #1f2a26; border-radius: 8px; padding: 10px 12px; min-height: 76px;
+  border: 2px solid #9cc9bb; cursor: pointer; position: relative }
+.dialogue .who { font-family: var(--font-display); font-size: 13px; color: #127a64 }
+.dialogue .txt { font-size: 15px; min-height: 2.9em }
+.dialogue .more { position: absolute; right: 10px; bottom: 6px; font-size: 12px; color: #5d6b64 }
+.row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center }
+.chip { font: 500 13px var(--font-body); border: 1px solid var(--line); background: var(--chip); color: var(--ink); border-radius: 999px; padding: 5px 11px; cursor: pointer }
+.chip[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent) }
+.chip:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+.btn { font: 600 13px var(--font-body); border: 1px solid var(--accent); color: var(--accent); background: transparent; border-radius: 6px; padding: 6px 12px; cursor: pointer }
+.btn.solid { background: var(--accent); color: var(--accent-ink) }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px; display: grid; gap: 12px; min-width: 0 }
+.picker { display: grid; grid-template-columns: 92px 34px minmax(0, 1fr) 34px; gap: 6px; align-items: center }
+.picker label { font-size: 13px; color: var(--muted) }
+.picker .val { font-weight: 500; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums }
+.picker button { height: 30px; border-radius: 6px; border: 1px solid var(--line); background: var(--chip); color: var(--ink); font: 700 15px var(--font-display); cursor: pointer }
+.swatches { display: flex; flex-wrap: wrap; gap: 6px; grid-column: 2 / -1 }
+.sw { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--panel); box-shadow: 0 0 0 1px var(--line); cursor: pointer; padding: 0 }
+.sw[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--accent) }
+.sw.natural { background: conic-gradient(#f2c49a, #c98a5c, #f2c49a) }
+.toggles { display: flex; flex-wrap: wrap; gap: 6px }
+.say { display: flex; gap: 6px }
+.say input { flex: 1; min-width: 0; font: 14px var(--font-body); padding: 7px 10px; border-radius: 6px; border: 1px solid var(--line); background: var(--panel); color: var(--ink) }
+.sheet { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px }
+.sheet figure { margin: 0; display: grid; gap: 4px; justify-items: center; background: var(--stage); border-radius: 8px; padding: 6px }
+.sheet figcaption { font-size: 11px; color: #cfe3da; letter-spacing: .04em; text-transform: uppercase }
+.note { font-size: 13px; color: var(--muted); margin: 0 }
+.foot { display: flex; flex-wrap: wrap; gap: 8px; align-items: center }
+code { font-size: 12px }
+textarea { width: 100%; min-height: 90px; font: 12px ui-monospace, Menlo, monospace; background: var(--chip); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 8px }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Portrait Lab</h1>
+    <p>Phase 07 prototype · layered 32-bit pixel portraits · still body, sub-pixel head rig, animated eyes and mouth</p>
+  </header>
+
+  <section class="left">
+    <div class="stage">
+      <canvas id="cv" width="64" height="64" aria-label="Character portrait"></canvas>
+      <div class="dialogue" id="dlg" role="button" tabindex="0" aria-label="Next line">
+        <div class="who" id="who">Juniper</div>
+        <div class="txt" id="txt"></div>
+        <div class="more">tap ▸</div>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>Expression</h2>
+      <div class="row" id="exprs"></div>
+      <div class="say">
+        <input id="line" value="[happy] A Billie! [surprised] Wait, it's wearing a top hat? [angry] Give back my lunch!" aria-label="Line to say, with expression tags">
+        <button class="btn solid" id="sayBtn">Say</button>
+      </div>
+      <div class="row">
+        <span class="note">Size</span>
+        <button class="chip" id="sz64" aria-pressed="true">64 px</button>
+        <button class="chip" id="sz96" aria-pressed="false">96 px</button>
+        <span class="note" style="margin-left:8px">Zoom</span>
+        <button class="chip" id="zoomBtn">auto</button>
+        <button class="chip" id="rmBtn" aria-pressed="false">Reduce motion</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="right">
+    <div class="panel" id="parts">
+      <div class="row" style="justify-content:space-between"><h2>Parts</h2><button class="btn" id="rand">Randomize</button></div>
+    </div>
+    <div class="panel">
+      <h2>Expression sheet</h2>
+      <div class="sheet" id="sheet"></div>
+      <p class="note">Every tag the dialogue understands, drawn with the current parts. Test check from the plan: every portrait × expression renders.</p>
+    </div>
+    <div class="panel">
+      <h2>Character data</h2>
+      <p class="note">What the game would save for this character (the <code>portrait.json</code> idea from the plan).</p>
+      <textarea id="json" readonly aria-label="Character JSON"></textarea>
+      <div class="foot"><button class="btn" id="copy">Copy JSON</button><span class="note" id="copied"></span></div>
+    </div>
+  </section>
+</div>
+
+<script>/*DATA*/</script>
+<script>/*ENGINE*/</script>
+<script>
+(() => {
+const $ = (id) => document.getElementById(id);
+let T = 64, zoom = 0, reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const loaded = {};
+const SKINS = ['natural', '#f6d3b3', '#e8b48a', '#c98d62', '#9c6644', '#6e452d', '#4a2d1e'];
+const HAIRS = ['#6b4423', '#2b211c', '#e2c27a', '#b5512b', '#d9d6d0', '#4f7fd1', '#d45b9a', '#3a9a6b'];
+const IRIS = ['#5b7d9a', '#6b4a2f', '#3f8a5a', '#8a5bc4', '#c48a2c', '#3a3a44'];
+const CLOTH = ['#d0d6d8', '#2f5f8f', '#b23a3a', '#3a7a4f', '#e0b84a', '#33343a', '#c46aa0', '#7a5a3a'];
+const HATS = ['Cap', 'Beanie', 'Bucket hat', 'Cowboy hat', 'Hood', 'Helmet', 'Beret', 'Flat cap', 'Bandana', 'Visor', 'Sun hat', 'Top hat'];
+const TOPS = ['T-shirt', 'Hoodie', 'Zip jacket', 'Suit', 'Blouse', 'Sweater', 'Overalls', 'Lab coat', 'Rain coat', 'Tank top', 'Uniform', 'Scarf'];
+const BEARDS = ['none', 'beard', 'chin', 'mustache', 'goatee'];
+const EXTRAS = [['0_0', 'Freckles'], ['0_1', 'Blush'], ['0_2', 'Scar'], ['1_0', 'Smile lines'], ['1_1', 'Stubble']];
+const ACCS = [['0_0', 'Round glasses'], ['0_1', 'Square glasses'], ['0_2', 'Sunglasses'], ['0_3', 'Goggles'], ['1_0', 'Eyepatch'], ['1_1', 'Headband'],
+  ['1_2', 'Earrings'], ['1_3', 'Plaster'], ['2_0', 'Mask'], ['2_1', 'Earpiece'], ['2_2', 'Headphones'], ['2_3', 'Necklace']];
+const EYEWEAR = ['0_0', '0_1', '0_2', '0_3', '1_0'];
+
+const M = () => PORTRAIT_DATA[T].manifest;
+let ch = {
+  base: 'base_bodyB_0_1', skin: 'natural', hair: 'L4', hairColor: '#6b4423', eyes: 'lashes', iris: '#5b7d9a', brow: 'brow_0_0',
+  nose: 0, mouth: 'simple', beard: 'none', top: 'top00', topColor: '#2f5f8f', hat: 'none', hatColor: '#b23a3a',
+  extras: ['0_0'], acc: [], accColor: '#d0d6d8',
+};
+
+// ---------- pickers ----------
+function opts() {
+  const m = M();
+  return [
+    ['base', 'Head', Object.keys(m.bases), (v, i) => `${i < 6 ? 'Soft' : 'Clean'} ${(i % 6) + 1}`],
+    ['hair', 'Hair', ['none', ...m.hairShort.map((_, i) => 'S' + i), ...m.hairLong.map((_, i) => 'L' + i)],
+      (v) => v === 'none' ? 'None' : (v[0] === 'S' ? 'Short ' : 'Long ') + (+v.slice(1) + 1)],
+    ['eyes', 'Eyes', Object.keys(m.eyeStyles), (v) => m.eyeStyles[v].label],
+    ['brow', 'Brows', Object.keys(m.brows), (v, i) => 'Brows ' + (i + 1)],
+    ['nose', 'Nose', m.noses.map((_, i) => i), (v) => 'Nose ' + (v + 1)],
+    ['mouth', 'Mouth', Object.keys(m.mouthSets), (v) => m.mouthSets[v].label],
+    ['beard', 'Facial hair', BEARDS, (v) => v[0].toUpperCase() + v.slice(1)],
+    ['top', 'Top', ['none', ...m.tops], (v) => v === 'none' ? 'None' : TOPS[m.tops.indexOf(v)]],
+    ['hat', 'Hat', ['none', ...m.hats.map((_, i) => i)], (v) => v === 'none' ? 'None' : HATS[v]],
+  ];
+}
+const COLORS = { base: ['skin', SKINS], hair: ['hairColor', HAIRS], eyes: ['iris', IRIS], top: ['topColor', CLOTH], hat: ['hatColor', CLOTH] };
+
+function buildParts() {
+  const host = $('parts');
+  host.querySelectorAll('.picker, .tg').forEach((n) => n.remove());
+  for (const [key, label, list, name] of opts()) {
+    const row = document.createElement('div'); row.className = 'picker';
+    const id = 'pk-' + key;
+    row.innerHTML = `<label for="${id}">${label}</label><button aria-label="Previous ${label}">‹</button><div class="val" id="${id}" aria-live="polite"></div><button aria-label="Next ${label}">›</button>`;
+    const [prev, val, next] = [row.children[1], row.children[2], row.children[3]];
+    const show = () => { const i = Math.max(0, list.indexOf(ch[key])); val.textContent = name(list[i], i); };
+    const step = (d) => { const i = list.indexOf(ch[key]); ch[key] = list[(i + d + list.length) % list.length]; show(); changed(); };
+    prev.onclick = () => step(-1); next.onclick = () => step(1); show();
+    if (COLORS[key]) {
+      const [ck, pal] = COLORS[key];
+      const sw = document.createElement('div'); sw.className = 'swatches';
+      for (const c of pal) {
+        const b = document.createElement('button'); b.className = 'sw' + (c === 'natural' ? ' natural' : '');
+        if (c !== 'natural') b.style.background = c;
+        b.setAttribute('aria-label', `${label} colour ${c}`);
+        b.onclick = () => { ch[ck] = c; buildParts(); changed(); };
+        b.setAttribute('aria-pressed', String(ch[ck] === c)); sw.appendChild(b);
+      }
+      row.appendChild(document.createElement('span')); row.appendChild(sw);
+    }
+    host.appendChild(row);
+  }
+  const mk = (title, items, field, exclusive) => {
+    const wrap = document.createElement('div'); wrap.className = 'tg'; wrap.style.display = 'grid'; wrap.style.gap = '6px';
+    wrap.innerHTML = `<label class="note">${title}</label>`;
+    const t = document.createElement('div'); t.className = 'toggles';
+    for (const [k, l] of items) {
+      const b = document.createElement('button'); b.className = 'chip'; b.textContent = l;
+      b.setAttribute('aria-pressed', String(ch[field].includes(k)));
+      b.onclick = () => {
+        const on = ch[field].includes(k);
+        ch[field] = ch[field].filter((x) => x !== k && !(exclusive && !on && exclusive.includes(k) && exclusive.includes(x)));
+        if (!on) ch[field].push(k);
+        buildParts(); changed();
+      };
+      t.appendChild(b);
+    }
+    wrap.appendChild(t); host.appendChild(wrap);
+  };
+  mk('Face details', EXTRAS, 'extras');
+  mk('Accessories', ACCS, 'acc', EYEWEAR);
+  const sw = document.createElement('div'); sw.className = 'tg swatches'; sw.style.gridColumn = 'auto';
+  for (const c of CLOTH) {
+    const b = document.createElement('button'); b.className = 'sw'; b.style.background = c; b.setAttribute('aria-label', 'Accessory colour ' + c);
+    b.setAttribute('aria-pressed', String(ch.accColor === c)); b.onclick = () => { ch.accColor = c; buildParts(); changed(); }; sw.appendChild(b);
+  }
+  host.appendChild(sw);
+}
+
+// ---------- animation ----------
+// The body never moves. The head (and everything on it) is a rig: it is drawn as one layer and moved with
+// sub-pixel springs: idle sway, nods per word, a tilt for questions, and one-shot hits per expression.
+// Long hair hangs from the crown on a softer spring, so it swings a beat behind the head.
+const anim = { expr: 'idle', exprAt: 0, blinkAt: 2500, glanceAt: 6000, glance: null, typing: false, mouthFrame: null, mouthAt: 0,
+  tiltUntil: 0, look: null, lookAt: -1e9, last: 0 };
+const pose = { x: 0, y: 0, a: 0, vx: 0, vy: 0, va: 0 };       // the head (art px, degrees)
+const hairP = { a: 0, va: 0 };                                // extra swing of long hair around the crown
+const hits = [];                                              // decaying wobbles: {at, kind}
+function setExpr(e, now = performance.now()) {
+  if (anim.expr !== e) { const h = Portrait.EXPR[e].hit; if (h) hit(h, now); }
+  anim.expr = e; anim.exprAt = now; drawChips();
+}
+function hit(kind, now = performance.now()) {
+  if (reduce) return;
+  if (kind === 'jolt') { pose.vy -= 34; pose.va += 18 * (Math.random() < .5 ? -1 : 1); }
+  if (kind === 'bounce') { pose.vy -= 22; }
+  if (kind === 'recoil') { pose.vx -= 30; pose.va -= 60; }
+  if (kind === 'nod') { pose.vy += 9 + Math.random() * 6; pose.va += (Math.random() - .5) * 14; }
+  if (kind === 'bigNod') { pose.vy += 22; pose.va += (Math.random() - .5) * 20; }
+  if (kind === 'shake' || kind === 'recoil') hits.push({ at: now, kind });
+}
+function spring(p, v, target, k, damp, dt) {
+  const c = 2 * Math.sqrt(k) * damp;
+  return v + (k * (target - p) - c * v) * dt;
+}
+function stepPose(now) {
+  const dt = Math.min(0.05, (now - (anim.last || now)) / 1000); anim.last = now;
+  const E = Portrait.EXPR[anim.expr];
+  const t = now / 1000, m = reduce ? 0 : 1, sw = (E.sway ?? 1) * m * (anim.typing ? 1.5 : 1);
+  // where the head wants to be: the expression's pose, slow layered sines, the pointer, a glance, a question
+  let tx = E.pose[0] * m + sw * (0.35 * Math.sin(t * 0.63) + 0.15 * Math.sin(t * 1.7 + 1));
+  let ty = E.pose[1] * m + sw * 0.45 * Math.sin(t * 2 * Math.PI / 3.4);
+  let ta = E.pose[2] * m + sw * (1.3 * Math.sin(t * 0.81 + 2) + 0.5 * Math.sin(t * 2.3));
+  const look = now - anim.lookAt < 1800 ? anim.look : null;
+  if (look && m) { tx += look.x * 1.1; ty += look.y * 0.8; ta += look.x * 3; }
+  if (now < anim.tiltUntil && m) ta += 7;
+  pose.vx = spring(pose.x, pose.vx, tx, 70, 0.55, dt); pose.x += pose.vx * dt;
+  pose.vy = spring(pose.y, pose.vy, ty, 90, 0.5, dt); pose.y += pose.vy * dt;
+  pose.va = spring(pose.a, pose.va, ta, 60, 0.5, dt); pose.a += pose.va * dt;
+  // long hair lags: it is pulled toward minus the head's angular speed and springs back
+  hairP.va = spring(hairP.a, hairP.va, -pose.va * 0.06 * m, 28, 0.32, dt); hairP.a += hairP.va * dt;
+  // one-shot wobbles
+  let sx = 0, sa = 0;
+  for (let i = hits.length - 1; i >= 0; i--) {
+    const h = hits[i], s = (now - h.at) / 1000;
+    if (s > 0.8) { hits.splice(i, 1); continue; }
+    const env = Math.exp(-s / 0.18);
+    if (h.kind === 'shake') { sx += 1.3 * env * Math.sin(s * 2 * Math.PI * 11); sa += 2.5 * env * Math.sin(s * 2 * Math.PI * 11 + 1); }
+    if (h.kind === 'recoil') { sx += 0.9 * env * Math.sin(s * 2 * Math.PI * 14); }
+  }
+  return { x: pose.x + sx, y: pose.y, a: pose.a + sa, hair: hairP.a };
+}
+
+function frameState(now) {
+  const E = Portrait.EXPR[anim.expr];
+  const st = { eyes: E.eyes, mouth: E.mouth, browTilt: E.browTilt, browLift: E.browLift, blush: E.blush };
+  // blink (eyes that are already shut skip it)
+  if (now > anim.blinkAt) anim.blinkAt = now + 2600 + Math.random() * 2600;
+  if (!['closed', 'happy'].includes(st.eyes)) {
+    const ph = 200 - (anim.blinkAt - now);   // the 200 ms before blinkAt are the blink
+    if (ph >= 0 && ph < 200) st.eyes = ph < 50 || ph >= 150 ? 'half' : 'closed';
+  }
+  // eyes lead the head: a pointer look, or an idle glance (lashes set has the frames)
+  if (ch.eyes === 'lashes' && st.eyes === 'open' && ['idle', 'smug'].includes(anim.expr)) {
+    const look = now - anim.lookAt < 1800 ? anim.look : null;
+    if (look) st.eyes = Math.abs(look.x) > 0.45 ? (look.x < 0 ? 'lookL' : 'lookR') : look.y < -0.5 ? 'up' : look.y > 0.6 ? 'down' : 'open';
+    else {
+      if (now > anim.glanceAt) {
+        anim.glance = ['lookL', 'lookR', 'up', 'down'][Math.random() * 4 | 0]; anim.glanceUntil = now + 800; anim.glanceAt = now + 5000 + Math.random() * 4000;
+        const g = { lookL: [-1, 0], lookR: [1, 0], up: [0, -1], down: [0, 1] }[anim.glance];
+        anim.look = { x: g[0] * 0.6, y: g[1] * 0.6 }; anim.lookAt = now - 1000;   // the head follows the eyes briefly
+      }
+      if (now < anim.glanceUntil) st.eyes = anim.glance;
+    }
+  }
+  // talking mouth, about 8 frames a second; closed during punctuation pauses
+  if (anim.typing && !anim.pause) {
+    if (now - anim.mouthAt > 115) {
+      const talk = E.talk || ['talkA', 'talkB', 'talkC', 'closed'];
+      let f; do { f = talk[Math.random() * talk.length | 0]; } while (f === anim.mouthFrame && talk.length > 1);
+      anim.mouthFrame = f; anim.mouthAt = now;
+    }
+    st.mouth = anim.mouthFrame === 'closed' ? E.mouth : anim.mouthFrame;
+  }
+  return st;
+}
+
+const cv = $('cv'), ctx = cv.getContext('2d');
+const layers = { back: document.createElement('canvas'), body: document.createElement('canvas'), front: document.createElement('canvas') };
+let K = 4;  // device pixels per art pixel on the stage
+function fitCanvas() {
+  const avail = Math.min(cv.parentElement.clientWidth - 28, 384);
+  const z = zoom || Math.max(1, Math.floor(avail / T));
+  const dpr = Math.max(1, Math.round(window.devicePixelRatio || 1));
+  K = z * dpr;
+  cv.width = T * K; cv.height = T * K; cv.style.width = T * z + 'px'; cv.style.height = T * z + 'px';
+  for (const c of Object.values(layers)) { c.width = T; c.height = T; }
+  $('zoomBtn').textContent = (zoom ? zoom : 'auto ' + z) + '×';
+}
+function loop(now) {
+  if (loaded[T]) {
+    const st = frameState(now), p = stepPose(now), R = Portrait.rig(T, ch);
+    for (const [name, c] of Object.entries(layers)) Portrait.draw(c.getContext('2d'), T, ch, { ...st, only: name });
+    ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, cv.width, cv.height);
+    ctx.imageSmoothingEnabled = false;
+    const head = (img, extra) => {
+      ctx.save();
+      ctx.translate((R.cx + p.x) * K, (R.neckY + p.y) * K); ctx.rotate(p.a * Math.PI / 180); ctx.translate(-R.cx * K, -R.neckY * K);
+      if (extra) { ctx.translate(R.cx * K, R.crownY * K); ctx.rotate(extra * Math.PI / 180); ctx.translate(-R.cx * K, -R.crownY * K); }
+      ctx.drawImage(img, 0, 0, T * K, T * K);
+      ctx.restore();
+    };
+    head(layers.back, p.hair);
+    ctx.drawImage(layers.body, 0, 0, T * K, T * K);
+    head(layers.front);
+  }
+  requestAnimationFrame(loop);
+}
+// the head turns toward a finger or pointer over the stage
+const stageEl = document.querySelector('.stage');
+stageEl.addEventListener('pointermove', (e) => {
+  const r = cv.getBoundingClientRect();
+  const x = ((e.clientX - r.left) / r.width - 0.5) * 2, y = ((e.clientY - r.top) / r.height - 0.45) * 2;
+  anim.look = { x: Math.max(-1, Math.min(1, x)), y: Math.max(-1, Math.min(1, y)) }; anim.lookAt = performance.now();
+});
+
+// ---------- dialogue ----------
+const SCRIPT = [
+  '[happy] Morning! You must be the new rancher. I am Juniper, I run the post office.',
+  '[surprised] Is that a Billie in your bag? They never sit still for anyone!',
+  '[smug] Lucky for you, I know a thing or two about taming them.',
+  '[sad] Mine ran off last week. It took my good pen with it.',
+  '[angry] If I catch it near the cannery again...',
+  '[hurt] Ow! Bit my tongue. [idle] Anyway, welcome to Marigold.',
+];
+let si = 0, typer = null;
+function say(raw) {
+  clearInterval(typer);
+  const segs = []; const re = /\[(\w+)\]/g; let last = 0, m, tag = null;
+  while ((m = re.exec(raw))) { if (m.index > last) segs.push([tag, raw.slice(last, m.index)]); tag = m[1]; last = re.lastIndex; }
+  segs.push([tag, raw.slice(last)]);
+  const out = $('txt'); out.textContent = '';
+  let s = 0, c = 0;
+  if (segs[0][0] && Portrait.EXPR[segs[0][0]]) setExpr(segs[0][0]);
+  anim.typing = true;
+  let wait = 0; anim.pause = false;
+  typer = setInterval(() => {
+    if (wait > 0) { if (--wait === 0) anim.pause = false; return; }
+    const seg = segs[s];
+    if (!seg) { clearInterval(typer); anim.typing = false; return; }
+    if (c === 0 && seg[0] && Portrait.EXPR[seg[0]]) setExpr(seg[0]);
+    const chs = seg[1][c++];
+    if (chs === undefined) { s++; c = 0; return; }
+    out.textContent += chs;
+    // every few words get a small nod; "!" a bigger one; "?" tilts the head; punctuation pauses with the mouth shut
+    if (chs !== ' ' && (c === 1 || seg[1][c - 2] === ' ') && Math.random() < 0.55) hit('nod');
+    if (chs === '!') hit('bigNod');
+    if (chs === '?') anim.tiltUntil = performance.now() + 900;
+    if (/[.!?,]/.test(chs)) { anim.pause = true; wait = chs === ',' ? 5 : 9; }
+  }, 32);
+}
+$('dlg').onclick = () => { if (anim.typing) return; si = (si + 1) % SCRIPT.length; say(SCRIPT[si]); };
+$('dlg').onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('dlg').click(); } };
+$('sayBtn').onclick = () => say($('line').value);
+$('line').onkeydown = (e) => { if (e.key === 'Enter') say($('line').value); };
+
+// ---------- expression chips + sheet ----------
+function drawChips() {
+  const host = $('exprs'); host.innerHTML = '';
+  for (const e of Object.keys(Portrait.EXPR)) {
+    const b = document.createElement('button'); b.className = 'chip'; b.textContent = e;
+    b.setAttribute('aria-pressed', String(anim.expr === e)); b.onclick = () => setExpr(e); host.appendChild(b);
+  }
+}
+function drawSheet() {
+  const host = $('sheet'); host.innerHTML = '';
+  const z = T === 64 ? 1 : 1;
+  for (const e of Object.keys(Portrait.EXPR)) {
+    const E = Portrait.EXPR[e];
+    const f = document.createElement('figure'); const c = document.createElement('canvas');
+    c.width = T; c.height = T; c.style.width = (T === 64 ? 128 : 96) * z + 'px';
+    Portrait.draw(c.getContext('2d'), T, ch, { eyes: E.eyes, mouth: E.mouth, browTilt: E.browTilt, browLift: E.browLift, blush: E.blush });
+    const cap = document.createElement('figcaption'); cap.textContent = e;
+    f.append(c, cap); host.appendChild(f);
+  }
+}
+
+function changed() {
+  $('json').value = JSON.stringify({ size: T, ...ch }, null, 1);
+  drawSheet();
+}
+
+async function setSize(t) {
+  T = t; $('sz64').setAttribute('aria-pressed', String(t === 64)); $('sz96').setAttribute('aria-pressed', String(t === 96));
+  if (!loaded[t]) { await Portrait.loadSize(t); loaded[t] = true; }
+  fitCanvas(); buildParts(); changed();
+}
+$('sz64').onclick = () => setSize(64); $('sz96').onclick = () => setSize(96);
+$('zoomBtn').onclick = () => { zoom = zoom >= 6 ? 0 : (zoom || 1) + 1; fitCanvas(); };
+$('rmBtn').onclick = () => { reduce = !reduce; $('rmBtn').setAttribute('aria-pressed', String(reduce)); };
+$('rmBtn').setAttribute('aria-pressed', String(reduce));
+const pick = (a) => a[Math.random() * a.length | 0];
+function randomize() {
+  const m = M();
+  ch.base = pick(Object.keys(m.bases)); ch.skin = pick(SKINS); ch.hairColor = pick(HAIRS); ch.iris = pick(IRIS);
+  ch.hair = pick(['none', ...m.hairShort.map((_, i) => 'S' + i), ...m.hairLong.map((_, i) => 'L' + i)].concat(m.hairShort.map((_, i) => 'S' + i)));
+  ch.eyes = pick(Object.keys(m.eyeStyles)); ch.brow = pick(Object.keys(m.brows)); ch.nose = Math.random() * m.noses.length | 0;
+  ch.mouth = pick(Object.keys(m.mouthSets)); ch.beard = Math.random() < .25 ? pick(BEARDS.slice(1)) : 'none';
+  ch.top = pick(m.tops); ch.topColor = pick(CLOTH); ch.hat = Math.random() < .35 ? Math.random() * m.hats.length | 0 : 'none'; ch.hatColor = pick(CLOTH);
+  ch.extras = EXTRAS.filter(() => Math.random() < .15).map((x) => x[0]);
+  ch.acc = []; if (Math.random() < .3) ch.acc.push(pick(EYEWEAR)); if (Math.random() < .2) ch.acc.push(pick(['1_2', '2_2', '2_3', '1_3']));
+  ch.accColor = pick(CLOTH);
+  buildParts(); changed();
+}
+$('rand').onclick = randomize;
+$('copy').onclick = () => {
+  const t = $('json').value;
+  navigator.clipboard.writeText(t).then(() => { $('copied').textContent = 'Copied'; }, () => { $('json').select(); $('copied').textContent = 'Selected, press copy'; });
+};
+addEventListener('resize', fitCanvas);
+window.PB = { Portrait, get ch() { return ch; }, set ch(v) { ch = v; buildParts(); changed(); }, setSize, setExpr, say };
+
+drawChips();
+setSize(64).then(() => { requestAnimationFrame(loop); say(SCRIPT[0]); });
+})();
+</script>

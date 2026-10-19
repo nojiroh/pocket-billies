@@ -151,6 +151,8 @@ export default [
       'validation/',
       'game/data/',
       'game/art/',
+      // phase 07: the portrait prototype, kept for reference (tools/art-source/portrait-kit/prototype)
+      'tools/art-source/',
       // phase 06: Lit, bundled by tools/vendor-lit.mjs
       'game/vendor/',
       'firebase/',

@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>UI gallery · Pocket Billies Studio</title>
+<link rel="icon" href="../game/art/app/icon-192.png">
+<!-- phase 06-4: every piece of the game's UI in its states, from the game's own styles (no game data, no 3D). The
+     markup copies what js/unit-card.js, js/talk.js, js/cutscene.js and opening-fall.js build; change both together. -->
+<link rel="stylesheet" href="../game/css/loader.css">
+<link rel="stylesheet" href="../game/css/style.css">
+<link rel="stylesheet" href="../game/css/battle.css">
+<link rel="stylesheet" href="../game/css/polish.css">
+<link rel="stylesheet" href="../game/css/screens.css">
+<link rel="stylesheet" href="../game/css/v05.css">
+<link rel="stylesheet" href="../game/css/tokens.css">
+<link rel="stylesheet" href="../game/css/motion.css">
+<link rel="stylesheet" href="../game/css/ui-kit.css">
+<link rel="stylesheet" href="../game/css/units.css">
+<link rel="stylesheet" href="../game/css/opening.css">
+<link rel="stylesheet" href="../game/css/battle-ui.css">
+<link rel="stylesheet" href="../game/css/dialogue.css">
+<link rel="stylesheet" href="../game/css/menus.css">
+<style>
+  body { margin: 0; padding: 0 0 80px; background: var(--bg); color: var(--text); }
+  .g-bar { position: sticky; top: 0; z-index: 70; display: flex; flex-wrap: wrap; gap: var(--s2); align-items: center;
+    padding: var(--s3) var(--gutter); background: var(--g-solid); box-shadow: var(--g-sh); }
+  .g-bar h1 { margin: 0 auto 0 0; font: 700 18px/1 var(--font-voice); }
+  .g-bar button { min-height: 36px; padding: 0 var(--s3); border: 0; border-radius: var(--r-pill); background: var(--g-bg2);
+    color: var(--text); font: 600 13px/1 var(--font-voice); cursor: pointer; }
+  .g-bar button[aria-pressed='true'] { background: linear-gradient(180deg, var(--gold-a), var(--gold-b)); color: #3a2408; }
+  .g-wrap { margin: 0 auto; padding: 0 var(--gutter); max-width: var(--g-w, 390px); }
+  .g-sec { margin-top: var(--s6); }
+  .g-sec > h2 { margin: 0 0 var(--s3); font: 700 var(--fs-title)/1.2 var(--font-voice); }
+  .g-sec > p { margin: 0 0 var(--s3); font: 500 var(--fs-caption)/1.4 var(--font-prose); color: var(--text2); }
+  .g-row { display: flex; flex-wrap: wrap; gap: var(--s2); align-items: center; }
+  .g-stack { display: grid; gap: var(--s3); }
+  .g-sw { display: grid; place-items: center; min-width: 44px; height: 44px; border-radius: var(--r-sm); background: var(--g-bg2);
+    font: 600 11px/1 var(--font-voice); }
+  .g-sprite { display: block; width: 44px; height: 44px; border-radius: 50%; background: color-mix(in srgb, var(--c1) 40%, var(--g-solid)); }
+  .g-local { position: relative !important; inset: auto !important; transform: none !important; left: auto !important; bottom: auto !important; }
+  .g-dark { padding: var(--s4); border-radius: var(--r-lg); background: #241c3a; }
+</style>
+</head>
+<body>
+<div class="g-bar">
+  <h1>UI gallery</h1>
+  <button data-g="theme" data-v="light" aria-pressed="true">Light</button><button data-g="theme" data-v="dark" aria-pressed="false">Dark</button>
+  <button data-g="w" data-v="320px" aria-pressed="false">320</button><button data-g="w" data-v="390px" aria-pressed="true">390</button><button data-g="w" data-v="760px" aria-pressed="false">Wide</button>
+  <button data-g="motion" data-v="reduced" aria-pressed="false">Reduced motion</button>
+</div>
+<main class="g-wrap">
+
+<section class="g-sec"><h2>Tokens</h2><p>Space (--s1 to --s7), corners, type. Change them in game/css/tokens.css.</p>
+  <div class="g-row"><span class="g-sw" style="width:4px;min-width:4px"></span><span class="g-sw" style="min-width:8px;width:8px"></span><span class="g-sw" style="min-width:12px;width:12px"></span><span class="g-sw">16</span><span class="g-sw" style="min-width:24px">24</span><span class="g-sw" style="min-width:32px">32</span><span class="g-sw" style="min-width:48px">48</span></div>
+  <div class="g-row" style="margin-top:var(--s3)"><span class="g-sw" style="border-radius:var(--r-sm)">sm</span><span class="g-sw" style="border-radius:var(--r-md)">md</span><span class="g-sw" style="border-radius:var(--r-lg)">lg</span><span class="g-sw" style="border-radius:var(--r-pill);min-width:72px">pill</span></div>
+  <p style="margin-top:var(--s3);font:700 var(--fs-screen)/1 var(--font-voice);color:var(--text)">Screen title</p>
+  <p class="prose" style="color:var(--text)">Long text is in the reading font: descriptions, dialogue, the Guide and help. Names, headings, buttons and numbers stay in the pixel font.</p>
+</section>
+
+<section class="g-sec"><h2>Buttons</h2><p>pb-button (new code) and .pb (older screens). Tap one: it presses in.</p>
+  <div class="g-row"><pb-button kind="gold">Choose Kidling</pb-button><pb-button kind="dark">Bag</pb-button><pb-button>Plain</pb-button><pb-button kind="quiet">Not yet</pb-button><pb-button disabled>Locked</pb-button></div>
+  <div class="g-row" style="margin-top:var(--s3)"><button class="pb gold">Gold</button><button class="pb dark">Dark</button><button class="pb">Plain</button><button class="pb quiet">Quiet</button><button class="pb small">Small</button><button class="pb" disabled>Disabled</button></div>
+</section>
+
+<section class="g-sec"><h2>Pills and tags</h2>
+  <div class="g-row"><span class="chip" style="--tc:#E0603A;--tf:#fff">Fire</span><span class="chip" style="--tc:#3A86D6;--tf:#fff">Water</span><span class="chip" style="--tc:#4E9E42;--tf:#fff">Grass</span><pb-pill tone="#7d52c2">Psychic</pb-pill><pb-pill>Prime</pb-pill></div>
+  <div class="g-row" style="margin-top:var(--s3)"><span class="u-tag lead">Lead</span><span class="u-tag bud">♥ Buddy</span><span class="u-tag gold">Golden</span><span class="u-tag prime">Prime</span><span class="u-brk">Broken</span><span class="u-brk dmg">Damaged</span></div>
+</section>
+
+<section class="g-sec"><h2>Panels</h2>
+  <div class="g-stack"><pb-panel>Raised: cards on a screen.</pb-panel><pb-panel depth="float">Floating: sheets, the bottom bar.</pb-panel><pb-panel depth="flat">Flat: inside another panel.</pb-panel></div>
+</section>
+
+<section class="g-sec"><h2>Messages</h2><p>A toast (the same message again adds a count), the inbox dot, a rising number.</p>
+  <div class="g-stack">
+    <pb-toast class="g-local" id="gToast"></pb-toast>
+    <div class="g-row"><button class="pb small" id="gToastMore">Same message again</button><span style="position:relative;width:60px;height:44px;display:inline-block"><button class="tb-inbox" style="left:0;top:0"><b>3</b></button></span><button class="pb small" id="gFloat">+$120</button></div>
+  </div>
+</section>
+
+<section class="g-sec"><h2>Team rows</h2><p>js/unit-card.js unitRowHTML: normal, a long name, low HP, fainted, Prime; the open spots.</p>
+  <div class="u-list">
+    <button class="u-row" style="--c1:#E0603A;--c2:#E0603A"><span class="u-spr"><i class="g-sprite"></i></span><span class="u-mid"><span class="u-head"><b>Emberox</b><span class="u-lv tnum">Lv 30</span></span><span class="u-types"><span class="chip" style="--tc:#E0603A;--tf:#fff">Fire</span><span class="u-tag prime">Prime</span></span></span><span class="u-right"><span class="u-hp"><i style="width:100%"></i></span><span class="u-hpn tnum">77/77</span></span></button>
+    <button class="u-row" style="--c1:#7fb2f5;--c2:#f2c14e"><span class="u-spr"><i class="g-sprite"></i></span><span class="u-mid"><span class="u-head"><b>Ember Bulwark the Unbreakable</b><span class="u-lv tnum">Lv 48</span></span><span class="u-types"><span class="chip" style="--tc:#8a8fa6;--tf:#fff">Steel</span><span class="chip" style="--tc:#b9854a;--tf:#fff">Ground</span></span></span><span class="u-right"><span class="u-hp mid"><i style="width:42%"></i></span><span class="u-hpn tnum">62/147</span></span></button>
+    <button class="u-row" style="--c1:#4E9E42;--c2:#4E9E42"><span class="u-spr"><i class="g-sprite"></i></span><span class="u-mid"><span class="u-head"><b>Kidling</b><span class="u-lv tnum">Lv 5</span></span><span class="u-types"><span class="chip" style="--tc:#4E9E42;--tf:#fff">Grass</span></span></span><span class="u-right"><span class="u-hp low"><i style="width:12%"></i></span><span class="u-hpn tnum">3/24</span></span></button>
+    <button class="u-row down" style="--c1:#3A86D6;--c2:#3A86D6"><span class="u-spr"><i class="g-sprite"></i></span><span class="u-mid"><span class="u-head"><b>Cartotter</b><span class="u-lv tnum">Lv 12</span></span><span class="u-types"><span class="chip" style="--tc:#3A86D6;--tf:#fff">Water</span></span></span><span class="u-right"><span class="u-hp low"><i style="width:0%"></i></span><span class="u-hpn tnum">0/38</span></span></button>
+    <div class="u-row u-open"><span class="u-plus">+</span><span class="u-mid"><b>2 open spots</b><span class="u-note">Bring someone back from storage.</span></span><button class="pb small">Add</button></div>
+  </div>
+</section>
+
+<section class="g-sec"><h2>Build tab</h2><p>A Billie's parts on S·M·L dials and its balance; a robot's slots and the weight its legs carry.</p>
+  <div class="g-stack">
+    <div class="u-build"><div class="u-build-h"><b>Build</b><span class="tnum">80 kg · Medium</span></div>
+      <ul class="u-slots"><li><span class="u-slot-n">Head</span><span class="u-dial"><span>S</span><span>M</span><span class="on off-size">L</span></span></li><li><span class="u-slot-n">Body</span><span class="u-dial"><span>S</span><span class="on">M</span><span>L</span></span></li><li><span class="u-slot-n">Back</span><span class="u-dial"><span class="on off-size">S</span><span>M</span><span>L</span></span></li></ul>
+      <div class="u-bal"><span class="u-bal-k">Speed</span><span class="u-bal-track"><i style="left:66%"></i></span><span class="u-bal-k">Attack</span><span class="u-bal-n tnum dn">−8%</span><span></span><span class="u-bal-n tnum r up">+7%</span></div>
+      <p class="u-prime">Not Prime: 2 parts off normal size. Bigger parts hit harder but slow it down.</p></div>
+    <div class="u-build"><ul class="u-slots u-bot-slots"><li><span class="u-slot-n">Left arm</span><span class="u-part"><b>Tesla Coil</b><span class="u-part-m"><span class="chip" style="--tc:#e0b030;--tf:#3a2408">Electric</span><span>Arc Whip</span><span class="u-brk">Broken</span></span></span></li><li><span class="u-slot-n">Legs</span><span class="u-part"><b>Strider Legs</b><span class="u-part-m"><span class="chip" style="--tc:#e0b030;--tf:#3a2408">Electric</span><span>Dash Kick</span><span class="u-brk dmg">Damaged</span></span></span></li></ul>
+      <div class="u-carry"><div class="u-carry-h"><b>Weight</b><span class="tnum">120 kg · legs carry 100 kg</span></div><span class="u-carry-track"><i class="u-carry-cap" style="left:66.7%"></i><i class="u-carry-at over" style="left:80%"></i></span><div class="u-carry-n"><span class="tnum dn">Speed −12%</span><span class="tnum up">Attack +9%</span></div></div></div>
+  </div>
+</section>
+
+<section class="g-sec"><h2>Dialogue box</h2><p>The 96 px slot holds a 64 px portrait at 1.5×, drawn in whole device pixels (js/talk.js).</p>
+  <div class="talk-box g-local" style="width:100%;position:relative"><span class="talk-slot"></span><div class="talk-txt"><p class="talk-who">Professor Hazel</p><p class="talk-line">You came down through the crust. Things do, now and then. Mostly furniture.</p></div><span class="talk-more" style="opacity:.8">▼</span></div>
+</section>
+
+<section class="g-sec"><h2>Battle cards</h2><p>In the 3D scene they float under the one choosing; here they sit still.</p>
+  <div class="battle ui3d" style="position:relative;inset:auto;height:auto;background:none"><div class="dock" style="position:relative;inset:auto;display:grid;gap:8px;pointer-events:auto">
+    <button class="bmsg g-local" id="msg" style="position:relative;width:100%">What will Zorblax do?</button>
+    <div class="cmd g-local" id="acts" style="position:relative;width:100%"><div class="c-choose"><div class="moves">
+      <button class="mv" style="--tc:#E0603A;--tf:#fff"><span class="mv-top"><b>Inferno</b><kbd>1</kbd></span><span class="mv-meta"><span class="mv-ty">Fire ★</span><span class="tnum">120 pow · 85%</span></span></button>
+      <button class="mv" style="--tc:#7fb2f5;--tf:#fff"><span class="mv-top"><b>Cyclone</b><kbd>2</kbd></span><span class="mv-meta"><span class="mv-ty">Flying</span><span class="tnum">110 pow</span></span></button>
+      <button class="mv" style="--tc:#E0603A;--tf:#fff"><span class="mv-top"><b>Blaze Charge</b><kbd>3</kbd></span><span class="mv-meta"><span class="mv-ty">Fire ★</span><span class="tnum">100 pow</span></span></button>
+      <button class="mv off" disabled style="--tc:#7d52c2;--tf:#fff"><span class="mv-top"><b>Drake Dive</b><kbd>4</kbd></span><span class="mv-meta"><span class="mv-ty">Part broken</span></span></button>
+    </div><div class="bt-row"><button class="bt coin"><b>Tax it</b><small>5 left</small></button><button class="bt items"><b>Bag</b><small>2</small></button><button class="bt team"><b>Team</b><small>2/2</small></button><button class="bt run"><b>Run</b><small>Walk away</small></button></div></div></div>
+  </div></div>
+</section>
+
+<section class="g-sec"><h2>Starter pick</h2>
+  <div class="cs" style="position:relative;inset:auto;z-index:auto;cursor:default"><div class="cs-pick g-local" style="width:100%;position:relative;animation:none"><div class="pk-top"><button class="pk-arrow">‹</button><div class="pk-name"><b>Cartotter</b><span class="pk-types"><span class="chip" style="--tc:#3A86D6;--tf:#fff">Water</span></span></div><button class="pk-arrow">›</button></div><div class="pk-dots"><i></i><i class="on"></i><i></i></div><p class="pk-blurb">A river otter that carries everything it owns in one cardboard box.</p><div class="pk-match"><div><span class="pk-k">Strong against</span><span class="pk-ts"><span class="chip" style="--tc:#E0603A;--tf:#fff">Fire</span></span></div><div><span class="pk-k">Weak to</span><span class="pk-ts"><span class="chip" style="--tc:#4E9E42;--tf:#fff">Grass</span></span></div></div><p class="pk-note">Tap Professor Hazel for her (biased) opinion.</p><button class="pb gold wide pk-go">Choose Cartotter</button></div></div>
+</section>
+
+<section class="g-sec"><h2>Hazel's HOT TIP</h2>
+  <div class="btip hot on g-local" style="position:relative;display:grid;place-items:center;padding:var(--s6) 0;border-radius:var(--r-lg)"><div class="btip-card"><span class="btip-hot">HOT TIP!</span><span class="btip-face"></span><span class="btip-t"><b>Professor Hazel</b>Grass beats Fire. Trust me, I’m a doctor.</span><small class="btip-dismiss">Tap anywhere to close</small></div></div>
+</section>
+
+<section class="g-sec"><h2>Sheet</h2><p>Every sheet floats clear of the edges. Drag the handle down or press Escape to close.</p>
+  <pb-button kind="gold" id="gSheetBtn">Open a sheet</pb-button>
+  <pb-sheet id="gSheet" heading="Emberox is evolving"><p class="prose">It just reached level 16. Something bigger is coming.</p><pb-button kind="gold" wide>Let it evolve</pb-button></pb-sheet>
+</section>
+
+<section class="g-sec"><h2>Motion</h2><p>The eight motions (game/css/motion.css). With reduced motion on they fade.</p>
+  <div class="g-row"><button class="pb small" data-m="m-enter">enter</button><button class="pb small" data-m="m-pop">pop</button><button class="pb small" data-m="m-nudge">nudge</button><button class="pb small" data-m="m-count">count</button><button class="pb small m-press">press (tap me)</button></div>
+  <div style="margin-top:var(--s3)"><pb-panel id="gMotion">Watch me.</pb-panel></div>
+</section>
+
+</main>
+<script src="../game/vendor/lit.js"></script>
+<script type="module" src="gallery.js"></script>
+</body>
+</html>
