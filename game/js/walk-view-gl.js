@@ -701,6 +701,7 @@ setNavGrid(function () {
   const { N, gw, gh, blk } = n;
   for (let j = 0; j < gh; j++)
     for (let i = 0; i < gw; i++) {
+      if (blk[j * gw + i]) continue; /* (already blocked: in a room, all of the place outside it) */
       const x = (i + 0.5) / N,
         z = (j + 0.5) / N,
         e = 0.3,
