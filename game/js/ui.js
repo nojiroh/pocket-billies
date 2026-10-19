@@ -186,6 +186,7 @@ import { postcardCheck, renderPostcards } from './postcards.js';
 import { renderBag } from './bag.js';
 import { friendsHTML } from './friends.js';
 import { legendCheck, personTalk, storyCheck, storyMovedCheck, storyRivalBattle, trainerTalk } from './story.js';
+import { storyResumeCheck } from './story-stage.js';
 import {
   arrivedAt,
   challengeCardHTML,
@@ -1371,6 +1372,7 @@ function exitPrompt(e) {
 }
 setInterval(() => {
   try {
+    if (typeof storyResumeCheck === 'function') storyResumeCheck();
     if (typeof storyCheck === 'function') storyCheck();
     if (typeof legendCheck === 'function') legendCheck();
     if (typeof storyMovedCheck === 'function') storyMovedCheck();

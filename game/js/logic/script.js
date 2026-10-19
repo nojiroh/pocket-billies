@@ -15,7 +15,8 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { saveData } from '../hooks.js';
-import { STORY_DATA, warnData } from '../game-data.js';
+import { LOCATIONS, STORY_DATA, TRAINERS, warnData } from '../game-data.js';
+import { makeBilly } from './rules.js';
 import { conditionHolds, conditionProblem, conditionTree, didYouMean, storyStateOf } from './conditions.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -23,12 +24,18 @@ expose({
   KEYWORDS: [() => KEYWORDS],
   SCRIPT_COMMANDS: [() => SCRIPT_COMMANDS],
   // @ts-expect-error -- replaced on purpose
+  applyStoryPreset: [() => applyStoryPreset, v => (applyStoryPreset = v)],
+  // @ts-expect-error -- replaced on purpose
   checkedCondition: [() => checkedCondition, v => (checkedCondition = v)],
   flagWarned: [() => flagWarned],
   // @ts-expect-error -- replaced on purpose
   parseScript: [() => parseScript, v => (parseScript = v)],
   // @ts-expect-error -- replaced on purpose
+  runBase: [() => runBase, v => (runBase = v)],
+  // @ts-expect-error -- replaced on purpose
   runScript: [() => runScript, v => (runScript = v)],
+  // @ts-expect-error -- replaced on purpose
+  saveDuringRun: [() => saveDuringRun, v => (saveDuringRun = v)],
   // @ts-expect-error -- replaced on purpose
   sayLine: [() => sayLine, v => (sayLine = v)],
   // @ts-expect-error -- replaced on purpose
@@ -61,7 +68,7 @@ export const SCRIPT_COMMANDS = {
   quest: { args: ['id', 'stage'], about: 'move a quest to a stage' },
   battle: { args: ['trainer'], checkpoint: true, about: 'battle a trainer; the script goes on after it' },
   heal: { args: [], about: 'heal the team' },
-  walk: { args: ['who', 'x', 'z', 'ms?'], about: 'walk someone to a spot in the scene' },
+  walk: { args: ['who', '...'], about: 'walk someone somewhere in the scene (where: S2)' },
   face: { args: ['who', 'dir'], about: 'turn someone (up, down, side, sideR, or toward someone)' },
   camera: { args: ['...'], about: 'move the camera (a named shot, or follow / back)' },
   wait: { args: ['s'], about: 'wait, in seconds' },
@@ -223,7 +230,7 @@ export function parseScript(lines) {
     spec.forEach((a, i) => {
       const v = args[i],
         b = a.replace('?', '');
-      if (v != null && ['n', 's', 'x', 'z', 'ms'].includes(b) && !/^-?\d+(\.\d+)?$/.test(v))
+      if (v != null && ['n', 's'].includes(b) && !/^-?\d+(\.\d+)?$/.test(v))
         throw scriptError(`"${name}": ${b} is a number, not "${v}"`, line);
     });
     return { k: 'cmd', line, name, args };
@@ -413,4 +420,53 @@ export function setStoryFlag(k, v = 1) {
     warnData(`story flag ${k} is not in story.json`);
   }
   (saveData.story || (saveData.story = {}))[k] = v;
+}
+
+/* ---------- safe runs ----------
+   A script changes the save as it runs, but a save taken halfway through stores the story, items, coins and trainers
+   beaten as they were when it started (or at its last checkpoint), with `resume` saying which script to play again
+   on Continue and from where. */
+/** what JSON.stringify(save) writes while a script runs @param {any} save
+ * @param {{ story: any, items: any, coins: any, flags: any }} base @param {{ script: string, path: number[] | null }} at */
+export function saveDuringRun(save, base, at) {
+  return { ...save, ...base, story: { ...base.story, resume: at } };
+}
+/** the parts of a save a safe run keeps aside, copied @param {any} save */
+export function runBase(save) {
+  return JSON.parse(
+    JSON.stringify({
+      story: save.story || {},
+      items: save.items || {},
+      coins: save.coins || {},
+      flags: save.flags || {},
+    })
+  );
+}
+
+/* ---------- start presets (story.json presets, ?story=<preset> in a test run) ---------- */
+/** puts a started save at a point in the story: the place, story flags, trainers beaten (a leader's badge with them),
+ * coins, items and the team; returns the preset, or null if there is none by that name
+ * @param {any} save @param {string} name */
+export function applyStoryPreset(save, name) {
+  const P = ((STORY_DATA || {}).presets || {})[name];
+  if (!P) return null;
+  const node = LOCATIONS.findIndex(r => r.id === P.place);
+  if (node >= 0) {
+    save.trip = { node, plan: [] };
+    save.visited[node] = 1;
+    save.mapSeen = null;
+  }
+  save.story = Object.assign({}, save.story, P.flags || {});
+  for (const id of P.beaten || []) {
+    const T = TRAINERS[id];
+    if (!T) continue;
+    save.flags[id] = 1;
+    if (T.seat && !save.seats.includes(T.seat.id)) save.seats.push(T.seat.id);
+  }
+  Object.assign(save.coins, P.coins || {});
+  Object.assign(save.items, P.items || {});
+  save.team = P.team.map((/** @type {{ sp: string, lvl: number }} */ m) => makeBilly(m.sp, m.lvl));
+  save.buddy = save.team[0].uid;
+  for (const m of save.team) save.caught[m.sp] = save.seen[m.sp] = 1;
+  return P;
 }

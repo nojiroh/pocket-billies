@@ -8,6 +8,7 @@ import { expose } from './test-globals.js';
 import { provide } from './hooks.js';
 import { TEST_BOOT } from './test-boot.js';
 import { DATA_WARN, RULES, SPECIES, START_NODE, gameData } from './game-data.js';
+import { applyStoryPreset } from './logic/script.js';
 import { SAVE_NEW_MSG, SAVE_OLD_MSG, newSave } from './logic/saves.js';
 import { battleStageKey } from './logic/battle-engine.js';
 import { loadAllMaps, loadMapsAhead, watchMapsAhead } from './map-files.js';
@@ -748,11 +749,12 @@ function loaderHide() {
 }
 /* v29: Pocket Billies Studio and an open game tab. A test run (?test=1&scene=<id>) is a throwaway game that starts in that
    scene and never touches your save; while the Studio is open, its edits to scenes, props and the engine reach the
-   game as you make them (no saving needed to see them). */
+   game as you make them (no saving needed to see them). Project Story: ?story=<preset> is a test run that starts at a
+   point in the story (story.json presets), alone or with ?test=1. */
 const TEST_RUN = (() => {
   try {
     const q = new URLSearchParams(location.search);
-    return q.get('test') ? { scene: q.get('scene') } : null;
+    return q.get('test') || q.get('story') ? { scene: q.get('scene'), story: q.get('story') } : null;
   } catch (e) {
     return null;
   }
@@ -770,11 +772,15 @@ function studioTestStart() {
   uiState.modal = null;
   uiState.mq = [];
   renderOverlay();
+  /* a preset says which story flags hold, from none */
+  if (TEST_RUN.story) saveData.story = {};
+  const preset = TEST_RUN.story ? applyStoryPreset(saveData, TEST_RUN.story) : null;
+  if (TEST_RUN.story && !preset) toast(`No story preset “${TEST_RUN.story}” (story.json presets).`);
   if (TEST_RUN.scene && mapById(TEST_RUN.scene)) uiState.bench = { id: TEST_RUN.scene };
   uiState.tab = 'walk';
   render();
   toast(
-    `Test run${TEST_RUN.scene && mapById(TEST_RUN.scene) ? ' of ' + (mapById(TEST_RUN.scene).name || TEST_RUN.scene) : ''}. Nothing here is saved.`
+    `Test run${preset ? ' at ' + TEST_RUN.story : ''}${TEST_RUN.scene && mapById(TEST_RUN.scene) ? ' of ' + (mapById(TEST_RUN.scene).name || TEST_RUN.scene) : ''}. Nothing here is saved.`
   );
 }
 function studioLive(D) {
