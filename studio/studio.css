@@ -1205,6 +1205,37 @@ canvas.spr-prev.big {
   vector-effect: non-scaling-stroke;
   stroke-dasharray: 4 3;
 }
+.dlg.keys-dlg {
+  width: min(1180px, 94vw);
+  max-width: none;
+}
+.keys-sheet {
+  columns: 3 320px;
+  column-gap: 28px;
+}
+.keys-sheet section {
+  break-inside: avoid;
+  margin-bottom: 14px;
+}
+.keys-sheet h3 {
+  margin: 0 0 6px;
+  font-size: 14px;
+}
+table.keys {
+  border-collapse: collapse;
+  font-size: 13px;
+}
+table.keys th {
+  text-align: left;
+  font-weight: 400;
+  white-space: nowrap;
+  padding: 3px 12px 3px 0;
+  vertical-align: top;
+}
+table.keys td {
+  padding: 3px 0;
+  color: var(--text2);
+}
 .pc-axis {
   stroke: #d0347c;
   stroke-width: 1.5;

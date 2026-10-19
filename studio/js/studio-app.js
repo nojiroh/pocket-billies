@@ -501,7 +501,7 @@ export function renderSide() {
               .join('')
       }</div>`;
     }).join('') +
-    `<div class="side-foot"><small><kbd>Ctrl K</kbd> finds any setting · <kbd>Ctrl L</kbd> shows connections · <kbd>Ctrl S</kbd> saves.<br>Saves go to <code>game/data</code> and <code>game/art</code>, with backups in <code>backups/</code>.</small></div>`;
+    `<div class="side-foot"><small><kbd>Ctrl K</kbd> finds any setting · <kbd>Ctrl L</kbd> shows connections · <kbd>Ctrl S</kbd> saves · <kbd>?</kbd> lists the keys.<br>Saves go to <code>game/data</code> and <code>game/art</code>, with backups in <code>backups/</code>.</small></div>`;
 }
 /* studio track ST-1: the second pane shows any section but the four with a 3D view (they share one) and the one in
    the first pane (its ids would clash); why not, or '' */

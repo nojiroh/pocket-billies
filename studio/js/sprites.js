@@ -5,7 +5,7 @@
    the game does, animates previews, and provides the pixel editor and recoloring. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
-import { openSkeleton, provide } from '../../game/js/hooks.js';
+import { openShortcutSheet, openSkeleton, provide } from '../../game/js/hooks.js';
 import { $, $$, clamp } from '../../game/js/util.js';
 import { coatArt } from '../../game/js/logic/coats.js';
 import { makeCanvas } from '../../game/js/art.js';
@@ -430,7 +430,7 @@ export async function openPixelEditor(sp, view = 'front', focus = null) {
     .map(([k, l, t]) => `<button class="seg" data-pe="xf" data-x="${k}" title="${t}">${l}</button>`)
     .join('')}</span>
   <span class="px-tools"><button class="seg" data-pe="undo" title="Undo (Ctrl+Z)">↶</button><button class="seg" data-pe="redo" title="Redo (Ctrl+Y)">↷</button></span>
-  <span class="grow"></span><button class="btn" data-pe="skel" title="Add, move and connect body parts">Skeleton builder</button><button class="btn" data-pe="close">Done</button></header>
+  <span class="grow"></span><button class="btn" data-pe="keys" title="Every key (?)">Keys</button><button class="btn" data-pe="skel" title="Add, move and connect body parts">Skeleton builder</button><button class="btn" data-pe="close">Done</button></header>
  <div class="px-body"><div class="px-stage" id="pxStage"></div>
  <aside class="px-side">
   <div class="px-sec"><h4>Color</h4><div class="px-color"><input type="color" id="pxColor" value="${E.color}"><span id="pxHex">${E.color}</span></div><div class="px-pal" id="pxPal"></div></div>
@@ -693,6 +693,8 @@ function bindPixelEditor() {
       previewsDirty();
       if (back) back();
       else render();
+    } else if (k === 'keys') {
+      openShortcutSheet();
     } else if (k === 'skel') {
       openSkeleton(E.sp, E.view);
     }
@@ -713,7 +715,7 @@ function pixelEditorKeys(ev) {
     document.removeEventListener('keydown', pixelEditorKeys);
     return;
   }
-  if (ev.target.closest('input')) return;
+  if (ev.target.closest('input') || $('#dlg').innerHTML) return;
   const P = pixelEditor.pc,
     a = pixelKeyAction(ev);
   if (!P || !a) return;
