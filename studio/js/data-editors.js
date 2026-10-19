@@ -1460,7 +1460,7 @@ SECTIONS.jobs = () => {
       )}${textField('What it did (after the Billie’s name)', `${p}.quip`, { help: '“Hoodini made 40 lattes. Most were wrong.”' })}<button class="btn danger subtle" data-act="jobDel" data-k="${k}">Delete job</button></div></div>`;
     })
     .join('');
-  return `<div class="ed-col solo"><div class="ed-head"><h2>Jobs</h2><button class="btn primary" data-act="jobNew">+ New job</button></div>${card('Jobs', rows, { sub: `Pay arrives every ${formatThousands(D.rules.jobs.stepsPerPay)} steps (Rules → Jobs).` })}</div>`;
+  return `<div class="ed-col solo"><div class="ed-head"><h2>Jobs</h2><button class="btn primary" data-act="jobNew">+ New job</button></div>${card('Jobs', rows, { sub: 'Kept for the ranch (phase 12): the game has no jobs for now, so nothing here is used yet.' })}</div>`;
 };
 document.addEventListener('change', ev => {
   const el = ev.target;
