@@ -52,6 +52,48 @@ tools/art-source and are sliced again by dropping them (settings kept per kit).
   parts of the kit that are no longer on the sheets? Should islands be named row by row instead of by first pixel?
 - Next session starts with: ST-4, Part mode (start from partKits.json parts and the workbench's pieces).
 
+### Studio track ST-4 - the Art workbench, Part mode - 2026-10-19
+Plan approved at the start (after #70, ST-3, merged). Owner's picks: Mirror makes a real copy (`<id>_r`); S/L painted
+pictures beside M per view (`<id>_s.png`, `_l.png`); one pivot per view.
+- Changed:
+  - partKits.json (schema, types, data check; all optional): per kind `z` front/back, `turns`, `sides`; `socketRules`;
+    per part `z`, `turn`, `accepts`, `mirrorOf`; per view `pivot`, `sizes`. Kind defaults written: z from the rework
+    placeholders' bones, turns as first guesses, arms drawn for the right and legs for the left.
+  - game/js/logic/part-joints.js (+ 10 tests): a part's joint per view and size, the sockets that take it, the fit on
+    a body (pivot on the socket, turn limits, z order, mirrored or its `_r` copy on the other side), the copy for the
+    other side, nearest-neighbour scaling.
+  - pixel-canvas.js: a host tool can follow a drag.
+  - Workbench: Write keeps Part mode's work and hand-placed sockets for every way of slicing (it rebuilt entries).
+  - studio/js/workbench-part.js: Part mode (list, front and back with pivot and sockets, drag and arrow nudge, socket
+    editor and slot rules, turns and z, test fit with slider and swing, Mirror to other side, Paint S/L, Back to
+    scaled). The Sheet/Part switch in the workbench head.
+  - Studio check: a Part mode step on cat_leg.
+- Risky or unfinished:
+  - The pivot of a part not moved by hand is its joint, chin or base socket (as the rework placeholders join parts),
+    else the kind's pivot. The kind `pivots` are now only that last fallback.
+  - Turn limits are guesses; nothing in the game reads z, turns, socket rules, sides or S/L pictures yet (no runtime
+    code reads partKits.json; build-rework-placeholders.py still uses its own z table).
+  - A `_r` copy goes stale if its part is sliced again; Back to scaled leaves the painted picture in art/.
+  - Painting S/L has pencil, eraser, fill and pick only (no symmetry or palette panel, no B/E/G keys there).
+  - Headless only: not tried on a tablet or the 3440 screen by hand (pictures at 1024, 1920, 3440 look right).
+  - Found, older than ST-4: the Studio's undo snapshot drops keys starting with `_` (seen: an undo removes partKits'
+    `_help`), and Save stringifies the data the same way, so a Studio save likely drops `_help` from partKits.json,
+    portraits.json, robots.json and rules.json.
+  - check:smoke has one problem, the same on main: "Shaders: mthing: aCol sets location 7, the engine's standard is 2"
+    (world-bowl.js, phase 10).
+- Verified: lint, typecheck, check:modules, format, check:data, 236 unit tests (10 new in part-joints); the full
+  check-studio-github (all steps, the new Part mode step: drag 3,2 px; nudges 1 and 1/4 px as three undo steps;
+  a socket rule; test fit flips on hipR and clamps 90 to 35 degrees; Mirror makes cat_leg_r with flipped pictures;
+  L painted 1.2x and a pencil pixel undoable; the kit written again keeps cat_leg; all undone); check:smoke (one
+  problem, also on main). The full quick check was not run (this session's gate is unit tests).
+- Decisions I made (and why): `sides` added (the placeholders mirror arms on the left but legs on the right); a
+  socket's slot rule becomes the part's own once changed (↺ back to the kit's); a click on the pivot wins over a
+  socket under it; points rounded to 1/10000 (quarter-pixel nudges need it); S/L points belong to that size once
+  painted, scaled sizes are read-only; socket `spine` and `top` rules added for extras (no part has them yet).
+- Questions waiting for the owner: are the turn limits and z defaults right? Should Studio save keep `_help` (fix
+  the `_` filter to skip only runtime caches)? Tag `st-3-done` on main's #70 merge and `st-4-done` here once happy.
+- Next session starts with: ST-5, Robots on the workbench (stored sockets per part, falling back to robotRig's).
+
 ### Phase 10 - World map: fixes for the weird textures - 2026-10-19
 Owner: "the map textures look weird on main". Found with small low-graphics pictures of the map (lite page, no
 graphics test); branch `world-map-fix` on top of `world-map-look-5`. Only #62 (sessions 1-2) had reached main; #65,
