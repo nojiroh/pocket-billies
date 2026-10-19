@@ -139,7 +139,6 @@ import {
   seamlessDelta,
   seamlessGate,
   seamlessGetReady,
-  seamlessOn,
   seamlessRoamView,
   seamlessRoomId,
   seamlessRoomMap,
@@ -1014,7 +1013,6 @@ function enterRoom(a, p) {
 function roomLayIn(id, p, fresh) {
   if (
     typeof seamlessRoomMap !== 'function' ||
-    !seamlessOn() ||
     !walkView.ready ||
     !walkView.sc ||
     !walkView.sc.parts ||

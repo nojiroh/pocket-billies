@@ -68,7 +68,6 @@ expose({
   seamlessMemo: [() => seamlessMemo, v => (seamlessMemo = v)],
   seamlessMixHex: [() => seamlessMixHex, v => (seamlessMixHex = v)],
   seamlessNoise: [() => seamlessNoise, v => (seamlessNoise = v)],
-  seamlessOn: [() => seamlessOn],
   seamlessRoadExit: [() => seamlessRoadExit, v => (seamlessRoadExit = v)],
   seamlessRoamView: [() => seamlessRoamView, v => (seamlessRoamView = v)],
   seamlessRoomId: [() => seamlessRoomId, v => (seamlessRoomId = v)],
@@ -86,10 +85,8 @@ expose({
 /* eslint-enable no-func-assign */
 provide({ seamlessLookTick, seamlessMapById });
 /* to-module: end */
-export const seamlessWorld = { cache: new Map(), max: 5, gen: 0, on: true };
+export const seamlessWorld = { cache: new Map(), max: 5, gen: 0 };
 provide({ seamlessWorld }); /* to-module */
-export const seamlessOn = () =>
-  seamlessWorld.on && !(typeof engineSetting === 'function' && engineSetting('world', 'seamless') === false);
 function seamlessHash(x, y, s) {
   let h = (Math.floor(x) * 374761393 + Math.floor(y) * 668265263 + (s || 0) * 1013904223) ^ 0x5bd1e995;
   h = Math.imul(h ^ (h >>> 13), 1274126177);
@@ -150,7 +147,7 @@ function seamlessMemo(key, fn) {
   return v;
 }
 function seamlessJoin(i) {
-  if (!seamlessOn() || (typeof engineSetting === 'function' && engineSetting('world', 'joined') === false)) return null;
+  if (typeof engineSetting === 'function' && engineSetting('world', 'joined') === false) return null;
   return seamlessMemo('join' + i, () => {
     const L = ROADS[i];
     if (!L) return null;
@@ -1491,7 +1488,6 @@ export function seamlessDelta(fromId, toId) {
 /* roaming at a stop: v46: always the place's hub view (the scene with a band of each neighbour), so walking
    round a place and up to its exits never switches views */
 export function seamlessRoamView(node, pos) {
-  if (!seamlessOn()) return null;
   const id = mapIdAt(node),
     sc = mapById(id);
   if (
@@ -1553,16 +1549,7 @@ export function seamlessGetReady(id, urgent, focus) {
    well inside it (neighbouring views overlap by 36 m, so there is time). If you would walk off its edge the switch
    happens anyway, built on the spot as before. */
 export function seamlessGate(v) {
-  if (
-    !seamlessOn() ||
-    !v ||
-    v.id === walkView.id ||
-    !walkView.ready ||
-    !walkView.sc ||
-    !walkView.pl ||
-    walkView.pl.fresh
-  )
-    return v;
+  if (!v || v.id === walkView.id || !walkView.ready || !walkView.sc || !walkView.pl || walkView.pl.fresh) return v;
   if (seamlessGetReady(v.id, true, v.pos)) {
     seamlessWorld.heldFor = null;
     if (typeof walkRenderer !== 'undefined') walkRenderer.prepBoost = 1;
