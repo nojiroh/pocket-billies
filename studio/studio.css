@@ -1183,6 +1183,14 @@ canvas.spr-prev.big {
 .pc-art {
   image-rendering: pixelated;
 }
+.pan-ready .px-wrap,
+.pan-ready {
+  cursor: grab;
+}
+.panning,
+.panning .px-wrap {
+  cursor: grabbing;
+}
 .pc-over {
   position: absolute;
   inset: 0;

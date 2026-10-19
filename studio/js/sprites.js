@@ -12,6 +12,7 @@ import { makeCanvas } from '../../game/js/art.js';
 import { animFor } from '../../game/js/body-plan-animation.js';
 import { coatAtlas, drawRig, rigPose, setCoatRigData } from '../../game/js/skeleton-rig.js';
 import { escapeHtml } from './game-stand-ins.js';
+import { pixelZoomNext } from '../../game/js/logic/pixel-ops.js';
 import { ask, redo, render, speciesName, studioState, toast, undo, updateTopBar } from './studio-app.js';
 import {
   artStep,
@@ -588,7 +589,7 @@ function bindPixelEditor() {
     } else if (k === 'tool') {
       if (E.pc) pixelCanvasTool(E.pc, b.dataset.t);
     } else if (k === 'zoom') {
-      if (E.pc) pixelCanvasZoom(E.pc, E.pc.zoom + +b.dataset.z);
+      if (E.pc) pixelCanvasZoom(E.pc, pixelZoomNext(E.pc.zoom, +b.dataset.z));
     } else if (k === 'grid') {
       if (E.pc) E.pc.showGrid = !E.pc.showGrid;
       drawPixelEditor();
@@ -681,8 +682,8 @@ function pixelEditorKeys(ev) {
   if (!P) return;
   if (T[k]) pixelCanvasTool(P, T[k]);
   else if (k === '+' || k === '=') {
-    pixelCanvasZoom(P, P.zoom + 1);
-  } else if (k === '-') pixelCanvasZoom(P, P.zoom - 1);
+    pixelCanvasZoom(P, pixelZoomNext(P.zoom, 1));
+  } else if (k === '-') pixelCanvasZoom(P, pixelZoomNext(P.zoom, -1));
   else if (k === 'escape') {
     $('#modal').innerHTML = '';
     render();

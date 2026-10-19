@@ -127,5 +127,13 @@ test('the keys: tools, Shift for flips, Ctrl for undo and redo, numbers for zoom
   assert.equal(k('+', { shiftKey: true }), 'zoomIn');
   assert.equal(k("'", { ctrlKey: true }), 'grid');
   assert.equal(k('Escape'), 'deselect');
+  assert.deepEqual(
+    [1, 7, 8, 14, 16, 32].map(z => P.pixelZoomNext(z, 1)),
+    [2, 8, 10, 16, 20, 32]
+  );
+  assert.deepEqual(
+    [1, 8, 10, 16, 20].map(z => P.pixelZoomNext(z, -1)),
+    [1, 7, 8, 14, 16]
+  );
   for (const e of P.PIXEL_KEYS) assert.ok(e.keys && e.label && e.act, e.act);
 });

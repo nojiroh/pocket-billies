@@ -57,6 +57,8 @@ expose({
   pixelSymmetryFor: [() => pixelSymmetryFor, v => (pixelSymmetryFor = v)],
   // @ts-expect-error -- replaced on purpose
   pixelTopColors: [() => pixelTopColors, v => (pixelTopColors = v)],
+  // @ts-expect-error -- replaced on purpose
+  pixelZoomNext: [() => pixelZoomNext, v => (pixelZoomNext = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -322,6 +324,11 @@ export function pixelTopColors(/** @type {Pixels} */ im, /** @type {number} */ n
 export const PIXEL_ZOOMS = [1, 2, 4, 8, 16, 32];
 /** the smallest zoom that shows the pixel grid */
 export const PIXEL_GRID_FROM = 8;
+/** the next zoom in (dir 1) or out (-1): one at a time up to 8x, then two, then four */
+export function pixelZoomNext(/** @type {number} */ z, /** @type {number} */ dir) {
+  const step = (/** @type {number} */ v) => (v < 8 ? 1 : v < 16 ? 2 : 4);
+  return Math.max(1, Math.min(32, dir > 0 ? z + step(z) : z - step(z - 1)));
+}
 /** the pixel canvas's keys (Aseprite's where it has one): what the `?` sheet lists and the canvas does. `keys` as
  * shown; `match` is { key, shift?, mod? } with key in lower case */
 export const PIXEL_KEYS = [

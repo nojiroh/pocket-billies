@@ -22,6 +22,7 @@ import { clamp } from '../../game/js/util.js';
 import { makeCanvas } from '../../game/js/art.js';
 import { historyArt } from '../../game/js/logic/history.js';
 import {
+  PIXEL_GRID_FROM,
   pixelCopy,
   pixelDiffBox,
   pixelFill,
@@ -30,6 +31,7 @@ import {
   pixelLine,
   pixelRgba,
   pixelSet,
+  pixelZoomNext,
 } from '../../game/js/logic/pixel-ops.js';
 import { commit, studioState, updateTopBar } from './studio-app.js';
 /* eslint-disable no-func-assign */
@@ -126,9 +128,19 @@ export function pixelCanvasFit(P, lo = 2, hi = 24) {
     n = pixelCanvasRepeat(P);
   return clamp(Math.floor(Math.min((st.width - 40) / (c.width * n), (st.height - 40) / (c.height * n))), lo, hi);
 }
-export function pixelCanvasZoom(P, z) {
+/* a whole zoom; the picture pixel under the pointer (or the middle of the view) stays where it is */
+export function pixelCanvasZoom(P, z, at = null) {
+  const st = P.stage.getBoundingClientRect(),
+    ax = at ? at.clientX : st.left + st.width / 2,
+    ay = at ? at.clientY : st.top + st.height / 2,
+    r0 = P.cv.getBoundingClientRect(),
+    fx = r0.width ? (ax - r0.left) / r0.width : 0.5,
+    fy = r0.height ? (ay - r0.top) / r0.height : 0.5;
   P.zoom = clamp(Math.round(z), 1, 32);
   drawPixelCanvas(P);
+  const r1 = P.cv.getBoundingClientRect();
+  P.stage.scrollLeft += r1.left + fx * r1.width - ax;
+  P.stage.scrollTop += r1.top + fy * r1.height - ay;
 }
 export function drawPixelCanvas(P) {
   const c = P.o.get(),
@@ -153,7 +165,7 @@ export function drawPixelCanvas(P) {
   P.wrap.style.width = W * P.zoom + 'px';
   P.wrap.style.height = H * P.zoom + 'px';
   P.wrap.dataset.tool = P.tool;
-  P.grid.hidden = !(P.showGrid && P.zoom >= 6);
+  P.grid.hidden = !(P.showGrid && P.zoom >= PIXEL_GRID_FROM);
   P.grid.style.backgroundSize = `${P.zoom}px ${P.zoom}px`;
   P.over.setAttribute('viewBox', `0 0 ${W} ${H}`);
   const off = n > 1 ? c.width : 0,
@@ -255,8 +267,46 @@ function bindPixelCanvasEvents(P) {
     ev => {
       if (!ev.ctrlKey && !ev.metaKey) return;
       ev.preventDefault();
-      pixelCanvasZoom(P, P.zoom + (ev.deltaY < 0 ? 1 : -1));
+      pixelCanvasZoom(P, pixelZoomNext(P.zoom, ev.deltaY < 0 ? 1 : -1), ev);
     },
     { passive: false }
   );
+  /* move the view: the middle button, or the left one with Space held */
+  let pan = null;
+  P.stage.addEventListener(
+    'pointerdown',
+    ev => {
+      if (!(ev.button === 1 || (ev.button === 0 && P.space))) return;
+      ev.preventDefault();
+      ev.stopPropagation();
+      pan = { x: ev.clientX, y: ev.clientY, l: P.stage.scrollLeft, t: P.stage.scrollTop };
+      P.stage.setPointerCapture(ev.pointerId);
+      P.stage.classList.add('panning');
+    },
+    true
+  );
+  P.stage.addEventListener('pointermove', ev => {
+    if (!pan) return;
+    P.stage.scrollLeft = pan.l - (ev.clientX - pan.x);
+    P.stage.scrollTop = pan.t - (ev.clientY - pan.y);
+  });
+  const panEnd = () => {
+    pan = null;
+    P.stage.classList.remove('panning');
+  };
+  P.stage.addEventListener('pointerup', panEnd);
+  P.stage.addEventListener('pointercancel', panEnd);
+  const space = ev => {
+    if (!P.cv.isConnected) {
+      document.removeEventListener('keydown', space);
+      document.removeEventListener('keyup', space);
+      return;
+    }
+    if (ev.key !== ' ' || (ev.target.closest && ev.target.closest('input,textarea,select,button'))) return;
+    ev.preventDefault();
+    P.space = ev.type === 'keydown';
+    P.stage.classList.toggle('pan-ready', P.space);
+  };
+  document.addEventListener('keydown', space);
+  document.addEventListener('keyup', space);
 }
