@@ -16,9 +16,10 @@ import { LOCATIONS, RULES, SPECIES, START_NODE, TRAINERS } from './game-data.js'
 import { makeBilly } from './logic/rules.js';
 import { newSave } from './logic/saves.js';
 import { startTrainer } from './logic/battle-engine.js';
-import { FIXTURE, saveData, setSaveData, uiState } from './game-state.js';
+import { FIXTURE, setSaveData, uiState } from './game-state.js';
 import { LOOK_PRESETS, cleanLook } from './person-art.js';
-import { render, renderOverlay } from './ui.js';
+import { actionSpot, walkData, walkView } from './walk-view.js';
+import { enterRoom, render, renderOverlay } from './ui.js';
 /* eslint-disable no-func-assign */
 expose({
   FIXTURE_NAMES: [() => FIXTURE_NAMES],
@@ -70,21 +71,28 @@ if (FIXTURE && FIXTURE !== 'stored') setSaveData(fixtureSave());
 export function fixtureStart() {
   uiState.modal = null;
   uiState.mq = [];
-  if (FIXTURE === 'room') {
-    const node = saveData.trip.node,
-      here = LOCATIONS[node];
-    uiState.inside = {
-      id: 'int_shop',
-      kind: 'shop',
-      node,
-      shop: here.shop || null,
-      p: null,
-      name: null,
-      back: { id: here.mapId, x: 0, z: 0 },
-    };
-  }
   uiState.tab = 'walk';
   renderOverlay();
   render();
+  /* phase 08b: into the shop through its door, as soon as the town is on screen */
+  if (FIXTURE === 'room') {
+    const go = (n = 0) => {
+      const p =
+        walkView.ready &&
+        walkView.sc &&
+        !walkView.pl.fresh &&
+        walkView.sc.props.find(q => q.act === 'shop' && q.k === 'shop');
+      if (!p) {
+        if (n < 600) setTimeout(() => go(n + 1), 100);
+        return;
+      }
+      const g = actionSpot(p, walkData().sc.props[p.k]);
+      walkView.pl.route = null;
+      walkView.pl.x = g[0];
+      walkView.pl.z = g[1];
+      enterRoom('shop', p);
+    };
+    go();
+  }
   if (FIXTURE === 'battle') startTrainer('crude');
 }

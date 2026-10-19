@@ -36,6 +36,13 @@ kept aside in the browser).
   - Roads are measured in metres from the maps ("90 m"); the gold arrows guide by metres.
   - All the step text is rewritten (tips, people, Hazel, rooms, lore: money is coins now).
   - Saves of format 2 start over (save format 3).
+- Rooms open at once (phase 08 Part B): the room is drawn over its town at the door, the town dimmed round it, and
+  nothing of the town is painted or built again, so stepping in no longer waits (the Marigold shop took up to 11 s
+  headless, now under 1.2 s; your phone's debug log says "inside ... (waited N ms)"). There is one way in: through a
+  building's door. The 9 s fallback that showed a room on its own and Settings → "Shops and houses: Counter" are gone
+  (a door with no room still goes straight to the counter). Coming out, you stand just in front of the door facing
+  out, and the camera is as it was. A turned building's door turns with it. Marigold's shop and clinic signs lead
+  into their buildings.
 - Run: push the joystick past its rim into the outer ring (it turns gold), hold the D-pad's centre, or hold Shift.
   Settings → Moving about → Always run makes a full push, the keys and tapping the ground run. The keys and the D-pad
   walk at walking speed (they were a little faster). The walk cycle, footsteps and camera bob keep pace with your

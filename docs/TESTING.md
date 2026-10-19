@@ -120,7 +120,11 @@ same phase:
   - `tools/test/rules.test.mjs` 'steps, trips and gates, encounters' (`earningsBetween`, the trip's steps) and the
     step fields `validSave` checks (`totalSteps`, `day.steps`);
   - the debug menu's step buttons and the debug log's trip progress.
-  Part B: rooms that open in place are checked by the full test's room step, v46 and alpha 0.1's library. The
+  Part B: rooms that open in place are checked by the full test's room step (since 08b-2: the doorway within 0.1 m
+  of the door, nothing of the room walkable or walled outside it, out exactly at the door facing out with the camera
+  as it was, the town's walking grid unchanged), v46 (every door of Copperleaf, Verdigris and Marigold: its room's
+  doorway within 0.1 m) and alpha 0.1's library; check-data checks that every door opens a room.
+  `tools/measure-rooms.py` times walking into seven sample doors, cold and warm (headless; compare runs). The
   world-map graph test must still pass (same places, roads and gates); if a road's exits move on purpose, remake the
   snapshot and say so.
 - **09 Props and terrain**: the data steps (windows, water and jetties, masts, ground tiles, low-poly recipes) count

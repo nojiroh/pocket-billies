@@ -349,14 +349,6 @@ export function settingsHTML() {
         switchHTML('buddyWalk', p.buddyWalk !== 'off', 'on', 'off')
       ) +
       settingsRowHTML(
-        'Shops and houses',
-        'Walk inside, or go straight to the counter.',
-        segmentedHTML('rooms', p.rooms || 'walk', [
-          ['walk', 'Walk inside'],
-          ['quick', 'Counter'],
-        ])
-      ) +
-      settingsRowHTML(
         'Language',
         'Menus and buttons. Stories and names stay in English.',
         `<select data-preference="lang">${(typeof I18N_LANGS !== 'undefined' ? I18N_LANGS : [['en', 'English']]).map(([v, n]) => `<option value="${v}" ${(p.lang || 'en') === v ? 'selected' : ''}>${n}</option>`).join('')}</select>`

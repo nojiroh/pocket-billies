@@ -291,6 +291,7 @@ function groundOcclusionTexture(r) {
 }
 /* v46: the frame's key for a view's ground (its mesh, water and textures are kept under it, swapMapCache) */
 export function mapCacheKey(id, sc, gkey) {
+  if (sc.groundOf) return mapCacheKey(sc.roomBase, sc.groundOf, gkey); /* phase 08b: a room keeps its place's ground */
   return (
     id +
     '|' +
@@ -310,8 +311,9 @@ export function mapCacheKey(id, sc, gkey) {
 /* v46: get a view's ground ready before it is shown: built a few ms a frame (groundPrepWork) and kept with the scenes you
    left (walkRenderer.sceneCache), so the switch to it is a swap of a few references. Returns true when it is ready. */
 export function isGroundPrepared(id, sc, gkey) {
-  const M = walkRenderer.sceneCache;
-  return !!(M && M.has(mapCacheKey(id, sc, gkey || groundKey(sc))));
+  const M = walkRenderer.sceneCache,
+    k = mapCacheKey(id, sc, gkey || groundKey(sc));
+  return k === walkRenderer.hkey || !!(M && M.has(k)); /* (phase 08b: or it is the one on screen: out of a room) */
 }
 export function prepareMapGround(id, sc, G, urgent, focus) {
   if (!walkRenderer.on || !G) return false;
@@ -517,7 +519,7 @@ export function swapMapCache(oldKey, key) {
     M.delete(k0);
   }
 }
-function freeMapCacheEntry(e) {
+export function freeMapCacheEntry(e) {
   const gl = gpuState.gl;
   if (!e) return;
   if (e.ring) {

@@ -10,10 +10,12 @@ import {
   buildingState,
   buildingsOn,
   drawBuildingShadows,
+  drawGroundDepth,
   drawPropModelShadows,
   drawSolidPropShadows,
   drawStructureShadows,
   provide,
+  roomFloorOf,
 } from '../hooks.js';
 import { gpuPass } from '../engine/gpu-counters.js';
 import { filterInto } from '../engine/frame-lists.js';
@@ -104,9 +106,7 @@ export function shadowPass(items0, sun, C) {
     gl.uniformMatrix4fv(p.U.uVP, false, SH.vp);
     gl.uniform3f(p.U.uCurve, ca[0], ca[1], ca[2]);
     gl.uniform1f(p.U.uCurveD0, ca[3]);
-    gl.bindVertexArray(walkRenderer.mesh.vao);
-    gl.drawElements(gl.TRIANGLES, walkRenderer.mesh.n, gl.UNSIGNED_INT, 0);
-    gl.bindVertexArray(null);
+    drawGroundDepth(p, walkView.sc);
   }
   drawShadowSprites(SH, items, sun, ca);
   if (typeof drawBuildingShadows === 'function') drawBuildingShadows(SH, items);
@@ -152,9 +152,7 @@ export function lampShadowMaps(items, X, dark) {
       gl.uniformMatrix4fv(p.U.uVP, false, SH.vp);
       gl.uniform3f(p.U.uCurve, ca[0], ca[1], ca[2]);
       gl.uniform1f(p.U.uCurveD0, ca[3]);
-      gl.bindVertexArray(walkRenderer.mesh.vao);
-      gl.drawElements(gl.TRIANGLES, walkRenderer.mesh.n, gl.UNSIGNED_INT, 0);
-      gl.bindVertexArray(null);
+      drawGroundDepth(p, walkView.sc);
     }
     drawShadowSprites(SH, near, null, ca, l.p);
     if (typeof drawBuildingShadows === 'function') drawBuildingShadows(SH, near);
@@ -280,6 +278,7 @@ function fittedShadowPass(items0, sun, C) {
         walkRenderer.itemGen || 0,
         solid ? 1 : 0,
         walkRenderer.mesh && walkRenderer.mesh.n,
+        roomFloorOf(sc) ? sc.roomScene.id : '',
         sc.heights ? sc.heights.length : 0,
         typeof buildingsOn === 'function' && buildingsOn() ? 1 : 0,
         typeof buildingState !== 'undefined' ? buildingState.made || 0 : 0,
@@ -359,9 +358,7 @@ function fittedShadowPass(items0, sun, C) {
     gl.useProgram(p.p);
     gl.uniformMatrix4fv(p.U.uVP, false, SH.vp);
     curve(p);
-    gl.bindVertexArray(walkRenderer.mesh.vao);
-    gl.drawElements(gl.TRIANGLES, walkRenderer.mesh.n, gl.UNSIGNED_INT, 0);
-    gl.bindVertexArray(null);
+    drawGroundDepth(p, sc);
     sprites(stat);
     if (typeof drawBuildingShadows === 'function') drawBuildingShadows(SH, stat);
     if (typeof drawStructureShadows === 'function') drawStructureShadows(SH);

@@ -159,8 +159,8 @@ def scene(node_id):
 
 
 def room(pg, base):
+    if not until(pg, "!!uiState.inside&&walkView.ready&&walkView.sc.roomOf===uiState.inside.id", 60): raise Exception(f'not in the room: {pg.evaluate("walkView.id")}')
     drawing(pg)
-    if not pg.evaluate("!!uiState.inside&&walkView.id===uiState.inside.id"): raise Exception(f'not in the room: {pg.evaluate("walkView.id")}')
     return f'{pg.evaluate("walkView.id")} drew {pg.evaluate("walkRenderer.frames")} frames'
 
 

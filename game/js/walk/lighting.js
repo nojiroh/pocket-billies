@@ -22,6 +22,7 @@ expose({
   AO_ALL: [() => AO_ALL],
   AO_NEAR: [() => AO_NEAR],
   AO_POOL: [() => AO_POOL],
+  ROOM_DIM: [() => ROOM_DIM],
   lampLit: [() => lampLit, v => (lampLit = v)],
   mapSun: [() => mapSun, v => (mapSun = v)],
   roomDimming: [() => roomDimming, v => (roomDimming = v)],
@@ -54,9 +55,10 @@ export function mapSun(sc, sun) {
 }
 /* v46: inside a building laid into the place (seamless-world.js seamlessRoomMap) the town around the room dims over 0.6 s; walking
    out it brightens again over 0.7 s, as your eyes adjust */
+const ROOM_DIM = 0.68; /* how far the place round a room dims */
 export function roomDimming(sc) {
   const now = performance.now(),
-    k0 = engineSetting('world', 'roomDim') ?? 0.68;
+    k0 = ROOM_DIM;
   let R = sc.roomRect,
     k = 0;
   if (R) {

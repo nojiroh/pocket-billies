@@ -11,6 +11,83 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 - Questions waiting for the owner: 
 - Next session starts with: 
 
+### Phase 08b-2 - rooms in their own space, drawn at the door - 2026-10-19
+Plan approved at the start (Part B tasks 7, 8 and the doors half of 2). Branch `ccr-4fc4790e-8depsm`, from main at
+d2f9721.
+- Changed (one cause per commit):
+  - **Fix first:** main's `check:modules` was red (an `engineSetting` import 08b-1 left unused in seamless-world.js).
+  - Door link: `doorOf(p)` (door point, way out, the front's middle) and `doorLinkOf(p, act, map)` in the links' shape
+    `{kind: 'door', a: {map, exit}, b: {map: room, exit: 0}}`. A kind's room is now `room` in scenery.json (11 kinds;
+    the table in ui.js and the Studio's two copies, int_station included, are gone); the choice is
+    `PB_DATA.doorRooms` (data-files.js), shared by the game, the Studio and check-data. A turned building's door turns
+    with it (257 doors move 9 cm at most). check-data: every door opens a room, the room has its doorway at the front,
+    the door is on the building's front.
+  - **Rooms over the place:** a room's view (seamlessRoomMap, same ids) is the place's own view with the room's tiles,
+    heights, walls and things laid in, but its ground is the place's (`groundOf`: same picture, mesh and near ring;
+    groundKey and the scene cache follow it). The place's ground, grass, water and their shadows leave a hole where
+    the room is; the room's floor and walls, built from the room alone (`roomScene`, painted at the near ring's size),
+    are drawn there at the floor's height (walk/ground-draw.js roomHole, roomFloorReady; three rooms' floors kept).
+    Nothing is cropped any more (roomCut is gone).
+  - Speed: in a room the walking grid works out heights for the room only; the heights grid is the place's with the
+    floor laid in; the last two views' walking grids are kept (coming out is a swap).
+  - Out of a room: 0.6 m in front of the door, facing the way the building faces, the camera as it was.
+  - One path: no 9 s fallback (after 2 s at the door the floor is painted at once), no room shown on its own (a door
+    needs a building; Marigold's two signs lead into the building they stand by), no "Shops and houses: Counter", no
+    `seamlessRooms` switch, the `roomDim` setting is a constant (ROOM_DIM 0.68).
+  - Tests: the full test's room step (doorway within 0.1 m, nothing of the room outside it, exact exit and camera,
+    the town's walking grid unchanged); v46 (all 92 doors of Copperleaf, Verdigris, Marigold); v31 walks in through a
+    house's door; the room fixture (check-fast) walks into the shop; `tools/measure-rooms.py` (new).
+- Room open times, headless (software drawing, from tap at the door to the room shown; cold / warm):
+
+  | Door | Before | After |
+  |---|---|---|
+  | Marigold shop | 9.8-13.1 s / 13-31 ms | 0.9-1.2 s / 28-209 ms |
+  | Marigold market hall | 6.1-8.1 s | 0.7-1.4 s |
+  | Marigold house_red | 6.2-7.6 s | 0.3-1.6 s |
+  | Copperleaf, your room | 4.4-4.8 s | 0.7-1.1 s |
+  | Verdigris mansion | 5.3-6.3 s | 1.9-2.7 s |
+  | Verdigris townhouse_red | 5.3-6.3 s | 0.3-0.9 s |
+
+  The wait itself ("waited N ms" in the log) went from 2.5-8.8 s to 0.1-1.0 s. Coming out costs about 0.2 s of
+  drawing (it was a walking-grid and heights rebuild). The sign_shop row now includes walking to the shop's door.
+- Risky or unfinished:
+  - The first frames inside still gather the room's things and, the first time, cut tree leaves for any tree picture
+    not seen yet (about 0.7 s headless, once); on a phone this should be small. Your phone log's "inside ... (waited
+    N ms)" lines are the real numbers.
+  - The town's structures (bridges, rails, arches) and far props are rebuilt for the room's view as before (cheap so
+    far); bridges or arches crossing a room's rectangle are not hidden by the hole.
+  - The near ring is painted from the place's own view while you're in a room; flat props under the room stay painted
+    on the place's ground (hidden by the hole).
+  - 303 of 342 room footprints cover another building's footprint (from the 08a audit); those buildings are left out
+    while you're inside, as before.
+- Verified: every commit lint, typecheck, unit tests (72), check:data, check:modules, format:check. Before merging
+  main: smoke 15/15, check-fast 11/11, the quick check's room steps (rooms, time and weather and rooms, things to do,
+  v31, v46, v47, alpha 0.1's windows) all green. After merging main (phase 20 stage B's walk/ split, props batches
+  4-7): smoke 15/15, check-fast 11/11, the full test's room step (in 0.7 s; doorway 0.02 m along from the door), v31
+  green (alone; in a run after other steps its 90 s wait for the fountain's water timed out once), **v46 red on main
+  too**: "buildings without a plan: bakery, inn, market_hall, library, greenhouse" (props batch 7 made them models
+  from the house kit; the step still expects build plans). Not fixed here. The full quick check and the in-game full
+  test whole were not run (08b-3 ends the phase with them).
+- Questions waiting for the owner:
+  - Try rooms on your phone (the Marigold shop, your room, a mansion) and send a debug log.
+  - Merge this branch to main, then "start 08b-3" (tasks 9 and 10: room templates and slot sets, home from the save,
+    build-interiors.py retired; the Studio edits links and doors; the full quick check, the first picture baseline,
+    `phase-08-done`).
+- Next session starts with: "start 08b-3".
+
+### Phase 08b-1 - roads as typed links, seam checks, prefetch (recap) - 2026-10-19
+Written in 08b-2 from the commits (13e96a7 to 0e5c20c); that session left no entry. Not re-verified beyond what
+08b-2's checks cover.
+- Changed: one road accessor for the Studio and the tools (PB_DATA.road, setRoadEnd, addRoad; gamedata.py the same);
+  roads.json as typed links by map id `{id, name, kind: 'seam' | 'lift', a: {map, exit}, b: {map, exit}}` with a
+  schema; the glass lift is a `lift` link; check-data validates the links (facing, widths, at most two exits a side,
+  44 m apart, walkable ground at each exit, every exit used once); the Studio errors on a road without both exits or
+  with exits that don't face each other; the compass-bearing fallback, the "Seamless world" and 'joined' switches
+  deleted; the debug log's 'world' section (map files, views kept, crossings); the quick check's seam walk (the six
+  hardest, all 56 with --seams=all) and v43 composing every place's view; the next place's view prepared about 40 m
+  before an exit.
+- Left: tasks 7-10 (07-08 done in 08b-2).
+
 ### Project Story S1 - the story layer - 2026-10-19
 Plan approved at the start (S1 of docs/phases/project-story.md). Branch `ccr-f321762c-zuw15s`, from main at d2f9721.
 - Changed (one cause per commit):

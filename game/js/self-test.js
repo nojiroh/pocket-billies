@@ -999,35 +999,65 @@ async function runFullTest(mode) {
             walkView.pl.route = null;
             walkView.pl.x = g[0];
             walkView.pl.z = g[1];
-            const t0 = performance.now();
+            /* phase 08b: the town's walking grid, to compare with after coming out */
+            const blk0 = navGrid().blk.slice(),
+              t0 = performance.now();
             walkPick({ k: 'act', p, act: 'shop' });
-            for (
-              let i = 0;
-              i < 150 && !(walkView.ready && (walkView.sc.roomOf === 'int_shop' || walkView.id === 'int_shop'));
-              i++
-            )
+            for (let i = 0; i < 150 && !(walkView.ready && walkView.sc.roomOf === 'int_shop'); i++)
               await selfTestSleep(100);
             const ms = performance.now() - t0;
-            if (walkView.id === 'int_shop') {
-              leaveRoom();
-              await selfTestSleep(1500);
-              return `the room wasn’t ready in time and opened on its own (${(ms / 1000).toFixed(1)} s)`;
-            }
             if (walkView.sc.roomOf !== 'int_shop')
               throw new Error('the shop’s room didn’t open (still ' + walkView.id + ')');
             await selfTestSleep(1200);
+            /* phase 08b: the doorway is at the door; the room walks and stands only inside its own rectangle */
             const sc = walkView.sc,
-              c = sc.roomCut,
               I = uiState.inside,
-              ex = [sc.exits[0][0] + c[0], sc.exits[0][1] + c[1]],
+              ex = sc.exits[0],
+              dx = I && I.at ? Math.abs(ex[0] - I.at[0]) : 9,
               off = I && I.door ? Math.hypot(ex[0] - I.door[0], ex[1] - I.door[1]) : 9,
-              RD = roomDimming(sc);
+              RD = roomDimming(sc),
+              R = sc.roomRect,
+              G = navGrid(),
+              inR = (x, z, m) => x > R[0] - m && x < R[0] + R[2] + m && z > R[1] - m && z < R[1] + R[3] + m;
+            if (dx > 0.1) throw new Error(`the room’s doorway is ${dx.toFixed(2)} m along from the shop’s door`);
             if (off > 0.8) throw new Error(`the room’s doorway is ${off.toFixed(1)} m from the shop’s door`);
+            let walkOut = 0,
+              wallsOut = 0;
+            for (let j = 0; j < G.gh; j++)
+              for (let i = 0; i < G.gw; i++)
+                if (!G.blk[j * G.gw + i] && !inR((i + 0.5) / G.N, (j + 0.5) / G.N, 0)) walkOut++;
+            const E = stepGrid(sc),
+              E0 = stepGrid(sc.groundOf);
+            if (E && E0)
+              for (let j = 0; j < E.h; j++)
+                for (let i = 0; i < E.w; i++) {
+                  const q = j * E.w + i;
+                  if ((E.H[q] !== E0.H[q] || E.M[q] !== E0.M[q]) && !inR((i + 0.5) / 2, (j + 0.5) / 2, 0)) wallsOut++;
+                }
+            if (walkOut) throw new Error(`inside the room, ${walkOut} walking cells outside it are open`);
+            if (wallsOut) throw new Error(`the room changes ${wallsOut} wall cells of the town outside it`);
+            /* out: just in front of the door, facing out, the camera as it was when you went in */
+            const cam = I.cam,
+              fr = [I.at[0] + I.out[0] * 0.6, I.at[1] + I.out[1] * 0.6];
             leaveRoom();
+            const P = walkView.pl,
+              pd = Math.hypot(P.x - fr[0], P.z - fr[1]),
+              camOk =
+                !!cam &&
+                walkRenderer.camT.every((v, k) => Math.abs(v - cam.T[k]) < 1e-6) &&
+                walkRenderer.yawT === cam.yaw &&
+                walkRenderer.zoomT === cam.zoom;
+            if (pd > 0.01 || P.dir !== 'down')
+              throw new Error(`out at ${pd.toFixed(2)} m from the door, facing ${P.dir}`);
+            if (!camOk) throw new Error('the camera isn’t as it was when you went in');
             for (let i = 0; i < 60 && !(walkView.ready && walkView.id === 'w:marigold*'); i++) await selfTestSleep(100);
             if (walkView.id !== 'w:marigold*')
               throw new Error('walking out didn’t bring the town back (' + walkView.id + ')');
-            return `in ${(ms / 1000).toFixed(1)} s, doorway ${off.toFixed(2)} m from the door, town dimmed ${(RD ? RD.dim : 0).toFixed(2)}, back out at the door`;
+            const blk1 = navGrid().blk;
+            let navDiff = blk1.length === blk0.length ? 0 : -1;
+            for (let i = 0; navDiff >= 0 && i < blk0.length; i++) if (blk0[i] !== blk1[i]) navDiff++;
+            if (navDiff) throw new Error(`the town’s walking grid changed after the room (${navDiff} cells)`);
+            return `in ${(ms / 1000).toFixed(1)} s, doorway ${dx.toFixed(2)} m along from the door, nothing of the room outside it, town dimmed ${(RD ? RD.dim : 0).toFixed(2)}, out at the door facing out with the camera as it was, the town’s walking grid unchanged`;
           } finally {
             if (typeof environment !== 'undefined') {
               environment.force = f0;

@@ -143,5 +143,21 @@ self.PB_DATA = (() => {
     return l;
   }
 
-  return { SPLIT, files, assemble, split, format, text, road, setRoadEnd, addRoad };
+  // phase 08b: a building's door leads to a room: the one set on the building (p.room), else the one made for its kind
+  // of building (scenery.json, the kind's room), else the one for what it does. The rooms to try, in that order (the
+  // first that exists is the one); the game's door link is walk-view.js doorLinkOf
+  /** @type {Record<string, string>} */
+  const ROOM_BY_USE = { shop: 'int_shop', clinic: 'int_clinic', lab: 'int_lab', house: 'int_house', home: 'int_home' };
+  /** @param {any} p @param {any} M @param {string | null} act @returns {string[]} */
+  function doorRooms(p, M, act) {
+    const out = [];
+    if (act !== 'home' && p) {
+      if (p.room) out.push(p.room);
+      if (M && M.room) out.push(M.room);
+    }
+    if (act && ROOM_BY_USE[act]) out.push(ROOM_BY_USE[act]);
+    return out;
+  }
+
+  return { SPLIT, files, assemble, split, format, text, road, setRoadEnd, addRoad, ROOM_BY_USE, doorRooms };
 })();

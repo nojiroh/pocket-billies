@@ -11,7 +11,6 @@
 import { expose } from './test-globals.js';
 import {
   ALTERNATE_PROPS,
-  ROOM_BY_BUILDING,
   TERRAIN_MATERIALS,
   addWalked,
   artCacheVersion,
@@ -77,6 +76,7 @@ expose({
   ROOF_MODEL: [() => ROOF_MODEL],
   ROOF_STYLES: [() => ROOF_STYLES],
   ROOF_VARIANT_CACHE: [() => ROOF_VARIANT_CACHE],
+  ROOM_BY_USE: [() => ROOM_BY_USE],
   RUN_FACTOR: [() => RUN_FACTOR],
   STEP_GRID_CACHE: [() => STEP_GRID_CACHE],
   TILE_PIXEL_CACHE: [() => TILE_PIXEL_CACHE],
@@ -113,6 +113,8 @@ expose({
   cropGrowth: [() => cropGrowth, v => (cropGrowth = v)],
   decodeBase64Array: [() => decodeBase64Array, v => (decodeBase64Array = v)],
   directionOf: [() => directionOf, v => (directionOf = v)],
+  doorLinkOf: [() => doorLinkOf, v => (doorLinkOf = v)],
+  doorOf: [() => doorOf, v => (doorOf = v)],
   drawBubble: [() => drawBubble, v => (drawBubble = v)],
   drawExitLabels: [() => drawExitLabels, v => (drawExitLabels = v)],
   drawExitMarks: [() => drawExitMarks, v => (drawExitMarks = v)],
@@ -603,12 +605,32 @@ const CLOSED_VENUE_NAMES = {
   greenhouse: 'The greenhouse',
   barn: 'The barn',
 };
+/* phase 08b: a building's door link, in the shape of the links in roads.json: from the place (a) at the building's door
+   to the room's doorway (b, the room's exit 0). The room: the first that exists of data-files.js doorRooms (its own,
+   its kind's, the one for what it does). a.exit (doorOf): the door, the way out of it (a step of 1 m) and the middle
+   of the building's front, in the place's metres (null for a door with no building) */
+export const ROOM_BY_USE = PB_DATA.ROOM_BY_USE;
+export function doorLinkOf(p, act, mapId) {
+  const M = p && walkData().sc.props[p.k],
+    room = PB_DATA.doorRooms(p, M, act).find(id => mapById(id)) || null;
+  return room ? { kind: 'door', a: { map: mapId || null, exit: doorOf(p) }, b: { map: room, exit: 0 } } : null;
+}
+export function doorOf(p) {
+  if (!p || p.x == null) return null;
+  const C = walkData().sc,
+    M = C.props[p.k],
+    s = p.s || 1,
+    f = p.f ? -1 : 1,
+    dx = (((M && M.door && M.door.x) || 0) / (C.ppu || 34)) * s * f,
+    r = ((p.rot || 0) * Math.PI) / 180,
+    c = Math.cos(r),
+    sn = Math.sin(r); /* a turned building turns about the middle of its front (buildings.js buildingRotation) */
+  return { at: [p.x + dx * c, p.z + dx * sn], out: [sn, -c], mid: [+p.x, +p.z] };
+}
 /* v47: the kind a door keeps hours as (not game-data.js locationKind(id), the kind of a place) */
 export function openingHoursKind(a, p) {
-  const C = walkData().sc,
-    M = p && C.props[p.k],
-    RK = typeof ROOM_BY_BUILDING !== 'undefined' ? ROOM_BY_BUILDING : {};
-  return p && RK[p.k] ? p.k : M && RK[M.group] ? M.group : a;
+  const M = p && walkData().sc.props[p.k];
+  return M && M.room ? p.k : a;
 }
 export function isOpenNow(kind) {
   const H = OPEN_HOURS[kind];
@@ -717,6 +739,7 @@ function tilePixels(path) {
   return { w, h, d: new Uint32Array(x.getImageData(0, 0, w, h).data.buffer) };
 }
 export function groundKey(sc) {
+  if (sc.groundOf) return groundKey(sc.groundOf); /* phase 08b: a room shows its place's ground */
   const C = walkData().sc;
   return JSON.stringify([
     sc.w,
@@ -2166,7 +2189,7 @@ export function ensureGround() {
     key = groundKey(sc);
   if (key !== walkView.gkey || !walkView.ground) {
     const c = cachedGround(key);
-    walkView.ground = c || buildGroundPicture(sc);
+    walkView.ground = c || buildGroundPicture(sc.groundOf || sc);
     if (!c) keepGround(key, walkView.ground);
     walkView.gkey = key;
     walkView.cand = null;
@@ -2695,6 +2718,11 @@ export function navGrid() {
     walkView.navT === tk
   )
     return walkView.nav;
+  const K = (walkView.navKeep || []).find(k => k.sc === sc);
+  if (K && K.G === walkView.gkey && K.P === (sc.props || []).length && K.T === tk) {
+    Object.assign(walkView, { navSc: sc, navG: K.G, navP: K.P, navT: K.T, navKey: K.key });
+    return (walkView.nav = K.nav);
+  }
   const C = walkData().sc,
     key = walkView.gkey;
   walkView.navSc = sc;
@@ -2793,9 +2821,14 @@ export function navGrid() {
   const lv = new Float32Array(gw * gh),
     hop = new Uint8Array(gw * gh),
     E = stepGrid(sc),
-    BR = mapBridges(sc);
-  for (let j = 0; j < gh; j++)
-    for (let i = 0; i < gw; i++) {
+    BR = mapBridges(sc),
+    RW = sc.roomRect /* phase 08b: in a room only its floor and a metre round it (the rest is blocked already) */,
+    i0 = RW ? Math.max(0, Math.floor((RW[0] - 1) * N)) : 0,
+    i1 = RW ? Math.min(gw, Math.ceil((RW[0] + RW[2] + 1) * N)) : gw,
+    j0 = RW ? Math.max(0, Math.floor((RW[1] - 1) * N)) : 0,
+    j1 = RW ? Math.min(gh, Math.ceil((RW[1] + RW[3] + 1) * N)) : gh;
+  for (let j = j0; j < j1; j++)
+    for (let i = i0; i < i1; i++) {
       const x = (i + 0.5) / N,
         z = (j + 0.5) / N,
         q = j * gw + i;
@@ -3906,10 +3939,11 @@ export function approachPoint(x, z) {
     l = Math.hypot(dx, dz) || 1;
   return walkablePointNear(x + (dx / l) * 1.1, z + (dz / l) * 1.1);
 }
-export function actionSpot(p, M, PPU) {
-  const s = p.s || 1,
-    f = p.f ? -1 : 1;
-  if (M.door) return walkablePointNear(p.x + ((M.door.x || 0) / PPU) * s * f, p.z - 0.55);
+export function actionSpot(p, M) {
+  if (M.door) {
+    const D = doorOf(p);
+    return walkablePointNear(D.at[0] + D.out[0] * 0.55, D.at[1] + D.out[1] * 0.55);
+  }
   return approachPoint(p.x, p.z - 0.3);
 }
 export function drawExitMarks(C, st, t) {

@@ -249,6 +249,7 @@ export function ensureWalkGl(cv) {
   walkRenderer.gkey = '';
   walkRenderer.farKey = '';
   walkRenderer.sceneCache = null;
+  walkRenderer.roomFloors = null;
   walkRenderer.wtex = null;
   for (const k of MAP_CACHE_FIELDS) walkRenderer[k] = null;
   return true;
@@ -413,7 +414,7 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
       T = walkRenderer.camT;
     const fx = bc ? bc[0] : T ? T[0] : walkView.pl.x,
       fz = bc ? bc[1] : T ? T[1] : walkView.pl.z;
-    updateNearRing(sc, fx, fz, PREP_BUDGET_MS);
+    updateNearRing(sc.groundOf || sc, fx, fz, PREP_BUDGET_MS);
   }
   walkRenderer.budT = performance.now();
   /* phase 20: the GPU counters (engine/gpu-counters.js) put each call that follows in the pass named last */
