@@ -15,10 +15,10 @@ Lint enforces what it can (see the end). Every old -> new name of phase 05 is in
 | Its WebGL renderer | `walkRenderer` (walk-view-gl.js) and descriptive names (`drawGround`, `shadowPass`) | was DGL, dgl* |
 | The renderer's 3D scene, a cutscene or story scene | `scene` | the only meanings `scene` keeps |
 | A named place on the world map | `location` (data section `locations`, `LOCATIONS`, `LOCATION_BY_ID`, a map's `locationId`) | was place, stop, route.json; never a bare top-level `location` (that is window.location) |
-| A location's position in LOCATIONS | `node` | saves (`saveData.trip.node`), trainers and roads refer to locations by node |
-| A link between two locations | `road` (data section `roads`, `ROADS`, ids `road:<a>-<b>`) | was link, LINKS; NOT route (see below) |
+| A location's position in LOCATIONS | `node` | saves (`saveData.trip.node`) and trainers refer to locations by node (roads by map since phase 08b) |
+| A link between two locations | `road` (data section `roads`, `ROADS`, ids `road:<a>-<b>`); its kind `seam` (edges meet at the exits) or `lift` (the glass lift, ids `lift:<a>-<b>`) | was link, LINKS; NOT route (see below). roads.json: `{id, name, kind, a: {map, exit}, b: {map, exit}}`, read through `PB_DATA.road` (Studio, tools) and `ROADS` (game) |
 | A route-kind location and its "Route N" label | `route` (kind `route`, a road's `name`) | kept: players read "Route 2" as the area |
-| The player's position and travel along roads | `trip` (`saveData.trip`: node, prog, plan, hold) | was saveData.route |
+| The player's position and travel along roads | `trip` (`saveData.trip`: node, plan) | was saveData.route |
 | The shared strip where two maps join | `seam` | not border: CSS uses that word everywhere |
 | The seamless world: maps and roads drawn as one ground | `seamlessWorld`, `seamless*` | was WORLD, wr* |
 | The battle stage | `battleStage` (battle-stage.js; a location's or trainer's `battleStage` id) | was SC, sc*, scene.js, area |

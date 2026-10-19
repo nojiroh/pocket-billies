@@ -393,8 +393,9 @@ function connectionGraph(cur) {
   if (cur.kind === 'scene') {
     const stops = D.locations.map((r, i) => (r.mapId === cur.id ? i : -1)).filter(i => i >= 0);
     stops.forEach(i => usedBy.set('stop:' + i, ['stop', i]));
-    (D.roads || []).forEach(l => {
-      const a = stops.includes(l[0]) ? l[1] : stops.includes(l[1]) ? l[0] : null;
+    (D.roads || []).forEach(L => {
+      const l = PB_DATA.road(D, L),
+        a = stops.includes(l.a) ? l.b : stops.includes(l.b) ? l.a : null;
       if (a == null || !D.locations[a]) return;
       const s = D.locations[a].mapId;
       if (s && s !== cur.id) uses.set('scene:' + s, ['scene', s]);
@@ -409,8 +410,9 @@ function connectionGraph(cur) {
       if (r.pool) uses.set('pool:' + r.pool, ['pool', r.pool]);
       if (r.shop) uses.set('shop:' + r.shop, ['shop', r.shop]);
     }
-    (D.roads || []).forEach(l => {
-      const a = l[0] === +cur.id ? l[1] : l[1] === +cur.id ? l[0] : null;
+    (D.roads || []).forEach(L => {
+      const l = PB_DATA.road(D, L),
+        a = l.a === +cur.id ? l.b : l.b === +cur.id ? l.a : null;
       if (a != null && D.locations[a]) uses.set('stop:' + a, ['stop', a]);
     });
   }

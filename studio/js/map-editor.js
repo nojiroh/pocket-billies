@@ -775,17 +775,18 @@ export function mapExitNames(id) {
     pairs = [],
     out = {},
     E = sc.edgeExits || [];
-  /* v42: the join table first: a road that names its exit here keeps it */
-  (D.roads || []).forEach(l => {
-    const o = l[0] === i ? l[1] : l[1] === i ? l[0] : null,
-      J = l[3];
-    if (o == null || !D.locations[o] || !J) return;
-    const id = l[0] === i ? J.a : J.b,
+  /* v42: the links first: a road that names its exit here keeps it */
+  (D.roads || []).forEach(L => {
+    const l = PB_DATA.road(D, L),
+      o = l.kind === 'seam' ? (l.a === i ? l.b : l.b === i ? l.a : null) : null;
+    if (o == null || !D.locations[o]) return;
+    const id = l.a === i ? l.exitA : l.exitB,
       k = id ? E.findIndex(q => q.id === id) : -1;
     if (k >= 0 && !(o in out)) out[o] = k;
   });
-  (D.roads || []).forEach(l => {
-    const o = l[0] === i ? l[1] : l[1] === i ? l[0] : null;
+  (D.roads || []).forEach(L => {
+    const l = PB_DATA.road(D, L),
+      o = l.kind === 'seam' ? (l.a === i ? l.b : l.b === i ? l.a : null) : null;
     if (o == null || !D.locations[o] || o in out) return;
     const a = Math.atan2((D.locations[o].lat || 0) - (me.lat || 0), (D.locations[o].lon || 0) - (me.lon || 0));
     ex.forEach((p, k) => {
@@ -847,12 +848,10 @@ function dropStaleExitJoins(sc) {
   const D = studioState.D,
     ids = new Set((sc.edgeExits || []).map(e => e.id)),
     users = locationsUsingMap(currentMapId()).map(([, i]) => i);
-  (D.roads || []).forEach(l => {
-    const J = l[3];
-    if (!J) return;
-    if (users.includes(l[0]) && J.a && !ids.has(J.a)) delete J.a;
-    if (users.includes(l[1]) && J.b && !ids.has(J.b)) delete J.b;
-    if (!J.a && !J.b) l.length = 3;
+  (D.roads || []).forEach(L => {
+    const l = PB_DATA.road(D, L);
+    if (users.includes(l.a) && l.exitA && !ids.has(l.exitA)) PB_DATA.setRoadEnd(D, L, 'a', null, null);
+    if (users.includes(l.b) && l.exitB && !ids.has(l.exitB)) PB_DATA.setRoadEnd(D, L, 'b', null, null);
   });
 }
 function mountMapPreview() {
@@ -1883,14 +1882,13 @@ function exitChecks(sc) {
           : { ok: 0, t: `${nm}: no way to walk there from the hub` }
       );
     }
-    (D.roads || []).forEach(l => {
-      const J = l[3];
-      if (!J) return;
-      const here = users.includes(l[0]) && J.a === e.id ? 'a' : users.includes(l[1]) && J.b === e.id ? 'b' : null;
+    (D.roads || []).forEach(L => {
+      const l = PB_DATA.road(D, L),
+        here = users.includes(l.a) && l.exitA === e.id ? 'a' : users.includes(l.b) && l.exitB === e.id ? 'b' : null;
       if (!here) return;
-      const o = here === 'a' ? l[1] : l[0],
+      const o = here === 'a' ? l.b : l.a,
         osc = D.maps[(D.locations[o] || {}).mapId],
-        oid = here === 'a' ? J.b : J.a,
+        oid = here === 'a' ? l.exitB : l.exitA,
         oe = osc && (osc.edgeExits || []).find(q => q.id === oid);
       if (!oe) out.push({ ok: 0, t: `${nm}: the road to ${D.locations[o].name} names no exit on that side` });
       else
@@ -1898,8 +1896,8 @@ function exitChecks(sc) {
           oe.side === opp[e.side]
             ? { ok: 1, t: `${nm}: faces ${D.locations[o].name}'s ${oe.id}, a straight road` }
             : {
-                ok: 1,
-                t: `${nm} (${e.side}) meets ${D.locations[o].name}'s ${oe.id} (${oe.side}): the road bends to join them`,
+                ok: 0,
+                t: `${nm} (${e.side}) meets ${D.locations[o].name}'s ${oe.id} (${oe.side}): they don't face each other, so the places can't join`,
               }
         );
     });

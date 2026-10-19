@@ -14,7 +14,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { provide, saveData, seamlessWorld } from './hooks.js';
-import { LOCATIONS, ROADS, ROADS_BY_NODE, START_NODE, gameData } from './game-data.js';
+import { LOCATIONS, ROADS_BY_NODE, START_NODE, gameData } from './game-data.js';
 /* eslint-disable no-func-assign */
 expose({
   MAP_FIELDS: [() => MAP_FIELDS],
@@ -43,7 +43,7 @@ provide({ mapsOfView });
 /* busy: the fetches under way or done, by map; touched: maps a view was made from while lite; all: loadAllMaps;
    ms and n: time spent and maps loaded; failed: maps that did not load */
 /** @type {{ busy: Map<string, Promise<void>>, touched: Set<string>, all: Promise<void> | null, ms: number, n: number, failed: string[] }} */
-const mapFiles = { busy: new Map(), touched: new Set(), all: null, ms: 0, n: 0, failed: [] };
+export const mapFiles = { busy: new Map(), touched: new Set(), all: null, ms: 0, n: 0, failed: [] };
 provide({ mapFiles }); /* to-module */
 /** @type {MapFileField[]} */
 const MAP_FIELDS = ['heights', 'steps', 'stepm', 'tiles', 'props'];
@@ -117,11 +117,6 @@ function mapsOfView(id) {
   let m = id.match(/#([^@#]+)@/);
   if (m) out.push(m[1]);
   if (!id.startsWith('w:')) return out.concat(id.split('#')[0]);
-  m = id.match(/^w:road(\d+)@/);
-  if (m) {
-    const L = ROADS[+m[1]];
-    return L ? out.concat(mapsAround(L[0], 1), mapsAround(L[1], 1)) : out;
-  }
   m = id.match(/^w:(.+?)(\*|[<>]\d+)/);
   const node = m ? nodeOfMap(m[1]) : -1;
   return node >= 0 ? out.concat(mapsAround(node, 1)) : out;

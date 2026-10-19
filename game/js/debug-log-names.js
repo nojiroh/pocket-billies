@@ -4,6 +4,7 @@
 import { LOCATIONS, gameData } from './game-data.js';
 import { encountersHere, setSetTrip, setTrip } from './logic/rules.js';
 import { battleStageKey, newBattle, setNewBattle } from './logic/battle-engine.js';
+import { mapFiles } from './map-files.js';
 import { activeBattle, save, saveData, setSave, uiState } from './game-state.js';
 import { gpuCountSummary, gpuCounters } from './engine/gpu-counters.js';
 import { frameScheduler, userFps } from './frame-scheduler.js';
@@ -90,6 +91,7 @@ import {
 } from './solid-props.js';
 import { drawPropModels, setDrawPropModels } from './prop-models.js';
 import { ambientLife, lifeStep, setLifeStep } from './ambient-life.js';
+import { seamlessWorld } from './seamless-world.js';
 import { paintWorkerReport } from './ground-paint-worker.js';
 import { endBattle, openBattle, paintActions, setEndBattle, setOpenBattle, setPaintActions } from './battle.js';
 import { setWorldMapMount, worldMapMount } from './world-map.js';
@@ -146,6 +148,7 @@ Object.defineProperties(GAME, {
   groundOcclusion: { get: () => groundOcclusion, set: setGroundOcclusion },
   lifeStep: { get: () => lifeStep, set: setLifeStep },
   makeNormalMap: { get: () => makeNormalMap, set: setMakeNormalMap },
+  mapFiles: { get: () => mapFiles },
   mountWalkView: { get: () => mountWalkView, set: setMountWalkView },
   navGrid: { get: () => navGrid, set: setNavGrid },
   newBattle: { get: () => newBattle, set: setNewBattle },
@@ -164,6 +167,7 @@ Object.defineProperties(GAME, {
   save: { get: () => save, set: setSave },
   saveData: { get: () => saveData },
   screenSnapshot: { get: () => screenSnapshot, set: setScreenSnapshot },
+  seamlessWorld: { get: () => seamlessWorld },
   setTrip: { get: () => setTrip, set: setSetTrip },
   shadowPass: { get: () => shadowPass, set: setShadowPass },
   solidPropState: { get: () => solidPropState },

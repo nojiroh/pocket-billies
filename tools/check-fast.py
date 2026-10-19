@@ -39,7 +39,7 @@ TEST_GLOBALS = "window.PB_TEST_GLOBALS=true"
 LOW_GRAPHICS = """(()=>{const off={lens:{blur:0,bokeh:0,aberration:0,grain:0,sharpen:0,vignette:0},color:{bloom:0,ink:0,outlines:0},
  air:{godRays:0,lightsInAir:0,mist:0,valleyMist:0,sunFog:0,particles:0},sun:{shafts:0,glare:0,clouds:0,cloudShadows:0},
  shadows:{ao:0,contact:0,cascades:false,lampShadows:0,groundAO:0},grass:{density:0},
- world:{groundBumps:0,farProps:0,treeCount:0,mini3d:false,variety:0,wear:0,buildings3d:true,interiors:true,seamless:true},
+ world:{groundBumps:0,farProps:0,treeCount:0,mini3d:false,variety:0,wear:0,buildings3d:true,interiors:true},
  quality:{auto:false,shadowMap:1024,resolution:.4}};let G;
  Object.defineProperty(window,'GAMEDATA',{configurable:true,get(){return G},set(v){if(v&&typeof v==='object'){v.engine=v.engine||{};
   const d=v.engine.defaults=v.engine.defaults||{};for(const k in off)d[k]=Object.assign({},d[k]||{},off[k])}G=v}})})()"""

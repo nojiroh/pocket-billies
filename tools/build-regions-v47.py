@@ -1390,9 +1390,9 @@ WAYS_IN = {('lanternhall', 'fanfare_fields'): dict(side='E', at=20.0, start=66.0
 def open_way(D, sid, nid, spec, rep):
     import base64, struct
     sc = D['maps'][sid]; i, j = node_index(D, sid), node_index(D, nid)
-    L = next(L for L in D['roads'] if {L[0], L[1]} == {i, j}); J = L[3]; mine = 'a' if L[0] == i else 'b'
+    L = next(L for L in D['roads'] if {gamedata.road(D, L)['a'], gamedata.road(D, L)['b']} == {i, j}); mine = 'a' if gamedata.road(D, L)['a'] == i else 'b'
     E = sc.setdefault('edgeExits', []); ex = sc.setdefault('exits', []); ids = {e['id'] for e in E}
-    if J.get(mine) in ids: return
+    if gamedata.road(D, L)['exit_' + mine] in ids: return
     if len(E) != len(ex): rep.append(f'!! {sid}: its exits and edge exits disagree, way to {nid} not opened'); return
     W, H = sc['w'], sc['h']; side, at, start, ch, wd = spec['side'], spec['at'], spec['start'], spec['ch'], spec['width']; inn = 1.1
     base = {'N': 'north', 'S': 'south', 'E': 'east', 'W': 'west'}[side]; eid, k = base, 2
@@ -1417,7 +1417,7 @@ def open_way(D, sid, nid, spec, rep):
     sp = {'E': (W - 3.4, at + wd / 2 + .9), 'W': (3.4, at + wd / 2 + .9), 'N': (at + wd / 2 + .9, H - 3.4), 'S': (at + wd / 2 + .9, 3.4)}[side]
     sc['props'].append({'k': 'signpost', 'x': round(sp[0], 2), 'z': round(sp[1], 2), 'act': 'sign', 'say': say, TAG: 1})
     E.append({'id': eid, 'side': side, 't': round(at / (H if side in 'EW' else W), 4), 'in': inn, 'width': 2}); ex.append([round(pt[0], 2), round(pt[1], 2)])
-    J[mine] = eid
+    gamedata.set_road_end(D, L, mine, exit=eid)
     rep.append(f'{sid}: a way out to {nid} ({eid}, {len(cells)} m² of ground, {len(gone)} props taken off it: {", ".join(p["k"] for p in gone) or "none"})')
 
 
@@ -1435,11 +1435,11 @@ def add_region(D, R, force=False, rep=None):
         if i is None: D['locations'].append(e); rep.append(f'place {n["id"]}')
         elif force and D['locations'][i].get(TAG): D['locations'][i] = e
     # roads
-    have = {L[3].get('id') for L in D['roads']}
+    have = {gamedata.road(D, L)['id'] for L in D['roads']}
     for a, b, cost, name in R['links']:
         ia, ib = node_index(D, a), node_index(D, b); rid = f'road:{a}-{b}'
         if rid in have: continue
-        D['roads'].append([ia, ib, cost, {'a': 'south', 'b': 'north', 'id': rid, 'from': a, 'to': b, 'name': name}]); rep.append(rid)
+        L = gamedata.add_road(D, ia, ib, id=rid, name=name); gamedata.set_road_end(D, L, 'a', exit='south'); gamedata.set_road_end(D, L, 'b', exit='north'); rep.append(rid)
     # places already there that a road of the region leaves from get their way out
     new = {n['id'] for n in R['nodes']}
     for a, b, cost, name in R['links']:
