@@ -134,7 +134,6 @@ import {
   walkView,
   walkablePointNear,
 } from './walk-view.js';
-import { engineSetting } from './engine/settings.js';
 import { environment, environmentHint, environmentIcon, environmentLabel } from './environment.js';
 import { mountWalkView, roomFloorReady, walkRenderer } from './walk-view-gl.js';
 import { fishStart } from './fishing.js';
@@ -988,7 +987,6 @@ function roomLayIn(id, p, fresh) {
     !p
   )
     return null;
-  if (engineSetting('world', 'seamlessRooms') === false) return null;
   const M = walkData().sc.props[p.k],
     E = doorOf(p);
   if (!M || !M.box || !E) return null;
