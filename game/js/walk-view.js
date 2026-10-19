@@ -605,8 +605,11 @@ export function doorOf(p) {
     M = C.props[p.k],
     s = p.s || 1,
     f = p.f ? -1 : 1,
-    dx = (((M && M.door && M.door.x) || 0) / (C.ppu || 34)) * s * f;
-  return { at: [p.x + dx, +p.z], out: [0, -1], mid: [+p.x, +p.z] };
+    dx = (((M && M.door && M.door.x) || 0) / (C.ppu || 34)) * s * f,
+    r = ((p.rot || 0) * Math.PI) / 180,
+    c = Math.cos(r),
+    sn = Math.sin(r); /* a turned building turns about the middle of its front (buildings.js buildingRotation) */
+  return { at: [p.x + dx * c, p.z + dx * sn], out: [sn, -c], mid: [+p.x, +p.z] };
 }
 /* v47: the kind a door keeps hours as (not game-data.js locationKind(id), the kind of a place) */
 export function openingHoursKind(a, p) {
