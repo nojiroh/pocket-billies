@@ -2135,7 +2135,7 @@ function* buildGroundMeshSteps(sc, G, T, bare) {
   }
 }
 export function buildGroundMesh() {
-  const it = buildGroundMeshSteps(walkView.sc, walkView.ground, walkRenderer);
+  const it = buildGroundMeshSteps(walkView.sc.groundOf || walkView.sc, walkView.ground, walkRenderer);
   let r = it.next();
   while (!r.done) r = it.next();
 }
@@ -2412,6 +2412,7 @@ function groundOcclusionTexture(r) {
 }
 /* v46: the frame's key for a view's ground (its mesh, water and textures are kept under it, swapMapCache) */
 function mapCacheKey(id, sc, gkey) {
+  if (sc.groundOf) return mapCacheKey(sc.roomBase, sc.groundOf, gkey); /* phase 08b: a room keeps its place's ground */
   return (
     id +
     '|' +
@@ -2431,8 +2432,9 @@ function mapCacheKey(id, sc, gkey) {
 /* v46: get a view's ground ready before it is shown: built a few ms a frame (groundPrepWork) and kept with the scenes you
    left (walkRenderer.sceneCache), so the switch to it is a swap of a few references. Returns true when it is ready. */
 export function isGroundPrepared(id, sc, gkey) {
-  const M = walkRenderer.sceneCache;
-  return !!(M && M.has(mapCacheKey(id, sc, gkey || groundKey(sc))));
+  const M = walkRenderer.sceneCache,
+    k = mapCacheKey(id, sc, gkey || groundKey(sc));
+  return k === walkRenderer.hkey || !!(M && M.has(k)); /* (phase 08b: or it is the one on screen: out of a room) */
 }
 export function prepareMapGround(id, sc, G, urgent, focus) {
   if (!walkRenderer.on || !G) return false;
@@ -3711,7 +3713,7 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
       T = walkRenderer.camT;
     const fx = bc ? bc[0] : T ? T[0] : walkView.pl.x,
       fz = bc ? bc[1] : T ? T[1] : walkView.pl.z;
-    updateNearRing(sc, fx, fz, PREP_BUDGET_MS);
+    updateNearRing(sc.groundOf || sc, fx, fz, PREP_BUDGET_MS);
   }
   walkRenderer.budT = performance.now();
   /* phase 20: the GPU counters (engine/gpu-counters.js) put each call that follows in the pass named last */
@@ -5877,7 +5879,7 @@ function drawGroundDepth(p, sc) {
 /* is the room's floor ready to show? If not, get it ready: its picture painted (at the near ring's size: it is seen up
    close), then its mesh built on the card (a room is small: at once). Rooms you were in lately are kept (three) */
 const ROOM_FLOORS_KEPT = 3;
-function roomFloorReady(RS, pr = -5) {
+export function roomFloorReady(RS, pr = -5) {
   if (!RS || !walkRenderer.on || !gpuState.gl) return false;
   const M = walkRenderer.roomFloors || (walkRenderer.roomFloors = new Map());
   if (M.has(RS.id)) return true;

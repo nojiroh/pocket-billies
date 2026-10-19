@@ -713,6 +713,7 @@ function tilePixels(path) {
   return { w, h, d: new Uint32Array(x.getImageData(0, 0, w, h).data.buffer) };
 }
 export function groundKey(sc) {
+  if (sc.groundOf) return groundKey(sc.groundOf); /* phase 08b: a room shows its place's ground */
   const C = walkData().sc;
   return JSON.stringify([
     sc.w,
@@ -2162,7 +2163,7 @@ export function ensureGround() {
     key = groundKey(sc);
   if (key !== walkView.gkey || !walkView.ground) {
     const c = cachedGround(key);
-    walkView.ground = c || buildGroundPicture(sc);
+    walkView.ground = c || buildGroundPicture(sc.groundOf || sc);
     if (!c) keepGround(key, walkView.ground);
     walkView.gkey = key;
     walkView.cand = null;
