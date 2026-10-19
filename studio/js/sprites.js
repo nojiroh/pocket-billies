@@ -50,6 +50,7 @@ expose({
   drawPixelEditor: [() => drawPixelEditor, v => (drawPixelEditor = v)],
   drawSpritePreview: [() => drawSpritePreview, v => (drawSpritePreview = v)],
   fileToCanvas: [() => fileToCanvas, v => (fileToCanvas = v)],
+  forgetArt: [() => forgetArt, v => ((forgetArt = v), provide({ forgetArt }))],
   hsvToRgb: [() => hsvToRgb, v => (hsvToRgb = v)],
   hueShift: [() => hueShift, v => (hueShift = v)],
   loadImage: [() => loadImage, v => (loadImage = v)],
@@ -82,7 +83,7 @@ expose({
   undoPixels: [() => undoPixels, v => (undoPixels = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ markArt, mountPreviews, spriteCacheClear });
+provide({ forgetArt, markArt, mountPreviews, spriteCacheClear });
 /* to-module: end */
 export const ATLAS_CACHE = new Map(); /* path -> canvas */
 const ATLAS_LOADS = new Map();
@@ -331,6 +332,14 @@ export function markArt(path, c) {
   atlasVersion++;
   studioState.artDirty.set(path, c);
   ATLAS_CACHE.set(path, c);
+  updateTopBar();
+  previewsDirty();
+}
+/* studio track ST-3: a picture made in this session and not saved, taken back (an undo of a new part) */
+function forgetArt(path) {
+  studioState.artDirty.delete(path);
+  ATLAS_CACHE.delete(path);
+  atlasVersion++;
   updateTopBar();
   previewsDirty();
 }

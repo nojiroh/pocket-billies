@@ -4,11 +4,13 @@
    The Studio's one undo, as a stack. Two kinds of step share one order:
    - data: the snapshot of the data (a JSON string) before an edit. The current snapshot is `last`.
    - art: a patch of a picture, `{ art: path, before, after }`, each a box of pixels `{ x, y, width, height, data }`
-     (or the whole picture when its size changed, `whole: true`). Art does not change `last`.
+     (or the whole picture when its size changed, `whole: true`; `made: true` when the picture is new, its `before`
+     0 x 0: undoing it drops the picture). Art does not change `last`.
+   - a group of art steps, one step of the undo (`group`: a kit's parts written at once; studio track ST-3).
    Undoing a data step swaps `last` with it; undoing art hands the step back to put `before` on the picture. Logic
    only: no DOM, runs in Node (tools/test/history.test.mjs). studio/js/studio-app.js keeps it in studioState. */
 /** @typedef {{ x: number, y: number, width: number, height: number, data: Uint8ClampedArray }} Patch */
-/** @typedef {{ art: string, before: Patch, after: Patch, whole?: boolean }} ArtStep */
+/** @typedef {{ art: string, before: Patch, after: Patch, whole?: boolean, made?: boolean, group?: ArtStep[] }} ArtStep */
 /** @typedef {{ undo: (string | ArtStep)[], redo: (string | ArtStep)[], last: string | null }} History */
 /** @typedef {{ kind: 'data', snap: string } | { kind: 'art', step: ArtStep, put: Patch }} Undone */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
@@ -17,8 +19,11 @@ import { expose } from '../test-globals.js';
 expose({
   HISTORY_ART_BYTES: [() => HISTORY_ART_BYTES],
   HISTORY_STEPS: [() => HISTORY_STEPS],
+  NO_PIXELS: [() => NO_PIXELS],
   // @ts-expect-error -- replaced on purpose
   historyArt: [() => historyArt, v => (historyArt = v)],
+  // @ts-expect-error -- replaced on purpose
+  historyArtGroup: [() => historyArtGroup, v => (historyArtGroup = v)],
   historyBytes: [() => historyBytes],
   // @ts-expect-error -- replaced on purpose
   historyCommit: [() => historyCommit, v => (historyCommit = v)],
@@ -36,7 +41,16 @@ export const HISTORY_STEPS = 80;
 export const HISTORY_ART_BYTES = 64 * 1024 * 1024;
 
 export const historyBytes = (/** @type {string | ArtStep} */ s) =>
-  typeof s === 'string' ? 0 : s.before.data.length + s.after.data.length;
+  typeof s === 'string'
+    ? 0
+    : s.group
+      ? s.group.reduce((n, g) => n + historyBytes(g), 0)
+      : s.before.data.length + s.after.data.length;
+export const NO_PIXELS = { x: 0, y: 0, width: 0, height: 0, data: new Uint8ClampedArray(0) };
+/** several picture steps as one (undone and redone together) */
+export function historyArtGroup(/** @type {History} */ H, /** @type {ArtStep[]} */ steps) {
+  if (steps.length) historyArt(H, { art: '', before: NO_PIXELS, after: NO_PIXELS, group: steps });
+}
 export function historyTrim(/** @type {History} */ H) {
   let bytes = H.undo.reduce((n, s) => n + historyBytes(s), 0);
   while (H.undo.length > HISTORY_STEPS || (bytes > HISTORY_ART_BYTES && H.undo.length > 1))
