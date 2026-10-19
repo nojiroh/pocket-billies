@@ -11,6 +11,42 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 - Questions waiting for the owner: 
 - Next session starts with: 
 
+### Phase 09 batch 8 - city opening mockups: towers, signs, street things, portals (provisional) - 2026-10-19
+Owner's request: start the city opening's buildings and props, as mockups to judge before S4 and S7-S8 (Project
+Story's "Ask me before": the city mockups before S8 builds the scene). Look chosen 2026-10-19: only tall buildings
+(Cyberpunk 2077, Blade Runner), sleek tops over grimy bottoms, neon in pink, cyan and amber. Then: "make various
+portal shapes".
+- Changed (tools/build-props-batch8.py, independent of batches 1-7, rerunnable; new keys only, nothing places them
+  outside the new showcase map `test_props_city`):
+  - Towers from one kit (grimy base: concrete, slabs, shopfront with a neon strip, pipes, AC units, fire escape,
+    small windows with grime runs; sleek shaft: glass, chrome bands, corner fins, lit curtain wall):
+    city_tower_slab (90 m), city_tower_mega (95 m, balcony cages, two setbacks, a landing pad), city_tower_hero
+    (125 m octagonal needle on a podium, edge light strips, a holo-ad band, the organization's logo panel **blank**).
+  - Signs with generic words only (no brands, those are S4's): city_sign_hotel (vertical blade), city_sign_bar,
+    city_sign_open (arrow), city_billboard (holo panel on a truss, no text).
+  - Street: city_streetlight (cyan bar), city_vending, city_flying_car (hovering at 2.4 m, lights; still, the lanes
+    and splines are S8's).
+  - Portals, five shapes, each in two colourways (variant 0 violet, the city's side; variant 1 gold-green, the Hollow
+    Earth's light): portal_ring (with floating shards), portal_rift (a jagged tear), portal_door (a door that wasn't
+    there, on a scorched threshold), portal_gate (a machine-built octagon gate with a generator), portal_hole (the
+    pavement gives way: broken slabs, a glowing hole, a beam of light rising). The swirls are still pictures.
+  - Each prop has a front picture (for when models are off) and a coloured halo (`glow`) at night.
+- Risky or unfinished:
+  - Only picture layers glow (the model shader has no emission), so lit windows are a picture on each tower's FRONT
+    face only; the sides are unlit glass with bands and fins. Fine for a scripted camera; say if the sides need light.
+  - With Settings "Props as low-poly" off, a 125 m tower would be built as voxels at 32 to the metre: too big. Nothing
+    turns it off but that setting; S8 should keep the city's towers low-poly always.
+  - Triangles (meshed in Node, no rendering): towers 714 / 2,536 / 848, everything else under 330. Not measured on a
+    phone; the largest window picture is 378 x 1,699 px (the slab's glass).
+- Verified: data check, lint (one naming note in game/js/engine/frame-block.js, already on main), type-check, 118
+  unit tests, module and format checks, smoke check (result in the next commit); each recipe meshed in Node; the generated pictures looked at as
+  flat sheets. No headless renders of the props (graphics are for your devices).
+- Decisions I made (and why): towers 90-125 m so they read as megacity at street level; sign words kept generic;
+  steady glow, no flicker (no engine change; flicker can come with S8).
+- Questions waiting for the owner: on your phone, open `test_props_city` with Settings → Time of day at night: the
+  look of the towers and signs, which portal shape (or shapes) and which colourway.
+- Next session starts with: the owner's picks; then the full kit after S4 (names, logo, surface/interior contrast).
+
 ### Phase 20 stage C, session C-2 - One light block per frame (C3), flat things and blades (C4) - 2026-10-19
 Plan approved at the start ("Yes, let's go"), after sorting out the branches. Branch `ccr-9d72271f-j72y94`.
 - Branches first (nothing of stage B or C-1 was in main at the start):

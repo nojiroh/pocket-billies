@@ -8918,6 +8918,272 @@
     {"k":"glow","x":0,"y":-308}
    ],
    "about": "An airship station in the open: the mast with a lift, a canopy, a ticket kiosk. Tap it to fly; the airship moors at its mast (same spot)"
+  },
+  "city_tower_slab": {
+   "name": "City tower: slab (mockup)",
+   "img": "scene/next/city/city_tower_slab_front.png",
+   "ox": -230,
+   "oy": -2883,
+   "shadow": 3,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["test","city"],
+   "group": "city_tower_slab",
+   "model": "scene/next/models/city_tower_slab.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0},
+   "box": [14,10]
+  },
+  "city_tower_mega": {
+   "name": "City tower: megablock (mockup)",
+   "img": "scene/next/city/city_tower_mega_front.png",
+   "ox": -326,
+   "oy": -3203,
+   "shadow": 3,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["test","city"],
+   "group": "city_tower_mega",
+   "model": "scene/next/models/city_tower_mega.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0},
+   "box": [20,14]
+  },
+  "city_tower_hero": {
+   "name": "City tower: hero needle (mockup)",
+   "img": "scene/next/city/city_tower_hero_front.png",
+   "ox": -326,
+   "oy": -4051,
+   "shadow": 3,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["test","city"],
+   "group": "city_tower_hero",
+   "model": "scene/next/models/city_tower_hero.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0},
+   "box": [20,16]
+  },
+  "city_sign_hotel": {
+   "name": "City sign: hotel blade (mockup)",
+   "img": "scene/next/city/city_sign_hotel_front.png",
+   "ox": -22,
+   "oy": -352,
+   "shadow": 0.4,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["test","city"],
+   "group": "city_sign_hotel",
+   "model": "scene/next/models/city_sign_hotel.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0},
+   "solid": 0.4,
+   "glow": {"c":"#FF3FA4","r":3,"y":7.3,"day":0.12}
+  },
+  "city_sign_bar": {
+   "name": "City sign: bar (mockup)",
+   "img": "scene/next/city/city_sign_bar_front.png",
+   "ox": -10,
+   "oy": -122,
+   "shadow": 0.4,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["test","city"],
+   "group": "city_sign_bar",
+   "model": "scene/next/models/city_sign_bar.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0},
+   "solid": 0.4,
+   "glow": {"c":"#3FE6FF","r":3,"y":2.4,"day":0.12}
+  },
+  "city_sign_open": {
+   "name": "City sign: open arrow (mockup)",
+   "img": "scene/next/city/city_sign_open_front.png",
+   "ox": -40,
+   "oy": -120,
+   "shadow": 0.4,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["test","city"],
+   "group": "city_sign_open",
+   "model": "scene/next/models/city_sign_open.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0},
+   "solid": 0.4,
+   "glow": {"c":"#FFB23F","r":3,"y":2.8,"day":0.12}
+  },
+  "city_billboard": {
+   "name": "City billboard (mockup)",
+   "img": "scene/next/city/city_billboard_front.png",
+   "ox": -154,
+   "oy": -301,
+   "shadow": 1.2,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["test","city"],
+   "group": "city_billboard",
+   "model": "scene/next/models/city_billboard.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0},
+   "box": [9.6,0.8],
+   "glow": {"c":"#FF3FA4","r":4,"y":6.5,"day":0.12}
+  },
+  "city_streetlight": {
+   "name": "City street light (mockup)",
+   "img": "scene/next/city/city_streetlight_front.png",
+   "ox": -8,
+   "oy": -247,
+   "shadow": 0.3,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["test","city"],
+   "group": "city_streetlight",
+   "model": "scene/next/models/city_streetlight.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0},
+   "solid": 0.3,
+   "glow": {"c":"#3FE6FF","r":3,"y":7.4,"day":0.12}
+  },
+  "city_vending": {
+   "name": "Vending machine (mockup)",
+   "img": "scene/next/city/city_vending_front.png",
+   "ox": -18,
+   "oy": -67,
+   "shadow": 0.5,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["test","city"],
+   "group": "city_vending",
+   "model": "scene/next/models/city_vending.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0},
+   "box": [1.1,0.85],
+   "glow": {"c":"#FF3FA4","r":2,"y":1.6,"day":0.12}
+  },
+  "city_flying_car": {
+   "name": "Flying car (mockup)",
+   "img": "scene/next/city/city_flying_car_front.png",
+   "ox": -72,
+   "oy": -123,
+   "shadow": 1,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["test","city"],
+   "group": "city_flying_car",
+   "model": "scene/next/models/city_flying_car.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0},
+   "glow": {"c":"#3FE6FF","r":3,"y":2.2,"day":0.12}
+  },
+  "portal_ring": {
+   "name": "Portal: ring (mockup)",
+   "img": "scene/next/city/portal_ring_front.png",
+   "ox": -70,
+   "oy": -135,
+   "shadow": 0.6,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["test","city"],
+   "group": "portal_ring",
+   "model": "scene/next/models/portal_ring.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0},
+   "glow": {"c":"#C27CFF","r":3.5,"y":1.9500000000000002,"day":0.4},
+   "variants": [
+    {
+     "swap": {"scene/next/city/portal_ring_void.png":"scene/next/city/portal_ring_inner.png"},
+     "glow": {"c":"#FFC94A","r":3.5,"y":1.9500000000000002,"day":0.4},
+     "name": "Portal: ring (inner light, mockup)"
+    }
+   ]
+  },
+  "portal_rift": {
+   "name": "Portal: rift (mockup)",
+   "img": "scene/next/city/portal_rift_front.png",
+   "ox": -55,
+   "oy": -127,
+   "shadow": 0.6,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["test","city"],
+   "group": "portal_rift",
+   "model": "scene/next/models/portal_rift.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0},
+   "glow": {"c":"#C27CFF","r":3.5,"y":2.05,"day":0.4},
+   "variants": [
+    {
+     "swap": {"scene/next/city/portal_rift_void.png":"scene/next/city/portal_rift_inner.png"},
+     "glow": {"c":"#FFC94A","r":3.5,"y":2.05,"day":0.4},
+     "name": "Portal: rift (inner light, mockup)"
+    }
+   ]
+  },
+  "portal_door": {
+   "name": "Portal: door (mockup)",
+   "img": "scene/next/city/portal_door_front.png",
+   "ox": -35,
+   "oy": -86,
+   "shadow": 0.6,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["test","city"],
+   "group": "portal_door",
+   "model": "scene/next/models/portal_door.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0},
+   "glow": {"c":"#C27CFF","r":3.5,"y":1.35,"day":0.4},
+   "variants": [
+    {
+     "swap": {"scene/next/city/portal_door_void.png":"scene/next/city/portal_door_inner.png"},
+     "glow": {"c":"#FFC94A","r":3.5,"y":1.35,"day":0.4},
+     "name": "Portal: door (inner light, mockup)"
+    }
+   ]
+  },
+  "portal_gate": {
+   "name": "Portal: machine gate (mockup)",
+   "img": "scene/next/city/portal_gate_front.png",
+   "ox": -70,
+   "oy": -130,
+   "shadow": 0.6,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["test","city"],
+   "group": "portal_gate",
+   "model": "scene/next/models/portal_gate.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0},
+   "glow": {"c":"#C27CFF","r":3.5,"y":2.15,"day":0.4},
+   "variants": [
+    {
+     "swap": {"scene/next/city/portal_gate_void.png":"scene/next/city/portal_gate_inner.png"},
+     "glow": {"c":"#FFC94A","r":3.5,"y":2.15,"day":0.4},
+     "name": "Portal: machine gate (inner light, mockup)"
+    }
+   ]
+  },
+  "portal_hole": {
+   "name": "Portal: hole in the pavement (mockup)",
+   "img": "scene/next/city/portal_hole_front.png",
+   "ox": -64,
+   "oy": -147,
+   "shadow": 0.6,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["test","city"],
+   "group": "portal_hole",
+   "model": "scene/next/models/portal_hole.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0},
+   "glow": {"c":"#C27CFF","r":3.5,"y":1.2,"day":0.4},
+   "variants": [
+    {
+     "swap": {"scene/next/city/portal_hole_beam_void.png":"scene/next/city/portal_hole_beam_inner.png","#C27CFF":"#FFC94A"},
+     "glow": {"c":"#FFC94A","r":3.5,"y":1.2,"day":0.4},
+     "name": "Portal: hole in the pavement (inner light, mockup)"
+    }
+   ]
   }
  },
  "person": 1.75,
