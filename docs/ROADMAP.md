@@ -24,7 +24,7 @@ Do the phases in order. Each phase is one session (or a few for the big ones). E
 | 17 | 17-robots | Medabot-inspired build-your-own robots and battles | 8-15 h prototype; 25-45 h full | 09, 13, 15 |
 | 18 | 18-friend-trading-and-battles | Async friend battles and atomic trades (Billies, robots, parts) | 10-20 h | 02, 16, 17, 19 |
 | 19 | 19-battle-core | Seeded RNG owned by the battle, own state, two-sided inputs, replay log, effect handlers | 10-18 h | 13, 17 prototype |
-| 20 | 20-renderer-batching | Draw counters, split walk-view-gl.js, uniform block, instancing, battle rigs on GPU, context loss | 15-30 h | 19 |
+| 20 | 20-renderer-batching | Measure; split walk-view-gl.js; CPU per frame (settings, allocations, uniform block, lights); pixels first (sky last, mediump, phone budget, overdraw); instancing; shadow casters; GPU rigs; context loss; a directable time-of-day light | 25-45 h | 19 (stage A can go first) |
 | 21 | 21-texture-atlases-and-ktx2 | Atlas pages, build-time normal maps, KTX2 (Basis) with PNG fallback | 10-20 h | 20 |
 | 22 | 22-story-layer | Conditions, dialogue/choices/quests as scripts in data, when/unless, story checks, Studio preview | 12-24 h | 19 (seeded runs), before 15 content |
 

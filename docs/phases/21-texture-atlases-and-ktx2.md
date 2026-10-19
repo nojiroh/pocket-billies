@@ -28,6 +28,10 @@ thing people edit; atlases and KTX2 files are built from them.
   rectangle. The game looks pictures up through the manifest; a picture not in any page loads alone as today.
 - Generated, not in git; built by `npm run data`/the build and in CI, like `gamedata.js`. In `npm run dev` the game
   can use single pictures, so a Studio edit shows at once.
+- Alternative studied in phase 20: a texture array (TEXTURE_2D_ARRAY) per size bucket instead of 2D packing. No
+  packing or bleeding, and each picture keeps its pixel coordinates, but Copperleaf would waste about 2.5x memory
+  (5 buckets, 4.67 Mpx for 1.89 Mpx of pictures), layers must be preallocated, and mipmaps are rebuilt for the whole
+  array on every upload. Choose between the two in the first reply, with numbers.
 - **Ask me before:** what is excluded (portraits, UI, pictures the Studio paints often).
 
 ### 2. KTX2 encoding
