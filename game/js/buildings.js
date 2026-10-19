@@ -31,7 +31,7 @@ import { environment, environmentLitFraction } from './environment.js';
 import { walkRenderer } from './walk/walk-state.js';
 import { standingHeightAt } from './walk/heights.js';
 import { useWalkProgram, worldCurveArgs } from './walk/draw-common.js';
-import { setPropLookUniforms } from './walk-view-gl.js';
+import { setPropLookUniforms } from './walk/prop-look.js';
 /* eslint-disable no-func-assign */
 expose({
   BUILDING_RAMP_GLSL: [() => BUILDING_RAMP_GLSL],

@@ -7,6 +7,7 @@
    mist, cloud shadows, and a lens with depth of field. Every dial is an engine setting (Studio → Engine).
    Same scenes, walking and taps as js/walk-view.js (scene data, paths, the player); this file draws them. */
 /* which material a prop is made of: its own "mat", else guessed from its name */
+/* ---------- canvas plumbing: the WebGL canvas plus a 2D layer on top for labels ---------- */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import {
@@ -14,17 +15,13 @@ import {
   LIFE_KIND,
   SOLID_PROP_PARTS,
   SOLID_PROP_SHADERS,
-  SPECIES,
   ambientLife,
-  buddyItems,
   buildingFrontPicture,
   buildingGuard,
-  buildingMesh,
   buildingState,
   buildingsOn,
   chimneySmoke,
   clueDraw,
-  companionItems,
   drawBuildingShadows,
   drawBuildings,
   drawPropModelShadows,
@@ -33,52 +30,36 @@ import {
   drawSolidProps,
   drawStructureShadows,
   drawStructures,
-  friendWorldItems,
   frontWindowLight,
-  lifeSprites,
   lifeStep,
   litWindowFraction,
   loadingScreen,
   noWebGL,
-  propModelImageItems,
   propModelShaders,
   provide,
   reducedMotion,
   requestAsker,
-  riderOf,
   saveData,
   seamlessLookTick,
-  solidPropLevelOfDetail,
-  soundEffectAt,
   stampDraw,
-  tagPropModel,
-  tagSolidProp,
-  warmWorldBillies,
-  wildBillyItem,
   worldBillies,
   worldBillyGlows,
-  worldBillyItem,
   worldBillyLabels,
 } from './hooks.js';
 import { clamp } from './util.js';
 import { gpuPass } from './engine/gpu-counters.js';
 import { frameCount, frameTask, userFps } from './frame-scheduler.js';
 import { hexToRgb, makeCanvas } from './art.js';
-import { folkFrames, personBattlePose, personWalkFrames, pickWalkFrame, warmPerson } from './person-art.js';
-import { drawRig, rigFrame, rigParts, rigPreload } from './skeleton-rig.js';
 import {
   BOB_M,
   EFFECT_FRAMES,
   GROUND_BORDER_M,
-  WALK_FRAME_M,
   actionLabel,
   actionSpot,
   approachPoint,
   artImage,
   canvasPoint,
   climbStartEnd,
-  cropGrowth,
-  directionOf,
   drawBubble,
   drawExitLabels,
   drawExitMarks,
@@ -86,35 +67,26 @@ import {
   drawLevelTag,
   drawSpeech,
   drawTapMark,
-  encounterSpot,
   ensureGround,
-  flagPicturePath,
   handleWalkClick,
   hash2d,
   hitAt,
-  imageReady,
   isWalkable,
-  layerAsProp,
   mapById,
   mapHub,
   navGrid,
-  pointAlongMapPath,
   prepareMap,
   propShown,
-  propWithVariant,
   screenToGround,
   setScreenToGround,
   setStopWalkView,
   setWorldToScreen,
-  stepLevelAt,
   stopWalkView,
-  tallGrassProps,
   terrainAt,
   updateFolk,
   updatePlayer,
   walkData,
   walkView,
-  walkablePointNear,
   worldToScreen,
 } from './walk-view.js';
 import { PLAIN_LOOK, engineColor, engineContext, engineSetting } from './engine/settings.js';
@@ -140,7 +112,6 @@ import {
   trimTextures,
   uploadMesh,
   webgl2Supported,
-  windBendAt,
   windGustAt,
 } from './engine/webgl.js';
 import { beginLampShadow, beginSunShadow, endShadow, lightContext, pickPointLights, sunLight } from './engine/light.js';
@@ -174,30 +145,18 @@ import {
 import { drawSky, skyColors } from './walk/sky.js';
 import { drawRoomEffects, drawRoomFront, roomBoxOf, roomLights, roomSkyLight, windowLightShare } from './walk/rooms.js';
 import { addRipple, drawWater, reflectionPass, waterAt } from './walk/water.js';
+import { foliageAmount, setPropLookUniforms } from './walk/prop-look.js';
+import { gatherFrameItems } from './walk/frame-items.js';
 /* eslint-disable no-func-assign */
 expose({
-  ALTERNATE_PROPS: [() => ALTERNATE_PROPS],
-  BOBBING_PROPS: [() => BOBBING_PROPS],
   BOX_INFO_CACHE: [() => BOX_INFO_CACHE],
-  EVERGREEN_PROPS: [() => EVERGREEN_PROPS],
   FLOWER_COLORS: [() => FLOWER_COLORS],
   FLOWER_SET_BY_LOCATION: [() => FLOWER_SET_BY_LOCATION],
-  FOLIAGE_PROPS: [() => FOLIAGE_PROPS],
   FOOTPRINT_COLORS: [() => FOOTPRINT_COLORS],
   GRASS_PUSHER_BUFFER: [() => GRASS_PUSHER_BUFFER],
   IMAGE_IDS: [() => IMAGE_IDS],
-  NEUTRAL_LOOK: [() => NEUTRAL_LOOK],
-  PROP_LOOK_CACHE: [() => PROP_LOOK_CACHE],
-  PROP_VARIETY_DEFAULT: [() => PROP_VARIETY_DEFAULT],
-  PROP_VARIETY_RULES: [() => PROP_VARIETY_RULES],
-  SLOPE_HUGGERS: [() => SLOPE_HUGGERS],
-  SLOPE_HUG_CACHE: [() => SLOPE_HUG_CACHE],
-  STILL_PROP_CACHE: [() => STILL_PROP_CACHE],
-  SUNKEN_FOOTPRINT_PROPS: [() => SUNKEN_FOOTPRINT_PROPS],
-  WAVING_PROPS: [() => WAVING_PROPS],
   addFootprint: [() => addFootprint, v => (addFootprint = v)],
   addHitTarget: [() => addHitTarget, v => (addHitTarget = v)],
-  alternatePropImage: [() => alternatePropImage, v => (alternatePropImage = v)],
   askDeviceTilt: [() => askDeviceTilt, v => (askDeviceTilt = v)],
   baseStopWalkView: [() => baseStopWalkView],
   battleCamera: [() => battleCamera, v => (battleCamera = v)],
@@ -206,7 +165,6 @@ expose({
   cameraTurnLimit: [() => cameraTurnLimit],
   canvasForContext: [() => canvasForContext, v => (canvasForContext = v)],
   clampZoom: [() => clampZoom],
-  computePropLook: [() => computePropLook, v => (computePropLook = v)],
   cutsceneCamera: [() => cutsceneCamera, v => (cutsceneCamera = v)],
   drawBoxFaces: [() => drawBoxFaces, v => setDrawBoxFaces(v)],
   drawClockHands: [() => drawClockHands, v => (drawClockHands = v)],
@@ -225,14 +183,11 @@ expose({
   effectsPass: [() => effectsPass, v => setEffectsPass(v)],
   ensureWalkGl: [() => ensureWalkGl, v => (ensureWalkGl = v)],
   fittedShadowPass: [() => fittedShadowPass, v => (fittedShadowPass = v)],
-  foliageAmount: [() => foliageAmount, v => (foliageAmount = v)],
   freeCameraOn: [() => freeCameraOn],
   gatherFountainBasins: [() => gatherFountainBasins, v => (gatherFountainBasins = v)],
-  gatherFrameItems: [() => gatherFrameItems, v => setGatherFrameItems(v)],
   grassPushers: [() => grassPushers, v => (grassPushers = v)],
   grassTrail: [() => grassTrail, v => (grassTrail = v)],
   handleCanvasClick: [() => handleCanvasClick, v => (handleCanvasClick = v)],
-  hugSlope: [() => hugSlope, v => (hugSlope = v)],
   imageId: [() => imageId, v => (imageId = v)],
   imageIdCount: [() => imageIdCount, v => (imageIdCount = v)],
   labelLayer: [() => labelLayer, v => (labelLayer = v)],
@@ -244,34 +199,22 @@ expose({
   mapSun: [() => mapSun, v => (mapSun = v)],
   mountWalkView: [() => mountWalkView, v => setMountWalkView(v)],
   onGlContextRestored: [() => onGlContextRestored, v => ((onGlContextRestored = v), provide({ onGlContextRestored }))],
-  personItem: [() => personItem, v => (personItem = v)],
-  propBaseHeight: [() => propBaseHeight, v => (propBaseHeight = v)],
-  propCheckedAt: [() => propCheckedAt, v => (propCheckedAt = v)],
-  propGrid: [() => propGrid, v => (propGrid = v)],
-  propLook: [() => propLook, v => (propLook = v)],
-  propLookSettings: [() => propLookSettings, v => (propLookSettings = v)],
-  propMaterial: [() => propMaterial, v => (propMaterial = v)],
-  propVariety: [() => propVariety, v => (propVariety = v)],
-  rideMountItem: [() => rideMountItem, v => (rideMountItem = v)],
   roomDimming: [() => roomDimming, v => (roomDimming = v)],
   screenRay: [() => screenRay, v => (screenRay = v)],
   screenToGround2d: [() => screenToGround2d],
   setMountWalkView: [() => setMountWalkView, v => (setMountWalkView = v)],
-  setPropLookUniforms: [() => setPropLookUniforms, v => ((setPropLookUniforms = v), provide({ setPropLookUniforms }))],
   shadowMapArea: [() => shadowMapArea, v => (shadowMapArea = v)],
   shadowPass: [() => shadowPass, v => setShadowPass(v)],
   startTownRise: [() => startTownRise, v => (startTownRise = v)],
-  stillPropState: [() => stillPropState, v => (stillPropState = v)],
   townRiseAmount: [() => townRiseAmount, v => (townRiseAmount = v)],
   updateBasinMeshes: [() => updateBasinMeshes, v => (updateBasinMeshes = v)],
   walkCamera: [() => walkCamera, v => (walkCamera = v)],
   walkLightContext: [() => walkLightContext, v => (walkLightContext = v)],
-  windLeanAt: [() => windLeanAt, v => (windLeanAt = v)],
   windowLit: [() => windowLit, v => (windowLit = v)],
   worldToScreen2d: [() => worldToScreen2d],
 });
 /* eslint-enable no-func-assign */
-provide({ onGlContextRestored, setPropLookUniforms });
+provide({ onGlContextRestored });
 export function setDrawBoxFaces(v) {
   drawBoxFaces = v; // eslint-disable-line no-func-assign
   provide({ drawBoxFaces });
@@ -292,31 +235,11 @@ export function setEffectsPass(v) {
   effectsPass = v; // eslint-disable-line no-func-assign
   provide({ effectsPass });
 }
-export function setGatherFrameItems(v) {
-  gatherFrameItems = v; // eslint-disable-line no-func-assign
-  provide({ gatherFrameItems });
-}
 export function setShadowPass(v) {
   shadowPass = v; // eslint-disable-line no-func-assign
   provide({ shadowPass });
 }
 /* to-module: end */
-export function propMaterial(k, M) {
-  if (M && M.mat && SURFACE_MATERIALS[M.mat]) return M.mat;
-  const n = ((M && M.group) || '') + ' ' + k;
-  if (/house|shop|clinic|lab|bunker|tent|stall|windmill|busstop|kiosk/.test(n)) return 'building';
-  if (/crystal|glass|coral/.test(n)) return 'crystal';
-  if (/tree|bush|hedge|flower|reed|cattail|lily|grass|crop|seaweed|cactus|mushroom|vine|plant|hay/.test(n))
-    return 'foliage';
-  if (/lamp|lantern|pipe|derrick|tire|scrap|bin|trash|escal|salesign|cartS|pretzel|mailbox|flag/.test(n))
-    return 'metal';
-  if (/rock|boulder|well|fountain|statue|stalag|mesa|stepping|planter|flowerpot|cave|arch/.test(n)) return 'stone';
-  if (/fence|bench|sign|crate|barrel|log|stump|cart|picnic|table|campfire|planter_box/.test(n)) return 'wood';
-  if (/mesa/.test(n)) return 'stone';
-  if (/escal|bin|pretzel|derrick/.test(n)) return 'metal';
-  return M && M.box ? 'building' : 'plain';
-}
-/* ---------- canvas plumbing: the WebGL canvas plus a 2D layer on top for labels ---------- */
 export function canvasForContext(cv, type) {
   if (!cv._ctx) {
     cv._ctx = type;
@@ -1140,900 +1063,6 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
     H[work < 8 ? 0 : work < 16 ? 1 : work < 33 ? 2 : work < 66 ? 3 : work < 133 ? 4 : 5]++;
   }
   if (typeof frameCount === 'function' && walkView.opt.meter) frameCount(work);
-}
-/* ---------- what stands in the scene this frame ---------- */
-/* v23: low, wide things (fences, benches, logs, rocks, hedges, planters) follow the slope they stand on: a picture's two
-   ends sit on the ground (a vertical skew along its width), a solid prop tilts with the ground. Upright things (trees,
-   lamps, signs, people, buildings) stay plumb. Steps of a cliff aren't a slope: anything steeper than 35° stays level. */
-const SLOPE_HUGGERS =
-  /fence|bench|log|rock|boulder|stone|hedge|planter|crate|pipe|rail|wall|bush|flower|hay|pumpkin|melon|crop|tire|planks|stump|vineyard/;
-/* v26: how much a thing is leaves or grass (it turns with the seasons; evergreens hardly) and whether snow settles on it */
-const FOLIAGE_PROPS =
-    /tree_(oak|fruit|birch|maple|willow|blossom)|street_tree|^tree$|bush|hedge|tallgrass|reeds|cattail|flowers|fern|crops|vine|ivy|lily|grass/,
-  EVERGREEN_PROPS = /pine|palm|cactus|dead|snow/;
-export function foliageAmount(it) {
-  if (!it || it.k !== 'prop' || it.person || !it.M) return [0, 0];
-  const M = it.M;
-  if (M._fol) return M._fol;
-  const g = (M.group || '') + ' ' + ((it.p && it.p.k) || '');
-  return (M._fol = [
-    EVERGREEN_PROPS.test(g)
-      ? 0.3
-      : /tallgrass|reeds|cattail|grass|fern|flowers|crops|lily/.test(g)
-        ? 0.7
-        : FOLIAGE_PROPS.test(g)
-          ? 1
-          : 0,
-    it.flat || /puddle|crosswalk|manhole|lily|fallen/.test(g) ? 0 : 1,
-  ]);
-}
-/* alpha 0.4.1: worked out once per prop and kept (the ground doesn't move): six height samples a prop every frame were
-   a quarter of gathering the frame's items in a big place; the slope across the view again only when the camera turns */
-const SLOPE_HUG_CACHE = new WeakMap();
-function hugSlope(it, C) {
-  if (!it || it.bld3 || it.flat || !engineSetting('world', 'hugSlopes')) return;
-  const M = it.M,
-    p = it.p;
-  if (M._hugK !== p.k) {
-    M._hugK = p.k;
-    const g = (M.group || '') + ' ' + p.k;
-    M._hug = SLOPE_HUGGERS.test(g) && !/tree|lamp|post|sign|pole/.test(g);
-  }
-  if (!M._hug) return;
-  const R = it.fixed ? FIXED_RIGHT : C.right,
-    e = 0.45,
-    h = (x, z) => groundHeightAt(x, z),
-    x = it.x,
-    z = it.z,
-    id = walkView.id,
-    ig = walkRenderer.itemGen || 0;
-  let c = SLOPE_HUG_CACHE.get(p);
-  if (!c || c.id !== id || c.ig !== ig || c.x !== x || c.z !== z) {
-    const gx = (h(x + e, z) - h(x - e, z)) / (2 * e),
-      gz = (h(x, z + e) - h(x, z - e)) / (2 * e),
-      gm = Math.hypot(gx, gz);
-    c = { id, ig, x, z, tilt: gm < 0.7 && gm > 0.02 ? [gx, gz] : null, rx: NaN, rz: NaN, slope: null };
-    SLOPE_HUG_CACHE.set(p, c);
-  }
-  if (c.rx !== R[0] || c.rz !== R[2]) {
-    const s = (h(x + R[0] * e, z + R[2] * e) - h(x - R[0] * e, z - R[2] * e)) / (2 * e);
-    c.rx = R[0];
-    c.rz = R[2];
-    c.slope = Math.abs(s) > 0.02 && Math.abs(s) < 0.7 ? s : null;
-  }
-  if (c.slope != null) it.slope = c.slope;
-  if (c.tilt) it.tilt = c.tilt;
-}
-/* v24: riding. On water in a riding scene you sit on your biggest Water billionaire (rules.ride), drawn from its rig,
-   facing away when you head up the screen; it bobs, and leaves ripple rings behind. */
-function rideMountItem(P, t) {
-  const sc = walkView.sc;
-  if (!sc || !sc.ride || typeof riderOf !== 'function' || typeof saveData === 'undefined' || !saveData.team)
-    return null;
-  const ch = terrainAt(P.x, P.z);
-  if (ch !== 'w' && ch !== 'd') {
-    walkRenderer.mountOn = false;
-    return null;
-  }
-  const m =
-    riderOf() || saveData.team.find(x => SPECIES[x.sp] && SPECIES[x.sp].types.includes('Water')) || saveData.team[0];
-  if (!m || !SPECIES[m.sp]) return null;
-  const back = P.dir === 'up',
-    R = rigParts(m.sp, m.gold, back ? 2 : 1);
-  if (!R) {
-    if (!walkRenderer.mountLoad) {
-      walkRenderer.mountLoad = 1;
-      rigPreload([
-        [m.sp, m.gold, 1],
-        [m.sp, m.gold, 2],
-      ]).then(() => {
-        walkRenderer.mountLoad = 0;
-      });
-    }
-    return null;
-  }
-  let cv = walkRenderer.mountCv;
-  if (!cv || cv.width !== R.BW || cv.height !== R.BH) {
-    cv = walkRenderer.mountCv = makeCanvas(R.BW, R.BH);
-    cv.__v = 0;
-  }
-  const x = cv.getContext('2d');
-  x.setTransform(1, 0, 0, 1, 0, 0);
-  x.clearRect(0, 0, cv.width, cv.height);
-  x.imageSmoothingEnabled = false;
-  const F = rigFrame(R, null, 0, reducedMotion ? 0 : Math.floor(t / 50) * 50, 1.7);
-  if (m.build) F.build = m.build;
-  drawRig(x, R, F, back ? 'back' : 'front');
-  cv.__v++;
-  const ht = clamp(SPECIES[m.sp].ht, 0.9, 3),
-    hm = 0.75 + ht * 0.32,
-    mpp = hm / Math.max(40, R.base - (R.geo && R.geo.top != null ? R.geo.top : 0)),
-    bob = reducedMotion ? 0 : Math.sin(t / 420) * 0.05,
-    y = standingHeightAt(P.x, P.z) + bob - 0.08;
-  if (!reducedMotion && P.walk && (!walkRenderer.wakeT || t - walkRenderer.wakeT > 320)) {
-    walkRenderer.wakeT = t;
-    addRipple(P.x, P.z - 0.1, 0.9);
-  }
-  walkRenderer.mountOn = true;
-  return {
-    it: {
-      k: 'life',
-      im: cv,
-      x: P.x,
-      z: P.z + 0.01,
-      y,
-      mpp,
-      ox: -R.cx,
-      oy: -R.base,
-      w: R.BW,
-      h: R.BH,
-      flip: P.dir === 'side' ? -1 : 1,
-      shear: 0,
-      sh: 0,
-      aoR: 0,
-      person: 1,
-    },
-    lift: hm * 0.62 + bob - 0.12,
-  };
-}
-/* ---------- v32: every prop its own look ----------
-   Variety (size, colour, a little turn and lean) and wear (dirt, moss, faded paint, cracks), from three places:
-   defaults by kind of thing (below), the catalog ("vary" and "wear" on a prop in the Studio's prop editor) and each
-   placed prop ("vary", "wear", "tint"), scaled by the scene ("variety", "wear") and the Engine dials (World →
-   Variety, Wear and tear, Prop turning). Each placed prop draws its own values from where it stands, so a scene
-   looks the same every visit. */
-const PROP_VARIETY_RULES = [
-  [/tree|palm|street_tree/, { size: 0.14, hue: 9, sat: 0.12, val: 0.1, rot: 0, lean: 1.5, mask: [104, 47], wear: {} }],
-  [
-    /bush|hedge|fern|tallgrass|reeds|cattail|crops|vine|ivy/,
-    { size: 0.16, hue: 11, sat: 0.14, val: 0.1, rot: 10, lean: 2, mask: [104, 54], wear: {} },
-  ],
-  [/flower|lily/, { size: 0.16, hue: 22, sat: 0.1, val: 0.08, rot: 10, lean: 2, mask: null, wear: {} }],
-  [
-    /rock|boulder|stone|pebble|basalt|obsidian|stalag|crystal|mesa|lava_rock/,
-    { size: 0.18, hue: 0, sat: 0.08, val: 0.09, rot: 22, lean: 3, mask: null, wear: { moss: 0.35, dirt: 0.1 } },
-  ],
-  [
-    /house|shop|clinic|lab|tower|apartment|hall|villa|chalet|mart|cafe|boutique|windmill|cave_house|townhouse/,
-    {
-      size: 0,
-      hue: 11,
-      sat: 0.12,
-      val: 0.06,
-      rot: 0,
-      lean: 0,
-      mask: null,
-      wear: { dirt: 0.38, moss: 0.2, fade: 0.25, crack: 0.22 },
-    },
-  ],
-  [
-    /crate|barrel|bench|fence|sign|cart|log|stump|wheelbarrow|picnic|table|chair|planter|hay|sack|firewood|beehive|birdhouse|dock_post|stall|scarecrow|laundry/,
-    {
-      size: 0.08,
-      hue: 5,
-      sat: 0.08,
-      val: 0.1,
-      rot: 7,
-      lean: 1.5,
-      mask: null,
-      wear: { dirt: 0.25, moss: 0.15, fade: 0.25, crack: 0.12 },
-    },
-  ],
-  [
-    /lamp|lantern|hydrant|mailbox|bin|trash|bollard|traffic|phone|vending|newsstand|bus|bike|meter|pipe|tire|scrap|car_|food_truck|kiosk|pretzel/,
-    {
-      size: 0.04,
-      hue: 7,
-      sat: 0.08,
-      val: 0.06,
-      rot: 3,
-      lean: 0.8,
-      mask: null,
-      wear: { dirt: 0.22, fade: 0.18, crack: 0.05 },
-    },
-  ],
-  [
-    /statue|fountain|well|arch|wall|column|snowman/,
-    {
-      size: 0.03,
-      hue: 0,
-      sat: 0.05,
-      val: 0.06,
-      rot: 0,
-      lean: 0,
-      mask: null,
-      wear: { dirt: 0.25, moss: 0.3, crack: 0.25 },
-    },
-  ],
-];
-const PROP_VARIETY_DEFAULT = {
-  size: 0.06,
-  hue: 7,
-  sat: 0.06,
-  val: 0.06,
-  rot: 5,
-  lean: 1,
-  mask: null,
-  wear: { dirt: 0.12 },
-};
-export function propVariety(k, M) {
-  const mk =
-    M && M.vary ? JSON.stringify(M.vary) + JSON.stringify(M.wear || 0) : M && M.wear ? JSON.stringify(M.wear) : '';
-  if (M && M._vy && M._vyk === mk) return M._vy;
-  const g = ((M && M.group) || '') + ' ' + k;
-  let d = PROP_VARIETY_DEFAULT;
-  for (const [re, v] of PROP_VARIETY_RULES)
-    if (re.test(g)) {
-      d = v;
-      break;
-    }
-  if (M && M.flat && !/flower|lily/.test(g)) d = Object.assign({}, d, { rot: 0, lean: 0 });
-  const out = Object.assign({}, d, (M && M.vary) || {}, { wear: Object.assign({}, d.wear, (M && M.wear) || {}) });
-  if (M) {
-    Object.defineProperty(M, '_vy', { value: out, writable: true, configurable: true, enumerable: false });
-    Object.defineProperty(M, '_vyk', { value: mk, writable: true, configurable: true, enumerable: false });
-  }
-  return out;
-}
-/* v32: a stump or log here and there is drawn with its mossy twin (same size and footprint), so a wood isn't a row of
-   copies. Prop variety at 0, "Exactly as drawn" on the prop, or alt:0 on it keeps the picture as placed. */
-const ALTERNATE_PROPS = { stump: ['stump_mossy'], log: ['log_mossy'] };
-provide({ ALTERNATE_PROPS }); /* to-module */
-function alternatePropImage(p, M, C0, sc) {
-  const L = ALTERNATE_PROPS[p.k];
-  if (
-    !L ||
-    p.v ||
-    p.plain ||
-    p.alt === 0 ||
-    !((engineSetting('world', 'variety') ?? 1) > 0) ||
-    (sc && sc.variety === 0)
-  )
-    return M.img;
-  const h = hash2d(Math.round(p.x * 23) + 5, Math.round(p.z * 19) + 11);
-  if (h > 0.38) return M.img;
-  const A = C0.props[L[Math.floor((h / 0.38) * L.length) % L.length]];
-  const ai = A && A.img;
-  if (!ai) return M.img;
-  const t = artImage(ai);
-  return imageReady(t) ? ai : M.img;
-}
-const PROP_LOOK_CACHE = new WeakMap();
-/* v34: a still prop keeps what it worked out last frame (its look, its height on the ground, its material) and only
-   checks again twice a second or when it moves, so a big scene doesn't redo hundreds of string keys every frame */
-const STILL_PROP_CACHE = new WeakMap();
-/* when a prop checked last, rounded down to its own half-second beat (set by its place): props worked out in the same
-   frame (a scene opening, the ground changing) check again spread over the next half second, not all in one frame twice
-   a second, which was a regular spike on phones */
-function propCheckedAt(p, t) {
-  return t - ((t + hash2d(Math.round(p.x * 7) + 3, Math.round(p.z * 5) + 11) * 500) % 500);
-}
-function propGrid(sc) {
-  const L = sc.props || [],
-    G = walkRenderer.pgrid;
-  /* made again only when a prop is added, moved or resized, or the ground changes (itemGen), not on a timer: a full
-     rebuild every 2 s was a regular spike on phones; the signature reads every prop (cheap next to the rebuild) */
-  let sig = L.length;
-  for (const p of L) sig = (sig * 31 + (p.x * 7 + p.z * 13 + (p.s || 1) * 101) * 16) | 0;
-  const gen = walkRenderer.itemGen || 0;
-  if (G && G.sc === sc && G.sig === sig && G.gen === gen) return G;
-  const S = 6,
-    m = new Map();
-  for (const p of L) {
-    const k = Math.floor(p.x / S) + ',' + Math.floor(p.z / S);
-    let c = m.get(k);
-    if (!c) {
-      c = { list: [], x0: 1e9, x1: -1e9, z0: 1e9, z1: -1e9, y0: 1e9, y1: -1e9 };
-      m.set(k, c);
-    }
-    c.list.push(p);
-    const r = 2.5 * (p.s || 1),
-      y = typeof standingHeightAt === 'function' ? standingHeightAt(p.x, p.z) : 0;
-    c.x0 = Math.min(c.x0, p.x - r);
-    c.x1 = Math.max(c.x1, p.x + r);
-    c.z0 = Math.min(c.z0, p.z - r);
-    c.z1 = Math.max(c.z1, p.z + r);
-    c.y0 = Math.min(c.y0, y);
-    c.y1 = Math.max(c.y1, y + 8 * (p.s || 1));
-  }
-  const cells = [...m.values()].map(c => ({
-    list: c.list,
-    x: (c.x0 + c.x1) / 2,
-    z: (c.z0 + c.z1) / 2,
-    y: (c.y0 + c.y1) / 2,
-    r: Math.hypot(c.x1 - c.x0, c.z1 - c.z0, c.y1 - c.y0) / 2,
-  }));
-  return (walkRenderer.pgrid = { sc, sig, gen, cells });
-}
-function stillPropState(p, M, im, sc) {
-  const t = walkView.t || 0,
-    s = p.s || 1,
-    id = walkView.id || '',
-    src = (im && im.src) || '',
-    gen = walkRenderer.itemGen || 0;
-  let c = STILL_PROP_CACHE.get(p);
-  /* alpha 0.4.1: compared field by field (a key string was built for every prop every frame) */
-  if (
-    c &&
-    c.k === p.k &&
-    c.x === p.x &&
-    c.z === p.z &&
-    c.s === s &&
-    c.id === id &&
-    c.src === src &&
-    c.gen === gen &&
-    t - c.at < 500 &&
-    t >= c.at
-  )
-    return c;
-  const mat = propMaterial(p.k, M),
-    at = propCheckedAt(p, t);
-  c = {
-    k: p.k,
-    x: p.x,
-    z: p.z,
-    s,
-    id,
-    src,
-    gen,
-    at,
-    y: propBaseHeight(p, M),
-    mat,
-    plane: M.face === 'fixed' || !!M.box || mat === 'wood' || mat === 'building',
-    cross:
-      M.face !== 'billboard' &&
-      !M.flat &&
-      mat === 'foliage' &&
-      /tree|flower|fern|tallgrass|reed|cattail|crop/.test((M.group || '') + p.k),
-    bob: BOBBING_PROPS.test(p.k),
-    flag: WAVING_PROPS.test(p.k),
-  };
-  STILL_PROP_CACHE.set(p, c);
-  return c;
-}
-/* alpha 0.4.1: the settings a prop's look depends on, read once a frame rather than once a prop */
-function propLookSettings(sc) {
-  if (walkRenderer._lsF === walkRenderer.frames && walkRenderer._lsSc === sc) return walkRenderer._ls;
-  walkRenderer._lsF = walkRenderer.frames;
-  walkRenderer._lsSc = sc;
-  return (walkRenderer._ls =
-    (engineSetting('world', 'variety') ?? 1) +
-    ',' +
-    (engineSetting('world', 'wear') ?? 1) +
-    ',' +
-    (engineSetting('world', 'propTurn') ?? 1) +
-    ',' +
-    (sc.variety ?? 1) +
-    ',' +
-    (sc.wear ?? 1) +
-    ',' +
-    (sc.lookSeed || 0));
-}
-function propLook(p, M, sc) {
-  const c0 = PROP_LOOK_CACHE.get(p),
-    t = walkView.t || 0,
-    sg = propLookSettings(sc);
-  if (
-    c0 &&
-    c0.at !== undefined &&
-    t - c0.at < 500 &&
-    t >= c0.at &&
-    c0.px === p.x &&
-    c0.pz === p.z &&
-    c0.sg === sg &&
-    c0.gen === (walkRenderer.itemGen || 0)
-  )
-    return c0;
-  const L0 = computePropLook(p, M, sc);
-  L0.at = propCheckedAt(p, t);
-  L0.px = p.x;
-  L0.pz = p.z;
-  L0.sg = sg;
-  L0.gen = walkRenderer.itemGen || 0;
-  return L0;
-}
-function computePropLook(p, M, sc) {
-  const E = [
-      engineSetting('world', 'variety') ?? 1,
-      engineSetting('world', 'wear') ?? 1,
-      engineSetting('world', 'propTurn') ?? 1,
-    ],
-    key =
-      p.k +
-      '|' +
-      p.x +
-      '|' +
-      p.z +
-      '|' +
-      JSON.stringify(p.vary || 0) +
-      JSON.stringify(p.wear ?? 0) +
-      (p.tint || '') +
-      (p.tintAmt ?? '') +
-      (p.plain ? 'P' : '') +
-      '|' +
-      (sc.variety ?? 1) +
-      '|' +
-      (sc.wear ?? 1) +
-      '|' +
-      (sc.lookSeed || 0) +
-      '|' +
-      E.join(',') +
-      '|' +
-      (M && M._vyk !== undefined ? M._vyk : '') +
-      (M && M.vary ? JSON.stringify(M.vary) : '') +
-      (M && M.wear ? JSON.stringify(M.wear) : '');
-  const c = PROP_LOOK_CACHE.get(p);
-  if (c && c.key === key) return c;
-  const V = Object.assign({}, propVariety(p.k, M), p.vary || {}),
-    sd = (sc.lookSeed || 0) * 101,
-    r = n => hash2d(Math.round(p.x * 31) + n * 17 + sd, Math.round(p.z * 29) + n * 7 + sd) * 2 - 1,
-    vk = p.plain ? 0 : E[0] * (sc.variety ?? 1);
-  let W = Object.assign({}, V.wear);
-  if (typeof p.wear === 'number') for (const k in W) W[k] *= p.wear;
-  else if (p.wear && typeof p.wear === 'object') Object.assign(W, p.wear);
-  const wk = E[1] * (sc.wear ?? 1),
-    dry = /[sznj]/.test(sc.edge || '') || /desert|volcano|canyon/.test(sc.far || '') ? 0.25 : 1,
-    jit = n => 0.55 + 0.9 * hash2d(Math.round(p.x * 13) + n * 5, Math.round(p.z * 11) + n * 3);
-  const wear = [
-    (W.dirt || 0) * wk * jit(1),
-    (W.moss || 0) * wk * jit(2) * dry,
-    (W.fade || 0) * wk * jit(3),
-    (W.crack || 0) * wk * jit(4),
-  ].map(v => clamp(v, 0, 1.5));
-  const hue = ((V.hue || 0) / 360) * vk * r(1),
-    sat = (V.sat || 0) * vk * r(2),
-    val = (V.val || 0) * vk * r(3),
-    on = Math.abs(hue) + Math.abs(sat) + Math.abs(val) > 0.002 ? 1 : 0;
-  let tint = [1, 1, 1, 0];
-  if (p.tint && p.tint !== '#000000') {
-    const t = hexToRgb(p.tint);
-    tint = [t[0] / 255, t[1] / 255, t[2] / 255, clamp(p.tintAmt ?? 0.6, 0, 1)];
-  }
-  const L = {
-    key,
-    hsv: [hue, sat, val, on],
-    wear,
-    tint,
-    mask: V.mask && V.mask.length === 2 && V.mask[1] > 0 ? [V.mask[0] / 360, V.mask[1] / 360] : [0, 0],
-    size: 1 + (V.size || 0) * vk * r(4) * (p.s && p.vary && p.vary.size === 0 ? 0 : 1),
-    rot: p.plain ? 0 : ((V.rot || 0) * E[2] * r(5) * Math.PI) / 180,
-    lean: p.plain ? 0 : ((V.lean || 0) * E[2] * r(6) * Math.PI) / 180,
-  };
-  PROP_LOOK_CACHE.set(p, L);
-  return L;
-}
-const NEUTRAL_LOOK = { hsv: [0, 0, 0, 0], wear: [0, 0, 0, 0], tint: [1, 1, 1, 0], mask: [0, 0] };
-export function setPropLookUniforms(U, L, bp) {
-  const gl = gpuState.gl;
-  if (!U.uWear) return;
-  L = L || NEUTRAL_LOOK;
-  gl.uniform4fv(U.uWear, L.wear);
-  gl.uniform4fv(U.uHsv, L.hsv);
-  gl.uniform4fv(U.uLkTint, L.tint);
-  gl.uniform2fv(U.uMaskH, L.mask);
-  if (U.uBP && bp) gl.uniform3fv(U.uBP, bp);
-}
-const BOBBING_PROPS = /sailboat|rowboat|buoy/,
-  WAVING_PROPS = /banner|laundry|beach_umbrella|ski_sign/;
-/* v43: one wind for every plant: a slow lean that drifts across the scene, a faster flutter, and the gust bands
-   (windGustAt) that travel over the grass; the result is a lean of the top of the sprite as a fraction of its height */
-export function windLeanAt(x, z, t, sc, wind) {
-  const k = (sc.wind || 1) * (wind == null ? engineSetting('grass', 'wind') : wind);
-  return windBendAt(x, z, t, engineSetting('grass', 'gusts')) * k;
-}
-export function gatherFrameItems(st, C, PPU, C0) {
-  const sc = walkView.sc,
-    P = walkView.pl,
-    t = walkView.t,
-    out = [],
-    hub = mapHub(sc),
-    tg = tallGrassProps(C0),
-    wind = engineSetting('grass', 'wind'),
-    odt = Math.min(0.1, Math.max(0, (t - (walkRenderer.owT ?? t)) / 1000)),
-    ow = typeof worldBillyItem === 'function' && !st.battle && !walkRenderer.bt,
-    npcPos = [];
-  walkRenderer.owT = t;
-  if (ow && worldBillies.warmId !== walkView.id) {
-    worldBillies.warmId = walkView.id;
-    warmWorldBillies();
-  }
-  const prop = (p, far) => {
-    const M = propWithVariant(p, C0.props[p.k]);
-    if (!M || !propShown(p)) return;
-    const im = artImage(alternatePropImage(p, M, C0, sc));
-    if (!imageReady(im)) return;
-    const lk = far ? null : propLook(p, M, sc),
-      /* phase 09 batch 1: a prop drawn at its own scale (ppm: pixels to the metre, 32 for the new style) */
-      s = ((p.s || 1) / (M.ppm || PPU)) * (lk ? lk.size : 1) * (p.grow != null ? cropGrowth(p) : 1),
-      w = im.naturalWidth || im.width,
-      h = im.naturalHeight || im.height;
-    const S = far ? null : stillPropState(p, M, im, sc);
-    const y = far ? standingHeightAt(p.x, p.z) : S.y,
-      sw = far || !M.sway ? 0 : (M.sway || 0) * windLeanAt(p.x, p.z, reducedMotion ? 0 : t, sc, wind);
-    const mat = S ? S.mat : propMaterial(p.k, M);
-    im.__mat = mat;
-    /* v27: boats and buoys bob and roll on the water; flags, banners and washing flutter in the wind */
-    let y2 = y,
-      sw2 = sw;
-    if (!far && !reducedMotion) {
-      const ph = p.x * 1.3 + p.z * 0.7,
-        gk = (sc.wind || 1) * wind;
-      if (S.bob) {
-        y2 += Math.sin(t / 760 + ph) * 0.05;
-        sw2 += Math.sin(t / 1130 + ph) * 0.035;
-      } else if (S.flag) sw2 += (Math.sin(t / 230 + ph) * 0.025 + Math.sin(t / 97 + ph * 2) * 0.012) * gk;
-    }
-    /* v34: a flat picture (a sign, a painted board) stands upright: no random lean, only the wind */
-    out.push({
-      k: far ? 'farp' : 'prop',
-      still: !far && !M.sway && !S.bob && !S.flag,
-      lk,
-      p,
-      M,
-      im,
-      x: p.x,
-      z: p.z,
-      y: y2,
-      mpp: s,
-      ox: M.ox,
-      oy: M.oy,
-      w,
-      h,
-      flip: p.f ? -1 : 1,
-      shear: sw2 + (lk && !M.box && !M.build && !M.flat ? lk.lean : 0),
-      flat: M.flat,
-      sh: (M.shadow || 0) * (p.s || 1),
-      far,
-      fixed: M.face !== 'billboard',
-      mat,
-      plane: S ? S.plane : M.face === 'fixed' || !!M.box || mat === 'wood' || mat === 'building',
-      cross: !far && S.cross,
-      bld3: !far && !!(M.build && M.box) && typeof buildingsOn === 'function' && buildingsOn(),
-    });
-    if (!far) hugSlope(out[out.length - 1], C);
-    /* v46: a building whose solid or front isn't made yet (a few are made per frame) shows as its picture meanwhile, never as nothing */
-    if (!far) {
-      const bi = out[out.length - 1];
-      if (bi.bld3) {
-        let E = null,
-          F = null;
-        buildingGuard(() => {
-          E = buildingMesh(bi);
-          if (E && E.walls) F = buildingFrontPicture(bi.im, M.build, M);
-        });
-        if (!E || !E.walls || !F) bi.bld3 = false;
-      }
-    }
-    /* v43: a prop with a voxel recipe draws as a solid (prop-models.js); its picture layers come along as sprites */
-    if (!far && M.model && typeof tagPropModel === 'function') {
-      const vi = out[out.length - 1];
-      tagPropModel(vi);
-      if (vi.vox) propModelImageItems(vi, out);
-    }
-    /* v43: a flag pole is rigid; its cloth is a separate picture (the town's flag) draped from the top and waved by the wind */
-    if (!far && M.flag) {
-      const F = M.flag,
-        fi = artImage(flagPicturePath(sc)),
-        fim = imageReady(fi) ? fi : artImage('scene/flags/default.png');
-      if (imageReady(fim)) {
-        const fl = p.f ? -1 : 1,
-          ps = p.s || 1,
-          wv = reducedMotion ? 0 : windLeanAt(p.x, p.z, t, sc, wind);
-        out.push({
-          k: 'flag',
-          p,
-          M,
-          im: fim,
-          x: p.x + F.dx * ps * fl,
-          z: p.z,
-          y: y + F.h * ps,
-          mpp: 1,
-          ox: 0,
-          oy: -F.fh * ps,
-          w: F.w * ps,
-          h: F.fh * ps,
-          flip: fl,
-          shear: 0,
-          sh: 0,
-          fixed: false,
-          mat: 'cloth',
-          wave: [0.05 + Math.abs(wv) * 1.1, t / 170 + p.x * 0.7, 0],
-        });
-      }
-    }
-    /* extra layers for depth: each one a sprite of its own, dz meters behind (or in front of) the main picture */
-    if (!far && M.layers)
-      for (const l of M.layers) {
-        const li = l.img && artImage(l.img);
-        if (!imageReady(li)) continue;
-        const LM = layerAsProp(M, l);
-        /* alpha 0.4: a layer that swings from a point (the rope swing on the great oak: l.pivot metres up), a slow pendulum
-      pushed a little harder by the gusts: it leans one way about the pivot and moves the other, so the pivot stays put */
-        let lx = p.x,
-          lsh = sw * (l.sway ?? 1);
-        if (l.swing && !reducedMotion) {
-          const a =
-            Math.sin(t / (l.swingT || 720) + p.x * 0.9 + p.z * 0.4) * l.swing * (1 + Math.min(1.5, Math.abs(sw) * 10));
-          lsh -= a;
-          lx += a * (l.pivot || 3) * (p.s || 1);
-        }
-        out.push({
-          k: 'prop',
-          still: !M.sway && !S.bob && !S.flag && !l.swing,
-          lk,
-          layer: l,
-          p,
-          M,
-          im: li,
-          x: lx,
-          z: p.z + (l.dz || 0) * (p.s || 1),
-          y,
-          mpp: s,
-          ox: LM.ox,
-          oy: LM.oy,
-          w: li.naturalWidth || li.width,
-          h: li.naturalHeight || li.height,
-          flip: p.f ? -1 : 1,
-          shear: lsh,
-          flat: LM.flat,
-          sh: l.glow || M.box || l.shadow === 0 ? 0 : (M.shadow || 0) * (p.s || 1),
-          fixed: l.face !== 'billboard',
-          glow: l.glow || 0,
-          mat,
-          plane: l.face === 'fixed' || !!M.box || mat === 'wood' || mat === 'building',
-        });
-        li.__mat = mat;
-      }
-  };
-  /* v34: props sit in a grid of 6 m squares; a square well outside the view (8 m of slack for shadows and lamp light)
-    isn't looked at at all this frame */
-  /* alpha 0.4: in a 3D battle too (it gathered every prop of the place each frame: 6 to 9 ms on a phone) */
-  const GR = propGrid(sc),
-    F = C.vp && (engineSetting('quality', 'cull') ?? true) ? computeFrustum(C.vp) : null;
-  let gs = 0;
-  for (const c of GR.cells) {
-    if (F && !inFrustum(F, c.x, c.y + worldCurveDrop(c.x, c.z), c.z, c.r + 8)) {
-      gs += c.list.length;
-      continue;
-    }
-    for (const p of c.list) prop(p);
-  }
-  walkRenderer.gridSkip = gs;
-  for (const p of walkRenderer.farProps) prop(p, 1);
-  (st.npcs || []).forEach((n, i) => {
-    let pos = walkView.npcAt[n.id];
-    if (!pos && n.at) pos = walkView.npcAt[n.id] = walkablePointNear(n.at[0], n.at[1]);
-    if (!pos) {
-      if (!st.mode || st.mode === 'line') {
-        const a = pointAlongMapPath(sc, n.t ?? 0.7 + i * 0.08);
-        pos = [a.x + (n.dx || 0), a.z + (n.dz ?? 1.5)];
-      } else if (n.exit) {
-        const dx = hub[0] - n.exit[0],
-          dz = hub[1] - n.exit[1],
-          l = Math.hypot(dx, dz) || 1;
-        pos = walkablePointNear(n.exit[0] + (dx / l) * 2.2, n.exit[1] + (dz / l) * 2.2);
-      } else if (sc.npcSpots && sc.npcSpots[i]) pos = sc.npcSpots[i].slice();
-      else {
-        const a = i * 2.3 + 0.6,
-          r = 3.4 + i * 0.9;
-        pos = walkablePointNear(hub[0] + Math.cos(a) * r, hub[1] + Math.sin(a) * r * 0.7);
-      }
-      walkView.npcAt[n.id] = pos;
-    }
-    const fr = typeof personWalkFrames === 'function' ? personWalkFrames(n.who) : null;
-    if (!fr) return;
-    warmPerson(n.who);
-    const dir =
-      Math.hypot(P.x - pos[0], P.z - pos[1]) < 4.5 ? directionOf(P.x - pos[0], P.z - pos[1]) : n.dir || 'down';
-    const nset = fr[dir] || fr.down,
-      nim = typeof pickWalkFrame === 'function' ? pickWalkFrame(nset, false, 0) : nset[0];
-    if (nim) out.push(personItem('npc', nim, pos[0], pos[1], C0, { n }));
-    npcPos.push([n, pos]);
-  });
-  if (ow) {
-    companionItems(out, t, npcPos);
-    buddyItems(out, t, odt);
-    if (typeof friendWorldItems === 'function')
-      try {
-        friendWorldItems(out, t, C0);
-      } catch (e) {}
-  }
-  const used = [];
-  walkRenderer.encPos = [];
-  (st.enc || []).forEach(e => {
-    let s = walkView.enc[e.id];
-    if (!s || s.sc !== walkView.id) {
-      const sp = encounterSpot(sc, e.id, used);
-      s = walkView.enc[e.id] = { x: sp[0], z: sp[1], tx: sp[0], tz: sp[1], sc: walkView.id };
-    }
-    /* v46: they keep their spot in the tall grass until you battle them: no wandering. They stay alive in place (a bob,
-     the grass swaying round them, a peek now and then, see wildBillyItem) and rustle when you come close */
-    s.tx = s.x;
-    s.tz = s.z;
-    if (!st.battle && !reducedMotion && !walkRenderer.bt) {
-      const dd = Math.min(0.1, (t - (s.lt || t)) / 1000);
-      s.lt = t;
-      const P = walkView.pl;
-      if (P && typeof soundEffectAt === 'function' && Math.hypot(P.x - s.x, P.z - s.z) < 4 && Math.random() < dd * 0.25)
-        soundEffectAt('rustle', s.x, s.z);
-    }
-    used.push([s.x, s.z]);
-    walkRenderer.encPos.push([s.x, s.z, e.id]);
-    const g = tg[Math.abs(Math.round(s.x * 7 + s.z * 3)) % tg.length];
-    const im = g && artImage(g.img);
-    if (!imageReady(im)) return;
-    const moving = Math.hypot((s.tx ?? s.x) - s.x, (s.tz ?? s.z) - s.z) > 0.05,
-      ru = moving ? 0.06 * Math.sin(t / 70 + s.x) : 0,
-      wv = reducedMotion ? 0 : windLeanAt(s.x, s.z, t, sc, wind);
-    out.push({
-      k: 'enc',
-      e,
-      im,
-      x: s.x + ru * 0.5,
-      z: s.z,
-      y: standingHeightAt(s.x, s.z),
-      mpp: 1.25 / PPU,
-      ox: g.ox,
-      oy: g.oy,
-      w: im.naturalWidth || im.width,
-      h: im.naturalHeight || im.height,
-      flip: 1,
-      shear: wv + ru,
-      sh: 0.5,
-    });
-    out.push({
-      k: 'enc2',
-      e,
-      im,
-      x: s.x + 0.18,
-      z: s.z - 0.12,
-      y: standingHeightAt(s.x, s.z),
-      mpp: 1.1 / PPU,
-      ox: g.ox,
-      oy: g.oy,
-      w: im.naturalWidth || im.width,
-      h: im.naturalHeight || im.height,
-      flip: -1,
-      shear: -(wv * 0.8) - ru * 0.7,
-      sh: 0,
-    });
-    if (ow) wildBillyItem(out, e, s, t, odt);
-  });
-  if (!st.battle)
-    for (const f of walkView.folk) {
-      const fr = folkFrames(f.seed);
-      if (!fr) continue;
-      warmPerson('folk:' + f.seed);
-      const set = fr[f.dir] || fr.down;
-      let fim =
-        typeof pickWalkFrame === 'function'
-          ? pickWalkFrame(set, f.walk, Math.floor(t / 110) % 6)
-          : f.walk
-            ? set.cyc
-              ? set.cyc[Math.floor(t / 110) % 6]
-              : set[1 + (Math.floor(t / 150) % 2)]
-            : set[0];
-      /* v47: a wave hello */ if (f.waveT > 0 && typeof personBattlePose === 'function') {
-        const w = personBattlePose('folk:' + f.seed, 'front', 'cheer', 0, (1.4 - f.waveT) * 1000);
-        if (w) fim = w;
-      }
-      if (fim) out.push(personItem('folk', fim, f.x, f.z, C0, { f }));
-    }
-  if (typeof lifeSprites === 'function')
-    for (const L of lifeSprites())
-      out.push({
-        k: 'life',
-        im: L.im,
-        x: L.x,
-        z: L.z,
-        y: L.y,
-        mpp: L.mpp,
-        ox: -L.im.width / 2,
-        oy: -L.im.height,
-        w: L.im.width,
-        h: L.im.height,
-        flip: L.flip,
-        shear: 0,
-        sh: L.sh,
-        aoR: Math.max(0.12, L.sh * 0.8),
-      });
-  if (typeof tagSolidProp === 'function') {
-    for (const it of out) if (it.fixed !== false) tagSolidProp(it, PPU);
-    if (typeof solidPropLevelOfDetail === 'function')
-      solidPropLevelOfDetail(out, C); /* a solid tree has its crown in 3D: its layered crown pictures go */
-    const T = new Set(out.filter(it => it.vol && it.vol.tree).map(it => it.p));
-    if (T.size) for (let i = out.length - 1; i >= 0; i--) if (out[i].layer && T.has(out[i].p)) out.splice(i, 1);
-  }
-  if (st.who !== null && typeof personWalkFrames === 'function') {
-    const fr = personWalkFrames(st.who),
-      set = fr[P.dir] || fr.down;
-    const me = personItem(
-      'me',
-      P.hop
-        ? set.cyc
-          ? set.cyc[2]
-          : set[1]
-        : P.walk
-          ? set.cyc
-            ? set.cyc[Math.floor((P.gait || 0) / WALK_FRAME_M) % 6]
-            : set[1 + (Math.floor((P.gait || 0) / (WALK_FRAME_M * 1.36)) % 2)]
-          : set[0],
-      P.x,
-      P.z,
-      C0,
-      { shear: reducedMotion ? 0 : P.lean || 0 }
-    );
-    if (P.yv != null && P.yId === walkView.id) me.y = P.yv;
-    const mt = rideMountItem(P, t);
-    if (mt) {
-      out.push(mt.it);
-      me.y += mt.lift;
-      me.im = set[0];
-      me.z -= 0.02;
-    }
-    out.push(me);
-  }
-  return out;
-}
-/* a prop's base height: on a slope the lowest point under it on its own terrace (so it never floats on the downhill
-   side), rocks and boulders sunk a little into the ground */
-/* alpha 0.2: a rock formation or a hill-built thing with a footprint stands at the lowest point under it (it sinks into the slope, it never hangs over it) */
-const SUNKEN_FOOTPRINT_PROPS = /mesa|vault_door|mine_entrance|shipwreck|stilt|spore_mill/;
-function propBaseHeight(p, M) {
-  const y0 = standingHeightAt(p.x, p.z);
-  if (M.box && SUNKEN_FOOTPRINT_PROPS.test(p.k)) {
-    const s = p.s || 1,
-      bw = (M.box[0] * s) / 2,
-      bd = M.box[1] * s,
-      lv = stepLevelAt(p.x, p.z);
-    let y = y0;
-    for (const [x, z] of [
-      [p.x - bw, p.z - 0.05],
-      [p.x + bw, p.z - 0.05],
-      [p.x - bw, p.z + bd],
-      [p.x + bw, p.z + bd],
-    ])
-      if (Math.abs(stepLevelAt(x, z) - lv) <= 0.05) y = Math.min(y, standingHeightAt(x, z));
-    return y;
-  }
-  if (M.box || M.flat || M.walk) return y0;
-  const r = Math.min(0.45, (M.shadow || 0) * 0.3 * (p.s || 1));
-  if (r < 0.08) return y0;
-  const s0 = stepLevelAt(p.x, p.z);
-  let y = y0;
-  for (const [a, b] of [
-    [-r, 0],
-    [r, 0],
-    [0, -r * 0.6],
-    [0, r * 0.6],
-  ]) {
-    if (Math.abs(stepLevelAt(p.x + a, p.z + b) - s0) > 0.05) continue;
-    y = Math.min(y, standingHeightAt(p.x + a, p.z + b));
-  }
-  const g = (M.group || '') + ' ' + p.k;
-  return y - (M.sink ?? (/rock|boulder|stone_|pebble|stalag/.test(g) ? 0.07 : 0));
-}
-export function personItem(k, im, x, z, C0, extra) {
-  const mpp = (C0.person || 1.75) / 1.75 / (im.ppm || 42);
-  return Object.assign(
-    {
-      k,
-      im,
-      x,
-      z,
-      y: standingHeightAt(x, z),
-      mpp,
-      ox: -(im.ax ?? 16),
-      oy: -(im.ay ?? 40),
-      w: im.width,
-      h: im.height,
-      flip: 1,
-      shear: 0,
-      sh: 0.38,
-      person: 1,
-    },
-    extra
-  );
 }
 /* the light context: sky ambient, fog, mist, shadows, contact shadows and the nearest lamps, windows and fires */
 /* v43: the light that stands in for the sun in a room: daylight through the windows, from the front at a slant (roomSkyLight

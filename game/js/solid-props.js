@@ -29,7 +29,8 @@ import {
 import { walkRenderer } from './walk/walk-state.js';
 import { useWalkProgram, worldCurveArgs } from './walk/draw-common.js';
 import { frameBudgetLeft } from './walk/quality-cull.js';
-import { addHitTarget, drawRotatingBlades, foliageAmount, setPropLookUniforms } from './walk-view-gl.js';
+import { foliageAmount, setPropLookUniforms } from './walk/prop-look.js';
+import { addHitTarget, drawRotatingBlades } from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
 expose({
   SOLID_PROP_BODIES: [() => SOLID_PROP_BODIES],
