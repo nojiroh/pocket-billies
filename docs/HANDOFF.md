@@ -35,7 +35,7 @@ in mind. Chosen: lit windows on every side, the portal in a side alley, the rift
   - Part 1's notes about front-only windows are superseded by this entry; the low-poly setting note still holds.
 - Verified: each recipe meshed in Node (city_sign_blank 58 triangles, towers unchanged), the layout checked from the
   data (no tower overlaps another, no prop inside a tower), data check, lint (the frame-block.js note from main),
-  type-check, 118 unit tests, format, modules, build, smoke check (result in the next commit). No headless renders.
+  type-check, 118 unit tests, format, modules, build, smoke check (15 of 15, the same unused note as before). No headless renders.
 - Questions waiting for the owner: the four in docs/city-opening-beats.md ("For you to decide"); how the set and the
   lit sides look on your phone (Settings > Time of day: night, Weather: rain).
 - Next session starts with: your answers to the beat sheet; then S7's script and the scene's commands once S2 is in.
