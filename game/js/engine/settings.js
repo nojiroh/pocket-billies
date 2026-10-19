@@ -13,11 +13,15 @@ expose({
   ENGINE_DEFAULTS: [() => ENGINE_DEFAULTS],
   ENGINE_PRESETS: [() => ENGINE_PRESETS],
   ENGINE_SPEC: [() => ENGINE_SPEC],
+  FRAME_SETTINGS: [() => FRAME_SETTINGS],
   PLAIN_LOOK: [() => PLAIN_LOOK],
+  beginFrameSettings: [() => beginFrameSettings, v => (beginFrameSettings = v)],
+  endFrameSettings: [() => endFrameSettings, v => (endFrameSettings = v)],
   engineColor: [() => engineColor, v => (engineColor = v)],
   engineContext: [() => engineContext, v => (engineContext = v)],
   engineDataSource: [() => engineDataSource, v => setEngineDataSource(v)],
   engineSetting: [() => engineSetting, v => ((engineSetting = v), provide({ engineSetting }))],
+  frameSettingsState: [() => frameSettingsState],
   gameDataDials: [() => gameDataDials, v => (gameDataDials = v)],
   lookDials: [() => lookDials, v => (lookDials = v)],
   playerDials: [() => playerDials, v => (playerDials = v)],
@@ -824,7 +828,40 @@ function playerDials() {
   const p = typeof saveData !== 'undefined' && saveData && saveData.preferences;
   return p && p.expert && p.eng ? p.eng : null;
 }
+/* phase 20 C1: while a walk frame draws, each dial is looked up once (beginFrameSettings, after the environment update)
+   and engineSetting answers from this table, one pre-made object per group, refilled in place. It answers only while
+   the look and the environment flag are the ones it was filled with; anything else (no frame open, the Studio's
+   defaults switch, a key not in ENGINE_DEFAULTS) takes the full lookup. */
+const FRAME_SETTINGS = {};
+for (const g in ENGINE_DEFAULTS) {
+  FRAME_SETTINGS[g] = Object.create(null);
+  for (const k in ENGINE_DEFAULTS[g]) FRAME_SETTINGS[g][k] = undefined;
+}
+const frameSettingsState = { open: false, look: null, env: false };
+export function beginFrameSettings() {
+  frameSettingsState.open = false;
+  for (const g in FRAME_SETTINGS) {
+    const F = FRAME_SETTINGS[g];
+    for (const k in F) F[k] = engineSetting(g, k);
+  }
+  frameSettingsState.look = engineContext.look;
+  frameSettingsState.env = engineContext.env;
+  frameSettingsState.open = !engineContext.bypass;
+}
+export function endFrameSettings() {
+  frameSettingsState.open = false;
+  frameSettingsState.look = null;
+}
 export function engineSetting(group, key) {
+  if (
+    frameSettingsState.open &&
+    engineContext.look === frameSettingsState.look &&
+    engineContext.env === frameSettingsState.env &&
+    !engineContext.bypass
+  ) {
+    const F = FRAME_SETTINGS[group];
+    if (F && key in F) return F[key];
+  }
   if (engineContext.bypass) return ENGINE_DEFAULTS[group][key];
   const L = lookDials(),
     G = gameDataDials(),
