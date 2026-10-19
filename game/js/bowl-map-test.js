@@ -153,8 +153,9 @@ async function runBowlMapTest() {
   try {
     await step('The bowl’s shaders compile', () => {
       ensurePrograms(WORLD_BOWL_SHADERS);
-      if (!gpuState.P || !gpuState.P.mbowl) return { ok: false, note: 'the ground program is missing' };
-      return 'ground and sky program compiled and linked';
+      const miss = Object.keys(WORLD_BOWL_SHADERS).filter(k => !gpuState.P || !gpuState.P[k]);
+      if (miss.length) return { ok: false, note: `missing: ${miss.join(', ')}` };
+      return `${Object.keys(WORLD_BOWL_SHADERS).join(' and ')} compiled and linked`;
     });
     await step('The Map tab opens as the bowl', async () => {
       uiState.mapSel = null;
@@ -163,7 +164,13 @@ async function runBowlMapTest() {
       const t = performance.now();
       while (!worldBowl.on && performance.now() - t < 4000) await bowlTestWait(100);
       if (!worldBowl.on) return { ok: false, note: 'no WebGL here: the map shows the Places list' };
-      const n = await bowlTestFrames(10, 4000);
+      const n = await bowlTestFrames(10, 4000),
+        r = worldMap.cv.getBoundingClientRect(),
+        open = [0.2, 0.3, 0.4, 0.5].some(fy =>
+          [0.3, 0.5, 0.7].some(fx => document.elementFromPoint(innerWidth * fx, innerHeight * fy) === worldMap.cv)
+        );
+      if (r.height < innerHeight * 0.9 || !open)
+        return { ok: false, note: `touches don't reach the map (its layer is ${Math.round(r.height)} px high)` };
       return n >= 10
         ? `opened in ${Math.round(performance.now() - t)} ms, drawing`
         : { ok: false, note: `${n} frames in 4 s` };
