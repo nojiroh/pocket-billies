@@ -734,13 +734,41 @@
 }
 /* a long name wraps rather than being cut off (robots' names are two words) */
 .u-row .u-head {
-  align-items: flex-start;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: flex-start;
+  column-gap: var(--s2);
+  row-gap: 2px;
 }
+/* a long name wraps between words, and only breaks a word that can't fit a line at all; the level moves under it */
 .u-row .u-head b {
   white-space: normal;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
   line-height: 1.15;
 }
 .u-row .u-lv {
   padding-top: 2px;
+}
+/* a narrow list (small phones, the side panel): the HP bar moves under the name, so the name keeps the width */
+.u-list {
+  container-type: inline-size;
+}
+@container (max-width: 340px) {
+  .u-row:not(.u-open) {
+    grid-template-columns: 56px minmax(0, 1fr);
+    column-gap: var(--s3);
+    padding: var(--s3);
+  }
+  .u-row .u-spr,
+  .u-row .u-plus {
+    width: 56px;
+    height: 56px;
+  }
+  .u-row .u-right {
+    grid-column: 2;
+    justify-items: stretch;
+  }
+  .u-row .u-right .u-hpn {
+    justify-self: end;
+  }
 }
