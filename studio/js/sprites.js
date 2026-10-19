@@ -22,6 +22,9 @@ import {
   pixelCanvasColor,
   pixelCanvasDeselect,
   pixelCanvasFit,
+  pixelCanvasPanel,
+  pixelCanvasPanelHTML,
+  pixelCanvasSymmetry,
   pixelCanvasTool,
   pixelCanvasTransform,
   pixelCanvasZoom,
@@ -430,6 +433,7 @@ export async function openPixelEditor(sp, view = 'front', focus = null) {
  <div class="px-body"><div class="px-stage" id="pxStage"></div>
  <aside class="px-side">
   <div class="px-sec"><h4>Color</h4><div class="px-color"><input type="color" id="pxColor" value="${E.color}"><span id="pxHex">${E.color}</span></div><div class="px-pal" id="pxPal"></div></div>
+  ${pixelCanvasPanelHTML()}
   <div class="px-sec"><h4>Preview</h4><div class="px-prev"><canvas id="pxPrev"></canvas></div><div class="seg-row">${['idle', 'attack', 'cast', 'hurt', 'cheer', 'faint'].map(a => `<button class="seg sm" data-pe="act" data-a="${a}">${a}</button>`).join('')}</div></div>
   <div class="px-sec"><h4>Under the cursor</h4><p class="px-hover" id="pxHover">Point at a part of the sheet.</p></div>
   <div class="px-sec"><h4>Whole sheet</h4><p class="help">Edit in another app (Aseprite, Photoshop…): download, edit, upload. Keep the size and layout so the parts line up.</p><div class="seg-row"><button class="btn" data-pe="dl">Download PNG</button><button class="btn" data-pe="ul">Upload PNG</button></div><button class="btn subtle" data-pe="revert">Revert to the saved file</button></div>
@@ -452,7 +456,7 @@ function refreshPixelEditor() {
     $('#pxStage').innerHTML = '<p class="help">This sheet doesn’t exist yet.</p>';
     return;
   }
-  if (!E.pc || !E.pc.cv.isConnected)
+  if (!E.pc || !E.pc.cv.isConnected) {
     E.pc = pixelCanvas($('#pxStage'), {
       ids: 'px',
       tool: E.tool,
@@ -493,6 +497,8 @@ function refreshPixelEditor() {
         refreshPixelTools();
       },
     });
+    pixelCanvasPanel(E.pc, $('.pxed .px-side'));
+  }
   if (E.focus) {
     const k = partsOf(E.sp, E.view).findIndex(p => p.i === E.focus.i && (!E.focus.v || p.v === E.focus.v));
     if (k >= 0) {
@@ -699,6 +705,7 @@ function pixelEditorKeys(ev) {
   if (!P) return;
   const X = { h: 'flipH', v: 'flipV', r: 'rotate' };
   if (ev.shiftKey && X[k]) pixelCanvasTransform(P, X[k]);
+  else if (k === 'y') pixelCanvasSymmetry(P);
   else if (T[k]) pixelCanvasTool(P, T[k]);
   else if (k === '+' || k === '=') {
     pixelCanvasZoom(P, pixelZoomNext(P.zoom, 1));

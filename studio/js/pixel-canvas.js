@@ -32,14 +32,17 @@ import {
   pixelGet,
   pixelHex,
   pixelLine,
+  pixelMirrored,
   pixelRgba,
   pixelRotate,
   pixelSet,
+  pixelSymmetryFor,
   pixelZoomNext,
 } from '../../game/js/logic/pixel-ops.js';
 import { commit, studioState, toast, updateTopBar } from './studio-app.js';
 /* eslint-disable no-func-assign */
 expose({
+  PIXEL_SYMMETRY: [() => PIXEL_SYMMETRY],
   artStep: [() => artStep, v => (artStep = v)],
   artStepPut: [() => artStepPut, v => ((artStepPut = v), provide({ artStepPut }))],
   bindPixelCanvasEvents: [() => bindPixelCanvasEvents, v => (bindPixelCanvasEvents = v)],
@@ -52,8 +55,12 @@ expose({
   pixelCanvasDeselect: [() => pixelCanvasDeselect, v => (pixelCanvasDeselect = v)],
   pixelCanvasFit: [() => pixelCanvasFit, v => (pixelCanvasFit = v)],
   pixelCanvasInk: [() => pixelCanvasInk],
+  pixelCanvasPanel: [() => pixelCanvasPanel, v => (pixelCanvasPanel = v)],
+  pixelCanvasPanelHTML: [() => pixelCanvasPanelHTML, v => (pixelCanvasPanelHTML = v)],
+  pixelCanvasPanelSync: [() => pixelCanvasPanelSync, v => (pixelCanvasPanelSync = v)],
   pixelCanvasPoint: [() => pixelCanvasPoint, v => (pixelCanvasPoint = v)],
   pixelCanvasRepeat: [() => pixelCanvasRepeat],
+  pixelCanvasSymmetry: [() => pixelCanvasSymmetry, v => (pixelCanvasSymmetry = v)],
   pixelCanvasTool: [() => pixelCanvasTool, v => (pixelCanvasTool = v)],
   pixelCanvasTransform: [() => pixelCanvasTransform, v => (pixelCanvasTransform = v)],
   pixelCanvasZoom: [() => pixelCanvasZoom, v => (pixelCanvasZoom = v)],
@@ -62,6 +69,8 @@ expose({
   strokePlot: [() => strokePlot, v => (strokePlot = v)],
   strokeShow: [() => strokeShow, v => (strokeShow = v)],
   strokeStart: [() => strokeStart, v => (strokeStart = v)],
+  symmetryAt: [() => symmetryAt, v => (symmetryAt = v)],
+  symmetryLines: [() => symmetryLines],
 });
 /* eslint-enable no-func-assign */
 provide({ artStepPut });
@@ -83,6 +92,9 @@ export function pixelCanvas(stage, o) {
     stroke: null,
     sel: null /* the selected box, in picture pixels */,
     lastAt: null /* where the last stroke ended: Shift-click draws a line from there */,
+    hoverAt: null,
+    symMode: 'off',
+    symShift: [0, 0] /* the axes moved, in half pixels */,
   };
   bindPixelCanvasEvents(P);
   const onArt = ev => {
@@ -94,6 +106,42 @@ export function pixelCanvas(stage, o) {
   };
   document.addEventListener('studio-art', onArt);
   return P;
+}
+/* ---------- the panel the hosts put beside the canvas: symmetry (and the palette and onion skin) ---------- */
+export function pixelCanvasPanelHTML() {
+  return `<div class="px-sec pc-panel"><h4>Symmetry</h4><div class="seg-row">${PIXEL_SYMMETRY.map(
+    ([k, l]) =>
+      `<button class="seg sm" data-pc="sym" data-m="${k}" title="Symmetry: ${k === 'v' ? 'left-right' : k === 'h' ? 'top-bottom' : k} (Y)">${l}</button>`
+  ).join(
+    ''
+  )}</div><p class="help">Mirrors about the middle of the selection, else of the part under the pointer.</p><div class="pc-shift"><label>Move the axis ↔ <input type="number" step="1" data-pc="shift" data-i="0" value="0" title="In half pixels"></label><label>↕ <input type="number" step="1" data-pc="shift" data-i="1" value="0" title="In half pixels"></label></div></div>`;
+}
+export function pixelCanvasPanel(P, root) {
+  P.panel = root;
+  root.addEventListener('click', ev => {
+    const b = ev.target.closest('[data-pc]');
+    if (!b || !P.cv.isConnected) return;
+    if (b.dataset.pc === 'sym') pixelCanvasSymmetry(P, b.dataset.m);
+  });
+  root.addEventListener('input', ev => {
+    const b = ev.target.closest('[data-pc=shift]');
+    if (!b) return;
+    P.symShift[+b.dataset.i] = Math.round(+b.value || 0);
+    drawPixelCanvas(P);
+  });
+  pixelCanvasPanelSync(P);
+}
+function pixelCanvasPanelSync(P) {
+  const r = P.panel;
+  if (!r) return;
+  r.querySelectorAll('[data-pc=sym]').forEach(b => b.classList.toggle('on', b.dataset.m === (P.symMode || 'off')));
+  r.querySelectorAll('.pc-shift').forEach(e => (e.hidden = !P.symMode || P.symMode === 'off'));
+}
+/* a symmetry mode, or the next one */
+export function pixelCanvasSymmetry(P, mode) {
+  const ks = PIXEL_SYMMETRY.map(m => m[0]);
+  P.symMode = mode || ks[(ks.indexOf(P.symMode) + 1) % ks.length];
+  drawPixelCanvas(P);
 }
 /* ---------- the Studio's undo for pictures: a step holds the box that changed, before and after ---------- */
 const imageOf = c => c.getContext('2d').getImageData(0, 0, c.width, c.height);
@@ -183,7 +231,9 @@ export function drawPixelCanvas(P) {
   const sel = P.sel
     ? `<rect class="pc-sel" x="${P.sel[0]}" y="${P.sel[1]}" width="${P.sel[2]}" height="${P.sel[3]}"/>`
     : '';
-  P.over.innerHTML = `<g transform="translate(${off} ${offY})">${P.o.overlay ? P.o.overlay(P) : ''}${sel}</g>`;
+  const sym = symmetryLines(P, P.stroke ? P.stroke.sym : P.hoverAt ? symmetryAt(P, ...P.hoverAt) : symmetryAt(P));
+  P.over.innerHTML = `<g transform="translate(${off} ${offY})">${P.o.overlay ? P.o.overlay(P) : ''}${sel}${sym}</g>`;
+  pixelCanvasPanelSync(P);
   if (P.o.drawn) P.o.drawn(P);
 }
 /* the picture pixel under the pointer (a ground tile's repeats wrap onto the picture) */
@@ -201,7 +251,12 @@ function pixelCanvasPoint(P, ev) {
 function strokeStart(P) {
   const c = P.o.get(),
     cx = c.getContext('2d');
-  P.stroke = { c, before: cx.getImageData(0, 0, c.width, c.height), work: cx.getImageData(0, 0, c.width, c.height) };
+  P.stroke = {
+    c,
+    before: cx.getImageData(0, 0, c.width, c.height),
+    work: cx.getImageData(0, 0, c.width, c.height),
+    sym: P.hoverAt ? symmetryAt(P, P.hoverAt[0], P.hoverAt[1]) : symmetryAt(P),
+  };
   return P.stroke;
 }
 function strokeShow(P) {
@@ -220,8 +275,37 @@ function strokeEnd(P) {
 }
 const pixelCanvasInk = P => (P.tool === 'erase' ? null : pixelRgba(P.color));
 function strokePlot(P, x, y) {
-  pixelSet(P.stroke.work, x, y, pixelCanvasInk(P));
+  const ink = pixelCanvasInk(P);
+  for (const [a, b] of pixelMirrored(x, y, P.stroke.sym)) pixelSet(P.stroke.work, a, b, ink);
 }
+/* ---------- symmetry: mirror every pixel about the middle of the selection, else of the part under the pointer, else
+   of the picture; the axis can be moved by half pixels ---------- */
+const PIXEL_SYMMETRY = [
+  ['off', 'Off'],
+  ['v', '↔'],
+  ['h', '↕'],
+  ['both', 'Both'],
+];
+function symmetryAt(P, x, y) {
+  if (!P.symMode || P.symMode === 'off') return null;
+  const c = P.o.get(),
+    box = P.sel || (P.o.boxAt && x != null && P.o.boxAt(x, y)) || [0, 0, c.width, c.height],
+    s = pixelSymmetryFor(P.symMode, box);
+  return { ...s, sx: s.sx + P.symShift[0], sy: s.sy + P.symShift[1], box };
+}
+/* the axes across the box they mirror in */
+const symmetryLines = (P, s) => {
+  if (!s) return '';
+  const [x, y, w, h] = s.box,
+    ax = (s.sx + 1) / 2,
+    ay = (s.sy + 1) / 2,
+    out = [];
+  if (s.mode === 'v' || s.mode === 'both')
+    out.push(`<line class="pc-axis" x1="${ax}" y1="${y}" x2="${ax}" y2="${y + h}"/>`);
+  if (s.mode === 'h' || s.mode === 'both')
+    out.push(`<line class="pc-axis" x1="${x}" y1="${ay}" x2="${x + w}" y2="${ay}"/>`);
+  return out.join('');
+};
 /* a line from a to b over the picture as it was before the stroke (it follows the pointer until let go) */
 function strokeLineTo(P, a, b) {
   const s = P.stroke;
@@ -273,6 +357,7 @@ function bindPixelCanvasEvents(P) {
     const c = P.o.get();
     if (!c) return;
     const [x, y] = pixelCanvasPoint(P, ev);
+    P.hoverAt = [x, y];
     if (P.o.hostTool && P.o.hostTool(P, P.tool, x, y)) return;
     if (P.tool === 'pick') {
       const d = pixelGet(c.getContext('2d').getImageData(0, 0, c.width, c.height), x, y);
@@ -288,7 +373,8 @@ function bindPixelCanvasEvents(P) {
     }
     strokeStart(P);
     if (P.tool === 'fill') {
-      pixelFill(P.stroke.work, x, y, pixelCanvasInk(P), P.o.boxAt ? P.o.boxAt(x, y) : null);
+      for (const [a, b] of pixelMirrored(x, y, P.stroke.sym))
+        pixelFill(P.stroke.work, a, b, pixelCanvasInk(P), P.o.boxAt ? P.o.boxAt(a, b) : null);
       strokeEnd(P);
       return;
     }
@@ -325,6 +411,13 @@ function bindPixelCanvasEvents(P) {
       last = p;
       strokeShow(P);
       return;
+    }
+    const was = P.hoverAt;
+    P.hoverAt = p;
+    if (P.symMode && P.symMode !== 'off' && !P.sel && P.o.boxAt) {
+      const a = was && P.o.boxAt(was[0], was[1]),
+        b = P.o.boxAt(p[0], p[1]);
+      if (String(a) !== String(b)) drawPixelCanvas(P);
     }
     if (P.o.hover) P.o.hover(P, p[0], p[1]);
   });

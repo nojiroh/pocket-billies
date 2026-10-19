@@ -1205,6 +1205,21 @@ canvas.spr-prev.big {
   vector-effect: non-scaling-stroke;
   stroke-dasharray: 4 3;
 }
+.pc-axis {
+  stroke: #d0347c;
+  stroke-width: 1.5;
+  stroke-dasharray: 6 3;
+  vector-effect: non-scaling-stroke;
+}
+.pc-shift {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font-size: 12px;
+}
+.pc-shift input {
+  width: 56px;
+}
 .pc-over rect.pc-sel {
   fill: rgba(40, 120, 220, 0.08);
   stroke: #2878dc;
