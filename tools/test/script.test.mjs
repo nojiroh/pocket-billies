@@ -224,3 +224,20 @@ test('line ids: kept apart from the text; once, cycle and [once] remember by the
   assert.deepEqual((await play(v1, { save })).said, ['First time.', 'One.', '? Ask. | Go.']);
   assert.deepEqual((await play(v2, { save })).said, ['Something new above.', 'Two.', '? Go.']);
 });
+
+test('the Studio’s reference is built from the tables: every command, keyword, slot and condition kind', () => {
+  const { scriptReference, SCRIPT_COMMANDS, KEYWORDS, SCRIPT_SLOTS } = modules['script-parse'];
+  const { CONDITION_KINDS } = modules.conditions;
+  const R = scriptReference(),
+    uses = R.flatMap(s => s.rows.map(r => r.use.split(/[\s:]/)[0]));
+  for (const k of [...Object.keys(SCRIPT_COMMANDS), ...KEYWORDS, ...Object.keys(CONDITION_KINDS)])
+    assert.ok(uses.includes(k), k);
+  for (const k of Object.keys(SCRIPT_SLOTS)) assert.ok(uses.includes(`{${k}}`), k);
+  assert.ok(
+    R.flatMap(s => s.rows).every(r => r.about),
+    'each row says what it does'
+  );
+  const set = R.find(s => s.title === 'Commands').rows.find(r => r.use.startsWith('set '));
+  assert.equal(set.use, 'set flag [value]');
+  assert.equal(R.find(s => s.title === 'Commands').rows.find(r => r.use.startsWith('battle')).tag, 'checkpoint');
+});

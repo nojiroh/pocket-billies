@@ -7,10 +7,11 @@
    conditions.js alone. Logic only: no DOM, no game data, runs in Node. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { conditionProblem, didYouMean } from './conditions.js';
+import { CONDITION_KINDS, conditionProblem, didYouMean } from './conditions.js';
 /* eslint-disable no-func-assign */
 expose({
   KEYWORDS: [() => KEYWORDS],
+  KEYWORD_ABOUT: [() => KEYWORD_ABOUT],
   LINE_ID: [() => LINE_ID],
   SCRIPT_COMMANDS: [() => SCRIPT_COMMANDS],
   SCRIPT_SLOTS: [() => SCRIPT_SLOTS],
@@ -25,6 +26,8 @@ expose({
   scriptError: [() => scriptError, v => (scriptError = v)],
   // @ts-expect-error -- replaced on purpose
   scriptProblem: [() => scriptProblem, v => (scriptProblem = v)],
+  // @ts-expect-error -- replaced on purpose
+  scriptReference: [() => scriptReference, v => (scriptReference = v)],
   withoutId: [() => withoutId],
 });
 /* eslint-enable no-func-assign */
@@ -65,7 +68,17 @@ export const SCRIPT_COMMANDS = {
   tip: { args: ['...'], opening: true, about: 'a HOT TIP card in battle' },
   fall: { args: [], opening: true, checkpoint: true, about: 'the fall through the crust' },
 };
-export const KEYWORDS = ['choice', 'if', 'elif', 'else', 'once', 'cycle', 'seq'];
+/** the keywords, with how each is written and what it does, for the Studio's reference (S3) */
+export const KEYWORD_ABOUT = {
+  choice: ['choice', 'a choice: its options go under it as "> text", the lines under each indented two more'],
+  if: ['if cond', 'the lines under it only when the condition holds'],
+  elif: ['elif cond', 'after an if: when the ones above didn’t hold and this does'],
+  else: ['else', 'after an if: when none above held'],
+  once: ['once [key]', 'the lines under it the first time only'],
+  cycle: ['cycle [key]', 'a different "- " entry each time, then from the first again'],
+  seq: ['seq [key]', 'a different "- " entry each time, staying on the last'],
+};
+export const KEYWORDS = Object.keys(KEYWORD_ABOUT);
 /** a line's id at its end, " #l:3fa9" (tools/story-ids.mjs gives them): kept when the text changes or moves */
 export const LINE_ID = /\s+#l:([0-9a-z]{4,8})$/;
 /** a text and its line id, apart @param {string} t @returns {[string, string | null]} */
@@ -281,4 +294,57 @@ export function scriptProblem(lines) {
     if (err.name === 'ScriptError') return { message: err.message, line: err.line };
     throw e;
   }
+}
+
+/** the format at a glance, built from the tables above and conditions.js (the Studio's command reference), so it
+ * can't drift from what the parser reads: [{ title, rows: [{ use, about, tag }] }] */
+export function scriptReference() {
+  /** @param {string[]} args */
+  const usage = args => args.map(a => (a.endsWith('?') ? `[${a.slice(0, -1)}]` : a === '...' ? '…' : a)).join(' ');
+  const C = /** @type {Record<string, { args: string[], about: string, opening?: boolean, checkpoint?: boolean }>} */ (
+    SCRIPT_COMMANDS
+  );
+  const commands = (/** @type {boolean} */ opening) =>
+    Object.entries(C)
+      .filter(([, c]) => !!c.opening === opening)
+      .map(([k, c]) => ({
+        use: `${k} ${usage(c.args)}`.trim(),
+        about: c.about,
+        tag: c.checkpoint ? 'checkpoint' : '',
+      }));
+  const K = /** @type {Record<string, { id: boolean, count: boolean, about: string }>} */ (CONDITION_KINDS);
+  return [
+    {
+      title: 'Lines',
+      rows: [
+        { use: 'Text', about: 'a line said by the one you talk to', tag: '' },
+        { use: 'Name: text', about: 'a line said by someone else (story.json speakers)', tag: '' },
+        { use: '[happy] Name: text', about: 'with an expression on their portrait', tag: '' },
+        ...Object.entries(SCRIPT_SLOTS).map(([k, about]) => ({ use: `{${k}}`, about, tag: 'slot' })),
+      ],
+    },
+    {
+      title: 'Blocks',
+      rows: [
+        ...Object.values(KEYWORD_ABOUT).map(([use, about]) => ({ use, about, tag: '' })),
+        { use: '> [if cond] text', about: 'an option shown only when the condition holds', tag: '' },
+        { use: '> [once] text', about: 'an option that goes away once picked', tag: '' },
+      ],
+    },
+    { title: 'Commands', rows: commands(false) },
+    { title: 'Opening commands', rows: commands(true) },
+    {
+      title: 'Conditions',
+      rows: [
+        { use: 'flag', about: 'a story flag is set (!flag or not flag: it isn’t)', tag: '' },
+        { use: 'flag = word', about: 'a flag set to a word or number', tag: '' },
+        ...Object.entries(K).map(([k, c]) => ({
+          use: c.id ? `${k}:id${c.count ? ' >= n' : ''}` : `${k}${c.count ? ' >= n' : ''}`,
+          about: c.about,
+          tag: '',
+        })),
+        { use: 'a and b, a or b, (a or b)', about: 'combined; a count alone means more than 0', tag: '' },
+      ],
+    },
+  ];
 }
