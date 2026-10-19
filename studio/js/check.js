@@ -378,7 +378,7 @@ function runCheck() {
           'scenes',
           g
         );
-      /* v42: the join table names an exit this scene has, and both ends face each other */
+      /* v42: each link names an exit this scene has (phase 08b: and the two ends face each other) */
       (D.roads || []).forEach(L => {
         const l = PB_DATA.road(D, L),
           end = l.a === i ? 'a' : l.b === i ? 'b' : null,

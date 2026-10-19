@@ -775,7 +775,7 @@ export function mapExitNames(id) {
     pairs = [],
     out = {},
     E = sc.edgeExits || [];
-  /* v42: the join table first: a road that names its exit here keeps it */
+  /* v42: the links first: a road that names its exit here keeps it */
   (D.roads || []).forEach(L => {
     const l = PB_DATA.road(D, L),
       o = l.kind === 'seam' ? (l.a === i ? l.b : l.b === i ? l.a : null) : null;
