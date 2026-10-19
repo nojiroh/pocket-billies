@@ -49,6 +49,16 @@ import {
   bowlSurface,
   bowlToGpu,
 } from './logic/bowl-camera.js';
+import {
+  BOWL_CLOUD_LEVELS,
+  BOWL_SKY_KEYS,
+  bowlCloudAt,
+  bowlCloudLayout,
+  bowlCloudLevel,
+  bowlCloudShow,
+  bowlSkyGrid,
+  bowlSunAt,
+} from './logic/bowl-weather.js';
 import { isLiteMap, loadMapFile } from './map-files.js';
 import { escapeHtml, reducedMotion, saveData, uiState } from './game-state.js';
 import { frameCount, frameStop, frameTask } from './frame-scheduler.js';
@@ -66,6 +76,7 @@ import {
   webgl2Supported,
 } from './engine/webgl.js';
 import { POST_EFFECT_SHADERS, drawPostEffects, projectToScreenUv } from './engine/post-effects.js';
+import { WEATHER_LOOKS, environmentState } from './environment.js';
 import { walkRenderer } from './walk/walk-state.js';
 import { clampZoom } from './walk/camera.js';
 /* eslint-disable no-func-assign */
@@ -85,6 +96,7 @@ expose({
   BOWL_SEA_FAR: [() => BOWL_SEA_FAR],
   BOWL_SHADOW_GLSL: [() => BOWL_SHADOW_GLSL],
   BOWL_SHADOW_SIZE: [() => BOWL_SHADOW_SIZE],
+  BOWL_SKY_GLSL: [() => BOWL_SKY_GLSL],
   BOWL_SUN: [() => BOWL_SUN],
   BOWL_SUN_NOW: [() => BOWL_SUN_NOW],
   BOWL_WALL_W: [() => BOWL_WALL_W],
@@ -93,8 +105,11 @@ expose({
   bowlNoise: [() => bowlNoise, v => (bowlNoise = v)],
   bowlWallTexture: [() => bowlWallTexture, v => ((bowlWallTexture = v), provide({ bowlWallTexture }))],
   worldBowl: [() => worldBowl],
+  worldBowlCloudsNow: [() => worldBowlCloudsNow, v => (worldBowlCloudsNow = v)],
   worldBowlColorAt: [() => worldBowlColorAt, v => (worldBowlColorAt = v)],
   worldBowlDot: [() => worldBowlDot, v => (worldBowlDot = v)],
+  worldBowlDrawSky: [() => worldBowlDrawSky, v => (worldBowlDrawSky = v)],
+  worldBowlFallNow: [() => worldBowlFallNow, v => (worldBowlFallNow = v)],
   worldBowlFilm: [() => worldBowlFilm, v => (worldBowlFilm = v)],
   worldBowlGpu: [() => worldBowlGpu, v => (worldBowlGpu = v)],
   worldBowlLightMatrix: [() => worldBowlLightMatrix, v => (worldBowlLightMatrix = v)],
@@ -105,14 +120,21 @@ expose({
   worldBowlOverlay: [() => worldBowlOverlay, v => (worldBowlOverlay = v)],
   worldBowlPick: [() => worldBowlPick, v => (worldBowlPick = v)],
   worldBowlPin: [() => worldBowlPin, v => (worldBowlPin = v)],
+  worldBowlPuffMesh: [() => worldBowlPuffMesh, v => (worldBowlPuffMesh = v)],
   worldBowlRender: [() => worldBowlRender, v => setWorldBowlRender(v)],
   worldBowlRiversInto: [() => worldBowlRiversInto, v => (worldBowlRiversInto = v)],
   worldBowlRoadsInto: [() => worldBowlRoadsInto, v => (worldBowlRoadsInto = v)],
   worldBowlShadowUniforms: [() => worldBowlShadowUniforms, v => (worldBowlShadowUniforms = v)],
   worldBowlShadows: [() => worldBowlShadows, v => (worldBowlShadows = v)],
+  worldBowlSkyAt: [() => worldBowlSkyAt, v => (worldBowlSkyAt = v)],
+  worldBowlSkyFloor: [() => worldBowlSkyFloor, v => (worldBowlSkyFloor = v)],
+  worldBowlSkyGpu: [() => worldBowlSkyGpu, v => (worldBowlSkyGpu = v)],
+  worldBowlSkyTick: [() => worldBowlSkyTick, v => (worldBowlSkyTick = v)],
+  worldBowlSkyUniforms: [() => worldBowlSkyUniforms, v => (worldBowlSkyUniforms = v)],
   worldBowlSpots: [() => worldBowlSpots, v => (worldBowlSpots = v)],
   worldBowlStampMap: [() => worldBowlStampMap, v => (worldBowlStampMap = v)],
   worldBowlStampMaps: [() => worldBowlStampMaps, v => (worldBowlStampMaps = v)],
+  worldBowlSunNow: [() => worldBowlSunNow, v => (worldBowlSunNow = v)],
   worldBowlTerrainGpu: [() => worldBowlTerrainGpu, v => (worldBowlTerrainGpu = v)],
   worldBowlTerrainKinds: [() => worldBowlTerrainKinds, v => (worldBowlTerrainKinds = v)],
   worldBowlTerrainPictures: [() => worldBowlTerrainPictures, v => (worldBowlTerrainPictures = v)],
@@ -206,16 +228,26 @@ float bowlShadow(vec3 p,float nl){if(uShOn<.5)return 1.;vec4 s=uSM*vec4(p,1.);ve
  if(any(lessThan(t.xy,vec2(0.)))||any(greaterThan(t.xy,vec2(1.))))return 1.;float b=.0006+.0012*(1.-nl),k=1./${BOWL_SHADOW_SIZE.toFixed(1)};
  float r=texture(uSh,vec3(t.xy+vec2(-k,-k)*.75,t.z-b))+texture(uSh,vec3(t.xy+vec2(k,-k)*.75,t.z-b))+texture(uSh,vec3(t.xy+vec2(-k,k)*.75,t.z-b))+texture(uSh,vec3(t.xy+vec2(k,k)*.75,t.z-b));
  return r*.25;}`;
+/* the sky's part of lighting, shared by the ground and the water (look session 3): the sun's strength and colour
+   through the day (red and low at night), the ambient going dusk-blue, the clouds' moving shadows (up to 40 soft
+   discs where each cloud's shadow falls along the light) and the weather map (cloud, rain, fog, snow) */
+const BOWL_SKY_GLSL = `uniform float uLight,uNight,uFlash;uniform vec4 uCs[40];uniform int uCn;uniform sampler2D uSky;
+vec3 bowlAmb(float ny){return mix(vec3(.4,.45,.56)+.16*ny,vec3(.1,.13,.27)+.05*ny,uNight)+uFlash*.35;}
+vec3 bowlSunCol(){return mix(vec3(1.,.94,.82)*.74,vec3(.5,.18,.1)*.5,uNight)*uLight;}
+float bowlCloudShade(vec2 q){float s=1.;for(int i=0;i<40;i++){if(i>=uCn)break;vec4 c=uCs[i];float d=length(q-c.xy)/c.z;s*=1.-c.w*(1.-smoothstep(.55,1.,d));}return s;}
+float bowlH(vec2 q){float r=min(1.,length(q));return ${Math.SQRT2.toFixed(6)}-sqrt(2.-r*r);}`;
 export const WORLD_BOWL_SHADERS = {
   /* the sky: pale towards the rim line, the Inner Sun overhead (depth at the very back) */
   msky: [
     `#version 300 es
 precision highp float;in vec2 aC;void main(){gl_Position=vec4(aC*2.-1.,.99999,1.);}`,
     `#version 300 es
-precision highp float;out vec4 o;uniform vec3 uC,uFw,uRt,uUp,uSun;uniform float uFoc,uR;uniform vec2 uWH;
+precision highp float;out vec4 o;uniform vec3 uC,uFw,uRt,uUp,uSun;uniform float uFoc,uR,uNight,uGrey;uniform vec2 uWH;
 void main(){vec2 px=gl_FragCoord.xy/uR;vec3 d=normalize(uFw+uRt*(px.x-uWH.x*.5)/uFoc+uUp*(px.y-uWH.y*.5)/uFoc);
- vec3 c=mix(vec3(.98,.87,.72),vec3(.6,.71,.95),smoothstep(-.05,.7,d.y));
- vec3 sd=normalize(uSun-uC);float a=max(0.,dot(d,sd));c+=vec3(1.,.9,.6)*(pow(a,900.)*3.+pow(a,40.)*.35);o=vec4(c,1.);}`,
+ float k=smoothstep(-.05,.7,d.y);vec3 c=mix(vec3(.98,.87,.72),vec3(.6,.71,.95),k);
+ c=mix(c,mix(vec3(.75,.77,.8),vec3(.55,.6,.68),k),uGrey*.8);c=mix(c,mix(vec3(.16,.13,.25),vec3(.04,.06,.16),k),uNight);
+ vec3 sd=normalize(uSun-uC);float a=max(0.,dot(d,sd));
+ c+=mix(vec3(1.,.9,.6),vec3(.9,.3,.15),uNight)*(pow(a,900.)*mix(3.,1.4,uNight)+pow(a,40.)*.35*(1.-uGrey*.7));o=vec4(c,1.);}`,
   ],
   /* the ground: one low-poly mesh, lit facet by facet by the Inner Sun, painted with the walk scenes' terrain
      pictures (a square a metre, 16 px each, sharp) close up and their average colours far away */
@@ -229,6 +261,7 @@ precision highp float;in vec3 aPos;uniform mat4 uVP;out vec3 vW;void main(){vW=a
     `#version 300 es
 precision highp float;precision highp sampler2DArray;precision highp sampler2DShadow;in vec3 vW;out vec4 o;uniform sampler2D uIdx,uMix,uRoute;uniform sampler2DArray uLay;uniform vec3 uC,uLd,uHaze;uniform float uOn;
 ${BOWL_SHADOW_GLSL}
+${BOWL_SKY_GLSL}
 void main(){vec3 n=normalize(cross(dFdx(vW),dFdy(vW)));if(n.y<0.)n=-n;
  vec2 q=vec2(vW.x,-vW.z),uv=vec2(q.x*.5+.5,.5-q.y*.5);vec3 far=uOn>.5?texture(uMix,uv).rgb:vec3(.5,.63,.38),c=far,near=far;
  vec2 m=q*${BOWL_METRES.toFixed(1)};float px=max(length(dFdx(m)),length(dFdy(m))),pb=px/${BOWL_METRES.toFixed(1)};
@@ -240,9 +273,34 @@ void main(){vec3 n=normalize(cross(dFdx(vW),dFdy(vW)));if(n.y<0.)n=-n;
   float rd=rq.r*${BOWL_ROUTE_FIELD.toFixed(3)},hw=max(.0018,pb*1.6),ow=hw+max(.0011,pb*1.1),vis=1.-rq.g*(1.-smoothstep(1.5,4.,px));
   vec3 rc=mix(vec3(.95,.87,.66),near*1.08,1.-smoothstep(1.,3.,px));
   c=mix(c,vec3(.22,.15,.1),(1.-smoothstep(ow-aa,ow+aa,rd))*vis*.85);c=mix(c,rc,(1.-smoothstep(hw-aa,hw+aa,rd))*vis);}
- float nl=max(0.,dot(n,uLd)),sh=bowlShadow(vW,nl);
- c*=vec3(.4,.45,.56)+.16*n.y+vec3(1.,.94,.82)*.74*nl*sh;
+ vec4 wx=texture(uSky,uv);float rh=vW.y-bowlH(q);
+ c=mix(c,vec3(.94,.96,1.),wx.a*smoothstep(.55,.9,n.y)*smoothstep(.0,.03,rh)*.6);
+ float nl=max(0.,dot(n,uLd)),sh=bowlShadow(vW,nl)*bowlCloudShade(q);
+ c*=bowlAmb(n.y)+bowlSunCol()*nl*sh*(1.-.4*max(0.,wx.r-.35)/.65);
+ c=mix(c,mix(vec3(.82,.85,.88),vec3(.2,.22,.3),uNight),wx.b*(.22+.5*(1.-smoothstep(.0,.035,rh))));
  float d=length(vW-uC),fk=1.-exp(-max(0.,d-.7)*.32);o=vec4(mix(c,uHaze,clamp(fk,0.,.6)),1.);}`,
+  ],
+  /* the clouds (look session 3): low-poly puffs, one instance each (centre and size, how much it shows and how dark),
+     flat-faceted, lit by the sun from the side it faces, see-through as they build and fade, gone when the camera
+     comes close */
+  mcloud: [
+    `#version 300 es
+precision highp float;in vec3 aPos;in vec3 aNrm;layout(location=4) in vec4 iC;layout(location=5) in vec4 iK;uniform mat4 uVP;out vec3 vN,vW;out vec2 vK;
+void main(){vec3 p=iC.xyz+aPos*vec3(iC.w,iC.w*iK.z,iC.w);vW=p;vN=aNrm;vK=iK.xy;gl_Position=uVP*vec4(p,1.);}`,
+    `#version 300 es
+precision highp float;in vec3 vN,vW;in vec2 vK;out vec4 o;uniform vec3 uC,uLd,uHaze;uniform float uLight,uNight,uFlash,uNear;
+void main(){vec3 n=normalize(vN);float nl=max(0.,dot(n,uLd));
+ vec3 c=mix(vec3(1.,.99,.97),vec3(.55,.58,.64),vK.y)*(mix(.72,.3,uNight)+.38*nl*uLight)+uFlash*vK.y*.8;
+ c=mix(c,c*vec3(.75,.8,.95),.25*(1.-n.y));float d=length(vW-uC);
+ float a=vK.x*smoothstep(uNear,uNear*2.5,d);if(a<.01)discard;float fk=1.-exp(-max(0.,d-.7)*.32);o=vec4(mix(c,uHaze,clamp(fk,0.,.5)),a);}`,
+  ],
+  /* rain, snow and ash under the clouds: short lines falling (kind: 0 rain, 1 snow, 2 ash) */
+  mfall: [
+    `#version 300 es
+precision highp float;in vec3 aPos;layout(location=6) in float aKind;uniform mat4 uVP;out float vK;void main(){vK=aKind;gl_Position=uVP*vec4(aPos,1.);}`,
+    `#version 300 es
+precision highp float;in float vK;out vec4 o;uniform float uNight;
+void main(){vec3 c=vK<.5?vec3(.72,.8,.92):vK<1.5?vec3(1.):vec3(.35,.32,.3);c*=1.-uNight*.6;o=vec4(c,vK<.5?.55:.85);}`,
   ],
   /* the shadow map: the ground seen from the sun, depth only */
   mshadow: [
@@ -261,6 +319,7 @@ precision highp float;in vec3 aPos;in vec2 aShore;uniform mat4 uVP;out vec3 vW;o
   `#version 300 es
 precision highp float;precision highp sampler2DShadow;in vec3 vW;in vec2 vS;out vec4 o;uniform vec3 uC,uLd,uHaze;uniform float uT;
 ${BOWL_SHADOW_GLSL}
+${BOWL_SKY_GLSL}
 float wv(vec2 p,vec2 d,float f,float s,float t){return sin(dot(p,d)*f+t*s);}
 void main(){vec2 q=vec2(vW.x,-vW.z)*${BOWL_METRES.toFixed(1)};float t=uT;
  vec3 up=normalize(vec3(0.,${Math.SQRT2.toFixed(6)},0.)-vW);
@@ -270,15 +329,16 @@ void main(){vec2 q=vec2(vW.x,-vW.z)*${BOWL_METRES.toFixed(1)};float t=uT;
  g+=vec2(.2,-.98)*cos(dot(q,vec2(.2,-.98))*.31+t*2.3)*.035;
  g+=vec2(-.94,-.34)*cos(dot(q,vec2(-.94,-.34))*.6+t*3.1)*.02;
  vec3 n=normalize(up+vec3(-g.x,0.,g.y)*.35);
- vec3 v=normalize(uC-vW),l=uLd;float sh=bowlShadow(vW,1.);
+ vec3 v=normalize(uC-vW),l=uLd;vec2 qb=vec2(vW.x,-vW.z);vec4 wx=texture(uSky,vec2(qb.x*.5+.5,.5-qb.y*.5));float sh=bowlShadow(vW,1.)*bowlCloudShade(qb);
  float dep=vS.x,c=vS.y;
  vec3 shallow=vec3(.33,.78,.78),mid=vec3(.1,.48,.68),deep=vec3(.04,.2,.42);
  vec3 col=mix(shallow,mid,smoothstep(.0,.006,dep));col=mix(col,deep,smoothstep(.008,.032,dep));
- col*=(.62+.3*max(0.,dot(n,l)))*(.72+.28*sh);
+ col*=(bowlAmb(1.)*1.4+bowlSunCol()*.4*max(0.,dot(n,l)))*(.72+.28*sh);
  vec3 r=reflect(-v,n);float ry=dot(r,up);
- vec3 sky=mix(vec3(.98,.87,.72),vec3(.6,.71,.95),smoothstep(-.05,.7,ry));
+ vec3 sky=mix(vec3(.98,.87,.72),vec3(.6,.71,.95),smoothstep(-.05,.7,ry));sky=mix(sky,vec3(.62,.66,.72),wx.r*.5);sky=mix(sky,vec3(.06,.08,.18),uNight);
  float fr=.04+.96*pow(1.-max(0.,dot(n,v)),5.);col=mix(col,sky,clamp(fr,0.,.85));
- float sp=pow(max(0.,dot(reflect(-l,n),v)),120.);col+=vec3(1.,.95,.8)*sp*1.6*sh;
+ float sp=pow(max(0.,dot(reflect(-l,n),v)),120.);col+=mix(vec3(1.,.95,.8),vec3(.9,.35,.2),uNight)*sp*1.6*sh*uLight;
+ col=mix(col,mix(vec3(.82,.85,.88),vec3(.2,.22,.3),uNight),wx.b*.35);
  float fb=1.-smoothstep(.0,.0035,dep),fw=.5+.5*sin(dep*2600.-t*2.2+wv(q,vec2(.6,.8),.4,0.,0.)*1.5);
  float foam=fb*smoothstep(.35,.75,fw)+(1.-smoothstep(0.,.0008,dep))*.8;col=mix(col,vec3(.95,.98,1.),clamp(foam,0.,1.)*.85);
  float a=mix(.45,.92,smoothstep(.0,.006,dep));a=max(a,clamp(foam,0.,1.)*.9);
@@ -609,7 +669,7 @@ function worldBowlLineMap() {
 /* the light's view of the bowl for the shadow map: straight along the light, everything inside the rim in the square.
    Column-major, as WebGL reads it */
 function worldBowlLightMatrix() {
-  const f = BOWL_LIGHT.map(v => -v),
+  const f = worldBowlSunNow().ld.map(v => -v),
     hint = Math.abs(f[2]) > 0.9 ? [1, 0, 0] : [0, 0, 1],
     cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]],
     norm = a => {
@@ -637,7 +697,10 @@ function worldBowlLightMatrix() {
 /* the shadow map: drawn once for the ground (it never moves) and again only if the GPU starts over */
 function worldBowlShadows(g) {
   const gl = gpuState.gl;
-  if (g.shadow && g.shadow.gl === gl) return g.shadow;
+  const sun = worldBowlSunNow();
+  /* the sun moves with the clock: draw the shadows again once it has gone round a little (about 6 minutes) */
+  if (g.shadow && g.shadow.gl === gl && Math.abs(g.shadow.az - sun.az) < 1.5) return g.shadow;
+  if (g.shadow && g.shadow.gl === gl && g.shadow.t) gl.deleteTexture(g.shadow.t);
   const t0 = performance.now(),
     Z = BOWL_SHADOW_SIZE,
     tex = gl.createTexture();
@@ -675,7 +738,7 @@ function worldBowlShadows(g) {
   gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   gl.deleteFramebuffer(fb);
   if (!ok) gl.deleteTexture(tex);
-  g.shadow = { gl, t: ok ? tex : null, SM, ms: Math.round(performance.now() - t0) };
+  g.shadow = { gl, t: ok ? tex : null, SM, az: sun.az, ms: Math.round(performance.now() - t0) };
   return g.shadow;
 }
 /* paths along the roads, a few squares wide (the places' own maps lie over their ends) */
@@ -1277,7 +1340,12 @@ export function worldBowlRender(t) {
   gl.uniform3fv(U.uFw, v.fw);
   gl.uniform3fv(U.uRt, v.rt);
   gl.uniform3fv(U.uUp, v.up);
-  gl.uniform3fv(U.uSun, BOWL_SUN);
+  const sky = worldBowlSkyTick(),
+    sun = worldBowlSunNow(),
+    haze = BOWL_HAZE.map((c, k) => c + ([0.12, 0.14, 0.26][k] - c) * sun.night);
+  gl.uniform3fv(U.uSun, sun.pos);
+  gl.uniform1f(U.uNight, sun.night);
+  gl.uniform1f(U.uGrey, sky.greyHere || 0);
   gl.uniform1f(U.uFoc, v.foc);
   gl.uniform1f(U.uR, rw / worldMapWidth);
   gl.uniform2f(U.uWH, worldMapWidth, worldMapHeight);
@@ -1291,9 +1359,10 @@ export function worldBowlRender(t) {
   gl.useProgram(p.p);
   gl.uniformMatrix4fv(U.uVP, false, VP);
   gl.uniform3fv(U.uC, v.C);
-  gl.uniform3fv(U.uLd, BOWL_LIGHT);
+  gl.uniform3fv(U.uLd, sun.ld);
   worldBowlShadowUniforms(U, g);
-  gl.uniform3fv(U.uHaze, BOWL_HAZE);
+  worldBowlSkyUniforms(U, sky, sun);
+  gl.uniform3fv(U.uHaze, haze);
   const T = g.terrain || worldBowl.ground.terrain;
   gl.uniform1f(U.uOn, g.ok ? 1 : 0);
   gl.activeTexture(gl.TEXTURE0);
@@ -1318,9 +1387,10 @@ export function worldBowlRender(t) {
     gl.useProgram(p.p);
     gl.uniformMatrix4fv(U.uVP, false, VP);
     gl.uniform3fv(U.uC, v.C);
-    gl.uniform3fv(U.uLd, BOWL_LIGHT);
+    gl.uniform3fv(U.uLd, sun.ld);
     worldBowlShadowUniforms(U, g);
-    gl.uniform3fv(U.uHaze, BOWL_HAZE);
+    worldBowlSkyUniforms(U, sky, sun);
+    gl.uniform3fv(U.uHaze, haze);
     gl.uniform1f(U.uT, reducedMotion ? 0 : (t % 600000) / 1000);
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
@@ -1330,6 +1400,8 @@ export function worldBowlRender(t) {
     gl.depthMask(true);
     gl.disable(gl.BLEND);
   }
+  /* rain, snow and ash, then the clouds over everything */
+  worldBowlDrawSky(sky, sun, VP, v, haze);
   gl.bindVertexArray(null);
   const fd = Math.max(0.05, worldBowl.cam ? worldBowl.cam.dist : 1);
   drawPostEffects(
@@ -1338,8 +1410,367 @@ export function worldBowlRender(t) {
     fd,
     rw,
     rh,
-    { blur: 0, fast: rw * rh > 1.2e6, noAO: true, sun: projectToScreenUv(VP, BOWL_SUN), sunCol: [1, 0.9, 0.7] }
+    {
+      blur: 0,
+      fast: rw * rh > 1.2e6,
+      noAO: true,
+      sun: projectToScreenUv(VP, sun.pos),
+      sunCol: [1, 0.9 - 0.5 * sun.night, 0.7 - 0.5 * sun.night].map(c => c * sun.light),
+    }
   );
+}
+/* ---------- the sky: the game's weather, clouds, rain and snow, the Inner Sun's day (look session 3) ---------- */
+/* the sun now: where it hangs and the way to it in GPU space, how strong its light is, how far into the night */
+export function worldBowlSunNow() {
+  const s = worldBowl.skyState,
+    b = s && s.sun ? s.sun : bowlSunAt(13, 0),
+    night = s ? s.night || 0 : 0;
+  return { pos: bowlToGpu(...b.at), ld: bowlToGpu(...b.dir), dir: b.dir, light: b.light, night, az: b.az };
+}
+/* the weather per place (each place's own, from its kind of place) every few seconds, eased so fronts build and
+   clear; the clouds for the setting; the sun from the clock. Returns the frame's sky. */
+function worldBowlSkyTick() {
+  const S =
+    worldBowl.skyState ||
+    (worldBowl.skyState = { level: null, clouds: [], grid: null, target: null, at: -1e9, last: 0, flash: 0 });
+  const pref = (saveData && saveData.preferences) || {},
+    level = bowlCloudLevel(pref.mapClouds, pref.aim),
+    now = performance.now(),
+    dt = Math.min(0.1, (now - (S.last || now)) / 1000);
+  S.last = now;
+  if (level !== S.level) {
+    S.level = level;
+    S.clouds = bowlCloudLayout(level);
+    S.parts = null;
+  }
+  if (now - S.at > 5000) {
+    S.at = now;
+    const spots = worldBowlSpots(),
+      P = [];
+    LOCATIONS.forEach((l, i) => {
+      const s = spots[i];
+      if (!s || s.under) return;
+      const st = environmentState((gameData.maps && gameData.maps[l.mapId]) || null);
+      P.push({ x: s.x, y: s.y, look: WEATHER_LOOKS[st.wx] || WEATHER_LOOKS.clear, wx: st.wx });
+    });
+    S.places = P;
+    S.target = bowlSkyGrid(P, 32);
+    if (!S.grid) S.grid = { n: 32, v: S.target.v.slice() };
+    const me = LOCATIONS[saveData && saveData.trip ? saveData.trip.node : 0],
+      st = environmentState((me && gameData.maps && gameData.maps[me.mapId]) || null);
+    S.hour = st.h;
+    S.night = st.night;
+    S.sun = bowlSunAt(st.h, st.night);
+  }
+  /* fronts: the sky eases towards the weather over about half a minute (at once the first time) */
+  const k = 1 - Math.exp(-dt / 8);
+  for (let q = 0; q < S.grid.v.length; q++) S.grid.v[q] += (S.target.v[q] - S.grid.v[q]) * k;
+  S.dt = dt;
+  S.flash *= Math.exp(-dt * 14);
+  const at = worldBowl.cam ? worldBowlSkyAt(worldBowl.cam.tx, worldBowl.cam.ty) : null;
+  S.greyHere = at ? at.grey : 0;
+  return S;
+}
+/* the eased weather at a point (the nearest cell of the sky's grid) */
+function worldBowlSkyAt(x, y) {
+  const S = worldBowl.skyState,
+    G = S && S.grid;
+  if (!G) return { cloud: 0.35, grey: 0, rain: 0, storm: 0, snow: 0, fog: 0, ash: 0 };
+  const n = G.n,
+    i = Math.max(0, Math.min(n - 1, Math.floor(((x + 1) / 2) * n))),
+    j = Math.max(0, Math.min(n - 1, Math.floor(((1 - y) / 2) * n))),
+    o = (j * n + i) * BOWL_SKY_KEYS.length,
+    out = {};
+  BOWL_SKY_KEYS.forEach((key, q) => (out[key] = G.v[o + q]));
+  return out;
+}
+/* the sky's uniforms for the ground and the water: light, night, lightning, cloud shadows, the weather map */
+function worldBowlSkyUniforms(U, S, sun) {
+  const gl = gpuState.gl;
+  gl.uniform1f(U.uLight, sun.light);
+  gl.uniform1f(U.uNight, sun.night);
+  gl.uniform1f(U.uFlash, S.flash || 0);
+  gl.uniform4fv(U.uCs, S.shadows || new Float32Array(160));
+  gl.uniform1i(U.uCn, S.shadowN || 0);
+  if (!S.tex || S.tex.gl !== gl) {
+    S.tex = { gl, t: gl.createTexture() };
+    gl.bindTexture(gl.TEXTURE_2D, S.tex.t);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    S.texAt = -1;
+  }
+  gl.activeTexture(gl.TEXTURE5);
+  gl.bindTexture(gl.TEXTURE_2D, S.tex.t);
+  if (S.texAt !== S.last) {
+    /* the weather map: cloud, rain, fog (and ash haze), snow */
+    S.texAt = S.last;
+    const n = S.grid.n,
+      K = BOWL_SKY_KEYS.length,
+      px = new Uint8Array(n * n * 4);
+    for (let q = 0; q < n * n; q++) {
+      const v = S.grid.v,
+        o = q * K;
+      px[q * 4] = Math.min(255, v[o] * 255);
+      px[q * 4 + 1] = Math.min(255, (v[o + 2] / 1.6) * 255);
+      px[q * 4 + 2] = Math.min(255, (v[o + 5] + v[o + 6] * 0.5) * 255);
+      px[q * 4 + 3] = Math.min(255, v[o + 4] * 255);
+    }
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, n, n, 0, gl.RGBA, gl.UNSIGNED_BYTE, px);
+  }
+  gl.uniform1i(U.uSky, 5);
+  gl.activeTexture(gl.TEXTURE0);
+}
+/* a low-poly puff: an icosahedron, each face flat (its own normal) */
+function worldBowlPuffMesh() {
+  const t = (1 + Math.sqrt(5)) / 2,
+    V = [
+      [-1, t, 0],
+      [1, t, 0],
+      [-1, -t, 0],
+      [1, -t, 0],
+      [0, -1, t],
+      [0, 1, t],
+      [0, -1, -t],
+      [0, 1, -t],
+      [t, 0, -1],
+      [t, 0, 1],
+      [-t, 0, -1],
+      [-t, 0, 1],
+    ].map(v => v.map(c => c / Math.hypot(...v))),
+    F = [
+      [0, 11, 5],
+      [0, 5, 1],
+      [0, 1, 7],
+      [0, 7, 10],
+      [0, 10, 11],
+      [1, 5, 9],
+      [5, 11, 4],
+      [11, 10, 2],
+      [10, 7, 6],
+      [7, 1, 8],
+      [3, 9, 4],
+      [3, 4, 2],
+      [3, 2, 6],
+      [3, 6, 8],
+      [3, 8, 9],
+      [4, 9, 5],
+      [2, 4, 11],
+      [6, 2, 10],
+      [8, 6, 7],
+      [9, 8, 1],
+    ],
+    out = [];
+  for (const [a, b, c] of F) {
+    const n = [0, 1, 2].map(k => V[a][k] + V[b][k] + V[c][k]),
+      l = Math.hypot(...n);
+    for (const q of [a, b, c]) out.push(...V[q], ...n.map(x => x / l));
+  }
+  return new Float32Array(out);
+}
+/* the sky's GPU parts: the puff, the clouds' instances, the falling weather's lines */
+function worldBowlSkyGpu(S) {
+  const gl = gpuState.gl;
+  if (S.gpu && S.gpu.gl === gl) return S.gpu;
+  const G = {
+    gl,
+    vao: gl.createVertexArray(),
+    inst: gl.createBuffer(),
+    fvao: gl.createVertexArray(),
+    fall: gl.createBuffer(),
+  };
+  const puff = worldBowlPuffMesh(),
+    vb = gl.createBuffer();
+  gl.bindVertexArray(G.vao);
+  gl.bindBuffer(gl.ARRAY_BUFFER, vb);
+  gl.bufferData(gl.ARRAY_BUFFER, puff, gl.STATIC_DRAW);
+  gl.enableVertexAttribArray(0);
+  gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 24, 0);
+  gl.enableVertexAttribArray(1);
+  gl.vertexAttribPointer(1, 3, gl.FLOAT, false, 24, 12);
+  gl.bindBuffer(gl.ARRAY_BUFFER, G.inst);
+  for (const [loc, off] of [
+    [4, 0],
+    [5, 16],
+  ]) {
+    gl.enableVertexAttribArray(loc);
+    gl.vertexAttribPointer(loc, 4, gl.FLOAT, false, 32, off);
+    gl.vertexAttribDivisor(loc, 1);
+  }
+  G.nPuff = puff.length / 6;
+  gl.bindVertexArray(G.fvao);
+  gl.bindBuffer(gl.ARRAY_BUFFER, G.fall);
+  gl.enableVertexAttribArray(0);
+  gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 16, 0);
+  gl.enableVertexAttribArray(6);
+  gl.vertexAttribPointer(6, 1, gl.FLOAT, false, 16, 12);
+  gl.bindVertexArray(null);
+  S.gpu = G;
+  return G;
+}
+/* where the ground or the water is under a point (clouds float above whichever is higher) */
+function worldBowlSkyFloor(x, y) {
+  return Math.max(bowlSurface(x, y), bowlWaterLevel(x, y));
+}
+/* the clouds this frame: which show, their puffs as instances (back to front), their shadows on the ground */
+function worldBowlCloudsNow(S, sun, eye, t) {
+  const L = BOWL_CLOUD_LEVELS[S.level],
+    cam = worldBowl.cam,
+    /* zoomed right in, the clouds clear away so they never hide a town */
+    near = cam ? Math.max(0, Math.min(1, (cam.dist - 0.12) / 0.3)) : 1,
+    inst = [],
+    shadows = new Float32Array(160);
+  let ns = 0;
+  S.shown = 0;
+  S.showing = [];
+  for (const c of S.clouds) {
+    const [x, y] = bowlCloudAt(c, t),
+      w = worldBowlSkyAt(x, y),
+      show = bowlCloudShow(c, w) * near;
+    if (show < 0.02) continue;
+    S.shown++;
+    const lift = L.layers[c.layer] || 0.07,
+      floor = worldBowlSkyFloor(x, y),
+      dark = Math.min(1, w.grey * 0.55 + w.storm * 0.45),
+      flat = c.layer > 0 ? 0.32 : 0.55,
+      ang = Math.atan2(y, x) + Math.PI / 2;
+    S.showing.push({ c, x, y, w, lift, show });
+    for (const p of c.puffs) {
+      const px = x + p.dx * Math.cos(ang) - p.dy * Math.sin(ang),
+        py = y + p.dx * Math.sin(ang) + p.dy * Math.cos(ang),
+        G = bowlToGpu(px, py, floor + lift + p.dh);
+      inst.push({
+        d: Math.hypot(G[0] - eye[0], G[1] - eye[1], G[2] - eye[2]),
+        v: [G[0], G[1], G[2], p.s, show * (c.layer > 0 ? 0.7 : 0.93), dark, flat, 0],
+      });
+    }
+    /* its shadow: where the light through it meets the ground */
+    if (ns < 40 && sun.dir[2] > 0.1) {
+      const k = lift / sun.dir[2];
+      shadows.set(
+        [x - sun.dir[0] * k, y - sun.dir[1] * k, c.size * 1.25, show * (0.3 + 0.3 * dark) * sun.light],
+        ns * 4
+      );
+      ns++;
+    }
+  }
+  inst.sort((a, b) => b.d - a.d);
+  S.shadows = shadows;
+  S.shadowN = ns;
+  S.inst = new Float32Array(inst.length * 8);
+  inst.forEach((q, i) => S.inst.set(q.v, i * 8));
+  S.nInst = inst.length;
+}
+/* rain, snow and ash: each drop belongs to a cloud that is raining (or snowing, or dropping ash) and falls from it to
+   the ground, then starts again under a raining cloud */
+function worldBowlFallNow(S, dt) {
+  const L = BOWL_CLOUD_LEVELS[S.level],
+    n = reducedMotion ? 0 : L.particles;
+  if (!n) {
+    S.nFall = 0;
+    return;
+  }
+  if (!S.parts || S.parts.n !== n)
+    S.parts = {
+      n,
+      x: new Float32Array(n),
+      y: new Float32Array(n),
+      h: new Float32Array(n),
+      kind: new Int8Array(n).fill(-1),
+      top: new Float32Array(n),
+    };
+  const P = S.parts,
+    wet = S.showing.filter(q => q.w.rain + q.w.snow + q.w.ash > 0.15),
+    total = wet.reduce((a, q) => a + q.show * (q.w.rain + q.w.snow + q.w.ash), 0),
+    out = new Float32Array(n * 8);
+  for (let i = 0; i < n; i++) {
+    const speed = P.kind[i] === 0 ? 0.09 : 0.012;
+    P.h[i] -= speed * dt;
+    if (P.kind[i] < 0 || P.h[i] <= 0) {
+      P.kind[i] = -1;
+      if (total > 0 && Math.random() < 0.5) {
+        let r = Math.random() * total,
+          q = wet[0];
+        for (const o of wet) {
+          r -= o.show * (o.w.rain + o.w.snow + o.w.ash);
+          if (r <= 0) {
+            q = o;
+            break;
+          }
+        }
+        const a = Math.random() * Math.PI * 2,
+          d = Math.sqrt(Math.random()) * q.c.size * 1.1,
+          sw = q.w.rain + q.w.snow + q.w.ash,
+          pick = Math.random() * sw;
+        P.x[i] = q.x + Math.cos(a) * d;
+        P.y[i] = q.y + Math.sin(a) * d;
+        P.kind[i] = pick < q.w.rain ? 0 : pick < q.w.rain + q.w.snow ? 1 : 2;
+        P.top[i] = q.lift * 0.85;
+        P.h[i] = P.top[i] * (0.3 + Math.random() * 0.7);
+      }
+    }
+    if (P.kind[i] < 0) continue;
+    const floor = worldBowlSkyFloor(P.x[i], P.y[i]),
+      len = P.kind[i] === 0 ? 0.012 : 0.0018,
+      sway = P.kind[i] === 0 ? 0 : Math.sin(P.h[i] * 900 + i) * 0.0012,
+      A = bowlToGpu(P.x[i] + sway, P.y[i], floor + P.h[i] + len),
+      B = bowlToGpu(P.x[i] + sway, P.y[i], floor + P.h[i]);
+    out.set([...A, P.kind[i], ...B, P.kind[i]], i * 8);
+  }
+  S.fall = out;
+  S.nFall = n * 2;
+}
+/* draws the falling weather and the clouds (blended, after the ground and the water) */
+function worldBowlDrawSky(S, sun, VP, v, haze) {
+  if (!S.clouds.length) {
+    S.shadowN = 0;
+    S.shown = 0;
+    return;
+  }
+  const gl = gpuState.gl,
+    G = worldBowlSkyGpu(S),
+    t = (performance.now() - (S.t0 || (S.t0 = performance.now()))) / 1000 + 1e5;
+  worldBowlCloudsNow(S, sun, v.C, reducedMotion ? 1e5 : t);
+  worldBowlFallNow(S, S.dt || 0);
+  /* lightning, now and then, under a storm (High only) */
+  if (BOWL_CLOUD_LEVELS[S.level].lightning && !reducedMotion)
+    for (const q of S.showing) if (q.w.storm > 0.5 && Math.random() < (S.dt || 0) * 0.08 * q.show) S.flash = 1;
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+  gl.depthMask(false);
+  if (S.nFall) {
+    const p = gpuState.P.mfall;
+    gl.useProgram(p.p);
+    gl.uniformMatrix4fv(p.U.uVP, false, VP);
+    gl.uniform1f(p.U.uNight, sun.night);
+    gl.bindVertexArray(G.fvao);
+    gl.bindBuffer(gl.ARRAY_BUFFER, G.fall);
+    gl.bufferData(gl.ARRAY_BUFFER, S.fall, gl.DYNAMIC_DRAW);
+    gl.drawArrays(gl.LINES, 0, S.nFall);
+  }
+  if (S.nInst) {
+    const p = gpuState.P.mcloud,
+      U = p.U;
+    gl.useProgram(p.p);
+    gl.uniformMatrix4fv(U.uVP, false, VP);
+    gl.uniform3fv(U.uC, v.C);
+    gl.uniform3fv(U.uLd, sun.ld);
+    gl.uniform3fv(U.uHaze, haze);
+    gl.uniform1f(U.uLight, sun.light);
+    gl.uniform1f(U.uNight, sun.night);
+    gl.uniform1f(U.uFlash, S.flash || 0);
+    gl.uniform1f(U.uNear, 0.03);
+    gl.bindVertexArray(G.vao);
+    gl.bindBuffer(gl.ARRAY_BUFFER, G.inst);
+    gl.bufferData(gl.ARRAY_BUFFER, S.inst, gl.DYNAMIC_DRAW);
+    gl.enable(gl.CULL_FACE);
+    gl.drawArraysInstanced(gl.TRIANGLES, 0, G.nPuff, S.nInst);
+    gl.disable(gl.CULL_FACE);
+  }
+  gl.bindVertexArray(null);
+  gl.depthMask(true);
+  gl.disable(gl.BLEND);
 }
 /* the shadow map for a program that reads it (texture unit 3) */
 function worldBowlShadowUniforms(U, g) {
