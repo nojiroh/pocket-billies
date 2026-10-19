@@ -28,10 +28,10 @@
  "double": true,
  "script": [
   "if beat:markdown",
-  "  [happy] Back for more? All right!",
+  "  [happy] Back for more? All right! #l:aa0b",
   "else",
-  "  [happy] Welcome to the Lanternhall arena. Polished floors, polished team.",
-  "  Every Steel Billie on my team makes the others hit harder.",
+  "  [happy] Welcome to the Lanternhall arena. Polished floors, polished team. #l:27ff",
+  "  Every Steel Billie on my team makes the others hit harder. #l:5f38",
   "battle markdown"
  ]
 }

@@ -27,10 +27,10 @@
  },
  "script": [
   "if beat:alta",
-  "  [happy] Back for more? All right!",
+  "  [happy] Back for more? All right! #l:cd1a",
   "else",
-  "  [happy] Welcome to the top. The air is thin and so is my patience.",
-  "  My Flying team has never once looked down.",
+  "  [happy] Welcome to the top. The air is thin and so is my patience. #l:af12",
+  "  My Flying team has never once looked down. #l:a613",
   "battle alta"
  ]
 }

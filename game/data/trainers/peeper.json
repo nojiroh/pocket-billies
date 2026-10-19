@@ -16,9 +16,9 @@
  "v47region": 1,
  "script": [
   "if beat:peeper",
-  "  [happy] Back for more? All right!",
+  "  [happy] Back for more? All right! #l:5dce",
   "else",
-  "  [happy] The leaves turn every quarter. I’ve been here forty quarters. I am leaving next quarter.",
+  "  [happy] The leaves turn every quarter. I’ve been here forty quarters. I am leaving next quarter. #l:d853",
   "battle peeper"
  ]
 }

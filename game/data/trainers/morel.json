@@ -28,10 +28,10 @@
  "v47region": 1,
  "script": [
   "if beat:morel",
-  "  [happy] Back for more? All right!",
+  "  [happy] Back for more? All right! #l:6074",
   "else",
-  "  [happy] The forest remembers every spore. The Variants are grinding up its memory to make a record shine.",
-  "  Breathe in. Now battle.",
+  "  [happy] The forest remembers every spore. The Variants are grinding up its memory to make a record shine. #l:8946",
+  "  Breathe in. Now battle. #l:3a63",
   "battle morel"
  ]
 }

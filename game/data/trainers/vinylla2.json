@@ -24,19 +24,19 @@
  "runsUp": true,
  "script": [
   "if beat:vinylla2",
-  "  [happy] Back for more? All right!",
+  "  [happy] Back for more? All right! #l:7497",
   "elif !met_vinylla2",
   "  set met_vinylla2",
   "  music rival",
   "  camera run-up",
-  "  [angry] You came all this way for the release? I’m touched. Truly.",
+  "  [angry] You came all this way for the release? I’m touched. Truly. #l:6f00",
   "  walk vinylla beside me",
   "  face vinylla me",
-  "  One turn of the press and the sun is a record. Gold on one side, darkness on the other.",
-  "  [angry] And every one of them will pay to listen.",
-  "  [happy] This is the last track, darling. Make it count.",
+  "  One turn of the press and the sun is a record. Gold on one side, darkness on the other. #l:45d0",
+  "  [angry] And every one of them will pay to listen. #l:259d",
+  "  [happy] This is the last track, darling. Make it count. #l:bdf8",
   "else",
-  "  [happy] Scarcity is the whole song.",
+  "  [happy] Scarcity is the whole song. #l:8ec4",
   "battle vinylla2"
  ]
 }

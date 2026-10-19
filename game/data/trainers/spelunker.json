@@ -16,9 +16,9 @@
  "v47region": 1,
  "script": [
   "if beat:spelunker",
-  "  [happy] Back for more? All right!",
+  "  [happy] Back for more? All right! #l:8e4f",
   "else",
-  "  [happy] Don’t look into the pool too long. It looks back, and it’s doing your accounts.",
+  "  [happy] Don’t look into the pool too long. It looks back, and it’s doing your accounts. #l:100c",
   "battle spelunker"
  ]
 }

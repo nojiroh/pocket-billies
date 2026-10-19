@@ -17,9 +17,9 @@
  "v47region": 1,
  "script": [
   "if beat:sysadmin",
-  "  [happy] Back for more? All right!",
+  "  [happy] Back for more? All right! #l:6d70",
   "else",
-  "  [happy] Have you tried turning the Cloud off and on again? I have. It rained for a week.",
+  "  [happy] Have you tried turning the Cloud off and on again? I have. It rained for a week. #l:66f5",
   "battle sysadmin"
  ]
 }

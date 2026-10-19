@@ -14,5 +14,11 @@
  "lose": "“Ha! Told you. Mine beats yours.”",
  "hint": "",
  "seat": null,
- "script": ["if beat:blake0","  [happy] Back for more? All right!","else","  [happy] Mine beats yours. Watch.","battle blake0"]
+ "script": [
+  "if beat:blake0",
+  "  [happy] Back for more? All right! #l:85be",
+  "else",
+  "  [happy] Mine beats yours. Watch. #l:b4ee",
+  "battle blake0"
+ ]
 }

@@ -16,9 +16,9 @@
  "v47region": 1,
  "script": [
   "if beat:variant_vip2",
-  "  [happy] Back for more? All right!",
+  "  [happy] Back for more? All right! #l:9986",
   "else",
-  "  [happy] Number one. The first fan. I was here before the tower. I watched them build it round me.",
+  "  [happy] Number one. The first fan. I was here before the tower. I watched them build it round me. #l:2d4b",
   "battle variant_vip2"
  ]
 }

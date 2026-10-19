@@ -28,10 +28,10 @@
  "v47region": 1,
  "script": [
   "if beat:carat",
-  "  [happy] Back for more? All right!",
+  "  [happy] Back for more? All right! #l:a7f3",
   "else",
-  "  [happy] The Variants want one perfect needle, long enough to play the sun. I’m cutting it. I didn’t ask what for.",
-  "  I’m asking now. Show me what you’re made of.",
+  "  [happy] The Variants want one perfect needle, long enough to play the sun. I’m cutting it. I didn’t ask what for. #l:4b1f",
+  "  I’m asking now. Show me what you’re made of. #l:9f92",
   "battle carat"
  ]
 }

@@ -28,10 +28,10 @@
  "v47region": 1,
  "script": [
   "if beat:poppy",
-  "  [happy] Back for more? All right!",
+  "  [happy] Back for more? All right! #l:3c2d",
   "else",
-  "  [happy] Everything here grows back twice as fast. Including my temper, since the merch stalls arrived.",
-  "  Let’s see if your team blooms under pressure.",
+  "  [happy] Everything here grows back twice as fast. Including my temper, since the merch stalls arrived. #l:9044",
+  "  Let’s see if your team blooms under pressure. #l:b678",
   "battle poppy"
  ]
 }

@@ -16,10 +16,10 @@
  "hint": "Hiker Hal waits by the hut with a level 31–32 team.",
  "script": [
   "if beat:hiker",
-  "  [happy] Back for more? All right!",
+  "  [happy] Back for more? All right! #l:e4dd",
   "else",
-  "  [happy] Nice day for a climb!",
-  "  My Billies carry all my gear.",
+  "  [happy] Nice day for a climb! #l:6400",
+  "  My Billies carry all my gear. #l:d880",
   "battle hiker"
  ]
 }

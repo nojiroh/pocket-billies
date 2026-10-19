@@ -17,9 +17,9 @@
  "v47region": 1,
  "script": [
   "if beat:sailor",
-  "  [happy] Back for more? All right!",
+  "  [happy] Back for more? All right! #l:ab1c",
   "else",
-  "  [happy] See that shell? Four hundred companies live in it. None of them have ever been seen.",
+  "  [happy] See that shell? Four hundred companies live in it. None of them have ever been seen. #l:0866",
   "battle sailor"
  ]
 }

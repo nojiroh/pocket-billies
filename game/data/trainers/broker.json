@@ -18,10 +18,10 @@
  "double": true,
  "script": [
   "if beat:broker",
-  "  [happy] Back for more? All right!",
+  "  [happy] Back for more? All right! #l:8e22",
   "else",
-  "  [happy] Buy low, battle high!",
-  "  My team is fully diversified.",
+  "  [happy] Buy low, battle high! #l:2b3d",
+  "  My team is fully diversified. #l:9c96",
   "battle broker"
  ]
 }

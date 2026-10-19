@@ -26,9 +26,9 @@
  "seat": null,
  "script": [
   "if beat:tinker",
-  "  [happy] Back for more? All right!",
+  "  [happy] Back for more? All right! #l:eab2",
   "else",
-  "  [happy] Built them myself. Want to see what they can do?",
+  "  [happy] Built them myself. Want to see what they can do? #l:f0f6",
   "battle tinker"
  ]
 }

@@ -27,10 +27,10 @@
  },
  "script": [
   "if beat:marina",
-  "  [happy] Back for more? All right!",
+  "  [happy] Back for more? All right! #l:a209",
   "else",
-  "  [happy] Welcome to Palmhaven Town. Relax, nobody here asks questions.",
-  "  My Water team flows around every attack.",
+  "  [happy] Welcome to Palmhaven Town. Relax, nobody here asks questions. #l:30d5",
+  "  My Water team flows around every attack. #l:669f",
   "battle marina"
  ]
 }

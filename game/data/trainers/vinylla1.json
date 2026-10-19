@@ -20,19 +20,19 @@
  "runsUp": true,
  "script": [
   "if beat:vinylla1",
-  "  [happy] Back for more? All right!",
+  "  [happy] Back for more? All right! #l:1cac",
   "elif !met_vinylla1",
   "  set met_vinylla1",
   "  music rival",
   "  camera run-up",
-  "  [angry] Oh! The sound engineer. Cass said you’d bounced. I love a comeback; they chart so well.",
+  "  [angry] Oh! The sound engineer. Cass said you’d bounced. I love a comeback; they chart so well. #l:6eaf",
   "  walk vinylla beside me",
   "  face vinylla me",
-  "  You know what I’m pressing. A lid for the sun, gold on one side. Light, by subscription.",
-  "  [angry] People pay for scarcity. I’m making the scarcest thing there is.",
-  "  [happy] Let’s do a little soundcheck, darling.",
+  "  You know what I’m pressing. A lid for the sun, gold on one side. Light, by subscription. #l:6d9c",
+  "  [angry] People pay for scarcity. I’m making the scarcest thing there is. #l:e2ef",
+  "  [happy] Let’s do a little soundcheck, darling. #l:1bd9",
   "else",
-  "  [happy] Every limited edition needs a launch.",
+  "  [happy] Every limited edition needs a launch. #l:4d85",
   "battle vinylla1"
  ]
 }

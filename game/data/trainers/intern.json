@@ -16,10 +16,10 @@
  "hint": "Intern Ollie is trying to impress the bosses outside Capital Tower.",
  "script": [
   "if beat:intern",
-  "  [happy] Back for more? All right!",
+  "  [happy] Back for more? All right! #l:4057",
   "else",
-  "  [happy] I’m only here for the experience. And the battles.",
-  "  Unpaid, but very motivated!",
+  "  [happy] I’m only here for the experience. And the battles. #l:b7b2",
+  "  Unpaid, but very motivated! #l:ad05",
   "battle intern"
  ]
 }

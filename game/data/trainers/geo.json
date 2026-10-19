@@ -18,10 +18,10 @@
  "double": true,
  "script": [
   "if beat:geo",
-  "  [happy] Back for more? All right!",
+  "  [happy] Back for more? All right! #l:20f1",
   "else",
-  "  [happy] Careful, the ground is literally melting.",
-  "  I study volcanoes. Mostly I study running away.",
+  "  [happy] Careful, the ground is literally melting. #l:2d61",
+  "  I study volcanoes. Mostly I study running away. #l:1028",
   "battle geo"
  ]
 }

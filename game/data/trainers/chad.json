@@ -20,20 +20,20 @@
  "runsUp": true,
  "script": [
   "if beat:chad",
-  "  [happy] Back for more? All right!",
+  "  [happy] Back for more? All right! #l:7020",
   "elif !met_chad",
   "  set met_chad",
   "  music rival",
   "  camera run-up",
-  "  [angry] Hey! Surface stray! Wait up!",
+  "  [angry] Hey! Surface stray! Wait up! #l:b5d8",
   "  walk Blake beside me",
   "  face Blake me",
-  "  [happy] I’ve been training out here all morning. Mine knows a lot more than Tackle now.",
-  "  What happened outside the lab doesn’t count. This one counts.",
-  "  [angry] Nobody plays through this course until we settle it. Let’s go!",
+  "  [happy] I’ve been training out here all morning. Mine knows a lot more than Tackle now. #l:d3ee",
+  "  What happened outside the lab doesn’t count. This one counts. #l:88c4",
+  "  [angry] Nobody plays through this course until we settle it. Let’s go! #l:392c",
   "else",
-  "  [happy] Hey! I’ve been waiting for you.",
-  "  I picked the starter that beats yours. Let’s see what you’ve got.",
+  "  [happy] Hey! I’ve been waiting for you. #l:83a9",
+  "  I picked the starter that beats yours. Let’s see what you’ve got. #l:0924",
   "battle chad"
  ]
 }

@@ -17,9 +17,9 @@
  "v47region": 1,
  "script": [
   "if beat:variant_press",
-  "  [happy] Back for more? All right!",
+  "  [happy] Back for more? All right! #l:6fb2",
   "else",
-  "  [happy] Lucky number! I got to stand by the press. I can feel it in my teeth.",
+  "  [happy] Lucky number! I got to stand by the press. I can feel it in my teeth. #l:6222",
   "battle variant_press"
  ]
 }

@@ -16,9 +16,9 @@
  "v47region": 1,
  "script": [
   "if beat:founder",
-  "  [happy] Back for more? All right!",
+  "  [happy] Back for more? All right! #l:82fd",
   "else",
-  "  [happy] We’re pre-revenue. Pre-product. Pre-office, now the jungle has it. But the vision is huge.",
+  "  [happy] We’re pre-revenue. Pre-product. Pre-office, now the jungle has it. But the vision is huge. #l:7924",
   "battle founder"
  ]
 }
