@@ -741,6 +741,39 @@ def safety_step(b, base, R):
         ctx.close()
 
 
+@step('Tap targets: every control on the main screens is big enough to tap (phase 06-4)', 240)
+def targets_step(b, base, R):
+    """phase 06-4 accessibility: on a 390 px phone every visible control is at least 40 px each way, or one of the small
+    icon controls that carry an invisible margin (game/css/menus.css: 7 px all round)"""
+    errs = []
+    ctx = b.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=1); ctx.add_init_script(CLOCK); ctx.add_init_script(NO_ACCOUNTS); ctx.add_init_script(TEST_GLOBALS)
+    ctx.set_default_timeout(90000); pg = ctx.new_page(); CUR['pg'] = pg
+    pg.on('pageerror', lambda e: errs.append(str(e)))
+    small = """(where)=>{const out=[];const pad=e=>e.matches('.wh-x,.mbtn,.swatch,.tb-btn,.qb')?14:0;
+      for(const e of document.querySelectorAll('button,a[href],[role=button],[role=tab],input,select,[data-a]')){
+        if(e.closest('[hidden],.dbg'))continue;const r=e.getBoundingClientRect();if(!r.width||!r.height||r.bottom<0||r.top>innerHeight)continue;
+        const cs=getComputedStyle(e);if(cs.visibility==='hidden'||cs.display==='none'||+cs.opacity===0)continue;
+        const m=Math.min(r.width,r.height)+pad(e);if(m<39.5)out.push(where+': '+(e.dataset.a||e.className||e.tagName)+' '+Math.round(r.width)+'x'+Math.round(r.height))}
+      return [...new Set(out)]}"""
+    try:
+        pg.goto(base + '/index.html?fixture=town'); pg.evaluate(LOW_RENDER)
+        if not until(pg, "typeof walkView!=='undefined'&&walkView.ready", 120): raise Exception('the town never opened')
+        pg.add_style_tag(content='*,*::before,*::after{animation:none!important;transition:none!important}')
+        pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();saveData.team.forEach(m=>{m.evoNo=m.lvl});0")
+        bad = []
+        for tab in ['walk', 'team', 'ledger', 'profile', 'bag']:
+            pg.evaluate(f"uiState.modal=null;uiState.mq=[];renderOverlay();uiState.tab='{tab}';render();scrollTo(0,0);0"); time.sleep(.6)
+            bad += pg.evaluate(small, tab)
+        for name, js in [('details', "billySheet(saveData.team[0])"), ('settings', "openSettings()"), ('shop', "openShop('marigold')"), ('dressing room', "openDressingRoom({})")]:
+            pg.evaluate(f"uiState.modal=null;uiState.mq=[];renderOverlay();uiState.tab='walk';render();{js};0"); time.sleep(.8)
+            bad += pg.evaluate(small, name)
+        if bad: raise Exception(f'{len(bad)} controls too small to tap: ' + '; '.join(bad[:8]))
+        if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
+        return 'every control on 9 screens is 40 px or more, or an icon with its 7 px tap margin'
+    finally:
+        ctx.close()
+
+
 @step('In-game full test: one step headless, and nothing is saved while it runs', 120)
 def in_game_test_step(b, base, R):
     errs = []; ctx, pg = open_game(b, base, 1100, 700, False, errs)
@@ -2418,6 +2451,7 @@ def main():
                 messages_step(b, base, R)
                 team_step(b, base, R)
                 safety_step(b, base, R)
+                targets_step(b, base, R)
                 try:
                     desktop_steps(b, base, R)
                 except Exception as e:

@@ -195,3 +195,32 @@
   min-height: var(--tap);
   border-radius: var(--r-sm);
 }
+
+/* ---------- accessibility (06-4): every tap target at least 40 px ---------- */
+:root .pb.small,
+:root .seg button,
+:root .dr-tabs button,
+:root .dr-tog {
+  min-height: 40px;
+}
+.tb-btn {
+  min-width: 40px;
+  min-height: 40px;
+}
+/* small icon controls keep their look; an invisible margin makes the tap area 44 px or more */
+.wh-x,
+.mbtn,
+.swatch,
+.tb-btn,
+.qb {
+  position: relative;
+}
+.wh-x::before,
+.mbtn::before,
+.swatch::before,
+.tb-btn::before,
+.qb::before {
+  content: '';
+  position: absolute;
+  inset: -7px;
+}
