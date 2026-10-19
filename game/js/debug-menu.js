@@ -68,6 +68,7 @@ import { mapById } from './walk-view.js';
 import { gpuState } from './engine/webgl.js';
 import { paintBoxes, playTurnEvents, stopTimers } from './battle.js';
 import { worldMap } from './world-map.js';
+import { bowlMapPreview, switchBowlMapPreview } from './world-bowl.js';
 /* eslint-disable no-func-assign */
 expose({
   debugAction: [() => debugAction, v => (debugAction = v)],
@@ -121,6 +122,7 @@ function debugHTML() {
     LOCATIONS.map((r, i) => [i, `${i}. ${r.name}`]),
     node
   )}${debugButtonHTML('jump', 'Go there')}</div>
+  <div class="dbg-row">${debugButtonHTML('bowlmap', bowlMapPreview() ? 'Bowl world map: on' : 'Bowl world map: off', 'gold')}</div><p class="note">Phase 10 preview, this device only: the Map tab shows the new bowl map instead of the old one.</p>
   <div class="dbg-row">${debugButtonHTML('seats', 'Earn every badge')}${debugButtonHTML('flags', 'Reset trainer wins')}${debugButtonHTML('fillq', 'Fill encounters here')}${debugButtonHTML('clearq', 'Clear encounters here')}</div></details>
  <details><summary>Story scripts (Project Story)</summary><div class="dbg-row">${debugSelectHTML(
    'dbgScript',
@@ -255,6 +257,13 @@ function debugAction(x) {
     case 'heal':
       healAll();
       break;
+    case 'bowlmap':
+      switchBowlMapPreview(!bowlMapPreview());
+      return refreshDebugMenu(
+        bowlMapPreview()
+          ? 'The Map tab now shows the bowl (preview). Switch it off here to go back.'
+          : 'The Map tab shows the old map again.'
+      );
     case 'bots':
       giveRobotKit();
       save();
