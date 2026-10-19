@@ -121,6 +121,9 @@ Order matters: refactors first with results unchanged, then the one commit that 
    bounds agreed in phase 17.
 8b. **Seeded wild encounters** (place id + counter, section 1).
 9. **Log and replay** (`b.log`, `replayBattle`, version and rules hash). Event text moves to `battle.js` / `i18n.js`.
+9b. **Scripted battles** (for Project Story S6): a trainer with no Billie (Professor Hazel) can fight, and a story
+    script can start a battle by id (`battle hazel_vs_blake`) whose outcome it sets; the normal battle UI, plates and
+    log are used. Covered by the golden record.
 10. **Mid-battle quit**, as the owner decides (see "Ask me before").
 11. **Fix the Lullaby text** or the rule, as the owner decides (rules.json says sleep lasts 2-4 turns, the move text
     says 1-3).
