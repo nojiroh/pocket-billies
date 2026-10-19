@@ -98,3 +98,61 @@ test('without a sea the ground has no coast', () => {
   assert.equal(plain.c, undefined);
   assert.equal(bowlCoastAt(plain, 0.3, 0.2), -1);
 });
+
+// session 5: the sea's settings from worldmap.json (the Studio edits them), and the land and sea brush
+const seaShare = g => {
+  let s = 0,
+    a = 0;
+  for (let j = 0; j <= g.n; j++)
+    for (let i = 0; i <= g.n; i++) {
+      const x = -1 + (2 * i) / g.n,
+        y = -1 + (2 * j) / g.n;
+      if (x * x + y * y > 1) continue;
+      a++;
+      if (g.c[j * (g.n + 1) + i] > 0) s++;
+    }
+  return s / a;
+};
+const withSea = opt =>
+  bowlGroundGrid(
+    bowlReliefFeatures(locations),
+    160,
+    bowlSeaInput(locations, roads, l => maps[l.mapId] || null, 1000, opt)
+  );
+const BASE = { share: 0.4, depth: 0.035, rimLand: 0.45, rough: 1, seed: 0, paint: [] };
+
+test("the sea's settings: the share, another seed, the game's own file", () => {
+  assert.ok(Math.abs(seaShare(withSea({ ...BASE, share: 0.3 })) - 0.3) < 0.02);
+  const a = withSea(BASE),
+    b = withSea({ ...BASE, seed: 7 });
+  let moved = 0;
+  for (let k = 0; k < a.c.length; k++) if (a.c[k] > 0 !== b.c[k] > 0) moved++;
+  assert.ok(moved > 200, 'another seed moves the coast');
+  assert.ok(GAME_DATA.worldmap && GAME_DATA.worldmap.sea, 'worldmap.json has the sea');
+  const g = withSea(GAME_DATA.worldmap.sea);
+  assert.ok(seaShare(g) > 0.25 && seaShare(g) < 0.55, 'the game’s sea is a sensible size');
+});
+
+test('the brush makes land or sea where it paints, never over a place or a road', () => {
+  /* a spot that is sea, and Copperleaf's middle (land, a place) */
+  const base = withSea(BASE),
+    n = base.n;
+  let sx = 0,
+    sy = 0;
+  for (let k = 0; k < base.c.length; k++)
+    if (base.c[k] > 0.05) {
+      sx = -1 + (2 * (k % (n + 1))) / n;
+      sy = -1 + (2 * Math.floor(k / (n + 1))) / n;
+      if (sx * sx + sy * sy < 0.6) break;
+    }
+  const cl = at(byId('copperleaf')),
+    g = withSea({
+      ...BASE,
+      paint: [
+        { land: true, r: 0.04, pts: [[sx, sy]] },
+        { land: false, r: 0.05, pts: [cl.xy] },
+      ],
+    });
+  assert.ok(bowlCoastAt(base, sx, sy) > 0 && bowlCoastAt(g, sx, sy) < 0, 'painted land');
+  assert.ok(bowlCoastAt(g, ...cl.xy) < 0, 'Copperleaf stays dry');
+});

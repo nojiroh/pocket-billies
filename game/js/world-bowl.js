@@ -60,6 +60,7 @@ import {
   bowlSunAt,
 } from './logic/bowl-weather.js';
 import {
+  BOWL_REGION_TREES,
   BOWL_THING_SCALE,
   bowlClumps,
   bowlLandmarkPick,
@@ -135,6 +136,7 @@ expose({
   worldBowlPin: [() => worldBowlPin, v => (worldBowlPin = v)],
   worldBowlPuffMesh: [() => worldBowlPuffMesh, v => (worldBowlPuffMesh = v)],
   worldBowlRender: [() => worldBowlRender, v => setWorldBowlRender(v)],
+  worldBowlReset: [() => worldBowlReset, v => (worldBowlReset = v)],
   worldBowlRiversInto: [() => worldBowlRiversInto, v => (worldBowlRiversInto = v)],
   worldBowlRoadsInto: [() => worldBowlRoadsInto, v => (worldBowlRoadsInto = v)],
   worldBowlShadowUniforms: [() => worldBowlShadowUniforms, v => (worldBowlShadowUniforms = v)],
@@ -167,6 +169,7 @@ expose({
   worldMapFit: [() => worldMapFit, v => (worldMapFit = v)],
   worldMapHeight: [() => worldMapHeight, v => (worldMapHeight = v)],
   worldMapLocationListHTML: [() => worldMapLocationListHTML, v => (worldMapLocationListHTML = v)],
+  worldMapLook: [() => worldMapLook, v => (worldMapLook = v)],
   worldMapLoop: [() => worldMapLoop, v => (worldMapLoop = v)],
   worldMapMount: [() => worldMapMount, v => setWorldMapMount(v)],
   worldMapOpenFromWalk: [() => worldMapOpenFromWalk, v => (worldMapOpenFromWalk = v)],
@@ -398,7 +401,31 @@ void main(){vec2 q=vec2(vW.x,-vW.z)*${BOWL_METRES.toFixed(1)};float t=uT;
  float d=length(vW-uC),fk=1.-exp(-max(0.,d-.7)*.32);o=vec4(mix(col,uHaze,clamp(fk,0.,.6)),a);}`,
 ];
 
+/* the Studio changed the look (worldmap.json, a landmark): work the ground, sky and things out again */
+export function worldBowlReset() {
+  worldBowl.spots = null;
+  worldBowl.ground = null;
+  if (worldBowl.wall) worldBowl.wall.node = -1;
+  worldBowl.dirty = true;
+}
 /* ---------- the places and the ground ---------- */
+/* the world map's look from worldmap.json (the Studio edits it), each part falling back to the values in code */
+function worldMapLook() {
+  const W = (gameData && gameData.worldmap) || {},
+    regions = {};
+  for (const r of new Set([...Object.keys(BOWL_REGION_GROUND), ...Object.keys(W.regions || {})])) {
+    const R = (W.regions || {})[r],
+      sh = BOWL_REGION_SHADE[r] || BOWL_REGION_SHADE.starter;
+    regions[r] = R || {
+      ground: BOWL_REGION_GROUND[r] || BOWL_REGION_GROUND.starter,
+      wet: sh[0],
+      dry: sh[1],
+      high: sh[2],
+      trees: BOWL_REGION_TREES[r] || BOWL_REGION_TREES.starter,
+    };
+  }
+  return { sea: W.sea || null, relief: W.relief || null, regions, kinds: W.kinds || BOWL_KIND_GROUND };
+}
 /* where a place is on the bowl: x, y seen from above and the ground's height there */
 export function worldMapSpot(i) {
   return worldBowlSpots()[i] || { x: 0, y: 0, h: 0, under: 0 };
@@ -454,14 +481,16 @@ function worldBowlSpots() {
   if (worldBowl.spots) return worldBowl.spots;
   /* the sea (look session 1): every place's walk map and every road on land, the rest of the line drawn so about 40%
      of the bowl is water */
-  const t0 = performance.now(),
+  const look = worldMapLook(),
+    t0 = performance.now(),
     sea = bowlSeaInput(
       LOCATIONS,
       ROADS.map(r => [r[0], r[1]]),
       l => (gameData.maps && gameData.maps[l.mapId]) || null,
-      BOWL_METRES
+      BOWL_METRES,
+      look.sea
     ),
-    F = bowlReliefFeatures(LOCATIONS),
+    F = bowlReliefFeatures(LOCATIONS, look.relief),
     G = bowlGroundGrid(F, undefined, sea);
   bowlCamUseGround(G);
   const byId = id => LOCATION_BY_ID[id];
@@ -526,17 +555,19 @@ function worldBowlTerrainStart() {
       }
       near[j * C + i] = best;
     }
-  const lists = LOCATIONS.map(l => {
-    const r = (BOWL_REGION_GROUND[l.region] || BOWL_REGION_GROUND.starter).split(''),
-      k = (BOWL_KIND_GROUND[l.t] || '').split('');
-    const sh = BOWL_REGION_SHADE[l.region] || BOWL_REGION_SHADE.starter,
-      keys = (/** @type {string} */ str) =>
-        str
-          .split('')
-          .filter(c => c in K.layer)
-          .map(c => K.layer[c]);
-    return { r: keys(r.join('')), k: keys(k.join('')), wet: keys(sh[0]), dry: keys(sh[1]), high: keys(sh[2]) };
-  });
+  const look = worldMapLook(),
+    lists = LOCATIONS.map(l => {
+      const R = look.regions[l.region] || look.regions.starter,
+        r = R.ground.split(''),
+        k = (look.kinds[l.t] || '').split('');
+      const sh = [R.wet, R.dry, R.high],
+        keys = (/** @type {string} */ str) =>
+          str
+            .split('')
+            .filter(c => c in K.layer)
+            .map(c => K.layer[c]);
+      return { r: keys(r.join('')), k: keys(k.join('')), wet: keys(sh[0]), dry: keys(sh[1]), high: keys(sh[2]) };
+    });
   /* how steep the ground is at each of the grid's corners (rise over run, above the water's curve) */
   const G = g.G,
     gw = G.n + 1,
@@ -1027,7 +1058,9 @@ function worldBowlClumpsInto(W) {
   });
   for (const [a, b] of ROADS)
     if (S[a] && S[b] && !S[a].under && !S[b].under) roads.push([S[a].x, S[a].y, S[b].x, S[b].y]);
-  const T = bowlClumps(G, places, roads, (x, y) => bowlGridHeight(G, x, y) - bowlWaterLevel(x, y)),
+  const look = worldMapLook(),
+    trees = Object.fromEntries(Object.entries(look.regions).map(([k, R]) => [k, R.trees])),
+    T = bowlClumps(G, places, roads, (x, y) => bowlGridHeight(G, x, y) - bowlWaterLevel(x, y), undefined, trees),
     k = BOWL_THING_SCALE / BOWL_METRES;
   for (const t of T) {
     const a = Math.sin(t.x * 733.1 + t.y * 197.7) * Math.PI;

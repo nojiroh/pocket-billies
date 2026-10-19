@@ -1,0 +1,51 @@
+{
+ "sea": {"share":0.4,"depth":0.035,"rimLand":0.45,"rough":1,"seed":0,"paint":[]},
+ "relief": {
+  "max": 0.115,
+  "default": [0.008,0.06],
+  "kinds": {
+   "summit": [0.105,0.11],
+   "pass": [0.063,0.08],
+   "ridge": [0.05,0.08],
+   "volcano": [0.09,0.07],
+   "canyon": [-0.042,0.05],
+   "sea": [-0.03,0.12],
+   "island": [-0.012,0.07],
+   "lake": [-0.022,0.06],
+   "pond": [-0.014,0.05],
+   "trench": [-0.05,0.07],
+   "spire": [0.042,0.06],
+   "sun": [0.042,0.06],
+   "vault": [0.025,0.07],
+   "silicon": [0.02,0.06],
+   "spore": [0.014,0.07]
+  }
+ },
+ "regions": {
+  "starter": {"ground":"gGlCtg","wet":"RlG","dry":"BH","high":"rv","trees":["round","round","tall","bush"]},
+  "meadowlands": {"ground":"gEERCg","wet":"RGE","dry":"HB","high":"rv","trees":["round","tall","bush"]},
+  "goldenhills": {"ground":"BAB4gB","wet":"gGl","dry":"AB","high":"Wr","trees":["dry","round","bush"]},
+  "sporeforest": {"ground":"JyLMJy","wet":"DMR","dry":"Ly","high":"rM","trees":["mushroom","mushroom","round"]},
+  "crystalcaverns": {"ground":"krXvkr","wet":"kM","dry":"rv","high":"Xr","trees":["crystal","crystal","cone"]},
+  "coraltrench": {"ground":"N3N2gN","wet":"SR","dry":"sP","high":"r","trees":["palm","palm","bush"]},
+  "cloudspire": {"ground":"UgUvtU","wet":"UV","dry":"Vv","high":"Vn","trees":["cone","cone","tall"]},
+  "innersun": {"ground":"YWYBYW","wet":"Y","dry":"AZ","high":"jz","trees":["dry","palm"]}
+ },
+ "kinds": {
+  "sea": "dwdS",
+  "pond": "wwgR",
+  "lake": "wdwl",
+  "island": "sSws",
+  "volcano": "zjzZ",
+  "canyon": "srsP",
+  "summit": "nnIr",
+  "pass": "rnrv",
+  "ridge": "rgHr",
+  "trench": "dd3N",
+  "thicket": "yLyM",
+  "farm": "oGol",
+  "golf": "lGlg",
+  "bins": "xvxu",
+  "grotto": "krkM"
+ }
+}

@@ -287,6 +287,36 @@ def studio(pg, base):
     return 'scripts and the shared renderer loaded, the GitHub sign-in is there'
 
 
+STUDIO_DATA = """(async()=>{const ix=await (await fetch('../game/data/index.json')).json(),paths=[];
+ for(const k of ix.keys){const sp=ix.split&&ix.split[k];if(!sp)paths.push(k+'.json');else for(const id of sp.ids)paths.push(k+'/'+id+'.json')}
+ const F={};await Promise.all(paths.map(async p=>{F[p]=await (await fetch('../game/data/'+p)).json()}));
+ const D=PB_DATA.assemble(ix,p=>F[p]);studioState.D=D;studioState.rigs={};studioState.files=[];studioState.last=null;commit(true);
+ document.querySelectorAll('.dlg,.modal,.overlay').forEach(e=>e.remove());return Object.keys(D).length})()"""
+
+
+def studio_worldmap(pg, base):
+    """phase 10, session 5: World & encounters → World map look: the picture of the bowl from the game's own code, a
+    land brush stroke that is one undo step, and each place's landmark field"""
+    if not until(pg, "typeof openSection==='function'&&typeof PB_DATA==='object'", 60): raise Exception('the Studio never loaded')
+    pg.evaluate(STUDIO_DATA)
+    pg.evaluate("studioState.sel.wtab='look';openSection('world');0")
+    if not until(pg, "!!document.getElementById('wmlPic')&&typeof wmlSeaShare==='function'&&wmlSeaShare()>0", 30): raise Exception('the World map look tab drew no bowl')
+    share = pg.evaluate("wmlSeaShare()")
+    n0 = pg.evaluate("(studioState.D.worldmap.sea.paint||[]).length")
+    pg.evaluate("""(()=>{const c=document.getElementById('wmlPic'),r=c.getBoundingClientRect(),ev=(t,x,y)=>c.dispatchEvent(new PointerEvent(t,{clientX:r.left+r.width*x,clientY:r.top+r.height*y,pointerId:1,bubbles:true}));
+      ACTIONS.wmlTool({t:'land'});})();0""")
+    pg.evaluate("""(()=>{const c=document.getElementById('wmlPic');c.setPointerCapture=()=>{};const r=c.getBoundingClientRect(),ev=(t,x,y)=>c.dispatchEvent(new PointerEvent(t,{clientX:r.left+r.width*x,clientY:r.top+r.height*y,pointerId:1,bubbles:true}));
+      ev('pointerdown',.5,.8);ev('pointermove',.55,.8);ev('pointermove',.6,.8);ev('pointerup',.6,.8)})();0""")
+    n1 = pg.evaluate("studioState.D.worldmap.sea.paint.length")
+    if n1 != n0 + 1: raise Exception(f'a land brush stroke made {n1 - n0} strokes')
+    pg.evaluate("undo();0")
+    if pg.evaluate("(studioState.D.worldmap.sea.paint||[]).length") != n0: raise Exception('Undo didn’t take the stroke back')
+    pg.evaluate("studioState.sel.wtab='route';studioState.sel.stop=LOCATIONS_STUDIO_PROBE=studioState.D.locations.findIndex(l=>l.id==='clovercrest');render();0")
+    if not until(pg, "[...document.querySelectorAll('select[data-p$=\".landmark\"]')].some(s=>s.options[0].textContent.includes('Windmill'))", 10):
+        raise Exception('the landmark field doesn’t offer Auto (Windmill) for Clovercrest')
+    return f'the bowl drawn ({round(share * 100)}% sea), a brush stroke and its undo, the landmark field'
+
+
 NODE_CHECKS = [('Game data is valid', data_valid), ('The world-map graph is unchanged', world_graph)]
 PAGES = [   # (what the page opens, its checks in order); the longest first, so the browsers finish together
     ('town', [('A town opens and draws (Marigold Town)', scene('marigold')),
@@ -297,7 +327,7 @@ PAGES = [   # (what the page opens, its checks in order); the longest first, so 
     ('room', [('A room opens and draws (the shop)', room), ('A save round-trips', save_round_trip)]),
     ('battle', [('A battle plays to the end', battle)]),
     ('title', [('The game boots with no console or page errors', boots)]),
-    ('studio', [('The Studio loads', studio)]),
+    ('studio', [('The Studio loads', studio), ("The Studio's world map look", studio_worldmap)]),
 ]
 
 
