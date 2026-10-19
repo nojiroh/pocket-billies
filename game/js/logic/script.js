@@ -28,6 +28,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   applyStoryPreset: [() => applyStoryPreset, v => (applyStoryPreset = v)],
   // @ts-expect-error -- replaced on purpose
+  chapterMap: [() => chapterMap, v => (chapterMap = v)],
+  // @ts-expect-error -- replaced on purpose
   checkedCondition: [() => checkedCondition, v => (checkedCondition = v)],
   flagWarned: [() => flagWarned],
   // @ts-expect-error -- replaced on purpose
@@ -47,7 +49,11 @@ expose({
   // @ts-expect-error -- replaced on purpose
   setStoryFlag: [() => setStoryFlag, v => (setStoryFlag = v)],
   // @ts-expect-error -- replaced on purpose
+  storyAllows: [() => storyAllows, v => (storyAllows = v)],
+  // @ts-expect-error -- replaced on purpose
   storyFlagKnown: [() => storyFlagKnown, v => (storyFlagKnown = v)],
+  // @ts-expect-error -- replaced on purpose
+  storyHolds: [() => storyHolds, v => (storyHolds = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -444,6 +450,34 @@ export function setStoryFlag(k, v = 1) {
     warnData(`story flag ${k} is not in story.json`);
   }
   (saveData.story || (saveData.story = {}))[k] = v;
+}
+
+/* ---------- the story-dependent world (Project Story S2) ----------
+   People, trainers and props can carry `when` and `unless` (conditions); exits and doors `requires` (and a `locked`
+   line for when it doesn't hold); a chapter (story.json chapters) swaps a map for a variant file while its condition
+   holds. Read against the game's save (saveData) unless a save is given. */
+/** whether a condition holds now @param {string} cond @param {any} [save] */
+export function storyHolds(cond, save = saveData) {
+  const qs = Object.fromEntries(
+    Object.entries((STORY_DATA || {}).quests || {}).map(([k, q]) => [k, /** @type {any} */ (q).stages])
+  );
+  return conditionHolds(conditionTree(cond), storyStateOf(save, { locations: LOCATIONS, questStages: qs }));
+}
+/** whether a person, trainer or prop is there: its `when` holds (if it has one) and its `unless` doesn't
+ * @param {{ when?: string, unless?: string } | null | undefined} thing @param {any} [save] */
+export function storyAllows(thing, save = saveData) {
+  if (!thing) return false;
+  if (thing.when && !storyHolds(thing.when, save)) return false;
+  return !(thing.unless && storyHolds(thing.unless, save));
+}
+/** the map file to load for a map id: a chapter's variant while its condition holds (the first that holds, in
+ * story.json's order), else the map itself @param {string} id @param {any} [save] */
+export function chapterMap(id, save = saveData) {
+  for (const C of Object.values((STORY_DATA || {}).chapters || {})) {
+    const c = /** @type {{ when: string, maps?: Record<string, string> }} */ (C);
+    if (c.maps && c.maps[id] && storyHolds(c.when, save)) return c.maps[id];
+  }
+  return id;
 }
 
 /* ---------- safe runs ----------
