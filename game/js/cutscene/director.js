@@ -9,6 +9,7 @@ import { expose } from '../test-globals.js';
 import { landing, landingFrame, openingFall, provide } from '../hooks.js';
 import { $, clamp } from '../util.js';
 import { reducedMotion } from '../game-state.js';
+import { makeCanvas } from '../art.js';
 import { personBattlePose, personWalkFrames } from '../person-art.js';
 import { particleSprite } from '../battle-stage.js';
 import { directionOf, stopWalkView, walkData, walkView } from '../walk-view.js';
@@ -17,17 +18,21 @@ import { personItem } from '../walk/frame-items.js';
 import { talkBox, talkHide, talkLine } from '../talk.js';
 /* eslint-disable no-func-assign */
 expose({
+  DARK_ART: [() => DARK_ART],
+  MIRROR_ART: [() => MIRROR_ART],
   cutscene: [() => cutscene],
   cutsceneAct: [() => cutsceneAct, v => (cutsceneAct = v)],
   cutsceneActor: [() => cutsceneActor, v => (cutsceneActor = v)],
   cutsceneBlink: [() => cutsceneBlink, v => (cutsceneBlink = v)],
   cutsceneCameraNow: [() => cutsceneCameraNow, v => (cutsceneCameraNow = v)],
   cutsceneCaption: [() => cutsceneCaption, v => (cutsceneCaption = v)],
+  cutsceneDark: [() => cutsceneDark, v => (cutsceneDark = v)],
   cutsceneEase: [() => cutsceneEase],
   cutsceneFlush: [() => cutsceneFlush, v => (cutsceneFlush = v)],
   cutsceneFrame: [() => cutsceneFrame, v => (cutsceneFrame = v)],
   cutsceneHTML: [() => cutsceneHTML, v => (cutsceneHTML = v)],
   cutsceneHideDialogue: [() => cutsceneHideDialogue, v => (cutsceneHideDialogue = v)],
+  cutsceneMirrored: [() => cutsceneMirrored, v => (cutsceneMirrored = v)],
   cutsceneNow: [() => cutsceneNow],
   cutscenePersonItem: [() => cutscenePersonItem, v => (cutscenePersonItem = v)],
   cutscenePortraitTick: [() => cutscenePortraitTick, v => (cutscenePortraitTick = v)],
@@ -36,6 +41,9 @@ expose({
   cutsceneSparkle: [() => cutsceneSparkle, v => (cutsceneSparkle = v)],
   cutsceneTap: [() => cutsceneTap, v => (cutsceneTap = v)],
   cutsceneTeardown: [() => cutsceneTeardown, v => (cutsceneTeardown = v)],
+  cutsceneTraffic: [() => cutsceneTraffic, v => (cutsceneTraffic = v)],
+  cutsceneTrafficEnd: [() => cutsceneTrafficEnd, v => (cutsceneTrafficEnd = v)],
+  cutsceneTrafficTick: [() => cutsceneTrafficTick, v => (cutsceneTrafficTick = v)],
   cutsceneWait: [() => cutsceneWait, v => (cutsceneWait = v)],
   cutsceneWalk: [() => cutsceneWalk, v => (cutsceneWalk = v)],
   skipCutscene: [() => skipCutscene, v => (skipCutscene = v)],
@@ -68,6 +76,7 @@ export const cutscene = {
   off: [0, 0],
   named: {},
   layers: [],
+  traffic: [],
 };
 provide({ cutscene }); /* to-module */
 export const cutsceneNow = () => performance.now();
@@ -116,8 +125,9 @@ export function cutsceneShot(K, ms = 0) {
   return cutsceneWait(ms);
 }
 /* ---------- actors ---------- */
-export function cutsceneActor(id, who, at, dir) {
-  cutscene.actors[id] = { id, who, x: at[0], z: at[1], dir: dir || 'down', walk: null, act: null, actT: 0 };
+/* dark: drawn as a silhouette, so who it is stays hidden (the city opening's figure) */
+export function cutsceneActor(id, who, at, dir, dark = false) {
+  cutscene.actors[id] = { id, who, x: at[0], z: at[1], dir: dir || 'down', walk: null, act: null, actT: 0, dark };
   return cutscene.actors[id];
 }
 export function cutsceneWalk(id, to, ms) {
@@ -148,8 +158,83 @@ function cutscenePersonItem(a, t, C0) {
     im = set.cyc ? set.cyc[Math.floor(t / 110) % 6] : set[1 + (Math.floor(t / 150) % 2)];
   } else if (a.act === 'throw') im = personBattlePose(a.who, 'front', 'throw', clamp((now - a.actT) / 700, 0, 1));
   else if (a.act === 'cheer' || a.act === 'react') im = personBattlePose(a.who, 'front', a.act, 0, now - a.actT);
-  else im = (personWalkFrames(a.who)[a.dir] || personWalkFrames(a.who).down)[0];
-  return personItem('actor', im, a.x, a.z, C0, {});
+  else if (a.act === 'reach') {
+    /* an arm held out the way they face: the throw's wind-up, held */
+    const view = a.dir === 'up' ? 'back' : a.dir === 'down' ? 'front' : 'side';
+    im = personBattlePose(a.who, view, 'throw', 0.35);
+    if (a.dir === 'sideR') im = cutsceneMirrored(im);
+  } else im = (personWalkFrames(a.who)[a.dir] || personWalkFrames(a.who).down)[0];
+  return personItem('actor', a.dark ? cutsceneDark(im) : im, a.x, a.z, C0, {});
+}
+/* a picture of a person, flat dark (a silhouette) or mirrored, made once per picture */
+const DARK_ART = new WeakMap(),
+  MIRROR_ART = new WeakMap();
+function cutsceneDark(im) {
+  if (!im || !(im.width || im.naturalWidth)) return im;
+  let d = DARK_ART.get(im);
+  if (!d) {
+    d = makeCanvas(im.width || im.naturalWidth, im.height || im.naturalHeight);
+    const x = d.getContext('2d');
+    x.drawImage(im, 0, 0);
+    x.globalCompositeOperation = 'source-in';
+    x.fillStyle = '#0D0A16';
+    x.fillRect(0, 0, d.width, d.height);
+    if (im.__mat) d.__mat = im.__mat;
+    DARK_ART.set(im, d);
+  }
+  return d;
+}
+function cutsceneMirrored(im) {
+  if (!im || !(im.width || im.naturalWidth)) return im;
+  let d = MIRROR_ART.get(im);
+  if (!d) {
+    d = makeCanvas(im.width || im.naturalWidth, im.height || im.naturalHeight);
+    const x = d.getContext('2d');
+    x.imageSmoothingEnabled = false;
+    x.setTransform(-1, 0, 0, 1, d.width, 0);
+    x.drawImage(im, 0, 0);
+    MIRROR_ART.set(im, d);
+  }
+  return d;
+}
+/* ---------- traffic: props (flying cars) along a cutscene's lanes, again and again ---------- */
+/* lane: [x, height, z] points in the view; each prop is a placement in the scene for as long as the cutscene lasts */
+export function cutsceneTraffic(lane, key, s, count) {
+  const sc = walkView.sc;
+  if (!sc || lane.length < 2) return;
+  const seg = [];
+  let len = 0;
+  for (let i = 1; i < lane.length; i++) {
+    const a = lane[i - 1],
+      b = lane[i],
+      l = Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]);
+    seg.push({ a, b, l, at: len });
+    len += l;
+  }
+  for (let i = 0; i < count; i++) {
+    const p = { k: key, x: lane[0][0], z: lane[0][2], lift: lane[0][1], moving: 1 };
+    (sc.props || (sc.props = [])).push(p);
+    cutscene.traffic.push({ p, seg, len, dur: s * 1000, ph: i / count, t0: cutsceneNow() });
+  }
+  if (typeof walkRenderer !== 'undefined') walkRenderer.itemGen = (walkRenderer.itemGen || 0) + 1;
+}
+function cutsceneTrafficTick(now) {
+  for (const T of cutscene.traffic) {
+    const d = (((now - T.t0) / T.dur + T.ph) % 1) * T.len,
+      S = T.seg.find(q => d <= q.at + q.l) || T.seg[T.seg.length - 1],
+      k = S.l ? (d - S.at) / S.l : 0;
+    T.p.x = S.a[0] + (S.b[0] - S.a[0]) * k;
+    T.p.z = S.a[2] + (S.b[2] - S.a[2]) * k;
+    T.p.lift = S.a[1] + (S.b[1] - S.a[1]) * k;
+    /* facing along the lane: a car flies nose first (its model's front is +x, so flip when going -x) */
+    T.p.f = S.b[0] < S.a[0] ? 1 : 0;
+  }
+}
+export function cutsceneTrafficEnd() {
+  const sc = walkView.sc,
+    gone = new Set(cutscene.traffic.map(T => T.p));
+  if (sc && sc.props && gone.size) sc.props = sc.props.filter(p => !gone.has(p));
+  cutscene.traffic = [];
 }
 /* ---------- what the engine draws: walkView.director.frame ---------- */
 export function cutsceneFrame() {
@@ -164,8 +249,9 @@ export function cutsceneFrame() {
   parts.length = 0;
   lights.length = 0;
   for (const a of Object.values(cutscene.actors)) if (!a.hidden) items.push(cutscenePersonItem(a, t, C0));
-  /* what a cutscene adds of its own (the opening's starters and coins: opening.js) */
+  /* what a cutscene adds of its own (the opening's starters and coins: opening.js), and its traffic */
   for (const f of cutscene.layers) f(items, parts, lights, now, t);
+  if (cutscene.traffic.length) cutsceneTrafficTick(now);
   const spark = typeof particleSprite === 'function' ? particleSprite('sparkle') : null;
   cutscene.fx = cutscene.fx.filter(f => now - f.t0 < f.life);
   for (const f of cutscene.fx) {
@@ -309,6 +395,7 @@ export function cutsceneTeardown() {
   if (typeof landing !== 'undefined') landing.bits = [];
   cutscene.foe = null;
   cutscene.layers = [];
+  cutsceneTrafficEnd();
   cutscene.set = null;
   cutscene.named = {};
   document.body.classList.remove(

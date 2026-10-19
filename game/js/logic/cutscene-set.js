@@ -37,7 +37,7 @@ expose({
 export const CUTSCENE_YOU = 'you';
 export const CUTSCENE_DIRECTIONS = ['up', 'down', 'side', 'sideR'];
 /** the poses `act` plays (person-art.js battle poses) */
-export const CUTSCENE_POSES = ['throw', 'cheer', 'react'];
+export const CUTSCENE_POSES = ['throw', 'cheer', 'react', 'reach'];
 /** `screen`: the look of the whole picture (css/cutscene.css): coming round after the fall, then clear */
 export const CUTSCENE_SCREENS = ['dazed', 'waking', 'clear'];
 /** `effect`: little things in the scene */
@@ -52,7 +52,8 @@ export const num = v => (v != null && NUM.test(v) ? +v : null);
  * problem if it doesn't read. Commands that aren't the cutscene's own come back with only `name`.
  * @typedef {{ name: string, who?: string, spot?: string, shot?: string, s?: number, nowait?: boolean,
  *   on?: string[], dir?: string, toward?: string, pose?: string, text?: [string, string], screen?: string,
- *   effect?: string, at?: string, box?: boolean, colour?: string, sound?: string, problem?: string }} CutsceneStep */
+ *   effect?: string, at?: string, box?: boolean, colour?: string, sound?: string, dark?: boolean, prop?: string,
+ *   lane?: string, count?: number, problem?: string }} CutsceneStep */
 /** @param {CmdNode} n @returns {CutsceneStep} */
 export function cutsceneStep(n) {
   const a = n.args,
@@ -70,16 +71,20 @@ export function cutsceneStep(n) {
       } else if (a[i] != null) return bad(`camera ${out.shot}: then seconds or "on", not "${a[i]}"`);
       return out;
     }
-    case 'actor':
-      /* actor <who> at <spot> [direction] */
-      if (a[1] !== 'at' || !a[2]) return bad('actor takes: who at spot [direction]');
+    case 'actor': {
+      /* actor <who> at <spot> [direction] [silhouette] (a dark figure: who it is stays hidden) */
+      const use = 'actor takes: who at spot [direction] [silhouette]';
+      if (a[1] !== 'at' || !a[2]) return bad(use);
       Object.assign(out, { who: a[0], spot: a[2] });
-      if (a[3] != null) {
-        if (!CUTSCENE_DIRECTIONS.includes(a[3])) return bad(`facing ${a[3]}: up, down, side or sideR`);
-        out.dir = a[3];
+      let i = 3;
+      if (a[i] != null && a[i] !== 'silhouette') {
+        if (!CUTSCENE_DIRECTIONS.includes(a[i])) return bad(`facing ${a[i]}: up, down, side or sideR`);
+        out.dir = a[i++];
       }
-      if (a.length > 4) return bad('actor takes: who at spot [direction]');
+      if (a[i] === 'silhouette') ((out.dark = true), i++);
+      if (a[i] != null) return bad(use);
       return out;
+    }
     case 'walk': {
       /* walk <who> <spot> [seconds] [nowait]; "walk <who> beside me" is the walk scene's (story-stage.js) */
       Object.assign(out, { who: a[0], spot: a[1] });
@@ -132,10 +137,28 @@ export function cutsceneStep(n) {
       }
       return out;
     case 'hide':
-      /* hide box (the dialogue box) | hide <who> */
-      if (a[0] === 'box') out.box = true;
-      else out.who = a[0];
+    case 'show':
+      /* hide box (the dialogue box) | hide <who> | hide prop <spot> (the prop standing nearest it), and show the same */
+      if (a[0] === 'box') {
+        if (n.name === 'show') return bad('the dialogue box shows itself with the next line');
+        out.box = true;
+      } else if (a[0] === 'prop') {
+        if (!a[1] || a.length > 2) return bad(`${n.name} prop takes a spot (the prop nearest it)`);
+        out.at = a[1];
+      } else {
+        if (a.length > 1) return bad(`${n.name} takes: box, someone, or prop spot`);
+        out.who = a[0];
+      }
       return out;
+    case 'traffic': {
+      /* traffic <lane> <prop> <seconds> [count]: that many of a prop (a flying car) along a lane, end to end in that many
+         seconds, again and again, spaced evenly */
+      const s_ = num(a[2]),
+        c = a[3] == null ? 1 : num(a[3]);
+      if (!a[0] || !a[1] || s_ == null || s_ <= 0 || c == null || c < 1 || a.length > 4)
+        return bad('traffic takes: lane prop seconds [count]');
+      return Object.assign(out, { lane: a[0], prop: a[1], s: s_, count: Math.round(c) });
+    }
     case 'fade':
       /* fade in | fade out [#colour] */
       out.dir = a[0] || 'out';
@@ -154,20 +177,24 @@ export function cutsceneStep(n) {
 
 /** the names a cutscene's script uses, each with its line: spots, shots, and who (to check them against the file and
  * the speakers) @param {any[]} tree the parsed script
- * @returns {{ kind: 'spot' | 'shot' | 'who', name: string, line: number }[]} */
+ * @returns {{ kind: 'spot' | 'shot' | 'who' | 'lane' | 'prop', name: string, line: number }[]} */
 export function cutsceneNames(tree) {
-  /** @type {{ kind: 'spot' | 'shot' | 'who', name: string, line: number }[]} */
+  /** @type {{ kind: 'spot' | 'shot' | 'who' | 'lane' | 'prop', name: string, line: number }[]} */
   const out = [];
   const walk = (/** @type {any[]} */ blk) => {
     for (const n of blk) {
       if (n.k === 'cmd') {
         const S = cutsceneStep(n),
-          add = (/** @type {'spot' | 'shot' | 'who'} */ kind, /** @type {string | undefined} */ name) =>
-            name && out.push({ kind, name, line: n.line });
+          add = (
+            /** @type {'spot' | 'shot' | 'who' | 'lane' | 'prop'} */ kind,
+            /** @type {string | undefined} */ name
+          ) => name && out.push({ kind, name, line: n.line });
         add('shot', S.shot);
         add('spot', S.spot);
         add('who', S.who);
-        add('who', S.toward);
+        add('spot', S.toward);
+        add('lane', S.lane);
+        add('prop', S.prop);
         for (const x of S.on || []) add('spot', x);
         add('spot', S.at);
       } else if (n.k === 'say') out.push({ kind: 'who', name: n.who || '', line: n.line });

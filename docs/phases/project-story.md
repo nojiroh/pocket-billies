@@ -31,6 +31,7 @@ Project Story is its own track. It runs alongside phases A to E; A2 and E3 point
 | Pacing | First talk: flat rhythm. Hazel vs Blake: too fast. Starter pick: too fast. Blake's battle: flat rhythm |
 | Arrival | Open: Claude proposes 2-3 options (see "Ask me before") |
 | Phase 22 | Moved here from the `plan/engine-phases-19-21` branch |
+| City opening beats (S7) | Draft in docs/city-opening-beats.md: 21 s; the city replaces the fall's first leg (in S8); the figure reaches toward the light; the billboard's advert stays open (one swappable picture) |
 
 ## What exists today (read 2026-10-19 on main 09ae2ba; verify again before each session)
 - **The fall** (`opening-fall.js`, 899 lines): surface, crust, inner sky, landing. Starts on New game.

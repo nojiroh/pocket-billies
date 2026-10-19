@@ -18,6 +18,16 @@ kept aside in the browser).
   chapter can swap a map for another version. Every line has an id the debug log names. The data check checks the
   story (names, flags, line ids, places that could never open). A battle started from the debug menu no longer shows
   the trainer's opening lines.
+- Cutscenes are data (cutscene tools, sessions 1 and 3): each is one file, game/data/cutscenes/<id>.json, with the
+  map it is filmed on, named camera shots and spots, traffic lanes, its own time of day and weather, and a script
+  (docs/CUTSCENES.md). The opening with Professor Hazel and Blake plays from its file, same words as before.
+- A new start (Project Story S7): New game opens in a city at night in the rain; a figure walks up a neon street,
+  sees a violet light in an alley, reaches for the rift and falls; the fall goes on from the crust to Copperleaf.
+- The title is back (the test boot is off; `?boot=test` gives the quick start): signed out, a card to sign in with
+  Google or play without an account; signed in, your account in the corner (tap to sign out) and Continue presses
+  itself after 4 s unless you touch anything. A new player sees the city behind the title, a returning one Copperleaf.
+  What's new opens the latest notes (meta.json, the Studio's World page). When your account and this browser have
+  different games, you choose which to keep; the other is set aside (Settings → Save brings it back or downloads it).
 - The Studio writes the story (Project Story S3): every script (trainers, people in a scene, the story's own) in one
   field that shows mistakes as you type, on their line, with a command reference and line ids; a Story scripts
   section; a story preview in the scene editor (pick a point in the story: who is there and who isn't); **Play from

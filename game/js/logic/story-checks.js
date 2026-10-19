@@ -248,9 +248,13 @@ export function storyFindings(G, L = { parseScript, conditionTree, conditionProb
       const ok =
         x.kind === 'shot'
           ? !!C.shots[x.name]
-          : x.kind === 'spot'
-            ? !!C.spots[x.name] || people.has(x.name) || x.name === 'starter'
-            : people.has(x.name);
+          : x.kind === 'lane'
+            ? !!(C.lanes || {})[x.name]
+            : x.kind === 'prop'
+              ? !!((G.scenery || {}).props || {})[x.name]
+              : x.kind === 'spot'
+                ? !!C.spots[x.name] || people.has(x.name) || x.name === 'starter'
+                : people.has(x.name);
       if (!ok)
         problems.push(
           at(x.line),

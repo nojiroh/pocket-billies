@@ -11,6 +11,53 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 - Questions waiting for the owner: 
 - Next session starts with: 
 
+### Cutscene tools, session 3 - the city opening; the title with accounts back - 2026-10-19
+Owner's request: "begin session 3 now, explain session 2 in handoff"; then the title with the account, on the new UI
+direction, Continue pressing itself when signed in (answers in the questions of this session, listed below).
+Branch `project-story-city`, from `project-story-opening` (PR #59) with PR #52 (batch 8) merged in.
+- **Session 2 (not built; next):** the Studio's cutscene tools. A Cutscenes section listing game/data/cutscenes;
+  in its preview (the Walk scenes 3D view with the free camera), **Save as shot** (name it; eye, target, field of
+  view from the free camera), a Shots list (look through, retake, rename, field of view, delete), **spots as pins**
+  (click the map or the 3D view to drop a named pin, drag to move), the clear areas drawn on the map; the script field
+  (S3's) with a **step list** beside it (each step with its time, click to jump the camera there) and **▶ Preview**
+  playing the cutscene in the Studio (the director and stage.js on the preview's view, lines in a box); insert buttons
+  (this camera as a shot, walk to a pin, a line); Play from here for a cutscene. Its checks are the same reading
+  (logic/cutscene-set.js) and story checks. Start from docs/CUTSCENES.md and studio/js/free-camera.js.
+- Changed (one cause per commit):
+  - Merge PR #52; fix hazel.js's generated module block (also pushed to PR #59).
+  - Engine: a placement may float (`lift`, metres up) and move (`moving`: shadow drawn each frame).
+  - Cutscene commands: `actor ... silhouette`, `act <who> reach`, `hide/show prop <spot>`, `show <who>`,
+    `traffic <lane> <prop> <s> [n]`; a cutscene's `look` (time, weather) holds while it plays.
+  - `game/data/cutscenes/city.json`: the city's spots, shots and lanes (out of the map's block), night and rain, the
+    beat sheet's script; New game plays it before the fall, which then starts in the crust (the street under the
+    billboard only when the city can't). The batch 8 builder no longer writes a cutscene block.
+  - Test boot off (`?boot=test` turns it on): the title, saves and accounts are back.
+  - Accounts: saves more than a minute apart: you choose which to keep (two cards); the other is set aside in this
+    browser; Settings > Save brings it back or downloads it.
+  - Title on the new look: signed out a glass sign-in card (Sign in with Google / Play without an account); signed in
+    an account chip (tap: email, Sign out); the Continue card's ring fills for 4 s and it continues unless you touch
+    anything (also right after signing in); new players see the city at night behind the title, returning ones
+    Copperleaf; the version and What's new (meta.json whatsNew, the Studio's World page). The New game warning no
+    longer mentions save slots (there are none).
+  - Docs: CUTSCENES.md, city-opening-beats.md (built), CHANGELOG.
+- Owner's answers this session: test boot off with ?boot=test; a sign-in card whenever signed out; 4 s with a ring,
+  any touch stops it; signed-in only, also right after signing in; city behind the title for new players, Copperleaf
+  for returning ones; Continue card plus a quiet row; account chip with a sign-out sheet; ask which save to keep, the
+  other set aside (no slots exist); "other device played since" = saved more than a minute apart; the city title
+  camera drifts down the avenue; What's new from meta.json; version and What's new on the title.
+- Risky or unfinished:
+  - Not seen on a phone: the city (look, traffic, the silhouette, the reach pose is the throw's wind-up held), the
+    title's new look, the ring. Traffic moves placements each frame; watch for stray shadows or flicker.
+  - Sign-in, auto-continue and the which-save sheet need Firebase, which this sandbox can't reach: untested.
+  - The city has no lite version yet and no rain or hum sounds (the fall's music plays).
+  - tools/check-studio-github.py still stops at the story preview switch, as on main (see session 1).
+- Verified: lint, typecheck, 164 unit tests (the city: commands, names, it runs through, length), check:data,
+  check:modules, format, build. A headless look at phone size (360 x 640, pixel ratio 1; the page's state only, no
+  pictures): the title shows the sign-in card (sign-in unreachable here) and What's new; New game plays the city, the
+  fall from the crust, then Hazel's lines, no errors. **Not run: the smoke check on the final code** (stopped by the
+  owner; the last smoke, after session 1, passed 15/15).
+- Next session starts with: your look at the city and the title on your phone (and a sign-in test); then session 2,
+  the Studio's cutscene tools.
 ### Studio track ST-0 - the plan, Golden removed, coats - 2026-10-19
 Owner asked for a more intuitive Studio (ultrawide, 3D import/export, a sprite-sheet parts tool, a combined tool),
 answered about 30 questions and approved the plan (docs/phases/studio-track.md, ST-0 to ST-9). ST-0 removes Golden
@@ -386,6 +433,80 @@ Plan in docs/phases/10-world-map-bowl.md (rewritten with the owner's answers). B
   between; spots are stored as angle and radius (stable when the bowl's size or depth changes).
 - Questions waiting for the owner: zoom range and default tilt (before E-map-3).
 - Next session starts with: E-map-3, camera and controls over the bowl.
+### Phase 09 batch 8, part 3 - the owner's answers to the beat sheet - 2026-10-19
+- Changed: docs/city-opening-beats.md now 21 s with the owner's decisions (the city replaces the fall's first leg,
+  done in S8 so the opening keeps working until then; the figure reaches toward the light; the billboard's advert
+  stays open); project-story.md's decisions table points to it. Map `city_opening`: the spot `stumble` is now
+  `reach`; one billboard placed opposite the alley as the ad slot (its advert is one picture,
+  city_billboard_holo.png, swapped to change it).
+- Verified: the script in the beat sheet parses (parseScript, no problems); the billboard clears the towers (from
+  the data); data check.
+- Next session starts with: S7's remaining owner checks on the phone (the set at night in the rain), then S8.
+
+### Phase 09 batch 8, part 2 - towers lit on every side; the city opening's draft set and beat sheet - 2026-10-19
+Owner's request: "the 3D version of the building and a small map for the cutscene", keeping Project Story's system
+in mind. Chosen: lit windows on every side, the portal in a side alley, the rift, the layout plus a draft beat sheet.
+- Changed (one cause per commit):
+  - Engine: a fixed picture layer on a model can face any way (`yaw`, radians: pi/2 the right side, pi the back), in
+    the sprite pass and in water reflections (prop-models.js, walk/sprites.js, walk/water.js). Nothing used it
+    before, so nothing else changes.
+  - The towers' window pictures and neon strips on all four faces (front and back share a picture, the sides
+    another); the hero needle's eight faces in two pictures, its crown strip all round.
+  - Map `city_opening` (a draft, test: 1, not joined to the world): one avenue between 15 towers, the hero needle
+    closing the view, street lights, signs, hovering cars, a 5 m alley on the right two thirds up with the BAR sign,
+    puddles, a vending machine, the rift and a new `city_sign_blank` (the organization's logo spot, blank until S4).
+    You start at the near end. A `cutscene` block holds what the opening's script will name: spots (walkFrom,
+    alleyMouth, lean, stumble, rift, logo), camera shots (above, canyon, street, alleyMouth, rift, through: eye and
+    target as [x, height, z], fov) and two car lanes. Nothing reads it yet (camera and walk play from S2).
+  - docs/city-opening-beats.md: a 26 s beat sheet, the beats as a script in the story layer's format (it parses with
+    today's parseScript, no problems), and the decisions it needs from you.
+- Risky or unfinished:
+  - Fill rate: each tower now draws about 10 large window pictures and the set has 16 towers. Not measured on a
+    phone; walk the avenue at night and send a debug log.
+  - The rift stands there always; appearing on a beat needs `when` / `unless` on props (S2) or a show/hide command.
+  - Part 1's notes about front-only windows are superseded by this entry; the low-poly setting note still holds.
+- Verified: each recipe meshed in Node (city_sign_blank 58 triangles, towers unchanged), the layout checked from the
+  data (no tower overlaps another, no prop inside a tower), data check, lint (the frame-block.js note from main),
+  type-check, 118 unit tests, format, modules, build, smoke check ("no problems"; its unused note again names one picture and one prop, the same as part 1). No headless renders.
+- Questions waiting for the owner: the four in docs/city-opening-beats.md ("For you to decide"); how the set and the
+  lit sides look on your phone (Settings > Time of day: night, Weather: rain).
+- Next session starts with: your answers to the beat sheet; then S7's script and the scene's commands once S2 is in.
+
+### Phase 09 batch 8 - city opening mockups: towers, signs, street things, portals (provisional) - 2026-10-19
+Owner's request: start the city opening's buildings and props, as mockups to judge before S4 and S7-S8 (Project
+Story's "Ask me before": the city mockups before S8 builds the scene). Look chosen 2026-10-19: only tall buildings
+(Cyberpunk 2077, Blade Runner), sleek tops over grimy bottoms, neon in pink, cyan and amber. Then: "make various
+portal shapes".
+- Changed (tools/build-props-batch8.py, independent of batches 1-7, rerunnable; new keys only, nothing places them
+  outside the new showcase map `test_props_city`):
+  - Towers from one kit (grimy base: concrete, slabs, shopfront with a neon strip, pipes, AC units, fire escape,
+    small windows with grime runs; sleek shaft: glass, chrome bands, corner fins, lit curtain wall):
+    city_tower_slab (90 m), city_tower_mega (95 m, balcony cages, two setbacks, a landing pad), city_tower_hero
+    (125 m octagonal needle on a podium, edge light strips, a holo-ad band, the organization's logo panel **blank**).
+  - Signs with generic words only (no brands, those are S4's): city_sign_hotel (vertical blade), city_sign_bar,
+    city_sign_open (arrow), city_billboard (holo panel on a truss, no text).
+  - Street: city_streetlight (cyan bar), city_vending, city_flying_car (hovering at 2.4 m, lights; still, the lanes
+    and splines are S8's).
+  - Portals, five shapes, each in two colourways (variant 0 violet, the city's side; variant 1 gold-green, the Hollow
+    Earth's light): portal_ring (with floating shards), portal_rift (a jagged tear), portal_door (a door that wasn't
+    there, on a scorched threshold), portal_gate (a machine-built octagon gate with a generator), portal_hole (the
+    pavement gives way: broken slabs, a glowing hole, a beam of light rising). The swirls are still pictures.
+  - Each prop has a front picture (for when models are off) and a coloured halo (`glow`) at night.
+- Risky or unfinished:
+  - Only picture layers glow (the model shader has no emission), so lit windows are a picture on each tower's FRONT
+    face only; the sides are unlit glass with bands and fins. Fine for a scripted camera; say if the sides need light.
+  - With Settings "Props as low-poly" off, a 125 m tower would be built as voxels at 32 to the metre: too big. Nothing
+    turns it off but that setting; S8 should keep the city's towers low-poly always.
+  - Triangles (meshed in Node, no rendering): towers 714 / 2,536 / 848, everything else under 330. Not measured on a
+    phone; the largest window picture is 378 x 1,699 px (the slab's glass).
+- Verified: data check, lint (one naming note in game/js/engine/frame-block.js, already on main), type-check, 118
+  unit tests, module and format checks, smoke check (15 of 15; its unused note names detail-a04.png and airship_mast, both from before); each recipe meshed in Node; the generated pictures looked at as
+  flat sheets. No headless renders of the props (graphics are for your devices).
+- Decisions I made (and why): towers 90-125 m so they read as megacity at street level; sign words kept generic;
+  steady glow, no flicker (no engine change; flicker can come with S8).
+- Questions waiting for the owner: on your phone, open `test_props_city` with Settings → Time of day at night: the
+  look of the towers and signs, which portal shape (or shapes) and which colourway.
+- Next session starts with: the owner's picks; then the full kit after S4 (names, logo, surface/interior contrast).
 
 ### Phase 20 stage C, session C-2 - One light block per frame (C3), flat things and blades (C4) - 2026-10-19
 Plan approved at the start ("Yes, let's go"), after sorting out the branches. Branch `ccr-9d72271f-j72y94`.
