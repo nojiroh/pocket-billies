@@ -1,0 +1,472 @@
+{
+ "about": "Session E-map-1 bowl layouts. Top-down unit disc: x right, y up, centre = bowl floor, radius 1 = rim. Not used by the game yet.",
+ "layouts": {
+  "1-spiral": {
+   "frame": "a map's north faces the centre, east runs counter-clockwise",
+   "positions": {
+    "marigold": [
+     -0.0129,
+     -0.403
+    ],
+    "tallgrass_meadow": [
+     0.0682,
+     -0.3161
+    ],
+    "old_fairway": [
+     0.4929,
+     -0.402
+    ],
+    "thicket": [
+     0.4054,
+     -0.3248
+    ],
+    "fizzwell": [
+     0.5859,
+     -0.2904
+    ],
+    "stepstone_canyon": [
+     0.6945,
+     -0.2424
+    ],
+    "rustgear": [
+     0.5315,
+     -0.1846
+    ],
+    "pepperpot": [
+     0.3953,
+     0.0225
+    ],
+    "lanternhall": [
+     0.5258,
+     0.2868
+    ],
+    "willowmere": [
+     0.0257,
+     -0.1138
+    ],
+    "clovercrest": [
+     0.3197,
+     -0.2447
+    ],
+    "kitewind": [
+     0.8068,
+     -0.2811
+    ],
+    "verdigris": [
+     0.3952,
+     -0.1411
+    ],
+    "driftwreck": [
+     -0.2178,
+     -0.3269
+    ],
+    "palmhaven": [
+     -0.3366,
+     -0.3352
+    ],
+    "cinderpeak": [
+     -0.1836,
+     -0.1802
+    ],
+    "hornpass": [
+     0.2924,
+     -0.0904
+    ],
+    "frostcrown": [
+     0.1892,
+     -0.0398
+    ],
+    "mirrormere": [
+     0.1385,
+     -0.1406
+    ],
+    "fanfare_fields": [
+     0.4075,
+     0.3144
+    ],
+    "twinpetal": [
+     0.2896,
+     0.3187
+    ],
+    "petalfall": [
+     0.1749,
+     0.1697
+    ],
+    "rootwater": [
+     0.4364,
+     0.4878
+    ],
+    "grapevine_hills": [
+     0.307,
+     0.4728
+    ],
+    "goldvine": [
+     0.2049,
+     0.5269
+    ],
+    "saltpan_flats": [
+     0.3874,
+     0.7618
+    ],
+    "badlands": [
+     0.0778,
+     0.5617
+    ],
+    "puffcap": [
+     -0.06,
+     0.5654
+    ],
+    "capshade": [
+     -0.1254,
+     0.4672
+    ],
+    "russetwood": [
+     -0.061,
+     0.2929
+    ],
+    "tanglewild": [
+     -0.1685,
+     0.6136
+    ],
+    "prism_chasm": [
+     -0.3222,
+     0.6799
+    ],
+    "glimmershaft": [
+     -0.352,
+     0.5655
+    ],
+    "gloomwater": [
+     -0.2339,
+     0.4119
+    ],
+    "rimefrost": [
+     -0.5214,
+     0.5848
+    ],
+    "conchshell": [
+     -0.713,
+     0.575
+    ],
+    "kelpport": [
+     -0.4543,
+     0.3404
+    ],
+    "abyssal_trench": [
+     -0.5516,
+     0.408
+    ],
+    "vinyl_works": [
+     -0.6488,
+     0.4755
+    ],
+    "circuit_terraces": [
+     -0.8671,
+     0.412
+    ],
+    "nimbus": [
+     -0.6564,
+     0.3041
+    ],
+    "fizzpop": [
+     -0.7644,
+     0.353
+    ],
+    "skygarden": [
+     -0.5491,
+     0.253
+    ],
+    "zenith_steps": [
+     -0.746,
+     0.1474
+    ],
+    "bellwether_rise": [
+     -0.8935,
+     0.0276
+    ],
+    "innersun": [
+     -0.7836,
+     -0.0767
+    ],
+    "copperleaf": [
+     0.0,
+     0.0
+    ],
+    "hedgerow": [
+     -0.0097,
+     -0.2268
+    ],
+    "pearlantis": [
+     -0.4543,
+     0.3404
+    ]
+   },
+   "seams_within_30deg": 56,
+   "crossings": 0
+  },
+  "2-natural": {
+   "frame": "a map's north points up the wall, east runs clockwise",
+   "positions": {
+    "marigold": [
+     0.0,
+     0.0
+    ],
+    "tallgrass_meadow": [
+     0.1881,
+     0.1517
+    ],
+    "old_fairway": [
+     0.2021,
+     0.0381
+    ],
+    "thicket": [
+     0.3509,
+     0.1855
+    ],
+    "fizzwell": [
+     0.3225,
+     0.0669
+    ],
+    "stepstone_canyon": [
+     0.2843,
+     -0.0484
+    ],
+    "rustgear": [
+     0.4433,
+     0.0639
+    ],
+    "pepperpot": [
+     0.5963,
+     -0.0399
+    ],
+    "lanternhall": [
+     0.4314,
+     -0.1906
+    ],
+    "willowmere": [
+     0.7467,
+     0.1237
+    ],
+    "clovercrest": [
+     0.4649,
+     0.2678
+    ],
+    "kitewind": [
+     0.1657,
+     -0.0726
+    ],
+    "verdigris": [
+     0.5435,
+     0.133
+    ],
+    "driftwreck": [
+     -0.0541,
+     -0.1101
+    ],
+    "palmhaven": [
+     0.0649,
+     -0.1318
+    ],
+    "cinderpeak": [
+     -0.2336,
+     0.1811
+    ],
+    "hornpass": [
+     0.6466,
+     0.194
+    ],
+    "frostcrown": [
+     0.7553,
+     0.2474
+    ],
+    "mirrormere": [
+     0.6128,
+     0.4084
+    ],
+    "fanfare_fields": [
+     0.504,
+     -0.4129
+    ],
+    "twinpetal": [
+     0.5238,
+     -0.5337
+    ],
+    "petalfall": [
+     0.6587,
+     -0.6317
+    ],
+    "rootwater": [
+     0.3819,
+     -0.3975
+    ],
+    "grapevine_hills": [
+     0.3802,
+     -0.569
+    ],
+    "goldvine": [
+     0.2744,
+     -0.6302
+    ],
+    "saltpan_flats": [
+     0.1991,
+     -0.3627
+    ],
+    "badlands": [
+     0.1561,
+     -0.6671
+    ],
+    "puffcap": [
+     0.0328,
+     -0.6772
+    ],
+    "capshade": [
+     -0.0551,
+     -0.7616
+    ],
+    "russetwood": [
+     -0.0484,
+     -0.9379
+    ],
+    "tanglewild": [
+     -0.0305,
+     -0.571
+    ],
+    "prism_chasm": [
+     -0.0945,
+     -0.4643
+    ],
+    "glimmershaft": [
+     -0.2082,
+     -0.5122
+    ],
+    "gloomwater": [
+     -0.2931,
+     -0.7178
+    ],
+    "rimefrost": [
+     -0.2264,
+     -0.3864
+    ],
+    "conchshell": [
+     -0.2208,
+     -0.2619
+    ],
+    "kelpport": [
+     -0.6362,
+     -0.4372
+    ],
+    "abyssal_trench": [
+     -0.5268,
+     -0.379
+    ],
+    "vinyl_works": [
+     -0.4178,
+     -0.3206
+    ],
+    "circuit_terraces": [
+     -0.3651,
+     -0.1814
+    ],
+    "nimbus": [
+     -0.501,
+     -0.2034
+    ],
+    "fizzpop": [
+     -0.2482,
+     -0.1409
+    ],
+    "skygarden": [
+     -0.6712,
+     -0.2296
+    ],
+    "zenith_steps": [
+     -0.5998,
+     -0.1278
+    ],
+    "bellwether_rise": [
+     -0.5124,
+     -0.039
+    ],
+    "innersun": [
+     -0.6379,
+     0.1568
+    ],
+    "copperleaf": [
+     -0.1156,
+     0.2212
+    ],
+    "hedgerow": [
+     -0.0586,
+     0.1101
+    ],
+    "pearlantis": [
+     -0.6362,
+     -0.4372
+    ]
+   },
+   "seams_within_30deg": 50,
+   "crossings": 8,
+   "seams_off": [
+    "90deg marigold:west -> driftwreck:east",
+    "58deg driftwreck:south -> palmhaven:east",
+    "45deg marigold:east -> tallgrass_meadow:south",
+    "34deg stepstone_canyon:north -> rustgear:south",
+    "32deg clovercrest:south2 -> fizzwell:north",
+    "30deg palmhaven:north -> cinderpeak:south"
+   ]
+  }
+ },
+ "under_parent": {
+  "pearlantis": "kelpport"
+ },
+ "proposed_links": [
+  {
+   "a": "capshade",
+   "b": "gloomwater",
+   "length": 0.122,
+   "exit_a": "east",
+   "exit_b": "west"
+  },
+  {
+   "a": "frostcrown",
+   "b": "petalfall",
+   "length": 0.21,
+   "exit_a": "east",
+   "exit_b": "west"
+  },
+  {
+   "a": "twinpetal",
+   "b": "grapevine_hills",
+   "length": 0.155,
+   "exit_a": "south",
+   "exit_b": "north"
+  },
+  {
+   "a": "kelpport",
+   "b": "skygarden",
+   "length": 0.129,
+   "exit_a": "east",
+   "exit_b": "west"
+  },
+  {
+   "a": "nimbus",
+   "b": "zenith_steps",
+   "length": 0.181,
+   "exit_a": "east",
+   "exit_b": "west"
+  }
+ ],
+ "chosen": "1-spiral",
+ "special_links": [
+  {
+   "a": "copperleaf",
+   "b": "kelpport",
+   "kind": "canal"
+  },
+  {
+   "a": "copperleaf",
+   "b": "nimbus",
+   "kind": "sky lift"
+  }
+ ]
+}

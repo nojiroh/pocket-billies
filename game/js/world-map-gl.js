@@ -195,7 +195,7 @@ function worldMapGlCanvas() {
   }
   return cv;
 }
-function worldMapGlReady() {
+export function worldMapGlReady() {
   if (!worldMapGlWanted()) return false;
   const cv = worldMapGlCanvas();
   if (gpuState.cv !== cv) {
@@ -723,7 +723,7 @@ export function setWorldMapGlRender(v) {
 }
 /* the miniatures: loaded the first time the map opens; size in world units per pixel (about 3 degrees across) */
 const MINI_PICTURE_SCALE = 0.0004;
-function worldMapGlMiniPicture(i) {
+export function worldMapGlMiniPicture(i) {
   const r = LOCATIONS[i];
   if (!r || !r.mapId) return null;
   const p = `map/mini/${r.mapId}.png`,
@@ -1085,7 +1085,7 @@ setWorldMapReset(function () {
   worldMap.dirty = true;
 });
 /* ---------- extra controls: places list and flat view ---------- */
-function worldMapGlChrome() {
+export function worldMapGlChrome() {
   const box = $('.map-full');
   if (!box) return;
   const ctl = box.querySelector('.mapctl');

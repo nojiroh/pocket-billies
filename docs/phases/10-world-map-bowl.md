@@ -1,32 +1,93 @@
-# Phase 10 - World map: 3D bowl
+# Phase 10 - World map: the bowl
+
+Part of roadmap Phase E. Sized in sessions; no hour estimates.
 
 ## Goal
-A new, always-3D world map shown as the inside of a half sphere (a bowl) with clouds and simplified terrain. It must feel intuitive on a phone. All existing towns and routes stay (same connections, gates, costs and airship stops); only their positions and the visuals change.
+Replace the full-sphere world map with the lower half of the Hollow Earth: a bowl, the Inner Sun hanging above its
+centre, the ground generated from region terrain, seen from above like a diorama. All places and roads stay the same
+(the graph does not change); only positions and visuals change. It must feel intuitive on a phone.
 
-## Verify first (legacy figures from alpha 0.4.1)
-- map.js (~17 KB) and map-gl.js (~38 KB) draw the current 3D map with miniatures of each stop. 49 places each have `lon` and `lat` (the start town "Marigold Town", id sundown, is at lon 0, lat 0). Roads branch and loop; each road has a step count; some places are under the ground; every town has an airship station.
-- The Studio has a drag-and-drop world-map editor.
+## Decided (owner, 2026-10-19)
+- **Geometry:** lower half only. All land sits in the bowl; the upper half is sky.
+- **Progression:** centre outward. Copperleaf (the start town) at the bottom centre; regions spiral outward and up the
+  walls; the Inner Sun region ends at the rim.
+- **Camera:** over the bowl. Orbit above it like a tabletop, zoom down towards a place, never below the rim line.
+- **Ground:** generated from region terrain textures and heights. `art/map/world.png` and `world_h.png` are retired.
+- **Light:** the Inner Sun overhead, always noon; soft bloom and cloud shadows as today.
+- **Travel:** an airship hop of 2-3 s, scaled a little by distance, tap to skip.
+- **Underground / sealed places:** Pearlantis is a small marker under Kelpport with a dashed lift line, not its own spot
+  on the ground.
+- **Kept from today's map:** the Places list.
+- **Dropped:** Flat view; the CPU-drawn fallback (when the GPU context is lost, show the Places list and a "map
+  reloading" note); the gold trip line and the pins.
+- **Depth:** medium. A flat-ish floor, walls rising to about 45 degrees at the rim.
+- **Relief:** each region has its own low-poly relief (volcano peak, canyon cut, trench dip, Cloudspire terraces).
+- **Driftwreck:** Palmhaven is placed south of Driftwreck to match the walkable maps; no map data changes.
+- **New links:** allowed, but only as notes for now (`10-proposed-links.md`). Each needs edges, a story check and a
+  graph-test update before it enters the game.
+- **Feel:** the layout should feel authentic and natural.
 
-## Tasks
-1. Audit the current map code, the place and route data, gates and regions.
-2. Propose TWO layouts on the bowl (say where the start town sits, which direction progression runs, where each region goes and why), with a flat sketch of each, and ask me. Routes must not cross in confusing ways and distances should make sense.
-3. Keep the graph identical. Add a test that the set of locations, routes, gates and requirements is exactly the same as before. The layout must also respect how the walkable maps join edge to edge (the neighbour graph from phase 08): if a bowl position would need a different adjacency or edge direction, tell me before changing anything.
-4. Camera and controls (phone first): drag to orbit around the bowl, pinch to zoom, tap a location to open an info card with a Travel button, a Home button that recentres on the current location, smooth easing, limits so the camera never leaves the bowl or enters terrain; mouse support too (wheel zoom, drag). Ask me before locking the camera model.
-5. Simplified terrain: low-poly heightfield per region using the terrain textures from phase 09 (32 px/m style); regions readable at a glance; routes drawn as clear paths; labels that stay readable; location markers as small low-poly miniatures (reuse the existing ones where they fit).
-6. Clouds: layered low-poly or soft clouds drifting at several heights, fading when the camera is close. Quality setting (off, low, high) and a phone frame-time budget.
-7. Travel: an animated airship hop along the route (the airship model exists), skippable, using the new travel cost decided in phase 08 (step costs are gone).
-8. Retro-futuristic solarpunk look: greenery on structures, wind turbines, solar sails, rounded arches, warm and pastel colours. Ask me about the bowl's sky and any central light.
-9. Replace the old map code and update the Studio's world-map editor so you drag locations on the bowl surface.
-10. Tests: graph unchanged; every location reachable and tappable; travel works; screenshot baseline; phone frame-time numbers.
+## E-map-1 result (2026-10-19): owner chose layout 1; the proposed links are kept as notes
+Copperleaf also gets proposed special links (canal to Kelpport, sky lift to Nimbus); see `10-proposed-links.md`.
+Sketches and data in `docs/phases/10-bowl/` (made by `tools/layout/`).
+- **Layout 1, spiral (recommended).** On the bowl a map's north faces the centre and its east runs counter-clockwise.
+  Today's order rolls round the bowl and rises up the wall; the Inner Sun ends high at the rim. All 56 seams point
+  within 30 degrees of their exits; no roads cross. Frostcrown and Hornpass sit beside the start, so the floor gets a
+  central peak (as in a crater). The empty lower third of the bowl becomes open sea around Driftwreck Bay.
+- **Layout 2, natural basin.** North points up the wall instead (sea low, peaks high). Six seams end up 34-90 degrees
+  off and eight roads cross; it would need walkable-map edits. Shown for comparison.
 
-## Ask me before
-The layout choice; camera limits; sky and central light; travel animation length.
+## What exists today (reuse)
+- `game/js/world-map-gl.js` (1554 lines): GPU drawing on the walk scene's canvas, Inner Sun bloom, clouds and cloud
+  shadows, 49 landmark miniatures, Places list, pinch and pan, camera easing.
+- `game/js/world-map.js` (818 lines): camera, picking, road curves, cloud list; the CPU ray-cast renderer (to delete).
+- `game/art/map/mini/` (49 miniatures): keep as the place markers.
+- `game/js/airship.js`: the airship model and the flight arc over the map; retarget it to the bowl.
+- `studio/js/world-map-painter.js` (880 lines): paints `world.png`; becomes the bowl editor (below).
+- `tools/test/world-graph.test.mjs`: the graph test already runs in the fast check.
+- Data: 49 places in `locations.json` (lon/lat today spans about 335 degrees, so it cannot simply be squeezed onto a
+  half sphere), 56 seams and 1 lift in `roads.json`, 11 regions (by `region` / `t`).
+- Known data issue: Driftwreck's south exit leads to Palmhaven, which sits mostly west on today's map. The new layout
+  fixes this rather than copying it.
+
+## Sessions
+
+**E-map-1 Layouts (no code).** Two centre-outward variants (for example a spiral versus rings with spokes), each as a
+flat top-down sketch: every region placed, Copperleaf at the centre, every seam's exit direction checked against the
+layout, and any adjacency the bowl cannot honour listed. Owner picks one.
+
+**E-map-2 Geometry and data (done 2026-10-19).** Bowl positions in `locations.json` (proposal: `bowl: { a, r }`, azimuth in degrees and
+0-1 from centre to rim; lon/lat removed once nothing reads them). Road curves rebuilt on the bowl surface. New Node
+test: every seam's exit direction agrees with the layout (within a tolerance). The graph test stays green.
+
+**E-map-3 Camera and controls (done 2026-10-19, as a preview switched on in the debug menu).** Drag to orbit, pinch or wheel to zoom, smooth easing, limits so the camera stays above
+the rim line and out of the terrain, a Home button that recentres on the current place, tap a miniature to open the
+card with a Travel button. Locked and visited states shown on the miniature and the card (pins are gone).
+
+**E-map-4 Ground and routes.** A low-poly heightfield per region generated from region data, using the chapter-09
+terrain textures (32 px/m); regions readable at a glance; routes drawn as paths in the ground; labels that stay
+readable; miniatures standing on the ground. Delete `world.png`, `world_h.png` and their loaders.
+
+**E-map-5 Sky, clouds, travel.** Inner Sun above the centre; layered clouds at several heights that fade when the camera
+is close; cloud quality setting (off, low, high) with a phone frame-time budget. The airship hop retargeted to the bowl,
+2-3 s, skippable, using the metre-based trip from `tripTo`.
+
+**E-map-6 Studio and clean-up.** The Studio world map becomes a bowl editor: drag places on the bowl surface, edit a
+region's terrain and height settings, live preview. Delete the CPU renderer, Flat view, trip line, pins and the old
+painter code. Node tests pass; then the owner's phone test.
+
+## Owner's part
+- Pick a layout after E-map-1.
+- Phone frame times after E-map-4 and E-map-5 (graphics are tested only on the owner's devices; no headless graphics).
+
+## Still open (ask before the session that needs it)
+- E-map-4: how strongly regions differ in height (flat floor with raised walls, or each region its own relief).
+- E-map-5: cloud count and heights per quality level.
+
+## Tests
+Node only: graph unchanged; every place reachable; seam directions match the layout; every place has bowl coordinates
+and a miniature; travel plans unchanged by the move. No screenshot baselines.
 
 ## Done when
-The new map replaces the old, graph test passes, phone frame times reported, Studio editor updated, tag `phase-10-done`.
-
-## First reply
-Same four items as phase 01, plus the two layout proposals.
-
-## Testing (phase 13)
-Follow docs/TESTING.md: where new tests go, what must pass before the phase ends, and its section for phase 10.
+The bowl replaces the old map, the Node tests pass, the owner has reported phone frame times, the Studio editor works
+on the bowl, and the old map code is deleted.

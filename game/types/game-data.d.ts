@@ -295,6 +295,10 @@ export interface RosterEntry {
 
 /* ---------- the world: locations, roads, regions, maps ---------- */
 
+/** phase 10: a place on the bowl, seen from above. a: degrees counter-clockwise from east; r: 0 at the centre of
+ * the floor, 1 at the rim. A place reached only by lift (Pearlantis) sits under another place instead. */
+export type BowlSpot = { a: number; r: number } | { under: DataId };
+
 /** locations.json: a place on the world map (a town or a route area), in node order */
 export interface LocationData {
   /** the same id as its map */
@@ -316,9 +320,11 @@ export interface LocationData {
   biome: string;
   mood: DataId;
   blurb: string;
-  /** where it is on the world map, degrees */
+  /** where it is on the world map, degrees (the sphere map; replaced by bowl in phase 10) */
   lon: number;
   lat: number;
+  /** phase 10: where it sits on the bowl world map */
+  bowl: BowlSpot;
   region?: string;
   music?: string;
   /** a key of gameData.shops */
