@@ -13,7 +13,6 @@
  "egg": 10,
  "market": {"k":"sand","n":5},
  "marketText": "The arena is caught in a sandstorm. Ground moves hit 1.5× harder, and everyone else takes a little damage each turn.",
- "lines": ["“Welcome to the Fizzwell arena. Here we battle in a sandstorm.”","“Hope you brought goggles.”"],
  "win": "“Well fought. The Ground Badge is yours.”",
  "lose": "“The ground always wins. Come back stronger.”",
  "hint": "Leader Rocco’s Ground team is level 12–15, and the battle opens in a sandstorm. Water and Grass moves hit Ground hard.",

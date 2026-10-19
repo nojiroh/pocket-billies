@@ -691,20 +691,6 @@
    "id": "juniper",
    "who": "juniper",
    "name": "Granny Juniper",
-   "first": [
-    "[happy] There you are, dear. Up and about already? You came down in my lavender. Flattened half of it.",
-    "Hazel looked you over and says you’ll live. I’ve made up the little room in my cottage. It’s yours for as long as you want it.",
-    "Come in whenever you like. Have a rest, and your Billies will feel better for it too."
-   ],
-   "lines": [
-    "The bees know everyone in Copperleaf. They’ll get used to you.",
-    "[happy] Honey’s in the jar by the door. Don’t tell the bees I said so.",
-    "Hazel works too hard. Take her some honey if you’re passing the lab.",
-    "The wind sail turns all day and keeps the lanterns lit all night. Copper, sun and a bit of wind: that’s all a village needs.",
-    "Marigold Town is down Hedgerow Lane. Mind the stepping stones; the middle one wobbles.",
-    "Things fall into Copperleaf every week or so. Mostly furniture. You’re the first one I’ve kept.",
-    "[happy] You’ve been walking! I can tell. You’ve got that Hollow Earth colour in your cheeks."
-   ],
    "x": 24.4,
    "z": 49.6,
    "dir": "down",

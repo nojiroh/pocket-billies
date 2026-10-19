@@ -157,7 +157,6 @@ export async function personTalk(P) {
 
 /* ================= v47: BLAKE'S FIRST BATTLE, AND WHAT COMES AFTER =================
    The opening ends with Blake wanting a battle (cutscene.js); it starts as soon as Sundown is back on screen. */
-/* what Blake says when he runs in (the opening's scene, or the step-by-step intro's conversation before the battle) */
 /* this device has seen Blake's first battle through once: next time it can be skipped */
 function openingDone() {
   try {

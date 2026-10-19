@@ -13,12 +13,6 @@
  "reward": 1500,
  "egg": 5,
  "market": null,
- "intro": [
-  "[happy] There you are! I’ve been training on the farm all week.",
-  "My starter evolved. Did yours? Doesn’t matter. I’m winning this time.",
-  "[angry] Rematch. Right here, right now!"
- ],
- "lines": ["“Round two. I’ve been waiting all week.”"],
  "win": "“Again?! Okay. You’re the real deal. See you at the next arena.”",
  "lose": "“Ha! Told you I’d train harder.”",
  "hint": "Blake waits in Clovercrest Town with an evolved starter. Bring a team around level 18.",

@@ -13,10 +13,6 @@
  "reward": 2000,
  "egg": 10,
  "market": null,
- "lines": [
-  "“Welcome to the Lanternhall arena. Polished floors, polished team.”",
-  "“Every Steel Billie on my team makes the others hit harder.”"
- ],
  "win": "“Brilliant. The Steel Badge is yours.”",
  "lose": "“Not a scratch on them. Come back stronger.”",
  "hint": "Leader Iris’s Steel team is level 19–21. Fire and Ground moves hit Steel hard, and Steel shrugs off Psychic and Flying.",

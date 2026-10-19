@@ -14,13 +14,6 @@
  "reward": 6000,
  "egg": 10,
  "market": null,
- "intro": [
-  "[angry] Stop right there. This is a closed set.",
-  "Wait. You? We dropped you. Down a hole. On the surface.",
-  "[sad] You were the best sound engineer the tour ever had. Then you read the plans.",
-  "[angry] It doesn’t matter. The press is nearly done, and you’re not on the guest list."
- ],
- "lines": ["“Nothing personal. It’s just the bottom line.”"],
  "win": "“Fine. Go up the Spire, then. She’ll be delighted. She loves a comeback.”",
  "lose": "“Back down the hole with you.”",
  "hint": "Cass Flow waits at the pressing plant with a team around level 55–57.",

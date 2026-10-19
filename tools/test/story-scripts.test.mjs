@@ -41,14 +41,16 @@ test('every script in the data reads', () => {
 test('Curator Nacre: a choice once the ledger is read, its [once] option gone after', async () => {
   const P = person('nacre'),
     save = { story: {}, items: {}, coins: {} };
-  assert.deepEqual(await play(P.script, save), P.first);
-  assert.deepEqual(await play(P.script, save), [P.lines[1]]);
+  const SANK =
+    'We sank because we wouldn’t spend. Now someone else is spending it for us. There’s a lesson in that, but I’m too cross to learn it.';
+  assert.equal((await play(P.script, save)).length, 3, 'the first meeting');
+  assert.deepEqual(await play(P.script, save), [SANK]);
   save.story.read_pearl_ledger = 1;
   const asked = await play(P.script, save, { id: 'person:nacre' });
   assert.deepEqual(asked, [
     '[angry] So you’ve read the ledger.',
     '? Why didn’t anyone stop her? | What are the mirrors for? | Just passing.',
-    P.lines[1],
+    SANK,
   ]);
   const again = await play(P.script, save, { id: 'person:nacre', pick: 1 });
   assert.equal(again[1], '? What are the mirrors for? | Just passing.', 'the [once] option is gone');

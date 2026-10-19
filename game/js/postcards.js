@@ -69,8 +69,7 @@ function postcardAllowed() {
   const F = typeof storyFlags === 'function' ? storyFlags() : {};
   if (TRAINERS.blake0 && !F.rival0 && !F.met_blake0) return false;
   if (typeof storyState !== 'undefined' && (storyState.pending || storyState.rivalTalk)) return false;
-  if (trainersAt(saveData.trip.node).some(T => !saveData.flags[T.id] && T.intro && T.intro.length && !F['met_' + T.id]))
-    return false;
+  if (trainersAt(saveData.trip.node).some(T => !saveData.flags[T.id] && T.runsUp && !F['met_' + T.id])) return false;
   if (typeof walkView !== 'undefined' && !walkView.ready) return false;
   return true;
 }
