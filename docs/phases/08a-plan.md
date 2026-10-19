@@ -209,7 +209,16 @@ deleted). Smoke had been red since phase 16 (legacy species in check-quick), fix
    self-test.js:809/887 and check-quick.py:516/1718/1905, types), the Studio "How you travel" select, i18n rows
    43-45, the dead CSS. check-logic.mjs (315-336) changes with tripTo. Keep trip.node and trip.plan.
 
-### 08a-2: the mechanics (one behaviour commit each)
+### 08a-2: the mechanics (DONE 2026-10-18, see HANDOFF "Phase 08a-2")
+Corrections found while doing it: merge d991d0b had put `addSteps(2400)` back into check-quick's play() and
+`prog/hold` into a trip literal (fixed first). The order changed: challenges came second (the money commit deletes
+`day`, which the steps challenge read), the buddy-km kind was deleted before the split (the split commit deletes
+`bsteps`). The money commit also took the step chips, the Today card's steps and brackets and the trainer card's
+"Steps today" tile (they read `day`), and commit 9 the trainer card's "Total steps" tile. A letter goes to the 1st,
+2nd or 3rd nearest town by roads (towns are 1 to 13 roads apart; Pearlantis has no roads and asks something else).
+Egg names from `need` came straight after the eggs commit (tier 5 needs 4 km). restCost went to `rules.battle`.
+Jobs: the Studio's Jobs editor and jobs.json stay for phase 12; only `rules.jobs` and its card went.
+
 Each commit removes its own part of addSteps and its save fields (newSave, validSave, types, check-logic) in the
 same commit, and updates the quick-check steps, self-test checks and debug-menu buttons that read them.
 1. Encounters: per-map stock from the map's location pool (pools.json; tall grass tiles 't'), stored per map in the
@@ -235,7 +244,18 @@ same commit, and updates the quick-check steps, self-test checks and debug-menu 
 11. SAVE_VERSION 3, once, after the save changes: your phone and cloud saves are set aside once and a new game
     starts.
 
-### 08a-3: UI, text, Studio, run
+### 08a-3: UI, text, Studio, run (DONE 2026-10-19, see HANDOFF "Phase 08a-3")
+Corrections found while doing it: 08a-2 sat on its own branch, not on main (merged in first); 08a-2 had already done
+most of step 1 (step chips, brackets, trainer card, restore and merge dialogs) and 08a-1 had dropped `tripProgress`;
+the Studio's Jobs section crashed since 08a-2 (it read `rules.jobs`); the debug log does list the places opened, so
+its header says "no positions" rather than "no movement history"; the full quick check and the new picture baseline
+were skipped at the owner's request (smoke only).
+Note (2026-10-18): the UI phase (06) is being built at the same time on its own branch and reworks these screens.
+Before starting, see whether 06 has merged; build 08a-3 on top of it, or ask the owner which goes first.
+Already done in 08a-2: the .wh-steps chips, the Today card's steps and brackets (the card shows only the money), the
+trainer card's "Steps today" and "Total steps" tiles, the restore / account-merge / Settings profile lines (they say
+km walked), egg labels, the Studio's step fields. Left: the CSS, the text below, and the Studio's "Rest stop price"
+field (it sits in the Encounters card, edits rules.battle.restCost).
 1. Step widgets: the Today card and brackets, the .wh-steps chips (ui.js:923, 958), the trainer card and Settings
    tiles (distance in real km, play time, battles won, places visited), the restore and account-merge dialogs;
    their CSS (only the `.today`-scoped rules: `.mid` and `.se` are shared with battle HP bars and pops) and i18n

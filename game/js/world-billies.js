@@ -13,7 +13,7 @@ import { expose } from './test-globals.js';
 import { provide, soundEffect } from './hooks.js';
 import { clamp } from './util.js';
 import { SPECIES, STATUS_NAMES, TRAINERS, rivalSpecies, trainersAt } from './game-data.js';
-import { billyName, findBilly, maxHp } from './logic/rules.js';
+import { billyName, encountersHere, findBilly, maxHp } from './logic/rules.js';
 import { battleStageKey } from './logic/battle-engine.js';
 import { save, saveData, uiState } from './game-state.js';
 import { makeCanvas } from './art.js';
@@ -168,7 +168,7 @@ export function buddyBilly() {
   if ((saveData.preferences || {}).buddyWalk === 'off' || !saveData.team) return null;
   let m = saveData.buddy && typeof findBilly === 'function' ? findBilly(saveData.buddy) : null;
   if (!m) m = saveData.team[0] || null;
-  return m && m.job == null ? m : null;
+  return m || null;
 }
 export function shiftWorldBillies(dx, dz) {
   const b = worldBillies.bud;
@@ -313,7 +313,7 @@ export function buddyTap() {
     t = walkView.t,
     bond = (m.bond = (m.bond || 0) + 1),
     n = billyName(m),
-    q = (saveData.queue || []).length;
+    q = encountersHere().length;
   const lines =
     hp <= 0
       ? [`${n} has fainted. It needs a rest at a clinic.`]
@@ -491,7 +491,7 @@ function worldBillyLabels(C, labels) {
 function warmWorldBillies() {
   try {
     const L = [];
-    for (const q of saveData.queue || []) L.push([q.sp, q.gold, 1]);
+    for (const q of encountersHere()) L.push([q.sp, q.gold, 1]);
     const m = buddyBilly();
     if (m) {
       L.push([m.sp, m.gold, 1]);

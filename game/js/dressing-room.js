@@ -763,7 +763,7 @@ function buyDressingItems() {
     cost = mine.reduce((a, id) => a + (W[id].price || 0), 0);
   if (un.length > mine.length) return;
   if (saveData.se < cost) {
-    toast('Not enough money. Walk a little first.');
+    toast('Not enough money. Win a few battles first.');
     return;
   }
   saveData.se -= cost;

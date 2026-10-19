@@ -2,13 +2,13 @@
 'use strict';
 /* ================= RULES =================
    Phase 04e: the game's rules outside battle, moved here from game-state.js: a Billie's stats, levels, moves and
-   evolution, the team and storage, steps and their money, the trip along the roads and its gates, encounters from the
-   pool where you are, eggs and day jobs, and the small helpers they share.
+   evolution, the team and storage, the trip along the roads (in metres) and its gates, the wild Billies on each
+   place's map, walking and eggs, and the small helpers they share.
    Logic only (game/js/logic/): no DOM, WebGL or window, so it runs in plain Node (tools/test/logic.test.mjs). The data
    tables come from game-data.js; the save, the battle and the interface state (saveData, activeBattle, uiState), and
    what the rules tell the interface (save, toast, render), come through hooks.js, filled by game-state.js and ui.js on
    the page or by a test in Node. */
-/** @import { Billy, JobSlot, PartInstance, RobotFit } from '../../types/save-data' */
+/** @import { Billy, PartInstance, RobotFit } from '../../types/save-data' */
 /** @import { RobotSlot } from '../../types/game-data' */
 /** @import { Trainer } from '../../types/game-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
@@ -29,22 +29,21 @@ import {
 } from '../hooks.js';
 import { random } from '../util.js';
 import {
-  COINS,
   EGGS,
   EGG_TIERS,
   ITEMS,
-  JOBS,
-  JOB_STEPS,
   LINE_BY_ID,
   LOCATIONS,
+  LOCATION_BY_ID,
   MOVES,
   POOLS,
   ROADS_BY_NODE,
   RULES,
   SPECIES,
   STAT_IDS,
-  STEPS_PER_KM,
   TRAINERS,
+  gameData,
+  isTown,
   trainersAt,
   typeEffectiveness,
 } from '../game-data.js';
@@ -66,7 +65,6 @@ import {
 } from './fighters.js';
 /* eslint-disable no-func-assign */
 expose({
-  STEP_BRACKETS: [() => STEP_BRACKETS],
   // @ts-expect-error -- replaced on purpose
   addBilly: [() => addBilly, v => (addBilly = v)],
   // @ts-expect-error -- replaced on purpose
@@ -74,10 +72,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   addPart: [() => addPart, v => (addPart = v)],
   // @ts-expect-error -- replaced on purpose
-  addSteps: [() => addSteps, v => ((addSteps = v), provide({ addSteps }))],
+  addWalked: [() => addWalked, v => ((addWalked = v), provide({ addWalked }))],
   allBillies: [() => allBillies],
-  // @ts-expect-error -- replaced on purpose
-  assignJob: [() => assignJob, v => (assignJob = v)],
   // @ts-expect-error -- replaced on purpose
   autoSlot: [() => autoSlot, v => (autoSlot = v)],
   billyBuild: [() => billyBuild],
@@ -98,18 +94,19 @@ expose({
   // @ts-expect-error -- replaced on purpose
   cleanBuild: [() => cleanBuild, v => (cleanBuild = v)],
   cleanName: [() => cleanName],
+  distanceText: [() => distanceText],
   // @ts-expect-error -- replaced on purpose
-  collectJob: [() => collectJob, v => (collectJob = v)],
-  // @ts-expect-error -- replaced on purpose
-  earningsBetween: [() => earningsBetween, v => (earningsBetween = v)],
+  dropEncounter: [() => dropEncounter, v => (dropEncounter = v)],
+  eggKm: [() => eggKm],
   eggSlotCount: [() => eggSlotCount],
-  emptyJob: [() => emptyJob],
   // @ts-expect-error -- replaced on purpose
   encounterBuild: [() => encounterBuild, v => (encounterBuild = v)],
   // @ts-expect-error -- replaced on purpose
   encounterPoolHere: [() => encounterPoolHere, v => (encounterPoolHere = v)],
   // @ts-expect-error -- replaced on purpose
-  endShift: [() => endShift, v => (endShift = v)],
+  encounterStock: [() => encounterStock, v => (encounterStock = v)],
+  // @ts-expect-error -- replaced on purpose
+  encountersHere: [() => encountersHere, v => (encountersHere = v)],
   // @ts-expect-error -- replaced on purpose
   evolutionHint: [() => evolutionHint, v => (evolutionHint = v)],
   evolutionItemName: [() => evolutionItemName],
@@ -132,20 +129,19 @@ expose({
   healAll: [() => healAll, v => (healAll = v)],
   hereLocation: [() => hereLocation],
   isPrime: [() => isPrime],
-  jobSlotCount: [() => jobSlotCount],
   // @ts-expect-error -- replaced on purpose
   makeBilly: [() => makeBilly, v => ((makeBilly = v), provide({ makeBilly }))],
   // @ts-expect-error -- replaced on purpose
   makeRobot: [() => makeRobot, v => ((makeRobot = v), provide({ makeRobot }))],
   maxHp: [() => maxHp],
   maxLevel: [() => maxLevel],
+  metresToKm: [() => metresToKm],
   moveSlotCount: [() => moveSlotCount],
   // @ts-expect-error -- replaced on purpose
   moveUsable: [() => moveUsable, v => (moveUsable = v)],
   // @ts-expect-error -- replaced on purpose
   movesAt: [() => movesAt, v => (movesAt = v)],
   newUid: [() => newUid],
-  nextBracket: [() => nextBracket],
   nextTripNode: [() => nextTripNode],
   partBroken: [() => partBroken],
   partHpLeft: [() => partHpLeft],
@@ -171,18 +167,12 @@ expose({
   // @ts-expect-error -- replaced on purpose
   rollBuild: [() => rollBuild, v => (rollBuild = v)],
   // @ts-expect-error -- replaced on purpose
-  rollDay: [() => rollDay, v => (rollDay = v)],
-  // @ts-expect-error -- replaced on purpose
   rollPartSize: [() => rollPartSize, v => (rollPartSize = v)],
   setTrip: [() => setTrip, v => setSetTrip(v)],
   // @ts-expect-error -- replaced on purpose
   spawn: [() => spawn, v => (spawn = v)],
   // @ts-expect-error -- replaced on purpose
-  splitPath: [() => splitPath, v => (splitPath = v)],
-  // @ts-expect-error -- replaced on purpose
   stat: [() => stat, v => (stat = v)],
-  stepRate: [() => stepRate],
-  stepsToKm: [() => stepsToKm],
   // @ts-expect-error -- replaced on purpose
   stopTrip: [() => stopTrip, v => (stopTrip = v)],
   teamSize: [() => teamSize],
@@ -197,10 +187,14 @@ expose({
   upgradePart: [() => upgradePart, v => (upgradePart = v)],
   // @ts-expect-error -- replaced on purpose
   walkDistances: [() => walkDistances, v => (walkDistances = v)],
+  walkedUnsaved: [() => walkedUnsaved, v => (walkedUnsaved = v)],
+  // @ts-expect-error -- replaced on purpose
+  wildList: [() => wildList, v => (wildList = v)],
+  wildPrize: [() => wildPrize],
   xpFor: [() => xpFor],
 });
 /* eslint-enable no-func-assign */
-provide({ addSteps, makeBilly, makeRobot, riderOf });
+provide({ addWalked, makeBilly, makeRobot, riderOf });
 export function setSetTrip(v) {
   // @ts-expect-error -- replaced on purpose
   setTrip = v; // eslint-disable-line no-func-assign
@@ -217,7 +211,6 @@ export const cleanName = (s, max) =>
     .slice(0, max);
 provide({ cleanName }); /* to-module */
 export const formatNumber = n => Math.floor(n).toLocaleString('en-US');
-export const stepsToKm = st => (st / STEPS_PER_KM).toFixed(1);
 export const newUid = () => 'm' + Date.now().toString(36) + Math.floor(random() * 1e8).toString(36);
 export const today = () => {
   const d = new Date();
@@ -239,9 +232,6 @@ export const xpFor = L => Math.floor(RULES.progression.xpFactor * L * L * L);
 export const maxLevel = () => RULES.progression.maxLevel,
   moveSlotCount = () => RULES.progression.moveSlots,
   teamSize = () => RULES.progression.teamSize;
-export const jobSlotCount = () => Math.max(1, RULES.jobs.positions || 3);
-/** @returns {JobSlot} */
-export const emptyJob = () => ({ uid: null, job: null, acc: 0, pend: 0 });
 
 /* ---------- parts (phase 16, docs/phases/16) ----------
    Every Billie has a size (S, M or L) for each part slot: head, body, front, back and sig (its signature part). Wild
@@ -495,10 +485,8 @@ export function canEvolve(m) {
     case 'lvl':
     case 'split':
       return m.lvl >= e.at;
-    case 'buddy':
-      return (m.bsteps || 0) >= e.steps;
     case 'idle':
-      return !!m.boxedAt && !m.job && saveData.box.includes(m) && Date.now() - m.boxedAt >= e.ms && m.lvl >= e.min;
+      return !!m.boxedAt && saveData.box.includes(m) && Date.now() - m.boxedAt >= e.ms && m.lvl >= e.min;
     case 'streak':
       return (m.streak || 0) >= e.n && m.lvl >= e.min;
     default:
@@ -521,10 +509,8 @@ export function evolutionHint(m) {
       /* SPECIES[null] is undefined, which alt && handles */
       const alt = SPECIES[/** @type {string} */ (s.alt)],
         an = alt && saveData.seen[alt.id] ? alt.name : 'something else';
-      return `Evolves at level ${e.at} into ${nm} or ${an}: ${splitPath(m) === 'A' ? 'the Build path is ahead' : 'the Hype path is ahead'} (${m.wins || 0} battles won, ${stepsToKm(m.bsteps || 0)} km walked as buddy${m.psteps ? ` + ${stepsToKm((m.psteps || 0) / 2)} km in the party at half weight` : ''}).`;
+      return `Evolves at level ${e.at} into ${nm} (the Build path) or ${an} (the Hype path): you choose.`;
     }
-    case 'buddy':
-      return `Evolves after you walk ${stepsToKm(e.steps)} km with it as your buddy. ${stepsToKm(m.bsteps || 0)} of ${stepsToKm(e.steps)} km so far.`;
     case 'item':
       return `Evolves when you use ${/^[AEIOU]/.test(evolutionItemName(e)) ? 'an' : 'a'} ${evolutionItemName(e)}, once it reaches level ${e.min}.`;
     case 'donate':
@@ -540,19 +526,14 @@ export function evolutionHint(m) {
   }
   return '';
 }
-/* v36: which final a split line takes: Build (A) when the kilometres it walked as your buddy outweigh the battles it won
-   (1 km counts as one win), Hype (B) otherwise. A tie goes to Build. */
-export function splitPath(m) {
-  const wins = m.wins || 0,
-    kmW = ((m.bsteps || 0) + (m.psteps || 0) / 2) / STEPS_PER_KM;
-  return wins > kmW ? 'B' : 'A';
-}
-export function evolve(m) {
+/* phase 08: a split line's middle stage takes the path you pick when it evolves: Build (A, its next stage) or Hype
+   (B, the other final) */
+export function evolve(m, path = 'A') {
   if (typeof jingle === 'function') jingle(JINGLES.evolve, 140);
   const old = maxHp(m),
     from = billyName(m),
     s0 = speciesOf(m);
-  m.sp = s0.evo && s0.evo.k === 'split' && s0.alt && splitPath(m) === 'B' ? s0.alt : s0.next;
+  m.sp = s0.evo && s0.evo.k === 'split' && s0.alt && path === 'B' ? s0.alt : s0.next;
   if (m.hp > 0) m.hp = Math.max(1, Math.min(maxHp(m), m.hp + maxHp(m) - old));
   saveData.caught[m.sp] = 1;
   saveData.seen[m.sp] = 1;
@@ -598,31 +579,7 @@ export function addBilly(m) {
   return 'box';
 }
 
-/* ---------- steps ---------- */
-export const STEP_BRACKETS = RULES.steps.brackets
-  .map(b => [b.upTo > 0 ? b.upTo : Infinity, b.rate])
-  .sort((a, b) => a[0] - b[0]);
-if (!STEP_BRACKETS.length || STEP_BRACKETS[STEP_BRACKETS.length - 1][0] !== Infinity)
-  STEP_BRACKETS.push([Infinity, STEP_BRACKETS.length ? STEP_BRACKETS[STEP_BRACKETS.length - 1][1] : 1]);
-export function earningsBetween(a, b) {
-  let se = 0,
-    lo = 0;
-  for (const [hi, r] of STEP_BRACKETS) {
-    const s = Math.max(a, lo),
-      e = Math.min(b, hi);
-    if (e > s) se += (e - s) * r;
-    lo = hi;
-  }
-  return se;
-}
-export const stepRate = st => {
-  for (const [hi, r] of STEP_BRACKETS) if (st < hi) return r;
-  return STEP_BRACKETS[STEP_BRACKETS.length - 1][1];
-};
-export const nextBracket = st => STEP_BRACKETS.find(([hi]) => st < hi);
-export function rollDay() {
-  if (saveData.day.date !== today()) saveData.day = { date: today(), steps: 0 };
-}
+/* ---------- gates ---------- */
 export function gateOwner(seat) {
   return Object.values(TRAINERS).find(T => T.seat && T.seat.id === seat);
 }
@@ -660,7 +617,7 @@ export const riderName = () => {
 export const canEnter = n =>
   (!LOCATIONS[n].gate || saveData.seats.includes(LOCATIONS[n].gate)) && (!LOCATIONS[n].ride || canRide());
 export const nextTripNode = () => (saveData.trip.plan.length ? saveData.trip.plan[0] : null);
-/* shortest walk (in steps) between stops, entering only stops you may enter; returns {d,prev} */
+/* shortest walk (in metres) between stops, entering only stops you may enter; returns {d,prev} */
 export function walkDistances(from) {
   const N = LOCATIONS.length,
     d = Array(N).fill(Infinity),
@@ -689,13 +646,13 @@ export const pathFrom = (prev, to) => {
   for (let x = to; x >= 0 && prev[x] >= 0; x = prev[x]) out.unshift(x);
   return out;
 };
-/* steps from where you stand to stop j, and the plan that gets there */
+/* metres from where you stand to stop j, and the plan that gets there */
 export function tripTo(j) {
   const node = saveData.trip.node;
-  if (j === node) return { steps: 0, plan: [] };
+  if (j === node) return { metres: 0, plan: [] };
   const D = walkDistances(node);
   if (D.d[j] === Infinity) return null;
-  return { steps: D.d[j], plan: pathFrom(D.prev, j) };
+  return { metres: D.d[j], plan: pathFrom(D.prev, j) };
 }
 export function setTrip(j) {
   const t = tripTo(j);
@@ -710,11 +667,61 @@ export function stopTrip() {
 }
 /* encounters come from where you are */
 export const hereLocation = () => LOCATIONS[saveData.trip.node];
-export function encounterPoolHere() {
-  return POOLS[hereLocation().pool] || POOLS[Object.keys(POOLS)[0]];
+export function encounterPoolHere(node = saveData.trip.node) {
+  return POOLS[LOCATIONS[node].pool] || POOLS[Object.keys(POOLS)[0]];
 }
-export function spawn(gentle, force) {
-  const P = encounterPoolHere();
+/* phase 08: wild Billies live on each place's map (saveData.wild, by location id): a route keeps a few, a town with
+   tall grass fewer, other towns none (rooms are not places). A map is full the first time you come; after that one
+   more wanders over every minute of play, up to its stock */
+export function encounterStock(node) {
+  const L = LOCATIONS[node],
+    R = RULES.encounters;
+  if (!L) return 0;
+  if (!isTown(node)) return R.route;
+  const sc = L.mapId && gameData.maps ? gameData.maps[L.mapId] : null,
+    tiles = sc ? (sc._lite ? sc._lite.tiles : (sc.tiles || []).join('')) : '';
+  return tiles.includes('t') ? R.townGrass : 0;
+}
+/* the list a place's encounters are kept in (made empty if it has none yet) */
+export function wildList(node) {
+  const W = saveData.wild || (saveData.wild = {}),
+    id = LOCATIONS[node].id;
+  return (W[id] || (W[id] = { at: saveData.playMs || 0, list: [] })).list;
+}
+export function encountersHere(node = saveData.trip.node) {
+  const L = LOCATIONS[node];
+  if (!L) return [];
+  const W = saveData.wild || (saveData.wild = {}),
+    now = saveData.playMs || 0,
+    cap = encounterStock(node),
+    w = W[L.id];
+  if (!w) {
+    const list = wildList(node);
+    while (list.length < cap) spawn(false, null, node);
+    return list;
+  }
+  if (w.list.length >= cap) w.at = now;
+  else {
+    const every = Math.max(1000, RULES.encounters.refillMs),
+      n = Math.floor((now - w.at) / every);
+    for (let i = 0; i < n && w.list.length < cap; i++) spawn(false, null, node);
+    w.at = w.list.length >= cap ? now : w.at + Math.max(0, n) * every;
+  }
+  return w.list;
+}
+/* phase 08: the prize money for beating a wild Billie */
+export const wildPrize = lvl => Math.max(0, Math.round(lvl * (RULES.encounters.prizePerLevel || 0)));
+/* a battled (or fled-from) encounter leaves the map it was on; a map that was full starts its minute from now */
+export function dropEncounter(id) {
+  for (const [k, w] of Object.entries(saveData.wild || {})) {
+    const L = LOCATION_BY_ID[k],
+      full = !!L && w.list.length >= encounterStock(L.node);
+    w.list = w.list.filter(q => q.id !== id);
+    if (full) w.at = saveData.playMs || 0;
+  }
+}
+export function spawn(gentle, force, node = saveData.trip.node) {
+  const P = encounterPoolHere(node);
   let list = typeof environmentOdds === 'function' ? environmentOdds(P.list) : P.list;
   if (gentle) {
     const my = SPECIES[saveData.starter + '0'].types,
@@ -727,74 +734,47 @@ export function spawn(gentle, force) {
     id: newUid(),
     sp,
     lvl,
-    gold: random() < 1 / RULES.steps.goldOdds,
+    gold: random() < 1 / RULES.encounters.goldOdds,
     no: ++saveData.serial,
     build: rollBuild(),
   };
   /* v33: now and then an Alpha (once you have two billionaires to stand with your lead) */
-  if (
-    !gentle &&
-    !force &&
-    saveData.team.filter(m => m.job == null).length >= 2 &&
-    random() < 1 / ((RULES.steps && RULES.steps.alphaOdds) || 45)
-  )
+  if (!gentle && !force && saveData.team.length >= 2 && random() < 1 / (RULES.encounters.alphaOdds || 45))
     q.alpha = true;
-  saveData.queue.push(q);
+  wildList(node).push(q);
   return q;
 }
-export function addSteps(n, quiet) {
-  n = Math.floor(Number(n));
-  if (!saveData.started || !Number.isFinite(n) || n <= 0 || n > 100000) return;
-  rollDay();
-  const a = saveData.day.steps,
-    b = a + n,
-    g = earningsBetween(a, b) + saveData.seFrac,
-    gi = Math.floor(g);
-  saveData.seFrac = g - gi;
-  saveData.se += gi;
-  saveData.day.steps = b;
-  saveData.totalSteps += n;
-  const every = Math.max(1, RULES.steps.encounterEverySE);
-  saveData.meter += gi;
-  let sp = 0;
-  while (saveData.meter >= every) {
-    saveData.meter -= every;
-    if (saveData.queue.length < RULES.steps.maxEncounters) {
-      spawn();
-      sp++;
-    }
+
+/* ---------- walking and eggs ---------- */
+/* phase 08: the metres you walk outdoors (walk-view.js movePlayer; not in rooms, on ladders or test benches, and not a
+   jump to a new view): the distance on your trainer card, and what hatches the eggs in your incubators (eggs.json need,
+   in metres). Saved every 20 m, and at once when an egg is ready */
+export let walkedUnsaved = 0;
+export function addWalked(m) {
+  if (!saveData.started || !Number.isFinite(m) || m <= 0 || m > 1000) return;
+  const S = saveData.stats || (saveData.stats = {});
+  S.walked = (S.walked || 0) + m;
+  let ready = false;
+  for (const e of saveData.eggs) {
+    const need = EGGS[e.tier].need;
+    if (e.slot == null || e.prog >= need) continue;
+    e.prog = Math.min(need, e.prog + m);
+    if (e.prog >= need) ready = true;
   }
-  const bud = findBilly(saveData.buddy),
-    per = Math.max(1, RULES.progression.buddyStepsPerXp);
-  if (bud) bud.bsteps = (bud.bsteps || 0) + n;
-  /* v37: the rest of the party walks too, at half weight (for the Build path of a split evolution) */ for (const m of saveData.team)
-    if (m !== bud) m.psteps = (m.psteps || 0) + n;
-  saveData.buddyRem += n;
-  const xp = Math.floor(saveData.buddyRem / per);
-  saveData.buddyRem -= xp * per;
-  const notes = [];
-  if (bud && xp > 0) gainXp(bud, xp, t => notes.push(t));
-  saveData.eggs.forEach(e => {
-    if (e.slot != null) e.prog = Math.min(EGGS[e.tier].need, e.prog + n);
-  });
-  saveData.jobs.forEach(j => {
-    if (!j.uid) return;
-    j.acc += n;
-    while (j.acc >= JOB_STEPS) {
-      j.acc -= JOB_STEPS;
-      if (j.pend < RULES.jobs.maxPending) j.pend++;
-    }
-  });
-  /* phase 06-2: the money earned rises from the money chip (ui.js pbFloat), so the toast leaves it out */
-  if (!quiet || sp) toast(`+${formatNumber(n)} steps${sp ? `, ${plural(sp, 'new encounter')}` : ''}`);
-  notes.forEach(t => toast(t));
+  walkedUnsaved += m;
+  if (!ready && walkedUnsaved < 20) return;
+  walkedUnsaved = 0;
   save();
-  if (!activeBattle) {
+  if (ready && !activeBattle) {
     render();
     showPendingWindows();
   }
 }
-
+export const metresToKm = m => (m / 1000).toFixed(1);
+/* a walking distance for people: "80 m", "850 m", "1.2 km" */
+export const distanceText = m => (m < 1000 ? `${Math.max(10, Math.round(m / 10) * 10)} m` : `${metresToKm(m)} km`);
+/* an egg's name comes from the distance it needs ("2 km egg"); its tier id is only a key */
+export const eggKm = tier => Math.round((EGGS[tier] ? EGGS[tier].need : 0) / 100) / 10;
 /* ---------- Seed Rounds ---------- */
 export const eggSlotCount = () => Math.max(1, RULES.eggs.slots);
 export function autoSlot() {
@@ -833,44 +813,4 @@ export function hatchEgg(e) {
   const where = addBilly(m);
   save();
   return { m, where };
-}
-
-/* ---------- Day Jobs ---------- */
-export function assignJob(slot, job, id) {
-  const m = findBilly(id);
-  if (!m || m.job != null) return false;
-  if (saveData.team.includes(m) && saveData.team.filter(x => x.job == null).length <= 1) return false;
-  toBox(m);
-  m.boxedAt = null;
-  m.job = slot;
-  saveData.jobs[slot] = { uid: id, job, acc: 0, pend: 0 };
-  save();
-  return true;
-}
-export function collectJob(slot) {
-  const j = saveData.jobs[slot];
-  if (!j.uid || !j.pend) return null;
-  /* a slot with a Billie has a job (assignJob sets both) */
-  const J = JOBS[/** @type {string} */ (j.job)],
-    [kind, key, amt] = J.out,
-    n = j.pend;
-  j.pend = 0;
-  if (kind === 'item') saveData.items[key] += amt * n;
-  else if (kind === 'coin') saveData.coins[key] += amt * n;
-  else saveData.se += amt * n;
-  save();
-  const m = findBilly(j.uid);
-  return `${m ? billyName(m) : 'Your Billie'} ${J.quip} You collected ${kind === 'se' ? '$' + formatNumber(amt * n) : `${amt * n} × ${kind === 'item' ? ITEMS[key].n : COINS[key].n}`}.`;
-}
-export function endShift(slot) {
-  const j = saveData.jobs[slot];
-  const msg = collectJob(slot);
-  const m = findBilly(j.uid);
-  if (m) {
-    m.job = null;
-    m.boxedAt = Date.now();
-  }
-  saveData.jobs[slot] = { uid: null, job: null, acc: 0, pend: 0 };
-  save();
-  return msg;
 }

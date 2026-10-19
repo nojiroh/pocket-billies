@@ -24,8 +24,6 @@ expose({
   EGG_TIERS: [() => EGG_TIERS],
   HIT_EFFECTS_BY_TYPE: [() => HIT_EFFECTS_BY_TYPE],
   ITEMS: [() => ITEMS],
-  JOBS: [() => JOBS],
-  JOB_STEPS: [() => JOB_STEPS],
   LINES: [() => LINES],
   LINE_BY_ID: [() => LINE_BY_ID],
   LOCATIONS: [() => LOCATIONS],
@@ -48,13 +46,14 @@ expose({
   STATUS_NAMES: [() => STATUS_NAMES],
   STAT_IDS: [() => STAT_IDS],
   STAT_NAMES: [() => STAT_NAMES],
-  STEPS_PER_KM: [() => STEPS_PER_KM],
   TRAINERS: [() => TRAINERS],
   TYPES: [() => TYPES],
   TYPE_COLORS: [() => TYPE_COLORS],
   TYPE_RESISTED_BY: [() => TYPE_RESISTED_BY],
   TYPE_STRONG_AGAINST: [() => TYPE_STRONG_AGAINST],
   atOrLast: [() => atOrLast],
+  // @ts-expect-error -- replaced on purpose
+  exitLength: [() => exitLength, v => (exitLength = v)],
   gameData: [() => gameData],
   hasPassive: [() => hasPassive],
   // @ts-expect-error -- replaced on purpose
@@ -68,6 +67,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   rivalSpecies: [() => rivalSpecies, v => (rivalSpecies = v)],
   roadCost: [() => roadCost],
+  // @ts-expect-error -- replaced on purpose
+  roadMetres: [() => roadMetres, v => (roadMetres = v)],
   standInList: [() => standInList],
   // @ts-expect-error -- replaced on purpose
   standInSpecies: [() => standInSpecies, v => (standInSpecies = v)],
@@ -262,20 +263,31 @@ LOCATIONS.forEach((r, i) => {
   if (!BATTLE_STAGES[r.battleStage]) r.battleStage = BATTLE_STAGES[r.pool] ? r.pool : 'grass';
   r.trainers = [];
 });
-/* the walking network: links between stops (both directions); older data is a single chain */
+/* phase 08: a road is as long as the walk from one place's middle out to its edge plus the other's from its edge in:
+   the two exits' len (a map's edgeExits, in the boot bundle). A road without named exits counts 100 m */
+export function exitLength(node, id) {
+  const sc = id && gameData.maps ? gameData.maps[LOCATIONS[node].mapId] : null,
+    e = sc ? (sc.edgeExits || []).find(x => x.id === id) : null;
+  return e && Number.isFinite(e.len) ? e.len : null;
+}
+export function roadMetres(a, b, j) {
+  const la = j ? exitLength(a, j.a) : null,
+    lb = j ? exitLength(b, j.b) : null;
+  return la != null && lb != null ? Math.max(1, Math.round(la + lb)) : 100;
+}
+/* the walking network: links between stops (both directions), with their length in metres; older data is a single
+   chain */
 /** @type {Road[]} */
 export const ROADS = (
   gameData.roads && gameData.roads.length
     ? gameData.roads
-    : LOCATIONS.slice(1).map((r, i) => /** @type {Road} */ ([i, i + 1, r.cost || 500]))
+    : LOCATIONS.slice(1).map((r, i) => /** @type {Road} */ ([i, i + 1, 0]))
 )
   .filter(l => LOCATIONS[l[0]] && LOCATIONS[l[1]] && l[0] !== l[1])
   .map(
-    /** @returns {Road} */ ([a, b, c, j]) =>
-      j && typeof j === 'object'
-        ? [a, b, Math.max(1, Math.round(+c || 500)), j]
-        : [a, b, Math.max(1, Math.round(+c || 500))]
-  ); /* v42: a fourth entry {a,b} names the exit at each end (the join table) */
+    /** @returns {Road} */ ([a, b, , j]) =>
+      j && typeof j === 'object' ? [a, b, roadMetres(a, b, j), j] : [a, b, roadMetres(a, b, null)]
+  ); /* v42: a fourth entry {a,b} names the exit at each end (the join table); the third, the old step count, is not read */
 /* v46: what each place, scene and road is (tools/migrate-places.py fills these): use these instead of id prefixes */
 /* copies made before board is filled in (below), so they have none: read LOCATIONS[node].board */
 /** @type {Record<string, LocationData & { node: number, trainers: string[] }>} */
@@ -323,7 +335,6 @@ export const roadCost = (a, b) => {
   const e = (ROADS_BY_NODE[a] || []).find(e => e.to === b);
   return e ? e.cost : null;
 };
-export const STEPS_PER_KM = RULES.steps.stepsPerKm;
 export const EGGS = /** @type {Record<string, EggTier>} */ ({});
 for (const k in gameData.eggs) {
   const E = gameData.eggs[k];
@@ -340,8 +351,6 @@ export const EGG_TIERS = Object.keys(EGGS)
 export const COINS = gameData.coins;
 provide({ COINS }); /* to-module */
 export const ITEMS = gameData.items;
-export const JOBS = gameData.jobs;
-export const JOB_STEPS = RULES.jobs.stepsPerPay;
 export const PEOPLE = gameData.people;
 provide({ PEOPLE }); /* to-module */
 export const SHOPS = gameData.shops || {};

@@ -11,9 +11,8 @@
    of the two boxes' origins (shiftWalkView), the ground of the next box is painted in the background before it is needed,
    and nothing fades or cuts.
 
-   A road's length is 40 m per 500 steps of its cost; where you stand on it is your progress along the link, so steps
-   stay the currency: the road is the walk you were already doing, now with ground under it. The road's ground, verges,
-   trees and flowers come from a seed (the link's index), never stored. */
+   (The road frame, seamlessRoad, is unused: every road is a join. Its ground, verges, trees and flowers come from a
+   seed, the link's index, never stored. Phase 08b removes it.) */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { mapExits, mapIdAt, provide } from './hooks.js';

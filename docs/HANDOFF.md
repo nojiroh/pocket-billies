@@ -11,6 +11,58 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 - Questions waiting for the owner: 
 - Next session starts with: 
 
+### Phase 08a-3 - UI, text, Studio, running - 2026-10-19
+Plan approved at the start (docs/phases/08a-plan.md, section 08a-3, now marked done with the corrections found).
+Branch `ccr-72e8ad56-lpn1x3`, from main.
+- Changed (24 commits after the merge, this one included; one cause each, renames apart):
+  - Base: 08a-2 (`ccr-24f4b29c-s6oe4h`) was never merged to main. Merged into this branch; conflicts in HANDOFF (both
+    sides kept) and settings-screen.js (main's gameData import, 08a-2's metresToKm).
+  - Dead CSS deleted (.brackets, .brk-l, .wh-steps, .jobs/.job/.jt, .tm-jobs, .job-spr, .job-ic; .today/.mid/.se kept),
+    `uiState.disp.steps`, three i18n rows.
+  - Text without steps, one commit per group: the tagline ("A classic RPG", page, manifest, title), load tips, four
+    folk lines, the not-enough-money toasts ("Win a few battles first"), the place card, walk note, starter egg
+    ("hatches after 2 km of walking outdoors"), How to play, the airship sheet, Hazel's parting line (same in both
+    openings), room and town chat (and the generators' copies), lore as coins (world entry "Money down here", Route 1,
+    Verdigris, Mirrormere, airships, "The Coin Standard", loading lines, a chat line). Renames: lore world id
+    steps -> money, book steps -> coin_standard (and the library shelf). Physical steps (stairs, canyon) stay.
+  - Studio: **fix**, the Jobs section threw on opening (`rules.jobs.stepsPerPay`, gone since 08a-2; confirmed by
+    putting the old line back); Rest stop price moved to the Battle card; "Step sway" -> "Walk bob" (key `sway`
+    stays); the "road has no step count" warning removed; Find's example; STUDIO.md.
+  - Debug log header, README and the graphics test's note: the log holds no save data, names or positions, only which
+    places opened and when (it does log scene mounts and guide trips, so "no movement history" would be wrong).
+  - Run: past the joystick's rim (56 px) into an outer ring (84 px, gold while running), the D-pad's centre held by a
+    second finger, or Shift. Settings > Moving about > "Always run" (off by default; a full push, the keys and
+    tap-to-walk run). Speeds: light push x0.6, full push 3.4 m/s, run x1.7 (`RUN_FACTOR`); keys and D-pad x1 (were
+    x1.3). A load tip and the help say how.
+  - The walk cycle, footsteps and camera bob follow the metres walked (`walkView.pl.gait`; ladders included, view
+    jumps not): same timings as before at walking speed. Townsfolk keep their clock.
+  - Tests: a quick-check step "phase 08: running" (each speed, gait against distance, the ring and the D-pad centre
+    from pointer events); the phone step keeps its exported log as validation/quick/phone-debug-log.json.
+- Risky or unfinished:
+  - The full quick check and the first picture baseline were NOT run (owner's call). The known red full-check steps
+    from phase 16 (v35, v38, v39 roster counts) are unchanged, as far as anyone knows.
+  - The in-game full test was not run whole headless (smoke runs one step of it: green).
+  - The Studio's --studio round trip can't run: start-studio.py is not in the repository (STUDIO.md says so).
+    tools/check-studio-github.py (every section, GitHub mode) is the Studio check that works: green.
+  - The D-pad's run needs two fingers (direction + centre). If that's awkward on your phone, "Always run" covers it.
+  - A full push now walks at 3.4 m/s (it gave 4.4 before): moving feels slower until you use the ring.
+  - trainers' blockTitle/blockText kept, shown nowhere (phase 15 decides).
+  - Your phone and cloud saves start over (save format 3, from 08a-2).
+- Verified:
+  - Every commit: lint, typecheck, unit tests (65), check:data, check:modules, format:check.
+  - Smoke after the merge, after the text batch and on the final commit: 15/15 green.
+  - The running step: full push 3.48 m/s; light push 0.59x, ring 1.71x, keys 1.00x, Shift 1.71x, Always run 1.71x;
+    gait grows with distance; the ring and D-pad centre set and clear the run.
+  - check-studio-github.py: 21 sections open with no errors, the proposal goes through.
+  - Debug log, start of session vs final (headless phone flow): same sections, state fields and event kinds, the same
+    104 entries in its error list (all phase 16 "is in legacy; X stands in" warnings).
+- Questions waiting for the owner:
+  - Should 08a-2's branch and this one go to main now (one PR from this branch carries both)?
+  - On your phone: try the run ring and "Always run", and send a debug log.
+  - Tags `phase-04-done` and `phase-05-done` still need pushing from your machine.
+- Next session starts with: "start 08b" (docs/phases/08a-plan.md, Part B), after this branch is merged; the full quick
+  check and a picture baseline first, since none exists yet.
+
 ### Phase 09 batch 1 swapped in - 2026-10-19
 Owner's go-ahead: replace the finished props in the game.
 - Changed: the 24 old props the batch covers now are the new ones, under their own keys (tools/build-props-batch1.py
@@ -149,6 +201,79 @@ Two parts, plans approved by the owner. Part 1 on branch ccr-5f324dee-5mgqdn (me
   about the player than a graphics report needs.
 - Questions waiting for the owner: the first run on a phone, and the report it saves.
 - Next session starts with: the report from that run; then the rest of phase 13 (13b, 13c).
+### Phase 08a-2 - the step mechanics replaced - 2026-10-18
+Plan approved at the start (docs/phases/08a-plan.md, section 08a-2, now marked done with the corrections found).
+- Changed (21 commits on a331fbb, one cause each; renames apart):
+  - Test fix first: merge d991d0b had put `addSteps(2400)` back into check-quick's play() and `prog/hold` into the
+    3D-battle trip literal (HANDOFF 08a-1 said both were gone). Restored.
+  - Encounters live on each place's map (`saveData.wild` by location id; `rules.encounters`): route 4, town with
+    tall grass 2, other towns and rooms 0; full on the first visit, then one more per minute of play time (time a
+    place stands full doesn't count). Starter's 3 gentle ones in the start map; legends join the map they appear on.
+    Walk card: "Encounters here N/stock". Debug: fill / clear here. `queue`, `meter` gone.
+  - Challenges: "Visit 2/3/4 different places today" in the steps challenge's slot (daily picks unchanged). The
+    letter goes to the 1st/2nd/3rd nearest town by roads and back (Pearlantis, no roads, asks something else).
+    Both run on `arrivedAt(node)` (walkCross, airship, glass lift).
+  - Money: a wild win pays level x $20 (`rules.encounters.prizePerLevel`, a toast). Step money, brackets, `day`,
+    `seFrac`, rollDay gone; with them the step chips, the Today card's steps and brackets (it shows the money) and
+    the trainer card's "Steps today" tile. Debug "Start a new day" gone.
+  - Buddy: no walking XP; the buddy gets the full XP of a win even when it sat out (if not fainted).
+  - Split at 32: the evolution window offers "Build: <name>" / "Hype: <name>" / "Not yet"; `evolve(m, path)`;
+    splitPath, bsteps, psteps gone. Buddy-km evolution kind deleted (no species used it).
+  - Jobs removed (Team screen panel, hiring, pay, `saveData.jobs`, `m.job` and every "not at work" check,
+    `rules.jobs`, the debug button, the Studio rules card). jobs.json and the Studio's Jobs editor stay for phase 12.
+  - Eggs hatch by metres walked outdoors (`addWalked`, `saveData.stats.walked`; not rooms, benches or view jumps):
+    2 / 4 / 8 km (eggs.json need in metres); saves every 20 m and opens the hatch window when one is ready. Eggs are
+    named from `need` ("4 km egg", was "5 km"). Play time saves itself every minute. Debug: "Walk 1 km".
+  - addSteps, the step accumulator, totalSteps and the step debug buttons deleted. Restore / account-merge /
+    Settings lines say km walked; the trainer card lost "Total steps" ("Distance walked" is real km now).
+  - Data: goldOdds and alphaOdds moved to `rules.encounters`, restCost to `rules.battle` (rename commits);
+    `rules.steps` deleted; locations' `cost` deleted (and its writer in build-regions-v47.py). Roads are measured
+    at load from the two exits' `len` (game-data.js roadMetres): 56 roads, 82-153 m, 6,560 m in all; roads.json's
+    third value is no longer read. The guide routes by metres; road chips, Places list and card say "90 m"/"1.2 km";
+    the Studio road table shows the measured length (read-only). `tripTo().steps` renamed `metres`.
+  - Save format 3. The migrate lines for step-era fields went with it (a format 2 save is never migrated now).
+- Risky or unfinished:
+  - **The UI phase (06) is being built at the same time, on its own branch.** This session changed screen code it
+    will also touch: ui.js (about 240 lines: walk card and Today card, Encounters section, buddy card, evolution
+    window, team screen without the Day jobs panel, trainer card tiles, map card), things-to-do.js (challenges,
+    letter), battle.js (prize toast, switch list), bag.js (egg rows), settings-screen.js, world-map-gl.js (Places
+    list, road chips), debug-menu.js. Whichever branch merges second must merge, not overwrite: keep 06's structure
+    and carry 08a-2's content into it (no steps, "Encounters here N/stock", the Build/Hype buttons, no jobs, km
+    walked, "N m" road lengths). 08a-3 (step widgets, CSS, text) touches the same screens, so start it on top of
+    06 if 06 lands first, or agree the order with the owner.
+  - Your phone and cloud saves start over. A save is kept aside only if no set-aside copy exists yet: a phone that
+    kept one at the phase 05 bump does not keep this one (old saves don't matter, CLAUDE.md).
+  - The walk card's encounter count updates when the screen redraws; the play-time tick (every 15 s) redraws it
+    when the count here changed. The tufts in the scene update every frame.
+  - The prize is a toast after the battle, not a line in a sheet (a sheet on every wild win felt heavy). Say if you
+    want it in the sheet.
+  - Encounters are refilled when read (lazy): a place you never look at doesn't grow. A town's stock reads the
+    map's tiles (`_lite.tiles` before its file loads).
+  - Left for 08a-3: step text (load tips boot.js:163/169, airship.js:75, NPC lines, "Walk a bit first" toasts,
+    Settings "How to play", the welcome's "every step you walk helps it hatch", lore), dead CSS (.wh-steps,
+    .brackets, .jobs/.job), the Studio's "Rest stop price" field (it sits in the Encounters card).
+  - Known red full-check steps from phase 16 (v35, v38, v39 roster counts; --studio checko0) are unchanged.
+- Verified:
+  - Every commit: lint, typecheck, unit tests (now 38, new: per-map stock and refill, wild prize, buddy XP, split
+    by choice, eggs by metres, every road's length against its exits), check:data, check:modules, format:check.
+  - Smoke after each group (1-4, 5-7, 8, 9-10, 11): no problems. The base smoke run overlapped my first edits, so
+    only its phone step counts (green).
+  - Headless probes: Tallgrass Meadow 4/4, Fizzwell 0 with its note, +1 after a minute of play; a level 12 win pays
+    $240; the visit challenge goes 1/2 -> 2/2 on arriving; a letter Marigold -> Copperleaf turns into a reply on
+    arrival with its toast; walking 4.32 m outdoors adds 4.32 m, 2.83 m inside a house adds 0; at 2 km the hatch
+    window opens ("A 2 km egg is hatching"); the world map says "90 m", Copperleaf -> Marigold "200 m".
+  - Full-check steps v36 and v37 (split window, both paths): ok. The other steps this session touched, run together on the final code (693 s): Walking (218 m over two roads), Things to do ("Visit 3 different places today" among the challenges, a ladder, rain in battle), v33 (4 wild Billies in the grass, double and Alpha battles), v43, the terraces, the joystick and edge crossing, Battles (3D stage, a trainer battle won): all ok. v38 and v39/v40 fail as before (they count the old roster, phase 16).
+- Questions waiting for the owner:
+  - The tags `phase-05-done` and `phase-04-done` still need pushing from your machine (08a-1).
+  - On your phone: a new game (format 3), walk a route (encounters fill, a win pays), the debug "Walk 1 km" twice
+    for the starter egg, and a debug log.
+- Merged in afterwards (owner's request): phase-06-3 (with 06-1, 06-2, 06-2b and phase 17 robots) and
+  docs/phase-06-plan. 21 conflicts in 7 files: 06's structure kept, 08a-2's mechanics carried into it (unit cards
+  without Day jobs, speciesOf in the split evolution, no job checks, check-quick on per-map encounters). Fast checks
+  and smoke green after the merge; headless: walk card "Encounters here 4/4", team screen without Day jobs, the
+  evolution window's Build/Hype buttons. Not merged: graphics-bench and props-batch-1 (separate work, still moving).
+- Next session starts with: "start 08a-3" (docs/phases/08a-plan.md, section 08a-3), on top of this branch, which
+  now holds phase 06 up to 06-3.
 ### Phase 17 - Robots, prototype (in progress, not tagged) - 2026-10-18
 Plan agreed in chat (docs/phases/17-robots.md, rewritten first: robots battle in the same system as Billies, mixed
 teams, body HP + breakable parts, moves from parts, torso + legs types, some moves aim, gem levels + part upgrades,

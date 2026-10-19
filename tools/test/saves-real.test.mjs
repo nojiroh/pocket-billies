@@ -18,7 +18,7 @@ test('a species the game no longer has is dropped from a save with its Guide mar
     box: [],
     seen: { ghost0: 1, swift1: 1 },
     caught: { ghost0: 1 },
-    queue: [{ id: 'q', sp: 'ghost0', lvl: 5 }],
+    wild: { marigold: { at: 0, list: [{ id: 'q', sp: 'ghost0', lvl: 5 }] } },
   });
   assert.deepEqual(
     s.team.map(m => m.sp),
@@ -27,7 +27,7 @@ test('a species the game no longer has is dropped from a save with its Guide mar
   assert.ok(s.team[0].moves.length > 0, 'the Billie that stayed has no moves');
   assert.deepEqual(Object.keys(s.seen), ['swift1']);
   assert.deepEqual(Object.keys(s.caught), []);
-  assert.equal(s.queue.length, 0);
+  assert.equal(s.wild.marigold.list.length, 0);
 });
 
 test('preferences survive loading: 90 frames a second is kept, the picture setting is Sharpest by default', () => {
@@ -36,4 +36,20 @@ test('preferences survive loading: 90 frames a second is kept, the picture setti
   const m = fn('migrate')(JSON.parse(JSON.stringify(s)));
   assert.equal(m.preferences.fps, 90);
   assert.equal(m.preferences.aim, 'sharp');
+});
+
+test('wild Billies by place: a route keeps 4, a town with tall grass 2, a town without none', () => {
+  const s = startedSave(Object.keys(SPECIES).find(k => SPECIES[k].line === RULES.start.starters[0])),
+    node = id => data.LOCATIONS.findIndex(L => L.id === id),
+    stock = fn('encounterStock');
+  s.wild = {};
+  assert.equal(stock(node('tallgrass_meadow')), RULES.encounters.route);
+  assert.equal(stock(node('marigold')), RULES.encounters.townGrass);
+  assert.equal(stock(node('fizzwell')), 0);
+  assert.equal(
+    fn('encountersHere')(node('tallgrass_meadow')).length,
+    RULES.encounters.route,
+    'full on the first visit'
+  );
+  assert.equal(fn('encountersHere')(node('fizzwell')).length, 0);
 });

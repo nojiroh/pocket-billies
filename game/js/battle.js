@@ -39,6 +39,8 @@ import {
   addBilly,
   addEgg,
   billyName,
+  dropEncounter,
+  eggKm,
   findBilly,
   formatNumber,
   healAll,
@@ -49,6 +51,7 @@ import {
   partMaxHp,
   pickWeighted,
   plural,
+  wildPrize,
 } from './logic/rules.js';
 import {
   ACTOR_SIDE,
@@ -599,11 +602,7 @@ function paintParty() {
   if (!activeBattle) return;
   const pip = m => `<i class="pip${m.hp <= 0 ? ' out' : ''}${m.status ? ' st' : ''}"></i>`;
   const a = $('#pips0');
-  if (a)
-    a.innerHTML = saveData.team
-      .filter(m => m.job == null)
-      .map(pip)
-      .join('');
+  if (a) a.innerHTML = saveData.team.map(pip).join('');
   const b = $('#pips1');
   if (b) b.innerHTML = activeBattle.kind === 'trainer' ? activeBattle.sides[1].team.map(pip).join('') : '';
 }
@@ -838,21 +837,13 @@ function teamPick(back) {
   return `<div class="plist">${saveData.team
     .map((m, i) => {
       const act = (on.includes(i) && m.hp > 0) || called.includes(i);
-      const dis = act || m.hp <= 0 || m.job != null;
+      const dis = act || m.hp <= 0;
       return billyPickHTML(
         m,
         act,
         `data-a="bswitch" data-i="${i}"`,
         dis,
-        act
-          ? called.includes(i)
-            ? 'Coming in'
-            : 'In battle'
-          : m.job != null
-            ? 'At work'
-            : m.hp <= 0
-              ? 'Fainted'
-              : statusBadgeHTML(m.status)
+        act ? (called.includes(i) ? 'Coming in' : 'In battle') : m.hp <= 0 ? 'Fainted' : statusBadgeHTML(m.status)
       );
     })
     .join('')}</div>${back ? backButtonHTML() : ''}`;
@@ -895,7 +886,7 @@ export function paintActions() {
       items = Object.keys(ITEMS)
         .filter(k => saveData.items[k] > 0 && !ITEMS[k].evoItem)
         .reduce((a, k) => a + saveData.items[k], 0),
-      crew = saveData.team.filter(x => x.job == null),
+      crew = saveData.team,
       alive = crew.filter(x => x.hp > 0).length;
     h = `<div class="c-choose">${moveTilesHTML(m)}
   <div class="bt-row"><button class="bt coin" data-a="bcoins" ${wild && first ? '' : 'disabled'}>${uiIconHTML('coin', 18)}<b>Tax it</b><small>${wild ? (first ? coins + ' left' : 'First pick only') : 'Wild only'}</small><kbd>X</kbd></button>
@@ -1080,11 +1071,9 @@ export function endBattle() {
     tid = activeBattle.tid,
     lead = findBilly(activeBattle.lead);
   if (o === 'win' && typeof jingle === 'function') jingle(JINGLES.victory);
-  if (o === 'win')
-    for (const m of saveData.team)
-      if (m.hp > 0 && m.job == null) m.wins = (m.wins || 0) + 1; /* v36: the Hype counter */
+  if (o === 'win') for (const m of saveData.team) if (m.hp > 0) m.wins = (m.wins || 0) + 1; /* v36: the Hype counter */
   if (typeof battleTipHide === 'function') battleTipHide();
-  if (kind === 'wild') saveData.queue = saveData.queue.filter(q => q.id !== activeBattle.qid);
+  if (kind === 'wild') dropEncounter(activeBattle.qid);
   if (lead) {
     if (o === 'win') lead.streak = (lead.streak || 0) + 1;
     else if (o === 'lose') lead.streak = 0;
@@ -1119,6 +1108,14 @@ export function endBattle() {
       btns: [{ l: 'Back to walking', c: 'dark', f: closeModal }],
     });
   }
+  /* phase 08: beating a wild Billie pays prize money (steps paid before) */
+  if (kind === 'wild' && o === 'win') {
+    const prize = activeBattle.sides[1].team.reduce((a, m) => a + wildPrize(m.lvl), 0);
+    if (prize > 0) {
+      saveData.se += prize;
+      toast(`You earned $${formatNumber(prize)}.`);
+    }
+  }
   const E = RULES.eggs;
   if (kind === 'wild' && o === 'win' && random() < E.dropChance) {
     const tiers = Object.entries(E.dropTiers)
@@ -1129,7 +1126,7 @@ export function endBattle() {
       after.push({
         title: 'It dropped an egg',
         top: `<div class="sheet-art">${eggHTML(tier, 72, 'wob')}</div>`,
-        html: `<p>A ${tier} km egg rolled out of the grass. Walk ${tier} km with it in an incubator to see what hatches.</p>`,
+        html: `<p>A ${eggKm(tier)} km egg rolled out of the grass. Walk ${eggKm(tier)} km with it in an incubator to see what hatches.</p>`,
         btns: [{ l: 'Nice', c: 'dark', f: closeModal }],
       });
   }
@@ -1138,7 +1135,7 @@ export function endBattle() {
     const first = !saveData.flags[tid];
     saveData.flags[tid] = 1;
     let extra = '';
-    if (first && T.egg && addEgg(T.egg)) extra += ` and a ${T.egg} km egg`;
+    if (first && T.egg && addEgg(T.egg)) extra += ` and a ${eggKm(T.egg)} km egg`;
     const st = T.seat;
     if (st) {
       const nu = !saveData.seats.includes(st.id);

@@ -1,7 +1,7 @@
 {
  "name": "Pocket Billies",
  "short_name": "Pocket Billies",
- "description": "A walking RPG inside the Hollow Earth, where the Billies are the wildlife. Gotta tax 'em all!",
+ "description": "A classic RPG inside the Hollow Earth, where the Billies are the wildlife. Gotta tax 'em all!",
  "start_url": "./index.html",
  "display": "standalone",
  "orientation": "any",

@@ -72,10 +72,12 @@ import { hexToRgb, makeCanvas } from './art.js';
 import { folkFrames, personBattlePose, personWalkFrames, pickWalkFrame, warmPerson } from './person-art.js';
 import { drawRig, rigFrame, rigParts, rigPreload } from './skeleton-rig.js';
 import {
+  BOB_M,
   EFFECT_FRAMES,
   GROUND_BORDER_M,
   GROUND_CACHE,
   PAINT_WORKER_WAIT,
+  WALK_FRAME_M,
   actionLabel,
   actionSpot,
   approachPoint,
@@ -3448,7 +3450,7 @@ function walkCamera(rw, rh, st, dt) {
       room = T[1] + 1.2;
     if (back > room) df = Math.max(4, room / Math.cos(pitch));
   }
-  const bob = P.walk && !reducedMotion ? Math.sin(walkView.t / 170) * 0.025 * engineSetting('camera', 'sway') : 0,
+  const bob = P.walk && !reducedMotion ? Math.sin((P.gait || 0) / BOB_M) * 0.025 * engineSetting('camera', 'sway') : 0,
     f = [Math.sin(yaw) * Math.cos(pitch), -Math.sin(pitch), Math.cos(yaw) * Math.cos(pitch)];
   let tgt = [T[0], T[2] + bob, T[1]];
   /* v35: pixel-grid camera (Engine > Camera > Pixel grid, off until the new art): when you stand still the camera
@@ -4951,8 +4953,8 @@ export function gatherFrameItems(st, C, PPU, C0) {
           : set[1]
         : P.walk
           ? set.cyc
-            ? set.cyc[Math.floor(t / 110) % 6]
-            : set[1 + (Math.floor(t / 150) % 2)]
+            ? set.cyc[Math.floor((P.gait || 0) / WALK_FRAME_M) % 6]
+            : set[1 + (Math.floor((P.gait || 0) / (WALK_FRAME_M * 1.36)) % 2)]
           : set[0],
       P.x,
       P.z,

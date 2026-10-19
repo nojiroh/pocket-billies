@@ -73,7 +73,6 @@ Eggs|Eieren|Eier|Huevos|Œufs
 Empty incubator|Lege broedmachine|Leerer Brutkasten|Incubadora vacía|Couveuse vide
 Win battles to find eggs.|Win gevechten om eieren te vinden.|Gewinne Kämpfe, um Eier zu finden.|Gana combates para encontrar huevos.|Gagnez des combats pour trouver des œufs.
 Buddy|Maatje|Kumpel|Compañero|Compagnon
-steps today|stappen vandaag|Schritte heute|pasos hoy|pas aujourd’hui
 Money|Geld|Geld|Dinero|Argent
 Your team|Jouw team|Dein Team|Tu equipo|Ton équipe
 Party|Groep|Gruppe|Grupo|Groupe
@@ -83,9 +82,6 @@ Add from storage|Toevoegen uit opslag|Aus dem Lager holen|Añadir del almacén|A
 Make lead|Voorop zetten|Anführen lassen|Poner en cabeza|Mettre en tête
 Lead|Voorop|Anführer|Líder|En tête
 Fainted|Flauwgevallen|Besiegt|Debilitado|K.O.
-Day jobs|Bijbaantjes|Nebenjobs|Trabajos|Petits boulots
-Hire|Aannemen|Einstellen|Contratar|Embaucher
-End shift|Dienst beëindigen|Schicht beenden|Terminar turno|Fin de service
 Items|Spullen|Gegenstände|Objetos|Objets
 In your bag|In je tas|In deiner Tasche|En tu bolsa|Dans ton sac
 No items yet.|Nog geen spullen.|Noch keine Gegenstände.|Aún no hay objetos.|Pas encore d’objets.
@@ -101,8 +97,6 @@ Records|Records|Rekorde|Récords|Records
 Badges|Badges|Orden|Medallas|Badges
 Edit look|Uiterlijk aanpassen|Aussehen ändern|Cambiar aspecto|Modifier l’apparence
 Customize trainer|Trainer aanpassen|Trainer anpassen|Personalizar entrenador|Personnaliser le dresseur
-Steps today|Stappen vandaag|Schritte heute|Pasos hoy|Pas aujourd’hui
-Total steps|Totaal aantal stappen|Schritte insgesamt|Pasos totales|Pas au total
 Distance walked|Afgelegde afstand|Zurückgelegte Strecke|Distancia recorrida|Distance parcourue
 Places visited|Bezochte plekken|Besuchte Orte|Lugares visitados|Lieux visités
 Trainers beaten|Verslagen trainers|Besiegte Trainer|Entrenadores vencidos|Dresseurs battus

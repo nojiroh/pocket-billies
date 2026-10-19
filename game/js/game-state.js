@@ -161,7 +161,7 @@ export const uiState = {
   inbox: /** @type {{ id: string, title: string, html: string, onRead?: () => void }[]} */ ([]),
   evT: null,
   throwing: false,
-  disp: { steps: null, se: null },
+  disp: { se: null },
   seenEnc: new Set(),
   mapSel: null,
 };

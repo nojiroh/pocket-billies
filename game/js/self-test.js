@@ -13,7 +13,7 @@ import { expose } from './test-globals.js';
 import { provide } from './hooks.js';
 import { clamp } from './util.js';
 import { LOCATIONS, MOVES, RULES, SPECIES, TRAINERS, gameData, locationKind } from './game-data.js';
-import { makeBilly, maxHp, setTrip, spawn } from './logic/rules.js';
+import { encountersHere, makeBilly, maxHp, setTrip, spawn } from './logic/rules.js';
 import { fighter, liveActors, startTrainer, startWild } from './logic/battle-engine.js';
 import { loadAllMaps } from './map-files.js';
 import {
@@ -726,7 +726,7 @@ async function runFullTest(mode) {
         m.hp = maxHp(m);
       });
       const q = { id: 'selftest', sp: foeSp, lvl: 5, gold: false, no: 1 };
-      saveData.queue = [q].concat(saveData.queue || []);
+      encountersHere().unshift(q);
       startWild(q);
       const g0 = selfTest.gen || 0;
       const want = async (ph, ms) => {
@@ -778,7 +778,7 @@ async function runFullTest(mode) {
         m.hp = maxHp(m);
         m.status = null;
       });
-      while (saveData.team.filter(m => m.job == null).length < 3) saveData.team.push(makeBilly(foeSp, 6));
+      while (saveData.team.length < 3) saveData.team.push(makeBilly(foeSp, 6));
       if (kind === 'double') {
         const id = Object.keys(TRAINERS).find(
           k => TRAINERS[k].team.length >= 2 && !TRAINERS[k].team.some(m => String(m.sp).startsWith('@'))
@@ -787,7 +787,7 @@ async function runFullTest(mode) {
         startTrainer(id, { talked: true, double: true });
       } else {
         const q = { id: 'selftest-alpha', sp: foeSp, lvl: 5, gold: false, no: 1, alpha: true };
-        saveData.queue = [q].concat(saveData.queue || []);
+        encountersHere().unshift(q);
         startWild(q);
       }
       const g0 = selfTest.gen || 0;
@@ -861,9 +861,10 @@ async function runFullTest(mode) {
           for (let i = 0; i < 60 && !(walkView.ready && walkView.id === 'w:marigold*'); i++) await selfTestSleep(100);
           if (walkView.id !== 'w:marigold*')
             throw new Error('Marigold Town is not shown with its neighbours (still ' + walkView.id + ')');
-          const q0 = saveData.queue,
+          /* no wild Billies on the way: every place empty, and none wander over while the test walks */
+          const w0 = saveData.wild,
             t00 = performance.now() - (debugLog.t0 || 0);
-          saveData.queue = [];
+          saveData.wild = Object.fromEntries(LOCATIONS.map(L => [L.id, { at: Infinity, list: [] }]));
           try {
             setTrip(1);
             render();
@@ -946,7 +947,7 @@ async function runFullTest(mode) {
                 : 0;
             return `${views.join(' → ')} (${walked.toFixed(0)} m); ${shifts} view changes (${builds} logged, ${held} prepared ahead, ${onSpot} built on the spot), ${unready ? unready + ' unready frames' : 'never unready'}, slowest stretch ${worst.toFixed(0)} ms a frame${wf ? ', worst frame ' + Math.round(wf) + ' ms' : ''}`;
           } finally {
-            saveData.queue = q0;
+            saveData.wild = w0;
           }
         },
         8,
@@ -1271,12 +1272,12 @@ async function runFullTest(mode) {
         'dio',
         async () => {
           const gid = gameData.maps.tallgrass_meadow ? 'tallgrass_meadow' : scenes[0];
-          saveData.queue = (saveData.queue || []).slice(0, 0);
-          for (let i = 0; i < 3; i++) spawn(false);
           uiState.tab = 'walk';
           uiState.bench = null;
           const node = LOCATIONS.findIndex(r => r.mapId === gid);
           if (node >= 0) saveData.trip.node = node;
+          encountersHere().length = 0;
+          for (let i = 0; i < 3; i++) spawn(false);
           render();
           for (let i = 0; i < 80 && !(walkView.ready && walkView.id === gid); i++) await selfTestSleep(100);
           await selfTestSleep(1500);

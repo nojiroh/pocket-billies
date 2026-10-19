@@ -1,8 +1,8 @@
 # Pocket Billies: Gotta tax 'em all! — 0.1.0 alpha
 
 A classic RPG inside the Hollow Earth, where the Billies are the wildlife. You walk the seamless maps yourself with a
-joystick, step into rooms that are bigger on the inside, battle, make friends, and edit everything in
-**Pocket Billies Studio**.
+joystick (push it past its rim to run), step into rooms that are bigger on the inside, battle, make friends, and edit
+everything in **Pocket Billies Studio**.
 
 0.1.0 alpha is a fresh base: numbering starts over here and old saves don't carry over. What changes from release to
 release is in [CHANGELOG.md](CHANGELOG.md); where the game is going is in [docs/VISION.md](docs/VISION.md). The earlier
@@ -28,7 +28,8 @@ If something looks wrong or runs slowly, open **Settings** (the gear) and use:
   values and shows what each one costs on your device, costliest first. **Save the report** gives a short
   `pocket-billies-graphics-….json` to send. Your settings and save aren't changed (docs/graphics-bench.md).
 - **Export debug log**: one `.json` file with frame rates per screen and scene, slow frames, errors, loading times,
-  your device and graphics chip, and a small picture of the scene. It contains no save data, names or step history.
+  your device and graphics chip, and a small picture of the scene. It contains no save data, no names and no positions
+  (only which places opened and when).
 
 The full test, the graphics test and the log export are also in the debug menu (add `?debug` to the address).
 

@@ -25,10 +25,10 @@
    "text": "A Billie cannot resist a coin. Toss one and it will chase it, catch it and keep it, and while it is busy counting, it is yours. A Penny will do for a young one. Silver, Gold and Platinum (“Too Big To Fail”) coins hold the bigger and the stubborn ones. Nobody has found a Billie that turns money down."
   },
   {
-   "id": "steps",
-   "title": "Money and steps",
+   "id": "money",
+   "title": "Money down here",
    "unlock": "start",
-   "text": "Down here the one thing nobody can buy is someone else’s steps. Roads are measured in them, fares are paid in them, and a trainer’s team grows stronger with every one you walk. The banks of Verdigris City have tried for years to trade steps on the market. So far, the steps have refused to be walked by anyone else."
+   "text": "Down here money is coins, and coins are the one thing a Billie cannot resist, so every trainer’s purse is also a leash. Trainers pay each other after a battle, and a wild Billie you beat leaves a little prize behind. The banks of Verdigris City have tried for years to print coins of their own. So far, the Billies have refused to chase them."
   },
   {
    "id": "sun",
@@ -60,7 +60,7 @@
    "id": "road1",
    "stage": 0,
    "title": "Route 1",
-   "text": "Hazel asked you to walk: every step counts, and the road teaches more than any book. Route 1, Hedgerow Lane, runs down from Copperleaf to Marigold Town. When someone falls in, their things come down too, and they scatter along Tallgrass Meadow beyond it. Something of yours might still be out there."
+   "text": "Hazel asked you to explore: the road teaches more than any book. Route 1, Hedgerow Lane, runs down from Copperleaf to Marigold Town. When someone falls in, their things come down too, and they scatter along Tallgrass Meadow beyond it. Something of yours might still be out there."
   },
   {
    "id": "badges",
@@ -320,7 +320,7 @@
   "verdigris": {
    "history": "Built in the middle of everything by people who wanted to be in the middle of everything.",
    "known": "Banks, towers, and Verdigris City’s famous traffic, which is mostly Billies.",
-   "landmark": "The stock exchange, which trades in everything except steps.",
+   "landmark": "The stock exchange, which trades in everything except Billies. Officially.",
    "legend": "Every tower in Verdigris City is one floor taller than the plans say. Nobody admits to the extra floor."
   },
   "driftwreck": {
@@ -355,7 +355,7 @@
   },
   "mirrormere": {
    "history": "A lake that filled up from a sinkhole in reverse: water came up, not down.",
-   "known": "Clear water, reeds, and boats you can rent by the step.",
+   "known": "Clear water, reeds, and boats you can rent by the hour.",
    "landmark": "The pier and its little lighthouse.",
    "legend": "The lake is the surface’s rain, collected over a hundred years. Taste it: it still remembers being clouds."
   },
@@ -648,12 +648,12 @@
     "Article 3. The clinic is free. It always was. Stop asking."
    ]
   },
-  "steps": {
-   "title": "The Step Standard",
+  "coin_standard": {
+   "title": "The Coin Standard",
    "by": "an economics textbook, much underlined",
    "pages": [
-    "In the Hollow Earth, value is measured in steps, because steps cannot be printed, borrowed or inherited.",
-    "Attempts to sell steps have failed, because the buyer still has to walk them."
+    "In the Hollow Earth, value is measured in coins, because a Billie will chase nothing else.",
+    "Attempts to replace coins with paper have failed, because the Billies ate the paper."
    ]
   },
   "amnesia": {
@@ -668,7 +668,7 @@
    "title": "Airship timetable",
    "by": "Verdigris Air & Mooring Co.",
    "pages": [
-    "Airships leave from every mast for every town you have been to. Your ticket is good for one flight; your steps are good for everything else.",
+    "Airships leave from every mast for every town you have been to. Your ticket is good for one flight; your feet are good for everything else.",
     "Fares go by distance across the world, not by height. The Inner Sun is not a destination. Please stop asking.",
     "Lost property is returned at the next mast. The company is not responsible for Billies that board without a ticket."
    ]
@@ -687,7 +687,7 @@
  "loading": [
   "Officially the Inner Sun never sets. Its maintenance contract only covers business hours.",
   "A Billie cannot resist a coin. That is how you tax one.",
-  "Every step counts. Your team grows stronger with every one you walk.",
+  "Every win counts. Your team grows stronger with every battle.",
   "Legacy Labs: your fortune, backed up. Tails not covered by warranty.",
   "Things that fall from the surface mostly land in Copperleaf. Granny Juniper keeps a list.",
   "The clinic in Marigold Town is free. It always was. Stop asking.",
@@ -697,7 +697,7 @@
   "Tip: a gold Billie is a limited variant. Collectors will try to buy it from you. Don’t.",
   "The ducks on Marigold’s pond have names. They won’t tell you yet.",
   "The escalator in Lanternhall City has never been seen moving.",
-  "Down here, value is measured in steps, because steps can’t be inherited.",
+  "Down here, value is measured in coins, because a Billie will chase nothing else.",
   "Aurumansa gives its gold away. The banks call it a disaster.",
   "The soup of the day in Pepperpot Town has been the same soup since 1971.",
   "Professor Hazel has a map of the sinkholes. It looks a lot like a map of banks.",
@@ -734,7 +734,7 @@
   },
   "verdigris": {
    "0": [
-    "The exchange trades everything except steps. They keep trying.",
+    "The exchange trades everything except Billies. Officially. They keep trying.",
     "Don’t feed the Billies in the square. They unionise."
    ],
    "2": ["A Variant just bought three rare Billies on the steps of the bank, cash, no receipt."]

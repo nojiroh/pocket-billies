@@ -20,18 +20,18 @@ test('rules: stats, levels, moves, evolution', () => {
   assert.equal(m.sp, 'sparky1');
 });
 
-test('rules: steps, trips and gates, encounters', () => {
+test('rules: trips and gates, encounters, the wild prize', () => {
   const s = startedSave('sparky0', 10);
   assert.equal(fn('hereLocation')().id, 'meadow');
-  assert.deepEqual(fn('tripTo')(0), { steps: 100, plan: [0] });
+  assert.deepEqual(fn('tripTo')(0), { metres: 100, plan: [0] });
   assert.equal(fn('canEnter')(2), false); // the lake needs a Water Billie big enough to ride
   assert.equal(fn('tripTo')(2), null);
   s.team.push(fn('makeBilly')('drip0', 10)); // 2 m tall
   assert.equal(fn('canEnter')(2), true);
-  assert.equal(fn('earningsBetween')(7000, 9000), 1000 + 500);
-  const before = s.queue.length,
+  assert.equal(fn('wildPrize')(10), 200); // a wild win pays $20 a level
+  const before = fn('encountersHere')().length,
     q = fn('spawn')();
-  assert.equal(s.queue.length, before + 1);
+  assert.equal(fn('encountersHere')().length, before + 1);
   assert.ok(['sprout0', 'drip0'].includes(q.sp) && q.lvl >= 3 && q.lvl <= 5, JSON.stringify(q));
   assert.equal(
     fn('pickWeighted')([
@@ -50,12 +50,55 @@ test('rules: encounters follow the place’s pool (its species by weight, its le
     const q = fn('spawn')();
     n[q.sp]++;
     assert.ok(q.lvl >= 3 && q.lvl <= 5, `level ${q.lvl}`);
-    s.queue.length = 0;
+    fn('encountersHere')().length = 0;
   }
   assert.equal(n.sprout0 + n.drip0, 2000, JSON.stringify(n));
   assert.ok(Math.abs(n.drip0 / 2000 - 0.4) < 0.04, JSON.stringify(n));
   // a gentle encounter is nothing strong against your starter: Water beats Fire, so only Sprout
   for (let i = 0; i < 200; i++) assert.equal(fn('spawn')(true).sp, 'sprout0');
+});
+
+test('rules: wild Billies live on each place’s map: full on the first visit, one more a minute of play, never past the stock', () => {
+  const s = startedSave('sparky0', 10), // in the meadow, a route
+    here = fn('encountersHere');
+  s.wild = {};
+  s.playMs = 0;
+  assert.equal(here().length, 4, 'a route is full the first time you come');
+  assert.equal(here(0).length, 0, 'a town without tall grass has none');
+  fn('dropEncounter')(here()[0].id);
+  fn('dropEncounter')(here()[0].id);
+  assert.equal(here().length, 2);
+  s.playMs = 59000;
+  assert.equal(here().length, 2, 'not before a minute');
+  s.playMs = 60000;
+  assert.equal(here().length, 3);
+  s.playMs = 600000;
+  assert.equal(here().length, 4, 'never more than its stock');
+  s.playMs = 900000;
+  fn('dropEncounter')(here()[0].id);
+  assert.equal(here().length, 3, 'the time it stood full does not count');
+  s.playMs = 960000;
+  assert.equal(here().length, 4);
+});
+
+test('rules: a split evolution goes the way you pick: Build (its next stage) or Hype (the other final)', () => {
+  const s = startedSave('sparky0', 10),
+    E = data.SPECIES.sparky0,
+    keep = [E.evo, E.alt];
+  try {
+    E.evo = { k: 'split', at: 5 };
+    E.alt = 'sprout1';
+    const a = s.team[0],
+      b = fn('makeBilly')('sparky0', 10);
+    assert.equal(fn('canEvolve')(a), true);
+    fn('evolve')(a, 'A');
+    fn('evolve')(b, 'B');
+    assert.equal(a.sp, 'sparky1');
+    assert.equal(b.sp, 'sprout1');
+    assert.match(fn('evolutionHint')(fn('makeBilly')('sparky0', 3)), /you choose/);
+  } finally {
+    [E.evo, E.alt] = keep;
+  }
 });
 
 test('rules: the other evolution kinds: a winning streak, a day resting in storage; the rest only by hand', () => {
@@ -88,4 +131,23 @@ test('rules: the other evolution kinds: a winning streak, a day resting in stora
   } finally {
     E.evo = keep;
   }
+});
+
+test('rules: eggs hatch by metres walked outdoors; the distance walked counts them all', () => {
+  const s = startedSave('sparky0', 10);
+  s.eggs = [];
+  s.stats = {};
+  fn('addEgg')(2); // the fixture's egg needs 100 m
+  fn('addEgg')(2);
+  s.eggs[1].slot = null; // not in an incubator: it waits
+  fn('addWalked')(60);
+  assert.equal(s.eggs[0].prog, 60);
+  assert.equal(s.eggs[1].prog, 0);
+  assert.equal(fn('hatchable')().length, 0);
+  fn('addWalked')(60);
+  assert.equal(s.eggs[0].prog, 100, 'never past its need');
+  assert.equal(fn('hatchable')().length, 1);
+  assert.equal(s.stats.walked, 120);
+  fn('addWalked')(5000);
+  assert.equal(s.stats.walked, 120, 'a jump of kilometres is not a walk');
 });

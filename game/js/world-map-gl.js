@@ -12,7 +12,7 @@ import { expose } from './test-globals.js';
 import { flyDraw, flyTick, friends, provide } from './hooks.js';
 import { $, clamp } from './util.js';
 import { LOCATIONS, REGIONS, ROADS, locationSubtitle } from './game-data.js';
-import { canEnter, formatNumber, tripTo } from './logic/rules.js';
+import { canEnter, distanceText, tripTo } from './logic/rules.js';
 import { escapeHtml, reducedMotion, saveData, uiState } from './game-state.js';
 import { frameCount, frameStop, frameTask, userFps } from './frame-scheduler.js';
 import { artLoad, artPixels, hexToRgb, makeCanvas, uiIconHTML, worldMapStamp } from './art.js';
@@ -988,12 +988,7 @@ function worldMapGlPins() {
     const show =
       (typeof sel === 'number' && (a === sel || b === sel)) || onPlan.has(Math.min(a, b) + '-' + Math.max(a, b));
     const q = show ? worldMapGlProject(roadPosition(a, b, 0.5)) : null;
-    put(
-      'L' + i,
-      q,
-      `${formatNumber(c)} steps`,
-      'mchip' + (onPlan.has(Math.min(a, b) + '-' + Math.max(a, b)) ? ' trip' : '')
-    );
+    put('L' + i, q, distanceText(c), 'mchip' + (onPlan.has(Math.min(a, b) + '-' + Math.max(a, b)) ? ' trip' : ''));
   });
   /* 0.5: friends, at the place they were last */
   if (typeof friends !== 'undefined')
@@ -1125,7 +1120,7 @@ function worldMapGlLocationListHTML() {
         : locked
           ? 'Locked'
           : t
-            ? `${formatNumber(t.steps)} steps${saveData.visited[i] ? '' : ' · new'}`
+            ? `${distanceText(t.metres)}${saveData.visited[i] ? '' : ' · new'}`
             : 'No road yet';
     return {
       i,
@@ -1133,10 +1128,10 @@ function worldMapGlLocationListHTML() {
       st,
       sub,
       g: i === saveData.trip.node ? 0 : locked ? 3 : saveData.visited[i] ? 1 : 2,
-      steps: t ? t.steps : 1e9,
+      metres: t ? t.metres : 1e9,
     };
   });
-  rows.sort((a, b) => a.g - b.g || a.steps - b.steps);
+  rows.sort((a, b) => a.g - b.g || a.metres - b.metres);
   const G = ['Here', 'Visited', 'Not visited yet', 'Locked'];
   let h =
       '<div class="mpl-head"><b>Places</b><button class="mbtn sm" data-a="mlist" aria-label="Close">×</button></div><div class="mpl-body">',

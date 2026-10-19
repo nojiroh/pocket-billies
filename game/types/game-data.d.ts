@@ -180,7 +180,6 @@ export interface MoveEffect {
     the code still knows the older kinds (game-state.js canEvolve, evolutionHint) */
 export type Evolution =
   | { k: 'lvl' | 'split'; at: number }
-  | { k: 'buddy'; steps: number }
   | { k: 'item'; item?: DataId; min: number }
   | { k: 'idle'; ms: number; min: number }
   | { k: 'streak' | 'donate'; n: number; min: number }
@@ -282,8 +281,6 @@ export interface LocationData {
   pool: DataId;
   /** its battle stage, a key of gameData.battleStages (filled in at load when unknown) */
   battleStage: DataId;
-  /** the older chain's road length to it (roads.json has the lengths) */
-  cost?: number;
   t: string;
   biome: string;
   mood: DataId;
@@ -316,7 +313,8 @@ export interface LocationEntry extends LocationData {
   board: DataId | null;
 }
 
-/** roads.json: [from node, to node, length in steps, the two ends] */
+/** roads.json: [from node, to node, length, the two ends]. The data's length (old steps) is not read: game-data.js
+    ROADS measures it in metres from the two exits (roadMetres) */
 export type Road = [from: LocationNode, to: LocationNode, length: number, ends?: RoadEnds];
 
 /** a road as one end sees it (game-data.js ROADS_BY_NODE): the other end, the length and the road's index */
@@ -599,20 +597,24 @@ export interface Rules {
     /** where a new game starts */
     locationId: DataId;
   };
-  steps: {
-    stepsPerKm: number;
-    /** what a step earns: rate up to upTo steps a day (0: no limit) */
-    brackets: { upTo: number; rate: number }[];
-    encounterEverySE: number;
-    maxEncounters: number;
+  /** phase 08: wild Billies on each place's map (rules.js encountersHere) */
+  encounters: {
+    /** how many a route keeps */
+    route: number;
+    /** how many a town with tall grass keeps (other towns: none) */
+    townGrass: number;
+    /** play time for one more to wander over */
+    refillMs: number;
+    /** prize money for beating a wild Billie, per level */
+    prizePerLevel: number;
+    /** a wild one is Golden once in this many */
     goldOdds: number;
-    restCost: number;
+    /** a wild one is an Alpha once in this many (with two Billies on your team) */
     alphaOdds: number;
   };
   progression: {
     xpFactor: number;
     maxLevel: number;
-    buddyStepsPerXp: number;
     teamSize: number;
     moveSlots: number;
     /** XP yield by stage */
@@ -630,7 +632,6 @@ export interface Rules {
     dropChance: number;
     dropTiers: Record<string, number>;
   };
-  jobs: { stepsPerPay: number; maxPending: number; positions: number };
   battle: {
     stab: number;
     critChances: number[];
@@ -653,6 +654,8 @@ export interface Rules {
     stageMax: number;
     aiSmart: number;
     loseFee: number;
+    /** what a rest stop costs (it heals the team) */
+    restCost: number;
     shockType: TypeId;
     shockTurns: number;
     shockName: string;

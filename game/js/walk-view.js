@@ -13,7 +13,7 @@ import {
   ALTERNATE_PROPS,
   ROOM_BY_BUILDING,
   TERRAIN_MATERIALS,
-  addSteps,
+  addWalked,
   artCacheVersion,
   buddyTap,
   cachedBuildingSignature,
@@ -36,6 +36,7 @@ import {
   provide,
   rawHeightAt,
   reducedMotion,
+  saveData,
   seamlessMapById,
   seamlessNearestRoadPoint,
   smooth01,
@@ -51,6 +52,7 @@ import { frameStop } from './frame-scheduler.js';
 import { ART_CACHE, artLoad, makeCanvas, packHexPixel } from './art.js';
 /* eslint-disable no-func-assign */
 expose({
+  BOB_M: [() => BOB_M],
   BRIDGE_ARCH: [() => BRIDGE_ARCH],
   BUILDING_VARIANT_CACHE: [() => BUILDING_VARIANT_CACHE],
   CLOSED_VENUE_NAMES: [() => CLOSED_VENUE_NAMES],
@@ -60,6 +62,7 @@ expose({
   FOLK_CHAT: [() => FOLK_CHAT],
   FOLK_HOME: [() => FOLK_HOME],
   FOLK_WORK: [() => FOLK_WORK],
+  FOOTSTEP_M: [() => FOOTSTEP_M],
   GROUND_BORDER_M: [() => GROUND_BORDER_M],
   GROUND_BUILDS_PENDING: [() => GROUND_BUILDS_PENDING],
   GROUND_CACHE: [() => GROUND_CACHE],
@@ -73,6 +76,7 @@ expose({
   PROP_CLOCK: [() => PROP_CLOCK],
   PROP_VARIANT_CACHE: [() => PROP_VARIANT_CACHE],
   ROOF_STYLES: [() => ROOF_STYLES],
+  RUN_FACTOR: [() => RUN_FACTOR],
   STEP_GRID_CACHE: [() => STEP_GRID_CACHE],
   TILE_PIXEL_CACHE: [() => TILE_PIXEL_CACHE],
   TONE_AMOUNT: [() => TONE_AMOUNT],
@@ -80,10 +84,12 @@ expose({
   TONE_DIRECTIONS: [() => TONE_DIRECTIONS],
   TONE_LIGHT: [() => TONE_LIGHT],
   TONE_NONE: [() => TONE_NONE],
+  WALK_FRAME_M: [() => WALK_FRAME_M],
   WALK_KEYS: [() => WALK_KEYS],
   WALK_SPEED: [() => WALK_SPEED],
   actionLabel: [() => actionLabel, v => (actionLabel = v)],
   actionSpot: [() => actionSpot, v => (actionSpot = v)],
+  alwaysRun: [() => alwaysRun, v => (alwaysRun = v)],
   applyGroundTone: [() => applyGroundTone, v => (applyGroundTone = v)],
   approachPoint: [() => approachPoint, v => (approachPoint = v)],
   artImage: [() => artImage, v => setArtImage(v)],
@@ -259,6 +265,8 @@ export const walkView = {
     saved: 0,
     rust: 0,
     face: null,
+    /* metres walked, for the walk cycle, footsteps and bob */
+    gait: 0,
   },
   hits: [],
   R: 1,
@@ -278,6 +286,8 @@ export const walkView = {
   parts: [],
   tap: null,
   keys: {},
+  /* phase 08: running, held by the joystick's outer ring or the d-pad's centre (joystick.js); Shift is keys.run */
+  run: false,
   sh: null,
   chat: 0,
   ff: new Map(),
@@ -291,7 +301,15 @@ const canvasPixels = n => {
 };
 export const GROUND_BORDER_M = 8,
   NAV_CELLS_PER_M = 2,
-  WALK_SPEED = 3.4;
+  WALK_SPEED = 3.4,
+  /* phase 08: running is this much faster than walking (the joystick's outer ring, the d-pad's centre, Shift) */
+  RUN_FACTOR = 1.7,
+  /* phase 08: the walk cycle, the footsteps and the camera's bob follow the metres walked (walkView.pl.gait), not the
+     clock, so they keep pace when you run or push lightly. At walking speed they match the old timings: a frame every
+     110 ms, a footstep every 330 ms, the bob's 1.07 s wave. */
+  WALK_FRAME_M = WALK_SPEED * 0.11,
+  FOOTSTEP_M = WALK_SPEED * 0.33,
+  BOB_M = WALK_SPEED * 0.17;
 /* alpha 0.4: what a painting generator yields while the ground painter's helper thread works (ground-paint-worker.js): whatever
    steps it stops for now and comes back later */
 export const PAINT_WORKER_WAIT = { pw: 1 };
@@ -313,10 +331,10 @@ const FOLK_CHAT = [
   'Lovely day for a walk.',
   'Mind the tall grass. Something’s rustling in there.',
   'I heard a Billie tried to buy the sun once.',
-  'My grandma walks ten thousand steps before breakfast.',
+  'My grandma walks to the next town and back before breakfast.',
   'The clinic patches up your team for free, you know.',
   'Have you seen the windmill turn? Very relaxing.',
-  'Every step counts, they say. Literally, here.',
+  'Every coin counts, they say. Literally, here.',
   'I’m saving up for a fancy hat.',
   'Watch out, trainers like to battle anyone who looks at them.',
 ];
@@ -3189,12 +3207,17 @@ export function turnToPlayer(f) {
   f.dir = directionOf(P.x - f.x, P.z - f.z);
   f.wait = Math.max(f.wait, 3);
 }
-/* keyboard: arrows or WASD while the scene is in view */
+/* phase 08: the player's "Always run" (Settings → Moving about); the Studio has no save */
+function alwaysRun() {
+  return !!(typeof saveData !== 'undefined' && saveData && saveData.preferences && saveData.preferences.alwaysRun);
+}
+/* keyboard: arrows or WASD while the scene is in view; Shift runs */
 const WALK_KEYS = {
   ArrowLeft: 'l',
   ArrowRight: 'r',
   ArrowUp: 'u',
   ArrowDown: 'd',
+  Shift: 'run',
   a: 'l',
   d: 'r',
   w: 'u',
@@ -3212,6 +3235,7 @@ addEventListener('keydown', ev => {
   const t = ev.target;
   if (t && (t.isContentEditable || /INPUT|TEXTAREA|SELECT/.test(t.tagName))) return;
   walkView.keys[k] = 1;
+  if (k === 'run') return;
   walkView.pl.route = null;
   walkView.pl.goal = null;
   ev.preventDefault();
@@ -3333,6 +3357,7 @@ function stepClimb(dt) {
   const was = Math.floor(P.climbRung || 0);
   P.climbRung = k * 8;
   if (Math.floor(P.climbRung) !== was && typeof soundEffect === 'function') soundEffect('step', { ter: 'b' });
+  P.gait = (P.gait || 0) + Math.hypot(x - P.x, z - P.z, y - (P.yv ?? y));
   P.x = x;
   P.z = z;
   P.yv = y;
@@ -3458,7 +3483,9 @@ function movePlayer(st, dt) {
         P.route = null;
         P.goal = null;
       }
-      const run = km > 0.92 ? 1.3 : km < 0.5 ? 0.6 : 1,
+      /* phase 08: a light push walks slowly, a full push walks; running (the ring, the d-pad's centre, Shift, or a full
+         push with "Always run") is RUN_FACTOR faster. The keys and the d-pad push fully. */
+      const run = walkView.run || K.run || (km > 0.92 && alwaysRun()) ? RUN_FACTOR : km < 0.5 ? 0.6 : 1,
         s = WALK_SPEED * dt * run * slopeSpeedFactor(P.x, P.z, wx / l, wz / l);
       let nx = P.x + (wx / l) * s,
         nz = P.z + (wz / l) * s;
@@ -3469,7 +3496,12 @@ function movePlayer(st, dt) {
     } else if (P.route) {
       const tg0 = P.route[P.ri],
         d0 = Math.hypot(tg0[0] - P.x, tg0[1] - P.z) || 1;
-      let left = WALK_SPEED * (P.rush || 1) * dt * slopeSpeedFactor(P.x, P.z, (tg0[0] - P.x) / d0, (tg0[1] - P.z) / d0);
+      let left =
+        WALK_SPEED *
+        (P.rush || 1) *
+        (K.run || alwaysRun() ? RUN_FACTOR : 1) *
+        dt *
+        slopeSpeedFactor(P.x, P.z, (tg0[0] - P.x) / d0, (tg0[1] - P.z) / d0);
       while (left > 0 && P.route) {
         const tg = P.route[P.ri],
           dx = tg[0] - P.x,
@@ -3498,21 +3530,16 @@ function movePlayer(st, dt) {
       }
     }
     P.walk = Math.hypot(P.x - ox, P.z - oz) > 1e-4 ? 1 : 0;
-    /* alpha 0.4.1: walking yourself, the metres you walk are your steps (14 a metre): encounters, challenges, your buddy */
-    if (P.walk && !jumped && typeof addSteps === 'function' && !(typeof uiState !== 'undefined' && uiState.bench)) {
-      P.stepAcc = (P.stepAcc || 0) + Math.hypot(P.x - ox, P.z - oz) * 14.1;
-      if (P.stepAcc >= 300) {
-        const n = Math.floor(P.stepAcc);
-        P.stepAcc -= n;
-        addSteps(n, true);
-      }
-    }
+    /* phase 08: the metres you walk outdoors hatch your eggs */
+    if (P.walk && !jumped && typeof addWalked === 'function' && !uiState.bench && !uiState.inside)
+      addWalked(Math.hypot(P.x - ox, P.z - oz));
     if (P.walk && walkView.opt.onMove && walkView.t - P.saved > 400) {
       P.saved = walkView.t;
       walkView.opt.onMove(P.x, P.z);
     }
     if (!P.walk && P.wasWalk && walkView.opt.onMove) walkView.opt.onMove(P.x, P.z);
   }
+  if (P.walk && !jumped) P.gait = (P.gait || 0) + Math.hypot(P.x - ox, P.z - oz);
   if (Math.hypot(mx, mz) > 1e-6) P.dir = directionOf(mx, mz);
   P.wasWalk = P.walk;
   /* grass rustle and dust */

@@ -47,7 +47,7 @@ def hang(s, k, x, h=H):
 
 def int_shop():
     s = room('int_shop', 'Inside the shop', 'O', '#E6CFA2', 2601, 'shop', 'cashier', (7, 7.7),
-             ['Everything on these shelves is technically a collectible.', 'The coin rolls go fast on payday.', 'We restock every time someone walks a thousand steps. Roughly.'])
+             ['Everything on these shelves is technically a collectible.', 'The coin rolls go fast on payday.', 'We restock every time an airship lands. Roughly.'])
     s.put('shop_counter', 7, 6.6, act='shop', label='Counter')
     for x in (2.2, 11.8): s.put('shop_shelf', x, 8.6)
     s.put('fridge_drinks', 4.4, 8.9); s.put('shop_shelf', 9.7, 8.6, .9)
@@ -135,7 +135,7 @@ def int_bank():
 
 def int_library():
     s = room('int_library', 'Inside the library', '%', '#D8C8A8', 2614, 'library', 'folk:51', (7, 7.4),
-             ['Shh. The books are sleeping.', 'We have every billionaire’s biography. None of them are short.', 'Late fees are paid in steps.'])
+             ['Shh. The books are sleeping.', 'We have every billionaire’s biography. None of them are short.', 'Late fees are paid in coins. Small ones, but many.'])
     # alpha 0.1: two bookcases at the ends of the back wall and two standing in the room as stacks, so the library's
     # four front windows have room on the back wall (seamless-world.js seamlessRoomWindows)
     for x in (1.6, 12.4): s.put('bookshelf', x, 9.0)
@@ -147,7 +147,7 @@ def int_library():
 
 def int_school():
     s = room('int_school', 'Inside the school', ':', '#DCE4D0', 2615, 'school', 'folk:61', (7, 8.0),
-             ['Today’s lesson: what a billionaire eats for breakfast.', 'Homework: walk ten thousand steps.', 'Who drew on the board again?'])
+             ['Today’s lesson: what a billionaire eats for breakfast.', 'Homework: visit three towns and write about the people.', 'Who drew on the board again?'])
     hang(s, 'blackboard', 7); s.put('reading_desk', 7, 7.0)
     for x in (3.4, 5.8, 8.2, 10.6):
         for z in (4.8, 3.0): s.put('school_desk', x, z)

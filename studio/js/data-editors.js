@@ -295,7 +295,6 @@ studioState.hooks.billionaires = path => {
 };
 const EVOLUTION_KINDS = [
   ['lvl', 'Reaches a level'],
-  ['buddy', 'Walk with it as your buddy'],
   ['item', 'Use an item on it'],
   ['donate', 'Give away items'],
   ['merge', 'Combine two'],
@@ -310,13 +309,6 @@ function evolutionRowHTML(L, li, i) {
   const D = studioState.D;
   const f = {
     lvl: () => numberField('At level', `${p}.at`, { min: 2, max: 100, step: 1 }),
-    buddy: () =>
-      numberField('Distance', `${p}.steps`, {
-        unit: 'km',
-        scale: D.rules.steps.stepsPerKm,
-        step: 0.5,
-        help: 'Walked while it is your buddy.',
-      }),
     item: () =>
       selectField('Item', `${p}.item`, itemOptions()) +
       numberField('Minimum level', `${p}.min`, { min: 1, max: 100, step: 1 }),
@@ -471,7 +463,8 @@ function refsTo(ids) {
   const D = studioState.D,
     out = [];
   for (const [k, P] of Object.entries(D.pools)) if (P.list.some(([id]) => ids.includes(id))) out.push('wild pool ' + k);
-  for (const [k, E] of Object.entries(D.eggs)) if (E.list.some(([id]) => ids.includes(id))) out.push(k + ' km egg');
+  for (const [k, E] of Object.entries(D.eggs))
+    if (E.list.some(([id]) => ids.includes(id))) out.push(D.eggs[k].need / 1000 + ' km egg');
   for (const [k, T] of Object.entries(D.trainers || {}))
     if (T.team.some(e => ids.includes(e.sp))) out.push('trainer ' + T.name);
   if (Object.values(D.rules.start.rival).some(v => ids.includes(v))) out.push('rival picks');
@@ -1467,7 +1460,7 @@ SECTIONS.jobs = () => {
       )}${textField('What it did (after the Billie’s name)', `${p}.quip`, { help: '“Hoodini made 40 lattes. Most were wrong.”' })}<button class="btn danger subtle" data-act="jobDel" data-k="${k}">Delete job</button></div></div>`;
     })
     .join('');
-  return `<div class="ed-col solo"><div class="ed-head"><h2>Jobs</h2><button class="btn primary" data-act="jobNew">+ New job</button></div>${card('Jobs', rows, { sub: `Pay arrives every ${formatThousands(D.rules.jobs.stepsPerPay)} steps (Rules → Jobs).` })}</div>`;
+  return `<div class="ed-col solo"><div class="ed-head"><h2>Jobs</h2><button class="btn primary" data-act="jobNew">+ New job</button></div>${card('Jobs', rows, { sub: 'Kept for the ranch (phase 12): the game has no jobs for now, so nothing here is used yet.' })}</div>`;
 };
 document.addEventListener('change', ev => {
   const el = ev.target;

@@ -17,8 +17,6 @@ import {
   DEX_ORDER,
   EGGS,
   ITEMS,
-  JOBS,
-  JOB_STEPS,
   LINE_BY_ID,
   LOCATIONS,
   MOVES,
@@ -44,10 +42,8 @@ import {
 } from './game-data.js';
 import { isRobot, speciesOf } from './logic/fighters.js';
 import {
-  STEP_BRACKETS,
   addEgg,
   allBillies,
-  assignJob,
   billyBuild,
   billyName,
   blockerAt,
@@ -55,10 +51,12 @@ import {
   canEvolve,
   canRide,
   cleanName,
-  collectJob,
+  distanceText,
+  eggKm,
   eggSlotCount,
   encounterBuild,
-  endShift,
+  encounterStock,
+  encountersHere,
   evolutionHint,
   evolutionItemName,
   evolve,
@@ -72,18 +70,14 @@ import {
   makeBilly,
   maxHp,
   maxLevel,
+  metresToKm,
   moveSlotCount,
-  nextBracket,
   partSlots,
   plural,
   riderName,
-  rollDay,
   setTrip,
   spawn,
-  splitPath,
   stat,
-  stepRate,
-  stepsToKm,
   stopTrip,
   teamSize,
   toBox,
@@ -200,12 +194,18 @@ import {
   storyRivalBattle,
   trainerTalk,
 } from './story.js';
-import { challengeCardHTML, homeDecorate, refreshHomeFurniture, requestListHTML, stampTile } from './things-to-do.js';
+import {
+  arrivedAt,
+  challengeCardHTML,
+  homeDecorate,
+  refreshHomeFurniture,
+  requestListHTML,
+  stampTile,
+} from './things-to-do.js';
 import { workshopAction, workshopSectionHTML } from './workshop.js';
 /* eslint-disable no-func-assign */
 expose({
   BOX_SORTS: [() => BOX_SORTS],
-  BRACKET_COLORS: [() => BRACKET_COLORS],
   RARITY_NAMES: [() => RARITY_NAMES],
   ROOM_BY_BUILDING: [() => ROOM_BY_BUILDING],
   ROOM_BY_USE: [() => ROOM_BY_USE],
@@ -218,10 +218,6 @@ expose({
   billySheet: [() => billySheet, v => (billySheet = v)],
   boardNote: [() => boardNote, v => (boardNote = v)],
   boxSection: [() => boxSection, v => (boxSection = v)],
-  bracketBars: [() => bracketBars, v => (bracketBars = v)],
-  bracketLabels: [() => bracketLabels, v => (bracketLabels = v)],
-  bracketNote: [() => bracketNote, v => (bracketNote = v)],
-  bracketSpans: [() => bracketSpans, v => (bracketSpans = v)],
   buddyCard: [() => buddyCard, v => (buddyCard = v)],
   buildPixelSky: [() => buildPixelSky, v => (buildPixelSky = v)],
   closeModal: [() => closeModal, v => ((closeModal = v), provide({ closeModal }))],
@@ -239,12 +235,9 @@ expose({
   hatchModal: [() => hatchModal, v => (hatchModal = v)],
   healPick: [() => healPick, v => (healPick = v)],
   hereCard: [() => hereCard, v => (hereCard = v)],
-  hireFlow: [() => hireFlow, v => (hireFlow = v)],
-  hirePick: [() => hirePick, v => (hirePick = v)],
   hpBar: [() => hpBar, v => (hpBar = v)],
   initPixelSky: [() => initPixelSky, v => (initPixelSky = v)],
   isDark: [() => isDark],
-  jobSlots: [() => jobSlots, v => (jobSlots = v)],
   learnModal: [() => learnModal, v => (learnModal = v)],
   leaveRoom: [() => leaveRoom, v => (leaveRoom = v)],
   locationCardHTML: [() => locationCardHTML, v => (locationCardHTML = v)],
@@ -533,10 +526,9 @@ function evolutionModal(m) {
   const why =
     {
       lvl: `It just reached level ${e.at}.`,
-      buddy: `You’ve walked ${stepsToKm(e.steps)} km together.`,
       idle: 'It rested in storage for a whole day.',
       streak: `${e.n} wins in a row made it stronger.`,
-      split: `It just reached level ${e.at}. ${splitPath(m) === 'B' ? `It won ${m.wins || 0} battles: the Hype path.` : `It walked ${stepsToKm(m.bsteps || 0)} km with you: the Build path.`}`,
+      split: `It just reached level ${e.at}. It can take the Build path or the Hype path: you choose.`,
     }[e.k] || '';
   modal({
     title: `${escapeHtml(billyName(m))} is evolving`,
@@ -545,7 +537,17 @@ function evolutionModal(m) {
     html: `<p>${why} Something bigger is coming.</p>`,
     lock: 1,
     btns: [
-      { l: 'Let it evolve', c: 'dark', f: () => runEvolution(m) },
+      /* phase 08: a split line's middle stage evolves the way you pick */
+      ...(e.k === 'split' && s.alt
+        ? [
+            {
+              l: `Build: ${escapeHtml(SPECIES[/** @type {string} */ (s.next)].name)}`,
+              c: 'dark',
+              f: () => runEvolution(m, '', 'A'),
+            },
+            { l: `Hype: ${escapeHtml(SPECIES[s.alt].name)}`, c: 'dark', f: () => runEvolution(m, '', 'B') },
+          ]
+        : [{ l: 'Let it evolve', c: 'dark', f: () => runEvolution(m) }]),
       {
         l: 'Not yet',
         c: 'quiet',
@@ -558,9 +560,9 @@ function evolutionModal(m) {
     ],
   });
 }
-function runEvolution(m, note) {
+function runEvolution(m, note, path = 'A') {
   const from = speciesOf(m),
-    to = SPECIES[from.evo && from.evo.k === 'split' && from.alt && splitPath(m) === 'B' ? from.alt : from.next],
+    to = SPECIES[from.evo && from.evo.k === 'split' && from.alt && path === 'B' ? from.alt : from.next],
     fromName = billyName(m);
   uiState.modal = null;
   modal({
@@ -584,7 +586,7 @@ function runEvolution(m, note) {
       });
       setTimeout(() => {
         box.classList.add('b', 'flash');
-        evolve(m);
+        evolve(m, path);
         save();
         setTimeout(
           () => {
@@ -604,7 +606,7 @@ function runEvolution(m, note) {
 }
 function hatchModal(e) {
   modal({
-    title: `A ${e.tier} km egg is hatching`,
+    title: `A ${eggKm(e.tier)} km egg is hatching`,
     top: `<div class="hatch" id="hatchBox">${eggHTML(e.tier, 96, 'wob')}</div>`,
     html: '<p>Something is moving inside.</p>',
     lock: 1,
@@ -648,7 +650,6 @@ function hatchModal(e) {
 const TABS = ['walk', 'map', 'team', 'ledger', 'bag'],
   SCREENS = [...TABS, 'profile'];
 function topbar() {
-  rollDay();
   const shut = !!(saveData.preferences && saveData.preferences.cardClosed),
     walk = uiState.tab === 'walk';
   return `<div class="topbar glass" role="status">${walk ? `<button class="tb-where ${shut ? 'shut' : ''}" data-a="card-open" aria-expanded="${!shut}" aria-label="${shut ? 'Show' : 'Hide'} the card for ${escapeHtml(LOCATIONS[saveData.trip.node].name)}">${escapeHtml(uiState.inside && !uiState.bench && typeof roomState === 'function' && roomState() ? uiState.inside.name || LOCATIONS[saveData.trip.node].name : LOCATIONS[saveData.trip.node].name)}${uiIconHTML('chev', 12)}</button>` : `<span class="tb-where">${escapeHtml(LOCATIONS[saveData.trip.node].name)}</span>`}<span class="tb-chip tnum" title="Money">${coinHTML('penny', 16)}<small>$</small><b data-count="tse" data-to="${saveData.se}">${formatNumber(saveData.se)}</b></span><button class="tb-btn" data-a="settings" aria-label="Settings and help">${uiIconHTML('gear', 18)}</button><button class="tb-me" data-a="tab" data-t="profile" aria-label="Your trainer card" ${uiState.tab === 'profile' ? 'aria-current="page"' : ''}>${typeof portraitHTML === 'function' ? portraitHTML('me', 84) : ''}</button>${pbInboxDot(uiState.inbox.length)}</div>`;
@@ -757,42 +758,7 @@ function updateNav(show) {
 function renderIntro() {
   if (uiState.openingFailed)
     return `<div class="title opening-failed"><h1 class="logo">Pocket Billies</h1><p class="tag">The opening scene couldn’t start${uiState.openingFailed === 'stopped' ? ' (it stopped partway)' : ''}. Trying again usually works; if it keeps happening, send the debug log.</p><button class="pb gold wide big" data-a="intro">Try again</button><button class="pb quiet wide" data-a="dbglog">Export debug log</button></div>`;
-  return `<div class="title"><div class="title-landscape" aria-hidden="true"></div><div class="title-coin">${coinHTML('penny', 176, 32)}</div><h1 class="logo">Pocket Billies</h1><p class="tag">A walking RPG inside the Hollow Earth, where the Billies are the wildlife. Gotta tax 'em all!</p><button class="pb gold wide big" data-a="intro">Start</button></div>`;
-}
-const BRACKET_COLORS = ['var(--ok)', 'var(--gold)', 'var(--red)', '#9B6BE0', '#4F80E8'];
-function bracketSpans() {
-  let lo = 0;
-  return STEP_BRACKETS.map(([hi, r], i) => {
-    const top = hi === Infinity ? Math.max(lo * 1.33, lo + 5000) : hi,
-      o = { lo, hi: top, r, col: BRACKET_COLORS[i % BRACKET_COLORS.length] };
-    lo = hi;
-    return o;
-  });
-}
-function bracketBars(st) {
-  const sp = bracketSpans();
-  return sp
-    .map(
-      b =>
-        `<i style="flex:${b.hi - b.lo}"><b style="width:${clamp((st - b.lo) / (b.hi - b.lo), 0, 1) * 100}%;background:${b.col}"></b></i>`
-    )
-    .join('');
-}
-function bracketLabels() {
-  return bracketSpans()
-    .map(
-      (b, i) =>
-        `<span style="flex:${b.hi - b.lo}">${i === 0 ? `$${b.r} per step` : `$${b.r} after ${formatNumber(b.lo)}`}</span>`
-    )
-    .join('');
-}
-function bracketNote(st) {
-  const r = stepRate(st),
-    nb = nextBracket(st),
-    i = STEP_BRACKETS.indexOf(nb);
-  if (i === 0) return `Full rate for ${formatNumber(nb[0] - st)} more steps today.`;
-  if (nb[0] === Infinity) return 'You’ve walked a lot today. Resting is good too.';
-  return `Busy day! Steps now earn $${r} each until ${formatNumber(nb[0])}.`;
+  return `<div class="title"><div class="title-landscape" aria-hidden="true"></div><div class="title-coin">${coinHTML('penny', 176, 32)}</div><h1 class="logo">Pocket Billies</h1><p class="tag">A classic RPG inside the Hollow Earth, where the Billies are the wildlife. Gotta tax 'em all!</p><button class="pb gold wide big" data-a="intro">Start</button></div>`;
 }
 function encounterCardHTML(q) {
   const nu = !uiState.seenEnc.has(q.id);
@@ -822,7 +788,7 @@ function nodeActions(i) {
     x += `<button class="pb small" data-a="shop" data-s="${n.boutique}">${uiIconHTML('profile', 16)} ${escapeHtml(SHOPS[n.boutique].name)}</button>`;
   x += n.town
     ? '<button class="pb small" data-a="clinic">Rest at the clinic, free</button>'
-    : `<button class="pb small quiet" data-a="rest">Rest stop, $${formatNumber(RULES.steps.restCost)}</button>`;
+    : `<button class="pb small quiet" data-a="rest">Rest stop, $${formatNumber(RULES.battle.restCost)}</button>`;
   trainersAt(i).forEach(T => {
     const done = saveData.flags[T.id];
     if (T.blocks && done && !T.seat) return;
@@ -840,7 +806,7 @@ function boardNote(i) {
 function hereCard() {
   const node = saveData.trip.node,
     here = LOCATIONS[node],
-    prog = `<p class="note">You’re staying here. Steps still earn money, hatch eggs and bring encounters. Open the map to pick a place to walk to.</p>`;
+    prog = `<p class="note">Open the map to pick a place to walk to; gold arrows show you the way.</p>`;
   return `<section class="here px glass"><div class="route-art"${here.banner ? ` style="background-image:url('${artURL(here.banner)}')"` : ''}><span>${personHTML('me', 64)}</span><button class="route-profile" data-a="customize">${escapeHtml(cleanTrainer(saveData.avatar, saveData.gender).name)} · Edit look</button></div><div class="sec-h"><div><div class="sub">${escapeHtml(locationSubtitle(here))}</div><h2>${here.name}</h2></div><button class="pb small quiet" data-a="tab" data-t="map">Open map</button></div><p class="note">${here.blurb}</p>${boardNote(node)}${prog}<div class="racts">${tripButtons()}</div>${nodeActions(node)}</section>`;
 }
 function eggSlots() {
@@ -850,7 +816,7 @@ function eggSlots() {
       if (!e)
         return `<div class="slot px empty"><span class="egg-e"></span><b>Empty incubator</b><span class="note">Win battles to find eggs.</span></div>`;
       const T = EGGS[e.tier];
-      return `<div class="slot px">${eggHTML(e.tier, 48, 'wob')}<b>${e.tier} km egg</b>${progressBarHTML(e.prog / T.need, 'live')}<span class="note tnum">${stepsToKm(e.prog)} of ${e.tier} km</span></div>`;
+      return `<div class="slot px">${eggHTML(e.tier, 48, 'wob')}<b>${eggKm(e.tier)} km egg</b>${progressBarHTML(e.prog / T.need, 'live')}<span class="note tnum">${metresToKm(e.prog)} of ${metresToKm(T.need)} km</span></div>`;
     })
     .join('');
   const pipe = saveData.eggs.filter(e => e.slot == null);
@@ -860,13 +826,8 @@ function buddyCard() {
   const m = findBilly(saveData.buddy);
   if (!m) return '';
   const a = xpFor(m.lvl),
-    b = xpFor(m.lvl + 1),
-    e = speciesOf(m).evo;
-  const ev =
-    e && e.k === 'buddy'
-      ? `<div class="note">Buddy distance: ${stepsToKm(m.bsteps || 0)} of ${stepsToKm(e.steps)} km to evolve.</div>${progressBarHTML((m.bsteps || 0) / e.steps, 'gold')}`
-      : '';
-  return `<section><div class="sec-h"><h2>Buddy</h2></div><div class="buddy px" data-a="mon" data-u="${m.uid}" role="button" tabindex="0">${rigCanvasHTML(m.sp, 80, { gold: m.gold, build: m.build })}<div class="bd"><div class="bn">${escapeHtml(billyName(m))} <span class="lv tnum">Lv ${m.lvl}</span></div><div class="note">Earns 1 XP for every ${plural(RULES.progression.buddyStepsPerXp, 'step')}. ${formatNumber(Math.ceil((b - m.xp) * RULES.progression.buddyStepsPerXp))} more steps to level ${m.lvl + 1}.</div>${progressBarHTML((m.xp - a) / (b - a), 'xpb')}${ev}</div></div></section>`;
+    b = xpFor(m.lvl + 1);
+  return `<section><div class="sec-h"><h2>Buddy</h2></div><div class="buddy px" data-a="mon" data-u="${m.uid}" role="button" tabindex="0">${rigCanvasHTML(m.sp, 80, { gold: m.gold, build: m.build })}<div class="bd"><div class="bn">${escapeHtml(billyName(m))} <span class="lv tnum">Lv ${m.lvl}</span></div><div class="note">Gets the full XP of every battle you win, even when it sits one out. ${formatNumber(b - m.xp)} XP to level ${m.lvl + 1}.</div>${progressBarHTML((m.xp - a) / (b - a), 'xpb')}</div></div></section>`;
 }
 function roomHero() {
   const I = uiState.inside,
@@ -881,7 +842,7 @@ function roomHero() {
         home: 'Your room in Granny Juniper’s cottage. Decorate it with what you’ve found.',
       }[I.kind] || '';
   return `<div class="walk-hero" id="walkHero">${locationCardHTML(escapeHtml(here.name), escapeHtml(I.name || sc.name || 'Inside'), `<p class="wh-gate">${escapeHtml(what)}</p>`, (I.kind === 'home' ? `<button class="pb small gold" data-a="decorate">Decorate</button>` : '') + `<button class="pb small" data-a="leaveroom">${uiIconHTML('door', 14)} Go outside</button>`)}
- <div class="wh-foot"><div class="wh-row"><button class="pb small glass fish-btn" data-a="fish" hidden>${uiIconHTML('fish', 14)} Fish</button><button class="wh-down glass" data-a="walkdown" aria-label="Show actions">${uiIconHTML('chev', 18)}<span>Actions</span></button><span class="wh-steps glass tnum">${uiIconHTML('walk', 14)} ${formatNumber(saveData.day.steps)}</span></div></div></div>`;
+ <div class="wh-foot"><div class="wh-row"><button class="pb small glass fish-btn" data-a="fish" hidden>${uiIconHTML('fish', 14)} Fish</button><button class="wh-down glass" data-a="walkdown" aria-label="Show actions">${uiIconHTML('chev', 18)}<span>Actions</span></button></div></div></div>`;
 }
 /* v31: the place card: compact (where, the hour and weather, staying or walking, one main button; the rest folded
    under More), closable with ×, and brought back by tapping the place's name in the top bar. Closed stays closed. */
@@ -907,27 +868,24 @@ function walkHero() {
   }
   const node = saveData.trip.node,
     here = LOCATIONS[node],
-    q = saveData.queue,
+    q = encountersHere(),
     next = `<p class="wh-gate">${escapeHtml(tripStatus().t)}</p>`;
   return `<div class="walk-hero" id="walkHero">${locationCardHTML(escapeHtml(locationSubtitle(here)), escapeHtml(here.name), environmentLine() + next, tripButtons())}
  <div class="wh-foot">${q.length ? `<p class="wh-hint glass">${uiIconHTML('spark', 12)} ${plural(q.length, 'Billie')} hiding nearby. Tap a <b>?</b> to battle.</p>` : `<p class="wh-hint glass">${uiIconHTML('walk', 12)} Tap the ground to walk around. Tap buildings, people and signs.</p>`}
-  <div class="wh-row"><button class="pb small glass fish-btn" data-a="fish" hidden>${uiIconHTML('fish', 14)} Fish</button><button class="pb small glass" data-a="photo" aria-label="Photo mode">${uiIconHTML('camera', 14)}</button><button class="wh-down glass" data-a="walkdown" aria-label="Show actions">${uiIconHTML('chev', 18)}<span>Actions</span></button><span class="wh-steps glass tnum">${uiIconHTML('walk', 14)} ${formatNumber(saveData.day.steps)}</span></div></div></div>`;
+  <div class="wh-row"><button class="pb small glass fish-btn" data-a="fish" hidden>${uiIconHTML('fish', 14)} Fish</button><button class="pb small glass" data-a="photo" aria-label="Photo mode">${uiIconHTML('camera', 14)}</button><button class="wh-down glass" data-a="walkdown" aria-label="Show actions">${uiIconHTML('chev', 18)}<span>Actions</span></button></div></div></div>`;
 }
 function renderWalk() {
-  rollDay();
-  const st = saveData.day.steps,
-    r = stepRate(st),
-    q = saveData.queue;
+  const q = encountersHere(),
+    cap = encounterStock(saveData.trip.node);
   return `${walkHero()}<div class="walk-sheet"><span class="ws-grip" aria-hidden="true"></span>
  <div class="cols"><div class="col">
- <div class="today px glass"><div class="today-top"><div><div class="big tnum" data-count="steps" data-to="${st}">${formatNumber(st)}</div><div class="lbl">steps today</div></div><div class="se"><div class="mid tnum">$<span data-count="se" data-to="${saveData.se}">${formatNumber(saveData.se)}</span></div><div class="lbl">Money</div></div></div>
-  <div class="brackets" role="img" aria-label="Earning $${r} per step">${bracketBars(st)}</div><div class="brk-l">${bracketLabels()}</div>
-  <p class="note">${bracketNote(st)}</p></div>
- <section class="walkbtns"><p class="note">Walk with the joystick (drag anywhere on the scene) or tap where you want to go. The arrows at the edges lead on to the next place; the steps you take count here.</p></section>
+ <div class="today px glass"><div class="today-top"><div class="se"><div class="mid tnum">$<span data-count="se" data-to="${saveData.se}">${formatNumber(saveData.se)}</span></div><div class="lbl">Money</div></div></div>
+  <p class="note">Beat wild Billies and trainers to earn more.</p></div>
+ <section class="walkbtns"><p class="note">Walk with the joystick (drag anywhere on the scene) or tap where you want to go. The arrows at the edges lead on to the next place.</p></section>
  ${typeof challengeCardHTML === 'function' ? challengeCardHTML() : ''}${typeof requestListHTML === 'function' && requestListHTML() ? `<section class="chal px glass"><div class="sec-h"><h2>Requests you’re helping with</h2></div>${requestListHTML()}</section>` : ''}${hereCard()}</div><div class="col">
- <section class="pending"><div class="sec-h"><h2>Encounters</h2><span class="count tnum">${q.length}/${RULES.steps.maxEncounters}</span></div>
-  <p class="note">${q.length >= RULES.steps.maxEncounters ? 'Your area is full. Battle or tax a few to make room.' : `Next one in about ${formatNumber(Math.ceil((RULES.steps.encounterEverySE - saveData.meter) / r))} steps.`} You only see their level until the battle starts.</p>
-  ${q.length ? `<div class="queue">${q.map(encounterCardHTML).join('')}</div>` : `<div class="empty px">No Billies nearby. Walk about ${formatNumber(RULES.steps.encounterEverySE)} steps and one will wander over.</div>`}</section>
+ <section class="pending"><div class="sec-h"><h2>Encounters here</h2><span class="count tnum">${q.length}/${cap}</span></div>
+  <p class="note">${!cap ? 'No wild Billies live here. Try a route or a town with tall grass.' : q.length >= cap ? 'This place is full. Battle or tax a few to make room.' : 'Another one wanders over about every minute.'} You only see their level until the battle starts.</p>
+  ${q.length ? `<div class="queue">${q.map(encounterCardHTML).join('')}</div>` : `<div class="empty px">No Billies nearby.${cap ? ' Give it a minute and one will wander over.' : ''}</div>`}</section>
  ${eggSlots()}${buddyCard()}</div></div></div>`;
 }
 /* ---------- the walk scene behind the Walk tab ---------- */
@@ -1338,7 +1296,7 @@ export function walkState() {
           });
   }
   v.who = 'me';
-  v.enc = saveData.queue.map(q => ({
+  v.enc = encountersHere().map(q => ({
     id: q.id,
     lvl: q.lvl,
     sp: q.sp,
@@ -1362,7 +1320,7 @@ export function walkPick(h) {
     }
   }
   if (h.k === 'enc') {
-    const q = saveData.queue.find(x => x.id === h.e.id);
+    const q = encountersHere().find(x => x.id === h.e.id);
     if (q) {
       uiState.encAt = h.look || null;
       startWild(q);
@@ -1521,6 +1479,7 @@ export function walkCross() {
       plan = r.plan && r.plan[0] === n ? r.plan.slice(1) : [];
     saveData.trip = { node: n, plan };
     saveData.visited[n] = 1;
+    if (typeof arrivedAt === 'function') arrivedAt(n);
     uiState.roam = { id: q.id, node: n, x, z };
     uiState.backAt = null;
     if (typeof debugLog !== 'undefined') debugLog.add('travel', 'walked into ' + LOCATIONS[n].name);
@@ -1700,7 +1659,7 @@ function worldMapCardHTML() {
     status = st.k === 'stay' ? 'You are here.' : st.t + '.';
     btns = st.k === 'stay' ? '' : tripButtons();
   } else if (sel === dest) {
-    status = `${st.t}. ${formatNumber((tripTo(sel) || { steps: 0 }).steps)} steps to go.`;
+    status = `${st.t}. ${distanceText((tripTo(sel) || { metres: 0 }).metres)} to go.`;
     btns = tripButtons();
   } else {
     const t = tripTo(sel),
@@ -1708,7 +1667,7 @@ function worldMapCardHTML() {
     if (locked) status = 'Locked. ' + gateText(n);
     else if (!t) status = 'You can’t get there from here yet.';
     else {
-      status = `${formatNumber(t.steps)} steps · about ${stepsToKm(t.steps)} km${
+      status = `${distanceText(t.metres)} on foot${
         t.plan.length > 1
           ? ` · via ${t.plan
               .slice(0, -1)
@@ -1726,7 +1685,7 @@ function paintWorldMapCard() {
   const c = $('#mapcard');
   if (c) c.innerHTML = worldMapCardHTML();
 }
-/* ---------- team: the lead up top, the party as cards, day jobs, then storage ---------- */
+/* ---------- team: the lead up top, the party as cards, then storage ---------- */
 export const plateVars = m => {
   const t = speciesOf(m).types;
   return `--c1:${TYPE_COLORS[t[0]][0]};--c2:${TYPE_COLORS[t[t.length - 1]][0]}`;
@@ -1742,29 +1701,13 @@ const xpProgress = m => {
 const xpLeft = m => (m.lvl >= maxLevel() ? 'Max level' : `${formatNumber(xpFor(m.lvl + 1) - m.xp)} to Lv ${m.lvl + 1}`);
 export const needsCare = m => m.hp < maxHp(m) || !!m.status;
 const meter = (k, inner, v) => `<div class="tm-meter"><span>${k}</span>${inner}<b class="tnum">${v}</b></div>`;
-function jobSlots() {
-  const open = saveData.jobs.map((j, i) => (j.uid ? -1 : i)).filter(i => i >= 0);
-  return `<div class="jobs">${saveData.jobs
-    .map((j, i) => {
-      if (!j.uid)
-        return i !== open[0]
-          ? ''
-          : `<div class="job empty"><span class="job-ic">${uiIconHTML('bag', 20)}</span><div class="jt"><b>${open.length === 1 ? '1 open job' : `${open.length} open jobs`}</b><span class="note">Each pays out every ${formatNumber(JOB_STEPS)} steps.</span></div><button class="pb small" data-a="hire" data-s="${i}">Hire</button></div>`;
-      const m = findBilly(j.uid),
-        J = JOBS[j.job];
-      if (!m) return '';
-      return `<div class="job"><button class="job-spr" data-a="mon" data-u="${m.uid}" style="${plateVars(m)}" aria-label="${escapeHtml(billyName(m))}, details">${rigCanvasHTML(m.sp, 48, { gold: m.gold, build: m.build })}</button><div class="jt"><b>${escapeHtml(billyName(m))}</b><span class="note">${escapeHtml(J.n)}, ${escapeHtml(J.where)}. Earns ${escapeHtml(J.pay)}.</span>${progressBarHTML(j.acc / JOB_STEPS, 'gold live')}<span class="note tnum">${formatNumber(JOB_STEPS - j.acc)} steps to the next pay${j.pend ? `, ${j.pend} ready` : ''}</span>
-  <div class="racts"><button class="pb small ${j.pend ? 'gold' : ''}" data-a="collect" data-s="${i}" ${j.pend ? '' : 'disabled'}>Collect pay${j.pend ? ` (${j.pend})` : ''}</button><button class="pb small quiet" data-a="endshift" data-s="${i}">End shift</button></div></div></div>`;
-    })
-    .join('')}</div>`;
-}
 const BOX_SORTS = [
   ['new', 'Newest'],
   ['lvl', 'Level'],
   ['name', 'Name'],
 ];
 function boxSection() {
-  const all = saveData.box.filter(m => m.job == null),
+  const all = saveData.box,
     so = uiState.boxSort || 'new',
     types = [...new Set(all.flatMap(m => speciesOf(m).types))].sort();
   let f = uiState.boxF || 'all';
@@ -1800,9 +1743,8 @@ function boxSection() {
 function renderTeam() {
   const lead = saveData.team[0],
     rest = saveData.team.slice(1),
-    free = saveData.box.filter(m => m.job == null).length,
-    open = Math.max(0, teamSize() - saveData.team.length),
-    work = saveData.jobs.filter(j => j.uid).length;
+    free = saveData.box.length,
+    open = Math.max(0, teamSize() - saveData.team.length);
   /* phase 06-2: the lead big, the rest as roomy rows (js/unit-card.js), the open spots last */
   const slots = open
     ? unitOpenRowHTML(
@@ -1814,7 +1756,6 @@ function renderTeam() {
   return `<header class="bar"><div><div class="sub">${saveData.team.length} of ${teamSize()} on your team</div><h1 class="where">Your team</h1></div></header>
  <div class="u-team">${lead ? unitHeroHTML(billyUnit(lead)) : ''}${rest.length || slots ? `<div class="u-list" aria-label="Party">${rest.map((m, i) => unitRowHTML(billyUnit(m), i)).join('')}${slots}</div>` : ''}<p class="u-hint">Your lead goes first in battle. Tap anyone for details.</p></div>
 ${workshopSectionHTML()}
- <section class="tpanel tm-jobs"><div class="sec-h"><h2>Day jobs</h2><span class="count tnum">${work}/${saveData.jobs.length}</span></div><p class="note">Billies at work leave your team and earn pay while you walk.</p>${jobSlots()}</section>
  ${boxSection()}`;
 }
 const RARITY_NAMES = { starter: 'Starter', common: 'Common', uncommon: 'Uncommon', rare: 'Rare', mythical: 'Mythical' };
@@ -1891,8 +1832,6 @@ function evolutionMethod(e) {
       return `Lv ${e.at}`;
     case 'split':
       return `Lv ${e.at}, Build or Hype`;
-    case 'buddy':
-      return `Walk ${stepsToKm(e.steps)} km as buddy`;
     case 'item':
       return `${evolutionItemName(e)} at Lv ${e.min}`;
     case 'donate':
@@ -1929,7 +1868,7 @@ function renderDexEntry(id) {
   ];
   const eggs = Object.keys(EGGS)
     .filter(k => EGGS[k].list.some(([x]) => x === id))
-    .map(k => k + ' km egg');
+    .map(k => eggKm(k) + ' km egg');
   const strong = TYPES.filter(x => s.types.some(t => typeEffectiveness(t, [x]) > 1)),
     weak = TYPES.filter(x => typeEffectiveness(x, s.types) > 1),
     res = TYPES.filter(x => typeEffectiveness(x, s.types) < 1);
@@ -1959,7 +1898,7 @@ function renderDexEntry(id) {
     .join('')}</div>
   <section class="paper px notes"><h3>Field notes</h3>${got ? `<p>${escapeHtml(s.blurb)}</p><p class="hand red">${escapeHtml(s.note)}</p>` : `<p>${escapeHtml(s.blurb.split('. ')[0])}. <span class="redact">██████ ████ ███████ ██</span></p><p class="hand">Tax one to complete this entry.</p>`}</section>
   <section class="paper px"><h3>Base stats</h3>${got ? `<table class="bsheet"><tbody>${STAT_IDS.map((k, i) => `<tr><td>${STAT_NAMES[k]}</td><td class="tnum">${s.base[i]}</td><td><span class="bbar" style="--w:${((s.base[i] / mx) * 100).toFixed(0)}%"></span></td></tr>`).join('')}<tr class="tot"><td>Total</td><td class="tnum">${tot}</td><td></td></tr></tbody></table>` : `<p class="note">Tax one to see its stats.</p>`}</section>
-  <section class="paper px lin"><h3>Evolution</h3><div class="chain">${chain}</div><p class="note">${escapeHtml(evolutionHint({ sp: id, lvl: 0, bsteps: 0 }))}</p></section>
+  <section class="paper px lin"><h3>Evolution</h3><div class="chain">${chain}</div><p class="note">${escapeHtml(evolutionHint({ sp: id, lvl: 0 }))}</p></section>
   <section class="paper px"><h3>Type matchups</h3><table class="expo"><tbody><tr><td>Strong against</td><td>${strong.map(typeBadgeHTML).join('') || '—'}</td></tr><tr><td>Weak to</td><td>${weak.map(typeBadgeHTML).join('') || '—'}</td></tr><tr><td>Resists</td><td>${res.map(typeBadgeHTML).join('') || '—'}</td></tr></tbody></table></section>
   <section class="paper px"><h3>Where to look</h3><table class="expo"><tbody><tr><td>Found at</td><td>${where.length ? escapeHtml(where.join(', ')) : 'Not found in the wild'}</td></tr><tr><td>Hatches from</td><td>${eggs.length ? escapeHtml(eggs.join(', ')) : '—'}</td></tr><tr><td>Tracks</td><td>${escapeHtml(TRACKS[D.plan] || 'Unremarkable')}</td></tr></tbody></table></section>
   ${got ? `<div class="sig"><span class="sigline">${escapeHtml(s.name)}</span><small>Recorded by Professor Hazel.</small></div>` : ''}
@@ -2018,12 +1957,11 @@ function renderProfile() {
   <div class="tc-badges"><div class="tc-bh"><span>Badges</span><b class="tnum">${bd.got} of ${bd.tot}</b></div><ol class="bdgs">${bd.html}</ol></div>
  </section>
  <section class="tpanel pf-stats"><div class="sec-h"><h2>Records</h2></div><div class="pf-grid">
-  ${tile(uiIconHTML('walk', 14), 'Steps today', formatNumber(saveData.day.steps))}${tile(uiIconHTML('walk', 14), 'Total steps', formatNumber(saveData.totalSteps))}
-  ${tile(uiIconHTML('run', 14), 'Distance walked', `${stepsToKm(saveData.totalSteps)} km`)}${tile(uiIconHTML('map', 14), 'Places visited', `${places}/${LOCATIONS.length}`, null, places / LOCATIONS.length)}
+  ${tile(uiIconHTML('run', 14), 'Distance walked', `${metresToKm((saveData.stats && saveData.stats.walked) || 0)} km`)}${tile(uiIconHTML('map', 14), 'Places visited', `${places}/${LOCATIONS.length}`, null, places / LOCATIONS.length)}
   ${tile(uiIconHTML('ledger', 14), 'Seen', `${seen}/${DEX_ORDER.length}`, null, seen / DEX_ORDER.length)}${tile(coinHTML('penny', 14), 'Taxed', `${got}/${DEX_ORDER.length}`, null, got / DEX_ORDER.length)}
   ${tile(uiIconHTML('fight', 14), 'Trainers beaten', formatNumber(beat))}${tile(eggHTML(2, 12), 'Eggs hatched', formatNumber(saveData.hatched || 0), saveData.eggs.length ? `${plural(saveData.eggs.length, 'egg')} on the way` : 'No eggs right now')}${typeof stampTile === 'function' ? stampTile(tile) : ''}
  </div></section></div>
- <div class="pf-row">${bud ? `<section class="tpanel pf-buddy"><div class="sec-h"><h2>Buddy</h2></div><button class="pf-bud" data-a="mon" data-u="${bud.uid}"><span class="tm-spr" style="${plateVars(bud)}">${rigCanvasHTML(bud.sp, 72, { gold: bud.gold, build: bud.build })}</span><span class="pf-bt"><b>${escapeHtml(billyName(bud))}</b><span class="tnum">Lv ${bud.lvl}</span><small>You’ve walked ${stepsToKm(bud.bsteps || 0)} km together.</small></span></button></section>` : ''}
+ <div class="pf-row">${bud ? `<section class="tpanel pf-buddy"><div class="sec-h"><h2>Buddy</h2></div><button class="pf-bud" data-a="mon" data-u="${bud.uid}"><span class="tm-spr" style="${plateVars(bud)}">${rigCanvasHTML(bud.sp, 72, { gold: bud.gold, build: bud.build })}</span><span class="pf-bt"><b>${escapeHtml(billyName(bud))}</b><span class="tnum">Lv ${bud.lvl}</span><small>Gets the full XP of every battle you win.</small></span></button></section>` : ''}
  <section class="tpanel pf-bag"><div class="sec-h"><h2>Bag</h2></div>
   <div class="pf-coins">${Object.keys(COINS)
     .map(
@@ -2111,7 +2049,7 @@ function billySheet(m) {
         toast(`${billyName(m)} is resting in storage.`);
       },
     });
-  if (!inTeam && m.job == null)
+  if (!inTeam)
     acts.push(
       saveData.team.length < teamSize()
         ? {
@@ -2172,7 +2110,7 @@ function billySheet(m) {
   }
   if (e && e.k === 'merge' && m.lvl >= e.min) {
     const other = allBillies()
-      .filter(o => o !== m && o.sp === m.sp && o.job == null)
+      .filter(o => o !== m && o.sp === m.sp)
       .sort((x, y) => x.lvl - y.lvl)[0];
     acts.push({
       c: 'gold',
@@ -2241,7 +2179,6 @@ function billySheet(m) {
   <div class="ms-tabs" role="tablist" aria-label="About ${escapeHtml(billyName(m))}" data-on="sum">${tabs.map(([k, l]) => `<button role="tab" data-a="ms-tab" data-k="${k}" aria-selected="${k === 'sum'}">${l}</button>`).join('')}</div>
   <div class="ms-pane" data-k="sum"><div class="ms-meters">${meter('HP', hpBar(m.hp, mx), `${m.hp}/${mx}`)}${meter('XP', progressBarHTML(xpProgress(m), 'xpb'), xpLeft(m))}</div>
    <div class="ms-chart">${st}</div>${metR}
-   ${m.job != null ? `<p class="note ms-job">${uiIconHTML('bag', 14)} Working as a ${escapeHtml(JOBS[saveData.jobs[m.job].job].n.toLowerCase())} right now. End the shift from Day jobs to bring it back.</p>` : ''}
    ${acts.length ? `<div class="ms-acts">${acts.map((b, i) => `<button class="pb small ${b.c || ''}" data-a="mact" data-i="${i}" ${b.dis ? 'disabled' : ''}>${b.ic ? uiIconHTML(b.ic, 15) : ''}<span>${b.l}</span></button>`).join('')}</div>` : ''}
    <p class="note ms-about">${escapeHtml(s.blurb)}</p>
    <div class="ms-nick"><label class="field-l">Nickname<input id="nick" maxlength="16" value="${escapeHtml(m.nick)}" placeholder="${escapeHtml(s.name)}" autocomplete="off" enterkeyhint="done"></label><button class="pb small" data-a="mnick">Save</button></div></div>
@@ -2298,7 +2235,7 @@ function swapPick(m) {
   });
 }
 function addPick() {
-  const free = saveData.box.filter(m => m.job == null).sort((a, b) => b.lvl - a.lvl);
+  const free = saveData.box.slice().sort((a, b) => b.lvl - a.lvl);
   modal({
     title: 'Add to your team',
     html: `<div class="list">${
@@ -2313,33 +2250,6 @@ function addPick() {
         )
         .join('') || '<p>Storage is empty.</p>'
     }</div>`,
-    btns: [{ l: 'Cancel', c: 'quiet', f: closeModal }],
-  });
-}
-function hireFlow(slot) {
-  modal({
-    title: 'Pick a job',
-    html: `<p class="note">Each job pays out every ${formatNumber(JOB_STEPS)} steps you walk.</p>`,
-    btns: Object.keys(JOBS)
-      .map(k => ({
-        l: `${JOBS[k].n}, ${JOBS[k].where}: ${JOBS[k].pay}`,
-        f: () => {
-          uiState.modal = null;
-          hirePick(slot, k);
-        },
-      }))
-      .concat([{ l: 'Cancel', c: 'quiet', f: closeModal }]),
-  });
-}
-function hirePick(slot, job) {
-  const free = allBillies().filter(m => m.job == null),
-    canTeam = saveData.team.filter(x => x.job == null).length > 1;
-  const list = free.filter(m => !saveData.team.includes(m) || canTeam);
-  modal({
-    title: `Who becomes the ${JOBS[job].n.toLowerCase()}?`,
-    html: list.length
-      ? `<div class="list">${list.map(m => `<button class="pickrow px" data-a="hireon" data-s="${slot}" data-j="${job}" data-u="${m.uid}">${rigCanvasHTML(m.sp, 40, { gold: m.gold, build: m.build })}<span class="pr-t"><b>${escapeHtml(billyName(m))}</b><small>${saveData.team.includes(m) ? 'On your team' : 'In storage'}, Lv ${m.lvl}</small></span></button>`).join('')}</div>`
-      : '<p>Tax another Billie first. Your last one has to stay on the team.</p>',
     btns: [{ l: 'Cancel', c: 'quiet', f: closeModal }],
   });
 }
@@ -2419,7 +2329,7 @@ export function startGame(l, o = {}) {
   const W = {
     title: `${speciesOf(m).name} joined your team`,
     top: `<div class="sheet-art">${rigCanvasHTML(m.sp, 128)}</div>`,
-    html: `${nE ? `<p>${words[nE] || nE} Billie${nE === 1 ? ' is' : 's are'} already rustling in the grass. Tap one to battle it, then flick a coin.</p>` : ''}${egg ? `<p>Professor Hazel also gave you a ${R.starterEgg} km egg. It’s warming up in an incubator, and every step you walk helps it hatch.</p>` : ''}`,
+    html: `${nE ? `<p>${words[nE] || nE} Billie${nE === 1 ? ' is' : 's are'} already rustling in the grass. Tap one to battle it, then flick a coin.</p>` : ''}${egg ? `<p>Professor Hazel also gave you a ${eggKm(R.starterEgg)} km egg. It’s warming up in an incubator and hatches after ${eggKm(R.starterEgg)} km of walking outdoors.</p>` : ''}`,
     btns: [{ l: 'Let’s go', c: 'dark', f: closeModal }],
   };
   if (o.rival && TRAINERS.blake0 && typeof storyRivalBattle === 'function') {
@@ -2514,7 +2424,7 @@ document.addEventListener('click', ev => {
       render();
       break;
     case 'enc': {
-      const q = saveData.queue.find(x => x.id === d.id);
+      const q = encountersHere().find(x => x.id === d.id);
       if (q) startWild(q);
       break;
     }
@@ -2525,9 +2435,9 @@ document.addEventListener('click', ev => {
       toast('The clinic patched everyone up. No charge.');
       break;
     case 'rest': {
-      const c = RULES.steps.restCost;
+      const c = RULES.battle.restCost;
       if (saveData.se < c) {
-        toast(`A rest stop costs $${formatNumber(c)}. Walk a bit first.`);
+        toast(`A rest stop costs $${formatNumber(c)}. Win a battle first.`);
         break;
       }
       saveData.se -= c;
@@ -2591,7 +2501,7 @@ document.addEventListener('click', ev => {
     }
     case 'mteam': {
       const m = findBilly(d.u);
-      if (!m || m.job != null || saveData.team.includes(m)) break;
+      if (!m || saveData.team.includes(m)) break;
       if (saveData.team.length < teamSize()) {
         toTeam(m);
         save();
@@ -2605,7 +2515,7 @@ document.addEventListener('click', ev => {
       break;
     case 'tmaddon': {
       const m = findBilly(d.u);
-      if (m && m.job == null && !saveData.team.includes(m) && saveData.team.length < teamSize()) {
+      if (m && !saveData.team.includes(m) && saveData.team.length < teamSize()) {
         toTeam(m);
         save();
         closeModal();
@@ -2617,7 +2527,7 @@ document.addEventListener('click', ev => {
     case 'mswap': {
       const m = findBilly(d.u),
         o = findBilly(d.o);
-      if (!m || !o || m.job != null || !saveData.team.includes(o) || saveData.team.includes(m)) break;
+      if (!m || !o || !saveData.team.includes(o) || saveData.team.includes(m)) break;
       const i = saveData.team.indexOf(o);
       toBox(o);
       saveData.box.splice(saveData.box.indexOf(m), 1);
@@ -2659,29 +2569,6 @@ document.addEventListener('click', ev => {
     case 'mreset':
       worldMapReset();
       break;
-    case 'hire':
-      hireFlow(+d.s);
-      break;
-    case 'hireon':
-      if (assignJob(+d.s, d.j, d.u)) {
-        const m = findBilly(d.u);
-        closeModal();
-        render();
-        toast(`${billyName(m)} started work as a ${JOBS[d.j].n.toLowerCase()}.`);
-      }
-      break;
-    case 'collect': {
-      const t = collectJob(+d.s);
-      if (t) toast(t);
-      render();
-      break;
-    }
-    case 'endshift': {
-      const t = endShift(+d.s);
-      if (t) toast(t);
-      render();
-      break;
-    }
     case 'dex': {
       if (!d.s) break;
       if (!saveData.seen[d.s]) {

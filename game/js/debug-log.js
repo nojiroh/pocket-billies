@@ -4,7 +4,7 @@
    errors, the loading screen's timings, the device and graphics chip, and a small picture of the scene every few
    seconds. Settings → Export debug log saves it as one JSON file (or shares it on phones). Settings → Run the full
    test (self-test.js) plays through everything for about two minutes, stress-tests the device and adds the results.
-   Nothing here leaves the device unless the player exports it. No save data, names or step history are included. */
+   Nothing here leaves the device unless the player exports it. No save data or names are included, and no positions: only which places opened and when. */
 const BUILD_VERSION = PB_VERSION;
 /* phase 04d: what the log reads and wraps in the game's modules. debug-log.js runs before them (it catches their errors),
    so js/debug-log-names.js (made by tools/to-module.mjs, the last module of the page) fills this in once they have loaded:
@@ -413,7 +413,7 @@ debugLog.state = () => {
     s.trip = GAME.saveData.trip ? GAME.saveData.trip.plan.slice() : [];
     s.scene = typeof GAME.walkView !== 'undefined' ? GAME.walkView.id : null;
     s.team = GAME.saveData.team ? GAME.saveData.team.length : 0;
-    s.encounters = GAME.saveData.queue ? GAME.saveData.queue.length : 0;
+    s.encounters = GAME.encountersHere ? GAME.encountersHere().length : 0;
     s.badges = (GAME.saveData.seats || []).length;
     s.visited = Object.keys(GAME.saveData.visited || {}).length;
     s.frameHz = GAME.frameScheduler.hz;

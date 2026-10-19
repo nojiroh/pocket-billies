@@ -296,8 +296,7 @@ export function calcDamage(k, tk, mid, src) {
       eco =
         1 +
         BATTLE_RULES.retailSynergy *
-          sd.team.filter(m => m !== me && m.hp > 0 && m.job == null && speciesOf(m).types.some(t => syn.includes(t)))
-            .length;
+          sd.team.filter(m => m !== me && m.hp > 0 && speciesOf(m).types.some(t => syn.includes(t))).length;
     }
   }
   const wx =
@@ -642,8 +641,14 @@ export function award(e) {
     battleSay(`${billyName(m)} gained ${formatNumber(amt)} XP.`, { k: 'xp', si: k });
     gainXp(m, amt, battleSay);
   });
+  /* phase 08: your buddy gets the full amount even when it didn't fight (it got its XP from walking before) */
+  const bud = saveData.team.find(m => m.uid === saveData.buddy && !on.includes(m) && m.hp > 0);
+  if (bud) {
+    battleSay(`${billyName(bud)} gained ${formatNumber(amt)} XP.`);
+    gainXp(bud, amt, battleSay);
+  }
   const share = Math.floor(amt * P.teamXpShare),
-    rest = saveData.team.filter(m => !on.includes(m) && m.hp > 0 && m.job == null);
+    rest = saveData.team.filter(m => !on.includes(m) && m !== bud && m.hp > 0);
   if (rest.length && share > 0) {
     rest.forEach(m => gainXp(m, share, () => {}));
     battleSay(`The rest of the team gained ${formatNumber(share)} XP.`);
@@ -669,7 +674,7 @@ export function benchCandidates(si, also = []) {
     .map((m, i) => i)
     .filter(i => {
       const m = sd.team[i];
-      return m.hp > 0 && m.job == null && !on.includes(i) && !also.includes(i);
+      return m.hp > 0 && !on.includes(i) && !also.includes(i);
     });
 }
 export function doSwitch(k, idx) {
@@ -868,7 +873,7 @@ export function hitPart(tk, dmg, M, aim) {
 }
 /* fmt: 'single', 'double' (two a side) or 'alpha' (up to three of yours against one Alpha) */
 export function newBattle(kind, foe, extra) {
-  const able = saveData.team.map((m, i) => i).filter(i => saveData.team[i].hp > 0 && saveData.team[i].job == null);
+  const able = saveData.team.map((m, i) => i).filter(i => saveData.team[i].hp > 0);
   if (!able.length) {
     toast('Everyone on your team has fainted. Rest first, or use a Revive.');
     return false;
@@ -962,7 +967,7 @@ export function startWild(q) {
     battleSay(`A wild ${q.gold ? 'Golden ' : ''}${nm} appeared.`, { k: 'wild' });
     battleSay(`“${nm}!”`, { k: 'cry', si: 1 });
   }
-  if (q.gold) battleSay(`It shimmers. Golden Billies turn up once in ${formatNumber(RULES.steps.goldOdds)}.`);
+  if (q.gold) battleSay(`It shimmers. Golden Billies turn up once in ${formatNumber(RULES.encounters.goldOdds)}.`);
   if (CATCH_RULES.luxury.includes(SPECIES[q.sp].line))
     battleSay(`It looks too picky for ${COINS.penny ? 'a ' + COINS.penny.n : 'cheap coins'}.`);
   const K = liveActors(0);
@@ -977,8 +982,7 @@ export function startTrainer(id, o = {}) {
     toast(`${T.name} has no team yet. Add one in Pocket Billies Studio.`);
     return;
   }
-  const dbl =
-    (T.double || o.double) && team.length >= 2 && saveData.team.filter(m => m.hp > 0 && m.job == null).length >= 1;
+  const dbl = (T.double || o.double) && team.length >= 2 && saveData.team.filter(m => m.hp > 0).length >= 1;
   if (
     !newBattle('trainer', team, {
       tid: id,
@@ -1114,7 +1118,7 @@ export function catchRoll(id, T, spin) {
   while (w < 3 && random() < q) w++;
   return { caught: w === 3, w, edge: false, P };
 }
-export const teamNeedsHp = () => saveData.team.some(m => m.hp > 0 && m.hp < maxHp(m) && m.job == null);
+export const teamNeedsHp = () => saveData.team.some(m => m.hp > 0 && m.hp < maxHp(m));
 export const canUse = (it, m) => {
   const I = ITEMS[it];
   if (!I || !saveData.items[it] || I.evoItem) return false;
@@ -1160,7 +1164,7 @@ export function applyItem(it, id, inB) {
     if (I.hpAll) {
       let n = 0;
       saveData.team.forEach(x => {
-        if (x.hp > 0 && x.job == null) {
+        if (x.hp > 0) {
           /* if (I.hpAll) above; TypeScript doesn't carry that into the callback */
           const g = Math.min(/** @type {number} */ (I.hpAll), maxHp(x) - x.hp);
           if (g > 0) {

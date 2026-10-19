@@ -695,7 +695,7 @@ FLOW = ['@flowers', '@flowers', 'bush_flower', '@bush_round']
 UNDER = ('@fern', '@fern', '@bush_round', '@mushroom', 'stump', 'bush_berry')
 CHAT_SUNDOWN = ['Welcome to Sundown! The Professor’s lab is up the steps at the back.', 'The clinic heals your team for free. Just walk up to the door.',
                 'Tap the road sign to see where the road goes.', 'I once saw a billionaire try to buy a cloud.', 'The ducks on the pond have names. I won’t tell you them.',
-                'Steps add up. My dog has walked to the Long Grass and back twice today.', 'The General Store sells Gold Cards. Very shiny.',
+                'My dog walks himself. He has been to the Long Grass and back twice today.', 'The General Store sells Gold Cards. Very shiny.',
                 'They built a whole city in the middle of the world. Capital Gains, they call it.']
 
 

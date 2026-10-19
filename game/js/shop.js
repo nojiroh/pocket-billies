@@ -125,7 +125,7 @@ function shopBuy(id, k) {
     cost = price * n;
   if (it.need && saveData.seats.length < it.need) return;
   if (saveData.se < cost) {
-    toast('Not enough money. Walk a little first.');
+    toast('Not enough money. Win a few battles first.');
     return;
   }
   saveData.se -= cost;
