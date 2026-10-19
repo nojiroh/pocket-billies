@@ -1643,7 +1643,7 @@ async function runFullTest(mode) {
   <table class="nb-table"><thead><tr><th>What</th><th>Average</th><th>Worst</th><th>Result</th></tr></thead><tbody>${rows || '<tr><td colspan="4">Nothing was measured.</td></tr>'}</tbody></table>
   ${srows ? `<h3>Stress test</h3><p class="note">${keepUp ? `This device keeps up (28+ frames per second) up to: <b>${escapeHtml(keepUp.name)}</b>.` : 'This device struggled from the first step.'}</p><table class="nb-table"><thead><tr><th>Load</th><th>Average</th><th>Worst</th><th>ms per frame</th></tr></thead><tbody>${srows}</tbody></table>` : ''}
   ${causes.length ? `<h3>What made frames slow</h3><p class="note">Every frame over 33 ms, put down to what the game was busy with at the time.</p><table class="nb-table"><thead><tr><th>Busy with</th><th>Frames</th><th>Worst</th></tr></thead><tbody>${causes.map(([k, v]) => `<tr><td>${escapeHtml(k)}</td><td class="tnum">${v.n}</td><td class="tnum">${Math.round(v.max)} ms</td></tr>`).join('')}</tbody></table>` : ''}
-  ${errors.length ? `<h3>Errors</h3><ul class="nb-errs">${errors.map(e => `<li>${escapeHtml(e)}</li>`).join('')}</ul>` : ''}<p class="note">Your save wasn't changed. Export the debug log to send these results with your device's details.</p>`,
+  ${errors.length ? `<h3>Errors</h3><ul class="nb-errs">${errors.map(e => `<li>${escapeHtml(e)}</li>`).join('')}</ul>` : ''}<p class="note">Your save wasn't changed. ${debugLog.sendAuto() && debugLog.canSend() ? 'The debug log is being sent with these results; its code shows when it’s done.' : 'Export the debug log to send these results with your device’s details.'}</p>`,
     btns: diag
       ? [
           {
@@ -1668,6 +1668,7 @@ async function runFullTest(mode) {
           { l: 'Close', c: 'quiet', f: closeModal },
         ],
   });
+  debugLog.autoSend('test');
 }
 const runQuickTest = runFullTest;
 provide({ runQuickTest }); /* to-module */

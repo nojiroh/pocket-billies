@@ -51,12 +51,15 @@ addEventListener(
       e.message || (e.target && e.target.src ? 'Failed to load ' + e.target.src : 'error'),
       e.error && e.error.stack
     );
+    /* a thrown error, not a file that didn't load */
+    if (e.error) debugLog.autoSend('crash');
   },
   true
 );
 addEventListener('unhandledrejection', e => {
   const r = e.reason;
   debugLog.error('promise', (r && r.message) || String(r), r && r.stack);
+  debugLog.autoSend('crash');
 });
 for (const k of ['error', 'warn']) {
   const o = console[k].bind(console);
@@ -706,6 +709,15 @@ debugLog.canSend = () =>
     !GAME.TEST_RUN &&
     !GAME.TEST_BOOT);
 debugLog.sending = false;
+/* the automatic sends, only with the switch on: once per session for each reason (the end of the full or diagnostics
+   test, the opening-failed screen, the first uncaught error: sent 10 s later, so the log holds what came after) */
+debugLog.autoSent = new Set();
+debugLog.autoSend = why => {
+  if (!debugLog.sendAuto() || !debugLog.canSend() || debugLog.autoSent.has(why)) return;
+  debugLog.autoSent.add(why);
+  if (why === 'crash') setTimeout(() => sendDebugLog('crash'), 10000);
+  else sendDebugLog(why);
+};
 async function sendDebugLog(why = 'manual') {
   const say = m => why !== 'crash' && typeof GAME.toast === 'function' && GAME.toast(m);
   if (!debugLog.canSend()) {

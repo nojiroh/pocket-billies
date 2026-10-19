@@ -756,8 +756,10 @@ function updateNav(show) {
    start or broke, a screen to try it again. The old step-by-step intro (stills, Hazel's lines, the trainer step and a
    list of starters) is gone: the opening cutscene is the only way in (docs/phases/06-plan.md "The new opening"). */
 function renderIntro() {
-  if (uiState.openingFailed)
+  if (uiState.openingFailed) {
+    debugLog.autoSend('opening');
     return `<div class="title opening-failed"><h1 class="logo">Pocket Billies</h1><p class="tag">The opening scene couldn’t start${uiState.openingFailed === 'stopped' ? ' (it stopped partway)' : ''}. Trying again usually works; if it keeps happening, send the debug log.</p><button class="pb gold wide big" data-a="intro">Try again</button><button class="pb quiet wide" data-a="dbglog">Export debug log</button>${debugLog.canSend() ? '<button class="pb quiet wide" data-a="dbgsend">Send debug log</button>' : ''}</div>`;
+  }
   return `<div class="title"><div class="title-landscape" aria-hidden="true"></div><div class="title-coin">${coinHTML('penny', 176, 32)}</div><h1 class="logo">Pocket Billies</h1><p class="tag">A classic RPG inside the Hollow Earth, where the Billies are the wildlife. Gotta tax 'em all!</p><button class="pb gold wide big" data-a="intro">Start</button></div>`;
 }
 function encounterCardHTML(q) {
