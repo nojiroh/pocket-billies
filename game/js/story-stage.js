@@ -12,17 +12,21 @@
 /* the script lines of a person or a trainer: person:<id> (in a map's people), trainer:<id> */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { provide, toast } from './hooks.js';
+import { provide, render, toast } from './hooks.js';
+import { $ } from './util.js';
 import { LOCATIONS, STORY_DATA, TRAINERS, gameData } from './game-data.js';
 import { healAll } from './logic/rules.js';
 import { startTrainer } from './logic/battle-engine.js';
 import { parseScript, runBase, runScript, saveDuringRun } from './logic/script.js';
 import { activeBattle, reducedMotion, save, saveData, uiState } from './game-state.js';
 import { walkView } from './walk-view.js';
+import { walkRenderer } from './walk/walk-state.js';
 import { talkBox, talkChoose, talkHide, talkLine } from './talk.js';
-import { cutscene } from './cutscene.js';
+import { cutscene, cutsceneFlush, cutsceneFrame } from './cutscene.js';
 /* eslint-disable no-func-assign */
 expose({
+  cutsceneWorldBegin: [() => cutsceneWorldBegin, v => ((cutsceneWorldBegin = v), provide({ cutsceneWorldBegin }))],
+  cutsceneWorldEnd: [() => cutsceneWorldEnd, v => ((cutsceneWorldEnd = v), provide({ cutsceneWorldEnd }))],
   playStoryScript: [() => playStoryScript, v => ((playStoryScript = v), provide({ playStoryScript }))],
   storyGameStage: [() => storyGameStage],
   storyHold: [() => storyHold, v => (storyHold = v)],
@@ -35,9 +39,10 @@ expose({
   storyTree: [() => storyTree, v => (storyTree = v)],
   storyTrees: [() => storyTrees],
   storyWait: [() => storyWait],
+  storyWorldOK: [() => storyWorldOK, v => ((storyWorldOK = v), provide({ storyWorldOK }))],
 });
 /* eslint-enable no-func-assign */
-provide({ playStoryScript, storyScriptIds });
+provide({ cutsceneWorldBegin, cutsceneWorldEnd, playStoryScript, storyScriptIds, storyWorldOK });
 /* to-module: end */
 function storyScriptLines(id) {
   const i = id.indexOf(':'),
@@ -80,6 +85,62 @@ function storyTree(id) {
   let t = storyTrees.get(lines);
   if (!t) storyTrees.set(lines, (t = parseScript(lines)));
   return t;
+}
+function storyWorldOK() {
+  return (
+    typeof walkRenderer !== 'undefined' &&
+    walkRenderer.on &&
+    walkView.ready &&
+    walkView.cv &&
+    !activeBattle &&
+    typeof cutsceneFrame === 'function'
+  );
+}
+/* the director, borrowed for a scene in the current walk scene (no remount, no letterbox fade-in) */
+function cutsceneWorldBegin() {
+  cutscene.on = true;
+  cutscene.run++;
+  cutscene.skip = false;
+  cutscene.actors = {};
+  cutscene.stars = [];
+  cutscene.coins = [];
+  cutscene.fx = [];
+  cutscene.flashes = [];
+  cutscene.cam = null;
+  cutscene.hide = null;
+  cutscene.world = true;
+  let el = $('#cs');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'cs';
+    el.className = 'cs';
+    document.body.appendChild(el);
+  }
+  el.innerHTML =
+    '<div class="cs-bars" aria-hidden="true"><i></i><i></i></div><button class="cs-skip pb small quiet" data-a="cs-skip">Skip ›</button><div class="cs-fade" id="csFade"></div>';
+  el.hidden = false;
+  document.body.classList.add('in-cs', 'cs-world');
+  walkView.director = { frame: cutsceneFrame };
+  return cutscene.run;
+}
+function cutsceneWorldEnd() {
+  talkHide();
+  cutscene.on = false;
+  cutscene.run++;
+  cutscene.skip = false;
+  cutscene.world = false;
+  cutsceneFlush();
+  walkView.director = null;
+  walkRenderer.bt = null;
+  walkRenderer.camT = null;
+  walkRenderer.focus = null;
+  const el = $('#cs');
+  if (el) {
+    el.hidden = true;
+    el.innerHTML = '';
+  }
+  document.body.classList.remove('in-cs', 'cs-world');
+  render();
 }
 const storyWait = ms => new Promise(r => setTimeout(r, reducedMotion ? 0 : ms));
 /* the game's stage for the runner */

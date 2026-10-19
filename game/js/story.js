@@ -6,7 +6,16 @@
    battle. saveData.story remembers which scenes you have seen. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { closeModal, modal, provide, render, selfTest, showPendingWindows } from './hooks.js';
+import {
+  closeModal,
+  cutsceneWorldBegin,
+  cutsceneWorldEnd,
+  modal,
+  provide,
+  selfTest,
+  showPendingWindows,
+  storyWorldOK,
+} from './hooks.js';
 import { $, clamp } from './util.js';
 import { RULES, SPECIES, TRAINERS, trainersAt } from './game-data.js';
 import { encountersHere, healAll, today } from './logic/rules.js';
@@ -23,8 +32,6 @@ import { talk, talkBox, talkHide, talkLine } from './talk.js';
 import {
   cutscene,
   cutsceneActor,
-  cutsceneFlush,
-  cutsceneFrame,
   cutsceneHideDialogue,
   cutsceneNow,
   cutsceneSay,
@@ -35,8 +42,6 @@ import {
 import { loreClue, loreData } from './lore.js';
 /* eslint-disable no-func-assign */
 expose({
-  cutsceneWorldBegin: [() => cutsceneWorldBegin, v => (cutsceneWorldBegin = v)],
-  cutsceneWorldEnd: [() => cutsceneWorldEnd, v => (cutsceneWorldEnd = v)],
   legendCheck: [() => legendCheck, v => (legendCheck = v)],
   openingDone: [() => openingDone, v => ((openingDone = v), provide({ openingDone }))],
   openingMark: [() => openingMark, v => (openingMark = v)],
@@ -49,7 +54,6 @@ expose({
   storyFlags: [() => storyFlags, v => ((storyFlags = v), provide({ storyFlags }))],
   storyRivalBattle: [() => storyRivalBattle, v => (storyRivalBattle = v)],
   storyState: [() => storyState],
-  storyWorldOK: [() => storyWorldOK, v => (storyWorldOK = v)],
   trainerTalk: [() => trainerTalk, v => (trainerTalk = v)],
 });
 /* eslint-enable no-func-assign */
@@ -74,62 +78,6 @@ export async function trainerTalk(id) {
   if (lines.length && typeof talk === 'function')
     await talk(lines.map((l, i) => [T.who, i ? l : l.startsWith('[') ? l : '[happy] ' + l]));
   startTrainer(id, { talked: true });
-}
-function storyWorldOK() {
-  return (
-    typeof walkRenderer !== 'undefined' &&
-    walkRenderer.on &&
-    walkView.ready &&
-    walkView.cv &&
-    !activeBattle &&
-    typeof cutsceneFrame === 'function'
-  );
-}
-/* the director, borrowed for a scene in the current walk scene (no remount, no letterbox fade-in) */
-function cutsceneWorldBegin() {
-  cutscene.on = true;
-  cutscene.run++;
-  cutscene.skip = false;
-  cutscene.actors = {};
-  cutscene.stars = [];
-  cutscene.coins = [];
-  cutscene.fx = [];
-  cutscene.flashes = [];
-  cutscene.cam = null;
-  cutscene.hide = null;
-  cutscene.world = true;
-  let el = $('#cs');
-  if (!el) {
-    el = document.createElement('div');
-    el.id = 'cs';
-    el.className = 'cs';
-    document.body.appendChild(el);
-  }
-  el.innerHTML =
-    '<div class="cs-bars" aria-hidden="true"><i></i><i></i></div><button class="cs-skip pb small quiet" data-a="cs-skip">Skip ›</button><div class="cs-fade" id="csFade"></div>';
-  el.hidden = false;
-  document.body.classList.add('in-cs', 'cs-world');
-  walkView.director = { frame: cutsceneFrame };
-  return cutscene.run;
-}
-function cutsceneWorldEnd() {
-  talkHide();
-  cutscene.on = false;
-  cutscene.run++;
-  cutscene.skip = false;
-  cutscene.world = false;
-  cutsceneFlush();
-  walkView.director = null;
-  walkRenderer.bt = null;
-  walkRenderer.camT = null;
-  walkRenderer.focus = null;
-  const el = $('#cs');
-  if (el) {
-    el.hidden = true;
-    el.innerHTML = '';
-  }
-  document.body.classList.remove('in-cs', 'cs-world');
-  render();
 }
 /* Blake (or any trainer with intro lines) runs up to you, talks, and the battle starts */
 async function rivalScene(T) {
