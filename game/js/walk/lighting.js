@@ -10,6 +10,7 @@ import { hexToRgb } from '../art.js';
 import { hash2d, walkView } from '../walk-view.js';
 import { ENGINE_DEFAULTS, engineContext, engineSetting } from '../engine/settings.js';
 import { normalize3, smooth01 } from '../engine/webgl.js';
+import { LIGHT_KIND } from '../engine/light-pick.js';
 import { lightContext, pickPointLights } from '../engine/light.js';
 import { environment, environmentSky, environmentWindowLit } from '../environment.js';
 import { walkRenderer } from './walk-state.js';
@@ -147,10 +148,17 @@ export function walkLightContext(C, sun, dark, items, shadow, BT) {
       G = [],
       inRoom = !!sc.room && !out,
       E = it.bld3 && typeof buildingState !== 'undefined' ? buildingState.mesh.get(it.p) : null;
-    let W = null;
+    let W = null,
+      fi = 0;
     for (const e of M.fx || []) {
       if (e.k === 'fire')
-        L.push({ p: at(e.x, e.y), r: 4.4, c: [1.7, 0.8, 0.32].map(v => v * fl * lb * (dark ? 1 : 0.6)) });
+        L.push({
+          p: at(e.x, e.y),
+          r: 4.4,
+          c: [1.7, 0.8, 0.32].map(v => v * fl * lb * (dark ? 1 : 0.6)),
+          src: it.p,
+          kind: LIGHT_KIND.fire + fi++,
+        });
       else if (e.k === 'window' && !inRoom && !E) {
         const p = at(e.x, e.y);
         if (p[1] - it.y < 2.6 && windowLit(p[0], p[2])) (W || (W = [])).push(p);
@@ -170,6 +178,8 @@ export function walkLightContext(C, sun, dark, items, shadow, BT) {
         p: [cx + fn[0] * 0.5, it.y + 1.2, cz + fn[1] * 0.5],
         r: 2.4 + Math.min(1.6, n * 0.5),
         front: true,
+        src: it.p,
+        kind: LIGHT_KIND.window,
         c: [1.1, 0.8, 0.45].map(v => v * Math.min(2, 0.7 + n * 0.35) * wk * lb * (dark ? 1 : 0.6)),
       });
     }
@@ -182,6 +192,8 @@ export function walkLightContext(C, sun, dark, items, shadow, BT) {
           p,
           r: 3.6 + 0.35 * Math.min(3, n - 1),
           own: it.p,
+          src: it.p,
+          kind: LIGHT_KIND.glow,
           c: [1.3, 1.05, 0.7].map(v => v * Math.min(1.6, n) * fl * k * lb),
         });
         if (p[1] - it.y > 1.2 && pk > 0)
@@ -189,6 +201,8 @@ export function walkLightContext(C, sun, dark, items, shadow, BT) {
             p: [p[0], it.y + 0.35, p[2] + 0.05],
             r: Math.min(4.2, (p[1] - it.y) * 1.25),
             pool: 1,
+            src: it.p,
+            kind: LIGHT_KIND.glowPool,
             c: [1, 0.8, 0.52].map(v => v * 0.85 * k * pk * Math.min(1.3, n)),
           });
       }
@@ -200,6 +214,8 @@ export function walkLightContext(C, sun, dark, items, shadow, BT) {
         p,
         r: M.glow.r * 2.2,
         own: it.p,
+        src: it.p,
+        kind: LIGHT_KIND.lamp,
         c: [(c[0] / 255) * 1.3, (c[1] / 255) * 1.3, (c[2] / 255) * 1.3].map(v => v * lb * on),
       });
       /* v34: a lamp up high also lays a pool of light on the ground under it after dark */
@@ -208,6 +224,8 @@ export function walkLightContext(C, sun, dark, items, shadow, BT) {
           p: [it.x, it.y + 0.35, it.z + 0.05],
           r: Math.min(4.2, M.glow.y * 1.25),
           pool: 1,
+          src: it.p,
+          kind: LIGHT_KIND.lampPool,
           c: [(c[0] / 255) * 0.9 * pk * on, (c[1] / 255) * 0.78 * pk * on, (c[2] / 255) * 0.55 * pk * on],
         });
     }
@@ -215,7 +233,13 @@ export function walkLightContext(C, sun, dark, items, shadow, BT) {
   for (const it of items)
     if (it.person || it.k === 'enc' || (it.k === 'life' && it.sh > 0))
       ao.push(pooledQuad(AO_POOL, ao.length, it.x, it.z, it.aoR || 0.34, (it.aoR || 0.34) * 0.76));
-  if (BT) for (const l of BT.lights) L.push(l);
+  if (BT)
+    for (let i = 0; i < BT.lights.length; i++) {
+      const l = BT.lights[i];
+      l.src = BT;
+      l.kind = i;
+      L.push(l);
+    }
   nearestFirst(ao, P.x, P.z, AO_NEAR, 64);
   /* v26: dark caves (and the night) — you carry a lantern */
   const E = typeof environment !== 'undefined' && engineContext.env ? environment : null,
@@ -227,6 +251,8 @@ export function walkLightContext(C, sun, dark, items, shadow, BT) {
     L.push({
       p: [P.x, y, P.z - 0.25],
       r: cave > 0.02 ? 6.8 : 5,
+      src: 'lantern',
+      kind: 0,
       c: [2.5, 1.95, 1.3].map(v => v * lan * (cave > 0.02 ? 1 : 0.55) * lb),
     });
   }

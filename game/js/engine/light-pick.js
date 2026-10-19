@@ -32,7 +32,7 @@ const LIGHT_FADE_MS = 250,
 const LIGHT_JUMP_M = 20;
 /* a light's kind within the thing it comes from (its src): a prop's glow and the pool under it, its windows' light,
    its lamp (scenery glow) and that pool, and its fires (one per fx entry, from 8 on) */
-const LIGHT_KIND = { glow: 0, glowPool: 1, window: 2, lamp: 3, lampPool: 4, fire: 8 };
+export const LIGHT_KIND = { glow: 0, glowPool: 1, window: 2, lamp: 3, lampPool: 4, fire: 8 };
 function lightPicker() {
   return {
     owners: new Map(),
