@@ -5,6 +5,9 @@ reach the stand-in). Any error on the page fails it. Nothing leaves the machine;
 Project Story S3: on the way it writes in a trainer's script (an error on its line, line ids, the command reference),
 follows the Check's Show me, uses the story preview and plays from here in a second tab (the game gets the draft).
 And it flies the Walk scenes preview's free camera with the mouse, the keys and two fingers.
+Studio track ST-1: it shows two sections side by side and tries the presets and the handles.
+Studio track ST-2: it paints on the shared pixel canvas (strokes, lines, flips, symmetry, the palette lock, the keys,
+the ? sheet) and undoes pictures and data in one order, in the sheet editor and the ground tile painter.
 
     python3 tools/check-studio-github.py           # the repository as it is (run `npm run data` first)
     python3 tools/check-studio-github.py dist      # the build (`npm run build` first)
@@ -176,6 +179,155 @@ def story_steps(pg, errs):
     print('story editor: messages, line ids, reference, people, story section, the Check, the story preview', flush=True)
 
 
+def split_steps(pg, errs):
+    """Studio track ST-1: two sections side by side. No two sections the second pane can show share an element id;
+    an edit in the second pane is an edit (and undoes); a 3D section stays on the left beside a light one; the second
+    pane refuses a 3D section and the one already on the left; the presets and the handles answer."""
+    shared = pg.evaluate("""(() => { const by = {}, keep = studioState.sec;
+      for (const k of Object.keys(SECTIONS)) { if (PANE2_REFUSED[k]) continue; openSection(k);
+        for (const i of new Set([...document.querySelectorAll('#main [id]')].map(e => e.id))) (by[i] = by[i] || []).push(k); }
+      openSection(keep); return Object.entries(by).filter(([i, ks]) => ks.length > 1).map(([i, ks]) => i + ' in ' + ks.join(', ')); })()""")
+    if shared: errs.append('split: sections share ids: ' + '; '.join(shared[:5]))
+    pg.evaluate("void openSection('billionaires')"); time.sleep(0.3)
+    pg.locator('.nav[data-s=moves]').click(modifiers=['Shift']); time.sleep(0.8)
+    if pg.evaluate("[studioState.sec, studioState.sec2, document.querySelector('#main2').hidden]") != ['billionaires', 'moves', False]:
+        errs.append('split: Shift-click did not open Moves beside Billies')
+    f = pg.locator('#main2 input[data-p]').first
+    path, v0 = f.get_attribute('data-p'), f.input_value()
+    f.fill(v0 + ' Split'); f.dispatch_event('change'); time.sleep(0.4)
+    got = pg.evaluate(f"[readPath({json.dumps(path)}), studioState.dirty]")
+    pg.evaluate("void undo()"); time.sleep(0.4)
+    back = pg.evaluate(f"readPath({json.dumps(path)})")
+    if got != [v0 + ' Split', True] or back != v0: errs.append(f'split: an edit in the second pane gave {got}, undo {back!r}')
+    pg.evaluate("void openSection('preview')"); pg.wait_for_selector('#cvWorld', timeout=20000); time.sleep(1.5)
+    if pg.evaluate("[studioState.sec, studioState.sec2]") != ['preview', 'moves']: errs.append('split: the battle preview did not open beside Moves')
+    pg.evaluate("ACTIONS.openBeside({ s: 'scenes' })"); pg.evaluate("ACTIONS.openBeside({ s: 'preview' })"); time.sleep(0.3)
+    if pg.evaluate("studioState.sec2") != 'moves': errs.append('split: the second pane took a 3D section')
+    pg.select_option('#layPick', 'compact'); time.sleep(0.4)
+    if pg.evaluate("[studioState.sec2, getComputedStyle(document.querySelector('#side')).width]") != [None, '200px']: errs.append('split: the Compact preset did not close the split or set the sizes')
+    pg.select_option('#layPick', 'auto'); time.sleep(0.3)
+    pg.evaluate("void openSection('billionaires')"); time.sleep(0.3)
+    h = pg.locator('#main .split > .lay-h'); h.focus(); pg.keyboard.press('Shift+ArrowRight'); time.sleep(0.2)
+    w = pg.evaluate("Math.round(document.querySelector('#main .list-col').getBoundingClientRect().width)")
+    pg.keyboard.press('Delete'); time.sleep(0.2)
+    w0 = pg.evaluate("Math.round(document.querySelector('#main .list-col').getBoundingClientRect().width)")
+    if w != w0 + 32: errs.append(f'split: the list handle moved it to {w} from {w0}')
+    pg.evaluate("localStorage.removeItem('studio-layout')")
+    print('split: no shared ids, an edit and undo in the second pane, preview beside Moves, 3D refused, presets, handles', flush=True)
+
+
+PIXELS = "(p => { const c = loadedAtlas(p); return Array.from(c.getContext('2d').getImageData(0, 0, c.width, c.height).data).reduce((a, v, i) => (a * 31 + v * ((i % 7) + 1)) % 1000000007, 0) })"
+PIXEL_AT = "((p, x, y) => Array.from(loadedAtlas(p).getContext('2d').getImageData(x, y, 1, 1).data))"
+
+
+def pixel_canvas_steps(pg, errs, sp):
+    """Studio track ST-2: the sheet editor on the shared pixel canvas. A stroke, a skeleton number and a second stroke
+    undo in the order they were made (and redo), across a Front/Back switch; a flip twice and four quarter turns
+    change nothing; symmetry paints the mirrored pixel; the palette lock snaps a colour; the keys pick tools; ? lists
+    them. Everything is undone and the sheet left unchanged."""
+    path = pg.evaluate("atlasPath(pixelEditor.sp, 'front')")
+    h = lambda: pg.evaluate(f"{PIXELS}({json.dumps(path)})")
+    at = lambda x, y: pg.evaluate(f"{PIXEL_AT}({json.dumps(path)}, {x}, {y})")
+    pg.evaluate("pixelCanvasZoom(pixelEditor.pc, 4); pxStage.scrollTo(0, 0)"); time.sleep(0.3)
+    box = pg.locator('#pxCv').bounding_box()
+    Z = 4
+    xy = lambda x, y: (box['x'] + x * Z + Z / 2, box['y'] + y * Z + Z / 2)
+    def stroke(a, b):
+        pg.mouse.move(*xy(*a)); pg.mouse.down(); pg.mouse.move(*xy(*b), steps=6); pg.mouse.up()
+    steps0 = pg.evaluate('studioState.undo.length')
+    h0 = h()
+    stroke((6, 8), (30, 20)); h1 = h()
+    if h1 == h0: errs.append('pixels: a stroke changed nothing')
+    if pg.evaluate("typeof studioState.undo.at(-1)") != 'object': errs.append('pixels: a stroke is not a step of the undo')
+    bone = "studioState.rigs[pixelEditor.sp].front.bones[0].at[0]"
+    b0 = pg.evaluate(bone)
+    inp = pg.locator('#pxBones input').first
+    inp.fill(str(b0 + 3)); inp.press('Tab'); time.sleep(0.7)
+    stroke((10, 30), (20, 34)); h2 = h()
+    pg.click('.pxed [data-pe=atlas][data-v=back]'); time.sleep(0.4)
+    pg.mouse.move(*xy(2, 2))
+    got = []
+    for _ in range(3):
+        pg.keyboard.press('Control+z'); time.sleep(0.3); got.append((h(), pg.evaluate(bone)))
+    want = [(h1, b0 + 3), (h1, b0), (h0, b0)]
+    if got != want: errs.append(f'pixels: undo went {[(a == h0, a == h1, a == h2, b) for a, b in got]}, wanted stroke 2, the bone, stroke 1 (bone {b0})')
+    for _ in range(3): pg.keyboard.press('Control+y'); time.sleep(0.2)
+    if (h(), pg.evaluate(bone)) != (h2, b0 + 3): errs.append('pixels: redo did not bring both strokes and the bone back')
+    pg.click('.pxed [data-pe=atlas][data-v=front]'); time.sleep(0.4)
+    pg.evaluate("pixelCanvasZoom(pixelEditor.pc, 4); pxStage.scrollTo(0, 0)"); time.sleep(0.2)
+    # the line tool and Shift-click
+    pg.keyboard.press('l'); stroke((40, 4), (50, 9))
+    if at(50, 9)[3] == 0: errs.append('pixels: the line tool left its end unpainted')
+    # a flip twice, four quarter turns of a square selection
+    part = pg.evaluate("partsOf(pixelEditor.sp, 'front')[0].r")
+    hf = h()
+    pg.mouse.move(*xy(part[0] + 3, part[1] + 3)); time.sleep(0.2)
+    pg.keyboard.press('Shift+H')
+    if h() == hf: errs.append('pixels: Shift+H flipped nothing')
+    pg.keyboard.press('Shift+H')
+    pg.keyboard.press('m'); stroke((part[0] + 2, part[1] + 2), (part[0] + 13, part[1] + 13))
+    if pg.evaluate('pixelEditor.pc.sel') != [part[0] + 2, part[1] + 2, 12, 12]: errs.append(f"pixels: the selection is {pg.evaluate('pixelEditor.pc.sel')}")
+    for _ in range(4): pg.click('.pxed [data-pe=xf][data-x=rotate]')
+    if h() != hf: errs.append('pixels: two flips and four quarter turns changed the sheet')
+    pg.keyboard.press('Escape')
+    if pg.evaluate('pixelEditor.pc.sel') or not pg.locator('.pxed').count(): errs.append('pixels: Esc should drop the selection and keep the editor open')
+    # symmetry: a dot in the part paints its mirror
+    pg.keyboard.press('b'); pg.click('.pxed [data-pc=sym][data-m=v]')
+    pg.evaluate("choosePixelColor('#123456')")
+    x, y = part[0] + 4, part[1] + 5
+    pg.mouse.move(*xy(x, y)); pg.mouse.click(*xy(x, y))
+    mx = 2 * part[0] + part[2] - 1 - x
+    if at(x, y)[:3] != [0x12, 0x34, 0x56] or at(mx, y)[:3] != [0x12, 0x34, 0x56]: errs.append(f'pixels: symmetry painted {at(x, y)} and {at(mx, y)}')
+    pg.click('.pxed [data-pc=sym][data-m=off]')
+    # the palette lock snaps a colour onto the game palette
+    pg.keyboard.press('k')
+    snapped = pg.evaluate('pixelEditor.pc.color')
+    if not pg.evaluate(f"gamePalette().includes({json.dumps(snapped)})"): errs.append(f'pixels: the palette lock left {snapped}')
+    pg.keyboard.press('k')
+    for k, t in [('e', 'erase'), ('g', 'fill'), ('i', 'pick'), ('m', 'select'), ('b', 'pen')]:
+        pg.keyboard.press(k)
+        if pg.evaluate('pixelEditor.pc.tool') != t: errs.append(f'pixels: {k} gave {pg.evaluate("pixelEditor.pc.tool")}')
+    pg.keyboard.press('?'); time.sleep(0.3)
+    if not pg.locator('#dlg .keys-sheet').count(): errs.append('pixels: ? showed no key sheet')
+    pg.keyboard.press('Escape'); time.sleep(0.2)
+    if not pg.locator('.pxed').count(): errs.append('pixels: Esc on the key sheet closed the editor too')
+    # take it all back
+    for _ in range(pg.evaluate('studioState.undo.length') - steps0): pg.evaluate('undo()')
+    if h() != h0: errs.append('pixels: undoing every step did not bring the sheet back')
+    pg.evaluate(f"studioState.artDirty.delete({json.dumps(path)}); updateTopBar()")
+    print('pixel canvas: strokes, a bone and undo/redo in order, line, flips and turns, selection, symmetry, palette lock, keys, ? sheet', flush=True)
+
+
+def tile_painter_steps(pg, errs):
+    """Studio track ST-2: a ground tile on the shared canvas: a click on a repeat paints the tile, undo takes it back,
+    the painter's keys do not reach the map's."""
+    pg.set_default_timeout(120000)
+    pg.evaluate("void openSection('scenes')"); time.sleep(4)
+    t = pg.evaluate("Object.keys(sceneryCatalog().terrains).find(c => sceneryCatalog().terrains[c].tile)")
+    pg.evaluate(f"ACTIONS.scEditTile({{ c: {json.dumps(t)} }})")
+    pg.wait_for_selector('#scPeStage .pc-art'); time.sleep(1)
+    path = pg.evaluate('mapEditor.pe.path')
+    h0 = pg.evaluate(f"{PIXELS}({json.dumps(path)})")
+    pg.locator('#scPeStage .pc-art').scroll_into_view_if_needed()
+    box = pg.locator('#scPeStage .pc-art').bounding_box()
+    Z, W = pg.evaluate('mapEditor.pePc.zoom'), pg.evaluate(f"loadedAtlas({json.dumps(path)}).width")
+    pg.evaluate("pixelCanvasTool(mapEditor.pePc, 'pen'); pixelCanvasColor(mapEditor.pePc, '#FF0000')")
+    tool = pg.evaluate('mapEditor.tool')
+    pg.mouse.move(box['x'] + Z / 2, box['y'] + W * Z + Z / 2)
+    pg.keyboard.press('e')
+    if pg.evaluate('mapEditor.pePc.tool') != 'erase' or pg.evaluate('mapEditor.tool') != tool: errs.append('tile painter: E over it should pick its eraser, not the map tool')
+    pg.keyboard.press('b')
+    pg.mouse.click(box['x'] + Z / 2, box['y'] + W * Z + Z / 2)
+    got = pg.evaluate(f"{PIXEL_AT}({json.dumps(path)}, 0, 0)")
+    if got != [255, 0, 0, 255]:
+        errs.append(f"tile painter: a click on a repeat did not paint the tile ({got}, " + pg.evaluate(f"[mapEditor.pePc.tool, mapEditor.pePc.color, (document.elementFromPoint({box['x'] + Z / 2}, {box['y'] + W * Z + Z / 2}) || {{}}).className, innerWidth, innerHeight].join(' ')") + ')')
+    pg.evaluate('undo()'); time.sleep(0.3)
+    if pg.evaluate(f"{PIXELS}({json.dumps(path)})") != h0: errs.append('tile painter: undo did not take the stroke back')
+    pg.evaluate(f"studioState.artDirty.delete({json.dumps(path)}); ACTIONS.scPeClose(); updateTopBar()")
+    pg.set_default_timeout(30000)
+    print('tile painter: paints through a repeat, its keys, undo', flush=True)
+
+
 def main():
     srv = ThreadingHTTPServer(('127.0.0.1', 0), partial(Quiet, directory=str(ROOT)))
     threading.Thread(target=srv.serve_forever, daemon=True).start()
@@ -225,7 +377,8 @@ def main():
         n = len(errs)
         sp = pg.evaluate("studioState.D.lines[0].id + '0'")
         pg.evaluate(f"void openPixelEditor({json.dumps(sp)}, 'front')")
-        pg.wait_for_selector('#pxCv', timeout=20000)
+        pg.wait_for_selector('#pxCv', timeout=20000); time.sleep(0.5)
+        pixel_canvas_steps(pg, errs, sp)
         pg.click('.pxed [data-pe=atlas][data-v=back]'); time.sleep(0.5)
         pg.click('.pxed [data-pe=close]'); time.sleep(0.3)
         pg.evaluate(f"void openSkeleton({json.dumps(sp)}, 'front')")
@@ -244,6 +397,8 @@ def main():
         print(f'art tools opened: pixel editor (front, back), skeleton builder, battle preview, coats ({diff} pixels recoloured)', flush=True)
         story_steps(pg, errs)
         free_camera_steps(pg, errs)
+        tile_painter_steps(pg, errs)
+        split_steps(pg, errs)
         pg.evaluate("const k = Object.keys(studioState.D.moves)[0]; studioState.D.moves[k].name += ' Test'; studioState.dirty = true; void saveAll()")
         t0 = time.time()
         while time.time() - t0 < 60 and 'pulls' not in posts:

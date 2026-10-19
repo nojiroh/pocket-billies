@@ -10,13 +10,50 @@ straight into `game/data` and `game/art`.
 Double-click `Start-Studio.bat` / `Start-Studio.command`, or run
 `python3 start-studio.py`. It opens at **http://localhost:8001**.
 
+## Layout (studio track ST-1)
+
+The Studio is built for wide screens (up to 3440 x 1440) and still works on a tablet.
+
+- **Handles.** Drag the edge of the section list, of a section's list (Billies, Moves, Props and the others with a
+  list) and of the battle preview's side panel. A handle also takes the keyboard: Tab to it, then the arrow keys (8 px,
+  Shift 32 px), Home and End for the smallest and largest, Delete or a double-click to go back. Each section keeps its
+  own sizes (in this browser).
+- **Wide screens.** On a window of about 1920 px lists and side panels get wider; from about 2560 px an editor beside
+  its list puts its cards in two columns, and the battle preview's stage fills the height with the controls beside it.
+- **Two sections side by side.** The ⇥ button next to a section in the list (or Shift-click) opens it on the right.
+  Drag the line between the two panes; **Swap** or **Close** on the right pane's bar. Walk scenes, Props, Engine and the
+  Battle preview have a 3D view (there is one), so they only open on the left. Undo and Save cover both panes. The
+  split comes back when you open the Studio again; below 1000 px the right pane hides.
+- **Layout presets** (top bar, from 1200 px): Auto (sizes follow the window), Compact, Wide, Ultrawide and Split (two
+  sections). A preset sets every section's sizes; after a drag it says "adjusted", and Reset sizes goes back to it.
+
+## The pixel canvas (studio track ST-2)
+
+One canvas paints the Billies' sheets (Edit pixels) and props and ground tiles (Walk scenes and Props → Edit pixels).
+
+- **Tools.** Pencil (B), eraser (E), fill (G, stays inside the part), pick a colour (I, or hold Alt), line (L, or
+  Shift-click with the pencil from where the last stroke ended), select a box (M).
+- **Flip ↔, Flip ↕ and Turn ⟳** (Shift+H, Shift+V, Shift+R) act on the selection, else on the part under the pointer
+  (on a prop or tile, the whole picture). A box that is not square turns into one the other way round on the same
+  middle; art turned onto a neighbour's pixels covers them.
+- **Symmetry** (Y, or the side panel): left-right, top-bottom or both, about the middle of the selection, else of the
+  part under the pointer; the axis is drawn and can be moved by half pixels.
+- **Game palette.** Lock to it (K) and every colour snaps to its nearest shade; its ramps become swatches. "Show
+  colours not on it" paints the pixels that are off it in magenta and counts them.
+- **Onion skin** (O, sheets only): the same part of the other view (Front or Back), faint under the part you point at.
+- **View.** Whole-number zoom (+ and −, 1 to 6 for 1x to 32x, 0 to fit, Ctrl+wheel; it keeps the pixel under the
+  pointer), the grid from 8x (Ctrl+'), Space-drag or the middle button to move the view.
+- **Undo.** Each stroke, flip, turn, upload, revert and resize is one step of the Studio's undo, in order with every
+  other edit (a skeleton number, a field). Switching Front/Back or closing the editor keeps them.
+- **`?`** anywhere outside a text field lists every key in the Studio, the open tool's first.
+
 ## Sections
 
 | Section | What you can do |
 |---|---|
 | **Billies** | Names, Field Guide text, types, height and weight per stage; stat profile or exact stats; moves learned and when; how and when each stage evolves; where it appears. Animated front/back preview with every action, in any coat. |
 | **Coats** | A coat recolours a Billie's art (in place of the old Golden sheets). Swap whole palette ramps (every shade of one becomes the same shade of another), then exact colours; art a little off the palette follows the nearest shade. How often each coat turns up in the wild, from eggs and on the line (empty: never). Give one Billie its own hand-painted sheet for a coat: it starts as the recolour; download it, paint it, upload it back. A before/after preview on any Billie. |
-| **Edit pixels and skeleton** | Pixel editor on the real sprite sheets: pencil, eraser, fill, color picker, palette from the sheet, zoom, grid, part outlines, undo/redo, live animated preview. Download a sheet, edit it in another app, upload it back. Nudge where each body part attaches and how parts stack. |
+| **Edit pixels and skeleton** | Pixel editor on the real sprite sheets (the pixel canvas, above): every tool, part outlines, an onion skin of the other view, a live animated preview. Download a sheet, edit it in another app, upload it back. Nudge where each body part attaches and how parts stack. |
 | **Skeleton builder** | Build or reshape a body: add parts (blank or from a PNG), drag parts and pivots, tilt, re-parent, mirror a limb with everything attached to it, choose which motion each part follows, switch the body plan, and copy a layout between the front and back views. |
 | **+ New Billie** | Start from a blank body (biped, four-legged, flyer, fish, blob or worm) in a color you pick, or copy an existing Billie's skeleton and recolored art. Either way it works in the game immediately. Add or remove evolution stages, duplicate, recolor or reorder lines. |
 | **Battle preview** | The game's battle stage with your unsaved changes. Pick any two Billies (each in any coat) and a backdrop, then play any move with any outcome, status effects, wild and trainer intros, taxes, faints, sandstorms and camera moves at ½×, 1× or 2× speed. Sky and haze colors change live. |
