@@ -2074,18 +2074,22 @@ def desktop_steps(b, base, R):
             out = []
             for y in (1, -1):
                 pg.evaluate(f"walkView.pl.x={hub[0]};walkView.pl.z={hub[1]};walkView.pl.route=null;0")
-                a = pg.evaluate(f"(()=>{{{setup.replace('Y', str(y))};return [walkView.pl.x,walkView.pl.z,walkView.t]}})()")
+                a = pg.evaluate(f"(()=>{{{setup.replace('Y', str(y))};return [walkView.pl.x,walkView.pl.z,walkView.t,walkView.pl.gait]}})()")
                 until(pg, f"walkView.t>={a[2] + 600}", 60)
-                b = pg.evaluate(f"(()=>{{const r=[walkView.pl.x,walkView.pl.z,walkView.t];{undo};return r}})()")
-                out.append(((b[0] - a[0]) ** 2 + (b[1] - a[1]) ** 2) ** .5 / max(.001, (b[2] - a[2]) / 1000))
+                b = pg.evaluate(f"(()=>{{const r=[walkView.pl.x,walkView.pl.z,walkView.t,walkView.pl.gait];{undo};return r}})()")
+                d = ((b[0] - a[0]) ** 2 + (b[1] - a[1]) ** 2) ** .5
+                # the walk cycle, footsteps and bob follow the metres walked (pl.gait), at any speed
+                if d > .5 and abs((b[3] - a[3]) / d - 1) > .05: gait.append(f'{setup}: walked {d:.2f} m, gait grew {b[3] - a[3]:.2f}')
+                out.append(d / max(.001, (b[2] - a[2]) / 1000))
             return max(out)
+        gait = []
         walk = speed("walkView.stick={x:0,y:Y}", "walkView.stick=null")
         light = speed("walkView.stick={x:0,y:Y*0.4}", "walkView.stick=null")
         ring = speed("walkView.stick={x:0,y:Y};walkView.run=true", "walkView.stick=null;walkView.run=false")
         keys = speed("walkView.keys[Y>0?'u':'d']=1", "walkView.keys={}")
         shift = speed("walkView.keys[Y>0?'u':'d']=1;walkView.keys.run=1", "walkView.keys={}")
         always = speed("saveData.preferences.alwaysRun=true;walkView.stick={x:0,y:Y}", "walkView.stick=null;saveData.preferences.alwaysRun=false")
-        bad = []
+        bad = list(gait)
         if not 2.6 < walk < 3.8: bad.append(f'a full push walks at {walk:.2f} m/s (3.4)')
         for n, v, k in (('a light push', light, .6), ('the ring', ring, 1.7), ('the keys', keys, 1), ('Shift', shift, 1.7), ('Always run', always, 1.7)):
             if abs(v / walk - k) > .15 * k: bad.append(f'{n}: {v:.2f} m/s, {v / walk:.2f}x a full push (want {k}x)')

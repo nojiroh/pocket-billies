@@ -12,7 +12,17 @@ import { clamp } from './util.js';
 import { LOCATIONS } from './game-data.js';
 import { activeBattle, saveData, uiState } from './game-state.js';
 import { battleStage } from './battle-stage.js';
-import { baseMapId, bridgeAt, mapBridges, mapById, stepWallAt, terrainAt, walkData, walkView } from './walk-view.js';
+import {
+  FOOTSTEP_M,
+  baseMapId,
+  bridgeAt,
+  mapBridges,
+  mapById,
+  stepWallAt,
+  terrainAt,
+  walkData,
+  walkView,
+} from './walk-view.js';
 import { environment, environmentHour, environmentState } from './environment.js';
 import { walkRenderer } from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
@@ -30,6 +40,7 @@ expose({
   applyVolumes: [() => applyVolumes, v => ((applyVolumes = v), provide({ applyVolumes }))],
   battleSoundEffect: [() => battleSoundEffect, v => ((battleSoundEffect = v), provide({ battleSoundEffect }))],
   composeSong: [() => composeSong, v => (composeSong = v)],
+  footstepAt: [() => footstepAt, v => (footstepAt = v)],
   initAmbience: [() => initAmbience, v => (initAmbience = v)],
   initSound: [() => initSound, v => (initSound = v)],
   jingle: [() => jingle, v => ((jingle = v), provide({ jingle }))],
@@ -1108,7 +1119,8 @@ function battleSoundEffect(an, r) {
       break;
   }
 }
-/* footsteps while walking */
+/* footsteps while walking: one every FOOTSTEP_M walked (phase 08: by distance, so running steps faster) */
+let footstepAt = 0;
 setInterval(() => {
   try {
     if (
@@ -1120,7 +1132,11 @@ setInterval(() => {
       (typeof activeBattle !== 'undefined' && activeBattle)
     )
       return;
-    const P = walkView.pl;
+    const P = walkView.pl,
+      g = P.gait || 0;
+    if (g < footstepAt) footstepAt = g; /* a new view starts its count again */
+    if (g - footstepAt < FOOTSTEP_M) return;
+    footstepAt = g;
     let ter = typeof terrainAt === 'function' ? terrainAt(P.x, P.z) : 'g';
     /* v18: hollow boards on wooden and rope bridges, stone on stone bridges and stairs */
     if (typeof bridgeAt === 'function' && bridgeAt(P.x, P.z) != null) {
@@ -1153,7 +1169,7 @@ setInterval(() => {
       ter = 'n';
     soundEffect('step', { ter });
   } catch (e) {}
-}, 330);
+}, 50);
 /* volume sliders apply while you drag */
 document.addEventListener('input', ev => {
   const k = ev.target.dataset && ev.target.dataset.preference;

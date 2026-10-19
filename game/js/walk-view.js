@@ -52,6 +52,7 @@ import { frameStop } from './frame-scheduler.js';
 import { ART_CACHE, artLoad, makeCanvas, packHexPixel } from './art.js';
 /* eslint-disable no-func-assign */
 expose({
+  BOB_M: [() => BOB_M],
   BRIDGE_ARCH: [() => BRIDGE_ARCH],
   BUILDING_VARIANT_CACHE: [() => BUILDING_VARIANT_CACHE],
   CLOSED_VENUE_NAMES: [() => CLOSED_VENUE_NAMES],
@@ -61,6 +62,7 @@ expose({
   FOLK_CHAT: [() => FOLK_CHAT],
   FOLK_HOME: [() => FOLK_HOME],
   FOLK_WORK: [() => FOLK_WORK],
+  FOOTSTEP_M: [() => FOOTSTEP_M],
   GROUND_BORDER_M: [() => GROUND_BORDER_M],
   GROUND_BUILDS_PENDING: [() => GROUND_BUILDS_PENDING],
   GROUND_CACHE: [() => GROUND_CACHE],
@@ -82,6 +84,7 @@ expose({
   TONE_DIRECTIONS: [() => TONE_DIRECTIONS],
   TONE_LIGHT: [() => TONE_LIGHT],
   TONE_NONE: [() => TONE_NONE],
+  WALK_FRAME_M: [() => WALK_FRAME_M],
   WALK_KEYS: [() => WALK_KEYS],
   WALK_SPEED: [() => WALK_SPEED],
   actionLabel: [() => actionLabel, v => (actionLabel = v)],
@@ -262,6 +265,8 @@ export const walkView = {
     saved: 0,
     rust: 0,
     face: null,
+    /* metres walked, for the walk cycle, footsteps and bob */
+    gait: 0,
   },
   hits: [],
   R: 1,
@@ -298,7 +303,13 @@ export const GROUND_BORDER_M = 8,
   NAV_CELLS_PER_M = 2,
   WALK_SPEED = 3.4,
   /* phase 08: running is this much faster than walking (the joystick's outer ring, the d-pad's centre, Shift) */
-  RUN_FACTOR = 1.7;
+  RUN_FACTOR = 1.7,
+  /* phase 08: the walk cycle, the footsteps and the camera's bob follow the metres walked (walkView.pl.gait), not the
+     clock, so they keep pace when you run or push lightly. At walking speed they match the old timings: a frame every
+     110 ms, a footstep every 330 ms, the bob's 1.07 s wave. */
+  WALK_FRAME_M = WALK_SPEED * 0.11,
+  FOOTSTEP_M = WALK_SPEED * 0.33,
+  BOB_M = WALK_SPEED * 0.17;
 /* alpha 0.4: what a painting generator yields while the ground painter's helper thread works (ground-paint-worker.js): whatever
    steps it stops for now and comes back later */
 export const PAINT_WORKER_WAIT = { pw: 1 };
@@ -3346,6 +3357,7 @@ function stepClimb(dt) {
   const was = Math.floor(P.climbRung || 0);
   P.climbRung = k * 8;
   if (Math.floor(P.climbRung) !== was && typeof soundEffect === 'function') soundEffect('step', { ter: 'b' });
+  P.gait = (P.gait || 0) + Math.hypot(x - P.x, z - P.z, y - (P.yv ?? y));
   P.x = x;
   P.z = z;
   P.yv = y;
@@ -3527,6 +3539,7 @@ function movePlayer(st, dt) {
     }
     if (!P.walk && P.wasWalk && walkView.opt.onMove) walkView.opt.onMove(P.x, P.z);
   }
+  if (P.walk && !jumped) P.gait = (P.gait || 0) + Math.hypot(P.x - ox, P.z - oz);
   if (Math.hypot(mx, mz) > 1e-6) P.dir = directionOf(mx, mz);
   P.wasWalk = P.walk;
   /* grass rustle and dust */
