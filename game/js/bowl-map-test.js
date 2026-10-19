@@ -30,12 +30,14 @@ import {
   bowlCamZoom,
   bowlToGpu,
 } from './logic/bowl-camera.js';
+import { BOWL_CLOUD_LEVELS } from './logic/bowl-weather.js';
 import { activeBattle, escapeHtml, pauseSaving, resumeSaving, saveData, uiState } from './game-state.js';
 import { ensurePrograms, gpuState } from './engine/webgl.js';
 import {
   WORLD_BOWL_SHADERS,
   worldBowl,
   worldBowlPick,
+  worldBowlSunNow,
   worldMap,
   worldMapHeight,
   worldMapReset,
@@ -220,6 +222,20 @@ async function runBowlMapTest() {
       const n = (g.G.rivers || []).length;
       if (n < 4) return { ok: false, note: `only ${n} rivers` };
       return `shadow map drawn in ${g.shadow.ms} ms; route and river lines made in ${g.lines.ms} ms; ${n} rivers`;
+    });
+    await step('Clouds and weather', async () => {
+      await bowlTestFrames(4);
+      const S = worldBowl.skyState;
+      if (!S || !S.places) return { ok: false, note: 'the sky never worked out the weather' };
+      const kinds = {};
+      for (const q of S.places) kinds[q.wx] = (kinds[q.wx] || 0) + 1;
+      const sun = worldBowlSunNow(),
+        list = Object.entries(kinds)
+          .map(([k, n]) => `${k} ${n}`)
+          .join(', ');
+      if (S.clouds.length !== BOWL_CLOUD_LEVELS[S.level].count)
+        return { ok: false, note: `${S.clouds.length} clouds for the ${S.level} setting` };
+      return `clouds ${S.level}: ${S.shown || 0} of ${S.clouds.length} showing, ${Math.round((S.nFall || 0) / 2)} drops falling; weather by place: ${list}; the sun at ${Math.round(sun.az)} degrees, ${Math.round(sun.light * 100)}% light, night ${sun.night.toFixed(2)}`;
     });
     await step('Every place is on the bowl', async () => {
       const S = worldBowl.spots || [],

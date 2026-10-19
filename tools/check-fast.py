@@ -182,6 +182,15 @@ def bowl_map(pg, base):
     if not pg.evaluate("!!(worldBowl.ground.water&&gpuState.P.mwater)"): raise Exception('the sea isn’t drawn')
     # look session 2: the shadow map, the routes' and rivers' line map and the rivers
     if not until(pg, "!!(worldBowl.ground.shadow&&worldBowl.ground.shadow.t&&worldBowl.ground.lines&&(worldBowl.ground.G.rivers||[]).length>=4)", 20): raise Exception('no shadow map, route lines or rivers')
+    # look session 3: the clouds follow the setting (Off: none; High: 40), the shaders draw with them
+    for lv, want in (('off', 0), ('high', 40)):
+        pg.evaluate(f"saveData.preferences.mapClouds='{lv}';worldBowl.dirty=true;0")
+        if not until(pg, f"!!(worldBowl.skyState&&worldBowl.skyState.level==='{lv}'&&worldBowl.skyState.clouds.length==={want})", 10): raise Exception(f'the clouds don’t follow the setting {lv}')
+    if not pg.evaluate("!!(gpuState.P.mcloud&&gpuState.P.mfall)"): raise Exception('the cloud shaders are missing')
+    # a storm everywhere: clouds show, rain falls (then the weather goes back to the game's own)
+    pg.evaluate("environment.force={weather:'storm'};worldBowl.skyState.at=-1e9;worldBowl.skyState.grid=null;worldBowl.dirty=true;0")
+    if not until(pg, "worldBowl.skyState.shown>10&&worldBowl.skyState.nFall>0", 15): raise Exception('a storm shows no clouds or rain on the map')
+    pg.evaluate("environment.force=null;worldBowl.skyState.at=-1e9;0")
     f1 = pg.evaluate("worldBowl.frames"); until(pg, f"worldBowl.frames>={f1 + 2}", 10)
     err = pg.evaluate("gpuState.gl.getError()")
     if err: raise Exception(f'the GPU reports error {err} while drawing the bowl')
