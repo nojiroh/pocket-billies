@@ -110,6 +110,34 @@ Branch `ccr-72e8ad56-lpn1x3`, from main.
 - Next session starts with: "start 08b" (docs/phases/08a-plan.md, Part B), after this branch is merged; the full quick
   check and a picture baseline first, since none exists yet.
 
+### Phase 09 batches 6 and 7 - Marigold, parts 2 and 3: the rest of the town - 2026-10-19
+Owner's request: do the remaining props of Marigold, in the clinic and market's style. Keep the old pine trees.
+- Changed (tools/build-props-batch6.py and batch7.py; run batch1 to 7 in order; showcase rows on
+  `test_props_marigold`):
+  - Nature: bush_box (a clipped ball), bush_hawthorn_autumn (the hawthorn model with autumn leaves), dry_grass,
+    pebbles and puddle (flat, only the scale). The three pines stay as drawn, by request.
+  - Made: clock_tower (brick, quoins, a clock stage with four faces, an open belfry with a bell, a verdigris spire and
+    vane; it now has a 2.3 x 2.3 m footprint with its front at its base point, where the game draws its moving hands),
+    fountain, solar_canopy, solar_tree, vertical_garden, streetlamp and streetlamp_b (globe lamps under verdigris hoods
+    with solar cells), bin (now a three-bin recycling station under a solar roof), flag_pole (the town's flag kept),
+    bike_rack (two modelled bikes), sign_shop (a twin of the clinic's sign).
+  - Buildings, from one kit of parts (class House in batch 7): the five houses, both townhouses, bakery, shop, inn,
+    library and greenhouse. Plinth, walls with corner posts, floor bands, hip / gable / front-gable roofs with a
+    wall-coloured gable, square windows with crossed frames, sills, shutters and flower boxes, roof windows under
+    hoods, round plank doors and panelled doors under canopies, lamps, chimneys with smoke, copper gutters. Shop,
+    bakery, library and inn have their name in the chunky lettering. Each keeps its town colour looks (the old
+    variants' wall, roof and trim colours, as colour swaps).
+  - Engine (two separate commits): a modelled clock tower keeps its moving hands; a placement's roof style (moss,
+    solar, chrome) now also restyles a modelled building's roof parts (layers marked roof: 1).
+  - Data (separate commit): a double street lamp in Palmhaven moved 0.2 m off the new shop's window
+    (tools/clear-windows.py --fix).
+- Risky: these are the most used buildings in the game (house_cottage 46 placements, house_red 27, the townhouses 39,
+  shops 12, inns 10); door positions moved a little with the new fronts. Check towns on your phone, at night too
+  (window glows and smoke were placed anew).
+- Verified: data check, lint, unit tests, smoke check (after the lamp move, the windows step again); a few
+  low-resolution looks at the showcase and at Marigold.
+- Marigold is now all in the new style except the pines.
+
 ### Phase 09 batch 5 - Marigold, part 1: the clinic and the market, redesigned - 2026-10-19
 Owner's request: begin Marigold; rework the clinic and the market to be more Unova (Pokémon gen 5) inspired, keeping
 the retro-futuristic solarpunk vibe. Original designs: no emblem, sign or shape copied.
