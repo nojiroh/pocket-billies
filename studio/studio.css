@@ -3751,3 +3751,189 @@ body.lay-drag {
   min-height: 0;
   cursor: pointer;
 }
+/* ---------- studio track ST-3: the Art workbench, Sheet mode (studio/js/workbench.js) ---------- */
+.wb-body {
+  display: grid;
+  grid-template-columns: var(--list-w, 280px) minmax(0, 1fr) var(--side-w, 330px);
+  gap: 14px;
+  height: calc(100vh - 190px);
+  min-height: 420px;
+}
+.wb-list {
+  max-height: none;
+  height: 100%;
+  padding: 10px;
+  gap: 8px;
+}
+.wb-sheets {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.wb-sheet {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 4px;
+  align-items: center;
+}
+.wb-sheet .lcard small {
+  display: block;
+}
+.wb-partlist {
+  overflow: auto;
+  min-height: 0;
+  flex: 1;
+  border-top: 1px solid var(--line);
+  padding-top: 6px;
+}
+.wb-parts-h,
+.wb-part {
+  display: grid;
+  grid-template-columns: 48px 48px minmax(0, 1fr);
+  gap: 6px;
+  align-items: center;
+}
+.wb-parts-h {
+  font-size: 11px;
+  color: var(--muted);
+  padding: 0 4px 4px;
+}
+.wb-part {
+  padding: 3px 4px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.wb-part:hover {
+  background: color-mix(in srgb, var(--line) 50%, transparent);
+}
+.wb-part.on {
+  background: color-mix(in srgb, #1f6e6f 16%, transparent);
+}
+.wb-part.bad .wb-pid small {
+  color: #c8323c;
+}
+.wb-thumb {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  background: repeating-conic-gradient(#ddd 0 25%, #fff 0 50%) 0 0/8px 8px;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.wb-thumb canvas {
+  max-width: 100%;
+  max-height: 100%;
+  image-rendering: pixelated;
+}
+.wb-thumb i {
+  color: var(--muted);
+  font-style: normal;
+}
+.wb-pid {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.wb-pid b {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.wb-pid small {
+  color: var(--muted);
+}
+.wb-warn {
+  color: #c8323c;
+  font-size: 12px;
+  margin: 4px 0;
+}
+.wb-mid {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.wb-tools {
+  padding: 6px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+  align-items: center;
+}
+.wb-stage {
+  flex: 1;
+  min-height: 0;
+}
+.wb-side {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.wb-empty {
+  display: grid;
+  place-items: center;
+}
+.wb-drop {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+  text-align: center;
+  padding: 40px;
+  border: 2px dashed var(--line2);
+  border-radius: 14px;
+  color: var(--muted);
+  max-width: 420px;
+}
+.wb-drop b {
+  font-size: 18px;
+  color: var(--ink, inherit);
+}
+.pc-over .wb-label {
+  fill: #1f6e6f;
+  paint-order: stroke;
+  stroke: #fff;
+  stroke-width: 3px;
+  font-family: ui-monospace, monospace;
+}
+.pc-over .wb-snap {
+  fill: none;
+  stroke: rgba(200, 50, 60, 0.35);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+.pc-over rect.wb-cell {
+  stroke: rgba(80, 60, 160, 0.6);
+  stroke-dasharray: 2 2;
+}
+body.wb-dropping::after {
+  content: 'Drop sheets to slice them in the Art workbench';
+  position: fixed;
+  inset: 12px;
+  display: grid;
+  place-items: center;
+  border: 3px dashed #1f6e6f;
+  border-radius: 18px;
+  background: color-mix(in srgb, #1f6e6f 10%, transparent);
+  font-size: 22px;
+  font-weight: 700;
+  color: #1f6e6f;
+  pointer-events: none;
+  z-index: 1000;
+}
+.pane[data-w='narrow'] .wb-body {
+  grid-template-columns: 1fr;
+  height: auto;
+}
+.pane[data-w='narrow'] .wb-mid {
+  height: 60vh;
+}
+@media (max-width: 1100px) {
+  .wb-body {
+    grid-template-columns: var(--list-w, 240px) minmax(0, 1fr);
+  }
+  .wb-side {
+    grid-column: 1 / -1;
+  }
+}
