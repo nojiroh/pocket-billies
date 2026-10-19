@@ -103,6 +103,7 @@ expose({
   wbpRobotSideHTML: [() => wbpRobotSideHTML, v => (wbpRobotSideHTML = v)],
   wbpRobotStore: [() => wbpRobotStore, v => (wbpRobotStore = v)],
   wbpRobots: [() => wbpRobots],
+  wbpRoot: [() => wbpRoot],
   wbpRound: [() => wbpRound],
   wbpRules: [() => wbpRules],
   wbpSetPoint: [() => wbpSetPoint, v => (wbpSetPoint = v)],
@@ -143,6 +144,9 @@ const wbpPicSize = file => {
   const c = loadedAtlas(wbpPath(file));
   return c ? [c.width, c.height] : null;
 };
+/* the pane Part mode is in: paneRoot() is that pane only while it is drawn, and Part mode looks things up later too
+   (after loading pictures, on a drag, a key or an input), when it may be the second pane */
+const wbpRoot = () => document.querySelector('.wbp')?.closest('#main, #main2') || paneRoot();
 const wbpKits = () => (wbpRobots() ? robotKit(wbpRobotData(), wbpPicSize) : wbKits());
 const WBP_ROBOT_KINDS = ['torso', 'head', 'arm', 'legs', 'gem'];
 /* every picture robots.json names */
@@ -455,7 +459,7 @@ function wbpDrawFit() {
     socks = wbpFitSockets(),
     sock = socks.includes(wbPart.fit.socket) ? wbPart.fit.socket : socks[0];
   for (const v of WB_VIEWS) {
-    const cv = paneRoot().querySelector('#wbpFit' + v);
+    const cv = wbpRoot().querySelector('#wbpFit' + v);
     if (!cv) continue;
     const x = cv.getContext('2d'),
       f =
@@ -491,19 +495,19 @@ function wbpDrawFit() {
     cv.dataset.flip = String(f.flip);
     cv.dataset.angle = String(f.angle);
   }
-  const a = paneRoot().querySelector('#wbpAngle');
+  const a = wbpRoot().querySelector('#wbpAngle');
   if (a) a.textContent = partClampTurn(K, p || wbPart.id, wbPart.fit.angle) + '°';
 }
 function wbpSwing() {
   if (!wbPart.fit.swing) return;
-  if (!sectionShown('workbench') || workbench.mode !== 'part' || !paneRoot().querySelector('#wbpFitfront')) {
+  if (!sectionShown('workbench') || workbench.mode !== 'part' || !wbpRoot().querySelector('#wbpFitfront')) {
     wbPart.fit.swing = false;
     return;
   }
   const t = partTurn(wbpKits(), wbpFitPart() || wbPart.id),
     s = Math.sin(performance.now() / 600);
   wbPart.fit.angle = Math.round((t[0] + t[1]) / 2 + ((t[1] - t[0]) / 2) * s);
-  const r = paneRoot().querySelector('[data-wbp=fitAngle]');
+  const r = wbpRoot().querySelector('[data-wbp=fitAngle]');
   if (r) r.value = String(wbPart.fit.angle);
   wbpDrawFit();
   requestAnimationFrame(wbpSwing);
@@ -533,7 +537,7 @@ async function wbpMount() {
   if (id !== wbPart.id || workbench.mode !== 'part') return;
   wbPart.pcs = {};
   for (const v of WB_VIEWS) {
-    const st = paneRoot().querySelector(`#wbp${v}Stage`);
+    const st = wbpRoot().querySelector(`#wbp${v}Stage`);
     if (!st) continue;
     const j = wbpJoint(v),
       painted = !!wbpSizeOf(v),
@@ -548,7 +552,7 @@ async function wbpMount() {
         changed: () => wbpDrawFit(),
         drawn: P => {
           wbPart.zoom[v] = P.zoom;
-          const z = paneRoot().querySelector('#wbpZoom');
+          const z = wbpRoot().querySelector('#wbpZoom');
           if (z) z.textContent = P.zoom + '×';
         },
       });
@@ -565,7 +569,7 @@ function wbpRedraw() {
   wbpDrawFit();
 }
 function wbpRefreshSide() {
-  const s = paneRoot().querySelector('#wbpSide');
+  const s = wbpRoot().querySelector('#wbpSide');
   if (s) s.innerHTML = wbpSideHTML();
 }
 /* the pivot crosshair and the sockets, in the picture's pixels; sizes on screen stay the same at any zoom */
@@ -719,7 +723,7 @@ function wbpSockRename(from, to) {
 }
 ACTIONS.wbpSockAdd = () => {
   if (wbpRobots()) return;
-  const el = paneRoot().querySelector('#wbpNewSock'),
+  const el = wbpRoot().querySelector('#wbpNewSock'),
     n = String(el?.value || '').trim(),
     P = wbpEntry();
   if (!P) return;
@@ -971,7 +975,7 @@ ACTIONS.wbpZoom = d => {
 ACTIONS.wbpTool = d => {
   wbPart.tool = d.t;
   for (const P of Object.values(wbPart.pcs)) if (P.cv.isConnected && P.o.path) pixelCanvasTool(P, d.t);
-  paneRoot()
+  wbpRoot()
     .querySelectorAll('[data-act=wbpTool]')
     .forEach(b => b.classList.toggle('on', b.dataset.t === d.t));
 };
@@ -988,9 +992,9 @@ function wbpInput(ev) {
   if (k === 'kit' || k === 'kind' || k === 'q') {
     wbPart[k] = el.value;
     if (k !== 'q' || ev.type === 'change') return render();
-    const L = paneRoot().querySelector('.wbp-list');
+    const L = wbpRoot().querySelector('.wbp-list');
     if (L) L.innerHTML = wbpListHTML();
-    const q = paneRoot().querySelector('[data-wbp=q]');
+    const q = wbpRoot().querySelector('[data-wbp=q]');
     if (q) {
       q.focus();
       q.setSelectionRange(q.value.length, q.value.length);
@@ -1010,7 +1014,7 @@ function wbpInput(ev) {
   if (k === 'fitAngle') {
     wbPart.fit.angle = num;
     wbPart.fit.swing = false;
-    const s = paneRoot().querySelector('[data-wbp=fitSwing]');
+    const s = wbpRoot().querySelector('[data-wbp=fitSwing]');
     if (s) s.checked = false;
     return wbpDrawFit();
   }
