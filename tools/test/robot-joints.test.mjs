@@ -98,3 +98,55 @@ test('robotKit: robots.json as a part kit that partFit fits as the rig joins it 
   /* a stand-in (no picture) is not in the kit */
   assert.equal(RJ.robotKit(bare(BEFORE.data), () => null).parts.bulwark, undefined);
 });
+
+/* every point computed, written in as stored joints (what Part mode would write if every point were set by hand) */
+function storeComputed(D, sizes) {
+  const out = clone(D),
+    store = (piece, front, back) => {
+      const s = { front: sizes[front], back: sizes[back] || sizes[front] },
+        own = { front: !!sizes[front], back: !!sizes[back] },
+        J = {};
+      for (const [view, file] of [
+        ['front', front],
+        ['back', back],
+      ]) {
+        if (!file) continue;
+        const j = RJ.robotJoint(piece, undefined, view, s, own),
+          sockets = {};
+        for (const [n, p] of Object.entries(j.sockets)) sockets[n] = RJ.robotFrac(p, ...s[view]);
+        J[view] = { pivot: RJ.robotFrac(j.pivot, ...s[view]), z: j.z, ...(piece === 'torso' ? { sockets } : {}) };
+      }
+      return J;
+    };
+  for (const P of Object.values(out.parts)) {
+    P.art.joints = store(P.slot, P.art.img, P.art.imgB);
+    if (P.slot === 'torso') P.art.headJoints = store('head', P.art.head, P.art.headB);
+  }
+  return out;
+}
+
+test('every point computed and stored gives the same rigs; stored joints are ignored by stand-ins', () => {
+  const D = storeComputed(BEFORE.data, BEFORE.sizes);
+  assert.ok(D.parts.bulwark.art.joints.back.sockets.shoulderL);
+  for (const k of [1, 2]) {
+    assert.deepEqual(changed(D, BEFORE.sizes, BEFORE.pictures, k), []);
+    assert.deepEqual(changed(bare(D), {}, BEFORE.standIns, k), []);
+  }
+});
+
+test('a stored socket, pivot or draw order moves the picture in its view only', () => {
+  setPictures(BEFORE.sizes);
+  const sp = 'bot:ember.bulwark.piston.auger.striders',
+    bone = (D, k, n) => robotArt.robotRig(sp, D, k).bones.find(b => b.n === n),
+    D = clone(BEFORE.data);
+  D.parts.bulwark.art.joints = { front: { sockets: { shoulderL: [0.1, 0.5] } } };
+  D.parts.piston.art.joints = { back: { pivot: [0.5, 0.25], z: 7 } };
+  /* bulwark front is 29 x 27, pivot (14, 27): the shoulder at (3, 14) is (-11, -13) from it */
+  assert.deepEqual(bone(D, 1, 'armL').at, [-11, -13]);
+  assert.deepEqual(bone(BEFORE.data, 1, 'armR').at, bone(D, 1, 'armR').at);
+  /* the back keeps the front's offset (the back socket was not stored) */
+  assert.deepEqual(bone(D, 2, 'armL').at, [-11, -13]);
+  const arm = bone(D, 2, 'armL');
+  assert.deepEqual([arm.imgB.ox, arm.imgB.oy, arm.zb], [-7, -7, 7]);
+  assert.deepEqual([arm.img.ox, arm.img.oy, arm.z], [-7, 0, 8]);
+});
