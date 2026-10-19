@@ -10,7 +10,8 @@ Without a browser (Node): the game data is valid, and the world-map graph is unc
 and its snapshot). In a browser, each check opens its own page straight where it needs to be (?fixture=<name>,
 game/js/fixture.js), never through the opening and never waiting for every map: the game boots with no console or page
 errors; a town, a route, a room and a cave each open and draw frames; a battle plays to the end; a save round-trips;
-the Studio loads; the exported debug log holds no names. The page is small (400x300) with every costly graphics dial
+the Studio loads; the exported debug log holds no names; the world map opens as the bowl, a tap opens a card, Home
+comes back. The page is small (400x300) with every costly graphics dial
 off before it loads; nothing waits a fixed time, only for frames or the game's state. No pictures are taken.
 
 Graphics are not judged here: software drawing can't. The game's own graphics test (Settings → Help) is for a person
@@ -158,6 +159,49 @@ def scene(node_id):
     return run
 
 
+def bowl_map(pg, base):
+    """phase 10: the Map tab opens as the bowl (world-bowl.js) and keeps drawing; a tap on a place's pin opens its card,
+    and Home brings the camera back over you. Small page, graphics off, no pictures: on a device, the debug menu's
+    Bowl map test checks the rest (frame rate, every place)"""
+    # from the walk scene by its tab button: the walk camera rises, the bowl pulls back from right above you
+    if not until(pg, "!!document.querySelector('[data-a=tab][data-t=map]')&&typeof walkRenderer!=='undefined'&&walkRenderer.on", 90): raise Exception('the walk scene never got ready')
+    z0 = pg.evaluate("typeof walkRenderer!=='undefined'?walkRenderer.zoomT:null")
+    pg.evaluate("uiState.mapSel=null;document.querySelector('[data-a=tab][data-t=map]').click();0")
+    if not until(pg, "typeof worldBowl!=='undefined'&&worldBowl.on&&worldBowl.frames>=3", 30):
+        raise Exception('the map didn’t open as the bowl' + (' (the old map opened)' if pg.evaluate("worldMap.gl") else ''))
+    if not until(pg, "!worldBowl.tween&&!document.getElementById('mapfade')", 10): raise Exception('the zoom out from the walk scene never settled')
+    # touches must reach the map: its layer fills the screen and some of it is not under the card or the buttons (on a
+    # phone-sized page: this page's 300 px are mostly card)
+    pg.set_viewport_size({'width': 400, 'height': 760}); time.sleep(.5)
+    hit = pg.evaluate("(()=>{const r=worldMap.cv.getBoundingClientRect();if(r.height<innerHeight*.9)return 'a map layer '+Math.round(r.height)+' px high';for(const fy of [.2,.3,.4,.5])for(const fx of [.3,.5,.7]){const e=document.elementFromPoint(innerWidth*fx,innerHeight*fy);if(e===worldMap.cv)return ''}const e=document.elementFromPoint(innerWidth/2,innerHeight/2);return e?e.tagName+'#'+e.id:'nothing'})()")
+    if hit: raise Exception(f'a touch on the map lands on {hit}, not the map')
+    pg.set_viewport_size({'width': 400, 'height': 300})
+    n = pg.evaluate("LOCATIONS.length"); s = pg.evaluate("(worldBowl.spots||[]).filter(s=>isFinite(s.x)&&isFinite(s.y)).length")
+    if s != n: raise Exception(f'{s} of {n} places have a spot on the bowl')
+    pick = pg.evaluate("""(()=>{const t=LOCATIONS.findIndex(l=>l.id==='tallgrass_meadow'),p=worldBowl.spots[t];worldBowl.goal=null;worldBowl.cam=bowlCamHome(p.x,p.y);worldBowl.dirty=true;return t})()""")
+    f0 = pg.evaluate("worldBowl.frames")
+    if not until(pg, f"worldBowl.frames>={f0 + 2}&&(worldBowl.marks||[]).some(m=>m.i==={pick})", 20): raise Exception('the bowl stopped drawing')
+    pg.evaluate(f"(()=>{{const r=worldMap.cv.getBoundingClientRect(),m=worldBowl.marks.find(m=>m.i==={pick});worldBowlPick({{clientX:r.left+m.top.x,clientY:r.top+(m.top.y+m.base.y)/2}})}})();0")
+    if not until(pg, f"uiState.mapSel==={pick}&&document.querySelector('#mapcard').textContent.includes(LOCATIONS[{pick}].name)", 5):
+        raise Exception(f'tapping Tallgrass Meadow’s pin picked {pg.evaluate("uiState.mapSel")}')
+    pg.evaluate("uiState.mapSel=null;worldBowl.cam=bowlCamOverview();worldMapReset();0")
+    if not until(pg, "!worldBowl.goal&&(()=>{const p=worldBowl.spots[saveData.trip.node];return Math.hypot(worldBowl.cam.tx-p.x,worldBowl.cam.ty-p.y)<.01})()", 15):
+        raise Exception('Home didn’t bring the camera back')
+    fr = pg.evaluate("worldBowl.frames")
+    # the opening fall films the bowl (one frame of it, mid-fall)
+    pg.evaluate("worldBowlFilm(fallCamera(.5,400,300),performance.now());0")
+    pg.evaluate("uiState.tab='walk';render();0")
+    if z0 is not None and not until(pg, f"Math.abs(walkRenderer.zoomT-{z0})<1e-6", 10): raise Exception(f'the walk camera’s zoom didn’t come back ({pg.evaluate("walkRenderer.zoomT")}, was {z0})')
+    # an airship flight over the bowl, skipped to the end: you land in the other town
+    to = pg.evaluate("(()=>{const i=LOCATIONS.findIndex(l=>l.id==='copperleaf');saveData.visited[i]=1;saveData.se+=100000;startAirshipFlight(i);return i})()")
+    if not until(pg, "airshipFlight.on&&worldBowl.on", 15): raise Exception('the flight didn’t show on the bowl')
+    f1 = pg.evaluate("worldBowl.frames")
+    if not until(pg, f"worldBowl.frames>{f1}||!airshipFlight.on", 15): raise Exception('the bowl stopped drawing during the flight')
+    pg.evaluate("flySkip();0")
+    if not until(pg, f"!airshipFlight.on&&saveData.trip.node==={to}&&uiState.tab==='walk'", 30): raise Exception('the flight never landed')
+    return f'{n} places on the bowl, {fr} frames; opened from the walk scene; a tap opens the card, Home comes back; the fall films it; a flight lands'
+
+
 def room(pg, base):
     if not until(pg, "!!uiState.inside&&walkView.ready&&walkView.sc.roomOf===uiState.inside.id", 60): raise Exception(f'not in the room: {pg.evaluate("walkView.id")}')
     drawing(pg)
@@ -227,7 +271,8 @@ PAGES = [   # (what the page opens, its checks in order); the longest first, so 
     ('town', [('A town opens and draws (Marigold Town)', scene('marigold')),
               ('The exported debug log holds no names', debug_log),
               ('A route opens and draws (Tallgrass Meadow)', scene('tallgrass_meadow')),
-              ('A cave opens and draws (Gloomwater)', scene('gloomwater'))]),
+              ('A cave opens and draws (Gloomwater)', scene('gloomwater')),
+              ('The world map opens as the bowl', bowl_map)]),
     ('room', [('A room opens and draws (the shop)', room), ('A save round-trips', save_round_trip)]),
     ('battle', [('A battle plays to the end', battle)]),
     ('title', [('The game boots with no console or page errors', boots)]),

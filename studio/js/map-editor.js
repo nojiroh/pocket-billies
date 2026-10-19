@@ -798,7 +798,18 @@ export function mapExitNames(id) {
     const l = PB_DATA.road(D, L),
       o = l.kind === 'seam' ? (l.a === i ? l.b : l.b === i ? l.a : null) : null;
     if (o == null || !D.locations[o] || o in out) return;
-    const a = Math.atan2((D.locations[o].lat || 0) - (me.lat || 0), (D.locations[o].lon || 0) - (me.lon || 0));
+    /* phase 10: the other place's direction in this map's own compass on the bowl (north faces the centre, east runs
+       counter-clockwise; game/js/logic/bowl.js) */
+    const xy = r =>
+        r && r.bowl && 'a' in r.bowl
+          ? [r.bowl.r * Math.cos((r.bowl.a * Math.PI) / 180), r.bowl.r * Math.sin((r.bowl.a * Math.PI) / 180)]
+          : [0, 0],
+      P = xy(me),
+      Q = xy(D.locations[o]),
+      pr = Math.hypot(P[0], P[1]),
+      no = pr < 1e-6 ? [0, 1] : [-P[0] / pr, -P[1] / pr],
+      ea = [no[1], -no[0]],
+      a = Math.atan2((Q[0] - P[0]) * no[0] + (Q[1] - P[1]) * no[1], (Q[0] - P[0]) * ea[0] + (Q[1] - P[1]) * ea[1]);
     ex.forEach((p, k) => {
       let d = Math.abs(a - Math.atan2(p[1] - hub[1], p[0] - hub[0])) % (2 * Math.PI);
       if (d > Math.PI) d = 2 * Math.PI - d;

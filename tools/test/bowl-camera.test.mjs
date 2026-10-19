@@ -134,3 +134,27 @@ test('easing reaches its goal and takes the short way round', () => {
   const mid = bowlCamEase(bowlCamHome(0.5, 0.5), g, 0.5);
   assert.ok(Math.abs(mid.yaw - bowlCamHome(0.5, 0.5).yaw) < 0.2, 'turned the long way round');
 });
+
+test('a look-at view puts its target in the middle and keeps its axes square', async () => {
+  const { bowlCamLookView } = await import('../../game/js/logic/bowl-camera.js');
+  for (const [C, T] of [
+    [
+      [0, 1.4, 0.8],
+      [0, 0, 0],
+    ],
+    [
+      [0.2, 2, 0.01],
+      [0.2, 0, 0],
+    ],
+    [
+      [0, 0.5, 0],
+      [0, 1.7, 0],
+    ],
+  ]) {
+    const v = bowlCamLookView(C, T, W, H, 0.3),
+      q = bowlCamProject(v, T);
+    assert.ok(q && near(q.x, W / 2, 1e-6) && near(q.y, H / 2, 1e-6));
+    const d = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+    assert.ok(near(d(v.fw, v.rt), 0) && near(d(v.fw, v.up), 0) && near(d(v.rt, v.up), 0));
+  }
+});

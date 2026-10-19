@@ -14,18 +14,35 @@ import { expose } from '../test-globals.js';
 /* eslint-disable no-func-assign */
 expose({
   BOWL_FLOOR: [() => BOWL_FLOOR],
+  BOWL_GROUND_CELLS: [() => BOWL_GROUND_CELLS],
+  BOWL_GROUND_EXTENT: [() => BOWL_GROUND_EXTENT],
+  BOWL_RELIEF_DEFAULT: [() => BOWL_RELIEF_DEFAULT],
+  BOWL_RELIEF_KINDS: [() => BOWL_RELIEF_KINDS],
+  BOWL_RELIEF_MAX: [() => BOWL_RELIEF_MAX],
   BOWL_RIM_HEIGHT: [() => BOWL_RIM_HEIGHT],
   EXIT: [() => EXIT],
+  // @ts-expect-error -- replaced on purpose
+  bowlBaseHeight: [() => bowlBaseHeight, v => (bowlBaseHeight = v)],
   // @ts-expect-error -- replaced on purpose
   bowlCompass: [() => bowlCompass, v => (bowlCompass = v)],
   // @ts-expect-error -- replaced on purpose
   bowlExitSide: [() => bowlExitSide, v => (bowlExitSide = v)],
   // @ts-expect-error -- replaced on purpose
+  bowlGridHeight: [() => bowlGridHeight, v => (bowlGridHeight = v)],
+  // @ts-expect-error -- replaced on purpose
   bowlGround: [() => bowlGround, v => (bowlGround = v)],
+  // @ts-expect-error -- replaced on purpose
+  bowlGroundGrid: [() => bowlGroundGrid, v => (bowlGroundGrid = v)],
   // @ts-expect-error -- replaced on purpose
   bowlHeight: [() => bowlHeight, v => (bowlHeight = v)],
   // @ts-expect-error -- replaced on purpose
+  bowlRelief: [() => bowlRelief, v => (bowlRelief = v)],
+  // @ts-expect-error -- replaced on purpose
+  bowlReliefFeatures: [() => bowlReliefFeatures, v => (bowlReliefFeatures = v)],
+  // @ts-expect-error -- replaced on purpose
   bowlRoad: [() => bowlRoad, v => (bowlRoad = v)],
+  // @ts-expect-error -- replaced on purpose
+  bowlRoll: [() => bowlRoll, v => (bowlRoll = v)],
   // @ts-expect-error -- replaced on purpose
   bowlSeamTurn: [() => bowlSeamTurn, v => (bowlSeamTurn = v)],
   // @ts-expect-error -- replaced on purpose
@@ -132,4 +149,124 @@ export function bowlRoad(A, B, steps = 24) {
     pts.push(p);
   }
   return { pts, length };
+}
+
+/* ---------- the ground's relief (phase 10, session E-map-4) ----------
+   Gentle and readable (owner, 2026-10-19): low hills and dips, a few clear landmarks (the peak by Frostcrown, the
+   volcano, the canyon cut, the trench), never tall enough to hide a pin. Each place shapes the ground around it by its
+   kind (locations.json "t"): a bump or a dip, [height, reach], both in bowl radii. Places reached by lift add nothing. */
+/** @type {Record<string, [number, number]>} */
+export const BOWL_RELIEF_KINDS = {
+  summit: [0.075, 0.11],
+  pass: [0.045, 0.08],
+  ridge: [0.035, 0.08],
+  volcano: [0.065, 0.07],
+  canyon: [-0.03, 0.05],
+  sea: [-0.03, 0.12],
+  island: [-0.012, 0.07],
+  lake: [-0.022, 0.06],
+  pond: [-0.014, 0.05],
+  trench: [-0.04, 0.07],
+  spire: [0.03, 0.06],
+  sun: [0.03, 0.06],
+  vault: [0.018, 0.07],
+  silicon: [0.014, 0.06],
+  spore: [0.01, 0.07],
+};
+/** a gentle rolling bump for every other kind */
+export const BOWL_RELIEF_DEFAULT = /** @type {[number, number]} */ ([0.006, 0.06]);
+/** the most the relief may add or take, so pins and roads stay readable */
+export const BOWL_RELIEF_MAX = 0.08;
+
+/** @typedef {{ x: number, y: number, h: number, r: number }} BowlFeature */
+/** each place's bump or dip @param {LocationData[]} places @returns {BowlFeature[]} */
+export function bowlReliefFeatures(places) {
+  const byId = (/** @type {string} */ id) => places.find(p => p.id === id);
+  /** @type {BowlFeature[]} */
+  const out = [];
+  for (const p of places) {
+    if (!p.bowl || 'under' in p.bowl) continue;
+    const s = bowlSpotOf(p, byId),
+      [x, y] = bowlXY(s.a, s.r),
+      [h, r] = BOWL_RELIEF_KINDS[p.t] || BOWL_RELIEF_DEFAULT;
+    out.push({ x, y, h, r });
+  }
+  return out;
+}
+/** a small deterministic roll so open ground isn't flat (value noise on a coarse lattice) @param {number} x
+ * @param {number} y */
+export function bowlRoll(x, y) {
+  const hash = (/** @type {number} */ i, /** @type {number} */ j) => {
+      const s = Math.sin(i * 127.1 + j * 311.7) * 43758.5453;
+      return s - Math.floor(s);
+    },
+    u = x * 9,
+    v = y * 9,
+    i = Math.floor(u),
+    j = Math.floor(v),
+    fu = u - i,
+    fv = v - j,
+    a = hash(i, j),
+    b = hash(i + 1, j),
+    c = hash(i, j + 1),
+    d = hash(i + 1, j + 1);
+  return (a * (1 - fu) + b * fu) * (1 - fv) + (c * (1 - fu) + d * fu) * fv - 0.5;
+}
+/** the relief at a point: the places' bumps and dips, a little roll, kept within BOWL_RELIEF_MAX and fading out
+ * beyond the rim @param {BowlFeature[]} F @param {number} x @param {number} y */
+export function bowlRelief(F, x, y) {
+  let h = 0;
+  for (const f of F) {
+    const d2 = ((x - f.x) ** 2 + (y - f.y) ** 2) / (f.r * f.r);
+    if (d2 < 9) h += f.h * Math.exp(-d2);
+  }
+  h += bowlRoll(x, y) * 0.008;
+  const r = Math.hypot(x, y),
+    fade = r <= 1 ? 1 : Math.max(0, 1 - (r - 1) / 0.08);
+  return Math.max(-BOWL_RELIEF_MAX, Math.min(BOWL_RELIEF_MAX, h)) * fade || 0;
+}
+
+/* ---------- the ground as a grid ----------
+   The map draws the ground as a low-poly mesh over a square grid (two triangles a cell, split from the cell's
+   south-west to its north-east corner); the camera, the pins and a tap read the height the same way, so everything
+   agrees with what is drawn. Beyond the rim the land runs on flat for a short way. */
+/** @typedef {{ n: number, e: number, h: Float32Array }} BowlGround */
+/** how far the grid reaches from the centre (rim 1) and its cells across */
+export const BOWL_GROUND_EXTENT = 1.3;
+export const BOWL_GROUND_CELLS = 160;
+/** the ground's height with no relief: the bowl inside the rim, flat land beyond @param {number} x @param {number} y */
+export function bowlBaseHeight(x, y) {
+  const r = Math.hypot(x, y);
+  return r <= 1 ? bowlHeight(r) : BOWL_RIM_HEIGHT;
+}
+/** the grid's heights for these features @param {BowlFeature[]} F @param {number} [n] cells across
+ * @returns {BowlGround} */
+export function bowlGroundGrid(F, n = BOWL_GROUND_CELLS) {
+  const e = BOWL_GROUND_EXTENT,
+    h = new Float32Array((n + 1) * (n + 1));
+  for (let j = 0; j <= n; j++)
+    for (let i = 0; i <= n; i++) {
+      const x = -e + (2 * e * i) / n,
+        y = -e + (2 * e * j) / n;
+      h[j * (n + 1) + i] = bowlBaseHeight(x, y) + bowlRelief(F, x, y);
+    }
+  return { n, e, h };
+}
+/** the height of the drawn ground at a point (the triangle it falls in) @param {BowlGround} G @param {number} x
+ * @param {number} y */
+export function bowlGridHeight(G, x, y) {
+  const { n, e, h } = G,
+    u = Math.max(0, Math.min(n - 1e-9, ((x + e) / (2 * e)) * n)),
+    v = Math.max(0, Math.min(n - 1e-9, ((y + e) / (2 * e)) * n)),
+    i = Math.floor(u),
+    j = Math.floor(v),
+    fu = u - i,
+    fv = v - j,
+    w = n + 1,
+    a = h[j * w + i],
+    b = h[j * w + i + 1],
+    c = h[(j + 1) * w + i],
+    d = h[(j + 1) * w + i + 1];
+  /* split along the diagonal from (i, j) to (i + 1, j + 1) */
+  return fu >= fv ? a + (b - a) * fu + (d - b) * fv : a + (d - c) * fu + (c - a) * fv;
 }

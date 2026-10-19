@@ -4,19 +4,14 @@
    walk-view-gl.js as they were. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { WORLD_ART } from '../hooks.js';
+import { bowlWallTexture } from '../hooks.js';
 import { hexToRgb } from '../art.js';
-import { artImage, imageReady, walkView } from '../walk-view.js';
+import { walkView } from '../walk-view.js';
 import { engineContext, engineSetting } from '../engine/settings.js';
 import { bindQuad, gpuState } from '../engine/webgl.js';
 import { environment, environmentSky } from '../environment.js';
-import { walkRenderer } from './walk-state.js';
 /* eslint-disable no-func-assign */
-expose({
-  drawSky: [() => drawSky, v => (drawSky = v)],
-  skyColors: [() => skyColors, v => (skyColors = v)],
-  worldMapTexture: [() => worldMapTexture, v => (worldMapTexture = v)],
-});
+expose({ drawSky: [() => drawSky, v => (drawSky = v)], skyColors: [() => skyColors, v => (skyColors = v)] });
 /* eslint-enable no-func-assign */
 /* to-module: end */
 /* v26: the scene's sky colours after the hour and the weather (environment.js) */
@@ -48,27 +43,15 @@ export function drawSky(C, sun, mirror) {
   gl.uniform1f(U.uMirror, mirror);
   gl.uniform1f(U.uClouds, engineSetting('sun', 'clouds'));
   gl.uniform1f(U.uCloudSpd, engineSetting('sun', 'cloudSpeed'));
+  /* phase 10: the bowl's far wall round the horizon, as seen from this place (world-bowl.js) */
+  const wall = typeof bowlWallTexture === 'function' ? bowlWallTexture() : null;
   gl.activeTexture(gl.TEXTURE0);
-  gl.bindTexture(gl.TEXTURE_2D, worldMapTexture());
+  gl.bindTexture(gl.TEXTURE_2D, wall || gpuState.white);
   gl.uniform1i(U.uWorld, 0);
+  gl.uniform1f(U.uWallOn, wall ? 1 : 0);
   gl.depthMask(false);
   gl.disable(gl.DEPTH_TEST);
   gl.drawArrays(gl.TRIANGLES, 0, 6);
   gl.depthMask(true);
   gl.enable(gl.DEPTH_TEST);
-}
-export function worldMapTexture() {
-  if (walkRenderer.wtex) return walkRenderer.wtex;
-  const im = artImage(typeof WORLD_ART !== 'undefined' ? WORLD_ART : 'map/world.png');
-  if (!imageReady(im)) return gpuState.white;
-  const gl = gpuState.gl,
-    t = gl.createTexture();
-  gl.bindTexture(gl.TEXTURE_2D, t);
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, im);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-  gl.generateMipmap(gl.TEXTURE_2D);
-  return (walkRenderer.wtex = t);
 }

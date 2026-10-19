@@ -118,7 +118,7 @@ precision highp float;in vec2 vH;uniform vec4 uHole;out vec4 o;void main(){if(vH
     `#version 300 es
 precision highp float;in vec2 aC;out vec2 vP;void main(){vP=aC*2.-1.;gl_Position=vec4(vP,.9999,1.);}`,
     `#version 300 es
-precision highp float;in vec2 vP;out vec4 o;uniform mat4 uIVP;uniform vec3 uSky0,uSky1,uSky2,uSunCol,uSunDir;uniform float uIndoor,uTime,uSunPulse,uMirror,uClouds,uCloudSpd;uniform sampler2D uWorld;uniform vec4 uEnv;uniform vec3 uMoon;
+precision highp float;in vec2 vP;out vec4 o;uniform mat4 uIVP;uniform vec3 uSky0,uSky1,uSky2,uSunCol,uSunDir;uniform float uIndoor,uTime,uSunPulse,uMirror,uClouds,uCloudSpd;uniform sampler2D uWorld;uniform float uWallOn;uniform vec4 uEnv;uniform vec3 uMoon;
 float hsh(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
 float vn(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hsh(i),hsh(i+vec2(1,0)),f.x),mix(hsh(i+vec2(0,1)),hsh(i+vec2(1,1)),f.x),f.y);}
 float fbm(vec2 p){float s=0.,a=.5;for(int i=0;i<4;i++){s+=a*vn(p);p*=2.03;a*=.5;}return s;}
@@ -133,7 +133,10 @@ void main(){vec4 a=uIVP*vec4(vP,-1.,1.),b=uIVP*vec4(vP,1.,1.);vec3 d=normalize(b
   /* v32: a high thin layer drifting the other way, bright rims on the low clouds, and a glow along the horizon */
   float cl2=smoothstep(.58,.92,fbm(q*.32+vec2(-uTime,uTime*.4)*.000007*uCloudSpd+11.))*uClouds*.6;c=mix(c,cc*1.04+.03,cl2*.45*smoothstep(.05,.35,e)*(1.-cl));
   c+=uSunCol*cl*(1.-cl)*4.*.06*(1.-uEnv.x)*(1.-uEnv.z)*smoothstep(-.02,.2,e);c=mix(c,uSky2*1.06+.02,exp(-abs(e-.02)*16.)*.22*(1.-uEnv.x*.6));
-  float lon=atan(d.z,d.x),lat=asin(clamp(d.y,-1.,1.));vec3 far=texture(uWorld,vec2(lon/6.2832+.5,.5-lat/3.1416)).rgb*(1.-uEnv.x*.8);c=mix(c,mix(far,uSky1,.55),smoothstep(.45,.95,e)*.45);
+  /* phase 10: the bowl's far wall rising round the horizon (world-bowl.js bowlWallTexture: its colour, and in alpha how
+     high the land reaches there), hazed by the distance; x is east and z north, as the walk scene's own map */
+  float lon=atan(d.z,d.x),lat=asin(clamp(d.y,-1.,1.));vec4 wl=texture(uWorld,vec2(lon/6.2832+.5,.5));float top=wl.a*.6*uWallOn;
+  if(top>.002&&e<top){vec3 land=mix(wl.rgb*(1.-uEnv.x*.75),uSky2*1.02,.42);land=mix(land,uSky1,.18*smoothstep(0.,top,e));c=mix(c,land,smoothstep(top,top-.01,e)*(1.-cl*.5));}
   /* stars and the moon */
   if(uEnv.x>.02){vec2 sq=vec2(lon*70.,lat*70.);vec2 ce=floor(sq);float h=hsh(ce);if(h>.972){vec2 f=fract(sq)-.5-(vec2(hsh(ce+3.1),hsh(ce+7.7))-.5)*.6;float st=smoothstep(.16,0.,length(f))*(.55+.45*sin(uTime*.002+h*97.));c+=vec3(.92,.94,1.)*st*uEnv.x*(1.-cl)*smoothstep(.02,.2,e)*(.6+.8*fract(h*37.));}
    float md=dot(d,normalize(uMoon));c+=vec3(.96,.95,.86)*smoothstep(.9986,.9991,md)*uEnv.x*(1.-cl*.8)+vec3(.45,.5,.7)*pow(max(md,0.),90.)*.35*uEnv.x;}

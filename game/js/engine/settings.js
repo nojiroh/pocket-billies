@@ -821,7 +821,7 @@ function lookDials() {
   return null;
 }
 export let engineContext = { look: null, bypass: false, env: false };
-export let engineDataSource = () => (typeof gameData !== 'undefined' ? gameData.engine : null);
+let engineDataSource = () => (typeof gameData !== 'undefined' ? gameData.engine : null);
 /* phase 04d: the Studio points it at its unsaved data (studio/js/engine-editor.js) */
 export function setEngineDataSource(v) {
   engineDataSource = v;

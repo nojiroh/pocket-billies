@@ -210,7 +210,6 @@ def check_data():
         if bad: warn.append(f'{k}: squares with no ground kind: {"".join(sorted(bad))[:12]}')
     for r in D['locations']:
         if r.get('mapId') and r['mapId'] not in D.get('maps', {}): warn.append(f'{r["name"]}: missing scene {r["mapId"]}')
-        if r.get('mapId'): need(f'map/mini/{r["mapId"]}.png')   # v47: the world map asks for every stop's miniature (tools/build-map-minis.py)
     if missing: warn.append('missing pictures: ' + ', '.join(sorted(missing)[:8]))
     # v46: every place, scene and road says what it is (tools/migrate-places.py)
     import importlib.util as ilu
@@ -914,7 +913,7 @@ def desktop_steps(b, base, R):
 
     @step('Shaders: every program compiles, no clashing inputs', 30)
     def shaders():
-        r = pg.evaluate("""(()=>{if(typeof gpuState==='undefined'||!gpuState.gl)return {skip:'no WebGL in this browser'};const sets={WALK_SHADERS:typeof WALK_SHADERS!=='undefined'?WALK_SHADERS:null,BUILDING_SHADERS:typeof BUILDING_SHADERS!=='undefined'?BUILDING_SHADERS:null,POST_EFFECT_SHADERS:typeof POST_EFFECT_SHADERS!=='undefined'?POST_EFFECT_SHADERS:null,WORLD_MAP_GL_SHADERS:typeof WORLD_MAP_GL_SHADERS!=='undefined'?WORLD_MAP_GL_SHADERS:null,SOLID_PROP_SHADERS:typeof SOLID_PROP_SHADERS!=='undefined'?SOLID_PROP_SHADERS:null};
+        r = pg.evaluate("""(()=>{if(typeof gpuState==='undefined'||!gpuState.gl)return {skip:'no WebGL in this browser'};const sets={WALK_SHADERS:typeof WALK_SHADERS!=='undefined'?WALK_SHADERS:null,BUILDING_SHADERS:typeof BUILDING_SHADERS!=='undefined'?BUILDING_SHADERS:null,POST_EFFECT_SHADERS:typeof POST_EFFECT_SHADERS!=='undefined'?POST_EFFECT_SHADERS:null,WORLD_BOWL_SHADERS:typeof WORLD_BOWL_SHADERS!=='undefined'?WORLD_BOWL_SHADERS:null,SOLID_PROP_SHADERS:typeof SOLID_PROP_SHADERS!=='undefined'?SOLID_PROP_SHADERS:null};
          const bad=[];let n=0;for(const [name,S] of Object.entries(sets)){if(!S)continue;for(const [k,v] of Object.entries(S)){n++;const c=attributeClashes(v[0]);if(c.length)bad.push(k+' clash: '+c.join(','));try{if(!gpuState.P[k])gpuState.P[k]=compileProgram(v,k)}catch(e){bad.push(String(e.message||e).slice(0,160))}}}return {n,bad}})()""")
         if r.get('skip'): return r['skip']
         if r['bad']: raise Exception('; '.join(r['bad'][:4]))
@@ -1210,13 +1209,14 @@ def desktop_steps(b, base, R):
         out.append('place card closes and comes back')
         # the map: drag the land, turn, zoom right down to the miniatures
         pg.evaluate("uiState.tab='map';render();0"); time.sleep(6)
-        if pg.evaluate("worldMap.gl"):
-            f0 = pg.evaluate("JSON.stringify(worldMap.focus)"); y0 = pg.evaluate("worldMap.yaw")
-            pg.evaluate("worldMapGlPanTo({focus:worldMap.focus||worldMapPlayerPosition(),cam:worldMap.cam},-120,40);worldMapGlAction('mturn',{k:'1'});for(let i=0;i<20;i++)worldMapZoom(.8);worldMap.tilt=.35;0"); time.sleep(2); shot(pg, 'map-close')
-            m = pg.evaluate("[JSON.stringify(worldMap.focus),worldMap.yaw,worldMap.alt,worldMap.free]")
+        if pg.evaluate("typeof worldBowl!=='undefined'&&worldBowl.on"):
+            # phase 10: the bowl map (game/js/world-bowl.js): drag, turn and zoom with its own camera, then Home
+            c0 = pg.evaluate("JSON.stringify(worldBowl.cam)")
+            pg.evaluate("(()=>{const W=worldMapWidth,H=worldMapHeight;let c=bowlCamPan(worldBowl.cam,bowlCamView(worldBowl.cam,W,H),-120,40);c=bowlCamTurn(c,.8,.2);for(let i=0;i<20;i++)c=bowlCamZoom(c,.8);worldBowl.goal=null;worldBowl.cam=c;worldBowl.dirty=true})();0"); time.sleep(2); shot(pg, 'map-close')
+            m = pg.evaluate("(()=>{const c=worldBowl.cam,v=bowlCamView(c,worldMapWidth,worldMapHeight);return [JSON.stringify(c),c.dist,v.C[1]]})()")
             pg.evaluate("worldMapReset();0")
-            if m[0] == f0 or abs(m[1] - y0) < .3 or m[2] > .03 or not m[3]: raise Exception(f'map camera: {m}')
-            out.append(f'map pans, turns and zooms to {m[2]:.3f}')
+            if m[0] == c0 or m[1] > .46 or m[2] < .37: raise Exception(f'bowl map camera: {m}')
+            out.append(f'the bowl map pans, turns and zooms to {m[1]:.2f}, the eye {m[2]:.2f} up (above the rim)')
         pg.evaluate("uiState.tab='walk';render();0"); time.sleep(.5)
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return '; '.join(out)
@@ -1262,12 +1262,7 @@ def desktop_steps(b, base, R):
         pg.evaluate("(()=>{const sc=walkView.sc,C0=walkData().sc,b=(sc.props||[]).find(p=>{const M=C0.props[p.k];return M&&M.box&&M.door});if(!b)return;walkView.pl.route=null;const q=walkablePointNear(b.x,b.z-2.5);walkView.pl.x=q[0];walkView.pl.z=q[1];walkRenderer.zoomT=walkRenderer.zoom=.7})();0"); time.sleep(2.5); shot(pg, 'wear-building')
         # the map's 3D miniatures
         pg.evaluate("uiState.tab='map';render();0"); time.sleep(3)
-        if pg.evaluate("worldMap.gl&&typeof worldMapMinisOn==='function'&&worldMapMinisOn()"):
-            pg.evaluate("worldMap.alt=.04;worldMap.tilt=.45;worldMapGl.altT=null;worldMap.dirty=true;0"); time.sleep(4)
-            n = pg.evaluate("[...worldMapMinis.cache.values()].filter(e=>e.m).length"); shot(pg, 'map-minis')
-            pg.evaluate("worldMapReset();0")
-            if n < 1: raise Exception('no 3D miniatures were built on the map')
-            out.append(f'{n} 3D miniatures on the map')
+        out.append('the bowl map has no miniatures yet (phase 10)')
         pg.evaluate("uiState.tab='walk';render();0"); time.sleep(.5)
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return '; '.join(out)

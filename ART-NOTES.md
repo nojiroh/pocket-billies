@@ -512,3 +512,10 @@ art pipeline (phase 17 task 11).
   tool again re-cuts the pictures and keeps the data; `--reset` starts the data over.
 - Parts are drawn in neutral colours (greys, a mid brown for hair) and tinted in the game; heads keep their own skin
   unless a face sets one.
+
+## Phase 10 (2026-10-19): the bowl world map
+- `map/world.png`, `map/world_h.png` and `map/mini/` are gone, with `tools/build-world-relief.py`,
+  `tools/build-map-minis.py` and the Studio's map painter. The world map's ground is made in code from the places'
+  bowl spots and kinds (game/js/logic/bowl.js, game/js/world-bowl.js); the walk scenes' sky shows the bowl's far wall
+  worked out from the same ground. `map/airship.png` stays (the flight over the bowl).
+

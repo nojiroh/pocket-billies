@@ -71,8 +71,7 @@ import { ambientLife, lifeStep, setLifeStep } from './ambient-life.js';
 import { seamlessWorld } from './seamless-world.js';
 import { paintWorkerReport } from './ground-paint-worker.js';
 import { endBattle, openBattle, paintActions, setEndBattle, setOpenBattle, setPaintActions } from './battle.js';
-import { setWorldMapMount, worldMapMount } from './world-map.js';
-import { setWorldMapGlRender, setWorldMapMiniBuild, worldMapGlRender, worldMapMiniBuild } from './world-map-gl.js';
+import { setWorldBowlRender, setWorldMapMount, worldBowlRender, worldMapMount } from './world-bowl.js';
 import { openShop, setOpenShop } from './shop.js';
 import { ambience, soundEngine } from './sound.js';
 import { cutsceneStart, setCutsceneStart } from './cutscene.js';
@@ -159,7 +158,6 @@ Object.defineProperties(GAME, {
   userFps: { get: () => userFps },
   walkRenderer: { get: () => walkRenderer },
   walkView: { get: () => walkView },
-  worldMapGlRender: { get: () => worldMapGlRender, set: setWorldMapGlRender },
-  worldMapMiniBuild: { get: () => worldMapMiniBuild, set: setWorldMapMiniBuild },
+  worldBowlRender: { get: () => worldBowlRender, set: setWorldBowlRender },
   worldMapMount: { get: () => worldMapMount, set: setWorldMapMount },
 });

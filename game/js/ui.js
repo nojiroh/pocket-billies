@@ -170,15 +170,17 @@ import {
   tapMessage,
 } from './battle.js';
 import {
+  worldMapAction,
   worldMapFit,
   worldMapHeight,
   worldMapMount,
+  worldMapOpenFromWalk,
   worldMapReset,
   worldMapSelect,
+  worldMapWanted,
   worldMapWidth,
   worldMapZoom,
-} from './world-map.js';
-import { worldMapGlAction, worldMapGlWanted } from './world-map-gl.js';
+} from './world-bowl.js';
 import { openShop } from './shop.js';
 import { soundEffect } from './sound.js';
 import { talkHazel } from './talk.js';
@@ -1487,7 +1489,7 @@ function walkMapSync() {
   document.body.classList.toggle('on-scene', on && !walk && !activeBattle);
   if (!on) {
     if (walkView.cv) stopWalkView();
-    if (uiState.tab === 'map' && saveData.started && typeof worldMapGlWanted === 'function' && worldMapGlWanted()) {
+    if (uiState.tab === 'map' && saveData.started && typeof worldMapWanted === 'function' && worldMapWanted()) {
       if (cv) {
         cv.hidden = false;
         cv.classList.add('in');
@@ -2317,7 +2319,7 @@ document.addEventListener('click', ev => {
     if (b && !b.dis) b.f();
     return;
   }
-  if (typeof worldMapGlAction === 'function' && worldMapGlAction(a, d)) return;
+  if (typeof worldMapAction === 'function' && worldMapAction(a, d)) return;
   switch (a) {
     case 'intro':
       /* the opening cutscene is the only way into a new game; if it can't run, the Try again screen */
@@ -2335,6 +2337,14 @@ document.addEventListener('click', ev => {
       render();
       break;
     case 'tab':
+      /* phase 10: from a walk scene the walk camera rises first, then the bowl pulls back (world-bowl.js) */
+      if (
+        d.t === 'map' &&
+        uiState.tab === 'walk' &&
+        typeof worldMapOpenFromWalk === 'function' &&
+        worldMapOpenFromWalk()
+      )
+        break;
       if (uiState.tab !== d.t) {
         if (d.t === 'map') uiState.mglFrom = uiState.tab;
         uiState.tab = d.t;
