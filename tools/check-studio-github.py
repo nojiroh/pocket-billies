@@ -440,7 +440,8 @@ def part_mode_steps(pg, errs):
     px = pg.evaluate("loadedAtlas('art/next/parts/front/cat_leg_l.png').getContext('2d').getImageData(1, 1, 1, 1).data[3]")
     if px != 255 or pg.evaluate("studioState.undo.length") != before + 1: errs.append('a pencil click on L did not paint one undoable pixel')
     # the beasts kit written again keeps Part mode's work
-    pg.evaluate("ACTIONS.wbMode({ m: 'sheet' })")
+    # only the kit's sheets on the workbench (a sheet left from before would be sliced as the kit and fail)
+    pg.evaluate("ACTIONS.wbMode({ m: 'sheet' }); workbench.sheets.length = 0; workbench.cache = null; workbench.sel = null")
     keep = pg.evaluate("JSON.stringify(studioState.D.partKits.parts.cat_leg)")
     dropped = pg.evaluate("""(async () => { const dt = new DataTransfer(); for (const n of ['beasts-front.png', 'beasts-back.png']) { const r = await fetch('/tools/art-source/part-kit/' + n);
       if (!r.ok) return false; dt.items.add(new File([await r.blob()], n, { type: 'image/png' })); }
@@ -449,7 +450,10 @@ def part_mode_steps(pg, errs):
         t0 = time.time()
         while time.time() - t0 < 30 and pg.evaluate("workbench.sheets.filter(s => s.name.startsWith('beasts')).length") < 2: time.sleep(0.3)
         time.sleep(0.5)
-        pg.evaluate("ACTIONS.wbWrite()"); time.sleep(4)
+        pg.evaluate("void ACTIONS.wbWrite()"); time.sleep(4)
+        if pg.evaluate("!!document.querySelector('#dlg')?.innerHTML"):
+            errs.append('writing the beasts kit again asked a question')
+            pg.evaluate("document.querySelectorAll('#dlg button').forEach(b => /Cancel|No/.test(b.textContent) && b.click())")
         if pg.evaluate("JSON.stringify(studioState.D.partKits.parts.cat_leg)") != keep: errs.append('writing the beasts kit again lost Part mode\'s work on cat_leg')
         pg.evaluate("for (let i = workbench.sheets.length - 1; i >= 0; i--) if (workbench.sheets[i].name.startsWith('beasts')) ACTIONS.wbDrop({ i })")
     # everything undone: the parts as they were, no picture left changed
