@@ -990,7 +990,7 @@ function roomLayIn(id, p, fresh) {
   const sc = seamlessRoomMap(walkView.id, id, door);
   if (!sc) return null;
   seamlessGetReady(sc.id, true, door);
-  return { view: sc.id, door, base: walkView.id };
+  return { view: sc.id, door, base: walkView.id, at: E.at, out: E.out };
 }
 /* the room's things changed while you're in it (your room's decorations): lay it in again */
 function roomRefresh() {
@@ -1029,6 +1029,14 @@ function roomStepIn(info, n = 0) {
   uiState.goingIn = null;
   uiState.inside = info;
   uiState.roam = null;
+  /* phase 08b: the camera as it was at the door, for coming out */
+  if (typeof walkRenderer !== 'undefined' && walkRenderer.camT)
+    info.cam = {
+      T: walkRenderer.camT.slice(),
+      cpe: walkRenderer.cpe ? walkRenderer.cpe.slice() : null,
+      yaw: walkRenderer.yawT,
+      zoom: walkRenderer.zoomT,
+    };
   if (typeof walkRenderer !== 'undefined') walkRenderer.prepBoost = 1;
   if (typeof soundEffect === 'function') soundEffect('door');
   if (typeof debugLog !== 'undefined')
@@ -1045,15 +1053,18 @@ export function leaveRoom() {
   if (!I) return;
   uiState.inside = null;
   if (I.view) {
-    /* out through the door: you stand in front of it, where you came in */ const P = walkView.pl,
-      fr = [I.door[0], I.door[1] - 0.6],
-      rv = walkView.id === I.view && walkView.sc && walkView.sc.roomCut;
-    if (P && rv) {
-      P.x = fr[0] - rv[0];
-      P.z = fr[1] - rv[1];
+    /* out through the door: you stand just in front of it, facing out (phase 08b: the way the building faces), and the
+       camera is as it was when you went in */
+    const P = walkView.pl,
+      at = I.at || I.door,
+      out = I.out || [0, -1],
+      fr = [at[0] + out[0] * 0.6, at[1] + out[1] * 0.6];
+    if (P && walkView.id === I.view) {
+      P.x = fr[0];
+      P.z = fr[1];
       P.route = null;
       P.goal = null;
-      P.dir = 'down';
+      P.dir = Math.abs(out[0]) > Math.abs(out[1]) ? (out[0] > 0 ? 'right' : 'left') : out[1] < 0 ? 'down' : 'up';
     }
     const B = mapById(I.base),
       o = (B && B.baseOff) || [0, 0];
@@ -1061,6 +1072,12 @@ export function leaveRoom() {
     uiState.backAt = null;
     if (typeof soundEffect === 'function') soundEffect('door');
     render();
+    if (I.cam && typeof walkRenderer !== 'undefined') {
+      walkRenderer.camT = I.cam.T.slice();
+      if (I.cam.cpe) walkRenderer.cpe = I.cam.cpe.slice();
+      walkRenderer.yawT = walkRenderer.yaw = I.cam.yaw;
+      walkRenderer.zoomT = walkRenderer.zoom = I.cam.zoom;
+    }
     return;
   }
   uiState.roam = uiState.backAt = { id: I.back.id, node: I.node, x: I.back.x, z: I.back.z };
