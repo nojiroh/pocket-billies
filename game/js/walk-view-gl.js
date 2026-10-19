@@ -210,6 +210,7 @@ expose({
   FOLIAGE_PROPS: [() => FOLIAGE_PROPS],
   FOOTPRINT_COLORS: [() => FOOTPRINT_COLORS],
   FRUSTUM_PLANES: [() => FRUSTUM_PLANES],
+  FULL_UV: [() => FULL_UV],
   GRASS_KINDS: [() => GRASS_KINDS],
   GRASS_PUSHER_BUFFER: [() => GRASS_PUSHER_BUFFER],
   IMAGE_IDS: [() => IMAGE_IDS],
@@ -5347,13 +5348,18 @@ export function useWalkProgram(name, C, X) {
   if (X) setLightUniforms(p, X);
   return p;
 }
-function setSpriteUniforms(p, it, uv) {
+/* phase 20 C2: z and rk stand in for a copy of the item (a slice of a thick sprite at another depth, a picture rising
+   with its town at rk of its height), so nothing is made per draw */
+const FULL_UV = new Float32Array([0, 0, 1, 1]);
+function setSpriteUniforms(p, it, uv, z = it.z, rk = 1) {
   const gl = gpuState.gl,
     U = p.U,
-    s = it.mpp;
-  gl.uniform3f(U.uBase, it.x, it.y, it.z);
-  gl.uniform4f(U.uOff, it.ox * s, it.oy * s, it.w * s, it.h * s);
-  gl.uniform4fv(U.uUV, uv || [0, 0, 1, 1]);
+    s = it.mpp,
+    oy = rk === 1 ? it.oy : it.oy * rk,
+    h = rk === 1 ? it.h : it.h * rk;
+  gl.uniform3f(U.uBase, it.x, it.y, z);
+  gl.uniform4f(U.uOff, it.ox * s, oy * s, it.w * s, h * s);
+  gl.uniform4fv(U.uUV, uv || FULL_UV);
   gl.uniform1f(U.uFlip, it.flip);
   if (U.uSlope) gl.uniform1f(U.uSlope, it.slope || 0);
   gl.uniform1f(U.uShear, it.shear || 0);
@@ -5534,7 +5540,7 @@ function drawShadowSprites(SH, L, sun, ca, lamp) {
       const d = it.M.box[1] * (it.p.s || 1),
         n = 6;
       for (let i = 0; i < n; i++) {
-        setSpriteUniforms(p, Object.assign({}, it, { z: it.z + (d * i) / (n - 1) }));
+        setSpriteUniforms(p, it, null, it.z + (d * i) / (n - 1));
         gl.drawArrays(gl.TRIANGLES, 0, 6);
       }
       gl.uniform3fv(p.U.uRight, Rs);
@@ -5649,7 +5655,7 @@ function fittedShadowPass(items0, sun, C) {
         const d = it.M.box[1] * (it.p.s || 1),
           n = 6;
         for (let i = 0; i < n; i++) {
-          setSpriteUniforms(p, Object.assign({}, it, { z: it.z + (d * i) / (n - 1) }));
+          setSpriteUniforms(p, it, null, it.z + (d * i) / (n - 1));
           gl.drawArrays(gl.TRIANGLES, 0, 6);
         }
         gl.uniform3fv(p.U.uRight, Rs);
@@ -6112,7 +6118,7 @@ export function drawSprites(C, items, X, hits, labels, PPU) {
     gl.bindTexture(gl.TEXTURE_2D, T.t);
     gl.activeTexture(gl.TEXTURE1);
     gl.bindTexture(gl.TEXTURE_2D, T.n);
-    setSpriteUniforms(p, rk !== 1 ? Object.assign({}, it, { oy: it.oy * rk, h: it.h * rk }) : it);
+    setSpriteUniforms(p, it, null, it.z, rk);
     if (it.wave) {
       gl.uniform3fv(U.uWave, it.wave);
       bindGridQuad();
