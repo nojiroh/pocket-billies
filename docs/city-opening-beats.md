@@ -1,6 +1,6 @@
 # The city opening: beat sheet (DRAFT, for the owner's approval)
 
-Project Story S7 (docs/phases/project-story.md). Status: **draft, 2026-10-19; the owner's first answers are in**.
+Project Story S7 (docs/phases/project-story.md). Status: **built, 2026-10-19 (cutscene tools, session 3); for the owner to judge on the phone**.
 Nothing plays this yet: the set and these beats are for you to judge and change before S8 builds the scene. Owner decisions it follows: dark rainy neon
 at night, only tall buildings (Cyberpunk 2077, Blade Runner), sleek tops over grimy bottoms, pink, cyan and amber
 neon, the portal opens in a side alley and is a rift, the player falls through by accident, under 30 seconds,
@@ -24,35 +24,39 @@ rift at its end beside the blank logo sign. Walk it on your phone with Settings 
 
 Tap to skip at any point. Shown in full once; skippable at once after that.
 
-## The beats as a script (the story layer's format, docs/SCRIPTS.md)
+## The beats as a script
 
-It parses with today's `parseScript` (logic/script.js); `camera`, `walk`, `face` and `fade` play from S2. `reach` is
-the gesture this needs, written as `face you reach` until S7 settles whether it is a pose of `face` or a command of
-its own.
+The cutscene is `game/data/cutscenes/city.json` (docs/CUTSCENES.md): the set's spots, shots and lanes, its look (night,
+rain, whatever Settings say) and this script. New game plays it before the fall, which then starts in the crust.
 
 ```
+music fall
 camera above
+actor you at walkFrom up silhouette
+hide prop rift
+traffic high city_flying_car 9 3
+traffic low city_flying_car 7 2
 fade in
+wait 1
 camera canyon 3
-camera street 3.5
-walk you walkFrom alleyMouth 3.5
+wait 3
+camera street 3
+wait 3
+walk you alleyMouth 4
 face you sideR
+show prop rift
+effect sparkle at rift
 camera alleyMouth 1
-wait 1.5
-walk you alleyMouth lean 1.5
-camera rift 1.5
-walk you lean reach 2
-face you reach
+wait 3
+camera rift 2
+walk you lean 1.5
+walk you reach 2
+act you reach 2
 camera through 1.2
-fade out
-set seen_city_opening
-fall
+wait 1.5
+fade out #F2E8FF
+wait 1
 ```
-
-The names after `camera` and `walk` are the set's own: its map holds them in a `cutscene` block (spots: walkFrom,
-alleyMouth, lean, reach, rift, logo; shots: above, canyon, street, alleyMouth, rift, through, each an eye and a target
-as [x, height, z] in metres and a field of view; lanes: high and low, the flying cars' paths). The opening in Sundown
-keeps its spots in code (cutscene.js CUTSCENE_SPOTS); this is the data shape proposed for both.
 
 ## Decided (owner, 2026-10-19)
 
@@ -64,12 +68,9 @@ keeps its spots in code (cutscene.js CUTSCENE_SPOTS); this is the data shape pro
    billboard opposite the alley; what it shows is one picture (`city_billboard_holo.png`), changed by replacing that
    picture or by a variant of `city_billboard` that swaps it. Nothing else depends on it.
 
-## What S7-S8 still have to add (not this draft)
+## Still to do
 
-- The rift appears on a beat, not always: props with `when` / `unless` (S2's story-dependent world), or a new
-  `show` / `hide` command.
-- The reach: a pose or a short animation for the silhouette (`face you reach` above, or its own command).
-- Removing the fall's first leg (decision 1), once the city plays in its place.
-- The flying cars move along the lanes; a `seen_city_opening` flag in story.json; the light flicker; the lite
-  version for weak phones; frame times in the debug log.
+- A lite version for weak phones (fewer cars, no rain), and frame times in the debug log, once you've played it.
+- The light flicker; a hum and rain sounds (no such sounds yet: the fall's music plays).
 - The organization's logo on the blank sign (S4).
+- Shown in full once, then skippable at once: today the Skip button works from the start, always.

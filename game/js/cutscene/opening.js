@@ -22,7 +22,16 @@ import { LOOK_PRESETS, cleanLook } from '../person-art.js';
 import { dressingRoom, openDressingRoom, saveDressingLook } from '../dressing-room.js';
 import { rigPreload } from '../skeleton-rig.js';
 import { buzz } from '../battle-stage.js';
-import { artImage, imageReady, mapById, prepareMap, walkData, walkView, worldToScreen } from '../walk-view.js';
+import {
+  artImage,
+  imageReady,
+  mapById,
+  prepareMap,
+  stopWalkView,
+  walkData,
+  walkView,
+  worldToScreen,
+} from '../walk-view.js';
 import { gpuState, webgl2Supported } from '../engine/webgl.js';
 import { walkRenderer } from '../walk/walk-state.js';
 import { standingHeightAt } from '../walk/heights.js';
@@ -38,6 +47,7 @@ import {
   cutsceneNow,
   cutsceneSparkle,
   cutsceneTeardown,
+  cutsceneTrafficEnd,
   cutsceneWait,
 } from './director.js';
 import { cutsceneLook, cutscenePlayScript } from './stage.js';
@@ -52,6 +62,7 @@ expose({
   cutsceneStartName: [() => cutsceneStartName],
   cutsceneWanted: [() => cutsceneWanted, v => (cutsceneWanted = v)],
   hazelHotTake: [() => hazelHotTake, v => ((hazelHotTake = v), provide({ hazelHotTake }))],
+  openingCity: [() => openingCity, v => (openingCity = v)],
   openingDressingRoom: [() => openingDressingRoom, v => (openingDressingRoom = v)],
   openingLayer: [() => openingLayer, v => (openingLayer = v)],
   openingPickStarter: [() => openingPickStarter, v => (openingPickStarter = v)],
@@ -139,10 +150,14 @@ export async function cutsceneStart(opts) {
     artLoad(['coins/penny_32.png']),
     prepareMap(id),
   ]).catch(() => {});
-  /* v47: the fall, from the surface down to Copperleaf (opening-fall.js); it ends on a white screen */
+  /* the city at night (cutscenes/city.json), then the fall from the crust down to Copperleaf (opening-fall.js); it
+     ends on a white screen. Owner 2026-10-19: the city replaces the fall's first leg, the street under the billboard,
+     which plays only when the city can't */
   if (typeof fallPlay === 'function' && !cutscene.test && !cutscene.quick) {
     try {
-      await fallPlay(run);
+      const city = await openingCity(run);
+      if (!cutscene.on || cutscene.run !== run) return;
+      await fallPlay(run, city ? { from: 'crust' } : {});
     } catch (e) {
       console.error(e);
       const f = $('#csFade');
@@ -209,6 +224,59 @@ export async function cutsceneStart(opts) {
     console.error(e);
     if (typeof debugLog !== 'undefined') debugLog.add('error', 'cutscene: ' + (e.message || e));
     if (cutscene.on && cutscene.run === run) cutsceneAbort();
+  }
+}
+/* the city opening: its own map's view on the same canvas, its cutscene played, the view stopped again (the fall
+   comes next); false if it couldn't start (no file, no map, no 3D view) */
+async function openingCity(run) {
+  const C = CUTSCENES.city;
+  if (!C || !mapById(C.map) || cutscene.skip) return false;
+  const alive = () => cutscene.on && cutscene.run === run;
+  const fade = $('#csFade');
+  if (fade) fade.classList.add('on');
+  let started = false;
+  try {
+    await prepareMap(C.map);
+    if (!alive()) return true;
+    let cv = $('#dio');
+    if (!cv) {
+      cv = document.createElement('canvas');
+      cv.id = 'dio';
+      document.body.prepend(cv);
+    }
+    cv.hidden = false;
+    cv.setAttribute('aria-label', 'A city at night, in the rain');
+    walkView.director = { frame: cutsceneFrame };
+    await mountWalkView(cv, C.map, {
+      state: () => ({ who: null, npcs: [], enc: [], mode: 'line' }),
+      keys: () => false,
+      active: () => false,
+      onPick: () => {},
+      cap: () => (document.hidden ? 1 : Math.min(60, userFps())),
+    });
+    if (!alive() || !walkRenderer.on || !walkView.ready || !walkView.cv) return false;
+    walkView.cv.classList.add('in');
+    const f0 = walkRenderer.frames,
+      t0 = performance.now();
+    while (alive() && !(walkRenderer.gtex && walkRenderer.frames >= f0 + 3) && performance.now() - t0 < 15000)
+      await new Promise(r => setTimeout(r, 120));
+    if (!alive()) return true;
+    started = true;
+    await cutscenePlayScript('city');
+    return true;
+  } catch (e) {
+    console.error(e);
+    if (typeof debugLog !== 'undefined') debugLog.add('error', 'cutscene city: ' + (e.message || e));
+    return started;
+  } finally {
+    /* the set struck: its traffic, people and camera gone, the view stopped; the canvas stays for Copperleaf */
+    cutsceneTrafficEnd();
+    cutscene.actors = {};
+    cutscene.cam = null;
+    cutscene.hide = null;
+    cutscene.set = null;
+    if (walkView.director && walkView.director.frame === cutsceneFrame) walkView.director = null;
+    if (walkView.cv) stopWalkView();
   }
 }
 /* the opening plays game/data/cutscenes/opening.json on the cutscene stage, with its own commands below; Blake's

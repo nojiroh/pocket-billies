@@ -143,3 +143,46 @@ test('the story checks catch a cutscene’s mistakes, and cutscene commands outs
     []
   );
 });
+
+test('the city opening: its commands read, its names are its own, it runs through, under 30 seconds of waits', async () => {
+  const C = GAME_DATA.cutscenes.city,
+    step = s => {
+      const [name, ...args] = s.split(' ');
+      return cutsceneStep({ k: 'cmd', line: 0, name, args });
+    };
+  assert.equal(C.map, 'city_opening');
+  assert.deepEqual(step('actor you at walkFrom up silhouette'), {
+    name: 'actor',
+    who: 'you',
+    spot: 'walkFrom',
+    dir: 'up',
+    dark: true,
+  });
+  assert.deepEqual(step('traffic high city_flying_car 9 3'), {
+    name: 'traffic',
+    lane: 'high',
+    prop: 'city_flying_car',
+    s: 9,
+    count: 3,
+  });
+  assert.deepEqual(step('hide prop rift'), { name: 'hide', at: 'rift' });
+  assert.deepEqual(step('show you'), { name: 'show', who: 'you' });
+  assert.match(step('show box').problem, /shows itself/);
+  assert.match(step('traffic high car').problem, /lane prop seconds/);
+  const tree = parseScript(C.script);
+  for (const n of cutsceneNames(tree)) {
+    const ok = { shot: C.shots, lane: C.lanes, prop: GAME_DATA.scenery.props }[n.kind];
+    if (ok) assert.ok(ok[n.name], `${n.kind} ${n.name}`);
+    else if (n.kind === 'spot') assert.ok(C.spots[n.name] || n.name === 'you', n.name);
+  }
+  /* what the script waits for adds up to the beat sheet's length (docs/city-opening-beats.md: about 21 s) */
+  let t = 0;
+  for (const n of tree)
+    if (n.k === 'cmd' && (n.name === 'wait' || n.name === 'walk')) {
+      const S = cutsceneStep(n);
+      if (S.s != null && !S.nowait) t += S.s;
+    }
+  assert.ok(t > 15 && t < 30, `${t} s`);
+  const said = await play(C.script, {});
+  assert.deepEqual(said, []);
+});

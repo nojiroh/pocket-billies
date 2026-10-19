@@ -700,10 +700,9 @@ def showcase():
 def opening_map():
     """The city opening's set, small: one avenue running away from the camera between towers (a canyon), the hero
     tower closing the view at its end, a 5 m alley off to the right two thirds up where the rift opens. Not joined to
-    the world (test: 1). Its `cutscene` block holds the named spots and camera shots the opening's script will use
-    (`walk you <spot>`, `camera <shot>`; the commands are played from S2). Owner, 2026-10-19: this street
-    replaces the fall's first leg; the figure reaches toward the light; nothing reads it yet.
-    Units: metres; x across, z away from the camera; a shot's eye and target are [x, height, z]."""
+    the world (test: 1). The cutscene filmed on it (its spots, shots, lanes and script) is its own file,
+    game/data/cutscenes/city.json (docs/CUTSCENES.md), not made here: this makes the set's ground and props. Owner,
+    2026-10-19: this street replaces the fall's first leg. Units: metres; x across, z away from the camera."""
     W, H = 64, 130
     tiles = [['i'] * W for _ in range(H)]
     for z in range(H):
@@ -735,24 +734,6 @@ def opening_map():
         'sky': ['#141428', '#2A2E52', '#5A4E86'], 'haze': '#3A3458', 'hazeD': 70, 'cam': {'pitch': 30, 'h': 12, 'fov': 1},
         'blur': 0, 'amb': None, 'tint': None, 'indoor': 0, 'far': 'town', 'farH': 8, 'folk': 0, 'test': 1,
         'exits': [], 'checks': [], 'hub': [32, 4], 'tiles': [''.join(r) for r in tiles], 'props': P, 'kind': 'test',
-        'cutscene': {
-            'spots': {
-                'walkFrom': [40.6, 24], 'alleyMouth': [41.4, 61.5], 'lean': [44.5, 61.6], 'reach': [53.8, 61.6],
-                'rift': [55.6, 61.6], 'logo': [57.6, 60.0],
-            },
-            'shots': {
-                'above': {'eye': [32, 118, 30], 'tgt': [32, 70, 118], 'fov': 50},
-                'canyon': {'eye': [32, 34, 14], 'tgt': [32, 22, 70], 'fov': 45},
-                'street': {'eye': [37.2, 2.6, 18], 'tgt': [40.6, 1.6, 30], 'fov': 40},
-                'alleyMouth': {'eye': [38.0, 2.2, 57.5], 'tgt': [46, 1.8, 61.6], 'fov': 40},
-                'rift': {'eye': [47.5, 1.6, 62.8], 'tgt': [55.6, 1.9, 61.6], 'fov': 38},
-                'through': {'eye': [53.6, 1.7, 61.6], 'tgt': [57, 1.8, 61.6], 'fov': 28},
-            },
-            'lanes': {
-                'high': [[-20, 40, 50], [32, 44, 60], [90, 40, 70]],
-                'low': [[90, 16, 34], [32, 14, 46], [-20, 16, 58]],
-            },
-        },
     }
 
 

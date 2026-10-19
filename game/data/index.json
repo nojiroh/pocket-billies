@@ -227,6 +227,6 @@
     "city_opening"
    ]
   },
-  "cutscenes": {"ids":["opening"]}
+  "cutscenes": {"ids":["opening","city"]}
  }
 }
