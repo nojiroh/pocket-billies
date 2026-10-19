@@ -726,6 +726,11 @@ debugLog.hook = () => {
     ['drawGrass', 'grass'],
     ['drawSolidProps', 'solid props'],
     ['drawBuildings', 'buildings'],
+    /* phase 20: the diagnostics' and the Graphics test's pass timers (self-test.js DIAGNOSTICS_PASSES) reach a function
+       only through this list, so every name there is here too */
+    ['drawPropModels', 'models'],
+    ['drawBoxFaces', 'box faces'],
+    ['drawStructures', 'structures'],
     ['drawPostEffects', 'post'],
     ['drawGround', 'ground'],
     ['reflectionPass', 'reflections'],

@@ -31,7 +31,7 @@ expose({
     () => drawStructureShadows,
     v => ((drawStructureShadows = v), provide({ drawStructureShadows })),
   ],
-  drawStructures: [() => drawStructures, v => ((drawStructures = v), provide({ drawStructures }))],
+  drawStructures: [() => drawStructures, v => setDrawStructures(v)],
   ensureStructures: [() => ensureStructures, v => (ensureStructures = v)],
   freeStructures: [() => freeStructures, v => (freeStructures = v)],
   hasStructures: [() => hasStructures, v => (hasStructures = v)],
@@ -41,6 +41,10 @@ expose({
 });
 /* eslint-enable no-func-assign */
 provide({ drawStructureShadows, drawStructures });
+export function setDrawStructures(v) {
+  drawStructures = v; // eslint-disable-line no-func-assign
+  provide({ drawStructures });
+}
 /* to-module: end */
 export const structureState = { key: '', mesh: null, parts: [] };
 const STRUCTURE_MATERIALS = {
@@ -560,7 +564,7 @@ function freeStructures() {
   structureState.mesh = null;
   structureState.parts = [];
 }
-function drawStructures(C, X) {
+export function drawStructures(C, X) {
   if (typeof buildingGuard !== 'function') return;
   buildingGuard(() => {
     if (!ensureStructures()) return;

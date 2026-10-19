@@ -249,7 +249,7 @@ expose({
   cullItems: [() => cullItems, v => (cullItems = v)],
   cutsceneCamera: [() => cutsceneCamera, v => (cutsceneCamera = v)],
   defaultWallMaterial: [() => defaultWallMaterial, v => ((defaultWallMaterial = v), provide({ defaultWallMaterial }))],
-  drawBoxFaces: [() => drawBoxFaces, v => (drawBoxFaces = v)],
+  drawBoxFaces: [() => drawBoxFaces, v => setDrawBoxFaces(v)],
   drawClockHands: [() => drawClockHands, v => (drawClockHands = v)],
   drawFlatItem: [() => drawFlatItem, v => (drawFlatItem = v)],
   drawFootprints: [() => drawFootprints, v => (drawFootprints = v)],
@@ -395,6 +395,10 @@ export function setBuildGrass(v) {
 export function setBuildGroundMesh(v) {
   buildGroundMesh = v; // eslint-disable-line no-func-assign
   provide({ buildGroundMesh });
+}
+export function setDrawBoxFaces(v) {
+  drawBoxFaces = v; // eslint-disable-line no-func-assign
+  provide({ drawBoxFaces });
 }
 export function setDrawGrass(v) {
   drawGrass = v; // eslint-disable-line no-func-assign
@@ -6213,7 +6217,7 @@ function boxInfo(im) {
   BOX_INFO_CACHE.set(im, B);
   return B;
 }
-function drawBoxFaces(C, items, X) {
+export function drawBoxFaces(C, items, X) {
   const gl = gpuState.gl;
   let p = null;
   for (const it of items) {
