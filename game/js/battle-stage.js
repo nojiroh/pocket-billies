@@ -301,7 +301,6 @@ export const battleStage = {
   floorKey: '',
   q: { lvl: 0, since: 0, lowT: 0, highT: 0 },
   stT: 0,
-  goldT: 0,
   speed: 1,
   /* phase 06-3: the camera holds still while the player chooses (battle.js floatTick) */
   calm: false,
@@ -767,26 +766,6 @@ function spawnAmbientParticles(dt) {
         col: random() < 0.5 ? '#FF5A7A' : '#B03CFF',
         glow: 1,
         size: 2,
-      });
-    }
-  }
-  battleStage.goldT += dt;
-  if (battleStage.goldT > 260) {
-    battleStage.goldT = 0;
-    for (let i = 0; i < battleStage.s.length; i++) {
-      const sd = battleStage.s[i];
-      if (!sd.show || !sd.gold || sd.a < 0.5) continue;
-      const c = actorCenter(i);
-      addParticle({
-        x: c.x + (random() - 0.5) * 1.4,
-        y: c.y + (random() - 0.4) * 1.6,
-        z: c.z,
-        vy: 0.3,
-        life: 700,
-        spr: 'spark',
-        k: 0.8,
-        glow: 1,
-        twinkle: 1,
       });
     }
   }

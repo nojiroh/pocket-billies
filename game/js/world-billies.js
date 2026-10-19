@@ -439,17 +439,6 @@ function wildBillyItem(out, e, s, t, dt) {
     s.z + 0.05,
     { flip: w.flip, big, dy: -H * sink + hop * 0.32 + bob, build: e.build, extra: { e } }
   );
-  /* v34: a Golden one gives itself away: gold glints rise out of the grass where it moves */
-  if (e.gold && Math.random() < dt * 5)
-    worldBillies.fx.push({
-      x: s.x + (Math.random() - 0.5) * 0.5,
-      z: s.z + (Math.random() - 0.5) * 0.3,
-      y: 0.15 + Math.random() * 0.3,
-      vy: 0.35 + Math.random() * 0.4,
-      age: 0,
-      max: 1 + Math.random() * 0.6,
-      c: [1, 0.85, 0.35],
-    });
   if (it) {
     it.sh = hop > 0.3 ? it.sh * 0.6 : 0;
     out.push(it);
