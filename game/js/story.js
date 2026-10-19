@@ -137,12 +137,10 @@ async function rivalScene(T) {
   const run = cutsceneWorldBegin(),
     alive = () => cutscene.on && cutscene.run === run,
     P = walkView.pl,
-    sc = walkView.sc,
-    F = storyFlags();
+    sc = walkView.sc;
   setStoryFlag('met_' + T.id);
   save();
-  /* v47: "intro0" is for a game begun before the opening had Blake's first battle in it */
-  const intro = T.intro0 && T.intro0.length && !F.rival0 ? T.intro0 : T.intro;
+  const intro = T.intro;
   if (typeof music === 'function') music('rival');
   try {
     /* where he comes from: the side of the scene away from the camera, a little to one side of you */
