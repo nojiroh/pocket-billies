@@ -464,3 +464,33 @@ export function pbInboxDot(n) {
     ? `<button class="tb-inbox" data-a="inbox" aria-label="${n} ${n === 1 ? 'message' : 'messages'} waiting"><b>${n > 9 ? '9+' : n}</b></button>`
     : '';
 }
+
+/* phase 06-4: tab rows answer the arrow keys (and Home and End) like real tabs: focus moves along the row and the tab
+   opens, wherever a row of role="tab" buttons is */
+document.addEventListener('keydown', ev => {
+  const t = /** @type {HTMLElement} */ (ev.target);
+  if (!t || !t.matches || !t.matches('[role="tab"]') || !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(ev.key))
+    return;
+  const row = /** @type {HTMLElement[]} */ ([...t.parentElement.querySelectorAll(':scope > [role="tab"]')]).filter(
+    b => !(/** @type {HTMLButtonElement} */ (b).disabled)
+  );
+  const i = row.indexOf(t);
+  if (i < 0 || row.length < 2) return;
+  const j =
+    ev.key === 'Home'
+      ? 0
+      : ev.key === 'End'
+        ? row.length - 1
+        : (i + (ev.key === 'ArrowRight' ? 1 : -1) + row.length) % row.length;
+  ev.preventDefault();
+  row[j].click();
+  /* the click may redraw the row: focus the tab in its new place */
+  const d = row[j].dataset,
+    attr = 'k' in d ? 'k' : 'p' in d ? 'p' : 't' in d ? 't' : null;
+  requestAnimationFrame(() => {
+    const again =
+      attr &&
+      document.querySelector(`[role="tab"][data-a="${CSS.escape(d.a || '')}"][data-${attr}="${CSS.escape(d[attr])}"]`);
+    /** @type {HTMLElement} */ (again && again.isConnected ? again : row[j]).focus({ preventScroll: true });
+  });
+});

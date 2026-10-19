@@ -1,0 +1,21 @@
+{
+ "_help": "Phase 07: the portrait kit. Each sheet is a grid of parts on magenta, read row by row. 'names' gives each cell's id (null skips a cell). tools/slice-portrait-kit.py cuts them into game/art/next/portraits/ and adds new ones to game/data/portraits.json.",
+ "size": 64,
+ "sheets": {
+  "heads-soft": {"kind": "head", "grid": [2, 3], "names": ["soft1", "soft2", "soft3", "soft4", "soft5", "soft6"]},
+  "heads-clean": {"kind": "head", "grid": [2, 3], "names": ["clean1", "clean2", "clean3", "clean4", "clean5", "clean6"]},
+  "hair-short": {"kind": "hair", "grid": [3, 4], "names": ["crop", "tousled", "swept", "spiky", "curls", "afro", "mohawk", "bowl", "thinning", "slick", "messy", "undercut"]},
+  "hair-long-front": {"kind": "hairLong", "back": "hair-long-back", "grid": [3, 4], "names": ["bob", "straight", "waves", "ponytail", "pigtails", "braids", "bun", "space_buns", "side_braid", "curly", "shag", "bangs"]},
+  "hair-long-back": {"kind": "hairLongBack", "grid": [3, 4], "names": ["bob", "straight", "waves", "ponytail", "pigtails", "braids", "bun", "space_buns", "side_braid", "curly", "shag", "bangs"]},
+  "hats": {"kind": "hat", "grid": [3, 4], "names": ["cap", "beanie", "bucket", "cowboy", "hood", "helmet", "beret", "flat_cap", "bandana", "visor", "sun_hat", "top_hat"]},
+  "tops": {"kind": "top", "grid": [3, 4], "names": ["tshirt", "hoodie", "zip_jacket", "suit", "blouse", "sweater", "overalls", "lab_coat", "rain_coat", "tank_top", "uniform", "scarf"]},
+  "eyes-lashes": {"kind": "eyeFrames", "style": "lashes", "grid": [3, 4], "names": ["open", "half", "closed", "look_l", "look_r", "up", "down", "happy", "angry", "narrow", "wide", "bored"]},
+  "eye-styles": {"kind": "eyeStyle", "grid": [3, 4], "names": ["round", "almond", "sharp", "soft", "small", "big", "wide_set", "hooded", "lashy", "shadowed", "tired", "weary"]},
+  "brows": {"kind": "brows", "grid": [3, 4], "names": ["soft", "arched", "angled", "slanted", "flat", "peaked", "thick", "thin", "uneven", "knit", "bushy", "sharp"]},
+  "noses": {"kind": "nose", "grid": [3, 4], "names": ["button", "round", "narrow", "wide", "broad", "profile", "small", "long", "snub", "big", "freckled", "red"]},
+  "mouths-lips": {"kind": "mouth", "set": "lips", "grid": [3, 3], "names": ["lips_1", "lips_2", "lips_3", "lips_4", "lips_5", "lips_6", "lips_7", "lips_8", "lips_9"]},
+  "mouths": {"kind": "mouth", "set": "simple", "grid": [3, 4], "names": ["simple_1", "simple_2", "simple_3", "simple_4", "simple_5", "simple_6", "simple_7", "simple_8", "simple_9", "simple_10", "simple_11", "simple_12"]},
+  "face-marks": {"kind": "mark", "grid": [3, 4], "names": ["freckles", "blush", "scar", null, "smile_lines", "stubble", "beard_chin", "beard_full", "mustache", "goatee", null, null], "pairs": ["freckles", "blush", "smile_lines"]},
+  "accessories": {"kind": "acc", "grid": [3, 4], "names": ["glasses_round", "glasses_square", "sunglasses", "goggles", "eyepatch", "headband", "earrings", "plaster", "mask", "earpiece", "headphones", "necklace"], "pairs": ["earrings", "headphones"]}
+ }
+}
