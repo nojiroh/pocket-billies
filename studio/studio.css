@@ -3751,3 +3751,83 @@ body.lay-drag {
   min-height: 0;
   cursor: pointer;
 }
+
+/* phase 10, session 5: World & encounters → World map look */
+.wml-top {
+  display: grid;
+  grid-template-columns: minmax(240px, 520px) minmax(200px, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+.pane[data-w='narrow'] .wml-top {
+  grid-template-columns: 1fr;
+}
+.wml-pic {
+  width: 100%;
+  aspect-ratio: 1;
+  image-rendering: pixelated;
+  border-radius: 50%;
+  background: #1d2230;
+  touch-action: none;
+}
+.wml-pic.tool-land,
+.wml-pic.tool-sea,
+.wml-pic.tool-remove {
+  cursor: crosshair;
+}
+.wml-side .seg-row {
+  flex-wrap: wrap;
+}
+.wml-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+.wml-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px;
+  border: 1px solid var(--line, #3a3f4b);
+  border-radius: 6px;
+  font-size: 12px;
+}
+.wml-chip img {
+  image-rendering: pixelated;
+  width: 16px;
+  height: 16px;
+}
+.wml-chip b {
+  font-weight: 500;
+}
+.wml-add {
+  max-width: 9em;
+  font-size: 12px;
+}
+.wml-region {
+  border-top: 1px solid var(--line, #3a3f4b);
+  padding: 8px 0;
+}
+.wml-region h4 {
+  margin: 0 0 6px;
+  text-transform: capitalize;
+}
+.wml-row {
+  display: grid;
+  grid-template-columns: 11em 1fr;
+  gap: 8px;
+  align-items: center;
+  margin: 4px 0;
+}
+.wml-kinds .fld {
+  margin: 0;
+}
+.wml-kinds .fld > span:first-child {
+  display: none;
+}
+.wml-lm {
+  height: 48px;
+  image-rendering: pixelated;
+  align-self: end;
+}
