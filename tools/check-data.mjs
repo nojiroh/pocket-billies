@@ -101,6 +101,7 @@ route.forEach((r, i) => {
   if (r.mapId && !S[r.mapId]) problem('locations.json', `stop ${i} (${r.name}) has map ${r.mapId}, no such map`);
   if (r.pool && !pools[r.pool]) problem('locations.json', `stop ${i} (${r.name}) has pool ${r.pool}, no such pool`);
 });
+check('roads.schema.json', D.roads || [], 'roads.json');
 (D.roads || []).forEach((L, i) => {
   const l = PB_DATA.road(D, L);
   if (!route[l.a] || !route[l.b]) problem('roads.json', `link ${i} joins ${l.a} and ${l.b}, not both stops`);
