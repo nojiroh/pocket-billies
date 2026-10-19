@@ -136,6 +136,7 @@ expose({
   worldBowlPin: [() => worldBowlPin, v => (worldBowlPin = v)],
   worldBowlPuffMesh: [() => worldBowlPuffMesh, v => (worldBowlPuffMesh = v)],
   worldBowlRender: [() => worldBowlRender, v => setWorldBowlRender(v)],
+  worldBowlReset: [() => worldBowlReset, v => (worldBowlReset = v)],
   worldBowlRiversInto: [() => worldBowlRiversInto, v => (worldBowlRiversInto = v)],
   worldBowlRoadsInto: [() => worldBowlRoadsInto, v => (worldBowlRoadsInto = v)],
   worldBowlShadowUniforms: [() => worldBowlShadowUniforms, v => (worldBowlShadowUniforms = v)],
@@ -400,6 +401,13 @@ void main(){vec2 q=vec2(vW.x,-vW.z)*${BOWL_METRES.toFixed(1)};float t=uT;
  float d=length(vW-uC),fk=1.-exp(-max(0.,d-.7)*.32);o=vec4(mix(col,uHaze,clamp(fk,0.,.6)),a);}`,
 ];
 
+/* the Studio changed the look (worldmap.json, a landmark): work the ground, sky and things out again */
+export function worldBowlReset() {
+  worldBowl.spots = null;
+  worldBowl.ground = null;
+  if (worldBowl.wall) worldBowl.wall.node = -1;
+  worldBowl.dirty = true;
+}
 /* ---------- the places and the ground ---------- */
 /* the world map's look from worldmap.json (the Studio edits it), each part falling back to the values in code */
 function worldMapLook() {
