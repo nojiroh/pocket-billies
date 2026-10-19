@@ -28,6 +28,10 @@ kept aside in the browser).
   wild, from eggs and on the line (none yet: the sample coat, Midnight, only comes from the debug menu). A coat's name
   goes before the Billie's ("A wild Midnight Emberox appeared.") and shows on its card. The Studio's pixel editor
   loses its Golden tabs; the Billies section and the battle preview pick a coat instead.
+- The Studio on wide screens (Studio track ST-1): drag the edges of the section list, a section's list and the battle
+  preview's panel (or use the keys), and each section keeps its sizes; wider layouts at 1920 and 2560 px and up, and
+  no more 1180 px cap; two sections side by side (Shift-click a section, or its ⇥ button); layout presets in the top
+  bar (Auto, Compact, Wide, Ultrawide, Split).
 - The Studio's scene preview has a free camera: fly over the scene and look at any corner from any angle, with the
   mouse, the keys or two fingers on a phone; a top view; put the walker where you look.
 - Robots (phase 17 prototype): build your own from a gem and four parts (torso with head, left arm, right arm,
