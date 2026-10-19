@@ -209,7 +209,6 @@ import { workshopAction, workshopSectionHTML } from './workshop.js';
 expose({
   BOX_SORTS: [() => BOX_SORTS],
   RARITY_NAMES: [() => RARITY_NAMES],
-  ROOM_BY_BUILDING: [() => ROOM_BY_BUILDING],
   SCREENS: [() => SCREENS],
   TABS: [() => TABS],
   TRACKS: [() => TRACKS],
@@ -915,22 +914,6 @@ function mapExits(node) {
 /* what the walk scene shows: the stop you're at (walk around freely), or you walking out toward the next stop
    (first half of a road) and in from the far end (second half) */
 /* v26: walking into shops, the clinic, the lab and houses. uiState.inside remembers the room and where you came in */
-/* v46: a building's own room: one set on it in the Studio ("room"), else the room made for its kind of building
-   (a bakery, an inn, a bank...), else the room for what it does (shop, clinic, lab, house); walk-view.js doorLinkOf */
-const ROOM_BY_BUILDING = {
-  bakery: 'int_bakery',
-  inn: 'int_inn',
-  bank: 'int_bank',
-  library: 'int_library',
-  school: 'int_school',
-  fire_station: 'int_fire_station',
-  mansion: 'int_mansion',
-  barn: 'int_barn',
-  greenhouse: 'int_greenhouse',
-  ski_lodge: 'int_ski_lodge',
-  market_hall: 'int_market_hall',
-};
-provide({ ROOM_BY_BUILDING }); /* to-module */
 function roomFor(a, p) {
   if ((saveData.preferences || {}).rooms === 'quick' && a !== 'home') return null;
   const L = doorLinkOf(p, a, walkView.id);

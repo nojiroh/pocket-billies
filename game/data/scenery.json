@@ -7088,7 +7088,8 @@
       "img": "scene/props/bakery_v4.png"
      }
     ]
-   }
+   },
+   "room": "int_bakery"
   },
   "inn": {
    "name": "Inn",
@@ -7166,7 +7167,8 @@
       "img": "scene/props/inn_v4.png"
      }
     ]
-   }
+   },
+   "room": "int_inn"
   },
   "market_hall": {
    "name": "Market hall",
@@ -7231,7 +7233,8 @@
       "img": "scene/props/market_hall_v4.png"
      }
     ]
-   }
+   },
+   "room": "int_market_hall"
   },
   "bank": {
    "name": "Savings & Loan",
@@ -7294,7 +7297,8 @@
       "img": "scene/props/bank_v3.png"
      }
     ]
-   }
+   },
+   "room": "int_bank"
   },
   "library": {
    "name": "Library",
@@ -7357,7 +7361,8 @@
       "img": "scene/props/library_v3.png"
      }
     ]
-   }
+   },
+   "room": "int_library"
   },
   "school": {
    "name": "School",
@@ -7435,7 +7440,8 @@
       "img": "scene/props/school_v3.png"
      }
     ]
-   }
+   },
+   "room": "int_school"
   },
   "fire_station": {
    "name": "Fire station",
@@ -7508,7 +7514,8 @@
       "img": "scene/props/fire_station_v3.png"
      }
     ]
-   }
+   },
+   "room": "int_fire_station"
   },
   "mansion": {
    "name": "Mansion",
@@ -7627,7 +7634,8 @@
       "pearl": 1
      }
     ]
-   }
+   },
+   "room": "int_mansion"
   },
   "barn": {
    "name": "Barn",
@@ -7701,7 +7709,8 @@
       "img": "scene/props/barn_v5.png"
      }
     ]
-   }
+   },
+   "room": "int_barn"
   },
   "greenhouse": {
    "name": "Greenhouse",
@@ -7767,7 +7776,8 @@
       "img": "scene/props/greenhouse_v4.png"
      }
     ]
-   }
+   },
+   "room": "int_greenhouse"
   },
   "ski_lodge": {
    "name": "Ski lodge",
@@ -7848,7 +7858,8 @@
       "img": "scene/props/ski_lodge_v5.png"
      }
     ]
-   }
+   },
+   "room": "int_ski_lodge"
   },
   "bakery_oven": {
    "name": "Bread oven",
