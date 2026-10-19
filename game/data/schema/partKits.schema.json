@@ -108,6 +108,11 @@
    "type": "object",
    "additionalProperties": {"$ref":"#/$defs/turn"}
   },
+  "sides": {
+   "description": "the side of the body each kind's art is drawn for (L: the socket on the viewer's left, x small); on the other side it is mirrored, or its _r copy is used",
+   "type": "object",
+   "additionalProperties": {"enum":["L","R"]}
+  },
   "socketRules": {
    "description": "which slots may attach at each socket, by socket name",
    "$ref": "#/$defs/rules"

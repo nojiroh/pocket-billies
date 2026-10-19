@@ -815,6 +815,8 @@ export interface PartKits {
   z?: Record<string, PartZ>;
   /** each kind's turn limits, [least, most] degrees */
   turns?: Record<string, [number, number]>;
+  /** the side each kind's art is drawn for (L: the socket on the viewer's left); mirrored on the other side */
+  sides?: Record<string, 'L' | 'R'>;
   /** socket name: the slots that may attach there */
   socketRules?: Record<string, PartSlot[]>;
   parts: Record<DataId, KitPart>;
