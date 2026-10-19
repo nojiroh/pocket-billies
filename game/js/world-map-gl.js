@@ -24,6 +24,7 @@ import {
   bindQuad,
   ensurePrograms,
   freeMesh,
+  gpuLoading,
   gpuState,
   imageTexture,
   initWebgl,
@@ -207,6 +208,8 @@ function worldMapGlReady() {
       walkRenderer.wtex = null;
     }
   }
+  /* phase 20: the map's programs compiling on its first opening are part of opening it (engine/webgl.js pcl) */
+  if (!gpuState.P.mglobe) gpuLoading();
   try {
     ensurePrograms(WORLD_MAP_GL_SHADERS);
     ensurePrograms(POST_EFFECT_SHADERS);

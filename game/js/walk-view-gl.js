@@ -67,6 +67,7 @@ import {
   worldBillyLabels,
 } from './hooks.js';
 import { clamp } from './util.js';
+import { gpuPass } from './engine/gpu-counters.js';
 import { frameCount, frameScheduler, frameTask, userFps } from './frame-scheduler.js';
 import { hexToRgb, makeCanvas } from './art.js';
 import { folkFrames, personBattlePose, personWalkFrames, pickWalkFrame, warmPerson } from './person-art.js';
@@ -150,6 +151,7 @@ import {
   endGpuTimer,
   ensurePrograms,
   freeMesh,
+  gpuLoading,
   gpuState,
   imageTexture,
   initWebgl,
@@ -249,7 +251,7 @@ expose({
   cullItems: [() => cullItems, v => (cullItems = v)],
   cutsceneCamera: [() => cutsceneCamera, v => (cutsceneCamera = v)],
   defaultWallMaterial: [() => defaultWallMaterial, v => ((defaultWallMaterial = v), provide({ defaultWallMaterial }))],
-  drawBoxFaces: [() => drawBoxFaces, v => (drawBoxFaces = v)],
+  drawBoxFaces: [() => drawBoxFaces, v => setDrawBoxFaces(v)],
   drawClockHands: [() => drawClockHands, v => (drawClockHands = v)],
   drawFlatItem: [() => drawFlatItem, v => (drawFlatItem = v)],
   drawFootprints: [() => drawFootprints, v => (drawFootprints = v)],
@@ -395,6 +397,10 @@ export function setBuildGrass(v) {
 export function setBuildGroundMesh(v) {
   buildGroundMesh = v; // eslint-disable-line no-func-assign
   provide({ buildGroundMesh });
+}
+export function setDrawBoxFaces(v) {
+  drawBoxFaces = v; // eslint-disable-line no-func-assign
+  provide({ drawBoxFaces });
 }
 export function setDrawGrass(v) {
   drawGrass = v; // eslint-disable-line no-func-assign
@@ -763,6 +769,7 @@ export function mountWalkView(cv, id, opt = {}) {
   walkView.sc = mapById(id);
   walkView.ready = false;
   walkView.err = null;
+  gpuLoading();
   cv.classList.add('gl');
   if (!ensureWalkGl(cv)) return mountWalkView(cv, id, opt);
   const ui = labelLayer(cv);
@@ -3599,6 +3606,10 @@ function drawWalkFrame(ts, dtm) {
   const w0 = performance.now(),
     gl = gpuState.gl,
     sc = walkView.sc;
+  if (!gpuState.loaded) {
+    if (!gpuState.loadAt) gpuState.loadAt = w0 + 1000;
+    else if (w0 >= gpuState.loadAt) gpuState.loaded = true;
+  }
   engineContext.look = sc.plain ? PLAIN_LOOK : sc.look || null;
   gpuState.fr = (gpuState.fr || 0) + 1;
   if (gpuState.fr % 120 === 0) trimTextures();
@@ -3690,6 +3701,8 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
     updateNearRing(sc, fx, fz, PREP_BUDGET_MS);
   }
   walkRenderer.budT = performance.now();
+  /* phase 20: the GPU counters (engine/gpu-counters.js) put each call that follows in the pass named last */
+  gpuPass('other');
   let items = gatherFrameItems(st, C, PPU, C0);
   const hits = [],
     labels = [];
@@ -3709,11 +3722,14 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
     shadow = shadowPass(items, sun, C);
     walkRenderer.lastShadow = shadow;
   }
+  gpuPass('other');
   const X = walkLightContext(C, sun, dark, items, shadow, BT);
   walkRenderer.X = X;
   if (dark > 0.3 && !BT && shadow) lampShadowMaps(items, X, dark);
+  gpuPass('reflection');
   if (walkRenderer.water && !(QE >= 2 && walkRenderer.frames % 2 && gpuState.fb.refl))
     reflectionPass(items, C, rw, rh, X);
+  gpuPass('sky');
   const S = renderTarget('scene', rw, rh, { depth: true, hdr: true });
   gl.bindFramebuffer(gl.FRAMEBUFFER, S.f);
   gl.viewport(0, 0, rw, rh);
@@ -3721,18 +3737,29 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
   const D = walkRenderer.dbg || {};
   drawSky(C, sun, 0);
+  gpuPass('ground');
   drawGround(C, X);
   drawRoomFront(C, X);
+  gpuPass('grass');
   if (walkRenderer.grass && !D.noGrass) drawGrass(C, X);
+  gpuPass('sprites');
   drawSprites(C, items, X, hits, labels, PPU);
+  gpuPass('solid');
   if (typeof drawSolidProps === 'function') drawSolidProps(C, items, X, hits, labels, PPU);
+  gpuPass('models');
   if (typeof drawPropModels === 'function') drawPropModels(C, items, X, null, null, PPU);
+  gpuPass('box');
   drawBoxFaces(C, items, X);
+  gpuPass('buildings');
   if (typeof drawBuildings === 'function') drawBuildings(C, X, items, walkRenderer.bfade);
+  gpuPass('structures');
   if (typeof drawStructures === 'function') drawStructures(C, X);
+  gpuPass('water');
   gatherFountainBasins(items);
   if (walkRenderer.water || walkRenderer.basin) drawWater(C, X, rw, rh);
+  gpuPass('effects');
   effectsPass(C, items, X, dark, t, dt);
+  gpuPass('post');
   /* focus: on you, or on what you tapped for a moment */
   let fx = BT ? BT.center[0] : P.x,
     fz = BT ? BT.center[1] : P.z;
@@ -3775,6 +3802,7 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
       noVol: QE >= 3 || (!!sc.indoor && !dark),
       volDens: sc.indoor ? 0.5 : 1 + (engineContext.env ? environment.fog * 1.5 + environment.rain * 0.4 : 0),
     });
+  gpuPass('other');
   /* labels and markers stay sharp on the layer above */
   const x = walkView.x;
   x.setTransform(1, 0, 0, 1, 0, 0);
@@ -5354,6 +5382,7 @@ function shadowMapArea(C) {
 /* v43: two cascades. The far map is the fitted view as before (cached for what never moves); the near map is a tight
    square round you at a finer texel, drawn every frame from the things in it, so shadows near you are crisp */
 export function shadowPass(items0, sun, C) {
+  gpuPass('shadowFar');
   const far = fittedShadowPass(items0, sun, C);
   if (
     !(engineSetting('shadows', 'cascades') ?? true) ||
@@ -5365,6 +5394,7 @@ export function shadowPass(items0, sun, C) {
     res = Math.min(1024, engineSetting('quality', 'shadowMap')),
     gl = gpuState.gl,
     items = items0.filter(it => Math.hypot(it.x - P.x, it.z - P.z) < R + (it.w || 32) * (it.mpp || 0.03) + 3);
+  gpuPass('shadowNear');
   const SH = beginSunShadow(P.x, P.z, R, sun, res, 'shadowN'),
     ca = worldCurveArgs();
   {
@@ -5405,6 +5435,7 @@ function lampShadowMaps(items, X, dark) {
   const gl = gpuState.gl,
     ca = worldCurveArgs();
   cand.forEach((l, i) => {
+    gpuPass(i ? 'lamp1' : 'lamp0');
     const SH = beginLampShadow([l.p[0], l.p[1] + 0.2, l.p[2]], 512, 'lamp' + i),
       near = items.filter(
         it =>
@@ -6221,7 +6252,7 @@ function boxInfo(im) {
   BOX_INFO_CACHE.set(im, B);
   return B;
 }
-function drawBoxFaces(C, items, X) {
+export function drawBoxFaces(C, items, X) {
   const gl = gpuState.gl;
   let p = null;
   for (const it of items) {

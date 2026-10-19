@@ -376,7 +376,20 @@ async function graphicsTestMeasure(sec) {
   }
   const s = selfTestFrameStats(t0, debugLog.now(), 'dio', { whole: true }),
     gpu = r.gpu ? Math.round(Object.values(r.gpu).reduce((a, v) => a + v, 0) * 100) / 100 : null;
-  return { fps: s.fpsAvg, worstFps: s.fpsWorst, cpuMs: s.cpuMs, gpuMs: gpu, gpuPasses: r.gpu, slow: s.slow };
+  /* phase 20: per frame, draw calls, instances, program switches and the draws of each pass */
+  const c = r.calls;
+  return {
+    fps: s.fpsAvg,
+    worstFps: s.fpsWorst,
+    cpuMs: s.cpuMs,
+    gpuMs: gpu,
+    gpuPasses: r.gpu,
+    slow: s.slow,
+    draws: c ? c.dc[0] : null,
+    instances: c ? c.dc[1] : null,
+    programs: c ? c.dc[2] : null,
+    passDraws: c ? c.dcp : null,
+  };
 }
 const graphicsTestValue = v =>
   typeof v === 'boolean'
@@ -416,6 +429,7 @@ function graphicsTestCosts(steps) {
         return {
           value: s.value,
           fps: s.fps,
+          draws: s.draws,
           frameMs: f,
           cpuMs: s.cpuMs,
           gpuMs: s.gpuMs,
@@ -466,12 +480,12 @@ function graphicsTestShow() {
   const rows = R.settings
     .map(
       s =>
-        `<tr><td>${escapeHtml(s.label)}${s.unclear ? ' <em>(within noise)</em>' : ''}<small>${s.steps.map(p => `${escapeHtml(graphicsTestValue(p.value))}: ${sgn(cost(p))}`).join(' · ')}</small></td><td class="tnum">${sgn(cost(s.steps[s.steps.length - 1]))}</td><td class="tnum">${f(s.steps[0].fps)} → ${f(s.steps[s.steps.length - 1].fps)}</td></tr>`
+        `<tr><td>${escapeHtml(s.label)}${s.unclear ? ' <em>(within noise)</em>' : ''}<small>${s.steps.map(p => `${escapeHtml(graphicsTestValue(p.value))}: ${sgn(cost(p))}`).join(' · ')}</small></td><td class="tnum">${sgn(cost(s.steps[s.steps.length - 1]))}</td><td class="tnum">${f(s.steps[0].fps)} → ${f(s.steps[s.steps.length - 1].fps)}</td><td class="tnum">${f(s.steps[0].draws)} → ${f(s.steps[s.steps.length - 1].draws)}</td></tr>`
     )
     .join('');
   const all = R.steps.filter(s => s.kind === 'all'),
     allLine = all.length
-      ? `<p class="note">Everything at once: ${all.map(s => `${escapeHtml(s.label)} ${f(s.fps)} fps (${f(chip ? s.gpuMs : graphicsTestFrameMs(s))} ms)`).join(', ')}.</p>`
+      ? `<p class="note">Everything at once: ${all.map(s => `${escapeHtml(s.label)} ${f(s.fps)} fps (${f(chip ? s.gpuMs : graphicsTestFrameMs(s))} ms, ${f(s.draws)} draws)`).join(', ')}.</p>`
       : '',
     drift = Object.entries(R.drift)
       .filter(([, d]) => d.drifting)
@@ -479,7 +493,7 @@ function graphicsTestShow() {
   modal({
     title: R.stopped ? 'Graphics test stopped' : 'What each setting costs',
     html: `<p class="note">The extra time each setting adds to a frame on this device, in ms of the ${unit}, over the setting at its lowest (a frame has ${R.fpsCap ? Math.round(1000 / R.fpsCap) : 16} ms at your ${f(R.fpsCap)} fps cap, so nothing shows below it). Costliest first; a cost no bigger than its place's own wandering is marked “within noise”.</p>
-  <table class="nb-table"><thead><tr><th>Setting</th><th>At highest</th><th>fps</th></tr></thead><tbody>${rows || '<tr><td colspan="3">Nothing was measured.</td></tr>'}</tbody></table>${allLine}
+  <table class="nb-table"><thead><tr><th>Setting</th><th>At highest</th><th>fps</th><th>Draws</th></tr></thead><tbody>${rows || '<tr><td colspan="4">Nothing was measured.</td></tr>'}</tbody></table>${allLine}
   ${drift.length ? `<p class="note">These places measured differently at the end than at the start, so their numbers are less sure (the device may have warmed up): ${drift.map(escapeHtml).join(', ')}.</p>` : ''}
   ${R.errors.length ? `<h3>Errors</h3><ul class="nb-errs">${R.errors.map(e => `<li>${escapeHtml(e)}</li>`).join('')}</ul>` : ''}<p class="note">Your settings and your save weren't changed.</p>`,
     btns: [

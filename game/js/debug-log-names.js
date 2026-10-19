@@ -5,6 +5,7 @@ import { LOCATIONS, gameData } from './game-data.js';
 import { encountersHere, setSetTrip, setTrip } from './logic/rules.js';
 import { battleStageKey, newBattle, setNewBattle } from './logic/battle-engine.js';
 import { activeBattle, save, saveData, setSave, uiState } from './game-state.js';
+import { gpuCountSummary, gpuCounters } from './engine/gpu-counters.js';
 import { frameScheduler, userFps } from './frame-scheduler.js';
 import { artPixels, setArtPixels } from './art.js';
 import { PERSON_ART_CACHE, personBattleFrames, setPersonBattleFrames } from './person-art.js';
@@ -44,6 +45,7 @@ import { environment } from './environment.js';
 import {
   buildGrass,
   buildGroundMesh,
+  drawBoxFaces,
   drawGrass,
   drawGround,
   drawSprites,
@@ -56,6 +58,7 @@ import {
   reflectionPass,
   setBuildGrass,
   setBuildGroundMesh,
+  setDrawBoxFaces,
   setDrawGrass,
   setDrawGround,
   setDrawSprites,
@@ -75,6 +78,7 @@ import {
   walkRenderer,
 } from './walk-view-gl.js';
 import { buildingItems, buildingState, drawBuildings, setBuildingItems, setDrawBuildings } from './buildings.js';
+import { drawStructures, setDrawStructures } from './structures.js';
 import {
   buildSolidProp,
   buildSolidTree,
@@ -84,6 +88,7 @@ import {
   setDrawSolidProps,
   solidPropState,
 } from './solid-props.js';
+import { drawPropModels, setDrawPropModels } from './prop-models.js';
 import { ambientLife, lifeStep, setLifeStep } from './ambient-life.js';
 import { paintWorkerReport } from './ground-paint-worker.js';
 import { endBattle, openBattle, paintActions, setEndBattle, setOpenBattle, setPaintActions } from './battle.js';
@@ -115,12 +120,15 @@ Object.defineProperties(GAME, {
   buildingState: { get: () => buildingState },
   challengesToday: { get: () => challengesToday },
   cutsceneStart: { get: () => cutsceneStart, set: setCutsceneStart },
+  drawBoxFaces: { get: () => drawBoxFaces, set: setDrawBoxFaces },
   drawBuildings: { get: () => drawBuildings, set: setDrawBuildings },
   drawGrass: { get: () => drawGrass, set: setDrawGrass },
   drawGround: { get: () => drawGround, set: setDrawGround },
   drawPostEffects: { get: () => drawPostEffects, set: setDrawPostEffects },
+  drawPropModels: { get: () => drawPropModels, set: setDrawPropModels },
   drawSolidProps: { get: () => drawSolidProps, set: setDrawSolidProps },
   drawSprites: { get: () => drawSprites, set: setDrawSprites },
+  drawStructures: { get: () => drawStructures, set: setDrawStructures },
   drawWater: { get: () => drawWater, set: setDrawWater },
   effectsPass: { get: () => effectsPass, set: setEffectsPass },
   encountersHere: { get: () => encountersHere },
@@ -131,6 +139,8 @@ Object.defineProperties(GAME, {
   frameScheduler: { get: () => frameScheduler },
   gameData: { get: () => gameData },
   gatherFrameItems: { get: () => gatherFrameItems, set: setGatherFrameItems },
+  gpuCountSummary: { get: () => gpuCountSummary },
+  gpuCounters: { get: () => gpuCounters },
   gpuState: { get: () => gpuState },
   grassWork: { get: () => grassWork, set: setGrassWork },
   groundOcclusion: { get: () => groundOcclusion, set: setGroundOcclusion },

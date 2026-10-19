@@ -11,6 +11,53 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 - Questions waiting for the owner: 
 - Next session starts with: 
 
+### Phase 20 stage A - Measure (GPU counters) - 2026-10-19
+Plan approved at the start (Stage A only: phase 19 is not done, and the phase file lets only Stage A run early).
+Branch `ccr-9b6f14fb-6t1w6i`, from main at 09ae2ba. The phase file is now docs/phases/20-renderer-batching.md.
+- Changed (one cause per commit):
+  - **Fix (A6):** the diagnostics' and the Graphics test's pass timers skipped drawPropModels, drawBoxFaces and
+    drawStructures. Cause: tools/to-module.mjs fills the debug log's GAME object only from debug-log.js's own lists, and
+    self-test.js's DIAGNOSTICS_PASSES is not one. They are in debug-log.js's renderer list now (so they also get a
+    per-second time in `prof`). A Node test fails if a pass named there is missing from GAME.
+  - `game/js/engine/gpu-counters.js` (A1): own-property wrappers on the context for the draws (instances counted),
+    useProgram (real switches only), bindTexture, bindVertexArray, every uniform setter, texImage2D/texSubImage2D and
+    bufferData/bufferSubData (bytes). Off puts each method back exactly as it was (a test's own wrapper included).
+  - Passes (A2): a gpuPass() mark before each pass of drawWalkFrameInner, and inside shadowPass (far, near) and
+    lampShadowMaps (lamp0, lamp1). Screens other than the walk view (world map, battle stage canvas) count as `other`.
+  - When (A3): the frame scheduler counts one tick a second, every tick while a test measures; on and off in the same
+    tick, so the full test's light lab (which wraps the draws itself, from async code) never meets them half-way.
+    A counted tick that drew nothing is not kept.
+  - Log fields (A4, A5, A7): `dc`, `dcp`, `up`, `lit`, `pcl`, `alloc` in each second's sample (docs/TESTING.md says
+    what each holds). `pcl` counts from a second after a walk scene is ready; opening a place, or the world map for
+    the first time, resets the "settled" flag.
+  - Tests: the diagnostics' frame budget line and every Graphics test step carry draws, instances, program switches
+    and draws per pass; a Draws column in both graphics tests' tables.
+- Where the phase file was wrong (checked in the code): the commit it names (3ac5b5b) is not in this repository and its
+  lines are off by about 2; A6's cause (above); there are two graphics tests (the bench and the older per-dial one);
+  the battle has no separate mount, so `pcl` is not reset at battle start (a battle compiling a program counts, which
+  is what H5 wants to see).
+- First number (headless, so the count only, not the speed): Marigold in the smoke run makes about **2,250 draws a
+  frame** (sprites ~1,260, far sun shadow ~450, effects ~330, models ~90, reflection ~48, buildings ~45), not the
+  phase file's "about 400". Draw counts don't depend on the resolution, but the smoke run's settings differ from the
+  game's own values; your phone's log will say.
+- Risky or unfinished:
+  - While a test measures, every frame is counted, which adds some processor time to each (every step alike).
+  - `alloc` is Chrome-only and coarse (Chrome rounds and delays the heap figure); the iPad has none.
+  - `pcl` counts since the page loaded; the per-dial graphics test's shader check adds to it.
+  - A8 is yours: the baseline on the iPad and the Android phone.
+- Verified: every commit lint, typecheck, unit tests (65 -> 72), check:data, check:modules, format:check; smoke at the
+  end 15/15 green; its exported phone log has `dc`/`dcp`/`up`/`lit` in 69 of 85 samples and the same 104 entries in
+  its error list as before (all phase 16 "is in legacy" warnings). No headless graphics test was run.
+- Questions waiting for the owner (A8, "Ask me before"):
+  - Run the Graphics test and the diagnostics at the Sun gap, the depth corridor and Copperleaf by night, on the iPad
+    and the Android phone, and send the reports and the debug logs.
+  - Then the budgets. My proposal: 150 draws a frame on phones including the shadow passes, 30 fps on the Android phone
+    at the game's own values. (If 2,000+ draws holds on the phone, 150 needs stage E's instancing and phase 21's
+    atlases; a nearer first target would be 600.)
+  - Tag this as `phase-20a-done`?
+- Next session starts with: the A8 numbers into this file, the budgets decided, then stage B (the file split, "Ask me
+  before" the file list), or stage D first, since the Android phone is held back by pixels.
+
 ### Phase 08a-3 - UI, text, Studio, running - 2026-10-19
 Plan approved at the start (docs/phases/08a-plan.md, section 08a-3, now marked done with the corrections found).
 Branch `ccr-72e8ad56-lpn1x3`, from main.

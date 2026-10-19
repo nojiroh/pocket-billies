@@ -77,6 +77,7 @@ export function graphicsReport(r, names) {
       notMeasured: s.notMeasured || undefined,
       fps: s.fps,
       worstFrameMs: s.worstMs,
+      draws: s.draws,
       frames: s.frames,
       openMs: s.openMs,
       why: s.ok ? undefined : s.why,
@@ -191,13 +192,26 @@ export async function runGraphicsTest(G) {
       if (going) requestAnimationFrame(tickFrame);
     };
     requestAnimationFrame(tickFrame);
-    await sleep(2000);
+    /* phase 20: every frame's graphics calls counted meanwhile (engine/gpu-counters.js) */
+    G.gpuCountBegin();
+    let calls = null;
+    try {
+      await sleep(2000);
+    } finally {
+      calls = G.gpuCountEnd();
+    }
     going = false;
     const sec = (performance.now() - m0) / 1000,
       frames = R.frames - f0;
     if (G.gpuState.lost) throw new Error('the graphics chip lost the picture (context lost)');
     if (!frames) throw new Error('no frames in 2 s (a black or frozen screen)');
-    return { openMs, frames, fps: Math.round((frames / sec) * 10) / 10, worstMs: Math.round(worst) };
+    return {
+      openMs,
+      frames,
+      fps: Math.round((frames / sec) * 10) / 10,
+      worstMs: Math.round(worst),
+      draws: calls ? calls.dc[0] : null,
+    };
   };
   /* one step: what it measured, or why it is a problem; run again if the app went to the background meanwhile */
   let hidden = 0;
@@ -365,7 +379,7 @@ function showGraphicsResults(G, R) {
   const rows = R.steps
     .map(
       s =>
-        `<tr><td>${esc(s.step)}${!s.ok && s.why ? `<small class="nb-why">Why: ${esc(s.why)}</small>` : ''}</td><td class="tnum">${f(s.fps)}</td><td class="tnum">${f(s.worstFrameMs)}</td><td class="${s.notMeasured ? 'nb-skip' : s.ok ? 'nb-ok' : 'nb-bad'}">${s.notMeasured ? 'Not measured' : s.ok ? 'OK' : 'Problem'}</td></tr>`
+        `<tr><td>${esc(s.step)}${!s.ok && s.why ? `<small class="nb-why">Why: ${esc(s.why)}</small>` : ''}</td><td class="tnum">${f(s.fps)}</td><td class="tnum">${f(s.worstFrameMs)}</td><td class="tnum">${f(s.draws)}</td><td class="${s.notMeasured ? 'nb-skip' : s.ok ? 'nb-ok' : 'nb-bad'}">${s.notMeasured ? 'Not measured' : s.ok ? 'OK' : 'Problem'}</td></tr>`
     )
     .join('');
   G.modal({
@@ -375,7 +389,7 @@ function showGraphicsResults(G, R) {
         ? 'Every graphics setting works'
         : 'The graphics test found problems',
     html: `<p class="note">Each graphics setting on its own, in ${esc(R.scene || 'one scene')}. Frames per second (higher is smoother) and the longest frame in milliseconds.</p>
-  <table class="nb-table"><thead><tr><th>What</th><th>FPS</th><th>Worst ms</th><th>Result</th></tr></thead><tbody>${rows || '<tr><td colspan="4">Nothing was measured.</td></tr>'}</tbody></table>
+  <table class="nb-table"><thead><tr><th>What</th><th>FPS</th><th>Worst ms</th><th>Draws</th><th>Result</th></tr></thead><tbody>${rows || '<tr><td colspan="5">Nothing was measured.</td></tr>'}</tbody></table>
   ${R.errors.length ? `<h3>Errors</h3><ul class="nb-errs">${R.errors.map(e => `<li>${esc(e)}</li>`).join('')}</ul>` : ''}<p class="note">Your save and your graphics settings weren't changed. The report holds no save data or names.</p>`,
     btns: [
       {

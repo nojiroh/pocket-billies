@@ -56,6 +56,7 @@ import {
   uiState,
 } from './game-state.js';
 import { I18N_LANGS, i18nSet } from './i18n.js';
+import { gpuCountBegin, gpuCountEnd } from './engine/gpu-counters.js';
 import { frameScheduler } from './frame-scheduler.js';
 import { uiIconHTML } from './art.js';
 import { cleanLook, cleanTrainer, lookFromOld, personHTML } from './person-art.js';
@@ -145,6 +146,8 @@ async function startGraphicsTest() {
     selfTest,
     debugLog,
     gpuState,
+    gpuCountBegin,
+    gpuCountEnd,
     compileProgram,
     attributeClashes,
     shaders: { WALK_SHADERS, BUILDING_SHADERS, POST_EFFECT_SHADERS, WORLD_MAP_GL_SHADERS, SOLID_PROP_SHADERS },

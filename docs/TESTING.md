@@ -87,6 +87,14 @@ same phase:
   history or anything that identifies the player. Text that can carry a name (speech, labels) stays out of the
   log's picture. Smoke plants a trainer name and a Billie nickname and fails if either reaches the exported log; a
   new field in the log must keep it passing. **(13c)** Opt-in error reports follow the same rules, from an allowlist.
+- **(Phase 20)** Each second's sample in the debug log also holds what one frame asked of the graphics card
+  (game/js/engine/gpu-counters.js, counted once a second on whichever screen is open): `dc` [draws, instances,
+  program switches, texture binds, uniform calls], `dcp` (draws per render pass: sky, ground, grass, sprites, solid,
+  models, box, buildings, structures, water, effects, post, shadowNear, shadowFar, lamp0, lamp1, reflection, other),
+  `up` [KB of textures, KB of buffers uploaded], `lit` [point lights, lamp shadow maps], `pcl` [programs compiled at
+  once, started in the background] once a place has settled (a second after it is ready; counted since the page
+  loaded, and the per-dial graphics test's shader check adds to it), `alloc` [hitches, MB freed]: ticks more than
+  45 ms apart while the heap shrank (Chrome only, a rough sign of garbage collection). Numbers only.
 - **(13c)** The full test and the debug menu load on demand; the recording part of the debug log stays loaded.
 - The graphics test (Settings → Help → Run the graphics test, and the debug menu; `game/js/graphics-test.js`, loaded on
   demand) is run only by a person, by hand, on their own device: never from Claude Code, CI, a headless browser or

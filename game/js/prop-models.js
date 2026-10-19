@@ -45,7 +45,7 @@ expose({
     () => drawPropModelShadows,
     v => ((drawPropModelShadows = v), provide({ drawPropModelShadows })),
   ],
-  drawPropModels: [() => drawPropModels, v => ((drawPropModels = v), provide({ drawPropModels }))],
+  drawPropModels: [() => drawPropModels, v => setDrawPropModels(v)],
   drawSpinningParts: [() => drawSpinningParts, v => (drawSpinningParts = v)],
   flushPropModelMeshes: [
     () => flushPropModelMeshes,
@@ -91,6 +91,10 @@ provide({
   propModelShaders,
   tagPropModel,
 });
+export function setDrawPropModels(v) {
+  drawPropModels = v; // eslint-disable-line no-func-assign
+  provide({ drawPropModels });
+}
 /* to-module: end */
 export const propModelState = {
   recipes: new Map(),
@@ -1583,7 +1587,7 @@ function setPropModelUniforms(p, it) {
   gl.uniform1f(U.uRot, (it.lk && it.lk.rot ? it.lk.rot * 0.6 : 0) + (bo ? bo[1] : 0));
   gl.uniform1f(U.uFlip, it.flip || 1);
 }
-function drawPropModels(C, items, X, hits, labels, PPU) {
+export function drawPropModels(C, items, X, hits, labels, PPU) {
   propModelState.drawn = 0;
   if (!propModelsOn()) return;
   propModelGuard(() => {
