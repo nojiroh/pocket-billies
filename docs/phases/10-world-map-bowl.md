@@ -110,3 +110,23 @@ on the bowl, and the old map code is deleted.
   place and you always show.
 - **World map test:** the new ground, models and draw time.
 
+## The look: living diorama (chosen 2026-10-19)
+Concept sketches (top-down, offline, from the real spots and roads): `10-bowl/option-atlas.png`,
+`option-diorama.png` (chosen), `option-pixel.png`.
+Owner's answers: **B, living diorama** (strong low-poly relief, cast shadows, animated reflective water, little 3D towns);
+the sea as an **inland sea with bays** (the open side of the bowl, about 40% of it; one continent wrapping round it);
+**slanted light** for readable shadows; clouds and weather from **the game's own weather** and time of day.
+
+Sessions, in order:
+1. **Sea and coasts.** About 40% ocean in the ground data (logic/bowl.js: a sea level and a coastline from the
+   distance to places and roads plus noise; every place and road on land, enforced by a test). Water: depth colours,
+   moving waves, foam along the coasts, sky reflections; beaches, shallows. The walk scenes' far wall shows the sea.
+2. **The look and the routes.** Natural ground between places: beaches, cliffs on steep coasts, rivers from the high
+   ground to the sea, regions blending by height and wetness. Routes as bold outlined paths in the ground, always
+   clear. Stronger relief; hill shading and cast shadows from a slanted sun (a shadow map over the bowl).
+3. **Clouds and weather.** Simplified low-poly clouds at a few heights with moving shadows; rain showers, fog and snow
+   over the peaks from the game's weather; time of day; quality off/low/high.
+4. **Landmarks, buildings, trees.** Oversized landmarks far out, each town's real buildings close in, tree clumps.
+5. **Studio and finish.** Landmark per place, sea and region terrain editing; world map test steps for each part;
+   the owner's phone test; tag.
+
