@@ -1,7 +1,7 @@
 {
  "about": "Project Story: the story layer's own data. flags: every story flag the game keeps in saveData.story, and what it means. patterns: flags made from an id. kept: the story's own records in the same object (not flags). speakers: the names a script may write before a line, and whose portrait and name they stand for. quests: each quest's stages in order. presets: start points for ?story=name (test runs only): place, story flags, trainers beaten (with their badges), coins, items, team.",
  "flags": {
-  "rival0": "how Blake's first battle went: win, lose or skip (story.js storyAfterRival)",
+  "rival0": "how Blake's first battle went: win, lose or skip (story.js storyAfterRival; read by scripts.blake-first-battle)",
   "ending": "the last clue: the story's last stage (story.js storyEnding, lore.js loreStage)",
   "flights": "airship flights taken, a count (airship.js)",
   "clueLanyard": "the lanyard clue found (lore.json clues: lanyard)",
@@ -15,8 +15,7 @@
   "region:sporeforest": "unlocks lore entries (lore.json); set nowhere yet"
  },
  "patterns": {
-  "met_<id>": "met a person or a trainer with intro lines (story.js)",
-  "talk_<person>": "which of a person's lines comes next, an index (story.js personTalk)",
+  "met_<id>": "met a person, or a trainer who runs up to you (their script sets it)",
   "read_<book>": "a book read (lore.js loreBook)",
   "legend_<species>": "the day a legend was last met, so once a day (story.js legendCheck)",
   "clue_<clue>": "a clue found, for a clue whose unlock isn't a flag (lore.js loreClue)"

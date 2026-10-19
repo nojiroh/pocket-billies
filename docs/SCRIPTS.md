@@ -117,7 +117,7 @@ The command table is `SCRIPT_COMMANDS` in logic/script.js; the Studio's referenc
 ## Flags
 
 Every story flag is listed in `game/data/story.json` with what it means: `flags` by name, `patterns` for flags made
-from an id (`met_<id>`, `talk_<person>`, `read_<book>`, `legend_<species>`, `clue_<clue>`), and `kept` for the
+from an id (`met_<id>`, `read_<book>`, `legend_<species>`, `clue_<clue>`), and `kept` for the
 story's own records (`talks`, `quests`, `once`, `cycles`, `resume`). The game sets flags through `setStoryFlag`; one
 story.json doesn't list is a warning in the debug log's data list. Trainers beaten stay in `saveData.flags` (read as
 `beat:<id>`).
