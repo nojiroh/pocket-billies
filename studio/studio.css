@@ -3623,6 +3623,20 @@ body.lay-drag {
     grid-template-columns: 1fr;
   }
 }
+.lay-pick {
+  flex-shrink: 0;
+}
+@media (max-width: 1400px) {
+  .lay-pick > span {
+    display: none;
+  }
+}
+/* a tablet's top bar has no room: Save comes first (the handles still work) */
+@media (max-width: 1200px) {
+  .lay-pick {
+    display: none;
+  }
+}
 .lay-pick select {
   border: 0;
   background: none;

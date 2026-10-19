@@ -233,8 +233,7 @@ function layoutPickHTML() {
         ([id, P]) =>
           `<option value="${id}" title="${escapeHtml(P.note)}" ${id === lay.preset ? 'selected' : ''}>${escapeHtml(P.name)}${id === lay.preset && adj ? ' (adjusted)' : ''}</option>`
       )
-      .join('') +
-    `<option value="reset" ${adj ? '' : 'disabled'}>Reset sizes to ${escapeHtml(LAYOUT_PRESETS[lay.preset].name)}</option>`
+      .join('') + `<option value="reset" ${adj ? '' : 'disabled'}>Reset sizes</option>`
   );
 }
 function updateLayoutButton() {
@@ -310,7 +309,7 @@ addEventListener('load', () => {
   if (a)
     (l || a.firstChild).insertAdjacentHTML(
       l ? 'afterend' : 'beforebegin',
-      `<label class="tb lay-pick" title="Layout presets: sizes for your screen, or two sections side by side">Layout <select id="layPick" aria-label="Layout">${layoutPickHTML()}</select></label>`
+      `<label class="tb lay-pick" title="Layout presets: sizes for your screen, or two sections side by side"><span>Layout</span> <select id="layPick" aria-label="Layout">${layoutPickHTML()}</select></label>`
     );
   applyLayout();
   /* follow the Studio: each section drawn gets its sizes and handles, and the second pane is drawn too. The split
