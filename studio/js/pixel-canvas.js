@@ -20,7 +20,7 @@
      drawn(P)     the canvas was drawn (zoom and grid may have changed) */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
-import { loadedAtlas, markArt, provide } from '../../game/js/hooks.js';
+import { loadedAtlas, markArt, openShortcutSheet, provide } from '../../game/js/hooks.js';
 import { clamp } from '../../game/js/util.js';
 import { makeCanvas } from '../../game/js/art.js';
 import { historyArt } from '../../game/js/logic/history.js';
@@ -44,7 +44,7 @@ import {
   pixelSymmetryFor,
   pixelZoomNext,
 } from '../../game/js/logic/pixel-ops.js';
-import { commit, studioState, toast, updateTopBar } from './studio-app.js';
+import { commit, redo, studioState, toast, undo, updateTopBar } from './studio-app.js';
 /* eslint-disable no-func-assign */
 expose({
   PIXEL_SYMMETRY: [() => PIXEL_SYMMETRY],
@@ -72,6 +72,7 @@ expose({
   pixelCanvasRepeat: [() => pixelCanvasRepeat],
   pixelCanvasSymmetry: [() => pixelCanvasSymmetry, v => (pixelCanvasSymmetry = v)],
   pixelCanvasTool: [() => pixelCanvasTool, v => (pixelCanvasTool = v)],
+  pixelCanvasToolsHTML: [() => pixelCanvasToolsHTML, v => (pixelCanvasToolsHTML = v)],
   pixelCanvasTransform: [() => pixelCanvasTransform, v => (pixelCanvasTransform = v)],
   pixelCanvasZoom: [() => pixelCanvasZoom, v => (pixelCanvasZoom = v)],
   strokeEnd: [() => strokeEnd, v => (strokeEnd = v)],
@@ -122,6 +123,19 @@ export function pixelCanvas(stage, o) {
   return P;
 }
 /* ---------- the panel the hosts put beside the canvas: symmetry (and the palette and onion skin) ---------- */
+/* a tool bar for a host that has none of its own (the prop and tile painter); `extra`: the host's tools [key, name] */
+export function pixelCanvasToolsHTML(extra = []) {
+  const T = [
+    ['pen', 'Pencil', 'B'],
+    ['erase', 'Eraser', 'E'],
+    ['fill', 'Fill', 'G'],
+    ['pick', 'Pick color', 'I'],
+    ['line', 'Line', 'L'],
+    ['select', 'Select', 'M'],
+    ...extra,
+  ];
+  return `<span class="px-tools">${T.map(([k, n, key]) => `<button class="seg" data-pc="tool" data-t="${k}"${key ? ` title="${n} (${key})"` : ''}>${n}</button>`).join('')}</span><span class="px-tools"><button class="seg" data-pc="zoom" data-z="-1" title="Zoom out (−)">−</button><span class="pc-zoom"></span><button class="seg" data-pc="zoom" data-z="1" title="Zoom in (+)">+</button><button class="seg" data-pc="grid" title="Pixel grid (Ctrl+')">Grid</button></span><span class="px-tools"><button class="seg" data-pc="xf" data-x="flipH" title="Flip the selection or picture left-right (Shift+H)">Flip ↔</button><button class="seg" data-pc="xf" data-x="flipV" title="Flip upside down (Shift+V)">Flip ↕</button><button class="seg" data-pc="xf" data-x="rotate" title="Turn a quarter right (Shift+R)">Turn ⟳</button></span><span class="px-tools"><button class="seg" data-pc="undo" title="Undo (Ctrl+Z)">↶</button><button class="seg" data-pc="redo" title="Redo (Ctrl+Y)">↷</button><button class="seg" data-pc="keys" title="Every key (?)">?</button></span>`;
+}
 export function pixelCanvasPanelHTML(opts = {}) {
   return `<div class="px-sec pc-panel"><h4>Symmetry</h4><div class="seg-row">${PIXEL_SYMMETRY.map(
     ([k, l]) =>
@@ -144,8 +158,16 @@ export function pixelCanvasPanel(P, root) {
   root.addEventListener('click', ev => {
     const b = ev.target.closest('[data-pc]');
     if (!b || !P.cv.isConnected) return;
-    if (b.dataset.pc === 'sym') pixelCanvasSymmetry(P, b.dataset.m);
-    else if (b.dataset.pc === 'sw') pixelCanvasColor(P, b.dataset.c);
+    const k = b.dataset.pc;
+    if (k === 'sym') pixelCanvasSymmetry(P, b.dataset.m);
+    else if (k === 'tool') pixelCanvasTool(P, b.dataset.t);
+    else if (k === 'zoom') pixelCanvasZoom(P, pixelZoomNext(P.zoom, +b.dataset.z));
+    else if (k === 'grid') pixelCanvasAct(P, 'grid');
+    else if (k === 'xf') pixelCanvasTransform(P, b.dataset.x);
+    else if (k === 'undo') undo();
+    else if (k === 'redo') redo();
+    else if (k === 'keys') openShortcutSheet();
+    else if (k === 'sw') pixelCanvasColor(P, b.dataset.c);
   });
   root.addEventListener('change', ev => {
     const b = ev.target.closest('[data-pc=lock], [data-pc=off], [data-pc=onion]');
@@ -170,6 +192,9 @@ function pixelCanvasPanelSync(P) {
   if (!r) return;
   r.querySelectorAll('[data-pc=sym]').forEach(b => b.classList.toggle('on', b.dataset.m === (P.symMode || 'off')));
   r.querySelectorAll('.pc-shift').forEach(e => (e.hidden = !P.symMode || P.symMode === 'off'));
+  r.querySelectorAll('[data-pc=tool]').forEach(e => e.classList.toggle('on', e.dataset.t === P.tool));
+  r.querySelectorAll('[data-pc=grid]').forEach(e => e.classList.toggle('on', !!P.showGrid));
+  r.querySelectorAll('.pc-zoom').forEach(e => (e.textContent = P.zoom + '×'));
   r.querySelectorAll('[data-pc=lock]').forEach(e => (e.checked = !!P.lock));
   r.querySelectorAll('[data-pc=off]').forEach(e => (e.checked = !!P.showOff));
   r.querySelectorAll('[data-pc=onion]').forEach(e => (e.checked = !!P.showOnion));
@@ -458,6 +483,7 @@ export function pixelCanvasTool(P, t) {
   P.tool = t;
   P.wrap.dataset.tool = t;
   if (P.o.toolChanged) P.o.toolChanged(P);
+  pixelCanvasPanelSync(P);
 }
 function bindPixelCanvasEvents(P) {
   const w = P.wrap;

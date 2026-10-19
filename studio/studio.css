@@ -1236,6 +1236,21 @@ table.keys td {
   padding: 3px 0;
   color: var(--text2);
 }
+.pc-base {
+  fill: none;
+  stroke: #c8323c;
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+.sc-pe-stage .px-wrap {
+  margin: auto;
+}
+.pc-zoom {
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+  min-width: 30px;
+  text-align: center;
+}
 .pc-axis {
   stroke: #d0347c;
   stroke-width: 1.5;
@@ -2039,14 +2054,6 @@ select.sm {
   border-radius: 10px;
   background: repeating-conic-gradient(color-mix(in srgb, var(--line) 70%, transparent) 0 25%, transparent 0 50%) 0
     0/16px 16px;
-}
-.sc-pe-stage canvas {
-  display: block;
-  margin: auto;
-  image-rendering: pixelated;
-  cursor: crosshair;
-  touch-action: none;
-  box-shadow: 0 0 0 1px var(--line2);
 }
 @media (max-width: 1100px) {
   .sc-pe-body {
