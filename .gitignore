@@ -22,6 +22,8 @@ validation/rooms/
 validation/quick-baseline/
 validation/fast/
 validation/sim/
+# Debug logs fetched by firebase/fetch-debug-log.mjs: players' device details, never committed
+validation/logs/
 results.json
 test-results/
 playwright-report/
