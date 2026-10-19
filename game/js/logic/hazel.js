@@ -27,7 +27,6 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-
 export const HAZEL = {
   /** Hazel's own fight: the log lines under the plates ({foe} is Blake's Billie) */
   fight: {
