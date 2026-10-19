@@ -52,7 +52,7 @@
  ],
  "props": [
   {"k":"wall_clock","x":7,"z":9.45},
-  {"k":"bookshelf","x":1.6,"z":9,"act":"read","book":"steps"},
+  {"k":"bookshelf","x":1.6,"z":9,"act":"read","book":"coin_standard"},
   {"k":"bookshelf","x":2.6,"z":6.9},
   {"k":"bookshelf","x":11.4,"z":6.9},
   {"k":"bookshelf","x":12.4,"z":9},
