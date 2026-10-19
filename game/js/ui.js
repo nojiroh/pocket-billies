@@ -916,7 +916,6 @@ function mapExits(node) {
    (first half of a road) and in from the far end (second half) */
 /* v26: walking into shops, the clinic, the lab and houses. uiState.inside remembers the room and where you came in */
 function roomFor(a, p) {
-  if ((saveData.preferences || {}).rooms === 'quick' && a !== 'home') return null;
   const L = doorLinkOf(p, a, walkView.id);
   return L ? L.b.map : null;
 }
