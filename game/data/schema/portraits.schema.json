@@ -1,0 +1,158 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "portraits.schema.json",
+ "title": "game/data/portraits.json: talking-head portraits (phase 07)",
+ "type": "object",
+ "required": ["size", "slots", "heads", "items", "eyes", "mouths", "eyeFallback", "expressions", "motion", "palettes", "faces"],
+ "additionalProperties": false,
+ "$defs": {
+  "id": {"type": "string", "pattern": "^[a-z0-9_]+$"},
+  "img": {"description": "a picture in art/next/portraits/ (without .png)", "type": "string", "pattern": "^[a-z0-9_]+$"},
+  "pair": {"type": "object", "required": ["l", "r"], "additionalProperties": false, "properties": {"l": {"$ref": "#/$defs/img"}, "r": {"$ref": "#/$defs/img"}}},
+  "sizes": {"type": "object", "required": ["s", "m", "l"], "additionalProperties": false, "properties": {"s": {"$ref": "#/$defs/img"}, "m": {"$ref": "#/$defs/img"}, "l": {"$ref": "#/$defs/img"}}},
+  "px": {"type": "integer", "minimum": -64, "maximum": 128},
+  "color": {"type": "string", "pattern": "^#[0-9a-fA-F]{6}$"}
+ },
+ "properties": {
+  "_help": {"type": "string"},
+  "size": {"description": "art pixels a side", "type": "integer", "minimum": 16, "maximum": 256},
+  "slots": {
+   "description": "what a face can wear, in drawing order (later is on top)",
+   "type": "array",
+   "items": {
+    "type": "object",
+    "required": ["id", "name", "one"],
+    "additionalProperties": false,
+    "properties": {
+     "id": {"$ref": "#/$defs/id"},
+     "name": {"type": "string"},
+     "one": {"description": "a face wears at most one part of this slot", "type": "boolean"},
+     "layer": {"description": "body: never moves; otherwise it moves with the head", "enum": ["body", "head"]}
+    }
+   }
+  },
+  "heads": {
+   "type": "object",
+   "propertyNames": {"pattern": "^[a-z0-9_]+$"},
+   "additionalProperties": {
+    "type": "object",
+    "required": ["name", "img", "body", "x", "y", "bodyY", "cx", "crown", "forehead", "eyeY", "noseY", "mouthY", "neck", "bottom", "eyeGap", "earL", "earR", "earY", "lobeY", "top", "nudge"],
+    "additionalProperties": false,
+    "properties": {
+     "name": {"type": "string"},
+     "img": {"$ref": "#/$defs/img"},
+     "body": {"$ref": "#/$defs/img"},
+     "x": {"$ref": "#/$defs/px"}, "y": {"$ref": "#/$defs/px"}, "bodyY": {"$ref": "#/$defs/px"},
+     "cx": {"$ref": "#/$defs/px"}, "crown": {"$ref": "#/$defs/px"}, "forehead": {"$ref": "#/$defs/px"},
+     "eyeY": {"$ref": "#/$defs/px"}, "noseY": {"$ref": "#/$defs/px"}, "mouthY": {"$ref": "#/$defs/px"},
+     "neck": {"description": "the point the head turns around", "$ref": "#/$defs/px"},
+     "bottom": {"$ref": "#/$defs/px"}, "eyeGap": {"description": "from the middle to each eye", "$ref": "#/$defs/px"},
+     "earL": {"$ref": "#/$defs/px"}, "earR": {"$ref": "#/$defs/px"}, "earY": {"$ref": "#/$defs/px"}, "lobeY": {"$ref": "#/$defs/px"},
+     "top": {"description": "which cut of the clothes fits the shoulders", "enum": ["s", "m", "l"]},
+     "nudge": {"description": "item id -> [dx, dy] on this head only", "type": "object", "additionalProperties": {"type": "array", "items": {"type": "integer"}, "minItems": 2, "maxItems": 2}}
+    }
+   }
+  },
+  "items": {
+   "type": "object",
+   "propertyNames": {"pattern": "^[a-z0-9_]+$"},
+   "additionalProperties": {
+    "type": "object",
+    "required": ["slot", "name", "img", "at", "ax", "ay", "dx", "dy"],
+    "additionalProperties": false,
+    "properties": {
+     "slot": {"$ref": "#/$defs/id"},
+     "name": {"type": "string"},
+     "img": {"anyOf": [{"$ref": "#/$defs/img"}, {"$ref": "#/$defs/pair"}, {"$ref": "#/$defs/sizes"}]},
+     "at": {"description": "the head's point it hangs on; a pair uses <at>L and <at>R", "enum": ["crown", "forehead", "eyes", "nose", "mouth", "neck", "bottom", "eyeL", "eyeR", "earL", "earR", "eye", "brow", "cheek", "mouthSide", "ear", "lobe"]},
+     "ax": {"description": "which point of the picture sits there: 0 left, 1 right", "type": "number", "minimum": 0, "maximum": 1},
+     "ay": {"description": "0 top, 1 bottom", "type": "number", "minimum": 0, "maximum": 1},
+     "dx": {"description": "px; on a pair, outwards", "type": "integer"},
+     "dy": {"type": "integer"},
+     "tint": {"description": "the face colour it takes", "enum": ["skin", "hair", "iris", "top", "hat", "acc"]},
+     "layer": {"enum": ["body", "head"]},
+     "back": {"description": "hair: the part behind the body", "type": "object", "required": ["img", "dx", "dy"], "additionalProperties": false, "properties": {"img": {"$ref": "#/$defs/img"}, "dx": {"type": "integer"}, "dy": {"type": "integer"}}}
+    }
+   }
+  },
+  "eyes": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "required": ["name", "frames", "mid", "dx", "dy"],
+    "additionalProperties": false,
+    "properties": {
+     "name": {"type": "string"},
+     "frames": {"description": "frame -> picture (with _l and _r)", "type": "object", "required": ["open", "half", "closed"], "additionalProperties": {"$ref": "#/$defs/img"}},
+     "mid": {"description": "frames centred on the eye line instead of resting on the open eye's bottom", "type": "array", "items": {"type": "string"}},
+     "dx": {"type": "integer"}, "dy": {"type": "integer"}
+    }
+   }
+  },
+  "mouths": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "required": ["name", "frames", "dx", "dy"],
+    "additionalProperties": false,
+    "properties": {
+     "name": {"type": "string"},
+     "frames": {"type": "object", "required": ["closed", "talk_a", "talk_b", "talk_c"], "additionalProperties": {"$ref": "#/$defs/img"}},
+     "dx": {"type": "integer"}, "dy": {"type": "integer"}
+    }
+   }
+  },
+  "eyeFallback": {"description": "an eye frame a style lacks -> the one it uses", "type": "object", "additionalProperties": {"type": "string"}},
+  "expressions": {
+   "type": "object",
+   "required": ["idle"],
+   "additionalProperties": {
+    "type": "object",
+    "required": ["eyes", "mouth", "browTilt", "browLift", "pose", "sway"],
+    "additionalProperties": false,
+    "properties": {
+     "eyes": {"type": "string"}, "mouth": {"type": "string"},
+     "browTilt": {"description": "px the inner ends of the brows move down", "type": "integer", "minimum": -4, "maximum": 4},
+     "browLift": {"description": "px the brows move down", "type": "integer", "minimum": -4, "maximum": 4},
+     "blush": {"type": "boolean"},
+     "talk": {"description": "mouth frames while talking", "type": "array", "items": {"type": "string"}},
+     "pose": {"description": "where the head settles: x, y (art px), angle (degrees)", "type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3},
+     "sway": {"description": "how much the head sways (1 = normal)", "type": "number", "minimum": 0, "maximum": 4},
+     "hit": {"description": "a motion when the face changes to this", "enum": ["bounce", "shake", "jolt", "recoil", "nod"]}
+    }
+   }
+  },
+  "motion": {
+   "type": "object",
+   "required": ["sway", "talkSway", "nod", "nodChance", "hits", "hairLag", "follow"],
+   "additionalProperties": false,
+   "properties": {
+    "sway": {"type": "number", "minimum": 0, "maximum": 4}, "talkSway": {"type": "number", "minimum": 0, "maximum": 4},
+    "nod": {"type": "number", "minimum": 0, "maximum": 4}, "nodChance": {"type": "number", "minimum": 0, "maximum": 1},
+    "hits": {"type": "number", "minimum": 0, "maximum": 4}, "hairLag": {"type": "number", "minimum": 0, "maximum": 4},
+    "follow": {"type": "number", "minimum": 0, "maximum": 4}
+   }
+  },
+  "palettes": {
+   "type": "object",
+   "required": ["skin", "hair", "iris", "cloth"],
+   "additionalProperties": {"type": "array", "items": {"$ref": "#/$defs/color"}}
+  },
+  "faces": {
+   "description": "ready-made faces (for people to use later)",
+   "type": "object",
+   "propertyNames": {"pattern": "^[a-z0-9_]+$"},
+   "additionalProperties": {
+    "type": "object",
+    "required": ["name", "head", "eyes", "mouth", "items", "colors"],
+    "additionalProperties": false,
+    "properties": {
+     "name": {"type": "string"},
+     "head": {"$ref": "#/$defs/id"}, "eyes": {"$ref": "#/$defs/id"}, "mouth": {"$ref": "#/$defs/id"},
+     "items": {"type": "array", "items": {"$ref": "#/$defs/id"}},
+     "colors": {"type": "object", "additionalProperties": false, "properties": {"skin": {"$ref": "#/$defs/color"}, "hair": {"$ref": "#/$defs/color"}, "iris": {"$ref": "#/$defs/color"}, "top": {"$ref": "#/$defs/color"}, "hat": {"$ref": "#/$defs/color"}, "acc": {"$ref": "#/$defs/color"}}}
+    }
+   }
+  }
+ }
+}
