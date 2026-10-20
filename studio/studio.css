@@ -2041,6 +2041,48 @@ select.sm {
   align-items: center;
   margin-bottom: 10px;
 }
+/* studio track ST-6: the wardrobe paints on the shared pixel canvas, the trainer beside it */
+.wd-paint {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(160px, 2fr) var(--side-w, 280px);
+  gap: 14px;
+  align-items: start;
+  margin: 8px 0;
+}
+.wd-sheet {
+  max-height: 70vh;
+  min-height: 260px;
+  border-radius: 10px;
+}
+.wd-sheet .px-wrap {
+  margin: auto;
+}
+.wd-onbody h4 {
+  margin: 0 0 6px;
+}
+.wd-onbody .wd-stage {
+  cursor: grab;
+}
+.wd-onbody canvas {
+  max-width: 100%;
+  height: auto;
+}
+.pc-over rect.wd-piece.on {
+  stroke: #c8323c;
+  stroke-width: 2;
+  stroke-dasharray: none;
+}
+.pc-over rect.wd-area {
+  stroke: none;
+}
+@media (max-width: 1280px) {
+  .wd-paint {
+    grid-template-columns: minmax(0, 3fr) minmax(140px, 2fr);
+  }
+  .wd-panel {
+    grid-column: 1 / -1;
+  }
+}
 .sc-pe-body {
   display: grid;
   grid-template-columns: minmax(0, 1fr) var(--side-w, 300px);
