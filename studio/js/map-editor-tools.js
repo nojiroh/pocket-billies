@@ -12,6 +12,7 @@
 import { expose } from '../../game/js/test-globals.js';
 import { previewViewport, provide } from '../../game/js/hooks.js';
 import { $ } from '../../game/js/util.js';
+import { mirroredTurn, normalTurn, turnedPoint } from '../../game/js/logic/prop-turn.js';
 import { walkView } from '../../game/js/walk-view.js';
 import { escapeHtml } from './game-stand-ins.js';
 import { ACTIONS, ask, changed, clone, commit, dialog, render, studioState, toast, uniqueKey } from './studio-app.js';
@@ -45,6 +46,7 @@ expose({
   sceneryBlocks: [() => sceneryBlocks],
   smoothPolyline: [() => smoothPolyline, v => (smoothPolyline = v)],
   stampBlockAt: [() => stampBlockAt, v => (stampBlockAt = v)],
+  turnSelectedProps: [() => turnSelectedProps, v => (turnSelectedProps = v)],
 });
 /* eslint-enable no-func-assign */
 provide({
@@ -274,6 +276,15 @@ document.addEventListener(
       ev.preventDefault();
       return;
     }
+    /* phase 09 batch 9: [ and ] turn the selected props 15 degrees (Shift: 90, Alt: 1); R is the road tool */
+    if (!ev.ctrlKey && !ev.metaKey && (ev.code === 'BracketLeft' || ev.code === 'BracketRight')) {
+      const st = ev.shiftKey ? 90 : ev.altKey ? 1 : 15;
+      if (turnSelectedProps(ev.code === 'BracketLeft' ? -st : st)) {
+        ev.preventDefault();
+        ev.stopImmediatePropagation();
+      }
+      return;
+    }
     if (mapEditor.multi.size && (k === 'delete' || k === 'backspace')) {
       deleteSelectedProps();
       ev.preventDefault();
@@ -309,8 +320,40 @@ function multiSelectCardHTML() {
     n = [...mapEditor.multi].filter(i => sc.props[i]).length;
   if (n < 2) return '';
   return `<div class="sc-sel"><b>${n} props selected</b><p class="help">Drag one of them to move them all. Ctrl/Cmd+C copies them, Ctrl/Cmd+V pastes where the mouse is, Delete removes them. Escape clears the selection.</p>
+  <div class="seg-row sc-turn"><button class="btn sm" data-act="scxTurn" data-by="-15" title="Turn them left 15° ([)">⟲ 15°</button><button class="btn sm" data-act="scxTurn" data-by="15" title="Turn them right 15° (])">⟳ 15°</button><button class="btn sm" data-act="scxTurn" data-by="90" title="A quarter turn (Shift+])">⟳ 90°</button><small class="help">[ and ] turn them together about their middle.</small></div>
   <div class="seg-row"><button class="btn sm" data-act="scxCopy">Copy</button><button class="btn sm" data-act="scxPaste" ${mapEditor.clip ? '' : 'disabled'}>Paste</button><button class="btn sm primary" data-act="scxSaveBlock">Save as a building block</button><button class="btn sm danger subtle" data-act="scxDelMulti">Remove them</button></div></div>`;
 }
+/* phase 09 batch 9: turning props. One prop turns about its base point; several turn together about their middle,
+   so a group (a block) turns as one. A turn is kept as degrees from -180 to 180 (logic/prop-turn.js normalTurn). */
+function turnSelectedProps(by, to) {
+  const sc = currentMap();
+  if (!sc) return false;
+  const multi = [...(mapEditor.multi || [])].filter(i => sc.props[i]),
+    L = multi.length > 1 ? multi : mapEditor.sel != null && sc.props[mapEditor.sel] ? [mapEditor.sel] : [];
+  if (!L.length) return false;
+  const P = L.map(i => sc.props[i]),
+    turn = q => {
+      const r = normalTurn(to != null ? to : (q.rot || 0) + by);
+      if (r) q.rot = r;
+      else delete q.rot;
+    };
+  if (P.length > 1 && to == null) {
+    const c = { x: P.reduce((a, q) => a + q.x, 0) / P.length, z: P.reduce((a, q) => a + q.z, 0) / P.length, rot: by };
+    for (const q of P) {
+      const [x, z] = turnedPoint(c, q.x - c.x, q.z - c.z);
+      q.x = +x.toFixed(2);
+      q.z = +z.toFixed(2);
+      turn(q);
+    }
+  } else P.forEach(turn);
+  walkView.nav = null;
+  walkView.cand = null;
+  changed();
+  commit(true);
+  render();
+  return true;
+}
+ACTIONS.scxTurn = d => turnSelectedProps(+d.by || 0, d.to != null ? +d.to : null);
 ACTIONS.scxCopy = () => copySelectedProps();
 ACTIONS.scxPaste = () => pasteProps();
 ACTIONS.scxDelMulti = () => deleteSelectedProps();
@@ -359,6 +402,7 @@ function stampBlockAt(sc, b, x, z, mirror) {
     q.z = +(z + p.z).toFixed(2);
     if (mirror) q.f = q.f ? 0 : 1;
     if (!q.f) delete q.f;
+    if (mirror && q.rot) q.rot = mirroredTurn(q.rot); /* phase 09 batch 9: a mirrored block's turns go the other way */
     sc.props.push(q);
   }
   mapEditor.multi = new Set(sc.props.map((_, i) => i).filter(i => i >= n0));
