@@ -362,7 +362,7 @@ function skeletonFraming(sp) {
   }
 }
 /* ---------- open ---------- */
-async function openSkeleton(sp, view = 'front') {
+export async function openSkeleton(sp, view = 'front') {
   skeletonEditor.sp = sp;
   skeletonEditor.view = view;
   skeletonEditor.sel = null;

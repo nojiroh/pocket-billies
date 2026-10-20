@@ -162,7 +162,8 @@ export function rigSetSocket(M, child, x, y) {
  * Sets a picture's box on the sheet. The pivot stays on the same sheet pixel (ox, oy follow the box's top left), so
  * growing or trimming an edge leaves the art where it was. With no frame named every frame moves its edges by as
  * much (squash and stretch, blink, happy and hurt sit beside the shown one); with one, only that frame changes and the
- * pivot stays (it belongs to every frame). The box is kept on the sheet when its size is given.
+ * pivot stays (it belongs to every frame); a frame the picture does not have changes nothing. The box is kept on the
+ * sheet when its size is given.
  * @param {RigView} M @param {number} i the picture @param {RigRect} box @param {string} [frame]
  * @returns {boolean} false when nothing changed
  */
@@ -177,7 +178,8 @@ export function rigSetBox(M, i, box, frame) {
   nb[1] = Math.max(0, Math.min(SH - 1, nb[1]));
   nb[2] = Math.min(nb[2], SW - nb[0]);
   nb[3] = Math.min(nb[3], SH - nb[1]);
-  if (frame && frame in P.f) {
+  if (frame && !(frame in P.f)) return false;
+  if (frame) {
     if (P.f[frame].every((v, k) => v === nb[k])) return false;
     P.f[frame] = nb;
     return true;

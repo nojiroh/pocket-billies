@@ -4025,6 +4025,14 @@ body.wb-dropping::after {
 .wbp-row input[type='text'] {
   width: 110px;
 }
+/* studio track ST-6: a species picture's box, x y w h on one line */
+.wbp-row.wbs-boxrow input[type='number'] {
+  width: 64px;
+}
+.pc-over .wbs-edge {
+  stroke: #fff;
+  stroke-width: 0.15;
+}
 .wbp-row.on,
 .wbp-sock.on {
   background: color-mix(in srgb, #1f6e6f 12%, transparent);

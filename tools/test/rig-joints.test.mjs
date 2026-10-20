@@ -241,6 +241,7 @@ test('rigSetBox: one frame alone, kept on the sheet', () => {
   rigSetBox(M, 0, [60, -4, 10, 6]);
   assert.deepEqual(M.imgs[0].f.idle, [60, 0, 4, 6]);
   assert.equal(rigSetBox(M, 3, [0, 0, 1, 1]), false);
+  assert.equal(rigSetBox(M, 0, [0, 0, 1, 1], 'happy'), false);
 });
 
 test('rigSetSocket puts the child’s joint on that pixel of its parent’s picture', () => {
