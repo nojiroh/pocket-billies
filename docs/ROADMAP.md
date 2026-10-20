@@ -32,6 +32,9 @@ The opening, the story bible, the story layer and the Hazel/Blake rework are one
 ## Studio track
 A more intuitive Studio: wide-screen layout, a shared pixel canvas, an Art workbench (sheet slicing, parts with joints and sockets, 3D model import and export) and variants in place of Golden: docs/phases/studio-track.md (2026-10-19). It runs alongside the phases above and does the art-tool half of phase 14 early.
 
+
+## Map generator track
+A Generate card in Studio → Walk scenes: routes and towns from dials and a seed, live as a draft, accepted, linked and saved like a hand-built scene: docs/phases/mapgen-track.md (2026-10-20). Runs alongside the phases above.
 ## What "remove the walking" means
 It means the FITNESS STEP TRACKING (real-world steps driving travel, hatching and pace) is removed. In-game walking with the joystick, the seamless maps and the rooms stay. That is phase 08 (Part A removes steps, Part B improves maps and rooms).
 
