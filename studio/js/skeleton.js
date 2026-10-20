@@ -11,6 +11,7 @@ import { hexToRgb, makeCanvas, shadeHex } from '../../game/js/art.js';
 import { POSES_BY_PLAN } from '../../game/js/body-plan-animation.js';
 import { boneSlot, drawRig, rigAudit, rigMatrices, rigPose } from '../../game/js/skeleton-rig.js';
 import { escapeHtml } from './game-stand-ins.js';
+import { rigSetPivot } from '../../game/js/logic/rig-joints.js';
 import {
   ask,
   changed,
@@ -626,19 +627,13 @@ function bindSkeletonCanvas() {
     if (D.mode === 'part') {
       b.at = [+(b.at[0] + pdx / k).toFixed(3), +(b.at[1] + pdy / k).toFixed(3)];
     } else if (D.mode === 'pivot') {
+      /* the move in the bone's own frame, and the bone's turn and stretch in its parent (ST-6: Part mode moves
+         species pivots with the same rigSetPivot) */
       const m = W[b.n],
-        [ldx, ldy] = applyLinear2x2(invert2x2(m), dx, dy);
-      b.at = [+(b.at[0] + pdx / k).toFixed(3), +(b.at[1] + pdy / k).toFixed(3)];
-      const im = meta.imgs[b.i];
-      if (im) {
-        im.ox = Math.round((im.ox - ldx) * 100) / 100;
-        im.oy = Math.round((im.oy - ldy) * 100) / 100;
-      }
-      meta.bones
-        .filter(ch => ch.par === b.n)
-        .forEach(ch => {
-          ch.at = [+(ch.at[0] - ldx / k).toFixed(3), +(ch.at[1] - ldy / k).toFixed(3)];
-        });
+        [ldx, ldy] = applyLinear2x2(invert2x2(m), dx, dy),
+        [a, c] = applyLinear2x2(pinv, m[0], m[1]),
+        [e, f] = applyLinear2x2(pinv, m[2], m[3]);
+      rigSetPivot(meta, b.n, ldx, ldy, [a, c, e, f]);
     } else {
       const m = W[b.n],
         cx = m[4],
