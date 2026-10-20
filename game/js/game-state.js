@@ -128,10 +128,12 @@ export function accountSetAsideRead() {
 export const SAVE_FOUND = saveAge(readStoredSave());
 if (SAVE_FOUND === 'old' || SAVE_FOUND === 'new')
   try {
-    const k = SAVE_KEY + '-set-aside';
-    /* SAVE_FOUND says the key holds a save */
-    if (localStorage.getItem(k) == null)
-      localStorage.setItem(k, /** @type {string} */ (localStorage.getItem(SAVE_KEY)));
+    /* SAVE_FOUND says the key holds a save; one writer and one shape, so Settings > Save offers it */
+    if (!accountSetAsideRead())
+      accountSetAside(
+        /** @type {string} */ (localStorage.getItem(SAVE_KEY)),
+        SAVE_FOUND === 'old' ? 'an older version of the game' : 'a newer version of the game'
+      );
   } catch (e) {}
 if (SAVE_FOUND === 'new') saveHold = true;
 export let saveData = loadSave(readStoredSave()) || newSave();

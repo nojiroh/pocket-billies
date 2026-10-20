@@ -11,7 +11,7 @@ import { TEST_RUN, closeModal, modal, provide, render, toast } from './hooks.js'
 import { TEST_BOOT } from './test-boot.js';
 import { LOCATIONS } from './game-data.js';
 import { metresToKm } from './logic/rules.js';
-import { SAVE_NEW_MSG, SAVE_VERSION, loadSave, saveAge } from './logic/saves.js';
+import { SAVE_NEW_MSG, SAVE_OLD_MSG, SAVE_VERSION, loadSave, saveAge } from './logic/saves.js';
 import {
   ACCOUNT_ID,
   ACCOUNT_KEY,
@@ -302,12 +302,18 @@ function accountPickSave(remote, remoteJson) {
 function accountSetAsideHTML() {
   const A = accountSetAsideRead();
   if (!A) return '';
-  let S = null;
+  let O = null;
   try {
-    S = loadSave(JSON.parse(A.json));
+    O = JSON.parse(A.json);
   } catch (e) {}
-  if (!S) return '';
-  return `<div class="acc-box acc-aside"><div class="acc-t"><b>Set aside: ${escapeHtml((S.avatar && S.avatar.name) || 'Trainer')}</b><span class="note">The game from ${escapeHtml(A.from)}, set aside ${escapeHtml(new Date(A.at).toLocaleDateString())}. Bringing it back sets this one aside instead.</span></div><div class="two"><button class="pb small" data-a="acc-aside-back">Bring it back</button><button class="pb small quiet" data-a="acc-aside-save">Download it</button></div></div>`;
+  if (!O || typeof O !== 'object') return '';
+  /* a save this version can't load (older or newer) can still be downloaded, not brought back */
+  const S = loadSave(O),
+    name = escapeHtml(String((O.avatar && O.avatar.name) || 'Trainer')),
+    when = escapeHtml(new Date(A.at).toLocaleDateString());
+  if (!S)
+    return `<div class="acc-box acc-aside"><div class="acc-t"><b>Set aside: ${name}</b><span class="note">The game from ${escapeHtml(A.from)}, set aside ${when}. ${escapeHtml(saveAge(O) === 'new' ? SAVE_NEW_MSG : SAVE_OLD_MSG)}</span></div><div class="two"><button class="pb small quiet" data-a="acc-aside-save">Download it</button></div></div>`;
+  return `<div class="acc-box acc-aside"><div class="acc-t"><b>Set aside: ${name}</b><span class="note">The game from ${escapeHtml(A.from)}, set aside ${when}. Bringing it back sets this one aside instead.</span></div><div class="two"><button class="pb small" data-a="acc-aside-back">Bring it back</button><button class="pb small quiet" data-a="acc-aside-save">Download it</button></div></div>`;
 }
 /* called by save()'s flush: writes to the account (a moment later, so a burst of saves is one write) */
 function flushAccountSave(now) {
