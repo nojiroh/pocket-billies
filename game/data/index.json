@@ -228,7 +228,8 @@
     "test_props_next",
     "test_props_marigold",
     "test_props_city",
-    "city_opening"
+    "city_opening",
+    "test_props_turn"
    ]
   },
   "cutscenes": {"ids":["opening","city"]}

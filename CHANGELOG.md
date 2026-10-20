@@ -9,6 +9,13 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- Turned props (phase 09 batch 9): any prop on a map can face any way (a placement's `rot`, degrees, which only
+  buildings had, for a few degrees along a street). The model, its decals and leaves, its shadow, its reflection,
+  its footprint (where you can't walk), the ground levelled and shaded under it, its door, lamps, windows and smoke
+  all turn with it; a picture that stands still in the world turns too, one that faces the camera doesn't. In the
+  Studio's Walk scenes, [ and ] turn the selected prop 15° (Shift: 90°, Alt: 1°), several selected props turn together
+  about their middle, the card has a Turn box and buttons, and the map shows which way a turned prop faces. Mirroring
+  a block or a room turns its props the other way. Test map: `test_props_turn`.
 - Map generator (MG-1): the Studio's Walk scenes → Generate… makes a whole route from dials and a seed (biome, size,
   land, water, the road and its exits, nature, a feature, props), drawn live by the game's renderer as a draft and
   added as a scene of its own in one undo step. The same dials and seed always give the same route. The biome
