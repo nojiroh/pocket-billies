@@ -17,6 +17,9 @@
      onion(P)     the onion skin: { src: a canvas, from: [x, y, w, h], to: [x, y], clip?: [x, y, w, h] } drawn faint
                   under the art
      path()       where the picture is saved (art/...): a stroke is a step of the Studio's undo for it
+     companions(P, before, after)  a stroke ended (before and after: the picture's ImageData): the host changes other
+                  pictures to match (the wardrobe's colour-area mask) and returns [path, before, after] for each, so the
+                  stroke and they are one step of the undo (ST-6)
      changed(P)   a stroke ended, or an undo or redo changed the picture
      drawn(P)     the canvas was drawn (zoom and grid may have changed) */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
@@ -410,7 +413,11 @@ function strokeEnd(P) {
   if (!s) return;
   P.stroke = null;
   s.c.getContext('2d').putImageData(s.work, 0, 0);
-  if (P.o.path) artStep(P.o.path(), s.before, s.work);
+  if (P.o.path) {
+    const more = P.o.companions ? P.o.companions(P, s.before, s.work) : null;
+    if (more && more.length) artSteps([[P.o.path(), s.before, s.work], ...more]);
+    else artStep(P.o.path(), s.before, s.work);
+  }
   if (P.o.changed) P.o.changed(P);
   drawPixelCanvas(P);
 }
