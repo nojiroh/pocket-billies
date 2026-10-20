@@ -2,6 +2,28 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Phase 09 batch 9, part 1 - turned props - 2026-10-21
+Plan approved by the owner (free angles, Studio steps of 15°; rotation as its own PR before the 20 new props).
+- Changed: a placement's `rot` (degrees, about its base point, the middle of its front) existed since alpha 0.4 for
+  buildings only (bld3 walls, nav footprint, door). Every prop now turns: models (and their spinning parts), their
+  decals and leaf clumps, model and sprite shadows, building-slice shadows, reflections, still pictures (standees),
+  picture layers and flags, the nav footprint and posts, ground pads and ground shading, sunken footprints, the walk-to
+  spot, lamp, window and smoke points, the AO patch, rooms laid in mirrored, mirrored blocks. One logic module holds
+  the maths (game/js/logic/prop-turn.js, unit tested). Studio: [ and ] turn the selection 15° (Shift 90°, Alt 1°;
+  R was already the road tool), several props turn together about their middle, a Turn box and buttons on the card,
+  a facing arrow and turned footprint on the map. Schema: `rot` -180 to 180. Test map `test_props_turn`
+  (tools/build-turn-test-map.py).
+- Side fixes that come with it: a model's fixed decals now follow its few random degrees (they stayed square), and a
+  model layer's shadow and reflection face its yaw (tower windows' shadows were square to the street).
+- Risky or unfinished: a building you walk into still lays its room in square to the map; the Studio warns past 15°.
+  The picture-box faces (models off, old building pictures) are skipped past 5°; the standee turns instead. The 3D
+  battle's lane clearing still uses the unturned footprint (rough by design). Camera-facing pictures never turn.
+- Verified: 291 unit tests (6 new). Headless Chromium renders of test_props_turn: models, leaves, fences, stalls and
+  houses turn; walking checks on turned footprints. NOT run here: lint, typecheck, check:modules, format:check,
+  check:data (the npm registry is blocked in this session, so eslint, TypeScript, prettier, espree and ajv could not be
+  installed); the to-module blocks and expose lists were written by hand to match the tool. CI runs them.
+- Next session starts with: CI results on the PR, then batch 9 part 2, the 20 solarpunk props.
+
 ### Parts fixes, step 1 - 2026-10-20
 - Changed: DOM rig previews select front/back metadata consistently with the requested view. Bot refits and equipped upgrades capture maximum HP before mutation and preserve the HP fraction afterward; fainted bots stay fainted.
 - Verified: all 279 unit tests pass (16 new cases); the new tests fail in 9 cases against the original code. Lint/naming and module consistency pass; changed-file formatting and diff whitespace checked.
