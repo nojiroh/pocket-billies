@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#102a2d">
+  <meta name="description" content="A standalone, interactive interface concept for Pocket Billies.">
+  <title>Pocket Billies — Hollow Signal UI Lab</title>
+  <link rel="preload" href="../../fonts/chakra-petch-600.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="../../fonts/pixelify-sans-700.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <div class="presentation">
+    <aside class="concept-aside" aria-label="Prototype information">
+      <div class="concept-mark"><span class="signal-dot"></span> FIELD NOTES / UI EXPLORATION 001</div>
+      <div class="concept-intro">
+        <span class="eyebrow">POCKET BILLIES / DESIGN STUDY</span>
+        <h1>HOLLOW<br><em>SIGNAL.</em></h1>
+        <p>A different shape for every story. A little glass, a lot of personality. Explore a clickable design study, built on Pocket Billies artwork.</p>
+        <div class="concept-tags"><span>01 / SOFT + STRUCTURED</span><span>02 / TACTILE</span><span>03 / PLAYFUL</span></div>
+      </div>
+      <div class="concept-footer"><span class="scribble">↗</span><span>Standalone prototype<br>Not connected to game saves</span></div>
+    </aside>
+    <div class="device-wrap">
+      <div class="device" id="device">
+        <div class="device-grain" aria-hidden="true"></div>
+        <div class="device-inner">
+          <header class="topbar glass" id="topbar"></header>
+          <main class="view" id="view" tabindex="-1"></main>
+          <nav class="dock glass" id="dock" aria-label="Main navigation"></nav>
+          <div class="toast-region" id="toasts" aria-live="polite" aria-atomic="true"></div>
+          <div class="modal-root" id="modal-root"></div>
+        </div>
+      </div>
+      <div class="under-device"><span>POCKET BILLIES // INTERFACE PROTOTYPE</span><span>DESIGN / NOT GAMEPLAY</span></div>
+    </div>
+  </div>
+</body>
+</html>
