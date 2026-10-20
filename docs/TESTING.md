@@ -49,6 +49,14 @@ Two rules hold everywhere:
   and one battle per process (`hooks.js`). Tests in one file run in order and share that state.
 - Random numbers are seeded. A test that draws them calls `reseed()` first (or in `beforeEach`), so its result doesn't
   depend on the tests before it.
+- How randomness works today (RL-1, `tools/test/rng-baseline.test.mjs`; RL-2 changes it): `game/js/util.js`'s
+  `random` is `Math.random` as it is when util.js loads. On the page that is the browser's, so nothing in a real game
+  is seedable; in Node, `load-logic.mjs` puts a Park-Miller stand-in on `Math.random` first, so the logic (the battle
+  engine's ~16 rolls, `pickWeighted`) follows `reseed()` and two battles from one seed play out the same. Outside
+  util.js: `logic/mapgen.js` has its own seeded sfc32 (`mapgenRandom(seed, salt)`); 172 direct `Math.random` (counted at RL-1)
+  calls in game/ and studio/ are mostly drawing, sound and ambient life, but `battle.js` (bribes, egg drops) and
+  `things-to-do.js` (rewards) decide outcomes with them; `newUid` and `met` read `Date.now()`, battle weather the
+  real clock.
 - On the game's data, test what must hold whatever the content (every road has its exits, every gate its trainer),
   not counts a content change legitimately alters. Where the whole shape matters, use a snapshot
   (`t.assert.snapshot`): remake it with `node --test --test-update-snapshots tools/test/<file>` in the commit that
