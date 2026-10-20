@@ -54,6 +54,27 @@ polish tasks. Each session is tagged `st-N-done`.
 - Pixel editing: three editors (sprites.js, wardrobe.js, skeleton painting), each with its own undo, art outside the
   global undo, no vertical flip, no symmetry.
 
+## ST-6: species sheets in Part mode, the skeleton builder and the wardrobe (2026-10-20)
+- Owner's picks: the skeleton builder keeps its posed stage (whole-step zoom fitted to it, the pixel canvas's view
+  keys; the sheet side moves to Part mode); the wardrobe gets a Grow piece button instead of growing while painting;
+  a box change moves every frame together unless one frame is picked.
+- game/js/logic/rig-joints.js: `rigKit` (one species as a part kit: a part per bone with a picture, its box, pivot
+  `-ox, -oy`, children as sockets, z per view), `rigSetPivot` (the builder's pivot drag as data: the figure stays
+  where it is drawn; the turn the bone has in its parent is passed in, the neutral pose's from the builder and Part
+  mode), `rigSetSocket`, `rigSetBox` (the pivot stays on its sheet pixel), `rigSetZ` (the back's zb),
+  `rigSplitPicture`. tools/test/rig-joints.test.mjs are the skeleton tests: on every species and view, a pivot moved
+  keeps every picture and child drawn where it was, and gives the rig the builder's own drag gave (copied into the
+  test as it was before ST-6).
+- studio/js/workbench-species.js: Part mode's Billies source. pixel-canvas.js: a host's `companions` change other
+  pictures with a stroke in the same undo step (the wardrobe's mask).
+- Corrections: the skeleton builder never painted (its Paint pixels has opened the shared canvas since ST-2), and
+  its stage draws the posed, animated figure, which the pixel canvas does not; no skeleton tests existed. No picture
+  is shared by two bones in today's rigs (the split is for the builder's own edits). A species' frames share one pivot
+  and differ per view (a head has idle, blink, happy, hurt in front and one main picture behind). The back view is
+  drawn mirrored and by zb. Wardrobe pictures are 320 px wide. The wardrobe's body pencil marked the mask but its fill
+  did not; both do now.
+- For ST-7: the species' "as drawn" preview and rig-joints are the model for a 3D model's joints and spins.
+
 ## ST-5: robots on the workbench (2026-10-19)
 - robots.json gained, all optional: a part's `art.joints` (per view `pivot`, a torso's `sockets`, `z`), a torso's
   `art.headJoints`, `turn`, `headTurn`. Points are fractions of the picture, stored in whole pixels (3 decimals).

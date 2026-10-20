@@ -11,7 +11,7 @@
    the same parts. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
-import { wbPartSection } from '../../game/js/hooks.js';
+import { wbPart, wbPartSection } from '../../game/js/hooks.js';
 import { makeCanvas } from '../../game/js/art.js';
 import { escapeHtml } from './game-stand-ins.js';
 import { pixelHex, pixelRgba } from '../../game/js/logic/pixel-ops.js';
@@ -426,7 +426,7 @@ SECTIONS.workbench = () => {
       ['model', 'Model', '3D models in and out (ST-7, ST-8)'],
     ],
     on = workbench.mode;
-  const head = `<div class="ed-head"><div><small class="mono">partKits.json · art/next/parts</small><h2>Art workbench</h2><p class="sub">${on === 'part' ? 'A part’s joints: drag the pivot and sockets, test it on a body.' : 'Drop sheets anywhere on the Studio to cut them into parts.'}</p></div><div class="seg-row">${modes
+  const head = `<div class="ed-head"><div><small class="mono">${on === 'part' && wbPart.src === 'species' ? 'art/next/rigs-next.js · art/next/billionaires' : on === 'part' && wbPart.src === 'robots' ? 'robots.json · art/robots' : 'partKits.json · art/next/parts'}</small><h2>Art workbench</h2><p class="sub">${on === 'part' ? (wbPart.src === 'species' ? 'A species’ parts on its sheet: pivots, boxes, draw order.' : 'A part’s joints: drag the pivot and sockets, test it on a body.') : 'Drop sheets anywhere on the Studio to cut them into parts.'}</p></div><div class="seg-row">${modes
     .map(([k, l, t]) =>
       k === 'sheet' || k === 'part'
         ? `<button class="seg ${k === on ? 'on' : ''}" data-act="wbMode" data-m="${k}" title="${t}">${l}</button>`

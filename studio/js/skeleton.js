@@ -11,7 +11,10 @@ import { hexToRgb, makeCanvas, shadeHex } from '../../game/js/art.js';
 import { POSES_BY_PLAN } from '../../game/js/body-plan-animation.js';
 import { boneSlot, drawRig, rigAudit, rigMatrices, rigPose } from '../../game/js/skeleton-rig.js';
 import { escapeHtml } from './game-stand-ins.js';
+import { pixelKeyAction, pixelZoomNext } from '../../game/js/logic/pixel-ops.js';
+import { rigSetPivot } from '../../game/js/logic/rig-joints.js';
 import {
+  ACTIONS,
   ask,
   changed,
   checkboxField,
@@ -75,6 +78,7 @@ expose({
   skeletonChanged: [() => skeletonChanged, v => (skeletonChanged = v)],
   skeletonClick: [() => skeletonClick, v => (skeletonClick = v)],
   skeletonEditor: [() => skeletonEditor],
+  skeletonFitZoom: [() => skeletonFitZoom, v => (skeletonFitZoom = v)],
   skeletonFraming: [() => skeletonFraming, v => (skeletonFraming = v)],
   skeletonHitTest: [() => skeletonHitTest, v => (skeletonHitTest = v)],
   skeletonLoop: [() => skeletonLoop, v => (skeletonLoop = v)],
@@ -82,6 +86,7 @@ expose({
   skeletonPose: [() => skeletonPose, v => (skeletonPose = v)],
   skeletonSidePanel: [() => skeletonSidePanel, v => (skeletonSidePanel = v)],
   skeletonTree: [() => skeletonTree, v => (skeletonTree = v)],
+  skeletonZoom: [() => skeletonZoom, v => (skeletonZoom = v)],
   sortBonesParentsFirst: [() => sortBonesParentsFirst, v => (sortBonesParentsFirst = v)],
   swapLeftRight: [() => swapLeftRight],
   uniqueBoneName: [() => uniqueBoneName],
@@ -93,7 +98,7 @@ const skeletonEditor = {
   sp: null,
   view: 'front',
   sel: null,
-  zoom: 2.5,
+  zoom: 0 /* whole steps (ST-6, as the shared canvas zooms); 0: fit the stage */,
   anim: false,
   act: null,
   t0: 0,
@@ -361,12 +366,13 @@ function skeletonFraming(sp) {
   }
 }
 /* ---------- open ---------- */
-async function openSkeleton(sp, view = 'front') {
+export async function openSkeleton(sp, view = 'front') {
   skeletonEditor.sp = sp;
   skeletonEditor.view = view;
   skeletonEditor.sel = null;
   skeletonEditor.anim = false;
   skeletonEditor.act = null;
+  skeletonEditor.zoom = 0;
   try {
     await Promise.all(['front', 'back'].map(v => atlasGet(atlasPath(sp, v))));
   } catch (e) {
@@ -382,8 +388,8 @@ async function openSkeleton(sp, view = 'front') {
  <header class="px-top"><b>${escapeHtml(speciesName(sp))}</b><span class="px-tabs">${['front', 'back'].map(v => `<button class="seg" data-sk="view" data-v="${v}">${v === 'front' ? 'Front view' : 'Back view'}</button>`).join('')}</span>
   <span class="px-tools"><button class="seg" data-sk="anim" title="Play the body plan’s motion">Animate</button>${['attack', 'cast', 'hurt', 'cheer', 'faint'].map(a => `<button class="seg sm" data-sk="act" data-a="${a}">${a}</button>`).join('')}</span>
   <span class="px-tools sk-scrub" title="v35: step the pose on the 12 fps clock. Pause, then scrub a tick at a time; Onion shows the two ticks before as ghosts"><button class="seg" data-sk="grid12">12 fps</button><button class="seg" data-sk="pause">Pause</button><button class="seg sm" data-sk="tick" data-d="-1">◀</button><input type="range" id="skScrub" min="0" max="23" value="0" step="1"><span id="skTick">tick 0</span><button class="seg sm" data-sk="tick" data-d="1">▶</button><button class="seg" data-sk="onion">Onion</button></span>
-  <span class="px-tools"><button class="seg" data-sk="zoom" data-z="-.5">−</button><span id="skZoom"></span><button class="seg" data-sk="zoom" data-z=".5">+</button></span>
-  <span class="grow"></span><button class="btn" data-sk="paint">Paint pixels</button><button class="btn primary" data-sk="close">Done</button></header>
+  <span class="px-tools" title="Zoom: + and −, 0 fits, 1 to 6 for 1x to 32x (as on the pixel canvas)"><button class="seg" data-sk="zoom" data-z="-1">−</button><span id="skZoom"></span><button class="seg" data-sk="zoom" data-z="1">+</button><button class="seg" data-sk="zoomFit">Fit</button></span>
+  <span class="grow"></span><button class="btn" data-sk="workbench" title="Its pictures’ boxes, pivots and draw order on the Art workbench">Parts on the workbench</button><button class="btn" data-sk="paint" title="The sheet on the pixel canvas (the part picked in focus)">Paint pixels</button><button class="btn primary" data-sk="close">Done</button></header>
  <div class="sk-body"><aside class="sk-tree"><div class="sk-tree-head"><b>Parts</b><small>Drag a part to move it. Drag its dot to move only the pivot. Shift-drag to tilt.</small></div><div id="skTree"></div>
   <div class="sk-adds"><button class="btn" data-sk="add">+ Blank part</button><button class="btn" data-sk="addPng">+ Part from PNG</button><button class="btn" data-sk="importSheet" title="v35: a piece sheet (one PNG) with its layout JSON: every piece becomes a part">Import piece sheet</button><label class="fld chk"><input type="checkbox" id="skBoth" ${skeletonEditor.both ? 'checked' : ''}><span>Also add to the other view</span></label></div></aside>
   <div class="px-stage sk-stage" id="skStage"><canvas id="skCv"></canvas></div>
@@ -422,6 +428,7 @@ function drawSkeleton(ts) {
   if (!c) return;
   const R = rigFor(skeletonEditor.sp, skeletonEditor.view);
   if (!R) return;
+  if (!skeletonEditor.zoom) skeletonEditor.zoom = skeletonFitZoom(R);
   const Z = skeletonEditor.zoom,
     W = R.BW * Z,
     Hh = R.BH * Z;
@@ -538,6 +545,17 @@ function drawSkeleton(ts) {
   x.lineTo(rm[4] * Z, rm[5] * Z + 8);
   x.stroke();
 }
+/* the largest whole zoom that shows the figure's box in the stage */
+function skeletonFitZoom(R) {
+  const st = $('#skStage');
+  if (!st || !R) return 4;
+  const r = st.getBoundingClientRect();
+  return clamp(Math.floor(Math.min((r.width - 24) / R.BW, (r.height - 24) / R.BH)), 1, 16);
+}
+function skeletonZoom(z) {
+  skeletonEditor.zoom = clamp(Math.round(z), 1, 32);
+  drawSkeleton();
+}
 function skeletonAlphaAt(c, x, y) {
   let d = skeletonEditor.alpha.get(c);
   if (!d) {
@@ -626,19 +644,13 @@ function bindSkeletonCanvas() {
     if (D.mode === 'part') {
       b.at = [+(b.at[0] + pdx / k).toFixed(3), +(b.at[1] + pdy / k).toFixed(3)];
     } else if (D.mode === 'pivot') {
+      /* the move in the bone's own frame, and the bone's turn and stretch in its parent (ST-6: Part mode moves
+         species pivots with the same rigSetPivot) */
       const m = W[b.n],
-        [ldx, ldy] = applyLinear2x2(invert2x2(m), dx, dy);
-      b.at = [+(b.at[0] + pdx / k).toFixed(3), +(b.at[1] + pdy / k).toFixed(3)];
-      const im = meta.imgs[b.i];
-      if (im) {
-        im.ox = Math.round((im.ox - ldx) * 100) / 100;
-        im.oy = Math.round((im.oy - ldy) * 100) / 100;
-      }
-      meta.bones
-        .filter(ch => ch.par === b.n)
-        .forEach(ch => {
-          ch.at = [+(ch.at[0] - ldx / k).toFixed(3), +(ch.at[1] - ldy / k).toFixed(3)];
-        });
+        [ldx, ldy] = applyLinear2x2(invert2x2(m), dx, dy),
+        [a, c] = applyLinear2x2(pinv, m[0], m[1]),
+        [e, f] = applyLinear2x2(pinv, m[2], m[3]);
+      rigSetPivot(meta, b.n, ldx, ldy, [a, c, e, f]);
     } else {
       const m = W[b.n],
         cx = m[4],
@@ -672,8 +684,7 @@ function bindSkeletonCanvas() {
     ev => {
       if (!ev.ctrlKey && !ev.metaKey) return;
       ev.preventDefault();
-      skeletonEditor.zoom = clamp(skeletonEditor.zoom + (ev.deltaY < 0 ? 0.5 : -0.5), 1, 8);
-      drawSkeleton();
+      skeletonZoom(pixelZoomNext(skeletonEditor.zoom, ev.deltaY < 0 ? 1 : -1));
     },
     { passive: false }
   );
@@ -864,6 +875,22 @@ document.addEventListener(
     } else if (!mod && (k === 'delete' || k === 'backspace') && skeletonEditor.sel) {
       ev.preventDefault();
       $('[data-sk=del]') && $('[data-sk=del]').click();
+    } else {
+      /* ST-6: the pixel canvas's view keys (zoom, onion skin) */
+      const act = pixelKeyAction(ev);
+      if (!act || !/^(zoom|onion)/.test(act)) return;
+      ev.preventDefault();
+      if (act === 'onion') return $('[data-sk=onion]') && $('[data-sk=onion]').click();
+      const z = skeletonEditor.zoom;
+      skeletonZoom(
+        act === 'zoomIn'
+          ? pixelZoomNext(z, 1)
+          : act === 'zoomOut'
+            ? pixelZoomNext(z, -1)
+            : act === 'zoomFit'
+              ? skeletonFitZoom(rigFor(skeletonEditor.sp, skeletonEditor.view))
+              : +act.slice(5)
+      );
     }
   },
   true
@@ -1080,9 +1107,13 @@ function skeletonClick(ev) {
       drawSkeleton();
     },
     importSheet: () => importPieceSheet(),
-    zoom: () => {
-      skeletonEditor.zoom = clamp(skeletonEditor.zoom + +el.dataset.z, 1, 8);
-      drawSkeleton();
+    zoom: () => skeletonZoom(pixelZoomNext(skeletonEditor.zoom, +el.dataset.z)),
+    zoomFit: () => skeletonZoom(skeletonFitZoom(rigFor(skeletonEditor.sp, skeletonEditor.view))),
+    workbench: () => {
+      cancelAnimationFrame(skeletonEditor.raf);
+      $('#modal').innerHTML = '';
+      previewsDirty();
+      ACTIONS.wbsOpen({ sp: skeletonEditor.sp });
     },
     sel: () => {
       skeletonEditor.sel = el.dataset.n;
@@ -1098,8 +1129,9 @@ function skeletonClick(ev) {
     },
     paint: () => {
       const sp = skeletonEditor.sp,
-        v = skeletonEditor.view;
-      openPixelEditor(sp, v).then(() => {
+        v = skeletonEditor.view,
+        sel = skeletonMeta().bones.find(x => x.n === skeletonEditor.sel);
+      openPixelEditor(sp, v, sel && sel.i >= 0 ? { i: sel.i, v: sel.face ? 'idle' : null } : null).then(() => {
         pixelEditor.back = () => openSkeleton(sp, v);
       });
     },
