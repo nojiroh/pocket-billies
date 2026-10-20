@@ -235,3 +235,44 @@ test('save: robots and parts survive a save and load; a part the data lost is dr
   assert.equal(fn('validSave')(old), true);
   assert.deepEqual(fn('migrate')(old).parts, []);
 });
+
+for (const [slot, replacement] of [
+  ['torso', 'bulwark'],
+  ['legs', 'hover'],
+  ['gem', 'tide'],
+]) {
+  for (const health of [1, 0.43, 0]) {
+    test(`refitting ${slot} preserves HP share at ${health} health`, () => {
+      const s = startedSave('musk0', 10),
+        m = robot();
+      s.team.push(m);
+      const oldMax = fn('maxHp')(m);
+      m.hp = Math.floor(oldMax * health);
+      const oldHp = m.hp;
+      m.partDmg = { armL: 5, legs: 3 };
+      const p = fn('addPart')(replacement);
+      assert.equal(fn('fitPart')(m, slot, p.uid), true);
+      const newMax = fn('maxHp')(m);
+      assert.notEqual(newMax, oldMax, 'fixture changes maximum HP');
+      assert.equal(m.hp, oldHp ? Math.max(1, Math.round((newMax * oldHp) / oldMax)) : 0);
+      assert.ok(m.hp <= newMax);
+      assert.equal(m.partDmg.armL, 5, 'unreplaced limb damage stays');
+      assert.equal(m.partDmg.legs, slot === 'legs' ? undefined : 3);
+    });
+  }
+}
+
+for (const health of [1, 0.43, 0]) {
+  test(`equipped upgrades preserve HP share at ${health} health, including storage`, () => {
+    const s = startedSave('musk0', 10),
+      m = robot();
+    s.box.push(m);
+    const oldMax = fn('maxHp')(m);
+    m.hp = Math.floor(oldMax * health);
+    const oldHp = m.hp;
+    assert.equal(fn('upgradePart')(m.fit.torso), true);
+    const newMax = fn('maxHp')(m);
+    assert.ok(newMax > oldMax);
+    assert.equal(m.hp, oldHp ? Math.max(1, Math.round((newMax * oldHp) / oldMax)) : 0);
+  });
+}

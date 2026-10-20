@@ -360,12 +360,12 @@ export function makeRobot(gem, fit, lvl, o = {}) {
   return m;
 }
 /** after its parts change: its sp and moves follow them, and its HP stays the same share of the new max
- * @param {Billy} m */
-export function refreshRobot(m) {
+ * @param {Billy} m @param {number} [previousMaxHp] maximum HP before changing equipment */
+export function refreshRobot(m, previousMaxHp) {
   if (!isRobot(m) || !validRobot(m.gem, m.fit)) return;
   const fit = /** @type {RobotFit} */ (m.fit),
     gem = /** @type {string} */ (m.gem),
-    was = m.hp > 0 ? m.hp / Math.max(1, maxHp(m)) : 0;
+    was = m.hp > 0 ? m.hp / Math.max(1, previousMaxHp ?? maxHp(m)) : 0;
   m.sp = robotSp(gem, fit);
   m.moves = robotMoves(gem, fit);
   m.hp = m.hp > 0 ? Math.max(1, Math.round(maxHp(m) * was)) : 0;
@@ -412,7 +412,8 @@ export function fitPart(m, slot, uid) {
   if (!isRobot(m)) return false;
   const i = saveData.parts.findIndex(p => p.uid === uid);
   if (i < 0) return false;
-  const p = saveData.parts[i];
+  const p = saveData.parts[i],
+    previousMaxHp = maxHp(m);
   if (slot === 'gem') {
     if (!robotGemDef(p.id)) return false;
     saveData.parts.splice(i, 1, { uid: newUid(), id: /** @type {string} */ (m.gem), up: 0 });
@@ -425,7 +426,7 @@ export function fitPart(m, slot, uid) {
     fit[slot] = p;
     if (slot !== 'torso' && m.partDmg) delete m.partDmg[slot];
   }
-  refreshRobot(m);
+  refreshRobot(m, previousMaxHp);
   return true;
 }
 /** builds a new robot from a spare gem and four spare parts; it joins the team, or storage when the team is full
@@ -457,8 +458,11 @@ export function addPart(id) {
 /** upgrades a part one level (prototype: free; crafting costs come with the workshop) @param {PartInstance} p */
 export function upgradePart(p) {
   if (!p || (p.up || 0) >= robotRules().maxUpgrade || !robotPartDef(p.id)) return false;
+  const fitted = allBillies()
+    .filter(m => isRobot(m) && m.fit && Object.values(m.fit).includes(p))
+    .map(m => ({ m, previousMaxHp: maxHp(m) }));
   p.up = (p.up || 0) + 1;
-  for (const m of allBillies()) if (isRobot(m) && m.fit && Object.values(m.fit).includes(p)) refreshRobot(m);
+  for (const { m, previousMaxHp } of fitted) refreshRobot(m, previousMaxHp);
   return true;
 }
 export const billyName = m => m.nick || speciesOf(m).name;
