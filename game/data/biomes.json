@@ -1,0 +1,530 @@
+{
+ "meadow": {
+  "name": "Meadow",
+  "ground": {
+   "base": "g",
+   "patches": {"G":0.35,"C":0.2,"f":0.1},
+   "verge": "u",
+   "floor": "y",
+   "bank": "s",
+   "rock": "r",
+   "tall": "t"
+  },
+  "road": "p",
+  "water": "pond",
+  "trees": {
+   "tree_beech": 4,
+   "tree_oak_small": 2,
+   "tree_larch": 2,
+   "tree_poplar": 2,
+   "tree_rowan": 2,
+   "tree_oak_b": 2,
+   "tree_birch_b": 2,
+   "tree_hazel": 2
+  },
+  "shrubs": {
+   "bush_berry": 4,
+   "bush_roses": 4,
+   "bush_round_c": 3,
+   "bush_round": 3,
+   "bush_juniper": 3,
+   "bush_hawthorn": 3,
+   "bush_rhododendron": 3,
+   "bush_bramble": 2
+  },
+  "plants": {
+   "bracken": 4,
+   "clover_patch": 3,
+   "moss_patch": 3,
+   "thistles": 2,
+   "dandelions": 2,
+   "buttercups": 2,
+   "foxgloves": 2,
+   "sedge": 2,
+   "tussock": 2,
+   "dandelion_clocks": 2
+  },
+  "rocks": {"molehill":4,"boulder_lichen":3,"stones_flat":2,"rocks_mossy":1,"rocks_snow":1,"rocks_c":1,"rock_flat":1,"roots":1},
+  "waterPlants": {"iris_yellow":4,"iris_purple":2,"water_mint":1,"marsh_marigold":1},
+  "tall": {"tallgrass":4,"tallgrass_c":4,"tallgrass_b":3},
+  "look": {"sky":["#8CC6E6","#BFE3EE","#F4E8C8"],"haze":"#EAD9C0","hazeD":34,"amb":"pollen","far":"hills","farH":8},
+  "life": [
+   {"k":"rabbit","n":4}
+  ],
+  "from": "tallgrass_meadow"
+ },
+ "thicket": {
+  "name": "Thicket",
+  "ground": {
+   "base": "y",
+   "patches": {"M":0.35,"L":0.3,"G":0.1},
+   "verge": "u",
+   "floor": "M",
+   "bank": "D",
+   "rock": "r",
+   "tall": "t"
+  },
+  "road": "p",
+  "water": "swamp",
+  "trees": {
+   "tree_beech": 4,
+   "tree_hazel": 3,
+   "tree_chestnut": 3,
+   "tree_oak_deep": 2,
+   "tree_birch_deep": 2,
+   "tree_pine_deep": 2,
+   "tree_fallen": 2,
+   "tree_oak_b": 1
+  },
+  "shrubs": {
+   "bush_bramble": 4,
+   "bush_holly": 2,
+   "bush_rhododendron": 2,
+   "bush_round": 1,
+   "bush_round_b": 1,
+   "bush_berry": 1,
+   "bush_round_c": 1,
+   "bush_roses": 1
+  },
+  "plants": {
+   "bracken": 4,
+   "snowdrops": 3,
+   "nettles": 3,
+   "bluebells": 3,
+   "moss_patch": 3,
+   "foxgloves": 2,
+   "dry_grass": 1,
+   "horsetail": 1,
+   "sedge": 1,
+   "lupins": 1
+  },
+  "rocks": {"roots":4,"rocks_mossy":1,"boulder_mossy":1,"stones_flat":1,"molehill":1,"scree":1},
+  "waterPlants": {"bulrush":4},
+  "tall": {"tallgrass":4,"tallgrass_b":4,"tallgrass_c":3},
+  "look": {"sky":["#7FB8D8","#B3D9E6","#E2E8C8"],"haze":"#C9D8B8","hazeD":28,"amb":"spore","rays":1,"far":"forest","farH":8},
+  "life": [
+   {"k":"squirrel","n":3},
+   {"k":"frog","n":2},
+   {"k":"rabbit","n":2}
+  ],
+  "from": "thicket"
+ },
+ "lake": {
+  "name": "Lakeside",
+  "ground": {
+   "base": "g",
+   "patches": {"R":0.3,"M":0.2,"G":0.2},
+   "verge": "u",
+   "floor": "G",
+   "bank": "s",
+   "rock": "P",
+   "tall": "t"
+  },
+  "road": "p",
+  "water": "lake",
+  "trees": {
+   "tree_beech": 4,
+   "tree_birch_b": 3,
+   "tree_willow": 3,
+   "tree_oak_autumn": 3,
+   "tree_oak_small": 2,
+   "tree_oak_b": 2,
+   "tree_oak": 2,
+   "tree_birch": 2
+  },
+  "shrubs": {
+   "bush_bramble": 4,
+   "bush_round": 3,
+   "bush_rhododendron": 3,
+   "bush_rosemary": 3,
+   "bush_berry": 2,
+   "bush_juniper": 2,
+   "bush_hawthorn": 2,
+   "bush_round_b": 1
+  },
+  "plants": {
+   "sedge": 4,
+   "bracken": 3,
+   "snowdrops": 2,
+   "clover_patch": 2,
+   "moss_patch": 2,
+   "horsetail": 2,
+   "tussock": 2,
+   "bluebells": 2,
+   "clover_white": 1,
+   "nettles": 1
+  },
+  "rocks": {"rocks":4,"roots":4,"stones_flat":4,"molehill":3,"rocks_snow":3,"rocks_c":1,"rocks_mossy":1,"rock_flat":1},
+  "waterPlants": {"iris_yellow":4,"marsh_marigold":4,"water_mint":2,"bulrush":2,"iris_purple":2,"lotus_pink":1,"lilypad":1},
+  "tall": {"tallgrass_c":4,"tallgrass_b":3,"tallgrass":2},
+  "look": {"sky":["#88C4E4","#BEE2EC","#F2EACB"],"haze":"#DCE6D0","hazeD":34,"amb":"pollen","rays":1,"far":"forest","farH":8},
+  "life": [
+   {"k":"duck","n":6},
+   {"k":"frog","n":4},
+   {"k":"rabbit","n":2}
+  ],
+  "from": "willowmere"
+ },
+ "canyon": {
+  "name": "Canyon",
+  "ground": {
+   "base": "s",
+   "patches": {"r":0.35,"P":0.15,"H":0.05},
+   "verge": "v",
+   "floor": "A",
+   "bank": "P",
+   "rock": "r",
+   "tall": "t"
+  },
+  "road": "v",
+  "water": "stream",
+  "trees": {"tree_olive":4,"tree_cypress":2,"tree_rowan":1,"tree_larch":1},
+  "shrubs": {"bush_rosemary":4,"bush_juniper":1,"bush_rhododendron":1},
+  "plants": {
+   "dry_grass": 4,
+   "lavender": 3,
+   "lupins": 1,
+   "tussock": 1,
+   "dandelions": 1,
+   "thistles": 1,
+   "heather": 1,
+   "dandelion_clocks": 1,
+   "seedheads": 1
+  },
+  "rocks": {"stones_flat":4,"scree":4,"boulder_lichen":2,"rocks":2,"rocks_b":2,"rocks_c":1,"rocks_snow":1,"boulder":1},
+  "tall": {"tallgrass_c":4,"tallgrass":3,"tallgrass_b":2},
+  "look": {"sky":["#8CC2E2","#D6E6E4","#F6E2BE"],"haze":"#F0D9B2","hazeD":42,"amb":"sand","far":"canyon","farH":8},
+  "life": [
+   {"k":"lizard","n":4}
+  ],
+  "from": "stepstone_canyon"
+ },
+ "volcano": {
+  "name": "Volcano",
+  "ground": {
+   "base": "z",
+   "patches": {"j":0.35,"r":0.1},
+   "verge": "v",
+   "floor": "Z",
+   "bank": "j",
+   "rock": "j",
+   "tall": "t"
+  },
+  "road": "v",
+  "water": "lava",
+  "trees": {"tree_dead":4,"tree_cypress":1,"tree_rowan":1},
+  "shrubs": {"bush_juniper":4,"bush_rhododendron":3,"bush_rosemary":1},
+  "plants": {
+   "lupins": 4,
+   "tussock": 2,
+   "thistles": 2,
+   "dandelions": 2,
+   "dry_grass": 1,
+   "heather": 1,
+   "dandelion_clocks": 1,
+   "seedheads": 1,
+   "tussock_rust": 1
+  },
+  "rocks": {"lava_rock":4,"boulder_basalt":3,"basalt_columns":3,"rocks_basalt":2,"stones_flat":2,"scree":1,"boulder_lichen":1},
+  "tall": {"tallgrass_b":4,"tallgrass":4,"tallgrass_c":3},
+  "look": {
+   "sky": ["#3A2230","#8A4A3A","#E6A060"],
+   "haze": "#B07060",
+   "hazeD": 34,
+   "amb": "sand",
+   "tint": "#3A1A1A",
+   "wind": 0.8,
+   "rays": 1,
+   "far": "volcano",
+   "farH": 10
+  },
+  "life": [
+   {"k":"lizard","n":4}
+  ],
+  "from": "cinderpeak"
+ },
+ "tundra": {
+  "name": "Tundra",
+  "ground": {
+   "base": "n",
+   "patches": {"I":0.12,"r":0.08,"N":0.05},
+   "verge": "v",
+   "floor": "n",
+   "bank": "r",
+   "rock": "r",
+   "tall": "t"
+  },
+  "road": "v",
+  "water": "ice",
+  "trees": {"tree_larch":4,"tree_pine_snow":1,"tree_pine_snow_b":1,"tree_pine_snow_small":1,"tree_chestnut":1,"tree_rowan":1},
+  "shrubs": {"bush_holly":4,"bush_juniper":2},
+  "plants": {
+   "grass_snow": 4,
+   "heather": 3,
+   "snowdrops": 2,
+   "crocuses": 2,
+   "lupins": 1,
+   "dandelions": 1,
+   "thistles": 1,
+   "dry_grass": 1,
+   "dandelion_clocks": 1,
+   "lavender": 1
+  },
+  "rocks": {"rocks_snow":4,"scree":4,"boulder_snow":1,"stones_flat":1},
+  "tall": {"tallgrass":4},
+  "look": {
+   "sky": ["#8AB0D6","#C8DCEC","#EEF2F6"],
+   "haze": "#DCE6EE",
+   "hazeD": 52,
+   "amb": "dust",
+   "wind": 1.2,
+   "grassCol": ["#6A8A8A","#D8E8E4"],
+   "far": "mountains",
+   "farH": 10
+  },
+  "life": [
+   {"k":"rabbit","n":2}
+  ],
+  "from": "rimefrost"
+ },
+ "sea": {
+  "name": "Coast",
+  "ground": {
+   "base": "s",
+   "patches": {"S":0.25,"P":0.1},
+   "verge": "s",
+   "floor": "s",
+   "bank": "S",
+   "rock": "r",
+   "tall": "t"
+  },
+  "road": "p",
+  "water": "sea",
+  "trees": {"tree_cypress":4,"tree_olive":3,"palm_small":1,"palm_tree":1},
+  "shrubs": {"bush_rosemary":4},
+  "plants": {"dry_grass":4,"lavender":4},
+  "rocks": {"stones_flat":4,"scree":4,"rocks":1,"boulder_lichen":1},
+  "tall": {"tallgrass":4},
+  "look": {
+   "sky": ["#5E9EE0","#A6D2F2","#F2F0E0"],
+   "haze": "#D6E8F2",
+   "hazeD": 46,
+   "amb": "pollen",
+   "wind": 1.4,
+   "far": "sea",
+   "farH": 5,
+   "flatFar": 1
+  },
+  "life": [
+   {"k":"gull","n":4},
+   {"k":"crab","n":3}
+  ],
+  "from": "driftwreck"
+ },
+ "ridge": {
+  "name": "Ridge",
+  "ground": {
+   "base": "H",
+   "patches": {"G":0.35,"r":0.25},
+   "verge": "v",
+   "floor": "G",
+   "bank": "P",
+   "rock": "r",
+   "tall": "t"
+  },
+  "road": "v",
+  "water": "stream",
+  "trees": {
+   "tree_pine_b": 4,
+   "tree_larch": 4,
+   "tree_pine": 3,
+   "tree_rowan": 1,
+   "tree_elm": 1,
+   "tree_cypress": 1,
+   "tree_pine_small": 1,
+   "tree_beech": 1
+  },
+  "shrubs": {
+   "bush_juniper": 4,
+   "bush_hawthorn": 2,
+   "bush_rhododendron": 2,
+   "bush_roses": 1,
+   "bush_bramble": 1,
+   "bush_rosemary": 1,
+   "bush_holly": 1,
+   "bush_hawthorn_autumn": 1
+  },
+  "plants": {
+   "tussock": 4,
+   "lupins": 4,
+   "heather": 3,
+   "thistles": 2,
+   "bracken": 1,
+   "clover_patch": 1,
+   "dry_grass": 1,
+   "buttercups": 1,
+   "sedge": 1,
+   "bluebells": 1
+  },
+  "rocks": {"rocks_snow":4,"boulder_lichen":3,"rocks":3,"rocks_b":3,"rocks_mossy":3,"scree":2,"rocks_c":1,"molehill":1},
+  "tall": {"tallgrass_b":4,"tallgrass":4,"tallgrass_c":3},
+  "look": {"sky":["#7FBCE8","#BFE0F0","#EEF2EA"],"haze":"#DCE6EE","hazeD":48,"amb":"dust","wind":1.6,"far":"mountains","farH":9},
+  "life": [
+   {"k":"goat","n":3},
+   {"k":"rabbit","n":1}
+  ],
+  "from": "kitewind"
+ },
+ "autumn": {
+  "name": "Autumn wood",
+  "ground": {
+   "base": "L",
+   "patches": {"g":0.3,"y":0.15},
+   "verge": "u",
+   "floor": "g",
+   "bank": "s",
+   "rock": "r",
+   "tall": "t"
+  },
+  "road": "p",
+  "water": "pond",
+  "trees": {
+   "tree_maple": 4,
+   "tree_poplar_autumn": 3,
+   "tree_hazel_autumn": 3,
+   "tree_birch_gold": 3,
+   "tree_rowan_autumn": 2,
+   "tree_beech_autumn": 2,
+   "tree_hazel": 1,
+   "tree_giant_autumn": 1
+  },
+  "shrubs": {"bush_hawthorn_autumn":4,"bush_rhododendron":2,"bush_bramble":1,"bush_hawthorn":1,"bush_holly":1,"bush_roses":1},
+  "plants": {
+   "seedheads": 4,
+   "bluebells": 3,
+   "snowdrops": 3,
+   "bracken": 2,
+   "nettles": 2,
+   "moss_patch": 2,
+   "foxgloves": 1,
+   "tussock_rust": 1,
+   "buttercups": 1,
+   "clover_patch": 1
+  },
+  "rocks": {"roots":4,"rocks":2,"rocks_b":1,"rocks_snow":1,"rocks_mossy":1,"rocks_c":1,"stones_flat":1},
+  "waterPlants": {"iris_yellow":4,"iris_purple":2},
+  "tall": {"tallgrass_c":4,"tallgrass_b":4,"tallgrass":2},
+  "look": {
+   "sky": ["#8CB8E0","#D8D8D0","#F4DCC0"],
+   "haze": "#E2D6C8",
+   "hazeD": 52,
+   "amb": "pollen",
+   "wind": 1.2,
+   "grassCol": ["#6A6A30","#D8A850"],
+   "far": "forest",
+   "farH": 9
+  },
+  "life": [
+   {"k":"squirrel","n":4},
+   {"k":"rabbit","n":2}
+  ],
+  "from": "russetwood"
+ },
+ "badlands": {
+  "name": "Badlands",
+  "ground": {
+   "base": "A",
+   "patches": {"B":0.3,"r":0.15},
+   "verge": "u",
+   "floor": "A",
+   "bank": "s",
+   "rock": "r",
+   "tall": "t"
+  },
+  "road": "v",
+  "water": "stream",
+  "trees": {"tree_rowan":4},
+  "shrubs": {"bush_rosemary":4,"bush_rhododendron":1},
+  "plants": {
+   "dry_grass": 4,
+   "dandelions": 4,
+   "dandelion_clocks": 3,
+   "thistles": 3,
+   "tussock": 1,
+   "lupins": 1,
+   "seedheads": 1,
+   "heather": 1,
+   "horsetail": 1
+  },
+  "rocks": {"rocks_b":4,"stones_flat":4,"rocks_mossy":3,"rocks_c":2,"rocks":2,"scree":1,"rocks_snow":1,"boulder_lichen":1},
+  "tall": {"tallgrass_c":4,"tallgrass_b":3,"tallgrass":3},
+  "look": {
+   "sky": ["#86BEE6","#D6DCD8","#F2D8B8"],
+   "haze": "#E6D0B6",
+   "hazeD": 54,
+   "amb": "sand",
+   "wind": 1.2,
+   "grassCol": ["#7A6A30","#C8A860"],
+   "far": "canyon",
+   "farH": 9
+  },
+  "life": [
+   {"k":"lizard","n":4}
+  ],
+  "from": "badlands"
+ },
+ "jungle": {
+  "name": "Jungle",
+  "ground": {
+   "base": "y",
+   "patches": {"M":0.3,"J":0.1},
+   "verge": "u",
+   "floor": "y",
+   "bank": "s",
+   "rock": "r",
+   "tall": "t"
+  },
+  "road": "p",
+  "water": "swamp",
+  "trees": {
+   "tree_jungle": 4,
+   "palm_tree": 2,
+   "tree_beech": 2,
+   "tree_chestnut": 2,
+   "tree_hazel": 2,
+   "palm_small": 1,
+   "tree_fallen": 1,
+   "tree_beech_autumn": 1
+  },
+  "shrubs": {"bush_rhododendron":4,"bush_holly":3,"bush_bramble":2,"bush_juniper":1},
+  "plants": {
+   "snowdrops": 4,
+   "moss_patch": 4,
+   "bracken": 3,
+   "bluebells": 3,
+   "foxgloves": 3,
+   "nettles": 3,
+   "sedge": 1,
+   "dandelion_clocks": 1,
+   "wild_wheat": 1,
+   "tussock": 1
+  },
+  "rocks": {"roots":4,"stones_flat":1,"molehill":1},
+  "waterPlants": {"iris_purple":4},
+  "tall": {"tallgrass_c":4,"tallgrass_b":3,"tallgrass":3},
+  "look": {
+   "sky": ["#7EB8D8","#C4E0D8","#E8EED4"],
+   "haze": "#C6D8C8",
+   "hazeD": 40,
+   "amb": "spore",
+   "grassCol": ["#2C6A3C","#8CC86A"],
+   "rays": 1,
+   "far": "forest",
+   "farH": 11
+  },
+  "life": [
+   {"k":"frog","n":4}
+  ],
+  "from": "tanglewild"
+ }
+}

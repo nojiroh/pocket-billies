@@ -285,6 +285,21 @@ for (const [id, G] of Object.entries(robots.gems || {})) {
   if (!types.has(G.type)) problem('robots.json', `gem ${id} is type ${G.type}, no such type`);
   if (!moves[G.move]) problem('robots.json', `gem ${id} gives ${G.move}, no such move`);
 }
+// map generator MG-1: the biome recipes: the schema, then the ground letters, prop kinds and life they name
+if (D.biomes && check('biomes.schema.json', D.biomes, 'biomes.json')) {
+  const terr = (D.scenery && D.scenery.terrains) || {},
+    props = (D.scenery && D.scenery.props) || {},
+    life = (D.scenery && D.scenery.life) || {};
+  for (const [b, B] of Object.entries(D.biomes)) {
+    const G = B.ground;
+    for (const [f, ch] of [...Object.entries(G).filter(([f]) => f !== 'patches'), ['road', B.road]])
+      if (!terr[ch]) problem('biomes.json', `${b}.${f}: no terrain "${ch}" (scenery.json terrains)`);
+    for (const ch of Object.keys(G.patches || {})) if (!terr[ch]) problem('biomes.json', `${b}.ground.patches: no terrain "${ch}"`);
+    for (const pool of ['trees', 'shrubs', 'plants', 'rocks', 'waterPlants', 'tall'])
+      for (const k of Object.keys(B[pool] || {})) if (!props[k]) problem('biomes.json', `${b}.${pool}: no prop ${k}`);
+    for (const L of B.life || []) if (!life[L.k]) problem('biomes.json', `${b}.life: no animal ${L.k}`);
+  }
+}
 // phase 10: the world map's look: the schema, then the terrain keys it names and the regions it covers
 if (D.worldmap && check('worldmap.schema.json', D.worldmap, 'worldmap.json')) {
   const terr = new Set(Object.keys((D.scenery && D.scenery.terrains) || {}));
