@@ -2,6 +2,35 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Roguelite track RL-0 - the plan - 2026-10-20
+Planning only (the owner's brief, in Plan Mode); approved by the owner; nothing built. Branch `claude/new-session-qv8ou7`.
+- Changed (docs only, one cause per commit): docs/phases/roguelite-track.md (the plan: findings, the old phases'
+  status, the RL-1..RL-16 table, architecture decisions, design answers, each session's files and tests, the first
+  playable cut, what to leave alone, risks, the 20 "Ask me before" items); docs/ROADMAP.md rewritten around the track
+  (old phases marked done, parked or absorbed); docs/VISION.md "How the game plays" rewritten for the roguelite;
+  CLAUDE.md gains the roguelite ground rule and loses the stale camTo/dioTileHalf gotcha (replaced by the hooks.js rule).
+- What was found (verified at e3df43a): PR #78's HANDOFF entry says its validation never ran; the remote holds one
+  tag, `Baseline` (no phase, Studio or map-generator tag ever reached GitHub, so CI's tag-triggered full run has never
+  fired); `util.js random` is `Math.random` (only the tests seed it); the engine reads `activeBattle` from hooks 56
+  times and shares `saveData.team` by reference; node indices are identity everywhere and `migrate()` resets the trip
+  at load; mapgen is Node-safe but not loaded by the game page and makes routes only; phase 19 (battle core: seeded,
+  replayable, two-sided) exists only on `plan/engine-phases-19-21` and is adopted as RL-2/RL-4; a set-aside key
+  collision between game-state.js and account.js; the brief's `startGame` 574 lines is 40 (ui.js:2263-2302).
+- Risky or unfinished: nothing in this session was executed against the code (no node_modules, no Playwright in the
+  container); every line number is a read, not a run. The old-phase status table was read from HANDOFF alone, not
+  re-verified in the code. The seam layout (exits at t 0.25/0.5/0.75 on the 112 m side) and the run's timings are
+  design reasoning until MG-2 and the run sim prove them.
+- Verified: docs only; the plan's factual claims were checked by three code-reading passes and one spot check of
+  the synthesis (weather seam, the pinned Date in check-quick, fixture places, encounterStock, story.json:38/66,
+  condition kinds, mapgenPutProp, coatRoll, the 26 m seam bands, no serverTimestamp).
+- Decisions the owner made this session: the rework is a track (RL-N, `rl-N-done`) rather than phases 23+; parked
+  phases stay in the roadmap marked parked; the first playable cut is RL-8; the order after it follows the brief
+  (ranch, hub upgrades, relics, modifiers, bots, online).
+- Questions waiting for the owner: the 20 items in roguelite-track.md section 8 (answer the RL-1 ones first: the
+  Studio token options A and B, deleting the 16 version-stamped tools); push the outstanding tags from your machine.
+- Next session starts with: "start RL-1" (roguelite-track.md, section 4, RL-1 Hardening), in Plan Mode, beginning
+  with PR #78's unrun checks.
+
 ### Parts fixes, step 1 - 2026-10-20
 - Changed: DOM rig previews select front/back metadata consistently with the requested view. Bot refits and equipped upgrades capture maximum HP before mutation and preserve the HP fraction afterward; fainted bots stay fainted.
 - Verified: all 279 unit tests pass (16 new cases); the new tests fail in 9 cases against the original code. Lint/naming and module consistency pass; changed-file formatting and diff whitespace checked.
