@@ -99,7 +99,6 @@
   }
  ],
  "parts": {
-  "_help": "Phase 16 parts. Every Billie has a size per slot. Wild ones roll each slot by odds; starters and trainers are all M. Weight = species weight x sum(share x size weight). Attack and Sp. Atk x ratio^attackExp, Speed x ratio^speedExp, each capped at +-cap. All M is Prime: every stat x (1 + primeBonus). scale is how big the piece is drawn.",
   "slots": ["head","body","front","back","sig"],
   "share": {"head":0.15,"body":0.4,"front":0.15,"back":0.15,"sig":0.15},
   "sizes": {
@@ -113,7 +112,6 @@
   "primeBonus": 0.1
  },
  "robots": {
-  "_help": "Phase 17 robots (placeholder numbers, to be tuned with the simulation and agreed). baseStat is added to every stat before the parts. A part's own HP is the robot's max HP x partHpRatio x the part's dur. A hit on a robot lands on the torso (body only) or a limb by hitWeights; the limb loses the damage x partShare. A broken arm loses its move, broken legs multiply Speed by legBreakSpeed and lose their move. Each upgrade level adds upgradeStat to a part's stats. Over the legs' carry, Speed x (carry / weight) ^ overweightExp; under it, up to lightBonus faster. Attack and Sp. Atk x (weight / refWeight) ^ attackExp, capped at +-cap. A move of the gem's type hits gemAffinity times as hard. xpYield is the XP for beating one, like a species yield.",
   "slots": ["torso","armL","armR","legs"],
   "baseStat": 38,
   "partHpRatio": 0.4,

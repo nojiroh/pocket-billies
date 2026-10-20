@@ -1,4 +1,97 @@
 {
- "defaults": {},
- "presets": {}
+ "defaults": {
+  "lens": {"grain":0.015,"vignette":0.72,"aberration":1.15,"bokeh":1.25,"blur":2,"blurFar":2.6,"focusBand":0.62},
+  "color": {
+   "exposure": 1.1,
+   "saturation": 1.2,
+   "contrast": 1.08,
+   "warmth": 0.16,
+   "outlines": 1,
+   "bloom": 0.8,
+   "grade": "film",
+   "tone": "soft",
+   "ink": 0.2
+  },
+  "sun": {
+   "angle": 44,
+   "height": 54,
+   "strength": 0.8,
+   "clock": true,
+   "ambient": 0.2,
+   "clouds": 0.38,
+   "cloudSpeed": 1.6,
+   "cloudShadows": 0.19,
+   "glare": 0.9
+  },
+  "shadows": {
+   "strength": 0.84,
+   "softness": 0.6,
+   "hue": 0.44,
+   "pixel": true,
+   "pixelSize": 32,
+   "pixelSteps": 4,
+   "fit": true,
+   "cascades": true,
+   "nearRadius": 16,
+   "aoKind": "horizon",
+   "contact": 0.55,
+   "buildings": true,
+   "ao": 0.4,
+   "groundAO": 0.6
+  },
+  "lights": {"roomLight":false},
+  "air": {"hazeStart":0.97,"mist":0.16,"godRays":0},
+  "grass": {"density":3,"height":0.55},
+  "water": {"reflection":0.95,"ripples":0.3,"glints":1.35,"clarity":0.2,"caustics":0.4,"shallow":"#229ABF"},
+  "camera": {"pixelGrid":false,"pitchAdd":-8,"fov":0.68},
+  "quality": {"resolution":1.5,"shadowMap":4096,"frameBlock":true,"edgeBleed":true}
+ },
+ "presets": {
+  "test": {
+   "name": "Test",
+   "v": {
+    "lens": {"grain":0.015,"vignette":0.72,"aberration":1.15,"bokeh":1.25,"blur":2,"blurFar":2.6,"focusBand":0.62},
+    "color": {
+     "exposure": 1.1,
+     "saturation": 1.2,
+     "contrast": 1.08,
+     "warmth": 0.16,
+     "outlines": 1,
+     "bloom": 0.8,
+     "grade": "film",
+     "tone": "soft",
+     "ink": 0.2
+    },
+    "sun": {
+     "angle": 44,
+     "height": 54,
+     "strength": 0.8,
+     "clock": true,
+     "ambient": 0.2,
+     "clouds": 0.38,
+     "cloudSpeed": 1.6,
+     "cloudShadows": 0.19,
+     "glare": 0.9
+    },
+    "shadows": {
+     "strength": 0.84,
+     "softness": 0.6,
+     "hue": 0.44,
+     "pixel": true,
+     "pixelSize": 32,
+     "pixelSteps": 4,
+     "fit": true,
+     "cascades": true,
+     "nearRadius": 16,
+     "aoKind": "horizon",
+     "contact": 0.55,
+     "buildings": true,
+     "ao": 0.4,
+     "groundAO": 0.6
+    },
+    "lights": {"roomLight":false},
+    "air": {"hazeStart":0.97,"mist":0.16,"godRays":0}
+   }
+  }
+ }
 }
