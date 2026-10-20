@@ -189,7 +189,7 @@ SECTIONS.billionaires = () => {
       ([k, c]) => `<option value="${escapeHtml(k)}" ${k === coat ? 'selected' : ''}>${escapeHtml(c.name || k)}</option>`
     )
     .join('')}</select></label></div>
-  <div class="seg-row"><button class="btn primary" data-act="pixels" data-sp="${sp}">Edit pixels and skeleton</button><button class="btn" data-act="skeleton" data-sp="${sp}">Skeleton builder</button><button class="btn" data-act="recolor" data-sp="${sp}">Recolor this stage…</button><button class="btn" data-act="bpFoe" data-sp="${sp}">See it in battle</button>${studioState.rigs[sp] ? '' : '<span class="warn">No skeleton for this stage: it can’t be drawn.</span>'}</div>`;
+  <div class="seg-row"><button class="btn primary" data-act="pixels" data-sp="${sp}">Edit pixels and skeleton</button><button class="btn" data-act="skeleton" data-sp="${sp}">Skeleton builder</button><button class="btn" data-act="wbsOpen" data-sp="${sp}" title="Its pictures’ boxes, pivots and draw order on the Art workbench (Part mode)">Parts on the workbench</button><button class="btn" data-act="recolor" data-sp="${sp}">Recolor this stage…</button><button class="btn" data-act="bpFoe" data-sp="${sp}">See it in battle</button>${studioState.rigs[sp] ? '' : '<span class="warn">No skeleton for this stage: it can’t be drawn.</span>'}</div>`;
   const tsel = i => {
     const ts = L.types[st] || [];
     return `<label class="fld"><span>${i ? 'Second type' : 'Type'}</span><select data-p="${p}.types.${st}.${i}" data-k="sel" ${i ? 'data-opt="1"' : ''} data-rr="1">${i ? '<option value="">None</option>' : ''}${typeOptions(

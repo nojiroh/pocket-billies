@@ -119,6 +119,40 @@ joints**) opens it on that part, in the pane the Robots section is in.
 
 The battle preview offers robots too: the Robots section's Try a build and every trainer's robots.
 
+## Art workbench: species sheets in Part mode (studio track ST-6)
+
+Part mode's **Billies** source shows a species' rig (art/next/rigs-next.js) the same way; the numbers are in
+game/js/logic/rig-joints.js. The Billies section's **Parts on the workbench** (and the skeleton builder's) opens it on
+that species.
+
+- **The list**: the species picked, a part per bone with a picture (the role it moves as, the bone it hangs from).
+- **Each view** shows the picture's box on the sheet with a little of the sheet around it: the pivot crosshair, the
+  bones that hang on it as labelled sockets, the box's edges as small squares.
+- **Pivot**: dragging or nudging it (½ px with Shift) keeps the Billie drawn where it was: the picture shifts back by
+  as much and what hangs on the part stays put. It is the skeleton builder's pivot drag (the same function), so it
+  only changes where the part turns.
+- **Sockets**: dragging one moves the bone that hangs there (and everything on it).
+- **Box**: an edge, or the box itself, changes which pixels of the sheet the picture takes; the pivot stays on its
+  sheet pixel, so the art stays where it is drawn. With **all frames** (the default) squash and stretch, blink, happy
+  and hurt move their edges by as much; pick a frame to change only its box (a view without that frame is left as it
+  is).
+- **z** per view (the back view's is `zb`, the one the game draws it by). Every change is one undo step and is saved
+  with the rigs.
+- **As drawn**: the species front and back as the game draws it, the part picked marked; **Move** plays its idle.
+
+The skeleton builder zooms by whole steps (+, −, 0 to fit, 1 to 6 for 1x to 32x, as on the pixel canvas; O for the
+onion), fits its window when opened, and **Paint pixels** opens the sheet with the part picked in focus.
+
+## Wardrobe on the pixel canvas (studio track ST-6)
+
+The wardrobe's pieces are painted on the shared pixel canvas: the item's picture, with every tool, key, symmetry,
+the palette lock and the Studio's one undo; the trainer shows faintly behind the piece picked (O). Pencil and fill
+mark the colour area picked in the mask (the eraser clears it), in the same undo step; **Colour area** (A) paints the
+mask only; **Pick** also picks the area. The canvas paints inside the picture only, so **Grow piece** copies a piece
+with 2 px of room on every side to the bottom of the picture and mask. Beside it the pieces on the trainer: drag the
+piece picked there to move it on its bone. Adding a piece (or a copy for an expression) is a picture step and a data
+step of the undo.
+
 ## World map look (phase 10)
 
 World & encounters → **World map look** edits game/data/worldmap.json, the world map's look.
@@ -144,7 +178,7 @@ World & encounters → **World map look** edits game/data/worldmap.json, the wor
 | **Billies** | Names, Field Guide text, types, height and weight per stage; stat profile or exact stats; moves learned and when; how and when each stage evolves; where it appears. Animated front/back preview with every action, in any coat. |
 | **Coats** | A coat recolours a Billie's art (in place of the old Golden sheets). Swap whole palette ramps (every shade of one becomes the same shade of another), then exact colours; art a little off the palette follows the nearest shade. How often each coat turns up in the wild, from eggs and on the line (empty: never). Give one Billie its own hand-painted sheet for a coat: it starts as the recolour; download it, paint it, upload it back. A before/after preview on any Billie. |
 | **Edit pixels and skeleton** | Pixel editor on the real sprite sheets (the pixel canvas, above): every tool, part outlines, an onion skin of the other view, a live animated preview. Download a sheet, edit it in another app, upload it back. Nudge where each body part attaches and how parts stack. |
-| **Skeleton builder** | Build or reshape a body: add parts (blank or from a PNG), drag parts and pivots, tilt, re-parent, mirror a limb with everything attached to it, choose which motion each part follows, switch the body plan, and copy a layout between the front and back views. |
+| **Skeleton builder** | Build or reshape a body: add parts (blank or from a PNG), drag parts and pivots, tilt, re-parent, mirror a limb with everything attached to it, choose which motion each part follows, switch the body plan, and copy a layout between the front and back views. Whole-step zoom with the pixel canvas's keys; **Parts on the workbench** for boxes, pivots and draw order on the sheet. |
 | **+ New Billie** | Start from a blank body (biped, four-legged, flyer, fish, blob or worm) in a color you pick, or copy an existing Billie's skeleton and recolored art. Either way it works in the game immediately. Add or remove evolution stages, duplicate, recolor or reorder lines. |
 | **Battle preview** | The game's battle stage with your unsaved changes. Pick any two Billies (each in any coat) and a backdrop, then play any move with any outcome, status effects, wild and trainer intros, taxes, faints, sandstorms and camera moves at ½×, 1× or 2× speed. Sky and haze colors change live. |
 | **Robots** | Phase 17. Torsos, arms, legs and gems: names, types, weight, toughness, what the legs carry, the move each part gives, stats, and pictures (front and back, a torso's head, a gem's chest picture), with a colour and shape for the stand-in when a part has no picture. Rules: the stat floor, upgrades, the gem's type bonus, weight, part HP and where hits land. **Try a build** draws any gem and parts as the game does and shows its types, weight, stats and moves. A trainer's team entry can be a robot (Trainers). |

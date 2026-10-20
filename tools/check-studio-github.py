@@ -15,6 +15,10 @@ Studio track ST-4: Part mode on a kit part: the pivot dragged and nudged, a sock
 side, an L painted, and the kit written again keeping it all; then everything undone.
 Studio track ST-5: a robot torso in Part mode beside the battle preview: a shoulder moved moves the robot's arm on the
 stage, front and back; a test fit; back to computed; everything undone.
+Studio track ST-6: the skeleton builder's zoom keys; a species in Part mode (opened from Billies): its head's pivot
+dragged and nudged (the figure drawn the same), its box grown by an edge, its back draw order, everything undone. The
+wardrobe on the shared pixel canvas: a pencil click paints the item and marks its colour-area mask in one undo step
+(undone and redone together); the Colour area brush paints the mask only; Grow piece; everything undone.
 
     python3 tools/check-studio-github.py           # the repository as it is (run `npm run data` first)
     python3 tools/check-studio-github.py dist      # the build (`npm run build` first)
@@ -536,6 +540,122 @@ def robot_joint_steps(pg, errs):
     print('robot joints: opened from Robots, two robots in the battle preview, shoulder dragged and nudged (the rig follows, front and back), a test fit, back to computed, all undone', flush=True)
 
 
+def species_part_steps(pg, errs):
+    """Studio track ST-6: the skeleton builder zooms by whole steps with the pixel canvas's keys; the Billies section
+    opens the species in Part mode; the head's pivot dragged and nudged keeps the figure drawn where it was (the rig
+    changes), its box grown by the right edge, its back draw order set; four undo steps; everything undone."""
+    n = len(errs)
+    sp = pg.evaluate("studioState.D.lines[0].id + '0'")
+    rig = f"JSON.stringify(studioState.rigs[{json.dumps(sp)}])"
+    rig0 = pg.evaluate(rig)
+    pg.evaluate(f"void openSkeleton({json.dumps(sp)}, 'front')")
+    pg.wait_for_selector('.pxed.skel', timeout=20000); time.sleep(0.5)
+    z0 = pg.evaluate("skeletonEditor.zoom")
+    pg.locator('#skStage').hover(); pg.keyboard.press('+'); time.sleep(0.2)
+    z1 = pg.evaluate("skeletonEditor.zoom")
+    pg.keyboard.press('3'); time.sleep(0.2)
+    z2 = pg.evaluate("skeletonEditor.zoom")
+    if z0 != int(z0) or z1 <= z0 or z2 != 4: errs.append(f'the skeleton builder zoomed {z0}, then + {z1}, then 3 {z2} (whole steps; 3 is 4x)')
+    pg.click('.pxed.skel [data-sk=close]'); time.sleep(0.3)
+    # Billies: Parts on the workbench
+    pg.evaluate("studioState.sel.line = studioState.D.lines[0].id; studioState.sel.stage = 0; void openSection('billionaires')"); time.sleep(1)
+    pg.locator(f'[data-act=wbsOpen][data-sp="{sp}"]').click()
+    pg.wait_for_selector('#wbpfrontStage .pc-art', timeout=20000); time.sleep(0.5)
+    if pg.evaluate("[studioState.sec, workbench.mode, wbPart.src, wbPart.sp]") != ['workbench', 'part', 'species', sp]:
+        errs.append('Parts on the workbench did not open Part mode on the species')
+    pg.evaluate("ACTIONS.wbpPick({ id: 'head' })")
+    pg.wait_for_selector('#wbpfrontStage .pc-art', timeout=20000); time.sleep(0.8)
+    drawn = f"""(() => {{ const R = rigFor({json.dumps(sp)}, 'front'), c = document.createElement('canvas'); c.width = R.BW; c.height = R.BH;
+      drawRig(c.getContext('2d'), R, neutralPose(), 'front'); return c.getContext('2d').getImageData(0, 0, R.BW, R.BH).data.join(','); }})()"""
+    d0 = pg.evaluate(drawn)
+    steps0 = pg.evaluate("studioState.undo.length")
+    handle = lambda h: pg.evaluate(f"wbsHandles('front').find(x => x[0] === '{h}')")
+    Z = pg.evaluate("wbPart.pcs.front.zoom")
+    box = pg.locator('#wbpfrontStage .pc-art').bounding_box()
+    h0 = handle('pivot')
+    sx, sy = box['x'] + h0[1] * Z, box['y'] + h0[2] * Z
+    pg.mouse.move(sx, sy); pg.mouse.down(); pg.mouse.move(sx + 3 * Z, sy + 2 * Z, steps=4); pg.mouse.up(); time.sleep(0.3)
+    h1 = handle('pivot')
+    if (round(h1[1] - h0[1]), round(h1[2] - h0[2])) != (3, 2): errs.append(f'the head\'s pivot dragged from {h0[1:]} to {h1[1:]}, not by (3, 2)')
+    pg.locator('#wbpfrontStage').hover(); pg.keyboard.press('ArrowLeft'); time.sleep(0.3)
+    h2 = handle('pivot')
+    if round(h2[1] - h1[1], 2) != -1: errs.append(f'the arrow key moved the pivot by {h2[1] - h1[1]}')
+    if pg.evaluate(rig) == rig0: errs.append('moving the pivot did not change the rig')
+    if pg.evaluate(drawn) != d0: errs.append('moving the pivot moved the species as drawn')
+    b0 = pg.evaluate("wbsCrop('front').box")
+    e = handle('edgeR')
+    box = pg.locator('#wbpfrontStage .pc-art').bounding_box()
+    sx, sy = box['x'] + e[1] * Z, box['y'] + e[2] * Z
+    pg.mouse.move(sx, sy); pg.mouse.down(); pg.mouse.move(sx + 2 * Z, sy, steps=4); pg.mouse.up(); time.sleep(0.3)
+    b1 = pg.evaluate("wbsCrop('front').box")
+    if [b1[k] - b0[k] for k in range(4)] != [0, 0, 2, 0]: errs.append(f'the right edge dragged made the box {b1} (was {b0})')
+    pg.evaluate("""(() => { const el = document.querySelector('[data-wbs=z][data-v=back]'); el.value = '3'; el.dispatchEvent(new Event('change', { bubbles: true })); })()""")
+    time.sleep(0.3)
+    if pg.evaluate(f"studioState.rigs[{json.dumps(sp)}].back.bones.find(b => b.n === 'head').zb") != 3: errs.append('the back draw order was not stored as zb')
+    if pg.evaluate("studioState.undo.length") - steps0 != 4: errs.append(f"a drag, a nudge, an edge and a z made {pg.evaluate('studioState.undo.length') - steps0} undo steps, not 4")
+    if not pg.evaluate("studioState.rigsDirty"): errs.append('the rigs are not marked to save')
+    t0 = time.time()
+    while time.time() - t0 < 30 and pg.evaluate("studioState.undo.length") > steps0: pg.evaluate("undo()")
+    time.sleep(0.5)
+    if pg.evaluate(rig) != rig0: errs.append('undoing it all did not bring the rig back as it was')
+    pg.evaluate("wbPart.src = 'kits'; wbPart.id = ''; workbench.mode = 'sheet'")
+    if len(errs) > n: errs[n:] = [f'species parts: {e}' for e in errs[n:]]
+    print('species parts: builder zoom keys, opened from Billies, the head\'s pivot dragged and nudged (drawn the same), an edge, a back z, all undone', flush=True)
+
+
+def wardrobe_steps(pg, errs):
+    """Studio track ST-6: the wardrobe paints on the shared pixel canvas. A pencil click on an item's piece paints it
+    and marks the colour area picked in its mask, one undo step (undone and redone together); the Colour area brush
+    changes the mask only; Grow piece gives the piece room (a new place at the bottom of the picture and the mask);
+    everything is undone."""
+    n = len(errs)
+    k = pg.evaluate("Object.keys(studioState.D.wardrobe.items).find(k => studioState.D.wardrobe.items[k].mask && studioState.D.wardrobe.items[k].pieces.some(p => p.v === 'front'))")
+    item = f"studioState.D.wardrobe.items[{json.dumps(k)}]"
+    pg.evaluate(f"wardrobeEditor.sel = {json.dumps(k)}; wardrobeEditor.view = 'front'; wardrobeEditor.piece = {item}.pieces.findIndex(p => p.v === 'front'); void openSection('wardrobe')")
+    pg.wait_for_selector('#wdStage .pc-art', timeout=20000); time.sleep(1)
+    data0 = pg.evaluate(f"JSON.stringify({item})")
+    img, mask = pg.evaluate(f"['art/' + {item}.img, 'art/' + {item}.mask]")
+    px = lambda path, x, y: pg.evaluate(f"[...loadedAtlas({json.dumps(path)}).getContext('2d').getImageData({x}, {y}, 1, 1).data]")
+    steps0 = pg.evaluate("studioState.undo.length")
+    r = pg.evaluate(f"{item}.pieces[wardrobeEditor.piece].r")
+    x, y = r[0] + r[2] // 2, r[1] + r[3] // 2
+    pg.evaluate("ACTIONS.wdArea({ a: 2 })"); pg.wait_for_selector('#wdStage .pc-art', timeout=20000); time.sleep(0.5)
+    pg.evaluate("pixelCanvasTool(wardrobeEditor.pc, 'pen'); pixelCanvasColor(wardrobeEditor.pc, '#123456')")
+    i0, m0 = px(img, x, y), px(mask, x, y)
+    Z = pg.evaluate("wardrobeEditor.pc.zoom")
+    pg.locator('#wdStage').scroll_into_view_if_needed()
+    box = pg.locator('#wdStage .pc-art').bounding_box()
+    pg.mouse.click(box['x'] + (x + 0.5) * Z, box['y'] + (y + 0.5) * Z); time.sleep(0.4)
+    i1, m1 = px(img, x, y), px(mask, x, y)
+    if i1 != [0x12, 0x34, 0x56, 255] or m1 != [46, 168, 74, 255]: errs.append(f'a pencil click made the picture {i1} and the mask {m1} (want #123456 and area 2)')
+    if pg.evaluate("studioState.undo.length") - steps0 != 1: errs.append('a stroke and its mask were not one undo step')
+    pg.evaluate("undo()"); time.sleep(0.3)
+    if px(img, x, y) != i0 or px(mask, x, y) != m0: errs.append('undo did not take back the picture and the mask together')
+    pg.evaluate("redo()"); time.sleep(0.3)
+    if px(img, x, y) != i1 or px(mask, x, y) != m1: errs.append('redo did not bring back the picture and the mask together')
+    # the Colour area brush: area 3 on the same pixel, the picture untouched
+    pg.evaluate("ACTIONS.wdArea({ a: 3 })"); pg.wait_for_selector('#wdStage .pc-art', timeout=20000); time.sleep(0.5)
+    pg.evaluate("pixelCanvasTool(wardrobeEditor.pc, 'area')")
+    Z = pg.evaluate("wardrobeEditor.pc.zoom")
+    pg.locator('#wdStage').scroll_into_view_if_needed()
+    box = pg.locator('#wdStage .pc-art').bounding_box()
+    pg.mouse.click(box['x'] + (x + 0.5) * Z, box['y'] + (y + 0.5) * Z); time.sleep(0.4)
+    if px(img, x, y) != i1 or px(mask, x, y) != [58, 98, 224, 255]: errs.append(f'the Colour area brush made {px(img, x, y)} and {px(mask, x, y)}')
+    # Grow piece
+    h0 = pg.evaluate(f"loadedAtlas({json.dumps(img)}).height")
+    pg.evaluate("ACTIONS.wdGrow()"); pg.wait_for_selector('#wdStage .pc-art', timeout=20000); time.sleep(0.5)
+    r2 = pg.evaluate(f"{item}.pieces[wardrobeEditor.piece].r")
+    hs = pg.evaluate(f"[loadedAtlas({json.dumps(img)}).height, loadedAtlas({json.dumps(mask)}).height]")
+    if r2 != [1, h0, r[2] + 4, r[3] + 4] or hs[0] != hs[1] or hs[0] < h0 + r[3] + 4: errs.append(f'Grow piece made {r2} on pictures {hs} high (was {r}, {h0})')
+    t0 = time.time()
+    while time.time() - t0 < 30 and pg.evaluate("studioState.undo.length") > steps0: pg.evaluate("undo()")
+    time.sleep(0.5)
+    if pg.evaluate(f"JSON.stringify({item})") != data0: errs.append('undoing it all did not bring the item back as it was')
+    if px(img, x, y) != i0 or px(mask, x, y) != m0 or pg.evaluate(f"loadedAtlas({json.dumps(img)}).height") != h0: errs.append('undoing it all left pixels changed')
+    if len(errs) > n: errs[n:] = [f'wardrobe: {e}' for e in errs[n:]]
+    print('wardrobe: a pencil click and its mask one undo step (undone and redone), the Colour area brush, Grow piece, all undone', flush=True)
+
+
 def main():
     srv = ThreadingHTTPServer(('127.0.0.1', 0), partial(Quiet, directory=str(ROOT)))
     threading.Thread(target=srv.serve_forever, daemon=True).start()
@@ -610,6 +730,8 @@ def main():
         workbench_steps(pg, errs)
         part_mode_steps(pg, errs)
         robot_joint_steps(pg, errs)
+        species_part_steps(pg, errs)
+        wardrobe_steps(pg, errs)
         pg.evaluate("const k = Object.keys(studioState.D.moves)[0]; studioState.D.moves[k].name += ' Test'; studioState.dirty = true; void saveAll()")
         t0 = time.time()
         while time.time() - t0 < 60 and 'pulls' not in posts:

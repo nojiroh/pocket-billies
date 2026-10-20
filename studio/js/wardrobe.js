@@ -3,7 +3,12 @@
    Trainers' body, hairstyles, faces and clothes. Every item is pieces on the trainer skeleton (front, back and side
    views) in one picture, plus a colour-area mask: red, green and blue mark the parts the game recolours.
    Paint pieces right on the body, add pieces to any bone, set colour areas, prices and shops, and watch the trainer
-   walk and pose with it. The body section edits the skin pieces, the skeleton and the body sliders. */
+   walk and pose with it. The body section edits the skin pieces, the skeleton and the body sliders.
+   Studio track ST-6: the pixels are painted on the shared pixel canvas (the item's picture, the trainer faint behind
+   the piece): its tools, keys, symmetry and palette, and the Studio's one undo. A stroke marks the colour-area mask
+   to match, in the same undo step; the Colour area brush paints the mask only. Pieces no longer grow while painting:
+   Grow piece gives one room around it. The trainer beside it shows the pieces on the body; drag one there to move it
+   on its bone. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
 import { provide } from '../../game/js/hooks.js';
@@ -20,6 +25,7 @@ import {
 } from '../../game/js/person-art.js';
 import { rigMatrices } from '../../game/js/skeleton-rig.js';
 import { escapeHtml } from './game-stand-ins.js';
+import { pixelDiffBox, pixelKeyAction, pixelLine } from '../../game/js/logic/pixel-ops.js';
 import {
   ACTIONS,
   SECTIONS,
@@ -43,6 +49,20 @@ import {
   toast,
   uniqueKey,
 } from './studio-app.js';
+import {
+  artStep,
+  artSteps,
+  drawPixelCanvas,
+  pictureImage,
+  pixelCanvas,
+  pixelCanvasAct,
+  pixelCanvasColor,
+  pixelCanvasDeselect,
+  pixelCanvasFit,
+  pixelCanvasPanel,
+  pixelCanvasPanelHTML,
+  pixelCanvasToolsHTML,
+} from './pixel-canvas.js';
 import { atlasGet, loadedAtlas, markArt } from './sprites.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -57,23 +77,29 @@ expose({
   drawWardrobeEditor: [() => drawWardrobeEditor, v => (drawWardrobeEditor = v)],
   drawWardrobeThumbs: [() => drawWardrobeThumbs, v => (drawWardrobeThumbs = v)],
   editedWardrobe: [() => editedWardrobe],
-  fillWardrobePixels: [() => fillWardrobePixels, v => (fillWardrobePixels = v)],
-  growPiece: [() => growPiece, v => (growPiece = v)],
   loadWardrobe: [() => loadWardrobe, v => ((loadWardrobe = v), provide({ loadWardrobe }))],
   mountWardrobe: [() => mountWardrobe, v => (mountWardrobe = v)],
-  pickWardrobeColor: [() => pickWardrobeColor, v => (pickWardrobeColor = v)],
-  plotWardrobePixel: [() => plotWardrobePixel, v => (plotWardrobePixel = v)],
-  pushWardrobeUndo: [() => pushWardrobeUndo, v => (pushWardrobeUndo = v)],
+  mountWardrobePainter: [() => mountWardrobePainter, v => (mountWardrobePainter = v)],
+  wardrobeAreaBrush: [() => wardrobeAreaBrush, v => (wardrobeAreaBrush = v)],
+  wardrobeAreasSVG: [() => wardrobeAreasSVG, v => (wardrobeAreasSVG = v)],
   wardrobeArtChanged: [() => wardrobeArtChanged, v => (wardrobeArtChanged = v)],
   wardrobeBodyHTML: [() => wardrobeBodyHTML, v => (wardrobeBodyHTML = v)],
   wardrobeEditor: [() => wardrobeEditor],
   wardrobeEditorHTML: [() => wardrobeEditorHTML, v => (wardrobeEditorHTML = v)],
+  wardrobeGrowPiece: [() => wardrobeGrowPiece, v => (wardrobeGrowPiece = v)],
   wardrobeItemHTML: [() => wardrobeItemHTML, v => (wardrobeItemHTML = v)],
   wardrobeJoints: [() => wardrobeJoints, v => (wardrobeJoints = v)],
+  wardrobeMaskArea: [() => wardrobeMaskArea, v => (wardrobeMaskArea = v)],
+  wardrobeMaskFollow: [() => wardrobeMaskFollow, v => (wardrobeMaskFollow = v)],
+  wardrobeMaskSet: [() => wardrobeMaskSet, v => (wardrobeMaskSet = v)],
+  wardrobeOnion: [() => wardrobeOnion, v => (wardrobeOnion = v)],
+  wardrobePaths: [() => wardrobePaths],
+  wardrobePieceAt: [() => wardrobePieceAt, v => (wardrobePieceAt = v)],
   wardrobePointerPixel: [() => wardrobePointerPixel, v => (wardrobePointerPixel = v)],
   wardrobePreviewHTML: [() => wardrobePreviewHTML, v => (wardrobePreviewHTML = v)],
   wardrobePreviewLoop: [() => wardrobePreviewLoop, v => (wardrobePreviewLoop = v)],
   wardrobeSheets: [() => wardrobeSheets, v => (wardrobeSheets = v)],
+  wardrobeStrokeArea: [() => wardrobeStrokeArea],
   wardrobeTestLook: [() => wardrobeTestLook, v => (wardrobeTestLook = v)],
 });
 /* eslint-enable no-func-assign */
@@ -86,12 +112,13 @@ const wardrobeEditor = {
   tool: 'pen',
   color: '#2A2238',
   area: 1,
-  zoom: 5,
+  zoom: 5 /* the trainer beside the canvas */,
+  pc: null /* the shared pixel canvas */,
+  pcKeep: null /* its zoom, grid, symmetry and palette lock between drawings */,
   filter: 'all',
   pvView: 0,
   pvAct: 'walk',
   drag: null,
-  undo: [],
   test: null,
   loaded: false,
 };
@@ -194,7 +221,7 @@ function wardrobeItemHTML(k) {
    )
  )}
  ${card('Colour areas', cols + (it.colors.length < 3 ? `<div class="seg-row"><button class="btn sm" data-act="wdColAdd">+ Add a colour area</button></div>` : ''), { sub: 'Players pick a colour for each area; the shading you painted is kept. Paint the areas with the “Colour area” brush below.' })}
- ${card('Pieces and pixels', wardrobeEditorHTML(it), { sub: 'Each piece sits on one bone and moves with it. Paint on the trainer; the rest of the body is shown faintly for fitting.' })}`;
+ ${card('Pieces and pixels', wardrobeEditorHTML(it), { sub: 'Each piece sits on one bone and moves with it. Paint the item’s picture; the trainer shows faintly behind the piece picked. Beside it the pieces on the body: drag one there to move it.' })}`;
 }
 function wardrobeBodyHTML() {
   const W = editedWardrobe();
@@ -246,19 +273,7 @@ function wardrobeEditorHTML(src) {
     sel = src.pieces[wardrobeEditor.piece];
   if (!sel || sel.v !== wardrobeEditor.view) wardrobeEditor.piece = ps.length ? ps[0][1] : -1;
   const bones = editedWardrobe().skeleton[wardrobeEditor.view].map(b => b.n);
-  const tools = [
-    ['pen', 'Pencil'],
-    ['erase', 'Eraser'],
-    ['fill', 'Fill'],
-    ['pick', 'Pick'],
-    ['area', 'Colour area'],
-    ['move', 'Move piece'],
-  ]
-    .map(
-      ([k, n]) =>
-        `<button class="seg ${wardrobeEditor.tool === k ? 'on' : ''}" data-act="wdTool" data-t="${k}">${n}</button>`
-    )
-    .join('');
+  const tools = pixelCanvasToolsHTML([['area', 'Colour area', 'A']]);
   const areas =
     wardrobeEditor.sel === 'body'
       ? ''
@@ -276,10 +291,10 @@ function wardrobeEditorHTML(src) {
   const P = src.pieces[wardrobeEditor.piece];
   return `<div class="seg-row">${WARDROBE_VIEWS.map(([v, n]) => `<button class="seg ${wardrobeEditor.view === v ? 'on' : ''}" data-act="wdView" data-v="${v}">${n}</button>`).join('')}</div>
  <div class="wd-pieces">${ps.map(([p, i]) => `<button class="chk-chip ${i === wardrobeEditor.piece ? 'on' : ''}" data-act="wdPiece" data-i="${i}">${escapeHtml(p.b)}${p.x ? ' · ' + escapeHtml(p.x) : ''}${p.z != null ? ' · layer ' + p.z : ''}</button>`).join('') || '<span class="help">No pieces in this view yet.</span>'}</div>
- <div class="sc-bar"><span class="px-tools">${tools}</span><span class="colw"><input type="color" id="wdColor" value="${wardrobeEditor.color}"></span><span class="px-tools"><button class="seg" data-act="wdZoom" data-z="-1">−</button><button class="seg" data-act="wdZoom" data-z="1">+</button><button class="seg" data-act="wdUndo" title="Undo">↶</button></span></div>
- ${areas ? `<div class="sc-bar">${areas}<span class="help">Pencil and fill also mark the area you pick here.</span></div>` : ''}
- <div class="wd-stage"><canvas id="wdCv"></canvas></div>
- <div class="seg-row wd-pieceops">${P ? `<span class="help">Selected: <b>${escapeHtml(P.b)}</b>, ${P.r[2]}×${P.r[3]} px.</span><label class="fld wd-z"><span>Layer</span><input type="number" step=".05" data-p="${wardrobeEditor.sel === 'body' ? 'wardrobe.body' : 'wardrobe.items.' + wardrobeEditor.sel}.pieces.${wardrobeEditor.piece}.z" data-k="num" data-opt="1" value="${P.z ?? ''}" placeholder="auto"></label><label class="fld wd-z"><span>Shows when</span><select data-p="${wardrobeEditor.sel === 'body' ? 'wardrobe.body' : 'wardrobe.items.' + wardrobeEditor.sel}.pieces.${wardrobeEditor.piece}.x" data-k="sel" data-opt="1">${FACE_EXPRESSIONS.map(([k, n]) => `<option value="${k}" ${(P.x || '') === k ? 'selected' : ''}>${n}</option>`).join('')}</select></label><button class="btn sm subtle" data-act="wdPieceX" title="A copy of this piece that only shows with an expression; then repaint it">Copy for an expression</button><button class="btn sm subtle danger" data-act="wdPieceDel">Remove piece</button>` : ''}
+ <div class="wd-pc"><div class="sc-bar wd-bar">${tools}<span class="colw"><input type="color" id="wdColor" value="${wardrobeEditor.color}"></span></div>
+ ${areas ? `<div class="sc-bar">${areas}<span class="help">Pencil and fill also mark the area you pick here; the eraser clears it.</span></div>` : ''}
+ <div class="wd-paint"><div class="px-stage wd-sheet" id="wdStage"></div><div class="wd-onbody"><h4>On the body</h4><div class="wd-stage"><canvas id="wdCv"></canvas></div><div class="seg-row"><button class="seg sm" data-act="wdZoom" data-z="-1" title="Smaller">−</button><button class="seg sm" data-act="wdZoom" data-z="1" title="Bigger">+</button><label class="chk"><input type="checkbox" id="wdOnion" ${wardrobeEditor.pcKeep?.showOnion === false ? '' : 'checked'}> The trainer behind the piece (O)</label></div><p class="help">Drag the piece here to move it on its bone.</p></div><div class="wd-panel" id="wdPanel">${pixelCanvasPanelHTML()}</div></div></div>
+ <div class="seg-row wd-pieceops">${P ? `<span class="help">Selected: <b>${escapeHtml(P.b)}</b>, ${P.r[2]}×${P.r[3]} px.</span><label class="fld wd-z"><span>Layer</span><input type="number" step=".05" data-p="${wardrobeEditor.sel === 'body' ? 'wardrobe.body' : 'wardrobe.items.' + wardrobeEditor.sel}.pieces.${wardrobeEditor.piece}.z" data-k="num" data-opt="1" value="${P.z ?? ''}" placeholder="auto"></label><label class="fld wd-z"><span>Shows when</span><select data-p="${wardrobeEditor.sel === 'body' ? 'wardrobe.body' : 'wardrobe.items.' + wardrobeEditor.sel}.pieces.${wardrobeEditor.piece}.x" data-k="sel" data-opt="1">${FACE_EXPRESSIONS.map(([k, n]) => `<option value="${k}" ${(P.x || '') === k ? 'selected' : ''}>${n}</option>`).join('')}</select></label><button class="btn sm subtle" data-act="wdGrow" title="Room to paint around it: 2 pixels on every side (the canvas paints inside the picture only)">Grow piece</button><button class="btn sm subtle" data-act="wdPieceX" title="A copy of this piece that only shows with an expression; then repaint it">Copy for an expression</button><button class="btn sm subtle danger" data-act="wdPieceDel">Remove piece</button>` : ''}
   <span class="grow"></span><label class="fld"><span>Add a piece on</span><select id="wdBone">${bones.map(b => `<option>${b}</option>`).join('')}</select></label>
   <button class="btn sm" data-act="wdAdd" data-from="body" title="Starts as the body's shape on that bone, filled with the first colour">Fitted to the body</button><button class="btn sm" data-act="wdAdd" data-from="blank">Blank</button>${wardrobeEditor.view !== 'front' ? `<button class="btn sm subtle" data-act="wdAdd" data-from="front">Copy from front</button>` : ''}</div>`;
 }
@@ -288,6 +303,7 @@ async function mountWardrobe() {
   if (!wardrobeEditor.loaded) await loadWardrobe();
   if (!sectionShown('wardrobe')) return;
   drawWardrobeThumbs();
+  mountWardrobePainter();
   drawWardrobeEditor();
   bindWardrobeCanvas();
   const f = $('#wdFilter');
@@ -300,6 +316,13 @@ async function mountWardrobe() {
   if (c)
     c.oninput = () => {
       wardrobeEditor.color = c.value.toUpperCase();
+      if (wardrobeEditor.pc) pixelCanvasColor(wardrobeEditor.pc, wardrobeEditor.color);
+    };
+  const on = $('#wdOnion');
+  if (on)
+    on.onchange = () => {
+      const P = wardrobeEditor.pc;
+      if (P && P.showOnion !== on.checked) pixelCanvasAct(P, 'onion');
     };
   $$('[data-wd-test]').forEach(
     i =>
@@ -481,7 +504,252 @@ function drawWardrobeEditor() {
   }
   wardrobeEditor.geo = { J, X0, Y0, Z };
 }
-/* ---------- editing pixels ---------- */
+/* ---------- painting: the item's picture on the shared pixel canvas ---------- */
+const wardrobePaths = (src = currentWardrobeItem()) => ({
+  img: 'art/' + src.img,
+  mask: src.mask ? 'art/' + src.mask : '',
+});
+/* the piece a pixel of the picture is in (this view's first; fill stays inside it) */
+function wardrobePieceAt(src, x, y) {
+  const inside = p => x >= p.r[0] && y >= p.r[1] && x < p.r[0] + p.r[2] && y < p.r[1] + p.r[3];
+  return src.pieces.find(p => p.v === wardrobeEditor.view && inside(p)) || src.pieces.find(inside) || null;
+}
+/* the mask's area at a pixel: 1 to 3, 0 for none */
+function wardrobeMaskArea(d, k) {
+  if (d[k + 3] < 128) return 0;
+  return d[k] > 127 ? 1 : d[k + 1] > 127 ? 2 : d[k + 2] > 127 ? 3 : 0;
+}
+function wardrobeMaskSet(d, k, a) {
+  const c = MASK_AREA_COLORS[a];
+  d[k] = c ? c[0] : 0;
+  d[k + 1] = c ? c[1] : 0;
+  d[k + 2] = c ? c[2] : 0;
+  d[k + 3] = c ? 255 : 0;
+}
+/* the area a stroke marks: the body's skin is area 1; an item's the one picked (0: a fixed colour) */
+const wardrobeStrokeArea = () => (wardrobeEditor.sel === 'body' ? 1 : wardrobeEditor.area);
+/* a stroke ended: every pixel it changed marks the mask (cleared where it erased), in the same undo step */
+function wardrobeMaskFollow(P, before, after) {
+  const src = currentWardrobeItem(),
+    { mask } = wardrobePaths(src),
+    m = mask && loadedAtlas(mask),
+    box = m && pixelDiffBox(before, after);
+  if (!box) return [];
+  const mb = m.getContext('2d').getImageData(0, 0, m.width, m.height),
+    ma = new ImageData(new Uint8ClampedArray(mb.data), m.width, m.height),
+    a = wardrobeStrokeArea(),
+    [bx, by, bw, bh] = box;
+  for (let y = by; y < by + bh && y < m.height; y++)
+    for (let x = bx; x < bx + bw && x < m.width; x++) {
+      const i = (y * after.width + x) * 4;
+      if (
+        before.data[i] === after.data[i] &&
+        before.data[i + 1] === after.data[i + 1] &&
+        before.data[i + 2] === after.data[i + 2] &&
+        before.data[i + 3] === after.data[i + 3]
+      )
+        continue;
+      wardrobeMaskSet(ma.data, (y * m.width + x) * 4, after.data[i + 3] ? a : 0);
+    }
+  m.getContext('2d').putImageData(ma, 0, 0);
+  markArt(mask, m);
+  return [[mask, mb, ma]];
+}
+/* the Colour area brush: paints the mask only, where the picture has a pixel; one undo step when let go */
+function wardrobeAreaBrush(P, x, y) {
+  const src = currentWardrobeItem(),
+    { img, mask } = wardrobePaths(src),
+    m = mask && loadedAtlas(mask),
+    c = loadedAtlas(img);
+  if (!m || !c) {
+    toast('This piece has no colour-area mask.');
+    return true;
+  }
+  const mx = m.getContext('2d'),
+    before = mx.getImageData(0, 0, m.width, m.height),
+    work = mx.getImageData(0, 0, m.width, m.height),
+    pic = c.getContext('2d').getImageData(0, 0, c.width, c.height).data,
+    a = wardrobeEditor.sel === 'body' ? 1 : wardrobeEditor.area;
+  let last = [x, y];
+  const dab = (px, py) => {
+    for (const [qx, qy] of pixelLine(last, [px, py])) {
+      if (qx < 0 || qy < 0 || qx >= m.width || qy >= m.height || qx >= c.width || qy >= c.height) continue;
+      if (!pic[(qy * c.width + qx) * 4 + 3]) continue;
+      wardrobeMaskSet(work.data, (qy * m.width + qx) * 4, a);
+    }
+    last = [px, py];
+    mx.putImageData(work, 0, 0);
+    drawPixelCanvas(P);
+  };
+  dab(x, y);
+  return {
+    move: (P2, fx, fy) => dab(Math.floor(fx), Math.floor(fy)),
+    up: () => {
+      artStep(mask, before, work);
+      wardrobeArtChanged(src);
+    },
+  };
+}
+/* the mask's areas on the picked piece, while the Colour area brush is picked (else a light hatch) */
+function wardrobeAreasSVG(src, p) {
+  const m = src.mask && loadedAtlas('art/' + src.mask);
+  if (!m || !p) return '';
+  const [rx, ry, rw, rh] = p.r,
+    W = Math.min(rw, m.width - rx),
+    H = Math.min(rh, m.height - ry);
+  if (W <= 0 || H <= 0) return '';
+  const d = m.getContext('2d').getImageData(rx, ry, W, H).data,
+    full = wardrobeEditor.tool === 'area';
+  let g = '';
+  for (let y = 0; y < H; y++)
+    for (let x = 0; x < W; x++) {
+      const a = wardrobeMaskArea(d, (y * W + x) * 4);
+      if (!a || (!full && (x + y) % 3)) continue;
+      const c = MASK_AREA_COLORS[a];
+      g += `<rect class="wd-area" x="${rx + x}" y="${ry + y}" width="1" height="1" style="fill:rgb(${c[0]},${c[1]},${c[2]});fill-opacity:${full ? 0.45 : 0.3}"/>`;
+    }
+  return g;
+}
+/* the trainer faint behind the picked piece, lined up with it (as the game puts the piece on its bone) */
+function wardrobeOnion(src) {
+  const p = src.pieces[wardrobeEditor.piece];
+  if (!p || p.v !== wardrobeEditor.view) return null;
+  const J = wardrobeJoints(p.v)[p.b];
+  if (!J) return null;
+  const L = wardrobeTestLook();
+  for (const s of bodySliders()) L.body[s.k] = s.def;
+  L.body.chest = Math.max(0.6, L.body.chest);
+  const f = personFrame(L, p.v, 'idle', 0, 0, 0, p.x || undefined);
+  return {
+    src: f,
+    from: [0, 0, f.width, f.height],
+    to: [Math.round(p.r[0] - f.ax - J[0] - p.o[0]), Math.round(p.r[1] - f.ay - J[1] - p.o[1])],
+    clip: p.r,
+  };
+}
+function mountWardrobePainter() {
+  const st = $('#wdStage'),
+    src = currentWardrobeItem();
+  if (!st || !src) return;
+  const keep = wardrobeEditor.pcKeep || {},
+    { img } = wardrobePaths(src);
+  const P = pixelCanvas(st, {
+    ids: 'wdpc',
+    tool: wardrobeEditor.tool === 'move' ? 'pen' : wardrobeEditor.tool,
+    color: wardrobeEditor.color,
+    get: () => loadedAtlas(wardrobePaths().img),
+    path: () => wardrobePaths().img,
+    boxAt: (x, y) => wardrobePieceAt(currentWardrobeItem(), x, y)?.r || null,
+    focusBox: () => currentWardrobeItem().pieces[wardrobeEditor.piece]?.r || null,
+    overlay: () => {
+      const S = currentWardrobeItem();
+      return (
+        S.pieces
+          .map((p, i) =>
+            p.v === wardrobeEditor.view
+              ? `<rect class="wd-piece ${i === wardrobeEditor.piece ? 'on' : ''}" x="${p.r[0]}" y="${p.r[1]}" width="${p.r[2]}" height="${p.r[3]}"/>`
+              : ''
+          )
+          .join('') + (wardrobeEditor.sel === 'body' ? '' : wardrobeAreasSVG(S, S.pieces[wardrobeEditor.piece]))
+      );
+    },
+    onion: () => wardrobeOnion(currentWardrobeItem()),
+    hostTool: (P, t, x, y) => {
+      if (t === 'area') return wardrobeAreaBrush(P, x, y);
+      if (t === 'pick') {
+        /* the colour, and the area it is in */
+        const S = currentWardrobeItem(),
+          m = S.mask && loadedAtlas('art/' + S.mask);
+        if (m && wardrobeEditor.sel !== 'body' && x >= 0 && y >= 0 && x < m.width && y < m.height) {
+          wardrobeEditor.area = wardrobeMaskArea(m.getContext('2d').getImageData(x, y, 1, 1).data, 0);
+          $$('[data-act=wdArea]').forEach(b => b.classList.toggle('on', +b.dataset.a === wardrobeEditor.area));
+        }
+      }
+      return false;
+    },
+    companions: wardrobeMaskFollow,
+    changed: () => wardrobeArtChanged(currentWardrobeItem()),
+    toolChanged: P => {
+      wardrobeEditor.tool = P.tool;
+      drawPixelCanvas(P);
+    },
+    colorChanged: P => {
+      wardrobeEditor.color = P.color;
+      const c = $('#wdColor');
+      if (c) c.value = P.color.toLowerCase();
+    },
+    drawn: P => {
+      wardrobeEditor.pcKeep = {
+        zoom: P.zoom,
+        showGrid: P.showGrid,
+        symMode: P.symMode,
+        symShift: P.symShift,
+        lock: P.lock,
+        showOff: P.showOff,
+        showOnion: P.showOnion,
+      };
+    },
+  });
+  Object.assign(P, { showOnion: true, showGrid: true }, keep);
+  wardrobeEditor.pc = P;
+  pixelCanvasPanel(P, $('.wd-pc'));
+  const piece = src.pieces[wardrobeEditor.piece];
+  if (!keep.zoom) {
+    const c = loadedAtlas(img);
+    P.zoom = c ? pixelCanvasFit(P, 2, 8) : 4;
+    if (piece) P.zoom = Math.max(P.zoom, clamp(Math.floor(160 / Math.max(piece.r[2], piece.r[3])), 2, 12));
+  }
+  drawPixelCanvas(P);
+  /* the picked piece in the middle of the view */
+  if (piece)
+    requestAnimationFrame(() => {
+      if (!st.isConnected) return;
+      const Z = P.zoom,
+        r = piece.r;
+      st.scrollTo({
+        left: r[0] * Z - st.clientWidth / 2 + (r[2] * Z) / 2,
+        top: r[1] * Z - st.clientHeight / 2 + (r[3] * Z) / 2,
+      });
+    });
+}
+function wardrobeArtChanged(src) {
+  const { img, mask } = wardrobePaths(src);
+  markArt(img, loadedAtlas(img));
+  if (mask) markArt(mask, loadedAtlas(mask));
+  changed();
+  PERSON_ART_CACHE.clear();
+  drawWardrobeEditor();
+}
+/* Grow piece: the piece copied with `m` pixels of room on every side to a new place at the bottom of its picture and
+   mask (the old place stays, unused); the pictures, then the piece, are steps of the undo */
+function wardrobeGrowPiece(src, P, m) {
+  const w = P.r[2] + 2 * m,
+    h = P.r[3] + 2 * m;
+  if (w > 160 || h > 160) return toast('That piece is as big as a piece can be (160 px).');
+  const steps = [];
+  let top = 0;
+  for (const k of ['img', 'mask']) {
+    const path = src[k] && 'art/' + src[k],
+      c = path && loadedAtlas(path);
+    if (!c) continue;
+    const H = c.height,
+      n = makeCanvas(Math.max(c.width, w + 2), H + h + 1),
+      nx = n.getContext('2d');
+    nx.drawImage(c, 0, 0);
+    nx.drawImage(c, P.r[0], P.r[1], P.r[2], P.r[3], 1 + m, H + m, P.r[2], P.r[3]);
+    steps.push([path, pictureImage(c), pictureImage(n)]);
+    markArt(path, n);
+    if (k === 'img') top = H;
+  }
+  artSteps(steps);
+  P.r = [1, top, w, h];
+  P.o = [P.o[0] - m, P.o[1] - m];
+  changed();
+  commit(true);
+  PERSON_ART_CACHE.clear();
+  render();
+}
+/* the trainer beside the canvas: drag the picked piece to move it on its bone */
 function wardrobePointerPixel(ev) {
   const cv = $('#wdCv'),
     r = cv.getBoundingClientRect(),
@@ -493,209 +761,73 @@ function wardrobePointerPixel(ev) {
     sy = (((ev.clientY - r.top) / r.height) * cv.height) / G.Z + G.Y0;
   return { x: Math.floor(sx - G.J[P.b][0] - P.o[0]), y: Math.floor(sy - G.J[P.b][1] - P.o[1]) };
 }
-/* make the piece cover local pixel (x,y): a bigger region is added at the bottom of the sheet */
-function growPiece(src, P, x, y) {
-  if (x >= 0 && y >= 0 && x < P.r[2] && y < P.r[3]) return { dx: 0, dy: 0 };
-  const pad = 2,
-    nx0 = Math.min(0, x - pad),
-    ny0 = Math.min(0, y - pad),
-    nx1 = Math.max(P.r[2], x + 1 + pad),
-    ny1 = Math.max(P.r[3], y + 1 + pad),
-    w = nx1 - nx0,
-    h = ny1 - ny0;
-  if (w > 160 || h > 160) return null;
-  let top = 0;
-  for (const k of ['img', 'mask']) {
-    const c = loadedAtlas('art/' + src[k]);
-    if (!c) continue;
-    const H = c.height,
-      n = makeCanvas(Math.max(c.width, w + 2), H + h + 1),
-      nx = n.getContext('2d');
-    nx.drawImage(c, 0, 0);
-    nx.drawImage(c, P.r[0], P.r[1], P.r[2], P.r[3], 1 - nx0, H - ny0, P.r[2], P.r[3]);
-    markArt('art/' + src[k], n);
-    if (k === 'img') top = H;
-  }
-  P.r = [1, top, w, h];
-  P.o = [P.o[0] + nx0, P.o[1] + ny0];
-  return { dx: -nx0, dy: -ny0 };
-}
-function pushWardrobeUndo(src) {
-  const [a, b] = wardrobeSheets(src);
-  wardrobeEditor.undo.push({
-    src,
-    img: a.getContext('2d').getImageData(0, 0, a.width, a.height),
-    msk: b ? b.getContext('2d').getImageData(0, 0, b.width, b.height) : null,
-    pieces: JSON.stringify(src.pieces),
-  });
-  if (wardrobeEditor.undo.length > 30) wardrobeEditor.undo.shift();
-}
-function plotWardrobePixel(l) {
-  const src = currentWardrobeItem(),
-    P = src.pieces[wardrobeEditor.piece];
-  if (!P) return;
-  if (wardrobeEditor.tool === 'pick') {
-    pickWardrobeColor(l);
-    return;
-  }
-  if (wardrobeEditor.tool === 'erase' && (l.x < 0 || l.y < 0 || l.x >= P.r[2] || l.y >= P.r[3])) return;
-  if (wardrobeEditor.tool === 'area' && (l.x < 0 || l.y < 0 || l.x >= P.r[2] || l.y >= P.r[3])) return;
-  const g = growPiece(src, P, l.x, l.y);
-  if (!g) return;
-  const [img, msk] = wardrobeSheets(src),
-    ix = img.getContext('2d'),
-    mx = msk ? msk.getContext('2d') : null,
-    px = P.r[0] + l.x + g.dx,
-    py = P.r[1] + l.y + g.dy;
-  const mark = a => {
-    if (!mx) return;
-    mx.clearRect(px, py, 1, 1);
-    if (a) {
-      const c = MASK_AREA_COLORS[a];
-      mx.fillStyle = `rgb(${c[0]},${c[1]},${c[2]})`;
-      mx.fillRect(px, py, 1, 1);
-    }
-  };
-  if (wardrobeEditor.tool === 'erase') {
-    ix.clearRect(px, py, 1, 1);
-    mark(0);
-  } else if (wardrobeEditor.tool === 'area') {
-    if (!ix.getImageData(px, py, 1, 1).data[3]) return;
-    mark(wardrobeEditor.area);
-  } else {
-    ix.fillStyle = wardrobeEditor.color;
-    ix.fillRect(px, py, 1, 1);
-    mark(wardrobeEditor.sel === 'body' ? 1 : wardrobeEditor.area);
-  }
-  wardrobeArtChanged(src);
-}
-function wardrobeArtChanged(src) {
-  markArt('art/' + src.img, loadedAtlas('art/' + src.img));
-  if (src.mask) markArt('art/' + src.mask, loadedAtlas('art/' + src.mask));
-  changed();
-  PERSON_ART_CACHE.clear();
-  drawWardrobeEditor();
-}
-function pickWardrobeColor(l) {
-  const src = currentWardrobeItem(),
-    P = src.pieces[wardrobeEditor.piece],
-    [img, msk] = wardrobeSheets(src);
-  if (l.x < 0 || l.y < 0 || l.x >= P.r[2] || l.y >= P.r[3]) return;
-  const d = img.getContext('2d').getImageData(P.r[0] + l.x, P.r[1] + l.y, 1, 1).data;
-  if (!d[3]) return;
-  wardrobeEditor.color =
-    '#' +
-    [d[0], d[1], d[2]]
-      .map(v => v.toString(16).padStart(2, '0'))
-      .join('')
-      .toUpperCase();
-  const c = $('#wdColor');
-  if (c) c.value = wardrobeEditor.color;
-  if (msk) {
-    const m = msk.getContext('2d').getImageData(P.r[0] + l.x, P.r[1] + l.y, 1, 1).data;
-    wardrobeEditor.area = m[3] < 128 ? 0 : m[0] > 127 ? 1 : m[1] > 127 ? 2 : m[2] > 127 ? 3 : 0;
-  }
-  wardrobeEditor.tool = 'pen';
-  render();
-}
-function fillWardrobePixels(l) {
-  const src = currentWardrobeItem(),
-    P = src.pieces[wardrobeEditor.piece];
-  if (l.x < 0 || l.y < 0 || l.x >= P.r[2] || l.y >= P.r[3]) return;
-  const [img, msk] = wardrobeSheets(src),
-    ix = img.getContext('2d'),
-    [rx, ry, rw, rh] = P.r,
-    D = ix.getImageData(rx, ry, rw, rh),
-    d = new Uint32Array(D.data.buffer),
-    t = d[l.y * rw + l.x];
-  const n = parseInt(wardrobeEditor.color.slice(1), 16),
-    col = ((255 << 24) | ((n & 255) << 16) | (n & 0xff00) | (n >> 16)) >>> 0;
-  if (t === col) return;
-  const st = [[l.x, l.y]],
-    seen = new Uint8Array(rw * rh),
-    pts = [];
-  while (st.length) {
-    const [x, y] = st.pop();
-    if (x < 0 || y < 0 || x >= rw || y >= rh) continue;
-    const i = y * rw + x;
-    if (seen[i] || d[i] !== t) continue;
-    seen[i] = 1;
-    d[i] = col;
-    pts.push(i);
-    st.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
-  }
-  ix.putImageData(D, rx, ry);
-  if (msk && wardrobeEditor.sel !== 'body') {
-    const mx = msk.getContext('2d');
-    for (const i of pts) {
-      mx.clearRect(rx + (i % rw), ry + Math.floor(i / rw), 1, 1);
-      if (wardrobeEditor.area) {
-        const c = MASK_AREA_COLORS[wardrobeEditor.area];
-        mx.fillStyle = `rgb(${c[0]},${c[1]},${c[2]})`;
-        mx.fillRect(rx + (i % rw), ry + Math.floor(i / rw), 1, 1);
-      }
-    }
-  }
-  wardrobeArtChanged(src);
-}
 function bindWardrobeCanvas() {
   const cv = $('#wdCv');
   if (!cv || cv._b) return;
   cv._b = 1;
-  let down = false;
   cv.addEventListener('pointerdown', ev => {
-    const l = wardrobePointerPixel(ev);
-    if (!l) return;
-    const src = currentWardrobeItem();
-    pushWardrobeUndo(src);
-    down = true;
-    cv.setPointerCapture(ev.pointerId);
-    const P = src.pieces[wardrobeEditor.piece];
-    if (wardrobeEditor.tool === 'fill') {
-      fillWardrobePixels(l);
-      down = false;
-      return;
-    }
-    if (wardrobeEditor.tool === 'move') {
-      wardrobeEditor.drag = { x: ev.clientX, y: ev.clientY, o: P.o.slice() };
-      return;
-    }
-    plotWardrobePixel(l);
-  });
-  cv.addEventListener('pointermove', ev => {
-    if (!down) return;
     const src = currentWardrobeItem(),
       P = src.pieces[wardrobeEditor.piece];
-    if (wardrobeEditor.tool === 'move' && wardrobeEditor.drag) {
-      const r = cv.getBoundingClientRect(),
-        k = cv.width / r.width / wardrobeEditor.zoom;
-      P.o = [
-        Math.round(wardrobeEditor.drag.o[0] + (ev.clientX - wardrobeEditor.drag.x) * k),
-        Math.round(wardrobeEditor.drag.o[1] + (ev.clientY - wardrobeEditor.drag.y) * k),
-      ];
-      PERSON_ART_CACHE.clear();
-      drawWardrobeEditor();
-      return;
-    }
-    if (['pen', 'erase', 'area'].includes(wardrobeEditor.tool)) {
-      const l = wardrobePointerPixel(ev);
-      if (l) plotWardrobePixel(l);
-    }
+    if (!P || !wardrobePointerPixel(ev)) return;
+    cv.setPointerCapture(ev.pointerId);
+    wardrobeEditor.drag = { x: ev.clientX, y: ev.clientY, o: P.o.slice(), moved: false };
+  });
+  cv.addEventListener('pointermove', ev => {
+    const D = wardrobeEditor.drag;
+    if (!D) return;
+    const P = currentWardrobeItem().pieces[wardrobeEditor.piece],
+      r = cv.getBoundingClientRect(),
+      k = cv.width / r.width / wardrobeEditor.zoom,
+      o = [Math.round(D.o[0] + (ev.clientX - D.x) * k), Math.round(D.o[1] + (ev.clientY - D.y) * k)];
+    if (o[0] === P.o[0] && o[1] === P.o[1]) return;
+    P.o = o;
+    D.moved = true;
+    PERSON_ART_CACHE.clear();
+    drawWardrobeEditor();
   });
   const up = () => {
-    if (down && wardrobeEditor.tool === 'move') {
-      changed();
-      commit(true);
-    }
-    down = false;
+    const D = wardrobeEditor.drag;
     wardrobeEditor.drag = null;
+    if (!D || !D.moved) return;
+    changed();
+    commit(true);
+    if (wardrobeEditor.pc) drawPixelCanvas(wardrobeEditor.pc);
   };
   cv.addEventListener('pointerup', up);
   cv.addEventListener('pointercancel', up);
 }
+/* the canvas's keys while the pointer is over it */
+document.addEventListener(
+  'keydown',
+  ev => {
+    const st = $('#wdStage'),
+      P = wardrobeEditor.pc;
+    if (!st || !P || !P.cv.isConnected || !st.matches(':hover') || $('#dlg').innerHTML) return;
+    if (ev.target.closest('input,select,textarea')) return;
+    const a = !ev.ctrlKey && !ev.metaKey && ev.key.toLowerCase() === 'a' ? 'tool:area' : pixelKeyAction(ev);
+    if (!a || a === 'undo' || a === 'redo') return;
+    if (a === 'deselect' ? !pixelCanvasDeselect(P) : !pixelCanvasAct(P, a)) return;
+    if (a === 'onion' && $('#wdOnion')) $('#wdOnion').checked = P.showOnion;
+    ev.preventDefault();
+    ev.stopImmediatePropagation();
+  },
+  true
+);
+/* an undo or redo of the item's pictures: the trainer drawn again */
+document.addEventListener('studio-art', ev => {
+  const src = sectionShown('wardrobe') && editedWardrobe() && currentWardrobeItem();
+  if (!src) return;
+  const { img, mask } = wardrobePaths(src);
+  if (ev.detail.path !== img && ev.detail.path !== mask) return;
+  PERSON_ART_CACHE.clear();
+  drawWardrobeEditor();
+  if (ev.detail.path === mask && wardrobeEditor.pc?.cv.isConnected) drawPixelCanvas(wardrobeEditor.pc);
+});
 /* ---------- pieces ---------- */
+/* a new piece's pictures at the bottom of the item's picture and mask, one undo step (the piece is the next) */
 function addPieceRegion(src, c, m) {
-  const out = [];
+  const out = [],
+    steps = [];
   for (const [k, pic] of [
     ['img', c],
     ['mask', m],
@@ -708,9 +840,11 @@ function addPieceRegion(src, c, m) {
       x = n.getContext('2d');
     if (s) x.drawImage(s, 0, 0);
     x.drawImage(pic, 1, H);
+    steps.push(['art/' + src[k], s ? pictureImage(s) : null, pictureImage(n)]);
     markArt('art/' + src[k], n);
     out.push(H);
   }
+  artSteps(steps);
   return [1, out[0], c.width, c.height];
 }
 ACTIONS.wdAdd = d => {
@@ -718,7 +852,6 @@ ACTIONS.wdAdd = d => {
     bone = $('#wdBone').value,
     v = wardrobeEditor.view,
     W = editedWardrobe();
-  pushWardrobeUndo(src);
   let c, m, o;
   const body = W.body.pieces.find(p => p.v === v && p.b === bone);
   if (d.from === 'front') {
@@ -780,7 +913,6 @@ ACTIONS.wdPieceX = async () => {
   const used = new Set(src.pieces.filter(q => q.v === P.v && q.b === P.b).map(q => q.x || ''));
   const free = FACE_EXPRESSIONS.filter(([k]) => k && !used.has(k));
   if (!free.length) return toast('This piece already has every expression.');
-  pushWardrobeUndo(src);
   const [a, b] = wardrobeSheets(src),
     c = makeCanvas(P.r[2], P.r[3]);
   c.getContext('2d').drawImage(a, P.r[0], P.r[1], P.r[2], P.r[3], 0, 0, P.r[2], P.r[3]);
@@ -800,30 +932,10 @@ ACTIONS.wdPieceX = async () => {
 ACTIONS.wdPieceDel = async () => {
   const src = currentWardrobeItem();
   if (!(await ask('Remove this piece? Its pixels stay in the picture file but aren’t used.', 'Remove'))) return;
-  pushWardrobeUndo(src);
   src.pieces.splice(wardrobeEditor.piece, 1);
   wardrobeEditor.piece = -1;
   changed();
   commit(true);
-  PERSON_ART_CACHE.clear();
-  render();
-};
-ACTIONS.wdUndo = () => {
-  const u = wardrobeEditor.undo.pop();
-  if (!u) return toast('Nothing to undo in this picture.');
-  const src = u.src,
-    [a, b] = wardrobeSheets(src);
-  for (const [k, cv, data] of [
-    ['img', a, u.img],
-    ['mask', b, u.msk],
-  ]) {
-    if (!cv || !data) continue;
-    const n = makeCanvas(data.width, data.height);
-    n.getContext('2d').putImageData(data, 0, 0);
-    markArt('art/' + src[k], n);
-  }
-  src.pieces.splice(0, src.pieces.length, ...JSON.parse(u.pieces));
-  changed();
   PERSON_ART_CACHE.clear();
   render();
 };
@@ -913,7 +1025,6 @@ ACTIONS.wdDel = async () => {
 ACTIONS.wdPick = d => {
   wardrobeEditor.sel = d.k;
   wardrobeEditor.piece = 0;
-  wardrobeEditor.undo = [];
   render();
 };
 ACTIONS.wdView = d => {
@@ -925,13 +1036,14 @@ ACTIONS.wdPiece = d => {
   wardrobeEditor.piece = +d.i;
   render();
 };
-ACTIONS.wdTool = d => {
-  wardrobeEditor.tool = d.t;
-  render();
-};
 ACTIONS.wdArea = d => {
   wardrobeEditor.area = +d.a;
   render();
+};
+ACTIONS.wdGrow = () => {
+  const src = currentWardrobeItem(),
+    P = src.pieces[wardrobeEditor.piece];
+  if (P) wardrobeGrowPiece(src, P, 2);
 };
 ACTIONS.wdZoom = d => {
   wardrobeEditor.zoom = clamp(wardrobeEditor.zoom + +d.z, 3, 14);

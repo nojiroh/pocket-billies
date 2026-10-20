@@ -64,6 +64,15 @@ kept aside in the browser).
   joins their pictures at (neck, shoulders, hips, gem); drag or nudge one to store it in robots.json, or go back to
   the computed point. Robots look exactly as before until a point is moved. The Robots section opens a part there,
   and the battle preview can put robots on the stage (Try a build and the trainers' robots).
+- The species' sheets on the workbench (Studio track ST-6): Part mode's Billies source shows a species' pictures on
+  its sheet, front and back, with the pivot, the parts that hang on it and the picture's box. Moving a pivot keeps the
+  Billie drawn where it was (as the skeleton builder's pivot drag does); dragging a socket moves the part that hangs
+  there; an edge or the box itself changes which pixels of the sheet the picture takes (every frame together, or one);
+  draw order per view; the Billie as the game draws it beside, standing or moving. The Billies section and the
+  skeleton builder open it. The skeleton builder zooms by whole steps, fits its window and takes the pixel canvas's
+  zoom keys; Paint pixels opens the part picked. The wardrobe paints on the shared pixel canvas (its tools, keys,
+  symmetry and palette lock, the Studio's one undo) with the trainer faint behind the piece; a stroke marks the
+  colour-area mask in the same undo step; Grow piece gives a piece room (pieces no longer grow while painting).
 - The Studio's scene preview has a free camera: fly over the scene and look at any corner from any angle, with the
   mouse, the keys or two fingers on a phone; a top view; put the walker where you look.
 - Robots (phase 17 prototype): build your own from a gem and four parts (torso with head, left arm, right arm,

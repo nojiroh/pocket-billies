@@ -10,10 +10,28 @@
    Studio track ST-5: the Robots source shows robots.json the same way (logic/robot-joints.js robotKit): each part's
    pictures with the points the game joins them at (stored, else worked out from the picture), a torso's sockets by
    the socket standard, the test fit on a torso. Moving a point stores it in the part's art.joints (a head's in its
-   torso's art.headJoints), in whole pixels; Back to computed drops a view's stored points. */
+   torso's art.headJoints), in whole pixels; Back to computed drops a view's stored points.
+   Studio track ST-6: the Billies source shows a species' rig (art/next/rigs-next.js) the same way: a part per bone
+   with a picture, its box on the sheet, pivot, children as sockets and draw order (workbench-species.js). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
-import { provide } from '../../game/js/hooks.js';
+import {
+  provide,
+  wbsDrawFit,
+  wbsFitHTML,
+  wbsHost,
+  wbsKit,
+  wbsList,
+  wbsLoad,
+  wbsNudge,
+  wbsOverlay,
+  wbsPicture,
+  wbsPlay,
+  wbsSideHTML,
+  wbsSp,
+  wbsThumb,
+  wbsZoomFit,
+} from '../../game/js/hooks.js';
 import { robotFrac, robotJointSet, robotKit, robotKitPart, robotPx } from '../../game/js/logic/robot-joints.js';
 import { setRobotRigData } from '../../game/js/skeleton-rig.js';
 import { escapeHtml } from './game-stand-ins.js';
@@ -43,6 +61,7 @@ import {
   paneRoot,
   render,
   sectionShown,
+  speciesName,
   studioState,
   toast,
 } from './studio-app.js';
@@ -110,6 +129,7 @@ expose({
   wbpSideHTML: [() => wbpSideHTML, v => (wbpSideHTML = v)],
   wbpSizeOf: [() => wbpSizeOf],
   wbpSockRename: [() => wbpSockRename, v => (wbpSockRename = v)],
+  wbpSpecies: [() => wbpSpecies],
   wbpSwing: [() => wbpSwing, v => (wbpSwing = v)],
   wbpThumb: [() => wbpThumb, v => (wbpThumb = v)],
   wbpToolsHTML: [() => wbpToolsHTML, v => (wbpToolsHTML = v)],
@@ -123,7 +143,12 @@ const WBP_SLOTS = ['head', 'head-extra', 'body', 'body-extra', 'front', 'back', 
 /* one colour per socket name, the same in both views */
 const WBP_COLORS = ['#c8323c', '#1f6e6f', '#6a3fb5', '#c77a12', '#2f7d32', '#b23a8a', '#2b5fb8', '#7a5c2e'];
 export const wbPart = {
-  src: 'kits' /* or 'robots' (studio track ST-5) */,
+  src: 'kits' /* or 'robots' (studio track ST-5), or 'species' (ST-6) */,
+  sp: '' /* the species shown (ST-6) */,
+  frame: '' /* the species picture's frame whose box is edited ('': all frames) */,
+  play: false /* the species as drawn moves */,
+  cropHold: null /* a species view's crop kept while its box is dragged */,
+  drag: null,
   id: '',
   kit: '' /* the list's filters */,
   kind: '',
@@ -137,8 +162,10 @@ export const wbPart = {
   pcs: {} /* the canvas of each view */,
   scaled: new Map() /* M scaled to S or L, by path, size and version */,
 };
+provide({ wbPart }); /* to-module */
 /* ---------- the source: the kits, or robots.json shown as a kit (its points the ones the game draws) ---------- */
 const wbpRobots = () => wbPart.src === 'robots';
+const wbpSpecies = () => wbPart.src === 'species';
 const wbpRobotData = () => studioState.D.robots || { parts: {}, gems: {} };
 const wbpPicSize = file => {
   const c = loadedAtlas(wbpPath(file));
@@ -146,8 +173,8 @@ const wbpPicSize = file => {
 };
 /* the pane Part mode is in: paneRoot() is that pane only while it is drawn, and Part mode looks things up later too
    (after loading pictures, on a drag, a key or an input), when it may be the second pane */
-const wbpRoot = () => document.querySelector('.wbp')?.closest('#main, #main2') || paneRoot();
-const wbpKits = () => (wbpRobots() ? robotKit(wbpRobotData(), wbpPicSize) : wbKits());
+export const wbpRoot = () => document.querySelector('.wbp')?.closest('#main, #main2') || paneRoot();
+const wbpKits = () => (wbpRobots() ? robotKit(wbpRobotData(), wbpPicSize) : wbpSpecies() ? wbsKit() : wbKits());
 const WBP_ROBOT_KINDS = ['torso', 'head', 'arm', 'legs', 'gem'];
 /* every picture robots.json names */
 const wbpRobotFiles = () => {
@@ -181,11 +208,12 @@ function wbpRobotDone() {
 const wbpEntry = (id = wbPart.id) => wbpKits().parts?.[id] || null;
 const wbpRules = () => studioState.D.rules;
 const wbpJoint = (view, id = wbPart.id, size = wbPart.size) => partJoint(wbpKits(), id, view, size, wbpRules());
-const wbpColor = name =>
+export const wbpColor = name =>
   WBP_COLORS[[...name].reduce((a, ch) => (a * 31 + ch.charCodeAt(0)) >>> 0, 7) % WBP_COLORS.length];
 const wbpSizeOf = (view, size = wbPart.size) => wbpEntry()?.views[view]?.sizes?.[size] || null;
 /* the parts the list shows, by kit, kind and a search */
 function wbpList() {
+  if (wbpSpecies()) return wbsList();
   const q = wbPart.q.toLowerCase();
   return Object.entries(wbpKits().parts || {})
     .filter(
@@ -213,6 +241,11 @@ function wbpPicture(view) {
 }
 /* every picture the part and the test fit need, loaded before they are drawn */
 async function wbpLoad() {
+  if (wbpSpecies()) {
+    await wbsLoad();
+    wbPart.speciesLoaded = wbsSp();
+    return;
+  }
   if (wbpRobots()) {
     await Promise.all(wbpRobotFiles().map(f => atlasGet(wbpPath(f)).catch(() => null)));
     wbPart.robotsLoaded = wbpRobotFiles().join();
@@ -239,29 +272,50 @@ async function wbpLoad() {
 function wbpListHTML() {
   const K = wbpKits(),
     robots = wbpRobots(),
+    species = wbpSpecies(),
     kits = Object.keys(K.kits || {}),
-    kinds = robots ? WBP_ROBOT_KINDS : Object.keys(K.slots || {}),
+    kinds = robots
+      ? WBP_ROBOT_KINDS
+      : species
+        ? [...new Set(Object.values(K.parts).map(P => P.kind))]
+        : Object.keys(K.slots || {}),
     ids = wbpList();
   const opt = (v, n, on) => `<option value="${escapeHtml(v)}" ${on ? 'selected' : ''}>${escapeHtml(n)}</option>`;
   const src = `<div class="seg-row wbp-src">${[
     ['kits', 'Kits', 'partKits.json: the phase 16 kit parts'],
     ['robots', 'Robots', 'robots.json: robot parts, heads and gems'],
+    ['species', 'Billies', 'rigs-next.js: the species’ piece sheets (boxes, pivots, draw order)'],
   ]
     .map(
       ([k, n, t]) =>
         `<button class="seg ${k === wbPart.src ? 'on' : ''}" data-act="wbpSrc" data-s="${k}" title="${t}">${n}</button>`
     )
     .join('')}</div>`;
-  return `${src}<div class="wbp-filter">${robots ? '' : `<select data-wbp="kit">${opt('', 'Every kit', !wbPart.kit)}${kits.map(k => opt(k, k, k === wbPart.kit)).join('')}</select>`}<select data-wbp="kind">${opt('', 'Every kind', !wbPart.kind)}${kinds.map(k => opt(k, k, k === wbPart.kind)).join('')}</select><input type="search" data-wbp="q" placeholder="Find a part" value="${escapeHtml(wbPart.q)}"></div><div class="wb-parts-h"><span>Front</span><span>Back</span><span>${ids.length} part${ids.length === 1 ? '' : 's'}</span></div><div class="wb-partlist">${
+  const first = species
+    ? `<select data-wbs="sp" title="The species">${Object.keys(studioState.rigs || {})
+        .map(sp => opt(sp, `${speciesName(sp)} · ${sp}`, sp === wbsSp()))
+        .join('')}</select>`
+    : robots
+      ? ''
+      : null;
+  return `${src}<div class="wbp-filter">${first !== null ? first : `<select data-wbp="kit">${opt('', 'Every kit', !wbPart.kit)}${kits.map(k => opt(k, k, k === wbPart.kit)).join('')}</select>`}<select data-wbp="kind">${opt('', 'Every kind', !wbPart.kind)}${kinds.map(k => opt(k, k, k === wbPart.kind)).join('')}</select><input type="search" data-wbp="q" placeholder="Find a part" value="${escapeHtml(wbPart.q)}"></div><div class="wb-parts-h"><span>Front</span><span>Back</span><span>${ids.length} part${ids.length === 1 ? '' : 's'}</span></div><div class="wb-partlist">${
     ids
       .map(id => {
         const P = K.parts[id];
-        return `<div class="wb-part ${id === wbPart.id ? 'on' : ''}" data-act="wbpPick" data-id="${escapeHtml(id)}">${WB_VIEWS.map(v => `<span class="wb-thumb">${P.views[v] ? `<img src="${escapeHtml(wbpThumb(P.views[v].file))}" alt="">` : '<i>—</i>'}</span>`).join('')}<span class="wb-pid"><b class="mono">${escapeHtml(id)}</b><small>${robots ? `${escapeHtml(P.kind)} · ${escapeHtml(P.robot)}` : `${escapeHtml(P.kind)} · ${escapeHtml(P.slot)}${P.mirrorOf ? ' · mirrored' : ''}`}</small></span></div>`;
+        const thumb = v => (species ? wbsThumb(id, v) : wbpThumb(P.views[v].file)),
+          about = robots
+            ? `${escapeHtml(P.kind)} · ${escapeHtml(P.robot)}`
+            : species
+              ? `${P.kind === id ? '' : `moves as ${escapeHtml(P.kind)} · `}hangs from ${escapeHtml(P.rig.front?.par || P.rig.back?.par)}`
+              : `${escapeHtml(P.kind)} · ${escapeHtml(P.slot)}${P.mirrorOf ? ' · mirrored' : ''}`;
+        return `<div class="wb-part ${id === wbPart.id ? 'on' : ''}" data-act="wbpPick" data-id="${escapeHtml(id)}">${WB_VIEWS.map(v => `<span class="wb-thumb">${P.views[v] ? `<img src="${escapeHtml(thumb(v))}" alt="">` : '<i>—</i>'}</span>`).join('')}<span class="wb-pid"><b class="mono">${escapeHtml(id)}</b><small>${about}</small></span></div>`;
       })
       .join('') ||
     (robots
       ? '<p class="help">No robot pictures (Robots section: a part’s Pictures).</p>'
-      : '<p class="help">No parts. Write some in Sheet mode first.</p>')
+      : species
+        ? '<p class="help">This species has no rig.</p>'
+        : '<p class="help">No parts. Write some in Sheet mode first.</p>')
   }</div>`;
 }
 /* a thumbnail: the picture as the Studio has it now (changed and unsaved ones too) */
@@ -274,6 +328,8 @@ function wbpThumb(file) {
   return '../game/' + wbpPath(file);
 }
 function wbpToolsHTML() {
+  if (wbpSpecies())
+    return `<div class="seg-row wb-tools"><span class="px-tools"><button class="seg" data-act="wbpZoom" data-z="-1" title="Zoom out">−</button><span id="wbpZoom"></span><button class="seg" data-act="wbpZoom" data-z="1" title="Zoom in">+</button><button class="seg" data-act="wbpZoom" data-z="0" title="Fit">Fit</button></span><span class="help wbp-hint">Drag the crosshair (pivot), a socket, an edge or the box; arrows nudge the one picked (Shift: ½ px).</span></div>`;
   if (wbpRobots())
     return `<div class="seg-row wb-tools"><span class="px-tools"><button class="seg" data-act="wbpZoom" data-z="-1" title="Zoom out">−</button><span id="wbpZoom"></span><button class="seg" data-act="wbpZoom" data-z="1" title="Zoom in">+</button><button class="seg" data-act="wbpZoom" data-z="0" title="Fit">Fit</button></span><span class="help wbp-hint">Drag the crosshair (pivot) or a socket; arrows nudge the one picked a pixel.</span></div>`;
   const painted = WB_VIEWS.some(v => wbpSizeOf(v)),
@@ -298,9 +354,10 @@ function wbpViewsHTML() {
   }).join('')}</div>`;
 }
 /* ---------- the inspector ---------- */
-const wbpN = v => (Math.round(v * 1000) / 1000).toString();
+export const wbpN = v => (Math.round(v * 1000) / 1000).toString();
 function wbpSideHTML() {
   if (wbpRobots()) return wbpRobotSideHTML();
+  if (wbpSpecies()) return wbsSideHTML();
   const P = wbpEntry(),
     K = wbpKits();
   if (!P) return '<div class="px-sec"><p class="help">Pick a part on the left.</p></div>';
@@ -439,6 +496,7 @@ function wbpFitSockets() {
   return [...new Set(WB_VIEWS.flatMap(v => partSocketsFor(wbpKits(), b, p, v)))];
 }
 function wbpFitHTML() {
+  if (wbpSpecies()) return wbsFitHTML();
   if (!wbPart.id) return '';
   const K = wbpKits(),
     body = wbpIsBody(),
@@ -453,6 +511,7 @@ function wbpFitHTML() {
 }
 /* the test fit drawn at a whole zoom, both views */
 function wbpDrawFit() {
+  if (wbpSpecies()) return wbsDrawFit();
   const K = wbpKits(),
     b = wbpFitBody(),
     p = wbpFitPart(),
@@ -514,6 +573,10 @@ function wbpSwing() {
 }
 /* ---------- the section's parts, mounted ---------- */
 function wbPartSection(head) {
+  if (wbpSpecies() && wbPart.speciesLoaded !== wbsSp()) {
+    afterRender(() => wbpLoad().then(() => sectionShown('workbench') && render()));
+    return `<div class="wb wbp">${head}<div class="wb-body"><aside class="list-col wb-list wbp-list">${wbpListHTML()}</aside><div class="wb-mid wb-empty"><div class="wb-drop"><b>Loading the species’ sheets…</b></div></div></div></div>`;
+  }
   if (wbpRobots()) {
     setRobotRigData(wbpRobotData());
     if (wbPart.robotsLoaded !== wbpRobotFiles().join()) {
@@ -526,7 +589,7 @@ function wbPartSection(head) {
   const list = `<aside class="list-col wb-list wbp-list">${wbpListHTML()}</aside>`,
     mid = wbPart.id
       ? `<div class="wb-mid wbp-mid">${wbpToolsHTML()}${wbpViewsHTML()}${wbpFitHTML()}</div>`
-      : `<div class="wb-mid wb-empty"><div class="wb-drop"><b>No part picked</b><span>${wbpRobots() ? 'Robot parts come from the Robots section.' : 'Parts come from Sheet mode: drop a sheet, then Write.'}</span></div></div>`,
+      : `<div class="wb-mid wb-empty"><div class="wb-drop"><b>No part picked</b><span>${wbpRobots() ? 'Robot parts come from the Robots section.' : wbpSpecies() ? 'Pick a species with a rig.' : 'Parts come from Sheet mode: drop a sheet, then Write.'}</span></div></div>`,
     side = `<aside class="px-side wb-side wbp-side" id="wbpSide">${wbpSideHTML()}</aside>`;
   afterRender(() => wbpMount().catch(e => toast('Could not show the part: ' + e.message, 'err')));
   return `<div class="wb wbp">${head}<div class="wb-body">${list}${mid}${side}</div></div>`;
@@ -540,15 +603,16 @@ async function wbpMount() {
     const st = wbpRoot().querySelector(`#wbp${v}Stage`);
     if (!st) continue;
     const j = wbpJoint(v),
-      painted = !!wbpSizeOf(v),
+      species = wbpSpecies(),
+      painted = !species && !!wbpSizeOf(v),
       P = pixelCanvas(st, {
         ids: 'wbp' + v[0],
         tool: painted ? wbPart.tool : 'part',
         color: wbPart.color,
-        get: () => wbpPicture(v),
+        get: () => (species ? wbsPicture(v) : wbpPicture(v)),
         path: painted ? () => wbpPath(j.file) : undefined,
-        overlay: P => wbpOverlay(v, P),
-        hostTool: (P, t, x, y, ev) => wbpHost(v, P, t, ev),
+        overlay: P => (species ? wbsOverlay(v, P) : wbpOverlay(v, P)),
+        hostTool: (P, t, x, y, ev) => (species ? wbsHost(v, P, t, ev) : wbpHost(v, P, t, ev)),
         changed: () => wbpDrawFit(),
         drawn: P => {
           wbPart.zoom[v] = P.zoom;
@@ -557,18 +621,19 @@ async function wbpMount() {
         },
       });
     P.showGrid = true;
-    P.zoom = wbPart.zoom[v] || pixelCanvasFit(P, 2, 24);
+    P.zoom = wbPart.zoom[v] || (species ? wbsZoomFit(P) : pixelCanvasFit(P, 2, 24));
     wbPart.pcs[v] = P;
     drawPixelCanvas(P);
   }
   wbpDrawFit();
   if (wbPart.fit.swing) requestAnimationFrame(wbpSwing);
+  if (wbpSpecies() && wbPart.play) requestAnimationFrame(wbsPlay);
 }
 function wbpRedraw() {
   for (const P of Object.values(wbPart.pcs)) if (P.cv.isConnected) drawPixelCanvas(P);
   wbpDrawFit();
 }
-function wbpRefreshSide() {
+export function wbpRefreshSide() {
   const s = wbpRoot().querySelector('#wbpSide');
   if (s) s.innerHTML = wbpSideHTML();
 }
@@ -674,6 +739,7 @@ function wbpKeys(ev) {
   if (!ev.key.startsWith('Arrow') || !wbPart.sel || workbench.mode !== 'part' || !sectionShown('workbench')) return;
   if (ev.target.closest && ev.target.closest('input, select, textarea, [contenteditable]')) return;
   if (document.querySelector('#dlg')?.innerHTML || ev.ctrlKey || ev.metaKey || ev.altKey) return;
+  if (wbpSpecies()) return wbsNudge(ev);
   const { view, h } = wbPart.sel,
     j = wbpJoint(view);
   if (!j || !wbpEditable(view)) return;
@@ -926,7 +992,15 @@ ACTIONS.wbpMirror = async () => {
 /* ---------- actions and inputs ---------- */
 ACTIONS.wbpSrc = d => {
   if (d.s === wbPart.src) return;
-  Object.assign(wbPart, { src: d.s === 'robots' ? 'robots' : 'kits', id: '', kit: '', kind: '', size: 'M', sel: null });
+  Object.assign(wbPart, {
+    src: d.s === 'robots' || d.s === 'species' ? d.s : 'kits',
+    id: '',
+    kit: '',
+    kind: '',
+    size: 'M',
+    sel: null,
+    frame: '',
+  });
   Object.assign(wbPart, {
     tool: 'part',
     zoom: { front: 0, back: 0 },
@@ -954,6 +1028,7 @@ ACTIONS.wbpPick = d => {
   if (d.id === wbPart.id) return;
   wbPart.id = d.id;
   wbPart.sel = null;
+  wbPart.frame = '';
   wbPart.zoom = { front: 0, back: 0 };
   if (!wbpSizeOf('front') && !wbpSizeOf('back')) wbPart.tool = 'part';
   render();
