@@ -11,6 +11,42 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 - Questions waiting for the owner: 
 - Next session starts with: 
 
+### Studio track ST-6 - species sheets in Part mode, skeleton builder and wardrobe on the shared canvas - 2026-10-20
+Plan approved at the start (owner: "Ask questions and continue"), with my recommendations picked: the builder keeps its
+posed stage, a Grow piece button, frames move together, split off the wardrobe if the session ran long (it did not).
+- Changed (one cause per commit):
+  - logic/rig-joints.js + the skeleton tests (tools/test/rig-joints.test.mjs, every species).
+  - Skeleton builder: its pivot drag calls rigSetPivot (the same rig, by the tests); then whole-step zoom fitted to
+    its stage, the pixel canvas's view keys (+, −, 0, 1-6, O), Paint pixels with the part picked, Parts on the
+    workbench.
+  - Part mode's Billies source (workbench-species.js): a species' pictures on the sheet, pivot, sockets (children),
+    the box's edges, frames, z per view, the species as drawn; opened from the Billies section and the builder.
+  - Pixel canvas: `companions` (other pictures changed by a stroke, one undo step).
+  - Wardrobe on the pixel canvas: the item's picture with the trainer faint behind the piece, the mask following each
+    stroke, the Colour area brush (mask only), Grow piece, adding a piece undoable; its own 30-step undo is gone.
+  - Studio check steps (species in Part mode, the builder's zoom keys, the wardrobe); STUDIO.md, CHANGELOG, track.
+- Risky or unfinished:
+  - Tags still can't be pushed (HTTP 403). `st-5-done` (on 33a2cd4) and `st-6-done` (this branch's last commit) exist
+    only in this container; please tag them after merging.
+  - The wardrobe is no longer painted right on the trainer: the trainer shows faint behind the piece on the picture,
+    and the pieces on the body sit beside it (drag there to move one). Please try it; it is the biggest change in feel.
+  - Grow piece copies the piece to the bottom of the pictures (the old place stays, unused), as growing did before.
+  - A pivot moved keeps the figure still in the neutral pose (as the builder always did); a bone its body plan turns
+    even in the neutral pose turns about the new point in other poses, as it should.
+  - Part mode shows the back sheet as it is; the game draws the back view mirrored (said in the inspector).
+  - An undone picture stays marked unsaved with its old pixels (every painter, older than ST-6).
+  - Sheet mode (workbench.js) still uses paneRoot() in code that runs after drawing (from ST-5).
+- Verified: npm test 253 pass (10 new rig-joints tests); lint, typecheck, check:modules, format, check:data clean. The
+  full Studio check passes (all steps, new: the builder's zoom keys; Parts on the workbench from Billies, the head's
+  pivot dragged and nudged with the figure drawn the same, an edge, a back z, all undone; the wardrobe's stroke and
+  mask as one undo step, undone and redone, the Colour area brush, Grow piece, all undone; a proposed PR). Pictures
+  at 1400, 1600 and 3440 px wide (headless). check:smoke: 1 problem, the same mthing shader location as ST-5 (on main
+  too). Not tried by hand on a tablet or the 3440 screen.
+- Questions waiting for the owner: is painting beside the trainer (not on it) fine for the wardrobe? Should Grow
+  piece grow in place when the space around a piece is empty? ST-5's three questions are still open (turn limits in
+  the game's poses, gem points, the mthing shader).
+- Next session starts with: ST-7, Model mode import.
+
 ### Studio track ST-5 - robots on the workbench - 2026-10-19
 Plan approved at the start (owner: "Sounds good"), with my recommendations: sockets per part in robots.json `art`,
 stand-ins always computed, draw order and turn limits stored too, the ST-4 entry and tag first.
