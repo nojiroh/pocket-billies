@@ -88,7 +88,8 @@ function heightGrid(sc) {
   if (sc.props)
     for (const p of sc.props) {
       const M = CP[p.k];
-      if (M && M.box) sig += ',' + Math.round(p.x * 10) + ':' + Math.round(p.z * 10) + ':' + (p.s || 1) + ':' + (p.rot || 0);
+      if (M && M.box)
+        sig += ',' + Math.round(p.x * 10) + ':' + Math.round(p.z * 10) + ':' + (p.s || 1) + ':' + (p.rot || 0);
     }
   if (c && c.H === H && c.sig === sig) {
     c.t = now;

@@ -34,7 +34,6 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-
 /** @typedef {{ x: number, z: number, rot?: number }} Placed */
 
 /** the placement's turn in radians (0 when it has none) @param {Placed | null | undefined} p @returns {number} */
@@ -115,7 +114,7 @@ export function pictureFacing(it) {
   );
 }
 
-const STRAIGHT_RIGHT = new Float32Array([1, 0, 0]),
+export const STRAIGHT_RIGHT = new Float32Array([1, 0, 0]),
   FACING_RIGHT = new Float32Array(3);
 /**
  * the picture's right-hand way along the ground for pictureFacing (the camera's own when it faces the camera); the
