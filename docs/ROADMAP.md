@@ -1,62 +1,94 @@
 # Roadmap
 
-Do the phases in order. Each phase is one session (or a few for the big ones). Every phase follows docs/TESTING.md (phase 13): where its tests go and what must pass before it ends. Work-time estimates are rough guesses of Claude's working time, not calendar time, and exclude my testing. The vision is in docs/VISION.md.
+The game is being reworked into a roguelite: a hub (Copperleaf Town) and runs on a generated node map, with the
+walkable world, the seamless maps and the rooms kept (docs/VISION.md, "How the game plays"). The plan is
+docs/phases/roguelite-track.md (approved 2026-10-20). That track is the spine of this roadmap; the Studio, Map
+generator and Project Story tracks run alongside; the old numbered phases are listed below as done, parked or
+absorbed. Every session starts in Plan Mode, follows docs/TESTING.md, and ends with a docs/HANDOFF.md entry and a
+tag (`rl-N-done`, `st-N-done`, `mg-N-done`). Sessions can't push tags: the owner pushes them. Work-time estimates
+are sessions of Claude's working time, not calendar time, and exclude the owner's testing.
 
-| # | File | Goal | Rough work time | Depends on |
-|---|------|------|-----------------|------------|
-| 00 | 00-finish-current-work | Stable checkpoint, tagged `baseline` | unknown | none |
-| 01 | 01-baseline-and-bug-fixes | Tests green, duplicates fixed, CI | 1-2 h | 00 |
-| 02 | 02-security | Firestore rules, keys, token, innerHTML, saveVersion | 2-4 h | 01 |
-| 03 | 03-fresh-base-and-scope-reset | Legacy preserved, version 0.1.0 alpha, keep/rewrite/delete list, deletions | 4-8 h | 01 |
-| 04 | 04-modernize-codebase | Vite, ESLint, modules, data split, TypeScript, README | 12-25 h | 03 |
-| 05 | 05-internal-renaming | Clean names for code, data, concepts | 3-6 h | 04 |
-| 06 | 06-ui-structure | RPG UI: one module per screen, safe rendering, dialogue box, tokens | 10-20 h | 04, 05 |
-| 07 | 07-portraits | Layered portraits: animated eyes and mouth, head moves a little | 8-14 h | 06 |
-| 08 | 08-classic-movement-seamless-maps-rooms | Part A: remove step tracking. Part B: seamless maps and rooms | 14-28 h | 03, 04, 05 |
-| 09 | 09-props-and-terrain | Terrain textures, low-poly 32 px/m props, variants, dedupe | 15-30 h | 04, 05 |
-| 10 | 10-world-map-bowl | New 3D bowl world map, clouds, simplified terrain, new layout | 15-30 h | 05, 08, 09 |
-| 11 | moved to project-story | Cyberpunk city, portal, fall, arrival: now Project Story S7-S8 (archived: docs/archive/11-opening-sequence.md) | see Project Story | 07, 09 |
-| 12 | 12-ranch | Customizable ranch in the starting town | 10-20 h | 08, 09 |
-| 13 | 13-testing-and-debugging | Fast tests (fixtures, tiers, parallel), unit tests, simulations, lazy debug, error reports | 6-10 h | 04 |
-| 14 | 14-studio | Studio performance, polish and new editors | 14-28 h | 04, 05, 06, 08, 10 |
-| 15 | archive/15-game-design-and-story | Design half (core loop, tax mechanics, exploring) stays here; the story half and parody fixes are now Project Story S4 | 3-5 h doc; rest open | any (do before 16, 17) |
-| 16 | 16-billies-monster-system | Slimmed roster, parts, breeding, abominations, encounters | 6-12 h prototype; 20-40 h full | 04, 05, 13, 15 |
-| 17 | 17-robots | Medabot-inspired build-your-own robots and battles | 8-15 h prototype; 25-45 h full | 09, 13, 15 |
-| 18 | 18-friend-trading-and-battles | Async friend battles and atomic trades (Billies, robots, parts) | 10-20 h | 02, 16, 17 |
+## The roguelite track (RL)
 
-Rough total: about 190-370 hours at a careful, gated pace (plan first, approvals, tests, tags). These are guesses, not measurements, and are probably too high: the legacy game was built in about six days (file dates run 2026-10-10 to 2026-10-15) with roughly 50 releases. Treat the numbers as upper bounds and recalibrate after phases 01 and 03 using real usage. Phases 00-05 give a stable, modern, fresh base. Look at the game on my phone before starting phase 06.
+| # | Session | Goal | Depends on | Sessions | Playable |
+|---|---|---|---|---|---|
+| RL-1 | Hardening | Studio token options, versioned tools, stale docs, the set-aside key bug, PR #78 verified, RNG facts written down | none | 1 | no |
+| RL-2 | Golden record and RNG module | a battle golden snapshot; `logic/rng.js` (mapgen's seeded generator moved); seeded `pickWeighted`/`spawn` | RL-1 | 1 | no |
+| RL-3 | State separation | SAVE_VERSION 4; `meta`, `run`, `ranch` in the save; validators; `migrate` keeps a run's trip | RL-2 | 1 | no |
+| RL-4 | Battle state injected | phase 19's core: engine context, no save writes, a silent host, `b.rng`, a turn cap | RL-2 | 1-2 | no |
+| RL-5 | Legacy parking and the world setter | the other maps and places under `game/data/legacy/`; `worldSetGraph`; fixtures and checks retargeted | RL-3 | 1-2 | no |
+| MG-2 | Seam agreement in mapgen | generated parent/child scenes pass the seam rules | none | 1 | no |
+| RL-6 | Run map and clock logic | `logic/run-map.js`, `nodeTypes.json`, forecast, deadline; no UI | RL-3, MG-2 | 1 | no |
+| RL-7 | Run world | generated scenes installed and walkable; the bowl shows the run | RL-5, RL-6 | 1-2 | no |
+| RL-8 | Run loop and payout | airship start, a town with paid healing, a mini-boss, the payout screen, resume: **the first playable cut** | RL-4, RL-7 | 2 | yes |
+| RL-9 | Ranch A | the building, store and keep, train between runs, the keep-one rule | RL-8, played | 2 | yes |
+| RL-10 | Ranch B | breed safe/risky with abominations, hatch, passive income (cap, rollback guard, offline, server anchor) | RL-9 | 2 | yes |
+| RL-11 | Hub upgrades, currencies, unlocks | `currencies/buildings/unlocks.json`, the Lab board, one unlock registry | RL-8 | 1-2 | yes |
+| RL-12 | Relics and effects | `relics.json`, `events.json`, `logic/effects.js`, picks | RL-11 | 1-2 | yes |
+| RL-13 | Modifiers, tiers, mini-boss leaders | `modifiers.json`, the bracket pick, the 8 leaders as the pool | RL-12 | 1 | yes |
+| RL-14 | Bots as enemies, salvage, the Voltron | `factions.json`, `bosses.json`, data-driven `alphaPhase`, a robot phase in the full test | RL-13 | 2 | yes |
+| RL-15 | Online | the run record, friend ghosts, daily seeds, rules and emulator tests | RL-14 | 2 | yes |
+| RL-16 | Content packs and Studio editors | pack merge and checks, editors for the new sections | RL-11 | 1-2 | yes |
 
-## Project Story
-The opening, the story bible, the story layer and the Hazel/Blake rework are one track of their own: docs/phases/project-story.md (2026-10-19). It runs alongside the phases above; its session S6 waits for phase 19.
+About 22-28 sessions in all; the first playable cut (RL-1..RL-8 plus MG-2) about 10-13. **Nothing after RL-8 starts
+before the owner has played the first cut on the phone.** MG-3 (towns from the generator) joins the path when a
+town node needs it.
 
-## Studio track
-A more intuitive Studio: wide-screen layout, a shared pixel canvas, an Art workbench (sheet slicing, parts with joints and sockets, 3D model import and export) and variants in place of Golden: docs/phases/studio-track.md (2026-10-19). It runs alongside the phases above and does the art-tool half of phase 14 early.
+## Tracks alongside
+- **Studio track** (docs/phases/studio-track.md): ST-0..ST-6 done; ST-7 (Model mode import) next. Independent of the
+  rework; the editors for the new data sections come with their sessions (RL-11..RL-16).
+- **Map generator track** (docs/phases/mapgen-track.md): MG-1 done; MG-2 is on the RL path (before RL-6); MG-3 when a
+  town node needs it; MG-4 and MG-5 after RL-8.
+- **Project Story** (docs/phases/project-story.md): S1-S3 and S7 done, S8 partly (the city plays before the fall).
+  S6 (Hazel vs Blake as a real battle) is unblocked by RL-4; S4, S5 and S8's leftovers wait until the first cut has
+  been played. The opening stays as built; RL-8 adds Hazel's lines sending the player to the airship mast.
 
+## The old phases (status from docs/HANDOFF.md, 2026-10-20)
 
-## Map generator track
-A Generate card in Studio → Walk scenes: routes and towns from dials and a seed, live as a draft, accepted, linked and saved like a hand-built scene: docs/phases/mapgen-track.md (2026-10-20). Runs alongside the phases above.
-## What "remove the walking" means
-It means the FITNESS STEP TRACKING (real-world steps driving travel, hatching and pace) is removed. In-game walking with the joystick, the seamless maps and the rooms stay. That is phase 08 (Part A removes steps, Part B improves maps and rooms).
+No `phase-NN-done` tag was ever pushed; "done" means the HANDOFF entry says the work is finished.
 
-## Where the old brief went
-Old 1 -> 01, old 2 -> 02, old 3 -> 04, old 4 -> 05, old 5 (seamless maps and rooms) -> 08 Part B, old 5B -> 06, old 5C -> 09, old 6 -> 13, old 7 -> 14, old 8 -> 15, old 9 -> 16, old 10 -> 18. New: 03, 07, 10, 11, 12, 17, and 08 Part A.
+| # | File | Status | In the rework |
+|---|---|---|---|
+| 00 | 00-finish-current-work | done (`Baseline` is the one tag on GitHub) | keep |
+| 01 | 01-baseline-and-bug-fixes | done | keep |
+| 02 | 02-security | done; the Studio token options A and B were left "ask before" | absorbed: RL-1 |
+| 03 | 03-fresh-base-and-scope-reset | done; no picture baseline yet | keep |
+| 04 | 04-modernize-codebase | done (04a-04e) | keep |
+| 05 | 05-internal-renaming | done | keep |
+| 06 | 06-ui-structure | mostly done (06-1..06-4); ui.js not split, old CSS layers not emptied | parked: 06-5 when a screen session needs it |
+| 07 | 07-portraits | part 1 only (kit, slicer, portraits.json; nothing uses them) | parked: after the first cut is fun |
+| 08 | 08-classic-movement-seamless-maps-rooms | 08a-1..3 and 08b-1..2 done; 08b-3 not | absorbed: the run world uses 08b's seam model; 08b-3 templates parked |
+| 09 | 09-props-and-terrain | partly: Copperleaf, Route 1, Marigold and the city set redone | parked: the other towns are legacy; run biomes reuse the done kits |
+| 10 | 10-world-map-bowl | done, waiting on the owner's phone look and the tag | absorbed: RL-7 makes the bowl show a run |
+| 11 | archive/11-opening-sequence | moved to Project Story S7-S8; the city plays from New game | absorbed: RL-8 (Hazel's mast lines) |
+| 12 | 12-ranch | not started | absorbed: RL-9, RL-10 |
+| 13 | 13-testing-and-debugging | 13a done; 13b, 13c not | absorbed in part (fixtures for runs, RL-7/8); 13c parked |
+| 14 | 14-studio | partly, through the Studio track | absorbed: editors come with their sections (RL-16) |
+| 15 | archive/15-game-design-and-story | archived; the design half is the roguelite track; the story half is Project Story S4 | superseded |
+| 16 | 16-billies-monster-system | prep and prototype part 1 (parts, 7 lines, Studio Parts) | absorbed: breeding and abominations in RL-10; the rest parked |
+| 17 | 17-robots | prototype built, unapproved, untagged, debug-only | absorbed: RL-14 (bots as enemies, the Voltron); playable bots much later |
+| 18 | 18-friend-trading-and-battles | not started | absorbed: RL-15 (ghosts, daily seeds); trading out of scope |
+| 19 | 19-battle-core (branch `plan/engine-phases-19-21`) | plan only | absorbed: RL-2, RL-4 (core), RL-12 (effect handlers), RL-15 (replay) |
+| 20 | 20-renderer-batching | stages A, B, C-1, C-2 done; C5 and stage D not | parked: when the phone numbers ask for it |
+| 21 | 21-texture-atlases-and-ktx2 (branch `plan/engine-phases-19-21`) | plan only | parked: after phase 20 |
 
 ## If the scope is too big
-Priority order: 01, 02, 03, the cheap parts of 04 (.gitignore, CI, README, tooling), the 04 data split, 05, 08, 07, 10, 11, 12, the 13 unit tests, then the 17 prototype and the 16 prototype. 06, 09 and 14 grow as needed. 15 happens early because the story and mechanics drive everything else. 18 comes last.
+RL-1, RL-2, RL-3, RL-4, RL-5, MG-2, RL-6, RL-7, RL-8, then play. After that: RL-9, RL-10, RL-11, RL-12, RL-13, RL-14,
+RL-15, RL-16. Inside the ranch milestone cut the server timestamp first, then risky breeding, then the walkable yard;
+never store/keep or training.
 
 ## Questions I want to be asked (do not decide these alone)
-- Version scheme after 0.1.0 alpha and the single game name (03).
-- The keep / rewrite / delete list (03).
-- Lite mode: keep or remove (03).
-- Which UI rendering approach to adopt (06).
-- Portrait pixel size and how the face kit is made (07).
-- What replaces each step-based mechanic: travel cost, encounters, egg hatching, pace, step-based unlocks and costs (08 Part A).
-- Maps with several neighbours per side, or one exit per neighbour; rooms as `kind: room` maps or a separate type (08 Part B).
-- Which props stay flat on purpose (09).
-- Bowl layout, camera limits, central light, travel animation (10).
-- When character creation happens in the opening (11).
-- Ranch editing UI and whether the robot workshop lives at the ranch (12).
-- The organization's name, goals and how often it appears (15).
-- Breeding mode: deliberate, partly random, or both (16).
-- Robots: decided 2026-10-18 (same battle system, mixed teams, body HP + breakable parts; see 17). Still open: the gem's story role, wild robots, the sim bounds (17).
-- Live real-time friend battles (18).
+The 20 "Ask me before" items in docs/phases/roguelite-track.md, section 8: the run's internal key (RL-3); keep-one vs
+ranch levels (RL-9); the hub's extent and Copperleaf's south exit (RL-5); legacy by moving files (RL-5); currency
+names and the building mapping (RL-11); menu nodes (RL-12); mid-battle kills (RL-4); the first cut's shape (RL-8);
+battle formats and the turn cap (RL-4); the clock's numbers (RL-6); the token link, Remember me and deleting the
+versioned tools (RL-1); SAVE_VERSION 4 and the cloud key whitelist (RL-3, RL-10); the dex's place (RL-3); the relic
+cap (RL-12); the hub island's look (RL-5); the ranch cut order (RL-9); the order after the first cut; the tuning
+placeholders (RL-6); pushing the tags; the opening (RL-8). Still open from the old phases: phase 17's prototype
+approval and ask list (RL-14), phase 16's breeding mode (RL-10), phase 19's mid-battle quit and Lullaby (RL-4),
+phase 10's phone look, phase 06's 06-5.
+
+## Where the old brief went
+The old brief's numbering (phases 01-18 and their renames) is kept in the old phase files; the fresh-base vision is
+docs/VISION.md. The roguelite plan supersedes the "design half" of phase 15 and the remaining order of phases 12,
+16, 17 and 18.
