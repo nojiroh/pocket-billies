@@ -2,6 +2,12 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Parts fixes, step 1 - 2026-10-20
+- Changed: DOM rig previews select front/back metadata consistently with the requested view. Bot refits and equipped upgrades capture maximum HP before mutation and preserve the HP fraction afterward; fainted bots stay fainted.
+- Verified: all 279 unit tests pass (16 new cases); the new tests fail in 9 cases against the original code. Lint/naming and module consistency pass; changed-file formatting and diff whitespace checked.
+- Verification limits: browser smoke could not start because Playwright is unavailable. Typecheck was attempted but TypeScript 7 crashes because /proc/self/exe is unavailable in this environment. CI/browser verification remains required.
+- Next: step 2, a compatible-parts library picker in the Billie editor. No part-swapping UI changes in this patch.
+
 ## Entry template
 ### Phase NN - <name> - <date>
 - Changed: 

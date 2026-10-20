@@ -606,7 +606,7 @@ export function bustHTML(sp, size, o = {}) {
 function drawDomRig(c, ts) {
   const sp = c.dataset.sp;
   if (!sp.startsWith('bot:') && !(SPECIES && SPECIES[sp])) return;
-  const R = rigParts(sp, 1, c.dataset.coat);
+  const R = rigParts(sp, c.dataset.v === 'back' ? RIG_BACK_VIEW : 1, c.dataset.coat);
   if (!R) return;
   const x = c.getContext('2d');
   if (c._seed == null) {
