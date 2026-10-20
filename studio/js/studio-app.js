@@ -241,6 +241,7 @@ export function undo() {
   if (!u) return toast('Nothing to undo.');
   if (u.kind === 'art') {
     artStepPut(u.step, u.put);
+    if (u.step.snapshot) restore(u.step.snapshot.before);
     updateTopBar();
   } else restore(u.snap);
   toast('Undone.');
@@ -251,6 +252,7 @@ export function redo() {
   if (!u) return toast('Nothing to redo.');
   if (u.kind === 'art') {
     artStepPut(u.step, u.put);
+    if (u.step.snapshot) restore(u.step.snapshot.after);
     updateTopBar();
   } else restore(u.snap);
   toast('Redone.');

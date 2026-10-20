@@ -10,7 +10,7 @@
    Undoing a data step swaps `last` with it; undoing art hands the step back to put `before` on the picture. Logic
    only: no DOM, runs in Node (tools/test/history.test.mjs). studio/js/studio-app.js keeps it in studioState. */
 /** @typedef {{ x: number, y: number, width: number, height: number, data: Uint8ClampedArray }} Patch */
-/** @typedef {{ art: string, before: Patch, after: Patch, whole?: boolean, made?: boolean, group?: ArtStep[] }} ArtStep */
+/** @typedef {{ art: string, before: Patch, after: Patch, whole?: boolean, made?: boolean, group?: ArtStep[], snapshot?: { before: string, after: string } }} ArtStep */
 /** @typedef {{ undo: (string | ArtStep)[], redo: (string | ArtStep)[], last: string | null }} History */
 /** @typedef {{ kind: 'data', snap: string } | { kind: 'art', step: ArtStep, put: Patch }} Undone */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
@@ -48,13 +48,16 @@ export const historyBytes = (/** @type {string | ArtStep} */ s) =>
       : s.before.data.length + s.after.data.length;
 export const noPixels = () => ({ x: 0, y: 0, width: 0, height: 0, data: new Uint8ClampedArray(0) });
 /** several picture steps as one (undone and redone together) */
-export function historyArtGroup(/** @type {History} */ H, /** @type {ArtStep[]} */ steps) {
+export function historyArtGroup(/** @type {History} */ H, /** @type {ArtStep[]} */ steps, /** @type {{ before: string, after: string } | undefined} */ snapshot = undefined) {
+  if (!steps.length) return;
+  if (snapshot) H.last = snapshot.after;
   if (steps.length)
     historyArt(H, {
       art: '',
       before: noPixels(),
       after: noPixels(),
       group: steps,
+      ...(snapshot ? { snapshot } : {}),
     }); /* two objects: undo and redo tell them apart */
 }
 export function historyTrim(/** @type {History} */ H) {
@@ -83,6 +86,7 @@ export function historyUndo(/** @type {History} */ H) {
   if (s == null) return null;
   if (typeof s !== 'string') {
     H.redo.push(s);
+    if (s.snapshot) H.last = s.snapshot.before;
     return /** @type {Undone} */ ({ kind: 'art', step: s, put: s.before });
   }
   if (H.last != null) H.redo.push(H.last);
@@ -95,6 +99,7 @@ export function historyRedo(/** @type {History} */ H) {
   if (s == null) return null;
   if (typeof s !== 'string') {
     H.undo.push(s);
+    if (s.snapshot) H.last = s.snapshot.after;
     return /** @type {Undone} */ ({ kind: 'art', step: s, put: s.after });
   }
   if (H.last != null) H.undo.push(H.last);

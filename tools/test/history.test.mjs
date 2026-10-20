@@ -76,3 +76,31 @@ test('a group of picture steps is one step, and counts all its pictures', () => 
   assert.equal(r.put, r.step.after);
   assert.notEqual(r.step.before, r.step.after, 'undo and redo can tell which way they go');
 });
+
+test('a replacement undoes pixels and rig metadata together, between other edits', () => {
+  const h = fresh();
+  H.historyCommit(h, 'before');
+  H.historyArtGroup(h, [art('sheet.png')], { before: 'before', after: 'replacement' });
+  assert.equal(h.undo.length, 1);
+  assert.equal(h.last, 'replacement');
+  assert.equal(H.historyCommit(h, 'replacement'), false, 'no extra metadata step');
+  H.historyCommit(h, 'later');
+  assert.equal(H.historyUndo(h).snap, 'replacement');
+  const u = H.historyUndo(h);
+  assert.equal(u.kind, 'art');
+  assert.equal(u.put, u.step.before);
+  assert.equal(h.last, 'before');
+  assert.equal(u.step.snapshot.before, 'before');
+  const r = H.historyRedo(h);
+  assert.equal(r.put, r.step.after);
+  assert.equal(h.last, 'replacement');
+  assert.equal(H.historyRedo(h).snap, 'later');
+});
+
+test('an empty replacement group never advances the data snapshot', () => {
+  const h = fresh();
+  H.historyCommit(h, 'before');
+  H.historyArtGroup(h, [], { before: 'before', after: 'unused' });
+  assert.equal(h.last, 'before');
+  assert.equal(h.undo.length, 0);
+});

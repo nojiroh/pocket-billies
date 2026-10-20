@@ -234,11 +234,12 @@ export function artStep(path, before, after) {
 }
 /* studio track ST-3: several pictures changed at once, one step of the undo; [path, before, after] each, before null
    for a new picture (undoing it drops the picture) */
-export function artSteps(list) {
+export function artSteps(list, snapshot) {
   const steps = list.map(([path, before, after]) => artStepOf(path, before, after)).filter(Boolean);
   if (!steps.length) return;
-  commit(true);
-  historyArtGroup(studioState, steps);
+  if (snapshot) clearTimeout(studioState.snapT);
+  else commit(true);
+  historyArtGroup(studioState, steps, snapshot);
   updateTopBar();
 }
 function artStepOf(path, before, after) {

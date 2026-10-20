@@ -158,7 +158,7 @@ export function rigFor(sp, view, coat) {
   if (!atlas) return null;
   const meta = studioState.rigs[sp] && studioState.rigs[sp][view];
   if (!meta) return null;
-  const key = path + (coat ? '#' + coat : ''),
+  const key = sp + ':' + view + ':' + path + (coat ? '#' + coat : ''),
     ver = (studioState.rigVer || 0) + ':' + atlasVersion + ':' + (atlas._ver || 0) + ':' + (coat ? coatVersion : 0),
     hit = RIG_CACHE.get(key);
   if (hit && hit.ver === ver) return hit.R;
