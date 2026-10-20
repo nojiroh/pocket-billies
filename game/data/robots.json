@@ -1,5 +1,4 @@
 {
- "_help": "Phase 17 robots. A robot is a gem (its level, XP and signature move) with four parts fitted: a torso (with the head), a left arm, a right arm and legs. Any arm fits either side. stats are added to every robot stat floor (rules.json robots.baseStat), in the stats.json ids. move is the move the part gives. Torso and legs give the robot its two types. wt is kg; legs carry kg before the robot slows down. dur scales the part's own HP. art is the picture: img and imgB (front and back, in game/art) and for a torso head and headB; without them the game draws a stand-in from the colour, shape and size. A gem's img is drawn on the torso's chest.",
  "parts": {
   "bulwark": {
    "name": "Bulwark Frame",

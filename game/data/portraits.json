@@ -1,5 +1,4 @@
 {
- "_help": "Phase 07 portraits: 64x64 pixel art, a still body and a head that moves. Edit in the Studio (Portraits). Pictures: game/art/next/portraits/, cut by tools/slice-portrait-kit.py.",
  "size": 64,
  "slots": [
   {"id":"top","name":"Clothes","one":true,"layer":"body"},
