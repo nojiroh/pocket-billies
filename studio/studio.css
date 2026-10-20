@@ -4172,3 +4172,45 @@ body.wb-dropping::after {
   image-rendering: pixelated;
   align-self: end;
 }
+/* map generator MG-1: the Generate view (Walk scenes → Generate…) */
+.gen-dials .llist {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.gen-exit {
+  display: grid;
+  grid-template-columns: 76px 1fr 56px 24px;
+  gap: 6px;
+  align-items: center;
+}
+.gen-wh {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.gen-wh input[type='number'] {
+  width: 80px;
+}
+.gen-reroll {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+.gen-reroll .help {
+  width: 100%;
+}
+.gen-reroll .btn.on {
+  border-color: var(--acc);
+  color: var(--acc);
+}
+.gen-map {
+  display: block;
+  max-width: 100%;
+  image-rendering: pixelated;
+  cursor: crosshair;
+}
+.help.warn {
+  color: var(--red);
+}
