@@ -16,7 +16,9 @@ side, an L painted, and the kit written again keeping it all; then everything un
 Studio track ST-5: a robot torso in Part mode beside the battle preview: a shoulder moved moves the robot's arm on the
 stage, front and back; a test fit; back to computed; everything undone.
 Studio track ST-6: the skeleton builder's zoom keys; a species in Part mode (opened from Billies): its head's pivot
-dragged and nudged (the figure drawn the same), its box grown by an edge, its back draw order, everything undone.
+dragged and nudged (the figure drawn the same), its box grown by an edge, its back draw order, everything undone. The
+wardrobe on the shared pixel canvas: a pencil click paints the item and marks its colour-area mask in one undo step
+(undone and redone together); the Colour area brush paints the mask only; Grow piece; everything undone.
 
     python3 tools/check-studio-github.py           # the repository as it is (run `npm run data` first)
     python3 tools/check-studio-github.py dist      # the build (`npm run build` first)
@@ -601,6 +603,59 @@ def species_part_steps(pg, errs):
     print('species parts: builder zoom keys, opened from Billies, the head\'s pivot dragged and nudged (drawn the same), an edge, a back z, all undone', flush=True)
 
 
+def wardrobe_steps(pg, errs):
+    """Studio track ST-6: the wardrobe paints on the shared pixel canvas. A pencil click on an item's piece paints it
+    and marks the colour area picked in its mask, one undo step (undone and redone together); the Colour area brush
+    changes the mask only; Grow piece gives the piece room (a new place at the bottom of the picture and the mask);
+    everything is undone."""
+    n = len(errs)
+    k = pg.evaluate("Object.keys(studioState.D.wardrobe.items).find(k => studioState.D.wardrobe.items[k].mask && studioState.D.wardrobe.items[k].pieces.some(p => p.v === 'front'))")
+    item = f"studioState.D.wardrobe.items[{json.dumps(k)}]"
+    pg.evaluate(f"wardrobeEditor.sel = {json.dumps(k)}; wardrobeEditor.view = 'front'; wardrobeEditor.piece = {item}.pieces.findIndex(p => p.v === 'front'); void openSection('wardrobe')")
+    pg.wait_for_selector('#wdStage .pc-art', timeout=20000); time.sleep(1)
+    data0 = pg.evaluate(f"JSON.stringify({item})")
+    img, mask = pg.evaluate(f"['art/' + {item}.img, 'art/' + {item}.mask]")
+    px = lambda path, x, y: pg.evaluate(f"[...loadedAtlas({json.dumps(path)}).getContext('2d').getImageData({x}, {y}, 1, 1).data]")
+    steps0 = pg.evaluate("studioState.undo.length")
+    r = pg.evaluate(f"{item}.pieces[wardrobeEditor.piece].r")
+    x, y = r[0] + r[2] // 2, r[1] + r[3] // 2
+    pg.evaluate("ACTIONS.wdArea({ a: 2 })"); pg.wait_for_selector('#wdStage .pc-art', timeout=20000); time.sleep(0.5)
+    pg.evaluate("pixelCanvasTool(wardrobeEditor.pc, 'pen'); pixelCanvasColor(wardrobeEditor.pc, '#123456')")
+    i0, m0 = px(img, x, y), px(mask, x, y)
+    Z = pg.evaluate("wardrobeEditor.pc.zoom")
+    pg.locator('#wdStage').scroll_into_view_if_needed()
+    box = pg.locator('#wdStage .pc-art').bounding_box()
+    pg.mouse.click(box['x'] + (x + 0.5) * Z, box['y'] + (y + 0.5) * Z); time.sleep(0.4)
+    i1, m1 = px(img, x, y), px(mask, x, y)
+    if i1 != [0x12, 0x34, 0x56, 255] or m1 != [46, 168, 74, 255]: errs.append(f'a pencil click made the picture {i1} and the mask {m1} (want #123456 and area 2)')
+    if pg.evaluate("studioState.undo.length") - steps0 != 1: errs.append('a stroke and its mask were not one undo step')
+    pg.evaluate("undo()"); time.sleep(0.3)
+    if px(img, x, y) != i0 or px(mask, x, y) != m0: errs.append('undo did not take back the picture and the mask together')
+    pg.evaluate("redo()"); time.sleep(0.3)
+    if px(img, x, y) != i1 or px(mask, x, y) != m1: errs.append('redo did not bring back the picture and the mask together')
+    # the Colour area brush: area 3 on the same pixel, the picture untouched
+    pg.evaluate("ACTIONS.wdArea({ a: 3 })"); pg.wait_for_selector('#wdStage .pc-art', timeout=20000); time.sleep(0.5)
+    pg.evaluate("pixelCanvasTool(wardrobeEditor.pc, 'area')")
+    Z = pg.evaluate("wardrobeEditor.pc.zoom")
+    pg.locator('#wdStage').scroll_into_view_if_needed()
+    box = pg.locator('#wdStage .pc-art').bounding_box()
+    pg.mouse.click(box['x'] + (x + 0.5) * Z, box['y'] + (y + 0.5) * Z); time.sleep(0.4)
+    if px(img, x, y) != i1 or px(mask, x, y) != [58, 98, 224, 255]: errs.append(f'the Colour area brush made {px(img, x, y)} and {px(mask, x, y)}')
+    # Grow piece
+    h0 = pg.evaluate(f"loadedAtlas({json.dumps(img)}).height")
+    pg.evaluate("ACTIONS.wdGrow()"); pg.wait_for_selector('#wdStage .pc-art', timeout=20000); time.sleep(0.5)
+    r2 = pg.evaluate(f"{item}.pieces[wardrobeEditor.piece].r")
+    hs = pg.evaluate(f"[loadedAtlas({json.dumps(img)}).height, loadedAtlas({json.dumps(mask)}).height]")
+    if r2 != [1, h0, r[2] + 4, r[3] + 4] or hs[0] != hs[1] or hs[0] < h0 + r[3] + 4: errs.append(f'Grow piece made {r2} on pictures {hs} high (was {r}, {h0})')
+    t0 = time.time()
+    while time.time() - t0 < 30 and pg.evaluate("studioState.undo.length") > steps0: pg.evaluate("undo()")
+    time.sleep(0.5)
+    if pg.evaluate(f"JSON.stringify({item})") != data0: errs.append('undoing it all did not bring the item back as it was')
+    if px(img, x, y) != i0 or px(mask, x, y) != m0 or pg.evaluate(f"loadedAtlas({json.dumps(img)}).height") != h0: errs.append('undoing it all left pixels changed')
+    if len(errs) > n: errs[n:] = [f'wardrobe: {e}' for e in errs[n:]]
+    print('wardrobe: a pencil click and its mask one undo step (undone and redone), the Colour area brush, Grow piece, all undone', flush=True)
+
+
 def main():
     srv = ThreadingHTTPServer(('127.0.0.1', 0), partial(Quiet, directory=str(ROOT)))
     threading.Thread(target=srv.serve_forever, daemon=True).start()
@@ -676,6 +731,7 @@ def main():
         part_mode_steps(pg, errs)
         robot_joint_steps(pg, errs)
         species_part_steps(pg, errs)
+        wardrobe_steps(pg, errs)
         pg.evaluate("const k = Object.keys(studioState.D.moves)[0]; studioState.D.moves[k].name += ' Test'; studioState.dirty = true; void saveAll()")
         t0 = time.time()
         while time.time() - t0 < 60 and 'pulls' not in posts:
