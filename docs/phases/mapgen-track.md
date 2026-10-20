@@ -56,3 +56,35 @@ session is tagged `mg-N-done`.
 </invoke>
 <invoke name="Bash">
 <parameter name="command">cd /home/user/pocket-billies && sed -n 1,25p tools/build-places-v46.py
+## MG-1: the route generator (2026-10-20)
+- game/js/logic/mapgen.js (`mapgen*` names only: the pages share one namespace, and a first draft's `clamp` and
+  `put` clashed with util.js and frame-block.js): `mapgenParams` (dials filled in and kept in range), `mapgenScene`
+  (params, {scenery, biomes}) -> {scene, notes}, `mapgenUnreachable` (exits the hub can't walk to: water unless a
+  bridge, solid props, steps over 0.34 m), `mapgenRandom` (sfc32 from a string hash), `mapgenNoise` (integer-hash
+  value noise, no sin hash). Stages run: heights, road, ground patches, water (and bridges), hub, exits, land
+  (terraces, tall grass, clearings), feature, plants, props. Random streams by stage: `seeds.heights` (land, water,
+  terraces), `ground`, `road`, `plants`, `feature`, `props`.
+- The road: a cubic curve between the exits' straight runs (7 m in from each exit, so a seam is crossed head on),
+  with the shape as an offset that fades in and out; smoothed, sampled every 0.5 m; a distance field from it paints
+  the surface and a noise-edged verge and flattens the land (a moving average along the road, at most 18% slope,
+  blended over 5 m). A third or fourth exit is a straight branch to the main road. The hub is the main road's sample
+  nearest its middle with dry ground round it; each exit's `path` runs from the hub along the road, `len` is its length.
+- Terraces: bands rising toward the back in the step grid (rise in whole 5 cm); along the road the raise ramps 0.1 m
+  per half metre, and every road, hub and exit cell is lowered until no walkable neighbour is more than 0.25 m below.
+- The grow-wild rules ported (FAMILY_SHARE, the catalogue's family/grow/weight, no one plant over max(6, want/5), no
+  trees or shrubs within 6 m of the hub, w: 42) with the path test fixed (paved terrains, the path letters, the road
+  and its verge, bridges, jetties); a biome's `plants` are picked three times as often.
+- biomes.json: meadow, thicket, lake, canyon, volcano, tundra, sea (coast), ridge, autumn, badlands, jungle, from the
+  routes they name in `from` (look keys, life, the plants each route has most of).
+- Studio: studio/js/map-generate.js. The draft is `mapGen.draft`; walkData's scenes are D.maps with the draft as an
+  own key `_gen` on top (Object.create), so no list, Check, Find, save or broadcast sees it. A new draft bumps
+  `stepsV` so groundKey changes and the ground is painted again.
+- Verified by sweeps outside the tests: 1300 random dial sets (1-3 exits on any sides, every biome, shape, water and
+  feature) all reach every exit with the hub and exits dry and nothing in water it doesn't grow in; the slowest took
+  160 ms in Node. Every biome's scene passes map.schema.json.
+- Corrections: a generated scene that no location uses is not held to the exit rules (check-data only checks exits of
+  maps a place uses), so Add as a new scene saves cleanly; MG-2 adds the place and its roads.
+- For MG-2: exits are already `{id, side, t, in, width, len, path}`; ids follow the Studio's (north, north2...). The
+  neighbour's seam strip should set the exit's `t` (an integer offset within 0.5 m) and pin the edge heights within
+  ±22 m of the exit; terraces should stay at zero raise near a joined edge. Data rules to meet: two exits a side at
+  most, 44 m apart.
