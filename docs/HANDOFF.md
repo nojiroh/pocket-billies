@@ -8,6 +8,13 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 - Verification limits: browser smoke could not start because Playwright is unavailable. Typecheck was attempted but TypeScript 7 crashes because /proc/self/exe is unavailable in this environment. CI/browser verification remains required.
 - Next: step 2, a compatible-parts library picker in the Billie editor. No part-swapping UI changes in this patch.
 
+### Parts fixes, step 2 - staged Billie part replacement - 2026-10-20
+- Changed: Billies Part mode has Replace from Parts Library, body-group/kit/type filters, thumbnails, front/back comparison, staged assembled previews, paired limbs, scale/rotation/offset controls, palette matching, and motion selection.
+- Apply appends new crops, preserves existing bones/roles, isolates shared images, and groups pixel changes with metadata in one undo/redo step. Missing views keep their old art; static-frame loss and unchanged children/portrait are explained in the picker.
+- Fixed Studio rig cache keys to include species and view: shared sheets must not reuse the front skeleton for the back preview.
+- Verification: source syntax and four transaction checks plus compound-history checks passed in an isolated JavaScript runtime. Node suite, generated-module consistency, formatting, typecheck, and browser QA could not run locally because the execution environment is unavailable. This is a draft pending CI and browser verification, not a completed validation claim.
+- Next: run full validation and exercise save/reopen, undo/redo, front/back motion and phone-width layout; then step 3 socket-based child positioning and step 4 assembly recipes.
+
 ## Entry template
 ### Phase NN - <name> - <date>
 - Changed: 

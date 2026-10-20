@@ -12,7 +12,7 @@
 import { expose } from '../../game/js/test-globals.js';
 import { provide } from '../../game/js/hooks.js';
 import { makeCanvas } from '../../game/js/art.js';
-import { drawRig, rigMatrices, rigPose } from '../../game/js/skeleton-rig.js';
+import { boneSlot, drawRig, rigMatrices, rigPose } from '../../game/js/skeleton-rig.js';
 import { escapeHtml } from './game-stand-ins.js';
 import { rigBox, rigKit, rigSetBox, rigSetPivot, rigSetSocket, rigSetZ } from '../../game/js/logic/rig-joints.js';
 import {
@@ -26,8 +26,9 @@ import {
   studioState,
   toast,
 } from './studio-app.js';
-import { drawPixelCanvas, pixelCanvasPointF } from './pixel-canvas.js';
-import { atlasGet, atlasPath, loadedAtlas, openPixelEditor, rigFor } from './sprites.js';
+import { artSteps, drawPixelCanvas, pictureImage, pixelCanvasPointF } from './pixel-canvas.js';
+import { atlasGet, atlasPath, loadedAtlas, markArt, openPixelEditor, rigFor } from './sprites.js';
+import { partForSide, partJoint } from '../../game/js/logic/part-joints.js';
 import { neutralPose, openSkeleton } from './skeleton.js';
 import { WB_VIEWS, workbench } from './workbench.js';
 import { wbPart, wbpColor, wbpN, wbpRefreshSide, wbpRoot } from './workbench-part.js';
@@ -356,6 +357,7 @@ function wbsSideHTML() {
   }).join('');
   return (
     head +
+    wbsLibrary.html() +
     frame +
     views +
     `<div class="px-sec"><p class="help">Pixels from the picture’s top left. Moving the pivot keeps the figure where it is (its picture and what hangs on it stay); a socket is where a child hangs (dragging it moves the child). The box’s edges, or the box itself, change which pixels of the sheet it takes; the pivot stays on its sheet pixel. Higher z is drawn in front.</p></div>`
@@ -369,10 +371,14 @@ function wbsFitHTML() {
 function wbsDrawFit(ts) {
   for (const v of WB_VIEWS) {
     const cv = wbpRoot().querySelector('#wbsFit' + v),
-      R = cv && rigFor(wbsSp(), v);
+      baseRig = cv && rigFor(wbsSp(), v),
+      R = baseRig && wbsLibrary.preview(baseRig, v);
     if (!R) continue;
     const Z = Math.max(1, Math.min(4, Math.floor(260 / Math.max(R.BW, R.BH)))),
-      P = wbPart.play ? rigPose(null, ts || performance.now(), ts || performance.now(), 1) : neutralPose();
+      s = wbsLibrary.active(),
+      act = s?.action === 'idle' ? null : s?.action,
+      clock = ts || performance.now(),
+      P = wbPart.play ? rigPose(act || null, act === 'walk' ? clock : clock % 1200, clock, 1) : neutralPose();
     if (cv.width !== R.BW * Z || cv.height !== R.BH * Z) {
       cv.width = R.BW * Z;
       cv.height = R.BH * Z;
@@ -438,6 +444,7 @@ ACTIONS.wbsOpen = d => {
 };
 function wbsInput(ev) {
   const el = ev.target;
+  if (el.dataset?.wbsLib !== undefined) return wbsLibrary.input(ev);
   if (!el.dataset || el.dataset.wbs === undefined || !el.closest('.wbp') || wbPart.src !== 'species') return;
   const k = el.dataset.wbs;
   if (k === 'sp') {
@@ -471,3 +478,234 @@ function wbsInput(ev) {
 }
 document.addEventListener('input', wbsInput);
 document.addEventListener('change', wbsInput);
+
+/* A staged replacement never mutates the species until Apply. The packed sheet and its
+   skeleton are committed together, so one Undo restores both. */
+const wbsLibrary = {
+  state: null,
+  slot(b) {
+    const role = b.a || b.n;
+    if (/^(ear|horn|crest|antler)/i.test(role)) return 'head-extra';
+    if (/^(shell|ruff)/i.test(role)) return 'body-extra';
+    const slot = boneSlot(b);
+    return slot === 'sig' ? 'signature' : slot || '';
+  },
+  pair(M, name) {
+    const b = M?.bones.find(x => x.n === name);
+    if (!b) return null;
+    const other = /[LR]$/.test(name)
+      ? name.slice(0, -1) + (name.endsWith('L') ? 'R' : 'L')
+      : /^leg[FB][FN]$/.test(name)
+        ? name.slice(0, -1) + (name.endsWith('F') ? 'N' : 'F')
+        : '';
+    return M.bones.find(x => x.n === other && x.par === b.par && x.i >= 0) || null;
+  },
+  active() {
+    const s = this.state;
+    return s && s.sp === wbsSp() && s.bone === wbPart.id && s.version === studioState.rigVer && s.rig === studioState.rigs[s.sp] ? s : null;
+  },
+  async open() {
+    await wbsLoad();
+    const b = wbsBone('front') || wbsBone('back');
+    if (!b) return;
+    this.state = {
+      sp: wbsSp(), bone: wbPart.id, version: studioState.rigVer, rig: wbsRig(),
+      slot: this.slot(b), kit: '', kind: '', selected: '', both: false,
+      scale: 100, angle: 0, x: 0, y: 0, recolor: false,
+      action: 'idle', prepared: [], warnings: [], busy: false, serial: 0,
+    };
+    render();
+  },
+  entries() {
+    const s = this.active(), K = studioState.D.partKits;
+    if (!s || !K) return [];
+    return Object.entries(K.parts || {}).filter(([, p]) =>
+      !p.hidden && (!s.slot || p.slot === s.slot) && (!s.kit || p.kit === s.kit) &&
+      (!s.kind || p.kind === s.kind));
+  },
+  html() {
+    const s = this.active();
+    if (!s) return '<button class="btn sm" data-act="wbsLibraryOpen">Replace from Parts Library</button>';
+    const K = studioState.D.partKits || { parts: {} }, esc = escapeHtml,
+      opts = (values, current) => values.map(v =>
+        '<option value="' + esc(v) + '"' + (v === current ? ' selected' : '') + '>' + esc(v || 'All') + '</option>').join(''),
+      field = (label, key, values) => '<label class="fld"><span>' + label +
+        '</span><select data-wbs-lib="' + key + '">' + opts(values, s[key]) + '</select></label>',
+      pair = this.pair(wbsMeta('front'), s.bone) || this.pair(wbsMeta('back'), s.bone),
+      rows = this.entries();
+    return '<div class="px-sec"><h4>Parts Library</h4>' +
+      field('Body group', 'slot', ['', ...new Set(Object.values(K.parts).map(p => p.slot))]) +
+      field('Kit', 'kit', ['', ...new Set(Object.values(K.parts).map(p => p.kit))]) +
+      field('Part type', 'kind', ['', ...new Set(Object.values(K.parts).filter(p => !s.slot || p.slot === s.slot).map(p => p.kind))]) +
+      '<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;max-height:240px;overflow:auto">' +
+      rows.map(([id, p]) => {
+        const v = p.views.front || p.views.back,
+          thumb = v && loadedAtlas('art/' + v.file);
+        return '<button class="btn sm ' + (s.selected === id ? 'on' : '') + '" data-act="wbsLibraryPick" data-id="' + esc(id) +
+          '" aria-pressed="' + (s.selected === id) + '">' +
+          (v ? '<img alt="" src="' + (thumb ? thumb.toDataURL() : '../game/art/' + esc(v.file)) + '" style="width:56px;height:56px;object-fit:contain;image-rendering:pixelated">' : '') +
+          '<br>' + esc(id) + (!p.views.back ? '<br><small>No back image</small>' : '') + '</button>';
+      }).join('') + '</div>' + (!rows.length ? '<p>No matching parts.</p>' : '') +
+      (pair ? '<label class="chk"><input type="checkbox" data-wbs-lib="both"' + (s.both ? ' checked' : '') +
+        '> Replace both sides (' + esc(pair.n) + ' too)</label>' : '') +
+      '<label class="chk"><input type="checkbox" data-wbs-lib="recolor"' + (s.recolor ? ' checked' : '') +
+      '> Match current part’s palette</label>' +
+      [['Scale %', 'scale', 25, 200], ['Rotation °', 'angle', -180, 180], ['Offset X', 'x', -64, 64], ['Offset Y', 'y', -64, 64]]
+        .map(([label, key, min, max]) => '<label class="fld"><span>' + label + '</span><input type="number" data-wbs-lib="' +
+          key + '" value="' + s[key] + '" min="' + min + '" max="' + max + '" step="1"></label>').join('') +
+      field('Preview motion', 'action', ['idle', 'walk', 'attack', 'hurt']) +
+      '<div class="wbp-fitviews">' + WB_VIEWS.map(view => {
+        const p = s.prepared.find(p => p.view === view && p.bone === s.bone),
+          current = wbsThumb(s.bone, view);
+        return '<figure><figcaption>' + view + ': current → replacement</figcaption>' +
+          (current ? '<img alt="Current ' + view + ' part" src="' + current + '" style="width:64px;height:64px;object-fit:contain;image-rendering:pixelated">' : '') +
+          (p ? '<img alt="Replacement ' + view + ' part" src="' + p.c.toDataURL() + '" style="width:64px;height:64px;object-fit:contain;image-rendering:pixelated">' : '') + '</figure>';
+      }).join('') + '</div>' +
+      '<p class="help">Preview below shows the assembled Billie in both views. Scale starts fitted to the current piece. Attached children keep their positions. The separate portrait is unchanged.</p>' +
+      s.warnings.map(w => '<p class="help">' + esc(w) + '</p>').join('') +
+      '<div class="seg-row"><button class="btn" data-act="wbsLibraryApply"' +
+      (s.busy || !s.prepared.length ? ' disabled' : '') + '>' + (s.busy ? 'Loading…' : 'Apply replacement') +
+      '</button><button class="btn sm" data-act="wbsLibraryCancel">Cancel</button></div></div>';
+  },
+  paint(source, old, j, flip, s) {
+    const factor = Math.min(old.width / source.width, old.height / source.height) * s.scale / 100,
+      w = Math.max(1, Math.round(source.width * factor)), h = Math.max(1, Math.round(source.height * factor)),
+      px = (flip ? 1 - j.pivot[0] : j.pivot[0]) * w, py = j.pivot[1] * h,
+      r = s.angle * Math.PI / 180, cs = Math.cos(r), sn = Math.sin(r),
+      corners = [[-px, -py], [w - px, -py], [-px, h - py], [w - px, h - py]]
+        .map(([x, y]) => [cs * x - sn * y, sn * x + cs * y]),
+      left = Math.floor(Math.min(...corners.map(p => p[0]))), top = Math.floor(Math.min(...corners.map(p => p[1]))),
+      right = Math.ceil(Math.max(...corners.map(p => p[0]))), bottom = Math.ceil(Math.max(...corners.map(p => p[1]))),
+      c = makeCanvas(Math.max(1, right - left), Math.max(1, bottom - top)), x = c.getContext('2d');
+    x.imageSmoothingEnabled = false;
+    x.translate(-left, -top);
+    x.rotate(r);
+    x.translate(-px, -py);
+    if (flip) { x.translate(w, 0); x.scale(-1, 1); }
+    x.drawImage(source, 0, 0, w, h);
+    if (s.recolor) {
+      const oldPixels = pictureImage(old), im = pictureImage(c), counts = new Map();
+      for (let i = 0; i < oldPixels.data.length; i += 4) {
+        const d = oldPixels.data;
+        if (!d[i + 3]) continue;
+        const key = d[i] + ',' + d[i + 1] + ',' + d[i + 2];
+        counts.set(key, (counts.get(key) || 0) + 1);
+      }
+      const palette = [...counts].sort((a, b) => b[1] - a[1]).slice(0, 24).map(([key]) => key.split(',').map(Number)),
+        lum = a => a[0] * 0.2126 + a[1] * 0.7152 + a[2] * 0.0722;
+      if (palette.length) {
+        for (let i = 0; i < im.data.length; i += 4) {
+          if (!im.data[i + 3]) continue;
+          const l = lum(im.data.slice(i, i + 3)),
+            color = palette.reduce((best, p) => Math.abs(lum(p) - l) < Math.abs(lum(best) - l) ? p : best);
+          im.data.set(color, i);
+        }
+        x.setTransform(1, 0, 0, 1, 0, 0);
+        x.putImageData(im, 0, 0);
+      }
+    }
+    return { c, ox: left + s.x, oy: top + s.y };
+  },
+  async prepare() {
+    const s = this.active();
+    if (!s || !s.selected) return;
+    const serial = ++s.serial, K = studioState.D.partKits;
+    s.busy = true; s.prepared = []; s.warnings = [];
+    render();
+    const prepared = [], warnings = [];
+    try {
+      for (const view of WB_VIEWS) {
+        const M = wbsMeta(view), bone = M?.bones.find(b => b.n === s.bone);
+        if (!bone || bone.i < 0) continue;
+        const pair = s.both && this.pair(M, bone.n), bones = pair ? [bone, pair] : [bone],
+          path = atlasPath(s.sp, view), sheet = await atlasGet(path);
+        for (const b of bones) {
+          const side = this.pair(M, b.n)
+            ? (/^leg[FB][FN]$/.test(b.n) ? (b.n.endsWith('N') ? 'L' : 'R') : (b.n.endsWith('L') ? 'L' : 'R'))
+            : '',
+            use = partForSide(K, s.selected, side), j = partJoint(K, use.id, view);
+          if (!j) { warnings.push('No ' + view + ' image for ' + use.id + ': existing ' + b.n + ' is kept.'); continue; }
+          const source = await atlasGet('art/' + j.file),
+            [bx, by, bw, bh] = rigBox(M.imgs[b.i]), old = makeCanvas(bw, bh);
+          old.getContext('2d').drawImage(sheet, bx, by, bw, bh, 0, 0, bw, bh);
+          const picture = this.paint(source, old, j, use.flip, s);
+          prepared.push({ view, bone: b.n, path, sheet, version: sheet._ver, ...picture });
+          if (Object.keys(M.imgs[b.i].f).length > 1)
+            warnings.push(view + ' ' + b.n + ': the library image is static; expression/squash frames will be replaced.');
+        }
+      }
+    } catch (e) { warnings.push('Could not load the replacement: ' + e.message); prepared.length = 0; }
+    if (this.active() !== s || serial !== s.serial) return;
+    s.prepared = prepared; s.warnings = warnings; s.busy = false;
+    render();
+  },
+  preview(R, view) {
+    const s = this.active();
+    if (!s?.prepared.length) return R;
+    return { ...R, bones: R.bones.map(b => {
+      const p = s.prepared.find(p => p.view === view && p.bone === b.n);
+      return p ? { ...b, img: { c: p.c, ox: p.ox, oy: p.oy }, imgB: null } : b;
+    }) };
+  },
+  apply() {
+    const s = this.active();
+    if (!s || s.busy || !s.prepared.length) return;
+    if (s.prepared.some(p => loadedAtlas(p.path) !== p.sheet || p.sheet._ver !== p.version))
+      return toast('The sheet changed. Pick the library part again to refresh the preview.', 'err');
+    // Finish earlier edits before taking the paired data/art snapshot.
+    commit(true);
+    const before = studioState.last, rigs = JSON.parse(JSON.stringify(studioState.rigs)),
+      sheets = new Map(), steps = [];
+    for (const p of s.prepared) {
+      let item = sheets.get(p.path);
+      if (!item) { item = { old: p.sheet, c: p.sheet }; sheets.set(p.path, item); }
+      const y = item.c.height + 1, next = makeCanvas(Math.max(item.c.width, p.c.width + 2), y + p.c.height + 1);
+      next.getContext('2d').drawImage(item.c, 0, 0);
+      next.getContext('2d').drawImage(p.c, 1, y);
+      item.c = next;
+      const M = rigs[s.sp][p.view], b = M.bones.find(b => b.n === p.bone);
+      // New image metadata isolates bones that previously shared one crop.
+      b.i = M.imgs.length;
+      M.imgs.push({ ox: p.ox, oy: p.oy, f: { main: [1, y, p.c.width, p.c.height] } });
+    }
+    for (const [path, item] of sheets) {
+      steps.push([path, pictureImage(item.old), pictureImage(item.c)]);
+      for (const [sp, views] of Object.entries(rigs)) for (const view of WB_VIEWS) {
+        if (views[view] && atlasPath(sp, view) === path) views[view].size = [item.c.width, item.c.height];
+      }
+    }
+    for (const [path, item] of sheets) markArt(path, item.c);
+    studioState.rigs = rigs;
+    window.RIGS = rigs;
+    changed(true);
+    const after = JSON.stringify({ D: studioState.D, R: rigs }, (k, v) => k[0] === '_' && k.length > 1 ? undefined : v);
+    artSteps(steps, { before, after });
+    this.state = null;
+    wbPart.frame = ''; wbPart.sel = null;
+    render();
+    toast('Part replaced. Undo restores the pictures and skeleton together.');
+  },
+  input(ev) {
+    const el = ev.target, key = el.dataset?.wbsLib, s = this.active();
+    if (!key || !s || ev.type !== 'change') return;
+    if (['both', 'recolor'].includes(key)) s[key] = el.checked;
+    else if (['scale', 'angle', 'x', 'y'].includes(key)) {
+      const value = Number(el.value);
+      if (!Number.isFinite(value)) return;
+      s[key] = Math.max(Number(el.min), Math.min(Number(el.max), Math.round(value)));
+    } else if (['slot', 'kit', 'kind', 'action'].includes(key)) s[key] = el.value;
+    else return;
+    if (key === 'slot' || key === 'kit' || key === 'kind') {
+      if (key !== 'kind') s.kind = '';
+      s.serial++; s.selected = ''; s.prepared = []; s.busy = false; s.warnings = [];
+      render();
+    } else if (key === 'action') {
+      wbPart.play = true;
+      render();
+    } else this.prepare();
+  },
+};
+ACTIONS.wbsLibraryOpen = () => wbsLibrary.open();
+ACTIONS.wbsLibraryPick = d => { const s = wbsLibrary.active(); if (s) { s.selected = d.id; wbsLibrary.prepare(); } };
+ACTIONS.wbsLibraryCancel = () => { wbsLibrary.state = null; render(); };
+ACTIONS.wbsLibraryApply = () => wbsLibrary.apply();

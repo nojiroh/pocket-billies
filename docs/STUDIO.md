@@ -240,3 +240,23 @@ the old single `gamedata.js` and would have to be changed to the data files (pha
   preview and map painting, each saved and loaded in the game. Version 14 adds the opening cutscene (skip, dressing room, starter
   pick) on phone and desktop and the Studio's Wardrobe section. Real phone motion sensors, touch throws and vibration still need a
   device check.
+
+
+## Replacing a Billie's part from the library
+
+In Art workbench → Part → Billies, select a species and one of its pieces, then choose **Replace from Parts Library**.
+The picker filters by body group, kit (beasts, birds, fish), and part type. Groups are inferred from the existing bone;
+choose a group explicitly for custom bones. Select a thumbnail to stage the change. Front/back thumbnails compare the
+current and replacement piece; the assembled front/back previews show the result. Use Move and the idle/walk/attack/hurt
+selector to inspect motion. Scale, rotation and offsets are baked into the replacement picture around its library pivot.
+Match current part’s palette maps the new pixels to colours sampled from the old piece.
+
+For recognised paired limbs, Replace both sides uses each side's library art or its mirrored counterpart. Missing back
+art keeps the existing back piece, with a warning. A static library image replaces the selected bone's expression or
+squash/stretch frames; the picker warns about that before Apply. Existing children keep their positions, and the separate
+portrait remains unchanged. Socket-based child repositioning and assembly recipes are later steps.
+
+Nothing changes until Apply. Apply appends the pieces to the species sheet and creates separate crop metadata, preserving
+bones, parents, animation roles, and draw order. Save to game writes the modified sheet(s) and rig through the existing
+save flow. One Undo/Redo restores both the pictures and metadata. Cancel discards the staged preview. Library source
+images are never overwritten. Refresh the preview if the species or its sheet changes while the picker is open.
