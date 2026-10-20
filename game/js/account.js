@@ -17,6 +17,8 @@ import {
   ACCOUNT_KEY,
   SAVE_KEY,
   SAVE_KEY_BASE,
+  accountSetAside,
+  accountSetAsideRead,
   activeBattle,
   escapeHtml,
   save,
@@ -36,7 +38,6 @@ expose({
   FIREBASE_SDK_URL: [() => FIREBASE_SDK_URL],
   GOOGLE_ICON_SVG: [() => GOOGLE_ICON_SVG],
   SAVES_APART_MS: [() => SAVES_APART_MS],
-  SET_ASIDE_KEY: [() => SET_ASIDE_KEY],
   account: [() => account],
   accountAvatarHTML: [() => accountAvatarHTML],
   accountChanged: [() => accountChanged, v => (accountChanged = v)],
@@ -45,9 +46,7 @@ expose({
   accountOn: [() => accountOn, v => ((accountOn = v), provide({ accountOn }))],
   accountPickSave: [() => accountPickSave, v => (accountPickSave = v)],
   accountSaveCardHTML: [() => accountSaveCardHTML, v => (accountSaveCardHTML = v)],
-  accountSetAside: [() => accountSetAside, v => (accountSetAside = v)],
   accountSetAsideHTML: [() => accountSetAsideHTML, v => ((accountSetAsideHTML = v), provide({ accountSetAsideHTML }))],
-  accountSetAsideRead: [() => accountSetAsideRead, v => (accountSetAsideRead = v)],
   accountSettingsHTML: [() => accountSettingsHTML, v => ((accountSettingsHTML = v), provide({ accountSettingsHTML }))],
   accountSignIn: [() => accountSignIn, v => (accountSignIn = v)],
   accountSignOut: [() => accountSignOut, v => ((accountSignOut = v), provide({ accountSignOut }))],
@@ -299,23 +298,6 @@ function accountPickSave(remote, remoteJson) {
       ],
     });
   });
-}
-/* a save set aside in this browser (one, the latest): Settings > Save restores it or downloads it */
-const SET_ASIDE_KEY = () => SAVE_KEY + '-set-aside';
-function accountSetAside(json, from) {
-  try {
-    localStorage.setItem(SET_ASIDE_KEY(), JSON.stringify({ json, from, at: Date.now() }));
-  } catch (e) {
-    console.warn(e);
-  }
-}
-function accountSetAsideRead() {
-  try {
-    const v = JSON.parse(localStorage.getItem(SET_ASIDE_KEY()) || 'null');
-    return v && v.json ? v : null;
-  } catch (e) {
-    return null;
-  }
 }
 function accountSetAsideHTML() {
   const A = accountSetAsideRead();

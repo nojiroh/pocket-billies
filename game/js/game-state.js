@@ -15,6 +15,11 @@ expose({
   SAVE_FOUND: [() => SAVE_FOUND],
   SAVE_KEY: [() => SAVE_KEY],
   SAVE_KEY_BASE: [() => SAVE_KEY_BASE],
+  SET_ASIDE_KEY: [() => SET_ASIDE_KEY],
+  // @ts-expect-error -- replaced on purpose
+  accountSetAside: [() => accountSetAside, v => (accountSetAside = v)],
+  // @ts-expect-error -- replaced on purpose
+  accountSetAsideRead: [() => accountSetAsideRead, v => (accountSetAsideRead = v)],
   activeBattle: [() => activeBattle, v => setActiveBattle(v)],
   escapeHtml: [() => escapeHtml],
   // @ts-expect-error -- replaced on purpose
@@ -100,6 +105,23 @@ export function writeStoredSave(o) {
       uiState.saveWarning = true;
       setTimeout(() => toast('Browser storage is full or unavailable. Export a save backup from Settings.'), 0);
     }
+  }
+}
+/* a save set aside in this browser (one, the latest): Settings > Save restores it or downloads it */
+const SET_ASIDE_KEY = () => SAVE_KEY + '-set-aside';
+export function accountSetAside(json, from) {
+  try {
+    localStorage.setItem(SET_ASIDE_KEY(), JSON.stringify({ json, from, at: Date.now() }));
+  } catch (e) {
+    console.warn(e);
+  }
+}
+export function accountSetAsideRead() {
+  try {
+    const v = JSON.parse(localStorage.getItem(SET_ASIDE_KEY()) || 'null');
+    return v && v.json ? v : null;
+  } catch (e) {
+    return null;
   }
 }
 /* a save here that this version can't load is kept aside in this browser (once), and the title says why it's a new game */
