@@ -46,6 +46,8 @@ export interface GameData {
   partKits?: PartKits;
   /** phase 10: the world map's look: the sea, the relief, each region's ground and trees (game/data/worldmap.json) */
   worldmap?: WorldMapLook;
+  /** map generator MG-1: the generator's recipe per biome (game/data/biomes.json) */
+  biomes?: Record<DataId, Biome>;
   lines: Line[];
   /** the world map's places, in node order */
   locations: LocationData[];
@@ -1234,4 +1236,29 @@ export interface WorldMapLook {
   relief: { max: number; default: [number, number]; kinds: Record<string, [number, number]> };
   regions: Record<string, { ground: string; wet: string; dry: string; high: string; trees: string[] }>;
   kinds: Record<string, string>;
+}
+
+/** biomes.json: what the map generator (logic/mapgen.js) grows and paints for a biome */
+export interface Biome {
+  name: string;
+  ground: {
+    base: string;
+    patches?: Record<string, number>;
+    verge: string;
+    floor: string;
+    bank: string;
+    rock: string;
+    tall: string;
+  };
+  road: string;
+  water: string;
+  trees: Record<string, number>;
+  shrubs?: Record<string, number>;
+  plants?: Record<string, number>;
+  rocks?: Record<string, number>;
+  waterPlants?: Record<string, number>;
+  tall: Record<string, number>;
+  look?: Record<string, unknown>;
+  life?: { k: string; n: number }[];
+  from?: string;
 }

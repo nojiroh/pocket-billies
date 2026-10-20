@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
-"""v46: the world update's places. All 8 towns and 11 routes laid out again at their new size, with the v46 ground
+"""WARNING (map generator track, 2026-10-20): do not run this on the current data without --dry. Exits are placed by
+compass bearing from the locations' lat/lon, which no location has any more (they have bowl), so every bearing is 0;
+a rebuild also drops the margins the maps grew later (grown2), keeps a stale `worn`, and can rename road exits. Kept
+for reference; the map generator (game/js/logic/mapgen.js, docs/phases/mapgen-track.md) replaces it. Unknown flags,
+--help included, are ignored and start a full run.
+
+v46: the world update's places. All 8 towns and 11 routes laid out again at their new size, with the v46 ground
 (clover, moss, mud, wet sand, pebbles, cobbles, leaf litter, heather, marsh, marble, ice, crystal) and buildings
 (bakery, inn, market hall, bank, library, school, station, fire station, mansion, barn, greenhouse, ski lodge, and
 every building's colour variants), following one set of rules so the places feel grown rather than placed:

@@ -1,0 +1,99 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "biomes.schema.json",
+ "title": "game/data/biomes.json: the map generator's recipes, one per biome (map generator track MG-1)",
+ "type": "object",
+ "propertyNames": {
+  "pattern": "^[a-z][a-z0-9_]*$"
+ },
+ "additionalProperties": {
+  "type": "object",
+  "required": [
+   "name",
+   "ground",
+   "road",
+   "water",
+   "trees",
+   "tall"
+  ],
+  "additionalProperties": false,
+  "properties": {
+   "name": {
+    "description": "shown in the Studio's biome picker",
+    "type": "string",
+    "minLength": 1
+   },
+   "ground": {
+    "description": "ground letters (scenery.json terrains): the base, patches (letter: share 0-1), and the ground by a path (verge), in clearings (floor), round water (bank), on cliffs and scree (rock), and tall grass (tall, where encounters are)",
+    "type": "object",
+    "required": [
+     "base",
+     "verge",
+     "floor",
+     "bank",
+     "rock",
+     "tall"
+    ],
+    "additionalProperties": false,
+    "properties": {
+     "base": { "$ref": "#/$defs/letter" },
+     "patches": {
+      "type": "object",
+      "propertyNames": { "minLength": 1, "maxLength": 1 },
+      "additionalProperties": { "type": "number", "minimum": 0, "maximum": 1 }
+     },
+     "verge": { "$ref": "#/$defs/letter" },
+     "floor": { "$ref": "#/$defs/letter" },
+     "bank": { "$ref": "#/$defs/letter" },
+     "rock": { "$ref": "#/$defs/letter" },
+     "tall": { "$ref": "#/$defs/letter" }
+    }
+   },
+   "road": {
+    "description": "the default road surface letter",
+    "$ref": "#/$defs/letter"
+   },
+   "water": {
+    "description": "the water kind of its ponds and streams (walk/water-data.js kinds)",
+    "enum": ["pond", "stream", "canal", "spring", "swamp", "lake", "sea", "lava", "ice"]
+   },
+   "trees": { "$ref": "#/$defs/pool" },
+   "shrubs": { "$ref": "#/$defs/pool" },
+   "plants": {
+    "description": "plants this biome favours: the wild growth (the grow-wild rules) picks these more often",
+    "$ref": "#/$defs/pool"
+   },
+   "rocks": { "$ref": "#/$defs/pool" },
+   "waterPlants": { "$ref": "#/$defs/pool" },
+   "tall": {
+    "description": "the props drawn in tall grass",
+    "$ref": "#/$defs/pool"
+   },
+   "look": {
+    "description": "scene look keys copied onto a generated scene (sky, haze, hazeD, amb, tint, wind, grassCol, rays, far, farH, flatFar)",
+    "type": "object"
+   },
+   "life": {
+    "description": "animals: [{k, n}] (scenery.json life)",
+    "type": "array",
+    "items": {
+     "type": "object",
+     "required": ["k", "n"],
+     "properties": { "k": { "type": "string" }, "n": { "type": "integer", "minimum": 1 } }
+    }
+   },
+   "from": {
+    "description": "the hand-built place this recipe was first taken from (for reference)",
+    "type": "string"
+   }
+  }
+ },
+ "$defs": {
+  "letter": { "type": "string", "minLength": 1, "maxLength": 1 },
+  "pool": {
+   "description": "prop kind (scenery.json props) -> weight",
+   "type": "object",
+   "additionalProperties": { "type": "number", "exclusiveMinimum": 0 }
+  }
+ }
+}

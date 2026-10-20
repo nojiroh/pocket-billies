@@ -540,6 +540,38 @@ def robot_joint_steps(pg, errs):
     print('robot joints: opened from Robots, two robots in the battle preview, shoulder dragged and nudged (the rig follows, front and back), a test fit, back to computed, all undone', flush=True)
 
 
+def generate_steps(pg, errs):
+    """map generator MG-1: Walk scenes → Generate… draws a draft route in the game's renderer, the dials change it (a
+    biome, terraces, a new seed for the plants only) without touching the data or the undo history, and Add as a new
+    scene is one undo step (left in, so the proposal at the end carries a generated scene)"""
+    n = len(errs)
+    pg.evaluate("studioState.sel.scene='tallgrass_meadow';mapGen.on=false;void openSection('scenes')")
+    pg.wait_for_selector('[data-act=genOpen]', timeout=20000)
+    maps0, undo0 = pg.evaluate("[Object.keys(studioState.D.maps).length, studioState.undo.length]")
+    pg.click('[data-act=genOpen]')
+    t0 = time.time()
+    while time.time() - t0 < 60 and not pg.evaluate("!!mapGen.draft&&walkView.id==='_gen'&&walkView.ready"):
+        time.sleep(0.3)
+    if not pg.evaluate("!!mapGen.draft&&walkView.id==='_gen'"):
+        errs.append('generate: the draft never drew')
+        return
+    pg.select_option('select[data-gen=biome]', 'canyon')
+    pg.evaluate("""(()=>{const r=document.querySelector('input[data-gen="land.terraces"]');r.value='0.7';r.dispatchEvent(new Event('input',{bubbles:true}))})()""")
+    time.sleep(0.8)
+    if not pg.evaluate("mapGen.draft.biome==='canyon'&&!!mapGen.draft.steps"): errs.append('generate: the biome and terrace dials changed nothing')
+    ground = pg.evaluate("JSON.stringify([mapGen.draft.tiles,mapGen.draft.edgeExits])")
+    pg.click('[data-act=genReroll][data-st=plants]'); time.sleep(0.6)
+    if pg.evaluate("JSON.stringify([mapGen.draft.tiles,mapGen.draft.edgeExits])") != ground: errs.append('generate: a new seed for the plants changed the ground or the road')
+    if pg.evaluate("[Object.keys(studioState.D.maps).length, studioState.undo.length]") != [maps0, undo0]: errs.append('generate: the draft reached the data or the undo history')
+    if pg.evaluate("mapgenUnreachable(mapGen.draft, studioState.D.scenery).length"): errs.append('generate: the hub of the draft does not reach every exit')
+    pg.click('[data-act=genAccept]')
+    pg.fill('#genName', 'Check Trail')
+    pg.click('#dlg [data-dlg="1"]'); time.sleep(0.5)
+    if not pg.evaluate("!!studioState.D.maps.checktrail&&studioState.D.maps.checktrail.gen.params.biome==='canyon'&&studioState.D.maps.checktrail.props.every(p=>p.g===1)"):
+        errs.append('generate: Add as a new scene made no scene with its dials')
+    elif pg.evaluate("studioState.undo.length") != undo0 + 1: errs.append('generate: adding the scene is not one undo step')
+    if len(errs) > n: errs[n:] = [f'generate: {e}' for e in errs[n:]]
+    else: print('generate: a canyon route drafted and drawn, dials and a plants reroll, added as a scene in one undo step', flush=True)
 def species_part_steps(pg, errs):
     """Studio track ST-6: the skeleton builder zooms by whole steps with the pixel canvas's keys; the Billies section
     opens the species in Part mode; the head's pivot dragged and nudged keeps the figure drawn where it was (the rig
@@ -730,6 +762,7 @@ def main():
         workbench_steps(pg, errs)
         part_mode_steps(pg, errs)
         robot_joint_steps(pg, errs)
+        generate_steps(pg, errs)
         species_part_steps(pg, errs)
         wardrobe_steps(pg, errs)
         pg.evaluate("const k = Object.keys(studioState.D.moves)[0]; studioState.D.moves[k].name += ' Test'; studioState.dirty = true; void saveAll()")

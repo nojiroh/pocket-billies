@@ -9,6 +9,10 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- Map generator (MG-1): the Studio's Walk scenes → Generate… makes a whole route from dials and a seed (biome, size,
+  land, water, the road and its exits, nature, a feature, props), drawn live by the game's renderer as a draft and
+  added as a scene of its own in one undo step. The same dials and seed always give the same route. The biome
+  recipes are data (game/data/biomes.json, 11 biomes taken from hand-built routes).
 - Story scripts (Project Story S1, S2): every conversation is written as lines in the data, with choices,
   conditions, once-only and rotating lines, and commands (docs/SCRIPTS.md): people, trainers before a battle, Blake,
   Cass and Vinylla running up to you, Hazel in the lab, the talk after Blake's first battle and the ending. Same words

@@ -411,7 +411,7 @@ SECTIONS.scenes = () => {
     : mapEditor.multi && mapEditor.multi.size > 1 && typeof multiSelectCardHTML === 'function'
       ? multiSelectCardHTML()
       : '<p class="help">Click a prop on the map to select it. Arrow keys nudge it, Delete removes it. Shift-drag a box (or shift-click) to select several.</p>';
-  return `<div class="split sc-split"><aside class="list-col"><div class="list-head"><button class="btn primary" data-act="scNew">+ New scene</button></div><div class="llist">${list}</div></aside>
+  return `<div class="split sc-split"><aside class="list-col"><div class="list-head"><button class="btn primary" data-act="scNew">+ New scene</button><button class="btn" data-act="genOpen" title="Make a whole route from dials and a seed, as a draft">Generate…</button></div><div class="llist">${list}</div></aside>
  <div class="ed-col"><div class="ed-head"><div><small class="mono">${escapeHtml(id)}</small><h2>${escapeHtml(sc.name || id)}</h2></div><div class="seg-row"><button class="btn subtle" data-act="scDup">Duplicate</button><button class="btn danger" data-act="scDel">Delete</button></div></div>
  ${card(
    'Preview',
