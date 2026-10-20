@@ -14,6 +14,7 @@
 import { expose } from './test-globals.js';
 import { provide, reducedMotion } from './hooks.js';
 import { clamp } from './util.js';
+import { placedTurn } from './logic/prop-turn.js';
 import { makeCanvas } from './art.js';
 import { artImage, hash2d, walkView, worldToScreen } from './walk-view.js';
 import { engineSetting } from './engine/settings.js';
@@ -1226,7 +1227,7 @@ function setSolidPropUniforms(p, it, M) {
     U.uWob,
     V.wind ? (it.M.sway || 0.3) * 0.14 * ((walkView.sc && walkView.sc.wind) || 1) * engineSetting('grass', 'wind') : 0
   );
-  gl.uniform1f(U.uRot, (V.rot ? (h1 - 0.5) * 0.42 : 0) + (it.lk ? it.lk.rot : 0));
+  gl.uniform1f(U.uRot, (V.rot ? (h1 - 0.5) * 0.42 : 0) + (it.lk ? it.lk.rot : 0) + placedTurn(it.p)); /* phase 09 batch 9 */
   gl.uniform1f(U.uClump, M && M.tex ? 1 : 0);
   if (U.uFol) {
     const f = foliageAmount(it);

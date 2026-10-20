@@ -6,6 +6,7 @@
 import { expose } from '../test-globals.js';
 import { provide } from '../hooks.js';
 import { clamp } from '../util.js';
+import { placedTurn, pointInProp, turnedBounds } from '../logic/prop-turn.js';
 import { bridgeAt, navGrid, setNavGrid, stepRaiseAt, terrainAt, walkData, walkView } from '../walk-view.js';
 import { smooth01 } from '../engine/webgl.js';
 /* eslint-disable no-func-assign */
@@ -42,12 +43,15 @@ function buildingPads(sc) {
     const s = p.s || 1,
       bw = (M.box[0] * s) / 2,
       bd = M.box[1] * s,
-      bld = !!(M.build || M.door != null);
+      bld = !!(M.build || M.door != null),
+      /* phase 09 batch 9: a turned prop levels its turned footprint (x0 to z1 then hold the place's rectangle round it) */
+      T = turnedBounds(p, -bw, -0.1, bw, bd);
     out.push({
-      x0: p.x - bw,
-      x1: p.x + bw,
-      z0: p.z - 0.1,
-      z1: p.z + bd,
+      x0: T[0],
+      x1: T[2],
+      z0: T[1],
+      z1: T[3],
+      turn: placedTurn(p) ? { p, a0: -bw, a1: bw, b0: -0.1, b1: bd } : null,
       m: bld ? 1.5 : 0.9,
       ax: p.x,
       az: p.z,
@@ -84,7 +88,7 @@ function heightGrid(sc) {
   if (sc.props)
     for (const p of sc.props) {
       const M = CP[p.k];
-      if (M && M.box) sig += ',' + Math.round(p.x * 10) + ':' + Math.round(p.z * 10) + ':' + (p.s || 1);
+      if (M && M.box) sig += ',' + Math.round(p.x * 10) + ':' + Math.round(p.z * 10) + ':' + (p.s || 1) + ':' + (p.rot || 0);
     }
   if (c && c.H === H && c.sig === sig) {
     c.t = now;
@@ -125,9 +129,17 @@ function heightGrid(sc) {
     const tg = bil(P.ax, P.az);
     for (let b = Math.max(0, Math.floor(P.z0 - P.m)); b <= Math.min(Hh, Math.ceil(P.z1 + P.m)); b++)
       for (let a = Math.max(0, Math.floor(P.x0 - P.m)); a <= Math.min(W, Math.ceil(P.x1 + P.m)); a++) {
-        const dx = Math.max(0, P.x0 - a, a - P.x1),
-          dz = Math.max(0, P.z0 - b, b - P.z1),
-          d = Math.hypot(dx, dz);
+        let dx, dz;
+        if (P.turn) {
+          const R = P.turn,
+            [la, lb] = pointInProp(R.p, a, b);
+          dx = Math.max(0, R.a0 - la, la - R.a1);
+          dz = Math.max(0, R.b0 - lb, lb - R.b1);
+        } else {
+          dx = Math.max(0, P.x0 - a, a - P.x1);
+          dz = Math.max(0, P.z0 - b, b - P.z1);
+        }
+        const d = Math.hypot(dx, dz);
         if (d >= P.m || wet(a, b)) continue;
         const w = d <= 0 ? 1 : 1 - smooth01(d / P.m),
           q = b * (W + 1) + a;

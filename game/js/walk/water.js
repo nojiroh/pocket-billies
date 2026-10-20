@@ -5,10 +5,11 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { ambientLife, provide, reducedMotion, roomHole, setPropLookUniforms, soundEffectAt } from '../hooks.js';
+import { pictureRight } from '../logic/prop-turn.js';
 import { walkData, walkView } from '../walk-view.js';
 import { engineColor, engineSetting } from '../engine/settings.js';
 import { bindQuad, gpuState, imageTexture, matrix4, renderTarget } from '../engine/webgl.js';
-import { FIXED_RIGHT, walkRenderer } from './walk-state.js';
+import { walkRenderer } from './walk-state.js';
 import { setSpriteUniforms, useWalkProgram } from './draw-common.js';
 import { WATER_KIND_LOOKS, setShoreUniforms } from './water-data.js';
 import { computeFrustum, inFrustum } from './quality-cull.js';
@@ -126,8 +127,8 @@ export function reflectionPass(items, C, rw, rh, X) {
     if (cut && !it.person && !mirrorInView(FR, it, L)) continue;
     const T = imageTexture(it.im);
     if (!T) continue;
-    if (it.fixed && it.yaw) gl.uniform3f(U.uRight, Math.cos(it.yaw), 0, Math.sin(it.yaw));
-    else gl.uniform3fv(U.uRight, it.fixed ? FIXED_RIGHT : C.right);
+    /* phase 09 batch 9: a turned picture's reflection turns with it (logic/prop-turn.js pictureRight) */
+    gl.uniform3fv(U.uRight, pictureRight(it, C.right));
     gl.uniform3f(U.uBaseP, it.x, it.y, it.z);
     setPropLookUniforms(U, it.lk);
     gl.activeTexture(gl.TEXTURE0);

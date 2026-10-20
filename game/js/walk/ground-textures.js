@@ -6,6 +6,7 @@
 import { expose } from '../test-globals.js';
 import { groundOcclusionTexture, provide } from '../hooks.js';
 import { clamp } from '../util.js';
+import { pointInProp, turnedBounds } from '../logic/prop-turn.js';
 import { GROUND_BORDER_M, imageReady, stepGrid, stepRaiseAt, walkData, walkView } from '../walk-view.js';
 import { engineSetting } from '../engine/settings.js';
 import { gpuState, setTextureParams, smooth01 } from '../engine/webgl.js';
@@ -88,13 +89,12 @@ export function* groundOcclusionSteps(sc) {
       const w = (M.box[0] * s) / 2,
         d = M.box[1] * s,
         k = /house|shop|clinic|lab|tower|apartment|hall|villa|chalet|mart|cafe|boutique|windmill/.test(g) ? 0.5 : 0.32,
-        x0 = p.x - w,
-        x1 = p.x + w,
-        z0 = p.z - 0.1,
-        z1 = p.z + d;
-      dark(x0 - 1.2, z0 - 1.2, x1 + 1.2, z1 + 1.2, (x, z) => {
-        const dx = Math.max(x0 - x, 0, x - x1),
-          dz = Math.max(z0 - z, 0, z - z1),
+        /* phase 09 batch 9: measured in the prop's own metres, so a turned prop darkens its turned footprint */
+        T = turnedBounds(p, -w, -0.1, w, d);
+      dark(T[0] - 1.2, T[1] - 1.2, T[2] + 1.2, T[3] + 1.2, (x, z) => {
+        const [lx, lz] = pointInProp(p, x, z),
+          dx = Math.max(-w - lx, 0, lx - w),
+          dz = Math.max(-0.1 - lz, 0, lz - d),
           dd = Math.hypot(dx, dz);
         return 1 - k * (1 - smooth01(dd / 1.1));
       });
