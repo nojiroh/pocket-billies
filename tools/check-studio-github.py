@@ -13,6 +13,8 @@ them changes nothing), and a sheet drawn at 4x on a flat background snaps to its
 undoes and redoes them.
 Studio track ST-4: Part mode on a kit part: the pivot dragged and nudged, a socket rule, a test fit, Mirror to other
 side, an L painted, and the kit written again keeping it all; then everything undone.
+Studio track ST-5: a robot torso in Part mode beside the battle preview: a shoulder moved moves the robot's arm on the
+stage, front and back; a test fit; back to computed; everything undone.
 
     python3 tools/check-studio-github.py           # the repository as it is (run `npm run data` first)
     python3 tools/check-studio-github.py dist      # the build (`npm run build` first)
@@ -378,6 +380,9 @@ def workbench_steps(pg, errs):
     if have() or pg.evaluate("studioState.artDirty.size"): errs.append('workbench: two undos left the new parts or pictures')
     pg.evaluate("redo(); redo()"); time.sleep(0.5)
     if have() != 3 or pg.evaluate("studioState.artDirty.size") != 3: errs.append('workbench: two redos did not bring the parts and pictures back')
+    # its sheets go, so a later Write (Part mode's step) only writes the sheets it drops (blobs left in would ask
+    # whether to replace parts of another kit, and nobody answers)
+    pg.evaluate("while (workbench.sheets.length) ACTIONS.wbDrop({ i: 0 })")
     if len(errs) > n: errs[n:] = [f'workbench: {e}' for e in errs[n:]]
     print(f"workbench: {'a kit sliced as the game has it, ' if kit else ''}a 4x sheet snapped, three parts written, undone and redone", flush=True)
 
@@ -470,6 +475,67 @@ def part_mode_steps(pg, errs):
     print('part mode: pivot dragged and nudged, a socket rule, a test fit on both hips, mirrored, L painted, kept on a rewrite, all undone', flush=True)
 
 
+def robot_joint_steps(pg, errs):
+    """Studio track ST-5: robots on the workbench. The Robots section opens a torso in Part mode; beside the battle
+    preview (a robot against a robot), its left shoulder is dragged and nudged, which moves that robot's arm in the
+    rig the stage draws, front and back; a test fit of an arm on the other shoulder is not mirrored; Back to computed
+    drops the view's points; everything is undone."""
+    n = len(errs)
+    robots = "JSON.stringify(studioState.D.robots, (k, v) => (k[0] === '_' && k.length > 1 ? undefined : v))"
+    data0 = pg.evaluate(robots)
+    sp, me = 'bot:ember.bulwark.piston.auger.striders', 'bot:volt.vane.tesla.auger.striders'
+    arm = lambda k: pg.evaluate(f"robotRigParts({json.dumps(sp)}, {k}).bones.find(b => b.n === 'armL').at")
+    # the Robots section's button opens Part mode on the torso
+    pg.evaluate("studioState.sel.rbKind = 'torso'; studioState.sel.rbId = 'bulwark'; studioState.sel.rbBuild = { gem: 'ember', torso: 'bulwark', armL: 'piston', armR: 'auger', legs: 'striders' }; void openSection('robots')")
+    time.sleep(0.8)
+    pg.locator('[data-act=rbJoints][data-id=bulwark]').click()
+    pg.wait_for_selector('#wbpfrontStage .pc-art', timeout=20000); time.sleep(0.5)
+    if pg.evaluate("[studioState.sec, workbench.mode, wbPart.src, wbPart.id]") != ['workbench', 'part', 'robots', 'bulwark']:
+        errs.append('Edit joints on the workbench did not open Part mode on bulwark')
+    # the battle preview: robots offered and drawn, the workbench beside it
+    pg.evaluate("void openSection('preview')"); pg.wait_for_selector('#cvWorld', timeout=20000); time.sleep(1)
+    opts = pg.evaluate("[...document.querySelectorAll('[data-bp=foe] option')].map(o => o.value)")
+    if sp not in opts or me not in opts: errs.append(f'the battle preview does not offer the robots ({[o for o in opts if o.startswith("bot:")]})')
+    pg.evaluate(f"battlePreview.me = {json.dumps(me)}; battlePreview.foe = {json.dumps(sp)}; void render()"); time.sleep(3)
+    if pg.evaluate("[battleStage.s[0].sp, battleStage.s[1].sp]") != [me, sp]: errs.append('the battle preview did not put the two robots on the stage')
+    a0, b0 = arm(1), arm(1.4)
+    pg.evaluate("ACTIONS.openBeside({ s: 'workbench' })")
+    pg.wait_for_selector('#main2 #wbpfrontStage .pc-art', timeout=20000); time.sleep(0.8)
+    steps0 = pg.evaluate("studioState.undo.length")
+    Z = pg.evaluate("wbPart.pcs.front.zoom")
+    box = pg.locator('#wbpfrontStage .pc-art').bounding_box()
+    j = pg.evaluate("(j => [j.sockets.shoulderL[0] * j.w, j.sockets.shoulderL[1] * j.h])(wbpJoint('front'))")
+    sx, sy = box['x'] + j[0] * Z, box['y'] + j[1] * Z
+    pg.mouse.move(sx, sy); pg.mouse.down(); pg.mouse.move(sx + 2 * Z, sy + 1 * Z, steps=4); pg.mouse.up(); time.sleep(0.3)
+    stored = pg.evaluate("studioState.D.robots.parts.bulwark.art.joints")
+    want = [round((j[0] + 2) / 29, 3), round((j[1] + 1) / 27, 3)]
+    if stored != {'front': {'sockets': {'shoulderL': want}}}: errs.append(f'dragging shoulderL stored {stored}, not {want}')
+    a1, b1 = arm(1), arm(1.4)
+    if [a1[0] - a0[0], a1[1] - a0[1]] != [2, 1] or [b1[0] - b0[0], b1[1] - b0[1]] != [2, 1]:
+        errs.append(f'the robot\'s left arm moved from {a0} to {a1} (back {b0} to {b1}), not by (2, 1) in both views')
+    if pg.evaluate(f"rigParts({json.dumps(sp)}, 1).bones.find(b => b.n === 'armL').at") != a1: errs.append('the battle stage draws the robot from an old rig')
+    pg.locator('#wbpfrontStage').hover()
+    pg.keyboard.press('ArrowLeft'); time.sleep(0.3)
+    a2 = arm(1)
+    if [a2[0] - a0[0], a2[1] - a0[1]] != [1, 1]: errs.append(f'the arrow key moved the arm to {a2} (from {a0})')
+    if pg.evaluate("studioState.undo.length") - steps0 != 2: errs.append(f"a drag and a nudge made {pg.evaluate('studioState.undo.length') - steps0} undo steps, not 2")
+    # a test fit: an arm on the right shoulder, the same picture (not mirrored), under the torso from behind
+    pg.evaluate("wbPart.fit.other = 'piston'; wbPart.fit.socket = 'shoulderR'; render()"); time.sleep(1.5)
+    fit = pg.evaluate("['front', 'back'].map(v => { const c = document.querySelector('#wbpFit' + v); return c && [c.dataset.z, c.dataset.flip]; })")
+    if fit != [['body,part', 'false'], ['part,body', 'false']]: errs.append(f'the test fit of piston on shoulderR drew {fit}')
+    # Back to computed, then everything undone
+    pg.evaluate("ACTIONS.wbpRobotReset({ v: 'front' })"); time.sleep(0.3)
+    if pg.evaluate("studioState.D.robots.parts.bulwark.art.joints") is not None or arm(1) != a0: errs.append('Back to computed left stored points')
+    t0 = time.time()
+    while time.time() - t0 < 30 and pg.evaluate("studioState.undo.length") > steps0: pg.evaluate("undo()")
+    time.sleep(0.5)
+    if pg.evaluate(robots) != data0: errs.append('undoing it all did not bring robots.json back as it was')
+    if arm(1) != a0: errs.append(f'after undoing it all the arm is at {arm(1)}, not {a0}')
+    pg.evaluate("ACTIONS.paneClose(); wbPart.src = 'kits'; wbPart.id = ''; workbench.mode = 'sheet'")
+    if len(errs) > n: errs[n:] = [f'robot joints: {e}' for e in errs[n:]]
+    print('robot joints: opened from Robots, two robots in the battle preview, shoulder dragged and nudged (the rig follows, front and back), a test fit, back to computed, all undone', flush=True)
+
+
 def main():
     srv = ThreadingHTTPServer(('127.0.0.1', 0), partial(Quiet, directory=str(ROOT)))
     threading.Thread(target=srv.serve_forever, daemon=True).start()
@@ -543,6 +609,7 @@ def main():
         split_steps(pg, errs)
         workbench_steps(pg, errs)
         part_mode_steps(pg, errs)
+        robot_joint_steps(pg, errs)
         pg.evaluate("const k = Object.keys(studioState.D.moves)[0]; studioState.D.moves[k].name += ' Test'; studioState.dirty = true; void saveAll()")
         t0 = time.time()
         while time.time() - t0 < 60 and 'pulls' not in posts:

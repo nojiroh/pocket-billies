@@ -542,7 +542,7 @@ export function rigParts(sp, k = 1, coat) {
 export function robotRigParts(sp, k = 1) {
   const key = sp + (k === 1 ? 'front' : 'back');
   if (RIG_PARTS_CACHE[key]) return RIG_PARTS_CACHE[key];
-  const R = robotRig(sp, robotRigData || (typeof ROBOTS !== 'undefined' ? ROBOTS : null));
+  const R = robotRig(sp, robotRigData || (typeof ROBOTS !== 'undefined' ? ROBOTS : null), k);
   if (!R) return null;
   Object.assign(R, { anim: animFor(R.plan, R.q), lag: false });
   if (!R.wait) RIG_PARTS_CACHE[key] = R;

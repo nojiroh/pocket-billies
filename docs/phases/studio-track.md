@@ -54,6 +54,24 @@ polish tasks. Each session is tagged `st-N-done`.
 - Pixel editing: three editors (sprites.js, wardrobe.js, skeleton painting), each with its own undo, art outside the
   global undo, no vertical flip, no symmetry.
 
+## ST-5: robots on the workbench (2026-10-19)
+- robots.json gained, all optional: a part's `art.joints` (per view `pivot`, a torso's `sockets`, `z`), a torso's
+  `art.headJoints`, `turn`, `headTurn`. Points are fractions of the picture, stored in whole pixels (3 decimals).
+  The socket standard (phase 17 task 11): neck, shoulderL, shoulderR, hipL, hipR, hip (treads, hover), gem.
+- game/js/logic/robot-joints.js: `robotJointComputed` (today's numbers), `robotJoint` (stored, else computed; a back
+  point not stored keeps the front's offset from the pivot; stand-ins ignore stored points), `robotKit` (robots.json
+  as a part kit: `<torso>:head`, `gem:<id>`, hidden `<id>_r` copies so partForSide never mirrors a robot limb),
+  `robotJointSet`. robot-art.js `robotRig(sp, D, k)` places the bones from view k's joints.
+- Parity: tools/test/robot-rig-before.json holds a hash of every build's rig as robotRig made it on 9b731cf (972
+  builds, pictures and stand-ins, front and back); the rig still matches, also with every point stored.
+- Corrections: the back view always reused the front's positions (the front and back pictures differ by a pixel or
+  two); that is kept as the fallback. The rig's `geo.top` is 2 px under the head's top; it is worked out from the
+  front. The battle preview could not show robots (its pickers took Billies only, and it loaded Billie sheets).
+- Found and fixed: Part mode in the second pane drew nothing; it looked its elements up with `paneRoot()` after
+  loading pictures, which is the left pane outside a drawing (`wbpRoot` finds its own pane). Sheet mode
+  (workbench.js) still uses `paneRoot()` in its drawn-later code (5 places): not fixed, untested in the second pane.
+- For ST-6: the same pattern (a derived kit for Part mode, edits routed to the real data) fits the species rigs.
+
 ## ST-4: the Art workbench, Part mode (2026-10-19)
 - partKits.json gained, all optional: per kind `z` (front/back), `turns`, `sides` (the side its art is drawn for);
   `socketRules` (socket name -> slots); per part `z`, `turn`, `accepts`, `mirrorOf`; per view `pivot` and `sizes`

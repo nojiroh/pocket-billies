@@ -14,6 +14,7 @@ import {
   robotMathTypes,
   robotMathWeight,
 } from '../../game/js/logic/robot-math.js';
+import { robotHeadId } from '../../game/js/logic/robot-joints.js';
 import { artURL } from '../../game/js/art.js';
 import { RIG_BACK_VIEW, drawRig, rigFrame, robotRigParts, setRobotRigData } from '../../game/js/skeleton-rig.js';
 import { escapeHtml } from './game-stand-ins.js';
@@ -28,6 +29,7 @@ import {
   colorField,
   grid,
   numberField,
+  openSection,
   render,
   sectionShown,
   selectField,
@@ -37,6 +39,8 @@ import {
   typeOptions,
   uniqueKey,
 } from './studio-app.js';
+import { workbench } from './workbench.js';
+import { wbPart } from './workbench-part.js';
 /* eslint-disable no-func-assign */
 expose({
   RB_KINDS: [() => RB_KINDS],
@@ -51,6 +55,7 @@ expose({
   rbData: [() => rbData],
   rbFit: [() => rbFit],
   rbGemEditorHTML: [() => rbGemEditorHTML, v => (rbGemEditorHTML = v)],
+  rbJointsHTML: [() => rbJointsHTML, v => (rbJointsHTML = v)],
   rbList: [() => rbList],
   rbListHTML: [() => rbListHTML, v => (rbListHTML = v)],
   rbPartEditorHTML: [() => rbPartEditorHTML, v => (rbPartEditorHTML = v)],
@@ -251,6 +256,7 @@ function rbPartEditorHTML(id) {
           : ''
       )
       .join('')}</div>
+    ${rbJointsHTML(id, P)}
     <p class="help">Without a picture the game draws a stand-in from these:</p>${grid(
       colorField('Colour', `${p}.art.color`),
       selectField('Shape', `${p}.art.shape`, RB_SHAPES[kind] || [], { rr: 1 }),
@@ -260,6 +266,26 @@ function rbPartEditorHTML(id) {
   )}
   ${users.length ? `<p class="help">Used by ${users.map(T => escapeHtml(T.name)).join(', ')}.</p>` : ''}`;
 }
+/* studio track ST-5: where the part's pictures join (stored or worked out), and the way to the workbench */
+function rbJointsHTML(id, P) {
+  const said = J => {
+    const v = ['front', 'back'].filter(k => J?.[k]);
+    return v.length ? `stored (${v.join(', ')})` : 'worked out from the picture';
+  };
+  const btn = (kitId, label) =>
+    `<button class="btn sm" data-act="rbJoints" data-id="${escapeHtml(kitId)}">${label}</button>`;
+  if (!P.art.img && !P.art.imgB) return '';
+  return `<div class="seg-row rb-joints"><span class="help">Joints: ${said(P.art.joints)}${P.slot === 'torso' && (P.art.head || P.art.headB) ? `; head: ${said(P.art.headJoints)}` : ''}.</span>${btn(id, 'Edit joints on the workbench')}${P.slot === 'torso' && (P.art.head || P.art.headB) ? btn(robotHeadId(id), 'The head’s joints') : ''}</div>`;
+}
+/* opens the workbench's Part mode on a robot part, in the pane the Robots section is in */
+ACTIONS.rbJoints = d => {
+  Object.assign(wbPart, { src: 'robots', id: d.id, kit: '', kind: '', size: 'M', sel: null, tool: 'part' });
+  wbPart.zoom = { front: 0, back: 0 };
+  wbPart.fit = { other: '', socket: '', angle: 0, swing: false };
+  workbench.mode = 'part';
+  if (studioState.sec2 === 'robots') ACTIONS.openBeside({ s: 'workbench' });
+  else openSection('workbench');
+};
 function rbGemEditorHTML(id) {
   const D = studioState.D,
     p = `robots.gems.${id}`,

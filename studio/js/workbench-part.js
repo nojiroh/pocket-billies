@@ -6,10 +6,16 @@
    limits), Mirror to other side (a copy <id>_r, pictures flipped and sockets swapped), and S and L: M scaled about the
    pivot, or a hand-painted picture beside M (<id>_s.png, <id>_l.png). The numbers are in
    game/js/logic/part-joints.js; the parts are in partKits.json (Sheet mode writes them). Every change is one step of
-   the Studio's undo. */
+   the Studio's undo.
+   Studio track ST-5: the Robots source shows robots.json the same way (logic/robot-joints.js robotKit): each part's
+   pictures with the points the game joins them at (stored, else worked out from the picture), a torso's sockets by
+   the socket standard, the test fit on a torso. Moving a point stores it in the part's art.joints (a head's in its
+   torso's art.headJoints), in whole pixels; Back to computed drops a view's stored points. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
 import { provide } from '../../game/js/hooks.js';
+import { robotFrac, robotJointSet, robotKit, robotKitPart, robotPx } from '../../game/js/logic/robot-joints.js';
+import { setRobotRigData } from '../../game/js/skeleton-rig.js';
 import { escapeHtml } from './game-stand-ins.js';
 import { pixelFlip } from '../../game/js/logic/pixel-ops.js';
 import {
@@ -56,12 +62,14 @@ import { WB_VIEWS, wbKits, wbPixelsCanvas, wbSamePicture, workbench } from './wo
 /* eslint-disable no-func-assign */
 expose({
   WBP_COLORS: [() => WBP_COLORS],
+  WBP_ROBOT_KINDS: [() => WBP_ROBOT_KINDS],
   WBP_SIZES: [() => WBP_SIZES],
   WBP_SLOTS: [() => WBP_SLOTS],
   wbPart: [() => wbPart],
   wbPartSection: [() => wbPartSection, v => ((wbPartSection = v), provide({ wbPartSection }))],
   wbpAttach: [() => wbpAttach],
   wbpBodies: [() => wbpBodies, v => (wbpBodies = v)],
+  wbpBodySlot: [() => wbpBodySlot],
   wbpColor: [() => wbpColor],
   wbpDrawFit: [() => wbpDrawFit, v => (wbpDrawFit = v)],
   wbpEditable: [() => wbpEditable],
@@ -84,9 +92,18 @@ expose({
   wbpN: [() => wbpN],
   wbpOverlay: [() => wbpOverlay, v => (wbpOverlay = v)],
   wbpPath: [() => wbpPath],
+  wbpPicSize: [() => wbpPicSize],
   wbpPicture: [() => wbpPicture, v => (wbpPicture = v)],
   wbpRedraw: [() => wbpRedraw, v => (wbpRedraw = v)],
   wbpRefreshSide: [() => wbpRefreshSide, v => (wbpRefreshSide = v)],
+  wbpRobotData: [() => wbpRobotData],
+  wbpRobotDone: [() => wbpRobotDone, v => (wbpRobotDone = v)],
+  wbpRobotFiles: [() => wbpRobotFiles],
+  wbpRobotSet: [() => wbpRobotSet, v => (wbpRobotSet = v)],
+  wbpRobotSideHTML: [() => wbpRobotSideHTML, v => (wbpRobotSideHTML = v)],
+  wbpRobotStore: [() => wbpRobotStore, v => (wbpRobotStore = v)],
+  wbpRobots: [() => wbpRobots],
+  wbpRoot: [() => wbpRoot],
   wbpRound: [() => wbpRound],
   wbpRules: [() => wbpRules],
   wbpSetPoint: [() => wbpSetPoint, v => (wbpSetPoint = v)],
@@ -105,7 +122,8 @@ const WBP_SIZES = ['S', 'M', 'L'];
 const WBP_SLOTS = ['head', 'head-extra', 'body', 'body-extra', 'front', 'back', 'signature'];
 /* one colour per socket name, the same in both views */
 const WBP_COLORS = ['#c8323c', '#1f6e6f', '#6a3fb5', '#c77a12', '#2f7d32', '#b23a8a', '#2b5fb8', '#7a5c2e'];
-const wbPart = {
+export const wbPart = {
+  src: 'kits' /* or 'robots' (studio track ST-5) */,
   id: '',
   kit: '' /* the list's filters */,
   kind: '',
@@ -119,7 +137,47 @@ const wbPart = {
   pcs: {} /* the canvas of each view */,
   scaled: new Map() /* M scaled to S or L, by path, size and version */,
 };
-const wbpKits = () => wbKits();
+/* ---------- the source: the kits, or robots.json shown as a kit (its points the ones the game draws) ---------- */
+const wbpRobots = () => wbPart.src === 'robots';
+const wbpRobotData = () => studioState.D.robots || { parts: {}, gems: {} };
+const wbpPicSize = file => {
+  const c = loadedAtlas(wbpPath(file));
+  return c ? [c.width, c.height] : null;
+};
+/* the pane Part mode is in: paneRoot() is that pane only while it is drawn, and Part mode looks things up later too
+   (after loading pictures, on a drag, a key or an input), when it may be the second pane */
+const wbpRoot = () => document.querySelector('.wbp')?.closest('#main, #main2') || paneRoot();
+const wbpKits = () => (wbpRobots() ? robotKit(wbpRobotData(), wbpPicSize) : wbKits());
+const WBP_ROBOT_KINDS = ['torso', 'head', 'arm', 'legs', 'gem'];
+/* every picture robots.json names */
+const wbpRobotFiles = () => {
+  const D = wbpRobotData(),
+    f = [
+      ...Object.values(D.parts || {}).flatMap(P => [P.art.img, P.art.imgB, P.art.head, P.art.headB]),
+      ...Object.values(D.gems || {}).map(G => G.img),
+    ];
+  return [...new Set(f.filter(Boolean))];
+};
+/* where a robot kit part's points are stored: its robots.json art, under joints (a head: its torso's headJoints);
+   null for a gem (it sits on its centre) */
+function wbpRobotStore(id = wbPart.id) {
+  const R = robotKitPart(wbpRobotData(), id);
+  return R && { art: R.part.art, key: R.head ? 'headJoints' : 'joints', turn: R.head ? 'headTurn' : 'turn' };
+}
+/* sets (or with null drops) one stored point or draw order of a view */
+function wbpRobotSet(view, key, value) {
+  const S = wbpRobotStore();
+  if (!S) return;
+  const J = robotJointSet(S.art[S.key], view, key, value);
+  if (J) S.art[S.key] = J;
+  else delete S.art[S.key];
+}
+/* after a robot edit: one undo step, and every robot is drawn again (the battle preview, the Robots section) */
+function wbpRobotDone() {
+  setRobotRigData(wbpRobotData());
+  changed();
+  commit(true);
+}
 const wbpEntry = (id = wbPart.id) => wbpKits().parts?.[id] || null;
 const wbpRules = () => studioState.D.rules;
 const wbpJoint = (view, id = wbPart.id, size = wbPart.size) => partJoint(wbpKits(), id, view, size, wbpRules());
@@ -132,7 +190,8 @@ function wbpList() {
   return Object.entries(wbpKits().parts || {})
     .filter(
       ([id, P]) =>
-        (!wbPart.kit || P.kit === wbPart.kit) &&
+        !P.hidden &&
+        (!wbPart.kit || wbpRobots() || P.kit === wbPart.kit) &&
         (!wbPart.kind || P.kind === wbPart.kind) &&
         (!q || id.includes(q) || P.animal.includes(q))
     )
@@ -154,6 +213,11 @@ function wbpPicture(view) {
 }
 /* every picture the part and the test fit need, loaded before they are drawn */
 async function wbpLoad() {
+  if (wbpRobots()) {
+    await Promise.all(wbpRobotFiles().map(f => atlasGet(wbpPath(f)).catch(() => null)));
+    wbPart.robotsLoaded = wbpRobotFiles().join();
+    return;
+  }
   const K = wbpKits(),
     files = new Set();
   for (const id of [
@@ -174,17 +238,30 @@ async function wbpLoad() {
 /* ---------- the section ---------- */
 function wbpListHTML() {
   const K = wbpKits(),
+    robots = wbpRobots(),
     kits = Object.keys(K.kits || {}),
-    kinds = Object.keys(K.slots || {}),
+    kinds = robots ? WBP_ROBOT_KINDS : Object.keys(K.slots || {}),
     ids = wbpList();
   const opt = (v, n, on) => `<option value="${escapeHtml(v)}" ${on ? 'selected' : ''}>${escapeHtml(n)}</option>`;
-  return `<div class="wbp-filter"><select data-wbp="kit">${opt('', 'Every kit', !wbPart.kit)}${kits.map(k => opt(k, k, k === wbPart.kit)).join('')}</select><select data-wbp="kind">${opt('', 'Every kind', !wbPart.kind)}${kinds.map(k => opt(k, k, k === wbPart.kind)).join('')}</select><input type="search" data-wbp="q" placeholder="Find a part" value="${escapeHtml(wbPart.q)}"></div><div class="wb-parts-h"><span>Front</span><span>Back</span><span>${ids.length} part${ids.length === 1 ? '' : 's'}</span></div><div class="wb-partlist">${
+  const src = `<div class="seg-row wbp-src">${[
+    ['kits', 'Kits', 'partKits.json: the phase 16 kit parts'],
+    ['robots', 'Robots', 'robots.json: robot parts, heads and gems'],
+  ]
+    .map(
+      ([k, n, t]) =>
+        `<button class="seg ${k === wbPart.src ? 'on' : ''}" data-act="wbpSrc" data-s="${k}" title="${t}">${n}</button>`
+    )
+    .join('')}</div>`;
+  return `${src}<div class="wbp-filter">${robots ? '' : `<select data-wbp="kit">${opt('', 'Every kit', !wbPart.kit)}${kits.map(k => opt(k, k, k === wbPart.kit)).join('')}</select>`}<select data-wbp="kind">${opt('', 'Every kind', !wbPart.kind)}${kinds.map(k => opt(k, k, k === wbPart.kind)).join('')}</select><input type="search" data-wbp="q" placeholder="Find a part" value="${escapeHtml(wbPart.q)}"></div><div class="wb-parts-h"><span>Front</span><span>Back</span><span>${ids.length} part${ids.length === 1 ? '' : 's'}</span></div><div class="wb-partlist">${
     ids
       .map(id => {
         const P = K.parts[id];
-        return `<div class="wb-part ${id === wbPart.id ? 'on' : ''}" data-act="wbpPick" data-id="${escapeHtml(id)}">${WB_VIEWS.map(v => `<span class="wb-thumb">${P.views[v] ? `<img src="${escapeHtml(wbpThumb(P.views[v].file))}" alt="">` : '<i>—</i>'}</span>`).join('')}<span class="wb-pid"><b class="mono">${escapeHtml(id)}</b><small>${escapeHtml(P.kind)} · ${escapeHtml(P.slot)}${P.mirrorOf ? ' · mirrored' : ''}</small></span></div>`;
+        return `<div class="wb-part ${id === wbPart.id ? 'on' : ''}" data-act="wbpPick" data-id="${escapeHtml(id)}">${WB_VIEWS.map(v => `<span class="wb-thumb">${P.views[v] ? `<img src="${escapeHtml(wbpThumb(P.views[v].file))}" alt="">` : '<i>—</i>'}</span>`).join('')}<span class="wb-pid"><b class="mono">${escapeHtml(id)}</b><small>${robots ? `${escapeHtml(P.kind)} · ${escapeHtml(P.robot)}` : `${escapeHtml(P.kind)} · ${escapeHtml(P.slot)}${P.mirrorOf ? ' · mirrored' : ''}`}</small></span></div>`;
       })
-      .join('') || '<p class="help">No parts. Write some in Sheet mode first.</p>'
+      .join('') ||
+    (robots
+      ? '<p class="help">No robot pictures (Robots section: a part’s Pictures).</p>'
+      : '<p class="help">No parts. Write some in Sheet mode first.</p>')
   }</div>`;
 }
 /* a thumbnail: the picture as the Studio has it now (changed and unsaved ones too) */
@@ -197,6 +274,8 @@ function wbpThumb(file) {
   return '../game/' + wbpPath(file);
 }
 function wbpToolsHTML() {
+  if (wbpRobots())
+    return `<div class="seg-row wb-tools"><span class="px-tools"><button class="seg" data-act="wbpZoom" data-z="-1" title="Zoom out">−</button><span id="wbpZoom"></span><button class="seg" data-act="wbpZoom" data-z="1" title="Zoom in">+</button><button class="seg" data-act="wbpZoom" data-z="0" title="Fit">Fit</button></span><span class="help wbp-hint">Drag the crosshair (pivot) or a socket; arrows nudge the one picked a pixel.</span></div>`;
   const painted = WB_VIEWS.some(v => wbpSizeOf(v)),
     T = [
       ['part', 'Points'],
@@ -221,6 +300,7 @@ function wbpViewsHTML() {
 /* ---------- the inspector ---------- */
 const wbpN = v => (Math.round(v * 1000) / 1000).toString();
 function wbpSideHTML() {
+  if (wbpRobots()) return wbpRobotSideHTML();
   const P = wbpEntry(),
     K = wbpKits();
   if (!P) return '<div class="px-sec"><p class="help">Pick a part on the left.</p></div>';
@@ -267,18 +347,67 @@ function wbpSideHTML() {
   const mirror = `<div class="px-sec"><h4>Other side</h4><button class="btn" data-act="wbpMirror">Mirror to other side</button><p class="help">Makes <b class="mono">${escapeHtml(partMirrorId(K, id))}</b>: the pictures flipped, sockets swapped (shoulderL ↔ shoulderR), so that side can be repainted. Without it the part is mirrored when drawn.</p></div>`;
   return head + pivot + sockets + joint + sizes + mirror;
 }
+/* a robot part's inspector: its points per view (stored or computed), turn and draw order */
+function wbpRobotSideHTML() {
+  const P = wbpEntry(),
+    K = wbpKits(),
+    id = wbPart.id;
+  if (!P) return '<div class="px-sec"><p class="help">Pick a part on the left.</p></div>';
+  const S = wbpRobotStore(),
+    stored = (S && S.art[S.key]) || {},
+    head = id.endsWith(':head'),
+    where = S
+      ? `robots.json → parts → <b class="mono">${escapeHtml(P.robot)}</b> → art.${S.key}`
+      : `robots.json → gems → <b class="mono">${escapeHtml(P.robot)}</b>`;
+  const top = `<div class="px-sec"><h4 class="mono">${escapeHtml(id)}</h4><p class="help">${escapeHtml(head ? 'the head of a torso' : P.kind)} · ${where}. Drawn the same on both sides (not mirrored).${S ? '' : ' A gem sits on its centre in the chest’s gem socket; it has nothing to store.'}</p></div>`;
+  const views = WB_VIEWS.filter(v => P.views[v])
+    .map(v => {
+      const j = wbpJoint(v),
+        own = stored[v] || {},
+        dis = S ? '' : 'disabled',
+        socks = Object.entries(j.sockets)
+          .map(
+            ([n, p]) =>
+              `<div class="wbp-row ${wbPart.sel && wbPart.sel.view === v && wbPart.sel.h === n ? 'on' : ''}"><i class="wbp-dot" style="background:${wbpColor(n)}"></i><span class="wbp-name mono">${escapeHtml(n)}</span><small class="mono">${wbpN(p[0])}, ${wbpN(p[1])}</small><small class="help">→ ${escapeHtml(partAccepts(K, id, n).join(', '))}${own.sockets?.[n] ? ' · set' : ''}</small></div>`
+          )
+          .join('');
+      return `<div class="px-sec"><h4>${v === 'front' ? 'Front' : 'Back'} <small>${stored[v] ? 'stored' : 'computed'} · ${j.w} × ${j.h}</small></h4><div class="wbp-row ${wbPart.sel && wbPart.sel.view === v && wbPart.sel.h === 'pivot' ? 'on' : ''}"><span class="wbp-name">pivot</span><input type="number" step="0.01" data-wbp="pivot" data-v="${v}" data-i="0" value="${wbpN(j.pivot[0])}" ${dis}><input type="number" step="0.01" data-wbp="pivot" data-v="${v}" data-i="1" value="${wbpN(j.pivot[1])}" ${dis}>${own.pivot ? `<button class="btn sm subtle" data-act="wbpPivotReset" data-v="${v}" title="Back to computed">↺</button>` : ''}</div>${socks}${stored[v] ? `<button class="btn sm" data-act="wbpRobotReset" data-v="${v}">Back to computed</button>` : ''}</div>`;
+    })
+    .join('');
+  const turn = partTurn(K, id),
+    zOwn = WB_VIEWS.some(v => stored[v]?.z != null);
+  const joint = S
+    ? `<div class="px-sec"><h4>Turn and draw order</h4><div class="wbp-row"><span class="wbp-name">turns</span><input type="number" step="1" data-wbp="turn" data-i="0" value="${turn[0]}" title="Least (degrees)"><input type="number" step="1" data-wbp="turn" data-i="1" value="${turn[1]}" title="Most (degrees)">${S.art[S.turn] ? `<button class="btn sm subtle" data-act="wbpTurnReset" title="Back to free">↺</button>` : '<small class="help">free</small>'}</div><div class="wbp-row"><span class="wbp-name">z</span>${WB_VIEWS.filter(
+        v => P.views[v]
+      )
+        .map(
+          v =>
+            `<label class="wbp-z">${v}<input type="number" step="1" data-wbp="z" data-v="${v}" value="${partZ(K, id, v)}"></label>`
+        )
+        .join(
+          ''
+        )}${zOwn ? `<button class="btn sm subtle" data-act="wbpZReset" title="Back to the ${escapeHtml(P.kind)} default">↺</button>` : '<small class="help">default</small>'}</div><p class="help">Turn limits are for the test fit (the game’s poses don’t read them yet). Higher z is drawn in front; from behind, arms go under the body.</p></div>`
+    : '';
+  return (
+    top +
+    views +
+    joint +
+    `<div class="px-sec"><p class="help">Points are fractions of the picture, stored in whole pixels. A back point not stored keeps the front’s offset from the pivot. Stand-ins (a part without a picture) always use computed points.</p></div>`
+  );
+}
 /* where an unmoved pivot comes from */
 const wbpAttach = j => {
   const by = PART_ATTACH.find(n => j.sockets[n]);
   return by ? `at ${by}` : 'the part’s';
 };
-/* the points of a view can be moved: at M, or on a hand-painted size */
-const wbpEditable = view => wbPart.size === 'M' || !!wbpSizeOf(view);
+/* the points of a view can be moved: at M, or on a hand-painted size; a robot part's, except a gem's */
+const wbpEditable = view => (wbpRobots() ? !!wbpRobotStore() : wbPart.size === 'M' || !!wbpSizeOf(view));
 /* ---------- test fit ---------- */
-const wbpIsBody = () => wbpEntry()?.slot === 'body';
+const wbpBodySlot = () => (wbpRobots() ? 'torso' : 'body');
+const wbpIsBody = () => wbpEntry()?.slot === wbpBodySlot();
 function wbpBodies() {
   return Object.entries(wbpKits().parts || {})
-    .filter(([, P]) => P.slot === 'body')
+    .filter(([, P]) => P.slot === wbpBodySlot())
     .map(([id]) => id);
 }
 /* the body in the test fit: the part itself, or the one picked (the same animal's torso first) */
@@ -289,7 +418,11 @@ function wbpFitBody() {
     P = wbpEntry();
   if (B.includes(wbPart.fit.other)) return wbPart.fit.other;
   return (
-    B.find(b => wbpKits().parts[b].animal === P.animal) || B.find(b => wbpKits().parts[b].kit === P.kit) || B[0] || ''
+    B.find(b => b === P.robot) ||
+    B.find(b => wbpKits().parts[b].animal === P.animal) ||
+    B.find(b => wbpKits().parts[b].kit === P.kit) ||
+    B[0] ||
+    ''
   );
 }
 /* the part in the test fit: this one, or (for a body) the one picked */
@@ -297,7 +430,7 @@ function wbpFitPart() {
   if (!wbpIsBody()) return wbPart.id;
   const K = wbpKits(),
     o = wbPart.fit.other;
-  return o && K.parts[o] && K.parts[o].slot !== 'body' ? o : '';
+  return o && K.parts[o] && K.parts[o].slot !== wbpBodySlot() && !K.parts[o].hidden ? o : '';
 }
 function wbpFitSockets() {
   const b = wbpFitBody(),
@@ -309,7 +442,9 @@ function wbpFitHTML() {
   if (!wbPart.id) return '';
   const K = wbpKits(),
     body = wbpIsBody(),
-    choices = body ? Object.keys(K.parts).filter(k => K.parts[k].slot !== 'body' && k !== wbPart.id) : wbpBodies(),
+    choices = body
+      ? Object.keys(K.parts).filter(k => K.parts[k].slot !== wbpBodySlot() && !K.parts[k].hidden && k !== wbPart.id)
+      : wbpBodies(),
     pick = body ? wbpFitPart() : wbpFitBody(),
     socks = wbpFitSockets(),
     sock = socks.includes(wbPart.fit.socket) ? wbPart.fit.socket : socks[0] || '',
@@ -324,7 +459,7 @@ function wbpDrawFit() {
     socks = wbpFitSockets(),
     sock = socks.includes(wbPart.fit.socket) ? wbPart.fit.socket : socks[0];
   for (const v of WB_VIEWS) {
-    const cv = paneRoot().querySelector('#wbpFit' + v);
+    const cv = wbpRoot().querySelector('#wbpFit' + v);
     if (!cv) continue;
     const x = cv.getContext('2d'),
       f =
@@ -360,31 +495,38 @@ function wbpDrawFit() {
     cv.dataset.flip = String(f.flip);
     cv.dataset.angle = String(f.angle);
   }
-  const a = paneRoot().querySelector('#wbpAngle');
+  const a = wbpRoot().querySelector('#wbpAngle');
   if (a) a.textContent = partClampTurn(K, p || wbPart.id, wbPart.fit.angle) + '°';
 }
 function wbpSwing() {
   if (!wbPart.fit.swing) return;
-  if (!sectionShown('workbench') || workbench.mode !== 'part' || !paneRoot().querySelector('#wbpFitfront')) {
+  if (!sectionShown('workbench') || workbench.mode !== 'part' || !wbpRoot().querySelector('#wbpFitfront')) {
     wbPart.fit.swing = false;
     return;
   }
   const t = partTurn(wbpKits(), wbpFitPart() || wbPart.id),
     s = Math.sin(performance.now() / 600);
   wbPart.fit.angle = Math.round((t[0] + t[1]) / 2 + ((t[1] - t[0]) / 2) * s);
-  const r = paneRoot().querySelector('[data-wbp=fitAngle]');
+  const r = wbpRoot().querySelector('[data-wbp=fitAngle]');
   if (r) r.value = String(wbPart.fit.angle);
   wbpDrawFit();
   requestAnimationFrame(wbpSwing);
 }
 /* ---------- the section's parts, mounted ---------- */
 function wbPartSection(head) {
+  if (wbpRobots()) {
+    setRobotRigData(wbpRobotData());
+    if (wbPart.robotsLoaded !== wbpRobotFiles().join()) {
+      afterRender(() => wbpLoad().then(() => sectionShown('workbench') && render()));
+      return `<div class="wb wbp">${head}<div class="wb-body"><aside class="list-col wb-list wbp-list">${wbpListHTML()}</aside><div class="wb-mid wb-empty"><div class="wb-drop"><b>Loading the robot pictures…</b></div></div></div></div>`;
+    }
+  }
   if (wbPart.id && !wbpEntry()) wbPart.id = '';
   if (!wbPart.id) wbPart.id = wbpList()[0] || '';
   const list = `<aside class="list-col wb-list wbp-list">${wbpListHTML()}</aside>`,
     mid = wbPart.id
       ? `<div class="wb-mid wbp-mid">${wbpToolsHTML()}${wbpViewsHTML()}${wbpFitHTML()}</div>`
-      : `<div class="wb-mid wb-empty"><div class="wb-drop"><b>No part picked</b><span>Parts come from Sheet mode: drop a sheet, then Write.</span></div></div>`,
+      : `<div class="wb-mid wb-empty"><div class="wb-drop"><b>No part picked</b><span>${wbpRobots() ? 'Robot parts come from the Robots section.' : 'Parts come from Sheet mode: drop a sheet, then Write.'}</span></div></div>`,
     side = `<aside class="px-side wb-side wbp-side" id="wbpSide">${wbpSideHTML()}</aside>`;
   afterRender(() => wbpMount().catch(e => toast('Could not show the part: ' + e.message, 'err')));
   return `<div class="wb wbp">${head}<div class="wb-body">${list}${mid}${side}</div></div>`;
@@ -395,7 +537,7 @@ async function wbpMount() {
   if (id !== wbPart.id || workbench.mode !== 'part') return;
   wbPart.pcs = {};
   for (const v of WB_VIEWS) {
-    const st = paneRoot().querySelector(`#wbp${v}Stage`);
+    const st = wbpRoot().querySelector(`#wbp${v}Stage`);
     if (!st) continue;
     const j = wbpJoint(v),
       painted = !!wbpSizeOf(v),
@@ -410,7 +552,7 @@ async function wbpMount() {
         changed: () => wbpDrawFit(),
         drawn: P => {
           wbPart.zoom[v] = P.zoom;
-          const z = paneRoot().querySelector('#wbpZoom');
+          const z = wbpRoot().querySelector('#wbpZoom');
           if (z) z.textContent = P.zoom + '×';
         },
       });
@@ -427,7 +569,7 @@ function wbpRedraw() {
   wbpDrawFit();
 }
 function wbpRefreshSide() {
-  const s = paneRoot().querySelector('#wbpSide');
+  const s = wbpRoot().querySelector('#wbpSide');
   if (s) s.innerHTML = wbpSideHTML();
 }
 /* the pivot crosshair and the sockets, in the picture's pixels; sizes on screen stay the same at any zoom */
@@ -478,16 +620,20 @@ function wbpHost(view, P, t, ev) {
   let moved = false;
   return {
     move: (P2, x, y) => {
-      /* half pixels: the pivot can sit between two pixels, as the kits' do */
-      wbpSetPoint(view, best, Math.round(x * 2) / 2 / j.w, Math.round(y * 2) / 2 / j.h);
+      /* half pixels: the pivot can sit between two pixels, as the kits' do (a robot's: whole pixels) */
+      const q = wbpRobots() ? 1 : 2;
+      wbpSetPoint(view, best, Math.round(x * q) / q / j.w, Math.round(y * q) / q / j.h);
       moved = true;
       drawPixelCanvas(P2);
       wbpDrawFit();
     },
     up: () => {
       if (!moved) return;
-      changed();
-      commit(true);
+      if (wbpRobots()) wbpRobotDone();
+      else {
+        changed();
+        commit(true);
+      }
       wbpRefreshSide();
     },
   };
@@ -496,6 +642,11 @@ const wbpRound = v => Math.round(v * 10000) / 10000;
 /* moves a point of a view (no undo step: the caller makes one): at M the view's own pivot or socket (and the hand
    socket that Sheet mode keeps), on a hand-painted size that size's */
 function wbpSetPoint(view, h, fx, fy) {
+  if (wbpRobots()) {
+    const j = wbpJoint(view),
+      px = robotPx([Math.min(1.5, Math.max(-0.5, fx)), Math.min(1.5, Math.max(-0.5, fy))], j.w, j.h);
+    return wbpRobotSet(view, h, robotFrac(px, j.w, j.h));
+  }
   const P = wbpEntry(),
     V = P.views[view],
     S = wbpSizeOf(view),
@@ -527,14 +678,17 @@ function wbpKeys(ev) {
     j = wbpJoint(view);
   if (!j || !wbpEditable(view)) return;
   ev.preventDefault();
-  const step = ev.shiftKey ? 0.25 : 1,
+  const step = ev.shiftKey && !wbpRobots() ? 0.25 : 1,
     dx = ev.key === 'ArrowLeft' ? -step : ev.key === 'ArrowRight' ? step : 0,
     dy = ev.key === 'ArrowUp' ? -step : ev.key === 'ArrowDown' ? step : 0,
     p = h === 'pivot' ? j.pivot : j.sockets[h];
   if (!p) return;
   wbpSetPoint(view, h, (p[0] * j.w + dx) / j.w, (p[1] * j.h + dy) / j.h);
-  changed();
-  commit(true);
+  if (wbpRobots()) wbpRobotDone();
+  else {
+    changed();
+    commit(true);
+  }
   wbpRedraw();
   wbpRefreshSide();
 }
@@ -568,7 +722,8 @@ function wbpSockRename(from, to) {
   render();
 }
 ACTIONS.wbpSockAdd = () => {
-  const el = paneRoot().querySelector('#wbpNewSock'),
+  if (wbpRobots()) return;
+  const el = wbpRoot().querySelector('#wbpNewSock'),
     n = String(el?.value || '').trim(),
     P = wbpEntry();
   if (!P) return;
@@ -588,6 +743,7 @@ ACTIONS.wbpSockAdd = () => {
   render();
 };
 ACTIONS.wbpSockDel = d => {
+  if (wbpRobots()) return;
   const P = wbpEntry(),
     K = wbpKits(),
     n = d.n;
@@ -614,6 +770,7 @@ ACTIONS.wbpSockDel = d => {
 };
 /* a slot on or off at a socket: the part's own rule from then on (it starts as the kit's rule for that name) */
 ACTIONS.wbpAccept = d => {
+  if (wbpRobots()) return;
   const P = wbpEntry(),
     have = partAccepts(wbpKits(), wbPart.id, d.n),
     next = have.includes(d.s) ? have.filter(s => s !== d.s) : WBP_SLOTS.filter(s => s === d.s || have.includes(s));
@@ -623,6 +780,7 @@ ACTIONS.wbpAccept = d => {
   render();
 };
 ACTIONS.wbpAcceptReset = d => {
+  if (wbpRobots()) return;
   const P = wbpEntry();
   if (!P.accepts) return;
   delete P.accepts[d.n];
@@ -632,6 +790,11 @@ ACTIONS.wbpAcceptReset = d => {
   render();
 };
 ACTIONS.wbpPivotReset = d => {
+  if (wbpRobots()) {
+    wbpRobotSet(d.v, 'pivot', null);
+    wbpRobotDone();
+    return render();
+  }
   const P = wbpEntry(),
     S = wbpSizeOf(d.v);
   if (wbPart.size === 'M') delete P.views[d.v].pivot;
@@ -641,12 +804,23 @@ ACTIONS.wbpPivotReset = d => {
   render();
 };
 ACTIONS.wbpTurnReset = () => {
+  if (wbpRobots()) {
+    const S = wbpRobotStore();
+    if (S) delete S.art[S.turn];
+    wbpRobotDone();
+    return render();
+  }
   delete wbpEntry().turn;
   changed();
   commit(true);
   render();
 };
 ACTIONS.wbpZReset = () => {
+  if (wbpRobots()) {
+    for (const v of WB_VIEWS) wbpRobotSet(v, 'z', null);
+    wbpRobotDone();
+    return render();
+  }
   delete wbpEntry().z;
   changed();
   commit(true);
@@ -654,6 +828,7 @@ ACTIONS.wbpZReset = () => {
 };
 /* ---------- S and L: paint from M scaled, or go back to scaled ---------- */
 ACTIONS.wbpPaint = async d => {
+  if (wbpRobots()) return;
   const P = wbpEntry(),
     id = wbPart.id,
     s = d.s,
@@ -685,6 +860,7 @@ ACTIONS.wbpPaint = async d => {
   toast(`${s} is now its own picture: paint it, then Save.`, 'ok');
 };
 ACTIONS.wbpSizeDrop = async d => {
+  if (wbpRobots()) return;
   const P = wbpEntry();
   if (
     !(await ask(
@@ -706,6 +882,7 @@ ACTIONS.wbpSizeDrop = async d => {
 };
 /* ---------- Mirror to other side ---------- */
 ACTIONS.wbpMirror = async () => {
+  if (wbpRobots()) return;
   const K = wbpKits(),
     m = partMirror(K, wbPart.id);
   if (!m) return;
@@ -747,6 +924,28 @@ ACTIONS.wbpMirror = async () => {
   toast(`${m.id} made: ${steps.length} picture${steps.length === 1 ? '' : 's'}. Save to put it in the game.`, 'ok');
 };
 /* ---------- actions and inputs ---------- */
+ACTIONS.wbpSrc = d => {
+  if (d.s === wbPart.src) return;
+  Object.assign(wbPart, { src: d.s === 'robots' ? 'robots' : 'kits', id: '', kit: '', kind: '', size: 'M', sel: null });
+  Object.assign(wbPart, {
+    tool: 'part',
+    zoom: { front: 0, back: 0 },
+    fit: { other: '', socket: '', angle: 0, swing: false },
+  });
+  render();
+};
+/* a robot part's view back to computed: its stored points and draw order go */
+ACTIONS.wbpRobotReset = d => {
+  const S = wbpRobotStore();
+  if (!S?.art[S.key]?.[d.v]) return;
+  const J = { ...S.art[S.key] };
+  delete J[d.v];
+  if (Object.keys(J).length) S.art[S.key] = J;
+  else delete S.art[S.key];
+  wbPart.sel = null;
+  wbpRobotDone();
+  render();
+};
 ACTIONS.wbMode = d => {
   workbench.mode = d.m === 'part' ? 'part' : 'sheet';
   render();
@@ -776,7 +975,7 @@ ACTIONS.wbpZoom = d => {
 ACTIONS.wbpTool = d => {
   wbPart.tool = d.t;
   for (const P of Object.values(wbPart.pcs)) if (P.cv.isConnected && P.o.path) pixelCanvasTool(P, d.t);
-  paneRoot()
+  wbpRoot()
     .querySelectorAll('[data-act=wbpTool]')
     .forEach(b => b.classList.toggle('on', b.dataset.t === d.t));
 };
@@ -793,9 +992,9 @@ function wbpInput(ev) {
   if (k === 'kit' || k === 'kind' || k === 'q') {
     wbPart[k] = el.value;
     if (k !== 'q' || ev.type === 'change') return render();
-    const L = paneRoot().querySelector('.wbp-list');
+    const L = wbpRoot().querySelector('.wbp-list');
     if (L) L.innerHTML = wbpListHTML();
-    const q = paneRoot().querySelector('[data-wbp=q]');
+    const q = wbpRoot().querySelector('[data-wbp=q]');
     if (q) {
       q.focus();
       q.setSelectionRange(q.value.length, q.value.length);
@@ -815,7 +1014,7 @@ function wbpInput(ev) {
   if (k === 'fitAngle') {
     wbPart.fit.angle = num;
     wbPart.fit.swing = false;
-    const s = paneRoot().querySelector('[data-wbp=fitSwing]');
+    const s = wbpRoot().querySelector('[data-wbp=fitSwing]');
     if (s) s.checked = false;
     return wbpDrawFit();
   }
@@ -837,13 +1036,19 @@ function wbpInput(ev) {
     const t = [...partTurn(wbpKits(), wbPart.id)];
     t[+el.dataset.i] = Math.max(-180, Math.min(180, Math.round(num)));
     if (t[0] > t[1]) return toast('The least turn must not be more than the most.', 'err');
-    P.turn = /** @type {[number, number]} */ (t);
+    if (wbpRobots()) {
+      const S = wbpRobotStore();
+      if (S) S.art[S.turn] = t;
+    } else P.turn = /** @type {[number, number]} */ (t);
+  } else if (k === 'z' && wbpRobots()) {
+    wbpRobotSet(el.dataset.v, 'z', Math.max(-50, Math.min(50, Math.round(num))));
   } else if (k === 'z') {
     const z = { front: partZ(wbpKits(), wbPart.id, 'front'), back: partZ(wbpKits(), wbPart.id, 'back') };
     z[el.dataset.v] = Math.max(-50, Math.min(50, Math.round(num)));
     P.z = z;
   } else return;
-  done();
+  if (wbpRobots()) wbpRobotDone();
+  else done();
   render();
 }
 document.addEventListener('input', wbpInput);

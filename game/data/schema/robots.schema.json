@@ -70,8 +70,34 @@
     "img": {"description": "the front picture, a path in game/art", "type": "string"},
     "imgB": {"description": "the back picture", "type": "string"},
     "head": {"description": "a torso's head, front", "type": "string"},
-    "headB": {"description": "a torso's head, back", "type": "string"}
+    "headB": {"description": "a torso's head, back", "type": "string"},
+    "joints": {"$ref": "#/$defs/joints", "description": "studio track ST-5: where its picture joins, per view; what is not here is worked out from the picture's size"},
+    "headJoints": {"$ref": "#/$defs/joints", "description": "a torso's head: where its picture joins the neck, per view"},
+    "turn": {"$ref": "#/$defs/turn"},
+    "headTurn": {"$ref": "#/$defs/turn"}
    }
-  }
+  },
+  "joints": {
+   "type": "object",
+   "additionalProperties": false,
+   "properties": {"front": {"$ref": "#/$defs/joint"}, "back": {"$ref": "#/$defs/joint"}}
+  },
+  "joint": {
+   "description": "points are fractions of the picture, x right and y down",
+   "type": "object",
+   "additionalProperties": false,
+   "properties": {
+    "pivot": {"description": "the point it hangs from (its socket's point on the part it joins) and turns around", "$ref": "#/$defs/point"},
+    "sockets": {
+     "description": "a torso's sockets: neck, shoulderL, shoulderR, hipL, hipR, hip (treads and hover), gem",
+     "type": "object",
+     "propertyNames": {"enum": ["neck", "shoulderL", "shoulderR", "hipL", "hipR", "hip", "gem"]},
+     "additionalProperties": {"$ref": "#/$defs/point"}
+    },
+    "z": {"description": "draw order in this view: higher is drawn in front", "type": "number"}
+   }
+  },
+  "point": {"type": "array", "items": {"type": "number", "minimum": -1, "maximum": 2}, "minItems": 2, "maxItems": 2},
+  "turn": {"description": "how far it may turn, [least, most] degrees (the workbench's test fit)", "type": "array", "items": {"type": "number", "minimum": -180, "maximum": 180}, "minItems": 2, "maxItems": 2}
  }
 }

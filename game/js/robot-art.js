@@ -8,6 +8,7 @@
    flat pixel shapes, 2 px outlines, one highlight and one shadow. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
+import { robotJoint, robotJointComputed, robotSingleLegs } from './logic/robot-joints.js';
 import { ART_CACHE, artImg, artReady, makeCanvas } from './art.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -247,84 +248,92 @@ function robotPic(path) {
   artImg(path);
   return artReady(path) ? ART_CACHE.img[path] : undefined;
 }
-/** a robot's rig from its sp ('bot:gem.torso.armL.armR.legs'), or null when the data lacks a part. D is robots.json.
+/** a robot's rig from its sp ('bot:gem.torso.armL.armR.legs'), or null when the data lacks a part. D is robots.json;
+ *  k is the view the rig is for (1 front, else back): its joints place the bones.
  *  Each part uses its picture (art.img / art.imgB, a torso's art.head / headB, the gem's img) and, without one, a
- *  stand-in drawn from its colour and shape. The pictures stack at their sockets: the legs' hip knob under the torso,
- *  the head's neck on the torso's top, each arm's shoulder knob at the torso's side, the gem in the chest's socket.
+ *  stand-in drawn from its colour and shape. The pictures join at their joints (logic/robot-joints.js: stored in
+ *  robots.json or worked out from the picture's size): the legs hang from the torso's hips (treads and hover from the
+ *  middle one), the head's pivot sits on the neck, each arm hangs from its shoulder, the gem sits in the chest's
+ *  socket; the torso stands so the legs' bottom is on the ground.
  *  wait is true while a picture is still loading (the caller draws the rig again later).
  *  The rig has the fields skeleton-rig.js rigParts returns (the caller adds anim). */
-export function robotRig(sp, D) {
+export function robotRig(sp, D, k = 1) {
   const o = robotArtParts(sp, D);
   if (!o) return null;
   const { G, T, AL, AR, L } = o;
   let wait = false;
-  /* a part's front and back pictures, or the stand-in for both */
-  const pics = (art, front, back, make) => {
+  /* a part's front and back pictures, or the stand-in for both; own: which views draw the part's own picture */
+  const pics = (front, back, make) => {
     const f = robotPic(front),
       b = robotPic(back);
     if (f === undefined || b === undefined) wait = true;
     const c = f || make();
-    return { f: c, b: b || c };
+    return { f: c, b: b || c, own: { front: !!f, back: !!b } };
   };
   const gemColor = G.color || '#FFFFFF',
-    single = L.art.shape === 'treads' || L.art.shape === 'hover';
-  const torso = pics(T.art, T.art.img, T.art.imgB, () => robotTorsoCanvas(T, gemColor)),
-    head = pics(T.art, T.art.head, T.art.headB, () => robotHeadCanvas(T, gemColor)),
-    armL = pics(AL.art, AL.art.img, AL.art.imgB, () => robotArmCanvas(AL)),
-    armR = pics(AR.art, AR.art.img, AR.art.imgB, () => robotArmCanvas(AR)),
-    leg = pics(L.art, L.art.img, L.art.imgB, () => robotLegsCanvas(L)),
+    single = robotSingleLegs(L),
+    view = k === 1 ? 'front' : 'back';
+  const torso = pics(T.art.img, T.art.imgB, () => robotTorsoCanvas(T, gemColor)),
+    head = pics(T.art.head, T.art.headB, () => robotHeadCanvas(T, gemColor)),
+    armL = pics(AL.art.img, AL.art.imgB, () => robotArmCanvas(AL)),
+    armR = pics(AR.art.img, AR.art.imgB, () => robotArmCanvas(AR)),
+    leg = pics(L.art.img, L.art.imgB, () => robotLegsCanvas(L)),
     gemPic = robotPic(G.img);
   if (gemPic === undefined) wait = true;
+  /* a piece's joint in a view, from its pictures' sizes */
+  const joint = (piece, P, stored, v) =>
+    robotJoint(piece, stored, v, { front: [P.f.width, P.f.height], back: [P.b.width, P.b.height] }, P.own);
+  const J = v => ({
+    torso: joint('torso', torso, T.art.joints, v),
+    head: joint('head', head, T.art.headJoints, v),
+    armL: joint('arm', armL, AL.art.joints, v),
+    armR: joint('arm', armR, AR.art.joints, v),
+    leg: joint('legs', leg, L.art.joints, v),
+  });
+  const F = J('front'),
+    B = J('back'),
+    V = view === 'front' ? F : B;
   /* the stand-in torso has its gem drawn in; a torso picture gets the gem's picture on its chest */
   const ownTorso = !!(T.art.img && torso.f !== undefined && robotPic(T.art.img)),
     tw = torso.f.width,
-    th = torso.f.height,
-    legH = leg.f.height,
-    hang = (c, cb) => ({
-      img: { ox: -Math.floor(c.width / 2), oy: 0, c },
-      imgB: { ox: -Math.floor(cb.width / 2), oy: 0, c: cb },
+    /* a socket of the torso, from its pivot (the torso bone's origin), in the view the rig is for */
+    at = (Jv, n) => [Jv.torso.sockets[n][0] - Jv.torso.pivot[0], Jv.torso.sockets[n][1] - Jv.torso.pivot[1]],
+    /* how high the torso's pivot stands: the legs' bottom on the ground */
+    lift = (Jv, legPic) =>
+      -(Jv.torso.sockets[single ? 'hip' : 'hipL'][1] - Jv.torso.pivot[1] + legPic.height - Jv.leg.pivot[1]),
+    /* a picture's offset from its bone: minus its pivot (0, not -0, at the edge) */
+    off = p => [0 - p[0], 0 - p[1]],
+    place = (P, j) => ({
+      img: { ox: off(j.f.pivot)[0], oy: off(j.f.pivot)[1], c: P.f },
+      imgB: { ox: off(j.b.pivot)[0], oy: off(j.b.pivot)[1], c: P.b },
+      z: j.f.z,
+      zb: j.b.z,
     }),
-    sit = (c, cb, lift) => ({
-      img: { ox: -Math.floor(c.width / 2), oy: -c.height + lift, c },
-      imgB: { ox: -Math.floor(cb.width / 2), oy: -cb.height + lift, c: cb },
-    });
+    of = n => ({ f: F[n], b: B[n] });
   const bones = [
-    { n: 'torso', par: 'root', at: [0, -legH + 2], z: 5, zb: 5, ...sit(torso.f, torso.b, 0) },
-    { n: 'head', par: 'torso', at: [0, -th + 3], z: 9, zb: 9, ...sit(head.f, head.b, 2) },
-    {
-      n: 'armL',
-      par: 'torso',
-      at: [-Math.round(tw / 2) + 1, -Math.round(th * 0.62)],
-      z: 8,
-      zb: 2,
-      ...hang(armL.f, armL.b),
-    },
-    {
-      n: 'armR',
-      par: 'torso',
-      at: [Math.round(tw / 2) - 1, -Math.round(th * 0.62)],
-      z: 8,
-      zb: 2,
-      ...hang(armR.f, armR.b),
-    },
+    { n: 'torso', par: 'root', at: [0, lift(V, view === 'front' ? leg.f : leg.b)], ...place(torso, of('torso')) },
+    { n: 'head', par: 'torso', at: at(V, 'neck'), ...place(head, of('head')) },
+    { n: 'armL', par: 'torso', at: at(V, 'shoulderL'), ...place(armL, of('armL')) },
+    { n: 'armR', par: 'torso', at: at(V, 'shoulderR'), ...place(armR, of('armR')) },
+    { n: 'legL', par: 'torso', at: at(V, single ? 'hip' : 'hipL'), ...place(leg, of('leg')) },
     single
-      ? { n: 'legL', par: 'torso', at: [0, -2], z: 4, zb: 4, ...hang(leg.f, leg.b) }
-      : { n: 'legL', par: 'torso', at: [-Math.round(tw / 4), -2], z: 4, zb: 4, ...hang(leg.f, leg.b) },
-    single
-      ? { n: 'legR', par: 'torso', at: [0, -2], z: 4, zb: 4, img: null }
-      : { n: 'legR', par: 'torso', at: [Math.round(tw / 4), -2], z: 4, zb: 4, ...hang(leg.f, leg.b) },
+      ? { n: 'legR', par: 'torso', at: at(V, 'hip'), z: F.leg.z, zb: B.leg.z, img: null }
+      : { n: 'legR', par: 'torso', at: at(V, 'hipR'), ...place(leg, of('leg')) },
   ];
-  if (ownTorso && gemPic)
+  if (ownTorso && gemPic) {
+    const g = robotJointComputed('gem', gemPic.width, gemPic.height);
     bones.push({
       n: 'gem',
       par: 'torso',
-      at: [0, -Math.round(th * 0.5)],
-      z: 6,
-      zb: 6,
+      at: at(V, 'gem'),
+      z: g.z,
+      zb: g.z,
       hideB: true,
-      img: { ox: -Math.floor(gemPic.width / 2), oy: -Math.floor(gemPic.height / 2), c: gemPic },
+      img: { ox: off(g.pivot)[0], oy: off(g.pivot)[1], c: gemPic },
     });
-  const top = ROBOT_ART_BASE - legH - th - head.f.height + 5,
+  }
+  /* the top of the head (2 px of headroom), from the front view, so both views share it */
+  const top = ROBOT_ART_BASE + lift(F, leg.f) + at(F, 'neck')[1] - F.head.pivot[1] - 2,
     hw = Math.max(tw / 2 + Math.max(armL.f.width, armR.f.width), leg.f.width / (single ? 2 : 1) + tw / 4);
   return {
     k: 1,
