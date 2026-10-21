@@ -221,7 +221,14 @@ export const cleanName = (s, max) =>
     .slice(0, max);
 provide({ cleanName }); /* to-module */
 export const formatNumber = n => Math.floor(n).toLocaleString('en-US');
-export const newUid = () => 'm' + Date.now().toString(36) + Math.floor(random() * 1e8).toString(36);
+/* RL-8: on a run, from the run's own counter (run.uidN: 'r' + the runs played before + '-' + n), so a run made again
+   from its seed (a resume, its simulation) gives its Billies, encounters and eggs the same ids; the hub's from the
+   clock as before */
+export const newUid = () => {
+  const run = saveData && saveData.run;
+  if (run) return `r${(saveData.meta && saveData.meta.runs) || 0}-${run.uidN++}`;
+  return 'm' + Date.now().toString(36) + Math.floor(random() * 1e8).toString(36);
+};
 export const today = () => {
   const d = new Date();
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');

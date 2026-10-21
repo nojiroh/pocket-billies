@@ -167,3 +167,13 @@ test('during a run storage stays in Copperleaf: only the party counts, nothing m
   s.run = null;
   assert.equal(fn('addBilly')(seventh), 'box');
 });
+
+test("on a run new ids come from the run's counter, so a run made again gives the same ones", () => {
+  const s = startedSave('musk0', 10);
+  assert.match(fn('newUid')(), /^m[0-9a-z]+$/, 'the hub: from the clock');
+  s.meta.runs = 3;
+  s.run = newRun('R', 1, 1, { team: [] });
+  assert.deepEqual([fn('newUid')(), fn('newUid')(), fn('makeBilly')('musk0', 5).uid], ['r3-0', 'r3-1', 'r3-2']);
+  assert.equal(s.run.uidN, 3);
+  s.run = null;
+});
