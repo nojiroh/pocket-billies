@@ -27,7 +27,7 @@
 <div id="modal"></div>
 <div id="dlg"></div>
 <div id="toasts" aria-live="polite"></div>
-<script>window.STUDIO_KEY='__STUDIO_KEY__';window.NW_ARTDIR='../game/art/';</script>
+<script>window.STUDIO_KEY='__STUDIO_KEY__';window.NW_ARTDIR='../game/art/';try{performance.setResourceTimingBufferSize(3000)}catch(e){}</script>
 <script src="../game/version.js"></script>
 <script src="../game/js/data-files.js"></script>
 <script>document.getElementById('ver').textContent=PB_VERSION;</script>
@@ -134,5 +134,6 @@
 <script type="module" src="js/connections.js"></script>
 <script type="module" src="js/github.js"></script>
 <script type="module" src="js/layout.js"></script>
+<script type="module" src="js/studio-test-start.js"></script>
 </body>
 </html>

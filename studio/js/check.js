@@ -38,7 +38,7 @@ expose({
 /* eslint-enable no-func-assign */
 provide({ runCheck, scheduleCheck });
 /* to-module: end */
-function runCheck() {
+export function runCheck() {
   const D = studioState.D,
     P = [],
     err = (msg, go, sel) => P.push({ lvl: 'error', msg, go, sel }),
@@ -510,7 +510,7 @@ ACTIONS.fix = d => {
 SECTIONS.check = () => {
   afterRender(renderCheckList);
   afterRender(loadBackups);
-  return `<div class="ed-col solo"><div class="ed-head"><h2>Check & backups</h2><div class="seg-row"><button class="btn" data-act="exportData">Download game data</button><button class="btn" data-act="importData">Load game data from a file</button></div></div>
+  return `<div class="ed-col solo"><div class="ed-head"><h2>Check & backups</h2><div class="seg-row"><button class="btn" data-act="exportData">Download game data</button><button class="btn" data-act="importData">Load game data from a file</button><button class="btn" data-act="studioTest" title="Opens and edits every section, times the Studio’s own work and lists the slowest spots (about 90 s; nothing is saved)">Run the Studio test</button></div></div>
  ${card('Problems', `<ul class="checks" id="checkList"></ul>`, { sub: 'Problems are things the game will skip or patch over. Notes are worth a look.' })}
  ${card('Backups', `<p class="help">Every save keeps the previous version in the backups folder. Restoring replaces the current file (which is backed up first). Reload the Studio afterwards.</p><div id="backupList">Loading…</div>`)}</div>`;
 };

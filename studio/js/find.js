@@ -116,7 +116,7 @@ function findPageFields(sec, add) {
     );
   });
 }
-function buildSearchIndex() {
+export function buildSearchIndex() {
   const D = studioState.D,
     E = [],
     add = (label, where, kind, fn, extra = '') => {
@@ -228,7 +228,7 @@ const FIND_KIND_LABELS = {
   stop: 'Stop',
   prop: 'Prop',
 };
-function findRun(q) {
+export function findRun(q) {
   const n = normalizeForFind(q).trim(),
     W = n.split(/\s+/).filter(Boolean);
   if (!W.length) return [];

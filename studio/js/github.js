@@ -52,7 +52,7 @@ const GITHUB_CONFIG = Object.assign(
   { owner: 'nojiroh', repo: 'pocket-billies', branch: 'main', game: 'game' },
   window.PB_STUDIO_GITHUB || {}
 );
-const githubMode = {
+export const githubMode = {
   on: window.STUDIO_KEY === '__STUDIO_KEY__' || !window.STUDIO_KEY,
   token: '',
   login: '',

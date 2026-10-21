@@ -4264,3 +4264,54 @@ body.wb-dropping::after {
 .help.warn {
   color: var(--red);
 }
+/* studio track ST-T: the Studio self-test, its progress and its report (studio/js/studio-test.js) */
+.st-run {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 60;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 14px;
+  background: var(--panel);
+  border: 1px solid var(--line2);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+}
+.st-run .st-what {
+  min-width: 220px;
+  color: var(--text2);
+}
+.dlg.st-report {
+  width: min(1100px, 100%);
+}
+.st-report h3 {
+  margin: 16px 0 6px;
+}
+.st-ok {
+  color: var(--ok);
+  font-weight: 600;
+}
+.st-bad {
+  color: var(--red);
+  font-weight: 600;
+}
+.st-find li {
+  margin: 2px 0;
+}
+.st-find li.high b {
+  color: var(--red);
+}
+.st-find li.mid b {
+  color: var(--warn);
+}
+.st-scroll {
+  overflow-x: auto;
+}
+.st-report tr.worse td:last-child {
+  color: var(--red);
+}
+.st-report tr.better td:last-child {
+  color: var(--ok);
+}
