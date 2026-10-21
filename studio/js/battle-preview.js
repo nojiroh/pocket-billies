@@ -105,7 +105,7 @@ const coatOptions = () => [
   ...Object.entries(studioState.D.coats || {}).map(([k, c]) => [k, c.name || k]),
 ];
 const battlePreview = {
-  stage: 'backdrop',
+  stage: 'test_battle' /* the battle stage's test place (tools/build-test-scenes.py t_battle) */,
   area: null,
   me: null,
   foe: null,
@@ -220,9 +220,7 @@ SECTIONS.preview = () => {
   )}
   ${card(
     'Stage',
-    `<label class="fld"><span>Where the battle happens</span><select data-bp="stage"><option value="backdrop" ${battlePreview.stage === 'backdrop' ? 'selected' : ''}>A painted backdrop (classic)</option>${Object.entries(
-      D.maps || {}
-    )
+    `<label class="fld"><span>Where the battle happens</span><select data-bp="stage">${Object.entries(D.maps || {})
       .map(
         ([k, s]) =>
           `<option value="${escapeHtml(k)}" ${battlePreview.stage === k ? 'selected' : ''}>Walk scene: ${escapeHtml(s.name || k)}</option>`
@@ -265,14 +263,11 @@ async function startBattlePreview() {
     battleStage.gl = false;
   }
   battleStageStart(battlePreview.area);
-  if (
-    battlePreview.stage !== 'backdrop' &&
-    studioState.D.maps &&
-    studioState.D.maps[battlePreview.stage] &&
-    typeof battle3dAttach === 'function'
-  ) {
-    await mountBattlePreviewMap();
-  }
+  /* the painted backdrop is gone from the game (battle-3d.js, phase 06-3): a battle always stands in a walk scene, so
+     a stage that isn't one (an old choice, a deleted scene) falls back to the battle's test place, else the first */
+  const maps = studioState.D.maps || {};
+  if (!maps[battlePreview.stage]) battlePreview.stage = maps.test_battle ? 'test_battle' : Object.keys(maps)[0];
+  if (maps[battlePreview.stage] && typeof battle3dAttach === 'function') await mountBattlePreviewMap();
   if (load) load.hidden = true;
   if (!battlePreview.ro)
     battlePreview.ro = new ResizeObserver(() => {
