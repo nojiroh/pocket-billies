@@ -79,6 +79,7 @@ test('run: the load check refuses broken or tampered runs', () => {
   const s = hubSave();
   const ok = copy({ ...runBegin(s, GIVE), map: MAP, path: [0, 1], forecast: [['sun'], ['rain', 'sun']] });
   assert.equal(validRun(ok), true);
+  assert.equal(validRun({ ...ok, map: { nodes: MAP.nodes.map(n => ({ ...n, seen: 2, biome: 'meadow' })) } }), true);
   const bad = [
     null,
     [],
@@ -91,6 +92,7 @@ test('run: the load check refuses broken or tampered runs', () => {
     { ...ok, map: { nodes: [{ ...MAP.nodes[0], to: [9] }] } }, // a link off the map
     { ...ok, map: { nodes: [{ ...MAP.nodes[0], to: [0] }] } }, // to itself
     { ...ok, map: { nodes: [{ ...MAP.nodes[0], type: 'Bad Type' }] } },
+    { ...ok, map: { nodes: MAP.nodes.map((n, i) => (i === 2 ? { ...n, biome: 'Not A Biome' } : n)) } },
     { ...ok, at: { phase: 'nap', battle: -1 } },
     { ...ok, at: { phase: 'walk', battle: -2 } },
     { ...ok, clock: 0 },

@@ -110,7 +110,8 @@ export function validRun(o) {
         !list(node.to, 8) ||
         node.to.some(j => !wholeIn(j, 0, n - 1) || j === i) ||
         new Set(node.to).size !== node.to.length ||
-        (node.seen !== undefined && !wholeIn(node.seen, 0, 2))
+        (node.seen !== undefined && !wholeIn(node.seen, 0, 2)) ||
+        (node.biome !== undefined && !id(node.biome))
       )
         return false;
   }
