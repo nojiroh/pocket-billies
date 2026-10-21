@@ -26,7 +26,7 @@ session is tagged `mg-N-done`.
 | # | What | Checks before the tag |
 |---|------|-----------------------|
 | MG-1 | mapgen.js for routes: RNG, heights (hills, terraces), ground, road (straight, winding, S-curve, switchback; carve, flatten, pave, verges), exits and hub, growth (the grow-wild rules, fixed), one feature, props. biomes.json. The Generate card with its dials, a draft in the live preview. | unit tests, lint, types, data |
-| MG-2 | Accept: the place (map file, index.json, locations.json with a bowl spot), link to neighbours (seam roads, exits facing and aligned, the neighbour's seam strip read), "Preview as seamless pair", save and propose. | unit tests, a Studio check step, a02_joins on the pair |
+| MG-2 | Seam agreement (the roguelite track's version, owner's pick 2026-10-21): a scene joined to a neighbour's exit has that exit facing and aligned (an integer offset), the neighbour's edge heights, raise and natural ground read and eased inward; terraces at ground level near every exit edge; mast, clinic and shop at the hub by dials; the seam rules in one module (logic/seam-rules.js); the Studio's Generate card joins a draft to a scene and previews the pair. Terrain track TR-1 (smooth roads) folded in. Parked: Accept as a place (locations.json, bowl spot, roads, an exit added to the neighbour): it edits the legacy world, which the game no longer loads. | unit tests (a joined pair passes the seam rules and agrees: heights, raise, a straight walk across), a Studio check step |
 | MG-3 | Towns: main street, side lanes, square, landmark, lots (level, door to the street, clear footprint, turned along curves), kind mix, colour variants, gardens and fences, townsfolk spots. | unit tests, smoke |
 | MG-4 | Presets, per-stage reroll, regenerate-only-generated (props by `g`, ground by a mask), the keep lock, dials restored from `gen`. | unit tests: a hand edit survives a regenerate |
 | MG-5 | Check panel rules (hub reaches every exit, nothing in water, door gaps clear, exits face their neighbour), a quick-check step (generate, accept, save, reload, walk the seam), STUDIO.md. | full quick check, Studio check |
@@ -52,10 +52,7 @@ session is tagged `mg-N-done`.
   were cells (no effect), plants that grow on 'o' never grow. The port uses terrains' `paved`, the path letters and
   the distance to the road instead.
 - Python's Mersenne Twister output can't be matched without porting it; mapgen.js has its own RNG and new output.
-</content>
-</invoke>
-<invoke name="Bash">
-<parameter name="command">cd /home/user/pocket-billies && sed -n 1,25p tools/build-places-v46.py
+
 ## MG-1: the route generator (2026-10-20)
 - game/js/logic/mapgen.js (`mapgen*` names only: the pages share one namespace, and a first draft's `clamp` and
   `put` clashed with util.js and frame-block.js): `mapgenParams` (dials filled in and kept in range), `mapgenScene`
@@ -89,8 +86,39 @@ session is tagged `mg-N-done`.
   ±22 m of the exit; terraces should stay at zero raise near a joined edge. Data rules to meet: two exits a side at
   most, 44 m apart.
 
+## MG-2: seam agreement (2026-10-21; terrain TR-1 folded in)
+- What RL-7 calls (all in game/js/logic/mapgen.js, pure): `mapgenEdgeStrip(parent, exitId, {w, h}, t)` reads what
+  the parent shows at that exit, in the new scene's metres (its edge corners, cells, step raise and nearby things over
+  the exit ± 30 m, clipped to the edge both share) with the new exit's `t` snapped so the two exits are a whole number
+  of metres apart; pass the strips as `params.edges` (plain data, kept in `gen.params`, so a scene is still a function
+  of its dials); mapgenParams moves the nearest exit on that side (within 44 m) onto each strip or adds one (a note
+  when four exits leave no room). `mapgenSeamAgreement(A, idA, B, idB, scenery)` measures a pair (height gap along
+  the shared edge near the exit and over the band, the step across, a straight walk across: what a run-world test
+  should assert). `mapgenPairScene` lays two scenes into one (the Studio's preview). `mapgenReach`/`mapgenReached`
+  (the walk grid from any point). The props dials `mast`, `clinic`, `shop` put the hub's buildings (stage `lots`, its
+  own seed). MAPGEN_VERSION 2.
+- The stages: heights, the edges pinned (16 m fade), road, ground, water (none in a joined strip), hub (10 m from a
+  joined edge), exits, land (terraces at ground level within 8 m of every exit's edge stretch, a level more every 6 m),
+  feature, the neighbour's natural ground and things (`mapgenStageEdgeGround`), lots, plants, props, the edges pinned
+  again (6 m, exact). A joined edge ends exactly at the neighbour's heights over the stretch a neighbour shows in a
+  view (seamless-world.js NEIGHBOR_BAND_HALF_WIDTH, 26 m either side of the exit; MAPGEN_BAND), so the game's seam
+  easing has nothing to do there. Two parents on one side hold to the midpoint between their exits less 2 m.
+- Measured: two routes generated on their own differ by 0.26 m near the exit and 0.76 m over the band (up to 1.3 m at
+  hills 0.5); joined, 0.00 m on every pair tried (about 250, terraced ones included), no step, every walk across.
+  Terraced scenes had their north exits 1-3 m up; now 0. The hub's buildings fit in 359 of 360 random routes (north
+  of the road where it runs across, beside it where it runs north, always facing the camera).
+- Corrections to the plans: the roguelite plan's MG-2 (seam agreement) is not this file's old MG-2 (Accept as a
+  place, now parked: it edits the legacy world). "a02_joins' numbers": a02_joins compares the two composite views
+  (a composer property) and walks across; on raw data only heights, step raise and the walk are rules (today's 56
+  hand-made links: heights within 5 cm near the exit on 55, worst 0.14 m; equal raise on all; edge cells differ on 53,
+  which the composer mingles), so copying the neighbour's ground is a generator nicety, kept to natural ground on free
+  cells. "The check-data rules re-implemented once in Node" means one shared module, logic/seam-rules.js (check-data
+  is already Node). MG-1's "zero raise near a joined edge" has to hold on every exit's edge: a parent can't know which
+  exits get joined. The pin covers the 26 m band, not 22 m.
+- The Studio: Joins… on each exit row, Preview the pair, the hub's buildings, a Buildings reroll (STUDIO.md).
+
 ## Plants without scaling (phase 09 side work, 2026-10-21)
-- MAPGEN_VERSION 2. A picture is never scaled (`s` only on models): scaling resamples it off the 32 px/m grid. A prop
+- MAPGEN_VERSION 3 (2 is MG-2's). A picture is never scaled (`s` only on models): scaling resamples it off the 32 px/m grid. A prop
   whose `variants` carry a `weight` gets one (`v`, 1 is the first; the prop as drawn counts 1) from the stream
   `plants|variants`, so the pick changes no other stage's draws; the footprint is `mapgenRadius` times the variant's
   `span`. The variants are drawn by tools/build-flat-variants.py.

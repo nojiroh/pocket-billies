@@ -10,6 +10,7 @@
 import { expose } from './test-globals.js';
 import { provide } from './hooks.js';
 import { clamp } from './util.js';
+import { stepCellsJoined, stepCornerHeight, stepGridCorners } from './logic/step-grid.js';
 import { hexToRgb, packHexPixel, packPixel } from './art.js';
 import {
   GROUND_BORDER_M,
@@ -33,10 +34,7 @@ import {
   plainTileIndex,
   scaleColor,
   stableCells,
-  stepCellsJoined,
-  stepCornerHeight,
   stepGrid,
-  stepGridCorners,
   tileSetPixels,
   valueNoise2d,
   walkData,

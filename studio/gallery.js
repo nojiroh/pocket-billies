@@ -1,6 +1,6 @@
 // Phase 06-4: the UI gallery's switches (theme, width, reduced motion) and its live samples. The components come from the
 // game's own js/ui-kit.js, so the gallery shows exactly what the game draws.
-import { pbFloat } from '../game/js/ui-kit.js';
+import { pbFloat, typeGlyphHTML } from '../game/js/ui-kit.js';
 import { applyUiTheme } from '../game/js/theme-sheet.js';
 
 const root = document.documentElement;
@@ -30,7 +30,7 @@ document.addEventListener('click', ev => {
     b.setAttribute('aria-pressed', String(on));
   } else if (d.m) {
     const el = document.getElementById('gMotion');
-    el.classList.remove('m-enter', 'm-pop', 'm-nudge', 'm-count');
+    el.classList.remove('m-wipe', 'm-wipe-r', 'm-enter', 'm-pop', 'm-nudge', 'm-count');
     void el.offsetWidth;
     el.classList.add(d.m);
   } else if (b.id === 'gToastMore') {
@@ -43,3 +43,28 @@ document.addEventListener('click', ev => {
 const toastEl = /** @type {any} */ (document.getElementById('gToast'));
 toastEl.text = 'Found an item';
 toastEl.n = 1;
+
+// UI-2: the hand-written type pills get their glyphs, as typeBadgeHTML gives them in the game
+document
+  .querySelectorAll('.chip[data-ty]')
+  .forEach(c => c.insertAdjacentHTML('afterbegin', typeGlyphHTML(/** @type {HTMLElement} */ (c).dataset.ty)));
+
+// UI-3: the Studio's UI section shows this page in a frame (gallery.html?studio=1, without the bar) and hands it the
+// look being edited: the theme, light or dark, the width, reduced motion, Settings' text size and the screen whose
+// own colours and shapes to show (uiTheme.json overrides, through data-ui-screen)
+if (new URLSearchParams(location.search).has('studio')) root.classList.add('g-studio');
+/** @param {any} theme uiTheme.json as edited @param {{mode?: string, width?: string, reduced?: boolean,
+ * text?: string, screen?: string}} [o] */
+function galleryLook(theme, o = {}) {
+  applyUiTheme(theme);
+  root.dataset.theme = o.mode === 'dark' ? 'dark' : 'light';
+  const wrap = /** @type {HTMLElement} */ (document.querySelector('.g-wrap'));
+  if (o.width) wrap.style.setProperty('--g-w', o.width);
+  if (o.reduced) root.dataset.motion = 'reduced';
+  else delete root.dataset.motion;
+  if (o.text) root.dataset.text = o.text;
+  else delete root.dataset.text;
+  if (o.screen) wrap.dataset.uiScreen = o.screen;
+  else delete wrap.dataset.uiScreen;
+}
+/** @type {any} */ (globalThis).galleryLook = galleryLook;

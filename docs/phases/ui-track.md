@@ -42,6 +42,34 @@ danger or ground name. tools/ui-lint.mjs counts every length in a shorthand, so 
 above (spacing 1,093 raw values, radii 168): see the UI-1 HANDOFF entry. Blurred surfaces measured on the phone
 screens: walk 6, map 12, team 6, ledger 5, profile 4, shop 8, battle 3, against the budget of 3.
 
+UI-2 found (read at 3479f01): the plan's "screens already on the kit" were few: only the lead card (`pb-panel`) and
+the toast used kit components; the team rows, the battle cards and plates, the sheets and the dialogue box are page
+markup styled by units.css, battle-ui.css, ui-kit.css and dialogue.css, so UI-2 shaped them there. The gallery had no
+picture tests and the quick-check baseline is not in git, so the gallery's baseline is committed
+(validation/ui-gallery/). How the shapes are built (logic/ui-theme.js, "the angular shapes"): each family's outline,
+its 1 px edge ring and the ring outside it are clip-path polygons made from uiTheme.json (`shape.families`: cut,
+rounded or square; `shape.stepped`), written as `--clip-*`, `--edge-*`, `--ring-*`. A clip-path cuts off box-shadows
+and borders, and a `filter` on an ancestor stops `backdrop-filter` blurring the page behind (a backdrop root), so a
+glass part draws its shadow on a sibling layer clipped to the ring outside its outline; a solid page part carries a
+`drop-shadow` filter and draws its fill and edge in its pseudo-elements; parts whose pseudo-elements were taken
+(old sheets, battle buttons) are clipped themselves and go without a shadow. `corner-shape` is not used (Safari lacks
+it). Type pills needed one line in ui.js (`typeBadgeHTML`), the only ui.js change.
+
+UI-3 found (read at 550c4ed): uiTheme.json held only colours, the glass (light side only: the dark side's highlight,
+edge and shadows were fixed in code), the cut sizes and the fonts; space, text sizes, line height, motion and the
+depths lived only in tokens.css and v05.css, and which corners each family cuts was fixed in code. `overrides` was in
+the schema but nothing read it, and presets merged one level deep. `--shape-panel/card/button` in tokens.css are dead
+(families switch through the `--clip-*` polygons). The Studio can't take the game's theme sheet on its own page
+(studio.css uses the same names: `--line`, `--text2`, `--text`...), so the preview is the UI gallery in a frame. Its
+colour field took `#rrggbb` only (`line` is `#rrggbbaa`), and `studioBroadcast` didn't send the look, though the game
+already applied it live. The Studio had no "Save as" (owner: it means Save as preset). ui-lint.mjs is Node only and
+counts without lines, so the Studio's rule check with Show me needs a browser-safe module first (UI-3b). How UI-3a
+built it: uiTheme.json version 2 (every dial's value, the defaults equal to today's CSS, proven by every custom
+property resolving the same on the gallery and the 73 pictures); overrides scoped to each screen's root (`UI_SCREENS`)
+with the variables the sheets derive at `:root` declared again (`UI_DERIVED`); the dials as a table
+(logic/ui-dials.js); the contrast check shared by check-data and the Studio (danger and primary at 3:1 besides text at
+4.5:1; not on presets, as alpha05's green reads 2.5:1).
+
 No rule yet but needed: a layer scale (24 distinct z-index values, -1 to 2147483000) and cut-corner tokens. The Studio
 is outside the 06 rules (studio.css: 108 raw radii, 372 raw spacing values, its own teal palette). The bottom bar's
 tabs (walk, map, team, ledger, bag) and `--t-*` colours are the pre-roguelite game's.
@@ -101,7 +129,11 @@ Works like the Engine section (dials in groups, ↺ per dial, presets, Hold to c
   real screens from fixtures: Team, Bag, a battle with the floating cards, the dialogue box, the payout, the run chip.
 - **Tools (all four groups):** presets and Hold to compare; a rule check with Show me (tools/ui-lint.mjs, also in the
   Studio's Check); inspect (tap a part: its component and tokens; Ctrl+L the reverse) and overlays (tap targets under
-  44 px, contrast failures, more than two glass layers); before/after shots. Find (Ctrl+K), Undo and Save as everywhere.
+  44 px, contrast failures, more than two glass layers); before/after shots. Find (Ctrl+K), Undo and Save as everywhere
+  (owner, UI-3: "Save as" is + Save as preset, as in the Engine section; no Studio-wide Save as).
+- **Split (owner, UI-3):** UI-3a builds the data, the section, the dials, the overrides, presets, Hold to compare, the
+  gallery preview, Find, the contrast check and the check step; UI-3b the rest of the tools (real screens from
+  fixtures, inspect and Ctrl+L, overlays, before/after shots, the rule check with Show me).
 - **The Studio's own look** moves onto the shared tokens (its own calm preset) after UI-3. Desktop and iPad only.
 
 ## Sessions
@@ -109,8 +141,9 @@ Works like the Engine section (dials in groups, ↺ per dial, presets, Hold to c
 | # | Session | Does | Visible change | Done when |
 | --- | --- | --- | --- | --- |
 | UI-1 (done 2026-10-21) | Theme as data, rules as a check | uiTheme.json + schema, boot writes the variables; `--cut-*`, `--slant`, `--z-*`; the Copper Grove palette and teal HP as data; Jersey 15 and Oxanium in game/fonts; tools/ui-lint.mjs counts raw values per rule and file and blurred surfaces per screen (report only); v05's `--disp`/`--body` folded into the font tokens | the palette and fonts | game otherwise identical; lint report in the HANDOFF entry |
-| UI-2 | Kit v2: angular shapes | cut panel, card, button, tab, bar, selection with the edge line; `pb-card`, `pb-tabs`, `pb-stat-bar`, `pb-field`; the shared bot plate (limb pips); the 45° icon set; type glyphs; portraits breaking the frame; diagonal wipes in motion.css; battle floating cards and move tiles; gallery picture tests per component state | screens already on the kit | gallery picture tests and smoke pass; phone check of three screens |
-| UI-3 | Studio UI section | the section above, presets as data, a Studio check step (a dial changed, previewed, undone, saved as a PR) | Studio only | the Studio check step passes |
+| UI-2 (done 2026-10-21) | Kit v2: angular shapes | cut panel, card, button, tab, bar, selection with the edge line; `pb-card`, `pb-tabs`, `pb-stat-bar`, `pb-field`; the shared bot plate (limb pips); the 45° icon set; type glyphs; portraits breaking the frame; diagonal wipes in motion.css; battle floating cards and move tiles; gallery picture tests per component state | screens already on the kit | gallery picture tests and smoke pass; phone check of three screens |
+| UI-3a (done 2026-10-21) | Studio UI section, core | uiTheme.json version 2; overrides read; the section with every dial group, the whole game or a screen, presets as data (+ Save as preset), Hold to compare, the UI gallery as live preview, Find, the contrast check in the Studio's Check; a Studio check step (a dial changed, previewed, undone, saved as a PR) | Studio only | the Studio check step passes |
+| UI-3b | Studio UI section, tools | real screens from fixtures beside the gallery (Team, Bag, a battle, the dialogue box; payout and run chip once they exist); inspect (tap a part: its component and tokens) and Ctrl+L the reverse; overlays (tap targets under 44 px, contrast failures, glass layers); before/after shots; the rule check (ui-lint as a browser-safe module with lines) in the Studio's Check with Show me | Studio only | its check steps pass |
 | UI-4 | Run parts | day and deadline chip, forecast icon row, node markers, the four currency chips, the relic and keep-one card, payout rows with their motion, the hub/run bottom bar | gallery only | RL-7 and RL-8 can use them with no CSS of their own |
 | UI-5 | Every screen onto the kit | after the RL-8 play test: every screen, including ones the roguelite replaces, moves out of ui.js and the old CSS, one screen per commit, moves only (absorbs 06-5) | every remaining screen | each moved screen passes its UI test; the unused-CSS list shrinks |
 | UI-6 | Old layers gone | style, polish, screens and v05 emptied and deleted; lint and the blur budget enforced (fail when raw values rise); accessibility pass; then `phase-06-done` and `ui-6-done` | none intended | ui-lint at or near zero; full quick check green apart from known reds |

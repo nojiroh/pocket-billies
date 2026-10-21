@@ -1,5 +1,5 @@
 {
- "version": 1,
+ "version": 2,
  "defaults": {
   "color": {
    "light": {
@@ -31,12 +31,67 @@
     "hpLow": "#FF8466"
    }
   },
-  "surface": {"glass":0.7,"blur":12,"saturate":1.4,"highlight":0.95,"shadowTint":"text"},
-  "shape": {"cutSm":4,"cutMd":8,"cutLg":12,"slant":10},
-  "type": {"voice":"Jersey 15","prose":"Oxanium","voiceScale":1.18}
+  "surface": {
+   "blur": 12,
+   "saturate": 1.4,
+   "light": {"glass":0.7,"highlight":0.95,"edgeHi":0.95,"edgeLo":0.3,"shadowTint":"text"},
+   "dark": {"glass":0.7,"highlight":0.12,"edgeHi":0.2,"edgeLo":0.55,"shadowTint":"#000000"}
+  },
+  "depth": {
+   "light": {
+    "raisedY": 10,
+    "raisedBlur": 28,
+    "raisedAlpha": 0.42,
+    "raisedNear": 0.14,
+    "floatY": 16,
+    "floatBlur": 34,
+    "floatAlpha": 0.5,
+    "floatNear": 0.16
+   },
+   "dark": {
+    "raisedY": 12,
+    "raisedBlur": 30,
+    "raisedAlpha": 0.65,
+    "raisedNear": 0.35,
+    "floatY": 18,
+    "floatBlur": 38,
+    "floatAlpha": 0.75,
+    "floatNear": 0.4
+   }
+  },
+  "drop": {
+   "raisedY": 6,
+   "raisedBlur": 7,
+   "raisedAlpha": 0.24,
+   "raisedNear": 0.16,
+   "floatY": 12,
+   "floatBlur": 14,
+   "floatAlpha": 0.32,
+   "floatNear": 0.18
+  },
+  "shape": {
+   "cutSm": 4,
+   "cutMd": 8,
+   "cutLg": 12,
+   "slant": 10,
+   "stepped": false,
+   "step": 4,
+   "families": {
+    "panel": {"kind":"cut","size":"cutLg","corners":["tl","br"],"radius":22},
+    "card": {"kind":"cut","size":"cutMd","corners":["tl","tr","br","bl"],"radius":16},
+    "button": {"kind":"cut","size":"cutSm","corners":["tl","tr","br","bl"],"radius":16},
+    "action": {"kind":"cut","size":"cutLg","radius":22},
+    "tab": {"kind":"cut","size":"cutMd","corners":["tl","tr"],"radius":12},
+    "toast": {"kind":"cut","size":"cutMd","radius":18}
+   }
+  },
+  "space": {"s1":4,"s2":8,"s3":12,"s4":16,"s5":24,"s6":32,"s7":48,"gutter":16},
+  "type": {"voice":"Jersey 15","prose":"Oxanium","voiceScale":1.18,"scale":1,"lineHeight":1.5},
+  "motion": {"fast":140,"base":240,"slow":420,"stagger":35,"easeOut":[0.2,0.8,0.2,1],"easeIn":[0.4,0,1,1],"spring":[0.3,1.6,0.5,1]}
  },
  "presets": {
   "alpha05": {
+   "name": "Alpha 0.5",
    "color": {
     "light": {
      "ground": "#DBE9DC",
@@ -67,8 +122,26 @@
      "hpLow": "#E84848"
     }
    },
-   "surface": {"glass":0.7,"blur":16,"saturate":1.5,"highlight":0.9,"shadowTint":"#2E2140"},
-   "type": {"voice":"Pixelify Sans","prose":"Chakra Petch","voiceScale":1}
+   "surface": {
+    "blur": 16,
+    "saturate": 1.5,
+    "light": {"glass":0.7,"highlight":0.9,"edgeHi":0.9,"shadowTint":"#2E2140"}
+   },
+   "type": {"voice":"Pixelify Sans","prose":"Chakra Petch","voiceScale":1},
+   "shape": {
+    "families": {
+     "panel": {"kind":"rounded"},
+     "card": {"kind":"rounded"},
+     "button": {"kind":"rounded"},
+     "action": {"kind":"rounded"},
+     "tab": {"kind":"rounded"},
+     "toast": {"kind":"rounded"}
+    }
+   }
+  },
+  "stepped": {
+   "name": "Stepped pixels",
+   "shape": {"stepped":true}
   }
  },
  "overrides": {}
