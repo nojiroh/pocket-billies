@@ -1303,7 +1303,15 @@ export type UiRole =
 export interface UiLook {
   color?: { light?: Partial<Record<UiRole, string>>; dark?: Partial<Record<UiRole, string>> };
   surface?: { glass?: number; blur?: number; saturate?: number; highlight?: number; shadowTint?: string };
-  shape?: { cutSm?: number; cutMd?: number; cutLg?: number; slant?: number };
+  shape?: {
+    cutSm?: number;
+    cutMd?: number;
+    cutLg?: number;
+    slant?: number;
+    stepped?: boolean;
+    step?: number;
+    families?: Partial<Record<'panel' | 'card' | 'button' | 'action' | 'tab' | 'toast', 'cut' | 'rounded' | 'square'>>;
+  };
   type?: { voice?: 'Jersey 15' | 'Pixelify Sans'; prose?: 'Oxanium' | 'Chakra Petch'; voiceScale?: number };
 }
 export interface UiTheme {
