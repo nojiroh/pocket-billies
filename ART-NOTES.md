@@ -341,7 +341,7 @@ ones are kept in `retired/map-mini-v46/`). The tools below only write what's mis
 the metre for props and 32 px to the metre for the ground.
 
 ### Part 1: the ground
-- **Ground** (`tools/build-terrain-v47.py`): 78 kinds (the 38 from before, 22 new and part 4's 18 room floors), each
+- **Ground** (`tools/build-ground.py`): 78 kinds (the 38 from before, 22 new and part 4's 18 room floors), each
   with twelve 32 px tiles in `art/next/tiles47/<name>_1..12.png`
   (the v46 set in `art/next/tiles/` is untouched). `_1`, `_7`, `_8` plain; `_2`–`_6` and `_10` details; `_9` the damp
   patch in the kind's own colours; `_11`, `_12` worn (fewer details: the painter lays the trodden track itself). The

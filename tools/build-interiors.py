@@ -23,7 +23,7 @@ W, H, WALL = 14, 11, 3.2
 
 
 def room(sid, name, floor, wall, seed, kind, keeper, spot, chat, w=W, h=H):
-    # v47: floor is each room's own indoor floor (tools/build-terrain-v47.py, tools/room-floors-v47.py)
+    # v47: floor is each room's own indoor floor (tools/build-ground.py, tools/room-floors-v47.py)
     s = Scene(sid, name, floor, seed, w, h, sky=['#2A2836', '#3A3848', '#4A4658'], haze='#4A4658', hazeD=40, amb='dust', tint=None, indoor=1, far='mall', farH=4, folk=0,
               cam={'pitch': 28, 'h': 8.5, 'fov': 1}, blur=.6, chat=chat,
               # light from above, soft shadows: a room lit by its ceiling, not the sun through the roof

@@ -24,9 +24,9 @@ Roles of the twelve (the ground painter, walk-view.js, places them): 1, 7, 8 pla
 patch; 11, 12 worn. The 16 px tiles of the new kinds (scene/tiles/<name>.png and _1.._5, Lite mode and the Studio)
 are made from the 32 px ones, with the soft patches baked in (Lite has no painter patches).
 
-    python3 tools/build-terrain-v47.py                       # writes what is missing (+ the catalogue entries)
-    python3 tools/build-terrain-v47.py --force NAME[,NAME]   # redraws those kinds (their tiles47 files only)
-    python3 tools/build-terrain-v47.py --preview --sheet out.png   # only the tiles47 files and the sheets
+    python3 tools/build-ground.py                       # writes what is missing (+ the catalogue entries)
+    python3 tools/build-ground.py --force NAME[,NAME]   # redraws those kinds (their tiles47 files only)
+    python3 tools/build-ground.py --preview --sheet out.png   # only the tiles47 files and the sheets
 """
 import gamedata  # phase 04b: the data files in game/data
 import argparse, importlib.util, json, math, random, zlib
