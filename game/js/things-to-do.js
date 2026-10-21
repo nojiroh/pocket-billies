@@ -197,7 +197,8 @@ export function arrivedAt(node) {
 const challengeText = c => (CHALLENGE_KINDS.find(t => t.k === c.k) || { text: () => c.k }).text(c);
 /* something happened: a catch (with its types), a win, a fish landed, a stamp found */
 function recordThingsToDoEvent(k, o = {}) {
-  if (!saveData || !saveData.started) return;
+  /* RL-8: today's challenges are the hub's (a run's wins and catches don't count, its money isn't the hub's) */
+  if (!saveData || !saveData.started || saveData.run) return;
   const C = challengesToday();
   let ch = false;
   for (const c of C.list) {
@@ -221,7 +222,7 @@ function recordThingsToDoEvent(k, o = {}) {
   if (ch) save();
 }
 export function challengeCardHTML() {
-  if (!saveData.started) return '';
+  if (!saveData.started || saveData.run) return '';
   const C = challengesToday();
   return `<section class="chal px glass"><div class="sec-h"><h2>Today’s challenges</h2><span class="count tnum">${C.list.filter(c => c.claimed).length}/${C.list.length}</span></div>${C.list
     .map((c, i) => {
@@ -233,7 +234,7 @@ export function challengeCardHTML() {
 }
 function claimChallenge(i) {
   const c = challengesToday().list[+i];
-  if (!c || c.claimed || challengeProgress(c) < c.need) return;
+  if (!c || c.claimed || challengeProgress(c) < c.need || saveData.run) return;
   c.claimed = true;
   const got = thingsToDoReward(1.4);
   save();
