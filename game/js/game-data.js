@@ -424,12 +424,13 @@ export function worldSetGraph(locations, roads) {
     ROADS_BY_NODE[a].push({ to: b, cost: c, i });
     ROADS_BY_NODE[b].push({ to: a, cost: c, i });
   });
-  /* v47: a "tutorial" trainer only battles in a story scene (blake0, in the opening); it stands on no stop */
+  /* v47: a "tutorial" trainer only battles in a story scene (blake0, in the opening); it stands on no stop. RL-5: nor
+     does a mini-boss (the eight badge leaders, the runs' mini-boss pool from RL-13) */
   for (const id in TRAINERS) {
     const T = TRAINERS[id];
-    if (T.tutorial) {
+    if (T.tutorial || T.miniboss) {
       /* it waits on no location */
-    } else if (LOCATIONS[T.node]) LOCATIONS[T.node].trainers.push(id);
+    } else if (T.node !== undefined && LOCATIONS[T.node]) LOCATIONS[T.node].trainers.push(id);
     else warnData(`Trainer ${id} stands on a stop that doesn’t exist.`);
   }
   /* the first trainer at a stop that hands out a Board Seat (or doesn’t block the road) is that stop’s Boardroom */

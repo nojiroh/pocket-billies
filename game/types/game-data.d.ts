@@ -580,8 +580,8 @@ export interface Trainer {
   who: DataId;
   /** their battle stage, a key of gameData.battleStages */
   battleStage?: DataId;
-  /** the location where they wait */
-  node: LocationNode;
+  /** the location where they wait (none for a tutorial trainer or a mini-boss) */
+  node?: LocationNode;
   /** they block the road until beaten */
   blocks?: boolean;
   team: TrainerBilly[];
@@ -609,6 +609,8 @@ export interface Trainer {
   after?: DataId;
   /** only battles in a story scene; waits on no location */
   tutorial?: boolean;
+  /** RL-5: a mini-boss (a badge leader): waits on no location; the runs' mini-boss pool (RL-13) */
+  miniboss?: boolean;
   clue?: string;
   ending?: number;
   v47region?: number;

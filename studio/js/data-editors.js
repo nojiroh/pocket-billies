@@ -1498,7 +1498,7 @@ SECTIONS.trainers = () => {
   const list = ks
     .map(
       x =>
-        `<button class="lcard slim ${x === k ? 'on' : ''}" data-act="pickTrainer" data-id="${x}"><span class="lt"><b>${escapeHtml(TR[x].name)}</b><small>${TR[x].tutorial ? 'The opening' : escapeHtml((D.locations[TR[x].node] || {}).name || '?')}${TR[x].seat ? ' · Badge' : ''}${TR[x].blocks ? ' · blocks the road' : ''}</small></span></button>`
+        `<button class="lcard slim ${x === k ? 'on' : ''}" data-act="pickTrainer" data-id="${x}"><span class="lt"><b>${escapeHtml(TR[x].name)}</b><small>${TR[x].tutorial ? 'The opening' : TR[x].miniboss ? 'Mini-boss' : escapeHtml((D.locations[TR[x].node] || {}).name || '?')}${TR[x].seat ? ' · Badge' : ''}${TR[x].blocks ? ' · blocks the road' : ''}</small></span></button>`
     )
     .join('');
   if (!T)
@@ -1539,12 +1539,14 @@ SECTIONS.trainers = () => {
    `<div class="keeper"><div class="person-prev">${personPreviewHTML(T.who)}</div><div>${grid(
      textField('Name', `${p}.name`),
      selectField('Look', `${p}.who`, peopleOptions(), { rr: 1 }),
-     selectField(
-       'Stands at',
-       `${p}.node`,
-       D.locations.map((r, i) => [i, `${i + 1}. ${r.name}`]),
-       { num: 1, rr: 1 }
-     ),
+     T.miniboss
+       ? ''
+       : selectField(
+           'Stands at',
+           `${p}.node`,
+           D.locations.map((r, i) => [i, `${i + 1}. ${r.name}`]),
+           { num: 1, rr: 1 }
+         ),
      selectField(
        'Battle backdrop',
        `${p}.battleStage`,
@@ -1567,7 +1569,7 @@ SECTIONS.trainers = () => {
       ['false', 'Never'],
     ]
   )}
-  ${checkboxField('Story battle only (the opening): stands on no stop, and losing costs nothing', `${p}.tutorial`, { rr: 1, help: 'Blake’s first battle, right after you choose your starter. Hazel gives tips during it.' })}${checkboxField('Blocks the road until beaten', `${p}.blocks`, { rr: 1 })}${T.blocks ? grid(textField('Blocking headline', `${p}.blockTitle`), textField('Blocking text', `${p}.blockText`)) : ''}${textField('Hint before the battle', `${p}.hint`, { area: 1, rows: 2, opt: 1 })}</div></div>`
+  ${checkboxField('Story battle only (the opening): stands on no stop, and losing costs nothing', `${p}.tutorial`, { rr: 1, help: 'Blake’s first battle, right after you choose your starter. Hazel gives tips during it.' })}${checkboxField('Mini-boss: stands on no stop (the runs’ mini-boss pool)', `${p}.miniboss`, { rr: 1, help: 'The eight badge leaders. A run picks its mini-bosses from them (roguelite track RL-13).' })}${checkboxField('Blocks the road until beaten', `${p}.blocks`, { rr: 1 })}${T.blocks ? grid(textField('Blocking headline', `${p}.blockTitle`), textField('Blocking text', `${p}.blockText`)) : ''}${textField('Hint before the battle', `${p}.hint`, { area: 1, rows: 2, opt: 1 })}</div></div>`
  )}
  ${card('Team', `<table class="tbl"><thead><tr><th>Billie</th><th>Lv</th><th></th></tr></thead><tbody>${team}</tbody></table><div class="seg-row"><button class="btn" data-act="teamAdd">Add a Billie</button></div>`, { sub: 'They send them out in this order.' })}
  ${card(

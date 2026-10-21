@@ -439,7 +439,9 @@ const robotProblems = R => {
   return out;
 };
 for (const [id, T] of Object.entries(D.trainers || {})) {
-  if (!route[T.node]) problem(`trainers/${id}.json`, `waits at stop ${T.node}, no such stop`);
+  /* RL-5: a tutorial trainer and a mini-boss stand on no stop */
+  if (!T.tutorial && !T.miniboss && !route[T.node])
+    problem(`trainers/${id}.json`, `waits at stop ${T.node}, no such stop`);
   if (T.who && !people[T.who]) problem(`trainers/${id}.json`, `looks like ${T.who}, no such person`);
   for (const m of T.team || [])
     if (m.sp === 'robot') for (const p of robotProblems(m.robot)) problem(`trainers/${id}.json`, p);

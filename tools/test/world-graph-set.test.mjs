@@ -107,3 +107,31 @@ test('putting the same world in again changes nothing', () => {
   data.worldSetGraph(data.LOCATIONS, FIXTURE.roads);
   assert.deepEqual(tables(), before, 'the list given may be LOCATIONS itself');
 });
+
+test('RL-5: a mini-boss stands on no place, like a tutorial trainer', () => {
+  const T = data.TRAINERS.ray;
+  assert.deepEqual(
+    data.trainersAt(1).map(t => t.id),
+    ['ray'],
+    'Rival Ray waits on the Meadow'
+  );
+  for (const k of ['miniboss', 'tutorial'])
+    try {
+      T[k] = true;
+      data.worldSetGraph(FIXTURE.locations, FIXTURE.roads);
+      assert.deepEqual(
+        data.LOCATIONS.map(l => l.trainers),
+        [[], [], []],
+        k
+      );
+      assert.equal(data.LOCATIONS[1].board, null);
+    } finally {
+      delete T[k];
+      data.worldSetGraph(FIXTURE.locations, FIXTURE.roads);
+    }
+  assert.deepEqual(
+    data.trainersAt(1).map(t => t.id),
+    ['ray'],
+    'and back'
+  );
+});
