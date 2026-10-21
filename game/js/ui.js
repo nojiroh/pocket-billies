@@ -19,11 +19,10 @@ import {
   saveData,
   setSaveData,
   uiState,
-  writeStoredSave,
 } from './game-state.js';
 import { coinHTML, uiIconHTML } from './art.js';
 import { LOOK_PRESETS, cleanLook, portraitHTML } from './person-art.js';
-import { applyPreferences, settingsHTML } from './settings-screen.js';
+import { openSettings } from './settings-screen.js';
 import { rigCanvasHTML } from './skeleton-rig.js';
 import { EASE, battleStage, battleStageFocus, battleStageTargets, camHome } from './battle-stage.js';
 import { fishStart } from './fishing.js';
@@ -63,7 +62,6 @@ import { leaveRoom, roomState, walkMapSync } from './walk-control.js';
 expose({
   SCREENS: [() => SCREENS],
   TABS: [() => TABS],
-  openSettings: [() => openSettings, v => ((openSettings = v), provide({ openSettings }))],
   render: [() => render, v => setRender(v)],
   renderIntro: [() => renderIntro, v => (renderIntro = v)],
   startGame: [() => startGame, v => ((startGame = v), provide({ startGame }))],
@@ -71,7 +69,7 @@ expose({
   updateNav: [() => updateNav, v => ((updateNav = v), provide({ updateNav }))],
 });
 /* eslint-enable no-func-assign */
-provide({ openSettings, render, startGame, updateNav });
+provide({ render, startGame, updateNav });
 export function setRender(v) {
   render = v; // eslint-disable-line no-func-assign
   provide({ render });
@@ -191,50 +189,6 @@ function renderIntro() {
   if (uiState.openingFailed)
     return `<div class="title opening-failed"><h1 class="logo">Pocket Billies</h1><p class="tag">The opening scene couldn’t start${uiState.openingFailed === 'stopped' ? ' (it stopped partway)' : ''}. Trying again usually works; if it keeps happening, send the debug log.</p><button class="pb gold wide big" data-a="intro">Try again</button><button class="pb quiet wide" data-a="dbglog">Export debug log</button></div>`;
   return `<div class="title"><div class="title-landscape" aria-hidden="true"></div><div class="title-coin">${coinHTML('penny', 176, 32)}</div><h1 class="logo">Pocket Billies</h1><p class="tag">A classic RPG inside the Hollow Earth, where the Billies are the wildlife. Gotta tax 'em all!</p><button class="pb gold wide big" data-a="intro">Start</button></div>`;
-}
-function openSettings(tab) {
-  if (tab) uiState.setTab = tab;
-  modal({
-    title: 'Settings',
-    settings: true,
-    cls: 'set-sheet',
-    html: settingsHTML(),
-    btns: [
-      { l: 'Done', c: 'dark', f: closeModal },
-      {
-        l: 'Start over',
-        c: 'quiet',
-        f: () => {
-          uiState.modal = null;
-          modal({
-            title: 'Start over?',
-            html: '<p>This erases your team, Field Guide and money.</p>',
-            btns: [
-              {
-                l: 'Erase and start over',
-                c: 'red',
-                f: () => {
-                  setSaveData(newSaveKeepingPreferences());
-                  saveData.savedAt = Date.now();
-                  writeStoredSave(saveData);
-                  flushSave();
-                  uiState.intro = 0;
-                  uiState.pg = null;
-                  uiState.avatarDraft = null;
-                  uiState.trainerDraft = null;
-                  uiState.tab = 'walk';
-                  applyPreferences();
-                  closeModal();
-                  render();
-                },
-              },
-              { l: 'Keep my progress', c: 'quiet', f: closeModal },
-            ],
-          });
-        },
-      },
-    ],
-  });
 }
 /* o.rival (v47, from the opening): Blake's battle comes first; the welcome sheet waits until the talk after it */
 export function startGame(l, o = {}) {
