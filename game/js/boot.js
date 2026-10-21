@@ -7,7 +7,7 @@
 import { expose } from './test-globals.js';
 import { provide } from './hooks.js';
 import { TEST_BOOT } from './test-boot.js';
-import { DATA_WARN, LOCATIONS, RULES, SPECIES, START_NODE, gameData } from './game-data.js';
+import { DATA_WARN, LOCATIONS, RULES, SPECIES, START_NODE, gameData, worldExtraMaps } from './game-data.js';
 import { applyUiTheme } from './theme-sheet.js';
 import { SAVE_NEW_MSG, SAVE_OLD_MSG, newSave } from './logic/saves.js';
 import { battleStageKey } from './logic/battle-engine.js';
@@ -38,6 +38,7 @@ import { worldBowlReset } from './world-bowl.js';
 import { cutsceneStart, cutsceneWanted } from './cutscene/opening.js';
 import { titleMount, titleScreen, titleStart, titleWanted } from './title.js';
 import { loreLoadingLines } from './lore.js';
+import { runWorld, runWorldSync } from './run-world.js';
 import { initAccount } from './account.js';
 import {
   initPixelSky,
@@ -831,6 +832,8 @@ function studioLive(D) {
       gameData[k] = D[k];
       any = true;
     }
+  /* RL-7: a run's scenes aren't the Studio's: they stay while its world is in */
+  if (D.maps) Object.assign(gameData.maps, worldExtraMaps());
   /* phase 10, session 5: the world map's look and the places' landmarks; the bowl is worked out again */
   if (D.worldmap) {
     gameData.worldmap = D.worldmap;
@@ -908,6 +911,10 @@ function noWebGL(why) {
   });
   document.body.appendChild(el);
 }
+/* RL-7: the world the save needs goes in before anything reads where you stand (a run's, made from its seed; the
+   hub's is in already); from here a swapped save brings its own (game-state.js setSaveData) */
+runWorldSync();
+runWorld.live = true;
 if (!webgl2Supported()) noWebGL();
 else
   /* phase 04b: the maps round where you are come with the art check; the others after the loader (js/map-files.js) */

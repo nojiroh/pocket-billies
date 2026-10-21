@@ -4,7 +4,7 @@
 /** @import { SaveData } from '../types/save-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { flushAccountSave, provide, toast } from './hooks.js';
+import { flushAccountSave, provide, runWorld, runWorldSync, toast } from './hooks.js';
 import { TEST_BOOT } from './test-boot.js';
 import { loadSave, newSave, saveAge } from './logic/saves.js';
 /* eslint-disable no-func-assign */
@@ -146,6 +146,8 @@ provide({ activeBattle }); /* to-module */
 export function setSaveData(v) {
   saveData = v;
   provide({ saveData });
+  /* RL-7: the world follows the save (a run's or the hub's: game/js/run-world.js), once boot has put the first in */
+  if (typeof runWorld !== 'undefined' && runWorld.live) runWorldSync();
 }
 export function setActiveBattle(v) {
   activeBattle = v;

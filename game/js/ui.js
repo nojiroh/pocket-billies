@@ -88,6 +88,7 @@ import {
 } from './logic/rules.js';
 import { TOAST_MS, toastAdd, toastItem, toastTime } from './logic/messages.js';
 import { readableBg } from './logic/colors.js';
+import { runArrive, runMapNode } from './logic/run-map.js';
 import { pbFloat, pbInboxDot, pbInboxPop, typeGlyphHTML } from './ui-kit.js';
 import { newSaveKeepingPreferences } from './logic/saves.js';
 import {
@@ -137,7 +138,7 @@ import {
   walkView,
   walkablePointNear,
 } from './walk-view.js';
-import { environment, environmentHint, environmentIcon, environmentLabel } from './environment.js';
+import { WEATHER_NAMES, environment, environmentHint, environmentIcon, environmentLabel } from './environment.js';
 import { walkRenderer } from './walk/walk-state.js';
 import { roomFloorReady } from './walk/ground-draw.js';
 import { mountWalkView } from './walk-view-gl.js';
@@ -171,6 +172,7 @@ import {
   tapMessage,
 } from './battle.js';
 import {
+  worldBowlRunMark,
   worldMapAction,
   worldMapFit,
   worldMapHeight,
@@ -191,6 +193,7 @@ import { tutorPicked } from './opening-fall.js';
 import { renderTitle, titleMount } from './title.js';
 import { loreBook, renderLore } from './lore.js';
 import { flyMenu, rideGlassLift } from './airship.js';
+import { runWorldData } from './run-world.js';
 import { postcardCheck, renderPostcards } from './postcards.js';
 import { renderBag } from './bag.js';
 import { friendsHTML } from './friends.js';
@@ -281,6 +284,7 @@ expose({
   roomState: [() => roomState, v => (roomState = v)],
   roomStepIn: [() => roomStepIn, v => (roomStepIn = v)],
   runEvolution: [() => runEvolution, v => ((runEvolution = v), provide({ runEvolution }))],
+  runForecastHTML: [() => runForecastHTML, v => (runForecastHTML = v)],
   showPendingWindows: [() => showPendingWindows, v => ((showPendingWindows = v), provide({ showPendingWindows }))],
   showToast: [() => showToast, v => (showToast = v)],
   startGame: [() => startGame, v => ((startGame = v), provide({ startGame }))],
@@ -1169,7 +1173,7 @@ function roomState() {
     exits: [{ i: 0, to: -1, name: 'Outside', out: 1 }],
   };
 }
-function walkState() {
+export function walkState() {
   const rs = !uiState.bench && roomState();
   if (rs) return rs;
   if (uiState.bench && uiState.bench.id && mapById(uiState.bench.id)) {
@@ -1385,7 +1389,7 @@ function mapOffsetInView(id) {
   const q = (sc.parts || []).find(q => q.id === id);
   return q ? [q.ox || 0, q.oz || 0] : null;
 }
-function walkCross() {
+export function walkCross() {
   if (
     !saveData.started ||
     !walkView.ready ||
@@ -1413,13 +1417,19 @@ function walkCross() {
       uiState.walkOk = [P.x, P.z, walkView.id];
       return;
     }
-    if (Math.min(x, z, s.w - x, s.h - z) < 1 || !ROADS_BY_NODE[node].some(e => e.to === n)) return;
-    const bl = blockerAt(node),
-      why = !canEnter(n)
-        ? gateText(LOCATIONS[n])
-        : bl && !saveData.visited[n]
-          ? `${bl.name} is blocking the way. Beat them first.`
-          : null;
+    /* RL-7: in a run a crossing counts a few metres in (rules.json run.seamIn), so a step over a seam and back costs
+       no day */
+    const inside = saveData.run ? RULES.run.seamIn : 1;
+    if (Math.min(x, z, s.w - x, s.h - z) < inside || !ROADS_BY_NODE[node].some(e => e.to === n)) return;
+    const bl = blockerAt(node);
+    let why = !canEnter(n)
+      ? gateText(LOCATIONS[n])
+      : bl && !saveData.visited[n]
+        ? `${bl.name} is blocking the way. Beat them first.`
+        : null;
+    /* RL-7: in a run a crossing is an arrival (logic/run-map.js runArrive: a day, the path, what the map shows) */
+    if (!why && saveData.run && !runArrive(saveData, runMapNode(n), runWorldData()))
+      why = 'That way isn’t on the run’s map.';
     if (why) {
       const w = uiState.walkOk;
       if (w && w[2] === walkView.id) {
@@ -1441,7 +1451,11 @@ function walkCross() {
     if (typeof arrivedAt === 'function') arrivedAt(n);
     uiState.roam = { id: q.id, node: n, x, z };
     uiState.backAt = null;
-    if (typeof debugLog !== 'undefined') debugLog.add('travel', 'walked into ' + LOCATIONS[n].name);
+    if (typeof debugLog !== 'undefined')
+      debugLog.add(
+        'travel',
+        'walked into ' + LOCATIONS[n].name + (saveData.run ? ` (the run's day ${saveData.run.clock})` : '')
+      );
     save();
     render();
     return;
@@ -1591,8 +1605,11 @@ function walkMapSync() {
   }
 }
 function renderWorldMapTab() {
+  /* RL-7: on a run, its day and deadline (ui-run-kit.js pb-day-chip) */
+  const run = saveData.run && saveData.run.map ? saveData.run : null,
+    day = run ? `<pb-day-chip class="map-day" day="${run.clock}" deadline="${run.deadline}"></pb-day-chip>` : '';
   return `<div class="map-full"><canvas id="mapcv" width="${worldMapWidth}" height="${worldMapHeight}" aria-label="World map. Drag to look around, tap a place."></canvas><div id="maplabels"></div>
- <div class="map-head glass"><div class="sub">The Hollow Earth</div><h1 class="where">World map</h1><p class="map-trip ${tripStatus().k}">${escapeHtml(tripStatus().t)}</p></div>
+ <div class="map-head glass"><div class="sub">The Hollow Earth</div><h1 class="where">World map</h1>${day}<p class="map-trip ${tripStatus().k}">${escapeHtml(tripStatus().t)}</p></div>
  <div class="mapctl"><button class="mbtn" data-a="mzoom" data-k="in" aria-label="Zoom in">+</button><button class="mbtn" data-a="mzoom" data-k="out" aria-label="Zoom out">−</button><button class="mbtn" data-a="mreset" aria-label="Back to you">${uiIconHTML('walk', 16)}</button></div>
  <div class="mapcard px glass" id="mapcard">${worldMapCardHTML()}</div></div>`;
 }
@@ -1601,8 +1618,20 @@ function poolStrip(pool) {
   if (!P) return '';
   return `<div class="poolstrip">${P.list.map(([id]) => (saveData.seen[id] ? rigCanvasHTML(id, 36) : rigCanvasHTML(id, 36, { sil: 1, still: 1 }))).join('')}</div>`;
 }
+/* RL-7: a run's place's weather for a week from today (its forecast; ui-run-kit.js pb-forecast), today marked */
+function runForecastHTML(node) {
+  const run = saveData.run,
+    days = ((run && run.forecast[node]) || []).slice(run.clock - 1, run.clock + 6);
+  return days.length
+    ? `<pb-forecast class="mc-fc" label="Forecast" items="${escapeHtml(days.map(w => `${w}:${WEATHER_NAMES[w] || w}`).join(','))}" from="${run.clock}" value="${run.clock}"></pb-forecast>`
+    : '';
+}
 function worldMapCardHTML() {
   const sel = uiState.mapSel == null ? saveData.trip.node : uiState.mapSel;
+  /* RL-7: a run's place the map shows only as a '?' */
+  const rm = typeof sel === 'number' ? worldBowlRunMark(sel) : null;
+  if (rm && rm.seen < 2)
+    return `<div class="mc-top"><h2>Further on</h2><span class="sub">On the run</span></div><p class="note">Come closer to see what waits here.</p>`;
   if (typeof sel === 'string') {
     const f = REGIONS[+sel.slice(1)];
     return `<div class="mc-top"><h2>${escapeHtml(f.name)}</h2><span class="sub">${f.t === 'sun' ? 'Center of the world' : 'Unexplored'}</span></div><p>${escapeHtml(f.blurb || '')}</p><p class="note">${f.t === 'sun' ? 'Visible from everywhere in the Hollow Earth.' : 'No trainer from Marigold Town has walked this far yet. The road opens in a later version.'}</p>`;
@@ -1637,8 +1666,12 @@ function worldMapCardHTML() {
       btns = `<button class="pb small gold" data-a="travel" data-n="${sel}">${uiIconHTML('walk', 16)} Travel here</button>`;
     }
   }
-  const nb = ROADS_BY_NODE[sel].map(e => LOCATIONS[e.to].name);
-  return `<div class="mc-top"><h2>${escapeHtml(n.name)}</h2><span class="sub">${escapeHtml(locationSubtitle(n))}</span></div><p class="note">${escapeHtml(n.blurb || '')}</p>${n.ride && canRide() ? `<p class="note ride">${uiIconHTML('drop', 14)} You ride across on ${escapeHtml(riderName())}.</p>` : ''}<p class="status">${status}</p>${btns ? `<div class="racts">${btns}</div>` : ''}${poolStrip(n.pool)}${nb.length ? `<p class="note mc-nb">Roads to ${nb.map(escapeHtml).join(', ')}.</p>` : ''}${nodeActions(sel)}`;
+  /* RL-7: a road to a run's '?' place doesn't name it */
+  const nb = ROADS_BY_NODE[sel].map(e => {
+    const to = worldBowlRunMark(e.to);
+    return to && to.seen < 2 ? 'somewhere further on' : LOCATIONS[e.to].name;
+  });
+  return `<div class="mc-top"><h2>${escapeHtml(n.name)}</h2><span class="sub">${escapeHtml(locationSubtitle(n))}</span></div><p class="note">${escapeHtml(n.blurb || '')}</p>${n.ride && canRide() ? `<p class="note ride">${uiIconHTML('drop', 14)} You ride across on ${escapeHtml(riderName())}.</p>` : ''}<p class="status">${status}</p>${btns ? `<div class="racts">${btns}</div>` : ''}${rm ? runForecastHTML(sel) : ''}${poolStrip(n.pool)}${nb.length ? `<p class="note mc-nb">Roads to ${nb.map(escapeHtml).join(', ')}.</p>` : ''}${nodeActions(sel)}`;
 }
 function paintWorldMapCard() {
   const c = $('#mapcard');

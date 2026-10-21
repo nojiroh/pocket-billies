@@ -12,15 +12,15 @@ import { random } from '../util.js';
 import {
   COINS,
   EGGS,
+  HUB_LOCATIONS,
   ITEMS,
   LINES,
-  LOCATIONS,
   MOVES,
   RULES,
   SPECIES,
   START_NODE,
   STATUS_NAMES,
-  roadCost,
+  hubRoadCost,
 } from '../game-data.js';
 import { isRobot, robotGemDef, robotPartDef, robotRules, speciesOf } from './fighters.js';
 import { cleanName, movesAt, refreshRobot, teamSize } from './rules.js';
@@ -168,25 +168,26 @@ export function migrate(o) {
       onRun = x => Number.isInteger(x) && x >= 0 && x < nodes;
     if (!s.trip || !onRun(s.trip.node)) s.trip = { node: 0, plan: [] };
     s.trip.plan = (Array.isArray(s.trip.plan) ? s.trip.plan : []).filter(onRun);
-    if (!LOCATIONS[s.run.start.trip.node]) s.run.start.trip = { node: START_NODE, plan: [] };
+    if (!HUB_LOCATIONS[s.run.start.trip.node]) s.run.start.trip = { node: START_NODE, plan: [] };
   } else {
-    if (!s.trip || !LOCATIONS[s.trip.node]) s.trip = { node: START_NODE, plan: [] };
-    s.trip.plan = (Array.isArray(s.trip.plan) ? s.trip.plan : []).filter(x => LOCATIONS[x]);
-    if (s.trip.plan.length && !roadCost(s.trip.node, s.trip.plan[0])) s.trip.plan = [];
+    /* RL-7: in the hub's world, whatever world is in while the save loads (a backup restored during a run) */
+    if (!s.trip || !HUB_LOCATIONS[s.trip.node]) s.trip = { node: START_NODE, plan: [] };
+    s.trip.plan = (Array.isArray(s.trip.plan) ? s.trip.plan : []).filter(x => HUB_LOCATIONS[x]);
+    if (s.trip.plan.length && !hubRoadCost(s.trip.node, s.trip.plan[0])) s.trip.plan = [];
   }
   if (!s.visited || typeof s.visited !== 'object') s.visited = {};
   /* RL-5: a save from before the hub stood alone holds the old world's places: what names a place that isn't there
      any more goes, in the hub (during a run they are the run's, made after loading): places visited, wild Billies by
      place, the townsfolk's requests by place and the letters to one, today's visits */
   if (!s.run) {
-    for (const k of Object.keys(s.visited)) if (!LOCATIONS[+k]) delete s.visited[k];
-    const ids = new Set(LOCATIONS.map(l => l.id));
+    for (const k of Object.keys(s.visited)) if (!HUB_LOCATIONS[+k]) delete s.visited[k];
+    const ids = new Set(HUB_LOCATIONS.map(l => l.id));
     for (const k of Object.keys(s.wild)) if (!ids.has(k)) delete s.wild[k];
     const X = s.x && typeof s.x === 'object' ? s.x : null;
     if (X && X.reqs && typeof X.reqs === 'object')
       for (const [k, q] of Object.entries(X.reqs))
-        if (!LOCATIONS[+k] || (q && q.to != null && !LOCATIONS[q.to])) delete X.reqs[k];
-    if (X && X.visits && Array.isArray(X.visits.ids)) X.visits.ids = X.visits.ids.filter(n => !!LOCATIONS[n]);
+        if (!HUB_LOCATIONS[+k] || (q && q.to != null && !HUB_LOCATIONS[q.to])) delete X.reqs[k];
+    if (X && X.visits && Array.isArray(X.visits.ids)) X.visits.ids = X.visits.ids.filter(n => !!HUB_LOCATIONS[n]);
   }
   s.visited[s.trip.node] = 1;
   if (s.started && !s.team.length && !s.box.length) return newSave();
@@ -225,10 +226,10 @@ export function validSave(o) {
     return false;
   /* RL-3: the run's checks; during a run the hub's team as it started is checked like the team */
   if (!validMeta(o.meta) || !validRanch(o.ranch) || (o.run !== null && !validRun(o.run))) return false;
-  const nodes = o.run ? runNodeCount(o.run) : LOCATIONS.length;
+  const nodes = o.run ? runNodeCount(o.run) : HUB_LOCATIONS.length;
   if (!billiesOk(o.team.concat(o.box)) || (o.run && !billiesOk(o.run.start.team))) return false;
   if (!o.trip || !Number.isInteger(o.trip.node) || !num(o.trip.node, 0, nodes - 1) || !num(o.se, 0, 1e12)) return false;
-  if (o.run && !num(o.run.start.trip.node, 0, LOCATIONS.length - 1)) return false;
+  if (o.run && !num(o.run.start.trip.node, 0, HUB_LOCATIONS.length - 1)) return false;
   if (!Array.isArray(o.eggs) || o.eggs.some(e => !e || !num(e.prog, 0, 1e12))) return false;
   for (const k of ['coins', 'items'])
     if (!o[k] || typeof o[k] !== 'object' || Object.values(o[k]).some(n => !num(n, 0, 1e12))) return false;
@@ -243,7 +244,7 @@ export function validSave(o) {
   const record = v => v && typeof v === 'object' && !Array.isArray(v) && !Object.hasOwn(v, '__proto__');
   if (
     !record(o.wild) ||
-    Object.keys(o.wild).length > LOCATIONS.length + nodes ||
+    Object.keys(o.wild).length > HUB_LOCATIONS.length + nodes ||
     Object.values(o.wild).some(
       w =>
         !w ||

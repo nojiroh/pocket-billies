@@ -351,6 +351,8 @@ export interface LocationData {
   locked?: string;
   ride?: number;
   noFly?: number;
+  /** roguelite track RL-7: a run's place: its node on the run's map (logic/run-scenes.js; world node runNode + 1) */
+  runNode?: number;
   v47region?: number;
   a04place?: number;
   a04pearl?: number;
@@ -801,8 +803,23 @@ export interface Rules {
     /** RL-6: what the map shows from where you stand: the rows up to `icons` ahead with their type, up to `unknown`
         ahead as '?' pins (the boss always) */
     reveal: { icons: number; unknown: number };
+    /** RL-7: how a run node's scene varies (logic/run-scenes.js): mapgen's dials (MAPGEN_DEFAULTS' groups), each
+        number a [low, high] range drawn from the node's stream, each choice (water, road shape and surface, feature)
+        a record of weights. Dials left out keep mapgen's defaults */
+    scene: RunSceneRules;
+    /** RL-7: a run node's wild Billies: levels `lv` on the landing's row, `perRow` more on each row after; a node
+        walked back to rolls `back` of them again (the hub's stock on a first visit) */
+    wild: { lv: [number, number]; perRow: number; back: number };
+    /** RL-7: metres past a seam before a crossing counts in a run (the hub's is 1), so a step over and back costs
+        no day */
+    seamIn: number;
   };
 }
+
+/** rules.json run.scene: mapgen's dials as ranges and weights (RL-7) */
+export type RunSceneRules = {
+  [group: string]: [number, number] | Record<string, number> | RunSceneRules;
+};
 
 /** rules.json run.map: how a run's node map is laid out (logic/run-map.js runMapMake; placeholders, 8.18) */
 export interface RunMapRules {
@@ -1298,6 +1315,11 @@ export interface Biome {
   name: string;
   /** the kind of weather it gets (logic/weather.js CLIMATE_WEATHER_ODDS): a run node's forecast rolls from it (RL-6) */
   climate: string;
+  /** RL-7: a run node's Billies (a pools.json pool: its species; the run sets the levels), battle stage
+      (battleStages.json) and colour grade (moods.json) */
+  pool: DataId;
+  battleStage: DataId;
+  mood: DataId;
   ground: {
     base: string;
     patches?: Record<string, number>;

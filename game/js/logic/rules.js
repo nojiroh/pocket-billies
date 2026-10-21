@@ -21,6 +21,7 @@ import {
   jingle,
   provide,
   render,
+  runNodeSeed,
   save,
   saveData,
   showPendingWindows,
@@ -50,6 +51,7 @@ import {
   trainersAt,
   typeEffectiveness,
 } from '../game-data.js';
+import { rngFn } from './rng.js';
 import { partsLean, partsPrime, partsStatFactor, partsWeightRatio } from './parts.js';
 import {
   ROBOT_LIMBS,
@@ -107,6 +109,8 @@ expose({
   encounterBuild: [() => encounterBuild, v => (encounterBuild = v)],
   // @ts-expect-error -- replaced on purpose
   encounterPoolHere: [() => encounterPoolHere, v => (encounterPoolHere = v)],
+  // @ts-expect-error -- replaced on purpose
+  encounterRunVisits: [() => encounterRunVisits, v => (encounterRunVisits = v)],
   // @ts-expect-error -- replaced on purpose
   encounterStock: [() => encounterStock, v => (encounterStock = v)],
   // @ts-expect-error -- replaced on purpose
@@ -692,6 +696,8 @@ export function encounterStock(node) {
   const L = LOCATIONS[node],
     R = RULES.encounters;
   if (!L) return 0;
+  /* RL-7: a run's place walked back to holds fewer (rules.json run.wild.back) */
+  if (encounterRunVisits(node) > 1) return RULES.run.wild.back;
   if (!isTown(node)) return R.route;
   const sc = L.mapId && gameData.maps ? gameData.maps[L.mapId] : null,
     tiles = sc ? (sc._lite ? sc._lite.tiles : (sc.tiles || []).join('')) : '';
@@ -703,13 +709,30 @@ export function wildList(node) {
     id = LOCATIONS[node].id;
   return (W[id] || (W[id] = { at: saveData.playMs || 0, list: [] })).list;
 }
+/* RL-7: how many times you have arrived at a run's place (its map node in run.path); 0 for a hub place */
+export function encounterRunVisits(node) {
+  const L = LOCATIONS[node],
+    run = saveData.run;
+  return L && L.runNode != null && run ? run.path.filter(i => i === L.runNode).length : 0;
+}
 export function encountersHere(node = saveData.trip.node) {
   const L = LOCATIONS[node];
   if (!L) return [];
   const W = saveData.wild || (saveData.wild = {}),
     now = saveData.playMs || 0,
     cap = encounterStock(node),
-    w = W[L.id];
+    w = W[L.id],
+    visit = encounterRunVisits(node);
+  /* RL-7: a run's place is stocked once on each visit, from its own stream (rngFrom(its node's seed, 'wild|' + the
+     visit)), and not topped up by play time: a run's time is its days */
+  if (visit) {
+    if (!w || w.v !== visit) {
+      const rnd = rngFn(runNodeSeed(saveData.run.seed, L.runNode), 'wild|' + visit);
+      W[L.id] = { at: now, list: [], v: visit };
+      while (W[L.id].list.length < cap) spawn(false, null, node, rnd);
+    }
+    return W[L.id].list;
+  }
   if (!w) {
     const list = wildList(node);
     while (list.length < cap) spawn(false, null, node);

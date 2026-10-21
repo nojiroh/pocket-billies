@@ -111,6 +111,22 @@ game's rules). `runEnd` paid per node cleared from the path's length, which coun
 `forecast[node][day]` is `forecast[world node][day - 1]`; the node seed uses the map's numbering. "About 14 nodes"
 needs two lanes on almost every free or town row: with the 70% chosen, a map has 12.5 on average (9 to 14), and towns
 are 4.4 of them (the two rows before the mini-boss rows, plus a filler at weight 1 of 5).
+**Corrected in RL-7 (2026-10-21).** A scene takes about 30 ms to make in Node, not 136-451 ms (MG-1's numbers, before
+MG-2); a run's 12-14 took 0.4-0.9 s in headless Chromium, so a run's world makes all its scenes when it goes in,
+not "lazily one hop ahead" (which can't work per node anyway: a child is made from every parent's edge, so the order
+is row by row). 501 scenes of 40 runs with the scene dials varied all joined with no gap and a straight walk, all
+reachable. The world follows the save, not boot alone: the save is swapped in many places (New game, an account or
+backup restore, the debug menu, the in-game test), so `setSaveData` calls `runWorldSync` once boot has (RL-8's run
+start calls it too). `runArrive` took where you stand from `run.path`; `trip.node` is the one copy (RL-3), so it reads
+that. `migrate`/`validSave` bounded a hub save by the installed world's places: the hub's own now (`HUB_LOCATIONS`).
+Not in 2e: a crossing counts `run.seamIn` (6) metres in, so a step over a seam and back costs no day; a run place's
+pool is its own (its biome's species at its row's levels: the source places' pools carry old levels, Russetwood
+41-45); biomes.json rows got `pool`, `battleStage`, `mood`. 2a's "a run made by another generator version is
+abandoned" became "kept" (the owner's J: the map and position don't depend on the generator). The walked view copies
+a scene's `climate` (LOOK_KEYS). Things that would misfire on run nodes were kept to the hub: postcards, things-to-do's
+visits and requests, friends' presence (node 0, "a run"). Run trainers, the landing's mast and towns' clinic and shop
+moved to RL-8 with their behaviour; RL-7's scenes are plain routes. A place's landmark picture on the bowl draws as a
+red block in headless Chromium, Copperleaf's in the hub too (not RL-7's; HANDOFF).
 
 ### Findings A: battle, state, randomness, saves (verified)
 
@@ -602,7 +618,11 @@ lazy generation, run trainers, `seamlessWorld.gen++`, `worldBowlReset()`), `boot
 `environment.js` (forced weather on arrival). Tests: `run-world.test.mjs` on real data (every run road's exits face
 and align; restore leaves the hub tables as before). Could break: the walk view when tables change mid-session,
 seamless caches, name-free debug log. Verify: (a), (b), smoke, a quick-check step on `?fixture=run` (install, open the
-map, walk one seam). 1-2 sessions.
+map, walk one seam). 1-2 sessions. Done 2026-10-21 in one session (HANDOFF; section 0 for what changed from this
+paragraph): `logic/run-scenes.js` and `game/js/run-world.js` (`runWorldSync`, all scenes at once), `worldPut` and
+`worldHubBack`, the weather from the forecast, the bowl's run pins and day chip, a run place's wild stock; tested by
+`run-scenes.test.mjs`, `run-world-real.test.mjs`, the `run` fixture, a fast-check page, a quick-check step and an
+in-game test phase. Run trainers moved to RL-8.
 
 **RL-8 Run loop and payout (first playable cut).** Files: `logic/battle-rewards.js` (move of `endBattle`'s arithmetic
 first, with a fixture test that the numbers match), new `run.js` (start from the mast, arrival checkpoints,

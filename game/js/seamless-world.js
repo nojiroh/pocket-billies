@@ -383,6 +383,8 @@ const LOOK_KEYS = [
   'mist',
   'cliff',
   'grass',
+  /* RL-7: a run's scene names its climate (its biome's); environment.js reads it first */
+  'climate',
 ];
 function seamlessLookOf(S) {
   const o = {};

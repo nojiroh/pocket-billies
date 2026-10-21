@@ -165,18 +165,20 @@ export function challengesToday() {
   }
   return X.chal;
 }
-/* the places you've been in today (the one you were in when the day began counts) */
+/* the places you've been in today (the one you were in when the day began counts; RL-7: in the hub: a run's places
+   are a world of their own, whose numbers mean other places in the hub's) */
 function visitsToday() {
   const X = thingsToDo(),
     d = today();
-  if (!X.visits || X.visits.date !== d) X.visits = { date: d, ids: [saveData.trip.node] };
+  if (!X.visits || X.visits.date !== d) X.visits = { date: d, ids: saveData.run ? [] : [saveData.trip.node] };
   return X.visits;
 }
 const challengeProgress = c => (c.k === 'visit' ? visitsToday().ids.length : c.have);
 /* phase 08: you came to a place (over a road's edge, by airship or by the glass lift): today's visits, and a letter
    you carry may have reached its town */
 export function arrivedAt(node) {
-  if (!saveData || !saveData.started) return;
+  /* RL-7: today's visits and the townsfolk's letters are the hub's (a run's arrival is logic/run-map.js runArrive) */
+  if (!saveData || !saveData.started || saveData.run) return;
   const V = visitsToday();
   if (!V.ids.includes(node)) {
     V.ids.push(node);
@@ -247,7 +249,8 @@ const REQUEST_KINDS = {
 };
 function requestHere(node = saveData.trip.node) {
   const R = LOCATIONS[node];
-  if (!R || !R.town || !saveData.started) return null;
+  /* RL-7: townsfolk with requests live in the hub's towns, not a run's */
+  if (!R || !R.town || !saveData.started || saveData.run) return null;
   const X = thingsToDo(),
     d = today();
   let q = X.reqs[node];

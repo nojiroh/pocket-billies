@@ -9,7 +9,7 @@
    The renderer reads environment through environmentFrame() once a frame; nothing here touches WebGL. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { RULES, SPECIES, mapIdAt, provide, reducedMotion, saveData } from './hooks.js';
+import { RULES, SPECIES, mapIdAt, provide, reducedMotion, runPlaceWeather, saveData } from './hooks.js';
 import { clamp } from './util.js';
 import { CLIMATE_WEATHER_ODDS, weatherPick } from './logic/weather.js';
 import { hexToRgb } from './art.js';
@@ -41,6 +41,7 @@ expose({
   environmentOdds: [() => environmentOdds, v => ((environmentOdds = v), provide({ environmentOdds }))],
   environmentPreferences: [() => environmentPreferences, v => (environmentPreferences = v)],
   environmentRules: [() => environmentRules, v => (environmentRules = v)],
+  environmentRunWeather: [() => environmentRunWeather, v => (environmentRunWeather = v)],
   environmentSeason: [() => environmentSeason, v => ((environmentSeason = v), provide({ environmentSeason }))],
   environmentSky: [() => environmentSky, v => (environmentSky = v)],
   environmentSmoothstep: [() => environmentSmoothstep],
@@ -182,17 +183,24 @@ function environmentHash(s) {
   }
   return ((h >>> 0) % 100000) / 100000;
 }
-/* today's weather for a kind of place: changes every three hours, the same for everyone */
-function environmentWeatherFor(climate, d) {
+/* today's weather for a kind of place: changes every three hours, the same for everyone. RL-7: a run's place has
+   its forecast's weather for the day instead (fixed, environmentRunWeather), after a forced weather and your setting */
+function environmentWeatherFor(climate, d, fixed) {
   const f = environment.force && environment.force.weather;
   if (f) return f;
   const p = environmentPreferences().weather;
   if (p === 'clear' || !environment.on) return 'clear';
   if (p && p !== 'auto' && WEATHER_LOOKS[p]) return p;
+  if (fixed) return fixed;
   d = d || new Date();
   const day = Math.floor((d.getTime() - d.getTimezoneOffset() * 6e4) / 864e5),
     blk = Math.floor(d.getHours() / 3);
   return weatherPick(climate, environmentHash(climate + '|' + day + '|' + blk), environmentSeason(d));
+}
+/* RL-7: a run place's weather today, from the run's forecast (run-world.js runPlaceWeather); '' anywhere else: a
+   scene names its place (a view: placeId; a place's own scene: locationId) */
+function environmentRunWeather(sc) {
+  return sc && !sc.indoor && typeof runPlaceWeather === 'function' ? runPlaceWeather(sc.placeId || sc.locationId) : '';
 }
 /* everything the renderer needs, eased so weather drifts in and out; a new scene snaps */
 /* the hour, the season and the weather for a scene right now (no easing): used for the odds in the wild and the walk card too */
@@ -204,7 +212,7 @@ export function environmentState(sc, d) {
     rise = 6 + wk * 1.1,
     set = 20.2 - wk * 1.8,
     clim = environmentClimate(sc),
-    wx = sc && sc.indoor ? 'clear' : environmentWeatherFor(clim, d);
+    wx = sc && sc.indoor ? 'clear' : environmentWeatherFor(clim, d, environmentRunWeather(sc));
   /* 1 at full night, 0 in daylight; dusk and dawn are bells around sunset and sunrise */
   const night =
       1 - environmentSmoothstep(rise - 0.9, rise + 0.7, h) * (1 - environmentSmoothstep(set - 0.5, set + 1.1, h)),
@@ -277,8 +285,9 @@ function environmentHistory(clim, d) {
 export function environmentFrame(sc, dt) {
   const p = environmentPreferences(),
     F = environment.force || {},
+    /* RL-7: a run's next place, whose day's weather is its own, snaps to it like a forced weather */
     f =
-      JSON.stringify([F.time, F.season, F.front ? 0 : F.weather]) +
+      JSON.stringify([F.time, F.season, F.front ? 0 : F.weather, environmentRunWeather(sc)]) +
       (p.time || '') +
       (p.season || '') +
       (environment.on ? 1 : 0),
@@ -553,7 +562,8 @@ export function environmentLabel(sc) {
 function environmentForecast(sc) {
   if (!environment.on || (environment.force && environment.force.weather)) return '';
   const s = sc || currentLocationMap();
-  if (!s || s.indoor) return '';
+  /* RL-7: a run's place keeps its day's weather */
+  if (!s || s.indoor || environmentRunWeather(s)) return '';
   const clim = environmentClimate(s),
     d = new Date(),
     now = environmentWeatherFor(clim, d);

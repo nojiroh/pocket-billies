@@ -347,6 +347,22 @@ test('arriving: the landing first on day 1, then a day for each linked node, for
   assert.ok(validRun(JSON.parse(JSON.stringify(s.run))), 'the save takes it after the walk');
 });
 
+test('arriving goes from where trip.node says you stand (a debug jump or a test moves it alone)', () => {
+  const s = onRun('RL7JUMP'),
+    map = s.run.map;
+  runArrive(s, 0, DATA);
+  const row1 = runNext(map, 0)[0],
+    row2 = runNext(map, row1)[0],
+    row3 = runNext(map, row2)[0];
+  s.trip.node = runWorldNode(row2);
+  assert.equal(runArrive(s, row3, DATA), 2, 'on from where you were put, a day');
+  assert.deepEqual(s.run.path, [0, row3]);
+  s.trip.node = runWorldNode(row1);
+  assert.equal(runArrive(s, row3, DATA), 0, 'not from the row before');
+  s.trip.node = 0;
+  assert.equal(runArrive(s, 0, DATA), 3, 'from Copperleaf only the landing');
+});
+
 test("the forecast: the same for a seed, a later fill gives a longer fill's days, each node's climate", () => {
   const one = onRun('RL6SKY').run,
     two = onRun('RL6SKY').run;

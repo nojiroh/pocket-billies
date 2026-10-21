@@ -75,6 +75,7 @@ import { setWorldBowlRender, setWorldMapMount, worldBowlRender, worldMapMount } 
 import { openShop, setOpenShop } from './shop.js';
 import { ambience, soundEngine } from './sound.js';
 import { cutsceneStart, setCutsceneStart } from './cutscene/opening.js';
+import { runWorld } from './run-world.js';
 import { account } from './account.js';
 import { challengesToday, stampCount } from './things-to-do.js';
 import { render, renderOverlay, setRender, setRenderOverlay, toast } from './ui.js';
@@ -140,6 +141,7 @@ Object.defineProperties(GAME, {
   render: { get: () => render, set: setRender },
   renderOverlay: { get: () => renderOverlay, set: setRenderOverlay },
   runNormalMapJobs: { get: () => runNormalMapJobs, set: setRunNormalMapJobs },
+  runWorld: { get: () => runWorld },
   save: { get: () => save, set: setSave },
   saveData: { get: () => saveData },
   screenSnapshot: { get: () => screenSnapshot, set: setScreenSnapshot },

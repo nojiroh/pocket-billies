@@ -122,6 +122,38 @@ test('saves: a save from a run loads with its trip, plan, visited places and run
   assert.equal(fn('migrate')(gone).run.start.team.length, 1);
 });
 
+test("saves: a hub save is checked against the hub's places while a run's world is in (RL-7)", () => {
+  /* the run's world as RL-7 puts it in: Copperleaf (here the fixture's first place) and five run nodes */
+  const hub = data.LOCATIONS.slice(),
+    run = i => ({
+      id: 'run_' + i,
+      name: 'Node ' + i,
+      kind: 'route',
+      route: 'Route',
+      pool: 'meadow',
+      mapId: 'run_' + i,
+    });
+  data.worldSetGraph([hub[0], run(0), run(1), run(2), run(3), run(4)], []);
+  try {
+    assert.equal(data.LOCATIONS.length, 6);
+    const s = startedSave('sparky0', 10);
+    s.trip = { node: 4, plan: [5] };
+    s.visited = { 0: 1, 4: 1 };
+    assert.equal(fn('validSave')(JSON.parse(JSON.stringify(s))), false, "node 4 is not one of the hub's three");
+    const m = fn('migrate')(JSON.parse(JSON.stringify(s)));
+    assert.deepEqual(m.trip, { node: data.START_NODE, plan: [] });
+    assert.equal(m.visited[4], undefined);
+    /* a run's save is still bounded by its own map */
+    assert.deepEqual(fn('migrate')(JSON.parse(JSON.stringify(runSave()))).trip, { node: 4, plan: [5] });
+  } finally {
+    data.worldSetGraph(hub, data.gameData.roads);
+  }
+  assert.deepEqual(
+    data.LOCATIONS.map(l => l.id),
+    hub.map(l => l.id)
+  );
+});
+
 test('saves: a run that fails its check is left, with the hub as it was when the run started', () => {
   const s = runSave(),
     hubTrip = s.run.start.trip;

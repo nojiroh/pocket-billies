@@ -6,13 +6,13 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
 import { $ } from '../../game/js/util.js';
+import { mapgenParams, mapgenScene } from '../../game/js/logic/mapgen.js';
 import { gpuCountBegin, gpuCountEnd } from '../../game/js/engine/gpu-counters.js';
 import { frameScheduler } from '../../game/js/frame-scheduler.js';
 import { gpuState } from '../../game/js/engine/webgl.js';
 import { escapeHtml } from './game-stand-ins.js';
 import { HISTORY_STEPS } from '../../game/js/logic/history.js';
 import { sheetIslands } from '../../game/js/logic/sheet-slice.js';
-import { mapgenParams, mapgenScene } from '../../game/js/logic/mapgen.js';
 import {
   ACTIONS,
   PANE2_REFUSED,
