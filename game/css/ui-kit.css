@@ -18,17 +18,25 @@
   cursor: pointer;
 }
 .tb-inbox b {
-  min-width: 22px;
-  height: 22px;
-  padding: 0 6px;
+  /* UI-2: a diamond (the ring is the surface colour behind a slightly smaller diamond) */
+  width: 28px;
+  height: 28px;
   display: grid;
   place-items: center;
-  border-radius: var(--r-pill);
-  background: var(--t-profile);
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+  background: var(--g-solid);
   color: #fff;
   font: 700 12px/1 var(--font-voice);
-  border: 2px solid var(--g-solid);
-  box-shadow: var(--g-sh);
+  position: relative;
+  isolation: isolate;
+}
+.tb-inbox b::before {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  z-index: -1;
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+  background: var(--t-profile);
 }
 
 /* the inbox sheet's list */
@@ -41,7 +49,7 @@
 }
 .inbox-list li {
   padding: var(--s4);
-  border-radius: var(--r-md);
+  clip-path: var(--clip-card);
   background: var(--g-bg2);
 }
 .inbox-list h3 {
@@ -71,14 +79,26 @@
 }
 
 /* phase 06-4: every sheet is a floating card that keeps clear of the screen's edges, with room to breathe (on wide
-   screens style.css centres it in the middle of the screen) */
+   screens style.css centres it in the middle of the screen). UI-2: the panel's two cuts and its edge line; no
+   shadow (a clip-path would cut it off, and the scrim behind already sets the sheet apart) */
 .scrim .sheet {
   width: calc(100% - 2 * var(--gutter));
   max-width: 520px;
   margin: 0 var(--gutter) calc(var(--gutter) + env(safe-area-inset-bottom, 0px));
   padding: var(--s5) var(--pad-panel) var(--pad-panel) !important;
-  border-radius: var(--r-lg) !important;
-  box-shadow: var(--depth-float) !important;
+  border-radius: 0 !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  clip-path: var(--clip-panel);
+}
+.scrim .sheet::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  clip-path: var(--edge-panel);
+  background: var(--edge);
+  pointer-events: none;
 }
 .scrim .sheet > h2 {
   font-size: var(--fs-title);
@@ -124,4 +144,92 @@
 }
 .sheet.evo-sheet .btns .pb {
   font-size: 15px !important;
+}
+
+/* ================= UI-2: page-side angular pieces =================
+   A slanted bar behind the chosen row of a list (.pb-sel with aria-selected, aria-current or .on), and a section rule
+   that is a line with a diamond (<hr class="pb-rule">). */
+.pb-sel {
+  position: relative;
+  isolation: isolate;
+}
+.pb-sel::before {
+  content: '';
+  position: absolute;
+  inset: 2px calc(-1 * var(--s1));
+  z-index: -1;
+  transform: skewX(calc(-1 * var(--slant)));
+  border-left: 4px solid var(--gold-b);
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--gold-b) 34%, transparent),
+    color-mix(in srgb, var(--gold-a) 10%, transparent)
+  );
+  opacity: 0;
+  transition: opacity var(--m-fast) var(--ease-out);
+  pointer-events: none;
+}
+.pb-sel[aria-selected='true']::before,
+.pb-sel[aria-current='true']::before,
+.pb-sel.on::before {
+  opacity: 1;
+}
+hr.pb-rule {
+  position: relative;
+  height: 1px;
+  margin: var(--s4) var(--s2);
+  border: 0;
+  overflow: visible;
+  background: linear-gradient(90deg, transparent, var(--line) 12%, var(--line) 88%, transparent);
+}
+hr.pb-rule::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  transform: translate(-50%, -50%);
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+  background: linear-gradient(180deg, var(--gold-a), var(--gold-b));
+}
+/* a portrait or avatar: the circle sits behind and the head breaks out of its top (the picture shows whole above
+   the circle's middle and only inside it below); size it with --por (the box) */
+.pb-portrait {
+  position: relative;
+  isolation: isolate;
+  display: inline-grid;
+  place-items: end center;
+  width: var(--por, 64px);
+  height: var(--por, 64px);
+}
+.pb-portrait::before {
+  content: '';
+  position: absolute;
+  left: 7%;
+  right: 7%;
+  bottom: 0;
+  aspect-ratio: 1;
+  z-index: -1;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 30%, rgba(255, 255, 255, 0.45), transparent 60%),
+    color-mix(in srgb, var(--c1, var(--gold-a)) 45%, var(--g-solid));
+  box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--c-shadow) 18%, transparent);
+}
+.pb-portrait > * {
+  -webkit-mask:
+    radial-gradient(
+      circle calc(var(--por, 64px) * 0.43) at 50% calc(100% - var(--por, 64px) * 0.43),
+      #000 99%,
+      transparent
+    ),
+    linear-gradient(#000, #000) top / 100% calc(100% - var(--por, 64px) * 0.43) no-repeat;
+  mask:
+    radial-gradient(
+      circle calc(var(--por, 64px) * 0.43) at 50% calc(100% - var(--por, 64px) * 0.43),
+      #000 99%,
+      transparent
+    ),
+    linear-gradient(#000, #000) top / 100% calc(100% - var(--por, 64px) * 0.43) no-repeat;
 }
