@@ -36,7 +36,8 @@ town node needs it.
 
 ## Tracks alongside
 - **Studio track** (docs/phases/studio-track.md): ST-0..ST-6 done; ST-7 (Model mode import) next. Independent of the
-  rework; the editors for the new data sections come with their sessions (RL-11..RL-16).
+  rework; the editors for the new data sections come with their sessions (RL-11..RL-16). Side session ST-T, the
+  Studio self-test (docs/phases/studio-self-test.md, approved 2026-10-21): measure the Studio; fixes come after.
 - **Map generator track** (docs/phases/mapgen-track.md): MG-1 done; MG-2 is on the RL path (before RL-6); MG-3 when a
   town node needs it; MG-4 and MG-5 after RL-8.
 - **Project Story** (docs/phases/project-story.md): S1-S3 and S7 done, S8 partly (the city plays before the fall).
