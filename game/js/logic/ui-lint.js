@@ -12,6 +12,8 @@ expose({
   COLOUR: [() => COLOUR],
   JS_RULES: [() => JS_RULES],
   LENGTH: [() => LENGTH],
+  UI_LINT_EXTRA: [() => UI_LINT_EXTRA],
+  UI_LINT_PAGES: [() => UI_LINT_PAGES],
   UI_LINT_RULES: [() => UI_LINT_RULES],
   blank: [() => blank],
   count: [() => count],
@@ -19,6 +21,9 @@ expose({
   declarations: [() => declarations, v => (declarations = v)],
   // @ts-expect-error -- replaced on purpose
   findingsOf: [() => findingsOf, v => (findingsOf = v)],
+  folderOfPath: [() => folderOfPath],
+  // @ts-expect-error -- replaced on purpose
+  joinPath: [() => joinPath, v => (joinPath = v)],
   // @ts-expect-error -- replaced on purpose
   lineAt: [() => lineAt, v => (lineAt = v)],
   lintCss: [() => lintCss],
@@ -33,7 +38,14 @@ expose({
   stripCss: [() => stripCss],
   stripJs: [() => stripJs],
   // @ts-expect-error -- replaced on purpose
+  uiLintCrawl: [() => uiLintCrawl, v => (uiLintCrawl = v)],
+  // @ts-expect-error -- replaced on purpose
   uiLintFindings: [() => uiLintFindings, v => (uiLintFindings = v)],
+  // @ts-expect-error -- replaced on purpose
+  uiLintImports: [() => uiLintImports, v => (uiLintImports = v)],
+  // @ts-expect-error -- replaced on purpose
+  uiLintPageFiles: [() => uiLintPageFiles, v => (uiLintPageFiles = v)],
+  uiLintReads: [() => uiLintReads],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -180,4 +192,69 @@ export function report(total) {
     return `| ${x.name} | ${t.raw} | ${x.token ? t.token : x.id === 'keyframes' ? `${t.token} in motion.css` : '-'} | ${worst} |`;
   });
   return ['| Rule | Raw | Token uses | Worst files |', '| --- | --- | --- | --- |', ...rows].join('\n');
+}
+
+/* UI-3b: the files the lint reads, found the way a browser can (the Studio has no folder listing): the pages'
+   style sheets and scripts under game/, and every module they import, followed. tools/test/ui-lint.test.mjs keeps
+   this list equal to what tools/ui-lint.mjs walks. */
+export const UI_LINT_PAGES = ['game/index.html', 'studio/index.html', 'studio/gallery.html'];
+// loaded by a URL made at run time (settings-screen.js), so no import names it
+export const UI_LINT_EXTRA = ['game/js/graphics-test.js'];
+
+/** a path relative to the repository: dir + a relative URL (./, ../) */
+export function joinPath(dir, rel) {
+  const out = dir ? dir.split('/') : [];
+  for (const p of rel.split('/')) {
+    if (p === '..') out.pop();
+    else if (p && p !== '.') out.push(p);
+  }
+  return out.join('/');
+}
+export const folderOfPath = (/** @type {string} */ f) => f.slice(0, Math.max(0, f.lastIndexOf('/')));
+
+/** the style sheets and scripts a page names (paths from the repository's root) */
+export function uiLintPageFiles(page, html) {
+  const out = [];
+  for (const m of html.matchAll(/<(?:link\b[^>]*\brel="stylesheet"[^>]*\bhref|script\b[^>]*\bsrc)="([^"?#]+)/g))
+    if (!m[1].includes('://')) out.push(joinPath(folderOfPath(page), m[1]));
+  return out;
+}
+
+/** the modules a script imports (static imports and import('...') with a plain string) */
+export function uiLintImports(file, text) {
+  const out = [];
+  for (const m of stripJs(text).matchAll(
+    /\b(?:import|export)\s[^'";]*?\bfrom\s*['"]([^'"]+)['"]|\bimport\s*\(\s*['"]([^'"]+)['"]\s*\)|^\s*import\s*['"]([^'"]+)['"]/gm
+  )) {
+    const rel = m[1] || m[2] || m[3];
+    if (rel.startsWith('.')) out.push(joinPath(folderOfPath(file), rel));
+  }
+  return out;
+}
+
+/** does the lint read this file? (game CSS and JS; not the generated hooks.js, not the rules' own file) */
+export const uiLintReads = (/** @type {string} */ f) =>
+  (/^game\/css\/.+\.css$/.test(f) || /^game\/js\/.+\.js$/.test(f)) &&
+  !/\/vendor\//.test(f) &&
+  !f.endsWith('/hooks.js') &&
+  !f.endsWith('logic/ui-lint.js');
+
+/** every file the lint reads, by following the pages: read(path) gives a file's text (fetch or fs) */
+export async function uiLintCrawl(/** @type {(path: string) => Promise<string>} */ read) {
+  const seen = new Set(),
+    queue = [];
+  const take = f => {
+    if (!seen.has(f) && (f.endsWith('.css') || f.endsWith('.js'))) {
+      seen.add(f);
+      queue.push(f);
+    }
+  };
+  for (const page of UI_LINT_PAGES) uiLintPageFiles(page, await read(page)).forEach(take);
+  UI_LINT_EXTRA.forEach(take);
+  while (queue.length) {
+    const f = queue.shift();
+    // the Studio's own modules are followed (they import game modules) but not read by the lint
+    if (f.endsWith('.js') && (uiLintReads(f) || f.startsWith('studio/'))) uiLintImports(f, await read(f)).forEach(take);
+  }
+  return [...seen].filter(uiLintReads).sort();
 }

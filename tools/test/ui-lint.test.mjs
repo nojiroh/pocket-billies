@@ -80,3 +80,31 @@ test("the game's findings add up to the report's raw counts", async () => {
   for (const [rule, t] of Object.entries(total)) assert.equal(found.filter(x => x.rule === rule).length, t.raw, rule);
   for (const x of found.slice(0, 50)) assert.ok(x.line > 0 && typeof x.text === 'string');
 });
+
+// UI-3b: the Studio finds the files by following the pages; it must read the same files as the command line
+test('following the pages reaches every file the lint reads, and no other', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const { lintFiles } = await import('../ui-lint.mjs');
+  const { uiLintCrawl } = await import('../../game/js/logic/ui-lint.js');
+  const root = new URL('../../', import.meta.url);
+  const found = await uiLintCrawl(p => readFile(new URL(p, root), 'utf8'));
+  assert.deepEqual(found, [...lintFiles()].sort());
+});
+
+test('page tags and imports become paths from the root', async () => {
+  const { uiLintPageFiles, uiLintImports } = await import('../../game/js/logic/ui-lint.js');
+  assert.deepEqual(
+    uiLintPageFiles(
+      'studio/gallery.html',
+      '<link rel="stylesheet" href="../game/css/a.css"><script type="module" src="gallery.js?v=2"></script><script src="https://x.y/z.js"></script>'
+    ),
+    ['game/css/a.css', 'studio/gallery.js']
+  );
+  assert.deepEqual(
+    uiLintImports(
+      'game/js/logic/a.js',
+      "import { x } from '../b.js';\nexport { y } from './c.js';\n// import { z } from './no.js';\nconst m = import('./d.js');"
+    ),
+    ['game/js/b.js', 'game/js/logic/c.js', 'game/js/logic/d.js']
+  );
+});

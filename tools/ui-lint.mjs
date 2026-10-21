@@ -8,7 +8,7 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { UI_LINT_RULES, lintCss, lintJs, report, uiLintFindings } from '../game/js/logic/ui-lint.js';
+import { UI_LINT_RULES, lintCss, lintJs, report, uiLintFindings, uiLintReads } from '../game/js/logic/ui-lint.js';
 
 // UI-3b: the rules and the counting are in game/js/logic/ui-lint.js (the Studio runs them too)
 export { UI_LINT_RULES, lintCss, lintJs, report, stripCss, stripJs, uiLintFindings } from '../game/js/logic/ui-lint.js';
@@ -24,13 +24,9 @@ const walk = (dir, ext) =>
 
 /** the files the lint reads, relative to root (the Studio reads the same list from the game page: UI-3b) */
 export function lintFiles(root = ROOT) {
-  return [
-    ...walk(join(root, 'game/css'), '.css'),
-    ...walk(join(root, 'game/js'), '.js').filter(
-      // hooks.js is generated; the rules' own file holds their patterns, not page code
-      f => !f.endsWith('hooks.js') && !f.endsWith('logic/ui-lint.js')
-    ),
-  ].map(f => relative(root, f));
+  return [...walk(join(root, 'game/css'), '.css'), ...walk(join(root, 'game/js'), '.js')]
+    .map(f => relative(root, f))
+    .filter(uiLintReads);
 }
 
 /** UI-3b: every raw value in the game, with its file and line */
