@@ -850,6 +850,65 @@ def ui_tools_steps(pg, errs):
     else: print(f"ui tools: overlays ({ov and ov['note']}); Connections on the text colour ({lk[1]} parts read {len(lk[0])} variables); inspect (the gold button: {len(names)} variables, its cut opens {go}); the rule report ({pg.evaluate('uiRules.found.length')} raw values) with Show me to lines that match the files", flush=True)
 
 
+def ui_screens_steps(pg, errs):
+    """UI-3b: the UI look preview's real screens: the Team screen is the game itself at its fixture (team), it follows
+    a colour edit and its Undo, light and dark, Hold to compare; inspect and the overlays work on it; then the Bag,
+    the dialogue box and a battle open at their fixtures. Back to the gallery at the end."""
+    n = len(errs)
+    W = "document.querySelector('#uiPv').contentWindow"
+    def screen_var(sel, v):
+        return pg.evaluate(f"(w => {{ const el = w.document.querySelector({json.dumps(sel)}); return el ? w.getComputedStyle(el).getPropertyValue({json.dumps(v)}).trim() : null }})({W})")
+    def open_view(v, sel):
+        pg.evaluate("void openSection('ui')")
+        pg.click(f'[data-act=uiPv][data-g=view][data-v={v}]')
+        try:
+            pg.wait_for_function(f"(w => w && w.location.search.includes('fixture={v}') && !!w.document.querySelector({json.dumps(sel)}) && (!w.document.querySelector('#loader') || w.getComputedStyle(w.document.querySelector('#loader')).display === 'none' || w.document.querySelector('#loader').hidden || w.getComputedStyle(w.document.querySelector('#loader')).visibility === 'hidden' || w.getComputedStyle(w.document.querySelector('#loader')).opacity === '0'))({W})", timeout=150000)
+            return True
+        except Exception:
+            errs.append(f'the {v} screen never showed in the preview'); return False
+    t0 = time.time()
+    if open_view('team', 'main.s-team'):
+        print(f'ui screens: the Team screen started in {time.time() - t0:.0f} s', flush=True)
+        p = 'uiTheme.defaults.color.light.text'
+        before = screen_var('main.s-team', '--c-text')
+        pg.evaluate("uiEditor.open.color = 1; refreshUiSettings()")
+        box = pg.locator(f'#uiSet input.hex[data-p="{p}"]')
+        box.fill('#102030'); box.press('Tab')
+        try: pg.wait_for_function(f"(w => w.getComputedStyle(w.document.querySelector('main.s-team')).getPropertyValue('--c-text').trim() === '#102030')({W})", timeout=15000)
+        except Exception: errs.append(f"the Team screen did not follow the colour ({screen_var('main.s-team', '--c-text')!r})")
+        pg.locator('#uiCmp').hover(); pg.mouse.down()
+        try: pg.wait_for_function(f"(w => w.getComputedStyle(w.document.querySelector('main.s-team')).getPropertyValue('--c-text').trim() === {json.dumps(before)})({W})", timeout=10000)
+        except Exception: errs.append('Hold to compare did not show the saved look on the Team screen')
+        pg.mouse.up()
+        pg.click('#undoBtn')
+        try: pg.wait_for_function(f"(w => w.getComputedStyle(w.document.querySelector('main.s-team')).getPropertyValue('--c-text').trim() === {json.dumps(before)})({W})", timeout=10000)
+        except Exception: errs.append('Undo did not reach the Team screen')
+        pg.click('[data-act=uiPv][data-g=mode][data-v=dark]')
+        try: pg.wait_for_function(f"{W}.document.documentElement.dataset.theme === 'dark'", timeout=10000)
+        except Exception: errs.append('the Team screen did not go dark')
+        pg.click('[data-act=uiPv][data-g=mode][data-v=light]')
+        # inspect a team row, and the overlays, on the game itself
+        pg.click('#uiInsp')
+        pg.frame_locator('#uiPv').locator('main.s-team .u-row, main.s-team .u-hero').first.click()
+        try: pg.wait_for_selector('#uiInspect tr[data-var]', timeout=10000)
+        except Exception: errs.append('inspect found nothing on the Team screen')
+        where = pg.evaluate("(document.querySelector('#uiInspect .ui-insp-h') || {}).textContent || ''")
+        if 'Team screen' not in where: errs.append(f'inspect on the Team screen says {where!r}')
+        pg.click('#uiInsp')
+        pg.click('[data-act=uiOverlay][data-k=glass]')
+        note = pg.evaluate("document.querySelector('#uiOvNote').textContent")
+        if 'Blurred surfaces on screen' not in note: errs.append(f'the glass overlay on the Team screen: {note!r}')
+        pg.click('[data-act=uiOverlay][data-k=glass]')
+        print(f'ui screens: Team followed a colour, compare, undo and dark; inspect ({where.strip()}); {note}', flush=True)
+    for v, sel in [('bag', 'main.s-bag'), ('talk', '#talk:not([hidden]) .talk-box'), ('battle', '.battle')]:
+        t0 = time.time()
+        if open_view(v, sel): print(f'ui screens: {v} in {time.time() - t0:.0f} s', flush=True)
+    pg.click('[data-act=uiPv][data-g=view][data-v=gallery]')
+    try: pg.wait_for_function(f"(w => w && typeof w.galleryLook === 'function')({W})", timeout=30000)
+    except Exception: errs.append('the gallery did not come back')
+    if len(errs) > n: errs[n:] = [f'ui screens: {e}' for e in errs[n:]]
+
+
 def studio_test_steps(pg, errs):
     """Studio track ST-T: the Studio self-test (studio/js/studio-test.js) runs whole. It fails on an error, an edit
     that didn't come back with its undo, data not put back or a token in its report; never on a time, since a headless
@@ -885,6 +944,7 @@ STEPS = [
     ('wardrobe', wardrobe_steps),
     ('ui', ui_steps),
     ('ui_tools', ui_tools_steps),
+    ('ui_screens', ui_screens_steps),
     ('studio_test', studio_test_steps),
 ]
 

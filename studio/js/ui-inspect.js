@@ -9,6 +9,7 @@
 import { expose } from '../../game/js/test-globals.js';
 import { provide, uiOverlaysFollow } from '../../game/js/hooks.js';
 import { $ } from '../../game/js/util.js';
+import { UI_SCREENS, screenSel } from '../../game/js/logic/ui-theme.js';
 import { escapeHtml } from './game-stand-ins.js';
 import { UI_DIALS, UI_DIAL_ALSO, uiDialList, uiDialReach, uiGet, uiVarDials } from '../../game/js/logic/ui-dials.js';
 import { cssVarNames, hostSelector, matchableSelector, splitSelectors } from '../../game/js/logic/ui-inspect.js';
@@ -96,8 +97,9 @@ export function uiFrameBoxes(w, boxes, id = 'studioLayer') {
 /** watch a preview frame: taps pick a part while Inspect is on */
 function uiInspectMount() {
   const w = uiPreviewWin();
-  if (!w || !w.document || uiInspectWins.has(w)) return;
-  uiInspectWins.add(w);
+  // the document, not the window: a frame keeps its window from page to page
+  if (!w || !w.document || uiInspectWins.has(w.document)) return;
+  uiInspectWins.add(w.document);
   const stop = ev => {
     if (!uiInspect.on) return false;
     ev.preventDefault();
@@ -238,6 +240,8 @@ function uiInspectInfo(el) {
     top = comp || el,
     sec = top.closest && top.closest('.g-sec'),
     scr = top.closest && top.closest('[data-ui-screen]'),
+    // a game screen (the preview's real screens): the screen root it sits in
+    game = top.closest && Object.keys(UI_SCREENS).find(k => top.closest(screenSel(k))),
     found = [...uiVarsOn(el, w), ...(comp && comp !== el ? uiVarsOn(comp, w) : [])],
     dials = uiInspectDials(),
     cs = w.getComputedStyle(el),
@@ -255,7 +259,13 @@ function uiInspectInfo(el) {
   return {
     name: uiPartName(el),
     comp: comp && comp !== el ? uiPartName(comp) : '',
-    where: scr ? `the ${uiScreenName(scr.dataset.uiScreen)} screen` : h2 ? `${h2.textContent} (gallery)` : '',
+    where: scr
+      ? `the ${uiScreenName(scr.dataset.uiScreen)} screen`
+      : h2
+        ? `${h2.textContent} (gallery)`
+        : game
+          ? `the ${uiScreenName(game)} screen`
+          : '',
     vars,
   };
 }

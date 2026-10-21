@@ -61,6 +61,7 @@ import {
 } from './studio-app.js';
 /* eslint-disable no-func-assign */
 expose({
+  UI_VIEWS: [() => UI_VIEWS],
   findUi: [() => findUi, v => (findUi = v)],
   mountUiPreview: [() => mountUiPreview, v => (mountUiPreview = v)],
   refreshUiSettings: [() => refreshUiSettings, v => (refreshUiSettings = v)],
@@ -77,19 +78,26 @@ expose({
   uiEditor: [() => uiEditor],
   uiFamiliesHTML: [() => uiFamiliesHTML, v => (uiFamiliesHTML = v)],
   uiFormat: [() => uiFormat],
+  uiFrameLoaded: [() => uiFrameLoaded, v => (uiFrameLoaded = v)],
   uiGroupCount: [() => uiGroupCount, v => (uiGroupCount = v)],
   uiGroupHTML: [() => uiGroupHTML, v => (uiGroupHTML = v)],
+  uiKept: [() => uiKept],
+  uiKeptFrame: [() => uiKeptFrame, v => (uiKeptFrame = v)],
+  uiKeptSync: [() => uiKeptSync, v => (uiKeptSync = v)],
   uiLayersHTML: [() => uiLayersHTML, v => (uiLayersHTML = v)],
   uiLevelName: [() => uiLevelName],
+  uiLookTo: [() => uiLookTo, v => (uiLookTo = v)],
   uiOverride: [() => uiOverride],
   uiPresetsHTML: [() => uiPresetsHTML, v => (uiPresetsHTML = v)],
   uiPreview: [() => uiPreview, v => (uiPreview = v)],
+  uiPreviewDropped: [() => uiPreviewDropped, v => (uiPreviewDropped = v)],
   uiPreviewNow: [() => uiPreviewNow, v => (uiPreviewNow = v)],
   uiPruneHere: [() => uiPruneHere, v => (uiPruneHere = v)],
   uiResetBtn: [() => uiResetBtn],
   uiSaved: [() => uiSaved, v => (uiSaved = v)],
   uiScreenName: [() => uiScreenName],
   uiSettingsHTML: [() => uiSettingsHTML, v => (uiSettingsHTML = v)],
+  uiViewSrc: [() => uiViewSrc],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -101,11 +109,24 @@ export const uiEditor = {
   width: '390px',
   reduced: false,
   text: '',
+  /* UI-3b: what the preview shows: the gallery, or a real screen of the game from its fixture (UI_VIEWS) */
+  view: 'gallery',
   holding: false,
   saved: null,
   pvT: 0,
 };
 export const uiData = () => studioState.D.uiTheme;
+/* UI-3b: the preview's views: the gallery, and the game's real screens from fixtures (game/js/fixture.js); the payout
+   and the run chip join when they exist (RL-8, UI-4) */
+const UI_VIEWS = [
+  ['gallery', 'Gallery'],
+  ['team', 'Team'],
+  ['bag', 'Bag'],
+  ['battle', 'Battle'],
+  ['talk', 'Dialogue'],
+];
+/** a view's page: the gallery without its bar, or the game at a fixture (its own save, no account) */
+const uiViewSrc = v => (v === 'gallery' ? 'gallery.html?studio=1' : `../game/index.html?fixture=${v}`);
 /* the look as last saved: taken when the Studio has nothing unsaved */
 function uiSaved() {
   if (!uiEditor.saved || (!studioState.dirty && JSON.stringify(uiEditor.saved) !== JSON.stringify(uiData())))
@@ -331,23 +352,36 @@ SECTIONS.ui = () => {
   <div class="seg-row"><button class="seg ${uiEditor.reduced ? 'on' : ''}" data-act="uiPv" data-g="reduced">Reduced motion</button><select id="uiText" aria-label="Text size (Settings)"><option value="">Text: normal</option><option value="large" ${uiEditor.text === 'large' ? 'selected' : ''}>Text: large</option><option value="xlarge" ${uiEditor.text === 'xlarge' ? 'selected' : ''}>Text: larger</option></select>
   <div class="seg-row ui-ov" title="Mark what breaks the UI rules in the preview"><button class="seg ${uiOverlays.tap ? 'on' : ''}" data-act="uiOverlay" data-k="tap">Under 44 px</button><button class="seg ${uiOverlays.contrast ? 'on' : ''}" data-act="uiOverlay" data-k="contrast">Contrast</button><button class="seg ${uiOverlays.glass ? 'on' : ''}" data-act="uiOverlay" data-k="glass">Glass</button></div>
   <button class="btn sm ${uiInspect.on ? 'on' : ''}" id="uiInsp" data-act="uiInspectOn" title="Tap a part in the preview: what it is and which dials reach it">Inspect</button>  <button class="btn sm" id="uiCmp" title="Hold (or hold C) to see the look as last saved">Hold to compare</button><a class="btn sm subtle" href="gallery.html" target="_blank" rel="noopener">Open the gallery</a></div></div>
-  <iframe class="ui-pv" id="uiPv" title="The UI gallery with this look" src="gallery.html?studio=1"></iframe>
+  <div class="seg-row ui-views">${UI_VIEWS.map(([v, label]) => seg('view', v, label)).join('')}</div>
+  <div class="ui-pv ui-pv-slot ${uiEditor.view === 'gallery' ? '' : 'game'}" id="uiPvSlot" ${uiEditor.view === 'gallery' ? '' : `style="width:${uiEditor.width}"`}></div>
   <p class="help ui-ov-note" id="uiOvNote" hidden></p>
   <div class="ui-inspect" id="uiInspect" hidden></div>
-  <p class="help">The game’s own parts (studio/gallery.html) with your unsaved look${uiEditor.scope === 'game' ? '' : `, as on ${escapeHtml(uiScreenName(uiEditor.scope))}`}. An open game tab follows too.</p></div></div></div></div>`;
+  <p class="help">${uiEditor.view === 'gallery' ? `The game’s own parts (studio/gallery.html) with your unsaved look${uiEditor.scope === 'game' ? '' : `, as on ${escapeHtml(uiScreenName(uiEditor.scope))}`}` : 'The game itself on this screen (a ready-made game of its own: nothing is saved to yours) with your unsaved look; it takes a few seconds to start'}. An open game tab follows too.</p></div></div></div></div>`;
 };
-/* hand the look to the preview frame */
-function uiPreviewNow() {
-  const f = $('#uiPv'),
-    w = f && f.contentWindow;
-  if (!w || typeof w.galleryLook !== 'function') return false;
-  w.galleryLook(uiEditor.holding ? uiSaved() : uiData(), {
+/** hand a look to a preview frame: the gallery takes it whole; a game screen (a fixture) by a message */
+function uiLookTo(f, theme) {
+  const w = f && f.contentWindow;
+  if (!w) return false;
+  if (uiEditor.view !== 'gallery') {
+    w.postMessage(
+      { type: 'uiLook', theme, mode: uiEditor.mode, reduced: uiEditor.reduced, text: uiEditor.text },
+      location.origin
+    );
+    return true;
+  }
+  if (typeof w.galleryLook !== 'function') return false;
+  w.galleryLook(theme, {
     mode: uiEditor.mode,
     width: uiEditor.width,
     reduced: uiEditor.reduced,
     text: uiEditor.text,
     screen: uiEditor.scope === 'game' ? '' : uiEditor.scope,
   });
+  return true;
+}
+/* hand the look to the preview frame */
+function uiPreviewNow() {
+  if (!uiLookTo($('#uiPv'), uiEditor.holding ? uiSaved() : uiData())) return false;
   /* UI-3b: what inspect shows follows the look */
   if (uiInspect.on) {
     uiInspectOutline();
@@ -361,17 +395,75 @@ function uiPreview() {
   uiEditor.pvT = requestAnimationFrame(uiPreviewNow);
 }
 function mountUiPreview() {
-  const f = $('#uiPv');
-  if (!f) return;
-  f.addEventListener('load', () => {
-    uiPreviewNow();
-    uiInspectMount();
-    uiOverlaysSoon();
-  });
+  uiKeptFrame(
+    'uiPv',
+    uiViewSrc(uiEditor.view),
+    `${uiEditor.view === 'gallery' ? 'The UI gallery' : 'The game'} with this look`
+  );
   uiPreviewNow();
   const b = $('#uiCmp');
   b.onpointerdown = () => uiCompare(true);
   ['pointerup', 'pointerleave', 'pointercancel'].forEach(t => b.addEventListener(t, () => uiCompare(false)));
+}
+/* UI-3b: the preview frames are kept across the section's redraws (an edit's Undo, a new scope draw the section
+   again; a frame made again would load again, and a game screen would start over). Each lives on the page's body,
+   laid over its slot in the section (<id>Slot) and clipped to the pane as it scrolls; when the slot goes (another
+   section), a game frame is let go. */
+const uiKept = new Map();
+/** the kept frame with this id, showing src (a new src loads it) */
+function uiKeptFrame(id, src, title = '') {
+  let f = uiKept.get(id);
+  if (!f) {
+    f = document.createElement('iframe');
+    f.id = id;
+    f.className = 'ui-pv-kept';
+    f.addEventListener('load', () => uiFrameLoaded(id));
+    document.body.appendChild(f);
+    uiKept.set(id, f);
+  }
+  if (title) f.title = title;
+  if (f.dataset.src !== src) {
+    f.dataset.src = src;
+    f.src = src;
+  }
+  uiKeptSync();
+  return f;
+}
+/** the preview is about to show another page: what inspect picked goes with it */
+function uiPreviewDropped() {
+  if (typeof uiInspect !== 'undefined') uiInspect.el = null;
+}
+/** a kept frame has loaded its page: hand it the look */
+function uiFrameLoaded(id) {
+  if (id === 'uiPv') {
+    uiPreviewNow();
+    uiInspectMount();
+    uiOverlaysSoon();
+  }
+}
+/** lay each kept frame over its slot (every frame while one is shown) */
+function uiKeptSync() {
+  cancelAnimationFrame(uiKeptSync.raf);
+  let any = false;
+  for (const [id, f] of uiKept) {
+    const slot = document.getElementById(id + 'Slot');
+    if (!slot || !slot.getClientRects().length) {
+      f.style.display = 'none';
+      // a game left running in a hidden frame costs the Studio frames: let it go (it starts again when shown)
+      if (/fixture=/.test(f.dataset.src || '')) {
+        f.dataset.src = '';
+        f.src = 'about:blank';
+      }
+      continue;
+    }
+    any = true;
+    const r = slot.getBoundingClientRect(),
+      pane = slot.closest('.pane') || $('#main'),
+      c = pane ? pane.getBoundingClientRect() : { top: 0, left: 0, right: innerWidth, bottom: innerHeight },
+      clip = [c.top - r.top, r.right - c.right, r.bottom - c.bottom, c.left - r.left].map(x => Math.max(0, x));
+    f.style.cssText = `display:block;left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px;clip-path:inset(${clip.map(x => x + 'px').join(' ')});visibility:${clip[0] + clip[2] >= r.height ? 'hidden' : 'visible'}`;
+  }
+  if (any) uiKeptSync.raf = requestAnimationFrame(uiKeptSync);
 }
 function uiCompare(on) {
   if (uiEditor.holding === on) return;
@@ -447,6 +539,13 @@ ACTIONS.uiFam = d => {
   refreshUiSettings();
 };
 ACTIONS.uiPv = d => {
+  /* UI-3b: another view is another page in the frame */
+  if (d.g === 'view') {
+    uiEditor.view = d.v;
+    uiPreviewDropped();
+    render();
+    return;
+  }
   if (d.g === 'reduced') uiEditor.reduced = !uiEditor.reduced;
   else uiEditor[d.g] = d.v;
   document
@@ -454,6 +553,9 @@ ACTIONS.uiPv = d => {
     .forEach(b =>
       b.classList.toggle('on', b.dataset.g === 'reduced' ? uiEditor.reduced : uiEditor[b.dataset.g] === b.dataset.v)
     );
+  /* a game screen's frame takes the width itself (the slot it lies over) */
+  const sl = $('#uiPvSlot');
+  if (sl && uiEditor.view !== 'gallery') sl.style.width = uiEditor.width;
   uiPreviewNow();
 };
 ACTIONS.uiReset = d => {

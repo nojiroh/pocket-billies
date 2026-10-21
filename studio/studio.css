@@ -4523,3 +4523,22 @@ body.wb-dropping::after {
 .ui-ov-note {
   margin: 8px 0 0;
 }
+.ui-pv.game {
+  max-width: 100%;
+  margin: 0 auto;
+}
+/* the kept frame lies over its slot (studio/js/ui-editor.js uiKeptFrame) */
+.ui-pv-slot {
+  border-color: transparent;
+}
+.ui-pv-kept {
+  position: fixed;
+  z-index: 2;
+  box-sizing: border-box;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel2);
+}
+.ui-views {
+  margin-bottom: 8px;
+}
