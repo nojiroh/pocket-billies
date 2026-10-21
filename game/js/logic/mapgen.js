@@ -19,12 +19,14 @@ import { expose } from '../test-globals.js';
 import { hashString, rngFrom } from './rng.js';
 /* eslint-disable no-func-assign */
 expose({
+  MAPGEN_BAND: [() => MAPGEN_BAND],
   MAPGEN_BASE64: [() => MAPGEN_BASE64],
   MAPGEN_DEFAULTS: [() => MAPGEN_DEFAULTS],
   MAPGEN_EXIT_IN: [() => MAPGEN_EXIT_IN],
   MAPGEN_FAMILY_SHARE: [() => MAPGEN_FAMILY_SHARE],
   MAPGEN_FEATURES: [() => MAPGEN_FEATURES],
   MAPGEN_INWARD: [() => MAPGEN_INWARD],
+  MAPGEN_OUTWARD: [() => MAPGEN_OUTWARD],
   MAPGEN_PATH_GROUND: [() => MAPGEN_PATH_GROUND],
   MAPGEN_SHAPES: [() => MAPGEN_SHAPES],
   MAPGEN_SIDE_NAME: [() => MAPGEN_SIDE_NAME],
@@ -53,6 +55,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   mapgenEncodeBase64: [() => mapgenEncodeBase64, v => (mapgenEncodeBase64 = v)],
   // @ts-expect-error -- replaced on purpose
+  mapgenExitOf: [() => mapgenExitOf, v => (mapgenExitOf = v)],
+  // @ts-expect-error -- replaced on purpose
   mapgenExitPoint: [() => mapgenExitPoint, v => (mapgenExitPoint = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenFbm: [() => mapgenFbm, v => (mapgenFbm = v)],
@@ -61,6 +65,8 @@ expose({
   mapgenGround: [() => mapgenGround],
   // @ts-expect-error -- replaced on purpose
   mapgenGrowWild: [() => mapgenGrowWild, v => (mapgenGrowWild = v)],
+  // @ts-expect-error -- replaced on purpose
+  mapgenJoinOffset: [() => mapgenJoinOffset, v => (mapgenJoinOffset = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenLattice: [() => mapgenLattice, v => (mapgenLattice = v)],
   // @ts-expect-error -- replaced on purpose
@@ -107,6 +113,12 @@ expose({
   mapgenRound2: [() => mapgenRound2],
   // @ts-expect-error -- replaced on purpose
   mapgenScene: [() => mapgenScene, v => (mapgenScene = v)],
+  // @ts-expect-error -- replaced on purpose
+  mapgenSceneCorner: [() => mapgenSceneCorner, v => (mapgenSceneCorner = v)],
+  // @ts-expect-error -- replaced on purpose
+  mapgenSceneGround: [() => mapgenSceneGround, v => (mapgenSceneGround = v)],
+  // @ts-expect-error -- replaced on purpose
+  mapgenSeamAgreement: [() => mapgenSeamAgreement, v => (mapgenSeamAgreement = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenShareMask: [() => mapgenShareMask, v => (mapgenShareMask = v)],
   // @ts-expect-error -- replaced on purpose
@@ -1695,4 +1707,131 @@ export const mapgenReached = (R, x, z) =>
 export function mapgenUnreachable(sc, scenery) {
   const R = mapgenReach(sc, scenery);
   return (sc.edgeExits || []).filter(e => !mapgenReached(R, ...mapgenExitPoint(sc.w, sc.h, e))).map(e => e.id);
+}
+
+/* ---------- MG-2: how two scenes meet where they join ---------- */
+/* how far either side of an exit a neighbour shows in a place's view (seamless-world.js NEIGHBOR_BAND_HALF_WIDTH):
+   the stretch of a joined edge that must agree */
+export const MAPGEN_BAND = 26;
+export const MAPGEN_OUTWARD = { N: [0, 1], S: [0, -1], E: [1, 0], W: [-1, 0] }; /* pointing out of the map */
+/** a scene's corner height at whole metres (x east, z from the near edge), as stored */
+export function mapgenSceneCorner(sc, x, z) {
+  const r = (sc.heights || [])[sc.h - mapgenBetween(Math.round(z), 0, sc.h)];
+  return r ? +r[mapgenBetween(Math.round(x), 0, sc.w)] || 0 : 0;
+}
+/** a scene's ground height at (x, z) between its corners (bilinear; walk/heights.js keeps within the same corners) */
+export function mapgenSceneGround(sc, x, z) {
+  const i = mapgenBetween(Math.floor(x), 0, sc.w - 1),
+    j = mapgenBetween(Math.floor(z), 0, sc.h - 1),
+    fx = mapgenBetween(x - i, 0, 1),
+    fz = mapgenBetween(z - j, 0, 1),
+    c = (a, b) => mapgenSceneCorner(sc, a, b);
+  return (
+    c(i, j) * (1 - fx) * (1 - fz) +
+    c(i + 1, j) * fx * (1 - fz) +
+    c(i, j + 1) * (1 - fx) * fz +
+    c(i + 1, j + 1) * fx * fz
+  );
+}
+/** a scene's exit and the point it stands on (sc.exits, as the game reads it; worked out when missing) */
+export function mapgenExitOf(sc, id) {
+  const k = (sc.edgeExits || []).findIndex(e => e.id === id);
+  if (k < 0) return null;
+  const e = sc.edgeExits[k];
+  return { k, e, p: (sc.exits || [])[k] || mapgenExitPoint(sc.w, sc.h, e) };
+}
+/** where B's corner lies in A's metres when A's exit meets B's (seamless-world.js seamlessJoin) */
+export function mapgenJoinOffset(A, xa, B, xb) {
+  const s = xa.e.side;
+  return s === 'E'
+    ? [A.w, Math.round(xa.p[1] - xb.p[1])]
+    : s === 'W'
+      ? [-B.w, Math.round(xa.p[1] - xb.p[1])]
+      : s === 'N'
+        ? [Math.round(xa.p[0] - xb.p[0]), A.h]
+        : [Math.round(xa.p[0] - xb.p[0]), -B.h];
+}
+/**
+ * how well two scenes meet where A's exit idA joins B's exit idB, B laid as the game lays it: the largest height gap
+ * between their corners along the shared edge within 6 m of the exit (dhNear, the a02_joins distance) and within the
+ * neighbour band (dhBand); the step raise across the seam at the exit (raiseExit, B's minus A's) and its largest gap
+ * along the band (raiseBand); and walk: null when a straight walk across, from 4 m inside A's exit to 5.2 m out (as
+ * a02_joins walks it), crosses only walkable half-metre cells with no rise over 0.34 m between them (ground plus
+ * raise, as the nav grid levels them), else what stops it. null when an exit is missing.
+ * @returns {{ off: number[], dhNear: number, dhBand: number, raiseExit: number, raiseBand: number, walk: string | null } | null}
+ */
+export function mapgenSeamAgreement(A, idA, B, idB, scenery) {
+  const xa = mapgenExitOf(A, idA),
+    xb = mapgenExitOf(B, idB);
+  if (!xa || !xb) return null;
+  const s = xa.e.side,
+    v = s === 'E' || s === 'W',
+    off = mapgenJoinOffset(A, xa, B, xb),
+    oa = v ? off[1] : off[0],
+    e = v ? xa.p[1] : xa.p[0],
+    lo = Math.max(0, oa, e - MAPGEN_BAND),
+    hi = Math.min(v ? A.h : A.w, oa + (v ? B.h : B.w), e + MAPGEN_BAND);
+  /* the shared edge, by u (metres along it, in A's): A's corner and B's, A's half-metre cell touching it and B's */
+  const edge = u => {
+    const ax = v ? (s === 'E' ? A.w : 0) : u,
+      az = v ? u : s === 'N' ? A.h : 0;
+    return [ax, az, ax - off[0], az - off[1]];
+  };
+  const inA = u => (v ? [s === 'E' ? A.w - 0.25 : 0.25, u] : [u, s === 'N' ? A.h - 0.25 : 0.25]),
+    inB = u => {
+      const [x, z] = inA(u);
+      return [x + (v ? (s === 'E' ? 0.5 : -0.5) : 0) - off[0], z + (v ? 0 : s === 'N' ? 0.5 : -0.5) - off[1]];
+    };
+  let dhNear = 0,
+    dhBand = 0;
+  for (let u = Math.ceil(lo); u <= Math.floor(hi); u++) {
+    const [ax, az, bx, bz] = edge(u),
+      d = Math.abs(mapgenSceneCorner(B, bx, bz) - mapgenSceneCorner(A, ax, az));
+    dhBand = Math.max(dhBand, d);
+    if (Math.abs(u - e) <= 6) dhNear = Math.max(dhNear, d);
+  }
+  const WA = mapgenWalkGrid(A, scenery),
+    WB = mapgenWalkGrid(B, scenery),
+    cell = (W, x, z) =>
+      mapgenBetween(Math.floor(z * W.N), 0, W.gh - 1) * W.gw + mapgenBetween(Math.floor(x * W.N), 0, W.gw - 1),
+    raise = (W, x, z) => (W.S ? W.S[cell(W, x, z)] / 20 : 0);
+  const raiseExit = mapgenRound2(raise(WB, ...inB(e)) - raise(WA, ...inA(e)));
+  let raiseBand = 0;
+  for (let u = Math.floor(lo) + 0.25; u < hi; u += 0.5)
+    raiseBand = Math.max(raiseBand, Math.abs(raise(WB, ...inB(u)) - raise(WA, ...inA(u))));
+  /* the walk across, every tenth of a metre, cell by cell */
+  const d = MAPGEN_OUTWARD[s],
+    a = [xa.p[0] - d[0] * 4, xa.p[1] - d[1] * 4];
+  let walk = /** @type {string | null} */ (null),
+    last = '',
+    lv0 = NaN;
+  for (let t = 0; t <= 9.2 + 1e-6 && !walk; t += 0.1) {
+    let x = a[0] + d[0] * t,
+      z = a[1] + d[1] * t,
+      S = A,
+      W = WA;
+    if (x < 0 || z < 0 || x > A.w || z > A.h) {
+      x -= off[0];
+      z -= off[1];
+      S = B;
+      W = WB;
+    }
+    const q = cell(W, x, z),
+      key = (S === A ? 'a' : 'b') + q;
+    if (key === last) continue;
+    last = key;
+    const where = `${t.toFixed(1)} m along, in ${S === A ? 'the first' : 'the second'} scene`;
+    if (W.blk[q]) walk = `blocked ${where}`;
+    const lv = mapgenSceneGround(S, x, z) + (W.S ? W.S[q] / 20 : 0);
+    if (lv0 === lv0 && Math.abs(lv - lv0) > 0.34) walk = `a step of ${Math.abs(lv - lv0).toFixed(2)} m ${where}`;
+    lv0 = lv;
+  }
+  return {
+    off,
+    dhNear: mapgenRound2(dhNear),
+    dhBand: mapgenRound2(dhBand),
+    raiseExit,
+    raiseBand: mapgenRound2(raiseBand),
+    walk,
+  };
 }
