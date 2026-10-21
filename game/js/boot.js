@@ -44,7 +44,8 @@ import { initAccount } from './account.js';
 import { notice, renderOverlay, toast } from './overlay.js';
 import { showPendingWindows, whenWorldShows } from './pending-windows.js';
 import { initPixelSky } from './pixel-sky.js';
-import { mapIdAt, render, startGame } from './ui.js';
+import { mapIdAt } from './walk-control.js';
+import { render, startGame } from './ui.js';
 import { fixtureStart } from './fixture.js';
 /* eslint-disable no-func-assign */
 expose({
