@@ -39,7 +39,8 @@ test('rng: a generated scene hashes the same as before the move', () => {
   // a change to the scenery or biome data changes this too; then remake it on purpose, said in the commit.
   // MG-2: 301195872 until MAPGEN_VERSION became 2 (the scene is the same but for gen.v), then 2111299369 until the
   // props dials gained mast, clinic and shop (gen.params; the scene is the same)
-  assert.equal(hashString(JSON.stringify(sc)), 3312083804);
+  // (and 3312083804 until MAPGEN_VERSION 3: pictures no longer scaled, plants given drawn variants)
+  assert.equal(hashString(JSON.stringify(sc)), 2974976760);
 });
 
 test('rng: the helpers stay in their ranges', () => {
