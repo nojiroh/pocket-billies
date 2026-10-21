@@ -20,6 +20,7 @@ import { DATA, PB_DATA } from './data-files.mjs';
 import { uiThemeContrast } from '../game/js/logic/ui-theme.js';
 import { seamRulesLinks, seamRulesPlaces } from '../game/js/logic/seam-rules.js';
 import { CLIMATE_WEATHER_ODDS } from '../game/js/logic/weather.js';
+import { RUN_MARK_TYPES } from '../game/js/logic/run-marks.js';
 
 const FIX = process.argv.includes('--fix');
 const bad = [];
@@ -271,6 +272,16 @@ if (D.biomes && check('biomes.schema.json', D.biomes, 'biomes.json')) {
       for (const k of Object.keys(B[pool] || {})) if (!props[k]) problem('biomes.json', `${b}.${pool}: no prop ${k}`);
     for (const L of B.life || []) if (!life[L.k]) problem('biomes.json', `${b}.life: no animal ${L.k}`);
   }
+}
+// RL-6: the kinds of node on a run's map: the schema, a marker for each, and something to fill the free rows with
+if (D.nodeTypes && check('nodeTypes.schema.json', D.nodeTypes, 'nodeTypes.json')) {
+  for (const [k, T] of Object.entries(D.nodeTypes)) {
+    const mark = T.mark || k;
+    if (!RUN_MARK_TYPES.includes(mark) || mark === 'unknown')
+      problem('nodeTypes.json', `${k}: no marker "${mark}" (logic/run-marks.js: ${RUN_MARK_TYPES.filter(t => t !== 'unknown').join(', ')})`);
+  }
+  if (!Object.values(D.nodeTypes).some(T => (T.weight || 0) > 0))
+    problem('nodeTypes.json', 'no type has a weight, so nothing can fill a free row of the run map');
 }
 // phase 10: the world map's look: the schema, then the terrain keys it names and the regions it covers
 if (D.worldmap && check('worldmap.schema.json', D.worldmap, 'worldmap.json')) {

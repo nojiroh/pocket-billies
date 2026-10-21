@@ -1,0 +1,7 @@
+{
+ "landing": {"name":"Landing","engine":"scene"},
+ "route": {"name":"Route","engine":"scene","weight":4},
+ "town": {"name":"Town","engine":"scene","weight":1},
+ "miniboss": {"name":"Mini-boss","engine":"scene"},
+ "boss": {"name":"Boss","engine":"scene"}
+}

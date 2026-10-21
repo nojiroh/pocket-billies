@@ -48,6 +48,8 @@ export interface GameData {
   worldmap?: WorldMapLook;
   /** map generator MG-1: the generator's recipe per biome (game/data/biomes.json) */
   biomes?: Record<DataId, Biome>;
+  /** roguelite track RL-6: the kinds of node on a run's map (game/data/nodeTypes.json; logic/run-map.js) */
+  nodeTypes?: Record<DataId, NodeType>;
   /** UI track UI-1: the UI's look: palette, glass, cuts, fonts (game/data/uiTheme.json; logic/ui-theme.js) */
   uiTheme?: UiTheme;
   lines: Line[];
@@ -1288,6 +1290,18 @@ export interface Biome {
   look?: Record<string, unknown>;
   life?: { k: string; n: number }[];
   from?: string;
+}
+
+/** nodeTypes.json: a kind of node on a run's map (roguelite track RL-6) */
+export interface NodeType {
+  /** what the player reads */
+  name: string;
+  /** its marker's outline (logic/run-marks.js RUN_MARK_TYPES); the type's id when left out */
+  mark?: string;
+  /** how it plays: a walkable map, or a menu (a story script or a shop sheet, RL-12) */
+  engine: 'scene' | 'menu';
+  /** how often it fills a free row (rules.json run.map gives the other rows their types); 0 or none: never */
+  weight?: number;
 }
 
 /** uiTheme.json: the UI's look (UI track UI-1; version 2 in UI-3, for the Studio's UI section) */

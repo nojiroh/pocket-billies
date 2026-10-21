@@ -31,6 +31,7 @@ expose({
   LOCATIONS: [() => LOCATIONS],
   LOCATION_BY_ID: [() => LOCATION_BY_ID],
   MOVES: [() => MOVES],
+  NODE_TYPES: [() => NODE_TYPES],
   PASSIVE: [() => PASSIVE],
   PEOPLE: [() => PEOPLE],
   POOLS: [() => POOLS],
@@ -341,6 +342,8 @@ export const ITEMS = gameData.items;
 export const PEOPLE = gameData.people;
 provide({ PEOPLE }); /* to-module */
 export const SHOPS = gameData.shops || {};
+/* roguelite track RL-6: the kinds of node on a run's map (logic/run-map.js takes them as an argument) */
+export const NODE_TYPES = gameData.nodeTypes || {};
 /* Project Story: the story layer's flags, speakers, quests and start presets (story.json) */
 export const STORY_DATA = gameData.story;
 /* cutscenes, one file each (game/data/cutscenes/<id>.json, docs/CUTSCENES.md) */
