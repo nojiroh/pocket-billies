@@ -127,12 +127,32 @@ test("the run's world goes in (its scenes, pools, places and roads) and the hub'
     mapIds = Object.keys(data.gameData.maps),
     poolIds = Object.keys(data.POOLS),
     shopIds = Object.keys(data.SHOPS),
+    trainerIds = Object.keys(data.TRAINERS),
     run = runOf('RL7SWAP'),
     made = runScenesMake(run, WORLD_DATA),
     W = runWorldTables(run, data.LOCATIONS[0], WORLD_DATA),
     maps = Object.fromEntries(W.locations.slice(1).map((p, i) => [p.mapId, made[i]]));
+  /* RL-8: its mini-bosses and boss */
+  const foes = modules['run-loop'].runFoes(run, {
+    leaders: Object.values(data.TRAINERS).filter(T => T.miniboss),
+    rules: R,
+  });
+  startedSave('musk0');
+  /* a hub trainer standing on the hub's node 1 (none does today) must not stand on the run's place 1 */
+  data.TRAINERS.hub_guard = { id: 'hub_guard', name: 'Guard', who: 'gini', team: [], node: 1 };
   try {
-    data.worldPut({ ...W, maps });
+    data.worldPut({ ...W, maps, trainers: foes });
+    assert.ok(!data.LOCATIONS[1].trainers.includes('hub_guard'), 'a hub trainer on a run’s place');
+    for (const F of Object.values(foes)) {
+      assert.deepEqual(data.LOCATIONS[F.node].trainers, [F.id], `${F.id} stands on its place alone`);
+      assert.equal(data.TRAINERS[F.id].from, F.from);
+      if (F.runFoe === 'miniboss') assert.equal(fn('blockerAt')(F.node).id, F.id, 'a mini-boss blocks the way on');
+    }
+    assert.equal(
+      data.LOCATIONS.filter(p => p.trainers.length).length,
+      Object.keys(foes).length,
+      'no trainer anywhere else'
+    );
     assert.equal(data.LOCATIONS.length, 1 + run.map.nodes.length);
     assert.equal(data.LOCATIONS[0].id, 'copperleaf');
     assert.equal(data.ROADS.length, W.roads.length);
@@ -170,11 +190,13 @@ test("the run's world goes in (its scenes, pools, places and roads) and the hub'
     assert.equal(data.LOCATIONS.length, 1 + run2.map.nodes.length);
   } finally {
     data.worldHubBack();
+    delete data.TRAINERS.hub_guard;
   }
   assert.deepEqual(hubTables(), hub);
   assert.deepEqual(Object.keys(data.gameData.maps), mapIds, "only the hub's scenes");
   assert.deepEqual(Object.keys(data.POOLS), poolIds, "only the game's pools");
   assert.deepEqual(Object.keys(data.SHOPS), shopIds, "only the game's shops");
+  assert.deepEqual(Object.keys(data.TRAINERS), trainerIds, "only the game's trainers");
   assert.deepEqual(data.worldExtraMaps(), {});
 });
 

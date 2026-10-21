@@ -626,6 +626,12 @@ export interface Trainer {
 export interface TrainerEntry extends Trainer {
   /** its key in gameData.trainers */
   id: DataId;
+  /** RL-8: a run's foe (logic/run-loop.js runFoes): its map node, 'miniboss' or 'boss', the leader it copies, and
+      for the boss its top Billie fought alone as an Alpha */
+  runNode?: number;
+  runFoe?: 'miniboss' | 'boss';
+  from?: DataId;
+  alpha?: boolean;
 }
 
 /** a trainer's Billie: a species, or '@rival' ('@rival1', '@rival2': evolved) for the starter that beats yours */

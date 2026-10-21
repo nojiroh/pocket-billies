@@ -15,10 +15,21 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { provide, toast } from './hooks.js';
-import { LOCATION_BY_ID, NODE_TYPES, POOLS, RULES, START_NODE, gameData, worldHubBack, worldPut } from './game-data.js';
+import {
+  LOCATION_BY_ID,
+  NODE_TYPES,
+  POOLS,
+  RULES,
+  START_NODE,
+  TRAINERS,
+  gameData,
+  worldHubBack,
+  worldPut,
+} from './game-data.js';
 import { runRestore } from './logic/run-state.js';
 import { runWeather } from './logic/run-map.js';
 import { runScenesMake, runWorldTables } from './logic/run-scenes.js';
+import { runFoes } from './logic/run-loop.js';
 import { saveData, uiState } from './game-state.js';
 import { stopWalkView, walkView } from './walk-view.js';
 import { environment } from './environment.js';
@@ -62,7 +73,12 @@ export function runWorldSync() {
         data = runWorldData(),
         scenes = runScenesMake(run, data),
         W = runWorldTables(run, gameData.locations[START_NODE], data);
-      worldPut({ ...W, maps: Object.fromEntries(W.locations.slice(1).map((p, i) => [p.mapId, scenes[i]])) });
+      worldPut({
+        ...W,
+        maps: Object.fromEntries(W.locations.slice(1).map((p, i) => [p.mapId, scenes[i]])),
+        /* RL-8: its mini-bosses and boss, each a leader's copy (logic/run-loop.js runFoes) */
+        trainers: runFoes(run, { leaders: Object.values(TRAINERS).filter(T => T.miniboss), rules: RULES.run }),
+      });
       Object.assign(runWorld, { seed: want, scenes: scenes.length, ms: Math.round(performance.now() - t0) });
     } catch (e) {
       console.error(e);
