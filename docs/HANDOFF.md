@@ -2,6 +2,26 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### UI track UI-3a - Studio UI section, core - 2026-10-21 (entry written in UI-3b)
+The UI-3a session (PR #93, branch `claude/ui-3-start-3q234o`) updated STUDIO.md, TESTING.md, ui-track.md, ROADMAP and
+CHANGELOG but left no entry here; this one is put together from its commits (85bc555..203ac13) and those docs.
+- Changed (one cause per commit): uiTheme.json version 2 (the surface split into light and dark, each shape family's
+  cut, corners and radius as data, new groups depth, drop, space and motion, type scale and line height, preset
+  names; the sheet it writes the same text, byte for byte, for the defaults and both presets); the theme sheet writes
+  the new groups (every custom property on the gallery resolving the same); per-screen overrides read (`UI_SCREENS`,
+  `UI_DERIVED`) and the contrast check moved into logic/ui-theme.js (`uiThemeContrast`); the dials as data
+  (logic/ui-dials.js, `UI_DIALS`); the gallery takes a look from the Studio (`gallery.html?studio=1`,
+  `galleryLook`); the Studio's UI look section (studio/js/ui-editor.js: every dial group, the whole game or one
+  screen, ↺ and Reset, presets with + Save as preset, Hold to compare, the gallery as the preview, Find); the
+  contrast check in the Studio's Check with Show me; `studioBroadcast` sends the look to an open game tab; the Studio
+  check's `ui` step and `--only`.
+- Decided by the owner: UI-3 split into UI-3a and UI-3b; "Save as" means + Save as preset (no Studio-wide Save as).
+- Found: see ui-track.md, "UI-3 found" (the look's data held only colours, glass, cuts and fonts; overrides unread;
+  the Studio's own CSS names clash with the game's, so the preview is the gallery in a frame).
+- Verified (from the commit messages): the Studio check's `ui` step seen to fail on a planted fault (the gallery
+  ignoring the look: five problems); the 73 gallery pictures matched for the no-op data commits.
+- Next: UI-3b (the section's tools).
+
 ### UI track UI-2 - Kit v2: angular shapes - 2026-10-21
 Branch `ccr-00069345-2zok4t`, from main 3479f01 (RL-4 merged, UI-1 in). The owner asked for the whole of UI-2 in one
 session (no split). Two calls I made without asking (my plan's recommendations): the old `.pb` buttons and every
