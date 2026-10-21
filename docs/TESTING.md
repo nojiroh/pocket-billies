@@ -110,7 +110,10 @@ Two rules hold everywhere:
   height gap over the neighbour band, no step, a straight walk across; terraces at ground level by exits; a node
   with two parents; the pair laid as one scene); `mapgen-roads` roads measured with the game's own riser rule
   (`logic/step-grid.js`, moved from walk-view.js so a test sees the road as the game draws it); `mapgen-lots` the
-  hub's buildings. `rng.test.mjs` freezes the default scene's hash, `gen` included: a new dial or version changes it
+  hub's buildings; `mapgen-mountains` (TR-2) the mountains and their trails: without the dials a scene is unchanged,
+  dial sets reach every exit and every summit with `{ slope: true }` (the game's slope rule and whole standing heights,
+  a bridge's deck walked), the dial's top reaches 15 m, nothing planted across a cliff, the relief seed moves only the
+  mountains, a mountains run (`dbg_mountains`) joins. `rng.test.mjs` freezes the default scene's hash, `gen` included: a new dial or version changes it
   (remade on purpose, said in the commit). The seam rules are `logic/seam-rules.js` (`seam-rules.test.mjs` freezes
   each fault's words); check-data runs the same module.
 - On the game's data, test what must hold whatever the content (every road has its exits, every gate its trainer),
