@@ -2,6 +2,31 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Roguelite track RL-2 - Golden record and RNG module - 2026-10-21
+Branch `ccr-a09a396b-vfdptc`, started from main c66bf2b (RL-1 merged; `rl-1-done` not yet on the remote).
+- Changed (one cause per commit): `tools/test/battle-golden.test.mjs` + snapshot first (single wild, double trainer,
+  Alpha, robot vs Billie on the game's data, both sides played by `chooseAI`, every event without uids and the end
+  state); `mapgenHashString`/`mapgenRandom` moved unchanged into the new `game/js/logic/rng.js` (both pages load it
+  first among the logic modules), then renamed `hashString` and `rngFrom` (one rename per commit, `rename.mjs
+  verify`: pure renames); `rngFn(seed, salt)` and `dailySeed(now)` (`'d'` + UTC date) added with
+  `tools/test/rng.test.mjs`; `pickWeighted`, `rollPartSize`, `rollBuild`, `spawn` take an optional `rnd` (default
+  util.js `random`, so play is unchanged; nothing passes one yet). Docs: TESTING.md, roguelite-track.md section 0
+  (where the plan text was wrong), ROADMAP.
+- Verified: 302 unit tests, lint, typecheck, check:modules, format:check, check:data, smoke (all green, 203 s).
+  The golden record passes unchanged at every commit after the first, and a planted fault (+1 damage on every hit)
+  turned all four fights red. `rng.test.mjs`'s frozen values (first five draws, a string hash, a generated scene's
+  hash) were taken from mapgen.js at c66bf2b, before the move. The Studio's Generate card: the GitHub check's
+  generate step passed in a temporary copy that skipped the steps before it (the unchanged script still stalls at the
+  story preview click, as in RL-1).
+- Risky: the golden record and the scene hash read the game's data, so a content edit to moves, species, trainers,
+  robots, scenery or biomes turns them red; remake on purpose (`--test-update-snapshots`) and say so in the commit.
+  The full quick check (47 min) was not run; nothing on the page changed apart from one more module tag.
+- Not done: `spawn`'s species odds still go through `environmentOdds` (real-clock weather), so a seeded spawn is only
+  reproducible while the weather is the same; RL-6/7 feed it the run's forecast. Battles still draw `Math.random`
+  (RL-4's `b.rng`).
+- Next: the owner pushes `rl-1-done` and `rl-2-done` and answers RL-1's tools question; then RL-3 (state separation)
+  or RL-4 (battle state injected), both unblocked.
+
 ### Roguelite track RL-1 - Hardening - 2026-10-21
 Branch `claude/rl-1-start-enwmnf`. Every tier could run this time: `npm ci` works, and Playwright works once the pinned
 `pip install -r tools/requirements-check.txt` (1.56.0) is used (the newest one wants a browser the container lacks).
