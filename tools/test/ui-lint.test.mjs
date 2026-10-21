@@ -48,3 +48,35 @@ test('the game report has a row per rule', () => {
   assert.ok(total.colour.raw > 0);
   assert.match(report(total), /\| Colours as variables \(CSS rules\) \| \d+ \|/);
 });
+
+// UI-3b: every raw value as a finding with its line (the Studio's rule report lists them)
+test('each raw value is a finding on its own line, and comments keep the lines', async () => {
+  const { uiLintFindings } = await import('../ui-lint.mjs');
+  const f = uiLintFindings(CSS, 'x.css');
+  const at = rule => f.filter(x => x.rule === rule).map(x => x.line);
+  assert.deepEqual(at('radius'), [4]); // the comment on line 3 doesn't shift .a
+  assert.deepEqual(at('space'), [4, 4]);
+  assert.deepEqual(at('colour'), [4, 6]);
+  assert.deepEqual(at('important'), [6]);
+  assert.deepEqual(at('blur'), [7]);
+  assert.deepEqual(at('keyframes'), [9]);
+  assert.equal(f.find(x => x.rule === 'zindex').text, CSS.split('\n')[3].trim());
+  const counts = lintCss(CSS, 'x.css');
+  for (const [rule, c] of Object.entries(counts)) assert.equal(at(rule).length, c.raw, rule);
+  const js = uiLintFindings('/* a\n b */\nconst a = 1;\nel.innerHTML = x; // #fff\nconst c = "#abc";', 'y.js');
+  assert.deepEqual(
+    js.map(x => [x.rule, x.line]),
+    [
+      ['innerHtml', 4],
+      ['jsColour', 5],
+    ]
+  );
+});
+
+test("the game's findings add up to the report's raw counts", async () => {
+  const { lintGameFindings } = await import('../ui-lint.mjs');
+  const total = lintGame(),
+    found = lintGameFindings();
+  for (const [rule, t] of Object.entries(total)) assert.equal(found.filter(x => x.rule === rule).length, t.raw, rule);
+  for (const x of found.slice(0, 50)) assert.ok(x.line > 0 && typeof x.text === 'string');
+});

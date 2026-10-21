@@ -10,19 +10,30 @@ import { expose } from '../test-globals.js';
 /* eslint-disable no-func-assign */
 expose({
   COLOUR: [() => COLOUR],
+  JS_RULES: [() => JS_RULES],
   LENGTH: [() => LENGTH],
   UI_LINT_RULES: [() => UI_LINT_RULES],
+  blank: [() => blank],
   count: [() => count],
   // @ts-expect-error -- replaced on purpose
   declarations: [() => declarations, v => (declarations = v)],
   // @ts-expect-error -- replaced on purpose
-  lintCss: [() => lintCss, v => (lintCss = v)],
+  findingsOf: [() => findingsOf, v => (findingsOf = v)],
   // @ts-expect-error -- replaced on purpose
-  lintJs: [() => lintJs, v => (lintJs = v)],
+  lineAt: [() => lineAt, v => (lineAt = v)],
+  lintCss: [() => lintCss],
+  // @ts-expect-error -- replaced on purpose
+  lintCssAll: [() => lintCssAll, v => (lintCssAll = v)],
+  lintJs: [() => lintJs],
+  // @ts-expect-error -- replaced on purpose
+  lintJsAll: [() => lintJsAll, v => (lintJsAll = v)],
+  places: [() => places],
   // @ts-expect-error -- replaced on purpose
   report: [() => report, v => (report = v)],
   stripCss: [() => stripCss],
   stripJs: [() => stripJs],
+  // @ts-expect-error -- replaced on purpose
+  uiLintFindings: [() => uiLintFindings, v => (uiLintFindings = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -46,54 +57,116 @@ export const UI_LINT_RULES = [
 ];
 
 export const count = (s, re) => (re ? (s.match(re) || []).length : 0);
-export const stripCss = s => s.replace(/\/\*[\s\S]*?\*\//g, '');
+// UI-3b: a comment becomes spaces (its line breaks kept), so a place in the stripped text is the same place in the file
+export const blank = (/** @type {string} */ c) => c.replace(/[^\n]/g, ' ');
+export const stripCss = (/** @type {string} */ s) => s.replace(/\/\*[\s\S]*?\*\//g, blank);
 // block comments, then line comments that don't follow a ':' (keeps https://)
-export const stripJs = s => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"`])\/\/.*$/gm, '$1');
+export const stripJs = (/** @type {string} */ s) =>
+  s.replace(/\/\*[\s\S]*?\*\//g, blank).replace(/(^|[^:\\'"`])(\/\/.*)$/gm, (m, a, c) => a + blank(c));
 
-/** declarations outside custom property definitions: [{prop, value}] */
+/** declarations outside custom property definitions: [{prop, value, at}] (at: where the value starts) */
 export function declarations(css) {
   const out = [];
   for (const m of css.matchAll(/([\w-]+)\s*:\s*([^;{}]+)(?=[;}])/g)) {
     if (m[1].startsWith('--')) continue;
-    out.push({ prop: m[1].toLowerCase(), value: m[2] });
+    out.push({ prop: m[1].toLowerCase(), value: m[2], at: m.index + m[0].length - m[2].length });
   }
   return out;
 }
 
-/** one CSS file's counts: {ruleId: {raw, token}} */
-export function lintCss(text, file = '') {
+/** UI-3b: the line (from 1) of each place in a text: (at) => line */
+export function lineAt(text) {
+  const starts = [0];
+  for (let i = text.indexOf('\n'); i >= 0; i = text.indexOf('\n', i + 1)) starts.push(i + 1);
+  return (/** @type {number} */ at) => {
+    let lo = 0,
+      hi = starts.length - 1;
+    while (lo < hi) {
+      const mid = (lo + hi + 1) >> 1;
+      if (starts[mid] <= at) lo = mid;
+      else hi = mid - 1;
+    }
+    return lo + 1;
+  };
+}
+
+/** @typedef {{rule: string, file: string, line: number, text: string}} UiLintFinding */
+
+/** each match of re in s: its place */
+export const places = (s, re) => [...s.matchAll(re)].map(m => /** @type {number} */ (m.index));
+
+/** one CSS file: its counts ({ruleId: {raw, token}}) and a finding for every raw value */
+export function lintCssAll(text, file = '') {
   const css = stripCss(text);
   const r = Object.fromEntries(UI_LINT_RULES.map(x => [x.id, { raw: 0, token: 0 }]));
-  for (const { prop, value } of declarations(css)) {
-    const v = value.replace(/var\([^()]*(?:\([^()]*\)[^()]*)*\)/g, ' '); // what's left once vars are taken out
-    if (/radius$/.test(prop)) r.radius.raw += (v.match(LENGTH) || []).filter(n => parseFloat(n) !== 0).length;
-    if (/^(padding|margin|gap|row-gap|column-gap)(-|$)/.test(prop))
-      r.space.raw += (v.match(LENGTH) || []).filter(n => parseFloat(n) !== 0).length;
-    if (prop === 'box-shadow' && !/^\s*(none|inherit|initial|unset)?\s*$/.test(v.replace(/,/g, ''))) r.shadow.raw++;
-    if (/^(transition|animation)(-duration|-delay)?$/.test(prop)) r.duration.raw += count(v, /\b\d*\.?\d+m?s\b/g);
+  /** @type {[string, number][]} */
+  const raw = [];
+  const add = (rule, at) => raw.push([rule, at]);
+  for (const { prop, value, at } of declarations(css)) {
+    // what's left once vars are taken out (each var as spaces, so places hold)
+    const v = value.replace(/var\([^()]*(?:\([^()]*\)[^()]*)*\)/g, blank);
+    const lengths = () => [...v.matchAll(LENGTH)].filter(m => parseFloat(m[0]) !== 0).map(m => at + m.index);
+    if (/radius$/.test(prop)) lengths().forEach(i => add('radius', i));
+    if (/^(padding|margin|gap|row-gap|column-gap)(-|$)/.test(prop)) lengths().forEach(i => add('space', i));
+    if (prop === 'box-shadow' && !/^\s*(none|inherit|initial|unset)?\s*$/.test(v.replace(/,/g, ''))) add('shadow', at);
+    if (/^(transition|animation)(-duration|-delay)?$/.test(prop))
+      places(v, /\b\d*\.?\d+m?s\b/g).forEach(i => add('duration', at + i));
     if (prop === 'font-family' || prop === 'font')
-      if (/['"]|\b(monospace|sans-serif|serif|cursive)\b/.test(v)) r.font.raw++;
-    r.colour.raw += count(v, COLOUR);
-    if (prop === 'z-index' && /-?\d/.test(v)) r.zindex.raw++;
+      if (/['"]|\b(monospace|sans-serif|serif|cursive)\b/.test(v)) add('font', at);
+    places(v, COLOUR).forEach(i => add('colour', at + i));
+    if (prop === 'z-index' && /-?\d/.test(v)) add('zindex', at);
   }
   for (const x of UI_LINT_RULES) if (x.token) r[x.id].token += count(css, x.token);
-  const frames = count(css, /@keyframes\s/g);
-  if (file.endsWith('motion.css')) r.keyframes.token = frames;
-  else r.keyframes.raw = frames;
-  r.important.raw = count(css, /!important/g);
+  const frames = places(css, /@keyframes\s/g);
+  if (file.endsWith('motion.css')) r.keyframes.token = frames.length;
+  else frames.forEach(i => add('keyframes', i));
+  places(css, /!important/g).forEach(i => add('important', i));
   // one per rule block that blurs (-webkit- and plain on the same rule are one surface)
-  r.blur.raw = (css.match(/\{[^{}]*\}/g) || []).filter(b => /backdrop-filter\s*:(?!\s*none)/.test(b)).length;
-  return r;
+  for (const b of css.matchAll(/\{[^{}]*\}/g)) {
+    const m = b[0].match(/backdrop-filter\s*:(?!\s*none)/);
+    if (m) add('blur', /** @type {number} */ (b.index) + /** @type {number} */ (m.index));
+  }
+  for (const [rule] of raw) r[rule].raw++;
+  return { counts: r, found: findingsOf(text, file, raw) };
+}
+
+/** [rule, place] pairs as findings with their line and the line's text */
+export function findingsOf(text, file, raw) {
+  const line = lineAt(text),
+    lines = text.split('\n');
+  return raw
+    .map(([rule, at]) => {
+      const n = line(at);
+      return { rule, file, line: n, text: lines[n - 1].trim().slice(0, 200) };
+    })
+    .sort((a, b) => a.line - b.line);
+}
+
+/** one CSS file's counts: {ruleId: {raw, token}} */
+export const lintCss = (text, file = '') => lintCssAll(text, file).counts;
+
+export const JS_RULES = /** @type {[string, RegExp][]} */ ([
+  ['jsColour', /['"`(\s,:]#[0-9a-fA-F]{3}(?:[0-9a-fA-F]{3})?(?:[0-9a-fA-F]{2})?\b/g],
+  ['innerHtml', /\.innerHTML\s*\+?=(?!=)/g],
+  ['styleAttr', /style="/g],
+]);
+
+/** one JS file: its counts and a finding for every raw value */
+export function lintJsAll(text, file = '') {
+  const js = stripJs(text);
+  /** @type {[string, number][]} */
+  const raw = JS_RULES.flatMap(([rule, re]) => places(js, re).map(i => /** @type {[string, number]} */ ([rule, i])));
+  const counts = Object.fromEntries(JS_RULES.map(([rule]) => [rule, { raw: 0, token: 0 }]));
+  for (const [rule] of raw) counts[rule].raw++;
+  return { counts, found: findingsOf(text, file, raw) };
 }
 
 /** one JS file's counts */
-export function lintJs(text) {
-  const js = stripJs(text);
-  return {
-    jsColour: { raw: count(js, /['"`(\s,:]#[0-9a-fA-F]{3}(?:[0-9a-fA-F]{3})?(?:[0-9a-fA-F]{2})?\b/g), token: 0 },
-    innerHtml: { raw: count(js, /\.innerHTML\s*\+?=(?!=)/g), token: 0 },
-    styleAttr: { raw: count(js, /style="/g), token: 0 },
-  };
+export const lintJs = (text, file = '') => lintJsAll(text, file).counts;
+
+/** UI-3b: every raw value in one file (CSS or JS, by its name), with its line: [{rule, file, line, text}] */
+export function uiLintFindings(text, file) {
+  return (/\.css$/.test(file) ? lintCssAll(text, file) : lintJsAll(text, file)).found;
 }
 
 export function report(total) {

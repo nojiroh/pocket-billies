@@ -2,15 +2,16 @@
 // file, next to the token uses that follow them. A report only: it never fails (UI-6 turns it into a gate).
 //   node tools/ui-lint.mjs            # the table: each rule, raw vs token, the worst files
 //   node tools/ui-lint.mjs --json     # every count per rule and file
+//   node tools/ui-lint.mjs --lines    # UI-3b: every raw value: file:line, the rule, the line's text
 // The rules and how they count: game/js/logic/ui-lint.js.
 // Blurred surfaces per screen can't be read from the files: the smoke run logs uiBlurCount() per screen.
 import { readFileSync, readdirSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { UI_LINT_RULES, lintCss, lintJs, report } from '../game/js/logic/ui-lint.js';
+import { UI_LINT_RULES, lintCss, lintJs, report, uiLintFindings } from '../game/js/logic/ui-lint.js';
 
 // UI-3b: the rules and the counting are in game/js/logic/ui-lint.js (the Studio runs them too)
-export { UI_LINT_RULES, lintCss, lintJs, report, stripCss, stripJs } from '../game/js/logic/ui-lint.js';
+export { UI_LINT_RULES, lintCss, lintJs, report, stripCss, stripJs, uiLintFindings } from '../game/js/logic/ui-lint.js';
 
 const ROOT = join(import.meta.dirname, '..');
 
@@ -20,6 +21,21 @@ const walk = (dir, ext) =>
     if (d.isDirectory()) return d.name === 'vendor' ? [] : walk(p, ext);
     return p.endsWith(ext) ? [p] : [];
   });
+
+/** the files the lint reads, relative to root (the Studio reads the same list from the game page: UI-3b) */
+export function lintFiles(root = ROOT) {
+  return [
+    ...walk(join(root, 'game/css'), '.css'),
+    ...walk(join(root, 'game/js'), '.js').filter(
+      // hooks.js is generated; the rules' own file holds their patterns, not page code
+      f => !f.endsWith('hooks.js') && !f.endsWith('logic/ui-lint.js')
+    ),
+  ].map(f => relative(root, f));
+}
+
+/** UI-3b: every raw value in the game, with its file and line */
+export const lintGameFindings = (root = ROOT) =>
+  lintFiles(root).flatMap(f => uiLintFindings(readFileSync(join(root, f), 'utf8'), f));
 
 /** the whole game: {ruleId: {raw, token, files: {file: raw}}} */
 export function lintGame(root = ROOT) {
@@ -31,16 +47,18 @@ export function lintGame(root = ROOT) {
       if (c.raw) total[id].files[file] = (total[id].files[file] || 0) + c.raw;
     }
   };
-  for (const f of walk(join(root, 'game/css'), '.css')) add(relative(root, f), lintCss(readFileSync(f, 'utf8'), f));
-  for (const f of walk(join(root, 'game/js'), '.js')) {
-    if (f.endsWith('hooks.js')) continue; // generated
-    if (f.endsWith('logic/ui-lint.js')) continue; // the rules themselves: their patterns are not page code
-    add(relative(root, f), lintJs(readFileSync(f, 'utf8')));
+  for (const f of lintFiles(root)) {
+    const text = readFileSync(join(root, f), 'utf8');
+    add(f, f.endsWith('.css') ? lintCss(text, f) : lintJs(text, f));
   }
   return total;
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] || '').href) {
-  const total = lintGame();
-  console.log(process.argv.includes('--json') ? JSON.stringify(total, null, 1) : report(total));
+  if (process.argv.includes('--lines'))
+    for (const f of lintGameFindings()) console.log(`${f.file}:${f.line}\t${f.rule}\t${f.text}`);
+  else {
+    const total = lintGame();
+    console.log(process.argv.includes('--json') ? JSON.stringify(total, null, 1) : report(total));
+  }
 }
