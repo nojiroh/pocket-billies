@@ -310,7 +310,7 @@ def check_water():
     return f'no building has water in it; {piers} jetties, each a flat deck ending over water'
 
 
-@step('alpha 0.4: an airship mast in every town, the terminal in Verdigris City (from the data)', 20)
+@step('alpha 0.4: an airship mast in every town (from the data)', 20)   # RL-5: Verdigris City and its terminal are parked
 def check_masts():
     """every town has something to fly from (a prop with act 'fly': a mast, or a sky lift under the ground); the
     terminal's ticket window sells tickets; the mast's airship is a low-poly model with two propellers that turn"""
@@ -447,6 +447,10 @@ def report_unused():
         if {rel, f.name, f.stem, stem} & tokens or d in dynd or 'tiles' in d or any(rel.startswith(x) for x in pre if x.startswith(d)): continue
         unused.append(rel)
     placed = {p['k'] for sc in D['maps'].values() for p in sc.get('props', [])}
+    # RL-5: what the parked maps place counts as placed (game/data/legacy: kept for the Studio's Legacy section, and a map
+    # copied back into the game brings its props with it)
+    for f in (GAME / 'data' / 'legacy' / 'maps').glob('*.json'):
+        placed |= {p['k'] for p in json.loads(f.read_text(encoding='utf-8')).get('props', [])}
     code = '\n'.join(f.read_text(encoding='utf-8', errors='ignore') for f in list((GAME / 'js').rglob('*.js')) + list((ROOT / 'studio' / 'js').glob('*.js')))
     ctok = set(re.findall(r'[\'"`]([A-Za-z0-9_]+)[\'"`]', code)) | set(re.findall(r'[\'"`]([A-Za-z0-9_]+)[|,]', code))
     props = [k for k in SY.get('props', {}) if k not in placed and k not in ctok]
