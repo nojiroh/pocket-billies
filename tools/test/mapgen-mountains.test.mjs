@@ -2,7 +2,8 @@
 // scene made without the dials is the scene it always was; with them, ridges rise on the chosen sides up to 15 m and
 // more, as smooth land you can walk plus step-grid shelves and cliffs, and still every exit can be walked to from the
 // hub with the game's own rules (a step over 0.34 m or a slope over 1.05 stops you); nothing is planted across a
-// cliff; a run with the debug menu's mountains mod makes scenes that join as every run's do.
+// cliff; a run with the debug menu's mountains mod makes scenes that join as every run's do. TR-2b: a footpath climbs
+// each massif to a summit you can walk to (switchbacks, stone steps where steep).
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { GAME_DATA, data, modules } from './setup-real.mjs';
@@ -191,6 +192,8 @@ test("the debug menu's mountains run: a valid run whose every place has mountain
       const { scene, notes } = runSceneMake(run, i, made, WORLD);
       assert.deepEqual(notes, [], `${seed} node ${i}`);
       assert.deepEqual(G.mapgenUnreachable(scene, C, { slope: true }), [], `${seed} node ${i}`);
+      const R = G.mapgenReach(scene, C, scene.hub, { slope: true });
+      for (const s of scene.spots || []) assert.ok(G.mapgenReached(R, s.x, s.z), `${seed} node ${i}: its summit`);
       made.push(scene);
     });
     assert.ok(Math.max(...made.map(top)) >= 15, `${seed}: 15 m somewhere`);
@@ -201,4 +204,82 @@ test("the debug menu's mountains run: a valid run whose every place has mountain
       assert.deepEqual([a.dhNear, a.dhBand, a.raiseExit, a.walk], [0, 0, 0, null], `${seed} ${L.id}`);
     }
   }
+});
+
+/** TR-2b: dial sets as a run's scenes are made now: exits east and west, mountains at the back or front and back */
+function trailed(n, seed0) {
+  const biomes = Object.keys(GAME_DATA.biomes),
+    out = [];
+  for (let i = 0; i < n; i++)
+    out.push({
+      seed: seed0 + i,
+      biome: biomes[i % biomes.length],
+      land: {
+        hills: (i % 5) / 5,
+        terraces: (i % 3) / 3,
+        cliffs: (i % 4) / 3,
+        water: ['none', 'stream', 'pond'][i % 3],
+        mountains: 0.6 + (0.4 * (i % 3)) / 2,
+        massif: i % 2 ? 'NS' : 'N',
+      },
+      road: {
+        exits:
+          i % 2
+            ? [
+                { side: 'E', t: 0.5 },
+                { side: 'W', t: 0.5 },
+              ]
+            : [
+                { side: 'E', t: 0.15625 },
+                { side: 'W', t: 0.5 },
+                { side: 'E', t: 0.84375 },
+              ],
+        shape: ['winding', 'scurve', 'straight', 'switchback'][i % 4],
+      },
+    });
+  return out;
+}
+
+test('trails: a footpath from the road climbs each massif to a summit you can walk to (40 dial sets)', () => {
+  let scenes = 0,
+    summits = 0,
+    high = 0,
+    top = 0,
+    stairs = 0;
+  for (const p of trailed(40, 7000)) {
+    const sc = G.mapgenScene(p, ctx).scene,
+      where = JSON.stringify(p),
+      R = G.mapgenReach(sc, C, sc.hub, { slope: true });
+    assert.deepEqual(G.mapgenUnreachable(sc, C, { slope: true }), [], where);
+    for (const s of sc.spots || []) {
+      assert.equal(s.kind, 'summit', where);
+      assert.ok(G.mapgenReached(R, s.x, s.z), `${where}: the summit at ${s.x}, ${s.z} (${s.y} m)`);
+      summits++;
+      if (s.y >= 12) high++;
+      top = Math.max(top, s.y);
+    }
+    if ((sc.spots || []).length) scenes++;
+    const M = G.mapgenDecodeBase64(sc.stepm);
+    if (M.some(f => (f & 15) === 8)) stairs++;
+  }
+  /* what it does today (40 of 40 with a trail, 60 summits, 19 at 12 m or more, the best 15 m and up): a floor, not a
+     goal; the trail stops short of the highest ground (TR-2b's HANDOFF) */
+  assert.ok(scenes >= 36, `${scenes} of 40 scenes have a trail`);
+  assert.ok(summits >= 50, `${summits} summits`);
+  assert.ok(high >= 12, `${high} summits at 12 m or more`);
+  assert.ok(top >= 15, `the highest summit ${top} m`);
+  assert.ok(stairs >= scenes, `${stairs} scenes with stone steps`);
+});
+
+test('a trail is the same for the same dials, follows the relief seed, and leaves the road and exits as they were', () => {
+  const p = trailed(1, 7004)[0],
+    a = G.mapgenScene(p, ctx).scene,
+    b = G.mapgenScene(p, ctx).scene,
+    c = G.mapgenScene({ ...p, seeds: { relief: 4242 } }, ctx).scene;
+  assert.deepEqual(a, b);
+  assert.notDeepEqual(a.spots, c.spots);
+  assert.deepEqual(
+    a.edgeExits.map(e => e.path),
+    c.edgeExits.map(e => e.path)
+  );
 });

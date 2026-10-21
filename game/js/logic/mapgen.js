@@ -40,6 +40,8 @@ expose({
   MAPGEN_STAGES: [() => MAPGEN_STAGES],
   MAPGEN_STRAIGHT_IN: [() => MAPGEN_STRAIGHT_IN],
   MAPGEN_SURFACES: [() => MAPGEN_SURFACES],
+  MAPGEN_TRAIL_GRADE: [() => MAPGEN_TRAIL_GRADE],
+  MAPGEN_TRAIL_WIDTH: [() => MAPGEN_TRAIL_WIDTH],
   MAPGEN_VERSION: [() => MAPGEN_VERSION],
   MAPGEN_WATER: [() => MAPGEN_WATER],
   MAPGEN_WET: [() => MAPGEN_WET],
@@ -50,6 +52,8 @@ expose({
   mapgenBezier: [() => mapgenBezier, v => (mapgenBezier = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenBridgesOverWater: [() => mapgenBridgesOverWater, v => (mapgenBridgesOverWater = v)],
+  // @ts-expect-error -- replaced on purpose
+  mapgenCarveTrail: [() => mapgenCarveTrail, v => (mapgenCarveTrail = v)],
   mapgenCellAt: [() => mapgenCellAt],
   // @ts-expect-error -- replaced on purpose
   mapgenChooseHub: [() => mapgenChooseHub, v => (mapgenChooseHub = v)],
@@ -92,10 +96,13 @@ expose({
   mapgenMergeDefaults: [() => mapgenMergeDefaults, v => (mapgenMergeDefaults = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenMountainField: [() => mapgenMountainField, v => (mapgenMountainField = v)],
+  mapgenMountainLevel: [() => mapgenMountainLevel],
   // @ts-expect-error -- replaced on purpose
   mapgenMountains: [() => mapgenMountains, v => (mapgenMountains = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenNearJoined: [() => mapgenNearJoined, v => (mapgenNearJoined = v)],
+  // @ts-expect-error -- replaced on purpose
+  mapgenNearPinned: [() => mapgenNearPinned, v => (mapgenNearPinned = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenNearRoadWidth: [() => mapgenNearRoadWidth, v => (mapgenNearRoadWidth = v)],
   // @ts-expect-error -- replaced on purpose
@@ -155,6 +162,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   mapgenSceneGround: [() => mapgenSceneGround, v => (mapgenSceneGround = v)],
   // @ts-expect-error -- replaced on purpose
+  mapgenSceneGroundOf: [() => mapgenSceneGroundOf, v => (mapgenSceneGroundOf = v)],
+  // @ts-expect-error -- replaced on purpose
   mapgenSeamAgreement: [() => mapgenSeamAgreement, v => (mapgenSeamAgreement = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenShareMask: [() => mapgenShareMask, v => (mapgenShareMask = v)],
@@ -186,9 +195,15 @@ expose({
   // @ts-expect-error -- replaced on purpose
   mapgenStageWater: [() => mapgenStageWater, v => (mapgenStageWater = v)],
   // @ts-expect-error -- replaced on purpose
+  mapgenSteepAt: [() => mapgenSteepAt, v => (mapgenSteepAt = v)],
+  // @ts-expect-error -- replaced on purpose
   mapgenStreamLine: [() => mapgenStreamLine, v => (mapgenStreamLine = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenTerraces: [() => mapgenTerraces, v => (mapgenTerraces = v)],
+  // @ts-expect-error -- replaced on purpose
+  mapgenTrailSearch: [() => mapgenTrailSearch, v => (mapgenTrailSearch = v)],
+  // @ts-expect-error -- replaced on purpose
+  mapgenTrails: [() => mapgenTrails, v => (mapgenTrails = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenUnreachable: [() => mapgenUnreachable, v => (mapgenUnreachable = v)],
   // @ts-expect-error -- replaced on purpose
@@ -534,6 +549,12 @@ export function mapgenNewWork(P, ctx) {
     stepsUsed: false,
     /* TR-2: mountains made shelves and cliffs (mapgenMountains) */
     relief: false,
+    /* TR-2b: marked spots (a trail's summit: { kind, x, z, y }) */
+    spots: /** @type {{ kind: string, x: number, z: number, y: number }[]} */ ([]),
+    /* TR-2: the mountains' height per corner (mapgenMountainField), once made */
+    mtnE: /** @type {Float32Array | null} */ (null),
+    /* TR-2b: the step raise before the mountains' shelves (the terraces'), once the mountains are made */
+    S0: /** @type {Float32Array | null} */ (null),
     /* MG-2: the buildings' lots, [x0, z0, x1, z1] (mapgenStageLots) */
     lots: /** @type {number[][]} */ ([]),
     /* MG-2: the edges joined to a neighbour that got their exit (mapgenParams) */
@@ -1622,6 +1643,8 @@ export function mapgenMountains(G) {
     a = MAPGEN_MOUNTAIN_SMOOTH,
     at = (i, j) => E[j * (w + 1) + i];
   let any = false;
+  /* the terraces' raise before the shelves go on (a trail follows the ground as the terraces left it) */
+  G.S0 = Float32Array.from(G.S);
   for (let q = 0; q < E.length; q++) G.H[q] += E[q] * a;
   for (let j = 0; j < h * 2; j++)
     for (let i = 0; i < W2; i++) {
@@ -1645,7 +1668,381 @@ export function mapgenMountains(G) {
   if (!any) return;
   G.relief = true;
   G.stepsUsed = true;
+  G.mtnE = E;
+  mapgenTrails(G);
   mapgenRockEdges(G);
+}
+/* ---------- TR-2b: mountain trails ---------- */
+/* the steepest a trail climbs (rise per metre run) */
+export const MAPGEN_TRAIL_GRADE = 0.56; /* stairs of 0.28 m a half metre, 0.33 m at most once rounded to 5 cm */
+export const MAPGEN_TRAIL_WIDTH = 1.8;
+/** a mountain's full height at a corner: its smooth land and the shelves it stands for (before they are cut to steps) */
+export const mapgenMountainLevel = (G, c) => {
+  const i = c % (G.w + 1),
+    j = Math.floor(c / (G.w + 1)),
+    q = mapgenBetween(j * 2, 0, G.h * 2 - 1) * G.w * 2 + mapgenBetween(i * 2, 0, G.w * 2 - 1);
+  return G.H[c] + G.S0[q] + G.mtnE[c] * (1 - MAPGEN_MOUNTAIN_SMOOTH);
+};
+/** is corner (i, j) where the last pinning still moves the land (within 7 m of a pinned side or a joined strip): a trail
+ * carved there would be moved off its own steps */
+export function mapgenNearPinned(G, i, j) {
+  for (const side of G.P.pin || '') if (mapgenDepth(G, side, i, j) < 7) return true;
+  return mapgenNearJoined(G, i, j, 7);
+}
+/** is the smooth land at corner c steeper than you may walk (walk/heights.js navGrid blocks a slope over 1.05, whatever
+ * steps are cut into it; a margin kept) */
+export function mapgenSteepAt(G, c) {
+  const W1 = G.w + 1,
+    i = c % W1,
+    j = Math.floor(c / W1),
+    H = G.H,
+    gx = (H[j * W1 + Math.min(G.w, i + 1)] - H[j * W1 + Math.max(0, i - 1)]) / 2,
+    gz = (H[Math.min(G.h, j + 1) * W1 + i] - H[Math.max(0, j - 1) * W1 + i]) / 2;
+  return Math.hypot(gx, gz) > 0.8;
+}
+/** the way up to a summit (the owner: mountains walkable to 15 m and more): from the corner `goal` outward, the
+ * cheapest way to a road corner whose every metre climbs no more than MAPGEN_TRAIL_GRADE, so on steep ground it winds
+ * in switchbacks. Corners, the summit first, or null. Steps cost their length, more the steeper they are, and a little
+ * noise of the 'relief' seed so two trails don't look drawn with a ruler */
+export function mapgenTrailSearch(G, goal, isRoad, s) {
+  const { w, h } = G,
+    W1 = w + 1,
+    n = W1 * (h + 1);
+  /* on every second corner (2 m apart), so two legs of a switchback are never closer than a trail is wide; a state is
+     a corner and the heading it was reached by, and each turn costs (a hairpin most), so legs run long */
+  const steps = [
+    [2, 0, 2],
+    [2, 2, 2 * Math.SQRT2],
+    [0, 2, 2],
+    [-2, 2, 2 * Math.SQRT2],
+    [-2, 0, 2],
+    [-2, -2, 2 * Math.SQRT2],
+    [0, -2, 2],
+    [2, -2, 2 * Math.SQRT2],
+  ];
+  const TURN = [0, 0.8, 3, 8, 12] /* by eighths of a turn: none, 45, 90, 135, 180 degrees */,
+    dist = new Float32Array(n * 9).fill(Infinity),
+    from = new Int32Array(n * 9).fill(-1),
+    done = new Uint8Array(n * 9),
+    heap = /** @type {number[][]} */ ([[0, goal * 9 + 8]]);
+  dist[goal * 9 + 8] = 0;
+  const push = it => {
+      heap.push(it);
+      let k = heap.length - 1;
+      while (k) {
+        const p = (k - 1) >> 1;
+        if (heap[p][0] <= heap[k][0]) break;
+        [heap[p], heap[k]] = [heap[k], heap[p]];
+        k = p;
+      }
+    },
+    pop = () => {
+      const top = heap[0],
+        last = /** @type {number[]} */ (heap.pop());
+      if (heap.length) {
+        heap[0] = last;
+        let k = 0;
+        for (;;) {
+          const a = 2 * k + 1,
+            b = a + 1;
+          let m = k;
+          if (a < heap.length && heap[a][0] < heap[m][0]) m = a;
+          if (b < heap.length && heap[b][0] < heap[m][0]) m = b;
+          if (m === k) break;
+          [heap[m], heap[k]] = [heap[k], heap[m]];
+          k = m;
+        }
+      }
+      return top;
+    };
+  while (heap.length) {
+    const [d, st] = pop();
+    if (done[st]) continue;
+    done[st] = 1;
+    const c = Math.floor(st / 9),
+      dir = st % 9;
+    if (isRoad(c) || isRoad(c + 1) || isRoad(c + W1) || isRoad(c + W1 + 1)) {
+      const out = [];
+      for (let k = st; k >= 0; k = from[k]) out.push(Math.floor(k / 9));
+      return out.reverse();
+    }
+    const i = c % W1,
+      j = Math.floor(c / W1);
+    for (let nd8 = 0; nd8 < 8; nd8++) {
+      const [di, dj, len] = steps[nd8],
+        ii = i + di,
+        jj = j + dj;
+      if (ii < 2 || jj < 2 || ii > w - 3 || jj > h - 3) continue;
+      const c2 = jj * W1 + ii,
+        st2 = c2 * 9 + nd8;
+      if (
+        done[st2] ||
+        G.F[mapgenCellAt(G, ii, jj)] & 4 ||
+        mapgenSteepAt(G, c2) ||
+        mapgenSteepAt(G, (c + c2) >> 1) ||
+        mapgenNearPinned(G, ii, jj)
+      )
+        continue;
+      const dh = Math.abs(mapgenMountainLevel(G, c2) - mapgenMountainLevel(G, c));
+      if (dh > MAPGEN_TRAIL_GRADE * len) continue;
+      const turn = dir === 8 ? 0 : TURN[Math.min((nd8 - dir + 8) % 8, (dir - nd8 + 8) % 8)],
+        nd = d + len * (1 + (2.5 * dh) / len) + turn + 0.35 * len * mapgenNoise(ii / 3, jj / 3, s);
+      if (nd < dist[st2]) {
+        dist[st2] = nd;
+        from[st2] = st;
+        push([nd, st2]);
+      }
+    }
+  }
+  return null;
+}
+/** a footpath from the road up each massif side to its summit (TR-2b): the summit is the highest corner whose nearest
+ * side is that side, 3 m in from the edges (lower ones tried when no way up is found), the way found by
+ * mapgenTrailSearch, smoothed, its height along it the land's own within the grade, carved MAPGEN_TRAIL_WIDTH wide
+ * into the shelves as stairs where it climbs (stone steps) and a ramp where it's gentle, on the road's surface, ending
+ * in a flat summit pocket 2.5 m round. Each summit is a marked spot (G.spots: { kind: 'summit', x, z, y }) */
+export function mapgenTrails(G) {
+  const { P, w, h } = G,
+    W1 = w + 1,
+    s = G.salt('relief', 'trail'),
+    E = G.mtnE,
+    surf = MAPGEN_SURFACES[P.road.surface];
+  const road = new Uint8Array(W1 * (h + 1));
+  for (let j = 0; j <= h; j++)
+    for (let i = 0; i <= w; i++) {
+      const q = mapgenCellAt(G, i, j);
+      if (G.F[q] & 1 && !(G.F[q] & 8) && Math.hypot(i - G.hub[0], j - G.hub[1]) > 20 && !E[j * W1 + i])
+        road[j * W1 + i] = 1;
+    }
+  for (const side of P.land.massif || MAPGEN_MOUNTAIN_DIALS.massif) {
+    const cands = [];
+    for (let j = 4; j <= h - 4; j += 2)
+      for (let i = 4; i <= w - 4; i += 2) {
+        const c = j * W1 + i;
+        if (E[c] < 4 || mapgenNearPinned(G, i, j)) continue;
+        /* the pocket's ground must be gentle enough to stand on */
+        let steep = false;
+        for (let dj = -2; dj <= 2 && !steep; dj++)
+          for (let di = -2; di <= 2 && !steep; di++) steep = mapgenSteepAt(G, (j + dj) * W1 + i + di);
+        if (steep) continue;
+        let near = side,
+          nd = mapgenDepth(G, side, i, j);
+        for (const o of 'NSEW')
+          if (mapgenDepth(G, o, i, j) < nd) {
+            nd = mapgenDepth(G, o, i, j);
+            near = o;
+          }
+        if (near === side) cands.push(c);
+      }
+    cands.sort((a, b) => E[b] - E[a] || a - b);
+    let path = /** @type {number[] | null} */ (null);
+    /* the highest first; then lower ones, each at least 6 m from those tried */
+    const tried = [];
+    for (const c of cands) {
+      if (tried.length >= 6) break;
+      const i = c % W1,
+        j = Math.floor(c / W1);
+      if (tried.some(t => Math.hypot(t[0] - i, t[1] - j) < 6)) continue;
+      tried.push([i, j]);
+      path = mapgenTrailSearch(G, c, k => !!road[k], s + tried.length);
+      if (path) break;
+    }
+    if (!path || path.length < 4) continue;
+    mapgenCarveTrail(G, path, surf);
+  }
+}
+/** carve a trail along corners `path` (the summit first) into the step grid: see mapgenTrails */
+export function mapgenCarveTrail(G, path, surf) {
+  const { w, h } = G,
+    W1 = w + 1,
+    W2 = w * 2;
+  /* the road end first, rounded off (two passes of corner cutting), every half metre */
+  /* the search's 2 m grid zigzags: straightened (within 0.8 m) before its corners are rounded */
+  let pts = mapgenSimplify(
+    path
+      .slice()
+      .reverse()
+      .map(c => [c % W1, Math.floor(c / W1)]),
+    0.8
+  );
+  for (let pass = 0; pass < 2; pass++) {
+    const nx = [pts[0]];
+    for (let k = 0; k < pts.length - 1; k++) {
+      const a = pts[k],
+        b = pts[k + 1];
+      nx.push(
+        [a[0] * 0.75 + b[0] * 0.25, a[1] * 0.75 + b[1] * 0.25],
+        [a[0] * 0.25 + b[0] * 0.75, a[1] * 0.25 + b[1] * 0.75]
+      );
+    }
+    nx.push(pts[pts.length - 1]);
+    pts = nx;
+  }
+  /* it starts on the road itself: the nearest road half-metre cell within 2 m of its first corner */
+  {
+    const [x0, z0] = pts[0];
+    let bd = 1e9,
+      at = /** @type {number[] | null} */ (null);
+    for (let j = Math.floor((z0 - 2) * 2); j <= Math.floor((z0 + 2) * 2); j++)
+      for (let i = Math.floor((x0 - 2) * 2); i <= Math.floor((x0 + 2) * 2); i++) {
+        if (i < 0 || j < 0 || i >= W2 || j >= h * 2) continue;
+        const x = (i + 0.5) / 2,
+          z = (j + 0.5) / 2,
+          d = Math.hypot(x - x0, z - z0);
+        if (d < bd && G.F[mapgenCellAt(G, x, z)] & 1 && !(G.F[mapgenCellAt(G, x, z)] & 8)) {
+          bd = d;
+          at = [x, z];
+        }
+      }
+    if (at) pts.unshift(at);
+  }
+  pts = mapgenResample(pts, 0.5);
+  const level = (x, z) => {
+    const i = mapgenBetween(Math.floor(x), 0, w - 1),
+      j = mapgenBetween(Math.floor(z), 0, h - 1),
+      fx = x - i,
+      fz = z - j,
+      L = c => mapgenMountainLevel(G, c);
+    return (
+      L(j * W1 + i) * (1 - fx) * (1 - fz) +
+      L(j * W1 + i + 1) * fx * (1 - fz) +
+      L((j + 1) * W1 + i) * (1 - fx) * fz +
+      L((j + 1) * W1 + i + 1) * fx * fz
+    );
+  };
+  const n = pts.length,
+    cellOf = (x, z) =>
+      mapgenBetween(Math.floor(z * 2), 0, h * 2 - 1) * W2 + mapgenBetween(Math.floor(x * 2), 0, W2 - 1),
+    smoothAt = (x, z) => mapgenSceneGroundOf(G, x, z);
+  /* the height along it: the land's, smoothed, starting where the road stands, within the grade both ways */
+  const raw = pts.map(p => level(p[0], p[1]));
+  raw[0] = smoothAt(pts[0][0], pts[0][1]) + G.S[cellOf(pts[0][0], pts[0][1])];
+  const prof = raw.map((_, k) => {
+    let a = 0,
+      c = 0;
+    for (let m = Math.max(1, k - 3); m <= Math.min(n - 1, k + 3); m++) {
+      a += raw[m];
+      c++;
+    }
+    return k ? a / c : raw[0];
+  });
+  const lim = MAPGEN_TRAIL_GRADE * 0.5;
+  /* level with the road for its first 1.5 m, so the cells beside the road don't start a step up */
+  for (let k = 1; k < Math.min(n, 4); k++) prof[k] = prof[0];
+  /* a landing at each hairpin (over 100 degrees within a metre either way): level for 1.5 m either side, so the cells on
+     its two sides, side by side, stand at one height; a sharp turn (over 60) climbs at half the grade */
+  const flat = new Float32Array(n).fill(1);
+  for (let k = 2; k < n - 2; k++) {
+    const a1 = Math.atan2(pts[k][1] - pts[k - 2][1], pts[k][0] - pts[k - 2][0]),
+      a2 = Math.atan2(pts[k + 2][1] - pts[k][1], pts[k + 2][0] - pts[k][0]),
+      turn = Math.abs(((a2 - a1 + 3 * Math.PI) % (2 * Math.PI)) - Math.PI);
+    const f = turn > (Math.PI * 5) / 9 ? 0 : turn > Math.PI / 3 ? 0.5 : 1;
+    if (f < 1) for (let m = Math.max(1, k - 3); m <= Math.min(n - 1, k + 3); m++) flat[m] = Math.min(flat[m], f);
+  }
+  for (let k = 1; k < n; k++) {
+    const l = lim * flat[k];
+    prof[k] = mapgenBetween(prof[k], prof[k - 1] - l, prof[k - 1] + l);
+  }
+  /* the last 2.5 m are the summit pocket's: level with where the trail comes into it */
+  const inPocket = Math.max(1, n - 6);
+  for (let k = inPocket; k < n; k++) prof[k] = prof[inPocket];
+  /* carve: each half-metre cell within half the width of the line takes its nearest sample's height */
+  const half = MAPGEN_TRAIL_WIDTH / 2,
+    best = new Map();
+  pts.forEach((p, k) => {
+    for (let j = Math.floor((p[1] - half) * 2); j <= Math.floor((p[1] + half) * 2); j++)
+      for (let i = Math.floor((p[0] - half) * 2); i <= Math.floor((p[0] + half) * 2); i++) {
+        if (i < 0 || j < 0 || i >= W2 || j >= h * 2) continue;
+        const d = Math.hypot((i + 0.5) / 2 - p[0], (j + 0.5) / 2 - p[1]);
+        if (d > half) continue;
+        const q = j * W2 + i,
+          o = best.get(q);
+        if (!o || d < o[0]) best.set(q, [d, k]);
+      }
+  });
+  /* the road it leaves keeps its own height (read before this trail marks its own cells as path) */
+  const onRoad = new Set();
+  for (const q of best.keys()) {
+    const x = ((q % W2) + 0.5) / 2,
+      z = (Math.floor(q / W2) + 0.5) / 2;
+    if (
+      G.F[mapgenCellAt(G, x, z)] & 1 &&
+      !G.mtnE[mapgenBetween(Math.round(z), 0, h) * W1 + mapgenBetween(Math.round(x), 0, w)]
+    )
+      onRoad.add(q);
+  }
+  /* the height along the line where a cell's centre falls on it (between its nearest sample and the next or last), so
+     two cells side by side on one leg differ by no more than the grade over half a metre */
+  const along = (x, z, k) => {
+    let bt = 0,
+      bd = 1e9;
+    for (const m of [k - 1, k]) {
+      if (m < 0 || m + 1 >= n) continue;
+      const [ax, az] = pts[m],
+        [bx, bz] = pts[m + 1],
+        dx = bx - ax,
+        dz = bz - az,
+        L2 = dx * dx + dz * dz || 1,
+        t = mapgenBetween(((x - ax) * dx + (z - az) * dz) / L2, 0, 1),
+        d = Math.hypot(ax + dx * t - x, az + dz * t - z);
+      if (d < bd) {
+        bd = d;
+        bt = m + t;
+      }
+    }
+    const m = Math.floor(bt),
+      f = bt - m;
+    return m + 1 < n ? prof[m] * (1 - f) + prof[m + 1] * f : prof[n - 1];
+  };
+  for (const [q, [, k]] of best) {
+    const i = q % W2,
+      j = Math.floor(q / W2),
+      x = (i + 0.5) / 2,
+      z = (j + 0.5) / 2,
+      c = mapgenCellAt(G, x, z);
+    if (onRoad.has(q)) continue;
+    /* a cut below the smooth land where the trail runs lower (a negative raise, as hand-made maps have) */
+    G.S[q] = Math.round((along(x, z, k) - smoothAt(x, z)) * 20) / 20;
+    const grade = Math.abs(prof[Math.min(n - 1, k + 1)] - prof[Math.max(0, k - 1)]) / 1;
+    G.M[q] = grade > 0.12 ? (G.M[q] & ~(32 | 15)) | 8 : (G.M[q] & ~15) | 32;
+    if (!(G.F[c] & 4)) {
+      G.T[c] = surf;
+      G.F[c] = (G.F[c] & ~(32 | 64)) | 1 | 16;
+    }
+  }
+  /* the summit pocket: flat, clear, a marked spot */
+  const [sx, sz] = pts[n - 1],
+    top = prof[n - 1];
+  for (let j = Math.floor((sz - 2.5) * 2); j <= Math.floor((sz + 2.5) * 2); j++)
+    for (let i = Math.floor((sx - 2.5) * 2); i <= Math.floor((sx + 2.5) * 2); i++) {
+      if (i < 0 || j < 0 || i >= W2 || j >= h * 2) continue;
+      const x = (i + 0.5) / 2,
+        z = (j + 0.5) / 2;
+      if (Math.hypot(x - sx, z - sz) > 2.5) continue;
+      /* a leg of the trail passing by lower down keeps its own height */
+      const own = best.get(j * W2 + i);
+      if (own && own[1] < inPocket) continue;
+      G.S[j * W2 + i] = Math.round((top - smoothAt(x, z)) * 20) / 20;
+      G.M[j * W2 + i] = (G.M[j * W2 + i] & ~15) | 32;
+      G.F[mapgenCellAt(G, x, z)] |= 16;
+    }
+  G.keep.push([sx, sz, 2.5]);
+  G.spots.push({ kind: 'summit', x: mapgenRound2(sx), z: mapgenRound2(sz), y: mapgenRound2(top) });
+}
+/** the smooth land's height at (x, z) in the working state (bilinear between corners) */
+export function mapgenSceneGroundOf(G, x, z) {
+  const W1 = G.w + 1,
+    i = mapgenBetween(Math.floor(x), 0, G.w - 1),
+    j = mapgenBetween(Math.floor(z), 0, G.h - 1),
+    fx = mapgenBetween(x - i, 0, 1),
+    fz = mapgenBetween(z - j, 0, 1),
+    H = G.H;
+  return (
+    H[j * W1 + i] * (1 - fx) * (1 - fz) +
+    H[j * W1 + i + 1] * fx * (1 - fz) +
+    H[(j + 1) * W1 + i] * (1 - fx) * fz +
+    H[(j + 1) * W1 + i + 1] * fx * fz
+  );
 }
 /** TR-2: does a prop of radius r at (x, z) stand across a step of more than 0.3 m (a cliff or a shelf's edge) */
 export function mapgenOnCliff(G, x, z, r) {
@@ -2394,6 +2791,7 @@ export function mapgenScene(params, ctx) {
   if (G.bridges.length) sc.bridges = G.bridges;
   if (G.waters.length) sc.waters = G.waters;
   if (G.waterKind) sc.waterKind = G.waterKind;
+  if (G.spots.length) sc.spots = G.spots;
   if (G.stepsUsed) {
     const raw = new Int16Array(G.S.length);
     let any = false;
@@ -2415,6 +2813,7 @@ export function mapgenWalkGrid(sc, scenery, o = {}) {
     gw = sc.w * N,
     gh = sc.h * N,
     blk = new Uint8Array(gw * gh),
+    br = new Uint8Array(gw * gh) /* cells a bridge's deck crosses */,
     C = scenery || { terrains: {}, props: {} };
   for (let j = 0; j < gh; j++)
     for (let i = 0; i < gw; i++) {
@@ -2445,7 +2844,10 @@ export function mapgenWalkGrid(sc, scenery, o = {}) {
       const x = b.a[0] + ((b.b[0] - b.a[0]) * t) / L,
         z = b.a[1] + ((b.b[1] - b.a[1]) * t) / L;
       each(x - b.w / 2, z - b.w / 2, x + b.w / 2, z + b.w / 2, (q, cx, cz) => {
-        if (Math.hypot(cx - x, cz - z) <= b.w / 2) blk[q] = 0;
+        if (Math.hypot(cx - x, cz - z) <= b.w / 2) {
+          blk[q] = 0;
+          br[q] = 1;
+        }
       });
     }
   }
@@ -2474,16 +2876,25 @@ export function mapgenWalkGrid(sc, scenery, o = {}) {
     const u = mapgenDecodeBase64(sc.steps);
     S = new Int16Array(u.buffer, 0, u.length >> 1);
   }
-  return { N, gw, gh, blk, S: S && S.length === gw * gh ? S : null };
+  return { N, gw, gh, blk, br, S: S && S.length === gw * gh ? S : null };
 }
 /** the half-metre cells you can walk to from a point (the hub unless given): water, solid props and a step taller
- * than 0.34 m stop you. { N, gw, gh, blk, S, seen } */
+ * than 0.34 m stop you (with o.slope, also smooth land steeper than 1.05, and steps measured on the whole height). { N, gw, gh, blk, S, seen } */
 export function mapgenReach(sc, scenery, from = sc.hub, o = {}) {
   const W = mapgenWalkGrid(sc, scenery, o),
-    { N, gw, gh, blk, S } = W,
+    { N, gw, gh, blk, br, S } = W,
     start = mapgenBetween(Math.floor(from[1] * N), 0, gh - 1) * gw + mapgenBetween(Math.floor(from[0] * N), 0, gw - 1),
     seen = new Uint8Array(gw * gh),
     Q = [start];
+  /* TR-2, with o.slope: the height you stand at in each cell (the smooth land and its raise), as the game compares
+     cells (walk-view.js lv), so a step cut into a slope (a trail) is judged by what you climb, not by its raise */
+  let lv = /** @type {Float32Array | null} */ (null);
+  if (o.slope) {
+    lv = new Float32Array(gw * gh);
+    for (let j = 0; j < gh; j++)
+      for (let i = 0; i < gw; i++)
+        lv[j * gw + i] = mapgenSceneGround(sc, (i + 0.5) / N, (j + 0.5) / N) + (S ? S[j * gw + i] / 20 : 0);
+  }
   seen[start] = 1;
   for (let n = 0; n < Q.length; n++) {
     const q = Q[n],
@@ -2499,7 +2910,8 @@ export function mapgenReach(sc, scenery, from = sc.hub, o = {}) {
         jj = j + dj,
         r = jj * gw + ii;
       if (ii < 0 || jj < 0 || ii >= gw || jj >= gh || seen[r] || blk[r]) continue;
-      if (S && Math.abs(S[r] - S[q]) / 20 > 0.34) continue;
+      /* on a bridge the deck is walked, not the bed under it: its raise alone, as without o.slope */
+      if (lv && !br[r] && !br[q] ? Math.abs(lv[r] - lv[q]) > 0.34 : S && Math.abs(S[r] - S[q]) / 20 > 0.34) continue;
       seen[r] = 1;
       Q.push(r);
     }
