@@ -159,6 +159,21 @@
    "feature": {"none":4,"bridge":1,"glade":1,"lookout":1}
   },
   "wild": {"lv":[3,5],"perRow":1,"back":2},
-  "seamIn": 6
+  "seamIn": 6,
+  "start": {
+   "se": 600,
+   "coins": {"penny":5},
+   "items": {"taxbreak":2}
+  },
+  "healCost": 60,
+  "shop": {
+   "always": ["coin:penny","taxbreak"],
+   "more": 2,
+   "pick": {"pretzel":3,"loophole":2,"trailmix":2,"spillkit":2,"apology":1,"settlement":1,"appeal":1,"bailout":1}
+  },
+  "foes": {
+   "miniboss": {"up":3,"reward":300},
+   "boss": {"up":5,"reward":600}
+  }
  }
 }
