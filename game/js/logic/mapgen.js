@@ -16,6 +16,7 @@
 /** @import { Biome } from '../../types/game-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { mapgenHashString, mapgenRandom } from './rng.js';
 /* eslint-disable no-func-assign */
 expose({
   MAPGEN_BASE64: [() => MAPGEN_BASE64],
@@ -61,8 +62,6 @@ expose({
   // @ts-expect-error -- replaced on purpose
   mapgenGrowWild: [() => mapgenGrowWild, v => (mapgenGrowWild = v)],
   // @ts-expect-error -- replaced on purpose
-  mapgenHashString: [() => mapgenHashString, v => (mapgenHashString = v)],
-  // @ts-expect-error -- replaced on purpose
   mapgenLattice: [() => mapgenLattice, v => (mapgenLattice = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenLowerWater: [() => mapgenLowerWater, v => (mapgenLowerWater = v)],
@@ -96,8 +95,6 @@ expose({
   mapgenRadius: [() => mapgenRadius, v => (mapgenRadius = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenRaise: [() => mapgenRaise, v => (mapgenRaise = v)],
-  // @ts-expect-error -- replaced on purpose
-  mapgenRandom: [() => mapgenRandom, v => (mapgenRandom = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenResample: [() => mapgenResample, v => (mapgenResample = v)],
   // @ts-expect-error -- replaced on purpose
@@ -211,56 +208,6 @@ export const mapgenBetween = (v, a, b) => (v < a ? a : v > b ? b : v);
 export const mapgenRound2 = v => Math.round(v * 100) / 100;
 export const mapgenSmooth = t => t * t * (3 - 2 * t);
 
-/* ---------- random numbers: a hash of (seed, salt) starts a small fast generator (sfc32) ---------- */
-export function mapgenHashString(s) {
-  let h = 2166136261 >>> 0;
-  for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619) >>> 0;
-  return h;
-}
-/** a random stream for a seed and a salt: next() in [0,1), range, int, chance, pick (by weight), gauss */
-export function mapgenRandom(seed, salt = '') {
-  let a = mapgenHashString(`${seed}|${salt}|a`),
-    b = mapgenHashString(`${seed}|${salt}|b`),
-    c = mapgenHashString(`${seed}|${salt}|c`),
-    d = 1;
-  const next = () => {
-    a >>>= 0;
-    b >>>= 0;
-    c >>>= 0;
-    d >>>= 0;
-    const t = (((a + b) | 0) + d) | 0;
-    d = (d + 1) | 0;
-    a = b ^ (b >>> 9);
-    b = (c + (c << 3)) | 0;
-    c = (c << 21) | (c >>> 11);
-    c = (c + t) | 0;
-    return (t >>> 0) / 4294967296;
-  };
-  for (let i = 0; i < 12; i++) next();
-  const R = {
-    next,
-    range: (lo, hi) => lo + (hi - lo) * next(),
-    int: (lo, hi) => lo + Math.floor(next() * (hi - lo + 1)),
-    chance: p => next() < p,
-    /** @param {Record<string, number>} W */
-    pick: W => {
-      const ks = Object.keys(W).filter(k => W[k] > 0);
-      let s = 0;
-      for (const k of ks) s += W[k];
-      let r = next() * s;
-      for (const k of ks) if ((r -= W[k]) < 0) return k;
-      return ks[ks.length - 1];
-    },
-    gauss: () => {
-      const u = Math.max(1e-9, next()),
-        v = next();
-      return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
-    },
-  };
-  return R;
-}
-
-/* value noise on a lattice, from an integer hash (no sin hash: the same in every engine) */
 export function mapgenLattice(i, j, s) {
   let h = Math.imul(i | 0, 374761393) + Math.imul(j | 0, 668265263) + Math.imul(s | 0, 1442695041);
   h = Math.imul(h ^ (h >>> 13), 1274126177);

@@ -189,7 +189,7 @@ test('a generated route is quick enough to show live', () => {
 });
 
 test('40 random dial sets: each reaches every exit, with nothing in water it does not grow in', () => {
-  const R = G.mapgenRandom(7, 'sweep'),
+  const R = modules.rng.mapgenRandom(7, 'sweep'),
     pick = o => Object.keys(o)[R.int(0, Object.keys(o).length - 1)];
   for (let i = 0; i < 40; i++) {
     const exits = [];
