@@ -22,7 +22,6 @@ import {
   sectionShown,
   studioState,
   toast,
-  uniqueKey,
 } from './studio-app.js';
 import { githubDataText, githubMode } from './github.js';
 /* eslint-disable no-func-assign */
@@ -142,8 +141,15 @@ ACTIONS.legacyCopy = async (/** @type {{ id: string }} */ d) => {
     ]
   );
   if (name == null) return;
-  const id = uniqueKey(name || d.id, k => !!D.maps[k]),
+  /* a map id keeps underscores and its length (uniqueKey makes short keys: tallgrass_meadow became tallgrassmea) */
+  const base =
+      (name || d.id)
+        .toLowerCase()
+        .replace(/[^a-z0-9_]+/g, '_')
+        .replace(/^_+|_+$/g, '') || d.id,
     sc = clone(M);
+  let id = base;
+  for (let i = 2; D.maps[id]; i++) id = base + '_' + i;
   delete sc.locationId;
   D.maps[id] = sc;
   studioState.sel.scene = id;
