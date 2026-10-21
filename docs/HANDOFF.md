@@ -15,7 +15,7 @@ the owner started UI-4 in a parallel session and asked to skip the remaining che
   message only a fixture listens to; real screens in the preview with the frame kept across redraws; before/after;
   Find and the ? sheet. The Studio check's `ui_tools` and `ui_screens` steps.
 - Where the plan was wrong: see ui-track.md "UI-3b found" (Ctrl+L taken; the lint's lines; no fixtures; no DOM capture).
-- Verified: fast tier at every commit up to the real screens (lint, typecheck, unit tests 357 -> 384, modules,
+- Verified: fast tier at every commit up to the real screens (lint, typecheck, unit tests 371 -> 381, modules,
   format, data); each new test and Studio step seen to fail on a planted fault (lines one off, comments deleted, the
   `:host` rules left out, Connections not knowing UI dials, the fixture ignoring the look). `check:fast` green after
   the fixtures (2.5 min). `--only=ui,ui_tools,ui_screens` green after before/after. Skipped at the owner's word: the
