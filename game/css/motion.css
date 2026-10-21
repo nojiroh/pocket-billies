@@ -156,6 +156,41 @@
     mask-position: 100% 0;
   }
 }
+/* bubble (UI-2): the dialogue box's bubble floats, wiggles and breathes, each on its own period (dialogue.css) so the
+   three never line up the same way twice; a pixel or two, a third of a degree, a couple of percent */
+@keyframes m-bubble-float {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  30% {
+    translate: 1px -2px;
+  }
+  65% {
+    translate: -1px -1px;
+  }
+}
+@keyframes m-bubble-wiggle {
+  0%,
+  100% {
+    rotate: 0deg;
+  }
+  25% {
+    rotate: 0.35deg;
+  }
+  75% {
+    rotate: -0.3deg;
+  }
+}
+@keyframes m-bubble-breathe {
+  0%,
+  100% {
+    scale: 1 1;
+  }
+  50% {
+    scale: 1.008 1.018;
+  }
+}
 /* the screens and the sheets use it (the older slide-ins in v05.css and polish.css are replaced here; the Map tab's
    screen keeps no animation, screens.css) */
 .screen.enter,
@@ -182,7 +217,9 @@
   .m-float {
     animation: m-fade 120ms linear both !important;
   }
-  .m-idle {
+  .m-idle,
+  .talk-box::before,
+  .talk-box::after {
     animation: none !important;
   }
   .m-press:active {
@@ -204,7 +241,9 @@
   ) {
   animation: m-fade 120ms linear both !important;
 }
-[data-motion='reduced'] .m-idle {
+[data-motion='reduced'] .m-idle,
+[data-motion='reduced'] .talk-box::before,
+[data-motion='reduced'] .talk-box::after {
   animation: none !important;
 }
 [data-motion='reduced'] .m-press:active {

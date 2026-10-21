@@ -9,6 +9,18 @@ const L = Object.fromEntries(
   ['parseScript', 'conditionTree', 'conditionProblem', 'conditionNames'].map(k => [k, fn(k)])
 );
 const copy = () => structuredClone(GAME_DATA);
+/* RL-5: a place behind a gate, joined to the start by a road (on the test map test_tiny), planted in a copy: the
+   game's own places outside the start are parked */
+const gated = (G, requires) => {
+  G.locations.push({ ...G.locations[0], id: 'gate_test', name: 'Gate test', mapId: 'test_tiny', requires });
+  G.roads.push({
+    id: 'road:start-gate_test',
+    kind: 'seam',
+    a: { map: G.rules.start.locationId, exit: 'x' },
+    b: { map: 'test_tiny', exit: 'y' },
+  });
+  return G;
+};
 const run = G => storyChecks(G, L);
 
 test('the game’s scripts pass the story checks, with no warnings', () => {
@@ -20,7 +32,12 @@ test('each planted fault is found', () => {
   const cases = [
     ['a script that doesn’t read', G => G.trainers.crude.script.push('sett met_x'), 'problems', 'did you mean "set"'],
     ['a line without an id', G => G.trainers.crude.script.splice(1, 0, '  Hi.'), 'problems', 'has no line id'],
-    ['an id used twice', G => G.trainers.crude.script.push(G.trainers.chad.script[1].trim()), 'problems', 'is also'],
+    [
+      'an id used twice',
+      G => G.trainers.crude.script.push(G.story.scripts.hazel.script[0].trim()),
+      'problems',
+      'is also',
+    ],
     ['an unknown speaker', G => G.trainers.crude.script.push('Nobody: Hi. #l:zz01'), 'problems', 'speaker Nobody'],
     ['an unknown trainer', G => G.trainers.crude.script.push('battle nobody'), 'problems', 'battle nobody'],
     ['an unknown item', G => G.trainers.crude.script.push('give unobtainium'), 'problems', 'no such item'],
@@ -56,12 +73,7 @@ test('each planted fault is found', () => {
       'once key k1',
     ],
     ['a quest stage nothing reaches', G => (G.story.quests.q = { stages: ['a'] }), 'warnings', 'moves it to a'],
-    [
-      'a gate that can never open',
-      G => (G.locations.find(l => l.id === 'marigold').requires = 'never_set_flag'),
-      'problems',
-      "can't come true",
-    ],
+    ['a gate that can never open', G => gated(G, 'never_set_flag'), 'problems', "can't come true"],
   ];
   for (const [what, plant, kind, word] of cases) {
     const G = copy();
@@ -77,7 +89,7 @@ test('each planted fault is found', () => {
 test('the reach check: a gate opens when a script the player can get to sets its flag', () => {
   const G = copy();
   G.story.flags.gate_open = 'test';
-  G.locations.find(l => l.id === 'marigold').requires = 'gate_open';
+  gated(G, 'gate_open');
   assert.deepEqual(run(G).problems, [], 'a flag story.json lists counts as one the game sets');
   delete G.story.flags.gate_open;
   G.maps.copperleaf.people[0].script.push('set gate_open');
@@ -88,7 +100,7 @@ test('a finding says where it is: file, script and line, or the thing and field'
   const G = copy();
   G.trainers.crude.script.push('sett met_x');
   G.maps.copperleaf.people[0].when = 'beat:nobody';
-  G.locations.find(l => l.id === 'marigold').requires = 'item:nope';
+  gated(G, 'item:nope');
   const F = storyFindings(G, L);
   const at = word => F.find(f => f.message.includes(word));
   const n = G.trainers.crude.script.length - 1;
@@ -107,7 +119,7 @@ test('a finding says where it is: file, script and line, or the thing and field'
     [at('beat:nobody').file, at('beat:nobody').thing, at('beat:nobody').field],
     ['maps/copperleaf.json', 'person:' + G.maps.copperleaf.people[0].id, 'when']
   );
-  assert.deepEqual([at('item:nope').thing, at('item:nope').field], ['place:marigold', 'requires']);
+  assert.deepEqual([at('item:nope').thing, at('item:nope').field], ['place:gate_test', 'requires']);
   assert.deepEqual(
     run(G).problems,
     F.filter(f => f.level === 'problem').map(f => f.text),
@@ -116,8 +128,7 @@ test('a finding says where it is: file, script and line, or the thing and field'
 });
 
 test('a requires that doesn’t read is a problem, not a crash of the reach check', () => {
-  const G = copy();
-  G.locations.find(l => l.id === 'marigold').requires = 'itme:x';
+  const G = gated(copy(), 'itme:x');
   assert.ok(run(G).problems.some(m => m.includes('did you mean "item:"')));
 });
 
@@ -150,23 +161,23 @@ test('the Studio’s story preview reads a preset as the game does after applySt
   }
   const pv = storyPreviewSave(GAME_DATA, {
     preset: 'after-opening',
-    flags: { met_blake0: false, x: true, 'beat:chad': true },
+    flags: { met_blake0: false, x: true, 'beat:crude': true },
   });
-  assert.deepEqual([pv.story.met_blake0, pv.story.x, pv.flags.chad], [undefined, 1, 1]);
-  assert.equal(storyPreviewAllows(GAME_DATA, { when: 'beat:chad', unless: 'x' }, pv), false);
+  assert.deepEqual([pv.story.met_blake0, pv.story.x, pv.flags.crude], [undefined, 1, 1]);
+  assert.equal(storyPreviewAllows(GAME_DATA, { when: 'beat:crude', unless: 'x' }, pv), false);
   assert.equal(storyPreviewAllows(GAME_DATA, { when: 'itme:x' }, pv), false, 'a when that doesn’t read hides it');
-  assert.deepEqual(storyNamesIn([{ when: 'a and beat:chad' }, { unless: '!b or a' }, {}]), {
+  assert.deepEqual(storyNamesIn([{ when: 'a and beat:crude' }, { unless: '!b or a' }, {}]), {
     flags: ['a', 'b'],
-    beat: ['chad'],
+    beat: ['crude'],
   });
 });
 
 test('Play from here: the switches go through the address and into a save as the preview reads them', () => {
   const { storySwitches, storySwitchesText, storySwitchesOf } = modules['story-checks'];
-  const F = { met_x: true, rival0: false, 'beat:chad': true };
-  assert.equal(storySwitchesText(F), 'met_x,!rival0,beat:chad');
-  assert.deepEqual(storySwitchesOf('met_x,!rival0,beat:chad, ,<b>,'), F);
+  const F = { met_x: true, rival0: false, 'beat:crude': true };
+  assert.equal(storySwitchesText(F), 'met_x,!rival0,beat:crude');
+  assert.deepEqual(storySwitchesOf('met_x,!rival0,beat:crude, ,<b>,'), F);
   const save = storySwitches({ story: { rival0: 'win' } }, GAME_DATA, F);
-  assert.deepEqual([save.story.met_x, save.story.rival0, save.flags.chad], [1, undefined, 1]);
-  assert.ok(save.seats.includes(GAME_DATA.trainers.chad.seat?.id) || !GAME_DATA.trainers.chad.seat);
+  assert.deepEqual([save.story.met_x, save.story.rival0, save.flags.crude], [1, undefined, 1]);
+  assert.ok(save.seats.includes(GAME_DATA.trainers.crude.seat.id), 'and the badge');
 });

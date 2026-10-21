@@ -1,5 +1,5 @@
 {
- "about": "Project Story S2: what the game said before its conversations moved into scripts, recorded in the real game (?fixture=town, headless) with talkLine, startTrainer and healAll swapped for recorders, on main at 509c990: personTalk (each person, visit after visit), trainerTalk (first meeting, met, beaten; a trainer with intro lines runs rivalScene), talkHazel (Index 1/6/20, badges 0/1/3, Blake beaten on the golf course or not, the player named Rae), storyAfterRival (win, lose, skipped) and storyEnding. tools/test/story-snapshot.test.mjs plays the scripts against it.",
+ "about": "Project Story S2: what the game said before its conversations moved into scripts, recorded in the real game (?fixture=town, headless) with talkLine, startTrainer and healAll swapped for recorders, on main at 509c990: personTalk (each person, visit after visit), trainerTalk (first meeting, met, beaten; a trainer with intro lines runs rivalScene), talkHazel (Index 1/6/20, badges 0/1/3, Blake beaten on the golf course or not, the player named Rae), storyAfterRival (win, lose, skipped) and storyEnding. tools/test/story-snapshot.test.mjs plays the scripts against it. RL-5 (owner’s answer): the lines that sent you to the parked places were cut from Hazel’s, Granny Juniper’s and the townsfolk’s talk; their records here lost the same lines and nothing else.",
  "person:juniper": [
   [
    {
@@ -37,13 +37,6 @@
     "who": "juniper",
     "expr": null,
     "text": "The wind sail turns all day and keeps the lanterns lit all night. Copper, sun and a bit of wind: that’s all a village needs."
-   }
-  ],
-  [
-   {
-    "who": "juniper",
-    "expr": null,
-    "text": "Marigold Town is down Hedgerow Lane. Mind the stepping stones; the middle one wobbles."
    }
   ],
   [
@@ -1937,16 +1930,6 @@
      "who": "gini",
      "expr": "happy",
      "text": "Rae! How's your Index coming along? 1 taxed so far."
-    },
-    {
-     "who": "gini",
-     "expr": null,
-     "text": "Try the tall grass on Hedgerow Lane, just down the road. Walk, and they come to you."
-    },
-    {
-     "who": "gini",
-     "expr": null,
-     "text": "When your team is ready, try an arena. The first one is in Fizzwell Town."
     }
    ]
   },
@@ -1959,21 +1942,6 @@
      "who": "gini",
      "expr": "happy",
      "text": "Rae! How's your Index coming along? 1 taxed so far."
-    },
-    {
-     "who": "gini",
-     "expr": null,
-     "text": "Try the tall grass on Hedgerow Lane, just down the road. Walk, and they come to you."
-    },
-    {
-     "who": "gini",
-     "expr": null,
-     "text": "When your team is ready, try an arena. The first one is in Fizzwell Town."
-    },
-    {
-     "who": "gini",
-     "expr": null,
-     "text": "Blake was here earlier, bragging. He said he’d wait for you in Clovercrest Town."
     }
    ]
   },
@@ -1986,16 +1954,6 @@
      "who": "gini",
      "expr": "happy",
      "text": "Rae! How's your Index coming along? 1 taxed so far."
-    },
-    {
-     "who": "gini",
-     "expr": null,
-     "text": "Try the tall grass on Hedgerow Lane, just down the road. Walk, and they come to you."
-    },
-    {
-     "who": "gini",
-     "expr": null,
-     "text": "When your team is ready, try an arena. The first one is in Fizzwell Town."
     }
    ]
   },
@@ -2012,11 +1970,6 @@
     {
      "who": "gini",
      "expr": null,
-     "text": "Try the tall grass on Hedgerow Lane, just down the road. Walk, and they come to you."
-    },
-    {
-     "who": "gini",
-     "expr": null,
      "text": "1 badge already. The arena leaders talk about you, you know."
     }
    ]
@@ -2034,17 +1987,7 @@
     {
      "who": "gini",
      "expr": null,
-     "text": "Try the tall grass on Hedgerow Lane, just down the road. Walk, and they come to you."
-    },
-    {
-     "who": "gini",
-     "expr": null,
      "text": "1 badge already. The arena leaders talk about you, you know."
-    },
-    {
-     "who": "gini",
-     "expr": null,
-     "text": "Blake was here earlier, bragging. He said he’d wait for you in Clovercrest Town."
     }
    ]
   },
@@ -2057,11 +2000,6 @@
      "who": "gini",
      "expr": "happy",
      "text": "Rae! How's your Index coming along? 1 taxed so far."
-    },
-    {
-     "who": "gini",
-     "expr": null,
-     "text": "Try the tall grass on Hedgerow Lane, just down the road. Walk, and they come to you."
     },
     {
      "who": "gini",
@@ -2083,11 +2021,6 @@
     {
      "who": "gini",
      "expr": null,
-     "text": "Try the tall grass on Hedgerow Lane, just down the road. Walk, and they come to you."
-    },
-    {
-     "who": "gini",
-     "expr": null,
      "text": "3 badges already. The arena leaders talk about you, you know."
     }
    ]
@@ -2105,17 +2038,7 @@
     {
      "who": "gini",
      "expr": null,
-     "text": "Try the tall grass on Hedgerow Lane, just down the road. Walk, and they come to you."
-    },
-    {
-     "who": "gini",
-     "expr": null,
      "text": "3 badges already. The arena leaders talk about you, you know."
-    },
-    {
-     "who": "gini",
-     "expr": null,
-     "text": "Blake was here earlier, bragging. He said he’d wait for you in Clovercrest Town."
     }
    ]
   },
@@ -2128,11 +2051,6 @@
      "who": "gini",
      "expr": "happy",
      "text": "Rae! How's your Index coming along? 1 taxed so far."
-    },
-    {
-     "who": "gini",
-     "expr": null,
-     "text": "Try the tall grass on Hedgerow Lane, just down the road. Walk, and they come to you."
     },
     {
      "who": "gini",
@@ -2155,11 +2073,6 @@
      "who": "gini",
      "expr": "surprised",
      "text": "You’re getting good at this. Some of them only show up in caves or in the malls."
-    },
-    {
-     "who": "gini",
-     "expr": null,
-     "text": "When your team is ready, try an arena. The first one is in Fizzwell Town."
     }
    ]
   },
@@ -2177,16 +2090,6 @@
      "who": "gini",
      "expr": "surprised",
      "text": "You’re getting good at this. Some of them only show up in caves or in the malls."
-    },
-    {
-     "who": "gini",
-     "expr": null,
-     "text": "When your team is ready, try an arena. The first one is in Fizzwell Town."
-    },
-    {
-     "who": "gini",
-     "expr": null,
-     "text": "Blake was here earlier, bragging. He said he’d wait for you in Clovercrest Town."
     }
    ]
   },
@@ -2204,11 +2107,6 @@
      "who": "gini",
      "expr": "surprised",
      "text": "You’re getting good at this. Some of them only show up in caves or in the malls."
-    },
-    {
-     "who": "gini",
-     "expr": null,
-     "text": "When your team is ready, try an arena. The first one is in Fizzwell Town."
     }
    ]
   },
@@ -2253,11 +2151,6 @@
      "who": "gini",
      "expr": null,
      "text": "1 badge already. The arena leaders talk about you, you know."
-    },
-    {
-     "who": "gini",
-     "expr": null,
-     "text": "Blake was here earlier, bragging. He said he’d wait for you in Clovercrest Town."
     }
    ]
   },
@@ -2324,11 +2217,6 @@
      "who": "gini",
      "expr": null,
      "text": "3 badges already. The arena leaders talk about you, you know."
-    },
-    {
-     "who": "gini",
-     "expr": null,
-     "text": "Blake was here earlier, bragging. He said he’d wait for you in Clovercrest Town."
     }
    ]
   },
@@ -2368,11 +2256,6 @@
      "who": "gini",
      "expr": "happy",
      "text": "That’s a proper collection. I might have to cite you in my paper."
-    },
-    {
-     "who": "gini",
-     "expr": null,
-     "text": "When your team is ready, try an arena. The first one is in Fizzwell Town."
     }
    ]
   },
@@ -2390,16 +2273,6 @@
      "who": "gini",
      "expr": "happy",
      "text": "That’s a proper collection. I might have to cite you in my paper."
-    },
-    {
-     "who": "gini",
-     "expr": null,
-     "text": "When your team is ready, try an arena. The first one is in Fizzwell Town."
-    },
-    {
-     "who": "gini",
-     "expr": null,
-     "text": "Blake was here earlier, bragging. He said he’d wait for you in Clovercrest Town."
     }
    ]
   },
@@ -2417,11 +2290,6 @@
      "who": "gini",
      "expr": "happy",
      "text": "That’s a proper collection. I might have to cite you in my paper."
-    },
-    {
-     "who": "gini",
-     "expr": null,
-     "text": "When your team is ready, try an arena. The first one is in Fizzwell Town."
     }
    ]
   },
@@ -2466,11 +2334,6 @@
      "who": "gini",
      "expr": null,
      "text": "1 badge already. The arena leaders talk about you, you know."
-    },
-    {
-     "who": "gini",
-     "expr": null,
-     "text": "Blake was here earlier, bragging. He said he’d wait for you in Clovercrest Town."
     }
    ]
   },
@@ -2537,11 +2400,6 @@
      "who": "gini",
      "expr": null,
      "text": "3 badges already. The arena leaders talk about you, you know."
-    },
-    {
-     "who": "gini",
-     "expr": null,
-     "text": "Blake was here earlier, bragging. He said he’d wait for you in Clovercrest Town."
     }
    ]
   },
@@ -2591,17 +2449,12 @@
    {
     "who": "gini",
     "expr": "happy",
-    "text": "There, good as new. Any time they’re hurt, the clinic in Marigold Town patches them up for free. It’s just down Hedgerow Lane."
+    "text": "There, good as new."
    },
    {
     "who": "gini",
     "expr": null,
     "text": "Granny Juniper has made up a room for you in her cottage, by the hives. A rest there does wonders."
-   },
-   {
-    "who": "gini",
-    "expr": null,
-    "text": "One more thing. When someone falls in, their things come down too, and they scatter along Tallgrass Meadow, past Marigold Town. If anything of yours made it, that’s where it’ll be."
    },
    {
     "who": "gini",
@@ -2633,17 +2486,12 @@
    {
     "who": "gini",
     "expr": "happy",
-    "text": "There, good as new. Any time they’re hurt, the clinic in Marigold Town patches them up for free. It’s just down Hedgerow Lane."
+    "text": "There, good as new."
    },
    {
     "who": "gini",
     "expr": null,
     "text": "Granny Juniper has made up a room for you in her cottage, by the hives. A rest there does wonders."
-   },
-   {
-    "who": "gini",
-    "expr": null,
-    "text": "One more thing. When someone falls in, their things come down too, and they scatter along Tallgrass Meadow, past Marigold Town. If anything of yours made it, that’s where it’ll be."
    },
    {
     "who": "gini",
@@ -2660,17 +2508,12 @@
    {
     "who": "gini",
     "expr": "happy",
-    "text": "There, good as new. Any time they’re hurt, the clinic in Marigold Town patches them up for free. It’s just down Hedgerow Lane."
+    "text": "There, good as new."
    },
    {
     "who": "gini",
     "expr": null,
     "text": "Granny Juniper has made up a room for you in her cottage, by the hives. A rest there does wonders."
-   },
-   {
-    "who": "gini",
-    "expr": null,
-    "text": "One more thing. When someone falls in, their things come down too, and they scatter along Tallgrass Meadow, past Marigold Town. If anything of yours made it, that’s where it’ll be."
    },
    {
     "who": "gini",

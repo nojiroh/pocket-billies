@@ -16,6 +16,13 @@ kept aside in the browser).
   Studio's Walk scenes, [ and ] turn the selected prop 15° (Shift: 90°, Alt: 1°), several selected props turn together
   about their middle, the card has a Turn box and buttons, and the map shows which way a turned prop faces. Mirroring
   a block or a room turns its props the other way. Test map: `test_props_turn`.
+- The hub alone (roguelite track RL-5): the game is Copperleaf Town now; every other place, its map, trainers,
+  shops, day jobs and lore is parked for the Studio (its new Legacy section) and no longer loaded. Copperleaf's south
+  exit and Route 1 are gone, the world map shows Copperleaf alone, and the eight badge leaders wait for the runs as
+  mini-bosses. Hazel, Blake and Copperleaf's people no longer give directions to places that are gone. A save from
+  before loads at Copperleaf with the parked places dropped from it; a backup file exported before can't be
+  imported. Rooms now open in place in a town with no exits (Pearlantis's didn't). The game's data is about a
+  quarter smaller to load.
 - The Studio's UI look (UI track UI-3a): Game → UI look edits the menus' look: colours light and dark side by side
   with a contrast grade on each text colour, the glass, depth and drop shadows, the shapes (each family's cut,
   corners and radius), space, type and motion, for the whole game or one screen's colours and shapes. Presets (save
@@ -29,7 +36,8 @@ kept aside in the browser).
   leaf...). Bots get a steel plate with pips for each limb, in battle and on the team. The icons are redrawn on the
   45° grid. Screens and sheets come in with a diagonal wipe (a fade with reduced motion). New parts for the screens to
   come: cards, tabs, stat bars, text fields, a slanted selection bar, a rule with a diamond. A stepped (pixel) and a
-  rounded look are in the theme data to compare.
+  rounded look are in the theme data to compare. The dialogue box is a speech bubble with a tail over the portrait;
+  the bubble floats and breathes a little and pops with each new line, while the words stay still.
 
 - Battles (roguelite track RL-4): a battle still going after 40 turns is called off as a draw (a wild battle as if
   you walked away, a trainer's as a loss). Lullaby's text says 2-4 turns of sleep, as the rule has it. Inside, a
@@ -54,7 +62,7 @@ kept aside in the browser).
   conditions, once-only and rotating lines, and commands (docs/SCRIPTS.md): people, trainers before a battle, Blake,
   Cass and Vinylla running up to you, Hazel in the lab, the talk after Blake's first battle and the ending. Same words
   as before. Hold the dialogue box to skip. A save taken mid-conversation keeps the state from before it and plays it
-  again on Continue. Test runs can start at a point in the story (`?story=after-opening`, `?story=before-cass`).
+  again on Continue. Test runs can start at a point in the story (`?story=after-opening`).
   People, trainers and props can appear only at some points of the story, places can stay closed until a point, and a
   chapter can swap a map for another version. Every line has an id the debug log names. The data check checks the
   story (names, flags, line ids, places that could never open). A battle started from the debug menu no longer shows

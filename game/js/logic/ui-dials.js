@@ -82,6 +82,7 @@ export const UI_FAMILY_LABELS = /** @type {[string, string, boolean][]} */ ([
   ['action', 'The main action', true],
   ['tab', 'Tabs', false],
   ['toast', 'Toasts', true],
+  ['bubble', 'The dialogue bubble', false],
 ]);
 export const dialEase = (/** @type {string} */ k, /** @type {string} */ label, help = '') =>
   /** @type {UiDial} */ ({ k, label, kind: 'ease', help });

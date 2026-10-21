@@ -16,7 +16,7 @@ are sessions of Claude's working time, not calendar time, and exclude the owner'
 | RL-2 | Golden record and RNG module (done 2026-10-21) | a battle golden snapshot; `logic/rng.js` (mapgen's seeded generator moved); seeded `pickWeighted`/`spawn` | RL-1 | 1 | no |
 | RL-3 | State separation (done 2026-10-21) | SAVE_VERSION 4; `meta`, `run`, `ranch` in the save; validators; `migrate` keeps a run's trip | RL-2 | 1 | no |
 | RL-4 | Battle state injected (done 2026-10-21) | phase 19's core: engine context, no save writes, a silent host, `b.rng`, a turn cap | RL-2 | 1-2 | no |
-| RL-5 | Legacy parking and the world setter | the other maps and places under `game/data/legacy/`; `worldSetGraph`; fixtures and checks retargeted | RL-3 | 1-2 | no |
+| RL-5 | Legacy parking and the world setter (done 2026-10-21) | the other maps and places under `game/data/legacy/`; `worldSetGraph`; fixtures and checks retargeted | RL-3 | 1-2 | no |
 | MG-2 | Seam agreement in mapgen (+ TR-1 smooth roads) | generated parent/child scenes pass the seam rules; roads ramp with no risers | none | 1-2 | no |
 | RL-6 | Run map and clock logic | `logic/run-map.js`, `nodeTypes.json`, forecast, deadline; no UI | RL-3, MG-2 | 1 | no |
 | RL-7 | Run world | generated scenes installed and walkable; the bowl shows the run | RL-5, RL-6 | 1-2 | no |
@@ -89,11 +89,12 @@ never store/keep or training.
 
 ## Questions I want to be asked (do not decide these alone)
 The 20 "Ask me before" items in docs/phases/roguelite-track.md, section 8: the run's internal key (RL-3); keep-one vs
-ranch levels (RL-9); the hub's extent and Copperleaf's south exit (RL-5); legacy by moving files (RL-5); currency
+ranch levels (RL-9); the hub's extent and Copperleaf's south exit (answered in RL-5: Copperleaf alone, its south exit gone); legacy by
+moving files (answered in RL-5: moved to game/data/legacy, a read-only Studio list); currency
 names and the building mapping (RL-11); menu nodes (RL-12); the first cut's shape (RL-8); battle formats by node type
 (RL-8; the turn cap was answered in RL-4: 40, a draw; a killed battle restarts from its seed); the clock's numbers (RL-6); the token link, Remember me and deleting the
 versioned tools (RL-1); SAVE_VERSION 4 and the cloud key whitelist (RL-3, RL-10); the dex's place (RL-3); the relic
-cap (RL-12); the hub island's look (RL-5); the ranch cut order (RL-9); the order after the first cut; the tuning
+cap (RL-12); the hub island's look (answered in RL-5: the bowl shows Copperleaf alone; its sea share is set in the Studio); the ranch cut order (RL-9); the order after the first cut; the tuning
 placeholders (RL-6); pushing the tags; the opening (RL-8). Still open from the old phases: phase 17's prototype
 approval and ask list (RL-14), phase 16's breeding mode (RL-10),
 phase 10's phone look, phase 06's 06-5.

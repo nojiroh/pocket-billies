@@ -46,10 +46,10 @@ check('index.schema.json', index, 'index.json');
 const listed = new Set(['index.json', ...PB_DATA.files(index).map(f => f.path)]);
 const D = {};
 let fixed = 0;
-const read = path => {
+const read = (path, ix = 'index.json') => {
   const file = join(DATA, path);
   if (!existsSync(file)) {
-    problem(path, 'listed in index.json but missing');
+    problem(path, `listed in ${ix} but missing`);
     return undefined;
   }
   const text = readFileSync(file, 'utf8');
@@ -87,6 +87,28 @@ for (const [section, schema] of Object.entries(ENTRY)) {
   }
   const entries = Array.isArray(v) ? v.map(e => [e.id, e]) : Object.entries(v);
   for (const [id, e] of entries) if (e) check(schema, e, `${section}/${id}.json`);
+}
+
+// RL-5: the parked world, game/data/legacy/index.json (the same layout; the game never loads it, the Studio's Legacy
+// section reads it): every file it lists is there, reads and is laid out the Studio's way, nothing unlisted lies
+// there, and its maps and trainers still match their schemas, so a map copied back into the game is one the checks
+// here can take. What they refer to is not checked: it is the old world's
+if (existsSync(join(DATA, 'legacy', 'index.json'))) {
+  const at = p => 'legacy/' + p,
+    LI = read(at('index.json'), 'legacy') || { keys: [], split: {} };
+  check('index.schema.json', LI, 'legacy/index.json');
+  const files = PB_DATA.files(LI),
+    here = new Set(['index.json', 'README.json', ...files.map(f => f.path)]);
+  for (const f of files) {
+    const v = read(at(f.path), 'legacy/index.json');
+    if (v && f.id !== null && (f.section === 'maps' || f.section === 'trainers')) check(ENTRY[f.section], v, at(f.path));
+  }
+  for (const f of readdirSync(join(DATA, 'legacy')))
+    if (f.endsWith('.json') && !here.has(f)) problem(at(f), 'not listed in legacy/index.json');
+  for (const dir of Object.keys(LI.split || {}))
+    if (existsSync(join(DATA, 'legacy', dir)))
+      for (const f of readdirSync(join(DATA, 'legacy', dir)))
+        if (!here.has(`${dir}/${f}`)) problem(at(`${dir}/${f}`), 'not listed in legacy/index.json');
 }
 
 // cutscenes: the map each is filmed on, the spots its paths join (their scripts: the story checks below)
@@ -351,7 +373,9 @@ const robotProblems = R => {
   return out;
 };
 for (const [id, T] of Object.entries(D.trainers || {})) {
-  if (!route[T.node]) problem(`trainers/${id}.json`, `waits at stop ${T.node}, no such stop`);
+  /* RL-5: a tutorial trainer and a mini-boss stand on no stop */
+  if (!T.tutorial && !T.miniboss && !route[T.node])
+    problem(`trainers/${id}.json`, `waits at stop ${T.node}, no such stop`);
   if (T.who && !people[T.who]) problem(`trainers/${id}.json`, `looks like ${T.who}, no such person`);
   for (const m of T.team || [])
     if (m.sp === 'robot') for (const p of robotProblems(m.robot)) problem(`trainers/${id}.json`, p);

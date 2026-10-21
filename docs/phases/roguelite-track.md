@@ -76,6 +76,28 @@ made before its children), and a node with two parents shares its south side at 
 re-implementation; a02_joins compares views, so on raw data the numbers are heights, step and the walk. The hub's
 buildings for RL-8's towns are the props dials `mast`, `clinic`, `shop` (a lot beside the main road facing the camera,
 level, with a path to the door). The terrain track's TR-1 (smooth roads) was folded in by the owner.
+**Corrected in RL-5 (2026-10-21).** 48 places and 48 maps were parked, not 47 (49 locations, Copperleaf index 46,
+now 0); 39 trainers moved, 10 stayed (the 8 leaders, now `miniboss: true` with no `node`, and the tutorials blake0
+and tinker). Trainers name their place by a numeric `node`, so a leader without one needed the `miniboss` branch in
+`worldSetGraph`, the schema (`node` only for a trainer that stands somewhere) and both checks (check-data and the
+Studio's; neither exempted tutorials: they passed because node 0 existed). More of story.json named parked things
+than lines 38 and 66: 47 (Fizzwell), 48-49 (`beat:chad`, `!beat:chad2`, Clovercrest), 67 (Tallgrass), and the
+`before-cass` preset (moved to legacy); Copperleaf's own signpost, a townsfolk line and one of Granny Juniper's
+pointed at Marigold too (cut, the owner's answer). A place with no exits opened as its plain map, where no room
+opens in place (`roomLayIn` needs a hub view's parts): Pearlantis had that bug, and Copperleaf would have; fixed in
+`seamlessRoamView`. `worldSetGraph` is pure (game-data.js is logic): it does **not** bump `seamlessWorld.gen` or call
+`worldBowlReset()` (2e said so); RL-7's install does that, and must also reset what holds a node or a place:
+`worldBowl.sel`/`marks`, `uiState.mapSel`, `airshipFlight.a/b`, the walk view's composite (a `gen` bump with the same
+view id keeps it), `watchMapsAhead`'s cached node, things-to-do's node keys (`saveData.x` is not a run field),
+`mapIdAt`'s fallback to the first map (Copperleaf, listed first since RL-5), and `walk-view.js mapMoodName`, which
+reads `gameData.locations` (the hub's; shared with the Studio, so a run scene should carry its own `mood`). Hub
+trainers attach by node number in whatever world is in (none stand anywhere after RL-5; a run puts its trainers in
+`TRAINERS` first). A world without roads now has none (an empty list made up a chain). check-data's seam offset
+rule rejects only an offset of exactly x.5 m (now `logic/seam-rules.js:122`, moved there by MG-2): a small fix for later.
+`gamedata.js` was 0.76 MB (lite maps), not 13 MB (CLAUDE.md's gotcha is stale): 0.59 MB after; game/data/maps 7.3 MB
+-> 0.8 MB. Kept, against this plan: fishing.json (keyed by water, not place; Copperleaf has water) and the postcard
+pictures (loaded only on arrival). Left dead in the data: `rules.json legends[].scene` (cinderpeak, frostcrown),
+`scenery.json` flags (parked towns), `biomes.json from`, the parked places' pools.
 
 ### Findings A: battle, state, randomness, saves (verified)
 
@@ -406,20 +428,21 @@ code:** every run scene 112×64; forward links leave by N and arrive by S at `t 
 integer offsets, 56 m apart ≥ check-data's 44 m, bands 52 m wide after the composer's midpoint clip); MG-2 gives
 `mapgenScene` a `params.edges` strip copied from the parent's edge and eased inward; scenes generate lazily one hop
 ahead (136-451 ms each in Node). **Node indices:** `worldSetGraph(locations, roads)` (a move of the import-time
-derivation in `game-data.js:288-358` into a function) mutates the exported tables in place and bumps
-`seamlessWorld.gen` and `worldBowlReset()`; the run table is **Copperleaf at index 0 plus the run's nodes**, so
-`START_NODE` stays, the airship has an origin, and `trip.node = i + 1`. Run nodes are ordinary location rows
-(`id: 'run_<i>'`, `mapId`, kind, biome, pool, battleStage, bowl spot from row and lane); run trainers are runtime
-`TRAINERS` entries removed at run end; scenes go into `gameData.maps` without `_lite` (never fetched); friends see
-`place: 'On a run'`, node 0. **Clock:** `run.clock` counts days; entering any node, forward or back, costs one day;
-the day drives (1) `run.forecast[i][day]` (seeded per node and day from the climate odds moved into
-`logic/weather.js`; `environment.force.weather` on arrival; every battle gets `extra.wx`), (2) `run.deadline =
-shortest path + slack (3)`, past which each day adds levels to foes and prices to shops through effect rows, (3) shop
-and event rolls keyed by the day. The player sees "Day N · deadline day M" on the Map tab and walk HUD, weather icons on
-seen pins, a red chip past the deadline. Backtracking costs one day and a smaller re-rolled wild stock. **Bowl:** no
-change beyond the swapped tables; hidden nodes carry a gate the run's `canEnter` refuses. **Airship:**
-`startAirshipFlight(1)` unchanged except a `free` flag; the landing scene places an `airship_station` prop at its hub
-with `mapgenPutProp`, so `flyLand` works; a kill mid-flight resumes at the landing because `trip.node` is set first.
+derivation in `game-data.js:288-358` into a function, RL-5) mutates the exported tables in place; the run's install
+(RL-7) bumps `seamlessWorld.gen` and calls `worldBowlReset()` (game-data.js is logic and can't); the run table is
+**Copperleaf at index 0 plus the run's nodes**, so `START_NODE` stays, the airship has an origin, and `trip.node = i +
+1`. Run nodes are ordinary location rows (`id: 'run_<i>'`, `mapId`, kind, biome, pool, battleStage, bowl spot from row
+and lane); run trainers are runtime `TRAINERS` entries removed at run end; scenes go into `gameData.maps` without
+`_lite` (never fetched); friends see `place: 'On a run'`, node 0. **Clock:** `run.clock` counts days; entering any
+node, forward or back, costs one day; the day drives (1) `run.forecast[i][day]` (seeded per node and day from the
+climate odds moved into `logic/weather.js`; `environment.force.weather` on arrival; every battle gets `extra.wx`), (2)
+`run.deadline = shortest path + slack (3)`, past which each day adds levels to foes and prices to shops through effect
+rows, (3) shop and event rolls keyed by the day. The player sees "Day N · deadline day M" on the Map tab and walk HUD,
+weather icons on seen pins, a red chip past the deadline. Backtracking costs one day and a smaller re-rolled wild
+stock. **Bowl:** no change beyond the swapped tables; hidden nodes carry a gate the run's `canEnter` refuses.
+**Airship:** `startAirshipFlight(1)` unchanged except a `free` flag; the landing scene places an `airship_station`
+prop at its hub with `mapgenPutProp`, so `flyLand` works; a kill mid-flight resumes at the landing because `trip.node`
+is set first.
 
 **2f. Parking the legacy maps.** Move the 47 location maps with their locations, roads, trainers, shops, jobs,
 fishing, regions, lore and postcards under `game/data/legacy/` with their own `legacy/index.json`, read by the Studio

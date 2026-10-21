@@ -12,8 +12,8 @@
 import { expose } from './test-globals.js';
 import { provide } from './hooks.js';
 import { clamp } from './util.js';
-import { LOCATIONS, MOVES, RULES, SPECIES, TRAINERS, gameData, locationKind } from './game-data.js';
-import { encountersHere, makeBilly, maxHp, setTrip, spawn } from './logic/rules.js';
+import { LOCATIONS, MOVES, RULES, SPECIES, START_NODE, TRAINERS, gameData, locationKind } from './game-data.js';
+import { encountersHere, makeBilly, maxHp, spawn } from './logic/rules.js';
 import { fighter, liveActors, startTrainer, startWild } from './logic/battle-engine.js';
 import { loadAllMaps } from './map-files.js';
 import {
@@ -69,18 +69,7 @@ import { WORLD_BOWL_SHADERS, worldBowl, worldMap, worldMapReset } from './world-
 import { talkBox, talkHide } from './talk.js';
 import { cutscene, cutsceneTeardown } from './cutscene/director.js';
 import { battleTipHide, fallOverWorldMap, fallWorldMapCanvas } from './opening-fall.js';
-import {
-  closeModal,
-  leaveRoom,
-  mapIdAt,
-  modal,
-  render,
-  renderOverlay,
-  toast,
-  walkCross,
-  walkPick,
-  walkState,
-} from './ui.js';
+import { closeModal, leaveRoom, mapIdAt, modal, render, renderOverlay, toast, walkPick } from './ui.js';
 /* eslint-disable no-func-assign */
 expose({
   DIAGNOSTICS_PASSES: [() => DIAGNOSTICS_PASSES],
@@ -674,13 +663,14 @@ async function runFullTest(mode) {
           .join(', ') + ' walkable'
       );
     }
-    /* 1c. v26: night, bad weather and the seasons drawn in town, a room you walk into, and a dark cave */
+    /* 1c. v26: night, bad weather and the seasons drawn in town, and a room you walk into (RL-5: in the hub, Copperleaf; the
+       dark cave, Fizzwell's, went to game/data/legacy with its place) */
     if (typeof environment !== 'undefined' && !selfTest.stop)
       await phase(
         'Night, weather, seasons and rooms',
         'dio',
         async () => {
-          const sid = gameData.maps.marigold ? 'marigold' : scenes[0],
+          const sid = LOCATIONS[START_NODE].mapId,
             f0 = environment.force,
             out = [];
           try {
@@ -705,13 +695,13 @@ async function runFullTest(mode) {
           } finally {
             environment.force = f0;
           }
-          for (const id of ['int_shop', 'fizzwell']) {
+          for (const id of ['int_shop']) {
             if (!gameData.maps[id] || selfTest.stop) continue;
             uiState.bench = { id };
             render();
             await selfTestSleep(1400);
             if (!walkView.ready || walkView.id !== id) throw new Error((gameData.maps[id].name || id) + ' didn’t open');
-            out.push(id === 'fizzwell' ? 'a dark cave' : 'a shop you walk into');
+            out.push('a shop you walk into');
           }
           return out.join(', ');
         },
@@ -854,119 +844,11 @@ async function runFullTest(mode) {
       await selfTestSleep(600);
       return `${mine} against ${theirs} (${fmt}); ${plates} nameplates; ${picks} picks, ${aimed} aimed; the turn played ${lines} lines in ${(turnMs / 1000).toFixed(1)} s`;
     };
-    /* v43: the seamless world: out of Marigold Town over its edge and into Tallgrass Meadow, measuring every view change.
-       Phase 08: walked, the way a player crosses (it was paid for with steps): along a path to just past the exit, at most
-       0.8 m every 100 ms (about a run), the crossing checked after each */
-    if (typeof walkCross === 'function' && gameData.maps.marigold && !selfTest.stop)
-      await phase(
-        'Road: Marigold Town to Tallgrass Meadow on the ground',
-        'dio',
-        async () => {
-          uiState.bench = null;
-          uiState.tab = 'walk';
-          saveData.trip = { node: 0, plan: [] };
-          {
-            const h = mapHub(gameData.maps.marigold);
-            uiState.roam = { id: 'marigold', node: 0, x: h[0], z: h[1] };
-          }
-          render();
-          for (let i = 0; i < 60 && !(walkView.ready && walkView.id === 'w:marigold*'); i++) await selfTestSleep(100);
-          if (walkView.id !== 'w:marigold*')
-            throw new Error('Marigold Town is not shown with its neighbours (still ' + walkView.id + ')');
-          /* no wild Billies on the way: every place empty, and none wander over while the test walks */
-          const w0 = saveData.wild,
-            t00 = performance.now() - (debugLog.t0 || 0);
-          saveData.wild = Object.fromEntries(LOCATIONS.map(L => [L.id, { at: Infinity, list: [] }]));
-          try {
-            setTrip(1);
-            render();
-            await selfTestSleep(600);
-            const e = (walkState().exits || []).find(x => x.to === 1);
-            if (!e) throw new Error('Marigold Town has no exit to Tallgrass Meadow');
-            const sc = walkView.sc,
-              pt = sc.exits[e.i],
-              hub = mapHub(sc),
-              l = Math.hypot(pt[0] - hub[0], pt[1] - hub[1]) || 1,
-              P = walkView.pl,
-              R = findPath(P.x, P.z, pt[0] + ((pt[0] - hub[0]) / l) * 6, pt[1] + ((pt[1] - hub[1]) / l) * 6, {
-                max: 1e6,
-              });
-            if (!R) throw new Error('no path from the square to the exit to Tallgrass Meadow');
-            const views = [walkView.id];
-            let unready = 0,
-              shifts = 0,
-              worst = 0,
-              walked = 0,
-              f0 = walkRenderer.frames,
-              t0 = performance.now();
-            const L0 = debugLog.ev.length;
-            walk: for (let k = 1; k < R.length; k++) {
-              const [ax, az] = R[k - 1],
-                [bx, bz] = R[k],
-                d = Math.hypot(bx - ax, bz - az),
-                n = Math.max(1, Math.ceil(d / 0.8));
-              for (let j = 1; j <= n; j++) {
-                await selfTestSleep(100);
-                if (!walkView.ready) {
-                  unready++;
-                  j--;
-                  continue;
-                }
-                P.route = null;
-                P.x = ax + ((bx - ax) * j) / n;
-                P.z = az + ((bz - az) * j) / n;
-                walked += d / n;
-                walkCross();
-                if (walkView.id !== views[views.length - 1]) {
-                  views.push(walkView.id);
-                  shifts++;
-                }
-                /* the slowest stretch: the frame time over each 1.4 s, as when a road was paid for in seven batches */
-                if (performance.now() - t0 > 1400 * (selfTest.slow || 1)) {
-                  worst = Math.max(worst, (performance.now() - t0) / Math.max(1, walkRenderer.frames - f0));
-                  f0 = walkRenderer.frames;
-                  t0 = performance.now();
-                }
-                if (saveData.trip.node === 1) break walk;
-              }
-            }
-            for (let i = 0; i < 200 && !(walkView.ready && /^w:tallgrass_meadow/.test(walkView.id)); i++) {
-              await selfTestSleep(100);
-              if (walkView.id !== views[views.length - 1]) {
-                views.push(walkView.id);
-                shifts++;
-              }
-            }
-            worst = Math.max(worst, (performance.now() - t0) / Math.max(1, walkRenderer.frames - f0));
-            if (saveData.trip.node !== 1)
-              throw new Error(
-                `walked ${walked.toFixed(0)} m and never arrived at Tallgrass Meadow (` +
-                  JSON.stringify(saveData.trip) +
-                  ')'
-              );
-            if (!/^w:tallgrass_meadow/.test(walkView.id))
-              throw new Error('arrived at Tallgrass Meadow, but its view never showed (' + views.join(' → ') + ')');
-            const ev = debugLog.ev.slice(L0),
-              builds = ev.filter(e => /seamless to/.test(e.msg || '')).length,
-              onSpot = ev.filter(e => /built on the spot/.test(e.msg || '')).length,
-              held = ev.filter(e => /painted .* ahead/.test(e.msg || '')).length;
-            /* v46: the worst single frame on the way (the frame log), and whether any view had to be built on the spot */
-            const sm = (debugLog.samples || []).filter(x => x && x.t >= t00),
-              wf = sm.length
-                ? Math.max(
-                    ...sm.map(x => (x.tasks && x.tasks.dio ? Math.max(x.tasks.dio.max || 0, x.tasks.dio.gap || 0) : 0))
-                  )
-                : 0;
-            return `${views.join(' → ')} (${walked.toFixed(0)} m); ${shifts} view changes (${builds} logged, ${held} prepared ahead, ${onSpot} built on the spot), ${unready ? unready + ' unready frames' : 'never unready'}, slowest stretch ${worst.toFixed(0)} ms a frame${wf ? ', worst frame ' + Math.round(wf) + ' ms' : ''}`;
-          } finally {
-            saveData.wild = w0;
-          }
-        },
-        8,
-        120
-      );
-    /* v46: a room that opens in place: into Sundown's shop and out again, without leaving the town */
-    if (typeof seamlessRoomMap === 'function' && gameData.maps.marigold && !selfTest.stop)
+    /* RL-5: the Road phase (v43, phase 08: out of Marigold Town over its edge and into Tallgrass Meadow on foot) went
+       with those places to game/data/legacy: the hub has no road. It comes back on a run's roads (RL-7) */
+    /* v46: a room that opens in place: into a building and out again, without leaving the town (RL-5: Professor Hazel's
+       lab in Copperleaf, the hub; it was Marigold's shop) */
+    if (typeof seamlessRoomMap === 'function' && LOCATIONS[START_NODE] && !selfTest.stop)
       await phase(
         'A room that opens in place',
         'dio',
@@ -982,19 +864,21 @@ async function runFullTest(mode) {
             uiState.inside = null;
             uiState.goingIn = null;
             uiState.tab = 'walk';
-            saveData.trip = { node: 0, plan: [] };
+            const hub = LOCATIONS[START_NODE];
+            saveData.trip = { node: START_NODE, plan: [] };
             uiState.roam = null;
             render();
-            for (let i = 0; i < 60 && !(walkView.ready && walkView.id === 'w:marigold*'); i++) await selfTestSleep(100);
-            if (walkView.id !== 'w:marigold*')
-              throw new Error('Marigold Town is not shown (still ' + walkView.id + ')');
+            for (let i = 0; i < 60 && !(walkView.ready && walkView.id === 'w:' + hub.mapId + '*'); i++)
+              await selfTestSleep(100);
+            if (walkView.id !== 'w:' + hub.mapId + '*')
+              throw new Error(hub.name + ' is not shown (still ' + walkView.id + ')');
             /* phase 13: the first frames of a place put you where you arrive; on a slow device that comes after this
                step has put you at the shop's door, and the walk to the door then never starts */
             const f0 = typeof walkRenderer !== 'undefined' ? walkRenderer.frames : 0;
             for (let i = 0; i < 60 && typeof walkRenderer !== 'undefined' && walkRenderer.frames < f0 + 2; i++)
               await selfTestSleep(100);
-            const p = walkView.sc.props.find(p => p.act === 'shop' && p.k === 'shop');
-            if (!p) throw new Error('no shop in Marigold Town');
+            const p = walkView.sc.props.find(p => p.act === 'lab');
+            if (!p) throw new Error('no lab in ' + hub.name);
             const C = walkData().sc,
               g = actionSpot(p, C.props[p.k], C.ppu || 34);
             walkView.pl.route = null;
@@ -1003,12 +887,12 @@ async function runFullTest(mode) {
             /* phase 08b: the town's walking grid, to compare with after coming out */
             const blk0 = navGrid().blk.slice(),
               t0 = performance.now();
-            walkPick({ k: 'act', p, act: 'shop' });
-            for (let i = 0; i < 150 && !(walkView.ready && walkView.sc.roomOf === 'int_shop'); i++)
+            walkPick({ k: 'act', p, act: 'lab' });
+            for (let i = 0; i < 150 && !(walkView.ready && walkView.sc.roomOf === 'int_lab'); i++)
               await selfTestSleep(100);
             const ms = performance.now() - t0;
-            if (walkView.sc.roomOf !== 'int_shop')
-              throw new Error('the shop’s room didn’t open (still ' + walkView.id + ')');
+            if (walkView.sc.roomOf !== 'int_lab')
+              throw new Error('the lab’s room didn’t open (still ' + walkView.id + ')');
             await selfTestSleep(1200);
             /* phase 08b: the doorway is at the door; the room walks and stands only inside its own rectangle */
             const sc = walkView.sc,
@@ -1020,8 +904,8 @@ async function runFullTest(mode) {
               R = sc.roomRect,
               G = navGrid(),
               inR = (x, z, m) => x > R[0] - m && x < R[0] + R[2] + m && z > R[1] - m && z < R[1] + R[3] + m;
-            if (dx > 0.1) throw new Error(`the room’s doorway is ${dx.toFixed(2)} m along from the shop’s door`);
-            if (off > 0.8) throw new Error(`the room’s doorway is ${off.toFixed(1)} m from the shop’s door`);
+            if (dx > 0.1) throw new Error(`the room’s doorway is ${dx.toFixed(2)} m along from the lab’s door`);
+            if (off > 0.8) throw new Error(`the room’s doorway is ${off.toFixed(1)} m from the lab’s door`);
             let walkOut = 0,
               wallsOut = 0;
             for (let j = 0; j < G.gh; j++)
@@ -1051,8 +935,9 @@ async function runFullTest(mode) {
             if (pd > 0.01 || P.dir !== 'down')
               throw new Error(`out at ${pd.toFixed(2)} m from the door, facing ${P.dir}`);
             if (!camOk) throw new Error('the camera isn’t as it was when you went in');
-            for (let i = 0; i < 60 && !(walkView.ready && walkView.id === 'w:marigold*'); i++) await selfTestSleep(100);
-            if (walkView.id !== 'w:marigold*')
+            for (let i = 0; i < 60 && !(walkView.ready && walkView.id === 'w:' + hub.mapId + '*'); i++)
+              await selfTestSleep(100);
+            if (walkView.id !== 'w:' + hub.mapId + '*')
               throw new Error('walking out didn’t bring the town back (' + walkView.id + ')');
             const blk1 = navGrid().blk;
             let navDiff = blk1.length === blk0.length ? 0 : -1;
@@ -1317,7 +1202,8 @@ async function runFullTest(mode) {
         'Billies in the world',
         'dio',
         async () => {
-          const gid = gameData.maps.tallgrass_meadow ? 'tallgrass_meadow' : scenes[0];
+          /* RL-5: in the hub's tall grass (it was Tallgrass Meadow, parked) */
+          const gid = LOCATIONS[START_NODE].mapId;
           uiState.tab = 'walk';
           uiState.bench = null;
           const node = LOCATIONS.findIndex(r => r.mapId === gid);
@@ -1325,7 +1211,8 @@ async function runFullTest(mode) {
           encountersHere().length = 0;
           for (let i = 0; i < 3; i++) spawn(false);
           render();
-          for (let i = 0; i < 80 && !(walkView.ready && walkView.id === gid); i++) await selfTestSleep(100);
+          for (let i = 0; i < 80 && !(walkView.ready && (walkView.id === gid || walkView.id === 'w:' + gid + '*')); i++)
+            await selfTestSleep(100);
           await selfTestSleep(1500);
           const p0 = Object.fromEntries(Object.entries(walkView.enc).map(([k, v]) => [k, [v.x, v.z]]));
           await selfTestSleep(8000);
@@ -1413,9 +1300,10 @@ async function runFullTest(mode) {
       },
       1
     );
-    /* 7. stress: more and more at once in Sundown, until the device can't keep up (not in the diagnostics test) */
+    /* 7. stress: more and more at once in the hub (RL-5: Copperleaf; it was Marigold), until the device can't keep up (not
+       in the diagnostics test) */
     if (!diag && wanted('Stress test')) {
-      const sid = gameData.maps.marigold ? 'marigold' : scenes[0],
+      const sid = LOCATIONS[START_NODE].mapId,
         sc = mapById(sid),
         folk0 = sc.folk,
         props0 = sc.props,

@@ -3,6 +3,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { data, fn, startedSave } from './setup-real.mjs';
+import { oldWorld } from './old-world.mjs';
 
 const { RULES, SPECIES } = data;
 
@@ -18,7 +19,7 @@ test('a species the game no longer has is dropped from a save with its Guide mar
     box: [],
     seen: { ghost0: 1, swift1: 1 },
     caught: { ghost0: 1 },
-    wild: { marigold: { at: 0, list: [{ id: 'q', sp: 'ghost0', lvl: 5 }] } },
+    wild: { copperleaf: { at: 0, list: [{ id: 'q', sp: 'ghost0', lvl: 5 }] } },
   });
   assert.deepEqual(
     s.team.map(m => m.sp),
@@ -27,7 +28,7 @@ test('a species the game no longer has is dropped from a save with its Guide mar
   assert.ok(s.team[0].moves.length > 0, 'the Billie that stayed has no moves');
   assert.deepEqual(Object.keys(s.seen), ['swift1']);
   assert.deepEqual(Object.keys(s.caught), []);
-  assert.equal(s.wild.marigold.list.length, 0);
+  assert.equal(s.wild.copperleaf.list.length, 0);
 });
 
 test('preferences survive loading: 90 frames a second is kept, the picture setting is Sharpest by default', () => {
@@ -39,17 +40,34 @@ test('preferences survive loading: 90 frames a second is kept, the picture setti
 });
 
 test('wild Billies by place: a route keeps 4, a town with tall grass 2, a town without none', () => {
-  const s = startedSave(Object.keys(SPECIES).find(k => SPECIES[k].line === RULES.start.starters[0])),
-    node = id => data.LOCATIONS.findIndex(L => L.id === id),
-    stock = fn('encounterStock');
-  s.wild = {};
-  assert.equal(stock(node('tallgrass_meadow')), RULES.encounters.route);
-  assert.equal(stock(node('marigold')), RULES.encounters.townGrass);
-  assert.equal(stock(node('fizzwell')), 0);
-  assert.equal(
-    fn('encountersHere')(node('tallgrass_meadow')).length,
-    RULES.encounters.route,
-    'full on the first visit'
+  /* RL-5: on the old world (the hub alone has only Copperleaf, a town with tall grass), put in through
+     worldSetGraph with its maps, and the hub back after: so this also proves the world setter on the real maps */
+  const W = oldWorld(),
+    maps0 = data.gameData.maps;
+  data.gameData.maps = { ...W.maps, ...maps0 };
+  data.worldSetGraph(W.locations, W.roads);
+  try {
+    const s = startedSave(Object.keys(SPECIES).find(k => SPECIES[k].line === RULES.start.starters[0])),
+      node = id => data.LOCATIONS.findIndex(L => L.id === id),
+      stock = fn('encounterStock');
+    s.wild = {};
+    assert.equal(stock(node('tallgrass_meadow')), RULES.encounters.route);
+    assert.equal(stock(node('marigold')), RULES.encounters.townGrass);
+    assert.equal(stock(node('copperleaf')), RULES.encounters.townGrass);
+    assert.equal(stock(node('fizzwell')), 0);
+    assert.equal(
+      fn('encountersHere')(node('tallgrass_meadow')).length,
+      RULES.encounters.route,
+      'full on the first visit'
+    );
+    assert.equal(fn('encountersHere')(node('fizzwell')).length, 0);
+  } finally {
+    data.gameData.maps = maps0;
+    data.worldSetGraph(data.gameData.locations, data.gameData.roads);
+  }
+  assert.deepEqual(
+    data.LOCATIONS.map(l => l.id),
+    data.gameData.locations.map(l => l.id),
+    'the hub is back'
   );
-  assert.equal(fn('encountersHere')(node('fizzwell')).length, 0);
 });

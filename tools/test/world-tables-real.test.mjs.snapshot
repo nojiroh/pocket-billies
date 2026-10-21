@@ -1,0 +1,15 @@
+exports[`the world tables are the ones in the snapshot 1`] = `
+{
+  "start": 0,
+  "places": [
+    "0 copperleaf pool hedgerow stage grass"
+  ],
+  "roads": [],
+  "byNode": [
+    "0: "
+  ],
+  "byId": [
+    "copperleaf 0 its trainers"
+  ]
+}
+`;

@@ -124,7 +124,7 @@ test('the story checks catch a cutscene’s mistakes, and cutscene commands outs
     'walk Hazel attic',
     'actor Nobody at door',
   ];
-  G.trainers.chad.script = ['actor Blake at door', ...G.trainers.chad.script];
+  G.trainers.crude.script = ['actor Blake at door', ...G.trainers.crude.script];
   const F = storyFindings(G).filter(f => f.level === 'problem');
   const has = (script, re) =>
     assert.ok(
@@ -134,7 +134,7 @@ test('the story checks catch a cutscene’s mistakes, and cutscene commands outs
   has('cutscene:opening', /shot nowhere/);
   has('cutscene:opening', /spot attic/);
   has('cutscene:opening', /Nobody: not a speaker/);
-  has('trainer:chad', /actor plays only in a cutscene/);
+  has('trainer:crude', /actor plays only in a cutscene/);
   /* and the data as it is has none */
   assert.deepEqual(
     storyFindings(GAME_DATA)

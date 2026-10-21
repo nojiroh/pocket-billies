@@ -2,7 +2,7 @@
  "name": "Baron Vault",
  "who": "vault",
  "battleStage": "esc",
- "node": 24,
+ "miniboss": true,
  "blocks": false,
  "team": [
   {"sp":"ma1","lvl":41},

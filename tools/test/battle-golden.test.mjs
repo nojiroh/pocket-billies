@@ -5,6 +5,7 @@
 // The snapshot is in battle-golden.test.mjs.snapshot. A change to the battle data (moves, species, trainers, rules) or
 // a change meant to alter battles remakes it, said in the commit:
 //   node --test --test-update-snapshots tools/test/battle-golden.test.mjs
+import assert from 'node:assert/strict';
 import { beforeEach, test } from 'node:test';
 import { data, fn, hooks, reseed, said, startedSave } from './setup-real.mjs';
 
@@ -88,7 +89,10 @@ test('golden: a single wild battle', t => {
 test('golden: a double trainer battle', t => {
   reseed(202);
   teamOfThree(7);
-  const tid = Object.keys(TRAINERS).find(k => TRAINERS[k].team.length >= 2);
+  /* RL-5: Leader Rocco (crude), a mini-boss who stays in the game (it took the first trainer with two Billies, Blake on
+     the golf course, who is parked with his place) */
+  const tid = 'crude';
+  assert.ok(TRAINERS[tid].team.length >= 2);
   fn('startTrainer')(tid, { talked: true, double: true });
   t.assert.snapshot({ tid, ...play() });
 });

@@ -1169,7 +1169,7 @@ function roomState() {
     exits: [{ i: 0, to: -1, name: 'Outside', out: 1 }],
   };
 }
-export function walkState() {
+function walkState() {
   const rs = !uiState.bench && roomState();
   if (rs) return rs;
   if (uiState.bench && uiState.bench.id && mapById(uiState.bench.id)) {
@@ -1385,7 +1385,7 @@ function mapOffsetInView(id) {
   const q = (sc.parts || []).find(q => q.id === id);
   return q ? [q.ox || 0, q.oz || 0] : null;
 }
-export function walkCross() {
+function walkCross() {
   if (
     !saveData.started ||
     !walkView.ready ||
@@ -1638,7 +1638,7 @@ function worldMapCardHTML() {
     }
   }
   const nb = ROADS_BY_NODE[sel].map(e => LOCATIONS[e.to].name);
-  return `<div class="mc-top"><h2>${escapeHtml(n.name)}</h2><span class="sub">${escapeHtml(locationSubtitle(n))}</span></div><p class="note">${escapeHtml(n.blurb || '')}</p>${n.ride && canRide() ? `<p class="note ride">${uiIconHTML('drop', 14)} You ride across on ${escapeHtml(riderName())}.</p>` : ''}<p class="status">${status}</p>${btns ? `<div class="racts">${btns}</div>` : ''}${poolStrip(n.pool)}<p class="note mc-nb">Roads to ${nb.map(escapeHtml).join(', ')}.</p>${nodeActions(sel)}`;
+  return `<div class="mc-top"><h2>${escapeHtml(n.name)}</h2><span class="sub">${escapeHtml(locationSubtitle(n))}</span></div><p class="note">${escapeHtml(n.blurb || '')}</p>${n.ride && canRide() ? `<p class="note ride">${uiIconHTML('drop', 14)} You ride across on ${escapeHtml(riderName())}.</p>` : ''}<p class="status">${status}</p>${btns ? `<div class="racts">${btns}</div>` : ''}${poolStrip(n.pool)}${nb.length ? `<p class="note mc-nb">Roads to ${nb.map(escapeHtml).join(', ')}.</p>` : ''}${nodeActions(sel)}`;
 }
 function paintWorldMapCard() {
   const c = $('#mapcard');
