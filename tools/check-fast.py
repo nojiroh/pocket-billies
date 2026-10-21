@@ -212,6 +212,10 @@ def bowl_map(pg, base):
     # RL-5: and the loading screen gone (it takes a few seconds to fade; the route and cave checks that ran before this
     # one on this page went with their places)
     if not until(pg, "!document.getElementById('loader')", 30): raise Exception('the loading screen never went')
+    # UI-5: a postcard shown on the walk tab (postcards.js, 3 s after the town is calm) stays up to 9 s and lies over
+    # the map's tap points; it goes on a tap, as a player would dismiss it
+    pg.evaluate("postcardState.last=postcardTownHere();document.querySelectorAll('.pcard-wrap').forEach(e=>e.click());0")
+    if not until(pg, "!document.querySelector('.pcard-wrap')", 5): raise Exception('a postcard wouldn’t go')
     z0 = pg.evaluate("typeof walkRenderer!=='undefined'?walkRenderer.zoomT:null")
     pg.evaluate("uiState.mapSel=null;document.querySelector('[data-a=tab][data-t=map]').click();0")
     if not until(pg, "typeof worldBowl!=='undefined'&&worldBowl.on&&worldBowl.frames>=3", 30):
