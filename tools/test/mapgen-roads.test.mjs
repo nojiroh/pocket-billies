@@ -139,9 +139,11 @@ test('junctions, bends and the hub round are one ramp: walkable, no riser on any
       surf = G.MAPGEN_SURFACES[sc.gen.params.road.surface],
       ramp = (M, i, j) => M[j * W2 + i] & 32,
       paved = (M, i, j) => ramp(M, i, j) && (sc.tiles[sc.h - 1 - (j >> 1)] || '')[i >> 1] === surf;
-    /* the roads, the hub round and the exits' rounds (the ramp cells): no step between neighbours over 0.25 m */
+    /* the roads, the hub round, the exits' rounds and (TR-1) the banks beside them, the ramp cells: no step between
+       neighbours over 0.3 m (0.25 m before the banks; a bank between two stretches of road too close for its slope
+       takes 0.3 m, and a step is walkable up to 0.34 m). The paved cells hold to 0.15 m (the notch check below) */
     assert.deepEqual(
-      neighbourSteps(sc, ramp).filter(s => s[0] > 25),
+      neighbourSteps(sc, ramp).filter(s => s[0] > 30),
       [],
       `${where}: walkable steps (cm, i, j)`
     );
@@ -254,4 +256,22 @@ test('a main road that must climb more than the cap allows gets switchbacks', ()
     assert.deepEqual(G.mapgenUnreachable(B, C), [], where);
   }
   assert.ok(bent >= 3, `${bent} of 4 roads wound to climb`);
+});
+
+test('a road cut into a terrace has graded banks beside it on a route, not walls', () => {
+  let banks = 0;
+  for (const { sc, where } of hilly(40, 7000).filter(m => m.sc.steps)) {
+    const r = G.mapgenRoadReport(sc);
+    /* no wall beside a road taller than a bank's step (0.25 m a half metre, walkable) */
+    assert.ok(r.side <= 0.25 + 1e-9, `${where}: a wall of ${r.side} m beside the road at ${r.at.side}`);
+    const E = G.mapgenStepGridOf(sc),
+      surf = G.MAPGEN_SURFACES[sc.gen.params.road.surface];
+    for (let q = 0; q < E.H.length; q++) {
+      const i = q % E.w,
+        j = (q - i) / E.w;
+      if (E.M[q] & 32 && sc.tiles[sc.h - 1 - (j >> 1)][i >> 1] !== surf) banks++;
+    }
+    assert.deepEqual(G.mapgenUnreachable(sc, C), [], where);
+  }
+  assert.ok(banks > 1000, `${banks} bank cells`);
 });

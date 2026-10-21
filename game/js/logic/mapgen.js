@@ -21,6 +21,8 @@ import { hashString, rngFrom } from './rng.js';
 /* eslint-disable no-func-assign */
 expose({
   MAPGEN_BAND: [() => MAPGEN_BAND],
+  MAPGEN_BANK_REACH: [() => MAPGEN_BANK_REACH],
+  MAPGEN_BANK_SLOPE: [() => MAPGEN_BANK_SLOPE],
   MAPGEN_BASE64: [() => MAPGEN_BASE64],
   MAPGEN_DEFAULTS: [() => MAPGEN_DEFAULTS],
   MAPGEN_EXIT_IN: [() => MAPGEN_EXIT_IN],
@@ -144,6 +146,8 @@ expose({
   mapgenRoadProfiles: [() => mapgenRoadProfiles, v => (mapgenRoadProfiles = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenRoadReport: [() => mapgenRoadReport, v => (mapgenRoadReport = v)],
+  // @ts-expect-error -- replaced on purpose
+  mapgenRoadSides: [() => mapgenRoadSides, v => (mapgenRoadSides = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenRoadSurface: [() => mapgenRoadSurface, v => (mapgenRoadSurface = v)],
   mapgenRound2: [() => mapgenRound2],
@@ -1759,6 +1763,7 @@ export function mapgenTerraces(G, levels) {
       ? G.grades
       : mapgenRoadGrades(G); /* worked out with the land under the roads (mapgenStageGrade) */
   mapgenRoadSurface(G, prof, /** @type {any} */ (discs));
+  mapgenRoadSides(G);
   /* water lies at the bottom: no raise under it (under a bridge the road's ramp goes on, so the deck meets its ends) */
   for (let j = 0; j < H2; j++)
     for (let i = 0; i < W2; i++)
@@ -1768,7 +1773,7 @@ export function mapgenTerraces(G, levels) {
   for (let j = 0; j < h; j++)
     for (let i = 0; i < w; i++) {
       const q = j * w + i;
-      if (G.F[q] & (1 | 4)) continue;
+      if (G.F[q] & (1 | 4) || G.M[j * 2 * W2 + i * 2] & 32) continue; /* a bank stays grass */
       const me = G.S[j * 2 * W2 + i * 2];
       let wall = false;
       for (const [di, dj] of [
@@ -1943,6 +1948,81 @@ export function mapgenProfilesMeet(G, v, fixed, first, discs, lim, slope = lim *
     val.set(v);
     if (worst < 1e-3) break;
   }
+}
+/* TR-1: how steep a bank beside a road is (0.25 m a half metre, 27 degrees: walkable, and no steeper than a step
+   between road cells may be), and how far out it reaches */
+export const MAPGEN_BANK_SLOPE = 0.25;
+export const MAPGEN_BANK_REACH = 6;
+/** TR-1: the sides of the roads' cuts and fills. On a route a graded bank: within 3 m of the walkable surface (the
+ * ramp cells mapgenRoadSurface made) the land's raise comes no nearer the road's than MAPGEN_BANK_SLOPE a half metre
+ * away from it allows, as ramp cells of the land's own ground, so a road cut into a terrace has grassy slopes beside
+ * it instead of walls; what a bank can't take (more than 1.5 m) stays a wall above it. Not on water */
+export function mapgenRoadSides(G) {
+  const W2 = G.w * 2,
+    H2 = G.h * 2,
+    N = W2 * H2,
+    R = MAPGEN_BANK_REACH,
+    sl = MAPGEN_BANK_SLOPE,
+    road = new Uint8Array(N),
+    lo = new Float64Array(N).fill(-1e9),
+    hi = new Float64Array(N).fill(1e9),
+    wet = c => (G.F[mapgenCellAt(G, ((c % W2) + 0.5) / 2, (Math.floor(c / W2) + 0.5) / 2)] & (4 | 8)) === 4;
+  for (let c = 0; c < N; c++) if (G.M[c] & 32) road[c] = 1;
+  for (let c = 0; c < N; c++) {
+    if (!road[c]) continue;
+    const i = c % W2,
+      j = (c - i) / W2;
+    for (let b = -R; b <= R; b++)
+      for (let a = -R; a <= R; a++) {
+        const ii = i + a,
+          jj = j + b,
+          d = Math.hypot(a, b);
+        if (ii < 0 || jj < 0 || ii >= W2 || jj >= H2 || d > R + 0.01) continue;
+        const q = jj * W2 + ii;
+        if (road[q]) continue;
+        lo[q] = Math.max(lo[q], G.S[c] - sl * d);
+        hi[q] = Math.min(hi[q], G.S[c] + sl * d);
+      }
+  }
+  /* the bank: the land's raise brought within the slope of the road, then of its neighbours in the bank (so two bank
+     cells either side of a terrace's edge meet as a slope too) */
+  /* in whole 5 cm units, so rounding never makes a step steeper than the slope */
+  const u = Math.round(sl * 20),
+    v = Int32Array.from(G.S, x => Math.round(x * 20)),
+    zone = [];
+  for (let q = 0; q < N; q++) {
+    if (road[q] || hi[q] > 1e8 || wet(q)) continue;
+    const a = Math.ceil(Math.min(lo[q], hi[q]) * 20 - 1e-6),
+      b = Math.floor(Math.max(lo[q], hi[q]) * 20 + 1e-6);
+    v[q] = mapgenBetween(v[q], a, Math.max(a, b));
+    zone.push(q);
+  }
+  const inBank = new Uint8Array(N);
+  for (const q of zone) inBank[q] = 1;
+  for (let pass = 0, moved = true; moved && pass < 400; pass++) {
+    moved = false;
+    for (let x = 0; x < zone.length; x++) {
+      const q = zone[pass % 2 ? zone.length - 1 - x : x],
+        i = q % W2;
+      let a = -1e9,
+        b = 1e9;
+      for (const r of [i > 0 ? q - 1 : -1, i < W2 - 1 ? q + 1 : -1, q - W2, q + W2]) {
+        if (r < 0 || r >= N || !(road[r] || inBank[r])) continue;
+        a = Math.max(a, v[r] - u);
+        b = Math.min(b, v[r] + u);
+      }
+      const nv = a > b ? Math.round((a + b) / 2) : mapgenBetween(v[q], a, b);
+      if (nv !== v[q]) {
+        v[q] = nv;
+        moved = true;
+      }
+    }
+  }
+  for (const q of zone)
+    if (Math.abs(v[q] / 20 - G.S[q]) > 0.01) {
+      G.S[q] = v[q] / 20;
+      G.M[q] |= 32;
+    }
 }
 /** TR-1: the walkable surface: every cell of a road's corridor (within its half width and 0.75 m) and of the rounds,
  * as ramps (stepm 32, so the game draws them leaning between their neighbours). The rounds lie level, the cells a
@@ -3031,7 +3111,7 @@ export function mapgenWalkHeight(sc, E, x, z) {
 /**
  * TR-1: how the roads of a scene climb, measured along every walk from the hub to an exit (sc.edgeExits' paths)
  * every half metre: jump, the most the ground changes over a metre; grade, the steepest climb over 2 m; side, the
- * tallest wall beside a road (a walkable ramp cell against a neighbour that is not one, out of water); stairs, the
+ * tallest wall beside a road (a road cell against a neighbour that is no ramp, out of water); stairs, the
  * stair cells (wall material 8). Each with where it is.
  * @returns {{ jump: number, grade: number, side: number, stairs: number, at: { jump: number[], grade: number[], side: number[] } }}
  */
@@ -3056,12 +3136,14 @@ export function mapgenRoadReport(sc) {
     for (let k = 4; k < pts.length; k++) worst('grade', Math.abs(y[k] - y[k - 4]) / 2, pts[k - 2][0], pts[k - 2][1]);
   }
   if (E) {
-    const wet = (i, j) => MAPGEN_WET.includes((sc.tiles[sc.h - 1 - (j >> 1)] || '')[i >> 1]);
+    const tile = (i, j) => (sc.tiles[sc.h - 1 - (j >> 1)] || '')[i >> 1],
+      wet = (i, j) => MAPGEN_WET.includes(tile(i, j)),
+      surf = MAPGEN_SURFACES[(sc.gen && sc.gen.params.road.surface) || 'dirt'];
     for (let q = 0; q < E.H.length; q++) {
       if ((E.M[q] & 15) === 8) out.stairs++;
-      if (!(E.M[q] & 32)) continue;
       const i = q % E.w,
         j = (q - i) / E.w;
+      if (!(E.M[q] & 32) || tile(i, j) !== surf) continue;
       for (const [di, dj] of [
         [1, 0],
         [-1, 0],
