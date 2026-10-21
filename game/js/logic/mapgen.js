@@ -25,8 +25,10 @@ expose({
   MAPGEN_EXIT_IN: [() => MAPGEN_EXIT_IN],
   MAPGEN_FAMILY_SHARE: [() => MAPGEN_FAMILY_SHARE],
   MAPGEN_FEATURES: [() => MAPGEN_FEATURES],
+  MAPGEN_FOUR: [() => MAPGEN_FOUR],
   MAPGEN_HUB_BUILDINGS: [() => MAPGEN_HUB_BUILDINGS],
   MAPGEN_INWARD: [() => MAPGEN_INWARD],
+  MAPGEN_LEDGE_PIECE: [() => MAPGEN_LEDGE_PIECE],
   MAPGEN_MASSIF: [() => MAPGEN_MASSIF],
   MAPGEN_MOUNTAIN_DIALS: [() => MAPGEN_MOUNTAIN_DIALS],
   MAPGEN_MOUNTAIN_SMOOTH: [() => MAPGEN_MOUNTAIN_SMOOTH],
@@ -89,6 +91,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   mapgenLattice: [() => mapgenLattice, v => (mapgenLattice = v)],
   // @ts-expect-error -- replaced on purpose
+  mapgenLedges: [() => mapgenLedges, v => (mapgenLedges = v)],
+  // @ts-expect-error -- replaced on purpose
   mapgenLevelLot: [() => mapgenLevelLot, v => (mapgenLevelLot = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenLowerWater: [() => mapgenLowerWater, v => (mapgenLowerWater = v)],
@@ -133,6 +137,8 @@ expose({
   mapgenPinEdges: [() => mapgenPinEdges, v => (mapgenPinEdges = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenPinSides: [() => mapgenPinSides, v => (mapgenPinSides = v)],
+  // @ts-expect-error -- replaced on purpose
+  mapgenPockets: [() => mapgenPockets, v => (mapgenPockets = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenPolyLength: [() => mapgenPolyLength, v => (mapgenPolyLength = v)],
   // @ts-expect-error -- replaced on purpose
@@ -205,7 +211,11 @@ expose({
   // @ts-expect-error -- replaced on purpose
   mapgenTrails: [() => mapgenTrails, v => (mapgenTrails = v)],
   // @ts-expect-error -- replaced on purpose
+  mapgenTraps: [() => mapgenTraps, v => (mapgenTraps = v)],
+  // @ts-expect-error -- replaced on purpose
   mapgenUnreachable: [() => mapgenUnreachable, v => (mapgenUnreachable = v)],
+  // @ts-expect-error -- replaced on purpose
+  mapgenUntrap: [() => mapgenUntrap, v => (mapgenUntrap = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenWalkGrid: [() => mapgenWalkGrid, v => (mapgenWalkGrid = v)],
 });
@@ -242,7 +252,7 @@ export const MAPGEN_MASSIF = {
 };
 /* TR-2: the mountains dials when not given (they are not in MAPGEN_DEFAULTS, so scenes made without them keep the
    dials they stored): mountains 0-1 (none up to MAPGEN_PEAK), massif the sides they rise on */
-export const MAPGEN_MOUNTAIN_DIALS = { mountains: 0, massif: 'EW' };
+export const MAPGEN_MOUNTAIN_DIALS = { mountains: 0, massif: 'EW', ledges: 0 };
 /* TR-2: the tallest a mountain gets at the mountains dial's top (metres) */
 export const MAPGEN_PEAK = 20;
 /* TR-2: how much of a mountain's height is smooth land (the rest is step-grid shelves and cliffs) */
@@ -354,6 +364,7 @@ export function mapgenParams(p) {
   if (!MAPGEN_FEATURES[P.feature]) P.feature = 'none';
   /* TR-2: the mountains dials are kept only when given, so a scene made without them stores the dials it always did */
   if (P.land.mountains !== undefined && typeof P.land.mountains !== 'number') delete P.land.mountains;
+  if (P.land.ledges !== undefined && typeof P.land.ledges !== 'number') delete P.land.ledges;
   if (P.land.massif !== undefined && !MAPGEN_MASSIF[P.land.massif]) P.land.massif = MAPGEN_MOUNTAIN_DIALS.massif;
   /* the sides whose edge is pinned to height 0 (a run's: every scene meets any neighbour there), kept only when given */
   if (P.pin !== undefined)
@@ -549,6 +560,9 @@ export function mapgenNewWork(P, ctx) {
     stepsUsed: false,
     /* TR-2: mountains made shelves and cliffs (mapgenMountains) */
     relief: false,
+    /* TR-2c: the ledges' cells and their flights of stairs (mapgenLedges) */
+    ledgeCells: 0,
+    ledgeStairs: 0,
     /* TR-2b: marked spots (a trail's summit: { kind, x, z, y }) */
     spots: /** @type {{ kind: string, x: number, z: number, y: number }[]} */ ([]),
     /* TR-2: the mountains' height per corner (mapgenMountainField), once made */
@@ -1672,6 +1686,200 @@ export function mapgenMountains(G) {
   mapgenTrails(G);
   mapgenRockEdges(G);
 }
+/* ---------- TR-2c: ledges ---------- */
+/** a ledge's pieces, in half-metre cells: 3-10 m (Gen 3's are 3-10 tiles) */
+export const MAPGEN_LEDGE_PIECE = [6, 20];
+/** ledges (TR-2c, the land.ledges dial 0-1; inspired by Gen 3, where short ledges cut a route into bands you cross
+ * one way): the fronts of the terraces that face south (toward the camera; the terraces rise toward the back) and drop
+ * 0.35-1.8 m become, piece by piece, ledges you hop down from (stepm flag 16 on the upper cells: walk-view.js
+ * canStepBetween), never climb. A piece is 3-10 m, a ledge by the dial's share, else it stays a cliff; between pieces a
+ * 2 m flight of stairs (stone steps, at most 0.28 m a step) runs down the front onto the lower ground, the way back up,
+ * so the shelf above is a lane beside the road you can drop off anywhere and climb at the stairs. Not on roads, water,
+ * ramps or mountains. Its own stream ('ground', 'ledges'). Counts in G.ledgeCells and G.ledgeStairs */
+export function mapgenLedges(G) {
+  const { P, w, h } = G,
+    W2 = w * 2,
+    H2 = h * 2,
+    rnd = G.rng('ground', 'ledges'),
+    E = G.mtnE;
+  const busy = (i, j) =>
+    G.F[mapgenCellAt(G, (i + 0.5) / 2, (j + 0.5) / 2)] & (1 | 4 | 8 | 128) ||
+    G.M[j * W2 + i] & (32 | 16) ||
+    (E &&
+      E[mapgenBetween(Math.round((j + 0.5) / 2), 0, h) * (w + 1) + mapgenBetween(Math.round((i + 0.5) / 2), 0, w)] > 0);
+  const drop = (i, j) => G.S[j * W2 + i] - G.S[(j - 1) * W2 + i];
+  const front = (i, j) => j > 0 && !busy(i, j) && !busy(i, j - 1) && drop(i, j) >= 0.35 && drop(i, j) <= 1.8;
+  let ledges = 0,
+    stairs = 0;
+  /** a flight of stairs down the front at columns cols (each from its own front row: a front zigzags), 2 m wide: only
+   * where every column's lower ground is free and nearly level */
+  const flight = cols => {
+    const plan = [];
+    for (const [i, j] of cols) {
+      const n = Math.ceil(drop(i, j) / 0.28);
+      if (j - n - 1 < 0) return false;
+      const lo = G.S[(j - 1) * W2 + i];
+      for (let m = 1; m <= n + 1; m++) if (busy(i, j - m) || Math.abs(G.S[(j - m) * W2 + i] - lo) > 0.12) return false;
+      plan.push([i, j, n]);
+    }
+    for (const [i, j, n] of plan) {
+      const up = G.S[j * W2 + i],
+        lo = G.S[(j - n - 1) * W2 + i];
+      for (let m = 1; m <= n; m++) {
+        const q = (j - m) * W2 + i;
+        G.S[q] = Math.round((up - ((up - lo) * m) / (n + 1)) * 20) / 20;
+        G.M[q] = (G.M[q] & ~(15 | 16)) | 8;
+      }
+    }
+    return true;
+  };
+  /* the front cells, gathered into fronts (cells touching, corners too), each walked west to east a column at a time */
+  const isFront = new Uint8Array(W2 * H2);
+  for (let j = 1; j < H2; j++) for (let i = 0; i < W2; i++) if (front(i, j)) isFront[j * W2 + i] = 1;
+  const seen = new Uint8Array(W2 * H2);
+  for (let q0 = 0; q0 < W2 * H2; q0++) {
+    if (!isFront[q0] || seen[q0]) continue;
+    const cells = [],
+      st = [q0];
+    seen[q0] = 1;
+    while (st.length) {
+      const q = /** @type {number} */ (st.pop()),
+        i = q % W2,
+        j = Math.floor(q / W2);
+      cells.push(q);
+      for (let dj = -1; dj <= 1; dj++)
+        for (let di = -1; di <= 1; di++) {
+          const ii = i + di,
+            jj = j + dj,
+            r = jj * W2 + ii;
+          if (ii >= 0 && jj >= 0 && ii < W2 && jj < H2 && isFront[r] && !seen[r]) {
+            seen[r] = 1;
+            st.push(r);
+          }
+        }
+    }
+    /** column -> its front cells (rows), west to east */
+    const byCol = new Map();
+    for (const q of cells) {
+      const i = q % W2;
+      if (!byCol.has(i)) byCol.set(i, []);
+      byCol.get(i).push(Math.floor(q / W2));
+    }
+    const cols = [...byCol.keys()].sort((a, b) => a - b);
+    let k = 0,
+      since = 0; /* columns since the last flight on this front */
+    while (k < cols.length) {
+      /* a piece of 3-10 m of columns (a gap in the columns ends it) */
+      const len = rnd.int(MAPGEN_LEDGE_PIECE[0], MAPGEN_LEDGE_PIECE[1]),
+        led = rnd.next() < P.land.ledges;
+      let m = k;
+      while (m < cols.length && m - k < len && (m === k || cols[m] === cols[m - 1] + 1)) {
+        if (led)
+          for (const j of byCol.get(cols[m])) {
+            G.M[j * W2 + cols[m]] |= 16;
+            ledges++;
+          }
+        m++;
+      }
+      since += m - k;
+      k = m;
+      /* then, now and then (a third of the time, and at least every 24 m of front), the way back up: a flight over the
+         next four columns, if they run on and the ground below takes it */
+      if (
+        (rnd.next() < 0.33 || since >= 48) &&
+        k + 4 <= cols.length &&
+        cols[k + 3] === cols[k] + 3 &&
+        cols[k] === cols[k - 1] + 1
+      ) {
+        const fl = [0, 1, 2, 3].map(t => [cols[k + t], Math.max(...byCol.get(cols[k + t]))]);
+        if (flight(fl)) {
+          stairs++;
+          k += 4;
+          since = 0;
+        }
+      }
+    }
+  }
+  G.ledgeCells = ledges;
+  G.ledgeStairs = stairs;
+}
+
+/** a ledge that drops you into a trap (mapgenTraps: cells you reach but can't get back from) stays a cliff: its flag
+ * comes off wherever its hop lands in a trapped cell. Walking is both ways, so only a hop leads into a trap, and
+ * taking those hops away leaves none (the trap is no longer reached) */
+export function mapgenUntrap(sc, scenery, G) {
+  const T = mapgenTraps(sc, scenery);
+  if (!T.n) return;
+  const { gw, gh, seen } = T.R,
+    back = T.back,
+    M = mapgenDecodeBase64(sc.stepm);
+  let cleared = 0;
+  for (let q = 0; q < gw * gh; q++) {
+    if (!(M[q] & 16)) continue;
+    const i = q % gw,
+      j = Math.floor(q / gw);
+    for (const [di, dj] of MAPGEN_FOUR) {
+      const ii = i + di,
+        jj = j + dj,
+        r = jj * gw + ii;
+      if (ii >= 0 && jj >= 0 && ii < gw && jj < gh && seen[r] && !back[r]) {
+        M[q] &= ~16;
+        cleared++;
+        break;
+      }
+    }
+  }
+  sc.stepm = mapgenEncodeBase64(M);
+  if (G) G.ledgeCells -= cleared;
+}
+
+/** pockets (TR-2c; in Gen 3 the far corners reward the walk there, an item at a dead end or up a ledge): up to two
+ * marked spots (G.spots, kind 'pocket') where the walk from the hub is longest (a raised shelf counting 50 m more), 6
+ * m off the road, 3 m from the scene's edge, 8 m from the exits and from a summit, 20 m apart. Items and the like come
+ * later */
+export function mapgenPockets(sc, scenery, G) {
+  const R = mapgenReach(sc, scenery, sc.hub, { slope: true }),
+    { gw, gh, dist, N } = R,
+    roadCh = Object.values(MAPGEN_SURFACES),
+    exits = (sc.edgeExits || []).map(e => mapgenExitPoint(sc.w, sc.h, e)),
+    cands = [];
+  for (let q = 0; q < gw * gh; q++) {
+    if (dist[q] < 0) continue;
+    const x = ((q % gw) + 0.5) / N,
+      z = (Math.floor(q / gw) + 0.5) / N;
+    if (x < 3 || z < 3 || x > sc.w - 3 || z > sc.h - 3) continue;
+    if (exits.some(p => Math.hypot(p[0] - x, p[1] - z) < 8)) continue;
+    if (G.spots.some(p => Math.hypot(p.x - x, p.z - z) < 8)) continue;
+    if (
+      G.near[mapgenCellAt(G, x, z)] >= 0 &&
+      G.dist[mapgenCellAt(G, x, z)] - G.roadPts[G.near[mapgenCellAt(G, x, z)]].r < 6
+    )
+      continue;
+    if (roadCh.includes(mapgenGround(G, x, z))) continue;
+    cands.push(q);
+  }
+  /* the longest walk first, a raised shelf counting 50 m more (Gen 3's items sit up ledges and at dead ends) */
+  const hubLv = mapgenSceneGround(sc, sc.hub[0], sc.hub[1]),
+    score = q => {
+      const x = ((q % gw) + 0.5) / N,
+        z = (Math.floor(q / gw) + 0.5) / N,
+        up = mapgenSceneGround(sc, x, z) + (R.S ? R.S[q] / 20 : 0) - hubLv;
+      return dist[q] + (up > 0.3 ? 100 : 0);
+    },
+    sc0 = new Map(cands.map(q => [q, score(q)]));
+  cands.sort((a, b) => (sc0.get(b) || 0) - (sc0.get(a) || 0) || a - b);
+  const picked = [];
+  for (const q of cands) {
+    if (picked.length >= 2) break;
+    const x = ((q % gw) + 0.5) / N,
+      z = (Math.floor(q / gw) + 0.5) / N;
+    if (picked.some(p => Math.hypot(p.x - x, p.z - z) < 20)) continue;
+    const y = mapgenSceneGround(sc, x, z) + (R.S ? R.S[q] / 20 : 0);
+    picked.push({ kind: 'pocket', x: mapgenRound2(x), z: mapgenRound2(z), y: mapgenRound2(y) });
+  }
+  G.spots.push(...picked);
+}
+
 /* ---------- TR-2b: mountain trails ---------- */
 /* the steepest a trail climbs (rise per metre run) */
 export const MAPGEN_TRAIL_GRADE = 0.56; /* stairs of 0.28 m a half metre, 0.33 m at most once rounded to 5 cm */
@@ -2118,6 +2326,7 @@ export function mapgenStageLand(G) {
   const lv = P.feature === 'terraces' ? Math.max(2, Math.round(P.land.terraces * 3)) : Math.round(P.land.terraces * 3);
   if (lv > 0) mapgenTerraces(G, lv);
   if (P.land.mountains > 0) mapgenMountains(G);
+  if (P.land.ledges > 0 && G.stepsUsed) mapgenLedges(G);
   /* tall grass in drifts beside the road (where the wild billionaires wait), away from the hub and the exits */
   const away = q => {
     const x = (q % G.w) + 0.5,
@@ -2801,6 +3010,12 @@ export function mapgenScene(params, ctx) {
       sc.stepm = mapgenEncodeBase64(G.M);
     }
   }
+  /* TR-2c: no ledge drops you where you can't get back from (judged on the finished scene, plants and all) */
+  if (G.ledgeCells && sc.stepm) {
+    mapgenUntrap(sc, ctx.scenery, G);
+    mapgenPockets(sc, ctx.scenery, G);
+    if (G.spots.length) sc.spots = G.spots;
+  }
   sc.gen = { v: MAPGEN_VERSION, params: P, seed: P.seed };
   return { scene: sc, notes: G.notes };
 }
@@ -2879,44 +3094,92 @@ export function mapgenWalkGrid(sc, scenery, o = {}) {
   return { N, gw, gh, blk, br, S: S && S.length === gw * gh ? S : null };
 }
 /** the half-metre cells you can walk to from a point (the hub unless given): water, solid props and a step taller
- * than 0.34 m stop you (with o.slope, also smooth land steeper than 1.05, and steps measured on the whole height). { N, gw, gh, blk, S, seen } */
+ * than 0.34 m stop you (with o.slope, also smooth land steeper than 1.05, steps measured on the whole height, and a
+ * ledge (stepm flag 16) lets you hop down from it up to 1.8 m, never up: walk-view.js canStepBetween).
+ * { N, gw, gh, blk, S, seen, step } (step(a, b): may you step from cell a to its neighbour b) */
 export function mapgenReach(sc, scenery, from = sc.hub, o = {}) {
   const W = mapgenWalkGrid(sc, scenery, o),
     { N, gw, gh, blk, br, S } = W,
     start = mapgenBetween(Math.floor(from[1] * N), 0, gh - 1) * gw + mapgenBetween(Math.floor(from[0] * N), 0, gw - 1),
     seen = new Uint8Array(gw * gh),
+    dist = new Int32Array(gw * gh).fill(-1) /* half-metre steps from the start (TR-2c) */,
     Q = [start];
   /* TR-2, with o.slope: the height you stand at in each cell (the smooth land and its raise), as the game compares
      cells (walk-view.js lv), so a step cut into a slope (a trail) is judged by what you climb, not by its raise */
-  let lv = /** @type {Float32Array | null} */ (null);
+  let lv = /** @type {Float32Array | null} */ (null),
+    hop = /** @type {Uint8Array | null} */ (null);
   if (o.slope) {
     lv = new Float32Array(gw * gh);
     for (let j = 0; j < gh; j++)
       for (let i = 0; i < gw; i++)
         lv[j * gw + i] = mapgenSceneGround(sc, (i + 0.5) / N, (j + 0.5) / N) + (S ? S[j * gw + i] / 20 : 0);
+    if (sc.stepm) {
+      const M = mapgenDecodeBase64(sc.stepm);
+      if (M.length === gw * gh) hop = M.map(f => (f & 16 ? 1 : 0));
+    }
   }
+  /* on a bridge the deck is walked, not the bed under it: its raise alone, as without o.slope */
+  const step = (a, b) => {
+    if (blk[b]) return false;
+    if (!lv || br[a] || br[b]) return !S || Math.abs(S[b] - S[a]) / 20 <= 0.34;
+    const d = lv[b] - lv[a];
+    if (d > 0.34) return false;
+    if (d < -0.34) return !!hop && !!hop[a] && d > -1.8;
+    return true;
+  };
   seen[start] = 1;
+  dist[start] = 0;
   for (let n = 0; n < Q.length; n++) {
     const q = Q[n],
       i = q % gw,
       j = Math.floor(q / gw);
-    for (const [di, dj] of [
-      [1, 0],
-      [-1, 0],
-      [0, 1],
-      [0, -1],
-    ]) {
+    for (const [di, dj] of MAPGEN_FOUR) {
       const ii = i + di,
         jj = j + dj,
         r = jj * gw + ii;
-      if (ii < 0 || jj < 0 || ii >= gw || jj >= gh || seen[r] || blk[r]) continue;
-      /* on a bridge the deck is walked, not the bed under it: its raise alone, as without o.slope */
-      if (lv && !br[r] && !br[q] ? Math.abs(lv[r] - lv[q]) > 0.34 : S && Math.abs(S[r] - S[q]) / 20 > 0.34) continue;
+      if (ii < 0 || jj < 0 || ii >= gw || jj >= gh || seen[r] || !step(q, r)) continue;
       seen[r] = 1;
+      dist[r] = dist[q] + 1;
       Q.push(r);
     }
   }
-  return { ...W, seen };
+  return { ...W, seen, dist, step, start };
+}
+export const MAPGEN_FOUR = [
+  [1, 0],
+  [-1, 0],
+  [0, 1],
+  [0, -1],
+];
+/** TR-2c: the cells you can walk to but never back from (a pocket below a ledge with no way up, say): reached from
+ * the hub, yet the hub can't be reached from them, ledges counted one way. Their count and the first few (x, z) */
+export function mapgenTraps(sc, scenery) {
+  const R = mapgenReach(sc, scenery, sc.hub, { slope: true }),
+    { gw, gh, seen, step, start, N } = R,
+    back = new Uint8Array(gw * gh),
+    Q = [start];
+  back[start] = 1;
+  for (let n = 0; n < Q.length; n++) {
+    const q = Q[n],
+      i = q % gw,
+      j = Math.floor(q / gw);
+    for (const [di, dj] of MAPGEN_FOUR) {
+      const ii = i + di,
+        jj = j + dj,
+        r = jj * gw + ii;
+      if (ii < 0 || jj < 0 || ii >= gw || jj >= gh || back[r] || !seen[r] || !step(r, q)) continue;
+      back[r] = 1;
+      Q.push(r);
+    }
+  }
+  const at = [];
+  let n = 0;
+  for (let q = 0; q < gw * gh; q++)
+    if (seen[q] && !back[q]) {
+      n++;
+      if (at.length < 5) at.push([((q % gw) + 0.5) / N, (Math.floor(q / gw) + 0.5) / N]);
+    }
+  return { n, at, R, back };
 }
 /** was the cell at (x, z) reached (R: from mapgenReach) */
 export const mapgenReached = (R, x, z) =>
