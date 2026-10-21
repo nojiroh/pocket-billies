@@ -5,7 +5,12 @@
    Save, the Check or the game tab until "Add as a new scene" makes it a scene (one undo step; Ctrl+S saves it as
    usual). The renderer finds it under the id `_gen` through walkData (a view of D.maps with the draft on top).
    The dials are UI state (data-gen, not data-p, so the Studio's field listener never writes them into the data);
-   the scene it makes keeps them in `gen` so a later session can open it again (MG-4). */
+   the scene it makes keeps them in `gen` so a later session can open it again (MG-4).
+   MG-2: an exit can join an exit of an existing scene ("Joins…"): the draft's exit turns to face it, a whole number
+   of metres along from it and as wide, and the draft takes the neighbour's edge (its heights, step raise and natural
+   ground, mapgenEdgeStrip into params.edges); the stats say how well the two meet (mapgenSeamAgreement), and
+   "Preview the pair" shows both laid side by side as the game lays them (mapgenPairScene). Also the hub's buildings
+   (props dials mast, clinic, shop). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
 import { $ } from '../../game/js/util.js';
@@ -16,12 +21,17 @@ import { escapeHtml } from './game-stand-ins.js';
 import {
   MAPGEN_DEFAULTS,
   MAPGEN_FEATURES,
+  MAPGEN_OPPOSITE,
   MAPGEN_SHAPES,
   MAPGEN_SIZES,
   MAPGEN_WATER,
+  mapgenEdgeStrip,
+  mapgenPairScene,
   mapgenParams,
   mapgenScene,
+  mapgenSeamAgreement,
 } from '../../game/js/logic/mapgen.js';
+import { seamRulesSides } from '../../game/js/logic/seam-rules.js';
 import {
   ACTIONS,
   SECTIONS,
@@ -44,6 +54,7 @@ expose({
   GEN_DIALS: [() => GEN_DIALS],
   GEN_DRAFT_ID: [() => GEN_DRAFT_ID],
   GEN_REROLL: [() => GEN_REROLL],
+  genAgreeHTML: [() => genAgreeHTML, v => (genAgreeHTML = v)],
   genBaseScenes: [() => genBaseScenes],
   genBasicsHTML: [() => genBasicsHTML, v => (genBasicsHTML = v)],
   genColour: [() => genColour, v => (genColour = v)],
@@ -56,11 +67,13 @@ expose({
   genGroundColour: [() => genGroundColour],
   genGroupHTML: [() => genGroupHTML, v => (genGroupHTML = v)],
   genInput: [() => genInput, v => (genInput = v)],
+  genJoinHTML: [() => genJoinHTML, v => (genJoinHTML = v)],
   genRun: [() => genRun, v => (genRun = v)],
   genScenes: [() => genScenes, v => (genScenes = v)],
   genScenesView: [() => genScenesView, v => (genScenesView = v)],
   genSet: [() => genSet, v => (genSet = v)],
   genShow: [() => genShow, v => (genShow = v)],
+  genShowWhich: [() => genShowWhich, v => (genShowWhich = v)],
   genSoon: [() => genSoon, v => (genSoon = v)],
   genStatsHTML: [() => genStatsHTML, v => (genStatsHTML = v)],
   genTimer: [() => genTimer, v => (genTimer = v)],
@@ -80,18 +93,26 @@ const mapGen = {
   pvPos: /** @type {number[] | null} */ (null),
   /** @type {Record<string, boolean>} */
   open: { nature: false, feature: false, props: false },
+  /* MG-2: the exits joined to a scene's exit, by exit row: {map, exit} */
+  /** @type {Record<number, { map: string, exit: string }>} */
+  joins: {},
+  /* MG-2: how each joined exit meets its neighbour (genRun), and the pair shown instead of the draft */
+  agree: /** @type {any[]} */ ([]),
+  pair: false,
+  shown: /** @type {any} */ (null),
 };
 const GEN_DRAFT_ID = '_gen';
 /* the renderer reads scenes through walkData: D.maps, with the draft on top while the Generate view is open */
 let genScenesView = { maps: null, draft: null, out: null };
 function genScenes() {
   const maps = (studioState.D && studioState.D.maps) || {};
-  if (!mapGen.on || !mapGen.draft) return maps;
-  if (genScenesView.maps !== maps || genScenesView.draft !== mapGen.draft)
+  const shown = mapGen.shown || mapGen.draft;
+  if (!mapGen.on || !shown) return maps;
+  if (genScenesView.maps !== maps || genScenesView.draft !== shown)
     genScenesView = {
       maps,
-      draft: mapGen.draft,
-      out: Object.assign(Object.create(maps), { [GEN_DRAFT_ID]: mapGen.draft }),
+      draft: shown,
+      out: Object.assign(Object.create(maps), { [GEN_DRAFT_ID]: shown }),
     };
   return genScenesView.out;
 }
@@ -151,6 +172,9 @@ const GEN_DIALS = [
       ['props.benches', 'Benches', 0, 1, 0.05],
       ['props.bins', 'Bins by the benches', 0, 1, 0.05],
       ['props.folk', 'Townsfolk spots', 0, 1, 0.05],
+      ['props.mast', 'Airship mast at the hub', 'bool'],
+      ['props.clinic', 'Clinic at the hub', 'bool'],
+      ['props.shop', 'Shop at the hub', 'bool'],
     ],
   ],
 ];
@@ -161,6 +185,7 @@ const GEN_REROLL = [
   ['plants', 'Plants'],
   ['feature', 'Feature'],
   ['props', 'Props'],
+  ['lots', 'Buildings'],
 ];
 const genGet = (o, path) => path.split('.').reduce((v, k) => (v == null ? v : v[k]), o);
 function genSet(o, path, v) {
@@ -195,19 +220,39 @@ function genDialHTML(f) {
 }
 function genExitsHTML() {
   const E = mapGen.params.road.exits;
-  return `<span class="eng-lab">Entry and exit (written to edgeExits)</span>${E.map(
-    (e, i) =>
-      `<div class="gen-exit"><select data-gen="road.exits.${i}.side" data-k="sel" aria-label="Side">${[
-        ['N', 'North'],
-        ['S', 'South'],
-        ['E', 'East'],
-        ['W', 'West'],
-      ]
-        .map(([a, n]) => `<option value="${a}" ${e.side === a ? 'selected' : ''}>${n}</option>`)
-        .join(
-          ''
-        )}</select><input type="range" data-gen="road.exits.${i}.t" data-k="num" min="0.08" max="0.92" step="0.01" value="${e.t}" title="Where along that side" aria-label="Where along the side"><input type="number" data-gen="road.exits.${i}.width" data-k="num" min="1" max="6" step="0.5" value="${e.width}" title="Exit width (m); a neighbour's exit must have the same" aria-label="Exit width"><button class="eng-x" data-act="genExitDel" data-i="${i}" title="Remove this exit" ${E.length < 2 ? 'disabled' : ''}>×</button></div>`
-  ).join('')}${E.length < 4 ? '<button class="btn sm subtle" data-act="genExitAdd">+ Add an exit</button>' : ''}`;
+  return `<span class="eng-lab">Entry and exit (written to edgeExits)</span>${E.map((e, i) => {
+    const J = mapGen.joins[i],
+      lock = J ? 'disabled' : '';
+    return `<div class="gen-exit"><select data-gen="road.exits.${i}.side" data-k="sel" aria-label="Side" ${lock}>${[
+      ['N', 'North'],
+      ['S', 'South'],
+      ['E', 'East'],
+      ['W', 'West'],
+    ]
+      .map(([a, n]) => `<option value="${a}" ${e.side === a ? 'selected' : ''}>${n}</option>`)
+      .join(
+        ''
+      )}</select><input type="range" data-gen="road.exits.${i}.t" data-k="num" min="0.08" max="0.92" step="0.01" value="${e.t}" title="Where along that side" aria-label="Where along the side" ${lock}><input type="number" data-gen="road.exits.${i}.width" data-k="num" min="1" max="6" step="0.5" value="${e.width}" title="Exit width (m); a neighbour's exit must have the same" aria-label="Exit width" ${lock}><button class="eng-x" data-act="genExitDel" data-i="${i}" title="Remove this exit" ${E.length < 2 ? 'disabled' : ''}>×</button></div>
+ <div class="gen-exit gen-join">${genJoinHTML(i)}</div>`;
+  }).join('')}${E.length < 4 ? '<button class="btn sm subtle" data-act="genExitAdd">+ Add an exit</button>' : ''}`;
+}
+/* MG-2: an exit row's join: a scene and one of its exits; the draft's exit then faces it and takes its edge */
+function genJoinHTML(i) {
+  const J = mapGen.joins[i],
+    D = studioState.D,
+    side = { N: 'north', S: 'south', E: 'east', W: 'west' };
+  if (J) {
+    const nb = D.maps[J.map];
+    return `<small class="help">Joins <b>${escapeHtml((nb && nb.name) || J.map)}</b>'s exit ${escapeHtml(J.exit)}: this exit faces it and takes its edge</small><button class="btn sm subtle" data-act="genUnjoin" data-i="${i}" title="Back to an exit of its own">Unjoin</button>`;
+  }
+  const groups = Object.entries(D.maps || {})
+    .filter(([id, sc]) => id !== GEN_DRAFT_ID && sc && sc.kind !== 'room' && (sc.edgeExits || []).length && sc.tiles)
+    .map(
+      ([id, sc]) =>
+        `<optgroup label="${escapeHtml(sc.name || id)}">${sc.edgeExits.map(e => `<option value="${escapeHtml(id)}|${escapeHtml(e.id)}">${escapeHtml(sc.name || id)} · ${escapeHtml(e.id)} (${side[e.side] || e.side})</option>`).join('')}</optgroup>`
+    )
+    .join('');
+  return `<select data-gen-join="${i}" aria-label="Join this exit to a scene's exit" title="Join this exit to an exit of a scene: it turns to face it and the draft meets that scene's edge"><option value="">Joins… (none)</option>${groups}</select>`;
 }
 function genGroupHTML([g, title, fields]) {
   const open = mapGen.open[g] !== false,
@@ -248,7 +293,26 @@ function genStatsHTML() {
     tall = (d.tiles.join('').match(/t/g) || []).length;
   return `<p class="help">${d.w} × ${d.h} m · ${d.props.length} props (${plants} wild plants) · ${tall} m² of tall grass · ${(d.bridges || []).length} bridges · made in ${Math.round(mapGen.ms)} ms</p>
  <p class="help">Exits: ${d.edgeExits.map(e => `<b>${escapeHtml(e.id)}</b> (${e.side}, ${e.len} m from the hub)`).join(', ')}</p>
+ ${genAgreeHTML(d)}
  ${mapGen.notes.length ? `<p class="help warn">${mapGen.notes.map(escapeHtml).join('; ')}</p>` : ''}`;
+}
+/* MG-2: how each joined exit meets its neighbour, the exits against the data's rules, the hub's buildings */
+function genAgreeHTML(d) {
+  const out = mapGen.agree.map(g => {
+    const nb = studioState.D.maps[g.map],
+      name = escapeHtml((nb && nb.name) || g.map),
+      a = g.a;
+    if (!a) return `<p class="help warn">The joined exit didn't come out (four exits at most).</p>`;
+    const ok = a.dhBand <= 0.05 && Math.abs(a.raiseExit) <= 0.05 && !a.walk;
+    return `<p class="help ${ok ? '' : 'warn'}"><b>${escapeHtml(g.id)}</b> meets ${name}'s ${escapeHtml(g.exit)}: heights ${a.dhBand.toFixed(2)} m apart along the band (${a.dhNear.toFixed(2)} m by the exit), step ${a.raiseExit.toFixed(2)} m${a.raiseBand ? ` (up to ${a.raiseBand.toFixed(2)} m along it: ${name}'s edge is up on a shelf; the game ramps up to it)` : ''}, ${a.walk ? `the walk across: ${escapeHtml(a.walk)}` : 'a straight walk across'}</p>`;
+  });
+  const rules = seamRulesSides(d);
+  if (rules.length) out.push(`<p class="help warn">As a place's map: ${rules.map(escapeHtml).join('; ')}</p>`);
+  const built = d.props
+    .filter(p => ['clinic', 'shop', 'airship_station'].includes(p.k))
+    .map(p => p.k.replace('airship_station', 'airship mast'));
+  if (built.length) out.push(`<p class="help">At the hub: ${built.join(', ')}</p>`);
+  return out.join('');
 }
 function genViewHTML() {
   return `<div class="split sc-split gen-split"><aside class="list-col gen-dials"><div class="list-head"><button class="btn subtle" data-act="genClose">← Back to the scenes</button></div><div class="llist">${genBasicsHTML()}${GEN_DIALS.map(genGroupHTML).join('')}</div></aside>
@@ -256,7 +320,7 @@ function genViewHTML() {
  ${card(
    'Preview',
    `<div class="sc-pv"><canvas id="genPv"></canvas><div class="sc-pv-load" id="genPvLoad">Loading…</div></div>
-  <div class="seg-row"><button class="btn sm subtle" data-act="genHub">Back to the hub</button></div><div id="genStats">${genStatsHTML()}</div>`,
+  <div class="seg-row"><button class="btn sm subtle" data-act="genHub">Back to the hub</button>${Object.keys(mapGen.joins).length ? `<button class="btn sm ${mapGen.pair ? 'on' : 'subtle'}" data-act="genPair" title="Both scenes side by side, as the game lays them, nothing eased">${mapGen.pair ? 'Show the draft alone' : 'Preview the pair'}</button>` : ''}</div><div id="genStats">${genStatsHTML()}</div>`,
    {
      sub: 'The draft as the game draws it. Walk with W A S D or click the ground; the dials change it as you move them.',
    }
@@ -278,15 +342,48 @@ async function mountGenView() {
   else genShow();
 }
 function genRun() {
+  const D = studioState.D,
+    P = mapGen.params,
+    edges = [],
+    joined = [];
+  /* MG-2: each joined exit faces its neighbour's exit and takes its edge; the locked dials follow */
+  for (const [i, J] of Object.entries(mapGen.joins)) {
+    const e = P.road.exits[+i],
+      nb = D.maps[J.map],
+      strip = e && nb ? mapgenEdgeStrip(nb, J.exit, { w: P.w, h: P.h }, e.t) : null;
+    if (!strip) continue;
+    strip.from.map = J.map;
+    Object.assign(e, { side: strip.side, t: strip.t, width: strip.width });
+    edges.push(strip);
+    joined.push({ ...J, strip });
+  }
   const t = performance.now(),
-    r = mapgenScene(mapGen.params, { scenery: sceneryCatalog(), biomes: studioState.D.biomes || {} });
+    r = mapgenScene({ ...P, edges }, { scenery: sceneryCatalog(), biomes: D.biomes || {} });
   mapGen.ms = performance.now() - t;
   mapGen.notes = r.notes;
+  const d = r.scene;
   /* a new draft is new ground (groundKey reads stepsV) */
-  r.scene.stepsV = ++mapGen.gen;
-  if (mapGen.draft && (mapGen.draft.w !== r.scene.w || mapGen.draft.h !== r.scene.h)) mapGen.pvPos = null;
-  mapGen.draft = r.scene;
+  d.stepsV = ++mapGen.gen;
+  if (mapGen.draft && (mapGen.draft.w !== d.w || mapGen.draft.h !== d.h)) mapGen.pvPos = null;
+  mapGen.draft = d;
+  mapGen.agree = joined.map(J => {
+    const e = d.edgeExits.find(q => q.side === J.strip.side && Math.abs(q.t - J.strip.t) < 1e-3);
+    return {
+      map: J.map,
+      exit: J.exit,
+      id: e ? e.id : '',
+      a: e ? mapgenSeamAgreement(D.maps[J.map], J.exit, d, e.id, D.scenery) : null,
+    };
+  });
+  genShowWhich();
   genShow();
+}
+/* the draft, or the draft and its first neighbour side by side */
+function genShowWhich() {
+  const g = mapGen.agree.find(q => q.a),
+    d = mapGen.draft;
+  mapGen.shown = mapGen.pair && g && d ? mapgenPairScene(studioState.D.maps[g.map], g.exit, d, g.id) : null;
+  if (mapGen.shown) mapGen.shown.stepsV = ++mapGen.gen;
 }
 function genShow() {
   const d = mapGen.draft,
@@ -295,7 +392,8 @@ function genShow() {
   if (st) st.innerHTML = genStatsHTML();
   genDrawMap();
   if (!cv || !d) return;
-  if (mapGen.pvPos && (mapGen.pvPos[0] > d.w || mapGen.pvPos[1] > d.h)) mapGen.pvPos = null;
+  const S = mapGen.shown || d;
+  if (mapGen.pvPos && (mapGen.pvPos[0] > S.w || mapGen.pvPos[1] > S.h)) mapGen.pvPos = null;
   walkView.nav = null;
   walkView.cand = null;
   walkView.gkey = '';
@@ -304,11 +402,13 @@ function genShow() {
     state: () => ({
       mode: 'roam',
       roam: true,
-      pos: mapGen.pvPos || (mapGen.draft ? mapGen.draft.hub : [0, 0]),
+      pos: mapGen.pvPos || ((mapGen.shown || mapGen.draft || {}).hub ?? [0, 0]),
       who: 'boy',
       enc: [],
       npcs: [],
-      exits: (mapGen.draft ? mapGen.draft.edgeExits : []).map((e, i) => ({ i, name: e.id })),
+      exits: mapGen.shown
+        ? mapGen.shown.exits.map((p, i) => ({ i, name: mapGen.shown.exitNames[i] }))
+        : (mapGen.draft ? mapGen.draft.edgeExits : []).map((e, i) => ({ i, name: e.id })),
     }),
     onMove: (x, z) => {
       mapGen.pvPos = [x, z];
@@ -317,7 +417,7 @@ function genShow() {
     onPick: h =>
       toast(
         h.k === 'exit'
-          ? 'Here the road leaves for the next place (linked when it is added, MG-2).'
+          ? "Here the road leaves for the next place (join it to a scene's exit under Entry and exit)."
           : 'Click the ground to walk there.'
       ),
     cap: () => (studioState.sec === 'scenes' && mapGen.on ? 30 : 0),
@@ -414,16 +514,33 @@ function genInput(ev, settle) {
 }
 document.addEventListener('input', ev => mapGen.on && genInput(ev, false));
 document.addEventListener('change', ev => mapGen.on && genInput(ev, true));
+/* MG-2: an exit row joined to a scene's exit (its side turns to face it; genRun takes the rest) */
+document.addEventListener('change', ev => {
+  const t = /** @type {HTMLSelectElement} */ (ev.target);
+  if (!mapGen.on || !t || !t.dataset || t.dataset.genJoin == null || !t.value) return;
+  const i = +t.dataset.genJoin,
+    [map, exit] = t.value.split('|'),
+    nb = studioState.D.maps[map],
+    e = nb && (nb.edgeExits || []).find(q => q.id === exit),
+    row = mapGen.params.road.exits[i];
+  if (!e || !row) return;
+  row.side = MAPGEN_OPPOSITE[e.side];
+  mapGen.joins[i] = { map, exit };
+  render();
+  genRun();
+});
 /* ---------- actions ---------- */
 ACTIONS.genOpen = () => {
   mapGen.on = true;
   mapGen.draft = null;
+  mapGen.shown = null;
   mapGen.pvPos = null;
   render();
 };
 ACTIONS.genClose = () => {
   mapGen.on = false;
   mapGen.draft = null;
+  mapGen.shown = null;
   render();
 };
 ACTIONS.genOpenG = d => {
@@ -469,8 +586,25 @@ ACTIONS.genExitAdd = () => {
 };
 ACTIONS.genExitDel = d => {
   mapGen.params.road.exits.splice(+d.i, 1);
+  /* the joins move with their rows */
+  const J = {};
+  for (const [k, v] of Object.entries(mapGen.joins)) if (+k !== +d.i) J[+k > +d.i ? +k - 1 : +k] = v;
+  mapGen.joins = J;
+  if (!Object.keys(J).length) mapGen.pair = false;
   render();
   genRun();
+};
+ACTIONS.genUnjoin = d => {
+  delete mapGen.joins[+d.i];
+  if (!Object.keys(mapGen.joins).length) mapGen.pair = false;
+  render();
+  genRun();
+};
+ACTIONS.genPair = () => {
+  mapGen.pair = !mapGen.pair;
+  mapGen.pvPos = null;
+  genShowWhich();
+  render();
 };
 ACTIONS.genHub = () => {
   mapGen.pvPos = null;
@@ -483,7 +617,7 @@ ACTIONS.genAccept = async () => {
   const D = studioState.D,
     name = await dialog(
       'Add as a new scene',
-      `<label class="fld"><span>Name</span><input id="genName" value="${escapeHtml(d.name)}"></label><p class="help">It becomes a walk scene of its own (kind ${escapeHtml(d.kind)}, biome ${escapeHtml(d.biome)}), with its dials kept in it. No place or roads yet.</p>`,
+      `<label class="fld"><span>Name</span><input id="genName" value="${escapeHtml(d.name)}"></label><p class="help">It becomes a walk scene of its own (kind ${escapeHtml(d.kind)}, biome ${escapeHtml(d.biome)}), with its dials kept in it${mapGen.agree.length ? ` and the edge of the scene it joins (${mapGen.agree.map(g => escapeHtml(g.map + ' ' + g.exit)).join(', ')})` : ''}. No place or roads yet.</p>`,
       [
         { l: 'Cancel', v: null },
         { l: 'Add', c: 'primary', f: () => $('#genName').value.trim() },
@@ -498,6 +632,7 @@ ACTIONS.genAccept = async () => {
   studioState.sel.scene = id;
   mapGen.on = false;
   mapGen.draft = null;
+  mapGen.shown = null;
   changed();
   commit(true);
   render();

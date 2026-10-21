@@ -545,7 +545,8 @@ def robot_joint_steps(pg, errs):
 def generate_steps(pg, errs):
     """map generator MG-1: Walk scenes → Generate… draws a draft route in the game's renderer, the dials change it (a
     biome, terraces, a new seed for the plants only) without touching the data or the undo history, and Add as a new
-    scene is one undo step (left in, so the proposal at the end carries a generated scene)"""
+    scene is one undo step (left in, so the proposal at the end carries a generated scene). MG-2: an exit joined to
+    Tallgrass Meadow's meets it, the pair is drawn side by side, the clinic dial puts a clinic at the hub"""
     n = len(errs)
     pg.evaluate("studioState.sel.scene='tallgrass_meadow';mapGen.on=false;void openSection('scenes')")
     pg.wait_for_selector('[data-act=genOpen]', timeout=20000)
@@ -566,14 +567,34 @@ def generate_steps(pg, errs):
     if pg.evaluate("JSON.stringify([mapGen.draft.tiles,mapGen.draft.edgeExits])") != ground: errs.append('generate: a new seed for the plants changed the ground or the road')
     if pg.evaluate("[Object.keys(studioState.D.maps).length, studioState.undo.length]") != [maps0, undo0]: errs.append('generate: the draft reached the data or the undo history')
     if pg.evaluate("mapgenUnreachable(mapGen.draft, studioState.D.scenery).length"): errs.append('generate: the hub of the draft does not reach every exit')
+    # MG-2: the west exit joins Tallgrass Meadow's east exit (south2): it faces it a whole number of metres along, and
+    # the draft meets that edge (heights, step, a straight walk across); the pair side by side; the hub's buildings
+    pg.select_option('select[data-gen-join="0"]', 'tallgrass_meadow|south2')
+    t0 = time.time()
+    while time.time() - t0 < 60 and not pg.evaluate("mapGen.agree.length>0&&!!mapGen.agree[0].a&&walkView.ready"): time.sleep(0.3)
+    a = pg.evaluate("mapGen.agree.length?mapGen.agree[0].a:null")
+    if not a or a['dhBand'] > 0.05 or abs(a['raiseExit']) > 0.05 or a['walk']: errs.append(f'generate: the joined exit does not meet Tallgrass Meadow: {a}')
+    rules = pg.evaluate("(()=>{const T=studioState.D.maps.tallgrass_meadow,d=mapGen.draft,g=mapGen.agree[0];return seamRulesPair(T,T.edgeExits.find(e=>e.id==='south2'),d,d.edgeExits.find(e=>e.id===g.id))})()")
+    if rules: errs.append(f'generate: the joined pair breaks the seam rules: {rules}')
+    pg.click('[data-act=genPair]')
+    t0 = time.time()
+    while time.time() - t0 < 60 and not pg.evaluate("!!mapGen.shown&&walkView.sc===mapGen.shown&&walkView.ready"): time.sleep(0.3)
+    if not pg.evaluate("!!mapGen.shown&&walkView.sc===mapGen.shown"): errs.append('generate: Preview the pair drew nothing')
+    pg.click('[data-act=genPair]'); time.sleep(0.5)
+    if not pg.evaluate("!!document.querySelector('input[data-gen=\"props.clinic\"]')"): pg.click('[data-act=genOpenG][data-g=props]'); time.sleep(0.3)
+    pg.evaluate("(()=>{const c=document.querySelector('input[data-gen=\"props.clinic\"]');c.checked=true;c.dispatchEvent(new Event('change',{bubbles:true}))})()")
+    t0 = time.time()
+    while time.time() - t0 < 30 and not pg.evaluate("mapGen.draft.props.some(p=>p.k==='clinic'&&p.act==='clinic')"): time.sleep(0.3)
+    if not pg.evaluate("mapGen.draft.props.some(p=>p.k==='clinic'&&p.act==='clinic')"): errs.append('generate: the clinic dial put no clinic at the hub')
+    if pg.evaluate("[Object.keys(studioState.D.maps).length, studioState.undo.length]") != [maps0, undo0]: errs.append('generate: joining reached the data or the undo history')
     pg.click('[data-act=genAccept]')
     pg.fill('#genName', 'Check Trail')
     pg.click('#dlg [data-dlg="1"]'); time.sleep(0.5)
-    if not pg.evaluate("!!studioState.D.maps.checktrail&&studioState.D.maps.checktrail.gen.params.biome==='canyon'&&studioState.D.maps.checktrail.props.every(p=>p.g===1)"):
+    if not pg.evaluate("!!studioState.D.maps.checktrail&&studioState.D.maps.checktrail.gen.params.biome==='canyon'&&studioState.D.maps.checktrail.props.every(p=>p.g===1)&&studioState.D.maps.checktrail.gen.params.edges[0].from.map==='tallgrass_meadow'"):
         errs.append('generate: Add as a new scene made no scene with its dials')
     elif pg.evaluate("studioState.undo.length") != undo0 + 1: errs.append('generate: adding the scene is not one undo step')
     if len(errs) > n: errs[n:] = [f'generate: {e}' for e in errs[n:]]
-    else: print('generate: a canyon route drafted and drawn, dials and a plants reroll, added as a scene in one undo step', flush=True)
+    else: print('generate: a canyon route drafted and drawn, dials and a plants reroll, joined to Tallgrass Meadow (meets it, the pair drawn), a clinic at the hub, added as a scene in one undo step', flush=True)
 def species_part_steps(pg, errs):
     """Studio track ST-6: the skeleton builder zooms by whole steps with the pixel canvas's keys; the Billies section
     opens the species in Part mode; the head's pivot dragged and nudged keeps the figure drawn where it was (the rig
