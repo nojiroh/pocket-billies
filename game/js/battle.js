@@ -24,17 +24,7 @@ import {
   typeBadgeHTML,
 } from './hooks.js';
 import { $, $$, clamp, random } from './util.js';
-import {
-  COINS,
-  EGGS,
-  EGG_TIERS,
-  ITEMS,
-  MOVES,
-  RULES,
-  STAT_NAMES,
-  TYPE_COLORS,
-  typeEffectiveness,
-} from './game-data.js';
+import { COINS, ITEMS, MOVES, STAT_NAMES, TYPE_COLORS, typeEffectiveness } from './game-data.js';
 import { ROBOT_LIMBS, ROBOT_SLOT_NAMES, isRobot, robotPartDef, speciesOf } from './logic/fighters.js';
 import {
   addBilly,
@@ -50,9 +40,7 @@ import {
   partBroken,
   partHpLeft,
   partMaxHp,
-  pickWeighted,
   plural,
-  wildPrize,
 } from './logic/rules.js';
 import {
   ACTOR_SIDE,
@@ -74,6 +62,7 @@ import {
   shockName,
   teamNeedsHp,
 } from './logic/battle-engine.js';
+import { battleRewards } from './logic/battle-rewards.js';
 import { activeBattle, escapeHtml, reducedMotion, save, saveData, setActiveBattle, uiState } from './game-state.js';
 import { artURL, coinHTML, eggHTML, iconURL, uiIconHTML } from './art.js';
 import { portraitHTML } from './person-art.js';
@@ -938,10 +927,16 @@ function finishThrow(res, id, lab, spin) {
 export function endBattle() {
   stopTimers();
   const kind = activeBattle.kind,
-    /* RL-4: a battle called off at the turn cap ends as if you walked away (wild) or lost (a trainer) */
-    o = activeBattle.over === 'draw' ? (kind === 'wild' ? 'ran' : 'lose') : activeBattle.over,
     T = activeBattle.T,
     tid = activeBattle.tid,
+    /* RL-8: what it pays and costs (logic/battle-rewards.js); RL-4: a battle called off at the turn cap ends as if you
+       walked away (wild) or lost (a trainer) */
+    pay = battleRewards(
+      { kind, over: activeBattle.over, T, tid, foe: activeBattle.sides[1].team },
+      saveData,
+      battleRoll
+    ),
+    o = pay.o,
     lead = findBilly(activeBattle.lead);
   if (o === 'win' && typeof jingle === 'function') jingle(JINGLES.victory);
   if (o === 'win') for (const m of saveData.team) if (m.hp > 0) m.wins = (m.wins || 0) + 1; /* v36: the Hype counter */
@@ -972,7 +967,7 @@ export function endBattle() {
   }
   const after = [];
   if (o === 'lose') {
-    const fee = Math.floor(saveData.se * BATTLE_RULES.loseFee);
+    const fee = pay.fee;
     saveData.se -= fee;
     healAll();
     after.push({
@@ -983,18 +978,14 @@ export function endBattle() {
   }
   /* phase 08: beating a wild Billie pays prize money (steps paid before) */
   if (kind === 'wild' && o === 'win') {
-    const prize = activeBattle.sides[1].team.reduce((a, m) => a + wildPrize(m.lvl), 0);
+    const prize = pay.prize;
     if (prize > 0) {
       saveData.se += prize;
       toast(`You earned $${formatNumber(prize)}.`);
     }
   }
-  const E = RULES.eggs;
-  if (kind === 'wild' && o === 'win' && battleRoll() < E.dropChance) {
-    const tiers = Object.entries(E.dropTiers)
-      .filter(([t]) => EGGS[t])
-      .map(([t, w]) => [+t, w]);
-    const tier = tiers.length ? pickWeighted(tiers, battleRoll) : EGG_TIERS[0];
+  if (pay.egg) {
+    const tier = pay.egg;
     if (addEgg(tier))
       after.push({
         title: 'It dropped an egg',
@@ -1004,18 +995,18 @@ export function endBattle() {
       });
   }
   if (kind === 'trainer' && o === 'win') {
-    saveData.se += T.reward || 0;
-    const first = !saveData.flags[tid];
+    saveData.se += pay.reward;
+    const first = pay.first;
     saveData.flags[tid] = 1;
     let extra = '';
     if (first && T.egg && addEgg(T.egg)) extra += ` and a ${eggKm(T.egg)} km egg`;
     const st = T.seat;
-    if (st) {
-      const nu = !saveData.seats.includes(st.id);
+    if (st && pay.seat) {
+      const nu = pay.seat.nu;
       if (nu) {
-        saveData.seats.push(st.id);
-        for (const k in st.coins || {}) saveData.coins[k] = (saveData.coins[k] || 0) + st.coins[k];
-        for (const k in st.items || {}) saveData.items[k] = (saveData.items[k] || 0) + st.items[k];
+        saveData.seats.push(pay.seat.id);
+        for (const k in pay.seat.coins) saveData.coins[k] = (saveData.coins[k] || 0) + pay.seat.coins[k];
+        for (const k in pay.seat.items) saveData.items[k] = (saveData.items[k] || 0) + pay.seat.items[k];
       }
       after.push({
         title: nu ? escapeHtml(st.title || 'Badge') : 'Rematch won',
