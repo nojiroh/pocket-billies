@@ -33,12 +33,12 @@ decisions left open. Newest facts win: update this file when the rules, the sign
 - **Game data**: `tools/check-data-text.py` (CI, under a second) fails when any text in the game data (game/data/*.json) has `< > `` ` or a
   name or id has `"`. The game and the Studio put place, Billie, move and scene names into HTML unescaped, and that
   data changes through Studio pull requests too big to read. Nothing in today's data trips it.
-- **saveVersion**: every save carries `saveVersion` (game/js/logic/saves.js `SAVE_VERSION`, 3 since phase 08). A save without it (alpha 0.5 and
+- **saveVersion**: every save carries `saveVersion` (game/js/logic/saves.js `SAVE_VERSION`, 3 since phase 08, 4 since RL-3). A save without it (alpha 0.5 and
   earlier) is not loaded: the game says "This save is from an older version of the game and can't be loaded in this
-  one", starts fresh, and keeps the old save in this browser under `<save key>-set-aside` (as `{json, from, at}`, the one shape since RL-1; Settings > Save offers it to download, or to bring back when it can be loaded). A save from a *newer* version
+  one", starts fresh, and keeps the old save in this browser under `<save key>-set-aside` (as `{json, from, at}`, the one shape since RL-1; one slot, holding the latest since RL-3; Settings > Save offers it to download, or to bring back when it can be loaded). A save from a *newer* version
   is never written over (the game stops saving and asks for a reload). Backups from other versions are refused with the
-  same message. An old save on the account is copied to this browser (`-cloud-set-aside`) and is replaced on the
-  account once the player plays on (see the open question below).
+  same message. An old save on the account is copied to this browser (`-cloud-set-aside`, written once and shown nowhere: RL-3
+  found it, not fixed) and is replaced on the account once the player plays on (see the open question below).
 
 ## For the owner to do (consoles, not code)
 
