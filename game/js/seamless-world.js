@@ -1513,19 +1513,12 @@ export function seamlessDelta(fromId, toId) {
 }
 /* --- what the walk shows (called by walkState in ui.js) --- */
 /* roaming at a stop: v46: always the place's hub view (the scene with a band of each neighbour), so walking
-   round a place and up to its exits never switches views */
+   round a place and up to its exits never switches views. RL-5: a place with no exits too (the hub alone, Pearlantis
+   under the sea): its view is the scene alone, and its rooms open in place as anywhere (they need a hub view) */
 export function seamlessRoamView(node, pos) {
   const id = mapIdAt(node),
     sc = mapById(id);
-  if (
-    !sc ||
-    !(sc.exits || []).length ||
-    sc.kind === 'room' ||
-    sc.kind === 'test' ||
-    /^(int_|test_)/.test(id) ||
-    sc.room
-  )
-    return null;
+  if (!sc || sc.kind === 'room' || sc.kind === 'test' || /^(int_|test_)/.test(id) || sc.room) return null;
   const hs = seamlessHubMap(node);
   if (!hs) return null;
   seamlessWorld.roam = { node };
