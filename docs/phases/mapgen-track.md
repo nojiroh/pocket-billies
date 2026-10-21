@@ -26,7 +26,7 @@ session is tagged `mg-N-done`.
 | # | What | Checks before the tag |
 |---|------|-----------------------|
 | MG-1 | mapgen.js for routes: RNG, heights (hills, terraces), ground, road (straight, winding, S-curve, switchback; carve, flatten, pave, verges), exits and hub, growth (the grow-wild rules, fixed), one feature, props. biomes.json. The Generate card with its dials, a draft in the live preview. | unit tests, lint, types, data |
-| MG-2 | Accept: the place (map file, index.json, locations.json with a bowl spot), link to neighbours (seam roads, exits facing and aligned, the neighbour's seam strip read), "Preview as seamless pair", save and propose. | unit tests, a Studio check step, a02_joins on the pair |
+| MG-2 | Seam agreement (the roguelite track's version, owner's pick 2026-10-21): a scene joined to a neighbour's exit has that exit facing and aligned (an integer offset), the neighbour's edge heights, raise and natural ground read and eased inward; terraces at ground level near every exit edge; mast, clinic and shop at the hub by dials; the seam rules in one module (logic/seam-rules.js); the Studio's Generate card joins a draft to a scene and previews the pair. Terrain track TR-1 (smooth roads) folded in. Parked: Accept as a place (locations.json, bowl spot, roads, an exit added to the neighbour): it edits the legacy world, which the game no longer loads. | unit tests (a joined pair passes the seam rules and agrees: heights, raise, a straight walk across), a Studio check step |
 | MG-3 | Towns: main street, side lanes, square, landmark, lots (level, door to the street, clear footprint, turned along curves), kind mix, colour variants, gardens and fences, townsfolk spots. | unit tests, smoke |
 | MG-4 | Presets, per-stage reroll, regenerate-only-generated (props by `g`, ground by a mask), the keep lock, dials restored from `gen`. | unit tests: a hand edit survives a regenerate |
 | MG-5 | Check panel rules (hub reaches every exit, nothing in water, door gaps clear, exits face their neighbour), a quick-check step (generate, accept, save, reload, walk the seam), STUDIO.md. | full quick check, Studio check |
@@ -52,10 +52,7 @@ session is tagged `mg-N-done`.
   were cells (no effect), plants that grow on 'o' never grow. The port uses terrains' `paved`, the path letters and
   the distance to the road instead.
 - Python's Mersenne Twister output can't be matched without porting it; mapgen.js has its own RNG and new output.
-</content>
-</invoke>
-<invoke name="Bash">
-<parameter name="command">cd /home/user/pocket-billies && sed -n 1,25p tools/build-places-v46.py
+
 ## MG-1: the route generator (2026-10-20)
 - game/js/logic/mapgen.js (`mapgen*` names only: the pages share one namespace, and a first draft's `clamp` and
   `put` clashed with util.js and frame-block.js): `mapgenParams` (dials filled in and kept in range), `mapgenScene`
