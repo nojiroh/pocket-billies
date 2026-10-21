@@ -11,7 +11,7 @@ import {
   unitOpenRowHTML,
   unitRowHTML,
 } from './hooks.js';
-import { $, $$, clamp, random } from './util.js';
+import { $, $$, clamp } from './util.js';
 import {
   COINS,
   DEX_ORDER,
@@ -108,8 +108,8 @@ import {
   uiState,
   writeStoredSave,
 } from './game-state.js';
-import { frameTask, userFps } from './frame-scheduler.js';
-import { ART_CACHE, artLoad, artURL, coinHTML, coinURL, eggHTML, makeCanvas, uiIconHTML } from './art.js';
+import { userFps } from './frame-scheduler.js';
+import { artLoad, artURL, coinHTML, coinURL, eggHTML, uiIconHTML } from './art.js';
 import { LOOK_PRESETS, cleanLook, cleanTrainer, personHTML, portraitHTML } from './person-art.js';
 import { applyPreferences, settingsHTML } from './settings-screen.js';
 import { bustHTML, rigCanvasHTML } from './skeleton-rig.js';
@@ -219,7 +219,6 @@ expose({
   boardNote: [() => boardNote, v => (boardNote = v)],
   boxSection: [() => boxSection, v => (boxSection = v)],
   buddyCard: [() => buddyCard, v => (buddyCard = v)],
-  buildPixelSky: [() => buildPixelSky, v => (buildPixelSky = v)],
   clinicHeal: [() => clinicHeal, v => (clinicHeal = v)],
   dexStatus: [() => dexStatus, v => (dexStatus = v)],
   donateItem: [() => donateItem, v => (donateItem = v)],
@@ -233,8 +232,6 @@ expose({
   guideTabs: [() => guideTabs, v => (guideTabs = v)],
   healPick: [() => healPick, v => (healPick = v)],
   hereCard: [() => hereCard, v => (hereCard = v)],
-  initPixelSky: [() => initPixelSky, v => (initPixelSky = v)],
-  isDark: [() => isDark],
   leaveRoom: [() => leaveRoom, v => (leaveRoom = v)],
   locationCardHTML: [() => locationCardHTML, v => (locationCardHTML = v)],
   mapExits: [() => mapExits, v => (mapExits = v)],
@@ -245,8 +242,6 @@ expose({
   nodeActions: [() => nodeActions, v => (nodeActions = v)],
   openSettings: [() => openSettings, v => ((openSettings = v), provide({ openSettings }))],
   paintWorldMapCard: [() => paintWorldMapCard, v => ((paintWorldMapCard = v), provide({ paintWorldMapCard }))],
-  pixelSky: [() => pixelSky],
-  pixelSkyTick: [() => pixelSkyTick, v => (pixelSkyTick = v)],
   plateVars: [() => plateVars],
   poolStrip: [() => poolStrip, v => (poolStrip = v)],
   render: [() => render, v => setRender(v)],
@@ -257,7 +252,6 @@ expose({
   renderTeam: [() => renderTeam, v => (renderTeam = v)],
   renderWalk: [() => renderWalk, v => (renderWalk = v)],
   renderWorldMapTab: [() => renderWorldMapTab, v => (renderWorldMapTab = v)],
-  resizePixelSky: [() => resizePixelSky, v => (resizePixelSky = v)],
   roomAct: [() => roomAct, v => (roomAct = v)],
   roomAim: [() => roomAim, v => (roomAim = v)],
   roomFor: [() => roomFor, v => (roomFor = v)],
@@ -2550,102 +2544,6 @@ document.addEventListener(
     }),
   { passive: true }
 );
-
-/* ---------- animated pixel sky behind the app ---------- */
-const pixelSky = { cv: null, x: null, last: 0, w: 160, h: 300, dark: null, base: null, isl: [], cl: [], sp: [] };
-provide({ pixelSky }); /* to-module */
-const isDark = () => {
-  const t = document.documentElement.dataset.theme;
-  return t === 'dark' || (t !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
-};
-function buildPixelSky() {
-  const W = pixelSky.w,
-    H = pixelSky.h,
-    dk = pixelSky.dark,
-    m = dk ? 'dark' : 'light',
-    sky = ART_CACHE.img[`background/sky_${m}.png`],
-    c = makeCanvas(W, H),
-    x = c.getContext('2d');
-  x.imageSmoothingEnabled = false;
-  x.drawImage(sky, 0, 0, W, H);
-  pixelSky.base = c;
-  pixelSky.cl = [0, 1, 2, 3].map(i => ({
-    img: ART_CACHE.img[`background/cloud_${m}_${i}.png`],
-    x: random() * W,
-    y: 20 + i * 28 + random() * 10,
-    v: 0.003 + i * 0.002,
-  }));
-  pixelSky.sp = Array.from({ length: dk ? 40 : 14 }, () => ({
-    x: random() * W,
-    y: random() * H * 0.8,
-    p: random() * 6,
-  }));
-}
-export function initPixelSky() {
-  const c = document.createElement('canvas');
-  c.id = 'bgfx';
-  c.setAttribute('aria-hidden', 'true');
-  document.body.prepend(c);
-  pixelSky.cv = c;
-  pixelSky.x = c.getContext('2d');
-  resizePixelSky();
-  window.addEventListener('resize', resizePixelSky);
-  frameTask('bg', pixelSkyTick, () => (activeBattle ? 1 : 15));
-}
-function resizePixelSky() {
-  pixelSky.w = 160;
-  pixelSky.h = Math.max(200, Math.round((160 * innerHeight) / Math.max(1, innerWidth)));
-  pixelSky.cv.width = pixelSky.w;
-  pixelSky.cv.height = pixelSky.h;
-  pixelSky.dark = null;
-}
-function pixelSkyTick(ts) {
-  if (activeBattle) return;
-  pixelSky.last = ts;
-  const dk = isDark();
-  if (dk !== pixelSky.dark) {
-    pixelSky.dark = dk;
-    buildPixelSky();
-  }
-  if (reducedMotion && pixelSky._still === pixelSky.base) return;
-  pixelSky._still = pixelSky.base;
-  const x = pixelSky.x,
-    W = pixelSky.w,
-    H = pixelSky.h,
-    t = reducedMotion ? 0 : ts;
-  x.imageSmoothingEnabled = false;
-  x.drawImage(pixelSky.base, 0, 0);
-  const sx = W * 0.78,
-    sy = H * 0.16,
-    pr = 10 + Math.sin(t / 900) * 1.2;
-  x.globalCompositeOperation = 'lighter';
-  [
-    [pr * 3.2, 0.06],
-    [pr * 2, 0.1],
-    [pr * 1.3, 0.18],
-  ].forEach(([r, a]) => {
-    x.fillStyle = `rgba(255,${dk ? 190 : 214},${dk ? 120 : 150},${a})`;
-    x.beginPath();
-    x.arc(sx, sy, r, 0, 7);
-    x.fill();
-  });
-  x.globalCompositeOperation = 'source-over';
-  x.fillStyle = dk ? '#FFE9A8' : '#FFF8E0';
-  x.beginPath();
-  x.arc(Math.round(sx), Math.round(sy), 6, 0, 7);
-  x.fill();
-  pixelSky.cl.forEach(c => {
-    const w = c.img.width,
-      xx = ((c.x + t * c.v) % (W + w)) - w;
-    x.drawImage(c.img, Math.round(xx), Math.round(c.y));
-  });
-  pixelSky.sp.forEach(p => {
-    const a = 0.5 + 0.5 * Math.sin(t / 500 + p.p);
-    if (a < 0.55) return;
-    x.fillStyle = dk ? `rgba(255,240,200,${a})` : `rgba(255,255,255,${a * 0.8})`;
-    x.fillRect(Math.round(p.x), Math.round(p.y), 1, 1);
-  });
-}
 
 /* ---------- boot: load the menu art, then draw ---------- */
 
