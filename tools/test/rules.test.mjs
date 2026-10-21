@@ -58,6 +58,40 @@ test('rules: encounters follow the place’s pool (its species by weight, its le
   for (let i = 0; i < 200; i++) assert.equal(fn('spawn')(true).sp, 'sprout0');
 });
 
+test('RL-2: a spawn from a seeded stream is the same every time, and leaves Math.random alone (bar the uid)', () => {
+  startedSave('sparky0', 10);
+  const roll = () => {
+    const f = fn('rngFn')('run-a|n0', 'wild|0'),
+      out = [];
+    for (let i = 0; i < 20; i++) {
+      const { sp, lvl, build, coat, alpha } = fn('spawn')(false, null, undefined, f);
+      out.push({ sp, lvl, build, coat, alpha });
+      fn('encountersHere')().length = 0;
+    }
+    return out;
+  };
+  const a = roll();
+  assert.deepEqual(roll(), a);
+  assert.ok(new Set(a.map(q => q.sp + q.lvl)).size > 1, 'the stream reaches the rolls');
+  // a seeded spawn draws Math.random once, for its uid (newUid), and for nothing else
+  reseed(9);
+  fn('spawn')(false, null, undefined, fn('rngFn')('x'));
+  const after = Math.random();
+  reseed(9);
+  Math.random();
+  assert.equal(after, Math.random());
+  // the seeded pickers
+  const f1 = fn('rngFn')('pick'),
+    f2 = fn('rngFn')('pick'),
+    L = [
+      ['a', 1],
+      ['b', 2],
+      ['c', 3],
+    ];
+  for (let i = 0; i < 20; i++) assert.equal(fn('pickWeighted')(L, f1), fn('pickWeighted')(L, f2));
+  assert.deepEqual(fn('rollBuild')(fn('rngFn')('b')), fn('rollBuild')(fn('rngFn')('b')));
+});
+
 test('rules: wild Billies live on each place’s map: full on the first visit, one more a minute of play, never past the stock', () => {
   const s = startedSave('sparky0', 10), // in the meadow, a route
     here = fn('encountersHere');

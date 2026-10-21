@@ -221,9 +221,10 @@ export const today = () => {
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 };
 export const plural = (n, w) => `${formatNumber(n)} ${w}${n === 1 ? '' : 's'}`;
-export function pickWeighted(list) {
+/** one id from [id, weight] pairs; rnd is the random source (a run passes its seeded stream, logic/rng.js rngFn) */
+export function pickWeighted(list, rnd = random) {
   const tot = list.reduce((a, b) => a + b[1], 0);
-  let r = random() * tot;
+  let r = rnd() * tot;
   for (const [id, w] of list) {
     r -= w;
     if (r <= 0) return id;
@@ -252,16 +253,16 @@ export function primeBuild() {
   return b;
 }
 /** @returns {PartSize} one size, by the odds */
-export function rollPartSize() {
+export function rollPartSize(rnd = random) {
   const S = RULES.parts.sizes,
     list = /** @type {[string, number][]} */ (Object.keys(S).map(k => [k, S[k].odds]));
-  return /** @type {PartSize} */ (pickWeighted(list));
+  return /** @type {PartSize} */ (pickWeighted(list, rnd));
 }
 /** @returns {Build} a wild Billie's sizes */
-export function rollBuild() {
+export function rollBuild(rnd = random) {
   /** @type {Build} */
   const b = {};
-  for (const k of partSlots()) b[k] = rollPartSize();
+  for (const k of partSlots()) b[k] = rollPartSize(rnd);
   return b;
 }
 /** @param {any} b @returns {Build} a build with every slot, unknown sizes as M (an old save, hand-made data) */
@@ -734,7 +735,8 @@ export function dropEncounter(id) {
     if (full) w.at = saveData.playMs || 0;
   }
 }
-export function spawn(gentle, force, node = saveData.trip.node) {
+/* RL-2: every outcome draw (species, level, sizes, coat, Alpha) comes from rnd; a run passes its own stream */
+export function spawn(gentle, force, node = saveData.trip.node, rnd = random) {
   const P = encounterPoolHere(node);
   let list = typeof environmentOdds === 'function' ? environmentOdds(P.list) : P.list;
   if (gentle) {
@@ -742,21 +744,20 @@ export function spawn(gentle, force, node = saveData.trip.node) {
       g = list.filter(([id]) => !SPECIES[id].types.some(t => typeEffectiveness(t, my) > 1));
     if (g.length) list = g;
   }
-  const sp = force || pickWeighted(list),
-    lvl = P.lv[0] + Math.floor(random() * (P.lv[1] - P.lv[0] + 1));
+  const sp = force || pickWeighted(list, rnd),
+    lvl = P.lv[0] + Math.floor(rnd() * (P.lv[1] - P.lv[0] + 1));
   const q = {
     id: newUid(),
     sp,
     lvl,
     no: ++saveData.serial,
-    build: rollBuild(),
+    build: rollBuild(rnd),
   };
   /* studio track ST-0: a coat, once in its odds (none: never) */
-  const coat = coatRoll(COATS, 'wild', random);
+  const coat = coatRoll(COATS, 'wild', rnd);
   if (coat) q.coat = coat;
   /* v33: now and then an Alpha (once you have two billionaires to stand with your lead) */
-  if (!gentle && !force && saveData.team.length >= 2 && random() < 1 / (RULES.encounters.alphaOdds || 45))
-    q.alpha = true;
+  if (!gentle && !force && saveData.team.length >= 2 && rnd() < 1 / (RULES.encounters.alphaOdds || 45)) q.alpha = true;
   wildList(node).push(q);
   return q;
 }
