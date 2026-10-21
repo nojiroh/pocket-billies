@@ -349,8 +349,8 @@ the metre for props and 32 px to the metre for the ground.
   tiles (`scene/tiles/<name>.png` and `_1`–`_5`) for the Studio. `--preview --sheet out.png` shows them.
 
 ### Part 2: the opening
-- **The loading screen** (`tools/build-loader-v47.py`): the runner and the coins, as data in `css/loader.css` and as
-  pictures in `art/ui/`.
+- **The loading screen**: the runner and the coins, as data in `css/loader.css` and as pictures in `art/ui/`
+  (the tool that drew them was deleted in RL-1's follow-up; the alpha 0.5 loading screen no longer uses them).
 
 ### Part 3: a living world
 - **Landmarks and chalk** (`tools/legacy/build-landmarks-v47.py`): `clock_tower` (with `clock_tower_hh` / `_hm`, the hands the
