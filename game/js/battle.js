@@ -59,6 +59,7 @@ import {
   CATCH_RULES,
   actorTypes,
   allSnapshots,
+  battleRoll,
   battleSay,
   canUse,
   catchOdds,
@@ -934,9 +935,10 @@ function finishThrow(res, id, lab, spin) {
     return playTurnEvents();
   }
   battleSay(['It broke free right away.', 'It almost stayed in.', 'So close. It wobbled twice.'][res.w]);
-  if (random() < CATCH_RULES.offerChance) {
+  /* RL-4: the bribe is the battle's chance (battleRoll: its own stream when it has a seed) */
+  if (battleRoll() < CATCH_RULES.offerChance) {
     activeBattle.offer =
-      Math.round((CATCH_RULES.offerMin + random() * (CATCH_RULES.offerMax - CATCH_RULES.offerMin)) / 10) * 10;
+      Math.round((CATCH_RULES.offerMin + battleRoll() * (CATCH_RULES.offerMax - CATCH_RULES.offerMin)) / 10) * 10;
     battleSay(`${billyName(e)} is offering you money to let it go.`, { k: 'cry', si: 1 });
     return playTurnEvents();
   }
@@ -997,11 +999,11 @@ export function endBattle() {
     }
   }
   const E = RULES.eggs;
-  if (kind === 'wild' && o === 'win' && random() < E.dropChance) {
+  if (kind === 'wild' && o === 'win' && battleRoll() < E.dropChance) {
     const tiers = Object.entries(E.dropTiers)
       .filter(([t]) => EGGS[t])
       .map(([t, w]) => [+t, w]);
-    const tier = tiers.length ? pickWeighted(tiers) : EGG_TIERS[0];
+    const tier = tiers.length ? pickWeighted(tiers, battleRoll) : EGG_TIERS[0];
     if (addEgg(tier))
       after.push({
         title: 'It dropped an egg',

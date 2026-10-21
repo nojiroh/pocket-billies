@@ -97,6 +97,7 @@ expose({
   battleHost: [() => battleHost],
   battleNow: [() => battleNow],
   battleOnSave: [() => battleOnSave],
+  battleRoll: [() => battleRoll],
   // @ts-expect-error -- replaced on purpose
   battleSay: [() => battleSay, v => (battleSay = v)],
   battleSeen: [() => battleSeen],
@@ -207,6 +208,14 @@ export const battleOnSave = b => !!b && b.sides[0].team === saveData.team;
 export const battleSeen = (b = battleNow()) => (!b || battleOnSave(b) ? saveData.seen : b.seen || (b.seen = {}));
 export const battleBag = b => (!b || battleOnSave(b) ? saveData.items : b.bag || (b.bag = {}));
 export const battleBuddy = b => (battleOnSave(b) ? saveData.buddy : b.buddy);
+/* RL-4: every chance in a battle (crits, damage rolls, sleep, confusion, accuracy, effects, the AI and its weighted
+   pick, the limb a hit lands on, speed ties, catch rolls) comes from battleRoll(): the battle's own stream b.rng when
+   it has one (makeBattle gives it one from b.seed), else util.js random, as before. The same seed plays the same
+   battle, whatever else draws numbers meanwhile. */
+export const battleRoll = () => {
+  const b = battleNow();
+  return b && b.rng ? b.rng() : random();
+};
 export const BATTLE_RULES = RULES.battle,
   CATCH_RULES = RULES.catching;
 export const ACTOR_SIDE = [0, 1, 0, 1, 0],
@@ -323,10 +332,10 @@ export function calcDamage(k, tk, mid, src) {
   const stab = M.t !== 'None' && aty.includes(M.t) ? BATTLE_RULES.stab : 1,
     te = typeEffectiveness(M.t, actorTypes(tk));
   const cs = (fx.crit || 0) + (hasPassive(aty, 'sharp') ? BATTLE_RULES.mediaCrit : 0);
-  const crit = !src && random() < BATTLE_RULES.critChances[clamp(cs, 0, BATTLE_RULES.critChances.length - 1)];
+  const crit = !src && battleRoll() < BATTLE_RULES.critChances[clamp(cs, 0, BATTLE_RULES.critChances.length - 1)];
   const roll = hasPassive(aty, 'volatile')
-    ? BATTLE_RULES.cryptoRollMin + random() * (BATTLE_RULES.cryptoRollMax - BATTLE_RULES.cryptoRollMin)
-    : BATTLE_RULES.rollMin + random() * (1 - BATTLE_RULES.rollMin);
+    ? BATTLE_RULES.cryptoRollMin + battleRoll() * (BATTLE_RULES.cryptoRollMax - BATTLE_RULES.cryptoRollMin)
+    : BATTLE_RULES.rollMin + battleRoll() * (1 - BATTLE_RULES.rollMin);
   const mk = battleNow().market && M.t === BATTLE_RULES.shockType ? BATTLE_RULES.oilShockMult : 1;
   let eco = 1;
   if (!src) {
@@ -373,14 +382,14 @@ export function inflict(tk, st, loud) {
     if (loud) battleSay(`But ${billyName(t)} is already ${(STATUS_NAMES[t.status] || 'affected').toLowerCase()}.`);
     return;
   }
-  if (t.boss && st === 'sub' && random() < (BATTLE_RULES.alphaSleepResist ?? 0.5)) {
+  if (t.boss && st === 'sub' && battleRoll() < (BATTLE_RULES.alphaSleepResist ?? 0.5)) {
     battleSay(`${billyName(t)} shrugged it off. Alphas don’t nod off easily.`);
     return;
   }
   t.status = st;
   if (st === 'sub')
     t.sTurns =
-      BATTLE_RULES.subpoenaMin + Math.floor(random() * (BATTLE_RULES.subpoenaMax - BATTLE_RULES.subpoenaMin + 1));
+      BATTLE_RULES.subpoenaMin + Math.floor(battleRoll() * (BATTLE_RULES.subpoenaMax - BATTLE_RULES.subpoenaMin + 1));
   battleSay(
     `${billyName(t)} ${st === 'aud' ? 'is paralyzed. It may be unable to move' : st === 'sub' ? 'fell asleep' : st === 'scn' ? 'was burned' : 'is ' + (STATUS_NAMES[st] || st)}.`,
     { k: 'status', si: tk, st }
@@ -392,7 +401,7 @@ export function retarget(k, tk) {
   if (tk != null && fighter(tk) && fighter(tk).hp > 0 && ACTOR_SIDE[tk] === fs) return tk;
   const L = liveActors(fs);
   if (!L.length) return null;
-  return L[Math.floor(random() * L.length)];
+  return L[Math.floor(battleRoll() * L.length)];
 }
 /* phase 17: part is the robot part an aimed move goes for (the player picks it, or the AI) */
 export function useMove(k, mid, tk0, part) {
@@ -418,13 +427,13 @@ export function useMove(k, mid, tk0, part) {
     u.status = null;
     battleSay(`${billyName(u)} woke up.`);
   }
-  if (u.status === 'aud' && random() < BATTLE_RULES.auditSkip) {
+  if (u.status === 'aud' && battleRoll() < BATTLE_RULES.auditSkip) {
     battleSay(`${billyName(u)} is paralyzed and can’t move.`, { k: 'status', si: k, st: 'aud' });
     return;
   }
   if (v.hyped > 0) {
     v.hyped--;
-    if (random() < BATTLE_RULES.hypeSelfHit) {
+    if (battleRoll() < BATTLE_RULES.hypeSelfHit) {
       const dm = Math.max(
         1,
         Math.floor(((0.4 * u.lvl + 2) * 40 * effectiveStat(k, 'lev')) / effectiveStat(k, 'law') / 50 + 2)
@@ -475,7 +484,7 @@ export function useMove(k, mid, tk0, part) {
       battleSay(`${billyName(t2)} protected itself.`, tk2 === tk ? null : { k: 'hurt', si: tk2, dmg: 0, fx: 'block' });
       continue;
     }
-    if (onFoe && M.a && random() * 100 >= M.a) {
+    if (onFoe && M.a && battleRoll() * 100 >= M.a) {
       if (tk2 === tk) ev.an.miss = true;
       battleSay(`${billyName(u)} missed${spread ? ' ' + billyName(t2) : ''}.`);
       if (fx.missCost && tk2 === targets[0]) {
@@ -536,7 +545,7 @@ export function useMove(k, mid, tk0, part) {
       }
     }
     if (t2.hp > 0 && onFoe) {
-      if (fx.status && (M.c === 'X' || random() * 100 < (fx.chance || 100))) inflict(tk2, fx.status, M.c === 'X');
+      if (fx.status && (M.c === 'X' || battleRoll() * 100 < (fx.chance || 100))) inflict(tk2, fx.status, M.c === 'X');
       if (fx.tgtStage) applyStatStages(tk2, fx.tgtStage);
       if (fx.hype) {
         if (fv2.hyped > 0) battleSay('But it failed.');
@@ -566,8 +575,8 @@ export function useMove(k, mid, tk0, part) {
     }
   }
   if (fx.delay || (!spread && ev.an && (ev.an.miss || ev.an.blocked))) return;
-  if (fx.selfStage && (!fx.selfChance || random() * 100 < fx.selfChance)) applyStatStages(k, fx.selfStage);
-  if (fx.selfStatus && u.hp > 0 && !u.status && random() * 100 < (fx.selfChance || 100)) {
+  if (fx.selfStage && (!fx.selfChance || battleRoll() * 100 < fx.selfChance)) applyStatStages(k, fx.selfStage);
+  if (fx.selfStatus && u.hp > 0 && !u.status && battleRoll() * 100 < (fx.selfChance || 100)) {
     u.status = fx.selfStatus;
     battleSay(`${billyName(u)} hurt itself and is now ${(STATUS_NAMES[fx.selfStatus] || 'troubled').toLowerCase()}.`, {
       k: 'status',
@@ -874,10 +883,10 @@ export function chooseAI(k = 1, b) {
       }
     }
     let pick;
-    if ((battleNow().kind === 'trainer' || m.boss) && random() < BATTLE_RULES.aiSmart) {
+    if ((battleNow().kind === 'trainer' || m.boss) && battleRoll() < BATTLE_RULES.aiSmart) {
       opts.sort((a, b) => b[1] - a[1]);
       pick = opts[0][0];
-    } else pick = pickWeighted(opts);
+    } else pick = pickWeighted(opts, battleRoll);
     if (pick) {
       const M = MOVES[pick.mid];
       if (M.c !== 'X') {
@@ -908,7 +917,7 @@ export function hitPart(tk, dmg, M, aim) {
   if (!slot) {
     const W = /** @type {[string, number][]} */ ([['torso', R.hitWeights.torso ?? 0.25]]);
     for (const q of ROBOT_LIMBS) if (!partBroken(t, q)) W.push([q, R.hitWeights[q] ?? 0.25]);
-    slot = pickWeighted(W);
+    slot = pickWeighted(W, battleRoll);
   }
   if (slot === 'torso') return slot;
   const d = Math.max(1, Math.round(dmg * R.partShare * (fx.breaker || 1)));
@@ -1034,7 +1043,7 @@ export function runTurn(plan, b) {
         if (c) acts.push({ who: k, mid: c.mid, tk: c.tk, part: c.part, boss2: i > 0 });
       }
     }
-    acts.forEach(a => (a.r = random()));
+    acts.forEach(a => (a.r = battleRoll()));
     acts.sort(
       (a, b) =>
         (MOVES[b.mid].pr || 0) - (MOVES[a.mid].pr || 0) ||
@@ -1100,11 +1109,11 @@ export function catchRoll(id, T, spin, b) {
   return withBattle(b, () => {
     if (battleHost().sureCatch()) return { caught: true, w: 3, edge: false, P: 1 };
     if (COINS[id].m === 0) return { caught: true, w: 3, edge: false, P: 1 };
-    if (random() < CATCH_RULES.edge) return { caught: true, w: 1, edge: true, P: 1 };
+    if (battleRoll() < CATCH_RULES.edge) return { caught: true, w: 1, edge: true, P: 1 };
     const P = catchOdds(id, T, spin);
     const q = Math.cbrt(P);
     let w = 0;
-    while (w < 3 && random() < q) w++;
+    while (w < 3 && battleRoll() < q) w++;
     return { caught: w === 3, w, edge: false, P };
   });
 }

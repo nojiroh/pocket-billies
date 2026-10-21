@@ -7,6 +7,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { RULES, STAT_IDS } from '../game-data.js';
+import { rngFn } from './rng.js';
 /* eslint-disable no-func-assign */
 expose({
   // @ts-expect-error -- replaced on purpose
@@ -43,8 +44,8 @@ export function addAct(sd) {
 }
 /* the battle object. kind: 'wild' or 'trainer'; team: side 0 (the save's team itself in ordinary play, so the Team
    tab sees live HP; a copy for a fight that must not touch the save); foe: side 1; extra: fields laid over it (fmt,
-   foeName, ...). fmt: 'single', 'double' (two a side) or 'alpha' (up to three of yours against one Alpha). Those of
-   yours who can still fight take the field in team order. null when none can. */
+   foeName, seed, host, bag, buddy, ...). fmt: 'single', 'double' (two a side) or 'alpha' (up to three of yours
+   against one Alpha). Those of yours who can still fight take the field in team order. null when none can. */
 export function makeBattle(kind, team, foe, extra) {
   const able = team.map((m, i) => i).filter(i => team[i].hp > 0);
   if (!able.length) return null;
@@ -90,5 +91,7 @@ export function makeBattle(kind, team, foe, extra) {
   );
   addAct(b.sides[0]);
   addAct(b.sides[1]);
+  /* RL-4: a battle with a seed draws its chances from its own stream (battle-engine.js battleRoll) */
+  if (b.seed != null && !b.rng) b.rng = rngFn(String(b.seed), 'battle');
   return b;
 }

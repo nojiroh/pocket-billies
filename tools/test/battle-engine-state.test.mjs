@@ -82,3 +82,42 @@ test("a battle on the save's team still marks seen and spends the save's items",
   fn('runTurn')([{ who: 0, k: 'item', item: 'taxbreak', uid: s.team[0].uid }]);
   assert.equal(s.items.taxbreak, 0);
 });
+
+// a seeded fight on copies, both sides played by the computer: its events without uids, and the end state
+function seededFight(seed, between = () => {}) {
+  reseed(31);
+  const s = startedSave(starter(), 14);
+  s.team.push(fn('makeBilly')(DEX_ORDER[4], 14));
+  const foe = [fn('makeBilly')(DEX_ORDER[1], 13), fn('makeBilly')(DEX_ORDER[6], 13)];
+  const b = fn('makeBattle')('trainer', copyTeam(s), foe, { fmt: 'double', seed, host: SILENT_HOST });
+  const log = [];
+  for (let t = 0; t < 80 && !b.over; t++) {
+    between();
+    const plan = (b.needSwitch || []).map(k => ({ who: k, k: 'switch', i: fn('benchCandidates')(0, [], b)[0] }));
+    for (const k of fn('withBattle')(b, () => fn('liveActors')(0))) {
+      if (plan.some(p => p.who === k)) continue;
+      const c = fn('chooseAI')(k, b);
+      if (c) plan.push({ who: k, k: 'move', mid: c.mid, tk: c.tk, part: c.part });
+    }
+    if (!plan.length) break;
+    fn('runTurn')(plan, b);
+    log.push(b.events.map(e => e.t));
+  }
+  return { over: b.over, turns: b.turn, log, hp: [...b.sides[0].team, ...b.sides[1].team].map(m => m.hp) };
+}
+
+test('a seeded battle plays the same twice, whatever else draws random numbers meanwhile', () => {
+  const a = seededFight('rl4-seed');
+  // between turns: Math.random draws (util.js random), and another battle played a turn on the page
+  const b = seededFight('rl4-seed', () => {
+    for (let i = 0; i < 7; i++) Math.random();
+    const other = fn('makeBattle')('wild', [fn('makeBilly')(DEX_ORDER[2], 5)], [fn('makeBilly')(DEX_ORDER[3], 5)], {
+      host: SILENT_HOST,
+    });
+    const c = fn('chooseAI')(0, other);
+    if (c) fn('runTurn')([{ who: 0, k: 'move', mid: c.mid, tk: c.tk }], other);
+  });
+  assert.ok(a.over, 'the battle ended');
+  assert.deepEqual(b, a);
+  assert.notDeepEqual(seededFight('another-seed').log, a.log, 'another seed plays another battle');
+});
