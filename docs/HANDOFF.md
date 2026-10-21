@@ -2,6 +2,24 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### UI track UI-0 - the plan - 2026-10-21
+Planning only, in a chat session with the owner (the plan, the owner's answers to 36 questions, a Design mockup);
+nothing built. Docs only, one cause per commit.
+- Changed: docs/phases/ui-track.md (the plan: where it fits in the RL track, an audit of the code against the 06
+  rules, the look, building notes, the Studio's UI section, UI-1..UI-6, risks, "Ask me before"); docs/ROADMAP.md (the
+  UI track under Tracks alongside; phase 06's 06-5 absorbed into UI-5 and UI-6).
+- Found (read at 072f993, pattern scans, not runs): raw values outnumber tokens about 4 to 1 in game CSS (200 raw
+  radii vs 81 tokens, 746 raw spacing values vs 152, 91 keyframes, 205 `!important`); ui.js 2,952 lines; the Studio
+  shares no tokens with the game.
+- Decided by the owner: chamfered cuts (two opposite corners on panels), smooth with a stepped preset, a bit less
+  blur, the Copper Grove palette with teal healthy HP, Jersey 15 + Oxanium, BW2 menus with Medabots bot plates, the
+  round list, one bottom bar whose tabs change, showy rewards, diagonal wipes, uiTheme.json with colour and shape
+  overrides, all four Studio tool groups, every screen reshaped in UI-5, 06-5 absorbed, lint report-only then enforced,
+  start now beside RL-3.
+- Risky: nothing ran against the code; every count is a scan. The mockup's sprites were assembled by hand from the
+  rig sheets (draw order guessed). Jersey 15 has one weight: check small labels on the phone.
+- Next session starts with: "start UI-1" (docs/phases/ui-track.md), in Plan Mode, beside RL-3.
+
 ### Roguelite track RL-2 - Golden record and RNG module - 2026-10-21
 Branch `ccr-a09a396b-vfdptc`, started from main c66bf2b (RL-1 merged; `rl-1-done` not yet on the remote).
 - Changed (one cause per commit): `tools/test/battle-golden.test.mjs` + snapshot first (single wild, double trainer,
