@@ -14,10 +14,6 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
 import { $ } from '../../game/js/util.js';
-import { ART_CACHE } from '../../game/js/art.js';
-import { imageReady, setWalkData, walkView } from '../../game/js/walk-view.js';
-import { mountWalkView } from '../../game/js/walk-view-gl.js';
-import { escapeHtml } from './game-stand-ins.js';
 import {
   MAPGEN_DEFAULTS,
   MAPGEN_FEATURES,
@@ -31,6 +27,10 @@ import {
   mapgenScene,
   mapgenSeamAgreement,
 } from '../../game/js/logic/mapgen.js';
+import { ART_CACHE } from '../../game/js/art.js';
+import { imageReady, setWalkData, walkView } from '../../game/js/walk-view.js';
+import { mountWalkView } from '../../game/js/walk-view-gl.js';
+import { escapeHtml } from './game-stand-ins.js';
 import { seamRulesSides } from '../../game/js/logic/seam-rules.js';
 import {
   ACTIONS,
