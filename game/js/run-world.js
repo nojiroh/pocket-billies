@@ -15,8 +15,9 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { provide, toast } from './hooks.js';
-import { NODE_TYPES, POOLS, RULES, START_NODE, gameData, worldHubBack, worldPut } from './game-data.js';
+import { LOCATION_BY_ID, NODE_TYPES, POOLS, RULES, START_NODE, gameData, worldHubBack, worldPut } from './game-data.js';
 import { runRestore } from './logic/run-state.js';
+import { runWeather } from './logic/run-map.js';
 import { runScenesMake, runWorldTables } from './logic/run-scenes.js';
 import { saveData, uiState } from './game-state.js';
 import { stopWalkView, walkView } from './walk-view.js';
@@ -26,13 +27,14 @@ import { worldBowl, worldBowlReset } from './world-bowl.js';
 import { airshipFlight } from './airship.js';
 /* eslint-disable no-func-assign */
 expose({
+  runPlaceWeather: [() => runPlaceWeather, v => ((runPlaceWeather = v), provide({ runPlaceWeather }))],
   runWorld: [() => runWorld],
   runWorldData: [() => runWorldData, v => (runWorldData = v)],
   runWorldLetGo: [() => runWorldLetGo, v => (runWorldLetGo = v)],
   runWorldSync: [() => runWorldSync, v => ((runWorldSync = v), provide({ runWorldSync }))],
 });
 /* eslint-enable no-func-assign */
-provide({ runWorldSync });
+provide({ runPlaceWeather, runWorldSync });
 /* to-module: end */
 /** the world that is in: the seed of the run it was made from ('' for the hub's), its scenes and how long they took
  * to make; live once boot has put the first world in (before that a swapped save waits for boot) */
@@ -108,4 +110,11 @@ function runWorldLetGo() {
       'scene',
       runWorld.seed ? `a run's world in: ${runWorld.scenes} scenes made in ${runWorld.ms} ms` : "the hub's world in"
     );
+}
+/** a run place's weather today, from the run's forecast ('' outside a run and for the hub's places): environment.js
+ * reads it instead of the real clock's @param {string} placeId */
+function runPlaceWeather(placeId) {
+  const run = saveData.run,
+    L = placeId ? LOCATION_BY_ID[placeId] : null;
+  return run && run.map && L && L.runNode != null ? runWeather(run, L.runNode, run.clock) : '';
 }
