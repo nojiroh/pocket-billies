@@ -6,8 +6,10 @@ import { test } from 'node:test';
 import {
   CLIMATE_WEATHER_ODDS,
   WEATHER_TYPE_BOOSTS,
+  WILD_TYPE_BOOSTS,
   battleWeatherOf,
   weatherPick,
+  wildLikes,
 } from '../../game/js/logic/weather.js';
 
 /** environmentWeatherFor's pick as it was before RL-6 (environment.js at 2a47ee1), with the hash's value as the roll */
@@ -93,4 +95,24 @@ test('battle weather (RL-8, moved from things-to-do.js): the same multipliers, t
     k: 'cloudy',
     m: { Ghost: 1.1 },
   });
+});
+
+test("the wild odds by weather (RL-8, moved from environment.js): the same table, the rules' likes laid over", () => {
+  /* environment.js's table before the move (at 93c0ee8) */
+  const BEFORE = {
+    night: { Psychic: 2, Dragon: 1.6, Steel: 1.2, Grass: 0.8 },
+    dusk: { Flying: 1.4, Psychic: 1.2 },
+    sunny: { Grass: 1.25, Fire: 1.2 },
+    rain: { Water: 1.8, Electric: 1.3, Fire: 0.6 },
+    storm: { Electric: 2.2, Water: 1.6, Flying: 0.6 },
+    snow: { Steel: 1.5, Water: 1.2, Grass: 0.7 },
+    fog: { Psychic: 1.6, Dragon: 1.3 },
+    ash: { Fire: 1.8, Ground: 1.4, Water: 0.7 },
+  };
+  assert.deepEqual(WILD_TYPE_BOOSTS, BEFORE);
+  assert.deepEqual(wildLikes(), BEFORE);
+  const L = wildLikes({ rain: { Fire: 1 }, cloudy: { Ghost: 2 } });
+  assert.deepEqual(L.rain, { Water: 1.8, Electric: 1.3, Fire: 1 });
+  assert.deepEqual(L.cloudy, { Ghost: 2 });
+  assert.deepEqual(WILD_TYPE_BOOSTS.rain, BEFORE.rain, 'the table itself unchanged');
 });

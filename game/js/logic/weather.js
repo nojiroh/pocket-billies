@@ -14,10 +14,13 @@ import { expose } from '../test-globals.js';
 expose({
   CLIMATE_WEATHER_ODDS: [() => CLIMATE_WEATHER_ODDS],
   WEATHER_TYPE_BOOSTS: [() => WEATHER_TYPE_BOOSTS],
+  WILD_TYPE_BOOSTS: [() => WILD_TYPE_BOOSTS],
   // @ts-expect-error -- replaced on purpose
   battleWeatherOf: [() => battleWeatherOf, v => (battleWeatherOf = v)],
   // @ts-expect-error -- replaced on purpose
   weatherPick: [() => weatherPick, v => (weatherPick = v)],
+  // @ts-expect-error -- replaced on purpose
+  wildLikes: [() => wildLikes, v => (wildLikes = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -73,4 +76,25 @@ export const WEATHER_TYPE_BOOSTS = {
 export function battleWeatherOf(k, env) {
   const m = Object.assign({}, WEATHER_TYPE_BOOSTS[k] || {}, ((env || {}).battle || {})[k] || {});
   return Object.keys(m).length ? { k, m } : null;
+}
+
+/* ---------- who comes out in what weather (moved from environment.js, RL-8) ---------- */
+/* each time of day's and weather's move type multipliers for the wild odds ('sunny' is clear by day) */
+/** @type {Record<string, Record<string, number>>} */
+export const WILD_TYPE_BOOSTS = {
+  night: { Psychic: 2, Dragon: 1.6, Steel: 1.2, Grass: 0.8 },
+  dusk: { Flying: 1.4, Psychic: 1.2 },
+  sunny: { Grass: 1.25, Fire: 1.2 },
+  rain: { Water: 1.8, Electric: 1.3, Fire: 0.6 },
+  storm: { Electric: 2.2, Water: 1.6, Flying: 0.6 },
+  snow: { Steel: 1.5, Water: 1.2, Grass: 0.7 },
+  fog: { Psychic: 1.6, Dragon: 1.3 },
+  ash: { Fire: 1.8, Ground: 1.4, Water: 0.7 },
+};
+/** the wild odds' multipliers with the rules' own likes (rules.json env.likes) laid over
+ * @param {Record<string, Record<string, number>>} [likes] @returns {Record<string, Record<string, number>>} */
+export function wildLikes(likes) {
+  const L = Object.assign({}, WILD_TYPE_BOOSTS);
+  for (const k in likes || {}) L[k] = Object.assign({}, L[k] || {}, /** @type {any} */ (likes)[k]);
+  return L;
 }
