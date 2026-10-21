@@ -236,6 +236,7 @@ async function readGithubData() {
     }
   };
   await Promise.all(Array.from({ length: 12 }, worker));
+  performance.mark('studio-data-read');
   githubMode.data = {};
   const D = PB_DATA.assemble(index, path => {
     const v = JSON.parse(texts[path]);
@@ -243,6 +244,7 @@ async function readGithubData() {
     return v;
   });
   githubMode.data['index.json'] = texts['index.json'];
+  performance.mark('studio-data-assembled');
   return D;
 }
 function changedDataFiles(D) {

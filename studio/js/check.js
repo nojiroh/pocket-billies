@@ -20,6 +20,7 @@ import {
   openSection,
   render,
   sectionShown,
+  studioProbe,
   studioState,
   toast,
 } from './studio-app.js';
@@ -475,6 +476,8 @@ function scheduleCheck(now) {
   clearTimeout(checkTimer);
   checkTimer = setTimeout(
     () => {
+      const T = studioProbe.on,
+        a = T ? performance.now() : 0;
       const P = runCheck(),
         n = P.filter(p => p.lvl === 'error').length,
         w = P.length - n;
@@ -482,6 +485,7 @@ function scheduleCheck(now) {
       b.textContent = n || w || '✓';
       b.className = 'badge' + (n ? ' err' : w ? ' warn' : ' ok');
       studioState.lastCheck = P;
+      if (T) T('check', { ms: performance.now() - a, problems: P.length });
       if (sectionShown('check') && !now) renderCheckList();
     },
     now ? 0 : 500
