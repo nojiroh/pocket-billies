@@ -22,6 +22,7 @@ import {
   provide,
   render,
   runNodeSeed,
+  runWeather,
   save,
   saveData,
   showPendingWindows,
@@ -52,6 +53,7 @@ import {
   typeEffectiveness,
 } from '../game-data.js';
 import { rngFn } from './rng.js';
+import { wildOddsBy } from './weather.js';
 import { partsLean, partsPrime, partsStatFactor, partsWeightRatio } from './parts.js';
 import {
   ROBOT_LIMBS,
@@ -771,8 +773,20 @@ export function dropEncounter(id) {
 }
 /* RL-2: every outcome draw (species, level, sizes, coat, Alpha) comes from rnd; a run passes its own stream */
 export function spawn(gentle, force, node = saveData.trip.node, rnd = random) {
-  const P = encounterPoolHere(node);
-  let list = typeof environmentOdds === 'function' ? environmentOdds(P.list) : P.list;
+  const P = encounterPoolHere(node),
+    L = LOCATIONS[node],
+    run = saveData.run;
+  /* RL-8: a run's place draws by its forecast for today alone, here in logic (a run has no hour: the same Billies on
+     every device, at any time of day, and in a run's simulation); the hub by the real clock's weather and hour */
+  const anyRules = /** @type {any} */ (RULES),
+    likes = anyRules.env ? anyRules.env.likes : undefined,
+    typesOf = (/** @type {string} */ id) => (SPECIES[id] ? SPECIES[id].types : []);
+  let list =
+    L && L.runNode != null && run && run.map
+      ? wildOddsBy(P.list, runWeather(run, L.runNode, run.clock), likes, typesOf)
+      : typeof environmentOdds === 'function'
+        ? environmentOdds(P.list)
+        : P.list;
   if (gentle) {
     const my = SPECIES[saveData.starter + '0'].types,
       g = list.filter(([id]) => !SPECIES[id].types.some(t => typeEffectiveness(t, my) > 1));

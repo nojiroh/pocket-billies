@@ -9,7 +9,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { PB_DATA } from '../data-files.mjs';
-import { data, fn, GAME_DATA, modules, startedSave } from './setup-real.mjs';
+import { data, fn, GAME_DATA, hooks, modules, startedSave } from './setup-real.mjs';
 
 const { runArrive, runMapStart, runNext } = modules['run-map'];
 const { newRun } = modules['run-state'];
@@ -210,6 +210,13 @@ test("a run's place is stocked once a visit from its own stream at its row's lev
   s.trip = { node: 0, plan: [] };
   runArrive(s, 0, MAP_DATA);
   data.worldPut({ ...W, maps: Object.fromEntries(W.locations.slice(1).map((p, i) => [p.mapId, made[i]])) });
+  /* RL-8: a run's place draws by its forecast in logic, never by the page's real-clock odds */
+  const pageOdds = hooks.environmentOdds;
+  hooks.provide({
+    environmentOdds: () => {
+      throw new Error('a run place asked the page for its wild odds');
+    },
+  });
   try {
     const stock = () => fn('encountersHere')(1),
       seen = (/** @type {any[]} */ L) => L.map(q => `${q.sp}:${q.lvl}`);
@@ -236,6 +243,7 @@ test("a run's place is stocked once a visit from its own stream at its row's lev
     assert.equal(fn('encounterRunVisits')(1), 2);
     assert.equal(stock().length, R.wild.back);
     assert.equal(stock()[0].lvl >= W.pools.run_0.lv[0], true);
+    hooks.provide({ environmentOdds: pageOdds });
     /* a hub place is stocked as before */
     assert.equal(fn('encounterRunVisits')(0), 0);
   } finally {

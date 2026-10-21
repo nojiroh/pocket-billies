@@ -21,6 +21,8 @@ expose({
   weatherPick: [() => weatherPick, v => (weatherPick = v)],
   // @ts-expect-error -- replaced on purpose
   wildLikes: [() => wildLikes, v => (wildLikes = v)],
+  // @ts-expect-error -- replaced on purpose
+  wildOddsBy: [() => wildOddsBy, v => (wildOddsBy = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -97,4 +99,13 @@ export function wildLikes(likes) {
   const L = Object.assign({}, WILD_TYPE_BOOSTS);
   for (const k in likes || {}) L[k] = Object.assign({}, L[k] || {}, /** @type {any} */ (likes)[k]);
   return L;
+}
+/** RL-8: the wild odds by a weather alone (a run's place: its forecast for today; a run has no hour, so clear is
+ * sunny): each [species, weight] times its types' multipliers @param {[string, number][]} list @param {string} weather
+ * @param {Record<string, Record<string, number>> | undefined} likes rules.json env.likes
+ * @param {(id: string) => string[]} typesOf @returns {[string, number][]} */
+export function wildOddsBy(list, weather, likes, typesOf) {
+  const F = wildLikes(likes)[!weather || weather === 'clear' ? 'sunny' : weather];
+  if (!F) return list;
+  return list.map(([id, w]) => [id, typesOf(id).reduce((m, t) => m * (F[t] || 1), w)]);
 }

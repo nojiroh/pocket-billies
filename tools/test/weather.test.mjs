@@ -10,6 +10,7 @@ import {
   battleWeatherOf,
   weatherPick,
   wildLikes,
+  wildOddsBy,
 } from '../../game/js/logic/weather.js';
 
 /** environmentWeatherFor's pick as it was before RL-6 (environment.js at 2a47ee1), with the hash's value as the roll */
@@ -115,4 +116,26 @@ test("the wild odds by weather (RL-8, moved from environment.js): the same table
   assert.deepEqual(L.rain, { Water: 1.8, Electric: 1.3, Fire: 1 });
   assert.deepEqual(L.cloudy, { Ghost: 2 });
   assert.deepEqual(WILD_TYPE_BOOSTS.rain, BEFORE.rain, 'the table itself unchanged');
+});
+
+test("a run place's wild odds by its forecast alone (RL-8): clear is sunny, a type's multipliers, no change otherwise", () => {
+  const types = { a: ['Water'], b: ['Fire', 'Grass'], c: ['Normal'] },
+    list = [
+      ['a', 4],
+      ['b', 2],
+      ['c', 1],
+    ],
+    of = id => types[id];
+  assert.deepEqual(wildOddsBy(list, 'rain', undefined, of), [
+    ['a', 4 * 1.8],
+    ['b', 2 * 0.6],
+    ['c', 1],
+  ]);
+  assert.deepEqual(wildOddsBy(list, 'clear', undefined, of), [
+    ['a', 4],
+    ['b', 2 * 1.2 * 1.25],
+    ['c', 1],
+  ]);
+  assert.equal(wildOddsBy(list, 'cloudy', undefined, of), list);
+  assert.deepEqual(wildOddsBy(list, 'cloudy', { cloudy: { Normal: 3 } }, of)[2], ['c', 3]);
 });
