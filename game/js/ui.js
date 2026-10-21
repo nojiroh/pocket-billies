@@ -16,7 +16,6 @@ import {
   START_NODE,
   TRAINERS,
   gameData,
-  locationSubtitle,
   trainersAt,
 } from './game-data.js';
 import { speciesOf } from './logic/fighters.js';
@@ -26,22 +25,15 @@ import {
   blockerAt,
   canEnter,
   eggKm,
-  eggSlotCount,
   encounterBuild,
-  encounterStock,
   encountersHere,
-  findBilly,
   formatNumber,
   gateText,
   healAll,
   makeBilly,
-  metresToKm,
-  plural,
   spawn,
-  xpFor,
 } from './logic/rules.js';
 import { runArrive, runMapNode } from './logic/run-map.js';
-import { runHealCost } from './logic/run-loop.js';
 import { pbFloat, pbInboxDot, pbInboxPop } from './ui-kit.js';
 import { newSaveKeepingPreferences } from './logic/saves.js';
 import {
@@ -68,8 +60,8 @@ import {
   writeStoredSave,
 } from './game-state.js';
 import { userFps } from './frame-scheduler.js';
-import { artLoad, artURL, coinHTML, eggHTML, uiIconHTML } from './art.js';
-import { LOOK_PRESETS, cleanLook, cleanTrainer, personHTML, portraitHTML } from './person-art.js';
+import { artLoad, coinHTML, uiIconHTML } from './art.js';
+import { LOOK_PRESETS, cleanLook, portraitHTML } from './person-art.js';
 import { applyPreferences, settingsHTML } from './settings-screen.js';
 import { rigCanvasHTML } from './skeleton-rig.js';
 import { EASE, battleStage, battleStageFocus, battleStageTargets, camHome } from './battle-stage.js';
@@ -90,7 +82,6 @@ import {
   walkView,
   walkablePointNear,
 } from './walk-view.js';
-import { environment, environmentHint, environmentIcon, environmentLabel } from './environment.js';
 import { walkRenderer } from './walk/walk-state.js';
 import { roomFloorReady } from './walk/ground-draw.js';
 import { mountWalkView } from './walk-view-gl.js';
@@ -133,77 +124,51 @@ import { renderTitle, titleMount } from './title.js';
 import { loreBook } from './lore.js';
 import { flyMenu, rideGlassLift } from './airship.js';
 import { runWorldData } from './run-world.js';
-import { runArrivedHint, runGiveUp } from './run.js';
+import { runArrivedHint } from './run.js';
 import { postcardCheck } from './postcards.js';
 import { renderBag } from './bag.js';
 import { legendCheck, personTalk, storyCheck, storyRivalBattle, trainerTalk } from './story.js';
 import { storyResumeCheck } from './story-stage.js';
-import { arrivedAt, challengeCardHTML, homeDecorate, refreshHomeFurniture, requestListHTML } from './things-to-do.js';
+import { arrivedAt, homeDecorate, refreshHomeFurniture } from './things-to-do.js';
 import { workshopAction } from './workshop.js';
-import { progressBarHTML } from './ui-bits.js';
 import { closeModal, modal, openInbox, toast } from './overlay.js';
 import { renderProfile } from './profile.js';
 import { guideAction, renderGuide } from './guide.js';
 import { renderTeam, teamAction } from './team.js';
 import { billieSheetAction } from './billie-sheet.js';
 import { mapTabAction, renderWorldMapTab } from './map-tab.js';
+import { clinicHeal, renderWalk, walkTabAction } from './walk-tab.js';
 /* eslint-disable no-func-assign */
 expose({
   SCREENS: [() => SCREENS],
   TABS: [() => TABS],
-  boardNote: [() => boardNote, v => (boardNote = v)],
-  buddyCard: [() => buddyCard, v => (buddyCard = v)],
-  clinicHeal: [() => clinicHeal, v => (clinicHeal = v)],
   doorBuildingOf: [() => doorBuildingOf, v => (doorBuildingOf = v)],
-  eggSlots: [() => eggSlots, v => (eggSlots = v)],
-  encounterCardHTML: [() => encounterCardHTML, v => (encounterCardHTML = v)],
   enterRoom: [() => enterRoom, v => (enterRoom = v)],
-  environmentLine: [() => environmentLine, v => (environmentLine = v)],
   exitPrompt: [() => exitPrompt, v => (exitPrompt = v)],
-  hereCard: [() => hereCard, v => (hereCard = v)],
   leaveRoom: [() => leaveRoom, v => (leaveRoom = v)],
-  locationCardHTML: [() => locationCardHTML, v => (locationCardHTML = v)],
   mapExits: [() => mapExits, v => (mapExits = v)],
   mapIdAt: [() => mapIdAt, v => ((mapIdAt = v), provide({ mapIdAt }))],
   mapOffsetInView: [() => mapOffsetInView, v => ((mapOffsetInView = v), provide({ mapOffsetInView }))],
-  nodeActions: [() => nodeActions, v => ((nodeActions = v), provide({ nodeActions }))],
   openSettings: [() => openSettings, v => ((openSettings = v), provide({ openSettings }))],
   render: [() => render, v => setRender(v)],
   renderIntro: [() => renderIntro, v => (renderIntro = v)],
-  renderWalk: [() => renderWalk, v => (renderWalk = v)],
   roomAct: [() => roomAct, v => (roomAct = v)],
   roomAim: [() => roomAim, v => (roomAim = v)],
   roomFor: [() => roomFor, v => (roomFor = v)],
-  roomHero: [() => roomHero, v => (roomHero = v)],
   roomLayIn: [() => roomLayIn, v => (roomLayIn = v)],
   roomRefresh: [() => roomRefresh, v => ((roomRefresh = v), provide({ roomRefresh }))],
-  roomState: [() => roomState, v => (roomState = v)],
+  roomState: [() => roomState, v => ((roomState = v), provide({ roomState }))],
   roomStepIn: [() => roomStepIn, v => (roomStepIn = v)],
   startGame: [() => startGame, v => ((startGame = v), provide({ startGame }))],
   topbar: [() => topbar, v => (topbar = v)],
-  tripButtons: [() => tripButtons, v => ((tripButtons = v), provide({ tripButtons }))],
-  tripDest: [() => tripDest],
-  tripStatus: [() => tripStatus, v => ((tripStatus = v), provide({ tripStatus }))],
   updateNav: [() => updateNav, v => ((updateNav = v), provide({ updateNav }))],
   walkCross: [() => walkCross, v => (walkCross = v)],
-  walkHero: [() => walkHero, v => (walkHero = v)],
   walkMapSync: [() => walkMapSync, v => (walkMapSync = v)],
   walkPick: [() => walkPick, v => (walkPick = v)],
   walkState: [() => walkState, v => (walkState = v)],
 });
 /* eslint-enable no-func-assign */
-provide({
-  mapIdAt,
-  mapOffsetInView,
-  nodeActions,
-  openSettings,
-  render,
-  roomRefresh,
-  startGame,
-  tripButtons,
-  tripStatus,
-  updateNav,
-});
+provide({ mapIdAt, mapOffsetInView, openSettings, render, roomRefresh, roomState, startGame, updateNav });
 export function setRender(v) {
   render = v; // eslint-disable-line no-func-assign
   provide({ render });
@@ -323,188 +288,6 @@ function renderIntro() {
   if (uiState.openingFailed)
     return `<div class="title opening-failed"><h1 class="logo">Pocket Billies</h1><p class="tag">The opening scene couldn’t start${uiState.openingFailed === 'stopped' ? ' (it stopped partway)' : ''}. Trying again usually works; if it keeps happening, send the debug log.</p><button class="pb gold wide big" data-a="intro">Try again</button><button class="pb quiet wide" data-a="dbglog">Export debug log</button></div>`;
   return `<div class="title"><div class="title-landscape" aria-hidden="true"></div><div class="title-coin">${coinHTML('penny', 176, 32)}</div><h1 class="logo">Pocket Billies</h1><p class="tag">A classic RPG inside the Hollow Earth, where the Billies are the wildlife. Gotta tax 'em all!</p><button class="pb gold wide big" data-a="intro">Start</button></div>`;
-}
-function encounterCardHTML(q) {
-  const nu = !uiState.seenEnc.has(q.id);
-  uiState.seenEnc.add(q.id);
-  return `<button class="enc px hidden-enc${nu ? ' pop' : ''}" data-a="enc" data-id="${q.id}" aria-label="Unknown Billie, level ${q.lvl}"><span class="no tnum">No. ${q.no}</span><span class="denom tnum">Lv ${q.lvl}</span><span class="stage-glow"></span><span class="enc-hide"><img class="pxi" src="${artURL('scene/props/tallgrass.png')}" alt=""><i>?</i></span><b>Unknown</b></button>`;
-}
-const tripDest = () => (saveData.trip.plan.length ? saveData.trip.plan[saveData.trip.plan.length - 1] : null);
-provide({ tripDest }); /* to-module */
-/* one line about travel: where you're headed (the gold arrows guide you), or where you are */
-function tripStatus() {
-  const d = tripDest();
-  if (d == null) return { k: 'stay', t: `In ${LOCATIONS[saveData.trip.node].name}` };
-  return { k: 'guide', t: `Heading for ${LOCATIONS[d].name}: follow the gold arrows` };
-}
-function tripButtons() {
-  if (tripStatus().k === 'guide')
-    return `<button class="pb small" data-a="stoptrip">Stop guiding me</button><button class="pb small quiet" data-a="tab" data-t="map">Change plans</button>`;
-  return `<button class="pb small gold" data-a="tab" data-t="map">${uiIconHTML('map', 16)} Choose where to go</button>`;
-}
-/** RL-8: a clinic heals the team: free in the hub (as before); on a run for rules.json run.healCost per hurt Billie,
-    after a yes, a purchase saved at once (logic/run-loop.js runHealCost). `say`: the clinic prop's own line */
-function clinicHeal(say) {
-  if (!saveData.run) {
-    healAll();
-    save();
-    render();
-    toast(say || 'The clinic patched everyone up. No charge.');
-    return;
-  }
-  const { hurt, cost } = runHealCost(saveData.team, RULES.run.healCost),
-    each = formatNumber(RULES.run.healCost);
-  if (!hurt) {
-    toast('Everyone is in good shape. Nothing to pay.');
-    return;
-  }
-  if (saveData.se < cost) {
-    toast(
-      `Healing ${plural(hurt, 'Billie')} costs $${formatNumber(cost)} ($${each} each). You have $${formatNumber(saveData.se)}.`
-    );
-    return;
-  }
-  modal({
-    title: 'The clinic',
-    html: `<p>Out here healing isn’t free: $${each} a Billie. Heal ${plural(hurt, 'hurt Billie')} for $${formatNumber(cost)}? You have $${formatNumber(saveData.se)}.</p>`,
-    btns: [
-      {
-        l: `Heal for $${formatNumber(cost)}`,
-        c: 'gold',
-        f: () => {
-          closeModal();
-          const now = runHealCost(saveData.team, RULES.run.healCost);
-          if (!now.hurt || saveData.se < now.cost) return;
-          saveData.se -= now.cost;
-          healAll();
-          saveNow();
-          render();
-          toast(say || `The clinic patched everyone up for $${formatNumber(now.cost)}.`);
-        },
-      },
-      { l: 'Not now', c: 'quiet', f: closeModal },
-    ],
-  });
-}
-function nodeActions(i) {
-  const n = LOCATIONS[i],
-    node = saveData.trip.node;
-  let x = '';
-  if (i !== node) return '';
-  if (n.shop && SHOPS[n.shop])
-    x += `<button class="pb small gold" data-a="shop" data-s="${n.shop}">${uiIconHTML('mint', 16)} ${escapeHtml(SHOPS[n.shop].name)}</button>`;
-  if (n.boutique && SHOPS[n.boutique])
-    x += `<button class="pb small" data-a="shop" data-s="${n.boutique}">${uiIconHTML('profile', 16)} ${escapeHtml(SHOPS[n.boutique].name)}</button>`;
-  /* RL-8: on a run the clinic charges for each hurt Billie and there is no rest stop on the road */
-  if (saveData.run) {
-    if (n.town) {
-      const { hurt, cost } = runHealCost(saveData.team, RULES.run.healCost);
-      x += hurt
-        ? `<button class="pb small" data-a="clinic">Clinic: heal ${plural(hurt, 'Billie')} for $${formatNumber(cost)}</button>`
-        : '<button class="pb small quiet" data-a="clinic">Clinic: everyone is fine</button>';
-    }
-  } else
-    x += n.town
-      ? '<button class="pb small" data-a="clinic">Rest at the clinic, free</button>'
-      : `<button class="pb small quiet" data-a="rest">Rest stop, $${formatNumber(RULES.battle.restCost)}</button>`;
-  trainersAt(i).forEach(T => {
-    const done = saveData.flags[T.id];
-    if (T.blocks && done && !T.seat) return;
-    x += `<button class="pb small ${done ? 'quiet' : 'red'}" data-a="trainer" data-t="${T.id}">${done ? 'Rematch' : T.seat ? 'Challenge' : 'Battle'} ${escapeHtml(T.name)}</button>`;
-  });
-  return `<div class="racts">${x}</div>`;
-}
-function boardNote(i) {
-  if (saveData.trip.node !== i) return '';
-  return trainersAt(i)
-    .filter(T => T.hint && !saveData.flags[T.id])
-    .map(T => `<p class="note">${escapeHtml(T.hint)}</p>`)
-    .join('');
-}
-function hereCard() {
-  const node = saveData.trip.node,
-    here = LOCATIONS[node],
-    prog = `<p class="note">Open the map to pick a place to walk to; gold arrows show you the way.</p>`;
-  return `<section class="here px glass"><div class="route-art"${here.banner ? ` style="background-image:url('${artURL(here.banner)}')"` : ''}><span>${personHTML('me', 64)}</span><button class="route-profile" data-a="customize">${escapeHtml(cleanTrainer(saveData.avatar, saveData.gender).name)} · Edit look</button></div><div class="sec-h"><div><div class="sub">${escapeHtml(locationSubtitle(here))}</div><h2>${here.name}</h2></div><button class="pb small quiet" data-a="tab" data-t="map">Open map</button></div><p class="note">${here.blurb}</p>${boardNote(node)}${prog}<div class="racts">${tripButtons()}</div>${nodeActions(node)}</section>`;
-}
-function eggSlots() {
-  const slots = Array.from({ length: eggSlotCount() }, (_, i) => i)
-    .map(sl => {
-      const e = saveData.eggs.find(x => x.slot === sl);
-      if (!e)
-        return `<div class="slot px empty"><span class="egg-e"></span><b>Empty incubator</b><span class="note">Win battles to find eggs.</span></div>`;
-      const T = EGGS[e.tier];
-      return `<div class="slot px">${eggHTML(e.tier, 48, 'wob')}<b>${eggKm(e.tier)} km egg</b>${progressBarHTML(e.prog / T.need, 'live')}<span class="note tnum">${metresToKm(e.prog)} of ${metresToKm(T.need)} km</span></div>`;
-    })
-    .join('');
-  const pipe = saveData.eggs.filter(e => e.slot == null);
-  return `<section><div class="sec-h"><h2>Eggs</h2><span class="count tnum">${saveData.eggs.length}/${RULES.eggs.capacity}</span></div><div class="slots">${slots}</div>${pipe.length ? `<div class="pipe"><span class="note">Waiting for an incubator:</span>${pipe.map(e => eggHTML(e.tier, 26)).join('')}</div>` : ''}</section>`;
-}
-function buddyCard() {
-  const m = findBilly(saveData.buddy);
-  if (!m) return '';
-  const a = xpFor(m.lvl),
-    b = xpFor(m.lvl + 1);
-  return `<section><div class="sec-h"><h2>Buddy</h2></div><div class="buddy px" data-a="mon" data-u="${m.uid}" role="button" tabindex="0">${rigCanvasHTML(m.sp, 80, { build: m.build, coat: m.coat })}<div class="bd"><div class="bn">${escapeHtml(billyName(m))} <span class="lv tnum">Lv ${m.lvl}</span></div><div class="note">Gets the full XP of every battle you win, even when it sits one out. ${formatNumber(b - m.xp)} XP to level ${m.lvl + 1}.</div>${progressBarHTML((m.xp - a) / (b - a), 'xpb')}</div></div></section>`;
-}
-function roomHero() {
-  const I = uiState.inside,
-    sc = mapById(I.id) || {},
-    here = LOCATIONS[saveData.trip.node],
-    what =
-      {
-        shop: 'Tap the counter to shop.',
-        clinic: 'Tap the desk and your team is patched up, free.',
-        lab: 'Tap the professor or the machine to talk.',
-        house: 'Tap whoever lives here to chat.',
-        home: 'Your room in Granny Juniper’s cottage. Decorate it with what you’ve found.',
-      }[I.kind] || '';
-  return `<div class="walk-hero" id="walkHero">${locationCardHTML(escapeHtml(here.name), escapeHtml(I.name || sc.name || 'Inside'), `<p class="wh-gate">${escapeHtml(what)}</p>`, (I.kind === 'home' ? `<button class="pb small gold" data-a="decorate">Decorate</button>` : '') + `<button class="pb small" data-a="leaveroom">${uiIconHTML('door', 14)} Go outside</button>`)}
- <div class="wh-foot"><div class="wh-row"><button class="pb small glass fish-btn" data-a="fish" hidden>${uiIconHTML('fish', 14)} Fish</button><button class="wh-down glass" data-a="walkdown" aria-label="Show actions">${uiIconHTML('chev', 18)}<span>Actions</span></button></div></div></div>`;
-}
-/* v31: the place card: compact (where, the hour and weather, staying or walking, one main button; the rest folded
-   under More), closable with ×, and brought back by tapping the place's name in the top bar. Closed stays closed. */
-function locationCardHTML(sub, name, mid, btns) {
-  if (saveData.preferences && saveData.preferences.cardClosed) return '';
-  const all = String(btns).match(/<button[\s\S]*?<\/button>/g) || [],
-    main = all[0] || '',
-    more = all.slice(1).join('');
-  return `<div class="wh-card glass compact"><div class="wh-top"><div class="sub">${sub}</div><button class="wh-x" data-a="card-close" aria-label="Hide this card"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button></div><h1 class="where">${name}</h1>${mid}<div class="wh-acts">${main}${more ? `<details class="wh-more"><summary>More</summary><div class="wh-more-b">${more}</div></details>` : ''}</div></div>`;
-}
-function environmentLine() {
-  if (typeof environmentLabel !== 'function' || !environment.on) return '';
-  const t = environmentLabel();
-  if (!t) return '';
-  const h = environmentHint();
-  return `<p class="wh-env">${uiIconHTML(environmentIcon(), 12)} ${escapeHtml(t)}${h ? `<span> · ${escapeHtml(h)}</span>` : ''}</p>`;
-}
-function walkHero() {
-  if (uiState.inside && !uiState.bench && roomState()) return roomHero();
-  if (uiState.bench && uiState.bench.test && mapById(uiState.bench.id)) {
-    /* v20: a test scene from the debug menu */ const sc = mapById(uiState.bench.id);
-    return `<div class="walk-hero" id="walkHero"><div class="wh-card glass">${uiState.bench.id === 'gallery' ? `<div class="sub">Settings</div><h1 class="where">Graphics gallery</h1><p class="wh-gate">Walk to a signpost, then move the dial below and watch what changes.</p>` : `<div class="sub">Test scene</div><h1 class="where">${escapeHtml((sc.name || uiState.bench.id).replace(/^Test: /, ''))}</h1><p class="wh-gate">${(sc.checks || []).length} walking checks. Debug menu → Test scenes runs them.</p>`}<div class="wh-acts"><button class="pb small gold" ${uiState.bench.id === 'gallery' ? 'data-a="gal-leave"' : 'data-a="dbg" data-x="untest"'}>${uiState.bench.id === 'gallery' ? 'Back to Settings' : 'Back to the game'}</button></div></div></div>`;
-  }
-  const node = saveData.trip.node,
-    here = LOCATIONS[node],
-    q = encountersHere(),
-    next = `<p class="wh-gate">${escapeHtml(tripStatus().t)}</p>`;
-  return `<div class="walk-hero" id="walkHero">${locationCardHTML(escapeHtml(locationSubtitle(here)), escapeHtml(here.name), environmentLine() + next, tripButtons())}
- <div class="wh-foot">${q.length ? `<p class="wh-hint glass">${uiIconHTML('spark', 12)} ${plural(q.length, 'Billie')} hiding nearby. Tap a <b>?</b> to battle.</p>` : `<p class="wh-hint glass">${uiIconHTML('walk', 12)} Tap the ground to walk around. Tap buildings, people and signs.</p>`}
-  <div class="wh-row"><button class="pb small glass fish-btn" data-a="fish" hidden>${uiIconHTML('fish', 14)} Fish</button><button class="pb small glass" data-a="photo" aria-label="Photo mode">${uiIconHTML('camera', 14)}</button><button class="wh-down glass" data-a="walkdown" aria-label="Show actions">${uiIconHTML('chev', 18)}<span>Actions</span></button></div></div></div>`;
-}
-function renderWalk() {
-  const q = encountersHere(),
-    cap = encounterStock(saveData.trip.node);
-  return `${walkHero()}<div class="walk-sheet"><span class="ws-grip" aria-hidden="true"></span>
- <div class="cols"><div class="col">
- <div class="today px glass"><div class="today-top"><div class="se"><div class="mid tnum">$<span data-count="se" data-to="${saveData.se}">${formatNumber(saveData.se)}</span></div><div class="lbl">Money</div></div></div>
-  <p class="note">Beat wild Billies and trainers to earn more.</p></div>
- <section class="walkbtns"><p class="note">Walk with the joystick (drag anywhere on the scene) or tap where you want to go. The arrows at the edges lead on to the next place.</p></section>
- ${typeof challengeCardHTML === 'function' ? challengeCardHTML() : ''}${typeof requestListHTML === 'function' && requestListHTML() ? `<section class="chal px glass"><div class="sec-h"><h2>Requests you’re helping with</h2></div>${requestListHTML()}</section>` : ''}${hereCard()}</div><div class="col">
- <section class="pending"><div class="sec-h"><h2>Encounters here</h2><span class="count tnum">${q.length}/${cap}</span></div>
-  <p class="note">${!cap ? 'No wild Billies live here. Try a route or a town with tall grass.' : q.length >= cap ? 'This place is full. Battle or tax a few to make room.' : 'Another one wanders over about every minute.'} You only see their level until the battle starts.</p>
-  ${q.length ? `<div class="queue">${q.map(encounterCardHTML).join('')}</div>` : `<div class="empty px">No Billies nearby.${cap ? ' Give it a minute and one will wander over.' : ''}</div>`}</section>
- ${eggSlots()}${buddyCard()}</div></div></div>`;
 }
 /* ---------- the walk scene behind the Walk tab ---------- */
 export function mapIdAt(i) {
@@ -1367,47 +1150,13 @@ document.addEventListener('click', ev => {
       openInbox();
       break;
     case 'card-close':
-      saveData.preferences = saveData.preferences || {};
-      saveData.preferences.cardClosed = true;
-      save();
-      render();
-      requestAnimationFrame(() => {
-        const t = $('.tb-where');
-        if (t) t.focus({ preventScroll: true });
-      });
-      break;
     case 'card-open':
-      saveData.preferences = saveData.preferences || {};
-      saveData.preferences.cardClosed = !saveData.preferences.cardClosed;
-      save();
-      render();
-      break;
-    case 'enc': {
-      const q = encountersHere().find(x => x.id === d.id);
-      if (q) startWild(q);
-      break;
-    }
+    case 'enc':
     case 'clinic':
-      clinicHeal();
-      break;
-    case 'rest': {
-      const c = RULES.battle.restCost;
-      if (saveData.se < c) {
-        toast(`A rest stop costs $${formatNumber(c)}. Win a battle first.`);
-        break;
-      }
-      saveData.se -= c;
-      healAll();
-      save();
-      render();
-      toast(`Everyone rested up for $${formatNumber(c)}.`);
-      break;
-    }
+    case 'rest':
     case 'trainer':
-      trainerTalk(d.t);
-      break;
     case 'rungiveup':
-      runGiveUp();
+      walkTabAction(a, d);
       break;
     case 'mon':
     case 'mact':
