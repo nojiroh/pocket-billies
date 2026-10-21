@@ -35,12 +35,17 @@
   .g-sec > p { margin: 0 0 var(--s3); font: 500 var(--fs-caption)/1.4 var(--font-prose); color: var(--text2); }
   .g-row { display: flex; flex-wrap: wrap; gap: var(--s2); align-items: center; }
   .g-stack { display: grid; gap: var(--s3); }
+  /* UI-4: three pick cards side by side, and a stand-in for a relic's own art */
+  .g-picks { display: grid; grid-template-columns: repeat(auto-fit, minmax(104px, 1fr)); gap: var(--s2); }
+  .g-relic { display: block; width: 40px; height: 40px; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); background: linear-gradient(180deg, var(--gold-a), var(--gold-b)); }
   .g-sw { display: grid; place-items: center; min-width: 44px; height: 44px; border-radius: var(--r-sm); background: var(--g-bg2);
     font: 600 11px/1 var(--font-voice); }
   .g-sprite { display: block; width: 64px; height: 64px; background: var(--c1);
     clip-path: polygon(30% 4%, 70% 4%, 80% 22%, 80% 40%, 70% 52%, 86% 70%, 86% 100%, 14% 100%, 14% 70%, 30% 52%, 20% 40%, 20% 22%); }
   .g-local { position: relative !important; inset: auto !important; transform: none !important; left: auto !important; bottom: auto !important; }
   .g-shots .g-sec { padding-bottom: var(--s4); }
+  /* UI-4: in the pictures the bar stays at the top of the page, so it never lies over a section or shades it */
+  .g-shots .g-bar { position: static; }
   .g-list { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
   .g-list li { padding: var(--s2) var(--s3); font: 600 15px/1.2 var(--font-voice); }
   .g-dark { padding: var(--s4); border-radius: var(--r-lg); background: #241c3a; }
@@ -168,10 +173,45 @@
   <div style="margin-top:var(--s3)"><pb-panel id="gMotion">Watch me.</pb-panel></div>
 </section>
 
+<!-- UI-4: the run parts (game/js/ui-run-kit.js); RL-7 and RL-8 build the run's screens from them -->
+<section class="g-sec" data-shot="run-hud"><h2>Run HUD</h2><p>The day and deadline chip (calm, the last day, past it), the forecast with today marked, the four currency chips, and the bottom bar's run and hub sets.</p>
+  <div class="g-stack">
+    <div class="g-row"><pb-day-chip day="3" deadline="7"></pb-day-chip><pb-day-chip day="7" deadline="7"></pb-day-chip><pb-day-chip day="9" deadline="7"></pb-day-chip></div>
+    <pb-forecast items="clear:Clear,cloudy:Cloudy,rain:Rain,storm:Thunderstorm,fog:Fog,snow:Snow,ash:Ash" from="3" value="4"></pb-forecast>
+    <div class="g-row"><pb-coin kind="money" value="340" label="$"></pb-coin><pb-coin kind="capital" value="12400" label="Capital"></pb-coin><pb-coin kind="scrap" value="86" label="Scrap"></pb-coin><pb-coin kind="seals" value="2" label="Audit Seals"></pb-coin></div>
+    <pb-nav-bar set="run" value="map" badges="relics:2"></pb-nav-bar>
+    <pb-nav-bar set="hub" value="lab"></pb-nav-bar>
+  </div>
+</section>
+
+<section class="g-sec" data-shot="run-nodes"><h2>Run map markers</h2><p>pb-node, one outline per node type (game/js/logic/run-marks.js, which the bowl's pins draw too): landing, route, town, mini-boss, boss, event, shop, not yet seen; then a town in each state, and with its forecast.</p>
+  <div class="g-stack">
+    <div class="g-row"><pb-node type="landing" label="Landing"></pb-node><pb-node type="route" label="Route"></pb-node><pb-node type="town" label="Town"></pb-node><pb-node type="miniboss" label="Mini-boss"></pb-node><pb-node type="boss" label="Boss"></pb-node><pb-node type="event" label="Event"></pb-node><pb-node type="shop" label="Shop"></pb-node><pb-node type="unknown" state="hidden"></pb-node></div>
+    <div class="g-row"><pb-node type="town" state="seen" label="Marrow Town"></pb-node><pb-node type="town" state="current" label="Marrow Town"></pb-node><pb-node type="town" state="visited" label="Marrow Town"></pb-node><pb-node type="town" state="locked" label="Marrow Town"></pb-node><pb-node type="town" state="hidden"></pb-node><pb-node type="route" weather="rain" label="Wet Fen"></pb-node><pb-node type="boss" weather="storm" style="--size:64px" label="The Voltron"></pb-node></div>
+  </div>
+</section>
+
+<section class="g-sec" data-shot="picks"><h2>Pick cards</h2><p>pb-pick-card, for relics and the keep-one picker: face up, selected, face down (tap it and it flips), a long name.</p>
+  <div class="g-stack">
+    <div class="g-picks"><pb-pick-card heading="Offshore Account" sub="Relic"><span slot="art" class="g-relic"></span>Shop prices are 15% lower.</pb-pick-card><pb-pick-card heading="Emberox" sub="Lv 30 · Fire" selected><span slot="art" class="g-sprite" style="--c1:#c4502e"></span>Keeps its levels and its moves.</pb-pick-card><pb-pick-card heading="Golden Parachute" facedown id="gPickDown">When a Billie faints, gain $40.</pb-pick-card></div>
+    <div class="g-picks"><pb-pick-card heading="Sir Reginald Taxworth the Third of the Long Lunch" sub="Lv 12 · Steel"><span slot="art" class="g-sprite" style="--c1:#6b7f91"></span>A long name that wraps.</pb-pick-card></div>
+    <div class="g-row"><button class="pb small" id="gPickFlip">Flip the face-down card</button></div>
+  </div>
+</section>
+
+<section class="g-sec" data-shot="payout"><h2>Payout</h2><p>pb-payout: its rows slam in one by one and Capital counts up (Play again; a tap skips to the end).</p>
+  <div class="g-stack">
+    <pb-panel><pb-payout id="gPayout" total="1180" total-label="Capital" rows='[{"label":"Money left","note":"$340 at half","value":170},{"label":"Items at half price","value":95},{"label":"Billies released","note":"2 Billies","value":60},{"label":"Nodes cleared","note":"7 × 75","value":525},{"label":"Win bonus","value":400},{"label":"Unpaid clinic bill","value":-70}]'></pb-payout></pb-panel>
+    <div class="g-row"><button class="pb small" id="gPayoutPlay">Play again</button><button class="pb small" id="gCoinUp">Add 1,000 Capital to the chip above</button></div>
+  </div>
+</section>
+
 </main>
 <!-- UI-1: the game data, for the look in game/data/uiTheme.json (js/theme-sheet.js writes it) -->
 <script src="../game/data/gamedata.js"></script>
 <script src="../game/vendor/lit.js"></script>
+<!-- UI-4: the run parts find the UI icons as art.js does -->
+<script>window.NW_ARTDIR = '../game/art/';</script>
 <script type="module" src="gallery.js"></script>
 </body>
 </html>

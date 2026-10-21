@@ -8,11 +8,14 @@
    (tools/test/ui-dials.test.mjs keeps them equal). Logic only: no DOM, runs in Node. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { uiThemeCss } from './ui-theme.js';
 /* eslint-disable no-func-assign */
 expose({
   UI_DIALS: [() => UI_DIALS],
+  UI_DIAL_ALSO: [() => UI_DIAL_ALSO],
   UI_FAMILY_LABELS: [() => UI_FAMILY_LABELS],
   UI_LAYERS: [() => UI_LAYERS],
+  UI_NUDGE: [() => UI_NUDGE],
   UI_ROLE_LABELS: [() => UI_ROLE_LABELS],
   UI_SHADOW_DIALS: [() => UI_SHADOW_DIALS],
   dialEase: [() => dialEase],
@@ -22,11 +25,16 @@ expose({
   uiCount: [() => uiCount, v => (uiCount = v)],
   // @ts-expect-error -- replaced on purpose
   uiDialList: [() => uiDialList, v => (uiDialList = v)],
+  uiDialReach: [() => uiDialReach],
+  // @ts-expect-error -- replaced on purpose
+  uiDialVars: [() => uiDialVars, v => (uiDialVars = v)],
   // @ts-expect-error -- replaced on purpose
   uiDiffCount: [() => uiDiffCount, v => (uiDiffCount = v)],
   // @ts-expect-error -- replaced on purpose
   uiGet: [() => uiGet, v => (uiGet = v)],
   uiGrade: [() => uiGrade],
+  // @ts-expect-error -- replaced on purpose
+  uiNudge: [() => uiNudge, v => (uiNudge = v)],
   // @ts-expect-error -- replaced on purpose
   uiPresetId: [() => uiPresetId, v => (uiPresetId = v)],
   // @ts-expect-error -- replaced on purpose
@@ -35,6 +43,10 @@ expose({
   uiPrune: [() => uiPrune, v => (uiPrune = v)],
   uiScopeGroups: [() => uiScopeGroups],
   uiScopePath: [() => uiScopePath],
+  // @ts-expect-error -- replaced on purpose
+  uiSheetVars: [() => uiSheetVars, v => (uiSheetVars = v)],
+  // @ts-expect-error -- replaced on purpose
+  uiVarDials: [() => uiVarDials, v => (uiVarDials = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -333,4 +345,78 @@ export function uiPresetId(name, taken) {
     n = 2;
   while (taken[id]) id = `${base}_${n++}`;
   return id;
+}
+
+/* UI-3b: which CSS variables a dial writes, found by moving it and comparing the sheets (logic/ui-theme.js), so the
+   answer follows the writer and never needs a table of its own. The Studio's inspect and Connections read it. */
+export const UI_NUDGE = /** @type {Record<string, string>} */ ({
+  cut: 'rounded',
+  rounded: 'cut',
+  square: 'cut',
+  cutSm: 'cutLg',
+  cutMd: 'cutLg',
+  cutLg: 'cutSm',
+  text: '#123456',
+});
+/** another value of the same kind @param {any} v @param {UiDial} [d] */
+export function uiNudge(v, d) {
+  if (typeof v === 'boolean') return !v;
+  if (typeof v === 'number') return Math.round((v + Math.max(1, Math.abs(v) * 0.37) + 0.37) * 100) / 100;
+  if (Array.isArray(v)) {
+    if (v.every(x => typeof x === 'number')) return v.map(x => Math.round((x + 0.07) * 100) / 100);
+    return v.length === 4 ? ['tl'] : ['tl', 'tr', 'br', 'bl'];
+  }
+  if (typeof v === 'string') {
+    if (/^#[0-9a-f]{6}([0-9a-f]{2})?$/i.test(v))
+      return '#' + v.slice(1, 7).replace(/./g, c => (15 - parseInt(c, 16)).toString(16)) + v.slice(7);
+    const o = d && d.options && d.options.find(([x]) => x !== v);
+    if (o) return o[0];
+    return UI_NUDGE[v] || v + 'x';
+  }
+  return v;
+}
+/** the custom properties a sheet sets: {"block|--name": value} (the block: the selectors it sits in) */
+export function uiSheetVars(css) {
+  /** @type {Record<string, string>} */
+  const out = {};
+  const stack = [];
+  for (const m of css.matchAll(/([^{};]*)\{|\}|(--[\w-]+)\s*:\s*([^;{}]*);/g)) {
+    if (m[0] === '}') stack.pop();
+    else if (m[0].endsWith('{')) stack.push(m[1].trim());
+    else out[stack.join(' ') + '|' + m[2]] = m[3].trim();
+  }
+  return out;
+}
+/** the variables a dial writes in the whole game's look (empty when it does nothing in this look: a corner list on a
+ * rounded family) @param {any} theme uiTheme.json @param {string} rel the dial's place inside a look */
+export function uiDialVars(theme, rel) {
+  if (!theme || !theme.defaults) return [];
+  const before = uiSheetVars(uiThemeCss(theme)),
+    t = JSON.parse(JSON.stringify(theme)),
+    keys = rel.split('.'),
+    entry = uiDialList().find(e => e.path === rel);
+  let o = t.defaults;
+  for (const k of keys.slice(0, -1)) o = o[k] = o[k] && typeof o[k] === 'object' ? o[k] : {};
+  o[keys[keys.length - 1]] = uiNudge(uiGet(theme.defaults, rel), entry && entry.dial);
+  const after = uiSheetVars(uiThemeCss(t)),
+    names = new Set();
+  for (const k of new Set([...Object.keys(before), ...Object.keys(after)]))
+    if (before[k] !== after[k]) names.add(k.slice(k.indexOf('|') + 1));
+  return [...names].sort();
+}
+/** dials that act through something other than a variable, and the variable whose parts they change: the voice
+ * font's size is its @font-face's size-adjust, on every part in --font-voice */
+export const UI_DIAL_ALSO = /** @type {Record<string, string[]>} */ ({ 'type.voiceScale': ['--font-voice'] });
+/** what a dial changes, for inspect and Connections: the variables it writes, or the one it acts through
+ * @param {any} theme @param {string} rel */
+export const uiDialReach = (theme, rel) => {
+  const v = uiDialVars(theme, rel);
+  return v.length ? v : UI_DIAL_ALSO[rel] || [];
+};
+/** every variable the dials write, and the dials that write it: {"--name": [rel, ...]} @param {any} theme */
+export function uiVarDials(theme) {
+  /** @type {Record<string, string[]>} */
+  const out = {};
+  for (const e of uiDialList()) for (const v of uiDialReach(theme, e.path)) (out[v] = out[v] || []).push(e.path);
+  return out;
 }

@@ -203,13 +203,18 @@ same phase:
   comes from game/data/uiTheme.json (`tools/test/ui-theme.test.mjs`; check-data checks text reads at 4.5:1). A look
   change moves the pictures: remake the baseline on purpose afterwards.
   UI-2: `npm run check:ui` (tools/check-ui-gallery.py) takes a picture of every `[data-shot]` section of
-  studio/gallery.html at 320 and 390 px, light and dark, plus the shaped parts with the stepped preset (73 pictures),
+  studio/gallery.html at 320 and 390 px, light and dark, plus the shaped parts with the stepped preset (73 pictures;
+  89 since UI-4's run parts),
   and compares each with the committed baseline in validation/ui-gallery/ (fails above 0.05% of a picture; a 2 px
   change to a cut is caught). A new kit part or state goes into the gallery as a section with `data-shot`; a look
   change on purpose is `python3 tools/check-ui-gallery.py --update`, said in the commit. Not in CI: the baseline is
   this container's Chromium and fonts. `tools/test/ui-theme.test.mjs` also checks the shape polygons (tokens.css's
   copy equals the generator's) and `tools/test/ui-icons.test.mjs` keeps game/art/ui/*.svg equal to the grids in
   tools/build-ui-icons.py.
+  UI-4: `tools/test/run-marks.test.mjs` checks the run map's node outlines (logic/run-marks.js: the plan's shapes,
+  inside their box, clockwise, distinct; hidden reads "?"; the canvas painter draws whole pixels in the role
+  colours). The run parts (js/ui-run-kit.js) are in the gallery's run-hud, run-nodes, picks and payout sections; the
+  pictures take them at their end (reduced motion), and the gallery's buttons play the motions.
   UI-3: uiTheme.json is version 2 (every group the Studio's dials edit). `ui-theme.test.mjs` keeps tokens.css's
   scales (space, text sizes, motion, drop shadows) equal to the data's defaults and the variables a screen override
   declares again (`UI_DERIVED`) equal to tokens.css and polish.css; `ui-dials.test.mjs` keeps every Studio dial on a
@@ -227,6 +232,13 @@ same phase:
   tools/check-quick.py). Smoke's shop steps open `CHECK_SHOP`, a shop the check makes for itself (the game has none
   now). check-data checks `game/data/legacy` only for being readable: every listed file is there, nothing unlisted,
   maps and trainers against their schemas; the Unused report counts props the parked maps place as used.
+  UI-3b: the lint's rules are game/js/logic/ui-lint.js (the Studio runs them; `node tools/ui-lint.mjs --lines` lists
+  every raw value with its line); `ui-lint.test.mjs` keeps the files the Studio finds by following the pages equal to
+  the ones the command line walks (a new logic file must be on a page). `ui-dials.test.mjs` checks every dial writes
+  a CSS variable (`uiDialVars`); `ui-inspect.test.mjs` the inspect and overlay rules. The fixtures `team`, `bag` and
+  `talk` (game/js/fixture.js) open those screens for the Studio's preview. The Studio check's `ui_tools` step (rule
+  report, inspect, Connections, overlays; about 30 s) and `ui_screens` (each real screen and before/after; about 4
+  min, as each screen boots the game) run with `--only=ui_tools,ui_screens`.
 - **18 Trading and battles with friends**: every new Firestore rule gets emulator tests in `firebase/test/`;
   trade validation is logic with unit tests.
 

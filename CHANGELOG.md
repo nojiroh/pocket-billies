@@ -16,6 +16,13 @@ kept aside in the browser).
   octopus as before. No clothing or gear: boosters, boxes, the sweater and the hat are gone. Each stage names its
   native parts (the set that will make it Prime), they squash, stretch and blink, and every form fits the stage box.
   The hand-drawn starters are kept as a part library.
+- The run parts (UI track UI-4), not in the game yet: the parts the run's screens will use, in the UI gallery. A
+  day and deadline chip (gold on the last day, red past it), the forecast as a row of weather icons by day, map
+  markers by node type (a diamond for the boss, a hexagon for a town, a chevron for a route, a slanted card for an
+  event; seen, here, visited, locked or not yet seen), chips for the four currencies that count to a new value, the
+  card for relic picks and the keep-one picker (face down it flips over), the payout (rows slam in one by one, Capital
+  counts up; a tap skips), and the bottom bar with the run's tabs (Map, Team, Bag, Relics) or the hub's (Map, Team,
+  Bag, Lab). Six new icons. With reduced motion the numbers jump and the motions fade.
 - Turned props (phase 09 batch 9): any prop on a map can face any way (a placement's `rot`, degrees, which only
   buildings had, for a few degrees along a street). The model, its decals and leaves, its shadow, its reflection,
   its footprint (where you can't walk), the ground levelled and shaded under it, its door, lamps, windows and smoke
@@ -35,6 +42,10 @@ kept aside in the browser).
   before loads at Copperleaf with the parked places dropped from it; a backup file exported before can't be
   imported. Rooms now open in place in a town with no exits (Pearlantis's didn't). The game's data is about a
   quarter smaller to load.
+- The Studio's UI look, tools (UI track UI-3b): the preview shows the game's real Team, Bag, battle and dialogue
+  screens with the look being edited, or the saved and unsaved looks side by side. Inspect a part to see which dials
+  reach it; Connections on a dial lists the parts it reaches. Overlays mark tap targets under 44 px, text that reads
+  too faintly and glass stacked too deep. The Check reports the UI rule counts, with every line listed.
 - The Studio's UI look (UI track UI-3a): Game → UI look edits the menus' look: colours light and dark side by side
   with a contrast grade on each text colour, the glass, depth and drop shadows, the shapes (each family's cut,
   corners and radius), space, type and motion, for the whole game or one screen's colours and shapes. Presets (save

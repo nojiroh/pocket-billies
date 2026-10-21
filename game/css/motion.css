@@ -204,6 +204,31 @@
   animation: m-wipe var(--m-slow) var(--ease-out) backwards;
 }
 
+/* slam and flip (UI-4): the rewards (payout, relic picks, the keep-one picker; owner: showy, Balatro-like). Slam: a
+   row lands from the right and settles (stagger rows with --i); flip: a card turns face up. The kit's pb-payout and
+   pb-pick-card repeat these in their own styles (js/ui-run-kit.js) */
+.m-slam {
+  animation: m-slam var(--m-slow) var(--spring) both;
+  animation-delay: calc(min(var(--i, 0), 8) * var(--stagger) * 3);
+}
+@keyframes m-slam {
+  from {
+    opacity: 0;
+    transform: translateX(28px) scale(1.12);
+  }
+  60% {
+    opacity: 1;
+    transform: translateX(-3px) scale(0.98);
+  }
+}
+.m-flip {
+  animation: m-flip var(--m-slow) var(--spring) both;
+}
+@keyframes m-flip {
+  from {
+    transform: perspective(600px) rotateY(180deg);
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   .m-wipe,
   .m-wipe-r,
@@ -214,7 +239,9 @@
   .m-pop,
   .m-count,
   .m-nudge,
-  .m-float {
+  .m-float,
+  .m-slam,
+  .m-flip {
     animation: m-fade 120ms linear both !important;
   }
   .m-idle,
@@ -237,7 +264,9 @@
     .m-pop,
     .m-count,
     .m-nudge,
-    .m-float
+    .m-float,
+    .m-slam,
+    .m-flip
   ) {
   animation: m-fade 120ms linear both !important;
 }

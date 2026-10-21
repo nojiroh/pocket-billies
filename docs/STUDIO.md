@@ -193,6 +193,19 @@ Game → **UI look** edits game/data/uiTheme.json, the look of the game's menus 
   320, 390 or wide, Reduced motion, Settings' text size, and the screen you are setting. **Hold to compare** (or hold
   C) shows the look as last saved. **Open the gallery** opens it in a tab. An open game tab follows the dials too.
 - Find (Ctrl+K) knows every dial; the Check lists a colour that reads too faintly, with Show me.
+- **Real screens** (UI-3b): above the preview, Gallery, Team, Bag, Battle or Dialogue. A screen is the game itself,
+  started from a ready-made game of its own (a fixture: nothing is saved to yours), with your unsaved look; it takes
+  a few seconds to start. The look, Light/Dark, the width, text size and reduced motion all reach it.
+- **Before / after**: the saved look and your unsaved one side by side, scrolled together.
+- **Inspect**: tap a part in the preview: what it is (its kit component, the gallery section or screen) and every
+  variable its rules read, with its value and the dials that write it (click one to go there).
+- **Connections** (Ctrl+L) on a dial: where its value comes from (the whole game, screens, presets), the variables it
+  writes and the parts in the preview that read them (click one to see it outlined).
+- **Overlays**: Under 44 px (tap targets too small), Contrast (text under 4.5:1, or 3:1 for large text, worked out
+  through the see-through layers behind it; text over an image can't be told, text shadows aren't counted) and Glass
+  (each blurred surface, red when more than two stack, and the count on screen against the budget of 3).
+- **Rule check**: the Check has one report line (not counted in its badge) with the raw values tools/ui-lint.mjs
+  counts; Show me opens the list by rule and file, each line linked on GitHub. A report until UI-6.
 
 ## Sections
 

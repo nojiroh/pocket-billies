@@ -33,6 +33,40 @@ bipeds, the gear goes, the hand-drawn art is kept. The preview was shown before 
 - Next: the owner looks at the Billies on the phone (team, a battle, the grass, the Studio's Parts preview); then the
   bios without gear, and a decision on a taller box for finals.
 
+### UI track UI-4 - Run parts - 2026-10-21
+Branch `claude/ui-4-run-parts`, from main 167cc96, beside UI-3b (owner's choice). Before it, by the owner's ask, the
+three open PRs were brought up to main and merged: #92 (the dialogue bubble: rewritten as a shape family in UI-3a's
+format), #90 (flat plant variants: MAPGEN_VERSION 3, as MG-2 had also taken 2; the frozen scene hash and MG-2's
+golden scenes remade, only props differ) and #80 (turned props: merged with one smoke run red, see Risky). Plan
+approved by "start with ui4"; its three questions were taken at my recommendations (a canvas painter for the bowl,
+the shapes below, the placeholder currency names as attributes).
+- Changed (one cause per commit): logic/run-marks.js (an outline per node type: diamond boss, notched diamond
+  mini-boss, hexagon town, chevron route, slanted event and shop, cut square landing, small diamond "?"; tone and
+  state; SVG points, clip-path; `runMarkDraw` for the bowl's canvas, not called yet) with run-marks.test.mjs; six
+  icons (capital, scrap, seal, clock, relic, check); motion.css `m-slam` and `m-flip`; game/js/ui-run-kit.js
+  (`pb-day-chip`, `pb-forecast`, `pb-node`, `pb-coin`, `pb-pick-card`, `pb-payout`, `pb-nav-bar`, with
+  `RUN_NAV_SETS`, `RUN_CURRENCY_ICONS`, `RUN_WEATHER_ICONS`), loaded after ui-kit.js; the gallery's run-hud,
+  run-nodes, picks and payout sections; the picture baseline (89). Docs: ui-track.md ("UI-4 found"), ROADMAP,
+  TESTING, CHANGELOG.
+- Where the plan was wrong: see ui-track.md "UI-4 found" (the bowl's pins are canvas; no data to read yet).
+- Verified: lint, typecheck, check:modules, format:check, check:data, unit tests (409) green; run-marks.test seen to
+  fail with the boss drawn anticlockwise; picture tests 89 pass, and fail with the boss's top point moved; in the
+  gallery, with motion on, the payout's rows come in one at a time and the total counts to 1,180, a currency chip
+  counts, the face-down card flips, the bar sends pb-change; with reduced motion everything is at its end at once; no
+  page errors. With UI-3b (#96) merged in: 425 unit tests, the Studio check's ui, ui_tools and ui_screens steps
+  pass (one run stalled on the container's real-click issue, the next passed whole); UI-3b's overlay rules found
+  four faint texts in the run parts (white on the dark side's light red, the payout's red, the bar's labels read over
+  its hidden highlight), fixed: none left. The gallery's sticky bar lay over tall sections in the pictures and made
+  payout's flaky; in the pictures it now stays at the top (11 pictures remade, the whole set stable over two runs).
+  Not run (owner: skip checks): smoke on this branch, the full quick check, a phone look.
+- Risky: nothing in the game uses the parts yet, so the page cost is one more module. The four remade light pictures
+  (panels, cards) moved because the page grew, proven by taking the sections out. #80's smoke step "the world map
+  opens as the bowl" failed in 2 of 5 CI runs on the same commits (a page element over the map at the tap points),
+  passed in the others and here; main never showed it. Not root-caused: watch for it on main.
+- Phone check wanted (the plan's "done when" is the gallery): the gallery's four new sections, light and dark, 320.
+- Next: the owner merges and pushes `ui-4-done`; RL-7 draws the bowl's pins with `runMarkDraw` and the day chip and
+  forecast on the Map tab; RL-8 builds the payout, pick and keep-one screens and the bottom bar's sets from these.
+
 ### Phase 09 batch 9, part 1 - turned props - 2026-10-21
 Plan approved by the owner (free angles, Studio steps of 15°; rotation as its own PR before the 20 new props).
 - Changed: a placement's `rot` (degrees, about its base point, the middle of its front) existed since alpha 0.4 for
@@ -153,6 +187,54 @@ Studio list, the bowl shows Copperleaf alone, Hazel's lines lose only the direct
   only an offset of exactly x.5 m (now logic/seam-rules.js:122, since MG-2; a small fix for later).
 - Next: the owner pushes `rl-1-done` .. `rl-5-done` (sessions can't push tags); checks the bowl and Copperleaf on the
   phone; then RL-6 (run map and clock logic; MG-2 is merged).
+
+### UI track UI-3b - Studio UI section, tools - 2026-10-21
+Branch `ccr-dc41c006-00p8dj`, from main 00be53b (UI-3a merged). Owner's answers at the plan: real screens as the game
+in a frame; before/after live side by side; the rule check as one report line, not in the Check badge. Mid-session
+the owner started UI-4 in a parallel session and asked to skip the remaining checks.
+- Changed (one cause per commit): the missing UI-3a entry; ui-lint's `RULES` renamed `UI_LINT_RULES`, then moved to
+  game/js/logic/ui-lint.js (counts byte for byte the same); lines for every raw value (`--lines`); the file list found
+  by following the pages (`uiLintCrawl`); the rule report in the Studio's Check (studio/js/ui-rules.js); which
+  variables a dial writes (`uiDialVars`, by moving the dial and comparing sheets); Inspect (studio/js/ui-inspect.js,
+  helpers in logic/ui-inspect.js); Connections on a UI dial; overlays (studio/js/ui-overlays.js: tap targets,
+  layered contrast with gradients, glass depth and the blur budget); fixtures `team`, `bag`, `talk` with a `uiLook`
+  message only a fixture listens to; real screens in the preview with the frame kept across redraws; before/after;
+  Find and the ? sheet. The Studio check's `ui_tools` and `ui_screens` steps.
+- Where the plan was wrong: see ui-track.md "UI-3b found" (Ctrl+L taken; the lint's lines; no fixtures; no DOM capture).
+- Verified: fast tier at every commit up to the real screens (lint, typecheck, unit tests 371 -> 381, modules,
+  format, data); each new test and Studio step seen to fail on a planted fault (lines one off, comments deleted, the
+  `:host` rules left out, Connections not knowing UI dials, the fixture ignoring the look). `check:fast` green after
+  the fixtures (2.5 min). `--only=ui,ui_tools,ui_screens` green after before/after. Skipped at the owner's word: the
+  Studio check after the last commit (Find and the ? sheet: lint, typecheck, modules and format only), smoke, the
+  73 gallery pictures (`check:ui`), the full quick check and `--selftest`. Run `check:ui` and smoke before merging.
+- Risky: game/js/fixture.js and its message listener (fixtures only; check-fast passed). A game screen boots the
+  whole game in the frame (25-45 s in this container; quicker on a desktop); before/after on a game screen runs two.
+  The kept frame lies over the pane (position fixed, clipped): check it on the iPad. Contrast is a scan of computed
+  styles: text shadows, filters and images aren't counted. Merging with UI-4: regenerate hooks.js (`npm run modules`).
+- Found for later (UI-5/6): 45 texts under their contrast on the gallery (white on type pills, move tiles), 12 tap
+  targets under 44 px, the Team screen blurs 4 surfaces.
+- Next: the owner merges and pushes `ui-3b-done`; UI-4 is running in its own session.
+
+### UI track UI-3a - Studio UI section, core - 2026-10-21 (entry written in UI-3b)
+The UI-3a session (PR #93, branch `claude/ui-3-start-3q234o`) updated STUDIO.md, TESTING.md, ui-track.md, ROADMAP and
+CHANGELOG but left no entry here; this one is put together from its commits (85bc555..203ac13) and those docs.
+- Changed (one cause per commit): uiTheme.json version 2 (the surface split into light and dark, each shape family's
+  cut, corners and radius as data, new groups depth, drop, space and motion, type scale and line height, preset
+  names; the sheet it writes the same text, byte for byte, for the defaults and both presets); the theme sheet writes
+  the new groups (every custom property on the gallery resolving the same); per-screen overrides read (`UI_SCREENS`,
+  `UI_DERIVED`) and the contrast check moved into logic/ui-theme.js (`uiThemeContrast`); the dials as data
+  (logic/ui-dials.js, `UI_DIALS`); the gallery takes a look from the Studio (`gallery.html?studio=1`,
+  `galleryLook`); the Studio's UI look section (studio/js/ui-editor.js: every dial group, the whole game or one
+  screen, ↺ and Reset, presets with + Save as preset, Hold to compare, the gallery as the preview, Find); the
+  contrast check in the Studio's Check with Show me; `studioBroadcast` sends the look to an open game tab; the Studio
+  check's `ui` step and `--only`.
+- Decided by the owner: UI-3 split into UI-3a and UI-3b; "Save as" means + Save as preset (no Studio-wide Save as).
+- Found: see ui-track.md, "UI-3 found" (the look's data held only colours, glass, cuts and fonts; overrides unread;
+  the Studio's own CSS names clash with the game's, so the preview is the gallery in a frame).
+- Verified (from the commit messages): the Studio check's `ui` step seen to fail on a planted fault (the gallery
+  ignoring the look: five problems); the 73 gallery pictures matched for the no-op data commits.
+- Next: UI-3b (the section's tools).
+
 ### UI track UI-2 - Kit v2: angular shapes - 2026-10-21
 Branch `ccr-00069345-2zok4t`, from main 3479f01 (RL-4 merged, UI-1 in). The owner asked for the whole of UI-2 in one
 session (no split). Two calls I made without asking (my plan's recommendations): the old `.pb` buttons and every
