@@ -85,6 +85,16 @@ Two rules hold everywhere:
   (`bowl-layout.test.mjs`: pins apart, roads within 30 degrees of their exits) but 0.07 apart and 45 degrees for a
   lane switch, which the rows' spacing can't keep within 30. weather.test checks `weatherPick` against the page's old
   pick for every roll its hash can give: a change to the weather's odds or its order fails it on purpose.
+- The run's world (RL-7: `run-scenes.test.mjs`, `run-world-real.test.mjs`): run-scenes.test on small tables of its
+  own (a node's exits in the order its scene is made with them and the ids the generator gives them, the dials drawn
+  from `run.scene` within their ranges and by weight, the levels by row, the world's rows, pools and roads);
+  run-world-real on the game's data: every scene of six runs made by the generator, each joined to its parents, every
+  road's exits where it says, check-data's seam rules clean, no height gap or step and a straight walk across
+  (`mapgenSeamAgreement`), all ground reachable, no generator note (about 4 s); the same seed the same scenes; a run's
+  world through `worldPut` and the hub's back through `worldHubBack` exactly; a run place stocked once a visit from its
+  own stream. A node's dials are frozen in `run-world-real.test.mjs.snapshot`: a change to how they are drawn changes
+  every run's scenes, so remake it (`--test-update-snapshots`) only on purpose and say so in the commit. A change to
+  the generator itself shows in the mapgen tests first.
 - The world (RL-5): the game's world is Copperleaf alone; the old one is parked in `game/data/legacy` (its own
   `legacy/index.json`, read by `readLegacyData()` in `tools/data-files.mjs`, null without one). A test that uses the
   old places as test data (the bowl's ground and landmarks, scripts said there) reads `oldWorld()`
@@ -133,8 +143,10 @@ same phase:
   `selfTestSleep` and frame counts, not fixed real-time deadlines; a deadline is multiplied by `selfTest.slow` (the
   headless runs use 3).
 - A removed system loses its step in the same commit as the system.
-- The Road phase was removed in RL-5 (the hub has no road); it comes back on a run's roads in RL-7. The Room phase
-  walks into Hazel's lab; the night, Billies-in-the-world and Stress phases run on the hub's map.
+- The Road phase was removed in RL-5 (the hub has no road); RL-7 brought it back as "A run's road" (a run put on a
+  copy of the save, its world made, the landing's north seam walked a step at a time, the next place on day 2, the
+  save and the hub's world put back). The Room phase walks into Hazel's lab; the night, Billies-in-the-world and
+  Stress phases run on the hub's map. The scenes of a run's world are not in the "Walk:" list.
 - The test never writes the save: it pauses saving (`pauseSaving`/`resumeSaving`, game-state.js) and puts the save
   back. Don't call `writeStoredSave` or the account directly from a step.
 - `--selftest` (headless) must pass at the end of the phase. A step that only runs out of time there is a note; a real
@@ -237,8 +249,12 @@ same phase:
 - **Roguelite track** (docs/phases/roguelite-track.md): RL-5 parked every place but Copperleaf. The fast check
   (`tools/check-fast.py`, CI) and its fixtures start there (`town`, `room` = Hazel's lab, `battle` = Leader Rocco); the
   `route` and `cave` fixtures and checks, the full check's road walks, seams, close-ups and the flight to another town
-  were retired with their places and come back on a run's world in RL-7 and RL-8 (each change is marked RL-5 in
-  tools/check-quick.py). Smoke's shop steps open `CHECK_SHOP`, a shop the check makes for itself (the game has none
+  were retired with their places (each change is marked RL-5 in tools/check-quick.py). RL-7 brought a run's world
+  back into the checks: the `run` fixture (the fixture's team on a run with the seed RL7FIXTURE, landed on day 1; its
+  world is made at boot), the fast check's run page (the landing drawing, every place on the bowl, a seam walked a
+  day later; about 50 s), the full check's step "RL-7: a run's roads" (a run swapped in, a seam walked each way with
+  `cross()`, the hub swapped back) and the in-game test's "A run's road". `cross()` walks `run.seamIn` metres further
+  in a run, where a crossing counts that far in. The flight to a run comes with RL-8. Smoke's shop steps open `CHECK_SHOP`, a shop the check makes for itself (the game has none
   now). check-data checks `game/data/legacy` only for being readable: every listed file is there, nothing unlisted,
   maps and trainers against their schemas; the Unused report counts props the parked maps place as used.
   UI-3b: the lint's rules are game/js/logic/ui-lint.js (the Studio runs them; `node tools/ui-lint.mjs --lines` lists

@@ -9,6 +9,15 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- A run's world (roguelite track RL-7), not playable yet (a run starts at the airship from RL-8; to look at one, open
+  the game with `?fixture=run`): each place on a run's map is a walkable route made from the run's seed, joined
+  seamlessly to the places before and after it, in its biome's look, ground and weather, with a little variety of its
+  own (hills, cliffs, a stream or a pond, the road's shape, a lookout, a glade or a bridge). Walking into the next
+  place, or back, takes a day; a step over the edge and back doesn't. Each place has the weather of its forecast for
+  the day, and its wild Billies at the levels of its row (3-5 on the landing, one more a row), fewer when you walk
+  back. The world map shows the run: its places by type as you come near them, "?" for the row after, the boss
+  always, the day and deadline at the top, and each place's week of weather on its card. On a run, your friends see
+  "a run" rather than where; postcards, today's visits and the townsfolk's requests stay in Copperleaf.
 - The run map and its clock (roguelite track RL-6), not in the game yet: a run's map is made from its seed, 9 rows
   from the airship's landing to the boss, mini-bosses on rows 3 and 6 with a town before each, one or two lanes,
   sometimes a switch between them. Entering a node, forward or back, takes a day; the landing is day 1 and the

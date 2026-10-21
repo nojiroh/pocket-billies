@@ -2,6 +2,88 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Roguelite track RL-7 - Run world - 2026-10-21
+Branch `ccr-b5ce394e-4jhzbp`, from main dfc9d68 (RL-6 merged). Plan approved at the start ("Start rl7", then the plan
+in Plan Mode); its decisions A-J were taken at my recommendations (none answered otherwise). Done in one session,
+parts A and B both (the plan's split point wasn't needed).
+- Changed (one cause per commit):
+  - The game page loads `logic/mapgen.js` and the new pure `logic/run-scenes.js`: a run node's generator dials
+    (`runSceneParams`: the run's seed, its biome, a 112 x 64 route, its exits as runExits places them with the ids the
+    generator gives (south, north, south2, north2), the dials drawn from rules.json `run.scene` on its own stream, an
+    edge strip from each parent's scene), its scene (`runSceneMake`: plus `locationId`, name, `mood`, `climate`), a
+    run's scenes in order (`runScenesMake`), and the run's world tables (`runWorldTables`: Copperleaf at 0, a place
+    `run_<i>` per node with `runNode`, map id `run_<i>_<tag of the seed>`, its own pool with its row's levels, the seam
+    roads).
+  - New `game/js/run-world.js` `runWorldSync`: the world follows the save. A run's world makes all its scenes at once,
+    then game-data.js `worldPut` (scenes into gameData.maps, pools into POOLS, then `worldSetGraph`), then everything
+    holding a node or place lets go in the same tick (seamless views and caches, the walk view, the bowl's spots,
+    ground, sky, pick and pins, rooms and roam spot, a flight, the weather's scene); in the hub `worldHubBack`. Boot
+    calls it before map look-ahead, `setSaveData` once boot has; a run whose world can't be made is left. The Studio's
+    live edit keeps a run's scenes; the full test's walk list leaves them out.
+  - Fixes found on the way: `runArrive` reads where you stand from `trip.node` (RL-6 read `run.path`); a hub save is
+    checked against the hub's own places (`HUB_LOCATIONS`, `hubRoadCost`), whatever world is in.
+  - Data: biomes.json `pool`, `battleStage`, `mood` (from each biome's legacy place); rules.json `run.scene` (dial
+    ranges and choice weights; tried first on 40 runs, 501 scenes, all joined), `run.wild` (lv 3-5, +1 a row, back 2),
+    `run.seamIn` (6). Schema, type, check-data, planted faults.
+  - A crossing in a run is an arrival (`walkCross` -> `runArrive`: a day, the path, the reveal, the forecast) counting
+    6 m in. Kept to the hub: things-to-do's visits and requests, postcards, friends' presence (node 0, "a run").
+  - A run place's weather is its forecast for today (environment.js via `runPlaceWeather`; a forced weather and your
+    setting first; no hourly forecast line; the walked view copies a scene's `climate`).
+  - The bowl shows the run: pins as run-marks.js outlines (current gold, walked faded, '?' for the row after the next),
+    nothing for places not shown yet (no pin, pick, list row, label, or name on a card), the day chip in the Map
+    header, a week's forecast on a place's card.
+  - A run place is stocked once a visit from its own stream (`encountersHere`, `encounterRunVisits`), no top-up by
+    play time, 2 on a walk back.
+  - Checks: the `run` fixture, the fast check's run page, the full check's step "RL-7: a run's roads", the in-game
+    test's "A run's road", the debug log's `run` line (seed, day, deadline, node, arrivals, scenes, make ms; no names).
+  - Docs: roguelite-track.md (section 0 "Corrected in RL-7", RL-7 done), ROADMAP, TESTING, NAMING, CHANGELOG.
+- Where the plan was wrong (roguelite-track.md section 0): a scene takes ~30 ms in Node, not 136-451, so all of a
+  run's scenes are made at once (0.4-0.9 s in headless Chromium); generation can't be "one hop ahead" per node (a
+  child needs every parent); the world must follow every save swap, not just boot; `runArrive` and the hub save checks
+  (above); run trainers, the landing's mast and towns' clinic and shop moved to RL-8 with their behaviour; 2a's
+  "abandon a run made by another generator version" became "keep it" (J).
+- Verified: the fast tier at every commit (lint, typecheck, unit tests 443 -> 455, check:modules, format:check,
+  check:data, build). Smoke (15 steps) passed on every game commit through 6443bbe, each in a checkout of its own;
+  the last two commits (encounters, the test phase and log line) weren't smoked on their own. New tests seen to fail
+  on planted faults (a swapped exit id, a child without its parent's edge, the run's pools left behind, the position
+  from the path, a hub save bounded by a run's world, the run's stocking taken out). In Chromium: the fast check's run
+  page (12 scenes in 867 ms at boot, a seam walked to day 2), its battle page, the quick-check step "RL-7: a run's
+  roads" (13 scenes in 707 ms, the next view ready on the way, day 2 and back to day 3, the hub back), the in-game
+  test's "A run's road" alone (26 s, nothing written while it ran), the debug log's privacy check on the run fixture;
+  probes: a run swapped into a live page and back, 3 m over a seam (no day) and 12 m (day 2), each place's weather
+  = its forecast, the Map tab's pins, chip, cards and list. **Not finished when the PR went up:** the full quick check and `--selftest` (base
+  dfc9d68 first, then the tip); their results follow in a later commit.
+- Risky: the scenes' cost on a phone is unmeasured (the debug log's `run.makeMs` says; the plan guessed 1-1.5 s for a
+  run, at boot or a save swap, with the loader frozen meanwhile). Two lanes 70 m apart on the bowl and scenes 112 m
+  wide: their ground stamps overlap where they meet (F, judged on the phone), and the ground shows places whose pins
+  are still hidden. The species a run place meets still follow the real hour (the wild odds by time of day), so a run
+  isn't fully reproducible from its seed (RL-8's run-sim decides). The card's "Rest stop, $100" shows on run routes as
+  on any route (RL-8's paid healing). Names ("Meadow Route", "Autumn wood Route") are placeholders (E).
+- Found, not this phase's: on the bowl a place's landmark picture draws as a red block in headless Chromium,
+  Copperleaf's in the plain hub too (the standee atlas holds the picture; not root-caused). Check it on the phone's
+  map: if it shows there, it's a bug for the phase 10 look.
+- Phone check wanted: `game/index.html?fixture=run` (its own save slot): the landing, a walk over the north seam
+  (day 2) and back (day 3), a step over and back (no day), the Map tab (pins, '?', the boss, the day chip, a card's
+  forecast), the weather, the debug log's `run.makeMs`.
+- Next: the owner merges and pushes `rl-1-done` .. `rl-7-done`; then RL-8 (the run loop and payout: the airship
+  start, a town with paid healing, the mini-boss, the payout, resume; the first playable cut).
+
+### Roguelite track RL-6 - Run map and clock logic - 2026-10-21 (entry written in RL-7, from the commits)
+Merged as PR #100 without a HANDOFF entry; this one is put together from its commits (2a47ee1..d74bab9).
+- Changed: logic/weather.js (`CLIMATE_WEATHER_ODDS` moved unchanged; `weatherPick(climate, roll, season)` taken out
+  of environment.js with the same steps, checked against the old pick for every roll); `runEnd` pays per distinct
+  node (walking back no longer pays); a run map's node may name its biome (`validRun`); biomes.json `climate`; the
+  data section `nodeTypes` (landing, route, town, miniboss, boss); new logic/run-map.js: `runMapMake` (9 rows, mini-
+  bosses on rows 3 and 6 with a town before each, one or two lanes, a switch now and then, every choice on a stream of
+  its own), `runExits`, `runSpot`, and the clock (owner's 8.10: a day per arrival, backtracking included; the deadline
+  the shortest walk + 3, day 12), `runReveal`, `runForecastFill`, `runMapStart`, `runArrive`; rules.json `run.map`,
+  `run.clock`, `run.reveal`. Docs (NAMING, TESTING, ROADMAP, the track's section 0 "Corrected in RL-6", CHANGELOG).
+- Verified (from the commits): run-map.test (a frozen map, every structure rule over 1,300 maps of 5-12 rows, the
+  clock; seen to fail on planted faults), run-map-real (1,000 maps and 200 walks on the game's data), weather.test;
+  planted faults in the rules fail the data check; smoke passed.
+- Left for RL-7 (done there): the scenes, the world, the bowl. RL-7 found `runArrive` read the position from the path
+  (fixed there).
+
 ### Phase 16 side work - every Billie from the part kits - 2026-10-21
 Branch `art/kit-billies` (owner's request in chat: rework the existing Billies with parts from the kit). Plan approved;
 the owner's answers: all 24 (starters too), phase 16's part table with gaps filled by me, kit parts as each stage's
