@@ -11,7 +11,7 @@
 import { expose } from './test-globals.js';
 import { RULES, SPECIES, mapIdAt, provide, reducedMotion, saveData } from './hooks.js';
 import { clamp } from './util.js';
-import { CLIMATE_WEATHER_ODDS } from './logic/weather.js';
+import { CLIMATE_WEATHER_ODDS, weatherPick } from './logic/weather.js';
 import { hexToRgb } from './art.js';
 import { mapById, walkView } from './walk-view.js';
 /* eslint-disable no-func-assign */
@@ -190,25 +190,9 @@ function environmentWeatherFor(climate, d) {
   if (p === 'clear' || !environment.on) return 'clear';
   if (p && p !== 'auto' && WEATHER_LOOKS[p]) return p;
   d = d || new Date();
-  const odds = Object.assign({}, CLIMATE_WEATHER_ODDS[climate] || CLIMATE_WEATHER_ODDS.mild),
-    ss = environmentSeason(d);
-  if (climate === 'mild' && ss === 'winter') {
-    odds.snow = (odds.rain || 0) * 0.7;
-    odds.rain = (odds.rain || 0) * 0.3;
-  }
-  if (climate === 'mild' && ss === 'summer') {
-    odds.clear += 12;
-    odds.storm = (odds.storm || 0) + 3;
-  }
   const day = Math.floor((d.getTime() - d.getTimezoneOffset() * 6e4) / 864e5),
-    blk = Math.floor(d.getHours() / 3),
-    r = environmentHash(climate + '|' + day + '|' + blk) * Object.values(odds).reduce((a, b) => a + b, 0);
-  let acc = 0;
-  for (const [k, w] of Object.entries(odds)) {
-    acc += w;
-    if (r < acc) return k;
-  }
-  return 'clear';
+    blk = Math.floor(d.getHours() / 3);
+  return weatherPick(climate, environmentHash(climate + '|' + day + '|' + blk), environmentSeason(d));
 }
 /* everything the renderer needs, eased so weather drifts in and out; a new scene snaps */
 /* the hour, the season and the weather for a scene right now (no easing): used for the odds in the wild and the walk card too */
