@@ -3,7 +3,12 @@
 // from its node's stream (logic/run-map.js).
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { CLIMATE_WEATHER_ODDS, weatherPick } from '../../game/js/logic/weather.js';
+import {
+  CLIMATE_WEATHER_ODDS,
+  WEATHER_TYPE_BOOSTS,
+  battleWeatherOf,
+  weatherPick,
+} from '../../game/js/logic/weather.js';
 
 /** environmentWeatherFor's pick as it was before RL-6 (environment.js at 2a47ee1), with the hash's value as the roll */
 function pickBefore(climate, roll, ss) {
@@ -63,4 +68,29 @@ test('the odds by roll: mild, a mild winter and summer, none, an unknown climate
 test('every pick is a weather the climate has', () => {
   for (const [c, odds] of Object.entries(CLIMATE_WEATHER_ODDS))
     for (let k = 0; k < 1000; k++) assert.ok(Object.hasOwn(odds, weatherPick(c, k / 1000)), c);
+});
+
+test('battle weather (RL-8, moved from things-to-do.js): the same multipliers, the rules laid over, none for cloudy', () => {
+  /* things-to-do.js's table before the move (at 78f813d) */
+  const BEFORE = {
+    rain: { Water: 1.2, Fire: 0.8 },
+    storm: { Electric: 1.25, Water: 1.15, Fire: 0.8 },
+    snow: { Steel: 1.1, Grass: 0.9 },
+    fog: { Psychic: 1.1 },
+    ash: { Fire: 1.15, Ground: 1.15, Water: 0.9 },
+    sunny: { Fire: 1.15, Grass: 1.1, Water: 0.95 },
+    night: { Psychic: 1.15, Dragon: 1.1 },
+  };
+  assert.deepEqual(WEATHER_TYPE_BOOSTS, BEFORE);
+  for (const k of Object.keys(BEFORE)) assert.deepEqual(battleWeatherOf(k), { k, m: BEFORE[k] });
+  assert.equal(battleWeatherOf('cloudy'), null);
+  assert.equal(battleWeatherOf('clear'), null);
+  assert.deepEqual(battleWeatherOf('rain', { battle: { rain: { Fire: 0.5, Grass: 1.1 } } }), {
+    k: 'rain',
+    m: { Water: 1.2, Fire: 0.5, Grass: 1.1 },
+  });
+  assert.deepEqual(battleWeatherOf('cloudy', { battle: { cloudy: { Ghost: 1.1 } } }), {
+    k: 'cloudy',
+    m: { Ghost: 1.1 },
+  });
 });

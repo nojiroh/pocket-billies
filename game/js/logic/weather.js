@@ -5,12 +5,17 @@
    rolled in logic from a seeded stream (logic/run-map.js) and the page's real-clock weather reads the same table.
    weatherPick turns a roll into a weather: environment.js rolls with a hash of the climate, the day and the 3-hour block,
    a run rolls from its node's stream for the day.
+   What a weather does in a battle (WEATHER_TYPE_BOOSTS, moved here from things-to-do.js in RL-8) is here too, so a
+   run's battle can take its forecast's weather and a run's simulation can play it.
    Logic only: no DOM, runs in Node (tools/test/weather.test.mjs). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 /* eslint-disable no-func-assign */
 expose({
   CLIMATE_WEATHER_ODDS: [() => CLIMATE_WEATHER_ODDS],
+  WEATHER_TYPE_BOOSTS: [() => WEATHER_TYPE_BOOSTS],
+  // @ts-expect-error -- replaced on purpose
+  battleWeatherOf: [() => battleWeatherOf, v => (battleWeatherOf = v)],
   // @ts-expect-error -- replaced on purpose
   weatherPick: [() => weatherPick, v => (weatherPick = v)],
 });
@@ -47,4 +52,25 @@ export function weatherPick(climate, roll, season) {
     if (r < acc) return k;
   }
   return 'clear';
+}
+
+/* ---------- battles feel the weather (moved from things-to-do.js, RL-8) ---------- */
+/* each battle weather's move type multipliers ('sunny' and 'night' are clear weather by day and by night) */
+/** @type {Record<string, Record<string, number>>} */
+export const WEATHER_TYPE_BOOSTS = {
+  rain: { Water: 1.2, Fire: 0.8 },
+  storm: { Electric: 1.25, Water: 1.15, Fire: 0.8 },
+  snow: { Steel: 1.1, Grass: 0.9 },
+  fog: { Psychic: 1.1 },
+  ash: { Fire: 1.15, Ground: 1.15, Water: 0.9 },
+  sunny: { Fire: 1.15, Grass: 1.1, Water: 0.95 },
+  night: { Psychic: 1.15, Dragon: 1.1 },
+};
+/** a battle's weather ({k, m}: its name and its move type multipliers, as battle.wx holds it), with the rules' own
+ * changes (rules.json env.battle) laid over; null when it changes nothing
+ * @param {string} k @param {{ battle?: Record<string, Record<string, number>> }} [env]
+ * @returns {{ k: string, m: Record<string, number> } | null} */
+export function battleWeatherOf(k, env) {
+  const m = Object.assign({}, WEATHER_TYPE_BOOSTS[k] || {}, ((env || {}).battle || {})[k] || {});
+  return Object.keys(m).length ? { k, m } : null;
 }
