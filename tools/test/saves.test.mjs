@@ -2,7 +2,7 @@
 // setup-fixture.mjs.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { fn, logic, startedSave } from './setup-fixture.mjs';
+import { fn, logic, modules, startedSave } from './setup-fixture.mjs';
 
 test('saves: a new save, load checks, migrate, backup check', () => {
   const s = fn('newSave')();
@@ -63,4 +63,94 @@ test('saves: a started save comes back from its JSON (loading again changes noth
     false,
     'money below zero'
   );
+});
+
+// RL-3 (save format 4): meta, run and ranch in the save; a run's trip is on the run's world, not today's LOCATIONS
+const { runBegin } = modules['run-state'];
+const GIVE = { seed: 'ABCDE12345', tier: 1, mapgenV: 1, se: 300 };
+const RUN_MAP = {
+  nodes: [
+    { type: 'landing', row: 0, lane: 0, to: [1, 2] },
+    { type: 'route', row: 1, lane: 0, to: [3] },
+    { type: 'route', row: 1, lane: 1, to: [3] },
+    { type: 'town', row: 2, lane: 0, to: [4] },
+    { type: 'miniboss', row: 3, lane: 0, to: [] },
+  ],
+};
+/** a save in the middle of a run: at the map's town (node 4: more than the fixture's three locations), heading on */
+function runSave() {
+  const s = startedSave('sparky0', 10);
+  s.trip = { node: 2, plan: [] };
+  runBegin(s, GIVE);
+  s.run.map = RUN_MAP;
+  s.run.path = [0, 1, 3];
+  s.run.clock = 4;
+  s.trip = { node: 4, plan: [5] };
+  s.visited = { 0: 1, 1: 1, 2: 1, 4: 1 };
+  s.wild = { run_1: { at: 0, list: [] } };
+  return s;
+}
+
+test('saves: format 4 holds meta, the run (null in the hub) and the ranch; a format 3 save is old', () => {
+  const s = fn('newSave')();
+  assert.equal(logic.SAVE_VERSION, 4);
+  assert.deepEqual(s.meta, modules['meta-state'].newMeta());
+  assert.equal(s.run, null);
+  assert.deepEqual(s.ranch, modules['ranch-state'].newRanch());
+  assert.equal('v' in s, false, 'the old v field is gone');
+  assert.equal(fn('saveAge')({ ...startedSave(), saveVersion: 3 }), 'old');
+  assert.equal(fn('loadSave')({ ...startedSave(), saveVersion: 3 }), null);
+});
+
+test('saves: a save from a run loads with its trip, plan, visited places and run as they were', () => {
+  const s = runSave();
+  assert.equal(fn('validSave')(JSON.parse(JSON.stringify(s))), true);
+  const back = fn('loadSave')(JSON.parse(JSON.stringify(s)));
+  assert.deepEqual(back.trip, { node: 4, plan: [5] }, 'not reset to the start, though LOCATIONS has 3 entries');
+  assert.deepEqual(back.visited, s.visited);
+  assert.deepEqual(back.run, JSON.parse(JSON.stringify(s.run)));
+  assert.deepEqual(back.wild, s.wild);
+  assert.deepEqual(fn('loadSave')(JSON.parse(JSON.stringify(back))), back, 'loading again changes nothing');
+  // off the run's world: back to Copperleaf (node 0), not to the hub's start
+  const off = fn('migrate')({ ...JSON.parse(JSON.stringify(s)), trip: { node: 6, plan: [9, 2, 'x'] } });
+  assert.deepEqual(off.trip, { node: 0, plan: [] });
+  const plan = fn('migrate')({ ...JSON.parse(JSON.stringify(s)), trip: { node: 3, plan: [9, 4, 'x'] } });
+  assert.deepEqual(plan.trip, { node: 3, plan: [4] });
+  // the hub's team as the run started is cleaned like the team (a species the Studio removed)
+  const gone = JSON.parse(JSON.stringify(s));
+  gone.run.start.team.push({ ...fn('makeBilly')('sprout0', 3), sp: 'gone0' });
+  assert.equal(fn('migrate')(gone).run.start.team.length, 1);
+});
+
+test('saves: a run that fails its check is left, with the hub as it was when the run started', () => {
+  const s = runSave(),
+    hubTrip = s.run.start.trip;
+  const broken = { ...JSON.parse(JSON.stringify(s)), run: { ...JSON.parse(JSON.stringify(s.run)), seed: 'bad seed' } };
+  const m = fn('migrate')(broken);
+  assert.equal(m.run, null);
+  assert.deepEqual(m.trip, hubTrip);
+  assert.equal(m.se, 600);
+  assert.equal(fn('validSave')(m), true);
+});
+
+test('saves: the load check refuses a format 4 save with a broken meta, run, ranch or trip', () => {
+  const s = JSON.parse(JSON.stringify(runSave())),
+    valid = fn('validSave');
+  assert.equal(valid(s), true);
+  const badBilly = { ...s.run.start.team[0], lvl: 0 };
+  for (const [what, bad] of [
+    ['no run key', { ...s, run: undefined }],
+    ['a broken run', { ...s, run: { ...s.run, clock: 0 } }],
+    ['no meta', { ...s, meta: undefined }],
+    ['a broken meta', { ...s, meta: { ...s.meta, capital: -1 } }],
+    ['no ranch', { ...s, ranch: null }],
+    ['the trip off the run world', { ...s, trip: { node: 6, plan: [] } }],
+    ['a broken Billie in the hub team', { ...s, run: { ...s.run, start: { ...s.run.start, team: [badBilly] } } }],
+    ['the hub trip off LOCATIONS', { ...s, run: { ...s.run, start: { ...s.run.start, trip: { node: 3, plan: [] } } } }],
+  ])
+    assert.equal(valid(bad), false, what);
+  // in the hub the trip is bounded by LOCATIONS as before
+  const hub = JSON.parse(JSON.stringify(startedSave('sparky0', 10)));
+  assert.equal(valid(hub), true);
+  assert.equal(valid({ ...hub, trip: { node: 3, plan: [] } }), false);
 });

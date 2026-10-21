@@ -8,7 +8,7 @@
 // The JSON report goes to validation/sim/robots.json (not committed).
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { data, fn, hooks, reseed, ROOT } from '../setup-real.mjs';
+import { data, fn, hooks, logic, reseed, ROOT } from '../setup-real.mjs';
 
 const { ROBOTS, LINES } = data;
 const LVL = 30;
@@ -34,7 +34,7 @@ export function duel(makeA, makeB, seed) {
   s.starter = 'musk';
   hooks.provide({ saveData: s });
   s.team.push(makeA());
-  fn('newBattle')('trainer', [makeB()]);
+  fn('newBattle')('trainer', [makeB()], { host: logic.SILENT_HOST });
   const B = () => hooks.activeBattle;
   for (let t = 0; t < 120 && !B().over; t++) {
     const c = fn('chooseAI')(0);

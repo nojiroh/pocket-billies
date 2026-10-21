@@ -8,6 +8,7 @@ The game vision is in docs/VISION.md. Read it before any design or art work.
 - Keep the custom WebGL2 renderer. Reuse existing code and art wherever it fits the new design. No engine swap.
 - Fixed art commitments: terrain textures and the airship style (low-poly models textured at 32 px/m) are the visual targets. Trainer portraits are 32-bit pixel art. Props that read better flat stay flat on purpose.
 - Real-world step tracking is REMOVED (the game becomes a classic RPG). In-game walking with a joystick, the seamless maps and the rooms STAY. See docs/phases/08.
+- The game is a roguelite (docs/VISION.md; the plan: docs/phases/roguelite-track.md): a hub, Copperleaf Town, and runs on a node map generated from a seed. Every map outside the hub is legacy: kept for the Studio, not loaded by the game flow.
 - One rename per commit. Never mix a rename with a behavior change, so a failed check points at one cause.
 - "Renaming" means internal names only (files, functions, variables, data keys, ids). Player-facing words stay unless a phase says otherwise.
 - Follow docs/NAMING.md for vocabulary and conventions.
@@ -27,7 +28,7 @@ The game vision is in docs/VISION.md. Read it before any design or art work.
 Numbers and file names in docs/phases/ come from an outside review of the alpha 0.4.1 build (README, file layout, partial code reads), not a full read of the code. The current legacy build is alpha 0.5 with a new UI look. Verify each claim against the real code, tell me where it is wrong, and push back on any idea you think is bad.
 
 ## Known gotchas (verify)
-- Duplicate global functions silently override each other (camTo in scene.js, dioTileHalf in diorama.js). Check for name clashes before and after any move.
+- The page's modules share names through the generated game/js/hooks.js (tools/to-module.mjs): a new module-level value needs a `setX` setter that calls `provide`, then `npm run modules`; check:modules also checks the load order. Check for name clashes before and after any move.
 - Many source lines exceed 300 characters. Reformat only in separate no-op commits.
 - gamedata.js is a ~13 MB `window.GAMEDATA=` file, ~8 MB of it `scenes`. Never open it whole; search it or read the schema.
 - Debug and self-test code must never send save data, names or step history anywhere.

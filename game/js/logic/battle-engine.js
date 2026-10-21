@@ -32,7 +32,6 @@ import {
   RULES,
   SPECIES,
   STATUS_NAMES,
-  STAT_IDS,
   STAT_NAMES,
   TRAINERS,
   hasPassive,
@@ -62,13 +61,16 @@ import {
   stat,
   xpFor,
 } from './rules.js';
+import { makeBattle, newFieldState } from './battle-state.js';
 /* eslint-disable no-func-assign */
 expose({
   ACTOR_SIDE: [() => ACTOR_SIDE],
   ACTOR_SLOT: [() => ACTOR_SLOT],
   BATTLE_RULES: [() => BATTLE_RULES],
   CATCH_RULES: [() => CATCH_RULES],
+  PAGE_HOST: [() => PAGE_HOST],
   SIDE_ACTORS: [() => SIDE_ACTORS],
+  SILENT_HOST: [() => SILENT_HOST],
   actorIndex: [() => actorIndex],
   // @ts-expect-error -- replaced on purpose
   actorSnapshot: [() => actorSnapshot, v => (actorSnapshot = v)],
@@ -89,8 +91,16 @@ expose({
   applyStatStages: [() => applyStatStages, v => (applyStatStages = v)],
   // @ts-expect-error -- replaced on purpose
   award: [() => award, v => (award = v)],
+  battleBag: [() => battleBag],
+  battleBuddy: [() => battleBuddy],
+  battleHere: [() => battleHere, v => (battleHere = v)],
+  battleHost: [() => battleHost],
+  battleNow: [() => battleNow],
+  battleOnSave: [() => battleOnSave],
+  battleRoll: [() => battleRoll],
   // @ts-expect-error -- replaced on purpose
   battleSay: [() => battleSay, v => (battleSay = v)],
+  battleSeen: [() => battleSeen],
   // @ts-expect-error -- replaced on purpose
   battleStageKey: [() => battleStageKey, v => (battleStageKey = v)],
   // @ts-expect-error -- replaced on purpose
@@ -132,7 +142,6 @@ expose({
   // @ts-expect-error -- replaced on purpose
   movePower: [() => movePower, v => (movePower = v)],
   newBattle: [() => newBattle, v => setNewBattle(v)],
-  newFieldState: [() => newFieldState],
   // @ts-expect-error -- replaced on purpose
   refreshLastSnapshot: [() => refreshLastSnapshot, v => (refreshLastSnapshot = v)],
   // @ts-expect-error -- replaced on purpose
@@ -146,7 +155,11 @@ expose({
   startWild: [() => startWild, v => (startWild = v)],
   teamNeedsHp: [() => teamNeedsHp],
   // @ts-expect-error -- replaced on purpose
+  turnCapCheck: [() => turnCapCheck, v => (turnCapCheck = v)],
+  // @ts-expect-error -- replaced on purpose
   useMove: [() => useMove, v => (useMove = v)],
+  // @ts-expect-error -- replaced on purpose
+  withBattle: [() => withBattle, v => (withBattle = v)],
 });
 /* eslint-enable no-func-assign */
 export function setNewBattle(v) {
@@ -155,19 +168,58 @@ export function setNewBattle(v) {
   provide({ newBattle });
 }
 /* to-module: end */
+/* RL-4: the battle the engine plays. An entry point given a battle (its last argument) plays that one for the
+   call (withBattle), so a fight can run beside the page's; otherwise the page's current battle (activeBattle). */
+export let battleHere = null;
+export const battleNow = () => battleHere || activeBattle;
+export function withBattle(b, f) {
+  if (!b || b === battleHere) return f();
+  const was = battleHere;
+  battleHere = b;
+  try {
+    return f();
+  } finally {
+    battleHere = was;
+  }
+}
+/* RL-4: what the engine asks of the page, through the battle's host: a toast, a save, opening the battle screen,
+   playing a turn's events, the debug menu's sure catch, the weather's boost to a move type. A battle without a host
+   (b.host) uses the page's; SILENT_HOST shows, saves and plays nothing and has no weather, for a fight in a test, a
+   simulation or a ghost. */
+export const PAGE_HOST = {
+  toast: t => toast(t),
+  save: () => save(),
+  open: () => openBattle(),
+  play: () => playTurnEvents(),
+  sureCatch: () => !!uiState.dbgCatch,
+  weather: t => (typeof battleWeatherMultiplier === 'function' ? battleWeatherMultiplier(t) : 1),
+};
+export const SILENT_HOST = Object.freeze({
+  toast() {},
+  save() {},
+  open() {},
+  play() {},
+  sureCatch: () => false,
+  weather: () => 1,
+});
+export const battleHost = (b = battleNow()) => (b && b.host) || PAGE_HOST;
+/* RL-4: a battle on the save's own team (the page's battles: newBattle) marks species seen, spends items and
+   gives the buddy its XP in the save, as always. A battle on a copied team (a ghost, a simulation) touches nothing of
+   the save: it brings its own seen list (b.seen), bag (b.bag, item id -> count) and buddy uid (b.buddy), or none. */
+export const battleOnSave = b => !!b && b.sides[0].team === saveData.team;
+export const battleSeen = (b = battleNow()) => (!b || battleOnSave(b) ? saveData.seen : b.seen || (b.seen = {}));
+export const battleBag = b => (!b || battleOnSave(b) ? saveData.items : b.bag || (b.bag = {}));
+export const battleBuddy = b => (battleOnSave(b) ? saveData.buddy : b.buddy);
+/* RL-4: every chance in a battle (crits, damage rolls, sleep, confusion, accuracy, effects, the AI and its weighted
+   pick, the limb a hit lands on, speed ties, catch rolls) comes from battleRoll(): the battle's own stream b.rng when
+   it has one (makeBattle gives it one from b.seed), else util.js random, as before. The same seed plays the same
+   battle, whatever else draws numbers meanwhile. */
+export const battleRoll = () => {
+  const b = battleNow();
+  return b && b.rng ? b.rng() : random();
+};
 export const BATTLE_RULES = RULES.battle,
   CATCH_RULES = RULES.catching;
-export const newFieldState = () => ({
-  st: Object.fromEntries(STAT_IDS.filter(k => k !== 'hp').map(k => [k, 0])),
-  turnsIn: 0,
-  ov: null,
-  ovT: 0,
-  protect: false,
-  last: null,
-  holdN: 0,
-  hyped: 0,
-  down: false,
-});
 export const ACTOR_SIDE = [0, 1, 0, 1, 0],
   ACTOR_SLOT = [0, 0, 1, 1, 2],
   SIDE_ACTORS = [
@@ -176,12 +228,12 @@ export const ACTOR_SIDE = [0, 1, 0, 1, 0],
   ];
 export const actorIndex = (si, sl) => SIDE_ACTORS[si][sl];
 export const fieldSlot = k => {
-  const sd = activeBattle && activeBattle.sides[ACTOR_SIDE[k]];
+  const sd = battleNow() && battleNow().sides[ACTOR_SIDE[k]];
   return sd ? sd.f[ACTOR_SLOT[k]] : null;
 };
 export const fighter = k => {
   const f = fieldSlot(k);
-  return f && f.on ? activeBattle.sides[ACTOR_SIDE[k]].team[f.act] : undefined;
+  return f && f.on ? battleNow().sides[ACTOR_SIDE[k]].team[f.act] : undefined;
 };
 provide({ fighter }); /* to-module */
 export const fieldState = k => fieldSlot(k).v;
@@ -189,8 +241,8 @@ provide({ fieldState }); /* to-module */
 /* every actor on the field, the live ones, and those of one side */
 export const allActors = () => {
   const o = [];
-  if (!activeBattle) return o;
-  activeBattle.sides.forEach((sd, si) => sd.f.forEach((f, sl) => o.push(actorIndex(si, sl))));
+  if (!battleNow()) return o;
+  battleNow().sides.forEach((sd, si) => sd.f.forEach((f, sl) => o.push(actorIndex(si, sl))));
   return o;
 };
 export const liveActors = si =>
@@ -198,8 +250,7 @@ export const liveActors = si =>
 export const foeSide = k => 1 - ACTOR_SIDE[k];
 export const actorTypes = k => fieldState(k).ov || speciesOf(fighter(k)).types;
 export const shockName = () => BATTLE_RULES.shockName || `${BATTLE_RULES.shockType} storm`;
-export const isMulti = () =>
-  !!activeBattle && (activeBattle.sides[0].f.length > 1 || activeBattle.sides[1].f.length > 1);
+export const isMulti = () => !!battleNow() && (battleNow().sides[0].f.length > 1 || battleNow().sides[1].f.length > 1);
 export function effectiveStat(k, s2) {
   const m = fighter(k),
     v = fieldState(k);
@@ -219,7 +270,7 @@ export function effectiveStat(k, s2) {
 export function actorSnapshot(k) {
   const f = fieldSlot(k);
   if (!f || !f.on) return null;
-  const m = activeBattle.sides[ACTOR_SIDE[k]].team[f.act];
+  const m = battleNow().sides[ACTOR_SIDE[k]].team[f.act];
   if (!m) return null;
   const a = xpFor(m.lvl),
     b = xpFor(m.lvl + 1);
@@ -250,15 +301,15 @@ export function actorSnapshot(k) {
 }
 export const allSnapshots = () => [0, 1, 2, 3, 4].map(k => (fieldSlot(k) ? actorSnapshot(k) : null));
 export function battleSay(t, an) {
-  const ev = { t, an: an || null, s: allSnapshots(), mk: activeBattle.market ? { ...activeBattle.market } : null };
-  activeBattle.events.push(ev);
+  const ev = { t, an: an || null, s: allSnapshots(), mk: battleNow().market ? { ...battleNow().market } : null };
+  battleNow().events.push(ev);
   return ev;
 }
 export function refreshLastSnapshot() {
-  const e = activeBattle.events[activeBattle.events.length - 1];
+  const e = battleNow().events[battleNow().events.length - 1];
   if (e) {
     e.s = allSnapshots();
-    e.mk = activeBattle.market ? { ...activeBattle.market } : null;
+    e.mk = battleNow().market ? { ...battleNow().market } : null;
   }
 }
 export function movePower(k, tk, M) {
@@ -283,16 +334,16 @@ export function calcDamage(k, tk, mid, src) {
   const stab = M.t !== 'None' && aty.includes(M.t) ? BATTLE_RULES.stab : 1,
     te = typeEffectiveness(M.t, actorTypes(tk));
   const cs = (fx.crit || 0) + (hasPassive(aty, 'sharp') ? BATTLE_RULES.mediaCrit : 0);
-  const crit = !src && random() < BATTLE_RULES.critChances[clamp(cs, 0, BATTLE_RULES.critChances.length - 1)];
+  const crit = !src && battleRoll() < BATTLE_RULES.critChances[clamp(cs, 0, BATTLE_RULES.critChances.length - 1)];
   const roll = hasPassive(aty, 'volatile')
-    ? BATTLE_RULES.cryptoRollMin + random() * (BATTLE_RULES.cryptoRollMax - BATTLE_RULES.cryptoRollMin)
-    : BATTLE_RULES.rollMin + random() * (1 - BATTLE_RULES.rollMin);
-  const mk = activeBattle.market && M.t === BATTLE_RULES.shockType ? BATTLE_RULES.oilShockMult : 1;
+    ? BATTLE_RULES.cryptoRollMin + battleRoll() * (BATTLE_RULES.cryptoRollMax - BATTLE_RULES.cryptoRollMin)
+    : BATTLE_RULES.rollMin + battleRoll() * (1 - BATTLE_RULES.rollMin);
+  const mk = battleNow().market && M.t === BATTLE_RULES.shockType ? BATTLE_RULES.oilShockMult : 1;
   let eco = 1;
   if (!src) {
     const syn = aty.filter(t => PASSIVE[t] === 'synergy');
     if (syn.length) {
-      const sd = activeBattle.sides[ACTOR_SIDE[k]],
+      const sd = battleNow().sides[ACTOR_SIDE[k]],
         me = fighter(k);
       eco =
         1 +
@@ -300,10 +351,7 @@ export function calcDamage(k, tk, mid, src) {
           sd.team.filter(m => m !== me && m.hp > 0 && speciesOf(m).types.some(t => syn.includes(t))).length;
     }
   }
-  const wx =
-    typeof battleWeatherMultiplier === 'function'
-      ? battleWeatherMultiplier(M.t)
-      : 1; /* v28: the weather where you stand */
+  const wx = battleHost().weather(M.t); /* v28: the weather where you stand */
   /* phase 17: a robot's move of its gem's type hits harder */
   const me = src ? null : fighter(k),
     gem = isRobot(me) ? robotGemDef(me.gem) : null,
@@ -336,14 +384,14 @@ export function inflict(tk, st, loud) {
     if (loud) battleSay(`But ${billyName(t)} is already ${(STATUS_NAMES[t.status] || 'affected').toLowerCase()}.`);
     return;
   }
-  if (t.boss && st === 'sub' && random() < (BATTLE_RULES.alphaSleepResist ?? 0.5)) {
+  if (t.boss && st === 'sub' && battleRoll() < (BATTLE_RULES.alphaSleepResist ?? 0.5)) {
     battleSay(`${billyName(t)} shrugged it off. Alphas don’t nod off easily.`);
     return;
   }
   t.status = st;
   if (st === 'sub')
     t.sTurns =
-      BATTLE_RULES.subpoenaMin + Math.floor(random() * (BATTLE_RULES.subpoenaMax - BATTLE_RULES.subpoenaMin + 1));
+      BATTLE_RULES.subpoenaMin + Math.floor(battleRoll() * (BATTLE_RULES.subpoenaMax - BATTLE_RULES.subpoenaMin + 1));
   battleSay(
     `${billyName(t)} ${st === 'aud' ? 'is paralyzed. It may be unable to move' : st === 'sub' ? 'fell asleep' : st === 'scn' ? 'was burned' : 'is ' + (STATUS_NAMES[st] || st)}.`,
     { k: 'status', si: tk, st }
@@ -355,7 +403,7 @@ export function retarget(k, tk) {
   if (tk != null && fighter(tk) && fighter(tk).hp > 0 && ACTOR_SIDE[tk] === fs) return tk;
   const L = liveActors(fs);
   if (!L.length) return null;
-  return L[Math.floor(random() * L.length)];
+  return L[Math.floor(battleRoll() * L.length)];
 }
 /* phase 17: part is the robot part an aimed move goes for (the player picks it, or the AI) */
 export function useMove(k, mid, tk0, part) {
@@ -381,13 +429,13 @@ export function useMove(k, mid, tk0, part) {
     u.status = null;
     battleSay(`${billyName(u)} woke up.`);
   }
-  if (u.status === 'aud' && random() < BATTLE_RULES.auditSkip) {
+  if (u.status === 'aud' && battleRoll() < BATTLE_RULES.auditSkip) {
     battleSay(`${billyName(u)} is paralyzed and can’t move.`, { k: 'status', si: k, st: 'aud' });
     return;
   }
   if (v.hyped > 0) {
     v.hyped--;
-    if (random() < BATTLE_RULES.hypeSelfHit) {
+    if (battleRoll() < BATTLE_RULES.hypeSelfHit) {
       const dm = Math.max(
         1,
         Math.floor(((0.4 * u.lvl + 2) * 40 * effectiveStat(k, 'lev')) / effectiveStat(k, 'law') / 50 + 2)
@@ -402,7 +450,7 @@ export function useMove(k, mid, tk0, part) {
   const tk = onFoe ? retarget(k, tk0) : k;
   if (onFoe && tk == null) return;
   const t = fighter(tk),
-    td = activeBattle.sides[ACTOR_SIDE[tk]];
+    td = battleNow().sides[ACTOR_SIDE[tk]];
   /* spread moves hit every fighter on the other side (a little weaker when there's more than one) */
   const spread = onFoe && fx.spread && liveActors(foeSide(k)).length > 1;
   const ev = battleSay(`${billyName(u)} used ${M.n}${isMulti() && onFoe && !spread ? ` on ${billyName(t)}` : ''}.`, {
@@ -438,7 +486,7 @@ export function useMove(k, mid, tk0, part) {
       battleSay(`${billyName(t2)} protected itself.`, tk2 === tk ? null : { k: 'hurt', si: tk2, dmg: 0, fx: 'block' });
       continue;
     }
-    if (onFoe && M.a && random() * 100 >= M.a) {
+    if (onFoe && M.a && battleRoll() * 100 >= M.a) {
       if (tk2 === tk) ev.an.miss = true;
       battleSay(`${billyName(u)} missed${spread ? ' ' + billyName(t2) : ''}.`);
       if (fx.missCost && tk2 === targets[0]) {
@@ -454,7 +502,7 @@ export function useMove(k, mid, tk0, part) {
     }
     if (fx.delay) {
       ev.an.self = true;
-      activeBattle.sides[ACTOR_SIDE[tk2]].mail.push({
+      battleNow().sides[ACTOR_SIDE[tk2]].mail.push({
         n: BATTLE_RULES.mailTurns,
         A: effectiveStat(k, 'lev'),
         lvl: u.lvl,
@@ -499,7 +547,7 @@ export function useMove(k, mid, tk0, part) {
       }
     }
     if (t2.hp > 0 && onFoe) {
-      if (fx.status && (M.c === 'X' || random() * 100 < (fx.chance || 100))) inflict(tk2, fx.status, M.c === 'X');
+      if (fx.status && (M.c === 'X' || battleRoll() * 100 < (fx.chance || 100))) inflict(tk2, fx.status, M.c === 'X');
       if (fx.tgtStage) applyStatStages(tk2, fx.tgtStage);
       if (fx.hype) {
         if (fv2.hyped > 0) battleSay('But it failed.');
@@ -529,8 +577,8 @@ export function useMove(k, mid, tk0, part) {
     }
   }
   if (fx.delay || (!spread && ev.an && (ev.an.miss || ev.an.blocked))) return;
-  if (fx.selfStage && (!fx.selfChance || random() * 100 < fx.selfChance)) applyStatStages(k, fx.selfStage);
-  if (fx.selfStatus && u.hp > 0 && !u.status && random() * 100 < (fx.selfChance || 100)) {
+  if (fx.selfStage && (!fx.selfChance || battleRoll() * 100 < fx.selfChance)) applyStatStages(k, fx.selfStage);
+  if (fx.selfStatus && u.hp > 0 && !u.status && battleRoll() * 100 < (fx.selfChance || 100)) {
     u.status = fx.selfStatus;
     battleSay(`${billyName(u)} hurt itself and is now ${(STATUS_NAMES[fx.selfStatus] || 'troubled').toLowerCase()}.`, {
       k: 'status',
@@ -558,7 +606,7 @@ export function useMove(k, mid, tk0, part) {
     }
   }
   if (fx.market) {
-    activeBattle.market = { k: 'sand', n: BATTLE_RULES.shockTurns };
+    battleNow().market = { k: 'sand', n: BATTLE_RULES.shockTurns };
     battleSay(`A ${shockName().toLowerCase()} kicked up.`, { k: 'market' });
   }
 }
@@ -579,7 +627,7 @@ export function endTurn() {
       m.hp = Math.max(0, m.hp - d);
       battleSay(`${billyName(m)} is hurt by its burn.`, { k: 'hurt', si: k, fx: 'scn', dmg: d });
     }
-    if (m.hp > 0 && activeBattle.market && !ty.includes(BATTLE_RULES.shockType)) {
+    if (m.hp > 0 && battleNow().market && !ty.includes(BATTLE_RULES.shockType)) {
       const d = Math.max(1, Math.floor(mx / fr));
       m.hp = Math.max(0, m.hp - d);
       battleSay(`${billyName(m)} is buffeted by the ${shockName().toLowerCase()}.`, {
@@ -602,7 +650,7 @@ export function endTurn() {
     }
   }
   for (const si of [0, 1]) {
-    const sd = activeBattle.sides[si];
+    const sd = battleNow().sides[si];
     sd.mail = sd.mail.filter(h => {
       if (--h.n > 0) return true;
       const L = liveActors(si),
@@ -624,8 +672,8 @@ export function endTurn() {
       return false;
     });
   }
-  if (activeBattle.market && --activeBattle.market.n <= 0) {
-    activeBattle.market = null;
+  if (battleNow().market && --battleNow().market.n <= 0) {
+    battleNow().market = null;
     battleSay(`The ${shockName().toLowerCase()} died down.`, { k: 'marketEnd' });
   }
 }
@@ -633,7 +681,7 @@ export function award(e) {
   const P = RULES.progression,
     amt = Math.floor(
       ((speciesOf(e).yld * e.lvl) / 7) *
-        (activeBattle.kind === 'trainer' ? P.trainerXpMult : 1) *
+        (battleNow().kind === 'trainer' ? P.trainerXpMult : 1) *
         (e.boss ? (BATTLE_RULES.alphaXp ?? 3) : 1)
     );
   const on = liveActors(0).map(k => fighter(k));
@@ -643,20 +691,22 @@ export function award(e) {
     gainXp(m, amt, battleSay);
   });
   /* phase 08: your buddy gets the full amount even when it didn't fight (it got its XP from walking before) */
-  const bud = saveData.team.find(m => m.uid === saveData.buddy && !on.includes(m) && m.hp > 0);
+  const mine = battleNow().sides[0].team,
+    buddy = battleBuddy(battleNow());
+  const bud = mine.find(m => m.uid === buddy && !on.includes(m) && m.hp > 0);
   if (bud) {
     battleSay(`${billyName(bud)} gained ${formatNumber(amt)} XP.`);
     gainXp(bud, amt, battleSay);
   }
   const share = Math.floor(amt * P.teamXpShare),
-    rest = saveData.team.filter(m => !on.includes(m) && m !== bud && m.hp > 0);
+    rest = mine.filter(m => !on.includes(m) && m !== bud && m.hp > 0);
   if (rest.length && share > 0) {
     rest.forEach(m => gainXp(m, share, () => {}));
     battleSay(`The rest of the team gained ${formatNumber(share)} XP.`);
   }
 }
 export function inherit(k) {
-  const sd = activeBattle.sides[ACTOR_SIDE[k]];
+  const sd = battleNow().sides[ACTOR_SIDE[k]];
   if (!hasPassive(speciesOf(fighter(k)).types, 'inherit')) return;
   const st = {};
   let any = false;
@@ -668,45 +718,49 @@ export function inherit(k) {
   if (any) sd.inh = st;
 }
 /* who on a side could still come in: alive, not at work, not on the field and not already called in this turn */
-export function benchCandidates(si, also = []) {
-  const sd = activeBattle.sides[si],
-    on = sd.f.filter(f => f.on).map(f => f.act);
-  return sd.team
-    .map((m, i) => i)
-    .filter(i => {
-      const m = sd.team[i];
-      return m.hp > 0 && !on.includes(i) && !also.includes(i);
-    });
+export function benchCandidates(si, also = [], b) {
+  return withBattle(b, () => {
+    const sd = battleNow().sides[si],
+      on = sd.f.filter(f => f.on).map(f => f.act);
+    return sd.team
+      .map((m, i) => i)
+      .filter(i => {
+        const m = sd.team[i];
+        return m.hp > 0 && !on.includes(i) && !also.includes(i);
+      });
+  });
 }
-export function doSwitch(k, idx) {
-  const sd = activeBattle.sides[ACTOR_SIDE[k]],
-    f = fieldSlot(k);
-  f.act = idx;
-  f.on = true;
-  f.down = false;
-  const inh = sd.inh;
-  f.v = newFieldState();
-  sd.inh = null;
-  const m = fighter(k);
-  battleSay(
-    ACTOR_SIDE[k] === 0
-      ? `Go, ${billyName(m)}!`
-      : `${activeBattle.foeName || 'The wild side'} sent out ${billyName(m)}.`,
-    {
-      k: 'enter',
-      si: k,
+export function doSwitch(k, idx, b) {
+  return withBattle(b, () => {
+    const sd = battleNow().sides[ACTOR_SIDE[k]],
+      f = fieldSlot(k);
+    f.act = idx;
+    f.on = true;
+    f.down = false;
+    const inh = sd.inh;
+    f.v = newFieldState();
+    sd.inh = null;
+    const m = fighter(k);
+    battleSay(
+      ACTOR_SIDE[k] === 0
+        ? `Go, ${billyName(m)}!`
+        : `${battleNow().foeName || 'The wild side'} sent out ${billyName(m)}.`,
+      {
+        k: 'enter',
+        si: k,
+      }
+    );
+    if (!isRobot(m)) battleSeen()[m.sp] = 1;
+    if (sd.rent && !hasPassive(speciesOf(m).types, 'landlord')) {
+      const d = Math.max(1, Math.floor(maxHp(m) / Math.max(2, BATTLE_RULES.rentFraction)));
+      m.hp = Math.max(0, m.hp - d);
+      battleSay(`${billyName(m)} was hurt by the sharp stones.`, { k: 'hurt', si: k, fx: 'rent', dmg: d });
     }
-  );
-  if (!isRobot(m)) saveData.seen[m.sp] = 1;
-  if (sd.rent && !hasPassive(speciesOf(m).types, 'landlord')) {
-    const d = Math.max(1, Math.floor(maxHp(m) / Math.max(2, BATTLE_RULES.rentFraction)));
-    m.hp = Math.max(0, m.hp - d);
-    battleSay(`${billyName(m)} was hurt by the sharp stones.`, { k: 'hurt', si: k, fx: 'rent', dmg: d });
-  }
-  if (inh) {
-    Object.assign(f.v.st, inh);
-    battleSay(`${billyName(m)} took up its teammate’s boosts.`, { k: 'stat', si: k, up: true });
-  }
+    if (inh) {
+      Object.assign(f.v.st, inh);
+      battleSay(`${billyName(m)} took up its teammate’s boosts.`, { k: 'stat', si: k, up: true });
+    }
+  });
 }
 export function checkFaints() {
   let any = false;
@@ -722,9 +776,9 @@ export function checkFaints() {
     inherit(k);
     const nx = benchCandidates(1)[0];
     if (nx == null) f.on = false;
-    else if (!activeBattle.over) doSwitch(k, nx);
+    else if (!battleNow().over) doSwitch(k, nx);
   }
-  if (!liveActors(1).length && !activeBattle.over) activeBattle.over = 'win';
+  if (!liveActors(1).length && !battleNow().over) battleNow().over = 'win';
   for (const k of allActors().filter(k => ACTOR_SIDE[k] === 0)) {
     const p = fighter(k),
       f = fieldSlot(k);
@@ -735,14 +789,13 @@ export function checkFaints() {
     p.sTurns = 0;
     battleSay(`${billyName(p)} fainted.`, { k: 'faint', si: k });
     inherit(k);
-    const pend = (activeBattle.needSwitch || []).length;
+    const pend = (battleNow().needSwitch || []).length;
     if (benchCandidates(0).length > pend) {
-      if (!activeBattle.over) (activeBattle.needSwitch || (activeBattle.needSwitch = [])).push(k);
+      if (!battleNow().over) (battleNow().needSwitch || (battleNow().needSwitch = [])).push(k);
     } else f.on = false;
   }
-  if (!activeBattle.over && !liveActors(0).length && !(activeBattle.needSwitch || []).length)
-    activeBattle.over = 'lose';
-  if (any && !activeBattle.over && liveActors(1).some(k => fighter(k).hp <= 0)) checkFaints();
+  if (!battleNow().over && !liveActors(0).length && !(battleNow().needSwitch || []).length) battleNow().over = 'lose';
+  if (any && !battleNow().over && liveActors(1).some(k => fighter(k).hp <= 0)) checkFaints();
   return any;
 }
 /* how much a move is worth against one target, for the computer's choices */
@@ -798,51 +851,53 @@ export function aiScore(k, id, tk) {
   else if (fx.hype) s = fieldState(tk).hyped ? 0 : 35;
   else if (fx.heal) s = m.hp < maxHp(m) * 0.5 ? 90 : 0;
   else if (fx.protect) s = fieldState(k).last === id ? 0 : 12;
-  else if (fx.rent) s = activeBattle.sides[ACTOR_SIDE[tk]].rent ? 0 : 30;
-  else if (fx.market) s = activeBattle.market ? 0 : 40;
+  else if (fx.rent) s = battleNow().sides[ACTOR_SIDE[tk]].rent ? 0 : 30;
+  else if (fx.market) s = battleNow().market ? 0 : 40;
   else if (fx.selfStage) s = Object.keys(fx.selfStage).some(q => fieldState(k).st[q] < 2) ? 28 : 0;
   else if (fx.tgtStage) s = 22;
   else if (fx.spin) s = fieldState(tk).ov ? 0 : 20;
   else s = 0;
   return s + 5;
 }
-export function chooseAI(k = 1) {
-  const m = fighter(k);
-  if (!m || m.hp <= 0) return null;
-  const T = liveActors(foeSide(k));
-  if (!T.length) return null;
-  const opts = [];
-  for (const id of m.moves.filter(id => MOVES[id] && moveUsable(m, id)))
-    for (const tk of T) opts.push([{ mid: id, tk, part: aiAimPart(id, tk) }, aiScore(k, id, tk)]);
-  if (!opts.length) return null;
-  /* v34: in a double the second foe knows what its partner is about to do: no piling onto a fighter that's already
+export function chooseAI(k = 1, b) {
+  return withBattle(b, () => {
+    const m = fighter(k);
+    if (!m || m.hp <= 0) return null;
+    const T = liveActors(foeSide(k));
+    if (!T.length) return null;
+    const opts = [];
+    for (const id of m.moves.filter(id => MOVES[id] && moveUsable(m, id)))
+      for (const tk of T) opts.push([{ mid: id, tk, part: aiAimPart(id, tk) }, aiScore(k, id, tk)]);
+    if (!opts.length) return null;
+    /* v34: in a double the second foe knows what its partner is about to do: no piling onto a fighter that's already
     going down, a spread move is worth more while both of yours stand, and a status move isn't doubled up */
-  const PL = activeBattle.aiPlan || (activeBattle.aiPlan = {});
-  if (activeBattle.fmt === 'double') {
-    for (const o of opts) {
-      const c = o[0],
-        M = MOVES[c.mid],
-        t = fighter(c.tk),
-        pre = PL[c.tk] || 0;
-      if (!t) continue;
-      if (M.c !== 'X' && pre >= t.hp) o[1] *= 0.3;
-      else if (M.c !== 'X' && pre + aiDamage(k, c.mid, c.tk) >= t.hp) o[1] *= 1.35;
-      if (M.c === 'X' && (M.fx || {}).status && PL['st' + c.tk]) o[1] *= 0.2;
+    const PL = battleNow().aiPlan || (battleNow().aiPlan = {});
+    if (battleNow().fmt === 'double') {
+      for (const o of opts) {
+        const c = o[0],
+          M = MOVES[c.mid],
+          t = fighter(c.tk),
+          pre = PL[c.tk] || 0;
+        if (!t) continue;
+        if (M.c !== 'X' && pre >= t.hp) o[1] *= 0.3;
+        else if (M.c !== 'X' && pre + aiDamage(k, c.mid, c.tk) >= t.hp) o[1] *= 1.35;
+        if (M.c === 'X' && (M.fx || {}).status && PL['st' + c.tk]) o[1] *= 0.2;
+      }
     }
-  }
-  let pick;
-  if ((activeBattle.kind === 'trainer' || m.boss) && random() < BATTLE_RULES.aiSmart) {
-    opts.sort((a, b) => b[1] - a[1]);
-    pick = opts[0][0];
-  } else pick = pickWeighted(opts);
-  if (pick) {
-    const M = MOVES[pick.mid];
-    if (M.c !== 'X') {
-      const tg = (M.fx || {}).spread ? liveActors(foeSide(k)) : [pick.tk];
-      for (const t of tg) PL[t] = (PL[t] || 0) + aiDamage(k, pick.mid, t);
-    } else if ((M.fx || {}).status) PL['st' + pick.tk] = 1;
-  }
-  return pick;
+    let pick;
+    if ((battleNow().kind === 'trainer' || m.boss) && battleRoll() < BATTLE_RULES.aiSmart) {
+      opts.sort((a, b) => b[1] - a[1]);
+      pick = opts[0][0];
+    } else pick = pickWeighted(opts, battleRoll);
+    if (pick) {
+      const M = MOVES[pick.mid];
+      if (M.c !== 'X') {
+        const tg = (M.fx || {}).spread ? liveActors(foeSide(k)) : [pick.tk];
+        for (const t of tg) PL[t] = (PL[t] || 0) + aiDamage(k, pick.mid, t);
+      } else if ((M.fx || {}).status) PL['st' + pick.tk] = 1;
+    }
+    return pick;
+  });
 }
 /* phase 17: which robot part the computer aims an aimed move at: the weakest limb still standing, so it breaks */
 export function aiAimPart(mid, tk) {
@@ -864,7 +919,7 @@ export function hitPart(tk, dmg, M, aim) {
   if (!slot) {
     const W = /** @type {[string, number][]} */ ([['torso', R.hitWeights.torso ?? 0.25]]);
     for (const q of ROBOT_LIMBS) if (!partBroken(t, q)) W.push([q, R.hitWeights[q] ?? 0.25]);
-    slot = pickWeighted(W);
+    slot = pickWeighted(W, battleRoll);
   }
   if (slot === 'torso') return slot;
   const d = Math.max(1, Math.round(dmg * R.partShare * (fx.breaker || 1)));
@@ -872,73 +927,14 @@ export function hitPart(tk, dmg, M, aim) {
   t.partDmg[slot] = (t.partDmg[slot] || 0) + d;
   return slot;
 }
-/* fmt: 'single', 'double' (two a side) or 'alpha' (up to three of yours against one Alpha) */
+/* a battle against foe on the save's team, made the current one (makeBattle, battle-state.js); false when all have fainted */
 export function newBattle(kind, foe, extra) {
-  const able = saveData.team.map((m, i) => i).filter(i => saveData.team[i].hp > 0);
-  if (!able.length) {
-    toast('Everyone on your team has fainted. Rest first, or use a Revive.');
+  const b = makeBattle(kind, saveData.team, foe, extra);
+  if (!b) {
+    battleHost(extra || null).toast('Everyone on your team has fainted. Rest first, or use a Revive.');
     return false;
   }
-  const fmt = (extra && extra.fmt) || 'single',
-    n0 = Math.min(able.length, fmt === 'double' ? 2 : fmt === 'alpha' ? (BATTLE_RULES.alphaTeam ?? 3) : 1),
-    n1 = fmt === 'double' ? Math.min(2, foe.length) : 1;
-  const fighters = (n, list) =>
-    Array.from({ length: n }, (_, sl) => ({ act: list[sl], on: list[sl] != null, v: newFieldState(), down: false }));
-  setActiveBattle(
-    Object.assign(
-      {
-        kind,
-        fmt,
-        events: [],
-        ev: 0,
-        phase: 'playing',
-        market: null,
-        integrity: 1,
-        over: null,
-        needSwitch: [],
-        offer: null,
-        foeName: '',
-        lead: saveData.team[able[0]].uid,
-        turn: 0,
-        plan: [],
-        cur: 0,
-        sides: [
-          { team: saveData.team, f: fighters(n0, able), rent: false, pivot: false, mail: [], inh: null },
-          {
-            team: foe,
-            f: fighters(
-              n1,
-              foe.map((m, i) => i)
-            ),
-            rent: false,
-            pivot: false,
-            mail: [],
-            inh: null,
-          },
-        ],
-      },
-      extra,
-      { fmt }
-    )
-  );
-  Object.defineProperty(activeBattle.sides[0], 'act', {
-    get() {
-      return this.f[0].act;
-    },
-    set(v) {
-      this.f[0].act = v;
-    },
-    enumerable: false,
-  });
-  Object.defineProperty(activeBattle.sides[1], 'act', {
-    get() {
-      return this.f[0].act;
-    },
-    set(v) {
-      this.f[0].act = v;
-    },
-    enumerable: false,
-  });
+  setActiveBattle(b);
   foe.forEach(m => {
     if (!isRobot(m)) saveData.seen[m.sp] = 1;
   });
@@ -972,14 +968,14 @@ export function startWild(q) {
     battleSay(`It looks too picky for ${COINS.penny ? 'a ' + COINS.penny.n : 'cheap coins'}.`);
   const K = liveActors(0);
   K.forEach((k, n) => battleSay(n ? '' : `Go, ${joinNames(K)}!`, { k: 'enter', si: k, quiet: n > 0 }));
-  openBattle();
+  battleHost().open();
 }
 export function startTrainer(id, o = {}) {
   const T = TRAINERS[id];
   if (!T) return;
   const team = trainerTeam(T);
   if (!team.length) {
-    toast(`${T.name} has no team yet. Add one in Pocket Billies Studio.`);
+    battleHost(o).toast(`${T.name} has no team yet. Add one in Pocket Billies Studio.`);
     return;
   }
   const dbl = (T.double || o.double) && team.length >= 2 && saveData.team.filter(m => m.hp > 0).length >= 1;
@@ -991,136 +987,157 @@ export function startTrainer(id, o = {}) {
       /* BATTLE_STAGES[undefined] is undefined: a trainer without a stage gets the place's */
       area: BATTLE_STAGES[/** @type {string} */ (T.battleStage)] ? T.battleStage : battleStageKey(),
       fmt: dbl ? 'double' : 'single',
+      ...(o.host && { host: o.host }),
     })
   )
     return;
   battleSay(dbl ? `${T.name} wants a double battle!` : `${T.name} wants to battle.`, { k: 'trainerIn', who: T.who });
   if (T.market) {
-    activeBattle.market = { k: 'sand', n: T.market.n || BATTLE_RULES.shockTurns };
+    battleNow().market = { k: 'sand', n: T.market.n || BATTLE_RULES.shockTurns };
     battleSay(T.marketText || `The battle opened in a ${shockName().toLowerCase()}.`, { k: 'market' });
   }
   const F = liveActors(1);
   F.forEach((k, n) => battleSay(n ? '' : `${T.name} sent out ${joinNames(F)}.`, { k: 'enter', si: k, quiet: n > 0 }));
   const K = liveActors(0);
   K.forEach((k, n) => battleSay(n ? '' : `Go, ${joinNames(K)}!`, { k: 'enter', si: k, quiet: n > 0 }));
-  openBattle();
+  battleHost().open();
 }
 export function battleStageKey() {
   return hereLocation().battleStage;
 }
 /* one turn. plan: what each of your fighters does ({who,k:'move',mid,tk} | {who,k:'switch',i} | {who,k:'item',item,uid})
    or a single {k:'run'}. An older single action ({k:'move',mid}) is your first fighter's. */
-export function runTurn(plan) {
-  activeBattle.events = [];
-  activeBattle.ev = 0;
-  activeBattle.needSwitch = [];
-  activeBattle.turn++;
-  activeBattle.aiPlan = {};
-  if (!Array.isArray(plan)) plan = [Object.assign({ who: 0 }, plan)];
-  if (plan.some(p => p.k === 'run')) {
-    battleSay('You got away safely.', { k: 'run' });
-    activeBattle.over = 'ran';
-    return playTurnEvents();
-  }
-  for (const p of plan.filter(p => p.k === 'switch')) {
-    const out = fighter(p.who);
-    if (!out) continue;
-    const free = hasPassive(actorTypes(p.who), 'pivot') && !activeBattle.sides[0].pivot;
-    if (free) activeBattle.sides[0].pivot = true;
-    battleSay(free ? `${billyName(out)} darted out without losing the turn.` : `${billyName(out)}, come back.`, {
-      k: 'recall',
-      si: p.who,
-    });
-    doSwitch(p.who, p.i);
-    p.free = free;
-  }
-  checkFaints();
-  if (activeBattle.over) return playTurnEvents();
-  if (plan.length === 1 && plan[0].k === 'switch' && plan[0].free) return playTurnEvents();
-  for (const p of plan.filter(p => p.k === 'item')) applyItem(p.item, p.uid, true);
-  const acts = [];
-  for (const p of plan.filter(p => p.k === 'move')) acts.push({ who: p.who, mid: p.mid, tk: p.tk, part: p.part });
-  for (const k of liveActors(1)) {
-    const n = fighter(k).boss ? (BATTLE_RULES.alphaActs ?? 2) : 1;
-    for (let i = 0; i < n; i++) {
-      const c = chooseAI(k);
-      if (c) acts.push({ who: k, mid: c.mid, tk: c.tk, part: c.part, boss2: i > 0 });
+export function runTurn(plan, b) {
+  return withBattle(b, () => {
+    battleNow().events = [];
+    battleNow().ev = 0;
+    battleNow().needSwitch = [];
+    battleNow().turn++;
+    battleNow().aiPlan = {};
+    if (!Array.isArray(plan)) plan = [Object.assign({ who: 0 }, plan)];
+    if (plan.some(p => p.k === 'run')) {
+      battleSay('You got away safely.', { k: 'run' });
+      battleNow().over = 'ran';
+      return battleHost().play();
     }
-  }
-  acts.forEach(a => (a.r = random()));
-  acts.sort(
-    (a, b) =>
-      (MOVES[b.mid].pr || 0) - (MOVES[a.mid].pr || 0) ||
-      (a.boss2 ? 1 : 0) - (b.boss2 ? 1 : 0) ||
-      effectiveStat(b.who, 'hus') - effectiveStat(a.who, 'hus') ||
-      a.r - b.r
-  );
-  for (const a of acts) {
-    if (activeBattle.over) break;
-    const u = fighter(a.who);
-    if (!u || u.hp <= 0 || fieldSlot(a.who).down) continue;
-    if (!liveActors(foeSide(a.who)).length) break;
-    useMove(a.who, a.mid, a.tk, a.part);
+    for (const p of plan.filter(p => p.k === 'switch')) {
+      const out = fighter(p.who);
+      if (!out) continue;
+      const free = hasPassive(actorTypes(p.who), 'pivot') && !battleNow().sides[0].pivot;
+      if (free) battleNow().sides[0].pivot = true;
+      battleSay(free ? `${billyName(out)} darted out without losing the turn.` : `${billyName(out)}, come back.`, {
+        k: 'recall',
+        si: p.who,
+      });
+      doSwitch(p.who, p.i);
+      p.free = free;
+    }
     checkFaints();
-  }
-  if (!activeBattle.over) {
-    endTurn();
-    checkFaints();
-  }
-  playTurnEvents();
-}
-export function enemyOnly() {
-  activeBattle.aiPlan = {};
-  for (const k of liveActors(1)) {
-    const n = fighter(k).boss ? (BATTLE_RULES.alphaActs ?? 2) : 1;
-    for (let i = 0; i < n && !activeBattle.over; i++) {
-      const c = chooseAI(k);
-      if (c) {
-        useMove(k, c.mid, c.tk);
-        checkFaints();
+    if (battleNow().over) return battleHost().play();
+    if (plan.length === 1 && plan[0].k === 'switch' && plan[0].free) return battleHost().play();
+    for (const p of plan.filter(p => p.k === 'item')) applyItem(p.item, p.uid, true);
+    const acts = [];
+    for (const p of plan.filter(p => p.k === 'move')) acts.push({ who: p.who, mid: p.mid, tk: p.tk, part: p.part });
+    for (const k of liveActors(1)) {
+      const n = fighter(k).boss ? (BATTLE_RULES.alphaActs ?? 2) : 1;
+      for (let i = 0; i < n; i++) {
+        const c = chooseAI(k);
+        if (c) acts.push({ who: k, mid: c.mid, tk: c.tk, part: c.part, boss2: i > 0 });
       }
     }
-  }
-  if (!activeBattle.over) {
-    endTurn();
-    checkFaints();
-  }
+    acts.forEach(a => (a.r = battleRoll()));
+    acts.sort(
+      (a, b) =>
+        (MOVES[b.mid].pr || 0) - (MOVES[a.mid].pr || 0) ||
+        (a.boss2 ? 1 : 0) - (b.boss2 ? 1 : 0) ||
+        effectiveStat(b.who, 'hus') - effectiveStat(a.who, 'hus') ||
+        a.r - b.r
+    );
+    for (const a of acts) {
+      if (battleNow().over) break;
+      const u = fighter(a.who);
+      if (!u || u.hp <= 0 || fieldSlot(a.who).down) continue;
+      if (!liveActors(foeSide(a.who)).length) break;
+      useMove(a.who, a.mid, a.tk, a.part);
+      checkFaints();
+    }
+    if (!battleNow().over) {
+      endTurn();
+      checkFaints();
+    }
+    turnCapCheck();
+    battleHost().play();
+  });
 }
-export function catchOdds(id, T, spin) {
-  const e = fighter(1);
-  if (COINS[id] && COINS[id].m === 0) return 1;
-  let C = COINS[id].m;
-  if (id === 'penny' && CATCH_RULES.luxury.includes(speciesOf(e).line)) C *= CATCH_RULES.luxuryPenny;
-  const Sx = e.status === 'sub' ? CATCH_RULES.subpoena : e.status ? CATCH_RULES.status : 1;
-  return Math.min(
-    1,
-    speciesOf(e).cr *
-      (1 - (CATCH_RULES.hpFactor * e.hp) / maxHp(e)) *
-      C *
-      Sx *
-      T *
-      (spin ? CATCH_RULES.spin : 1) *
-      activeBattle.integrity *
-      (e.boss ? (CATCH_RULES.alpha ?? 0.4) : 1)
-  );
+/* RL-4: a battle still going after RULES.battle.turnCap turns ends as a draw (battle.js endBattle: a wild battle as
+   if you walked away, a trainer's as a loss), so no battle (a stall, a ghost replay) runs on for ever */
+export function turnCapCheck() {
+  const b = battleNow(),
+    cap = BATTLE_RULES.turnCap;
+  if (b.over || !(cap > 0) || b.turn < cap) return;
+  b.needSwitch = [];
+  battleSay(`${cap} turns and nobody has given in. The battle is called off: a draw.`, { k: 'draw' });
+  b.over = 'draw';
 }
-export function catchRoll(id, T, spin) {
-  if (uiState.dbgCatch) return { caught: true, w: 3, edge: false, P: 1 };
-  if (COINS[id].m === 0) return { caught: true, w: 3, edge: false, P: 1 };
-  if (random() < CATCH_RULES.edge) return { caught: true, w: 1, edge: true, P: 1 };
-  const P = catchOdds(id, T, spin);
-  const q = Math.cbrt(P);
-  let w = 0;
-  while (w < 3 && random() < q) w++;
-  return { caught: w === 3, w, edge: false, P };
+export function enemyOnly(b) {
+  return withBattle(b, () => {
+    battleNow().aiPlan = {};
+    for (const k of liveActors(1)) {
+      const n = fighter(k).boss ? (BATTLE_RULES.alphaActs ?? 2) : 1;
+      for (let i = 0; i < n && !battleNow().over; i++) {
+        const c = chooseAI(k);
+        if (c) {
+          useMove(k, c.mid, c.tk);
+          checkFaints();
+        }
+      }
+    }
+    if (!battleNow().over) {
+      endTurn();
+      checkFaints();
+    }
+  });
 }
-export const teamNeedsHp = () => saveData.team.some(m => m.hp > 0 && m.hp < maxHp(m));
-export const canUse = (it, m) => {
+export function catchOdds(id, T, spin, b) {
+  return withBattle(b, () => {
+    const e = fighter(1);
+    if (COINS[id] && COINS[id].m === 0) return 1;
+    let C = COINS[id].m;
+    if (id === 'penny' && CATCH_RULES.luxury.includes(speciesOf(e).line)) C *= CATCH_RULES.luxuryPenny;
+    const Sx = e.status === 'sub' ? CATCH_RULES.subpoena : e.status ? CATCH_RULES.status : 1;
+    return Math.min(
+      1,
+      speciesOf(e).cr *
+        (1 - (CATCH_RULES.hpFactor * e.hp) / maxHp(e)) *
+        C *
+        Sx *
+        T *
+        (spin ? CATCH_RULES.spin : 1) *
+        battleNow().integrity *
+        (e.boss ? (CATCH_RULES.alpha ?? 0.4) : 1)
+    );
+  });
+}
+export function catchRoll(id, T, spin, b) {
+  return withBattle(b, () => {
+    if (battleHost().sureCatch()) return { caught: true, w: 3, edge: false, P: 1 };
+    if (COINS[id].m === 0) return { caught: true, w: 3, edge: false, P: 1 };
+    if (battleRoll() < CATCH_RULES.edge) return { caught: true, w: 1, edge: true, P: 1 };
+    const P = catchOdds(id, T, spin);
+    const q = Math.cbrt(P);
+    let w = 0;
+    while (w < 3 && battleRoll() < q) w++;
+    return { caught: w === 3, w, edge: false, P };
+  });
+}
+/* the items: out of battle (b not given) on the save's team and bag; with a battle, on that battle's team and bag */
+export const teamNeedsHp = b => (b ? b.sides[0].team : saveData.team).some(m => m.hp > 0 && m.hp < maxHp(m));
+export const canUse = (it, m, b) => {
   const I = ITEMS[it];
-  if (!I || !saveData.items[it] || I.evoItem) return false;
+  if (!I || !battleBag(b)[it] || I.evoItem) return false;
   if (I.revive) return m.hp <= 0;
   if (m.hp <= 0) return false;
-  if (I.hpAll) return teamNeedsHp();
+  if (I.hpAll) return teamNeedsHp(b);
   /* phase 17: a repair kit fixes a robot's damaged parts */
   if (I.repair) return partsDamaged(m);
   const hurt = m.hp < maxHp(m);
@@ -1128,11 +1145,13 @@ export const canUse = (it, m) => {
   if (I.hp) return hurt;
   return false;
 };
-export function applyItem(it, id, inB) {
-  const I = ITEMS[it],
-    m = findBilly(id);
-  if (!m || !canUse(it, m)) return false;
-  saveData.items[it]--;
+/* inB: used in a battle's turn (the current battle, or b) */
+export function applyItem(it, id, inB, b) {
+  const X = b || (inB ? battleNow() : null),
+    I = ITEMS[it],
+    m = X ? X.sides[0].team.find(q => q.uid === id) : findBilly(id);
+  if (!m || !canUse(it, m, X)) return false;
+  battleBag(X)[it]--;
   const t = [];
   let healed = 0;
   if (I.revive) {
@@ -1159,7 +1178,7 @@ export function applyItem(it, id, inB) {
     }
     if (I.hpAll) {
       let n = 0;
-      saveData.team.forEach(x => {
+      (X ? X.sides[0].team : saveData.team).forEach(x => {
         if (x.hp > 0) {
           /* if (I.hpAll) above; TypeScript doesn't carry that into the callback */
           const g = Math.min(/** @type {number} */ (I.hpAll), maxHp(x) - x.hp);
@@ -1180,7 +1199,7 @@ export function applyItem(it, id, inB) {
     t.forEach((x, i) =>
       battleSay(x, i === 0 && onField ? { k: 'heal', si: kOn ?? 0, amt: healed || undefined } : null)
     );
-  } else toast(t.join(' '));
-  save();
+  } else battleHost(X).toast(t.join(' '));
+  battleHost(X).save();
   return true;
 }

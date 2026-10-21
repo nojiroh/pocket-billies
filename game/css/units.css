@@ -36,7 +36,7 @@
   height: 176px;
   margin-bottom: var(--s2);
   padding: 0 0 var(--s3);
-  border-radius: var(--r-md);
+  clip-path: var(--clip-card);
   cursor: pointer;
 }
 .u-tags {
@@ -119,27 +119,34 @@
   min-height: var(--tap);
 }
 
-/* HP: one bar, its number beside it */
+/* HP: one bar, its number beside it. UI-2: angular (slanted ends) and in ten cells, like pb-stat-bar */
 .u-hp {
   position: relative;
   display: block;
   height: 8px;
-  border-radius: var(--r-pill);
+  clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
   background: color-mix(in srgb, var(--text) 10%, transparent);
   overflow: hidden;
+}
+.u-hp::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(90deg, transparent 0 calc(10% - 2px), var(--g-solid) calc(10% - 2px) 10%);
+  transform: skewX(-45deg);
+  transform-origin: 0 100%;
 }
 .u-hp i {
   position: absolute;
   inset: 0 auto 0 0;
-  border-radius: inherit;
-  background: var(--ok);
+  background: var(--c-hp-ok, var(--ok));
   transition: width var(--m-slow) var(--ease-out);
 }
 .u-hp.mid i {
-  background: var(--gold-b);
+  background: var(--c-hp-mid, var(--gold-b));
 }
 .u-hp.low i {
-  background: var(--red);
+  background: var(--c-hp-low, var(--red));
 }
 .u-hpn {
   font: 600 var(--fs-caption) / 1 var(--font-voice);
@@ -159,15 +166,54 @@
   width: 100%;
   min-height: 84px;
   padding: var(--s3) var(--s4) var(--s3) var(--s3);
-  border: 1px solid var(--g-bd);
-  border-radius: var(--r-md);
-  background: var(--g-bg);
-  -webkit-backdrop-filter: var(--g-blur);
-  backdrop-filter: var(--g-blur);
-  box-shadow: var(--depth-raised);
+  /* UI-2: a solid card (no blur: cards inside a screen are solid semigloss) with four cuts; the fill and the edge
+     line are the two pseudo-elements, clipped to the card's outline, and the shadow follows the cuts */
+  position: relative;
+  isolation: isolate;
+  border: 0;
+  background: none;
+  filter: var(--drop-raised);
+  --k-fill: linear-gradient(180deg, color-mix(in srgb, var(--g-solid) 92%, white), var(--g-solid));
   color: var(--text);
   text-align: left;
   cursor: pointer;
+}
+.u-row::before,
+.u-row::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-below);
+  clip-path: var(--clip-card);
+  background: var(--k-fill);
+  pointer-events: none;
+}
+.u-row::after {
+  clip-path: var(--edge-card);
+  background: var(--edge);
+}
+/* UI-2: a bot's row is the shared bot plate: steel, the panel's two bigger cuts, a light-blue mark, its limb pips */
+.u-row.bot {
+  --k-fill:
+    linear-gradient(90deg, #5aa9d6 0 28px, transparent 28px) top left / 100% 3px no-repeat,
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--g-solid) 82%, #9fb3c8),
+      color-mix(in srgb, var(--g-solid) 90%, #6f8299)
+    );
+}
+.u-row.bot::before {
+  clip-path: var(--clip-panel);
+}
+.u-row.bot::after {
+  clip-path: var(--edge-panel);
+}
+.u-row:focus-visible {
+  outline: none;
+}
+.u-row:focus-visible::after {
+  background: var(--gold-b);
+  filter: drop-shadow(0 0 1px var(--gold-b));
 }
 .u-row.down {
   opacity: 0.6;
@@ -175,7 +221,41 @@
 .u-spr {
   width: 64px;
   height: 64px;
-  border-radius: var(--r-sm);
+}
+/* UI-2: a row's sprite is a portrait: its type-coloured circle sits behind, and the head breaks out of the top (the
+   sprite shows whole above the circle's middle, only inside the circle below it; the same rule as .pb-portrait) */
+.u-row .u-spr {
+  --por: 64px;
+  overflow: visible;
+  isolation: isolate;
+  background: none;
+  box-shadow: none;
+}
+.u-row .u-spr::before {
+  content: '';
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  bottom: 0;
+  aspect-ratio: 1;
+  z-index: var(--z-below);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 30%, rgba(255, 255, 255, 0.45), transparent 60%),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--c1, var(--gold-b)) 30%, var(--g-solid)),
+      color-mix(in srgb, var(--c2, var(--gold-b)) 45%, var(--g-solid))
+    );
+  box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--c-shadow) 18%, transparent);
+}
+.u-row .u-spr > * {
+  -webkit-mask:
+    radial-gradient(circle 28px at 50% 36px, #000 99%, transparent),
+    linear-gradient(#000, #000) top / 100% 36px no-repeat;
+  mask:
+    radial-gradient(circle 28px at 50% 36px, #000 99%, transparent),
+    linear-gradient(#000, #000) top / 100% 36px no-repeat;
 }
 .u-mid {
   display: grid;
@@ -199,22 +279,22 @@
   box-shadow: none;
 }
 
-/* open spots: dashed, quiet */
+/* open spots: quiet, no shadow, a faint edge */
 .u-open {
   grid-template-columns: 64px minmax(0, 1fr) auto;
-  background: transparent;
-  border: 2px dashed color-mix(in srgb, var(--text) 18%, transparent);
-  box-shadow: none;
-  -webkit-backdrop-filter: none;
-  backdrop-filter: none;
+  filter: none;
+  --k-fill: color-mix(in srgb, var(--text) 5%, transparent);
   cursor: default;
+}
+.u-open::after {
+  opacity: 0.5;
 }
 .u-plus {
   display: grid;
   place-items: center;
   width: 64px;
   height: 64px;
-  border-radius: var(--r-sm);
+  clip-path: var(--clip-card);
   font: 600 28px/1 var(--font-voice);
   color: var(--text2);
   background: color-mix(in srgb, var(--text) 6%, transparent);

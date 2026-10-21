@@ -52,7 +52,7 @@ const GITHUB_CONFIG = Object.assign(
   { owner: 'nojiroh', repo: 'pocket-billies', branch: 'main', game: 'game' },
   window.PB_STUDIO_GITHUB || {}
 );
-const githubMode = {
+export const githubMode = {
   on: window.STUDIO_KEY === '__STUDIO_KEY__' || !window.STUDIO_KEY,
   token: '',
   login: '',
@@ -128,15 +128,17 @@ async function checkGithubToken(token) {
   return me;
 }
 function githubLoginHTML(err) {
-  const tok = `https://github.com/settings/tokens/new?scopes=public_repo&description=${encodeURIComponent('Pocket Billies Studio')}`;
+  /* SECURITY.md option A (RL-1): a fine-grained token for this one repository, so a stolen one can't touch others */
+  const tok = `https://github.com/settings/personal-access-tokens/new?name=${encodeURIComponent('Pocket Billies Studio')}&expires_in=90&contents=write&pull_requests=write`;
   return `<div class="gh-login"><div class="gh-card"><img src="../game/art/coins/penny_32.png" width="40" height="40" alt=""><h2>Pocket Billies Studio</h2>
  <p>Sign in with GitHub to edit the game. Only Studio admins get in, and what you save becomes a <b>pull request</b>: the game changes only when ${escapeHtml(GITHUB_CONFIG.owner)} approves it.</p>
- <ol class="gh-steps"><li><a href="${tok}" target="_blank" rel="noopener">Open GitHub’s “new token” page</a> (signed in as yourself). The name and the <b>public_repo</b> box are filled in already.</li>
- <li>Pick how long it lasts (90 days is fine), scroll down and click <b>Generate token</b>.</li><li>Copy the token (it starts with <code>ghp_</code>) and paste it here.</li></ol>
- <label class="fld"><span>GitHub token</span><input type="password" id="ghTok" autocomplete="off" placeholder="ghp_…"></label>
- <label class="fld chk"><input type="checkbox" id="ghKeep" checked><span>Remember me on this computer</span></label>
+ <ol class="gh-steps"><li><a href="${tok}" target="_blank" rel="noopener">Open GitHub’s “new fine-grained token” page</a> (signed in as yourself). The name and 90 days are filled in.</li>
+ <li>Under <b>Repository access</b> pick <b>Only select repositories</b> and choose <b>${escapeHtml(GITHUB_CONFIG.owner)}/${escapeHtml(GITHUB_CONFIG.repo)}</b>. Under <b>Permissions</b> check that <b>Contents</b> and <b>Pull requests</b> say <b>Read and write</b>.</li>
+ <li>Click <b>Generate token</b>, copy it (it starts with <code>github_pat_</code>) and paste it here.</li></ol>
+ <label class="fld"><span>GitHub token</span><input type="password" id="ghTok" autocomplete="off" placeholder="github_pat_…"></label>
+ <label class="fld chk"><input type="checkbox" id="ghKeep"><span>Remember me on this computer</span></label>
  ${err ? `<p class="gh-err">${escapeHtml(err)}</p>` : ''}<button class="btn primary" id="ghGo">Sign in</button>
- <p class="help">The token stays in this browser and is only sent to GitHub. To sign out, use the button at the top; to cut it off for good, delete it on GitHub (Settings → Developer settings → Tokens).</p></div></div>`;
+ <p class="help">The token is only sent to GitHub. Without “Remember me” it is forgotten when this tab closes; with it, it stays in this browser. To sign out, use the button at the top; to cut it off for good, delete it on GitHub (Settings → Developer settings → Tokens).</p></div></div>`;
 }
 function githubLogin(err) {
   return new Promise(res => {
@@ -234,6 +236,7 @@ async function readGithubData() {
     }
   };
   await Promise.all(Array.from({ length: 12 }, worker));
+  performance.mark('studio-data-read');
   githubMode.data = {};
   const D = PB_DATA.assemble(index, path => {
     const v = JSON.parse(texts[path]);
@@ -241,6 +244,7 @@ async function readGithubData() {
     return v;
   });
   githubMode.data['index.json'] = texts['index.json'];
+  performance.mark('studio-data-assembled');
   return D;
 }
 function changedDataFiles(D) {

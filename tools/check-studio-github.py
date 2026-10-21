@@ -19,9 +19,17 @@ Studio track ST-6: the skeleton builder's zoom keys; a species in Part mode (ope
 dragged and nudged (the figure drawn the same), its box grown by an edge, its back draw order, everything undone. The
 wardrobe on the shared pixel canvas: a pencil click paints the item and marks its colour-area mask in one undo step
 (undone and redone together); the Colour area brush paints the mask only; Grow piece; everything undone.
+Studio track ST-T: the Studio self-test runs whole and must pass (no errors, every edit undone, everything put back,
+no token in its report); its times are not judged here.
+UI track UI-3: the UI look section: a colour dial changed shows in the preview frame, Undo puts the data and the
+preview back; a screen's own colour shows on that screen only and ↺ takes it away; a preset applies and undoes; Find
+and the Check's Show me reach a dial; Hold to compare shows the saved look; a cut size is left changed, so the
+proposal at the end must carry uiTheme.json with it.
 
     python3 tools/check-studio-github.py           # the repository as it is (run `npm run data` first)
     python3 tools/check-studio-github.py dist      # the build (`npm run build` first)
+    python3 tools/check-studio-github.py --only=ui,studio_test   # sign in, only these steps, then the proposal
+                                                                 # (step names: STEPS below)
 
 Needs Python 3 and Playwright (tools/requirements-check.txt). About a minute."""
 import json, re, sys, threading, time
@@ -33,7 +41,10 @@ from urllib.parse import unquote, urlparse
 from playwright.sync_api import sync_playwright
 
 REPO = Path(__file__).resolve().parent.parent
-ROOT = REPO / sys.argv[1] if len(sys.argv) > 1 else REPO
+POS = [a for a in sys.argv[1:] if not a.startswith('--')]
+ROOT = REPO / POS[0] if POS else REPO
+# UI-3: --only=a,b runs only these steps (the full chain stalls at the story preview's real click in some containers)
+ONLY = next((set(a.split('=', 1)[1].split(',')) for a in sys.argv[1:] if a.startswith('--only=')), None)
 
 
 class Quiet(SimpleHTTPRequestHandler):
@@ -543,7 +554,8 @@ def robot_joint_steps(pg, errs):
 def generate_steps(pg, errs):
     """map generator MG-1: Walk scenes → Generate… draws a draft route in the game's renderer, the dials change it (a
     biome, terraces, a new seed for the plants only) without touching the data or the undo history, and Add as a new
-    scene is one undo step (left in, so the proposal at the end carries a generated scene)"""
+    scene is one undo step (left in, so the proposal at the end carries a generated scene). MG-2: an exit joined to
+    Tallgrass Meadow's meets it, the pair is drawn side by side, the clinic dial puts a clinic at the hub"""
     n = len(errs)
     pg.evaluate("studioState.sel.scene='tallgrass_meadow';mapGen.on=false;void openSection('scenes')")
     pg.wait_for_selector('[data-act=genOpen]', timeout=20000)
@@ -564,14 +576,34 @@ def generate_steps(pg, errs):
     if pg.evaluate("JSON.stringify([mapGen.draft.tiles,mapGen.draft.edgeExits])") != ground: errs.append('generate: a new seed for the plants changed the ground or the road')
     if pg.evaluate("[Object.keys(studioState.D.maps).length, studioState.undo.length]") != [maps0, undo0]: errs.append('generate: the draft reached the data or the undo history')
     if pg.evaluate("mapgenUnreachable(mapGen.draft, studioState.D.scenery).length"): errs.append('generate: the hub of the draft does not reach every exit')
+    # MG-2: the west exit joins Tallgrass Meadow's east exit (south2): it faces it a whole number of metres along, and
+    # the draft meets that edge (heights, step, a straight walk across); the pair side by side; the hub's buildings
+    pg.select_option('select[data-gen-join="0"]', 'tallgrass_meadow|south2')
+    t0 = time.time()
+    while time.time() - t0 < 60 and not pg.evaluate("mapGen.agree.length>0&&!!mapGen.agree[0].a&&walkView.ready"): time.sleep(0.3)
+    a = pg.evaluate("mapGen.agree.length?mapGen.agree[0].a:null")
+    if not a or a['dhBand'] > 0.05 or abs(a['raiseExit']) > 0.05 or a['walk']: errs.append(f'generate: the joined exit does not meet Tallgrass Meadow: {a}')
+    rules = pg.evaluate("(()=>{const T=studioState.D.maps.tallgrass_meadow,d=mapGen.draft,g=mapGen.agree[0];return seamRulesPair(T,T.edgeExits.find(e=>e.id==='south2'),d,d.edgeExits.find(e=>e.id===g.id))})()")
+    if rules: errs.append(f'generate: the joined pair breaks the seam rules: {rules}')
+    pg.click('[data-act=genPair]')
+    t0 = time.time()
+    while time.time() - t0 < 60 and not pg.evaluate("!!mapGen.shown&&walkView.sc===mapGen.shown&&walkView.ready"): time.sleep(0.3)
+    if not pg.evaluate("!!mapGen.shown&&walkView.sc===mapGen.shown"): errs.append('generate: Preview the pair drew nothing')
+    pg.click('[data-act=genPair]'); time.sleep(0.5)
+    if not pg.evaluate("!!document.querySelector('input[data-gen=\"props.clinic\"]')"): pg.click('[data-act=genOpenG][data-g=props]'); time.sleep(0.3)
+    pg.evaluate("(()=>{const c=document.querySelector('input[data-gen=\"props.clinic\"]');c.checked=true;c.dispatchEvent(new Event('change',{bubbles:true}))})()")
+    t0 = time.time()
+    while time.time() - t0 < 30 and not pg.evaluate("mapGen.draft.props.some(p=>p.k==='clinic'&&p.act==='clinic')"): time.sleep(0.3)
+    if not pg.evaluate("mapGen.draft.props.some(p=>p.k==='clinic'&&p.act==='clinic')"): errs.append('generate: the clinic dial put no clinic at the hub')
+    if pg.evaluate("[Object.keys(studioState.D.maps).length, studioState.undo.length]") != [maps0, undo0]: errs.append('generate: joining reached the data or the undo history')
     pg.click('[data-act=genAccept]')
     pg.fill('#genName', 'Check Trail')
     pg.click('#dlg [data-dlg="1"]'); time.sleep(0.5)
-    if not pg.evaluate("!!studioState.D.maps.checktrail&&studioState.D.maps.checktrail.gen.params.biome==='canyon'&&studioState.D.maps.checktrail.props.every(p=>p.g===1)"):
+    if not pg.evaluate("!!studioState.D.maps.checktrail&&studioState.D.maps.checktrail.gen.params.biome==='canyon'&&studioState.D.maps.checktrail.props.every(p=>p.g===1)&&studioState.D.maps.checktrail.gen.params.edges[0].from.map==='tallgrass_meadow'"):
         errs.append('generate: Add as a new scene made no scene with its dials')
     elif pg.evaluate("studioState.undo.length") != undo0 + 1: errs.append('generate: adding the scene is not one undo step')
     if len(errs) > n: errs[n:] = [f'generate: {e}' for e in errs[n:]]
-    else: print('generate: a canyon route drafted and drawn, dials and a plants reroll, added as a scene in one undo step', flush=True)
+    else: print('generate: a canyon route drafted and drawn, dials and a plants reroll, joined to Tallgrass Meadow (meets it, the pair drawn), a clinic at the hub, added as a scene in one undo step', flush=True)
 def species_part_steps(pg, errs):
     """Studio track ST-6: the skeleton builder zooms by whole steps with the pixel canvas's keys; the Billies section
     opens the species in Part mode; the head's pivot dragged and nudged keeps the figure drawn where it was (the rig
@@ -688,17 +720,128 @@ def wardrobe_steps(pg, errs):
     print('wardrobe: a pencil click and its mask one undo step (undone and redone), the Colour area brush, Grow piece, all undone', flush=True)
 
 
+def ui_steps(pg, errs):
+    """UI-3: the UI look section (studio/js/ui-editor.js): a dial changed shows in the preview frame (the UI gallery),
+    Undo puts the data and the preview back; a screen's own colour reaches that screen only and ↺ takes it away; a
+    preset applies and undoes; Find and the Check's Show me reach a dial; Hold to compare shows the saved look. The
+    large cut is left at 20 px, so the proposal at the end must carry uiTheme.json with it."""
+    n = len(errs)
+    # a variable as the preview frame's first card has it
+    PV = """(v => { const f = document.querySelector('#uiPv'), w = f && f.contentWindow;
+      const el = w && w.galleryLook && w.document.querySelector('.g-wrap pb-card');
+      return el ? w.getComputedStyle(el).getPropertyValue(v).trim() : null })"""
+    def pv(v): return pg.evaluate(f"{PV}({json.dumps(v)})")
+    def wait_pv(v, want, what):
+        try: pg.wait_for_function(f"{PV}({json.dumps(v)}) === {json.dumps(want)}", timeout=20000)
+        except Exception: errs.append(f'{what}: the preview shows {v} = {pv(v)!r}, wanted {want!r}')
+    pg.evaluate("void openSection('ui')")
+    try: pg.wait_for_function(f"{PV}('--c-text') !== null", timeout=30000)
+    except Exception:
+        errs.append('the preview frame never showed the gallery'); return
+    p = 'uiTheme.defaults.color.light.text'
+    was, before, undo0 = pg.evaluate(f"[readPath('{p}'), {PV}('--c-text'), studioState.undo.length]")
+    box = pg.locator(f'#uiSet input.hex[data-p="{p}"]')
+    box.fill('#102030'); box.press('Tab')
+    if pg.evaluate(f"readPath('{p}')") != '#102030': errs.append('the text colour field did not reach the data')
+    wait_pv('--c-text', '#102030', 'a colour')
+    if not pg.evaluate(f"!!document.querySelector('#uiSet .eng-f.own[data-path=\"{p}\"]')"): errs.append('a changed dial is not marked')
+    if not pg.evaluate("!!document.querySelector('#uiSet [data-aa=\"light.text\"]')"): errs.append('the text colour has no contrast badge')
+    pg.click('#undoBtn')
+    if pg.evaluate(f"readPath('{p}')") != was: errs.append('Undo did not put the colour back')
+    wait_pv('--c-text', before, 'undo')
+    # one screen's own colour: on that screen only; ↺ takes the override away
+    pg.select_option('#uiScope', 'team')
+    q = 'uiTheme.overrides.team.color.light.text'
+    box = pg.locator(f'#uiSet input.hex[data-p="{q}"]')
+    box.fill('#AA2020'); box.press('Tab')
+    if pg.evaluate(f"[readPath('{q}'), readPath('{p}')]") != ['#AA2020', was]: errs.append('a screen colour did not stay on the screen')
+    wait_pv('--c-text', '#aa2020', 'a screen colour')
+    if pg.evaluate("document.querySelector('#uiPv').contentWindow.document.querySelector('.g-wrap').dataset.uiScreen") != 'team':
+        errs.append('the preview does not show the screen')
+    pg.click('#uiSet [data-act=uiReset][data-r="color.light.text"]')
+    if pg.evaluate("JSON.stringify(studioState.D.uiTheme.overrides)") != '{}': errs.append('↺ left the screen an override')
+    wait_pv('--c-text', before, 'a screen colour taken away')
+    pg.select_option('#uiScope', 'game')
+    # a preset, undone
+    pg.click('#uiSet [data-act=uiPreset][data-k=alpha05]')
+    if pg.evaluate("studioState.D.uiTheme.defaults.type.voice") != 'Pixelify Sans': errs.append('the alpha05 preset did not apply')
+    try: pg.wait_for_function(f"({PV}('--font-voice') || '').includes('Pixelify')", timeout=20000)
+    except Exception: errs.append(f"the preset is not in the preview ({pv('--font-voice')!r})")
+    pg.click('#undoBtn')
+    if pg.evaluate("studioState.D.uiTheme.defaults.type.voice") != 'Jersey 15': errs.append('Undo did not take the preset back')
+    # Find and the Check reach a dial
+    pg.evaluate("buildSearchIndex().find(e => e.x.includes('shape.families.tab.corners')).fn()")
+    try: pg.wait_for_selector('#uiSet .eng-f[data-path="uiTheme.defaults.shape.families.tab.corners"]', timeout=10000)
+    except Exception: errs.append('Find did not open the tabs’ corners')
+    pg.evaluate("studioState.D.uiTheme.overrides.bag = {color: {dark: {text2: '#2A3A30'}}}")
+    found = pg.evaluate("runCheck().filter(c => c.go === 'ui').map(c => [c.msg, c.sel])")
+    if len(found) != 2 or found[0][1] != {'uiFocus': {'scope': 'bag', 'rel': 'color.dark.text2'}}: errs.append(f'the Check found {found}')
+    pg.evaluate("delete studioState.D.uiTheme.overrides.bag")
+    # the large cut, compared with the saved look, and left changed for the proposal
+    pg.evaluate("uiEditor.open.shape = 1; refreshUiSettings()")
+    pg.evaluate("""(()=>{const r=document.querySelector('#uiSet input[data-p="uiTheme.defaults.shape.cutLg"]');r.value='20';
+      r.dispatchEvent(new Event('input',{bubbles:true}));r.dispatchEvent(new Event('change',{bubbles:true}))})()""")
+    wait_pv('--cut-lg', '20px', 'the large cut')
+    pg.locator('#uiCmp').hover(); pg.mouse.down()
+    wait_pv('--cut-lg', '12px', 'Hold to compare')
+    pg.mouse.up()
+    wait_pv('--cut-lg', '20px', 'letting go of compare')
+    if pg.evaluate("studioState.D.uiTheme.defaults.shape.cutLg") != 20: errs.append('the large cut did not reach the data')
+    if pg.evaluate("studioState.undo.length") < undo0 + 2: errs.append('the edits are not undo steps')
+    if len(errs) > n: errs[n:] = [f'ui: {e}' for e in errs[n:]]
+    else: print('ui: a colour previewed and undone, a screen colour on its screen and taken away, a preset undone, Find and the Check, compare; the large cut left at 20 px', flush=True)
+
+
+def studio_test_steps(pg, errs):
+    """Studio track ST-T: the Studio self-test (studio/js/studio-test.js) runs whole. It fails on an error, an edit
+    that didn't come back with its undo, data not put back or a token in its report; never on a time, since a headless
+    browser draws in software."""
+    pg.evaluate("window.__stR = null; startStudioTest({ quiet: true, planted: ['ghp_stand-in'] }).then(r => window.__stR = r)")
+    t0 = time.time()
+    while time.time() - t0 < 600 and not pg.evaluate("!!window.__stR"):
+        time.sleep(1)
+    r = pg.evaluate("window.__stR")
+    if not r:
+        errs.append('studio test: no report in 600 s'); return
+    for e in r['errors']: errs.append(f"studio test: {e['where']}: {e['msg']}")
+    if not r['restored']: errs.append('studio test: the data was not put back as it was')
+    for s in r['sections']:
+        if s.get('edit') and s['edit']['back'] is False: errs.append(f"studio test: the edit in {s['id']} did not come back with undo")
+    if r['privacy']: errs.append('studio test: the report holds ' + ', '.join(r['privacy']))
+    if pg.evaluate("studioProbe.on !== null || studioProbe.running"): errs.append('studio test: the probe was left on')
+    edits = sum(1 for s in r['sections'] if s.get('edit'))
+    print(f"studio test: {len(r['sections'])} sections, {edits} edits undone, {len(r['findings'])} findings, {r['seconds']} s", flush=True)
+
+
+# the steps after sign-in, in order (--only picks some by name; 'sections' and 'art' are the two blocks in main)
+STEPS = [
+    ('story', story_steps),
+    ('free_camera', free_camera_steps),
+    ('tiles', tile_painter_steps),
+    ('split', split_steps),
+    ('workbench', workbench_steps),
+    ('part_mode', part_mode_steps),
+    ('robot_joints', robot_joint_steps),
+    ('generate', generate_steps),
+    ('species_parts', species_part_steps),
+    ('wardrobe', wardrobe_steps),
+    ('ui', ui_steps),
+    ('studio_test', studio_test_steps),
+]
+
+
 def main():
     srv = ThreadingHTTPServer(('127.0.0.1', 0), partial(Quiet, directory=str(ROOT)))
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     tree = [{'type': 'blob', 'path': str(p.relative_to(ROOT)), 'sha': 'x', 'size': p.stat().st_size}
             for p in (ROOT / 'game').rglob('*') if p.is_file()]
-    posts = []
+    posts, bodies = [], []
 
     def api(route):
         p = urlparse(route.request.url).path
         if route.request.method != 'GET':
             posts.append(p.rsplit('/', 1)[-1])
+            bodies.append((p.rsplit('/', 1)[-1], route.request.post_data or ''))
             return route.fulfill(json={'sha': 'x', 'number': 1, 'html_url': 'x', 'object': {'sha': 'x'}, 'tree': {'sha': 'x'}})
         if p == '/user': return route.fulfill(json={'login': 'nojiroh'})
         if p.rstrip('/') == '/repos/nojiroh/pocket-billies': return route.fulfill(json={'permissions': {'push': True, 'admin': True}})
@@ -726,45 +869,38 @@ def main():
             time.sleep(0.5)
         if not pg.evaluate("typeof studioState!=='undefined'&&!!studioState.D"): errs.append('the game data never loaded')
         print(f'loaded in {time.time() - t0:.0f} s', flush=True)
-        sections = pg.evaluate("typeof SECTIONS==='object'?Object.keys(SECTIONS):[]")
-        for k in sections:
+        if ONLY is None or 'sections' in ONLY or 'art' in ONLY:
+            sections = pg.evaluate("typeof SECTIONS==='object'?Object.keys(SECTIONS):[]")
+            for k in sections:
+                n = len(errs)
+                pg.evaluate(f"void openSection({json.dumps(k)})")
+                time.sleep(1)
+                if len(errs) > n: errs[n:] = [f'{k}: {e}' for e in errs[n:]]
+            print(f'{len(sections)} sections opened', flush=True)
+            # the art tools (studio track): the pixel editor on both views, the skeleton builder, the battle preview
             n = len(errs)
-            pg.evaluate(f"void openSection({json.dumps(k)})")
-            time.sleep(1)
-            if len(errs) > n: errs[n:] = [f'{k}: {e}' for e in errs[n:]]
-        print(f'{len(sections)} sections opened', flush=True)
-        # the art tools (studio track): the pixel editor on both views, the skeleton builder, the battle preview
-        n = len(errs)
-        sp = pg.evaluate("studioState.D.lines[0].id + '0'")
-        pg.evaluate(f"void openPixelEditor({json.dumps(sp)}, 'front')")
-        pg.wait_for_selector('#pxCv', timeout=20000); time.sleep(0.5)
-        pixel_canvas_steps(pg, errs, sp)
-        pg.click('.pxed [data-pe=atlas][data-v=back]'); time.sleep(0.5)
-        pg.click('.pxed [data-pe=close]'); time.sleep(0.3)
-        pg.evaluate(f"void openSkeleton({json.dumps(sp)}, 'front')")
-        pg.wait_for_selector('.pxed.skel', timeout=20000); time.sleep(0.5)
-        pg.click('.pxed.skel [data-sk=close]'); time.sleep(0.3)
-        pg.evaluate("void openSection('preview')"); pg.wait_for_selector('#cvWorld', timeout=20000); time.sleep(2)
-        # studio track ST-0: the Coats section recolours its preview; a new coat and a ramp swap are edits
-        pg.evaluate("void openSection('coats')"); pg.wait_for_selector('canvas.spr-prev', timeout=20000); time.sleep(1.5)
-        diff = pg.evaluate("""(()=>{const [a,b]=[...document.querySelectorAll('#main canvas.spr-prev')];if(!a||!b)return -1;
-          const d=c=>c.getContext('2d').getImageData(0,0,c.width,c.height).data,x=d(a),y=d(b);let n=0;for(let i=0;i<x.length;i+=4)if(x[i]!==y[i]||x[i+1]!==y[i+1]||x[i+2]!==y[i+2])n++;return n})()""")
-        if diff < 20: errs.append(f'coats: the coat preview looks like the normal one ({diff} pixels differ)')
-        pg.evaluate("document.querySelector('[data-act=coatRampAdd]').click()"); time.sleep(0.3)
-        if pg.evaluate("Object.keys(studioState.D.coats[studioState.sel.coat].ramps).length") < 2: errs.append('coats: + Swap a ramp added nothing')
-        pg.evaluate("void openSection('preview')"); time.sleep(1)
-        if len(errs) > n: errs[n:] = [f'art tools: {e}' for e in errs[n:]]
-        print(f'art tools opened: pixel editor (front, back), skeleton builder, battle preview, coats ({diff} pixels recoloured)', flush=True)
-        story_steps(pg, errs)
-        free_camera_steps(pg, errs)
-        tile_painter_steps(pg, errs)
-        split_steps(pg, errs)
-        workbench_steps(pg, errs)
-        part_mode_steps(pg, errs)
-        robot_joint_steps(pg, errs)
-        generate_steps(pg, errs)
-        species_part_steps(pg, errs)
-        wardrobe_steps(pg, errs)
+            sp = pg.evaluate("studioState.D.lines[0].id + '0'")
+            pg.evaluate(f"void openPixelEditor({json.dumps(sp)}, 'front')")
+            pg.wait_for_selector('#pxCv', timeout=20000); time.sleep(0.5)
+            pixel_canvas_steps(pg, errs, sp)
+            pg.click('.pxed [data-pe=atlas][data-v=back]'); time.sleep(0.5)
+            pg.click('.pxed [data-pe=close]'); time.sleep(0.3)
+            pg.evaluate(f"void openSkeleton({json.dumps(sp)}, 'front')")
+            pg.wait_for_selector('.pxed.skel', timeout=20000); time.sleep(0.5)
+            pg.click('.pxed.skel [data-sk=close]'); time.sleep(0.3)
+            pg.evaluate("void openSection('preview')"); pg.wait_for_selector('#cvWorld', timeout=20000); time.sleep(2)
+            # studio track ST-0: the Coats section recolours its preview; a new coat and a ramp swap are edits
+            pg.evaluate("void openSection('coats')"); pg.wait_for_selector('canvas.spr-prev', timeout=20000); time.sleep(1.5)
+            diff = pg.evaluate("""(()=>{const [a,b]=[...document.querySelectorAll('#main canvas.spr-prev')];if(!a||!b)return -1;
+              const d=c=>c.getContext('2d').getImageData(0,0,c.width,c.height).data,x=d(a),y=d(b);let n=0;for(let i=0;i<x.length;i+=4)if(x[i]!==y[i]||x[i+1]!==y[i+1]||x[i+2]!==y[i+2])n++;return n})()""")
+            if diff < 20: errs.append(f'coats: the coat preview looks like the normal one ({diff} pixels differ)')
+            pg.evaluate("document.querySelector('[data-act=coatRampAdd]').click()"); time.sleep(0.3)
+            if pg.evaluate("Object.keys(studioState.D.coats[studioState.sel.coat].ramps).length") < 2: errs.append('coats: + Swap a ramp added nothing')
+            pg.evaluate("void openSection('preview')"); time.sleep(1)
+            if len(errs) > n: errs[n:] = [f'art tools: {e}' for e in errs[n:]]
+            print(f'art tools opened: pixel editor (front, back), skeleton builder, battle preview, coats ({diff} pixels recoloured)', flush=True)
+        for name, step in STEPS:
+            if ONLY is None or name in ONLY: step(pg, errs)
         pg.evaluate("const k = Object.keys(studioState.D.moves)[0]; studioState.D.moves[k].name += ' Test'; studioState.dirty = true; void saveAll()")
         t0 = time.time()
         while time.time() - t0 < 60 and 'pulls' not in posts:
@@ -772,6 +908,17 @@ def main():
             pg.evaluate("document.querySelectorAll('#dlg button, #modal button').forEach(b => /Save anyway|Propose|Send|OK/.test(b.textContent) && b.click())")
         if 'pulls' not in posts: errs.append(f'no pull request proposed (sent: {posts})')
         else: print('proposed: ' + ', '.join(posts), flush=True)
+        if ONLY is None or 'ui' in ONLY:
+            # UI-3: the large cut left at 20 px is in the proposal, as uiTheme.json
+            import base64
+            tree = next((json.loads(b) for k, b in bodies if k == 'trees'), {'tree': []})
+            paths = [t['path'] for t in tree.get('tree', [])]
+            blobs = [json.loads(b) for k, b in bodies if k == 'blobs']
+            sent = [base64.b64decode(x['content']).decode('utf8', 'replace') for x in blobs]
+            ui = next((json.loads(t) for t in sent if '"overrides"' in t and '"defaults"' in t and '"cutLg"' in t), None)
+            if 'game/data/uiTheme.json' not in paths: errs.append(f'ui: uiTheme.json is not in the proposal ({paths})')
+            elif not ui or ui['defaults']['shape']['cutLg'] != 20: errs.append('ui: the proposal does not carry the large cut at 20 px')
+            else: print('ui: the proposal carries game/data/uiTheme.json with the large cut at 20 px', flush=True)
         b.close()
     for e in errs: print('PROBLEM', e)
     print('ok' if not errs else f'{len(errs)} problem(s)')

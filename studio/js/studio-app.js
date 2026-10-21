@@ -70,6 +70,7 @@ expose({
   statOptions: [() => statOptions],
   statusOptions: [() => statusOptions],
   studioBroadcast: [() => studioBroadcast, v => (studioBroadcast = v)],
+  studioProbe: [() => studioProbe],
   studioState: [() => studioState],
   textField: [() => textField, v => (textField = v)],
   toast: [() => toast, v => setToast(v)],
@@ -100,6 +101,9 @@ export const studioState = {
   after: [],
 };
 provide({ studioState }); /* to-module */
+/* studio track ST-T: the Studio self-test's timings of the Studio's own work (studio/js/studio-test.js). `on` is the
+   test's recorder while it runs and null otherwise, so a normal session pays one check per draw or edit */
+export const studioProbe = { on: null };
 const STUDIO_SERVER_KEY = window.STUDIO_KEY;
 export async function api(path, opt = {}) {
   const r = await fetch('/api/' + path, {
@@ -175,12 +179,17 @@ export function setWritePath(v) {
 /* ---------- undo / dirty ---------- */
 /* caches kept on the data (keys starting with _, as the height cache's clock in a map) are left out, as saving does:
    otherwise the snapshot changes on its own and an undo only takes that back */
-const snapshot = () =>
+export const snapshot = () =>
   JSON.stringify({ D: studioState.D, R: studioState.rigs }, (k, v) => (k[0] === '_' && k.length > 1 ? undefined : v));
 export function commit(now) {
   clearTimeout(studioState.snapT);
   const go = () => {
-    if (historyCommit(studioState, snapshot())) updateTopBar();
+    const P = studioProbe.on,
+      a = P ? performance.now() : 0,
+      snap = snapshot(),
+      b = P ? performance.now() : 0;
+    if (historyCommit(studioState, snap)) updateTopBar();
+    if (P) P('commit', { snapMs: b - a, chars: snap.length, ms: performance.now() - a });
   };
   if (now) go();
   else studioState.snapT = setTimeout(go, 450);
@@ -197,7 +206,7 @@ export function changed(rigs) {
 }
 /* v29: live update. A game tab open from this Studio (a test run, or the game on the same address) gets your scenes,
    props and engine settings (Project Story S3: and the story and trainers) half a second after each change, before
-   you save */
+   you save; UI-3: and the UI's look */
 const LIVE_UPDATE_CHANNEL = (() => {
   try {
     const c = new BroadcastChannel('networth-studio');
@@ -213,6 +222,8 @@ export function studioBroadcast() {
   if (!LIVE_UPDATE_CHANNEL || !studioState.D) return;
   clearTimeout(studioBroadcast.t);
   studioBroadcast.t = setTimeout(() => {
+    const P = studioProbe.on,
+      a = P ? performance.now() : 0;
     try {
       LIVE_UPDATE_CHANNEL.postMessage({
         type: 'data',
@@ -225,9 +236,12 @@ export function studioBroadcast() {
           /* phase 10, session 5: the world map's look and each place's landmark */
           worldmap: studioState.D.worldmap,
           landmarks: Object.fromEntries((studioState.D.locations || []).map(l => [l.id, l.landmark || ''])),
+          /* UI-3: the UI's look (the game writes it as its theme sheet) */
+          uiTheme: studioState.D.uiTheme,
         },
       });
     } catch (e) {}
+    if (P) P('send', { ms: performance.now() - a });
   }, 500);
 }
 const blurField = () => {
@@ -257,8 +271,11 @@ export function redo() {
   } else restore(u.snap);
   toast('Redone.');
 }
-function restore(s) {
+export function restore(s) {
+  const P = studioProbe.on,
+    a = P ? performance.now() : 0;
   const o = JSON.parse(s);
+  const b = P ? performance.now() : 0;
   studioState.D = o.D;
   studioState.rigs = o.R;
   studioState.dirty = true;
@@ -268,6 +285,7 @@ function restore(s) {
   render();
   updateTopBar();
   scheduleCheck();
+  if (P) P('restore', { parseMs: b - a, ms: performance.now() - a });
 }
 export function updateTopBar() {
   $('#dirty').hidden = !(studioState.dirty || studioState.rigsDirty || studioState.artDirty.size);
@@ -420,7 +438,10 @@ function readField(el) {
     return el.dataset.scale ? Math.round(n * +el.dataset.scale) : n;
   }
   if (k === 'color') {
-    return /^#[0-9a-f]{6}$/i.test(el.value) ? el.value.toUpperCase() : undefined;
+    /* UI-3: a colour that may be see-through (data-a): #rrggbbaa in its text field; the picker keeps the alpha it had */
+    if (el.dataset.a && el.type === 'color') return el.value.toUpperCase() + (el.dataset.alpha || '');
+    const ok = el.dataset.a ? /^#[0-9a-f]{6}([0-9a-f]{2})?$/i : /^#[0-9a-f]{6}$/i;
+    return ok.test(el.value) ? el.value.toUpperCase() : undefined;
   }
   if ((k === 'text' || k === 'sel') && el.value === '' && el.dataset.opt) return undefined;
   return el.value;
@@ -434,7 +455,12 @@ function onField(ev) {
   writePath(el.dataset.p, v);
   if (el.dataset.k === 'color') {
     $$(`[data-p="${el.dataset.p}"]`).forEach(o => {
-      if (o !== el) o.value = v;
+      if (o === el) return;
+      /* a colour picker holds #rrggbb only: the alpha byte stays beside it */
+      if (o.type === 'color') {
+        o.value = v.slice(0, 7);
+        if (o.dataset.a) o.dataset.alpha = v.slice(7);
+      } else o.value = v;
     });
   }
   const out = document.getElementById(fieldOutputId(el.dataset.p));
@@ -469,6 +495,7 @@ export const SECTION_LIST = [
   ['people', 'People', 'Looks for trainers and shopkeepers'],
   ['jobs', 'Jobs', 'What working Billies earn (not in the game until the ranch)'],
   ['rules', 'Rules', 'Every number that tunes the game'],
+  ['ui', 'UI look', 'The menus’ look: colours, glass, shapes, space, type and motion, for the game or one screen'],
   ['art', 'Art files', 'Browse and replace any image'],
   ['check', 'Check & backups', 'Problems, backups and restore'],
 ];
@@ -482,7 +509,7 @@ const SECTION_GROUPS = [
   ['World & places', ['scenes', 'props', 'engine', 'world']],
   ['People & story', ['trainers', 'people', 'wardrobe', 'lore', 'story']],
   ['Money', ['items', 'shops', 'jobs']],
-  ['Game', ['rules', 'art', 'check']],
+  ['Game', ['rules', 'ui', 'art', 'check']],
 ];
 const foldedSectionGroups = (() => {
   try {
@@ -560,9 +587,17 @@ export function renderPane(m, sec) {
   renderingPane = m;
   try {
     studioState.after = [];
-    m.innerHTML = S();
+    const P = studioProbe.on,
+      t0 = P ? performance.now() : 0;
+    const html = S();
+    const t1 = P ? performance.now() : 0;
+    m.innerHTML = html;
+    const t2 = P ? performance.now() : 0;
     studioState.after.forEach(f => f());
+    const t3 = P ? performance.now() : 0;
     mountPreviews(m);
+    if (P)
+      P('render', { sec, pane: m.id, html: t1 - t0, dom: t2 - t1, after: t3 - t2, previews: performance.now() - t3 });
   } finally {
     renderingPane = null;
   }
@@ -653,7 +688,9 @@ export const typeChipHTML = t => {
 /* ---------- boot ---------- */
 export async function boot() {
   try {
+    performance.mark('studio-boot');
     const [D, R, F] = await Promise.all([api('gamedata'), api('rigs'), api('files?dir='), artLoad([ICON_ATLAS])]);
+    performance.mark('studio-data-loaded');
     studioState.D = D;
     studioState.rigs = R;
     if (window.RIGS_NEXT) for (const k in window.RIGS_NEXT) if (!R[k]) R[k] = window.RIGS_NEXT[k];
@@ -666,6 +703,7 @@ export async function boot() {
     render();
     updateTopBar();
     scheduleCheck(true);
+    performance.mark('studio-first-draw');
   } catch (e) {
     $('#main').innerHTML =
       `<div class="loading err"><h2>The Studio couldn’t load the game data</h2><p>${escapeHtml(e.message)}</p><p>Start the Studio with <b>Start-Studio</b> (or <code>python3 start-studio.py</code>) and keep that window open.</p></div>`;

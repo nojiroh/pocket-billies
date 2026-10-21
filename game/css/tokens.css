@@ -49,6 +49,289 @@
 
   /* messages */
   --toast-time: 2500ms;
+
+  /* UI-1 (docs/phases/ui-track.md): the Semigloss Angular shapes. Cut corners are clip-path polygons from these
+     sizes (UI-2); a family's shape (cut, rounded or square) is data (uiTheme.json shape.families) and a Studio
+     dial (UI-3).
+     game/data/uiTheme.json overrides the cut sizes and the slant (logic/ui-theme.js). */
+  --cut-sm: 4px; /* quiet buttons: four cuts */
+  --cut-md: 8px; /* cards: four cuts */
+  --cut-lg: 12px; /* panels and sheets: top-left and bottom-right */
+  --slant: 10deg; /* the selection bar */
+  --shape-panel: cut;
+  --shape-card: cut;
+  --shape-button: cut;
+
+  /* UI-2: each family's outline (clip), its 1 px edge ring (edge) and the ring its shadow layer is clipped to
+     (ring), as logic/ui-theme.js shapeDecls makes them for the default sizes; uiTheme.json's sheet replaces them.
+     tools/test/ui-theme.test.mjs keeps this copy equal to the generator's. */
+  /* shapes: start */
+  --clip-panel: polygon(0 12px, 12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%);
+  --edge-panel: polygon(
+    evenodd,
+    0 12px,
+    12px 0,
+    100% 0,
+    100% calc(100% - 12px),
+    calc(100% - 12px) 100%,
+    0 100%,
+    0 12px,
+    1px 13.41px,
+    13.41px 1px,
+    calc(100% - 1px) 1px,
+    calc(100% - 1px) calc(100% - 13.41px),
+    calc(100% - 13.41px) calc(100% - 1px),
+    1px calc(100% - 1px),
+    1px 13.41px
+  );
+  --ring-panel: polygon(
+    evenodd,
+    -48px -48px,
+    calc(100% + 48px) -48px,
+    calc(100% + 48px) calc(100% + 48px),
+    -48px calc(100% + 48px),
+    -48px -48px,
+    0 12px,
+    12px 0,
+    100% 0,
+    100% calc(100% - 12px),
+    calc(100% - 12px) 100%,
+    0 100%,
+    0 12px
+  );
+  --clip-card: polygon(
+    0 8px,
+    8px 0,
+    calc(100% - 8px) 0,
+    100% 8px,
+    100% calc(100% - 8px),
+    calc(100% - 8px) 100%,
+    8px 100%,
+    0 calc(100% - 8px)
+  );
+  --edge-card: polygon(
+    evenodd,
+    0 8px,
+    8px 0,
+    calc(100% - 8px) 0,
+    100% 8px,
+    100% calc(100% - 8px),
+    calc(100% - 8px) 100%,
+    8px 100%,
+    0 calc(100% - 8px),
+    0 8px,
+    1px 9.41px,
+    9.41px 1px,
+    calc(100% - 9.41px) 1px,
+    calc(100% - 1px) 9.41px,
+    calc(100% - 1px) calc(100% - 9.41px),
+    calc(100% - 9.41px) calc(100% - 1px),
+    9.41px calc(100% - 1px),
+    1px calc(100% - 9.41px),
+    1px 9.41px
+  );
+  --ring-card: polygon(
+    evenodd,
+    -48px -48px,
+    calc(100% + 48px) -48px,
+    calc(100% + 48px) calc(100% + 48px),
+    -48px calc(100% + 48px),
+    -48px -48px,
+    0 8px,
+    8px 0,
+    calc(100% - 8px) 0,
+    100% 8px,
+    100% calc(100% - 8px),
+    calc(100% - 8px) 100%,
+    8px 100%,
+    0 calc(100% - 8px),
+    0 8px
+  );
+  --clip-button: polygon(
+    0 4px,
+    4px 0,
+    calc(100% - 4px) 0,
+    100% 4px,
+    100% calc(100% - 4px),
+    calc(100% - 4px) 100%,
+    4px 100%,
+    0 calc(100% - 4px)
+  );
+  --edge-button: polygon(
+    evenodd,
+    0 4px,
+    4px 0,
+    calc(100% - 4px) 0,
+    100% 4px,
+    100% calc(100% - 4px),
+    calc(100% - 4px) 100%,
+    4px 100%,
+    0 calc(100% - 4px),
+    0 4px,
+    1px 5.41px,
+    5.41px 1px,
+    calc(100% - 5.41px) 1px,
+    calc(100% - 1px) 5.41px,
+    calc(100% - 1px) calc(100% - 5.41px),
+    calc(100% - 5.41px) calc(100% - 1px),
+    5.41px calc(100% - 1px),
+    1px calc(100% - 5.41px),
+    1px 5.41px
+  );
+  --ring-button: polygon(
+    evenodd,
+    -48px -48px,
+    calc(100% + 48px) -48px,
+    calc(100% + 48px) calc(100% + 48px),
+    -48px calc(100% + 48px),
+    -48px -48px,
+    0 4px,
+    4px 0,
+    calc(100% - 4px) 0,
+    100% 4px,
+    100% calc(100% - 4px),
+    calc(100% - 4px) 100%,
+    4px 100%,
+    0 calc(100% - 4px),
+    0 4px
+  );
+  --clip-action: polygon(0 50%, 12px 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 12px 100%);
+  --edge-action: polygon(
+    evenodd,
+    0 50%,
+    12px 0,
+    calc(100% - 12px) 0,
+    100% 50%,
+    calc(100% - 12px) 100%,
+    12px 100%,
+    0 50%,
+    1.41px 50%,
+    12.41px 1px,
+    calc(100% - 12.41px) 1px,
+    calc(100% - 1.41px) 50%,
+    calc(100% - 12.41px) calc(100% - 1px),
+    12.41px calc(100% - 1px),
+    1.41px 50%
+  );
+  --ring-action: polygon(
+    evenodd,
+    -48px -48px,
+    calc(100% + 48px) -48px,
+    calc(100% + 48px) calc(100% + 48px),
+    -48px calc(100% + 48px),
+    -48px -48px,
+    0 50%,
+    12px 0,
+    calc(100% - 12px) 0,
+    100% 50%,
+    calc(100% - 12px) 100%,
+    12px 100%,
+    0 50%
+  );
+  --clip-tab: polygon(0 8px, 8px 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+  --edge-tab: polygon(
+    evenodd,
+    0 8px,
+    8px 0,
+    calc(100% - 8px) 0,
+    100% 8px,
+    100% 100%,
+    0 100%,
+    0 8px,
+    1px 9.41px,
+    9.41px 1px,
+    calc(100% - 9.41px) 1px,
+    calc(100% - 1px) 9.41px,
+    calc(100% - 1px) calc(100% - 1px),
+    1px calc(100% - 1px),
+    1px 9.41px
+  );
+  --ring-tab: polygon(
+    evenodd,
+    -48px -48px,
+    calc(100% + 48px) -48px,
+    calc(100% + 48px) calc(100% + 48px),
+    -48px calc(100% + 48px),
+    -48px -48px,
+    0 8px,
+    8px 0,
+    calc(100% - 8px) 0,
+    100% 8px,
+    100% 100%,
+    0 100%,
+    0 8px
+  );
+  --clip-toast: polygon(0 50%, 8px 0, calc(100% - 8px) 0, 100% 50%, calc(100% - 8px) 100%, 8px 100%);
+  --edge-toast: polygon(
+    evenodd,
+    0 50%,
+    8px 0,
+    calc(100% - 8px) 0,
+    100% 50%,
+    calc(100% - 8px) 100%,
+    8px 100%,
+    0 50%,
+    1.41px 50%,
+    8.41px 1px,
+    calc(100% - 8.41px) 1px,
+    calc(100% - 1.41px) 50%,
+    calc(100% - 8.41px) calc(100% - 1px),
+    8.41px calc(100% - 1px),
+    1.41px 50%
+  );
+  --ring-toast: polygon(
+    evenodd,
+    -48px -48px,
+    calc(100% + 48px) -48px,
+    calc(100% + 48px) calc(100% + 48px),
+    -48px calc(100% + 48px),
+    -48px -48px,
+    0 50%,
+    8px 0,
+    calc(100% - 8px) 0,
+    100% 50%,
+    calc(100% - 8px) 100%,
+    8px 100%,
+    0 50%
+  );
+  --clip-chip: polygon(4.23px 0, 100% 0, calc(100% - 4.23px) 100%, 0 100%);
+  /* shapes: end */
+  /* the edge line: light on top, dark below; the drop shadows follow a cut outline (a box-shadow can't) */
+  --c-shadow: #2e2140;
+  --edge-hi: rgba(255, 255, 255, 0.9);
+  --edge-lo: color-mix(in srgb, var(--c-shadow) 30%, transparent);
+  --edge: linear-gradient(180deg, var(--edge-hi), var(--edge-lo));
+  --drop-raised: drop-shadow(0 6px 7px color-mix(in srgb, var(--c-shadow) 24%, transparent))
+    drop-shadow(0 1px 2px color-mix(in srgb, var(--c-shadow) 16%, transparent));
+  --drop-float: drop-shadow(0 12px 14px color-mix(in srgb, var(--c-shadow) 32%, transparent))
+    drop-shadow(0 2px 4px color-mix(in srgb, var(--c-shadow) 18%, transparent));
+  /* the keyboard focus on a cut part: a 2 px gold line around the outline (an outline would be clipped) */
+  --drop-focus: drop-shadow(2px 0 0 var(--gold-b)) drop-shadow(-2px 0 0 var(--gold-b))
+    drop-shadow(0 2px 0 var(--gold-b)) drop-shadow(0 -2px 0 var(--gold-b));
+
+  /* layers: today's values by name (UI-1), so moving a rule onto them changes nothing; inside a component, 1-7 */
+  --z-below: -1;
+  --z-battle: 10;
+  --z-scene: 20; /* cutscene people over the dressing room */
+  --z-sheet: 30; /* scrims, the talk layer */
+  --z-hud: 40; /* joystick, d-pad, toasts, battle tips */
+  --z-float: 45; /* the dressing room, floating kit panels */
+  --z-wipe: 50;
+  --z-tool: 60; /* debug tools, fishing and photo modes */
+  --z-veil: 85; /* the lift's veil */
+  --z-top: 2147483000; /* the no-WebGL notice */
+
+  /* colour roles: the names the theme sets (logic/ui-theme.js), here on today's variables so a page without
+     uiTheme.json keeps today's look. The HP bars read --c-hp-* with today's colours as fallbacks. */
+  --c-ground: var(--bg);
+  --c-surface: var(--g-solid);
+  --c-text: var(--text);
+  --c-text2: var(--text2);
+  --c-line: var(--line);
+  --c-primary: var(--ok);
+  --c-gold-a: var(--gold-a);
+  --c-gold-b: var(--gold-b);
+  --c-danger: var(--red);
 }
 @media (max-width: 359px) {
   :root {

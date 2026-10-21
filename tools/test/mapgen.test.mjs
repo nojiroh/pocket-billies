@@ -110,7 +110,7 @@ test("the scene is in the game's format", () => {
       sc.props.some(p => p.w === 42),
       `${where}: wild plants marked as grow-wild marks them`
     );
-    assert.equal(sc.gen.v, 1);
+    assert.equal(sc.gen.v, 2);
     assert.equal(sc.gen.seed, c.seed);
     assert.equal(sc.exits.length, sc.edgeExits.length);
     const sides = {};
@@ -189,7 +189,7 @@ test('a generated route is quick enough to show live', () => {
 });
 
 test('40 random dial sets: each reaches every exit, with nothing in water it does not grow in', () => {
-  const R = G.mapgenRandom(7, 'sweep'),
+  const R = modules.rng.rngFrom(7, 'sweep'),
     pick = o => Object.keys(o)[R.int(0, Object.keys(o).length - 1)];
   for (let i = 0; i < 40; i++) {
     const exits = [];

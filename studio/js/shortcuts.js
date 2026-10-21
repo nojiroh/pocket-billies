@@ -82,6 +82,14 @@ const STUDIO_KEYS = [
     ],
   },
   {
+    name: 'UI look',
+    when: () => sectionShown('ui'),
+    keys: [
+      ['Hold C', 'Compare: the look as last saved'],
+      ['Ctrl+Z', 'Undo a dial, a preset or a reset'],
+    ],
+  },
+  {
     name: 'Skeleton builder',
     when: () => !!$('.pxed.skel'),
     keys: [

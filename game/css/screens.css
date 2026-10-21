@@ -85,7 +85,7 @@ body.on-scene .screen > p.note {
   align-items: center;
   gap: 4px;
   padding: 3px 7px 4px;
-  font: 400 12px/1 var(--disp);
+  font: 400 12px/1 var(--font-voice);
   background: linear-gradient(180deg, var(--gold-hi, #ffe59a), var(--gold) 60%);
   color: #3a2408;
   box-shadow: 0 0 0 2px var(--line);
@@ -115,14 +115,14 @@ body.on-scene .screen > p.note {
   align-items: center;
 }
 .tm-meter > span {
-  font: 400 12px/1 var(--disp);
+  font: 400 12px/1 var(--font-voice);
   color: var(--text2);
 }
 .tm-meter .pbar {
   margin: 0;
 }
 .tm-meter > b {
-  font: 600 12px/1 var(--body);
+  font: 600 12px/1 var(--font-voice);
   color: var(--text2);
   white-space: nowrap;
 }
@@ -145,7 +145,7 @@ body.on-scene .screen > p.note {
   border: 0;
   background: transparent;
   color: var(--text);
-  font: 400 13px/1 var(--disp);
+  font: 400 13px/1 var(--font-voice);
   cursor: pointer;
 }
 .qk + .qk {
@@ -221,7 +221,7 @@ body.on-scene .screen > p.note {
 }
 .bx-main b {
   max-width: 100%;
-  font: 400 14px/1.15 var(--disp);
+  font: 400 14px/1.15 var(--font-voice);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -378,7 +378,7 @@ body.on-scene .screen > p.note {
   gap: 2px;
 }
 .pr-t b {
-  font: 400 16px/1.1 var(--disp);
+  font: 400 16px/1.1 var(--font-voice);
 }
 .pr-t small {
   font-size: 12.5px;
@@ -386,7 +386,7 @@ body.on-scene .screen > p.note {
 }
 .pr-n {
   flex: none;
-  font: 400 16px/1 var(--disp);
+  font: 400 16px/1 var(--font-voice);
 }
 
 /* ---------- Trainer card ---------- */
@@ -419,7 +419,7 @@ body.on-scene .screen > p.note {
   padding: 9px 13px 10px;
   background: repeating-linear-gradient(90deg, #275c60 0 6px, #2b6468 6px 12px);
   color: #fffbee;
-  font: 400 14px/1 var(--disp);
+  font: 400 14px/1 var(--font-voice);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   box-shadow: inset 0 -3px 0 var(--gold);
@@ -490,7 +490,7 @@ body.on-scene .screen > p.note {
   gap: 5px;
   min-width: 0;
   margin: 0;
-  font: 400 15px/1.1 var(--disp);
+  font: 400 15px/1.1 var(--font-voice);
   text-align: right;
   overflow-wrap: anywhere;
 }
@@ -504,7 +504,7 @@ body.on-scene .screen > p.note {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  font: 400 14px/1 var(--disp);
+  font: 400 14px/1 var(--font-voice);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--text2);
@@ -544,7 +544,7 @@ body.on-scene .screen > p.note {
   width: 46px;
   height: 46px;
   border-radius: 50%;
-  font: 400 20px/1 var(--disp);
+  font: 400 20px/1 var(--font-voice);
   color: color-mix(in srgb, var(--text2) 80%, transparent);
   background: var(--panel-s);
   box-shadow:
@@ -610,7 +610,7 @@ body.on-scene .screen > p.note {
   flex: none;
 }
 .pf-tile > b {
-  font: 400 24px/1.05 var(--disp);
+  font: 400 24px/1.05 var(--font-voice);
 }
 .pf-tile > small {
   font-size: 12px;
@@ -653,11 +653,11 @@ body.on-scene .screen > p.note {
   min-width: 0;
 }
 .pf-bt b {
-  font: 400 21px/1.1 var(--disp);
+  font: 400 21px/1.1 var(--font-voice);
   overflow-wrap: anywhere;
 }
 .pf-bt .tnum {
-  font: 400 14px/1 var(--disp);
+  font: 400 14px/1 var(--font-voice);
   color: var(--text2);
 }
 .pf-bt small {
@@ -688,7 +688,7 @@ body.on-scene .screen > p.note {
   color: var(--text2);
 }
 .pf-coin b {
-  font: 400 18px/1 var(--disp);
+  font: 400 18px/1 var(--font-voice);
 }
 .pf-coin.none {
   opacity: 0.55;
@@ -720,7 +720,7 @@ body.on-scene .screen > p.note {
   white-space: nowrap;
 }
 .pf-items b {
-  font: 400 14px/1 var(--disp);
+  font: 400 14px/1 var(--font-voice);
 }
 .pf-bag > .note:last-child {
   margin-top: 10px;
@@ -745,7 +745,7 @@ body.on-scene .screen > p.note {
   color: var(--text);
 }
 .sb-c b {
-  font: 400 15px/1 var(--disp);
+  font: 400 15px/1 var(--font-voice);
 }
 .sb-c.none {
   opacity: 0.5;
@@ -880,7 +880,7 @@ body.map-gl #dioui {
   padding: 4px 9px 4px 5px;
   border: 0;
   border-radius: 999px;
-  font: 600 12.5px/1 var(--body);
+  font: 600 12.5px/1 var(--font-voice);
   color: #f3eef8;
   background: rgba(22, 16, 36, 0.82);
   box-shadow:
@@ -978,7 +978,7 @@ body.map-gl #dioui {
   top: 0;
   padding: 2px 7px;
   border-radius: 999px;
-  font: 600 11px/1.3 var(--body);
+  font: 600 11px/1.3 var(--font-voice);
   color: #2a2238;
   background: rgba(255, 255, 255, 0.88);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
@@ -1014,7 +1014,7 @@ body.map-gl #dioui {
   justify-content: space-between;
   align-items: center;
   padding: 10px 12px 6px;
-  font: 400 18px var(--disp);
+  font: 400 18px var(--font-voice);
 }
 .mbtn.sm {
   width: 28px;
@@ -1166,7 +1166,7 @@ body.dressing #nav {
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.14);
   color: inherit;
-  font: 600 13px var(--body);
+  font: 600 13px var(--font-voice);
   display: inline-flex;
   gap: 5px;
   align-items: center;
@@ -1227,7 +1227,7 @@ body.dressing #nav {
   border: 2px solid color-mix(in srgb, var(--line) 55%, var(--panel-s));
   border-radius: var(--r-s, 6px);
   padding: 0 10px;
-  font: 600 15px var(--body);
+  font: 600 15px var(--font-voice);
   background: var(--hi);
   color: var(--text);
 }
@@ -1244,7 +1244,7 @@ body.dressing #nav {
   border: 0;
   background: none;
   padding: 10px 10px 9px;
-  font: 600 13.5px var(--body);
+  font: 600 13.5px var(--font-voice);
   color: var(--text2);
   border-bottom: 3px solid transparent;
   cursor: pointer;
@@ -1260,7 +1260,7 @@ body.dressing #nav {
   overscroll-behavior: contain;
 }
 .dr-sec h3 {
-  font: 400 15px var(--disp);
+  font: 400 15px var(--font-voice);
   margin: 14px 0 8px;
 }
 .dr-grid {
@@ -1526,7 +1526,7 @@ body.cs-choosing .cs-bars i:last-child {
 }
 .cs-cap b {
   display: block;
-  font: 400 54px/1 var(--disp);
+  font: 400 54px/1 var(--font-voice);
   margin-top: 6px;
 }
 .cs-skip {
@@ -1721,7 +1721,7 @@ body.in-cs .talk-layer:not(.in-cs) .talk-box {
 }
 .talk-who {
   margin: 0 0 2px;
-  font: 400 18px/1.1 var(--disp);
+  font: 400 18px/1.1 var(--font-voice);
   color: var(--gold2);
 }
 .talk-line {
@@ -2115,7 +2115,7 @@ html[data-targets='big'] .pb.small {
   padding: 6px 7px;
   border: 0;
   border-radius: 999px;
-  font: 600 13px/1 var(--body);
+  font: 600 13px/1 var(--font-voice);
   color: var(--text2);
   background: color-mix(in srgb, var(--text) 6%, transparent);
   cursor: pointer;
@@ -2175,7 +2175,7 @@ html[data-targets='big'] .pb.small {
   padding: 6px 10px;
   border: 0;
   border-radius: 9px;
-  font: 600 13px/1.1 var(--body);
+  font: 600 13px/1.1 var(--font-voice);
   color: var(--text2);
   background: transparent;
   cursor: pointer;
@@ -2306,7 +2306,7 @@ html[data-targets='big'] .set-tabs button {
   min-height: 32px;
   padding: 6px 12px;
   border-radius: 999px;
-  font: 600 13px/1 var(--body);
+  font: 600 13px/1 var(--font-voice);
   color: var(--text2);
   cursor: pointer;
   background: color-mix(in srgb, var(--text) 8%, transparent);
@@ -2533,7 +2533,7 @@ body.on-map .map-full > #maplabels {
 }
 .lore-card h3 {
   margin: 0 0 4px;
-  font: 400 16px/1.1 var(--disp);
+  font: 400 16px/1.1 var(--font-voice);
   letter-spacing: 0.02em;
   color: var(--text);
 }
@@ -2549,7 +2549,7 @@ body.on-map .map-full > #maplabels {
   line-height: 1.45;
 }
 .lore-card p b {
-  font: 400 12px/1 var(--disp);
+  font: 400 12px/1 var(--font-voice);
   letter-spacing: 0.03em;
   margin-right: 4px;
   color: var(--text2);
@@ -2586,7 +2586,7 @@ body.on-map .map-full > #maplabels {
   margin: 2px 6px 8px;
 }
 .book-sheet .book-by {
-  font: 400 12px/1 var(--disp);
+  font: 400 12px/1 var(--font-voice);
   letter-spacing: 0.04em;
   opacity: 0.75;
   margin-bottom: 6px;
@@ -2599,12 +2599,12 @@ body.on-map .map-full > #maplabels {
 }
 .book-n {
   text-align: center;
-  font: 400 12px/1 var(--disp);
+  font: 400 12px/1 var(--font-voice);
   opacity: 0.7;
   margin: 8px 0 0;
 }
 .clue-sheet .clue-k {
-  font: 400 22px/1.1 var(--disp);
+  font: 400 22px/1.1 var(--font-voice);
   letter-spacing: 0.02em;
   text-align: center;
   padding: 14px 8px 4px;
@@ -2683,7 +2683,7 @@ body.ttl-live .ttl-bg {
 }
 .ttl-tag {
   margin: 14px 0 0;
-  font: 600 13px/1 var(--body);
+  font: 600 13px/1 var(--font-voice);
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: #ffe2c0;
@@ -2860,7 +2860,7 @@ body.ttl-auto .ttl-ring circle {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font: 600 10px/1 var(--body);
+  font: 600 10px/1 var(--font-voice);
   letter-spacing: 0.08em;
   color: rgba(255, 226, 192, 0.75);
   text-shadow: 0 1px 0 rgba(20, 10, 40, 0.6);
@@ -2907,7 +2907,7 @@ body.ttl-auto .ttl-ring circle {
 }
 .ttl-hint {
   margin: 0;
-  font: 400 12px/1 var(--disp);
+  font: 400 12px/1 var(--font-voice);
   letter-spacing: 0.06em;
   opacity: 0.85;
   animation: ttlBlink 2.4s ease-in-out infinite;
@@ -3007,7 +3007,7 @@ body.cs-dazed #dio.gl {
 }
 .btip-t b {
   display: block;
-  font: 400 16px/1.1 var(--disp);
+  font: 400 16px/1.1 var(--font-voice);
   color: var(--gold2);
   margin-bottom: 2px;
 }
@@ -3082,7 +3082,7 @@ body.ld-on #app {
   left: 12px;
   bottom: max(8px, env(safe-area-inset-bottom));
   margin: 0;
-  font: 600 10px/1 var(--body);
+  font: 600 10px/1 var(--font-voice);
   letter-spacing: 0.08em;
   color: rgba(255, 226, 192, 0.7);
   text-shadow: 0 1px 0 rgba(20, 10, 40, 0.6);
@@ -3097,7 +3097,7 @@ body.ld-on #app {
   border-radius: 999px;
   background: rgba(20, 14, 40, 0.55);
   color: #fff7e6;
-  font: 600 13px var(--body);
+  font: 600 13px var(--font-voice);
   cursor: pointer;
   backdrop-filter: blur(4px);
 }

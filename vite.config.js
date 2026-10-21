@@ -36,7 +36,8 @@ async function bundlePage(outDir, page) {
       target: 'esnext',
       modulePreload: false,
       copyPublicDir: false,
-      rollupOptions: { input: ENTRY, output: { format: 'es' } },
+      // a lazy import() (the Studio self-test, studio-test-start.js) goes into the same file: one bundle per page
+      rollupOptions: { input: ENTRY, output: { format: 'es', codeSplitting: false } },
     },
     plugins: [
       {
@@ -62,7 +63,9 @@ async function bundlePage(outDir, page) {
       return `<script type="module" src="js/${name}"></script>\n`;
     })
   );
-  return srcs.map(s => relative(ROOT, s));
+  // every module in the bundle, the lazily imported ones too: their sources are left out of dist/
+  const ids = chunk.moduleIds || Object.keys(chunk.modules || {});
+  return [...srcs, ...ids.filter(id => id.startsWith(ROOT + '/'))].map(s => relative(ROOT, s));
 }
 
 function copySite() {
@@ -90,7 +93,7 @@ function copySite() {
       buildData(resolve(outDir, 'game', 'data'));
       const sources = new Set(['game/js/test-globals.js', 'game/js/hooks.js']);
       for (const page of PAGES) for (const f of await bundlePage(outDir, page)) sources.add(f);
-      for (const f of sources) rmSync(resolve(outDir, f));
+      for (const f of sources) rmSync(resolve(outDir, f), { force: true });
       // the folder the engine's modules came from, now empty (phase 04e: and the logic's, once it has modules)
       rmdirSync(resolve(outDir, 'game/js/engine'));
       // phase 20: and the walk renderer's (walk-view-gl.js split into game/js/walk/)

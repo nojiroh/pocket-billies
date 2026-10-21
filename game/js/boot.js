@@ -8,6 +8,7 @@ import { expose } from './test-globals.js';
 import { provide } from './hooks.js';
 import { TEST_BOOT } from './test-boot.js';
 import { DATA_WARN, LOCATIONS, RULES, SPECIES, START_NODE, gameData } from './game-data.js';
+import { applyUiTheme } from './theme-sheet.js';
 import { SAVE_NEW_MSG, SAVE_OLD_MSG, newSave } from './logic/saves.js';
 import { battleStageKey } from './logic/battle-engine.js';
 import { storySwitches, storySwitchesOf } from './logic/story-checks.js';
@@ -842,6 +843,11 @@ function studioLive(D) {
       any = true;
     }
   if ((D.worldmap || D.landmarks) && typeof worldBowlReset === 'function') worldBowlReset();
+  /* UI-1: the UI's look, written again at once (nothing in the world to work out again) */
+  if (D.uiTheme) {
+    gameData.uiTheme = D.uiTheme;
+    applyUiTheme(D.uiTheme);
+  }
   /* Project Story S3: the story and the trainers, in place (STORY_DATA and TRAINERS are these objects) */
   for (const k of ['story', 'trainers'])
     if (D[k] && gameData[k]) {
@@ -934,7 +940,7 @@ else
         notice({
           id: 'save-found',
           title: SAVE_FOUND === 'old' ? 'A new game' : 'A newer save',
-          html: `<p>${SAVE_FOUND === 'old' ? SAVE_OLD_MSG + ' It is kept aside in this browser, and a new game starts here.' : SAVE_NEW_MSG}</p>`,
+          html: `<p>${SAVE_FOUND === 'old' ? SAVE_OLD_MSG + ' It is kept aside in this browser and a new game starts here. To keep a copy, download it from Settings > Save.' : SAVE_NEW_MSG}</p>`,
         });
       /* phase 06: a waiting choice (hatch, learn a move, evolve) opens only once the world is showing */
       if (saveData.started && !TEST_RUN && !FIXTURE) whenWorldShows(showPendingWindows);

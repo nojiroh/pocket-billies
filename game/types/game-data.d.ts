@@ -48,6 +48,8 @@ export interface GameData {
   worldmap?: WorldMapLook;
   /** map generator MG-1: the generator's recipe per biome (game/data/biomes.json) */
   biomes?: Record<DataId, Biome>;
+  /** UI track UI-1: the UI's look: palette, glass, cuts, fonts (game/data/uiTheme.json; logic/ui-theme.js) */
+  uiTheme?: UiTheme;
   lines: Line[];
   /** the world map's places, in node order */
   locations: LocationData[];
@@ -713,6 +715,9 @@ export interface Rules {
     loseFee: number;
     /** what a rest stop costs (it heals the team) */
     restCost: number;
+    /** roguelite track RL-4: a battle still going after this many turns ends as a draw ('draw': a wild battle as if
+     * you walked away, a trainer's or a ghost's as a loss) */
+    turnCap: number;
     shockType: TypeId;
     shockTurns: number;
     shockName: string;
@@ -765,6 +770,24 @@ export interface Rules {
   parts: PartRules;
   /** phase 17: robots (logic/fighters.js); missing in older data */
   robots?: RobotRules;
+  /** roguelite track RL-3: runs. payout: what a run pays when it ends (logic/run-state.js payoutOf). The numbers are
+      placeholders until the owner has played the first cut (roguelite-track.md 8.18) */
+  run: {
+    payout: {
+      /** Capital per $ left */
+      money: number;
+      /** items count at this share of their price, then at the money rate */
+      itemShare: number;
+      /** Capital per Billie released in the run */
+      released: number;
+      /** Capital per node arrived at */
+      node: number;
+      /** Capital for a win */
+      win: number;
+      /** Audit Seals for a win */
+      winSeals: number;
+    };
+  };
 }
 
 /** rules.json robots: the numbers behind robot stats, part HP and breaking (logic/fighters.js) */
@@ -1261,4 +1284,87 @@ export interface Biome {
   look?: Record<string, unknown>;
   life?: { k: string; n: number }[];
   from?: string;
+}
+
+/** uiTheme.json: the UI's look (UI track UI-1; version 2 in UI-3, for the Studio's UI section) */
+export type UiRole =
+  | 'ground'
+  | 'surface'
+  | 'text'
+  | 'text2'
+  | 'line'
+  | 'primary'
+  | 'goldA'
+  | 'goldB'
+  | 'danger'
+  | 'hpOk'
+  | 'hpMid'
+  | 'hpLow';
+export interface UiSurfaceSide {
+  glass?: number;
+  highlight?: number;
+  edgeHi?: number;
+  edgeLo?: number;
+  shadowTint?: string;
+}
+export interface UiShadows {
+  raisedY?: number;
+  raisedBlur?: number;
+  raisedAlpha?: number;
+  raisedNear?: number;
+  floatY?: number;
+  floatBlur?: number;
+  floatAlpha?: number;
+  floatNear?: number;
+}
+export type UiFamily = 'panel' | 'card' | 'button' | 'action' | 'tab' | 'toast';
+export interface UiFamilyShape {
+  kind?: 'cut' | 'rounded' | 'square';
+  size?: 'cutSm' | 'cutMd' | 'cutLg';
+  corners?: ('tl' | 'tr' | 'br' | 'bl')[];
+  radius?: number;
+}
+export type UiEase = [number, number, number, number];
+export interface UiLook {
+  /** a preset's name in the Studio */
+  name?: string;
+  color?: { light?: Partial<Record<UiRole, string>>; dark?: Partial<Record<UiRole, string>> };
+  surface?: { blur?: number; saturate?: number; light?: UiSurfaceSide; dark?: UiSurfaceSide };
+  /** the glass panels' box shadows per side (UI-3) */
+  depth?: { light?: UiShadows; dark?: UiShadows };
+  /** the angular parts' drop shadows (UI-3) */
+  drop?: UiShadows;
+  shape?: {
+    cutSm?: number;
+    cutMd?: number;
+    cutLg?: number;
+    slant?: number;
+    stepped?: boolean;
+    step?: number;
+    families?: Partial<Record<UiFamily, UiFamilyShape>>;
+  };
+  space?: Partial<Record<'s1' | 's2' | 's3' | 's4' | 's5' | 's6' | 's7' | 'gutter', number>>;
+  type?: {
+    voice?: 'Jersey 15' | 'Pixelify Sans';
+    prose?: 'Oxanium' | 'Chakra Petch';
+    voiceScale?: number;
+    scale?: number;
+    lineHeight?: number;
+  };
+  motion?: {
+    fast?: number;
+    base?: number;
+    slow?: number;
+    stagger?: number;
+    easeOut?: UiEase;
+    easeIn?: UiEase;
+    spring?: UiEase;
+  };
+}
+export interface UiTheme {
+  version: 2;
+  defaults: UiLook;
+  presets?: Record<string, UiLook>;
+  /** per screen: colour and shape only */
+  overrides?: Record<string, Pick<UiLook, 'color' | 'shape'>>;
 }

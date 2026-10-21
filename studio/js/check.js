@@ -5,10 +5,12 @@
 import { expose } from '../../game/js/test-globals.js';
 import { provide } from '../../game/js/hooks.js';
 import { $ } from '../../game/js/util.js';
+import { uiThemeContrast } from '../../game/js/logic/ui-theme.js';
 import { storyFindings } from '../../game/js/logic/story-checks.js';
 import { boneSlot } from '../../game/js/skeleton-rig.js';
 import { decodeBase64Array } from '../../game/js/walk-view.js';
 import { escapeHtml } from './game-stand-ins.js';
+import { UI_ROLE_LABELS } from '../../game/js/logic/ui-dials.js';
 import {
   ACTIONS,
   SECTIONS,
@@ -20,6 +22,7 @@ import {
   openSection,
   render,
   sectionShown,
+  studioProbe,
   studioState,
   toast,
 } from './studio-app.js';
@@ -37,7 +40,7 @@ expose({
 /* eslint-enable no-func-assign */
 provide({ runCheck, scheduleCheck });
 /* to-module: end */
-function runCheck() {
+export function runCheck() {
   const D = studioState.D,
     P = [],
     err = (msg, go, sel) => P.push({ lvl: 'error', msg, go, sel }),
@@ -459,6 +462,18 @@ function runCheck() {
       r.go,
       r.sel
     );
+  /* UI-3: the UI look's colours read on its ground and surfaces (the check check-data runs, logic/ui-theme.js) */
+  if (D.uiTheme && D.uiTheme.defaults)
+    for (const f of uiThemeContrast(D.uiTheme)) {
+      const role = (UI_ROLE_LABELS.find(r => r[0] === f.fg) || [])[1] || f.fg,
+        bg = f.bg === 'ground' ? 'the ground' : 'a surface',
+        where = f.where.startsWith('screen:') ? f.where.slice(7) : f.where ? '' : 'game';
+      err(
+        `UI look${f.where ? ` (${f.where.replace(':', ' ')})` : ''}: ${role} (${f.side}) reads at ${f.ratio.toFixed(2)}:1 on ${bg}, under ${f.min}:1.`,
+        'ui',
+        where ? { uiFocus: { scope: where, rel: `color.${f.side}.${f.fg}` } } : {}
+      );
+    }
   /* Project Story S3: the story checks, the same ones check-data runs (game/js/logic/story-checks.js) */
   try {
     for (const f of storyFindings(D)) {
@@ -475,6 +490,8 @@ function scheduleCheck(now) {
   clearTimeout(checkTimer);
   checkTimer = setTimeout(
     () => {
+      const T = studioProbe.on,
+        a = T ? performance.now() : 0;
       const P = runCheck(),
         n = P.filter(p => p.lvl === 'error').length,
         w = P.length - n;
@@ -482,6 +499,7 @@ function scheduleCheck(now) {
       b.textContent = n || w || '✓';
       b.className = 'badge' + (n ? ' err' : w ? ' warn' : ' ok');
       studioState.lastCheck = P;
+      if (T) T('check', { ms: performance.now() - a, problems: P.length });
       if (sectionShown('check') && !now) renderCheckList();
     },
     now ? 0 : 500
@@ -506,7 +524,7 @@ ACTIONS.fix = d => {
 SECTIONS.check = () => {
   afterRender(renderCheckList);
   afterRender(loadBackups);
-  return `<div class="ed-col solo"><div class="ed-head"><h2>Check & backups</h2><div class="seg-row"><button class="btn" data-act="exportData">Download game data</button><button class="btn" data-act="importData">Load game data from a file</button></div></div>
+  return `<div class="ed-col solo"><div class="ed-head"><h2>Check & backups</h2><div class="seg-row"><button class="btn" data-act="exportData">Download game data</button><button class="btn" data-act="importData">Load game data from a file</button><button class="btn" data-act="studioTest" title="Opens and edits every section, times the Studio’s own work and lists the slowest spots (about 90 s; nothing is saved)">Run the Studio test</button></div></div>
  ${card('Problems', `<ul class="checks" id="checkList"></ul>`, { sub: 'Problems are things the game will skip or patch over. Notes are worth a look.' })}
  ${card('Backups', `<p class="help">Every save keeps the previous version in the backups folder. Restoring replaces the current file (which is backed up first). Reload the Studio afterwards.</p><div id="backupList">Loading…</div>`)}</div>`;
 };

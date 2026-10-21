@@ -1,0 +1,148 @@
+{
+ "version": 2,
+ "defaults": {
+  "color": {
+   "light": {
+    "ground": "#F4EFE0",
+    "surface": "#FFFBF0",
+    "text": "#22301F",
+    "text2": "#55634F",
+    "line": "#22301F2E",
+    "primary": "#3B8446",
+    "goldA": "#F6D06C",
+    "goldB": "#D99E33",
+    "danger": "#C8492F",
+    "hpOk": "#2A9D8F",
+    "hpMid": "#D99E33",
+    "hpLow": "#C8492F"
+   },
+   "dark": {
+    "ground": "#17261E",
+    "surface": "#1D2E25",
+    "text": "#EEF2E2",
+    "text2": "#AEB9A4",
+    "line": "#FFFFFF24",
+    "primary": "#7DCB7B",
+    "goldA": "#F3CF6E",
+    "goldB": "#DDA640",
+    "danger": "#FF8466",
+    "hpOk": "#4FD1C0",
+    "hpMid": "#F3CF6E",
+    "hpLow": "#FF8466"
+   }
+  },
+  "surface": {
+   "blur": 12,
+   "saturate": 1.4,
+   "light": {"glass":0.7,"highlight":0.95,"edgeHi":0.95,"edgeLo":0.3,"shadowTint":"text"},
+   "dark": {"glass":0.7,"highlight":0.12,"edgeHi":0.2,"edgeLo":0.55,"shadowTint":"#000000"}
+  },
+  "depth": {
+   "light": {
+    "raisedY": 10,
+    "raisedBlur": 28,
+    "raisedAlpha": 0.42,
+    "raisedNear": 0.14,
+    "floatY": 16,
+    "floatBlur": 34,
+    "floatAlpha": 0.5,
+    "floatNear": 0.16
+   },
+   "dark": {
+    "raisedY": 12,
+    "raisedBlur": 30,
+    "raisedAlpha": 0.65,
+    "raisedNear": 0.35,
+    "floatY": 18,
+    "floatBlur": 38,
+    "floatAlpha": 0.75,
+    "floatNear": 0.4
+   }
+  },
+  "drop": {
+   "raisedY": 6,
+   "raisedBlur": 7,
+   "raisedAlpha": 0.24,
+   "raisedNear": 0.16,
+   "floatY": 12,
+   "floatBlur": 14,
+   "floatAlpha": 0.32,
+   "floatNear": 0.18
+  },
+  "shape": {
+   "cutSm": 4,
+   "cutMd": 8,
+   "cutLg": 12,
+   "slant": 10,
+   "stepped": false,
+   "step": 4,
+   "families": {
+    "panel": {"kind":"cut","size":"cutLg","corners":["tl","br"],"radius":22},
+    "card": {"kind":"cut","size":"cutMd","corners":["tl","tr","br","bl"],"radius":16},
+    "button": {"kind":"cut","size":"cutSm","corners":["tl","tr","br","bl"],"radius":16},
+    "action": {"kind":"cut","size":"cutLg","radius":22},
+    "tab": {"kind":"cut","size":"cutMd","corners":["tl","tr"],"radius":12},
+    "toast": {"kind":"cut","size":"cutMd","radius":18}
+   }
+  },
+  "space": {"s1":4,"s2":8,"s3":12,"s4":16,"s5":24,"s6":32,"s7":48,"gutter":16},
+  "type": {"voice":"Jersey 15","prose":"Oxanium","voiceScale":1.18,"scale":1,"lineHeight":1.5},
+  "motion": {"fast":140,"base":240,"slow":420,"stagger":35,"easeOut":[0.2,0.8,0.2,1],"easeIn":[0.4,0,1,1],"spring":[0.3,1.6,0.5,1]}
+ },
+ "presets": {
+  "alpha05": {
+   "name": "Alpha 0.5",
+   "color": {
+    "light": {
+     "ground": "#DBE9DC",
+     "surface": "#FFF9EE",
+     "text": "#2E2140",
+     "text2": "#5B4A6B",
+     "line": "#2E21402E",
+     "primary": "#3FA45A",
+     "goldA": "#FFDA7A",
+     "goldB": "#F2B84B",
+     "danger": "#D9434B",
+     "hpOk": "#3FC456",
+     "hpMid": "#F0B43A",
+     "hpLow": "#E84848"
+    },
+    "dark": {
+     "ground": "#142735",
+     "surface": "#241C3A",
+     "text": "#F3EDF9",
+     "text2": "#B9ADCC",
+     "line": "#FFFFFF24",
+     "primary": "#3FA45A",
+     "goldA": "#FFDA7A",
+     "goldB": "#F2B84B",
+     "danger": "#D9434B",
+     "hpOk": "#3FC456",
+     "hpMid": "#F0B43A",
+     "hpLow": "#E84848"
+    }
+   },
+   "surface": {
+    "blur": 16,
+    "saturate": 1.5,
+    "light": {"glass":0.7,"highlight":0.9,"edgeHi":0.9,"shadowTint":"#2E2140"}
+   },
+   "type": {"voice":"Pixelify Sans","prose":"Chakra Petch","voiceScale":1},
+   "shape": {
+    "families": {
+     "panel": {"kind":"rounded"},
+     "card": {"kind":"rounded"},
+     "button": {"kind":"rounded"},
+     "action": {"kind":"rounded"},
+     "tab": {"kind":"rounded"},
+     "toast": {"kind":"rounded"}
+    }
+   }
+  },
+  "stepped": {
+   "name": "Stepped pixels",
+   "shape": {"stepped":true}
+  }
+ },
+ "overrides": {}
+}

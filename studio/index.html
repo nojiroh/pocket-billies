@@ -27,7 +27,7 @@
 <div id="modal"></div>
 <div id="dlg"></div>
 <div id="toasts" aria-live="polite"></div>
-<script>window.STUDIO_KEY='__STUDIO_KEY__';window.NW_ARTDIR='../game/art/';</script>
+<script>window.STUDIO_KEY='__STUDIO_KEY__';window.NW_ARTDIR='../game/art/';try{performance.setResourceTimingBufferSize(3000)}catch(e){}</script>
 <script src="../game/version.js"></script>
 <script src="../game/js/data-files.js"></script>
 <script>document.getElementById('ver').textContent=PB_VERSION;</script>
@@ -36,6 +36,7 @@
 <script src="../game/art/next/palette.js"></script>
 <script type="module" src="../game/js/util.js"></script>
 <script type="module" src="js/game-stand-ins.js"></script>
+<script type="module" src="../game/js/logic/rng.js"></script>
 <script type="module" src="../game/js/logic/parts.js"></script>
 <script type="module" src="../game/js/logic/robot-math.js"></script>
 <script type="module" src="../game/js/logic/robot-joints.js"></script>
@@ -47,6 +48,9 @@
 <script type="module" src="../game/js/logic/story-checks.js"></script>
 <script type="module" src="../game/js/logic/free-camera.js"></script>
 <script type="module" src="../game/js/logic/studio-layout.js"></script>
+<script type="module" src="../game/js/logic/colors.js"></script>
+<script type="module" src="../game/js/logic/ui-theme.js"></script>
+<script type="module" src="../game/js/logic/ui-dials.js"></script>
 <script type="module" src="../game/js/logic/history.js"></script>
 <script type="module" src="../game/js/logic/pixel-ops.js"></script>
 <script type="module" src="../game/js/logic/pixel-snap.js"></script>
@@ -56,6 +60,8 @@
 <script type="module" src="../game/js/logic/bowl.js"></script>
 <script type="module" src="../game/js/logic/bowl-things.js"></script>
 <script type="module" src="../game/js/logic/mapgen.js"></script>
+<script type="module" src="../game/js/logic/seam-rules.js"></script>
+<script type="module" src="../game/js/logic/step-grid.js"></script>
 <script type="module" src="../game/js/engine/gpu-counters.js"></script>
 <script type="module" src="../game/js/engine/frame-lists.js"></script>
 <script type="module" src="../game/js/engine/frame-block.js"></script>
@@ -121,6 +127,7 @@
 <script type="module" src="js/props-editor.js"></script>
 <script type="module" src="js/wardrobe.js"></script>
 <script type="module" src="js/engine-editor.js"></script>
+<script type="module" src="js/ui-editor.js"></script>
 <script type="module" src="js/roster.js"></script>
 <script type="module" src="js/parts-editor.js"></script>
 <script type="module" src="js/coats-editor.js"></script>
@@ -135,5 +142,6 @@
 <script type="module" src="js/connections.js"></script>
 <script type="module" src="js/github.js"></script>
 <script type="module" src="js/layout.js"></script>
+<script type="module" src="js/studio-test-start.js"></script>
 </body>
 </html>

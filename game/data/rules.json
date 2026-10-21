@@ -58,7 +58,8 @@
   "alphaKeep": 1.08,
   "alphaSleepResist": 0.5,
   "spreadMult": 0.75,
-  "restCost": 100
+  "restCost": 100,
+  "turnCap": 40
  },
  "catching": {
   "rarity": {"starter":0.45,"common":0.45,"uncommon":0.25,"rare":0.1,"mythical":0.03},
@@ -127,5 +128,8 @@
   "cap": 0.2,
   "gemAffinity": 1.2,
   "xpYield": 150
+ },
+ "run": {
+  "payout": {"money":0.1,"itemShare":0.5,"released":15,"node":10,"win":100,"winSeals":1}
  }
 }

@@ -12,6 +12,7 @@ import {
   battleWeatherMultiplier,
   closeModal,
   jingle,
+  limbPipsHTML,
   modal,
   provide,
   render,
@@ -59,6 +60,7 @@ import {
   CATCH_RULES,
   actorTypes,
   allSnapshots,
+  battleRoll,
   battleSay,
   canUse,
   catchOdds,
@@ -102,7 +104,6 @@ import { addRipple, waterAt } from './walk/water.js';
 import { battle3d, battle3dWanted } from './battle-3d.js';
 /* eslint-disable no-func-assign */
 expose({
-  ROBOT_PART_SHORT: [() => ROBOT_PART_SHORT],
   TICKER_LAST: [() => TICKER_LAST],
   afterEvents: [() => afterEvents, v => (afterEvents = v)],
   afterStageTime: [() => afterStageTime, v => (afterStageTime = v)],
@@ -148,7 +149,6 @@ expose({
   plateElement: [() => plateElement, v => (plateElement = v)],
   platesTick: [() => platesTick, v => ((platesTick = v), provide({ platesTick }))],
   playTurnEvents: [() => playTurnEvents, v => ((playTurnEvents = v), provide({ playTurnEvents }))],
-  robotPartsHTML: [() => robotPartsHTML, v => (robotPartsHTML = v)],
   screenWipe: [() => screenWipe, v => (screenWipe = v)],
   setEndBattle: [() => setEndBattle, v => (setEndBattle = v)],
   setOpenBattle: [() => setOpenBattle, v => (setOpenBattle = v)],
@@ -688,16 +688,6 @@ function effectivenessLabel(mid, tk) {
       ? '<em class="nve">Not very effective</em>'
       : '';
 }
-/* phase 17: a robot's three limbs as small bars (L arm, R arm, legs), a broken one crossed out */
-const ROBOT_PART_SHORT = { armL: 'L', armR: 'R', legs: 'Lg' };
-function robotPartsHTML(bot) {
-  return Object.entries(bot.ph)
-    .map(([q, f]) => {
-      const p = Math.max(0, Math.min(1, f)) * 100;
-      return `<span class="hp-part${f <= 0 ? ' broken' : ''}" title="${ROBOT_SLOT_NAMES[q]}${f <= 0 ? ' (broken)' : ''}"><b>${ROBOT_PART_SHORT[q]}</b><i><u class="${p < 34 ? 'low' : ''}" style="width:${p}%"></u></i></span>`;
-    })
-    .join('');
-}
 /* phase 17: does this move ask which robot part to go for? (an aimed move at a robot with a limb still standing) */
 function needsPart(mid, tk) {
   const M = MOVES[mid],
@@ -836,6 +826,7 @@ export function paintActions() {
       caught: 'Taxed.',
       ran: 'You walked away.',
       bribed: 'You took the money.',
+      draw: 'A draw.',
     }[activeBattle.over];
     h = `<button class="bt end wide" data-a="bend"><b>${t} Continue</b><kbd>Enter</kbd></button>`;
   }
@@ -934,9 +925,10 @@ function finishThrow(res, id, lab, spin) {
     return playTurnEvents();
   }
   battleSay(['It broke free right away.', 'It almost stayed in.', 'So close. It wobbled twice.'][res.w]);
-  if (random() < CATCH_RULES.offerChance) {
+  /* RL-4: the bribe is the battle's chance (battleRoll: its own stream when it has a seed) */
+  if (battleRoll() < CATCH_RULES.offerChance) {
     activeBattle.offer =
-      Math.round((CATCH_RULES.offerMin + random() * (CATCH_RULES.offerMax - CATCH_RULES.offerMin)) / 10) * 10;
+      Math.round((CATCH_RULES.offerMin + battleRoll() * (CATCH_RULES.offerMax - CATCH_RULES.offerMin)) / 10) * 10;
     battleSay(`${billyName(e)} is offering you money to let it go.`, { k: 'cry', si: 1 });
     return playTurnEvents();
   }
@@ -945,8 +937,9 @@ function finishThrow(res, id, lab, spin) {
 }
 export function endBattle() {
   stopTimers();
-  const o = activeBattle.over,
-    kind = activeBattle.kind,
+  const kind = activeBattle.kind,
+    /* RL-4: a battle called off at the turn cap ends as if you walked away (wild) or lost (a trainer) */
+    o = activeBattle.over === 'draw' ? (kind === 'wild' ? 'ran' : 'lose') : activeBattle.over,
     T = activeBattle.T,
     tid = activeBattle.tid,
     lead = findBilly(activeBattle.lead);
@@ -997,11 +990,11 @@ export function endBattle() {
     }
   }
   const E = RULES.eggs;
-  if (kind === 'wild' && o === 'win' && random() < E.dropChance) {
+  if (kind === 'wild' && o === 'win' && battleRoll() < E.dropChance) {
     const tiers = Object.entries(E.dropTiers)
       .filter(([t]) => EGGS[t])
       .map(([t, w]) => [+t, w]);
-    const tier = tiers.length ? pickWeighted(tiers) : EGG_TIERS[0];
+    const tier = tiers.length ? pickWeighted(tiers, battleRoll) : EGG_TIERS[0];
     if (addEgg(tier))
       after.push({
         title: 'It dropped an egg',
@@ -1145,7 +1138,9 @@ function paintPlates(s, anim) {
       .join('');
     const pr = e.querySelector('.pl-parts');
     pr.hidden = !x.bot;
-    pr.innerHTML = x.bot ? robotPartsHTML(x.bot) : '';
+    /* UI-2: the shared bot plate: the limb pips, and the plate itself in steel with the panel's cuts */
+    pr.innerHTML = x.bot ? limbPipsHTML(x.bot.ph) : '';
+    e.classList.toggle('bot', !!x.bot);
     const pips = e.querySelector('.pl-pips'),
       party = k === 0 ? saveData.team : k === 1 && activeBattle.kind === 'trainer' ? activeBattle.sides[1].team : null;
     pips.hidden = !party || party.length < 2;

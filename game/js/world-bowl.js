@@ -334,7 +334,7 @@ void main(){vec3 c=vK<.5?vec3(.72,.8,.92):vK<1.5?vec3(1.):vec3(.35,.32,.3);c*=1.
      map's own, close in) and when its windows light at night (iK). uShadowPass draws them into the shadow map. */
   mthing: [
     `#version 300 es
-precision highp float;in vec3 aPos;in vec3 aNrm;layout(location=7) in vec3 aCol;layout(location=8) in vec4 iP;layout(location=9) in vec4 iR;layout(location=10) in vec4 iK;
+precision highp float;in vec3 aPos;in vec3 aNrm;layout(location=2) in vec3 aCol;layout(location=8) in vec4 iP;layout(location=9) in vec4 iR;layout(location=10) in vec4 iK;
 uniform mat4 uVP;uniform float uNear;out vec3 vW,vN,vC,vL;out vec2 vK;
 void main(){vec3 E=vec3(iR.x,0.,-iR.y),N=vec3(iR.z,0.,-iR.w);float k=iP.w*(iK.x>.5?mix(.3,1.,uNear):1.);
  vec3 p=iP.xyz+(E*aPos.x+N*aPos.z)*k+vec3(0.,aPos.y*k,0.);vN=E*aNrm.x+N*aNrm.z+vec3(0.,aNrm.y,0.);vW=p;vC=aCol;vL=aPos;vK=iK.xy;gl_Position=uVP*vec4(p,1.);}`,
@@ -1183,7 +1183,7 @@ function worldBowlThingsTick(g) {
     for (const [loc, size, off] of [
       [0, 3, 0],
       [1, 3, 12],
-      [7, 3, 24],
+      [2, 3, 24],
     ]) {
       gl.enableVertexAttribArray(loc);
       gl.vertexAttribPointer(loc, size, gl.FLOAT, false, 36, off);

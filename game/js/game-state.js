@@ -15,6 +15,11 @@ expose({
   SAVE_FOUND: [() => SAVE_FOUND],
   SAVE_KEY: [() => SAVE_KEY],
   SAVE_KEY_BASE: [() => SAVE_KEY_BASE],
+  SET_ASIDE_KEY: [() => SET_ASIDE_KEY],
+  // @ts-expect-error -- replaced on purpose
+  accountSetAside: [() => accountSetAside, v => (accountSetAside = v)],
+  // @ts-expect-error -- replaced on purpose
+  accountSetAsideRead: [() => accountSetAsideRead, v => (accountSetAsideRead = v)],
   activeBattle: [() => activeBattle, v => setActiveBattle(v)],
   escapeHtml: [() => escapeHtml],
   // @ts-expect-error -- replaced on purpose
@@ -102,14 +107,34 @@ export function writeStoredSave(o) {
     }
   }
 }
+/* a save set aside in this browser (one, the latest): Settings > Save restores it or downloads it */
+const SET_ASIDE_KEY = () => SAVE_KEY + '-set-aside';
+export function accountSetAside(json, from) {
+  try {
+    localStorage.setItem(SET_ASIDE_KEY(), JSON.stringify({ json, from, at: Date.now() }));
+  } catch (e) {
+    console.warn(e);
+  }
+}
+export function accountSetAsideRead() {
+  try {
+    const v = JSON.parse(localStorage.getItem(SET_ASIDE_KEY()) || 'null');
+    return v && v.json ? v : null;
+  } catch (e) {
+    return null;
+  }
+}
 /* a save here that this version can't load is kept aside in this browser (once), and the title says why it's a new game */
 export const SAVE_FOUND = saveAge(readStoredSave());
 if (SAVE_FOUND === 'old' || SAVE_FOUND === 'new')
   try {
-    const k = SAVE_KEY + '-set-aside';
-    /* SAVE_FOUND says the key holds a save */
-    if (localStorage.getItem(k) == null)
-      localStorage.setItem(k, /** @type {string} */ (localStorage.getItem(SAVE_KEY)));
+    /* SAVE_FOUND says the key holds a save; one writer and one shape, so Settings > Save offers it. The slot holds
+       the latest: an older set-aside save is replaced (else this one would be written over by the new game), the
+       same one is left as it was */
+    const json = /** @type {string} */ (localStorage.getItem(SAVE_KEY)),
+      aside = accountSetAsideRead();
+    if (!aside || aside.json !== json)
+      accountSetAside(json, SAVE_FOUND === 'old' ? 'an older version of the game' : 'a newer version of the game');
   } catch (e) {}
 if (SAVE_FOUND === 'new') saveHold = true;
 export let saveData = loadSave(readStoredSave()) || newSave();

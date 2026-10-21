@@ -24,6 +24,247 @@ Plan approved by the owner (free angles, Studio steps of 15°; rotation as its o
   installed); the to-module blocks and expose lists were written by hand to match the tool. CI runs them.
 - Next session starts with: CI results on the PR, then batch 9 part 2, the 20 solarpunk props.
 
+### UI track UI-2 - Kit v2: angular shapes - 2026-10-21
+Branch `ccr-00069345-2zok4t`, from main 3479f01 (RL-4 merged, UI-1 in). The owner asked for the whole of UI-2 in one
+session (no split). Two calls I made without asking (my plan's recommendations): the old `.pb` buttons and every
+screen not on the kit keep their shapes until UI-5; the gallery's picture baseline is committed.
+- Changed (one cause per commit): the missing UI-1 entry below; the shapes as data (logic/ui-theme.js makes each
+  family's clip-path outline, 1 px edge ring and shadow ring; `shape.families` cut/rounded/square, `shape.stepped`;
+  presets `stepped`, and `alpha05` now rounded; tokens.css holds the defaults, the edge and drop-shadow tokens);
+  tools/check-ui-gallery.py; kit v2 (`pb-panel`, `pb-button` with the gold long hexagon, `pb-sheet` floating with two
+  cuts, `pb-toast` a hexagon; new `pb-card`, `pb-tabs`, `pb-stat-bar`, `pb-field`; focus as a gold line round the
+  outline); page side: sheets, the diamond inbox dot, `.pb-sel`, `hr.pb-rule`, `.pb-portrait`; team rows as solid cut
+  cards with angular ten-cell HP and portraits breaking their circle; battle text, menu, move tiles, buttons and
+  plates cut; the dialogue box cut with its portrait breaking the circle and a slanted name tag; diagonal wipes
+  (`m-wipe`, `m-wipe-r`) for `.screen.enter` and sheets; the 40 icons from tools/build-ui-icons.py (the rounded ones
+  redrawn); type glyphs (ui-kit.js table; `typeBadgeHTML` in ui.js, one line, the only ui.js change); the shared bot
+  plate (`limbPipsHTML` in unit-card.js; battle plates and bot rows in steel, the old limb bars and their CSS gone);
+  the gallery's baseline (73 pictures), `npm run check:ui`; `--z-below` for the new layers. Docs: TESTING, ROADMAP,
+  ui-track.md ("UI-2 found"), CHANGELOG.
+- Where the plan was wrong: see ui-track.md "UI-2 found" (few screens were on the kit; no picture tests existed; how
+  clip-path, shadows and blur had to be layered).
+- Verified: fast tier green at every commit (lint, typecheck, check:modules, format:check, check:data; unit tests
+  351 -> 357, new: the shape polygons, tokens.css equal to the generator, the icons equal to their grids, each seen
+  to fail on a planted fault). Picture tests: 73 pictures, two runs match exactly; a 2 px change to the card cut fails
+  all five card pictures. Smoke: green after the page-side commits (280 s); after the last code commit one run had
+  two timeouts (the full-test step and the Studio screenshot, both on 40 s software frame read-backs under load), the
+  re-run straight after was green (205 s). Blurred surfaces: team 6 -> 4 (rows no longer blur); the others as before
+  (walk 6, map 12, ledger 5, profile 4, shop 8, battle 3). Not run: the full quick check and `--selftest`; the
+  graphics bench (needs a phone). I looked at every gallery section in light and dark and the wipes paused mid-way.
+- Lint report at the end (report only): corners 167 raw / 45 token uses, space 1,098 / 219, shadows 195 / 16,
+  keyframes 77 (11 in motion.css), times 278 / 28, fonts 18 / 215, colours 745 in CSS (was 709: the new edge,
+  steel and limb colours) and 571 in game JS (was 561: ui-kit.js), `!important` 207, layers 61 / 8, blurred rules 30,
+  `innerHTML` 57, `style="` 41.
+- Risky: clip-path, drop-shadow filters and masks on many parts can cost frames on phones (the plan's risk): please
+  run the Graphics bench on the team screen and a battle. The battle menu's card no longer scrolls itself (what it
+  holds does, at the same 72vh). Old sheets lost their shadow (the scrim sets them apart). Jersey 15 at 10-12 px on
+  the plates and limb pips: check them on the phone. The picture baseline is this container's Chromium; on another
+  machine fonts may differ (remake it there with --update).
+- Phone check wanted (the plan's "done when"): team (rows, a bot if you have one), a battle (plates, menu, tiles,
+  the wipe into it), a sheet; light and dark.
+- Not done: the Studio's dials for the shapes (UI-3), the run parts (UI-4), every other screen (UI-5).
+- Next: the owner merges and pushes `ui-2-done`; then "start UI-3" (the Studio's UI section) in a new session.
+
+### Roguelite track RL-4 - Battle state injected - 2026-10-21
+Branch `ccr-e32acdb2-oy1bny`, from main dcde38b (RL-3 merged). Plan approved at the start with the owner's answers:
+turn cap 40 ending in a draw (8.9), a killed battle restarts from its seed (8.7, built in RL-8), Lullaby's text fixed.
+- Changed (one cause per commit): the missing RL-3 entry below; a snapshot of the battle object `newBattle` installs
+  (`battle-state.test.mjs`) before anything moved; `newFieldState` moved into the new `logic/battle-state.js`, then
+  `makeBattle(kind, team, foe, extra)` (the same object); the engine reads its battle through `battleNow()` (the
+  page's `activeBattle` unless `withBattle(b, f)` plays another), and `runTurn`, `enemyOnly`, `chooseAI`, `doSwitch`,
+  `benchCandidates`, `catchOdds`, `catchRoll` take an optional battle last; the page calls (toast, save, open, play,
+  sure catch, weather) go through the battle's host, `SILENT_HOST` doing none (the robot sim uses it); a battle on a
+  copied team keeps its own `seen`, `bag`, `buddy` and leaves the save alone (`canUse`, `teamNeedsHp`, `applyItem`
+  take a battle); every chance through `battleRoll()` (`b.rng` from `b.seed`, else `util.random`), the bribe and the
+  egg drop included; `rules.battle.turnCap` (40) with type and data check; `turnCapCheck` ends a battle as `'draw'`,
+  which `endBattle` treats as walking away (wild) or a loss (trainer); Lullaby's text 2-4 turns. Docs: TESTING,
+  roguelite-track section 0, ROADMAP, CHANGELOG.
+- Where the plan was wrong (roguelite-track.md section 0): 64 engine reads, not 56; 18 draws, not 16 (two
+  `pickWeighted`); items and the buddy were save writes too; `B()` breaks the naming rule (`battleNow()`); no change
+  to `setActiveBattle` and no `seen` copy in `endBattle` were needed.
+- Verified: fast tier green at every commit (lint, typecheck, check:modules, format:check, check:data, unit tests,
+  331 -> 341); the golden record unchanged at every commit (it plays with no seed, so on `util.random` as before).
+  Each new test was seen to fail on a planted fault (a direct playTurnEvents, a save write of items, a crit on
+  `random`, the cap check removed, a cap of 4 in the data). Smoke 15/15 (210 s: the opening, Blake's first battle,
+  a phone battle, the debug log). The robot sim (`--quick`) matches the base commit exactly once the turn cap is
+  lifted; with the cap a few long robot stalls end as draws (part win rates move by under a point). Not run: the
+  in-game full test (`--selftest`, its double, Alpha and catch phases) and the full quick check, skipped at the
+  owner's word; run `--selftest` before or after merging.
+- Risky: every battle runs through the new paths; the unseeded play is proven the same by the golden record, not by
+  hand on the phone. A draw is new to the battle screen ('A draw.' on the end button). `withBattle` sets a module
+  value for the length of a call: a battle passed in must not open the page's battle screen (use `SILENT_HOST`).
+- Not done (as planned): formats by node type and `extra.seed` from the run (RL-8), the effect-handler table
+  (RL-12), the replay log (RL-15). Project Story S6 (Hazel vs Blake as a real battle) may proceed.
+- Next: the owner pushes `rl-1-done` .. `rl-4-done`; then RL-5 (legacy parking and the world setter) or MG-2.
+
+### Roguelite track RL-3 - State separation - 2026-10-21 (entry written in RL-4)
+The RL-3 session (PR #85, branch `ccr-c4c4609f-eqjopt`) updated CHANGELOG, ROADMAP, TESTING, SECURITY and
+roguelite-track.md section 0 but left no entry here; this one is put together from its commits and those docs.
+- Changed (one cause per commit): the unused save field `v` dropped; `logic/meta-state.js`, `logic/ranch-state.js`,
+  `logic/run-state.js` (`newRun`, `validRun`, `runBegin`, `runEnd`, `runRestore`, `payoutOf`, `runNodeCount`) with
+  types and tests, loaded by the game page and not used yet; `rules.json run.payout` (placeholders, 8.18) with a
+  check-data rule; `validSave`'s Billie checks moved into `billiesOk` (no-op); SAVE_VERSION 4 (`meta`, `run` null in
+  the hub, `ranch`; `migrate` keeps a run's trip, plan and visited places bounded by the run's map); the set-aside slot
+  keeps the latest unloadable save (it kept the first); the new-game notice says where to download a set-aside save.
+- Decisions by the owner: every format 3 save is set aside (8.12).
+- Risky: every save on the phone and account is set aside on first load of this version (intended). The account's
+  older save goes to `-cloud-set-aside`, which nothing reads (one slot, two saves: owner's call).
+- Verified: not written down by RL-3. RL-4 ran the fast tier on its merge commit dcde38b: lint, typecheck,
+  check:modules, format:check, check:data and 331 unit tests, all green.
+- Next: RL-4 (battle state injected) or RL-5 (legacy parking).
+
+### UI track UI-1 - Theme as data, rules as a check - 2026-10-21
+(Written by the UI-1 session after its merge; it replaces the entry UI-2 put together from the commits.)
+Branch `ccr-901f764c-bv0rc7`, from 29834ca (the UI-0 plan on top of main 072f993); merged as PR #87, then RL-4 (#88)
+on top. Plan approved at the start with the owner's answers: the uiTheme.json draft as shown, Jersey 15 scaled by
+its font face (118%), the palette through variables only (raw colours wait for UI-5/6).
+- Changed (one cause per commit): tools/ui-lint.mjs (`npm run lint:ui`, a report) with a fixture test;
+  `var(--disp)`/`var(--body)` folded into `var(--font-voice)` (a no-op: v05 already set both to Pixelify Sans);
+  tokens.css gains `--cut-sm/md/lg`, `--slant`, `--shape-*`, a `--z-*` scale on today's values and the `--c-*` colour
+  roles on today's variables; the HP bars (battle plate, hpmini, pbar.hpb, unit card) read `--c-hp-*` with today's
+  colours as fallbacks; game/data/uiTheme.json + schema + types + check-data (text and quiet text at 4.5:1 on ground
+  and surface, every preset, both sides); Jersey 15 and Oxanium woff2 (Fontsource, OFL lines in OFL.txt);
+  logic/ui-theme.js makes the sheet and theme-sheet.js writes it as `<style id="ui-theme">` after every stylesheet
+  (the three light/dark selectors the CSS uses, so Settings' theme switch still works), the Studio's live draft
+  rewrites it, both fonts preloaded; the UI gallery loads the data and gets a Copper Grove / alpha 0.5 switch; smoke
+  logs the blurred surfaces per screen (`uiBlurCount()`). Side PR #86 (merged): `npm run build` had failed on main
+  since PR #83 (the Studio self-test's lazy import made a second bundle).
+- Differs from the plan: Pixelify Sans stays (36 KB) so preset `alpha05` really shows the old look; the dark side's
+  highlight and shadows stay v05.css's (the surface dials split by mode in UI-3); `alpha05` is close to today, not
+  exact (`--panel-s` and `--g-solid` became one surface); the theme-color meta is unchanged; only the latin font
+  subsets ship (letters beyond Latin-1 fall back). Where the plan text was wrong is in ui-track.md (the fonts in use,
+  the two colour sets, the counts).
+- Verified: 324 unit tests on the branch (351 on main after RL-4), lint, typecheck, check:modules, format:check,
+  check:data, build; smoke green before every game commit and on main after RL-4. The four no-op commits: the team,
+  shop, ledger and profile pictures matched ones taken before (the others differ by capture timing: a camera pan, a
+  fade). A headless probe: the sheet is there, `--text` #22301f, the plate's HP gradient teal, Jersey 15 and Oxanium
+  loaded, `font-synthesis-weight: none`, no console errors; the gallery in both looks and both sides. Full quick
+  check (50 min): 11 problems, the 10 known since RL-1 (v31 fountain, v34, v35, v38, v39/40, v43, v44, v46, alpha 0.4,
+  phase 08 running) plus Crowd at 0.6 fps while other browsers ran here; Crowd alone passed (1.2 → 1.2 fps).
+  Not run: `--selftest` (UI-1 changes looks, not play; smoke's one in-game step passed).
+- Lint report (`npm run lint:ui`; it counts every length in a shorthand, so space and radii differ from the plan's
+  table):
+
+| Rule | Raw | Token uses | Worst files |
+| --- | --- | --- | --- |
+| Corners on the radius tokens | 168 | 59 | style.css 55, screens.css 53, v05.css 28 |
+| Space on the --s scale | 1093 | 214 | style.css 462, screens.css 393, v05.css 101 |
+| Shadows on the depth tokens | 189 | 22 | style.css 49, v05.css 40, polish.css 37 |
+| Keyframes in motion.css only | 77 | 9 in motion.css | style.css 38, polish.css 12, screens.css 11 |
+| Times on the motion tokens | 279 | 22 | style.css 89, polish.css 79, screens.css 47 |
+| Fonts by token | 18 | 215 | loader.css 7, style.css 5, v05.css 4 |
+| Colours as variables (CSS rules) | 709 | - | style.css 228, screens.css 166, v05.css 105 |
+| !important | 205 | - | v05.css 107, screens.css 23, style.css 23 |
+| Layers on the --z scale | 60 | 0 | style.css 24, screens.css 18, polish.css 6 |
+| Blurred surfaces (backdrop-filter rules) | 31 | - | style.css 10, screens.css 7, v05.css 7 |
+| Colours in game JS | 561 | - | dressing-room.js 96, opening-fall.js 81, battle-stage.js 64 |
+| innerHTML writes in game JS | 57 | - | battle.js 13, ui.js 9, dressing-room.js 6 |
+| style="..." strings in game JS | 39 | - | ui.js 15, unit-card.js 9, battle.js 6 |
+
+  Blurred surfaces per screen (smoke): walk 6, map 12, team 6, ledger 5, profile 4, shop 8, battle 3 (budget 3).
+- Risky: the look is mixed until UI-5/6 (purple raw colours in button gradients and shadows sit beside Copper
+  Grove); Jersey 15 at 12-13 px labels needs the owner's phone look; the loader paints in the old fonts for a moment
+  before the sheet loads; a look change moves every picture: remake the baseline (Actions → Check → "Make the picture
+  baseline"). The repo has no picture baseline yet, so the full check compared nothing.
+- Next: the owner looks on the phone, pushes `ui-1-done` and remakes the picture baseline. UI-2 came next (its
+  entry above).
+
+### UI track UI-0 - the plan - 2026-10-21
+Planning only, in a chat session with the owner (the plan, the owner's answers to 36 questions, a Design mockup);
+nothing built. Docs only, one cause per commit.
+- Changed: docs/phases/ui-track.md (the plan: where it fits in the RL track, an audit of the code against the 06
+  rules, the look, building notes, the Studio's UI section, UI-1..UI-6, risks, "Ask me before"); docs/ROADMAP.md (the
+  UI track under Tracks alongside; phase 06's 06-5 absorbed into UI-5 and UI-6).
+- Found (read at 072f993, pattern scans, not runs): raw values outnumber tokens about 4 to 1 in game CSS (200 raw
+  radii vs 81 tokens, 746 raw spacing values vs 152, 91 keyframes, 205 `!important`); ui.js 2,952 lines; the Studio
+  shares no tokens with the game.
+- Decided by the owner: chamfered cuts (two opposite corners on panels), smooth with a stepped preset, a bit less
+  blur, the Copper Grove palette with teal healthy HP, Jersey 15 + Oxanium, BW2 menus with Medabots bot plates, the
+  round list, one bottom bar whose tabs change, showy rewards, diagonal wipes, uiTheme.json with colour and shape
+  overrides, all four Studio tool groups, every screen reshaped in UI-5, 06-5 absorbed, lint report-only then enforced,
+  start now beside RL-3.
+- Risky: nothing ran against the code; every count is a scan. The mockup's sprites were assembled by hand from the
+  rig sheets (draw order guessed). Jersey 15 has one weight: check small labels on the phone.
+- Next session starts with: "start UI-1" (docs/phases/ui-track.md), in Plan Mode, beside RL-3.
+
+### Roguelite track RL-2 - Golden record and RNG module - 2026-10-21
+Branch `ccr-a09a396b-vfdptc`, started from main c66bf2b (RL-1 merged; `rl-1-done` not yet on the remote).
+- Changed (one cause per commit): `tools/test/battle-golden.test.mjs` + snapshot first (single wild, double trainer,
+  Alpha, robot vs Billie on the game's data, both sides played by `chooseAI`, every event without uids and the end
+  state); `mapgenHashString`/`mapgenRandom` moved unchanged into the new `game/js/logic/rng.js` (both pages load it
+  first among the logic modules), then renamed `hashString` and `rngFrom` (one rename per commit, `rename.mjs
+  verify`: pure renames); `rngFn(seed, salt)` and `dailySeed(now)` (`'d'` + UTC date) added with
+  `tools/test/rng.test.mjs`; `pickWeighted`, `rollPartSize`, `rollBuild`, `spawn` take an optional `rnd` (default
+  util.js `random`, so play is unchanged; nothing passes one yet). Docs: TESTING.md, roguelite-track.md section 0
+  (where the plan text was wrong), ROADMAP.
+- Verified: 302 unit tests, lint, typecheck, check:modules, format:check, check:data, smoke (all green, 203 s).
+  The golden record passes unchanged at every commit after the first, and a planted fault (+1 damage on every hit)
+  turned all four fights red. `rng.test.mjs`'s frozen values (first five draws, a string hash, a generated scene's
+  hash) were taken from mapgen.js at c66bf2b, before the move. The Studio's Generate card: the GitHub check's
+  generate step passed in a temporary copy that skipped the steps before it (the unchanged script still stalls at the
+  story preview click, as in RL-1).
+- Risky: the golden record and the scene hash read the game's data, so a content edit to moves, species, trainers,
+  robots, scenery or biomes turns them red; remake on purpose (`--test-update-snapshots`) and say so in the commit.
+  The full quick check (47 min) was not run; nothing on the page changed apart from one more module tag.
+- Not done: `spawn`'s species odds still go through `environmentOdds` (real-clock weather), so a seeded spawn is only
+  reproducible while the weather is the same; RL-6/7 feed it the run's forecast. Battles still draw `Math.random`
+  (RL-4's `b.rng`).
+- Next: the owner pushes `rl-1-done` and `rl-2-done` and answers RL-1's tools question; then RL-3 (state separation)
+  or RL-4 (battle state injected), both unblocked.
+
+### Roguelite track RL-1 - Hardening - 2026-10-21
+Branch `claude/rl-1-start-enwmnf`. Every tier could run this time: `npm ci` works, and Playwright works once the pinned
+`pip install -r tools/requirements-check.txt` (1.56.0) is used (the newest one wants a browser the container lacks).
+- Changed (one cause per commit): PR #78's leftovers (`npm run modules`, prettier); the world map's `mthing` shader puts
+  aCol on the standard location 2 (was 7: the full test's shader check, the smoke check's one red step, from phase 10);
+  the set-aside fix (writer and reader moved to game-state.js in a move-only commit, then one writer and one shape
+  `{json, from, at}`; Settings > Save now shows an older or newer save it can't load, with Download only); the Studio
+  sign-in links a fine-grained single-repo token (SECURITY A) and Remember me starts unticked (B); eslint.config.js
+  header and SECURITY.md brought up to date; `rng-baseline.test.mjs` + a TESTING.md paragraph on where randomness
+  comes from; roguelite-track.md section 0 corrected.
+- Not done, waiting for the owner: deleting the 16 version-stamped tools. The plan was wrong: most are live
+  (`build-scene-props.py` execs the 5 `scene_props_v*.py`, `build-props-a04.py` imports `build-buildings-v46.py`,
+  `build-terrain-v47.py` is the ground generator). Only `build-regions-v47.py` and `build-loader-v47.py` are clean
+  one-offs; `build-places-v46.py` (+ `build-v28.py`, which it imports) was kept on purpose in MG-1.
+- Verified: 290 unit tests (2 new files; the set-aside test fails on the old code), lint, typecheck, check:modules,
+  format:check, check:data; smoke 15/15 after the shader fix. `check-studio-github.py`: sign-in and all 24 sections
+  pass, then it times out clicking the story preview checkbox; the same at the base commit c2d51d6 (a real mouse click
+  never completes while the preview draws with software GL here; a script click works). Not in CI.
+- Risky: the full quick check (47 min) has 10 red steps of 54: the v31 fountain, v34 walk cycles, v35/v38/v39 roster
+  counts (117 wanted, 24 now), v43/alpha 0.4 empty bush voxel recipes, v44 props scene, v46 buildings without a plan,
+  phase 08 running speeds. They look like checks for content the scope reset removed or changed, not RL-1 changes;
+  a base-commit run is the comparison (see the next entry or the PR).
+- Next: the owner answers the tools question and pushes `rl-1-done` (and the old tags); then "start RL-2".
+
+### Roguelite track RL-0 - the plan - 2026-10-20
+Planning only (the owner's brief, in Plan Mode); approved by the owner; nothing built. Branch `claude/new-session-qv8ou7`.
+- Changed (docs only, one cause per commit): docs/phases/roguelite-track.md (the plan: findings, the old phases'
+  status, the RL-1..RL-16 table, architecture decisions, design answers, each session's files and tests, the first
+  playable cut, what to leave alone, risks, the 20 "Ask me before" items); docs/ROADMAP.md rewritten around the track
+  (old phases marked done, parked or absorbed); docs/VISION.md "How the game plays" rewritten for the roguelite;
+  CLAUDE.md gains the roguelite ground rule and loses the stale camTo/dioTileHalf gotcha (replaced by the hooks.js rule).
+- What was found (verified at e3df43a): PR #78's HANDOFF entry says its validation never ran; the remote holds one
+  tag, `Baseline` (no phase, Studio or map-generator tag ever reached GitHub, so CI's tag-triggered full run has never
+  fired); `util.js random` is `Math.random` (only the tests seed it); the engine reads `activeBattle` from hooks 56
+  times and shares `saveData.team` by reference; node indices are identity everywhere and `migrate()` resets the trip
+  at load; mapgen is Node-safe but not loaded by the game page and makes routes only; phase 19 (battle core: seeded,
+  replayable, two-sided) exists only on `plan/engine-phases-19-21` and is adopted as RL-2/RL-4; a set-aside key
+  collision between game-state.js and account.js; the brief's `startGame` 574 lines is 40 (ui.js:2263-2302).
+- Risky or unfinished: nothing in this session was executed against the code (no node_modules, no Playwright in the
+  container); every line number is a read, not a run. The old-phase status table was read from HANDOFF alone, not
+  re-verified in the code. The seam layout (exits at t 0.25/0.5/0.75 on the 112 m side) and the run's timings are
+  design reasoning until MG-2 and the run sim prove them.
+- Verified: docs only; the plan's factual claims were checked by three code-reading passes and one spot check of
+  the synthesis (weather seam, the pinned Date in check-quick, fixture places, encounterStock, story.json:38/66,
+  condition kinds, mapgenPutProp, coatRoll, the 26 m seam bands, no serverTimestamp).
+- Decisions the owner made this session: the rework is a track (RL-N, `rl-N-done`) rather than phases 23+; parked
+  phases stay in the roadmap marked parked; the first playable cut is RL-8; the order after it follows the brief
+  (ranch, hub upgrades, relics, modifiers, bots, online).
+- Questions waiting for the owner: the 20 items in roguelite-track.md section 8 (answer the RL-1 ones first: the
+  Studio token options A and B, deleting the 16 version-stamped tools); push the outstanding tags from your machine.
+- Next session starts with: "start RL-1" (roguelite-track.md, section 4, RL-1 Hardening), in Plan Mode, beginning
+  with PR #78's unrun checks.
+
 ### Parts fixes, step 1 - 2026-10-20
 - Changed: DOM rig previews select front/back metadata consistently with the requested view. Bot refits and equipped upgrades capture maximum HP before mutation and preserve the HP fraction afterward; fainted bots stay fainted.
 - Verified: all 279 unit tests pass (16 new cases); the new tests fail in 9 cases against the original code. Lint/naming and module consistency pass; changed-file formatting and diff whitespace checked.
