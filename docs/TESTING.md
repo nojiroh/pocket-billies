@@ -65,6 +65,9 @@ Two rules hold everywhere:
   (single, double, Alpha, robot), both sides played by `chooseAI`, every event and the end state snapshotted. It
   must stay unchanged through RL-4's engine work; a battle data change or a change meant to alter battles remakes it
   (`--test-update-snapshots`), said in the commit. A planted +1 damage turns all four red.
+- The save's run state (RL-3: `meta-state`, `ranch-state`, `run-state` and `saves.test.mjs`): run on the fixture's
+  three locations, so a save from a run sits at node 4, past `LOCATIONS`, to prove `migrate` keeps a run's trip by the
+  run's map and not by today's places. Switching that branch off turns the run-save test red.
 - On the game's data, test what must hold whatever the content (every road has its exits, every gate its trainer),
   not counts a content change legitimately alters. Where the whole shape matters, use a snapshot
   (`t.assert.snapshot`): remake it with `node --test --test-update-snapshots tools/test/<file>` in the commit that

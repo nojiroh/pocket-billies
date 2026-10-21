@@ -9,6 +9,10 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- Save format 4 (roguelite track RL-3): the save gets room for the roguelite (what lasts between runs, the run in
+  progress, the ranch). Saves from before are set aside and a new game starts; Settings > Save can download the old
+  one. The set-aside slot now keeps the latest unloadable save (it kept the first, so a second one was lost).
+
 - Map generator (MG-1): the Studio's Walk scenes → Generate… makes a whole route from dials and a seed (biome, size,
   land, water, the road and its exits, nature, a feature, props), drawn live by the game's renderer as a draft and
   added as a scene of its own in one undo step. The same dials and seed always give the same route. The biome

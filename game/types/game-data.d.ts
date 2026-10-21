@@ -765,6 +765,24 @@ export interface Rules {
   parts: PartRules;
   /** phase 17: robots (logic/fighters.js); missing in older data */
   robots?: RobotRules;
+  /** roguelite track RL-3: runs. payout: what a run pays when it ends (logic/run-state.js payoutOf). The numbers are
+      placeholders until the owner has played the first cut (roguelite-track.md 8.18) */
+  run: {
+    payout: {
+      /** Capital per $ left */
+      money: number;
+      /** items count at this share of their price, then at the money rate */
+      itemShare: number;
+      /** Capital per Billie released in the run */
+      released: number;
+      /** Capital per node arrived at */
+      node: number;
+      /** Capital for a win */
+      win: number;
+      /** Audit Seals for a win */
+      winSeals: number;
+    };
+  };
 }
 
 /** rules.json robots: the numbers behind robot stats, part HP and breaking (logic/fighters.js) */

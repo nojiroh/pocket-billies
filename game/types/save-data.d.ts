@@ -2,8 +2,9 @@
 // The save is what game-state.js newSave() makes and migrate() fills out and checks, kept as JSON in this browser
 // (localStorage) and, when signed in, on the account (account.js stores it as one string). A backup file is
 // { game: 'Pocket Billies', format: 1, save } (settings-screen.js exportSave; validSave checks an import).
-// Save format 2 (SAVE_VERSION, phase 05): the player's travel along the roads is `trip` (was `route`). A save of
-// another format is not loaded; the game says so and keeps it aside.
+// Save format 2 (SAVE_VERSION, phase 05): the player's travel along the roads is `trip` (was `route`); format 4
+// (roguelite track RL-3) adds meta, run and ranch. A save of another format is not loaded; the game says so and keeps
+// it aside.
 // Precise where the code reads a field; the parts other modules keep in the save (story, things to do, postcards,
 // the wardrobe) are loose.
 
@@ -11,8 +12,6 @@ import type { DataId, LocationNode, MoveId, PersonLook, SpeciesId } from './game
 
 /** game-state.js saveData */
 export interface SaveData {
-  /** the old in-save format number, always 4 (saveVersion is the one that counts) */
-  v: 4;
   /** the save format (game-state.js SAVE_VERSION) */
   saveVersion: number;
   /** the game version that wrote it (PB_VERSION) */
@@ -77,6 +76,103 @@ export interface SaveData {
   cards?: Record<string, any>;
   /** clothes owned and saved outfits (dressing-room.js) */
   wardrobe?: { owned: Record<string, any>; outfits: any[] };
+  /** roguelite track RL-3 (save format 4): what lasts between runs, the run in progress (null in the hub; while it is
+      on, team, se, items, coins, trip, wild, eggs, flags, seats and visited are the run's), the ranch */
+  meta: Meta;
+  run: Run | null;
+  ranch: Ranch;
+}
+
+/** roguelite track RL-3: what lasts between runs (logic/meta-state.js) */
+export interface Meta {
+  /** the unlock currency, the building material, the rare boss currency (money is saveData.se) */
+  capital: number;
+  scrap: number;
+  seals: number;
+  /** unlock ids: 1 (unlocks.json, RL-11) */
+  unlocks: Record<string, 1>;
+  /** hub building id -> level (buildings.json, RL-11) */
+  buildings: Record<string, number>;
+  /** runs ended (won or lost) and runs won */
+  runs: number;
+  wins: number;
+  /** the highest difficulty tier (Bracket) open, from 1 */
+  tier: number;
+}
+
+/** roguelite track RL-3: the ranch, a hub building (logic/ranch-state.js; filled in RL-9 and RL-10) */
+export interface Ranch {
+  /** uids of Billies kept at the ranch (they are in saveData.box) */
+  pens: string[];
+  /** Billies training between runs: uid, Date.now() when training started */
+  trainees: { uid: string; at: number }[];
+  /** breeding pairs: the parents' uids, the mode, when it started and when the egg is ready (Date.now()) */
+  nursery: { a: string; b: string; mode: 'safe' | 'risky'; at: number; ready: number }[];
+  /** passive income: per hour, banked so far, the last time it was counted (Date.now(); only moves forward) */
+  income: { rate: number; bank: number; lastAt: number };
+}
+
+/** roguelite track RL-3: one node of a run's map (logic/run-map.js makes them, RL-6) */
+export interface RunNode {
+  /** a nodeTypes.json id (RL-6): landing, route, town, miniboss, boss... */
+  type: string;
+  /** the row (0 the landing) and the lane in it */
+  row: number;
+  lane: number;
+  /** indices into the map's nodes this one leads to */
+  to: number[];
+  /** shown on the bowl: 0 hidden, 1 a '?' pin, 2 its type icon */
+  seen?: number;
+}
+
+/** what a run changes in the working fields, copied when it starts and put back when it ends */
+export interface RunStart {
+  team: Billy[];
+  se: number;
+  items: Record<DataId, number>;
+  coins: Record<DataId, number>;
+  trip: Trip;
+  wild: Record<string, WildStock>;
+  eggs: Egg[];
+  flags: Record<string, number>;
+  seats: string[];
+  visited: Record<LocationNode, number>;
+}
+
+/** roguelite track RL-3: the run in progress (logic/run-state.js); null in the hub */
+export interface Run {
+  /** the run's seed (10 base32 characters; 'd' + a UTC date for a daily); everything else regenerates from it */
+  seed: string;
+  /** the difficulty tier (Bracket) */
+  tier: number;
+  /** the map generator's version when the run started (a run made by another version is abandoned) */
+  mapgenV: number;
+  /** the node map; null until RL-6 makes it */
+  map: { nodes: RunNode[] } | null;
+  /** what is happening, and the battle being fought (its battle number, -1 for none: a resume restarts it from
+      the seed). Where the player is stays saveData.trip.node: 0 Copperleaf, i + 1 the map's node i */
+  at: { phase: 'fly' | 'walk' | 'battle' | 'menu' | 'payout'; battle: number };
+  /** the day (one per node arrival, backtracking included) and the deadline day */
+  clock: number;
+  deadline: number;
+  /** each node's weather by day: forecast[node][day] (a weather id) */
+  forecast: string[][];
+  /** relic ids held, the offer shown (saved before it is shown), modifier ids */
+  relics: string[];
+  offer: string[] | null;
+  mods: string[];
+  /** the hub's working fields as the run started */
+  start: RunStart;
+  /** counters, so a resumed run carries on its random streams and ids */
+  uidN: number;
+  battleN: number;
+  /** the nodes arrived at, in order (map indices); the player's choices, in order */
+  path: number[];
+  log: string[];
+  /** Billies released during the run (paid as Capital at the payout) */
+  released: { sp: SpeciesId; lvl: number }[];
+  /** the one-time hints already shown */
+  hints: Record<string, 1>;
 }
 
 /** the player's travel: where you are, and the locations still ahead (the gold arrows' guide) */
