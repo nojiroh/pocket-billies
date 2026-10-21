@@ -12,7 +12,7 @@ are sessions of Claude's working time, not calendar time, and exclude the owner'
 
 | # | Session | Goal | Depends on | Sessions | Playable |
 |---|---|---|---|---|---|
-| RL-1 | Hardening (done 2026-10-21, tools question open) | Studio token options, versioned tools, stale docs, the set-aside key bug, PR #78 verified, RNG facts written down | none | 1 | no |
+| RL-1 | Hardening (done 2026-10-21; tools tidied in its follow-up) | Studio token options, versioned tools, stale docs, the set-aside key bug, PR #78 verified, RNG facts written down | none | 1 | no |
 | RL-2 | Golden record and RNG module (done 2026-10-21) | a battle golden snapshot; `logic/rng.js` (mapgen's seeded generator moved); seeded `pickWeighted`/`spawn` | RL-1 | 1 | no |
 | RL-3 | State separation | SAVE_VERSION 4; `meta`, `run`, `ranch` in the save; validators; `migrate` keeps a run's trip | RL-2 | 1 | no |
 | RL-4 | Battle state injected | phase 19's core: engine context, no save writes, a silent host, `b.rng`, a turn cap | RL-2 | 1-2 | no |
@@ -81,8 +81,7 @@ never store/keep or training.
 The 20 "Ask me before" items in docs/phases/roguelite-track.md, section 8: the run's internal key (RL-3); keep-one vs
 ranch levels (RL-9); the hub's extent and Copperleaf's south exit (RL-5); legacy by moving files (RL-5); currency
 names and the building mapping (RL-11); menu nodes (RL-12); mid-battle kills (RL-4); the first cut's shape (RL-8);
-battle formats and the turn cap (RL-4); the clock's numbers (RL-6); the token link, Remember me and deleting the
-versioned tools (RL-1); SAVE_VERSION 4 and the cloud key whitelist (RL-3, RL-10); the dex's place (RL-3); the relic
+battle formats and the turn cap (RL-4); the clock's numbers (RL-6); the token link and Remember me (RL-1, done); SAVE_VERSION 4 and the cloud key whitelist (RL-3, RL-10); the dex's place (RL-3); the relic
 cap (RL-12); the hub island's look (RL-5); the ranch cut order (RL-9); the order after the first cut; the tuning
 placeholders (RL-6); pushing the tags; the opening (RL-8). Still open from the old phases: phase 17's prototype
 approval and ask list (RL-14), phase 16's breeding mode (RL-10), phase 19's mid-battle quit and Lullaby (RL-4),

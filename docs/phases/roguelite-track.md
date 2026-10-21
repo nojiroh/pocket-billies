@@ -656,7 +656,7 @@ Decided this session: the rework is a track RL-N (`rl-N-done`); parked phases ar
 9. **Battle formats and turn cap:** by node type with a 40-turn cap (recommended) / singles everywhere / cap 30.
 10. **Clock numbers:** a day per arrival including backtracking, deadline = shortest path + 3, no tick for healing or
     waiting until the first play (recommended) / + 5 / healing +1 and waiting +2.
-11. **Hardening items that change behaviour:** SECURITY A and B, delete the 16 version-stamped tools (recommended) /
+11. **(Decided 2026-10-21: A and B done in RL-1; the tools folded, renamed, parked in `tools/legacy/` or deleted, HANDOFF "RL-1 follow-up".)** **Hardening items that change behaviour:** SECURITY A and B, delete the 16 version-stamped tools (recommended) /
     move the tools to `tools/legacy/`.
 12. **SAVE_VERSION 4** sets aside every current save on your phone and account; and the `saves/{uid}` key whitelist
     with `t` in RL-10 (recommended yes to both).

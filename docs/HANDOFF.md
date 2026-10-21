@@ -2,6 +2,24 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### RL-1 follow-up - the version-stamped tools - 2026-10-21
+Same branch as RL-2. The owner's answer to RL-1's tools question (roguelite-track.md 8.11): fold, rename, park, delete.
+- Changed (one cause per commit): the five `scene_props_v*.py` chunks folded into `build-scene-props.py` (it exec'd
+  them; before and after, both sheets, props.json, far.json, fx.json and its output are byte-identical); renamed by
+  what they make: `build-terrain-v47` → `build-ground`, `build-buildings-v46` → `build-building-kit`,
+  `build-props-a04` → `build-town-kit`, `build-furniture-v46` → `build-furniture`, `build-fx-v47` → `build-critters`
+  (`rename.mjs verify`: pure renames); seven legacy-only generators moved to `tools/legacy/` with a README (places-v46,
+  v28, regions-v47, region-props-v47, landmarks-v47, life-v47, the v46 build-terrain), their ROOT/HERE one folder
+  deeper and tools/ on sys.path; `build-loader-v47.py` deleted.
+- Verified: lint, format:check, 302 tests, check:data, smoke (201 s, green); every file path the tools load exists;
+  `legacy/build-region-props-v47.py --preview` and `legacy/build-life-v47.py --dry` run from the new folder and write
+  nothing.
+- Found, not fixed: `build-ground.py --preview --sheet` dies with KeyError 'grass' while labelling the sheet (the same
+  at c66bf2b, before any change); a plain `build-scene-props.py` run rewrites 32 lines of props.json (the committed file
+  has drifted from what the kit writes; restored, not committed); `game/art/ui/loader-runner.png` and
+  `loader-coins.png` are no longer used by anything (left in place: deleting art is the owner's call).
+- Next: RL-3 or RL-4.
+
 ### Roguelite track RL-2 - Golden record and RNG module - 2026-10-21
 Branch `ccr-a09a396b-vfdptc`, started from main c66bf2b (RL-1 merged; `rl-1-done` not yet on the remote).
 - Changed (one cause per commit): `tools/test/battle-golden.test.mjs` + snapshot first (single wild, double trainer,
