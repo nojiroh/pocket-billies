@@ -1310,7 +1310,9 @@ export interface UiLook {
     slant?: number;
     stepped?: boolean;
     step?: number;
-    families?: Partial<Record<'panel' | 'card' | 'button' | 'action' | 'tab' | 'toast', 'cut' | 'rounded' | 'square'>>;
+    families?: Partial<
+      Record<'panel' | 'card' | 'button' | 'action' | 'tab' | 'toast' | 'bubble', 'cut' | 'rounded' | 'square'>
+    >;
   };
   type?: { voice?: 'Jersey 15' | 'Pixelify Sans'; prose?: 'Oxanium' | 'Chakra Petch'; voiceScale?: number };
 }

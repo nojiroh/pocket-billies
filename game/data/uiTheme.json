@@ -70,7 +70,15 @@
    "surface": {"glass":0.7,"blur":16,"saturate":1.5,"highlight":0.9,"shadowTint":"#2E2140"},
    "type": {"voice":"Pixelify Sans","prose":"Chakra Petch","voiceScale":1},
    "shape": {
-    "families": {"panel":"rounded","card":"rounded","button":"rounded","action":"rounded","tab":"rounded","toast":"rounded"}
+    "families": {
+     "panel": "rounded",
+     "card": "rounded",
+     "button": "rounded",
+     "action": "rounded",
+     "tab": "rounded",
+     "toast": "rounded",
+     "bubble": "rounded"
+    }
    }
   },
   "stepped": {

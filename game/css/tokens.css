@@ -294,7 +294,60 @@
     8px 100%,
     0 50%
   );
+  --clip-bubble: polygon(
+    0 30px,
+    12px 18px,
+    52px 18px,
+    52px 0,
+    70px 18px,
+    100% 18px,
+    100% calc(100% - 12px),
+    calc(100% - 12px) 100%,
+    0 100%
+  );
+  --edge-bubble: polygon(
+    evenodd,
+    0 30px,
+    12px 18px,
+    52px 18px,
+    52px 0,
+    70px 18px,
+    100% 18px,
+    100% calc(100% - 12px),
+    calc(100% - 12px) 100%,
+    0 100%,
+    0 30px,
+    1px 31.41px,
+    13.41px 19px,
+    53px 19px,
+    53px 2.41px,
+    69.59px 19px,
+    calc(100% - 1px) 19px,
+    calc(100% - 1px) calc(100% - 13.41px),
+    calc(100% - 13.41px) calc(100% - 1px),
+    1px calc(100% - 1px),
+    1px 31.41px
+  );
+  --ring-bubble: polygon(
+    evenodd,
+    -48px -48px,
+    calc(100% + 48px) -48px,
+    calc(100% + 48px) calc(100% + 48px),
+    -48px calc(100% + 48px),
+    -48px -48px,
+    0 30px,
+    12px 18px,
+    52px 18px,
+    52px 0,
+    70px 18px,
+    100% 18px,
+    100% calc(100% - 12px),
+    calc(100% - 12px) 100%,
+    0 100%,
+    0 30px
+  );
   --clip-chip: polygon(4.23px 0, 100% 0, calc(100% - 4.23px) 100%, 0 100%);
+  --bubble-tail: 18px;
   /* shapes: end */
   /* the edge line: light on top, dark below; the drop shadows follow a cut outline (a box-shadow can't) */
   --c-shadow: #2e2140;

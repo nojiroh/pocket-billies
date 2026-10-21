@@ -18,6 +18,7 @@ expose({
   UI_ROLES: [() => UI_ROLES],
   UI_SHAPE_DEFAULTS: [() => UI_SHAPE_DEFAULTS],
   UI_SHAPE_FAMILIES: [() => UI_SHAPE_FAMILIES],
+  bubbleTail: [() => bubbleTail],
   coord: [() => coord],
   // @ts-expect-error -- replaced on purpose
   cornerTL: [() => cornerTL, v => (cornerTL = v)],
@@ -159,6 +160,9 @@ export const UI_SHAPE_FAMILIES = {
   action: { hex: 'cutLg', radius: 22 }, // the main action: a long hexagon
   tab: { cut: 'cutMd', corners: ['tl', 'tr'], radius: 12 }, // tabs: trapezoids (the top corners cut)
   toast: { hex: 'cutMd', radius: 18 }, // toasts: a long hexagon
+  // the dialogue box: a panel with a speech tail on its top edge, over the portrait; the tail is 1.5 cutLg high and
+  // its upright side stands x from the left. Its layers reach up over the tail (dialogue.css: top: -tail)
+  bubble: { cut: 'cutLg', corners: ['tl', 'br'], radius: 22, tail: { x: 52, k: 1.5 } },
 };
 export const UI_SHAPE_DEFAULTS = { cutSm: 4, cutMd: 8, cutLg: 12, slant: 10, step: 4, stepped: false };
 export const RING = 48;
@@ -198,6 +202,8 @@ export function cornerTL(kind, size, d, sh) {
     [d + c, d],
   ];
 }
+/** the bubble's tail height in px (whole pixels) @param {any} sh */
+export const bubbleTail = sh => Math.round((sh.cutLg ?? UI_SHAPE_DEFAULTS.cutLg) * UI_SHAPE_FAMILIES.bubble.tail.k);
 /** a family's outline as points, inset by d @param {string} fam @param {any} sh @param {number} d @returns {Pt[]} */
 export function shapePoints(fam, sh, d = 0) {
   const F = /** @type {any} */ (UI_SHAPE_FAMILIES)[fam];
@@ -218,6 +224,7 @@ export function shapePoints(fam, sh, d = 0) {
   const cut = F.hex ? 0 : (sh[F.cut] ?? /** @type {any} */ (UI_SHAPE_DEFAULTS)[F.cut]);
   /** @type {Pt[]} */
   const out = [];
+  let tlEnd = 0;
   for (const [corner, mx, my, rev] of /** @type {const} */ ([
     ['tl', false, false, false],
     ['tr', true, false, true],
@@ -228,6 +235,21 @@ export function shapePoints(fam, sh, d = 0) {
     let pts = cornerTL(kind === 'rounded' ? 'rounded' : size ? 'cut' : 'square', size, d, sh);
     if (rev) pts = pts.slice().reverse();
     for (const [u, v] of pts) out.push([mx ? 100 : 0, mx ? -u : u, my ? 100 : 0, my ? -v : v]);
+    if (corner === 'tl') tlEnd = out.length;
+  }
+  if (F.tail) {
+    // the box is the part plus the tail's height above it: the top edge moves down by t, the tail goes in after the
+    // top-left corner (an upright side and a 45° side; inset by d, its tip sits d·(1 + √2) down)
+    const t = bubbleTail(sh),
+      x = F.tail.x;
+    for (const p of out) if (p[2] === 0) p[3] += t;
+    out.splice(
+      tlEnd,
+      0,
+      [0, x + d, 0, t + d],
+      [0, x + d, 0, d + d * Math.SQRT2],
+      [0, x + t + d - d * Math.SQRT2, 0, t + d]
+    );
   }
   return out;
 }
@@ -257,6 +279,8 @@ export function shapeDecls(shape) {
   // the slanted chip (coins, counts): the slant over a 24 px chip
   const s = roundTo2(Math.tan((sh.slant * Math.PI) / 180) * 24);
   out.push(`--clip-chip: polygon(${s}px 0, 100% 0, calc(100% - ${s}px) 100%, 0 100%);`);
+  // how far the bubble's layers reach above the dialogue box (its tail)
+  out.push(`--bubble-tail: ${bubbleTail(sh)}px;`);
   return out;
 }
 
