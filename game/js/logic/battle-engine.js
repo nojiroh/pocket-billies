@@ -32,7 +32,6 @@ import {
   RULES,
   SPECIES,
   STATUS_NAMES,
-  STAT_IDS,
   STAT_NAMES,
   TRAINERS,
   hasPassive,
@@ -62,6 +61,7 @@ import {
   stat,
   xpFor,
 } from './rules.js';
+import { newFieldState } from './battle-state.js';
 /* eslint-disable no-func-assign */
 expose({
   ACTOR_SIDE: [() => ACTOR_SIDE],
@@ -132,7 +132,6 @@ expose({
   // @ts-expect-error -- replaced on purpose
   movePower: [() => movePower, v => (movePower = v)],
   newBattle: [() => newBattle, v => setNewBattle(v)],
-  newFieldState: [() => newFieldState],
   // @ts-expect-error -- replaced on purpose
   refreshLastSnapshot: [() => refreshLastSnapshot, v => (refreshLastSnapshot = v)],
   // @ts-expect-error -- replaced on purpose
@@ -157,17 +156,6 @@ export function setNewBattle(v) {
 /* to-module: end */
 export const BATTLE_RULES = RULES.battle,
   CATCH_RULES = RULES.catching;
-export const newFieldState = () => ({
-  st: Object.fromEntries(STAT_IDS.filter(k => k !== 'hp').map(k => [k, 0])),
-  turnsIn: 0,
-  ov: null,
-  ovT: 0,
-  protect: false,
-  last: null,
-  holdN: 0,
-  hyped: 0,
-  down: false,
-});
 export const ACTOR_SIDE = [0, 1, 0, 1, 0],
   ACTOR_SLOT = [0, 0, 1, 1, 2],
   SIDE_ACTORS = [
