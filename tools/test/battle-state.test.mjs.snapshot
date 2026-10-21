@@ -1,0 +1,358 @@
+exports[`battle object: alpha 1`] = `
+{
+  "kind": "trainer",
+  "fmt": "alpha",
+  "events": [],
+  "ev": 0,
+  "phase": "playing",
+  "market": null,
+  "integrity": 1,
+  "over": null,
+  "needSwitch": [],
+  "offer": null,
+  "foeName": "Test",
+  "lead": "-",
+  "turn": 0,
+  "plan": [],
+  "cur": 0,
+  "sides": [
+    {
+      "team": [
+        "musk0@10",
+        "gates0@10",
+        "swift1@10"
+      ],
+      "f": [
+        {
+          "act": 0,
+          "on": true,
+          "v": {
+            "st": {
+              "lev": 0,
+              "law": 0,
+              "lob": 0,
+              "pr": 0,
+              "hus": 0
+            },
+            "turnsIn": 0,
+            "ov": null,
+            "ovT": 0,
+            "protect": false,
+            "last": null,
+            "holdN": 0,
+            "hyped": 0,
+            "down": false
+          },
+          "down": false
+        },
+        {
+          "act": 1,
+          "on": true,
+          "v": {
+            "st": {
+              "lev": 0,
+              "law": 0,
+              "lob": 0,
+              "pr": 0,
+              "hus": 0
+            },
+            "turnsIn": 0,
+            "ov": null,
+            "ovT": 0,
+            "protect": false,
+            "last": null,
+            "holdN": 0,
+            "hyped": 0,
+            "down": false
+          },
+          "down": false
+        },
+        {
+          "act": 2,
+          "on": true,
+          "v": {
+            "st": {
+              "lev": 0,
+              "law": 0,
+              "lob": 0,
+              "pr": 0,
+              "hus": 0
+            },
+            "turnsIn": 0,
+            "ov": null,
+            "ovT": 0,
+            "protect": false,
+            "last": null,
+            "holdN": 0,
+            "hyped": 0,
+            "down": false
+          },
+          "down": false
+        }
+      ],
+      "rent": false,
+      "pivot": false,
+      "mail": [],
+      "inh": null
+    },
+    {
+      "team": [
+        "musk1@9"
+      ],
+      "f": [
+        {
+          "act": 0,
+          "on": true,
+          "v": {
+            "st": {
+              "lev": 0,
+              "law": 0,
+              "lob": 0,
+              "pr": 0,
+              "hus": 0
+            },
+            "turnsIn": 0,
+            "ov": null,
+            "ovT": 0,
+            "protect": false,
+            "last": null,
+            "holdN": 0,
+            "hyped": 0,
+            "down": false
+          },
+          "down": false
+        }
+      ],
+      "rent": false,
+      "pivot": false,
+      "mail": [],
+      "inh": null
+    }
+  ]
+}
+`;
+
+exports[`battle object: double 1`] = `
+{
+  "kind": "trainer",
+  "fmt": "double",
+  "events": [],
+  "ev": 0,
+  "phase": "playing",
+  "market": null,
+  "integrity": 1,
+  "over": null,
+  "needSwitch": [],
+  "offer": null,
+  "foeName": "Test",
+  "lead": "-",
+  "turn": 0,
+  "plan": [],
+  "cur": 0,
+  "sides": [
+    {
+      "team": [
+        "musk0@10",
+        "gates0@10",
+        "swift1@10"
+      ],
+      "f": [
+        {
+          "act": 0,
+          "on": true,
+          "v": {
+            "st": {
+              "lev": 0,
+              "law": 0,
+              "lob": 0,
+              "pr": 0,
+              "hus": 0
+            },
+            "turnsIn": 0,
+            "ov": null,
+            "ovT": 0,
+            "protect": false,
+            "last": null,
+            "holdN": 0,
+            "hyped": 0,
+            "down": false
+          },
+          "down": false
+        },
+        {
+          "act": 1,
+          "on": true,
+          "v": {
+            "st": {
+              "lev": 0,
+              "law": 0,
+              "lob": 0,
+              "pr": 0,
+              "hus": 0
+            },
+            "turnsIn": 0,
+            "ov": null,
+            "ovT": 0,
+            "protect": false,
+            "last": null,
+            "holdN": 0,
+            "hyped": 0,
+            "down": false
+          },
+          "down": false
+        }
+      ],
+      "rent": false,
+      "pivot": false,
+      "mail": [],
+      "inh": null
+    },
+    {
+      "team": [
+        "musk1@9",
+        "musk2@9"
+      ],
+      "f": [
+        {
+          "act": 0,
+          "on": true,
+          "v": {
+            "st": {
+              "lev": 0,
+              "law": 0,
+              "lob": 0,
+              "pr": 0,
+              "hus": 0
+            },
+            "turnsIn": 0,
+            "ov": null,
+            "ovT": 0,
+            "protect": false,
+            "last": null,
+            "holdN": 0,
+            "hyped": 0,
+            "down": false
+          },
+          "down": false
+        },
+        {
+          "act": 1,
+          "on": true,
+          "v": {
+            "st": {
+              "lev": 0,
+              "law": 0,
+              "lob": 0,
+              "pr": 0,
+              "hus": 0
+            },
+            "turnsIn": 0,
+            "ov": null,
+            "ovT": 0,
+            "protect": false,
+            "last": null,
+            "holdN": 0,
+            "hyped": 0,
+            "down": false
+          },
+          "down": false
+        }
+      ],
+      "rent": false,
+      "pivot": false,
+      "mail": [],
+      "inh": null
+    }
+  ]
+}
+`;
+
+exports[`battle object: single 1`] = `
+{
+  "kind": "wild",
+  "fmt": "single",
+  "events": [],
+  "ev": 0,
+  "phase": "playing",
+  "market": null,
+  "integrity": 1,
+  "over": null,
+  "needSwitch": [],
+  "offer": null,
+  "foeName": "Test",
+  "lead": "-",
+  "turn": 0,
+  "plan": [],
+  "cur": 0,
+  "sides": [
+    {
+      "team": [
+        "musk0@10",
+        "gates0@10",
+        "swift1@10"
+      ],
+      "f": [
+        {
+          "act": 0,
+          "on": true,
+          "v": {
+            "st": {
+              "lev": 0,
+              "law": 0,
+              "lob": 0,
+              "pr": 0,
+              "hus": 0
+            },
+            "turnsIn": 0,
+            "ov": null,
+            "ovT": 0,
+            "protect": false,
+            "last": null,
+            "holdN": 0,
+            "hyped": 0,
+            "down": false
+          },
+          "down": false
+        }
+      ],
+      "rent": false,
+      "pivot": false,
+      "mail": [],
+      "inh": null
+    },
+    {
+      "team": [
+        "musk1@9"
+      ],
+      "f": [
+        {
+          "act": 0,
+          "on": true,
+          "v": {
+            "st": {
+              "lev": 0,
+              "law": 0,
+              "lob": 0,
+              "pr": 0,
+              "hus": 0
+            },
+            "turnsIn": 0,
+            "ov": null,
+            "ovT": 0,
+            "protect": false,
+            "last": null,
+            "holdN": 0,
+            "hyped": 0,
+            "down": false
+          },
+          "down": false
+        }
+      ],
+      "rent": false,
+      "pivot": false,
+      "mail": [],
+      "inh": null
+    }
+  ]
+}
+`;

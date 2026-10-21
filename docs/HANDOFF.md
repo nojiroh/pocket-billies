@@ -2,6 +2,54 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Roguelite track RL-4 - Battle state injected - 2026-10-21
+Branch `ccr-e32acdb2-oy1bny`, from main dcde38b (RL-3 merged). Plan approved at the start with the owner's answers:
+turn cap 40 ending in a draw (8.9), a killed battle restarts from its seed (8.7, built in RL-8), Lullaby's text fixed.
+- Changed (one cause per commit): the missing RL-3 entry below; a snapshot of the battle object `newBattle` installs
+  (`battle-state.test.mjs`) before anything moved; `newFieldState` moved into the new `logic/battle-state.js`, then
+  `makeBattle(kind, team, foe, extra)` (the same object); the engine reads its battle through `battleNow()` (the
+  page's `activeBattle` unless `withBattle(b, f)` plays another), and `runTurn`, `enemyOnly`, `chooseAI`, `doSwitch`,
+  `benchCandidates`, `catchOdds`, `catchRoll` take an optional battle last; the page calls (toast, save, open, play,
+  sure catch, weather) go through the battle's host, `SILENT_HOST` doing none (the robot sim uses it); a battle on a
+  copied team keeps its own `seen`, `bag`, `buddy` and leaves the save alone (`canUse`, `teamNeedsHp`, `applyItem`
+  take a battle); every chance through `battleRoll()` (`b.rng` from `b.seed`, else `util.random`), the bribe and the
+  egg drop included; `rules.battle.turnCap` (40) with type and data check; `turnCapCheck` ends a battle as `'draw'`,
+  which `endBattle` treats as walking away (wild) or a loss (trainer); Lullaby's text 2-4 turns. Docs: TESTING,
+  roguelite-track section 0, ROADMAP, CHANGELOG.
+- Where the plan was wrong (roguelite-track.md section 0): 64 engine reads, not 56; 18 draws, not 16 (two
+  `pickWeighted`); items and the buddy were save writes too; `B()` breaks the naming rule (`battleNow()`); no change
+  to `setActiveBattle` and no `seen` copy in `endBattle` were needed.
+- Verified: fast tier green at every commit (lint, typecheck, check:modules, format:check, check:data, unit tests,
+  331 -> 341); the golden record unchanged at every commit (it plays with no seed, so on `util.random` as before).
+  Each new test was seen to fail on a planted fault (a direct playTurnEvents, a save write of items, a crit on
+  `random`, the cap check removed, a cap of 4 in the data). Smoke 15/15 (210 s: the opening, Blake's first battle,
+  a phone battle, the debug log). The robot sim (`--quick`) matches the base commit exactly once the turn cap is
+  lifted; with the cap a few long robot stalls end as draws (part win rates move by under a point). Not run: the
+  in-game full test (`--selftest`, its double, Alpha and catch phases) and the full quick check, skipped at the
+  owner's word; run `--selftest` before or after merging.
+- Risky: every battle runs through the new paths; the unseeded play is proven the same by the golden record, not by
+  hand on the phone. A draw is new to the battle screen ('A draw.' on the end button). `withBattle` sets a module
+  value for the length of a call: a battle passed in must not open the page's battle screen (use `SILENT_HOST`).
+- Not done (as planned): formats by node type and `extra.seed` from the run (RL-8), the effect-handler table
+  (RL-12), the replay log (RL-15). Project Story S6 (Hazel vs Blake as a real battle) may proceed.
+- Next: the owner pushes `rl-1-done` .. `rl-4-done`; then RL-5 (legacy parking and the world setter) or MG-2.
+
+### Roguelite track RL-3 - State separation - 2026-10-21 (entry written in RL-4)
+The RL-3 session (PR #85, branch `ccr-c4c4609f-eqjopt`) updated CHANGELOG, ROADMAP, TESTING, SECURITY and
+roguelite-track.md section 0 but left no entry here; this one is put together from its commits and those docs.
+- Changed (one cause per commit): the unused save field `v` dropped; `logic/meta-state.js`, `logic/ranch-state.js`,
+  `logic/run-state.js` (`newRun`, `validRun`, `runBegin`, `runEnd`, `runRestore`, `payoutOf`, `runNodeCount`) with
+  types and tests, loaded by the game page and not used yet; `rules.json run.payout` (placeholders, 8.18) with a
+  check-data rule; `validSave`'s Billie checks moved into `billiesOk` (no-op); SAVE_VERSION 4 (`meta`, `run` null in
+  the hub, `ranch`; `migrate` keeps a run's trip, plan and visited places bounded by the run's map); the set-aside slot
+  keeps the latest unloadable save (it kept the first); the new-game notice says where to download a set-aside save.
+- Decisions by the owner: every format 3 save is set aside (8.12).
+- Risky: every save on the phone and account is set aside on first load of this version (intended). The account's
+  older save goes to `-cloud-set-aside`, which nothing reads (one slot, two saves: owner's call).
+- Verified: not written down by RL-3. RL-4 ran the fast tier on its merge commit dcde38b: lint, typecheck,
+  check:modules, format:check, check:data and 331 unit tests, all green.
+- Next: RL-4 (battle state injected) or RL-5 (legacy parking).
+
 ### UI track UI-0 - the plan - 2026-10-21
 Planning only, in a chat session with the owner (the plan, the owner's answers to 36 questions, a Design mockup);
 nothing built. Docs only, one cause per commit.

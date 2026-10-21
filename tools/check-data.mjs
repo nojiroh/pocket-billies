@@ -261,6 +261,11 @@ check('roads.schema.json', D.roads || [], 'roads.json');
     }
   }
 }
+// roguelite track RL-4: the turn cap, a whole number of turns, at least 10 (a short cap would end ordinary battles)
+{
+  const cap = D.rules && D.rules.battle && D.rules.battle.turnCap;
+  if (!Number.isInteger(cap) || cap < 10) problem('rules.json', 'battle.turnCap is not a whole number of 10 or more');
+}
 // roguelite track RL-3: what a run pays when it ends (logic/run-state.js payoutOf): every rate a number, none below 0,
 // the items' share of their price at most 1, the seals for a win a whole number
 {

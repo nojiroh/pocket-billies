@@ -9,6 +9,10 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- Battles (roguelite track RL-4): a battle still going after 40 turns is called off as a draw (a wild battle as if
+  you walked away, a trainer's as a loss). Lullaby's text says 2-4 turns of sleep, as the rule has it. Inside, a
+  battle can now run with its own seeded chances and without touching the save (for runs, ghosts and tests); the
+  battles you play are unchanged.
 - Save format 4 (roguelite track RL-3): the save gets room for the roguelite (what lasts between runs, the run in
   progress, the ranch). Saves from before are set aside and a new game starts; Settings > Save can download the old
   one. The set-aside slot now keeps the latest unloadable save (it kept the first, so a second one was lost).

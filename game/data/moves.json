@@ -16,7 +16,7 @@
   "c": "X",
   "a": 75,
   "fx": {"status":"sub"},
-  "d": "Sings the target to sleep for 1–3 turns. Sleeping targets are twice as easy to tax."
+  "d": "Sings the target to sleep for 2–4 turns. Sleeping targets are twice as easy to tax."
  },
  "movefast": {
   "n": "Zip",
