@@ -308,7 +308,7 @@ New files only, all under `art/next/` (the game doesn't load them yet):
 New files only; a picture you repaint is kept (each tool writes only what is missing; `--force` makes its own again).
 Props are still 34 px a metre (`scenery.ppu`); the building sheet and everything painted from it are 32 px a metre.
 
-- **Copperleaf** (`tools/build-props-a04.py`): `scene/props/cottage_moss.png`, `cottage_solar.png` (and their colour
+- **Copperleaf** (`tools/build-town-kit.py`): `scene/props/cottage_moss.png`, `cottage_solar.png` (and their colour
   variants `_v1`…), `cottage_juniper.png`, `wind_sail_flower.png` with its turning petals `wind_sail_flower_blades.png`,
   `banner_bunting.png`, `sky_lift.png`; the great oak's swing `scene/props/layers/tree_giant_swing.png`; the moss and
   solar-shingle roof textures, cells 16 and 17 of `scene/build/detail-a04.png`.

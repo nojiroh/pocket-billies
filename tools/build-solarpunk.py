@@ -28,7 +28,7 @@ import os, sys, json, math, random, importlib.util
 from PIL import Image
 
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(HERE)
-sp_ = importlib.util.spec_from_file_location('a4', os.path.join(HERE, 'build-props-a04.py')); A4 = importlib.util.module_from_spec(sp_); sp_.loader.exec_module(A4)
+sp_ = importlib.util.spec_from_file_location('a4', os.path.join(HERE, 'build-town-kit.py')); A4 = importlib.util.module_from_spec(sp_); sp_.loader.exec_module(A4)
 bsp, Cv, R, layer_out = A4.bsp, A4.Cv, A4.R, A4.layer_out
 ART = os.path.join(ROOT, 'game', 'art'); DATA = os.path.join(ROOT, 'game', 'data', 'gamedata.js'); OUT, META = bsp.OUT, bsp.META
 TAG, RTAG = 'a04solar', 'a04roof'

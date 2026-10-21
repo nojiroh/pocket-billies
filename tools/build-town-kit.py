@@ -18,9 +18,9 @@ redraw one on purpose.
                     (scene/build/detail-a04.png: the sixteen there were, copied pixel for pixel, and the new ones), which
                     the game data then points at (scenery.buildArt.detail)
 
-    python3 tools/build-props-a04.py                  # draw what is missing, add it to props.json and the game data
-    python3 tools/build-props-a04.py --sheet out.png  # also a contact sheet of everything this tool makes
-    python3 tools/build-props-a04.py --force cottage_moss
+    python3 tools/build-town-kit.py                  # draw what is missing, add it to props.json and the game data
+    python3 tools/build-town-kit.py --sheet out.png  # also a contact sheet of everything this tool makes
+    python3 tools/build-town-kit.py --force cottage_moss
 """
 import gamedata  # phase 04b: the data files in game/data
 import os, sys, json, math, random, zlib, importlib.util
