@@ -11,6 +11,8 @@ intros timed to the throw, and a cry per species. Each session is tagged `snd-N-
   Studio; nothing in the run's logic or in `ui.js`. SND-3 adds a Studio section the way UI-3a did.
 - SND-4 to SND-6 wait for the owner's play test of RL-8, like every RL session after it: the run's beats they score
   (the mast, the payout, a mini-boss, a relic pick, a day passing) exist only from RL-8 and RL-12 on.
+- The run gets biome music before the play test: SND-2's where table maps the eleven biomes onto the seven biome
+  songs that exist today. It is the biggest audible win for the least code, so it does not wait for SND-4.
 - The run's "where it plays" table (SND-2) keys on `nodeTypes.json` (landing, route, town, miniboss, boss), the
   biome and the row, so RL-13's leaders and RL-14's bots get a song by adding a row, not code.
 
@@ -41,6 +43,9 @@ Everything is synthesized in `game/js/sound.js` (2,013 lines) with the Web Audio
 - **The Studio** loads no sound code. `sound.js` imports walk-view, environment, battle-stage and game-state, so it
   cannot be loaded there as it is. The Studio edits data sections listed in `game/data/index.json` with schemas
   under `game/data/schema/` (`tools/check-data.mjs`), in groups (`studio-app.js:505`).
+- **Timers.** The music tick runs on a 25 ms interval with a 140 ms lookahead; the footstep poller every 50 ms and
+  `musicSync` every second run for the page's whole life, on the title screen and with no song. Fine while visible,
+  wasteful on a phone (a claim: measure in the debug log before and after).
 - **Tests.** No unit test touches sound. The quick check only asserts that at least nine world beds started.
 
 ### Bugs found (SND-1 fixes them)
@@ -67,7 +72,7 @@ Everything is synthesized in `game/js/sound.js` (2,013 lines) with the Web Audio
 | # | Session | Goal | Depends on | Sessions | Verified by |
 | --- | --- | --- | --- | --- | --- |
 | SND-1 | Settings and routing | the five bugs above, jingles on the music bus, preferences that survive a deleted save, a one-tap mute | none | 1 | unit test for `musicFor`; a quick-check step for the Sound tab; phone |
-| SND-2 | The tracker as data | `game/js/audio/tracker.js` with no game imports; `music.json` + schema (songs, jingles, cries, where); a song fingerprint baseline | SND-1 | 1-2 | fingerprints unchanged; check-data; modules check |
+| SND-2 | The tracker as data | `game/js/audio/tracker.js` with no game imports; `music.json` + schema (songs, jingles, cries, where); biome music in a run; timers that stop when idle; a song fingerprint baseline | SND-1 | 1-2 | fingerprints unchanged; check-data; modules check; the run fixture plays a biome song |
 | SND-3 | The Studio's Music & sound section | play and loop any song, the recipe's dials, a piano roll for the hook, the where table, a cry card on Billies, check warnings | SND-2 | 1-2 | Studio self-test; quick check; the owner plays it |
 | SND-4 | The Pokémon rework: themes | four voices, written hooks and countermelodies, the title motif as a leitmotif, Copperleaf as two voices, night variants | SND-3, RL-8 played | 1-2 | fingerprints updated on purpose; the owner listens on the phone |
 | SND-5 | Battle and run music | intros timed to the throw, wild/trainer/leader/boss/rival/ghost, biome × row variants, the deadline variant, the red zone | SND-4, RL-8 | 1-2 | battle fixture; run fixture; phone |
@@ -90,8 +95,10 @@ One cause per commit, in this order:
    (`localStorage['pb-sound']`), read by `volumePreference`; theme and motion stay where they are (UI track's call).
    `newSaveKeepingPreferences` and `migrate` stop carrying them. **Ask me before:** whether to move them at all.
 6. Translations for the Sound tab's strings.
-7. A one-tap mute on the pause sheet (the same switch, no new preference).
-8. Tests: `tools/test/sound.test.mjs` for `musicFor` through the hooks seams (hub, each run node type, indoor, each
+7. The tab's text: keep the note that sounds fade in on arrival, drop "turn a slider to 0 to mute it" (the mute
+   switch covers it), and say under Music that jingles follow it (after step 3's answer).
+8. A one-tap mute on the pause sheet (the same switch, no new preference).
+9. Tests: `tools/test/sound.test.mjs` for `musicFor` through the hooks seams (hub, each run node type, indoor, each
    battle kind) and for `volumePreference`; the quick check's settings step presses each Test button and checks that
    the right bus's gain moved (`soundEngine.*.gain.value`), not that the page heard anything.
 
@@ -114,8 +121,19 @@ Two halves, the first all renames and moves (no-op commits), the second new data
    indoor, tab, song}`, first match wins, with today's choices written out so nothing changes.
 4. **`logic/music-where.js`**: `songFor(state)` reads the where table from a small state object (started, battle
    kind, tab, node type, biome, row, indoor, location music). Pure, tested in `sound.test.mjs`; `musicFor` builds
-   the state and calls it. The seven biome songs become reachable only when SND-4 adds their rows.
-5. `check-data` validates `music.json`; the quick check's `unused` list names songs no where-rule and no script
+   the state and calls it.
+5. **Biome music in a run.** Where-rules by biome, mapping today's eleven biomes onto the seven biome songs
+   (meadow → meadow, thicket and jungle → spore, lake and sea → trench, canyon and badlands → hills, volcano →
+   innersun, tundra and ridge → crystal, autumn → spire), and a town node onto `town`, the landing onto `route`.
+   The first audible change of the track, in its own commit, after the fingerprint baseline. SND-4 refines the
+   mapping with its two new songs. **Ask me before:** the mapping (the names above are a first guess from the
+   recipes' moods; you may want to hear each pair in the Studio first, which is SND-3).
+6. **Timers that stop when idle.** The music tick's interval starts with a song and clears when none plays; the
+   footstep poller starts with the walk view and clears on the title screen and in battle; `musicSync` runs from
+   the places that change what plays (tab change, battle start and end, a scene arrival, a cutscene end) with a
+   slow fallback every few seconds instead of every second. Moving the tick onto the frame loop waits for UI-5's
+   `ui.js` split; the fingerprints and the debug log's timer count say whether this changed anything.
+7. `check-data` validates `music.json`; the quick check's `unused` list names songs no where-rule and no script
    uses (the Studio's story scripts play songs by name: `music rival`).
 
 ## SND-3: the Studio's Music & sound section
@@ -148,8 +166,8 @@ Audible changes, fingerprints regenerated at the end on purpose.
 4. **Copperleaf** as Pallet Town: two voices, no drums, slow swing, the music-box lead (p12, short decay).
 5. **Night** versions by data: a `night` override per song (slower by 6-10 bpm, the key a fourth down, drums
    soft), picked by `environmentHour`, crossfaded at dusk and dawn as songs crossfade today.
-6. **Biome songs** get where-rules by biome: meadow, thicket, lake, canyon, volcano, tundra, sea, ridge, autumn,
-   badlands, jungle map onto the seven songs plus two new ones (a volcano march, a tundra waltz).
+6. **Biome songs.** Two new ones (a volcano march, a tundra waltz) and the SND-2 mapping revised so that no two of
+   the eleven biomes share a song unless they should.
 
 ## SND-5: battle and run music
 1. **Intros.** A song's `intro` is one or two bars (the chromatic run on the lead, drums out) that play once. The
@@ -182,6 +200,7 @@ Audible changes, fingerprints regenerated at the end on purpose.
 
 ## Ask me before (collected)
 - SND-1: jingles follow Music, Sound effects, or a sixth slider; moving audio preferences out of the save.
+- SND-2: the biome-to-song mapping; whether to hear the pairs in the Studio (SND-3) before fixing it.
 - SND-3: a Game-group section or a Sound group of its own.
 - SND-4: who writes the hooks; whether the title motif should be the game's theme everywhere or the hub's only.
 - SND-5: the red-zone variant versus the beep; whether the deadline variant plays on the last day or the last two.
