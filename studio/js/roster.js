@@ -3,8 +3,8 @@
    The 117 billionaires of the big art update as cards: name, line, stage, parody target, types, the design line, and
    four checkboxes for how far its art is (silhouette approved, piece sheet drawn, rigged, portrait). Lives in
    gamedata.roster; the game ignores it until v38 when the new species replace the old ones.
-   The board also opens the silhouette check: the new piece sheet (art/next/billionaires/<id>.png), else a study
-   (art/next/starters/<id>.png), else the current rig, drawn black at 24 px beside its neighbours. */
+   The board also opens the silhouette check: the new piece sheet (art/next/billionaires/<id>.png), else the current
+   rig, drawn black at 24 px beside its neighbours. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
 import { $, $$ } from '../../game/js/util.js';
@@ -158,14 +158,6 @@ async function silhouetteOf(id, size = 24) {
       .catch(() => null);
     src = sheetSilhouette(im, lay);
   } catch (e) {}
-  if (!src) {
-    try {
-      const im = await loadImage('../game/art/next/starters/' + id + '.png');
-      const c = makeCanvas(im.width, im.height);
-      c.getContext('2d').drawImage(im, 0, 0);
-      src = c;
-    } catch (e) {}
-  }
   if (!src) {
     const R = rigFor(rosterSpeciesId(id), 'front');
     if (R) {
