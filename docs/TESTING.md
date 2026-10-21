@@ -57,7 +57,8 @@ Two rules hold everywhere:
   unchanged): `rngFrom(seed, salt)` gives a stream (`next, range, int, chance, pick, gauss`), `rngFn(seed, salt)` the
   same as a plain `() => number`, `hashString` the FNV-1a hash, `dailySeed(now)` `'d'` + the UTC date. `pickWeighted`,
   `rollPartSize`, `rollBuild` and `spawn` take an optional `rnd` (default util.js `random`); nothing passes one yet
-  (runs will, RL-6/7). Battles get their own stream (`b.rng`) in RL-4. 172 direct `Math.random` (counted at RL-1)
+  (runs will, RL-6/7). A battle with a seed (`makeBattle(…, {seed})`) draws every chance from its own stream (`b.rng`,
+  RL-4, `battleRoll()` in the engine); without one it draws `util.random` as before. 172 direct `Math.random` (counted at RL-1)
   calls in game/ and studio/ are mostly drawing, sound and ambient life, but `battle.js` (bribes, egg drops) and
   `things-to-do.js` (rewards) decide outcomes with them; `newUid` and `met` read `Date.now()`, battle weather the
   real clock.
@@ -65,6 +66,12 @@ Two rules hold everywhere:
   (single, double, Alpha, robot), both sides played by `chooseAI`, every event and the end state snapshotted. It
   must stay unchanged through RL-4's engine work; a battle data change or a change meant to alter battles remakes it
   (`--test-update-snapshots`), said in the commit. A planted +1 damage turns all four red.
+- A battle off the page (RL-4, `battle-state.test.mjs`, `battle-engine-state.test.mjs`): `makeBattle(kind, team,
+  foe, extra)` makes a battle without installing it; pass it last to `runTurn`, `chooseAI`, `benchCandidates`,
+  `canUse`, `applyItem` and the other entry points. `SILENT_HOST` (`extra.host`) shows, saves and plays nothing; a
+  copied team brings `bag` and `buddy` and leaves the save as it was. Use both for a simulation or a ghost (the robot
+  simulation does). The battle object's shape is snapshotted; a seeded battle must replay the same with other draws
+  in between; the turn cap is tested with the cap lowered inside the test.
 - The save's run state (RL-3: `meta-state`, `ranch-state`, `run-state` and `saves.test.mjs`): run on the fixture's
   three locations, so a save from a run sits at node 4, past `LOCATIONS`, to prove `migrate` keeps a run's trip by the
   run's map and not by today's places. Switching that branch off turns the run-save test red.
