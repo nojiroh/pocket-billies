@@ -220,17 +220,20 @@ export function runMapStart(run, data) {
   return run.map;
 }
 /** arrive at map node i: the landing first (day 1), then only a node linked to where you stand, forward or back, a day
- * each. Moves saveData.trip.node with the run, so the two never disagree; shows the map from there and keeps the
+ * each. Where you stand is saveData.trip.node (RL-3: the one copy of the position; a debug jump or a test sets it
+ * alone), Copperleaf before the landing. Moves trip.node with the run, shows the map from there and keeps the
  * forecast a week ahead. Returns the day, or 0 when i can't be reached from here (nothing changes)
  * @param {SaveData} s @param {number} i @param {RunMapData} data @returns {number} */
 export function runArrive(s, i, data) {
   const run = s.run;
   if (!run || !run.map || !run.map.nodes[i]) return 0;
   const map = run.map,
-    here = run.path.length ? run.path[run.path.length - 1] : -1,
+    at = runMapNode(s.trip ? s.trip.node : 0),
+    here = map.nodes[at] ? at : -1,
     linked = here < 0 ? map.nodes[i].row === 0 : runNext(map, here).includes(i) || runBack(map, here).includes(i);
   if (!linked) return 0;
-  if (here >= 0) run.clock = Math.min(RUN_DAYS, run.clock + 1);
+  /* the run's first arrival is day 1; every later one costs a day */
+  if (run.path.length) run.clock = Math.min(RUN_DAYS, run.clock + 1);
   run.path.push(i);
   s.trip.node = runWorldNode(i);
   runReveal(map, map.nodes[i].row, data.rules.reveal);
