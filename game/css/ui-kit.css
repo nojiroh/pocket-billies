@@ -245,3 +245,42 @@ hr.pb-rule::after {
   -webkit-mask: var(--glyph) center / contain no-repeat;
   mask: var(--glyph) center / contain no-repeat;
 }
+
+/* UI-2: the shared bot plate's limb pips (unit-card.js limbPipsHTML): each limb a slanted plate, its letter and four
+   cells lit by the HP left; low turns gold, a broken limb goes dark and is struck through */
+.pb-limbs {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--s1);
+}
+.pb-limb {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  padding: 2px 7px 2px 6px;
+  clip-path: var(--clip-chip);
+  background: var(--limb-bg, color-mix(in srgb, var(--text) 10%, transparent));
+  color: var(--limb-ink, var(--text2));
+  font: 400 11px/1 var(--font-voice);
+}
+.pb-limb b {
+  margin-right: 3px;
+  font-weight: 400;
+}
+.pb-limb i {
+  width: 3px;
+  height: 8px;
+  transform: skewX(-20deg);
+  background: var(--limb-off, color-mix(in srgb, var(--text) 18%, transparent));
+}
+.pb-limb i.on {
+  background: var(--limb-on, var(--c-hp-ok, var(--ok)));
+}
+.pb-limb.low i.on {
+  background: var(--limb-low, var(--c-hp-mid, var(--gold-b)));
+}
+.pb-limb.broken {
+  color: var(--c-danger, var(--red));
+  text-decoration: line-through;
+  opacity: 0.8;
+}

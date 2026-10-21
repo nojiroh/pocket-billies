@@ -192,11 +192,26 @@
   clip-path: var(--edge-card);
   background: var(--edge);
 }
+/* UI-2: a bot's row is the shared bot plate: steel, the panel's two bigger cuts, a light-blue mark, its limb pips */
+.u-row.bot {
+  --k-fill:
+    linear-gradient(90deg, #5aa9d6 0 28px, transparent 28px) top left / 100% 3px no-repeat,
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--g-solid) 82%, #9fb3c8),
+      color-mix(in srgb, var(--g-solid) 90%, #6f8299)
+    );
+}
+.u-row.bot::before {
+  clip-path: var(--clip-panel);
+}
+.u-row.bot::after {
+  clip-path: var(--edge-panel);
+}
 .u-row:focus-visible {
   outline: none;
 }
 .u-row:focus-visible::after {
-  clip-path: var(--edge-card);
   background: var(--gold-b);
   filter: drop-shadow(0 0 1px var(--gold-b));
 }

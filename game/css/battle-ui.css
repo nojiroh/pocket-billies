@@ -184,9 +184,6 @@
 .bplate .pl-pips[hidden] {
   display: none;
 }
-.bplate .pl-parts .hp-part {
-  flex: 1;
-}
 .bplate .pl-pips {
   display: flex;
   gap: 3px;
@@ -237,4 +234,27 @@
 .bplate .pl-xp {
   border-radius: 0;
   clip-path: polygon(3px 0, 100% 0, calc(100% - 3px) 100%, 0 100%);
+}
+
+/* UI-2: the shared bot plate in battle: steel with the panel's two cuts and a light-blue mark, the limb pips in the
+   plate's colours */
+.bplate.bot {
+  clip-path: var(--clip-panel);
+  background:
+    linear-gradient(90deg, #8fd8ff 0 28px, transparent 28px) top left / 100% 2px no-repeat,
+    linear-gradient(160deg, rgba(64, 78, 100, 0.8), rgba(20, 26, 38, 0.8));
+}
+.bplate.bot::after {
+  clip-path: var(--edge-panel);
+}
+.bplate .pl-parts .pb-limb {
+  --limb-bg: rgba(0, 0, 0, 0.4);
+  --limb-ink: #cfe3ff;
+  --limb-off: rgba(255, 255, 255, 0.14);
+  --limb-on: #8fd8ff;
+  --limb-low: #ffb04a;
+  font-size: 10px;
+}
+.bplate .pl-parts .pb-limb.broken {
+  color: #ff8a96;
 }
