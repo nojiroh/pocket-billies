@@ -29,7 +29,6 @@ import {
   SHOPS,
   SPECIES,
   START_NODE,
-  STATUS_NAMES,
   STAT_IDS,
   STAT_NAMES,
   TRAINERS,
@@ -87,10 +86,9 @@ import {
   xpFor,
 } from './logic/rules.js';
 import { TOAST_MS, toastAdd, toastItem, toastTime } from './logic/messages.js';
-import { readableBg } from './logic/colors.js';
 import { runArrive, runMapNode } from './logic/run-map.js';
 import { runHealCost } from './logic/run-loop.js';
-import { pbFloat, pbInboxDot, pbInboxPop, typeGlyphHTML } from './ui-kit.js';
+import { pbFloat, pbInboxDot, pbInboxPop } from './ui-kit.js';
 import { newSaveKeepingPreferences } from './logic/saves.js';
 import {
   CATCH_RULES,
@@ -211,10 +209,10 @@ import {
   stampTile,
 } from './things-to-do.js';
 import { workshopAction, workshopSectionHTML } from './workshop.js';
+import { hpBar, progressBarHTML, statusBadgeHTML, typeBadgeHTML } from './ui-bits.js';
 /* eslint-disable no-func-assign */
 expose({
   BOX_SORTS: [() => BOX_SORTS],
-  PILL_COLORS: [() => PILL_COLORS],
   RARITY_NAMES: [() => RARITY_NAMES],
   SCREENS: [() => SCREENS],
   TABS: [() => TABS],
@@ -243,7 +241,6 @@ expose({
   hatchModal: [() => hatchModal, v => (hatchModal = v)],
   healPick: [() => healPick, v => (healPick = v)],
   hereCard: [() => hereCard, v => (hereCard = v)],
-  hpBar: [() => hpBar, v => (hpBar = v)],
   initPixelSky: [() => initPixelSky, v => (initPixelSky = v)],
   isDark: [() => isDark],
   learnModal: [() => learnModal, v => (learnModal = v)],
@@ -262,12 +259,10 @@ expose({
   openInbox: [() => openInbox, v => (openInbox = v)],
   openSettings: [() => openSettings, v => ((openSettings = v), provide({ openSettings }))],
   paintWorldMapCard: [() => paintWorldMapCard, v => ((paintWorldMapCard = v), provide({ paintWorldMapCard }))],
-  pillColor: [() => pillColor],
   pixelSky: [() => pixelSky],
   pixelSkyTick: [() => pixelSkyTick, v => (pixelSkyTick = v)],
   plateVars: [() => plateVars],
   poolStrip: [() => poolStrip, v => (poolStrip = v)],
-  progressBarHTML: [() => progressBarHTML, v => ((progressBarHTML = v), provide({ progressBarHTML }))],
   render: [() => render, v => setRender(v)],
   renderDexEntry: [() => renderDexEntry, v => (renderDexEntry = v)],
   renderGuide: [() => renderGuide, v => (renderGuide = v)],
@@ -291,7 +286,6 @@ expose({
   showPendingWindows: [() => showPendingWindows, v => ((showPendingWindows = v), provide({ showPendingWindows }))],
   showToast: [() => showToast, v => (showToast = v)],
   startGame: [() => startGame, v => ((startGame = v), provide({ startGame }))],
-  statusBadgeHTML: [() => statusBadgeHTML],
   swapPick: [() => swapPick, v => (swapPick = v)],
   toast: [() => toast, v => ((toast = v), provide({ toast }))],
   toastTimer: [() => toastTimer, v => (toastTimer = v)],
@@ -299,7 +293,6 @@ expose({
   tripButtons: [() => tripButtons, v => (tripButtons = v)],
   tripDest: [() => tripDest],
   tripStatus: [() => tripStatus, v => (tripStatus = v)],
-  typeBadgeHTML: [() => typeBadgeHTML],
   updateNav: [() => updateNav, v => ((updateNav = v), provide({ updateNav }))],
   walkCross: [() => walkCross, v => (walkCross = v)],
   walkHero: [() => walkHero, v => (walkHero = v)],
@@ -319,7 +312,6 @@ provide({
   modal,
   openSettings,
   paintWorldMapCard,
-  progressBarHTML,
   render,
   renderOverlay,
   roomRefresh,
@@ -338,22 +330,6 @@ export function setRenderOverlay(v) {
   provide({ renderOverlay });
 }
 /* to-module: end */
-/* phase 06-4: the pill's colour is the type's, deepened just enough for its label to read at 4.5:1 (logic/colors.js) */
-const PILL_COLORS = {};
-const pillColor = t => (PILL_COLORS[t] = PILL_COLORS[t] || readableBg(TYPE_COLORS[t][0], TYPE_COLORS[t][1]));
-export const typeBadgeHTML = t =>
-  `<span class="chip" style="--tc:${pillColor(t)};--tf:${TYPE_COLORS[t][1]}">${typeGlyphHTML(t)}${t === 'None' ? 'Normal' : t}</span>`;
-provide({ typeBadgeHTML }); /* to-module */
-const statusBadgeHTML = st => (st ? `<span class="stb st-${st}">${STATUS_NAMES[st]}</span>` : '');
-provide({ statusBadgeHTML }); /* to-module */
-function progressBarHTML(p, cls = '') {
-  return `<div class="pbar ${cls}"><i style="width:${clamp(p, 0, 1) * 100}%"></i></div>`;
-}
-function hpBar(hp, max) {
-  const p = Math.max(0, hp / max);
-  return `<div class="pbar hpb ${p < 0.25 ? 'low' : p < 0.5 ? 'mid' : ''}"><i style="width:${p * 100}%"></i></div>`;
-}
-
 /* ---------- toasts & modals ---------- */
 /* phase 06: one toast at a time under the top bar (<pb-toast id="toast">, js/ui-kit.js); the same message again joins
    the one showing or waiting ("Saved ×2", js/logic/messages.js); a tap or a swipe up dismisses it */
