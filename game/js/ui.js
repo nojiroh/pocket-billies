@@ -239,7 +239,6 @@ expose({
   evolutionMethod: [() => evolutionMethod, v => (evolutionMethod = v)],
   evolutionModal: [() => evolutionModal, v => (evolutionModal = v)],
   exitPrompt: [() => exitPrompt, v => (exitPrompt = v)],
-  genderModal: [() => genderModal, v => (genderModal = v)],
   guideTabs: [() => guideTabs, v => (guideTabs = v)],
   hatchModal: [() => hatchModal, v => (hatchModal = v)],
   healPick: [() => healPick, v => (healPick = v)],
@@ -504,14 +503,6 @@ export function showPendingWindows() {
   }
   const m = allBillies().find(canEvolve);
   if (m) evolutionModal(m);
-}
-function genderModal() {
-  modal({
-    title: 'Are you a boy or a girl?',
-    html: `<p>Professor Hazel needs it for your trainer card.</p><div class="gpick">${['boy', 'girl'].map(g => `<button class="gcard px" data-a="setgender" data-g="${g}">${personHTML(g, 64)}<b>${g === 'boy' ? 'Boy' : 'Girl'}</b></button>`).join('')}</div>`,
-    btns: [],
-    lock: 1,
-  });
 }
 function learnModal(m, mv) {
   const M = MOVES[mv];
@@ -2426,12 +2417,6 @@ document.addEventListener('click', ev => {
         uiState.openingFailed = 'cant';
         render();
       }
-      break;
-    case 'setgender':
-      saveData.gender = d.g;
-      save();
-      closeModal();
-      render();
       break;
     case 'tab':
       /* phase 10: from a walk scene the walk camera rises first, then the bowl pulls back (world-bowl.js) */
