@@ -95,25 +95,61 @@ roguelite-track.md section 0 but left no entry here; this one is put together fr
   check:modules, format:check, check:data and 331 unit tests, all green.
 - Next: RL-4 (battle state injected) or RL-5 (legacy parking).
 
-### UI track UI-1 - Theme as data, rules as a check - 2026-10-21 (entry written in UI-2)
-The UI-1 session updated ROADMAP, TESTING and ui-track.md but left no entry here; this one is put together from its
-commits (6ae6719..2b03204) and those docs.
-- Changed (one cause per commit): tools/ui-lint.mjs (`npm run lint:ui`, a report of raw values per UI rule and file,
-  with a fixture test); v05's `--disp`/`--body` read `--font-voice`; tokens.css gains `--cut-sm/md/lg`, `--slant`,
-  `--shape-*`, a `--z-*` layer scale on today's values and the colour roles `--c-*`; HP bars read `--c-hp-*`;
-  game/data/uiTheme.json (the Copper Grove palette, teal healthy HP, glass, cut sizes, Jersey 15 + Oxanium; preset
-  `alpha05` is the old look) with schema, types and a contrast check; the fonts in game/fonts with their OFL lines;
-  logic/ui-theme.js makes the sheet and theme-sheet.js writes it as `<style id="ui-theme">`; the UI gallery loads the
-  data and switches presets; smoke logs blurred surfaces per screen (`uiBlurCount`, budget 3).
-- Found: the fonts in use were Pixelify Sans everywhere (style.css's Tiny5/Chakra pair was dead); colour roles were
-  spread over style.css and v05.css (ui-track.md, "UI-1 found").
-- Lint report at the end of UI-1 (re-run at UI-2's start, 3479f01): corners 168 raw / 59 token uses, space 1,093 /
-  214, shadows 189 / 22, keyframes 77 outside motion.css, times 279 / 22, fonts 18 / 215, colours 709 in CSS and 561
-  in game JS, `!important` 205, layers 60, blurred rules 31, `innerHTML` 57, `style="` 39. Blurred surfaces measured
-  on the phone screens: walk 6, map 12, team 6, ledger 5, profile 4, shop 8, battle 3 (budget 3).
-- Verified (from the commit messages): smoke green after the theme commit; unit tests for the sheet; the team, shop,
-  ledger and profile pictures matched for the no-op font commit.
-- Next: UI-2 (kit v2, angular shapes).
+### UI track UI-1 - Theme as data, rules as a check - 2026-10-21
+(Written by the UI-1 session after its merge; it replaces the entry UI-2 put together from the commits.)
+Branch `ccr-901f764c-bv0rc7`, from 29834ca (the UI-0 plan on top of main 072f993); merged as PR #87, then RL-4 (#88)
+on top. Plan approved at the start with the owner's answers: the uiTheme.json draft as shown, Jersey 15 scaled by
+its font face (118%), the palette through variables only (raw colours wait for UI-5/6).
+- Changed (one cause per commit): tools/ui-lint.mjs (`npm run lint:ui`, a report) with a fixture test;
+  `var(--disp)`/`var(--body)` folded into `var(--font-voice)` (a no-op: v05 already set both to Pixelify Sans);
+  tokens.css gains `--cut-sm/md/lg`, `--slant`, `--shape-*`, a `--z-*` scale on today's values and the `--c-*` colour
+  roles on today's variables; the HP bars (battle plate, hpmini, pbar.hpb, unit card) read `--c-hp-*` with today's
+  colours as fallbacks; game/data/uiTheme.json + schema + types + check-data (text and quiet text at 4.5:1 on ground
+  and surface, every preset, both sides); Jersey 15 and Oxanium woff2 (Fontsource, OFL lines in OFL.txt);
+  logic/ui-theme.js makes the sheet and theme-sheet.js writes it as `<style id="ui-theme">` after every stylesheet
+  (the three light/dark selectors the CSS uses, so Settings' theme switch still works), the Studio's live draft
+  rewrites it, both fonts preloaded; the UI gallery loads the data and gets a Copper Grove / alpha 0.5 switch; smoke
+  logs the blurred surfaces per screen (`uiBlurCount()`). Side PR #86 (merged): `npm run build` had failed on main
+  since PR #83 (the Studio self-test's lazy import made a second bundle).
+- Differs from the plan: Pixelify Sans stays (36 KB) so preset `alpha05` really shows the old look; the dark side's
+  highlight and shadows stay v05.css's (the surface dials split by mode in UI-3); `alpha05` is close to today, not
+  exact (`--panel-s` and `--g-solid` became one surface); the theme-color meta is unchanged; only the latin font
+  subsets ship (letters beyond Latin-1 fall back). Where the plan text was wrong is in ui-track.md (the fonts in use,
+  the two colour sets, the counts).
+- Verified: 324 unit tests on the branch (351 on main after RL-4), lint, typecheck, check:modules, format:check,
+  check:data, build; smoke green before every game commit and on main after RL-4. The four no-op commits: the team,
+  shop, ledger and profile pictures matched ones taken before (the others differ by capture timing: a camera pan, a
+  fade). A headless probe: the sheet is there, `--text` #22301f, the plate's HP gradient teal, Jersey 15 and Oxanium
+  loaded, `font-synthesis-weight: none`, no console errors; the gallery in both looks and both sides. Full quick
+  check (50 min): 11 problems, the 10 known since RL-1 (v31 fountain, v34, v35, v38, v39/40, v43, v44, v46, alpha 0.4,
+  phase 08 running) plus Crowd at 0.6 fps while other browsers ran here; Crowd alone passed (1.2 → 1.2 fps).
+  Not run: `--selftest` (UI-1 changes looks, not play; smoke's one in-game step passed).
+- Lint report (`npm run lint:ui`; it counts every length in a shorthand, so space and radii differ from the plan's
+  table):
+
+| Rule | Raw | Token uses | Worst files |
+| --- | --- | --- | --- |
+| Corners on the radius tokens | 168 | 59 | style.css 55, screens.css 53, v05.css 28 |
+| Space on the --s scale | 1093 | 214 | style.css 462, screens.css 393, v05.css 101 |
+| Shadows on the depth tokens | 189 | 22 | style.css 49, v05.css 40, polish.css 37 |
+| Keyframes in motion.css only | 77 | 9 in motion.css | style.css 38, polish.css 12, screens.css 11 |
+| Times on the motion tokens | 279 | 22 | style.css 89, polish.css 79, screens.css 47 |
+| Fonts by token | 18 | 215 | loader.css 7, style.css 5, v05.css 4 |
+| Colours as variables (CSS rules) | 709 | - | style.css 228, screens.css 166, v05.css 105 |
+| !important | 205 | - | v05.css 107, screens.css 23, style.css 23 |
+| Layers on the --z scale | 60 | 0 | style.css 24, screens.css 18, polish.css 6 |
+| Blurred surfaces (backdrop-filter rules) | 31 | - | style.css 10, screens.css 7, v05.css 7 |
+| Colours in game JS | 561 | - | dressing-room.js 96, opening-fall.js 81, battle-stage.js 64 |
+| innerHTML writes in game JS | 57 | - | battle.js 13, ui.js 9, dressing-room.js 6 |
+| style="..." strings in game JS | 39 | - | ui.js 15, unit-card.js 9, battle.js 6 |
+
+  Blurred surfaces per screen (smoke): walk 6, map 12, team 6, ledger 5, profile 4, shop 8, battle 3 (budget 3).
+- Risky: the look is mixed until UI-5/6 (purple raw colours in button gradients and shadows sit beside Copper
+  Grove); Jersey 15 at 12-13 px labels needs the owner's phone look; the loader paints in the old fonts for a moment
+  before the sheet loads; a look change moves every picture: remake the baseline (Actions → Check → "Make the picture
+  baseline"). The repo has no picture baseline yet, so the full check compared nothing.
+- Next: the owner looks on the phone, pushes `ui-1-done` and remakes the picture baseline. UI-2 came next (its
+  entry above).
 
 ### UI track UI-0 - the plan - 2026-10-21
 Planning only, in a chat session with the owner (the plan, the owner's answers to 36 questions, a Design mockup);

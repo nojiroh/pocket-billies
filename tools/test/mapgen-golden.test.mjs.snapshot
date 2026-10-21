@@ -1,0 +1,74 @@
+exports[`golden scene: default 1`] = `
+{
+  "tiles": 1507881607,
+  "heights": 2967723235,
+  "steps": 238425371,
+  "props": 213229926,
+  "exits": 2931372097,
+  "rest": 2233225732,
+  "counts": {
+    "props": 783,
+    "raised": false
+  }
+}
+`;
+
+exports[`golden scene: feature 1`] = `
+{
+  "tiles": 1234840993,
+  "heights": 2142064282,
+  "steps": 238425371,
+  "props": 2065972037,
+  "exits": 138117495,
+  "rest": 1719261085,
+  "counts": {
+    "props": 763,
+    "raised": false
+  }
+}
+`;
+
+exports[`golden scene: terraced 1`] = `
+{
+  "tiles": 3792147473,
+  "heights": 2247910161,
+  "steps": 3063656668,
+  "props": 682508324,
+  "exits": 3917193882,
+  "rest": 940172716,
+  "counts": {
+    "props": 786,
+    "raised": true
+  }
+}
+`;
+
+exports[`golden scene: threeExits 1`] = `
+{
+  "tiles": 2560410582,
+  "heights": 2276149042,
+  "steps": 238425371,
+  "props": 2487774783,
+  "exits": 1385571298,
+  "rest": 660286204,
+  "counts": {
+    "props": 858,
+    "raised": false
+  }
+}
+`;
+
+exports[`golden scene: water 1`] = `
+{
+  "tiles": 831468499,
+  "heights": 907636989,
+  "steps": 238425371,
+  "props": 3762606957,
+  "exits": 2419090157,
+  "rest": 1329596514,
+  "counts": {
+    "props": 773,
+    "raised": false
+  }
+}
+`;

@@ -6,12 +6,14 @@
    to the setting and makes it blink. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
-import { noteConnectionsField } from '../../game/js/hooks.js';
+import { noteConnectionsField, provide } from '../../game/js/hooks.js';
 import { $, $$ } from '../../game/js/util.js';
 import { ENGINE_SPEC } from '../../game/js/engine/settings.js';
 import { escapeHtml } from './game-stand-ins.js';
+import { UI_DIALS, uiDialList } from '../../game/js/logic/ui-dials.js';
 import { ACTIONS, SECTIONS, SECTION_LIST, clone, openSection, studioState, toast } from './studio-app.js';
 import { engineEditor, refreshEngineSettings } from './engine-editor.js';
+import { findUi } from './ui-editor.js';
 /* eslint-disable no-func-assign */
 expose({
   FIND_KIND_LABELS: [() => FIND_KIND_LABELS],
@@ -20,7 +22,7 @@ expose({
   findClose: [() => findClose, v => (findClose = v)],
   findEngine: [() => findEngine, v => (findEngine = v)],
   findField: [() => findField, v => (findField = v)],
-  findFlash: [() => findFlash, v => (findFlash = v)],
+  findFlash: [() => findFlash, v => ((findFlash = v), provide({ findFlash }))],
   findMark: [() => findMark, v => (findMark = v)],
   findOpen: [() => findOpen, v => (findOpen = v)],
   findPageFields: [() => findPageFields, v => (findPageFields = v)],
@@ -32,6 +34,7 @@ expose({
   searchIndex: [() => searchIndex, v => (searchIndex = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ findFlash });
 /* to-module: end */
 const findState = { idx: null, key: '', res: [], at: 0, q: '' };
 const normalizeForFind = s =>
@@ -64,6 +67,7 @@ export function findFlash(sel, tries = 0) {
   if (typeof noteConnectionsField === 'function') noteConnectionsField(el.dataset.p || el.dataset.path || '');
 }
 export const fieldSelector = p => `[data-p="${CSS.escape(p)}"],[data-path="${CSS.escape(p)}"]`;
+provide({ fieldSelector }); /* to-module */
 export function findField(sec, p, sel) {
   if (studioState.sec !== sec || sel) openSection(sec, sel);
   findFlash(fieldSelector(p));
@@ -139,6 +143,13 @@ export function buildSearchIndex() {
         add(f[1], 'Engine › ' + t, 'setting', () => findEngine(g, f[0]), (help || '') + ` ${g}.${f[0]}`);
       })
     );
+  /* UI-3: every dial of the UI look (the whole game's) */
+  if (typeof uiDialList === 'function') {
+    const T = Object.fromEntries(UI_DIALS.map(G => [G.id, G.title]));
+    uiDialList().forEach(d =>
+      add(d.label, 'UI look › ' + T[d.group], 'setting', () => findUi(d.path), `${d.dial.help || ''} ${d.path}`)
+    );
+  }
   ['rules', 'types', 'items', 'jobs'].forEach(s => findPageFields(s, add));
   (D.lines || []).forEach(L =>
     L.names.forEach((n, st) =>

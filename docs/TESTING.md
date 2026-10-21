@@ -76,6 +76,16 @@ Two rules hold everywhere:
 - The save's run state (RL-3: `meta-state`, `ranch-state`, `run-state` and `saves.test.mjs`): run on the fixture's
   three locations, so a save from a run sits at node 4, past `LOCATIONS`, to prove `migrate` keeps a run's trip by the
   run's map and not by today's places. Switching that branch off turns the run-save test red.
+- The map generator (MG-1, MG-2, TR-1; `tools/test/mapgen*.test.mjs`): `mapgen.test.mjs` the MG-1 invariants (format,
+  determinism, a stage's own seed, the hub reaches every exit, nothing grows on paths or in water); `mapgen-golden`
+  a hash per part of five unjoined scenes (`gen` left out), so a change says which part moved: remake it on purpose
+  (`--test-update-snapshots`) and say so; `mapgen-seams` joined pairs (`mapgenEdgeStrip`, `mapgenSeamAgreement`: no
+  height gap over the neighbour band, no step, a straight walk across; terraces at ground level by exits; a node
+  with two parents; the pair laid as one scene); `mapgen-roads` roads measured with the game's own riser rule
+  (`logic/step-grid.js`, moved from walk-view.js so a test sees the road as the game draws it); `mapgen-lots` the
+  hub's buildings. `rng.test.mjs` freezes the default scene's hash, `gen` included: a new dial or version changes it
+  (remade on purpose, said in the commit). The seam rules are `logic/seam-rules.js` (`seam-rules.test.mjs` freezes
+  each fault's words); check-data runs the same module.
 - On the game's data, test what must hold whatever the content (every road has its exits, every gate its trainer),
   not counts a content change legitimately alters. Where the whole shape matters, use a snapshot
   (`t.assert.snapshot`): remake it with `node --test --test-update-snapshots tools/test/<file>` in the commit that
@@ -166,7 +176,8 @@ same phase:
 - **12 Ranch**: a full-test step for the ranch, a quick-check step that edits it, and its save fields in the save
   tests (`saves.test.mjs`, `validSave`).
 - **14 Studio**: `tools/check-studio-github.py` and smoke's "Studio opens" keep passing; `--studio` follows the
-  Studio local mode decision.
+  Studio local mode decision. A new Studio feature adds a step function to its `STEPS` (UI-3), so it can also run
+  alone with `--only=<name>`.
 - **15 Design and story**: write down the balance bounds the simulations will assert (with the owner).
 - **16 Billies**: write the breeding simulation first, against the prototype, before the full build (the owner
   agreed in 13a's plan); agree its bounds. The roster steps (v35, v38, v39/v40) count today's 117 Billies: update
@@ -189,6 +200,16 @@ same phase:
   this container's Chromium and fonts. `tools/test/ui-theme.test.mjs` also checks the shape polygons (tokens.css's
   copy equals the generator's) and `tools/test/ui-icons.test.mjs` keeps game/art/ui/*.svg equal to the grids in
   tools/build-ui-icons.py.
+  UI-3: uiTheme.json is version 2 (every group the Studio's dials edit). `ui-theme.test.mjs` keeps tokens.css's
+  scales (space, text sizes, motion, drop shadows) equal to the data's defaults and the variables a screen override
+  declares again (`UI_DERIVED`) equal to tokens.css and polish.css; `ui-dials.test.mjs` keeps every Studio dial on a
+  place in the schema with the schema's range, and every schema value with a dial. The contrast check (text 4.5:1,
+  danger and primary 3:1; overrides too) is `uiThemeContrast` in logic/ui-theme.js, run by check-data and the
+  Studio's Check. `tools/check-studio-github.py`'s `ui` step drives the Studio's UI look section (a dial previewed and
+  undone, a screen override, a preset, Find, the Check, Hold to compare, the proposal carrying uiTheme.json); run it
+  alone with `python3 tools/check-studio-github.py --only=ui` (about a minute; `--only=` takes any names from its
+  `STEPS`, plus `sections` and `art` for the two blocks before them). A new uiTheme.json group needs its schema,
+  its dials in logic/ui-dials.js and its writer in logic/ui-theme.js together, or the tests fail.
 - **18 Trading and battles with friends**: every new Firestore rule gets emulator tests in `firebase/test/`;
   trade validation is logic with unit tests.
 
