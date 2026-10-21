@@ -10,7 +10,10 @@ import { expose } from '../test-globals.js';
 /* eslint-disable no-func-assign */
 expose({
   // @ts-expect-error -- replaced on purpose
+  dailySeed: [() => dailySeed, v => (dailySeed = v)],
+  // @ts-expect-error -- replaced on purpose
   hashString: [() => hashString, v => (hashString = v)],
+  rngFn: [() => rngFn],
   // @ts-expect-error -- replaced on purpose
   rngFrom: [() => rngFrom, v => (rngFrom = v)],
 });
@@ -66,3 +69,9 @@ export function rngFrom(seed, salt = '') {
 }
 
 /* value noise on a lattice, from an integer hash (no sin hash: the same in every engine) */
+/** a plain () => number in [0,1) for a seed and a salt, for code that takes a random function (rules.js spawn) */
+export const rngFn = (seed, salt = '') => rngFrom(seed, salt).next;
+/** the seed every player shares on one UTC day: 'd' and the date, d2026-10-21 (a Date or a time in ms) */
+export function dailySeed(now = Date.now()) {
+  return 'd' + new Date(now).toISOString().slice(0, 10);
+}
