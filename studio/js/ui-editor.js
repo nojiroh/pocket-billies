@@ -68,6 +68,7 @@ expose({
   uiAABadge: [() => uiAABadge, v => (uiAABadge = v)],
   uiAfterEdit: [() => uiAfterEdit, v => (uiAfterEdit = v)],
   uiBase: [() => uiBase],
+  uiBeforeNow: [() => uiBeforeNow, v => (uiBeforeNow = v)],
   uiColorHTML: [() => uiColorHTML, v => (uiColorHTML = v)],
   uiColorsHTML: [() => uiColorsHTML, v => (uiColorsHTML = v)],
   uiCompare: [() => uiCompare, v => (uiCompare = v)],
@@ -111,6 +112,8 @@ export const uiEditor = {
   text: '',
   /* UI-3b: what the preview shows: the gallery, or a real screen of the game from its fixture (UI_VIEWS) */
   view: 'gallery',
+  /* UI-3b: before/after: the saved look beside the unsaved one */
+  split: false,
   holding: false,
   saved: null,
   pvT: 0,
@@ -351,9 +354,9 @@ SECTIONS.ui = () => {
  <div class="eng-side"><div class="card"><div class="card-b"><div class="ui-pvbar"><div class="seg-row">${seg('mode', 'light', 'Light')}${seg('mode', 'dark', 'Dark')}</div><div class="seg-row">${seg('width', '320px', '320')}${seg('width', '390px', '390')}${seg('width', '760px', 'Wide')}</div>
   <div class="seg-row"><button class="seg ${uiEditor.reduced ? 'on' : ''}" data-act="uiPv" data-g="reduced">Reduced motion</button><select id="uiText" aria-label="Text size (Settings)"><option value="">Text: normal</option><option value="large" ${uiEditor.text === 'large' ? 'selected' : ''}>Text: large</option><option value="xlarge" ${uiEditor.text === 'xlarge' ? 'selected' : ''}>Text: larger</option></select>
   <div class="seg-row ui-ov" title="Mark what breaks the UI rules in the preview"><button class="seg ${uiOverlays.tap ? 'on' : ''}" data-act="uiOverlay" data-k="tap">Under 44 px</button><button class="seg ${uiOverlays.contrast ? 'on' : ''}" data-act="uiOverlay" data-k="contrast">Contrast</button><button class="seg ${uiOverlays.glass ? 'on' : ''}" data-act="uiOverlay" data-k="glass">Glass</button></div>
-  <button class="btn sm ${uiInspect.on ? 'on' : ''}" id="uiInsp" data-act="uiInspectOn" title="Tap a part in the preview: what it is and which dials reach it">Inspect</button>  <button class="btn sm" id="uiCmp" title="Hold (or hold C) to see the look as last saved">Hold to compare</button><a class="btn sm subtle" href="gallery.html" target="_blank" rel="noopener">Open the gallery</a></div></div>
+  <button class="btn sm ${uiEditor.split ? 'on' : ''}" id="uiSplit" data-act="uiSplit" title="The saved look and your unsaved look side by side, scrolled together">Before / after</button>  <button class="btn sm ${uiInspect.on ? 'on' : ''}" id="uiInsp" data-act="uiInspectOn" title="Tap a part in the preview: what it is and which dials reach it">Inspect</button>  <button class="btn sm" id="uiCmp" title="Hold (or hold C) to see the look as last saved">Hold to compare</button><a class="btn sm subtle" href="gallery.html" target="_blank" rel="noopener">Open the gallery</a></div></div>
   <div class="seg-row ui-views">${UI_VIEWS.map(([v, label]) => seg('view', v, label)).join('')}</div>
-  <div class="ui-pv ui-pv-slot ${uiEditor.view === 'gallery' ? '' : 'game'}" id="uiPvSlot" ${uiEditor.view === 'gallery' ? '' : `style="width:${uiEditor.width}"`}></div>
+  <div class="ui-pv-pair ${uiEditor.split ? 'split' : ''}">${uiEditor.split ? `<div class="ui-pv-col"><p class="ui-pv-cap">Before: the saved look</p><div class="ui-pv ui-pv-slot ${uiEditor.view === 'gallery' ? '' : 'game'}" id="uiPvBeforeSlot" ${uiEditor.view === 'gallery' ? '' : `style="width:${uiEditor.width}"`}></div></div>` : ''}<div class="ui-pv-col">${uiEditor.split ? '<p class="ui-pv-cap">After: your unsaved look</p>' : ''}<div class="ui-pv ui-pv-slot ${uiEditor.view === 'gallery' ? '' : 'game'}" id="uiPvSlot" ${uiEditor.view === 'gallery' ? '' : `style="width:${uiEditor.width}"`}></div></div></div>
   <p class="help ui-ov-note" id="uiOvNote" hidden></p>
   <div class="ui-inspect" id="uiInspect" hidden></div>
   <p class="help">${uiEditor.view === 'gallery' ? `The game’s own parts (studio/gallery.html) with your unsaved look${uiEditor.scope === 'game' ? '' : `, as on ${escapeHtml(uiScreenName(uiEditor.scope))}`}` : 'The game itself on this screen (a ready-made game of its own: nothing is saved to yours) with your unsaved look; it takes a few seconds to start'}. An open game tab follows too.</p></div></div></div></div>`;
@@ -388,6 +391,7 @@ function uiPreviewNow() {
     uiInspectPanel();
   }
   uiOverlaysSoon();
+  uiBeforeNow();
   return true;
 }
 function uiPreview() {
@@ -400,7 +404,9 @@ function mountUiPreview() {
     uiViewSrc(uiEditor.view),
     `${uiEditor.view === 'gallery' ? 'The UI gallery' : 'The game'} with this look`
   );
+  if (uiEditor.split) uiKeptFrame('uiPvBefore', uiViewSrc(uiEditor.view), 'The saved look');
   uiPreviewNow();
+  uiBeforeNow();
   const b = $('#uiCmp');
   b.onpointerdown = () => uiCompare(true);
   ['pointerup', 'pointerleave', 'pointercancel'].forEach(t => b.addEventListener(t, () => uiCompare(false)));
@@ -439,6 +445,38 @@ function uiFrameLoaded(id) {
     uiPreviewNow();
     uiInspectMount();
     uiOverlaysSoon();
+  } else uiBeforeNow();
+}
+/** the before frame takes the saved look, and follows the after frame's scroll */
+function uiBeforeNow() {
+  const f = uiKept.get('uiPvBefore');
+  if (!uiEditor.split || !f || !f.dataset.src) return;
+  uiLookTo(f, uiSaved());
+  const a = $('#uiPv'),
+    wa = a && a.contentWindow,
+    wb = f.contentWindow;
+  if (!wa || !wb || !wa.document) return;
+  const doc = wa.document;
+  if (uiBeforeNow.doc !== doc) {
+    uiBeforeNow.doc = doc;
+    // the scroll that matters: the page's, or the game screen's own scroller
+    wa.addEventListener(
+      'scroll',
+      ev => {
+        const t = /** @type {any} */ (ev.target),
+          wb2 = f.contentWindow;
+        if (!wb2 || !wb2.document) return;
+        if (t === doc || t === doc.documentElement) wb2.scrollTo(wa.scrollX, wa.scrollY);
+        else if (t && t.id) {
+          const o = wb2.document.getElementById(t.id);
+          if (o) o.scrollTop = t.scrollTop;
+        } else if (t && t.className && typeof t.className === 'string') {
+          const o = wb2.document.querySelector('.' + t.className.trim().split(/\s+/).join('.'));
+          if (o) o.scrollTop = t.scrollTop;
+        }
+      },
+      true
+    );
   }
 }
 /** lay each kept frame over its slot (every frame while one is shown) */
@@ -538,6 +576,10 @@ ACTIONS.uiFam = d => {
   uiEditor.fam = d.f;
   refreshUiSettings();
 };
+ACTIONS.uiSplit = () => {
+  uiEditor.split = !uiEditor.split;
+  render();
+};
 ACTIONS.uiPv = d => {
   /* UI-3b: another view is another page in the frame */
   if (d.g === 'view') {
@@ -554,8 +596,9 @@ ACTIONS.uiPv = d => {
       b.classList.toggle('on', b.dataset.g === 'reduced' ? uiEditor.reduced : uiEditor[b.dataset.g] === b.dataset.v)
     );
   /* a game screen's frame takes the width itself (the slot it lies over) */
-  const sl = $('#uiPvSlot');
-  if (sl && uiEditor.view !== 'gallery') sl.style.width = uiEditor.width;
+  for (const sl of document.querySelectorAll('#uiPvSlot, #uiPvBeforeSlot'))
+    if (uiEditor.view !== 'gallery') /** @type {HTMLElement} */ (sl).style.width = uiEditor.width;
+  uiBeforeNow();
   uiPreviewNow();
 };
 ACTIONS.uiReset = d => {

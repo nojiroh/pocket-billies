@@ -4542,3 +4542,16 @@ body.wb-dropping::after {
 .ui-views {
   margin-bottom: 8px;
 }
+.ui-pv-pair.split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.ui-pv-col {
+  min-width: 0;
+}
+.ui-pv-cap {
+  margin: 0 0 4px;
+  font-size: 12px;
+  color: var(--text2);
+}

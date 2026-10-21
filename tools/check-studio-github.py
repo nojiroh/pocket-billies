@@ -906,6 +906,24 @@ def ui_screens_steps(pg, errs):
     pg.click('[data-act=uiPv][data-g=view][data-v=gallery]')
     try: pg.wait_for_function(f"(w => w && typeof w.galleryLook === 'function')({W})", timeout=30000)
     except Exception: errs.append('the gallery did not come back')
+    # before/after: the saved look beside the edited one, scrolled together
+    pg.click('#uiSplit')
+    B = "document.querySelector('#uiPvBefore').contentWindow"
+    try: pg.wait_for_function(f"(w => w && typeof w.galleryLook === 'function' && w.document.querySelector('pb-card'))({B})", timeout=30000)
+    except Exception: errs.append('the before frame never showed the gallery')
+    pg.evaluate("uiEditor.open.shape = 1; refreshUiSettings()")
+    pg.evaluate("""(()=>{const r=document.querySelector('#uiSet input[data-p="uiTheme.defaults.shape.cutLg"]');r.value='30';
+      r.dispatchEvent(new Event('input',{bubbles:true}));r.dispatchEvent(new Event('change',{bubbles:true}))})()""")
+    cut = lambda w: pg.evaluate(f"(w => w.getComputedStyle(w.document.querySelector('pb-card')).getPropertyValue('--cut-lg').trim())({w})")
+    try: pg.wait_for_function(f"(w => w.getComputedStyle(w.document.querySelector('pb-card')).getPropertyValue('--cut-lg').trim() === '30px')({W})", timeout=10000)
+    except Exception: pass
+    if cut(W) != '30px' or cut(B) == '30px': errs.append(f'before/after: after {cut(W)!r}, before {cut(B)!r}')
+    pg.evaluate(f"{W}.scrollTo(0, 600)"); time.sleep(0.4)
+    if abs(pg.evaluate(f"{B}.scrollY") - pg.evaluate(f"{W}.scrollY")) > 2: errs.append('the before frame did not scroll with the after one')
+    pg.click('#undoBtn')
+    pg.click('#uiSplit')
+    if pg.evaluate("!!document.querySelector('#uiPvBeforeSlot')"): errs.append('before/after did not close')
+    else: print(f'ui screens: before/after (before {cut(B) if False else "the saved cut"}, after 30px, scrolled together)', flush=True)
     if len(errs) > n: errs[n:] = [f'ui screens: {e}' for e in errs[n:]]
 
 
