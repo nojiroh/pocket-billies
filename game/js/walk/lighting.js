@@ -5,6 +5,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { buildingState, frontWindowLight, litWindowFraction } from '../hooks.js';
+import { placedTurn, turnedPoint } from '../logic/prop-turn.js';
 import { nearestFirst, pooledQuad } from '../engine/frame-lists.js';
 import { hexToRgb } from '../art.js';
 import { hash2d, walkView } from '../walk-view.js';
@@ -119,6 +120,7 @@ export function walkLightContext(C, sun, dark, items, shadow, BT) {
     if (it.k !== 'prop' || it.far || it.layer) continue;
     const M = it.M,
       s = it.mpp,
+      ta = placedTurn(it.p) /* phase 09 batch 9: the placement's turn */,
       out = !!RR && (it.x < RR[0] || it.x > RR[0] + RR[2] || it.z < RR[1] || it.z > RR[1] + RR[3]),
       dark = out ? (dOut > 0.4 ? dOut : 0) : dark0L;
     if (!it.flat && it.sh > 0) {
@@ -128,15 +130,19 @@ export function walkLightContext(C, sun, dark, items, shadow, BT) {
           ? pooledQuad(
               AO_POOL,
               ao.length,
-              it.x,
-              it.z + box[1] * 0.5 * (it.p.s || 1),
-              box[0] * 0.62 * (it.p.s || 1),
-              box[1] * 0.75 * (it.p.s || 1)
+              /* phase 09 batch 9: under a turned prop's turned footprint (its middle; the soft patch stays square) */
+              turnedPoint(it.p, 0, box[1] * 0.5 * (it.p.s || 1))[0],
+              turnedPoint(it.p, 0, box[1] * 0.5 * (it.p.s || 1))[1],
+              (Math.abs(Math.cos(ta)) * box[0] * 0.62 + Math.abs(Math.sin(ta)) * box[1] * 0.75) * (it.p.s || 1),
+              (Math.abs(Math.sin(ta)) * box[0] * 0.62 + Math.abs(Math.cos(ta)) * box[1] * 0.75) * (it.p.s || 1)
             )
           : pooledQuad(AO_POOL, ao.length, it.x, it.z, Math.max(0.25, it.sh * 0.62), Math.max(0.2, it.sh * 0.47))
       );
     }
-    const at = (fx, fy) => [it.x + R[0] * fx * s * it.flip, it.y - fy * s, it.z + R[2] * fx * s * it.flip];
+    /* phase 09 batch 9: a turned prop's lamps and windows sit along its turned front */
+    const r0 = ta ? Math.cos(ta) : R[0],
+      r2 = ta ? Math.sin(ta) : R[2],
+      at = (fx, fy) => [it.x + r0 * fx * s * it.flip, it.y - fy * s, it.z + r2 * fx * s * it.flip];
     /* alpha 0.4: one light per lamp however many glasses it has (a four-lamp lantern took four of the sixteen lights and
      shone four times as bright, so lamps farther off got none), a pool of light on the ground under every lamp that hangs
      high, each lamp coming on at its own moment at dusk, and the windows' light as one soft pool in front of a house
@@ -163,7 +169,7 @@ export function walkLightContext(C, sun, dark, items, shadow, BT) {
     const wk = inRoom ? 0 : dark ? 1 : winDay;
     if (W && wk > 0.01) {
       const n = W.length,
-        fn = E ? E.fn : [0, -1],
+        fn = E ? E.fn : [Math.sin(ta), -Math.cos(ta)] /* phase 09 batch 9: out of a turned front */,
         cx = W.reduce((a, q) => a + q[0], 0) / n,
         cz = W.reduce((a, q) => a + q[2], 0) / n;
       L.push({

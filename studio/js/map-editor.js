@@ -22,6 +22,7 @@ import {
   scatterToolBarHTML,
 } from '../../game/js/hooks.js';
 import { $, $$, clamp } from '../../game/js/util.js';
+import { turnedPoint } from '../../game/js/logic/prop-turn.js';
 import {
   storyNamesIn,
   storyPreviewAllows,
@@ -104,6 +105,7 @@ expose({
   currentMap: [() => currentMap],
   currentMapId: [() => currentMapId],
   drawEditorMap: [() => drawEditorMap, v => (drawEditorMap = v)],
+  drawPropFacing: [() => drawPropFacing, v => (drawPropFacing = v)],
   drawScenePeople: [() => drawScenePeople, v => (drawScenePeople = v)],
   drawSceneryThumbs: [() => drawSceneryThumbs, v => (drawSceneryThumbs = v)],
   drawStepsOverlay: [() => drawStepsOverlay, v => (drawStepsOverlay = v)],
@@ -315,7 +317,13 @@ SECTIONS.scenes = () => {
       ? sc.props[mapEditor.sel]
       : null;
   const selCard = sel
-    ? `<div class="sc-sel"><b>${escapeHtml((sceneryCatalog().props[sel.k] || {}).name || sel.k)}</b>${grid(numberField('Across', `${p}.props.${mapEditor.sel}.x`, { step: 0.1 }), numberField('Depth', `${p}.props.${mapEditor.sel}.z`, { step: 0.1 }), numberField('Size', `${p}.props.${mapEditor.sel}.s`, { step: 0.05, min: 0.2, max: 4, opt: 1, ph: '1' }))}
+    ? `<div class="sc-sel"><b>${escapeHtml((sceneryCatalog().props[sel.k] || {}).name || sel.k)}</b>${grid(numberField('Across', `${p}.props.${mapEditor.sel}.x`, { step: 0.1 }), numberField('Depth', `${p}.props.${mapEditor.sel}.z`, { step: 0.1 }), numberField('Size', `${p}.props.${mapEditor.sel}.s`, { step: 0.05, min: 0.2, max: 4, opt: 1, ph: '1' }), numberField('Turn', `${p}.props.${mapEditor.sel}.rot`, { step: 15, min: -180, max: 180, opt: 1, ph: '0', unit: '°' }))}
+  <div class="seg-row sc-turn"><button class="btn sm" data-act="scxTurn" data-by="-15" title="Turn left 15° ([)">⟲ 15°</button><button class="btn sm" data-act="scxTurn" data-by="15" title="Turn right 15° (])">⟳ 15°</button><button class="btn sm" data-act="scxTurn" data-by="90" title="A quarter turn (Shift+])">⟳ 90°</button>${sel.rot ? '<button class="btn sm subtle" data-act="scxTurn" data-to="0">Straight</button>' : ''}<small class="help">[ and ] turn it 15°, with Shift 90°, with Alt 1°. It turns about its base point, the middle of its front.${(() => {
+    const P0 = sceneryCatalog().props[sel.k] || {};
+    return (P0.door || sel.room) && Math.abs(sel.rot || 0) > 15
+      ? ' <b>Its room inside stays square to the map:</b> keep buildings you walk into to a few degrees.'
+      : '';
+  })()}</small></div>
   ${grid(
     selectField(
       'When tapped',
@@ -1232,6 +1240,7 @@ export function drawEditorMap() {
     });
     x.fillStyle = 'rgba(30,26,52,.5)';
     x.fillRect(px - 1.5, py - 1.5, 3, 3);
+    if (p.rot || i === mapEditor.sel) drawPropFacing(x, p, M, Z, H);
     if (gone) {
       const b = mapEditor.boxes[mapEditor.boxes.length - 1];
       x.save();
@@ -2680,6 +2689,54 @@ function stepsPointerUp(sc, D) {
   changed();
   commit(true);
   drawEditorMap();
+}
+/* phase 09 batch 9: which way a turned prop faces, on the map: its footprint turned (a box) and an arrow out of its
+   front. The map shows the land from above with z up the screen, so a point's screen y is (H - z) * Z. */
+function drawPropFacing(x, p, M, Z, H) {
+  const S = (a, b) => {
+      const q = turnedPoint(p, a, b);
+      return [q[0] * Z, (H - q[1]) * Z];
+    },
+    s = p.s || 1;
+  x.save();
+  x.strokeStyle = 'rgba(242,193,78,.95)';
+  x.fillStyle = 'rgba(242,193,78,.95)';
+  x.lineWidth = 1.5;
+  if (M && M.box) {
+    const w = (M.box[0] * s) / 2,
+      d = M.box[1] * s;
+    x.setLineDash([3, 2]);
+    x.beginPath();
+    for (const [j, [a, b]] of [
+      [-w, -0.1],
+      [w, -0.1],
+      [w, d],
+      [-w, d],
+    ].entries()) {
+      const [u, v] = S(a, b);
+      if (j) x.lineTo(u, v);
+      else x.moveTo(u, v);
+    }
+    x.closePath();
+    x.stroke();
+    x.setLineDash([]);
+  }
+  const L = Math.max(0.6, M && M.box ? Math.min(M.box[0], M.box[1]) * s * 0.5 : 0.6),
+    [ax, ay] = S(0, 0),
+    [bx, by] = S(0, -L),
+    [lx, ly] = S(-0.18, -L + 0.25),
+    [rx, ry] = S(0.18, -L + 0.25);
+  x.beginPath();
+  x.moveTo(ax, ay);
+  x.lineTo(bx, by);
+  x.stroke();
+  x.beginPath();
+  x.moveTo(bx, by);
+  x.lineTo(lx, ly);
+  x.lineTo(rx, ry);
+  x.closePath();
+  x.fill();
+  x.restore();
 }
 function drawStepsOverlay(x, sc, Z) {
   const E = mapEditor.stE || stepGrid(sc),

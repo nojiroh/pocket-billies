@@ -15,6 +15,7 @@ import {
   stampDraw,
   worldBillyGlows,
 } from '../hooks.js';
+import { placedTurn } from '../logic/prop-turn.js';
 import { hexToRgb } from '../art.js';
 import { EFFECT_FRAMES, artImage, walkData, walkView } from '../walk-view.js';
 import { engineContext, engineSetting } from '../engine/settings.js';
@@ -82,11 +83,15 @@ export function effectsPass(C, items, X, dark, t, dt) {
       chim = it.bld3 && typeof chimneySmoke === 'function' ? chimneySmoke(it) : null,
       out = !!RR && (it.x < RR[0] || it.x > RR[0] + RR[2] || it.z < RR[1] || it.z > RR[1] + RR[3]),
       dIt = out ? (dOut > 0.4 ? dOut : 0) : dark;
+    /* phase 09 batch 9: a turned prop's chimneys and lamps sit along its turned front, not the camera's way */
+    const ta = placedTurn(it.p),
+      r0 = ta ? Math.cos(ta) : R[0],
+      r2 = ta ? Math.sin(ta) : R[2];
     (it.M.fx || []).forEach((e, i) => {
       const dark = dIt;
       const cs = chim && e.k === 'smoke',
-        x = cs ? chim[0] : it.x + R[0] * e.x * s * it.flip,
-        z = cs ? chim[2] : it.z + R[2] * e.x * s * it.flip + (e.z || 0),
+        x = cs ? chim[0] : it.x + r0 * e.x * s * it.flip - (ta ? r2 * (e.z || 0) : 0),
+        z = cs ? chim[2] : it.z + r2 * e.x * s * it.flip + (e.z || 0) * (ta ? r0 : 1),
         y = cs ? chim[1] : it.y - e.y * s,
         sd = it.x * 13.1 + it.z * 7.7 + i,
         fl = 1 - flick * 0.2 + flick * 0.2 * Math.sin(t / 170 + sd * 3) * Math.sin(t / 97 + sd);

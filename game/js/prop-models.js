@@ -10,6 +10,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { gameData, provide, reducedMotion } from './hooks.js';
+import { propTurn } from './logic/prop-turn.js';
 import { artImg, artURL, hexToRgb, makeCanvas } from './art.js';
 import { artImage, walkView } from './walk-view.js';
 import { engineSetting } from './engine/settings.js';
@@ -1452,7 +1453,7 @@ function propModelImageItems(it, out) {
   if (!rec) return;
   const s = it.p.s || 1,
     f = it.flip || 1,
-    ro = it.lk && it.lk.rot ? it.lk.rot * 0.6 : 0,
+    ro = propTurn(it) /* phase 09 batch 9: the placement's turn too (logic/prop-turn.js) */,
     cr = Math.cos(ro),
     sr = Math.sin(ro);
   for (const L of rec.layers || []) {
@@ -1490,7 +1491,7 @@ function propModelImageItems(it, out) {
       noRecv: L.recv === 0,
       fixed: L.face === 'fixed',
       plane: L.face === 'fixed',
-      yaw: L.face === 'fixed' ? +L.yaw || 0 : 0,
+      yaw: L.face === 'fixed' ? (+L.yaw || 0) + ro : 0 /* phase 09 batch 9: a decal turns with its model */,
       mat: it.mat,
       layer: L,
       still: it.still,
@@ -1625,7 +1626,7 @@ function setPropModelUniforms(p, it) {
     bo = mooredBob(it);
   gl.uniform3f(U.uBase, it.x, it.y + (bo ? bo[0] : 0), it.z);
   gl.uniform1f(U.uS, s);
-  gl.uniform1f(U.uRot, (it.lk && it.lk.rot ? it.lk.rot * 0.6 : 0) + (bo ? bo[1] : 0));
+  gl.uniform1f(U.uRot, propTurn(it) + (bo ? bo[1] : 0)); /* phase 09 batch 9: and the placement's turn */
   gl.uniform1f(U.uFlip, it.flip || 1);
 }
 export function drawPropModels(C, items, X, hits, labels, PPU) {

@@ -24,6 +24,7 @@ import {
   worldBillies,
   worldBillyItem,
 } from '../hooks.js';
+import { turnedPoint } from '../logic/prop-turn.js';
 import { folkFrames, personBattlePose, personWalkFrames, pickWalkFrame, warmPerson } from '../person-art.js';
 import {
   WALK_FRAME_M,
@@ -177,8 +178,9 @@ export function gatherFrameItems(st, C, PPU, C0) {
           p,
           M,
           im: fim,
-          x: p.x + F.dx * ps * fl,
-          z: p.z,
+          /* phase 09 batch 9: on a turned pole the cloth hangs from the turned top */
+          x: turnedPoint(p, F.dx * ps * fl, 0)[0],
+          z: turnedPoint(p, F.dx * ps * fl, 0)[1],
           y: y + F.h * ps,
           mpp: 1,
           ox: 0,
@@ -218,8 +220,9 @@ export function gatherFrameItems(st, C, PPU, C0) {
           p,
           M,
           im: li,
-          x: lx,
-          z: p.z + (l.dz || 0) * (p.s || 1),
+          /* phase 09 batch 9: a turned prop's layers stand behind it the way it faces */
+          x: turnedPoint(p, lx - p.x, (l.dz || 0) * (p.s || 1))[0],
+          z: turnedPoint(p, lx - p.x, (l.dz || 0) * (p.s || 1))[1],
           y,
           mpp: s,
           ox: LM.ox,
@@ -441,10 +444,10 @@ function propBaseHeight(p, M) {
       lv = stepLevelAt(p.x, p.z);
     let y = y0;
     for (const [x, z] of [
-      [p.x - bw, p.z - 0.05],
-      [p.x + bw, p.z - 0.05],
-      [p.x - bw, p.z + bd],
-      [p.x + bw, p.z + bd],
+      turnedPoint(p, -bw, -0.05),
+      turnedPoint(p, bw, -0.05),
+      turnedPoint(p, -bw, bd),
+      turnedPoint(p, bw, bd),
     ])
       if (Math.abs(stepLevelAt(x, z) - lv) <= 0.05) y = Math.min(y, standingHeightAt(x, z));
     return y;
