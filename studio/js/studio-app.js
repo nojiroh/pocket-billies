@@ -206,7 +206,7 @@ export function changed(rigs) {
 }
 /* v29: live update. A game tab open from this Studio (a test run, or the game on the same address) gets your scenes,
    props and engine settings (Project Story S3: and the story and trainers) half a second after each change, before
-   you save */
+   you save; UI-3: and the UI's look */
 const LIVE_UPDATE_CHANNEL = (() => {
   try {
     const c = new BroadcastChannel('networth-studio');
@@ -236,6 +236,8 @@ export function studioBroadcast() {
           /* phase 10, session 5: the world map's look and each place's landmark */
           worldmap: studioState.D.worldmap,
           landmarks: Object.fromEntries((studioState.D.locations || []).map(l => [l.id, l.landmark || ''])),
+          /* UI-3: the UI's look (the game writes it as its theme sheet) */
+          uiTheme: studioState.D.uiTheme,
         },
       });
     } catch (e) {}
