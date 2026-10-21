@@ -784,7 +784,7 @@ export interface Rules {
       itemShare: number;
       /** Capital per Billie released in the run */
       released: number;
-      /** Capital per node arrived at */
+      /** Capital per node cleared (each node once, however often it was walked back to; RL-6) */
       node: number;
       /** Capital for a win */
       win: number;

@@ -98,6 +98,19 @@ rule rejects only an offset of exactly x.5 m (now `logic/seam-rules.js:122`, mov
 -> 0.8 MB. Kept, against this plan: fishing.json (keyed by water, not place; Copperleaf has water) and the postcard
 pictures (loaded only on arrival). Left dead in the data: `rules.json legends[].scene` (cinderpeak, frostcrown),
 `scenery.json` flags (parked towns), `biomes.json from`, the parked places' pools.
+**Corrected in RL-6 (2026-10-21).** The climate odds can't make a forecast alone: no place, map or biome had a climate
+(`environmentClimate` guesses one from a scene's fields, and a node's weather is needed before its scene exists), so
+biomes.json rows got `climate` (today's guess for each biome's generated scene, default dials; a map with coast water
+guesses coast whatever its biome, so RL-7 writes `scene.climate` from the biome). `weatherPick(climate, rnd)` became
+`weatherPick(climate, roll, season)`: the page's pick changes the mild odds by season first; environment.js is on the
+Studio page too, so logic/weather.js loads on both. `runMapMake` takes no tier (tiers change nothing until RL-13).
+The seam rules cap a node at two links each way (two exits a side, 44 m apart: t 0.5, or 0.25 and 0.75). On the bowl
+every map's north faces the centre, so a run's rows go from the rim (r 0.94) towards it (0.12), on the south side;
+the hub's 30-degree seam rule holds for straight links and splits, not for a lane switch (45 is tested; 34 seen on the
+game's rules). `runEnd` paid per node cleared from the path's length, which counts backtracks: now distinct nodes.
+`forecast[node][day]` is `forecast[world node][day - 1]`; the node seed uses the map's numbering. "About 14 nodes"
+needs two lanes on almost every free or town row: with the 70% chosen, a map has 12.5 on average (9 to 14), and towns
+are 4.4 of them (the two rows before the mini-boss rows, plus a filler at weight 1 of 5).
 
 ### Findings A: battle, state, randomness, saves (verified)
 
@@ -417,7 +430,9 @@ on the board, `shop` at a building, `auto` by condition) and `requires` drawing 
 `PB_DATA.mergeInto` (build, Studio, fallback), ids prefixed `<pack>_`, duplicates a check-data error, text escaped on
 output; no code in packs, no remote loader (RL-16). Rejected: a JS plugin registry (packs would ship code), a DSL.
 
-**2e. The node map, clock, bowl, seamless world, airship.** `run.map` from `logic/run-map.js runMapMake(seed, tier,
+**2e. The node map, clock, bowl, seamless world, airship.** (Built in RL-6 as section 0 says: `runMapMake(seed,
+nodeTypes, rules.run.map)`, `runMapStart`, `runArrive`; the rows' roles are rules.json `run.map`'s, fillers are
+nodeTypes.json weights; shops and their apart rule come with RL-12.) `run.map` from `logic/run-map.js runMapMake(seed, tier,
 nodeTypes, rules.run)`: a layered DAG, row 0 the landing, rows 1..R-2 of one or two nodes (two lanes, a merge every
 2-3 rows), the boss last; R = 9 (estimate) gives about 14 nodes with 9 walked. Row rules in `rules.run` (a town
 before each mini-boss, mini-bosses near R/3 and 2R/3, no two shops adjacent). Reveal: on arrival at row r, row r+1
@@ -577,7 +592,9 @@ break: the Studio's Generate card. 1 session.
 `runOverdue`, bowl spots), `logic/weather.js` (move of `CLIMATE_WEATHER_ODDS`; `weatherPick(climate, rnd)`),
 `data/nodeTypes.json` + schema + type + check + export, `rules.json run`. Tests: `run-map.test.mjs` (same seed same
 snapshot, every node reachable, 8-12 nodes on every path, row rules, reveal, backtrack ticks, forecast determinism,
-deadline maths). Could break: nothing in the page. 1 session.
+deadline maths). Could break: nothing in the page. 1 session. Done 2026-10-21 (HANDOFF; section 0 for what changed
+from this paragraph): also `runMapRows`, `runMapStart`, `runBack`, `runExits`, `runSpot`, `runForecastFill`, biome
+climates, the payout's distinct nodes; `run-map-real.test.mjs` and `weather.test.mjs`.
 
 **RL-7 Run world.** Files: `game/index.html` (+ mapgen), new `run-world.js` (`runWorldInstall`/`runWorldRestore`,
 lazy generation, run trainers, `seamlessWorld.gen++`, `worldBowlReset()`), `boot.js` (install before
@@ -710,7 +727,8 @@ Decided this session: the rework is a track RL-N (`rl-N-done`); parked phases ar
 8. **First-cut shape:** five nodes made, four walked, one branch (recommended) / four in a line / the full ~14-node map.
 9. **Battle formats and turn cap:** by node type with a 40-turn cap (recommended) / singles everywhere / cap 30.
 10. **Clock numbers:** a day per arrival including backtracking, deadline = shortest path + 3, no tick for healing or
-    waiting until the first play (recommended) / + 5 / healing +1 and waiting +2.
+    waiting until the first play (recommended) / + 5 / healing +1 and waiting +2. **Answered in RL-6: the
+    recommendation** (rules.json `run.clock`).
 11. **Hardening items that change behaviour:** SECURITY A and B, delete the 16 version-stamped tools (recommended) /
     move the tools to `tools/legacy/`.
 12. **SAVE_VERSION 4** sets aside every current save on your phone and account; and the `saves/{uid}` key whitelist
@@ -723,7 +741,9 @@ Decided this session: the rework is a track RL-N (`rl-N-done`); parked phases ar
 17. **Order after the first cut:** the brief's (ranch, hub upgrades, relics, modifiers, bots, online; recommended) /
     relics and currencies before the ranch.
 18. **Tuning placeholders in `rules.run`:** rows 9, slack 3, healCost 60, the Capital rate, relic cap 6, turnCap 40,
-    income cap 24 h, as starting values.
+    income cap 24 h, as starting values. **RL-6 took the map's:** 9 rows, 2 mini-bosses, two lanes on 70% of free
+    and town rows, a lane switch on 25% of lane pairs, the five biomes with finished plants (meadow 3, lake 2, thicket
+    2, ridge 1, autumn 1, each node its own); reveal the next row, '?' on the row after, the boss always.
 19. **Tags:** push the outstanding `phase-*`, `st-*`, `mg-*` tags from your machine so CI's full run can fire on
     `rl-*`.
 20. **Opening:** keep city → fall → Hazel/Blake and add Hazel's "the airship is waiting" lines (recommended) / shorten

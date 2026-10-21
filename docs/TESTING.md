@@ -76,6 +76,15 @@ Two rules hold everywhere:
 - The save's run state (RL-3: `meta-state`, `ranch-state`, `run-state` and `saves.test.mjs`): run on the fixture's
   three locations, so a save from a run sits at node 4, past `LOCATIONS`, to prove `migrate` keeps a run's trip by the
   run's map and not by today's places. Switching that branch off turns the run-save test red.
+- The run map and clock (RL-6: `run-map.test.mjs`, `run-map-real.test.mjs`, `weather.test.mjs`): run-map.test on
+  small tables of its own (five node types, the five biomes as mild), run-map-real on the game's (nodeTypes.json,
+  rules.json `run`, biomes.json). A map is frozen in `run-map.test.mjs.snapshot`: a change meant to change maps remakes
+  it (`--test-update-snapshots`) and says so in the commit; each choice has its own stream (`map|shape|<row>`,
+  `map|type|<row>|<lane>`, `map|biome|<row>|<lane>`, a node's `weather|<day>`), so a rule's change moves only what it
+  rules (tested for `cross`). The structure rules run over 1,300 maps of 5 to 12 rows; the bowl's are the hub's
+  (`bowl-layout.test.mjs`: pins apart, roads within 30 degrees of their exits) but 0.07 apart and 45 degrees for a
+  lane switch, which the rows' spacing can't keep within 30. weather.test checks `weatherPick` against the page's old
+  pick for every roll its hash can give: a change to the weather's odds or its order fails it on purpose.
 - The world (RL-5): the game's world is Copperleaf alone; the old one is parked in `game/data/legacy` (its own
   `legacy/index.json`, read by `readLegacyData()` in `tools/data-files.mjs`, null without one). A test that uses the
   old places as test data (the bowl's ground and landmarks, scripts said there) reads `oldWorld()`
