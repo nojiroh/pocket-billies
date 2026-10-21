@@ -91,11 +91,15 @@ expose({
   applyStatStages: [() => applyStatStages, v => (applyStatStages = v)],
   // @ts-expect-error -- replaced on purpose
   award: [() => award, v => (award = v)],
+  battleBag: [() => battleBag],
+  battleBuddy: [() => battleBuddy],
   battleHere: [() => battleHere, v => (battleHere = v)],
   battleHost: [() => battleHost],
   battleNow: [() => battleNow],
+  battleOnSave: [() => battleOnSave],
   // @ts-expect-error -- replaced on purpose
   battleSay: [() => battleSay, v => (battleSay = v)],
+  battleSeen: [() => battleSeen],
   // @ts-expect-error -- replaced on purpose
   battleStageKey: [() => battleStageKey, v => (battleStageKey = v)],
   // @ts-expect-error -- replaced on purpose
@@ -196,6 +200,13 @@ export const SILENT_HOST = Object.freeze({
   weather: () => 1,
 });
 export const battleHost = (b = battleNow()) => (b && b.host) || PAGE_HOST;
+/* RL-4: a battle on the save's own team (the page's battles: newBattle) marks species seen, spends items and
+   gives the buddy its XP in the save, as always. A battle on a copied team (a ghost, a simulation) touches nothing of
+   the save: it brings its own seen list (b.seen), bag (b.bag, item id -> count) and buddy uid (b.buddy), or none. */
+export const battleOnSave = b => !!b && b.sides[0].team === saveData.team;
+export const battleSeen = (b = battleNow()) => (!b || battleOnSave(b) ? saveData.seen : b.seen || (b.seen = {}));
+export const battleBag = b => (!b || battleOnSave(b) ? saveData.items : b.bag || (b.bag = {}));
+export const battleBuddy = b => (battleOnSave(b) ? saveData.buddy : b.buddy);
 export const BATTLE_RULES = RULES.battle,
   CATCH_RULES = RULES.catching;
 export const ACTOR_SIDE = [0, 1, 0, 1, 0],
@@ -669,13 +680,15 @@ export function award(e) {
     gainXp(m, amt, battleSay);
   });
   /* phase 08: your buddy gets the full amount even when it didn't fight (it got its XP from walking before) */
-  const bud = saveData.team.find(m => m.uid === saveData.buddy && !on.includes(m) && m.hp > 0);
+  const mine = battleNow().sides[0].team,
+    buddy = battleBuddy(battleNow());
+  const bud = mine.find(m => m.uid === buddy && !on.includes(m) && m.hp > 0);
   if (bud) {
     battleSay(`${billyName(bud)} gained ${formatNumber(amt)} XP.`);
     gainXp(bud, amt, battleSay);
   }
   const share = Math.floor(amt * P.teamXpShare),
-    rest = saveData.team.filter(m => !on.includes(m) && m !== bud && m.hp > 0);
+    rest = mine.filter(m => !on.includes(m) && m !== bud && m.hp > 0);
   if (rest.length && share > 0) {
     rest.forEach(m => gainXp(m, share, () => {}));
     battleSay(`The rest of the team gained ${formatNumber(share)} XP.`);
@@ -726,7 +739,7 @@ export function doSwitch(k, idx, b) {
         si: k,
       }
     );
-    if (!isRobot(m)) saveData.seen[m.sp] = 1;
+    if (!isRobot(m)) battleSeen()[m.sp] = 1;
     if (sd.rent && !hasPassive(speciesOf(m).types, 'landlord')) {
       const d = Math.max(1, Math.floor(maxHp(m) / Math.max(2, BATTLE_RULES.rentFraction)));
       m.hp = Math.max(0, m.hp - d);
@@ -1095,13 +1108,14 @@ export function catchRoll(id, T, spin, b) {
     return { caught: w === 3, w, edge: false, P };
   });
 }
-export const teamNeedsHp = () => saveData.team.some(m => m.hp > 0 && m.hp < maxHp(m));
-export const canUse = (it, m) => {
+/* the items: out of battle (b not given) on the save's team and bag; with a battle, on that battle's team and bag */
+export const teamNeedsHp = b => (b ? b.sides[0].team : saveData.team).some(m => m.hp > 0 && m.hp < maxHp(m));
+export const canUse = (it, m, b) => {
   const I = ITEMS[it];
-  if (!I || !saveData.items[it] || I.evoItem) return false;
+  if (!I || !battleBag(b)[it] || I.evoItem) return false;
   if (I.revive) return m.hp <= 0;
   if (m.hp <= 0) return false;
-  if (I.hpAll) return teamNeedsHp();
+  if (I.hpAll) return teamNeedsHp(b);
   /* phase 17: a repair kit fixes a robot's damaged parts */
   if (I.repair) return partsDamaged(m);
   const hurt = m.hp < maxHp(m);
@@ -1109,11 +1123,13 @@ export const canUse = (it, m) => {
   if (I.hp) return hurt;
   return false;
 };
-export function applyItem(it, id, inB) {
-  const I = ITEMS[it],
-    m = findBilly(id);
-  if (!m || !canUse(it, m)) return false;
-  saveData.items[it]--;
+/* inB: used in a battle's turn (the current battle, or b) */
+export function applyItem(it, id, inB, b) {
+  const X = b || (inB ? battleNow() : null),
+    I = ITEMS[it],
+    m = X ? X.sides[0].team.find(q => q.uid === id) : findBilly(id);
+  if (!m || !canUse(it, m, X)) return false;
+  battleBag(X)[it]--;
   const t = [];
   let healed = 0;
   if (I.revive) {
@@ -1140,7 +1156,7 @@ export function applyItem(it, id, inB) {
     }
     if (I.hpAll) {
       let n = 0;
-      saveData.team.forEach(x => {
+      (X ? X.sides[0].team : saveData.team).forEach(x => {
         if (x.hp > 0) {
           /* if (I.hpAll) above; TypeScript doesn't carry that into the callback */
           const g = Math.min(/** @type {number} */ (I.hpAll), maxHp(x) - x.hp);
@@ -1161,7 +1177,7 @@ export function applyItem(it, id, inB) {
     t.forEach((x, i) =>
       battleSay(x, i === 0 && onField ? { k: 'heal', si: kOn ?? 0, amt: healed || undefined } : null)
     );
-  } else battleHost().toast(t.join(' '));
-  battleHost().save();
+  } else battleHost(X).toast(t.join(' '));
+  battleHost(X).save();
   return true;
 }
