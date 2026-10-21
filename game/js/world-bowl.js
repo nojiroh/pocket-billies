@@ -17,6 +17,7 @@ import { airshipFlight, flyDraw, flySkip, flyTick, paintWorldMapCard, provide, r
 import { $ } from './util.js';
 import { LOCATIONS, LOCATION_BY_ID, ROADS, gameData, locationSubtitle } from './game-data.js';
 import { canEnter, distanceText, tripTo } from './logic/rules.js';
+import { runMarkDraw } from './logic/run-marks.js';
 import {
   BOWL_GROUND_EXTENT,
   bowlCoastAt,
@@ -116,6 +117,7 @@ expose({
   bowlHash: [() => bowlHash],
   bowlNoise: [() => bowlNoise, v => (bowlNoise = v)],
   bowlWallTexture: [() => bowlWallTexture, v => ((bowlWallTexture = v), provide({ bowlWallTexture }))],
+  runPinColors: [() => runPinColors],
   worldBowl: [() => worldBowl],
   worldBowlAtlas: [() => worldBowlAtlas, v => (worldBowlAtlas = v)],
   worldBowlCloudsNow: [() => worldBowlCloudsNow, v => (worldBowlCloudsNow = v)],
@@ -140,6 +142,9 @@ expose({
   worldBowlReset: [() => worldBowlReset, v => (worldBowlReset = v)],
   worldBowlRiversInto: [() => worldBowlRiversInto, v => (worldBowlRiversInto = v)],
   worldBowlRoadsInto: [() => worldBowlRoadsInto, v => (worldBowlRoadsInto = v)],
+  worldBowlRunColors: [() => worldBowlRunColors, v => (worldBowlRunColors = v)],
+  worldBowlRunMark: [() => worldBowlRunMark, v => (worldBowlRunMark = v)],
+  worldBowlRunPin: [() => worldBowlRunPin, v => (worldBowlRunPin = v)],
   worldBowlShadowUniforms: [() => worldBowlShadowUniforms, v => (worldBowlShadowUniforms = v)],
   worldBowlShadows: [() => worldBowlShadows, v => (worldBowlShadows = v)],
   worldBowlSkyAt: [() => worldBowlSkyAt, v => (worldBowlSkyAt = v)],
@@ -2408,10 +2413,13 @@ function worldBowlOverlay(t) {
   worldBowl.marks = [];
   LOCATIONS.forEach((l, i) => {
     const s = worldBowl.spots[i],
-      base = at(s);
-    if (!base) return;
+      base = at(s),
+      rm = worldBowlRunMark(i);
+    /* RL-7: a run's place the map doesn't show yet has no pin at all */
+    if (!base || (rm && !rm.seen)) return;
     let top = { x: base.x, y: base.y - BOWL_PIN, z: base.z };
-    if (s.under) {
+    if (rm) worldBowlRunPin(c, base.x, base.y, rm, i === sel);
+    else if (s.under) {
       /* reached by lift: a small marker just under its parent, a dashed line up to it */
       const y = base.y + 26;
       c.setLineDash([3, 4]);
@@ -2431,8 +2439,8 @@ function worldBowlOverlay(t) {
     } else worldBowlPin(c, base.x, base.y, l, i);
     worldBowl.marks.push({ i, base, top, z: base.z });
     const here = i === saveData.trip.node,
-      locked = !canEnter(i),
-      fresh = !saveData.visited[i] && !locked;
+      locked = !rm && !canEnter(i),
+      fresh = !rm && !saveData.visited[i] && !locked;
     if (here) {
       const k = 1 + 0.15 * Math.sin(t / 300);
       c.strokeStyle = 'rgba(255,226,122,.95)';
@@ -2451,7 +2459,8 @@ function worldBowlOverlay(t) {
     if (locked) worldBowlLock(c, top.x, top.y - 12);
     else if (fresh) worldBowlDot(c, top.x + 9, top.y - 6, 4, '#ff9ec4');
     if (i === dest && !here) worldBowlDot(c, top.x, top.y - 12, 5, '#FFE27A');
-    if (l.town || i === sel || here || close) {
+    /* a run's '?' place keeps its name to itself */
+    if ((!rm || rm.seen > 1) && (l.town || i === sel || here || close)) {
       const y = (s.under ? top.y + 10 : top.y - 12) + (locked ? -12 : 0);
       c.font = `${l.town ? '700 ' : ''}${l.town ? 12 : 11}px system-ui, sans-serif`;
       c.textAlign = 'center';
@@ -2515,6 +2524,80 @@ function worldBowlLine(c, nodes, col, w, dash, off) {
   c.lineWidth = w;
   c.stroke();
   c.setLineDash([]);
+}
+/* RL-7: a run's place on the bowl: its node's type and how much of it the map shows (run.map node seen: 0 nothing,
+   1 a '?', 2 its type), and its state for the marker (logic/run-marks.js): where you stand, walked, shown, or '?';
+   null for a hub place or outside a run */
+export function worldBowlRunMark(i) {
+  const run = saveData.run,
+    l = LOCATIONS[i];
+  if (!run || !run.map || !l || l.runNode == null || !run.map.nodes[l.runNode]) return null;
+  const node = run.map.nodes[l.runNode],
+    seen = i === saveData.trip.node ? 2 : node.seen || 0,
+    state =
+      i === saveData.trip.node ? 'current' : seen < 2 ? 'hidden' : run.path.includes(l.runNode) ? 'visited' : 'seen';
+  return { seen, type: node.type, state };
+}
+/* the marker's colours from the UI's look (uiTheme.json through the page's custom properties), as the run parts' own
+   markers take them (ui-run-kit.js pb-node): a fill per role and a darker edge. Read again when the look changes */
+const runPinColors = { key: '', colors: /** @type {Record<string, {fill: string, edge: string}>} */ ({}) };
+function worldBowlRunColors() {
+  const cs = getComputedStyle(document.documentElement),
+    v = (/** @type {string} */ k) => cs.getPropertyValue(k).trim(),
+    P = v('--c-primary'),
+    D = v('--c-danger'),
+    G = v('--gold-b'),
+    S = v('--c-surface'),
+    T = v('--c-text'),
+    key = [P, D, G, S, T].join('|');
+  if (runPinColors.key !== key) {
+    const rgb = (/** @type {string} */ col) => {
+        const x = worldMap.ctx || document.createElement('canvas').getContext('2d');
+        x.fillStyle = '#000';
+        x.fillStyle = col;
+        const h = String(x.fillStyle),
+          m = h.match(/^#([0-9a-f]{6})$/i);
+        return m
+          ? [0, 2, 4].map(k => parseInt(m[1].slice(k, k + 2), 16))
+          : (h.match(/[\d.]+/g) || [0, 0, 0]).slice(0, 3).map(Number);
+      },
+      mix = (/** @type {string} */ a, /** @type {string} */ b, /** @type {number} */ k) => {
+        const A = rgb(a),
+          B = rgb(b);
+        return `rgb(${A.map((c, n) => Math.round(c * k + B[n] * (1 - k))).join(',')})`;
+      };
+    runPinColors.key = key;
+    runPinColors.colors = {
+      primary: { fill: P, edge: mix(P, '#000', 0.55) },
+      danger: { fill: D, edge: mix(D, '#000', 0.55) },
+      gold: { fill: G, edge: mix(G, '#000', 0.5) },
+      surface: { fill: S, edge: T },
+      muted: { fill: mix(T, S, 0.22), edge: mix(T, S, 0.45) },
+    };
+  }
+  return runPinColors.colors;
+}
+/* RL-7: a run's place's pin: the stalk, and its node's marker for a head (a '?' while the map shows only its row) */
+function worldBowlRunPin(c, x, y, rm, picked) {
+  const head = y - BOWL_PIN;
+  c.fillStyle = 'rgba(20,10,40,.3)';
+  c.beginPath();
+  c.ellipse(x, y, 5, 2, 0, 0, 7);
+  c.fill();
+  c.strokeStyle = picked ? '#fff' : 'rgba(20,14,30,.75)';
+  c.lineWidth = 3;
+  c.beginPath();
+  c.moveTo(x, y);
+  c.lineTo(x, head + 6);
+  c.stroke();
+  const look = runMarkDraw(c, x, head, rm.state === 'current' ? 22 : 18, rm.type, rm.state, worldBowlRunColors());
+  if (look.glyph === '?') {
+    c.font = '700 10px system-ui, sans-serif';
+    c.textAlign = 'center';
+    c.textBaseline = 'middle';
+    c.fillStyle = worldBowlRunColors().surface.fill;
+    c.fillText('?', x, head + 0.5);
+  }
 }
 /* a place's pin: a stalk standing on its spot and a round head, a house for a town; locked grey, here gold, picked
    white */
@@ -2717,7 +2800,8 @@ export function worldBowlPick(e) {
     if (g) {
       let gd = 0.07;
       worldBowl.spots.forEach((s, i) => {
-        if (s.under) return;
+        const rm = worldBowlRunMark(i);
+        if (s.under || (rm && !rm.seen)) return;
         const dd = Math.hypot(s.x - g[0], s.y - g[1]);
         if (dd < gd) {
           gd = dd;
@@ -2835,6 +2919,11 @@ function worldMapPinState(i) {
   };
 }
 function worldMapLocationListHTML() {
+  /* RL-7: a run's places only once the map shows what they are */
+  const shown = (/** @type {number} */ i) => {
+    const rm = worldBowlRunMark(i);
+    return !rm || rm.seen > 1;
+  };
   const rows = LOCATIONS.map((n, i) => {
     const st = worldMapPinState(i),
       t = i === saveData.trip.node ? null : tripTo(i),
@@ -2855,7 +2944,7 @@ function worldMapLocationListHTML() {
       g: i === saveData.trip.node ? 0 : locked ? 3 : saveData.visited[i] ? 1 : 2,
       metres: t ? t.metres : 1e9,
     };
-  });
+  }).filter(r => shown(r.i));
   rows.sort((a, b) => a.g - b.g || a.metres - b.metres);
   const G = ['Here', 'Visited', 'Not visited yet', 'Locked'];
   let h = `<div class="mpl-head"><b>Places</b>${worldMap.gl ? '<button class="mbtn sm" data-a="mlist" aria-label="Close">×</button>' : ''}</div><div class="mpl-body">`,
