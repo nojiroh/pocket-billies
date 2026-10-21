@@ -243,8 +243,8 @@ const PbPill = class extends LitElement {
       }
       /* UI-2: a type pill shows its glyph (game/art/ui/type-*.svg) before the name */
       .glyph {
-        width: 10px;
-        height: 10px;
+        width: 8px;
+        height: 8px;
         flex: none;
         background: currentColor;
         -webkit-mask: var(--glyph) center / contain no-repeat;
@@ -976,7 +976,7 @@ function typeGlyphURL(t) {
   return (GLYPH_URLS[t] = 'data:image/svg+xml,' + encodeURIComponent(svg));
 }
 /** the glyph inside a page-side type pill (.chip) @param {string} t */
-function typeGlyphHTML(t) {
+export function typeGlyphHTML(t) {
   const u = typeGlyphURL(t);
   return u ? `<i class="ty-g" style="--glyph:url('${u}')" aria-hidden="true"></i>` : '';
 }

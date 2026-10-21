@@ -1,6 +1,6 @@
 // Phase 06-4: the UI gallery's switches (theme, width, reduced motion) and its live samples. The components come from the
 // game's own js/ui-kit.js, so the gallery shows exactly what the game draws.
-import { pbFloat } from '../game/js/ui-kit.js';
+import { pbFloat, typeGlyphHTML } from '../game/js/ui-kit.js';
 import { applyUiTheme } from '../game/js/theme-sheet.js';
 
 const root = document.documentElement;
@@ -43,3 +43,8 @@ document.addEventListener('click', ev => {
 const toastEl = /** @type {any} */ (document.getElementById('gToast'));
 toastEl.text = 'Found an item';
 toastEl.n = 1;
+
+// UI-2: the hand-written type pills get their glyphs, as typeBadgeHTML gives them in the game
+document
+  .querySelectorAll('.chip[data-ty]')
+  .forEach(c => c.insertAdjacentHTML('afterbegin', typeGlyphHTML(/** @type {HTMLElement} */ (c).dataset.ty)));
