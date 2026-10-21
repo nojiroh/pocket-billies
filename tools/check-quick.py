@@ -252,21 +252,18 @@ def old_names():
     return f'{len(D["locations"])} places by their new names; none of the {len(rx)} old names left in the data or the game\'s texts'
 
 
-@step('alpha 0.4: Copperleaf Town and Route 1, the new start (from the data)', 20)
+@step('Copperleaf Town, the hub on its own (from the data)', 20)
 def copperleaf_data():
-    """a new game starts in Copperleaf (rules.start.locationId); Route 1 · Hedgerow Lane joins it to Marigold Town, the exits
-    facing; the lab and your room are in Copperleaf and nowhere else outdoors; Granny Juniper stands in her garden; no
-    shop or clinic in the hamlet; Marigold Town's signpost names the lane; nothing solid stands on the opening's stage"""
+    """a new game starts in Copperleaf (rules.start.locationId), the hub and the only place (RL-5: every other place is
+    parked in game/data/legacy), with no exit and no road out; the lab and your room are in Copperleaf and nowhere else
+    outdoors; Granny Juniper stands in her garden; no shop or clinic in the hamlet; nothing solid stands on the
+    opening's stage"""
     D = gamedata(); R = D['locations']; ix = {r['id']: i for i, r in enumerate(R)}; bad = []
     start = (D['rules'].get('start') or {}).get('locationId')
     if start != 'copperleaf' or 'copperleaf' not in ix: raise Exception(f'a new game starts at {start!r}')
-    if (R[ix.get('hedgerow', 0)] or {}).get('route') != 'Route 1': bad.append('Hedgerow Lane is not Route 1')
+    if list(ix) != ['copperleaf']: bad.append(f'places besides the hub: {list(ix)}')
     S_ = D['maps']; C = D['scenery']['props']
-    for rid, a, b in (('road:marigold-hedgerow', 'marigold', 'hedgerow'), ('road:hedgerow-copperleaf', 'hedgerow', 'copperleaf')):
-        L = next((r for r in (GAMEDATA.road(D, L) for L in D['roads']) if r['id'] == rid), None)
-        if not L: bad.append(f'no road {rid}'); continue
-        sa = next((e['side'] for e in S_[a].get('edgeExits') or [] if e['id'] == L['exit_a']), None); sb = next((e['side'] for e in S_[b].get('edgeExits') or [] if e['id'] == L['exit_b']), None)
-        if (sa, sb) != ('N', 'S'): bad.append(f'{rid}: exits {sa} and {sb} don’t face each other north to south')
+    if S_['copperleaf'].get('exits') or S_['copperleaf'].get('edgeExits') or D['roads']: bad.append('an exit or a road leads out of the hub')
     outdoor = {k: v for k, v in S_.items() if '@' not in k and v.get('kind') in ('town', 'route')}
     for act in ('lab', 'home'):
         where = [k for k, v in outdoor.items() for p in v.get('props', []) if p.get('act') == act]
@@ -276,11 +273,8 @@ def copperleaf_data():
     ppl = cl.get('people') or []
     if not any(p.get('who') == 'juniper' and p.get('script') for p in ppl) or 'juniper' not in D['people']: bad.append('Granny Juniper isn’t in Copperleaf')
     LO = D.get('lore') or {}
-    for k in ('copperleaf', 'hedgerow'):
-        if k not in (LO.get('locations') or {}): bad.append(f'no lore for {k}')
+    if 'copperleaf' not in (LO.get('locations') or {}): bad.append('no lore for copperleaf')
     if 'juniper' not in (LO.get('people') or {}): bad.append('Granny Juniper has no page in the Lore')
-    sd = S_['marigold']; sign = [p.get('say') for p in sd['props'] if p.get('act') == 'sign']
-    if 'Route 1 · Hedgerow Lane this way.' not in sign: bad.append(f'Marigold Town’s signposts: {sign}')
     # the opening's stage: east and south of the lab's door, where game/data/cutscenes/opening.json has its spots
     lab = next(p for p in cl['props'] if p.get('act') == 'lab'); M = C[lab['k']]; dx = M['door']['x'] / 34 * lab.get('s', 1) * (-1 if lab.get('f') else 1)
     d = (lab['x'] + dx, lab['z'])
@@ -290,7 +284,7 @@ def copperleaf_data():
         solid = Q.get('box') or (Q.get('solid') or 0) > .25
         if solid and d[0] + .8 < p['x'] < d[0] + 9.6 and d[1] - 4.8 < p['z'] < d[1] - 1.4: bad.append(f'{p["k"]} at {p["x"]},{p["z"]} stands on the opening’s stage')
     if bad: raise Exception('; '.join(bad[:6]))
-    return f'a new game starts in Copperleaf (node {ix["copperleaf"]}); Route 1 joins it to Marigold Town; the lab and your room are there, Granny Juniper in her garden, no shop or clinic; the opening’s stage is clear'
+    return f'a new game starts in Copperleaf (node {ix["copperleaf"]}), the only place, with no road out; the lab and your room are there, Granny Juniper in her garden, no shop or clinic; the opening’s stage is clear'
 
 
 @step('alpha 0.4: no building stands in water; every jetty is a flat deck over water (from the data)', 20)
@@ -346,10 +340,10 @@ def check_masts():
     return f'{n} masts and sky lifts in {sum(1 for r in D["locations"] if r.get("kind") == "town")} towns; airship stations, no train station; the mast and its moored airship are two low-poly props ({sum(P["ni"] for P in recm["parts"]) // 3} and {sum(P["ni"] for P in rec["parts"]) // 3} triangles), the airship bobbing, two turning propellers'
 
 
-@step('alpha 0.4: a postcard for every town; a solarpunk touch in every town; Verdigris Park (from the data)', 20)
+@step('alpha 0.4: a postcard for every town; a solarpunk touch in every town (from the data)', 20)
 def check_postcards():
     """every town has its postcard picture (tools/build-postcards.py); every town but the new start has something of
-    the solarpunk kit or a green or solar roof (tools/build-solarpunk.py); Verdigris City has its park"""
+    the solarpunk kit or a green or solar roof (tools/build-solarpunk.py). RL-5: Verdigris City and its park are parked"""
     D = gamedata(); bad = []; n = 0; C = D['scenery']['props']; kit = {'solar_tree', 'vertical_garden', 'solar_canopy', 'heat_dome', 'floating_solar', 'light_pipe', 'wind_sail_flower', 'banner_bunting'}
     for r in D['locations']:
         if r.get('kind') != 'town': continue
@@ -358,13 +352,11 @@ def check_postcards():
         else: n += 1
         sc = D['maps'][sid]
         if sid != 'copperleaf' and not any(p['k'] in kit or p.get('roof') for p in sc['props']): bad.append(f'{r["id"]}: no solarpunk touch')
-    city = D['maps'].get('verdigris') or {}
-    if not city.get('a04park') or not any(p.get('label') == 'Verdigris Park' for p in city.get('props', [])): bad.append('Verdigris City has no park')
     for k in kit:
         if k not in C: bad.append(f'{k} missing from the catalogue')
     if bad: raise Exception('; '.join(bad[:6]))
     roofs = sum(1 for sc in D['maps'].values() for p in sc.get('props', []) if p.get('roof'))
-    return f'{n} postcards; every town has its solarpunk touch ({roofs} moss and solar roofs); Verdigris Park is there'
+    return f'{n} postcards; every town has its solarpunk touch ({roofs} moss and solar roofs)'
 
 
 @step('Windows: no prop stands in front of one (from the data)', 30)

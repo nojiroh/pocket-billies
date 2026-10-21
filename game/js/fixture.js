@@ -4,7 +4,7 @@
    without the opening and without waiting for every map. The save is made here, keeps its own key in this browser
    and never reaches an account (game-state.js FIXTURE), so a player's save is never touched.
      title   a new game on the title screen (the boot a new player sees)
-     town    Copperleaf Town, the hub (RL-5)   route   Tallgrass Meadow       cave   Gloomwater
+     town    Copperleaf Town, the hub (RL-5: the route and the cave were parked with their places)
      room    inside Professor Hazel's lab in Copperleaf
      battle  a trainer battle (Leader Rocco) in Copperleaf that the team wins
      stored  whatever the fixture saved last in this browser (the save round trip)
@@ -33,8 +33,6 @@ const FIXTURE_NAMES = { trainer: 'Quillonda', nick: 'Zorblax' };
 provide({ FIXTURE_NAMES }); /* to-module */
 const FIXTURE_PLACES = {
   town: 'copperleaf',
-  route: 'tallgrass_meadow',
-  cave: 'gloomwater',
   room: 'copperleaf',
   battle: 'copperleaf',
 };

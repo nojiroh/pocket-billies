@@ -86,18 +86,6 @@
    "team": [
     {"sp":"musk0","lvl":6}
    ]
-  },
-  "before-cass": {
-   "about": "every badge and a team near level 55, at the pressing plant where Cass waits",
-   "place": "vinyl_works",
-   "flags": {"rival0":"win","met_blake0":1,"met_chad":1,"met_chad2":1,"met_chad3":1},
-   "beaten": ["blake0","chad","chad2","chad3","crude","markdown","marina","alta","poppy","vault","morel","carat"],
-   "coins": {"gold":3},
-   "team": [
-    {"sp":"musk3","lvl":55},
-    {"sp":"swift1","lvl":54},
-    {"sp":"bezos3","lvl":54}
-   ]
   }
  }
 }

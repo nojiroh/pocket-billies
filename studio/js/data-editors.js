@@ -1698,7 +1698,7 @@ ACTIONS.trainerNew = () => {
     name: 'New Trainer',
     who: Object.keys(D.people).find(p => !['boy', 'girl'].includes(p)) || 'gini',
     battleStage: 'grass',
-    node: 1,
+    node: 0,
     blocks: false,
     team: [{ sp: D.lines[0].id + '0', lvl: 8 }],
     reward: 300,

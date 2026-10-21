@@ -9,7 +9,8 @@ Code runs it after a change and CI on every push.
 Without a browser (Node): the game data is valid, and the world-map graph is unchanged (tools/test/world-graph.test.mjs
 and its snapshot). In a browser, each check opens its own page straight where it needs to be (?fixture=<name>,
 game/js/fixture.js), never through the opening and never waiting for every map: the game boots with no console or page
-errors; a town, a route, a room and a cave each open and draw frames; a battle plays to the end; a save round-trips;
+errors; a town and a room each open and draw frames (RL-5: the hub, Copperleaf; the route and the cave were parked
+with their places, and come back with the runs' places, RL-7); a battle plays to the end; a save round-trips;
 the Studio loads; the exported debug log holds no names; the world map opens as the bowl, a tap opens a card, Home
 comes back. The page is small (400x300) with every costly graphics dial
 off before it loads; nothing waits a fixed time, only for frames or the game's state. No pictures are taken.
@@ -216,7 +217,8 @@ def bowl_map(pg, base):
     pg.evaluate("worldBowlFilm(fallCamera(.5,400,300),performance.now());0")
     pg.evaluate("uiState.tab='walk';render();0")
     if z0 is not None and not until(pg, f"Math.abs(walkRenderer.zoomT-{z0})<1e-6", 10): raise Exception(f'the walk camera’s zoom didn’t come back ({pg.evaluate("walkRenderer.zoomT")}, was {z0})')
-    # an airship flight over the bowl, skipped to the end: you land in the other town
+    # an airship flight over the bowl, skipped to the end: you land at the mast (RL-5: Copperleaf to itself, the hub's one
+    # town; RL-8 flies from it to a run)
     to = pg.evaluate("(()=>{const i=LOCATIONS.findIndex(l=>l.id==='copperleaf');saveData.visited[i]=1;saveData.se+=100000;startAirshipFlight(i);return i})()")
     if not until(pg, "airshipFlight.on&&worldBowl.on", 15): raise Exception('the flight didn’t show on the bowl')
     f1 = pg.evaluate("worldBowl.frames")
@@ -324,8 +326,6 @@ NODE_CHECKS = [('Game data is valid', data_valid), ('The world-map graph is unch
 PAGES = [   # (what the page opens, its checks in order); the longest first, so the browsers finish together
     ('town', [('A town opens and draws (Copperleaf Town)', scene('copperleaf')),
               ('The exported debug log holds no names', debug_log),
-              ('A route opens and draws (Tallgrass Meadow)', scene('tallgrass_meadow')),
-              ('A cave opens and draws (Gloomwater)', scene('gloomwater')),
               ('The world map opens as the bowl', bowl_map)]),
     ('room', [('A room opens and draws (the lab)', room), ('A save round-trips', save_round_trip)]),
     ('battle', [('A battle plays to the end', battle)]),
