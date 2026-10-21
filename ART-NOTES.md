@@ -353,14 +353,14 @@ the metre for props and 32 px to the metre for the ground.
   pictures in `art/ui/`.
 
 ### Part 3: a living world
-- **Landmarks and chalk** (`tools/build-landmarks-v47.py`): `clock_tower` (with `clock_tower_hh` / `_hm`, the hands the
+- **Landmarks and chalk** (`tools/legacy/build-landmarks-v47.py`): `clock_tower` (with `clock_tower_hh` / `_hm`, the hands the
   game turns), `tree_giant`, `tree_willow_lean`, `crane`, `neon_sign` (and its lit layer), `lookout_tower`, `shipwreck`,
   `waystone`, `golden_cushion`, `lighthouse_small`, `bridge_broken`, `chalk_hopscotch`, `chalk_sun`. A landmark has
   `landmark: 1` in the catalogue, so the camera looks up at it.
 - **Small life** (`tools/build-critters.py`): `scene/fx/bee.png`, `fish.png`, `moth.png` and `scene/life/crow.png`.
 
 ### Part 4: the seven regions
-- **Region props** (`tools/build-region-props-v47.py`, 52): the Meadowlands (`tree_mangrove festival_stage stall_merch
+- **Region props** (`tools/legacy/build-region-props-v47.py`, 52): the Meadowlands (`tree_mangrove festival_stage stall_merch
   billboard_tour portaloo_vip sunflower_giant tree_blossom_great stilt_hut`), Golden Hills (`vineyard_row vault_door_hill
   statue_goldbull tollbooth salt_pile bear_rock mine_headframe minecart`), Spore Forest (`mushroom_house
   mushroom_colossal treehouse spore_mill tree_giant_autumn tree_jungle jungle_fern unicorn_statue`), Crystal Caverns
@@ -386,7 +386,7 @@ the metre for props and 32 px to the metre for the ground.
 - **Ground**: 12 tiles per kind in `art/next/tiles/<name>_1..12.png`. `_1`, `_7` and `_8` are plain; `_2`–`_6`,
   `_9` and `_10` are detail patches the painter puts where a slow noise is high; `_11` and `_12` are worn, used along
   the lines between the hub and the exits. The 12 new kinds (clover, moss, mud, wet sand, pebbles,
-  cobbles, leaf litter, heather, marsh, marble, ice, crystal floor) are drawn 32 px/m by `tools/build-terrain.py`,
+  cobbles, leaf litter, heather, marsh, marble, ice, crystal floor) are drawn 32 px/m by `tools/legacy/build-terrain.py`,
   which only writes missing files (`--force` remakes; `--sheet out.png` shows them all).
 - **Buildings**: 12 new kinds (`bakery inn market_hall bank library school station fire_station mansion barn greenhouse
   ski_lodge`) drawn with the same walls, roofs, windows and doors as the houses, each with a 3D plan. Colour variants

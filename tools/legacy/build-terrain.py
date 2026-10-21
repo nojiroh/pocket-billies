@@ -14,17 +14,18 @@ New kinds (capital letters; the catalogue entries go into game/data/gamedata.js 
 Each also gets its 16 px tiles (scene/tiles/<name>.png and _1.._5, the Lite renderer's and the Studio's picture),
 made from the 32 px ones.
 
-    python3 tools/build-terrain.py                # writes what is missing (your painted tiles are never touched)
-    python3 tools/build-terrain.py --force NAME   # redraws one kind's generated tiles
-    python3 tools/build-terrain.py --sheet out.png
+    python3 tools/legacy/build-terrain.py                # writes what is missing (your painted tiles are never touched)
+    python3 tools/legacy/build-terrain.py --force NAME   # redraws one kind's generated tiles
+    python3 tools/legacy/build-terrain.py --sheet out.png
 """
+import os, sys; sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # tools/ (this file is in tools/legacy/): gamedata
 import gamedata  # phase 04b: the data files in game/data
 import argparse, importlib.util, json, random
 from pathlib import Path
 import numpy as np
 from PIL import Image, ImageDraw
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parent.parent.parent  # the repo (this file is in tools/legacy/)
 spec = importlib.util.spec_from_file_location('btiles', ROOT / 'tools' / 'build-tiles.py'); BT = importlib.util.module_from_spec(spec); spec.loader.exec_module(BT)
 T, Tile, hx, ramp, mix, dk = BT.T, BT.Tile, BT.hx, BT.ramp, BT.mix, BT.dk
 OUT, OLD, DATA = BT.OUT, BT.OLD, ROOT / 'game' / 'data' / 'gamedata.js'

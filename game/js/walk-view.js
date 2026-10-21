@@ -428,7 +428,7 @@ export function bigTilePaths(path, set) {
       .replace(/_\d+$/, ''),
     f = set || groundTileFolder();
   return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(i => `next/${f}/${b}_${i}.png`);
-} /* v46: twelve per kind (tools/build-terrain.py) */
+} /* v46: twelve per kind (tools/legacy/build-terrain.py) */
 /* v47: which set of twelve: the catalogue's tileSet ('tiles47', tools/build-ground.py), else the v46 set. With the
    v47 set the painter lays the soft patches itself, in world metres, picks the plain tiles evenly and never mirrors */
 export function groundTileFolder() {
@@ -535,7 +535,7 @@ function propClock() {
   PROP_CLOCK.ss = typeof environmentSeason === 'function' ? environmentSeason(d) : 'summer';
   return PROP_CLOCK;
 }
-/* v47: crops grow between your visits: each field (a prop's "grow", from tools/build-life-v47.py) is sown, grows for
+/* v47: crops grow between your visits: each field (a prop's "grow", from tools/legacy/build-life-v47.py) is sown, grows for
    a week and is harvested, on a nine-day round of its own */
 export function cropGrowth(p) {
   if (!p || p.grow == null) return 1;
@@ -828,7 +828,7 @@ export function pathWearLines(sc) {
       if (s) L.push(s);
     };
     if (hub) for (const e of exits || []) put(hub[0] + ox, hub[1] + oz, e[0] + ox, e[1] + oz);
-    /* v47: the shortcuts people take across the grass (tools/build-life-v47.py) */ for (const w of worn || [])
+    /* v47: the shortcuts people take across the grass (tools/legacy/build-life-v47.py) */ for (const w of worn || [])
       put(w[0] + ox, w[1] + oz, w[2] + ox, w[3] + oz);
   };
   if (S) {

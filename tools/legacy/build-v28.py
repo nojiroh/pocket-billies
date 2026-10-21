@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 """v28 game data: ladders up the cliffs in the mountain and canyon places, and your own house in Sundown.
 
-    python3 tools/build-v28.py
+    python3 tools/legacy/build-v28.py
 
 A ladder goes where a cliff face 1.4 to 4.2 m high looks toward the camera, with open, dry ground at its foot and
 on top, not far from where you arrive. Only adds what is missing, so anything you changed in the Studio stays."""
+import os, sys; sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # tools/ (this file is in tools/legacy/): gamedata
 import gamedata  # phase 04b: the data files in game/data
 import base64, json, math, struct
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parent.parent.parent  # the repo (this file is in tools/legacy/)
 DATA = ROOT / 'game' / 'data' / 'gamedata.js'
 PROPS = json.loads((ROOT / 'game' / 'art' / 'scene' / 'props.json').read_text())
 LADDER_M = 110 / 34          # the ladder picture's height in metres at scale 1

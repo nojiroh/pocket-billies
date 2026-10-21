@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""v47 part 4: the seven regions become real places, built with the v46 place rules (tools/build-places-v46.py):
+"""v47 part 4: the seven regions become real places, built with the v46 place rules (tools/legacy/build-places-v46.py):
 towns with a heart, streets and lanes; routes with a winding path, tall grass in drifts and one feature. Each region
 brings its places (route nodes on the world map, near where the map has always shown the region), the roads between
 them, wild billionaires for its ground, trainers, an arena leader, a shop, its people's looks, lore and what people say.
@@ -26,18 +26,19 @@ Nothing of yours is touched: places are only added (a place marked "keep" in the
 route nodes keep their numbers, and a node, road, pool, trainer, look, shop or lore entry that already exists is left
 as it is unless you pass --force (which rebuilds this tool's own places and rewrites its own entries).
 
-    python3 tools/build-regions-v47.py                    # add every region's places and data (missing ones)
-    python3 tools/build-regions-v47.py meadowlands        # just this region
-    python3 tools/build-regions-v47.py --dry              # build and report, write nothing
-    python3 tools/build-regions-v47.py --map out/         # also draw a top-down map of each new place
-    python3 tools/build-regions-v47.py --force            # rebuild this tool's places and rewrite its entries
+    python3 tools/legacy/build-regions-v47.py                    # add every region's places and data (missing ones)
+    python3 tools/legacy/build-regions-v47.py meadowlands        # just this region
+    python3 tools/legacy/build-regions-v47.py --dry              # build and report, write nothing
+    python3 tools/legacy/build-regions-v47.py --map out/         # also draw a top-down map of each new place
+    python3 tools/legacy/build-regions-v47.py --force            # rebuild this tool's places and rewrite its entries
 """
+import os, sys; sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # tools/ (this file is in tools/legacy/): gamedata
 import gamedata  # phase 04b: the data files in game/data
 import copy, importlib.util, json, math, random, sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
-spec = importlib.util.spec_from_file_location('bp46', ROOT / 'tools' / 'build-places-v46.py'); BP = importlib.util.module_from_spec(spec); spec.loader.exec_module(BP)
+ROOT = Path(__file__).resolve().parent.parent.parent  # the repo (this file is in tools/legacy/)
+spec = importlib.util.spec_from_file_location('bp46', ROOT / 'tools' / 'legacy/build-places-v46.py'); BP = importlib.util.module_from_spec(spec); spec.loader.exec_module(BP)
 B = BP.B
 Place, exits_for, connect, frange, AV, SOFT, LEAFY, UNDER, TOWN_TREES = BP.Place, BP.exits_for, BP.connect, BP.frange, BP.AV, BP.SOFT, BP.LEAFY, BP.UNDER, BP.TOWN_TREES
 ROUTE_SIZE = BP.ROUTE_SIZE
@@ -56,7 +57,7 @@ def _drifts_b(self, *a, **k):
 
 Place.drifts = _drifts_b
 
-# the wild growth (tools/build-places-v46.py's nature pool) learns the v47 ground: sunburnt grass grows what gravel does
+# the wild growth (tools/legacy/build-places-v46.py's nature pool) learns the v47 ground: sunburnt grass grows what gravel does
 # (dry grass, thistles, rosemary, olives, cypresses), sun-baked stone and gold-veined rock what sand does, the wildflower
 # meadow what the meadow does; dry earth (the paths of the flats and the festival ground), salt crust, ice, clouds, tide
 # pools and concrete stay bare

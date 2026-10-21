@@ -2,7 +2,7 @@
 """v47: the ground, redrawn. Every ground kind gets a fresh set of twelve 32 px tiles in game/art/next/tiles47/
 (new files: the v46 set in next/tiles is left as it was), and 22 new kinds join the 38.
 
-What changed from v46 (tools/build-terrain.py):
+What changed from v46 (tools/legacy/build-terrain.py):
   - no seams and no repeats: the soft patches of light and shade are no longer in the tiles (where every tile's edge
     cut them and every tile repeated them); the ground painter (walk-view.js) lays them across the whole ground in
     world metres, half a step lighter or darker, round, a checker where they meet. tone_at/tone_px below are the

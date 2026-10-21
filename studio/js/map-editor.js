@@ -503,7 +503,7 @@ SECTIONS.scenes = () => {
  )}
  ${mapEditor.ped && sceneryCatalog().props[mapEditor.ped] ? propEditorCardHTML(mapEditor.ped) : ''}
  ${mapEditor.pe ? sceneryPixelCardHTML() : ''}
- ${sc.kind === 'town' || sc.kind === 'route' ? `<div class="seg-row sc-keep">${checkboxField('Keep this layout: the v46 rework tool (tools/build-places-v46.py) never rebuilds it', `${p}.keep`, { num: 1 })}</div>` : ''}
+ ${sc.kind === 'town' || sc.kind === 'route' ? `<div class="seg-row sc-keep">${checkboxField('Keep this layout: the v46 rework tool (tools/legacy/build-places-v46.py) never rebuilds it', `${p}.keep`, { num: 1 })}</div>` : ''}
  ${card(
    'Look and camera',
    `${grid(

@@ -22,19 +22,20 @@ are made again where the roads leave (by compass bearing) and the road table (li
 Everything the game relies on is kept: shops (and which shop), the clinic, the lab, your house, ladders, the
 fountain in Sundown, the look of each place (sky, haze, music, weather, folk, what people say).
 
-    python3 tools/build-places-v46.py               # rebuild every place not marked keep (backups first)
-    python3 tools/build-places-v46.py marigold clovercrest  # just these
-    python3 tools/build-places-v46.py --dry         # build and report, write nothing
-    python3 tools/build-places-v46.py --map out/    # also draw a top-down map of each place
+    python3 tools/legacy/build-places-v46.py               # rebuild every place not marked keep (backups first)
+    python3 tools/legacy/build-places-v46.py marigold clovercrest  # just these
+    python3 tools/legacy/build-places-v46.py --dry         # build and report, write nothing
+    python3 tools/legacy/build-places-v46.py --map out/    # also draw a top-down map of each place
 """
+import os, sys; sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # tools/ (this file is in tools/legacy/): gamedata
 import gamedata  # phase 04b: the data files in game/data
 import copy, importlib.util, json, math, random, sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parent.parent.parent  # the repo (this file is in tools/legacy/)
 spec = importlib.util.spec_from_file_location('bscenes', ROOT / 'tools' / 'build-scenes.py')
 B = importlib.util.module_from_spec(spec); spec.loader.exec_module(B)
-spec3 = importlib.util.spec_from_file_location('v28', ROOT / 'tools' / 'build-v28.py')
+spec3 = importlib.util.spec_from_file_location('v28', ROOT / 'tools' / 'legacy/build-v28.py')
 V28 = importlib.util.module_from_spec(spec3); spec3.loader.exec_module(V28)
 spec2 = importlib.util.spec_from_file_location('grow', ROOT / 'tools' / 'grow-wild.py')
 GW = importlib.util.module_from_spec(spec2); spec2.loader.exec_module(GW)
@@ -773,7 +774,7 @@ def finish(sc, D, i, nature, cat):
         E.append({'id': eid, 'side': side, 't': round(t, 4), 'in': round(d[side], 2), 'width': 2})
         gamedata.set_road_end(D, D['roads'][n], 'a' if gamedata.road(D, D['roads'][n])['a'] == i else 'b', exit=eid)
     sc['edgeExits'] = E
-    # ladders where a cliff faces the camera (tools/build-v28.py's finder, reaching farther in the bigger places)
+    # ladders where a cliff faces the camera (tools/legacy/build-v28.py's finder, reaching farther in the bigger places)
     want = {'kitewind': 2, 'stepstone_canyon': 2, 'hornpass': 2, 'frostcrown': 1, 'cinderpeak': 1, 'thicket': 1}.get(sc.get('locationId'))
     sc['props'] = [p for p in sc['props'] if p['k'] != 'ladder']
     if want:

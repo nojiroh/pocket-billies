@@ -21,15 +21,16 @@ missing; each carries "landmark": 1, and the camera tilts up a little as you wal
 and the windmill get the mark too). Placing them: every landmark this tool puts down carries "v47mark": 1, so running it again first takes the
 previous run's away; a place marked "keep" in the Studio is left alone.
 
-    python3 tools/build-landmarks-v47.py                     # draw what's missing, add to the catalogue, place them
-    python3 tools/build-landmarks-v47.py --preview out.png   # a sheet of the pictures, writes nothing in the game
-    python3 tools/build-landmarks-v47.py --force             # draw them all again
-    python3 tools/build-landmarks-v47.py --no-place          # pictures and catalogue only
+    python3 tools/legacy/build-landmarks-v47.py                     # draw what's missing, add to the catalogue, place them
+    python3 tools/legacy/build-landmarks-v47.py --preview out.png   # a sheet of the pictures, writes nothing in the game
+    python3 tools/legacy/build-landmarks-v47.py --force             # draw them all again
+    python3 tools/legacy/build-landmarks-v47.py --no-place          # pictures and catalogue only
 """
+import os, sys; sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # tools/ (this file is in tools/legacy/): gamedata
 import gamedata  # phase 04b: the data files in game/data
 import os, sys, json, math, random, importlib.util
 from PIL import Image
-HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(HERE)
+HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); ROOT = os.path.dirname(HERE)  # HERE is tools/ (this file is in tools/legacy/)
 spec = importlib.util.spec_from_file_location('bsp', os.path.join(HERE, 'build-scene-props.py')); bsp = importlib.util.module_from_spec(spec); spec.loader.exec_module(bsp)
 g = vars(bsp)
 Cv, R, P, ramp, xt, olc, mix, dk, sph = bsp.Cv, bsp.R, bsp.P, bsp.ramp, bsp.xt, bsp.olc, bsp.mix, bsp.dk, bsp.sph
@@ -202,7 +203,7 @@ def hand_img(length, width, tip, col, cap=False):
 
 
 # ----------------------------------------------------------------------------- the Long Grass: the giant tree
-GIANT_PAL = None          # (back, front) leaf ramps; tools/build-region-props-v47.py draws it in autumn with this
+GIANT_PAL = None          # (back, front) leaf ramps; tools/legacy/build-region-props-v47.py draws it in autumn with this
 @lprop('tree_giant', 'Giant tree', 4.2, ['route'], solid=1.0, sway=.18)
 def p_tree_giant(rng):
     W, H = 380, 402; G = H - 2; cx = 190
@@ -789,7 +790,7 @@ def p_lighthouse_small(rng):
 
 
 # ----------------------------------------------------------------------------- signs of people: chalk on the paving
-# (not landmarks: tools/build-life-v47.py puts them down in the towns, with "dry", so the rain washes them away)
+# (not landmarks: tools/legacy/build-life-v47.py puts them down in the towns, with "dry", so the rain washes them away)
 def chalk_line(cv, pts, col, rng, w=1):
     for (a, b) in zip(pts, pts[1:]):
         n = int(max(abs(b[0] - a[0]), abs(b[1] - a[1]))) + 1
@@ -941,7 +942,7 @@ def place(D, dry=False):
     """put each landmark down near its spot. Wild growth (the plants tools/grow-wild.py scattered, "w": 42) doesn't
     count as in the way: the plants under a landmark's footprint are lifted and kept on the landmark ("under"), and
     put back when this tool runs again; anything else in the way moves the landmark instead"""
-    lp = importlib.util.spec_from_file_location('life', os.path.join(HERE, 'build-life-v47.py')); life = importlib.util.module_from_spec(lp); lp.loader.exec_module(life)
+    lp = importlib.util.spec_from_file_location('life', os.path.join(HERE, 'legacy/build-life-v47.py')); life = importlib.util.module_from_spec(lp); lp.loader.exec_module(life)
     cat = D['scenery']['props']; S = D['maps']; report = []
     for sid in {s[0] for s in SPOTS}:
         sc = S.get(sid)

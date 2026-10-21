@@ -6995,7 +6995,7 @@ def fx_print():
 FX['print'] = fx_print
 # ============================================================================= v28: A LADDER UP THE CLIFFS
 # A wooden ladder leaning on a cliff face; the game scales
-# it to the cliff's height and lets you climb it (tools/build-v28.py puts them in the scenes).
+# it to the cliff's height and lets you climb it (tools/legacy/build-v28.py puts them in the scenes).
 
 @vprop('ladder', 'Ladder', 0.2, 0, ['mountains', 'canyon'], solid=0)
 def p_ladder(rng):

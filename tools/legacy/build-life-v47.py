@@ -4,7 +4,7 @@
   signs of people   washing lines beside houses, crates and barrels by shops and the inn, a bin behind the shop,
                     bikes by the library, school and station, planters and a gnome or two by front doors, chalk on the
                     paving outside a few (hopscotch or a drawing, "dry": gone in the rain; pictures from
-                    tools/build-landmarks-v47.py, so run that first)
+                    tools/legacy/build-landmarks-v47.py, so run that first)
   routines          the baker's bread out in the morning (a rack by the bakery door, hours 6 to 12)
   market day        on Saturdays stalls and a cart fill Sundown's square, and more people come (scene "market")
   the seasons       raked leaves under the town trees in autumn (season "autumn")
@@ -16,16 +16,17 @@
 Everything added carries "v47life": 1, so running this again first takes the previous run's things away. A place
 marked "keep" in the Studio is left alone.
 
-    python3 tools/build-life-v47.py            # all towns
-    python3 tools/build-life-v47.py marigold    # just these
-    python3 tools/build-life-v47.py --dry      # report, write nothing
-    python3 tools/build-life-v47.py --map out/ # draw a top-down map of each place (worn lines in orange)
+    python3 tools/legacy/build-life-v47.py            # all towns
+    python3 tools/legacy/build-life-v47.py marigold    # just these
+    python3 tools/legacy/build-life-v47.py --dry      # report, write nothing
+    python3 tools/legacy/build-life-v47.py --map out/ # draw a top-down map of each place (worn lines in orange)
 """
+import os, sys; sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # tools/ (this file is in tools/legacy/): gamedata
 import gamedata  # phase 04b: the data files in game/data
 import json, math, random, sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parent.parent.parent  # the repo (this file is in tools/legacy/)
 DATA = ROOT / 'game' / 'data' / 'gamedata.js'
 PPU = 34
 PAVED = set('pcmqhaeKTvb')       # streets, squares, boards: nothing is put down on them
@@ -165,7 +166,7 @@ def dress(P, rnd):
 
 def chalk(P, rnd):
     """chalk on the paving in front of some front doors: hopscotch or a drawing. "dry": the rain washes it away and
-    it is drawn again once the ground has dried (walk-view.js propShown). The pictures come from tools/build-landmarks-v47.py"""
+    it is drawn again once the ground has dried (walk-view.js propShown). The pictures come from tools/legacy/build-landmarks-v47.py"""
     if 'chalk_hopscotch' not in P.cat: return 0
     n = 0; homes = [p for p in P.sc['props'] if (P.cat.get(p['k']) or {}).get('box') and is_home(p, P.cat.get(p['k']) or {}) and not p.get(TAG)]
     rnd.shuffle(homes)

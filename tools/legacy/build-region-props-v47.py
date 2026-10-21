@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """v47 part 4: props for the new regions, drawn with the scene-prop kit in the style of the painted props (dark
 coloured outlines, lit from the top left, 34 pixels to the metre). Each region's set is listed below; a landmark is
-marked so the camera looks up at it (see tools/build-landmarks-v47.py).
+marked so the camera looks up at it (see tools/legacy/build-landmarks-v47.py).
 
 The Meadowlands
   tree_mangrove        a mangrove on its arching stilt roots (with leaf layers)
@@ -24,16 +24,16 @@ Golden Hills
   minecart             a rusty mine cart with gold ore, on a stub of rail
 
 Pictures that exist are kept (yours); --force draws them again. Catalogue and props.json entries are added when
-missing. Placing them is tools/build-regions-v47.py's job.
+missing. Placing them is tools/legacy/build-regions-v47.py's job.
 
-    python3 tools/build-region-props-v47.py                     # draw what's missing, add to the catalogue
-    python3 tools/build-region-props-v47.py --preview out.png   # a sheet, writes nothing in the game
-    python3 tools/build-region-props-v47.py --preview out.png tree_mangrove   # just these, at 2x
+    python3 tools/legacy/build-region-props-v47.py                     # draw what's missing, add to the catalogue
+    python3 tools/legacy/build-region-props-v47.py --preview out.png   # a sheet, writes nothing in the game
+    python3 tools/legacy/build-region-props-v47.py --preview out.png tree_mangrove   # just these, at 2x
 """
 import os, sys, json, math, random, importlib.util
 from PIL import Image
-HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(HERE)
-spec = importlib.util.spec_from_file_location('lm47', os.path.join(HERE, 'build-landmarks-v47.py')); LM = importlib.util.module_from_spec(spec); spec.loader.exec_module(LM)
+HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); ROOT = os.path.dirname(HERE)  # HERE is tools/ (this file is in tools/legacy/)
+spec = importlib.util.spec_from_file_location('lm47', os.path.join(HERE, 'legacy/build-landmarks-v47.py')); LM = importlib.util.module_from_spec(spec); spec.loader.exec_module(LM)
 bsp = LM.bsp; g = vars(bsp)
 Cv, R, ramp, xt, olc, sph = bsp.Cv, bsp.R, bsp.ramp, bsp.xt, bsp.olc, bsp.sph
 door, window, stone_band, tile_roof, blob, trunk = g['door'], g['window'], g['stone_band'], g['tile_roof'], g['blob'], g['trunk']
