@@ -2,6 +2,35 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Studio track ST-T, second part - the owner's report, the battle stage, vanishing props - 2026-10-21
+Branch `ccr-f4c5aa48-ofajfu`, rebased on main after PR #83 (ST-T's first half) merged. The owner's desktop report is
+written up in docs/phases/studio-self-test.md.
+- Changed (one cause per commit): test scene `test_battle` ("Test: battle", tools/build-test-scenes.py t_battle): a
+  30 x 24 m clearing for the battle stage, the hub in the middle, tall grass, 3D trees and two 3D cottages, flat
+  pictures, rocks, a lamp, a bench and a signpost the stage hides as in the way. The Studio's Battle preview starts
+  there; its "painted backdrop" choice is gone (the game dropped the painted stage in phase 06-3, so the preview
+  opened on an empty dark box). Vanishing 3D props: the mesh caches of prop models, solid props and buildings are
+  global (by path, picture or prop) and outlived the graphics context they were made on, so after a new canvas
+  (the battle preview makes one each time a fighter changes) or a restored context (a phone back from the
+  background), every mesh made before drew nothing. `gpuState.gen` now counts contexts (a restore counts) and each
+  cache forgets what was made for an older one.
+- Found, not changed: the grey dome cut flat behind Memeox in the battle preview is its own art (a rock below its
+  feet line, cut by the ground); other species have none. The battle stage hides props in the camera's lane on
+  purpose (battle3dAttach: the signpost and bench in test_battle). In Copperleaf no prop was wrongly frustum-culled
+  in five camera views (each culled prop's 3D box projected: none on screen). Far props are pictures by design.
+- Airship propeller (Copperleaf), skipped on the owner's word: the model's data is sound (tools/build-airship.py: a
+  three-bladed propeller either side of the stern, pivot on the hub, axis along the ship, 2.4 turns a second, the
+  far one turning the other way, both drawn and shadowed with the right shaders). Not yet looked at: how it looks in
+  motion on a phone (at a 30 fps cap, 2.4 turns a second with three blades steps 29 degrees a frame and can read as
+  slow or backwards), the airship's moored swing and bob round the mast with `f: 1` (mirrored) in Copperleaf, and
+  the far picture swap. A picture or a short clip of what looks wrong would settle it.
+- Verified: 397 unit tests, lint, typecheck, check:modules, format:check, check:data; smoke 15/15 (219 s). The battle
+  preview opens on test_battle with both fighters and its props; after switching the foe the cottage stays (before
+  the fix it vanished, same steps). The game's own test run (?test=1&place=copperleaf) stays on the title screen
+  in this harness, so the fix was seen in the Studio, which uses the same renderer.
+- Next: the owner checks the battle preview and a phone game after backgrounding it; says what is wrong with the
+  propeller; then the Studio's speed fixes from the report (the undo first), and the People bug.
+
 ### Studio track ST-T - Studio self-test - 2026-10-21
 Branch `ccr-f4c5aa48-ofajfu`. Plan approved by the owner in this session (measure only, about 90 s, desktop and iPad).
 - Changed (one cause per commit): docs/phases/studio-self-test.md (the plan, then the first runs) and a ROADMAP line;

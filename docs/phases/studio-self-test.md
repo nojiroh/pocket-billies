@@ -55,6 +55,23 @@ Passed in about 110 s: 24 sections, 16 edits undone, everything put back. What t
 - Loading the data from GitHub (222 files, the stand-in) about 11 s; no leaks found (memory, elements, loops, timers
   the same after the second pass).
 
+## The owner's first desktop run (2026-10-21, RTX 2070 Super, Chrome, 2752 x 983 at 1.25x, GitHub mode)
+81 s. Made with the version merged in PR #83 (before the edit rows were grouped and before each edit started from a
+clean undo step), so its list repeats "One edit takes" per section.
+- Every section but Engine draws at a steady 60 fps (p95 16.8 ms). Engine: p95 117 ms, worst 133 ms, 1,706 draws a
+  frame (sprites 802, effects 329, far shadows 220, near shadows 102, reflection 83), 20 ms on the graphics chip,
+  26 long tasks (2.6 s) while it was open. The heaviest view in the Studio by far.
+- An edit takes 255-355 ms: the undo's copy of the data (85-125 ms, 8 MB), the Check (25-135 ms), the live update
+  (17-25 ms) and the redraw. Undo takes 200-270 ms (reading the 8 MB copy back and drawing the section again);
+  the Wardrobe's undo 840 ms and redo 683 ms.
+- A full undo would hold about 640 MB.
+- Loading: the data from GitHub 6.8 s (225 files); the page also fetched 1,019 pictures.
+- Slow to open: People 146 ms (building its HTML, 139 ms); the Wardrobe in the second pane 553 ms.
+- Memory grew 48 MB over the second pass (just under the 50 MB mark); no loops or timers left running.
+- "Jobs: an edit and its undo did not bring the data back" was the test, not Jobs: opening People changes the data
+  with no undo step, and the next undo took that back too. The test now names People (changesData) and commits
+  before each edit; the People bug itself is still open.
+
 ## Files
 - `game/js/logic/studio-test-report.js`: the rules (numbers to findings), the comparison, the privacy check.
   Unit tests: `tools/test/studio-test-report.test.mjs`.
