@@ -2,6 +2,47 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### UI track UI-2 - Kit v2: angular shapes - 2026-10-21
+Branch `ccr-00069345-2zok4t`, from main 3479f01 (RL-4 merged, UI-1 in). The owner asked for the whole of UI-2 in one
+session (no split). Two calls I made without asking (my plan's recommendations): the old `.pb` buttons and every
+screen not on the kit keep their shapes until UI-5; the gallery's picture baseline is committed.
+- Changed (one cause per commit): the missing UI-1 entry below; the shapes as data (logic/ui-theme.js makes each
+  family's clip-path outline, 1 px edge ring and shadow ring; `shape.families` cut/rounded/square, `shape.stepped`;
+  presets `stepped`, and `alpha05` now rounded; tokens.css holds the defaults, the edge and drop-shadow tokens);
+  tools/check-ui-gallery.py; kit v2 (`pb-panel`, `pb-button` with the gold long hexagon, `pb-sheet` floating with two
+  cuts, `pb-toast` a hexagon; new `pb-card`, `pb-tabs`, `pb-stat-bar`, `pb-field`; focus as a gold line round the
+  outline); page side: sheets, the diamond inbox dot, `.pb-sel`, `hr.pb-rule`, `.pb-portrait`; team rows as solid cut
+  cards with angular ten-cell HP and portraits breaking their circle; battle text, menu, move tiles, buttons and
+  plates cut; the dialogue box cut with its portrait breaking the circle and a slanted name tag; diagonal wipes
+  (`m-wipe`, `m-wipe-r`) for `.screen.enter` and sheets; the 40 icons from tools/build-ui-icons.py (the rounded ones
+  redrawn); type glyphs (ui-kit.js table; `typeBadgeHTML` in ui.js, one line, the only ui.js change); the shared bot
+  plate (`limbPipsHTML` in unit-card.js; battle plates and bot rows in steel, the old limb bars and their CSS gone);
+  the gallery's baseline (73 pictures), `npm run check:ui`; `--z-below` for the new layers. Docs: TESTING, ROADMAP,
+  ui-track.md ("UI-2 found"), CHANGELOG.
+- Where the plan was wrong: see ui-track.md "UI-2 found" (few screens were on the kit; no picture tests existed; how
+  clip-path, shadows and blur had to be layered).
+- Verified: fast tier green at every commit (lint, typecheck, check:modules, format:check, check:data; unit tests
+  351 -> 357, new: the shape polygons, tokens.css equal to the generator, the icons equal to their grids, each seen
+  to fail on a planted fault). Picture tests: 73 pictures, two runs match exactly; a 2 px change to the card cut fails
+  all five card pictures. Smoke: green after the page-side commits (280 s); after the last code commit one run had
+  two timeouts (the full-test step and the Studio screenshot, both on 40 s software frame read-backs under load), the
+  re-run straight after was green (205 s). Blurred surfaces: team 6 -> 4 (rows no longer blur); the others as before
+  (walk 6, map 12, ledger 5, profile 4, shop 8, battle 3). Not run: the full quick check and `--selftest`; the
+  graphics bench (needs a phone). I looked at every gallery section in light and dark and the wipes paused mid-way.
+- Lint report at the end (report only): corners 167 raw / 45 token uses, space 1,098 / 219, shadows 195 / 16,
+  keyframes 77 (11 in motion.css), times 278 / 28, fonts 18 / 215, colours 745 in CSS (was 709: the new edge,
+  steel and limb colours) and 571 in game JS (was 561: ui-kit.js), `!important` 207, layers 61 / 8, blurred rules 30,
+  `innerHTML` 57, `style="` 41.
+- Risky: clip-path, drop-shadow filters and masks on many parts can cost frames on phones (the plan's risk): please
+  run the Graphics bench on the team screen and a battle. The battle menu's card no longer scrolls itself (what it
+  holds does, at the same 72vh). Old sheets lost their shadow (the scrim sets them apart). Jersey 15 at 10-12 px on
+  the plates and limb pips: check them on the phone. The picture baseline is this container's Chromium; on another
+  machine fonts may differ (remake it there with --update).
+- Phone check wanted (the plan's "done when"): team (rows, a bot if you have one), a battle (plates, menu, tiles,
+  the wipe into it), a sheet; light and dark.
+- Not done: the Studio's dials for the shapes (UI-3), the run parts (UI-4), every other screen (UI-5).
+- Next: the owner merges and pushes `ui-2-done`; then "start UI-3" (the Studio's UI section) in a new session.
+
 ### Roguelite track RL-4 - Battle state injected - 2026-10-21
 Branch `ccr-e32acdb2-oy1bny`, from main dcde38b (RL-3 merged). Plan approved at the start with the owner's answers:
 turn cap 40 ending in a draw (8.9), a killed battle restarts from its seed (8.7, built in RL-8), Lullaby's text fixed.
