@@ -51,6 +51,7 @@ expose({
     v => ((flushSolidPropMeshes = v), provide({ flushSolidPropMeshes })),
   ],
   setSolidPropUniforms: [() => setSolidPropUniforms, v => (setSolidPropUniforms = v)],
+  solidPropContext: [() => solidPropContext, v => (solidPropContext = v)],
   solidPropGuard: [() => solidPropGuard, v => (solidPropGuard = v)],
   solidPropKind: [() => solidPropKind, v => (solidPropKind = v)],
   solidPropLevelOfDetail: [
@@ -81,7 +82,7 @@ export function setDrawSolidProps(v) {
   provide({ drawSolidProps });
 }
 /* to-module: end */
-export const solidPropState = { meshes: new WeakMap(), live: new Map(), fail: '', drawn: 0 };
+export const solidPropState = { meshes: new WeakMap(), live: new Map(), fail: '', drawn: 0, gen: 0 };
 /* by prop group (or key): the kind of body and its depth at scale 1, in metres */
 export const SOLID_PROP_BODIES = {
   crate: ['block', 0.9],
@@ -282,8 +283,17 @@ function solidPropKind(k, M) {
   return auto || null;
 }
 /* the body for one picture, built from its pixels; cached per picture and spec */
+/* a new graphics context has none of the bodies made for the old one: they are forgotten (prop-models.js
+   propModelContext) */
+function solidPropContext() {
+  if (solidPropState.gen === gpuState.gen) return;
+  solidPropState.meshes = new WeakMap();
+  for (const [m, g] of solidPropState.live) if (g !== gpuState.gl) solidPropState.live.delete(m);
+  solidPropState.gen = gpuState.gen;
+}
 function solidPropMesh(im, spec) {
   if (!im || !(im.naturalWidth || im.width)) return null;
+  solidPropContext();
   /* v44: not loaded yet: nothing is cached, the picture draws meanwhile */ let per = solidPropState.meshes.get(im);
   if (!per) {
     per = new Map();
@@ -1193,6 +1203,7 @@ function solidPropLevelOfDetail(items, C) {
     for (let i = cap; i < T.length; i++) T[i][1].vol = null;
   }
   /* v32: a body not yet built is built within this frame's time budget; past it the prop stays a picture for now */
+  solidPropContext();
   let built = 0;
   for (const it of items) {
     if (!it.vol) continue;

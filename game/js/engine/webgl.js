@@ -81,6 +81,9 @@ export function setRunNormalMapJobs(v) {
 export const gpuState = {
   ok: null,
   gl: null,
+  /* how many contexts this page has made: a cache of meshes (prop models, solid props, buildings) made for an older
+     one (a canvas replaced, as the Studio's battle preview does, or a context restored) is forgotten when it changes */
+  gen: 0,
   cv: null,
   P: {},
   tex: new WeakMap(),
@@ -582,6 +585,7 @@ export function initWebgl(cv) {
       powerPreference: 'high-performance',
     });
     if (!gl) return false;
+    if (gpuState.gl !== gl) gpuState.gen++;
     gpuState.gl = gl;
     gpuState.cv = cv;
     gpuState.P = {};
@@ -638,6 +642,8 @@ export function initWebgl(cv) {
     cv.addEventListener('webglcontextrestored', () => {
       gpuState.lost = 0;
       gpuState.cv = null;
+      /* the same context object, but everything made on it is gone: the mesh caches start again */
+      gpuState.gen++;
       if (typeof debugLog !== 'undefined') debugLog.add('webgl', 'context restored');
       if (typeof onGlContextRestored === 'function') onGlContextRestored(cv);
     });

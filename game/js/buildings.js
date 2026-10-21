@@ -42,6 +42,7 @@ expose({
   buildingArt: [() => buildingArt, v => (buildingArt = v)],
   buildingBudgetLeft: [() => buildingBudgetLeft, v => (buildingBudgetLeft = v)],
   buildingColor: [() => buildingColor, v => (buildingColor = v)],
+  buildingContext: [() => buildingContext, v => (buildingContext = v)],
   buildingFrontPicture: [
     () => buildingFrontPicture,
     v => ((buildingFrontPicture = v), provide({ buildingFrontPicture })),
@@ -91,7 +92,7 @@ export function setDrawBuildings(v) {
   provide({ drawBuildings });
 }
 /* to-module: end */
-export const buildingState = { mesh: new WeakMap(), fac: new WeakMap(), vao: null };
+export const buildingState = { mesh: new WeakMap(), fac: new WeakMap(), vao: null, gen: 0 };
 provide({ buildingState }); /* to-module */
 export const BUILDING_TEXTURE_NAMES = [
   'Plaster',
@@ -1557,7 +1558,15 @@ export function buildingItems(items) {
 export function drawBuildings(C, X, items, fades) {
   buildingGuard(() => drawBuildingsUnguarded(C, X, items, fades));
 }
+/* a new graphics context has none of the meshes made for the old one: they are forgotten (prop-models.js
+   propModelContext) */
+function buildingContext() {
+  if (buildingState.gen === gpuState.gen) return;
+  buildingState.mesh = new WeakMap();
+  buildingState.gen = gpuState.gen;
+}
 function drawBuildingsUnguarded(C, X, items, fades) {
+  buildingContext();
   const L = buildingItems(items).filter(it => it.vis !== false);
   buildingState.drawn = L.length;
   if (!L.length) return;
@@ -1679,6 +1688,7 @@ function drawBuildingShadows(SH, items) {
   buildingGuard(() => drawBuildingShadowsUnguarded(SH, items));
 }
 function drawBuildingShadowsUnguarded(SH, items) {
+  buildingContext();
   const L = buildingItems(items);
   if (!L.length) return;
   const gl = gpuState.gl;

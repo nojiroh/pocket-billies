@@ -60,6 +60,7 @@ expose({
   lowPolyVertexShader: [() => lowPolyVertexShader],
   mooredBob: [() => mooredBob, v => (mooredBob = v)],
   propModelArtPaths: [() => propModelArtPaths, v => ((propModelArtPaths = v), provide({ propModelArtPaths }))],
+  propModelContext: [() => propModelContext, v => (propModelContext = v)],
   propModelGuard: [() => propModelGuard, v => (propModelGuard = v)],
   propModelImageItems: [() => propModelImageItems, v => ((propModelImageItems = v), provide({ propModelImageItems }))],
   propModelMesh: [() => propModelMesh, v => (propModelMesh = v)],
@@ -99,6 +100,7 @@ export const propModelState = {
   drawn: 0,
   VPM: 32,
   res: 0,
+  gen: 0 /* the graphics context its meshes belong to (gpuState.gen) */,
   fr: -1,
   bt: 0,
 };
@@ -639,7 +641,16 @@ function greedyVoxelMesh(V, R) {
   };
 }
 /* the mesh of a recipe on the card (built once; the Studio asks for a rebuild after an edit) */
+/* a new graphics context has none of the meshes made for the old one: they are forgotten, not freed (they went with
+   it). Without this, every model made before a canvas was replaced drew nothing: the Studio's battle preview makes a
+   new canvas each time a fighter changes, and its 3D props vanished */
+function propModelContext() {
+  if (propModelState.gen === gpuState.gen) return;
+  propModelState.meshes.clear();
+  propModelState.gen = gpuState.gen;
+}
 function propModelMesh(path, rec) {
+  propModelContext();
   let m = propModelState.meshes.get(path);
   if (m !== undefined) return m;
   if (rec.kind === 'mesh') {
@@ -1419,6 +1430,7 @@ function tagPropModel(it) {
     propModelState.res = R;
   }
   /* a few new meshes a frame (about 12 ms): the rest draw as their pictures a frame or two longer */
+  propModelContext();
   if (rec && !propModelState.meshes.has(path)) {
     const fr = typeof walkRenderer !== 'undefined' ? walkRenderer.frames : 0;
     if (propModelState.fr !== fr) {
