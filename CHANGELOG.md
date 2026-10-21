@@ -16,7 +16,8 @@ kept aside in the browser).
   leaf...). Bots get a steel plate with pips for each limb, in battle and on the team. The icons are redrawn on the
   45° grid. Screens and sheets come in with a diagonal wipe (a fade with reduced motion). New parts for the screens to
   come: cards, tabs, stat bars, text fields, a slanted selection bar, a rule with a diamond. A stepped (pixel) and a
-  rounded look are in the theme data to compare.
+  rounded look are in the theme data to compare. The dialogue box is a speech bubble with a tail over the portrait;
+  the bubble floats and breathes a little and pops with each new line, while the words stay still.
 
 - Battles (roguelite track RL-4): a battle still going after 40 turns is called off as a draw (a wild battle as if
   you walked away, a trainer's as a loss). Lullaby's text says 2-4 turns of sleep, as the rule has it. Inside, a

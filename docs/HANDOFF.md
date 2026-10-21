@@ -41,6 +41,10 @@ screen not on the kit keep their shapes until UI-5; the gallery's picture baseli
 - Phone check wanted (the plan's "done when"): team (rows, a bot if you have one), a battle (plates, menu, tiles,
   the wipe into it), a sheet; light and dark.
 - Not done: the Studio's dials for the shapes (UI-3), the run parts (UI-4), every other screen (UI-5).
+- Follow-up asked by the owner in the same session: the dialogue box became a speech bubble (a `bubble` shape family
+  with a tail; the bubble alone floats, wiggles and breathes, each new line pops it; still with reduced motion).
+  Unit test for the tail, the dialogue pictures remade on purpose, smoke green (220 s). Check on the phone that the
+  motion reads as subtle, not seasick, and that the tail doesn't meet a choice's buttons.
 - Next: the owner merges and pushes `ui-2-done`; then "start UI-3" (the Studio's UI section) in a new session.
 
 ### Roguelite track RL-4 - Battle state injected - 2026-10-21
