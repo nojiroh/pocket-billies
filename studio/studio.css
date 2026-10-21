@@ -4520,3 +4520,6 @@ body.wb-dropping::after {
   border: 1px solid var(--line);
   border-radius: 3px;
 }
+.ui-ov-note {
+  margin: 8px 0 0;
+}

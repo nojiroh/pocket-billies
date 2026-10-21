@@ -7,7 +7,7 @@
    part in the frame. The frame is the same page as the Studio (same origin), so its style sheets can be read. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
-import { provide } from '../../game/js/hooks.js';
+import { provide, uiOverlaysFollow } from '../../game/js/hooks.js';
 import { $ } from '../../game/js/util.js';
 import { escapeHtml } from './game-stand-ins.js';
 import { UI_DIALS, UI_DIAL_ALSO, uiDialList, uiDialReach, uiGet, uiVarDials } from '../../game/js/logic/ui-dials.js';
@@ -53,7 +53,7 @@ provide({ uiInspect }); /* to-module */
 const uiInspectWins = new WeakSet();
 
 /** the preview frame's window (the look being edited) */
-function uiPreviewWin() {
+export function uiPreviewWin() {
   const f = /** @type {HTMLIFrameElement | null} */ ($('#uiPv'));
   return f && f.contentWindow;
 }
@@ -71,7 +71,7 @@ function uiFrameLayer(w, id = 'studioLayer') {
   return L;
 }
 /** outline elements in a frame's layer: [{el, cls, tip}] */
-function uiFrameBoxes(w, boxes, id = 'studioLayer') {
+export function uiFrameBoxes(w, boxes, id = 'studioLayer') {
   const L = uiFrameLayer(w, id);
   L.innerHTML = '';
   for (const b of boxes) {
@@ -124,7 +124,10 @@ function uiInspectMount() {
     },
     true
   );
-  const again = () => uiInspectOutline();
+  const again = () => {
+    uiInspectOutline();
+    uiOverlaysFollow();
+  };
   w.addEventListener('scroll', again, true);
   w.addEventListener('resize', again);
   uiInspect.el = null;

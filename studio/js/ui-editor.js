@@ -20,6 +20,8 @@ import {
   uiInspectMount,
   uiInspectOutline,
   uiInspectPanel,
+  uiOverlays,
+  uiOverlaysSoon,
   uiRulesHTML,
   uiRulesShow,
 } from '../../game/js/hooks.js';
@@ -327,8 +329,10 @@ SECTIONS.ui = () => {
   return `<div class="eng-split ui-split"><div class="eng-set" id="uiSet">${uiSettingsHTML()}</div>
  <div class="eng-side"><div class="card"><div class="card-b"><div class="ui-pvbar"><div class="seg-row">${seg('mode', 'light', 'Light')}${seg('mode', 'dark', 'Dark')}</div><div class="seg-row">${seg('width', '320px', '320')}${seg('width', '390px', '390')}${seg('width', '760px', 'Wide')}</div>
   <div class="seg-row"><button class="seg ${uiEditor.reduced ? 'on' : ''}" data-act="uiPv" data-g="reduced">Reduced motion</button><select id="uiText" aria-label="Text size (Settings)"><option value="">Text: normal</option><option value="large" ${uiEditor.text === 'large' ? 'selected' : ''}>Text: large</option><option value="xlarge" ${uiEditor.text === 'xlarge' ? 'selected' : ''}>Text: larger</option></select>
+  <div class="seg-row ui-ov" title="Mark what breaks the UI rules in the preview"><button class="seg ${uiOverlays.tap ? 'on' : ''}" data-act="uiOverlay" data-k="tap">Under 44 px</button><button class="seg ${uiOverlays.contrast ? 'on' : ''}" data-act="uiOverlay" data-k="contrast">Contrast</button><button class="seg ${uiOverlays.glass ? 'on' : ''}" data-act="uiOverlay" data-k="glass">Glass</button></div>
   <button class="btn sm ${uiInspect.on ? 'on' : ''}" id="uiInsp" data-act="uiInspectOn" title="Tap a part in the preview: what it is and which dials reach it">Inspect</button>  <button class="btn sm" id="uiCmp" title="Hold (or hold C) to see the look as last saved">Hold to compare</button><a class="btn sm subtle" href="gallery.html" target="_blank" rel="noopener">Open the gallery</a></div></div>
   <iframe class="ui-pv" id="uiPv" title="The UI gallery with this look" src="gallery.html?studio=1"></iframe>
+  <p class="help ui-ov-note" id="uiOvNote" hidden></p>
   <div class="ui-inspect" id="uiInspect" hidden></div>
   <p class="help">The game’s own parts (studio/gallery.html) with your unsaved look${uiEditor.scope === 'game' ? '' : `, as on ${escapeHtml(uiScreenName(uiEditor.scope))}`}. An open game tab follows too.</p></div></div></div></div>`;
 };
@@ -349,6 +353,7 @@ function uiPreviewNow() {
     uiInspectOutline();
     uiInspectPanel();
   }
+  uiOverlaysSoon();
   return true;
 }
 function uiPreview() {
@@ -361,6 +366,7 @@ function mountUiPreview() {
   f.addEventListener('load', () => {
     uiPreviewNow();
     uiInspectMount();
+    uiOverlaysSoon();
   });
   uiPreviewNow();
   const b = $('#uiCmp');

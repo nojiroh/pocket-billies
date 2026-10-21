@@ -832,8 +832,22 @@ def ui_tools_steps(pg, errs):
         try: pg.wait_for_function("(w => !!w.document.querySelector('#studioFlash div'))(document.querySelector('#uiPv').contentWindow)", timeout=5000)
         except Exception: errs.append('a part in Connections did not show in the preview')
     pg.keyboard.press('Control+l')
+    # overlays: a planted 30 px button, a faint text and glass three deep are marked; switched off, nothing is
+    pg.evaluate("""(() => { const d = document.querySelector('#uiPv').contentWindow.document, m = d.querySelector('.g-wrap');
+      m.insertAdjacentHTML('afterbegin', '<div id="plant" style="background:#ffffff;padding:8px"><button id="plantTap" style="width:30px;height:30px">x</button><span id="plantFaint" style="color:#dddddd;font-size:14px">faint words</span>'
+        + '<div id="g1" style="backdrop-filter:blur(4px);padding:4px"><div id="g2" style="backdrop-filter:blur(4px);padding:4px"><div id="g3" style="backdrop-filter:blur(4px);height:20px"></div></div></div></div>');
+      d.querySelector('#plant').scrollIntoView() })()""")
+    for k in ['tap', 'contrast', 'glass']: pg.click(f'[data-act=uiOverlay][data-k={k}]')
+    ov = pg.evaluate("""(() => { const S = uiOverlays.last; if (!S) return null;
+      return { tap: S.tap.some(t => t.el.id === 'plantTap'), faint: S.contrast.some(c => c.el.id === 'plantFaint'),
+        deep: S.glass.filter(g => g.depth > 2).map(g => g.el.id), boxes: document.querySelector('#uiPv').contentWindow.document.querySelectorAll('#studioOverlay > div').length,
+        note: document.querySelector('#uiOvNote').textContent } })()""")
+    if not ov or not ov['tap'] or not ov['faint'] or ov['deep'] != ['g3'] or not ov['boxes'] or 'Tap targets under 44 px' not in ov['note']: errs.append(f'overlays: {ov}')
+    for k in ['tap', 'contrast', 'glass']: pg.click(f'[data-act=uiOverlay][data-k={k}]')
+    if pg.evaluate("document.querySelector('#uiPv').contentWindow.document.querySelectorAll('#studioOverlay > div').length"): errs.append('overlays stayed when switched off')
+    pg.evaluate("document.querySelector('#uiPv').contentWindow.document.querySelector('#plant').remove()")
     if len(errs) > n: errs[n:] = [f'ui tools: {e}' for e in errs[n:]]
-    else: print(f"ui tools: Connections on the text colour ({lk[1]} parts read {len(lk[0])} variables); inspect (the gold button: {len(names)} variables, its cut opens {go}); the rule report ({pg.evaluate('uiRules.found.length')} raw values) with Show me to lines that match the files", flush=True)
+    else: print(f"ui tools: overlays ({ov and ov['note']}); Connections on the text colour ({lk[1]} parts read {len(lk[0])} variables); inspect (the gold button: {len(names)} variables, its cut opens {go}); the rule report ({pg.evaluate('uiRules.found.length')} raw values) with Show me to lines that match the files", flush=True)
 
 
 def studio_test_steps(pg, errs):
