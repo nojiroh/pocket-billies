@@ -2,6 +2,33 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### UI track UI-3b - Studio UI section, tools - 2026-10-21
+Branch `ccr-dc41c006-00p8dj`, from main 00be53b (UI-3a merged). Owner's answers at the plan: real screens as the game
+in a frame; before/after live side by side; the rule check as one report line, not in the Check badge. Mid-session
+the owner started UI-4 in a parallel session and asked to skip the remaining checks.
+- Changed (one cause per commit): the missing UI-3a entry; ui-lint's `RULES` renamed `UI_LINT_RULES`, then moved to
+  game/js/logic/ui-lint.js (counts byte for byte the same); lines for every raw value (`--lines`); the file list found
+  by following the pages (`uiLintCrawl`); the rule report in the Studio's Check (studio/js/ui-rules.js); which
+  variables a dial writes (`uiDialVars`, by moving the dial and comparing sheets); Inspect (studio/js/ui-inspect.js,
+  helpers in logic/ui-inspect.js); Connections on a UI dial; overlays (studio/js/ui-overlays.js: tap targets,
+  layered contrast with gradients, glass depth and the blur budget); fixtures `team`, `bag`, `talk` with a `uiLook`
+  message only a fixture listens to; real screens in the preview with the frame kept across redraws; before/after;
+  Find and the ? sheet. The Studio check's `ui_tools` and `ui_screens` steps.
+- Where the plan was wrong: see ui-track.md "UI-3b found" (Ctrl+L taken; the lint's lines; no fixtures; no DOM capture).
+- Verified: fast tier at every commit up to the real screens (lint, typecheck, unit tests 357 -> 384, modules,
+  format, data); each new test and Studio step seen to fail on a planted fault (lines one off, comments deleted, the
+  `:host` rules left out, Connections not knowing UI dials, the fixture ignoring the look). `check:fast` green after
+  the fixtures (2.5 min). `--only=ui,ui_tools,ui_screens` green after before/after. Skipped at the owner's word: the
+  Studio check after the last commit (Find and the ? sheet: lint, typecheck, modules and format only), smoke, the
+  73 gallery pictures (`check:ui`), the full quick check and `--selftest`. Run `check:ui` and smoke before merging.
+- Risky: game/js/fixture.js and its message listener (fixtures only; check-fast passed). A game screen boots the
+  whole game in the frame (25-45 s in this container; quicker on a desktop); before/after on a game screen runs two.
+  The kept frame lies over the pane (position fixed, clipped): check it on the iPad. Contrast is a scan of computed
+  styles: text shadows, filters and images aren't counted. Merging with UI-4: regenerate hooks.js (`npm run modules`).
+- Found for later (UI-5/6): 45 texts under their contrast on the gallery (white on type pills, move tiles), 12 tap
+  targets under 44 px, the Team screen blurs 4 surfaces.
+- Next: the owner merges and pushes `ui-3b-done`; UI-4 is running in its own session.
+
 ### UI track UI-3a - Studio UI section, core - 2026-10-21 (entry written in UI-3b)
 The UI-3a session (PR #93, branch `claude/ui-3-start-3q234o`) updated STUDIO.md, TESTING.md, ui-track.md, ROADMAP and
 CHANGELOG but left no entry here; this one is put together from its commits (85bc555..203ac13) and those docs.

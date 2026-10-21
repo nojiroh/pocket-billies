@@ -200,6 +200,13 @@ same phase:
   alone with `python3 tools/check-studio-github.py --only=ui` (about a minute; `--only=` takes any names from its
   `STEPS`, plus `sections` and `art` for the two blocks before them). A new uiTheme.json group needs its schema,
   its dials in logic/ui-dials.js and its writer in logic/ui-theme.js together, or the tests fail.
+  UI-3b: the lint's rules are game/js/logic/ui-lint.js (the Studio runs them; `node tools/ui-lint.mjs --lines` lists
+  every raw value with its line); `ui-lint.test.mjs` keeps the files the Studio finds by following the pages equal to
+  the ones the command line walks (a new logic file must be on a page). `ui-dials.test.mjs` checks every dial writes
+  a CSS variable (`uiDialVars`); `ui-inspect.test.mjs` the inspect and overlay rules. The fixtures `team`, `bag` and
+  `talk` (game/js/fixture.js) open those screens for the Studio's preview. The Studio check's `ui_tools` step (rule
+  report, inspect, Connections, overlays; about 30 s) and `ui_screens` (each real screen and before/after; about 4
+  min, as each screen boots the game) run with `--only=ui_tools,ui_screens`.
 - **18 Trading and battles with friends**: every new Firestore rule gets emulator tests in `firebase/test/`;
   trade validation is logic with unit tests.
 
