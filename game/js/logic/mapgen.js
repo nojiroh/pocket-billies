@@ -26,6 +26,7 @@ expose({
   MAPGEN_FAMILY_SHARE: [() => MAPGEN_FAMILY_SHARE],
   MAPGEN_FEATURES: [() => MAPGEN_FEATURES],
   MAPGEN_INWARD: [() => MAPGEN_INWARD],
+  MAPGEN_OPPOSITE: [() => MAPGEN_OPPOSITE],
   MAPGEN_OUTWARD: [() => MAPGEN_OUTWARD],
   MAPGEN_PATH_GROUND: [() => MAPGEN_PATH_GROUND],
   MAPGEN_SHAPES: [() => MAPGEN_SHAPES],
@@ -52,6 +53,8 @@ expose({
   mapgenCornerHeight: [() => mapgenCornerHeight, v => (mapgenCornerHeight = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenDecodeBase64: [() => mapgenDecodeBase64, v => (mapgenDecodeBase64 = v)],
+  // @ts-expect-error -- replaced on purpose
+  mapgenEdgeStrip: [() => mapgenEdgeStrip, v => (mapgenEdgeStrip = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenEncodeBase64: [() => mapgenEncodeBase64, v => (mapgenEncodeBase64 = v)],
   // @ts-expect-error -- replaced on purpose
@@ -284,7 +287,120 @@ export function mapgenParams(p) {
     .slice(0, 4)
     .map(e => ({ side: e.side, t: mapgenBetween(+e.t || 0.5, 0.08, 0.92), width: mapgenBetween(+e.width || 2, 1, 6) }));
   if (!R.exits.length) R.exits = [{ side: 'S', t: 0.5, width: 2 }];
+  /* MG-2: the edges joined to a neighbour (mapgenEdgeStrip), copied (mapgenMergeDefaults keeps unknown keys by
+     reference); each one's exit is the nearest on its side within 44 m, moved onto it, or a new one */
+  const edges = (Array.isArray(P.edges) ? P.edges : [])
+    .filter(s => s && MAPGEN_OPPOSITE[s.side] && Array.isArray(s.heights) && s.t > 0 && s.t < 1)
+    .map(s => JSON.parse(JSON.stringify(s)));
+  delete P.edges;
+  if (edges.length) P.edges = edges;
+  for (const s of edges) {
+    const L = s.side === 'N' || s.side === 'S' ? P.w : P.h;
+    let best = /** @type {any} */ (null);
+    for (const e of R.exits)
+      if (
+        e.side === s.side &&
+        !e.joined &&
+        Math.abs(e.t - s.t) * L < 44 &&
+        (!best || Math.abs(e.t - s.t) < Math.abs(best.t - s.t))
+      )
+        best = e;
+    if (!best && R.exits.length < 4) R.exits.push((best = { side: s.side, t: s.t, width: s.width }));
+    if (best) Object.assign(best, { t: s.t, width: s.width, joined: 1 });
+  }
+  for (const e of R.exits) delete e.joined;
   return P;
+}
+
+/* ---------- MG-2: an edge joined to a neighbour ---------- */
+export const MAPGEN_OPPOSITE = { N: 'S', S: 'N', E: 'W', W: 'E' };
+/**
+ * what a neighbour shows where a new scene joins its exit, in the new scene's metres: the strip of its edge the new
+ * scene must agree with (MAPGEN_BAND either side of the exit and 4 m more to fade out, clipped to the edge both
+ * share). The new scene's exit goes on the opposite side, `t` along it (kept as near as it can be to the t asked
+ * for) so the two exits are a whole number of metres apart, as wide as the neighbour's. size: the new scene's
+ * {w, h}. The strip is plain data, so params.edges keeps the generator a function of its dials alone.
+ * { side, t, width, from: {exit}, at (the exit, metres along the side), lo, hi, u0 (the first corner),
+ *   heights (the neighbour's edge corners from u0, a metre apart), c0 (the first cell), ground (the neighbour's
+ *   cells along its edge from c0), raise (its step raise along the edge, a half metre apart from c0, or null),
+ *   props ([k, x, z, s] near the edge, outside the new scene) } or null
+ * @param {any} nb @param {string} exitId @param {{ w: number, h: number }} size @param {number} [t]
+ */
+export function mapgenEdgeStrip(nb, exitId, size, t) {
+  const xn = mapgenExitOf(nb, exitId);
+  if (!xn) return null;
+  const ns = xn.e.side,
+    side = MAPGEN_OPPOSITE[ns],
+    v = ns === 'E' || ns === 'W',
+    L = v ? size.h : size.w,
+    Lnb = v ? nb.h : nb.w,
+    an = v ? xn.p[1] : xn.p[0],
+    want = (t == null ? xn.e.t : t) * L;
+  /* the offset of the new scene along the edge, a whole number of metres: its exit at an - o */
+  let o = Math.round(an - want);
+  while (an - o > 0.92 * L && o < an) o++;
+  while (an - o < 0.08 * L && o > an - L) o--;
+  const at = mapgenRound2(an - o),
+    lo = Math.max(0, -o, at - MAPGEN_BAND - 4),
+    hi = Math.min(L, Lnb - o, at + MAPGEN_BAND + 4);
+  if (hi <= lo) return null;
+  /* the neighbour's edge, by u in the new scene's metres along it */
+  const corner = u =>
+    v ? mapgenSceneCorner(nb, ns === 'E' ? nb.w : 0, u + o) : mapgenSceneCorner(nb, u + o, ns === 'N' ? nb.h : 0);
+  const cellAt = (x, z) =>
+    (nb.tiles[nb.h - 1 - mapgenBetween(Math.floor(z), 0, nb.h - 1)] || '')[mapgenBetween(Math.floor(x), 0, nb.w - 1)] ||
+    nb.edge ||
+    'g';
+  const cell = c =>
+    v ? cellAt(ns === 'E' ? nb.w - 0.5 : 0.5, c + o + 0.5) : cellAt(c + o + 0.5, ns === 'N' ? nb.h - 0.5 : 0.5);
+  const u0 = Math.ceil(lo),
+    c0 = Math.floor(lo),
+    heights = [],
+    ground = [];
+  for (let u = u0; u <= hi; u++) heights.push(mapgenRound2(corner(u)));
+  for (let c = c0; c < hi; c++) ground.push(cell(c));
+  let raise = /** @type {number[] | null} */ (null);
+  if (nb.steps) {
+    const u8 = mapgenDecodeBase64(nb.steps),
+      S = new Int16Array(u8.buffer, 0, u8.length >> 1),
+      W2 = nb.w * 2;
+    if (S.length === nb.w * nb.h * 4) {
+      const R = [];
+      for (let u = c0 + 0.25; u < hi; u += 0.5) {
+        const x = v ? (ns === 'E' ? nb.w - 0.25 : 0.25) : u + o,
+          z = v ? u + o : ns === 'N' ? nb.h - 0.25 : 0.25;
+        R.push(
+          S[mapgenBetween(Math.floor(z * 2), 0, nb.h * 2 - 1) * W2 + mapgenBetween(Math.floor(x * 2), 0, W2 - 1)] / 20
+        );
+      }
+      if (R.some(r => r)) raise = R;
+    }
+  }
+  /* the neighbour's things within 3 m of the edge, where they stand from the new scene */
+  const props = [];
+  for (const p of nb.props || []) {
+    const d = ns === 'N' ? nb.h - p.z : ns === 'S' ? p.z : ns === 'E' ? nb.w - p.x : p.x,
+      u = (v ? p.z : p.x) - o;
+    if (d > 3 || u < lo - 3 || u > hi + 3) continue;
+    const x = side === 'S' ? p.x - o : side === 'N' ? p.x - o : side === 'W' ? p.x - nb.w : size.w + p.x,
+      z = side === 'S' ? p.z - nb.h : side === 'N' ? size.h + p.z : p.z - o;
+    props.push([p.k, mapgenRound2(x), mapgenRound2(z), p.s || 1]);
+  }
+  return {
+    side,
+    t: at / L,
+    width: xn.e.width || 2,
+    from: { exit: exitId },
+    at,
+    lo: mapgenRound2(lo),
+    hi: mapgenRound2(hi),
+    u0,
+    heights,
+    c0,
+    ground: ground.join(''),
+    raise,
+    props,
+  };
 }
 
 /** where an edge exit is, as walk-view.js exitPoint works it out */
@@ -351,8 +467,10 @@ export function mapgenNewWork(P, ctx) {
     bridges: [],
     waters: [],
     npcSpots: [],
-    notes: [],
+    notes: /** @type {string[]} */ ([]),
     stepsUsed: false,
+    /* MG-2: the edges joined to a neighbour that got their exit (mapgenParams) */
+    joined: (P.edges || []).filter(s => P.road.exits.some(e => e.side === s.side && e.t === s.t)),
   };
 }
 export const mapgenCellAt = (G, x, z) =>
@@ -1557,6 +1675,9 @@ export function mapgenEncodeBase64(bytes) {
 export function mapgenScene(params, ctx) {
   const P = mapgenParams(params),
     G = mapgenNewWork(P, ctx);
+  for (const s of P.edges || [])
+    if (!G.joined.includes(s))
+      G.notes.push(`no room for the exit joined on the ${MAPGEN_SIDE_NAME[s.side]} side (four exits at most)`);
   mapgenStageHeights(G);
   mapgenStageRoad(G);
   mapgenStageGround(G);

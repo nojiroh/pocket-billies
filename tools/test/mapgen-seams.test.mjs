@@ -78,3 +78,67 @@ test('two routes generated on their own do not meet (so the measure can tell)', 
   assert.deepEqual(r.off, [-56, 64]);
   assert.ok(r.dhBand > 0.05, `the band differs by ${r.dhBand} m`);
 });
+
+/* a parent route south to north with two exits north (a run's layout: t 0.25 and 0.75 on a 112 m side) */
+const parentParams = (seed, extra = {}) => ({
+  seed,
+  w: 112,
+  h: 64,
+  land: { hills: 0.5 },
+  road: {
+    exits: [
+      { side: 'S', t: 0.5 },
+      { side: 'N', t: 0.25 },
+      { side: 'N', t: 0.75 },
+    ],
+  },
+  ...extra,
+});
+const childParams = (seed, edges, extra = {}) => ({
+  seed,
+  w: 112,
+  h: 64,
+  land: { hills: 0.5 },
+  road: {
+    exits: [
+      { side: 'S', t: 0.75 },
+      { side: 'N', t: 0.5 },
+    ],
+  },
+  edges,
+  ...extra,
+});
+const R = modules['seam-rules'];
+
+test("a neighbour's strip: the opposite side, as wide, a whole number of metres along; the exit moves onto it", () => {
+  const P = G.mapgenScene(parentParams(3), ctx).scene,
+    strip = G.mapgenEdgeStrip(P, 'north', { w: 112, h: 64 }, 0.75);
+  assert.equal(strip.side, 'S');
+  assert.equal(strip.width, 2);
+  assert.equal(strip.at, 84);
+  assert.equal(strip.heights.length, Math.floor(strip.hi) - strip.u0 + 1);
+  assert.equal(strip.ground.length, Math.ceil(strip.hi) - strip.c0);
+  const K = G.mapgenScene(childParams(9, [strip]), ctx).scene,
+    eK = K.edgeExits.find(e => e.side === 'S'),
+    eP = P.edgeExits.find(e => e.id === 'north');
+  assert.deepEqual(R.seamRulesPair(P, eP, K, eK), []);
+  assert.deepEqual(R.seamRulesSides(K), []);
+  /* asked for too near a corner: kept inside 0.08..0.92, still a whole number of metres from the neighbour's */
+  const edge = G.mapgenEdgeStrip(P, 'north', { w: 112, h: 64 }, 0.99);
+  assert.ok(edge.t <= 0.92 && Number.isInteger(28 - edge.at), `t ${edge.t}, at ${edge.at}`);
+});
+
+test("joined dials are copied, so the caller's are not changed; no room for a fifth exit is a note", () => {
+  const P = G.mapgenScene(parentParams(3), ctx).scene,
+    strip = G.mapgenEdgeStrip(P, 'north', { w: 112, h: 64 }, 0.75),
+    p = childParams(9, [strip]),
+    copy = structuredClone(p),
+    Q = G.mapgenParams(p);
+  assert.deepEqual(p, copy);
+  assert.notEqual(Q.edges[0], strip);
+  const full = childParams(9, [strip]);
+  full.road.exits = ['W', 'E', 'N', 'N'].map((side, i) => ({ side, t: i === 3 ? 0.8 : 0.2 }));
+  const r = G.mapgenScene(full, ctx);
+  assert.deepEqual(r.notes, ['no room for the exit joined on the south side (four exits at most)']);
+  assert.equal(G.mapgenParams({}).edges, undefined, 'no edges key unless joined');
+});
