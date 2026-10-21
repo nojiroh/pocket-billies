@@ -436,7 +436,10 @@ function readField(el) {
     return el.dataset.scale ? Math.round(n * +el.dataset.scale) : n;
   }
   if (k === 'color') {
-    return /^#[0-9a-f]{6}$/i.test(el.value) ? el.value.toUpperCase() : undefined;
+    /* UI-3: a colour that may be see-through (data-a): #rrggbbaa in its text field; the picker keeps the alpha it had */
+    if (el.dataset.a && el.type === 'color') return el.value.toUpperCase() + (el.dataset.alpha || '');
+    const ok = el.dataset.a ? /^#[0-9a-f]{6}([0-9a-f]{2})?$/i : /^#[0-9a-f]{6}$/i;
+    return ok.test(el.value) ? el.value.toUpperCase() : undefined;
   }
   if ((k === 'text' || k === 'sel') && el.value === '' && el.dataset.opt) return undefined;
   return el.value;
@@ -450,7 +453,12 @@ function onField(ev) {
   writePath(el.dataset.p, v);
   if (el.dataset.k === 'color') {
     $$(`[data-p="${el.dataset.p}"]`).forEach(o => {
-      if (o !== el) o.value = v;
+      if (o === el) return;
+      /* a colour picker holds #rrggbb only: the alpha byte stays beside it */
+      if (o.type === 'color') {
+        o.value = v.slice(0, 7);
+        if (o.dataset.a) o.dataset.alpha = v.slice(7);
+      } else o.value = v;
     });
   }
   const out = document.getElementById(fieldOutputId(el.dataset.p));
@@ -485,6 +493,7 @@ export const SECTION_LIST = [
   ['people', 'People', 'Looks for trainers and shopkeepers'],
   ['jobs', 'Jobs', 'What working Billies earn (not in the game until the ranch)'],
   ['rules', 'Rules', 'Every number that tunes the game'],
+  ['ui', 'UI look', 'The menus’ look: colours, glass, shapes, space, type and motion, for the game or one screen'],
   ['art', 'Art files', 'Browse and replace any image'],
   ['check', 'Check & backups', 'Problems, backups and restore'],
 ];
@@ -498,7 +507,7 @@ const SECTION_GROUPS = [
   ['World & places', ['scenes', 'props', 'engine', 'world']],
   ['People & story', ['trainers', 'people', 'wardrobe', 'lore', 'story']],
   ['Money', ['items', 'shops', 'jobs']],
-  ['Game', ['rules', 'art', 'check']],
+  ['Game', ['rules', 'ui', 'art', 'check']],
 ];
 const foldedSectionGroups = (() => {
   try {
