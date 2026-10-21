@@ -392,7 +392,7 @@ const PbSheet = class extends LitElement {
         width: min(calc(100% - 2 * var(--gutter)), 560px);
         isolation: isolate;
         transform: translateX(-50%) translateY(var(--dy, 0px));
-        animation: wipe var(--m-slow) var(--ease-out) both;
+        animation: wipe var(--m-slow) var(--ease-out) backwards;
       }
       .sh,
       .edge {
@@ -438,16 +438,23 @@ const PbSheet = class extends LitElement {
         margin: 0 0 var(--s4);
         font: 700 var(--fs-title) / 1.15 var(--font-voice);
       }
+      /* motion.css m-wipe: a mask moves along the 45° line; backwards only, so nothing stays on the frame */
       @keyframes wipe {
         from {
-          opacity: 0;
-          clip-path: polygon(0 100%, 0 100%, 0 100%);
-        }
-        60% {
-          opacity: 1;
+          -webkit-mask-image: linear-gradient(135deg, #000 40%, transparent 60%);
+          mask-image: linear-gradient(135deg, #000 40%, transparent 60%);
+          -webkit-mask-size: 300% 300%;
+          mask-size: 300% 300%;
+          -webkit-mask-position: 100% 100%;
+          mask-position: 100% 100%;
         }
         to {
-          clip-path: polygon(0 -200%, 300% 100%, 0 100%);
+          -webkit-mask-image: linear-gradient(135deg, #000 40%, transparent 60%);
+          mask-image: linear-gradient(135deg, #000 40%, transparent 60%);
+          -webkit-mask-size: 300% 300%;
+          mask-size: 300% 300%;
+          -webkit-mask-position: 0 0;
+          mask-position: 0 0;
         }
       }
       @keyframes fade {

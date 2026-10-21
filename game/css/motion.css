@@ -1,4 +1,4 @@
-/* ================= phase 06: the eight motions =================
+/* ================= phase 06: the eight motions (UI-2: and the diagonal wipe) =================
    Each motion is named once and used everywhere (docs/phases/06-plan.md "Motion"). Add the class (or the component
    adds it) instead of writing new keyframes. Transforms and opacity only, so phones stay smooth.
    Reduced motion (the phone's setting, or Settings in the game: [data-motion='reduced']) turns every one into a
@@ -111,7 +111,69 @@
   }
 }
 
+/* wipe (UI-2): a screen or a sheet comes in along the 45° line, top left to bottom right (.m-wipe-r: from the top
+   right, for a screen coming from the right). A mask moves across, so the part keeps its cut outline (a clip-path)
+   while it comes in; the fill is backwards only, so nothing stays on the part afterwards */
+.m-wipe {
+  animation: m-wipe var(--m-slow) var(--ease-out) backwards;
+}
+.m-wipe-r {
+  animation: m-wipe-r var(--m-slow) var(--ease-out) backwards;
+}
+@keyframes m-wipe {
+  from {
+    -webkit-mask-image: linear-gradient(135deg, #000 40%, transparent 60%);
+    mask-image: linear-gradient(135deg, #000 40%, transparent 60%);
+    -webkit-mask-size: 300% 300%;
+    mask-size: 300% 300%;
+    -webkit-mask-position: 100% 100%;
+    mask-position: 100% 100%;
+  }
+  to {
+    -webkit-mask-image: linear-gradient(135deg, #000 40%, transparent 60%);
+    mask-image: linear-gradient(135deg, #000 40%, transparent 60%);
+    -webkit-mask-size: 300% 300%;
+    mask-size: 300% 300%;
+    -webkit-mask-position: 0 0;
+    mask-position: 0 0;
+  }
+}
+@keyframes m-wipe-r {
+  from {
+    -webkit-mask-image: linear-gradient(225deg, #000 40%, transparent 60%);
+    mask-image: linear-gradient(225deg, #000 40%, transparent 60%);
+    -webkit-mask-size: 300% 300%;
+    mask-size: 300% 300%;
+    -webkit-mask-position: 0 100%;
+    mask-position: 0 100%;
+  }
+  to {
+    -webkit-mask-image: linear-gradient(225deg, #000 40%, transparent 60%);
+    mask-image: linear-gradient(225deg, #000 40%, transparent 60%);
+    -webkit-mask-size: 300% 300%;
+    mask-size: 300% 300%;
+    -webkit-mask-position: 100% 0;
+    mask-position: 100% 0;
+  }
+}
+/* the screens and the sheets use it (the older slide-ins in v05.css and polish.css are replaced here; the Map tab's
+   screen keeps no animation, screens.css) */
+.screen.enter,
+.screen.enter.fromL {
+  animation: m-wipe var(--m-slow) var(--ease-out) backwards;
+}
+.screen.enter.fromR {
+  animation: m-wipe-r var(--m-slow) var(--ease-out) backwards;
+}
+.scrim:not(.still) .sheet {
+  animation: m-wipe var(--m-slow) var(--ease-out) backwards;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .m-wipe,
+  .m-wipe-r,
+  .screen.enter,
+  .scrim:not(.still) .sheet,
   .m-enter,
   .m-sheet,
   .m-pop,
@@ -127,7 +189,19 @@
     transform: none;
   }
 }
-[data-motion='reduced'] :is(.m-enter, .m-sheet, .m-pop, .m-count, .m-nudge, .m-float) {
+[data-motion='reduced']
+  :is(
+    .m-wipe,
+    .m-wipe-r,
+    .screen.enter,
+    .scrim:not(.still) .sheet,
+    .m-enter,
+    .m-sheet,
+    .m-pop,
+    .m-count,
+    .m-nudge,
+    .m-float
+  ) {
   animation: m-fade 120ms linear both !important;
 }
 [data-motion='reduced'] .m-idle {

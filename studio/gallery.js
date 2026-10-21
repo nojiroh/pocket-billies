@@ -30,7 +30,7 @@ document.addEventListener('click', ev => {
     b.setAttribute('aria-pressed', String(on));
   } else if (d.m) {
     const el = document.getElementById('gMotion');
-    el.classList.remove('m-enter', 'm-pop', 'm-nudge', 'm-count');
+    el.classList.remove('m-wipe', 'm-wipe-r', 'm-enter', 'm-pop', 'm-nudge', 'm-count');
     void el.offsetWidth;
     el.classList.add(d.m);
   } else if (b.id === 'gToastMore') {
