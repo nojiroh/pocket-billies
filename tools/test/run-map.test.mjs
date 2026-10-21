@@ -178,7 +178,7 @@ test('the 9-row map: 9 on every path, two lanes on a free or town row as often a
   assert.ok(switches > 100 && switches < 400, `${switches} of 500 maps switch lanes`);
 });
 
-test('exits: one link in the middle of a side, two at a quarter and three quarters; both ends of a link agree', () => {
+test('exits: one link in the middle of a side, two 10 m and 54 m along its 64 m; both ends of a link agree', () => {
   for (const s of seeds(200)) {
     const map = runMapMake(s, NODE_TYPES, MAP_RULES);
     map.nodes.forEach((n, i) => {
@@ -186,7 +186,7 @@ test('exits: one link in the middle of a side, two at a quarter and three quarte
       for (const side of [e.north, e.south])
         assert.deepEqual(
           side.map(x => x.t),
-          [[], [0.5], [0.25, 0.75]][side.length]
+          [[], [0.5], [0.15625, 0.84375]][side.length]
         );
       for (const { to } of e.north) assert.ok(runExits(map, to).south.some(x => x.from === i));
       assert.deepEqual(e.north.map(x => x.to).sort(), runNext(map, i).sort());
@@ -202,7 +202,7 @@ test('exits: one link in the middle of a side, two at a quarter and three quarte
   assert.throws(() => runExits(tooMany, 0), /more than two/);
 });
 
-test('on the bowl: rows from the rim towards the centre, lanes apart, roads leave and arrive the way their exits face', () => {
+test('on the bowl: rows clockwise (westward) along an arc, lanes apart, roads leave and arrive the way their exits face', () => {
   for (let rows = 5; rows <= 12; rows++)
     for (const s of seeds(60)) {
       const map = runMapMake(s, NODE_TYPES, rulesFor(rows)),
@@ -211,8 +211,9 @@ test('on the bowl: rows from the rim towards the centre, lanes apart, roads leav
       N.forEach((n, i) => {
         const { a, r } = runSpot(map, i);
         assert.ok(a >= 0 && a < 360 && r > 0 && r < 1, `${a}, ${r}`);
-        if (n.row === 0) assert.ok(Math.abs(r - RUN_BOWL.outer) < 1e-9);
-        if (n.row === rows - 1) assert.ok(Math.abs(r - RUN_BOWL.inner) < 1e-9);
+        assert.ok(Math.abs(r - RUN_BOWL.r) <= RUN_BOWL.lane / 2 + 1e-9, `${r}`);
+        if (n.row === 0) assert.ok(Math.abs(a - (RUN_BOWL.a + RUN_BOWL.span / 2)) < 1e-9);
+        if (n.row === rows - 1) assert.ok(Math.abs(a - (RUN_BOWL.a - RUN_BOWL.span / 2)) < 1e-9);
       });
       // pins at least 0.07 of the bowl's radius apart, Copperleaf at the centre too
       const all = [[0, 0], ...P];
@@ -223,21 +224,21 @@ test('on the bowl: rows from the rim towards the centre, lanes apart, roads leav
         }
       // a road turns within the hub's 30 degrees from its exits, a lane switch within 45
       for (const [a, b] of links(map)) {
-        const turn = bowlSeamTurn(P[a], P[b], 'north', 'south'),
+        const turn = bowlSeamTurn(P[a], P[b], 'west', 'east'),
           switching = N[a].lane !== N[b].lane && widthOf(map, N[a].row) === 2 && widthOf(map, N[b].row) === 2;
         assert.ok(turn <= (switching ? 45 : 30), `${s}, ${rows} rows: ${a}->${b} turns ${turn.toFixed(1)}`);
       }
-      // each node's exits run west to east in the order its neighbours lie along its east on the bowl
+      // each node's exits run south to north in the order its neighbours lie along its north on the bowl
       N.forEach((_, i) => {
-        const { east } = bowlCompass(P[i][0], P[i][1]),
-          along = j => (P[j][0] - P[i][0]) * east[0] + (P[j][1] - P[i][1]) * east[1],
+        const { north } = bowlCompass(P[i][0], P[i][1]),
+          along = j => (P[j][0] - P[i][0]) * north[0] + (P[j][1] - P[i][1]) * north[1],
           e = runExits(map, i);
         for (const side of [e.north.map(x => [x.to, x.t]), e.south.map(x => [x.from, x.t])]) {
           const byPlace = side
             .slice()
             .sort((p, q) => along(p[0]) - along(q[0]))
             .map(x => x[1]);
-          assert.deepEqual(byPlace, byPlace.slice().sort(), `${s} node ${i}: its exits' t run west to east`);
+          assert.deepEqual(byPlace, byPlace.slice().sort(), `${s} node ${i}: its exits' t run south to north`);
         }
       });
     }

@@ -4,9 +4,9 @@
    What a run's node map (logic/run-map.js) becomes when you stand in it: a walkable scene per node, made by the map
    generator (logic/mapgen.js) from the run's seed, and the world tables the game reads (game-data.js worldSetGraph):
    Copperleaf first (world node 0), then a place per map node (world node i + 1), joined by seam roads.
-   - A node's scene is a 112 × 64 route (MAPGEN_SIZES.route). Its exits are runExits': north to the nodes it leads
-     to, south to the ones that lead to it, at t 0.5, or 0.25 and 0.75. The main road runs from its first south exit
-     to its first north exit; the second ones branch off it.
+   - A node's scene is a 112 × 64 route (MAPGEN_SIZES.route). Its exits are runExits' (the owner: runs go east to
+     west): west to the nodes it leads to, east to the ones that lead to it, at t 0.5, or 0.15625 and 0.84375 (10 m and 54 m along). The main road
+     runs from its first east exit to its first west exit; the second ones branch off it.
    - A node's scene is made from every parent's edge (mapgenEdgeStrip into params.edges, map generator MG-2), so the
      two meet with no gap and a straight walk across. The map numbers nodes row by row, so every parent comes before
      its children: making the scenes in order makes each one after the ones it needs.
@@ -63,16 +63,16 @@ export const runShopId = i => `run_${i}_shop`;
  * @param {string} seed @param {number} i */
 export const runMapIdOf = (seed, i) => `run_${i}_${(hashString(seed) % 1679616).toString(36)}`;
 /** the side names mapgen gives a scene's exits, the first and then the second on a side (mapgenStageExits) */
-export const RUN_SIDE_ID = { S: ['south', 'south2'], N: ['north', 'north2'] };
-/** a node's exits in the order its scene is made with them, with the ids the generator gives them: the first south,
- * the first north (the main road between them), then the second south and the second north
+export const RUN_SIDE_ID = { E: ['east', 'east2'], W: ['west', 'west2'] };
+/** a node's exits in the order its scene is made with them, with the ids the generator gives them: the first east
+ * (back), the first west (ahead; the main road between them), then the second east and the second west
  * @param {RunMap} map @param {number} i
- * @returns {{ side: 'N' | 'S', t: number, id: string, node: number }[]} node: the neighbour the exit leads to */
+ * @returns {{ side: 'E' | 'W', t: number, id: string, node: number }[]} node: the neighbour the exit leads to */
 export function runSceneExits(map, i) {
   const ex = runExits(map, i),
-    S = ex.south.map((e, k) => ({ side: /** @type {'S'} */ ('S'), t: e.t, id: RUN_SIDE_ID.S[k], node: e.from })),
-    N = ex.north.map((e, k) => ({ side: /** @type {'N'} */ ('N'), t: e.t, id: RUN_SIDE_ID.N[k], node: e.to }));
-  return [S[0], N[0], S[1], N[1]].filter(e => !!e);
+    E = ex.south.map((e, k) => ({ side: /** @type {'E'} */ ('E'), t: e.t, id: RUN_SIDE_ID.E[k], node: e.from })),
+    W = ex.north.map((e, k) => ({ side: /** @type {'W'} */ ('W'), t: e.t, id: RUN_SIDE_ID.W[k], node: e.to }));
+  return [E[0], W[0], E[1], W[1]].filter(e => !!e);
 }
 /** the exit of node i that leads to node j, or null @param {RunMap} map @param {number} i @param {number} j */
 export const runSceneExitTo = (map, i, j) => runSceneExits(map, i).find(e => e.node === j) || null;
@@ -104,7 +104,7 @@ export function runSceneParams(run, i, scenes, data) {
     exits = runSceneExits(map, i),
     dials = runSceneDials(data.rules.scene, rngFrom(nodeSeed, 'scene|dials'));
   const edges = exits
-    .filter(e => e.side === 'S')
+    .filter(e => e.side === 'E')
     .map(e => {
       const parent = scenes[e.node],
         out = runSceneExitTo(map, e.node, i);
@@ -116,9 +116,9 @@ export function runSceneParams(run, i, scenes, data) {
   return {
     ...dials,
     /* TR-2: the debug menu's mountains run (a mod on the run, so a reload makes the same scenes): every place gets
-       the tallest mountains on its east and west sides, for measuring them on a phone */
+       the tallest mountains on its north side (the back: a run goes east to west), for measuring them on a phone */
     ...((run.mods || []).includes(RUN_MOD_MOUNTAINS)
-      ? { land: { ...(dials.land || {}), mountains: 1, massif: 'EW' } }
+      ? { land: { ...(dials.land || {}), mountains: 1, massif: 'N' } }
       : {}),
     /* RL-8: the buildings a node's type needs, beside the main road near its middle (mapgen's props dials: MG-2) */
     props: { ...(dials.props || {}), ...(RUN_BUILDINGS[node.type] || {}) },
@@ -127,6 +127,9 @@ export function runSceneParams(run, i, scenes, data) {
     w: size.w,
     h: size.h,
     seed: hashString(nodeSeed + '|scene') % 2147483647,
+    /* its east and west edges at height 0, so it meets any neighbour with no step (two neighbours' strips overlap on
+       a 64 m edge, where one scene can't follow both) */
+    pin: 'EW',
     road: { ...(dials.road || {}), exits: exits.map(e => ({ side: e.side, t: e.t, width: 2 })) },
     edges,
   };

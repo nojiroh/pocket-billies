@@ -66,7 +66,7 @@ test("every run's scenes join: exits where the roads say, no gap, a straight wal
       const where = `${seed} node ${i}`;
       assert.deepEqual(
         sc.edgeExits.map((/** @type {any} */ e) => [e.id, e.side, e.t]),
-        runSceneExits(map, i).map(e => [e.id, e.side, e.t]),
+        runSceneExits(map, i).map(e => [e.id, e.side, +e.t.toFixed(4)]) /* the generator keeps t to 4 places */,
         `${where}: the exits the roads name`
       );
       assert.deepEqual(mapgenUnreachable(sc, scenery), [], where);

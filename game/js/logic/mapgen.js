@@ -125,6 +125,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   mapgenPinEdges: [() => mapgenPinEdges, v => (mapgenPinEdges = v)],
   // @ts-expect-error -- replaced on purpose
+  mapgenPinSides: [() => mapgenPinSides, v => (mapgenPinSides = v)],
+  // @ts-expect-error -- replaced on purpose
   mapgenPolyLength: [() => mapgenPolyLength, v => (mapgenPolyLength = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenPutProp: [() => mapgenPutProp, v => (mapgenPutProp = v)],
@@ -194,7 +196,7 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-export const MAPGEN_VERSION = 3; /* 2: MG-2's terraces at ground level by exits; 3: pictures are never scaled, plants get a drawn variant (v) instead */
+export const MAPGEN_VERSION = 4; /* 2: MG-2's terraces at ground level by exits; 3: pictures are never scaled, plants get a drawn variant (v) instead; 4: a run's scenes go east to west (logic/run-scenes.js) */
 export const MAPGEN_STAGES = ['heights', 'relief', 'ground', 'road', 'exits', 'lots', 'plants', 'feature', 'props'];
 export const MAPGEN_SHAPES = {
   straight: 'Straight',
@@ -216,6 +218,7 @@ export const MAPGEN_FEATURES = {
 /* TR-2: the sides mountains rise on (land.massif): a side or two, the back and sides, or all round */
 export const MAPGEN_MASSIF = {
   EW: 'East and west',
+  NS: 'North and south',
   W: 'West',
   E: 'East',
   N: 'Back (north)',
@@ -337,6 +340,9 @@ export function mapgenParams(p) {
   /* TR-2: the mountains dials are kept only when given, so a scene made without them stores the dials it always did */
   if (P.land.mountains !== undefined && typeof P.land.mountains !== 'number') delete P.land.mountains;
   if (P.land.massif !== undefined && !MAPGEN_MASSIF[P.land.massif]) P.land.massif = MAPGEN_MOUNTAIN_DIALS.massif;
+  /* the sides whose edge is pinned to height 0 (a run's: every scene meets any neighbour there), kept only when given */
+  if (P.pin !== undefined)
+    P.pin = typeof P.pin === 'string' ? [...new Set(P.pin.split(''))].filter(c => 'NSEW'.includes(c)).join('') : '';
   R.exits = (R.exits || [])
     .filter(e => e && 'NSEW'.includes(e.side))
     .slice(0, 4)
@@ -808,6 +814,17 @@ export function mapgenPinEdges(G, fade) {
         if (c) G.H[j * (G.w + 1) + i] += c * (1 - mapgenSmooth(d / fade));
       }
   }
+}
+/** the sides in params.pin brought to height 0 at their edge, less and less further in (gone at `fade` metres): a
+ * run's scenes pin their east and west edges, so two scenes meet with no step wherever they join, even where a
+ * scene's two neighbours' strips overlap on its 64 m edge. Run with the joined edges (fade 16, then 6) */
+export function mapgenPinSides(G, fade) {
+  for (const side of G.P.pin || '')
+    for (let j = 0; j <= G.h; j++)
+      for (let i = 0; i <= G.w; i++) {
+        const d = mapgenDepth(G, side, i, j);
+        if (d < fade) G.H[j * (G.w + 1) + i] *= mapgenSmooth(d / fade);
+      }
 }
 /** is (x, z) within `depth` metres of a joined edge's strip (with its 4 m fade) */
 export function mapgenNearJoined(G, x, z, depth) {
@@ -2329,6 +2346,7 @@ export function mapgenScene(params, ctx) {
     if (!G.joined.includes(s))
       G.notes.push(`no room for the exit joined on the ${MAPGEN_SIDE_NAME[s.side]} side (four exits at most)`);
   mapgenStageHeights(G);
+  mapgenPinSides(G, 16);
   mapgenPinEdges(G, 16);
   mapgenStageRoad(G);
   mapgenStageGround(G);
@@ -2341,6 +2359,7 @@ export function mapgenScene(params, ctx) {
   mapgenStageLots(G);
   mapgenStagePlants(G);
   mapgenStageProps(G);
+  mapgenPinSides(G, 6);
   mapgenPinEdges(G, 6);
   const { w, h, B } = G;
   const tiles = [];
