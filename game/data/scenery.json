@@ -1432,8 +1432,42 @@
    "solid": 0,
    "ppm": 32,
    "variants": [
-    {"img":"scene/props/tallgrass_sm.png","ox":-19,"oy":-19,"name":"Tall grass (small)","size":"sm"},
-    {"img":"scene/props/tallgrass_lg.png","ox":-28,"oy":-38,"name":"Tall grass (large)","size":"lg"}
+    {
+     "img": "scene/props/tallgrass_tuft.png",
+     "ox": -15,
+     "oy": -15,
+     "form": "tuft",
+     "weight": 1,
+     "span": 0.71,
+     "name": "Tall grass (young tuft)"
+    },
+    {
+     "img": "scene/props/tallgrass_clump.png",
+     "ox": -29,
+     "oy": -23,
+     "form": "clump",
+     "weight": 1,
+     "span": 1.38,
+     "name": "Tall grass (clump)"
+    },
+    {
+     "img": "scene/props/tallgrass_windswept.png",
+     "ox": -26,
+     "oy": -33,
+     "form": "windswept",
+     "weight": 0.8,
+     "span": 1.24,
+     "name": "Tall grass (windswept)"
+    },
+    {
+     "img": "scene/props/tallgrass_meadow.png",
+     "ox": -43,
+     "oy": -33,
+     "form": "meadow",
+     "weight": 0.5,
+     "span": 2.05,
+     "name": "Tall grass (meadow)"
+    }
    ],
    "vary": {"size":0}
   },
@@ -1450,8 +1484,42 @@
    "solid": 0,
    "ppm": 32,
    "variants": [
-    {"img":"scene/props/reeds_sm.png","ox":-19,"oy":-61,"name":"Cattail reeds (small)","size":"sm"},
-    {"img":"scene/props/reeds_lg.png","ox":-24,"oy":-74,"name":"Cattail reeds (large)","size":"lg"}
+    {
+     "img": "scene/props/reeds_tuft.png",
+     "ox": -19,
+     "oy": -61,
+     "form": "tuft",
+     "weight": 1,
+     "span": 1,
+     "name": "Cattail reeds (young tuft)"
+    },
+    {
+     "img": "scene/props/reeds_clump.png",
+     "ox": -26,
+     "oy": -64,
+     "form": "clump",
+     "weight": 1,
+     "span": 1.37,
+     "name": "Cattail reeds (clump)"
+    },
+    {
+     "img": "scene/props/reeds_windswept.png",
+     "ox": -19,
+     "oy": -63,
+     "form": "windswept",
+     "weight": 0.8,
+     "span": 1,
+     "name": "Cattail reeds (windswept)"
+    },
+    {
+     "img": "scene/props/reeds_meadow.png",
+     "ox": -41,
+     "oy": -63,
+     "form": "meadow",
+     "weight": 0.5,
+     "span": 2.16,
+     "name": "Cattail reeds (meadow)"
+    }
    ],
    "vary": {"size":0}
   },
@@ -1468,8 +1536,42 @@
    "solid": 0,
    "ppm": 32,
    "variants": [
-    {"img":"scene/props/flowers_red_sm.png","ox":-17,"oy":-15,"name":"Red flowers (small)","size":"sm"},
-    {"img":"scene/props/flowers_red_lg.png","ox":-32,"oy":-25,"name":"Red flowers (large)","size":"lg"}
+    {
+     "img": "scene/props/flowers_red_sprig.png",
+     "ox": -8,
+     "oy": -18,
+     "form": "sprig",
+     "weight": 1,
+     "span": 0.35,
+     "name": "Red flowers (sprig)"
+    },
+    {
+     "img": "scene/props/flowers_red_cluster.png",
+     "ox": -14,
+     "oy": -15,
+     "form": "cluster",
+     "weight": 1,
+     "span": 0.61,
+     "name": "Red flowers (cluster)"
+    },
+    {
+     "img": "scene/props/flowers_red_drift.png",
+     "ox": -36,
+     "oy": -19,
+     "form": "drift",
+     "weight": 0.6,
+     "span": 1.57,
+     "name": "Red flowers (drift)"
+    },
+    {
+     "img": "scene/props/flowers_red_scatter.png",
+     "ox": -26,
+     "oy": -20,
+     "form": "scatter",
+     "weight": 0.7,
+     "span": 1.13,
+     "name": "Red flowers (scattered)"
+    }
    ],
    "vary": {"size":0}
   },
@@ -1486,8 +1588,42 @@
    "solid": 0,
    "ppm": 32,
    "variants": [
-    {"img":"scene/props/flowers_blue_sm.png","ox":-17,"oy":-14,"name":"Blue flowers (small)","size":"sm"},
-    {"img":"scene/props/flowers_blue_lg.png","ox":-33,"oy":-23,"name":"Blue flowers (large)","size":"lg"}
+    {
+     "img": "scene/props/flowers_blue_sprig.png",
+     "ox": -9,
+     "oy": -21,
+     "form": "sprig",
+     "weight": 1,
+     "span": 0.39,
+     "name": "Blue flowers (sprig)"
+    },
+    {
+     "img": "scene/props/flowers_blue_cluster.png",
+     "ox": -14,
+     "oy": -19,
+     "form": "cluster",
+     "weight": 1,
+     "span": 0.61,
+     "name": "Blue flowers (cluster)"
+    },
+    {
+     "img": "scene/props/flowers_blue_drift.png",
+     "ox": -39,
+     "oy": -18,
+     "form": "drift",
+     "weight": 0.6,
+     "span": 1.7,
+     "name": "Blue flowers (drift)"
+    },
+    {
+     "img": "scene/props/flowers_blue_scatter.png",
+     "ox": -26,
+     "oy": -17,
+     "form": "scatter",
+     "weight": 0.7,
+     "span": 1.13,
+     "name": "Blue flowers (scattered)"
+    }
    ],
    "vary": {"size":0}
   },
@@ -1504,8 +1640,42 @@
    "solid": 0,
    "ppm": 32,
    "variants": [
-    {"img":"scene/props/flowers_yellow_sm.png","ox":-17,"oy":-14,"name":"Yellow flowers (small)","size":"sm"},
-    {"img":"scene/props/flowers_yellow_lg.png","ox":-32,"oy":-25,"name":"Yellow flowers (large)","size":"lg"}
+    {
+     "img": "scene/props/flowers_yellow_sprig.png",
+     "ox": -8,
+     "oy": -21,
+     "form": "sprig",
+     "weight": 1,
+     "span": 0.35,
+     "name": "Yellow flowers (sprig)"
+    },
+    {
+     "img": "scene/props/flowers_yellow_cluster.png",
+     "ox": -14,
+     "oy": -18,
+     "form": "cluster",
+     "weight": 1,
+     "span": 0.61,
+     "name": "Yellow flowers (cluster)"
+    },
+    {
+     "img": "scene/props/flowers_yellow_drift.png",
+     "ox": -36,
+     "oy": -18,
+     "form": "drift",
+     "weight": 0.6,
+     "span": 1.57,
+     "name": "Yellow flowers (drift)"
+    },
+    {
+     "img": "scene/props/flowers_yellow_scatter.png",
+     "ox": -27,
+     "oy": -20,
+     "form": "scatter",
+     "weight": 0.7,
+     "span": 1.17,
+     "name": "Yellow flowers (scattered)"
+    }
    ],
    "vary": {"size":0}
   },
@@ -1876,8 +2046,42 @@
    "solid": 0,
    "ppm": 32,
    "variants": [
-    {"img":"scene/props/pond_lily_sm.png","ox":-15,"oy":-7,"name":"Lily pad (small)","size":"sm"},
-    {"img":"scene/props/pond_lily_lg.png","ox":-26,"oy":-11,"name":"Lily pad (large)","size":"lg"}
+    {
+     "img": "scene/props/pond_lily_single.png",
+     "ox": -13,
+     "oy": -6,
+     "form": "single",
+     "weight": 1,
+     "span": 0.65,
+     "name": "Lily pad (single)"
+    },
+    {
+     "img": "scene/props/pond_lily_pair.png",
+     "ox": -25,
+     "oy": -9,
+     "form": "pair",
+     "weight": 0.9,
+     "span": 1.25,
+     "name": "Lily pad (pair)"
+    },
+    {
+     "img": "scene/props/pond_lily_raft.png",
+     "ox": -30,
+     "oy": -12,
+     "form": "raft",
+     "weight": 0.5,
+     "span": 1.5,
+     "name": "Lily pad (raft)"
+    },
+    {
+     "img": "scene/props/pond_lily_trail.png",
+     "ox": -36,
+     "oy": -10,
+     "form": "trail",
+     "weight": 0.5,
+     "span": 1.8,
+     "name": "Lily pad (trail)"
+    }
    ],
    "vary": {"size":0}
   },
@@ -2092,8 +2296,42 @@
    ],
    "ppm": 32,
    "variants": [
-    {"img":"scene/props/bush_flower_sm.png","ox":-21,"oy":-29,"name":"Flowering bush (small)","size":"sm"},
-    {"img":"scene/props/bush_flower_lg.png","ox":-41,"oy":-57,"name":"Flowering bush (large)","size":"lg"}
+    {
+     "img": "scene/props/bush_flower_small.png",
+     "ox": -19,
+     "oy": -26,
+     "form": "small",
+     "weight": 1,
+     "span": 0.63,
+     "name": "Flowering bush (small)"
+    },
+    {
+     "img": "scene/props/bush_flower_pair.png",
+     "ox": -37,
+     "oy": -33,
+     "form": "pair",
+     "weight": 0.9,
+     "span": 1.23,
+     "name": "Flowering bush (pair)"
+    },
+    {
+     "img": "scene/props/bush_flower_row.png",
+     "ox": -49,
+     "oy": -31,
+     "form": "row",
+     "weight": 0.5,
+     "span": 1.63,
+     "name": "Flowering bush (row)"
+    },
+    {
+     "img": "scene/props/bush_flower_big.png",
+     "ox": -39,
+     "oy": -53,
+     "form": "big",
+     "weight": 0.5,
+     "span": 1.3,
+     "name": "Flowering bush (big)"
+    }
    ],
    "vary": {"size":0}
   },
@@ -2110,8 +2348,42 @@
    "solid": 0,
    "ppm": 32,
    "variants": [
-    {"img":"scene/props/tallgrass_b_sm.png","ox":-24,"oy":-15,"name":"Lush grass (small)","size":"sm"},
-    {"img":"scene/props/tallgrass_b_lg.png","ox":-38,"oy":-35,"name":"Lush grass (large)","size":"lg"}
+    {
+     "img": "scene/props/tallgrass_b_tuft.png",
+     "ox": -20,
+     "oy": -16,
+     "form": "tuft",
+     "weight": 1,
+     "span": 0.67,
+     "name": "Lush grass (young tuft)"
+    },
+    {
+     "img": "scene/props/tallgrass_b_clump.png",
+     "ox": -36,
+     "oy": -22,
+     "form": "clump",
+     "weight": 1,
+     "span": 1.2,
+     "name": "Lush grass (clump)"
+    },
+    {
+     "img": "scene/props/tallgrass_b_windswept.png",
+     "ox": -30,
+     "oy": -32,
+     "form": "windswept",
+     "weight": 0.8,
+     "span": 1,
+     "name": "Lush grass (windswept)"
+    },
+    {
+     "img": "scene/props/tallgrass_b_meadow.png",
+     "ox": -56,
+     "oy": -30,
+     "form": "meadow",
+     "weight": 0.5,
+     "span": 1.87,
+     "name": "Lush grass (meadow)"
+    }
    ],
    "vary": {"size":0}
   },
@@ -2128,8 +2400,42 @@
    "solid": 0,
    "ppm": 32,
    "variants": [
-    {"img":"scene/props/tallgrass_c_sm.png","ox":-20,"oy":-29,"name":"Tall reedy grass (small)","size":"sm"},
-    {"img":"scene/props/tallgrass_c_lg.png","ox":-31,"oy":-55,"name":"Tall reedy grass (large)","size":"lg"}
+    {
+     "img": "scene/props/tallgrass_c_tuft.png",
+     "ox": -18,
+     "oy": -26,
+     "form": "tuft",
+     "weight": 1,
+     "span": 0.72,
+     "name": "Tall reedy grass (young tuft)"
+    },
+    {
+     "img": "scene/props/tallgrass_c_clump.png",
+     "ox": -31,
+     "oy": -33,
+     "form": "clump",
+     "weight": 1,
+     "span": 1.24,
+     "name": "Tall reedy grass (clump)"
+    },
+    {
+     "img": "scene/props/tallgrass_c_windswept.png",
+     "ox": -26,
+     "oy": -50,
+     "form": "windswept",
+     "weight": 0.8,
+     "span": 1.04,
+     "name": "Tall reedy grass (windswept)"
+    },
+    {
+     "img": "scene/props/tallgrass_c_meadow.png",
+     "ox": -49,
+     "oy": -47,
+     "form": "meadow",
+     "weight": 0.5,
+     "span": 1.96,
+     "name": "Tall reedy grass (meadow)"
+    }
    ],
    "vary": {"size":0}
   },
@@ -2146,8 +2452,42 @@
    "solid": 0,
    "ppm": 32,
    "variants": [
-    {"img":"scene/props/flowers_white_sm.png","ox":-17,"oy":-14,"name":"White flowers (small)","size":"sm"},
-    {"img":"scene/props/flowers_white_lg.png","ox":-32,"oy":-24,"name":"White flowers (large)","size":"lg"}
+    {
+     "img": "scene/props/flowers_white_sprig.png",
+     "ox": -10,
+     "oy": -18,
+     "form": "sprig",
+     "weight": 1,
+     "span": 0.43,
+     "name": "White flowers (sprig)"
+    },
+    {
+     "img": "scene/props/flowers_white_cluster.png",
+     "ox": -14,
+     "oy": -20,
+     "form": "cluster",
+     "weight": 1,
+     "span": 0.61,
+     "name": "White flowers (cluster)"
+    },
+    {
+     "img": "scene/props/flowers_white_drift.png",
+     "ox": -36,
+     "oy": -18,
+     "form": "drift",
+     "weight": 0.6,
+     "span": 1.57,
+     "name": "White flowers (drift)"
+    },
+    {
+     "img": "scene/props/flowers_white_scatter.png",
+     "ox": -23,
+     "oy": -14,
+     "form": "scatter",
+     "weight": 0.7,
+     "span": 1,
+     "name": "White flowers (scattered)"
+    }
    ],
    "vary": {"size":0}
   },
@@ -2164,8 +2504,42 @@
    "solid": 0,
    "ppm": 32,
    "variants": [
-    {"img":"scene/props/flowers_purple_sm.png","ox":-17,"oy":-13,"name":"Purple flowers (small)","size":"sm"},
-    {"img":"scene/props/flowers_purple_lg.png","ox":-32,"oy":-25,"name":"Purple flowers (large)","size":"lg"}
+    {
+     "img": "scene/props/flowers_purple_sprig.png",
+     "ox": -8,
+     "oy": -18,
+     "form": "sprig",
+     "weight": 1,
+     "span": 0.35,
+     "name": "Purple flowers (sprig)"
+    },
+    {
+     "img": "scene/props/flowers_purple_cluster.png",
+     "ox": -13,
+     "oy": -17,
+     "form": "cluster",
+     "weight": 1,
+     "span": 0.57,
+     "name": "Purple flowers (cluster)"
+    },
+    {
+     "img": "scene/props/flowers_purple_drift.png",
+     "ox": -36,
+     "oy": -18,
+     "form": "drift",
+     "weight": 0.6,
+     "span": 1.57,
+     "name": "Purple flowers (drift)"
+    },
+    {
+     "img": "scene/props/flowers_purple_scatter.png",
+     "ox": -24,
+     "oy": -19,
+     "form": "scatter",
+     "weight": 0.7,
+     "span": 1.04,
+     "name": "Purple flowers (scattered)"
+    }
    ],
    "vary": {"size":0}
   },
@@ -2182,8 +2556,42 @@
    "solid": 0,
    "ppm": 32,
    "variants": [
-    {"img":"scene/props/flowers_mixed_sm.png","ox":-17,"oy":-13,"name":"Mixed flowers (small)","size":"sm"},
-    {"img":"scene/props/flowers_mixed_lg.png","ox":-32,"oy":-25,"name":"Mixed flowers (large)","size":"lg"}
+    {
+     "img": "scene/props/flowers_mixed_sprig.png",
+     "ox": -10,
+     "oy": -20,
+     "form": "sprig",
+     "weight": 1,
+     "span": 0.43,
+     "name": "Mixed flowers (sprig)"
+    },
+    {
+     "img": "scene/props/flowers_mixed_cluster.png",
+     "ox": -14,
+     "oy": -19,
+     "form": "cluster",
+     "weight": 1,
+     "span": 0.61,
+     "name": "Mixed flowers (cluster)"
+    },
+    {
+     "img": "scene/props/flowers_mixed_drift.png",
+     "ox": -36,
+     "oy": -18,
+     "form": "drift",
+     "weight": 0.6,
+     "span": 1.57,
+     "name": "Mixed flowers (drift)"
+    },
+    {
+     "img": "scene/props/flowers_mixed_scatter.png",
+     "ox": -27,
+     "oy": -16,
+     "form": "scatter",
+     "weight": 0.7,
+     "span": 1.17,
+     "name": "Mixed flowers (scattered)"
+    }
    ],
    "vary": {"size":0}
   },
@@ -2578,8 +2986,42 @@
    "solid": 0,
    "ppm": 32,
    "variants": [
-    {"img":"scene/props/cattails_sm.png","ox":-22,"oy":-56,"name":"Cattail clump (small)","size":"sm"},
-    {"img":"scene/props/cattails_lg.png","ox":-34,"oy":-74,"name":"Cattail clump (large)","size":"lg"}
+    {
+     "img": "scene/props/cattails_tuft.png",
+     "ox": -20,
+     "oy": -56,
+     "form": "tuft",
+     "weight": 1,
+     "span": 0.74,
+     "name": "Cattail clump (young tuft)"
+    },
+    {
+     "img": "scene/props/cattails_clump.png",
+     "ox": -34,
+     "oy": -59,
+     "form": "clump",
+     "weight": 1,
+     "span": 1.26,
+     "name": "Cattail clump (clump)"
+    },
+    {
+     "img": "scene/props/cattails_windswept.png",
+     "ox": -28,
+     "oy": -57,
+     "form": "windswept",
+     "weight": 0.8,
+     "span": 1.04,
+     "name": "Cattail clump (windswept)"
+    },
+    {
+     "img": "scene/props/cattails_meadow.png",
+     "ox": -52,
+     "oy": -58,
+     "form": "meadow",
+     "weight": 0.5,
+     "span": 1.93,
+     "name": "Cattail clump (meadow)"
+    }
    ],
    "vary": {"size":0}
   },
@@ -2596,8 +3038,42 @@
    "solid": 0,
    "ppm": 32,
    "variants": [
-    {"img":"scene/props/lily_flowers_sm.png","ox":-22,"oy":-9,"name":"Flowering lilies (small)","size":"sm"},
-    {"img":"scene/props/lily_flowers_lg.png","ox":-41,"oy":-15,"name":"Flowering lilies (large)","size":"lg"}
+    {
+     "img": "scene/props/lily_flowers_single.png",
+     "ox": -19,
+     "oy": -8,
+     "form": "single",
+     "weight": 1,
+     "span": 0.63,
+     "name": "Flowering lilies (single)"
+    },
+    {
+     "img": "scene/props/lily_flowers_pair.png",
+     "ox": -39,
+     "oy": -13,
+     "form": "pair",
+     "weight": 0.9,
+     "span": 1.3,
+     "name": "Flowering lilies (pair)"
+    },
+    {
+     "img": "scene/props/lily_flowers_raft.png",
+     "ox": -44,
+     "oy": -15,
+     "form": "raft",
+     "weight": 0.5,
+     "span": 1.47,
+     "name": "Flowering lilies (raft)"
+    },
+    {
+     "img": "scene/props/lily_flowers_trail.png",
+     "ox": -55,
+     "oy": -13,
+     "form": "trail",
+     "weight": 0.5,
+     "span": 1.83,
+     "name": "Flowering lilies (trail)"
+    }
    ],
    "vary": {"size":0}
   },
@@ -3881,8 +4357,26 @@
    "solid": 0,
    "ppm": 32,
    "variants": [
-    {"img":"scene/props/fern_sm.png","ox":-18,"oy":-23,"name":"Fern (small)","size":"sm"},
-    {"img":"scene/props/fern_lg.png","ox":-28,"oy":-43,"name":"Fern (large)","size":"lg"}
+    {
+     "img": "scene/props/fern_fiddlehead.png",
+     "ox": -18,
+     "oy": -27,
+     "form": "fiddlehead",
+     "weight": 0.8,
+     "span": 0.75,
+     "name": "Fern (fiddleheads)"
+    },
+    {"img":"scene/props/fern_clump.png","ox":-27,"oy":-31,"form":"clump","weight":1,"span":1.12,"name":"Fern (clump)"},
+    {
+     "img": "scene/props/fern_spread.png",
+     "ox": -36,
+     "oy": -32,
+     "form": "spread",
+     "weight": 0.7,
+     "span": 1.5,
+     "name": "Fern (spreading)"
+    },
+    {"img":"scene/props/fern_tall.png","ox":-26,"oy":-44,"form":"tall","weight":0.6,"span":1.08,"name":"Fern (tall stems)"}
    ],
    "vary": {"size":0}
   },
@@ -3899,8 +4393,42 @@
    "solid": 0,
    "ppm": 32,
    "variants": [
-    {"img":"scene/props/fern_b_sm.png","ox":-11,"oy":-18,"name":"Young fern (small)","size":"sm"},
-    {"img":"scene/props/fern_b_lg.png","ox":-20,"oy":-33,"name":"Young fern (large)","size":"lg"}
+    {
+     "img": "scene/props/fern_b_fiddlehead.png",
+     "ox": -13,
+     "oy": -20,
+     "form": "fiddlehead",
+     "weight": 0.8,
+     "span": 0.87,
+     "name": "Young fern (fiddleheads)"
+    },
+    {
+     "img": "scene/props/fern_b_clump.png",
+     "ox": -19,
+     "oy": -23,
+     "form": "clump",
+     "weight": 1,
+     "span": 1.27,
+     "name": "Young fern (clump)"
+    },
+    {
+     "img": "scene/props/fern_b_spread.png",
+     "ox": -25,
+     "oy": -23,
+     "form": "spread",
+     "weight": 0.7,
+     "span": 1.67,
+     "name": "Young fern (spreading)"
+    },
+    {
+     "img": "scene/props/fern_b_tall.png",
+     "ox": -18,
+     "oy": -31,
+     "form": "tall",
+     "weight": 0.6,
+     "span": 1.2,
+     "name": "Young fern (tall stems)"
+    }
    ],
    "vary": {"size":0}
   },
@@ -3917,8 +4445,42 @@
    "solid": 0,
    "ppm": 32,
    "variants": [
-    {"img":"scene/props/fallen_leaves_sm.png","ox":-19,"oy":-8,"name":"Fallen leaves (small)","size":"sm"},
-    {"img":"scene/props/fallen_leaves_lg.png","ox":-40,"oy":-20,"name":"Fallen leaves (large)","size":"lg"}
+    {
+     "img": "scene/props/fallen_leaves_single.png",
+     "ox": -17,
+     "oy": -7,
+     "form": "single",
+     "weight": 1,
+     "span": 0.61,
+     "name": "Fallen leaves (single)"
+    },
+    {
+     "img": "scene/props/fallen_leaves_pair.png",
+     "ox": -35,
+     "oy": -14,
+     "form": "pair",
+     "weight": 0.9,
+     "span": 1.25,
+     "name": "Fallen leaves (pair)"
+    },
+    {
+     "img": "scene/props/fallen_leaves_raft.png",
+     "ox": -37,
+     "oy": -17,
+     "form": "raft",
+     "weight": 0.5,
+     "span": 1.32,
+     "name": "Fallen leaves (raft)"
+    },
+    {
+     "img": "scene/props/fallen_leaves_trail.png",
+     "ox": -50,
+     "oy": -13,
+     "form": "trail",
+     "weight": 0.5,
+     "span": 1.79,
+     "name": "Fallen leaves (trail)"
+    }
    ],
    "vary": {"size":0}
   },
@@ -5568,8 +6130,42 @@
    "weight": 0.8,
    "ppm": 32,
    "variants": [
-    {"img":"scene/props/tulips_red_sm.png","ox":-17,"oy":-19,"name":"Red tulips (small)","size":"sm"},
-    {"img":"scene/props/tulips_red_lg.png","ox":-31,"oy":-27,"name":"Red tulips (large)","size":"lg"}
+    {
+     "img": "scene/props/tulips_red_sprig.png",
+     "ox": -9,
+     "oy": -22,
+     "form": "sprig",
+     "weight": 1,
+     "span": 0.39,
+     "name": "Red tulips (sprig)"
+    },
+    {
+     "img": "scene/props/tulips_red_cluster.png",
+     "ox": -13,
+     "oy": -20,
+     "form": "cluster",
+     "weight": 1,
+     "span": 0.57,
+     "name": "Red tulips (cluster)"
+    },
+    {
+     "img": "scene/props/tulips_red_drift.png",
+     "ox": -37,
+     "oy": -22,
+     "form": "drift",
+     "weight": 0.6,
+     "span": 1.61,
+     "name": "Red tulips (drift)"
+    },
+    {
+     "img": "scene/props/tulips_red_tall.png",
+     "ox": -14,
+     "oy": -29,
+     "form": "tall",
+     "weight": 0.6,
+     "span": 0.61,
+     "name": "Red tulips (tall stems)"
+    }
    ],
    "vary": {"size":0}
   },
@@ -5589,8 +6185,42 @@
    "weight": 0.8,
    "ppm": 32,
    "variants": [
-    {"img":"scene/props/tulips_yellow_sm.png","ox":-17,"oy":-19,"name":"Yellow tulips (small)","size":"sm"},
-    {"img":"scene/props/tulips_yellow_lg.png","ox":-31,"oy":-28,"name":"Yellow tulips (large)","size":"lg"}
+    {
+     "img": "scene/props/tulips_yellow_sprig.png",
+     "ox": -9,
+     "oy": -20,
+     "form": "sprig",
+     "weight": 1,
+     "span": 0.39,
+     "name": "Yellow tulips (sprig)"
+    },
+    {
+     "img": "scene/props/tulips_yellow_cluster.png",
+     "ox": -14,
+     "oy": -17,
+     "form": "cluster",
+     "weight": 1,
+     "span": 0.61,
+     "name": "Yellow tulips (cluster)"
+    },
+    {
+     "img": "scene/props/tulips_yellow_drift.png",
+     "ox": -36,
+     "oy": -22,
+     "form": "drift",
+     "weight": 0.6,
+     "span": 1.57,
+     "name": "Yellow tulips (drift)"
+    },
+    {
+     "img": "scene/props/tulips_yellow_tall.png",
+     "ox": -12,
+     "oy": -27,
+     "form": "tall",
+     "weight": 0.6,
+     "span": 0.52,
+     "name": "Yellow tulips (tall stems)"
+    }
    ],
    "vary": {"size":0}
   },
@@ -5610,8 +6240,42 @@
    "weight": 0.8,
    "ppm": 32,
    "variants": [
-    {"img":"scene/props/tulips_pink_sm.png","ox":-17,"oy":-17,"name":"Pink tulips (small)","size":"sm"},
-    {"img":"scene/props/tulips_pink_lg.png","ox":-31,"oy":-28,"name":"Pink tulips (large)","size":"lg"}
+    {
+     "img": "scene/props/tulips_pink_sprig.png",
+     "ox": -9,
+     "oy": -20,
+     "form": "sprig",
+     "weight": 1,
+     "span": 0.39,
+     "name": "Pink tulips (sprig)"
+    },
+    {
+     "img": "scene/props/tulips_pink_cluster.png",
+     "ox": -14,
+     "oy": -19,
+     "form": "cluster",
+     "weight": 1,
+     "span": 0.61,
+     "name": "Pink tulips (cluster)"
+    },
+    {
+     "img": "scene/props/tulips_pink_drift.png",
+     "ox": -36,
+     "oy": -22,
+     "form": "drift",
+     "weight": 0.6,
+     "span": 1.57,
+     "name": "Pink tulips (drift)"
+    },
+    {
+     "img": "scene/props/tulips_pink_tall.png",
+     "ox": -12,
+     "oy": -28,
+     "form": "tall",
+     "weight": 0.6,
+     "span": 0.52,
+     "name": "Pink tulips (tall stems)"
+    }
    ],
    "vary": {"size":0}
   },
@@ -5631,8 +6295,34 @@
    "weight": 1.4,
    "ppm": 32,
    "variants": [
-    {"img":"scene/props/daisies_sm.png","ox":-19,"oy":-18,"name":"Daisies (small)","size":"sm"},
-    {"img":"scene/props/daisies_lg.png","ox":-36,"oy":-24,"name":"Daisies (large)","size":"lg"}
+    {"img":"scene/props/daisies_sprig.png","ox":-10,"oy":-20,"form":"sprig","weight":1,"span":0.38,"name":"Daisies (sprig)"},
+    {
+     "img": "scene/props/daisies_cluster.png",
+     "ox": -15,
+     "oy": -20,
+     "form": "cluster",
+     "weight": 1,
+     "span": 0.58,
+     "name": "Daisies (cluster)"
+    },
+    {
+     "img": "scene/props/daisies_drift.png",
+     "ox": -42,
+     "oy": -20,
+     "form": "drift",
+     "weight": 0.6,
+     "span": 1.62,
+     "name": "Daisies (drift)"
+    },
+    {
+     "img": "scene/props/daisies_scatter.png",
+     "ox": -27,
+     "oy": -18,
+     "form": "scatter",
+     "weight": 0.7,
+     "span": 1.04,
+     "name": "Daisies (scattered)"
+    }
    ],
    "vary": {"size":0}
   },
@@ -5652,8 +6342,42 @@
    "weight": 1.2,
    "ppm": 32,
    "variants": [
-    {"img":"scene/props/bluebells_sm.png","ox":-19,"oy":-17,"name":"Bluebells (small)","size":"sm"},
-    {"img":"scene/props/bluebells_lg.png","ox":-36,"oy":-25,"name":"Bluebells (large)","size":"lg"}
+    {
+     "img": "scene/props/bluebells_sprig.png",
+     "ox": -9,
+     "oy": -19,
+     "form": "sprig",
+     "weight": 1,
+     "span": 0.35,
+     "name": "Bluebells (sprig)"
+    },
+    {
+     "img": "scene/props/bluebells_cluster.png",
+     "ox": -16,
+     "oy": -20,
+     "form": "cluster",
+     "weight": 1,
+     "span": 0.62,
+     "name": "Bluebells (cluster)"
+    },
+    {
+     "img": "scene/props/bluebells_drift.png",
+     "ox": -42,
+     "oy": -19,
+     "form": "drift",
+     "weight": 0.6,
+     "span": 1.62,
+     "name": "Bluebells (drift)"
+    },
+    {
+     "img": "scene/props/bluebells_scatter.png",
+     "ox": -29,
+     "oy": -20,
+     "form": "scatter",
+     "weight": 0.7,
+     "span": 1.12,
+     "name": "Bluebells (scattered)"
+    }
    ],
    "vary": {"size":0}
   },
@@ -5673,8 +6397,34 @@
    "weight": 1,
    "ppm": 32,
    "variants": [
-    {"img":"scene/props/poppies_sm.png","ox":-18,"oy":-22,"name":"Poppies (small)","size":"sm"},
-    {"img":"scene/props/poppies_lg.png","ox":-31,"oy":-32,"name":"Poppies (large)","size":"lg"}
+    {"img":"scene/props/poppies_sprig.png","ox":-10,"oy":-26,"form":"sprig","weight":1,"span":0.43,"name":"Poppies (sprig)"},
+    {
+     "img": "scene/props/poppies_cluster.png",
+     "ox": -14,
+     "oy": -26,
+     "form": "cluster",
+     "weight": 1,
+     "span": 0.61,
+     "name": "Poppies (cluster)"
+    },
+    {
+     "img": "scene/props/poppies_drift.png",
+     "ox": -37,
+     "oy": -25,
+     "form": "drift",
+     "weight": 0.6,
+     "span": 1.61,
+     "name": "Poppies (drift)"
+    },
+    {
+     "img": "scene/props/poppies_tall.png",
+     "ox": -13,
+     "oy": -35,
+     "form": "tall",
+     "weight": 0.6,
+     "span": 0.57,
+     "name": "Poppies (tall stems)"
+    }
    ],
    "vary": {"size":0}
   },
@@ -5694,8 +6444,42 @@
    "weight": 0.4,
    "ppm": 32,
    "variants": [
-    {"img":"scene/props/sunflowers_sm.png","ox":-23,"oy":-50,"name":"Sunflowers (small)","size":"sm"},
-    {"img":"scene/props/sunflowers_lg.png","ox":-31,"oy":-68,"name":"Sunflowers (large)","size":"lg"}
+    {
+     "img": "scene/props/sunflowers_sprig.png",
+     "ox": -9,
+     "oy": -56,
+     "form": "sprig",
+     "weight": 1,
+     "span": 0.39,
+     "name": "Sunflowers (sprig)"
+    },
+    {
+     "img": "scene/props/sunflowers_cluster.png",
+     "ox": -18,
+     "oy": -45,
+     "form": "cluster",
+     "weight": 1,
+     "span": 0.78,
+     "name": "Sunflowers (cluster)"
+    },
+    {
+     "img": "scene/props/sunflowers_drift.png",
+     "ox": -38,
+     "oy": -53,
+     "form": "drift",
+     "weight": 0.6,
+     "span": 1.65,
+     "name": "Sunflowers (drift)"
+    },
+    {
+     "img": "scene/props/sunflowers_tall.png",
+     "ox": -15,
+     "oy": -75,
+     "form": "tall",
+     "weight": 0.6,
+     "span": 0.65,
+     "name": "Sunflowers (tall stems)"
+    }
    ],
    "vary": {"size":0}
   },
@@ -5715,8 +6499,42 @@
    "weight": 1,
    "ppm": 32,
    "variants": [
-    {"img":"scene/props/lavender_sm.png","ox":-19,"oy":-28,"name":"Lavender (small)","size":"sm"},
-    {"img":"scene/props/lavender_lg.png","ox":-36,"oy":-39,"name":"Lavender (large)","size":"lg"}
+    {
+     "img": "scene/props/lavender_sprig.png",
+     "ox": -9,
+     "oy": -32,
+     "form": "sprig",
+     "weight": 1,
+     "span": 0.35,
+     "name": "Lavender (sprig)"
+    },
+    {
+     "img": "scene/props/lavender_cluster.png",
+     "ox": -17,
+     "oy": -30,
+     "form": "cluster",
+     "weight": 1,
+     "span": 0.65,
+     "name": "Lavender (cluster)"
+    },
+    {
+     "img": "scene/props/lavender_drift.png",
+     "ox": -41,
+     "oy": -32,
+     "form": "drift",
+     "weight": 0.6,
+     "span": 1.58,
+     "name": "Lavender (drift)"
+    },
+    {
+     "img": "scene/props/lavender_tall.png",
+     "ox": -14,
+     "oy": -39,
+     "form": "tall",
+     "weight": 0.6,
+     "span": 0.54,
+     "name": "Lavender (tall stems)"
+    }
    ],
    "vary": {"size":0}
   },
@@ -5736,8 +6554,42 @@
    "weight": 0.7,
    "ppm": 32,
    "variants": [
-    {"img":"scene/props/foxgloves_sm.png","ox":-15,"oy":-38,"name":"Foxgloves (small)","size":"sm"},
-    {"img":"scene/props/foxgloves_lg.png","ox":-27,"oy":-53,"name":"Foxgloves (large)","size":"lg"}
+    {
+     "img": "scene/props/foxgloves_sprig.png",
+     "ox": -9,
+     "oy": -41,
+     "form": "sprig",
+     "weight": 1,
+     "span": 0.45,
+     "name": "Foxgloves (sprig)"
+    },
+    {
+     "img": "scene/props/foxgloves_cluster.png",
+     "ox": -12,
+     "oy": -40,
+     "form": "cluster",
+     "weight": 1,
+     "span": 0.6,
+     "name": "Foxgloves (cluster)"
+    },
+    {
+     "img": "scene/props/foxgloves_drift.png",
+     "ox": -31,
+     "oy": -45,
+     "form": "drift",
+     "weight": 0.6,
+     "span": 1.55,
+     "name": "Foxgloves (drift)"
+    },
+    {
+     "img": "scene/props/foxgloves_tall.png",
+     "ox": -10,
+     "oy": -57,
+     "form": "tall",
+     "weight": 0.6,
+     "span": 0.5,
+     "name": "Foxgloves (tall stems)"
+    }
    ],
    "vary": {"size":0}
   },
@@ -5757,8 +6609,26 @@
    "weight": 0.7,
    "ppm": 32,
    "variants": [
-    {"img":"scene/props/lupins_sm.png","ox":-15,"oy":-36,"name":"Lupins (small)","size":"sm"},
-    {"img":"scene/props/lupins_lg.png","ox":-27,"oy":-52,"name":"Lupins (large)","size":"lg"}
+    {"img":"scene/props/lupins_sprig.png","ox":-8,"oy":-40,"form":"sprig","weight":1,"span":0.4,"name":"Lupins (sprig)"},
+    {
+     "img": "scene/props/lupins_cluster.png",
+     "ox": -13,
+     "oy": -32,
+     "form": "cluster",
+     "weight": 1,
+     "span": 0.65,
+     "name": "Lupins (cluster)"
+    },
+    {"img":"scene/props/lupins_drift.png","ox":-32,"oy":-41,"form":"drift","weight":0.6,"span":1.6,"name":"Lupins (drift)"},
+    {
+     "img": "scene/props/lupins_tall.png",
+     "ox": -12,
+     "oy": -53,
+     "form": "tall",
+     "weight": 0.6,
+     "span": 0.6,
+     "name": "Lupins (tall stems)"
+    }
    ],
    "vary": {"size":0}
   },
@@ -5778,8 +6648,42 @@
    "weight": 1.6,
    "ppm": 32,
    "variants": [
-    {"img":"scene/props/dandelions_sm.png","ox":-17,"oy":-19,"name":"Dandelions (small)","size":"sm"},
-    {"img":"scene/props/dandelions_lg.png","ox":-31,"oy":-24,"name":"Dandelions (large)","size":"lg"}
+    {
+     "img": "scene/props/dandelions_sprig.png",
+     "ox": -10,
+     "oy": -19,
+     "form": "sprig",
+     "weight": 1,
+     "span": 0.43,
+     "name": "Dandelions (sprig)"
+    },
+    {
+     "img": "scene/props/dandelions_cluster.png",
+     "ox": -14,
+     "oy": -16,
+     "form": "cluster",
+     "weight": 1,
+     "span": 0.61,
+     "name": "Dandelions (cluster)"
+    },
+    {
+     "img": "scene/props/dandelions_drift.png",
+     "ox": -36,
+     "oy": -20,
+     "form": "drift",
+     "weight": 0.6,
+     "span": 1.57,
+     "name": "Dandelions (drift)"
+    },
+    {
+     "img": "scene/props/dandelions_scatter.png",
+     "ox": -26,
+     "oy": -21,
+     "form": "scatter",
+     "weight": 0.7,
+     "span": 1.13,
+     "name": "Dandelions (scattered)"
+    }
    ],
    "vary": {"size":0}
   },
@@ -5799,8 +6703,42 @@
    "weight": 1,
    "ppm": 32,
    "variants": [
-    {"img":"scene/props/dandelion_clocks_sm.png","ox":-17,"oy":-22,"name":"Dandelion clocks (small)","size":"sm"},
-    {"img":"scene/props/dandelion_clocks_lg.png","ox":-31,"oy":-31,"name":"Dandelion clocks (large)","size":"lg"}
+    {
+     "img": "scene/props/dandelion_clocks_sprig.png",
+     "ox": -9,
+     "oy": -25,
+     "form": "sprig",
+     "weight": 1,
+     "span": 0.39,
+     "name": "Dandelion clocks (sprig)"
+    },
+    {
+     "img": "scene/props/dandelion_clocks_cluster.png",
+     "ox": -13,
+     "oy": -20,
+     "form": "cluster",
+     "weight": 1,
+     "span": 0.57,
+     "name": "Dandelion clocks (cluster)"
+    },
+    {
+     "img": "scene/props/dandelion_clocks_drift.png",
+     "ox": -38,
+     "oy": -23,
+     "form": "drift",
+     "weight": 0.6,
+     "span": 1.65,
+     "name": "Dandelion clocks (drift)"
+    },
+    {
+     "img": "scene/props/dandelion_clocks_tall.png",
+     "ox": -17,
+     "oy": -31,
+     "form": "tall",
+     "weight": 0.6,
+     "span": 0.74,
+     "name": "Dandelion clocks (tall stems)"
+    }
    ],
    "vary": {"size":0}
   },
@@ -5820,8 +6758,42 @@
    "weight": 1.4,
    "ppm": 32,
    "variants": [
-    {"img":"scene/props/clover_white_sm.png","ox":-20,"oy":-16,"name":"White clover (small)","size":"sm"},
-    {"img":"scene/props/clover_white_lg.png","ox":-37,"oy":-20,"name":"White clover (large)","size":"lg"}
+    {
+     "img": "scene/props/clover_white_sprig.png",
+     "ox": -10,
+     "oy": -16,
+     "form": "sprig",
+     "weight": 1,
+     "span": 0.37,
+     "name": "White clover (sprig)"
+    },
+    {
+     "img": "scene/props/clover_white_cluster.png",
+     "ox": -16,
+     "oy": -18,
+     "form": "cluster",
+     "weight": 1,
+     "span": 0.59,
+     "name": "White clover (cluster)"
+    },
+    {
+     "img": "scene/props/clover_white_drift.png",
+     "ox": -43,
+     "oy": -18,
+     "form": "drift",
+     "weight": 0.6,
+     "span": 1.59,
+     "name": "White clover (drift)"
+    },
+    {
+     "img": "scene/props/clover_white_scatter.png",
+     "ox": -30,
+     "oy": -17,
+     "form": "scatter",
+     "weight": 0.7,
+     "span": 1.11,
+     "name": "White clover (scattered)"
+    }
    ],
    "vary": {"size":0}
   },
@@ -5841,8 +6813,42 @@
    "weight": 1.5,
    "ppm": 32,
    "variants": [
-    {"img":"scene/props/buttercups_sm.png","ox":-19,"oy":-17,"name":"Buttercups (small)","size":"sm"},
-    {"img":"scene/props/buttercups_lg.png","ox":-36,"oy":-24,"name":"Buttercups (large)","size":"lg"}
+    {
+     "img": "scene/props/buttercups_sprig.png",
+     "ox": -10,
+     "oy": -19,
+     "form": "sprig",
+     "weight": 1,
+     "span": 0.38,
+     "name": "Buttercups (sprig)"
+    },
+    {
+     "img": "scene/props/buttercups_cluster.png",
+     "ox": -15,
+     "oy": -18,
+     "form": "cluster",
+     "weight": 1,
+     "span": 0.58,
+     "name": "Buttercups (cluster)"
+    },
+    {
+     "img": "scene/props/buttercups_drift.png",
+     "ox": -41,
+     "oy": -20,
+     "form": "drift",
+     "weight": 0.6,
+     "span": 1.58,
+     "name": "Buttercups (drift)"
+    },
+    {
+     "img": "scene/props/buttercups_scatter.png",
+     "ox": -26,
+     "oy": -19,
+     "form": "scatter",
+     "weight": 0.7,
+     "span": 1,
+     "name": "Buttercups (scattered)"
+    }
    ],
    "vary": {"size":0}
   },
@@ -5862,8 +6868,42 @@
    "weight": 1,
    "ppm": 32,
    "variants": [
-    {"img":"scene/props/cornflowers_sm.png","ox":-17,"oy":-20,"name":"Cornflowers (small)","size":"sm"},
-    {"img":"scene/props/cornflowers_lg.png","ox":-31,"oy":-30,"name":"Cornflowers (large)","size":"lg"}
+    {
+     "img": "scene/props/cornflowers_sprig.png",
+     "ox": -10,
+     "oy": -23,
+     "form": "sprig",
+     "weight": 1,
+     "span": 0.43,
+     "name": "Cornflowers (sprig)"
+    },
+    {
+     "img": "scene/props/cornflowers_cluster.png",
+     "ox": -13,
+     "oy": -21,
+     "form": "cluster",
+     "weight": 1,
+     "span": 0.57,
+     "name": "Cornflowers (cluster)"
+    },
+    {
+     "img": "scene/props/cornflowers_drift.png",
+     "ox": -36,
+     "oy": -23,
+     "form": "drift",
+     "weight": 0.6,
+     "span": 1.57,
+     "name": "Cornflowers (drift)"
+    },
+    {
+     "img": "scene/props/cornflowers_tall.png",
+     "ox": -14,
+     "oy": -29,
+     "form": "tall",
+     "weight": 0.6,
+     "span": 0.61,
+     "name": "Cornflowers (tall stems)"
+    }
    ],
    "vary": {"size":0}
   },
@@ -5883,8 +6923,42 @@
    "weight": 0.8,
    "ppm": 32,
    "variants": [
-    {"img":"scene/props/marigolds_sm.png","ox":-17,"oy":-18,"name":"Marigolds (small)","size":"sm"},
-    {"img":"scene/props/marigolds_lg.png","ox":-31,"oy":-23,"name":"Marigolds (large)","size":"lg"}
+    {
+     "img": "scene/props/marigolds_sprig.png",
+     "ox": -9,
+     "oy": -19,
+     "form": "sprig",
+     "weight": 1,
+     "span": 0.39,
+     "name": "Marigolds (sprig)"
+    },
+    {
+     "img": "scene/props/marigolds_cluster.png",
+     "ox": -14,
+     "oy": -17,
+     "form": "cluster",
+     "weight": 1,
+     "span": 0.61,
+     "name": "Marigolds (cluster)"
+    },
+    {
+     "img": "scene/props/marigolds_drift.png",
+     "ox": -37,
+     "oy": -17,
+     "form": "drift",
+     "weight": 0.6,
+     "span": 1.61,
+     "name": "Marigolds (drift)"
+    },
+    {
+     "img": "scene/props/marigolds_scatter.png",
+     "ox": -25,
+     "oy": -18,
+     "form": "scatter",
+     "weight": 0.7,
+     "span": 1.09,
+     "name": "Marigolds (scattered)"
+    }
    ],
    "vary": {"size":0}
   },
@@ -5904,8 +6978,42 @@
    "weight": 1.2,
    "ppm": 32,
    "variants": [
-    {"img":"scene/props/snowdrops_sm.png","ox":-14,"oy":-15,"name":"Snowdrops (small)","size":"sm"},
-    {"img":"scene/props/snowdrops_lg.png","ox":-26,"oy":-22,"name":"Snowdrops (large)","size":"lg"}
+    {
+     "img": "scene/props/snowdrops_sprig.png",
+     "ox": -8,
+     "oy": -16,
+     "form": "sprig",
+     "weight": 1,
+     "span": 0.42,
+     "name": "Snowdrops (sprig)"
+    },
+    {
+     "img": "scene/props/snowdrops_cluster.png",
+     "ox": -12,
+     "oy": -15,
+     "form": "cluster",
+     "weight": 1,
+     "span": 0.63,
+     "name": "Snowdrops (cluster)"
+    },
+    {
+     "img": "scene/props/snowdrops_drift.png",
+     "ox": -36,
+     "oy": -17,
+     "form": "drift",
+     "weight": 0.6,
+     "span": 1.89,
+     "name": "Snowdrops (drift)"
+    },
+    {
+     "img": "scene/props/snowdrops_scatter.png",
+     "ox": -20,
+     "oy": -17,
+     "form": "scatter",
+     "weight": 0.7,
+     "span": 1.05,
+     "name": "Snowdrops (scattered)"
+    }
    ],
    "vary": {"size":0}
   },
@@ -5925,8 +7033,42 @@
    "weight": 1,
    "ppm": 32,
    "variants": [
-    {"img":"scene/props/crocuses_sm.png","ox":-16,"oy":-14,"name":"Crocuses (small)","size":"sm"},
-    {"img":"scene/props/crocuses_lg.png","ox":-30,"oy":-14,"name":"Crocuses (large)","size":"lg"}
+    {
+     "img": "scene/props/crocuses_sprig.png",
+     "ox": -9,
+     "oy": -12,
+     "form": "sprig",
+     "weight": 1,
+     "span": 0.41,
+     "name": "Crocuses (sprig)"
+    },
+    {
+     "img": "scene/props/crocuses_cluster.png",
+     "ox": -13,
+     "oy": -13,
+     "form": "cluster",
+     "weight": 1,
+     "span": 0.59,
+     "name": "Crocuses (cluster)"
+    },
+    {
+     "img": "scene/props/crocuses_drift.png",
+     "ox": -35,
+     "oy": -13,
+     "form": "drift",
+     "weight": 0.6,
+     "span": 1.59,
+     "name": "Crocuses (drift)"
+    },
+    {
+     "img": "scene/props/crocuses_scatter.png",
+     "ox": -23,
+     "oy": -13,
+     "form": "scatter",
+     "weight": 0.7,
+     "span": 1.05,
+     "name": "Crocuses (scattered)"
+    }
    ],
    "vary": {"size":0}
   },
@@ -5946,8 +7088,34 @@
    "weight": 1.4,
    "ppm": 32,
    "variants": [
-    {"img":"scene/props/tussock_sm.png","ox":-19,"oy":-14,"name":"Tussock (small)","size":"sm"},
-    {"img":"scene/props/tussock_lg.png","ox":-31,"oy":-27,"name":"Tussock (large)","size":"lg"}
+    {
+     "img": "scene/props/tussock_tuft.png",
+     "ox": -18,
+     "oy": -10,
+     "form": "tuft",
+     "weight": 1,
+     "span": 0.75,
+     "name": "Tussock (young tuft)"
+    },
+    {"img":"scene/props/tussock_clump.png","ox":-36,"oy":-19,"form":"clump","weight":1,"span":1.5,"name":"Tussock (clump)"},
+    {
+     "img": "scene/props/tussock_windswept.png",
+     "ox": -27,
+     "oy": -25,
+     "form": "windswept",
+     "weight": 0.8,
+     "span": 1.12,
+     "name": "Tussock (windswept)"
+    },
+    {
+     "img": "scene/props/tussock_meadow.png",
+     "ox": -49,
+     "oy": -27,
+     "form": "meadow",
+     "weight": 0.5,
+     "span": 2.04,
+     "name": "Tussock (meadow)"
+    }
    ],
    "vary": {"size":0}
   },
@@ -5967,8 +7135,18 @@
    "weight": 1,
    "ppm": 32,
    "variants": [
-    {"img":"scene/props/sedge_sm.png","ox":-16,"oy":-20,"name":"Sedge (small)","size":"sm"},
-    {"img":"scene/props/sedge_lg.png","ox":-26,"oy":-37,"name":"Sedge (large)","size":"lg"}
+    {"img":"scene/props/sedge_tuft.png","ox":-16,"oy":-16,"form":"tuft","weight":1,"span":0.8,"name":"Sedge (young tuft)"},
+    {"img":"scene/props/sedge_clump.png","ox":-24,"oy":-26,"form":"clump","weight":1,"span":1.2,"name":"Sedge (clump)"},
+    {
+     "img": "scene/props/sedge_windswept.png",
+     "ox": -21,
+     "oy": -34,
+     "form": "windswept",
+     "weight": 0.8,
+     "span": 1.05,
+     "name": "Sedge (windswept)"
+    },
+    {"img":"scene/props/sedge_meadow.png","ox":-40,"oy":-38,"form":"meadow","weight":0.5,"span":2,"name":"Sedge (meadow)"}
    ],
    "vary": {"size":0}
   },
@@ -5988,8 +7166,42 @@
    "weight": 1,
    "ppm": 32,
    "variants": [
-    {"img":"scene/props/wild_wheat_sm.png","ox":-17,"oy":-31,"name":"Wild wheat (small)","size":"sm"},
-    {"img":"scene/props/wild_wheat_lg.png","ox":-30,"oy":-56,"name":"Wild wheat (large)","size":"lg"}
+    {
+     "img": "scene/props/wild_wheat_tuft.png",
+     "ox": -18,
+     "oy": -25,
+     "form": "tuft",
+     "weight": 1,
+     "span": 0.78,
+     "name": "Wild wheat (young tuft)"
+    },
+    {
+     "img": "scene/props/wild_wheat_clump.png",
+     "ox": -30,
+     "oy": -40,
+     "form": "clump",
+     "weight": 1,
+     "span": 1.3,
+     "name": "Wild wheat (clump)"
+    },
+    {
+     "img": "scene/props/wild_wheat_windswept.png",
+     "ox": -22,
+     "oy": -43,
+     "form": "windswept",
+     "weight": 0.8,
+     "span": 0.96,
+     "name": "Wild wheat (windswept)"
+    },
+    {
+     "img": "scene/props/wild_wheat_meadow.png",
+     "ox": -40,
+     "oy": -43,
+     "form": "meadow",
+     "weight": 0.5,
+     "span": 1.74,
+     "name": "Wild wheat (meadow)"
+    }
    ],
    "vary": {"size":0}
   },
@@ -6025,8 +7237,34 @@
    "weight": 1.2,
    "ppm": 32,
    "variants": [
-    {"img":"scene/props/bracken_sm.png","ox":-19,"oy":-23,"name":"Bracken (small)","size":"sm"},
-    {"img":"scene/props/bracken_lg.png","ox":-31,"oy":-41,"name":"Bracken (large)","size":"lg"}
+    {
+     "img": "scene/props/bracken_fiddlehead.png",
+     "ox": -15,
+     "oy": -26,
+     "form": "fiddlehead",
+     "weight": 0.8,
+     "span": 0.6,
+     "name": "Bracken (fiddleheads)"
+    },
+    {"img":"scene/props/bracken_clump.png","ox":-28,"oy":-29,"form":"clump","weight":1,"span":1.12,"name":"Bracken (clump)"},
+    {
+     "img": "scene/props/bracken_spread.png",
+     "ox": -37,
+     "oy": -30,
+     "form": "spread",
+     "weight": 0.7,
+     "span": 1.48,
+     "name": "Bracken (spreading)"
+    },
+    {
+     "img": "scene/props/bracken_tall.png",
+     "ox": -31,
+     "oy": -40,
+     "form": "tall",
+     "weight": 0.6,
+     "span": 1.24,
+     "name": "Bracken (tall stems)"
+    }
    ],
    "vary": {"size":0}
   },
@@ -6046,8 +7284,42 @@
    "weight": 0.9,
    "ppm": 32,
    "variants": [
-    {"img":"scene/props/thistles_sm.png","ox":-18,"oy":-25,"name":"Thistles (small)","size":"sm"},
-    {"img":"scene/props/thistles_lg.png","ox":-24,"oy":-47,"name":"Thistles (large)","size":"lg"}
+    {
+     "img": "scene/props/thistles_tuft.png",
+     "ox": -14,
+     "oy": -25,
+     "form": "tuft",
+     "weight": 1,
+     "span": 0.7,
+     "name": "Thistles (young tuft)"
+    },
+    {
+     "img": "scene/props/thistles_clump.png",
+     "ox": -23,
+     "oy": -35,
+     "form": "clump",
+     "weight": 1,
+     "span": 1.15,
+     "name": "Thistles (clump)"
+    },
+    {
+     "img": "scene/props/thistles_windswept.png",
+     "ox": -22,
+     "oy": -32,
+     "form": "windswept",
+     "weight": 0.8,
+     "span": 1.1,
+     "name": "Thistles (windswept)"
+    },
+    {
+     "img": "scene/props/thistles_meadow.png",
+     "ox": -37,
+     "oy": -37,
+     "form": "meadow",
+     "weight": 0.5,
+     "span": 1.85,
+     "name": "Thistles (meadow)"
+    }
    ],
    "vary": {"size":0}
   },
@@ -6067,8 +7339,10 @@
    "weight": 1.2,
    "ppm": 32,
    "variants": [
-    {"img":"scene/props/heather_sm.png","ox":-21,"oy":-14,"name":"Heather (small)","size":"sm"},
-    {"img":"scene/props/heather_lg.png","ox":-40,"oy":-25,"name":"Heather (large)","size":"lg"}
+    {"img":"scene/props/heather_small.png","ox":-18,"oy":-11,"form":"small","weight":1,"span":0.64,"name":"Heather (small)"},
+    {"img":"scene/props/heather_pair.png","ox":-35,"oy":-17,"form":"pair","weight":0.9,"span":1.25,"name":"Heather (pair)"},
+    {"img":"scene/props/heather_row.png","ox":-44,"oy":-14,"form":"row","weight":0.5,"span":1.57,"name":"Heather (row)"},
+    {"img":"scene/props/heather_big.png","ox":-37,"oy":-25,"form":"big","weight":0.5,"span":1.32,"name":"Heather (big)"}
    ],
    "vary": {"size":0}
   },
@@ -6088,8 +7362,42 @@
    "weight": 1,
    "ppm": 32,
    "variants": [
-    {"img":"scene/props/moss_patch_sm.png","ox":-18,"oy":-7,"name":"Moss patch (small)","size":"sm"},
-    {"img":"scene/props/moss_patch_lg.png","ox":-35,"oy":-14,"name":"Moss patch (large)","size":"lg"}
+    {
+     "img": "scene/props/moss_patch_single.png",
+     "ox": -15,
+     "oy": -6,
+     "form": "single",
+     "weight": 1,
+     "span": 0.6,
+     "name": "Moss patch (single)"
+    },
+    {
+     "img": "scene/props/moss_patch_pair.png",
+     "ox": -32,
+     "oy": -11,
+     "form": "pair",
+     "weight": 0.9,
+     "span": 1.28,
+     "name": "Moss patch (pair)"
+    },
+    {
+     "img": "scene/props/moss_patch_raft.png",
+     "ox": -37,
+     "oy": -13,
+     "form": "raft",
+     "weight": 0.5,
+     "span": 1.48,
+     "name": "Moss patch (raft)"
+    },
+    {
+     "img": "scene/props/moss_patch_trail.png",
+     "ox": -46,
+     "oy": -10,
+     "form": "trail",
+     "weight": 0.5,
+     "span": 1.84,
+     "name": "Moss patch (trail)"
+    }
    ],
    "vary": {"size":0}
   },
@@ -6109,8 +7417,42 @@
    "weight": 1.2,
    "ppm": 32,
    "variants": [
-    {"img":"scene/props/clover_patch_sm.png","ox":-14,"oy":-9,"name":"Clover patch (small)","size":"sm"},
-    {"img":"scene/props/clover_patch_lg.png","ox":-34,"oy":-13,"name":"Clover patch (large)","size":"lg"}
+    {
+     "img": "scene/props/clover_patch_single.png",
+     "ox": -15,
+     "oy": -7,
+     "form": "single",
+     "weight": 1,
+     "span": 0.6,
+     "name": "Clover patch (single)"
+    },
+    {
+     "img": "scene/props/clover_patch_pair.png",
+     "ox": -28,
+     "oy": -12,
+     "form": "pair",
+     "weight": 0.9,
+     "span": 1.12,
+     "name": "Clover patch (pair)"
+    },
+    {
+     "img": "scene/props/clover_patch_raft.png",
+     "ox": -34,
+     "oy": -12,
+     "form": "raft",
+     "weight": 0.5,
+     "span": 1.36,
+     "name": "Clover patch (raft)"
+    },
+    {
+     "img": "scene/props/clover_patch_trail.png",
+     "ox": -44,
+     "oy": -11,
+     "form": "trail",
+     "weight": 0.5,
+     "span": 1.76,
+     "name": "Clover patch (trail)"
+    }
    ],
    "vary": {"size":0}
   },
@@ -6130,8 +7472,10 @@
    "weight": 1,
    "ppm": 32,
    "variants": [
-    {"img":"scene/props/nettles_sm.png","ox":-19,"oy":-30,"name":"Nettles (small)","size":"sm"},
-    {"img":"scene/props/nettles_lg.png","ox":-29,"oy":-52,"name":"Nettles (large)","size":"lg"}
+    {"img":"scene/props/nettles_small.png","ox":-17,"oy":-26,"form":"small","weight":1,"span":0.77,"name":"Nettles (small)"},
+    {"img":"scene/props/nettles_pair.png","ox":-30,"oy":-33,"form":"pair","weight":0.9,"span":1.36,"name":"Nettles (pair)"},
+    {"img":"scene/props/nettles_row.png","ox":-40,"oy":-32,"form":"row","weight":0.5,"span":1.82,"name":"Nettles (row)"},
+    {"img":"scene/props/nettles_big.png","ox":-28,"oy":-49,"form":"big","weight":0.5,"span":1.27,"name":"Nettles (big)"}
    ],
    "vary": {"size":0}
   },
@@ -6151,8 +7495,26 @@
    "weight": 0.8,
    "ppm": 32,
    "variants": [
-    {"img":"scene/props/horsetail_sm.png","ox":-15,"oy":-30,"name":"Horsetail (small)","size":"sm"},
-    {"img":"scene/props/horsetail_lg.png","ox":-26,"oy":-51,"name":"Horsetail (large)","size":"lg"}
+    {
+     "img": "scene/props/horsetail_small.png",
+     "ox": -12,
+     "oy": -24,
+     "form": "small",
+     "weight": 1,
+     "span": 0.63,
+     "name": "Horsetail (small)"
+    },
+    {
+     "img": "scene/props/horsetail_pair.png",
+     "ox": -23,
+     "oy": -33,
+     "form": "pair",
+     "weight": 0.9,
+     "span": 1.21,
+     "name": "Horsetail (pair)"
+    },
+    {"img":"scene/props/horsetail_row.png","ox":-31,"oy":-29,"form":"row","weight":0.5,"span":1.63,"name":"Horsetail (row)"},
+    {"img":"scene/props/horsetail_big.png","ox":-24,"oy":-52,"form":"big","weight":0.5,"span":1.26,"name":"Horsetail (big)"}
    ],
    "vary": {"size":0}
   },
@@ -6489,8 +7851,42 @@
    "weight": 1,
    "ppm": 32,
    "variants": [
-    {"img":"scene/props/iris_yellow_sm.png","ox":-15,"oy":-32,"name":"Yellow iris (small)","size":"sm"},
-    {"img":"scene/props/iris_yellow_lg.png","ox":-23,"oy":-57,"name":"Yellow iris (large)","size":"lg"}
+    {
+     "img": "scene/props/iris_yellow_tuft.png",
+     "ox": -15,
+     "oy": -29,
+     "form": "tuft",
+     "weight": 1,
+     "span": 0.71,
+     "name": "Yellow iris (young tuft)"
+    },
+    {
+     "img": "scene/props/iris_yellow_clump.png",
+     "ox": -25,
+     "oy": -38,
+     "form": "clump",
+     "weight": 1,
+     "span": 1.19,
+     "name": "Yellow iris (clump)"
+    },
+    {
+     "img": "scene/props/iris_yellow_windswept.png",
+     "ox": -22,
+     "oy": -36,
+     "form": "windswept",
+     "weight": 0.8,
+     "span": 1.05,
+     "name": "Yellow iris (windswept)"
+    },
+    {
+     "img": "scene/props/iris_yellow_meadow.png",
+     "ox": -37,
+     "oy": -44,
+     "form": "meadow",
+     "weight": 0.5,
+     "span": 1.76,
+     "name": "Yellow iris (meadow)"
+    }
    ],
    "vary": {"size":0}
   },
@@ -6510,8 +7906,42 @@
    "weight": 0.8,
    "ppm": 32,
    "variants": [
-    {"img":"scene/props/iris_purple_sm.png","ox":-14,"oy":-32,"name":"Purple iris (small)","size":"sm"},
-    {"img":"scene/props/iris_purple_lg.png","ox":-25,"oy":-57,"name":"Purple iris (large)","size":"lg"}
+    {
+     "img": "scene/props/iris_purple_tuft.png",
+     "ox": -16,
+     "oy": -29,
+     "form": "tuft",
+     "weight": 1,
+     "span": 0.84,
+     "name": "Purple iris (young tuft)"
+    },
+    {
+     "img": "scene/props/iris_purple_clump.png",
+     "ox": -24,
+     "oy": -40,
+     "form": "clump",
+     "weight": 1,
+     "span": 1.26,
+     "name": "Purple iris (clump)"
+    },
+    {
+     "img": "scene/props/iris_purple_windswept.png",
+     "ox": -21,
+     "oy": -42,
+     "form": "windswept",
+     "weight": 0.8,
+     "span": 1.11,
+     "name": "Purple iris (windswept)"
+    },
+    {
+     "img": "scene/props/iris_purple_meadow.png",
+     "ox": -36,
+     "oy": -41,
+     "form": "meadow",
+     "weight": 0.5,
+     "span": 1.89,
+     "name": "Purple iris (meadow)"
+    }
    ],
    "vary": {"size":0}
   },
@@ -6531,8 +7961,42 @@
    "weight": 1.2,
    "ppm": 32,
    "variants": [
-    {"img":"scene/props/bulrush_sm.png","ox":-17,"oy":-46,"name":"Bulrushes (small)","size":"sm"},
-    {"img":"scene/props/bulrush_lg.png","ox":-26,"oy":-84,"name":"Bulrushes (large)","size":"lg"}
+    {
+     "img": "scene/props/bulrush_tuft.png",
+     "ox": -17,
+     "oy": -39,
+     "form": "tuft",
+     "weight": 1,
+     "span": 0.85,
+     "name": "Bulrushes (young tuft)"
+    },
+    {
+     "img": "scene/props/bulrush_clump.png",
+     "ox": -28,
+     "oy": -53,
+     "form": "clump",
+     "weight": 1,
+     "span": 1.4,
+     "name": "Bulrushes (clump)"
+    },
+    {
+     "img": "scene/props/bulrush_windswept.png",
+     "ox": -22,
+     "oy": -62,
+     "form": "windswept",
+     "weight": 0.8,
+     "span": 1.1,
+     "name": "Bulrushes (windswept)"
+    },
+    {
+     "img": "scene/props/bulrush_meadow.png",
+     "ox": -40,
+     "oy": -66,
+     "form": "meadow",
+     "weight": 0.5,
+     "span": 2,
+     "name": "Bulrushes (meadow)"
+    }
    ],
    "vary": {"size":0}
   },
@@ -6552,8 +8016,42 @@
    "weight": 1,
    "ppm": 32,
    "variants": [
-    {"img":"scene/props/duckweed_sm.png","ox":-19,"oy":-8,"name":"Duckweed (small)","size":"sm"},
-    {"img":"scene/props/duckweed_lg.png","ox":-39,"oy":-17,"name":"Duckweed (large)","size":"lg"}
+    {
+     "img": "scene/props/duckweed_single.png",
+     "ox": -16,
+     "oy": -7,
+     "form": "single",
+     "weight": 1,
+     "span": 0.59,
+     "name": "Duckweed (single)"
+    },
+    {
+     "img": "scene/props/duckweed_pair.png",
+     "ox": -32,
+     "oy": -13,
+     "form": "pair",
+     "weight": 0.9,
+     "span": 1.19,
+     "name": "Duckweed (pair)"
+    },
+    {
+     "img": "scene/props/duckweed_raft.png",
+     "ox": -40,
+     "oy": -13,
+     "form": "raft",
+     "weight": 0.5,
+     "span": 1.48,
+     "name": "Duckweed (raft)"
+    },
+    {
+     "img": "scene/props/duckweed_trail.png",
+     "ox": -50,
+     "oy": -11,
+     "form": "trail",
+     "weight": 0.5,
+     "span": 1.85,
+     "name": "Duckweed (trail)"
+    }
    ],
    "vary": {"size":0}
   },
@@ -6573,8 +8071,26 @@
    "weight": 1.2,
    "ppm": 32,
    "variants": [
-    {"img":"scene/props/lilypad_sm.png","ox":-10,"oy":-5,"name":"Lily pad (small)","size":"sm"},
-    {"img":"scene/props/lilypad_lg.png","ox":-19,"oy":-9,"name":"Lily pad (large)","size":"lg"}
+    {
+     "img": "scene/props/lilypad_single.png",
+     "ox": -9,
+     "oy": -5,
+     "form": "single",
+     "weight": 1,
+     "span": 0.64,
+     "name": "Lily pad (single)"
+    },
+    {"img":"scene/props/lilypad_pair.png","ox":-18,"oy":-8,"form":"pair","weight":0.9,"span":1.29,"name":"Lily pad (pair)"},
+    {"img":"scene/props/lilypad_raft.png","ox":-21,"oy":-9,"form":"raft","weight":0.5,"span":1.5,"name":"Lily pad (raft)"},
+    {
+     "img": "scene/props/lilypad_trail.png",
+     "ox": -26,
+     "oy": -8,
+     "form": "trail",
+     "weight": 0.5,
+     "span": 1.86,
+     "name": "Lily pad (trail)"
+    }
    ],
    "vary": {"size":0}
   },
@@ -6594,8 +8110,42 @@
    "weight": 0.8,
    "ppm": 32,
    "variants": [
-    {"img":"scene/props/lotus_pink_sm.png","ox":-16,"oy":-8,"name":"Pink lotus (small)","size":"sm"},
-    {"img":"scene/props/lotus_pink_lg.png","ox":-30,"oy":-8,"name":"Pink lotus (large)","size":"lg"}
+    {
+     "img": "scene/props/lotus_pink_single.png",
+     "ox": -14,
+     "oy": -7,
+     "form": "single",
+     "weight": 1,
+     "span": 0.64,
+     "name": "Pink lotus (single)"
+    },
+    {
+     "img": "scene/props/lotus_pink_pair.png",
+     "ox": -29,
+     "oy": -10,
+     "form": "pair",
+     "weight": 0.9,
+     "span": 1.32,
+     "name": "Pink lotus (pair)"
+    },
+    {
+     "img": "scene/props/lotus_pink_raft.png",
+     "ox": -33,
+     "oy": -12,
+     "form": "raft",
+     "weight": 0.5,
+     "span": 1.5,
+     "name": "Pink lotus (raft)"
+    },
+    {
+     "img": "scene/props/lotus_pink_trail.png",
+     "ox": -41,
+     "oy": -10,
+     "form": "trail",
+     "weight": 0.5,
+     "span": 1.86,
+     "name": "Pink lotus (trail)"
+    }
    ],
    "vary": {"size":0}
   },
@@ -6615,8 +8165,42 @@
    "weight": 0.8,
    "ppm": 32,
    "variants": [
-    {"img":"scene/props/lotus_white_sm.png","ox":-16,"oy":-8,"name":"White lotus (small)","size":"sm"},
-    {"img":"scene/props/lotus_white_lg.png","ox":-30,"oy":-8,"name":"White lotus (large)","size":"lg"}
+    {
+     "img": "scene/props/lotus_white_single.png",
+     "ox": -14,
+     "oy": -7,
+     "form": "single",
+     "weight": 1,
+     "span": 0.64,
+     "name": "White lotus (single)"
+    },
+    {
+     "img": "scene/props/lotus_white_pair.png",
+     "ox": -29,
+     "oy": -10,
+     "form": "pair",
+     "weight": 0.9,
+     "span": 1.32,
+     "name": "White lotus (pair)"
+    },
+    {
+     "img": "scene/props/lotus_white_raft.png",
+     "ox": -33,
+     "oy": -12,
+     "form": "raft",
+     "weight": 0.5,
+     "span": 1.5,
+     "name": "White lotus (raft)"
+    },
+    {
+     "img": "scene/props/lotus_white_trail.png",
+     "ox": -41,
+     "oy": -10,
+     "form": "trail",
+     "weight": 0.5,
+     "span": 1.86,
+     "name": "White lotus (trail)"
+    }
    ],
    "vary": {"size":0}
   },
@@ -6636,8 +8220,42 @@
    "weight": 1,
    "ppm": 32,
    "variants": [
-    {"img":"scene/props/marsh_marigold_sm.png","ox":-15,"oy":-17,"name":"Marsh marigolds (small)","size":"sm"},
-    {"img":"scene/props/marsh_marigold_lg.png","ox":-29,"oy":-28,"name":"Marsh marigolds (large)","size":"lg"}
+    {
+     "img": "scene/props/marsh_marigold_sprig.png",
+     "ox": -9,
+     "oy": -21,
+     "form": "sprig",
+     "weight": 1,
+     "span": 0.43,
+     "name": "Marsh marigolds (sprig)"
+    },
+    {
+     "img": "scene/props/marsh_marigold_cluster.png",
+     "ox": -13,
+     "oy": -20,
+     "form": "cluster",
+     "weight": 1,
+     "span": 0.62,
+     "name": "Marsh marigolds (cluster)"
+    },
+    {
+     "img": "scene/props/marsh_marigold_drift.png",
+     "ox": -33,
+     "oy": -22,
+     "form": "drift",
+     "weight": 0.6,
+     "span": 1.57,
+     "name": "Marsh marigolds (drift)"
+    },
+    {
+     "img": "scene/props/marsh_marigold_scatter.png",
+     "ox": -24,
+     "oy": -21,
+     "form": "scatter",
+     "weight": 0.7,
+     "span": 1.14,
+     "name": "Marsh marigolds (scattered)"
+    }
    ],
    "vary": {"size":0}
   },
@@ -6657,8 +8275,42 @@
    "weight": 0.9,
    "ppm": 32,
    "variants": [
-    {"img":"scene/props/water_mint_sm.png","ox":-15,"oy":-20,"name":"Water mint (small)","size":"sm"},
-    {"img":"scene/props/water_mint_lg.png","ox":-29,"oy":-28,"name":"Water mint (large)","size":"lg"}
+    {
+     "img": "scene/props/water_mint_sprig.png",
+     "ox": -8,
+     "oy": -23,
+     "form": "sprig",
+     "weight": 1,
+     "span": 0.38,
+     "name": "Water mint (sprig)"
+    },
+    {
+     "img": "scene/props/water_mint_cluster.png",
+     "ox": -12,
+     "oy": -20,
+     "form": "cluster",
+     "weight": 1,
+     "span": 0.57,
+     "name": "Water mint (cluster)"
+    },
+    {
+     "img": "scene/props/water_mint_drift.png",
+     "ox": -32,
+     "oy": -22,
+     "form": "drift",
+     "weight": 0.6,
+     "span": 1.52,
+     "name": "Water mint (drift)"
+    },
+    {
+     "img": "scene/props/water_mint_tall.png",
+     "ox": -12,
+     "oy": -30,
+     "form": "tall",
+     "weight": 0.6,
+     "span": 0.57,
+     "name": "Water mint (tall stems)"
+    }
    ],
    "vary": {"size":0}
   },
@@ -6695,8 +8347,42 @@
    "weight": 1,
    "ppm": 32,
    "variants": [
-    {"img":"scene/props/stones_flat_sm.png","ox":-21,"oy":-9,"name":"Flat stones (small)","size":"sm"},
-    {"img":"scene/props/stones_flat_lg.png","ox":-38,"oy":-19,"name":"Flat stones (large)","size":"lg"}
+    {
+     "img": "scene/props/stones_flat_single.png",
+     "ox": -10,
+     "oy": -6,
+     "form": "single",
+     "weight": 1,
+     "span": 0.32,
+     "name": "Flat stones (single)"
+    },
+    {
+     "img": "scene/props/stones_flat_pair.png",
+     "ox": -34,
+     "oy": -14,
+     "form": "pair",
+     "weight": 0.9,
+     "span": 1.1,
+     "name": "Flat stones (pair)"
+    },
+    {
+     "img": "scene/props/stones_flat_raft.png",
+     "ox": -37,
+     "oy": -13,
+     "form": "raft",
+     "weight": 0.5,
+     "span": 1.19,
+     "name": "Flat stones (raft)"
+    },
+    {
+     "img": "scene/props/stones_flat_trail.png",
+     "ox": -45,
+     "oy": -12,
+     "form": "trail",
+     "weight": 0.5,
+     "span": 1.45,
+     "name": "Flat stones (trail)"
+    }
    ],
    "vary": {"size":0}
   },
@@ -6716,8 +8402,10 @@
    "weight": 1,
    "ppm": 32,
    "variants": [
-    {"img":"scene/props/scree_sm.png","ox":-29,"oy":-12,"name":"Scree (small)","size":"sm"},
-    {"img":"scene/props/scree_lg.png","ox":-51,"oy":-22,"name":"Scree (large)","size":"lg"}
+    {"img":"scene/props/scree_small.png","ox":-38,"oy":-12,"form":"small","weight":1,"span":1,"name":"Scree (small)"},
+    {"img":"scene/props/scree_pair.png","ox":-55,"oy":-14,"form":"pair","weight":0.9,"span":1.45,"name":"Scree (pair)"},
+    {"img":"scene/props/scree_row.png","ox":-77,"oy":-13,"form":"row","weight":0.5,"span":2.03,"name":"Scree (row)"},
+    {"img":"scene/props/scree_big.png","ox":-47,"oy":-20,"form":"big","weight":0.5,"span":1.24,"name":"Scree (big)"}
    ],
    "vary": {"size":0}
   },
@@ -6737,8 +8425,18 @@
    "weight": 0.8,
    "ppm": 32,
    "variants": [
-    {"img":"scene/props/molehill_sm.png","ox":-10,"oy":-9,"name":"Molehill (small)","size":"sm"},
-    {"img":"scene/props/molehill_lg.png","ox":-19,"oy":-14,"name":"Molehill (large)","size":"lg"}
+    {"img":"scene/props/molehill_small.png","ox":-9,"oy":-8,"form":"small","weight":1,"span":0.64,"name":"Molehill (small)"},
+    {
+     "img": "scene/props/molehill_pair.png",
+     "ox": -18,
+     "oy": -11,
+     "form": "pair",
+     "weight": 0.9,
+     "span": 1.29,
+     "name": "Molehill (pair)"
+    },
+    {"img":"scene/props/molehill_row.png","ox":-23,"oy":-9,"form":"row","weight":0.5,"span":1.64,"name":"Molehill (row)"},
+    {"img":"scene/props/molehill_big.png","ox":-18,"oy":-13,"form":"big","weight":0.5,"span":1.29,"name":"Molehill (big)"}
    ],
    "vary": {"size":0}
   },
@@ -6758,8 +8456,26 @@
    "weight": 0.6,
    "ppm": 32,
    "variants": [
-    {"img":"scene/props/roots_sm.png","ox":-28,"oy":-11,"name":"Exposed roots (small)","size":"sm"},
-    {"img":"scene/props/roots_lg.png","ox":-53,"oy":-18,"name":"Exposed roots (large)","size":"lg"}
+    {
+     "img": "scene/props/roots_small.png",
+     "ox": -25,
+     "oy": -14,
+     "form": "small",
+     "weight": 1,
+     "span": 0.64,
+     "name": "Exposed roots (small)"
+    },
+    {
+     "img": "scene/props/roots_pair.png",
+     "ox": -46,
+     "oy": -17,
+     "form": "pair",
+     "weight": 0.9,
+     "span": 1.18,
+     "name": "Exposed roots (pair)"
+    },
+    {"img":"scene/props/roots_row.png","ox":-61,"oy":-15,"form":"row","weight":0.5,"span":1.56,"name":"Exposed roots (row)"},
+    {"img":"scene/props/roots_big.png","ox":-50,"oy":-21,"form":"big","weight":0.5,"span":1.28,"name":"Exposed roots (big)"}
    ],
    "vary": {"size":0}
   },
@@ -6883,8 +8599,42 @@
    "weight": 0.8,
    "ppm": 32,
    "variants": [
-    {"img":"scene/props/seedheads_sm.png","ox":-17,"oy":-21,"name":"Dry seed heads (small)","size":"sm"},
-    {"img":"scene/props/seedheads_lg.png","ox":-31,"oy":-34,"name":"Dry seed heads (large)","size":"lg"}
+    {
+     "img": "scene/props/seedheads_sprig.png",
+     "ox": -9,
+     "oy": -24,
+     "form": "sprig",
+     "weight": 1,
+     "span": 0.39,
+     "name": "Dry seed heads (sprig)"
+    },
+    {
+     "img": "scene/props/seedheads_cluster.png",
+     "ox": -15,
+     "oy": -27,
+     "form": "cluster",
+     "weight": 1,
+     "span": 0.65,
+     "name": "Dry seed heads (cluster)"
+    },
+    {
+     "img": "scene/props/seedheads_drift.png",
+     "ox": -39,
+     "oy": -25,
+     "form": "drift",
+     "weight": 0.6,
+     "span": 1.7,
+     "name": "Dry seed heads (drift)"
+    },
+    {
+     "img": "scene/props/seedheads_tall.png",
+     "ox": -12,
+     "oy": -31,
+     "form": "tall",
+     "weight": 0.6,
+     "span": 0.52,
+     "name": "Dry seed heads (tall stems)"
+    }
    ],
    "vary": {"size":0}
   },
@@ -6904,8 +8654,42 @@
    "weight": 0.6,
    "ppm": 32,
    "variants": [
-    {"img":"scene/props/tussock_rust_sm.png","ox":-22,"oy":-13,"name":"Rust tussock (small)","size":"sm"},
-    {"img":"scene/props/tussock_rust_lg.png","ox":-31,"oy":-28,"name":"Rust tussock (large)","size":"lg"}
+    {
+     "img": "scene/props/tussock_rust_tuft.png",
+     "ox": -16,
+     "oy": -12,
+     "form": "tuft",
+     "weight": 1,
+     "span": 0.64,
+     "name": "Rust tussock (young tuft)"
+    },
+    {
+     "img": "scene/props/tussock_rust_clump.png",
+     "ox": -32,
+     "oy": -19,
+     "form": "clump",
+     "weight": 1,
+     "span": 1.28,
+     "name": "Rust tussock (clump)"
+    },
+    {
+     "img": "scene/props/tussock_rust_windswept.png",
+     "ox": -26,
+     "oy": -22,
+     "form": "windswept",
+     "weight": 0.8,
+     "span": 1.04,
+     "name": "Rust tussock (windswept)"
+    },
+    {
+     "img": "scene/props/tussock_rust_meadow.png",
+     "ox": -51,
+     "oy": -30,
+     "form": "meadow",
+     "weight": 0.5,
+     "span": 2.04,
+     "name": "Rust tussock (meadow)"
+    }
    ],
    "vary": {"size":0}
   },
