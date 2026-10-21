@@ -34,7 +34,7 @@
   content: '';
   position: absolute;
   inset: 3px;
-  z-index: -1;
+  z-index: var(--z-below);
   clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
   background: var(--t-profile);
 }
@@ -157,7 +157,7 @@
   content: '';
   position: absolute;
   inset: 2px calc(-1 * var(--s1));
-  z-index: -1;
+  z-index: var(--z-below);
   transform: skewX(calc(-1 * var(--slant)));
   border-left: 4px solid var(--gold-b);
   background: linear-gradient(
@@ -210,7 +210,7 @@ hr.pb-rule::after {
   right: 7%;
   bottom: 0;
   aspect-ratio: 1;
-  z-index: -1;
+  z-index: var(--z-below);
   border-radius: 50%;
   background:
     radial-gradient(circle at 50% 30%, rgba(255, 255, 255, 0.45), transparent 60%),

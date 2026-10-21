@@ -97,7 +97,7 @@ const shaped = css`
     pointer-events: none;
   }
   .sh {
-    z-index: -1;
+    z-index: var(--z-below);
     clip-path: var(--k-ring);
     filter: var(--k-drop);
   }
@@ -401,7 +401,7 @@ const PbSheet = class extends LitElement {
         pointer-events: none;
       }
       .sh {
-        z-index: -1;
+        z-index: var(--z-below);
         clip-path: var(--ring-panel);
         filter: var(--drop-float);
       }
@@ -668,7 +668,7 @@ const PbTabs = class extends LitElement {
         content: '';
         position: absolute;
         inset: 0;
-        z-index: -1;
+        z-index: var(--z-below);
         pointer-events: none;
       }
       button::before {
@@ -873,7 +873,7 @@ const PbField = class extends LitElement {
         pointer-events: none;
       }
       .box::before {
-        z-index: -1;
+        z-index: var(--z-below);
         clip-path: var(--clip-button);
         background: color-mix(in srgb, var(--g-solid) 80%, var(--text) 4%);
       }
