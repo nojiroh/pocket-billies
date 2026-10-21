@@ -13,7 +13,6 @@ import {
 } from './hooks.js';
 import { $, $$, clamp } from './util.js';
 import {
-  COINS,
   DEX_ORDER,
   EGGS,
   ITEMS,
@@ -190,21 +189,14 @@ import { runWorldData } from './run-world.js';
 import { runArrivedHint, runGiveUp, runHint } from './run.js';
 import { postcardCheck, renderPostcards } from './postcards.js';
 import { renderBag } from './bag.js';
-import { friendsHTML } from './friends.js';
 import { legendCheck, personTalk, storyCheck, storyRivalBattle, trainerTalk } from './story.js';
 import { storyResumeCheck } from './story-stage.js';
-import {
-  arrivedAt,
-  challengeCardHTML,
-  homeDecorate,
-  refreshHomeFurniture,
-  requestListHTML,
-  stampTile,
-} from './things-to-do.js';
+import { arrivedAt, challengeCardHTML, homeDecorate, refreshHomeFurniture, requestListHTML } from './things-to-do.js';
 import { workshopAction, workshopSectionHTML } from './workshop.js';
 import { hpBar, progressBarHTML, statusBadgeHTML, typeBadgeHTML } from './ui-bits.js';
 import { closeModal, modal, nextModal, openInbox, toast } from './overlay.js';
 import { runEvolution } from './pending-windows.js';
+import { renderProfile } from './profile.js';
 /* eslint-disable no-func-assign */
 expose({
   BOX_SORTS: [() => BOX_SORTS],
@@ -213,7 +205,6 @@ expose({
   TABS: [() => TABS],
   TRACKS: [() => TRACKS],
   addPick: [() => addPick, v => (addPick = v)],
-  badgeSlots: [() => badgeSlots, v => (badgeSlots = v)],
   billyConditionHTML: [() => billyConditionHTML],
   billySheet: [() => billySheet, v => (billySheet = v)],
   boardNote: [() => boardNote, v => (boardNote = v)],
@@ -248,7 +239,6 @@ expose({
   renderDexEntry: [() => renderDexEntry, v => (renderDexEntry = v)],
   renderGuide: [() => renderGuide, v => (renderGuide = v)],
   renderIntro: [() => renderIntro, v => (renderIntro = v)],
-  renderProfile: [() => renderProfile, v => (renderProfile = v)],
   renderTeam: [() => renderTeam, v => (renderTeam = v)],
   renderWalk: [() => renderWalk, v => (renderWalk = v)],
   renderWorldMapTab: [() => renderWorldMapTab, v => (renderWorldMapTab = v)],
@@ -1589,74 +1579,6 @@ function renderDexEntry(id) {
   <section class="paper px"><h3>Where to look</h3><table class="expo"><tbody><tr><td>Found at</td><td>${where.length ? escapeHtml(where.join(', ')) : 'Not found in the wild'}</td></tr><tr><td>Hatches from</td><td>${eggs.length ? escapeHtml(eggs.join(', ')) : '—'}</td></tr><tr><td>Tracks</td><td>${escapeHtml(TRACKS[D.plan] || 'Unremarkable')}</td></tr></tbody></table></section>
   ${got ? `<div class="sig"><span class="sigline">${escapeHtml(s.name)}</span><small>Recorded by Professor Hazel.</small></div>` : ''}
  </article>`;
-}
-/* ---------- trainer card ---------- */
-function badgeSlots() {
-  const own = Object.values(TRAINERS).filter(T => T.seat),
-    tot = clamp(
-      Math.max(own.length, ...own.map(T => +((/of (\d+)/.exec(T.seat.title || '') || [])[1] || 0))),
-      own.length,
-      12
-    );
-  const known = own.map(T => ({
-    name: String(T.seat.title || 'Badge').split(' · ')[0],
-    leader: T.name,
-    coin: COINS[T.seat.coin] ? T.seat.coin : 'penny',
-    got: saveData.seats.includes(T.seat.id),
-  }));
-  return {
-    got: known.filter(b => b.got).length,
-    tot,
-    html:
-      known
-        .map(b =>
-          b.got
-            ? `<li class="bdg got"><span class="bdg-m" title="${escapeHtml(b.name)}, from ${escapeHtml(b.leader)}">${coinHTML(b.coin, 30, 32)}</span><small>${escapeHtml(b.name.replace(/ Badge$/, ''))}</small></li>`
-            : `<li class="bdg"><span class="bdg-m" title="Beat ${escapeHtml(b.leader)} to earn it">?</span><small>${escapeHtml(b.leader.replace(/^Leader /, ''))}</small></li>`
-        )
-        .join('') +
-      Array.from(
-        { length: tot - known.length },
-        () => '<li class="bdg none"><span class="bdg-m"></span><small>???</small></li>'
-      ).join(''),
-  };
-}
-function renderProfile() {
-  const name = cleanTrainer(saveData.avatar, saveData.gender).name,
-    seen = DEX_ORDER.filter(id => saveData.seen[id]).length,
-    got = DEX_ORDER.filter(id => saveData.caught[id]).length,
-    places = LOCATIONS.filter((r, i) => saveData.visited[i]).length,
-    bd = badgeSlots(),
-    bud = findBilly(saveData.buddy);
-  const beat = Object.keys(saveData.flags).filter(k => TRAINERS[k] && saveData.flags[k]).length,
-    since = saveData.since
-      ? new Date(saveData.since).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
-      : null;
-  const tile = (ic, k, v, sub, p) =>
-    `<div class="pf-tile"><span class="pf-k">${ic}${k}</span><b class="tnum">${v}</b>${sub ? `<small>${sub}</small>` : ''}${p != null ? progressBarHTML(p, 'gold') : ''}</div>`;
-  const items = Object.keys(ITEMS).filter(k => saveData.items[k] > 0);
-  return `<header class="bar"><div><div class="sub">Your profile</div><h1 class="where">Trainer</h1></div><button class="pb small quiet" data-a="settings">${uiIconHTML('gear', 16)} Settings</button></header>
- <div class="pf-top"><section class="tcard">
-  <div class="tc-band"><span>Trainer card</span><span class="tnum">ID No. ${String(saveData.tid || 0).padStart(5, '0')}</span></div>
-  <div class="tc-body"><div class="tc-photo"><div class="tc-portrait">${personHTML('me', 92)}</div><button class="pb small" data-a="customize">Edit look</button></div>
-   <div class="tc-info"><h2 class="tc-name">${escapeHtml(name)}</h2><dl class="tc-dl"><div><dt>Money</dt><dd class="tnum">${coinHTML('penny', 16)} $${formatNumber(saveData.se)}</dd></div><div><dt>Now in</dt><dd>${escapeHtml(LOCATIONS[saveData.trip.node].name)}</dd></div>${since ? `<div><dt>Started</dt><dd>${escapeHtml(since)}</dd></div>` : ''}<div><dt>Buddy</dt><dd>${bud ? escapeHtml(billyName(bud)) : 'None yet'}</dd></div></dl></div></div>
-  <div class="tc-badges"><div class="tc-bh"><span>Badges</span><b class="tnum">${bd.got} of ${bd.tot}</b></div><ol class="bdgs">${bd.html}</ol></div>
- </section>
- <section class="tpanel pf-stats"><div class="sec-h"><h2>Records</h2></div><div class="pf-grid">
-  ${tile(uiIconHTML('run', 14), 'Distance walked', `${metresToKm((saveData.stats && saveData.stats.walked) || 0)} km`)}${tile(uiIconHTML('map', 14), 'Places visited', `${places}/${LOCATIONS.length}`, null, places / LOCATIONS.length)}
-  ${tile(uiIconHTML('ledger', 14), 'Seen', `${seen}/${DEX_ORDER.length}`, null, seen / DEX_ORDER.length)}${tile(coinHTML('penny', 14), 'Taxed', `${got}/${DEX_ORDER.length}`, null, got / DEX_ORDER.length)}
-  ${tile(uiIconHTML('fight', 14), 'Trainers beaten', formatNumber(beat))}${tile(eggHTML(2, 12), 'Eggs hatched', formatNumber(saveData.hatched || 0), saveData.eggs.length ? `${plural(saveData.eggs.length, 'egg')} on the way` : 'No eggs right now')}${typeof stampTile === 'function' ? stampTile(tile) : ''}
- </div></section></div>
- <div class="pf-row">${bud ? `<section class="tpanel pf-buddy"><div class="sec-h"><h2>Buddy</h2></div><button class="pf-bud" data-a="mon" data-u="${bud.uid}"><span class="tm-spr" style="${plateVars(bud)}">${rigCanvasHTML(bud.sp, 72, { build: bud.build, coat: bud.coat })}</span><span class="pf-bt"><b>${escapeHtml(billyName(bud))}</b><span class="tnum">Lv ${bud.lvl}</span><small>Gets the full XP of every battle you win.</small></span></button></section>` : ''}
- <section class="tpanel pf-bag"><div class="sec-h"><h2>Bag</h2></div>
-  <div class="pf-coins">${Object.keys(COINS)
-    .map(
-      k =>
-        `<span class="pf-coin${saveData.coins[k] ? '' : ' none'}" title="${escapeHtml(COINS[k].n)}">${coinHTML(k, 22, 32)}<small>${escapeHtml(COINS[k].n.replace(/ Coins?$/, ''))}</small><b class="tnum">${formatNumber(saveData.coins[k] || 0)}</b></span>`
-    )
-    .join('')}</div>
-  ${items.length ? `<ul class="pf-items">${items.map(k => `<li>${itemIcon(k, 24)}<span>${escapeHtml(ITEMS[k].n)}</span><b class="tnum">×${formatNumber(saveData.items[k])}</b></li>`).join('')}</ul>` : '<p class="note">No items yet.</p>'}
-  <p class="note">Buy coins and items at a town shop.</p></section></div>${typeof friendsHTML === 'function' ? friendsHTML() : ''}`;
 }
 function donateItem() {
   const k = Object.keys(ITEMS)
