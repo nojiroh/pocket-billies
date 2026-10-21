@@ -460,7 +460,7 @@
   {"k":"mushroom_blue","x":84.43,"z":17.09,"s":1.23,"f":1},
   {"k":"tree_maple","x":1.5,"z":17,"s":1.07},
   {"k":"mushroom_blue","x":83.93,"z":16.16,"s":0.86},
-  {"k":"signpost","x":44.5,"z":16.1,"act":"sign","say":"Route 1 · Hedgerow Lane this way."},
+  {"k":"signpost","x":44.5,"z":16.1,"act":"sign"},
   {"k":"bush_round_c","x":1.4,"z":15.89,"s":0.91},
   {"k":"flowers_yellow","x":56.08,"z":15.38,"s":0.96,"f":1},
   {"k":"mushroom_brown","x":4.2,"z":15.04,"s":1.16},
@@ -683,8 +683,7 @@
  "chat": [
   "Things fall into Copperleaf every week or so. We put the furniture to good use.",
   "The flower on the knoll makes the power. The moss makes the roofs. The bees make the rest.",
-  "Hazel’s lab hums all night. Granny Juniper says it’s thinking.",
-  "Marigold Town has the shop and the clinic. We have the swing."
+  "Hazel’s lab hums all night. Granny Juniper says it’s thinking."
  ],
  "people": [
   {
@@ -705,7 +704,6 @@
     "    - [happy] Honey’s in the jar by the door. Don’t tell the bees I said so. #l:24d4",
     "    - Hazel works too hard. Take her some honey if you’re passing the lab. #l:96b8",
     "    - The wind sail turns all day and keeps the lanterns lit all night. Copper, sun and a bit of wind: that’s all a village needs. #l:5a4c",
-    "    - Marigold Town is down Hedgerow Lane. Mind the stepping stones; the middle one wobbles. #l:e66f",
     "    - Things fall into Copperleaf every week or so. Mostly furniture. You’re the first one I’ve kept. #l:f1c5",
     "    - [happy] You’ve been walking! I can tell. You’ve got that Hollow Earth colour in your cheeks. #l:187a",
     "    - The bees know everyone in Copperleaf. They’ll get used to you. #l:9126"
