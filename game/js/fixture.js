@@ -4,9 +4,9 @@
    without the opening and without waiting for every map. The save is made here, keeps its own key in this browser
    and never reaches an account (game-state.js FIXTURE), so a player's save is never touched.
      title   a new game on the title screen (the boot a new player sees)
-     town    Marigold Town          route   Tallgrass Meadow       cave   Gloomwater
-     room    inside the shop in Marigold Town
-     battle  a trainer battle (Leader Rocco) that the team wins
+     town    Copperleaf Town, the hub (RL-5)   route   Tallgrass Meadow       cave   Gloomwater
+     room    inside Professor Hazel's lab in Copperleaf
+     battle  a trainer battle (Leader Rocco) in Copperleaf that the team wins
      stored  whatever the fixture saved last in this browser (the save round trip)
    The trainer and the buddy carry planted names (FIXTURE_NAMES) that the debug log must never hold. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
@@ -32,11 +32,11 @@ expose({
 const FIXTURE_NAMES = { trainer: 'Quillonda', nick: 'Zorblax' };
 provide({ FIXTURE_NAMES }); /* to-module */
 const FIXTURE_PLACES = {
-  town: 'marigold',
+  town: 'copperleaf',
   route: 'tallgrass_meadow',
   cave: 'gloomwater',
-  room: 'marigold',
-  battle: 'fizzwell',
+  room: 'copperleaf',
+  battle: 'copperleaf',
 };
 function fixtureSave() {
   const s = newSave();
@@ -74,14 +74,10 @@ export function fixtureStart() {
   uiState.tab = 'walk';
   renderOverlay();
   render();
-  /* phase 08b: into the shop through its door, as soon as the town is on screen */
+  /* phase 08b: into a room through its door, as soon as the town is on screen (RL-5: Hazel's lab in Copperleaf) */
   if (FIXTURE === 'room') {
     const go = (n = 0) => {
-      const p =
-        walkView.ready &&
-        walkView.sc &&
-        !walkView.pl.fresh &&
-        walkView.sc.props.find(q => q.act === 'shop' && q.k === 'shop');
+      const p = walkView.ready && walkView.sc && !walkView.pl.fresh && walkView.sc.props.find(q => q.act === 'lab');
       if (!p) {
         if (n < 600) setTimeout(() => go(n + 1), 100);
         return;
@@ -90,7 +86,7 @@ export function fixtureStart() {
       walkView.pl.route = null;
       walkView.pl.x = g[0];
       walkView.pl.z = g[1];
-      enterRoom('shop', p);
+      enterRoom('lab', p);
     };
     go();
   }

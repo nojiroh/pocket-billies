@@ -194,20 +194,20 @@ def bowl_map(pg, base):
     pg.evaluate("environment.force={weather:'storm'};worldBowl.skyState.at=-1e9;worldBowl.skyState.grid=null;worldBowl.dirty=true;0")
     if not until(pg, "worldBowl.skyState.shown>10&&worldBowl.skyState.nFall>0", 15): raise Exception('a storm shows no clouds or rain on the map')
     pg.evaluate("environment.force=null;worldBowl.skyState.at=-1e9;0")
-    # look session 4: landmarks far out, buildings and trees close in (over Marigold Town, zoomed right in)
-    pg.evaluate("(()=>{const t=LOCATIONS.findIndex(l=>l.id==='marigold'),p=worldBowl.spots[t];worldBowl.goal=null;worldBowl.tween=null;worldBowl.cam=bowlCamClamp({...bowlCamHome(p.x,p.y),dist:.45});worldBowl.dirty=true})();0")
+    # look session 4: landmarks far out, buildings and trees close in (over Copperleaf, the hub, zoomed right in)
+    pg.evaluate("(()=>{const t=LOCATIONS.findIndex(l=>l.id==='copperleaf'),p=worldBowl.spots[t];worldBowl.goal=null;worldBowl.tween=null;worldBowl.cam=bowlCamClamp({...bowlCamHome(p.x,p.y),dist:.45});worldBowl.dirty=true})();0")
     if not until(pg, "(()=>{const W=worldBowl.ground.things;return !!(W&&W.gpu&&W.gpu.ns>0&&W.tris>0&&W.done.size>0&&Object.keys(W.gpu.kinds).some(k=>k.startsWith('m:')))})()", 30): raise Exception('no landmarks, buildings or trees on the map')
     f1 = pg.evaluate("worldBowl.frames"); until(pg, f"worldBowl.frames>={f1 + 2}", 10)
     err = pg.evaluate("gpuState.gl.getError()")
     if err: raise Exception(f'the GPU reports error {err} while drawing the bowl')
     n = pg.evaluate("LOCATIONS.length"); s = pg.evaluate("(worldBowl.spots||[]).filter(s=>isFinite(s.x)&&isFinite(s.y)).length")
     if s != n: raise Exception(f'{s} of {n} places have a spot on the bowl')
-    pick = pg.evaluate("""(()=>{const t=LOCATIONS.findIndex(l=>l.id==='tallgrass_meadow'),p=worldBowl.spots[t];worldBowl.goal=null;worldBowl.cam=bowlCamHome(p.x,p.y);worldBowl.dirty=true;return t})()""")
+    pick = pg.evaluate("""(()=>{const t=LOCATIONS.findIndex(l=>l.id==='copperleaf'),p=worldBowl.spots[t];worldBowl.goal=null;worldBowl.cam=bowlCamHome(p.x,p.y);worldBowl.dirty=true;return t})()""")
     f0 = pg.evaluate("worldBowl.frames")
     if not until(pg, f"worldBowl.frames>={f0 + 2}&&(worldBowl.marks||[]).some(m=>m.i==={pick})", 20): raise Exception('the bowl stopped drawing')
     pg.evaluate(f"(()=>{{const r=worldMap.cv.getBoundingClientRect(),m=worldBowl.marks.find(m=>m.i==={pick});worldBowlPick({{clientX:r.left+m.top.x,clientY:r.top+(m.top.y+m.base.y)/2}})}})();0")
     if not until(pg, f"uiState.mapSel==={pick}&&document.querySelector('#mapcard').textContent.includes(LOCATIONS[{pick}].name)", 5):
-        raise Exception(f'tapping Tallgrass Meadow’s pin picked {pg.evaluate("uiState.mapSel")}')
+        raise Exception(f'tapping Copperleaf’s pin picked {pg.evaluate("uiState.mapSel")}')
     pg.evaluate("uiState.mapSel=null;worldBowl.cam=bowlCamOverview();worldMapReset();0")
     if not until(pg, "!worldBowl.goal&&(()=>{const p=worldBowl.spots[saveData.trip.node];return Math.hypot(worldBowl.cam.tx-p.x,worldBowl.cam.ty-p.y)<.01})()", 15):
         raise Exception('Home didn’t bring the camera back')
@@ -314,20 +314,20 @@ def studio_worldmap(pg, base):
     if n1 != n0 + 1: raise Exception(f'a land brush stroke made {n1 - n0} strokes')
     pg.evaluate("undo();0")
     if pg.evaluate("(studioState.D.worldmap.sea.paint||[]).length") != n0: raise Exception('Undo didn’t take the stroke back')
-    pg.evaluate("studioState.sel.wtab='route';studioState.sel.stop=LOCATIONS_STUDIO_PROBE=studioState.D.locations.findIndex(l=>l.id==='clovercrest');render();0")
-    if not until(pg, "[...document.querySelectorAll('select[data-p$=\".landmark\"]')].some(s=>s.options[0].textContent.includes('Windmill'))", 10):
-        raise Exception('the landmark field doesn’t offer Auto (Windmill) for Clovercrest')
+    pg.evaluate("studioState.sel.wtab='route';studioState.sel.stop=LOCATIONS_STUDIO_PROBE=studioState.D.locations.findIndex(l=>l.id==='copperleaf');render();0")
+    if not until(pg, "[...document.querySelectorAll('select[data-p$=\".landmark\"]')].some(s=>s.options[0].textContent.includes('Great oak'))", 10):
+        raise Exception('the landmark field doesn’t offer Auto (the great oak) for Copperleaf')
     return f'the bowl drawn ({round(share * 100)}% sea), a brush stroke and its undo, the landmark field'
 
 
 NODE_CHECKS = [('Game data is valid', data_valid), ('The world-map graph is unchanged', world_graph)]
 PAGES = [   # (what the page opens, its checks in order); the longest first, so the browsers finish together
-    ('town', [('A town opens and draws (Marigold Town)', scene('marigold')),
+    ('town', [('A town opens and draws (Copperleaf Town)', scene('copperleaf')),
               ('The exported debug log holds no names', debug_log),
               ('A route opens and draws (Tallgrass Meadow)', scene('tallgrass_meadow')),
               ('A cave opens and draws (Gloomwater)', scene('gloomwater')),
               ('The world map opens as the bowl', bowl_map)]),
-    ('room', [('A room opens and draws (the shop)', room), ('A save round-trips', save_round_trip)]),
+    ('room', [('A room opens and draws (the lab)', room), ('A save round-trips', save_round_trip)]),
     ('battle', [('A battle plays to the end', battle)]),
     ('title', [('The game boots with no console or page errors', boots)]),
     ('studio', [('The Studio loads', studio), ("The Studio's world map look", studio_worldmap)]),
