@@ -126,6 +126,7 @@ test("the run's world goes in (its scenes, pools, places and roads) and the hub'
     hub = hubTables(),
     mapIds = Object.keys(data.gameData.maps),
     poolIds = Object.keys(data.POOLS),
+    shopIds = Object.keys(data.SHOPS),
     run = runOf('RL7SWAP'),
     made = runScenesMake(run, WORLD_DATA),
     W = runWorldTables(run, data.LOCATIONS[0], WORLD_DATA),
@@ -141,7 +142,14 @@ test("the run's world goes in (its scenes, pools, places and roads) and the hub'
       assert.equal(data.POOLS[p.pool], W.pools[p.pool]);
       assert.equal(data.gameData.maps[p.mapId], made[i]);
       assert.equal(p.runNode, i);
+      /* RL-8: a town's shop, by the day */
+      if (p.town) assert.equal(data.SHOPS[p.shop].runNode, i);
+      else assert.equal(p.shop, undefined);
     });
+    assert.ok(
+      data.LOCATIONS.some(p => p.runNode != null && p.town),
+      'a town on the run'
+    );
     /* each road as long as the walk out of one scene and into the other (its exits' len), not the 100 m of a
        road without scenes */
     for (const [a, b, m, j] of data.ROADS) {
@@ -166,6 +174,7 @@ test("the run's world goes in (its scenes, pools, places and roads) and the hub'
   assert.deepEqual(hubTables(), hub);
   assert.deepEqual(Object.keys(data.gameData.maps), mapIds, "only the hub's scenes");
   assert.deepEqual(Object.keys(data.POOLS), poolIds, "only the game's pools");
+  assert.deepEqual(Object.keys(data.SHOPS), shopIds, "only the game's shops");
   assert.deepEqual(data.worldExtraMaps(), {});
 });
 

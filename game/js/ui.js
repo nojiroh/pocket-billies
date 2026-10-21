@@ -89,6 +89,7 @@ import {
 import { TOAST_MS, toastAdd, toastItem, toastTime } from './logic/messages.js';
 import { readableBg } from './logic/colors.js';
 import { runArrive, runMapNode } from './logic/run-map.js';
+import { runHealCost } from './logic/run-loop.js';
 import { pbFloat, pbInboxDot, pbInboxPop, typeGlyphHTML } from './ui-kit.js';
 import { newSaveKeepingPreferences } from './logic/saves.js';
 import {
@@ -226,6 +227,7 @@ expose({
   boxSection: [() => boxSection, v => (boxSection = v)],
   buddyCard: [() => buddyCard, v => (buddyCard = v)],
   buildPixelSky: [() => buildPixelSky, v => (buildPixelSky = v)],
+  clinicHeal: [() => clinicHeal, v => (clinicHeal = v)],
   closeModal: [() => closeModal, v => ((closeModal = v), provide({ closeModal }))],
   dexStatus: [() => dexStatus, v => (dexStatus = v)],
   donateItem: [() => donateItem, v => (donateItem = v)],
@@ -786,6 +788,50 @@ function tripButtons() {
     return `<button class="pb small" data-a="stoptrip">Stop guiding me</button><button class="pb small quiet" data-a="tab" data-t="map">Change plans</button>`;
   return `<button class="pb small gold" data-a="tab" data-t="map">${uiIconHTML('map', 16)} Choose where to go</button>`;
 }
+/** RL-8: a clinic heals the team: free in the hub (as before); on a run for rules.json run.healCost per hurt Billie,
+    after a yes, a purchase saved at once (logic/run-loop.js runHealCost). `say`: the clinic prop's own line */
+function clinicHeal(say) {
+  if (!saveData.run) {
+    healAll();
+    save();
+    render();
+    toast(say || 'The clinic patched everyone up. No charge.');
+    return;
+  }
+  const { hurt, cost } = runHealCost(saveData.team, RULES.run.healCost),
+    each = formatNumber(RULES.run.healCost);
+  if (!hurt) {
+    toast('Everyone is in good shape. Nothing to pay.');
+    return;
+  }
+  if (saveData.se < cost) {
+    toast(
+      `Healing ${plural(hurt, 'Billie')} costs $${formatNumber(cost)} ($${each} each). You have $${formatNumber(saveData.se)}.`
+    );
+    return;
+  }
+  modal({
+    title: 'The clinic',
+    html: `<p>Out here healing isn’t free: $${each} a Billie. Heal ${plural(hurt, 'hurt Billie')} for $${formatNumber(cost)}? You have $${formatNumber(saveData.se)}.</p>`,
+    btns: [
+      {
+        l: `Heal for $${formatNumber(cost)}`,
+        c: 'gold',
+        f: () => {
+          closeModal();
+          const now = runHealCost(saveData.team, RULES.run.healCost);
+          if (!now.hurt || saveData.se < now.cost) return;
+          saveData.se -= now.cost;
+          healAll();
+          saveNow();
+          render();
+          toast(say || `The clinic patched everyone up for $${formatNumber(now.cost)}.`);
+        },
+      },
+      { l: 'Not now', c: 'quiet', f: closeModal },
+    ],
+  });
+}
 function nodeActions(i) {
   const n = LOCATIONS[i],
     node = saveData.trip.node;
@@ -795,9 +841,18 @@ function nodeActions(i) {
     x += `<button class="pb small gold" data-a="shop" data-s="${n.shop}">${uiIconHTML('mint', 16)} ${escapeHtml(SHOPS[n.shop].name)}</button>`;
   if (n.boutique && SHOPS[n.boutique])
     x += `<button class="pb small" data-a="shop" data-s="${n.boutique}">${uiIconHTML('profile', 16)} ${escapeHtml(SHOPS[n.boutique].name)}</button>`;
-  x += n.town
-    ? '<button class="pb small" data-a="clinic">Rest at the clinic, free</button>'
-    : `<button class="pb small quiet" data-a="rest">Rest stop, $${formatNumber(RULES.battle.restCost)}</button>`;
+  /* RL-8: on a run the clinic charges for each hurt Billie and there is no rest stop on the road */
+  if (saveData.run) {
+    if (n.town) {
+      const { hurt, cost } = runHealCost(saveData.team, RULES.run.healCost);
+      x += hurt
+        ? `<button class="pb small" data-a="clinic">Clinic: heal ${plural(hurt, 'Billie')} for $${formatNumber(cost)}</button>`
+        : '<button class="pb small quiet" data-a="clinic">Clinic: everyone is fine</button>';
+    }
+  } else
+    x += n.town
+      ? '<button class="pb small" data-a="clinic">Rest at the clinic, free</button>'
+      : `<button class="pb small quiet" data-a="rest">Rest stop, $${formatNumber(RULES.battle.restCost)}</button>`;
   trainersAt(i).forEach(T => {
     const done = saveData.flags[T.id];
     if (T.blocks && done && !T.seat) return;
@@ -1141,12 +1196,8 @@ function roomAct(h) {
   if (I.kind === 'shop') {
     if (I.shop && SHOPS[I.shop]) openShop(I.shop);
     else toast(I.p.say || 'The shop is closed today.');
-  } else if (I.kind === 'clinic') {
-    healAll();
-    save();
-    render();
-    toast(I.p.say || 'The clinic patched everyone up. No charge.');
-  } else if (I.kind === 'lab' && typeof talkHazel === 'function') talkHazel(I.p);
+  } else if (I.kind === 'clinic') clinicHeal(I.p.say);
+  else if (I.kind === 'lab' && typeof talkHazel === 'function') talkHazel(I.p);
   else if (I.kind === 'home' && typeof homeDecorate === 'function') homeDecorate();
   else {
     const c = (mapById(I.id) || {}).chat || [];
@@ -1325,12 +1376,8 @@ export function walkPick(h) {
       const id = p.shop || here.shop;
       if (id && SHOPS[id]) openShop(id);
       else toast(p.say || 'The shop is closed today.');
-    } else if (a === 'clinic') {
-      healAll();
-      save();
-      render();
-      toast(p.say || 'The clinic patched everyone up. No charge.');
-    } else if (a === 'lab' && typeof talkHazel === 'function') talkHazel(p);
+    } else if (a === 'clinic') clinicHeal(p.say);
+    else if (a === 'lab' && typeof talkHazel === 'function') talkHazel(p);
     else if (a === 'read' && typeof loreBook === 'function') loreBook(p.book);
     else
       toast(
@@ -2444,10 +2491,7 @@ document.addEventListener('click', ev => {
       break;
     }
     case 'clinic':
-      healAll();
-      save();
-      render();
-      toast('The clinic patched everyone up. No charge.');
+      clinicHeal();
       break;
     case 'rest': {
       const c = RULES.battle.restCost;

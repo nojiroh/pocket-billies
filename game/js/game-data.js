@@ -452,14 +452,22 @@ export const hubRoadsByNode = ROADS_BY_NODE.map(e => e.slice());
 /* RL-7: another world goes in (a run's: game/js/run-world.js) with what its places need first: its scenes into
    gameData.maps (a road's length is its exits' walk) and its pools into POOLS (a place keeps only a pool that
    exists), then its places and roads. worldHubBack takes them out and puts the hub's world back */
-export const worldExtra = { maps: /** @type {Record<string, any>} */ ({}), pools: /** @type {string[]} */ ([]) };
-/** @param {{ locations: LocationData[], roads: RoadLink[], pools: Record<string, Pool>, maps: Record<string, any> }} w */
+export const worldExtra = {
+  maps: /** @type {Record<string, any>} */ ({}),
+  pools: /** @type {string[]} */ ([]),
+  shops: /** @type {string[]} */ ([]),
+};
+/** RL-8: and its shops (a run town's) into SHOPS
+ * @param {{ locations: LocationData[], roads: RoadLink[], pools: Record<string, Pool>, maps: Record<string, any>,
+ *   shops?: Record<string, any> }} w */
 export function worldPut(w) {
   worldHubBack();
   Object.assign(worldExtra.maps, w.maps);
   Object.assign(gameData.maps, w.maps);
   Object.assign(POOLS, w.pools);
   worldExtra.pools.push(...Object.keys(w.pools));
+  Object.assign(SHOPS, w.shops || {});
+  worldExtra.shops.push(...Object.keys(w.shops || {}));
   worldSetGraph(w.locations, w.roads);
 }
 export function worldHubBack() {
@@ -468,6 +476,7 @@ export function worldHubBack() {
     delete worldExtra.maps[id];
   }
   for (const id of worldExtra.pools.splice(0)) delete POOLS[id];
+  for (const id of worldExtra.shops.splice(0)) delete SHOPS[id];
   worldSetGraph(gameData.locations, gameData.roads);
 }
 /** the scenes of the world that is in when it isn't the hub's, by map id (none in the hub) */
