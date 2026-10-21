@@ -1,0 +1,95 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "uiTheme.schema.json",
+ "title": "game/data/uiTheme.json: the UI's look (UI track, UI-1; the Studio's UI section edits it from UI-3)",
+ "description": "Boot writes it as CSS variables (game/js/logic/ui-theme.js); without it the page keeps tokens.css. defaults is the look; a preset lays some groups over it; overrides (per screen, colour and shape) are read from UI-3.",
+ "type": "object",
+ "required": ["version", "defaults"],
+ "additionalProperties": false,
+ "$defs": {
+  "hex": {"type": "string", "pattern": "^#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$", "description": "#rrggbb, or #rrggbbaa with an alpha byte"},
+  "palette": {
+   "type": "object",
+   "additionalProperties": false,
+   "properties": {
+    "ground": {"$ref": "#/$defs/hex", "description": "behind everything (--bg)"},
+    "surface": {"$ref": "#/$defs/hex", "description": "solid cards and the glass's colour (--panel-s, --g-solid, --g-bg)"},
+    "text": {"$ref": "#/$defs/hex"},
+    "text2": {"$ref": "#/$defs/hex", "description": "quiet text"},
+    "line": {"$ref": "#/$defs/hex", "description": "rules and borders"},
+    "primary": {"$ref": "#/$defs/hex", "description": "the green: success, primary marks (--ok)"},
+    "goldA": {"$ref": "#/$defs/hex", "description": "the main action's gradient, top"},
+    "goldB": {"$ref": "#/$defs/hex", "description": "the main action's gradient, bottom (--gold-b, --gold)"},
+    "danger": {"$ref": "#/$defs/hex", "description": "(--red)"},
+    "hpOk": {"$ref": "#/$defs/hex", "description": "healthy HP: teal, so primary, the Grass pill and HP stay apart"},
+    "hpMid": {"$ref": "#/$defs/hex", "description": "HP under half"},
+    "hpLow": {"$ref": "#/$defs/hex", "description": "HP under a quarter"}
+   }
+  },
+  "color": {
+   "type": "object",
+   "additionalProperties": false,
+   "properties": {"light": {"$ref": "#/$defs/palette"}, "dark": {"$ref": "#/$defs/palette"}}
+  },
+  "surface": {
+   "type": "object",
+   "additionalProperties": false,
+   "description": "the glass. The dark side's highlight and shadows stay those of v05.css until the dials split by mode (UI-3).",
+   "properties": {
+    "glass": {"type": "number", "minimum": 0, "maximum": 1, "description": "the glass's opacity"},
+    "blur": {"type": "number", "minimum": 0, "maximum": 40, "description": "backdrop blur in px"},
+    "saturate": {"type": "number", "minimum": 0, "maximum": 3},
+    "highlight": {"type": "number", "minimum": 0, "maximum": 1, "description": "the 1 px top highlight's opacity (light side)"},
+    "shadowTint": {"anyOf": [{"const": "text"}, {"$ref": "#/$defs/hex"}], "description": "the shadows' colour (light side): text, or a colour"}
+   }
+  },
+  "shape": {
+   "type": "object",
+   "additionalProperties": false,
+   "properties": {
+    "cutSm": {"type": "number", "minimum": 0, "maximum": 32, "description": "px: quiet buttons"},
+    "cutMd": {"type": "number", "minimum": 0, "maximum": 32, "description": "px: cards"},
+    "cutLg": {"type": "number", "minimum": 0, "maximum": 48, "description": "px: panels and sheets"},
+    "slant": {"type": "number", "minimum": 0, "maximum": 30, "description": "degrees: the selection bar"}
+   }
+  },
+  "type": {
+   "type": "object",
+   "additionalProperties": false,
+   "properties": {
+    "voice": {"enum": ["Jersey 15", "Pixelify Sans"], "description": "names, headings, buttons, numbers"},
+    "prose": {"enum": ["Oxanium", "Chakra Petch"], "description": "long text"},
+    "voiceScale": {"type": "number", "minimum": 0.5, "maximum": 2, "description": "the voice font's size-adjust (1.18 = 118%)"}
+   }
+  },
+  "look": {
+   "type": "object",
+   "additionalProperties": false,
+   "properties": {
+    "color": {"$ref": "#/$defs/color"},
+    "surface": {"$ref": "#/$defs/surface"},
+    "shape": {"$ref": "#/$defs/shape"},
+    "type": {"$ref": "#/$defs/type"}
+   }
+  }
+ },
+ "properties": {
+  "version": {"const": 1},
+  "defaults": {"$ref": "#/$defs/look", "required": ["color", "surface", "shape", "type"]},
+  "presets": {
+   "type": "object",
+   "propertyNames": {"pattern": "^[a-z][a-z0-9_]*$"},
+   "additionalProperties": {"$ref": "#/$defs/look"}
+  },
+  "overrides": {
+   "type": "object",
+   "description": "per screen: colour and shape only",
+   "propertyNames": {"pattern": "^[a-z][a-z0-9-]*$"},
+   "additionalProperties": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {"color": {"$ref": "#/$defs/color"}, "shape": {"$ref": "#/$defs/shape"}}
+   }
+  }
+ }
+}

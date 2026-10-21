@@ -8,6 +8,7 @@
     "preview": "vite preview",
     "data": "node tools/build-data.mjs",
     "check:data": "node tools/check-data.mjs",
+    "lint:ui": "node tools/ui-lint.mjs",
     "story:ids": "node tools/story-ids.mjs",
     "modules": "node tools/to-module.mjs",
     "check:modules": "node tools/to-module.mjs --check",

@@ -167,6 +167,12 @@ same phase:
   simulation (no build dominates) comes before the full build: `node tools/test/sim/robot-sim.mjs` fights every build
   the data allows against a reference set of robots and Billies and reports win rates per build and part
   (`--quick` for a sample; `robot-sim.test.mjs` checks it runs). Its bounds are still to be agreed with the owner.
+- **UI track** (docs/phases/ui-track.md): `npm run lint:ui` (tools/ui-lint.mjs, UI-1) counts raw values per UI rule
+  and file next to the token uses (corners, space, shadows, keyframes, times, fonts, colours, `!important`, layers,
+  blur rules; colours, `innerHTML` and `style="` in game JS). A report until UI-6 makes it fail when a count rises.
+  Smoke's phone step ends with the blurred surfaces on each screen it visits (`uiBlurCount()`, budget 3). The look
+  comes from game/data/uiTheme.json (`tools/test/ui-theme.test.mjs`; check-data checks text reads at 4.5:1). A look
+  change moves the pictures: remake the baseline on purpose afterwards.
 - **18 Trading and battles with friends**: every new Firestore rule gets emulator tests in `firebase/test/`;
   trade validation is logic with unit tests.
 

@@ -413,7 +413,7 @@ body:has(.topbar) .toast {
   box-shadow: inset 0 -3px 0 var(--panel2);
 }
 .help summary {
-  font-family: var(--disp);
+  font-family: var(--font-voice);
   font-weight: 400;
   font-size: 16px;
 }
@@ -1038,7 +1038,7 @@ body.flying #nav {
 }
 .pc-greet b {
   display: block;
-  font-family: var(--disp);
+  font-family: var(--font-voice);
   font-size: clamp(28px, 7.5vw, 44px);
   line-height: 1;
   letter-spacing: 0.02em;
@@ -1073,7 +1073,7 @@ body.flying #nav {
 }
 .pc-stamp span {
   display: block;
-  font-family: var(--disp);
+  font-family: var(--font-voice);
   font-size: 10px;
   color: #5e3a2a;
   margin-top: 3px;
@@ -1107,7 +1107,7 @@ body.flying #nav {
   color: #22314a;
   border-radius: 10px;
   box-shadow: 0 6px 18px rgba(20, 16, 40, 0.3);
-  font-family: var(--disp);
+  font-family: var(--font-voice);
   font-size: 14px;
   transform: translateX(-120%);
   transition: transform 0.45s cubic-bezier(0.2, 0.9, 0.25, 1.15);
@@ -1154,7 +1154,7 @@ body.flying #nav {
 .pc-thumb span {
   display: block;
   margin-top: 6px;
-  font-family: var(--disp);
+  font-family: var(--font-voice);
   font-size: 13px;
   color: #22314a;
 }
@@ -1169,7 +1169,7 @@ body.flying #nav {
   place-items: center;
   aspect-ratio: 3/2;
   font-style: normal;
-  font-family: var(--disp);
+  font-family: var(--font-voice);
   font-size: 34px;
   color: rgba(94, 107, 128, 0.55);
 }
@@ -1219,7 +1219,7 @@ body.flying #nav {
 }
 .lift-cap b {
   display: block;
-  font-family: var(--disp);
+  font-family: var(--font-voice);
   font-size: 26px;
   margin: 4px 0;
 }
