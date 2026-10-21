@@ -114,20 +114,24 @@ test("a node's dials are frozen: a change to how they are drawn changes every ru
 
 test("the run's world goes in (its scenes, pools, places and roads) and the hub's comes back exactly", () => {
   const TABLES = ['LOCATIONS', 'ROADS', 'ROADS_BY_NODE', 'LOCATION_BY_ID'],
-    hub = structuredClone(Object.fromEntries(TABLES.map(k => [k, data[k]]))),
+    hubTables = () => structuredClone(Object.fromEntries(TABLES.map(k => [k, data[k]]))),
+    hub = hubTables(),
+    mapIds = Object.keys(data.gameData.maps),
+    poolIds = Object.keys(data.POOLS),
     run = runOf('RL7SWAP'),
     made = runScenesMake(run, WORLD_DATA),
     W = runWorldTables(run, data.LOCATIONS[0], WORLD_DATA),
-    maps = data.gameData.maps;
-  W.locations.slice(1).forEach((p, i) => (maps[p.mapId] = made[i]));
-  Object.assign(data.POOLS, W.pools);
+    maps = Object.fromEntries(W.locations.slice(1).map((p, i) => [p.mapId, made[i]]));
   try {
-    data.worldSetGraph(W.locations, W.roads);
+    data.worldPut({ ...W, maps });
     assert.equal(data.LOCATIONS.length, 1 + run.map.nodes.length);
     assert.equal(data.LOCATIONS[0].id, 'copperleaf');
     assert.equal(data.ROADS.length, W.roads.length);
+    assert.deepEqual(data.worldExtraMaps(), maps);
     data.LOCATIONS.slice(1).forEach((p, i) => {
       assert.equal(p.pool, `run_${i}`, 'its own pool, kept');
+      assert.equal(data.POOLS[p.pool], W.pools[p.pool]);
+      assert.equal(data.gameData.maps[p.mapId], made[i]);
       assert.equal(p.runNode, i);
     });
     /* each road as long as the walk out of one scene and into the other (its exits' len), not the 100 m of a
@@ -138,12 +142,21 @@ test("the run's world goes in (its scenes, pools, places and roads) and the hub'
       assert.equal(m, Math.max(1, Math.round(len(a, j.a) + len(b, j.b))), j.id);
     }
     assert.deepEqual(data.ROADS_BY_NODE[1].map(e => e.to).sort(), run.map.nodes[0].to.map(i => i + 1).sort());
+    /* another run's world in its place takes the first one's out */
+    const run2 = runOf('RL7SWAP2'),
+      W2 = runWorldTables(run2, data.LOCATIONS[0], WORLD_DATA),
+      made2 = runScenesMake(run2, WORLD_DATA);
+    data.worldPut({ ...W2, maps: Object.fromEntries(W2.locations.slice(1).map((p, i) => [p.mapId, made2[i]])) });
+    assert.ok(
+      Object.keys(maps).every(id => !data.gameData.maps[id]),
+      "the first run's scenes are gone"
+    );
+    assert.equal(data.LOCATIONS.length, 1 + run2.map.nodes.length);
   } finally {
-    data.worldSetGraph(data.gameData.locations, data.gameData.roads);
-    for (const p of W.locations.slice(1)) {
-      delete maps[p.mapId];
-      delete data.POOLS[p.pool];
-    }
+    data.worldHubBack();
   }
-  assert.deepEqual(structuredClone(Object.fromEntries(TABLES.map(k => [k, data[k]]))), hub);
+  assert.deepEqual(hubTables(), hub);
+  assert.deepEqual(Object.keys(data.gameData.maps), mapIds, "only the hub's scenes");
+  assert.deepEqual(Object.keys(data.POOLS), poolIds, "only the game's pools");
+  assert.deepEqual(data.worldExtraMaps(), {});
 });

@@ -91,6 +91,12 @@ expose({
   typeEffectiveness: [() => typeEffectiveness, v => (typeEffectiveness = v)],
   typesWith: [() => typesWith],
   warnData: [() => warnData],
+  worldExtra: [() => worldExtra],
+  worldExtraMaps: [() => worldExtraMaps],
+  // @ts-expect-error -- replaced on purpose
+  worldHubBack: [() => worldHubBack, v => (worldHubBack = v)],
+  // @ts-expect-error -- replaced on purpose
+  worldPut: [() => worldPut, v => (worldPut = v)],
   // @ts-expect-error -- replaced on purpose
   worldSetGraph: [() => worldSetGraph, v => (worldSetGraph = v)],
 });
@@ -443,6 +449,29 @@ worldSetGraph(gameData.locations, gameData.roads);
    save is checked against these (saves.js), whatever world the tables hold when it loads */
 export const HUB_LOCATIONS = /** @type {LocationEntry[]} */ (LOCATIONS.slice());
 export const hubRoadsByNode = ROADS_BY_NODE.map(e => e.slice());
+/* RL-7: another world goes in (a run's: game/js/run-world.js) with what its places need first: its scenes into
+   gameData.maps (a road's length is its exits' walk) and its pools into POOLS (a place keeps only a pool that
+   exists), then its places and roads. worldHubBack takes them out and puts the hub's world back */
+export const worldExtra = { maps: /** @type {Record<string, any>} */ ({}), pools: /** @type {string[]} */ ([]) };
+/** @param {{ locations: LocationData[], roads: RoadLink[], pools: Record<string, Pool>, maps: Record<string, any> }} w */
+export function worldPut(w) {
+  worldHubBack();
+  Object.assign(worldExtra.maps, w.maps);
+  Object.assign(gameData.maps, w.maps);
+  Object.assign(POOLS, w.pools);
+  worldExtra.pools.push(...Object.keys(w.pools));
+  worldSetGraph(w.locations, w.roads);
+}
+export function worldHubBack() {
+  for (const id of Object.keys(worldExtra.maps)) {
+    delete gameData.maps[id];
+    delete worldExtra.maps[id];
+  }
+  for (const id of worldExtra.pools.splice(0)) delete POOLS[id];
+  worldSetGraph(gameData.locations, gameData.roads);
+}
+/** the scenes of the world that is in when it isn't the hub's, by map id (none in the hub) */
+export const worldExtraMaps = () => worldExtra.maps;
 /** the walk between two of the hub's places (roadCost on the hub's roads), null without a road */
 export const hubRoadCost = (a, b) => {
   const e = (hubRoadsByNode[a] || []).find(e => e.to === b);

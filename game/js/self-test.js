@@ -12,7 +12,17 @@
 import { expose } from './test-globals.js';
 import { provide } from './hooks.js';
 import { clamp } from './util.js';
-import { LOCATIONS, MOVES, RULES, SPECIES, START_NODE, TRAINERS, gameData, locationKind } from './game-data.js';
+import {
+  LOCATIONS,
+  MOVES,
+  RULES,
+  SPECIES,
+  START_NODE,
+  TRAINERS,
+  gameData,
+  locationKind,
+  worldExtraMaps,
+} from './game-data.js';
 import { encountersHere, makeBilly, maxHp, spawn } from './logic/rules.js';
 import { fighter, liveActors, startTrainer, startWild } from './logic/battle-engine.js';
 import { loadAllMaps } from './map-files.js';
@@ -195,8 +205,14 @@ async function runFullTest(mode) {
   };
   const stepEl = box.querySelector('.nb-step'),
     bar = box.querySelector('.nb-bar i');
+  /* RL-7: not a run's scenes (made from its seed while its world is in; a run's road has a phase of its own) */
   const scenes = Object.keys(gameData.maps || {}).filter(
-      id => mapById(id) && !gameData.maps[id].test && !gameData.maps[id].backup && !id.includes('@')
+      id =>
+        mapById(id) &&
+        !gameData.maps[id].test &&
+        !gameData.maps[id].backup &&
+        !id.includes('@') &&
+        !worldExtraMaps()[id]
     ),
     phases = [],
     stress = [],
