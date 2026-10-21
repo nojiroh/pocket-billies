@@ -791,7 +791,27 @@ export interface Rules {
       /** Audit Seals for a win */
       winSeals: number;
     };
+    /** RL-6: the run's node map (logic/run-map.js) */
+    map: RunMapRules;
   };
+}
+
+/** rules.json run.map: how a run's node map is laid out (logic/run-map.js runMapMake; placeholders, 8.18) */
+export interface RunMapRules {
+  /** rows from the landing (0) to the boss (the last): the nodes on every path */
+  rows: number;
+  /** mini-bosses on rows round(k * rows / (minibosses + 1)), each with a town's row before it */
+  minibosses: number;
+  /** the nodeTypes.json types of the landing, the row before each mini-boss, the mini-bosses and the boss */
+  first: DataId;
+  rest: DataId;
+  guard: DataId;
+  last: DataId;
+  /** the chance a free or town row has two lanes, and that two lanes side by side get a switch (one diagonal) */
+  wide: number;
+  cross: number;
+  /** the biomes nodes pick from, by weight (biomes.json ids) */
+  biomes: Record<DataId, number>;
 }
 
 /** rules.json robots: the numbers behind robot stats, part HP and breaking (logic/fighters.js) */

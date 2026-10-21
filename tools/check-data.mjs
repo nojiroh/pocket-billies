@@ -21,6 +21,7 @@ import { uiThemeContrast } from '../game/js/logic/ui-theme.js';
 import { seamRulesLinks, seamRulesPlaces } from '../game/js/logic/seam-rules.js';
 import { CLIMATE_WEATHER_ODDS } from '../game/js/logic/weather.js';
 import { RUN_MARK_TYPES } from '../game/js/logic/run-marks.js';
+import { runMapRowsFit } from '../game/js/logic/run-map.js';
 
 const FIX = process.argv.includes('--fix');
 const bad = [];
@@ -221,6 +222,30 @@ check('roads.schema.json', D.roads || [], 'roads.json');
     for (const k of Object.keys(pay)) if (!RATES.includes(k)) problem('rules.json', `run.payout.${k}: no such rate`);
     if (pay.itemShare > 1) problem('rules.json', 'run.payout.itemShare is more than 1 (items would pay over their price)');
     if (!Number.isInteger(pay.winSeals)) problem('rules.json', 'run.payout.winSeals is not a whole number');
+  }
+}
+// RL-6: how a run's node map is laid out (logic/run-map.js): 5 to 12 rows, mini-bosses that fit (each on a row of
+// its own, a town's row before it, after the landing's row and before the boss's), the four types it names in
+// nodeTypes.json, chances from 0 to 1, biomes that exist with something to pick
+{
+  const M = D.rules && D.rules.run && D.rules.run.map,
+    KEYS = ['rows', 'minibosses', 'first', 'rest', 'guard', 'last', 'wide', 'cross', 'biomes'];
+  if (!M || typeof M !== 'object') problem('rules.json', 'run.map missing');
+  else {
+    for (const k of Object.keys(M)) if (!KEYS.includes(k)) problem('rules.json', `run.map.${k}: no such rule`);
+    if (!Number.isInteger(M.rows) || M.rows < 5 || M.rows > 12) problem('rules.json', 'run.map.rows is not a whole number from 5 to 12');
+    else if (!Number.isInteger(M.minibosses) || M.minibosses < 0 || !runMapRowsFit(M))
+      problem('rules.json', `run.map: ${M.rows} rows can't hold ${M.minibosses} mini-bosses (each on a row of its own with a town's row before it)`);
+    for (const k of ['first', 'rest', 'guard', 'last'])
+      if (!(D.nodeTypes || {})[M[k]]) problem('rules.json', `run.map.${k}: no node type "${M[k]}" (nodeTypes.json)`);
+    for (const k of ['wide', 'cross'])
+      if (typeof M[k] !== 'number' || !(M[k] >= 0 && M[k] <= 1)) problem('rules.json', `run.map.${k} is not a chance from 0 to 1`);
+    const B = M.biomes && typeof M.biomes === 'object' ? Object.entries(M.biomes) : [];
+    if (!B.some(([, w]) => w > 0)) problem('rules.json', 'run.map.biomes has no biome to pick');
+    for (const [b, w] of B) {
+      if (!(D.biomes || {})[b]) problem('rules.json', `run.map.biomes: no biome "${b}" (biomes.json)`);
+      if (typeof w !== 'number' || !(w >= 0)) problem('rules.json', `run.map.biomes.${b} is not a weight of 0 or more`);
+    }
   }
 }
 // phase 17: robot parts and gems: the schema, then the moves and types they name and the slot each part fits

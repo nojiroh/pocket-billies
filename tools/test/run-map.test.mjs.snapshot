@@ -1,0 +1,115 @@
+exports[`the same seed makes the same map; other seeds make others 1`] = `
+{
+  "nodes": [
+    {
+      "type": "landing",
+      "row": 0,
+      "lane": 0,
+      "to": [
+        1
+      ],
+      "seen": 0,
+      "biome": "autumn"
+    },
+    {
+      "type": "route",
+      "row": 1,
+      "lane": 0,
+      "to": [
+        2
+      ],
+      "seen": 0,
+      "biome": "thicket"
+    },
+    {
+      "type": "town",
+      "row": 2,
+      "lane": 0,
+      "to": [
+        3
+      ],
+      "seen": 0,
+      "biome": "lake"
+    },
+    {
+      "type": "miniboss",
+      "row": 3,
+      "lane": 0,
+      "to": [
+        4,
+        5
+      ],
+      "seen": 0,
+      "biome": "thicket"
+    },
+    {
+      "type": "route",
+      "row": 4,
+      "lane": 0,
+      "to": [
+        6
+      ],
+      "seen": 0,
+      "biome": "lake"
+    },
+    {
+      "type": "route",
+      "row": 4,
+      "lane": 1,
+      "to": [
+        7
+      ],
+      "seen": 0,
+      "biome": "meadow"
+    },
+    {
+      "type": "town",
+      "row": 5,
+      "lane": 0,
+      "to": [
+        8
+      ],
+      "seen": 0,
+      "biome": "meadow"
+    },
+    {
+      "type": "town",
+      "row": 5,
+      "lane": 1,
+      "to": [
+        8
+      ],
+      "seen": 0,
+      "biome": "thicket"
+    },
+    {
+      "type": "miniboss",
+      "row": 6,
+      "lane": 0,
+      "to": [
+        9
+      ],
+      "seen": 0,
+      "biome": "meadow"
+    },
+    {
+      "type": "town",
+      "row": 7,
+      "lane": 0,
+      "to": [
+        10
+      ],
+      "seen": 0,
+      "biome": "lake"
+    },
+    {
+      "type": "boss",
+      "row": 8,
+      "lane": 0,
+      "to": [],
+      "seen": 0,
+      "biome": "meadow"
+    }
+  ]
+}
+`;
