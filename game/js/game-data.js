@@ -7,7 +7,7 @@
    Phase 04e: the data is read from globalThis, the page's window; in plain Node (tools/test/logic.test.mjs) a test puts
    its own small data there before it imports this module. */
 /**
- * @import { EggTier, Evolution, GameData, LocationData, LocationEntry, Pool, Road, RoadFromNode } from '../types/game-data'
+ * @import { EggTier, Evolution, GameData, LocationData, LocationEntry, Pool, Road, RoadFromNode, RoadLink } from '../types/game-data'
  * @import { CutsceneData, Seat, Species, TrainerEntry } from '../types/game-data'
  */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
@@ -87,6 +87,8 @@ expose({
   typeEffectiveness: [() => typeEffectiveness, v => (typeEffectiveness = v)],
   typesWith: [() => typesWith],
   warnData: [() => warnData],
+  // @ts-expect-error -- replaced on purpose
+  worldSetGraph: [() => worldSetGraph, v => (worldSetGraph = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -245,8 +247,10 @@ export const standInList = list => list.map(([id, w]) => [standInSpecies(id), w]
 if (RULES.legends) for (const L of RULES.legends) L.sp = standInSpecies(L.sp);
 if (RULES.eggs && RULES.eggs.mythSpecies) RULES.eggs.mythSpecies = standInSpecies(RULES.eggs.mythSpecies);
 /* ---------- world ---------- */
-/* trainers and board are filled in below */
-export const LOCATIONS = /** @type {LocationEntry[]} */ (gameData.locations);
+/* RL-5: the places and the roads between them, as the rest of the game reads them. worldSetGraph (below the trainers)
+   fills these tables in place, so every module that imports them sees the new rows: here once from the game data,
+   the hub; a run puts its own world in (RL-7) and the hub back after */
+export const LOCATIONS = /** @type {LocationEntry[]} */ ([]);
 export const REGIONS = gameData.regions;
 export const POOLS = /** @type {Record<string, Pool>} */ ({});
 for (const k in gameData.pools) {
@@ -259,14 +263,6 @@ for (const k in gameData.pools) {
 }
 export const BATTLE_STAGES = gameData.battleStages;
 provide({ BATTLE_STAGES }); /* to-module */
-LOCATIONS.forEach((r, i) => {
-  if (!POOLS[r.pool]) {
-    warnData(`${r.name} uses unknown pool ${r.pool}.`);
-    r.pool = Object.keys(POOLS)[0];
-  }
-  if (!BATTLE_STAGES[r.battleStage]) r.battleStage = BATTLE_STAGES[r.pool] ? r.pool : 'grass';
-  r.trainers = [];
-});
 /* phase 08: a road is as long as the walk from one place's middle out to its edge plus the other's from its edge in:
    the two exits' len (a map's edgeExits, in the boot bundle). A road without named exits counts 100 m */
 export function exitLength(node, id) {
@@ -285,40 +281,11 @@ export function roadMetres(a, b, j) {
    {a: exit, b: exit, id, from, to, name}], the form the game reads. Without roads the locations make one chain */
 export const roadEndNode = (/** @type {string} */ m) => LOCATIONS.findIndex(r => r.mapId === m || r.id === m);
 /** @type {Road[]} */
-export const ROADS = (
-  gameData.roads && gameData.roads.length
-    ? gameData.roads
-        .filter(l => (l.kind || 'seam') === 'seam')
-        .map(l => {
-          const a = roadEndNode(l.a && l.a.map),
-            b = roadEndNode(l.b && l.b.map);
-          return /** @type {Road} */ ([
-            a,
-            b,
-            0,
-            {
-              a: l.a.exit,
-              b: l.b.exit,
-              id: l.id,
-              from: LOCATIONS[a] && LOCATIONS[a].id,
-              to: LOCATIONS[b] && LOCATIONS[b].id,
-              name: l.name,
-            },
-          ]);
-        })
-    : LOCATIONS.slice(1).map((r, i) => /** @type {Road} */ ([i, i + 1, 0]))
-)
-  .filter(l => LOCATIONS[l[0]] && LOCATIONS[l[1]] && l[0] !== l[1])
-  .map(
-    /** @returns {Road} */ ([a, b, , j]) =>
-      j && typeof j === 'object' ? [a, b, roadMetres(a, b, j), j] : [a, b, roadMetres(a, b, null)]
-  );
+export const ROADS = [];
 /* v46: what each place, scene and road is (tools/migrate-places.py fills these): use these instead of id prefixes */
 /* copies made before board is filled in (below), so they have none: read LOCATIONS[node].board */
 /** @type {Record<string, LocationData & { node: number, trainers: string[] }>} */
-export const LOCATION_BY_ID = Object.fromEntries(
-  LOCATIONS.map((r, i) => [r.id || r.mapId, Object.assign({ node: i }, r)])
-);
+export const LOCATION_BY_ID = {};
 /* alpha 0.4: what a place is, under its name: its route number ("Route 2"), or "Town" / "City"; and its full name,
    the number and the name together ("Route 2 · Tallgrass Meadow"), for signposts, postcards and the like */
 export function locationSubtitle(n) {
@@ -330,11 +297,6 @@ export function locationFullName(n) {
   if (!n) return '';
   return !n.town && /^Route \d/.test(n.route || '') ? n.route + ' · ' + n.name : n.name;
 }
-/* alpha 0.4: where a new game starts (rules.start.locationId: Copperleaf Town; before alpha 0.4 the first stop, Marigold Town) */
-export const START_NODE = (() => {
-  const p = RULES.start && RULES.start.locationId;
-  return p && LOCATION_BY_ID[p] ? LOCATION_BY_ID[p].node : 0;
-})();
 export function locationKind(id) {
   const sc = gameData.maps && gameData.maps[id];
   if (sc && sc.kind) return sc.kind;
@@ -351,11 +313,7 @@ export function isTown(nodeOrId) {
   const r = typeof nodeOrId === 'number' ? LOCATIONS[nodeOrId] : LOCATION_BY_ID[nodeOrId];
   return !!r && (r.kind ? r.kind === 'town' : !!r.town);
 }
-export const ROADS_BY_NODE = LOCATIONS.map(() => /** @type {RoadFromNode[]} */ ([]));
-ROADS.forEach(([a, b, c], i) => {
-  ROADS_BY_NODE[a].push({ to: b, cost: c, i });
-  ROADS_BY_NODE[b].push({ to: a, cost: c, i });
-});
+export const ROADS_BY_NODE = /** @type {RoadFromNode[][]} */ ([]);
 export const roadCost = (a, b) => {
   const e = (ROADS_BY_NODE[a] || []).find(e => e.to === b);
   return e ? e.cost : null;
@@ -388,14 +346,9 @@ export const STORY_DATA = gameData.story;
 export const CUTSCENES = /** @type {Record<string, CutsceneData>} */ (gameData.cutscenes || {});
 /* ---------- trainers: plain data, turned into teams when a battle starts ---------- */
 export const TRAINERS = /** @type {Record<string, TrainerEntry>} */ (gameData.trainers || {});
-/* v47: a "tutorial" trainer only battles in a story scene (blake0, in the opening); it stands on no stop */
 for (const id in TRAINERS) {
   const T = TRAINERS[id];
   T.id = id;
-  if (T.tutorial) {
-    /* it waits on no location */
-  } else if (LOCATIONS[T.node]) LOCATIONS[T.node].trainers.push(id);
-  else warnData(`Trainer ${id} stands on a stop that doesn’t exist.`);
   if (!PEOPLE[T.who]) T.who = 'gini';
   T.team = (T.team || [])
     .map(e => (/^@rival\d?$/.test(e.sp) || e.sp === 'robot' ? e : { ...e, sp: standInSpecies(e.sp) }))
@@ -417,10 +370,77 @@ export function trainerRobotOk(e) {
     Object.entries(fits).every(([k, kind]) => ROBOTS.parts[R[k]] && ROBOTS.parts[R[k]].slot === kind)
   );
 }
-/* the first trainer at a stop that hands out a Board Seat (or doesn’t block the road) is that stop’s Boardroom */
-LOCATIONS.forEach(r => {
-  r.board = r.trainers.find(id => TRAINERS[id].seat) || null;
-});
+/** RL-5: put a world's places and roads in: the tables above (LOCATIONS, ROADS, LOCATION_BY_ID, ROADS_BY_NODE) are
+    filled again in place. Each place's pool and battle stage are checked, it gets the trainers that stand there and
+    its Boardroom; each seam road becomes [a node, b node, metres, ends] (the glass lift is left out). The game data's
+    world (the hub) goes in below; a run's in RL-7
+    @param {LocationData[]} locations @param {RoadLink[]} [roads] */
+export function worldSetGraph(locations, roads) {
+  /* a copy first: the list given may be LOCATIONS itself */
+  LOCATIONS.splice(0, LOCATIONS.length, .../** @type {LocationEntry[]} */ (locations.slice()));
+  LOCATIONS.forEach(r => {
+    if (!POOLS[r.pool]) {
+      warnData(`${r.name} uses unknown pool ${r.pool}.`);
+      r.pool = Object.keys(POOLS)[0];
+    }
+    if (!BATTLE_STAGES[r.battleStage]) r.battleStage = BATTLE_STAGES[r.pool] ? r.pool : 'grass';
+    r.trainers = [];
+  });
+  const roadList = (
+    roads && roads.length
+      ? roads
+          .filter(l => (l.kind || 'seam') === 'seam')
+          .map(l => {
+            const a = roadEndNode(l.a && l.a.map),
+              b = roadEndNode(l.b && l.b.map);
+            return /** @type {Road} */ ([
+              a,
+              b,
+              0,
+              {
+                a: l.a.exit,
+                b: l.b.exit,
+                id: l.id,
+                from: LOCATIONS[a] && LOCATIONS[a].id,
+                to: LOCATIONS[b] && LOCATIONS[b].id,
+                name: l.name,
+              },
+            ]);
+          })
+      : LOCATIONS.slice(1).map((r, i) => /** @type {Road} */ ([i, i + 1, 0]))
+  )
+    .filter(l => LOCATIONS[l[0]] && LOCATIONS[l[1]] && l[0] !== l[1])
+    .map(
+      /** @returns {Road} */ ([a, b, , j]) =>
+        j && typeof j === 'object' ? [a, b, roadMetres(a, b, j), j] : [a, b, roadMetres(a, b, null)]
+    );
+  ROADS.splice(0, ROADS.length, ...roadList);
+  for (const k of Object.keys(LOCATION_BY_ID)) delete LOCATION_BY_ID[k];
+  LOCATIONS.forEach((r, i) => (LOCATION_BY_ID[r.id || r.mapId] = Object.assign({ node: i }, r)));
+  ROADS_BY_NODE.splice(0, ROADS_BY_NODE.length, ...LOCATIONS.map(() => /** @type {RoadFromNode[]} */ ([])));
+  ROADS.forEach(([a, b, c], i) => {
+    ROADS_BY_NODE[a].push({ to: b, cost: c, i });
+    ROADS_BY_NODE[b].push({ to: a, cost: c, i });
+  });
+  /* v47: a "tutorial" trainer only battles in a story scene (blake0, in the opening); it stands on no stop */
+  for (const id in TRAINERS) {
+    const T = TRAINERS[id];
+    if (T.tutorial) {
+      /* it waits on no location */
+    } else if (LOCATIONS[T.node]) LOCATIONS[T.node].trainers.push(id);
+    else warnData(`Trainer ${id} stands on a stop that doesn’t exist.`);
+  }
+  /* the first trainer at a stop that hands out a Board Seat (or doesn’t block the road) is that stop’s Boardroom */
+  LOCATIONS.forEach(r => {
+    r.board = r.trainers.find(id => TRAINERS[id].seat) || null;
+  });
+}
+worldSetGraph(gameData.locations, gameData.roads);
+/* alpha 0.4: where a new game starts (rules.start.locationId: Copperleaf Town; before alpha 0.4 the first stop, Marigold Town) */
+export const START_NODE = (() => {
+  const p = RULES.start && RULES.start.locationId;
+  return p && LOCATION_BY_ID[p] ? LOCATION_BY_ID[p].node : 0;
+})();
 export const SEATS = Object.values(TRAINERS)
   .filter(T => T.seat)
   .map(T => /** @type {Seat} */ (T.seat).id);
