@@ -2,6 +2,113 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Roguelite track RL-8 - Run loop and payout - 2026-10-21
+Branch `ccr-0f465f3f-hh2rq2`, from main 1d35666 (RL-7 merged). PR #103 went up at the owner's "Push pr" before the
+phase's end and was merged at 3f6f1c8; the owner played that build on the phone the same day. The rest (the full-check
+step, the in-game phase, the fixes from the owner's play, the docs) followed on the same branch, with main (ca9aa54)
+merged in (e18a604), for a new PR. Plan approved at the start ("Start rl8", the plan in Plan Mode). The owner's answers: the full 9-row map (8.8), with a 5-row short run in the debug menu; wild battles single,
+a mini-boss a leader in doubles, the boss a third leader's strongest Billie as an Alpha, the 40-turn cap kept (8.9);
+a wipe (or a trainer battle at the turn cap) ends the run, keep 1 Billie on a loss and the whole party on a win,
+Billies from Copperleaf come back as they left; the opening is the fall only (8.20), Blake cut from it, Hazel's new
+lines send you to the mast. The plan's decisions 1-13 were taken as written.
+- Changed (one cause per commit):
+  - Moves, no change in play, each proven against the code before it: `endBattle`'s arithmetic into
+    `logic/battle-rewards.js` (`battleRewards`); battle weather (`WEATHER_TYPE_BOOSTS`, `battleWeatherOf`) and the wild
+    odds by weather (`WILD_TYPE_BOOSTS`, `wildLikes`) into `logic/weather.js`.
+  - Data: rules.json `run.start` ($600, 5 Copper Coins, 2 Potions), `run.healCost` (60), `run.shop` (2 always, 2 more
+    drawn a day), `run.foes` (mini-boss +3 levels, $300; boss +5, $600); types, check-data, planted faults.
+  - New `logic/run-loop.js`: the start's give, the heal price, a town's stock for a day, the run's foes (a leader per
+    mini-boss node and the boss from the node's stream, none twice, own ids `run_<i>_foe`, no script, badge, egg or
+    story conditions), a battle's seed, release pay (only Billies caught on the run), the payout's rows.
+  - Leaks closed: today's challenges and the friends list's Map button stay in the hub; storage stays in Copperleaf
+    (a 7th catch waits outside the team until one is released: `validSave` refuses a team of 7).
+  - New `game/js/run.js` and `game/js/run-payout.js`: "Start a run" at Copperleaf's mast (a free flight: airship.js
+    `startAirshipFlight(i, {free, from})`), landing beside the landing's mast (`standByMast`), arrivals saved to the
+    account at once (game-state.js `saveNow`), "Give up the run" in the Map tab and "Fly home" at the landing's mast,
+    `runOver(won)` (the payout phase, saved at once), the payout screen (rows, Capital, Seals on a win, a keep-one card
+    per Billie on a loss), `runEndHome` (healed, by Copperleaf's mast), resume at boot (`runResume`), first-run hints.
+  - Run scenes get buildings by node type (mapgen's `mast`, `clinic`, `shop` dials through `runSceneParams`): the
+    landing's mast, a town's clinic and shop. The dials snapshot was remade on purpose.
+  - Run battles: one seam in `newBattle` (hooks `runBattleStart`) gives every run battle a seed (`<node seed>|battle|k`)
+    and the forecast's weather, and saves a checkpoint (`run.at`: phase `battle`, its number, the whole foe) to the
+    account at once; saving is then held (`saveHeld()`, worked out from the save and the battle on screen) until the
+    battle ends; a reload restarts it from its seed. Run rewards: no lose fee, egg or badge. A loss ends the run.
+  - Run towns: one `clinicHeal` for every clinic path charges `healCost` a hurt Billie after a yes (free in the hub);
+    each town's shop sells the day's stock; no rest stop; opening hours don't apply on a run.
+  - Mini-bosses block the way north (the existing blocker rule) and fight doubles; the boss fights alone as an Alpha
+    (`startTrainer` with `T.alpha`); beating it offers "On to the payout". `worldSetGraph` attaches a trainer only in
+    its own world.
+  - Determinism: on a run, wild odds by the forecast alone (`wildOddsBy`; a run has no hour, clear counts as sunny)
+    and new ids from the run's counter (`r<runs>-<run.uidN>`).
+  - `tools/test/sim/run-sim.mjs`: a whole run from its seed in Node (battles played by the AI on both sides, a fixed
+    player policy), the same twice; `runStats` reports to validation/sim/runs.json; a sample in `npm test`.
+  - The opening: New game plays the fall from the crust (the city scene no longer plays); Blake's entrance, Hazel's
+    staged fight and his battle are cut (beats 37-60 and 75-83; his trainer, script and shots stay in the data);
+    three new lines from Hazel after the starter pick send you to the mast; the welcome sheet mentions it. Postcards
+    wait for the opening's end, not Blake's flags.
+  - Debug menu "Runs": start a seeded run (short or full), win or lose the run. Debug log: the run line's phase,
+    battles, hold, party size and money; a `meta` line (runs, wins, Capital, Seals). Numbers only.
+  - Checks: `battle-rewards.test`, `run-loop.test`, `run-sim.test`, more cases in `run-state`, `run-world-real`,
+    `weather` and `opening-script` tests; the fast check's run page "a run's battle held and started again after a
+    reload; a loss, the payout (again after a reload) and home"; smoke's phone flow taps the mast and opens the run's
+    sheet; the full check's step "RL-8: a run from the mast"; the in-game test's phase "A run: airship, nodes,
+    payout". The in-game test's "Opening: Blake's first battle" went with the battle.
+  - Docs: roguelite-track.md (section 0 "Corrected in RL-8", section 5 as built, section 8's 8, 9 and 20 answered,
+    RL-8 done), ROADMAP, VISION (the opening), TESTING, NAMING, CHANGELOG.
+  - Fixes from the owner's first play (their diagnostics log: "Autumn wood Landing: can't walk to: an exit, across a
+    bridge"; "It got stuck"; "The bridge was turned the wrong way"): walk/heights.js blocked the steep ground under a
+    bridge's deck, so a run's bridges over steep stream banks couldn't be walked (11 of 18 landings with bridges
+    couldn't be left; the same on the RL-7 base); and mapgen laid a bridge from a road's first wet point to its last,
+    so where the road ran beside a stream the bridge lay along the water and often ended in it. Now bridges go only
+    where the road crosses a stream, square to it (within 25 degrees), dry at both ends, and the road is kept out of
+    the water elsewhere (`mapgenRoadOverWater`, MAPGEN_VERSION 4).
+- Where the plan was wrong: roguelite-track.md section 0 "Corrected in RL-8".
+- Verified:
+  - The fast tier at every commit (lint, typecheck, unit tests 455 -> 474, check:modules, format:check, check:data,
+    build). New tests seen to fail on planted faults (each commit says which).
+  - Smoke (15 steps) passed on 78f813d, 68d9020, 64b29f5, 94cbaf3, 37eb839, 6d2f257, ae67d51, 93c0ee8, a92382e,
+    27f9acd, bf0a027, 3729b6a, 6265a88 and 1576dbc, each in a checkout of its own, and on the working tree for 3f6f1c8
+    and 6e9bb2a. 4b0e984's smoke ran out of time twice while Chromium probes ran beside it; 93c0ee8 passed with it.
+    Not smoked alone (each inside the next smoked commit): 27a3168, 7cad9ce, 4fa8257, 7b9c848, 6d8f70e, 6474fbe,
+    7c4a81b, 1caf7c9, 78ca212, f23fc55.
+  - In Chromium: the fast check's run pages (`--only=run`); the full check's step "RL-8: a run from the mast" alone
+    (83 s); the in-game phase "A run: airship, nodes, payout" alone (10 s, nothing written while it ran); probes of
+    the mast start and flight, a reload mid-flight, mid-battle (the same seed and first roll) and at the payout, the
+    clinic ($120 for 2 hurt Billies, refused when short), the shop's stock, the mini-boss blocking and in doubles, the
+    Alpha boss, the payout won and lost, Copperleaf after; the in-game walk check on every place of 10 runs (126
+    places, 92 bridges) after the bridge fixes: every exit reachable, every bridge crossable.
+  - Node sweeps: 200 runs, 2,500 scenes with the buildings: all placed, every seam joined, no new generator note;
+    100 runs after the bridge fix: 421 bridges, none ending in water, all at 65 degrees or more to the stream.
+  - End of the phase: FULLCHECK
+- Run simulation (report only; the bounds are the owner's): on the placeholders a lone level-5 starter loses 50 of 50
+  runs (31 on the landing, about 1.6 places); three level-5 starters lose 50 of 50 too (20 at the first mini-boss,
+  levels 9-11 in doubles). No run reaches the boss.
+- Risky or unfinished:
+  - Balance is untuned (above); a bribe pays $600-900, more than a run's starting $600; leaders at low levels still
+    field evolved species; the boss is a stand-in until the Voltron (RL-14).
+  - Saving is held during a run battle by design: a kill after the result but before you tap past it replays the
+    battle (accepted).
+  - Robots are rebuilt from `saveData.parts`, which isn't a run field (only the debug menu gives robots today).
+  - The debug menu's "Go there" walks past a mini-boss that blocks (a test tool).
+  - The debug menu's "after the opening" story preset still mentions Blake; Blake's trainer, script and shots stay
+    in the data, unplayed. Hazel's joke "hot tips" left with his battle.
+  - Every run's scenes changed twice (buildings, then bridges); a run started before keeps its map and gets the new
+    scenes.
+  - One kind of bridge trap is left in principle: a deck end beside a terrace riser more than 0.34 m off the deck
+    (seen once, BR20, before the bridge rework; not seen after it in 126 places).
+  - Not in RL-8: relics, route trainers, event nodes, the return flight's animation, deadline hardening. Capital shows
+    in the Map header (the Lab's board is RL-11). The phone's cost of making a run's scenes is still only in the debug
+    log (`run.makeMs`).
+- Phone check wanted: a new game (the fall, Hazel, the starter, the mast lines); a run from the mast; a landing or
+  route with a stream (walk over the bridge); a town (paid heal, shop) and a mini-boss; kill the app mid-battle and
+  reopen; win or give up, the payout, Copperleaf; export the debug log (the run and meta lines).
+- Next: the owner merges this branch's PR and pushes `rl-8-done` (and the earlier tags). The owner's other notes from
+  the first play are new work waiting for their choices (roguelite-track.md section 5): rooms too bright; routes wider
+  than long (an HD-2D diorama); Copperleaf's world map its island alone; a run's own world map from its seed. My
+  proposal: one phase before RL-9, "RL-8b Run look": routes laid east to west across the screen (wide and shallow,
+  joined at their east and west edges), a run's world map generated from its seed, the hub's map Copperleaf's island
+  alone, and the rooms' light; 2 sessions; the balance tuning after it, with the simulation's numbers.
+
 ### Roguelite track RL-7 - Run world - 2026-10-21
 Branch `ccr-b5ce394e-4jhzbp`, from main dfc9d68 (RL-6 merged). Plan approved at the start ("Start rl7", then the plan
 in Plan Mode); its decisions A-J were taken at my recommendations (none answered otherwise). Done in one session,

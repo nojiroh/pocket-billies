@@ -9,8 +9,17 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
-- A run's world (roguelite track RL-7), not playable yet (a run starts at the airship from RL-8; to look at one, open
-  the game with `?fixture=run`): each place on a run's map is a walkable route made from the run's seed, joined
+- Runs are playable (roguelite track RL-8): the airship at Copperleaf's mast takes your team on a run. You land on
+  day 1 and walk the run's places: wild battles, towns where the clinic charges $60 a hurt Billie and the shop sells
+  the day's stock, two mini-bosses (leaders, in double battles, who block the way on until beaten) and the boss (a
+  leader's strongest Billie as an Alpha). Win, or lose your whole party, and the payout turns your money and finds
+  into Capital (Seals too on a win); on a loss you keep one Billie of your choice. Then you're back in Copperleaf by
+  the mast. Storage stays home during a run; a seventh Billie caught means letting one go. Closing the game anywhere
+  brings you back where you were, even mid-battle (the battle starts again). "Give up the run" is in the Map tab.
+  New game now plays the fall alone: you wake in Copperleaf, meet Hazel, make yourself up and pick your starter, and
+  Hazel sends you to the airship (Blake is out of the opening for now). Bridges on a run's routes now cross the
+  stream square and can be walked; one could trap you on the landing.
+- A run's world (roguelite track RL-7): each place on a run's map is a walkable route made from the run's seed, joined
   seamlessly to the places before and after it, in its biome's look, ground and weather, with a little variety of its
   own (hills, cliffs, a stream or a pond, the road's shape, a lookout, a glade or a bridge). Walking into the next
   place, or back, takes a day; a step over the edge and back doesn't. Each place has the weather of its forecast for

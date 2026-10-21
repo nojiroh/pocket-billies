@@ -10,7 +10,7 @@ those sessions; until then, follow the rule next to them.
 | Tier | Command | Now | Budget | When |
 |---|---|---|---|---|
 | (a) lint, types | `npm run lint`, `npm run typecheck` | 4 s warm (9 s cold) + 0.6 s | under 10 s | after every edit (the Claude Code hook runs it) |
-| (b) unit tests | `npm test` | about 1 s | under 30 s | after every edit to logic, data or tests (the hook) |
+| (b) unit tests | `npm test` | about 30 s (RL-8: 474 tests; the scene sweeps take most) | under 30 s | after every edit to logic, data or tests (the hook) |
 | before a commit | `npm run check:modules`, `npm run format:check`, `npm run check:data`, `npm run build` | about 15 s | none | every commit |
 | UI pictures (UI-2) | `npm run check:ui` | about 1.5 min | none | after a change to the kit, its CSS, uiTheme.json or studio/gallery.html |
 | (c) smoke | `npm run check:smoke` | about 2.5 min | 1-2 min | before every commit that touches game/, tools/check-quick.py, vite.config.js or tools/to-module.mjs |
@@ -95,6 +95,15 @@ Two rules hold everywhere:
   own stream. A node's dials are frozen in `run-world-real.test.mjs.snapshot`: a change to how they are drawn changes
   every run's scenes, so remake it (`--test-update-snapshots`) only on purpose and say so in the commit. A change to
   the generator itself shows in the mapgen tests first.
+- The run loop (RL-8): `battle-rewards.test.mjs` proves `battleRewards` gives what `endBattle` worked out before the
+  move (every outcome, both kinds, seeded egg rolls); `run-loop.test.mjs` the start's give, the heal price, a town's
+  stock for a day (the same after a reload), the run's foes (none twice, levels by row, the boss an Alpha), battle
+  seeds, release pay, the payout rows and a run's ids; `run-sim.test.mjs` plays whole runs with
+  `tools/test/sim/run-sim.mjs` (one seed twice the same whatever util.js random does; the report's numbers). The
+  simulation's full report: `node tools/test/sim/run-sim.mjs --runs=50 --team=1` (validation/sim/runs.json; it reports,
+  bounds wait for the owner). `run-world-real.test.mjs` also checks a run's buildings (the landing's mast, a town's
+  clinic and shop), its trainers in their own world and its bridges (both ends dry, a stream crossed square within
+  25 degrees).
 - The world (RL-5): the game's world is Copperleaf alone; the old one is parked in `game/data/legacy` (its own
   `legacy/index.json`, read by `readLegacyData()` in `tools/data-files.mjs`, null without one). A test that uses the
   old places as test data (the bowl's ground and landmarks, scripts said there) reads `oldWorld()`
@@ -145,7 +154,8 @@ same phase:
 - A removed system loses its step in the same commit as the system.
 - The Road phase was removed in RL-5 (the hub has no road); RL-7 brought it back as "A run's road" (a run put on a
   copy of the save, its world made, the landing's north seam walked a step at a time, the next place on day 2, the
-  save and the hub's world put back). The Room phase walks into Hazel's lab; the night, Billies-in-the-world and
+  save and the hub's world put back). RL-8 added "A run: airship, nodes, payout" (a short run taken off from the mast
+  on a copy of the save, the flight, a battle, a paid heal, the Alpha boss, the payout, home). The Room phase walks into Hazel's lab; the night, Billies-in-the-world and
   Stress phases run on the hub's map. The scenes of a run's world are not in the "Walk:" list.
 - The test never writes the save: it pauses saving (`pauseSaving`/`resumeSaving`, game-state.js) and puts the save
   back. Don't call `writeStoredSave` or the account directly from a step.
@@ -178,8 +188,10 @@ same phase:
 ## What each phase does
 
 - **06 UI structure**: the smoke phone flow clicks real buttons (`[data-a=intro]`, the dressing room, `cs-next`,
-  `cs-choose`, `cs-yes`, the five tabs, the shop) and the Help buttons `quicktest`, `diagtest` and `dbglog` start
-  the in-game test and the log export: keep them, or change the checks in the same commit. Pure UI logic that
+  `cs-choose`, `cs-yes`, and since RL-8 the mast's `runstart`); it switches the five tabs, opens the shop and starts
+  the in-game test and the log export by script (corrected in RL-8: this line said it tapped them). The Help buttons
+  `quicktest`, `diagtest` and `dbglog` are how the owner starts them on the phone: keep them, or change the checks in
+  the same commit. Pure UI logic that
   moves out of a screen (prices, sorting, text building) gets unit tests.
 - **07 Portraits**: `tools/test/expressions.test.mjs` checks that every expression asked for has face pieces;
   replace it with the real tag-to-expression mapping test (task 8's second half). Add a portrait to the full test.
@@ -254,7 +266,11 @@ same phase:
   world is made at boot), the fast check's run page (the landing drawing, every place on the bowl, a seam walked a
   day later; about 50 s), the full check's step "RL-7: a run's roads" (a run swapped in, a seam walked each way with
   `cross()`, the hub swapped back) and the in-game test's "A run's road". `cross()` walks `run.seamIn` metres further
-  in a run, where a crossing counts that far in. The flight to a run comes with RL-8. Smoke's shop steps open `CHECK_SHOP`, a shop the check makes for itself (the game has none
+  in a run, where a crossing counts that far in. RL-8: smoke's phone flow taps Copperleaf's mast and opens the run's
+  sheet; the fast check's second run page holds a run battle, reloads (`?fixture=stored`) into the same battle, loses,
+  reloads at the payout, keeps one Billie and flies home; the full check's step "RL-8: a run from the mast" plays a run
+  from the mast to home (the flight, a battle, a seam, a paid heal, the shop, a mini-boss in doubles, the Alpha boss,
+  the payout). Smoke's shop steps open `CHECK_SHOP`, a shop the check makes for itself (the game has none
   now). check-data checks `game/data/legacy` only for being readable: every listed file is there, nothing unlisted,
   maps and trainers against their schemas; the Unused report counts props the parked maps place as used.
   UI-3b: the lint's rules are game/js/logic/ui-lint.js (the Studio runs them; `node tools/ui-lint.mjs --lines` lists

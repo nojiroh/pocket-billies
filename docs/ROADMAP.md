@@ -20,7 +20,7 @@ are sessions of Claude's working time, not calendar time, and exclude the owner'
 | MG-2 | Seam agreement in mapgen (+ TR-1 smooth roads) | generated parent/child scenes pass the seam rules; roads ramp with no risers | none | 1-2 | no |
 | RL-6 | Run map and clock logic (done 2026-10-21) | `logic/run-map.js`, `nodeTypes.json`, forecast, deadline; no UI | RL-3, MG-2 | 1 | no |
 | RL-7 | Run world (done 2026-10-21) | generated scenes installed and walkable; the bowl shows the run | RL-5, RL-6 | 1-2 | no |
-| RL-8 | Run loop and payout | airship start, a town with paid healing, a mini-boss, the payout screen, resume: **the first playable cut** | RL-4, RL-7 | 2 | yes |
+| RL-8 | Run loop and payout (done 2026-10-21) | airship start, a town with paid healing, a mini-boss, the payout screen, resume: **the first playable cut** | RL-4, RL-7 | 2 | yes |
 | RL-9 | Ranch A | the building, store and keep, train between runs, the keep-one rule | RL-8, played | 2 | yes |
 | RL-10 | Ranch B | breed safe/risky with abominations, hatch, passive income (cap, rollback guard, offline, server anchor) | RL-9 | 2 | yes |
 | RL-11 | Hub upgrades, currencies, unlocks | `currencies/buildings/unlocks.json`, the Lab board, one unlock registry | RL-8 | 1-2 | yes |
@@ -50,9 +50,10 @@ town node needs it.
 - **Terrain track** (docs/phases/terrain-track.md, the owner's brief 2026-10-21): smooth roads, mountains, height as
   gameplay, terrain features. TR-1 (smooth roads) is folded into MG-2, before RL-7; TR-2..TR-7 alongside RL-9..RL-11
   after the first cut; the gameplay sessions TR-8..TR-11 wait for their RL parts. Tags `tr-N-done`.
-- **Project Story** (docs/phases/project-story.md): S1-S3 and S7 done, S8 partly (the city plays before the fall).
+- **Project Story** (docs/phases/project-story.md): S1-S3 and S7 done, S8 partly (RL-8: New game plays the fall only; the city's files stay).
   S6 (Hazel vs Blake as a real battle) is unblocked by RL-4; S4, S5 and S8's leftovers wait until the first cut has
-  been played. The opening stays as built; RL-8 adds Hazel's lines sending the player to the airship mast.
+  been played. RL-8 (the owner's answer): the opening is the fall only, Blake cut from it (his data kept), and Hazel's
+  new lines send the player to the airship mast.
 
 ## The old phases (status from docs/HANDOFF.md, 2026-10-20)
 
@@ -71,7 +72,7 @@ No `phase-NN-done` tag was ever pushed; "done" means the HANDOFF entry says the 
 | 08 | 08-classic-movement-seamless-maps-rooms | 08a-1..3 and 08b-1..2 done; 08b-3 not | absorbed: the run world uses 08b's seam model; 08b-3 templates parked |
 | 09 | 09-props-and-terrain | partly: Copperleaf, Route 1, Marigold and the city set redone | parked: the other towns are legacy; run biomes reuse the done kits |
 | 10 | 10-world-map-bowl | done, waiting on the owner's phone look and the tag | absorbed: RL-7 makes the bowl show a run |
-| 11 | archive/11-opening-sequence | moved to Project Story S7-S8; the city plays from New game | absorbed: RL-8 (Hazel's mast lines) |
+| 11 | archive/11-opening-sequence | moved to Project Story S7-S8; since RL-8 New game plays the fall only | absorbed: RL-8 (the fall only, Hazel's mast lines) |
 | 12 | 12-ranch | not started | absorbed: RL-9, RL-10 |
 | 13 | 13-testing-and-debugging | 13a done; 13b, 13c not | absorbed in part (fixtures for runs, RL-7/8); 13c parked |
 | 14 | 14-studio | partly, through the Studio track | absorbed: editors come with their sections (RL-16) |
@@ -92,8 +93,8 @@ never store/keep or training.
 The 20 "Ask me before" items in docs/phases/roguelite-track.md, section 8: the run's internal key (RL-3); keep-one vs
 ranch levels (RL-9); the hub's extent and Copperleaf's south exit (answered in RL-5: Copperleaf alone, its south exit gone); legacy by
 moving files (answered in RL-5: moved to game/data/legacy, a read-only Studio list); currency
-names and the building mapping (RL-11); menu nodes (RL-12); the first cut's shape (RL-8); battle formats by node type
-(RL-8; the turn cap was answered in RL-4: 40, a draw; a killed battle restarts from its seed); the clock's numbers (answered in
+names and the building mapping (RL-11); menu nodes (RL-12); the first cut's shape (answered in RL-8: the full 9-row map); battle formats by node type
+(answered in RL-8: wild single, mini-boss doubles, an Alpha boss; the turn cap was answered in RL-4: 40, a draw; a killed battle restarts from its seed); the clock's numbers (answered in
 RL-6: a day per arrival, backtracking included, deadline = the shortest walk + 3, no tick for healing or waiting); the token link, Remember me and deleting the
 versioned tools (RL-1); SAVE_VERSION 4 and the cloud key whitelist (RL-3, RL-10); the dex's place (RL-3); the relic
 cap (RL-12); the hub island's look (answered in RL-5: the bowl shows Copperleaf alone; its sea share is set in the Studio); the ranch cut order (RL-9); the order after the first cut; the tuning
@@ -101,7 +102,9 @@ placeholders (RL-6 took the map's: 9 rows, 2 mini-bosses, two lanes on 70% of fr
 of lane pairs, the five biomes with finished plants; reveal the next row, '?' on the row after, the boss always; RL-7
 took the scenes': dial ranges in `run.scene`, wild levels 3-5 on the landing +1 a row, 2 on a walk back, a crossing
 counting 6 m in, a run kept across a new generator version, places named biome + type; the rest wait for their
-sessions); pushing the tags; the opening (RL-8). Still open from the old phases: phase 17's prototype
+sessions); pushing the tags; the opening (answered in RL-8: the fall only). New from the owner's first play (2026-10-21,
+roguelite-track.md section 5): rooms too bright; routes wider than long (an HD-2D diorama); Copperleaf's world map its
+island alone; a run's own world map generated from its seed. Still open from the old phases: phase 17's prototype
 approval and ask list (RL-14), phase 16's breeding mode (RL-10),
 phase 10's phone look, phase 06's 06-5.
 
