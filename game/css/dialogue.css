@@ -9,22 +9,59 @@
   align-items: start;
   gap: var(--s4);
   padding: var(--s4);
-  border: 1px solid var(--g-bd);
-  border-radius: var(--r-lg);
-  background: var(--g-solid);
-  box-shadow: var(--depth-float);
+  /* UI-2: a panel with two cuts; the shadow follows the cuts, the fill and edge line are the pseudo-elements */
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  filter: var(--drop-float);
+  isolation: isolate;
 }
+.talk-box::before,
+.talk-box::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-below);
+  clip-path: var(--clip-panel);
+  background: var(--g-solid);
+  pointer-events: none;
+}
+.talk-box::after {
+  clip-path: var(--edge-panel);
+  background: var(--edge);
+}
+/* UI-2: the portrait's circle sits behind, and the head breaks out of its top: the picture shows whole above the
+   circle's middle and only inside the circle below it (the .pb-portrait rule, at 96 px) */
 .talk-slot {
+  position: relative;
+  isolation: isolate;
   display: grid;
-  place-items: center;
+  place-items: end center;
   width: 96px;
   height: 96px;
-  border-radius: var(--r-md);
-  overflow: hidden;
+}
+.talk-slot::before {
+  content: '';
+  position: absolute;
+  left: 7px;
+  right: 7px;
+  bottom: 0;
+  aspect-ratio: 1;
+  z-index: var(--z-below);
+  border-radius: 50%;
   background:
-    radial-gradient(60% 18% at 50% 96%, rgba(46, 33, 64, 0.2), transparent 70%),
-    linear-gradient(180deg, color-mix(in srgb, var(--gold-a) 30%, var(--g-solid)), var(--g-bg2));
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    radial-gradient(circle at 50% 30%, rgba(255, 255, 255, 0.5), transparent 60%),
+    linear-gradient(180deg, color-mix(in srgb, var(--gold-a) 40%, var(--g-solid)), var(--g-bg2));
+  box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--c-shadow) 16%, transparent);
+}
+.talk-slot > * {
+  -webkit-mask:
+    radial-gradient(circle 41px at 50% 55px, #000 99%, transparent),
+    linear-gradient(#000, #000) top / 100% 55px no-repeat;
+  mask:
+    radial-gradient(circle 41px at 50% 55px, #000 99%, transparent),
+    linear-gradient(#000, #000) top / 100% 55px no-repeat;
 }
 .talk-box .talk-por {
   /* sized by talk.js (drawTalkPortrait): 1.5 CSS px per art pixel, a whole number of device pixels */
@@ -41,8 +78,8 @@
 .talk-who {
   display: inline-block;
   margin: 0 0 var(--s2);
-  padding: 3px 10px;
-  border-radius: var(--r-pill);
+  padding: 3px 12px;
+  clip-path: var(--clip-chip);
   font: 700 var(--fs-caption) / 1.2 var(--font-voice);
   letter-spacing: 0.02em;
   color: var(--goldink, #3a2408);
@@ -71,19 +108,22 @@
 .talk-choice {
   min-height: 44px;
   padding: var(--s2) var(--s4);
-  border: 1px solid var(--g-bd);
-  border-radius: var(--r-md);
+  border: 0;
   font: 600 var(--fs-body) / 1.25 var(--font-prose);
   text-align: left;
   color: var(--text);
-  background: var(--g-solid);
-  box-shadow: var(--depth-float);
+  /* UI-2: a quiet button's four small cuts, an inner edge (the box's shadow covers it) */
+  clip-path: var(--clip-button);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--g-solid) 90%, white), var(--g-solid));
+  box-shadow:
+    inset 0 1px 0 var(--edge-hi),
+    inset 0 -1px 0 var(--edge-lo);
   cursor: pointer;
 }
 .talk-choice:hover,
 .talk-choice:focus-visible {
-  outline: 2px solid var(--gold-b);
-  outline-offset: 1px;
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--gold-b);
 }
 @media (max-width: 560px) {
   .talk-box {

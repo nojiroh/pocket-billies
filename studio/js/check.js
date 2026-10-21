@@ -5,10 +5,12 @@
 import { expose } from '../../game/js/test-globals.js';
 import { provide } from '../../game/js/hooks.js';
 import { $ } from '../../game/js/util.js';
+import { uiThemeContrast } from '../../game/js/logic/ui-theme.js';
 import { storyFindings } from '../../game/js/logic/story-checks.js';
 import { boneSlot } from '../../game/js/skeleton-rig.js';
 import { decodeBase64Array } from '../../game/js/walk-view.js';
 import { escapeHtml } from './game-stand-ins.js';
+import { UI_ROLE_LABELS } from '../../game/js/logic/ui-dials.js';
 import {
   ACTIONS,
   SECTIONS,
@@ -461,6 +463,18 @@ export function runCheck() {
       r.go,
       r.sel
     );
+  /* UI-3: the UI look's colours read on its ground and surfaces (the check check-data runs, logic/ui-theme.js) */
+  if (D.uiTheme && D.uiTheme.defaults)
+    for (const f of uiThemeContrast(D.uiTheme)) {
+      const role = (UI_ROLE_LABELS.find(r => r[0] === f.fg) || [])[1] || f.fg,
+        bg = f.bg === 'ground' ? 'the ground' : 'a surface',
+        where = f.where.startsWith('screen:') ? f.where.slice(7) : f.where ? '' : 'game';
+      err(
+        `UI look${f.where ? ` (${f.where.replace(':', ' ')})` : ''}: ${role} (${f.side}) reads at ${f.ratio.toFixed(2)}:1 on ${bg}, under ${f.min}:1.`,
+        'ui',
+        where ? { uiFocus: { scope: where, rel: `color.${f.side}.${f.fg}` } } : {}
+      );
+    }
   /* Project Story S3: the story checks, the same ones check-data runs (game/js/logic/story-checks.js) */
   try {
     for (const f of storyFindings(D)) {

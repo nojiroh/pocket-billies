@@ -17,7 +17,7 @@ are sessions of Claude's working time, not calendar time, and exclude the owner'
 | RL-3 | State separation (done 2026-10-21) | SAVE_VERSION 4; `meta`, `run`, `ranch` in the save; validators; `migrate` keeps a run's trip | RL-2 | 1 | no |
 | RL-4 | Battle state injected (done 2026-10-21) | phase 19's core: engine context, no save writes, a silent host, `b.rng`, a turn cap | RL-2 | 1-2 | no |
 | RL-5 | Legacy parking and the world setter (done 2026-10-21) | the other maps and places under `game/data/legacy/`; `worldSetGraph`; fixtures and checks retargeted | RL-3 | 1-2 | no |
-| MG-2 | Seam agreement in mapgen | generated parent/child scenes pass the seam rules | none | 1 | no |
+| MG-2 | Seam agreement in mapgen (+ TR-1 smooth roads) | generated parent/child scenes pass the seam rules; roads ramp with no risers | none | 1-2 | no |
 | RL-6 | Run map and clock logic | `logic/run-map.js`, `nodeTypes.json`, forecast, deadline; no UI | RL-3, MG-2 | 1 | no |
 | RL-7 | Run world | generated scenes installed and walkable; the bowl shows the run | RL-5, RL-6 | 1-2 | no |
 | RL-8 | Run loop and payout | airship start, a town with paid healing, a mini-boss, the payout screen, resume: **the first playable cut** | RL-4, RL-7 | 2 | yes |
@@ -40,10 +40,15 @@ town node needs it.
   Studio self-test (docs/phases/studio-self-test.md, approved 2026-10-21): measure the Studio; fixes come after.
 - **UI track** (docs/phases/ui-track.md, planned 2026-10-21): Semigloss Angular, the Studio's UI section and phase
   06's leftover. UI-1..UI-4 run beside RL-3..RL-7 (UI-4 before RL-7, so the run screens use the new parts); UI-5 and
-  UI-6 after the RL-8 play test. Tags `ui-N-done`. UI-1 (theme as data, rules as a check) done 2026-10-21; UI-2
-  (kit v2, angular shapes) next.
-- **Map generator track** (docs/phases/mapgen-track.md): MG-1 done; MG-2 is on the RL path (before RL-6); MG-3 when a
-  town node needs it; MG-4 and MG-5 after RL-8.
+  UI-6 after the RL-8 play test. Tags `ui-N-done`. UI-1 (theme as data, rules as a check) and UI-2 (kit v2, angular
+  shapes, done whole, not split) done 2026-10-21; UI-3 split by the owner: UI-3a (the Studio's UI section, core) done
+  2026-10-21; UI-3b (its tools) next, then UI-4.
+- **Map generator track** (docs/phases/mapgen-track.md): MG-1 done; MG-2 is on the RL path (before RL-6), the
+  roguelite version (seam agreement), with terrain TR-1 folded in; MG-3 when a town node needs it; MG-4 and MG-5
+  after RL-8.
+- **Terrain track** (docs/phases/terrain-track.md, the owner's brief 2026-10-21): smooth roads, mountains, height as
+  gameplay, terrain features. TR-1 (smooth roads) is folded into MG-2, before RL-7; TR-2..TR-7 alongside RL-9..RL-11
+  after the first cut; the gameplay sessions TR-8..TR-11 wait for their RL parts. Tags `tr-N-done`.
 - **Project Story** (docs/phases/project-story.md): S1-S3 and S7 done, S8 partly (the city plays before the fall).
   S6 (Hazel vs Blake as a real battle) is unblocked by RL-4; S4, S5 and S8's leftovers wait until the first cut has
   been played. The opening stays as built; RL-8 adds Hazel's lines sending the player to the airship mast.

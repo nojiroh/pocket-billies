@@ -11,7 +11,9 @@ import { provide } from './hooks.js';
 import { MOVES } from './game-data.js';
 import { weightClass } from './logic/parts.js';
 import {
+  ROBOT_LIMBS,
   ROBOT_SLOTS,
+  ROBOT_SLOT_NAMES,
   isRobot,
   robotAttackFactor,
   robotGemDef,
@@ -30,6 +32,8 @@ import {
   isPrime,
   maxHp,
   partBroken,
+  partHpLeft,
+  partMaxHp,
 } from './logic/rules.js';
 import { escapeHtml, saveData } from './game-state.js';
 import { uiIconHTML } from './art.js';
@@ -39,9 +43,11 @@ import { needsCare, plateVars, typeBadgeHTML } from './ui.js';
 expose({
   BILLY_SLOT_NAMES: [() => BILLY_SLOT_NAMES],
   BOT_SLOT_TITLES: [() => BOT_SLOT_TITLES],
+  LIMB_SHORT: [() => LIMB_SHORT],
   SIZE_KEYS: [() => SIZE_KEYS],
   SIZE_WORDS: [() => SIZE_WORDS],
   billyUnit: [() => billyUnit, v => ((billyUnit = v), provide({ billyUnit }))],
+  limbPipsHTML: [() => limbPipsHTML, v => ((limbPipsHTML = v), provide({ limbPipsHTML }))],
   unitBalanceHTML: [() => unitBalanceHTML, v => (unitBalanceHTML = v)],
   unitBotBuildHTML: [() => unitBotBuildHTML, v => ((unitBotBuildHTML = v), provide({ unitBotBuildHTML }))],
   unitBotSlotsHTML: [() => unitBotSlotsHTML, v => (unitBotSlotsHTML = v)],
@@ -54,13 +60,23 @@ expose({
   unitTagsHTML: [() => unitTagsHTML, v => (unitTagsHTML = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ billyUnit, unitBotBuildHTML, unitBuildHTML, unitCarryHTML, unitHeroHTML, unitOpenRowHTML, unitRowHTML });
+provide({
+  billyUnit,
+  limbPipsHTML,
+  unitBotBuildHTML,
+  unitBuildHTML,
+  unitCarryHTML,
+  unitHeroHTML,
+  unitOpenRowHTML,
+  unitRowHTML,
+});
 /* to-module: end */
 /** @typedef {{
  *   kind: 'billy' | 'bot', id: string, name: string, sub: string, lvl: number, types: string[],
  *   hp: number, max: number, art: (px: number) => string, plate: string, down: boolean,
  *   lead: boolean, buddy: boolean, coat: string, prime: boolean, care: boolean,
- *   build: Record<string, string>, kg: number, wclass: string, slotNames: Record<string, string>
+ *   build: Record<string, string>, kg: number, wclass: string, slotNames: Record<string, string>,
+ *   limbs: Record<string, number> | null
  * }} Unit */
 
 const SIZE_KEYS = ['S', 'M', 'L'];
@@ -95,7 +111,25 @@ function billyUnit(m) {
     kg,
     wclass: weightClass(kg),
     slotNames: BILLY_SLOT_NAMES,
+    /* UI-2: a bot's limbs, each as the share of its HP left (the limb pips) */
+    limbs: bot ? Object.fromEntries(ROBOT_LIMBS.map(q => [q, partHpLeft(m, q) / (partMaxHp(m, q) || 1)])) : null,
   };
+}
+
+/* UI-2: a bot's limbs as pips, the shared bot plate's row (the battle plate and the team row): each limb a slanted
+   plate with its letter and four cells lit by the HP it has left; a broken limb goes dark and is struck through.
+   ph: {armL, armR, legs}, each 0..1 */
+const LIMB_SHORT = { armL: 'L', armR: 'R', legs: 'Lg' };
+function limbPipsHTML(ph) {
+  const said = [];
+  const pips = ROBOT_LIMBS.map(q => {
+    const f = Math.max(0, Math.min(1, (ph && ph[q]) ?? 1)),
+      lit = f <= 0 ? 0 : Math.ceil(f * 4),
+      state = f <= 0 ? 'broken' : f < 0.34 ? 'low' : 'ok';
+    said.push(`${ROBOT_SLOT_NAMES[q]} ${f <= 0 ? 'broken' : Math.round(f * 100) + '%'}`);
+    return `<span class="pb-limb ${state}"><b>${LIMB_SHORT[q]}</b>${[0, 1, 2, 3].map(i => `<i${i < lit ? ' class="on"' : ''}></i>`).join('')}</span>`;
+  });
+  return `<span class="pb-limbs" role="img" aria-label="${said.join(', ')}">${pips.join('')}</span>`;
 }
 
 function unitHpHTML(u) {
@@ -117,8 +151,8 @@ function unitHeroHTML(u) {
 
 /** one row in a team or a list: tap for details */
 function unitRowHTML(u, i, act = 'mon', label = 'details') {
-  return `<button class="u-row m-press m-enter${u.down ? ' down' : ''}" style="--i:${i}" data-a="${act}" data-u="${escapeHtml(u.id)}" aria-label="${escapeHtml(u.name)}, level ${u.lvl}, ${label}"><span class="u-spr" style="${u.plate}"><span class="m-idle" style="--phase:${((i * 0.37) % 1).toFixed(2)}">${u.art(64)}</span></span>
-  <span class="u-mid"><span class="u-head"><b>${escapeHtml(u.name)}</b><span class="u-lv tnum">Lv ${u.lvl}</span></span><span class="u-types">${u.types.map(typeBadgeHTML).join('')}${u.buddy ? `<i class="u-heart" title="Buddy">${uiIconHTML('heart', 12)}</i>` : ''}${u.prime ? '<span class="u-tag prime">Prime</span>' : ''}</span></span>
+  return `<button class="u-row m-press m-enter${u.down ? ' down' : ''}${u.kind === 'bot' ? ' bot' : ''}" style="--i:${i}" data-a="${act}" data-u="${escapeHtml(u.id)}" aria-label="${escapeHtml(u.name)}, level ${u.lvl}, ${label}"><span class="u-spr" style="${u.plate}"><span class="m-idle" style="--phase:${((i * 0.37) % 1).toFixed(2)}">${u.art(64)}</span></span>
+  <span class="u-mid"><span class="u-head"><b>${escapeHtml(u.name)}</b><span class="u-lv tnum">Lv ${u.lvl}</span></span><span class="u-types">${u.types.map(typeBadgeHTML).join('')}${u.buddy ? `<i class="u-heart" title="Buddy">${uiIconHTML('heart', 12)}</i>` : ''}${u.prime ? '<span class="u-tag prime">Prime</span>' : ''}</span>${u.limbs ? limbPipsHTML(u.limbs) : ''}</span>
   <span class="u-right">${unitHpHTML(u)}</span></button>`;
 }
 

@@ -67,6 +67,15 @@ seed the engine still draws `util.random`, so ordinary play and the golden recor
 turn cap 40, a draw (wild = walked away, trainer = loss) (8.9); a killed battle restarts from its seed (8.7, built in
 RL-8); Lullaby's text fixed to 2-4 turns.
 
+**Corrected in MG-2 (2026-10-21).** "Seams decided by the code" holds: run scenes 112×64, forward links N to S at t
+0.25/0.5/0.75 join with whole-metre offsets, and a child generated from its parent's strip (`mapgenEdgeStrip` into
+`params.edges`) meets it with no height gap or step and a straight walk across (docs/phases/mapgen-track.md, MG-2). Two
+things the plan didn't say: terraces must stay at ground level by every exit's edge, not only joined ones (a parent is
+made before its children), and a node with two parents shares its south side at the midpoint between the exits.
+`logic/seam-rules.js` is check-data's seam rules moved into one module (check-data is already Node), not a
+re-implementation; a02_joins compares views, so on raw data the numbers are heights, step and the walk. The hub's
+buildings for RL-8's towns are the props dials `mast`, `clinic`, `shop` (a lot beside the main road facing the camera,
+level, with a path to the door). The terrain track's TR-1 (smooth roads) was folded in by the owner.
 **Corrected in RL-5 (2026-10-21).** 48 places and 48 maps were parked, not 47 (49 locations, Copperleaf index 46,
 now 0); 39 trainers moved, 10 stayed (the 8 leaders, now `miniboss: true` with no `node`, and the tutorials blake0
 and tinker). Trainers name their place by a numeric `node`, so a leader without one needed the `miniboss` branch in
@@ -84,7 +93,7 @@ view id keeps it), `watchMapsAhead`'s cached node, things-to-do's node keys (`sa
 reads `gameData.locations` (the hub's; shared with the Studio, so a run scene should carry its own `mood`). Hub
 trainers attach by node number in whatever world is in (none stand anywhere after RL-5; a run puts its trainers in
 `TRAINERS` first). A world without roads now has none (an empty list made up a chain). check-data's seam offset
-rule (205-207) rejects only an offset of exactly x.5 m: worth fixing before MG-2 copies it into `seam-rules.js`.
+rule rejects only an offset of exactly x.5 m (now `logic/seam-rules.js:122`, moved there by MG-2): a small fix for later.
 `gamedata.js` was 0.76 MB (lite maps), not 13 MB (CLAUDE.md's gotcha is stale): 0.59 MB after; game/data/maps 7.3 MB
 -> 0.8 MB. Kept, against this plan: fishing.json (keyed by water, not place; Copperleaf has water) and the postcard
 pictures (loaded only on arrival). Left dead in the data: `rules.json legends[].scene` (cinderpeak, frostcrown),

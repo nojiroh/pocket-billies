@@ -73,9 +73,49 @@ Studio list, the bowl shows Copperleaf alone, Hazel's lines lose only the direct
   Marigold charter book and three people's lore name parked places (RL-8 rewrites the hub's directions); `rules.json
   legends[].scene`, `scenery.json` town flags, `biomes.json from` and the parked places' pools are dead data; "Rest at
   the clinic, free" shows for Copperleaf (it did before; RL-8's paid healing); check-data's seam offset rule rejects
-  only an offset of exactly x.5 m (fix before MG-2 copies it).
+  only an offset of exactly x.5 m (now logic/seam-rules.js:122, since MG-2; a small fix for later).
 - Next: the owner pushes `rl-1-done` .. `rl-5-done` (sessions can't push tags); checks the bowl and Copperleaf on the
-  phone; then MG-2 (seam agreement) or RL-6 (run map and clock logic).
+  phone; then RL-6 (run map and clock logic; MG-2 is merged).
+### UI track UI-2 - Kit v2: angular shapes - 2026-10-21
+Branch `ccr-00069345-2zok4t`, from main 3479f01 (RL-4 merged, UI-1 in). The owner asked for the whole of UI-2 in one
+session (no split). Two calls I made without asking (my plan's recommendations): the old `.pb` buttons and every
+screen not on the kit keep their shapes until UI-5; the gallery's picture baseline is committed.
+- Changed (one cause per commit): the missing UI-1 entry below; the shapes as data (logic/ui-theme.js makes each
+  family's clip-path outline, 1 px edge ring and shadow ring; `shape.families` cut/rounded/square, `shape.stepped`;
+  presets `stepped`, and `alpha05` now rounded; tokens.css holds the defaults, the edge and drop-shadow tokens);
+  tools/check-ui-gallery.py; kit v2 (`pb-panel`, `pb-button` with the gold long hexagon, `pb-sheet` floating with two
+  cuts, `pb-toast` a hexagon; new `pb-card`, `pb-tabs`, `pb-stat-bar`, `pb-field`; focus as a gold line round the
+  outline); page side: sheets, the diamond inbox dot, `.pb-sel`, `hr.pb-rule`, `.pb-portrait`; team rows as solid cut
+  cards with angular ten-cell HP and portraits breaking their circle; battle text, menu, move tiles, buttons and
+  plates cut; the dialogue box cut with its portrait breaking the circle and a slanted name tag; diagonal wipes
+  (`m-wipe`, `m-wipe-r`) for `.screen.enter` and sheets; the 40 icons from tools/build-ui-icons.py (the rounded ones
+  redrawn); type glyphs (ui-kit.js table; `typeBadgeHTML` in ui.js, one line, the only ui.js change); the shared bot
+  plate (`limbPipsHTML` in unit-card.js; battle plates and bot rows in steel, the old limb bars and their CSS gone);
+  the gallery's baseline (73 pictures), `npm run check:ui`; `--z-below` for the new layers. Docs: TESTING, ROADMAP,
+  ui-track.md ("UI-2 found"), CHANGELOG.
+- Where the plan was wrong: see ui-track.md "UI-2 found" (few screens were on the kit; no picture tests existed; how
+  clip-path, shadows and blur had to be layered).
+- Verified: fast tier green at every commit (lint, typecheck, check:modules, format:check, check:data; unit tests
+  351 -> 357, new: the shape polygons, tokens.css equal to the generator, the icons equal to their grids, each seen
+  to fail on a planted fault). Picture tests: 73 pictures, two runs match exactly; a 2 px change to the card cut fails
+  all five card pictures. Smoke: green after the page-side commits (280 s); after the last code commit one run had
+  two timeouts (the full-test step and the Studio screenshot, both on 40 s software frame read-backs under load), the
+  re-run straight after was green (205 s). Blurred surfaces: team 6 -> 4 (rows no longer blur); the others as before
+  (walk 6, map 12, ledger 5, profile 4, shop 8, battle 3). Not run: the full quick check and `--selftest`; the
+  graphics bench (needs a phone). I looked at every gallery section in light and dark and the wipes paused mid-way.
+- Lint report at the end (report only): corners 167 raw / 45 token uses, space 1,098 / 219, shadows 195 / 16,
+  keyframes 77 (11 in motion.css), times 278 / 28, fonts 18 / 215, colours 745 in CSS (was 709: the new edge,
+  steel and limb colours) and 571 in game JS (was 561: ui-kit.js), `!important` 207, layers 61 / 8, blurred rules 30,
+  `innerHTML` 57, `style="` 41.
+- Risky: clip-path, drop-shadow filters and masks on many parts can cost frames on phones (the plan's risk): please
+  run the Graphics bench on the team screen and a battle. The battle menu's card no longer scrolls itself (what it
+  holds does, at the same 72vh). Old sheets lost their shadow (the scrim sets them apart). Jersey 15 at 10-12 px on
+  the plates and limb pips: check them on the phone. The picture baseline is this container's Chromium; on another
+  machine fonts may differ (remake it there with --update).
+- Phone check wanted (the plan's "done when"): team (rows, a bot if you have one), a battle (plates, menu, tiles,
+  the wipe into it), a sheet; light and dark.
+- Not done: the Studio's dials for the shapes (UI-3), the run parts (UI-4), every other screen (UI-5).
+- Next: the owner merges and pushes `ui-2-done`; then "start UI-3" (the Studio's UI section) in a new session.
 
 ### Roguelite track RL-4 - Battle state injected - 2026-10-21
 Branch `ccr-e32acdb2-oy1bny`, from main dcde38b (RL-3 merged). Plan approved at the start with the owner's answers:
@@ -124,6 +164,26 @@ roguelite-track.md section 0 but left no entry here; this one is put together fr
 - Verified: not written down by RL-3. RL-4 ran the fast tier on its merge commit dcde38b: lint, typecheck,
   check:modules, format:check, check:data and 331 unit tests, all green.
 - Next: RL-4 (battle state injected) or RL-5 (legacy parking).
+
+### UI track UI-1 - Theme as data, rules as a check - 2026-10-21 (entry written in UI-2)
+The UI-1 session updated ROADMAP, TESTING and ui-track.md but left no entry here; this one is put together from its
+commits (6ae6719..2b03204) and those docs.
+- Changed (one cause per commit): tools/ui-lint.mjs (`npm run lint:ui`, a report of raw values per UI rule and file,
+  with a fixture test); v05's `--disp`/`--body` read `--font-voice`; tokens.css gains `--cut-sm/md/lg`, `--slant`,
+  `--shape-*`, a `--z-*` layer scale on today's values and the colour roles `--c-*`; HP bars read `--c-hp-*`;
+  game/data/uiTheme.json (the Copper Grove palette, teal healthy HP, glass, cut sizes, Jersey 15 + Oxanium; preset
+  `alpha05` is the old look) with schema, types and a contrast check; the fonts in game/fonts with their OFL lines;
+  logic/ui-theme.js makes the sheet and theme-sheet.js writes it as `<style id="ui-theme">`; the UI gallery loads the
+  data and switches presets; smoke logs blurred surfaces per screen (`uiBlurCount`, budget 3).
+- Found: the fonts in use were Pixelify Sans everywhere (style.css's Tiny5/Chakra pair was dead); colour roles were
+  spread over style.css and v05.css (ui-track.md, "UI-1 found").
+- Lint report at the end of UI-1 (re-run at UI-2's start, 3479f01): corners 168 raw / 59 token uses, space 1,093 /
+  214, shadows 189 / 22, keyframes 77 outside motion.css, times 279 / 22, fonts 18 / 215, colours 709 in CSS and 561
+  in game JS, `!important` 205, layers 60, blurred rules 31, `innerHTML` 57, `style="` 39. Blurred surfaces measured
+  on the phone screens: walk 6, map 12, team 6, ledger 5, profile 4, shop 8, battle 3 (budget 3).
+- Verified (from the commit messages): smoke green after the theme commit; unit tests for the sheet; the team, shop,
+  ledger and profile pictures matched for the no-op font commit.
+- Next: UI-2 (kit v2, angular shapes).
 
 ### UI track UI-0 - the plan - 2026-10-21
 Planning only, in a chat session with the owner (the plan, the owner's answers to 36 questions, a Design mockup);

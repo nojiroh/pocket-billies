@@ -12,6 +12,7 @@ those sessions; until then, follow the rule next to them.
 | (a) lint, types | `npm run lint`, `npm run typecheck` | 4 s warm (9 s cold) + 0.6 s | under 10 s | after every edit (the Claude Code hook runs it) |
 | (b) unit tests | `npm test` | about 1 s | under 30 s | after every edit to logic, data or tests (the hook) |
 | before a commit | `npm run check:modules`, `npm run format:check`, `npm run check:data`, `npm run build` | about 15 s | none | every commit |
+| UI pictures (UI-2) | `npm run check:ui` | about 1.5 min | none | after a change to the kit, its CSS, uiTheme.json or studio/gallery.html |
 | (c) smoke | `npm run check:smoke` | about 2.5 min | 1-2 min | before every commit that touches game/, tools/check-quick.py, vite.config.js or tools/to-module.mjs |
 | (d) full | `npm run check:quick` | about 32 min | about 10 min | at the end of a phase, nightly in CI |
 | (e) in-game test | `python3 tools/check-quick.py --selftest` | about 25 min | outside the budget | nightly in CI; at the end of a phase that touched what it plays |
@@ -83,6 +84,16 @@ Two rules hold everywhere:
   on the game's data; `world-graph-set.test.mjs` puts a 3-place world in and the hub back (every table deep-equal, the
   same objects); `saves-real` puts the old world in through `worldSetGraph` for its wild-stock cases and the hub back
   after. A test that swaps the world puts the hub back in `finally`.
+- The map generator (MG-1, MG-2, TR-1; `tools/test/mapgen*.test.mjs`): `mapgen.test.mjs` the MG-1 invariants (format,
+  determinism, a stage's own seed, the hub reaches every exit, nothing grows on paths or in water); `mapgen-golden`
+  a hash per part of five unjoined scenes (`gen` left out), so a change says which part moved: remake it on purpose
+  (`--test-update-snapshots`) and say so; `mapgen-seams` joined pairs (`mapgenEdgeStrip`, `mapgenSeamAgreement`: no
+  height gap over the neighbour band, no step, a straight walk across; terraces at ground level by exits; a node
+  with two parents; the pair laid as one scene); `mapgen-roads` roads measured with the game's own riser rule
+  (`logic/step-grid.js`, moved from walk-view.js so a test sees the road as the game draws it); `mapgen-lots` the
+  hub's buildings. `rng.test.mjs` freezes the default scene's hash, `gen` included: a new dial or version changes it
+  (remade on purpose, said in the commit). The seam rules are `logic/seam-rules.js` (`seam-rules.test.mjs` freezes
+  each fault's words); check-data runs the same module.
 - On the game's data, test what must hold whatever the content (every road has its exits, every gate its trainer),
   not counts a content change legitimately alters. Where the whole shape matters, use a snapshot
   (`t.assert.snapshot`): remake it with `node --test --test-update-snapshots tools/test/<file>` in the commit that
@@ -175,7 +186,8 @@ same phase:
 - **12 Ranch**: a full-test step for the ranch, a quick-check step that edits it, and its save fields in the save
   tests (`saves.test.mjs`, `validSave`).
 - **14 Studio**: `tools/check-studio-github.py` and smoke's "Studio opens" keep passing; `--studio` follows the
-  Studio local mode decision.
+  Studio local mode decision. A new Studio feature adds a step function to its `STEPS` (UI-3), so it can also run
+  alone with `--only=<name>`.
 - **15 Design and story**: write down the balance bounds the simulations will assert (with the owner).
 - **16 Billies**: write the breeding simulation first, against the prototype, before the full build (the owner
   agreed in 13a's plan); agree its bounds. The roster steps (v35, v38, v39/v40) count today's 117 Billies: update
@@ -190,6 +202,24 @@ same phase:
   Smoke's phone step ends with the blurred surfaces on each screen it visits (`uiBlurCount()`, budget 3). The look
   comes from game/data/uiTheme.json (`tools/test/ui-theme.test.mjs`; check-data checks text reads at 4.5:1). A look
   change moves the pictures: remake the baseline on purpose afterwards.
+  UI-2: `npm run check:ui` (tools/check-ui-gallery.py) takes a picture of every `[data-shot]` section of
+  studio/gallery.html at 320 and 390 px, light and dark, plus the shaped parts with the stepped preset (73 pictures),
+  and compares each with the committed baseline in validation/ui-gallery/ (fails above 0.05% of a picture; a 2 px
+  change to a cut is caught). A new kit part or state goes into the gallery as a section with `data-shot`; a look
+  change on purpose is `python3 tools/check-ui-gallery.py --update`, said in the commit. Not in CI: the baseline is
+  this container's Chromium and fonts. `tools/test/ui-theme.test.mjs` also checks the shape polygons (tokens.css's
+  copy equals the generator's) and `tools/test/ui-icons.test.mjs` keeps game/art/ui/*.svg equal to the grids in
+  tools/build-ui-icons.py.
+  UI-3: uiTheme.json is version 2 (every group the Studio's dials edit). `ui-theme.test.mjs` keeps tokens.css's
+  scales (space, text sizes, motion, drop shadows) equal to the data's defaults and the variables a screen override
+  declares again (`UI_DERIVED`) equal to tokens.css and polish.css; `ui-dials.test.mjs` keeps every Studio dial on a
+  place in the schema with the schema's range, and every schema value with a dial. The contrast check (text 4.5:1,
+  danger and primary 3:1; overrides too) is `uiThemeContrast` in logic/ui-theme.js, run by check-data and the
+  Studio's Check. `tools/check-studio-github.py`'s `ui` step drives the Studio's UI look section (a dial previewed and
+  undone, a screen override, a preset, Find, the Check, Hold to compare, the proposal carrying uiTheme.json); run it
+  alone with `python3 tools/check-studio-github.py --only=ui` (about a minute; `--only=` takes any names from its
+  `STEPS`, plus `sections` and `art` for the two blocks before them). A new uiTheme.json group needs its schema,
+  its dials in logic/ui-dials.js and its writer in logic/ui-theme.js together, or the tests fail.
 - **Roguelite track** (docs/phases/roguelite-track.md): RL-5 parked every place but Copperleaf. The fast check
   (`tools/check-fast.py`, CI) and its fixtures start there (`town`, `room` = Hazel's lab, `battle` = Leader Rocco); the
   `route` and `cave` fixtures and checks, the full check's road walks, seams, close-ups and the flight to another town

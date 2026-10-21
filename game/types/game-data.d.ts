@@ -1288,7 +1288,7 @@ export interface Biome {
   from?: string;
 }
 
-/** uiTheme.json: the UI's look (UI track UI-1; the Studio's UI section edits it from UI-3) */
+/** uiTheme.json: the UI's look (UI track UI-1; version 2 in UI-3, for the Studio's UI section) */
 export type UiRole =
   | 'ground'
   | 'surface'
@@ -1302,14 +1302,69 @@ export type UiRole =
   | 'hpOk'
   | 'hpMid'
   | 'hpLow';
+export interface UiSurfaceSide {
+  glass?: number;
+  highlight?: number;
+  edgeHi?: number;
+  edgeLo?: number;
+  shadowTint?: string;
+}
+export interface UiShadows {
+  raisedY?: number;
+  raisedBlur?: number;
+  raisedAlpha?: number;
+  raisedNear?: number;
+  floatY?: number;
+  floatBlur?: number;
+  floatAlpha?: number;
+  floatNear?: number;
+}
+export type UiFamily = 'panel' | 'card' | 'button' | 'action' | 'tab' | 'toast';
+export interface UiFamilyShape {
+  kind?: 'cut' | 'rounded' | 'square';
+  size?: 'cutSm' | 'cutMd' | 'cutLg';
+  corners?: ('tl' | 'tr' | 'br' | 'bl')[];
+  radius?: number;
+}
+export type UiEase = [number, number, number, number];
 export interface UiLook {
+  /** a preset's name in the Studio */
+  name?: string;
   color?: { light?: Partial<Record<UiRole, string>>; dark?: Partial<Record<UiRole, string>> };
-  surface?: { glass?: number; blur?: number; saturate?: number; highlight?: number; shadowTint?: string };
-  shape?: { cutSm?: number; cutMd?: number; cutLg?: number; slant?: number };
-  type?: { voice?: 'Jersey 15' | 'Pixelify Sans'; prose?: 'Oxanium' | 'Chakra Petch'; voiceScale?: number };
+  surface?: { blur?: number; saturate?: number; light?: UiSurfaceSide; dark?: UiSurfaceSide };
+  /** the glass panels' box shadows per side (UI-3) */
+  depth?: { light?: UiShadows; dark?: UiShadows };
+  /** the angular parts' drop shadows (UI-3) */
+  drop?: UiShadows;
+  shape?: {
+    cutSm?: number;
+    cutMd?: number;
+    cutLg?: number;
+    slant?: number;
+    stepped?: boolean;
+    step?: number;
+    families?: Partial<Record<UiFamily, UiFamilyShape>>;
+  };
+  space?: Partial<Record<'s1' | 's2' | 's3' | 's4' | 's5' | 's6' | 's7' | 'gutter', number>>;
+  type?: {
+    voice?: 'Jersey 15' | 'Pixelify Sans';
+    prose?: 'Oxanium' | 'Chakra Petch';
+    voiceScale?: number;
+    scale?: number;
+    lineHeight?: number;
+  };
+  motion?: {
+    fast?: number;
+    base?: number;
+    slow?: number;
+    stagger?: number;
+    easeOut?: UiEase;
+    easeIn?: UiEase;
+    spring?: UiEase;
+  };
 }
 export interface UiTheme {
-  version: 1;
+  version: 2;
   defaults: UiLook;
   presets?: Record<string, UiLook>;
   /** per screen: colour and shape only */
