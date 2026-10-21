@@ -203,6 +203,16 @@ export default [
     languageOptions: { ecmaVersion: 'latest', sourceType: 'module', globals: globals.browser },
     rules: bugRules,
   },
+  // studio track ST-T: the Studio self-test is on no page: studio-test-start.js loads it and hands it what it reads
+  {
+    files: ['studio/js/studio-test.js'],
+    languageOptions: {
+      ecmaVersion: 'latest',
+      sourceType: 'module',
+      globals: { ...globals.browser, PB_VERSION: 'readonly', PB_DATA: 'readonly' },
+    },
+    rules: bugRules,
+  },
   {
     files: ['game/sw.js'],
     languageOptions: {

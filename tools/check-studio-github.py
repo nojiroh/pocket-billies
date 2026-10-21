@@ -19,6 +19,8 @@ Studio track ST-6: the skeleton builder's zoom keys; a species in Part mode (ope
 dragged and nudged (the figure drawn the same), its box grown by an edge, its back draw order, everything undone. The
 wardrobe on the shared pixel canvas: a pencil click paints the item and marks its colour-area mask in one undo step
 (undone and redone together); the Colour area brush paints the mask only; Grow piece; everything undone.
+Studio track ST-T: the Studio self-test runs whole and must pass (no errors, every edit undone, everything put back,
+no token in its report); its times are not judged here.
 
     python3 tools/check-studio-github.py           # the repository as it is (run `npm run data` first)
     python3 tools/check-studio-github.py dist      # the build (`npm run build` first)
@@ -688,6 +690,27 @@ def wardrobe_steps(pg, errs):
     print('wardrobe: a pencil click and its mask one undo step (undone and redone), the Colour area brush, Grow piece, all undone', flush=True)
 
 
+def studio_test_steps(pg, errs):
+    """Studio track ST-T: the Studio self-test (studio/js/studio-test.js) runs whole. It fails on an error, an edit
+    that didn't come back with its undo, data not put back or a token in its report; never on a time, since a headless
+    browser draws in software."""
+    pg.evaluate("window.__stR = null; startStudioTest({ quiet: true, planted: ['ghp_stand-in'] }).then(r => window.__stR = r)")
+    t0 = time.time()
+    while time.time() - t0 < 600 and not pg.evaluate("!!window.__stR"):
+        time.sleep(1)
+    r = pg.evaluate("window.__stR")
+    if not r:
+        errs.append('studio test: no report in 600 s'); return
+    for e in r['errors']: errs.append(f"studio test: {e['where']}: {e['msg']}")
+    if not r['restored']: errs.append('studio test: the data was not put back as it was')
+    for s in r['sections']:
+        if s.get('edit') and s['edit']['back'] is False: errs.append(f"studio test: the edit in {s['id']} did not come back with undo")
+    if r['privacy']: errs.append('studio test: the report holds ' + ', '.join(r['privacy']))
+    if pg.evaluate("studioProbe.on !== null || studioProbe.running"): errs.append('studio test: the probe was left on')
+    edits = sum(1 for s in r['sections'] if s.get('edit'))
+    print(f"studio test: {len(r['sections'])} sections, {edits} edits undone, {len(r['findings'])} findings, {r['seconds']} s", flush=True)
+
+
 def main():
     srv = ThreadingHTTPServer(('127.0.0.1', 0), partial(Quiet, directory=str(ROOT)))
     threading.Thread(target=srv.serve_forever, daemon=True).start()
@@ -765,6 +788,7 @@ def main():
         generate_steps(pg, errs)
         species_part_steps(pg, errs)
         wardrobe_steps(pg, errs)
+        studio_test_steps(pg, errs)
         pg.evaluate("const k = Object.keys(studioState.D.moves)[0]; studioState.D.moves[k].name += ' Test'; studioState.dirty = true; void saveAll()")
         t0 = time.time()
         while time.time() - t0 < 60 and 'pulls' not in posts:

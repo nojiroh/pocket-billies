@@ -489,7 +489,7 @@ const connectionNodeHTML = (n, cls = '') =>
 function connectionMapHTML(left, mid, right, lt, rt) {
   return `<div class="lk-map"><svg class="lk-svg"></svg><div class="lk-col lk-l"><h5>${lt}</h5>${left.length ? left.map(n => connectionNodeHTML(n)).join('') : '<p class="help">Nothing</p>'}</div><div class="lk-col lk-m">${connectionNodeHTML(mid, 'lk-me')}</div><div class="lk-col lk-r"><h5>${rt}</h5>${right.length ? right.map(n => connectionNodeHTML(n)).join('') : '<p class="help">Nothing</p>'}</div></div>`;
 }
-function connectionsHTML() {
+export function connectionsHTML() {
   const cur = connectionsTarget();
   connectionsDrawer.nodes = new Map();
   const keep = L => {
