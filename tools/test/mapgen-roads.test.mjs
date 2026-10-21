@@ -220,3 +220,38 @@ test('a road climbs no faster than the cap, with no jump in the ground, junction
   }
   assert.ok(steep <= 2, `${steep} of 64 roads steeper than 18% somewhere`);
 });
+
+test('a main road that must climb more than the cap allows gets switchbacks', () => {
+  /* the north exit joins a neighbour 8 m up: straight, the 31 m from the hub to an exit can't take the climb */
+  let bent = 0;
+  for (const seed of [2, 3, 4, 5]) {
+    const A = G.mapgenScene(
+      { seed: seed + 100, land: { hills: 0.3 }, road: { exits: [{ side: 'W' }, { side: 'S' }] } },
+      ctx
+    ).scene;
+    A.heights = A.heights.map(r => r.map(v => v + 8));
+    const strip = G.mapgenEdgeStrip(A, 'south', { w: 112, h: 64 });
+    const p = {
+      seed,
+      land: { hills: 0.3 },
+      road: {
+        exits: [
+          { side: 'S', t: 0.5 },
+          { side: 'N', t: strip.t },
+        ],
+        shape: 'straight',
+      },
+      edges: [strip],
+    };
+    const { scene: B, notes } = G.mapgenScene(p, ctx),
+      r = G.mapgenRoadReport(B),
+      where = `seed ${seed}`;
+    if (Math.max(...B.edgeExits.map(e => e.len)) > 34) bent++;
+    assert.ok(r.grade <= 0.2 && r.jump <= 0.25, `${where}: ${JSON.stringify(r)}`);
+    assert.deepEqual(notes, [], where);
+    const ag = G.mapgenSeamAgreement(B, 'north', A, 'south', C);
+    assert.ok(ag && ag.dhNear <= 0.05 && ag.walk === null, `${where}: ${JSON.stringify(ag)}`);
+    assert.deepEqual(G.mapgenUnreachable(B, C), [], where);
+  }
+  assert.ok(bent >= 3, `${bent} of 4 roads wound to climb`);
+});

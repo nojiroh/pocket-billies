@@ -84,6 +84,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   mapgenLattice: [() => mapgenLattice, v => (mapgenLattice = v)],
   // @ts-expect-error -- replaced on purpose
+  mapgenLayRoads: [() => mapgenLayRoads, v => (mapgenLayRoads = v)],
+  // @ts-expect-error -- replaced on purpose
   mapgenLevelLot: [() => mapgenLevelLot, v => (mapgenLevelLot = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenLowerWater: [() => mapgenLowerWater, v => (mapgenLowerWater = v)],
@@ -185,9 +187,13 @@ expose({
   // @ts-expect-error -- replaced on purpose
   mapgenStageWater: [() => mapgenStageWater, v => (mapgenStageWater = v)],
   // @ts-expect-error -- replaced on purpose
+  mapgenSteepStretch: [() => mapgenSteepStretch, v => (mapgenSteepStretch = v)],
+  // @ts-expect-error -- replaced on purpose
   mapgenStepGridOf: [() => mapgenStepGridOf, v => (mapgenStepGridOf = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenStreamLine: [() => mapgenStreamLine, v => (mapgenStreamLine = v)],
+  // @ts-expect-error -- replaced on purpose
+  mapgenSwitchback: [() => mapgenSwitchback, v => (mapgenSwitchback = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenTerraceCount: [() => mapgenTerraceCount, v => (mapgenTerraceCount = v)],
   // @ts-expect-error -- replaced on purpose
@@ -501,7 +507,7 @@ export function mapgenNewWork(P, ctx) {
     /* per cell: 1 road, 2 verge, 4 water, 8 bridge, 16 clear (no trees), 32 tall grass, 64 bank, 128 jetty */
     F: new Uint8Array(w * h),
     /* a branch's join: the main road's sample where it ends */
-    road: /** @type {{ pts: number[][], width: number, main: boolean, join?: number }[]} */ ([]),
+    road: /** @type {{ pts: number[][], base?: number, width: number, main: boolean, join?: number }[]} */ ([]),
     dist: new Float32Array(w * h).fill(1e9) /* to the nearest road's centre line, at cell centres */,
     near: new Int32Array(w * h).fill(-1) /* which road sample is nearest (index into roadPts) */,
     roadPts: /** @type {{ x: number, z: number, r: number, s: number, k: number }[]} */ ([]),
@@ -891,26 +897,51 @@ export function mapgenRoadCurve(G, A, B, shape, rnd, ns) {
   }
   return mapgenResample(pts, 0.5);
 }
-export function mapgenStageRoad(G) {
+/** the roads' centre lines (the main road, then a branch for each exit after the second), the hub's first guess and
+ * the distance field. specs: for each road, its switchbacks (mapgenSwitchback) or nothing; each road keeps its
+ * length before them (R.base) */
+export function mapgenLayRoads(G, specs) {
   const { P, w, h } = G,
     rnd = G.rng('road'),
-    ns = G.salt('road');
-  const E = P.road.exits.map(e => ({ ...e, pt: mapgenExitPoint(w, h, e) }));
-  G.exits = E;
-  const half = P.road.width / 2;
+    ns = G.salt('road'),
+    E = G.exits;
+  G.road = [];
+  G.roadPts = [];
+  G.dist.fill(1e9);
+  G.near.fill(-1);
+  const bent = (k, pts) => {
+    const base = mapgenPolyLength(pts);
+    return { pts: (specs[k] && specs[k].need && mapgenSwitchback(G, pts, specs[k])) || pts, base };
+  };
   if (E.length === 1) {
     /* a dead end: the road runs from the exit to a hub inside */
     const e = E[0],
       nA = MAPGEN_INWARD[e.side],
       deep = (e.side === 'N' || e.side === 'S' ? h : w) * 0.55;
     const end = [mapgenBetween(e.pt[0] + nA[0] * deep, 8, w - 8), mapgenBetween(e.pt[1] + nA[1] * deep, 8, h - 8)];
-    G.road.push({ pts: mapgenRoadCurve(G, e, { pt: end }, P.road.shape, rnd, ns), width: P.road.width, main: true });
+    G.road.push({
+      ...bent(0, mapgenRoadCurve(G, e, { pt: end }, P.road.shape, rnd, ns)),
+      width: P.road.width,
+      main: true,
+    });
   } else {
-    G.road.push({ pts: mapgenRoadCurve(G, E[0], E[1], P.road.shape, rnd, ns), width: P.road.width, main: true });
+    G.road.push({
+      ...bent(0, mapgenRoadCurve(G, E[0], E[1], P.road.shape, rnd, ns)),
+      width: P.road.width,
+      main: true,
+    });
   }
   /* the hub, a first guess (chooseHub settles it once the water is in): half way along the main road, or at its end */
-  const M = G.road[0].pts,
-    hk = E.length === 1 ? M.length - 1 : Math.floor(M.length / 2);
+  const M = G.road[0].pts;
+  let hk = E.length === 1 ? M.length - 1 : Math.floor(M.length / 2);
+  /* TR-1: with switchbacks, where the middle was before the road bent */
+  const sp0 = specs[0];
+  if (E.length > 1 && sp0 && sp0.need && M.length - 1 !== Math.round(G.road[0].base * 2)) {
+    const half = Math.floor(Math.round(G.road[0].base * 2) / 2) / 2,
+      grow = mapgenPolyLength(M) - G.road[0].base,
+      want = half <= sp0.s0 ? half : half + grow;
+    hk = mapgenBetween(Math.round(want * 2), 0, M.length - 1);
+  }
   G.hubK = hk;
   G.hub = [mapgenRound2(M[hk][0]), mapgenRound2(M[hk][1])];
   /* more exits branch off the main road where it passes nearest the end of their straight run in (a gentle
@@ -928,8 +959,11 @@ export function mapgenStageRoad(G) {
         best = i;
       }
     }
-    const pts = mapgenRoadCurve(G, e, { pt: M[best] }, 'straight', rnd, ns + x);
-    G.road.push({ pts, width: Math.max(1.6, P.road.width * 0.85), main: false, join: best });
+    /* TR-1: or where it can climb to the main road (mapgenSteepStretch) */
+    const sp = specs[x - 1];
+    if (sp && sp.join != null) best = mapgenBetween(sp.join, 0, M.length - 1);
+    const b = bent(x - 1, mapgenRoadCurve(G, e, { pt: M[best] }, 'straight', rnd, ns + x));
+    G.road.push({ ...b, width: Math.max(1.6, P.road.width * 0.85), main: false, join: best });
   }
   /* the distance field: every road sample stamps the cells round it */
   let s = 0;
@@ -952,6 +986,211 @@ export function mapgenStageRoad(G) {
         }
       }
   });
+}
+/** TR-1: the stretch of road most in need of switchbacks: where its grade can't keep near the cap (18%) between the
+ * points it must meet (an exit, the hub, a junction), or where keeping to it leaves the road more than 2 m above or
+ * below the land (less is a bank's work). {r, s0, s1, need} (a road, the stretch's ends along it in metres from its start, the length it would
+ * need) or null. Not within an exit's straight run, the hub's level stretch or a junction's last 4 m */
+export function mapgenSteepStretch(G, gr) {
+  const cap = MAPGEN_ROAD_CAP * 2;
+  let best = /** @type {any} */ (null);
+  G.road.forEach((R, r) => {
+    const f0 = gr.first[r],
+      m = R.pts.length,
+      sAt = i => G.roadPts[f0 + i].s - G.roadPts[f0].s,
+      L = sAt(m - 1),
+      lo = 2 * MAPGEN_STRAIGHT_IN,
+      hubS = r === 0 ? sAt(mapgenBetween(G.hubK ?? 0, 0, m - 1)) : -1e9,
+      open = i => {
+        const s = sAt(i);
+        if (s < lo || (L - s < lo && !(r > 0))) return false;
+        if (r > 0 && L - s < 4) return false;
+        return Math.abs(s - hubS) > 6;
+      };
+    /* worst: a climb it can't keep to (scored 1 and up), else the deepest cut or fill over 2 m */
+    let bad = 0,
+      at = -1,
+      stuck = false;
+    for (let i = 1; i < m; i++) {
+      const dev = Math.min(0.99, Math.abs(gr.E[f0 + i] - gr.target[f0 + i]) - 2),
+        jump = Math.abs(gr.E[f0 + i] - gr.E[f0 + i - 1]) - MAPGEN_ROAD_CAP * 1.3,
+        v = jump > 0 ? 1 + jump : dev;
+      if (v > bad) {
+        bad = v;
+        at = i;
+        stuck = jump > 0;
+      }
+    }
+    if (at < 0) return;
+    /* the stretch: where the road can't keep to its points (out to the nearest ones it must meet), or where it
+       leaves the land by more than half a metre round the worst point; within what may bend */
+    const devAt = i => Math.abs(gr.E[f0 + i] - gr.target[f0 + i]);
+    let a = at,
+      b = at;
+    if (stuck) {
+      while (a > 0 && !gr.fixed[f0 + a - 1]) a--;
+      while (b < m - 1 && !gr.fixed[f0 + b + 1]) b++;
+    } else {
+      while (a > 0 && !gr.fixed[f0 + a - 1] && devAt(a - 1) > 0.5) a--;
+      while (b < m - 1 && !gr.fixed[f0 + b + 1] && devAt(b + 1) > 0.5) b++;
+      a = Math.max(0, a - 6);
+      b = Math.min(m - 1, b + 6);
+    }
+    const a0 = a,
+      b0 = b;
+    while (a < b && !open(a)) a++;
+    while (b > a && !open(b)) b--;
+    if (b - a < 16) {
+      /* a branch too short to bend joins the main road where it can climb to it, at a little under the cap */
+      if (r > 0 && stuck) {
+        const f1 = gr.first[0],
+          ex = R.pts[0],
+          e0 = gr.E[f0],
+          M = G.road[0].pts,
+          hubS = G.roadPts[f1 + mapgenBetween(G.hubK ?? 0, 0, M.length - 1)].s;
+        let k = -1,
+          kd = 1e9;
+        for (let i = 2 * MAPGEN_STRAIGHT_IN; i < M.length - 2 * MAPGEN_STRAIGHT_IN; i++) {
+          const d = Math.hypot(M[i][0] - ex[0], M[i][1] - ex[1]);
+          if (Math.abs(G.roadPts[f1 + i].s - hubS) < 6 || d >= kd) continue;
+          if (Math.abs(gr.E[f1 + i] - e0) <= cap * 0.85 * (d - 2)) {
+            k = i;
+            kd = d;
+          }
+        }
+        if (k >= 0 && (!best || bad > best.bad)) best = { r, join: k, bad };
+      }
+      return;
+    }
+    /* the length it needs: all the climbing and dropping the land asks for there, at a little under the cap */
+    let tv = 0;
+    for (let i = a + 1; i <= b; i++) tv += Math.abs(gr.target[f0 + i] - gr.target[f0 + i - 1]);
+    if (stuck) {
+      /* the whole climb between the points it must meet, less what the stretches that may not bend can take */
+      const fa = gr.fixed[f0 + a0 - 1] ? gr.E[f0 + a0 - 1] : gr.target[f0 + a0],
+        fb = gr.fixed[f0 + b0 + 1] ? gr.E[f0 + b0 + 1] : gr.target[f0 + b0],
+        stiff = sAt(b0) - sAt(a0) - (sAt(b) - sAt(a));
+      tv = Math.max(tv, Math.abs(fb - fa) - stiff * cap * 0.85);
+    }
+    const need = tv / (cap * 0.85),
+      len = sAt(b) - sAt(a);
+    if (need <= len * 1.05) return;
+    if (!best || bad > best.bad) best = { r, s0: sAt(a), s1: sAt(b), need, bad };
+  });
+  return (
+    best &&
+    (best.join != null
+      ? { r: best.r, join: best.join, bad: best.bad }
+      : { r: best.r, s0: best.s0, s1: best.s1, need: best.need, bad: best.bad })
+  );
+}
+/** TR-1: switchbacks: the road between s0 and s1 (metres from its start) winds across its line to be about `need`
+ * metres long (room allowing); the turns are smoothed. The new centre line, or null with no room */
+export function mapgenSwitchback(G, pts, sp) {
+  const n = pts.length,
+    s = [0];
+  for (let i = 1; i < n; i++) s.push(s[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+  const a = s.findIndex(v => v >= sp.s0),
+    b = s.findIndex(v => v >= sp.s1);
+  if (a < 4 || b < 0 || b > n - 5 || b - a < 16) return null;
+  const Lb = s[b] - s[a],
+    nrm = pts.map((_, i) => {
+      const p = pts[Math.min(n - 1, i + 4)],
+        q = pts[Math.max(0, i - 4)],
+        l = Math.hypot(p[0] - q[0], p[1] - q[1]) || 1;
+      return [-(p[1] - q[1]) / l, (p[0] - q[0]) / l];
+    });
+  /* the room either side, 6 m from the map's edges */
+  let room = 12;
+  for (let i = a; i <= b; i++)
+    for (const sg of [1, -1]) {
+      const [nx, nz] = nrm[i];
+      let r = 12;
+      if (nx * sg > 0) r = Math.min(r, (G.w - 6 - pts[i][0]) / (nx * sg));
+      if (nx * sg < 0) r = Math.min(r, (6 - pts[i][0]) / (nx * sg));
+      if (nz * sg > 0) r = Math.min(r, (G.h - 6 - pts[i][1]) / (nz * sg));
+      if (nz * sg < 0) r = Math.min(r, (6 - pts[i][1]) / (nz * sg));
+      room = Math.min(room, r);
+    }
+  if (room < 2.5) return null;
+  /* a serpentine: k half waves across the line, legs at least 6.5 m apart (so the rule that keeps stretches near
+     each other at one height leaves them apart and the land between them is a bank), as wide as the length asks */
+  const k = Math.max(1, Math.floor(Lb / 6.5)),
+    lenOf = A => {
+      let L = 0;
+      for (let t = 0; t < 64; t++) {
+        const c = Math.cos((Math.PI * k * (t + 0.5)) / 64);
+        L += Math.hypot(Lb / 64, ((A * Math.PI * k) / Lb) * c * (Lb / 64));
+      }
+      return L;
+    };
+  let lo = 0,
+    hi = room;
+  if (lenOf(hi) <= sp.need) lo = hi;
+  else
+    for (let it = 0; it < 30; it++) {
+      const mid = (lo + hi) / 2;
+      if (lenOf(mid) < sp.need) lo = mid;
+      else hi = mid;
+    }
+  const A = lo;
+  if (A < 1.5) return null;
+  const out = pts.map(p => p.slice());
+  for (let i = a; i <= b; i++) {
+    const off = A * Math.sin((Math.PI * k * (s[i] - s[a])) / Lb);
+    out[i] = [
+      mapgenBetween(pts[i][0] + nrm[i][0] * off, 4, G.w - 4),
+      mapgenBetween(pts[i][1] + nrm[i][1] * off, 4, G.h - 4),
+    ];
+  }
+  let q = mapgenResample(out, 0.5);
+  /* smooth the turns, inside the stretch only */
+  const qs = [0];
+  for (let i = 1; i < q.length; i++) qs.push(qs[i - 1] + Math.hypot(q[i][0] - q[i - 1][0], q[i][1] - q[i - 1][1]));
+  const qa = qs.findIndex(v => v >= sp.s0),
+    qb = qs.findIndex(v => v >= sp.s0 + (qs[qs.length - 1] - s[n - 1]) + Lb);
+  for (let pass = 0; pass < 6; pass++) {
+    const nx = q.map(p => p.slice());
+    for (let i = Math.max(2, qa); i < Math.min(q.length - 2, qb < 0 ? q.length - 2 : qb); i++)
+      nx[i] = [
+        (q[i - 2][0] + q[i - 1][0] * 2 + q[i][0] * 2 + q[i + 1][0] * 2 + q[i + 2][0]) / 8,
+        (q[i - 2][1] + q[i - 1][1] * 2 + q[i][1] * 2 + q[i + 1][1] * 2 + q[i + 2][1]) / 8,
+      ];
+    q = nx;
+  }
+  return mapgenResample(q, 0.5);
+}
+export function mapgenStageRoad(G) {
+  const { P, w, h } = G;
+  G.exits = P.road.exits.map(e => ({ ...e, pt: mapgenExitPoint(w, h, e) }));
+  const half = P.road.width / 2;
+  /* TR-1: a road that can't keep to the cap gets switchbacks where it climbs: one stretch a road, measured before it
+     bends, made longer (and wider, to take in a new steep stretch) each time it still can't, four times at most */
+  let specs = [],
+    best = { specs, bad: 1e9 };
+  for (let tries = 0; ; tries++) {
+    mapgenLayRoads(G, specs);
+    const sp = mapgenSteepStretch(G, mapgenRoadGrades(G));
+    /* the try that left the road least steep is the one kept */
+    const bad = sp ? sp.bad : 0;
+    if (bad < best.bad) best = { specs: specs.map(x => x && { ...x }), bad };
+    if (!sp || tries >= 5) {
+      if (best.specs !== specs && bad > best.bad) mapgenLayRoads(G, (specs = best.specs));
+      break;
+    }
+    const cur = specs[sp.r];
+    if (sp.join != null) specs[sp.r] = { join: sp.join };
+    else if (!cur || !cur.need) specs[sp.r] = { ...cur, s0: sp.s0, s1: sp.s1, need: sp.need };
+    else {
+      /* back to where the stretch lies before the bends: the bent span is longer by what the road grew */
+      const Lb = cur.s1 - cur.s0,
+        grow = mapgenPolyLength(G.road[sp.r].pts) - (G.road[sp.r].base ?? 0),
+        back = u => (u <= cur.s0 ? u : u <= cur.s0 + Lb + grow ? cur.s0 + ((u - cur.s0) * Lb) / (Lb + grow) : u - grow),
+        s0 = Math.min(cur.s0, back(sp.s0)),
+        s1 = Math.max(cur.s1, back(sp.s1));
+      specs[sp.r] = { ...cur, s0, s1, need: Math.max(cur.need * 1.3, s1 - s0 + sp.need - (sp.s1 - sp.s0)) };
+    }
+  }
   /* paint: the surface, then a verge whose edge the softness dial roughens */
   const surf = MAPGEN_SURFACES[P.road.surface],
     verge = G.B.ground.verge,
@@ -1195,7 +1434,7 @@ export function mapgenSimplify(pts, tol) {
 /* the hub: the main road's sample nearest its middle (or its end) with dry ground all round, away from the exits */
 export function mapgenChooseHub(G) {
   const M = G.road[0].pts,
-    want = G.exits.length === 1 ? M.length - 1 : Math.floor(M.length / 2),
+    want = G.exits.length === 1 ? M.length - 1 : (G.hubK ?? Math.floor(M.length / 2)),
     lo = 2 * MAPGEN_STRAIGHT_IN + 6;
   const ok = (k, r, away) => {
     let dry = true;
@@ -2537,6 +2776,10 @@ export function mapgenScene(params, ctx) {
     }
   }
   sc.gen = { v: MAPGEN_VERSION, params: P, seed: P.seed };
+  /* TR-1: a road still steeper than 20% somewhere (switchbacks had no room there) */
+  const rr = mapgenRoadReport(sc);
+  if (rr.grade > 0.2)
+    G.notes.push(`a road climbs ${Math.round(rr.grade * 100)}% near ${rr.at.grade.map(Math.round).join(', ')}`);
   return { scene: sc, notes: G.notes };
 }
 
