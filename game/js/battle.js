@@ -12,6 +12,7 @@ import {
   battleWeatherMultiplier,
   closeModal,
   jingle,
+  limbPipsHTML,
   modal,
   provide,
   render,
@@ -103,7 +104,6 @@ import { addRipple, waterAt } from './walk/water.js';
 import { battle3d, battle3dWanted } from './battle-3d.js';
 /* eslint-disable no-func-assign */
 expose({
-  ROBOT_PART_SHORT: [() => ROBOT_PART_SHORT],
   TICKER_LAST: [() => TICKER_LAST],
   afterEvents: [() => afterEvents, v => (afterEvents = v)],
   afterStageTime: [() => afterStageTime, v => (afterStageTime = v)],
@@ -149,7 +149,6 @@ expose({
   plateElement: [() => plateElement, v => (plateElement = v)],
   platesTick: [() => platesTick, v => ((platesTick = v), provide({ platesTick }))],
   playTurnEvents: [() => playTurnEvents, v => ((playTurnEvents = v), provide({ playTurnEvents }))],
-  robotPartsHTML: [() => robotPartsHTML, v => (robotPartsHTML = v)],
   screenWipe: [() => screenWipe, v => (screenWipe = v)],
   setEndBattle: [() => setEndBattle, v => (setEndBattle = v)],
   setOpenBattle: [() => setOpenBattle, v => (setOpenBattle = v)],
@@ -689,16 +688,6 @@ function effectivenessLabel(mid, tk) {
       ? '<em class="nve">Not very effective</em>'
       : '';
 }
-/* phase 17: a robot's three limbs as small bars (L arm, R arm, legs), a broken one crossed out */
-const ROBOT_PART_SHORT = { armL: 'L', armR: 'R', legs: 'Lg' };
-function robotPartsHTML(bot) {
-  return Object.entries(bot.ph)
-    .map(([q, f]) => {
-      const p = Math.max(0, Math.min(1, f)) * 100;
-      return `<span class="hp-part${f <= 0 ? ' broken' : ''}" title="${ROBOT_SLOT_NAMES[q]}${f <= 0 ? ' (broken)' : ''}"><b>${ROBOT_PART_SHORT[q]}</b><i><u class="${p < 34 ? 'low' : ''}" style="width:${p}%"></u></i></span>`;
-    })
-    .join('');
-}
 /* phase 17: does this move ask which robot part to go for? (an aimed move at a robot with a limb still standing) */
 function needsPart(mid, tk) {
   const M = MOVES[mid],
@@ -1149,7 +1138,9 @@ function paintPlates(s, anim) {
       .join('');
     const pr = e.querySelector('.pl-parts');
     pr.hidden = !x.bot;
-    pr.innerHTML = x.bot ? robotPartsHTML(x.bot) : '';
+    /* UI-2: the shared bot plate: the limb pips, and the plate itself in steel with the panel's cuts */
+    pr.innerHTML = x.bot ? limbPipsHTML(x.bot.ph) : '';
+    e.classList.toggle('bot', !!x.bot);
     const pips = e.querySelector('.pl-pips'),
       party = k === 0 ? saveData.team : k === 1 && activeBattle.kind === 'trainer' ? activeBattle.sides[1].team : null;
     pips.hidden = !party || party.length < 2;

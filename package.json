@@ -20,6 +20,7 @@
     "format:check": "prettier --check \"game/**/*.{js,css,ts}\" \"studio/**/*.{js,css}\" \"tools/test/**/*.mjs\" \"*.js\"",
     "check:fast": "python3 tools/check-fast.py",
     "check:smoke": "python3 tools/check-quick.py --smoke",
+    "check:ui": "python3 tools/check-ui-gallery.py",
     "check:quick": "python3 tools/check-quick.py"
   },
   "devDependencies": {

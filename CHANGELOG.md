@@ -9,6 +9,21 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- The Studio's UI look (UI track UI-3a): Game → UI look edits the menus' look: colours light and dark side by side
+  with a contrast grade on each text colour, the glass, depth and drop shadows, the shapes (each family's cut,
+  corners and radius), space, type and motion, for the whole game or one screen's colours and shapes. Presets (save
+  your own), Hold to compare with the saved look, and the UI gallery as a live preview; an open game tab follows the
+  dials. The Check flags text that reads too faintly. The game looks the same: the look's data now holds every value
+  the dials edit.
+- The look, angular (UI track UI-2): panels, sheets, cards, buttons, tabs and toasts have cut 45° corners with a thin
+  edge line, light on top and dark below; the main action is a long hexagon. The team rows are solid cards, the
+  battle text, the move menu and the dialogue box cut panels, move tiles cut cards. HP bars are angular and
+  segmented. Portraits sit on a circle with the head breaking out of its top. Type pills carry a glyph (flame, drop,
+  leaf...). Bots get a steel plate with pips for each limb, in battle and on the team. The icons are redrawn on the
+  45° grid. Screens and sheets come in with a diagonal wipe (a fade with reduced motion). New parts for the screens to
+  come: cards, tabs, stat bars, text fields, a slanted selection bar, a rule with a diamond. A stepped (pixel) and a
+  rounded look are in the theme data to compare.
+
 - Battles (roguelite track RL-4): a battle still going after 40 turns is called off as a draw (a wild battle as if
   you walked away, a trainer's as a loss). Lullaby's text says 2-4 turns of sleep, as the rule has it. Inside, a
   battle can now run with its own seeded chances and without touching the save (for runs, ghosts and tests); the
