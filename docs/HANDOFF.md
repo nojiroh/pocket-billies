@@ -2,6 +2,37 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Phase 16 side work - every Billie from the part kits - 2026-10-21
+Branch `art/kit-billies` (owner's request in chat: rework the existing Billies with parts from the kit). Plan approved;
+the owner's answers: all 24 (starters too), phase 16's part table with gaps filled by me, kit parts as each stage's
+native parts, per-line recolours plus kit extras. Taken as approved with my recommendations: starters become upright
+bipeds, the gear goes, the hand-drawn art is kept. The preview was shown before the art was written. No tag.
+- Changed (one cause per commit): tools/build-rework-placeholders.py renamed to tools/build-kit-billies.py (and its
+  mentions); the builder now makes every form from tools/art-source/part-kit/builds.json (a part per bone kind with
+  size and colour, extras on brow/ears/crown/chin/back/collar, slot overrides, arm rest angle), with squash and
+  stretch torso frames, a blink found on each front head, and a fit to the 128 px stage box; `parts` on lines
+  (schema, type, check-data: a kit part per slot per stage); the 12 hand-drawn starter sheets, layouts and rigs kept
+  in game/art/next/billionaires/hand (rigs-hand.json) and the studies moved there from art/next/starters (the Studio's
+  silhouette check no longer falls back to them); the 24 sheets, layouts and rigs rebuilt; every line's `parts`;
+  roster.json (sheet, rig, silhouette ticked; `placeholder` dropped). Preview: docs/samples/kit-billies.png.
+- Verified: 410 unit tests; check-data (schema step stubbed: the npm registry was unreachable; the lines validated
+  against line.schema.json with Python's jsonschema; a planted unknown part was reported); smoke 15/15 (323 s);
+  v36 green (12 starter rigs draw, the hurt pose squashes the torso, every piece moves, legs walk, heads flinch, the
+  split at 32); v33 (double and Alpha battles, Billies in the world) and the 3D battle with a trainer fight won.
+  **v34 red**, as on main: on main its walk-cycle probe finds quad, biped and bird still; here only biped (every
+  Billie is a biped now). v36's motion audit shows the legs do walk, so the probe itself looks wrong; not fixed here.
+  NOT run: lint, typecheck, format:check (packages unreachable); the full quick check and `--selftest`.
+- Risky: five finals were shrunk to fit the box (Marsox 0.71, Everyotter 0.80, Harvestgoat 0.74, Kardashleon and
+  Tremendoslug 0.84 of their recipe), so they stand about as tall as their middle stage; a taller box for finals
+  would touch battle and menu placement. The Midnight coat swaps palette ramps, which the kit colours don't use, so
+  it may barely show. Kontourlet's and Gildlet's eyes are too small to find, so they don't blink. Bios and the
+  roster's design lines still mention boosters, boxes, the sweater and the hat (player-facing words left as they
+  are). The 4-legged walk is gone for Musk and Gates; check it reads on the phone.
+- Nothing reads `parts` yet: the Prime check still looks at sizes only; abominations and breeding will compare a
+  Billie's parts with its stage's set.
+- Next: the owner looks at the Billies on the phone (team, a battle, the grass, the Studio's Parts preview); then the
+  bios without gear, and a decision on a taller box for finals.
+
 ### UI track UI-4 - Run parts - 2026-10-21
 Branch `claude/ui-4-run-parts`, from main 167cc96, beside UI-3b (owner's choice). Before it, by the owner's ask, the
 three open PRs were brought up to main and merged: #92 (the dialogue bubble: rewritten as a shape family in UI-3a's

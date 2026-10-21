@@ -3,7 +3,7 @@
 
 A sample only: it draws every form (front and back) into one preview sheet and writes each form's recipe (which
 part in which slot, at what size and colour). Nothing in the game changes. If a look is approved, the recipe becomes
-a real sheet and rig the same way tools/build-rework-placeholders.py builds Trump and Zuckerberg.
+a real sheet and rig the same way tools/build-kit-billies.py builds Trump and Zuckerberg.
 
     python3 tools/sample-kit-starters.py   # -> docs/samples/kit-starters.png and kit-starters.json
 

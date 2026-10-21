@@ -143,7 +143,7 @@ The fish kit has no prototype line yet; it is ready for a fish Billie or abomina
 Style difference: the kits are drawn straight-on, upright and with softer shading; the existing Billie sheets are side-on 3/4 views with harder 4-band shading. Both are allowed in the prototype (decided); pick one before the full build.
 
 ### Placeholder sheets and rigs (built)
-`tools/build-rework-placeholders.py` makes every new Billie's sheet, Gold-Plated sheet and piece layout in `game/art/next/billionaires/` (where the Studio looks for them) and adds its rig to `game/art/next/rigs-next.js`, marked `"placeholder"`. Swift and Kardashian are recolours of the jay and gecko lines on their rigs. Trump and Zuckerberg are put together from the part kits on a biped rig. Replace any of them in the Studio; running the tool again rebuilds them.
+`tools/build-kit-billies.py` makes every new Billie's sheet, Gold-Plated sheet and piece layout in `game/art/next/billionaires/` (where the Studio looks for them) and adds its rig to `game/art/next/rigs-next.js`, marked `"placeholder"`. Swift and Kardashian are recolours of the jay and gecko lines on their rigs. Trump and Zuckerberg are put together from the part kits on a biped rig. Replace any of them in the Studio; running the tool again rebuilds them.
 
 | New Billie | Placeholder | Final art needs |
 |------------|-------------|-----------------|
@@ -196,6 +196,17 @@ The 7-line roster; the weight formula and caps; the Prime bonus; how the split i
 - Starter split: L body → heavy branch, S body → light branch, M body → the player picks.
 - The kits will grow; the slicer and data leave room for more kits.
 - The first column of the beasts kit is a cat.
+
+## Decided (2026-10-21): every Billie from the kits
+- All 24 Billies, starters included, are built from the part kits (the kit style wins: straight-on, upright,
+  softer shading). Recipes live in tools/art-source/part-kit/builds.json, built by tools/build-kit-billies.py; the
+  starters follow the sample's recipes (docs/samples/kit-starters.json), the four new lines the table in section 4.
+- Every rig is a biped (Musk and Gates were quads). Gear is gone with the clothing (boosters, boxes, tractor collar:
+  ASK 1.6 answered by the kit having no such parts).
+- Each line names its stages' native parts (`parts` in game/data/lines/<id>.json: a kit part per slot); this is the
+  fitting set Prime and abominations will compare against. Nothing reads it yet.
+- The hand-drawn starters are kept in game/art/next/billionaires/hand (sheets, layouts, rigs-hand.json) as part of the
+  part library.
 
 **Testing boot (2026-10-18):** for now the game boots straight into starter selection, with saves and accounts switched off. Nothing is removed; see docs/HANDOFF.md for the one switch that turns it off.
 

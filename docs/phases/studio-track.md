@@ -101,7 +101,7 @@ polish tasks. Each session is tagged `st-N-done`.
 - game/js/logic/part-joints.js: `partJoint` (a view at a size), `partSocketsFor`, `partFit` (draw list), `partMirror`,
   `partScaledPixels`; tests in tools/test/part-joints.test.mjs. studio/js/workbench-part.js: the mode.
   pixel-canvas.js: `hostTool` may return `{ move, up }` to follow a drag (`pixelCanvasPointF`).
-- Corrections: the kits' pivot per kind is not where the game joins parts; tools/build-rework-placeholders.py joins a
+- Corrections: the kits' pivot per kind is not where the game joins parts; tools/build-kit-billies.py joins a
   limb by its joint socket, a head by its chin, a tail by its base. So an unmoved pivot is that socket. The kit draws
   arms for the right side and legs for the left (the placeholders mirror arms on the left shoulder, legs on the right
   hip), now `sides`. Write rebuilt every entry from scratch, which would have lost Part mode's work; it keeps it now.
