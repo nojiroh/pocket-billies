@@ -3,9 +3,9 @@
 mansion, a barn, a greenhouse, a ski lodge, a market hall), drawn with the scene-prop kit like the v26 furniture
 (the v26 part of tools/build-scene-props.py). Pictures that already exist are kept.
 
-    python3 tools/build-furniture-v46.py                 # draws what is missing, adds it to props.json and game data
-    python3 tools/build-furniture-v46.py --sheet out.png
-    python3 tools/build-furniture-v46.py piano --force   # redraws one
+    python3 tools/build-furniture.py                 # draws what is missing, adds it to props.json and game data
+    python3 tools/build-furniture.py --sheet out.png
+    python3 tools/build-furniture.py piano --force   # redraws one
 """
 import gamedata  # phase 04b: the data files in game/data
 import os, sys, json, math, random, zlib, importlib.util

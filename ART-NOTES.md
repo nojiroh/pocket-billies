@@ -396,7 +396,7 @@ the metre for props and 32 px to the metre for the ground.
   existing picture (`<name> --force` redraws one; `--sheet` shows them all).
 - **Furniture** for the new rooms: bakery oven, bread rack, bed, bar counter, bank counter, vault door, reading desk,
   school desk, blackboard, wall map, ticket window, departures board, piano, armchair, chest of drawers, glass cabinet,
-  ski rack, potting bench and fire pole (`tools/build-furniture-v46.py`, missing files only). Things that hang on the
+  ski rack, potting bench and fire pole (`tools/build-furniture.py`, missing files only). Things that hang on the
   back wall (vault door, blackboard, map, departures board) are drawn like the clock and the window: picture at the
   top, empty space below.
 - Room layouts for the new kinds are in `tools/build-interiors.py` (it only adds rooms that are missing).
