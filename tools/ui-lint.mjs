@@ -14,7 +14,7 @@ const ROOT = join(import.meta.dirname, '..');
 const COLOUR = /#[0-9a-fA-F]{3,8}\b|\b(?:rgba?|hsla?)\(/g;
 const LENGTH = /(?<![\w.#-])-?\d*\.?\d+(?:px|rem|em)\b/g;
 
-export const RULES = [
+export const UI_LINT_RULES = [
   { id: 'radius', name: 'Corners on the radius tokens', token: /var\(--r-/g },
   { id: 'space', name: 'Space on the --s scale', token: /var\(--(?:s\d|gutter|pad-panel)\b/g },
   { id: 'shadow', name: 'Shadows on the depth tokens', token: /var\(--depth-/g },
@@ -48,7 +48,7 @@ function declarations(css) {
 /** one CSS file's counts: {ruleId: {raw, token}} */
 export function lintCss(text, file = '') {
   const css = stripCss(text);
-  const r = Object.fromEntries(RULES.map(x => [x.id, { raw: 0, token: 0 }]));
+  const r = Object.fromEntries(UI_LINT_RULES.map(x => [x.id, { raw: 0, token: 0 }]));
   for (const { prop, value } of declarations(css)) {
     const v = value.replace(/var\([^()]*(?:\([^()]*\)[^()]*)*\)/g, ' '); // what's left once vars are taken out
     if (/radius$/.test(prop)) r.radius.raw += (v.match(LENGTH) || []).filter(n => parseFloat(n) !== 0).length;
@@ -61,7 +61,7 @@ export function lintCss(text, file = '') {
     r.colour.raw += count(v, COLOUR);
     if (prop === 'z-index' && /-?\d/.test(v)) r.zindex.raw++;
   }
-  for (const x of RULES) if (x.token) r[x.id].token += count(css, x.token);
+  for (const x of UI_LINT_RULES) if (x.token) r[x.id].token += count(css, x.token);
   const frames = count(css, /@keyframes\s/g);
   if (file.endsWith('motion.css')) r.keyframes.token = frames;
   else r.keyframes.raw = frames;
@@ -90,7 +90,7 @@ const walk = (dir, ext) =>
 
 /** the whole game: {ruleId: {raw, token, files: {file: raw}}} */
 export function lintGame(root = ROOT) {
-  const total = Object.fromEntries(RULES.map(x => [x.id, { raw: 0, token: 0, files: {} }]));
+  const total = Object.fromEntries(UI_LINT_RULES.map(x => [x.id, { raw: 0, token: 0, files: {} }]));
   const add = (file, counts) => {
     for (const [id, c] of Object.entries(counts)) {
       total[id].raw += c.raw;
@@ -107,7 +107,7 @@ export function lintGame(root = ROOT) {
 }
 
 export function report(total) {
-  const rows = RULES.map(x => {
+  const rows = UI_LINT_RULES.map(x => {
     const t = total[x.id];
     const worst = Object.entries(t.files)
       .sort((a, b) => b[1] - a[1])
