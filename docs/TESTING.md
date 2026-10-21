@@ -75,6 +75,14 @@ Two rules hold everywhere:
 - The save's run state (RL-3: `meta-state`, `ranch-state`, `run-state` and `saves.test.mjs`): run on the fixture's
   three locations, so a save from a run sits at node 4, past `LOCATIONS`, to prove `migrate` keeps a run's trip by the
   run's map and not by today's places. Switching that branch off turns the run-save test red.
+- The world (RL-5): the game's world is Copperleaf alone; the old one is parked in `game/data/legacy` (its own
+  `legacy/index.json`, read by `readLegacyData()` in `tools/data-files.mjs`, null without one). A test that uses the
+  old places as test data (the bowl's ground and landmarks, scripts said there) reads `oldWorld()`
+  (`tools/test/old-world.mjs`: the game's places, roads, maps and trainers plus the parked ones), so parking or
+  bringing back a place doesn't change it. `world-tables-real.test.mjs` snapshots the tables `worldSetGraph` works out
+  on the game's data; `world-graph-set.test.mjs` puts a 3-place world in and the hub back (every table deep-equal, the
+  same objects); `saves-real` puts the old world in through `worldSetGraph` for its wild-stock cases and the hub back
+  after. A test that swaps the world puts the hub back in `finally`.
 - On the game's data, test what must hold whatever the content (every road has its exits, every gate its trainer),
   not counts a content change legitimately alters. Where the whole shape matters, use a snapshot
   (`t.assert.snapshot`): remake it with `node --test --test-update-snapshots tools/test/<file>` in the commit that
@@ -105,6 +113,8 @@ same phase:
   `selfTestSleep` and frame counts, not fixed real-time deadlines; a deadline is multiplied by `selfTest.slow` (the
   headless runs use 3).
 - A removed system loses its step in the same commit as the system.
+- The Road phase was removed in RL-5 (the hub has no road); it comes back on a run's roads in RL-7. The Room phase
+  walks into Hazel's lab; the night, Billies-in-the-world and Stress phases run on the hub's map.
 - The test never writes the save: it pauses saving (`pauseSaving`/`resumeSaving`, game-state.js) and puts the save
   back. Don't call `writeStoredSave` or the account directly from a step.
 - `--selftest` (headless) must pass at the end of the phase. A step that only runs out of time there is a note; a real
@@ -180,6 +190,13 @@ same phase:
   Smoke's phone step ends with the blurred surfaces on each screen it visits (`uiBlurCount()`, budget 3). The look
   comes from game/data/uiTheme.json (`tools/test/ui-theme.test.mjs`; check-data checks text reads at 4.5:1). A look
   change moves the pictures: remake the baseline on purpose afterwards.
+- **Roguelite track** (docs/phases/roguelite-track.md): RL-5 parked every place but Copperleaf. The fast check
+  (`tools/check-fast.py`, CI) and its fixtures start there (`town`, `room` = Hazel's lab, `battle` = Leader Rocco); the
+  `route` and `cave` fixtures and checks, the full check's road walks, seams, close-ups and the flight to another town
+  were retired with their places and come back on a run's world in RL-7 and RL-8 (each change is marked RL-5 in
+  tools/check-quick.py). Smoke's shop steps open `CHECK_SHOP`, a shop the check makes for itself (the game has none
+  now). check-data checks `game/data/legacy` only for being readable: every listed file is there, nothing unlisted,
+  maps and trainers against their schemas; the Unused report counts props the parked maps place as used.
 - **18 Trading and battles with friends**: every new Firestore rule gets emulator tests in `firebase/test/`;
   trade validation is logic with unit tests.
 

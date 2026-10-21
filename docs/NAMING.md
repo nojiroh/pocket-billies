@@ -16,6 +16,7 @@ Lint enforces what it can (see the end). Every old -> new name of phase 05 is in
 | The renderer's 3D scene, a cutscene or story scene | `scene` | the only meanings `scene` keeps |
 | A named place on the world map | `location` (data section `locations`, `LOCATIONS`, `LOCATION_BY_ID`, a map's `locationId`) | was place, stop, route.json; never a bare top-level `location` (that is window.location) |
 | A location's position in LOCATIONS | `node` | saves (`saveData.trip.node`) and trainers refer to locations by node (roads by map since phase 08b) |
+| Putting a world's places and roads in | `worldSetGraph(locations, roads)` (game-data.js) | RL-5: fills `LOCATIONS`, `ROADS`, `ROADS_BY_NODE`, `LOCATION_BY_ID` in place, attaches trainers and boards; the game calls it with the hub's, RL-7 with a run's |
 | A link between two locations | `road` (data section `roads`, `ROADS`, ids `road:<a>-<b>`); its kind `seam` (edges meet at the exits) or `lift` (the glass lift, ids `lift:<a>-<b>`) | was link, LINKS; NOT route (see below). roads.json: `{id, name, kind, a: {map, exit}, b: {map, exit}}`, read through `PB_DATA.road` (Studio, tools) and `ROADS` (game) |
 | A building's way into its room | `door` (`doorOf(p)`: the door point, the way out, the front's middle; `doorLinkOf(p, act, map)`: the same link shape as a road, `{kind: 'door', a: {map, exit}, b: {map: room, exit: 0}}`) | the room is the prop's `room`, else its kind's `room` in scenery.json, else the one for what it does (`PB_DATA.doorRooms`, `ROOM_BY_USE`) |
 | A route-kind location and its "Route N" label | `route` (kind `route`, a road's `name`) | kept: players read "Route 2" as the area |
@@ -42,6 +43,8 @@ Lint enforces what it can (see the end). Every old -> new name of phase 05 is in
 | The debug log | `debugLog` (debug-log.js) | was NWLOG, log.js |
 | Lore: a location's history, landmark and legend | `lore.locations`; an unlock `location:<id>` | was lore.places, `place:<id>` |
 | Customizable home | `ranch` | phase 12 |
+| The old world outside the hub | `legacy` (folder `game/data/legacy`, its own `legacy/index.json`; `readLegacyData()`, `oldWorld()` in tests; the Studio's `legacyView`) | RL-5: kept for the Studio, never loaded by the game |
+| A leader who stands on no stop | `miniboss` (a trainer's `miniboss: true`, no `node`) | RL-5: the eight badge leaders; RL-13 makes them the runs' mini-boss pool. A `tutorial` trainer stands nowhere too |
 | Robot pieces | `part` (torso, leftArm, rightArm, legs), `gem` | phase 17 |
 | Hidden organization | `organization` | final name in phase 15 |
 
