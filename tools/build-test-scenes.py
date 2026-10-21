@@ -301,6 +301,29 @@ def t_life():
 
 
 
+# ---------------------------------------------------------------- the battle stage
+def t_battle():
+    """A battle happens where you stand, so the battle stage needs a place of its own to be checked on: a small, flat
+    clearing with the hub in the middle and room round it for both sides, tall grass beside it, and round the edge
+    the kinds of thing the stage has to draw: 3D trees and bushes, two 3D cottages behind the foe's side, flat
+    pictures (flowers, a signpost), rocks, a lamp, and a tree close to the hub that the stage hides as standing in the
+    way. The Studio's Battle preview starts here."""
+    s = base('test_battle', 'Test: battle', 30, 24, 'g', 920)
+    hub(s, 15, 12)
+    s.grass(6.5, 12, 3.5, 3)                                           # tall grass to the west
+    for x, z, k in ((3, 3, 'tree_oak'), (9, 2.5, 'tree_beech'), (21, 2.5, 'tree_birch'), (27, 3.5, 'tree_oak_small'),
+                    (2.5, 20.5, 'tree_chestnut'), (27.5, 20.5, 'tree_maple'), (2, 9, 'bush_round'), (28, 9, 'bush_holly'),
+                    (28, 15, 'bush_berry'), (24, 6, 'rocks'), (6, 18, 'rocks_mossy'), (18.5, 15.5, 'tree_blossom')):
+        s.put(k, x, z)
+    s.put('cottage_moss', 10, 21.5); s.put('cottage_solar', 20, 21.5)  # behind the foe's side
+    s.put('lantern', 15, 19); s.put('signpost', 11.5, 8); s.put('bench_wood', 19, 8)
+    s.scatter(['@flowers'], 10, (1, 0.5, 29, 5), gap=.6)              # flowers along the front edge (pictures)
+    s.rolling(.05, 8)
+    check(s, (15, 12), (6.5, 12), True, 'into the tall grass')
+    shot(s, 15, 12, 'stage'); shot(s, 15, 12, 'stage-turned', 1.2)
+    return s.out(8)
+
+
 # ---------------------------------------------------------------- v44: the light lab (tools/check-quick.py measures these)
 def t_light_terrain():
     """a ridge running north-south (its west slope faces the afternoon sun), rolling ground, a tall block and a wall for
@@ -431,7 +454,7 @@ def t_graphics():
     return s.out(8)
 
 
-BUILD = [t_stairs, t_ledges, t_bridges, t_water, t_shadows, t_props, t_slopes, t_hilltown, t_camera, t_night, t_forest, t_tiny, t_huge, t_life, t_light_terrain, t_light_room, t_light_props, t_light_air, t_graphics]
+BUILD = [t_stairs, t_ledges, t_bridges, t_water, t_shadows, t_props, t_slopes, t_hilltown, t_camera, t_night, t_forest, t_tiny, t_huge, t_life, t_light_terrain, t_light_room, t_light_props, t_light_air, t_graphics, t_battle]
 
 
 def main():
