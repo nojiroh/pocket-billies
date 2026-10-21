@@ -1,5 +1,5 @@
 {
- "keys": ["lines","roster","locations","roads","maps","trainers","story","shops","jobs","regions"],
+ "keys": ["lines","roster","locations","roads","maps","trainers","story","shops","jobs","regions","lore"],
  "split": {
   "lines": {
    "array": true,
