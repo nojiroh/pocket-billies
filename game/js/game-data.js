@@ -278,7 +278,8 @@ export function roadMetres(a, b, j) {
 /* the walking network: links between stops (both directions), with their length in metres. roads.json is a list of
    typed links, {id, name, kind: 'seam', a: {map, exit}, b: {map, exit}}, each end naming a place by its map (phase 08b;
    the Studio and the tools read it through data-files.js PB_DATA.road). Here each becomes [a node, b node, metres,
-   {a: exit, b: exit, id, from, to, name}], the form the game reads. Without roads the locations make one chain */
+   {a: exit, b: exit, id, from, to, name}], the form the game reads. A world without roads has none (RL-5: the
+   places once made one chain without them) */
 export const roadEndNode = (/** @type {string} */ m) => LOCATIONS.findIndex(r => r.mapId === m || r.id === m);
 /** @type {Road[]} */
 export const ROADS = [];
@@ -388,34 +389,27 @@ export function worldSetGraph(locations, roads) {
     /* a place put in again keeps no Boardroom from before (the copies by id below are made without one) */
     delete (/** @type {{ board?: string | null }} */ (r).board);
   });
-  const roadList = (
-    roads && roads.length
-      ? roads
-          .filter(l => (l.kind || 'seam') === 'seam')
-          .map(l => {
-            const a = roadEndNode(l.a && l.a.map),
-              b = roadEndNode(l.b && l.b.map);
-            return /** @type {Road} */ ([
-              a,
-              b,
-              0,
-              {
-                a: l.a.exit,
-                b: l.b.exit,
-                id: l.id,
-                from: LOCATIONS[a] && LOCATIONS[a].id,
-                to: LOCATIONS[b] && LOCATIONS[b].id,
-                name: l.name,
-              },
-            ]);
-          })
-      : LOCATIONS.slice(1).map((r, i) => /** @type {Road} */ ([i, i + 1, 0]))
-  )
+  const roadList = (roads || [])
+    .filter(l => (l.kind || 'seam') === 'seam')
+    .map(l => {
+      const a = roadEndNode(l.a && l.a.map),
+        b = roadEndNode(l.b && l.b.map);
+      return /** @type {Road} */ ([
+        a,
+        b,
+        0,
+        {
+          a: l.a.exit,
+          b: l.b.exit,
+          id: l.id,
+          from: LOCATIONS[a] && LOCATIONS[a].id,
+          to: LOCATIONS[b] && LOCATIONS[b].id,
+          name: l.name,
+        },
+      ]);
+    })
     .filter(l => LOCATIONS[l[0]] && LOCATIONS[l[1]] && l[0] !== l[1])
-    .map(
-      /** @returns {Road} */ ([a, b, , j]) =>
-        j && typeof j === 'object' ? [a, b, roadMetres(a, b, j), j] : [a, b, roadMetres(a, b, null)]
-    );
+    .map(/** @returns {Road} */ ([a, b, , j]) => [a, b, roadMetres(a, b, j), j]);
   ROADS.splice(0, ROADS.length, ...roadList);
   for (const k of Object.keys(LOCATION_BY_ID)) delete LOCATION_BY_ID[k];
   LOCATIONS.forEach((r, i) => (LOCATION_BY_ID[r.id || r.mapId] = Object.assign({ node: i }, r)));

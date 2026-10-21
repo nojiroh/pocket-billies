@@ -135,3 +135,13 @@ test('RL-5: a mini-boss stands on no place, like a tutorial trainer', () => {
     'and back'
   );
 });
+
+test('RL-5: a world without roads has none (no chain made up in the places’ order)', () => {
+  try {
+    data.worldSetGraph(FIXTURE.locations, []);
+    assert.deepEqual([data.ROADS.length, data.ROADS_BY_NODE.flat().length, data.roadCost(0, 1)], [0, 0, null]);
+  } finally {
+    data.worldSetGraph(FIXTURE.locations, FIXTURE.roads);
+  }
+  assert.equal(data.roadCost(0, 1), 100);
+});

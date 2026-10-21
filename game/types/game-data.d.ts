@@ -68,7 +68,7 @@ export interface GameData {
   scenery: Scenery;
   /** every walkable map: towns, routes, rooms (int_*) and test maps (test_*) */
   maps: Record<DataId, MapData>;
-  /** without roads the locations make one chain, in order (game-data.js) */
+  /** the walking network between the locations; a world without roads has none (RL-5: no chain made up) */
   roads?: RoadLink[];
   engine: Engine;
   wardrobe: Wardrobe;
