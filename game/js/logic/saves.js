@@ -30,6 +30,8 @@ expose({
   SAVE_OLD_MSG: [() => SAVE_OLD_MSG],
   SAVE_VERSION: [() => SAVE_VERSION],
   // @ts-expect-error -- replaced on purpose
+  billiesOk: [() => billiesOk, v => (billiesOk = v)],
+  // @ts-expect-error -- replaced on purpose
   loadSave: [() => loadSave, v => (loadSave = v)],
   // @ts-expect-error -- replaced on purpose
   migrate: [() => migrate, v => (migrate = v)],
@@ -180,25 +182,7 @@ export function validSave(o) {
     o.box.length > 5000
   )
     return false;
-  const ids = new Set();
-  for (const m of o.team.concat(o.box)) {
-    if (
-      !m ||
-      !speciesOf(m) ||
-      typeof m.uid !== 'string' ||
-      ids.has(m.uid) ||
-      !num(m.lvl, 1, 100) ||
-      !Number.isInteger(m.lvl) ||
-      !num(m.hp, 0, 9999) ||
-      !num(m.xp, 0, 1e12) ||
-      !Array.isArray(m.moves) ||
-      !m.moves.length ||
-      m.moves.length > 4 ||
-      m.moves.some(k => !MOVES[k])
-    )
-      return false;
-    ids.add(m.uid);
-  }
+  if (!billiesOk(o.team.concat(o.box))) return false;
   if (!o.trip || !Number.isInteger(o.trip.node) || !num(o.trip.node, 0, LOCATIONS.length - 1) || !num(o.se, 0, 1e12))
     return false;
   if (!Array.isArray(o.eggs) || o.eggs.some(e => !e || !num(e.prog, 0, 1e12))) return false;
@@ -212,12 +196,6 @@ export function validSave(o) {
       o.parts.some(p => !p || typeof p.uid !== 'string' || typeof p.id !== 'string' || !num(p.up || 0, 0, 99)))
   )
     return false;
-  for (const m of o.team.concat(o.box))
-    if (
-      m.kind === 'robot' &&
-      (!m.partDmg || typeof m.partDmg !== 'object' || Object.values(m.partDmg).some(n => !num(n, 0, 1e6)))
-    )
-      return false;
   const record = v => v && typeof v === 'object' && !Array.isArray(v) && !Object.hasOwn(v, '__proto__');
   if (
     !record(o.wild) ||
@@ -242,7 +220,37 @@ export function validSave(o) {
   )
     return false;
   if (!num(o.serial, 0, 1e12)) return false;
-  for (const m of o.team.concat(o.box))
+  return true;
+}
+/** a list of Billies a save holds: each one well formed, no uid twice */
+export function billiesOk(list) {
+  const num = (v, min, max) => Number.isFinite(v) && v >= min && v <= max;
+  const ids = new Set();
+  for (const m of list) {
+    if (
+      !m ||
+      !speciesOf(m) ||
+      typeof m.uid !== 'string' ||
+      ids.has(m.uid) ||
+      !num(m.lvl, 1, 100) ||
+      !Number.isInteger(m.lvl) ||
+      !num(m.hp, 0, 9999) ||
+      !num(m.xp, 0, 1e12) ||
+      !Array.isArray(m.moves) ||
+      !m.moves.length ||
+      m.moves.length > 4 ||
+      m.moves.some(k => !MOVES[k])
+    )
+      return false;
+    ids.add(m.uid);
+  }
+  for (const m of list)
+    if (
+      m.kind === 'robot' &&
+      (!m.partDmg || typeof m.partDmg !== 'object' || Object.values(m.partDmg).some(n => !num(n, 0, 1e6)))
+    )
+      return false;
+  for (const m of list)
     if (typeof (m.nick || '') !== 'string' || (m.status != null && !STATUS_NAMES[m.status])) return false;
   return true;
 }
