@@ -2,6 +2,30 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Roguelite track RL-1 - Hardening - 2026-10-21
+Branch `claude/rl-1-start-enwmnf`. Every tier could run this time: `npm ci` works, and Playwright works once the pinned
+`pip install -r tools/requirements-check.txt` (1.56.0) is used (the newest one wants a browser the container lacks).
+- Changed (one cause per commit): PR #78's leftovers (`npm run modules`, prettier); the world map's `mthing` shader puts
+  aCol on the standard location 2 (was 7: the full test's shader check, the smoke check's one red step, from phase 10);
+  the set-aside fix (writer and reader moved to game-state.js in a move-only commit, then one writer and one shape
+  `{json, from, at}`; Settings > Save now shows an older or newer save it can't load, with Download only); the Studio
+  sign-in links a fine-grained single-repo token (SECURITY A) and Remember me starts unticked (B); eslint.config.js
+  header and SECURITY.md brought up to date; `rng-baseline.test.mjs` + a TESTING.md paragraph on where randomness
+  comes from; roguelite-track.md section 0 corrected.
+- Not done, waiting for the owner: deleting the 16 version-stamped tools. The plan was wrong: most are live
+  (`build-scene-props.py` execs the 5 `scene_props_v*.py`, `build-props-a04.py` imports `build-buildings-v46.py`,
+  `build-terrain-v47.py` is the ground generator). Only `build-regions-v47.py` and `build-loader-v47.py` are clean
+  one-offs; `build-places-v46.py` (+ `build-v28.py`, which it imports) was kept on purpose in MG-1.
+- Verified: 290 unit tests (2 new files; the set-aside test fails on the old code), lint, typecheck, check:modules,
+  format:check, check:data; smoke 15/15 after the shader fix. `check-studio-github.py`: sign-in and all 24 sections
+  pass, then it times out clicking the story preview checkbox; the same at the base commit c2d51d6 (a real mouse click
+  never completes while the preview draws with software GL here; a script click works). Not in CI.
+- Risky: the full quick check (47 min) has 10 red steps of 54: the v31 fountain, v34 walk cycles, v35/v38/v39 roster
+  counts (117 wanted, 24 now), v43/alpha 0.4 empty bush voxel recipes, v44 props scene, v46 buildings without a plan,
+  phase 08 running speeds. They look like checks for content the scope reset removed or changed, not RL-1 changes;
+  a base-commit run is the comparison (see the next entry or the PR).
+- Next: the owner answers the tools question and pushes `rl-1-done` (and the old tags); then "start RL-2".
+
 ### Roguelite track RL-0 - the plan - 2026-10-20
 Planning only (the owner's brief, in Plan Mode); approved by the owner; nothing built. Branch `claude/new-session-qv8ou7`.
 - Changed (docs only, one cause per commit): docs/phases/roguelite-track.md (the plan: findings, the old phases'
