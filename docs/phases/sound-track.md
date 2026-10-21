@@ -1,0 +1,192 @@
+# Sound track (SND) - a Pokémon-style soundtrack, cries, and a Studio section for them
+
+A track of its own, like the Studio, UI and Terrain tracks (owner's question and the research answer, 2026-10-21;
+planned in a chat session, not yet started in the repo). It fixes the sound settings, splits the tracker out of the
+game so the Studio can play it, moves the songs into data, and then reworks the music and the sound effects toward
+the Game Boy Pokémon sound: written hooks over a generated backing, four voices, the I-bVII progression, battle
+intros timed to the throw, and a cry per species. Each session is tagged `snd-N-done`.
+
+## Where it fits in the roguelite track
+- SND-1 to SND-3 can run now, beside RL-8. They touch `sound.js`, `settings-screen.js`, the data loader and the
+  Studio; nothing in the run's logic or in `ui.js`. SND-3 adds a Studio section the way UI-3a did.
+- SND-4 to SND-6 wait for the owner's play test of RL-8, like every RL session after it: the run's beats they score
+  (the mast, the payout, a mini-boss, a relic pick, a day passing) exist only from RL-8 and RL-12 on.
+- The run's "where it plays" table (SND-2) keys on `nodeTypes.json` (landing, route, town, miniboss, boss), the
+  biome and the row, so RL-13's leaders and RL-14's bots get a song by adding a row, not code.
+
+## What the code does today (read at main 1d35666, 2026-10-21; verify)
+Everything is synthesized in `game/js/sound.js` (2,013 lines) with the Web Audio API; there are no sound files.
+
+- **The mix.** master (0.9, squared volume) → compressor; buses music (through a low-pass that closes in rain and a
+  soft delay), effects, world (placed water, fire, rain, wind, animals) and ambience (birds, crickets, a town's
+  murmur, a clock). Volumes live in `saveData.preferences` (music 0.55, sfx 0.8, world 0.5, amb 0.5, master 1, mute).
+- **The instruments.** `synthVoice` (pulse 12.5/25/50 % from periodic waves, square, triangle, sine; ADSR, slide,
+  vibrato, low-pass, send to the delay), `synthNoise` (one noise buffer through hp/lp/bp filters), `synthKick`.
+  That is already a Game Boy palette plus sine.
+- **The songs.** 21 recipes in `SONGS` (`sound.js:284`): bpm, key, scale (major, minor, dorian, lydian, mixo), an
+  eight-chord progression, lead wave, bass pattern (bounce, gallop, long, walk, drive), arp pattern (up, updown,
+  drip, chord7), drum pattern (soft, skip, drive, march, bossa, none), seed, swing, echo. `composeSong`
+  (`sound.js:547`) makes the lead by a seeded random walk over the chord tones: bars 1-4 a phrase, 5-6 repeat its
+  start, 7-8 a cadence on the home note. `musicTick` plays it 25 ms at a time with a 140 ms lookahead. Every song is
+  the same shape: 8 bars of 16 steps, one lead, a bass, an arp, drums, and a sine pad at night. `chord7` stacks four
+  sines, so a song can run seven voices at once.
+- **Which song.** `musicFor` (`sound.js:808`): hazel before the game starts, wild/trainer/rival in battle, map on
+  the map tab, cave or mall indoors, else a location's `music` field, else city, town or route. Only Copperleaf
+  sets `music` in `locations.json`; a run's places set none, so a run plays route, town or cave. The seven biome
+  songs (innersun, meadow, hills, spore, crystal, trench, spire) are legacy-only and unreachable.
+- **Jingles** (`JINGLES`: victory, levelup, evolve, caught, hatch) play on the effects bus and duck the song to
+  0.15 for their length. **Cries** hash the species name into one of four waves and a pitch (`sound.js:1053`).
+  **Footsteps** by terrain every 0.33 m on a 50 ms poller. **One tick** on every button.
+- **Settings → Sound** (`settings-screen.js:425`): a mute switch, five sliders with a Test button each.
+- **The Studio** loads no sound code. `sound.js` imports walk-view, environment, battle-stage and game-state, so it
+  cannot be loaded there as it is. The Studio edits data sections listed in `game/data/index.json` with schemas
+  under `game/data/schema/` (`tools/check-data.mjs`), in groups (`studio-app.js:505`).
+- **Tests.** No unit test touches sound. The quick check only asserts that at least nine world beds started.
+
+### Bugs found (SND-1 fixes them)
+1. The Music **Test** button plays the level-up jingle, which plays on the effects bus: with music up and effects
+   at 0 it is silent (`sound.js:849`). By the same routing, music at 0 still plays every victory tune.
+2. The master **Test** button plays nothing: `testVolume` has no master branch (`sound.js:1924`).
+3. Master and Ambience do not apply while dragging; the live listener covers music, sfx and world only
+   (`sound.js:1165`).
+4. `i18n.js` translates Music, Sound effects and World sounds, not Volume, Ambience, Test, the mute row or the hints.
+5. (Claim, check on the phone.) The unlock handler resumes the context only from `suspended` (`sound.js:165`); after
+   a call or Siri, Safari reports `interrupted`, and `music()` refuses to start while the state is not `running`.
+
+## The research, in short (sources in the chat answer of 2026-10-21)
+- Red and Blue were written by one person on the Game Boy's four voices: two pulse, one wave, one noise. Pallet Town
+  is two voices, a melody and a countermelody; the adventure tracks use all four, with noise as a marching snare.
+- The series' signature progression is I-bVII-I (a major key with the flattened seventh: mixolydian). Battle themes
+  open with chromatic runs; counterpoint implies the harmony the hardware cannot play.
+- Battle music was timed to the throw: a falling sound before the battle, the song held until the ball flies.
+- Early routes are simple and welcoming, late routes triumphant; towns reuse route motifs (leitmotifs); night
+  versions are slower and lower. Black and White swapped the low-HP beep for a tense variant of the battle song.
+- Gen 1 built 151 cries from about 37 base cries, each species a base plus a pitch and a length setting.
+
+## Sessions
+| # | Session | Goal | Depends on | Sessions | Verified by |
+| --- | --- | --- | --- | --- | --- |
+| SND-1 | Settings and routing | the five bugs above, jingles on the music bus, preferences that survive a deleted save, a one-tap mute | none | 1 | unit test for `musicFor`; a quick-check step for the Sound tab; phone |
+| SND-2 | The tracker as data | `game/js/audio/tracker.js` with no game imports; `music.json` + schema (songs, jingles, cries, where); a song fingerprint baseline | SND-1 | 1-2 | fingerprints unchanged; check-data; modules check |
+| SND-3 | The Studio's Music & sound section | play and loop any song, the recipe's dials, a piano roll for the hook, the where table, a cry card on Billies, check warnings | SND-2 | 1-2 | Studio self-test; quick check; the owner plays it |
+| SND-4 | The Pokémon rework: themes | four voices, written hooks and countermelodies, the title motif as a leitmotif, Copperleaf as two voices, night variants | SND-3, RL-8 played | 1-2 | fingerprints updated on purpose; the owner listens on the phone |
+| SND-5 | Battle and run music | intros timed to the throw, wild/trainer/leader/boss/rival/ghost, biome × row variants, the deadline variant, the red zone | SND-4, RL-8 | 1-2 | battle fixture; run fixture; phone |
+| SND-6 | Sound effects and jingles | a cry per species with a low-HP cry, four UI sounds, jingles for the run's beats, a mix pass | SND-4, RL-12 for relics | 1 | battle golden record untouched; phone |
+
+Budget: SND-1 to SND-3 are three to five sessions before the play test; SND-4 to SND-6 three to five after. Tiers
+and time budgets follow docs/phases/13: lint, type-check and unit tests after each change, the smoke subset after
+each commit, the full quick check at the end of a session.
+
+## SND-1: settings and routing
+One cause per commit, in this order:
+1. `testVolume('master')` plays a short chord on the master bus (the sfx coin through the music's echo is enough).
+2. The live-apply listener covers master and amb too; the number next to the slider stays as it is.
+3. Jingles get their own gain into the music bus (`soundEngine.jin`), scaled by the music volume, and the Music Test
+   button plays through it. **Ask me before:** whether jingles follow Music, Sound effects, or get a sixth slider
+   (recommendation: Music, no new slider; the hint already says "tunes for each place and battle").
+4. `unlockSound` and the visibility handler resume from any state but `running`; the debug log's `audio` line adds
+   the five volumes and the mute flag (no names, no save data).
+5. Audio preferences (the five volumes, mute) move out of the save into the device's own storage
+   (`localStorage['pb-sound']`), read by `volumePreference`; theme and motion stay where they are (UI track's call).
+   `newSaveKeepingPreferences` and `migrate` stop carrying them. **Ask me before:** whether to move them at all.
+6. Translations for the Sound tab's strings.
+7. A one-tap mute on the pause sheet (the same switch, no new preference).
+8. Tests: `tools/test/sound.test.mjs` for `musicFor` through the hooks seams (hub, each run node type, indoor, each
+   battle kind) and for `volumePreference`; the quick check's settings step presses each Test button and checks that
+   the right bus's gain moved (`soundEngine.*.gain.value`), not that the page heard anything.
+
+## SND-2: the tracker as data
+Two halves, the first all renames and moves (no-op commits), the second new data with the old values in it.
+
+1. **The split.** `game/js/audio/tracker.js`: the instruments, `composeSong`, the playback tick, the delay and the
+   waves, taking an `AudioContext` and a destination at `create(ctx, bus)`; no import outside `util.js`. `sound.js`
+   keeps the mix, `musicFor`, the footsteps, the battle sounds, the world and ambience beds. `logic/` is not the
+   place (NAMING.md: nothing that plays sound), hence `audio/`. `npm run modules` after each move; check:modules.
+2. **A fingerprint baseline.** Before the first move, a Playwright step renders 8 bars of every song and every
+   jingle through an `OfflineAudioContext` (the same sample rate every run) and writes the RMS of each 50 ms window
+   to `validation/sound-baseline/<song>.json`. Each later commit in the session compares against it with a small
+   tolerance. A refactor that changes a fingerprint is a bug; SND-4 and SND-5 regenerate it on purpose, like the
+   picture baseline.
+3. **`music.json`** (listed in `index.json`, `music.schema.json`): `songs` (today's recipe fields, plus optional
+   `hook` and `counter` as note lists of `[step, midi, length]`, an optional `intro` of bars, `night` overrides),
+   `jingles` (note lists, bpm, wave), `cries` (`bases`: the base recipes; a species names `base`, `pitch` and
+   `length` in `roster.json`, like Gen 1), and `where`: an ordered list of rules `{battle, nodeType, biome, row,
+   indoor, tab, song}`, first match wins, with today's choices written out so nothing changes.
+4. **`logic/music-where.js`**: `songFor(state)` reads the where table from a small state object (started, battle
+   kind, tab, node type, biome, row, indoor, location music). Pure, tested in `sound.test.mjs`; `musicFor` builds
+   the state and calls it. The seven biome songs become reachable only when SND-4 adds their rows.
+5. `check-data` validates `music.json`; the quick check's `unused` list names songs no where-rule and no script
+   uses (the Studio's story scripts play songs by name: `music rival`).
+
+## SND-3: the Studio's Music & sound section
+A section `music` in the Game group (**ask me before:** its own group "Sound" instead), built like the UI section:
+1. **Song list** with play, stop and loop, through the shared tracker on the Studio's own `AudioContext` (a button
+   press unlocks it). The list shows where each song plays (from the where table) and flags songs nothing names.
+2. **Recipe card**: tempo, key, scale, the eight chords as roman numerals (I, ii, iii, IV, V, vi, viiº, with bVII
+   under mixolydian), lead, bass, arp, drums, swing, echo, seed; every change re-composes and keeps playing.
+3. **Hook roll**: a 32-step piano roll (two bars) for the hook and the countermelody over the first two chords,
+   drawn on the shared pixel canvas's grid code if it fits, else its own small canvas; notes snap to the scale.
+4. **Where table**: the rules as rows with selects for each key, drag to reorder, a "play what this picks" button.
+5. **Cry card** on the Billies section: base, pitch, length, play; a low-HP preview.
+6. **Jingle editor**: the same roll, one bar, with a play button.
+7. Save through the existing Save to game flow; `check.js` warns on a song with no where-rule, a species with no
+   cry, and a where-rule that names no song.
+8. Verified by: the Studio self-test opens the section, plays a song for a second and checks the context is
+   running; the quick check's Studio step; the owner tries it.
+
+## SND-4: the Pokémon rework, themes
+Audible changes, fingerprints regenerated at the end on purpose.
+1. **Four voices.** A song declares its voices: two pulse (lead and counter or arp), one triangle (bass), one noise
+   (drums). `chord7` becomes a two-note arp; the night pad becomes a single triangle line; the echo stays as the
+   game's own colour. An "extra" flag keeps the thicker mix for the title and the fall only.
+2. **Written hooks.** The composer takes a song's `hook` as bars 1-2 and makes bars 3-4 answer it (same rhythm,
+   steps toward the next chord tone), bars 5-6 repeat the hook, 7-8 cadence. A `counter` plays under the hook on
+   the second pulse. **Ask me before:** who writes the hooks (recommendation: I draft them as note lists, you
+   keep or change them in the Studio's roll).
+3. **The motif.** One mixolydian theme (I-bVII-I) for the title; its first bar returns in Copperleaf's song (as the
+   countermelody), on the airship mast and in the payout jingle.
+4. **Copperleaf** as Pallet Town: two voices, no drums, slow swing, the music-box lead (p12, short decay).
+5. **Night** versions by data: a `night` override per song (slower by 6-10 bpm, the key a fourth down, drums
+   soft), picked by `environmentHour`, crossfaded at dusk and dawn as songs crossfade today.
+6. **Biome songs** get where-rules by biome: meadow, thicket, lake, canyon, volcano, tundra, sea, ridge, autumn,
+   badlands, jungle map onto the seven songs plus two new ones (a volcano march, a tundra waltz).
+
+## SND-5: battle and run music
+1. **Intros.** A song's `intro` is one or two bars (the chromatic run on the lead, drums out) that play once. The
+   encounter sting starts the intro on the flash; the drums enter on the throw (`battleSoundEffect('enter')`), as
+   Masuda timed it.
+2. **Battle songs** by kind through the where table: wild, trainer, rival, leader (mini-boss), boss, ghost (a
+   friend's run, RL-15). The leader song reuses the title motif in minor.
+3. **The red zone.** When the player's lead Billy is under a quarter of its HP, the song switches to its `tense`
+   variant (faster, bVII pedal, march drums), back when healed. **Ask me before:** this (Black and White) or the
+   classic beep (recommendation: the variant; the beep as an accessibility switch off by default).
+4. **The run arc.** A where-rule can name a `row` band: rows 1-3 play the biome song as written, rows 4-6 with
+   `drums: march` and the arp up an octave, rows 7-9 with the counter on; the last day before the deadline plays a
+   `deadline` variant (drums only, the hook on triangle). The `map` song gets the forecast's weather as a low-pass.
+5. Verified by: the battle fixture's log shows the intro, throw and drum entry at the right ticks; the run fixture
+   plays each row band; the owner listens on the phone.
+
+## SND-6: sound effects and jingles
+1. **Cries.** About eight base cries by kind (beast, bird, slime, machine, fish, insect, ghost, suit) in
+   `music.json`; each of the 24 Billies sets base, pitch and length in `roster.json`; the Studio card from SND-3
+   edits them. A low-HP cry is the same cry faster and a third down. A robot's cry comes from its torso part.
+2. **UI sounds.** Four instead of one: select (the tick), confirm (a rising fifth), cancel (a falling one), can't
+   (a dull buzz); the click listener picks by `data-a` and the button's class, so no screen changes.
+3. **Jingles for the run's beats.** relic picked, node revealed, a day passing (the clock's tock, twice), run won
+   (the victory tune plus the motif), run lost (the victory tune's notes backwards in minor), payout counting (a
+   coin per step, pitch rising). Each is a note list in `music.json`.
+4. **The mix pass.** The ambience and world beds come down 3 dB under a four-voice song; the compressor's
+   threshold follows; the master's 0.9 becomes a `music.json` `mix` object (bus trims) so the Studio can set it.
+5. Verified by: the battle golden record is untouched (sounds are not in it); the fingerprint baseline for the
+   jingles; the owner's phone.
+
+## Ask me before (collected)
+- SND-1: jingles follow Music, Sound effects, or a sixth slider; moving audio preferences out of the save.
+- SND-3: a Game-group section or a Sound group of its own.
+- SND-4: who writes the hooks; whether the title motif should be the game's theme everywhere or the hub's only.
+- SND-5: the red-zone variant versus the beep; whether the deadline variant plays on the last day or the last two.
+- The order of SND-4 to SND-6 after the play test, and whether any of them should go before it.
+
+## Not in this track
+Recorded or sampled sound files (the game stays synthesized: no assets, no loading, no licensing); a music volume
+per song; voice; haptics beyond what exists; the step counter's sounds (removed with it).
