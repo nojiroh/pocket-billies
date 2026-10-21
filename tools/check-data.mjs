@@ -22,6 +22,7 @@ import { seamRulesLinks, seamRulesPlaces } from '../game/js/logic/seam-rules.js'
 import { CLIMATE_WEATHER_ODDS } from '../game/js/logic/weather.js';
 import { RUN_MARK_TYPES } from '../game/js/logic/run-marks.js';
 import { runMapRowsFit } from '../game/js/logic/run-map.js';
+import { MAPGEN_DEFAULTS, MAPGEN_FEATURES, MAPGEN_SHAPES, MAPGEN_SURFACES, MAPGEN_WATER } from '../game/js/logic/mapgen.js';
 
 const FIX = process.argv.includes('--fix');
 const bad = [];
@@ -270,13 +271,60 @@ check('roads.schema.json', D.roads || [], 'roads.json');
     V = R.reveal,
     whole = (v, lo, hi) => Number.isInteger(v) && v >= lo && v <= hi;
   for (const k of Object.keys(R))
-    if (!['payout', 'map', 'clock', 'reveal'].includes(k)) problem('rules.json', `run.${k}: no such rule`);
+    if (!['payout', 'map', 'clock', 'reveal', 'scene', 'wild', 'seamIn'].includes(k)) problem('rules.json', `run.${k}: no such rule`);
   if (!C || typeof C !== 'object' || !whole(C.slack, 0, 30) || !whole(C.ahead, 1, 30))
     problem('rules.json', 'run.clock: slack (0-30) and ahead (1-30) are not whole numbers of days');
   else for (const k of Object.keys(C)) if (!['slack', 'ahead'].includes(k)) problem('rules.json', `run.clock.${k}: no such rule`);
   if (!V || typeof V !== 'object' || !whole(V.icons, 1, 12) || !whole(V.unknown, V.icons, 12))
     problem('rules.json', "run.reveal: icons (1-12) and unknown (icons to 12) are not whole numbers of rows");
   else for (const k of Object.keys(V)) if (!['icons', 'unknown'].includes(k)) problem('rules.json', `run.reveal.${k}: no such rule`);
+}
+// RL-7: how a run node's scene varies (logic/run-scenes.js): mapgen's dials, a [low, high] range from 0 to 1 for a
+// number the generator keeps from 0 to 1 (land, nature and props, the road's wobble and verge), weights for a choice
+// (water, the road's shape and surface, the feature) with something to pick; nothing the run sets itself (size, kind,
+// biome, seed, exits, edges). Wild levels: whole numbers from 1 to 100, low to high, a whole number more a row and
+// again on a node walked back to; the metres past a seam before a crossing counts (1-30)
+{
+  const R = (D.rules && D.rules.run) || {},
+    SC = R.scene,
+    CHOICES = { 'land.water': MAPGEN_WATER, 'road.shape': MAPGEN_SHAPES, 'road.surface': MAPGEN_SURFACES, feature: MAPGEN_FEATURES },
+    RANGED = path => /^(land|nature|props)\.[a-z]+$|^road\.(wobble|verge)$/i.test(path),
+    walk = (rule, def, path) => {
+      for (const [k, v] of Object.entries(rule)) {
+        const at = path ? `${path}.${k}` : k,
+          d = def && typeof def === 'object' && !Array.isArray(def) ? def[k] : undefined;
+        if (CHOICES[at]) {
+          const W = v && typeof v === 'object' && !Array.isArray(v) ? Object.entries(v) : [];
+          if (!W.some(([, w]) => w > 0)) problem('rules.json', `run.scene.${at} has nothing to pick`);
+          for (const [c, w] of W) {
+            if (!Object.hasOwn(CHOICES[at], c)) problem('rules.json', `run.scene.${at}: no such choice "${c}" (logic/mapgen.js)`);
+            if (typeof w !== 'number' || !(w >= 0)) problem('rules.json', `run.scene.${at}.${c} is not a weight of 0 or more`);
+          }
+        } else if (typeof d === 'number' && RANGED(at)) {
+          if (!Array.isArray(v) || v.length !== 2 || !v.every(x => typeof x === 'number' && x >= 0 && x <= 1) || v[0] > v[1])
+            problem('rules.json', `run.scene.${at} is not a range [low, high] from 0 to 1`);
+        } else if (d && typeof d === 'object' && !Array.isArray(d) && v && typeof v === 'object' && !Array.isArray(v) && !path)
+          walk(v, d, at);
+        else problem('rules.json', `run.scene.${at}: not a dial a run varies (logic/mapgen.js MAPGEN_DEFAULTS)`);
+      }
+    };
+  if (!SC || typeof SC !== 'object' || Array.isArray(SC)) problem('rules.json', 'run.scene missing');
+  else walk(SC, MAPGEN_DEFAULTS, '');
+  const W = R.wild,
+    whole = (v, lo, hi) => Number.isInteger(v) && v >= lo && v <= hi;
+  if (
+    !W ||
+    typeof W !== 'object' ||
+    !Array.isArray(W.lv) ||
+    W.lv.length !== 2 ||
+    !whole(W.lv[0], 1, 100) ||
+    !whole(W.lv[1], W.lv[0], 100) ||
+    !whole(W.perRow, 0, 20) ||
+    !whole(W.back, 0, 20)
+  )
+    problem('rules.json', 'run.wild: lv [low, high] (1-100), perRow (0-20) and back (0-20) are not whole numbers');
+  else for (const k of Object.keys(W)) if (!['lv', 'perRow', 'back'].includes(k)) problem('rules.json', `run.wild.${k}: no such rule`);
+  if (!whole(R.seamIn, 1, 30)) problem('rules.json', 'run.seamIn is not a whole number of metres from 1 to 30');
 }
 // phase 17: robot parts and gems: the schema, then the moves and types they name and the slot each part fits
 const robots = D.robots || { parts: {}, gems: {} },
@@ -320,6 +368,10 @@ if (D.biomes && check('biomes.schema.json', D.biomes, 'biomes.json')) {
     // RL-6: the weather it gets outdoors (none is for rooms)
     if (!Object.hasOwn(CLIMATE_WEATHER_ODDS, B.climate) || B.climate === 'none')
       problem('biomes.json', `${b}.climate: "${B.climate}" is not an outdoor climate (logic/weather.js)`);
+    // RL-7: a run node's Billies, battle stage and colour grade
+    if (!(D.pools || {})[B.pool]) problem('biomes.json', `${b}.pool: no pool "${B.pool}" (pools.json)`);
+    if (!(D.battleStages || {})[B.battleStage]) problem('biomes.json', `${b}.battleStage: no stage "${B.battleStage}" (battleStages.json)`);
+    if (!(D.moods || {})[B.mood]) problem('biomes.json', `${b}.mood: no mood "${B.mood}" (moods.json)`);
     for (const [f, ch] of [...Object.entries(G).filter(([f]) => f !== 'patches'), ['road', B.road]])
       if (!terr[ch]) problem('biomes.json', `${b}.${f}: no terrain "${ch}" (scenery.json terrains)`);
     for (const ch of Object.keys(G.patches || {})) if (!terr[ch]) problem('biomes.json', `${b}.ground.patches: no terrain "${ch}"`);

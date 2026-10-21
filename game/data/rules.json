@@ -143,6 +143,22 @@
    "biomes": {"meadow":3,"lake":2,"thicket":2,"ridge":1,"autumn":1}
   },
   "clock": {"slack":3,"ahead":7},
-  "reveal": {"icons":1,"unknown":2}
+  "reveal": {"icons":1,"unknown":2},
+  "scene": {
+   "land": {
+    "hills": [0.15,0.7],
+    "cliffs": [0.1,0.5],
+    "water": {"none":3,"stream":1,"pond":1},
+    "waterAmount": [0.3,0.7]
+   },
+   "road": {
+    "shape": {"winding":3,"scurve":2,"straight":1},
+    "wobble": [0.3,0.8]
+   },
+   "nature": {"growth":[0.6,1],"tall":[0.4,0.8],"clearings":[0.2,0.5],"trees":[0.3,0.7]},
+   "feature": {"none":4,"bridge":1,"glade":1,"lookout":1}
+  },
+  "wild": {"lv":[3,5],"perRow":1,"back":2},
+  "seamIn": 6
  }
 }

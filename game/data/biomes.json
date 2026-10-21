@@ -2,6 +2,9 @@
  "meadow": {
   "name": "Meadow",
   "climate": "mild",
+  "pool": "grass",
+  "battleStage": "grass",
+  "mood": "green",
   "ground": {
    "base": "g",
    "patches": {"G":0.35,"C":0.2,"f":0.1},
@@ -57,6 +60,9 @@
  "thicket": {
   "name": "Thicket",
   "climate": "mild",
+  "pool": "shell",
+  "battleStage": "shell",
+  "mood": "misty",
   "ground": {
    "base": "y",
    "patches": {"M":0.35,"L":0.3,"G":0.1},
@@ -114,6 +120,9 @@
  "lake": {
   "name": "Lakeside",
   "climate": "mild",
+  "pool": "willowmere",
+  "battleStage": "golf",
+  "mood": "lakeside",
   "ground": {
    "base": "g",
    "patches": {"R":0.3,"M":0.2,"G":0.2},
@@ -171,6 +180,9 @@
  "canyon": {
   "name": "Canyon",
   "climate": "dry",
+  "pool": "esc",
+  "battleStage": "esc",
+  "mood": "heat",
   "ground": {
    "base": "s",
    "patches": {"r":0.35,"P":0.15,"H":0.05},
@@ -206,6 +218,9 @@
  "volcano": {
   "name": "Volcano",
   "climate": "volcano",
+  "pool": "cinderpeak",
+  "battleStage": "volcano",
+  "mood": "ember",
   "ground": {
    "base": "z",
    "patches": {"j":0.35,"r":0.1},
@@ -251,6 +266,9 @@
  "tundra": {
   "name": "Tundra",
   "climate": "alpine",
+  "pool": "rimefrost",
+  "battleStage": "snow",
+  "mood": "crisp",
   "ground": {
    "base": "n",
    "patches": {"I":0.12,"r":0.08,"N":0.05},
@@ -296,6 +314,9 @@
  "sea": {
   "name": "Coast",
   "climate": "coast",
+  "pool": "sea",
+  "battleStage": "sea",
+  "mood": "seaside",
   "ground": {
    "base": "s",
    "patches": {"S":0.25,"P":0.1},
@@ -331,6 +352,9 @@
  "ridge": {
   "name": "Ridge",
   "climate": "mild",
+  "pool": "kitewind",
+  "battleStage": "esc",
+  "mood": "clear",
   "ground": {
    "base": "H",
    "patches": {"G":0.35,"r":0.25},
@@ -386,6 +410,9 @@
  "autumn": {
   "name": "Autumn wood",
   "climate": "mild",
+  "pool": "russetwood",
+  "battleStage": "shell",
+  "mood": "harvest",
   "ground": {
    "base": "L",
    "patches": {"g":0.3,"y":0.15},
@@ -442,6 +469,9 @@
  "badlands": {
   "name": "Badlands",
   "climate": "dry",
+  "pool": "badlands",
+  "battleStage": "esc",
+  "mood": "gilded",
   "ground": {
    "base": "A",
    "patches": {"B":0.3,"r":0.15},
@@ -486,6 +516,9 @@
  "jungle": {
   "name": "Jungle",
   "climate": "mild",
+  "pool": "tanglewild",
+  "battleStage": "shell",
+  "mood": "green",
   "ground": {
    "base": "y",
    "patches": {"M":0.3,"J":0.1},

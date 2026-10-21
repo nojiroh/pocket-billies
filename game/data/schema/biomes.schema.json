@@ -11,6 +11,9 @@
   "required": [
    "name",
    "climate",
+   "pool",
+   "battleStage",
+   "mood",
    "ground",
    "road",
    "water",
@@ -26,6 +29,21 @@
    },
    "climate": {
     "description": "the kind of weather it gets: a climate of logic/weather.js CLIMATE_WEATHER_ODDS (a run's forecast rolls from it; RL-6)",
+    "type": "string",
+    "pattern": "^[a-z][a-z0-9_]*$"
+   },
+   "pool": {
+    "description": "the Billies a run node of this biome meets: a pool of pools.json (its species only; the run sets the levels; RL-7)",
+    "type": "string",
+    "pattern": "^[a-z][a-z0-9_]*$"
+   },
+   "battleStage": {
+    "description": "where a run node's battles are drawn: a stage of battleStages.json (RL-7)",
+    "type": "string",
+    "pattern": "^[a-z][a-z0-9_]*$"
+   },
+   "mood": {
+    "description": "a run node's colour grade: a mood of moods.json (RL-7)",
     "type": "string",
     "pattern": "^[a-z][a-z0-9_]*$"
    },
