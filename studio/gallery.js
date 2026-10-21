@@ -1,6 +1,7 @@
 // Phase 06-4: the UI gallery's switches (theme, width, reduced motion) and its live samples. The components come from the
 // game's own js/ui-kit.js, so the gallery shows exactly what the game draws.
 import { pbFloat } from '../game/js/ui-kit.js';
+import { applyUiTheme } from '../game/js/theme-sheet.js';
 
 const root = document.documentElement;
 const press = (group, value) =>
@@ -15,6 +16,10 @@ document.addEventListener('click', ev => {
   if (d.g === 'theme') {
     root.dataset.theme = d.v;
     press('theme', d.v);
+  } else if (d.g === 'look') {
+    // UI-1: the look in game/data/uiTheme.json, or one of its presets laid over it
+    applyUiTheme(/** @type {any} */ (globalThis).GAMEDATA?.uiTheme, d.v || undefined);
+    press('look', d.v);
   } else if (d.g === 'w') {
     document.querySelector('.g-wrap').style.setProperty('--g-w', d.v);
     press('w', d.v);

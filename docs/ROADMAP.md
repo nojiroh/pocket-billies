@@ -38,6 +38,10 @@ town node needs it.
 - **Studio track** (docs/phases/studio-track.md): ST-0..ST-6 done; ST-7 (Model mode import) next. Independent of the
   rework; the editors for the new data sections come with their sessions (RL-11..RL-16). Side session ST-T, the
   Studio self-test (docs/phases/studio-self-test.md, approved 2026-10-21): measure the Studio; fixes come after.
+- **UI track** (docs/phases/ui-track.md, planned 2026-10-21): Semigloss Angular, the Studio's UI section and phase
+  06's leftover. UI-1..UI-4 run beside RL-3..RL-7 (UI-4 before RL-7, so the run screens use the new parts); UI-5 and
+  UI-6 after the RL-8 play test. Tags `ui-N-done`. UI-1 (theme as data, rules as a check) done 2026-10-21; UI-2
+  (kit v2, angular shapes) next.
 - **Map generator track** (docs/phases/mapgen-track.md): MG-1 done; MG-2 is on the RL path (before RL-6); MG-3 when a
   town node needs it; MG-4 and MG-5 after RL-8.
 - **Project Story** (docs/phases/project-story.md): S1-S3 and S7 done, S8 partly (the city plays before the fall).
@@ -56,7 +60,7 @@ No `phase-NN-done` tag was ever pushed; "done" means the HANDOFF entry says the 
 | 03 | 03-fresh-base-and-scope-reset | done; no picture baseline yet | keep |
 | 04 | 04-modernize-codebase | done (04a-04e) | keep |
 | 05 | 05-internal-renaming | done | keep |
-| 06 | 06-ui-structure | mostly done (06-1..06-4); ui.js not split, old CSS layers not emptied | parked: 06-5 when a screen session needs it |
+| 06 | 06-ui-structure | mostly done (06-1..06-4); ui.js not split, old CSS layers not emptied | absorbed: UI-5 and UI-6 (docs/phases/ui-track.md); `phase-06-done` when UI-6 ends |
 | 07 | 07-portraits | part 1 only (kit, slicer, portraits.json; nothing uses them) | parked: after the first cut is fun |
 | 08 | 08-classic-movement-seamless-maps-rooms | 08a-1..3 and 08b-1..2 done; 08b-3 not | absorbed: the run world uses 08b's seam model; 08b-3 templates parked |
 | 09 | 09-props-and-terrain | partly: Copperleaf, Route 1, Marigold and the city set redone | parked: the other towns are legacy; run biomes reuse the done kits |

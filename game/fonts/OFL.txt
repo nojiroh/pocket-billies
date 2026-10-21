@@ -2,6 +2,8 @@ Fonts bundled with Pocket Billies (SIL Open Font License 1.1):
 - Tiny5: Copyright 2022-2024 The Tiny5 Project Authors (https://github.com/Gissio/font_tiny5)
 - Chakra Petch: Copyright 2018 The Chakra Petch Project Authors (https://github.com/m4rc1e/Chakra-Petch)
 - Caveat: Copyright 2014 The Caveat Project Authors (https://github.com/googlefonts/caveat)
+- Jersey 15: Copyright 2023 The Soft Type Project Authors (https://github.com/scfried/soft-type-jersey)
+- Oxanium: Copyright 2019 The Oxanium Project Authors (https://github.com/sevmeyer/oxanium)
 
 This license is copied below, and is also available with a FAQ at:
 http://scripts.sil.org/OFL
