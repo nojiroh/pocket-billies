@@ -232,6 +232,13 @@ same phase:
   tools/check-quick.py). Smoke's shop steps open `CHECK_SHOP`, a shop the check makes for itself (the game has none
   now). check-data checks `game/data/legacy` only for being readable: every listed file is there, nothing unlisted,
   maps and trainers against their schemas; the Unused report counts props the parked maps place as used.
+  UI-3b: the lint's rules are game/js/logic/ui-lint.js (the Studio runs them; `node tools/ui-lint.mjs --lines` lists
+  every raw value with its line); `ui-lint.test.mjs` keeps the files the Studio finds by following the pages equal to
+  the ones the command line walks (a new logic file must be on a page). `ui-dials.test.mjs` checks every dial writes
+  a CSS variable (`uiDialVars`); `ui-inspect.test.mjs` the inspect and overlay rules. The fixtures `team`, `bag` and
+  `talk` (game/js/fixture.js) open those screens for the Studio's preview. The Studio check's `ui_tools` step (rule
+  report, inspect, Connections, overlays; about 30 s) and `ui_screens` (each real screen and before/after; about 4
+  min, as each screen boots the game) run with `--only=ui_tools,ui_screens`.
 - **18 Trading and battles with friends**: every new Firestore rule gets emulator tests in `firebase/test/`;
   trade validation is logic with unit tests.
 

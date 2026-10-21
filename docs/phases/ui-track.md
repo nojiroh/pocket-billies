@@ -70,6 +70,14 @@ with the variables the sheets derive at `:root` declared again (`UI_DERIVED`); t
 (logic/ui-dials.js); the contrast check shared by check-data and the Studio (danger and primary at 3:1 besides text at
 4.5:1; not on presets, as alpha05's green reads 2.5:1).
 
+UI-3b found (read at 00be53b): Ctrl+L was taken by Connections, so "Ctrl+L the reverse" is Connections on a UI dial
+(the parts that read what it writes). ui-lint deleted comments, so its places shifted; it now blanks them and gives
+lines. No Team, Bag or dialogue fixture existed and the game's screens draw into their own document, so a real screen
+is the game in a frame at a new fixture. No DOM capture exists (glass, clip-paths and web fonts defeat DOM-to-image),
+so before/after is live, side by side (owner's choice). The rule report is one line, not counted (owner's choice): the
+gallery today has 45 texts under their contrast (white on type pills 3.2-3.8:1, the move tiles, the bot plate's name)
+and 12 tap targets under 44 px; the Team screen blurs 4 surfaces (budget 3).
+
 UI-4 found (read at 167cc96): the bowl draws its pins on a 2D canvas (world-bowl.js `worldBowlPin`), so a kit
 component can't be a map pin: the node shapes are data (logic/run-marks.js) with a canvas painter (`runMarkDraw`)
 for RL-7, and `<pb-node>` draws the same outlines as SVG. No node type, currency or weather data exists yet
@@ -154,7 +162,7 @@ Works like the Engine section (dials in groups, ↺ per dial, presets, Hold to c
 | UI-1 (done 2026-10-21) | Theme as data, rules as a check | uiTheme.json + schema, boot writes the variables; `--cut-*`, `--slant`, `--z-*`; the Copper Grove palette and teal HP as data; Jersey 15 and Oxanium in game/fonts; tools/ui-lint.mjs counts raw values per rule and file and blurred surfaces per screen (report only); v05's `--disp`/`--body` folded into the font tokens | the palette and fonts | game otherwise identical; lint report in the HANDOFF entry |
 | UI-2 (done 2026-10-21) | Kit v2: angular shapes | cut panel, card, button, tab, bar, selection with the edge line; `pb-card`, `pb-tabs`, `pb-stat-bar`, `pb-field`; the shared bot plate (limb pips); the 45° icon set; type glyphs; portraits breaking the frame; diagonal wipes in motion.css; battle floating cards and move tiles; gallery picture tests per component state | screens already on the kit | gallery picture tests and smoke pass; phone check of three screens |
 | UI-3a (done 2026-10-21) | Studio UI section, core | uiTheme.json version 2; overrides read; the section with every dial group, the whole game or a screen, presets as data (+ Save as preset), Hold to compare, the UI gallery as live preview, Find, the contrast check in the Studio's Check; a Studio check step (a dial changed, previewed, undone, saved as a PR) | Studio only | the Studio check step passes |
-| UI-3b | Studio UI section, tools | real screens from fixtures beside the gallery (Team, Bag, a battle, the dialogue box; payout and run chip once they exist); inspect (tap a part: its component and tokens) and Ctrl+L the reverse; overlays (tap targets under 44 px, contrast failures, glass layers); before/after shots; the rule check (ui-lint as a browser-safe module with lines) in the Studio's Check with Show me | Studio only | its check steps pass |
+| UI-3b (done 2026-10-21) | Studio UI section, tools | real screens from fixtures beside the gallery (Team, Bag, a battle, the dialogue box; payout and run chip once they exist); inspect (tap a part: its component and tokens) and Ctrl+L the reverse; overlays (tap targets under 44 px, contrast failures, glass layers); before/after shots; the rule check (ui-lint as a browser-safe module with lines) in the Studio's Check with Show me | Studio only | its check steps pass |
 | UI-4 (done 2026-10-21) | Run parts | day and deadline chip, forecast icon row, node markers, the four currency chips, the relic and keep-one card, payout rows with their motion, the hub/run bottom bar | gallery only | RL-7 and RL-8 can use them with no CSS of their own |
 | UI-5 | Every screen onto the kit | after the RL-8 play test: every screen, including ones the roguelite replaces, moves out of ui.js and the old CSS, one screen per commit, moves only (absorbs 06-5) | every remaining screen | each moved screen passes its UI test; the unused-CSS list shrinks |
 | UI-6 | Old layers gone | style, polish, screens and v05 emptied and deleted; lint and the blur budget enforced (fail when raw values rise); accessibility pass; then `phase-06-done` and `ui-6-done` | none intended | ui-lint at or near zero; full quick check green apart from known reds |

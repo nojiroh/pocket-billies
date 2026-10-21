@@ -35,6 +35,10 @@ kept aside in the browser).
   before loads at Copperleaf with the parked places dropped from it; a backup file exported before can't be
   imported. Rooms now open in place in a town with no exits (Pearlantis's didn't). The game's data is about a
   quarter smaller to load.
+- The Studio's UI look, tools (UI track UI-3b): the preview shows the game's real Team, Bag, battle and dialogue
+  screens with the look being edited, or the saved and unsaved looks side by side. Inspect a part to see which dials
+  reach it; Connections on a dial lists the parts it reaches. Overlays mark tap targets under 44 px, text that reads
+  too faintly and glass stacked too deep. The Check reports the UI rule counts, with every line listed.
 - The Studio's UI look (UI track UI-3a): Game → UI look edits the menus' look: colours light and dark side by side
   with a contrast grade on each text colour, the glass, depth and drop shadows, the shapes (each family's cut,
   corners and radius), space, type and motion, for the whole game or one screen's colours and shapes. Presets (save

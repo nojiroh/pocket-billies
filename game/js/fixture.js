@@ -8,22 +8,31 @@
      room    inside Professor Hazel's lab in Copperleaf
      battle  a trainer battle (Leader Rocco) in Copperleaf that the team wins
      stored  whatever the fixture saved last in this browser (the save round trip)
+   UI-3b, for the Studio's UI look preview (the real screens with the look being edited):
+     team    the Team screen          bag     the Bag, with a few of each item
+     talk    the dialogue box with a line from Professor Hazel
+   While a fixture runs, a page of the same origin that holds it in a frame (the Studio) can hand it a look:
+   postMessage({type: 'uiLook', theme, mode, reduced, text}) (fixtureLook below).
    The trainer and the buddy carry planted names (FIXTURE_NAMES) that the debug log must never hold. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { provide } from './hooks.js';
 import { LOCATIONS, RULES, SPECIES, START_NODE, TRAINERS } from './game-data.js';
 import { makeBilly } from './logic/rules.js';
+import { applyUiTheme } from './theme-sheet.js';
 import { newSave } from './logic/saves.js';
 import { startTrainer } from './logic/battle-engine.js';
-import { FIXTURE, setSaveData, uiState } from './game-state.js';
+import { FIXTURE, saveData, setSaveData, uiState } from './game-state.js';
 import { LOOK_PRESETS, cleanLook } from './person-art.js';
+import { applyPreferences } from './settings-screen.js';
 import { actionSpot, walkData, walkView } from './walk-view.js';
+import { talkLine } from './talk.js';
 import { enterRoom, render, renderOverlay } from './ui.js';
 /* eslint-disable no-func-assign */
 expose({
   FIXTURE_NAMES: [() => FIXTURE_NAMES],
   FIXTURE_PLACES: [() => FIXTURE_PLACES],
+  fixtureLook: [() => fixtureLook, v => (fixtureLook = v)],
   fixtureSave: [() => fixtureSave, v => (fixtureSave = v)],
   fixtureStart: [() => fixtureStart, v => (fixtureStart = v)],
 });
@@ -35,6 +44,9 @@ const FIXTURE_PLACES = {
   town: 'copperleaf',
   room: 'copperleaf',
   battle: 'copperleaf',
+  team: 'copperleaf',
+  bag: 'copperleaf',
+  talk: 'copperleaf',
 };
 function fixtureSave() {
   const s = newSave();
@@ -59,6 +71,8 @@ function fixtureSave() {
   s.team = [lead, second];
   s.buddy = lead.uid;
   for (const m of s.team) s.caught[m.sp] = s.seen[m.sp] = 1;
+  /* UI-3b: the Bag fixture has something in it */
+  if (FIXTURE === 'bag') for (const k of Object.keys(s.items)) s.items[k] = 3;
   /* the people who would stop you to talk have met you already */
   s.story = { met_chad: 1, met_chad2: 1, rival0: 1 };
   for (const T of Object.values(TRAINERS)) if (T.runsUp) s.story['met_' + T.id] = 1;
@@ -89,4 +103,24 @@ export function fixtureStart() {
     go();
   }
   if (FIXTURE === 'battle') startTrainer('crude');
+  /* UI-3b: the screens the Studio's UI look preview shows */
+  if (FIXTURE === 'team' || FIXTURE === 'bag') {
+    uiState.tab = FIXTURE;
+    render();
+  }
+  if (FIXTURE === 'talk')
+    talkLine('gini', 'This is the dialogue box. The Studio shows it with the look you are editing.');
 }
+/* UI-3b: the Studio's UI look preview hands a fixture the look being edited: the theme sheet, and light or dark,
+   reduced motion and the text size through the fixture save's own Settings (only a fixture listens) */
+function fixtureLook(ev) {
+  const m = ev.data || {};
+  if (ev.origin !== location.origin || m.type !== 'uiLook') return;
+  if (m.theme) applyUiTheme(m.theme);
+  const p = (saveData.preferences = saveData.preferences || {});
+  p.theme = m.mode === 'dark' ? 'dark' : 'light';
+  p.motion = m.reduced ? 'reduced' : 'full';
+  p.textSize = m.text || 'normal';
+  applyPreferences();
+}
+if (FIXTURE) addEventListener('message', fixtureLook);

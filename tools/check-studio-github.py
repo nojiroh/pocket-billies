@@ -787,7 +787,7 @@ def ui_steps(pg, errs):
     try: pg.wait_for_selector('#uiSet .eng-f[data-path="uiTheme.defaults.shape.families.tab.corners"]', timeout=10000)
     except Exception: errs.append('Find did not open the tabs’ corners')
     pg.evaluate("studioState.D.uiTheme.overrides.bag = {color: {dark: {text2: '#2A3A30'}}}")
-    found = pg.evaluate("runCheck().filter(c => c.go === 'ui').map(c => [c.msg, c.sel])")
+    found = pg.evaluate("runCheck().filter(c => c.go === 'ui' && c.lvl === 'error').map(c => [c.msg, c.sel])")
     if len(found) != 2 or found[0][1] != {'uiFocus': {'scope': 'bag', 'rel': 'color.dark.text2'}}: errs.append(f'the Check found {found}')
     pg.evaluate("delete studioState.D.uiTheme.overrides.bag")
     # the large cut, compared with the saved look, and left changed for the proposal
@@ -803,6 +803,162 @@ def ui_steps(pg, errs):
     if pg.evaluate("studioState.undo.length") < undo0 + 2: errs.append('the edits are not undo steps')
     if len(errs) > n: errs[n:] = [f'ui: {e}' for e in errs[n:]]
     else: print('ui: a colour previewed and undone, a screen colour on its screen and taken away, a preset undone, Find and the Check, compare; the large cut left at 20 px', flush=True)
+
+
+def ui_tools_steps(pg, errs):
+    """UI-3b: the UI look section's tools. The rule check: the Check has one report line (not in its badge) and its
+    Show me lists the raw values, each line's text equal to that line of the file."""
+    n = len(errs)
+    pg.evaluate("uiRulesLoad()")
+    try: pg.wait_for_function("uiRules.state === 'ready' || uiRules.state === 'failed'", timeout=60000)
+    except Exception: errs.append('the rule check never read the files')
+    if pg.evaluate("uiRules.state") != 'ready': errs.append(f"the rule check: {pg.evaluate('uiRules.err')}")
+    line = pg.evaluate("runCheck().find(c => c.lvl === 'info' && c.msg.startsWith('UI rules'))")
+    if not line or line.get('go') != 'ui': errs.append(f'the Check has no rule report line ({line})')
+    pg.evaluate("void openSection('check')")
+    pg.evaluate("scheduleCheck(true)"); time.sleep(0.3)
+    badge = pg.evaluate("document.querySelector('#checkCount').textContent")
+    real = pg.evaluate("runCheck().filter(c => c.lvl !== 'info').length")
+    if not real and badge != '✓': errs.append(f'the Check badge counts the report ({badge})')
+    try:
+        pg.wait_for_selector('#checkList li.info button[data-act=fix]', timeout=10000)
+        pg.click('#checkList li.info button[data-act=fix]')
+        pg.wait_for_selector('#uiRules .ui-rules li', timeout=20000)
+    except Exception: errs.append('Show me did not open the rule list')
+    pg.select_option('#uiRulesRule', 'important'); time.sleep(0.2)
+    rows = pg.evaluate("[...document.querySelectorAll('#uiRules .ui-rules li')].slice(0, 5).map(li => [li.dataset.rule, li.querySelector('a').textContent, li.querySelector('a').href, li.querySelector('code').textContent])")
+    if not rows: errs.append('the rule list is empty for !important')
+    for rule, at, href, text in rows:
+        f, ln = at.rsplit(':', 1)
+        lines = (REPO / 'game' / f).read_text().split('\n')
+        if rule != 'important' or lines[int(ln) - 1].strip()[:200] != text or '!important' not in text: errs.append(f'the rule list says {at} {text!r}')
+        if not href.endswith(f'/game/{f}#L{ln}') or 'github.com/nojiroh/pocket-billies/blob/' not in href: errs.append(f'the link {href}')
+    # inspect: a tap on the gold button picks it (it doesn't press) and lists the variables it reads, with their dials
+    pg.evaluate("void openSection('ui')")
+    try: pg.wait_for_function("(w => w && w.galleryLook && w.document.querySelector('pb-button[kind=gold]'))(document.querySelector('#uiPv').contentWindow)", timeout=30000)
+    except Exception: errs.append('the preview never showed the gallery')
+    pg.click('#uiInsp')
+    pg.frame_locator('#uiPv').locator('.g-wrap pb-button[kind=gold]').first.click()
+    try: pg.wait_for_selector('#uiInspect tr[data-var]', timeout=10000)
+    except Exception: errs.append(f"inspect listed nothing: {pg.evaluate('document.querySelector(\"#uiInspect\").textContent')!r}")
+    info = pg.evaluate("[document.querySelector('#uiInspect .ui-insp-h').textContent, [...document.querySelectorAll('#uiInspect tr[data-var]')].map(r => [r.dataset.var, r.querySelectorAll('[data-act=uiInspectGo]').length])]")
+    if 'pb-button' not in info[0] or 'Buttons' not in info[0]: errs.append(f'inspect named the part {info[0]!r}')
+    names = [v for v, _ in info[1]]
+    if not any(v.startswith('--clip-') for v in names) or not any(k for v, k in info[1] if v.startswith('--clip-')): errs.append(f'inspect: no cut shape with its dial among {names}')
+    if not pg.evaluate("!!document.querySelector('#uiPv').contentWindow.document.querySelector('#studioInspect div')"): errs.append('inspect drew no outline')
+    go = pg.evaluate("(b => b && b.dataset.r)(document.querySelector('#uiInspect tr[data-var^=\"--clip-\"] [data-act=uiInspectGo]'))")
+    if go:
+        pg.click(f'#uiInspect tr[data-var^="--clip-"] [data-act=uiInspectGo][data-r="{go}"]')
+        try: pg.wait_for_selector(f'#uiSet .eng-f[data-path="uiTheme.defaults.{go}"]', timeout=10000)
+        except Exception: errs.append(f'the dial button did not open {go}')
+    pg.click('#uiInsp')
+    if pg.evaluate("!!document.querySelector('#uiPv').contentWindow.document.querySelector('#studioInspect div')"): errs.append('the outline stayed after Inspect went off')
+    # Connections (Ctrl+L) on a dial: what it writes and the parts in the preview that read it; a part shows there
+    pg.evaluate("uiEditor.open.color = 1; refreshUiSettings()")
+    pg.locator('#uiSet input.hex[data-p="uiTheme.defaults.color.light.text"]').focus()
+    pg.keyboard.press('Control+l')
+    try: pg.wait_for_selector('#lnkB .lk-n.k-part', timeout=10000)
+    except Exception: errs.append(f"Connections on a dial listed no parts: {pg.evaluate('(document.querySelector(\"#lnkB\")||{}).textContent')!r}")
+    lk = pg.evaluate("[[...document.querySelectorAll('#lnkB .lk-n.k-var')].map(b => b.textContent), document.querySelectorAll('#lnkB .lk-n.k-part').length, (document.querySelector('#lnkB h4')||{}).textContent]")
+    if '--c-text' not in ' '.join(lk[0]) or lk[1] < 3: errs.append(f'Connections on the text colour: {lk}')
+    if lk[1]:
+        pg.click('#lnkB .lk-n.k-part >> nth=0')
+        try: pg.wait_for_function("(w => !!w.document.querySelector('#studioFlash div'))(document.querySelector('#uiPv').contentWindow)", timeout=5000)
+        except Exception: errs.append('a part in Connections did not show in the preview')
+    pg.keyboard.press('Control+l')
+    # overlays: a planted 30 px button, a faint text and glass three deep are marked; switched off, nothing is
+    pg.evaluate("""(() => { const d = document.querySelector('#uiPv').contentWindow.document, m = d.querySelector('.g-wrap');
+      m.insertAdjacentHTML('afterbegin', '<div id="plant" style="background:#ffffff;padding:8px"><button id="plantTap" style="width:30px;height:30px">x</button><span id="plantFaint" style="color:#dddddd;font-size:14px">faint words</span>'
+        + '<div id="g1" style="backdrop-filter:blur(4px);padding:4px"><div id="g2" style="backdrop-filter:blur(4px);padding:4px"><div id="g3" style="backdrop-filter:blur(4px);height:20px"></div></div></div></div>');
+      d.querySelector('#plant').scrollIntoView() })()""")
+    for k in ['tap', 'contrast', 'glass']: pg.click(f'[data-act=uiOverlay][data-k={k}]')
+    ov = pg.evaluate("""(() => { const S = uiOverlays.last; if (!S) return null;
+      return { tap: S.tap.some(t => t.el.id === 'plantTap'), faint: S.contrast.some(c => c.el.id === 'plantFaint'),
+        deep: S.glass.filter(g => g.depth > 2).map(g => g.el.id), boxes: document.querySelector('#uiPv').contentWindow.document.querySelectorAll('#studioOverlay > div').length,
+        note: document.querySelector('#uiOvNote').textContent } })()""")
+    if not ov or not ov['tap'] or not ov['faint'] or ov['deep'] != ['g3'] or not ov['boxes'] or 'Tap targets under 44 px' not in ov['note']: errs.append(f'overlays: {ov}')
+    for k in ['tap', 'contrast', 'glass']: pg.click(f'[data-act=uiOverlay][data-k={k}]')
+    if pg.evaluate("document.querySelector('#uiPv').contentWindow.document.querySelectorAll('#studioOverlay > div').length"): errs.append('overlays stayed when switched off')
+    pg.evaluate("document.querySelector('#uiPv').contentWindow.document.querySelector('#plant').remove()")
+    if len(errs) > n: errs[n:] = [f'ui tools: {e}' for e in errs[n:]]
+    else: print(f"ui tools: overlays ({ov and ov['note']}); Connections on the text colour ({lk[1]} parts read {len(lk[0])} variables); inspect (the gold button: {len(names)} variables, its cut opens {go}); the rule report ({pg.evaluate('uiRules.found.length')} raw values) with Show me to lines that match the files", flush=True)
+
+
+def ui_screens_steps(pg, errs):
+    """UI-3b: the UI look preview's real screens: the Team screen is the game itself at its fixture (team), it follows
+    a colour edit and its Undo, light and dark, Hold to compare; inspect and the overlays work on it; then the Bag,
+    the dialogue box and a battle open at their fixtures. Back to the gallery at the end."""
+    n = len(errs)
+    W = "document.querySelector('#uiPv').contentWindow"
+    def screen_var(sel, v):
+        return pg.evaluate(f"(w => {{ const el = w.document.querySelector({json.dumps(sel)}); return el ? w.getComputedStyle(el).getPropertyValue({json.dumps(v)}).trim() : null }})({W})")
+    def open_view(v, sel):
+        pg.evaluate("void openSection('ui')")
+        pg.click(f'[data-act=uiPv][data-g=view][data-v={v}]')
+        try:
+            pg.wait_for_function(f"(w => w && w.location.search.includes('fixture={v}') && !!w.document.querySelector({json.dumps(sel)}) && (!w.document.querySelector('#loader') || w.getComputedStyle(w.document.querySelector('#loader')).display === 'none' || w.document.querySelector('#loader').hidden || w.getComputedStyle(w.document.querySelector('#loader')).visibility === 'hidden' || w.getComputedStyle(w.document.querySelector('#loader')).opacity === '0'))({W})", timeout=150000)
+            return True
+        except Exception:
+            errs.append(f'the {v} screen never showed in the preview'); return False
+    t0 = time.time()
+    if open_view('team', 'main.s-team'):
+        print(f'ui screens: the Team screen started in {time.time() - t0:.0f} s', flush=True)
+        p = 'uiTheme.defaults.color.light.text'
+        before = screen_var('main.s-team', '--c-text')
+        pg.evaluate("uiEditor.open.color = 1; refreshUiSettings()")
+        box = pg.locator(f'#uiSet input.hex[data-p="{p}"]')
+        box.fill('#102030'); box.press('Tab')
+        try: pg.wait_for_function(f"(w => w.getComputedStyle(w.document.querySelector('main.s-team')).getPropertyValue('--c-text').trim() === '#102030')({W})", timeout=15000)
+        except Exception: errs.append(f"the Team screen did not follow the colour ({screen_var('main.s-team', '--c-text')!r})")
+        pg.locator('#uiCmp').hover(); pg.mouse.down()
+        try: pg.wait_for_function(f"(w => w.getComputedStyle(w.document.querySelector('main.s-team')).getPropertyValue('--c-text').trim() === {json.dumps(before)})({W})", timeout=10000)
+        except Exception: errs.append('Hold to compare did not show the saved look on the Team screen')
+        pg.mouse.up()
+        pg.click('#undoBtn')
+        try: pg.wait_for_function(f"(w => w.getComputedStyle(w.document.querySelector('main.s-team')).getPropertyValue('--c-text').trim() === {json.dumps(before)})({W})", timeout=10000)
+        except Exception: errs.append('Undo did not reach the Team screen')
+        pg.click('[data-act=uiPv][data-g=mode][data-v=dark]')
+        try: pg.wait_for_function(f"{W}.document.documentElement.dataset.theme === 'dark'", timeout=10000)
+        except Exception: errs.append('the Team screen did not go dark')
+        pg.click('[data-act=uiPv][data-g=mode][data-v=light]')
+        # inspect a team row, and the overlays, on the game itself
+        pg.click('#uiInsp')
+        pg.frame_locator('#uiPv').locator('main.s-team .u-row, main.s-team .u-hero').first.click()
+        try: pg.wait_for_selector('#uiInspect tr[data-var]', timeout=10000)
+        except Exception: errs.append('inspect found nothing on the Team screen')
+        where = pg.evaluate("(document.querySelector('#uiInspect .ui-insp-h') || {}).textContent || ''")
+        if 'Team screen' not in where: errs.append(f'inspect on the Team screen says {where!r}')
+        pg.click('#uiInsp')
+        pg.click('[data-act=uiOverlay][data-k=glass]')
+        note = pg.evaluate("document.querySelector('#uiOvNote').textContent")
+        if 'Blurred surfaces on screen' not in note: errs.append(f'the glass overlay on the Team screen: {note!r}')
+        pg.click('[data-act=uiOverlay][data-k=glass]')
+        print(f'ui screens: Team followed a colour, compare, undo and dark; inspect ({where.strip()}); {note}', flush=True)
+    for v, sel in [('bag', 'main.s-bag'), ('talk', '#talk:not([hidden]) .talk-box'), ('battle', '.battle')]:
+        t0 = time.time()
+        if open_view(v, sel): print(f'ui screens: {v} in {time.time() - t0:.0f} s', flush=True)
+    pg.click('[data-act=uiPv][data-g=view][data-v=gallery]')
+    try: pg.wait_for_function(f"(w => w && typeof w.galleryLook === 'function')({W})", timeout=30000)
+    except Exception: errs.append('the gallery did not come back')
+    # before/after: the saved look beside the edited one, scrolled together
+    pg.click('#uiSplit')
+    B = "document.querySelector('#uiPvBefore').contentWindow"
+    try: pg.wait_for_function(f"(w => w && typeof w.galleryLook === 'function' && w.document.querySelector('pb-card'))({B})", timeout=30000)
+    except Exception: errs.append('the before frame never showed the gallery')
+    pg.evaluate("uiEditor.open.shape = 1; refreshUiSettings()")
+    pg.evaluate("""(()=>{const r=document.querySelector('#uiSet input[data-p="uiTheme.defaults.shape.cutLg"]');r.value='30';
+      r.dispatchEvent(new Event('input',{bubbles:true}));r.dispatchEvent(new Event('change',{bubbles:true}))})()""")
+    cut = lambda w: pg.evaluate(f"(w => w.getComputedStyle(w.document.querySelector('pb-card')).getPropertyValue('--cut-lg').trim())({w})")
+    try: pg.wait_for_function(f"(w => w.getComputedStyle(w.document.querySelector('pb-card')).getPropertyValue('--cut-lg').trim() === '30px')({W})", timeout=10000)
+    except Exception: pass
+    if cut(W) != '30px' or cut(B) == '30px': errs.append(f'before/after: after {cut(W)!r}, before {cut(B)!r}')
+    pg.evaluate(f"{W}.scrollTo(0, 600)"); time.sleep(0.4)
+    if abs(pg.evaluate(f"{B}.scrollY") - pg.evaluate(f"{W}.scrollY")) > 2: errs.append('the before frame did not scroll with the after one')
+    pg.click('#undoBtn')
+    pg.click('#uiSplit')
+    if pg.evaluate("!!document.querySelector('#uiPvBeforeSlot')"): errs.append('before/after did not close')
+    else: print(f'ui screens: before/after (before {cut(B) if False else "the saved cut"}, after 30px, scrolled together)', flush=True)
+    if len(errs) > n: errs[n:] = [f'ui screens: {e}' for e in errs[n:]]
 
 
 def studio_test_steps(pg, errs):
@@ -839,6 +995,8 @@ STEPS = [
     ('species_parts', species_part_steps),
     ('wardrobe', wardrobe_steps),
     ('ui', ui_steps),
+    ('ui_tools', ui_tools_steps),
+    ('ui_screens', ui_screens_steps),
     ('studio_test', studio_test_steps),
 ]
 

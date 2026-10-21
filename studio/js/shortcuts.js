@@ -87,6 +87,8 @@ const STUDIO_KEYS = [
     keys: [
       ['Hold C', 'Compare: the look as last saved'],
       ['Ctrl+Z', 'Undo a dial, a preset or a reset'],
+      ['Ctrl+L', 'Connections: what a dial writes and the parts that read it'],
+      ['Inspect', 'Tap a part in the preview: its variables and their dials'],
     ],
   },
   {
