@@ -275,3 +275,46 @@ test('a road cut into a terrace has graded banks beside it on a route, not walls
   }
   assert.ok(banks > 1000, `${banks} bank cells`);
 });
+
+test('in a town the roads have dressed-stone retaining walls beside them instead of banks', () => {
+  let walls = 0;
+  for (let seed = 1; seed <= 6; seed++) {
+    const { w, h } = G.MAPGEN_SIZES.small_town,
+      p = {
+        seed,
+        kind: 'small_town',
+        w,
+        h,
+        land: { terraces: 0.75, cliffs: 0.6, hills: 0.5 },
+        road: {
+          exits: [
+            { side: 'S', t: 0.5 },
+            { side: 'N', t: 0.5 },
+          ],
+        },
+      },
+      sc = G.mapgenScene(p, ctx).scene,
+      E = G.mapgenStepGridOf(sc),
+      where = JSON.stringify(p);
+    if (!E) continue;
+    /* every step at a road's edge is a wall of dressed stone, its higher side built */
+    for (let q = 0; q < E.H.length; q++) {
+      if (!(E.M[q] & 32)) continue;
+      const i = q % E.w;
+      for (const r of [i > 0 ? q - 1 : -1, i < E.w - 1 ? q + 1 : -1, q - E.w, q + E.w]) {
+        if (r < 0 || r >= E.H.length || E.M[r] & 32 || Math.abs(E.H[r] - E.H[q]) < 0.04) continue;
+        const j = (r - (r % E.w)) / E.w;
+        if (G.MAPGEN_WET.includes(sc.tiles[sc.h - 1 - (j >> 1)][(r % E.w) >> 1])) continue;
+        assert.equal(E.M[E.H[r] > E.H[q] ? r : q] & 15, G.MAPGEN_TOWN_WALL, `${where}: cell ${r}`);
+        walls++;
+      }
+    }
+    assert.deepEqual(G.mapgenUnreachable(sc, C), [], where);
+  }
+  assert.ok(walls > 100, `${walls} wall faces`);
+  /* and a route has none */
+  for (const { sc } of hilly(8, 7000)) {
+    const E = G.mapgenStepGridOf(sc);
+    if (E) assert.ok(!E.M.some(m => (m & 15) === G.MAPGEN_TOWN_WALL));
+  }
+});

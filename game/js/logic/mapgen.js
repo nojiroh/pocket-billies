@@ -41,6 +41,7 @@ expose({
   MAPGEN_STAGES: [() => MAPGEN_STAGES],
   MAPGEN_STRAIGHT_IN: [() => MAPGEN_STRAIGHT_IN],
   MAPGEN_SURFACES: [() => MAPGEN_SURFACES],
+  MAPGEN_TOWN_WALL: [() => MAPGEN_TOWN_WALL],
   MAPGEN_VERSION: [() => MAPGEN_VERSION],
   MAPGEN_WATER: [() => MAPGEN_WATER],
   MAPGEN_WET: [() => MAPGEN_WET],
@@ -1773,7 +1774,9 @@ export function mapgenTerraces(G, levels) {
   for (let j = 0; j < h; j++)
     for (let i = 0; i < w; i++) {
       const q = j * w + i;
-      if (G.F[q] & (1 | 4) || G.M[j * 2 * W2 + i * 2] & 32) continue; /* a bank stays grass */
+      const m = G.M[j * 2 * W2 + i * 2];
+      if (G.F[q] & (1 | 4) || m & 32 || (m & 15) === MAPGEN_TOWN_WALL)
+        continue; /* a bank stays grass, a wall's top too */
       const me = G.S[j * 2 * W2 + i * 2];
       let wall = false;
       for (const [di, dj] of [
@@ -1953,10 +1956,13 @@ export function mapgenProfilesMeet(G, v, fixed, first, discs, lim, slope = lim *
    between road cells may be), and how far out it reaches */
 export const MAPGEN_BANK_SLOPE = 0.25;
 export const MAPGEN_BANK_REACH = 6;
+/* TR-1: the wall beside a town's roads (walk/heights.js WALL_MATERIALS: dressed stone) */
+export const MAPGEN_TOWN_WALL = 5;
 /** TR-1: the sides of the roads' cuts and fills. On a route a graded bank: within 3 m of the walkable surface (the
  * ramp cells mapgenRoadSurface made) the land's raise comes no nearer the road's than MAPGEN_BANK_SLOPE a half metre
  * away from it allows, as ramp cells of the land's own ground, so a road cut into a terrace has grassy slopes beside
- * it instead of walls; what a bank can't take (more than 1.5 m) stays a wall above it. Not on water */
+ * it instead of walls; what a bank can't take (more than 1.5 m) stays a wall above it. In a town (any kind but a
+ * route) a dressed-stone retaining wall at the road's edge instead. Not on water */
 export function mapgenRoadSides(G) {
   const W2 = G.w * 2,
     H2 = G.h * 2,
@@ -1968,6 +1974,20 @@ export function mapgenRoadSides(G) {
     hi = new Float64Array(N).fill(1e9),
     wet = c => (G.F[mapgenCellAt(G, ((c % W2) + 0.5) / 2, (Math.floor(c / W2) + 0.5) / 2)] & (4 | 8)) === 4;
   for (let c = 0; c < N; c++) if (G.M[c] & 32) road[c] = 1;
+  if (G.P.kind !== 'route') {
+    /* in a town a retaining wall of dressed stone instead: the higher side of every step at the road's edge (a cut's
+       land, a fill's road) is built (the wall takes the higher cell's material) */
+    for (let c = 0; c < N; c++) {
+      if (!road[c]) continue;
+      const i = c % W2;
+      for (const q of [i > 0 ? c - 1 : -1, i < W2 - 1 ? c + 1 : -1, c - W2, c + W2]) {
+        if (q < 0 || q >= N || road[q] || wet(q) || Math.abs(G.S[q] - G.S[c]) < 0.04) continue;
+        const top = G.S[q] > G.S[c] ? q : c;
+        G.M[top] = (G.M[top] & ~15) | MAPGEN_TOWN_WALL;
+      }
+    }
+    return;
+  }
   for (let c = 0; c < N; c++) {
     if (!road[c]) continue;
     const i = c % W2,
