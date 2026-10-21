@@ -10,23 +10,23 @@ import { expose } from '../test-globals.js';
 /* eslint-disable no-func-assign */
 expose({
   // @ts-expect-error -- replaced on purpose
-  mapgenHashString: [() => mapgenHashString, v => (mapgenHashString = v)],
+  hashString: [() => hashString, v => (hashString = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenRandom: [() => mapgenRandom, v => (mapgenRandom = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
 /* ---------- random numbers: a hash of (seed, salt) starts a small fast generator (sfc32) ---------- */
-export function mapgenHashString(s) {
+export function hashString(s) {
   let h = 2166136261 >>> 0;
   for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619) >>> 0;
   return h;
 }
 /** a random stream for a seed and a salt: next() in [0,1), range, int, chance, pick (by weight), gauss */
 export function mapgenRandom(seed, salt = '') {
-  let a = mapgenHashString(`${seed}|${salt}|a`),
-    b = mapgenHashString(`${seed}|${salt}|b`),
-    c = mapgenHashString(`${seed}|${salt}|c`),
+  let a = hashString(`${seed}|${salt}|a`),
+    b = hashString(`${seed}|${salt}|b`),
+    c = hashString(`${seed}|${salt}|c`),
     d = 1;
   const next = () => {
     a >>>= 0;

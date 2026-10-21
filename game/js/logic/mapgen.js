@@ -16,7 +16,7 @@
 /** @import { Biome } from '../../types/game-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { mapgenHashString, mapgenRandom } from './rng.js';
+import { hashString, mapgenRandom } from './rng.js';
 /* eslint-disable no-func-assign */
 expose({
   MAPGEN_BASE64: [() => MAPGEN_BASE64],
@@ -311,7 +311,7 @@ export function mapgenNewWork(P, ctx) {
     terr: (ctx.scenery && ctx.scenery.terrains) || {},
     /* a stage's random stream and noise salt; sub separates the parts of a stage (they all follow its seed) */
     rng: (st, sub = '') => mapgenRandom(seedOf(st), st + sub),
-    salt: (st, sub = '') => mapgenHashString(`${seedOf(st)}|${st}${sub}|noise`) % 100000,
+    salt: (st, sub = '') => hashString(`${seedOf(st)}|${st}${sub}|noise`) % 100000,
     /* ground per cell, near row first */
     T: new Array(w * h).fill(B.ground.base),
     /* corner heights, (w+1) x (h+1), near row first */
