@@ -62,7 +62,8 @@
       "button": {"$ref": "#/$defs/familyShape"},
       "action": {"$ref": "#/$defs/familyShape"},
       "tab": {"$ref": "#/$defs/familyShape"},
-      "toast": {"$ref": "#/$defs/familyShape"}
+      "toast": {"$ref": "#/$defs/familyShape"},
+      "bubble": {"$ref": "#/$defs/familyShape"}
      }
     }
    }

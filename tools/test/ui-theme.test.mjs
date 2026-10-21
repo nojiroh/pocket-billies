@@ -266,6 +266,23 @@ test("tokens.css holds the generator's default shapes, for a page without uiThem
   assert.equal(norm(part), norm(shapeDecls({}).join(' ')));
 });
 
+test('the dialogue bubble: a panel with a speech tail on its top edge, its layers reaching the tail height above', () => {
+  const light = blockOf(uiThemeCss(THEME), ':root');
+  // the top edge sits 18 px down (the tail: 1.5 x the 12 px cut); the tail stands at 52 px: up 18, then back at 45°
+  assert.equal(
+    light['--clip-bubble'],
+    'polygon(0 30px, 12px 18px, 52px 18px, 52px 0, 70px 18px, 100% 18px, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%)'
+  );
+  assert.equal(light['--bubble-tail'], '18px');
+  // inset by 1 px, the tail's tip sits 1 + √2 down and its 45° side meets the top edge √2 − 1 short
+  assert.match(light['--edge-bubble'], /, 53px 19px, 53px 2\.41px, 69\.59px 19px, /);
+  // rounded (alpha05) keeps the tail
+  assert.match(
+    blockOf(uiThemeCss(THEME, { preset: 'alpha05' }), ':root')['--clip-bubble'],
+    /, 52px 18px, 52px 0, 70px 18px, /
+  );
+});
+
 test("UI-3: a screen's override: its colours and shapes on its root (and on data-ui-screen), both sides", () => {
   const T = {
     ...THEME,

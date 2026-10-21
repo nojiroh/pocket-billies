@@ -1319,7 +1319,7 @@ export interface UiShadows {
   floatAlpha?: number;
   floatNear?: number;
 }
-export type UiFamily = 'panel' | 'card' | 'button' | 'action' | 'tab' | 'toast';
+export type UiFamily = 'panel' | 'card' | 'button' | 'action' | 'tab' | 'toast' | 'bubble';
 export interface UiFamilyShape {
   kind?: 'cut' | 'rounded' | 'square';
   size?: 'cutSm' | 'cutMd' | 'cutLg';

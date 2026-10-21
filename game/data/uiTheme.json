@@ -82,7 +82,8 @@
     "button": {"kind":"cut","size":"cutSm","corners":["tl","tr","br","bl"],"radius":16},
     "action": {"kind":"cut","size":"cutLg","radius":22},
     "tab": {"kind":"cut","size":"cutMd","corners":["tl","tr"],"radius":12},
-    "toast": {"kind":"cut","size":"cutMd","radius":18}
+    "toast": {"kind":"cut","size":"cutMd","radius":18},
+    "bubble": {"kind":"cut","size":"cutLg","corners":["tl","br"],"radius":22}
    }
   },
   "space": {"s1":4,"s2":8,"s3":12,"s4":16,"s5":24,"s6":32,"s7":48,"gutter":16},
@@ -135,7 +136,8 @@
      "button": {"kind":"rounded"},
      "action": {"kind":"rounded"},
      "tab": {"kind":"rounded"},
-     "toast": {"kind":"rounded"}
+     "toast": {"kind":"rounded"},
+     "bubble": {"kind":"rounded"}
     }
    }
   },

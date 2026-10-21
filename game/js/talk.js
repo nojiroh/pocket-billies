@@ -112,6 +112,7 @@ export function talkLine(who, text, expr, o = {}) {
     expr = expr || m[1];
     text = text.slice(m[0].length);
   }
+  const shown = !el.hidden;
   el.hidden = false;
   el.classList.toggle('in-cs', !!o.cs);
   el.classList.toggle('scrim', !!o.scrim);
@@ -121,6 +122,13 @@ export function talkLine(who, text, expr, o = {}) {
   el.querySelector('.talk-who').textContent = o.name || talkName(who);
   box.classList.remove('done');
   line.textContent = '';
+  /* UI-2: each new line in an open box, the bubble pops a little: a squash, then a spring back (the `scale`
+     property, so the box's own transform stays) */
+  if (shown && !reducedMotion && box.animate)
+    box.animate([{ scale: '0.975 0.95' }, { scale: '1 1' }], {
+      duration: 360,
+      easing: 'cubic-bezier(0.3, 1.6, 0.5, 1)',
+    });
   talkBox.on = true;
   talkBox.por = { who, expr: expr || null, t: 0 };
   if (!talkBox.loop) {
