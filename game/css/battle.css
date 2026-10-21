@@ -122,16 +122,16 @@ body.battle-3d #camFg {
   transition: width 0.65s cubic-bezier(0.4, 0.1, 0.3, 1);
 }
 .bplate .pl-hp .fill {
-  background: linear-gradient(180deg, #a6ffb2, #3fc456);
+  background: linear-gradient(180deg, var(--c-hp-ok-hi, #a6ffb2), var(--c-hp-ok, #3fc456));
   transition:
     width 0.38s cubic-bezier(0.2, 0.9, 0.3, 1),
     background 0.3s;
 }
 .bplate .pl-hp .fill.mid {
-  background: linear-gradient(#ffeb94, #f0b43a);
+  background: linear-gradient(var(--c-hp-mid-hi, #ffeb94), var(--c-hp-mid, #f0b43a));
 }
 .bplate .pl-hp .fill.low {
-  background: linear-gradient(#ffa0a0, #e84848);
+  background: linear-gradient(var(--c-hp-low-hi, #ffa0a0), var(--c-hp-low, #e84848));
   animation: low 0.7s steps(2) infinite;
 }
 .bplate .pl-bot {

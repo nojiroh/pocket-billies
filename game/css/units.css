@@ -132,14 +132,14 @@
   position: absolute;
   inset: 0 auto 0 0;
   border-radius: inherit;
-  background: var(--ok);
+  background: var(--c-hp-ok, var(--ok));
   transition: width var(--m-slow) var(--ease-out);
 }
 .u-hp.mid i {
-  background: var(--gold-b);
+  background: var(--c-hp-mid, var(--gold-b));
 }
 .u-hp.low i {
-  background: var(--red);
+  background: var(--c-hp-low, var(--red));
 }
 .u-hpn {
   font: 600 var(--fs-caption) / 1 var(--font-voice);

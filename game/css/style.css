@@ -541,11 +541,14 @@ section > h2,
 .pbar.xpb i {
   background-color: #6a8ef2;
 }
+.pbar.hpb i {
+  background-color: var(--c-hp-ok, var(--ok));
+}
 .pbar.hpb.mid i {
-  background-color: var(--gold);
+  background-color: var(--c-hp-mid, var(--gold));
 }
 .pbar.hpb.low i {
-  background-color: var(--red);
+  background-color: var(--c-hp-low, var(--red));
 }
 /* here */
 .here {
@@ -3127,13 +3130,13 @@ nav#nav[hidden] {
 .hpmini i {
   display: block;
   height: 100%;
-  background: #4fd067;
+  background: var(--c-hp-ok, #4fd067);
 }
 .hpmini i.mid {
-  background: #f0b43a;
+  background: var(--c-hp-mid, #f0b43a);
 }
 .hpmini i.low {
-  background: #e84848;
+  background: var(--c-hp-low, #e84848);
 }
 .aim {
   display: flex;
