@@ -385,6 +385,8 @@ export function worldSetGraph(locations, roads) {
     }
     if (!BATTLE_STAGES[r.battleStage]) r.battleStage = BATTLE_STAGES[r.pool] ? r.pool : 'grass';
     r.trainers = [];
+    /* a place put in again keeps no Boardroom from before (the copies by id below are made without one) */
+    delete (/** @type {{ board?: string | null }} */ (r).board);
   });
   const roadList = (
     roads && roads.length
