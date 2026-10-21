@@ -837,6 +837,7 @@ export function paintActions() {
       caught: 'Taxed.',
       ran: 'You walked away.',
       bribed: 'You took the money.',
+      draw: 'A draw.',
     }[activeBattle.over];
     h = `<button class="bt end wide" data-a="bend"><b>${t} Continue</b><kbd>Enter</kbd></button>`;
   }
@@ -947,8 +948,9 @@ function finishThrow(res, id, lab, spin) {
 }
 export function endBattle() {
   stopTimers();
-  const o = activeBattle.over,
-    kind = activeBattle.kind,
+  const kind = activeBattle.kind,
+    /* RL-4: a battle called off at the turn cap ends as if you walked away (wild) or lost (a trainer) */
+    o = activeBattle.over === 'draw' ? (kind === 'wild' ? 'ran' : 'lose') : activeBattle.over,
     T = activeBattle.T,
     tid = activeBattle.tid,
     lead = findBilly(activeBattle.lead);

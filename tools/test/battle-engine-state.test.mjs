@@ -121,3 +121,29 @@ test('a seeded battle plays the same twice, whatever else draws random numbers m
   assert.deepEqual(b, a);
   assert.notDeepEqual(seededFight('another-seed').log, a.log, 'another seed plays another battle');
 });
+
+test('a battle still going at the turn cap ends as a draw', () => {
+  assert.equal(RULES.battle.turnCap, 40);
+  const was = RULES.battle.turnCap;
+  RULES.battle.turnCap = 2; // the same check, reached in two turns
+  try {
+    reseed(13);
+    const s = startedSave(starter(), 30);
+    const foe = fn('makeBilly')(DEX_ORDER[1], 30);
+    const b = fn('makeBattle')('wild', copyTeam(s), [foe], { seed: 'cap', host: SILENT_HOST });
+    // both fighters far too tough to fall in two turns
+    for (const m of [b.sides[0].team[0], foe]) m.hp = 1e6;
+    const turn = () => {
+      const c = fn('chooseAI')(0, b);
+      fn('runTurn')([{ who: 0, k: 'move', mid: c.mid, tk: c.tk }], b);
+    };
+    turn();
+    assert.equal(b.over, null, 'one turn in: still going');
+    turn();
+    assert.equal(b.over, 'draw');
+    assert.equal(b.turn, 2);
+    assert.match(b.events.at(-1).t, /draw/);
+  } finally {
+    RULES.battle.turnCap = was;
+  }
+});

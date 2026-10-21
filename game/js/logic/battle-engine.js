@@ -155,6 +155,8 @@ expose({
   startWild: [() => startWild, v => (startWild = v)],
   teamNeedsHp: [() => teamNeedsHp],
   // @ts-expect-error -- replaced on purpose
+  turnCapCheck: [() => turnCapCheck, v => (turnCapCheck = v)],
+  // @ts-expect-error -- replaced on purpose
   useMove: [() => useMove, v => (useMove = v)],
   // @ts-expect-error -- replaced on purpose
   withBattle: [() => withBattle, v => (withBattle = v)],
@@ -1063,8 +1065,19 @@ export function runTurn(plan, b) {
       endTurn();
       checkFaints();
     }
+    turnCapCheck();
     battleHost().play();
   });
+}
+/* RL-4: a battle still going after RULES.battle.turnCap turns ends as a draw (battle.js endBattle: a wild battle as
+   if you walked away, a trainer's as a loss), so no battle (a stall, a ghost replay) runs on for ever */
+export function turnCapCheck() {
+  const b = battleNow(),
+    cap = BATTLE_RULES.turnCap;
+  if (b.over || !(cap > 0) || b.turn < cap) return;
+  b.needSwitch = [];
+  battleSay(`${cap} turns and nobody has given in. The battle is called off: a draw.`, { k: 'draw' });
+  b.over = 'draw';
 }
 export function enemyOnly(b) {
   return withBattle(b, () => {
