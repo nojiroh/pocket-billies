@@ -39,6 +39,9 @@ T0 = time.time()
 # are always taken at the same time of day and compare with the baseline
 CLOCK = """(()=>{const D=Date,off=new D(2026,5,15,12,30,0).getTime()-D.now();class FD extends D{constructor(...a){if(a.length)super(...a);else super(D.now()+off)}static now(){return D.now()+off}}
  FD.UTC=D.UTC;FD.parse=D.parse;window.Date=FD})()"""
+# RL-5: the shops were parked with their towns (game/data/legacy): the checks open a shop of their own to see the shop
+# screen (the stock Marigold's General Store had)
+CHECK_SHOP = "SHOPS.check_shop=SHOPS.check_shop||{name:'Corner Store',keeper:'Mabel Underhill',who:'clerk',greeting:'Welcome in! Potions on the left, coins on the right.',stock:[{item:'taxbreak',price:150},{item:'apology',price:200},{item:'settlement',price:200},{item:'appeal',price:200},{item:'trailmix',price:260},{coin:'penny',price:300}]};"
 NO_ACCOUNTS = "Object.defineProperty(window,'PB_FIREBASE',{get(){return null},set(){},configurable:false})"   # alpha 0.4.1: no Google sign-in during the checks
 # phase 04d: the modules' names on window (game/js/test-globals.js), only for the checks' page.evaluate() calls
 TEST_GLOBALS = "window.PB_TEST_GLOBALS=true"
@@ -723,7 +726,7 @@ def safety_step(b, base, R):
         for k in ['sound', 'graphics', 'game', 'save', 'help']:
             pg.evaluate(f"uiState.modal=null;uiState.mq=[];renderOverlay();openSettings();document.querySelector('[data-a=set-tab][data-k={k}]')?.click();0"); time.sleep(.3); check('settings ' + k)
         shown.append('settings')
-        pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();openShop('marigold');0"); time.sleep(.4); check('shop'); shown.append('shop')
+        pg.evaluate(CHECK_SHOP + "uiState.modal=null;uiState.mq=[];renderOverlay();openShop('check_shop');0"); time.sleep(.4); check('shop'); shown.append('shop')
         pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();document.querySelector('[data-a=inbox]')?.click();0"); time.sleep(.4); check('inbox'); shown.append('inbox')
         pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();toast(saveData.team[0].nick+' leads the team now.');talkLine('me',saveData.avatar.name+' says hi.');0"); time.sleep(.6); check('toast and dialogue'); shown.append('toast'); shown.append('dialogue')
         pg.evaluate("talkHide();uiState.modal=null;uiState.mq=[];renderOverlay();openDressingRoom({});0"); time.sleep(1); check('dressing room'); shown.append('dressing room')
@@ -760,7 +763,7 @@ def targets_step(b, base, R):
         for tab in ['walk', 'team', 'ledger', 'profile', 'bag']:
             pg.evaluate(f"uiState.modal=null;uiState.mq=[];renderOverlay();uiState.tab='{tab}';render();scrollTo(0,0);0"); time.sleep(.6)
             bad += pg.evaluate(small, tab)
-        for name, js in [('details', "billySheet(saveData.team[0])"), ('settings', "openSettings()"), ('shop', "openShop('marigold')"), ('dressing room', "openDressingRoom({})")]:
+        for name, js in [('details', "billySheet(saveData.team[0])"), ('settings', "openSettings()"), ('shop', CHECK_SHOP + "openShop('check_shop')"), ('dressing room', "openDressingRoom({})")]:
             pg.evaluate(f"uiState.modal=null;uiState.mq=[];renderOverlay();uiState.tab='walk';render();{js};0"); time.sleep(.8)
             bad += pg.evaluate(small, name)
         if bad: raise Exception(f'{len(bad)} controls too small to tap: ' + '; '.join(bad[:8]))
@@ -868,7 +871,7 @@ def phone_flow(b, base, R):
         for tab in ['walk', 'map', 'team', 'ledger', 'profile']:
             pg.evaluate(f"uiState.tab='{tab}';render();scrollTo(0,0);0"); time.sleep(2.5 if tab in ('walk', 'map') else .6); shot(pg, f'phone-{tab}')
             blur[tab] = pg.evaluate('uiBlurCount()')
-        pg.evaluate("uiState.tab='walk';saveData.trip.node=0;render();openShop('marigold');0"); time.sleep(.6); shot(pg, 'phone-shop')
+        pg.evaluate(CHECK_SHOP + "uiState.tab='walk';saveData.trip.node=0;render();openShop('check_shop');0"); time.sleep(.6); shot(pg, 'phone-shop')
         blur['shop'] = pg.evaluate('uiBlurCount()')
         pg.evaluate("closeModal();screenWipe=f=>f();activeBattle=null;const q={id:'tq',sp:'swift1',lvl:12,no:1};encountersHere().splice(0,1e9,q);saveData.team.forEach(m=>{m.hp=maxHp(m)});startWild(q);0")
         if wait_phase(pg) != 'choose': raise Exception('a wild battle never reached the move menu')
