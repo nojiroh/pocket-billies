@@ -25,6 +25,7 @@ expose({
   EGGS: [() => EGGS],
   EGG_TIERS: [() => EGG_TIERS],
   HIT_EFFECTS_BY_TYPE: [() => HIT_EFFECTS_BY_TYPE],
+  HUB_LOCATIONS: [() => HUB_LOCATIONS],
   ITEMS: [() => ITEMS],
   LINES: [() => LINES],
   LINE_BY_ID: [() => LINE_BY_ID],
@@ -60,6 +61,8 @@ expose({
   exitLength: [() => exitLength, v => (exitLength = v)],
   gameData: [() => gameData],
   hasPassive: [() => hasPassive],
+  hubRoadCost: [() => hubRoadCost],
+  hubRoadsByNode: [() => hubRoadsByNode],
   // @ts-expect-error -- replaced on purpose
   isTown: [() => isTown, v => (isTown = v)],
   // @ts-expect-error -- replaced on purpose
@@ -436,6 +439,15 @@ export function worldSetGraph(locations, roads) {
   });
 }
 worldSetGraph(gameData.locations, gameData.roads);
+/* RL-7: the hub's places and roads as they go in here, kept while a run's world is in (game/js/run-world.js): a hub
+   save is checked against these (saves.js), whatever world the tables hold when it loads */
+export const HUB_LOCATIONS = /** @type {LocationEntry[]} */ (LOCATIONS.slice());
+export const hubRoadsByNode = ROADS_BY_NODE.map(e => e.slice());
+/** the walk between two of the hub's places (roadCost on the hub's roads), null without a road */
+export const hubRoadCost = (a, b) => {
+  const e = (hubRoadsByNode[a] || []).find(e => e.to === b);
+  return e ? e.cost : null;
+};
 /* alpha 0.4: where a new game starts (rules.start.locationId: Copperleaf Town; before alpha 0.4 the first stop, Marigold Town) */
 export const START_NODE = (() => {
   const p = RULES.start && RULES.start.locationId;
