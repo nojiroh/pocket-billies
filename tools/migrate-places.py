@@ -40,9 +40,10 @@ def problems(D):
         k = sc.get('kind')
         if k not in ('town', 'route', 'room', 'test'): out.append(f'scene {sid}: no kind'); continue
         if k in ('town', 'route'):
+            # RL-5: a town or route scene that no place uses is a scene of its own (one copied from the parked world in
+            # the Studio's Legacy section, or made by Generate), until a place uses it
             pl = next((p for p in places if p.get('mapId') == sid), None)
-            if not pl: out.append(f'scene {sid}: kind {k} but no place uses it')
-            elif pl.get('kind') != k: out.append(f'scene {sid}: kind {k} but its place is a {pl.get("kind")}')
+            if pl and pl.get('kind') != k: out.append(f'scene {sid}: kind {k} but its place is a {pl.get("kind")}')
         if k == 'room' and not sc.get('building'): out.append(f'scene {sid}: a room without a building')
     for i, L in enumerate(D['roads']):
         r = gamedata.road(D, L)

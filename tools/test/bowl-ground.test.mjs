@@ -2,7 +2,8 @@
 // grid the map draws as a low-poly mesh, and the camera reading the same heights it draws.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { GAME_DATA } from './setup-real.mjs';
+import './setup-real.mjs';
+import { oldWorld } from './old-world.mjs';
 import {
   BOWL_GROUND_EXTENT,
   BOWL_RELIEF_MAX,
@@ -27,7 +28,8 @@ import {
   bowlToGpu,
 } from '../../game/js/logic/bowl-camera.js';
 
-const { locations } = GAME_DATA;
+/* RL-5: the old world's places (the game's and the ones parked in game/data/legacy): good ground to test on */
+const { locations } = oldWorld();
 const byId = id => locations.find(l => l.id === id);
 const F = bowlReliefFeatures(locations);
 const at = id => {

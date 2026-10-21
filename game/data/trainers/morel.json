@@ -2,7 +2,7 @@
  "name": "Mother Morel",
  "who": "morel",
  "battleStage": "shell",
- "node": 28,
+ "miniboss": true,
  "blocks": false,
  "team": [
   {"sp":"jobs2","lvl":46},

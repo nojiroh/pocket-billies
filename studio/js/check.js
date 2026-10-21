@@ -223,7 +223,8 @@ export function runCheck() {
   });
   for (const [k, T] of Object.entries(D.trainers || {})) {
     const g = { trainer: k };
-    if (!D.locations[T.node]) err(`${T.name} stands on a stop that doesn’t exist.`, 'trainers', g);
+    if (!T.tutorial && !T.miniboss && !D.locations[T.node])
+      err(`${T.name} stands on a stop that doesn’t exist.`, 'trainers', g);
     if (!T.team.length) err(`${T.name} has no team.`, 'trainers', g);
     T.team.forEach(e => {
       if (!/^@rival\d?$/.test(e.sp) && !sp.has(e.sp))

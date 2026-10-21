@@ -9,6 +9,13 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- The hub alone (roguelite track RL-5): the game is Copperleaf Town now; every other place, its map, trainers,
+  shops, day jobs and lore is parked for the Studio (its new Legacy section) and no longer loaded. Copperleaf's south
+  exit and Route 1 are gone, the world map shows Copperleaf alone, and the eight badge leaders wait for the runs as
+  mini-bosses. Hazel, Blake and Copperleaf's people no longer give directions to places that are gone. A save from
+  before loads at Copperleaf with the parked places dropped from it; a backup file exported before can't be
+  imported. Rooms now open in place in a town with no exits (Pearlantis's didn't). The game's data is about a
+  quarter smaller to load.
 - The Studio's UI look (UI track UI-3a): Game → UI look edits the menus' look: colours light and dark side by side
   with a contrast grade on each text colour, the glass, depth and drop shadows, the shapes (each family's cut,
   corners and radius), space, type and motion, for the whole game or one screen's colours and shapes. Presets (save
@@ -47,7 +54,7 @@ kept aside in the browser).
   conditions, once-only and rotating lines, and commands (docs/SCRIPTS.md): people, trainers before a battle, Blake,
   Cass and Vinylla running up to you, Hazel in the lab, the talk after Blake's first battle and the ending. Same words
   as before. Hold the dialogue box to skip. A save taken mid-conversation keeps the state from before it and plays it
-  again on Continue. Test runs can start at a point in the story (`?story=after-opening`, `?story=before-cass`).
+  again on Continue. Test runs can start at a point in the story (`?story=after-opening`).
   People, trainers and props can appear only at some points of the story, places can stay closed until a point, and a
   chapter can swap a map for another version. Every line has an id the debug log names. The data check checks the
   story (names, flags, line ids, places that could never open). A battle started from the debug menu no longer shows

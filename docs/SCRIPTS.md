@@ -86,7 +86,7 @@ An entry of `cycle` or `seq` starts after `- `; its other lines go under it, two
 |---|---|
 | `met_juniper` | the story flag is set; `!met_juniper` or `not met_juniper`: it isn't |
 | `rival0 = win`, `flights >= 3` | a flag holds that word or number |
-| `beat:chad` | the trainer is beaten |
+| `beat:crude` | the trainer is beaten |
 | `item:honey >= 3`, `coin:gold > 0` | items in the bag, coins |
 | `quest:ledger = asked`, `quest:ledger >= found` | a quest's stage (`>=`, `<` in the quest's own order of stages; `none` before it starts) |
 | `visits:juniper >= 2` | times you have talked to someone |
@@ -142,11 +142,11 @@ makes every change (a choice takes its first option); a battle stops the skip.
 
 `game/index.html?story=<preset>` (alone or with `?test=1`) is a test run: a new game that saves nothing, put at a
 point in the story by story.json `presets` (place, story flags, trainers beaten with their badges, coins, items,
-team). `after-opening`: Copperleaf, Blake's first battle won. `before-cass`: every badge, a team near level 55, at
-the pressing plant.
+team). `after-opening`: Copperleaf, Blake's first battle won. (`before-cass`, every badge at the pressing plant, was
+parked with its place in RL-5: game/data/legacy/story.json.)
 
 The Studio's Play from here adds (S3): `&place=<location>` starts you in the place itself (its people, trainers and
-exits) and `&at=x,z` on a spot of its scene; `&flags=met_x,!rival0,beat:chad` switches flags and trainers on or off
+exits) and `&at=x,z` on a spot of its scene; `&flags=met_x,!rival0,beat:crude` switches flags and trainers on or off
 on top of the preset; `&draft=1` waits up to 2 s for the open Studio's unsaved data first.
 
 ## Line ids

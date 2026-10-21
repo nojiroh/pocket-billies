@@ -2,7 +2,7 @@
  "name": "Leader Poppy",
  "who": "poppy",
  "battleStage": "grass",
- "node": 20,
+ "miniboss": true,
  "blocks": false,
  "team": [
   {"sp":"bloomberg1","lvl":36},

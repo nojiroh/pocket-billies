@@ -33,6 +33,7 @@ expose({
   changedDataFiles: [() => changedDataFiles, v => (changedDataFiles = v)],
   checkGithubToken: [() => checkGithubToken, v => (checkGithubToken = v)],
   gameFilePath: [() => gameFilePath],
+  githubDataText: [() => githubDataText],
   githubFetch: [() => githubFetch, v => (githubFetch = v)],
   githubLogin: [() => githubLogin, v => (githubLogin = v)],
   githubLoginHTML: [() => githubLoginHTML, v => (githubLoginHTML = v)],
@@ -222,9 +223,12 @@ ACTIONS.ghOut = async () => {
 /* ---------- the game data: many files in game/data (phase 04b, layout in game/js/data-files.js) ----------
    Read: index.json, then every file it lists, a few at a time. Their text is kept, so a proposal sends only the files
    that changed (and removes the files of entries that were deleted). */
+/* a data file's text from the branch (RL-5: the Legacy section reads the parked world with it; it stays out of
+   githubMode.data, so Save never writes or removes what it reads) */
+export const githubDataText = (/** @type {string} */ path) =>
+  githubFetch(repoApiPath(`contents/${gameFilePath('data/' + path)}?ref=${GITHUB_CONFIG.branch}`), {}, true);
 async function readGithubData() {
-  const read = path =>
-    githubFetch(repoApiPath(`contents/${gameFilePath('data/' + path)}?ref=${GITHUB_CONFIG.branch}`), {}, true);
+  const read = githubDataText;
   const index = JSON.parse(await read('index.json')),
     list = PB_DATA.files(index),
     texts = { 'index.json': PB_DATA.text(index) };

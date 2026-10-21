@@ -1,9 +1,9 @@
 // Phase 10, the look, session 4: landmarks, buildings and trees on the world map (game/js/logic/bowl-things.js).
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import fs from 'node:fs';
 import { PB_DATA } from '../data-files.mjs';
-import { GAME_DATA } from './setup-real.mjs';
+import './setup-real.mjs';
+import { oldWorld } from './old-world.mjs';
 import {
   BOWL_REGION_TREES,
   bowlClumps,
@@ -24,16 +24,18 @@ import {
   bowlXY,
 } from '../../game/js/logic/bowl.js';
 
-const { locations, maps } = GAME_DATA;
-const ART = GAME_DATA.scenery.props;
+/* RL-5: the old world (the game's places and the ones parked in game/data/legacy), with whole maps */
+const OLD = oldWorld();
+const { locations, maps } = OLD;
+const ART = OLD.scenery.props;
 const byId = id => locations.find(l => l.id === id);
 const spotOf = l => {
   const s = bowlSpotOf(l, byId),
     [x, y] = bowlXY(s.a, s.r);
   return { x, y, under: s.under };
 };
-/* the full walk maps (props) from the data folder: the game data may hold only their outlines */
-const fullMap = id => JSON.parse(fs.readFileSync(new URL(`../../game/data/maps/${id}.json`, import.meta.url), 'utf8'));
+/* the full walk maps (props), from either data folder (the page's game data may hold only their outlines) */
+const fullMap = id => maps[id];
 
 test('a walk map lies on the bowl as the terrain stamps it: its middle on the place, its north to the centre', () => {
   const l = byId('marigold'),
@@ -81,8 +83,8 @@ test('each place gets its own landmark when its map has one', () => {
 });
 
 test('clumps grow on dry land between places, off the routes, in their region’s kinds', () => {
-  const roads = GAME_DATA.roads
-      .map(r => PB_DATA.road(GAME_DATA, r))
+  const roads = OLD.roads
+      .map(r => PB_DATA.road(OLD, r))
       .filter(r => r.kind === 'seam')
       .map(r => [r.a, r.b]),
     S = bowlSeaInput(locations, roads, l => maps[l.mapId] || null),

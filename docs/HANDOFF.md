@@ -2,6 +2,80 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Roguelite track RL-5 - Legacy parking and the world setter - 2026-10-21
+Branch `ccr-ad41ba43-cf2age`, from main 3479f01 (RL-4 merged). Plan approved at the start with the owner's answers:
+Copperleaf alone (its south exit and Route 1 gone), the other places moved to `game/data/legacy` with a read-only
+Studio list, the bowl shows Copperleaf alone, Hazel's lines lose only the directions to parked places.
+- Changed (one cause per commit):
+  - The world setter: a snapshot of the tables game-data.js works out (`world-tables-real.test.mjs`) before anything
+    moved; then `worldSetGraph(locations, roads)` (a move): `LOCATIONS`, `ROADS`, `ROADS_BY_NODE`, `LOCATION_BY_ID`
+    filled in place, each place's fix-ups, trainers and boards attached, called once at import;
+    `world-graph-set.test.mjs` puts a 3-place world in and the hub back (deep-equal, same objects). A world with no
+    roads has none (an empty list used to make up a chain).
+  - Mini-bosses: a trainer with `miniboss: true` stands on no stop (game-data.js, the schema, check-data, the Studio's
+    check and its trainer editor's box); the eight leaders are mini-bosses with no `node`.
+  - Directions cut (the owner's answer): Hazel's Hedgerow, Fizzwell-arena, Clovercrest and Tallgrass lines; Blake's
+    "good as new" line keeps its id; Copperleaf's signpost, a townsfolk line and one of Granny Juniper's (all pointed
+    at Marigold). `talk-before-scripts.json` re-recorded by hand.
+  - `migrate` (no run on) drops what an old save names past the hub's places (visited, wild by place, requests,
+    letters, today's visits). The golden record's double fight names Leader Rocco (crude) and was remade on purpose
+    (the other three fights unchanged). Tests that use the old places as data read `oldWorld()`
+    (tools/test/old-world.mjs).
+  - check-data reads `legacy/index.json` (every listed file there and readable, nothing unlisted, maps and trainers
+    against their schemas). A place without exits gets its hub view, so its rooms open in place (Pearlantis's didn't;
+    Copperleaf's wouldn't have). The fast check and its fixtures start from Copperleaf (the room is Hazel's lab, the
+    battle Leader Rocco).
+  - The parking (one commit): 48 maps and 39 trainers `git mv`d; legacy/locations.json (48 places, old order),
+    roads.json (all 57), the `before-cass` preset, README.json (what is here, the old stops, the leaders' old arenas);
+    the game's locations.json is Copperleaf alone (node 0), roads.json `[]`, Copperleaf's exits and edge exits empty;
+    the checks that need parked places retired in the same commit (the fast check's route, cave and flight; the
+    `route`/`cave` fixtures; the full test's Road phase, back in RL-7). Then shops (18), jobs (4), the one region and
+    the place-bound lore (48 places' pages, 22 chat lists, 5 legends, 2 clues), one commit each.
+  - The full check's steps no longer need parked places (each change marked RL-5 in tools/check-quick.py); smoke's
+    shop steps use a shop the check makes (`CHECK_SHOP`); the Unused report counts props the parked maps place.
+  - The Studio's Legacy section (studio/js/legacy-view.js, group Legacy): the 48 places with their old stops, trainers
+    and roads (named by the place at the other end), read-only, never in `studioState.D`; Copy into game brings a map
+    back as a scene of its own in one undo step. The world map's card no longer says "Roads to ." when a place has none.
+  - Docs: roguelite-track.md section 0 (below) and 2e, CHANGELOG, ROADMAP, TESTING, NAMING, STUDIO, SCRIPTS.
+- Where the plan was wrong (roguelite-track.md section 0): 48 places and maps, not 47 (Copperleaf was index 46);
+  trainers name their place by number, so the leaders needed the mini-boss branch (and neither check exempted
+  tutorials: they passed because node 0 existed); more of story.json named parked places (lines 47-49, 67, the
+  `before-cass` preset), and so did Copperleaf's own signpost and two people; a place with no exits opened as its
+  plain map, where no room opens; `worldSetGraph` can't bump `seamlessWorld.gen` or reset the bowl (game-data.js is
+  logic): RL-7's install does, plus the list of what holds a node; `gamedata.js` was 0.76 MB, not 13 MB (CLAUDE.md's
+  gotcha is stale). Pushed back: fishing.json stays (keyed by water, Copperleaf has water); the postcard pictures
+  stay. Not done from the plan: walk-view.js's `mapMoodName` still reads `gameData.locations` (shared with the Studio;
+  a run scene should carry its own `mood`, RL-7).
+- Verified: fast tier green at every commit (lint, typecheck, check:modules, format:check, check:data, build; unit
+  tests 341 -> 358). Smoke passed before each game commit and on the last one, 7c35815 (15 steps, 200 s: the opening,
+  Blake's first battle, a phone battle, the debug log with no names); the fast check (CI) 11/11 there (the town, the
+  lab, a battle, the bowl with one place and a card on tap, the flight from Copperleaf to itself). The new tests were
+  seen to fail on planted faults (the world swap, migrate's clean-up taken out). Probed in a browser: Pearlantis's
+  door did nothing and now opens its room; Copperleaf without exits opens the lab, a house and Juniper's room in
+  place; the Studio's Legacy section lists 48 places, Copy into game and Undo work, the Studio's data keys and what
+  Save compares are unchanged, no page error; the Studio's Check has nothing new (8 findings not about Billie art, 95
+  on the base). Sizes: `gamedata.js` 756 KB -> 557 KB, game/data/maps 7.3 MB -> 0.8 MB (legacy 6.9 MB, never fetched
+  by the game; the service worker caches only what the game fetches). **Not run:** the full quick check and
+  `--selftest` on the tip (the final run was stopped after smoke and the fast check passed). The base full check
+  (3479f01) had 11 of 54 steps red (Walking's second road, v31, v34, v35, v38, v39/40, v43, v44, v46, alpha 0.4, phase
+  08 running); the retargeted steps (da87295) were written from reading the code and checked only statically (the file
+  parses, every name resolves), never run in a browser; the least sure are v32 via test_tiny, v37's building budget
+  via test_hilltown, the rabbit that bolts, v43's flag and alpha 0.1's lab window. Run both before or after merging; a
+  step red there and green on the base is RL-5's.
+- Risky: the game now starts and stays in one place; the opening, the first battle and the hub were played by smoke
+  and the fast check, not by hand on the phone. The bowl's land fills about 60% of the bowl whatever the places, so it
+  doesn't read as an island until the sea share is raised in the Studio (picture sent). The leaders have no arena
+  until RL-13 (debug menu and fixtures only). A backup file exported before RL-5 is refused on import (it holds old
+  stop numbers); saves on the phone and account load and are cleaned. The CI checks lose routes, caves, road walks and
+  flights to another town until RL-7/RL-8 bring run worlds. The daily "visit places" challenge can't be done with one
+  place.
+- Left as is (noted, not moved): the Guide's story pages "Route 1" and "The four arenas", three loading tips, the
+  Marigold charter book and three people's lore name parked places (RL-8 rewrites the hub's directions); `rules.json
+  legends[].scene`, `scenery.json` town flags, `biomes.json from` and the parked places' pools are dead data; "Rest at
+  the clinic, free" shows for Copperleaf (it did before; RL-8's paid healing); check-data's seam offset rule rejects
+  only an offset of exactly x.5 m (now logic/seam-rules.js:122, since MG-2; a small fix for later).
+- Next: the owner pushes `rl-1-done` .. `rl-5-done` (sessions can't push tags); checks the bowl and Copperleaf on the
+  phone; then RL-6 (run map and clock logic; MG-2 is merged).
 ### UI track UI-2 - Kit v2: angular shapes - 2026-10-21
 Branch `ccr-00069345-2zok4t`, from main 3479f01 (RL-4 merged, UI-1 in). The owner asked for the whole of UI-2 in one
 session (no split). Two calls I made without asking (my plan's recommendations): the old `.pb` buttons and every

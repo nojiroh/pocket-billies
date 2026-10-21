@@ -3,13 +3,17 @@
  "$id": "trainer.schema.json",
  "title": "game/data/trainers/<id>.json: a trainer you can battle",
  "type": "object",
- "required": ["name", "who", "node", "team", "reward", "win", "lose"],
+ "required": ["name", "who", "team", "reward", "win", "lose"],
+ "if": {"not": {"anyOf": [{"required": ["tutorial"], "properties": {"tutorial": {"const": true}}}, {"required": ["miniboss"], "properties": {"miniboss": {"const": true}}}]}},
+ "then": {"required": ["node"]},
  "properties": {
   "name": {"type": "string", "minLength": 1},
   "who": {"description": "their look (a person id)", "type": "string"},
   "battleStage": {"type": "string"},
   "node": {"description": "the route stop where they wait", "type": "integer", "minimum": 0},
   "blocks": {"type": "boolean"},
+  "tutorial": {"description": "only battles in a story scene (the opening): stands on no stop", "type": "boolean"},
+  "miniboss": {"description": "RL-5: a mini-boss (a badge leader): stands on no stop; the runs' mini-boss pool (RL-13)", "type": "boolean"},
   "team": {
    "type": "array",
    "minItems": 1,

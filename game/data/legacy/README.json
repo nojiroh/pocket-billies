@@ -56,5 +56,16 @@
   "scott",
   "hershey",
   "vanderbilt"
- ]
+ ],
+ "_world": "Roguelite track RL-5 (2026-10-21): the old world outside the hub, kept out of the game and read only by the Studio (its Legacy section); index.json lists it in the game data’s layout. locations.json: the 48 places in their old order without Copperleaf, so a place’s old node below 46 is its number here, and old nodes 47 and 48 (Hedgerow Lane, Pearlantis) are 46 and 47. maps/: their maps. roads.json: all 57 roads between them, Route 1 to Copperleaf included. trainers/: the 39 trainers who stood on them (a trainer’s node is its number in locations.json here). story.json: the before-cass test preset. The eight badge leaders stayed in game/data/trainers as mini-bosses (miniboss: true, no node); arenas says where each stood. To bring a map back, use the Studio’s Legacy section (Copy into game): it comes in as a scene of its own, without its place or its roads.",
+ "arenas": {
+  "crude": "fizzwell",
+  "markdown": "lanternhall",
+  "alta": "frostcrown",
+  "marina": "palmhaven",
+  "poppy": "twinpetal",
+  "vault": "goldvine",
+  "morel": "capshade",
+  "carat": "glimmershaft"
+ }
 }

@@ -555,8 +555,21 @@ def generate_steps(pg, errs):
     """map generator MG-1: Walk scenes → Generate… draws a draft route in the game's renderer, the dials change it (a
     biome, terraces, a new seed for the plants only) without touching the data or the undo history, and Add as a new
     scene is one undo step (left in, so the proposal at the end carries a generated scene). MG-2: an exit joined to
-    Tallgrass Meadow's meets it, the pair is drawn side by side, the clinic dial puts a clinic at the hub"""
+    Tallgrass Meadow's meets it, the pair is drawn side by side, the clinic dial puts a clinic at the hub. RL-5: Tallgrass
+    Meadow is parked (game/data/legacy), so it is brought back first with the Legacy section's Copy into game (one undo
+    step, before the counts below; the proposal carries it too)"""
     n = len(errs)
+    pg.evaluate("void openSection('legacy')")
+    pg.wait_for_selector('[data-act=legacyCopy][data-id=tallgrass_meadow]', timeout=30000)
+    pg.click('[data-act=legacyCopy][data-id=tallgrass_meadow]')
+    pg.wait_for_selector('#lgName', timeout=15000)
+    pg.click('.dlg [data-dlg="1"]')
+    t0 = time.time()
+    while time.time() - t0 < 15 and not pg.evaluate("!!studioState.D.maps.tallgrass_meadow"):
+        time.sleep(0.3)
+    if not pg.evaluate("!!studioState.D.maps.tallgrass_meadow"):
+        errs.append('generate: Tallgrass Meadow could not be copied in from the Legacy section')
+        return
     pg.evaluate("studioState.sel.scene='tallgrass_meadow';mapGen.on=false;void openSection('scenes')")
     pg.wait_for_selector('[data-act=genOpen]', timeout=20000)
     maps0, undo0 = pg.evaluate("[Object.keys(studioState.D.maps).length, studioState.undo.length]")
