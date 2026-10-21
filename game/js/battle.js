@@ -16,6 +16,8 @@ import {
   modal,
   provide,
   render,
+  runCatch,
+  runReleaseSheet,
   showPendingWindows,
   statusBadgeHTML,
   storyAfterRival,
@@ -909,6 +911,11 @@ function finishThrow(res, id, lab, spin) {
     e.hp = Math.max(1, e.hp);
     const where = addBilly(e);
     if (where === 'box') battleSay(`${billyName(e)} went to storage. Your team is full.`);
+    /* RL-8: a run's party is full: after the battle, one of the seven leaves the party (run.js) */
+    if (where === 'full') {
+      runCatch.m = e;
+      battleSay(`Your party is full. After the battle, pick who leaves it.`);
+    }
     activeBattle.over = 'caught';
     save();
     return playTurnEvents();
@@ -1041,6 +1048,9 @@ export function endBattle() {
     document.body.classList.remove('in-battle');
     uiState.tab = 'walk';
     render();
+    /* RL-8: a Billie caught with a full party: the release sheet comes first */
+    const rel = runReleaseSheet();
+    if (rel) after.unshift(rel);
     after.forEach(m => modal(m));
     if (!after.length) showPendingWindows();
   });

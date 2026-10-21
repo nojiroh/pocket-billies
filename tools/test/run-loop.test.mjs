@@ -139,3 +139,31 @@ test("the payout screen's rows: payoutOf's lines with their words, the win row o
   assert.equal(lost[0].value, Math.floor(750 * R.payout.money));
   assert.match(lost[0].note, /\$750 at 10%/);
 });
+
+test('during a run storage stays in Copperleaf: only the party counts, nothing moves in or out, a 7th waits', () => {
+  reseed();
+  const s = startedSave('musk0', 10),
+    mk = () => fn('makeBilly')('musk0', 5);
+  for (let k = 0; k < 5; k++) s.team.push(mk());
+  const resting = mk();
+  s.box.push(resting);
+  assert.equal(fn('allBillies')().length, 7, 'in the hub the box counts');
+  s.run = newRun('R', 1, 1, { team: [] });
+  assert.equal(fn('allBillies')().length, 6, 'in a run only the party');
+  assert.equal(fn('findBilly')(resting.uid), undefined);
+  assert.equal(fn('toBox')(s.team[1]), false);
+  assert.equal(fn('toTeam')(resting), false);
+  assert.equal(s.team.length, 6);
+  assert.deepEqual(s.box, [resting]);
+  const seventh = mk();
+  assert.equal(fn('addBilly')(seventh), 'full');
+  assert.equal(s.team.length, 6);
+  assert.deepEqual(s.box, [resting], 'the 7th never goes to the hub’s storage');
+  s.team[0].hp = 1;
+  resting.hp = 1;
+  fn('healAll')();
+  assert.equal(s.team[0].hp, fn('maxHp')(s.team[0]));
+  assert.equal(resting.hp, 1, 'a heal on a run doesn’t reach storage');
+  s.run = null;
+  assert.equal(fn('addBilly')(seventh), 'box');
+});

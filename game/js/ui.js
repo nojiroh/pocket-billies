@@ -1699,6 +1699,9 @@ const BOX_SORTS = [
   ['name', 'Name'],
 ];
 function boxSection() {
+  /* RL-8: storage stays in Copperleaf during a run */
+  if (saveData.run)
+    return '<section class="tpanel tm-box"><div class="sec-h"><h2>Storage</h2></div><div class="empty tm-empty">Storage stays in Copperleaf while you’re on a run. Your party holds six: catch a seventh and one of them leaves.</div></section>';
   const all = saveData.box,
     so = uiState.boxSort || 'new',
     types = [...new Set(all.flatMap(m => speciesOf(m).types))].sort();
@@ -1735,7 +1738,7 @@ function boxSection() {
 function renderTeam() {
   const lead = saveData.team[0],
     rest = saveData.team.slice(1),
-    free = saveData.box.length,
+    free = saveData.run ? 0 : saveData.box.length,
     open = Math.max(0, teamSize() - saveData.team.length);
   /* phase 06-2: the lead big, the rest as roomy rows (js/unit-card.js), the open spots last */
   const slots = open
@@ -2032,7 +2035,7 @@ function billySheet(m) {
         healPick(m, true);
       },
     });
-  if (inTeam && saveData.team.length > 1)
+  if (inTeam && saveData.team.length > 1 && !saveData.run)
     acts.push({
       ic: 'bag',
       l: 'Move to storage',

@@ -471,7 +471,9 @@ export function upgradePart(p) {
   return true;
 }
 export const billyName = m => m.nick || speciesOf(m).name;
-export const allBillies = () => saveData.team.concat(saveData.box);
+/* RL-8: during a run storage stays in Copperleaf (the box isn't a run field): only the party counts, so nothing in a run
+   reads, heals, merges or moves a Billie that is resting at home */
+export const allBillies = () => (saveData.run ? saveData.team.slice() : saveData.team.concat(saveData.box));
 export const findBilly = id => allBillies().find(m => m.uid === id);
 export function gainXp(m, amt, say) {
   if (m.lvl >= maxLevel() || amt <= 0) return;
@@ -567,17 +569,23 @@ export function healAll() {
     repairParts(m);
   }
 }
+/** move a Billie to storage (false during a run: storage stays in Copperleaf) */
 export function toBox(m) {
+  if (saveData.run) return false;
   const i = saveData.team.indexOf(m);
   if (i >= 0) saveData.team.splice(i, 1);
   if (!saveData.box.includes(m)) saveData.box.push(m);
   m.boxedAt = Date.now();
+  return true;
 }
+/** bring a Billie from storage onto the team (false during a run) */
 export function toTeam(m) {
+  if (saveData.run) return false;
   const i = saveData.box.indexOf(m);
   if (i >= 0) saveData.box.splice(i, 1);
   if (!saveData.team.includes(m)) saveData.team.push(m);
   m.boxedAt = null;
+  return true;
 }
 export function addBilly(m) {
   /* phase 17: robots aren't in the Guide */
@@ -589,6 +597,9 @@ export function addBilly(m) {
     saveData.team.push(m);
     return 'team';
   }
+  /* RL-8: a run's party is full: the Billie waits with the caller until one is released (a team of seven can't be
+     saved, and storage is the hub's) */
+  if (saveData.run) return 'full';
   m.boxedAt = Date.now();
   saveData.box.push(m);
   return 'box';
