@@ -469,6 +469,11 @@ debugLog.state = () => {
             held: typeof GAME.saveHeld === 'function' ? GAME.saveHeld() : null,
             party: GAME.saveData.team ? GAME.saveData.team.length : 0,
             money: GAME.saveData.se,
+            /* TR-2: the run's mods (dbg_mountains: the debug menu's mountains run), this place's mountains dial and
+               its ground's triangles (the land and the step grid's walls; to weigh frame times against) */
+            mods: (run.mods || []).slice(),
+            mountains: ((((GAME.walkView.sc || {}).gen || {}).params || {}).land || {}).mountains || 0,
+            groundTris: GAME.walkRenderer && GAME.walkRenderer.mesh ? Math.round(GAME.walkRenderer.mesh.n / 3) : null,
           }
         : null;
     /* RL-8: what the runs brought home (numbers only) */

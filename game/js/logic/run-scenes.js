@@ -26,6 +26,7 @@ import { MAPGEN_SIZES, mapgenEdgeStrip, mapgenScene } from './mapgen.js';
 /* eslint-disable no-func-assign */
 expose({
   RUN_BUILDINGS: [() => RUN_BUILDINGS],
+  RUN_MOD_MOUNTAINS: [() => RUN_MOD_MOUNTAINS],
   RUN_SIDE_ID: [() => RUN_SIDE_ID],
   runMapIdOf: [() => runMapIdOf],
   runPlaceId: [() => runPlaceId],
@@ -114,6 +115,11 @@ export function runSceneParams(run, i, scenes, data) {
     });
   return {
     ...dials,
+    /* TR-2: the debug menu's mountains run (a mod on the run, so a reload makes the same scenes): every place gets
+       the tallest mountains on its east and west sides, for measuring them on a phone */
+    ...((run.mods || []).includes(RUN_MOD_MOUNTAINS)
+      ? { land: { ...(dials.land || {}), mountains: 1, massif: 'EW' } }
+      : {}),
     /* RL-8: the buildings a node's type needs, beside the main road near its middle (mapgen's props dials: MG-2) */
     props: { ...(dials.props || {}), ...(RUN_BUILDINGS[node.type] || {}) },
     kind: 'route',
@@ -125,6 +131,8 @@ export function runSceneParams(run, i, scenes, data) {
     edges,
   };
 }
+/** TR-2: the debug menu's run mod that gives every place mountains (runSceneParams) */
+export const RUN_MOD_MOUNTAINS = 'dbg_mountains';
 /** RL-8: what stands beside the main road of a node of each type: the airship's mast where it lands you, a clinic
  * (paid healing) and a shop in a town (mapgen.js MAPGEN_HUB_BUILDINGS) */
 export const RUN_BUILDINGS = /** @type {Record<string, Record<string, number>>} */ ({

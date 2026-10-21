@@ -17,6 +17,8 @@ import { $ } from '../../game/js/util.js';
 import {
   MAPGEN_DEFAULTS,
   MAPGEN_FEATURES,
+  MAPGEN_MASSIF,
+  MAPGEN_MOUNTAIN_DIALS,
   MAPGEN_OPPOSITE,
   MAPGEN_SHAPES,
   MAPGEN_SIZES,
@@ -135,7 +137,23 @@ const GEN_DIALS = [
         0.05,
         'None, then one to three steps rising toward the back; the road ramps through them',
       ],
-      ['land.cliffs', 'Terrace height', 0, 1, 0.05, 'A low bank (0.4 m) up to a cliff (1.6 m)'],
+      [
+        'land.cliffs',
+        'Terrace height',
+        0,
+        1,
+        0.05,
+        'A low bank (0.4 m) up to a cliff (1.6 m); also the height of a mountain shelf (0.8-2 m)',
+      ],
+      [
+        'land.mountains',
+        'Mountains',
+        0,
+        1,
+        0.05,
+        'None, up to 20 m: ridges on the chosen sides, shelves and cliffs, kept away from the road, the hub and the exits',
+      ],
+      ['land.massif', 'Mountains on', 'sel', MAPGEN_MASSIF],
       ['land.water', 'Water', 'sel', MAPGEN_WATER],
       ['land.waterAmount', 'Water amount', 0, 1, 0.05, 'How wide the stream, how big the pond, how deep the sea'],
     ],
@@ -180,6 +198,7 @@ const GEN_DIALS = [
 ];
 const GEN_REROLL = [
   ['heights', 'Land and water'],
+  ['relief', 'Mountains'],
   ['ground', 'Ground'],
   ['road', 'Road'],
   ['plants', 'Plants'],
@@ -195,13 +214,14 @@ function genSet(o, path, v) {
   for (const k of ks) t = t[k] == null ? (t[k] = {}) : t[k];
   t[last] = v;
 }
-const genDefault = path => genGet(MAPGEN_DEFAULTS, path);
+/* TR-2: the mountains dials are not in MAPGEN_DEFAULTS (scenes made without them keep the dials they stored) */
+const genDefault = path => genGet(MAPGEN_DEFAULTS, path) ?? genGet({ land: MAPGEN_MOUNTAIN_DIALS }, path);
 const genDialValue = (v, step) => (typeof v === 'number' ? +v.toFixed(step < 0.1 ? 2 : 1) : v);
 function genDialHTML(f) {
   const [path, label] = f,
     typ = typeof f[2] === 'string' ? f[2] : 'range',
-    v = genGet(mapGen.params, path),
     def = genDefault(path),
+    v = genGet(mapGen.params, path) ?? def,
     own = JSON.stringify(v) !== JSON.stringify(def);
   const reset = `<button class="eng-reset" data-act="genReset" data-path="${path}" title="Back to ${escapeHtml(String(typ === 'exits' ? 'west and east' : typ === 'sel' ? f[3][def] : genDialValue(def, f[4] || 1)))}">↺</button>`;
   let body = '';
@@ -256,7 +276,9 @@ function genJoinHTML(i) {
 }
 function genGroupHTML([g, title, fields]) {
   const open = mapGen.open[g] !== false,
-    set = fields.filter(f => JSON.stringify(genGet(mapGen.params, f[0])) !== JSON.stringify(genDefault(f[0]))).length;
+    set = fields.filter(
+      f => JSON.stringify(genGet(mapGen.params, f[0]) ?? genDefault(f[0])) !== JSON.stringify(genDefault(f[0]))
+    ).length;
   return `<section class="card eng-g ${open ? 'open' : ''}"><header><button class="eng-gh" data-act="genOpenG" data-g="${g}"><span class="eng-tw">${open ? '▾' : '▸'}</span><h3>${escapeHtml(title)}</h3>${set ? `<span class="badge">${set} set</span>` : ''}</button>${set ? `<button class="btn sm subtle" data-act="genResetG" data-g="${g}">Reset</button>` : ''}</header>
  ${open ? `<div class="card-b eng-fields">${fields.map(genDialHTML).join('')}</div>` : ''}</section>`;
 }
@@ -508,7 +530,10 @@ function genInput(ev, settle) {
   if (o) o.textContent = String(genDialValue(v, +(t.step || 1)));
   const f = t.closest('.eng-f');
   if (f && !path.startsWith('road.exits'))
-    f.classList.toggle('own', JSON.stringify(genGet(mapGen.params, path)) !== JSON.stringify(genDefault(path)));
+    f.classList.toggle(
+      'own',
+      JSON.stringify(genGet(mapGen.params, path) ?? genDefault(path)) !== JSON.stringify(genDefault(path))
+    );
   if (settle && (k === 'sel' || path === 'w' || path === 'h')) render();
   genSoon();
 }

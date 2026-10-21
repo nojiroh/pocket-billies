@@ -210,15 +210,16 @@ function runStartSheet() {
  * with the account at once, then the airship's free flight from Copperleaf (it starts after the world goes in, which
  * would stop it, and is told where from: runArrive has moved the trip already). A reload mid-flight is on the landing.
  * @param {string} [seed] @param {Partial<import('../types/game-data').RunMapRules>} [map] the map's rules changed (the
- * debug menu's short run)
+ * debug menu's short run) @param {string[]} [mods] the run's mods (the debug menu's mountains run: RUN_MOD_MOUNTAINS)
  */
-function runTakeOff(seed, map) {
+function runTakeOff(seed, map, mods) {
   if (!runStartable()) return;
   closeModal();
   const s = saveData,
     sd = seed || runSeedRoll(),
     data = runWorldData();
   runBegin(s, runGive(sd, 1, MAPGEN_VERSION, RULES.run.start));
+  if (mods && mods.length && s.run) s.run.mods = mods.slice();
   uiState.learnQ = [];
   runCatch.m = null;
   runMapStart(
