@@ -197,6 +197,17 @@ The 7-line roster; the weight formula and caps; the Prime bonus; how the split i
 - The kits will grow; the slicer and data leave room for more kits.
 - The first column of the beasts kit is a cat.
 
+## Decided (2026-10-21): every Billie from the kits
+- All 24 Billies, starters included, are built from the part kits (the kit style wins: straight-on, upright,
+  softer shading). Recipes live in tools/art-source/part-kit/builds.json, built by tools/build-kit-billies.py; the
+  starters follow the sample's recipes (docs/samples/kit-starters.json), the four new lines the table in section 4.
+- Every rig is a biped (Musk and Gates were quads). Gear is gone with the clothing (boosters, boxes, tractor collar:
+  ASK 1.6 answered by the kit having no such parts).
+- Each line names its stages' native parts (`parts` in game/data/lines/<id>.json: a kit part per slot); this is the
+  fitting set Prime and abominations will compare against. Nothing reads it yet.
+- The hand-drawn starters are kept in game/art/next/billionaires/hand (sheets, layouts, rigs-hand.json) as part of the
+  part library.
+
 **Testing boot (2026-10-18):** for now the game boots straight into starter selection, with saves and accounts switched off. Nothing is removed; see docs/HANDOFF.md for the one switch that turns it off.
 
 ## Open questions (ASK)

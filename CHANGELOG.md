@@ -9,6 +9,13 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- Billies from the part kits (phase 16): all 24 Billies are now built from the three part kits (beasts, birds,
+  fish), drawn straight-on and upright: the starters too (a muskox from bear parts with horns and a spark tail, an
+  otter from cat and bear parts with a flat tail, a goat from rabbit parts with horns and a beard), a swift with a
+  blonde fringe and a silver mic crest, a chameleon with a sleek dark crest and a glowing ring, the slug and the
+  octopus as before. No clothing or gear: boosters, boxes, the sweater and the hat are gone. Each stage names its
+  native parts (the set that will make it Prime), they squash, stretch and blink, and every form fits the stage box.
+  The hand-drawn starters are kept as a part library.
 - Turned props (phase 09 batch 9): any prop on a map can face any way (a placement's `rot`, degrees, which only
   buildings had, for a few degrees along a street). The model, its decals and leaves, its shadow, its reflection,
   its footprint (where you can't walk), the ground levelled and shaded under it, its door, lamps, windows and smoke
