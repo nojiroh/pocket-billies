@@ -12,6 +12,7 @@ import { expose } from './test-globals.js';
 import { mapIdAt, provide } from './hooks.js';
 import { clamp } from './util.js';
 import { LOCATIONS, ROADS, ROADS_BY_NODE } from './game-data.js';
+import { mirroredTurn, turnedBounds } from './logic/prop-turn.js';
 import { uiState } from './game-state.js';
 import { artLoad, hexToRgb } from './art.js';
 import {
@@ -1431,10 +1432,8 @@ export function seamlessRoomMap(baseId, roomId, door) {
       b0 = p.z - 0.2,
       b1 = p.z + 0.4;
     if (M && M.box) {
-      a0 = p.x - (M.box[0] * s) / 2;
-      a1 = p.x + (M.box[0] * s) / 2;
-      b0 = p.z - 0.1;
-      b1 = p.z + M.box[1] * s;
+      /* phase 09 batch 9: a turned building's turned footprint */
+      [a0, b0, a1, b1] = turnedBounds(p, -(M.box[0] * s) / 2, -0.1, (M.box[0] * s) / 2, M.box[1] * s);
     }
     if (hits(a0, b0, a1, b1)) continue;
     props.push(p);
@@ -1450,6 +1449,8 @@ export function seamlessRoomMap(baseId, roomId, door) {
     if (mir) {
       if (q.f) delete q.f;
       else q.f = 1;
+      /* phase 09 batch 9: a mirrored room's turned things turn the other way */
+      if (q.rot) q.rot = mirroredTurn(q.rot);
     }
     q.z = +(p.z + oz).toFixed(2);
     props.push(q);

@@ -47,6 +47,7 @@ import {
   waitForPaintWorker,
 } from './hooks.js';
 import { clamp } from './util.js';
+import { pointInProp, turnedBounds, turnedPoint } from './logic/prop-turn.js';
 import { stepCellsJoined, stepCornerHeight, stepGridCorners } from './logic/step-grid.js';
 import { frameStop } from './frame-scheduler.js';
 import { ART_CACHE, artLoad, makeCanvas, packHexPixel } from './art.js';
@@ -2691,21 +2692,25 @@ export function navGrid() {
       const w = M.box[0] * s,
         d = M.box[1] * s;
       if (p.rot) {
-        /* alpha 0.4: a turned building blocks its turned footprint (it turns about its door) */ const r =
-            (p.rot * Math.PI) / 180,
-          c = Math.cos(r),
-          sn = Math.sin(r),
-          e = Math.hypot(w / 2, d + 0.1);
-        each(p.x - e, p.z - e, p.x + e, p.z + e, (q, x, z) => {
-          const lx = (x - p.x) * c + (z - p.z) * sn,
-            lz = -(x - p.x) * sn + (z - p.z) * c;
+        /* alpha 0.4: a turned prop blocks its turned footprint (it turns about its base point, its door) */
+        const B = turnedBounds(p, -w / 2, -0.1, w / 2, d);
+        each(B[0], B[1], B[2], B[3], (q, x, z) => {
+          const [lx, lz] = pointInProp(p, x, z);
           if (lx >= -w / 2 && lx <= w / 2 && lz >= -0.1 && lz <= d) blk[q] = 1;
         });
       } else each(p.x - w / 2, p.z - 0.1, p.x + w / 2, p.z + d, q => (blk[q] = 1));
-    } else if (M.posts) for (const o of M.posts) disc(p.x + (o.x / PPU) * s * f, p.z + 0.15, (o.r || 0.4) * s, 1);
+    } else if (M.posts)
+      for (const o of M.posts) {
+        /* phase 09 batch 9: a turned prop's posts (an arch's legs) turn with it */
+        const [px, pz] = turnedPoint(p, (o.x / PPU) * s * f, 0.15);
+        disc(px, pz, (o.r || 0.4) * s, 1);
+      }
     else {
       const r = M.solid != null ? M.solid * s : M.flat ? 0 : (M.shadow || 0) * 0.42 * s;
-      if (r > 0.05) disc(p.x, p.z + r * 0.2, r, 1);
+      if (r > 0.05) {
+        const [cx, cz] = turnedPoint(p, 0, r * 0.2);
+        disc(cx, cz, r, 1);
+      }
     }
   }
   /* v46: inside a room laid into the place you walk only on its floor */
@@ -3866,7 +3871,9 @@ export function actionSpot(p, M) {
     const D = doorOf(p);
     return walkablePointNear(D.at[0] + D.out[0] * 0.55, D.at[1] + D.out[1] * 0.55);
   }
-  return approachPoint(p.x, p.z - 0.3);
+  /* phase 09 batch 9: in front of a turned prop is the way its front faces */
+  const [ax, az] = turnedPoint(p, 0, -0.3);
+  return approachPoint(ax, az);
 }
 export function drawExitMarks(C, st, t) {
   const sc = walkView.sc,

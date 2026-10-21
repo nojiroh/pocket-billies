@@ -6,6 +6,7 @@
 import { expose } from '../test-globals.js';
 import { loadingScreen, provide, reducedMotion, requestAsker } from '../hooks.js';
 import { clamp } from '../util.js';
+import { pictureFacing } from '../logic/prop-turn.js';
 import { filterInto } from '../engine/frame-lists.js';
 import { makeCanvas } from '../art.js';
 import {
@@ -183,9 +184,7 @@ export function drawSprites(C, items, X, hits, labels, PPU) {
     {
       /* phase 09 batch 8: a model's picture layer may face another way than the front (yaw, radians: pi/2 the right
          side, pi the back), a tower's windows on every face */
-      const ro =
-          (it.fixed && it.lk && it.lk.rot && !it.M.box && !it.bld3 ? it.lk.rot * 0.6 : 0) +
-          (it.fixed ? it.yaw || 0 : 0),
+      const ro = pictureFacing(it) /* phase 09 batch 9: and the placement's turn (logic/prop-turn.js) */,
         cr = Math.cos(ro),
         sr = Math.sin(ro);
       if (ro) {
@@ -395,7 +394,8 @@ export function drawBoxFaces(C, items, X) {
       it.mat !== 'building' ||
       it.vis === false ||
       it.vol ||
-      it.vox /* phase 09: a prop drawn as a 3D model gets no box made from its picture */
+      it.vox /* phase 09: a prop drawn as a 3D model gets no box made from its picture */ ||
+      Math.abs(+it.p.rot || 0) > 5 /* phase 09 batch 9: nor one turned more than a few degrees (a standee) */
     )
       continue;
     if (walkRenderer.bt && walkRenderer.bt.hide && walkRenderer.bt.hide.has(it.p)) continue;

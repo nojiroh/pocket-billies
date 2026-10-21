@@ -17,6 +17,7 @@ import {
   provide,
   roomFloorOf,
 } from '../hooks.js';
+import { pictureRight, placedTurn } from '../logic/prop-turn.js';
 import { gpuPass } from '../engine/gpu-counters.js';
 import { filterInto } from '../engine/frame-lists.js';
 import { walkView } from '../walk-view.js';
@@ -212,18 +213,24 @@ function drawShadowSprites(SH, L, sun, ca, lamp) {
       continue;
     }
     if (it.plane && !(solid && it.M && it.M.box)) {
-      gl.uniform3fv(p.U.uRight, FIXED_RIGHT);
+      gl.uniform3fv(p.U.uRight, it.fixed ? pictureRight(it, FIXED_RIGHT) : FIXED_RIGHT);
       setSpriteUniforms(p, it);
       gl.drawArrays(gl.TRIANGLES, 0, 6);
       gl.uniform3fv(p.U.uRight, Rs);
       continue;
     }
     if (solid && it.M && it.M.box) {
-      gl.uniform3fv(p.U.uRight, [1, 0, 0]);
+      /* phase 09 batch 9: a turned building's slices turn with it and step back the way it faces */
+      const ta = placedTurn(it.p),
+        tc = Math.cos(ta),
+        ts = Math.sin(ta);
+      gl.uniform3f(p.U.uRight, tc, 0, ts);
       const d = it.M.box[1] * (it.p.s || 1),
         n = 6;
       for (let i = 0; i < n; i++) {
-        setSpriteUniforms(p, it, null, it.z + (d * i) / (n - 1));
+        const k = (d * i) / (n - 1);
+        setSpriteUniforms(p, it, null, it.z + k * tc);
+        if (ta) gl.uniform3f(p.U.uBase, it.x - k * ts, it.y, it.z + k * tc);
         gl.drawArrays(gl.TRIANGLES, 0, 6);
       }
       gl.uniform3fv(p.U.uRight, Rs);
@@ -331,7 +338,7 @@ function fittedShadowPass(items0, sun, C) {
         continue;
       }
       if (it.plane && !(solid && it.M && it.M.box)) {
-        gl.uniform3fv(p.U.uRight, FIXED_RIGHT);
+        gl.uniform3fv(p.U.uRight, it.fixed ? pictureRight(it, FIXED_RIGHT) : FIXED_RIGHT);
         setSpriteUniforms(p, it);
         gl.drawArrays(gl.TRIANGLES, 0, 6);
         gl.uniform3fv(p.U.uRight, Rs);
@@ -339,11 +346,17 @@ function fittedShadowPass(items0, sun, C) {
       }
       if (solid && it.M && it.M.box) {
         /* a building: its front outline extruded through its depth, so the shadow has its true roof line */
-        gl.uniform3fv(p.U.uRight, [1, 0, 0]);
+        /* phase 09 batch 9: a turned building's slices turn with it and step back the way it faces */
+        const ta = placedTurn(it.p),
+          tc = Math.cos(ta),
+          ts = Math.sin(ta);
+        gl.uniform3f(p.U.uRight, tc, 0, ts);
         const d = it.M.box[1] * (it.p.s || 1),
           n = 6;
         for (let i = 0; i < n; i++) {
-          setSpriteUniforms(p, it, null, it.z + (d * i) / (n - 1));
+          const k = (d * i) / (n - 1);
+          setSpriteUniforms(p, it, null, it.z + k * tc);
+          if (ta) gl.uniform3f(p.U.uBase, it.x - k * ts, it.y, it.z + k * tc);
           gl.drawArrays(gl.TRIANGLES, 0, 6);
         }
         gl.uniform3fv(p.U.uRight, Rs);
