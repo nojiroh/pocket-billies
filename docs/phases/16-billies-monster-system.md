@@ -143,7 +143,7 @@ The fish kit has no prototype line yet; it is ready for a fish Billie or abomina
 Style difference: the kits are drawn straight-on, upright and with softer shading; the existing Billie sheets are side-on 3/4 views with harder 4-band shading. Both are allowed in the prototype (decided); pick one before the full build.
 
 ### Placeholder sheets and rigs (built)
-`tools/build-rework-placeholders.py` makes every new Billie's sheet, Gold-Plated sheet and piece layout in `game/art/next/billionaires/` (where the Studio looks for them) and adds its rig to `game/art/next/rigs-next.js`, marked `"placeholder"`. Swift and Kardashian are recolours of the jay and gecko lines on their rigs. Trump and Zuckerberg are put together from the part kits on a biped rig. Replace any of them in the Studio; running the tool again rebuilds them.
+`tools/build-kit-billies.py` makes every new Billie's sheet, Gold-Plated sheet and piece layout in `game/art/next/billionaires/` (where the Studio looks for them) and adds its rig to `game/art/next/rigs-next.js`, marked `"placeholder"`. Swift and Kardashian are recolours of the jay and gecko lines on their rigs. Trump and Zuckerberg are put together from the part kits on a biped rig. Replace any of them in the Studio; running the tool again rebuilds them.
 
 | New Billie | Placeholder | Final art needs |
 |------------|-------------|-----------------|
