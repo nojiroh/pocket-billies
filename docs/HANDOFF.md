@@ -68,21 +68,111 @@ parts A and B both (the plan's split point wasn't needed).
 - Next: the owner merges and pushes `rl-1-done` .. `rl-7-done`; then RL-8 (the run loop and payout: the airship
   start, a town with paid healing, the mini-boss, the payout, resume; the first playable cut).
 
-### Roguelite track RL-6 - Run map and clock logic - 2026-10-21 (entry written in RL-7, from the commits)
-Merged as PR #100 without a HANDOFF entry; this one is put together from its commits (2a47ee1..d74bab9).
-- Changed: logic/weather.js (`CLIMATE_WEATHER_ODDS` moved unchanged; `weatherPick(climate, roll, season)` taken out
-  of environment.js with the same steps, checked against the old pick for every roll); `runEnd` pays per distinct
-  node (walking back no longer pays); a run map's node may name its biome (`validRun`); biomes.json `climate`; the
-  data section `nodeTypes` (landing, route, town, miniboss, boss); new logic/run-map.js: `runMapMake` (9 rows, mini-
-  bosses on rows 3 and 6 with a town before each, one or two lanes, a switch now and then, every choice on a stream of
-  its own), `runExits`, `runSpot`, and the clock (owner's 8.10: a day per arrival, backtracking included; the deadline
-  the shortest walk + 3, day 12), `runReveal`, `runForecastFill`, `runMapStart`, `runArrive`; rules.json `run.map`,
-  `run.clock`, `run.reveal`. Docs (NAMING, TESTING, ROADMAP, the track's section 0 "Corrected in RL-6", CHANGELOG).
-- Verified (from the commits): run-map.test (a frozen map, every structure rule over 1,300 maps of 5-12 rows, the
-  clock; seen to fail on planted faults), run-map-real (1,000 maps and 200 walks on the game's data), weather.test;
-  planted faults in the rules fail the data check; smoke passed.
-- Left for RL-7 (done there): the scenes, the world, the bowl. RL-7 found `runArrive` read the position from the path
-  (fixed there).
+### Roguelite track RL-6 - Run map and clock logic - 2026-10-21
+Branch `ccr-86f70f38-ax8pda`, from main 3ab03d4 (UI-4 merged).
+
+**Plan and answers.** The plan was approved at the start, with the owner's answers:
+- 8.10: a day per arrival, backtracking included; deadline = the shortest walk + 3; no tick for healing or waiting.
+- 8.18: 9 rows with lane switches.
+- Reveal: the next row, '?' on the row after, the boss always.
+- Biomes: the five with finished plants, each node its own.
+
+The design was reviewed before the work started. From that review: every table is passed in, each choice draws from
+its own stream, `runArrive` moves `trip.node` with the run, the payout fix lands first, and weather is proven
+exhaustively in Node.
+
+**Changed** (one cause per commit; nothing in the game calls the new code yet):
+- **Weather**
+  - `CLIMATE_WEATHER_ODDS` moved unchanged from environment.js into the new `logic/weather.js`, which both pages load
+    before environment.js.
+  - Then `weatherPick(climate, roll, season)` was taken out of `environmentWeatherFor`, same steps in the same order.
+- **run-state**
+  - The payout counts each node once (`runEnd` had used `path.length`, which counts backtracks).
+  - `validRun` takes an optional node `biome`.
+  - The types got `RunMap` and `RunNode.biome`. The forecast index is `[world node][day - 1]`.
+- **Data**
+  - Each biome got a `climate` (schema, type, check: an outdoor climate).
+  - New data section `nodeTypes`: landing, route, town, miniboss, boss, each `{name, mark?, engine, weight?}`, with its
+    schema, type, check and the `NODE_TYPES` export.
+- **`logic/run-map.js`** (on the game page; it reads no game data):
+  - The map: `runMapRows`, `runMapRowsFit`, `runMapMake`, `runNext`, `runBack`, `runExits`, `runSpot`, `RUN_BOWL`,
+    `runWorldNode`, `runMapNode`, with `rules.json run.map`.
+  - The clock: `runDeadline`, `runOverdue`, `runReveal`, `runNodeSeed`, `runForecastFill`, `runWeather`,
+    `runMapStart`, `runArrive`, with `run.clock` and `run.reveal`.
+  - Types and data checks for all three blocks.
+- **Docs:** NAMING (the run map's words), TESTING, ROADMAP, roguelite-track.md (section 0 "Corrected in RL-6", 2e, the
+  RL-6 paragraph, 8.10 and 8.18), CHANGELOG.
+
+**How it works, for RL-7 and RL-8:**
+- **Calls.** `runMapStart(run, {nodeTypes, biomes, rules: RULES.run})` at the mast, then `runArrive(saveData, i, same)`
+  on each arrival. The first call takes the landing. It returns the day, or 0 if refused.
+- **Numbering.** Map node i is world node i + 1. `path`, `to` and `runNodeSeed` count map nodes; `trip.node` and
+  `forecast` count world nodes.
+- **Exits.** `runExits(map, i)` gives each side's links west to east, with the t to put in `params.road.exits` and
+  `mapgenEdgeStrip`.
+- **The bowl.** `runSpot(map, i)` gives the `bowl` spot for the location row.
+- **Weather.** `runWeather(run, i, day)` gives the day's weather for `environment.force.weather` and `extra.wx`, which
+  is `{k, m}` built like things-to-do.js `battleWeather`.
+- **Streams.** The map's are `map|shape|<row>`, `map|type|<row>|<lane>` and `map|biome|<row>|<lane>`. A node's
+  weather is `<seed>|n<i>`, salted `weather|<day>`.
+
+**Where the plan was wrong** (roguelite-track.md section 0):
+- No climate existed anywhere, so a forecast had nothing to roll from. Biomes got one; RL-7 writes `scene.climate`
+  from it.
+- `weatherPick` needs the season, for the page.
+- `runMapMake` takes no tier.
+- The seam rules cap a node at two links each way.
+- The run goes from the bowl's rim inward (every map's north faces the centre). A lane switch can't keep the hub's
+  30°.
+- The payout counted backtracks.
+- **"About 14 nodes" and 70% two lanes disagree.** 70% gives 12.5 on average, 9 to 14. I kept the 70% the owner
+  picked; 0.9 would give about 13.5.
+
+**Map report** (1,000 seeds on the game's rules, 0.34 s with forecasts):
+- **Nodes:** 9 to 14 (12.5 on average). Each map has about 4 routes, 4.4 towns, 2 mini-bosses and the boss.
+- **Choices:** 2.75 forks a map; 23% of maps have a lane switch.
+- **On the bowl:** roads turn at most 22° from their exits, a switch 34°.
+- **Biomes:** meadow 33%, thicket 23%, lake 22%, autumn 12%, ridge 11%.
+- **Weather** (all mild): clear 50%, cloudy 22%, rain 16%, fog 8%, storm 4%.
+
+**Verified:**
+- **Fast tier** green at every commit: lint, typecheck, check:modules, format:check, check:data, build, unit tests
+  (425 -> 443).
+- **Smoke** passed after every commit that touched the page (1, 2, the map, the clock).
+- **Weather** is the same as before:
+  - In the page, 61,320 picks (three years of 3-hour blocks, every climate) are identical on the base, after the move
+    and after the extraction.
+  - weather.test checks all 100,000 rolls against the old code, for 7 climates × 5 seasons.
+- **Climates.** The biome climates were read off each biome's generated scene in the Studio page (8 seeds each).
+- **Planted faults.** Every new test and data rule was seen to fail on one:
+  - weather: `<=` for `<`;
+  - the payout's old count, and validRun without the biome check (the first try at that test passed for another
+    reason: fixed before pushing);
+  - an unknown or `none` climate;
+  - a bad marker, or no weights;
+  - crossing links, swapped exits, mirrored lanes;
+  - walking back free, one forecast stream, a shrinking reveal, the boss hidden, an unlinked arrival;
+  - 13 rows, 4 mini-bosses, bad chances, stray keys.
+- **The game and the Studio** open with no page errors.
+- **The fast check:** 11/11 on the tip and on the base when rerun. Its first run on the tip had one red step: "the
+  world map opens as the bowl: a touch on the map lands on IMG#". That is the step UI-4 saw fail in 2 of 5 CI runs on
+  #80's commits, and nothing here touches the page's layout. Not root-caused: watch it on main.
+- **The full quick check** was still running when the PR went up; its result is added below when it finishes.
+
+**Risky:**
+- environment.js now reads the odds and the pick from a logic module on both pages. It is proven the same, but every
+  weather in the game goes through it.
+- Towns are almost half the nodes: two town rows, plus a filler weight of 1 against route's 4. Tune `town.weight` in
+  nodeTypes.json or `wide` after the first play.
+- `run.path` keeps every arrival (validRun allows 5,000); unrealistic to reach.
+
+**Not done (as planned):**
+- RL-7: installing scenes, `scene.climate`, the pins and day chip.
+- RL-8: calling it at the mast, the five-row first cut (`rows: 5, minibosses: 1` fits).
+- RL-12: shops and `apart`.
+- RL-13: tiers and hardening.
+
+**Next:** the owner merges and pushes `rl-6-done` (sessions can't push tags); then RL-7 (run world).
 
 ### Phase 16 side work - every Billie from the part kits - 2026-10-21
 Branch `art/kit-billies` (owner's request in chat: rework the existing Billies with parts from the kit). Plan approved;
@@ -114,6 +204,7 @@ bipeds, the gear goes, the hand-drawn art is kept. The preview was shown before 
   Billie's parts with its stage's set.
 - Next: the owner looks at the Billies on the phone (team, a battle, the grass, the Studio's Parts preview); then the
   bios without gear, and a decision on a taller box for finals.
+
 
 ### UI track UI-4 - Run parts - 2026-10-21
 Branch `claude/ui-4-run-parts`, from main 167cc96, beside UI-3b (owner's choice). Before it, by the owner's ask, the
