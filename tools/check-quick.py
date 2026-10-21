@@ -871,12 +871,18 @@ def phone_flow(b, base, R):
         R['afterRival'] = pg.evaluate("({story:saveData.story.rival0,hp:saveData.team.map(m=>m.hp===maxHp(m)),welcome:uiState.modal&&uiState.modal.title})")
         pg.evaluate("closeModal();0")
         play(pg)
+        # UI-1: how many surfaces blur what's behind them on each screen (the plan's budget is 3); a report, not a failure
+        blur = {}
         for tab in ['walk', 'map', 'team', 'ledger', 'profile']:
             pg.evaluate(f"uiState.tab='{tab}';render();scrollTo(0,0);0"); time.sleep(2.5 if tab in ('walk', 'map') else .6); shot(pg, f'phone-{tab}')
+            blur[tab] = pg.evaluate('uiBlurCount()')
         pg.evaluate("uiState.tab='walk';saveData.trip.node=0;render();openShop('marigold');0"); time.sleep(.6); shot(pg, 'phone-shop')
+        blur['shop'] = pg.evaluate('uiBlurCount()')
         pg.evaluate("closeModal();screenWipe=f=>f();activeBattle=null;const q={id:'tq',sp:'swift1',lvl:12,no:1};encountersHere().splice(0,1e9,q);saveData.team.forEach(m=>{m.hp=maxHp(m)});startWild(q);0")
         if wait_phase(pg) != 'choose': raise Exception('a wild battle never reached the move menu')
         shot(pg, 'phone-battle')
+        blur['battle'] = pg.evaluate('uiBlurCount()')
+        R['blurPerScreen'] = blur
         pg.evaluate("stopTimers();activeBattle=null;battleStageStop();render();0")
         # phase 13: the debug log never holds names: the trainer is called Checker, and the buddy gets a nickname it
         # then says out loud (debug_picture_privacy); neither may be in the exported log
@@ -893,7 +899,7 @@ def phone_flow(b, base, R):
         # kept for comparing logs across a phase (validation/ is not committed)
         shutil.copyfile(d.path(), OUT / 'phone-debug-log.json')
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
-        return f'the fall, Hazel, dressing room, Hazel’s fight, starter, Blake’s first battle (HOT TIP) and the talk after, five screens, shop, battle, speech kept out of the debug picture, debug log ({len(json.dumps(dlog)) // 1024} KB, no names)'
+        return f'the fall, Hazel, dressing room, Hazel’s fight, starter, Blake’s first battle (HOT TIP) and the talk after, five screens, shop, battle, speech kept out of the debug picture, debug log ({len(json.dumps(dlog)) // 1024} KB, no names); blurred surfaces per screen: {", ".join(f"{k} {v}" for k, v in blur.items())}'
     finally:
         R['phoneErrors'] = errs[:10]; ctx.close()
 
