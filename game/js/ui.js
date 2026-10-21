@@ -88,7 +88,7 @@ import {
 } from './logic/rules.js';
 import { TOAST_MS, toastAdd, toastItem, toastTime } from './logic/messages.js';
 import { readableBg } from './logic/colors.js';
-import { pbFloat, pbInboxDot, pbInboxPop } from './ui-kit.js';
+import { pbFloat, pbInboxDot, pbInboxPop, typeGlyphHTML } from './ui-kit.js';
 import { newSaveKeepingPreferences } from './logic/saves.js';
 import {
   CATCH_RULES,
@@ -335,7 +335,7 @@ export function setRenderOverlay(v) {
 const PILL_COLORS = {};
 const pillColor = t => (PILL_COLORS[t] = PILL_COLORS[t] || readableBg(TYPE_COLORS[t][0], TYPE_COLORS[t][1]));
 export const typeBadgeHTML = t =>
-  `<span class="chip" style="--tc:${pillColor(t)};--tf:${TYPE_COLORS[t][1]}">${t === 'None' ? 'Normal' : t}</span>`;
+  `<span class="chip" style="--tc:${pillColor(t)};--tf:${TYPE_COLORS[t][1]}">${typeGlyphHTML(t)}${t === 'None' ? 'Normal' : t}</span>`;
 provide({ typeBadgeHTML }); /* to-module */
 const statusBadgeHTML = st => (st ? `<span class="stb st-${st}">${STATUS_NAMES[st]}</span>` : '');
 provide({ statusBadgeHTML }); /* to-module */

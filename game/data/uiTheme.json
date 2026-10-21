@@ -32,7 +32,7 @@
    }
   },
   "surface": {"glass":0.7,"blur":12,"saturate":1.4,"highlight":0.95,"shadowTint":"text"},
-  "shape": {"cutSm":4,"cutMd":8,"cutLg":12,"slant":10},
+  "shape": {"cutSm":4,"cutMd":8,"cutLg":12,"slant":10,"stepped":false,"step":4},
   "type": {"voice":"Jersey 15","prose":"Oxanium","voiceScale":1.18}
  },
  "presets": {
@@ -68,7 +68,13 @@
     }
    },
    "surface": {"glass":0.7,"blur":16,"saturate":1.5,"highlight":0.9,"shadowTint":"#2E2140"},
-   "type": {"voice":"Pixelify Sans","prose":"Chakra Petch","voiceScale":1}
+   "type": {"voice":"Pixelify Sans","prose":"Chakra Petch","voiceScale":1},
+   "shape": {
+    "families": {"panel":"rounded","card":"rounded","button":"rounded","action":"rounded","tab":"rounded","toast":"rounded"}
+   }
+  },
+  "stepped": {
+   "shape": {"stepped":true}
   }
  },
  "overrides": {}
