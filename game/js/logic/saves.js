@@ -175,6 +175,19 @@ export function migrate(o) {
     if (s.trip.plan.length && !roadCost(s.trip.node, s.trip.plan[0])) s.trip.plan = [];
   }
   if (!s.visited || typeof s.visited !== 'object') s.visited = {};
+  /* RL-5: a save from before the hub stood alone holds the old world's places: what names a place that isn't there
+     any more goes, in the hub (during a run they are the run's, made after loading): places visited, wild Billies by
+     place, the townsfolk's requests by place and the letters to one, today's visits */
+  if (!s.run) {
+    for (const k of Object.keys(s.visited)) if (!LOCATIONS[+k]) delete s.visited[k];
+    const ids = new Set(LOCATIONS.map(l => l.id));
+    for (const k of Object.keys(s.wild)) if (!ids.has(k)) delete s.wild[k];
+    const X = s.x && typeof s.x === 'object' ? s.x : null;
+    if (X && X.reqs && typeof X.reqs === 'object')
+      for (const [k, q] of Object.entries(X.reqs))
+        if (!LOCATIONS[+k] || (q && q.to != null && !LOCATIONS[q.to])) delete X.reqs[k];
+    if (X && X.visits && Array.isArray(X.visits.ids)) X.visits.ids = X.visits.ids.filter(n => !!LOCATIONS[n]);
+  }
   s.visited[s.trip.node] = 1;
   if (s.started && !s.team.length && !s.box.length) return newSave();
   s.saveVersion = SAVE_VERSION;
