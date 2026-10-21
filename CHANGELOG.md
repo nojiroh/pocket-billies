@@ -32,6 +32,13 @@ kept aside in the browser).
   progress, the ranch). Saves from before are set aside and a new game starts; Settings > Save can download the old
   one. The set-aside slot now keeps the latest unloadable save (it kept the first, so a second one was lost).
 
+- Map generator (MG-2, with terrain TR-1): a generated route joined to another scene's exit meets it: the exits face
+  each other a whole number of metres apart, the land meets at the same heights along the stretch the game shows of
+  its neighbour, the neighbour's natural ground runs on across, and you walk straight across. Terraces come down to
+  ground level by every exit, and roads climb terraces as slopes instead of little stairs. The Studio's Generate card
+  joins an exit to any scene's exit (Joins…), shows how the two meet, previews them side by side, and can put an
+  airship mast, a clinic and a shop by the hub. The seam rules the data check uses are now one module the generator's
+  tests use too.
 - Map generator (MG-1): the Studio's Walk scenes → Generate… makes a whole route from dials and a seed (biome, size,
   land, water, the road and its exits, nature, a feature, props), drawn live by the game's renderer as a draft and
   added as a scene of its own in one undo step. The same dials and seed always give the same route. The biome

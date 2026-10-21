@@ -18,6 +18,7 @@ import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { DATA, PB_DATA } from './data-files.mjs';
 import { uiThemeContrast } from '../game/js/logic/ui-theme.js';
+import { seamRulesLinks, seamRulesPlaces } from '../game/js/logic/seam-rules.js';
 
 const FIX = process.argv.includes('--fix');
 const bad = [];
@@ -132,103 +133,20 @@ route.forEach((r, i) => {
     problem('locations.json', `stop ${i} (${r.name}) has bowl spot a ${B.a}, r ${B.r}: a must be 0-360, r 0-1`);
 });
 check('roads.schema.json', D.roads || [], 'roads.json');
-// phase 08b: the links. A seam's two exits face each other (east to west, north to south), are as wide, and meet
-// within half a metre once the view puts the second map on whole metres (seamless-world.js seamlessJoin); the ground
-// at each exit is walkable (the walk's own rule: water only where the place is ridden). Every edge exit of a place's
-// map is used by exactly one link; a side has at most two exits, 44 m apart or more. A lift: a lift prop at each end
-// goes to the other. A link that joins nothing walkable is an error, not a road the game draws.
+// phase 08b: the links between places join them as the walk needs (game/js/logic/seam-rules.js, one copy of the
+// rules since map generator MG-2: the map generator's tests run them too): a seam's two exits face each other, are as
+// wide and meet a whole number of metres apart, the ground at each exit is walkable, every edge exit of a place's
+// map is used by exactly one link, a side has at most two exits 44 m apart, a lift has a lift prop at each end
 {
-  const OPPOSITE = { E: 'W', W: 'E', N: 'S', S: 'N' },
-    T = (D.scenery && D.scenery.terrains) || {},
-    along = (sc, e) => Math.round(e.t * (e.side === 'N' || e.side === 'S' ? sc.w : sc.h) * 100) / 100,
-    at = (sc, e) => {
-      const n = e.in == null ? 1.1 : e.in;
-      return e.side === 'N'
-        ? [e.t * sc.w, sc.h - n]
-        : e.side === 'S'
-          ? [e.t * sc.w, n]
-          : e.side === 'E'
-            ? [sc.w - n, e.t * sc.h]
-            : [n, e.t * sc.h];
-    },
-    walkable = (sc, [x, z]) => {
-      const ch = ((sc.tiles || [])[sc.h - 1 - Math.floor(z)] || '')[Math.floor(x)] || sc.edge || 'g',
-        t = T[ch];
-      return t && t.walk != null ? !!t.walk : !'wd'.includes(ch) || !!sc.ride;
-    },
-    used = new Map(),
-    ids = new Set();
-  (D.roads || []).forEach((L, i) => {
-    const l = PB_DATA.road(D, L),
-      name = l.id || `link ${i}`;
-    if (!route[l.a] || !route[l.b])
-      return problem('roads.json', `${name} joins ${L.a && L.a.map} and ${L.b && L.b.map}, not two places`);
-    if (l.a === l.b) problem('roads.json', `${name} joins ${route[l.a].id} to itself`);
-    if (ids.has(l.id)) problem('roads.json', `two links are ${l.id}`);
-    ids.add(l.id);
-    const ends = [
-      [l.a, l.exitA],
-      [l.b, l.exitB],
-    ].map(([n, x]) => {
-      const sc = S[route[n].mapId];
-      return {
-        place: route[n].id,
-        mapId: route[n].mapId,
-        sc,
-        x,
-        e: sc && x ? (sc.edgeExits || []).find(q => q.id === x) : null,
-      };
-    });
-    if (l.kind === 'lift') {
-      for (const [E, O] of [ends, [...ends].reverse()])
-        if (!E.sc || !(E.sc.props || []).some(p => p.act === 'lift' && p.to === O.place))
-          problem('roads.json', `${name}: ${E.mapId} has no lift going to ${O.place}`);
-      return;
-    }
-    for (const E of ends) {
-      if (!E.e) {
-        problem('roads.json', `${name}: ${E.mapId} has no exit ${E.x} (a road that joins nothing)`);
-        continue;
-      }
-      used.set(`${E.mapId}:${E.e.id}`, (used.get(`${E.mapId}:${E.e.id}`) || []).concat(name));
-      if (!walkable(E.sc, at(E.sc, E.e)))
-        problem('roads.json', `${name}: the ground at ${E.mapId}'s exit ${E.e.id} can't be walked on`);
-    }
-    const [A, B] = ends;
-    if (!A.e || !B.e) return;
-    if (OPPOSITE[A.e.side] !== B.e.side)
-      problem(
-        'roads.json',
-        `${name}: the exits don't face each other (${A.mapId} ${A.e.side}, ${B.mapId} ${B.e.side})`
-      );
-    if ((A.e.width || 2) !== (B.e.width || 2))
-      problem('roads.json', `${name}: the exits are ${A.e.width || 2} m and ${B.e.width || 2} m wide`);
-    const d = along(A.sc, A.e) - along(B.sc, B.e);
-    if (Math.abs(d - Math.round(d)) >= 0.5)
-      problem('roads.json', `${name}: the exits miss each other by ${Math.abs(d - Math.round(d)).toFixed(2)} m`);
+  const links = seamRulesLinks({
+    roads: D.roads || [],
+    roadOf: L => PB_DATA.road(D, L),
+    locations: route,
+    maps: S,
+    terrains: (D.scenery && D.scenery.terrains) || {},
   });
-  for (const r of route) {
-    const sc = S[r.mapId];
-    if (!sc) continue;
-    const E = sc.edgeExits || [];
-    for (const e of E) {
-      const u = used.get(`${r.mapId}:${e.id}`) || [];
-      if (u.length !== 1)
-        problem(`maps/${r.mapId}.json`, `exit ${e.id} is used by ${u.length ? u.join(' and ') : 'no link'}`);
-    }
-    for (const side of ['N', 'S', 'E', 'W']) {
-      const xs = E.filter(e => e.side === side)
-        .map(e => along(sc, e))
-        .sort((a, b) => a - b);
-      if (xs.length > 2) problem(`maps/${r.mapId}.json`, `${xs.length} exits on its ${side} side (two at most)`);
-      for (let k = 1; k < xs.length; k++)
-        if (xs[k] - xs[k - 1] < 44)
-          problem(
-            `maps/${r.mapId}.json`,
-            `two exits on its ${side} side ${(xs[k] - xs[k - 1]).toFixed(1)} m apart (44 m at least)`
-          );
-    }
-  }
+  for (const [where, what] of links.problems) problem(where, what);
+  for (const [where, what] of seamRulesPlaces({ locations: route, maps: S, used: links.used })) problem(where, what);
 }
 // phase 08b: the doors. A kind of building's room is a room; every door on a place (a building or sign that opens a
 // shop, the clinic, the lab, a house or your room) leads to a room that exists, has a doorway (its exit 0) at its
