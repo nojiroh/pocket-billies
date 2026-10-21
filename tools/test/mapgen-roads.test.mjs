@@ -318,3 +318,34 @@ test('in a town the roads have dressed-stone retaining walls beside them instead
     if (E) assert.ok(!E.M.some(m => (m & 15) === G.MAPGEN_TOWN_WALL));
   }
 });
+
+test('a footpath climbs to its feature by stairs or a ramp, and a lookout leaves the road beside it alone', () => {
+  let stairs = 0;
+  for (const f of ['lookout', 'glade'])
+    for (let i = 0; i < 24; i++) {
+      const p = {
+          seed: 3000 + i,
+          feature: f,
+          biome: ['ridge', 'canyon', 'meadow', 'autumn'][i % 4],
+          land: { terraces: (i % 4) / 3, cliffs: (i % 3) / 2, hills: 0.6 },
+          road: { shape: Object.keys(G.MAPGEN_SHAPES)[i % 4] },
+        },
+        sc = G.mapgenScene(p, ctx).scene,
+        where = JSON.stringify(p),
+        r = G.mapgenRoadReport(sc);
+      assert.ok(r.jump <= 0.25 && r.grade <= 0.2, `${where}: ${JSON.stringify(r)}`);
+      stairs += r.stairs;
+      const pr = sc.props.find(q => q.k === (f === 'lookout' ? 'lookout_tower' : 'campfire'));
+      if (!pr) continue;
+      /* the top: some ground round the tower (or the fire) is walked to from the hub */
+      const R = G.mapgenReach(sc, C),
+        rad = f === 'lookout' ? 2.8 : 1.5;
+      let reached = false;
+      for (let dz = -rad; dz <= rad; dz += 0.5)
+        for (let dx = -rad; dx <= rad; dx += 0.5)
+          if (Math.hypot(dx, dz) >= (f === 'lookout' ? 1.7 : 0) && G.mapgenReached(R, pr.x + dx, pr.z + dz))
+            reached = true;
+      assert.ok(reached, `${where}: the ${f} can't be walked to`);
+    }
+  assert.ok(stairs > 200, `${stairs} stair cells`);
+});

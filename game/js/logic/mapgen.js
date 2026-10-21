@@ -33,12 +33,14 @@ expose({
   MAPGEN_OPPOSITE: [() => MAPGEN_OPPOSITE],
   MAPGEN_OUTWARD: [() => MAPGEN_OUTWARD],
   MAPGEN_PATH_GROUND: [() => MAPGEN_PATH_GROUND],
+  MAPGEN_PATH_RAMP: [() => MAPGEN_PATH_RAMP],
   MAPGEN_ROAD_CAP: [() => MAPGEN_ROAD_CAP],
   MAPGEN_ROAD_CLIMB: [() => MAPGEN_ROAD_CLIMB],
   MAPGEN_SHAPES: [() => MAPGEN_SHAPES],
   MAPGEN_SIDE_NAME: [() => MAPGEN_SIDE_NAME],
   MAPGEN_SIZES: [() => MAPGEN_SIZES],
   MAPGEN_STAGES: [() => MAPGEN_STAGES],
+  MAPGEN_STAIR_RISE: [() => MAPGEN_STAIR_RISE],
   MAPGEN_STRAIGHT_IN: [() => MAPGEN_STRAIGHT_IN],
   MAPGEN_SURFACES: [() => MAPGEN_SURFACES],
   MAPGEN_TOWN_WALL: [() => MAPGEN_TOWN_WALL],
@@ -76,12 +78,16 @@ expose({
   mapgenExitPoint: [() => mapgenExitPoint, v => (mapgenExitPoint = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenFbm: [() => mapgenFbm, v => (mapgenFbm = v)],
+  // @ts-expect-error -- replaced on purpose
+  mapgenFootpath: [() => mapgenFootpath, v => (mapgenFootpath = v)],
   mapgenGround: [() => mapgenGround],
   // @ts-expect-error -- replaced on purpose
   mapgenGrowWild: [() => mapgenGrowWild, v => (mapgenGrowWild = v)],
   mapgenInLot: [() => mapgenInLot],
   // @ts-expect-error -- replaced on purpose
   mapgenJoinOffset: [() => mapgenJoinOffset, v => (mapgenJoinOffset = v)],
+  // @ts-expect-error -- replaced on purpose
+  mapgenKnoll: [() => mapgenKnoll, v => (mapgenKnoll = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenLandProfile: [() => mapgenLandProfile, v => (mapgenLandProfile = v)],
   // @ts-expect-error -- replaced on purpose
@@ -128,8 +134,6 @@ expose({
   mapgenPutProp: [() => mapgenPutProp, v => (mapgenPutProp = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenRadius: [() => mapgenRadius, v => (mapgenRadius = v)],
-  // @ts-expect-error -- replaced on purpose
-  mapgenRaise: [() => mapgenRaise, v => (mapgenRaise = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenRampLimit: [() => mapgenRampLimit, v => (mapgenRampLimit = v)],
   // @ts-expect-error -- replaced on purpose
@@ -2623,10 +2627,18 @@ export function mapgenStageFeature(G) {
     if (!at) return G.notes.push('no room for the lookout');
     const [x, z] = at;
     mapgenClearRound(G, x, z, 4.5);
-    mapgenRaise(G, x, z, 5, 1.4);
-    mapgenPutProp(G, 'lookout_tower', x, z + 1, { force: true });
-    mapgenPutProp(G, 'bench_wood', x + 2.2, z - 1.6, { force: true });
-    mapgenSpur(G, x, z);
+    mapgenKnoll(G, x, z, 5, 1.4); /* TR-1: was the land raised, out to 9 m: it lifted the road beside it */
+    /* TR-1: the tower and the bench on the far side of the knoll from the road, the path's stairs ending before them
+       (they stood at fixed offsets, often across the path's top) */
+    const k = G.near[mapgenCellAt(G, x, z)],
+      P0 = k >= 0 ? G.roadPts[k] : { x, z: z - 1 },
+      L = Math.hypot(x - P0.x, z - P0.z) || 1,
+      ux = (x - P0.x) / L,
+      uz = (z - P0.z) / L,
+      sd = ux >= 0 ? 1 : -1;
+    mapgenPutProp(G, 'lookout_tower', x + ux * 1.1, z + uz * 1.1, { force: true });
+    mapgenPutProp(G, 'bench_wood', x - uz * 2.3 * sd - ux * 0.6, z + ux * 2.3 * sd - uz * 0.6, { force: true });
+    mapgenSpur(G, x, z, 1.1);
   } else if (f === 'glade') {
     const at = spotBeside(5, 14);
     if (!at) return G.notes.push('no room for the glade');
@@ -2689,14 +2701,7 @@ export function mapgenClearRound(G, x, z, r) {
     );
   G.keep.push([x, z, r * 0.6]);
 }
-export function mapgenRaise(G, x, z, r, by) {
-  for (let j = 0; j <= G.h; j++)
-    for (let i = 0; i <= G.w; i++) {
-      const d = Math.hypot(i - x, j - z);
-      if (d < r + 4) G.H[j * (G.w + 1) + i] += by * (d < r ? 1 : 1 - mapgenSmooth((d - r) / 4));
-    }
-}
-export function mapgenSpur(G, x, z) {
+export function mapgenSpur(G, x, z, short = 1.5) {
   /* a short path from the road to a feature */
   const k = G.near[mapgenCellAt(G, x, z)];
   if (k < 0) return;
@@ -2710,6 +2715,82 @@ export function mapgenSpur(G, x, z) {
         G.F[q] = (G.F[q] & ~32) | 2;
       }
     });
+  mapgenFootpath(G, [p.x, p.z], [x, z], L - short);
+}
+/* TR-1: a footpath climbs no faster than this a half metre: a stair's riser, or a ramp where the path runs aslant
+   the half-metre grid (a stair's risers follow the grid, so a slanting flight would be ragged) */
+export const MAPGEN_STAIR_RISE = 0.2;
+export const MAPGEN_PATH_RAMP = 0.125;
+/** TR-1: a footpath's climb (from a road at a to a feature, `len` metres toward b): stone steps (wall material 8,
+ * risers of MAPGEN_STAIR_RISE at most, 0.25 m where the climb asks it) where it runs within 25 degrees of the grid
+ * or a ramp couldn't fit, else a ramp of 25% (ramp cells), in the step raise: a terrace's or a knoll's raise it crosses is cut or filled to it, from the road's raise
+ * where it leaves the road to the ground's at its end */
+export function mapgenFootpath(G, a, b, len) {
+  const W2 = G.w * 2,
+    H2 = G.h * 2,
+    dx = b[0] - a[0],
+    dz = b[1] - a[1],
+    L0 = Math.hypot(dx, dz);
+  if (L0 < 1 || len < 1) return;
+  const ux = dx / L0,
+    uz = dz / L0,
+    ang = Math.abs(Math.atan2(uz, ux)) % (Math.PI / 2),
+    square = Math.min(ang, Math.PI / 2 - ang) <= (25 * Math.PI) / 180,
+    cellOf = (x, z) => mapgenBetween(Math.floor(z * 2), 0, H2 - 1) * W2 + mapgenBetween(Math.floor(x * 2), 0, W2 - 1),
+    n = Math.floor(len * 2) + 1,
+    Z = new Float64Array(n),
+    fixed = new Uint8Array(n);
+  /* in the raise (walking steps from cell to cell go by it; the land between corners is smooth and walkable) */
+  for (let k = 0; k < n; k++) Z[k] = G.S[cellOf(a[0] + ux * k * 0.5, a[1] + uz * k * 0.5)];
+  fixed[0] = fixed[n - 1] = 1;
+  /* stairs where the path runs along the grid, a ramp where it slants, unless the ramp can't fit the climb in the
+     length there is: then stairs anyway (ragged beats out of reach), with risers up to 0.25 m if they must be */
+  const climb = Math.abs(Z[n - 1] - Z[0]),
+    stairs = !square ? climb > MAPGEN_PATH_RAMP * (n - 1) : true,
+    lim = !stairs ? MAPGEN_PATH_RAMP : climb > MAPGEN_STAIR_RISE * (n - 1) ? 0.25 : MAPGEN_STAIR_RISE;
+  mapgenRampLimit(Z, fixed, lim);
+  let any = false;
+  const x0 = Math.min(a[0], b[0]) - 1,
+    x1 = Math.max(a[0], b[0]) + 1,
+    z0 = Math.min(a[1], b[1]) - 1,
+    z1 = Math.max(a[1], b[1]) + 1;
+  for (let j = Math.max(0, Math.floor(z0 * 2)); j < Math.min(H2, Math.ceil(z1 * 2)); j++)
+    for (let i = Math.max(0, Math.floor(x0 * 2)); i < Math.min(W2, Math.ceil(x1 * 2)); i++) {
+      const x = (i + 0.5) / 2,
+        z = (j + 0.5) / 2,
+        t = (x - a[0]) * ux + (z - a[1]) * uz,
+        off = Math.abs((x - a[0]) * uz - (z - a[1]) * ux),
+        q = mapgenCellAt(G, x, z);
+      if (t < 0 || t > len || off > 0.75 || G.F[q] & (1 | 4)) continue;
+      const k = Math.min(n - 1, Math.floor(t * 2)),
+        f = Math.min(1, t * 2 - k),
+        zt = Z[k] * (1 - f) + Z[Math.min(n - 1, k + 1)] * f,
+        c = j * W2 + i,
+        v = Math.round(zt * 20) / 20;
+      if (Math.abs(v - G.S[c]) < 0.01 && !(stairs && v)) continue;
+      G.S[c] = v;
+      G.M[c] = stairs ? (G.M[c] & ~(15 | 32)) | 8 : G.M[c] | 32;
+      any = true;
+    }
+  if (any) G.stepsUsed = true;
+}
+/** TR-1: a knoll for a lookout: the ground within about r of (x, z) raised by `by` as a step-grid rise (natural rock
+ * at its edge), kept 2.5 m clear of a road and off water, so the road beside it stays as it was */
+export function mapgenKnoll(G, x, z, r, by) {
+  const W2 = G.w * 2,
+    ns = G.salt('feature', 'knoll');
+  for (let j = Math.max(0, Math.floor((z - r * 1.3) * 2)); j < Math.min(G.h * 2, Math.ceil((z + r * 1.3) * 2)); j++)
+    for (let i = Math.max(0, Math.floor((x - r * 1.3) * 2)); i < Math.min(W2, Math.ceil((x + r * 1.3) * 2)); i++) {
+      const cx = (i + 0.5) / 2,
+        cz = (j + 0.5) / 2,
+        d = Math.hypot(cx - x, cz - z),
+        an = Math.atan2(cz - z, cx - x),
+        q = mapgenCellAt(G, cx, cz);
+      if (d > r * (0.85 + 0.3 * mapgenNoise(Math.cos(an) * 1.5 + 5, Math.sin(an) * 1.5 + 5, ns))) continue;
+      if (G.F[q] & 4 || G.dist[q] - (G.near[q] >= 0 ? G.roadPts[G.near[q]].r : 0) < 2.5) continue;
+      G.S[j * W2 + i] = Math.round((G.S[j * W2 + i] + by) * 20) / 20;
+    }
+  G.stepsUsed = true;
 }
 
 /* ---------- 8. props: signposts at the exits, lamps along the road, benches and bins, townsfolk spots ---------- */
