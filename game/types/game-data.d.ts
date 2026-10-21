@@ -1266,6 +1266,8 @@ export interface WorldMapLook {
 /** biomes.json: what the map generator (logic/mapgen.js) grows and paints for a biome */
 export interface Biome {
   name: string;
+  /** the kind of weather it gets (logic/weather.js CLIMATE_WEATHER_ODDS): a run node's forecast rolls from it (RL-6) */
+  climate: string;
   ground: {
     base: string;
     patches?: Record<string, number>;

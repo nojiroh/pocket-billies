@@ -19,6 +19,7 @@ import { join } from 'node:path';
 import { DATA, PB_DATA } from './data-files.mjs';
 import { uiThemeContrast } from '../game/js/logic/ui-theme.js';
 import { seamRulesLinks, seamRulesPlaces } from '../game/js/logic/seam-rules.js';
+import { CLIMATE_WEATHER_ODDS } from '../game/js/logic/weather.js';
 
 const FIX = process.argv.includes('--fix');
 const bad = [];
@@ -260,6 +261,9 @@ if (D.biomes && check('biomes.schema.json', D.biomes, 'biomes.json')) {
     life = (D.scenery && D.scenery.life) || {};
   for (const [b, B] of Object.entries(D.biomes)) {
     const G = B.ground;
+    // RL-6: the weather it gets outdoors (none is for rooms)
+    if (!Object.hasOwn(CLIMATE_WEATHER_ODDS, B.climate) || B.climate === 'none')
+      problem('biomes.json', `${b}.climate: "${B.climate}" is not an outdoor climate (logic/weather.js)`);
     for (const [f, ch] of [...Object.entries(G).filter(([f]) => f !== 'patches'), ['road', B.road]])
       if (!terr[ch]) problem('biomes.json', `${b}.${f}: no terrain "${ch}" (scenery.json terrains)`);
     for (const ch of Object.keys(G.patches || {})) if (!terr[ch]) problem('biomes.json', `${b}.ground.patches: no terrain "${ch}"`);
