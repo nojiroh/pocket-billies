@@ -248,8 +248,10 @@ setNavGrid(function () {
       if (blk[j * gw + i]) continue; /* (already blocked: in a room, all of the place outside it) */
       const x = (i + 0.5) / N,
         z = (j + 0.5) / N,
-        e = 0.3,
-        gx = (rawHeightAt(sc, x + e, z) - rawHeightAt(sc, x - e, z)) / (2 * e),
+        e = 0.3;
+      /* RL-8: on a bridge you walk on its deck, not on the steep bank under it (a run's streams have steep banks) */
+      if (sc.bridges && bridgeAt(x, z, sc) != null) continue;
+      const gx = (rawHeightAt(sc, x + e, z) - rawHeightAt(sc, x - e, z)) / (2 * e),
         gz = (rawHeightAt(sc, x, z + e) - rawHeightAt(sc, x, z - e)) / (2 * e);
       if (Math.hypot(gx, gz) > 1.05) blk[j * gw + i] = 1;
     }
