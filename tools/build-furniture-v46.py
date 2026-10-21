@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """v46: furniture for the new rooms (a bakery, an inn, a bank, a library, a school, a station, a fire station, a
 mansion, a barn, a greenhouse, a ski lodge, a market hall), drawn with the scene-prop kit like the v26 furniture
-(tools/scene_props_v26.py). Pictures that already exist are kept.
+(the v26 part of tools/build-scene-props.py). Pictures that already exist are kept.
 
     python3 tools/build-furniture-v46.py                 # draws what is missing, adds it to props.json and game data
     python3 tools/build-furniture-v46.py --sheet out.png

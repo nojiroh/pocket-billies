@@ -146,7 +146,7 @@ All existing pictures are unchanged. New files only:
 - `scene/tiles/asphalt|pavers|bricks|gravel|dirt|forest|steps|lawn.png` and `<tile>_1…_5.png` for
   every ground type: variants drawn in each tile's own colours (cracks, pebbles, clover, puddles,
   moss, knots…). The tile generator never overwrites a tile unless asked with `--force`.
-- `scene/props/*.png`: 56 new props (see the README), drawn by `tools/scene_props_v17.py` in the same
+- `scene/props/*.png`: 56 new props (see the README), drawn by the v17 part of `tools/build-scene-props.py` in the same
   style as the v10 props (1-pixel outlines, 5-tone ramps lit from the top left, 34 px per metre).
 - `scene/props/layers/<prop>_lb.png` and `<prop>_lf.png`: back and front crowns for every tree and
   bush, cut from the props' own pictures (the back one grown two pixels and darkened, the front one
@@ -200,7 +200,7 @@ No new image files. Props get solid bodies made at run time from their own pictu
   and cut out with a slice of earth underneath (`tools/build-map-minis.py`; run it again after editing a scene).
 - `scene/props/`: palms, villa, lighthouse, buoy, beach umbrella, deck chair, sailboat, shells, snowy pines,
   chalets, snowman, snowy rocks and boulder, trail sign, charred tree, basalt rocks, boulder and columns,
-  obsidian, steam vent, lava rock and vent, danger sign (`tools/scene_props_v24.py`, loaded by
+  obsidian, steam vent, lava rock and vent, danger sign (the v24 part of
   `tools/build-scene-props.py`, which only writes missing files). `scene/far/volcano.png` and `scene/far/sea.png`.
 - `scene/tiles/ash*.png`, `scene/tiles/basalt*.png`: volcanic ground (`tools/build-scene-tiles.py`).
 - `battle/beach_*`, `battle/volcano_*`, `battle/snow_*`, `battle/far_snow.png`, `battle/far_volcano.png`,
@@ -219,8 +219,8 @@ No new image files. Props get solid bodies made at run time from their own pictu
   fridge, clinic bed, privacy screen, bookcase, desk with a computer, the lab's evolution machine, round table,
   wooden chair, sofa, fireplace, tall potted plant, round and runner rugs, crate of goods, and three things that
   hang on the back wall (a painting, a clock, a window; their pictures keep the empty space below them so they
-  hang at the right height). Drawn by `tools/scene_props_v26.py`, loaded by `tools/build-scene-props.py`, which
-  only writes files that don't exist yet.
+  hang at the right height). Drawn by the v26 part of `tools/build-scene-props.py`, which only writes files
+  that don't exist yet.
 - `ui/sun.svg`, `moon.svg`, `cloud.svg`, `rain.svg`, `snow.svg`, `fog.svg`, `ash.svg`, `door.svg`: icons for the
   hour and the weather on the walk card, and for going outside (`tools/build-ui-icons-v26.py`, new files only).
 - No picture changes for night, weather or seasons: the renderer does those from the existing art (autumn
@@ -230,14 +230,14 @@ No new image files. Props get solid bodies made at run time from their own pictu
 
 - `scene/life/rabbit.png`, `squirrel.png`, `frog.png`, `gull.png`, `goat.png`, `cat.png`, `crab.png`, `lizard.png`:
   frame strips for the new animals, all facing left like the duck (the game mirrors them): standing, two moving
-  frames and (where there is one) grazing, nibbling, loafing or flying (`tools/scene_props_v27.py`, loaded by
+  frames and (where there is one) grazing, nibbling, loafing or flying (the v27 part of
   `tools/build-scene-props.py`, which only writes files that don't exist yet).
 - `scene/fx/print.png`: a footprint and a paw print seen from above, pale so the ground colour tints them.
 
 ## Version 28
 
 - `scene/props/ladder.png`: a wooden ladder with rope lashings, scaled in each scene to the cliff it leans on
-  (`tools/scene_props_v28.py`, new files only).
+  (the v28 part of `tools/build-scene-props.py`, new files only).
 - Gold stamps, the eyes in the grass and photo mode use the existing sparkle and glow effects; no new pictures.
 
 ## Version 31
