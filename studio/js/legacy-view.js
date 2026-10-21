@@ -89,10 +89,17 @@ SECTIONS.legacy = () => {
         .filter(T => T.node === i)
         .map(T => escapeHtml(T.name))
         .join(', '),
+    /* a road's other end by its place's name: a parked place's, else the game's (Copperleaf), else the map id */
+    nameOf = (/** @type {string} */ map) =>
+      (places.find(l => l.mapId === map) || (studioState.D.locations || []).find(l => l.mapId === map) || {}).name ||
+      map,
     roadsOf = (/** @type {any} */ l) =>
       roads
         .filter(r => (r.a && r.a.map) === l.mapId || (r.b && r.b.map) === l.mapId)
-        .map(r => escapeHtml(r.name || r.id));
+        .map(r => {
+          const other = (r.a && r.a.map) === l.mapId ? r.b && r.b.map : r.a && r.a.map;
+          return `${escapeHtml(nameOf(other))} (${escapeHtml(r.name || r.id)})`;
+        });
   const rows = places
     .map((l, i) => {
       const R = roadsOf(l);
@@ -107,7 +114,7 @@ SECTIONS.legacy = () => {
     ) +
     card(
       'Places',
-      `<table class="tbl"><thead><tr><th>Old stop</th><th>Place</th><th>Trainers there</th><th>Roads</th><th></th></tr></thead><tbody>${rows}</tbody></table>`,
+      `<table class="tbl"><thead><tr><th>Old stop</th><th>Place</th><th>Trainers there</th><th>Roads to</th><th></th></tr></thead><tbody>${rows}</tbody></table>`,
       { sub: 'A place’s old stop is its number in legacy/locations.json (its trainers stand by it).' }
     )
   );
