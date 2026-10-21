@@ -11,7 +11,7 @@ import { closeModal, mapIdAt, modal, provide, render, runPayoutOpen, toast } fro
 import { COINS, ITEMS, RULES, START_NODE } from './game-data.js';
 import { billyName, formatNumber, healAll, plural } from './logic/rules.js';
 import { runBegin, runEnd } from './logic/run-state.js';
-import { runArrive, runMapStart } from './logic/run-map.js';
+import { runArrive, runBack, runMapNode, runMapStart, runNext } from './logic/run-map.js';
 import { MAPGEN_VERSION } from './logic/mapgen.js';
 import { runGive, runRelease, runReleasePays } from './logic/run-loop.js';
 import { isLiteMap, loadMapFile } from './map-files.js';
@@ -24,6 +24,7 @@ expose({
   runCatch: [() => runCatch],
   runEndHome: [() => runEndHome, v => (runEndHome = v)],
   runGiveUp: [() => runGiveUp, v => ((runGiveUp = v), provide({ runGiveUp }))],
+  runJump: [() => runJump, v => ((runJump = v), provide({ runJump }))],
   runOver: [() => runOver, v => (runOver = v)],
   runReleasePick: [() => runReleasePick, v => (runReleasePick = v)],
   runReleaseSheet: [() => runReleaseSheet, v => ((runReleaseSheet = v), provide({ runReleaseSheet }))],
@@ -34,7 +35,7 @@ expose({
   runTakeOff: [() => runTakeOff, v => (runTakeOff = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ runGiveUp, runReleaseSheet, runStartSheet, runStartable });
+provide({ runGiveUp, runJump, runReleaseSheet, runStartSheet, runStartable });
 /* to-module: end */
 /** a Billie caught on a run while the party was full, waiting for the release sheet (page state only) */
 const runCatch = { m: /** @type {any} */ (null) };
@@ -211,4 +212,35 @@ function runTakeOff(seed, map) {
   saveNow();
   if (typeof debugLog !== 'undefined') debugLog.add('scene', `a run starts: ${s.run.map.nodes.length} places`);
   startAirshipFlight(s.trip.node, { free: true, from: START_NODE });
+}
+
+/* ---------- arrivals ---------- */
+/** the debug menu's "Go there" on a run: walked as you would, one linked place at a time (runArrive: a day each, the
+ * path, what the map shows), the shortest way there over the map's links; Copperleaf can't be walked to on a run.
+ * Returns whether it got there @param {number} n the world node */
+function runJump(n) {
+  const run = saveData.run;
+  if (!run || !run.map) return false;
+  const map = run.map,
+    to = runMapNode(n),
+    from = runMapNode(saveData.trip.node);
+  if (!map.nodes[to] || !map.nodes[from]) return false;
+  const prev = new Map([[from, -1]]),
+    q = [from];
+  while (q.length && !prev.has(to)) {
+    const i = /** @type {number} */ (q.shift());
+    for (const j of [...runNext(map, i), ...runBack(map, i)])
+      if (!prev.has(j)) {
+        prev.set(j, i);
+        q.push(j);
+      }
+  }
+  if (!prev.has(to)) return false;
+  const way = [];
+  for (let i = to; i !== from; i = prev.get(i)) way.unshift(i);
+  for (const i of way) {
+    if (!runArrive(saveData, i, runWorldData())) return false;
+    saveData.visited[saveData.trip.node] = 1;
+  }
+  return true;
 }

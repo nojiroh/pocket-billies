@@ -111,6 +111,7 @@ import {
   reducedMotion,
   save,
   saveData,
+  saveNow,
   setSaveData,
   uiState,
   writeStoredSave,
@@ -1457,7 +1458,9 @@ export function walkCross() {
         'travel',
         'walked into ' + LOCATIONS[n].name + (saveData.run ? ` (the run's day ${saveData.run.clock})` : '')
       );
-    save();
+    /* RL-8: a run's arrival is a checkpoint: the account too, at once */
+    if (saveData.run) saveNow();
+    else save();
     render();
     return;
   }

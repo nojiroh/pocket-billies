@@ -14,6 +14,7 @@ import {
   renderOverlay,
   runBowlMapTest,
   runEvolution,
+  runJump,
   storyScriptIds,
   testMapChecks,
   testMaps,
@@ -348,6 +349,12 @@ function debugAction(x) {
     }
     case 'jump': {
       const n = clamp(+v('dbgNode'), 0, LOCATIONS.length - 1);
+      /* RL-8: on a run, walked there as you would (a day a place, the path, what the map shows) */
+      if (saveData.run) {
+        if (!runJump(n)) toast('That place can’t be walked to on this run.');
+        saveData.mapSeen = null;
+        break;
+      }
       saveData.trip = { node: n, plan: [] };
       saveData.visited[n] = 1;
       saveData.mapSeen = null;
