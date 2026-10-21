@@ -83,18 +83,8 @@ import { talkBox, talkHide } from './talk.js';
 import { cutscene, cutsceneTeardown } from './cutscene/director.js';
 import { fallOverWorldMap, fallWorldMapCanvas } from './opening-fall.js';
 import { runWorld, runWorldData, runWorldSync } from './run-world.js';
-import {
-  closeModal,
-  leaveRoom,
-  mapIdAt,
-  modal,
-  render,
-  renderOverlay,
-  toast,
-  walkCross,
-  walkPick,
-  walkState,
-} from './ui.js';
+import { closeModal, modal, renderOverlay, toast } from './overlay.js';
+import { leaveRoom, mapIdAt, render, walkCross, walkPick, walkState } from './ui.js';
 /* eslint-disable no-func-assign */
 expose({
   DIAGNOSTICS_PASSES: [() => DIAGNOSTICS_PASSES],

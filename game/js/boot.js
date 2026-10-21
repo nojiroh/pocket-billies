@@ -41,17 +41,8 @@ import { loreLoadingLines } from './lore.js';
 import { runWorld, runWorldSync } from './run-world.js';
 import { runResume } from './run.js';
 import { initAccount } from './account.js';
-import {
-  initPixelSky,
-  mapIdAt,
-  notice,
-  render,
-  renderOverlay,
-  showPendingWindows,
-  startGame,
-  toast,
-  whenWorldShows,
-} from './ui.js';
+import { notice, renderOverlay, toast } from './overlay.js';
+import { initPixelSky, mapIdAt, render, showPendingWindows, startGame, whenWorldShows } from './ui.js';
 import { fixtureStart } from './fixture.js';
 /* eslint-disable no-func-assign */
 expose({

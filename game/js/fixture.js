@@ -32,7 +32,8 @@ import { applyPreferences } from './settings-screen.js';
 import { actionSpot, walkData, walkView } from './walk-view.js';
 import { talkLine } from './talk.js';
 import { runWorldData } from './run-world.js';
-import { enterRoom, render, renderOverlay } from './ui.js';
+import { renderOverlay } from './overlay.js';
+import { enterRoom, render } from './ui.js';
 /* eslint-disable no-func-assign */
 expose({
   FIXTURE_NAMES: [() => FIXTURE_NAMES],
