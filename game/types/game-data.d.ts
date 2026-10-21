@@ -351,6 +351,8 @@ export interface LocationData {
   locked?: string;
   ride?: number;
   noFly?: number;
+  /** roguelite track RL-7: a run's place: its node on the run's map (logic/run-scenes.js; world node runNode + 1) */
+  runNode?: number;
   v47region?: number;
   a04place?: number;
   a04pearl?: number;
