@@ -121,7 +121,7 @@ export const uiEditor = {
 export const uiData = () => studioState.D.uiTheme;
 /* UI-3b: the preview's views: the gallery, and the game's real screens from fixtures (game/js/fixture.js); the payout
    and the run chip join when they exist (RL-8, UI-4) */
-const UI_VIEWS = [
+export const UI_VIEWS = [
   ['gallery', 'Gallery'],
   ['team', 'Team'],
   ['bag', 'Bag'],
