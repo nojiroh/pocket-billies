@@ -498,6 +498,7 @@ export const SECTION_LIST = [
   ['ui', 'UI look', 'The menus’ look: colours, glass, shapes, space, type and motion, for the game or one screen'],
   ['art', 'Art files', 'Browse and replace any image'],
   ['check', 'Check & backups', 'Problems, backups and restore'],
+  ['legacy', 'Legacy world', 'The places parked outside the hub, read-only: copy a map into the game'],
 ];
 /* alpha 0.4.1: the sections in five groups that fold away; the one you're in always shows. The descriptions show as
    a tooltip and under the section you're in, so the list is short enough to see at once */
@@ -510,6 +511,8 @@ const SECTION_GROUPS = [
   ['People & story', ['trainers', 'people', 'wardrobe', 'lore', 'story']],
   ['Money', ['items', 'shops', 'jobs']],
   ['Game', ['rules', 'ui', 'art', 'check']],
+  /* RL-5: the old world outside the hub, parked in game/data/legacy (legacy-view.js) */
+  ['Legacy', ['legacy']],
 ];
 const foldedSectionGroups = (() => {
   try {

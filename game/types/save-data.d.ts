@@ -71,6 +71,8 @@ export interface SaveData {
     stamps?: Record<string, any>;
     reqs?: Record<string, any>;
     home?: { slots: Record<string, any>; own: string[] };
+    /** the places you've been in today (by node) */
+    visits?: { date: string; ids: number[] };
   };
   /** postcards collected (postcards.js) */
   cards?: Record<string, any>;

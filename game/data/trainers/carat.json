@@ -2,7 +2,7 @@
  "name": "Leader Carat",
  "who": "carat",
  "battleStage": "grotto",
- "node": 32,
+ "miniboss": true,
  "blocks": false,
  "team": [
   {"sp":"slim2","lvl":51},

@@ -2,13 +2,16 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { data, fn, startedSave } from './setup-real.mjs';
+import { oldWorld } from './old-world.mjs';
 
 const { parseScript, runScript, saveDuringRun, runBase, applyStoryPreset } = Object.fromEntries(
   ['parseScript', 'runScript', 'saveDuringRun', 'runBase', 'applyStoryPreset'].map(n => [n, fn(n)])
 );
 const G = data.gameData;
+/* RL-5: people from the old world's maps too (Curator Nacre lives in Pearlantis, parked in game/data/legacy) */
+const OLD = oldWorld();
 const person = id =>
-  Object.values(G.maps)
+  Object.values(OLD.maps)
     .flatMap(sc => sc.people || [])
     .find(p => p.id === id);
 const scripts = () => [
@@ -69,9 +72,16 @@ test('start presets: place, flags, trainers beaten with their badges, coins and 
       P.team.map(m => [m.sp, m.lvl])
     );
   }
-  const s = startedSave('musk0');
-  applyStoryPreset(s, 'before-cass');
-  assert.equal(s.seats.length, 8, 'every leader beaten, every badge');
+  /* RL-5: a preset that beats every leader gives every badge (planted: before-cass, the ending's, is parked) */
+  const leaders = Object.keys(data.TRAINERS).filter(k => data.TRAINERS[k].seat);
+  G.story.presets.rl5_badges = { place: G.rules.start.locationId, beaten: leaders, team: [{ sp: 'musk0', lvl: 50 }] };
+  try {
+    const s = startedSave('musk0');
+    applyStoryPreset(s, 'rl5_badges');
+    assert.deepEqual([leaders.length, s.seats.length], [8, 8], 'every leader beaten, every badge');
+  } finally {
+    delete G.story.presets.rl5_badges;
+  }
   assert.equal(applyStoryPreset(startedSave('musk0'), 'nope'), null);
 });
 

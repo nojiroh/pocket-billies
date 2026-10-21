@@ -1,11 +1,13 @@
 // Phase 13: the world-map graph on the game's own data: locations, the roads between them, the map edges each road
 // joins, gates and lifts. Phases 08 and 10 rework travel and the world map; whatever they change, the places, their
-// connections and their gates stay (the snapshot leaves out costs, which may change). The snapshot is in
+// connections and their gates stay (the snapshot leaves out costs, which may change). RL-5: the game's world is the hub,
+// Copperleaf, alone; the old world outside it is parked in game/data/legacy (the last test here checks it holds
+// together). The snapshot is in
 // world-graph.test.mjs.snapshot; when a change to the graph is meant, remake it with
 //   node --test --test-update-snapshots tools/test/world-graph.test.mjs
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { PB_DATA } from '../data-files.mjs';
+import { PB_DATA, readLegacyData } from '../data-files.mjs';
 import { data, GAME_DATA } from './setup-real.mjs';
 
 const { locations, maps, trainers } = GAME_DATA;
@@ -132,4 +134,24 @@ test('phase 08: every road is measured in metres, from each place’s middle to 
     assert.equal(len, Math.round(ea.len + eb.len), ends.id);
     assert.ok(len >= 20 && len <= 400, `${ends.id} is ${len} m`);
   }
+});
+
+test('RL-5: the parked world holds together: each place has its map naming it back, each road joins two of its places (or Copperleaf), each trainer stands on one of its places', () => {
+  const L = readLegacyData();
+  assert.ok(L, 'game/data/legacy/index.json');
+  const ids = new Set(L.locations.map(l => l.id));
+  for (const l of L.locations) assert.equal((L.maps[l.mapId] || {}).locationId, l.id, l.id);
+  for (const r of L.roads)
+    for (const end of [r.a, r.b]) assert.ok(ids.has(end.map) || end.map === 'copperleaf', `${r.id}: ${end.map}`);
+  for (const [id, T] of Object.entries(L.trainers)) assert.ok(L.locations[T.node], `${id} stands on ${T.node}`);
+  for (const id of ids)
+    assert.equal(
+      locations.find(l => l.id === id),
+      undefined,
+      `${id} is in the game too`
+    );
+  assert.deepEqual(
+    [L.locations.length, L.roads.length, Object.keys(L.trainers).length, L.lines.length],
+    [48, 57, 39, 55]
+  );
 });

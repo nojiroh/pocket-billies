@@ -2,7 +2,7 @@
  "name": "Leader Rocco",
  "who": "crude",
  "battleStage": "grotto",
- "node": 4,
+ "miniboss": true,
  "blocks": false,
  "team": [
   {"sp":"ford0","lvl":12},
