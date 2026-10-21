@@ -845,7 +845,7 @@ def in_game_test_whole(b, base, R):
         ctx.close()
 
 
-@step('Phone: opening, first battle, screens and a battle', 260)
+@step('Phone: opening, the airship mast, screens and a battle', 260)
 def phone_flow(b, base, R):
     errs = []; ctx, pg = open_game(b, base, 390, 844, True, errs)
     try:
@@ -866,6 +866,17 @@ def phone_flow(b, base, R):
         if not until(pg, '!!uiState.modal', 30): raise Exception('no welcome sheet after the opening')
         R['afterOpening'] = pg.evaluate("({welcome:uiState.modal&&uiState.modal.title,rival0:(saveData.story||{}).rival0||null})")
         pg.evaluate("closeModal();0")
+        # RL-8: Copperleaf's airship mast offers a run: tapped (walkPick, as a tap on it does), its sheet has "Start a
+        # run"; a real tap on that row opens the run's sheet (left there: the fast check and the full check fly it)
+        if not until(pg, "walkView.ready&&!!walkView.sc.props.find(p=>p.act==='fly')", 60): raise Exception('Copperleaf has no airship mast')
+        pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();(p=>walkPick({k:'act',p,act:'fly'}))(walkView.sc.props.find(p=>p.act==='fly'));0")
+        if not until(pg, "!!document.querySelector('#ov [data-a=runstart]')", 30): raise Exception('the mast’s sheet has no “Start a run”')
+        shot(pg, 'phone-mast')
+        pg.click('#ov [data-a=runstart]')
+        if not until(pg, "uiState.modal&&uiState.modal.title==='Start a run'", 10): raise Exception('“Start a run” didn’t open the run’s sheet')
+        R['runSheet'] = pg.evaluate("uiState.modal.btns.map(b=>b.l)")
+        shot(pg, 'phone-run-sheet')
+        pg.evaluate("closeModal();uiState.modal=null;uiState.mq=[];renderOverlay();0")
         play(pg)
         # UI-1: how many surfaces blur what's behind them on each screen (the plan's budget is 3); a report, not a failure
         blur = {}
@@ -895,7 +906,7 @@ def phone_flow(b, base, R):
         # kept for comparing logs across a phase (validation/ is not committed)
         shutil.copyfile(d.path(), OUT / 'phone-debug-log.json')
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
-        return f'the fall, Hazel, dressing room, starter (no Blake: RL-8), the welcome sheet, five screens, shop, battle, speech kept out of the debug picture, debug log ({len(json.dumps(dlog)) // 1024} KB, no names); blurred surfaces per screen: {", ".join(f"{k} {v}" for k, v in blur.items())}'
+        return f'the fall, Hazel, dressing room, starter (no Blake: RL-8), the welcome sheet, the mast’s run sheet, five screens, shop, battle, speech kept out of the debug picture, debug log ({len(json.dumps(dlog)) // 1024} KB, no names); blurred surfaces per screen: {", ".join(f"{k} {v}" for k, v in blur.items())}'
     finally:
         R['phoneErrors'] = errs[:10]; ctx.close()
 
