@@ -35,7 +35,9 @@ written) and check what MG-2 to MG-5 have already changed in mapgen.js. Report w
 - The renderer already has nine water kinds (pond, stream, canal, spring, swamp, lake, sea, lava, ice) and a waterfall
   mesh (`fall`). TR-10 and TR-6 reuse them: marsh = swamp, lava and ice exist, waterfalls use `fall`. New kinds (hot
   spring with steam, oasis, rapids) mean growing the shader's kind arrays past 9.
-- Run scenes are fixed at 112×64 with forward links N→S at t 0.25/0.5/0.75 (roguelite-track 2e), and MG-2 copies the
+- (TR-2 session: runs now go east to west, entered by the east edge and left by the west, so the free sides are north,
+  the back, and south, toward the camera; both run edges are pinned to height 0. The rest of this point is as written.)
+  Run scenes are fixed at 112×64 with forward links N→S at t 0.25/0.5/0.75 (roguelite-track 2e), and MG-2 copies the
   parent's edge strip into the child. So big relief belongs on the free E/W sides (the massif mask), and N/S edges must
   match their neighbours. Climbing toward the boss comes from that continuity: each scene ends a little higher than it
   started.
@@ -184,7 +186,7 @@ Sources: [pret/pokeemerald](https://github.com/pret/pokeemerald) (map data, deco
 |---|------|-----------------------|
 | TR-1 | (folded into MG-2 by the owner, 2026-10-21) Smooth roads: road ramp cells flagged 32 in `stepm`; a graded shoulder beside cuts (bank in the wild, wall in towns, by biome/scene kind); a gradient cap with automatic switchbacks on main roads and stairs on footpaths; junctions and the hub round made with ramps instead of the lowering pass. One-off tool run on Copperleaf only. | unit test: no riser over 3 cm on any road cell; mapgenUnreachable sweep; a02_joins |
 | TR-2a | (done, TR-2 session) Mountains as the border: the `mountains` (0-1, up to 20 m) and `massif` (sides) dials, ridged noise plus domain warp under a massif mask, its own `relief` seed; steep ground as step-grid shelves and cliffs; kept off the road, hub, exits and water; the Studio dials; the debug menu's mountains run for the phone measurement. | sweep of random dial sets reaching every exit (with the slope rule); seams of a mountains run; phone frame time (owner) |
-| TR-2b | Gen 3 route layout, part 1: the walk mask (corridors 6-14 m, pockets, spurs, dead ends, a solid border of tree wall, massif or water, about 50-60% walkable); tiers (1-3, a cliff apart) joined by stairs on footpaths and ramps on main roads; the massif's foot walkable by stairs to a pocket; marked spots (pocket, dead end, tier top, trainer spot with facing). | sweep: every exit reached, walkable share in range, every pocket reached; seams; picture notes |
+| TR-2b | Mountain trails (the owner: walkable to 15 m+, open routes): a footpath from the road up each massif to its summit, searched so it stays walkable (switchbacks), stairs where steep, ramps where gentle, a flat summit pocket as a marked spot; tiers and stairs where the land steps near the road. | sweep: every exit and every summit reached with the slope rule; seams; picture notes |
 | TR-2c | Gen 3 route layout, part 2: generated ledges (moved from TR-5: short runs, loops, one-way in the reach check, hop arc and dust puff); tall grass as 3-6 patches across the path; the road pathfinder through tiers and the massif; the four mountain route types (valley floor, pass, ledge path, gorge with a rope bridge) as recipes of these parts. | unreachable check counting ledges one way; grass on the way north; sweep; phone frame time |
 | TR-3 | Camera for tall ground: rock fade, camera rise on tall ground, player silhouette. | visual check steps, smoke |
 | TR-4 | Look: painting by height and steepness (rock, snow line per biome, scree, grass lip), strata bands on cliff faces per biome. | picture notes, smoke |
@@ -240,10 +242,16 @@ Sources: [pret/pokeemerald](https://github.com/pret/pokeemerald) (map data, deco
 - What happens to the existing ladder props and the scenes that use them.
 - Where altitude encounter pools live in the data (pools.json or biomes.json).
 
-## Ask me before (from the Gen 3-5 research, TR-2 session)
-- **Walkable height.** The owner chose walkable mountains of 15 m or more. Gen 3 walks a few tiers per map and keeps
-  tall mountains as the border. Proposed: 1-3 walkable tiers per scene, the massif above as border and backdrop, the
-  run climbing a tier at a time across its scenes.
-- **How much is walkable.** Gen 3: about 47%. Proposed for run routes: 50-60%, the rest a solid border.
-- **Which way ledges jump.** A run goes north (away from the camera). Gen 3's ledges jump south, toward the camera
-  (back toward where you came from): loops and quick ways back inside a scene. Or north: shortcuts forward.
+## The owner's answers to the research (TR-2 session, 2026-10-21)
+- **Walkable height: 15 m and more, in one scene** (the earlier decision stands). Paths climb the massif itself:
+  switchback trails with stairs where steep, up to a summit pocket. Gen 3's tiers and stairs are the parts they are
+  built from.
+- **Routes stay open (70% or more walkable)**, not Gen 3's corridors. Borders are added only where they help (the
+  massif, water, the tree belt). Point 1 above ("a route is corridors inside a border") is dropped.
+- **Ledges jump south, toward the camera**, as in Gen 3: one-way drops back toward where you came in, for loops,
+  skipping grass and reaching pockets from above.
+
+So TR-2b becomes: **mountain trails** (a footpath from the road up each massif to its summit, found by a search that
+keeps it walkable so it winds in switchbacks; stairs where it is steep, a ramp where it is gentle; a flat summit
+pocket as a marked spot), plus tiers and stairs near the road where the land steps. TR-2c keeps ledges, grass patches,
+the main-road pathfinder and the four mountain route types.
