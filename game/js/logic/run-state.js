@@ -216,7 +216,8 @@ export function runEnd(s, how, rates, itemPrice) {
   const run = s.run;
   if (!run) throw new Error('runEnd: no run is on');
   const pay = payoutOf(
-    { se: s.se, items: s.items, released: run.released.length, cleared: run.path.length, won: how.won },
+    /* nodes cleared: each node once (the path counts every arrival, backtracking included) */
+    { se: s.se, items: s.items, released: run.released.length, cleared: new Set(run.path).size, won: how.won },
     rates,
     itemPrice
   );

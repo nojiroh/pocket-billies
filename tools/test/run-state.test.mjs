@@ -135,7 +135,7 @@ test('run: ending one pays into meta, puts the hub back and keeps the chosen Bil
   const s = hubSave(),
     hub = copy(s);
   const run = runBegin(s, GIVE);
-  run.path = [0, 1, 3];
+  run.path = [0, 1, 0, 1, 3]; // walked back to the landing once: still three nodes cleared
   run.released.push({ sp: 'sprout0', lvl: 4 });
   s.se = 500;
   s.items.potion = 2;
