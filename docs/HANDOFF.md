@@ -2,6 +2,30 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Phase 09 side work - flat plant variants and the generator - 2026-10-21
+Branch `props/flat-sizes` (owner's request in chat, no phase file). No tag.
+- Changed: tools/build-flat-variants.py draws four variants of each of the 60 flat plants the first cut uses
+  (Copperleaf, its five rooms, the routes of meadow, lake, thicket, ridge and autumn), with the scene-prop kit itself:
+  flowers from their own flower_bed / flower_patch call (sprig, cluster, drift, tall or scatter), grasses and reeds
+  (tuft, clump, windswept, meadow), ferns (fiddlehead, clump, spread, tall), pads and ground cover (single, pair, raft,
+  trail), low things (small, pair, row, big). Each is a `variants` row with form, weight and span; the props get
+  `vary.size: 0` and ppm 32. mapgen.js (MAPGEN_VERSION 3 after merging main; 2 is MG-2's): a picture is never scaled (only models keep `s`), a prop
+  with weighted variants gets one (`v`) from its own stream (`plants|variants`), and its footprint is the variant's.
+- Left out on purpose: trees, shrubs, the mossy boulder, campfire, lookout tower, wind-sail flower and room furniture
+  (they become models); crops (one design, place at 1) and flowers_meadow (no drawing code); rugs, wall clock,
+  painting, window and chalk sun (always placed at 1; the wall things and rugs are still 34 px/m).
+- Verified: the kit draws today's 60 pictures exactly (checked on every run); 240 pictures without soft edges,
+  anchors as the prop tools set them; 353 unit tests (two new: pictures never scaled, the weighted pick); data check
+  (schema step stubbed: the registry was unreachable); type check unchanged (14 errors before and after, none in
+  mapgen); a generated meadow route seen in the game (headless Chromium, ?fixture=route with the route swapped in a
+  throwaway copy): 679 variants drawn, no page errors. ESLint and Prettier could not run (packages unreachable).
+- Risky: rng.test.mjs's frozen scene hash was remade on purpose (MAPGEN_VERSION 3). Copperleaf still places 52
+  pictures at a scale (hand-placed; not touched). Picture trees in thicket and ridge (planned as models) now all
+  stand at size 1 in generated routes.
+- Next: Copperleaf's scaled plants to variants (one-off), the turn and lean of flowers (owner to decide), then the
+  plants of the other biomes the same way once their kits are converted.
+
+
 ### Roguelite track RL-5 - Legacy parking and the world setter - 2026-10-21
 Branch `ccr-ad41ba43-cf2age`, from main 3479f01 (RL-4 merged). Plan approved at the start with the owner's answers:
 Copperleaf alone (its south exit and Route 1 gone), the other places moved to `game/data/legacy` with a read-only

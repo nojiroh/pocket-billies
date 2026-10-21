@@ -110,7 +110,7 @@ test("the scene is in the game's format", () => {
       sc.props.some(p => p.w === 42),
       `${where}: wild plants marked as grow-wild marks them`
     );
-    assert.equal(sc.gen.v, 2);
+    assert.equal(sc.gen.v, G.MAPGEN_VERSION);
     assert.equal(sc.gen.seed, c.seed);
     assert.equal(sc.exits.length, sc.edgeExits.length);
     const sides = {};
@@ -225,4 +225,33 @@ test('40 random dial sets: each reaches every exit, with nothing in water it doe
       if ('wd'.includes(at(sc, p.x, p.z)) && p.k !== 'dock_post')
         assert.ok(/[wd]/.test(P[p.k].grow || ''), `${where}: ${p.k} in water`);
   }
+});
+
+/* phase 09: a picture scaled by a placement leaves the 32 px/m grid; plants get their variety from drawn variants */
+test('pictures are never scaled; plants carry a drawn variant instead', () => {
+  let withV = 0,
+    plants = 0;
+  for (const c of CASES) {
+    const sc = G.mapgenScene(c, ctx).scene;
+    for (const p of sc.props) {
+      const M = P[p.k];
+      if (!M.model) assert.equal(p.s, undefined, `${p.k}: a picture is scaled (${p.s})`);
+      if (M.variants && M.variants.some(r => r.weight > 0)) plants++;
+      if (p.v) {
+        assert.ok(M.variants && Number.isInteger(p.v) && p.v >= 1 && p.v <= M.variants.length, `${p.k}: v ${p.v}`);
+        withV++;
+      }
+    }
+  }
+  assert.ok(withV > plants * 0.5, `most plants with variants get one (${withV} of ${plants})`);
+});
+
+test('the variant pick follows the weights, the prop as drawn counting 1', () => {
+  const M = { variants: [{ weight: 1 }, { weight: 2 }, { weight: 0 }] },
+    n = [0, 0, 0, 0],
+    W = { vrnd: null, rng: () => modules.rng.rngFrom(7, 'v') };
+  for (let i = 0; i < 4000; i++) n[G.mapgenPickVariant(W, M)]++;
+  assert.equal(n[3], 0, 'a weight of 0 is never picked');
+  assert.ok(Math.abs(n[2] / 4000 - 0.5) < 0.04 && Math.abs(n[0] / 4000 - 0.25) < 0.04, n.join(','));
+  assert.equal(G.mapgenPickVariant(W, { name: 'no variants' }), 0);
 });

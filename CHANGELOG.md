@@ -9,6 +9,11 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- Plants (phase 09): the flowers, grasses, reeds, ferns, pads and ground cover of Copperleaf and the generated routes
+  each come in four more drawings: a sprig with a bud, a domed cluster, a wide drift with fallen petals, tall stems,
+  scattered rosettes, windswept or seeding grass, curled fiddleheads, rafts of lily pads and so on. Generated routes
+  pick among them instead of stretching one picture to a random size, so every plant stays on the 32 px/m pixel
+  grid (and the renderer no longer gives these plants a random size either).
 - The hub alone (roguelite track RL-5): the game is Copperleaf Town now; every other place, its map, trainers,
   shops, day jobs and lore is parked for the Studio (its new Legacy section) and no longer loaded. Copperleaf's south
   exit and Route 1 are gone, the world map shows Copperleaf alone, and the eight badge leaders wait for the runs as

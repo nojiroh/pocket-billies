@@ -116,3 +116,9 @@ session is tagged `mg-N-done`.
   is already Node). MG-1's "zero raise near a joined edge" has to hold on every exit's edge: a parent can't know which
   exits get joined. The pin covers the 26 m band, not 22 m.
 - The Studio: Joins… on each exit row, Preview the pair, the hub's buildings, a Buildings reroll (STUDIO.md).
+
+## Plants without scaling (phase 09 side work, 2026-10-21)
+- MAPGEN_VERSION 3 (2 is MG-2's). A picture is never scaled (`s` only on models): scaling resamples it off the 32 px/m grid. A prop
+  whose `variants` carry a `weight` gets one (`v`, 1 is the first; the prop as drawn counts 1) from the stream
+  `plants|variants`, so the pick changes no other stage's draws; the footprint is `mapgenRadius` times the variant's
+  `span`. The variants are drawn by tools/build-flat-variants.py.
