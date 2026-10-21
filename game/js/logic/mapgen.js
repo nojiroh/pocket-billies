@@ -80,6 +80,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   mapgenJoinOffset: [() => mapgenJoinOffset, v => (mapgenJoinOffset = v)],
   // @ts-expect-error -- replaced on purpose
+  mapgenLandProfile: [() => mapgenLandProfile, v => (mapgenLandProfile = v)],
+  // @ts-expect-error -- replaced on purpose
   mapgenLattice: [() => mapgenLattice, v => (mapgenLattice = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenLevelLot: [() => mapgenLevelLot, v => (mapgenLevelLot = v)],
@@ -178,6 +180,10 @@ expose({
   mapgenStageWater: [() => mapgenStageWater, v => (mapgenStageWater = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenStreamLine: [() => mapgenStreamLine, v => (mapgenStreamLine = v)],
+  // @ts-expect-error -- replaced on purpose
+  mapgenTerraceCount: [() => mapgenTerraceCount, v => (mapgenTerraceCount = v)],
+  // @ts-expect-error -- replaced on purpose
+  mapgenTerraceField: [() => mapgenTerraceField, v => (mapgenTerraceField = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenTerraces: [() => mapgenTerraces, v => (mapgenTerraces = v)],
   // @ts-expect-error -- replaced on purpose
@@ -961,27 +967,29 @@ export function mapgenCornerHeight(G, x, z) {
     j = mapgenBetween(Math.round(z), 0, G.h);
   return G.H[j * (G.w + 1) + i];
 }
+/** the land's height along a road (one value a sample): its corners smoothed over 7 m either way, changing by no
+ * more than lim a half metre */
+export function mapgenLandProfile(G, pts, lim) {
+  const n = pts.length,
+    raw = pts.map(p => mapgenCornerHeight(G, p[0], p[1])),
+    win = 14;
+  const sm = raw.map((_, i) => {
+    let s = 0,
+      c = 0;
+    for (let k = Math.max(0, i - win); k <= Math.min(n - 1, i + win); k++) {
+      s += raw[k];
+      c++;
+    }
+    return s / c;
+  });
+  for (let i = 1; i < n; i++) sm[i] = mapgenBetween(sm[i], sm[i - 1] - lim, sm[i - 1] + lim);
+  for (let i = n - 2; i >= 0; i--) sm[i] = mapgenBetween(sm[i], sm[i + 1] - lim, sm[i + 1] + lim);
+  return sm;
+}
 export function mapgenFlattenRoads(G, half) {
   const { w, h } = G,
     prof = new Float32Array(G.roadPts.length);
-  for (const R of G.road) {
-    const n = R.pts.length,
-      raw = R.pts.map(p => mapgenCornerHeight(G, p[0], p[1])),
-      win = 14;
-    const sm = raw.map((_, i) => {
-      let s = 0,
-        c = 0;
-      for (let k = Math.max(0, i - win); k <= Math.min(n - 1, i + win); k++) {
-        s += raw[k];
-        c++;
-      }
-      return s / c;
-    });
-    const lim = 0.09; /* per half metre: 18% at most */
-    for (let i = 1; i < n; i++) sm[i] = mapgenBetween(sm[i], sm[i - 1] - lim, sm[i - 1] + lim);
-    for (let i = n - 2; i >= 0; i--) sm[i] = mapgenBetween(sm[i], sm[i + 1] - lim, sm[i + 1] + lim);
-    R.prof = sm;
-  }
+  for (const R of G.road) R.prof = mapgenLandProfile(G, R.pts, 0.09); /* per half metre: 18% at most */
   let o = 0;
   for (const R of G.road) {
     for (let i = 0; i < R.pts.length; i++) prof[o + i] = R.prof[i];
@@ -1322,11 +1330,14 @@ export function mapgenPaintCoast(G, rnd, size) {
     }
   G.waterKind = 'sea';
 }
-export function mapgenTerraces(G, levels) {
-  /* bands across the depth that rise toward the back, each a step up; the road ramps through them */
-  const { w, h, P } = G,
-    W2 = w * 2,
-    H2 = h * 2,
+/** how many terrace levels the dials ask for (0: none) */
+export function mapgenTerraceCount(P) {
+  return P.feature === 'terraces' ? Math.max(2, Math.round(P.land.terraces * 3)) : Math.round(P.land.terraces * 3);
+}
+/** the terraces: bands across the depth that rise toward the back, each a step of rise metres; lvl(x, z) is the level
+ * at a point, zoneDist(x, z) how far it is from the stretch of an exit's edge kept at ground level */
+export function mapgenTerraceField(G, levels) {
+  const { h, P } = G,
     rise = Math.round((0.4 + P.land.cliffs * 1.2) * 20) / 20,
     ns = G.salt('heights', 'terrace');
   /* MG-2: at ground level by every exit's edge, over the stretch a neighbour shows there (MAPGEN_BAND and 4 m), so a
@@ -1352,6 +1363,14 @@ export function mapgenTerraces(G, levels) {
       Math.floor(Math.max(0, zoneDist(x, z) - 8) / 6)
     );
   };
+  return { rise, lvl, zoneDist };
+}
+export function mapgenTerraces(G, levels) {
+  /* bands across the depth that rise toward the back, each a step up; the road ramps through them */
+  const { w, h } = G,
+    W2 = w * 2,
+    H2 = h * 2,
+    { rise, lvl, zoneDist } = mapgenTerraceField(G, levels);
   for (let j = 0; j < H2; j++) for (let i = 0; i < W2; i++) G.S[j * W2 + i] = lvl((i + 0.5) / 2, (j + 0.5) / 2) * rise;
   /* TR-1: along each road the raise follows a profile that climbs no faster than 0.1 m a half metre (a level stretch
      through the hub, a branch ending at the main road's raise), and the roads, the hub round and the exits' rounds
@@ -1691,7 +1710,7 @@ export function mapgenStageLand(G) {
   const { P, B } = G,
     rnd = G.rng('ground', 'land'),
     s = G.salt('ground');
-  const lv = P.feature === 'terraces' ? Math.max(2, Math.round(P.land.terraces * 3)) : Math.round(P.land.terraces * 3);
+  const lv = mapgenTerraceCount(P);
   if (lv > 0) mapgenTerraces(G, lv);
   /* tall grass in drifts beside the road (where the wild billionaires wait), away from the hub and the exits */
   const away = q => {
