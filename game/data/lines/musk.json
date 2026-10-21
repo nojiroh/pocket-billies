@@ -38,5 +38,11 @@
   {"k":"lvl","at":16},
   {"k":"split","at":32}
  ],
- "parody": "Elon Musk"
+ "parody": "Elon Musk",
+ "parts": [
+  {"head":"bear_head","body":"bear_torso","front":"bear_arm","back":"bear_leg","sig":"fox_tail"},
+  {"head":"bear_head","body":"bear_torso","front":"bear_arm","back":"bear_leg","sig":"fox_tail"},
+  {"head":"bear_head","body":"bear_torso","front":"bear_arm","back":"bear_leg","sig":"fox_tail"},
+  {"head":"bear_head","body":"bear_torso","front":"bear_arm","back":"bear_leg","sig":"fox_tail"}
+ ]
 }

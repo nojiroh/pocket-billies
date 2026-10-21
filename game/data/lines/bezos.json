@@ -38,5 +38,11 @@
   {"k":"lvl","at":16},
   {"k":"split","at":32}
  ],
- "parody": "Jeff Bezos"
+ "parody": "Jeff Bezos",
+ "parts": [
+  {"head":"cat_head","body":"bear_torso","front":"cat_arm","back":"cat_leg","sig":"reptile_tail"},
+  {"head":"cat_head","body":"bear_torso","front":"cat_arm","back":"cat_leg","sig":"reptile_tail"},
+  {"head":"cat_head","body":"bear_torso","front":"cat_arm","back":"cat_leg","sig":"shark_tailfin"},
+  {"head":"cat_head","body":"bear_torso","front":"cat_arm","back":"cat_leg","sig":"reptile_tail"}
+ ]
 }

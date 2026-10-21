@@ -133,6 +133,20 @@ for (const L of D.lines || []) {
   (L.names || []).forEach((n, i) => species.add(L.id + i));
   for (const [lv, m] of L.learn || [])
     if (!moves[m]) problem(`lines/${L.id}.json`, `learns ${m} at ${lv}, no such move`);
+  // phase 16: native parts: one per stage, every slot filled with a part the kits have
+  if (L.parts) {
+    if (L.parts.length !== (L.names || []).length)
+      problem(`lines/${L.id}.json`, `${L.parts.length} stages of parts, ${(L.names || []).length} names`);
+    const slots = (D.rules && D.rules.parts && D.rules.parts.slots) || [],
+      kit = (D.partKits && D.partKits.parts) || {};
+    L.parts.forEach((P, i) => {
+      for (const s of slots) if (!P[s]) problem(`lines/${L.id}.json`, `stage ${i}: no native part for slot ${s}`);
+      for (const [s, id] of Object.entries(P)) {
+        if (!slots.includes(s)) problem(`lines/${L.id}.json`, `stage ${i}: ${s} is not a part slot`);
+        if (!kit[id]) problem(`lines/${L.id}.json`, `stage ${i}: native ${s} part ${id}, no such kit part`);
+      }
+    });
+  }
 }
 // phase 16: a species from a line kept in game/data/legacy is fine; the game stands in a new line's Billie for it
 const legacy = new Set();

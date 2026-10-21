@@ -257,6 +257,8 @@ export interface Line {
   diet?: string[];
   bio?: string[];
   note?: string[];
+  /** phase 16: each stage's native parts (its fitting set): a kit part id (partKits.json) per part slot */
+  parts?: Record<string, string>[];
 }
 
 /** a species, made from its line at load (game-data.js SPECIES) */

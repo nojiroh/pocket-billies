@@ -31,5 +31,10 @@
   {"k":"lvl","at":16},
   {"k":"lvl","at":36}
  ],
- "parody": "Mark Zuckerberg"
+ "parody": "Mark Zuckerberg",
+ "parts": [
+  {"head":"carp_head","body":"carp_torso","front":"koi_frontfin","back":"piranha_backfin","sig":"shark_tailfin"},
+  {"head":"carp_head","body":"carp_torso","front":"koi_frontfin","back":"piranha_backfin","sig":"shark_tailfin"},
+  {"head":"carp_head","body":"carp_torso","front":"koi_frontfin","back":"piranha_backfin","sig":"shark_tailfin"}
+ ]
 }
