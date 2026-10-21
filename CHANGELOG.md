@@ -9,6 +9,12 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- The Studio's UI look (UI track UI-3a): Game → UI look edits the menus' look: colours light and dark side by side
+  with a contrast grade on each text colour, the glass, depth and drop shadows, the shapes (each family's cut,
+  corners and radius), space, type and motion, for the whole game or one screen's colours and shapes. Presets (save
+  your own), Hold to compare with the saved look, and the UI gallery as a live preview; an open game tab follows the
+  dials. The Check flags text that reads too faintly. The game looks the same: the look's data now holds every value
+  the dials edit.
 - The look, angular (UI track UI-2): panels, sheets, cards, buttons, tabs and toasts have cut 45° corners with a thin
   edge line, light on top and dark below; the main action is a long hexagon. The team rows are solid cards, the
   battle text, the move menu and the dialogue box cut panels, move tiles cut cards. HP bars are angular and

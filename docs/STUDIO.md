@@ -171,6 +171,29 @@ World & encounters → **World map look** edits game/data/worldmap.json, the wor
 - **Landmarks.** On a stop (Route stops), **Landmark on the world map**: Auto (the biggest landmark in its walk scene)
   or one of its scene's landmarks and buildings; far out the map shows it standing up as its own picture.
 
+## UI look (UI track UI-3)
+
+Game → **UI look** edits game/data/uiTheme.json, the look of the game's menus (not the 3D scenes: that is Engine).
+
+- **Set the look for** the whole game, or one screen's colours and shapes only (Walk, Map, Team, Guide, Bag, Trainer
+  card, Battle, Dialogue): the screen's own part of the page; its top and bottom bars and sheets follow the game.
+- **Dials** in groups that fold: Colours (light and dark side by side; each text colour shows its grade and how
+  well it reads on the ground and on a surface: text needs 4.5:1, danger and primary 3:1), Surface (the glass: blur,
+  saturation, and per side its opacity, highlight, edge line and shadow colour), Depth (the glass panels' raised and
+  floating shadows, per side), Drop shadows (the cut parts'), Shape (the three cut sizes, the slant, stepped like
+  pixel art, and each family's shape, cut size, corners and radius), Space, Type (the two fonts, the voice font's
+  size, every text size, line height), Motion (three speeds, the stagger, three eases) and Layers (read only).
+- **↺** on a dial: on the whole game it goes back to the value last saved; on a screen the screen stops setting it.
+  **Reset** does a group. **Back to the saved look** (the whole game) or **Clear everything set here** (a screen);
+  **Use these for the whole game** moves a screen's values to the game.
+- **Presets** are data in uiTheme.json (Alpha 0.5, the look before UI-1; Stepped pixels). One applies onto the level
+  you are on (on a screen, its colours and shapes only); **+ Save as preset** saves the level's look under a name;
+  × deletes one. Undo takes any of it back.
+- **The preview** is the UI gallery (every part of the kit, in its states) with your unsaved look: Light or Dark,
+  320, 390 or wide, Reduced motion, Settings' text size, and the screen you are setting. **Hold to compare** (or hold
+  C) shows the look as last saved. **Open the gallery** opens it in a tab. An open game tab follows the dials too.
+- Find (Ctrl+K) knows every dial; the Check lists a colour that reads too faintly, with Show me.
+
 ## Sections
 
 | Section | What you can do |
@@ -194,6 +217,7 @@ World & encounters → **World map look** edits game/data/worldmap.json, the wor
 | **Trainers, People** | Trainer teams, their script (checked as you type), when they're there, rewards, badges, sandstorms; trainer and shopkeeper looks with a live preview. |
 | **Story scripts** | Project Story S3: story.json's own scripts (Hazel's lab, after Blake's first battle, the ending): add, rename, remove and edit them in the script field; the story's flags, start presets (with ▶ Play) and quests to read. |
 | **Scripts everywhere** | Every script field (a trainer's, a person's, story.json's) shows the parser's error at once and the story checks a moment later, each on its line (click to go there); **Add line ids**; **Commands**, a reference built from the parser's own tables that puts a command in the script. Condition fields (when, unless, a place's requires) are checked the same way, and the Check lists every story finding. docs/SCRIPTS.md. |
+| **UI look** | The menus' look (uiTheme.json): colours light and dark with contrast grades, glass, depth, shapes, space, type and motion, for the whole game or one screen's colours and shapes; presets, Hold to compare, the UI gallery as a live preview. UI track UI-3, above. |
 | **Rules** | Every number that tunes the game: starting items, starters and rival, wild Billies per place and how fast they come back, prize money, leveling curve, team size, eggs, damage, critical hits, type abilities, taxing, bargains. |
 | **Art files** | Browse, download and replace any image. |
 | **Check & backups** | Lists problems with "Show me" links; restores earlier versions. |
