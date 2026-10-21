@@ -35,8 +35,9 @@ const postcardState = { last: null, on: false };
 function postcardsOwned() {
   return saveData.cards || (saveData.cards = {});
 }
+/* RL-7: the hub's towns: a run's have no postcard picture (their scenes are made from the run's seed) */
 function postcardTowns() {
-  return LOCATIONS.map((r, i) => i).filter(i => isTown(i) && mapIdAt(i));
+  return LOCATIONS.map((r, i) => i).filter(i => isTown(i) && mapIdAt(i) && LOCATIONS[i].runNode == null);
 }
 function postcardImage(i) {
   return 'postcards/' + mapIdAt(i) + '.webp';
@@ -80,6 +81,8 @@ export function postcardCheck() {
   }
   if (
     !saveData.started ||
+    /* RL-7: a run's towns have no postcard */
+    saveData.run ||
     (typeof activeBattle !== 'undefined' && activeBattle) ||
     uiState.modal ||
     uiState.title ||
