@@ -2,8 +2,9 @@
 // The save is what game-state.js newSave() makes and migrate() fills out and checks, kept as JSON in this browser
 // (localStorage) and, when signed in, on the account (account.js stores it as one string). A backup file is
 // { game: 'Pocket Billies', format: 1, save } (settings-screen.js exportSave; validSave checks an import).
-// Save format 2 (SAVE_VERSION, phase 05): the player's travel along the roads is `trip` (was `route`). A save of
-// another format is not loaded; the game says so and keeps it aside.
+// Save format 2 (SAVE_VERSION, phase 05): the player's travel along the roads is `trip` (was `route`); format 4
+// (roguelite track RL-3) adds meta, run and ranch. A save of another format is not loaded; the game says so and keeps
+// it aside.
 // Precise where the code reads a field; the parts other modules keep in the save (story, things to do, postcards,
 // the wardrobe) are loose.
 
@@ -75,6 +76,11 @@ export interface SaveData {
   cards?: Record<string, any>;
   /** clothes owned and saved outfits (dressing-room.js) */
   wardrobe?: { owned: Record<string, any>; outfits: any[] };
+  /** roguelite track RL-3 (save format 4): what lasts between runs, the run in progress (null in the hub; while it is
+      on, team, se, items, coins, trip, wild, eggs, flags, seats and visited are the run's), the ranch */
+  meta: Meta;
+  run: Run | null;
+  ranch: Ranch;
 }
 
 /** roguelite track RL-3: what lasts between runs (logic/meta-state.js) */

@@ -24,6 +24,9 @@ import {
 } from '../game-data.js';
 import { isRobot, robotGemDef, robotPartDef, robotRules, speciesOf } from './fighters.js';
 import { cleanName, movesAt, refreshRobot, teamSize } from './rules.js';
+import { metaFill, newMeta, validMeta } from './meta-state.js';
+import { newRanch, ranchFill, validRanch } from './ranch-state.js';
+import { runNodeCount, runRestore, validRun } from './run-state.js';
 /* eslint-disable no-func-assign */
 expose({
   SAVE_NEW_MSG: [() => SAVE_NEW_MSG],
@@ -85,6 +88,10 @@ export function newSave() {
     tid: 10000 + Math.floor(random() * 90000),
     since: 0,
     hatched: 0,
+    /* roguelite track RL-3: what lasts between runs, the run in progress (null in the hub), the ranch */
+    meta: newMeta(),
+    run: null,
+    ranch: newRanch(),
   };
 }
 /* a new game on the same device keeps its settings (theme, motion, effects, sound…) */
@@ -107,6 +114,12 @@ export function migrate(o) {
   s.coins = Object.assign(zero(COINS), o.coins || {});
   s.items = Object.assign(zero(ITEMS), o.items || {});
   s.flags = o.flags || {};
+  /* roguelite track RL-3: meta and ranch filled out; a run that fails its check can't be resumed, so the hub's
+     working fields come back from it (nothing is paid) before the checks below clean them */
+  s.meta = metaFill(o.meta);
+  s.ranch = ranchFill(o.ranch);
+  if (s.run != null && !validRun(s.run)) runRestore(s);
+  if (s.run === undefined) s.run = null;
   const p = (s.preferences = Object.assign(
     { theme: 'system', motion: 'system', fps: 60, effects: 'full' },
     o.preferences || {}
@@ -123,19 +136,23 @@ export function migrate(o) {
     s.starter = RULES.start.starters.find(l => SPECIES[l + '0']) || LINES[0].id;
   s.team = (s.team || []).filter(m => speciesOf(m));
   s.box = (s.box || []).filter(m => speciesOf(m));
+  const start = s.run && s.run.start;
+  if (start) start.team = start.team.filter(m => speciesOf(m));
+  /* every Billie the save holds: the team, the box and, during a run, the hub's team as the run started */
+  const members = () => [...s.team, ...s.box, ...(start ? start.team : [])];
   /* phase 17: robot parts you own, and robots' sp and moves made again from their parts */
   s.parts = (Array.isArray(o.parts) ? o.parts : [])
     .filter(p => p && typeof p.uid === 'string' && (robotPartDef(p.id) || robotGemDef(p.id)))
     .map(p => ({ uid: p.uid, id: p.id, up: Math.max(0, Math.min(robotRules().maxUpgrade, Math.floor(+p.up || 0))) }));
-  [...s.team, ...s.box].forEach(m => {
+  members().forEach(m => {
     if (isRobot(m)) refreshRobot(m);
   });
-  [...s.team, ...s.box].forEach(m => {
+  members().forEach(m => {
     if (m.nick != null) m.nick = cleanName(m.nick, 16);
   });
   if (s.avatar && typeof s.avatar === 'object' && 'name' in s.avatar)
     s.avatar.name = cleanName(s.avatar.name, 18) || 'Trainer';
-  [...s.team, ...s.box].forEach(m => {
+  members().forEach(m => {
     m.moves = (m.moves || []).filter(k => MOVES[k]);
     if (!m.moves.length && !isRobot(m)) m.moves = movesAt(speciesOf(m).line, m.lvl);
   });
@@ -144,9 +161,19 @@ export function migrate(o) {
   if (!s.wild || typeof s.wild !== 'object') s.wild = {};
   for (const w of Object.values(s.wild)) w.list = (w.list || []).filter(q => SPECIES[q.sp]);
   s.eggs = s.eggs.filter(e => EGGS[e.tier]);
-  if (!s.trip || !LOCATIONS[s.trip.node]) s.trip = { node: START_NODE, plan: [] };
-  s.trip.plan = (Array.isArray(s.trip.plan) ? s.trip.plan : []).filter(x => LOCATIONS[x]);
-  if (s.trip.plan.length && !roadCost(s.trip.node, s.trip.plan[0])) s.trip.plan = [];
+  if (s.run) {
+    /* RL-3: during a run the trip is on the run's world (0 Copperleaf, then the map's nodes), which is made from the
+       seed after loading (RL-7): it is kept as it is, bounded by the run's map, not by today's LOCATIONS */
+    const nodes = runNodeCount(s.run),
+      onRun = x => Number.isInteger(x) && x >= 0 && x < nodes;
+    if (!s.trip || !onRun(s.trip.node)) s.trip = { node: 0, plan: [] };
+    s.trip.plan = (Array.isArray(s.trip.plan) ? s.trip.plan : []).filter(onRun);
+    if (!LOCATIONS[s.run.start.trip.node]) s.run.start.trip = { node: START_NODE, plan: [] };
+  } else {
+    if (!s.trip || !LOCATIONS[s.trip.node]) s.trip = { node: START_NODE, plan: [] };
+    s.trip.plan = (Array.isArray(s.trip.plan) ? s.trip.plan : []).filter(x => LOCATIONS[x]);
+    if (s.trip.plan.length && !roadCost(s.trip.node, s.trip.plan[0])) s.trip.plan = [];
+  }
   if (!s.visited || typeof s.visited !== 'object') s.visited = {};
   s.visited[s.trip.node] = 1;
   if (s.started && !s.team.length && !s.box.length) return newSave();
@@ -155,10 +182,11 @@ export function migrate(o) {
   return s;
 }
 /* phase 02: every save says which save format it is (saveVersion; raise it when old saves can't be read any more; 2 since
-   phase 05, 3 since phase 08: steps are gone, encounters live on each map, no jobs).
+   phase 05, 3 since phase 08: steps are gone, encounters live on each map, no jobs; 4 since roguelite track RL-3: meta,
+   run and ranch).
    A save without one (alpha 0.5 and earlier) or from a newer format is not loaded: the game says so and starts fresh.
    saveAge: null (no save), 'ok', 'old' or 'new'. A newer save is never written over (saveHold) */
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
 /** @param {any} o @returns {'ok' | 'old' | 'new' | null} */
 export function saveAge(o) {
   if (!o || typeof o !== 'object') return null;
@@ -182,9 +210,12 @@ export function validSave(o) {
     o.box.length > 5000
   )
     return false;
-  if (!billiesOk(o.team.concat(o.box))) return false;
-  if (!o.trip || !Number.isInteger(o.trip.node) || !num(o.trip.node, 0, LOCATIONS.length - 1) || !num(o.se, 0, 1e12))
-    return false;
+  /* RL-3: the run's checks; during a run the hub's team as it started is checked like the team */
+  if (!validMeta(o.meta) || !validRanch(o.ranch) || (o.run !== null && !validRun(o.run))) return false;
+  const nodes = o.run ? runNodeCount(o.run) : LOCATIONS.length;
+  if (!billiesOk(o.team.concat(o.box)) || (o.run && !billiesOk(o.run.start.team))) return false;
+  if (!o.trip || !Number.isInteger(o.trip.node) || !num(o.trip.node, 0, nodes - 1) || !num(o.se, 0, 1e12)) return false;
+  if (o.run && !num(o.run.start.trip.node, 0, LOCATIONS.length - 1)) return false;
   if (!Array.isArray(o.eggs) || o.eggs.some(e => !e || !num(e.prog, 0, 1e12))) return false;
   for (const k of ['coins', 'items'])
     if (!o[k] || typeof o[k] !== 'object' || Object.values(o[k]).some(n => !num(n, 0, 1e12))) return false;
@@ -199,7 +230,7 @@ export function validSave(o) {
   const record = v => v && typeof v === 'object' && !Array.isArray(v) && !Object.hasOwn(v, '__proto__');
   if (
     !record(o.wild) ||
-    Object.keys(o.wild).length > LOCATIONS.length ||
+    Object.keys(o.wild).length > LOCATIONS.length + nodes ||
     Object.values(o.wild).some(
       w =>
         !w ||

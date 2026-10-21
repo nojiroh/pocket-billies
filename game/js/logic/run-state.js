@@ -8,8 +8,7 @@
    be made again (the map, the scenes): the counters (uidN, battleN) let a resumed run carry on its random streams.
    Pure: no DOM, no Date, no Math.random; runs in Node (tools/test/run-state.test.mjs). Starting and ending a run on
    the page (the airship, the payout screen) come in RL-8. */
-/** @import { Run, RunStart, SaveData, Billy, Meta } from '../../types/save-data' */
-/** @typedef {SaveData & { run: Run | null, meta: Meta }} RunSave a save with its run and meta (saves.js newSave) */
+/** @import { Run, RunStart, SaveData, Billy } from '../../types/save-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { META_MAX, recordOf, wholeIn } from './meta-state.js';
@@ -59,7 +58,7 @@ export const RUN_PHASES = ['fly', 'walk', 'battle', 'menu', 'payout'],
   RUN_TIERS = 9;
 export const copyOf = v => JSON.parse(JSON.stringify(v));
 /** the hub's working fields, copied */
-/** @param {RunSave} s @returns {RunStart} */
+/** @param {SaveData} s @returns {RunStart} */
 export const runSnapshot = s =>
   /** @type {RunStart} */ (Object.fromEntries(RUN_FIELDS.map(k => [k, copyOf(s[k] === undefined ? null : s[k])])));
 /** a run as it starts; `start` is the hub's working fields at that moment */
@@ -153,7 +152,7 @@ export function validRun(o) {
     ones (`give`, from the rules in RL-8); the trip starts at Copperleaf (node 0) for the airship; story flags and
     badges carry over, so conditions read as in the hub. Returns the run */
 /**
- * @param {RunSave} s
+ * @param {SaveData} s
  * @param {{ seed: string, tier: number, mapgenV: number, se: number, items?: Record<string, number>,
  *   coins?: Record<string, number> }} give
  * @returns {Run}
@@ -208,7 +207,7 @@ export function payoutOf(end, rates, itemPrice) {
     as it left (roguelite-track.md section 3, option 3 of "keep-one vs ranch levels": how many are kept on a win or a
     loss is the owner's call, 8.2). Returns the payout */
 /**
- * @param {RunSave} s
+ * @param {SaveData} s
  * @param {{ won: boolean, keep: string[] }} how
  * @param {Parameters<typeof payoutOf>[1]} rates
  * @param {(id: string) => number} itemPrice
@@ -237,7 +236,7 @@ export function runEnd(s, how, rates, itemPrice) {
 }
 /** put the hub's working fields back from run.start and leave the run, paying nothing (runEnd's last step; also a
     run that can't be resumed, saves.js migrate) */
-/** @param {RunSave} s */
+/** @param {SaveData} s */
 export function runRestore(s) {
   const start = s.run && s.run.start;
   if (start && typeof start === 'object')
