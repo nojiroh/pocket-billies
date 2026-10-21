@@ -25,6 +25,7 @@ expose({
   MAPGEN_EXIT_IN: [() => MAPGEN_EXIT_IN],
   MAPGEN_FAMILY_SHARE: [() => MAPGEN_FAMILY_SHARE],
   MAPGEN_FEATURES: [() => MAPGEN_FEATURES],
+  MAPGEN_HUB_BUILDINGS: [() => MAPGEN_HUB_BUILDINGS],
   MAPGEN_INWARD: [() => MAPGEN_INWARD],
   MAPGEN_OPPOSITE: [() => MAPGEN_OPPOSITE],
   MAPGEN_OUTWARD: [() => MAPGEN_OUTWARD],
@@ -74,10 +75,13 @@ expose({
   mapgenGround: [() => mapgenGround],
   // @ts-expect-error -- replaced on purpose
   mapgenGrowWild: [() => mapgenGrowWild, v => (mapgenGrowWild = v)],
+  mapgenInLot: [() => mapgenInLot],
   // @ts-expect-error -- replaced on purpose
   mapgenJoinOffset: [() => mapgenJoinOffset, v => (mapgenJoinOffset = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenLattice: [() => mapgenLattice, v => (mapgenLattice = v)],
+  // @ts-expect-error -- replaced on purpose
+  mapgenLevelLot: [() => mapgenLevelLot, v => (mapgenLevelLot = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenLowerWater: [() => mapgenLowerWater, v => (mapgenLowerWater = v)],
   // @ts-expect-error -- replaced on purpose
@@ -151,6 +155,8 @@ expose({
   mapgenStageHeights: [() => mapgenStageHeights, v => (mapgenStageHeights = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenStageLand: [() => mapgenStageLand, v => (mapgenStageLand = v)],
+  // @ts-expect-error -- replaced on purpose
+  mapgenStageLots: [() => mapgenStageLots, v => (mapgenStageLots = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenStagePlants: [() => mapgenStagePlants, v => (mapgenStagePlants = v)],
   // @ts-expect-error -- replaced on purpose
@@ -233,7 +239,7 @@ export const MAPGEN_DEFAULTS = {
   },
   nature: { growth: 0.8, tall: 0.5, clearings: 0.3, trees: 0.5 },
   feature: 'none',
-  props: { lamps: 0, benches: 0.3, signs: 1, bins: 0, folk: 0.3 },
+  props: { lamps: 0, benches: 0.3, signs: 1, bins: 0, folk: 0.3, mast: 0, clinic: 0, shop: 0 },
 };
 
 export const mapgenBetween = (v, a, b) => (v < a ? a : v > b ? b : v);
@@ -483,6 +489,8 @@ export function mapgenNewWork(P, ctx) {
     npcSpots: [],
     notes: /** @type {string[]} */ ([]),
     stepsUsed: false,
+    /* MG-2: the buildings' lots, [x0, z0, x1, z1] (mapgenStageLots) */
+    lots: /** @type {number[][]} */ ([]),
     /* MG-2: the edges joined to a neighbour that got their exit (mapgenParams) */
     joined: (P.edges || []).filter(s => P.road.exits.some(e => e.side === s.side && e.t === s.t)),
   };
@@ -1479,6 +1487,162 @@ export function mapgenStageEdgeGround(G) {
   }
 }
 
+/* ---------- MG-2: the hub's buildings (a first take on MG-3's lots) ---------- */
+/* what the props dials put at the hub: [dial, prop, what it does, label] (the act opens the clinic's or the shop's
+   room, data-files.js ROOM_BY_USE; 'fly' is the airship's mast, airship.js) */
+/** @type {[string, string, string, string | null][]} */
+export const MAPGEN_HUB_BUILDINGS = [
+  ['clinic', 'clinic', 'clinic', null],
+  ['shop', 'shop', 'shop', null],
+  ['mast', 'airship_station', 'fly', 'Airship station'],
+];
+/** is (x, z) on a building's lot, or within m metres of one */
+export const mapgenInLot = (G, x, z, m = 0) =>
+  G.lots.some(L => x > L[0] - m && x < L[2] + m && z > L[1] - m && z < L[3] + m);
+/** the props dials' clinic, shop and airship mast beside the main road near the hub, facing the camera (south) like
+ * every town building: north of the road, the front 2.5-5 m from its edge, on a level pad, with a path from the door
+ * to the road. A lot keeps 12 m from the exits and joined edges, clear of the road, water, banks, bridges and
+ * anything placed, its z on a half metre (so the door step isn't inside the building's walk block), and its door 7 m
+ * from the sides and 10.4 m from the back, where the room laid behind a door fits (seamless-world.js
+ * seamlessRoomPlacement). Its own random stream ('lots'). */
+export function mapgenStageLots(G) {
+  const { P, w, h } = G,
+    want = MAPGEN_HUB_BUILDINGS.filter(b => P.props[b[0]] > 0);
+  if (!want.length) return;
+  const rnd = G.rng('lots'),
+    M = G.road[0].pts,
+    hk = G.hubK,
+    ppu = 34,
+    half = P.road.width / 2,
+    cand = [];
+  for (let k = Math.max(0, hk - 60); k <= Math.min(M.length - 1, hk + 60); k += 2) cand.push(k);
+  for (let i = cand.length - 1; i > 0; i--) {
+    const j = rnd.int(0, i);
+    [cand[i], cand[j]] = [cand[j], cand[i]];
+  }
+  cand.sort((a, b) => Math.abs(a - hk) - Math.abs(b - hk) || 0); /* nearest the hub first; ties in the random order */
+  const free = (x0, z0, x1, z1) => {
+    if (x0 < 1 || z0 < 1 || x1 > w - 1 || z1 > h - 1) return false;
+    for (let z = Math.floor(z0); z < Math.ceil(z1); z++)
+      for (let x = Math.floor(x0); x < Math.ceil(x1); x++)
+        if (G.F[z * w + x] & (1 | 2 | 4 | 8 | 64 | 128)) return false;
+    const cx = (x0 + x1) / 2,
+      cz = (z0 + z1) / 2,
+      r = Math.hypot(x1 - x0, z1 - z0) / 2;
+    if (Math.hypot(cx - G.hub[0], cz - G.hub[1]) < r + 3) return false;
+    if (G.exits.some(e => Math.hypot(cx - e.pt[0], cz - e.pt[1]) < r + 12)) return false;
+    if (mapgenNearJoined(G, cx, cz, 12 + r)) return false;
+    if (G.lots.some(L => x0 < L[2] + 1 && x1 > L[0] - 1 && z0 < L[3] + 1 && z1 > L[1] - 1)) return false;
+    for (const o of [...[...G.occ.values()].flat(), ...G.keep]) {
+      const dx = Math.max(x0 - o[0], 0, o[0] - x1),
+        dz = Math.max(z0 - o[1], 0, o[1] - z1);
+      if (Math.hypot(dx, dz) < o[2]) return false;
+    }
+    return true;
+  };
+  for (const [dial, k, act, label] of want) {
+    const C = G.cat[k];
+    if (!C || !C.box) continue;
+    const bw = C.box[0],
+      bd = C.box[1],
+      dx = ((C.door && C.door.x) || 0) / ppu;
+    let done = /** @type {any} */ (null);
+    for (const s of cand) {
+      const R = M[s];
+      /* north of the road (it runs across), or beside it (it runs north), always facing the camera */
+      const spots = [];
+      for (const gap of [2.5, 3.5, 4.5]) for (const ox of [0, 2, -2, 4, -4]) spots.push([ox - dx, half + gap]);
+      for (const gap of [1.5, 2.5]) for (const sg of [1, -1]) spots.push([sg * (half + gap + bw / 2), -1]);
+      for (const [ox, oz] of spots) {
+        const z = Math.round((R[1] + oz) * 2) / 2,
+          x = mapgenRound2(R[0] + ox),
+          door = [x + dx, z],
+          step = [door[0], z - 0.55];
+        if (door[0] < 7 || door[0] > w - 7 || z > h - 10.4) continue;
+        /* the road it fronts: the nearest sample to the door step, close and south of it */
+        const q = mapgenCellAt(G, step[0], step[1]),
+          nk = G.near[q];
+        if (nk < 0) continue;
+        const p = G.roadPts[nk];
+        if (p.k !== 0 || step[1] < p.z - 1.5 || Math.hypot(step[0] - p.x, step[1] - p.z) > p.r + 5.5) continue;
+        if (!free(x - bw / 2 - 0.5, z - 1, x + bw / 2 + 0.5, z + bd + 0.5)) continue;
+        /* a spot for the mast's landing (airship.js flyLand: beside it, a step in front) */
+        if (act === 'fly' && !free(x + bw / 2 + 0.4, z - 1.4, x + bw / 2 + 1.4, z - 0.4)) continue;
+        done = { x, z, step, road: p, bw, bd };
+        break;
+      }
+      if (done) break;
+    }
+    if (!done) {
+      G.notes.push(`no room for the ${dial === 'mast' ? "airship's mast" : dial} beside the road near the hub`);
+      continue;
+    }
+    mapgenLevelLot(G, done);
+    const extra = label ? { act, label } : { act };
+    mapgenPutProp(G, k, done.x, done.z, { force: true, extra });
+    G.lots.push([done.x - bw / 2, done.z - 0.1, done.x + bw / 2, done.z + bd]);
+    mapgenOccAdd(G, done.x, done.z + bd / 2, Math.hypot(bw, bd) / 2 + 0.4);
+    if (act === 'fly') G.keep.push([done.x + bw / 2 + 0.9, done.z - 0.9, 1]);
+  }
+}
+/** a lot made ready: its ground (the building, a metre round it and the door's path) level at the road's height
+ * where the path meets it, the same step raise, the path painted to the door and kept clear */
+export function mapgenLevelLot(G, L) {
+  const { w, h } = G,
+    W2 = w * 2,
+    p = L.road,
+    h0 = mapgenCornerHeight(G, p.x, p.z),
+    raise = G.S[mapgenBetween(Math.floor(p.z * 2), 0, h * 2 - 1) * W2 + mapgenBetween(Math.floor(p.x * 2), 0, W2 - 1)],
+    x0 = L.x - L.bw / 2 - 1,
+    x1 = L.x + L.bw / 2 + 1,
+    z0 = L.z - 1.5,
+    z1 = L.z + L.bd + 1;
+  /* the path: from the door step to the road's centre line */
+  const path = [],
+    n = Math.ceil(Math.hypot(L.step[0] - p.x, L.step[1] - p.z) / 0.25);
+  for (let i = 0; i <= n; i++)
+    path.push([L.step[0] + ((p.x - L.step[0]) * i) / n, L.step[1] + ((p.z - L.step[1]) * i) / n]);
+  const onPath = (x, z, r) => path.some(q => Math.hypot(x - q[0], z - q[1]) <= r),
+    /* the lots already made keep their ground */
+    other = (x, z) => G.lots.some(Q => x >= Q[0] - 1 && x <= Q[2] + 1 && z >= Q[1] - 1.5 && z <= Q[3] + 1);
+  /* corners: level on the lot and the path, blended out over 3 m, never moving the road itself */
+  for (let j = Math.max(0, Math.floor(z0 - 3)); j <= Math.min(h, Math.ceil(z1 + 3)); j++)
+    for (let i = Math.max(0, Math.floor(x0 - 3)); i <= Math.min(w, Math.ceil(x1 + 3)); i++) {
+      const q = mapgenCellAt(G, i, j);
+      if ((G.near[q] >= 0 && G.dist[q] < G.roadPts[G.near[q]].r + 0.5) || other(i, j)) continue;
+      const dx = Math.max(x0 - i, 0, i - x1),
+        dz = Math.max(z0 - j, 0, j - z1),
+        d = Math.min(Math.hypot(dx, dz), onPath(i, j, 0.9) ? 0 : 1e9),
+        t = d <= 0 ? 1 : 1 - mapgenSmooth(Math.min(1, d / 3));
+      if (t > 0) G.H[j * (w + 1) + i] = G.H[j * (w + 1) + i] * (1 - t) + h0 * t;
+    }
+  /* half-metre cells: the lot's and the path's raise is the road's there */
+  for (let j = Math.max(0, Math.floor(z0 * 2)); j < Math.min(h * 2, Math.ceil(z1 * 2)); j++)
+    for (let i = Math.max(0, Math.floor(x0 * 2)); i < Math.min(W2, Math.ceil(x1 * 2)); i++) {
+      if (other((i + 0.5) / 2, (j + 0.5) / 2)) continue;
+      G.S[j * W2 + i] = raise;
+      G.M[j * W2 + i] |= 32;
+    }
+  const surf = MAPGEN_SURFACES[G.P.road.surface];
+  for (const [x, z] of path) {
+    mapgenPaintDisc(G, x, z, 0.75, q => {
+      if (G.F[q] & (1 | 4)) return;
+      G.T[q] = surf;
+      G.F[q] = (G.F[q] & ~(32 | 64)) | 2;
+    });
+    for (let j = Math.max(0, Math.floor((z - 0.75) * 2)); j < Math.min(h * 2, Math.ceil((z + 0.75) * 2)); j++)
+      for (let i = Math.max(0, Math.floor((x - 0.75) * 2)); i < Math.min(W2, Math.ceil((x + 0.75) * 2)); i++) {
+        G.S[j * W2 + i] = raise;
+        G.M[j * W2 + i] |= 32;
+      }
+  }
+  for (let i = 0; i < path.length; i += 4) G.keep.push([path[i][0], path[i][1], 0.9]);
+  /* no tree on the lot */
+  for (let z = Math.floor(z0); z < Math.ceil(z1); z++)
+    for (let x = Math.floor(x0); x < Math.ceil(x1); x++) if (x >= 0 && z >= 0 && x < w && z < h) G.F[z * w + x] |= 16;
+  if (raise) G.stepsUsed = true;
+}
+
 /* ---------- 6. plants: groves and an edge belt of trees, shrubs, rocks, tall grass, then the wild growth ---------- */
 export function mapgenStagePlants(G) {
   const { P, B, w, h } = G,
@@ -1760,8 +1924,11 @@ export function mapgenStageProps(G) {
           L = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1,
           nx = -(b[1] - a[1]) / L,
           nz = (b[0] - a[0]) / L;
-        if (mapgenPutProp(G, 'signpost', pts[k][0] + nx * r, pts[k][1] + nz * r, { force: true })) break;
-        if (mapgenPutProp(G, 'signpost', pts[k][0] - nx * r, pts[k][1] - nz * r, { force: true })) break;
+        for (const sg of [1, -1]) {
+          const x = pts[k][0] + nx * r * sg,
+            z = pts[k][1] + nz * r * sg;
+          if (!mapgenInLot(G, x, z, 0.6) && mapgenPutProp(G, 'signpost', x, z, { force: true })) return;
+        }
       }
     });
   if (D.lamps > 0) {
@@ -1846,6 +2013,7 @@ export function mapgenScene(params, ctx) {
   mapgenStageLand(G);
   mapgenStageFeature(G);
   mapgenStageEdgeGround(G);
+  mapgenStageLots(G);
   mapgenStagePlants(G);
   mapgenStageProps(G);
   mapgenPinEdges(G, 6);

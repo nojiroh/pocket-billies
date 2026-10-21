@@ -37,8 +37,9 @@ test('rng: the first five values and the hashes are frozen (taken before the mov
 test('rng: a generated scene hashes the same as before the move', () => {
   const sc = modules.mapgen.mapgenScene({ seed: 4242 }, { scenery: GAME_DATA.scenery, biomes: GAME_DATA.biomes }).scene;
   // a change to the scenery or biome data changes this too; then remake it on purpose, said in the commit.
-  // MG-2: 301195872 until MAPGEN_VERSION became 2 (the scene is the same but for gen.v)
-  assert.equal(hashString(JSON.stringify(sc)), 2111299369);
+  // MG-2: 301195872 until MAPGEN_VERSION became 2 (the scene is the same but for gen.v), then 2111299369 until the
+  // props dials gained mast, clinic and shop (gen.params; the scene is the same)
+  assert.equal(hashString(JSON.stringify(sc)), 3312083804);
 });
 
 test('rng: the helpers stay in their ranges', () => {
