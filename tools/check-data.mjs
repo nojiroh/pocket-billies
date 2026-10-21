@@ -271,7 +271,7 @@ check('roads.schema.json', D.roads || [], 'roads.json');
     V = R.reveal,
     whole = (v, lo, hi) => Number.isInteger(v) && v >= lo && v <= hi;
   for (const k of Object.keys(R))
-    if (!['payout', 'map', 'clock', 'reveal', 'scene', 'wild', 'seamIn'].includes(k)) problem('rules.json', `run.${k}: no such rule`);
+    if (!['payout', 'map', 'clock', 'reveal', 'scene', 'wild', 'seamIn', 'start', 'healCost', 'shop', 'foes'].includes(k)) problem('rules.json', `run.${k}: no such rule`);
   if (!C || typeof C !== 'object' || !whole(C.slack, 0, 30) || !whole(C.ahead, 1, 30))
     problem('rules.json', 'run.clock: slack (0-30) and ahead (1-30) are not whole numbers of days');
   else for (const k of Object.keys(C)) if (!['slack', 'ahead'].includes(k)) problem('rules.json', `run.clock.${k}: no such rule`);
@@ -325,6 +325,49 @@ check('roads.schema.json', D.roads || [], 'roads.json');
     problem('rules.json', 'run.wild: lv [low, high] (1-100), perRow (0-20) and back (0-20) are not whole numbers');
   else for (const k of Object.keys(W)) if (!['lv', 'perRow', 'back'].includes(k)) problem('rules.json', `run.wild.${k}: no such rule`);
   if (!whole(R.seamIn, 1, 30)) problem('rules.json', 'run.seamIn is not a whole number of metres from 1 to 30');
+}
+// RL-8: the run loop's numbers (placeholders): what a run starts with (money, known coins and items, whole counts), a
+// run town's heal price per hurt Billie, its shop (wares that exist: an item id or coin:<id>; `more` drawn by weight
+// from `pick`, with something to pick when more is above 0), a mini-boss's and the boss's levels over their row and
+// their reward; nothing else in each
+{
+  const R = (D.rules && D.rules.run) || {},
+    whole = (v, lo, hi) => Number.isInteger(v) && v >= lo && v <= hi,
+    rec = v => !!v && typeof v === 'object' && !Array.isArray(v),
+    only = (o, keys, at) => { for (const k of Object.keys(o)) if (!keys.includes(k)) problem('rules.json', `${at}.${k}: no such rule`); },
+    ware = w => typeof w === 'string' && (w.startsWith('coin:') ? !!(D.coins || {})[w.slice(5)] : !!(D.items || {})[w]),
+    ST = R.start,
+    SH = R.shop,
+    F = R.foes;
+  if (!rec(ST) || !whole(ST.se, 0, 1e6) || !rec(ST.coins) || !rec(ST.items))
+    problem('rules.json', 'run.start: se (whole, 0-1,000,000), coins and items (records) are needed');
+  else {
+    only(ST, ['se', 'coins', 'items'], 'run.start');
+    for (const [k, n] of Object.entries(ST.coins)) if (!(D.coins || {})[k] || !whole(n, 0, 999)) problem('rules.json', `run.start.coins.${k}: no such coin, or not a whole count`);
+    for (const [k, n] of Object.entries(ST.items)) if (!(D.items || {})[k] || !whole(n, 0, 999)) problem('rules.json', `run.start.items.${k}: no such item, or not a whole count`);
+  }
+  if (!whole(R.healCost, 0, 100000)) problem('rules.json', 'run.healCost is not a whole number of $ (0-100,000)');
+  if (!rec(SH) || !Array.isArray(SH.always) || !whole(SH.more, 0, 12) || !rec(SH.pick))
+    problem('rules.json', 'run.shop: always (a list), more (whole, 0-12) and pick (weights) are needed');
+  else {
+    only(SH, ['always', 'more', 'pick'], 'run.shop');
+    for (const w of SH.always) if (!ware(w)) problem('rules.json', `run.shop.always: no such ware "${w}"`);
+    for (const [w, n] of Object.entries(SH.pick)) {
+      if (!ware(w)) problem('rules.json', `run.shop.pick: no such ware "${w}"`);
+      if (typeof n !== 'number' || !(n >= 0)) problem('rules.json', `run.shop.pick.${w} is not a weight of 0 or more`);
+    }
+    if (SH.more > 0 && !Object.values(SH.pick).some(n => n > 0)) problem('rules.json', 'run.shop.pick has nothing to pick');
+  }
+  if (!rec(F)) problem('rules.json', 'run.foes missing');
+  else {
+    only(F, ['miniboss', 'boss'], 'run.foes');
+    for (const k of ['miniboss', 'boss']) {
+      const f = F[k];
+      if (!rec(f) || !whole(f.up, -20, 50) || !whole(f.reward, 0, 1e6))
+        problem('rules.json', `run.foes.${k}: up (whole, -20-50) and reward (whole $, 0-1,000,000) are needed`);
+      else only(f, ['up', 'reward'], `run.foes.${k}`);
+    }
+  }
 }
 // phase 17: robot parts and gems: the schema, then the moves and types they name and the slot each part fits
 const robots = D.robots || { parts: {}, gems: {} },

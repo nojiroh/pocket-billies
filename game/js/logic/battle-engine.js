@@ -16,6 +16,7 @@ import {
   openBattle,
   playTurnEvents,
   provide,
+  runBattleStart,
   save,
   saveData,
   setActiveBattle,
@@ -929,7 +930,9 @@ export function hitPart(tk, dmg, M, aim) {
 }
 /* a battle against foe on the save's team, made the current one (makeBattle, battle-state.js); false when all have fainted */
 export function newBattle(kind, foe, extra) {
-  const b = makeBattle(kind, saveData.team, foe, extra);
+  /* RL-8: on a run the page gives the battle its seed and weather, and holds the save once it has begun (run.js) */
+  const R = typeof runBattleStart === 'function' ? runBattleStart(kind, foe, extra) : null,
+    b = makeBattle(kind, saveData.team, foe, R ? R.extra : extra);
   if (!b) {
     battleHost(extra || null).toast('Everyone on your team has fainted. Rest first, or use a Revive.');
     return false;
@@ -938,6 +941,7 @@ export function newBattle(kind, foe, extra) {
   foe.forEach(m => {
     if (!isRobot(m)) saveData.seen[m.sp] = 1;
   });
+  if (R) R.begun(b);
   return true;
 }
 export const joinNames = K => {
@@ -973,7 +977,8 @@ export function startWild(q) {
 export function startTrainer(id, o = {}) {
   const T = TRAINERS[id];
   if (!T) return;
-  const team = trainerTeam(T);
+  /* RL-8: a run's boss is its leader's top Billie alone, as an Alpha (logic/run-loop.js runFoes) */
+  const team = T.alpha ? T.team.slice(0, 1).map(e => makeAlpha(e.sp, e.lvl)) : trainerTeam(T);
   if (!team.length) {
     battleHost(o).toast(`${T.name} has no team yet. Add one in Pocket Billies Studio.`);
     return;
@@ -986,12 +991,19 @@ export function startTrainer(id, o = {}) {
       T,
       /* BATTLE_STAGES[undefined] is undefined: a trainer without a stage gets the place's */
       area: BATTLE_STAGES[/** @type {string} */ (T.battleStage)] ? T.battleStage : battleStageKey(),
-      fmt: dbl ? 'double' : 'single',
+      fmt: T.alpha ? 'alpha' : dbl ? 'double' : 'single',
       ...(o.host && { host: o.host }),
     })
   )
     return;
-  battleSay(dbl ? `${T.name} wants a double battle!` : `${T.name} wants to battle.`, { k: 'trainerIn', who: T.who });
+  battleSay(
+    T.alpha
+      ? `${T.name} sends out an Alpha! It acts twice a turn. Your team steps up together.`
+      : dbl
+        ? `${T.name} wants a double battle!`
+        : `${T.name} wants to battle.`,
+    { k: 'trainerIn', who: T.who }
+  );
   if (T.market) {
     battleNow().market = { k: 'sand', n: T.market.n || BATTLE_RULES.shockTurns };
     battleSay(T.marketText || `The battle opened in a ${shockName().toLowerCase()}.`, { k: 'market' });

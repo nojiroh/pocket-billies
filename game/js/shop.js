@@ -6,9 +6,10 @@
 import { expose } from './test-globals.js';
 import { closeModal, modal, provide, renderOverlay, soundEffect, toast } from './hooks.js';
 import { clamp, random } from './util.js';
-import { COINS, ITEMS, SHOPS } from './game-data.js';
+import { COINS, ITEMS, RULES, SHOPS } from './game-data.js';
 import { formatNumber, plural } from './logic/rules.js';
-import { escapeHtml, save, saveData, uiState } from './game-state.js';
+import { runShopStock } from './logic/run-loop.js';
+import { escapeHtml, save, saveData, saveNow, uiState } from './game-state.js';
 import { coinHTML, uiIconHTML } from './art.js';
 import { portraitHTML } from './person-art.js';
 import { openDressingRoom } from './dressing-room.js';
@@ -96,6 +97,9 @@ export function openShop(id) {
     openDressingRoom({ shop: id });
     return;
   }
+  /* RL-8: a run town's shop has the day's stock (logic/run-loop.js runShopStock: its own stream for the day) */
+  if (sh.runNode != null && saveData.run)
+    sh.stock = runShopStock(saveData.run, sh.runNode, saveData.run.clock, RULES.run.shop);
   uiState.shopLine = null;
   uiState.shopQty = {};
   const m = {
@@ -132,7 +136,9 @@ function shopBuy(id, k) {
   if (typeof soundEffect === 'function') soundEffect('buy');
   if (kind === 'coin') saveData.coins[key] = (saveData.coins[key] || 0) + n;
   else saveData.items[key] = (saveData.items[key] || 0) + n;
-  save();
+  /* RL-8: a run's purchase is a checkpoint */
+  if (saveData.run) saveNow();
+  else save();
   buzz && buzz(10);
   const lines = sh.thanks && sh.thanks.length ? sh.thanks : SHOP_THANKS;
   uiState.shopLine = lines[Math.floor(random() * lines.length)];

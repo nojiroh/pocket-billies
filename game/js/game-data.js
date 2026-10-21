@@ -436,8 +436,10 @@ export function worldSetGraph(locations, roads) {
     const T = TRAINERS[id];
     if (T.tutorial || T.miniboss) {
       /* it waits on no location */
-    } else if (T.node !== undefined && LOCATIONS[T.node]) LOCATIONS[T.node].trainers.push(id);
-    else warnData(`Trainer ${id} stands on a stop that doesn’t exist.`);
+    } else if (T.node !== undefined && LOCATIONS[T.node]) {
+      /* RL-8: a world's trainers stand only in that world: a run's on its place (runNode), the hub's off a run's */
+      if ((T.runNode ?? null) === (LOCATIONS[T.node].runNode ?? null)) LOCATIONS[T.node].trainers.push(id);
+    } else warnData(`Trainer ${id} stands on a stop that doesn’t exist.`);
   }
   /* the first trainer at a stop that hands out a Board Seat (or doesn’t block the road) is that stop’s Boardroom */
   LOCATIONS.forEach(r => {
@@ -452,14 +454,27 @@ export const hubRoadsByNode = ROADS_BY_NODE.map(e => e.slice());
 /* RL-7: another world goes in (a run's: game/js/run-world.js) with what its places need first: its scenes into
    gameData.maps (a road's length is its exits' walk) and its pools into POOLS (a place keeps only a pool that
    exists), then its places and roads. worldHubBack takes them out and puts the hub's world back */
-export const worldExtra = { maps: /** @type {Record<string, any>} */ ({}), pools: /** @type {string[]} */ ([]) };
-/** @param {{ locations: LocationData[], roads: RoadLink[], pools: Record<string, Pool>, maps: Record<string, any> }} w */
+export const worldExtra = {
+  maps: /** @type {Record<string, any>} */ ({}),
+  pools: /** @type {string[]} */ ([]),
+  shops: /** @type {string[]} */ ([]),
+  trainers: /** @type {string[]} */ ([]),
+};
+/** RL-8: and its shops (a run town's) into SHOPS and its trainers (a run's mini-bosses and boss) into TRAINERS
+ * @param {{ locations: LocationData[], roads: RoadLink[], pools: Record<string, Pool>, maps: Record<string, any>,
+ *   shops?: Record<string, any>, trainers?: Record<string, any> }} w */
 export function worldPut(w) {
   worldHubBack();
   Object.assign(worldExtra.maps, w.maps);
   Object.assign(gameData.maps, w.maps);
   Object.assign(POOLS, w.pools);
   worldExtra.pools.push(...Object.keys(w.pools));
+  Object.assign(SHOPS, w.shops || {});
+  worldExtra.shops.push(...Object.keys(w.shops || {}));
+  for (const [id, T] of Object.entries(w.trainers || {})) {
+    TRAINERS[id] = /** @type {TrainerEntry} */ ({ ...T, id, who: PEOPLE[T.who] ? T.who : 'gini' });
+    worldExtra.trainers.push(id);
+  }
   worldSetGraph(w.locations, w.roads);
 }
 export function worldHubBack() {
@@ -468,6 +483,8 @@ export function worldHubBack() {
     delete worldExtra.maps[id];
   }
   for (const id of worldExtra.pools.splice(0)) delete POOLS[id];
+  for (const id of worldExtra.shops.splice(0)) delete SHOPS[id];
+  for (const id of worldExtra.trainers.splice(0)) delete TRAINERS[id];
   worldSetGraph(gameData.locations, gameData.roads);
 }
 /** the scenes of the world that is in when it isn't the hub's, by map id (none in the hub) */

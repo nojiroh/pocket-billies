@@ -9,7 +9,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { PB_DATA } from '../data-files.mjs';
-import { data, fn, GAME_DATA, modules, startedSave } from './setup-real.mjs';
+import { data, fn, GAME_DATA, hooks, modules, startedSave } from './setup-real.mjs';
 
 const { runArrive, runMapStart, runNext } = modules['run-map'];
 const { newRun } = modules['run-state'];
@@ -72,6 +72,14 @@ test("every run's scenes join: exits where the roads say, no gap, a straight wal
       assert.deepEqual(mapgenUnreachable(sc, scenery), [], where);
       assert.equal(sc.locationId, W.locations[i + 1].id, where);
       assert.equal(sc.climate, GAME_DATA.biomes[map.nodes[i].biome].climate, where);
+      /* RL-8: the landing has the airship's mast (where the flight lands you), a town its clinic and shop */
+      const acts = sc.props.map((/** @type {any} */ p) => p.act).filter(Boolean),
+        want = { landing: ['fly'], town: ['clinic', 'shop'] }[map.nodes[i].type] || [];
+      assert.deepEqual(
+        acts.filter((/** @type {string} */ a) => ['fly', 'clinic', 'shop'].includes(a)).sort(),
+        want.slice().sort(),
+        `${where}: the buildings of a ${map.nodes[i].type}`
+      );
       scenes++;
     });
     /* check-data's seam rules on the run's roads, as on the hub's */
@@ -118,12 +126,33 @@ test("the run's world goes in (its scenes, pools, places and roads) and the hub'
     hub = hubTables(),
     mapIds = Object.keys(data.gameData.maps),
     poolIds = Object.keys(data.POOLS),
+    shopIds = Object.keys(data.SHOPS),
+    trainerIds = Object.keys(data.TRAINERS),
     run = runOf('RL7SWAP'),
     made = runScenesMake(run, WORLD_DATA),
     W = runWorldTables(run, data.LOCATIONS[0], WORLD_DATA),
     maps = Object.fromEntries(W.locations.slice(1).map((p, i) => [p.mapId, made[i]]));
+  /* RL-8: its mini-bosses and boss */
+  const foes = modules['run-loop'].runFoes(run, {
+    leaders: Object.values(data.TRAINERS).filter(T => T.miniboss),
+    rules: R,
+  });
+  startedSave('musk0');
+  /* a hub trainer standing on the hub's node 1 (none does today) must not stand on the run's place 1 */
+  data.TRAINERS.hub_guard = { id: 'hub_guard', name: 'Guard', who: 'gini', team: [], node: 1 };
   try {
-    data.worldPut({ ...W, maps });
+    data.worldPut({ ...W, maps, trainers: foes });
+    assert.ok(!data.LOCATIONS[1].trainers.includes('hub_guard'), 'a hub trainer on a run’s place');
+    for (const F of Object.values(foes)) {
+      assert.deepEqual(data.LOCATIONS[F.node].trainers, [F.id], `${F.id} stands on its place alone`);
+      assert.equal(data.TRAINERS[F.id].from, F.from);
+      if (F.runFoe === 'miniboss') assert.equal(fn('blockerAt')(F.node).id, F.id, 'a mini-boss blocks the way on');
+    }
+    assert.equal(
+      data.LOCATIONS.filter(p => p.trainers.length).length,
+      Object.keys(foes).length,
+      'no trainer anywhere else'
+    );
     assert.equal(data.LOCATIONS.length, 1 + run.map.nodes.length);
     assert.equal(data.LOCATIONS[0].id, 'copperleaf');
     assert.equal(data.ROADS.length, W.roads.length);
@@ -133,7 +162,14 @@ test("the run's world goes in (its scenes, pools, places and roads) and the hub'
       assert.equal(data.POOLS[p.pool], W.pools[p.pool]);
       assert.equal(data.gameData.maps[p.mapId], made[i]);
       assert.equal(p.runNode, i);
+      /* RL-8: a town's shop, by the day */
+      if (p.town) assert.equal(data.SHOPS[p.shop].runNode, i);
+      else assert.equal(p.shop, undefined);
     });
+    assert.ok(
+      data.LOCATIONS.some(p => p.runNode != null && p.town),
+      'a town on the run'
+    );
     /* each road as long as the walk out of one scene and into the other (its exits' len), not the 100 m of a
        road without scenes */
     for (const [a, b, m, j] of data.ROADS) {
@@ -154,10 +190,13 @@ test("the run's world goes in (its scenes, pools, places and roads) and the hub'
     assert.equal(data.LOCATIONS.length, 1 + run2.map.nodes.length);
   } finally {
     data.worldHubBack();
+    delete data.TRAINERS.hub_guard;
   }
   assert.deepEqual(hubTables(), hub);
   assert.deepEqual(Object.keys(data.gameData.maps), mapIds, "only the hub's scenes");
   assert.deepEqual(Object.keys(data.POOLS), poolIds, "only the game's pools");
+  assert.deepEqual(Object.keys(data.SHOPS), shopIds, "only the game's shops");
+  assert.deepEqual(Object.keys(data.TRAINERS), trainerIds, "only the game's trainers");
   assert.deepEqual(data.worldExtraMaps(), {});
 });
 
@@ -171,6 +210,13 @@ test("a run's place is stocked once a visit from its own stream at its row's lev
   s.trip = { node: 0, plan: [] };
   runArrive(s, 0, MAP_DATA);
   data.worldPut({ ...W, maps: Object.fromEntries(W.locations.slice(1).map((p, i) => [p.mapId, made[i]])) });
+  /* RL-8: a run's place draws by its forecast in logic, never by the page's real-clock odds */
+  const pageOdds = hooks.environmentOdds;
+  hooks.provide({
+    environmentOdds: () => {
+      throw new Error('a run place asked the page for its wild odds');
+    },
+  });
   try {
     const stock = () => fn('encountersHere')(1),
       seen = (/** @type {any[]} */ L) => L.map(q => `${q.sp}:${q.lvl}`);
@@ -197,6 +243,7 @@ test("a run's place is stocked once a visit from its own stream at its row's lev
     assert.equal(fn('encounterRunVisits')(1), 2);
     assert.equal(stock().length, R.wild.back);
     assert.equal(stock()[0].lvl >= W.pools.run_0.lv[0], true);
+    hooks.provide({ environmentOdds: pageOdds });
     /* a hub place is stocked as before */
     assert.equal(fn('encounterRunVisits')(0), 0);
   } finally {

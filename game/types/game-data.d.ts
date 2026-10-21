@@ -626,6 +626,12 @@ export interface Trainer {
 export interface TrainerEntry extends Trainer {
   /** its key in gameData.trainers */
   id: DataId;
+  /** RL-8: a run's foe (logic/run-loop.js runFoes): its map node, 'miniboss' or 'boss', the leader it copies, and
+      for the boss its top Billie fought alone as an Alpha */
+  runNode?: number;
+  runFoe?: 'miniboss' | 'boss';
+  from?: DataId;
+  alpha?: boolean;
 }
 
 /** a trainer's Billie: a species, or '@rival' ('@rival1', '@rival2': evolved) for the starter that beats yours */
@@ -813,6 +819,15 @@ export interface Rules {
     /** RL-7: metres past a seam before a crossing counts in a run (the hub's is 1), so a step over and back costs
         no day */
     seamIn: number;
+    /** RL-8: what a run starts with (the party travels as it is): its money, coins and items (placeholders) */
+    start: { se: number; coins: Record<string, number>; items: Record<string, number> };
+    /** RL-8: a run town's clinic: $ per hurt Billie (free in the hub) */
+    healCost: number;
+    /** RL-8: a run town's shop: `always` on sale, then `more` wares a day drawn by weight from `pick` (an item id, or
+        `coin:<id>`), at their own prices; drawn from the town's seed and the day */
+    shop: { always: string[]; more: number; pick: Record<string, number> };
+    /** RL-8: a mini-boss's and the boss's levels: `up` over the top wild level of their row; their reward in $ */
+    foes: { miniboss: { up: number; reward: number }; boss: { up: number; reward: number } };
   };
 }
 

@@ -39,6 +39,7 @@ import { cutsceneStart, cutsceneWanted } from './cutscene/opening.js';
 import { titleMount, titleScreen, titleStart, titleWanted } from './title.js';
 import { loreLoadingLines } from './lore.js';
 import { runWorld, runWorldSync } from './run-world.js';
+import { runResume } from './run.js';
 import { initAccount } from './account.js';
 import {
   initPixelSky,
@@ -951,6 +952,8 @@ else
         });
       /* phase 06: a waiting choice (hatch, learn a move, evolve) opens only once the world is showing */
       if (saveData.started && !TEST_RUN && !FIXTURE) whenWorldShows(showPendingWindows);
+      /* RL-8: a run picks up where it was (its payout screen) */
+      if (saveData.started && saveData.run && !TEST_RUN) whenWorldShows(runResume);
       if (TEST_BOOT && !TEST_RUN && !FIXTURE)
         setTimeout(() => toast('Test boot: the opening with Professor Hazel, nothing is saved.'), 900);
       if (location.protocol === 'file:')

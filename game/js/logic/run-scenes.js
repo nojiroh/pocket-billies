@@ -25,6 +25,7 @@ import { runExits, runNodeSeed, runSpot } from './run-map.js';
 import { MAPGEN_SIZES, mapgenEdgeStrip, mapgenScene } from './mapgen.js';
 /* eslint-disable no-func-assign */
 expose({
+  RUN_BUILDINGS: [() => RUN_BUILDINGS],
   RUN_SIDE_ID: [() => RUN_SIDE_ID],
   runMapIdOf: [() => runMapIdOf],
   runPlaceId: [() => runPlaceId],
@@ -41,6 +42,7 @@ expose({
   runSceneParams: [() => runSceneParams, v => (runSceneParams = v)],
   // @ts-expect-error -- replaced on purpose
   runScenesMake: [() => runScenesMake, v => (runScenesMake = v)],
+  runShopId: [() => runShopId],
   // @ts-expect-error -- replaced on purpose
   runWildLevels: [() => runWildLevels, v => (runWildLevels = v)],
   // @ts-expect-error -- replaced on purpose
@@ -54,6 +56,8 @@ expose({
  */
 /** a run node's place id (its row in the world tables, its wild Billies in saveData.wild) @param {number} i */
 export const runPlaceId = i => `run_${i}`;
+/** RL-8: a run town's shop id @param {number} i */
+export const runShopId = i => `run_${i}_shop`;
 /** a run node's map id: its place id and a tag of the run's seed, so no cache keyed by map id mixes two runs
  * @param {string} seed @param {number} i */
 export const runMapIdOf = (seed, i) => `run_${i}_${(hashString(seed) % 1679616).toString(36)}`;
@@ -110,6 +114,8 @@ export function runSceneParams(run, i, scenes, data) {
     });
   return {
     ...dials,
+    /* RL-8: the buildings a node's type needs, beside the main road near its middle (mapgen's props dials: MG-2) */
+    props: { ...(dials.props || {}), ...(RUN_BUILDINGS[node.type] || {}) },
     kind: 'route',
     biome: node.biome || Object.keys(data.biomes)[0],
     w: size.w,
@@ -119,6 +125,12 @@ export function runSceneParams(run, i, scenes, data) {
     edges,
   };
 }
+/** RL-8: what stands beside the main road of a node of each type: the airship's mast where it lands you, a clinic
+ * (paid healing) and a shop in a town (mapgen.js MAPGEN_HUB_BUILDINGS) */
+export const RUN_BUILDINGS = /** @type {Record<string, Record<string, number>>} */ ({
+  landing: { mast: 1 },
+  town: { clinic: 1, shop: 1 },
+});
 /** a run node's name (a placeholder, the owner's call: its biome and its type, "Meadow Route")
  * @param {RunMap} map @param {number} i @param {RunWorldData} data */
 export function runPlaceName(map, i, data) {
@@ -165,13 +177,15 @@ export function runWildLevels(map, i, data) {
  * node's north exits to its children's south ones) and each node's pool (its biome's species at its row's levels).
  * A place is an ordinary row (game-data.js worldSetGraph) plus runNode, its map node
  * @param {Run} run @param {LocationData} hub @param {RunWorldData} data
- * @returns {{ locations: LocationData[], roads: RoadLink[], pools: Record<string, Pool> }} */
+ * @returns {{ locations: LocationData[], roads: RoadLink[], pools: Record<string, Pool>, shops: Record<string, any> }} */
 export function runWorldTables(run, hub, data) {
   const map = /** @type {RunMap} */ (run.map),
     /** @type {Record<string, Pool>} */
     pools = {},
     /** @type {RoadLink[]} */
-    roads = [];
+    roads = [],
+    /** @type {Record<string, any>} */
+    shops = {};
   const places = map.nodes.map((node, i) => {
     const B = data.biomes[node.biome || ''] || /** @type {Biome} */ ({}),
       T = data.nodeTypes[node.type],
@@ -198,7 +212,19 @@ export function runWorldTables(run, hub, data) {
       bowl: runSpot(map, i),
       runNode: i,
     };
-    if (town) row.town = 1;
+    if (town) {
+      row.town = 1;
+      /* RL-8: its shop (stocked by the day when it opens: logic/run-loop.js runShopStock) */
+      row.shop = runShopId(i);
+      shops[row.shop] = {
+        name: `${row.name} Shop`,
+        keeper: 'The shopkeeper',
+        who: 'clerk',
+        greeting: 'New stock every morning. Have a look.',
+        stock: [],
+        runNode: i,
+      };
+    }
     return row;
   });
   map.nodes.forEach((node, i) =>
@@ -215,5 +241,5 @@ export function runWorldTables(run, hub, data) {
       });
     })
   );
-  return { locations: [hub, ...places], roads, pools };
+  return { locations: [hub, ...places], roads, pools, shops };
 }

@@ -89,6 +89,7 @@ import {
 import { TOAST_MS, toastAdd, toastItem, toastTime } from './logic/messages.js';
 import { readableBg } from './logic/colors.js';
 import { runArrive, runMapNode } from './logic/run-map.js';
+import { runHealCost } from './logic/run-loop.js';
 import { pbFloat, pbInboxDot, pbInboxPop, typeGlyphHTML } from './ui-kit.js';
 import { newSaveKeepingPreferences } from './logic/saves.js';
 import {
@@ -111,6 +112,7 @@ import {
   reducedMotion,
   save,
   saveData,
+  saveNow,
   setSaveData,
   uiState,
   writeStoredSave,
@@ -194,6 +196,7 @@ import { renderTitle, titleMount } from './title.js';
 import { loreBook, renderLore } from './lore.js';
 import { flyMenu, rideGlassLift } from './airship.js';
 import { runWorldData } from './run-world.js';
+import { runArrivedHint, runGiveUp, runHint } from './run.js';
 import { postcardCheck, renderPostcards } from './postcards.js';
 import { renderBag } from './bag.js';
 import { friendsHTML } from './friends.js';
@@ -224,6 +227,7 @@ expose({
   boxSection: [() => boxSection, v => (boxSection = v)],
   buddyCard: [() => buddyCard, v => (buddyCard = v)],
   buildPixelSky: [() => buildPixelSky, v => (buildPixelSky = v)],
+  clinicHeal: [() => clinicHeal, v => (clinicHeal = v)],
   closeModal: [() => closeModal, v => ((closeModal = v), provide({ closeModal }))],
   dexStatus: [() => dexStatus, v => (dexStatus = v)],
   donateItem: [() => donateItem, v => (donateItem = v)],
@@ -784,6 +788,50 @@ function tripButtons() {
     return `<button class="pb small" data-a="stoptrip">Stop guiding me</button><button class="pb small quiet" data-a="tab" data-t="map">Change plans</button>`;
   return `<button class="pb small gold" data-a="tab" data-t="map">${uiIconHTML('map', 16)} Choose where to go</button>`;
 }
+/** RL-8: a clinic heals the team: free in the hub (as before); on a run for rules.json run.healCost per hurt Billie,
+    after a yes, a purchase saved at once (logic/run-loop.js runHealCost). `say`: the clinic prop's own line */
+function clinicHeal(say) {
+  if (!saveData.run) {
+    healAll();
+    save();
+    render();
+    toast(say || 'The clinic patched everyone up. No charge.');
+    return;
+  }
+  const { hurt, cost } = runHealCost(saveData.team, RULES.run.healCost),
+    each = formatNumber(RULES.run.healCost);
+  if (!hurt) {
+    toast('Everyone is in good shape. Nothing to pay.');
+    return;
+  }
+  if (saveData.se < cost) {
+    toast(
+      `Healing ${plural(hurt, 'Billie')} costs $${formatNumber(cost)} ($${each} each). You have $${formatNumber(saveData.se)}.`
+    );
+    return;
+  }
+  modal({
+    title: 'The clinic',
+    html: `<p>Out here healing isn’t free: $${each} a Billie. Heal ${plural(hurt, 'hurt Billie')} for $${formatNumber(cost)}? You have $${formatNumber(saveData.se)}.</p>`,
+    btns: [
+      {
+        l: `Heal for $${formatNumber(cost)}`,
+        c: 'gold',
+        f: () => {
+          closeModal();
+          const now = runHealCost(saveData.team, RULES.run.healCost);
+          if (!now.hurt || saveData.se < now.cost) return;
+          saveData.se -= now.cost;
+          healAll();
+          saveNow();
+          render();
+          toast(say || `The clinic patched everyone up for $${formatNumber(now.cost)}.`);
+        },
+      },
+      { l: 'Not now', c: 'quiet', f: closeModal },
+    ],
+  });
+}
 function nodeActions(i) {
   const n = LOCATIONS[i],
     node = saveData.trip.node;
@@ -793,9 +841,18 @@ function nodeActions(i) {
     x += `<button class="pb small gold" data-a="shop" data-s="${n.shop}">${uiIconHTML('mint', 16)} ${escapeHtml(SHOPS[n.shop].name)}</button>`;
   if (n.boutique && SHOPS[n.boutique])
     x += `<button class="pb small" data-a="shop" data-s="${n.boutique}">${uiIconHTML('profile', 16)} ${escapeHtml(SHOPS[n.boutique].name)}</button>`;
-  x += n.town
-    ? '<button class="pb small" data-a="clinic">Rest at the clinic, free</button>'
-    : `<button class="pb small quiet" data-a="rest">Rest stop, $${formatNumber(RULES.battle.restCost)}</button>`;
+  /* RL-8: on a run the clinic charges for each hurt Billie and there is no rest stop on the road */
+  if (saveData.run) {
+    if (n.town) {
+      const { hurt, cost } = runHealCost(saveData.team, RULES.run.healCost);
+      x += hurt
+        ? `<button class="pb small" data-a="clinic">Clinic: heal ${plural(hurt, 'Billie')} for $${formatNumber(cost)}</button>`
+        : '<button class="pb small quiet" data-a="clinic">Clinic: everyone is fine</button>';
+    }
+  } else
+    x += n.town
+      ? '<button class="pb small" data-a="clinic">Rest at the clinic, free</button>'
+      : `<button class="pb small quiet" data-a="rest">Rest stop, $${formatNumber(RULES.battle.restCost)}</button>`;
   trainersAt(i).forEach(T => {
     const done = saveData.flags[T.id];
     if (T.blocks && done && !T.seat) return;
@@ -1139,12 +1196,8 @@ function roomAct(h) {
   if (I.kind === 'shop') {
     if (I.shop && SHOPS[I.shop]) openShop(I.shop);
     else toast(I.p.say || 'The shop is closed today.');
-  } else if (I.kind === 'clinic') {
-    healAll();
-    save();
-    render();
-    toast(I.p.say || 'The clinic patched everyone up. No charge.');
-  } else if (I.kind === 'lab' && typeof talkHazel === 'function') talkHazel(I.p);
+  } else if (I.kind === 'clinic') clinicHeal(I.p.say);
+  else if (I.kind === 'lab' && typeof talkHazel === 'function') talkHazel(I.p);
   else if (I.kind === 'home' && typeof homeDecorate === 'function') homeDecorate();
   else {
     const c = (mapById(I.id) || {}).chat || [];
@@ -1323,12 +1376,8 @@ export function walkPick(h) {
       const id = p.shop || here.shop;
       if (id && SHOPS[id]) openShop(id);
       else toast(p.say || 'The shop is closed today.');
-    } else if (a === 'clinic') {
-      healAll();
-      save();
-      render();
-      toast(p.say || 'The clinic patched everyone up. No charge.');
-    } else if (a === 'lab' && typeof talkHazel === 'function') talkHazel(p);
+    } else if (a === 'clinic') clinicHeal(p.say);
+    else if (a === 'lab' && typeof talkHazel === 'function') talkHazel(p);
     else if (a === 'read' && typeof loreBook === 'function') loreBook(p.book);
     else
       toast(
@@ -1456,7 +1505,11 @@ export function walkCross() {
         'travel',
         'walked into ' + LOCATIONS[n].name + (saveData.run ? ` (the run's day ${saveData.run.clock})` : '')
       );
-    save();
+    /* RL-8: a run's arrival is a checkpoint: the account too, at once */
+    if (saveData.run) {
+      saveNow();
+      runArrivedHint();
+    } else save();
     render();
     return;
   }
@@ -1605,9 +1658,16 @@ function walkMapSync() {
   }
 }
 function renderWorldMapTab() {
+  if (saveData.run) runHint('map');
   /* RL-7: on a run, its day and deadline (ui-run-kit.js pb-day-chip) */
   const run = saveData.run && saveData.run.map ? saveData.run : null,
-    day = run ? `<pb-day-chip class="map-day" day="${run.clock}" deadline="${run.deadline}"></pb-day-chip>` : '';
+    M = saveData.meta,
+    /* RL-8: on a run, the way to give it up; in the hub, once a run has ended, what the runs brought home */
+    day = run
+      ? `<pb-day-chip class="map-day" day="${run.clock}" deadline="${run.deadline}"></pb-day-chip><button class="pb small quiet" data-a="rungiveup">Give up the run</button>`
+      : M && M.runs
+        ? `<p class="map-meta"><pb-coin kind="capital" value="${M.capital}" label="Capital"></pb-coin>${M.seals ? ` <pb-coin kind="seals" value="${M.seals}" label="Seals"></pb-coin>` : ''}</p>`
+        : '';
   return `<div class="map-full"><canvas id="mapcv" width="${worldMapWidth}" height="${worldMapHeight}" aria-label="World map. Drag to look around, tap a place."></canvas><div id="maplabels"></div>
  <div class="map-head glass"><div class="sub">The Hollow Earth</div><h1 class="where">World map</h1>${day}<p class="map-trip ${tripStatus().k}">${escapeHtml(tripStatus().t)}</p></div>
  <div class="mapctl"><button class="mbtn" data-a="mzoom" data-k="in" aria-label="Zoom in">+</button><button class="mbtn" data-a="mzoom" data-k="out" aria-label="Zoom out">−</button><button class="mbtn" data-a="mreset" aria-label="Back to you">${uiIconHTML('walk', 16)}</button></div>
@@ -1699,6 +1759,9 @@ const BOX_SORTS = [
   ['name', 'Name'],
 ];
 function boxSection() {
+  /* RL-8: storage stays in Copperleaf during a run */
+  if (saveData.run)
+    return '<section class="tpanel tm-box"><div class="sec-h"><h2>Storage</h2></div><div class="empty tm-empty">Storage stays in Copperleaf while you’re on a run. Your party holds six: catch a seventh and one of them leaves.</div></section>';
   const all = saveData.box,
     so = uiState.boxSort || 'new',
     types = [...new Set(all.flatMap(m => speciesOf(m).types))].sort();
@@ -1735,7 +1798,7 @@ function boxSection() {
 function renderTeam() {
   const lead = saveData.team[0],
     rest = saveData.team.slice(1),
-    free = saveData.box.length,
+    free = saveData.run ? 0 : saveData.box.length,
     open = Math.max(0, teamSize() - saveData.team.length);
   /* phase 06-2: the lead big, the rest as roomy rows (js/unit-card.js), the open spots last */
   const slots = open
@@ -2032,7 +2095,7 @@ function billySheet(m) {
         healPick(m, true);
       },
     });
-  if (inTeam && saveData.team.length > 1)
+  if (inTeam && saveData.team.length > 1 && !saveData.run)
     acts.push({
       ic: 'bag',
       l: 'Move to storage',
@@ -2323,7 +2386,7 @@ export function startGame(l, o = {}) {
   const W = {
     title: `${speciesOf(m).name} joined your team`,
     top: `<div class="sheet-art">${rigCanvasHTML(m.sp, 128)}</div>`,
-    html: `${nE ? `<p>${words[nE] || nE} Billie${nE === 1 ? ' is' : 's are'} already rustling in the grass. Tap one to battle it, then flick a coin.</p>` : ''}${egg ? `<p>Professor Hazel also gave you a ${eggKm(R.starterEgg)} km egg. It’s warming up in an incubator and hatches after ${eggKm(R.starterEgg)} km of walking outdoors.</p>` : ''}`,
+    html: `${nE ? `<p>${words[nE] || nE} Billie${nE === 1 ? ' is' : 's are'} already rustling in the grass. Tap one to battle it, then flick a coin.</p>` : ''}<p>When you’re ready, the airship at the mast flies you out on a run.</p>${egg ? `<p>Professor Hazel also gave you a ${eggKm(R.starterEgg)} km egg. It’s warming up in an incubator and hatches after ${eggKm(R.starterEgg)} km of walking outdoors.</p>` : ''}`,
     btns: [{ l: 'Let’s go', c: 'dark', f: closeModal }],
   };
   if (o.rival && TRAINERS.blake0 && typeof storyRivalBattle === 'function') {
@@ -2431,10 +2494,7 @@ document.addEventListener('click', ev => {
       break;
     }
     case 'clinic':
-      healAll();
-      save();
-      render();
-      toast('The clinic patched everyone up. No charge.');
+      clinicHeal();
       break;
     case 'rest': {
       const c = RULES.battle.restCost;
@@ -2451,6 +2511,9 @@ document.addEventListener('click', ev => {
     }
     case 'trainer':
       trainerTalk(d.t);
+      break;
+    case 'rungiveup':
+      runGiveUp();
       break;
     case 'mon': {
       const m = findBilly(d.u);

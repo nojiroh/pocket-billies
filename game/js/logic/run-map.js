@@ -207,6 +207,7 @@ export function runForecastFill(run, biomes, toDay) {
 }
 /** a node's weather on a day ('' when not rolled) @param {Run} run @param {number} i @param {number} day */
 export const runWeather = (run, i, day) => (run.forecast[runWorldNode(i)] || [])[day - 1] || '';
+provide({ runWeather }); /* to-module */
 /**
  * @typedef {{ nodeTypes: Record<string, NodeType>, biomes: Record<string, { climate?: string }>,
  *   rules: { map: RunMapRules, clock: { slack: number, ahead: number }, reveal: { icons: number, unknown: number } } }} RunMapData

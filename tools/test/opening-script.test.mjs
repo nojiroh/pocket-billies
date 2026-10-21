@@ -12,6 +12,30 @@ const { cutsceneStep, cutsceneNames, cutsceneOffset, cutsceneShotAt, cutsceneCle
 const { storyFindings } = modules['story-checks'];
 const BEFORE = JSON.parse(readFileSync(new URL('./opening-before-scripts.json', import.meta.url), 'utf8')).said;
 const OPENING = GAME_DATA.cutscenes.opening;
+/* RL-8 (the owner's "fall only", roguelite-track.md 8.20): Blake left the opening: his lines, Hazel's fight with him
+   and her lines to him are gone, everything else said as before, in the same order */
+const BLAKE_SCENE = new Set([
+  'They don’t have a Billie yet, Blake.',
+  'Oh, I’d love to.',
+  'I have tenure.',
+  'Everyone has a type, Blake. Mine is “tenured”.',
+  'Now. Where was I? Ah, yes. Three of them, right here.',
+]);
+/* RL-8: and after the pick, Hazel sends you to the airship mast */
+const OPENING_NOW = [
+  ...BEFORE.filter(l => l.who !== 'chad' && l.cmd !== 'staged-fight' && !BLAKE_SCENE.has(l.text)),
+  {
+    who: 'gini',
+    text: 'One more thing. See the airship at the mast? It flies out past the island, to wild places nobody has mapped yet.',
+    expr: null,
+  },
+  {
+    who: 'gini',
+    text: 'Every trip out there is different. Take Starterbill, catch what you can, and bring back whatever you find.',
+    expr: null,
+  },
+  { who: 'gini', text: 'Go whenever you’re ready. And come and see me in the lab.', expr: 'happy' },
+];
 const SPEAKERS = GAME_DATA.story.speakers;
 const OWN = ['dressing-room', 'staged-fight', 'pick-starter'];
 
@@ -33,7 +57,7 @@ async function play(lines, slots) {
   return said;
 }
 
-test('the opening says what it said before, in the same order, with the same commands between', async () => {
+test('the opening says what it said before, in the same order, with the same commands between (Blake left it, RL-8)', async () => {
   const said = await play(OPENING.script, {
     name: 'Pat',
     starter: 'Starterbill',
@@ -41,7 +65,7 @@ test('the opening says what it said before, in the same order, with the same com
     foe: 'Gildlet',
     place: 'Copperleaf Town',
   });
-  assert.deepEqual(said, BEFORE);
+  assert.deepEqual(said, OPENING_NOW);
 });
 
 test('the opening is filmed on Copperleaf and names only its own spots and shots', () => {

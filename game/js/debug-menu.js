@@ -14,6 +14,10 @@ import {
   renderOverlay,
   runBowlMapTest,
   runEvolution,
+  runJump,
+  runOver,
+  runStartable,
+  runTakeOff,
   storyScriptIds,
   testMapChecks,
   testMaps,
@@ -125,6 +129,11 @@ function debugHTML() {
   )}${debugButtonHTML('jump', 'Go there')}</div>
   <div class="dbg-row">${debugButtonHTML('bowltest', 'Bowl map test', 'gold')}</div><p class="note">Phase 10: opens the bowl world map and checks its shaders, that every place is on it and opens its card when tapped, that the camera keeps above the rim, Home, and the frame rate on this device.</p>
   <div class="dbg-row">${debugButtonHTML('seats', 'Earn every badge')}${debugButtonHTML('flags', 'Reset trainer wins')}${debugButtonHTML('fillq', 'Fill encounters here')}${debugButtonHTML('clearq', 'Clear encounters here')}</div></details>
+ <details><summary>Runs (roguelite track)</summary>${
+   saveData.run
+     ? `<p class="note">On a run: seed ${escapeHtml(saveData.run.seed)}, day ${saveData.run.clock}, ${saveData.run.at.phase}. “Go there” above walks it a place at a time.</p><div class="dbg-row">${debugButtonHTML('runwin', 'Win the run', 'gold')}${debugButtonHTML('runlose', 'Lose the run', 'red')}</div>`
+     : `<div class="dbg-row"><input id="dbgRunSeed" maxlength="20" placeholder="Seed (empty: a new one)" aria-label="Run seed" value="${escapeHtml(uiState.dbgRunSeed || '')}"><label><input id="dbgRunShort" type="checkbox"${uiState.dbgRunShort ? ' checked' : ''}> Short (5 rows)</label>${debugButtonHTML('runstart', 'Start a run', 'gold')}</div><p class="note">From Copperleaf, as the mast does (Bracket I). Short: one mini-boss, a town before it, the boss.</p>`
+ }</details>
  <details><summary>Story scripts (Project Story)</summary><div class="dbg-row">${debugSelectHTML(
    'dbgScript',
    storyScriptIds().map(id => [id, id]),
@@ -348,11 +357,38 @@ function debugAction(x) {
     }
     case 'jump': {
       const n = clamp(+v('dbgNode'), 0, LOCATIONS.length - 1);
+      /* RL-8: on a run, walked there as you would (a day a place, the path, what the map shows) */
+      if (saveData.run) {
+        if (!runJump(n)) toast('That place can’t be walked to on this run.');
+        saveData.mapSeen = null;
+        break;
+      }
       saveData.trip = { node: n, plan: [] };
       saveData.visited[n] = 1;
       saveData.mapSeen = null;
       break;
     }
+    /* RL-8: runs */
+    case 'runstart': {
+      const sd = (v('dbgRunSeed') || '')
+          .trim()
+          .replace(/[^A-Za-z0-9_-]/g, '')
+          .slice(0, 20),
+        short = !!($('#dbgRunShort') || {}).checked;
+      uiState.dbgRunSeed = sd;
+      uiState.dbgRunShort = short;
+      if (!runStartable())
+        return refreshDebugMenu('A run can’t start now (on a run, in a battle, or no Billie can fight).');
+      uiState.modal = null;
+      runTakeOff(sd || undefined, short ? { rows: 5, minibosses: 1 } : undefined);
+      return;
+    }
+    case 'runwin':
+    case 'runlose':
+      if (!saveData.run || activeBattle) return refreshDebugMenu('No run, or a battle is on.');
+      uiState.modal = null;
+      runOver(x === 'runwin');
+      return;
     case 'seats':
       Object.values(TRAINERS).forEach(T => {
         if (T.seat && !saveData.seats.includes(T.seat.id)) saveData.seats.push(T.seat.id);

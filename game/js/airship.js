@@ -9,7 +9,20 @@
    land in 2-3 s (tap to skip), and a ticket costs money. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { arrivedAt, closeModal, mapIdAt, modal, provide, render, storyFlags, toast } from './hooks.js';
+import {
+  arrivedAt,
+  closeModal,
+  mapIdAt,
+  modal,
+  provide,
+  render,
+  runGiveUp,
+  runHint,
+  runStartSheet,
+  runStartable,
+  storyFlags,
+  toast,
+} from './hooks.js';
 import { $, clamp } from './util.js';
 import { LOCATIONS, LOCATION_BY_ID, isTown, locationFullName } from './game-data.js';
 import { canEnter, formatNumber } from './logic/rules.js';
@@ -36,6 +49,7 @@ expose({
   flyTowns: [() => flyTowns, v => (flyTowns = v)],
   glassLift: [() => glassLift],
   rideGlassLift: [() => rideGlassLift, v => (rideGlassLift = v)],
+  standByMast: [() => standByMast, v => (standByMast = v)],
   startAirshipFlight: [() => startAirshipFlight, v => (startAirshipFlight = v)],
 });
 /* eslint-enable no-func-assign */
@@ -70,6 +84,26 @@ function flyFare(a, b) {
 }
 export function flyMenu(p) {
   if (airshipFlight.on || !saveData.started) return;
+  /* RL-8: on a run the airship only takes you home, which gives the run up */
+  if (saveData.run) {
+    modal({
+      title: escapeHtml((p && p.label) || 'Airship mast'),
+      cls: 'fly-sheet',
+      html: '<p>The airship waits here for the end of the run. Flying home now gives the run up.</p>',
+      btns: [
+        {
+          l: 'Fly home',
+          c: 'red',
+          f: () => {
+            uiState.modal = null;
+            if (typeof runGiveUp === 'function') runGiveUp();
+          },
+        },
+        { l: 'Not now', c: 'quiet', f: closeModal },
+      ],
+    });
+    return;
+  }
   const L = flyTowns(),
     here = saveData.trip.node;
   const rows = L.map(i => {
@@ -77,29 +111,42 @@ export function flyMenu(p) {
       ok = saveData.se >= f;
     return `<button class="pickrow fly-row${ok ? '' : ' off'}" data-a="flyto" data-n="${i}"${ok ? '' : ' aria-disabled="true"'}><span class="fly-ico">${uiIconHTML('house', 18)}</span><span class="pr-t"><b>${escapeHtml(locationFullName(LOCATIONS[i]))}</b><small>${escapeHtml(LOCATIONS[i].blurb || '')}</small></span><span class="fly-fare tnum">$${formatNumber(f)}</span></button>`;
   }).join('');
+  /* RL-8: a run starts here (run.js) */
+  const runRow =
+    typeof runStartable === 'function' && runStartable()
+      ? `<button class="pickrow fly-row" data-a="runstart"><span class="fly-ico">${uiIconHTML('map', 18)}</span><span class="pr-t"><b>Start a run</b><small>Bracket I · the wild lands past the island</small></span><span class="fly-fare">Free</span></button>`
+      : '';
   modal({
     title: escapeHtml((p && p.label) || 'Airship mast'),
     cls: 'fly-sheet',
-    html: L.length
-      ? `<p class="note">The airships fly to the towns you’ve been to. A ticket is paid in money. You have $${formatNumber(saveData.se)}.</p><div class="list">${rows}</div>`
-      : `<p>The airships fly to the towns you’ve already been to. Walk on to another town, and you can fly back here from its mast whenever you like.</p>`,
+    html:
+      (runRow ? `<div class="list">${runRow}</div>` : '') +
+      (L.length
+        ? `<p class="note">The airships fly to the towns you’ve been to. A ticket is paid in money. You have $${formatNumber(saveData.se)}.</p><div class="list">${rows}</div>`
+        : runRow
+          ? ''
+          : `<p>The airships fly to the towns you’ve already been to. Walk on to another town, and you can fly back here from its mast whenever you like.</p>`),
     btns: [{ l: 'Not now', c: 'quiet', f: closeModal }],
   });
 }
 /* buy the ticket and go: you are at the other end at once (a reload mid-flight lands you there), the flight is the
    show on the way */
-function startAirshipFlight(i) {
+/* RL-8: o.free: a flight a run pays for itself (run.js, to its landing): from o.from, the trip left as the caller set it
+   (runArrive has moved it already), no ticket */
+export function startAirshipFlight(i, o = {}) {
   if (airshipFlight.on || !LOCATIONS[i]) return;
-  const a = saveData.trip.node,
-    f = flyFare(a, i);
+  const a = o.free && LOCATIONS[o.from] ? o.from : saveData.trip.node,
+    f = o.free ? 0 : flyFare(a, i);
   if (saveData.se < f) {
     toast(`A ticket to ${LOCATIONS[i].name} costs $${formatNumber(f)}. You have $${formatNumber(saveData.se)}.`);
     return;
   }
-  saveData.se -= f;
-  saveData.trip = { node: i, plan: [] };
-  saveData.visited[i] = 1;
-  if (typeof arrivedAt === 'function') arrivedAt(i);
+  if (!o.free) {
+    saveData.se -= f;
+    saveData.trip = { node: i, plan: [] };
+    saveData.visited[i] = 1;
+    if (typeof arrivedAt === 'function') arrivedAt(i);
+  }
   uiState.inside = null;
   uiState.goingIn = null;
   uiState.backAt = null;
@@ -225,6 +272,21 @@ function flyDraw(c, t, proj) {
     c.fillRect(q.x - 9, q.y - 8 + bob, 18, 5);
   }
 }
+/* RL-8: stand beside a place's airship mast (the first prop with act 'fly' in its own map), where a flight lands you
+   and where a run's end leaves you in Copperleaf; at the place's middle when it has none. Returns whether it has one */
+export function standByMast(b) {
+  const sid = mapIdAt(b),
+    sc = typeof mapById === 'function' ? mapById(sid) : null,
+    m = sc && (sc.props || []).find(p => p.act === 'fly');
+  if (!m || typeof walkData !== 'function') return false;
+  const C = walkData().sc,
+    M = C.props[m.k] || {},
+    s = m.s || 1,
+    f = m.f ? -1 : 1,
+    bx = M.box ? M.box[0] * s : 1.2;
+  uiState.roam = { id: sid, node: b, x: m.x + (bx / 2 + 0.9) * f, z: m.z - 0.9 };
+  return true;
+}
 /* landing: the walk screen in the new town, standing by its mast */
 function flyLand() {
   if (!airshipFlight.on || airshipFlight.wait) return;
@@ -242,22 +304,16 @@ function flyLand() {
   document.body.classList.remove('flying');
   const cap = $('#flycap');
   if (cap) cap.remove();
-  const sid = mapIdAt(b),
-    sc = typeof mapById === 'function' ? mapById(sid) : null,
-    m = sc && (sc.props || []).find(p => p.act === 'fly');
-  if (m && typeof walkData === 'function') {
-    const C = walkData().sc,
-      M = C.props[m.k] || {},
-      ppu = C.ppu || 34,
-      s = m.s || 1,
-      f = m.f ? -1 : 1,
-      bx = M.box ? M.box[0] * s : 1.2;
-    uiState.roam = { id: sid, node: b, x: m.x + (bx / 2 + 0.9) * f, z: m.z - 0.9 };
-  }
+  standByMast(b);
   uiState.tab = 'walk';
+  /* RL-8: a run's flight has landed */
+  if (saveData.run && saveData.run.at.phase === 'fly') {
+    saveData.run.at.phase = 'walk';
+    if (typeof runHint === 'function') runHint('landing');
+  }
   save();
   render();
-  toast(`Welcome to ${LOCATIONS[b].name}.`);
+  if (!saveData.run) toast(`Welcome to ${LOCATIONS[b].name}.`);
   if (typeof soundEffect === 'function') soundEffect('pop');
 }
 function flySkip() {
@@ -269,6 +325,12 @@ function flySkip() {
 document.addEventListener(
   'click',
   ev => {
+    if (ev.target.closest && ev.target.closest('[data-a="runstart"]')) {
+      ev.stopPropagation();
+      ev.preventDefault();
+      if (typeof runStartSheet === 'function') runStartSheet();
+      return;
+    }
     const el = ev.target.closest && ev.target.closest('[data-a="flyto"]');
     if (el) {
       ev.stopPropagation();

@@ -7,7 +7,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { mapIdAt, selfTest, storyFlags, storyState, toast } from './hooks.js';
-import { LOCATIONS, TRAINERS, isTown, trainersAt } from './game-data.js';
+import { LOCATIONS, isTown, trainersAt } from './game-data.js';
 import { activeBattle, escapeHtml, save, saveData, uiState } from './game-state.js';
 import { artURL } from './art.js';
 import { flagPicturePath, mapById, walkView } from './walk-view.js';
@@ -68,7 +68,8 @@ function postcardTownHere() {
 /* 0.5: only once you are free to walk: never while the opening, a story scene or an unmet rival or blocker here is still to come, and only after a calm moment of walking */
 function postcardAllowed() {
   const F = typeof storyFlags === 'function' ? storyFlags() : {};
-  if (TRAINERS.blake0 && !F.rival0 && !F.met_blake0) return false;
+  /* RL-8: not before the opening has ended (it waited for Blake's battle, which left the opening) */
+  if (!saveData.started || (typeof cutscene !== 'undefined' && cutscene.on)) return false;
   if (typeof storyState !== 'undefined' && (storyState.pending || storyState.rivalTalk)) return false;
   if (trainersAt(saveData.trip.node).some(T => !saveData.flags[T.id] && T.runsUp && !F['met_' + T.id])) return false;
   if (typeof walkView !== 'undefined' && !walkView.ready) return false;

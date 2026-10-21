@@ -22,6 +22,7 @@ import {
   provide,
   render,
   runNodeSeed,
+  runWeather,
   save,
   saveData,
   showPendingWindows,
@@ -52,6 +53,7 @@ import {
   typeEffectiveness,
 } from '../game-data.js';
 import { rngFn } from './rng.js';
+import { wildOddsBy } from './weather.js';
 import { partsLean, partsPrime, partsStatFactor, partsWeightRatio } from './parts.js';
 import {
   ROBOT_LIMBS,
@@ -219,7 +221,14 @@ export const cleanName = (s, max) =>
     .slice(0, max);
 provide({ cleanName }); /* to-module */
 export const formatNumber = n => Math.floor(n).toLocaleString('en-US');
-export const newUid = () => 'm' + Date.now().toString(36) + Math.floor(random() * 1e8).toString(36);
+/* RL-8: on a run, from the run's own counter (run.uidN: 'r' + the runs played before + '-' + n), so a run made again
+   from its seed (a resume, its simulation) gives its Billies, encounters and eggs the same ids; the hub's from the
+   clock as before */
+export const newUid = () => {
+  const run = saveData && saveData.run;
+  if (run) return `r${(saveData.meta && saveData.meta.runs) || 0}-${run.uidN++}`;
+  return 'm' + Date.now().toString(36) + Math.floor(random() * 1e8).toString(36);
+};
 export const today = () => {
   const d = new Date();
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
@@ -471,7 +480,9 @@ export function upgradePart(p) {
   return true;
 }
 export const billyName = m => m.nick || speciesOf(m).name;
-export const allBillies = () => saveData.team.concat(saveData.box);
+/* RL-8: during a run storage stays in Copperleaf (the box isn't a run field): only the party counts, so nothing in a run
+   reads, heals, merges or moves a Billie that is resting at home */
+export const allBillies = () => (saveData.run ? saveData.team.slice() : saveData.team.concat(saveData.box));
 export const findBilly = id => allBillies().find(m => m.uid === id);
 export function gainXp(m, amt, say) {
   if (m.lvl >= maxLevel() || amt <= 0) return;
@@ -567,17 +578,23 @@ export function healAll() {
     repairParts(m);
   }
 }
+/** move a Billie to storage (false during a run: storage stays in Copperleaf) */
 export function toBox(m) {
+  if (saveData.run) return false;
   const i = saveData.team.indexOf(m);
   if (i >= 0) saveData.team.splice(i, 1);
   if (!saveData.box.includes(m)) saveData.box.push(m);
   m.boxedAt = Date.now();
+  return true;
 }
+/** bring a Billie from storage onto the team (false during a run) */
 export function toTeam(m) {
+  if (saveData.run) return false;
   const i = saveData.box.indexOf(m);
   if (i >= 0) saveData.box.splice(i, 1);
   if (!saveData.team.includes(m)) saveData.team.push(m);
   m.boxedAt = null;
+  return true;
 }
 export function addBilly(m) {
   /* phase 17: robots aren't in the Guide */
@@ -589,6 +606,9 @@ export function addBilly(m) {
     saveData.team.push(m);
     return 'team';
   }
+  /* RL-8: a run's party is full: the Billie waits with the caller until one is released (a team of seven can't be
+     saved, and storage is the hub's) */
+  if (saveData.run) return 'full';
   m.boxedAt = Date.now();
   saveData.box.push(m);
   return 'box';
@@ -760,8 +780,20 @@ export function dropEncounter(id) {
 }
 /* RL-2: every outcome draw (species, level, sizes, coat, Alpha) comes from rnd; a run passes its own stream */
 export function spawn(gentle, force, node = saveData.trip.node, rnd = random) {
-  const P = encounterPoolHere(node);
-  let list = typeof environmentOdds === 'function' ? environmentOdds(P.list) : P.list;
+  const P = encounterPoolHere(node),
+    L = LOCATIONS[node],
+    run = saveData.run;
+  /* RL-8: a run's place draws by its forecast for today alone, here in logic (a run has no hour: the same Billies on
+     every device, at any time of day, and in a run's simulation); the hub by the real clock's weather and hour */
+  const anyRules = /** @type {any} */ (RULES),
+    likes = anyRules.env ? anyRules.env.likes : undefined,
+    typesOf = (/** @type {string} */ id) => (SPECIES[id] ? SPECIES[id].types : []);
+  let list =
+    L && L.runNode != null && run && run.map
+      ? wildOddsBy(P.list, runWeather(run, L.runNode, run.clock), likes, typesOf)
+      : typeof environmentOdds === 'function'
+        ? environmentOdds(P.list)
+        : P.list;
   if (gentle) {
     const my = SPECIES[saveData.starter + '0'].types,
       g = list.filter(([id]) => !SPECIES[id].types.some(t => typeEffectiveness(t, my) > 1));

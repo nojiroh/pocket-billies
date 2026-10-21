@@ -845,7 +845,7 @@ def in_game_test_whole(b, base, R):
         ctx.close()
 
 
-@step('Phone: opening, first battle, screens and a battle', 260)
+@step('Phone: opening, the airship mast, screens and a battle', 260)
 def phone_flow(b, base, R):
     errs = []; ctx, pg = open_game(b, base, 390, 844, True, errs)
     try:
@@ -859,19 +859,24 @@ def phone_flow(b, base, R):
         pg.click('[data-a=cs-next]'); time.sleep(.5); pg.click('[data-a=cs-choose]'); pg.click('[data-a=cs-yes]')
         if not until(pg, 'saveData.started', 40, skip): raise Exception('the game didn’t start after picking a starter')
         R['opening'] = pg.evaluate('[saveData.starter,saveData.avatar.name,saveData.team.length,LOCATIONS[saveData.trip.node].id]')
-        # phase 06-2b: Blake came before the pick and Hazel fought his first Billie herself
-        if not pg.evaluate('!!cutscene.foeName'): raise Exception('Hazel’s fight against Blake never ran in the opening')
         if R['opening'][3] != 'copperleaf': raise Exception(f'the game started at {R["opening"][3]}, not in Copperleaf')
-        # v47: Blake battles you on the spot, with Hazel's tips; win or lose, he talks, Hazel heals you, the welcome sheet
-        if not until(pg, "!!activeBattle&&activeBattle.phase==='choose'", 120): raise Exception('Blake’s first battle never reached the move menu')
-        R['rivalBattle'] = pg.evaluate("({tutorial:!!(activeBattle.T&&activeBattle.T.tutorial),foe:activeBattle.foeName,moves:activeBattle.sides[1].team[0].moves,tip:!!document.querySelector('#btip.on'),hot:!!document.querySelector('#btip.hot.on')})")
-        shot(pg, 'phone-rival-battle')
-        if not R['rivalBattle']['tutorial'] or not R['rivalBattle']['hot']: raise Exception(f'Blake’s first battle doesn’t open on Hazel’s HOT TIP: {R["rivalBattle"]}')
-        pg.evaluate("activeBattle.over='win';stopTimers();endBattle();0")
-        if not until(pg, '!!talkBox.cur', 40): raise Exception('nobody spoke after Blake’s battle')
-        if not until(pg, '!talkBox.on&&!!uiState.modal', 60, 'talkBox.cur&&talkBox.cur.tap()'): raise Exception('the talk after Blake’s battle never ended')
-        R['afterRival'] = pg.evaluate("({story:saveData.story.rival0,hp:saveData.team.map(m=>m.hp===maxHp(m)),welcome:uiState.modal&&uiState.modal.title})")
+        # RL-8 (the owner's "fall only"): Blake left the opening: no fight of Hazel's, no battle of his; the welcome
+        # sheet comes straight after the pick
+        if pg.evaluate('!!cutscene.foeName||!!activeBattle'): raise Exception('Blake is still in the opening (Hazel’s fight or his battle)')
+        if not until(pg, '!!uiState.modal', 30): raise Exception('no welcome sheet after the opening')
+        R['afterOpening'] = pg.evaluate("({welcome:uiState.modal&&uiState.modal.title,rival0:(saveData.story||{}).rival0||null})")
         pg.evaluate("closeModal();0")
+        # RL-8: Copperleaf's airship mast offers a run: tapped (walkPick, as a tap on it does), its sheet has "Start a
+        # run"; a real tap on that row opens the run's sheet (left there: the fast check and the full check fly it)
+        if not until(pg, "walkView.ready&&!!walkView.sc.props.find(p=>p.act==='fly')", 60): raise Exception('Copperleaf has no airship mast')
+        pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();(p=>walkPick({k:'act',p,act:'fly'}))(walkView.sc.props.find(p=>p.act==='fly'));0")
+        if not until(pg, "!!document.querySelector('#ov [data-a=runstart]')", 30): raise Exception('the mast’s sheet has no “Start a run”')
+        shot(pg, 'phone-mast')
+        pg.click('#ov [data-a=runstart]')
+        if not until(pg, "uiState.modal&&uiState.modal.title==='Start a run'", 10): raise Exception('“Start a run” didn’t open the run’s sheet')
+        R['runSheet'] = pg.evaluate("uiState.modal.btns.map(b=>b.l)")
+        shot(pg, 'phone-run-sheet')
+        pg.evaluate("closeModal();uiState.modal=null;uiState.mq=[];renderOverlay();0")
         play(pg)
         # UI-1: how many surfaces blur what's behind them on each screen (the plan's budget is 3); a report, not a failure
         blur = {}
@@ -901,7 +906,7 @@ def phone_flow(b, base, R):
         # kept for comparing logs across a phase (validation/ is not committed)
         shutil.copyfile(d.path(), OUT / 'phone-debug-log.json')
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
-        return f'the fall, Hazel, dressing room, Hazel’s fight, starter, Blake’s first battle (HOT TIP) and the talk after, five screens, shop, battle, speech kept out of the debug picture, debug log ({len(json.dumps(dlog)) // 1024} KB, no names); blurred surfaces per screen: {", ".join(f"{k} {v}" for k, v in blur.items())}'
+        return f'the fall, Hazel, dressing room, starter (no Blake: RL-8), the welcome sheet, the mast’s run sheet, five screens, shop, battle, speech kept out of the debug picture, debug log ({len(json.dumps(dlog)) // 1024} KB, no names); blurred surfaces per screen: {", ".join(f"{k} {v}" for k, v in blur.items())}'
     finally:
         R['phoneErrors'] = errs[:10]; ctx.close()
 
@@ -1977,8 +1982,8 @@ def desktop_steps(b, base, R):
         is Copperleaf, the only one (Marigold Town is parked)"""
         if not pg.evaluate("typeof postcardCheck==='function'"): return 'not in this build'
         sd = pg.evaluate("LOCATION_BY_ID.copperleaf.node")   # RL-5: Copperleaf's postcard (Marigold Town is parked)
-        # alpha 0.5: no postcard before Blake's first battle (postcardAllowed); the checks skip the opening, so mark it as played
-        pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();uiState.bench=null;saveData.cards={};postcardState.last=null;postcardState.on=false;Object.assign(storyFlags(),{rival0:'win',met_blake0:1});0")
+        # alpha 0.5: no postcard before the opening has ended (postcardAllowed; RL-8: it waited for Blake's battle, which left the opening)
+        pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();uiState.bench=null;saveData.cards={};postcardState.last=null;postcardState.on=false;0")
         go_scene(pg, sd)
         if not until(pg, "!!document.querySelector('.pcard-wrap.in')", 12, "postcardCheck()"): raise Exception('no postcard came on walking into Copperleaf')   # RL-5: Copperleaf
         time.sleep(1.2)

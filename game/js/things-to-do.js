@@ -8,6 +8,7 @@ import { expose } from './test-globals.js';
 import { closeModal, modal, progressBarHTML, provide, render, roomRefresh, toast } from './hooks.js';
 import { clamp } from './util.js';
 import { COINS, ITEMS, LOCATIONS, ROADS_BY_NODE, RULES, gameData, isTown } from './game-data.js';
+import { battleWeatherOf } from './logic/weather.js';
 import { speciesOf } from './logic/fighters.js';
 import { billyName, formatNumber, today } from './logic/rules.js';
 import { battleSay } from './logic/battle-engine.js';
@@ -39,7 +40,6 @@ expose({
   REQUEST_KINDS: [() => REQUEST_KINDS],
   STAMP_SPOTS: [() => STAMP_SPOTS],
   WEATHER_BATTLE_NOTES: [() => WEATHER_BATTLE_NOTES],
-  WEATHER_TYPE_BOOSTS: [() => WEATHER_TYPE_BOOSTS],
   arrivedAt: [() => arrivedAt, v => ((arrivedAt = v), provide({ arrivedAt }))],
   battleWeather: [() => battleWeather, v => (battleWeather = v)],
   battleWeatherMultiplier: [
@@ -197,7 +197,8 @@ export function arrivedAt(node) {
 const challengeText = c => (CHALLENGE_KINDS.find(t => t.k === c.k) || { text: () => c.k }).text(c);
 /* something happened: a catch (with its types), a win, a fish landed, a stamp found */
 function recordThingsToDoEvent(k, o = {}) {
-  if (!saveData || !saveData.started) return;
+  /* RL-8: today's challenges are the hub's (a run's wins and catches don't count, its money isn't the hub's) */
+  if (!saveData || !saveData.started || saveData.run) return;
   const C = challengesToday();
   let ch = false;
   for (const c of C.list) {
@@ -221,7 +222,7 @@ function recordThingsToDoEvent(k, o = {}) {
   if (ch) save();
 }
 export function challengeCardHTML() {
-  if (!saveData.started) return '';
+  if (!saveData.started || saveData.run) return '';
   const C = challengesToday();
   return `<section class="chal px glass"><div class="sec-h"><h2>Today’s challenges</h2><span class="count tnum">${C.list.filter(c => c.claimed).length}/${C.list.length}</span></div>${C.list
     .map((c, i) => {
@@ -233,7 +234,7 @@ export function challengeCardHTML() {
 }
 function claimChallenge(i) {
   const c = challengesToday().list[+i];
-  if (!c || c.claimed || challengeProgress(c) < c.need) return;
+  if (!c || c.claimed || challengeProgress(c) < c.need || saveData.run) return;
   c.claimed = true;
   const got = thingsToDoReward(1.4);
   save();
@@ -675,15 +676,6 @@ document.addEventListener('click', ev => {
 });
 
 /* ---------- battles feel the weather ---------- */
-const WEATHER_TYPE_BOOSTS = {
-  rain: { Water: 1.2, Fire: 0.8 },
-  storm: { Electric: 1.25, Water: 1.15, Fire: 0.8 },
-  snow: { Steel: 1.1, Grass: 0.9 },
-  fog: { Psychic: 1.1 },
-  ash: { Fire: 1.15, Ground: 1.15, Water: 0.9 },
-  sunny: { Fire: 1.15, Grass: 1.1, Water: 0.95 },
-  night: { Psychic: 1.15, Dragon: 1.1 },
-};
 const WEATHER_BATTLE_NOTES = {
   rain: 'It’s raining: Water moves hit harder and Fire moves fizzle.',
   storm: 'A storm is raging: Electric and Water moves are stronger, Fire weaker.',
@@ -701,9 +693,8 @@ function battleWeather() {
   const sc = currentLocationMap();
   if (!sc || sc.indoor) return (activeBattle.wx = null);
   const st = environmentState(sc),
-    k = st.night > 0.5 ? (st.wx === 'clear' ? 'night' : st.wx) : st.wx === 'clear' ? 'sunny' : st.wx,
-    m = Object.assign({}, WEATHER_TYPE_BOOSTS[k] || {}, ((RULES.env || {}).battle || {})[k] || {});
-  return (activeBattle.wx = Object.keys(m).length ? { k, m } : null);
+    k = st.night > 0.5 ? (st.wx === 'clear' ? 'night' : st.wx) : st.wx === 'clear' ? 'sunny' : st.wx;
+  return (activeBattle.wx = battleWeatherOf(k, RULES.env));
 }
 function battleWeatherMultiplier(t) {
   const w = battleWeather();

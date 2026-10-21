@@ -35,6 +35,8 @@ expose({
   runSnapshot: [() => runSnapshot],
   // @ts-expect-error -- replaced on purpose
   validRun: [() => validRun, v => (validRun = v)],
+  // @ts-expect-error -- replaced on purpose
+  validRunFoe: [() => validRunFoe, v => (validRunFoe = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -117,6 +119,10 @@ export function validRun(o) {
   }
   const nodes = runNodeCount(o);
   if (!plain(o.at) || !RUN_PHASES.includes(o.at.phase) || !wholeIn(o.at.battle, -1, 1e6)) return false;
+  /* RL-8: at the payout, whether the run was won; in a battle, its foe as it began (run.js runFoeRef); nothing else */
+  if (Object.keys(o.at).some(k => !['phase', 'battle', 'won', 'foe'].includes(k))) return false;
+  if (o.at.won !== undefined && !wholeIn(o.at.won, 0, 1)) return false;
+  if (o.at.foe !== undefined && !validRunFoe(o.at.foe)) return false;
   if (!wholeIn(o.clock, 1, RUN_DAYS) || !wholeIn(o.deadline, 0, RUN_DAYS)) return false;
   if (!list(o.forecast, nodes) || o.forecast.some(days => !list(days, RUN_DAYS) || !days.every(id))) return false;
   if (!list(o.relics, 32) || !o.relics.every(id) || !list(o.mods, 32) || !o.mods.every(id)) return false;
@@ -146,6 +152,28 @@ export function validRun(o) {
     list(st.seats, 64) &&
     st.seats.every(v => typeof v === 'string') &&
     plain(st.visited)
+  );
+}
+/** RL-8: a run battle's foe as it began, kept in run.at so a reload starts the same battle again: its kind and
+    format, the foe's Billies (1-6, each with a species and a level), and what the page gave it (an encounter's id, a
+    trainer's id, the stage, a fish). Shapes only: the Billies are made by the game's own code */
+/** @param {any} f @returns {boolean} */
+export function validRunFoe(f) {
+  const plain = v => !!v && typeof v === 'object' && !Array.isArray(v) && !Object.hasOwn(v, '__proto__'),
+    id = v => typeof v === 'string' && /^[a-z0-9_]{1,40}$/.test(v);
+  return (
+    plain(f) &&
+    Object.keys(f).every(k => ['kind', 'fmt', 'team', 'qid', 'tid', 'area', 'fished'].includes(k)) &&
+    ['wild', 'trainer'].includes(f.kind) &&
+    ['single', 'double', 'alpha'].includes(f.fmt) &&
+    Array.isArray(f.team) &&
+    f.team.length >= 1 &&
+    f.team.length <= 6 &&
+    f.team.every(m => plain(m) && typeof m.sp === 'string' && m.sp.length <= 60 && wholeIn(m.lvl, 1, 200)) &&
+    (f.qid === undefined || (typeof f.qid === 'string' && f.qid.length <= 60)) &&
+    (f.tid === undefined || id(f.tid)) &&
+    (f.area === undefined || id(f.area)) &&
+    (f.fished === undefined || f.fished === 1)
   );
 }
 /** start a run on the save: the hub's working fields go into run.start and the run gets its own. The party travels

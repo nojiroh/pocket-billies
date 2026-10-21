@@ -637,6 +637,8 @@ export function openingHoursKind(a, p) {
   return M && M.room ? p.k : a;
 }
 export function isOpenNow(kind) {
+  /* RL-8: a run's time is its days, not the real clock: its shops and clinics are always open */
+  if (saveData.run) return true;
   const H = OPEN_HOURS[kind];
   if (!H) return true;
   const h = propClock().h;

@@ -34,7 +34,11 @@ expose({
   resumeSaving: [() => resumeSaving, v => (resumeSaving = v)],
   save: [() => save, v => setSave(v)],
   saveData: [() => saveData, v => setSaveData(v)],
+  // @ts-expect-error -- replaced on purpose
+  saveHeld: [() => saveHeld, v => (saveHeld = v)],
   saveHold: [() => saveHold, v => setSaveHold(v)],
+  // @ts-expect-error -- replaced on purpose
+  saveNow: [() => saveNow, v => (saveNow = v)],
   saveTimer: [() => saveTimer, v => (saveTimer = v)],
   // @ts-expect-error -- replaced on purpose
   setActiveBattle: [() => setActiveBattle, v => ((setActiveBattle = v), provide({ setActiveBattle }))],
@@ -97,7 +101,7 @@ function readStoredSave() {
 }
 /** @param {SaveData} o */
 export function writeStoredSave(o) {
-  if (saveHold || TEST_BOOT) return;
+  if (saveHold || TEST_BOOT || saveHeld()) return;
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify(o));
   } catch (e) {
@@ -219,8 +223,28 @@ document.addEventListener('visibilitychange', () => {
     flushSave();
   }
 });
+/* RL-8: while a run's battle is on, nothing is written: the save holds the battle's start (run.at phase 'battle', saved
+   as it began), so a phone killed mid-battle starts it again from its seed. Worked out, not stored: the save's run is
+   in that phase and the battle on screen is that one (runK, run.js), so swapping the save or clearing the battle lets
+   go of it whatever ends it */
+export function saveHeld() {
+  const run = saveData && saveData.run,
+    b = /** @type {any} */ (activeBattle);
+  return !!(run && run.at && run.at.phase === 'battle' && b && b.runK != null && b.runK === run.at.battle);
+}
+/* RL-8: a run's checkpoint (its start, an arrival, a battle about to begin, its end): written here and sent to the
+   account at once, not after save()'s few seconds, so a phone killed right after resumes from it */
+export function saveNow() {
+  save();
+  if (saveTimer) {
+    clearTimeout(saveTimer);
+    saveTimer = null;
+  }
+  if (saveHold || TEST_BOOT || saveHeld()) return;
+  if (typeof flushAccountSave === 'function') flushAccountSave(true);
+}
 export function flushSave() {
-  if (saveHold || TEST_BOOT) return;
+  if (saveHold || TEST_BOOT || saveHeld()) return;
   if (typeof flushAccountSave === 'function') flushAccountSave();
 }
 /* phase 13: the in-game full test (self-test.js) changes the save while it runs, so nothing is written, in this browser,

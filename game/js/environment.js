@@ -11,7 +11,7 @@
 import { expose } from './test-globals.js';
 import { RULES, SPECIES, mapIdAt, provide, reducedMotion, runPlaceWeather, saveData } from './hooks.js';
 import { clamp } from './util.js';
-import { CLIMATE_WEATHER_ODDS, weatherPick } from './logic/weather.js';
+import { CLIMATE_WEATHER_ODDS, weatherPick, wildLikes } from './logic/weather.js';
 import { hexToRgb } from './art.js';
 import { mapById, walkView } from './walk-view.js';
 /* eslint-disable no-func-assign */
@@ -23,7 +23,6 @@ expose({
   TIME_OF_DAY_CHOICES: [() => TIME_OF_DAY_CHOICES],
   WEATHER_LOOKS: [() => WEATHER_LOOKS],
   WEATHER_NAMES: [() => WEATHER_NAMES],
-  WILD_TYPE_BOOSTS: [() => WILD_TYPE_BOOSTS],
   activeWildTypeBoosts: [() => activeWildTypeBoosts, v => (activeWildTypeBoosts = v)],
   currentLocationMap: [() => currentLocationMap, v => ((currentLocationMap = v), provide({ currentLocationMap }))],
   environment: [() => environment],
@@ -130,17 +129,7 @@ const TIME_OF_DAY_CHOICES = [
   ['night', 'Always night'],
 ];
 const PINNED_HOURS = { morning: 8.2, day: 13, evening: 19.6, night: 23.4 };
-/* who comes out when (multiplies a billionaire's odds in the wild by its types) */
-export const WILD_TYPE_BOOSTS = {
-  night: { Psychic: 2, Dragon: 1.6, Steel: 1.2, Grass: 0.8 },
-  dusk: { Flying: 1.4, Psychic: 1.2 },
-  sunny: { Grass: 1.25, Fire: 1.2 },
-  rain: { Water: 1.8, Electric: 1.3, Fire: 0.6 },
-  storm: { Electric: 2.2, Water: 1.6, Flying: 0.6 },
-  snow: { Steel: 1.5, Water: 1.2, Grass: 0.7 },
-  fog: { Psychic: 1.6, Dragon: 1.3 },
-  ash: { Fire: 1.8, Ground: 1.4, Water: 0.7 },
-};
+/* who comes out when: WILD_TYPE_BOOSTS, logic/weather.js (RL-8) */
 const environmentSmoothstep = (a, b, x) => {
   const t = Math.max(0, Math.min(1, (x - a) / (b - a)));
   return t * t * (3 - 2 * t);
@@ -508,10 +497,7 @@ function environmentSun(a, h, col) {
 }
 /* the odds of meeting each billionaire, tilted by the hour and the weather */
 function wildTypeBoosts() {
-  const L = Object.assign({}, WILD_TYPE_BOOSTS),
-    R = environmentRules().likes || {};
-  for (const k in R) L[k] = Object.assign({}, L[k] || {}, R[k]);
-  return L;
+  return wildLikes(environmentRules().likes);
 }
 /* which of the likes apply where you are now */
 function activeWildTypeBoosts(st) {
