@@ -11,8 +11,6 @@ import type { DataId, LocationNode, MoveId, PersonLook, SpeciesId } from './game
 
 /** game-state.js saveData */
 export interface SaveData {
-  /** the old in-save format number, always 4 (saveVersion is the one that counts) */
-  v: 4;
   /** the save format (game-state.js SAVE_VERSION) */
   saveVersion: number;
   /** the game version that wrote it (PB_VERSION) */

@@ -54,7 +54,6 @@ export function newSave() {
   Object.assign(coins, R.coins);
   Object.assign(items, R.items);
   return {
-    v: 4,
     saveVersion: SAVE_VERSION,
     gameVersion: PB_VERSION,
     avatar: null,
@@ -149,7 +148,6 @@ export function migrate(o) {
   if (!s.visited || typeof s.visited !== 'object') s.visited = {};
   s.visited[s.trip.node] = 1;
   if (s.started && !s.team.length && !s.box.length) return newSave();
-  s.v = 4;
   s.saveVersion = SAVE_VERSION;
   s.gameVersion = PB_VERSION;
   return s;
