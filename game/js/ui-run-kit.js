@@ -173,7 +173,7 @@ const PbDayChip = class extends LitElement {
       }
       :host([tone='over']) {
         --tone: var(--c-danger);
-        --ink: #fff;
+        --ink: var(--c-surface); /* reads on danger in both themes (white fails on the dark side) */
       }
       .chip {
         display: inline-flex;
@@ -316,12 +316,12 @@ const PbNode = class extends LitElement {
       :host([data-tone='primary']) {
         --fill: var(--c-primary);
         --line: color-mix(in srgb, var(--c-primary) 55%, black);
-        --ink: #fff;
+        --ink: var(--c-surface);
       }
       :host([data-tone='danger']) {
         --fill: var(--c-danger);
         --line: color-mix(in srgb, var(--c-danger) 55%, black);
-        --ink: #fff;
+        --ink: var(--c-surface);
       }
       :host([data-tone='gold']) {
         --fill: var(--gold-b);
@@ -746,7 +746,7 @@ const PbPayout = class extends LitElement {
         font-variant-numeric: tabular-nums;
       }
       .v.neg {
-        color: var(--c-danger);
+        color: color-mix(in srgb, var(--c-danger) 70%, var(--c-text)); /* danger alone reads 3.7:1 here */
       }
       .tot {
         display: flex;
@@ -924,19 +924,18 @@ const PbNavBar = class extends LitElement {
         white-space: nowrap;
       }
       button::before {
-        content: '';
+        content: none; /* only the current tab has the gold bar (so nothing reads it behind the others) */
         position: absolute;
         inset: 3px 4px;
         z-index: var(--z-below);
         transform: skewX(calc(var(--slant) * -1));
         background: linear-gradient(180deg, var(--gold-a), var(--gold-b));
-        opacity: 0;
       }
       button[aria-current='page'] {
         color: var(--goldink, #3a2408);
       }
       button[aria-current='page']::before {
-        opacity: 1;
+        content: '';
       }
       .badge {
         position: absolute;
@@ -949,7 +948,7 @@ const PbNavBar = class extends LitElement {
         padding: 0 4px;
         clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
         background: var(--c-danger);
-        color: #fff;
+        color: var(--c-surface);
         font-size: 12px;
       }
       button:focus-visible {
