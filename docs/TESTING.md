@@ -13,6 +13,7 @@ those sessions; until then, follow the rule next to them.
 | (b) unit tests | `npm test` | about 1 s | under 30 s | after every edit to logic, data or tests (the hook) |
 | before a commit | `npm run check:modules`, `npm run format:check`, `npm run check:data`, `npm run build` | about 15 s | none | every commit |
 | UI pictures (UI-2) | `npm run check:ui` | about 1.5 min | none | after a change to the kit, its CSS, uiTheme.json or studio/gallery.html |
+| style diff (UI-5) | `python3 tools/style-diff.py` (`--only=<screens>`, `--ref=<rev>`) | about 8 min (16 screens, 2 browsers) | none | a commit that moves CSS or screen code and must change nothing on screen: 0 differences against HEAD |
 | (c) smoke | `npm run check:smoke` | about 2.5 min | 1-2 min | before every commit that touches game/, tools/check-quick.py, vite.config.js or tools/to-module.mjs |
 | (d) full | `npm run check:quick` | about 32 min | about 10 min | at the end of a phase, nightly in CI |
 | (e) in-game test | `python3 tools/check-quick.py --selftest` | about 25 min | outside the budget | nightly in CI; at the end of a phase that touched what it plays |
