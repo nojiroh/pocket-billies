@@ -215,13 +215,16 @@ function friendWatchError(u, e) {
 /* what friends see of you: written when it changes, at most every 20 s (where you stand, every 60 s) */
 function publishToFriends(now) {
   if (!friends.on || !saveData.started || saveHold) return;
+  /* RL-7: on a run your friends see that, not where: a run's places and scenes are made from its seed and mean
+     nothing in their world (a friend on another run would stand in yours) */
   const t = Date.now(),
-    node = saveData.trip && saveData.trip.node,
-    r = LOCATIONS[node] || {},
-    sid = typeof mapIdAt === 'function' ? mapIdAt(node) : null;
+    onRun = !!saveData.run,
+    node = onRun ? 0 : saveData.trip && saveData.trip.node,
+    r = onRun ? { name: 'a run' } : LOCATIONS[node] || {},
+    sid = !onRun && typeof mapIdAt === 'function' ? mapIdAt(node) : null;
   let x = null,
     z = null;
-  if (uiState.roam && uiState.roam.node === node && uiState.roam.id === sid) {
+  if (!onRun && uiState.roam && uiState.roam.node === node && uiState.roam.id === sid) {
     x = +uiState.roam.x.toFixed(1);
     z = +uiState.roam.z.toFixed(1);
   }
