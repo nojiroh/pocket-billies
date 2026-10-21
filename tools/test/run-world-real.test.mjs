@@ -72,6 +72,14 @@ test("every run's scenes join: exits where the roads say, no gap, a straight wal
       assert.deepEqual(mapgenUnreachable(sc, scenery), [], where);
       assert.equal(sc.locationId, W.locations[i + 1].id, where);
       assert.equal(sc.climate, GAME_DATA.biomes[map.nodes[i].biome].climate, where);
+      /* RL-8: the landing has the airship's mast (where the flight lands you), a town its clinic and shop */
+      const acts = sc.props.map((/** @type {any} */ p) => p.act).filter(Boolean),
+        want = { landing: ['fly'], town: ['clinic', 'shop'] }[map.nodes[i].type] || [];
+      assert.deepEqual(
+        acts.filter((/** @type {string} */ a) => ['fly', 'clinic', 'shop'].includes(a)).sort(),
+        want.slice().sort(),
+        `${where}: the buildings of a ${map.nodes[i].type}`
+      );
       scenes++;
     });
     /* check-data's seam rules on the run's roads, as on the hub's */

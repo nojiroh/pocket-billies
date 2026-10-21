@@ -30,6 +30,9 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
         }
       ]
     },
+    "props": {
+      "mast": 1
+    },
     "kind": "route",
     "biome": "thicket",
     "w": 112,
@@ -67,6 +70,7 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
         }
       ]
     },
+    "props": {},
     "kind": "route",
     "biome": "ridge",
     "w": 112,
@@ -104,6 +108,7 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
         }
       ]
     },
+    "props": {},
     "kind": "route",
     "biome": "autumn",
     "w": 112,
@@ -145,6 +150,10 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
           "width": 2
         }
       ]
+    },
+    "props": {
+      "clinic": 1,
+      "shop": 1
     },
     "kind": "route",
     "biome": "thicket",
@@ -188,6 +197,7 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
         }
       ]
     },
+    "props": {},
     "kind": "route",
     "biome": "thicket",
     "w": 112,
@@ -230,6 +240,7 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
         }
       ]
     },
+    "props": {},
     "kind": "route",
     "biome": "thicket",
     "w": 112,
@@ -267,6 +278,7 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
         }
       ]
     },
+    "props": {},
     "kind": "route",
     "biome": "ridge",
     "w": 112,
@@ -303,6 +315,10 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
           "width": 2
         }
       ]
+    },
+    "props": {
+      "clinic": 1,
+      "shop": 1
     },
     "kind": "route",
     "biome": "thicket",
@@ -345,6 +361,10 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
           "width": 2
         }
       ]
+    },
+    "props": {
+      "clinic": 1,
+      "shop": 1
     },
     "kind": "route",
     "biome": "meadow",
@@ -393,6 +413,7 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
         }
       ]
     },
+    "props": {},
     "kind": "route",
     "biome": "thicket",
     "w": 112,
@@ -430,6 +451,7 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
         }
       ]
     },
+    "props": {},
     "kind": "route",
     "biome": "meadow",
     "w": 112,
@@ -466,6 +488,10 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
           "width": 2
         }
       ]
+    },
+    "props": {
+      "clinic": 1,
+      "shop": 1
     },
     "kind": "route",
     "biome": "meadow",
@@ -504,6 +530,7 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
         }
       ]
     },
+    "props": {},
     "kind": "route",
     "biome": "meadow",
     "w": 112,

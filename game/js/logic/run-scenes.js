@@ -25,6 +25,7 @@ import { runExits, runNodeSeed, runSpot } from './run-map.js';
 import { MAPGEN_SIZES, mapgenEdgeStrip, mapgenScene } from './mapgen.js';
 /* eslint-disable no-func-assign */
 expose({
+  RUN_BUILDINGS: [() => RUN_BUILDINGS],
   RUN_SIDE_ID: [() => RUN_SIDE_ID],
   runMapIdOf: [() => runMapIdOf],
   runPlaceId: [() => runPlaceId],
@@ -110,6 +111,8 @@ export function runSceneParams(run, i, scenes, data) {
     });
   return {
     ...dials,
+    /* RL-8: the buildings a node's type needs, beside the main road near its middle (mapgen's props dials: MG-2) */
+    props: { ...(dials.props || {}), ...(RUN_BUILDINGS[node.type] || {}) },
     kind: 'route',
     biome: node.biome || Object.keys(data.biomes)[0],
     w: size.w,
@@ -119,6 +122,12 @@ export function runSceneParams(run, i, scenes, data) {
     edges,
   };
 }
+/** RL-8: what stands beside the main road of a node of each type: the airship's mast where it lands you, a clinic
+ * (paid healing) and a shop in a town (mapgen.js MAPGEN_HUB_BUILDINGS) */
+export const RUN_BUILDINGS = /** @type {Record<string, Record<string, number>>} */ ({
+  landing: { mast: 1 },
+  town: { clinic: 1, shop: 1 },
+});
 /** a run node's name (a placeholder, the owner's call: its biome and its type, "Meadow Route")
  * @param {RunMap} map @param {number} i @param {RunWorldData} data */
 export function runPlaceName(map, i, data) {
