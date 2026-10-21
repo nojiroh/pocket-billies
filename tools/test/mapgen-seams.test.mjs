@@ -310,3 +310,28 @@ test('joined pairs with terraces on either side meet with no raise and walk stra
     assert.deepEqual(G.mapgenUnreachable(K, C), [], where);
   }
 });
+
+test('a pair laid as one scene (the Studio preview): the game format, and from the draft you walk across to the neighbour', () => {
+  for (const { P, exit, K, kExit, where } of joinedPairs(8, 8, { terraces: true })) {
+    const sc = G.mapgenPairScene(P, exit, K, kExit);
+    assert.equal(sc.tiles.length, sc.h, where);
+    for (const row of sc.tiles) assert.equal(row.length, sc.w, where);
+    assert.equal(sc.heights.length, sc.h + 1, where);
+    for (const row of sc.heights) assert.equal(row.length, sc.w + 1, where);
+    if (sc.steps) assert.equal(Buffer.from(sc.steps, 'base64').length, sc.w * sc.h * 8, where);
+    assert.equal(sc.props.length, P.props.length + K.props.length, where);
+    assert.equal(sc.exits.length, P.edgeExits.length + K.edgeExits.length - 2, where);
+    assert.equal(sc.exits.length, sc.exitNames.length, where);
+    assert.equal(sc.inside.length, 2, where);
+    /* from the draft's hub to every other exit, the neighbour's across the seam included */
+    const reach = G.mapgenReach(sc, C);
+    for (const [k, p] of sc.exits.entries()) assert.ok(G.mapgenReached(reach, ...p), `${where}: ${sc.exitNames[k]}`);
+    /* the neighbour's hub too */
+    const [ox, oz] = sc.pair.of[0];
+    assert.ok(G.mapgenReached(reach, P.hub[0] + ox, P.hub[1] + oz), `${where}: the neighbour's hub`);
+  }
+  assert.equal(
+    G.mapgenPairScene(G.mapgenScene({ seed: 1 }, ctx).scene, 'nowhere', G.mapgenScene({ seed: 2 }, ctx).scene, 'west'),
+    null
+  );
+});

@@ -107,6 +107,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   mapgenPaintStream: [() => mapgenPaintStream, v => (mapgenPaintStream = v)],
   // @ts-expect-error -- replaced on purpose
+  mapgenPairScene: [() => mapgenPairScene, v => (mapgenPairScene = v)],
+  // @ts-expect-error -- replaced on purpose
   mapgenParams: [() => mapgenParams, v => (mapgenParams = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenPinEdges: [() => mapgenPinEdges, v => (mapgenPinEdges = v)],
@@ -571,6 +573,135 @@ export function mapgenStageHeights(G) {
     }
   const mean = sum / ((w + 1) * (h + 1));
   for (let q = 0; q < G.H.length; q++) G.H[q] -= mean;
+}
+
+/* ---------- MG-2: two scenes as one, for the Studio's "Preview the pair" ---------- */
+/**
+ * two scenes joined at A's exit idA and B's exit idB, laid into one scene as the game lays them side by side
+ * (seamlessJoin's offset) with nothing eased and no countryside, so the Studio's preview shows how they really meet.
+ * B is the scene shown (its look, hub, animals and townsfolk spots); the rest of the box is B's edge ground, walled
+ * off (sc.inside: where you may walk). Exits are points only (sc.exits and sc.exitNames), the two that meet left
+ * out. null when an exit is missing.
+ */
+export function mapgenPairScene(A, idA, B, idB) {
+  const xa = mapgenExitOf(A, idA),
+    xb = mapgenExitOf(B, idB);
+  if (!xa || !xb) return null;
+  const off = mapgenJoinOffset(A, xa, B, xb),
+    x0 = Math.min(0, off[0]),
+    z0 = Math.min(0, off[1]),
+    w = Math.max(A.w, off[0] + B.w) - x0,
+    h = Math.max(A.h, off[1] + B.h) - z0,
+    parts = [
+      { S: B, o: [off[0] - x0, off[1] - z0], skip: idB },
+      { S: A, o: [-x0, -z0], skip: idA },
+    ];
+  const cellOf = (i, j) => parts.find(P => i >= P.o[0] && j >= P.o[1] && i < P.o[0] + P.S.w && j < P.o[1] + P.S.h);
+  const tiles = [];
+  for (let j = h - 1; j >= 0; j--) {
+    let row = '';
+    for (let i = 0; i < w; i++) {
+      const P = cellOf(i, j);
+      row += P ? (P.S.tiles[P.S.h - 1 - (j - P.o[1])] || '')[i - P.o[0]] || P.S.edge || 'g' : B.edge || 'g';
+    }
+    tiles.push(row);
+  }
+  /* corners: a part's own (the joined edge agrees, B's taken); outside both, the nearest part's nearest corner */
+  const heights = [];
+  for (let j = h; j >= 0; j--) {
+    const row = [];
+    for (let i = 0; i <= w; i++) {
+      let best = /** @type {any[]} */ ([]),
+        bd = 1e9;
+      for (const P of parts) {
+        const cx = mapgenBetween(i, P.o[0], P.o[0] + P.S.w),
+          cz = mapgenBetween(j, P.o[1], P.o[1] + P.S.h),
+          d = Math.hypot(cx - i, cz - j);
+        if (d < bd) ((bd = d), (best = [P, cx, cz]));
+      }
+      const [P, cx, cz] = best;
+      row.push(mapgenSceneCorner(P.S, cx - P.o[0], cz - P.o[1]));
+    }
+    heights.push(row);
+  }
+  /** @type {any} */
+  const sc = {};
+  for (const [k, v] of Object.entries(B))
+    if (
+      ![
+        'tiles',
+        'heights',
+        'steps',
+        'stepm',
+        'props',
+        'exits',
+        'edgeExits',
+        'hub',
+        'streams',
+        'bridges',
+        'waters',
+        'npcSpots',
+        'gen',
+        'stepsV',
+      ].includes(k)
+    )
+      sc[k] = v;
+  Object.assign(sc, {
+    name: `${B.name || 'draft'} + ${A.name || 'neighbour'}`,
+    w,
+    h,
+    edge: B.edge || 'g',
+    tiles,
+    heights,
+  });
+  if (A.steps || B.steps) {
+    const W2 = w * 2,
+      S = new Int16Array(W2 * h * 2),
+      M = new Uint8Array(W2 * h * 2);
+    for (const P of parts) {
+      if (!P.S.steps) continue;
+      const u = mapgenDecodeBase64(P.S.steps),
+        R = new Int16Array(u.buffer, 0, u.length >> 1),
+        F = P.S.stepm ? mapgenDecodeBase64(P.S.stepm) : null,
+        w2 = P.S.w * 2;
+      for (let j = 0; j < P.S.h * 2; j++)
+        for (let i = 0; i < w2; i++) {
+          const q = (j + P.o[1] * 2) * W2 + i + P.o[0] * 2;
+          S[q] = R[j * w2 + i] || 0;
+          M[q] = F ? F[j * w2 + i] || 0 : 0;
+        }
+    }
+    sc.steps = mapgenEncodeBase64(new Uint8Array(S.buffer));
+    sc.stepm = mapgenEncodeBase64(M);
+  }
+  const tr = (P, x, z) => [mapgenRound2(x + P.o[0]), mapgenRound2(z + P.o[1])];
+  sc.props = [];
+  sc.exits = [];
+  sc.exitNames = [];
+  for (const P of parts) {
+    const S = P.S;
+    for (const q of S.props || []) {
+      const [x, z] = tr(P, q.x, q.z);
+      sc.props.push({ ...q, x, z });
+    }
+    for (const k of ['streams'])
+      if (S[k]) sc[k] = (sc[k] || []).concat(S[k].map(o => ({ ...o, pts: o.pts.map(p => tr(P, p[0], p[1])) })));
+    if (S.bridges)
+      sc.bridges = (sc.bridges || []).concat(S.bridges.map(o => ({ ...o, a: tr(P, ...o.a), b: tr(P, ...o.b) })));
+    if (S.waters) sc.waters = (sc.waters || []).concat(S.waters.map(o => ({ ...o, x: o.x + P.o[0], z: o.z + P.o[1] })));
+    (S.edgeExits || []).forEach((e, k) => {
+      if (e.id === P.skip) return;
+      const p = (S.exits || [])[k] || mapgenExitPoint(S.w, S.h, e);
+      sc.exits.push(tr(P, p[0], p[1]));
+      sc.exitNames.push(`${P.S === B ? '' : (A.name || 'neighbour') + ' '}${e.id}`);
+    });
+  }
+  sc.props.sort((a, b) => b.z - a.z || a.x - b.x);
+  sc.hub = tr(parts[0], ...(B.hub || [B.w / 2, B.h / 2]));
+  sc.npcSpots = (B.npcSpots || []).map(p => tr(parts[0], p[0], p[1]));
+  sc.inside = parts.map(P => [P.o[0], P.o[1], P.o[0] + P.S.w, P.o[1] + P.S.h]);
+  sc.pair = { a: idA, b: idB, off, of: [parts[1].o, parts[0].o] };
+  return sc;
 }
 
 /* ---------- MG-2: the land meets the neighbour along a joined edge ---------- */
