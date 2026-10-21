@@ -2,6 +2,22 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Roguelite track RL-3 - State separation - 2026-10-21 (entry written in RL-4)
+The RL-3 session (PR #85, branch `ccr-c4c4609f-eqjopt`) updated CHANGELOG, ROADMAP, TESTING, SECURITY and
+roguelite-track.md section 0 but left no entry here; this one is put together from its commits and those docs.
+- Changed (one cause per commit): the unused save field `v` dropped; `logic/meta-state.js`, `logic/ranch-state.js`,
+  `logic/run-state.js` (`newRun`, `validRun`, `runBegin`, `runEnd`, `runRestore`, `payoutOf`, `runNodeCount`) with
+  types and tests, loaded by the game page and not used yet; `rules.json run.payout` (placeholders, 8.18) with a
+  check-data rule; `validSave`'s Billie checks moved into `billiesOk` (no-op); SAVE_VERSION 4 (`meta`, `run` null in
+  the hub, `ranch`; `migrate` keeps a run's trip, plan and visited places bounded by the run's map); the set-aside slot
+  keeps the latest unloadable save (it kept the first); the new-game notice says where to download a set-aside save.
+- Decisions by the owner: every format 3 save is set aside (8.12).
+- Risky: every save on the phone and account is set aside on first load of this version (intended). The account's
+  older save goes to `-cloud-set-aside`, which nothing reads (one slot, two saves: owner's call).
+- Verified: not written down by RL-3. RL-4 ran the fast tier on its merge commit dcde38b: lint, typecheck,
+  check:modules, format:check, check:data and 331 unit tests, all green.
+- Next: RL-4 (battle state injected) or RL-5 (legacy parking).
+
 ### Roguelite track RL-2 - Golden record and RNG module - 2026-10-21
 Branch `ccr-a09a396b-vfdptc`, started from main c66bf2b (RL-1 merged; `rl-1-done` not yet on the remote).
 - Changed (one cause per commit): `tools/test/battle-golden.test.mjs` + snapshot first (single wild, double trainer,
