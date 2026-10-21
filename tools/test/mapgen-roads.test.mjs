@@ -158,3 +158,17 @@ test('junctions, bends and the hub round are one ramp: walkable, no riser on any
     assert.deepEqual(G.mapgenUnreachable(sc, C), [], where);
   }
 });
+
+test('the road report measures a road as it is walked', () => {
+  const flat = G.mapgenScene({ seed: 4, land: { hills: 0, terraces: 0 }, road: { shape: 'straight' } }, ctx).scene;
+  assert.deepEqual((({ jump, grade, side, stairs }) => ({ jump, grade, side, stairs }))(G.mapgenRoadReport(flat)), {
+    jump: 0,
+    grade: 0,
+    side: 0,
+    stairs: 0,
+  });
+  /* the same land tilted 10% eastward: a west-east road climbs 0.1 m a metre */
+  const tilted = { ...flat, heights: flat.heights.map(r => r.map((_, i) => i * 0.1)) };
+  const r = G.mapgenRoadReport(tilted);
+  assert.ok(Math.abs(r.jump - 0.1) < 0.011 && r.grade <= 0.105 && r.grade > 0.08, JSON.stringify(r));
+});

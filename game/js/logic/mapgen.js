@@ -16,6 +16,7 @@
 /** @import { Biome } from '../../types/game-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { stepCornerHeight } from '../hooks.js';
 import { hashString, rngFrom } from './rng.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -139,6 +140,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   mapgenRoadProfiles: [() => mapgenRoadProfiles, v => (mapgenRoadProfiles = v)],
   // @ts-expect-error -- replaced on purpose
+  mapgenRoadReport: [() => mapgenRoadReport, v => (mapgenRoadReport = v)],
+  // @ts-expect-error -- replaced on purpose
   mapgenRoadSurface: [() => mapgenRoadSurface, v => (mapgenRoadSurface = v)],
   mapgenRound2: [() => mapgenRound2],
   // @ts-expect-error -- replaced on purpose
@@ -179,6 +182,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   mapgenStageWater: [() => mapgenStageWater, v => (mapgenStageWater = v)],
   // @ts-expect-error -- replaced on purpose
+  mapgenStepGridOf: [() => mapgenStepGridOf, v => (mapgenStepGridOf = v)],
+  // @ts-expect-error -- replaced on purpose
   mapgenStreamLine: [() => mapgenStreamLine, v => (mapgenStreamLine = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenTerraceCount: [() => mapgenTerraceCount, v => (mapgenTerraceCount = v)],
@@ -190,6 +195,8 @@ expose({
   mapgenUnreachable: [() => mapgenUnreachable, v => (mapgenUnreachable = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenWalkGrid: [() => mapgenWalkGrid, v => (mapgenWalkGrid = v)],
+  // @ts-expect-error -- replaced on purpose
+  mapgenWalkHeight: [() => mapgenWalkHeight, v => (mapgenWalkHeight = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -2617,4 +2624,79 @@ export function mapgenSeamAgreement(A, idA, B, idB, scenery) {
     raiseBand: mapgenRound2(raiseBand),
     walk,
   };
+}
+
+/* ---------- TR-1: how a scene's roads climb ---------- */
+/** a scene's step grid as the game builds it (walk-view.js stepGrid), or null with no steps */
+export function mapgenStepGridOf(sc) {
+  if (!sc.steps) return null;
+  const u = mapgenDecodeBase64(sc.steps),
+    S = new Int16Array(u.buffer, 0, u.length >> 1),
+    M = sc.stepm ? mapgenDecodeBase64(sc.stepm) : new Uint8Array(S.length);
+  return { w: sc.w * 2, h: sc.h * 2, H: Float32Array.from(S, v => v / 20), M, s: 1, m0: 1 };
+}
+/** the ground you walk on at (x, z): the land between its corners and the step raise as the game draws it (a ramp
+ * cell leaning between its neighbours, walk-view.js stepRaiseAt without the natural edges' shaping) */
+export function mapgenWalkHeight(sc, E, x, z) {
+  const g = mapgenSceneGround(sc, x, z);
+  if (!E) return g;
+  const i = mapgenBetween(Math.floor(x * 2), 0, E.w - 1),
+    j = mapgenBetween(Math.floor(z * 2), 0, E.h - 1),
+    q = j * E.w + i,
+    fx = mapgenBetween(x * 2 - i, 0, 1),
+    fz = mapgenBetween(z * 2 - j, 0, 1),
+    c = (a, b) => stepCornerHeight(E, q, a, b);
+  return g + (c(0, 0) * (1 - fx) + c(1, 0) * fx) * (1 - fz) + (c(0, 1) * (1 - fx) + c(1, 1) * fx) * fz;
+}
+/**
+ * TR-1: how the roads of a scene climb, measured along every walk from the hub to an exit (sc.edgeExits' paths)
+ * every half metre: jump, the most the ground changes over a metre; grade, the steepest climb over 2 m; side, the
+ * tallest wall beside a road (a walkable ramp cell against a neighbour that is not one, out of water); stairs, the
+ * stair cells (wall material 8). Each with where it is.
+ * @returns {{ jump: number, grade: number, side: number, stairs: number, at: { jump: number[], grade: number[], side: number[] } }}
+ */
+export function mapgenRoadReport(sc) {
+  const E = mapgenStepGridOf(sc),
+    out = { jump: 0, grade: 0, side: 0, stairs: 0, at: { jump: [0, 0], grade: [0, 0], side: [0, 0] } },
+    worst = (k, v, x, z) => {
+      if (v > out[k]) {
+        out[k] = v;
+        out.at[k] = [mapgenRound2(x), mapgenRound2(z)];
+      }
+    };
+  for (const e of sc.edgeExits || []) {
+    const pts = [];
+    for (let k = 1; k < e.path.length; k++) {
+      const [a, b] = [e.path[k - 1], e.path[k]],
+        L = Math.hypot(b[0] - a[0], b[1] - a[1]);
+      for (let t = 0; t < L; t += 0.5) pts.push([a[0] + ((b[0] - a[0]) * t) / L, a[1] + ((b[1] - a[1]) * t) / L]);
+    }
+    const y = pts.map(p => mapgenWalkHeight(sc, E, p[0], p[1]));
+    for (let k = 2; k < pts.length; k++) worst('jump', Math.abs(y[k] - y[k - 2]), pts[k - 1][0], pts[k - 1][1]);
+    for (let k = 4; k < pts.length; k++) worst('grade', Math.abs(y[k] - y[k - 4]) / 2, pts[k - 2][0], pts[k - 2][1]);
+  }
+  if (E) {
+    const wet = (i, j) => MAPGEN_WET.includes((sc.tiles[sc.h - 1 - (j >> 1)] || '')[i >> 1]);
+    for (let q = 0; q < E.H.length; q++) {
+      if ((E.M[q] & 15) === 8) out.stairs++;
+      if (!(E.M[q] & 32)) continue;
+      const i = q % E.w,
+        j = (q - i) / E.w;
+      for (const [di, dj] of [
+        [1, 0],
+        [-1, 0],
+        [0, 1],
+        [0, -1],
+      ]) {
+        const ii = i + di,
+          jj = j + dj;
+        if (ii < 0 || jj < 0 || ii >= E.w || jj >= E.h || E.M[jj * E.w + ii] & 32 || wet(ii, jj)) continue;
+        worst('side', Math.abs(E.H[jj * E.w + ii] - E.H[q]), (i + 0.5) / 2, (j + 0.5) / 2);
+      }
+    }
+  }
+  out.jump = mapgenRound2(out.jump);
+  out.grade = mapgenRound2(out.grade);
+  out.side = mapgenRound2(out.side);
+  return out;
 }

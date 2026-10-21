@@ -8,16 +8,18 @@
    (ground-paint-worker.js paintWorkerSource): they read nothing but their arguments. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { provide } from '../hooks.js';
 /* eslint-disable no-func-assign */
 expose({
   // @ts-expect-error -- replaced on purpose
   stepCellsJoined: [() => stepCellsJoined, v => (stepCellsJoined = v)],
   // @ts-expect-error -- replaced on purpose
-  stepCornerHeight: [() => stepCornerHeight, v => (stepCornerHeight = v)],
+  stepCornerHeight: [() => stepCornerHeight, v => ((stepCornerHeight = v), provide({ stepCornerHeight }))],
   // @ts-expect-error -- replaced on purpose
   stepGridCorners: [() => stepGridCorners, v => (stepGridCorners = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ stepCornerHeight });
 /* to-module: end */
 /* two neighbouring cells meet without a step when their corners on the shared edge agree (a slope) */
 export function stepCellsJoined(E, i, j, di, dj) {
