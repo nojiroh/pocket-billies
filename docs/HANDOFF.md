@@ -22,7 +22,12 @@ the shapes below, the placeholder currency names as attributes).
   fail with the boss drawn anticlockwise; picture tests 89 pass, and fail with the boss's top point moved; in the
   gallery, with motion on, the payout's rows come in one at a time and the total counts to 1,180, a currency chip
   counts, the face-down card flips, the bar sends pb-change; with reduced motion everything is at its end at once; no
-  page errors. Not run (owner: skip checks): smoke on this branch, the full quick check, a phone look.
+  page errors. With UI-3b (#96) merged in: 425 unit tests, the Studio check's ui, ui_tools and ui_screens steps
+  pass (one run stalled on the container's real-click issue, the next passed whole); UI-3b's overlay rules found
+  four faint texts in the run parts (white on the dark side's light red, the payout's red, the bar's labels read over
+  its hidden highlight), fixed: none left. The gallery's sticky bar lay over tall sections in the pictures and made
+  payout's flaky; in the pictures it now stays at the top (11 pictures remade, the whole set stable over two runs).
+  Not run (owner: skip checks): smoke on this branch, the full quick check, a phone look.
 - Risky: nothing in the game uses the parts yet, so the page cost is one more module. The four remade light pictures
   (panels, cards) moved because the page grew, proven by taking the sections out. #80's smoke step "the world map
   opens as the bowl" failed in 2 of 5 CI runs on the same commits (a page element over the map at the tap points),

@@ -86,8 +86,8 @@ data; the currency names are the plan's placeholders. The page's modules share o
 their own module (game/js/ui-run-kit.js) and take Lit and `reduced` from ui-kit.js. The shapes the plan didn't give
 were chosen: a notched diamond for a mini-boss, a cut square for the landing, the shop slanted the other way from an
 event, a small diamond for "?"; the event's slant is about 11°, as the plan's 10° reads too faint at pin size. The
-gallery's pictures have the gallery's sticky bar over the top of tall sections (73 older pictures too); and a longer
-gallery moves what the light glass blurs, so panels and cards in light were remade with the new sections.
+gallery's sticky bar lay over the top of tall sections in the pictures (older ones too): in picture mode it now stays
+at the top. A longer gallery moves what the light glass blurs, so panels and cards in light were remade.
 
 No rule yet but needed: a layer scale (24 distinct z-index values, -1 to 2147483000) and cut-corner tokens. The Studio
 is outside the 06 rules (studio.css: 108 raw radii, 372 raw spacing values, its own teal palette). The bottom bar's

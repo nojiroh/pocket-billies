@@ -44,6 +44,8 @@
     clip-path: polygon(30% 4%, 70% 4%, 80% 22%, 80% 40%, 70% 52%, 86% 70%, 86% 100%, 14% 100%, 14% 70%, 30% 52%, 20% 40%, 20% 22%); }
   .g-local { position: relative !important; inset: auto !important; transform: none !important; left: auto !important; bottom: auto !important; }
   .g-shots .g-sec { padding-bottom: var(--s4); }
+  /* UI-4: in the pictures the bar stays at the top of the page, so it never lies over a section or shades it */
+  .g-shots .g-bar { position: static; }
   .g-list { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
   .g-list li { padding: var(--s2) var(--s3); font: 600 15px/1.2 var(--font-voice); }
   .g-dark { padding: var(--s4); border-radius: var(--r-lg); background: #241c3a; }
