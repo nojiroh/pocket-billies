@@ -2,7 +2,7 @@
  "name": "Leader Marina",
  "who": "marina",
  "battleStage": "beach",
- "node": 14,
+ "miniboss": true,
  "blocks": false,
  "team": [
   {"sp":"ellison1","lvl":29},

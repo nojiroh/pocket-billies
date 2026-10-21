@@ -2,7 +2,7 @@
  "name": "Leader Iris",
  "who": "markdown",
  "battleStage": "mall",
- "node": 8,
+ "miniboss": true,
  "blocks": false,
  "team": [
   {"sp":"walton1","lvl":19},

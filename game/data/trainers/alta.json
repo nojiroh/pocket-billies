@@ -2,7 +2,7 @@
  "name": "Leader Alta",
  "who": "alta",
  "battleStage": "snow",
- "node": 17,
+ "miniboss": true,
  "blocks": false,
  "team": [
   {"sp":"knight1","lvl":36},
