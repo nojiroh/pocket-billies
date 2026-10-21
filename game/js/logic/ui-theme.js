@@ -1,7 +1,8 @@
 // @ts-check
 'use strict';
 /* ================= UI THEME (UI-1) =================
-   game/data/uiTheme.json as one style sheet: the colour roles, the glass, the cut sizes and the fonts. The page writes
+   game/data/uiTheme.json as one style sheet: the colour roles, the glass, the cut sizes and the fonts (UI-3 adds the
+   depths, the drop shadows, the spacing scale, the text sizes and the motion; their defaults are tokens.css's). The page writes
    it into <style id="ui-theme"> after every stylesheet (theme-sheet.js), with the same three selectors the CSS uses
    (light on :root, dark from the system unless Settings says light, dark from Settings), so Settings' theme switch
    keeps working. Each role also sets the older variable names the screens still read (--text, --bg, --panel-s,
@@ -18,6 +19,7 @@ expose({
   UI_ROLES: [() => UI_ROLES],
   UI_SHAPE_DEFAULTS: [() => UI_SHAPE_DEFAULTS],
   UI_SHAPE_FAMILIES: [() => UI_SHAPE_FAMILIES],
+  UI_TYPE_SIZES: [() => UI_TYPE_SIZES],
   coord: [() => coord],
   // @ts-expect-error -- replaced on purpose
   cornerTL: [() => cornerTL, v => (cornerTL = v)],
@@ -113,29 +115,30 @@ export function modeVars(pal, look, mode) {
   const s = (look.surface || {})[mode] || {},
     tint = s.shadowTint === 'text' ? pal.text : s.shadowTint;
   if (pal.surface && s.glass != null) out.push(`--g-bg: ${withAlpha(pal.surface.slice(0, 7), s.glass)};`);
-  if (mode === 'light') {
-    if (s.highlight != null) out.push(`--g-in: inset 0 1px 0 rgba(255, 255, 255, ${s.highlight});`);
-    if (s.edgeHi != null) out.push(`--edge-hi: rgba(255, 255, 255, ${s.edgeHi});`);
+  if (s.highlight != null) out.push(`--g-in: inset 0 1px 0 rgba(255, 255, 255, ${s.highlight});`);
+  if (s.edgeHi != null) out.push(`--edge-hi: rgba(255, 255, 255, ${s.edgeHi});`);
+  if (tint && /^#/.test(tint)) {
+    const t = (/** @type {number} */ a) => withAlpha(tint.slice(0, 7), a);
     // UI-2: the shadow colour the angular parts' drop shadows read, and the edge line's dark side
-    if (tint && /^#/.test(tint))
-      out.push(
-        `--c-shadow: ${cssColour(tint.slice(0, 7))};`,
-        `--edge-lo: ${withAlpha(tint.slice(0, 7), s.edgeLo ?? 0.3)};`
-      );
-    if (tint && /^#/.test(tint)) {
-      const t = (/** @type {number} */ a) => withAlpha(tint.slice(0, 7), a);
-      out.push(
-        `--g-sh: 0 10px 28px -10px ${t(0.42)}, 0 2px 6px ${t(0.14)};`,
-        `--g-sh2: 0 16px 34px -10px ${t(0.5)}, 0 3px 8px ${t(0.16)};`
-      );
-    }
-  } else if (tint && /^#/.test(tint)) {
     out.push(`--c-shadow: ${cssColour(tint.slice(0, 7))};`);
-    if (s.edgeHi != null) out.push(`--edge-hi: rgba(255, 255, 255, ${s.edgeHi});`);
-    out.push(`--edge-lo: ${withAlpha(tint.slice(0, 7), s.edgeLo ?? 0.55)};`);
+    if (s.edgeLo != null) out.push(`--edge-lo: ${t(s.edgeLo)};`);
+    // UI-3: the glass panels' raised and floating box shadows, per side (the depth group)
+    const d = (look.depth || {})[mode] || {};
+    if (d.raisedY != null)
+      out.push(`--g-sh: 0 ${d.raisedY}px ${d.raisedBlur}px -10px ${t(d.raisedAlpha)}, 0 2px 6px ${t(d.raisedNear)};`);
+    if (d.floatY != null)
+      out.push(`--g-sh2: 0 ${d.floatY}px ${d.floatBlur}px -10px ${t(d.floatAlpha)}, 0 3px 8px ${t(d.floatNear)};`);
   }
   return out;
 }
+
+/** the text sizes as tokens.css has them: clamp(min px, rem + vw, max px) */
+export const UI_TYPE_SIZES = {
+  caption: [12, 0.7, 0.3, 13],
+  body: [15, 0.85, 0.3, 16],
+  title: [20, 1, 1.2, 24],
+  screen: [28, 1.4, 1.6, 34],
+};
 
 /** what doesn't change between light and dark @param {any} look */
 export function sharedVars(look) {
@@ -149,8 +152,43 @@ export function sharedVars(look) {
   if (sh.cutLg != null) out.push(`--cut-lg: ${sh.cutLg}px;`);
   if (sh.slant != null) out.push(`--slant: ${sh.slant}deg;`);
   if (look.shape) out.push(...shapeDecls(sh));
+  // UI-3: the angular parts' drop shadows, in each side's shadow colour
+  const dr = look.drop || {},
+    mix = (/** @type {number} */ a) => `color-mix(in srgb, var(--c-shadow) ${roundTo2(a * 100)}%, transparent)`;
+  if (dr.raisedY != null)
+    out.push(
+      `--drop-raised: drop-shadow(0 ${dr.raisedY}px ${dr.raisedBlur}px ${mix(dr.raisedAlpha)}) drop-shadow(0 1px 2px ${mix(dr.raisedNear)});`
+    );
+  if (dr.floatY != null)
+    out.push(
+      `--drop-float: drop-shadow(0 ${dr.floatY}px ${dr.floatBlur}px ${mix(dr.floatAlpha)}) drop-shadow(0 2px 4px ${mix(dr.floatNear)});`
+    );
+  // UI-3: the spacing scale
+  for (const [k, v] of Object.entries(look.space || {})) if (typeof v === 'number') out.push(`--${k}: ${v}px;`);
   if (ty.voice) out.push(`--font-voice: '${ty.voice}', ui-monospace, monospace;`);
   if (ty.prose) out.push(`--font-prose: '${ty.prose}', ui-sans-serif, system-ui, sans-serif;`);
+  // UI-3: the text sizes times the scale, long text's line height
+  if (ty.scale != null)
+    for (const [k, [lo, rem, vw, hi]] of Object.entries(UI_TYPE_SIZES)) {
+      const x = (/** @type {number} */ n) => roundTo2(n * ty.scale);
+      out.push(`--fs-${k}: clamp(${x(lo)}px, ${x(rem)}rem + ${x(vw)}vw, ${x(hi)}px);`);
+    }
+  if (ty.lineHeight != null) out.push(`--lh-prose: ${ty.lineHeight};`);
+  // UI-3: the three speeds, the stagger and the eases
+  const mo = look.motion || {};
+  for (const [k, v] of /** @type {const} */ ([
+    ['fast', '--m-fast'],
+    ['base', '--m-base'],
+    ['slow', '--m-slow'],
+    ['stagger', '--stagger'],
+  ]))
+    if (typeof mo[k] === 'number') out.push(`${v}: ${mo[k]}ms;`);
+  for (const [k, v] of /** @type {const} */ ([
+    ['easeOut', '--ease-out'],
+    ['easeIn', '--ease-in'],
+    ['spring', '--spring'],
+  ]))
+    if (Array.isArray(mo[k]) && mo[k].length === 4) out.push(`${v}: cubic-bezier(${mo[k].join(', ')});`);
   return out;
 }
 

@@ -98,6 +98,63 @@ test("UI-3: a family's cut size and corners are data", () => {
   assert.equal(css['--clip-tab'], 'polygon(0 0, 100% 0, 100% 100%, 0 100%)');
 });
 
+test('UI-3: space, text sizes, motion, depth and drop shadows are written from the data', () => {
+  const css = uiThemeCss(THEME),
+    light = blockOf(css, ':root'),
+    dark = blockOf(css, ":root[data-theme='dark']");
+  assert.equal(light['--s5'], '24px');
+  assert.equal(light['--fs-title'], 'clamp(20px, 1rem + 1.2vw, 24px)', 'the same text as tokens.css at scale 1');
+  assert.equal(light['--m-base'], '240ms');
+  assert.equal(light['--spring'], 'cubic-bezier(0.3, 1.6, 0.5, 1)');
+  assert.equal(
+    light['--g-sh'],
+    'rgba(34, 48, 31, 0.42)'.replace(/^/, '0 10px 28px -10px ') + ', 0 2px 6px rgba(34, 48, 31, 0.14)'
+  );
+  assert.equal(
+    dark['--g-sh2'],
+    '0 18px 38px -10px rgba(0, 0, 0, 0.75), 0 3px 8px rgba(0, 0, 0, 0.4)',
+    "v05.css's dark"
+  );
+  assert.equal(dark['--g-in'], 'inset 0 1px 0 rgba(255, 255, 255, 0.12)');
+  assert.match(
+    light['--drop-raised'],
+    /^drop-shadow\(0 6px 7px color-mix\(in srgb, var\(--c-shadow\) 24%, transparent\)\)/
+  );
+  const big = blockOf(
+    uiThemeCss({ ...THEME, defaults: mergeLook(THEME.defaults, { type: { scale: 1.2 }, motion: { fast: 0 } }) }),
+    ':root'
+  );
+  assert.equal(big['--fs-caption'], 'clamp(14.4px, 0.84rem + 0.36vw, 15.6px)');
+  assert.equal(big['--m-fast'], '0ms');
+});
+
+test("tokens.css's scales are the data's defaults (a page without uiTheme.json looks the same)", () => {
+  const tok = readFileSync(join(import.meta.dirname, '../../game/css/tokens.css'), 'utf8');
+  const root = blockOf(tok.replace(/\/\*[\s\S]*?\*\//g, ''), ':root');
+  const light = blockOf(uiThemeCss(THEME), ':root');
+  for (const k of [
+    '--s1',
+    '--s4',
+    '--s7',
+    '--gutter',
+    '--fs-caption',
+    '--fs-body',
+    '--fs-title',
+    '--fs-screen',
+    '--lh-prose',
+    '--m-fast',
+    '--m-base',
+    '--m-slow',
+    '--stagger',
+    '--ease-out',
+    '--ease-in',
+  ])
+    assert.equal(light[k], root[k], k);
+  const norm = (/** @type {string} */ v) => v.replace(/\s+/g, ' ');
+  assert.equal(norm(light['--drop-raised']), norm(root['--drop-raised']));
+  assert.equal(norm(light['--drop-float']), norm(root['--drop-float']));
+});
+
 test('fonts: the voice font is scaled and never fake-bolded; @font-face only with a fonts folder', () => {
   const css = uiThemeCss(THEME, { fonts: 'https://x/game/fonts/' });
   assert.match(
