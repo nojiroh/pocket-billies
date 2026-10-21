@@ -673,45 +673,49 @@ export function inherit(k) {
   if (any) sd.inh = st;
 }
 /* who on a side could still come in: alive, not at work, not on the field and not already called in this turn */
-export function benchCandidates(si, also = []) {
-  const sd = battleNow().sides[si],
-    on = sd.f.filter(f => f.on).map(f => f.act);
-  return sd.team
-    .map((m, i) => i)
-    .filter(i => {
-      const m = sd.team[i];
-      return m.hp > 0 && !on.includes(i) && !also.includes(i);
-    });
+export function benchCandidates(si, also = [], b) {
+  return withBattle(b, () => {
+    const sd = battleNow().sides[si],
+      on = sd.f.filter(f => f.on).map(f => f.act);
+    return sd.team
+      .map((m, i) => i)
+      .filter(i => {
+        const m = sd.team[i];
+        return m.hp > 0 && !on.includes(i) && !also.includes(i);
+      });
+  });
 }
-export function doSwitch(k, idx) {
-  const sd = battleNow().sides[ACTOR_SIDE[k]],
-    f = fieldSlot(k);
-  f.act = idx;
-  f.on = true;
-  f.down = false;
-  const inh = sd.inh;
-  f.v = newFieldState();
-  sd.inh = null;
-  const m = fighter(k);
-  battleSay(
-    ACTOR_SIDE[k] === 0
-      ? `Go, ${billyName(m)}!`
-      : `${battleNow().foeName || 'The wild side'} sent out ${billyName(m)}.`,
-    {
-      k: 'enter',
-      si: k,
+export function doSwitch(k, idx, b) {
+  return withBattle(b, () => {
+    const sd = battleNow().sides[ACTOR_SIDE[k]],
+      f = fieldSlot(k);
+    f.act = idx;
+    f.on = true;
+    f.down = false;
+    const inh = sd.inh;
+    f.v = newFieldState();
+    sd.inh = null;
+    const m = fighter(k);
+    battleSay(
+      ACTOR_SIDE[k] === 0
+        ? `Go, ${billyName(m)}!`
+        : `${battleNow().foeName || 'The wild side'} sent out ${billyName(m)}.`,
+      {
+        k: 'enter',
+        si: k,
+      }
+    );
+    if (!isRobot(m)) saveData.seen[m.sp] = 1;
+    if (sd.rent && !hasPassive(speciesOf(m).types, 'landlord')) {
+      const d = Math.max(1, Math.floor(maxHp(m) / Math.max(2, BATTLE_RULES.rentFraction)));
+      m.hp = Math.max(0, m.hp - d);
+      battleSay(`${billyName(m)} was hurt by the sharp stones.`, { k: 'hurt', si: k, fx: 'rent', dmg: d });
     }
-  );
-  if (!isRobot(m)) saveData.seen[m.sp] = 1;
-  if (sd.rent && !hasPassive(speciesOf(m).types, 'landlord')) {
-    const d = Math.max(1, Math.floor(maxHp(m) / Math.max(2, BATTLE_RULES.rentFraction)));
-    m.hp = Math.max(0, m.hp - d);
-    battleSay(`${billyName(m)} was hurt by the sharp stones.`, { k: 'hurt', si: k, fx: 'rent', dmg: d });
-  }
-  if (inh) {
-    Object.assign(f.v.st, inh);
-    battleSay(`${billyName(m)} took up its teammate’s boosts.`, { k: 'stat', si: k, up: true });
-  }
+    if (inh) {
+      Object.assign(f.v.st, inh);
+      battleSay(`${billyName(m)} took up its teammate’s boosts.`, { k: 'stat', si: k, up: true });
+    }
+  });
 }
 export function checkFaints() {
   let any = false;
@@ -810,43 +814,45 @@ export function aiScore(k, id, tk) {
   else s = 0;
   return s + 5;
 }
-export function chooseAI(k = 1) {
-  const m = fighter(k);
-  if (!m || m.hp <= 0) return null;
-  const T = liveActors(foeSide(k));
-  if (!T.length) return null;
-  const opts = [];
-  for (const id of m.moves.filter(id => MOVES[id] && moveUsable(m, id)))
-    for (const tk of T) opts.push([{ mid: id, tk, part: aiAimPart(id, tk) }, aiScore(k, id, tk)]);
-  if (!opts.length) return null;
-  /* v34: in a double the second foe knows what its partner is about to do: no piling onto a fighter that's already
+export function chooseAI(k = 1, b) {
+  return withBattle(b, () => {
+    const m = fighter(k);
+    if (!m || m.hp <= 0) return null;
+    const T = liveActors(foeSide(k));
+    if (!T.length) return null;
+    const opts = [];
+    for (const id of m.moves.filter(id => MOVES[id] && moveUsable(m, id)))
+      for (const tk of T) opts.push([{ mid: id, tk, part: aiAimPart(id, tk) }, aiScore(k, id, tk)]);
+    if (!opts.length) return null;
+    /* v34: in a double the second foe knows what its partner is about to do: no piling onto a fighter that's already
     going down, a spread move is worth more while both of yours stand, and a status move isn't doubled up */
-  const PL = battleNow().aiPlan || (battleNow().aiPlan = {});
-  if (battleNow().fmt === 'double') {
-    for (const o of opts) {
-      const c = o[0],
-        M = MOVES[c.mid],
-        t = fighter(c.tk),
-        pre = PL[c.tk] || 0;
-      if (!t) continue;
-      if (M.c !== 'X' && pre >= t.hp) o[1] *= 0.3;
-      else if (M.c !== 'X' && pre + aiDamage(k, c.mid, c.tk) >= t.hp) o[1] *= 1.35;
-      if (M.c === 'X' && (M.fx || {}).status && PL['st' + c.tk]) o[1] *= 0.2;
+    const PL = battleNow().aiPlan || (battleNow().aiPlan = {});
+    if (battleNow().fmt === 'double') {
+      for (const o of opts) {
+        const c = o[0],
+          M = MOVES[c.mid],
+          t = fighter(c.tk),
+          pre = PL[c.tk] || 0;
+        if (!t) continue;
+        if (M.c !== 'X' && pre >= t.hp) o[1] *= 0.3;
+        else if (M.c !== 'X' && pre + aiDamage(k, c.mid, c.tk) >= t.hp) o[1] *= 1.35;
+        if (M.c === 'X' && (M.fx || {}).status && PL['st' + c.tk]) o[1] *= 0.2;
+      }
     }
-  }
-  let pick;
-  if ((battleNow().kind === 'trainer' || m.boss) && random() < BATTLE_RULES.aiSmart) {
-    opts.sort((a, b) => b[1] - a[1]);
-    pick = opts[0][0];
-  } else pick = pickWeighted(opts);
-  if (pick) {
-    const M = MOVES[pick.mid];
-    if (M.c !== 'X') {
-      const tg = (M.fx || {}).spread ? liveActors(foeSide(k)) : [pick.tk];
-      for (const t of tg) PL[t] = (PL[t] || 0) + aiDamage(k, pick.mid, t);
-    } else if ((M.fx || {}).status) PL['st' + pick.tk] = 1;
-  }
-  return pick;
+    let pick;
+    if ((battleNow().kind === 'trainer' || m.boss) && random() < BATTLE_RULES.aiSmart) {
+      opts.sort((a, b) => b[1] - a[1]);
+      pick = opts[0][0];
+    } else pick = pickWeighted(opts);
+    if (pick) {
+      const M = MOVES[pick.mid];
+      if (M.c !== 'X') {
+        const tg = (M.fx || {}).spread ? liveActors(foeSide(k)) : [pick.tk];
+        for (const t of tg) PL[t] = (PL[t] || 0) + aiDamage(k, pick.mid, t);
+      } else if ((M.fx || {}).status) PL['st' + pick.tk] = 1;
+    }
+    return pick;
+  });
 }
 /* phase 17: which robot part the computer aims an aimed move at: the weakest limb still standing, so it breaks */
 export function aiAimPart(mid, tk) {
@@ -955,109 +961,117 @@ export function battleStageKey() {
 }
 /* one turn. plan: what each of your fighters does ({who,k:'move',mid,tk} | {who,k:'switch',i} | {who,k:'item',item,uid})
    or a single {k:'run'}. An older single action ({k:'move',mid}) is your first fighter's. */
-export function runTurn(plan) {
-  battleNow().events = [];
-  battleNow().ev = 0;
-  battleNow().needSwitch = [];
-  battleNow().turn++;
-  battleNow().aiPlan = {};
-  if (!Array.isArray(plan)) plan = [Object.assign({ who: 0 }, plan)];
-  if (plan.some(p => p.k === 'run')) {
-    battleSay('You got away safely.', { k: 'run' });
-    battleNow().over = 'ran';
-    return playTurnEvents();
-  }
-  for (const p of plan.filter(p => p.k === 'switch')) {
-    const out = fighter(p.who);
-    if (!out) continue;
-    const free = hasPassive(actorTypes(p.who), 'pivot') && !battleNow().sides[0].pivot;
-    if (free) battleNow().sides[0].pivot = true;
-    battleSay(free ? `${billyName(out)} darted out without losing the turn.` : `${billyName(out)}, come back.`, {
-      k: 'recall',
-      si: p.who,
-    });
-    doSwitch(p.who, p.i);
-    p.free = free;
-  }
-  checkFaints();
-  if (battleNow().over) return playTurnEvents();
-  if (plan.length === 1 && plan[0].k === 'switch' && plan[0].free) return playTurnEvents();
-  for (const p of plan.filter(p => p.k === 'item')) applyItem(p.item, p.uid, true);
-  const acts = [];
-  for (const p of plan.filter(p => p.k === 'move')) acts.push({ who: p.who, mid: p.mid, tk: p.tk, part: p.part });
-  for (const k of liveActors(1)) {
-    const n = fighter(k).boss ? (BATTLE_RULES.alphaActs ?? 2) : 1;
-    for (let i = 0; i < n; i++) {
-      const c = chooseAI(k);
-      if (c) acts.push({ who: k, mid: c.mid, tk: c.tk, part: c.part, boss2: i > 0 });
+export function runTurn(plan, b) {
+  return withBattle(b, () => {
+    battleNow().events = [];
+    battleNow().ev = 0;
+    battleNow().needSwitch = [];
+    battleNow().turn++;
+    battleNow().aiPlan = {};
+    if (!Array.isArray(plan)) plan = [Object.assign({ who: 0 }, plan)];
+    if (plan.some(p => p.k === 'run')) {
+      battleSay('You got away safely.', { k: 'run' });
+      battleNow().over = 'ran';
+      return playTurnEvents();
     }
-  }
-  acts.forEach(a => (a.r = random()));
-  acts.sort(
-    (a, b) =>
-      (MOVES[b.mid].pr || 0) - (MOVES[a.mid].pr || 0) ||
-      (a.boss2 ? 1 : 0) - (b.boss2 ? 1 : 0) ||
-      effectiveStat(b.who, 'hus') - effectiveStat(a.who, 'hus') ||
-      a.r - b.r
-  );
-  for (const a of acts) {
-    if (battleNow().over) break;
-    const u = fighter(a.who);
-    if (!u || u.hp <= 0 || fieldSlot(a.who).down) continue;
-    if (!liveActors(foeSide(a.who)).length) break;
-    useMove(a.who, a.mid, a.tk, a.part);
+    for (const p of plan.filter(p => p.k === 'switch')) {
+      const out = fighter(p.who);
+      if (!out) continue;
+      const free = hasPassive(actorTypes(p.who), 'pivot') && !battleNow().sides[0].pivot;
+      if (free) battleNow().sides[0].pivot = true;
+      battleSay(free ? `${billyName(out)} darted out without losing the turn.` : `${billyName(out)}, come back.`, {
+        k: 'recall',
+        si: p.who,
+      });
+      doSwitch(p.who, p.i);
+      p.free = free;
+    }
     checkFaints();
-  }
-  if (!battleNow().over) {
-    endTurn();
-    checkFaints();
-  }
-  playTurnEvents();
-}
-export function enemyOnly() {
-  battleNow().aiPlan = {};
-  for (const k of liveActors(1)) {
-    const n = fighter(k).boss ? (BATTLE_RULES.alphaActs ?? 2) : 1;
-    for (let i = 0; i < n && !battleNow().over; i++) {
-      const c = chooseAI(k);
-      if (c) {
-        useMove(k, c.mid, c.tk);
-        checkFaints();
+    if (battleNow().over) return playTurnEvents();
+    if (plan.length === 1 && plan[0].k === 'switch' && plan[0].free) return playTurnEvents();
+    for (const p of plan.filter(p => p.k === 'item')) applyItem(p.item, p.uid, true);
+    const acts = [];
+    for (const p of plan.filter(p => p.k === 'move')) acts.push({ who: p.who, mid: p.mid, tk: p.tk, part: p.part });
+    for (const k of liveActors(1)) {
+      const n = fighter(k).boss ? (BATTLE_RULES.alphaActs ?? 2) : 1;
+      for (let i = 0; i < n; i++) {
+        const c = chooseAI(k);
+        if (c) acts.push({ who: k, mid: c.mid, tk: c.tk, part: c.part, boss2: i > 0 });
       }
     }
-  }
-  if (!battleNow().over) {
-    endTurn();
-    checkFaints();
-  }
+    acts.forEach(a => (a.r = random()));
+    acts.sort(
+      (a, b) =>
+        (MOVES[b.mid].pr || 0) - (MOVES[a.mid].pr || 0) ||
+        (a.boss2 ? 1 : 0) - (b.boss2 ? 1 : 0) ||
+        effectiveStat(b.who, 'hus') - effectiveStat(a.who, 'hus') ||
+        a.r - b.r
+    );
+    for (const a of acts) {
+      if (battleNow().over) break;
+      const u = fighter(a.who);
+      if (!u || u.hp <= 0 || fieldSlot(a.who).down) continue;
+      if (!liveActors(foeSide(a.who)).length) break;
+      useMove(a.who, a.mid, a.tk, a.part);
+      checkFaints();
+    }
+    if (!battleNow().over) {
+      endTurn();
+      checkFaints();
+    }
+    playTurnEvents();
+  });
 }
-export function catchOdds(id, T, spin) {
-  const e = fighter(1);
-  if (COINS[id] && COINS[id].m === 0) return 1;
-  let C = COINS[id].m;
-  if (id === 'penny' && CATCH_RULES.luxury.includes(speciesOf(e).line)) C *= CATCH_RULES.luxuryPenny;
-  const Sx = e.status === 'sub' ? CATCH_RULES.subpoena : e.status ? CATCH_RULES.status : 1;
-  return Math.min(
-    1,
-    speciesOf(e).cr *
-      (1 - (CATCH_RULES.hpFactor * e.hp) / maxHp(e)) *
-      C *
-      Sx *
-      T *
-      (spin ? CATCH_RULES.spin : 1) *
-      battleNow().integrity *
-      (e.boss ? (CATCH_RULES.alpha ?? 0.4) : 1)
-  );
+export function enemyOnly(b) {
+  return withBattle(b, () => {
+    battleNow().aiPlan = {};
+    for (const k of liveActors(1)) {
+      const n = fighter(k).boss ? (BATTLE_RULES.alphaActs ?? 2) : 1;
+      for (let i = 0; i < n && !battleNow().over; i++) {
+        const c = chooseAI(k);
+        if (c) {
+          useMove(k, c.mid, c.tk);
+          checkFaints();
+        }
+      }
+    }
+    if (!battleNow().over) {
+      endTurn();
+      checkFaints();
+    }
+  });
 }
-export function catchRoll(id, T, spin) {
-  if (uiState.dbgCatch) return { caught: true, w: 3, edge: false, P: 1 };
-  if (COINS[id].m === 0) return { caught: true, w: 3, edge: false, P: 1 };
-  if (random() < CATCH_RULES.edge) return { caught: true, w: 1, edge: true, P: 1 };
-  const P = catchOdds(id, T, spin);
-  const q = Math.cbrt(P);
-  let w = 0;
-  while (w < 3 && random() < q) w++;
-  return { caught: w === 3, w, edge: false, P };
+export function catchOdds(id, T, spin, b) {
+  return withBattle(b, () => {
+    const e = fighter(1);
+    if (COINS[id] && COINS[id].m === 0) return 1;
+    let C = COINS[id].m;
+    if (id === 'penny' && CATCH_RULES.luxury.includes(speciesOf(e).line)) C *= CATCH_RULES.luxuryPenny;
+    const Sx = e.status === 'sub' ? CATCH_RULES.subpoena : e.status ? CATCH_RULES.status : 1;
+    return Math.min(
+      1,
+      speciesOf(e).cr *
+        (1 - (CATCH_RULES.hpFactor * e.hp) / maxHp(e)) *
+        C *
+        Sx *
+        T *
+        (spin ? CATCH_RULES.spin : 1) *
+        battleNow().integrity *
+        (e.boss ? (CATCH_RULES.alpha ?? 0.4) : 1)
+    );
+  });
+}
+export function catchRoll(id, T, spin, b) {
+  return withBattle(b, () => {
+    if (uiState.dbgCatch) return { caught: true, w: 3, edge: false, P: 1 };
+    if (COINS[id].m === 0) return { caught: true, w: 3, edge: false, P: 1 };
+    if (random() < CATCH_RULES.edge) return { caught: true, w: 1, edge: true, P: 1 };
+    const P = catchOdds(id, T, spin);
+    const q = Math.cbrt(P);
+    let w = 0;
+    while (w < 3 && random() < q) w++;
+    return { caught: w === 3, w, edge: false, P };
+  });
 }
 export const teamNeedsHp = () => saveData.team.some(m => m.hp > 0 && m.hp < maxHp(m));
 export const canUse = (it, m) => {
