@@ -68,7 +68,9 @@ expose({
   ACTOR_SLOT: [() => ACTOR_SLOT],
   BATTLE_RULES: [() => BATTLE_RULES],
   CATCH_RULES: [() => CATCH_RULES],
+  PAGE_HOST: [() => PAGE_HOST],
   SIDE_ACTORS: [() => SIDE_ACTORS],
+  SILENT_HOST: [() => SILENT_HOST],
   actorIndex: [() => actorIndex],
   // @ts-expect-error -- replaced on purpose
   actorSnapshot: [() => actorSnapshot, v => (actorSnapshot = v)],
@@ -90,6 +92,7 @@ expose({
   // @ts-expect-error -- replaced on purpose
   award: [() => award, v => (award = v)],
   battleHere: [() => battleHere, v => (battleHere = v)],
+  battleHost: [() => battleHost],
   battleNow: [() => battleNow],
   // @ts-expect-error -- replaced on purpose
   battleSay: [() => battleSay, v => (battleSay = v)],
@@ -172,6 +175,27 @@ export function withBattle(b, f) {
     battleHere = was;
   }
 }
+/* RL-4: what the engine asks of the page, through the battle's host: a toast, a save, opening the battle screen,
+   playing a turn's events, the debug menu's sure catch, the weather's boost to a move type. A battle without a host
+   (b.host) uses the page's; SILENT_HOST shows, saves and plays nothing and has no weather, for a fight in a test, a
+   simulation or a ghost. */
+export const PAGE_HOST = {
+  toast: t => toast(t),
+  save: () => save(),
+  open: () => openBattle(),
+  play: () => playTurnEvents(),
+  sureCatch: () => !!uiState.dbgCatch,
+  weather: t => (typeof battleWeatherMultiplier === 'function' ? battleWeatherMultiplier(t) : 1),
+};
+export const SILENT_HOST = Object.freeze({
+  toast() {},
+  save() {},
+  open() {},
+  play() {},
+  sureCatch: () => false,
+  weather: () => 1,
+});
+export const battleHost = (b = battleNow()) => (b && b.host) || PAGE_HOST;
 export const BATTLE_RULES = RULES.battle,
   CATCH_RULES = RULES.catching;
 export const ACTOR_SIDE = [0, 1, 0, 1, 0],
@@ -305,10 +329,7 @@ export function calcDamage(k, tk, mid, src) {
           sd.team.filter(m => m !== me && m.hp > 0 && speciesOf(m).types.some(t => syn.includes(t))).length;
     }
   }
-  const wx =
-    typeof battleWeatherMultiplier === 'function'
-      ? battleWeatherMultiplier(M.t)
-      : 1; /* v28: the weather where you stand */
+  const wx = battleHost().weather(M.t); /* v28: the weather where you stand */
   /* phase 17: a robot's move of its gem's type hits harder */
   const me = src ? null : fighter(k),
     gem = isRobot(me) ? robotGemDef(me.gem) : null,
@@ -886,7 +907,7 @@ export function hitPart(tk, dmg, M, aim) {
 export function newBattle(kind, foe, extra) {
   const b = makeBattle(kind, saveData.team, foe, extra);
   if (!b) {
-    toast('Everyone on your team has fainted. Rest first, or use a Revive.');
+    battleHost(extra || null).toast('Everyone on your team has fainted. Rest first, or use a Revive.');
     return false;
   }
   setActiveBattle(b);
@@ -923,14 +944,14 @@ export function startWild(q) {
     battleSay(`It looks too picky for ${COINS.penny ? 'a ' + COINS.penny.n : 'cheap coins'}.`);
   const K = liveActors(0);
   K.forEach((k, n) => battleSay(n ? '' : `Go, ${joinNames(K)}!`, { k: 'enter', si: k, quiet: n > 0 }));
-  openBattle();
+  battleHost().open();
 }
 export function startTrainer(id, o = {}) {
   const T = TRAINERS[id];
   if (!T) return;
   const team = trainerTeam(T);
   if (!team.length) {
-    toast(`${T.name} has no team yet. Add one in Pocket Billies Studio.`);
+    battleHost(o).toast(`${T.name} has no team yet. Add one in Pocket Billies Studio.`);
     return;
   }
   const dbl = (T.double || o.double) && team.length >= 2 && saveData.team.filter(m => m.hp > 0).length >= 1;
@@ -942,6 +963,7 @@ export function startTrainer(id, o = {}) {
       /* BATTLE_STAGES[undefined] is undefined: a trainer without a stage gets the place's */
       area: BATTLE_STAGES[/** @type {string} */ (T.battleStage)] ? T.battleStage : battleStageKey(),
       fmt: dbl ? 'double' : 'single',
+      ...(o.host && { host: o.host }),
     })
   )
     return;
@@ -954,7 +976,7 @@ export function startTrainer(id, o = {}) {
   F.forEach((k, n) => battleSay(n ? '' : `${T.name} sent out ${joinNames(F)}.`, { k: 'enter', si: k, quiet: n > 0 }));
   const K = liveActors(0);
   K.forEach((k, n) => battleSay(n ? '' : `Go, ${joinNames(K)}!`, { k: 'enter', si: k, quiet: n > 0 }));
-  openBattle();
+  battleHost().open();
 }
 export function battleStageKey() {
   return hereLocation().battleStage;
@@ -972,7 +994,7 @@ export function runTurn(plan, b) {
     if (plan.some(p => p.k === 'run')) {
       battleSay('You got away safely.', { k: 'run' });
       battleNow().over = 'ran';
-      return playTurnEvents();
+      return battleHost().play();
     }
     for (const p of plan.filter(p => p.k === 'switch')) {
       const out = fighter(p.who);
@@ -987,8 +1009,8 @@ export function runTurn(plan, b) {
       p.free = free;
     }
     checkFaints();
-    if (battleNow().over) return playTurnEvents();
-    if (plan.length === 1 && plan[0].k === 'switch' && plan[0].free) return playTurnEvents();
+    if (battleNow().over) return battleHost().play();
+    if (plan.length === 1 && plan[0].k === 'switch' && plan[0].free) return battleHost().play();
     for (const p of plan.filter(p => p.k === 'item')) applyItem(p.item, p.uid, true);
     const acts = [];
     for (const p of plan.filter(p => p.k === 'move')) acts.push({ who: p.who, mid: p.mid, tk: p.tk, part: p.part });
@@ -1019,7 +1041,7 @@ export function runTurn(plan, b) {
       endTurn();
       checkFaints();
     }
-    playTurnEvents();
+    battleHost().play();
   });
 }
 export function enemyOnly(b) {
@@ -1063,7 +1085,7 @@ export function catchOdds(id, T, spin, b) {
 }
 export function catchRoll(id, T, spin, b) {
   return withBattle(b, () => {
-    if (uiState.dbgCatch) return { caught: true, w: 3, edge: false, P: 1 };
+    if (battleHost().sureCatch()) return { caught: true, w: 3, edge: false, P: 1 };
     if (COINS[id].m === 0) return { caught: true, w: 3, edge: false, P: 1 };
     if (random() < CATCH_RULES.edge) return { caught: true, w: 1, edge: true, P: 1 };
     const P = catchOdds(id, T, spin);
@@ -1139,7 +1161,7 @@ export function applyItem(it, id, inB) {
     t.forEach((x, i) =>
       battleSay(x, i === 0 && onField ? { k: 'heal', si: kOn ?? 0, amt: healed || undefined } : null)
     );
-  } else toast(t.join(' '));
-  save();
+  } else battleHost().toast(t.join(' '));
+  battleHost().save();
   return true;
 }
