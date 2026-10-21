@@ -89,6 +89,8 @@ expose({
   applyStatStages: [() => applyStatStages, v => (applyStatStages = v)],
   // @ts-expect-error -- replaced on purpose
   award: [() => award, v => (award = v)],
+  battleHere: [() => battleHere, v => (battleHere = v)],
+  battleNow: [() => battleNow],
   // @ts-expect-error -- replaced on purpose
   battleSay: [() => battleSay, v => (battleSay = v)],
   // @ts-expect-error -- replaced on purpose
@@ -146,6 +148,8 @@ expose({
   teamNeedsHp: [() => teamNeedsHp],
   // @ts-expect-error -- replaced on purpose
   useMove: [() => useMove, v => (useMove = v)],
+  // @ts-expect-error -- replaced on purpose
+  withBattle: [() => withBattle, v => (withBattle = v)],
 });
 /* eslint-enable no-func-assign */
 export function setNewBattle(v) {
@@ -154,6 +158,20 @@ export function setNewBattle(v) {
   provide({ newBattle });
 }
 /* to-module: end */
+/* RL-4: the battle the engine plays. An entry point given a battle (its last argument) plays that one for the
+   call (withBattle), so a fight can run beside the page's; otherwise the page's current battle (activeBattle). */
+export let battleHere = null;
+export const battleNow = () => battleHere || activeBattle;
+export function withBattle(b, f) {
+  if (!b || b === battleHere) return f();
+  const was = battleHere;
+  battleHere = b;
+  try {
+    return f();
+  } finally {
+    battleHere = was;
+  }
+}
 export const BATTLE_RULES = RULES.battle,
   CATCH_RULES = RULES.catching;
 export const ACTOR_SIDE = [0, 1, 0, 1, 0],
@@ -164,12 +182,12 @@ export const ACTOR_SIDE = [0, 1, 0, 1, 0],
   ];
 export const actorIndex = (si, sl) => SIDE_ACTORS[si][sl];
 export const fieldSlot = k => {
-  const sd = activeBattle && activeBattle.sides[ACTOR_SIDE[k]];
+  const sd = battleNow() && battleNow().sides[ACTOR_SIDE[k]];
   return sd ? sd.f[ACTOR_SLOT[k]] : null;
 };
 export const fighter = k => {
   const f = fieldSlot(k);
-  return f && f.on ? activeBattle.sides[ACTOR_SIDE[k]].team[f.act] : undefined;
+  return f && f.on ? battleNow().sides[ACTOR_SIDE[k]].team[f.act] : undefined;
 };
 provide({ fighter }); /* to-module */
 export const fieldState = k => fieldSlot(k).v;
@@ -177,8 +195,8 @@ provide({ fieldState }); /* to-module */
 /* every actor on the field, the live ones, and those of one side */
 export const allActors = () => {
   const o = [];
-  if (!activeBattle) return o;
-  activeBattle.sides.forEach((sd, si) => sd.f.forEach((f, sl) => o.push(actorIndex(si, sl))));
+  if (!battleNow()) return o;
+  battleNow().sides.forEach((sd, si) => sd.f.forEach((f, sl) => o.push(actorIndex(si, sl))));
   return o;
 };
 export const liveActors = si =>
@@ -186,8 +204,7 @@ export const liveActors = si =>
 export const foeSide = k => 1 - ACTOR_SIDE[k];
 export const actorTypes = k => fieldState(k).ov || speciesOf(fighter(k)).types;
 export const shockName = () => BATTLE_RULES.shockName || `${BATTLE_RULES.shockType} storm`;
-export const isMulti = () =>
-  !!activeBattle && (activeBattle.sides[0].f.length > 1 || activeBattle.sides[1].f.length > 1);
+export const isMulti = () => !!battleNow() && (battleNow().sides[0].f.length > 1 || battleNow().sides[1].f.length > 1);
 export function effectiveStat(k, s2) {
   const m = fighter(k),
     v = fieldState(k);
@@ -207,7 +224,7 @@ export function effectiveStat(k, s2) {
 export function actorSnapshot(k) {
   const f = fieldSlot(k);
   if (!f || !f.on) return null;
-  const m = activeBattle.sides[ACTOR_SIDE[k]].team[f.act];
+  const m = battleNow().sides[ACTOR_SIDE[k]].team[f.act];
   if (!m) return null;
   const a = xpFor(m.lvl),
     b = xpFor(m.lvl + 1);
@@ -238,15 +255,15 @@ export function actorSnapshot(k) {
 }
 export const allSnapshots = () => [0, 1, 2, 3, 4].map(k => (fieldSlot(k) ? actorSnapshot(k) : null));
 export function battleSay(t, an) {
-  const ev = { t, an: an || null, s: allSnapshots(), mk: activeBattle.market ? { ...activeBattle.market } : null };
-  activeBattle.events.push(ev);
+  const ev = { t, an: an || null, s: allSnapshots(), mk: battleNow().market ? { ...battleNow().market } : null };
+  battleNow().events.push(ev);
   return ev;
 }
 export function refreshLastSnapshot() {
-  const e = activeBattle.events[activeBattle.events.length - 1];
+  const e = battleNow().events[battleNow().events.length - 1];
   if (e) {
     e.s = allSnapshots();
-    e.mk = activeBattle.market ? { ...activeBattle.market } : null;
+    e.mk = battleNow().market ? { ...battleNow().market } : null;
   }
 }
 export function movePower(k, tk, M) {
@@ -275,12 +292,12 @@ export function calcDamage(k, tk, mid, src) {
   const roll = hasPassive(aty, 'volatile')
     ? BATTLE_RULES.cryptoRollMin + random() * (BATTLE_RULES.cryptoRollMax - BATTLE_RULES.cryptoRollMin)
     : BATTLE_RULES.rollMin + random() * (1 - BATTLE_RULES.rollMin);
-  const mk = activeBattle.market && M.t === BATTLE_RULES.shockType ? BATTLE_RULES.oilShockMult : 1;
+  const mk = battleNow().market && M.t === BATTLE_RULES.shockType ? BATTLE_RULES.oilShockMult : 1;
   let eco = 1;
   if (!src) {
     const syn = aty.filter(t => PASSIVE[t] === 'synergy');
     if (syn.length) {
-      const sd = activeBattle.sides[ACTOR_SIDE[k]],
+      const sd = battleNow().sides[ACTOR_SIDE[k]],
         me = fighter(k);
       eco =
         1 +
@@ -390,7 +407,7 @@ export function useMove(k, mid, tk0, part) {
   const tk = onFoe ? retarget(k, tk0) : k;
   if (onFoe && tk == null) return;
   const t = fighter(tk),
-    td = activeBattle.sides[ACTOR_SIDE[tk]];
+    td = battleNow().sides[ACTOR_SIDE[tk]];
   /* spread moves hit every fighter on the other side (a little weaker when there's more than one) */
   const spread = onFoe && fx.spread && liveActors(foeSide(k)).length > 1;
   const ev = battleSay(`${billyName(u)} used ${M.n}${isMulti() && onFoe && !spread ? ` on ${billyName(t)}` : ''}.`, {
@@ -442,7 +459,7 @@ export function useMove(k, mid, tk0, part) {
     }
     if (fx.delay) {
       ev.an.self = true;
-      activeBattle.sides[ACTOR_SIDE[tk2]].mail.push({
+      battleNow().sides[ACTOR_SIDE[tk2]].mail.push({
         n: BATTLE_RULES.mailTurns,
         A: effectiveStat(k, 'lev'),
         lvl: u.lvl,
@@ -546,7 +563,7 @@ export function useMove(k, mid, tk0, part) {
     }
   }
   if (fx.market) {
-    activeBattle.market = { k: 'sand', n: BATTLE_RULES.shockTurns };
+    battleNow().market = { k: 'sand', n: BATTLE_RULES.shockTurns };
     battleSay(`A ${shockName().toLowerCase()} kicked up.`, { k: 'market' });
   }
 }
@@ -567,7 +584,7 @@ export function endTurn() {
       m.hp = Math.max(0, m.hp - d);
       battleSay(`${billyName(m)} is hurt by its burn.`, { k: 'hurt', si: k, fx: 'scn', dmg: d });
     }
-    if (m.hp > 0 && activeBattle.market && !ty.includes(BATTLE_RULES.shockType)) {
+    if (m.hp > 0 && battleNow().market && !ty.includes(BATTLE_RULES.shockType)) {
       const d = Math.max(1, Math.floor(mx / fr));
       m.hp = Math.max(0, m.hp - d);
       battleSay(`${billyName(m)} is buffeted by the ${shockName().toLowerCase()}.`, {
@@ -590,7 +607,7 @@ export function endTurn() {
     }
   }
   for (const si of [0, 1]) {
-    const sd = activeBattle.sides[si];
+    const sd = battleNow().sides[si];
     sd.mail = sd.mail.filter(h => {
       if (--h.n > 0) return true;
       const L = liveActors(si),
@@ -612,8 +629,8 @@ export function endTurn() {
       return false;
     });
   }
-  if (activeBattle.market && --activeBattle.market.n <= 0) {
-    activeBattle.market = null;
+  if (battleNow().market && --battleNow().market.n <= 0) {
+    battleNow().market = null;
     battleSay(`The ${shockName().toLowerCase()} died down.`, { k: 'marketEnd' });
   }
 }
@@ -621,7 +638,7 @@ export function award(e) {
   const P = RULES.progression,
     amt = Math.floor(
       ((speciesOf(e).yld * e.lvl) / 7) *
-        (activeBattle.kind === 'trainer' ? P.trainerXpMult : 1) *
+        (battleNow().kind === 'trainer' ? P.trainerXpMult : 1) *
         (e.boss ? (BATTLE_RULES.alphaXp ?? 3) : 1)
     );
   const on = liveActors(0).map(k => fighter(k));
@@ -644,7 +661,7 @@ export function award(e) {
   }
 }
 export function inherit(k) {
-  const sd = activeBattle.sides[ACTOR_SIDE[k]];
+  const sd = battleNow().sides[ACTOR_SIDE[k]];
   if (!hasPassive(speciesOf(fighter(k)).types, 'inherit')) return;
   const st = {};
   let any = false;
@@ -657,7 +674,7 @@ export function inherit(k) {
 }
 /* who on a side could still come in: alive, not at work, not on the field and not already called in this turn */
 export function benchCandidates(si, also = []) {
-  const sd = activeBattle.sides[si],
+  const sd = battleNow().sides[si],
     on = sd.f.filter(f => f.on).map(f => f.act);
   return sd.team
     .map((m, i) => i)
@@ -667,7 +684,7 @@ export function benchCandidates(si, also = []) {
     });
 }
 export function doSwitch(k, idx) {
-  const sd = activeBattle.sides[ACTOR_SIDE[k]],
+  const sd = battleNow().sides[ACTOR_SIDE[k]],
     f = fieldSlot(k);
   f.act = idx;
   f.on = true;
@@ -679,7 +696,7 @@ export function doSwitch(k, idx) {
   battleSay(
     ACTOR_SIDE[k] === 0
       ? `Go, ${billyName(m)}!`
-      : `${activeBattle.foeName || 'The wild side'} sent out ${billyName(m)}.`,
+      : `${battleNow().foeName || 'The wild side'} sent out ${billyName(m)}.`,
     {
       k: 'enter',
       si: k,
@@ -710,9 +727,9 @@ export function checkFaints() {
     inherit(k);
     const nx = benchCandidates(1)[0];
     if (nx == null) f.on = false;
-    else if (!activeBattle.over) doSwitch(k, nx);
+    else if (!battleNow().over) doSwitch(k, nx);
   }
-  if (!liveActors(1).length && !activeBattle.over) activeBattle.over = 'win';
+  if (!liveActors(1).length && !battleNow().over) battleNow().over = 'win';
   for (const k of allActors().filter(k => ACTOR_SIDE[k] === 0)) {
     const p = fighter(k),
       f = fieldSlot(k);
@@ -723,14 +740,13 @@ export function checkFaints() {
     p.sTurns = 0;
     battleSay(`${billyName(p)} fainted.`, { k: 'faint', si: k });
     inherit(k);
-    const pend = (activeBattle.needSwitch || []).length;
+    const pend = (battleNow().needSwitch || []).length;
     if (benchCandidates(0).length > pend) {
-      if (!activeBattle.over) (activeBattle.needSwitch || (activeBattle.needSwitch = [])).push(k);
+      if (!battleNow().over) (battleNow().needSwitch || (battleNow().needSwitch = [])).push(k);
     } else f.on = false;
   }
-  if (!activeBattle.over && !liveActors(0).length && !(activeBattle.needSwitch || []).length)
-    activeBattle.over = 'lose';
-  if (any && !activeBattle.over && liveActors(1).some(k => fighter(k).hp <= 0)) checkFaints();
+  if (!battleNow().over && !liveActors(0).length && !(battleNow().needSwitch || []).length) battleNow().over = 'lose';
+  if (any && !battleNow().over && liveActors(1).some(k => fighter(k).hp <= 0)) checkFaints();
   return any;
 }
 /* how much a move is worth against one target, for the computer's choices */
@@ -786,8 +802,8 @@ export function aiScore(k, id, tk) {
   else if (fx.hype) s = fieldState(tk).hyped ? 0 : 35;
   else if (fx.heal) s = m.hp < maxHp(m) * 0.5 ? 90 : 0;
   else if (fx.protect) s = fieldState(k).last === id ? 0 : 12;
-  else if (fx.rent) s = activeBattle.sides[ACTOR_SIDE[tk]].rent ? 0 : 30;
-  else if (fx.market) s = activeBattle.market ? 0 : 40;
+  else if (fx.rent) s = battleNow().sides[ACTOR_SIDE[tk]].rent ? 0 : 30;
+  else if (fx.market) s = battleNow().market ? 0 : 40;
   else if (fx.selfStage) s = Object.keys(fx.selfStage).some(q => fieldState(k).st[q] < 2) ? 28 : 0;
   else if (fx.tgtStage) s = 22;
   else if (fx.spin) s = fieldState(tk).ov ? 0 : 20;
@@ -805,8 +821,8 @@ export function chooseAI(k = 1) {
   if (!opts.length) return null;
   /* v34: in a double the second foe knows what its partner is about to do: no piling onto a fighter that's already
     going down, a spread move is worth more while both of yours stand, and a status move isn't doubled up */
-  const PL = activeBattle.aiPlan || (activeBattle.aiPlan = {});
-  if (activeBattle.fmt === 'double') {
+  const PL = battleNow().aiPlan || (battleNow().aiPlan = {});
+  if (battleNow().fmt === 'double') {
     for (const o of opts) {
       const c = o[0],
         M = MOVES[c.mid],
@@ -819,7 +835,7 @@ export function chooseAI(k = 1) {
     }
   }
   let pick;
-  if ((activeBattle.kind === 'trainer' || m.boss) && random() < BATTLE_RULES.aiSmart) {
+  if ((battleNow().kind === 'trainer' || m.boss) && random() < BATTLE_RULES.aiSmart) {
     opts.sort((a, b) => b[1] - a[1]);
     pick = opts[0][0];
   } else pick = pickWeighted(opts);
@@ -925,7 +941,7 @@ export function startTrainer(id, o = {}) {
     return;
   battleSay(dbl ? `${T.name} wants a double battle!` : `${T.name} wants to battle.`, { k: 'trainerIn', who: T.who });
   if (T.market) {
-    activeBattle.market = { k: 'sand', n: T.market.n || BATTLE_RULES.shockTurns };
+    battleNow().market = { k: 'sand', n: T.market.n || BATTLE_RULES.shockTurns };
     battleSay(T.marketText || `The battle opened in a ${shockName().toLowerCase()}.`, { k: 'market' });
   }
   const F = liveActors(1);
@@ -940,22 +956,22 @@ export function battleStageKey() {
 /* one turn. plan: what each of your fighters does ({who,k:'move',mid,tk} | {who,k:'switch',i} | {who,k:'item',item,uid})
    or a single {k:'run'}. An older single action ({k:'move',mid}) is your first fighter's. */
 export function runTurn(plan) {
-  activeBattle.events = [];
-  activeBattle.ev = 0;
-  activeBattle.needSwitch = [];
-  activeBattle.turn++;
-  activeBattle.aiPlan = {};
+  battleNow().events = [];
+  battleNow().ev = 0;
+  battleNow().needSwitch = [];
+  battleNow().turn++;
+  battleNow().aiPlan = {};
   if (!Array.isArray(plan)) plan = [Object.assign({ who: 0 }, plan)];
   if (plan.some(p => p.k === 'run')) {
     battleSay('You got away safely.', { k: 'run' });
-    activeBattle.over = 'ran';
+    battleNow().over = 'ran';
     return playTurnEvents();
   }
   for (const p of plan.filter(p => p.k === 'switch')) {
     const out = fighter(p.who);
     if (!out) continue;
-    const free = hasPassive(actorTypes(p.who), 'pivot') && !activeBattle.sides[0].pivot;
-    if (free) activeBattle.sides[0].pivot = true;
+    const free = hasPassive(actorTypes(p.who), 'pivot') && !battleNow().sides[0].pivot;
+    if (free) battleNow().sides[0].pivot = true;
     battleSay(free ? `${billyName(out)} darted out without losing the turn.` : `${billyName(out)}, come back.`, {
       k: 'recall',
       si: p.who,
@@ -964,7 +980,7 @@ export function runTurn(plan) {
     p.free = free;
   }
   checkFaints();
-  if (activeBattle.over) return playTurnEvents();
+  if (battleNow().over) return playTurnEvents();
   if (plan.length === 1 && plan[0].k === 'switch' && plan[0].free) return playTurnEvents();
   for (const p of plan.filter(p => p.k === 'item')) applyItem(p.item, p.uid, true);
   const acts = [];
@@ -985,24 +1001,24 @@ export function runTurn(plan) {
       a.r - b.r
   );
   for (const a of acts) {
-    if (activeBattle.over) break;
+    if (battleNow().over) break;
     const u = fighter(a.who);
     if (!u || u.hp <= 0 || fieldSlot(a.who).down) continue;
     if (!liveActors(foeSide(a.who)).length) break;
     useMove(a.who, a.mid, a.tk, a.part);
     checkFaints();
   }
-  if (!activeBattle.over) {
+  if (!battleNow().over) {
     endTurn();
     checkFaints();
   }
   playTurnEvents();
 }
 export function enemyOnly() {
-  activeBattle.aiPlan = {};
+  battleNow().aiPlan = {};
   for (const k of liveActors(1)) {
     const n = fighter(k).boss ? (BATTLE_RULES.alphaActs ?? 2) : 1;
-    for (let i = 0; i < n && !activeBattle.over; i++) {
+    for (let i = 0; i < n && !battleNow().over; i++) {
       const c = chooseAI(k);
       if (c) {
         useMove(k, c.mid, c.tk);
@@ -1010,7 +1026,7 @@ export function enemyOnly() {
       }
     }
   }
-  if (!activeBattle.over) {
+  if (!battleNow().over) {
     endTurn();
     checkFaints();
   }
@@ -1029,7 +1045,7 @@ export function catchOdds(id, T, spin) {
       Sx *
       T *
       (spin ? CATCH_RULES.spin : 1) *
-      activeBattle.integrity *
+      battleNow().integrity *
       (e.boss ? (CATCH_RULES.alpha ?? 0.4) : 1)
   );
 }
