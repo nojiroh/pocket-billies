@@ -266,3 +266,47 @@ test("the neighbour's natural ground runs on across the edge; nothing stands aga
     void exit;
   }
 });
+
+test('terraces come down to ground level by every exit, so any exit can be joined with no wall', () => {
+  for (let i = 0; i < 12; i++) {
+    const exits = [
+        [
+          { side: 'S', t: 0.5 },
+          { side: 'N', t: 0.25 },
+          { side: 'N', t: 0.75 },
+        ],
+        [
+          { side: 'W', t: 0.3 },
+          { side: 'E', t: 0.7 },
+        ],
+      ][i % 2],
+      sc = G.mapgenScene(
+        {
+          seed: 300 + i,
+          biome: 'ridge',
+          land: { terraces: 0.3 + (i % 4) * 0.23, cliffs: (i % 3) / 2 },
+          road: { exits },
+        },
+        ctx
+      ).scene;
+    assert.ok(sc.steps, `seed ${300 + i} has terraces`);
+    const W = G.mapgenWalkGrid(sc, C);
+    for (const e of sc.edgeExits) {
+      const v = e.side === 'E' || e.side === 'W',
+        at = e.t * (v ? sc.h : sc.w);
+      for (let u = Math.max(0.25, at - 30); u < Math.min(v ? sc.h : sc.w, at + 30); u += 0.5) {
+        const [x, z] = v ? [e.side === 'E' ? sc.w - 0.25 : 0.25, u] : [u, e.side === 'N' ? sc.h - 0.25 : 0.25];
+        assert.equal(W.S[Math.floor(z * 2) * W.gw + Math.floor(x * 2)], 0, `seed ${300 + i} exit ${e.id} at ${u}`);
+      }
+    }
+    assert.deepEqual(G.mapgenUnreachable(sc, C), [], `seed ${300 + i}`);
+  }
+});
+
+test('joined pairs with terraces on either side meet with no raise and walk straight across', () => {
+  for (const { P, exit, K, kExit, where } of joinedPairs(7, 24, { terraces: true })) {
+    const a = G.mapgenSeamAgreement(P, exit, K, kExit, C);
+    assert.deepEqual([a.dhBand, a.raiseExit, a.raiseBand, a.walk], [0, 0, 0, null], where);
+    assert.deepEqual(G.mapgenUnreachable(K, C), [], where);
+  }
+});

@@ -170,7 +170,7 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-export const MAPGEN_VERSION = 1;
+export const MAPGEN_VERSION = 2; /* MG-2: terraces at ground level by exits */
 export const MAPGEN_STAGES = ['heights', 'ground', 'road', 'exits', 'lots', 'plants', 'feature', 'props'];
 export const MAPGEN_SHAPES = {
   straight: 'Straight',
@@ -1178,18 +1178,38 @@ export function mapgenTerraces(G, levels) {
     H2 = h * 2,
     rise = Math.round((0.4 + P.land.cliffs * 1.2) * 20) / 20,
     ns = G.salt('heights', 'terrace');
+  /* MG-2: at ground level by every exit's edge, over the stretch a neighbour shows there (MAPGEN_BAND and 4 m), so a
+     joined neighbour's land meets this one with no wall: within 8 m of that stretch no raise, then a level more
+     every 6 m (never a wall of more than one rise) */
+  const zones = G.exits.map(e => {
+      const a = e.side === 'N' || e.side === 'S' ? e.pt[0] : e.pt[1];
+      return { side: e.side, lo: a - MAPGEN_BAND - 4, hi: a + MAPGEN_BAND + 4 };
+    }),
+    zoneDist = (x, z) => {
+      let best = 1e9;
+      for (const Z of zones) {
+        const u = mapgenAlong(Z.side, x, z),
+          du = u < Z.lo ? Z.lo - u : u > Z.hi ? u - Z.hi : 0;
+        best = Math.min(best, Math.hypot(du, mapgenDepth(G, Z.side, x, z)));
+      }
+      return best;
+    };
   const lvl = (x, z) => {
     const t = (z - 8) / (h - 16) + (mapgenFbm(x / 14, z / 14, ns) - 0.5) * 0.35;
-    return mapgenBetween(Math.floor(t * (levels + 1)), 0, levels);
+    return Math.min(
+      mapgenBetween(Math.floor(t * (levels + 1)), 0, levels),
+      Math.floor(Math.max(0, zoneDist(x, z) - 8) / 6)
+    );
   };
   for (let j = 0; j < H2; j++) for (let i = 0; i < W2; i++) G.S[j * W2 + i] = lvl((i + 0.5) / 2, (j + 0.5) / 2) * rise;
   /* along each road: the raise ramps no faster than 0.1 m a half metre */
+  const lim = 0.1;
   let o = 0;
   const prof = new Float32Array(G.roadPts.length);
   for (const R of G.road) {
     const n = R.pts.length,
       raw = R.pts.map(p => lvl(p[0], p[1]) * rise);
-    const win = Math.ceil((rise / 0.1) * 0.6),
+    const win = Math.ceil((rise / lim) * 0.6),
       sm = raw.map((_, i) => {
         let s = 0,
           c = 0;
@@ -1199,6 +1219,13 @@ export function mapgenTerraces(G, levels) {
         }
         return s / c;
       });
+    /* MG-2: no higher than a ramp from the nearest stretch of road at ground level by an exit's edge, so the exit
+       stays at 0 (a guard: with the levels stepping down every 6 m the ramp limit already keeps it there in every
+       scene tried, but a road running along an edge could be lifted by the smoothing) */
+    const away = R.pts.map(p => (zoneDist(p[0], p[1]) <= 8 ? 0 : 1e9));
+    for (let i = 1; i < n; i++) away[i] = Math.min(away[i], away[i - 1] + 1);
+    for (let i = n - 2; i >= 0; i--) away[i] = Math.min(away[i], away[i + 1] + 1);
+    for (let i = 0; i < n; i++) sm[i] = Math.min(sm[i], lim * away[i]);
     for (let i = 1; i < n; i++) sm[i] = mapgenBetween(sm[i], sm[i - 1] - 0.1, sm[i - 1] + 0.1);
     for (let i = n - 2; i >= 0; i--) sm[i] = mapgenBetween(sm[i], sm[i + 1] - 0.1, sm[i + 1] + 0.1);
     for (let i = 0; i < n; i++) prof[o + i] = Math.round(sm[i] * 20) / 20;
