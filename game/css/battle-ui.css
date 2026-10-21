@@ -33,36 +33,62 @@
   will-change: transform;
 }
 
-/* the battle text: a speech-like card over the ground */
+/* the battle text: a speech-like card over the ground. UI-2: the text and the menu are panels with two cuts: the
+   card casts a shadow that follows the cuts, its fill and edge line are its pseudo-elements, clipped to the outline */
 .battle.ui3d #msg {
   min-height: 0;
   padding: var(--s3) var(--s6) var(--s3) var(--s4);
-  border-radius: var(--r-lg) !important;
-  background: var(--g-solid) !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: none !important;
   color: var(--text) !important;
   -webkit-backdrop-filter: none !important;
   backdrop-filter: none !important;
-  box-shadow:
-    0 0 0 1px var(--g-bd),
-    var(--depth-float) !important;
+  box-shadow: none !important;
+  filter: var(--drop-float);
+  isolation: isolate;
+  --k-fill: var(--g-solid);
   font: 600 16px/1.4 var(--font-voice) !important;
+}
+.battle.ui3d .dock > #msg::before,
+.battle.ui3d .dock > #acts::before,
+.battle.ui3d .dock > #msg::after,
+.battle.ui3d .dock > #acts::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  clip-path: var(--clip-panel);
+  background: var(--k-fill);
+  pointer-events: none;
+}
+.battle.ui3d .dock > #msg::after,
+.battle.ui3d .dock > #acts::after {
+  clip-path: var(--edge-panel);
+  background: var(--edge);
 }
 .battle.ui3d #msg .more {
   border-top-color: var(--gold-b);
 }
 
-/* the menu: one card holding the move tiles and the row under them */
+/* the menu: one card holding the move tiles and the row under them. UI-2: the card itself doesn't scroll (its fill
+   and edge are positioned in it and would scroll away); what it holds does */
 .battle.ui3d #acts {
   height: auto !important;
-  max-height: 72vh;
-  overflow: auto;
+  overflow: visible;
   padding: var(--s3);
   gap: var(--s2);
-  border-radius: var(--r-lg);
-  background: color-mix(in srgb, var(--g-solid) 94%, transparent);
-  box-shadow:
-    0 0 0 1px var(--g-bd),
-    var(--depth-float);
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  filter: var(--drop-float);
+  isolation: isolate;
+  --k-fill: color-mix(in srgb, var(--g-solid) 94%, transparent);
+}
+.battle.ui3d #acts > * {
+  max-height: calc(72vh - 2 * var(--s3));
+  overflow: auto;
 }
 .battle.ui3d #acts.empty {
   visibility: hidden;
@@ -80,6 +106,50 @@
 .battle.ui3d #acts .mv,
 .battle.ui3d #acts .bt {
   min-height: var(--tap);
+}
+/* UI-2: move tiles are cards (four cuts), the row's buttons quiet buttons (four small cuts); each has its edge line
+   and the tiles share one soft shadow */
+.battle.ui3d #acts .moves,
+.battle.ui3d #acts .bt-row {
+  filter: drop-shadow(0 3px 2px color-mix(in srgb, var(--c-shadow) 28%, transparent));
+}
+.battle.ui3d #acts .mv {
+  border-radius: 0;
+  clip-path: var(--clip-card);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.2);
+}
+.battle.ui3d #acts .bt {
+  border-radius: 0;
+  clip-path: var(--clip-button);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.18);
+}
+.battle.ui3d #acts .mv::after,
+.battle.ui3d #acts .bt::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: none;
+  clip-path: var(--edge-card);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(0, 0, 0, 0.35));
+  transition: none;
+  pointer-events: none;
+}
+.battle.ui3d #acts .bt::after {
+  clip-path: var(--edge-button);
+}
+/* focus: the outline would be clipped; a gold edge and an inner ring instead */
+.battle.ui3d #acts .mv:focus-visible,
+.battle.ui3d #acts .bt:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--focus, var(--gold-b));
+}
+.battle.ui3d #acts .mv:focus-visible::after,
+.battle.ui3d #acts .bt:focus-visible::after {
+  background: var(--focus, var(--gold-b));
 }
 .battle.ui3d #acts .bt.run {
   color: #fff;
@@ -121,4 +191,50 @@
   display: flex;
   gap: 3px;
   margin-top: 3px;
+}
+
+/* UI-2: the plates over the fighters: dark glass with four small cuts and an edge line; the chosen one's edge is gold.
+   HP is angular and in ten cells, XP angular */
+.bplate {
+  border-radius: 0;
+  box-shadow: none;
+  clip-path: var(--clip-card);
+}
+.bplate::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  clip-path: var(--edge-card);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.32), rgba(0, 0, 0, 0.5));
+  pointer-events: none;
+}
+.bplate.cur {
+  box-shadow: none;
+}
+.bplate.cur::after {
+  background: #f4c542;
+}
+.bplate .pl-hp {
+  border-radius: 0;
+  box-shadow: none;
+  clip-path: polygon(7px 0, 100% 0, calc(100% - 7px) 100%, 0 100%);
+}
+.bplate .pl-hp i {
+  border-radius: 0;
+}
+.bplate .pl-hp::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent 0 calc(10% - 2px),
+    rgba(10, 6, 22, 0.75) calc(10% - 2px) 10%
+  );
+  transform: skewX(-45deg);
+  transform-origin: 0 100%;
+}
+.bplate .pl-xp {
+  border-radius: 0;
+  clip-path: polygon(3px 0, 100% 0, calc(100% - 3px) 100%, 0 100%);
 }
