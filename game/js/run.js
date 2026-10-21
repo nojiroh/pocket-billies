@@ -8,27 +8,33 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { closeModal, mapIdAt, modal, provide, render, runPayoutOpen, toast } from './hooks.js';
-import { RULES } from './game-data.js';
+import { COINS, ITEMS, RULES, START_NODE } from './game-data.js';
 import { billyName, formatNumber, healAll, plural } from './logic/rules.js';
-import { runEnd } from './logic/run-state.js';
-import { runRelease, runReleasePays } from './logic/run-loop.js';
+import { runBegin, runEnd } from './logic/run-state.js';
+import { runArrive, runMapStart } from './logic/run-map.js';
+import { MAPGEN_VERSION } from './logic/mapgen.js';
+import { runGive, runRelease, runReleasePays } from './logic/run-loop.js';
 import { isLiteMap, loadMapFile } from './map-files.js';
 import { activeBattle, escapeHtml, save, saveData, saveNow, uiState } from './game-state.js';
 import { rigCanvasHTML } from './skeleton-rig.js';
-import { standByMast } from './airship.js';
-import { runWorldSync } from './run-world.js';
+import { standByMast, startAirshipFlight } from './airship.js';
+import { runWorld, runWorldData, runWorldSync } from './run-world.js';
 /* eslint-disable no-func-assign */
 expose({
   runCatch: [() => runCatch],
   runEndHome: [() => runEndHome, v => (runEndHome = v)],
-  runGiveUp: [() => runGiveUp, v => (runGiveUp = v)],
+  runGiveUp: [() => runGiveUp, v => ((runGiveUp = v), provide({ runGiveUp }))],
   runOver: [() => runOver, v => (runOver = v)],
   runReleasePick: [() => runReleasePick, v => (runReleasePick = v)],
   runReleaseSheet: [() => runReleaseSheet, v => ((runReleaseSheet = v), provide({ runReleaseSheet }))],
   runResume: [() => runResume, v => (runResume = v)],
+  runSeedRoll: [() => runSeedRoll, v => (runSeedRoll = v)],
+  runStartSheet: [() => runStartSheet, v => ((runStartSheet = v), provide({ runStartSheet }))],
+  runStartable: [() => runStartable, v => ((runStartable = v), provide({ runStartable }))],
+  runTakeOff: [() => runTakeOff, v => (runTakeOff = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ runReleaseSheet });
+provide({ runGiveUp, runReleaseSheet, runStartSheet, runStartable });
 /* to-module: end */
 /** a Billie caught on a run while the party was full, waiting for the release sheet (page state only) */
 const runCatch = { m: /** @type {any} */ (null) };
@@ -133,4 +139,76 @@ export function runResume() {
   const run = saveData.run;
   if (!run) return;
   if (run.at.phase === 'payout') runPayoutOpen();
+  /* killed mid-flight: you are on the landing (runArrive ran before the flight) */
+  if (run.at.phase === 'fly') {
+    run.at.phase = 'walk';
+    standByMast(saveData.trip.node);
+    save();
+    render();
+  }
+}
+
+/* ---------- the start, at Copperleaf's airship mast ---------- */
+/** may a run start now: a game under way, no run on, someone on the team who can fight, no battle */
+function runStartable() {
+  return !!saveData.started && !saveData.run && saveData.team.some(m => m.hp > 0) && !activeBattle;
+}
+/** a new run's seed: 10 letters and digits (the one draw a run takes from Math.random: everything after it comes
+ * from the seed) */
+function runSeedRoll() {
+  const A = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+  let s = '';
+  for (let k = 0; k < 10; k++) s += A[Math.floor(Math.random() * A.length)];
+  return s;
+}
+/** the sheet before a run: what you take, what you are given, how it ends */
+function runStartSheet() {
+  if (!runStartable()) return;
+  const S = RULES.run.start,
+    gifts = [
+      `$${formatNumber(S.se)}`,
+      ...Object.entries(S.coins).map(([k, n]) => `${n} ${COINS[k] ? COINS[k].n : k}${n === 1 ? '' : 's'}`),
+      ...Object.entries(S.items).map(([k, n]) => `${n} ${ITEMS[k] ? ITEMS[k].n : k}${n === 1 ? '' : 's'}`),
+    ];
+  /* in place of the mast's sheet (closeModal would let a waiting window in first) */
+  uiState.modal = null;
+  modal({
+    title: 'Start a run',
+    cls: 'fly-sheet',
+    html: `<p>The airship flies you out to the wild lands past the island: a road of places, a town before each mini-boss, and a boss at the end.</p><p>Your team comes along; storage stays here. You set off with ${escapeHtml(gifts.join(', '))}.</p><p class="note">Every place you walk into takes a day. Beat the boss to win. If your whole party faints, the run is over. Either way, what you bring back turns into Capital.</p>`,
+    btns: [
+      { l: 'Take off', c: 'gold', f: () => runTakeOff() },
+      { l: 'Not now', c: 'quiet', f: closeModal },
+    ],
+  });
+}
+/**
+ * Take off on a run, in one tick: the run on the save (runBegin, with run.start), its map (runMapStart), its world
+ * (runWorldSync; a world that can't be made leaves the run), day 1 on the landing (runArrive) in phase 'fly', saved
+ * with the account at once, then the airship's free flight from Copperleaf (it starts after the world goes in, which
+ * would stop it, and is told where from: runArrive has moved the trip already). A reload mid-flight is on the landing.
+ * @param {string} [seed] @param {Partial<import('../types/game-data').RunMapRules>} [map] the map's rules changed (the
+ * debug menu's short run)
+ */
+function runTakeOff(seed, map) {
+  if (!runStartable()) return;
+  closeModal();
+  const s = saveData,
+    sd = seed || runSeedRoll(),
+    data = runWorldData();
+  runBegin(s, runGive(sd, 1, MAPGEN_VERSION, RULES.run.start));
+  uiState.learnQ = [];
+  runCatch.m = null;
+  runMapStart(
+    /** @type {any} */ (s.run),
+    map ? { ...data, rules: { ...data.rules, map: { ...data.rules.map, ...map } } } : data
+  );
+  runWorldSync();
+  if (!s.run || runWorld.seed !== sd) return;
+  runArrive(s, 0, data);
+  s.visited[s.trip.node] = 1;
+  s.run.at.phase = 'fly';
+  saveNow();
+  if (typeof debugLog !== 'undefined') debugLog.add('scene', `a run starts: ${s.run.map.nodes.length} places`);
+  startAirshipFlight(s.trip.node, { free: true, from: START_NODE });
 }
