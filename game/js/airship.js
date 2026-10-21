@@ -36,6 +36,7 @@ expose({
   flyTowns: [() => flyTowns, v => (flyTowns = v)],
   glassLift: [() => glassLift],
   rideGlassLift: [() => rideGlassLift, v => (rideGlassLift = v)],
+  standByMast: [() => standByMast, v => (standByMast = v)],
   startAirshipFlight: [() => startAirshipFlight, v => (startAirshipFlight = v)],
 });
 /* eslint-enable no-func-assign */
@@ -225,6 +226,21 @@ function flyDraw(c, t, proj) {
     c.fillRect(q.x - 9, q.y - 8 + bob, 18, 5);
   }
 }
+/* RL-8: stand beside a place's airship mast (the first prop with act 'fly' in its own map), where a flight lands you
+   and where a run's end leaves you in Copperleaf; at the place's middle when it has none. Returns whether it has one */
+export function standByMast(b) {
+  const sid = mapIdAt(b),
+    sc = typeof mapById === 'function' ? mapById(sid) : null,
+    m = sc && (sc.props || []).find(p => p.act === 'fly');
+  if (!m || typeof walkData !== 'function') return false;
+  const C = walkData().sc,
+    M = C.props[m.k] || {},
+    s = m.s || 1,
+    f = m.f ? -1 : 1,
+    bx = M.box ? M.box[0] * s : 1.2;
+  uiState.roam = { id: sid, node: b, x: m.x + (bx / 2 + 0.9) * f, z: m.z - 0.9 };
+  return true;
+}
 /* landing: the walk screen in the new town, standing by its mast */
 function flyLand() {
   if (!airshipFlight.on || airshipFlight.wait) return;
@@ -242,18 +258,7 @@ function flyLand() {
   document.body.classList.remove('flying');
   const cap = $('#flycap');
   if (cap) cap.remove();
-  const sid = mapIdAt(b),
-    sc = typeof mapById === 'function' ? mapById(sid) : null,
-    m = sc && (sc.props || []).find(p => p.act === 'fly');
-  if (m && typeof walkData === 'function') {
-    const C = walkData().sc,
-      M = C.props[m.k] || {},
-      ppu = C.ppu || 34,
-      s = m.s || 1,
-      f = m.f ? -1 : 1,
-      bx = M.box ? M.box[0] * s : 1.2;
-    uiState.roam = { id: sid, node: b, x: m.x + (bx / 2 + 0.9) * f, z: m.z - 0.9 };
-  }
+  standByMast(b);
   uiState.tab = 'walk';
   save();
   render();

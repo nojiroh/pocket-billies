@@ -117,6 +117,9 @@ export function validRun(o) {
   }
   const nodes = runNodeCount(o);
   if (!plain(o.at) || !RUN_PHASES.includes(o.at.phase) || !wholeIn(o.at.battle, -1, 1e6)) return false;
+  /* RL-8: at the payout, whether the run was won; nothing else */
+  if (Object.keys(o.at).some(k => !['phase', 'battle', 'won'].includes(k))) return false;
+  if (o.at.won !== undefined && !wholeIn(o.at.won, 0, 1)) return false;
   if (!wholeIn(o.clock, 1, RUN_DAYS) || !wholeIn(o.deadline, 0, RUN_DAYS)) return false;
   if (!list(o.forecast, nodes) || o.forecast.some(days => !list(days, RUN_DAYS) || !days.every(id))) return false;
   if (!list(o.relics, 32) || !o.relics.every(id) || !list(o.mods, 32) || !o.mods.every(id)) return false;

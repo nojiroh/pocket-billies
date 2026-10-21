@@ -194,6 +194,7 @@ import { renderTitle, titleMount } from './title.js';
 import { loreBook, renderLore } from './lore.js';
 import { flyMenu, rideGlassLift } from './airship.js';
 import { runWorldData } from './run-world.js';
+import { runGiveUp } from './run.js';
 import { postcardCheck, renderPostcards } from './postcards.js';
 import { renderBag } from './bag.js';
 import { friendsHTML } from './friends.js';
@@ -1607,7 +1608,13 @@ function walkMapSync() {
 function renderWorldMapTab() {
   /* RL-7: on a run, its day and deadline (ui-run-kit.js pb-day-chip) */
   const run = saveData.run && saveData.run.map ? saveData.run : null,
-    day = run ? `<pb-day-chip class="map-day" day="${run.clock}" deadline="${run.deadline}"></pb-day-chip>` : '';
+    M = saveData.meta,
+    /* RL-8: on a run, the way to give it up; in the hub, once a run has ended, what the runs brought home */
+    day = run
+      ? `<pb-day-chip class="map-day" day="${run.clock}" deadline="${run.deadline}"></pb-day-chip><button class="pb small quiet" data-a="rungiveup">Give up the run</button>`
+      : M && M.runs
+        ? `<p class="map-meta"><pb-coin kind="capital" value="${M.capital}" label="Capital"></pb-coin>${M.seals ? ` <pb-coin kind="seals" value="${M.seals}" label="Seals"></pb-coin>` : ''}</p>`
+        : '';
   return `<div class="map-full"><canvas id="mapcv" width="${worldMapWidth}" height="${worldMapHeight}" aria-label="World map. Drag to look around, tap a place."></canvas><div id="maplabels"></div>
  <div class="map-head glass"><div class="sub">The Hollow Earth</div><h1 class="where">World map</h1>${day}<p class="map-trip ${tripStatus().k}">${escapeHtml(tripStatus().t)}</p></div>
  <div class="mapctl"><button class="mbtn" data-a="mzoom" data-k="in" aria-label="Zoom in">+</button><button class="mbtn" data-a="mzoom" data-k="out" aria-label="Zoom out">−</button><button class="mbtn" data-a="mreset" aria-label="Back to you">${uiIconHTML('walk', 16)}</button></div>
@@ -2454,6 +2461,9 @@ document.addEventListener('click', ev => {
     }
     case 'trainer':
       trainerTalk(d.t);
+      break;
+    case 'rungiveup':
+      runGiveUp();
       break;
     case 'mon': {
       const m = findBilly(d.u);

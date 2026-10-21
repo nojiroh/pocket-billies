@@ -35,6 +35,8 @@ expose({
   save: [() => save, v => setSave(v)],
   saveData: [() => saveData, v => setSaveData(v)],
   saveHold: [() => saveHold, v => setSaveHold(v)],
+  // @ts-expect-error -- replaced on purpose
+  saveNow: [() => saveNow, v => (saveNow = v)],
   saveTimer: [() => saveTimer, v => (saveTimer = v)],
   // @ts-expect-error -- replaced on purpose
   setActiveBattle: [() => setActiveBattle, v => ((setActiveBattle = v), provide({ setActiveBattle }))],
@@ -219,6 +221,17 @@ document.addEventListener('visibilitychange', () => {
     flushSave();
   }
 });
+/* RL-8: a run's checkpoint (its start, an arrival, a battle about to begin, its end): written here and sent to the
+   account at once, not after save()'s few seconds, so a phone killed right after resumes from it */
+export function saveNow() {
+  save();
+  if (saveTimer) {
+    clearTimeout(saveTimer);
+    saveTimer = null;
+  }
+  if (saveHold || TEST_BOOT) return;
+  if (typeof flushAccountSave === 'function') flushAccountSave(true);
+}
 export function flushSave() {
   if (saveHold || TEST_BOOT) return;
   if (typeof flushAccountSave === 'function') flushAccountSave();

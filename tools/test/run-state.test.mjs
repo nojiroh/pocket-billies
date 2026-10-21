@@ -80,6 +80,7 @@ test('run: the load check refuses broken or tampered runs', () => {
   const ok = copy({ ...runBegin(s, GIVE), map: MAP, path: [0, 1], forecast: [['sun'], ['rain', 'sun']] });
   assert.equal(validRun(ok), true);
   assert.equal(validRun({ ...ok, map: { nodes: MAP.nodes.map(n => ({ ...n, seen: 2, biome: 'meadow' })) } }), true);
+  assert.equal(validRun({ ...ok, at: { phase: 'payout', battle: -1, won: 1 } }), true);
   const bad = [
     null,
     [],
@@ -95,6 +96,8 @@ test('run: the load check refuses broken or tampered runs', () => {
     { ...ok, map: { nodes: MAP.nodes.map((n, i) => (i === 2 ? { ...n, biome: 'Not A Biome' } : n)) } },
     { ...ok, at: { phase: 'nap', battle: -1 } },
     { ...ok, at: { phase: 'walk', battle: -2 } },
+    { ...ok, at: { phase: 'payout', battle: -1, won: 2 } }, // RL-8: won is 0 or 1
+    { ...ok, at: { phase: 'walk', battle: -1, extra: 1 } }, // RL-8: nothing else in at
     { ...ok, clock: 0 },
     { ...ok, forecast: [['sun'], 'rain'] },
     { ...ok, forecast: Array(7).fill([]) }, // more nodes than the map has
