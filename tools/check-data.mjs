@@ -259,6 +259,20 @@ check('roads.schema.json', D.roads || [], 'roads.json');
     }
   }
 }
+// roguelite track RL-3: what a run pays when it ends (logic/run-state.js payoutOf): every rate a number, none below 0,
+// the items' share of their price at most 1, the seals for a win a whole number
+{
+  const pay = D.rules && D.rules.run && D.rules.run.payout,
+    RATES = ['money', 'itemShare', 'released', 'node', 'win', 'winSeals'];
+  if (!pay || typeof pay !== 'object') problem('rules.json', 'run.payout missing');
+  else {
+    for (const k of RATES)
+      if (typeof pay[k] !== 'number' || !(pay[k] >= 0)) problem('rules.json', `run.payout.${k} is not a number of 0 or more`);
+    for (const k of Object.keys(pay)) if (!RATES.includes(k)) problem('rules.json', `run.payout.${k}: no such rate`);
+    if (pay.itemShare > 1) problem('rules.json', 'run.payout.itemShare is more than 1 (items would pay over their price)');
+    if (!Number.isInteger(pay.winSeals)) problem('rules.json', 'run.payout.winSeals is not a whole number');
+  }
+}
 // phase 17: robot parts and gems: the schema, then the moves and types they name and the slot each part fits
 const robots = D.robots || { parts: {}, gems: {} },
   types = new Set([...(D.types || []).map(t => t.id), 'None']);

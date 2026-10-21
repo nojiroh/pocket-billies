@@ -127,5 +127,8 @@
   "cap": 0.2,
   "gemAffinity": 1.2,
   "xpYield": 150
+ },
+ "run": {
+  "payout": {"money":0.1,"itemShare":0.5,"released":15,"node":10,"win":100,"winSeals":1}
  }
 }
