@@ -142,3 +142,101 @@ test("joined dials are copied, so the caller's are not changed; no room for a fi
   assert.deepEqual(r.notes, ['no room for the exit joined on the south side (four exits at most)']);
   assert.equal(G.mapgenParams({}).edges, undefined, 'no edges key unless joined');
 });
+
+/* a sweep of joined pairs: random dials for both, the child joined to one of the parent's north exits */
+function joinedPairs(seed, n, { terraces }) {
+  const Rn = modules.rng.rngFrom(seed, 'pairs'),
+    pick = o => Object.keys(o)[Rn.int(0, Object.keys(o).length - 1)],
+    feats = Object.keys(G.MAPGEN_FEATURES).filter(f => terraces || f !== 'terraces');
+  const dials = exits => ({
+    biome: pick(GAME_DATA.biomes),
+    seed: Rn.int(0, 1e6),
+    w: 112,
+    h: 64,
+    land: {
+      hills: Rn.next(),
+      water: pick(G.MAPGEN_WATER),
+      waterAmount: Rn.next(),
+      terraces: terraces && Rn.chance(0.6) ? Rn.next() : 0,
+      cliffs: Rn.next(),
+    },
+    road: { exits, shape: pick(G.MAPGEN_SHAPES), wobble: Rn.next(), surface: pick(G.MAPGEN_SURFACES) },
+    feature: feats[Rn.int(0, feats.length - 1)],
+    nature: { trees: Rn.next(), growth: Rn.next(), tall: Rn.next() },
+  });
+  const out = [];
+  for (let i = 0; i < n; i++) {
+    const pd = dials([
+        { side: 'S', t: 0.5 },
+        { side: 'N', t: 0.25 },
+        { side: 'N', t: 0.75 },
+      ]),
+      P = G.mapgenScene(pd, ctx).scene,
+      exit = Rn.chance(0.5) ? 'north' : 'north2',
+      strip = G.mapgenEdgeStrip(P, exit, { w: 112, h: 64 }, [0.25, 0.5, 0.75][Rn.int(0, 2)]),
+      cd = {
+        ...dials([
+          { side: 'S', t: 0.5 },
+          { side: 'N', t: 0.5 },
+        ]),
+        edges: [strip],
+      },
+      K = G.mapgenScene(cd, ctx).scene;
+    out.push({
+      P,
+      exit,
+      K,
+      kExit: K.edgeExits.find(e => e.side === 'S').id,
+      where: JSON.stringify({ pd, cd: { ...cd, edges: 1 } }),
+    });
+  }
+  return out;
+}
+
+test('a child joined to its parent meets it: the same heights along the band, a straight walk across', () => {
+  for (const { P, exit, K, kExit, where } of joinedPairs(5, 24, { terraces: false })) {
+    const a = G.mapgenSeamAgreement(P, exit, K, kExit, C);
+    assert.equal(a.dhNear, 0, where);
+    assert.equal(a.dhBand, 0, where);
+    assert.equal(a.walk, null, where);
+    assert.deepEqual(G.mapgenUnreachable(K, C), [], where);
+    assert.deepEqual(
+      R.seamRulesPair(
+        P,
+        P.edgeExits.find(e => e.id === exit),
+        K,
+        K.edgeExits.find(e => e.id === kExit)
+      ),
+      [],
+      where
+    );
+  }
+});
+
+test('a node with two parents on one side meets each of them up to the midpoint', () => {
+  const P1 = G.mapgenScene(parentParams(21), ctx).scene,
+    P2 = G.mapgenScene(parentParams(22, { land: { hills: 1 } }), ctx).scene,
+    s1 = G.mapgenEdgeStrip(P1, 'north', { w: 112, h: 64 }, 0.25),
+    s2 = G.mapgenEdgeStrip(P2, 'north2', { w: 112, h: 64 }, 0.75),
+    K = G.mapgenScene(
+      {
+        ...childParams(23, [s1, s2]),
+        road: {
+          exits: [
+            { side: 'S', t: 0.25 },
+            { side: 'S', t: 0.75 },
+            { side: 'N', t: 0.5 },
+          ],
+        },
+      },
+      ctx
+    ).scene;
+  assert.deepEqual(R.seamRulesSides(K), []);
+  for (const [P, exit, id] of [
+    [P1, 'north', 'south'],
+    [P2, 'north2', 'south2'],
+  ]) {
+    const a = G.mapgenSeamAgreement(P, exit, K, id, C);
+    assert.deepEqual([a.dhNear, a.dhBand, a.walk], [0, 0, null], exit);
+  }
+});

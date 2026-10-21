@@ -39,6 +39,7 @@ expose({
   MAPGEN_WATER: [() => MAPGEN_WATER],
   MAPGEN_WET: [() => MAPGEN_WET],
   MAPGEN_WILD_MARK: [() => MAPGEN_WILD_MARK],
+  mapgenAlong: [() => mapgenAlong],
   mapgenBetween: [() => mapgenBetween],
   // @ts-expect-error -- replaced on purpose
   mapgenBezier: [() => mapgenBezier, v => (mapgenBezier = v)],
@@ -53,6 +54,9 @@ expose({
   mapgenCornerHeight: [() => mapgenCornerHeight, v => (mapgenCornerHeight = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenDecodeBase64: [() => mapgenDecodeBase64, v => (mapgenDecodeBase64 = v)],
+  mapgenDepth: [() => mapgenDepth],
+  // @ts-expect-error -- replaced on purpose
+  mapgenEdgeCorrection: [() => mapgenEdgeCorrection, v => (mapgenEdgeCorrection = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenEdgeStrip: [() => mapgenEdgeStrip, v => (mapgenEdgeStrip = v)],
   // @ts-expect-error -- replaced on purpose
@@ -77,6 +81,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   mapgenMergeDefaults: [() => mapgenMergeDefaults, v => (mapgenMergeDefaults = v)],
   // @ts-expect-error -- replaced on purpose
+  mapgenNearJoined: [() => mapgenNearJoined, v => (mapgenNearJoined = v)],
+  // @ts-expect-error -- replaced on purpose
   mapgenNearRoadWidth: [() => mapgenNearRoadWidth, v => (mapgenNearRoadWidth = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenNewWork: [() => mapgenNewWork, v => (mapgenNewWork = v)],
@@ -96,6 +102,8 @@ expose({
   mapgenPaintStream: [() => mapgenPaintStream, v => (mapgenPaintStream = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenParams: [() => mapgenParams, v => (mapgenParams = v)],
+  // @ts-expect-error -- replaced on purpose
+  mapgenPinEdges: [() => mapgenPinEdges, v => (mapgenPinEdges = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenPolyLength: [() => mapgenPolyLength, v => (mapgenPolyLength = v)],
   // @ts-expect-error -- replaced on purpose
@@ -551,6 +559,66 @@ export function mapgenStageHeights(G) {
   for (let q = 0; q < G.H.length; q++) G.H[q] -= mean;
 }
 
+/* ---------- MG-2: the land meets the neighbour along a joined edge ---------- */
+/** the depth of point (x, z) from a side of the map, and how far along that side it is */
+export const mapgenDepth = (G, side, x, z) => (side === 'S' ? z : side === 'N' ? G.h - z : side === 'W' ? x : G.w - x);
+export const mapgenAlong = (side, x, z) => (side === 'N' || side === 'S' ? x : z);
+/** a side's corner heights corrected toward each joined strip: corr[u] for every corner u along the side. Full
+ * correction where a strip is, a 4 m fade past its ends, and where two strips share a side (a node with two
+ * parents) each holds to the midpoint between their exits less 2 m, blended across the 4 m between (as
+ * seamless-world.js seamlessSeamOf shares a side) */
+export function mapgenEdgeCorrection(G, side, strips) {
+  const L = side === 'N' || side === 'S' ? G.w : G.h,
+    edge = u =>
+      mapgenCornerHeight(
+        G,
+        ...(side === 'N' || side === 'S' ? [u, side === 'N' ? G.h : 0] : [side === 'E' ? G.w : 0, u])
+      ),
+    list = strips.slice().sort((a, b) => a.at - b.at),
+    corr = new Float32Array(L + 1),
+    weight = new Float32Array(L + 1);
+  list.forEach((s, k) => {
+    const n = s.heights.length,
+      a = Math.max(s.u0, k ? Math.ceil((list[k - 1].at + s.at) / 2 + 2) : -1e9),
+      b = Math.min(s.u0 + n - 1, k < list.length - 1 ? Math.floor((s.at + list[k + 1].at) / 2 - 2) : 1e9);
+    if (b < a) return;
+    const diff = u => s.heights[mapgenBetween(u, a, b) - s.u0] - edge(mapgenBetween(u, a, b));
+    for (let u = Math.max(0, a - 4); u <= Math.min(L, b + 4); u++) {
+      const f = u < a ? mapgenSmooth(1 - (a - u) / 4) : u > b ? mapgenSmooth(1 - (u - b) / 4) : 1;
+      if (f <= 0) continue;
+      corr[u] += diff(u) * f;
+      weight[u] += f;
+    }
+  });
+  for (let u = 0; u <= L; u++) if (weight[u] > 1) corr[u] /= weight[u];
+  return corr;
+}
+/** the land pinned to the joined strips: each corner moves by its side's correction, less and less further in
+ * (gone at `fade` metres). Run on the raw land (fade 16) and again once nothing else moves the land (fade 6), so the
+ * joined edge ends exactly at the neighbour's heights */
+export function mapgenPinEdges(G, fade) {
+  const sides = {};
+  for (const s of G.joined) (sides[s.side] = sides[s.side] || []).push(s);
+  for (const [side, strips] of Object.entries(sides)) {
+    const corr = mapgenEdgeCorrection(G, side, strips);
+    for (let j = 0; j <= G.h; j++)
+      for (let i = 0; i <= G.w; i++) {
+        const d = mapgenDepth(G, side, i, j);
+        if (d >= fade) continue;
+        const c = corr[mapgenAlong(side, i, j)];
+        if (c) G.H[j * (G.w + 1) + i] += c * (1 - mapgenSmooth(d / fade));
+      }
+  }
+}
+/** is (x, z) within `depth` metres of a joined edge's strip (with its 4 m fade) */
+export function mapgenNearJoined(G, x, z, depth) {
+  for (const s of G.joined) {
+    const u = mapgenAlong(s.side, x, z);
+    if (mapgenDepth(G, s.side, x, z) < depth && u > s.u0 - 4 && u < s.u0 + s.heights.length + 3) return true;
+  }
+  return false;
+}
+
 /* ---------- 3. road: a curve between the exits through the hub, sampled every half metre ---------- */
 export function mapgenBezier(a, b, c, d, t) {
   const u = 1 - t;
@@ -822,7 +890,11 @@ export function mapgenChooseHub(G) {
     mapgenPaintDisc(G, M[k][0], M[k][1], r, q => {
       if (G.F[q] & (4 | 8)) dry = false;
     });
-    return dry && G.exits.every(e => Math.hypot(M[k][0] - e.pt[0], M[k][1] - e.pt[1]) > away);
+    return (
+      dry &&
+      G.exits.every(e => Math.hypot(M[k][0] - e.pt[0], M[k][1] - e.pt[1]) > away) &&
+      !mapgenNearJoined(G, M[k][0], M[k][1], away)
+    );
   };
   /* first with room round it; on a crowded map (water along a short road) a dry spot of the road will do */
   for (const [r, away, from] of [
@@ -1243,6 +1315,12 @@ export function mapgenStageWater(G) {
           }
         });
     }
+    /* MG-2: and out of a joined edge's strip, so the edge meets the neighbour's land */
+    for (let q = 0; q < G.w * G.h; q++)
+      if (G.F[q] & 4 && mapgenNearJoined(G, (q % G.w) + 0.5, Math.floor(q / G.w) + 0.5, 6)) {
+        G.F[q] &= ~4;
+        G.T[q] = G.F[q] & 1 ? MAPGEN_SURFACES[P.road.surface] : B.ground.bank;
+      }
     mapgenLowerWater(G);
   }
   mapgenBridgesOverWater(G);
@@ -1679,6 +1757,7 @@ export function mapgenScene(params, ctx) {
     if (!G.joined.includes(s))
       G.notes.push(`no room for the exit joined on the ${MAPGEN_SIDE_NAME[s.side]} side (four exits at most)`);
   mapgenStageHeights(G);
+  mapgenPinEdges(G, 16);
   mapgenStageRoad(G);
   mapgenStageGround(G);
   mapgenStageWater(G);
@@ -1688,6 +1767,7 @@ export function mapgenScene(params, ctx) {
   mapgenStageFeature(G);
   mapgenStagePlants(G);
   mapgenStageProps(G);
+  mapgenPinEdges(G, 6);
   const { w, h, B } = G;
   const tiles = [];
   for (let j = h - 1; j >= 0; j--) tiles.push(G.T.slice(j * w, (j + 1) * w).join(''));
