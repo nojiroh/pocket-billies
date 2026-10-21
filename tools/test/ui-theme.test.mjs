@@ -4,7 +4,17 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { cssColour, roleVar, uiThemeCss, uiThemeLook, UI_ROLES } from '../../game/js/logic/ui-theme.js';
+import {
+  cssColour,
+  roleVar,
+  shapeDecls,
+  shapePoints,
+  shapeVars,
+  uiThemeCss,
+  uiThemeLook,
+  UI_ROLES,
+  UI_SHAPE_DEFAULTS,
+} from '../../game/js/logic/ui-theme.js';
 
 const THEME = JSON.parse(readFileSync(join(import.meta.dirname, '../../game/data/uiTheme.json'), 'utf8'));
 
@@ -94,4 +104,74 @@ test('every font the schema allows has files in game/fonts', () => {
       );
     assert.match(t, /@font-face/, `${fam} has files`);
   }
+});
+
+// UI-2: the angular shapes as clip-path polygons
+test('the default shapes: two cuts on a panel, four on a card, a long hexagon for the main action', () => {
+  const light = blockOf(uiThemeCss(THEME), ':root');
+  assert.equal(
+    light['--clip-panel'],
+    'polygon(0 12px, 12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%)'
+  );
+  assert.equal(shapePoints('card', UI_SHAPE_DEFAULTS).length, 8);
+  assert.equal(
+    light['--clip-action'],
+    'polygon(0 50%, 12px 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 12px 100%)'
+  );
+  assert.equal(light['--clip-tab'], 'polygon(0 8px, 8px 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%)');
+  // the edge ring is the outline and the outline 1 px in, as one evenodd polygon; the diagonal moves in by 1 px
+  assert.match(light['--edge-card'], /^polygon\(evenodd, 0 8px, .*, 0 8px, 1px 9\.41px, 9\.41px 1px, /);
+  // the shadow ring: a box 48 px out, then the outline (cut out of it)
+  assert.match(
+    light['--ring-panel'],
+    /^polygon\(evenodd, -48px -48px, calc\(100% \+ 48px\) -48px, .*, 0 12px, 12px 0, /
+  );
+});
+
+test('a family can be rounded or square, and cuts can be stepped like pixel art', () => {
+  const round = shapePoints('panel', { ...UI_SHAPE_DEFAULTS, families: { panel: 'rounded' } });
+  assert.equal(round.length, 4 * 7, 'seven points an arc');
+  assert.deepEqual(round[0], [0, 0, 0, 22]);
+  const sq = shapeVars('card', { ...UI_SHAPE_DEFAULTS, families: { card: 'square' } });
+  assert.equal(sq['--clip-card'], 'polygon(0 0, 100% 0, 100% 100%, 0 100%)');
+  // a 12 px cut in 4 px steps: three stairs from the left edge to the top edge
+  const st = shapePoints('panel', { ...UI_SHAPE_DEFAULTS, stepped: true });
+  assert.deepEqual(
+    st.slice(0, 7).map(([, x, , y]) => [x, y]),
+    [
+      [0, 12],
+      [4, 12],
+      [4, 8],
+      [8, 8],
+      [8, 4],
+      [12, 4],
+      [12, 0],
+    ]
+  );
+  // the stepped preset changes the shapes only
+  const css = blockOf(uiThemeCss(THEME, { preset: 'stepped' }), ':root');
+  assert.match(css['--clip-panel'], /^polygon\(0 12px, 4px 12px, 4px 8px, /);
+  assert.equal(css['--text'], '#22301f');
+  // alpha05 is rounded: the look before UI-2
+  assert.match(blockOf(uiThemeCss(THEME, { preset: 'alpha05' }), ':root')['--clip-card'], /^polygon\(0 16px, 0\.55px /);
+});
+
+test('the edge line and the drop shadows follow the text tint on the light side and black on the dark', () => {
+  const css = uiThemeCss(THEME);
+  assert.equal(blockOf(css, ':root')['--c-shadow'], '#22301f');
+  assert.equal(blockOf(css, ':root')['--edge-lo'], 'rgba(34, 48, 31, 0.3)');
+  assert.equal(blockOf(css, ":root[data-theme='dark']")['--c-shadow'], '#000000');
+});
+
+test("tokens.css holds the generator's default shapes, for a page without uiTheme.json", () => {
+  const tok = readFileSync(join(import.meta.dirname, '../../game/css/tokens.css'), 'utf8');
+  const part = tok.slice(tok.indexOf('/* shapes: start */') + 19, tok.indexOf('/* shapes: end */'));
+  const norm = s =>
+    s
+      .replace(/\s+/g, ' ')
+      .replace(/\( /g, '(')
+      .replace(/ \)/g, ')')
+      .replace(/,\s*\)/g, ')')
+      .trim();
+  assert.equal(norm(part), norm(shapeDecls({}).join(' ')));
 });

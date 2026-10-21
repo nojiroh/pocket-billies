@@ -37,8 +37,12 @@
   .g-stack { display: grid; gap: var(--s3); }
   .g-sw { display: grid; place-items: center; min-width: 44px; height: 44px; border-radius: var(--r-sm); background: var(--g-bg2);
     font: 600 11px/1 var(--font-voice); }
-  .g-sprite { display: block; width: 44px; height: 44px; border-radius: 50%; background: color-mix(in srgb, var(--c1) 40%, var(--g-solid)); }
+  .g-sprite { display: block; width: 64px; height: 64px; background: var(--c1);
+    clip-path: polygon(30% 4%, 70% 4%, 80% 22%, 80% 40%, 70% 52%, 86% 70%, 86% 100%, 14% 100%, 14% 70%, 30% 52%, 20% 40%, 20% 22%); }
   .g-local { position: relative !important; inset: auto !important; transform: none !important; left: auto !important; bottom: auto !important; }
+  .g-shots .g-sec { padding-bottom: var(--s4); }
+  .g-list { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
+  .g-list li { padding: var(--s2) var(--s3); font: 600 15px/1.2 var(--font-voice); }
   .g-dark { padding: var(--s4); border-radius: var(--r-lg); background: #241c3a; }
 </style>
 </head>
@@ -48,64 +52,90 @@
   <button data-g="theme" data-v="light" aria-pressed="true">Light</button><button data-g="theme" data-v="dark" aria-pressed="false">Dark</button>
   <button data-g="w" data-v="320px" aria-pressed="false">320</button><button data-g="w" data-v="390px" aria-pressed="true">390</button><button data-g="w" data-v="760px" aria-pressed="false">Wide</button>
   <button data-g="motion" data-v="reduced" aria-pressed="false">Reduced motion</button>
-  <button data-g="look" data-v="" aria-pressed="true">Copper Grove</button><button data-g="look" data-v="alpha05" aria-pressed="false">alpha 0.5</button>
+  <button data-g="look" data-v="" aria-pressed="true">Copper Grove</button><button data-g="look" data-v="alpha05" aria-pressed="false">alpha 0.5</button><button data-g="look" data-v="stepped" aria-pressed="false">Stepped</button>
 </div>
 <main class="g-wrap">
 
-<section class="g-sec"><h2>Tokens</h2><p>Space (--s1 to --s7), corners, type. Change them in game/css/tokens.css.</p>
+<section class="g-sec" data-shot="tokens"><h2>Tokens</h2><p>Space (--s1 to --s7), corners, type. Change them in game/css/tokens.css.</p>
   <div class="g-row"><span class="g-sw" style="width:4px;min-width:4px"></span><span class="g-sw" style="min-width:8px;width:8px"></span><span class="g-sw" style="min-width:12px;width:12px"></span><span class="g-sw">16</span><span class="g-sw" style="min-width:24px">24</span><span class="g-sw" style="min-width:32px">32</span><span class="g-sw" style="min-width:48px">48</span></div>
   <div class="g-row" style="margin-top:var(--s3)"><span class="g-sw" style="border-radius:var(--r-sm)">sm</span><span class="g-sw" style="border-radius:var(--r-md)">md</span><span class="g-sw" style="border-radius:var(--r-lg)">lg</span><span class="g-sw" style="border-radius:var(--r-pill);min-width:72px">pill</span></div>
   <p style="margin-top:var(--s3);font:700 var(--fs-screen)/1 var(--font-voice);color:var(--text)">Screen title</p>
   <p class="prose" style="color:var(--text)">Long text is in the reading font: descriptions, dialogue, the Guide and help. Names, headings, buttons and numbers stay in the pixel font.</p>
 </section>
 
-<section class="g-sec"><h2>Buttons</h2><p>pb-button (new code) and .pb (older screens). Tap one: it presses in.</p>
+<section class="g-sec" data-shot="buttons"><h2>Buttons</h2><p>pb-button (new code) and .pb (older screens). Tap one: it presses in.</p>
   <div class="g-row"><pb-button kind="gold">Choose Kidling</pb-button><pb-button kind="dark">Bag</pb-button><pb-button>Plain</pb-button><pb-button kind="quiet">Not yet</pb-button><pb-button disabled>Locked</pb-button></div>
+  <div class="g-stack" style="margin-top:var(--s3)"><pb-button kind="gold" wide>Fly to the first node</pb-button></div>
   <div class="g-row" style="margin-top:var(--s3)"><button class="pb gold">Gold</button><button class="pb dark">Dark</button><button class="pb">Plain</button><button class="pb quiet">Quiet</button><button class="pb small">Small</button><button class="pb" disabled>Disabled</button></div>
 </section>
 
-<section class="g-sec"><h2>Pills and tags</h2>
-  <div class="g-row"><span class="chip" style="--tc:#E0603A;--tf:#fff">Fire</span><span class="chip" style="--tc:#3A86D6;--tf:#fff">Water</span><span class="chip" style="--tc:#4E9E42;--tf:#fff">Grass</span><pb-pill tone="#7d52c2">Psychic</pb-pill><pb-pill>Prime</pb-pill></div>
+<section class="g-sec" data-shot="pills"><h2>Pills and tags</h2>
+  <div class="g-row"><span class="chip" data-ty="Fire" style="--tc:#E0603A;--tf:#fff">Fire</span><span class="chip" data-ty="Water" style="--tc:#3A86D6;--tf:#fff">Water</span><span class="chip" data-ty="Grass" style="--tc:#4E9E42;--tf:#fff">Grass</span><pb-pill tone="#7d52c2" type="Psychic">Psychic</pb-pill><pb-pill>Prime</pb-pill></div>
   <div class="g-row" style="margin-top:var(--s3)"><span class="u-tag lead">Lead</span><span class="u-tag bud">♥ Buddy</span><span class="u-tag prime">Prime</span><span class="u-brk">Broken</span><span class="u-brk dmg">Damaged</span></div>
 </section>
 
-<section class="g-sec"><h2>Panels</h2>
+<section class="g-sec" data-shot="panels"><h2>Panels</h2>
   <div class="g-stack"><pb-panel>Raised: cards on a screen.</pb-panel><pb-panel depth="float">Floating: sheets, the bottom bar.</pb-panel><pb-panel depth="flat">Flat: inside another panel.</pb-panel></div>
 </section>
 
-<section class="g-sec"><h2>Messages</h2><p>A toast (the same message again adds a count), the inbox dot, a rising number.</p>
+<section class="g-sec" data-shot="cards"><h2>Cards</h2><p>pb-card: solid inside a panel, four small cuts; selected has a gold notch and edge.</p>
+  <pb-panel><div class="g-stack"><pb-card>A card: Kidling, Lv 5</pb-card><pb-card selected>Selected: Emberox, Lv 30</pb-card><pb-card depth="flat">Flat: inside a card</pb-card><pb-card>A long name that wraps over two lines: Ember Bulwark the Unbreakable</pb-card></div></pb-panel>
+</section>
+
+<section class="g-sec" data-shot="tabs"><h2>Tabs</h2><p>pb-tabs: trapezoids; arrow keys move along the row. The run's and the hub's bottom-bar sets.</p>
+  <div class="g-stack"><pb-tabs items="map:Map,team:Team,bag:Bag,relics:Relics" value="team" label="Run"></pb-tabs><pb-tabs items="map:Map,team:Team,bag:Bag,lab:Lab" value="lab" label="Hub"></pb-tabs><pb-tabs items="moves:Moves,build:Build,about:About the Billie and its long history" value="moves"></pb-tabs></div>
+</section>
+
+<section class="g-sec" data-shot="bars"><h2>Stat bars</h2><p>pb-stat-bar: HP (teal, gold under half, red under a quarter), XP, a stat; segmented or whole.</p>
+  <div class="g-stack"><pb-stat-bar value="77" max="77" segments="10"></pb-stat-bar><pb-stat-bar value="62" max="147" segments="10"></pb-stat-bar><pb-stat-bar value="3" max="24" segments="10"></pb-stat-bar><pb-stat-bar value="0" max="38" segments="10"></pb-stat-bar><pb-stat-bar kind="xp" value="40" max="100"></pb-stat-bar><pb-stat-bar kind="stat" value="7" max="10" segments="10" label="Attack"></pb-stat-bar></div>
+</section>
+
+<section class="g-sec" data-shot="fields"><h2>Fields</h2><p>pb-field: empty, filled, with a hint, with an error, disabled.</p>
+  <div class="g-stack"><pb-field label="Nickname" placeholder="Kidling"></pb-field><pb-field label="Nickname" value="Sir Reginald Taxworth III" hint="Up to 24 letters."></pb-field><pb-field label="Friend code" value="PB-12" error="A friend code has 8 letters."></pb-field><pb-field label="Save name" value="Locked" disabled></pb-field></div>
+</section>
+
+<section class="g-sec" data-shot="lists"><h2>Lists, rules, portraits</h2><p>The slanted selection bar (.pb-sel), the section rule (hr.pb-rule) and a portrait whose head breaks out of its circle (.pb-portrait).</p>
+  <pb-panel><ul class="g-list"><li class="pb-sel">Continue</li><li class="pb-sel" aria-selected="true">New run</li><li class="pb-sel">Settings</li></ul><hr class="pb-rule"><div class="g-row"><span class="pb-portrait" style="--c1:#E0603A"><i class="g-sprite" style="--c1:#c4502e"></i></span><span class="pb-portrait" style="--por:96px;--c1:#3A86D6"><i class="g-sprite" style="--c1:#2f6fb3;width:96px;height:96px"></i></span></div></pb-panel>
+</section>
+
+<section class="g-sec" data-shot="messages"><h2>Messages</h2><p>A toast (the same message again adds a count), the inbox dot, a rising number.</p>
   <div class="g-stack">
     <pb-toast class="g-local" id="gToast"></pb-toast>
     <div class="g-row"><button class="pb small" id="gToastMore">Same message again</button><span style="position:relative;width:60px;height:44px;display:inline-block"><button class="tb-inbox" style="left:0;top:0"><b>3</b></button></span><button class="pb small" id="gFloat">+$120</button></div>
   </div>
 </section>
 
-<section class="g-sec"><h2>Team rows</h2><p>js/unit-card.js unitRowHTML: normal, a long name, low HP, fainted, Prime; the open spots.</p>
+<section class="g-sec" data-shot="team-rows"><h2>Team rows</h2><p>js/unit-card.js unitRowHTML: normal, a long name, low HP, fainted, Prime; the open spots.</p>
   <div class="u-list">
-    <button class="u-row" style="--c1:#E0603A;--c2:#E0603A"><span class="u-spr"><i class="g-sprite"></i></span><span class="u-mid"><span class="u-head"><b>Emberox</b><span class="u-lv tnum">Lv 30</span></span><span class="u-types"><span class="chip" style="--tc:#E0603A;--tf:#fff">Fire</span><span class="u-tag prime">Prime</span></span></span><span class="u-right"><span class="u-hp"><i style="width:100%"></i></span><span class="u-hpn tnum">77/77</span></span></button>
-    <button class="u-row" style="--c1:#7fb2f5;--c2:#f2c14e"><span class="u-spr"><i class="g-sprite"></i></span><span class="u-mid"><span class="u-head"><b>Ember Bulwark the Unbreakable</b><span class="u-lv tnum">Lv 48</span></span><span class="u-types"><span class="chip" style="--tc:#8a8fa6;--tf:#fff">Steel</span><span class="chip" style="--tc:#b9854a;--tf:#fff">Ground</span></span></span><span class="u-right"><span class="u-hp mid"><i style="width:42%"></i></span><span class="u-hpn tnum">62/147</span></span></button>
-    <button class="u-row" style="--c1:#4E9E42;--c2:#4E9E42"><span class="u-spr"><i class="g-sprite"></i></span><span class="u-mid"><span class="u-head"><b>Kidling</b><span class="u-lv tnum">Lv 5</span></span><span class="u-types"><span class="chip" style="--tc:#4E9E42;--tf:#fff">Grass</span></span></span><span class="u-right"><span class="u-hp low"><i style="width:12%"></i></span><span class="u-hpn tnum">3/24</span></span></button>
-    <button class="u-row down" style="--c1:#3A86D6;--c2:#3A86D6"><span class="u-spr"><i class="g-sprite"></i></span><span class="u-mid"><span class="u-head"><b>Cartotter</b><span class="u-lv tnum">Lv 12</span></span><span class="u-types"><span class="chip" style="--tc:#3A86D6;--tf:#fff">Water</span></span></span><span class="u-right"><span class="u-hp low"><i style="width:0%"></i></span><span class="u-hpn tnum">0/38</span></span></button>
+    <button class="u-row" style="--c1:#E0603A;--c2:#E0603A"><span class="u-spr"><i class="g-sprite"></i></span><span class="u-mid"><span class="u-head"><b>Emberox</b><span class="u-lv tnum">Lv 30</span></span><span class="u-types"><span class="chip" data-ty="Fire" style="--tc:#E0603A;--tf:#fff">Fire</span><span class="u-tag prime">Prime</span></span></span><span class="u-right"><span class="u-hp"><i style="width:100%"></i></span><span class="u-hpn tnum">77/77</span></span></button>
+    <button class="u-row" style="--c1:#7fb2f5;--c2:#f2c14e"><span class="u-spr"><i class="g-sprite"></i></span><span class="u-mid"><span class="u-head"><b>Ember Bulwark the Unbreakable</b><span class="u-lv tnum">Lv 48</span></span><span class="u-types"><span class="chip" data-ty="Steel" style="--tc:#8a8fa6;--tf:#fff">Steel</span><span class="chip" data-ty="Ground" style="--tc:#b9854a;--tf:#fff">Ground</span></span></span><span class="u-right"><span class="u-hp mid"><i style="width:42%"></i></span><span class="u-hpn tnum">62/147</span></span></button>
+    <button class="u-row" style="--c1:#4E9E42;--c2:#4E9E42"><span class="u-spr"><i class="g-sprite"></i></span><span class="u-mid"><span class="u-head"><b>Kidling</b><span class="u-lv tnum">Lv 5</span></span><span class="u-types"><span class="chip" data-ty="Grass" style="--tc:#4E9E42;--tf:#fff">Grass</span></span></span><span class="u-right"><span class="u-hp low"><i style="width:12%"></i></span><span class="u-hpn tnum">3/24</span></span></button>
+    <button class="u-row down" style="--c1:#3A86D6;--c2:#3A86D6"><span class="u-spr"><i class="g-sprite"></i></span><span class="u-mid"><span class="u-head"><b>Cartotter</b><span class="u-lv tnum">Lv 12</span></span><span class="u-types"><span class="chip" data-ty="Water" style="--tc:#3A86D6;--tf:#fff">Water</span></span></span><span class="u-right"><span class="u-hp low"><i style="width:0%"></i></span><span class="u-hpn tnum">0/38</span></span></button>
+    <button class="u-row bot" style="--c1:#8a9cb0;--c2:#5aa9d6"><span class="u-spr"><i class="g-sprite" style="--c1:#6f8299"></i></span><span class="u-mid"><span class="u-head"><b>Voltcrank</b><span class="u-lv tnum">Lv 14</span></span><span class="u-types"><span class="chip" data-ty="Steel" style="--tc:#8a8fa6;--tf:#fff">Steel</span></span><span class="pb-limbs" role="img" aria-label="left arm 100%, right arm 30%, legs broken"><span class="pb-limb ok"><b>L</b><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span><span class="pb-limb low"><b>R</b><i class="on"></i><i class="on"></i><i></i><i></i></span><span class="pb-limb broken"><b>Lg</b><i></i><i></i><i></i><i></i></span></span></span><span class="u-right"><span class="u-hp mid"><i style="width:45%"></i></span><span class="u-hpn tnum">27/60</span></span></button>
     <div class="u-row u-open"><span class="u-plus">+</span><span class="u-mid"><b>2 open spots</b><span class="u-note">Bring someone back from storage.</span></span><button class="pb small">Add</button></div>
   </div>
 </section>
 
-<section class="g-sec"><h2>Build tab</h2><p>A Billie's parts on S·M·L dials and its balance; a robot's slots and the weight its legs carry.</p>
+<section class="g-sec" data-shot="build"><h2>Build tab</h2><p>A Billie's parts on S·M·L dials and its balance; a robot's slots and the weight its legs carry.</p>
   <div class="g-stack">
     <div class="u-build"><div class="u-build-h"><b>Build</b><span class="tnum">80 kg · Medium</span></div>
       <ul class="u-slots"><li><span class="u-slot-n">Head</span><span class="u-dial"><span>S</span><span>M</span><span class="on off-size">L</span></span></li><li><span class="u-slot-n">Body</span><span class="u-dial"><span>S</span><span class="on">M</span><span>L</span></span></li><li><span class="u-slot-n">Back</span><span class="u-dial"><span class="on off-size">S</span><span>M</span><span>L</span></span></li></ul>
       <div class="u-bal"><span class="u-bal-k">Speed</span><span class="u-bal-track"><i style="left:66%"></i></span><span class="u-bal-k">Attack</span><span class="u-bal-n tnum dn">−8%</span><span></span><span class="u-bal-n tnum r up">+7%</span></div>
       <p class="u-prime">Not Prime: 2 parts off normal size. Bigger parts hit harder but slow it down.</p></div>
-    <div class="u-build"><ul class="u-slots u-bot-slots"><li><span class="u-slot-n">Left arm</span><span class="u-part"><b>Tesla Coil</b><span class="u-part-m"><span class="chip" style="--tc:#e0b030;--tf:#3a2408">Electric</span><span>Arc Whip</span><span class="u-brk">Broken</span></span></span></li><li><span class="u-slot-n">Legs</span><span class="u-part"><b>Strider Legs</b><span class="u-part-m"><span class="chip" style="--tc:#e0b030;--tf:#3a2408">Electric</span><span>Dash Kick</span><span class="u-brk dmg">Damaged</span></span></span></li></ul>
+    <div class="u-build"><ul class="u-slots u-bot-slots"><li><span class="u-slot-n">Left arm</span><span class="u-part"><b>Tesla Coil</b><span class="u-part-m"><span class="chip" data-ty="Electric" style="--tc:#e0b030;--tf:#3a2408">Electric</span><span>Arc Whip</span><span class="u-brk">Broken</span></span></span></li><li><span class="u-slot-n">Legs</span><span class="u-part"><b>Strider Legs</b><span class="u-part-m"><span class="chip" data-ty="Electric" style="--tc:#e0b030;--tf:#3a2408">Electric</span><span>Dash Kick</span><span class="u-brk dmg">Damaged</span></span></span></li></ul>
       <div class="u-carry"><div class="u-carry-h"><b>Weight</b><span class="tnum">120 kg · legs carry 100 kg</span></div><span class="u-carry-track"><i class="u-carry-cap" style="left:66.7%"></i><i class="u-carry-at over" style="left:80%"></i></span><div class="u-carry-n"><span class="tnum dn">Speed −12%</span><span class="tnum up">Attack +9%</span></div></div></div>
   </div>
 </section>
 
-<section class="g-sec"><h2>Dialogue box</h2><p>The 96 px slot holds a 64 px portrait at 1.5×, drawn in whole device pixels (js/talk.js).</p>
-  <div class="talk-box g-local" style="width:100%;position:relative"><span class="talk-slot"></span><div class="talk-txt"><p class="talk-who">Professor Hazel</p><p class="talk-line">You came down through the crust. Things do, now and then. Mostly furniture.</p></div><span class="talk-more" style="opacity:.8">▼</span></div>
+<section class="g-sec" data-shot="plates"><h2>Battle plates</h2><p>Over each fighter in the 3D scene: a Billie's (the chosen one has a gold edge), a bot's (the shared bot plate: steel, two cuts, limb pips).</p>
+  <div class="g-row" style="padding:var(--s4);background:#2b3a2f;align-items:flex-start"><div class="bplate " style="position:relative;left:auto;top:auto;transform:none"><span class="pl-top"><b class="pl-n">Emberox</b><span class="pl-lv tnum">Lv 30</span></span><span class="pl-hp"><i class="ghost" style="width:82%"></i><i class="fill " style="width:82%"></i></span><span class="pl-bot"><span class="pl-st"></span><span class="pl-sg"></span><span class="pl-num tnum">63/77</span></span><span class="pl-xp"><i style="width:60%"></i></span></div><div class="bplate cur" style="position:relative;left:auto;top:auto;transform:none"><span class="pl-top"><b class="pl-n">Kidling</b><span class="pl-lv tnum">Lv 5</span></span><span class="pl-hp"><i class="ghost" style="width:40%"></i><i class="fill mid" style="width:40%"></i></span><span class="pl-bot"><span class="pl-st"></span><span class="pl-sg"></span><span class="pl-num tnum">10/24</span></span><span class="pl-xp"><i style="width:60%"></i></span></div><div class="bplate bot" style="position:relative;left:auto;top:auto;transform:none"><span class="pl-top"><b class="pl-n">Voltcrank</b><span class="pl-lv tnum">Lv 14</span></span><span class="pl-hp"><i class="ghost" style="width:18%"></i><i class="fill low" style="width:18%"></i></span><span class="pl-bot"><span class="pl-st"></span><span class="pl-sg"></span><span class="pl-num tnum"></span></span><span class="pl-parts"><span class="pb-limbs" role="img" aria-label="left arm 100%, right arm 30%, legs broken"><span class="pb-limb ok"><b>L</b><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span><span class="pb-limb low"><b>R</b><i class="on"></i><i class="on"></i><i></i><i></i></span><span class="pb-limb broken"><b>Lg</b><i></i><i></i><i></i><i></i></span></span></span></div></div>
 </section>
 
-<section class="g-sec"><h2>Battle cards</h2><p>In the 3D scene they float under the one choosing; here they sit still.</p>
+<section class="g-sec" data-shot="dialogue"><h2>Dialogue box</h2><p>The 96 px slot holds a 64 px portrait at 1.5×, drawn in whole device pixels (js/talk.js).</p>
+  <div class="talk-box g-local" style="width:100%;position:relative"><span class="talk-slot"><i class="g-sprite" style="--c1:#b07a52;width:96px;height:96px"></i></span><div class="talk-txt"><p class="talk-who">Professor Hazel</p><p class="talk-line">You came down through the crust. Things do, now and then. Mostly furniture.</p></div><span class="talk-more" style="opacity:.8">▼</span></div>
+</section>
+
+<section class="g-sec" data-shot="battle"><h2>Battle cards</h2><p>In the 3D scene they float under the one choosing; here they sit still.</p>
   <div class="battle ui3d" style="position:relative;inset:auto;height:auto;background:none"><div class="dock" style="position:relative;inset:auto;display:grid;gap:8px;pointer-events:auto">
     <button class="bmsg g-local" id="msg" style="position:relative;width:100%">What will Zorblax do?</button>
     <div class="cmd g-local" id="acts" style="position:relative;width:100%"><div class="c-choose"><div class="moves">
@@ -117,11 +147,11 @@
   </div></div>
 </section>
 
-<section class="g-sec"><h2>Starter pick</h2>
-  <div class="cs" style="position:relative;inset:auto;z-index:auto;cursor:default"><div class="cs-pick g-local" style="width:100%;position:relative;animation:none"><div class="pk-top"><button class="pk-arrow">‹</button><div class="pk-name"><b>Cartotter</b><span class="pk-types"><span class="chip" style="--tc:#3A86D6;--tf:#fff">Water</span></span></div><button class="pk-arrow">›</button></div><div class="pk-dots"><i></i><i class="on"></i><i></i></div><p class="pk-blurb">A river otter that carries everything it owns in one cardboard box.</p><div class="pk-match"><div><span class="pk-k">Strong against</span><span class="pk-ts"><span class="chip" style="--tc:#E0603A;--tf:#fff">Fire</span></span></div><div><span class="pk-k">Weak to</span><span class="pk-ts"><span class="chip" style="--tc:#4E9E42;--tf:#fff">Grass</span></span></div></div><p class="pk-note">Tap Professor Hazel for her (biased) opinion.</p><button class="pb gold wide pk-go">Choose Cartotter</button></div></div>
+<section class="g-sec" data-shot="starter"><h2>Starter pick</h2>
+  <div class="cs" style="position:relative;inset:auto;z-index:auto;cursor:default"><div class="cs-pick g-local" style="width:100%;position:relative;animation:none"><div class="pk-top"><button class="pk-arrow">‹</button><div class="pk-name"><b>Cartotter</b><span class="pk-types"><span class="chip" data-ty="Water" style="--tc:#3A86D6;--tf:#fff">Water</span></span></div><button class="pk-arrow">›</button></div><div class="pk-dots"><i></i><i class="on"></i><i></i></div><p class="pk-blurb">A river otter that carries everything it owns in one cardboard box.</p><div class="pk-match"><div><span class="pk-k">Strong against</span><span class="pk-ts"><span class="chip" data-ty="Fire" style="--tc:#E0603A;--tf:#fff">Fire</span></span></div><div><span class="pk-k">Weak to</span><span class="pk-ts"><span class="chip" data-ty="Grass" style="--tc:#4E9E42;--tf:#fff">Grass</span></span></div></div><p class="pk-note">Tap Professor Hazel for her (biased) opinion.</p><button class="pb gold wide pk-go">Choose Cartotter</button></div></div>
 </section>
 
-<section class="g-sec"><h2>Hazel's HOT TIP</h2>
+<section class="g-sec" data-shot="tip"><h2>Hazel's HOT TIP</h2>
   <div class="btip hot on g-local" style="position:relative;display:grid;place-items:center;padding:var(--s6) 0;border-radius:var(--r-lg)"><div class="btip-card"><span class="btip-hot">HOT TIP!</span><span class="btip-face"></span><span class="btip-t"><b>Professor Hazel</b>Grass beats Fire. Trust me, I’m a doctor.</span><small class="btip-dismiss">Tap anywhere to close</small></div></div>
 </section>
 
@@ -131,7 +161,7 @@
 </section>
 
 <section class="g-sec"><h2>Motion</h2><p>The eight motions (game/css/motion.css). With reduced motion on they fade.</p>
-  <div class="g-row"><button class="pb small" data-m="m-enter">enter</button><button class="pb small" data-m="m-pop">pop</button><button class="pb small" data-m="m-nudge">nudge</button><button class="pb small" data-m="m-count">count</button><button class="pb small m-press">press (tap me)</button></div>
+  <div class="g-row"><button class="pb small" data-m="m-wipe">wipe</button><button class="pb small" data-m="m-wipe-r">wipe from the right</button><button class="pb small" data-m="m-enter">enter</button><button class="pb small" data-m="m-pop">pop</button><button class="pb small" data-m="m-nudge">nudge</button><button class="pb small" data-m="m-count">count</button><button class="pb small m-press">press (tap me)</button></div>
   <div style="margin-top:var(--s3)"><pb-panel id="gMotion">Watch me.</pb-panel></div>
 </section>
 

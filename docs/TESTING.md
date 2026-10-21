@@ -12,6 +12,7 @@ those sessions; until then, follow the rule next to them.
 | (a) lint, types | `npm run lint`, `npm run typecheck` | 4 s warm (9 s cold) + 0.6 s | under 10 s | after every edit (the Claude Code hook runs it) |
 | (b) unit tests | `npm test` | about 1 s | under 30 s | after every edit to logic, data or tests (the hook) |
 | before a commit | `npm run check:modules`, `npm run format:check`, `npm run check:data`, `npm run build` | about 15 s | none | every commit |
+| UI pictures (UI-2) | `npm run check:ui` | about 1.5 min | none | after a change to the kit, its CSS, uiTheme.json or studio/gallery.html |
 | (c) smoke | `npm run check:smoke` | about 2.5 min | 1-2 min | before every commit that touches game/, tools/check-quick.py, vite.config.js or tools/to-module.mjs |
 | (d) full | `npm run check:quick` | about 32 min | about 10 min | at the end of a phase, nightly in CI |
 | (e) in-game test | `python3 tools/check-quick.py --selftest` | about 25 min | outside the budget | nightly in CI; at the end of a phase that touched what it plays |
@@ -180,6 +181,14 @@ same phase:
   Smoke's phone step ends with the blurred surfaces on each screen it visits (`uiBlurCount()`, budget 3). The look
   comes from game/data/uiTheme.json (`tools/test/ui-theme.test.mjs`; check-data checks text reads at 4.5:1). A look
   change moves the pictures: remake the baseline on purpose afterwards.
+  UI-2: `npm run check:ui` (tools/check-ui-gallery.py) takes a picture of every `[data-shot]` section of
+  studio/gallery.html at 320 and 390 px, light and dark, plus the shaped parts with the stepped preset (73 pictures),
+  and compares each with the committed baseline in validation/ui-gallery/ (fails above 0.05% of a picture; a 2 px
+  change to a cut is caught). A new kit part or state goes into the gallery as a section with `data-shot`; a look
+  change on purpose is `python3 tools/check-ui-gallery.py --update`, said in the commit. Not in CI: the baseline is
+  this container's Chromium and fonts. `tools/test/ui-theme.test.mjs` also checks the shape polygons (tokens.css's
+  copy equals the generator's) and `tools/test/ui-icons.test.mjs` keeps game/art/ui/*.svg equal to the grids in
+  tools/build-ui-icons.py.
 - **18 Trading and battles with friends**: every new Firestore rule gets emulator tests in `firebase/test/`;
   trade validation is logic with unit tests.
 

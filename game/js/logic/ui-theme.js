@@ -13,13 +13,27 @@ import { expose } from '../test-globals.js';
 import { hexRgb } from './colors.js';
 /* eslint-disable no-func-assign */
 expose({
+  RING: [() => RING],
   UI_FONTS: [() => UI_FONTS],
   UI_ROLES: [() => UI_ROLES],
+  UI_SHAPE_DEFAULTS: [() => UI_SHAPE_DEFAULTS],
+  UI_SHAPE_FAMILIES: [() => UI_SHAPE_FAMILIES],
+  coord: [() => coord],
+  // @ts-expect-error -- replaced on purpose
+  cornerTL: [() => cornerTL, v => (cornerTL = v)],
   // @ts-expect-error -- replaced on purpose
   cssColour: [() => cssColour, v => (cssColour = v)],
   // @ts-expect-error -- replaced on purpose
   modeVars: [() => modeVars, v => (modeVars = v)],
+  ptsText: [() => ptsText],
   roleVar: [() => roleVar],
+  roundTo2: [() => roundTo2],
+  // @ts-expect-error -- replaced on purpose
+  shapeDecls: [() => shapeDecls, v => (shapeDecls = v)],
+  // @ts-expect-error -- replaced on purpose
+  shapePoints: [() => shapePoints, v => (shapePoints = v)],
+  // @ts-expect-error -- replaced on purpose
+  shapeVars: [() => shapeVars, v => (shapeVars = v)],
   // @ts-expect-error -- replaced on purpose
   sharedVars: [() => sharedVars, v => (sharedVars = v)],
   // @ts-expect-error -- replaced on purpose
@@ -95,7 +109,11 @@ export function modeVars(pal, look, mode) {
   // the dark side's highlight and shadows stay those of v05.css until the Studio's surface dials split by mode (UI-3)
   if (mode === 'light') {
     if (s.highlight != null) out.push(`--g-in: inset 0 1px 0 rgba(255, 255, 255, ${s.highlight});`);
+    if (s.highlight != null) out.push(`--edge-hi: rgba(255, 255, 255, ${s.highlight});`);
     const tint = s.shadowTint === 'text' ? pal.text : s.shadowTint;
+    // UI-2: the shadow colour the angular parts' drop shadows read, and the edge line's dark side
+    if (tint && /^#/.test(tint))
+      out.push(`--c-shadow: ${cssColour(tint.slice(0, 7))};`, `--edge-lo: ${withAlpha(tint.slice(0, 7), 0.3)};`);
     if (tint && /^#/.test(tint)) {
       const t = (/** @type {number} */ a) => withAlpha(tint.slice(0, 7), a);
       out.push(
@@ -103,7 +121,7 @@ export function modeVars(pal, look, mode) {
         `--g-sh2: 0 16px 34px -10px ${t(0.5)}, 0 3px 8px ${t(0.16)};`
       );
     }
-  }
+  } else out.push('--c-shadow: #000000;', '--edge-hi: rgba(255, 255, 255, 0.2);', '--edge-lo: rgba(0, 0, 0, 0.55);');
   return out;
 }
 
@@ -118,8 +136,127 @@ export function sharedVars(look) {
   if (sh.cutMd != null) out.push(`--cut-md: ${sh.cutMd}px;`);
   if (sh.cutLg != null) out.push(`--cut-lg: ${sh.cutLg}px;`);
   if (sh.slant != null) out.push(`--slant: ${sh.slant}deg;`);
+  if (look.shape) out.push(...shapeDecls(sh));
   if (ty.voice) out.push(`--font-voice: '${ty.voice}', ui-monospace, monospace;`);
   if (ty.prose) out.push(`--font-prose: '${ty.prose}', ui-sans-serif, system-ui, sans-serif;`);
+  return out;
+}
+
+/* ---------- UI-2: the angular shapes ----------
+   Each component family's outline as clip-path polygons, made from the shape group: `cut` (chamfered 45° corners,
+   smooth or stepped like pixel art), `rounded` (arcs, so the Studio can compare) or `square`. Three per family:
+     --clip-<f>  the outline (the face is clipped to it)
+     --edge-<f>  a 1 px ring just inside the outline (the edge line: light on top, dark below)
+     --ring-<f>  everything around the outline out to 48 px (the shadow layer is clipped to it, so a drop shadow shows
+                 outside the cut and never under the glass)
+   A clip-path also clips box-shadows and borders, so the kit draws the shadow on its own layer (ui-kit.js,
+   ui-kit.css). */
+/** the families: which cut size, which corners, and the radius when the family is rounded */
+export const UI_SHAPE_FAMILIES = {
+  panel: { cut: 'cutLg', corners: ['tl', 'br'], radius: 22 }, // panels and sheets: top-left and bottom-right
+  card: { cut: 'cutMd', corners: ['tl', 'tr', 'br', 'bl'], radius: 16 }, // cards: four small cuts
+  button: { cut: 'cutSm', corners: ['tl', 'tr', 'br', 'bl'], radius: 16 }, // quiet and plain buttons
+  action: { hex: 'cutLg', radius: 22 }, // the main action: a long hexagon
+  tab: { cut: 'cutMd', corners: ['tl', 'tr'], radius: 12 }, // tabs: trapezoids (the top corners cut)
+  toast: { hex: 'cutMd', radius: 18 }, // toasts: a long hexagon
+};
+export const UI_SHAPE_DEFAULTS = { cutSm: 4, cutMd: 8, cutLg: 12, slant: 10, step: 4, stepped: false };
+export const RING = 48;
+export const roundTo2 = (/** @type {number} */ n) => Math.round(n * 100) / 100;
+/** one coordinate: an anchor (0, 50 or 100 %) and a px offset @param {number} a @param {number} o */
+export const coord = (a, o) => {
+  o = roundTo2(o);
+  if (a === 0) return o ? `${o}px` : '0';
+  if (!o) return `${a}%`;
+  return `calc(${a}% ${o < 0 ? '-' : '+'} ${Math.abs(o)}px)`;
+};
+/** @typedef {[number, number, number, number]} Pt anchor x, offset x, anchor y, offset y */
+/** a corner's points, top-left first, from the left edge to the top edge, inset by d
+ * @param {'cut' | 'rounded' | 'square'} kind @param {number} size @param {number} d @param {any} sh @returns {[number, number][]} */
+export function cornerTL(kind, size, d, sh) {
+  if (kind === 'square' || size <= 0) return [[d, d]];
+  if (kind === 'rounded') {
+    const r = Math.max(0, size - d),
+      out = /** @type {[number, number][]} */ ([]);
+    for (let i = 0; i <= 6; i++) {
+      const t = (i / 6) * (Math.PI / 2);
+      out.push([d + r - r * Math.cos(t), d + r - r * Math.sin(t)]);
+    }
+    return out;
+  }
+  if (sh.stepped) {
+    const n = Math.max(1, Math.round(size / (sh.step || 4))),
+      s = size / n,
+      out = /** @type {[number, number][]} */ ([[d, d + size]]);
+    for (let i = 1; i <= n; i++) out.push([d + i * s, d + size - (i - 1) * s], [d + i * s, d + size - i * s]);
+    return out;
+  }
+  // smooth: the diagonal moves in by d, so its ends sit d·(√2 − 1) further along the edges
+  const c = size + d * (Math.SQRT2 - 1);
+  return [
+    [d, d + c],
+    [d + c, d],
+  ];
+}
+/** a family's outline as points, inset by d @param {string} fam @param {any} sh @param {number} d @returns {Pt[]} */
+export function shapePoints(fam, sh, d = 0) {
+  const F = /** @type {any} */ (UI_SHAPE_FAMILIES)[fam];
+  const kind = (sh.families && sh.families[fam]) || 'cut';
+  if (F.hex && kind === 'cut') {
+    const h = sh[F.hex] ?? /** @type {any} */ (UI_SHAPE_DEFAULTS)[F.hex],
+      e = d * Math.SQRT2,
+      k = h + d * (Math.SQRT2 - 1);
+    return [
+      [0, e, 50, 0],
+      [0, k, 0, d],
+      [100, -k, 0, d],
+      [100, -e, 50, 0],
+      [100, -k, 100, -d],
+      [0, k, 100, -d],
+    ];
+  }
+  const cut = F.hex ? 0 : (sh[F.cut] ?? /** @type {any} */ (UI_SHAPE_DEFAULTS)[F.cut]);
+  /** @type {Pt[]} */
+  const out = [];
+  for (const [corner, mx, my, rev] of /** @type {const} */ ([
+    ['tl', false, false, false],
+    ['tr', true, false, true],
+    ['br', true, true, false],
+    ['bl', false, true, true],
+  ])) {
+    const size = kind === 'rounded' ? F.radius : kind === 'cut' && F.corners.includes(corner) ? cut : 0;
+    let pts = cornerTL(kind === 'rounded' ? 'rounded' : size ? 'cut' : 'square', size, d, sh);
+    if (rev) pts = pts.slice().reverse();
+    for (const [u, v] of pts) out.push([mx ? 100 : 0, mx ? -u : u, my ? 100 : 0, my ? -v : v]);
+  }
+  return out;
+}
+export const ptsText = (/** @type {Pt[]} */ pts) => pts.map(([ax, ox, ay, oy]) => `${coord(ax, ox)} ${coord(ay, oy)}`);
+/** the three polygons of a family @param {string} fam @param {any} sh */
+export function shapeVars(fam, sh) {
+  const outer = ptsText(shapePoints(fam, sh)),
+    inner = ptsText(shapePoints(fam, sh, 1)),
+    box = ptsText([
+      [0, -RING, 0, -RING],
+      [100, RING, 0, -RING],
+      [100, RING, 100, RING],
+      [0, -RING, 100, RING],
+    ]);
+  return {
+    [`--clip-${fam}`]: `polygon(${outer.join(', ')})`,
+    [`--edge-${fam}`]: `polygon(evenodd, ${[...outer, outer[0], ...inner, inner[0]].join(', ')})`,
+    [`--ring-${fam}`]: `polygon(evenodd, ${[...box, box[0], ...outer, outer[0]].join(', ')})`,
+  };
+}
+/** every family's polygons, the slanted chip and the cut sizes, as declarations @param {any} shape */
+export function shapeDecls(shape) {
+  const sh = { ...UI_SHAPE_DEFAULTS, ...(shape || {}) };
+  const out = [];
+  for (const fam of Object.keys(UI_SHAPE_FAMILIES))
+    for (const [k, v] of Object.entries(shapeVars(fam, sh))) out.push(`${k}: ${v};`);
+  // the slanted chip (coins, counts): the slant over a 24 px chip
+  const s = roundTo2(Math.tan((sh.slant * Math.PI) / 180) * 24);
+  out.push(`--clip-chip: polygon(${s}px 0, 100% 0, calc(100% - ${s}px) 100%, 0 100%);`);
   return out;
 }
 

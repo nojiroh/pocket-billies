@@ -50,9 +50,25 @@
     "cutSm": {"type": "number", "minimum": 0, "maximum": 32, "description": "px: quiet buttons"},
     "cutMd": {"type": "number", "minimum": 0, "maximum": 32, "description": "px: cards"},
     "cutLg": {"type": "number", "minimum": 0, "maximum": 48, "description": "px: panels and sheets"},
-    "slant": {"type": "number", "minimum": 0, "maximum": 30, "description": "degrees: the selection bar"}
+    "slant": {"type": "number", "minimum": 0, "maximum": 30, "description": "degrees: the selection bar"},
+    "stepped": {"type": "boolean", "description": "UI-2: cut corners as pixel steps instead of a smooth 45° line"},
+    "step": {"type": "number", "minimum": 1, "maximum": 16, "description": "UI-2: px per step when stepped"},
+    "families": {
+     "type": "object",
+     "additionalProperties": false,
+     "description": "UI-2: each component family's shape (cut is the look; rounded and square are for comparing)",
+     "properties": {
+      "panel": {"$ref": "#/$defs/familyShape"},
+      "card": {"$ref": "#/$defs/familyShape"},
+      "button": {"$ref": "#/$defs/familyShape"},
+      "action": {"$ref": "#/$defs/familyShape"},
+      "tab": {"$ref": "#/$defs/familyShape"},
+      "toast": {"$ref": "#/$defs/familyShape"}
+     }
+    }
    }
   },
+  "familyShape": {"enum": ["cut", "rounded", "square"]},
   "type": {
    "type": "object",
    "additionalProperties": false,
