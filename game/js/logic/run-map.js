@@ -1,6 +1,6 @@
 // @ts-check
 'use strict';
-/* ================= THE RUN MAP (roguelite track RL-6) =================
+/* ================= THE RUN MAP AND ITS CLOCK (roguelite track RL-6) =================
    A run's node map, made from its seed (roguelite-track.md 2e): rows from the landing (row 0, where the airship sets
    you down) to the boss (the last row), one or two nodes a row, links only to the next row, so every path is as long
    as the map has rows. Mini-boss rows and the boss row hold one node, so every path meets them, and the row before
@@ -10,22 +10,33 @@
    way. Two lanes run straight, split, merge, or switch once (one diagonal, never two, so links never cross).
    On the bowl every map's north faces the centre (logic/bowl.js), so a run's rows go from the rim towards it, on the
    bowl's south side, and each node's exits run west to east in the order of its neighbours.
+   The clock (owner, 8.10): a day per arrival, backtracking included; the landing is day 1; the deadline is the
+   shortest walk to the boss plus a slack (rules.json run.clock), past which RL-13 hardens the world. The map shows the
+   next row from where you stand, the row after as '?', and the boss always (run.reveal). Each node has a forecast by
+   day, rolled from its biome's climate on a stream of its own per day (logic/weather.js weatherPick).
    Numbering: the map's nodes are 0..n-1, row by row, west to east (run.path, a node's `to`, the seeds); the run's world
    puts Copperleaf first, so map node i is world node i + 1 (saveData.trip.node, run.forecast).
    Logic only: no DOM, runs in Node (tools/test/run-map.test.mjs). It reads no game data: every table comes in as an
    argument, so the data check can use it too. */
-/** @import { RunMap, RunNode } from '../../types/save-data' */
+/** @import { Run, RunMap, RunNode, SaveData } from '../../types/save-data' */
 /** @import { NodeType, RunMapRules } from '../../types/game-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { rngFrom } from './rng.js';
+import { weatherPick } from './weather.js';
+import { RUN_DAYS } from './run-state.js';
 /* eslint-disable no-func-assign */
 expose({
   RUN_BOWL: [() => RUN_BOWL],
   RUN_EXIT_T: [() => RUN_EXIT_T],
+  // @ts-expect-error -- replaced on purpose
+  runArrive: [() => runArrive, v => (runArrive = v)],
   runBack: [() => runBack],
+  runDeadline: [() => runDeadline],
   // @ts-expect-error -- replaced on purpose
   runExits: [() => runExits, v => (runExits = v)],
+  // @ts-expect-error -- replaced on purpose
+  runForecastFill: [() => runForecastFill, v => (runForecastFill = v)],
   // @ts-expect-error -- replaced on purpose
   runMapMake: [() => runMapMake, v => (runMapMake = v)],
   runMapNode: [() => runMapNode],
@@ -33,9 +44,16 @@ expose({
   runMapRows: [() => runMapRows, v => (runMapRows = v)],
   // @ts-expect-error -- replaced on purpose
   runMapRowsFit: [() => runMapRowsFit, v => (runMapRowsFit = v)],
+  // @ts-expect-error -- replaced on purpose
+  runMapStart: [() => runMapStart, v => (runMapStart = v)],
   runNext: [() => runNext],
+  runNodeSeed: [() => runNodeSeed],
+  runOverdue: [() => runOverdue],
+  // @ts-expect-error -- replaced on purpose
+  runReveal: [() => runReveal, v => (runReveal = v)],
   // @ts-expect-error -- replaced on purpose
   runSpot: [() => runSpot, v => (runSpot = v)],
+  runWeather: [() => runWeather],
   runWorldNode: [() => runWorldNode],
 });
 /* eslint-enable no-func-assign */
@@ -149,3 +167,73 @@ export function runSpot(map, i) {
 export const runWorldNode = i => i + 1;
 /** the map node of a run's world node (-1 for Copperleaf) @param {number} node */
 export const runMapNode = node => node - 1;
+
+/* ---------- the clock (owner, 8.10): a day per arrival, backtracking included; the landing is day 1 ---------- */
+/** the deadline day: the shortest walk to the boss in days (one row a day from the landing's day 1) and the slack
+ * @param {RunMap} map @param {number} slack @returns {number} */
+export const runDeadline = (map, slack) => 1 + Math.max(...map.nodes.map(n => n.row)) + slack;
+/** days past the deadline (0 on or before it, and while no deadline is set) @param {Run} run @returns {number} */
+export const runOverdue = run => (run.deadline ? Math.max(0, run.clock - run.deadline) : 0);
+/** show the map from a row: the rows up to `icons` ahead with their type, the rows up to `unknown` ahead as '?', the
+ * boss always (the goal). What was shown stays shown @param {RunMap} map @param {number} row
+ * @param {{ icons: number, unknown: number }} reveal */
+export function runReveal(map, row, reveal) {
+  const last = Math.max(...map.nodes.map(n => n.row));
+  for (const n of map.nodes) {
+    const want = n.row <= row + reveal.icons || n.row === last ? 2 : n.row <= row + reveal.unknown ? 1 : 0;
+    n.seen = Math.max(n.seen || 0, want);
+  }
+}
+/** a map node's seed, which its scene, wild stock, shop and weather streams are salted from (roguelite-track.md 2c:
+ * the map's numbering) @param {string} seed @param {number} i */
+export const runNodeSeed = (seed, i) => `${seed}|n${i}`;
+/** each node's weather by day, rolled up to a day (forecast[world node][day - 1]; Copperleaf, world node 0, has none:
+ * the hub keeps the real clock's weather). Each node and day rolls from a stream of its own, so filling later gives
+ * the days a longer fill would have. A node's climate is its biome's
+ * @param {Run} run @param {Record<string, { climate?: string }>} biomes @param {number} toDay */
+export function runForecastFill(run, biomes, toDay) {
+  if (!run.map) return;
+  const map = run.map,
+    last = Math.min(toDay, RUN_DAYS);
+  while (run.forecast.length < map.nodes.length + 1) run.forecast.push([]);
+  map.nodes.forEach((node, i) => {
+    const days = run.forecast[runWorldNode(i)],
+      climate = (biomes[node.biome || ''] || {}).climate || 'mild';
+    for (let day = days.length + 1; day <= last; day++)
+      days.push(weatherPick(climate, rngFrom(runNodeSeed(run.seed, i), 'weather|' + day).next()));
+  });
+}
+/** a node's weather on a day ('' when not rolled) @param {Run} run @param {number} i @param {number} day */
+export const runWeather = (run, i, day) => (run.forecast[runWorldNode(i)] || [])[day - 1] || '';
+/**
+ * @typedef {{ nodeTypes: Record<string, NodeType>, biomes: Record<string, { climate?: string }>,
+ *   rules: { map: RunMapRules, clock: { slack: number, ahead: number }, reveal: { icons: number, unknown: number } } }} RunMapData
+ */
+/** give a new run its map (at the mast, before the flight): the map from the seed, the deadline, the landing's view
+ * and the forecast a week ahead @param {Run} run @param {RunMapData} data @returns {RunMap} */
+export function runMapStart(run, data) {
+  run.map = runMapMake(run.seed, data.nodeTypes, data.rules.map);
+  run.deadline = runDeadline(run.map, data.rules.clock.slack);
+  run.forecast = [];
+  runReveal(run.map, 0, data.rules.reveal);
+  runForecastFill(run, data.biomes, run.clock + data.rules.clock.ahead);
+  return run.map;
+}
+/** arrive at map node i: the landing first (day 1), then only a node linked to where you stand, forward or back, a day
+ * each. Moves saveData.trip.node with the run, so the two never disagree; shows the map from there and keeps the
+ * forecast a week ahead. Returns the day, or 0 when i can't be reached from here (nothing changes)
+ * @param {SaveData} s @param {number} i @param {RunMapData} data @returns {number} */
+export function runArrive(s, i, data) {
+  const run = s.run;
+  if (!run || !run.map || !run.map.nodes[i]) return 0;
+  const map = run.map,
+    here = run.path.length ? run.path[run.path.length - 1] : -1,
+    linked = here < 0 ? map.nodes[i].row === 0 : runNext(map, here).includes(i) || runBack(map, here).includes(i);
+  if (!linked) return 0;
+  if (here >= 0) run.clock = Math.min(RUN_DAYS, run.clock + 1);
+  run.path.push(i);
+  s.trip.node = runWorldNode(i);
+  runReveal(map, map.nodes[i].row, data.rules.reveal);
+  runForecastFill(run, data.biomes, run.clock + data.rules.clock.ahead);
+  return run.clock;
+}

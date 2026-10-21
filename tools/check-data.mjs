@@ -248,6 +248,22 @@ check('roads.schema.json', D.roads || [], 'roads.json');
     }
   }
 }
+// RL-6: the run's clock and what its map shows: whole days of slack (0-30) and of forecast ahead (1-30), whole rows
+// shown ahead with their type (1-12) and as '?' (at least as far, up to 12); nothing else in rules.json run
+{
+  const R = (D.rules && D.rules.run) || {},
+    C = R.clock,
+    V = R.reveal,
+    whole = (v, lo, hi) => Number.isInteger(v) && v >= lo && v <= hi;
+  for (const k of Object.keys(R))
+    if (!['payout', 'map', 'clock', 'reveal'].includes(k)) problem('rules.json', `run.${k}: no such rule`);
+  if (!C || typeof C !== 'object' || !whole(C.slack, 0, 30) || !whole(C.ahead, 1, 30))
+    problem('rules.json', 'run.clock: slack (0-30) and ahead (1-30) are not whole numbers of days');
+  else for (const k of Object.keys(C)) if (!['slack', 'ahead'].includes(k)) problem('rules.json', `run.clock.${k}: no such rule`);
+  if (!V || typeof V !== 'object' || !whole(V.icons, 1, 12) || !whole(V.unknown, V.icons, 12))
+    problem('rules.json', "run.reveal: icons (1-12) and unknown (icons to 12) are not whole numbers of rows");
+  else for (const k of Object.keys(V)) if (!['icons', 'unknown'].includes(k)) problem('rules.json', `run.reveal.${k}: no such rule`);
+}
 // phase 17: robot parts and gems: the schema, then the moves and types they name and the slot each part fits
 const robots = D.robots || { parts: {}, gems: {} },
   types = new Set([...(D.types || []).map(t => t.id), 'None']);

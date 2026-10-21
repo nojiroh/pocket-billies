@@ -1,23 +1,32 @@
-// RL-6: the run's node map (game/js/logic/run-map.js), on the tests' own small tables: rows from the landing to the
-// boss, mini-boss rows with a town before each, one or two lanes, links only to the next row, and where it all sits on
-// the bowl. run-map-real.test.mjs runs it on the game's data.
+// RL-6: the run's node map and its clock (game/js/logic/run-map.js), on the tests' own small tables: rows from the
+// landing to the boss, mini-boss rows with a town before each, one or two lanes, links only to the next row, where it
+// all sits on the bowl; the days, the deadline, what the map shows and the forecast. run-map-real.test.mjs runs it on the game's data.
 //   node --test --test-update-snapshots tools/test/run-map.test.mjs   remakes the frozen map (say why in the commit)
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { bowlCompass, bowlSeamTurn, bowlXY } from '../../game/js/logic/bowl.js';
 import {
   RUN_BOWL,
+  runArrive,
   runBack,
+  runDeadline,
   runExits,
+  runForecastFill,
   runMapMake,
   runMapNode,
   runMapRows,
   runMapRowsFit,
+  runMapStart,
   runNext,
+  runNodeSeed,
+  runOverdue,
+  runReveal,
   runSpot,
+  runWeather,
   runWorldNode,
 } from '../../game/js/logic/run-map.js';
 import { newRun, validRun } from '../../game/js/logic/run-state.js';
+import { CLIMATE_WEATHER_ODDS } from '../../game/js/logic/weather.js';
 
 const NODE_TYPES = {
   landing: { name: 'Landing', engine: 'scene' },
@@ -239,4 +248,137 @@ test("the world's numbering: Copperleaf first, map node i is world node i + 1", 
   assert.equal(runMapNode(1), 0);
   assert.equal(runMapNode(0), -1);
   for (let i = 0; i < 20; i++) assert.equal(runMapNode(runWorldNode(i)), i);
+});
+
+/* ---------- the clock (owner, 8.10): a day per arrival, backtracking included; the landing is day 1 ---------- */
+const RUN_RULES = { map: MAP_RULES, clock: { slack: 3, ahead: 7 }, reveal: { icons: 1, unknown: 2 } };
+const BIOMES = Object.fromEntries(Object.keys(MAP_RULES.biomes).map(b => [b, { climate: 'mild' }]));
+const DATA = { nodeTypes: NODE_TYPES, biomes: BIOMES, rules: RUN_RULES };
+/** a save on a run that has its map (as at the mast, before the flight) */
+const onRun = seed => {
+  const s = { run: newRun(seed, 1, 3, START), trip: { node: 0, plan: [] } };
+  runMapStart(s.run, DATA);
+  return s;
+};
+/** the fewest nodes from the landing to the boss (a search, not the row count) */
+const shortest = map => {
+  const last = map.nodes.length - 1,
+    seen = new Map([[0, 1]]),
+    queue = [0];
+  while (queue.length) {
+    const i = queue.shift();
+    for (const j of runNext(map, i)) if (!seen.has(j)) (seen.set(j, seen.get(i) + 1), queue.push(j));
+  }
+  return seen.get(last);
+};
+
+test('the deadline: the shortest walk to the boss in days (the landing is day 1) and the slack; days past it', () => {
+  for (const s of seeds(100)) {
+    const map = runMapMake(s, NODE_TYPES, MAP_RULES);
+    assert.equal(runDeadline(map, 3), shortest(map) + 3);
+    assert.equal(runDeadline(map, 3), 12);
+  }
+  assert.equal(runOverdue({ clock: 50, deadline: 0 }), 0, 'no deadline set');
+  assert.equal(runOverdue({ clock: 12, deadline: 12 }), 0, 'the last day');
+  assert.equal(runOverdue({ clock: 14, deadline: 12 }), 2);
+});
+
+test("what's shown: the rows up to one ahead with their type, the next as '?', the boss always; never less", () => {
+  const map = {
+    nodes: [0, 1, 2, 3, 4, 5].map(row => ({ type: 'route', row, lane: 0, to: row < 5 ? [row + 1] : [], seen: 0 })),
+  };
+  runReveal(map, 2, RUN_RULES.reveal);
+  assert.deepEqual(
+    map.nodes.map(n => n.seen),
+    [2, 2, 2, 2, 1, 2]
+  );
+  map.nodes[4].seen = 2;
+  runReveal(map, 0, RUN_RULES.reveal);
+  assert.deepEqual(
+    map.nodes.map(n => n.seen),
+    [2, 2, 2, 2, 2, 2],
+    'what was shown stays shown'
+  );
+});
+
+test("a new run's map: the deadline, the landing's view, a week of forecast for every node, none for the hub", () => {
+  const { run } = onRun('RL6START'),
+    map = run.map;
+  assert.equal(run.deadline, 12);
+  assert.equal(run.clock, 1);
+  assert.equal(run.forecast.length, map.nodes.length + 1);
+  assert.deepEqual(run.forecast[0], []);
+  for (const days of run.forecast.slice(1)) assert.equal(days.length, 1 + 7);
+  for (const n of map.nodes) assert.equal(n.seen, n.row <= 1 || n.row === 8 ? 2 : n.row === 2 ? 1 : 0, `row ${n.row}`);
+  assert.ok(validRun(JSON.parse(JSON.stringify(run))));
+});
+
+test('arriving: the landing first on day 1, then a day for each linked node, forward or back; nowhere else', () => {
+  const s = onRun('RL6WALK'),
+    map = s.run.map,
+    before = JSON.stringify(s),
+    ahead = runNext(map, 0)[0];
+  assert.equal(runArrive(s, ahead, DATA), 0, 'not before the landing');
+  assert.equal(runArrive(s, 99, DATA), 0, 'no such node');
+  assert.equal(JSON.stringify(s), before, 'a refused arrival changes nothing');
+  assert.equal(runArrive(s, 0, DATA), 1, 'the landing is day 1');
+  assert.deepEqual([s.run.path, s.trip.node, s.run.clock], [[0], 1, 1]);
+  assert.equal(runArrive(s, 0, DATA), 0, 'already here');
+  assert.equal(runArrive(s, ahead, DATA), 2);
+  assert.deepEqual([s.run.path, s.trip.node], [[0, ahead], runWorldNode(ahead)]);
+  for (const n of map.nodes) if (n.row <= 2) assert.equal(n.seen, 2, `row ${n.row} shown from row 1`);
+  const far = map.nodes.findIndex(n => n.row === 3);
+  assert.equal(runArrive(s, far, DATA), 0, 'two rows ahead');
+  assert.equal(runArrive(s, 0, DATA), 3, 'walking back costs a day');
+  assert.deepEqual(s.run.path, [0, ahead, 0]);
+  for (const days of s.run.forecast.slice(1)) assert.equal(days.length, 3 + 7, 'the forecast keeps a week ahead');
+  // on to the boss: one row a day from here, three days past the shortest walk's day 9
+  let at = 0;
+  while (runNext(map, at).length) {
+    at = runNext(map, at).at(-1);
+    assert.ok(runArrive(s, at, DATA) > 0);
+  }
+  assert.equal(s.run.clock, 3 + 8);
+  assert.equal(runOverdue(s.run), 0, 'day 11 of a day-12 deadline');
+  assert.equal(runArrive(s, runBack(map, at)[0], DATA), 12);
+  assert.equal(runArrive(s, at, DATA), 13);
+  assert.equal(runOverdue(s.run), 1);
+  assert.equal(s.trip.node, runWorldNode(at));
+  assert.ok(validRun(JSON.parse(JSON.stringify(s.run))), 'the save takes it after the walk');
+});
+
+test("the forecast: the same for a seed, a later fill gives a longer fill's days, each node's climate", () => {
+  const one = onRun('RL6SKY').run,
+    two = onRun('RL6SKY').run;
+  assert.deepEqual(two.forecast, one.forecast);
+  assert.notDeepEqual(onRun('RL6SKY2').run.forecast, one.forecast);
+  // filled up to day 8 at the start, then to day 30, is what a fill to day 30 at once gives
+  runForecastFill(one, BIOMES, 30);
+  const once = { ...two, forecast: [] };
+  runForecastFill(once, BIOMES, 30);
+  assert.deepEqual(one.forecast, once.forecast);
+  assert.ok(
+    one.forecast.slice(1).every(days => days.length === 30 && days.every(Boolean)),
+    'no gaps'
+  );
+  assert.equal(runWeather(one, 2, 5), one.forecast[3][4]);
+  assert.equal(runWeather(one, 2, 31), '');
+  assert.equal(runNodeSeed('ABC', 4), 'ABC|n4');
+  // each node rolls from its biome's climate; a biome without one reads as mild
+  const dry = { ...two, forecast: [] };
+  runForecastFill(dry, Object.fromEntries(Object.keys(BIOMES).map(b => [b, { climate: 'dry' }])), 60);
+  const seenDry = new Set(dry.forecast.flat());
+  assert.ok(
+    [...seenDry].every(w => w === 'clear' || w === 'cloudy'),
+    [...seenDry].join()
+  );
+  const indoors = { ...two, forecast: [] };
+  runForecastFill(indoors, Object.fromEntries(Object.keys(BIOMES).map(b => [b, { climate: 'none' }])), 20);
+  assert.deepEqual([...new Set(indoors.forecast.flat())], ['clear']);
+  const mild = { ...two, forecast: [] };
+  runForecastFill(mild, {}, 400);
+  const days = mild.forecast.flat(),
+    clear = days.filter(w => w === 'clear').length / days.length;
+  assert.ok(days.every(w => Object.hasOwn(CLIMATE_WEATHER_ODDS.mild, w)));
+  assert.ok(clear > 0.45 && clear < 0.55, `clear on ${(clear * 100).toFixed(0)}% of days (mild: 50%)`);
 });
