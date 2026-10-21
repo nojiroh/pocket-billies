@@ -11,12 +11,15 @@
    DOM, runs in Node. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { hexRgb } from './colors.js';
+import { contrastRatio, hexRgb } from './colors.js';
 /* eslint-disable no-func-assign */
 expose({
   RING: [() => RING],
+  UI_CONTRAST: [() => UI_CONTRAST],
+  UI_DERIVED: [() => UI_DERIVED],
   UI_FONTS: [() => UI_FONTS],
   UI_ROLES: [() => UI_ROLES],
+  UI_SCREENS: [() => UI_SCREENS],
   UI_SHAPE_DEFAULTS: [() => UI_SHAPE_DEFAULTS],
   UI_SHAPE_FAMILIES: [() => UI_SHAPE_FAMILIES],
   UI_TYPE_SIZES: [() => UI_TYPE_SIZES],
@@ -29,18 +32,29 @@ expose({
   mergeLook: [() => mergeLook, v => (mergeLook = v)],
   // @ts-expect-error -- replaced on purpose
   modeVars: [() => modeVars, v => (modeVars = v)],
+  // @ts-expect-error -- replaced on purpose
+  overrideCss: [() => overrideCss, v => (overrideCss = v)],
   plain: [() => plain],
   ptsText: [() => ptsText],
   roleVar: [() => roleVar],
   roundTo2: [() => roundTo2],
+  screenLook: [() => screenLook],
+  screenSel: [() => screenSel],
   // @ts-expect-error -- replaced on purpose
   shapeDecls: [() => shapeDecls, v => (shapeDecls = v)],
+  // @ts-expect-error -- replaced on purpose
+  shapeLines: [() => shapeLines, v => (shapeLines = v)],
   // @ts-expect-error -- replaced on purpose
   shapePoints: [() => shapePoints, v => (shapePoints = v)],
   // @ts-expect-error -- replaced on purpose
   shapeVars: [() => shapeVars, v => (shapeVars = v)],
   // @ts-expect-error -- replaced on purpose
   sharedVars: [() => sharedVars, v => (sharedVars = v)],
+  // @ts-expect-error -- replaced on purpose
+  solidOver: [() => solidOver, v => (solidOver = v)],
+  uiRatio: [() => uiRatio],
+  // @ts-expect-error -- replaced on purpose
+  uiThemeContrast: [() => uiThemeContrast, v => (uiThemeContrast = v)],
   // @ts-expect-error -- replaced on purpose
   uiThemeCss: [() => uiThemeCss, v => (uiThemeCss = v)],
   // @ts-expect-error -- replaced on purpose
@@ -331,6 +345,122 @@ export const UI_FONTS = {
   ],
 };
 
+/* ---------- UI-3: per-screen overrides ----------
+   uiTheme.json overrides.<screen> lays colour and shape over the look on one screen. Its variables are declared again
+   on the screen's root (and on anything marked data-ui-screen, as the Studio's preview is), so they reach only it. */
+/** the screens an override can name: the Studio's name and the screen's root on the page */
+export const UI_SCREENS = {
+  walk: { name: 'Walk', sel: '.screen.s-walk' },
+  map: { name: 'Map', sel: '.screen.s-map' },
+  team: { name: 'Team', sel: '.screen.s-team' },
+  ledger: { name: 'Guide', sel: '.screen.s-ledger' },
+  bag: { name: 'Bag', sel: '.screen.s-bag' },
+  profile: { name: 'Trainer card', sel: '.screen.s-profile' },
+  battle: { name: 'Battle', sel: '#battle' },
+  dialogue: { name: 'Dialogue', sel: '.talk-layer' },
+};
+/** variables the style sheets make at :root from the theme's; a custom property is worked out where it is declared,
+ * so a screen with its own colours declares these again (tools/test/ui-theme.test.mjs keeps them equal to the CSS) */
+export const UI_DERIVED = [
+  '--depth-raised: var(--g-in), var(--g-sh);',
+  '--depth-float: var(--g-in), var(--g-sh2);',
+  '--edge: linear-gradient(180deg, var(--edge-hi), var(--edge-lo));',
+  '--drop-focus: drop-shadow(2px 0 0 var(--gold-b)) drop-shadow(-2px 0 0 var(--gold-b)) drop-shadow(0 2px 0 var(--gold-b)) drop-shadow(0 -2px 0 var(--gold-b));',
+  '--orn: var(--gold);',
+];
+/** a screen's selector @param {string} id */
+export const screenSel = id =>
+  `${/** @type {any} */ (UI_SCREENS[id] || {}).sel || '.s-' + id}, [data-ui-screen='${id}']`;
+/** the shape declarations a shape group makes (cut sizes, slant, the polygons) @param {any} sh */
+export function shapeLines(sh) {
+  const out = [];
+  if (sh.cutSm != null) out.push(`--cut-sm: ${sh.cutSm}px;`);
+  if (sh.cutMd != null) out.push(`--cut-md: ${sh.cutMd}px;`);
+  if (sh.cutLg != null) out.push(`--cut-lg: ${sh.cutLg}px;`);
+  if (sh.slant != null) out.push(`--slant: ${sh.slant}deg;`);
+  out.push(...shapeDecls(sh));
+  return out;
+}
+/** one screen's look: the look with its override laid over @param {any} look @param {any} ov */
+export const screenLook = (look, ov) => mergeLook(look, { color: ov && ov.color, shape: ov && ov.shape });
+/** an override as CSS @param {string} id @param {any} look @param {any} ov
+ * @param {(sel: string, lines: string[], ind?: string) => string} block */
+export function overrideCss(id, look, ov, block) {
+  const has = (/** @type {any} */ o) => !!o && Object.keys(o).length > 0;
+  const col = ov && ov.color && (has(ov.color.light) || has(ov.color.dark)),
+    shp = has(ov && ov.shape);
+  if (!col && !shp) return '';
+  const L = screenLook(look, ov),
+    sel = `:is(${screenSel(id)})`,
+    pal = L.color || {};
+  const shared = [...(shp ? shapeLines(L.shape || {}) : [])];
+  if (col) {
+    const dr = sharedVars({ drop: L.drop }); // the drop shadows read --c-shadow: declared again here
+    shared.push(...dr, ...UI_DERIVED);
+  }
+  let css = `/* ${id} */\n` + block(sel, [...shared, ...(col ? modeVars(pal.light || {}, L, 'light') : [])]);
+  if (col) {
+    const dark = modeVars(pal.dark || {}, L, 'dark');
+    css +=
+      `@media (prefers-color-scheme: dark) {\n${block(`:root:not([data-theme='light']) ${sel}`, dark, '  ')}}\n` +
+      block(`:root[data-theme='dark'] ${sel}`, dark);
+  }
+  return css;
+}
+
+/* ---------- UI-3: contrast ----------
+   Text and quiet text read at 4.5:1 on the ground and on a solid surface; danger and primary, used for marks and big
+   text, at 3:1 (WCAG AA). Checked in the defaults and every screen's override, both sides; a preset over the defaults
+   for text only (alpha05 is the look before UI-1, for comparing, and its green reads 2.5:1 on its ground).
+   tools/check-data.mjs and the Studio's Check use the same list. */
+export const UI_CONTRAST = [
+  ['text', 4.5],
+  ['text2', 4.5],
+  ['danger', 3],
+  ['primary', 3],
+];
+/** a colour with an alpha byte, laid over a solid one (#rrggbb) @param {string} fg @param {string} bg */
+export function solidOver(fg, bg) {
+  const h = String(fg).replace('#', '');
+  if (h.length !== 8) return fg;
+  const a = parseInt(h.slice(6), 16) / 255,
+    f = hexRgb('#' + h.slice(0, 6)),
+    b = hexRgb(bg);
+  return (
+    '#' +
+    f
+      .map((c, i) =>
+        Math.round(c * a + b[i] * (1 - a))
+          .toString(16)
+          .padStart(2, '0')
+      )
+      .join('')
+  );
+}
+/** the contrast of one colour on another, alpha laid over the second @param {string} fg @param {string} bg */
+export const uiRatio = (fg, bg) => contrastRatio(solidOver(fg, bg.slice(0, 7)), bg.slice(0, 7));
+/** every pair under its minimum: {where ('' the defaults, 'preset:<id>', 'screen:<id>'), side, fg, bg, ratio, min}
+ * @param {any} theme */
+export function uiThemeContrast(theme) {
+  if (!theme || !theme.defaults) return [];
+  const out = [];
+  const looks = /** @type {[string, any][]} */ ([['', uiThemeLook(theme)]]);
+  for (const id of Object.keys(theme.presets || {})) looks.push([`preset:${id}`, uiThemeLook(theme, id)]);
+  for (const [id, ov] of Object.entries(theme.overrides || {}))
+    looks.push([`screen:${id}`, screenLook(uiThemeLook(theme), ov)]);
+  for (const [where, look] of looks)
+    for (const side of ['light', 'dark']) {
+      const pal = (look.color || {})[side] || {};
+      for (const [fg, min] of UI_CONTRAST)
+        for (const bg of ['ground', 'surface']) {
+          if (!pal[fg] || !pal[bg] || (where.startsWith('preset:') && /** @type {number} */ (min) < 4.5)) continue;
+          const ratio = uiRatio(pal[fg], pal[bg]);
+          if (ratio < /** @type {number} */ (min)) out.push({ where, side, fg, bg, ratio, min });
+        }
+    }
+  return out;
+}
+
 /** the theme as a style sheet
  * @param {any} theme uiTheme.json @param {{preset?: string, fonts?: string}} [o] fonts: the URL of game/fonts/, ending in / */
 export function uiThemeCss(theme, o = {}) {
@@ -346,6 +476,8 @@ export function uiThemeCss(theme, o = {}) {
     css +=
       `@media (prefers-color-scheme: dark) {\n${block(":root:not([data-theme='light'])", dark, '  ')}}\n` +
       block(":root[data-theme='dark']", dark);
+  // UI-3: each screen's own colours and shapes
+  for (const [id, ov] of Object.entries(theme.overrides || {})) css += overrideCss(id, look, ov, block);
   // the voice font has one weight: never fake a bold (the CSS still asks for 600 and 700 in places)
   const ty = look.type || {};
   if (ty.voice && (UI_FONTS[/** @type {keyof typeof UI_FONTS} */ (ty.voice)] || []).length === 1)

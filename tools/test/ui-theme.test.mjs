@@ -7,6 +7,12 @@ import { test } from 'node:test';
 import {
   cssColour,
   mergeLook,
+  screenSel,
+  solidOver,
+  uiRatio,
+  uiThemeContrast,
+  UI_DERIVED,
+  UI_SCREENS,
   roleVar,
   shapeDecls,
   shapePoints,
@@ -258,4 +264,82 @@ test("tokens.css holds the generator's default shapes, for a page without uiThem
       .replace(/,\s*\)/g, ')')
       .trim();
   assert.equal(norm(part), norm(shapeDecls({}).join(' ')));
+});
+
+test("UI-3: a screen's override: its colours and shapes on its root (and on data-ui-screen), both sides", () => {
+  const T = {
+    ...THEME,
+    overrides: {
+      team: { color: { light: { text: '#102010' }, dark: { text: '#F0FFF0' } } },
+      battle: { shape: { cutLg: 20 } },
+    },
+  };
+  const css = uiThemeCss(T);
+  assert.equal(screenSel('team'), ".screen.s-team, [data-ui-screen='team']");
+  const team = blockOf(css, ":is(.screen.s-team, [data-ui-screen='team'])");
+  assert.equal(team['--c-text'], '#102010');
+  assert.equal(team['--text'], '#102010');
+  assert.equal(team['--c-ground'], '#f4efe0', 'the rest of the palette comes along, so derived values follow');
+  assert.equal(team['--depth-raised'], 'var(--g-in), var(--g-sh)');
+  assert.equal(team['--clip-panel'], undefined, 'no shapes without a shape override');
+  const dark = blockOf(css, ":root[data-theme='dark'] :is(.screen.s-team, [data-ui-screen='team'])");
+  assert.equal(dark['--c-text'], '#f0fff0');
+  assert.match(
+    css,
+    /@media \(prefers-color-scheme: dark\) \{\n {2}:root:not\(\[data-theme='light'\]\) :is\(\.screen\.s-team/
+  );
+  const battle = blockOf(css, ":is(#battle, [data-ui-screen='battle'])");
+  assert.equal(battle['--cut-lg'], '20px');
+  assert.match(battle['--clip-panel'], /^polygon\(0 20px, 20px 0, /);
+  assert.equal(battle['--c-text'], undefined, 'no colours without a colour override');
+  assert.ok(!css.includes(":root[data-theme='dark'] :is(#battle"));
+  // the whole game's sheet is unchanged by an empty override
+  assert.equal(uiThemeCss({ ...THEME, overrides: { map: {} } }), uiThemeCss(THEME));
+  const schema = JSON.parse(
+    readFileSync(join(import.meta.dirname, '../../game/data/schema/uiTheme.schema.json'), 'utf8')
+  );
+  assert.deepEqual(
+    schema.properties.overrides.propertyNames.enum,
+    Object.keys(UI_SCREENS),
+    'the schema names the same screens'
+  );
+});
+
+test("UI-3: the variables a screen declares again are the style sheets' own", () => {
+  const css = ['tokens.css', 'polish.css']
+    .map(f => readFileSync(join(import.meta.dirname, '../../game/css/' + f), 'utf8'))
+    .join('\n');
+  const norm = (/** @type {string} */ v) => v.replace(/\s+/g, ' ').trim();
+  for (const line of UI_DERIVED) {
+    const [, name, value] = /** @type {RegExpMatchArray} */ (line.match(/^(--[\w-]+): (.*);$/));
+    const m = css.match(new RegExp(`\\n\\s*${name}:([^;]+);`));
+    assert.ok(m, name);
+    assert.equal(norm(m[1]), norm(value), name);
+  }
+});
+
+test('UI-3: contrast: text at 4.5:1, danger and primary at 3:1, overrides too; alpha over the ground', () => {
+  assert.equal(solidOver('#00000080', '#FFFFFF'), '#7f7f7f');
+  assert.equal(solidOver('#123456', '#FFFFFF'), '#123456');
+  assert.ok(Math.abs(uiRatio('#000000', '#FFFFFF') - 21) < 0.01);
+  assert.deepEqual(uiThemeContrast(THEME), [], "the game's look passes");
+  const bad = uiThemeContrast({ ...THEME, overrides: { team: { color: { dark: { text2: '#2A3A30' } } } } });
+  assert.deepEqual(
+    bad.map(f => [f.where, f.side, f.fg, f.bg, f.min]),
+    [
+      ['screen:team', 'dark', 'text2', 'ground', 4.5],
+      ['screen:team', 'dark', 'text2', 'surface', 4.5],
+    ]
+  );
+  const red = uiThemeContrast({
+    ...THEME,
+    defaults: mergeLook(THEME.defaults, { color: { light: { danger: '#F0A090' } } }),
+  });
+  assert.deepEqual(
+    red.map(f => [f.where, f.fg, f.min]),
+    [
+      ['', 'danger', 3],
+      ['', 'danger', 3],
+    ]
+  );
 });

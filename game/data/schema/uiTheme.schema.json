@@ -184,8 +184,8 @@
   "presets": {"type": "object", "propertyNames": {"pattern": "^[a-z][a-z0-9_]*$"}, "additionalProperties": {"$ref": "#/$defs/look"}},
   "overrides": {
    "type": "object",
-   "description": "per screen: colour and shape only",
-   "propertyNames": {"pattern": "^[a-z][a-z0-9-]*$"},
+   "description": "per screen: colour and shape over the defaults on that screen only (logic/ui-theme.js UI_SCREENS names each screen's root)",
+   "propertyNames": {"enum": ["walk", "map", "team", "ledger", "bag", "profile", "battle", "dialogue"]},
    "additionalProperties": {
     "type": "object",
     "additionalProperties": false,
