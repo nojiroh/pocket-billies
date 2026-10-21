@@ -1173,7 +1173,7 @@ function roomState() {
     exits: [{ i: 0, to: -1, name: 'Outside', out: 1 }],
   };
 }
-function walkState() {
+export function walkState() {
   const rs = !uiState.bench && roomState();
   if (rs) return rs;
   if (uiState.bench && uiState.bench.id && mapById(uiState.bench.id)) {
@@ -1389,7 +1389,7 @@ function mapOffsetInView(id) {
   const q = (sc.parts || []).find(q => q.id === id);
   return q ? [q.ox || 0, q.oz || 0] : null;
 }
-function walkCross() {
+export function walkCross() {
   if (
     !saveData.started ||
     !walkView.ready ||

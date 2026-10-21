@@ -24,6 +24,9 @@ import {
   worldExtraMaps,
 } from './game-data.js';
 import { encountersHere, makeBilly, maxHp, spawn } from './logic/rules.js';
+import { runBegin, runRestore } from './logic/run-state.js';
+import { runArrive, runMapStart, runNext, runWorldNode } from './logic/run-map.js';
+import { MAPGEN_VERSION } from './logic/mapgen.js';
 import { fighter, liveActors, startTrainer, startWild } from './logic/battle-engine.js';
 import { loadAllMaps } from './map-files.js';
 import {
@@ -79,7 +82,19 @@ import { WORLD_BOWL_SHADERS, worldBowl, worldMap, worldMapReset } from './world-
 import { talkBox, talkHide } from './talk.js';
 import { cutscene, cutsceneTeardown } from './cutscene/director.js';
 import { battleTipHide, fallOverWorldMap, fallWorldMapCanvas } from './opening-fall.js';
-import { closeModal, leaveRoom, mapIdAt, modal, render, renderOverlay, toast, walkPick } from './ui.js';
+import { runWorld, runWorldData, runWorldSync } from './run-world.js';
+import {
+  closeModal,
+  leaveRoom,
+  mapIdAt,
+  modal,
+  render,
+  renderOverlay,
+  toast,
+  walkCross,
+  walkPick,
+  walkState,
+} from './ui.js';
 /* eslint-disable no-func-assign */
 expose({
   DIAGNOSTICS_PASSES: [() => DIAGNOSTICS_PASSES],
@@ -861,7 +876,77 @@ async function runFullTest(mode) {
       return `${mine} against ${theirs} (${fmt}); ${plates} nameplates; ${picks} picks, ${aimed} aimed; the turn played ${lines} lines in ${(turnMs / 1000).toFixed(1)} s`;
     };
     /* RL-5: the Road phase (v43, phase 08: out of Marigold Town over its edge and into Tallgrass Meadow on foot) went
-       with those places to game/data/legacy: the hub has no road. It comes back on a run's roads (RL-7) */
+       with those places to game/data/legacy: the hub has no road. RL-7: back on a run's road. A run is put on a copy
+       of the save as the mast will (RL-8), so its world is made from its seed; the landing's north seam is walked over
+       a step at a time as a player walks it, and you arrive at the next place a day later with its view. Then the save
+       as it was, and the hub's world with it */
+    if (typeof runWorldSync === 'function' && !selfTest.stop)
+      await phase(
+        "A run's road",
+        'dio',
+        async () => {
+          const was = saveData,
+            s = JSON.parse(JSON.stringify(saveData)),
+            data = runWorldData();
+          try {
+            uiState.bench = null;
+            uiState.inside = null;
+            uiState.goingIn = null;
+            uiState.tab = 'walk';
+            if (s.run) runRestore(s);
+            runBegin(s, { seed: 'SELFTESTRUN', tier: 1, mapgenV: MAPGEN_VERSION, se: 300 });
+            runMapStart(s.run, data);
+            runArrive(s, 0, data);
+            s.visited[s.trip.node] = 1;
+            setSaveData(s);
+            render();
+            const landing = 'w:' + LOCATIONS[1].mapId + '*';
+            for (let i = 0; i < 150 && !(walkView.ready && walkView.id === landing); i++) await selfTestSleep(100);
+            if (walkView.id !== landing) throw new Error(`the run's landing isn't shown (still ${walkView.id})`);
+            measureFromHere();
+            /* the way to the exit north and on past where a run's crossing counts (rules.json run.seamIn) */
+            const to = runWorldNode(runNext(s.run.map, 0)[0]),
+              e = (walkState().exits || []).find(x => x.to === to);
+            if (!e) throw new Error(`no exit from the landing to ${LOCATIONS[to].name}`);
+            const sc = walkView.sc,
+              pt = sc.exits[e.i],
+              ee = sc.edgeExits || ((sc.baseId && mapById(sc.baseId)) || {}).edgeExits || [],
+              side = { N: [0, 1], S: [0, -1], E: [1, 0], W: [-1, 0] }[(ee[e.i] || {}).side] || [0, 1],
+              past = RULES.run.seamIn + 6,
+              R = findPath(walkView.pl.x, walkView.pl.z, pt[0] + side[0] * past, pt[1] + side[1] * past, {
+                max: 1e6,
+              });
+            if (!R) throw new Error('no path out of the landing to its north exit');
+            let crossed = false;
+            for (let k = 1; k < R.length && !crossed; k++) {
+              const [ax, az] = R[k - 1],
+                [bx, bz] = R[k],
+                n = Math.max(1, Math.ceil(Math.hypot(bx - ax, bz - az) / 0.8));
+              for (let j = 1; j <= n && !crossed; j++) {
+                for (let w = 0; w < 100 && !walkView.ready; w++) await selfTestSleep(50);
+                walkView.pl.x = ax + ((bx - ax) * j) / n;
+                walkView.pl.z = az + ((bz - az) * j) / n;
+                walkView.pl.route = null;
+                walkCross();
+                crossed = saveData.trip.node === to;
+                await selfTestSleep(30);
+              }
+            }
+            if (!crossed) throw new Error(`walked out of the landing and never arrived at ${LOCATIONS[to].name}`);
+            const next = 'w:' + LOCATIONS[to].mapId + '*';
+            for (let i = 0; i < 150 && !(walkView.ready && walkView.id === next); i++) await selfTestSleep(100);
+            if (walkView.id !== next) throw new Error(`arrived but the view is still ${walkView.id}`);
+            if (saveData.run.clock !== 2) throw new Error(`arrived on day ${saveData.run.clock}, not 2`);
+            await selfTestSleep(800);
+            return `${runWorld.scenes} scenes made in ${runWorld.ms} ms; over the seam into the next place on day 2`;
+          } finally {
+            setSaveData(was);
+            render();
+          }
+        },
+        8,
+        150
+      );
     /* v46: a room that opens in place: into a building and out again, without leaving the town (RL-5: Professor Hazel's
        lab in Copperleaf, the hub; it was Marigold's shop) */
     if (typeof seamlessRoomMap === 'function' && LOCATIONS[START_NODE] && !selfTest.stop)
