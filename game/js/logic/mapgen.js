@@ -31,6 +31,7 @@ expose({
   MAPGEN_OPPOSITE: [() => MAPGEN_OPPOSITE],
   MAPGEN_OUTWARD: [() => MAPGEN_OUTWARD],
   MAPGEN_PATH_GROUND: [() => MAPGEN_PATH_GROUND],
+  MAPGEN_ROAD_CAP: [() => MAPGEN_ROAD_CAP],
   MAPGEN_ROAD_CLIMB: [() => MAPGEN_ROAD_CLIMB],
   MAPGEN_SHAPES: [() => MAPGEN_SHAPES],
   MAPGEN_SIDE_NAME: [() => MAPGEN_SIDE_NAME],
@@ -72,8 +73,6 @@ expose({
   mapgenExitPoint: [() => mapgenExitPoint, v => (mapgenExitPoint = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenFbm: [() => mapgenFbm, v => (mapgenFbm = v)],
-  // @ts-expect-error -- replaced on purpose
-  mapgenFlattenRoads: [() => mapgenFlattenRoads, v => (mapgenFlattenRoads = v)],
   mapgenGround: [() => mapgenGround],
   // @ts-expect-error -- replaced on purpose
   mapgenGrowWild: [() => mapgenGrowWild, v => (mapgenGrowWild = v)],
@@ -138,6 +137,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   mapgenRoadDist: [() => mapgenRoadDist, v => (mapgenRoadDist = v)],
   // @ts-expect-error -- replaced on purpose
+  mapgenRoadGrades: [() => mapgenRoadGrades, v => (mapgenRoadGrades = v)],
+  // @ts-expect-error -- replaced on purpose
   mapgenRoadProfiles: [() => mapgenRoadProfiles, v => (mapgenRoadProfiles = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenRoadReport: [() => mapgenRoadReport, v => (mapgenRoadReport = v)],
@@ -165,6 +166,8 @@ expose({
   mapgenStageExits: [() => mapgenStageExits, v => (mapgenStageExits = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenStageFeature: [() => mapgenStageFeature, v => (mapgenStageFeature = v)],
+  // @ts-expect-error -- replaced on purpose
+  mapgenStageGrade: [() => mapgenStageGrade, v => (mapgenStageGrade = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenStageGround: [() => mapgenStageGround, v => (mapgenStageGround = v)],
   // @ts-expect-error -- replaced on purpose
@@ -514,6 +517,8 @@ export function mapgenNewWork(P, ctx) {
     npcSpots: [],
     notes: /** @type {string[]} */ ([]),
     stepsUsed: false,
+    /* TR-1: every road's grade (mapgenRoadGrades), once mapgenStageGrade has laid them */
+    grades: /** @type {any} */ (null),
     /* MG-2: the buildings' lots, [x0, z0, x1, z1] (mapgenStageLots) */
     lots: /** @type {number[][]} */ ([]),
     /* MG-2: the edges joined to a neighbour that got their exit (mapgenParams) */
@@ -966,8 +971,8 @@ export function mapgenStageRoad(G) {
       G.F[q] |= 2;
     }
   }
-  /* flatten: a smoothed height along each road, its slope limited, blended out to the sides */
-  mapgenFlattenRoads(G, half);
+  /* the land under the roads is laid once the hub is chosen (mapgenStageGrade) */
+  void half;
 }
 export function mapgenCornerHeight(G, x, z) {
   const i = mapgenBetween(Math.round(x), 0, G.w),
@@ -993,31 +998,168 @@ export function mapgenLandProfile(G, pts, lim) {
   for (let i = n - 2; i >= 0; i--) sm[i] = mapgenBetween(sm[i], sm[i + 1] - lim, sm[i + 1] + lim);
   return sm;
 }
-export function mapgenFlattenRoads(G, half) {
-  const { w, h } = G,
-    prof = new Float32Array(G.roadPts.length);
-  for (const R of G.road) R.prof = mapgenLandProfile(G, R.pts, 0.09); /* per half metre: 18% at most */
+/* TR-1: the steepest a road climbs, land and terrace raise together, a half metre at a time (15%) */
+export const MAPGEN_ROAD_CAP = 0.07;
+/** TR-1: the height of every road, both layers at once: the raise each road sample takes (mapgenRoadProfiles, when
+ * there are terraces) and the walked height E (land plus raise), which follows the land smoothed along the road but
+ * climbs no more than MAPGEN_ROAD_CAP a half metre, starts at the land by each exit, lies level through the hub and
+ * meets the main road where a branch joins it; stretches that pass near each other differ by no more than the cap
+ * over the gap (mapgenProfilesMeet). {E, sProf, sDiscs, target, fixed, first} (target: what E would be with no cap) */
+export function mapgenRoadGrades(G) {
+  const lim = MAPGEN_ROAD_CAP,
+    n = G.roadPts.length,
+    lv = mapgenTerraceCount(G.P);
+  let sProf = new Float32Array(n),
+    sDiscs = /** @type {{ x: number, z: number, r: number, v: number }[] | null} */ (null);
+  if (lv > 0) {
+    const { rise, lvl, zoneDist } = mapgenTerraceField(G, lv),
+      r = mapgenRoadProfiles(
+        G,
+        p => lvl(p[0], p[1]) * rise,
+        rise,
+        (x, z) => zoneDist(x, z) <= 8
+      );
+    sProf = r.prof;
+    sDiscs = r.discs;
+  }
+  const E = new Float64Array(n),
+    target = new Float64Array(n),
+    fixed = new Uint8Array(n),
+    first = [];
   let o = 0;
   for (const R of G.road) {
-    for (let i = 0; i < R.pts.length; i++) prof[o + i] = R.prof[i];
+    first.push(o);
     o += R.pts.length;
   }
-  /* corners: nearest road sample by brute force within reach (the cell field is at centres) */
+  const ends = new Set(G.exits.map(e => `${e.pt[0]},${e.pt[1]}`));
+  G.road.forEach((R, r) => {
+    const m = R.pts.length,
+      f0 = first[r],
+      land = mapgenLandProfile(G, R.pts, 1e9),
+      e = E.subarray(f0, f0 + m),
+      fx = fixed.subarray(f0, f0 + m);
+    for (let i = 0; i < m; i++) e[i] = target[f0 + i] = land[i] + sProf[f0 + i];
+    /* by an exit the road starts at the land there (pinned to a joined neighbour), with no raise */
+    for (const i of [0, m - 1])
+      if (ends.has(`${R.pts[i][0]},${R.pts[i][1]}`)) {
+        e[i] = mapgenCornerHeight(G, R.pts[i][0], R.pts[i][1]);
+        fx[i] = 1;
+      }
+    if (r === 0) {
+      /* level through the hub (4 m either way), as high as the cone from the exits allows */
+      const hk = mapgenBetween(G.hubK ?? 0, 0, m - 1),
+        S = G.roadPts[f0 + hk].s,
+        lvl = [];
+      for (let i = 0; i < m; i++) if (Math.abs(G.roadPts[f0 + i].s - S) <= 4) lvl.push(i);
+      let hv = lvl.reduce((a, i) => a + e[i], 0) / (lvl.length || 1);
+      for (let i = 0; i < m; i++)
+        if (fx[i])
+          for (const k of lvl) hv = mapgenBetween(hv, e[i] - lim * Math.abs(k - i), e[i] + lim * Math.abs(k - i));
+      for (const i of lvl) {
+        e[i] = hv;
+        fx[i] = 1;
+      }
+    } else if (R.join != null) {
+      e[m - 1] = E[first[0] + R.join];
+      fx[m - 1] = 1;
+    }
+    mapgenRampLimit(e, fx, lim);
+  });
+  const discs = [[G.hub[0], G.hub[1], 3.5], ...G.exits.map(e => [e.pt[0], e.pt[1], 3])].map(([x, z, r], d) => {
+    const k =
+      d === 0 ? first[0] + mapgenBetween(G.hubK ?? 0, 0, G.road[0].pts.length - 1) : G.near[mapgenCellAt(G, x, z)];
+    return { x, z, r, v: k >= 0 ? E[k] : 0 };
+  });
+  /* across a gap, half the cap: the land between two stretches blends them, so a walk along one that turns into
+     the other adds the two slopes */
+  mapgenProfilesMeet(G, E, fixed, first, discs, lim, lim);
+  return { E, sProf, sDiscs, target, fixed, first };
+}
+/** TR-1: the land under and beside the roads, laid from their grades. Each road sample's land height is its walked
+ * height less its raise; the corners under a centre line take that, the rest of the road and its sides are smooth
+ * between them (so where two roads come near each other, at a junction or across a bend, the land between them is a
+ * slope, never the height of whichever road is nearest), and the sides blend out to the land over 5 m. The hub's
+ * round lies level. Corners at water stay under the road (a bridge spans them) */
+export function mapgenStageGrade(G) {
+  const { w, h } = G,
+    W1 = w + 1,
+    gr = mapgenRoadGrades(G),
+    n = G.roadPts.length,
+    hp = Float64Array.from(gr.E, (v, k) => v - gr.sProf[k]);
+  G.grades = gr;
+  const inner = 1.2,
+    blend = 5,
+    N = W1 * (h + 1),
+    tw = new Float32Array(N).fill(-1),
+    v = new Float64Array(N),
+    bucket = new Map(),
+    key = (x, z) => `${Math.floor(x / 2)},${Math.floor(z / 2)}`;
+  G.roadPts.forEach((p, k) => {
+    const b = key(p.x, p.z);
+    if (!bucket.has(b)) bucket.set(b, []);
+    bucket.get(b).push(k);
+  });
   for (let j = 0; j <= h; j++)
     for (let i = 0; i <= w; i++) {
-      const q = mapgenBetween(j, 0, h - 1) * w + mapgenBetween(i, 0, w - 1),
-        k = G.near[q];
-      if (k < 0) continue;
-      const p = G.roadPts[k],
-        d = Math.hypot(i - p.x, j - p.z) - p.r,
-        inner = 1.2,
-        blend = 5;
+      const k0 = G.near[mapgenBetween(j, 0, h - 1) * w + mapgenBetween(i, 0, w - 1)];
+      if (k0 < 0) continue;
+      const p0 = G.roadPts[k0],
+        d0 = Math.hypot(i - p0.x, j - p0.z),
+        d = d0 - p0.r;
       if (d > inner + blend) continue;
-      const t = d <= inner ? 1 : 1 - mapgenSmooth((d - inner) / blend),
-        c = j * (w + 1) + i;
-      G.H[c] = G.H[c] * (1 - t) + prof[k] * t;
+      const c = j * W1 + i;
+      tw[c] = d <= inner ? 1 : 1 - mapgenSmooth((d - inner) / blend);
+      /* the road samples round the corner, weighted by how much further they are than the nearest: on a straight
+         road that is the height where the corner lies along it, and where two stretches come near each other it
+         blends from one to the other */
+      const sg = 0.7 + 0.25 * d0,
+        reach = d0 + 3 * sg,
+        bi = Math.floor(i / 2),
+        bj = Math.floor(j / 2),
+        nb = Math.ceil(reach / 2);
+      let sw = 0,
+        sv = 0;
+      for (let y = bj - nb; y <= bj + nb; y++)
+        for (let x = bi - nb; x <= bi + nb; x++)
+          for (const k of bucket.get(`${x},${y}`) || []) {
+            const P = G.roadPts[k],
+              e = (Math.hypot(i - P.x, j - P.z) - d0) / sg;
+            if (e > 3) continue;
+            const wt = Math.exp(-e * e);
+            sw += wt;
+            sv += wt * hp[k];
+          }
+      v[c] = sw ? sv / sw : hp[k0];
     }
-  void half;
+  /* the hub's round: level at its road's height out to 2.5 m, easing back over 1.5 m */
+  const [hx, hz] = G.hub,
+    hk = gr.first[0] + mapgenBetween(G.hubK ?? 0, 0, G.road[0].pts.length - 1),
+    hv = hp[hk];
+  for (let j = Math.max(0, Math.floor(hz - 4)); j <= Math.min(h, Math.ceil(hz + 4)); j++)
+    for (let i = Math.max(0, Math.floor(hx - 4)); i <= Math.min(w, Math.ceil(hx + 4)); i++) {
+      const d = Math.hypot(i - hx, j - hz),
+        c = j * W1 + i;
+      if (d > 4) continue;
+      const t = d < 2.5 ? 1 : 1 - mapgenSmooth((d - 2.5) / 1.5);
+      if (tw[c] < 0) {
+        tw[c] = t;
+        v[c] = hv;
+      } else {
+        v[c] = v[c] * (1 - t) + hv * t;
+        tw[c] = Math.max(tw[c], t);
+      }
+    }
+  const wet = (i, j) => i >= 0 && j >= 0 && i < w && j < h && (G.F[j * w + i] & (4 | 8)) === 4;
+  for (let c = 0; c < N; c++) {
+    if (tw[c] < 0) continue;
+    const i = c % W1,
+      j = (c - i) / W1;
+    if (wet(i, j) || wet(i - 1, j) || wet(i, j - 1) || wet(i - 1, j - 1)) {
+      if (tw[c] >= 1) G.H[c] = Math.min(G.H[c], v[c] - 0.45);
+      continue;
+    }
+    G.H[c] = G.H[c] * (1 - tw[c]) + v[c] * tw[c];
+  }
 }
 
 /* ---------- 4. exits and hub ---------- */
@@ -1081,8 +1223,7 @@ export function mapgenChooseHub(G) {
   G.notes.push('no dry spot on the road for the hub');
 }
 export function mapgenStageExits(G) {
-  const { w, h } = G,
-    used = {};
+  const used = {};
   const M = G.road[0].pts,
     hk = G.hubK;
   G.edgeExits = G.exits.map((e, x) => {
@@ -1122,17 +1263,8 @@ export function mapgenStageExits(G) {
       path: mapgenSimplify(path, 0.4).map(p => [mapgenRound2(p[0]), mapgenRound2(p[1])]),
     };
   });
-  /* the hub: flat, clear of trees */
-  const [hx, hz] = G.hub,
-    hh = mapgenCornerHeight(G, hx, hz);
-  for (let j = Math.max(0, Math.floor(hz - 4)); j <= Math.min(h, Math.ceil(hz + 4)); j++)
-    for (let i = Math.max(0, Math.floor(hx - 4)); i <= Math.min(w, Math.ceil(hx + 4)); i++) {
-      const d = Math.hypot(i - hx, j - hz);
-      if (d > 4) continue;
-      const t = d < 2.5 ? 1 : 1 - mapgenSmooth((d - 2.5) / 1.5),
-        c = j * (w + 1) + i;
-      G.H[c] = G.H[c] * (1 - t) + hh * t;
-    }
+  /* the hub: clear of trees (mapgenStageGrade lays it level) */
+  const [hx, hz] = G.hub;
   G.keep.push([hx, hz, 2.2]);
 }
 
@@ -1377,19 +1509,17 @@ export function mapgenTerraces(G, levels) {
   const { w, h } = G,
     W2 = w * 2,
     H2 = h * 2,
-    { rise, lvl, zoneDist } = mapgenTerraceField(G, levels);
+    { rise, lvl } = mapgenTerraceField(G, levels);
   for (let j = 0; j < H2; j++) for (let i = 0; i < W2; i++) G.S[j * W2 + i] = lvl((i + 0.5) / 2, (j + 0.5) / 2) * rise;
   /* TR-1: along each road the raise follows a profile that climbs no faster than 0.1 m a half metre (a level stretch
      through the hub, a branch ending at the main road's raise), and the roads, the hub round and the exits' rounds
      lie on one surface drawn from those profiles, with no step anywhere on it (it replaces a pass that lowered
      cells until each was within 0.25 m of its neighbours, which notched junctions and the hub round) */
-  const { prof, discs } = mapgenRoadProfiles(
-    G,
-    p => lvl(p[0], p[1]) * rise,
-    rise,
-    (x, z) => zoneDist(x, z) <= 8
-  );
-  mapgenRoadSurface(G, prof, discs);
+  const { sProf: prof, sDiscs: discs } =
+    G.grades && G.grades.sDiscs
+      ? G.grades
+      : mapgenRoadGrades(G); /* worked out with the land under the roads (mapgenStageGrade) */
+  mapgenRoadSurface(G, prof, /** @type {any} */ (discs));
   /* water lies at the bottom: no raise under it (under a bridge the road's ramp goes on, so the deck meets its ends) */
   for (let j = 0; j < H2; j++)
     for (let i = 0; i < W2; i++)
@@ -1503,11 +1633,11 @@ export function mapgenRoadProfiles(G, rawAt, rise, inZone) {
 /** TR-1: where two stretches of road pass near each other in space but not along the road (a bend that doubles
  * back, a branch beside the main road at a junction, another road) or near a round, their raise differs by no more
  * than lim a half metre of the gap between them, so the surface between them can be a ramp. A branch gives way to the
- * main road, and the fixed samples (an exit's stretch, the hub's) and the rounds do not move */
-export function mapgenProfilesMeet(G, v, fixed, first, discs, lim) {
+ * main road, and the fixed samples (an exit's stretch, the hub's) and the rounds do not move. slope: the change
+ * allowed a metre of gap (lim a half metre, unless given) */
+export function mapgenProfilesMeet(G, v, fixed, first, discs, lim, slope = lim * 2) {
   const P = G.roadPts,
     n = P.length,
-    slope = lim * 2,
     val = Float64Array.from([...v, ...discs.map(D => D.v)]),
     weight = q => (q >= n || fixed[q] ? 0 : G.road[P[q].k].main ? 1 : 2),
     pairs = [],
@@ -1547,8 +1677,12 @@ export function mapgenProfilesMeet(G, v, fixed, first, discs, lim) {
       if (d <= P[b].r + 1.5) add(n + x, b, Math.max(0, d));
     })
   );
+  /* the samples a round moves hold still while the ramp limit runs, so their neighbours follow them (without that
+     the limit's forward pass lifted a lowered sample straight back) */
+  const held = new Uint8Array(n);
   for (let round = 0; round < 60; round++) {
     let worst = 0;
+    held.set(fixed);
     for (const [a, b, d, wa, wb] of pairs) {
       const ex = Math.abs(val[a] - val[b]) - slope * d;
       if (ex <= 1e-6) continue;
@@ -1556,12 +1690,14 @@ export function mapgenProfilesMeet(G, v, fixed, first, discs, lim) {
       const sg = val[a] > val[b] ? 1 : -1;
       val[a] -= (sg * ex * wa) / (wa + wb);
       val[b] += (sg * ex * wb) / (wa + wb);
+      if (a < n && wa) held[a] = 1;
+      if (b < n && wb) held[b] = 1;
     }
     v.set(val.subarray(0, n));
     G.road.forEach((R, r) =>
       mapgenRampLimit(
         v.subarray(first[r], first[r] + R.pts.length),
-        fixed.subarray(first[r], first[r] + R.pts.length),
+        (worst < 1e-3 ? fixed : held).subarray(first[r], first[r] + R.pts.length),
         lim
       )
     );
@@ -2350,6 +2486,7 @@ export function mapgenScene(params, ctx) {
   mapgenStageWater(G);
   mapgenChooseHub(G);
   mapgenStageExits(G);
+  mapgenStageGrade(G);
   mapgenStageLand(G);
   mapgenStageFeature(G);
   mapgenStageEdgeGround(G);

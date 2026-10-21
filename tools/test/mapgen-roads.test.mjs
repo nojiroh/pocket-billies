@@ -172,3 +172,51 @@ test('the road report measures a road as it is walked', () => {
   const r = G.mapgenRoadReport(tilted);
   assert.ok(Math.abs(r.jump - 0.1) < 0.011 && r.grade <= 0.105 && r.grade > 0.08, JSON.stringify(r));
 });
+
+/** routes of every shape and exit layout on hilly land, terraced or not */
+function hilly(n, seed0) {
+  const sets = [
+    [
+      { side: 'W', t: 0.5 },
+      { side: 'E', t: 0.5 },
+    ],
+    [
+      { side: 'S', t: 0.5 },
+      { side: 'N', t: 0.5 },
+    ],
+    [
+      { side: 'W', t: 0.4 },
+      { side: 'E', t: 0.6 },
+      { side: 'S', t: 0.5 },
+    ],
+    [
+      { side: 'S', t: 0.5 },
+      { side: 'N', t: 0.3 },
+      { side: 'N', t: 0.8 },
+    ],
+  ];
+  const out = [];
+  for (let i = 0; i < n; i++) {
+    const p = {
+      seed: seed0 + i,
+      biome: ['ridge', 'canyon', 'meadow', 'autumn'][i % 4],
+      land: { terraces: (i % 5) / 4, cliffs: (i % 4) / 3, hills: [0.3, 0.6, 0.9, 1][i % 4] },
+      road: { exits: sets[(i >> 2) % 4], shape: Object.keys(G.MAPGEN_SHAPES)[(i >> 4) % 4] },
+    };
+    out.push({ sc: G.mapgenScene(p, ctx).scene, where: JSON.stringify(p) });
+  }
+  return out;
+}
+
+test('a road climbs no faster than the cap, with no jump in the ground, junctions included', () => {
+  let steep = 0;
+  for (const { sc, where } of hilly(64, 7000)) {
+    const r = G.mapgenRoadReport(sc);
+    /* 15% at most (0.07 m a half metre, as drawn: the land's curves and the raise's 5 cm add a little) */
+    assert.ok(r.jump <= 0.25, `${where}: a jump of ${r.jump} m over a metre at ${r.at.jump}`);
+    assert.ok(r.grade <= 0.2, `${where}: ${r.grade} over 2 m at ${r.at.grade}`);
+    if (r.grade > 0.18) steep++;
+    assert.deepEqual(G.mapgenUnreachable(sc, C), [], where);
+  }
+  assert.ok(steep <= 2, `${steep} of 64 roads steeper than 18% somewhere`);
+});
