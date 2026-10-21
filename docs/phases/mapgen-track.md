@@ -88,3 +88,9 @@ session is tagged `mg-N-done`.
   neighbour's seam strip should set the exit's `t` (an integer offset within 0.5 m) and pin the edge heights within
   ±22 m of the exit; terraces should stay at zero raise near a joined edge. Data rules to meet: two exits a side at
   most, 44 m apart.
+
+## Plants without scaling (phase 09 side work, 2026-10-21)
+- MAPGEN_VERSION 2. A picture is never scaled (`s` only on models): scaling resamples it off the 32 px/m grid. A prop
+  whose `variants` carry a `weight` gets one (`v`, 1 is the first; the prop as drawn counts 1) from the stream
+  `plants|variants`, so the pick changes no other stage's draws; the footprint is `mapgenRadius` times the variant's
+  `span`. The variants are drawn by tools/build-flat-variants.py.

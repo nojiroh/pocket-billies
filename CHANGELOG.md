@@ -9,6 +9,11 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- Plants (phase 09): the flowers, grasses, reeds, ferns, pads and ground cover of Copperleaf and the generated routes
+  each come in four more drawings: a sprig with a bud, a domed cluster, a wide drift with fallen petals, tall stems,
+  scattered rosettes, windswept or seeding grass, curled fiddleheads, rafts of lily pads and so on. Generated routes
+  pick among them instead of stretching one picture to a random size, so every plant stays on the 32 px/m pixel
+  grid (and the renderer no longer gives these plants a random size either).
 - Battles (roguelite track RL-4): a battle still going after 40 turns is called off as a draw (a wild battle as if
   you walked away, a trainer's as a loss). Lullaby's text says 2-4 turns of sleep, as the rule has it. Inside, a
   battle can now run with its own seeded chances and without touching the save (for runs, ghosts and tests); the

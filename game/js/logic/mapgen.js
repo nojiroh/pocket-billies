@@ -88,6 +88,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   mapgenParams: [() => mapgenParams, v => (mapgenParams = v)],
   // @ts-expect-error -- replaced on purpose
+  mapgenPickVariant: [() => mapgenPickVariant, v => (mapgenPickVariant = v)],
+  // @ts-expect-error -- replaced on purpose
   mapgenPolyLength: [() => mapgenPolyLength, v => (mapgenPolyLength = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenPutProp: [() => mapgenPutProp, v => (mapgenPutProp = v)],
@@ -138,7 +140,7 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-export const MAPGEN_VERSION = 1;
+export const MAPGEN_VERSION = 2; /* 2: pictures are never scaled; plants get a drawn variant (v) instead */
 export const MAPGEN_STAGES = ['heights', 'ground', 'road', 'exits', 'lots', 'plants', 'feature', 'props'];
 export const MAPGEN_SHAPES = {
   straight: 'Straight',
@@ -370,14 +372,29 @@ export function mapgenNearRoadWidth(G, x, z) {
   return k >= 0 ? G.roadPts[k].r : 0;
 }
 /** put a prop (marked g: 1) if its spot is free; o: { avoid: ground letters, road: extra clearance, water: allowed } */
+/** a drawn variant of a prop (its v, 1 is the first; 0 is the prop as drawn), picked by the variants' weights with
+ * the prop as drawn counting 1, from a stream of its own (so picking one changes nothing else in the scene) */
+export function mapgenPickVariant(G, M) {
+  const L = M && M.variants;
+  if (!L || !L.some(r => r.weight > 0)) return 0;
+  const rnd = G.vrnd || (G.vrnd = G.rng('plants', '|variants'));
+  let t = rnd.next() * L.reduce((a, r) => a + (r.weight > 0 ? r.weight : 0), 1) - 1;
+  if (t < 0) return 0;
+  for (let i = 0; i < L.length; i++) if (L[i].weight > 0 && (t -= L[i].weight) < 0) return i + 1;
+  return 0;
+}
 export function mapgenPutProp(G, k, x0, z0, o = {}) {
   const M = G.cat[k];
   if (!M) return null;
   /* checked where it is stored: rounding can move a prop into the next cell */
   const x = mapgenRound2(x0),
     z = mapgenRound2(z0);
-  const s = o.s || 1,
-    r = mapgenRadius(M, s) * (o.squeeze || 1);
+  /* phase 09: a picture is never scaled (it would leave the 32 px/m grid of the ground and the models): its variety
+     is a drawn variant, and its footprint that variant's width (span). Models keep their size range. */
+  const v = o.v != null ? o.v : mapgenPickVariant(G, M),
+    s = M.model ? o.s || 1 : 1,
+    span = v ? M.variants[v - 1].span || 1 : 1,
+    r = mapgenRadius(M, s) * span * (o.squeeze || 1);
   if (x < 0.5 || z < 0.5 || x > G.w - 0.5 || z > G.h - 0.5) return null;
   const q = mapgenCellAt(G, x, z),
     ch = G.T[q];
@@ -392,6 +409,7 @@ export function mapgenPutProp(G, k, x0, z0, o = {}) {
   }
   const p = { k, x: mapgenRound2(x), z: mapgenRound2(z), g: 1 };
   if (Math.abs(s - 1) > 0.02) p.s = mapgenRound2(s);
+  if (v) p.v = v;
   if (o.f) p.f = 1;
   if (o.w) p.w = o.w;
   if (o.extra) Object.assign(p, o.extra);
