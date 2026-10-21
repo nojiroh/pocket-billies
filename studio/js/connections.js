@@ -17,6 +17,7 @@ import { ACTIONS, openSection, render, setRender, speciesName, studioState } fro
 import { selectedLineIndex } from './data-editors.js';
 import { currentMapId, mapEditor } from './map-editor.js';
 import { engineData, engineEditor, formatDialValue } from './engine-editor.js';
+import { uiDialConnections } from './ui-inspect.js';
 import { fieldSelector, findEngine, findField, findFlash } from './find.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -147,6 +148,11 @@ function connectionsTarget() {
     return { kind: 'stop', id: studioState.sel.stop };
   const m = f.match(/^(items|coins)\.([^.]+)\./);
   if (s === 'items' && m) return { kind: m[1] === 'items' ? 'item' : 'coin', id: m[2] };
+  /* UI-3b: a UI look dial, on the whole game or one screen */
+  if (s === 'ui' && f) {
+    const m = f.match(/^uiTheme\.(?:defaults|overrides\.([^.]+))\.(.+)$/);
+    if (m) return { kind: 'uidial', id: m[2], scope: m[1] || 'game' };
+  }
   if (f) return { kind: 'field', id: f };
   return null;
 }
@@ -507,6 +513,15 @@ export function connectionsHTML() {
   ${I.pre.length ? `<h5>Looks that change it</h5><div class="lk-row">${I.pre.map(n => connectionNodeHTML(n)).join('')}</div>` : ''}
   ${connectionMapHTML(I.needs, me, I.feeds, 'It needs', 'Only matters when it’s on')}
   ${I.qoff ? `<p class="lk-q"><b>Automatic quality</b> turns this off on slow devices: ${escapeHtml(I.qoff)}. Your Studio preview always shows it at full quality.</p>` : ''}`;
+  }
+  if (cur.kind === 'uidial') {
+    const I = uiDialConnections(cur.id, cur.scope),
+      me = { kind: 'uidial', id: cur.id, label: I.label, sub: 'UI look', go: null };
+    keep([...I.chain, ...I.pre, ...I.vars, ...I.parts]);
+    return `<h4>${escapeHtml(I.label)}</h4><p class="help">Where its value comes from: a screen that sets it beats the whole game on that screen. Then what it writes and the parts in the preview that read it (click one to see it there).</p>
+  <div class="lk-chain">${I.chain.map(n => connectionNodeHTML(n)).join('<span class="lk-arrow">→</span>')}</div>
+  ${I.pre.length ? `<h5>Presets that set it</h5><div class="lk-row">${I.pre.map(n => connectionNodeHTML(n)).join('')}</div>` : ''}
+  ${connectionMapHTML(I.vars, me, I.parts, 'It writes', 'Parts in the preview that read it')}${I.more ? `<p class="help">And ${I.more} more parts.</p>` : ''}`;
   }
   if (cur.kind === 'field') {
     const o = recordOwningPath(cur.id);

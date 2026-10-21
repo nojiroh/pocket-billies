@@ -2,6 +2,8 @@
 // game's own js/ui-kit.js, so the gallery shows exactly what the game draws.
 import { pbFloat, typeGlyphHTML } from '../game/js/ui-kit.js';
 import { applyUiTheme } from '../game/js/theme-sheet.js';
+// UI-4: the run parts (pb-day-chip, pb-forecast, pb-node, pb-coin, pb-pick-card, pb-payout, pb-nav-bar)
+import '../game/js/ui-run-kit.js';
 
 const root = document.documentElement;
 const press = (group, value) =>
@@ -10,7 +12,9 @@ const press = (group, value) =>
     .forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === value)));
 
 document.addEventListener('click', ev => {
-  const b = /** @type {HTMLElement} */ (ev.target).closest('[data-g],[data-m],#gToastMore,#gFloat,#gSheetBtn');
+  const b = /** @type {HTMLElement} */ (ev.target).closest(
+    '[data-g],[data-m],#gToastMore,#gFloat,#gSheetBtn,#gPayoutPlay,#gPickFlip,#gCoinUp'
+  );
   if (!b) return;
   const d = b.dataset;
   if (d.g === 'theme') {
@@ -38,6 +42,16 @@ document.addEventListener('click', ev => {
     t.n = (t.n || 1) + 1;
   } else if (b.id === 'gFloat') pbFloat(b, '+$120');
   else if (b.id === 'gSheetBtn') /** @type {any} */ (document.getElementById('gSheet')).open = true;
+  // UI-4: the reward motions on demand (the pictures take each part at its end)
+  else if (b.id === 'gPayoutPlay') /** @type {any} */ (document.getElementById('gPayout')).play();
+  else if (b.id === 'gPickFlip') {
+    const c = /** @type {any} */ (document.getElementById('gPickDown'));
+    if (c.facedown) c.reveal();
+    else c.facedown = true;
+  } else if (b.id === 'gCoinUp') {
+    const c = /** @type {any} */ (document.querySelector('pb-coin[kind="capital"]'));
+    c.value += 1000;
+  }
 });
 
 const toastEl = /** @type {any} */ (document.getElementById('gToast'));

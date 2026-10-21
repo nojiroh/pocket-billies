@@ -6,14 +6,14 @@
    to the setting and makes it blink. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
-import { noteConnectionsField, provide } from '../../game/js/hooks.js';
+import { noteConnectionsField, provide, uiRulesShow } from '../../game/js/hooks.js';
 import { $, $$ } from '../../game/js/util.js';
 import { ENGINE_SPEC } from '../../game/js/engine/settings.js';
 import { escapeHtml } from './game-stand-ins.js';
 import { UI_DIALS, uiDialList } from '../../game/js/logic/ui-dials.js';
 import { ACTIONS, SECTIONS, SECTION_LIST, clone, openSection, studioState, toast } from './studio-app.js';
 import { engineEditor, refreshEngineSettings } from './engine-editor.js';
-import { findUi } from './ui-editor.js';
+import { UI_VIEWS, findUi, uiEditor } from './ui-editor.js';
 /* eslint-disable no-func-assign */
 expose({
   FIND_KIND_LABELS: [() => FIND_KIND_LABELS],
@@ -149,6 +149,23 @@ export function buildSearchIndex() {
     uiDialList().forEach(d =>
       add(d.label, 'UI look › ' + T[d.group], 'setting', () => findUi(d.path), `${d.dial.help || ''} ${d.path}`)
     );
+  }
+  /* UI-3b: the UI look's tools */
+  if (typeof uiRulesShow === 'function') {
+    const tool = (label, help, fn) => add(label, 'UI look › Tools', 'setting', fn, help);
+    tool('Rule check', 'raw values ui-lint tokens lines', () => {
+      openSection('ui');
+      uiRulesShow();
+    });
+    for (const [v, label] of UI_VIEWS)
+      tool(`Preview: ${label}`, 'real screen fixture preview', () => {
+        uiEditor.view = v;
+        openSection('ui');
+      });
+    tool('Before / after', 'compare saved look side by side', () => {
+      uiEditor.split = true;
+      openSection('ui');
+    });
   }
   ['rules', 'types', 'items', 'jobs'].forEach(s => findPageFields(s, add));
   (D.lines || []).forEach(L =>

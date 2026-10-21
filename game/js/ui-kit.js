@@ -49,9 +49,9 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-const { LitElement, css, html, nothing } = /** @type {any} */ (self).PB_LIT;
+export const { LitElement, css, html, nothing } = /** @type {any} */ (self).PB_LIT;
 
-const reduced = () =>
+export const reduced = () =>
   document.documentElement.dataset.motion === 'reduced' ||
   (typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches);
 

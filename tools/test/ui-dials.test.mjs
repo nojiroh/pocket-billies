@@ -127,3 +127,24 @@ test('grades, presets and their ids', () => {
   assert.equal(uiPresetId('Alpha 0.5', { alpha_0_5: 1 }), 'alpha_0_5_2');
   assert.equal(uiPresetId('12', {}), 'look');
 });
+
+// UI-3b: which variables a dial writes (inspect and Connections in the Studio read it)
+test('every dial writes a variable, in the look or once what it depends on is on', async () => {
+  const { uiDialList, uiDialReach, uiVarDials } = await import('../../game/js/logic/ui-dials.js');
+  const theme = JSON.parse(readFileSync(new URL('../../game/data/uiTheme.json', import.meta.url), 'utf8'));
+  // the radius matters on a rounded family, the step on a stepped look
+  const stepped = JSON.parse(JSON.stringify(theme)),
+    rounded = JSON.parse(JSON.stringify(theme));
+  stepped.defaults.shape.stepped = true;
+  for (const f of Object.values(rounded.defaults.shape.families)) f.kind = 'rounded';
+  for (const e of uiDialList())
+    assert.ok(
+      [theme, stepped, rounded].some(t => uiDialReach(t, e.path).length),
+      `${e.path} writes nothing`
+    );
+  assert.deepEqual(uiDialReach(theme, 'color.dark.text'), ['--c-text', '--text']);
+  assert.ok(uiDialReach(theme, 'shape.cutLg').includes('--clip-panel'));
+  assert.deepEqual(uiDialReach(theme, 'space.s3'), ['--s3']);
+  assert.deepEqual(uiDialReach(theme, 'type.voiceScale'), ['--font-voice']);
+  assert.ok(uiVarDials(theme)['--c-text'].includes('color.light.text'));
+});

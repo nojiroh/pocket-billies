@@ -1030,6 +1030,9 @@ canvas.spr-prev.big {
 .checks li.warn span {
   color: var(--warn);
 }
+.checks li.info span {
+  color: var(--text2);
+}
 .checks li.ok span {
   color: var(--ok);
 }
@@ -4326,7 +4329,8 @@ body.wb-dropping::after {
 .ui-pvbar select {
   width: auto;
 }
-#uiCmp.on {
+#uiCmp.on,
+#uiInsp.on {
   background: var(--acc);
   border-color: var(--acc);
   color: #fff;
@@ -4451,4 +4455,103 @@ body.wb-dropping::after {
 }
 .ui-col input[type='color'] {
   width: 28px;
+}
+/* UI track UI-3b: the rule check's list (studio/js/ui-rules.js) */
+.ui-rules {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  max-height: 60vh;
+  overflow: auto;
+  font-size: 12px;
+}
+.ui-rules li {
+  display: grid;
+  grid-template-columns: minmax(120px, auto) minmax(90px, auto) 1fr;
+  gap: 8px;
+  padding: 3px 0;
+  border-bottom: 1px solid var(--line);
+}
+.ui-rules span {
+  color: var(--text2);
+}
+.ui-rules code {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ui-inspect {
+  max-height: 34vh;
+  overflow: auto;
+  margin-top: 10px;
+  font-size: 12px;
+}
+/* the frame makes room for the panel while it shows */
+.eng-side:has(.ui-inspect:not([hidden])) .ui-pv {
+  height: calc(66vh - 230px);
+  min-height: 300px;
+}
+.ui-insp-h {
+  margin-bottom: 6px;
+}
+.ui-insp {
+  width: 100%;
+  border-collapse: collapse;
+}
+.ui-insp td {
+  padding: 3px 6px 3px 0;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--line);
+}
+.ui-insp td:first-child {
+  white-space: nowrap;
+}
+.ui-insp td:last-child {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.ui-sw {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin-right: 4px;
+  vertical-align: -2px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+}
+.ui-ov-note {
+  margin: 8px 0 0;
+}
+.ui-pv.game {
+  max-width: 100%;
+  margin: 0 auto;
+}
+/* the kept frame lies over its slot (studio/js/ui-editor.js uiKeptFrame) */
+.ui-pv-slot {
+  border-color: transparent;
+}
+.ui-pv-kept {
+  position: fixed;
+  z-index: 2;
+  box-sizing: border-box;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel2);
+}
+.ui-views {
+  margin-bottom: 8px;
+}
+.ui-pv-pair.split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.ui-pv-col {
+  min-width: 0;
+}
+.ui-pv-cap {
+  margin: 0 0 4px;
+  font-size: 12px;
+  color: var(--text2);
 }
