@@ -6,7 +6,7 @@
   art/scene/fx/moth.png    a glowing moth (Spore Forest at night), 2 frames, 7 x 5 px each
   art/scene/life/crow.png  a crow: the pigeon strip, recoloured black with a blue sheen (5 frames, 24 x 22)
 
-    python3 tools/build-fx-v47.py [--force]
+    python3 tools/build-critters.py [--force]
 """
 import sys
 from pathlib import Path

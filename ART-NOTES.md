@@ -357,7 +357,7 @@ the metre for props and 32 px to the metre for the ground.
   game turns), `tree_giant`, `tree_willow_lean`, `crane`, `neon_sign` (and its lit layer), `lookout_tower`, `shipwreck`,
   `waystone`, `golden_cushion`, `lighthouse_small`, `bridge_broken`, `chalk_hopscotch`, `chalk_sun`. A landmark has
   `landmark: 1` in the catalogue, so the camera looks up at it.
-- **Small life** (`tools/build-fx-v47.py`): `scene/fx/bee.png`, `fish.png`, `moth.png` and `scene/life/crow.png`.
+- **Small life** (`tools/build-critters.py`): `scene/fx/bee.png`, `fish.png`, `moth.png` and `scene/life/crow.png`.
 
 ### Part 4: the seven regions
 - **Region props** (`tools/build-region-props-v47.py`, 52): the Meadowlands (`tree_mangrove festival_stage stall_merch
