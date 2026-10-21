@@ -58,7 +58,8 @@
   "alphaKeep": 1.08,
   "alphaSleepResist": 0.5,
   "spreadMult": 0.75,
-  "restCost": 100
+  "restCost": 100,
+  "turnCap": 40
  },
  "catching": {
   "rarity": {"starter":0.45,"common":0.45,"uncommon":0.25,"rare":0.1,"mythical":0.03},

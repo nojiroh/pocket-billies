@@ -713,6 +713,9 @@ export interface Rules {
     loseFee: number;
     /** what a rest stop costs (it heals the team) */
     restCost: number;
+    /** roguelite track RL-4: a battle still going after this many turns ends as a draw ('draw': a wild battle as if
+     * you walked away, a trainer's or a ghost's as a loss) */
+    turnCap: number;
     shockType: TypeId;
     shockTurns: number;
     shockName: string;
