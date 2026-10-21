@@ -27,7 +27,7 @@ import os, sys, json, math, random, zlib, importlib.util
 from PIL import Image
 
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(HERE)
-spec = importlib.util.spec_from_file_location('bbv46', os.path.join(HERE, 'build-buildings-v46.py')); BV = importlib.util.module_from_spec(spec); spec.loader.exec_module(BV)
+spec = importlib.util.spec_from_file_location('bbv46', os.path.join(HERE, 'build-building-kit.py')); BV = importlib.util.module_from_spec(spec); spec.loader.exec_module(BV)
 bsp, bbld = BV.bsp, BV.bbld
 g = vars(bsp)
 Cv, R, P, ramp, olc, mix = bsp.Cv, bsp.R, bsp.P, bsp.ramp, bsp.olc, bsp.mix

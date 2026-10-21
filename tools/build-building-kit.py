@@ -3,9 +3,9 @@
 same walls, roofs, windows, doors and ramps as the town's houses), each with a 3D plan, and colour variants of the
 23 buildings there were. Pictures that already exist are kept (a front you painted over is never redrawn).
 
-    python3 tools/build-buildings-v46.py                # draws what is missing, adds it to props.json and game data
-    python3 tools/build-buildings-v46.py --sheet out.png
-    python3 tools/build-buildings-v46.py bakery --force  # redraws one
+    python3 tools/build-building-kit.py                # draws what is missing, adds it to props.json and game data
+    python3 tools/build-building-kit.py --sheet out.png
+    python3 tools/build-building-kit.py bakery --force  # redraws one
 
 New kinds: bakery, inn, market hall, bank (Savings & Loan), library, school, train station, fire station, mansion,
 barn, greenhouse, ski lodge. (The lighthouse and the windmill were already props.)

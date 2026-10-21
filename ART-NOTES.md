@@ -392,7 +392,7 @@ the metre for props and 32 px to the metre for the ground.
   ski_lodge`) drawn with the same walls, roofs, windows and doors as the houses, each with a 3D plan. Colour variants
   are new files next to the original, `scene/props/<name>_v1.png` ... `_v5.png`: the original's wall, roof and trim tones
   are moved to a new palette, and sometimes shutters, window boxes or an awning are added. The catalogue lists them
-  under `build.variants`, and a placed building picks one with `v`. `tools/build-buildings-v46.py` never touches an
+  under `build.variants`, and a placed building picks one with `v`. `tools/build-building-kit.py` never touches an
   existing picture (`<name> --force` redraws one; `--sheet` shows them all).
 - **Furniture** for the new rooms: bakery oven, bread rack, bed, bar counter, bank counter, vault door, reading desk,
   school desk, blackboard, wall map, ticket window, departures board, piano, armchair, chest of drawers, glass cabinet,
