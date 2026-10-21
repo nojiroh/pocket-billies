@@ -48,6 +48,8 @@ export interface GameData {
   worldmap?: WorldMapLook;
   /** map generator MG-1: the generator's recipe per biome (game/data/biomes.json) */
   biomes?: Record<DataId, Biome>;
+  /** roguelite track RL-6: the kinds of node on a run's map (game/data/nodeTypes.json; logic/run-map.js) */
+  nodeTypes?: Record<DataId, NodeType>;
   /** UI track UI-1: the UI's look: palette, glass, cuts, fonts (game/data/uiTheme.json; logic/ui-theme.js) */
   uiTheme?: UiTheme;
   lines: Line[];
@@ -784,14 +786,40 @@ export interface Rules {
       itemShare: number;
       /** Capital per Billie released in the run */
       released: number;
-      /** Capital per node arrived at */
+      /** Capital per node cleared (each node once, however often it was walked back to; RL-6) */
       node: number;
       /** Capital for a win */
       win: number;
       /** Audit Seals for a win */
       winSeals: number;
     };
+    /** RL-6: the run's node map (logic/run-map.js) */
+    map: RunMapRules;
+    /** RL-6: the clock (owner, 8.10): the deadline is the shortest walk to the boss plus `slack` days; the forecast
+        keeps `ahead` days after today */
+    clock: { slack: number; ahead: number };
+    /** RL-6: what the map shows from where you stand: the rows up to `icons` ahead with their type, up to `unknown`
+        ahead as '?' pins (the boss always) */
+    reveal: { icons: number; unknown: number };
   };
+}
+
+/** rules.json run.map: how a run's node map is laid out (logic/run-map.js runMapMake; placeholders, 8.18) */
+export interface RunMapRules {
+  /** rows from the landing (0) to the boss (the last): the nodes on every path */
+  rows: number;
+  /** mini-bosses on rows round(k * rows / (minibosses + 1)), each with a town's row before it */
+  minibosses: number;
+  /** the nodeTypes.json types of the landing, the row before each mini-boss, the mini-bosses and the boss */
+  first: DataId;
+  rest: DataId;
+  guard: DataId;
+  last: DataId;
+  /** the chance a free or town row has two lanes, and that two lanes side by side get a switch (one diagonal) */
+  wide: number;
+  cross: number;
+  /** the biomes nodes pick from, by weight (biomes.json ids) */
+  biomes: Record<DataId, number>;
 }
 
 /** rules.json robots: the numbers behind robot stats, part HP and breaking (logic/fighters.js) */
@@ -1268,6 +1296,8 @@ export interface WorldMapLook {
 /** biomes.json: what the map generator (logic/mapgen.js) grows and paints for a biome */
 export interface Biome {
   name: string;
+  /** the kind of weather it gets (logic/weather.js CLIMATE_WEATHER_ODDS): a run node's forecast rolls from it (RL-6) */
+  climate: string;
   ground: {
     base: string;
     patches?: Record<string, number>;
@@ -1288,6 +1318,18 @@ export interface Biome {
   look?: Record<string, unknown>;
   life?: { k: string; n: number }[];
   from?: string;
+}
+
+/** nodeTypes.json: a kind of node on a run's map (roguelite track RL-6) */
+export interface NodeType {
+  /** what the player reads */
+  name: string;
+  /** its marker's outline (logic/run-marks.js RUN_MARK_TYPES); the type's id when left out */
+  mark?: string;
+  /** how it plays: a walkable map, or a menu (a story script or a shop sheet, RL-12) */
+  engine: 'scene' | 'menu';
+  /** how often it fills a free row (rules.json run.map gives the other rows their types); 0 or none: never */
+  weight?: number;
 }
 
 /** uiTheme.json: the UI's look (UI track UI-1; version 2 in UI-3, for the Studio's UI section) */

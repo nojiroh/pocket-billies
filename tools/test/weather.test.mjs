@@ -1,0 +1,66 @@
+// RL-6: the weather a roll gives a kind of place (game/js/logic/weather.js), taken out of environment.js
+// environmentWeatherFor, which rolls with a hash of the climate, the day and the 3-hour block; a run's forecast rolls
+// from its node's stream (logic/run-map.js).
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+import { CLIMATE_WEATHER_ODDS, weatherPick } from '../../game/js/logic/weather.js';
+
+/** environmentWeatherFor's pick as it was before RL-6 (environment.js at 2a47ee1), with the hash's value as the roll */
+function pickBefore(climate, roll, ss) {
+  const odds = Object.assign({}, CLIMATE_WEATHER_ODDS[climate] || CLIMATE_WEATHER_ODDS.mild);
+  if (climate === 'mild' && ss === 'winter') {
+    odds.snow = (odds.rain || 0) * 0.7;
+    odds.rain = (odds.rain || 0) * 0.3;
+  }
+  if (climate === 'mild' && ss === 'summer') {
+    odds.clear += 12;
+    odds.storm = (odds.storm || 0) + 3;
+  }
+  const r = roll * Object.values(odds).reduce((a, b) => a + b, 0);
+  let acc = 0;
+  for (const [k, w] of Object.entries(odds)) {
+    acc += w;
+    if (r < acc) return k;
+  }
+  return 'clear';
+}
+
+test('the same pick as the page made before, for every roll its hash can give (k / 100000)', () => {
+  const climates = [...Object.keys(CLIMATE_WEATHER_ODDS), 'nowhere'],
+    seasons = [undefined, 'spring', 'summer', 'autumn', 'winter'];
+  let n = 0;
+  for (const c of climates)
+    for (const ss of seasons)
+      for (let k = 0; k < 100000; k++) {
+        const roll = k / 100000;
+        if (weatherPick(c, roll, ss) !== pickBefore(c, roll, ss))
+          assert.fail(`${c}, ${ss}, roll ${roll}: ${weatherPick(c, roll, ss)} (was ${pickBefore(c, roll, ss)})`);
+        n++;
+      }
+  assert.equal(n, 7 * 5 * 100000);
+});
+
+test('the odds by roll: mild, a mild winter and summer, none, an unknown climate', () => {
+  // mild: clear [0, 50), cloudy [50, 72), rain [72, 88), fog [88, 96), storm [96, 100)
+  assert.deepEqual(
+    [0, 0.49999, 0.5, 0.71999, 0.72, 0.88, 0.96, 0.99999].map(r => weatherPick('mild', r)),
+    ['clear', 'clear', 'cloudy', 'cloudy', 'rain', 'fog', 'storm', 'storm']
+  );
+  // a mild winter: rain 4.8 after cloudy, snow 11.2 last
+  assert.deepEqual(
+    [0.75, 0.8, 0.95].map(r => weatherPick('mild', r, 'winter')),
+    ['rain', 'fog', 'snow']
+  );
+  // a mild summer: clear 62 of 115, storm 7
+  assert.equal(weatherPick('mild', 61.9 / 115, 'summer'), 'clear');
+  assert.equal(weatherPick('mild', 0.9999, 'summer'), 'storm');
+  for (let k = 0; k < 100; k++) assert.equal(weatherPick('none', k / 100), 'clear');
+  // an unknown climate reads as mild, without the season's change
+  assert.equal(weatherPick('nowhere', 0.75, 'winter'), 'rain');
+  assert.equal(weatherPick('nowhere', 0.95, 'winter'), 'fog');
+});
+
+test('every pick is a weather the climate has', () => {
+  for (const [c, odds] of Object.entries(CLIMATE_WEATHER_ODDS))
+    for (let k = 0; k < 1000; k++) assert.ok(Object.hasOwn(odds, weatherPick(c, k / 1000)), c);
+});

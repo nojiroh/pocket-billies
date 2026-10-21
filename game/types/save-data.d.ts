@@ -125,6 +125,13 @@ export interface RunNode {
   to: number[];
   /** shown on the bowl: 0 hidden, 1 a '?' pin, 2 its type icon */
   seen?: number;
+  /** its biome (a biomes.json id): its scene's look and its weather's climate */
+  biome?: string;
+}
+
+/** roguelite track RL-6: a run's node map (logic/run-map.js runMapMake): nodes row by row, west to east */
+export interface RunMap {
+  nodes: RunNode[];
 }
 
 /** what a run changes in the working fields, copied when it starts and put back when it ends */
@@ -149,15 +156,16 @@ export interface Run {
   tier: number;
   /** the map generator's version when the run started (a run made by another version is abandoned) */
   mapgenV: number;
-  /** the node map; null until RL-6 makes it */
-  map: { nodes: RunNode[] } | null;
+  /** the node map; null until the run gets it at the mast (logic/run-map.js runMapStart) */
+  map: RunMap | null;
   /** what is happening, and the battle being fought (its battle number, -1 for none: a resume restarts it from
       the seed). Where the player is stays saveData.trip.node: 0 Copperleaf, i + 1 the map's node i */
   at: { phase: 'fly' | 'walk' | 'battle' | 'menu' | 'payout'; battle: number };
   /** the day (one per node arrival, backtracking included) and the deadline day */
   clock: number;
   deadline: number;
-  /** each node's weather by day: forecast[node][day] (a weather id) */
+  /** each node's weather by day: forecast[world node][day - 1] (a weather id; world node i + 1 is the map's node i,
+      and Copperleaf's, world node 0, is empty) */
   forecast: string[][];
   /** relic ids held, the offer shown (saved before it is shown), modifier ids */
   relics: string[];

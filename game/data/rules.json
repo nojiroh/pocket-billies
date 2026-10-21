@@ -130,6 +130,19 @@
   "xpYield": 150
  },
  "run": {
-  "payout": {"money":0.1,"itemShare":0.5,"released":15,"node":10,"win":100,"winSeals":1}
+  "payout": {"money":0.1,"itemShare":0.5,"released":15,"node":10,"win":100,"winSeals":1},
+  "map": {
+   "rows": 9,
+   "minibosses": 2,
+   "first": "landing",
+   "rest": "town",
+   "guard": "miniboss",
+   "last": "boss",
+   "wide": 0.7,
+   "cross": 0.25,
+   "biomes": {"meadow":3,"lake":2,"thicket":2,"ridge":1,"autumn":1}
+  },
+  "clock": {"slack":3,"ahead":7},
+  "reveal": {"icons":1,"unknown":2}
  }
 }

@@ -110,7 +110,8 @@ export function validRun(o) {
         !list(node.to, 8) ||
         node.to.some(j => !wholeIn(j, 0, n - 1) || j === i) ||
         new Set(node.to).size !== node.to.length ||
-        (node.seen !== undefined && !wholeIn(node.seen, 0, 2))
+        (node.seen !== undefined && !wholeIn(node.seen, 0, 2)) ||
+        (node.biome !== undefined && !id(node.biome))
       )
         return false;
   }
@@ -216,7 +217,8 @@ export function runEnd(s, how, rates, itemPrice) {
   const run = s.run;
   if (!run) throw new Error('runEnd: no run is on');
   const pay = payoutOf(
-    { se: s.se, items: s.items, released: run.released.length, cleared: run.path.length, won: how.won },
+    /* nodes cleared: each node once (the path counts every arrival, backtracking included) */
+    { se: s.se, items: s.items, released: run.released.length, cleared: new Set(run.path).size, won: how.won },
     rates,
     itemPrice
   );

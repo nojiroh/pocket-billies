@@ -9,6 +9,13 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- The run map and its clock (roguelite track RL-6), not in the game yet: a run's map is made from its seed, 9 rows
+  from the airship's landing to the boss, mini-bosses on rows 3 and 6 with a town before each, one or two lanes,
+  sometimes a switch between them. Entering a node, forward or back, takes a day; the landing is day 1 and the
+  deadline three days after the shortest walk (day 12). The map shows the next row, the row after as "?", and the
+  boss. Each node has its weather day by day from its biome (meadow, lake, thicket, ridge or autumn). The weather's
+  odds now live in one place the run reads too (the weather you see in Copperleaf is unchanged), and the payout will
+  pay for each node once, however often you walk back.
 - Billies from the part kits (phase 16): all 24 Billies are now built from the three part kits (beasts, birds,
   fish), drawn straight-on and upright: the starters too (a muskox from bear parts with horns and a spark tail, an
   otter from cat and bear parts with a flat tail, a goat from rabbit parts with horns and a beard), a swift with a

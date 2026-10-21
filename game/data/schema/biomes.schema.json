@@ -10,6 +10,7 @@
   "type": "object",
   "required": [
    "name",
+   "climate",
    "ground",
    "road",
    "water",
@@ -22,6 +23,11 @@
     "description": "shown in the Studio's biome picker",
     "type": "string",
     "minLength": 1
+   },
+   "climate": {
+    "description": "the kind of weather it gets: a climate of logic/weather.js CLIMATE_WEATHER_ODDS (a run's forecast rolls from it; RL-6)",
+    "type": "string",
+    "pattern": "^[a-z][a-z0-9_]*$"
    },
    "ground": {
     "description": "ground letters (scenery.json terrains): the base, patches (letter: share 0-1), and the ground by a path (verge), in clearings (floor), round water (bank), on cliffs and scree (rock), and tall grass (tall, where encounters are)",

@@ -45,6 +45,9 @@ Lint enforces what it can (see the end). Every old -> new name of phase 05 is in
 | Customizable home | `ranch` | phase 12 |
 | The old world outside the hub | `legacy` (folder `game/data/legacy`, its own `legacy/index.json`; `readLegacyData()`, `oldWorld()` in tests; the Studio's `legacyView`) | RL-5: kept for the Studio, never loaded by the game |
 | A leader who stands on no stop | `miniboss` (a trainer's `miniboss: true`, no `node`) | RL-5: the eight badge leaders; RL-13 makes them the runs' mini-boss pool. A `tutorial` trainer stands nowhere too |
+| A run's node map | `run.map` (`{nodes}`), made by logic/run-map.js `runMapMake` (`runMap*`, `run*`); a node's `type` (data section `nodeTypes`), `row`, `lane`, `to`, `seen`, `biome`; its rows' plan `runMapRows` (`first`, `rest`, `guard`, `last`, as rules.json `run.map` names them) | RL-6. Map node i is world node i + 1 (`runWorldNode`, `runMapNode`): `run.path`, `to` and `runNodeSeed` count map nodes, `trip.node` and `run.forecast` the world's. Not `route` (a kind of place) or `road` (a seam between two) |
+| The run's day and deadline | `run.clock` (the day), `run.deadline`, `runOverdue` (days past it) | RL-6: a day per arrival, backtracking included |
+| A node's weather by day | `run.forecast` (`forecast[world node][day - 1]`, `runForecastFill`, `runWeather`); a biome's `climate`; logic/weather.js `CLIMATE_WEATHER_ODDS`, `weatherPick` | RL-6; the hub's real-clock weather is still `environment*` |
 | Robot pieces | `part` (torso, leftArm, rightArm, legs), `gem` | phase 17 |
 | Hidden organization | `organization` | final name in phase 15 |
 

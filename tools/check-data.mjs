@@ -19,6 +19,9 @@ import { join } from 'node:path';
 import { DATA, PB_DATA } from './data-files.mjs';
 import { uiThemeContrast } from '../game/js/logic/ui-theme.js';
 import { seamRulesLinks, seamRulesPlaces } from '../game/js/logic/seam-rules.js';
+import { CLIMATE_WEATHER_ODDS } from '../game/js/logic/weather.js';
+import { RUN_MARK_TYPES } from '../game/js/logic/run-marks.js';
+import { runMapRowsFit } from '../game/js/logic/run-map.js';
 
 const FIX = process.argv.includes('--fix');
 const bad = [];
@@ -235,6 +238,46 @@ check('roads.schema.json', D.roads || [], 'roads.json');
     if (!Number.isInteger(pay.winSeals)) problem('rules.json', 'run.payout.winSeals is not a whole number');
   }
 }
+// RL-6: how a run's node map is laid out (logic/run-map.js): 5 to 12 rows, mini-bosses that fit (each on a row of
+// its own, a town's row before it, after the landing's row and before the boss's), the four types it names in
+// nodeTypes.json, chances from 0 to 1, biomes that exist with something to pick
+{
+  const M = D.rules && D.rules.run && D.rules.run.map,
+    KEYS = ['rows', 'minibosses', 'first', 'rest', 'guard', 'last', 'wide', 'cross', 'biomes'];
+  if (!M || typeof M !== 'object') problem('rules.json', 'run.map missing');
+  else {
+    for (const k of Object.keys(M)) if (!KEYS.includes(k)) problem('rules.json', `run.map.${k}: no such rule`);
+    if (!Number.isInteger(M.rows) || M.rows < 5 || M.rows > 12) problem('rules.json', 'run.map.rows is not a whole number from 5 to 12');
+    else if (!Number.isInteger(M.minibosses) || M.minibosses < 0 || !runMapRowsFit(M))
+      problem('rules.json', `run.map: ${M.rows} rows can't hold ${M.minibosses} mini-bosses (each on a row of its own with a town's row before it)`);
+    for (const k of ['first', 'rest', 'guard', 'last'])
+      if (!(D.nodeTypes || {})[M[k]]) problem('rules.json', `run.map.${k}: no node type "${M[k]}" (nodeTypes.json)`);
+    for (const k of ['wide', 'cross'])
+      if (typeof M[k] !== 'number' || !(M[k] >= 0 && M[k] <= 1)) problem('rules.json', `run.map.${k} is not a chance from 0 to 1`);
+    const B = M.biomes && typeof M.biomes === 'object' ? Object.entries(M.biomes) : [];
+    if (!B.some(([, w]) => w > 0)) problem('rules.json', 'run.map.biomes has no biome to pick');
+    for (const [b, w] of B) {
+      if (!(D.biomes || {})[b]) problem('rules.json', `run.map.biomes: no biome "${b}" (biomes.json)`);
+      if (typeof w !== 'number' || !(w >= 0)) problem('rules.json', `run.map.biomes.${b} is not a weight of 0 or more`);
+    }
+  }
+}
+// RL-6: the run's clock and what its map shows: whole days of slack (0-30) and of forecast ahead (1-30), whole rows
+// shown ahead with their type (1-12) and as '?' (at least as far, up to 12); nothing else in rules.json run
+{
+  const R = (D.rules && D.rules.run) || {},
+    C = R.clock,
+    V = R.reveal,
+    whole = (v, lo, hi) => Number.isInteger(v) && v >= lo && v <= hi;
+  for (const k of Object.keys(R))
+    if (!['payout', 'map', 'clock', 'reveal'].includes(k)) problem('rules.json', `run.${k}: no such rule`);
+  if (!C || typeof C !== 'object' || !whole(C.slack, 0, 30) || !whole(C.ahead, 1, 30))
+    problem('rules.json', 'run.clock: slack (0-30) and ahead (1-30) are not whole numbers of days');
+  else for (const k of Object.keys(C)) if (!['slack', 'ahead'].includes(k)) problem('rules.json', `run.clock.${k}: no such rule`);
+  if (!V || typeof V !== 'object' || !whole(V.icons, 1, 12) || !whole(V.unknown, V.icons, 12))
+    problem('rules.json', "run.reveal: icons (1-12) and unknown (icons to 12) are not whole numbers of rows");
+  else for (const k of Object.keys(V)) if (!['icons', 'unknown'].includes(k)) problem('rules.json', `run.reveal.${k}: no such rule`);
+}
 // phase 17: robot parts and gems: the schema, then the moves and types they name and the slot each part fits
 const robots = D.robots || { parts: {}, gems: {} },
   types = new Set([...(D.types || []).map(t => t.id), 'None']);
@@ -274,6 +317,9 @@ if (D.biomes && check('biomes.schema.json', D.biomes, 'biomes.json')) {
     life = (D.scenery && D.scenery.life) || {};
   for (const [b, B] of Object.entries(D.biomes)) {
     const G = B.ground;
+    // RL-6: the weather it gets outdoors (none is for rooms)
+    if (!Object.hasOwn(CLIMATE_WEATHER_ODDS, B.climate) || B.climate === 'none')
+      problem('biomes.json', `${b}.climate: "${B.climate}" is not an outdoor climate (logic/weather.js)`);
     for (const [f, ch] of [...Object.entries(G).filter(([f]) => f !== 'patches'), ['road', B.road]])
       if (!terr[ch]) problem('biomes.json', `${b}.${f}: no terrain "${ch}" (scenery.json terrains)`);
     for (const ch of Object.keys(G.patches || {})) if (!terr[ch]) problem('biomes.json', `${b}.ground.patches: no terrain "${ch}"`);
@@ -281,6 +327,16 @@ if (D.biomes && check('biomes.schema.json', D.biomes, 'biomes.json')) {
       for (const k of Object.keys(B[pool] || {})) if (!props[k]) problem('biomes.json', `${b}.${pool}: no prop ${k}`);
     for (const L of B.life || []) if (!life[L.k]) problem('biomes.json', `${b}.life: no animal ${L.k}`);
   }
+}
+// RL-6: the kinds of node on a run's map: the schema, a marker for each, and something to fill the free rows with
+if (D.nodeTypes && check('nodeTypes.schema.json', D.nodeTypes, 'nodeTypes.json')) {
+  for (const [k, T] of Object.entries(D.nodeTypes)) {
+    const mark = T.mark || k;
+    if (!RUN_MARK_TYPES.includes(mark) || mark === 'unknown')
+      problem('nodeTypes.json', `${k}: no marker "${mark}" (logic/run-marks.js: ${RUN_MARK_TYPES.filter(t => t !== 'unknown').join(', ')})`);
+  }
+  if (!Object.values(D.nodeTypes).some(T => (T.weight || 0) > 0))
+    problem('nodeTypes.json', 'no type has a weight, so nothing can fill a free row of the run map');
 }
 // phase 10: the world map's look: the schema, then the terrain keys it names and the regions it covers
 if (D.worldmap && check('worldmap.schema.json', D.worldmap, 'worldmap.json')) {

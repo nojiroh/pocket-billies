@@ -1,0 +1,43 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "nodeTypes.schema.json",
+ "title": "game/data/nodeTypes.json: the kinds of node on a run's map (roguelite track RL-6; logic/run-map.js)",
+ "type": "object",
+ "propertyNames": {
+  "pattern": "^[a-z][a-z0-9_]*$"
+ },
+ "minProperties": 1,
+ "additionalProperties": {
+  "type": "object",
+  "required": [
+   "name",
+   "engine"
+  ],
+  "additionalProperties": false,
+  "properties": {
+   "name": {
+    "description": "what the player reads (the map's pins, the forecast)",
+    "type": "string",
+    "minLength": 1,
+    "maxLength": 40
+   },
+   "mark": {
+    "description": "its marker on the run map: an outline of logic/run-marks.js RUN_MARK_TYPES (the type's id when left out)",
+    "type": "string",
+    "pattern": "^[a-z][a-z0-9_]*$"
+   },
+   "engine": {
+    "description": "how it plays: scene (a walkable map) or menu (a story script or a shop sheet, RL-12)",
+    "enum": [
+     "scene",
+     "menu"
+    ]
+   },
+   "weight": {
+    "description": "how often it fills a free row (rows rules.json run.map gives no role); 0 or left out: never",
+    "type": "number",
+    "minimum": 0
+   }
+  }
+ }
+}
