@@ -39,7 +39,7 @@ provide({ runWorldSync });
 export const runWorld = { seed: '', scenes: 0, ms: 0, live: false };
 provide({ runWorld }); /* to-module */
 /** what the run's scenes and tables are made from: the game data as the page holds it (POOLS with stand-ins) */
-function runWorldData() {
+export function runWorldData() {
   return {
     nodeTypes: NODE_TYPES,
     biomes: gameData.biomes,

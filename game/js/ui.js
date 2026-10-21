@@ -88,6 +88,7 @@ import {
 } from './logic/rules.js';
 import { TOAST_MS, toastAdd, toastItem, toastTime } from './logic/messages.js';
 import { readableBg } from './logic/colors.js';
+import { runArrive, runMapNode } from './logic/run-map.js';
 import { pbFloat, pbInboxDot, pbInboxPop, typeGlyphHTML } from './ui-kit.js';
 import { newSaveKeepingPreferences } from './logic/saves.js';
 import {
@@ -191,6 +192,7 @@ import { tutorPicked } from './opening-fall.js';
 import { renderTitle, titleMount } from './title.js';
 import { loreBook, renderLore } from './lore.js';
 import { flyMenu, rideGlassLift } from './airship.js';
+import { runWorldData } from './run-world.js';
 import { postcardCheck, renderPostcards } from './postcards.js';
 import { renderBag } from './bag.js';
 import { friendsHTML } from './friends.js';
@@ -1413,13 +1415,19 @@ function walkCross() {
       uiState.walkOk = [P.x, P.z, walkView.id];
       return;
     }
-    if (Math.min(x, z, s.w - x, s.h - z) < 1 || !ROADS_BY_NODE[node].some(e => e.to === n)) return;
-    const bl = blockerAt(node),
-      why = !canEnter(n)
-        ? gateText(LOCATIONS[n])
-        : bl && !saveData.visited[n]
-          ? `${bl.name} is blocking the way. Beat them first.`
-          : null;
+    /* RL-7: in a run a crossing counts a few metres in (rules.json run.seamIn), so a step over a seam and back costs
+       no day */
+    const inside = saveData.run ? RULES.run.seamIn : 1;
+    if (Math.min(x, z, s.w - x, s.h - z) < inside || !ROADS_BY_NODE[node].some(e => e.to === n)) return;
+    const bl = blockerAt(node);
+    let why = !canEnter(n)
+      ? gateText(LOCATIONS[n])
+      : bl && !saveData.visited[n]
+        ? `${bl.name} is blocking the way. Beat them first.`
+        : null;
+    /* RL-7: in a run a crossing is an arrival (logic/run-map.js runArrive: a day, the path, what the map shows) */
+    if (!why && saveData.run && !runArrive(saveData, runMapNode(n), runWorldData()))
+      why = 'That way isn’t on the run’s map.';
     if (why) {
       const w = uiState.walkOk;
       if (w && w[2] === walkView.id) {
@@ -1441,7 +1449,11 @@ function walkCross() {
     if (typeof arrivedAt === 'function') arrivedAt(n);
     uiState.roam = { id: q.id, node: n, x, z };
     uiState.backAt = null;
-    if (typeof debugLog !== 'undefined') debugLog.add('travel', 'walked into ' + LOCATIONS[n].name);
+    if (typeof debugLog !== 'undefined')
+      debugLog.add(
+        'travel',
+        'walked into ' + LOCATIONS[n].name + (saveData.run ? ` (the run's day ${saveData.run.clock})` : '')
+      );
     save();
     render();
     return;
