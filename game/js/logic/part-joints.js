@@ -56,7 +56,7 @@ expose({
 /** S and L as M scaled about the pivot, when rules.json parts.sizes is not at hand (phase 16: 85% and 120%) */
 export const PART_SIZE_SCALE = /** @type {Record<string, number>} */ ({ S: 0.85, M: 1, L: 1.2 });
 /** the sockets a part joins by when its view has no pivot of its own: a limb its joint, a head its chin, a tail its
- * base (as tools/build-rework-placeholders.py joins them); else the part's pivot */
+ * base (as tools/build-kit-billies.py joins them); else the part's pivot */
 export const PART_ATTACH = ['joint', 'chin', 'base'];
 /** turn limits of a kind with none given */
 export const PART_TURN_FREE = /** @type {[number, number]} */ ([-180, 180]);

@@ -35,5 +35,10 @@
   {"k":"lvl","at":16},
   {"k":"lvl","at":36}
  ],
- "parody": "Taylor Swift"
+ "parody": "Taylor Swift",
+ "parts": [
+  {"head":"sparrow_head","body":"sparrow_torso","front":"hawk_wing","back":"sparrow_foot","sig":"duck_tail"},
+  {"head":"sparrow_head","body":"sparrow_torso","front":"hawk_wing","back":"sparrow_foot","sig":"duck_tail"},
+  {"head":"sparrow_head","body":"sparrow_torso","front":"hawk_wing","back":"sparrow_foot","sig":"duck_tail"}
+ ]
 }

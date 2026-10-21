@@ -159,8 +159,7 @@
   "parody": "Taylor Swift",
   "types": ["Flying","Psychic"],
   "design": "Swift chick with a blonde feather fringe",
-  "state": {"silhouette":false,"sheet":true,"rig":true,"portrait":false},
-  "placeholder": true
+  "state": {"silhouette":true,"sheet":true,"rig":true,"portrait":false}
  },
  {
   "id": "versewift",
@@ -172,8 +171,7 @@
   "parody": "Taylor Swift",
   "types": ["Flying","Psychic"],
   "design": "Microphone crest, sings every verse twice",
-  "state": {"silhouette":false,"sheet":true,"rig":true,"portrait":false},
-  "placeholder": true
+  "state": {"silhouette":true,"sheet":true,"rig":true,"portrait":false}
  },
  {
   "id": "erastar",
@@ -185,8 +183,7 @@
   "parody": "Taylor Swift",
   "types": ["Flying","Psychic"],
   "design": "Feathers change colour each era",
-  "state": {"silhouette":false,"sheet":true,"rig":true,"portrait":false},
-  "placeholder": true
+  "state": {"silhouette":true,"sheet":true,"rig":true,"portrait":false}
  },
  {
   "id": "kontourlet",
@@ -198,8 +195,7 @@
   "parody": "Kim Kardashian",
   "types": ["Psychic"],
   "design": "Chameleon hatchling with a sleek dark crest, contoured scales",
-  "state": {"silhouette":false,"sheet":true,"rig":true,"portrait":false},
-  "placeholder": true
+  "state": {"silhouette":true,"sheet":true,"rig":true,"portrait":false}
  },
  {
   "id": "filterleon",
@@ -211,8 +207,7 @@
   "parody": "Kim Kardashian",
   "types": ["Psychic","Steel"],
   "design": "Ring-shaped glowing crest, shifts to the trend",
-  "state": {"silhouette":false,"sheet":true,"rig":true,"portrait":false},
-  "placeholder": true
+  "state": {"silhouette":true,"sheet":true,"rig":true,"portrait":false}
  },
  {
   "id": "kardashleon",
@@ -224,8 +219,7 @@
   "parody": "Kim Kardashian",
   "types": ["Psychic","Steel"],
   "design": "Sells its own colours back to the others",
-  "state": {"silhouette":false,"sheet":true,"rig":true,"portrait":false},
-  "placeholder": true
+  "state": {"silhouette":true,"sheet":true,"rig":true,"portrait":false}
  },
  {
   "id": "gildlet",
@@ -237,8 +231,7 @@
   "parody": "Donald Trump",
   "types": ["Ground"],
   "design": "Slug with a golden swept-over fur crest, orange-tan hide",
-  "state": {"silhouette":false,"sheet":true,"rig":true,"portrait":false},
-  "placeholder": true
+  "state": {"silhouette":true,"sheet":true,"rig":true,"portrait":false}
  },
  {
   "id": "gildslug",
@@ -250,8 +243,7 @@
   "parody": "Donald Trump",
   "types": ["Ground","Steel"],
   "design": "Too heavy to move, names every rock it sits on",
-  "state": {"silhouette":false,"sheet":true,"rig":true,"portrait":false},
-  "placeholder": true
+  "state": {"silhouette":true,"sheet":true,"rig":true,"portrait":false}
  },
  {
   "id": "tremendoslug",
@@ -263,8 +255,7 @@
   "parody": "Donald Trump",
   "types": ["Ground","Steel"],
   "design": "Vast gold-flecked slug with tiny waving arms",
-  "state": {"silhouette":false,"sheet":true,"rig":true,"portrait":false},
-  "placeholder": true
+  "state": {"silhouette":true,"sheet":true,"rig":true,"portrait":false}
  },
  {
   "id": "facelet",
@@ -276,8 +267,7 @@
   "parody": "Mark Zuckerberg",
   "types": ["Electric"],
   "design": "Pale octopus with curly fur crest, unblinking eyes",
-  "state": {"silhouette":false,"sheet":true,"rig":true,"portrait":false},
-  "placeholder": true
+  "state": {"silhouette":true,"sheet":true,"rig":true,"portrait":false}
  },
  {
   "id": "feedopus",
@@ -289,8 +279,7 @@
   "parody": "Mark Zuckerberg",
   "types": ["Electric","Water"],
   "design": "Each tentacle scrolls a different feed",
-  "state": {"silhouette":false,"sheet":true,"rig":true,"portrait":false},
-  "placeholder": true
+  "state": {"silhouette":true,"sheet":true,"rig":true,"portrait":false}
  },
  {
   "id": "metapus",
@@ -302,7 +291,6 @@
   "parody": "Mark Zuckerberg",
   "types": ["Electric","Water"],
   "design": "Visor-shaped brow ridge, builds its own reef",
-  "state": {"silhouette":false,"sheet":true,"rig":true,"portrait":false},
-  "placeholder": true
+  "state": {"silhouette":true,"sheet":true,"rig":true,"portrait":false}
  }
 ]

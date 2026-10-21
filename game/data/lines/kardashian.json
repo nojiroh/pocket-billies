@@ -35,5 +35,10 @@
   {"k":"lvl","at":16},
   {"k":"lvl","at":36}
  ],
- "parody": "Kim Kardashian"
+ "parody": "Kim Kardashian",
+ "parts": [
+  {"head":"reptile_head","body":"reptile_torso","front":"reptile_arm","back":"reptile_leg","sig":"reptile_tail"},
+  {"head":"reptile_head","body":"reptile_torso","front":"reptile_arm","back":"reptile_leg","sig":"reptile_tail"},
+  {"head":"reptile_head","body":"reptile_torso","front":"reptile_arm","back":"reptile_leg","sig":"reptile_tail"}
+ ]
 }
