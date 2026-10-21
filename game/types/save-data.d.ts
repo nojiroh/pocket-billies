@@ -284,6 +284,8 @@ export type Build = Record<string, PartSize>;
 export interface WildStock {
   at: number;
   list: Encounter[];
+  /** RL-7: a run's place: the visit it was stocked on (logic/rules.js encountersHere) */
+  v?: number;
 }
 
 export interface Encounter {

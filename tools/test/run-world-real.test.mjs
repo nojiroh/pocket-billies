@@ -9,9 +9,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { PB_DATA } from '../data-files.mjs';
-import { data, GAME_DATA, modules } from './setup-real.mjs';
+import { data, fn, GAME_DATA, modules, startedSave } from './setup-real.mjs';
 
-const { runMapStart } = modules['run-map'];
+const { runArrive, runMapStart, runNext } = modules['run-map'];
 const { newRun } = modules['run-state'];
 const { seamRulesLinks } = modules['seam-rules'];
 const { MAPGEN_VERSION, mapgenSeamAgreement, mapgenUnreachable } = modules.mapgen;
@@ -159,4 +159,47 @@ test("the run's world goes in (its scenes, pools, places and roads) and the hub'
   assert.deepEqual(Object.keys(data.gameData.maps), mapIds, "only the hub's scenes");
   assert.deepEqual(Object.keys(data.POOLS), poolIds, "only the game's pools");
   assert.deepEqual(data.worldExtraMaps(), {});
+});
+
+test("a run's place is stocked once a visit from its own stream at its row's levels; fewer when walked back to", () => {
+  const s = startedSave(GAME_DATA.rules.start.starters[0] + '0', 5),
+    run = runOf('RL7WILD'),
+    made = runScenesMake(run, WORLD_DATA),
+    W = runWorldTables(run, data.LOCATIONS[0], WORLD_DATA),
+    E = GAME_DATA.rules.encounters;
+  s.run = run;
+  s.trip = { node: 0, plan: [] };
+  runArrive(s, 0, MAP_DATA);
+  data.worldPut({ ...W, maps: Object.fromEntries(W.locations.slice(1).map((p, i) => [p.mapId, made[i]])) });
+  try {
+    const stock = () => fn('encountersHere')(1),
+      seen = (/** @type {any[]} */ L) => L.map(q => `${q.sp}:${q.lvl}`);
+    const first = stock();
+    assert.equal(first.length, E.route, "a route's stock on the first visit");
+    for (const q of first) {
+      assert.ok(q.lvl >= W.pools.run_0.lv[0] && q.lvl <= W.pools.run_0.lv[1], `level ${q.lvl}`);
+      assert.ok(
+        W.pools.run_0.list.some(([sp]) => sp === q.sp),
+        q.sp
+      );
+    }
+    assert.equal(stock(), first, 'looked at again: the same list, not rolled again');
+    /* the same visit rolled again (a reload, another device) meets the same Billies */
+    delete s.wild.run_0;
+    assert.deepEqual(seen(stock()), seen(first));
+    /* no top-up by play time in a run */
+    fn('dropEncounter')(stock()[0].id);
+    s.playMs = (s.playMs || 0) + 10 * E.refillMs;
+    assert.equal(stock().length, E.route - 1);
+    /* walked on and back: a smaller stock, rolled again */
+    runArrive(s, runNext(run.map, 0)[0], MAP_DATA);
+    runArrive(s, 0, MAP_DATA);
+    assert.equal(fn('encounterRunVisits')(1), 2);
+    assert.equal(stock().length, R.wild.back);
+    assert.equal(stock()[0].lvl >= W.pools.run_0.lv[0], true);
+    /* a hub place is stocked as before */
+    assert.equal(fn('encounterRunVisits')(0), 0);
+  } finally {
+    data.worldHubBack();
+  }
 });

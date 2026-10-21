@@ -22,6 +22,7 @@
 /** @import { NodeType, RunMapRules } from '../../types/game-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { provide } from '../hooks.js';
 import { rngFrom } from './rng.js';
 import { weatherPick } from './weather.js';
 import { RUN_DAYS } from './run-state.js';
@@ -187,6 +188,7 @@ export function runReveal(map, row, reveal) {
 /** a map node's seed, which its scene, wild stock, shop and weather streams are salted from (roguelite-track.md 2c:
  * the map's numbering) @param {string} seed @param {number} i */
 export const runNodeSeed = (seed, i) => `${seed}|n${i}`;
+provide({ runNodeSeed }); /* to-module */
 /** each node's weather by day, rolled up to a day (forecast[world node][day - 1]; Copperleaf, world node 0, has none:
  * the hub keeps the real clock's weather). Each node and day rolls from a stream of its own, so filling later gives
  * the days a longer fill would have. A node's climate is its biome's
