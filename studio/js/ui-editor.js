@@ -13,7 +13,7 @@
    screen, ↺ takes the screen's own value away and the dial follows the game again. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
-import { fieldSelector, findFlash } from '../../game/js/hooks.js';
+import { fieldSelector, findFlash, uiRulesHTML, uiRulesShow } from '../../game/js/hooks.js';
 import { $ } from '../../game/js/util.js';
 import { UI_CONTRAST, UI_SCREENS, mergeLook, screenLook, uiRatio, uiThemeLook } from '../../game/js/logic/ui-theme.js';
 import { escapeHtml } from './game-stand-ins.js';
@@ -292,7 +292,7 @@ function uiSettingsHTML() {
  <p class="help">${uiEditor.scope === 'game' ? 'Every screen, unless a screen sets its own colours or shapes. A dial you’ve changed since the last save shows ↺, which puts it back.' : `Colours and shapes for ${escapeHtml(uiScreenName(uiEditor.scope))} only (its own part of the page; the top and bottom bars and sheets follow the game). A dial you haven’t set follows the whole game; ↺ makes it follow again.`}</p>
  <h4>Presets</h4>${uiPresetsHTML()}
  <div class="seg-row"><button class="btn sm subtle" data-act="uiClear">${uiEditor.scope === 'game' ? 'Back to the saved look' : 'Clear everything set here'}</button>${uiEditor.scope !== 'game' && ov[uiEditor.scope] ? '<button class="btn sm subtle" data-act="uiPromote">Use these for the whole game</button>' : ''}</div></div></div>
- ${uiScopeGroups(uiEditor.scope).map(uiGroupHTML).join('')}`;
+ ${uiScopeGroups(uiEditor.scope).map(uiGroupHTML).join('')}${uiRulesHTML()}`;
 }
 SECTIONS.ui = () => {
   if (!uiData() || !uiData().defaults)
@@ -306,6 +306,11 @@ SECTIONS.ui = () => {
     if (g) uiEditor.open[g] = 1;
     if (g === 'shape' && /^shape\.families\./.test(F.rel)) uiEditor.fam = F.rel.split('.')[2];
     afterRender(() => findFlash(fieldSelector(`${uiBase()}.${F.rel}`)));
+  }
+  /* UI-3b: the Check's Show me on the rule report */
+  if (studioState.sel.uiRules) {
+    delete studioState.sel.uiRules;
+    uiRulesShow();
   }
   afterRender(mountUiPreview);
   const seg = (g, v, label) =>

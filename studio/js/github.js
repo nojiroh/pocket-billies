@@ -48,7 +48,7 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-const GITHUB_CONFIG = Object.assign(
+export const GITHUB_CONFIG = Object.assign(
   { owner: 'nojiroh', repo: 'pocket-billies', branch: 'main', game: 'game' },
   window.PB_STUDIO_GITHUB || {}
 );

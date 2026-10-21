@@ -753,7 +753,7 @@ def ui_steps(pg, errs):
     try: pg.wait_for_selector('#uiSet .eng-f[data-path="uiTheme.defaults.shape.families.tab.corners"]', timeout=10000)
     except Exception: errs.append('Find did not open the tabs’ corners')
     pg.evaluate("studioState.D.uiTheme.overrides.bag = {color: {dark: {text2: '#2A3A30'}}}")
-    found = pg.evaluate("runCheck().filter(c => c.go === 'ui').map(c => [c.msg, c.sel])")
+    found = pg.evaluate("runCheck().filter(c => c.go === 'ui' && c.lvl === 'error').map(c => [c.msg, c.sel])")
     if len(found) != 2 or found[0][1] != {'uiFocus': {'scope': 'bag', 'rel': 'color.dark.text2'}}: errs.append(f'the Check found {found}')
     pg.evaluate("delete studioState.D.uiTheme.overrides.bag")
     # the large cut, compared with the saved look, and left changed for the proposal
@@ -769,6 +769,38 @@ def ui_steps(pg, errs):
     if pg.evaluate("studioState.undo.length") < undo0 + 2: errs.append('the edits are not undo steps')
     if len(errs) > n: errs[n:] = [f'ui: {e}' for e in errs[n:]]
     else: print('ui: a colour previewed and undone, a screen colour on its screen and taken away, a preset undone, Find and the Check, compare; the large cut left at 20 px', flush=True)
+
+
+def ui_tools_steps(pg, errs):
+    """UI-3b: the UI look section's tools. The rule check: the Check has one report line (not in its badge) and its
+    Show me lists the raw values, each line's text equal to that line of the file."""
+    n = len(errs)
+    pg.evaluate("uiRulesLoad()")
+    try: pg.wait_for_function("uiRules.state === 'ready' || uiRules.state === 'failed'", timeout=60000)
+    except Exception: errs.append('the rule check never read the files')
+    if pg.evaluate("uiRules.state") != 'ready': errs.append(f"the rule check: {pg.evaluate('uiRules.err')}")
+    line = pg.evaluate("runCheck().find(c => c.lvl === 'info' && c.msg.startsWith('UI rules'))")
+    if not line or line.get('go') != 'ui': errs.append(f'the Check has no rule report line ({line})')
+    pg.evaluate("void openSection('check')")
+    pg.evaluate("scheduleCheck(true)"); time.sleep(0.3)
+    badge = pg.evaluate("document.querySelector('#checkCount').textContent")
+    real = pg.evaluate("runCheck().filter(c => c.lvl !== 'info').length")
+    if not real and badge != '✓': errs.append(f'the Check badge counts the report ({badge})')
+    try:
+        pg.wait_for_selector('#checkList li.info button[data-act=fix]', timeout=10000)
+        pg.click('#checkList li.info button[data-act=fix]')
+        pg.wait_for_selector('#uiRules .ui-rules li', timeout=20000)
+    except Exception: errs.append('Show me did not open the rule list')
+    pg.select_option('#uiRulesRule', 'important'); time.sleep(0.2)
+    rows = pg.evaluate("[...document.querySelectorAll('#uiRules .ui-rules li')].slice(0, 5).map(li => [li.dataset.rule, li.querySelector('a').textContent, li.querySelector('a').href, li.querySelector('code').textContent])")
+    if not rows: errs.append('the rule list is empty for !important')
+    for rule, at, href, text in rows:
+        f, ln = at.rsplit(':', 1)
+        lines = (REPO / 'game' / f).read_text().split('\n')
+        if rule != 'important' or lines[int(ln) - 1].strip()[:200] != text or '!important' not in text: errs.append(f'the rule list says {at} {text!r}')
+        if not href.endswith(f'/game/{f}#L{ln}') or 'github.com/nojiroh/pocket-billies/blob/' not in href: errs.append(f'the link {href}')
+    if len(errs) > n: errs[n:] = [f'ui tools: {e}' for e in errs[n:]]
+    else: print(f"ui tools: the rule report ({pg.evaluate('uiRules.found.length')} raw values) with Show me to lines that match the files", flush=True)
 
 
 def studio_test_steps(pg, errs):
@@ -805,6 +837,7 @@ STEPS = [
     ('species_parts', species_part_steps),
     ('wardrobe', wardrobe_steps),
     ('ui', ui_steps),
+    ('ui_tools', ui_tools_steps),
     ('studio_test', studio_test_steps),
 ]
 

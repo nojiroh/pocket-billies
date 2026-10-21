@@ -3,7 +3,7 @@
    The game repairs or skips anything broken when it loads, but these checks point at it first. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
-import { provide } from '../../game/js/hooks.js';
+import { provide, uiRulesCheckLine } from '../../game/js/hooks.js';
 import { $ } from '../../game/js/util.js';
 import { uiThemeContrast } from '../../game/js/logic/ui-theme.js';
 import { storyFindings } from '../../game/js/logic/story-checks.js';
@@ -474,6 +474,9 @@ export function runCheck() {
         where ? { uiFocus: { scope: where, rel: `color.${f.side}.${f.fg}` } } : {}
       );
     }
+  /* UI-3b: the UI rules (game/js/logic/ui-lint.js on the game's files), one report line; Show me lists every value */
+  const rules = uiRulesCheckLine();
+  if (rules) P.push({ lvl: 'info', msg: rules, go: 'ui', sel: { uiRules: 1 } });
   /* Project Story S3: the story checks, the same ones check-data runs (game/js/logic/story-checks.js) */
   try {
     for (const f of storyFindings(D)) {
@@ -486,7 +489,7 @@ export function runCheck() {
   return P;
 }
 let checkTimer = null;
-function scheduleCheck(now) {
+export function scheduleCheck(now) {
   clearTimeout(checkTimer);
   checkTimer = setTimeout(
     () => {
@@ -494,7 +497,7 @@ function scheduleCheck(now) {
         a = T ? performance.now() : 0;
       const P = runCheck(),
         n = P.filter(p => p.lvl === 'error').length,
-        w = P.length - n;
+        w = P.filter(p => p.lvl === 'warn').length; // UI-3b: a report line ('info') is not counted
       const b = $('#checkCount');
       b.textContent = n || w || '✓';
       b.className = 'badge' + (n ? ' err' : w ? ' warn' : ' ok');
@@ -512,7 +515,7 @@ function renderCheckList() {
   el.innerHTML = P.length
     ? P.map(
         (p, i) =>
-          `<li class="${p.lvl}"><span>${p.lvl === 'error' ? 'Problem' : 'Note'}</span><p>${escapeHtml(p.msg)}</p>${p.go ? `<button class="btn sm" data-act="fix" data-i="${i}">Show me</button>` : ''}</li>`
+          `<li class="${p.lvl}"><span>${p.lvl === 'error' ? 'Problem' : p.lvl === 'info' ? 'Report' : 'Note'}</span><p>${escapeHtml(p.msg)}</p>${p.go ? `<button class="btn sm" data-act="fix" data-i="${i}">Show me</button>` : ''}</li>`
       ).join('')
     : '<li class="ok"><span>All good</span><p>No problems found. The game will load every Billie, move and rule.</p></li>';
   studioState.lastCheck = P;

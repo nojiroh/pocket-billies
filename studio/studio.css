@@ -1030,6 +1030,9 @@ canvas.spr-prev.big {
 .checks li.warn span {
   color: var(--warn);
 }
+.checks li.info span {
+  color: var(--text2);
+}
 .checks li.ok span {
   color: var(--ok);
 }
@@ -4451,4 +4454,28 @@ body.wb-dropping::after {
 }
 .ui-col input[type='color'] {
   width: 28px;
+}
+/* UI track UI-3b: the rule check's list (studio/js/ui-rules.js) */
+.ui-rules {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  max-height: 60vh;
+  overflow: auto;
+  font-size: 12px;
+}
+.ui-rules li {
+  display: grid;
+  grid-template-columns: minmax(120px, auto) minmax(90px, auto) 1fr;
+  gap: 8px;
+  padding: 3px 0;
+  border-bottom: 1px solid var(--line);
+}
+.ui-rules span {
+  color: var(--text2);
+}
+.ui-rules code {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
