@@ -33,6 +33,15 @@ pattern scan of comment-stripped CSS and JS; treat them as within a few percent.
 | One module per screen | ui.js 2,952 lines | 06-5 parked |
 | Dead CSS removed | 72 rules name a class nothing uses (tools/unused-css.mjs) | v05, screens |
 
+UI-1 found (read at 29834ca): the fonts in use were not the ones tokens.css and style.css name. v05.css set both
+`--disp` and `--body` to Pixelify Sans, so all UI text was Pixelify; style.css's Tiny5/Chakra pair was dead. Chakra
+Petch still draws the loader's text (loader.css), canvas captions (walk-view.js, things-to-do.js) and the Studio;
+Tiny5 the walk view's pixel labels and the opening's canvas text. The colour roles were spread over two sets
+(style.css `--bg --panel-s --gold --red --ok`, v05.css `--text --text2 --line --g-* --gold-a/b`), with no primary,
+danger or ground name. tools/ui-lint.mjs counts every length in a shorthand, so its numbers differ from the table
+above (spacing 1,093 raw values, radii 168): see the UI-1 HANDOFF entry. Blurred surfaces measured on the phone
+screens: walk 6, map 12, team 6, ledger 5, profile 4, shop 8, battle 3, against the budget of 3.
+
 No rule yet but needed: a layer scale (24 distinct z-index values, -1 to 2147483000) and cut-corner tokens. The Studio
 is outside the 06 rules (studio.css: 108 raw radii, 372 raw spacing values, its own teal palette). The bottom bar's
 tabs (walk, map, team, ledger, bag) and `--t-*` colours are the pre-roguelite game's.
@@ -99,7 +108,7 @@ Works like the Engine section (dials in groups, ↺ per dial, presets, Hold to c
 
 | # | Session | Does | Visible change | Done when |
 | --- | --- | --- | --- | --- |
-| UI-1 | Theme as data, rules as a check | uiTheme.json + schema, boot writes the variables; `--cut-*`, `--slant`, `--z-*`; the Copper Grove palette and teal HP as data; Jersey 15 and Oxanium in game/fonts; tools/ui-lint.mjs counts raw values per rule and file and blurred surfaces per screen (report only); v05's `--disp`/`--body` folded into the font tokens | the palette and fonts | game otherwise identical; lint report in the HANDOFF entry |
+| UI-1 (done 2026-10-21) | Theme as data, rules as a check | uiTheme.json + schema, boot writes the variables; `--cut-*`, `--slant`, `--z-*`; the Copper Grove palette and teal HP as data; Jersey 15 and Oxanium in game/fonts; tools/ui-lint.mjs counts raw values per rule and file and blurred surfaces per screen (report only); v05's `--disp`/`--body` folded into the font tokens | the palette and fonts | game otherwise identical; lint report in the HANDOFF entry |
 | UI-2 | Kit v2: angular shapes | cut panel, card, button, tab, bar, selection with the edge line; `pb-card`, `pb-tabs`, `pb-stat-bar`, `pb-field`; the shared bot plate (limb pips); the 45° icon set; type glyphs; portraits breaking the frame; diagonal wipes in motion.css; battle floating cards and move tiles; gallery picture tests per component state | screens already on the kit | gallery picture tests and smoke pass; phone check of three screens |
 | UI-3 | Studio UI section | the section above, presets as data, a Studio check step (a dial changed, previewed, undone, saved as a PR) | Studio only | the Studio check step passes |
 | UI-4 | Run parts | day and deadline chip, forecast icon row, node markers, the four currency chips, the relic and keep-one card, payout rows with their motion, the hub/run bottom bar | gallery only | RL-7 and RL-8 can use them with no CSS of their own |
