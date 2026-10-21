@@ -23,6 +23,8 @@ import { standByMast, startAirshipFlight } from './airship.js';
 import { runWorld, runWorldData, runWorldSync } from './run-world.js';
 /* eslint-disable no-func-assign */
 expose({
+  RUN_HINTS: [() => RUN_HINTS],
+  runArrivedHint: [() => runArrivedHint, v => (runArrivedHint = v)],
   runBattleAgain: [() => runBattleAgain, v => (runBattleAgain = v)],
   runBattleStart: [() => runBattleStart, v => ((runBattleStart = v), provide({ runBattleStart }))],
   runBattleWeather: [() => runBattleWeather],
@@ -30,6 +32,7 @@ expose({
   runEndHome: [() => runEndHome, v => (runEndHome = v)],
   runFoeRef: [() => runFoeRef],
   runGiveUp: [() => runGiveUp, v => ((runGiveUp = v), provide({ runGiveUp }))],
+  runHint: [() => runHint, v => ((runHint = v), provide({ runHint }))],
   runJump: [() => runJump, v => ((runJump = v), provide({ runJump }))],
   runOver: [() => runOver, v => ((runOver = v), provide({ runOver }))],
   runReleasePick: [() => runReleasePick, v => (runReleasePick = v)],
@@ -41,7 +44,7 @@ expose({
   runTakeOff: [() => runTakeOff, v => (runTakeOff = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ runBattleStart, runGiveUp, runJump, runOver, runReleaseSheet, runStartSheet, runStartable });
+provide({ runBattleStart, runGiveUp, runHint, runJump, runOver, runReleaseSheet, runStartSheet, runStartable });
 /* to-module: end */
 /** a Billie caught on a run while the party was full, waiting for the release sheet (page state only) */
 const runCatch = { m: /** @type {any} */ (null) };
@@ -322,4 +325,28 @@ function runBattleAgain() {
   const K = liveActors(0);
   K.forEach((kk, n) => battleSay(n ? '' : `Go, ${joinNames(K)}!`, { k: 'enter', si: kk, quiet: n > 0 }));
   battleHost().open();
+}
+
+/* ---------- hints, on a player's first run only ---------- */
+/** the first run's hints, each shown once (run.hints) as a toast */
+const RUN_HINTS = {
+  landing: run =>
+    `Day 1 of the run. Walk north into the next place: each place you walk into takes a day. The boss waits at the far end; the deadline is day ${run.deadline}.`,
+  map: () => 'The map shows the places ahead and their weather. A ? is further on. The boss is always shown.',
+  town: () => `A town: its clinic heals for $${RULES.run.healCost} a Billie, and its shop has new stock every day.`,
+  miniboss: () => 'A mini-boss blocks the way north. Beat them to go on.',
+  boss: () => 'The boss. Beat it and the run is won.',
+};
+/** show a first-run hint once (nothing on a later run, or once shown) @param {keyof typeof RUN_HINTS} id */
+export function runHint(id) {
+  const run = saveData.run;
+  if (!run || (saveData.meta && saveData.meta.runs) || run.hints[id] || !RUN_HINTS[id]) return;
+  run.hints[id] = 1;
+  toast(RUN_HINTS[id](run));
+}
+/** a run's place walked into: its type's hint */
+export function runArrivedHint() {
+  const run = saveData.run,
+    node = run && run.map && run.map.nodes[runMapNode(saveData.trip.node)];
+  if (node && ['town', 'miniboss', 'boss'].includes(node.type)) runHint(/** @type {any} */ (node.type));
 }

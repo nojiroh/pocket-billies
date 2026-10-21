@@ -17,6 +17,7 @@ import {
   provide,
   render,
   runGiveUp,
+  runHint,
   runStartSheet,
   runStartable,
   storyFlags,
@@ -306,10 +307,13 @@ function flyLand() {
   standByMast(b);
   uiState.tab = 'walk';
   /* RL-8: a run's flight has landed */
-  if (saveData.run && saveData.run.at.phase === 'fly') saveData.run.at.phase = 'walk';
+  if (saveData.run && saveData.run.at.phase === 'fly') {
+    saveData.run.at.phase = 'walk';
+    if (typeof runHint === 'function') runHint('landing');
+  }
   save();
   render();
-  toast(`Welcome to ${LOCATIONS[b].name}.`);
+  if (!saveData.run) toast(`Welcome to ${LOCATIONS[b].name}.`);
   if (typeof soundEffect === 'function') soundEffect('pop');
 }
 function flySkip() {

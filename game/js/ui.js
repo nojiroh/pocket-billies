@@ -196,7 +196,7 @@ import { renderTitle, titleMount } from './title.js';
 import { loreBook, renderLore } from './lore.js';
 import { flyMenu, rideGlassLift } from './airship.js';
 import { runWorldData } from './run-world.js';
-import { runGiveUp } from './run.js';
+import { runArrivedHint, runGiveUp, runHint } from './run.js';
 import { postcardCheck, renderPostcards } from './postcards.js';
 import { renderBag } from './bag.js';
 import { friendsHTML } from './friends.js';
@@ -1506,8 +1506,10 @@ export function walkCross() {
         'walked into ' + LOCATIONS[n].name + (saveData.run ? ` (the run's day ${saveData.run.clock})` : '')
       );
     /* RL-8: a run's arrival is a checkpoint: the account too, at once */
-    if (saveData.run) saveNow();
-    else save();
+    if (saveData.run) {
+      saveNow();
+      runArrivedHint();
+    } else save();
     render();
     return;
   }
@@ -1656,6 +1658,7 @@ function walkMapSync() {
   }
 }
 function renderWorldMapTab() {
+  if (saveData.run) runHint('map');
   /* RL-7: on a run, its day and deadline (ui-run-kit.js pb-day-chip) */
   const run = saveData.run && saveData.run.map ? saveData.run : null,
     M = saveData.meta,
