@@ -819,8 +819,20 @@ def ui_tools_steps(pg, errs):
         except Exception: errs.append(f'the dial button did not open {go}')
     pg.click('#uiInsp')
     if pg.evaluate("!!document.querySelector('#uiPv').contentWindow.document.querySelector('#studioInspect div')"): errs.append('the outline stayed after Inspect went off')
+    # Connections (Ctrl+L) on a dial: what it writes and the parts in the preview that read it; a part shows there
+    pg.evaluate("uiEditor.open.color = 1; refreshUiSettings()")
+    pg.locator('#uiSet input.hex[data-p="uiTheme.defaults.color.light.text"]').focus()
+    pg.keyboard.press('Control+l')
+    try: pg.wait_for_selector('#lnkB .lk-n.k-part', timeout=10000)
+    except Exception: errs.append(f"Connections on a dial listed no parts: {pg.evaluate('(document.querySelector(\"#lnkB\")||{}).textContent')!r}")
+    lk = pg.evaluate("[[...document.querySelectorAll('#lnkB .lk-n.k-var')].map(b => b.textContent), document.querySelectorAll('#lnkB .lk-n.k-part').length, (document.querySelector('#lnkB h4')||{}).textContent]")
+    if '--c-text' not in ' '.join(lk[0]) or lk[1] < 3: errs.append(f'Connections on the text colour: {lk}')
+    pg.click('#lnkB .lk-n.k-part >> nth=0')
+    try: pg.wait_for_function("(w => !!w.document.querySelector('#studioFlash div'))(document.querySelector('#uiPv').contentWindow)", timeout=5000)
+    except Exception: errs.append('a part in Connections did not show in the preview')
+    pg.keyboard.press('Control+l')
     if len(errs) > n: errs[n:] = [f'ui tools: {e}' for e in errs[n:]]
-    else: print(f"ui tools: inspect (the gold button: {len(names)} variables, its cut opens {go}); the rule report ({pg.evaluate('uiRules.found.length')} raw values) with Show me to lines that match the files", flush=True)
+    else: print(f"ui tools: Connections on the text colour ({lk[1]} parts read {len(lk[0])} variables); inspect (the gold button: {len(names)} variables, its cut opens {go}); the rule report ({pg.evaluate('uiRules.found.length')} raw values) with Show me to lines that match the files", flush=True)
 
 
 def studio_test_steps(pg, errs):

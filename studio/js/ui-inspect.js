@@ -10,14 +10,16 @@ import { expose } from '../../game/js/test-globals.js';
 import { provide } from '../../game/js/hooks.js';
 import { $ } from '../../game/js/util.js';
 import { escapeHtml } from './game-stand-ins.js';
-import { UI_DIALS, uiDialList, uiVarDials } from '../../game/js/logic/ui-dials.js';
+import { UI_DIALS, UI_DIAL_ALSO, uiDialList, uiDialReach, uiGet, uiVarDials } from '../../game/js/logic/ui-dials.js';
 import { cssVarNames, hostSelector, matchableSelector, splitSelectors } from '../../game/js/logic/ui-inspect.js';
 import { ACTIONS } from './studio-app.js';
 import { findUi, uiData, uiEditor, uiScreenName } from './ui-editor.js';
 /* eslint-disable no-func-assign */
 expose({
   uiComponentOf: [() => uiComponentOf, v => (uiComponentOf = v)],
+  uiDialConnections: [() => uiDialConnections, v => (uiDialConnections = v)],
   uiDialTitle: [() => uiDialTitle],
+  uiFlashParts: [() => uiFlashParts, v => (uiFlashParts = v)],
   uiFrameBoxes: [() => uiFrameBoxes, v => (uiFrameBoxes = v)],
   uiFrameLayer: [() => uiFrameLayer, v => (uiFrameLayer = v)],
   uiInspect: [() => uiInspect],
@@ -29,7 +31,9 @@ expose({
   uiInspectPanel: [() => uiInspectPanel, v => ((uiInspectPanel = v), provide({ uiInspectPanel }))],
   uiInspectPick: [() => uiInspectPick, v => (uiInspectPick = v)],
   uiInspectWins: [() => uiInspectWins],
+  uiPartLabel: [() => uiPartLabel, v => (uiPartLabel = v)],
   uiPartName: [() => uiPartName, v => (uiPartName = v)],
+  uiPartsUsing: [() => uiPartsUsing, v => (uiPartsUsing = v)],
   uiPreviewWin: [() => uiPreviewWin, v => (uiPreviewWin = v)],
   uiRulesOf: [() => uiRulesOf, v => (uiRulesOf = v)],
   uiVarsOn: [() => uiVarsOn, v => (uiVarsOn = v)],
@@ -153,6 +157,13 @@ function uiPartName(el) {
   );
 }
 
+/** a part's name for a list: a bare tag (i, span) or one class is named with its parent's (button.tab › i.on) */
+function uiPartLabel(el) {
+  const own = uiPartName(el);
+  if (el.localName.includes('-') || el.classList.length > 1) return own;
+  const up = el.parentElement || (el.parentNode && el.parentNode.host);
+  return up && up.localName !== 'body' && up.localName !== 'main' ? `${uiPartName(up)} › ${own}` : own;
+}
 /** the style rules in a root's sheets (media that applies, supports, layers and nested rules opened) */
 function uiRulesOf(root, w) {
   const out = [];
@@ -325,3 +336,109 @@ ACTIONS.uiInspectGo = d => {
     G = UI_DIALS.find(g => g.id === rel.split('.')[0]);
   findUi(rel, G && G.screen ? uiEditor.scope : 'game');
 };
+
+/* ---- UI-3b: Connections (Ctrl+L) on a UI dial: where its value comes from, the variables it writes and the parts
+   in the preview that read them (the reverse of inspect) ---- */
+/** the parts in a frame whose rules read any of these variables: [{name, els, vars}] by part name */
+function uiPartsUsing(w, vars) {
+  const want = new Set(vars),
+    groups = new Map();
+  const add = (el, v) => {
+    if (!el.getBoundingClientRect().width) return;
+    const name = uiPartLabel(el),
+      g = groups.get(name) || { name, els: [], vars: [] };
+    if (!g.els.includes(el)) g.els.push(el);
+    for (const x of v) if (!g.vars.includes(x)) g.vars.push(x);
+    groups.set(name, g);
+  };
+  const scan = (root, hostOf) => {
+    for (const r of uiRulesOf(root, w)) {
+      const v = cssVarNames(r.style.cssText).filter(x => want.has(x));
+      if (!v.length) continue;
+      for (const part of splitSelectors(r.selectorText)) {
+        try {
+          if (hostOf) {
+            const h = hostSelector(part);
+            if (h && hostOf.matches(h)) add(hostOf, v);
+            else if (!h) root.querySelectorAll(matchableSelector(part).sel).forEach(el => add(hostOf, v));
+          } else w.document.querySelectorAll(matchableSelector(part).sel).forEach(el => add(el, v));
+        } catch (e) {
+          /* a selector this browser can't match */
+        }
+      }
+    }
+  };
+  scan(w.document, null);
+  for (const el of w.document.querySelectorAll('*')) if (el.shadowRoot) scan(el.shadowRoot, el);
+  return [...groups.values()].sort((a, b) => b.els.length - a.els.length);
+}
+
+/** outline these parts in the preview for a moment and bring the first into view */
+function uiFlashParts(els) {
+  const w = uiPreviewWin();
+  if (!w || !els.length) return;
+  els[0].scrollIntoView({ block: 'center' });
+  const draw = () =>
+    uiFrameBoxes(
+      w,
+      els.map(el => ({ el, style: 'outline:2px solid #e8a33a;outline-offset:1px;background:rgba(232,163,58,.15);' })),
+      'studioFlash'
+    );
+  requestAnimationFrame(draw);
+  clearTimeout(uiFlashParts.t);
+  uiFlashParts.t = setTimeout(() => uiFrameBoxes(w, [], 'studioFlash'), 2400);
+}
+
+/** what Connections shows for a UI dial at a level: {label, chain, pre, vars, parts} */
+export function uiDialConnections(rel, scope = 'game') {
+  const T = uiData(),
+    e = uiDialList().find(x => x.path === rel),
+    G = UI_DIALS.find(g => g.id === rel.split('.')[0]),
+    fmt = v => (v === undefined ? 'not set' : Array.isArray(v) ? v.join(' ') : String(v)),
+    open = sc => () => findUi(rel, sc);
+  const chain = [
+    {
+      kind: 'src',
+      id: 'game',
+      label: 'Whole game',
+      sub: fmt(uiGet(T.defaults, rel)),
+      on: scope === 'game',
+      go: open('game'),
+    },
+  ];
+  const screens = G && G.screen ? Object.entries(T.overrides || {}).filter(([, o]) => uiGet(o, rel) !== undefined) : [];
+  const shown = screens.map(([k, o]) => ({
+    kind: 'screen',
+    id: k,
+    label: 'Only ' + uiScreenName(k),
+    sub: fmt(uiGet(o, rel)),
+    on: scope === k,
+    go: open(k),
+  }));
+  const pre = Object.entries(T.presets || {})
+    .filter(([, P]) => uiGet(P, rel) !== undefined)
+    .map(([k, P]) => ({
+      kind: 'preset',
+      id: k,
+      label: 'Preset: ' + (P.name || k),
+      sub: 'sets it to ' + fmt(uiGet(P, rel)),
+      go: open(scope),
+    }));
+  const reach = uiDialReach(T, rel),
+    w = uiPreviewWin(),
+    parts = w && w.document && w.document.body ? uiPartsUsing(w, reach) : [];
+  return {
+    label: `${G ? G.title : ''} › ${e ? e.label : rel}`,
+    chain: [...chain, ...shown],
+    pre,
+    vars: reach.map(v => ({ kind: 'var', id: v, label: v, sub: UI_DIAL_ALSO[rel] ? 'through its @font-face' : '' })),
+    parts: parts.slice(0, 12).map(p => ({
+      kind: 'part',
+      id: p.name,
+      label: p.name,
+      sub: `${p.els.length} in the preview · ${p.vars.slice(0, 2).join(' ')}`,
+      go: () => uiFlashParts(p.els),
+    })),
+    more: Math.max(0, parts.length - 12),
+  };
+}
