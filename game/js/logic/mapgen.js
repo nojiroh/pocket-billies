@@ -96,6 +96,9 @@ expose({
   // @ts-expect-error -- replaced on purpose
   mapgenRaise: [() => mapgenRaise, v => (mapgenRaise = v)],
   // @ts-expect-error -- replaced on purpose
+  mapgenReach: [() => mapgenReach, v => (mapgenReach = v)],
+  mapgenReached: [() => mapgenReached],
+  // @ts-expect-error -- replaced on purpose
   mapgenResample: [() => mapgenResample, v => (mapgenResample = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenRoadCurve: [() => mapgenRoadCurve, v => (mapgenRoadCurve = v)],
@@ -135,6 +138,8 @@ expose({
   mapgenTerraces: [() => mapgenTerraces, v => (mapgenTerraces = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenUnreachable: [() => mapgenUnreachable, v => (mapgenUnreachable = v)],
+  // @ts-expect-error -- replaced on purpose
+  mapgenWalkGrid: [() => mapgenWalkGrid, v => (mapgenWalkGrid = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -1597,9 +1602,9 @@ export function mapgenScene(params, ctx) {
 }
 
 /* ---------- checking a scene: can you walk from the hub to every exit? ---------- */
-/** the exits the hub can't walk to (by edgeExits id), on a half-metre grid: water is blocked unless a bridge
- * crosses it, solid props block, a step taller than 0.34 m blocks (walk-view.js navGrid, simplified) */
-export function mapgenUnreachable(sc, scenery) {
+/** a scene's walk grid on half-metre cells (walk-view.js navGrid, simplified): blk, water blocked unless a bridge
+ * crosses it and solid props; S, the step raise of each cell in 5 cm units (null with no steps) */
+export function mapgenWalkGrid(sc, scenery) {
   const N = 2,
     gw = sc.w * N,
     gh = sc.h * N,
@@ -1651,8 +1656,14 @@ export function mapgenUnreachable(sc, scenery) {
     const u = mapgenDecodeBase64(sc.steps);
     S = new Int16Array(u.buffer, 0, u.length >> 1);
   }
-  const hub = sc.hub,
-    start = Math.floor(hub[1] * N) * gw + Math.floor(hub[0] * N),
+  return { N, gw, gh, blk, S: S && S.length === gw * gh ? S : null };
+}
+/** the half-metre cells you can walk to from a point (the hub unless given): water, solid props and a step taller
+ * than 0.34 m stop you. { N, gw, gh, blk, S, seen } */
+export function mapgenReach(sc, scenery, from = sc.hub) {
+  const W = mapgenWalkGrid(sc, scenery),
+    { N, gw, gh, blk, S } = W,
+    start = mapgenBetween(Math.floor(from[1] * N), 0, gh - 1) * gw + mapgenBetween(Math.floor(from[0] * N), 0, gw - 1),
     seen = new Uint8Array(gw * gh),
     Q = [start];
   seen[start] = 1;
@@ -1670,15 +1681,18 @@ export function mapgenUnreachable(sc, scenery) {
         jj = j + dj,
         r = jj * gw + ii;
       if (ii < 0 || jj < 0 || ii >= gw || jj >= gh || seen[r] || blk[r]) continue;
-      if (S && S.length === gw * gh && Math.abs(S[r] - S[q]) / 20 > 0.34) continue;
+      if (S && Math.abs(S[r] - S[q]) / 20 > 0.34) continue;
       seen[r] = 1;
       Q.push(r);
     }
   }
-  return (sc.edgeExits || [])
-    .filter(e => {
-      const [x, z] = mapgenExitPoint(sc.w, sc.h, e);
-      return !seen[mapgenBetween(Math.floor(z * N), 0, gh - 1) * gw + mapgenBetween(Math.floor(x * N), 0, gw - 1)];
-    })
-    .map(e => e.id);
+  return { ...W, seen };
+}
+/** was the cell at (x, z) reached (R: from mapgenReach) */
+export const mapgenReached = (R, x, z) =>
+  !!R.seen[mapgenBetween(Math.floor(z * R.N), 0, R.gh - 1) * R.gw + mapgenBetween(Math.floor(x * R.N), 0, R.gw - 1)];
+/** the exits the hub can't walk to (by edgeExits id) */
+export function mapgenUnreachable(sc, scenery) {
+  const R = mapgenReach(sc, scenery);
+  return (sc.edgeExits || []).filter(e => !mapgenReached(R, ...mapgenExitPoint(sc.w, sc.h, e))).map(e => e.id);
 }
