@@ -1430,7 +1430,12 @@
    "tags": ["route"],
    "group": "tallgrass",
    "solid": 0,
-   "ppm": 32
+   "ppm": 32,
+   "variants": [
+    {"img":"scene/props/tallgrass_sm.png","ox":-19,"oy":-19,"name":"Tall grass (small)","size":"sm"},
+    {"img":"scene/props/tallgrass_lg.png","ox":-28,"oy":-38,"name":"Tall grass (large)","size":"lg"}
+   ],
+   "vary": {"size":0}
   },
   "reeds": {
    "name": "Cattail reeds",
@@ -1443,7 +1448,12 @@
    "tags": ["water","route"],
    "group": "reeds",
    "solid": 0,
-   "ppm": 32
+   "ppm": 32,
+   "variants": [
+    {"img":"scene/props/reeds_sm.png","ox":-19,"oy":-61,"name":"Cattail reeds (small)","size":"sm"},
+    {"img":"scene/props/reeds_lg.png","ox":-24,"oy":-74,"name":"Cattail reeds (large)","size":"lg"}
+   ],
+   "vary": {"size":0}
   },
   "flowers_red": {
    "name": "Red flowers",
@@ -1456,7 +1466,12 @@
    "tags": ["route","town"],
    "group": "flowers",
    "solid": 0,
-   "ppm": 32
+   "ppm": 32,
+   "variants": [
+    {"img":"scene/props/flowers_red_sm.png","ox":-17,"oy":-15,"name":"Red flowers (small)","size":"sm"},
+    {"img":"scene/props/flowers_red_lg.png","ox":-32,"oy":-25,"name":"Red flowers (large)","size":"lg"}
+   ],
+   "vary": {"size":0}
   },
   "flowers_blue": {
    "name": "Blue flowers",
@@ -1469,7 +1484,12 @@
    "tags": ["route","town"],
    "group": "flowers",
    "solid": 0,
-   "ppm": 32
+   "ppm": 32,
+   "variants": [
+    {"img":"scene/props/flowers_blue_sm.png","ox":-17,"oy":-14,"name":"Blue flowers (small)","size":"sm"},
+    {"img":"scene/props/flowers_blue_lg.png","ox":-33,"oy":-23,"name":"Blue flowers (large)","size":"lg"}
+   ],
+   "vary": {"size":0}
   },
   "flowers_yellow": {
    "name": "Yellow flowers",
@@ -1482,7 +1502,12 @@
    "tags": ["route","town","farm"],
    "group": "flowers",
    "solid": 0,
-   "ppm": 32
+   "ppm": 32,
+   "variants": [
+    {"img":"scene/props/flowers_yellow_sm.png","ox":-17,"oy":-14,"name":"Yellow flowers (small)","size":"sm"},
+    {"img":"scene/props/flowers_yellow_lg.png","ox":-32,"oy":-25,"name":"Yellow flowers (large)","size":"lg"}
+   ],
+   "vary": {"size":0}
   },
   "mushroom": {
    "name": "Mushrooms",
@@ -1849,7 +1874,12 @@
    "tags": ["water"],
    "group": "pond_lily",
    "solid": 0,
-   "ppm": 32
+   "ppm": 32,
+   "variants": [
+    {"img":"scene/props/pond_lily_sm.png","ox":-15,"oy":-7,"name":"Lily pad (small)","size":"sm"},
+    {"img":"scene/props/pond_lily_lg.png","ox":-26,"oy":-11,"name":"Lily pad (large)","size":"lg"}
+   ],
+   "vary": {"size":0}
   },
   "stepping": {
    "name": "Stepping stones",
@@ -2060,7 +2090,12 @@
     {"img":"scene/props/layers/bush_flower_lb.png","dz":0.27,"sway":0.7,"shadow":0},
     {"img":"scene/props/layers/bush_flower_lf.png","dz":-0.2,"sway":1.4,"shadow":0}
    ],
-   "ppm": 32
+   "ppm": 32,
+   "variants": [
+    {"img":"scene/props/bush_flower_sm.png","ox":-21,"oy":-29,"name":"Flowering bush (small)","size":"sm"},
+    {"img":"scene/props/bush_flower_lg.png","ox":-41,"oy":-57,"name":"Flowering bush (large)","size":"lg"}
+   ],
+   "vary": {"size":0}
   },
   "tallgrass_b": {
    "name": "Lush grass",
@@ -2073,7 +2108,12 @@
    "tags": ["route"],
    "group": "tallgrass",
    "solid": 0,
-   "ppm": 32
+   "ppm": 32,
+   "variants": [
+    {"img":"scene/props/tallgrass_b_sm.png","ox":-24,"oy":-15,"name":"Lush grass (small)","size":"sm"},
+    {"img":"scene/props/tallgrass_b_lg.png","ox":-38,"oy":-35,"name":"Lush grass (large)","size":"lg"}
+   ],
+   "vary": {"size":0}
   },
   "tallgrass_c": {
    "name": "Tall reedy grass",
@@ -2086,7 +2126,12 @@
    "tags": ["route"],
    "group": "tallgrass",
    "solid": 0,
-   "ppm": 32
+   "ppm": 32,
+   "variants": [
+    {"img":"scene/props/tallgrass_c_sm.png","ox":-20,"oy":-29,"name":"Tall reedy grass (small)","size":"sm"},
+    {"img":"scene/props/tallgrass_c_lg.png","ox":-31,"oy":-55,"name":"Tall reedy grass (large)","size":"lg"}
+   ],
+   "vary": {"size":0}
   },
   "flowers_white": {
    "name": "White flowers",
@@ -2099,7 +2144,12 @@
    "tags": ["route","town"],
    "group": "flowers",
    "solid": 0,
-   "ppm": 32
+   "ppm": 32,
+   "variants": [
+    {"img":"scene/props/flowers_white_sm.png","ox":-17,"oy":-14,"name":"White flowers (small)","size":"sm"},
+    {"img":"scene/props/flowers_white_lg.png","ox":-32,"oy":-24,"name":"White flowers (large)","size":"lg"}
+   ],
+   "vary": {"size":0}
   },
   "flowers_purple": {
    "name": "Purple flowers",
@@ -2112,7 +2162,12 @@
    "tags": ["route","town"],
    "group": "flowers",
    "solid": 0,
-   "ppm": 32
+   "ppm": 32,
+   "variants": [
+    {"img":"scene/props/flowers_purple_sm.png","ox":-17,"oy":-13,"name":"Purple flowers (small)","size":"sm"},
+    {"img":"scene/props/flowers_purple_lg.png","ox":-32,"oy":-25,"name":"Purple flowers (large)","size":"lg"}
+   ],
+   "vary": {"size":0}
   },
   "flowers_mixed": {
    "name": "Mixed flowers",
@@ -2125,7 +2180,12 @@
    "tags": ["route","town","farm"],
    "group": "flowers",
    "solid": 0,
-   "ppm": 32
+   "ppm": 32,
+   "variants": [
+    {"img":"scene/props/flowers_mixed_sm.png","ox":-17,"oy":-13,"name":"Mixed flowers (small)","size":"sm"},
+    {"img":"scene/props/flowers_mixed_lg.png","ox":-32,"oy":-25,"name":"Mixed flowers (large)","size":"lg"}
+   ],
+   "vary": {"size":0}
   },
   "rocks_b": {
    "name": "Rock cluster",
@@ -2516,7 +2576,12 @@
    "tags": ["water","route"],
    "group": "reeds",
    "solid": 0,
-   "ppm": 32
+   "ppm": 32,
+   "variants": [
+    {"img":"scene/props/cattails_sm.png","ox":-22,"oy":-56,"name":"Cattail clump (small)","size":"sm"},
+    {"img":"scene/props/cattails_lg.png","ox":-34,"oy":-74,"name":"Cattail clump (large)","size":"lg"}
+   ],
+   "vary": {"size":0}
   },
   "lily_flowers": {
    "name": "Flowering lilies",
@@ -2529,7 +2594,12 @@
    "tags": ["water"],
    "group": "pond_lily",
    "solid": 0,
-   "ppm": 32
+   "ppm": 32,
+   "variants": [
+    {"img":"scene/props/lily_flowers_sm.png","ox":-22,"oy":-9,"name":"Flowering lilies (small)","size":"sm"},
+    {"img":"scene/props/lily_flowers_lg.png","ox":-41,"oy":-15,"name":"Flowering lilies (large)","size":"lg"}
+   ],
+   "vary": {"size":0}
   },
   "sign_shop": {
    "name": "Shop sign",
@@ -3809,7 +3879,12 @@
    "tags": ["route","forest"],
    "group": "fern",
    "solid": 0,
-   "ppm": 32
+   "ppm": 32,
+   "variants": [
+    {"img":"scene/props/fern_sm.png","ox":-18,"oy":-23,"name":"Fern (small)","size":"sm"},
+    {"img":"scene/props/fern_lg.png","ox":-28,"oy":-43,"name":"Fern (large)","size":"lg"}
+   ],
+   "vary": {"size":0}
   },
   "fern_b": {
    "name": "Young fern",
@@ -3822,7 +3897,12 @@
    "tags": ["route","forest"],
    "group": "fern",
    "solid": 0,
-   "ppm": 32
+   "ppm": 32,
+   "variants": [
+    {"img":"scene/props/fern_b_sm.png","ox":-11,"oy":-18,"name":"Young fern (small)","size":"sm"},
+    {"img":"scene/props/fern_b_lg.png","ox":-20,"oy":-33,"name":"Young fern (large)","size":"lg"}
+   ],
+   "vary": {"size":0}
   },
   "fallen_leaves": {
    "name": "Fallen leaves",
@@ -3835,7 +3915,12 @@
    "tags": ["route","forest","town"],
    "group": "fallen_leaves",
    "solid": 0,
-   "ppm": 32
+   "ppm": 32,
+   "variants": [
+    {"img":"scene/props/fallen_leaves_sm.png","ox":-19,"oy":-8,"name":"Fallen leaves (small)","size":"sm"},
+    {"img":"scene/props/fallen_leaves_lg.png","ox":-40,"oy":-20,"name":"Fallen leaves (large)","size":"lg"}
+   ],
+   "vary": {"size":0}
   },
   "pebbles": {
    "name": "Pebbles",
@@ -5481,7 +5566,12 @@
    "family": "flowers",
    "grow": "gfl",
    "weight": 0.8,
-   "ppm": 32
+   "ppm": 32,
+   "variants": [
+    {"img":"scene/props/tulips_red_sm.png","ox":-17,"oy":-19,"name":"Red tulips (small)","size":"sm"},
+    {"img":"scene/props/tulips_red_lg.png","ox":-31,"oy":-27,"name":"Red tulips (large)","size":"lg"}
+   ],
+   "vary": {"size":0}
   },
   "tulips_yellow": {
    "name": "Yellow tulips",
@@ -5497,7 +5587,12 @@
    "family": "flowers",
    "grow": "gfl",
    "weight": 0.8,
-   "ppm": 32
+   "ppm": 32,
+   "variants": [
+    {"img":"scene/props/tulips_yellow_sm.png","ox":-17,"oy":-19,"name":"Yellow tulips (small)","size":"sm"},
+    {"img":"scene/props/tulips_yellow_lg.png","ox":-31,"oy":-28,"name":"Yellow tulips (large)","size":"lg"}
+   ],
+   "vary": {"size":0}
   },
   "tulips_pink": {
    "name": "Pink tulips",
@@ -5513,7 +5608,12 @@
    "family": "flowers",
    "grow": "gfl",
    "weight": 0.8,
-   "ppm": 32
+   "ppm": 32,
+   "variants": [
+    {"img":"scene/props/tulips_pink_sm.png","ox":-17,"oy":-17,"name":"Pink tulips (small)","size":"sm"},
+    {"img":"scene/props/tulips_pink_lg.png","ox":-31,"oy":-28,"name":"Pink tulips (large)","size":"lg"}
+   ],
+   "vary": {"size":0}
   },
   "daisies": {
    "name": "Daisies",
@@ -5529,7 +5629,12 @@
    "family": "flowers",
    "grow": "gGfl",
    "weight": 1.4,
-   "ppm": 32
+   "ppm": 32,
+   "variants": [
+    {"img":"scene/props/daisies_sm.png","ox":-19,"oy":-18,"name":"Daisies (small)","size":"sm"},
+    {"img":"scene/props/daisies_lg.png","ox":-36,"oy":-24,"name":"Daisies (large)","size":"lg"}
+   ],
+   "vary": {"size":0}
   },
   "bluebells": {
    "name": "Bluebells",
@@ -5545,7 +5650,12 @@
    "family": "flowers",
    "grow": "gGy",
    "weight": 1.2,
-   "ppm": 32
+   "ppm": 32,
+   "variants": [
+    {"img":"scene/props/bluebells_sm.png","ox":-19,"oy":-17,"name":"Bluebells (small)","size":"sm"},
+    {"img":"scene/props/bluebells_lg.png","ox":-36,"oy":-25,"name":"Bluebells (large)","size":"lg"}
+   ],
+   "vary": {"size":0}
   },
   "poppies": {
    "name": "Poppies",
@@ -5561,7 +5671,12 @@
    "family": "flowers",
    "grow": "gGfo",
    "weight": 1,
-   "ppm": 32
+   "ppm": 32,
+   "variants": [
+    {"img":"scene/props/poppies_sm.png","ox":-18,"oy":-22,"name":"Poppies (small)","size":"sm"},
+    {"img":"scene/props/poppies_lg.png","ox":-31,"oy":-32,"name":"Poppies (large)","size":"lg"}
+   ],
+   "vary": {"size":0}
   },
   "sunflowers": {
    "name": "Sunflowers",
@@ -5577,7 +5692,12 @@
    "family": "flowers",
    "grow": "gof",
    "weight": 0.4,
-   "ppm": 32
+   "ppm": 32,
+   "variants": [
+    {"img":"scene/props/sunflowers_sm.png","ox":-23,"oy":-50,"name":"Sunflowers (small)","size":"sm"},
+    {"img":"scene/props/sunflowers_lg.png","ox":-31,"oy":-68,"name":"Sunflowers (large)","size":"lg"}
+   ],
+   "vary": {"size":0}
   },
   "lavender": {
    "name": "Lavender",
@@ -5593,7 +5713,12 @@
    "family": "flowers",
    "grow": "gfls",
    "weight": 1,
-   "ppm": 32
+   "ppm": 32,
+   "variants": [
+    {"img":"scene/props/lavender_sm.png","ox":-19,"oy":-28,"name":"Lavender (small)","size":"sm"},
+    {"img":"scene/props/lavender_lg.png","ox":-36,"oy":-39,"name":"Lavender (large)","size":"lg"}
+   ],
+   "vary": {"size":0}
   },
   "foxgloves": {
    "name": "Foxgloves",
@@ -5609,7 +5734,12 @@
    "family": "flowers",
    "grow": "gGy",
    "weight": 0.7,
-   "ppm": 32
+   "ppm": 32,
+   "variants": [
+    {"img":"scene/props/foxgloves_sm.png","ox":-15,"oy":-38,"name":"Foxgloves (small)","size":"sm"},
+    {"img":"scene/props/foxgloves_lg.png","ox":-27,"oy":-53,"name":"Foxgloves (large)","size":"lg"}
+   ],
+   "vary": {"size":0}
   },
   "lupins": {
    "name": "Lupins",
@@ -5625,7 +5755,12 @@
    "family": "flowers",
    "grow": "gGr",
    "weight": 0.7,
-   "ppm": 32
+   "ppm": 32,
+   "variants": [
+    {"img":"scene/props/lupins_sm.png","ox":-15,"oy":-36,"name":"Lupins (small)","size":"sm"},
+    {"img":"scene/props/lupins_lg.png","ox":-27,"oy":-52,"name":"Lupins (large)","size":"lg"}
+   ],
+   "vary": {"size":0}
   },
   "dandelions": {
    "name": "Dandelions",
@@ -5641,7 +5776,12 @@
    "family": "flowers",
    "grow": "gGflv",
    "weight": 1.6,
-   "ppm": 32
+   "ppm": 32,
+   "variants": [
+    {"img":"scene/props/dandelions_sm.png","ox":-17,"oy":-19,"name":"Dandelions (small)","size":"sm"},
+    {"img":"scene/props/dandelions_lg.png","ox":-31,"oy":-24,"name":"Dandelions (large)","size":"lg"}
+   ],
+   "vary": {"size":0}
   },
   "dandelion_clocks": {
    "name": "Dandelion clocks",
@@ -5657,7 +5797,12 @@
    "family": "flowers",
    "grow": "gGflv",
    "weight": 1,
-   "ppm": 32
+   "ppm": 32,
+   "variants": [
+    {"img":"scene/props/dandelion_clocks_sm.png","ox":-17,"oy":-22,"name":"Dandelion clocks (small)","size":"sm"},
+    {"img":"scene/props/dandelion_clocks_lg.png","ox":-31,"oy":-31,"name":"Dandelion clocks (large)","size":"lg"}
+   ],
+   "vary": {"size":0}
   },
   "clover_white": {
    "name": "White clover",
@@ -5673,7 +5818,12 @@
    "family": "flowers",
    "grow": "gGl",
    "weight": 1.4,
-   "ppm": 32
+   "ppm": 32,
+   "variants": [
+    {"img":"scene/props/clover_white_sm.png","ox":-20,"oy":-16,"name":"White clover (small)","size":"sm"},
+    {"img":"scene/props/clover_white_lg.png","ox":-37,"oy":-20,"name":"White clover (large)","size":"lg"}
+   ],
+   "vary": {"size":0}
   },
   "buttercups": {
    "name": "Buttercups",
@@ -5689,7 +5839,12 @@
    "family": "flowers",
    "grow": "gGfo",
    "weight": 1.5,
-   "ppm": 32
+   "ppm": 32,
+   "variants": [
+    {"img":"scene/props/buttercups_sm.png","ox":-19,"oy":-17,"name":"Buttercups (small)","size":"sm"},
+    {"img":"scene/props/buttercups_lg.png","ox":-36,"oy":-24,"name":"Buttercups (large)","size":"lg"}
+   ],
+   "vary": {"size":0}
   },
   "cornflowers": {
    "name": "Cornflowers",
@@ -5705,7 +5860,12 @@
    "family": "flowers",
    "grow": "gGfo",
    "weight": 1,
-   "ppm": 32
+   "ppm": 32,
+   "variants": [
+    {"img":"scene/props/cornflowers_sm.png","ox":-17,"oy":-20,"name":"Cornflowers (small)","size":"sm"},
+    {"img":"scene/props/cornflowers_lg.png","ox":-31,"oy":-30,"name":"Cornflowers (large)","size":"lg"}
+   ],
+   "vary": {"size":0}
   },
   "marigolds": {
    "name": "Marigolds",
@@ -5721,7 +5881,12 @@
    "family": "flowers",
    "grow": "gfl",
    "weight": 0.8,
-   "ppm": 32
+   "ppm": 32,
+   "variants": [
+    {"img":"scene/props/marigolds_sm.png","ox":-17,"oy":-18,"name":"Marigolds (small)","size":"sm"},
+    {"img":"scene/props/marigolds_lg.png","ox":-31,"oy":-23,"name":"Marigolds (large)","size":"lg"}
+   ],
+   "vary": {"size":0}
   },
   "snowdrops": {
    "name": "Snowdrops",
@@ -5737,7 +5902,12 @@
    "family": "flowers",
    "grow": "ngy",
    "weight": 1.2,
-   "ppm": 32
+   "ppm": 32,
+   "variants": [
+    {"img":"scene/props/snowdrops_sm.png","ox":-14,"oy":-15,"name":"Snowdrops (small)","size":"sm"},
+    {"img":"scene/props/snowdrops_lg.png","ox":-26,"oy":-22,"name":"Snowdrops (large)","size":"lg"}
+   ],
+   "vary": {"size":0}
   },
   "crocuses": {
    "name": "Crocuses",
@@ -5753,7 +5923,12 @@
    "family": "flowers",
    "grow": "ngl",
    "weight": 1,
-   "ppm": 32
+   "ppm": 32,
+   "variants": [
+    {"img":"scene/props/crocuses_sm.png","ox":-16,"oy":-14,"name":"Crocuses (small)","size":"sm"},
+    {"img":"scene/props/crocuses_lg.png","ox":-30,"oy":-14,"name":"Crocuses (large)","size":"lg"}
+   ],
+   "vary": {"size":0}
   },
   "tussock": {
    "name": "Tussock",
@@ -5769,7 +5944,12 @@
    "family": "ground",
    "grow": "gGro",
    "weight": 1.4,
-   "ppm": 32
+   "ppm": 32,
+   "variants": [
+    {"img":"scene/props/tussock_sm.png","ox":-19,"oy":-14,"name":"Tussock (small)","size":"sm"},
+    {"img":"scene/props/tussock_lg.png","ox":-31,"oy":-27,"name":"Tussock (large)","size":"lg"}
+   ],
+   "vary": {"size":0}
   },
   "sedge": {
    "name": "Sedge",
@@ -5785,7 +5965,12 @@
    "family": "ground",
    "grow": "gGw",
    "weight": 1,
-   "ppm": 32
+   "ppm": 32,
+   "variants": [
+    {"img":"scene/props/sedge_sm.png","ox":-16,"oy":-20,"name":"Sedge (small)","size":"sm"},
+    {"img":"scene/props/sedge_lg.png","ox":-26,"oy":-37,"name":"Sedge (large)","size":"lg"}
+   ],
+   "vary": {"size":0}
   },
   "wild_wheat": {
    "name": "Wild wheat",
@@ -5801,7 +5986,12 @@
    "family": "ground",
    "grow": "gGo",
    "weight": 1,
-   "ppm": 32
+   "ppm": 32,
+   "variants": [
+    {"img":"scene/props/wild_wheat_sm.png","ox":-17,"oy":-31,"name":"Wild wheat (small)","size":"sm"},
+    {"img":"scene/props/wild_wheat_lg.png","ox":-30,"oy":-56,"name":"Wild wheat (large)","size":"lg"}
+   ],
+   "vary": {"size":0}
   },
   "dry_grass": {
    "name": "Dry grass",
@@ -5833,7 +6023,12 @@
    "family": "ground",
    "grow": "ygG",
    "weight": 1.2,
-   "ppm": 32
+   "ppm": 32,
+   "variants": [
+    {"img":"scene/props/bracken_sm.png","ox":-19,"oy":-23,"name":"Bracken (small)","size":"sm"},
+    {"img":"scene/props/bracken_lg.png","ox":-31,"oy":-41,"name":"Bracken (large)","size":"lg"}
+   ],
+   "vary": {"size":0}
   },
   "thistles": {
    "name": "Thistles",
@@ -5849,7 +6044,12 @@
    "family": "ground",
    "grow": "gGrov",
    "weight": 0.9,
-   "ppm": 32
+   "ppm": 32,
+   "variants": [
+    {"img":"scene/props/thistles_sm.png","ox":-18,"oy":-25,"name":"Thistles (small)","size":"sm"},
+    {"img":"scene/props/thistles_lg.png","ox":-24,"oy":-47,"name":"Thistles (large)","size":"lg"}
+   ],
+   "vary": {"size":0}
   },
   "heather": {
    "name": "Heather",
@@ -5865,7 +6065,12 @@
    "family": "ground",
    "grow": "grn",
    "weight": 1.2,
-   "ppm": 32
+   "ppm": 32,
+   "variants": [
+    {"img":"scene/props/heather_sm.png","ox":-21,"oy":-14,"name":"Heather (small)","size":"sm"},
+    {"img":"scene/props/heather_lg.png","ox":-40,"oy":-25,"name":"Heather (large)","size":"lg"}
+   ],
+   "vary": {"size":0}
   },
   "moss_patch": {
    "name": "Moss patch",
@@ -5881,7 +6086,12 @@
    "family": "ground",
    "grow": "ygGk",
    "weight": 1,
-   "ppm": 32
+   "ppm": 32,
+   "variants": [
+    {"img":"scene/props/moss_patch_sm.png","ox":-18,"oy":-7,"name":"Moss patch (small)","size":"sm"},
+    {"img":"scene/props/moss_patch_lg.png","ox":-35,"oy":-14,"name":"Moss patch (large)","size":"lg"}
+   ],
+   "vary": {"size":0}
   },
   "clover_patch": {
    "name": "Clover patch",
@@ -5897,7 +6107,12 @@
    "family": "ground",
    "grow": "gGl",
    "weight": 1.2,
-   "ppm": 32
+   "ppm": 32,
+   "variants": [
+    {"img":"scene/props/clover_patch_sm.png","ox":-14,"oy":-9,"name":"Clover patch (small)","size":"sm"},
+    {"img":"scene/props/clover_patch_lg.png","ox":-34,"oy":-13,"name":"Clover patch (large)","size":"lg"}
+   ],
+   "vary": {"size":0}
   },
   "nettles": {
    "name": "Nettles",
@@ -5913,7 +6128,12 @@
    "family": "ground",
    "grow": "gGyx",
    "weight": 1,
-   "ppm": 32
+   "ppm": 32,
+   "variants": [
+    {"img":"scene/props/nettles_sm.png","ox":-19,"oy":-30,"name":"Nettles (small)","size":"sm"},
+    {"img":"scene/props/nettles_lg.png","ox":-29,"oy":-52,"name":"Nettles (large)","size":"lg"}
+   ],
+   "vary": {"size":0}
   },
   "horsetail": {
    "name": "Horsetail",
@@ -5929,7 +6149,12 @@
    "family": "ground",
    "grow": "gwu",
    "weight": 0.8,
-   "ppm": 32
+   "ppm": 32,
+   "variants": [
+    {"img":"scene/props/horsetail_sm.png","ox":-15,"oy":-30,"name":"Horsetail (small)","size":"sm"},
+    {"img":"scene/props/horsetail_lg.png","ox":-26,"oy":-51,"name":"Horsetail (large)","size":"lg"}
+   ],
+   "vary": {"size":0}
   },
   "grass_snow": {
    "name": "Snowy grass",
@@ -6262,7 +6487,12 @@
    "family": "water",
    "grow": "wg",
    "weight": 1,
-   "ppm": 32
+   "ppm": 32,
+   "variants": [
+    {"img":"scene/props/iris_yellow_sm.png","ox":-15,"oy":-32,"name":"Yellow iris (small)","size":"sm"},
+    {"img":"scene/props/iris_yellow_lg.png","ox":-23,"oy":-57,"name":"Yellow iris (large)","size":"lg"}
+   ],
+   "vary": {"size":0}
   },
   "iris_purple": {
    "name": "Purple iris",
@@ -6278,7 +6508,12 @@
    "family": "water",
    "grow": "wg",
    "weight": 0.8,
-   "ppm": 32
+   "ppm": 32,
+   "variants": [
+    {"img":"scene/props/iris_purple_sm.png","ox":-14,"oy":-32,"name":"Purple iris (small)","size":"sm"},
+    {"img":"scene/props/iris_purple_lg.png","ox":-25,"oy":-57,"name":"Purple iris (large)","size":"lg"}
+   ],
+   "vary": {"size":0}
   },
   "bulrush": {
    "name": "Bulrushes",
@@ -6293,7 +6528,13 @@
    "solid": 0,
    "family": "water",
    "grow": "w",
-   "weight": 1.2
+   "weight": 1.2,
+   "ppm": 32,
+   "variants": [
+    {"img":"scene/props/bulrush_sm.png","ox":-17,"oy":-46,"name":"Bulrushes (small)","size":"sm"},
+    {"img":"scene/props/bulrush_lg.png","ox":-26,"oy":-84,"name":"Bulrushes (large)","size":"lg"}
+   ],
+   "vary": {"size":0}
   },
   "duckweed": {
    "name": "Duckweed",
@@ -6308,7 +6549,13 @@
    "solid": 0,
    "family": "water",
    "grow": "wd",
-   "weight": 1
+   "weight": 1,
+   "ppm": 32,
+   "variants": [
+    {"img":"scene/props/duckweed_sm.png","ox":-19,"oy":-8,"name":"Duckweed (small)","size":"sm"},
+    {"img":"scene/props/duckweed_lg.png","ox":-39,"oy":-17,"name":"Duckweed (large)","size":"lg"}
+   ],
+   "vary": {"size":0}
   },
   "lilypad": {
    "name": "Lily pad",
@@ -6323,7 +6570,13 @@
    "solid": 0,
    "family": "water",
    "grow": "wd",
-   "weight": 1.2
+   "weight": 1.2,
+   "ppm": 32,
+   "variants": [
+    {"img":"scene/props/lilypad_sm.png","ox":-10,"oy":-5,"name":"Lily pad (small)","size":"sm"},
+    {"img":"scene/props/lilypad_lg.png","ox":-19,"oy":-9,"name":"Lily pad (large)","size":"lg"}
+   ],
+   "vary": {"size":0}
   },
   "lotus_pink": {
    "name": "Pink lotus",
@@ -6338,7 +6591,13 @@
    "solid": 0,
    "family": "water",
    "grow": "wd",
-   "weight": 0.8
+   "weight": 0.8,
+   "ppm": 32,
+   "variants": [
+    {"img":"scene/props/lotus_pink_sm.png","ox":-16,"oy":-8,"name":"Pink lotus (small)","size":"sm"},
+    {"img":"scene/props/lotus_pink_lg.png","ox":-30,"oy":-8,"name":"Pink lotus (large)","size":"lg"}
+   ],
+   "vary": {"size":0}
   },
   "lotus_white": {
    "name": "White lotus",
@@ -6353,7 +6612,13 @@
    "solid": 0,
    "family": "water",
    "grow": "wd",
-   "weight": 0.8
+   "weight": 0.8,
+   "ppm": 32,
+   "variants": [
+    {"img":"scene/props/lotus_white_sm.png","ox":-16,"oy":-8,"name":"White lotus (small)","size":"sm"},
+    {"img":"scene/props/lotus_white_lg.png","ox":-30,"oy":-8,"name":"White lotus (large)","size":"lg"}
+   ],
+   "vary": {"size":0}
   },
   "marsh_marigold": {
    "name": "Marsh marigolds",
@@ -6369,7 +6634,12 @@
    "family": "water",
    "grow": "wg",
    "weight": 1,
-   "ppm": 32
+   "ppm": 32,
+   "variants": [
+    {"img":"scene/props/marsh_marigold_sm.png","ox":-15,"oy":-17,"name":"Marsh marigolds (small)","size":"sm"},
+    {"img":"scene/props/marsh_marigold_lg.png","ox":-29,"oy":-28,"name":"Marsh marigolds (large)","size":"lg"}
+   ],
+   "vary": {"size":0}
   },
   "water_mint": {
    "name": "Water mint",
@@ -6385,7 +6655,12 @@
    "family": "water",
    "grow": "wg",
    "weight": 0.9,
-   "ppm": 32
+   "ppm": 32,
+   "variants": [
+    {"img":"scene/props/water_mint_sm.png","ox":-15,"oy":-20,"name":"Water mint (small)","size":"sm"},
+    {"img":"scene/props/water_mint_lg.png","ox":-29,"oy":-28,"name":"Water mint (large)","size":"lg"}
+   ],
+   "vary": {"size":0}
   },
   "boulder_lichen": {
    "name": "Lichen boulder",
@@ -6418,7 +6693,12 @@
    "family": "rocks",
    "grow": "grsvw",
    "weight": 1,
-   "ppm": 32
+   "ppm": 32,
+   "variants": [
+    {"img":"scene/props/stones_flat_sm.png","ox":-21,"oy":-9,"name":"Flat stones (small)","size":"sm"},
+    {"img":"scene/props/stones_flat_lg.png","ox":-38,"oy":-19,"name":"Flat stones (large)","size":"lg"}
+   ],
+   "vary": {"size":0}
   },
   "scree": {
    "name": "Scree",
@@ -6433,7 +6713,13 @@
    "solid": 0,
    "family": "rocks",
    "grow": "rsn",
-   "weight": 1
+   "weight": 1,
+   "ppm": 32,
+   "variants": [
+    {"img":"scene/props/scree_sm.png","ox":-29,"oy":-12,"name":"Scree (small)","size":"sm"},
+    {"img":"scene/props/scree_lg.png","ox":-51,"oy":-22,"name":"Scree (large)","size":"lg"}
+   ],
+   "vary": {"size":0}
   },
   "molehill": {
    "name": "Molehill",
@@ -6449,7 +6735,12 @@
    "family": "rocks",
    "grow": "gGlo",
    "weight": 0.8,
-   "ppm": 32
+   "ppm": 32,
+   "variants": [
+    {"img":"scene/props/molehill_sm.png","ox":-10,"oy":-9,"name":"Molehill (small)","size":"sm"},
+    {"img":"scene/props/molehill_lg.png","ox":-19,"oy":-14,"name":"Molehill (large)","size":"lg"}
+   ],
+   "vary": {"size":0}
   },
   "roots": {
    "name": "Exposed roots",
@@ -6465,7 +6756,12 @@
    "family": "rocks",
    "grow": "yg",
    "weight": 0.6,
-   "ppm": 32
+   "ppm": 32,
+   "variants": [
+    {"img":"scene/props/roots_sm.png","ox":-28,"oy":-11,"name":"Exposed roots (small)","size":"sm"},
+    {"img":"scene/props/roots_lg.png","ox":-53,"oy":-18,"name":"Exposed roots (large)","size":"lg"}
+   ],
+   "vary": {"size":0}
   },
   "tree_rowan_autumn": {
    "name": "Rowan in autumn",
@@ -6585,7 +6881,12 @@
    "family": "seasons",
    "grow": "gGrov",
    "weight": 0.8,
-   "ppm": 32
+   "ppm": 32,
+   "variants": [
+    {"img":"scene/props/seedheads_sm.png","ox":-17,"oy":-21,"name":"Dry seed heads (small)","size":"sm"},
+    {"img":"scene/props/seedheads_lg.png","ox":-31,"oy":-34,"name":"Dry seed heads (large)","size":"lg"}
+   ],
+   "vary": {"size":0}
   },
   "tussock_rust": {
    "name": "Rust tussock",
@@ -6600,7 +6901,13 @@
    "solid": 0,
    "family": "seasons",
    "grow": "gGro",
-   "weight": 0.6
+   "weight": 0.6,
+   "ppm": 32,
+   "variants": [
+    {"img":"scene/props/tussock_rust_sm.png","ox":-22,"oy":-13,"name":"Rust tussock (small)","size":"sm"},
+    {"img":"scene/props/tussock_rust_lg.png","ox":-31,"oy":-28,"name":"Rust tussock (large)","size":"lg"}
+   ],
+   "vary": {"size":0}
   },
   "bakery": {
    "name": "Bakery",
