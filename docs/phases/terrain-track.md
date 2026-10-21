@@ -102,6 +102,76 @@ Features are **mostly gameplay**: each one changes encounters, pace, loot or the
 - **Biome fit:** mostly features that fit the biome, with rare surprises (a crystal field in a meadow now and then).
 - **Roguelite:** rare features (ruins, wrecks, crystals and the like) enter the generator's pool as unlocks.
 
+## How Pokémon Gen 3-5 build their routes (research, TR-2 session, 2026-10-21)
+The owner asked for routes much more like Gen 3-5 (Ruby/Sapphire/Emerald, Diamond/Pearl/Platinum, HeartGold/SoulSilver,
+Black/White). Most wikis refused to be read from here, so the numbers come from the game's own map data: the Emerald
+decompilation (github.com/pret/pokeemerald: `data/layouts/layouts.json`, each route's `map.bin` (metatile, collision
+and level per tile) and `map.json` (trainers, their sight, items), the tilesets' behaviours), decoded for 13 land
+routes (102-104, 110, 111, 113-116, 119-121, 123). Gen 4 and 5 facts are from wiki search summaries. A Gen 3 tile is
+about the player's width, so one tile is read as about one metre here.
+
+**What the data shows (Emerald)**
+- **Size.** A route is a strip: 40 tiles wide and 60-140 long (north-south), or 20 tall and 50-140 long (east-west).
+  A run scene (112 x 64 m) holds about two of the 40 x 80 routes' area.
+- **Most of it is wall.** Only 31-65% of the tiles can be walked on (median 47%). The rest is a solid border: a tree
+  wall, the "mountain top" rock (up to 1,200 tiles on Route 114) or water. A route is a network of corridors and
+  pockets inside that border, not an open field with a road across it.
+- **Few levels.** Walkable land has one ground level on most routes, two or three on the mountain ones (Routes 114 and
+  115: levels 3, 4, 5 and 7), and a bridge level over water (110, 119, 120). Tall mountains are the border, not
+  somewhere you walk: the climb happens a level at a time, by stairs, across several maps (Jagged Pass, Route 112).
+- **Ledges everywhere.** 10-80 ledge tiles per route (0 on only two), in short runs of 3-10 tiles, mostly jumping
+  south (toward the camera), some east or west, never north. They cut a route into bands you cross one way, make
+  loops ("hop down to skip the grass"), keep the way back short and gate pockets you reach from above.
+- **Grass in patches.** 3-6 patches of 15-70 tiles each (one route, 116, has many crumbs; 119 has one 475-tile field
+  of long grass you can't see over). The way north usually runs through at least one patch; a ledge or a side path
+  often lets you skip one in the other direction.
+- **Trainers.** 0 on the first route, 4 on the second, 6-17 on later ones. Each looks one way and sees 1-7 tiles
+  (median 3). They stand across the corridor or at a pocket's mouth, so most are hard to avoid, some are optional.
+- **Things to find.** 1-9 visible items and 0-5 hidden ones per route, berry soil (2-18 spots), 1-11 signs. Items sit
+  at dead ends, on ledged pockets and behind obstacles.
+- **Each route has a gimmick:** ash on the grass (113), a sandstorm desert you need goggles for (111), long grass,
+  rails and a waterfall (119), rain and puddles (120), a bridge level (110), muddy slopes only a fast bike climbs
+  (111, 115).
+
+**Gen 4 and 5 (search summaries)**
+- Sinnoh: fog on the north of Route 210 and in Mt. Coronet; a winding series of bridges over rivers (210); Route 211
+  split by the mountain, its east half a choice between grass and a flight of stairs up the mountainside; deep snow
+  you can't run in and a blizzard that cuts the view (216, 217); a downhill cycling road (206); Rock Climb walls.
+- Unova: seasons change routes. In winter snow banks reach ledges and item spots that are shut the rest of the year,
+  and cover some cave mouths; in autumn fallen leaves show items. Big bridges are landmarks.
+- Johto (HGSS): Route 45 is a descent down a ribbon of narrow cliff ledges; Route 38's lower path is a one-way express.
+
+Sources: [pret/pokeemerald](https://github.com/pret/pokeemerald) (map data, decoded here);
+[Bulbapedia: Ledge](https://bulbapedia.bulbagarden.net/wiki/Ledge), [Kanto Route 1](https://bulbapedia.bulbagarden.net/wiki/Kanto%20Route%201),
+[Hoenn Route 113](https://bulbapedia.bulbagarden.net/wiki/Hoenn_Route_113), [Route 111](https://bulbapedia.bulbagarden.net/wiki/Route_111),
+[Sinnoh Route 210](https://bulbapedia.bulbagarden.net/wiki/Sinnoh_Route_210), [Sinnoh Route 211](https://bulbapedia.bulbagarden.net/wiki/Sinnoh_Route_211),
+[Sinnoh Route 216](https://bulbapedia.bulbagarden.net/wiki/Sinnoh_Route_216), [Bike obstacles](https://bulbapedia.bulbagarden.net/wiki/Bike_obstacles);
+[Serebii: Black 2/White 2 seasons](https://serebii.net/black2white2/seasons.shtml);
+[PokéCommunity: Mapping routes](https://daily.pokecommunity.com/2017/09/14/fangame-tutorials-mapping-routes/);
+[RankedBoost: HGSS Route 45](https://rankedboost.com/pokemon/location/heartgold-soulsilver/route-45/).
+
+**What it changes in this track**
+1. **A route is corridors inside a border.** Today's generator makes an open field with a road across it and a belt
+   of trees. Gen 3 walks about half the area and walls off the rest. The generator gets a walk mask: the road as a
+   corridor 6-14 m wide with pockets, spurs and dead ends; the rest a solid border (a dense tree wall in the wild, the
+   massif's rock, water, a town's walls). Target about 50-60% walkable for a run route (more than Gen 3, because
+   the 3D camera sees further and a phone joystick needs room).
+2. **Height comes in tiers, joined by stairs and ledges.** Walkable land sits on 1-3 tiers a cliff apart (the cliffs
+   dial: 0.8-2 m, about one Gen 3 cliff). The road changes tier by a flight of stairs (stone steps, at most 0.3 m a
+   step) or a ramp on main roads (TR-1); a ledge is the one-way way down. The tall massif (TR-2a's mountains, 15-20 m)
+   is the border and the backdrop, walkable only on its foot. A run climbs a tier at a time across its scenes
+   (later nodes higher, the boss on a peak), never 15 m inside one scene.
+3. **Ledges move up from TR-5** into the route layout: short runs (3-10 m) that cut the route into bands, loops and
+   pockets, counted one way by the reach check (TR-5's rule).
+4. **Tall grass in patches across the path** (3-6 of 15-70 m², one the way north must cross, one a ledge or side path
+   skips), instead of drifts beside the road.
+5. **Pockets for things to find:** dead ends, ledged pockets and tier tops get marked spots that items, berry soil,
+   hidden items and (TR-8) trainers use; a trainer's spot has a facing and a sight of 1-7 m across a corridor.
+6. **One gimmick a route** from the biome and the feature catalogue (TR-9, TR-10): ash, sandstorm, long grass, fog,
+   deep snow, puddles, a bridge level, a muddy slope only climbing gear climbs.
+7. **Seasons open and close paths** (TR-10): winter snow banks reach a ledge or an item pocket, autumn leaves show
+   items, snow covers a cave mouth.
+
 ## Rules
 - Deterministic and re-runnable as in the MG track (seeded streams; a new `seeds.relief` stream for mountain work).
 - The scene format stays the game's own: heights, steps/stepm, tiles, props, bridges. Raise the heights range if the
@@ -113,10 +183,12 @@ Features are **mostly gameplay**: each one changes encounters, pace, loot or the
 | # | What | Checks before the tag |
 |---|------|-----------------------|
 | TR-1 | (folded into MG-2 by the owner, 2026-10-21) Smooth roads: road ramp cells flagged 32 in `stepm`; a graded shoulder beside cuts (bank in the wild, wall in towns, by biome/scene kind); a gradient cap with automatic switchbacks on main roads and stairs on footpaths; junctions and the hub round made with ramps instead of the lowering pass. One-off tool run on Copperleaf only. | unit test: no riser over 3 cm on any road cell; mapgenUnreachable sweep; a02_joins |
-| TR-2 | Mountains: ridged noise plus domain warp, a massif mask (mountains on chosen sides), relief up to 15 m+; slopes too steep to walk become step-grid cliffs with scree; the mountain dial in every biome and as `ridge`'s default; the road pathfinder; the four route types (valley, pass, ledge path, gorge + rope bridge). | sweep of random dial sets reaching every exit; seam heights; phone frame time |
+| TR-2a | (done, TR-2 session) Mountains as the border: the `mountains` (0-1, up to 20 m) and `massif` (sides) dials, ridged noise plus domain warp under a massif mask, its own `relief` seed; steep ground as step-grid shelves and cliffs; kept off the road, hub, exits and water; the Studio dials; the debug menu's mountains run for the phone measurement. | sweep of random dial sets reaching every exit (with the slope rule); seams of a mountains run; phone frame time (owner) |
+| TR-2b | Gen 3 route layout, part 1: the walk mask (corridors 6-14 m, pockets, spurs, dead ends, a solid border of tree wall, massif or water, about 50-60% walkable); tiers (1-3, a cliff apart) joined by stairs on footpaths and ramps on main roads; the massif's foot walkable by stairs to a pocket; marked spots (pocket, dead end, tier top, trainer spot with facing). | sweep: every exit reached, walkable share in range, every pocket reached; seams; picture notes |
+| TR-2c | Gen 3 route layout, part 2: generated ledges (moved from TR-5: short runs, loops, one-way in the reach check, hop arc and dust puff); tall grass as 3-6 patches across the path; the road pathfinder through tiers and the massif; the four mountain route types (valley floor, pass, ledge path, gorge with a rope bridge) as recipes of these parts. | unreachable check counting ledges one way; grass on the way north; sweep; phone frame time |
 | TR-3 | Camera for tall ground: rock fade, camera rise on tall ground, player silhouette. | visual check steps, smoke |
 | TR-4 | Look: painting by height and steepness (rock, snow line per biome, scree, grass lip), strata bands on cliff faces per biome. | picture notes, smoke |
-| TR-5 | Terraces that follow the contours of the land (the old "rise toward the back" kept as a dial), edge styles; generated one-way ledges with hop and dust puff. | unit tests, unreachable check counts ledges as one-way |
+| TR-5 | Terraces that follow the contours of the land (the old "rise toward the back" kept as a dial), edge styles. (Generated ledges moved to TR-2c.) | unit tests |
 | TR-6 | Cliff extras: climbable vines (ladders converted or retired), cave/mine entrances as room doors, waterfalls off terrace edges. | unit tests, room door check |
 | TR-7 | Studio: raise/lower brush as a mask that survives regenerate, the ridge-line tool, feature presets. STUDIO.md. | MG-4 style test: a hand edit survives a regenerate |
 | TR-8 | Height as gameplay: altitude encounter pools, trainers on ledges with sight down, items on hard-to-reach terraces, snow and storms by height; levelled battle arena. Roguelite hooks: node altitude rising toward a peak boss, climbing gear unlock gating paths. | unit tests, run sim |
@@ -167,3 +239,11 @@ Features are **mostly gameplay**: each one changes encounters, pace, loot or the
 - How the silhouette and the rock fade are drawn in the current renderer.
 - What happens to the existing ladder props and the scenes that use them.
 - Where altitude encounter pools live in the data (pools.json or biomes.json).
+
+## Ask me before (from the Gen 3-5 research, TR-2 session)
+- **Walkable height.** The owner chose walkable mountains of 15 m or more. Gen 3 walks a few tiers per map and keeps
+  tall mountains as the border. Proposed: 1-3 walkable tiers per scene, the massif above as border and backdrop, the
+  run climbing a tier at a time across its scenes.
+- **How much is walkable.** Gen 3: about 47%. Proposed for run routes: 50-60%, the rest a solid border.
+- **Which way ledges jump.** A run goes north (away from the camera). Gen 3's ledges jump south, toward the camera
+  (back toward where you came from): loops and quick ways back inside a scene. Or north: shortcuts forward.
