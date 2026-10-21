@@ -150,14 +150,12 @@ export async function cutsceneStart(opts) {
     artLoad(['coins/penny_32.png']),
     prepareMap(id),
   ]).catch(() => {});
-  /* the city at night (cutscenes/city.json), then the fall from the crust down to Copperleaf (opening-fall.js); it
-     ends on a white screen. Owner 2026-10-19: the city replaces the fall's first leg, the street under the billboard,
-     which plays only when the city can't */
+  /* the fall from the crust down to Copperleaf (opening-fall.js); it ends on a white screen. RL-8 (the owner's answer,
+     roguelite-track.md 8.20, "fall only"): New game no longer plays the city at night (cutscenes/city.json; openingCity
+     stays for later) nor the fall's street leg, its stand-in */
   if (typeof fallPlay === 'function' && !cutscene.test && !cutscene.quick) {
     try {
-      const city = await openingCity(run);
-      if (!cutscene.on || cutscene.run !== run) return;
-      await fallPlay(run, city ? { from: 'crust' } : {});
+      await fallPlay(run, { from: 'crust' });
     } catch (e) {
       console.error(e);
       const f = $('#csFade');
@@ -227,7 +225,8 @@ export async function cutsceneStart(opts) {
   }
 }
 /* the city opening: its own map's view on the same canvas, its cutscene played, the view stopped again (the fall
-   comes next); false if it couldn't start (no file, no map, no 3D view) */
+   comes next); false if it couldn't start (no file, no map, no 3D view). RL-8: New game doesn't play it (the owner's
+   "fall only"); kept for when the story brings it back */
 async function openingCity(run) {
   const C = CUTSCENES.city;
   if (!C || !mapById(C.map) || cutscene.skip) return false;
