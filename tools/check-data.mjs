@@ -11,12 +11,13 @@
 // - phase 07: portraits.json against its schema, and every picture, part and frame it names exists,
 // - studio track ST-3: partKits.json against its schema, and every part's picture is there at its size,
 // - phase 08b: the links between places (roads.json) join them as the walk needs, and every door opens a room (below),
-// - UI-1: uiTheme.json against its schema, and its text reads on its ground and surface (4.5:1, light and dark).
+// - UI-1: uiTheme.json against its schema, and its text reads on its ground and surface (4.5:1, light and dark; UI-3:
+//   danger and primary at 3:1, screens' overrides too).
 import Ajv2020 from 'ajv/dist/2020.js';
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { DATA, PB_DATA } from './data-files.mjs';
-import { contrastRatio } from '../game/js/logic/colors.js';
+import { uiThemeContrast } from '../game/js/logic/ui-theme.js';
 
 const FIX = process.argv.includes('--fix');
 const bad = [];
@@ -306,19 +307,12 @@ for (const [id, G] of Object.entries(robots.gems || {})) {
   if (!types.has(G.type)) problem('robots.json', `gem ${id} is type ${G.type}, no such type`);
   if (!moves[G.move]) problem('robots.json', `gem ${id} gives ${G.move}, no such move`);
 }
-// UI-1: the UI's look: the schema, then text and quiet text read at 4.5:1 on the ground and on a solid surface, in the
-// defaults and in every preset (each with the defaults under it), on both sides
-if (D.uiTheme && check('uiTheme.schema.json', D.uiTheme, 'uiTheme.json')) {
-  const T = D.uiTheme;
-  for (const name of ['', ...Object.keys(T.presets || {})])
-    for (const side of ['light', 'dark']) {
-      const pal = { ...T.defaults.color?.[side], ...(name ? T.presets[name].color?.[side] : {}) };
-      for (const fg of ['text', 'text2'])
-        for (const bg of ['ground', 'surface'])
-          if (pal[fg] && pal[bg] && contrastRatio(pal[fg], pal[bg]) < 4.5)
-            problem('uiTheme.json', `${name || 'defaults'} ${side}: ${fg} on ${bg} reads at ${contrastRatio(pal[fg], pal[bg]).toFixed(2)}:1, under 4.5`);
-    }
-}
+// UI-1: the UI's look: the schema, then the colours read on the ground and on a solid surface (UI-3: text and quiet
+// text at 4.5:1, danger and primary at 3:1) in the defaults, every preset and every screen's override, both sides
+// (logic/ui-theme.js uiThemeContrast, which the Studio's Check uses too)
+if (D.uiTheme && check('uiTheme.schema.json', D.uiTheme, 'uiTheme.json'))
+  for (const f of uiThemeContrast(D.uiTheme))
+    problem('uiTheme.json', `${f.where || 'defaults'} ${f.side}: ${f.fg} on ${f.bg} reads at ${f.ratio.toFixed(2)}:1, under ${f.min}`);
 // map generator MG-1: the biome recipes: the schema, then the ground letters, prop kinds and life they name
 if (D.biomes && check('biomes.schema.json', D.biomes, 'biomes.json')) {
   const terr = (D.scenery && D.scenery.terrains) || {},

@@ -4315,3 +4315,140 @@ body.wb-dropping::after {
 .st-report tr.better td:last-child {
   color: var(--ok);
 }
+/* UI track UI-3: the UI look section (studio/js/ui-editor.js); its dials reuse the Engine section's (.eng-*) */
+.ui-pvbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.ui-pvbar select {
+  width: auto;
+}
+#uiCmp.on {
+  background: var(--acc);
+  border-color: var(--acc);
+  color: #fff;
+}
+.ui-pv {
+  display: block;
+  width: 100%;
+  height: calc(100vh - 230px);
+  min-height: 420px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel2);
+}
+.ui-cols {
+  width: 100%;
+  border-collapse: collapse;
+}
+.ui-cols th {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text2);
+  text-align: left;
+  padding: 4px 6px 4px 0;
+  white-space: nowrap;
+}
+.ui-cols td {
+  padding: 3px 4px;
+  vertical-align: top;
+}
+.ui-col .colw {
+  display: flex;
+  gap: 4px;
+  width: 100%;
+}
+.ui-col input[type='color'] {
+  flex: none;
+  width: 34px;
+}
+.ui-col .hex {
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+}
+.ui-col .ui-aa {
+  align-self: start;
+}
+.ui-aa {
+  font:
+    600 11px/1.6 ui-monospace,
+    monospace;
+  padding: 0 5px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+.ui-aa.ok {
+  background: var(--acc2);
+  color: var(--ok);
+}
+.ui-aa.bad {
+  background: var(--red);
+  color: #fff;
+}
+.ui-sides {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.ui-sides h4 {
+  margin: 4px 0 8px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text2);
+}
+.ui-sides > div {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+.ui-fams {
+  display: grid;
+  gap: 10px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.ui-corners {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 12px;
+}
+.ui-ease {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+}
+.ui-ease input {
+  min-width: 0;
+}
+.ui-layers td {
+  font-size: 12.5px;
+}
+.ui-col .hex {
+  padding-left: 4px;
+  padding-right: 4px;
+  font:
+    12px/1.2 ui-monospace,
+    monospace;
+}
+.ui-layers td.mono {
+  white-space: nowrap;
+}
+.ui-cols {
+  table-layout: fixed;
+}
+.ui-cols th:first-child {
+  width: 26%;
+  white-space: normal;
+}
+.ui-col {
+  padding-right: 24px;
+}
+.ui-col input[type='color'] {
+  width: 28px;
+}

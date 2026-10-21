@@ -48,3 +48,23 @@ toastEl.n = 1;
 document
   .querySelectorAll('.chip[data-ty]')
   .forEach(c => c.insertAdjacentHTML('afterbegin', typeGlyphHTML(/** @type {HTMLElement} */ (c).dataset.ty)));
+
+// UI-3: the Studio's UI section shows this page in a frame (gallery.html?studio=1, without the bar) and hands it the
+// look being edited: the theme, light or dark, the width, reduced motion, Settings' text size and the screen whose
+// own colours and shapes to show (uiTheme.json overrides, through data-ui-screen)
+if (new URLSearchParams(location.search).has('studio')) root.classList.add('g-studio');
+/** @param {any} theme uiTheme.json as edited @param {{mode?: string, width?: string, reduced?: boolean,
+ * text?: string, screen?: string}} [o] */
+function galleryLook(theme, o = {}) {
+  applyUiTheme(theme);
+  root.dataset.theme = o.mode === 'dark' ? 'dark' : 'light';
+  const wrap = /** @type {HTMLElement} */ (document.querySelector('.g-wrap'));
+  if (o.width) wrap.style.setProperty('--g-w', o.width);
+  if (o.reduced) root.dataset.motion = 'reduced';
+  else delete root.dataset.motion;
+  if (o.text) root.dataset.text = o.text;
+  else delete root.dataset.text;
+  if (o.screen) wrap.dataset.uiScreen = o.screen;
+  else delete wrap.dataset.uiScreen;
+}
+/** @type {any} */ (globalThis).galleryLook = galleryLook;

@@ -166,7 +166,8 @@ same phase:
 - **12 Ranch**: a full-test step for the ranch, a quick-check step that edits it, and its save fields in the save
   tests (`saves.test.mjs`, `validSave`).
 - **14 Studio**: `tools/check-studio-github.py` and smoke's "Studio opens" keep passing; `--studio` follows the
-  Studio local mode decision.
+  Studio local mode decision. A new Studio feature adds a step function to its `STEPS` (UI-3), so it can also run
+  alone with `--only=<name>`.
 - **15 Design and story**: write down the balance bounds the simulations will assert (with the owner).
 - **16 Billies**: write the breeding simulation first, against the prototype, before the full build (the owner
   agreed in 13a's plan); agree its bounds. The roster steps (v35, v38, v39/v40) count today's 117 Billies: update
@@ -189,6 +190,16 @@ same phase:
   this container's Chromium and fonts. `tools/test/ui-theme.test.mjs` also checks the shape polygons (tokens.css's
   copy equals the generator's) and `tools/test/ui-icons.test.mjs` keeps game/art/ui/*.svg equal to the grids in
   tools/build-ui-icons.py.
+  UI-3: uiTheme.json is version 2 (every group the Studio's dials edit). `ui-theme.test.mjs` keeps tokens.css's
+  scales (space, text sizes, motion, drop shadows) equal to the data's defaults and the variables a screen override
+  declares again (`UI_DERIVED`) equal to tokens.css and polish.css; `ui-dials.test.mjs` keeps every Studio dial on a
+  place in the schema with the schema's range, and every schema value with a dial. The contrast check (text 4.5:1,
+  danger and primary 3:1; overrides too) is `uiThemeContrast` in logic/ui-theme.js, run by check-data and the
+  Studio's Check. `tools/check-studio-github.py`'s `ui` step drives the Studio's UI look section (a dial previewed and
+  undone, a screen override, a preset, Find, the Check, Hold to compare, the proposal carrying uiTheme.json); run it
+  alone with `python3 tools/check-studio-github.py --only=ui` (about a minute; `--only=` takes any names from its
+  `STEPS`, plus `sections` and `art` for the two blocks before them). A new uiTheme.json group needs its schema,
+  its dials in logic/ui-dials.js and its writer in logic/ui-theme.js together, or the tests fail.
 - **18 Trading and battles with friends**: every new Firestore rule gets emulator tests in `firebase/test/`;
   trade validation is logic with unit tests.
 

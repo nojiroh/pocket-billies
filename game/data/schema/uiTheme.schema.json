@@ -1,8 +1,8 @@
 {
  "$schema": "https://json-schema.org/draft/2020-12/schema",
  "$id": "uiTheme.schema.json",
- "title": "game/data/uiTheme.json: the UI's look (UI track, UI-1; the Studio's UI section edits it from UI-3)",
- "description": "Boot writes it as CSS variables (game/js/logic/ui-theme.js); without it the page keeps tokens.css. defaults is the look; a preset lays some groups over it; overrides (per screen, colour and shape) are read from UI-3.",
+ "title": "game/data/uiTheme.json: the UI's look (UI track: UI-1 made it, UI-3 version 2 for the Studio's UI section)",
+ "description": "Boot writes it as CSS variables (game/js/logic/ui-theme.js); without it the page keeps tokens.css. defaults is the look; a preset lays some groups over it (the Studio applies one onto the defaults or a screen); overrides lay colour and shape over the defaults on one screen. Version 2 (UI-3): every group the Studio's dials edit, the defaults equal to tokens.css and v05.css.",
  "type": "object",
  "required": ["version", "defaults"],
  "additionalProperties": false,
@@ -34,13 +34,12 @@
   "surface": {
    "type": "object",
    "additionalProperties": false,
-   "description": "the glass. The dark side's highlight and shadows stay those of v05.css until the dials split by mode (UI-3).",
+   "description": "the glass: blur and saturation for both sides, the rest per side",
    "properties": {
-    "glass": {"type": "number", "minimum": 0, "maximum": 1, "description": "the glass's opacity"},
     "blur": {"type": "number", "minimum": 0, "maximum": 40, "description": "backdrop blur in px"},
-    "saturate": {"type": "number", "minimum": 0, "maximum": 3},
-    "highlight": {"type": "number", "minimum": 0, "maximum": 1, "description": "the 1 px top highlight's opacity (light side)"},
-    "shadowTint": {"anyOf": [{"const": "text"}, {"$ref": "#/$defs/hex"}], "description": "the shadows' colour (light side): text, or a colour"}
+    "saturate": {"type": "number", "minimum": 0, "maximum": 3, "description": "the backdrop's saturation"},
+    "light": {"$ref": "#/$defs/surfaceSide"},
+    "dark": {"$ref": "#/$defs/surfaceSide"}
    }
   },
   "shape": {
@@ -56,7 +55,7 @@
     "families": {
      "type": "object",
      "additionalProperties": false,
-     "description": "UI-2: each component family's shape (cut is the look; rounded and square are for comparing)",
+     "description": "UI-2: each component family's shape; UI-3: its cut size, corners and rounded radius as data",
      "properties": {
       "panel": {"$ref": "#/$defs/familyShape"},
       "card": {"$ref": "#/$defs/familyShape"},
@@ -68,39 +67,125 @@
     }
    }
   },
-  "familyShape": {"enum": ["cut", "rounded", "square"]},
+  "familyShape": {
+   "type": "object",
+   "additionalProperties": false,
+   "properties": {
+    "kind": {"enum": ["cut", "rounded", "square"], "description": "cut is the look; rounded and square are for comparing"},
+    "size": {"enum": ["cutSm", "cutMd", "cutLg"], "description": "which cut size the family's cuts use"},
+    "corners": {
+     "type": "array",
+     "uniqueItems": true,
+     "maxItems": 4,
+     "items": {"enum": ["tl", "tr", "br", "bl"]},
+     "description": "which corners are cut (the long hexagons, action and toast, cut both ends and ignore it)"
+    },
+    "radius": {"type": "number", "minimum": 0, "maximum": 48, "description": "px, when the family is rounded"}
+   }
+  },
   "type": {
    "type": "object",
    "additionalProperties": false,
    "properties": {
     "voice": {"enum": ["Jersey 15", "Pixelify Sans"], "description": "names, headings, buttons, numbers"},
     "prose": {"enum": ["Oxanium", "Chakra Petch"], "description": "long text"},
-    "voiceScale": {"type": "number", "minimum": 0.5, "maximum": 2, "description": "the voice font's size-adjust (1.18 = 118%)"}
+    "voiceScale": {"type": "number", "minimum": 0.5, "maximum": 2, "description": "the voice font's size-adjust (1.18 = 118%)"},
+    "scale": {"type": "number", "minimum": 0.5, "maximum": 2, "description": "every text size (--fs-caption, -body, -title, -screen) times this"},
+    "lineHeight": {"type": "number", "minimum": 1, "maximum": 2.5, "description": "long text's line height (--lh-prose)"}
    }
   },
   "look": {
    "type": "object",
    "additionalProperties": false,
    "properties": {
+    "name": {"type": "string", "maxLength": 40, "description": "a preset's name in the Studio"},
     "color": {"$ref": "#/$defs/color"},
     "surface": {"$ref": "#/$defs/surface"},
+    "depth": {"$ref": "#/$defs/depth"},
+    "drop": {"$ref": "#/$defs/drop"},
     "shape": {"$ref": "#/$defs/shape"},
-    "type": {"$ref": "#/$defs/type"}
+    "space": {"$ref": "#/$defs/space"},
+    "type": {"$ref": "#/$defs/type"},
+    "motion": {"$ref": "#/$defs/motion"}
+   }
+  },
+  "surfaceSide": {
+   "type": "object",
+   "additionalProperties": false,
+   "properties": {
+    "glass": {"type": "number", "minimum": 0, "maximum": 1, "description": "the glass's opacity"},
+    "highlight": {"type": "number", "minimum": 0, "maximum": 1, "description": "the 1 px top highlight inside a glass panel (--g-in), its opacity"},
+    "edgeHi": {"type": "number", "minimum": 0, "maximum": 1, "description": "the edge line's light top on the angular parts (--edge-hi), its opacity"},
+    "edgeLo": {"type": "number", "minimum": 0, "maximum": 1, "description": "the edge line's dark side (--edge-lo): the shadow tint at this opacity"},
+    "shadowTint": {"anyOf": [{"const": "text"}, {"$ref": "#/$defs/hex"}], "description": "the shadows' colour: text (the side's text colour), or a colour"}
+   }
+  },
+  "shadows": {
+   "type": "object",
+   "additionalProperties": false,
+   "properties": {
+    "raisedY": {"type": "number", "minimum": 0, "maximum": 40, "description": "raised (cards, buttons): how far down the big shadow falls, px"},
+    "raisedBlur": {"type": "number", "minimum": 0, "maximum": 60, "description": "raised (cards, buttons): the big shadow's blur, px"},
+    "raisedAlpha": {"type": "number", "minimum": 0, "maximum": 1, "description": "raised (cards, buttons): the big shadow's opacity"},
+    "raisedNear": {"type": "number", "minimum": 0, "maximum": 1, "description": "raised (cards, buttons): the small near shadow's opacity"},
+    "floatY": {"type": "number", "minimum": 0, "maximum": 40, "description": "floating (sheets, toasts, the bottom bar): how far down the big shadow falls, px"},
+    "floatBlur": {"type": "number", "minimum": 0, "maximum": 60, "description": "floating (sheets, toasts, the bottom bar): the big shadow's blur, px"},
+    "floatAlpha": {"type": "number", "minimum": 0, "maximum": 1, "description": "floating (sheets, toasts, the bottom bar): the big shadow's opacity"},
+    "floatNear": {"type": "number", "minimum": 0, "maximum": 1, "description": "floating (sheets, toasts, the bottom bar): the small near shadow's opacity"}
+   }
+  },
+  "depth": {
+   "type": "object",
+   "additionalProperties": false,
+   "description": "the three depths (flat, raised, floating) of the glass panels' box shadows (--g-sh, --g-sh2), per side; flat has none",
+   "properties": {"light": {"$ref": "#/$defs/shadows"}, "dark": {"$ref": "#/$defs/shadows"}}
+  },
+  "drop": {"$ref": "#/$defs/shadows", "description": "the angular parts' drop shadows (--drop-raised, --drop-float), in the shadow colour of each side"},
+  "space": {
+   "type": "object",
+   "additionalProperties": false,
+   "description": "the spacing scale (--s1..--s7) and the screen gutter, px",
+   "properties": {
+    "s1": {"type": "number", "minimum": 0, "maximum": 96, "description": "--s1"},
+    "s2": {"type": "number", "minimum": 0, "maximum": 96, "description": "--s2"},
+    "s3": {"type": "number", "minimum": 0, "maximum": 96, "description": "--s3"},
+    "s4": {"type": "number", "minimum": 0, "maximum": 96, "description": "--s4"},
+    "s5": {"type": "number", "minimum": 0, "maximum": 96, "description": "--s5"},
+    "s6": {"type": "number", "minimum": 0, "maximum": 96, "description": "--s6"},
+    "s7": {"type": "number", "minimum": 0, "maximum": 96, "description": "--s7"},
+    "gutter": {"type": "number", "minimum": 0, "maximum": 48, "description": "--gutter, the screen's side margin"}
+   }
+  },
+  "ease": {
+   "type": "array",
+   "minItems": 4,
+   "maxItems": 4,
+   "items": {"type": "number", "minimum": -2, "maximum": 3},
+   "description": "a cubic-bezier's four numbers"
+  },
+  "motion": {
+   "type": "object",
+   "additionalProperties": false,
+   "description": "the three speeds in ms, the stagger between rows, and the eases",
+   "properties": {
+    "fast": {"type": "number", "minimum": 0, "maximum": 2000, "description": "--m-fast, ms"},
+    "base": {"type": "number", "minimum": 0, "maximum": 2000, "description": "--m-base, ms"},
+    "slow": {"type": "number", "minimum": 0, "maximum": 4000, "description": "--m-slow, ms"},
+    "stagger": {"type": "number", "minimum": 0, "maximum": 500, "description": "--stagger, ms between rows"},
+    "easeOut": {"$ref": "#/$defs/ease"},
+    "easeIn": {"$ref": "#/$defs/ease"},
+    "spring": {"$ref": "#/$defs/ease"}
    }
   }
  },
  "properties": {
-  "version": {"const": 1},
-  "defaults": {"$ref": "#/$defs/look", "required": ["color", "surface", "shape", "type"]},
-  "presets": {
-   "type": "object",
-   "propertyNames": {"pattern": "^[a-z][a-z0-9_]*$"},
-   "additionalProperties": {"$ref": "#/$defs/look"}
-  },
+  "version": {"const": 2},
+  "defaults": {"$ref": "#/$defs/look", "required": ["color", "surface", "depth", "drop", "shape", "space", "type", "motion"]},
+  "presets": {"type": "object", "propertyNames": {"pattern": "^[a-z][a-z0-9_]*$"}, "additionalProperties": {"$ref": "#/$defs/look"}},
   "overrides": {
    "type": "object",
-   "description": "per screen: colour and shape only",
-   "propertyNames": {"pattern": "^[a-z][a-z0-9-]*$"},
+   "description": "per screen: colour and shape over the defaults on that screen only (logic/ui-theme.js UI_SCREENS names each screen's root)",
+   "propertyNames": {"enum": ["walk", "map", "team", "ledger", "bag", "profile", "battle", "dialogue"]},
    "additionalProperties": {
     "type": "object",
     "additionalProperties": false,
