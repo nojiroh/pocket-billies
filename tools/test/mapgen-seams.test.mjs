@@ -240,3 +240,29 @@ test('a node with two parents on one side meets each of them up to the midpoint'
     assert.deepEqual([a.dhNear, a.dhBand, a.walk], [0, 0, null], exit);
   }
 });
+
+test("the neighbour's natural ground runs on across the edge; nothing stands against its things", () => {
+  const T = GAME_DATA.scenery.terrains,
+    natural = ch => G.mapgenCopyable({ terr: T }, ch);
+  for (const { P, exit, K, where } of joinedPairs(6, 16, { terraces: false })) {
+    const strip = K.gen.params.edges[0],
+      B = GAME_DATA.biomes[K.biome].ground,
+      kept = ch =>
+        !natural(ch) || ch === B.bank || ch === B.verge || ch === 'S'; /* banks, verges, a coast's wet sand */
+    let same = 0;
+    for (let n = 0; n < strip.ground.length; n++) {
+      const nb = strip.ground[n],
+        mine = K.tiles[K.h - 1][strip.c0 + n];
+      if (!natural(nb)) continue;
+      assert.ok(mine === nb || kept(mine), `${where}: cell ${strip.c0 + n} is ${mine}, the neighbour's ${nb}`);
+      if (mine === nb) same++;
+    }
+    assert.ok(same > 0, where);
+    for (const [k, x, z] of strip.props)
+      for (const p of K.props)
+        if (p.k !== 'signpost')
+          assert.ok(Math.hypot(p.x - x, p.z - z) > 0.5, `${where}: ${p.k} against the neighbour's ${k}`);
+    void P;
+    void exit;
+  }
+});

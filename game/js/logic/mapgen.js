@@ -51,6 +51,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   mapgenClearRound: [() => mapgenClearRound, v => (mapgenClearRound = v)],
   // @ts-expect-error -- replaced on purpose
+  mapgenCopyable: [() => mapgenCopyable, v => (mapgenCopyable = v)],
+  // @ts-expect-error -- replaced on purpose
   mapgenCornerHeight: [() => mapgenCornerHeight, v => (mapgenCornerHeight = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenDecodeBase64: [() => mapgenDecodeBase64, v => (mapgenDecodeBase64 = v)],
@@ -137,6 +139,8 @@ expose({
   mapgenSmooth: [() => mapgenSmooth],
   // @ts-expect-error -- replaced on purpose
   mapgenSpur: [() => mapgenSpur, v => (mapgenSpur = v)],
+  // @ts-expect-error -- replaced on purpose
+  mapgenStageEdgeGround: [() => mapgenStageEdgeGround, v => (mapgenStageEdgeGround = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenStageExits: [() => mapgenStageExits, v => (mapgenStageExits = v)],
   // @ts-expect-error -- replaced on purpose
@@ -1399,6 +1403,46 @@ export function mapgenBridgesOverWater(G) {
   }
 }
 
+/* ---------- MG-2: the neighbour's ground runs on across a joined edge ---------- */
+/** ground a joined edge takes from its neighbour: natural ground, as the composer mingles it across a seam
+ * (seamless-world.js: walkable, not paved, not water), less the road surfaces, boards and tall grass, whose places
+ * are the scene's own */
+export function mapgenCopyable(G, ch) {
+  const T = G.terr[ch];
+  return (
+    !!T &&
+    !T.paved &&
+    T.walk !== false &&
+    !MAPGEN_WET.includes(ch) &&
+    !Object.values(MAPGEN_SURFACES).includes(ch) &&
+    ch !== 'b' &&
+    ch !== 't'
+  );
+}
+/** after the feature: along each joined strip, the neighbour's natural ground is laid on the cells next to the
+ * edge to a ragged depth of 1-4 m, on free cells only (no road, verge, water, bridge, tall grass, bank or jetty), and
+ * the neighbour's things near the edge take their room, so nothing of this scene stands against them */
+export function mapgenStageEdgeGround(G) {
+  const sl = G.salt('ground', 'edge');
+  for (const s of G.joined) {
+    for (const [k, x, z, sz] of s.props || []) mapgenOccAdd(G, x, z, mapgenRadius(G.cat[k], sz || 1));
+    for (let n = 0; n < s.ground.length; n++) {
+      const ch = s.ground[n],
+        c = s.c0 + n;
+      if (!mapgenCopyable(G, ch)) continue;
+      const deep = 1 + 3 * mapgenNoise(c / 3.1, s.side.charCodeAt(0), sl);
+      for (let d = 0; d < deep; d++) {
+        const i = s.side === 'W' ? d : s.side === 'E' ? G.w - 1 - d : c,
+          j = s.side === 'S' ? d : s.side === 'N' ? G.h - 1 - d : c;
+        if (i < 0 || j < 0 || i >= G.w || j >= G.h) continue;
+        const q = j * G.w + i;
+        if (G.F[q] & (1 | 2 | 4 | 8 | 32 | 64 | 128) || !mapgenCopyable(G, G.T[q])) continue;
+        G.T[q] = ch;
+      }
+    }
+  }
+}
+
 /* ---------- 6. plants: groves and an edge belt of trees, shrubs, rocks, tall grass, then the wild growth ---------- */
 export function mapgenStagePlants(G) {
   const { P, B, w, h } = G,
@@ -1765,6 +1809,7 @@ export function mapgenScene(params, ctx) {
   mapgenStageExits(G);
   mapgenStageLand(G);
   mapgenStageFeature(G);
+  mapgenStageEdgeGround(G);
   mapgenStagePlants(G);
   mapgenStageProps(G);
   mapgenPinEdges(G, 6);
