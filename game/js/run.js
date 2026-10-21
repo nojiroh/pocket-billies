@@ -41,10 +41,20 @@ expose({
   runSeedRoll: [() => runSeedRoll, v => (runSeedRoll = v)],
   runStartSheet: [() => runStartSheet, v => ((runStartSheet = v), provide({ runStartSheet }))],
   runStartable: [() => runStartable, v => ((runStartable = v), provide({ runStartable }))],
-  runTakeOff: [() => runTakeOff, v => (runTakeOff = v)],
+  runTakeOff: [() => runTakeOff, v => ((runTakeOff = v), provide({ runTakeOff }))],
 });
 /* eslint-enable no-func-assign */
-provide({ runBattleStart, runGiveUp, runHint, runJump, runOver, runReleaseSheet, runStartSheet, runStartable });
+provide({
+  runBattleStart,
+  runGiveUp,
+  runHint,
+  runJump,
+  runOver,
+  runReleaseSheet,
+  runStartSheet,
+  runStartable,
+  runTakeOff,
+});
 /* to-module: end */
 /** a Billie caught on a run while the party was full, waiting for the release sheet (page state only) */
 const runCatch = { m: /** @type {any} */ (null) };
