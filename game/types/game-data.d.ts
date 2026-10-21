@@ -48,6 +48,8 @@ export interface GameData {
   worldmap?: WorldMapLook;
   /** map generator MG-1: the generator's recipe per biome (game/data/biomes.json) */
   biomes?: Record<DataId, Biome>;
+  /** UI track UI-1: the UI's look: palette, glass, cuts, fonts (game/data/uiTheme.json; logic/ui-theme.js) */
+  uiTheme?: UiTheme;
   lines: Line[];
   /** the world map's places, in node order */
   locations: LocationData[];
@@ -1261,4 +1263,32 @@ export interface Biome {
   look?: Record<string, unknown>;
   life?: { k: string; n: number }[];
   from?: string;
+}
+
+/** uiTheme.json: the UI's look (UI track UI-1; the Studio's UI section edits it from UI-3) */
+export type UiRole =
+  | 'ground'
+  | 'surface'
+  | 'text'
+  | 'text2'
+  | 'line'
+  | 'primary'
+  | 'goldA'
+  | 'goldB'
+  | 'danger'
+  | 'hpOk'
+  | 'hpMid'
+  | 'hpLow';
+export interface UiLook {
+  color?: { light?: Partial<Record<UiRole, string>>; dark?: Partial<Record<UiRole, string>> };
+  surface?: { glass?: number; blur?: number; saturate?: number; highlight?: number; shadowTint?: string };
+  shape?: { cutSm?: number; cutMd?: number; cutLg?: number; slant?: number };
+  type?: { voice?: 'Jersey 15' | 'Pixelify Sans'; prose?: 'Oxanium' | 'Chakra Petch'; voiceScale?: number };
+}
+export interface UiTheme {
+  version: 1;
+  defaults: UiLook;
+  presets?: Record<string, UiLook>;
+  /** per screen: colour and shape only */
+  overrides?: Record<string, Pick<UiLook, 'color' | 'shape'>>;
 }
