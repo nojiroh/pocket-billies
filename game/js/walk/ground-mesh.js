@@ -5,6 +5,7 @@
 import { expose } from '../test-globals.js';
 import { freeNearRing, groundOcclusionTexture, provide } from '../hooks.js';
 import { clamp } from '../util.js';
+import { stepGridCorners } from '../logic/step-grid.js';
 import {
   GROUND_BORDER_M,
   artImage,
@@ -15,7 +16,6 @@ import {
   stepCellAt,
   stepEdgeShape,
   stepGrid,
-  stepGridCorners,
   valueNoise2d,
   walkData,
   walkView,
