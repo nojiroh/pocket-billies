@@ -2,6 +2,25 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Roguelite track RL-8 - Run loop and payout - 2026-10-21 (entry written in UI-5)
+(Put together by the UI-5 session from RL-8's 26 commits; that session left no entry. Merged as PR #103, ca9aa54.
+The owner has played it on the phone, which unblocks RL-9+ and UI-5.)
+- Changed: the run loop's numbers (rules.json `run.start`, `run.healCost`, `run.shop`) and rules (logic/run-loop.js:
+  runGive, runHealCost, runFoes); a battle's rewards, its weather and who comes out in what weather moved into logic
+  (battle-rewards.js, weather.js); a run starts at Copperleaf's mast (run.js runStartable, the run sheet) and ends
+  (runOver -> the payout screen, game/js/run-payout.js, built from UI-4's pb-payout, pb-pick-card, pb-coin); a run's
+  landing has the mast, its towns a clinic (paid healing, ui.js clinicHeal) and a shop; mini-bosses and the boss as
+  leaders' copies; arrivals and battles are checkpoints (saveNow; a reload restarts the same battle from its seed);
+  a run's ids come from its own counter; storage, challenges and the friends' Map button stay in the hub; first-run
+  hints; New game plays the fall alone (the city and Blake's battle left the opening, kept in the data); Hazel's
+  three lines send you to the mast; the debug menu's "Runs" section; the debug log's run and meta lines (numbers
+  only); tools/test/sim/run-sim.mjs plays a whole run in Node; the fast check's run-end page; smoke taps the mast.
+- Verified (from the commits): the fast tier at each commit; smoke 15 of 15 on the last commit; the fast check's run
+  pages. The full quick check and `--selftest` are not mentioned in the commits.
+- Not in it: the bottom bar's hub/run sets (UI-4's `pb-nav-bar`): UI-5 swaps it. The mast and run sheets are plain
+  `modal()` sheets, not kit parts.
+- Next: the owner pushes `rl-8-done`; RL-9 (Ranch A) and UI-5.
+
 ### Roguelite track RL-7 - Run world - 2026-10-21
 Branch `ccr-b5ce394e-4jhzbp`, from main dfc9d68 (RL-6 merged). Plan approved at the start ("Start rl7", then the plan
 in Plan Mode); its decisions A-J were taken at my recommendations (none answered otherwise). Done in one session,
