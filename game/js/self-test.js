@@ -77,11 +77,11 @@ import { SOLID_PROP_SHADERS, solidPropState } from './solid-props.js';
 import { propModelShaders, propModelState } from './prop-models.js';
 import { buddyTap, companionSpecies, worldBillies } from './world-billies.js';
 import { seamlessRoomMap, seamlessWorld } from './seamless-world.js';
-import { endBattle, pickMove, pickTarget, stopTimers, tapMessage } from './battle.js';
+import { pickMove, pickTarget, stopTimers, tapMessage } from './battle.js';
 import { WORLD_BOWL_SHADERS, worldBowl, worldMap, worldMapReset } from './world-bowl.js';
 import { talkBox, talkHide } from './talk.js';
 import { cutscene, cutsceneTeardown } from './cutscene/director.js';
-import { battleTipHide, fallOverWorldMap, fallWorldMapCanvas } from './opening-fall.js';
+import { fallOverWorldMap, fallWorldMapCanvas } from './opening-fall.js';
 import { runWorld, runWorldData, runWorldSync } from './run-world.js';
 import {
   closeModal,
@@ -1212,91 +1212,8 @@ async function runFullTest(mode) {
         6,
         40
       );
-    /* v47: Blake's first battle: Hazel's first tip shows, a turn plays, and after it Blake and Hazel talk and your team is healed */
-    if (TRAINERS.blake0 && !selfTest.stop)
-      await phase(
-        'Opening: Blake’s first battle',
-        'scene',
-        async () => {
-          uiState.bench = null;
-          uiState.inside = null;
-          uiState.tab = 'walk';
-          saveData.trip.node = back.node;
-          render();
-          await selfTestSleep(1200);
-          let od = null;
-          try {
-            od = localStorage.getItem('nw-opening-done');
-          } catch (e) {}
-          const story0 = JSON.stringify(saveData.story || {});
-          saveData.team.forEach(m => {
-            m.hp = maxHp(m);
-            m.status = null;
-          });
-          startTrainer('blake0', { talked: true });
-          const g0 = selfTest.gen || 0,
-            want = async (ph, ms) => {
-              const end = performance.now() + ms * (selfTest.slow || 1);
-              while (performance.now() < end) {
-                if (!activeBattle || (selfTest.gen || 0) !== g0) return false;
-                if (ph.includes(activeBattle.phase)) return true;
-                if (activeBattle.phase === 'playing') tapMessage();
-                await selfTestSleep(150);
-              }
-              return false;
-            };
-          try {
-            if (!(await want(['choose'], 45000)))
-              throw new Error(`never got to the menu (${activeBattle ? activeBattle.phase : 'no battle'})`);
-            const tip = !!document.querySelector('#btip.on'),
-              foe = fighter(1),
-              fm = foe ? foe.moves.join(',') : '';
-            pickMove(fighter(0).moves[0]);
-            if (!(await want(['choose', 'end', 'switch'], 60000)))
-              throw new Error(`the turn never finished (${activeBattle ? activeBattle.phase : 'no battle'})`);
-            const tip2 = (document.querySelector('#btip') || {}).textContent || '';
-            stopTimers();
-            activeBattle.over = 'win';
-            endBattle();
-            let said = 0;
-            for (let i = 0; i < 120 && !(said && !talkBox.on); i++) {
-              if (talkBox.cur) {
-                said++;
-                talkBox.cur.tap();
-              }
-              await selfTestSleep(200);
-            }
-            const st = (saveData.story || {}).rival0,
-              healed = saveData.team.every(m => m.hp === maxHp(m));
-            if (!tip) throw new Error('Hazel’s first tip didn’t show');
-            if (!said) throw new Error('nobody spoke after the battle');
-            if (st !== 'win') throw new Error('the story didn’t carry on (rival0 ' + st + ')');
-            if (!healed) throw new Error('the team wasn’t healed');
-            return `tip shown; Blake’s Billie knows ${fm}; after a turn: ${tip2 ? '“' + tip2.replace(/^Professor Hazel/, '').slice(0, 60) + '…”' : 'no new tip'}; ${said} lines after; healed`;
-          } finally {
-            if (activeBattle) {
-              stopTimers();
-              setActiveBattle(null);
-              battleStageStop();
-            }
-            talkHide();
-            if (typeof battleTipHide === 'function') battleTipHide();
-            saveData.story = JSON.parse(story0);
-            uiState.welcome = null;
-            uiState.modal = null;
-            uiState.mq = [];
-            renderOverlay();
-            try {
-              if (od == null) localStorage.removeItem('nw-opening-done');
-              else localStorage.setItem('nw-opening-done', od);
-            } catch (e) {}
-            render();
-            await selfTestSleep(500);
-          }
-        },
-        10,
-        150
-      );
+    /* RL-8: the phase 'Opening: Blake’s first battle' went with Blake's battle, which left the opening (the owner's
+       "fall only") */
     /* v33: the billionaires out in the world: the wild ones move about in the grass, your buddy keeps up, trainers' companions stand by */
     if (typeof worldBillies !== 'undefined')
       await phase(
