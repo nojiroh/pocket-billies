@@ -166,6 +166,9 @@ def bowl_map(pg, base):
     Bowl map test checks the rest (frame rate, every place)"""
     # from the walk scene by its tab button: the walk camera rises, the bowl pulls back from right above you
     if not until(pg, "!!document.querySelector('[data-a=tab][data-t=map]')&&typeof walkRenderer!=='undefined'&&walkRenderer.on", 90): raise Exception('the walk scene never got ready')
+    # RL-5: and the loading screen gone (it takes a few seconds to fade; the route and cave checks that ran before this
+    # one on this page went with their places)
+    if not until(pg, "!document.getElementById('loader')", 30): raise Exception('the loading screen never went')
     z0 = pg.evaluate("typeof walkRenderer!=='undefined'?walkRenderer.zoomT:null")
     pg.evaluate("uiState.mapSel=null;document.querySelector('[data-a=tab][data-t=map]').click();0")
     if not until(pg, "typeof worldBowl!=='undefined'&&worldBowl.on&&worldBowl.frames>=3", 30):
