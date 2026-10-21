@@ -103,16 +103,52 @@ export function studioTestFindings(r) {
       );
     if (s.longTasks) add(s.id, s.longTasks.ms, L.longMs, `${s.longTasks.n} long tasks, ${ms(s.longTasks.ms)} in all`);
     add(s.id, s.conn, L.connMs, `The Connections drawer takes ${ms(s.conn)} to work out`);
-    if (s.edit) {
-      const e = s.edit;
-      add(s.id, e.ms, L.editMs, `One edit takes ${ms(e.ms)} (the undo copy ${ms(e.snapMs || 0)})`);
-      add(s.id, Math.max(e.undoMs || 0, e.redoMs || 0), L.undoMs, `Undo takes ${ms(e.undoMs)}, redo ${ms(e.redoMs)}`);
-    }
+    if (s.changesData)
+      out.push({
+        lvl: 'mid',
+        area: s.id,
+        text: 'Opening it changes the data with no undo step of its own (the next undo takes that back too)',
+        over: 1.5,
+      });
   }
-  /* the costs every edit pays, wherever it is made: reported once, from the slowest edit */
-  const edits = (r.sections || []).map((/** @type {any} */ s) => s.edit).filter(Boolean);
+  /* the costs every edit pays, wherever it is made: one row from the middle edit, and a row for a section only when
+     its edit or undo costs at least twice the middle one */
+  const withEdit = (r.sections || []).filter((/** @type {any} */ s) => s.edit);
+  const edits = withEdit.map((/** @type {any} */ s) => s.edit);
   const worst = (/** @type {string} */ k) => Math.max(0, ...edits.map((/** @type {any} */ e) => e[k] || 0));
+  const undoOf = (/** @type {any} */ e) => Math.max(e.undoMs || 0, e.redoMs || 0);
   if (edits.length) {
+    const mid = studioTestStats(edits.map((/** @type {any} */ e) => e.ms)).p50,
+      midUndo = studioTestStats(edits.map(undoOf)).p50;
+    add(
+      'every edit',
+      mid,
+      L.editMs,
+      `An edit takes ${ms(mid)} in the middle section (${edits.length} sections, up to ${ms(worst('ms'))})`
+    );
+    add(
+      'every edit',
+      midUndo,
+      L.undoMs,
+      `Undo or redo takes ${ms(midUndo)} in the middle section (up to ${ms(Math.max(...edits.map(undoOf)))})`
+    );
+    for (const s of withEdit) {
+      if (s.edit.ms >= 2 * mid)
+        add(s.id, s.edit.ms, L.editMs, `An edit takes ${ms(s.edit.ms)}, twice the middle one or more`);
+      if (undoOf(s.edit) >= 2 * midUndo)
+        add(
+          s.id,
+          undoOf(s.edit),
+          L.undoMs,
+          `Undo takes ${ms(s.edit.undoMs)}, redo ${ms(s.edit.redoMs)}, twice the middle one or more`
+        );
+    }
+    add(
+      'every edit',
+      worst('topbarMs'),
+      L.snapMs,
+      `While the undo is empty, the top bar copies all the game data to see whether there is anything to undo: ${Math.max(...edits.map((/** @type {any} */ e) => e.topbars || 0))} times per edit, up to ${ms(worst('topbarMs'))}`
+    );
     add(
       'every edit',
       worst('snapMs'),

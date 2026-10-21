@@ -49,7 +49,7 @@ export async function runStudioTest(G, opts = {}) {
       stopped: false,
       passed: false,
       restored: false,
-      device: deviceInfo(G),
+      device: null,
       load: loadInfo(),
       sections: [],
       undo: null,
@@ -162,6 +162,12 @@ export async function runStudioTest(G, opts = {}) {
           shown: r1(now() - a),
         };
         row.nodes = nodeCount();
+        /* drawing a section should leave the data alone: a change here has no undo step of its own, so the next
+           undo takes it back along with the person's edit. Kept as an undo step, so the edit below starts clean */
+        if (G.snapshot() !== S.last) {
+          row.changesData = true;
+          G.commit(true);
+        }
         await wait(big ? SETTLE_3D_MS : SETTLE_MS);
         const calls0 = calls.n;
         const f = await measure(G, watch, big ? MEASURE_3D_MS : MEASURE_MS);
@@ -282,6 +288,7 @@ export async function runStudioTest(G, opts = {}) {
     ui.close();
   }
   report.seconds = r1((now() - t0) / 1000);
+  report.device = deviceInfo(G); /* at the end: the graphics context exists once a 3D view has opened */
   report.passed =
     !errors.length && report.restored && !stop && report.sections.every(s => !s.edit || s.edit.back !== false);
   report.findings = studioTestFindings(report);
@@ -315,6 +322,7 @@ async function editOnce(G, k, probeSince) {
       e => !e.disabled && e.offsetParent && !e.classList.contains('hex')
     );
   if (!el) return null;
+  G.commit(true);
   const before = G.snapshot(),
     path = el.dataset.p;
   if (el.type === 'number') {
@@ -327,7 +335,8 @@ async function editOnce(G, k, probeSince) {
   el.dispatchEvent(new Event('input', { bubbles: true }));
   el.dispatchEvent(new Event('change', { bubbles: true }));
   const ms = now() - a;
-  const com = probeSince('commit', a).pop();
+  const com = probeSince('commit', a).pop(),
+    bar = probeSince('topbar', a).filter(p => p.t <= a + ms + 1);
   await wait(AFTER_EDIT_MS);
   const chk = probeSince('check', a).pop(),
     send = probeSince('send', a).pop();
@@ -343,6 +352,8 @@ async function editOnce(G, k, probeSince) {
     ms: r1(ms),
     snapMs: com ? r1(com.snapMs) : null,
     snapMB: com ? r1(com.chars / 1e6) : null,
+    topbarMs: r1(bar.reduce((n, p) => n + p.ms, 0)),
+    topbars: bar.length,
     checkMs: chk ? r1(chk.ms) : null,
     sendMs: send ? r1(send.ms) : null,
     undoMs: r1(u1 - u0),
@@ -658,7 +669,7 @@ function loadInfo() {
   const groups = {};
   const rows = res.map(e => {
     const p = studioTestFilePath(e.name),
-      kb = (e.transferSize || e.encodedBodySize || 0) / 1024;
+      kb = (e.transferSize || e.encodedBodySize || 0) / 1024; /* 0 for another site's file that hides its size */
     const g = (groups[kind(p)] = groups[kind(p)] || { n: 0, kb: 0, ms: 0 });
     g.n++;
     g.kb += kb;
@@ -666,7 +677,7 @@ function loadInfo() {
     return { file: p, ms: r1(e.duration), kb: r1(kb) };
   });
   for (const g of Object.values(groups)) {
-    g.kb = Math.round(g.kb);
+    g.kb = g.kb ? Math.round(g.kb) : null;
     g.ms = Math.round(g.ms);
   }
   return {

@@ -77,7 +77,7 @@ test('the undo copy is reported once for every edit, from the slowest, and the f
     undo: { max: 80, snapMB: 6.5, fullMB: 520 },
   });
   const f = studioTestFindings(r);
-  const copy = f.filter(x => x.area === 'every edit');
+  const copy = f.filter(x => x.area === 'every edit' && /copies all the game data for the undo/.test(x.text));
   assert.equal(copy.length, 1);
   assert.match(copy[0].text, /6\.5 MB\) in up to 120 ms/);
   assert.equal(f[0].area, 'undo', 'the full undo (high) comes first');
@@ -195,4 +195,48 @@ test('a high finding comes before a mid one even when the mid one is further pas
     ]
   );
   assert.ok(f[1].over > f[0].over, 'the mid row is further past its first limit');
+});
+
+test('edits: one row from the middle edit, and a section only when it costs twice the middle one', () => {
+  const edit = (ms, undoMs = 30) => ({
+    ms,
+    snapMs: 10,
+    snapMB: 1,
+    checkMs: 5,
+    sendMs: 2,
+    undoMs,
+    redoMs: 20,
+    topbarMs: 0,
+    topbars: 1,
+    back: true,
+  });
+  const r = report({
+    sections: [
+      section('moves', { edit: edit(320) }),
+      section('types', { edit: edit(340, 900) }),
+      section('items', { edit: edit(350) }),
+      section('scenes', { edit: edit(700) }),
+    ],
+  });
+  const f = studioTestFindings(r).map(x => [x.area, x.text]);
+  assert.deepEqual(f, [
+    ['scenes', 'An edit takes 700 ms, twice the middle one or more'],
+    ['types', 'Undo takes 900 ms, redo 20 ms, twice the middle one or more'],
+    ['every edit', 'An edit takes 350 ms in the middle section (4 sections, up to 700 ms)'],
+  ]);
+});
+
+test('a section that changes the data when it opens is named', () => {
+  const f = studioTestFindings(report({ sections: [section('people', { changesData: true })] }));
+  assert.deepEqual(
+    f.map(x => [x.lvl, x.area]),
+    [['mid', 'people']]
+  );
+});
+
+test('the top bar copying the data on every edit is reported once, with how many copies', () => {
+  const edit = { ms: 50, snapMs: 10, snapMB: 8, undoMs: 30, redoMs: 30, topbarMs: 260, topbars: 2, back: true };
+  const f = studioTestFindings(report({ sections: [section('moves', { edit })] }));
+  assert.equal(f.length, 1);
+  assert.match(f[0].text, /2 times per edit, up to 260 ms$/);
 });
