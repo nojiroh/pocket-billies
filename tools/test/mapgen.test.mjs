@@ -110,7 +110,7 @@ test("the scene is in the game's format", () => {
       sc.props.some(p => p.w === 42),
       `${where}: wild plants marked as grow-wild marks them`
     );
-    assert.equal(sc.gen.v, 2);
+    assert.equal(sc.gen.v, 3);
     assert.equal(sc.gen.seed, c.seed);
     assert.equal(sc.exits.length, sc.edgeExits.length);
     const sides = {};

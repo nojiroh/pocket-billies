@@ -218,7 +218,7 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-export const MAPGEN_VERSION = 2; /* MG-2: terraces at ground level by exits */
+export const MAPGEN_VERSION = 3; /* MG-2: terraces at ground level by exits; TR-1: roads capped at 15%, banks, stairs */
 export const MAPGEN_STAGES = ['heights', 'ground', 'road', 'exits', 'lots', 'plants', 'feature', 'props'];
 export const MAPGEN_SHAPES = {
   straight: 'Straight',

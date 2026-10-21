@@ -39,8 +39,9 @@ test('rng: a generated scene hashes the same as before the move', () => {
   // a change to the scenery or biome data changes this too; then remake it on purpose, said in the commit.
   // MG-2: 301195872 until MAPGEN_VERSION became 2 (the scene is the same but for gen.v), then 2111299369 until the
   // props dials gained mast, clinic and shop (gen.params; the scene is the same), then 3312083804 until TR-1 laid the
-  // land under the roads from one capped grade (mapgenStageGrade: the scene's heights changed)
-  assert.equal(hashString(JSON.stringify(sc)), 2489231542);
+  // land under the roads from one capped grade (mapgenStageGrade: the scene's heights changed), then 2489231542 until
+  // MAPGEN_VERSION became 3 (the scene is the same but for gen.v)
+  assert.equal(hashString(JSON.stringify(sc)), 705965519);
 });
 
 test('rng: the helpers stay in their ranges', () => {
