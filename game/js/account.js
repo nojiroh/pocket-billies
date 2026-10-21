@@ -23,6 +23,7 @@ import {
   escapeHtml,
   save,
   saveData,
+  saveHeld,
   saveHold,
   setSaveData,
   setSaveHold,
@@ -321,7 +322,8 @@ function flushAccountSave(now) {
   if (saveHold) return true;
   clearTimeout(account.t);
   const go = () => {
-    if (!account.user || saveHold) return;
+    /* RL-8: not mid-way through a run's battle (game-state.js saveHeld): the account keeps its start */
+    if (!account.user || saveHold || saveHeld()) return;
     account.db
       .collection('saves')
       .doc(account.user.uid)

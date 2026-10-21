@@ -25,7 +25,7 @@ export const battleOutcome = (kind, over) => (over === 'draw' ? (kind === 'wild'
  * What a battle that has ended pays and costs. `roll` is the battle's chance (battleRoll), drawn only for a wild win's
  * egg, in the order endBattle drew it. `rules` and `eggs` default to the game's.
  * @param {{ kind: string, over: string | null, T?: any, tid?: string, foe: { lvl: number }[] }} b
- * @param {{ se: number, flags: Record<string, number>, seats: string[] }} s
+ * @param {{ se: number, flags: Record<string, number>, seats: string[], run?: any }} s
  * @param {() => number} roll
  * @param {{ battle: { loseFee: number }, eggs: { dropChance: number, dropTiers: Record<string, number> } }} [rules]
  * @param {Record<string, any>} [eggs] the egg tiers there are (EGGS) @param {number[]} [eggTiers] EGG_TIERS
@@ -35,11 +35,13 @@ export const battleOutcome = (kind, over) => (over === 'draw' ? (kind === 'wild'
 export function battleRewards(b, s, roll, rules = RULES, eggs = EGGS, eggTiers = EGG_TIERS) {
   const o = battleOutcome(b.kind, b.over),
     out = { o, fee: 0, prize: 0, egg: 0, reward: 0, first: false, seat: /** @type {any} */ (null) };
-  if (o === 'lose') out.fee = Math.floor(s.se * rules.battle.loseFee);
+  /* RL-8: on a run a loss ends the run (no fee), no egg drops (a run's eggs vanish when it ends) and no badge */
+  const run = !!s.run;
+  if (o === 'lose' && !run) out.fee = Math.floor(s.se * rules.battle.loseFee);
   if (b.kind === 'wild' && o === 'win') {
     out.prize = b.foe.reduce((a, m) => a + wildPrize(m.lvl), 0);
     const E = rules.eggs;
-    if (roll() < E.dropChance) {
+    if (!run && roll() < E.dropChance) {
       const tiers = Object.entries(E.dropTiers)
         .filter(([t]) => eggs[t])
         .map(([t, w]) => [+t, w]);
@@ -50,7 +52,8 @@ export function battleRewards(b, s, roll, rules = RULES, eggs = EGGS, eggTiers =
     out.reward = b.T.reward || 0;
     out.first = !s.flags[b.tid || ''];
     const st = b.T.seat;
-    if (st) out.seat = { id: st.id, nu: !s.seats.includes(st.id), coins: st.coins || {}, items: st.items || {} };
+    if (st && !run)
+      out.seat = { id: st.id, nu: !s.seats.includes(st.id), coins: st.coins || {}, items: st.items || {} };
   }
   return out;
 }

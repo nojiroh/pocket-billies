@@ -16,6 +16,7 @@ import {
   openBattle,
   playTurnEvents,
   provide,
+  runBattleStart,
   save,
   saveData,
   setActiveBattle,
@@ -929,7 +930,9 @@ export function hitPart(tk, dmg, M, aim) {
 }
 /* a battle against foe on the save's team, made the current one (makeBattle, battle-state.js); false when all have fainted */
 export function newBattle(kind, foe, extra) {
-  const b = makeBattle(kind, saveData.team, foe, extra);
+  /* RL-8: on a run the page gives the battle its seed and weather, and holds the save once it has begun (run.js) */
+  const R = typeof runBattleStart === 'function' ? runBattleStart(kind, foe, extra) : null,
+    b = makeBattle(kind, saveData.team, foe, R ? R.extra : extra);
   if (!b) {
     battleHost(extra || null).toast('Everyone on your team has fainted. Rest first, or use a Revive.');
     return false;
@@ -938,6 +941,7 @@ export function newBattle(kind, foe, extra) {
   foe.forEach(m => {
     if (!isRobot(m)) saveData.seen[m.sp] = 1;
   });
+  if (R) R.begun(b);
   return true;
 }
 export const joinNames = K => {

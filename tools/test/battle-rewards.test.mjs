@@ -73,3 +73,17 @@ test('battle rewards: a lose costs a tenth of the money, a wild win pays $20 a l
   const w = R({ kind: 'trainer', over: 'win', T: { reward: 9 }, tid: 'x', foe: [] }, { se: 0, flags: {}, seats: [] });
   assert.deepEqual([w.reward, w.first, w.seat], [9, true, null]);
 });
+
+test('battle rewards on a run (RL-8): no lose fee, no egg, no badge; the prize and the reward as in the hub', () => {
+  const T = { reward: 300, seat: { id: 'oil', coins: { silver: 3 }, items: {} } },
+    s = { se: 1000, flags: {}, seats: [], run: {} };
+  let rolls = 0;
+  const roll = () => (rolls++, 0);
+  const R = b => battleRewards(b, s, roll, RULES_HERE, EGGS_HERE, TIERS_HERE);
+  assert.equal(R({ kind: 'wild', over: 'lose', foe: [] }).fee, 0);
+  assert.equal(R({ kind: 'trainer', over: 'draw', T, tid: 't', foe: [] }).fee, 0);
+  const w = R({ kind: 'wild', over: 'win', foe: [{ lvl: 5 }] });
+  assert.deepEqual([w.prize, w.egg, rolls], [100, 0, 0]);
+  const t = R({ kind: 'trainer', over: 'win', T, tid: 't', foe: [] });
+  assert.deepEqual([t.reward, t.first, t.seat], [300, true, null]);
+});

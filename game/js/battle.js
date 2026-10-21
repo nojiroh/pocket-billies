@@ -17,6 +17,7 @@ import {
   provide,
   render,
   runCatch,
+  runOver,
   runReleaseSheet,
   showPendingWindows,
   statusBadgeHTML,
@@ -944,7 +945,10 @@ export function endBattle() {
       battleRoll
     ),
     o = pay.o,
-    lead = findBilly(activeBattle.lead);
+    lead = findBilly(activeBattle.lead),
+    /* RL-8: a run's battle (run.js): it has ended, so the save may be written again (game-state.js saveHeld) */
+    run = saveData.run && activeBattle.runK != null ? saveData.run : null;
+  if (run) run.at = { phase: 'walk', battle: -1 };
   if (o === 'win' && typeof jingle === 'function') jingle(JINGLES.victory);
   if (o === 'win') for (const m of saveData.team) if (m.hp > 0) m.wins = (m.wins || 0) + 1; /* v36: the Hype counter */
   if (typeof battleTipHide === 'function') battleTipHide();
@@ -973,7 +977,8 @@ export function endBattle() {
     return;
   }
   const after = [];
-  if (o === 'lose') {
+  /* RL-8: on a run, a loss ends the run (its payout, after the battle) */
+  if (o === 'lose' && !run) {
     const fee = pay.fee;
     saveData.se -= fee;
     healAll();
@@ -1028,15 +1033,21 @@ export function endBattle() {
         html: `<p>${escapeHtml(T.win || '')}</p><p>You earned $${formatNumber(T.reward || 0)}${extra}.</p>`,
         btns: [
           {
-            l: 'Keep walking',
             c: 'dark',
+            l: run && T.runFoe === 'boss' ? 'On to the payout' : 'Keep walking',
             f:
-              first && (T.clue || T.ending) && typeof storyAfterWin === 'function'
+              /* RL-8: the run's boss beaten: the run is won */
+              run && T.runFoe === 'boss'
                 ? () => {
-                    closeModal();
-                    storyAfterWin(T);
+                    uiState.modal = null;
+                    runOver(true);
                   }
-                : closeModal,
+                : first && (T.clue || T.ending) && typeof storyAfterWin === 'function'
+                  ? () => {
+                      closeModal();
+                      storyAfterWin(T);
+                    }
+                  : closeModal,
           },
         ],
       });
@@ -1052,7 +1063,9 @@ export function endBattle() {
     const rel = runReleaseSheet();
     if (rel) after.unshift(rel);
     after.forEach(m => modal(m));
-    if (!after.length) showPendingWindows();
+    /* RL-8: the run's party fainted: the run is over */
+    if (run && o === 'lose') runOver(false);
+    else if (!after.length) showPendingWindows();
   });
 }
 /* phase 04d: things-to-do.js adds the weather and its events around it */

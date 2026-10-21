@@ -8,12 +8,14 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { closeModal, mapIdAt, modal, provide, render, runPayoutOpen, toast } from './hooks.js';
-import { COINS, ITEMS, RULES, START_NODE } from './game-data.js';
+import { COINS, ITEMS, RULES, START_NODE, TRAINERS } from './game-data.js';
+import { battleWeatherOf } from './logic/weather.js';
 import { billyName, formatNumber, healAll, plural } from './logic/rules.js';
 import { runBegin, runEnd } from './logic/run-state.js';
-import { runArrive, runBack, runMapNode, runMapStart, runNext } from './logic/run-map.js';
+import { runArrive, runBack, runMapNode, runMapStart, runNext, runWeather } from './logic/run-map.js';
 import { MAPGEN_VERSION } from './logic/mapgen.js';
-import { runGive, runRelease, runReleasePays } from './logic/run-loop.js';
+import { runBattleSeed, runGive, runRelease, runReleasePays } from './logic/run-loop.js';
+import { BATTLE_RULES, battleHost, battleSay, joinNames, liveActors, newBattle } from './logic/battle-engine.js';
 import { isLiteMap, loadMapFile } from './map-files.js';
 import { activeBattle, escapeHtml, save, saveData, saveNow, uiState } from './game-state.js';
 import { rigCanvasHTML } from './skeleton-rig.js';
@@ -21,11 +23,15 @@ import { standByMast, startAirshipFlight } from './airship.js';
 import { runWorld, runWorldData, runWorldSync } from './run-world.js';
 /* eslint-disable no-func-assign */
 expose({
+  runBattleAgain: [() => runBattleAgain, v => (runBattleAgain = v)],
+  runBattleStart: [() => runBattleStart, v => ((runBattleStart = v), provide({ runBattleStart }))],
+  runBattleWeather: [() => runBattleWeather],
   runCatch: [() => runCatch],
   runEndHome: [() => runEndHome, v => (runEndHome = v)],
+  runFoeRef: [() => runFoeRef],
   runGiveUp: [() => runGiveUp, v => ((runGiveUp = v), provide({ runGiveUp }))],
   runJump: [() => runJump, v => ((runJump = v), provide({ runJump }))],
-  runOver: [() => runOver, v => (runOver = v)],
+  runOver: [() => runOver, v => ((runOver = v), provide({ runOver }))],
   runReleasePick: [() => runReleasePick, v => (runReleasePick = v)],
   runReleaseSheet: [() => runReleaseSheet, v => ((runReleaseSheet = v), provide({ runReleaseSheet }))],
   runResume: [() => runResume, v => (runResume = v)],
@@ -35,7 +41,7 @@ expose({
   runTakeOff: [() => runTakeOff, v => (runTakeOff = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ runGiveUp, runJump, runReleaseSheet, runStartSheet, runStartable });
+provide({ runBattleStart, runGiveUp, runJump, runOver, runReleaseSheet, runStartSheet, runStartable });
 /* to-module: end */
 /** a Billie caught on a run while the party was full, waiting for the release sheet (page state only) */
 const runCatch = { m: /** @type {any} */ (null) };
@@ -140,6 +146,8 @@ export function runResume() {
   const run = saveData.run;
   if (!run) return;
   if (run.at.phase === 'payout') runPayoutOpen();
+  /* killed mid-battle: the same battle again, from its seed (the owner's answer, roguelite-track.md 8.7) */
+  if (run.at.phase === 'battle') runBattleAgain();
   /* killed mid-flight: you are on the landing (runArrive ran before the flight) */
   if (run.at.phase === 'fly') {
     run.at.phase = 'walk';
@@ -243,4 +251,75 @@ function runJump(n) {
     saveData.visited[saveData.trip.node] = 1;
   }
   return true;
+}
+
+/* ---------- a run's battles ---------- */
+/** a run battle's weather: the place's forecast for today; clear is sunny (a run has no hour) */
+const runBattleWeather = (run, i) => {
+  const w = runWeather(run, i, run.clock) || 'clear';
+  return battleWeatherOf(w === 'clear' ? 'sunny' : w, RULES.env);
+};
+/** what a run battle needs to start again after a reload: its kind, format and foe as it began (copies), and what
+ * the page gave it (the encounter, the trainer, the stage, a fish) */
+const runFoeRef = (kind, foe, extra = {}) => ({
+  kind,
+  fmt: extra.fmt || 'single',
+  team: JSON.parse(JSON.stringify(foe)),
+  ...(extra.qid ? { qid: String(extra.qid) } : {}),
+  ...(extra.tid ? { tid: extra.tid } : {}),
+  ...(extra.area ? { area: extra.area } : {}),
+  ...(extra.fished ? { fished: 1 } : {}),
+});
+/* Every battle the page starts goes through newBattle: on a run (not a test's own fight, which brings its host) it
+   gets its seed (logic/run-loop.js runBattleSeed: its place and its number in the run) and the forecast's weather;
+   as it begins, the save holds it (run.at phase 'battle', its number and its foe) and goes to the account at once;
+   then the battle carries runK and nothing is written until it ends (game-state.js saveHeld). A battle started again
+   after a reload (phase 'battle' already) keeps its number, so it draws the same chances. The engine's newBattle
+   asks for it (runBattleStart, through hooks.js) */
+function runBattleStart(kind, foe, extra) {
+  const run = saveData.run,
+    i = run && run.map ? runMapNode(saveData.trip.node) : -1;
+  if (!run || !run.map || !run.map.nodes[i] || run.at.phase === 'payout' || (extra && extra.host)) return null;
+  const again = run.at.phase === 'battle',
+    k = again ? run.at.battle : run.battleN,
+    ref = again && run.at.foe ? run.at.foe : runFoeRef(kind, foe, extra);
+  return {
+    extra: { ...extra, seed: runBattleSeed(run, i, k), wx: runBattleWeather(run, i) },
+    begun: b => {
+      if (!again) run.battleN = k + 1;
+      run.at = { phase: 'battle', battle: k, foe: ref };
+      saveNow();
+      b.runK = k;
+      if (typeof debugLog !== 'undefined') debugLog.add('battle', `run battle ${k}${again ? ' started again' : ''}`);
+    },
+  };
+}
+/** a reload in the middle of a run's battle: the same battle again, from its start (its foe as it began, its seed) */
+function runBattleAgain() {
+  const run = saveData.run,
+    A = run && run.at.foe,
+    T = A && A.tid ? TRAINERS[A.tid] : null;
+  if (!run || !A || (A.tid && !T) || !saveData.team.some(m => m.hp > 0)) {
+    if (run && run.at.phase === 'battle') run.at = { phase: 'walk', battle: -1 };
+    save();
+    return;
+  }
+  if (
+    !newBattle(A.kind, JSON.parse(JSON.stringify(A.team)), {
+      fmt: A.fmt,
+      area: A.area,
+      ...(A.qid ? { qid: A.qid } : {}),
+      ...(T ? { tid: A.tid, foeName: T.name, T } : {}),
+      ...(A.fished ? { fished: 1 } : {}),
+    })
+  )
+    return;
+  if (T && T.market) activeBattle.market = { k: 'sand', n: T.market.n || BATTLE_RULES.shockTurns };
+  battleSay(
+    T ? `${T.name} is ready to battle again.` : 'The battle starts again.',
+    T ? { k: 'trainerIn', who: T.who } : { k: 'wild' }
+  );
+  const K = liveActors(0);
+  K.forEach((kk, n) => battleSay(n ? '' : `Go, ${joinNames(K)}!`, { k: 'enter', si: kk, quiet: n > 0 }));
+  battleHost().open();
 }

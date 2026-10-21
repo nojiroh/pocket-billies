@@ -75,12 +75,15 @@ test('run: starting one sets the hub aside and gives the run its own working fie
   assert.equal(run.start.flags.won_something, undefined);
 });
 
+/* RL-8: a run battle's foe as it began */
+const FOE = { kind: 'trainer', fmt: 'double', team: [{ sp: 'sparky0', lvl: 9 }], tid: 'run_3_foe', area: 'grass' };
 test('run: the load check refuses broken or tampered runs', () => {
   const s = hubSave();
   const ok = copy({ ...runBegin(s, GIVE), map: MAP, path: [0, 1], forecast: [['sun'], ['rain', 'sun']] });
   assert.equal(validRun(ok), true);
   assert.equal(validRun({ ...ok, map: { nodes: MAP.nodes.map(n => ({ ...n, seen: 2, biome: 'meadow' })) } }), true);
   assert.equal(validRun({ ...ok, at: { phase: 'payout', battle: -1, won: 1 } }), true);
+  assert.equal(validRun({ ...ok, at: { phase: 'battle', battle: 3, foe: FOE } }), true);
   const bad = [
     null,
     [],
@@ -98,6 +101,11 @@ test('run: the load check refuses broken or tampered runs', () => {
     { ...ok, at: { phase: 'walk', battle: -2 } },
     { ...ok, at: { phase: 'payout', battle: -1, won: 2 } }, // RL-8: won is 0 or 1
     { ...ok, at: { phase: 'walk', battle: -1, extra: 1 } }, // RL-8: nothing else in at
+    { ...ok, at: { phase: 'battle', battle: 0, foe: { ...FOE, kind: 'boss' } } },
+    { ...ok, at: { phase: 'battle', battle: 0, foe: { ...FOE, team: [] } } },
+    { ...ok, at: { phase: 'battle', battle: 0, foe: { ...FOE, team: [{ sp: 'sparky0', lvl: 0 }] } } },
+    { ...ok, at: { phase: 'battle', battle: 0, foe: { ...FOE, tid: 'Not An Id' } } },
+    { ...ok, at: { phase: 'battle', battle: 0, foe: { ...FOE, hp: 9 } } },
     { ...ok, clock: 0 },
     { ...ok, forecast: [['sun'], 'rain'] },
     { ...ok, forecast: Array(7).fill([]) }, // more nodes than the map has
