@@ -53,7 +53,7 @@ Two rules hold everywhere:
   `random` is `Math.random` as it is when util.js loads. On the page that is the browser's, so nothing in a real game
   is seedable; in Node, `load-logic.mjs` puts a Park-Miller stand-in on `Math.random` first, so the logic (the battle
   engine's ~16 rolls, `pickWeighted`) follows `reseed()` and two battles from one seed play out the same. Outside
-  util.js: `logic/mapgen.js` has its own seeded sfc32 (`mapgenRandom(seed, salt)`); 172 direct `Math.random` (counted at RL-1)
+  util.js: `logic/mapgen.js` has its own seeded sfc32 (`rngFrom(seed, salt)`); 172 direct `Math.random` (counted at RL-1)
   calls in game/ and studio/ are mostly drawing, sound and ambient life, but `battle.js` (bribes, egg drops) and
   `things-to-do.js` (rewards) decide outcomes with them; `newUid` and `met` read `Date.now()`, battle weather the
   real clock.

@@ -5,7 +5,7 @@
    edgeExits with path and len, streams, bridges, waters, the look keys), so a generated place is drawn and walked
    like a hand-built one. Logic only: no DOM, no Math.random, runs in Node (tools/test/mapgen.test.mjs). The Studio's
    Generate card (studio/js/map-generate.js) shows it as a draft.
-   - The same params and seed give the same scene. Each stage draws from its own random stream (mapgenRandom(seed,
+   - The same params and seed give the same scene. Each stage draws from its own random stream (rngFrom(seed,
      stage)), so a stage can be rerolled alone (params.seeds[stage]).
    - What it makes is marked: every prop carries g: 1 (its wild plants also w: 42, as tools/grow-wild.py marks them),
      the scene carries gen: {v, params, seed}.
@@ -16,7 +16,7 @@
 /** @import { Biome } from '../../types/game-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { hashString, mapgenRandom } from './rng.js';
+import { hashString, rngFrom } from './rng.js';
 /* eslint-disable no-func-assign */
 expose({
   MAPGEN_BASE64: [() => MAPGEN_BASE64],
@@ -310,7 +310,7 @@ export function mapgenNewWork(P, ctx) {
     cat: (ctx.scenery && ctx.scenery.props) || {},
     terr: (ctx.scenery && ctx.scenery.terrains) || {},
     /* a stage's random stream and noise salt; sub separates the parts of a stage (they all follow its seed) */
-    rng: (st, sub = '') => mapgenRandom(seedOf(st), st + sub),
+    rng: (st, sub = '') => rngFrom(seedOf(st), st + sub),
     salt: (st, sub = '') => hashString(`${seedOf(st)}|${st}${sub}|noise`) % 100000,
     /* ground per cell, near row first */
     T: new Array(w * h).fill(B.ground.base),

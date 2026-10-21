@@ -12,7 +12,7 @@ expose({
   // @ts-expect-error -- replaced on purpose
   hashString: [() => hashString, v => (hashString = v)],
   // @ts-expect-error -- replaced on purpose
-  mapgenRandom: [() => mapgenRandom, v => (mapgenRandom = v)],
+  rngFrom: [() => rngFrom, v => (rngFrom = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -23,7 +23,7 @@ export function hashString(s) {
   return h;
 }
 /** a random stream for a seed and a salt: next() in [0,1), range, int, chance, pick (by weight), gauss */
-export function mapgenRandom(seed, salt = '') {
+export function rngFrom(seed, salt = '') {
   let a = hashString(`${seed}|${salt}|a`),
     b = hashString(`${seed}|${salt}|b`),
     c = hashString(`${seed}|${salt}|c`),
