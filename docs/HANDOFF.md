@@ -2,6 +2,35 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### UI track UI-4 - Run parts - 2026-10-21
+Branch `claude/ui-4-run-parts`, from main 167cc96, beside UI-3b (owner's choice). Before it, by the owner's ask, the
+three open PRs were brought up to main and merged: #92 (the dialogue bubble: rewritten as a shape family in UI-3a's
+format), #90 (flat plant variants: MAPGEN_VERSION 3, as MG-2 had also taken 2; the frozen scene hash and MG-2's
+golden scenes remade, only props differ) and #80 (turned props: merged with one smoke run red, see Risky). Plan
+approved by "start with ui4"; its three questions were taken at my recommendations (a canvas painter for the bowl,
+the shapes below, the placeholder currency names as attributes).
+- Changed (one cause per commit): logic/run-marks.js (an outline per node type: diamond boss, notched diamond
+  mini-boss, hexagon town, chevron route, slanted event and shop, cut square landing, small diamond "?"; tone and
+  state; SVG points, clip-path; `runMarkDraw` for the bowl's canvas, not called yet) with run-marks.test.mjs; six
+  icons (capital, scrap, seal, clock, relic, check); motion.css `m-slam` and `m-flip`; game/js/ui-run-kit.js
+  (`pb-day-chip`, `pb-forecast`, `pb-node`, `pb-coin`, `pb-pick-card`, `pb-payout`, `pb-nav-bar`, with
+  `RUN_NAV_SETS`, `RUN_CURRENCY_ICONS`, `RUN_WEATHER_ICONS`), loaded after ui-kit.js; the gallery's run-hud,
+  run-nodes, picks and payout sections; the picture baseline (89). Docs: ui-track.md ("UI-4 found"), ROADMAP,
+  TESTING, CHANGELOG.
+- Where the plan was wrong: see ui-track.md "UI-4 found" (the bowl's pins are canvas; no data to read yet).
+- Verified: lint, typecheck, check:modules, format:check, check:data, unit tests (409) green; run-marks.test seen to
+  fail with the boss drawn anticlockwise; picture tests 89 pass, and fail with the boss's top point moved; in the
+  gallery, with motion on, the payout's rows come in one at a time and the total counts to 1,180, a currency chip
+  counts, the face-down card flips, the bar sends pb-change; with reduced motion everything is at its end at once; no
+  page errors. Not run (owner: skip checks): smoke on this branch, the full quick check, a phone look.
+- Risky: nothing in the game uses the parts yet, so the page cost is one more module. The four remade light pictures
+  (panels, cards) moved because the page grew, proven by taking the sections out. #80's smoke step "the world map
+  opens as the bowl" failed in 2 of 5 CI runs on the same commits (a page element over the map at the tap points),
+  passed in the others and here; main never showed it. Not root-caused: watch for it on main.
+- Phone check wanted (the plan's "done when" is the gallery): the gallery's four new sections, light and dark, 320.
+- Next: the owner merges and pushes `ui-4-done`; RL-7 draws the bowl's pins with `runMarkDraw` and the day chip and
+  forecast on the Map tab; RL-8 builds the payout, pick and keep-one screens and the bottom bar's sets from these.
+
 ### Phase 09 batch 9, part 1 - turned props - 2026-10-21
 Plan approved by the owner (free angles, Studio steps of 15°; rotation as its own PR before the 20 new props).
 - Changed: a placement's `rot` (degrees, about its base point, the middle of its front) existed since alpha 0.4 for

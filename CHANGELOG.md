@@ -9,6 +9,13 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- The run parts (UI track UI-4), not in the game yet: the parts the run's screens will use, in the UI gallery. A
+  day and deadline chip (gold on the last day, red past it), the forecast as a row of weather icons by day, map
+  markers by node type (a diamond for the boss, a hexagon for a town, a chevron for a route, a slanted card for an
+  event; seen, here, visited, locked or not yet seen), chips for the four currencies that count to a new value, the
+  card for relic picks and the keep-one picker (face down it flips over), the payout (rows slam in one by one, Capital
+  counts up; a tap skips), and the bottom bar with the run's tabs (Map, Team, Bag, Relics) or the hub's (Map, Team,
+  Bag, Lab). Six new icons. With reduced motion the numbers jump and the motions fade.
 - Turned props (phase 09 batch 9): any prop on a map can face any way (a placement's `rot`, degrees, which only
   buildings had, for a few degrees along a street). The model, its decals and leaves, its shadow, its reflection,
   its footprint (where you can't walk), the ground levelled and shaded under it, its door, lamps, windows and smoke

@@ -70,6 +70,17 @@ with the variables the sheets derive at `:root` declared again (`UI_DERIVED`); t
 (logic/ui-dials.js); the contrast check shared by check-data and the Studio (danger and primary at 3:1 besides text at
 4.5:1; not on presets, as alpha05's green reads 2.5:1).
 
+UI-4 found (read at 167cc96): the bowl draws its pins on a 2D canvas (world-bowl.js `worldBowlPin`), so a kit
+component can't be a map pin: the node shapes are data (logic/run-marks.js) with a canvas painter (`runMarkDraw`)
+for RL-7, and `<pb-node>` draws the same outlines as SVG. No node type, currency or weather data exists yet
+(nodeTypes.json is RL-6, currencies.json RL-11), so every run part takes its values as attributes and reads no game
+data; the currency names are the plan's placeholders. The page's modules share one namespace: the run parts live in
+their own module (game/js/ui-run-kit.js) and take Lit and `reduced` from ui-kit.js. The shapes the plan didn't give
+were chosen: a notched diamond for a mini-boss, a cut square for the landing, the shop slanted the other way from an
+event, a small diamond for "?"; the event's slant is about 11°, as the plan's 10° reads too faint at pin size. The
+gallery's pictures have the gallery's sticky bar over the top of tall sections (73 older pictures too); and a longer
+gallery moves what the light glass blurs, so panels and cards in light were remade with the new sections.
+
 No rule yet but needed: a layer scale (24 distinct z-index values, -1 to 2147483000) and cut-corner tokens. The Studio
 is outside the 06 rules (studio.css: 108 raw radii, 372 raw spacing values, its own teal palette). The bottom bar's
 tabs (walk, map, team, ledger, bag) and `--t-*` colours are the pre-roguelite game's.
@@ -144,7 +155,7 @@ Works like the Engine section (dials in groups, ↺ per dial, presets, Hold to c
 | UI-2 (done 2026-10-21) | Kit v2: angular shapes | cut panel, card, button, tab, bar, selection with the edge line; `pb-card`, `pb-tabs`, `pb-stat-bar`, `pb-field`; the shared bot plate (limb pips); the 45° icon set; type glyphs; portraits breaking the frame; diagonal wipes in motion.css; battle floating cards and move tiles; gallery picture tests per component state | screens already on the kit | gallery picture tests and smoke pass; phone check of three screens |
 | UI-3a (done 2026-10-21) | Studio UI section, core | uiTheme.json version 2; overrides read; the section with every dial group, the whole game or a screen, presets as data (+ Save as preset), Hold to compare, the UI gallery as live preview, Find, the contrast check in the Studio's Check; a Studio check step (a dial changed, previewed, undone, saved as a PR) | Studio only | the Studio check step passes |
 | UI-3b | Studio UI section, tools | real screens from fixtures beside the gallery (Team, Bag, a battle, the dialogue box; payout and run chip once they exist); inspect (tap a part: its component and tokens) and Ctrl+L the reverse; overlays (tap targets under 44 px, contrast failures, glass layers); before/after shots; the rule check (ui-lint as a browser-safe module with lines) in the Studio's Check with Show me | Studio only | its check steps pass |
-| UI-4 | Run parts | day and deadline chip, forecast icon row, node markers, the four currency chips, the relic and keep-one card, payout rows with their motion, the hub/run bottom bar | gallery only | RL-7 and RL-8 can use them with no CSS of their own |
+| UI-4 (done 2026-10-21) | Run parts | day and deadline chip, forecast icon row, node markers, the four currency chips, the relic and keep-one card, payout rows with their motion, the hub/run bottom bar | gallery only | RL-7 and RL-8 can use them with no CSS of their own |
 | UI-5 | Every screen onto the kit | after the RL-8 play test: every screen, including ones the roguelite replaces, moves out of ui.js and the old CSS, one screen per commit, moves only (absorbs 06-5) | every remaining screen | each moved screen passes its UI test; the unused-CSS list shrinks |
 | UI-6 | Old layers gone | style, polish, screens and v05 emptied and deleted; lint and the blur budget enforced (fail when raw values rise); accessibility pass; then `phase-06-done` and `ui-6-done` | none intended | ui-lint at or near zero; full quick check green apart from known reds |
 
