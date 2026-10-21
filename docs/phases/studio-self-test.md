@@ -42,6 +42,19 @@ no token, no GitHub name. A last row checks that.
 The slowest sections and steps, a "Look here first" list made by fixed rules (game/js/logic/studio-test-report.js),
 a JSON download, and the change from the last run in this browser.
 
+## First runs (headless, 2026-10-21; software drawing, so the times only rank, the 3D frames mean nothing)
+Passed in about 110 s: 24 sections, 16 edits undone, everything put back. What the list put first:
+- The undo would hold about 640 MB when full (80 copies of 8 MB of data).
+- An edit takes about 330 ms in the middle section (up to 650 ms, Walk scenes): the undo copy (100-190 ms), and while
+  the undo is empty the top bar makes up to three more copies (up to 400 ms). The live update to a game tab costs up
+  to 150 ms and the Check about 50-170 ms, half a second later.
+- Undo in the Wardrobe takes about 1 s; Types takes about 650 ms to open the first time (building its HTML; 30 ms the
+  second time); the Wardrobe takes 900 ms to open in the second pane.
+- Opening People changes the data with no undo step of its own: the next undo takes that back with the person's edit.
+  A bug to fix with the rest.
+- Loading the data from GitHub (222 files, the stand-in) about 11 s; no leaks found (memory, elements, loops, timers
+  the same after the second pass).
+
 ## Files
 - `game/js/logic/studio-test-report.js`: the rules (numbers to findings), the comparison, the privacy check.
   Unit tests: `tools/test/studio-test-report.test.mjs`.

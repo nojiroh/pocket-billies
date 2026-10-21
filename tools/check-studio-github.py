@@ -31,7 +31,7 @@ proposal at the end must carry uiTheme.json with it.
     python3 tools/check-studio-github.py --only=ui,studio_test   # sign in, only these steps, then the proposal
                                                                  # (step names: STEPS below)
 
-Needs Python 3 and Playwright (tools/requirements-check.txt). About a minute."""
+Needs Python 3 and Playwright (tools/requirements-check.txt). About a minute, plus about two for the Studio test."""
 import json, re, sys, threading, time
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer

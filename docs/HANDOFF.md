@@ -2,6 +2,32 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Studio track ST-T - Studio self-test - 2026-10-21
+Branch `ccr-f4c5aa48-ofajfu`. Plan approved by the owner in this session (measure only, about 90 s, desktop and iPad).
+- Changed (one cause per commit): docs/phases/studio-self-test.md (the plan, then the first runs) and a ROADMAP line;
+  `game/js/logic/studio-test-report.js` (stats, the "Look here first" rules, the comparison, file paths without the
+  GitHub owner, the privacy check) with `tools/test/studio-test-report.test.mjs` (15 tests); `studioProbe` in
+  studio-app.js and check.js: timings of drawing a section, the undo copy, undo, the live update, the Check and the
+  top bar, recorded only while the test runs (null otherwise), and performance marks at boot and the GitHub read;
+  `studio/js/studio-test.js` (the run, on no page, loaded when it starts) and `studio-test-start.js` (the Check &
+  backups button, `studio/?selftest`); the resource timing buffer raised to 3000 in studio/index.html;
+  check-studio-github.py runs the test and fails on its errors, undone edits that don't come back, data not put back
+  or a token in the report; STUDIO.md and TESTING.md.
+- Risky: the test edits the live data and puts it back (snapshot compare, then `restore`); it refuses writing calls
+  and Save/Propose while it runs, and wraps requestAnimationFrame, setInterval and console.error for its length.
+  A test that throws midway still restores in `finally`. Not yet run on a real desktop GPU or an iPad (owner).
+- Verified: 305 unit tests (the new ones fail on a planted fault: the high-before-mid order), lint, typecheck,
+  check:modules, format:check. The test passes headless (about 110 s, no errors, data put back); the harness step
+  passes alone and fails on a planted fault (edits marked as not coming back). The full check-studio-github.py still
+  times out clicking the story preview checkbox before reaching the new step, as at RL-1 (a real click never
+  completes while the preview draws with software GL here). Smoke and the quick check were not run: nothing in
+  game/ that the game page loads changed.
+- Found (headless, docs/phases/studio-self-test.md): the undo would hold about 640 MB when full; an edit costs about
+  330 ms (undo copy plus up to three top-bar copies while the undo is empty); opening People changes the data with no
+  undo step (a bug).
+- Next: the owner runs Check & backups → Run the Studio test on the desktop and sends the report; then a session
+  fixes the top items, the undo first (one cause per commit).
+
 ### UI track UI-2 - Kit v2: angular shapes - 2026-10-21
 Branch `ccr-00069345-2zok4t`, from main 3479f01 (RL-4 merged, UI-1 in). The owner asked for the whole of UI-2 in one
 session (no split). Two calls I made without asking (my plan's recommendations): the old `.pb` buttons and every
