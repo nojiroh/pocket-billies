@@ -37,8 +37,12 @@
   .g-stack { display: grid; gap: var(--s3); }
   .g-sw { display: grid; place-items: center; min-width: 44px; height: 44px; border-radius: var(--r-sm); background: var(--g-bg2);
     font: 600 11px/1 var(--font-voice); }
-  .g-sprite { display: block; width: 44px; height: 44px; border-radius: 50%; background: color-mix(in srgb, var(--c1) 40%, var(--g-solid)); }
+  .g-sprite { display: block; width: 64px; height: 64px; background: var(--c1);
+    clip-path: polygon(30% 4%, 70% 4%, 80% 22%, 80% 40%, 70% 52%, 86% 70%, 86% 100%, 14% 100%, 14% 70%, 30% 52%, 20% 40%, 20% 22%); }
   .g-local { position: relative !important; inset: auto !important; transform: none !important; left: auto !important; bottom: auto !important; }
+  .g-shots .g-sec { padding-bottom: var(--s4); }
+  .g-list { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
+  .g-list li { padding: var(--s2) var(--s3); font: 600 15px/1.2 var(--font-voice); }
   .g-dark { padding: var(--s4); border-radius: var(--r-lg); background: #241c3a; }
 </style>
 </head>
@@ -90,6 +94,10 @@
   <div class="g-stack"><pb-field label="Nickname" placeholder="Kidling"></pb-field><pb-field label="Nickname" value="Sir Reginald Taxworth III" hint="Up to 24 letters."></pb-field><pb-field label="Friend code" value="PB-12" error="A friend code has 8 letters."></pb-field><pb-field label="Save name" value="Locked" disabled></pb-field></div>
 </section>
 
+<section class="g-sec" data-shot="lists"><h2>Lists, rules, portraits</h2><p>The slanted selection bar (.pb-sel), the section rule (hr.pb-rule) and a portrait whose head breaks out of its circle (.pb-portrait).</p>
+  <pb-panel><ul class="g-list"><li class="pb-sel">Continue</li><li class="pb-sel" aria-selected="true">New run</li><li class="pb-sel">Settings</li></ul><hr class="pb-rule"><div class="g-row"><span class="pb-portrait" style="--c1:#E0603A"><i class="g-sprite" style="--c1:#c4502e"></i></span><span class="pb-portrait" style="--por:96px;--c1:#3A86D6"><i class="g-sprite" style="--c1:#2f6fb3;width:96px;height:96px"></i></span></div></pb-panel>
+</section>
+
 <section class="g-sec" data-shot="messages"><h2>Messages</h2><p>A toast (the same message again adds a count), the inbox dot, a rising number.</p>
   <div class="g-stack">
     <pb-toast class="g-local" id="gToast"></pb-toast>
@@ -119,7 +127,7 @@
 </section>
 
 <section class="g-sec" data-shot="dialogue"><h2>Dialogue box</h2><p>The 96 px slot holds a 64 px portrait at 1.5×, drawn in whole device pixels (js/talk.js).</p>
-  <div class="talk-box g-local" style="width:100%;position:relative"><span class="talk-slot"></span><div class="talk-txt"><p class="talk-who">Professor Hazel</p><p class="talk-line">You came down through the crust. Things do, now and then. Mostly furniture.</p></div><span class="talk-more" style="opacity:.8">▼</span></div>
+  <div class="talk-box g-local" style="width:100%;position:relative"><span class="talk-slot"><i class="g-sprite" style="--c1:#b07a52;width:96px;height:96px"></i></span><div class="talk-txt"><p class="talk-who">Professor Hazel</p><p class="talk-line">You came down through the crust. Things do, now and then. Mostly furniture.</p></div><span class="talk-more" style="opacity:.8">▼</span></div>
 </section>
 
 <section class="g-sec" data-shot="battle"><h2>Battle cards</h2><p>In the 3D scene they float under the one choosing; here they sit still.</p>
