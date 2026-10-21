@@ -3,7 +3,8 @@
 //   here the Park-Miller stand-in of load-logic.mjs, put on Math.random before anything imports util.js.
 // - So the battle engine's rolls (crit, damage, accuracy, statuses, the AI's pick, speed ties) follow Math.random:
 //   two battles started from the same seed play out the same, event for event.
-// RL-2 replaces this with logic/rng.js and a battle's own b.rng; then the first test changes on purpose.
+// RL-2 added logic/rng.js but left util.js random alone; RL-4 gives a battle its own b.rng, and then the first test
+// changes on purpose.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { fn, hooks, reseed, startedSave } from './setup-fixture.mjs';

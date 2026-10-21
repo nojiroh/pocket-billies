@@ -5,7 +5,7 @@
    edgeExits with path and len, streams, bridges, waters, the look keys), so a generated place is drawn and walked
    like a hand-built one. Logic only: no DOM, no Math.random, runs in Node (tools/test/mapgen.test.mjs). The Studio's
    Generate card (studio/js/map-generate.js) shows it as a draft.
-   - The same params and seed give the same scene. Each stage draws from its own random stream (mapgenRandom(seed,
+   - The same params and seed give the same scene. Each stage draws from its own random stream (rngFrom(seed,
      stage)), so a stage can be rerolled alone (params.seeds[stage]).
    - What it makes is marked: every prop carries g: 1 (its wild plants also w: 42, as tools/grow-wild.py marks them),
      the scene carries gen: {v, params, seed}.
@@ -16,6 +16,7 @@
 /** @import { Biome } from '../../types/game-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { hashString, rngFrom } from './rng.js';
 /* eslint-disable no-func-assign */
 expose({
   MAPGEN_BASE64: [() => MAPGEN_BASE64],
@@ -61,8 +62,6 @@ expose({
   // @ts-expect-error -- replaced on purpose
   mapgenGrowWild: [() => mapgenGrowWild, v => (mapgenGrowWild = v)],
   // @ts-expect-error -- replaced on purpose
-  mapgenHashString: [() => mapgenHashString, v => (mapgenHashString = v)],
-  // @ts-expect-error -- replaced on purpose
   mapgenLattice: [() => mapgenLattice, v => (mapgenLattice = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenLowerWater: [() => mapgenLowerWater, v => (mapgenLowerWater = v)],
@@ -96,8 +95,6 @@ expose({
   mapgenRadius: [() => mapgenRadius, v => (mapgenRadius = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenRaise: [() => mapgenRaise, v => (mapgenRaise = v)],
-  // @ts-expect-error -- replaced on purpose
-  mapgenRandom: [() => mapgenRandom, v => (mapgenRandom = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenResample: [() => mapgenResample, v => (mapgenResample = v)],
   // @ts-expect-error -- replaced on purpose
@@ -211,56 +208,6 @@ export const mapgenBetween = (v, a, b) => (v < a ? a : v > b ? b : v);
 export const mapgenRound2 = v => Math.round(v * 100) / 100;
 export const mapgenSmooth = t => t * t * (3 - 2 * t);
 
-/* ---------- random numbers: a hash of (seed, salt) starts a small fast generator (sfc32) ---------- */
-export function mapgenHashString(s) {
-  let h = 2166136261 >>> 0;
-  for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619) >>> 0;
-  return h;
-}
-/** a random stream for a seed and a salt: next() in [0,1), range, int, chance, pick (by weight), gauss */
-export function mapgenRandom(seed, salt = '') {
-  let a = mapgenHashString(`${seed}|${salt}|a`),
-    b = mapgenHashString(`${seed}|${salt}|b`),
-    c = mapgenHashString(`${seed}|${salt}|c`),
-    d = 1;
-  const next = () => {
-    a >>>= 0;
-    b >>>= 0;
-    c >>>= 0;
-    d >>>= 0;
-    const t = (((a + b) | 0) + d) | 0;
-    d = (d + 1) | 0;
-    a = b ^ (b >>> 9);
-    b = (c + (c << 3)) | 0;
-    c = (c << 21) | (c >>> 11);
-    c = (c + t) | 0;
-    return (t >>> 0) / 4294967296;
-  };
-  for (let i = 0; i < 12; i++) next();
-  const R = {
-    next,
-    range: (lo, hi) => lo + (hi - lo) * next(),
-    int: (lo, hi) => lo + Math.floor(next() * (hi - lo + 1)),
-    chance: p => next() < p,
-    /** @param {Record<string, number>} W */
-    pick: W => {
-      const ks = Object.keys(W).filter(k => W[k] > 0);
-      let s = 0;
-      for (const k of ks) s += W[k];
-      let r = next() * s;
-      for (const k of ks) if ((r -= W[k]) < 0) return k;
-      return ks[ks.length - 1];
-    },
-    gauss: () => {
-      const u = Math.max(1e-9, next()),
-        v = next();
-      return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
-    },
-  };
-  return R;
-}
-
-/* value noise on a lattice, from an integer hash (no sin hash: the same in every engine) */
 export function mapgenLattice(i, j, s) {
   let h = Math.imul(i | 0, 374761393) + Math.imul(j | 0, 668265263) + Math.imul(s | 0, 1442695041);
   h = Math.imul(h ^ (h >>> 13), 1274126177);
@@ -363,8 +310,8 @@ export function mapgenNewWork(P, ctx) {
     cat: (ctx.scenery && ctx.scenery.props) || {},
     terr: (ctx.scenery && ctx.scenery.terrains) || {},
     /* a stage's random stream and noise salt; sub separates the parts of a stage (they all follow its seed) */
-    rng: (st, sub = '') => mapgenRandom(seedOf(st), st + sub),
-    salt: (st, sub = '') => mapgenHashString(`${seedOf(st)}|${st}${sub}|noise`) % 100000,
+    rng: (st, sub = '') => rngFrom(seedOf(st), st + sub),
+    salt: (st, sub = '') => hashString(`${seedOf(st)}|${st}${sub}|noise`) % 100000,
     /* ground per cell, near row first */
     T: new Array(w * h).fill(B.ground.base),
     /* corner heights, (w+1) x (h+1), near row first */

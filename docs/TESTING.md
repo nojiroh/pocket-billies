@@ -49,14 +49,22 @@ Two rules hold everywhere:
   and one battle per process (`hooks.js`). Tests in one file run in order and share that state.
 - Random numbers are seeded. A test that draws them calls `reseed()` first (or in `beforeEach`), so its result doesn't
   depend on the tests before it.
-- How randomness works today (RL-1, `tools/test/rng-baseline.test.mjs`; RL-2 changes it): `game/js/util.js`'s
-  `random` is `Math.random` as it is when util.js loads. On the page that is the browser's, so nothing in a real game
-  is seedable; in Node, `load-logic.mjs` puts a Park-Miller stand-in on `Math.random` first, so the logic (the battle
-  engine's ~16 rolls, `pickWeighted`) follows `reseed()` and two battles from one seed play out the same. Outside
-  util.js: `logic/mapgen.js` has its own seeded sfc32 (`mapgenRandom(seed, salt)`); 172 direct `Math.random` (counted at RL-1)
+- How randomness works today (RL-1 `tools/test/rng-baseline.test.mjs`, RL-2 `tools/test/rng.test.mjs`):
+  `game/js/util.js`'s `random` is `Math.random` as it is when util.js loads. On the page that is the browser's, so
+  nothing in a real game is seedable yet; in Node, `load-logic.mjs` puts a Park-Miller stand-in on `Math.random`
+  first, so the logic (the battle engine's ~16 rolls, `pickWeighted`) follows `reseed()` and two battles from one seed
+  play out the same. The seedable source for game outcomes is `logic/rng.js` (RL-2, moved out of mapgen.js
+  unchanged): `rngFrom(seed, salt)` gives a stream (`next, range, int, chance, pick, gauss`), `rngFn(seed, salt)` the
+  same as a plain `() => number`, `hashString` the FNV-1a hash, `dailySeed(now)` `'d'` + the UTC date. `pickWeighted`,
+  `rollPartSize`, `rollBuild` and `spawn` take an optional `rnd` (default util.js `random`); nothing passes one yet
+  (runs will, RL-6/7). Battles get their own stream (`b.rng`) in RL-4. 172 direct `Math.random` (counted at RL-1)
   calls in game/ and studio/ are mostly drawing, sound and ambient life, but `battle.js` (bribes, egg drops) and
   `things-to-do.js` (rewards) decide outcomes with them; `newUid` and `met` read `Date.now()`, battle weather the
   real clock.
+- The battle golden record (`tools/test/battle-golden.test.mjs`, RL-2): four seeded fights on the game's data
+  (single, double, Alpha, robot), both sides played by `chooseAI`, every event and the end state snapshotted. It
+  must stay unchanged through RL-4's engine work; a battle data change or a change meant to alter battles remakes it
+  (`--test-update-snapshots`), said in the commit. A planted +1 damage turns all four red.
 - On the game's data, test what must hold whatever the content (every road has its exits, every gate its trainer),
   not counts a content change legitimately alters. Where the whole shape matters, use a snapshot
   (`t.assert.snapshot`): remake it with `node --test --test-update-snapshots tools/test/<file>` in the commit that

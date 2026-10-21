@@ -13,7 +13,7 @@ are sessions of Claude's working time, not calendar time, and exclude the owner'
 | # | Session | Goal | Depends on | Sessions | Playable |
 |---|---|---|---|---|---|
 | RL-1 | Hardening (done 2026-10-21, tools question open) | Studio token options, versioned tools, stale docs, the set-aside key bug, PR #78 verified, RNG facts written down | none | 1 | no |
-| RL-2 | Golden record and RNG module | a battle golden snapshot; `logic/rng.js` (mapgen's seeded generator moved); seeded `pickWeighted`/`spawn` | RL-1 | 1 | no |
+| RL-2 | Golden record and RNG module (done 2026-10-21) | a battle golden snapshot; `logic/rng.js` (mapgen's seeded generator moved); seeded `pickWeighted`/`spawn` | RL-1 | 1 | no |
 | RL-3 | State separation | SAVE_VERSION 4; `meta`, `run`, `ranch` in the save; validators; `migrate` keeps a run's trip | RL-2 | 1 | no |
 | RL-4 | Battle state injected | phase 19's core: engine context, no save writes, a silent host, `b.rng`, a turn cap | RL-2 | 1-2 | no |
 | RL-5 | Legacy parking and the world setter | the other maps and places under `game/data/legacy/`; `worldSetGraph`; fixtures and checks retargeted | RL-3 | 1-2 | no |
