@@ -10,7 +10,29 @@
    Logic only: no DOM, no game data of its own, runs in Node. tools/check-data.mjs runs it on the game's data, the map
    generator's tests on generated pairs (tools/test/seam-rules.test.mjs plants each fault). What a problem says is
    [where, what], in the words check-data has always used. */
-
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from '../test-globals.js';
+/* eslint-disable no-func-assign */
+expose({
+  SEAM_EXIT_GAP: [() => SEAM_EXIT_GAP],
+  SEAM_OPPOSITE: [() => SEAM_OPPOSITE],
+  SEAM_SIDE_MOST: [() => SEAM_SIDE_MOST],
+  seamRulesAlong: [() => seamRulesAlong],
+  // @ts-expect-error -- replaced on purpose
+  seamRulesExitPoint: [() => seamRulesExitPoint, v => (seamRulesExitPoint = v)],
+  // @ts-expect-error -- replaced on purpose
+  seamRulesLinks: [() => seamRulesLinks, v => (seamRulesLinks = v)],
+  // @ts-expect-error -- replaced on purpose
+  seamRulesPair: [() => seamRulesPair, v => (seamRulesPair = v)],
+  // @ts-expect-error -- replaced on purpose
+  seamRulesPlaces: [() => seamRulesPlaces, v => (seamRulesPlaces = v)],
+  // @ts-expect-error -- replaced on purpose
+  seamRulesSides: [() => seamRulesSides, v => (seamRulesSides = v)],
+  // @ts-expect-error -- replaced on purpose
+  seamRulesWalkable: [() => seamRulesWalkable, v => (seamRulesWalkable = v)],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
 export const SEAM_OPPOSITE = { E: 'W', W: 'E', N: 'S', S: 'N' };
 export const SEAM_SIDE_MOST = 2; /* exits on one side of a map, at most */
 export const SEAM_EXIT_GAP = 44; /* metres between two exits on one side, at least */
