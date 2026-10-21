@@ -61,7 +61,7 @@ import {
   stat,
   xpFor,
 } from './rules.js';
-import { newFieldState } from './battle-state.js';
+import { makeBattle, newFieldState } from './battle-state.js';
 /* eslint-disable no-func-assign */
 expose({
   ACTOR_SIDE: [() => ACTOR_SIDE],
@@ -860,73 +860,14 @@ export function hitPart(tk, dmg, M, aim) {
   t.partDmg[slot] = (t.partDmg[slot] || 0) + d;
   return slot;
 }
-/* fmt: 'single', 'double' (two a side) or 'alpha' (up to three of yours against one Alpha) */
+/* a battle against foe on the save's team, made the current one (makeBattle, battle-state.js); false when all have fainted */
 export function newBattle(kind, foe, extra) {
-  const able = saveData.team.map((m, i) => i).filter(i => saveData.team[i].hp > 0);
-  if (!able.length) {
+  const b = makeBattle(kind, saveData.team, foe, extra);
+  if (!b) {
     toast('Everyone on your team has fainted. Rest first, or use a Revive.');
     return false;
   }
-  const fmt = (extra && extra.fmt) || 'single',
-    n0 = Math.min(able.length, fmt === 'double' ? 2 : fmt === 'alpha' ? (BATTLE_RULES.alphaTeam ?? 3) : 1),
-    n1 = fmt === 'double' ? Math.min(2, foe.length) : 1;
-  const fighters = (n, list) =>
-    Array.from({ length: n }, (_, sl) => ({ act: list[sl], on: list[sl] != null, v: newFieldState(), down: false }));
-  setActiveBattle(
-    Object.assign(
-      {
-        kind,
-        fmt,
-        events: [],
-        ev: 0,
-        phase: 'playing',
-        market: null,
-        integrity: 1,
-        over: null,
-        needSwitch: [],
-        offer: null,
-        foeName: '',
-        lead: saveData.team[able[0]].uid,
-        turn: 0,
-        plan: [],
-        cur: 0,
-        sides: [
-          { team: saveData.team, f: fighters(n0, able), rent: false, pivot: false, mail: [], inh: null },
-          {
-            team: foe,
-            f: fighters(
-              n1,
-              foe.map((m, i) => i)
-            ),
-            rent: false,
-            pivot: false,
-            mail: [],
-            inh: null,
-          },
-        ],
-      },
-      extra,
-      { fmt }
-    )
-  );
-  Object.defineProperty(activeBattle.sides[0], 'act', {
-    get() {
-      return this.f[0].act;
-    },
-    set(v) {
-      this.f[0].act = v;
-    },
-    enumerable: false,
-  });
-  Object.defineProperty(activeBattle.sides[1], 'act', {
-    get() {
-      return this.f[0].act;
-    },
-    set(v) {
-      this.f[0].act = v;
-    },
-    enumerable: false,
-  });
+  setActiveBattle(b);
   foe.forEach(m => {
     if (!isRobot(m)) saveData.seen[m.sp] = 1;
   });
