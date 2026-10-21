@@ -462,8 +462,18 @@ debugLog.state = () => {
             nodes: run.map.nodes.length,
             scenes: GAME.runWorld.scenes,
             makeMs: GAME.runWorld.ms,
+            /* RL-8: its phase (fly, walk, battle, payout), the battles fought, whether saving is held for a battle, the
+               party's size and the run's money (numbers only) */
+            phase: run.at.phase,
+            battles: run.battleN,
+            held: typeof GAME.saveHeld === 'function' ? GAME.saveHeld() : null,
+            party: GAME.saveData.team ? GAME.saveData.team.length : 0,
+            money: GAME.saveData.se,
           }
         : null;
+    /* RL-8: what the runs brought home (numbers only) */
+    const meta = GAME.saveData.meta;
+    s.meta = meta ? { runs: meta.runs, wins: meta.wins, capital: meta.capital, seals: meta.seals } : null;
     s.frameHz = GAME.frameScheduler.hz;
     s.fpsCap = GAME.userFps();
   } catch (e) {

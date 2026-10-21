@@ -5,7 +5,7 @@ import { LOCATIONS, gameData } from './game-data.js';
 import { encountersHere, setSetTrip, setTrip } from './logic/rules.js';
 import { battleStageKey, newBattle, setNewBattle } from './logic/battle-engine.js';
 import { mapFiles } from './map-files.js';
-import { activeBattle, save, saveData, setSave, uiState } from './game-state.js';
+import { activeBattle, save, saveData, saveHeld, setSave, uiState } from './game-state.js';
 import { gpuCountSummary, gpuCounters } from './engine/gpu-counters.js';
 import { frameScheduler, userFps } from './frame-scheduler.js';
 import { artPixels, setArtPixels } from './art.js';
@@ -144,6 +144,7 @@ Object.defineProperties(GAME, {
   runWorld: { get: () => runWorld },
   save: { get: () => save, set: setSave },
   saveData: { get: () => saveData },
+  saveHeld: { get: () => saveHeld },
   screenSnapshot: { get: () => screenSnapshot, set: setScreenSnapshot },
   seamlessWorld: { get: () => seamlessWorld },
   setTrip: { get: () => setTrip, set: setSetTrip },
