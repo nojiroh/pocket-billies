@@ -21,7 +21,21 @@ const BLAKE_SCENE = new Set([
   'Everyone has a type, Blake. Mine is “tenured”.',
   'Now. Where was I? Ah, yes. Three of them, right here.',
 ]);
-const OPENING_NOW = BEFORE.filter(l => l.who !== 'chad' && l.cmd !== 'staged-fight' && !BLAKE_SCENE.has(l.text));
+/* RL-8: and after the pick, Hazel sends you to the airship mast */
+const OPENING_NOW = [
+  ...BEFORE.filter(l => l.who !== 'chad' && l.cmd !== 'staged-fight' && !BLAKE_SCENE.has(l.text)),
+  {
+    who: 'gini',
+    text: 'One more thing. See the airship at the mast? It flies out past the island, to wild places nobody has mapped yet.',
+    expr: null,
+  },
+  {
+    who: 'gini',
+    text: 'Every trip out there is different. Take Starterbill, catch what you can, and bring back whatever you find.',
+    expr: null,
+  },
+  { who: 'gini', text: 'Go whenever you’re ready. And come and see me in the lab.', expr: 'happy' },
+];
 const SPEAKERS = GAME_DATA.story.speakers;
 const OWN = ['dressing-room', 'staged-fight', 'pick-starter'];
 
