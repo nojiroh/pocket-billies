@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 import {
   cssColour,
+  mergeLook,
   roleVar,
   shapeDecls,
   shapePoints,
@@ -71,6 +72,32 @@ test('a preset lays its groups over the defaults; alpha05 is the look before UI-
   assert.equal(uiThemeLook(THEME, 'no-such').color.light.text, '#22301F');
 });
 
+test("UI-3: looks merge at every depth; lists are replaced; a preset's name stays out of the look", () => {
+  const m = mergeLook({ a: { b: 1, c: [1, 2] }, d: 1 }, { a: { c: [3] }, e: 2 });
+  assert.deepEqual(m, { a: { b: 1, c: [3] }, d: 1, e: 2 });
+  const look = uiThemeLook(THEME, 'alpha05');
+  assert.equal(look.name, undefined);
+  assert.equal(look.shape.families.panel.kind, 'rounded');
+  assert.deepEqual(look.shape.families.panel.corners, ['tl', 'br'], "the corners stay the defaults'");
+  assert.equal(look.surface.dark.edgeHi, 0.2, 'a side the preset leaves out keeps the defaults');
+  assert.equal(THEME.presets.alpha05.name, 'Alpha 0.5');
+});
+
+test("UI-3: a family's cut size and corners are data", () => {
+  const all = shapePoints('panel', {
+    ...UI_SHAPE_DEFAULTS,
+    families: { panel: { corners: ['tl', 'tr', 'br', 'bl'] } },
+  });
+  assert.equal(all.length, 8, 'four cuts');
+  const sm = shapeVars('panel', { ...UI_SHAPE_DEFAULTS, families: { panel: { size: 'cutSm' } } });
+  assert.match(sm['--clip-panel'], /^polygon\(0 4px, 4px 0, /);
+  const css = blockOf(
+    uiThemeCss({ ...THEME, defaults: mergeLook(THEME.defaults, { shape: { families: { tab: { corners: [] } } } }) }),
+    ':root'
+  );
+  assert.equal(css['--clip-tab'], 'polygon(0 0, 100% 0, 100% 100%, 0 100%)');
+});
+
 test('fonts: the voice font is scaled and never fake-bolded; @font-face only with a fonts folder', () => {
   const css = uiThemeCss(THEME, { fonts: 'https://x/game/fonts/' });
   assert.match(
@@ -129,10 +156,10 @@ test('the default shapes: two cuts on a panel, four on a card, a long hexagon fo
 });
 
 test('a family can be rounded or square, and cuts can be stepped like pixel art', () => {
-  const round = shapePoints('panel', { ...UI_SHAPE_DEFAULTS, families: { panel: 'rounded' } });
+  const round = shapePoints('panel', { ...UI_SHAPE_DEFAULTS, families: { panel: { kind: 'rounded' } } });
   assert.equal(round.length, 4 * 7, 'seven points an arc');
   assert.deepEqual(round[0], [0, 0, 0, 22]);
-  const sq = shapeVars('card', { ...UI_SHAPE_DEFAULTS, families: { card: 'square' } });
+  const sq = shapeVars('card', { ...UI_SHAPE_DEFAULTS, families: { card: { kind: 'square' } } });
   assert.equal(sq['--clip-card'], 'polygon(0 0, 100% 0, 100% 100%, 0 100%)');
   // a 12 px cut in 4 px steps: three stairs from the left edge to the top edge
   const st = shapePoints('panel', { ...UI_SHAPE_DEFAULTS, stepped: true });

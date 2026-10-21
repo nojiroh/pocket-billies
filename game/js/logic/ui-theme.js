@@ -24,7 +24,10 @@ expose({
   // @ts-expect-error -- replaced on purpose
   cssColour: [() => cssColour, v => (cssColour = v)],
   // @ts-expect-error -- replaced on purpose
+  mergeLook: [() => mergeLook, v => (mergeLook = v)],
+  // @ts-expect-error -- replaced on purpose
   modeVars: [() => modeVars, v => (modeVars = v)],
+  plain: [() => plain],
   ptsText: [() => ptsText],
   roleVar: [() => roleVar],
   roundTo2: [() => roundTo2],
@@ -76,20 +79,23 @@ export const withAlpha = (hex, a) => {
   return `rgba(${r}, ${g}, ${b}, ${a})`;
 };
 
-/** the look to use: the defaults, with a preset's groups laid over them (a preset names only what it changes)
+export const plain = (/** @type {any} */ v) => !!v && typeof v === 'object' && !Array.isArray(v);
+/** b laid over a: objects merge key by key at every depth, anything else (numbers, colours, lists) is replaced
+ * @param {any} a @param {any} b @returns {any} */
+export function mergeLook(a, b) {
+  if (!plain(a) || !plain(b)) return b === undefined ? a : b;
+  const out = { ...a };
+  for (const [k, v] of Object.entries(b)) out[k] = plain(out[k]) && plain(v) ? mergeLook(out[k], v) : v;
+  return out;
+}
+
+/** the look to use: the defaults, with a preset laid over them (a preset names only what it changes)
  * @param {any} theme uiTheme.json @param {string} [preset] */
 export function uiThemeLook(theme, preset) {
   const base = (theme && theme.defaults) || {};
   const over = (preset && theme && theme.presets && theme.presets[preset]) || {};
-  /** @type {any} */
-  const look = {};
-  for (const k of new Set([...Object.keys(base), ...Object.keys(over)])) {
-    if (k === 'color') {
-      look.color = {};
-      for (const m of ['light', 'dark'])
-        look.color[m] = { ...((base.color || {})[m] || {}), ...((over.color || {})[m] || {}) };
-    } else look[k] = { ...(base[k] || {}), ...(over[k] || {}) };
-  }
+  const look = mergeLook(base, over);
+  delete look.name;
   return look;
 }
 
@@ -104,16 +110,18 @@ export function modeVars(pal, look, mode) {
   if (pal.hpOk) out.push(`--c-hp-ok-hi: color-mix(in srgb, ${cssColour(pal.hpOk)} 55%, #ffffff);`);
   if (pal.hpMid) out.push(`--c-hp-mid-hi: color-mix(in srgb, ${cssColour(pal.hpMid)} 55%, #ffffff);`);
   if (pal.hpLow) out.push(`--c-hp-low-hi: color-mix(in srgb, ${cssColour(pal.hpLow)} 55%, #ffffff);`);
-  const s = look.surface || {};
+  const s = (look.surface || {})[mode] || {},
+    tint = s.shadowTint === 'text' ? pal.text : s.shadowTint;
   if (pal.surface && s.glass != null) out.push(`--g-bg: ${withAlpha(pal.surface.slice(0, 7), s.glass)};`);
-  // the dark side's highlight and shadows stay those of v05.css until the Studio's surface dials split by mode (UI-3)
   if (mode === 'light') {
     if (s.highlight != null) out.push(`--g-in: inset 0 1px 0 rgba(255, 255, 255, ${s.highlight});`);
-    if (s.highlight != null) out.push(`--edge-hi: rgba(255, 255, 255, ${s.highlight});`);
-    const tint = s.shadowTint === 'text' ? pal.text : s.shadowTint;
+    if (s.edgeHi != null) out.push(`--edge-hi: rgba(255, 255, 255, ${s.edgeHi});`);
     // UI-2: the shadow colour the angular parts' drop shadows read, and the edge line's dark side
     if (tint && /^#/.test(tint))
-      out.push(`--c-shadow: ${cssColour(tint.slice(0, 7))};`, `--edge-lo: ${withAlpha(tint.slice(0, 7), 0.3)};`);
+      out.push(
+        `--c-shadow: ${cssColour(tint.slice(0, 7))};`,
+        `--edge-lo: ${withAlpha(tint.slice(0, 7), s.edgeLo ?? 0.3)};`
+      );
     if (tint && /^#/.test(tint)) {
       const t = (/** @type {number} */ a) => withAlpha(tint.slice(0, 7), a);
       out.push(
@@ -121,7 +129,11 @@ export function modeVars(pal, look, mode) {
         `--g-sh2: 0 16px 34px -10px ${t(0.5)}, 0 3px 8px ${t(0.16)};`
       );
     }
-  } else out.push('--c-shadow: #000000;', '--edge-hi: rgba(255, 255, 255, 0.2);', '--edge-lo: rgba(0, 0, 0, 0.55);');
+  } else if (tint && /^#/.test(tint)) {
+    out.push(`--c-shadow: ${cssColour(tint.slice(0, 7))};`);
+    if (s.edgeHi != null) out.push(`--edge-hi: rgba(255, 255, 255, ${s.edgeHi});`);
+    out.push(`--edge-lo: ${withAlpha(tint.slice(0, 7), s.edgeLo ?? 0.55)};`);
+  }
   return out;
 }
 
@@ -151,14 +163,15 @@ export function sharedVars(look) {
                  outside the cut and never under the glass)
    A clip-path also clips box-shadows and borders, so the kit draws the shadow on its own layer (ui-kit.js,
    ui-kit.css). */
-/** the families: which cut size, which corners, and the radius when the family is rounded */
+/** the families as they are without data (uiTheme.json shape.families lays its own over them): the shape (kind),
+ * which cut size, which corners, and the radius when rounded; action and toast are long hexagons (hex) */
 export const UI_SHAPE_FAMILIES = {
-  panel: { cut: 'cutLg', corners: ['tl', 'br'], radius: 22 }, // panels and sheets: top-left and bottom-right
-  card: { cut: 'cutMd', corners: ['tl', 'tr', 'br', 'bl'], radius: 16 }, // cards: four small cuts
-  button: { cut: 'cutSm', corners: ['tl', 'tr', 'br', 'bl'], radius: 16 }, // quiet and plain buttons
-  action: { hex: 'cutLg', radius: 22 }, // the main action: a long hexagon
-  tab: { cut: 'cutMd', corners: ['tl', 'tr'], radius: 12 }, // tabs: trapezoids (the top corners cut)
-  toast: { hex: 'cutMd', radius: 18 }, // toasts: a long hexagon
+  panel: { kind: 'cut', size: 'cutLg', corners: ['tl', 'br'], radius: 22 }, // panels and sheets: top-left and bottom-right
+  card: { kind: 'cut', size: 'cutMd', corners: ['tl', 'tr', 'br', 'bl'], radius: 16 }, // cards: four small cuts
+  button: { kind: 'cut', size: 'cutSm', corners: ['tl', 'tr', 'br', 'bl'], radius: 16 }, // quiet and plain buttons
+  action: { kind: 'cut', size: 'cutLg', hex: true, radius: 22 }, // the main action: a long hexagon
+  tab: { kind: 'cut', size: 'cutMd', corners: ['tl', 'tr'], radius: 12 }, // tabs: trapezoids (the top corners cut)
+  toast: { kind: 'cut', size: 'cutMd', hex: true, radius: 18 }, // toasts: a long hexagon
 };
 export const UI_SHAPE_DEFAULTS = { cutSm: 4, cutMd: 8, cutLg: 12, slant: 10, step: 4, stepped: false };
 export const RING = 48;
@@ -200,10 +213,11 @@ export function cornerTL(kind, size, d, sh) {
 }
 /** a family's outline as points, inset by d @param {string} fam @param {any} sh @param {number} d @returns {Pt[]} */
 export function shapePoints(fam, sh, d = 0) {
-  const F = /** @type {any} */ (UI_SHAPE_FAMILIES)[fam];
-  const kind = (sh.families && sh.families[fam]) || 'cut';
+  const F = { .../** @type {any} */ (UI_SHAPE_FAMILIES)[fam], ...((sh.families && sh.families[fam]) || {}) };
+  const kind = F.kind || 'cut',
+    corners = F.corners || [];
   if (F.hex && kind === 'cut') {
-    const h = sh[F.hex] ?? /** @type {any} */ (UI_SHAPE_DEFAULTS)[F.hex],
+    const h = sh[F.size] ?? /** @type {any} */ (UI_SHAPE_DEFAULTS)[F.size],
       e = d * Math.SQRT2,
       k = h + d * (Math.SQRT2 - 1);
     return [
@@ -215,7 +229,7 @@ export function shapePoints(fam, sh, d = 0) {
       [0, k, 100, -d],
     ];
   }
-  const cut = F.hex ? 0 : (sh[F.cut] ?? /** @type {any} */ (UI_SHAPE_DEFAULTS)[F.cut]);
+  const cut = F.hex ? 0 : (sh[F.size] ?? /** @type {any} */ (UI_SHAPE_DEFAULTS)[F.size]);
   /** @type {Pt[]} */
   const out = [];
   for (const [corner, mx, my, rev] of /** @type {const} */ ([
@@ -224,7 +238,7 @@ export function shapePoints(fam, sh, d = 0) {
     ['br', true, true, false],
     ['bl', false, true, true],
   ])) {
-    const size = kind === 'rounded' ? F.radius : kind === 'cut' && F.corners.includes(corner) ? cut : 0;
+    const size = kind === 'rounded' ? F.radius : kind === 'cut' && corners.includes(corner) ? cut : 0;
     let pts = cornerTL(kind === 'rounded' ? 'rounded' : size ? 'cut' : 'square', size, d, sh);
     if (rev) pts = pts.slice().reverse();
     for (const [u, v] of pts) out.push([mx ? 100 : 0, mx ? -u : u, my ? 100 : 0, my ? -v : v]);
