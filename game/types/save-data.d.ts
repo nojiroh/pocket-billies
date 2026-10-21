@@ -143,8 +143,9 @@ export interface Run {
   mapgenV: number;
   /** the node map; null until RL-6 makes it */
   map: { nodes: RunNode[] } | null;
-  /** where the player is: the node (0 Copperleaf, i + 1 the map's node i), what is happening, the battle counter */
-  at: { node: number; phase: 'fly' | 'walk' | 'battle' | 'menu' | 'payout'; battle: number };
+  /** what is happening, and the battle being fought (its battle number, -1 for none: a resume restarts it from
+      the seed). Where the player is stays saveData.trip.node: 0 Copperleaf, i + 1 the map's node i */
+  at: { phase: 'fly' | 'walk' | 'battle' | 'menu' | 'payout'; battle: number };
   /** the day (one per node arrival, backtracking included) and the deadline day */
   clock: number;
   deadline: number;
