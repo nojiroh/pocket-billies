@@ -194,6 +194,23 @@ Game → **UI look** edits game/data/uiTheme.json, the look of the game's menus 
   C) shows the look as last saved. **Open the gallery** opens it in a tab. An open game tab follows the dials too.
 - Find (Ctrl+K) knows every dial; the Check lists a colour that reads too faintly, with Show me.
 
+## Studio test (studio track ST-T)
+
+Check & backups → **Run the Studio test** (or open `studio/?selftest`). A test of the Studio itself: it opens every
+section in both panes, makes one edit in each section that has a field and undoes it, opens Find, the Check, the
+pixel editor, the skeleton builder, the map generator and the sheet slicer, builds what Save and Propose would write
+(without writing it), and opens everything a second time to look for leaks. About 90 seconds on a desktop; Stop (or
+Esc) ends it early. Nothing is saved: while it runs Save and Propose do nothing and server calls that write are
+refused, and at the end your data, undo history, unsaved marks and open sections are put back.
+
+The report starts with **Look here first**, the slowest spots and anything wrong, worst first. Then come the changes
+since the last run in this browser, a table of every section (open time split into building the HTML, putting it on
+the page and the after-draw steps; the second pane; the second open; frames; elements; the Connections drawer; edit
+and undo), and the tools, the undo and loading. **Download the report** saves it as JSON (numbers, section ids and data
+paths only). The rules behind the list are in game/js/logic/studio-test-report.js; docs/phases/studio-self-test.md
+has the plan. A headless browser draws in software, so `tools/check-studio-github.py` runs the test only to check that
+it passes, never to judge its times.
+
 ## Sections
 
 | Section | What you can do |

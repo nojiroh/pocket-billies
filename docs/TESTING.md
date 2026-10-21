@@ -175,6 +175,10 @@ same phase:
 - **11 Opening**: the smoke phone flow and the full test's two Opening steps play the opening; update them with it.
 - **12 Ranch**: a full-test step for the ranch, a quick-check step that edits it, and its save fields in the save
   tests (`saves.test.mjs`, `validSave`).
+- **Studio self-test (ST-T)**: a new Studio section or tool gets timed by the Studio test with no change (it opens
+  every section in `SECTION_LIST` and edits its first field); a new kind of tool gets a line in `tools()` of
+  studio/js/studio-test.js. Its rules are unit tests (`tools/test/studio-test-report.test.mjs`); its run is checked
+  by `tools/check-studio-github.py` for errors, undone edits and data put back, never for times.
 - **14 Studio**: `tools/check-studio-github.py` and smoke's "Studio opens" keep passing; `--studio` follows the
   Studio local mode decision. A new Studio feature adds a step function to its `STEPS` (UI-3), so it can also run
   alone with `--only=<name>`.
