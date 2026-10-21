@@ -21,6 +21,7 @@ import { hashString, rngFrom } from './rng.js';
 expose({
   MAPGEN_BAND: [() => MAPGEN_BAND],
   MAPGEN_BASE64: [() => MAPGEN_BASE64],
+  MAPGEN_BRIDGE_SQUARE: [() => MAPGEN_BRIDGE_SQUARE],
   MAPGEN_DEFAULTS: [() => MAPGEN_DEFAULTS],
   MAPGEN_EXIT_IN: [() => MAPGEN_EXIT_IN],
   MAPGEN_FAMILY_SHARE: [() => MAPGEN_FAMILY_SHARE],
@@ -91,6 +92,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   mapgenNearRoadWidth: [() => mapgenNearRoadWidth, v => (mapgenNearRoadWidth = v)],
   // @ts-expect-error -- replaced on purpose
+  mapgenNearSpan: [() => mapgenNearSpan, v => (mapgenNearSpan = v)],
+  // @ts-expect-error -- replaced on purpose
   mapgenNewWork: [() => mapgenNewWork, v => (mapgenNewWork = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenNoise: [() => mapgenNoise, v => (mapgenNoise = v)],
@@ -131,6 +134,8 @@ expose({
   mapgenRoadCurve: [() => mapgenRoadCurve, v => (mapgenRoadCurve = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenRoadDist: [() => mapgenRoadDist, v => (mapgenRoadDist = v)],
+  // @ts-expect-error -- replaced on purpose
+  mapgenRoadOverWater: [() => mapgenRoadOverWater, v => (mapgenRoadOverWater = v)],
   mapgenRound2: [() => mapgenRound2],
   // @ts-expect-error -- replaced on purpose
   mapgenScene: [() => mapgenScene, v => (mapgenScene = v)],
@@ -140,6 +145,8 @@ expose({
   mapgenSceneGround: [() => mapgenSceneGround, v => (mapgenSceneGround = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenSeamAgreement: [() => mapgenSeamAgreement, v => (mapgenSeamAgreement = v)],
+  // @ts-expect-error -- replaced on purpose
+  mapgenSegCross: [() => mapgenSegCross, v => (mapgenSegCross = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenShareMask: [() => mapgenShareMask, v => (mapgenShareMask = v)],
   // @ts-expect-error -- replaced on purpose
@@ -180,7 +187,7 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-export const MAPGEN_VERSION = 3; /* 2: MG-2's terraces at ground level by exits; 3: pictures are never scaled, plants get a drawn variant (v) instead */
+export const MAPGEN_VERSION = 4; /* 2: MG-2's terraces at ground level by exits; 3: pictures are never scaled, plants get a drawn variant (v) instead; 4: a bridge only where the road crosses a stream, square to it and dry at both ends; the road kept out of the water elsewhere */
 export const MAPGEN_STAGES = ['heights', 'ground', 'road', 'exits', 'lots', 'plants', 'feature', 'props'];
 export const MAPGEN_SHAPES = {
   straight: 'Straight',
@@ -489,6 +496,8 @@ export function mapgenNewWork(P, ctx) {
     edgeExits: [],
     streams: [],
     bridges: [],
+    /* RL-8: where the bridges go (mapgenRoadOverWater) */
+    spans: /** @type {any[]} */ ([]),
     waters: [],
     npcSpots: [],
     notes: /** @type {string[]} */ ([]),
@@ -1518,6 +1527,7 @@ export function mapgenStageWater(G) {
         G.F[q] &= ~4;
         G.T[q] = G.F[q] & 1 ? MAPGEN_SURFACES[P.road.surface] : B.ground.bank;
       }
+    mapgenRoadOverWater(G);
     mapgenLowerWater(G);
   }
   mapgenBridgesOverWater(G);
@@ -1567,32 +1577,116 @@ export function mapgenStageLand(G) {
     });
   }
 }
-export function mapgenBridgesOverWater(G) {
-  for (const R of G.road) {
-    let run = [];
-    const flush = () => {
-      if (run.length >= 2) {
-        const a = run[0],
-          b = run[run.length - 1],
-          dx = b[0] - a[0],
-          dz = b[1] - a[1],
-          L = Math.hypot(dx, dz) || 1,
-          ext = 0.8;
-        G.bridges.push({
-          a: [mapgenRound2(a[0] - (dx / L) * ext), mapgenRound2(a[1] - (dz / L) * ext)],
-          b: [mapgenRound2(b[0] + (dx / L) * ext), mapgenRound2(b[1] + (dz / L) * ext)],
-          w: mapgenRound2(Math.max(1.4, R.width + 0.5)),
-          kind: G.P.feature === 'lava' ? 'stone' : 'wood',
-        });
-        for (const p of run) mapgenPaintDisc(G, p[0], p[1], R.width / 2 + 0.5, q => (G.F[q] |= 8));
-      }
-      run = [];
-    };
-    for (const p of R.pts) {
-      if (G.F[mapgenCellAt(G, p[0], p[1])] & 4) run.push(p);
-      else flush();
+/* RL-8: where a road meets water. A bridge goes only where the road's line crosses a stream's centre line (on water
+   still: the exits' straight runs and joined edges were dried), square to the water (or along the road when it comes
+   within 25 degrees of square), from dry bank to dry bank across the deck's width. Anywhere else the road only dips
+   into the water beside it (a road running along a stream, a pond's edge), and that stretch is dried and paved, so the
+   road keeps to the bank; a crossing with no bank within reach is a causeway the same way. Before, a bridge ran from a
+   road's first wet point to its last: along the stream where the road ran beside it, and often ending in the water */
+export const MAPGEN_BRIDGE_SQUARE = (25 * Math.PI) / 180;
+export function mapgenSegCross(p, q, r, s) {
+  const d = (q[0] - p[0]) * (s[1] - r[1]) - (q[1] - p[1]) * (s[0] - r[0]);
+  if (Math.abs(d) < 1e-9) return null;
+  const u = ((r[0] - p[0]) * (s[1] - r[1]) - (r[1] - p[1]) * (s[0] - r[0])) / d,
+    v = ((r[0] - p[0]) * (q[1] - p[1]) - (r[1] - p[1]) * (q[0] - p[0])) / d;
+  return u >= 0 && u < 1 && v >= 0 && v < 1 ? [p[0] + (q[0] - p[0]) * u, p[1] + (q[1] - p[1]) * u] : null;
+}
+/** the road's crossings of the streams and its dry stretches; runs before the water is lowered */
+export function mapgenRoadOverWater(G) {
+  const wet = (x, z) => !!(G.F[mapgenCellAt(G, x, z)] & 4);
+  /* how far out from p along (ux, uz) the deck's end is on dry ground across its width; null: none within 8 m */
+  const dry = (p, ux, uz, w) => {
+    const sx = -uz * Math.max(0, w / 2 - 0.3),
+      sz = ux * Math.max(0, w / 2 - 0.3);
+    for (let t = 0; t < 8; t += 0.25) {
+      const x = p[0] + ux * t,
+        z = p[1] + uz * t;
+      if (!wet(x, z) && !wet(x + sx, z + sz) && !wet(x - sx, z - sz)) return t;
     }
-    flush();
+    return null;
+  };
+  /** @type {{ a: number[], b: number[], w: number, R: any }[]} */
+  const spans = [];
+  for (const R of G.road) {
+    const w = Math.max(1.4, R.width + 0.5);
+    for (let i = 0; i + 1 < R.pts.length; i++) {
+      const p = R.pts[i],
+        q = R.pts[i + 1];
+      for (const st of G.streams)
+        for (let k = 0; k + 1 < st.pts.length; k++) {
+          const C = mapgenSegCross(p, q, st.pts[k], st.pts[k + 1]);
+          if (!C || !wet(C[0], C[1])) continue;
+          if (spans.some(S => mapgenNearSpan(S, C[0], C[1], 0.5))) continue;
+          const rl = Math.hypot(q[0] - p[0], q[1] - p[1]) || 1,
+            rx = (q[0] - p[0]) / rl,
+            rz = (q[1] - p[1]) / rl,
+            sx = st.pts[k + 1][0] - st.pts[k][0],
+            sz = st.pts[k + 1][1] - st.pts[k][1],
+            sl = Math.hypot(sx, sz) || 1;
+          let nx = -sz / sl,
+            nz = sx / sl;
+          if (nx * rx + nz * rz < 0) {
+            nx = -nx;
+            nz = -nz;
+          }
+          /* square to the water, turned toward the road by at most 25 degrees */
+          const off = Math.atan2(nx * rz - nz * rx, nx * rx + nz * rz),
+            turn = Math.max(-MAPGEN_BRIDGE_SQUARE, Math.min(MAPGEN_BRIDGE_SQUARE, off)),
+            ux = nx * Math.cos(turn) - nz * Math.sin(turn),
+            uz = nx * Math.sin(turn) + nz * Math.cos(turn),
+            ta = dry(C, -ux, -uz, w),
+            tb = dry(C, ux, uz, w);
+          if (ta == null || tb == null) continue; /* no bank in reach: the road there is dried below */
+          spans.push({
+            a: [C[0] - ux * (ta + 0.8), C[1] - uz * (ta + 0.8)],
+            b: [C[0] + ux * (tb + 0.8), C[1] + uz * (tb + 0.8)],
+            w,
+            R,
+          });
+        }
+    }
+  }
+  /* the road's wet stretches away from the bridges: dried and paved (its cells; the bank beside it) */
+  const surf = MAPGEN_SURFACES[G.P.road.surface];
+  for (const R of G.road)
+    for (const p of R.pts)
+      if (wet(p[0], p[1]) && !spans.some(S => mapgenNearSpan(S, p[0], p[1], 1.2)))
+        mapgenPaintDisc(G, p[0], p[1], R.width / 2 + 0.5, q => {
+          if (!(G.F[q] & 4)) return;
+          const x = (q % G.w) + 0.5,
+            z = Math.floor(q / G.w) + 0.5;
+          if (spans.some(S => mapgenNearSpan(S, x, z, 0.3))) return;
+          G.F[q] &= ~4;
+          G.T[q] = G.F[q] & 1 ? surf : G.B.ground.bank;
+        });
+  G.spans = spans;
+}
+/** whether (x, z) is on a span's deck, widened by m */
+export function mapgenNearSpan(S, x, z, m) {
+  const dx = S.b[0] - S.a[0],
+    dz = S.b[1] - S.a[1],
+    L = Math.hypot(dx, dz) || 1,
+    t = ((x - S.a[0]) * dx + (z - S.a[1]) * dz) / L,
+    s = Math.abs(-(x - S.a[0]) * dz + (z - S.a[1]) * dx) / L;
+  return t >= -m && t <= L + m && s <= S.w / 2 + m;
+}
+export function mapgenBridgesOverWater(G) {
+  for (const S of G.spans || []) {
+    G.bridges.push({
+      a: [mapgenRound2(S.a[0]), mapgenRound2(S.a[1])],
+      b: [mapgenRound2(S.b[0]), mapgenRound2(S.b[1])],
+      w: mapgenRound2(S.w),
+      kind: G.P.feature === 'lava' ? 'stone' : 'wood',
+    });
+    const L = Math.hypot(S.b[0] - S.a[0], S.b[1] - S.a[1]);
+    for (let t = 0; t <= L; t += 0.5)
+      mapgenPaintDisc(
+        G,
+        S.a[0] + ((S.b[0] - S.a[0]) * t) / L,
+        S.a[1] + ((S.b[1] - S.a[1]) * t) / L,
+        S.w / 2 + 0.25,
+        q => (G.F[q] |= 8)
+      );
   }
 }
 
