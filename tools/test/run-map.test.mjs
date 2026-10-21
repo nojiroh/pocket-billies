@@ -183,14 +183,14 @@ test('exits: one link in the middle of a side, two 10 m and 54 m along its 64 m;
     const map = runMapMake(s, NODE_TYPES, MAP_RULES);
     map.nodes.forEach((n, i) => {
       const e = runExits(map, i);
-      for (const side of [e.north, e.south])
+      for (const side of [e.ahead, e.back])
         assert.deepEqual(
           side.map(x => x.t),
           [[], [0.5], [0.15625, 0.84375]][side.length]
         );
-      for (const { to } of e.north) assert.ok(runExits(map, to).south.some(x => x.from === i));
-      assert.deepEqual(e.north.map(x => x.to).sort(), runNext(map, i).sort());
-      assert.deepEqual(e.south.map(x => x.from).sort(), runBack(map, i).sort());
+      for (const { to } of e.ahead) assert.ok(runExits(map, to).back.some(x => x.from === i));
+      assert.deepEqual(e.ahead.map(x => x.to).sort(), runNext(map, i).sort());
+      assert.deepEqual(e.back.map(x => x.from).sort(), runBack(map, i).sort());
     });
   }
   const tooMany = {
@@ -233,7 +233,7 @@ test('on the bowl: rows clockwise (westward) along an arc, lanes apart, roads le
         const { north } = bowlCompass(P[i][0], P[i][1]),
           along = j => (P[j][0] - P[i][0]) * north[0] + (P[j][1] - P[i][1]) * north[1],
           e = runExits(map, i);
-        for (const side of [e.north.map(x => [x.to, x.t]), e.south.map(x => [x.from, x.t])]) {
+        for (const side of [e.ahead.map(x => [x.to, x.t]), e.back.map(x => [x.from, x.t])]) {
           const byPlace = side
             .slice()
             .sort((p, q) => along(p[0]) - along(q[0]))

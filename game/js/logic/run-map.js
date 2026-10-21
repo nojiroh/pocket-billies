@@ -7,8 +7,8 @@
    each mini-boss is a town (rules.json run.map). The other rows take a filler type by weight (nodeTypes.json).
    A link leaves its node by the west side and arrives by the next node's east (the owner: runs go east to west): one
    link at t 0.5, two at 0.15625 and 0.84375, 10 m and 54 m along (the seam rules allow two exits a side, 44 m apart, logic/seam-rules.js, and an
-   east or west edge is 64 m), so a node has at most two links each way. runExits' `north` is the way ahead (west),
-   `south` the way back (east). Two lanes run straight, split, merge, or switch once (one diagonal, never two, so links never cross).
+   east or west edge is 64 m), so a node has at most two links each way. runExits' `ahead` is the way west,
+   `back` the way east. Two lanes run straight, split, merge, or switch once (one diagonal, never two, so links never cross).
    On the bowl every map's north faces the centre (logic/bowl.js), so west is clockwise round it: a run's rows go
    clockwise along an arc on the bowl's south side, lane 0 outermost (a map's south), and each node's exits run south
    to north in the order of its neighbours.
@@ -145,15 +145,15 @@ export const RUN_EXIT_T = [
 ]; /* 10 m and 54 m along a 64 m edge: whole metres, 44 m apart */
 /** a node's exits, west to east: north to the nodes it leads to, south to the ones that lead to it
  * @param {RunMap} map @param {number} i
- * @returns {{ north: { to: number, t: number }[], south: { from: number, t: number }[] }} */
+ * @returns {{ ahead: { to: number, t: number }[], back: { from: number, t: number }[] }} */
 export function runExits(map, i) {
   const byLane = (/** @type {number[]} */ js) => js.slice().sort((a, b) => map.nodes[a].lane - map.nodes[b].lane),
     ahead = byLane(runNext(map, i)),
     back = byLane(runBack(map, i));
   if (ahead.length > 2 || back.length > 2) throw new Error(`runExits: node ${i} has more than two links a side`);
   return {
-    north: ahead.map((to, k) => ({ to, t: RUN_EXIT_T[ahead.length][k] })),
-    south: back.map((from, k) => ({ from, t: RUN_EXIT_T[back.length][k] })),
+    ahead: ahead.map((to, k) => ({ to, t: RUN_EXIT_T[ahead.length][k] })),
+    back: back.map((from, k) => ({ from, t: RUN_EXIT_T[back.length][k] })),
   };
 }
 /** where a run's map sits on the bowl: its rows clockwise (westward) along an arc at radius r, centred on angle a

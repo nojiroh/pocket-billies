@@ -70,8 +70,8 @@ export const RUN_SIDE_ID = { E: ['east', 'east2'], W: ['west', 'west2'] };
  * @returns {{ side: 'E' | 'W', t: number, id: string, node: number }[]} node: the neighbour the exit leads to */
 export function runSceneExits(map, i) {
   const ex = runExits(map, i),
-    E = ex.south.map((e, k) => ({ side: /** @type {'E'} */ ('E'), t: e.t, id: RUN_SIDE_ID.E[k], node: e.from })),
-    W = ex.north.map((e, k) => ({ side: /** @type {'W'} */ ('W'), t: e.t, id: RUN_SIDE_ID.W[k], node: e.to }));
+    E = ex.back.map((e, k) => ({ side: /** @type {'E'} */ ('E'), t: e.t, id: RUN_SIDE_ID.E[k], node: e.from })),
+    W = ex.ahead.map((e, k) => ({ side: /** @type {'W'} */ ('W'), t: e.t, id: RUN_SIDE_ID.W[k], node: e.to }));
   return [E[0], W[0], E[1], W[1]].filter(e => !!e);
 }
 /** the exit of node i that leads to node j, or null @param {RunMap} map @param {number} i @param {number} j */
