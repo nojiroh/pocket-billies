@@ -85,3 +85,34 @@ session is tagged `mg-N-done`.
   neighbour's seam strip should set the exit's `t` (an integer offset within 0.5 m) and pin the edge heights within
   ±22 m of the exit; terraces should stay at zero raise near a joined edge. Data rules to meet: two exits a side at
   most, 44 m apart.
+
+## MG-2: seam agreement (2026-10-21; terrain TR-1 folded in)
+- What RL-7 calls (all in game/js/logic/mapgen.js, pure): `mapgenEdgeStrip(parent, exitId, {w, h}, t)` reads what
+  the parent shows at that exit, in the new scene's metres (its edge corners, cells, step raise and nearby things over
+  the exit ± 30 m, clipped to the edge both share) with the new exit's `t` snapped so the two exits are a whole number
+  of metres apart; pass the strips as `params.edges` (plain data, kept in `gen.params`, so a scene is still a function
+  of its dials); mapgenParams moves the nearest exit on that side (within 44 m) onto each strip or adds one (a note
+  when four exits leave no room). `mapgenSeamAgreement(A, idA, B, idB, scenery)` measures a pair (height gap along
+  the shared edge near the exit and over the band, the step across, a straight walk across: what a run-world test
+  should assert). `mapgenPairScene` lays two scenes into one (the Studio's preview). `mapgenReach`/`mapgenReached`
+  (the walk grid from any point). The props dials `mast`, `clinic`, `shop` put the hub's buildings (stage `lots`, its
+  own seed). MAPGEN_VERSION 2.
+- The stages: heights, the edges pinned (16 m fade), road, ground, water (none in a joined strip), hub (10 m from a
+  joined edge), exits, land (terraces at ground level within 8 m of every exit's edge stretch, a level more every 6 m),
+  feature, the neighbour's natural ground and things (`mapgenStageEdgeGround`), lots, plants, props, the edges pinned
+  again (6 m, exact). A joined edge ends exactly at the neighbour's heights over the stretch a neighbour shows in a
+  view (seamless-world.js NEIGHBOR_BAND_HALF_WIDTH, 26 m either side of the exit; MAPGEN_BAND), so the game's seam
+  easing has nothing to do there. Two parents on one side hold to the midpoint between their exits less 2 m.
+- Measured: two routes generated on their own differ by 0.26 m near the exit and 0.76 m over the band (up to 1.3 m at
+  hills 0.5); joined, 0.00 m on every pair tried (about 250, terraced ones included), no step, every walk across.
+  Terraced scenes had their north exits 1-3 m up; now 0. The hub's buildings fit in 359 of 360 random routes (north
+  of the road where it runs across, beside it where it runs north, always facing the camera).
+- Corrections to the plans: the roguelite plan's MG-2 (seam agreement) is not this file's old MG-2 (Accept as a
+  place, now parked: it edits the legacy world). "a02_joins' numbers": a02_joins compares the two composite views
+  (a composer property) and walks across; on raw data only heights, step raise and the walk are rules (today's 56
+  hand-made links: heights within 5 cm near the exit on 55, worst 0.14 m; equal raise on all; edge cells differ on 53,
+  which the composer mingles), so copying the neighbour's ground is a generator nicety, kept to natural ground on free
+  cells. "The check-data rules re-implemented once in Node" means one shared module, logic/seam-rules.js (check-data
+  is already Node). MG-1's "zero raise near a joined edge" has to hold on every exit's edge: a parent can't know which
+  exits get joined. The pin covers the 26 m band, not 22 m.
+- The Studio: Joins… on each exit row, Preview the pair, the hub's buildings, a Buildings reroll (STUDIO.md).

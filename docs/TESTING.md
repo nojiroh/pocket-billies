@@ -76,6 +76,16 @@ Two rules hold everywhere:
 - The save's run state (RL-3: `meta-state`, `ranch-state`, `run-state` and `saves.test.mjs`): run on the fixture's
   three locations, so a save from a run sits at node 4, past `LOCATIONS`, to prove `migrate` keeps a run's trip by the
   run's map and not by today's places. Switching that branch off turns the run-save test red.
+- The map generator (MG-1, MG-2, TR-1; `tools/test/mapgen*.test.mjs`): `mapgen.test.mjs` the MG-1 invariants (format,
+  determinism, a stage's own seed, the hub reaches every exit, nothing grows on paths or in water); `mapgen-golden`
+  a hash per part of five unjoined scenes (`gen` left out), so a change says which part moved: remake it on purpose
+  (`--test-update-snapshots`) and say so; `mapgen-seams` joined pairs (`mapgenEdgeStrip`, `mapgenSeamAgreement`: no
+  height gap over the neighbour band, no step, a straight walk across; terraces at ground level by exits; a node
+  with two parents; the pair laid as one scene); `mapgen-roads` roads measured with the game's own riser rule
+  (`logic/step-grid.js`, moved from walk-view.js so a test sees the road as the game draws it); `mapgen-lots` the
+  hub's buildings. `rng.test.mjs` freezes the default scene's hash, `gen` included: a new dial or version changes it
+  (remade on purpose, said in the commit). The seam rules are `logic/seam-rules.js` (`seam-rules.test.mjs` freezes
+  each fault's words); check-data runs the same module.
 - On the game's data, test what must hold whatever the content (every road has its exits, every gate its trainer),
   not counts a content change legitimately alters. Where the whole shape matters, use a snapshot
   (`t.assert.snapshot`): remake it with `node --test --test-update-snapshots tools/test/<file>` in the commit that
