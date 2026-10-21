@@ -799,8 +799,28 @@ def ui_tools_steps(pg, errs):
         lines = (REPO / 'game' / f).read_text().split('\n')
         if rule != 'important' or lines[int(ln) - 1].strip()[:200] != text or '!important' not in text: errs.append(f'the rule list says {at} {text!r}')
         if not href.endswith(f'/game/{f}#L{ln}') or 'github.com/nojiroh/pocket-billies/blob/' not in href: errs.append(f'the link {href}')
+    # inspect: a tap on the gold button picks it (it doesn't press) and lists the variables it reads, with their dials
+    pg.evaluate("void openSection('ui')")
+    try: pg.wait_for_function("(w => w && w.galleryLook && w.document.querySelector('pb-button[kind=gold]'))(document.querySelector('#uiPv').contentWindow)", timeout=30000)
+    except Exception: errs.append('the preview never showed the gallery')
+    pg.click('#uiInsp')
+    pg.frame_locator('#uiPv').locator('.g-wrap pb-button[kind=gold]').first.click()
+    try: pg.wait_for_selector('#uiInspect tr[data-var]', timeout=10000)
+    except Exception: errs.append(f"inspect listed nothing: {pg.evaluate('document.querySelector(\"#uiInspect\").textContent')!r}")
+    info = pg.evaluate("[document.querySelector('#uiInspect .ui-insp-h').textContent, [...document.querySelectorAll('#uiInspect tr[data-var]')].map(r => [r.dataset.var, r.querySelectorAll('[data-act=uiInspectGo]').length])]")
+    if 'pb-button' not in info[0] or 'Buttons' not in info[0]: errs.append(f'inspect named the part {info[0]!r}')
+    names = [v for v, _ in info[1]]
+    if not any(v.startswith('--clip-') for v in names) or not any(k for v, k in info[1] if v.startswith('--clip-')): errs.append(f'inspect: no cut shape with its dial among {names}')
+    if not pg.evaluate("!!document.querySelector('#uiPv').contentWindow.document.querySelector('#studioInspect div')"): errs.append('inspect drew no outline')
+    go = pg.evaluate("(b => b && b.dataset.r)(document.querySelector('#uiInspect tr[data-var^=\"--clip-\"] [data-act=uiInspectGo]'))")
+    if go:
+        pg.click(f'#uiInspect tr[data-var^="--clip-"] [data-act=uiInspectGo][data-r="{go}"]')
+        try: pg.wait_for_selector(f'#uiSet .eng-f[data-path="uiTheme.defaults.{go}"]', timeout=10000)
+        except Exception: errs.append(f'the dial button did not open {go}')
+    pg.click('#uiInsp')
+    if pg.evaluate("!!document.querySelector('#uiPv').contentWindow.document.querySelector('#studioInspect div')"): errs.append('the outline stayed after Inspect went off')
     if len(errs) > n: errs[n:] = [f'ui tools: {e}' for e in errs[n:]]
-    else: print(f"ui tools: the rule report ({pg.evaluate('uiRules.found.length')} raw values) with Show me to lines that match the files", flush=True)
+    else: print(f"ui tools: inspect (the gold button: {len(names)} variables, its cut opens {go}); the rule report ({pg.evaluate('uiRules.found.length')} raw values) with Show me to lines that match the files", flush=True)
 
 
 def studio_test_steps(pg, errs):

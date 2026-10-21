@@ -13,7 +13,16 @@
    screen, ↺ takes the screen's own value away and the dial follows the game again. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
-import { fieldSelector, findFlash, uiRulesHTML, uiRulesShow } from '../../game/js/hooks.js';
+import {
+  fieldSelector,
+  findFlash,
+  uiInspect,
+  uiInspectMount,
+  uiInspectOutline,
+  uiInspectPanel,
+  uiRulesHTML,
+  uiRulesShow,
+} from '../../game/js/hooks.js';
 import { $ } from '../../game/js/util.js';
 import { UI_CONTRAST, UI_SCREENS, mergeLook, screenLook, uiRatio, uiThemeLook } from '../../game/js/logic/ui-theme.js';
 import { escapeHtml } from './game-stand-ins.js';
@@ -82,7 +91,7 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-const uiEditor = {
+export const uiEditor = {
   scope: 'game',
   open: { color: 1 },
   fam: 'panel',
@@ -94,7 +103,7 @@ const uiEditor = {
   saved: null,
   pvT: 0,
 };
-const uiData = () => studioState.D.uiTheme;
+export const uiData = () => studioState.D.uiTheme;
 /* the look as last saved: taken when the Studio has nothing unsaved */
 function uiSaved() {
   if (!uiEditor.saved || (!studioState.dirty && JSON.stringify(uiEditor.saved) !== JSON.stringify(uiData())))
@@ -102,7 +111,7 @@ function uiSaved() {
   return uiEditor.saved;
 }
 const uiBase = () => uiScopePath(uiEditor.scope);
-const uiScreenName = id => (UI_SCREENS[id] || {}).name || id;
+export const uiScreenName = id => (UI_SCREENS[id] || {}).name || id;
 const uiLevelName = () => (uiEditor.scope === 'game' ? 'the whole game' : uiScreenName(uiEditor.scope));
 /* a dial's own value at this level, what it would be without it, and what shows */
 function uiDialState(rel) {
@@ -318,8 +327,9 @@ SECTIONS.ui = () => {
   return `<div class="eng-split ui-split"><div class="eng-set" id="uiSet">${uiSettingsHTML()}</div>
  <div class="eng-side"><div class="card"><div class="card-b"><div class="ui-pvbar"><div class="seg-row">${seg('mode', 'light', 'Light')}${seg('mode', 'dark', 'Dark')}</div><div class="seg-row">${seg('width', '320px', '320')}${seg('width', '390px', '390')}${seg('width', '760px', 'Wide')}</div>
   <div class="seg-row"><button class="seg ${uiEditor.reduced ? 'on' : ''}" data-act="uiPv" data-g="reduced">Reduced motion</button><select id="uiText" aria-label="Text size (Settings)"><option value="">Text: normal</option><option value="large" ${uiEditor.text === 'large' ? 'selected' : ''}>Text: large</option><option value="xlarge" ${uiEditor.text === 'xlarge' ? 'selected' : ''}>Text: larger</option></select>
-  <button class="btn sm" id="uiCmp" title="Hold (or hold C) to see the look as last saved">Hold to compare</button><a class="btn sm subtle" href="gallery.html" target="_blank" rel="noopener">Open the gallery</a></div></div>
+  <button class="btn sm ${uiInspect.on ? 'on' : ''}" id="uiInsp" data-act="uiInspectOn" title="Tap a part in the preview: what it is and which dials reach it">Inspect</button>  <button class="btn sm" id="uiCmp" title="Hold (or hold C) to see the look as last saved">Hold to compare</button><a class="btn sm subtle" href="gallery.html" target="_blank" rel="noopener">Open the gallery</a></div></div>
   <iframe class="ui-pv" id="uiPv" title="The UI gallery with this look" src="gallery.html?studio=1"></iframe>
+  <div class="ui-inspect" id="uiInspect" hidden></div>
   <p class="help">The game’s own parts (studio/gallery.html) with your unsaved look${uiEditor.scope === 'game' ? '' : `, as on ${escapeHtml(uiScreenName(uiEditor.scope))}`}. An open game tab follows too.</p></div></div></div></div>`;
 };
 /* hand the look to the preview frame */
@@ -334,6 +344,11 @@ function uiPreviewNow() {
     text: uiEditor.text,
     screen: uiEditor.scope === 'game' ? '' : uiEditor.scope,
   });
+  /* UI-3b: what inspect shows follows the look */
+  if (uiInspect.on) {
+    uiInspectOutline();
+    uiInspectPanel();
+  }
   return true;
 }
 function uiPreview() {
@@ -343,7 +358,10 @@ function uiPreview() {
 function mountUiPreview() {
   const f = $('#uiPv');
   if (!f) return;
-  f.addEventListener('load', uiPreviewNow);
+  f.addEventListener('load', () => {
+    uiPreviewNow();
+    uiInspectMount();
+  });
   uiPreviewNow();
   const b = $('#uiCmp');
   b.onpointerdown = () => uiCompare(true);

@@ -4329,7 +4329,8 @@ body.wb-dropping::after {
 .ui-pvbar select {
   width: auto;
 }
-#uiCmp.on {
+#uiCmp.on,
+#uiInsp.on {
   background: var(--acc);
   border-color: var(--acc);
   color: #fff;
@@ -4478,4 +4479,44 @@ body.wb-dropping::after {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.ui-inspect {
+  max-height: 34vh;
+  overflow: auto;
+  margin-top: 10px;
+  font-size: 12px;
+}
+/* the frame makes room for the panel while it shows */
+.eng-side:has(.ui-inspect:not([hidden])) .ui-pv {
+  height: calc(66vh - 230px);
+  min-height: 300px;
+}
+.ui-insp-h {
+  margin-bottom: 6px;
+}
+.ui-insp {
+  width: 100%;
+  border-collapse: collapse;
+}
+.ui-insp td {
+  padding: 3px 6px 3px 0;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--line);
+}
+.ui-insp td:first-child {
+  white-space: nowrap;
+}
+.ui-insp td:last-child {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.ui-sw {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin-right: 4px;
+  vertical-align: -2px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
 }
