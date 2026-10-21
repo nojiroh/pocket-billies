@@ -10,9 +10,9 @@ Without a browser (Node): the game data is valid, and the world-map graph is unc
 and its snapshot). In a browser, each check opens its own page straight where it needs to be (?fixture=<name>,
 game/js/fixture.js), never through the opening and never waiting for every map: the game boots with no console or page
 errors; a town and a room each open and draw frames (RL-5: the hub, Copperleaf; the route and the cave were parked
-with their places, and come back with the runs' places, RL-7); a battle plays to the end; a save round-trips;
-the Studio loads; the exported debug log holds no names; the world map opens as the bowl, a tap opens a card, Home
-comes back. The page is small (400x300) with every costly graphics dial
+with their places); a run's world (RL-7) opens on its landing, its places on the bowl, and a walk over a seam arrives
+at the next node a day later; a battle plays to the end; a save round-trips; the Studio loads; the exported debug
+log holds no names; the world map opens as the bowl, a tap opens a card, Home comes back. The page is small (400x300) with every costly graphics dial
 off before it loads; nothing waits a fixed time, only for frames or the game's state. No pictures are taken.
 
 Graphics are not judged here: software drawing can't. The game's own graphics test (Settings → Help) is for a person
@@ -158,6 +158,49 @@ def scene(node_id):
         else: drawing(pg)
         return f'{pg.evaluate("walkView.id")} drew {pg.evaluate("walkRenderer.frames")} frames'
     return run
+
+
+def walk_over(pg, n1, past, sec=60):
+    """RL-7: walk from where you stand out of the exit to the place n1 and on `past` metres, the way check-quick.py's
+    cross() does (a path, the player put along it 0.8 m at a time, walkCross() after each); True once you are in n1"""
+    R = pg.evaluate("""(([to, past]) => {
+      const v = walkState(), e = (v.exits || []).find(e => e.to === to);
+      if (!e) return 'no exit to ' + LOCATIONS[to].name + ' from ' + LOCATIONS[saveData.trip.node].name;
+      const sc = walkView.sc, pt = sc.exits[e.i],
+        ee = (sc.edgeExits || (sc.baseId && mapById(sc.baseId) || {}).edgeExits || [])[e.i], sv = SIDE_VECTORS[ee.side],
+        P = walkView.pl, R = findPath(P.x, P.z, pt[0] + sv[0] * past, pt[1] + sv[1] * past, { max: 1e6 });
+      return R || 'no path to the exit to ' + LOCATIONS[to].name;
+    })""", [n1, past])
+    if isinstance(R, str): raise Exception(R)
+    for a, b in zip(R, R[1:]):
+        d = ((b[0] - a[0]) ** 2 + (b[1] - a[1]) ** 2) ** .5; k = max(1, int(d / .8))
+        for j in range(1, k + 1):
+            if not until(pg, 'walkView.ready', sec): raise Exception(f'the view {pg.evaluate("walkView.id")} went unready on the way')
+            x = a[0] + (b[0] - a[0]) * j / k; z = a[1] + (b[1] - a[1]) * j / k
+            if pg.evaluate(f"(()=>{{walkView.pl.x={x};walkView.pl.z={z};walkView.pl.route=null;walkCross();return saveData.trip.node==={n1}}})()"): return True
+    return False
+
+
+def run_world(pg, base):
+    """RL-7: the run fixture boots on its landing (day 1), its world made from the seed at boot: Copperleaf and a place
+    per node, the landing's view drawing; the Map tab opens as the bowl with every place on it; a walk over the
+    landing's north seam (rules.json run.seamIn metres in) arrives at the next node on day 2 and opens its view"""
+    drawing(pg)
+    seed, scenes, ms, places, want, node, day, view = pg.evaluate("[runWorld.seed, runWorld.scenes, runWorld.ms, LOCATIONS.length, 1 + saveData.run.map.nodes.length, saveData.trip.node, saveData.run.clock, walkView.id]")
+    if seed != 'RL7FIXTURE' or places != want: raise Exception(f"the run's world isn't in: {places} places for {want}, made from {seed!r}")
+    if node != 1 or day != 1: raise Exception(f'not on the landing on day 1: node {node}, day {day}')
+    if view != pg.evaluate("'w:' + LOCATIONS[1].mapId + '*'"): raise Exception(f'the landing’s view isn’t open: {view}')
+    if not until(pg, "!document.getElementById('loader')", 30): raise Exception('the loading screen never went')
+    pg.evaluate("document.querySelector('[data-a=tab][data-t=map]').click();0")
+    if not until(pg, "typeof worldBowl!=='undefined'&&worldBowl.on&&worldBowl.frames>=3&&!!worldBowl.spots&&worldBowl.spots.length===LOCATIONS.length", 30):
+        raise Exception('the map didn’t open as the bowl with the run’s places')
+    pg.evaluate("document.querySelector('[data-a=tab][data-t=walk]').click();0")
+    drawing(pg)
+    n1 = pg.evaluate("runWorldNode(runNext(saveData.run.map, 0)[0])")
+    if not walk_over(pg, n1, pg.evaluate('RULES.run.seamIn') + 6): raise Exception(f'walked toward {pg.evaluate(f"LOCATIONS[{n1}].name")} and never crossed')
+    if pg.evaluate('saveData.run.clock') != 2: raise Exception(f'arrived on day {pg.evaluate("saveData.run.clock")}, not 2')
+    if not until(pg, f"walkView.ready&&walkView.id==='w:'+LOCATIONS[{n1}].mapId+'*'", 60): raise Exception(f'crossed but the view is still {pg.evaluate("walkView.id")}')
+    return f'{scenes} scenes made in {ms} ms; walked into {pg.evaluate(f"LOCATIONS[{n1}].name")} on day 2'
 
 
 def bowl_map(pg, base):
@@ -332,6 +375,7 @@ PAGES = [   # (what the page opens, its checks in order); the longest first, so 
               ('The world map opens as the bowl', bowl_map)]),
     ('room', [('A room opens and draws (the lab)', room), ('A save round-trips', save_round_trip)]),
     ('battle', [('A battle plays to the end', battle)]),
+    ('run', [("A run's world: the landing, its places on the bowl, a seam walked a day later", run_world)]),
     ('title', [('The game boots with no console or page errors', boots)]),
     ('studio', [('The Studio loads', studio), ("The Studio's world map look", studio_worldmap)]),
 ]

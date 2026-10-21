@@ -8,6 +8,7 @@
      room    inside Professor Hazel's lab in Copperleaf
      battle  a trainer battle (Leader Rocco) in Copperleaf that the team wins
      stored  whatever the fixture saved last in this browser (the save round trip)
+     run     on a run (RL-7): standing on its landing on day 1, its world made from the seed RL7FIXTURE
    UI-3b, for the Studio's UI look preview (the real screens with the look being edited):
      team    the Team screen          bag     the Bag, with a few of each item
      talk    the dialogue box with a line from Professor Hazel
@@ -20,6 +21,9 @@ import { provide } from './hooks.js';
 import { LOCATIONS, RULES, SPECIES, START_NODE, TRAINERS } from './game-data.js';
 import { makeBilly } from './logic/rules.js';
 import { applyUiTheme } from './theme-sheet.js';
+import { runBegin } from './logic/run-state.js';
+import { runArrive, runMapStart } from './logic/run-map.js';
+import { MAPGEN_VERSION } from './logic/mapgen.js';
 import { newSave } from './logic/saves.js';
 import { startTrainer } from './logic/battle-engine.js';
 import { FIXTURE, saveData, setSaveData, uiState } from './game-state.js';
@@ -27,11 +31,13 @@ import { LOOK_PRESETS, cleanLook } from './person-art.js';
 import { applyPreferences } from './settings-screen.js';
 import { actionSpot, walkData, walkView } from './walk-view.js';
 import { talkLine } from './talk.js';
+import { runWorldData } from './run-world.js';
 import { enterRoom, render, renderOverlay } from './ui.js';
 /* eslint-disable no-func-assign */
 expose({
   FIXTURE_NAMES: [() => FIXTURE_NAMES],
   FIXTURE_PLACES: [() => FIXTURE_PLACES],
+  FIXTURE_RUN_SEED: [() => FIXTURE_RUN_SEED],
   fixtureLook: [() => fixtureLook, v => (fixtureLook = v)],
   fixtureSave: [() => fixtureSave, v => (fixtureSave = v)],
   fixtureStart: [() => fixtureStart, v => (fixtureStart = v)],
@@ -47,7 +53,10 @@ const FIXTURE_PLACES = {
   team: 'copperleaf',
   bag: 'copperleaf',
   talk: 'copperleaf',
+  run: 'copperleaf',
 };
+/** RL-7: the run fixture's seed */
+const FIXTURE_RUN_SEED = 'RL7FIXTURE';
 function fixtureSave() {
   const s = newSave();
   if (FIXTURE === 'title') return s;
@@ -76,6 +85,16 @@ function fixtureSave() {
   /* the people who would stop you to talk have met you already */
   s.story = { met_chad: 1, met_chad2: 1, rival0: 1 };
   for (const T of Object.values(TRAINERS)) if (T.runsUp) s.story['met_' + T.id] = 1;
+  /* RL-7: a run from the mast (RL-8 does this at the airship) that has landed: its map, day 1 on the landing; its
+     world goes in at boot (run-world.js) */
+  if (FIXTURE === 'run') {
+    const data = runWorldData();
+    runBegin(s, { seed: FIXTURE_RUN_SEED, tier: 1, mapgenV: MAPGEN_VERSION, se: RULES.start.se });
+    runMapStart(s.run, data);
+    runArrive(s, 0, data);
+    s.run.at.phase = 'walk';
+    s.visited[s.trip.node] = 1;
+  }
   return s;
 }
 if (FIXTURE && FIXTURE !== 'stored') setSaveData(fixtureSave());

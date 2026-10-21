@@ -523,8 +523,9 @@ def walk_in(pg, act, k):
     pg.evaluate(f"(()=>{{const p=walkView.sc.props.find(p=>p.act==='{act}'&&p.k==='{k}'),g=actionSpot(p,walkData().sc.props[p.k]);walkView.pl.route=null;walkView.pl.x=g[0];walkView.pl.z=g[1];walkPick({{k:'act',p,act:'{act}'}})}})();0")
 
 
-# RL-5: cross() and cross_to() are unused while the hub is the only place (no road, no seam, no neighbour); kept for
-# RL-7, which walks a run's roads
+# RL-5: cross() and cross_to() were unused while the hub was the only place (no road, no seam, no neighbour); RL-7
+# walks a run's roads with them (a run's crossing counts rules.json run.seamIn metres in, so the walk goes that much
+# further)
 # phase 08: travel is walking. cross() walks from where you stand over the edge into the neighbour n1 the way a player
 # does: a path to 6 m past the exit (no search limit: a route view is long), the player put along it at most 0.8 m at a time, walkCross() after each (the a041
 # way: game time is too slow here to walk it for real). Returns the metres walked, the views seen on the way and how
@@ -534,7 +535,7 @@ def walk_in(pg, act, k):
 # meter['waits'] counts those steps' worth spent waiting at the seam for the next view
 def cross(pg, n1, sec=90, look=None, prep_ms=None, meter=None):
     if not until(pg, 'walkView.ready', sec): raise Exception(f'the view {pg.evaluate("walkView.id")} never got ready to walk from')
-    r = pg.evaluate(f"""(()=>{{const v=walkState(),e=(v.exits||[]).find(e=>e.to==={n1});if(!e)return 'no exit to '+LOCATIONS[{n1}].name+' from '+LOCATIONS[saveData.trip.node].name;const sc=walkView.sc,pt=sc.exits[e.i],hub=mapHub(sc),ee=(sc.edgeExits||(sc.baseId&&mapById(sc.baseId)||{{}}).edgeExits||[])[e.i],sv=ee&&SIDE_VECTORS[ee.side],dx=sv?sv[0]:pt[0]-hub[0],dz=sv?sv[1]:pt[1]-hub[1],l=Math.hypot(dx,dz)||1,tg=[pt[0]+dx/l*6,pt[1]+dz/l*6];/* phase 08b: straight out of the edge the exit is on */
+    r = pg.evaluate(f"""(()=>{{const v=walkState(),e=(v.exits||[]).find(e=>e.to==={n1});if(!e)return 'no exit to '+LOCATIONS[{n1}].name+' from '+LOCATIONS[saveData.trip.node].name;const sc=walkView.sc,pt=sc.exits[e.i],hub=mapHub(sc),ee=(sc.edgeExits||(sc.baseId&&mapById(sc.baseId)||{{}}).edgeExits||[])[e.i],sv=ee&&SIDE_VECTORS[ee.side],dx=sv?sv[0]:pt[0]-hub[0],dz=sv?sv[1]:pt[1]-hub[1],l=Math.hypot(dx,dz)||1,past=6+(saveData.run?RULES.run.seamIn:0),tg=[pt[0]+dx/l*past,pt[1]+dz/l*past];/* phase 08b: straight out of the edge the exit is on */
       const P=walkView.pl,R=findPath(P.x,P.z,tg[0],tg[1],{{max:1e6}});return R?{{R}}:'no path to the exit to '+LOCATIONS[{n1}].name}})()""")
     if isinstance(r, str): raise Exception(r)
     R = r['R']; walked = 0; views = [pg.evaluate('walkView.id')]; unready = 0
@@ -1864,7 +1865,36 @@ def desktop_steps(b, base, R):
 
     # RL-5: 'alpha 0.2: places joined edge to edge — every seam walks straight across and both views agree there' retired: the hub has no neighbour, no road and no exit, so there is no seam, no stored walk and no underground neighbour to check (RL-7 joins a run's places)
 
-    # RL-5: 'phase 08b: walking across seams — the next view ready ahead, no wait, no jump in the picture' retired: every seam it walked (and --seams=all) joined two parked places (RL-7 walks a run's roads)
+    # RL-5: 'phase 08b: walking across seams — the next view ready ahead, no wait, no jump in the picture' retired: every seam it walked (and --seams=all) joined two parked places (RL-7 walks a run's roads, below)
+
+    @step("RL-7: a run's roads — its world made from the seed, a seam walked each way a day apiece, the hub back", 300)
+    def rl7_run_roads():
+        """a run put on the save as the mast will (RL-8): its map from the seed, landed on day 1; the save swapped in
+        brings its world (game/js/run-world.js: every scene made, the tables swapped, the old views let go); the
+        landing's north seam walked over (cross()) arrives at the next node on day 2 with its view; walked back, day 3
+        on the landing; the hub's save swapped back brings Copperleaf and no run scene"""
+        if not pg.evaluate("typeof runWorldSync==='function'"): return 'not in this build'
+        pg.evaluate("""(()=>{uiState.inside=null;uiState.bench=null;uiState.modal=null;uiState.mq=[];renderOverlay();
+          window.rl7Hub=JSON.parse(JSON.stringify(saveData));const s=JSON.parse(JSON.stringify(saveData)),data=runWorldData();
+          runBegin(s,{seed:'RL7ROADS',tier:1,mapgenV:MAPGEN_VERSION,se:300});runMapStart(s.run,data);runArrive(s,0,data);
+          s.visited[s.trip.node]=1;uiState.tab='walk';setSaveData(s);render()})();0""")
+        if not until(pg, "walkView.ready&&walkView.id==='w:'+LOCATIONS[1].mapId+'*'", 90): raise Exception(f'the landing’s view never opened (still {pg.evaluate("walkView.id")})')
+        made = pg.evaluate("[runWorld.scenes, runWorld.ms, LOCATIONS.length]")
+        n1 = pg.evaluate("runWorldNode(runNext(saveData.run.map,0)[0])")
+        walked, views, unready = cross(pg, n1)
+        day = pg.evaluate('saveData.run.clock')
+        if day != 2: raise Exception(f'walked into {pg.evaluate(f"LOCATIONS[{n1}].name")} on day {day}, not 2')
+        cross(pg, 1)
+        back = pg.evaluate('[saveData.run.clock, saveData.run.path]')
+        if back[0] != 3: raise Exception(f'walked back to the landing on day {back[0]}, not 3 (path {back[1]})')
+        shot(pg, 'rl7-run-landing')
+        pg.evaluate("setSaveData(window.rl7Hub);render();0")
+        if not until(pg, "walkView.ready&&walkView.id==='w:'+mapIdAt(saveData.trip.node)+'*'&&!runWorld.seed", 90): raise Exception(f'the hub never came back (still {pg.evaluate("walkView.id")})')
+        left = pg.evaluate("Object.keys(worldExtraMaps()).length+'/'+LOCATIONS.length")
+        if left != '0/' + str(pg.evaluate('gameData.locations.length')): raise Exception(f'the run’s world stayed: {left}')
+        if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
+        return f'{made[0]} scenes made in {made[1]} ms ({made[2]} places); {walked:.0f} m over the seam (views {len(views)}, {unready} not ready), day 2, back on day 3; the hub back'
+    rl7_run_roads()
 
     @step('alpha 0.4: Copperleaf — Granny Juniper in her garden, the lab', 240)   # RL-5: the lane down to Marigold Town is parked
     def a04_copperleaf():
