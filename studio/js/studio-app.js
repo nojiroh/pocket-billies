@@ -288,9 +288,12 @@ export function restore(s) {
   if (P) P('restore', { parseMs: b - a, ms: performance.now() - a });
 }
 export function updateTopBar() {
+  const P = studioProbe.on,
+    a = P ? performance.now() : 0;
   $('#dirty').hidden = !(studioState.dirty || studioState.rigsDirty || studioState.artDirty.size);
   $('#undoBtn').disabled = !studioState.undo.length && studioState.last === snapshot();
   $('#redoBtn').disabled = !studioState.redo.length;
+  if (P) P('topbar', { ms: performance.now() - a });
 }
 /* ---------- save ---------- */
 export async function saveAll() {
