@@ -88,7 +88,7 @@ body.battle-3d #camFg {
   gap: 5px;
 }
 .bplate .pl-n {
-  font: 400 13px/1.1 var(--disp);
+  font: 400 13px/1.1 var(--font-voice);
   flex: 1;
   min-width: 0;
   overflow: hidden;
@@ -96,7 +96,7 @@ body.battle-3d #camFg {
   white-space: nowrap;
 }
 .bplate .pl-lv {
-  font: 400 12px/1 var(--disp);
+  font: 400 12px/1 var(--font-voice);
   color: #ffd86a;
 }
 .bplate .pl-cr {
@@ -147,7 +147,7 @@ body.battle-3d #camFg {
   background: rgba(0, 0, 0, 0.35);
 }
 .bplate .pl-num {
-  font: 400 11px/1 var(--disp);
+  font: 400 11px/1 var(--font-voice);
   opacity: 0.9;
 }
 .bplate .pl-xp {
@@ -288,7 +288,7 @@ body.battle-3d #camFg {
   align-items: center;
   gap: 3px;
   flex: 1;
-  font: 400 9px/1 var(--disp);
+  font: 400 9px/1 var(--font-voice);
   color: #cfe3ff;
 }
 .hp-part i {
