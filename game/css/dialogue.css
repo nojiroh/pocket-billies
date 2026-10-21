@@ -9,26 +9,35 @@
   align-items: start;
   gap: var(--s4);
   padding: var(--s4);
-  /* UI-2: a panel with two cuts; the shadow follows the cuts, the fill and edge line are the pseudo-elements */
+  /* UI-2: a speech bubble: the panel's two cuts and a tail on its top edge over the portrait; the shadow follows
+     the outline, the fill and edge line are the pseudo-elements. Only the bubble moves: it floats, wiggles and
+     breathes on three loops of different lengths (motion.css m-bubble-*), and pops a little with each new line
+     (talk.js), while the words and the pixel-art portrait stay still and crisp */
   border: 0;
   border-radius: 0;
   background: none;
   box-shadow: none;
   filter: var(--drop-float);
   isolation: isolate;
+  transform-origin: 58px 0;
 }
 .talk-box::before,
 .talk-box::after {
   content: '';
   position: absolute;
-  inset: 0;
+  inset: calc(-1 * var(--bubble-tail, 18px)) 0 0 0;
   z-index: var(--z-below);
-  clip-path: var(--clip-panel);
+  clip-path: var(--clip-bubble);
   background: var(--g-solid);
   pointer-events: none;
+  transform-origin: 58px var(--bubble-tail, 18px);
+  animation:
+    m-bubble-float 5.3s ease-in-out infinite,
+    m-bubble-wiggle 7.9s ease-in-out infinite,
+    m-bubble-breathe 4.1s ease-in-out infinite;
 }
 .talk-box::after {
-  clip-path: var(--edge-panel);
+  clip-path: var(--edge-bubble);
   background: var(--edge);
 }
 /* UI-2: the portrait's circle sits behind, and the head breaks out of its top: the picture shows whole above the
@@ -98,7 +107,7 @@
 .talk-choices {
   position: absolute;
   right: 0;
-  bottom: calc(100% + var(--s3));
+  bottom: calc(100% + var(--s3) + var(--bubble-tail, 18px));
   display: grid;
   gap: var(--s2);
   min-width: min(240px, 100%);
