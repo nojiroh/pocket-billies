@@ -31,5 +31,10 @@
   {"k":"lvl","at":16},
   {"k":"lvl","at":36}
  ],
- "parody": "Donald Trump"
+ "parody": "Donald Trump",
+ "parts": [
+  {"head":"bear_head","body":"bear_torso","front":"bear_arm","back":"reptile_tail","sig":"beasts_mane"},
+  {"head":"bear_head","body":"bear_torso","front":"bear_arm","back":"reptile_tail","sig":"beasts_mane"},
+  {"head":"bear_head","body":"bear_torso","front":"bear_arm","back":"reptile_tail","sig":"beasts_mane"}
+ ]
 }

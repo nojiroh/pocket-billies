@@ -38,5 +38,11 @@
   {"k":"lvl","at":16},
   {"k":"split","at":32}
  ],
- "parody": "Bill Gates"
+ "parody": "Bill Gates",
+ "parts": [
+  {"head":"rabbit_head","body":"rabbit_torso","front":"rabbit_arm","back":"rabbit_leg","sig":"rabbit_tail"},
+  {"head":"rabbit_head","body":"rabbit_torso","front":"rabbit_arm","back":"rabbit_leg","sig":"rabbit_tail"},
+  {"head":"rabbit_head","body":"rabbit_torso","front":"rabbit_arm","back":"rabbit_leg","sig":"rabbit_tail"},
+  {"head":"rabbit_head","body":"rabbit_torso","front":"rabbit_arm","back":"rabbit_leg","sig":"rabbit_tail"}
+ ]
 }
