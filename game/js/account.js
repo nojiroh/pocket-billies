@@ -11,12 +11,14 @@ import { TEST_RUN, closeModal, modal, provide, render, toast } from './hooks.js'
 import { TEST_BOOT } from './test-boot.js';
 import { LOCATIONS } from './game-data.js';
 import { metresToKm } from './logic/rules.js';
-import { SAVE_NEW_MSG, SAVE_VERSION, loadSave, saveAge } from './logic/saves.js';
+import { SAVE_NEW_MSG, SAVE_OLD_MSG, SAVE_VERSION, loadSave, saveAge } from './logic/saves.js';
 import {
   ACCOUNT_ID,
   ACCOUNT_KEY,
   SAVE_KEY,
   SAVE_KEY_BASE,
+  accountSetAside,
+  accountSetAsideRead,
   activeBattle,
   escapeHtml,
   save,
@@ -36,7 +38,6 @@ expose({
   FIREBASE_SDK_URL: [() => FIREBASE_SDK_URL],
   GOOGLE_ICON_SVG: [() => GOOGLE_ICON_SVG],
   SAVES_APART_MS: [() => SAVES_APART_MS],
-  SET_ASIDE_KEY: [() => SET_ASIDE_KEY],
   account: [() => account],
   accountAvatarHTML: [() => accountAvatarHTML],
   accountChanged: [() => accountChanged, v => (accountChanged = v)],
@@ -45,9 +46,7 @@ expose({
   accountOn: [() => accountOn, v => ((accountOn = v), provide({ accountOn }))],
   accountPickSave: [() => accountPickSave, v => (accountPickSave = v)],
   accountSaveCardHTML: [() => accountSaveCardHTML, v => (accountSaveCardHTML = v)],
-  accountSetAside: [() => accountSetAside, v => (accountSetAside = v)],
   accountSetAsideHTML: [() => accountSetAsideHTML, v => ((accountSetAsideHTML = v), provide({ accountSetAsideHTML }))],
-  accountSetAsideRead: [() => accountSetAsideRead, v => (accountSetAsideRead = v)],
   accountSettingsHTML: [() => accountSettingsHTML, v => ((accountSettingsHTML = v), provide({ accountSettingsHTML }))],
   accountSignIn: [() => accountSignIn, v => (accountSignIn = v)],
   accountSignOut: [() => accountSignOut, v => ((accountSignOut = v), provide({ accountSignOut }))],
@@ -300,32 +299,21 @@ function accountPickSave(remote, remoteJson) {
     });
   });
 }
-/* a save set aside in this browser (one, the latest): Settings > Save restores it or downloads it */
-const SET_ASIDE_KEY = () => SAVE_KEY + '-set-aside';
-function accountSetAside(json, from) {
-  try {
-    localStorage.setItem(SET_ASIDE_KEY(), JSON.stringify({ json, from, at: Date.now() }));
-  } catch (e) {
-    console.warn(e);
-  }
-}
-function accountSetAsideRead() {
-  try {
-    const v = JSON.parse(localStorage.getItem(SET_ASIDE_KEY()) || 'null');
-    return v && v.json ? v : null;
-  } catch (e) {
-    return null;
-  }
-}
 function accountSetAsideHTML() {
   const A = accountSetAsideRead();
   if (!A) return '';
-  let S = null;
+  let O = null;
   try {
-    S = loadSave(JSON.parse(A.json));
+    O = JSON.parse(A.json);
   } catch (e) {}
-  if (!S) return '';
-  return `<div class="acc-box acc-aside"><div class="acc-t"><b>Set aside: ${escapeHtml((S.avatar && S.avatar.name) || 'Trainer')}</b><span class="note">The game from ${escapeHtml(A.from)}, set aside ${escapeHtml(new Date(A.at).toLocaleDateString())}. Bringing it back sets this one aside instead.</span></div><div class="two"><button class="pb small" data-a="acc-aside-back">Bring it back</button><button class="pb small quiet" data-a="acc-aside-save">Download it</button></div></div>`;
+  if (!O || typeof O !== 'object') return '';
+  /* a save this version can't load (older or newer) can still be downloaded, not brought back */
+  const S = loadSave(O),
+    name = escapeHtml(String((O.avatar && O.avatar.name) || 'Trainer')),
+    when = escapeHtml(new Date(A.at).toLocaleDateString());
+  if (!S)
+    return `<div class="acc-box acc-aside"><div class="acc-t"><b>Set aside: ${name}</b><span class="note">The game from ${escapeHtml(A.from)}, set aside ${when}. ${escapeHtml(saveAge(O) === 'new' ? SAVE_NEW_MSG : SAVE_OLD_MSG)}</span></div><div class="two"><button class="pb small quiet" data-a="acc-aside-save">Download it</button></div></div>`;
+  return `<div class="acc-box acc-aside"><div class="acc-t"><b>Set aside: ${name}</b><span class="note">The game from ${escapeHtml(A.from)}, set aside ${when}. Bringing it back sets this one aside instead.</span></div><div class="two"><button class="pb small" data-a="acc-aside-back">Bring it back</button><button class="pb small quiet" data-a="acc-aside-save">Download it</button></div></div>`;
 }
 /* called by save()'s flush: writes to the account (a moment later, so a burst of saves is one write) */
 function flushAccountSave(now) {

@@ -26,16 +26,16 @@ decisions left open. Newest facts win: update this file when the rules, the sign
 - **friends.js**: a friend's page can only be read once their game has put you on their list too, so a refused read is
   retried every minute instead of showing "Friends need the updated database rules". What a friend's page holds is
   cleaned before it is drawn (`cleanFriend`): only the drawn fields, names without HTML characters, numbers as numbers.
-- **Names**: `cleanName()` (game-state.js) strips `< > " & `` ` and control characters where names enter the game: the
+- **Names**: `cleanName()` (game/js/logic/rules.js) strips `< > " & `` ` and control characters where names enter the game: the
   nickname box, `cleanLook()` (the trainer name) and `migrate()` (every load and every imported backup). This makes the
-  ~60 places that put `N(m)` or a trainer name into HTML without `esc()` safe as they are. There is no single-quoted
+  ~60 places that put `billyName(m)` (rules.js) or a trainer name into HTML without `escapeHtml()` (game-state.js) safe as they are. There is no single-quoted
   attribute with a value in it anywhere, so the apostrophe stays (D'Angelo).
 - **Game data**: `tools/check-data-text.py` (CI, under a second) fails when any text in the game data (game/data/*.json) has `< > `` ` or a
   name or id has `"`. The game and the Studio put place, Billie, move and scene names into HTML unescaped, and that
   data changes through Studio pull requests too big to read. Nothing in today's data trips it.
-- **saveVersion**: every save carries `saveVersion` (game-state.js `SAVE_VERSION = 1`). A save without it (alpha 0.5 and
+- **saveVersion**: every save carries `saveVersion` (game/js/logic/saves.js `SAVE_VERSION`, 3 since phase 08). A save without it (alpha 0.5 and
   earlier) is not loaded: the game says "This save is from an older version of the game and can't be loaded in this
-  one", starts fresh, and keeps the old save in this browser under `<save key>-set-aside`. A save from a *newer* version
+  one", starts fresh, and keeps the old save in this browser under `<save key>-set-aside` (as `{json, from, at}`, the one shape since RL-1; Settings > Save offers it to download, or to bring back when it can be loaded). A save from a *newer* version
   is never written over (the game stops saving and asks for a reload). Backups from other versions are refused with the
   same message. An old save on the account is copied to this browser (`-cloud-set-aside`) and is replaced on the
   account once the player plays on (see the open question below).
@@ -59,16 +59,16 @@ decisions left open. Newest facts win: update this file when the rules, the sign
    debug tokens for the headless checks and local play, and breaks old cached copies when enforced. Worth adding in
    phase 18, when trades make cheating valuable, together with the server code trades need anyway.
 
-## Studio sign-in (ask before changing; nothing changed)
+## Studio sign-in (A and B done in RL-1, 2026-10-20)
 
 Why it matters: the Studio and the game share one web origin (`nojiroh.github.io`, like every Pages site of the
 account), so anything that runs script on any of those pages can read a token kept in localStorage. The fixes above
 close the ways in that we know of; these options shrink what a stolen token can do.
 
-- **A. Fine-grained token for this repository only** (recommended, small). Change the "new token" link to a
+- **A. Fine-grained token for this repository only** (done in RL-1: the sign-in links GitHub's fine-grained token page). Change the "new token" link to a
   fine-grained token: only `nojiroh/pocket-billies`, Contents and Pull requests read/write, 90 days at most. A stolen
   token then can't touch other repositories. Collaborators make their own the same way.
-- **B. Session-only by default** (recommended, tiny). Untick "Remember me" by default, so the token lives in
+- **B. Session-only by default** (done in RL-1: Remember me starts unticked). Untick "Remember me" by default, so the token lives in
   sessionStorage and is gone when the tab closes. Ticking it stays possible.
 - **C. GitHub device-flow sign-in** (not now). GitHub's device-flow endpoints don't allow calls from a web page (no
   CORS), so a Pages-only Studio can't use it without a small proxy server (for example a Cloudflare Worker) and a GitHub
@@ -83,8 +83,8 @@ Every `innerHTML` in game/js and studio/js was traced to where its text comes fr
 | Where the text comes from | Places | Verdict |
 |---|---|---|
 | Fixed markup, icons, numbers the game computes | most of them (joystick, loader, fishing, story, talk, debug button, battle plates, ticker, pips, map pins) | Safe. |
-| Text through `esc()` | toasts, battle log lines, postcards, airship captions, account chip, friends list, missing-art list, Studio sign-in | Safe. |
-| Player names: nicknames `N(m)` and the trainer name, unescaped in ~60 templates (battle.js, ui.js, game-state.js, buildings, structures, vox, extras, bag) | typed, loaded from a save, imported from a backup file | **Was unsafe** (a backup file could carry a nickname with markup, without any length limit). Fixed at the way in (`cleanName`). |
+| Text through `escapeHtml()` | toasts, battle log lines, postcards, airship captions, account chip, friends list, missing-art list, Studio sign-in | Safe. |
+| Player names: nicknames `billyName(m)` and the trainer name, unescaped in ~60 templates (battle.js, ui.js, game-state.js, buildings, structures, vox, extras, bag) | typed, loaded from a save, imported from a backup file | **Was unsafe** (a backup file could carry a nickname with markup, without any length limit). Fixed at the way in (`cleanName`). |
 | Friend data (name, partner, place, request names) | friends list, map pins, world | Already escaped in friends.js and world-map-gl.js; now also cleaned on arrival (`cleanFriend`), and `data-n` gets a number only. |
 | Firebase sign-in name, e-mail, photo URL | account chip, Settings → Save | Escaped. Safe. |
 | Game data: place, Billie, move, item, scene and trainer names (game and Studio, unescaped) | gamedata.js from the repo | Trusted source, but changed by Studio pull requests. Guarded by `tools/check-data-text.py` in CI. |

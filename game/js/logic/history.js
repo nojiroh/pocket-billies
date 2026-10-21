@@ -48,7 +48,11 @@ export const historyBytes = (/** @type {string | ArtStep} */ s) =>
       : s.before.data.length + s.after.data.length;
 export const noPixels = () => ({ x: 0, y: 0, width: 0, height: 0, data: new Uint8ClampedArray(0) });
 /** several picture steps as one (undone and redone together) */
-export function historyArtGroup(/** @type {History} */ H, /** @type {ArtStep[]} */ steps, /** @type {{ before: string, after: string } | undefined} */ snapshot = undefined) {
+export function historyArtGroup(
+  /** @type {History} */ H,
+  /** @type {ArtStep[]} */ steps,
+  /** @type {{ before: string, after: string } | undefined} */ snapshot = undefined
+) {
   if (!steps.length) return;
   if (snapshot) H.last = snapshot.after;
   if (steps.length)

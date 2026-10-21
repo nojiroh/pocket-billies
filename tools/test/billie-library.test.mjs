@@ -14,7 +14,9 @@ function fixture() {
   const canvas = (width, height) => ({ width, height, getContext: () => ({ drawImage() {} }) });
   const sheet = canvas(64, 40);
   const meta = () => ({
-    k: 1, sheet: 'test.png', size: [64, 40],
+    k: 1,
+    sheet: 'test.png',
+    size: [64, 40],
     imgs: [{ ox: -4, oy: -1, f: { main: [1, 1, 8, 12] } }],
     bones: [
       { n: 'armL', par: 'torso', at: [-5, 0], i: 0, z: 8, a: 'armL' },
@@ -26,19 +28,37 @@ function fixture() {
   state.last = JSON.stringify({ D: state.D, R: rigs });
   let group;
   const context = {
-    studioState: state, wbPart: { id: 'armL' }, window: {}, WB_VIEWS: ['front', 'back'],
-    wbsSp: () => 'test', wbsRig: () => state.rigs.test,
-    boneSlot: b => b.n.startsWith('arm') ? 'front' : b.n === 'tail' ? 'sig' : null,
-    makeCanvas: canvas, atlasPath: () => 'art/test.png',
+    studioState: state,
+    wbPart: { id: 'armL' },
+    window: {},
+    WB_VIEWS: ['front', 'back'],
+    wbsSp: () => 'test',
+    wbsRig: () => state.rigs.test,
+    boneSlot: b => (b.n.startsWith('arm') ? 'front' : b.n === 'tail' ? 'sig' : null),
+    makeCanvas: canvas,
+    atlasPath: () => 'art/test.png',
     loadedAtlas: path => state.artDirty.get(path) || sheet,
     pictureImage: c => ({ width: c.width, height: c.height, data: new Uint8ClampedArray(c.width * c.height * 4) }),
     markArt: (path, c) => state.artDirty.set(path, c),
-    commit() {}, render() {}, toast() {}, changed() { state.rigVer++; state.rigsDirty = true; },
-    artSteps: (steps, snapshot) => { group = { steps, snapshot }; state.last = snapshot.after; },
+    commit() {},
+    render() {},
+    toast() {},
+    changed() {
+      state.rigVer++;
+      state.rigsDirty = true;
+    },
+    artSteps: (steps, snapshot) => {
+      group = { steps, snapshot };
+      state.last = snapshot.after;
+    },
   };
   const lib = vm.runInNewContext(code, context);
   lib.state = {
-    sp: 'test', bone: 'armL', version: 0, rig: rigs.test, busy: false,
+    sp: 'test',
+    bone: 'armL',
+    version: 0,
+    rig: rigs.test,
+    busy: false,
     prepared: [
       { view: 'front', bone: 'armL', path: 'art/test.png', sheet, c: canvas(10, 14), ox: -5, oy: -2 },
       { view: 'back', bone: 'armL', path: 'art/test.png', sheet, c: canvas(11, 15), ox: -6, oy: -3 },

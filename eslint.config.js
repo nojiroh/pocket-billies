@@ -1,6 +1,9 @@
-// Phase 04a: ESLint for the game and the Studio.
-// The game and the Studio load plain <script> files that share one global scope, in the order of their index.html.
-// So each file is linted with the top-level names of the OTHER scripts of its page(s) as globals:
+// ESLint for the game and the Studio. Today (RL-1) each page is mostly ES modules (game 113, Studio 100) that share
+// names through imports and game/js/hooks.js (tools/to-module.mjs), plus a few classic <script> files loaded first
+// (version.js, the data tables, the art manifests, lit; game 11, Studio 7) whose top-level names are real globals.
+// How the config got there, phase by phase:
+// Phase 04a: every script was a plain <script> sharing one global scope, in the order of its index.html, so each
+// file is linted with the top-level names of the OTHER scripts of its page(s) as globals:
 // - no-undef finds a name that no script defines (a typo, a deleted function still called),
 // - no-redeclare (builtinGlobals) finds a name defined in two scripts, where the later one silently wins or a
 //   let/const stops the page (what tools/check-globals.py looked for line by line).
