@@ -50,6 +50,26 @@ roguelite-track.md section 0 but left no entry here; this one is put together fr
   check:modules, format:check, check:data and 331 unit tests, all green.
 - Next: RL-4 (battle state injected) or RL-5 (legacy parking).
 
+### UI track UI-1 - Theme as data, rules as a check - 2026-10-21 (entry written in UI-2)
+The UI-1 session updated ROADMAP, TESTING and ui-track.md but left no entry here; this one is put together from its
+commits (6ae6719..2b03204) and those docs.
+- Changed (one cause per commit): tools/ui-lint.mjs (`npm run lint:ui`, a report of raw values per UI rule and file,
+  with a fixture test); v05's `--disp`/`--body` read `--font-voice`; tokens.css gains `--cut-sm/md/lg`, `--slant`,
+  `--shape-*`, a `--z-*` layer scale on today's values and the colour roles `--c-*`; HP bars read `--c-hp-*`;
+  game/data/uiTheme.json (the Copper Grove palette, teal healthy HP, glass, cut sizes, Jersey 15 + Oxanium; preset
+  `alpha05` is the old look) with schema, types and a contrast check; the fonts in game/fonts with their OFL lines;
+  logic/ui-theme.js makes the sheet and theme-sheet.js writes it as `<style id="ui-theme">`; the UI gallery loads the
+  data and switches presets; smoke logs blurred surfaces per screen (`uiBlurCount`, budget 3).
+- Found: the fonts in use were Pixelify Sans everywhere (style.css's Tiny5/Chakra pair was dead); colour roles were
+  spread over style.css and v05.css (ui-track.md, "UI-1 found").
+- Lint report at the end of UI-1 (re-run at UI-2's start, 3479f01): corners 168 raw / 59 token uses, space 1,093 /
+  214, shadows 189 / 22, keyframes 77 outside motion.css, times 279 / 22, fonts 18 / 215, colours 709 in CSS and 561
+  in game JS, `!important` 205, layers 60, blurred rules 31, `innerHTML` 57, `style="` 39. Blurred surfaces measured
+  on the phone screens: walk 6, map 12, team 6, ledger 5, profile 4, shop 8, battle 3 (budget 3).
+- Verified (from the commit messages): smoke green after the theme commit; unit tests for the sheet; the team, shop,
+  ledger and profile pictures matched for the no-op font commit.
+- Next: UI-2 (kit v2, angular shapes).
+
 ### UI track UI-0 - the plan - 2026-10-21
 Planning only, in a chat session with the owner (the plan, the owner's answers to 36 questions, a Design mockup);
 nothing built. Docs only, one cause per commit.
