@@ -463,6 +463,8 @@ export function mapgenNewWork(P, ctx) {
     H: new Float32Array((w + 1) * (h + 1)),
     /* step raise per half-metre cell (2w x 2h) */
     S: new Float32Array(4 * w * h),
+    /* TR-1: the step flags per half-metre cell, as scene.stepm (32: a ramp, leaning between its neighbours) */
+    M: new Uint8Array(4 * w * h),
     /* per cell: 1 road, 2 verge, 4 water, 8 bridge, 16 clear (no trees), 32 tall grass, 64 bank, 128 jetty */
     F: new Uint8Array(w * h),
     road: /** @type {{ pts: number[][], width: number, main: boolean }[]} */ ([]),
@@ -1239,14 +1241,21 @@ export function mapgenTerraces(G, levels) {
         k = G.near[q];
       if (k < 0) continue;
       const p = G.roadPts[k];
-      if (Math.hypot(x - p.x, z - p.z) <= p.r + 0.75) G.S[j * W2 + i] = prof[k];
+      if (Math.hypot(x - p.x, z - p.z) <= p.r + 0.75) {
+        G.S[j * W2 + i] = prof[k];
+        G.M[j * W2 + i] |= 32; /* TR-1: a ramp, so the road climbs as a slope, not 5 cm stairs */
+      }
     }
   /* the hub's and the exits' surroundings sit at their road's raise */
   for (const [cx, cz, rr] of [[G.hub[0], G.hub[1], 3.5], ...G.exits.map(e => [e.pt[0], e.pt[1], 3])]) {
     const k = G.near[mapgenCellAt(G, cx, cz)],
       v = k >= 0 ? prof[k] : 0;
     for (let j = 0; j < H2; j++)
-      for (let i = 0; i < W2; i++) if (Math.hypot((i + 0.5) / 2 - cx, (j + 0.5) / 2 - cz) <= rr) G.S[j * W2 + i] = v;
+      for (let i = 0; i < W2; i++)
+        if (Math.hypot((i + 0.5) / 2 - cx, (j + 0.5) / 2 - cz) <= rr) {
+          G.S[j * W2 + i] = v;
+          G.M[j * W2 + i] |= 32;
+        }
   }
   /* water lies at the bottom: no raise under it (under a bridge the road's ramp goes on, so the deck meets its ends) */
   for (let j = 0; j < H2; j++)
@@ -1879,7 +1888,7 @@ export function mapgenScene(params, ctx) {
     for (let i = 0; i < raw.length; i++) if ((raw[i] = Math.round(G.S[i] * 20))) any = true;
     if (any) {
       sc.steps = mapgenEncodeBase64(new Uint8Array(raw.buffer));
-      sc.stepm = mapgenEncodeBase64(new Uint8Array(G.S.length));
+      sc.stepm = mapgenEncodeBase64(G.M);
     }
   }
   sc.gen = { v: MAPGEN_VERSION, params: P, seed: P.seed };

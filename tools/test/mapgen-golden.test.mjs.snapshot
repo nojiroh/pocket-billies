@@ -32,7 +32,7 @@ exports[`golden scene: terraced 1`] = `
 {
   "tiles": 3792147473,
   "heights": 2247910161,
-  "steps": 1342825788,
+  "steps": 3063656668,
   "props": 682508324,
   "exits": 3917193882,
   "rest": 940172716,
