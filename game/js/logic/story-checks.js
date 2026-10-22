@@ -206,6 +206,8 @@ export function storyFindings(G, L = { parseScript, conditionTree, conditionProb
     for (const b of N.billie || [])
       if (!lines.has(b) && !species.has(b)) problems.push(at, `billie:${b}, no such Billie`);
     for (const q of N.quest || []) if (!quests[q]) problems.push(at, `quest:${q}, no such quest (story.json quests)`);
+    for (const u of N.unlock || [])
+      if (!(G.unlocks || {})[u]) problems.push(at, `unlock:${u}, no such unlock (unlocks.json)`);
   };
   const who = (w, at) => {
     if (w && !(w in speakers) && !(G.people || {})[w] && w !== 'me')

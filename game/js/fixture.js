@@ -11,6 +11,7 @@
      run     on a run (RL-7): standing on its landing on day 1, its world made from the seed RL7FIXTURE
      mountains   the same run with the debug menu's mountains mod (TR-3: mountains north and south, for the camera)
      ranch   inside Copperleaf's ranch (RL-9): three Billies in storage (one two levels under the cap), 50 Scrap
+     lab     Copperleaf after a run (RL-11): 500 Capital, 60 Scrap, 2 Audit Seals, one run ended (a milestone met)
    UI-3b, for the Studio's UI look preview (the real screens with the look being edited):
      team    the Team screen          bag     the Bag, with a few of each item
      talk    the dialogue box with a line from Professor Hazel
@@ -61,6 +62,7 @@ const FIXTURE_PLACES = {
   run: 'copperleaf',
   mountains: 'copperleaf',
   ranch: 'copperleaf',
+  lab: 'copperleaf',
 };
 /** RL-7: the run fixture's seed */
 const FIXTURE_RUN_SEED = 'RL7FIXTURE';
@@ -98,6 +100,8 @@ function fixtureSave() {
       s.caught[m.sp] = s.seen[m.sp] = 1;
     }
   }
+  /* RL-11: the Lab's fixture has what a few runs bring home, and one run ended (the first milestone, granted on load) */
+  if (FIXTURE === 'lab') Object.assign(s.meta, { capital: 500, scrap: 60, seals: 2, runs: 1 });
   /* UI-3b: the Bag fixture has something in it */
   if (FIXTURE === 'bag') for (const k of Object.keys(s.items)) s.items[k] = 3;
   /* the people who would stop you to talk have met you already */
@@ -107,7 +111,8 @@ function fixtureSave() {
      world goes in at boot (run-world.js) */
   if (FIXTURE === 'run' || FIXTURE === 'mountains') {
     const data = runWorldData();
-    runBegin(s, { seed: FIXTURE_RUN_SEED, tier: 1, mapgenV: MAPGEN_VERSION, se: RULES.start.se });
+    /* RL-9b: one Billie from home at Bracket I, the lead (the second stays in Copperleaf) */
+    runBegin(s, { seed: FIXTURE_RUN_SEED, tier: 1, mapgenV: MAPGEN_VERSION, se: RULES.start.se, home: [lead.uid] });
     if (FIXTURE === 'mountains') s.run.mods = [RUN_MOD_MOUNTAINS];
     runMapStart(s.run, data);
     runArrive(s, 0, data);

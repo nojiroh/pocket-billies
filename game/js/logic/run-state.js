@@ -2,8 +2,9 @@
 'use strict';
 /* ================= RUN STATE (roguelite track RL-3) =================
    The run in progress, kept in the save as saveData.run (null in the hub; roguelite-track.md 2a). While a run is
-   on, the save's working fields (team, se, items, coins, trip, wild, eggs, flags, seats, visited) are the run's: every
-   engine and screen reads them as before. runBegin copies the hub's into run.start and gives the run its own;
+   on, the save's working fields (team, se, items, coins, trip, wild, eggs, flags, seats, visited, buddy) are the
+   run's: every engine and screen reads them as before. runBegin copies the hub's into run.start and gives the run its
+   own: the Billies from home (RL-9b: picked at the mast, from the team or storage) and the bag packed from the hub's;
    runEnd pays out, puts the hub's back and keeps the Billies the player chose. Only the seed is stored for what can
    be made again (the map, the scenes): the counters (uidN, battleN) let a resumed run carry on its random streams.
    Pure: no DOM, no Date, no Math.random; runs in Node (tools/test/run-state.test.mjs). Starting and ending a run on
@@ -11,7 +12,7 @@
 /** @import { Run, RunStart, SaveData, Billy } from '../../types/save-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { META_MAX, recordOf, wholeIn } from './meta-state.js';
+import { META_IDS, META_MAX, recordOf, wholeIn } from './meta-state.js';
 /* eslint-disable no-func-assign */
 expose({
   RUN_DAYS: [() => RUN_DAYS],
@@ -27,8 +28,10 @@ expose({
   payoutOf: [() => payoutOf, v => (payoutOf = v)],
   // @ts-expect-error -- replaced on purpose
   runBegin: [() => runBegin, v => (runBegin = v)],
+  runByTier: [() => runByTier],
   // @ts-expect-error -- replaced on purpose
   runEnd: [() => runEnd, v => (runEnd = v)],
+  runHome: [() => runHome],
   runNodeCount: [() => runNodeCount],
   // @ts-expect-error -- replaced on purpose
   runRestore: [() => runRestore, v => (runRestore = v)],
@@ -52,6 +55,7 @@ export const RUN_FIELDS = /** @type {const} */ ([
   'flags',
   'seats',
   'visited',
+  'buddy',
 ]);
 export const RUN_PHASES = ['fly', 'walk', 'battle', 'menu', 'payout'],
   RUN_NODES = 64,
@@ -59,6 +63,13 @@ export const RUN_PHASES = ['fly', 'walk', 'battle', 'menu', 'payout'],
   RUN_LIST = 5000,
   RUN_TIERS = 9;
 export const copyOf = v => JSON.parse(JSON.stringify(v));
+/** RL-9b: a rule by Bracket (rules.json run.home, run.pack): the tier's entry, past the list's end its last */
+/** @param {number[]} list @param {number} tier */
+export const runByTier = (list, tier) => list[Math.max(0, Math.min(list.length, Math.floor(tier) || 1) - 1)];
+/** RL-9b: the uids of the Billies that came from home (picked at the mast); a run saved before RL-9b took the hub's
+    whole team */
+/** @param {Run} run @returns {string[]} */
+export const runHome = run => (Array.isArray(run.home) ? run.home : run.start.team.map(m => m.uid));
 /** the hub's working fields, copied */
 /** @param {SaveData} s @returns {RunStart} */
 export const runSnapshot = s =>
@@ -85,6 +96,8 @@ export function newRun(seed, tier, mapgenV, start) {
     log: [],
     released: [],
     hints: {},
+    home: ((start && start.team) || []).map(m => m.uid),
+    pack: { items: {}, coins: {} },
   };
 }
 /** how many nodes the run's world has: Copperleaf (node 0) and the map's nodes (node i + 1 is map node i) */
@@ -132,6 +145,19 @@ export function validRun(o) {
   if (!list(o.log) || !o.log.every(e => typeof e === 'string' && e.length <= 80)) return false;
   if (!list(o.released, 500) || !o.released.every(b => plain(b) && id(b.sp) && wholeIn(b.lvl, 1, 100))) return false;
   if (!recordOf(o.hints, 200, v => v === 1)) return false;
+  /* RL-11: the shop and biome unlocks the run started with (logic/unlocks.js runUnlocks); none on a run from before */
+  if (
+    o.unlocks !== undefined &&
+    (!list(o.unlocks, META_IDS) || !o.unlocks.every(u => typeof u === 'string' && /^[a-z][a-z0-9_]{0,63}$/.test(u)))
+  )
+    return false;
+  /* RL-9b: the Billies from home (uids) and what was packed (missing on a run saved before) */
+  if (o.home !== undefined && (!list(o.home, 6) || !o.home.every(u => typeof u === 'string' && u.length <= 60)))
+    return false;
+  const packed = v => recordOf(v, 500, n => wholeIn(n, 0, META_MAX));
+  if (o.pack !== undefined && !(plain(o.pack) && Object.keys(o.pack).every(k => k === 'items' || k === 'coins')))
+    return false;
+  if (o.pack !== undefined && !(packed(o.pack.items || {}) && packed(o.pack.coins || {}))) return false;
   /* the hub as the run started: shapes only (validSave checks its Billies like the team's) */
   const st = o.start,
     counts = v => recordOf(v, 500, n => wholeIn(n, 0, META_MAX));
@@ -151,7 +177,8 @@ export function validRun(o) {
     plain(st.flags) &&
     list(st.seats, 64) &&
     st.seats.every(v => typeof v === 'string') &&
-    plain(st.visited)
+    plain(st.visited) &&
+    (st.buddy === undefined || st.buddy === null || (typeof st.buddy === 'string' && st.buddy.length <= 60))
   );
 }
 /** RL-8: a run battle's foe as it began, kept in run.at so a reload starts the same battle again: its kind and
@@ -176,25 +203,51 @@ export function validRunFoe(f) {
     (f.fished === undefined || f.fished === 1)
   );
 }
-/** start a run on the save: the hub's working fields go into run.start and the run gets its own. The party travels
-    (a copy: what happens to it in the run never touches the hub's); money, items and coins are the run's starting
-    ones (`give`, from the rules in RL-8); the trip starts at Copperleaf (node 0) for the airship; story flags and
-    badges carry over, so conditions read as in the hub. Returns the run */
+/** start a run on the save: the hub's working fields go into run.start and the run gets its own. The Billies from
+    home travel (`home`, by uid, from the team or storage; RL-9b: picked at the mast, the rules' count by Bracket is the
+    page's to keep; left out, the team as it is): copies, so what happens to them in the run never touches the hub's,
+    and the first is the buddy. The packed bag (`pack`) leaves the hub's (no more than it holds, so run.start keeps what
+    stays home) and joins the run's starting money, items and coins (`give`, from the rules in RL-8); the trip starts at
+    Copperleaf (node 0) for the airship; story flags and badges carry over, so conditions read as in the hub. Returns
+    the run */
 /**
  * @param {SaveData} s
  * @param {{ seed: string, tier: number, mapgenV: number, se: number, items?: Record<string, number>,
- *   coins?: Record<string, number> }} give
+ *   coins?: Record<string, number>, home?: string[],
+ *   pack?: { items?: Record<string, number>, coins?: Record<string, number> } }} give
  * @returns {Run}
  */
 export function runBegin(s, give) {
   if (s.run) throw new Error('runBegin: a run is already on');
   const start = runSnapshot(s),
-    zero = rec => Object.fromEntries(Object.keys(rec || {}).map(k => [k, 0]));
-  const run = (s.run = newRun(give.seed, give.tier, give.mapgenV, start));
-  s.team = copyOf(start.team);
+    zero = rec => Object.fromEntries(Object.keys(rec || {}).map(k => [k, 0])),
+    all = [...s.team, ...(s.box || [])],
+    travel = [...new Set(give.home || s.team.map(m => m.uid))]
+      .map(uid => all.find(m => m.uid === uid))
+      .filter(m => !!m);
+  if (!travel.length) throw new Error('runBegin: nobody from home travels');
+  /** @type {{ items: Record<string, number>, coins: Record<string, number> }} */
+  const pack = { items: {}, coins: {} };
+  for (const kind of /** @type {const} */ (['items', 'coins']))
+    for (const [k, n] of Object.entries((give.pack && give.pack[kind]) || {})) {
+      const have = start[kind] || {},
+        take = Math.max(0, Math.min(Math.floor(n) || 0, have[k] || 0));
+      if (!take) continue;
+      have[k] -= take;
+      pack[kind][k] = take;
+    }
+  const run = (s.run = newRun(give.seed, give.tier, give.mapgenV, start)),
+    add = (/** @type {Record<string, number>} */ to, /** @type {Record<string, number>} */ more) => {
+      for (const [k, n] of Object.entries(more)) to[k] = (to[k] || 0) + n;
+      return to;
+    };
+  run.home = travel.map(m => m.uid);
+  run.pack = copyOf(pack);
+  s.team = /** @type {Billy[]} */ (copyOf(travel));
+  s.buddy = travel[0].uid;
   s.se = give.se;
-  s.items = Object.assign(zero(start.items), give.items || {});
-  s.coins = Object.assign(zero(start.coins), give.coins || {});
+  s.items = add(Object.assign(zero(start.items), give.items || {}), pack.items);
+  s.coins = add(Object.assign(zero(start.coins), give.coins || {}), pack.coins);
   s.trip = { node: 0, plan: [] };
   s.wild = {};
   s.eggs = [];
@@ -204,9 +257,9 @@ export function runBegin(s, give) {
   return run;
 }
 /** what a run pays when it ends, as Capital and Audit Seals, with the lines the payout screen lists: the money at a
-    rate, the items at a share of their price (then at the money rate), each released Billie, each node cleared, a
-    win bonus; seals for a win; Scrap (RL-9, the ranch's material) for each node cleared and a win. Rates are
-    rules.json run.payout (placeholders until the first play) */
+    rate, the items at a share of their price (then at the money rate; RL-9b: on a loss only, a win takes the bag
+    home), each released Billie, each node cleared, a win bonus; seals for a win; Scrap (RL-9, the ranch's material)
+    for each node cleared and a win. Rates are rules.json run.payout (placeholders until the first play) */
 /**
  * @param {{ se: number, items: Record<string, number>, released: number, cleared: number, won: boolean }} end
  * @param {{ money: number, itemShare: number, released: number, node: number, win: number, winSeals: number,
@@ -215,7 +268,7 @@ export function runBegin(s, give) {
  * @returns {{ capital: number, seals: number, scrap: number, lines: { what: string, n: number, capital: number }[] }}
  */
 export function payoutOf(end, rates, itemPrice) {
-  const itemValue = Object.entries(end.items || {}).reduce(
+  const itemValue = Object.entries(end.won ? {} : end.items || {}).reduce(
     (sum, [k, n]) => sum + Math.max(0, n) * Math.max(0, itemPrice(k) || 0) * rates.itemShare,
     0
   );
@@ -234,10 +287,11 @@ export function payoutOf(end, rates, itemPrice) {
   };
 }
 /** end the run on the save: pay out into saveData.meta, put the hub's working fields back, and keep the chosen
-    Billies (`keep`, by uid). A kept Billie that travelled from the hub keeps what it gained in the run; one caught or
-    bought in the run joins the team, or the box when the team is full. Every other Billie that travelled comes back
-    as it left (roguelite-track.md section 3, option 3 of "keep-one vs ranch levels": how many are kept on a win or a
-    loss is the owner's call, 8.2). Returns the payout */
+    Billies (`keep`, by uid). A kept Billie that travelled from home keeps what it gained in the run, where it lives
+    (the team or storage); one caught or bought in the run joins the team, or the box when the team is full. Every
+    other Billie from home comes back as it left (roguelite-track.md section 3, option 3 of "keep-one vs ranch
+    levels"; 8.2: one kept on a loss, all on a win). RL-9b: on a win the run's items and coins go into the hub's bag
+    (on a loss they were paid as Capital). Returns the payout */
 /**
  * @param {SaveData} s
  * @param {{ won: boolean, keep: string[] }} how
@@ -253,14 +307,20 @@ export function runEnd(s, how, rates, itemPrice) {
     rates,
     itemPrice
   );
-  const kept = how.keep.map(uid => s.team.find(m => m.uid === uid)).filter(m => !!m);
+  const kept = how.keep.map(uid => s.team.find(m => m.uid === uid)).filter(m => !!m),
+    bag = how.won ? { items: copyOf(s.items || {}), coins: copyOf(s.coins || {}) } : null;
   runRestore(s);
   for (const m of /** @type {Billy[]} */ (copyOf(kept))) {
-    const home = s.team.findIndex(t => t.uid === m.uid);
-    if (home >= 0) s.team[home] = m;
+    const inTeam = s.team.findIndex(t => t.uid === m.uid),
+      inBox = s.box.findIndex(t => t.uid === m.uid);
+    if (inTeam >= 0) s.team[inTeam] = m;
+    else if (inBox >= 0) s.box[inBox] = m;
     else if (s.team.length < 6) s.team.push(m);
     else s.box.push(m);
   }
+  if (bag)
+    for (const kind of /** @type {const} */ (['items', 'coins']))
+      for (const [k, n] of Object.entries(bag[kind])) if (n > 0) s[kind][k] = (s[kind][k] || 0) + n;
   s.meta.capital += pay.capital;
   s.meta.seals += pay.seals;
   s.meta.scrap += pay.scrap;
@@ -274,6 +334,7 @@ export function runEnd(s, how, rates, itemPrice) {
 export function runRestore(s) {
   const start = s.run && s.run.start;
   if (start && typeof start === 'object')
-    for (const k of RUN_FIELDS) if (start[k] !== undefined && start[k] !== null) s[k] = copyOf(start[k]);
+    for (const k of RUN_FIELDS)
+      if (start[k] !== undefined && (start[k] !== null || k === 'buddy')) /** @type {any} */ (s)[k] = copyOf(start[k]);
   s.run = null;
 }

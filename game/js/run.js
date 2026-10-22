@@ -3,22 +3,38 @@
    The run loop as the player meets it: starting a run at Copperleaf's airship mast, the checkpoints it saves, a
    reload picking it up where it was, giving up, and the end (the payout screen is run-payout.js). The rules it plays
    by are logic/run-loop.js, logic/run-map.js and logic/run-state.js; the run's world is run-world.js.
-   Storage stays in Copperleaf during a run (logic/rules.js allBillies, toBox, toTeam, addBilly): a Billie caught while
+   RL-9b: the start sheet picks who comes from home (the team or storage, rules.json run.home by Bracket) and packs a
+   bag from Copperleaf's (run.pack); the rest stay. Storage stays in Copperleaf during a run (logic/rules.js
+   allBillies, toBox, toTeam, addBilly): a Billie caught while
    the party is full waits in runCatch, never in the save (a team of seven can't be saved), until one is released. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { closeModal, mapIdAt, modal, provide, render, runPayoutOpen, toast } from './hooks.js';
-import { COINS, ITEMS, RULES, START_NODE, TRAINERS } from './game-data.js';
+import {
+  closeModal,
+  labMilestones,
+  mapIdAt,
+  modal,
+  provide,
+  render,
+  renderOverlay,
+  runPayoutOpen,
+  toast,
+} from './hooks.js';
+import { COINS, ITEMS, RULES, START_NODE, TRAINERS, UNLOCK_DATA } from './game-data.js';
 import { battleWeatherOf } from './logic/weather.js';
 import { billyName, formatNumber, healAll, plural } from './logic/rules.js';
-import { runBegin, runEnd } from './logic/run-state.js';
+import { ranchStop } from './logic/ranch.js';
+import { runBegin, runByTier, runEnd } from './logic/run-state.js';
 import { runArrive, runBack, runMapNode, runMapStart, runNext, runWeather } from './logic/run-map.js';
 import { MAPGEN_VERSION } from './logic/mapgen.js';
 import { runBattleSeed, runGive, runRelease, runReleasePays } from './logic/run-loop.js';
 import { BATTLE_RULES, battleHost, battleSay, joinNames, liveActors, newBattle } from './logic/battle-engine.js';
+import { runUnlocks, unlockOpen } from './logic/unlocks.js';
 import { isLiteMap, loadMapFile } from './map-files.js';
 import { activeBattle, escapeHtml, save, saveData, saveNow, uiState } from './game-state.js';
+import { coinHTML } from './art.js';
 import { rigCanvasHTML } from './skeleton-rig.js';
+import { itemIcon } from './battle.js';
 import { standByMast, startAirshipFlight } from './airship.js';
 import { runWorld, runWorldData, runWorldSync } from './run-world.js';
 /* eslint-disable no-func-assign */
@@ -33,8 +49,13 @@ expose({
   runFoeRef: [() => runFoeRef],
   runGiveUp: [() => runGiveUp, v => ((runGiveUp = v), provide({ runGiveUp }))],
   runHint: [() => runHint, v => ((runHint = v), provide({ runHint }))],
+  runHomeList: [() => runHomeList],
   runJump: [() => runJump, v => ((runJump = v), provide({ runJump }))],
   runOver: [() => runOver, v => ((runOver = v), provide({ runOver }))],
+  runPackStep: [() => runPackStep, v => (runPackStep = v)],
+  runPickDefault: [() => runPickDefault, v => (runPickDefault = v)],
+  runPickNow: [() => runPickNow, v => (runPickNow = v)],
+  runPickTap: [() => runPickTap, v => (runPickTap = v)],
   runReleasePick: [() => runReleasePick, v => (runReleasePick = v)],
   runReleaseSheet: [() => runReleaseSheet, v => ((runReleaseSheet = v), provide({ runReleaseSheet }))],
   runResume: [() => runResume, v => (runResume = v)],
@@ -151,6 +172,8 @@ export function runEndHome(won, keep, itemPrice) {
   toast(
     `+${formatNumber(pay.capital)} Capital${pay.scrap ? `, ${formatNumber(pay.scrap)} Scrap` : ''}${pay.seals ? ` and ${plural(pay.seals, 'Audit Seal')}` : ''}. You have ${formatNumber(saveData.meta.capital)} Capital.`
   );
+  /* RL-11: milestones the run has met (ended runs, wins), each with its own toast after this one */
+  if (typeof labMilestones === 'function') labMilestones();
 }
 
 /* ---------- a reload picks the run up ---------- */
@@ -171,9 +194,10 @@ export function runResume() {
 }
 
 /* ---------- the start, at Copperleaf's airship mast ---------- */
-/** may a run start now: a game under way, no run on, someone on the team who can fight, no battle */
+/** may a run start now: a game under way, no run on, someone at home (the team or storage: the travellers leave
+    healed), no battle */
 function runStartable() {
-  return !!saveData.started && !saveData.run && saveData.team.some(m => m.hp > 0) && !activeBattle;
+  return !!saveData.started && !saveData.run && saveData.team.length + saveData.box.length > 0 && !activeBattle;
 }
 /** a new run's seed: 10 letters and digits (the one draw a run takes from Math.random: everything after it comes
  * from the seed) */
@@ -183,49 +207,156 @@ function runSeedRoll() {
   for (let k = 0; k < 10; k++) s += A[Math.floor(Math.random() * A.length)];
   return s;
 }
-/** the sheet before a run: what you take, what you are given, how it ends */
+/** RL-9b: who may come from home: the team, then storage */
+const runHomeList = () => [...saveData.team, ...saveData.box];
+/** the mast's first pick: the buddy, else the lead, else the first in storage */
+function runPickDefault() {
+  const all = runHomeList(),
+    m = all.find(b => b.uid === saveData.buddy) || all[0];
+  return m ? m.uid : null;
+}
+/** the start sheet's choice as it stands (uiState.runPick, runPack), kept to what is at home, what the bag holds and
+ * the Bracket's counts (rules.json run.home, run.pack): the Billies from home (the default pick when none), the pack
+ * and how many things are in it @param {number} [tier] */
+function runPickNow(tier = 1) {
+  const all = runHomeList(),
+    cap = runByTier(RULES.run.home, tier),
+    most = runByTier(RULES.run.pack, tier);
+  let home = (uiState.runPick || []).filter(u => all.some(m => m.uid === u)).slice(0, cap);
+  if (!home.length) home = [runPickDefault()].filter(u => !!u);
+  const pack = { items: {}, coins: {} };
+  let n = 0;
+  for (const kind of ['items', 'coins'])
+    for (const [k, v] of Object.entries((uiState.runPack || {})[kind] || {})) {
+      const take = Math.max(0, Math.min(v, saveData[kind][k] || 0, most - n));
+      if (!take) continue;
+      pack[kind][k] = take;
+      n += take;
+    }
+  return { home, pack, n, cap, most };
+}
+/** a card tapped: that Billie comes (with one place, in place of the one picked; with more, in or out) */
+function runPickTap(uid) {
+  const P = runPickNow();
+  uiState.runPick =
+    P.cap === 1 ? [uid] : P.home.includes(uid) ? P.home.filter(u => u !== uid) : [...P.home, uid].slice(-P.cap);
+  runStartSheet();
+}
+/** a pack row's − or +: one thing more or less of it, within what the bag holds and the pack's room */
+function runPackStep(kind, k, d) {
+  const P = runPickNow(),
+    now = P.pack[kind][k] || 0,
+    next = Math.max(0, Math.min(saveData[kind][k] || 0, now + d, now + P.most - P.n));
+  uiState.runPack = P.pack;
+  uiState.runPack[kind][k] = next;
+  runStartSheet();
+}
+/** the sheet before a run: who comes from home, what you pack from Copperleaf's bag, what the airship adds, how it
+ * ends. Opened again in place on every tap (the same sheet: no new scrim, the scroll kept) */
 function runStartSheet() {
   if (!runStartable()) return;
   const S = RULES.run.start,
+    P = runPickNow(),
     gifts = [
       `$${formatNumber(S.se)}`,
       ...Object.entries(S.coins).map(([k, n]) => `${n} ${COINS[k] ? COINS[k].n : k}${n === 1 ? '' : 's'}`),
       ...Object.entries(S.items).map(([k, n]) => `${n} ${ITEMS[k] ? ITEMS[k].n : k}${n === 1 ? '' : 's'}`),
-    ];
-  /* in place of the mast's sheet (closeModal would let a waiting window in first) */
-  uiState.modal = null;
-  modal({
-    title: 'Start a run',
-    cls: 'fly-sheet',
-    html: `<p>The airship flies you out to the wild lands past the island: a road of places, a town before each mini-boss, and a boss at the end.</p><p>Your team comes along; storage stays here. You set off with ${escapeHtml(gifts.join(', '))}.</p><p class="note">Every place you walk into takes a day. Beat the boss to win. If your whole party faints, the run is over. Either way, what you bring back turns into Capital.</p>`,
-    btns: [
-      { l: 'Take off', c: 'gold', f: () => runTakeOff() },
-      { l: 'Not now', c: 'quiet', f: closeModal },
     ],
+    trains = uid => !!(saveData.ranch && saveData.ranch.trainees.some(t => t.uid === uid)),
+    card = m =>
+      `<pb-pick-card data-u="${m.uid}" heading="${escapeHtml(billyName(m))}" sub="Lv ${m.lvl} · ${saveData.team.includes(m) ? 'team' : trains(m.uid) ? 'training' : 'storage'}"${P.home.includes(m.uid) ? ' selected' : ''}><span slot="art">${rigCanvasHTML(m.sp, 64, { build: m.build, coat: m.coat })}</span></pb-pick-card>`,
+    things = [
+      ...Object.keys(ITEMS)
+        .filter(k => saveData.items[k] > 0)
+        .map(k => ['items', k, ITEMS[k].n, itemIcon(k, 30)]),
+      ...Object.keys(COINS)
+        .filter(k => saveData.coins[k] > 0)
+        .map(k => ['coins', k, COINS[k].n, coinHTML(k, 30)]),
+    ],
+    row = ([kind, k, name, icon]) => {
+      const n = P.pack[kind][k] || 0,
+        have = saveData[kind][k];
+      return `<div class="bag-row k-card run-pack-row"><span class="bag-ic">${icon}</span><span class="bag-t"><b>${escapeHtml(name)}</b><small>${formatNumber(have)} in the bag</small></span><button class="pb" data-pk="${kind}" data-k="${escapeHtml(k)}" data-d="-1" aria-label="One ${escapeHtml(name)} less"${n ? '' : ' disabled'}>−</button><b class="bag-n tnum">${n}</b><button class="pb" data-pk="${kind}" data-k="${escapeHtml(k)}" data-d="1" aria-label="One ${escapeHtml(name)} more"${n < have && P.n < P.most ? '' : ' disabled'}>+</button></div>`;
+    },
+    trained = P.home.filter(trains);
+  const html = `<p>The airship flies you out to the wild lands past the island: a road of places, a town before each mini-boss, and a boss at the end.</p><h3>Who comes from home</h3><p class="note">${plural(P.cap, 'Billie')} from home at Bracket I. The rest stay at the ranch; on the run you tax wild ones.${trained.length ? ' Training stops while it is away (what it banked comes along).' : ''}</p><div class="bx-grid">${runHomeList().map(card).join('')}</div><h3>Pack the bag <small class="tnum">${P.n} of ${P.most}</small></h3>${things.length ? `<div class="bag-list px">${things.map(row).join('')}</div>` : '<p class="note">Copperleaf’s bag is empty.</p>'}<p>The airship adds ${escapeHtml(gifts.join(', '))}.</p><p class="note">Every place you walk into takes a day. Beat the boss to win: everyone comes home with what they learned, and the bag goes into Copperleaf’s. If your whole party faints, the run is over: you keep one Billie, and the bag turns into Capital.</p>`;
+  const was = uiState.modal && uiState.modal.cls === 'fly-sheet run-start' ? uiState.modal : null,
+    sheet = document.querySelector('#ov .sheet'),
+    body = document.querySelector('#ov .sheet .body'),
+    scroll = was && sheet ? [sheet.scrollTop, body ? body.scrollTop : 0] : null;
+  const M = was || { title: 'Start a run', cls: 'fly-sheet run-start' };
+  Object.assign(M, {
+    html,
+    btns: [
+      {
+        l: 'Take off',
+        c: 'gold',
+        dis: !P.home.length,
+        f: () => runTakeOff(undefined, undefined, undefined, runPickNow()),
+      },
+      {
+        l: 'Not now',
+        c: 'quiet',
+        f: () => {
+          uiState.runPick = uiState.runPack = null;
+          closeModal();
+        },
+      },
+    ],
+    _afterRan: false,
+    after: () => {
+      for (const c of document.querySelectorAll('#ov pb-pick-card'))
+        c.addEventListener('pb-pick', () => runPickTap(/** @type {HTMLElement} */ (c).dataset.u));
+      for (const b of document.querySelectorAll('#ov [data-pk]'))
+        b.addEventListener('click', () => {
+          const d = /** @type {HTMLElement} */ (b).dataset;
+          runPackStep(d.pk, d.k, Number(d.d));
+        });
+      const sh = document.querySelector('#ov .sheet'),
+        bd = document.querySelector('#ov .sheet .body');
+      if (scroll && sh) sh.scrollTop = scroll[0];
+      if (scroll && bd) bd.scrollTop = scroll[1];
+    },
   });
+  /* in place of the mast's sheet (closeModal would let a waiting window in first) */
+  uiState.modal = M;
+  renderOverlay();
 }
 /**
  * Take off on a run, in one tick: the run on the save (runBegin, with run.start), its map (runMapStart), its world
  * (runWorldSync; a world that can't be made leaves the run), day 1 on the landing (runArrive) in phase 'fly', saved
  * with the account at once, then the airship's free flight from Copperleaf (it starts after the world goes in, which
  * would stop it, and is told where from: runArrive has moved the trip already). A reload mid-flight is on the landing.
+ * RL-9b: `pick` is who comes from home and what is packed (the start sheet's runPickNow); left out (the debug menu, the
+ * tests), the default pick alone and nothing packed. A Billie training at the ranch stops (its bank collected) and
+ * everyone at home is healed first (the hub's healing is free), so the travellers leave healed.
  * @param {string} [seed] @param {Partial<import('../types/game-data').RunMapRules>} [map] the map's rules changed (the
  * debug menu's short run) @param {string[]} [mods] the run's mods (the debug menu's mountains run: RUN_MOD_MOUNTAINS)
+ * @param {{ home: string[], pack: { items: Record<string, number>, coins: Record<string, number> } }} [pick]
  */
-export function runTakeOff(seed, map, mods) {
+export function runTakeOff(seed, map, mods, pick) {
   if (!runStartable()) return;
+  const P = pick || { home: [runPickDefault()].filter(u => !!u), pack: { items: {}, coins: {} } };
+  if (!P.home.length) return;
+  uiState.runPick = uiState.runPack = null;
   closeModal();
   const s = saveData,
     sd = seed || runSeedRoll(),
     data = runWorldData();
-  runBegin(s, runGive(sd, 1, MAPGEN_VERSION, RULES.run.start));
+  if (RULES.ranch && s.ranch) for (const uid of P.home) ranchStop(s, uid, Date.now(), RULES.ranch, toast);
+  healAll();
+  runBegin(s, { ...runGive(sd, 1, MAPGEN_VERSION, RULES.run.start), home: P.home, pack: P.pack });
   if (mods && mods.length && s.run) s.run.mods = mods.slice();
+  /* RL-11: the shop and biome unlocks it starts with; its map draws only the biomes open to it */
+  const run = /** @type {any} */ (s.run);
+  run.unlocks = runUnlocks(s, UNLOCK_DATA);
   uiState.learnQ = [];
   runCatch.m = null;
-  runMapStart(
-    /** @type {any} */ (s.run),
-    map ? { ...data, rules: { ...data.rules, map: { ...data.rules.map, ...map } } } : data
-  );
+  const rules = { ...data.rules.map, ...(map || {}) };
+  runMapStart(run, {
+    ...data,
+    rules: { ...data.rules, map: { ...rules, biomes: unlockOpen(rules.biomes, 'biome', run.unlocks, UNLOCK_DATA) } },
+  });
   runWorldSync();
   if (!s.run || runWorld.seed !== sd) return;
   runArrive(s, 0, data);

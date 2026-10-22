@@ -1,0 +1,166 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "unlocks.schema.json",
+ "title": "game/data/unlocks.json: the one unlock table (roguelite track RL-11). Three doors: sold at a building (at + cost; the Lab's rows are its board), or earned when a condition holds (when). The owned ids are saveData.meta.unlocks",
+ "type": "object",
+ "propertyNames": {
+  "pattern": "^[a-z][a-z0-9_]{0,63}$"
+ },
+ "minProperties": 1,
+ "additionalProperties": {
+  "type": "object",
+  "required": [
+   "name",
+   "about",
+   "grant"
+  ],
+  "additionalProperties": false,
+  "oneOf": [
+   {
+    "required": [
+     "at",
+     "cost"
+    ],
+    "not": {
+     "required": [
+      "when"
+     ]
+    }
+   },
+   {
+    "required": [
+     "when"
+    ],
+    "not": {
+     "anyOf": [
+      {
+       "required": [
+        "at"
+       ]
+      },
+      {
+       "required": [
+        "cost"
+       ]
+      }
+     ]
+    }
+   }
+  ],
+  "properties": {
+   "name": {
+    "description": "what the player reads",
+    "type": "string",
+    "minLength": 1,
+    "maxLength": 40
+   },
+   "about": {
+    "description": "what it gives, or (earned) what earns it",
+    "type": "string",
+    "minLength": 1,
+    "maxLength": 200
+   },
+   "at": {
+    "description": "the building (buildings.json) that sells it, in that building's currency; the Lab's rows are the unlock board",
+    "type": "string",
+    "pattern": "^[a-z][a-z0-9_]*$"
+   },
+   "cost": {
+    "description": "its price in the building's currency",
+    "type": "integer",
+    "minimum": 1,
+    "maximum": 1000000
+   },
+   "when": {
+    "description": "earned when this condition holds (docs/SCRIPTS.md conditions), checked in the hub after a run and on load",
+    "type": "string",
+    "minLength": 1,
+    "maxLength": 200
+   },
+   "requires": {
+    "description": "unlocks owned first (drawn as a tree on the board)",
+    "type": "array",
+    "uniqueItems": true,
+    "items": {
+     "type": "string",
+     "pattern": "^[a-z][a-z0-9_]*$"
+    }
+   },
+   "grant": {
+    "description": "what it gives: a building's level, an item into run shops, a biome onto run maps, or a currency",
+    "oneOf": [
+     {
+      "type": "object",
+      "required": [
+       "building",
+       "level"
+      ],
+      "additionalProperties": false,
+      "properties": {
+       "building": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9_]*$"
+       },
+       "level": {
+        "type": "integer",
+        "minimum": 2,
+        "maximum": 99
+       }
+      }
+     },
+     {
+      "type": "object",
+      "required": [
+       "shop"
+      ],
+      "additionalProperties": false,
+      "properties": {
+       "shop": {
+        "description": "an item of rules.json run.shop.pick, kept out of run shops until owned",
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9_]*$"
+       }
+      }
+     },
+     {
+      "type": "object",
+      "required": [
+       "biome"
+      ],
+      "additionalProperties": false,
+      "properties": {
+       "biome": {
+        "description": "a biome of rules.json run.map.biomes, kept off run maps until owned",
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9_]*$"
+       }
+      }
+     },
+     {
+      "type": "object",
+      "minProperties": 1,
+      "maxProperties": 1,
+      "additionalProperties": false,
+      "properties": {
+       "capital": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 1000000
+       },
+       "scrap": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 1000000
+       },
+       "seals": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 1000000
+       }
+      }
+     }
+    ]
+   }
+  }
+ }
+}

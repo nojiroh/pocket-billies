@@ -14,7 +14,7 @@ with their places); a run's world (RL-7) opens on its landing, its places on the
 at the next node a day later; a battle plays to the end; a save round-trips; the Studio loads; the exported debug
 log holds no names; the world map opens as the bowl, a tap opens a card, Home comes back; every screen opens with its parts (UI-5);
 on tall ground (TR-3, the mountains fixture) the camera rises, rock fades and the player's silhouette is drawn, and
-none of it on flat ground. The page is small (400x300) with every costly graphics dial
+none of it on flat ground; the Lab's unlock board (RL-11) grants, sells and keeps. The page is small (400x300) with every costly graphics dial
 off before it loads; nothing waits a fixed time, only for frames or the game's state. No pictures are taken.
 
 Graphics are not judged here: software drawing can't. The game's own graphics test (Settings → Help) is for a person
@@ -433,6 +433,38 @@ def ranch(pg, base):
     return f'Train paid {R["trainCost"]} Scrap each; a level’s time: Lv {first} → {first + 1}; a whole bank from Lv {last} stopped at the cap ({cap}); the clock turned back gained nothing; a reload kept it'
 
 
+def lab(pg, base):
+    """RL-11: the lab fixture stands in Copperleaf after a run (500 Capital, 60 Scrap, 2 Seals, one run ended). The
+    first milestone was granted on load; the bottom bar's Lab tab opens the board with every row; a board row bought
+    pays its Capital; the ranch's sheet sells Ranch Lv 2 for Scrap (its slots rise); the mast's sheet sells Airship Lv 2
+    for a Seal and then offers the ridge lands; a run would carry the shop unlock; a reload (?fixture=stored) keeps it all"""
+    if not until(pg, "typeof saveData!=='undefined'&&!!saveData.meta.unlocks.first_run&&walkView.ready", 60): raise Exception(f'no first milestone on load: {pg.evaluate("JSON.stringify(saveData.meta)")}')
+    if pg.evaluate("saveData.meta.scrap") != 70: raise Exception(f'the milestone paid {pg.evaluate("saveData.meta.scrap") - 60} Scrap, not 10')
+    pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();0")
+    if not pg.evaluate(nav_tap('lab')): raise Exception('no Lab tab in the bottom bar')
+    if not until(pg, "!!document.querySelector('.s-lab')", 10): raise Exception('the Lab tab didn’t open the board')
+    rows, want = pg.evaluate("[document.querySelectorAll('.s-lab .lab-row').length,Object.keys(UNLOCK_DATA.unlocks).length]")
+    if rows != want: raise Exception(f'the board shows {rows} rows of {want}')
+    cost = pg.evaluate("UNLOCK_DATA.unlocks.shop_bailout.cost")
+    pg.click(".s-lab [data-a=lab-buy][data-k=shop_bailout]")
+    st = pg.evaluate("[saveData.meta.capital,!!saveData.meta.unlocks.shop_bailout]")
+    if st != [500 - cost, True]: raise Exception(f'buying Revives: Capital and owned {st}')
+    pg.evaluate("uiState.tab='walk';render();uiState.modal=null;uiState.mq=[];ranchOpen();0")
+    pg.click("#ov .ranch-sheet [data-a=lab-buy][data-k=ranch_2]")
+    st = pg.evaluate("[saveData.meta.scrap,ranchLevel(saveData),ranchSlots(saveData,RULES.ranch),uiState.modal&&uiState.modal.title]")
+    if st[:3] != [70 - pg.evaluate("UNLOCK_DATA.unlocks.ranch_2.cost"), 2, pg.evaluate("RULES.ranch.slots[1]")] or 'Lv 2' not in (st[3] or ''): raise Exception(f'Ranch Lv 2: Scrap, level, slots, title {st}')
+    pg.evaluate("uiState.modal=null;uiState.mq=[];flyMenu(walkView.sc.props.find(q=>q.act==='fly'));0")
+    pg.click("#ov .fly-sheet [data-a=lab-buy][data-k=airship_2]")
+    if not until(pg, "saveData.meta.seals===1&&!!document.querySelector('#ov .fly-sheet [data-k=biome_ridge]:not([disabled])')", 10): raise Exception('Airship Lv 2 didn’t open the ridge lands on the mast’s sheet')
+    if pg.evaluate("runUnlocks(saveData,UNLOCK_DATA).join()") != 'shop_bailout': raise Exception('a run wouldn’t carry the shop unlock')
+    keep = pg.evaluate("JSON.stringify(saveData.meta)")
+    pg.goto(base + '/index.html?fixture=stored')
+    if not until(pg, "typeof saveData!=='undefined'&&!!saveData.meta&&!document.getElementById('loader')", 90): raise Exception('the reload never booted')
+    back = pg.evaluate("JSON.stringify(saveData.meta)")
+    if back != keep: raise Exception(f'after a reload {back}, not {keep}')
+    return f'the first milestone on load (+10 Scrap); {rows} rows on the board; Revives for {cost} Capital; Ranch Lv 2 (3 slots); Airship Lv 2 opened the ridge lands; a reload kept it'
+
+
 def save_round_trip(pg, base):
     """the save written in this browser comes back whole after a reload (under the fixture's own key)"""
     drawing(pg, 1)
@@ -513,7 +545,7 @@ def run_shop(pg, base):
 
 
 def screens(pg, base):
-    """UI-5: every screen opens with its parts, through the buttons a player taps: the bottom bar's Map, Team and Bag, the
+    """UI-5: every screen opens with its parts, through the buttons a player taps: the bottom bar's Map, Team, Bag and Lab, the
     world again (the open tab tapped again, and Esc), the Trainer card from the portrait and the Guide from it,
     the Billie sheet and its four tabs, a Guide page, Settings, the evolution window, the inbox, a toast (a run town's shop: run_shop). The check each
     screen moved out of ui.js must pass (docs/phases/ui-track.md, UI-5)"""
@@ -526,15 +558,15 @@ def screens(pg, base):
             raise Exception(f'{what}: not there ({cond}); on screen: ' + pg.evaluate("[uiState.tab,uiState.modal&&(uiState.modal.cls||uiState.modal.title),document.querySelector('#ov').className+' '+(document.querySelector('#ov .sheet')||{}).className].join(' / ')"))
         seen.append(what)
     screen = lambda t, part: f"!!document.querySelector('.screen.s-{t}')&&!!document.querySelector('.screen.s-{t} :is({part})')"
-    # UI-5: the bar holds Map, Team and Bag (the hub's set; Lab waits for RL-11)
+    # UI-5: the bar holds Map, Team and Bag, and RL-11's Lab (the hub's set)
     tabs = pg.evaluate("[...document.querySelector('#nav').shadowRoot.querySelectorAll('button')].map(b=>b.dataset.t).join(',')")
-    if tabs != 'map,team,bag': raise Exception(f'the bottom bar holds {tabs}')
+    if tabs != 'map,team,bag,lab': raise Exception(f'the bottom bar holds {tabs}')
     for t, part in (('map', '.map-head,pb-day-chip,.map-full'), ('team', '.u-team .u-hero'),
-                    ('bag', '.bag-tabs,.bag-list,.bag-empty,[data-a^=bag]')):
+                    ('bag', '.bag-tabs,.bag-list,.bag-empty,[data-a^=bag]'), ('lab', '.lab-sec .lab-row')):
         if not pg.evaluate(nav_tap(t)): raise Exception(f'no {t} tab to tap')
         need(t, screen(t, part))
     # the world is the base view: the open tab tapped again, or Esc, goes back to it
-    pg.evaluate(nav_tap('bag'))
+    pg.evaluate(nav_tap('lab'))
     need('the world (the open tab again)', screen('walk', '#walkHero'))
     pg.evaluate(nav_tap('team')); need('team again', screen('team', '.u-hero'))
     pg.keyboard.press('Escape')
@@ -569,12 +601,73 @@ def screens(pg, base):
 
 
 NODE_CHECKS = [('Game data is valid', data_valid), ('The world-map graph is unchanged', world_graph)]
+def run_pack(pg, base):
+    """RL-9b: from the ranch fixture (three Billies in storage), one of them training: the mast's start sheet picks it
+    (a pick card tapped) and packs two Potions (+ tapped twice); "Take off": the party is that Billie alone, healed,
+    its training stopped, the hub's team and storage left as they were, the bag the gift and the pack, Copperleaf's
+    two Potions fewer. Given up, keeping it: back in storage once (no second copy) with its run's levels, the team and
+    buddy the hub's, the packed Potions gone. A second run (the default pick, one Potion packed), won: no items row on
+    the payout, the run's bag added to Copperleaf's. A reload (?fixture=stored) keeps it all"""
+    if not until(pg, "typeof saveData!=='undefined'&&!!saveData.ranch&&!document.getElementById('loader')&&walkView.ready", 90): raise Exception('the ranch fixture never booted')
+    pg.evaluate("uiState.inside=null;uiState.modal=null;uiState.mq=[];renderOverlay();saveData.items.taxbreak=3;saveData.coins.penny=2;0")
+    who = pg.evaluate("saveData.box[1].uid")
+    if pg.evaluate(f"ranchTrainStart(saveData,'{who}',Date.now(),RULES.ranch)") != '': raise Exception('the fixture’s Billie couldn’t start training')
+    pg.evaluate(f"saveData.box[1].hp=1;0")
+    hub = pg.evaluate("JSON.stringify([saveData.team.map(m=>m.uid),saveData.box.map(m=>m.uid),saveData.buddy])")
+    gift = pg.evaluate("RULES.run.start.items.taxbreak||0")
+    pg.evaluate("runStartSheet();0")
+    if not until(pg, "uiState.modal&&uiState.modal.title==='Start a run'&&!!document.querySelector('#ov pb-pick-card')", 10): raise Exception('no start sheet')
+    pg.evaluate(f"document.querySelector('#ov pb-pick-card[data-u=\"{who}\"]').shadowRoot.querySelector('button').click();0")
+    if not until(pg, f"!!document.querySelector('#ov pb-pick-card[data-u=\"{who}\"][selected]')", 10): raise Exception('a tapped card wasn’t picked')
+    for _ in range(2): pg.click("#ov [data-pk=items][data-k=taxbreak][data-d='1']")
+    packed = pg.evaluate("document.querySelector('#ov h3 small').textContent")
+    if not packed.startswith('2 of '): raise Exception(f'the pack says “{packed}”')
+    pg.click('#ov [data-a=mb][data-i="0"]')
+    if not until(pg, "!!saveData.run&&airshipFlight.on", 30): raise Exception('“Take off” didn’t start a run')
+    got = pg.evaluate(f"JSON.stringify([saveData.team.map(m=>m.uid),saveData.team[0].hp===maxHp(saveData.team[0]),saveData.ranch.trainees.some(t=>t.uid==='{who}'),saveData.run.start.team.map(m=>m.uid),saveData.box.map(m=>m.uid),saveData.run.start.items.taxbreak,saveData.items.taxbreak,saveData.buddy])")
+    want = json.dumps([[who], True, False, json.loads(hub)[0], json.loads(hub)[1], 1, gift + 2, who], separators=(',', ':'))
+    if got != want: raise Exception(f'at take-off {got}, not {want}')
+    pg.evaluate("flySkip();0")
+    if not until(pg, "!airshipFlight.on&&saveData.run.at.phase==='walk'&&walkView.ready", 90): raise Exception('never landed')
+    lv = pg.evaluate("saveData.team[0].lvl+=3")
+    pg.evaluate("uiState.modal=null;uiState.mq=[];runOver(false);0")
+    if not until(pg, "!!uiState.modal&&uiState.modal.cls==='run-payout'&&!!document.querySelector('#ov pb-pick-card')", 30): raise Exception('no payout after giving up')
+    pg.evaluate("document.querySelector('#ov pb-pick-card').shadowRoot.querySelector('button').click();0")
+    if not until(pg, "!document.querySelector('#ov [data-a=mb]').disabled", 10): raise Exception('picking a card didn’t enable Fly home')
+    pg.evaluate("document.querySelector('#ov [data-a=mb]').click();0")
+    if not until(pg, "!saveData.run&&saveData.meta.runs===1", 30): raise Exception('Fly home didn’t end the run')
+    back = pg.evaluate(f"JSON.stringify([saveData.team.map(m=>m.uid),saveData.box.map(m=>m.uid),saveData.buddy,saveData.box.find(m=>m.uid==='{who}').lvl,saveData.items.taxbreak])")
+    H = json.loads(hub)
+    if back != json.dumps([H[0], H[1], H[2], lv, 1], separators=(',', ':')): raise Exception(f'home after a loss {back}: team, storage, buddy as before, Lv {lv} kept, 1 Potion')
+    lead = H[0][0]
+    pg.evaluate(f"runTakeOff(undefined,undefined,undefined,{{home:['{lead}'],pack:{{items:{{taxbreak:1}},coins:{{}}}}}});0")
+    if not until(pg, "!!saveData.run&&airshipFlight.on", 30): raise Exception('the second run didn’t start')
+    pg.evaluate("flySkip();0")
+    if not until(pg, "!airshipFlight.on&&saveData.run.at.phase==='walk'&&walkView.ready", 90): raise Exception('the second run never landed')
+    bag = pg.evaluate("saveData.items.taxbreak")
+    pg.evaluate("uiState.modal=null;uiState.mq=[];runOver(true);0")
+    if not until(pg, "!!uiState.modal&&uiState.modal.cls==='run-payout'&&!!document.querySelector('#ov pb-payout')", 30): raise Exception('no payout after the win')
+    labels = pg.evaluate("document.querySelector('#ov pb-payout').rows.map(r=>r.label)")
+    if 'Items in the bag' in labels: raise Exception(f'a win paid the bag: {labels}')
+    pg.evaluate("document.querySelector('#ov [data-a=mb]').click();0")
+    if not until(pg, "!saveData.run&&saveData.meta.wins===1", 30): raise Exception('Fly home didn’t end the won run')
+    keep = pg.evaluate("JSON.stringify([saveData.items.taxbreak,saveData.box.map(m=>[m.uid,m.lvl]),saveData.team.map(m=>m.uid)])")
+    if json.loads(keep)[0] != bag: raise Exception(f'after the win Copperleaf has {json.loads(keep)[0]} Potions, not {bag} (none at home + the run’s)')
+    pg.goto(base + '/index.html?fixture=stored')
+    if not until(pg, "typeof saveData!=='undefined'&&!!saveData.ranch&&!document.getElementById('loader')", 90): raise Exception('the reload never booted')
+    again = pg.evaluate("JSON.stringify([saveData.items.taxbreak,saveData.box.map(m=>[m.uid,m.lvl]),saveData.team.map(m=>m.uid)])")
+    if again != keep: raise Exception(f'after a reload {again}, not {keep}')
+    return f'a trainee from storage travelled alone with 2 Potions packed (training stopped, healed); given up and kept: back in storage once at Lv {lv}; a won run brought its bag home ({bag} Potions, no items row); a reload kept it'
+
+
 PAGES = [   # (what the page opens, its checks in order); the longest first, so the browsers finish together
     ('town', [('A town opens and draws (Copperleaf Town)', scene('copperleaf')),
               ('The exported debug log holds no names', debug_log),
               ('The world map opens as the bowl', bowl_map)]),
     ('room', [('A room opens and draws (the lab)', room), ('A save round-trips', save_round_trip)]),
     ('ranch', [('The ranch trains: Train, a level with time, the cap, a clock turned back, a reload (RL-9)', ranch)]),
+    ('lab', [('The Lab: a milestone on load, the board, buying at the Lab, the ranch and the mast, a reload (RL-11)', lab)]),
+    ('ranch', [('Packing for a run: a Billie from storage, a packed bag; kept on a loss, the bag home on a win (RL-9b)', run_pack)]),
     ('battle', [('A battle plays to the end', battle)]),
     ('run', [("A run's world: the landing, its places on the bowl, a seam walked a day later", run_world),
              ("A run town's shop opens (UI-5)", run_shop)]),

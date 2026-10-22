@@ -472,6 +472,14 @@ debugLog.state = () => {
             held: typeof GAME.saveHeld === 'function' ? GAME.saveHeld() : null,
             party: GAME.saveData.team ? GAME.saveData.team.length : 0,
             money: GAME.saveData.se,
+            /* RL-9b: how many Billies came from home and how many things were packed (counts only) */
+            home: Array.isArray(run.home) ? run.home.length : null,
+            packed: run.pack
+              ? [run.pack.items, run.pack.coins].reduce(
+                  (a, r) => a + Object.values(r || {}).reduce((b, n) => b + (+n || 0), 0),
+                  0
+                )
+              : null,
             /* TR-2: the run's mods (dbg_mountains: the debug menu's mountains run), this place's mountains dial and
                its ground's triangles (the land and the step grid's walls; to weigh frame times against) */
             mods: (run.mods || []).slice(),
@@ -484,7 +492,16 @@ debugLog.state = () => {
     /* RL-8: what the runs brought home (numbers only) */
     const meta = GAME.saveData.meta;
     s.meta = meta
-      ? { runs: meta.runs, wins: meta.wins, capital: meta.capital, seals: meta.seals, scrap: meta.scrap }
+      ? {
+          runs: meta.runs,
+          wins: meta.wins,
+          capital: meta.capital,
+          seals: meta.seals,
+          scrap: meta.scrap,
+          /* RL-11: the unlock ids owned (game data ids, no names) and the buildings' levels */
+          unlocks: Object.keys(meta.unlocks || {}).sort(),
+          buildings: Object.assign({}, meta.buildings || {}),
+        }
       : null;
     /* RL-9: the ranch (numbers only): its level, how many train, how long since each started (hours), storage's size */
     const ranch = GAME.saveData.ranch;

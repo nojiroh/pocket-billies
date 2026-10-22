@@ -6,14 +6,17 @@
 // (chooseAI), the run's rewards (battle-rewards.js), paid healing and the day's shop in towns, and the payout.
 // What the player does is a fixed policy: walk forward along a lane drawn from the seed, fight up to `fights` of a
 // place's wild Billies while the party is above 70% of its HP (a Potion on a Billie below 60%; tax the first ones while
-// the party is small), heal in towns when hurt, keep a few Copper Coins, beat the mini-boss, then the boss. Two uses:
+// the party is small), heal in towns when hurt, keep a few Copper Coins, beat the mini-boss, then the boss. RL-9b: it
+// starts as the mast does: the highest-level Billies from home (rules.json run.home at Bracket I; `team` is how many
+// starters wait at home) and a bag packed with Potions from home (`pack` of them at home, as many as run.pack lets).
+// Two uses:
 //   - replay: the same seed played twice must come out the same, even with util.js random seeded differently (so
 //     nothing in a run hangs on Math.random): runSim(seed, {random: n}) and compare;
 //   - statistics: how long runs are, how many battles, how often they are won, what they pay (report only; the bounds
 //     are the owner's call after the first play).
 //   node tools/test/sim/run-sim.mjs            50 runs, the report in validation/sim/runs.json (not committed)
-//   node tools/test/sim/run-sim.mjs --runs=200 --team=3 --fights=4   more runs, a party of three starters, up to
-//                                                              four wild fights a place
+//   node tools/test/sim/run-sim.mjs --runs=200 --team=3 --fights=4 --pack=5   more runs, three starters at home
+//                                       (one travels), up to four wild fights a place, five Potions packed
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { data, fn, hooks, logic, modules, reseed, ROOT, GAME_DATA } from '../setup-real.mjs';
@@ -21,7 +24,7 @@ import { data, fn, hooks, logic, modules, reseed, ROOT, GAME_DATA } from '../set
 const { RULES, TRAINERS, SPECIES, POOLS } = data;
 const R = RULES.run,
   { runMapStart, runArrive, runNext, runMapNode, runWorldNode, runWeather } = modules['run-map'],
-  { runBegin, payoutOf } = modules['run-state'],
+  { runBegin, payoutOf, runByTier } = modules['run-state'],
   { runScenesMake, runWorldTables } = modules['run-scenes'],
   { runGive, runFoes, runBattleSeed, runHealCost, runShopStock } = modules['run-loop'],
   { battleWeatherOf } = modules.weather,
@@ -75,7 +78,7 @@ function playOut() {
 /**
  * One run from its seed, played by the policy. `random` reseeds util.js random first (the replay test plays the same
  * seed with two of them). Returns a log of everything that was drawn and how it went, and the run's numbers.
- * @param {string} seed @param {{ random?: number, fights?: number, team?: number }} [o]
+ * @param {string} seed @param {{ random?: number, fights?: number, team?: number, pack?: number }} [o]
  */
 export function runSim(seed, o = {}) {
   reseed(o.random ?? 1);
@@ -85,7 +88,14 @@ export function runSim(seed, o = {}) {
   hooks.provide({ saveData: s, activeBattle: null });
   s.team.push(fn('makeBilly')(s.starter + '0', RULES.start.starterLevel));
   for (let k = 1; k < (o.team ?? 1); k++) s.team.push(fn('makeBilly')(s.starter + '0', RULES.start.starterLevel));
-  const run = runBegin(s, runGive(seed, 1, MAPGEN_VERSION, R.start));
+  s.items.taxbreak = o.pack ?? 0;
+  const home = s.team
+      .slice()
+      .sort((a, b) => b.lvl - a.lvl)
+      .slice(0, runByTier(R.home, 1))
+      .map(m => m.uid),
+    pack = { items: { taxbreak: Math.min(o.pack ?? 0, runByTier(R.pack, 1)) }, coins: {} };
+  const run = runBegin(s, { ...runGive(seed, 1, MAPGEN_VERSION, R.start), home, pack });
   runMapStart(run, MAP_DATA);
   const scenes = runScenesMake(run, worldData()),
     W = runWorldTables(run, data.LOCATIONS[0], worldData()),
@@ -289,7 +299,7 @@ export function runStats(n = 50, o = {}) {
 if (process.argv[1] && process.argv[1].endsWith('run-sim.mjs')) {
   const arg = (k, d) => +((process.argv.find(a => a.startsWith(`--${k}=`)) || '').split('=')[1] || d),
     t0 = Date.now(),
-    report = runStats(arg('runs', 50), { team: arg('team', 1), fights: arg('fights', 2) });
+    report = runStats(arg('runs', 50), { team: arg('team', 1), fights: arg('fights', 2), pack: arg('pack', 0) });
   report.seconds = Math.round((Date.now() - t0) / 1000);
   mkdirSync(join(ROOT, 'validation/sim'), { recursive: true });
   writeFileSync(join(ROOT, 'validation/sim/runs.json'), JSON.stringify(report, null, 1));

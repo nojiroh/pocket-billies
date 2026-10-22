@@ -92,7 +92,7 @@ def int_clinic():
 def int_lab():
     s = room('int_lab', 'Inside the lab', 'Q', '#B9C8DA', 2603, 'lab', 'gini', (5.2, 7.2),
              ['Every billionaire has a number. Some have several, in different countries.', 'The machine hums when it’s thinking.', 'Science is mostly paperwork.'])
-    s.put('lab_machine', 7, 8.4, act='lab', label='Machine')
+    s.put('lab_machine', 7, 8.4, act='board', label='Unlock board')
     for x in (2.8, 11.2): s.put('lab_desk', x, 6.4)
     for x in (1.6, 12.4): s.put('bookshelf', x, 9.0)
     s.put('plant_tall', 1.5, 1.8); s.put('chair_wood', 2.8, 5.2); s.put('chair_wood', 11.2, 5.2, 1, 1); s.put('crate_goods', 12.3, 3.2)
