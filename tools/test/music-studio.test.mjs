@@ -84,8 +84,9 @@ test('every song in the game data is played by something, and the rules say wher
       nodeTypes: json('nodeTypes.json'),
       biomes: json('biomes.json'),
       locations: [...locations, ...legacy],
-    }),
-    []
+    }).filter(f => f.lvl !== 'info'),
+    [],
+    'no errors or warnings (the notes on placeholder hooks are expected)'
   );
 });
 

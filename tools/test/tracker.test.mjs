@@ -12,7 +12,10 @@ await import('../../game/js/audio/tracker.js');
 const { trackerCompose, trackerNight } = /** @type {any} */ (globalThis);
 
 const MUSIC = JSON.parse(readFileSync(new URL('../../game/data/music.json', import.meta.url), 'utf8'));
-const town = MUSIC.songs.town;
+// town's recipe without its written lines (SND-4 gave it a placeholder hook): the tests write their own
+const town = Object.fromEntries(
+  Object.entries(MUSIC.songs.town).filter(([k]) => !['hook', 'counter', 'hookName'].includes(k))
+);
 
 test('an empty hook and counter change nothing', () => {
   const a = trackerCompose(town),
