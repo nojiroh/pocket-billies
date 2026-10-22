@@ -10,6 +10,7 @@ import {
   modal,
   playStoryScript,
   provide,
+  relicPickOpen,
   render,
   renderOverlay,
   runBowlMapTest,
@@ -33,6 +34,7 @@ import {
   EGG_TIERS,
   ITEMS,
   LOCATIONS,
+  RELICS,
   RULES,
   SPECIES,
   TRAINERS,
@@ -54,6 +56,7 @@ import {
   xpFor,
 } from './logic/rules.js';
 import { RUN_MOD_MOUNTAINS } from './logic/run-scenes.js';
+import { relicOfferMake, relicTake } from './logic/relics.js';
 import { newSaveKeepingPreferences } from './logic/saves.js';
 import { allSnapshots, battleSay, checkFaints, fighter, startTrainer, startWild } from './logic/battle-engine.js';
 import {
@@ -62,6 +65,7 @@ import {
   flushSave,
   save,
   saveData,
+  saveNow,
   setActiveBattle,
   setSaveData,
   uiState,
@@ -132,7 +136,11 @@ function debugHTML() {
   <div class="dbg-row">${debugButtonHTML('seats', 'Earn every badge')}${debugButtonHTML('flags', 'Reset trainer wins')}${debugButtonHTML('fillq', 'Fill encounters here')}${debugButtonHTML('clearq', 'Clear encounters here')}</div></details>
  <details><summary>Runs (roguelite track)</summary>${
    saveData.run
-     ? `<p class="note">On a run: seed ${escapeHtml(saveData.run.seed)}, day ${saveData.run.clock}, ${saveData.run.at.phase}. “Go there” above walks it a place at a time.</p><div class="dbg-row">${debugButtonHTML('runwin', 'Win the run', 'gold')}${debugButtonHTML('runlose', 'Lose the run', 'red')}</div>`
+     ? `<p class="note">On a run: seed ${escapeHtml(saveData.run.seed)}, day ${saveData.run.clock}, ${saveData.run.at.phase}. “Go there” above walks it a place at a time.</p><div class="dbg-row">${debugButtonHTML('runwin', 'Win the run', 'gold')}${debugButtonHTML('runlose', 'Lose the run', 'red')}</div><div class="dbg-row">${debugSelectHTML(
+         'dbgRelic',
+         Object.keys(RELICS).map(k => [k, RELICS[k].name]),
+         uiState.dbgRelic || Object.keys(RELICS)[0] || ''
+       )}${debugButtonHTML('relicgive', 'Give a Loophole')}${debugButtonHTML('relicpick', 'A mini-boss’s pick')}</div><p class="note">RL-12: Loopholes held: ${saveData.run.relics.length} of ${RULES.run.relics.cap}${saveData.run.relics.length ? ` (${escapeHtml(saveData.run.relics.map(k => (RELICS[k] || { name: k }).name).join(', '))})` : ''}. Past the cap, the one held longest makes room.</p>`
      : `<div class="dbg-row"><input id="dbgRunSeed" maxlength="20" placeholder="Seed (empty: a new one)" aria-label="Run seed" value="${escapeHtml(uiState.dbgRunSeed || '')}"><label><input id="dbgRunShort" type="checkbox"${uiState.dbgRunShort ? ' checked' : ''}> Short (5 rows)</label><label><input id="dbgRunMountains" type="checkbox"${uiState.dbgRunMountains ? ' checked' : ''}> Mountains and ledges</label>${debugButtonHTML('runstart', 'Start a run', 'gold')}</div><p class="note">From Copperleaf, as the mast does (Bracket I). Short: one mini-boss, a town before it, the boss. Mountains and ledges: every place gets mountains of 15-20 m on its north and south sides with trails up, and terraces with ledges (terrain TR-2, for a phone measurement; the debug log has the frame times).</p>`
  }</details>
  <details><summary>Story scripts (Project Story)</summary><div class="dbg-row">${debugSelectHTML(
@@ -391,6 +399,30 @@ function debugAction(x) {
       );
       return;
     }
+    /* RL-12: a Loophole for nothing (past the cap, in the place of the one held longest), and a mini-boss's pick */
+    case 'relicgive': {
+      const run = saveData.run,
+        id = v('dbgRelic');
+      uiState.dbgRelic = id;
+      if (!run) return refreshDebugMenu('No run.');
+      const why = relicTake(
+        run,
+        id,
+        RELICS,
+        RULES.run.relics,
+        run.relics.length >= RULES.run.relics.cap ? run.relics[0] : undefined
+      );
+      if (why) return refreshDebugMenu(why === 'held' ? 'Already held.' : 'That Loophole can’t be given.');
+      saveNow();
+      return refreshDebugMenu(`${RELICS[id].name}: held.`);
+    }
+    case 'relicpick':
+      if (!saveData.run || activeBattle) return refreshDebugMenu('No run, or a battle is on.');
+      if (!relicOfferMake(saveData.run, RELICS, RULES.run.relics)) return refreshDebugMenu('Every Loophole is held.');
+      saveNow();
+      uiState.modal = null;
+      relicPickOpen();
+      return;
     case 'runwin':
     case 'runlose':
       if (!saveData.run || activeBattle) return refreshDebugMenu('No run, or a battle is on.');
