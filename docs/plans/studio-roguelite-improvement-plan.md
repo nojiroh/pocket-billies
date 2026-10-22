@@ -78,6 +78,8 @@ Line numbers are at 5a30303d and will drift.
 - A designer cannot see a run, tune its structure, or measure a change's effect without editing JSON by hand,
   pushing a pull request and playing on a phone.
 - The navigation still leads with Town shops and Jobs; both data files are `{}` and do nothing in the roguelite.
+- Every redraw of a 3D section (Walk scenes, Engine, Hub island) makes a new WebGL context, and its cached meshes
+  go stale (F18, F19).
 
 ### Most serious engineering risks, in order
 1. Silent loss and silent reverts on publish (P0).
@@ -307,15 +309,64 @@ silently reverting.
 - `runOverdue` is never called by page code; tier and bracket are hard-coded to 1 (`run.js` 237, 298, 364) [read].
   These are already RL-13's.
 
+#### F16. Second-pane edits run the left section's hook - P2 [read + run]
+- `onField` calls `studioState.hooks[studioState.sec]` (`studio-app.js` 469), the *left* section.
+- Renaming a move in the right pane does not update that pane's list. The same edit in the left pane does.
+- **Approach:** T6.6. Find the field's pane, then use that pane's section.
+
+#### F17. Type rename misses robots - P2 [read]
+- `renameType` (`studio/js/data-editors.js` 1015-1032) updates types, moves, lines and `rules.battle`.
+- It does not update robots.json's 15 `type` fields, although STUDIO.md says every use is updated.
+- After a rename, the robots point to a type that no longer exists. check-data would then fail the PR.
+- **Approach:** T6.6. Shared rename helpers in logic, with a test that walks every id field.
+
+#### F18. Every redraw of a 3D section creates a new WebGL2 context - P2 [run]
+- `ensureWalkGl` (`game/js/walk-view-gl.js` 217) builds a new context and recompiles every shader whenever the
+  canvas element is new.
+- A redraw replaces the canvas, and so does any of ~40 scene tool or prop actions, undo or redo.
+- Nothing calls `loseContext`.
+- 18 tool switches in Walk scenes made 20 contexts. After each, the preview took 11-20 s (software GL) to be ready.
+- Browsers drop the oldest contexts at about 16. That is a crash risk on the owner's iPad [inf].
+
+#### F19. Stale GPU objects after a 3D redraw - P2 [run]
+- After a redraw, the console logs "bindVertexArray: object does not belong to this context".
+- The stale objects are meshes cached by scene key but not by GL context:
+  - `structureState.mesh` (`game/js/structures.js` 43, 542, 582, 609);
+  - `solidPropState.meshes` (`game/js/solid-props.js` 86, 289, 1309, 1353).
+- Buildings and solid props likely stop drawing in the Studio preview after a redraw [inf].
+- These are game files, but the problem only shows in the Studio, where the canvas is replaced.
+
+#### F20. `@lines.` path collision - P3 [read, latent]
+- Two path rewriters claim the `@lines.` prefix:
+  - data-editors.js (1171, 1207-1225) uses it for a shop keeper's lines;
+  - lore-editor.js (55-75) also uses it, and wraps later, so it wins.
+- Result: the shop field reads `D[<shopKey>]`, shows empty, and typing writes a new top-level key.
+- Latent today because shops.json is `{}`.
+
+#### F21. Smaller defects from the rendering audit [run unless noted]
+- **Focus:** a `data-rr` select change redraws the pane and moves focus to `<body>`.
+- **Lazy listener cleanup:** the pixel canvas removes its `document` listeners only on the next key or `studio-art`
+  event after it is detached (pixel-canvas.js 122-129, 671-683; sprites.js 711). Until then each one keeps a detached
+  canvas alive: +20 listeners after opening the pixel editor 5 times.
+- **Sheet mode in the second pane:** it still finds its elements with `paneRoot()` in code that runs after loading
+  (workbench.js 453, 487, 537, 554, 568). Known since ST-5.
+- **Dead backups UI:** in GitHub mode, backups are an empty list and restore throws (github.js 297, 329), but the side
+  footer still says "backups in backups/" [read].
+- **Proxy rebuilds:** the `TYPE_COLORS` and `HIT_EFFECTS_BY_TYPE` stand-ins (`studio/js/game-stand-ins.js`) rebuild
+  the whole object on every property read [read].
+
 ### Architectural risks (not bugs today)
 
 #### A1. Rendering
 **How it draws**
 - A section is a function returning an HTML string. `renderPane` (`studio-app.js` 588-608) assigns it to the pane's
   `innerHTML`, then runs `studioState.after` and `mountPreviews` [read].
-- Listeners are delegated on `document` (`studio-app.js` ~625-660 for `data-act`, `onField` for inputs). Redraws
-  therefore do not leak handlers [read].
+- Listeners are delegated on `document` (`studio-app.js` ~618-647 for `data-act`, `onField` for inputs), so section
+  redraws do not leak handlers [read].
 - The self-test's leak pass agrees: heap 33.5 → 33.5 MB, 326 → 327 nodes, no loops left running [run].
+- The exception is the pixel canvas; see F21.
+- `render()` is wrapped by layout.js (319) and connections.js (630), so **every redraw also rebuilds the second
+  pane**, reapplies the layout and remounts the resize handles [read].
 
 **Where the cost actually is** [run: self-test, headless]
 - **Typing in a plain field does not redraw.** `onField` writes the value in place.
@@ -327,8 +378,9 @@ silently reverting.
   - The self-test measured one Walk scenes edit at **973 ms**.
 - **Undo and redo always re-render the whole section** (`restore`). Wardrobe undo and redo took **~900 ms** each.
 - **Slow first opens.**
-  - Types opens in **1.9 s**, of which 1.9 s is building the HTML. The cause is not found: the icon data URLs are
-    cached (`game/js/art.js` 166-169) [inf, needs a profile].
+  - Types opens in **0.5-2.7 s** on first open and in 0.5 ms afterwards. A profile points to the cold icon cache:
+    `iconURL` → `toDataURL` (`game/js/art.js` 166), once per FX icon per type.
+  - Trainers takes 0.8 s on a cold first open.
   - Wardrobe opens in the second pane in **2.5 s**.
 - **Data load.** In GitHub mode, 145 files are fetched 12 at a time: 7.7 s against the local stand-in. On real
   GitHub this depends on the network.
@@ -342,8 +394,26 @@ silently reverting.
   and a few slow builders.
 - None justifies a framework.
 
-**Note.** A separate rendering and navigation audit was still running when this plan was written. Its findings are
-added in a follow-up commit if they change anything here.
+**Second audit [run]: Node Playwright with the stand-in, software GL.**
+- **One keystroke:**
+  - 2.6 ms normally.
+  - **68 ms while the undo stack is empty.** `updateTopBar` (`studio-app.js` 292) calls `snapshot()` to decide
+    whether Undo is enabled.
+- **After the 450 ms debounce:**
+  - snapshot 29-77 ms;
+  - the whole `runCheck` 13 ms;
+  - a ~2 MB BroadcastChannel post 10 ms, even with no game tab open.
+- **Undo memory:** 30 edits grew the JS heap by 144 MB, about 4.8 MB per step, which confirms F8.
+- **Largest DOMs:** Walk scenes 3,349 elements, Props 1,823, Billies 1,755.
+- **No list virtualization anywhere.** It is not needed at today's sizes: 24 species, 121 moves, 450 props, 52 maps.
+- **No global `error` or `unhandledrejection` handler** outside the self-test. `renderPane` has `try/finally` with no
+  `catch`, so a section that throws leaves the old pane on screen with only a console error.
+- The 3D defects are F18 and F19.
+
+**Monkey-patching by load order** is the riskiest pattern.
+- `render`, `readPath`/`writePath` (story-editor 75 → data-editors 1207 → lore-editor 55), `api`, `saveAll` and
+  `toast` are swapped in `<script>` order.
+- F20 is a latent bug that comes from it.
 
 #### A2. Single global state and setter bridge
 - `studioState` (`studio-app.js` 86-102) holds the whole data model.
@@ -476,7 +546,7 @@ needs T2.1 and T2.4.
 | 3 Simulation and balance | Many seeds, metrics with uncertainty, before/after compare | T3.1-T3.5 | 3 | 4, 5 |
 | 4 Roguelite content editors | Relics, unlocks/hub, leaders and economy views; navigation | T4.1-T4.5 | 3 | 3, 5 |
 | 5 Parts and rigs | One source of truth for kit Billies; part swap that keeps the Billie whole | T5.1-T5.7 | 4-5 | 2, 3, 4 |
-| 6 Performance, polish, docs | Measured bottlenecks; type checks; docs | T6.1-T6.5 | 2-3 | after 1 |
+| 6 Performance, polish, docs | Measured bottlenecks; 3D view kept across redraws; small correctness fixes; docs | T6.1-T6.8 | 3-4 | after 1 (T6.6 any time) |
 
 Every phase ends with the Studio working and publishing, the full quick check, a HANDOFF entry and a tag
 `sr-N-done` (the owner pushes tags).
@@ -1157,6 +1227,52 @@ with the self-test's comparison to the last run, which the self-test already pro
   - Update docs/TESTING.md.
   - Add `// @ts-check` to the new Studio modules (`publish`, `drafts`, `run-lab`, `logic-worker`) from day one.
 - **Effort:** S-M.
+
+#### T6.6 Small correctness fixes from the rendering audit
+- **Priority:** P2.
+- **Commits, one cause each:**
+  - F16: `onField` finds the field's pane and uses that pane's section hook.
+  - F17: robots in `renameType`. Then move the rename helpers into logic, with a unit test that walks every
+    type-id field of the real data.
+  - F20: one ordered registry of path prefixes instead of chained `setReadPath` wrappers, with a test that no two
+    claim one prefix.
+  - D5 (from the second audit): `updateTopBar` keeps a "changed since load" flag instead of calling `snapshot()`.
+  - A `catch` in `renderPane`, plus global `error` and `unhandledrejection` toasts.
+  - Pixel-canvas listeners removed on close.
+  - The dead backups text goes.
+- **Effort:** M in all. **Risk:** low.
+- **Acceptance:**
+  - A second-pane rename updates its own list.
+  - Renaming a type keeps check-data green.
+  - The listener count is flat after opening the pixel editor 5 times.
+
+#### T6.7 Keep the 3D view across redraws
+- **Priority:** P2.
+- **Problem:** F18 and F19.
+- **Approach, in order of preference:**
+  1. Keep the 3D view alive across redraws:
+     - the section's HTML holds a placeholder;
+     - `renderPane` moves the existing `<canvas>` into it (re-parenting keeps the context);
+     - stale state is cleared only when the scene really changes.
+  2. If re-parenting proves fragile:
+     - call `loseContext()` on the old canvas;
+     - key the structure and solid-prop mesh caches by the GL context.
+  - Either way, the game's own paths (one canvas for the page's life) do not change. These are game files, so a
+    check-fast run is needed.
+- **Effort:** M. **Risk:** medium (renderer). The "Leave alone" list in roguelite-track.md covers the renderer:
+  touch only cache keys and canvas ownership.
+- **Acceptance:**
+  - 20 tool switches in Walk scenes make 1 context.
+  - No `INVALID_OPERATION` in the console.
+  - Buildings stay drawn after undo.
+
+#### T6.8 Navigation clean-up beyond T4.5
+- **Priority:** P3.
+- **Approach:** one meaning per word.
+  - Rename only the *labels* "People" (looks) and "Parts" (size rules) to say what they are. Player-facing words do
+    not change. Labels are Studio UI, not game text.
+  - Update STUDIO.md's stale entries, such as "Map art".
+- **Effort:** S.
 
 #### T6.5 Docs
 - **Priority:** P3.
