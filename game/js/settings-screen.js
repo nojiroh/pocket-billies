@@ -299,7 +299,7 @@ function blurSliderHTML() {
   return settingsRowHTML(
     'Blur',
     'How soft far and near things go round the sharp strip where you stand (Medium is the game’s own look). Off costs nothing.',
-    `<div class="vol"><input type="range" min="0" max="150" step="5" data-preference="blur" value="${v}" aria-label="Blur"><span class="vol-n">${blurWord(v / 100)}</span></div>`
+    `<div class="vol"><input type="range" min="0" max="150" step="5" data-preference="blur" value="${v}" aria-label="Blur"><span class="vol-n vol-word">${blurWord(v / 100)}</span></div>`
   );
 }
 function volumeSliderHTML(k, label, hint, def) {
