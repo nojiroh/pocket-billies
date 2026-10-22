@@ -486,7 +486,7 @@ const wbsLibrary = {
   state: null,
   slot(b) {
     const role = b.a || b.n;
-    if (/^(ear|horn|crest|antler)/i.test(role)) return 'head-extra';
+    if (/^(ear|horn|crest|antler)/i.test(role)) return 'headExtra';
     if (/^(shell|ruff)/i.test(role)) return 'body-extra';
     const slot = boneSlot(b);
     return slot || '';

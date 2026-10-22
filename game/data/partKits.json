@@ -18,9 +18,9 @@
  },
  "slots": {
   "head": "head",
-  "ear": "head-extra",
-  "crest": "head-extra",
-  "dorsal": "head-extra",
+  "ear": "headExtra",
+  "crest": "headExtra",
+  "dorsal": "headExtra",
   "torso": "body",
   "arm": "front",
   "wing": "front",
@@ -30,17 +30,17 @@
   "backfin": "back",
   "tail": "sig",
   "tailfin": "sig",
-  "horn": "head-extra",
+  "horn": "headExtra",
   "spikes": "sig",
   "mane": "sig",
   "shell": "body-extra",
   "ruff": "body-extra",
-  "plume": "head-extra",
-  "crown": "head-extra",
+  "plume": "headExtra",
+  "crown": "headExtra",
   "sail": "sig",
-  "spike": "head-extra",
+  "spike": "headExtra",
   "scales": "body-extra",
-  "lure": "head-extra"
+  "lure": "headExtra"
  },
  "pivots": {
   "head": [0.5,0.92],
@@ -128,7 +128,7 @@
   "hipL": ["back"],
   "hipR": ["back"],
   "tail": ["sig"],
-  "top": ["head-extra"],
+  "top": ["headExtra"],
   "spine": ["body-extra","sig"]
  },
  "sockets": {
@@ -330,7 +330,7 @@
    "kit": "beasts",
    "animal": "cat",
    "kind": "ear",
-   "slot": "head-extra",
+   "slot": "headExtra",
    "pivot": [0.5,0.95],
    "size": "M",
    "views": {
@@ -352,7 +352,7 @@
    "kit": "beasts",
    "animal": "rabbit",
    "kind": "ear",
-   "slot": "head-extra",
+   "slot": "headExtra",
    "pivot": [0.5,0.95],
    "size": "M",
    "views": {
@@ -374,7 +374,7 @@
    "kit": "beasts",
    "animal": "fox",
    "kind": "ear",
-   "slot": "head-extra",
+   "slot": "headExtra",
    "pivot": [0.5,0.95],
    "size": "M",
    "views": {
@@ -396,7 +396,7 @@
    "kit": "beasts",
    "animal": "bear",
    "kind": "ear",
-   "slot": "head-extra",
+   "slot": "headExtra",
    "pivot": [0.5,0.95],
    "size": "M",
    "views": {
@@ -418,7 +418,7 @@
    "kit": "beasts",
    "animal": "bird",
    "kind": "ear",
-   "slot": "head-extra",
+   "slot": "headExtra",
    "pivot": [0.5,0.95],
    "size": "M",
    "views": {
@@ -440,7 +440,7 @@
    "kit": "beasts",
    "animal": "reptile",
    "kind": "ear",
-   "slot": "head-extra",
+   "slot": "headExtra",
    "pivot": [0.5,0.95],
    "size": "M",
    "views": {
@@ -1074,7 +1074,7 @@
    "kit": "beasts",
    "animal": "any",
    "kind": "horn",
-   "slot": "head-extra",
+   "slot": "headExtra",
    "pivot": [0.5,0.95],
    "size": "M",
    "views": {
@@ -1294,7 +1294,7 @@
    "kit": "birds",
    "animal": "chick",
    "kind": "crest",
-   "slot": "head-extra",
+   "slot": "headExtra",
    "pivot": [0.5,0.95],
    "size": "M",
    "views": {
@@ -1316,7 +1316,7 @@
    "kit": "birds",
    "animal": "duck",
    "kind": "crest",
-   "slot": "head-extra",
+   "slot": "headExtra",
    "pivot": [0.5,0.95],
    "size": "M",
    "views": {
@@ -1338,7 +1338,7 @@
    "kit": "birds",
    "animal": "owl",
    "kind": "crest",
-   "slot": "head-extra",
+   "slot": "headExtra",
    "pivot": [0.5,0.95],
    "size": "M",
    "views": {
@@ -1360,7 +1360,7 @@
    "kit": "birds",
    "animal": "sparrow",
    "kind": "crest",
-   "slot": "head-extra",
+   "slot": "headExtra",
    "pivot": [0.5,0.95],
    "size": "M",
    "views": {
@@ -1382,7 +1382,7 @@
    "kit": "birds",
    "animal": "eagle",
    "kind": "crest",
-   "slot": "head-extra",
+   "slot": "headExtra",
    "pivot": [0.5,0.95],
    "size": "M",
    "views": {
@@ -1404,7 +1404,7 @@
    "kit": "birds",
    "animal": "hawk",
    "kind": "crest",
-   "slot": "head-extra",
+   "slot": "headExtra",
    "pivot": [0.5,0.95],
    "size": "M",
    "views": {
@@ -2060,7 +2060,7 @@
    "kit": "birds",
    "animal": "any",
    "kind": "horn",
-   "slot": "head-extra",
+   "slot": "headExtra",
    "pivot": [0.5,0.95],
    "size": "M",
    "views": {
@@ -2082,7 +2082,7 @@
    "kit": "birds",
    "animal": "any",
    "kind": "plume",
-   "slot": "head-extra",
+   "slot": "headExtra",
    "pivot": [0.5,0.95],
    "size": "M",
    "views": {
@@ -2104,7 +2104,7 @@
    "kit": "birds",
    "animal": "any",
    "kind": "crown",
-   "slot": "head-extra",
+   "slot": "headExtra",
    "pivot": [0.5,0.95],
    "size": "M",
    "views": {
@@ -2258,7 +2258,7 @@
    "kit": "fish",
    "animal": "goldfish",
    "kind": "dorsal",
-   "slot": "head-extra",
+   "slot": "headExtra",
    "pivot": [0.5,0.95],
    "size": "M",
    "views": {
@@ -2280,7 +2280,7 @@
    "kit": "fish",
    "animal": "carp",
    "kind": "dorsal",
-   "slot": "head-extra",
+   "slot": "headExtra",
    "pivot": [0.5,0.95],
    "size": "M",
    "views": {
@@ -2302,7 +2302,7 @@
    "kit": "fish",
    "animal": "koi",
    "kind": "dorsal",
-   "slot": "head-extra",
+   "slot": "headExtra",
    "pivot": [0.5,0.95],
    "size": "M",
    "views": {
@@ -2324,7 +2324,7 @@
    "kit": "fish",
    "animal": "piranha",
    "kind": "dorsal",
-   "slot": "head-extra",
+   "slot": "headExtra",
    "pivot": [0.5,0.95],
    "size": "M",
    "views": {
@@ -2346,7 +2346,7 @@
    "kit": "fish",
    "animal": "betta",
    "kind": "dorsal",
-   "slot": "head-extra",
+   "slot": "headExtra",
    "pivot": [0.5,0.95],
    "size": "M",
    "views": {
@@ -2368,7 +2368,7 @@
    "kit": "fish",
    "animal": "shark",
    "kind": "dorsal",
-   "slot": "head-extra",
+   "slot": "headExtra",
    "pivot": [0.5,0.95],
    "size": "M",
    "views": {
@@ -3024,7 +3024,7 @@
    "kit": "fish",
    "animal": "any",
    "kind": "spike",
-   "slot": "head-extra",
+   "slot": "headExtra",
    "pivot": [0.5,0.95],
    "size": "M",
    "views": {
@@ -3068,7 +3068,7 @@
    "kit": "fish",
    "animal": "any",
    "kind": "lure",
-   "slot": "head-extra",
+   "slot": "headExtra",
    "pivot": [0.1,0.95],
    "size": "M",
    "views": {
