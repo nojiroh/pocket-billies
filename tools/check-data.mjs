@@ -390,6 +390,22 @@ if (D.nodeTypes && check('nodeTypes.schema.json', D.nodeTypes, 'nodeTypes.json')
   if (!Object.values(D.nodeTypes).some(T => (T.weight || 0) > 0))
     problem('nodeTypes.json', 'no type has a weight, so nothing can fill a free row of the run map');
 }
+// SND-2: the music: the schema, then every song a where-rule or a place names is a song, and the where table ends in a
+// rule that always matches (so something always plays)
+if (D.music && check('music.schema.json', D.music, 'music.json')) {
+  const songs = D.music.songs;
+  D.music.where.forEach((W, i) => {
+    if (W.song !== '$place' && !songs[W.song]) problem('music.json', `where[${i}]: no song "${W.song}"`);
+    if (W.nodeType && !(D.nodeTypes || {})[W.nodeType]) problem('music.json', `where[${i}]: no node type "${W.nodeType}" (nodeTypes.json)`);
+    if (W.biome && !(D.biomes || {})[W.biome]) problem('music.json', `where[${i}]: no biome "${W.biome}" (biomes.json)`);
+  });
+  const last = D.music.where[D.music.where.length - 1];
+  if (Object.keys(last).some(k => k !== 'song') || last.song === '$place')
+    problem('music.json', 'the last where-rule must match everywhere (a song and nothing else), so some song always plays');
+  (D.locations || []).forEach((L, i) => {
+    if (L && L.music && !songs[L.music]) problem('locations.json', `${L.id || i}: music "${L.music}" is not a song (music.json)`);
+  });
+}
 // phase 10: the world map's look: the schema, then the terrain keys it names and the regions it covers
 if (D.worldmap && check('worldmap.schema.json', D.worldmap, 'worldmap.json')) {
   const terr = new Set(Object.keys((D.scenery && D.scenery.terrains) || {}));

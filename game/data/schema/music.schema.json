@@ -1,0 +1,345 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "music.schema.json",
+ "title": "game/data/music.json: the songs, the jingles, the cries' bases and where each song plays (sound track SND-2; game/js/audio/tracker.js, logic/music-where.js)",
+ "type": "object",
+ "required": [
+  "songs",
+  "jingles",
+  "cries",
+  "where"
+ ],
+ "additionalProperties": false,
+ "$defs": {
+  "id": {
+   "type": "string",
+   "pattern": "^[a-z][a-z0-9_]*$"
+  },
+  "wave": {
+   "description": "p12, p25, p50: pulse waves of 12.5, 25 and 50 %; or one of the browser's own",
+   "enum": [
+    "p12",
+    "p25",
+    "p50",
+    "square",
+    "triangle",
+    "sine",
+    "sawtooth"
+   ]
+  },
+  "line": {
+   "description": "a written line of notes: [step from the song's start (16 a bar), midi note, length in steps]",
+   "type": "array",
+   "items": {
+    "type": "array",
+    "prefixItems": [
+     {
+      "type": "integer",
+      "minimum": 0
+     },
+     {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 127
+     },
+     {
+      "type": "integer",
+      "minimum": 1
+     }
+    ],
+    "minItems": 3,
+    "maxItems": 3
+   }
+  },
+  "recipe": {
+   "type": "object",
+   "properties": {
+    "bpm": {
+     "type": "number",
+     "minimum": 30,
+     "maximum": 300
+    },
+    "key": {
+     "description": "the home note, as a midi note (60 is middle C)",
+     "type": "integer",
+     "minimum": 24,
+     "maximum": 96
+    },
+    "scale": {
+     "enum": [
+      "major",
+      "minor",
+      "dorian",
+      "lydian",
+      "mixo"
+     ]
+    },
+    "prog": {
+     "description": "the chord of each bar, as a scale degree from 0 (I) to 6 (vii); eight bars",
+     "type": "array",
+     "items": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 6
+     },
+     "minItems": 8,
+     "maxItems": 8
+    },
+    "lead": {
+     "$ref": "#/$defs/wave"
+    },
+    "bass": {
+     "enum": [
+      "bounce",
+      "gallop",
+      "long",
+      "walk",
+      "drive"
+     ]
+    },
+    "arp": {
+     "enum": [
+      "up",
+      "updown",
+      "drip",
+      "chord7"
+     ]
+    },
+    "drums": {
+     "enum": [
+      "soft",
+      "skip",
+      "drive",
+      "march",
+      "bossa",
+      "none"
+     ]
+    },
+    "seed": {
+     "description": "the lead's random walk starts here: the same seed, the same tune",
+     "type": "integer"
+    },
+    "swing": {
+     "description": "how late every other sixteenth plays, as a share of a sixteenth",
+     "type": "number",
+     "minimum": 0,
+     "maximum": 0.5
+    },
+    "echo": {
+     "description": "how much of the lead goes to the echo (0.15 when left out)",
+     "type": "number",
+     "minimum": 0,
+     "maximum": 1
+    },
+    "seventh": {
+     "description": "1: the arpeggios and chords add the seventh",
+     "enum": [
+      0,
+      1
+     ]
+    }
+   }
+  }
+ },
+ "properties": {
+  "_help": {
+   "type": "string"
+  },
+  "songs": {
+   "type": "object",
+   "propertyNames": {
+    "$ref": "#/$defs/id"
+   },
+   "minProperties": 1,
+   "additionalProperties": {
+    "allOf": [
+     {
+      "$ref": "#/$defs/recipe"
+     },
+     {
+      "required": [
+       "bpm",
+       "key",
+       "scale",
+       "prog",
+       "lead",
+       "bass",
+       "arp",
+       "drums",
+       "seed"
+      ],
+      "properties": {
+       "bpm": true,
+       "key": true,
+       "scale": true,
+       "prog": true,
+       "lead": true,
+       "bass": true,
+       "arp": true,
+       "drums": true,
+       "seed": true,
+       "swing": true,
+       "echo": true,
+       "seventh": true,
+       "hook": {
+        "description": "SND-4: a written hook for bars 1-2 (none yet: the lead is composed)",
+        "$ref": "#/$defs/line"
+       },
+       "counter": {
+        "description": "SND-4: a countermelody under the hook (none yet)",
+        "$ref": "#/$defs/line"
+       },
+       "intro": {
+        "description": "SND-5: bars that play once before the song (none yet)",
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 2
+       },
+       "night": {
+        "description": "SND-4: what changes at night (none yet)",
+        "$ref": "#/$defs/recipe"
+       }
+      },
+      "additionalProperties": false
+     }
+    ]
+   }
+  },
+  "jingles": {
+   "type": "object",
+   "propertyNames": {
+    "$ref": "#/$defs/id"
+   },
+   "additionalProperties": {
+    "type": "object",
+    "required": [
+     "notes"
+    ],
+    "additionalProperties": false,
+    "properties": {
+     "notes": {
+      "description": "[midi note, length in sixteenths]; a rest is note 0",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+       "type": "array",
+       "prefixItems": [
+        {
+         "type": "integer",
+         "minimum": 0,
+         "maximum": 127
+        },
+        {
+         "type": "number",
+         "exclusiveMinimum": 0
+        }
+       ],
+       "minItems": 2,
+       "maxItems": 2
+      }
+     }
+    }
+   }
+  },
+  "cries": {
+   "type": "object",
+   "required": [
+    "bases"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "bases": {
+     "description": "the base cries; a species picks one by its name until roster.json names one (SND-6)",
+     "type": "array",
+     "minItems": 1,
+     "items": {
+      "type": "object",
+      "required": [
+       "wave"
+      ],
+      "additionalProperties": false,
+      "properties": {
+       "wave": {
+        "$ref": "#/$defs/wave"
+       }
+      }
+     }
+    }
+   }
+  },
+  "where": {
+   "description": "which song plays: the first rule whose every key matches wins; a rule with only a song matches always",
+   "type": "array",
+   "minItems": 1,
+   "items": {
+    "type": "object",
+    "required": [
+     "song"
+    ],
+    "additionalProperties": false,
+    "properties": {
+     "started": {
+      "description": "false: before the game has started (the title, the opening)",
+      "type": "boolean"
+     },
+     "battle": {
+      "description": "the kind of battle: wild, trainer, rival",
+      "$ref": "#/$defs/id"
+     },
+     "tab": {
+      "description": "the open tab (map: the world map)",
+      "$ref": "#/$defs/id"
+     },
+     "indoor": {
+      "description": "inside a room",
+      "type": "boolean"
+     },
+     "map": {
+      "description": "any of these maps",
+      "type": "array",
+      "items": {
+       "$ref": "#/$defs/id"
+      },
+      "minItems": 1
+     },
+     "placeKind": {
+      "description": "the place is a city or a town (locations.json t: city, town)",
+      "enum": [
+       "city",
+       "town"
+      ]
+     },
+     "nodeType": {
+      "description": "a run's node type (nodeTypes.json)",
+      "$ref": "#/$defs/id"
+     },
+     "biome": {
+      "description": "a run's biome (biomes.json)",
+      "$ref": "#/$defs/id"
+     },
+     "row": {
+      "description": "SND-5: a run's rows, from and to (1 is the landing)",
+      "type": "array",
+      "items": {
+       "type": "integer",
+       "minimum": 0
+      },
+      "minItems": 2,
+      "maxItems": 2
+     },
+     "song": {
+      "description": "a song of songs; $place: the place's own song (locations.json music), when it has one",
+      "anyOf": [
+       {
+        "$ref": "#/$defs/id"
+       },
+       {
+        "const": "$place"
+       }
+      ]
+     }
+    }
+   }
+  }
+ }
+}

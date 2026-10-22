@@ -50,6 +50,8 @@ export interface GameData {
   biomes?: Record<DataId, Biome>;
   /** roguelite track RL-6: the kinds of node on a run's map (game/data/nodeTypes.json; logic/run-map.js) */
   nodeTypes?: Record<DataId, NodeType>;
+  /** sound track SND-2: the songs, jingles, cries' bases and where each song plays (game/data/music.json) */
+  music?: Music;
   /** UI track UI-1: the UI's look: palette, glass, cuts, fonts (game/data/uiTheme.json; logic/ui-theme.js) */
   uiTheme?: UiTheme;
   lines: Line[];
@@ -1352,6 +1354,53 @@ export interface NodeType {
   engine: 'scene' | 'menu';
   /** how often it fills a free row (rules.json run.map gives the other rows their types); 0 or none: never */
   weight?: number;
+}
+
+/** music.json: a song's recipe, composed into notes by the tracker (game/js/audio/tracker.js; sound track SND-2) */
+export interface SongRecipe {
+  bpm: number;
+  /** the home note, as a midi note */
+  key: number;
+  scale: 'major' | 'minor' | 'dorian' | 'lydian' | 'mixo';
+  /** each bar's chord, as a scale degree (0 is I) */
+  prog: number[];
+  lead: string;
+  bass: 'bounce' | 'gallop' | 'long' | 'walk' | 'drive';
+  arp: 'up' | 'updown' | 'drip' | 'chord7';
+  drums: 'soft' | 'skip' | 'drive' | 'march' | 'bossa' | 'none';
+  seed: number;
+  swing?: number;
+  echo?: number;
+  seventh?: 0 | 1;
+  /** SND-4 and SND-5 (none yet): written lines of [step, midi, length], intro bars, night changes */
+  hook?: [number, number, number][];
+  counter?: [number, number, number][];
+  intro?: number;
+  night?: Partial<SongRecipe>;
+}
+
+/** music.json: a rule of the where table; the first whose every key matches picks the song (logic/music-where.js) */
+export interface MusicWhere {
+  started?: boolean;
+  battle?: string;
+  tab?: string;
+  indoor?: boolean;
+  map?: string[];
+  placeKind?: 'city' | 'town';
+  nodeType?: string;
+  biome?: string;
+  row?: [number, number];
+  /** a song, or $place: the place's own song */
+  song: string;
+}
+
+/** music.json (sound track SND-2) */
+export interface Music {
+  songs: Record<DataId, SongRecipe>;
+  /** [midi note, length in sixteenths]; note 0 rests */
+  jingles: Record<DataId, { notes: [number, number][] }>;
+  cries: { bases: { wave: string }[] };
+  where: MusicWhere[];
 }
 
 /** uiTheme.json: the UI's look (UI track UI-1; version 2 in UI-3, for the Studio's UI section) */
