@@ -75,7 +75,7 @@ Everything is synthesized in `game/js/sound.js` (2,013 lines) with the Web Audio
 | SND-1 (done 2026-10-22) | Settings and routing | the five bugs above, the Music Test on the music bus, a one-tap mute beside the sheet's title, the Sound tab translated | none | 1 | unit test for the levels; the quick check's Sound settings step; phone |
 | SND-2 (done 2026-10-22) | The tracker as data | `game/js/audio/tracker.js` with no game imports; `music.json` + schema (songs, jingles, cries, where); biome music in a run; timers that stop when idle; a song fingerprint baseline | SND-1 | 1-2 | fingerprints unchanged; check-data; modules check; the run fixture plays a biome song |
 | SND-3 (done 2026-10-22) | The Studio's Music & sound section | play and loop any song, the recipe's dials, a piano roll for the hook, the where table, a cry card on Billies, check warnings | SND-2 | 1-2 | Studio self-test; quick check; the owner plays it |
-| SND-4 | The Pokémon rework: themes | four voices, written hooks and countermelodies, the title motif as a leitmotif, Copperleaf as two voices, night variants | SND-3, RL-8 played | 1-2 | fingerprints updated on purpose; the owner listens on the phone |
+| SND-4 (done 2026-10-22) | The Pokémon rework: themes | four voices, written hooks and countermelodies, the title motif as a leitmotif, Copperleaf as two voices, night variants | SND-3, RL-8 played | 1-2 | fingerprints updated on purpose; the owner listens on the phone |
 | SND-5 | Battle and run music | intros timed to the throw, wild/trainer/leader/boss/rival/ghost, biome × row variants, the deadline variant, the red zone | SND-4, RL-8 | 1-2 | battle fixture; run fixture; phone |
 | SND-6 | Sound effects and jingles | a cry per species with a low-HP cry, four UI sounds, jingles for the run's beats, a mix pass | SND-4, RL-12 for relics | 1 | battle golden record untouched; phone |
 
@@ -246,6 +246,48 @@ Audible changes, fingerprints regenerated at the end on purpose.
 6. **Biome songs.** Two new ones (a volcano march, a tundra waltz) and the SND-2 mapping revised so that no two of
    the eleven biomes share a song unless they should.
 
+### SND-4 as built (2026-10-22, branch `sound`, tag `snd-4-done` local)
+Started before the owner's word on the RL-8 play test, on purpose (the owner). Main's ROADMAP already had RL-8 "done,
+played"; nothing in SND-4 needed RL-8 but its code (the mast's take-off and the payout), which was only on main, so
+`sound` merged main first. The owner's answers at the start: **placeholder hooks the owner edits, clearly named as
+placeholders**; **the motif on the hub and the run's bookends** (title, Copperleaf, the take-off, the payout);
+**merge main first**; **item 6 (two new biome songs) deferred**. One cause per commit:
+1. Merge main (RL-8, RL-9, RL-11, RL-12a, the island track). Fingerprints unchanged.
+2. `check-sound.py` renders the night as the game will play it (`musicVariant`), as long as the night recipe. Tool only.
+3. **Four voices** (tracker.js): pulse lead; a second pulse for the counter in its bars, else the arp (chord7 a
+   two-note 12.5 % arp, drip a 12.5 % pluck); triangle bass (drive off the 50 % pulse); noise drums with the kick. A
+   triangle lead keeps the triangle and the bass moves to the second pulse. The night pad only in `extra` songs (the
+   title, the fall). **The composer answers a hook**: bars 3-4 keep its rhythm, each note on the nearest tone of the
+   new chord (ties go down); the counter too. New recipe keys `extra`, `pluck` (a music-box lead) and `none` for bass
+   and arp.
+4. **Night versions**: a song's `night` changes, or by default 8 bpm slower, a fourth down, soft drums, the hook and
+   counter moved with the key (`trackerNight`, played as `town@night`). `logic/music-where.js` `songVariant` picks it
+   outdoors and out of battle, night from 0.6 and day again below 0.4. `night: false` on the battle songs, cave, mall,
+   hazel, the title and the fall. The Studio's player has a Night switch. A later fix: the first touch works out the
+   night before the first note.
+5. **Names**: `hookName` per song and `name` per jingle; the Studio edits them and its Check lists everything still
+   named "placeholder…".
+6. **The motif**: the title in D mixolydian (I bVII IV I | I bVII IV bVII) with a written hook; a `motif` jingle (its
+   first bar, home on D).
+7. **Copperleaf**: music-box lead (p12, pluck), no bass, arp or drums, 88 bpm, swing 0.18; the motif an octave down
+   as its countermelody.
+8. Placeholder hooks for town (with a counter), route, map, hazel, cave, meadow, trench, spore, crystal, spire.
+9. The motif plays as the airship takes off for a run (`runTakeOff`) and once on the payout screen.
+10. The fingerprint baseline written again, in its own commit.
+
+Corrections to this section's plan, found in SND-4:
+- Item 6 deferred: only meadow, lake, thicket, ridge and autumn reach a run (rules.json `run.map.biomes`), and they
+  already play five different songs; a volcano march and a tundra waltz would be heard by nobody.
+- Item 1's "the night pad becomes a single triangle line": the triangle is the bass, so a fifth line breaks the four
+  voices. The pad is gone from four-voice songs; the night version is the night's colour.
+- Item 1's voices didn't match the code: drive bass was a 50 % pulse, drip and chord7 sines, six songs had their lead
+  on the triangle (hence the rule above).
+- Item 3's "on the airship mast" is the run's take-off from the mast (`runTakeOff`), not every town-to-town flight.
+- Item 5's "picked by environmentHour" is the environment's night level (`environmentState`, as updateAmbience reads
+  it), which already follows the hour, with dusk in between.
+- Item 5's per-song night overrides (tuned by ear): none written. Claude can't listen; every outdoor song uses the
+  default night until the owner writes one in the Studio.
+
 ## SND-5: battle and run music
 1. **Intros.** A song's `intro` is one or two bars (the chromatic run on the lead, drums out) that play once. The
    encounter sting starts the intro on the flash; the drums enter on the throw (`battleSoundEffect('enter')`), as
@@ -280,7 +322,8 @@ Audible changes, fingerprints regenerated at the end on purpose.
 - SND-2 (answered 2026-10-22): the mapping as first guessed (below), not waiting for the Studio; SND-3 lets you hear the pairs, SND-4 revises it.
 - SND-3: a Game-group section or a Sound group of its own (answered: a Sound group; also: hooks heard now, cries per
   stage in lines/*.json).
-- SND-4: who writes the hooks; whether the title motif should be the game's theme everywhere or the hub's only.
+- SND-4 (answered 2026-10-22): Claude writes placeholder hooks, named as placeholders, the owner edits them; the motif
+  on the hub and the run's bookends (title, Copperleaf, the take-off, the payout); main merged first; item 6 deferred.
 - SND-5: the red-zone variant versus the beep; whether the deadline variant plays on the last day or the last two.
 - The order of SND-4 to SND-6 after the play test, and whether any of them should go before it.
 

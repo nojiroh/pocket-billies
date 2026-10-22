@@ -9,6 +9,12 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- The music's first rework toward the Game Boy Pokémon sound (sound track SND-4): every song plays on four voices
+  (two pulse waves, a triangle bass, noise drums), except the title and the fall, which keep their fuller sound. A
+  written hook comes back answered in bars 3-4. The title has a theme of its own (I-bVII-I) that returns under
+  Copperleaf's song, as the airship takes off on a run and on the payout screen. Copperleaf is a two-voice music box
+  with no drums. Outdoors at night a song plays its night version: slower, lower, softer drums. Ten place songs have
+  draft hooks, each named "placeholder" in the Studio until it is rewritten; the Studio's player has a Night switch.
 - The Studio's Music & sound section (sound track SND-3): play and loop any song and change its recipe while it
   plays (tempo, key, scale, the chords as numerals, the instruments, swing, echo, a new tune from a seed); write a
   two-bar hook and a countermelody on a piano roll, which the game now plays in place of the composed tune's first

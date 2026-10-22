@@ -347,6 +347,11 @@ same phase:
   tested in Node on the real table (`sound.test.mjs`); the full check's "Run music" step (alone with `--steps="run
   music"`, about 20 s) opens the run fixture and checks each place's pick and that the sync asks for a biome's song
   (`soundEngine.want`: nothing is heard). The Unused report lists songs nothing plays.
+  SND-4: the night fingerprint is the song's night version (sound.js `musicVariant`, `trackerNight`), rendered as long
+  as that recipe; songs with `night: false` render by day with the pad as before. The baseline was written again on
+  purpose (four voices, the hooks, the night versions). Night versions by day/night level: `songVariant` in
+  `sound.test.mjs`; the composer's answer and `trackerNight` in `tracker.test.mjs`; placeholders in
+  `music-studio.test.mjs`.
   SND-3: the cry fingerprints are the 24 species by id (bezos0), as the game asks for them (they were the roster's
   names, which the game never passes). The Studio's **Music & sound** section: `python3 tools/check-studio-github.py
   --only=music` (about a minute) plays a song with a real click (the context running, the bar shown), changes its tempo
