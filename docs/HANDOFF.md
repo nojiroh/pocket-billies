@@ -36,7 +36,14 @@ and the look pass. Plan approved in Plan Mode; question 8 answered: **the ranch'
   a first-stage species, about rabbit size on the field: that is the species' own size (the wild ones are the same).
 - Verified: unit tests 623 (5 new); lint, typecheck, check:modules, format:check, check:data (a planted `pasture: 13` caught);
   check-fast 26 of 26 (Copperleaf's walking checks pass through the gate); smoke no problems; headless phone pictures
-  (390 x 760) of the gate, inside the field and round the fence. The full quick check: running at this commit (its result in the next commit).
+  (390 x 760) of the gate, inside the field and round the fence. The full quick check (at 926fee5, 34 min): 10 problems,
+  none this PR's: the 8 stale steps red on main too (roster counts 117/61 in v35/v38/v39, the v34 biped walk cycle,
+  v44's props scene, v46's buildings without a plan, alpha 0.4's empty bush recipes, phase 08's running), IS-5's
+  Copperleaf terraces (596 cells, the same on the base: 58419→57823 there, 58233→57637 here, the fence's own cells
+  the only difference) and v31's bowl map camera (red on the base commit 5044991 too, run alone on both).
+  CI's smoke was red once on "The pasture": reproduced with the page's CPU slowed, it showed who's out was re-read by
+  frame time (capped a frame), so a Billie moved to the team lingered on slow frames; now the real clock, and the
+  check taps a point that answers as the Billie with the buddy's walk off (3 of 3 pass slowed 4x and 6x).
 - Risky:
   - Up to six more rigs drawn on the hub (the buddy's frame cache, 320 frames, is shared); not measured on a phone
     (IS-9 measures frame times).
