@@ -1,11 +1,25 @@
 {
- "hair": "#2A2420",
- "style": "spiky",
- "top": "#C8862A",
- "top2": "#8A5A1A",
- "bottom": "#3A3A44",
- "shoe": "#1E1410",
- "skin": "#E8B48A",
- "hat": "#F4C542",
- "hat2": "#B9801C"
+ "look": {
+  "name": "Trainer",
+  "body": {"height":1,"legs":1,"arms":1,"body":1,"shoulders":1.05,"hips":1,"chest":0.03,"head":1},
+  "skin": "#E8B48A",
+  "hair": "#2A2420",
+  "eyes": "#4A7BBB",
+  "wear": {
+   "hair": "hair_spiky",
+   "eyes": "eyes_round",
+   "brows": "brows_soft",
+   "mouth": "mouth_smile",
+   "facial": null,
+   "top": "tee",
+   "outer": null,
+   "bottom": "jeans",
+   "shoes": "sneakers",
+   "hat": "hat_hardhat",
+   "glasses": null,
+   "neck": null,
+   "bag": null
+  },
+  "colors": {"tee":["#C8862A"],"jeans":["#3A3A44"],"sneakers":["#1E1410","#F2F0EA"],"hat_hardhat":["#F4C542"]}
+ }
 }

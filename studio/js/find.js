@@ -36,7 +36,7 @@ expose({
 /* eslint-enable no-func-assign */
 provide({ findFlash });
 /* to-module: end */
-const findState = { idx: null, key: '', res: [], at: 0, q: '' };
+const findState = { idx: null, last: null, ver: 0, res: [], at: 0, q: '' };
 const normalizeForFind = s =>
   String(s || '')
     .toLowerCase()
@@ -235,11 +235,12 @@ export function buildSearchIndex() {
   );
   return E;
 }
+/* rebuilt when the data changed: a new undo state (`last`), or a step, undo or redo (the history's counter) */
 function searchIndex() {
-  const key = studioState.undo.length + '|' + (studioState.last || '').length;
-  if (!findState.idx || findState.key !== key) {
+  if (!findState.idx || findState.last !== studioState.last || findState.ver !== studioState.ver) {
     findState.idx = buildSearchIndex();
-    findState.key = key;
+    findState.last = studioState.last;
+    findState.ver = studioState.ver;
   }
   return findState.idx;
 }

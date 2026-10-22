@@ -141,6 +141,43 @@ save's); the simulator defaults to none with `--unlocks=all`; the Run Lab gets a
 - T2.5 after T1.3; T2.6 in its own session (game boot code, a check-fast step; add `run.unlocks` to the debug log).
 - Manual (owner): play the run fixture once on the phone; compare one seed in the Lab with the debug menu's run.
 - No phase tag: Phase 2 continues.
+### Studio plan Phase 1, sessions C+D - One validator for CI and the Studio (T1.3) and Studio checks in CI (T1.4) - 2026-10-22
+Branch `ccr-81011a25-lf3exv` (PR #131). Plan pre-approved by the owner's standing instruction (recommended options
+taken; recorded under the plan doc's "Decisions"). Phase 1b (T1.2 undo, T1.5, People) works on the same branch at the
+same time: this session stays out of history.js, studio-app.js's undo, studio-test.js, studio-test-report.js,
+data-editors.js and the person schema, and merges (never rebases) before every push.
+
+**Plan** (one cause per commit, checks after each):
+1. `tools/data-files.mjs` reads `PB_DATA_DIR` when set (so a test can run check-data on a planted copy).
+2. Snapshot test first: `tools/test/check-data-snapshot.test.mjs` plants bad data in every family T1.3 moves (in a
+   temp copy of game/data) and compares check-data's whole output with a committed snapshot, made on the old code.
+3. The move: check-data's battle.turnCap, run (payout, map, clock, reveal, scene, wild, seamIn, start, home, pack,
+   healCost, shop, foes, relics), ranch, robots, biomes, nodeTypes, relics, currencies, buildings and unlocks checks go
+   to `game/js/logic/data-checks.js` as pure functions of the data that return `[file, message]` pairs; schema checks
+   stay in check-data (passed in as a callback, so the order of lines is kept). Snapshot identical; unit tests per
+   family with planted bad data.
+4. The Studio's Check runs the same functions (a family that throws on malformed data reports that it stopped).
+5. One legacy-species rule (check-data's: a species is known when its line is loaded or is a line in
+   game/data/legacy), in the module; the Studio passes the legacy line ids its Legacy section reads.
+6. Enums to data: relic `fx.stat` against stats.json (schema enum removed); currency ids from currencies.json
+   (buildings' and unlock costs' enums removed); one exported `RUN_RULE_KEYS`.
+7. The Studio-only scene and road checks move into the module (same words); check-data runs them, so CI gains them.
+8. Severity: `error` = check:data fails = Propose is blocked; the Studio's other "errors" become warnings. check-data
+   prints the warnings and never fails on them.
+9. Propose refuses while the Check has an error ("Show me" opens the Check); a stand-in step `checks` in
+   check-studio-github.py (planted pool typo blocks, a warning does not).
+10. CI: the smoke job runs `check-studio-github.py --only=sections,publish,drafts,studio_test,checks` on pull requests
+    that touch `studio/` or `game/js/logic/`.
+11. Local mode dropped: `check-quick.py --studio` and the remaining start-studio.py text go.
+12. Docs: STUDIO.md, TESTING.md, CHANGELOG, the plan's Decisions, this entry.
+
+**Status for the parent session: `game/js/logic/data-checks.js` has the moved checks and is pushed** (step 3 above,
+commit "Move: check-data's run, ranch, ..."). Phase 4 (content editors) can start on it: each family is
+`dataX(D, valid?)` returning `[file, message]` pairs (dataRunPayout, dataRanchRules, dataRunMapRules, dataRunClock,
+dataRunScene, dataRunLoop, dataRobots, dataUiTheme, dataBiomes, dataNodeTypes, dataRelics, dataCurrencies,
+dataBuildings, dataUnlocks, dataBattleRules; dataRobotProblems for a trainer's robot). The later steps here add
+families (scenes, roads) and change some words (fx.stat, currencies), not the shape.
+
 ### Studio plan Phase 1, session A - Local drafts (T1.1) and hygiene (T1.6) - 2026-10-22
 Branch `ccr-81011a25-lf3exv`, on top of Phase 0 (PR #131, not merged yet). Approved in Plan Mode with Phase 1 split
 over four sessions: **A** T1.1 + T1.6 (this one); **B** T1.2 undo per file + T1.5 the F14 hunt; **C** T1.3 part 1 (move

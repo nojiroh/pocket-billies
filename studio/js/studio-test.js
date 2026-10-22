@@ -11,6 +11,7 @@
    numbers, section ids and data paths only: no token, no GitHub name (a last row checks it). */
 import {
   STUDIO_TEST_FORMAT,
+  studioTestChangedPaths,
   studioTestCompare,
   studioTestFilePath,
   studioTestFindings,
@@ -73,7 +74,7 @@ export async function runStudioTest(G, opts = {}) {
     snap: G.snapshot(),
     undo: S.undo.slice(),
     redo: S.redo.slice(),
-    last: S.last,
+    last: S.last && new Map(S.last) /* undo and redo change it in place */,
     dirty: S.dirty,
     rigsDirty: S.rigsDirty,
     artDirty: new Map(S.artDirty),
@@ -169,6 +170,7 @@ export async function runStudioTest(G, opts = {}) {
         row.longTasks = longIn(longTasks, a, now());
         row.api = calls.n - calls0;
         row.conn = timeIt(() => G.connectionsHTML());
+        row.outside = await outsideEdit(G);
         if (stop) break;
         step(`An edit in ${k}`, i, total);
         row.edit = await editOnce(G, k, probeSince);
@@ -283,7 +285,10 @@ export async function runStudioTest(G, opts = {}) {
   }
   report.seconds = r1((now() - t0) / 1000);
   report.passed =
-    !errors.length && report.restored && !stop && report.sections.every(s => !s.edit || s.edit.back !== false);
+    !errors.length &&
+    report.restored &&
+    !stop &&
+    report.sections.every(s => (!s.edit || s.edit.back !== false) && !(s.outside && s.outside.length));
   report.findings = studioTestFindings(report);
   report.privacy = studioTestPrivacyProblems(JSON.stringify(report), opts.planted || []);
   if (report.privacy.length) report.passed = false;
@@ -302,6 +307,20 @@ export async function runStudioTest(G, opts = {}) {
   G.studioProbe.last = report;
   if (!opts.quiet) showReport(G, report, changes, before);
   return report;
+}
+
+/* ---------- Studio plan T1.5: what opening a section wrote to the data without an edit ----------
+   Once the section has settled and no commit is pending, the data must be the last undo state. A difference would
+   ride along with the next edit, and that edit's undo would take it back too (F14). The paths that differ are
+   reported, then committed, so each cause is named once. */
+async function outsideEdit(G) {
+  const S = G.studioState;
+  for (let i = 0; i < 20 && S.snapT != null; i++) await wait(100);
+  const now = G.snapshotParts();
+  if (S.last == null || !G.historyDiff(S.last, now)) return [];
+  const paths = studioTestChangedPaths(G.historyPartsData(S.last), G.historyPartsData(now));
+  G.commit(true);
+  return paths;
 }
 
 /* ---------- one edit, through the Studio's own field code, then undo, redo, undo ---------- */

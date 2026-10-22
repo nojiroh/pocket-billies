@@ -1,9 +1,9 @@
 {
  "$schema": "https://json-schema.org/draft/2020-12/schema",
  "$id": "person.schema.json",
- "title": "game/data/people/<id>.json: how a person looks (colours as #RGB or #RRGGBB, a hair style, or a full look)",
+ "title": "game/data/people/<id>.json: how a person looks (a look, dressed from the wardrobe; the old colour keys beside it are ignored by the game)",
  "type": "object",
- "minProperties": 1,
+ "required": ["look"],
  "properties": {
   "look": {"type": "object"},
   "style": {"type": "string"}
