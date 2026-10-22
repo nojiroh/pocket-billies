@@ -127,6 +127,7 @@ expose({
   mountSceneryPixelEditor: [() => mountSceneryPixelEditor, v => (mountSceneryPixelEditor = v)],
   newEdgeExitName: [() => newEdgeExitName, v => (newEdgeExitName = v)],
   openSceneryPixelEditor: [() => openSceneryPixelEditor, v => (openSceneryPixelEditor = v)],
+  paintGroundBrush: [() => paintGroundBrush, v => (paintGroundBrush = v)],
   paintMapTile: [() => paintMapTile, v => (paintMapTile = v)],
   paintStepCells: [() => paintStepCells, v => (paintStepCells = v)],
   parseMapLife: [() => parseMapLife, v => (parseMapLife = v)],
@@ -1377,6 +1378,18 @@ export function paintMapTile(sc, i, j, ch) {
   sc.tiles[j] = row.slice(0, i) + ch + row.slice(i + 1);
   return true;
 }
+/* the round ground brush (Walk scenes and the Hub island editor): paints the tiles within the brush's size round
+   tile (i, j) (rows from the far edge); true when a tile changed */
+function paintGroundBrush(sc, i, j, ch, brush) {
+  const r = brush - 1;
+  let any = false;
+  for (let a = -r; a <= r; a++)
+    for (let b = -r; b <= r; b++) {
+      if (a * a + b * b > r * r + r) continue;
+      any = paintMapTile(sc, i + a, j + b, ch) || any;
+    }
+  return any;
+}
 export function propAtPointer(m) {
   const L = mapEditor.boxes || [];
   for (let k = L.length - 1; k >= 0; k--) {
@@ -1391,15 +1404,7 @@ function bindEditorMap() {
   cv._b = 1;
   cv.addEventListener('contextmenu', e => e.preventDefault());
   const paint = m => {
-    const sc = currentMap(),
-      r = mapEditor.brush - 1;
-    let any = false;
-    for (let a = -r; a <= r; a++)
-      for (let b = -r; b <= r; b++) {
-        if (a * a + b * b > r * r + r) continue;
-        any = paintMapTile(sc, m.i + a, m.j + b, mapEditor.ter) || any;
-      }
-    if (any) {
+    if (paintGroundBrush(currentMap(), m.i, m.j, mapEditor.ter, mapEditor.brush)) {
       walkView.gkey = '';
       drawEditorMap();
     }
@@ -1658,10 +1663,12 @@ function ensureHeightGrid(sc) {
     );
   return sc.heights;
 }
-function sculptHeights(sc, m) {
+/* the height brush at m ({x, z} in metres); o: the brush's size, strength, mode (raise, lower, flatten, smooth) and
+   the height flatten goes to (Walk scenes pass its own settings; the Hub island editor passes its own) */
+function sculptHeights(sc, m, o = mapEditor) {
   const H = ensureHeightGrid(sc),
-    R = Math.max(1, mapEditor.brush * 0.9),
-    k = mapEditor.hstr * 0.35;
+    R = Math.max(1, o.brush * 0.9),
+    k = o.hstr * 0.35;
   for (let r = 0; r <= sc.h; r++)
     for (let i = 0; i <= sc.w; i++) {
       const z = sc.h - r,
@@ -1670,9 +1677,9 @@ function sculptHeights(sc, m) {
       const w = (1 - d / R) ** 2,
         v = H[r][i];
       let n = v;
-      if (mapEditor.hmode === 'raise') n = v + k * w;
-      else if (mapEditor.hmode === 'lower') n = v - k * w;
-      else if (mapEditor.hmode === 'flatten') n = v + (mapEditor.hflat - v) * Math.min(1, w * k * 4);
+      if (o.hmode === 'raise') n = v + k * w;
+      else if (o.hmode === 'lower') n = v - k * w;
+      else if (o.hmode === 'flatten') n = v + (o.hflat - v) * Math.min(1, w * k * 4);
       else {
         let s = 0,
           c = 0;
