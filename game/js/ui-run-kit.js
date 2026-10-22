@@ -16,6 +16,7 @@
    page's; with reduced motion each one is a fade and numbers jump to their end. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
+import { i18nText } from './hooks.js';
 import { runMarkLook } from './logic/run-marks.js';
 import { LitElement, css, html, nothing, reduced } from './ui-kit.js';
 expose({
@@ -862,7 +863,7 @@ const PbPayout = class extends LitElement {
 
 /* ---------- the bottom bar: one bar whose tabs change (run: Map, Team, Bag, Relics; hub: Map, Team, Bag, Lab) ---------- */
 const PbNavBar = class extends LitElement {
-  static properties = { set: { reflect: true }, value: { reflect: true }, badges: {} };
+  static properties = { set: { reflect: true }, value: { reflect: true }, badges: {}, hide: {} };
   static styles = [
     runKitBase,
     css`
@@ -963,15 +964,22 @@ const PbNavBar = class extends LitElement {
     this.set = 'hub';
     this.value = 'map';
     this.badges = '';
+    this.hide = '';
   }
+  /* UI-5: hide lists tabs to leave out (ids, comma-separated): a set's tab whose screen isn't built yet */
   get tabs() {
-    return /** @type {any} */ (RUN_NAV_SETS)[this.set] || RUN_NAV_SETS.hub;
+    const off = String(this.hide || '').split(',');
+    return /** @type {any} */ (RUN_NAV_SETS[this.set] || RUN_NAV_SETS.hub).filter(t => !off.includes(t.id));
   }
   get badgeOf() {
     return Object.fromEntries(runList(this.badges).map(b => [b.id, Number(b.label) || 0]));
   }
+  /* UI-5: the open tab tapped again sends pb-reselect (the game goes back to the world) */
   pick(id) {
-    if (id === this.value) return;
+    if (id === this.value) {
+      this.dispatchEvent(new CustomEvent('pb-reselect', { detail: { value: id }, bubbles: true, composed: true }));
+      return;
+    }
     this.value = id;
     this.dispatchEvent(new CustomEvent('pb-change', { detail: { value: id }, bubbles: true, composed: true }));
   }
@@ -982,10 +990,11 @@ const PbNavBar = class extends LitElement {
         t =>
           html`<button
             part="tab"
+            data-t=${t.id}
             aria-current=${t.id === this.value ? 'page' : nothing}
             @click=${() => this.pick(t.id)}
           >
-            ${runIcon(t.icon)}<span>${t.label}</span>${
+            ${runIcon(t.icon)}<span>${typeof i18nText === 'function' ? i18nText(t.label) : t.label}</span>${
               b[t.id] > 0
                 ? html`<b class="badge" aria-label=${`${b[t.id]} new`}>${b[t.id] > 9 ? '9+' : b[t.id]}</b>`
                 : nothing

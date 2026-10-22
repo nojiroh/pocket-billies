@@ -43,10 +43,11 @@ import {
 } from './hooks.js';
 import { gameData } from './game-data.js';
 import { metresToKm, today } from './logic/rules.js';
-import { SAVE_NEW_MSG, SAVE_OLD_MSG, migrate, saveAge, validSave } from './logic/saves.js';
+import { SAVE_NEW_MSG, SAVE_OLD_MSG, migrate, newSaveKeepingPreferences, saveAge, validSave } from './logic/saves.js';
 import {
   activeBattle,
   escapeHtml,
+  flushSave,
   pauseSaving,
   reducedMotion,
   resumeSaving,
@@ -56,6 +57,7 @@ import {
   setSave,
   setSaveData,
   uiState,
+  writeStoredSave,
 } from './game-state.js';
 import { I18N_LANGS, i18nSet } from './i18n.js';
 import { gpuCountBegin, gpuCountEnd } from './engine/gpu-counters.js';
@@ -73,6 +75,7 @@ expose({
   exportSave: [() => exportSave, v => (exportSave = v)],
   graphicsDialHTML: [() => graphicsDialHTML, v => (graphicsDialHTML = v)],
   importSave: [() => importSave, v => (importSave = v)],
+  openSettings: [() => openSettings, v => (openSettings = v)],
   segmentedHTML: [() => segmentedHTML, v => (segmentedHTML = v)],
   settingsHTML: [() => settingsHTML, v => (settingsHTML = v)],
   settingsRefresh: [() => settingsRefresh, v => (settingsRefresh = v)],
@@ -295,7 +298,7 @@ function volumeSliderHTML(k, label, hint, def) {
     `<div class="vol"><input type="range" min="0" max="100" step="5" data-preference="${k}" value="${v}" aria-label="${escapeHtml(label)} volume"><span class="vol-n">${v}</span><button type="button" class="pb small quiet" data-a="aud-test" data-k="${k}">Test</button></div>`
   );
 }
-export function settingsHTML() {
+function settingsHTML() {
   const p = saveData.preferences || {},
     tab = SETTINGS_TABS.some(t => t[0] === uiState.setTab) ? uiState.setTab : 'game',
     hz = frameScheduler.hz || 60;
@@ -449,7 +452,7 @@ export function settingsHTML() {
       ]
         .map(
           ([k, n, h]) =>
-            `<button type="button" role="radio" aria-checked="${gp === k}" class="gfx-pre ${gp === k ? 'on' : ''}" data-pref-set="graphics" data-v="${k}"><b>${n}</b><small>${h}</small></button>`
+            `<button type="button" role="radio" aria-checked="${gp === k}" class="gfx-pre k-card ${gp === k ? 'on' : ''}" data-pref-set="graphics" data-v="${k}"><b>${n}</b><small>${h}</small></button>`
         )
         .join('')}</div>` +
       settingsRowHTML(
@@ -687,3 +690,47 @@ document.addEventListener('click', ev => {
     else toast('The Graphics gallery is on its way.');
   }
 });
+export function openSettings(tab) {
+  if (tab) uiState.setTab = tab;
+  modal({
+    title: 'Settings',
+    settings: true,
+    cls: 'set-sheet',
+    html: settingsHTML(),
+    btns: [
+      { l: 'Done', c: 'dark', f: closeModal },
+      {
+        l: 'Start over',
+        c: 'quiet',
+        f: () => {
+          uiState.modal = null;
+          modal({
+            title: 'Start over?',
+            html: '<p>This erases your team, Field Guide and money.</p>',
+            btns: [
+              {
+                l: 'Erase and start over',
+                c: 'red',
+                f: () => {
+                  setSaveData(newSaveKeepingPreferences());
+                  saveData.savedAt = Date.now();
+                  writeStoredSave(saveData);
+                  flushSave();
+                  uiState.intro = 0;
+                  uiState.pg = null;
+                  uiState.avatarDraft = null;
+                  uiState.trainerDraft = null;
+                  uiState.tab = 'walk';
+                  applyPreferences();
+                  closeModal();
+                  render();
+                },
+              },
+              { l: 'Keep my progress', c: 'quiet', f: closeModal },
+            ],
+          });
+        },
+      },
+    ],
+  });
+}

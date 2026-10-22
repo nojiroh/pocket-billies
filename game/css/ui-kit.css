@@ -284,3 +284,145 @@ hr.pb-rule::after {
   text-decoration: line-through;
   opacity: 0.8;
 }
+
+/* ================= UI-5: page parts on the kit's shapes =================
+   A part a screen builds in its own markup (not a kit component) takes a shape family with one class: .k-panel,
+   .k-card, .k-btn, .k-action (the long hexagon of a main action) or .k-tab. It is clipped to its family's outline
+   (uiTheme.json shape.families, so the Studio's shape dials switch it between cut, rounded and square, per screen
+   too) and ::after draws the 1 px edge line along the same outline, light on top and dark below. A clip-path cuts
+   box-shadows and borders, so these parts lose their old outer shadow (as UI-2's old sheets did); .k-plain keeps the
+   outline without the edge line, for a part whose ::after is taken. :not(#k) lifts the outline over the old layers'
+   corner rules (an id's weight; nothing is called #k). */
+.k-panel {
+  --k-clip: var(--clip-panel);
+  --k-edge: var(--edge-panel);
+}
+.k-card {
+  --k-clip: var(--clip-card);
+  --k-edge: var(--edge-card);
+}
+.k-btn {
+  --k-clip: var(--clip-button);
+  --k-edge: var(--edge-button);
+}
+.k-action {
+  --k-clip: var(--clip-action);
+  --k-edge: var(--edge-action);
+}
+.k-tab {
+  --k-clip: var(--clip-tab);
+  --k-edge: var(--edge-tab);
+}
+/* every page button (.pb) is in the button family, and a gold one, a screen's main action, is the long hexagon */
+.pb {
+  --k-clip: var(--clip-button);
+  --k-edge: var(--edge-button);
+}
+.pb.gold {
+  --k-clip: var(--clip-action);
+  --k-edge: var(--edge-action);
+}
+/* a row of tabs is the tab family (cut on top) and a segmented choice's options are buttons, in a track with the
+   button's outline; only the chosen one draws the edge line, so the others stay flat as before */
+.set-tabs button,
+.guide-tabs button,
+.lore-tabs button,
+.bag-pockets button,
+.ms-tabs button {
+  --k-clip: var(--clip-tab);
+  --k-edge: var(--edge-tab);
+}
+.seg > button,
+.seg,
+.set-tabs,
+.guide-tabs,
+.lore-tabs,
+.ms-tabs {
+  --k-clip: var(--clip-button);
+  --k-edge: var(--edge-button);
+}
+/* a row to pick in a sheet (the mast's menu, a run's sheets, the heal and swap pickers) is a card */
+.pickrow {
+  --k-clip: var(--clip-card);
+  --k-edge: var(--edge-card);
+}
+/* the shell's own glass joins the panel family (the top bar draws its own: shell.css): a screen's title box (its
+   ::after is the gold dash, so it has the outline only) and the section panels of the Trainer card and Team */
+.tpanel,
+.screen > .bar > div:first-child {
+  --k-clip: var(--clip-panel);
+  --k-edge: var(--edge-panel);
+}
+:where(
+  .k-panel,
+  .k-card,
+  .k-btn,
+  .k-action,
+  .k-tab,
+  .pb,
+  .set-tabs button,
+  .guide-tabs button,
+  .lore-tabs button,
+  .bag-pockets button,
+  .ms-tabs button,
+  .seg > button,
+  .pickrow
+) {
+  position: relative;
+}
+:is(
+  .k-panel,
+  .k-card,
+  .k-btn,
+  .k-action,
+  .k-tab,
+  .pb,
+  .tpanel,
+  .screen > .bar > div:first-child,
+  .set-tabs button,
+  .guide-tabs button,
+  .lore-tabs button,
+  .bag-pockets button,
+  .ms-tabs button,
+  .seg > button,
+  .seg,
+  .set-tabs,
+  .guide-tabs,
+  .lore-tabs,
+  .ms-tabs,
+  .pickrow
+):not(#k) {
+  /* !important only against v05.css's .px and .pb.big corners (!important themselves); goes with v05 in UI-6 */
+  border-radius: 0 !important;
+  clip-path: var(--k-clip);
+}
+:is(.k-panel, .k-card, .k-btn, .k-action, .k-tab, .pb, .tpanel, .pickrow):not(.k-plain, #k)::after {
+  content: '';
+  display: block;
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border: 0;
+  border-radius: 0;
+  clip-path: var(--k-edge);
+  background: var(--edge);
+  opacity: 1;
+  transform: none;
+  pointer-events: none;
+}
+
+:is(.set-tabs button, .guide-tabs button, .lore-tabs button, .bag-pockets button, .ms-tabs button, .seg > button):is(
+    .on,
+    [aria-selected='true'],
+    [aria-pressed='true'],
+    [aria-checked='true']
+  ):not(#k)::after {
+  content: '';
+  display: block;
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  clip-path: var(--k-edge);
+  background: var(--edge);
+  pointer-events: none;
+}

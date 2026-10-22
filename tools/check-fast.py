@@ -12,8 +12,9 @@ game/js/fixture.js), never through the opening and never waiting for every map: 
 errors; a town and a room each open and draw frames (RL-5: the hub, Copperleaf; the route and the cave were parked
 with their places); a run's world (RL-7) opens on its landing, its places on the bowl, and a walk over a seam arrives
 at the next node a day later; a battle plays to the end; a save round-trips; the Studio loads; the exported debug
-log holds no names; the world map opens as the bowl, a tap opens a card, Home comes back; on tall ground (TR-3, the
-mountains fixture) the camera rises, rock fades and the player's silhouette is drawn, and none of it on flat ground. The page is small (400x300) with every costly graphics dial
+log holds no names; the world map opens as the bowl, a tap opens a card, Home comes back; every screen opens with its parts (UI-5);
+on tall ground (TR-3, the mountains fixture) the camera rises, rock fades and the player's silhouette is drawn, and
+none of it on flat ground. The page is small (400x300) with every costly graphics dial
 off before it loads; nothing waits a fixed time, only for frames or the game's state. No pictures are taken.
 
 Graphics are not judged here: software drawing can't. The game's own graphics test (Settings → Help) is for a person
@@ -48,6 +49,13 @@ LOW_GRAPHICS = """(()=>{const off={lens:{blur:0,bokeh:0,aberration:0,grain:0,sha
   const d=v.engine.defaults=v.engine.defaults||{};for(const k in off)d[k]=Object.assign({},d[k]||{},off[k])}G=v}})})()"""
 NAMES = ('Quillonda', 'Zorblax')   # planted by the fixture (game/js/fixture.js FIXTURE_NAMES)
 results, lock = [], threading.Lock()
+
+
+# UI-5: the bottom bar is the kit's <pb-nav-bar id="nav">; its buttons sit in its shadow tree, one per tab (data-t)
+NAV_BUTTON = "document.querySelector('#nav')?.shadowRoot?.querySelector('button[data-t={t}]')"
+def nav_tap(t):
+    """a tap on the bottom bar's tab t, as a player taps it (the open tab tapped again goes back to the world)"""
+    return f"(()=>{{const b={NAV_BUTTON.format(t=t)};if(!b)return false;b.click();return true}})()"
 
 
 def log(msg):
@@ -192,10 +200,12 @@ def run_world(pg, base):
     if node != 1 or day != 1: raise Exception(f'not on the landing on day 1: node {node}, day {day}')
     if view != pg.evaluate("'w:' + LOCATIONS[1].mapId + '*'"): raise Exception(f'the landing’s view isn’t open: {view}')
     if not until(pg, "!document.getElementById('loader')", 30): raise Exception('the loading screen never went')
-    pg.evaluate("document.querySelector('[data-a=tab][data-t=map]').click();0")
+    bar = pg.evaluate("document.querySelector('#nav').set")
+    if bar != 'run': raise Exception(f"the bottom bar shows the {bar} tabs on a run")
+    if not pg.evaluate(nav_tap('map')): raise Exception('no Map tab on the bottom bar')
     if not until(pg, "typeof worldBowl!=='undefined'&&worldBowl.on&&worldBowl.frames>=3&&!!worldBowl.spots&&worldBowl.spots.length===LOCATIONS.length", 30):
         raise Exception('the map didn’t open as the bowl with the run’s places')
-    pg.evaluate("document.querySelector('[data-a=tab][data-t=walk]').click();0")
+    pg.evaluate(nav_tap('map'))   # the open tab again: back to the world
     drawing(pg)
     n1 = pg.evaluate("runWorldNode(runNext(saveData.run.map, 0)[0])")
     if not walk_over(pg, n1, pg.evaluate('RULES.run.seamIn') + 6): raise Exception(f'walked toward {pg.evaluate(f"LOCATIONS[{n1}].name")} and never crossed')
@@ -209,12 +219,12 @@ def bowl_map(pg, base):
     and Home brings the camera back over you. Small page, graphics off, no pictures: on a device, the debug menu's
     Bowl map test checks the rest (frame rate, every place)"""
     # from the walk scene by its tab button: the walk camera rises, the bowl pulls back from right above you
-    if not until(pg, "!!document.querySelector('[data-a=tab][data-t=map]')&&typeof walkRenderer!=='undefined'&&walkRenderer.on", 90): raise Exception('the walk scene never got ready')
+    if not until(pg, f"!!{NAV_BUTTON.format(t='map')}&&typeof walkRenderer!=='undefined'&&walkRenderer.on", 90): raise Exception('the walk scene never got ready')
     # RL-5: and the loading screen gone (it takes a few seconds to fade; the route and cave checks that ran before this
     # one on this page went with their places)
     if not until(pg, "!document.getElementById('loader')", 30): raise Exception('the loading screen never went')
     z0 = pg.evaluate("typeof walkRenderer!=='undefined'?walkRenderer.zoomT:null")
-    pg.evaluate("uiState.mapSel=null;document.querySelector('[data-a=tab][data-t=map]').click();0")
+    pg.evaluate("uiState.mapSel=null;0"); pg.evaluate(nav_tap('map'))
     if not until(pg, "typeof worldBowl!=='undefined'&&worldBowl.on&&worldBowl.frames>=3", 30):
         raise Exception('the map didn’t open as the bowl' + (' (the old map opened)' if pg.evaluate("worldMap.gl") else ''))
     if not until(pg, "!worldBowl.tween&&!document.getElementById('mapfade')", 10): raise Exception('the zoom out from the walk scene never settled')
@@ -454,6 +464,71 @@ def studio_worldmap(pg, base):
     return f'the bowl drawn ({round(share * 100)}% sea), a brush stroke and its undo, the landmark field'
 
 
+def run_shop(pg, base):
+    """UI-5: a run town's shop opens with the day's wares (the hub has no shop since RL-5)"""
+    pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();openShop(Object.keys(SHOPS)[0]);0")
+    if not until(pg, "document.querySelectorAll('#ov .shop-sheet .ware2').length>0", 10): raise Exception('no shop with wares')
+    n = pg.evaluate("document.querySelectorAll('#ov .shop-sheet .ware2').length")
+    pg.evaluate("closeModal();0")
+    return f'{n} wares'
+
+
+def screens(pg, base):
+    """UI-5: every screen opens with its parts, through the buttons a player taps: the bottom bar's Map, Team and Bag, the
+    world again (the open tab tapped again, and Esc), the Trainer card from the portrait and the Guide from it,
+    the Billie sheet and its four tabs, a Guide page, Settings, the evolution window, the inbox, a toast (a run town's shop: run_shop). The check each
+    screen moved out of ui.js must pass (docs/phases/ui-track.md, UI-5)"""
+    if not until(pg, "!document.getElementById('loader')&&!!document.querySelector('.screen')", 90): raise Exception('the game never came up')
+    pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();0")
+    tap = lambda sel: pg.evaluate(f"(()=>{{const e=document.querySelector({json.dumps(sel)});if(!e)return false;e.click();return true}})()")
+    seen = []
+    def need(what, cond, sec=10):
+        if not until(pg, cond, sec):
+            raise Exception(f'{what}: not there ({cond}); on screen: ' + pg.evaluate("[uiState.tab,uiState.modal&&(uiState.modal.cls||uiState.modal.title),document.querySelector('#ov').className+' '+(document.querySelector('#ov .sheet')||{}).className].join(' / ')"))
+        seen.append(what)
+    screen = lambda t, part: f"!!document.querySelector('.screen.s-{t}')&&!!document.querySelector('.screen.s-{t} :is({part})')"
+    # UI-5: the bar holds Map, Team and Bag (the hub's set; Lab waits for RL-11)
+    tabs = pg.evaluate("[...document.querySelector('#nav').shadowRoot.querySelectorAll('button')].map(b=>b.dataset.t).join(',')")
+    if tabs != 'map,team,bag': raise Exception(f'the bottom bar holds {tabs}')
+    for t, part in (('map', '.map-head,pb-day-chip,.map-full'), ('team', '.u-team .u-hero'),
+                    ('bag', '.bag-tabs,.bag-list,.bag-empty,[data-a^=bag]')):
+        if not pg.evaluate(nav_tap(t)): raise Exception(f'no {t} tab to tap')
+        need(t, screen(t, part))
+    # the world is the base view: the open tab tapped again, or Esc, goes back to it
+    pg.evaluate(nav_tap('bag'))
+    need('the world (the open tab again)', screen('walk', '#walkHero'))
+    pg.evaluate(nav_tap('team')); need('team again', screen('team', '.u-hero'))
+    pg.keyboard.press('Escape')
+    need('the world (Esc)', screen('walk', '#walkHero'))
+    # the Trainer card from the portrait, the Guide from the Trainer card
+    if not tap('.tb-me'): raise Exception('no portrait to tap')
+    need('the Trainer card', "!!document.querySelector('.screen.s-profile .tcard,.screen.s-profile .tc-card,.screen.s-profile [class*=tc-]')")
+    if not tap('.screen.s-profile [data-a=tab][data-t=ledger]'): raise Exception('no Guide button on the Trainer card')
+    need('the Guide', screen('ledger', '.dex,.ledger,.lrow'))
+    if not tap('.screen.s-ledger [data-a=dex]'): raise Exception('no Guide entry to open')
+    need('a Guide page', "!!document.querySelector('.screen.s-ledger .dexpage')")
+    pg.evaluate(nav_tap('team'))
+    if not tap('.screen.s-team [data-a=mon]'): raise Exception('no Billie to open')
+    need('the Billie sheet', "!!document.querySelector('#ov .mon-sheet')")
+    keys = pg.evaluate("[...document.querySelectorAll('#ov [data-a=ms-tab]')].map(b=>b.dataset.k)")
+    if len(keys) < 4: raise Exception(f'the Billie sheet has tabs {keys}')
+    for k in keys:
+        tap(f'#ov [data-a=ms-tab][data-k={k}]')
+        need(f'its {k} tab', f"document.querySelector('#ov [data-a=ms-tab][data-k={k}]').getAttribute('aria-selected')==='true'")
+    pg.evaluate("closeModal();0")
+    # the fixture's lead can evolve: closing the sheet brings up the evolution window (a pending window)
+    need('the evolution window', "!!document.querySelector('#ov .evo-sheet')")
+    pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();0")
+    if not tap('[data-a=settings]'): raise Exception('no Settings button')
+    need('Settings', "!!document.querySelector('#ov .set-sheet')")
+    pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();notice({id:'ui5',title:'A notice',html:'<p>Read me.</p>'});0")
+    if not until(pg, "!!document.querySelector('[data-a=inbox]')", 10) or not tap('[data-a=inbox]'): raise Exception('no inbox dot after a notice')
+    need('the inbox', "!!document.querySelector('#ov .inbox-sheet')")
+    pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();toast('Hello');0")
+    need('a toast', "!!document.getElementById('toast')")
+    return 'opened: ' + ', '.join(seen)
+
+
 NODE_CHECKS = [('Game data is valid', data_valid), ('The world-map graph is unchanged', world_graph)]
 PAGES = [   # (what the page opens, its checks in order); the longest first, so the browsers finish together
     ('town', [('A town opens and draws (Copperleaf Town)', scene('copperleaf')),
@@ -461,9 +536,11 @@ PAGES = [   # (what the page opens, its checks in order); the longest first, so 
               ('The world map opens as the bowl', bowl_map)]),
     ('room', [('A room opens and draws (the lab)', room), ('A save round-trips', save_round_trip)]),
     ('battle', [('A battle plays to the end', battle)]),
-    ('run', [("A run's world: the landing, its places on the bowl, a seam walked a day later", run_world)]),
+    ('run', [("A run's world: the landing, its places on the bowl, a seam walked a day later", run_world),
+             ("A run town's shop opens (UI-5)", run_shop)]),
     ('run', [("A run's battle held and started again after a reload; a loss, the payout (again after a reload) and home", run_loop)]),
     ('mountains', [('Tall ground: behind a south mountain the camera rises, rock fades, your silhouette shows; none on flat ground', tall_ground)]),
+    ('team', [('Every screen opens with its parts (UI-5)', screens)]),
     ('title', [('The game boots with no console or page errors', boots)]),
     ('studio', [('The Studio loads', studio), ("The Studio's world map look", studio_worldmap)]),
 ]

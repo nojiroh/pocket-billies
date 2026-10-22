@@ -85,7 +85,8 @@ import { cutsceneStart, setCutsceneStart } from './cutscene/opening.js';
 import { runWorld } from './run-world.js';
 import { account } from './account.js';
 import { challengesToday, stampCount } from './things-to-do.js';
-import { render, renderOverlay, setRender, setRenderOverlay, toast } from './ui.js';
+import { renderOverlay, setRenderOverlay, toast } from './overlay.js';
+import { render, setRender } from './ui.js';
 Object.defineProperties(GAME, {
   LOCATIONS: { get: () => LOCATIONS },
   PERSON_ART_CACHE: { get: () => PERSON_ART_CACHE },

@@ -41,7 +41,7 @@ function bagList(p) {
 export function renderBag() {
   const p = uiState.bagP || 'heal',
     sel = uiState.bagSel;
-  const tabs = `<div class="bag-pockets glass px" role="tablist" aria-label="Pockets">${BAG_POCKETS.map(
+  const tabs = `<div class="bag-pockets glass px k-panel" role="tablist" aria-label="Pockets">${BAG_POCKETS.map(
     ([k, l, ic]) => {
       const n = k === 'eggs' ? saveData.eggs.length : bagList(k).length;
       return `<button role="tab" aria-selected="${p === k}" data-a="bag-p" data-p="${k}">${uiIconHTML(ic, 20)}<span>${l}</span>${n ? `<small class="tnum">${n}</small>` : ''}</button>`;
@@ -55,7 +55,7 @@ export function renderBag() {
             const E = EGGS[e.tier] || { need: 1 },
               f = Math.min(1, (e.prog || 0) / E.need),
               left = Math.max(0, E.need - (e.prog || 0));
-            return `<div class="bag-row"><span class="bag-ic">${eggHTML(e.tier, 30)}</span><span class="bag-t"><b>${eggKm(e.tier)} km egg</b><small>${e.slot != null ? (left ? `${metresToKm(left)} km to go` : 'Ready to hatch') : 'Waiting for a free incubator'}</small><span class="bag-prog"><i style="width:${Math.round(f * 100)}%"></i></span></span></div>`;
+            return `<div class="bag-row k-card"><span class="bag-ic">${eggHTML(e.tier, 30)}</span><span class="bag-t"><b>${eggKm(e.tier)} km egg</b><small>${e.slot != null ? (left ? `${metresToKm(left)} km to go` : 'Ready to hatch') : 'Waiting for a free incubator'}</small><span class="bag-prog"><i style="width:${Math.round(f * 100)}%"></i></span></span></div>`;
           })
           .join('')}</div>`
       : `<p class="note bag-empty">No eggs right now. Some trainers and shops give them; they hatch as you walk.</p>`;
@@ -66,7 +66,7 @@ export function renderBag() {
           const I = p === 'coins' ? COINS[k] : ITEMS[k],
             n = p === 'coins' ? saveData.coins[k] : saveData.items[k],
             on = sel === k;
-          return `<button class="bag-row ${on ? 'on' : ''}" data-a="bag-sel" data-k="${escapeHtml(k)}" aria-pressed="${on}"><span class="bag-ic">${p === 'coins' ? coinHTML(k, 30) : itemIcon(k, 30)}</span><span class="bag-t"><b>${escapeHtml(I.n)}</b><small>${escapeHtml(I.d || '')}</small></span><b class="bag-n tnum">×${formatNumber(n)}</b></button>`;
+          return `<button class="bag-row k-card ${on ? 'on' : ''}" data-a="bag-sel" data-k="${escapeHtml(k)}" aria-pressed="${on}"><span class="bag-ic">${p === 'coins' ? coinHTML(k, 30) : itemIcon(k, 30)}</span><span class="bag-t"><b>${escapeHtml(I.n)}</b><small>${escapeHtml(I.d || '')}</small></span><b class="bag-n tnum">×${formatNumber(n)}</b></button>`;
         }).join('')}</div>`
       : `<p class="note bag-empty">${p === 'coins' ? 'No coins. Shops sell them.' : p === 'special' ? 'Nothing special yet.' : 'No healing items. Shops sell them.'}</p>`;
   }

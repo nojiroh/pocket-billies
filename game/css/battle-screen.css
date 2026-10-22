@@ -1,0 +1,1213 @@
+/* UI-5: the battle screen's rules (its stage and camera, the plates and HP cards, the message and the command dock, moves, items, the team list, taxing and aiming, landscape and portrait), moved as they were from the old layers (style, battle, polish, screens, v05), in the order the page loaded them. They load right after those layers and before the kit (battle-ui.css), so the cascade is as before (tools/style-diff.py) */
+
+/* ---------- UI-5: from style.css, as it was ---------- */
+.evo.run.flash canvas {
+  filter: none;
+  animation: evoflash 0.7s ease-out;
+}
+.hatch.flash {
+  animation: hflash 0.4s;
+}
+/* ===================== v7 · full-screen battle ===================== */
+.battle {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  overflow: hidden;
+  background: #0b0912;
+  color: #f3eef8;
+  font-family: var(--font-voice);
+  --st: env(safe-area-inset-top, 0px);
+  --sb: env(safe-area-inset-bottom, 0px);
+  --g-bg: rgba(16, 12, 30, 0.44);
+  --g-line: rgba(255, 255, 255, 0.13);
+  --g-hi: rgba(255, 255, 255, 0.22);
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.bstage {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  isolation: isolate;
+}
+.battle .cam {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 45%;
+  will-change: transform;
+}
+.battle .cam canvas {
+  position: absolute;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+#camWorld.ca {
+  filter: drop-shadow(2px 0 0 rgba(255, 40, 100, 0.55)) drop-shadow(-2px 0 0 rgba(40, 210, 255, 0.55));
+}
+.fgcam {
+  pointer-events: none;
+}
+.fgcam canvas {
+  animation: sway 7s ease-in-out infinite;
+  transform-origin: 50% 100%;
+}
+.battle .vign {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(130% 95% at 50% 42%, transparent 56%, rgba(8, 4, 20, 0.55));
+  pointer-events: none;
+}
+.lowhp {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.5s;
+  background: radial-gradient(120% 85% at 50% 45%, transparent 58%, rgba(225, 30, 55, 0.42));
+}
+.lowhp.on {
+  opacity: 1;
+  animation: lowpulse 1.3s ease-in-out infinite;
+}
+.battle .flash {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+.pop.nve {
+  color: #c8d0da;
+  font-size: 22px;
+}
+.pop.tag.nve {
+  color: #c8d0da;
+}
+/* glass panels: frosted, with a pixel-thin rim */
+.glassy {
+  background: var(--g-bg);
+  -webkit-backdrop-filter: blur(18px) saturate(1.5);
+  backdrop-filter: blur(18px) saturate(1.5);
+  border-radius: 8px;
+  box-shadow:
+    0 0 0 1px rgba(8, 4, 18, 0.6),
+    inset 0 1px 0 var(--g-hi),
+    inset 0 0 0 1px var(--g-line),
+    0 18px 40px -18px rgba(0, 0, 0, 0.65);
+}
+.battle .ticker {
+  position: absolute;
+  z-index: 4;
+  top: var(--st);
+  left: 0;
+  right: 0;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  background: rgba(6, 4, 14, 0.5);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+}
+.tk-in {
+  display: flex;
+  gap: 12px;
+  white-space: nowrap;
+  font: 400 12px/1 var(--font-voice);
+  color: #c8c0e0;
+  animation: tick 26s linear infinite;
+  padding-left: 12px;
+}
+.tk-in i {
+  font-style: normal;
+  color: #5a5080;
+}
+.tki b {
+  color: #f3eef8;
+  font-weight: 400;
+}
+.tki em {
+  font-style: normal;
+  color: #c8c0e0;
+}
+.tki em.up {
+  color: #5dff8a;
+}
+.tki em.dn {
+  color: #ff6a6a;
+}
+.tki.warn b {
+  color: #f2c14e;
+}
+.pip {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #fff1b0, #e9a92e);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.45);
+}
+.pip.out {
+  background: #4a4262;
+}
+.pip.st {
+  background: radial-gradient(circle at 35% 35%, #ffd0a0, #e06a3a);
+}
+.battle .mk {
+  position: absolute;
+  z-index: 5;
+  top: calc(var(--st) + 32px);
+  right: 12px;
+  padding: 7px 10px;
+  font: 400 12.5px/1 var(--font-voice);
+  color: #ffd86a;
+  display: none;
+  align-items: center;
+  gap: 6px;
+}
+.battle .mk.on {
+  display: flex;
+  animation: pop 0.4s cubic-bezier(0.3, 1.7, 0.5, 1);
+}
+/* dock: your card, the message, the commands */
+.dock {
+  position: absolute;
+  z-index: 5;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 10px 12px calc(12px + var(--sb));
+  border-radius: 16px 16px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.bmsg {
+  position: relative;
+  display: block;
+  width: 100%;
+  min-height: 60px;
+  text-align: left;
+  border: 0;
+  padding: 10px 40px 10px 14px;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 6px;
+  color: #fff;
+  font: 600 16px/1.38 var(--font-voice);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+}
+.bmsg .more {
+  position: absolute;
+  right: 14px;
+  bottom: 12px;
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 8px solid #ffd86a;
+  opacity: 0;
+}
+.bmsg.ready .more {
+  opacity: 1;
+  animation: bob 0.7s ease-in-out infinite;
+}
+.cmd {
+  height: 216px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 0;
+}
+.cmd.swap > * {
+  animation: rise 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.15) backwards;
+}
+.cmd.swap > *:nth-child(2) {
+  animation-delay: 40ms;
+}
+.cmd .note {
+  color: #c8c0e0;
+  margin: 0 2px;
+}
+.bt {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 0;
+  border-radius: 7px;
+  min-height: 50px;
+  padding: 8px 10px;
+  color: #fff;
+  font: 400 16px/1 var(--font-voice);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.17), rgba(255, 255, 255, 0.05));
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.16),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    0 6px 14px -8px rgba(0, 0, 0, 0.7);
+  transition:
+    transform 0.16s cubic-bezier(0.3, 1.8, 0.5, 1),
+    filter 0.16s;
+  overflow: hidden;
+}
+.bt::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, 0.3) 48%, transparent 60%);
+  transform: translateX(-120%);
+  pointer-events: none;
+}
+.bt:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+.bt:hover:not(:disabled)::after {
+  transition: transform 0.6s;
+  transform: translateX(120%);
+}
+.bt:active:not(:disabled) {
+  transform: translateY(2px) scale(0.97);
+}
+.bt:disabled {
+  opacity: 0.38;
+}
+.bt small {
+  font: 600 11.5px/1 var(--font-voice);
+  opacity: 0.85;
+}
+.bt b {
+  font-weight: 400;
+}
+.bt kbd,
+.mv kbd {
+  position: absolute;
+  top: 5px;
+  right: 7px;
+  font: 600 10px/1 var(--font-voice);
+  opacity: 0.5;
+  display: none;
+}
+@media (hover: hover) and (pointer: fine) {
+  .bt kbd,
+  .mv kbd {
+    display: block;
+  }
+}
+.bt.fight {
+  flex: 1;
+  min-height: 72px;
+  font-size: 30px;
+  justify-content: flex-start;
+  padding-left: 20px;
+  gap: 14px;
+  background: linear-gradient(180deg, #ff8a60, #e8473a 55%, #b9262f);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.25),
+    inset 0 -4px 0 rgba(0, 0, 0, 0.25),
+    inset 0 2px 0 rgba(255, 255, 255, 0.35),
+    0 10px 24px -10px rgba(232, 71, 58, 0.8);
+}
+.bt.fight::before {
+  content: '';
+  position: absolute;
+  right: -30px;
+  top: -40px;
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 220, 160, 0.35), transparent 65%);
+  animation: glowb 2.6s ease-in-out infinite;
+  pointer-events: none;
+}
+.bt-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+.bt-row .bt {
+  flex-direction: column;
+  gap: 5px;
+  min-height: 70px;
+  font-size: 15px;
+}
+.bt.coin {
+  background: linear-gradient(180deg, #ffe27a, #f2b43c 60%, #d18e1e);
+  color: #3a2408;
+}
+.bt.items {
+  background: linear-gradient(180deg, #5adb9c, #2e9c66);
+}
+.bt.team {
+  background: linear-gradient(180deg, #7aa8ff, #3f6bd6);
+}
+.bt.fightish {
+  background: linear-gradient(180deg, #5a4a8a, #3a2e62);
+}
+.bt.end {
+  background: linear-gradient(180deg, #5a4a8a, #30264f);
+  min-height: 64px;
+  font-size: 20px;
+}
+.bt.wide {
+  width: 100%;
+}
+.moves {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  flex: 1;
+  min-height: 0;
+}
+.mv {
+  position: relative;
+  border: 0;
+  border-radius: 7px;
+  text-align: left;
+  color: var(--tf);
+  padding: 9px 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  justify-content: center;
+  overflow: hidden;
+  background: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--tc) 78%, #fff),
+    var(--tc) 55%,
+    color-mix(in srgb, var(--tc) 72%, #000)
+  );
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.22),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.25),
+    0 6px 14px -8px rgba(0, 0, 0, 0.7);
+  transition:
+    transform 0.16s cubic-bezier(0.3, 1.8, 0.5, 1),
+    filter 0.16s;
+  animation: rise 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.2) backwards;
+}
+.mv:nth-child(2) {
+  animation-delay: 35ms;
+}
+.mv:nth-child(3) {
+  animation-delay: 70ms;
+}
+.mv:nth-child(4) {
+  animation-delay: 105ms;
+}
+.mv:hover {
+  filter: brightness(1.1);
+}
+.mv:active {
+  transform: translateY(2px) scale(0.97);
+}
+.mv-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+}
+.mv b {
+  font: 400 16.5px/1.1 var(--font-voice);
+}
+.mv-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  font: 600 11.5px/1 var(--font-voice);
+  opacity: 0.92;
+}
+.mv-ty {
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.mv em {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  font: 400 10.5px/1 var(--font-voice);
+  padding: 3px 5px;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.42);
+  color: #ffe59a;
+  font-style: normal;
+}
+.mv em.nve {
+  color: #d8dee4;
+}
+.mv:has(em) .mv-meta {
+  padding-right: 0;
+  margin-bottom: 14px;
+}
+.coins {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  flex: 1;
+  min-height: 0;
+  align-content: start;
+}
+.ccard {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  align-items: center;
+  gap: 4px 8px;
+  border: 0;
+  border-radius: 7px;
+  padding: 8px 10px;
+  color: #fff;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+  transition:
+    transform 0.15s,
+    background 0.2s;
+}
+.ccard img {
+  grid-row: span 2;
+}
+.ccard:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.14);
+}
+.ccard:active:not(:disabled) {
+  transform: scale(0.97);
+}
+.ccard:disabled {
+  opacity: 0.4;
+}
+.cc-t {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.cc-t b {
+  font: 400 15px/1.1 var(--font-voice);
+}
+.cc-t small {
+  font: 600 11.5px/1 var(--font-voice);
+  color: #d8d0ee;
+}
+.cc-bar {
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+}
+.cc-bar i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #ffd86a, #7cf08a);
+}
+.plist {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 1px;
+}
+.pick {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 0;
+  border-radius: 7px;
+  padding: 6px 10px 6px 6px;
+  min-height: 58px;
+  color: #fff;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+  transition:
+    background 0.2s,
+    transform 0.15s;
+}
+.pick:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.14);
+}
+.pick:active:not(:disabled) {
+  transform: scale(0.98);
+}
+.pick:disabled {
+  opacity: 0.42;
+}
+.pk-t {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.pk-t b {
+  font: 400 15.5px/1.1 var(--font-voice);
+}
+.pk-t small {
+  font: 600 12px/1.3 var(--font-voice);
+  color: #d0c8e8;
+}
+.pk-m {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.pk-m .chip {
+  font-size: 10px;
+  padding: 2px 4px;
+}
+.pk-s {
+  font: 400 13px/1 var(--font-voice);
+  color: #ffd86a;
+  text-align: right;
+}
+.hpmini {
+  display: block;
+  height: 5px;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+  max-width: 160px;
+}
+.hpmini i {
+  display: block;
+  height: 100%;
+  background: var(--c-hp-ok, #4fd067);
+}
+.hpmini i.mid {
+  background: var(--c-hp-mid, #f0b43a);
+}
+.hpmini i.low {
+  background: var(--c-hp-low, #e84848);
+}
+.aim {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+  flex: 1;
+  justify-content: center;
+}
+.aimcoin {
+  position: relative;
+  touch-action: none;
+  cursor: grab;
+  padding: 2px;
+  filter: drop-shadow(0 0 22px rgba(242, 193, 78, 0.65));
+  animation: float 2.4s ease-in-out infinite;
+}
+.aimcoin.held {
+  animation: none;
+  cursor: grabbing;
+}
+.aim-hint {
+  position: absolute;
+  left: 50%;
+  top: -8px;
+  transform: translateX(-50%) rotate(90deg);
+  color: #ffd86a;
+  animation: hint 1.2s ease-in-out infinite;
+}
+.aim .two {
+  width: 100%;
+}
+.aim .note {
+  font-size: 13px;
+}
+.offer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 4px 2px;
+  font-size: 15px;
+  justify-content: center;
+  flex: 1;
+}
+.offer p {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+}
+.offer .uico {
+  align-self: center;
+}
+/* landscape: the dock becomes a column on the right */
+.battle[data-layout='landscape'] .dock {
+  left: auto;
+  right: 12px;
+  bottom: calc(12px + var(--sb));
+  top: auto;
+  width: clamp(300px, 31vw, 420px);
+  border-radius: 12px;
+  max-height: calc(100% - 48px - var(--st) - var(--sb));
+}
+.battle[data-layout='landscape'] .mk {
+  right: calc(clamp(300px, 31vw, 420px) + 24px);
+}
+.battle[data-layout='landscape'] .cmd {
+  height: auto;
+  min-height: 180px;
+  flex: 1 1 auto;
+}
+@media (max-height: 500px) {
+  .battle[data-layout='landscape'] .dock {
+    overflow: auto;
+    gap: 6px;
+    padding: 8px 10px;
+    width: clamp(290px, 40vw, 380px);
+  }
+  .battle[data-layout='landscape'] .mk {
+    right: calc(clamp(290px, 40vw, 380px) + 24px);
+  }
+  .battle[data-layout='landscape'] .cmd {
+    min-height: 0;
+    height: auto;
+    flex: none;
+  }
+  .battle[data-layout='landscape'] .bt.fight {
+    min-height: 52px;
+    font-size: 24px;
+  }
+  .battle[data-layout='landscape'] .bt-row .bt {
+    min-height: 50px;
+    gap: 3px;
+  }
+  .battle[data-layout='landscape'] .bmsg {
+    min-height: 42px;
+    font-size: 14px;
+    padding: 7px 34px 7px 11px;
+  }
+  .battle[data-layout='landscape'] .moves {
+    grid-auto-rows: minmax(48px, auto);
+  }
+  .battle[data-layout='landscape'] .mv {
+    padding: 6px 9px;
+    gap: 3px;
+  }
+  .battle[data-layout='landscape'] .mv em {
+    display: none;
+  }
+  .battle[data-layout='landscape'] .bt.back {
+    min-height: 38px;
+  }
+  .battle[data-layout='landscape'] .ccard {
+    padding: 5px 8px;
+  }
+  .battle[data-layout='landscape'] .cc-bar {
+    display: none;
+  }
+  .battle[data-layout='landscape'] .pick {
+    min-height: 48px;
+  }
+  .battle[data-layout='landscape'] .plist {
+    max-height: 150px;
+  }
+  .battle[data-layout='landscape'] .blog {
+    max-height: 90px;
+  }
+}
+@media (min-height: 820px) and (min-width: 1100px) {
+  .battle[data-layout='landscape'] .dock,
+  .battle[data-layout='landscape'] .mk {
+    zoom: 1.18;
+  }
+}
+@media (min-height: 1000px) and (min-width: 1500px) {
+  .battle[data-layout='landscape'] .dock,
+  .battle[data-layout='landscape'] .mk {
+    zoom: 1.35;
+  }
+}
+@media (min-width: 700px) and (min-height: 900px) {
+  .battle[data-layout='portrait'] .dock {
+    left: 50%;
+    right: auto;
+    width: min(640px, 100%);
+    transform: translateX(-50%);
+    border-radius: 16px 16px 0 0;
+  }
+}
+@media (max-width: 360px) {
+  .bt-row .bt {
+    font-size: 13px;
+  }
+  .bt.fight {
+    font-size: 26px;
+  }
+  .mv b {
+    font-size: 15px;
+  }
+  .cmd {
+    height: 206px;
+  }
+}
+.blog {
+  list-style: none;
+  margin: 0;
+  padding: 4px 6px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 5px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  font: 600 13.5px/1.3 var(--font-voice);
+  color: #b9b0d4;
+  -webkit-mask-image: linear-gradient(transparent, #000 40%);
+  mask-image: linear-gradient(transparent, #000 40%);
+}
+.blog li {
+  animation: rise 0.3s ease-out backwards;
+}
+.blog li.next {
+  color: #857ca8;
+  font-size: 12px;
+}
+
+/* ---------- UI-5: from battle.css, as it was ---------- */
+/* ===================== battle: always the whole viewport =====================
+   On wide screens #app is a centered column with a backdrop-filter. A backdrop-filter (like transform or filter) makes an element the
+   containing block of its position:fixed descendants, so the "full-screen" battle inside it was confined to that column.
+   While a battle is open, #app drops everything that would trap it. */
+#app:has(> .battle),
+body.in-battle #app {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  filter: none !important;
+  transform: none !important;
+  contain: none !important;
+  will-change: auto !important;
+}
+.battle {
+  position: fixed;
+  inset: 0;
+  max-width: none;
+  margin: 0;
+}
+/* the zoom/roll layers pivot around the middle of the action (set from battle-stage.js) and never show an edge */
+.battle .cam {
+  backface-visibility: hidden;
+}
+/* v13: the walk scene as the battle stage */
+#dio.dio-battle {
+  position: absolute;
+  inset: auto;
+  z-index: 0;
+  image-rendering: auto;
+  opacity: 1;
+  filter: none !important;
+  transform: none !important;
+  transition: none;
+}
+body.battle-3d #cvWorld {
+  background: transparent;
+}
+body.battle-3d #bloom,
+body.battle-3d #camFg {
+  display: none;
+}
+/* ================= v33: nameplates in the scene =================
+   One per billionaire on the field, riding above it (battle.js platesTick positions them every frame). In scene-HUD
+   mode they replace the corner cards; the dock keeps the message and the commands. */
+.bplates {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;
+  overflow: hidden;
+}
+.bplate {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 118px;
+  max-width: 168px;
+  padding: 5px 7px 5px;
+  border: 0;
+  border-radius: 7px;
+  background: rgba(16, 10, 32, 0.62);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.14),
+    0 6px 16px rgba(0, 0, 0, 0.28);
+  color: #f6f2ff;
+  text-align: left;
+  font: inherit;
+  pointer-events: none;
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  transition:
+    opacity 0.25s,
+    box-shadow 0.2s;
+  will-change: transform;
+}
+.bplate.off,
+.bplate.gone {
+  opacity: 0;
+}
+.bplate .pl-top {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+}
+.bplate .pl-n {
+  font: 400 13px/1.1 var(--font-voice);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bplate .pl-lv {
+  font: 400 12px/1 var(--font-voice);
+  color: #ffd86a;
+}
+.bplate .pl-cr {
+  color: #ff7a9a;
+}
+.bplate .pl-hp {
+  position: relative;
+  height: 7px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.55);
+  overflow: hidden;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+.bplate .pl-hp i {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  border-radius: 4px;
+}
+.bplate .pl-hp .ghost {
+  background: linear-gradient(#ff8a96, #e8455a);
+  transition: width 0.65s cubic-bezier(0.4, 0.1, 0.3, 1);
+}
+.bplate .pl-hp .fill {
+  background: linear-gradient(180deg, var(--c-hp-ok-hi, #a6ffb2), var(--c-hp-ok, #3fc456));
+  transition:
+    width 0.38s cubic-bezier(0.2, 0.9, 0.3, 1),
+    background 0.3s;
+}
+.bplate .pl-hp .fill.mid {
+  background: linear-gradient(var(--c-hp-mid-hi, #ffeb94), var(--c-hp-mid, #f0b43a));
+}
+.bplate .pl-hp .fill.low {
+  background: linear-gradient(var(--c-hp-low-hi, #ffa0a0), var(--c-hp-low, #e84848));
+  animation: low 0.7s steps(2) infinite;
+}
+.bplate .pl-bot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 11px;
+}
+.bplate .pl-st .stb {
+  font-size: 10px;
+  padding: 1px 4px;
+  border-radius: 2px;
+  background: rgba(0, 0, 0, 0.35);
+}
+.bplate .pl-num {
+  font: 400 11px/1 var(--font-voice);
+  opacity: 0.9;
+}
+.bplate .pl-xp {
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+}
+.bplate .pl-xp i {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, #5ba8f0, #a8e8ff);
+  transition: width 0.8s;
+}
+.bplate.me {
+  background: rgba(14, 22, 40, 0.62);
+}
+.bplate.cur {
+  box-shadow:
+    0 0 0 2px #f4c542,
+    0 6px 18px rgba(244, 197, 66, 0.35);
+}
+.bplate.alpha {
+  background: linear-gradient(180deg, rgba(80, 10, 40, 0.78), rgba(30, 8, 30, 0.72));
+  box-shadow:
+    0 0 0 1px rgba(255, 90, 122, 0.55),
+    0 0 18px rgba(255, 60, 110, 0.35);
+  min-width: 150px;
+}
+.bplate.alpha .pl-n {
+  color: #ffd0dc;
+}
+.bplate.alpha .pl-hp {
+  height: 9px;
+}
+.bplate.aim {
+  pointer-events: auto;
+  cursor: pointer;
+  box-shadow:
+    0 0 0 2px #ff6b6b,
+    0 0 16px rgba(255, 107, 107, 0.5);
+  animation: plateaim 0.9s ease-in-out infinite;
+}
+.bplate.hit {
+  animation: cardhit 0.38s;
+}
+.battle.hud-scene .ticker {
+  opacity: 0.85;
+}
+.pick em.alpha {
+  color: #ff7a9a;
+  font-style: normal;
+  font-weight: 600;
+}
+@media (prefers-reduced-motion: reduce) {
+  .bplate.aim {
+    animation: none;
+  }
+}
+/* v34: turn order bar */
+.bplates .turnbar {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: calc(env(safe-area-inset-top, 0px) + 54px);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(14, 20, 30, 0.62);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  color: #fff;
+  font: 600 11px/1.2 var(--font, system-ui);
+  white-space: nowrap;
+  max-width: 92%;
+  overflow: hidden;
+  opacity: 0.92;
+}
+.bplates .turnbar b {
+  font-weight: 700;
+  opacity: 0.6;
+  margin-right: 4px;
+  text-transform: uppercase;
+  font-size: 9px;
+  letter-spacing: 0.06em;
+}
+.bplates .turnbar i {
+  opacity: 0.45;
+  font-style: normal;
+}
+.bplates .turnbar .tb {
+  padding: 1px 6px;
+  border-radius: 999px;
+}
+.bplates .turnbar .tb.me {
+  background: rgba(70, 170, 255, 0.35);
+}
+.bplates .turnbar .tb.foe {
+  background: rgba(255, 90, 110, 0.35);
+}
+.bplates .turnbar .tb.alpha {
+  background: rgba(255, 200, 60, 0.45);
+  color: #2a1a00;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .bplates .turnbar {
+    transition: opacity 0.2s;
+  }
+}
+/* ===================== phase 17: robots in battle =====================
+   A robot's limbs under its HP bar (left arm, right arm, legs), a broken one crossed out; a broken part's move. */
+.mv.off {
+  filter: grayscale(0.85) brightness(0.7);
+  cursor: not-allowed;
+}
+
+/* ---------- UI-5: from screens.css, as it was ---------- */
+/* talking portraits in battle messages */
+.bmsg.has-face {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding-left: 8px;
+}
+.bmsg .msg-face {
+  flex: none;
+  width: 46px;
+  height: 56px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+  display: grid;
+  place-items: end center;
+}
+.bmsg .msg-face img {
+  image-rendering: pixelated;
+  display: block;
+}
+.tr-face {
+  image-rendering: pixelated;
+}
+/* v28: weather over the painted battle stage */
+#camWorld {
+  position: relative;
+}
+#camWorld[data-wx]:not([data-wx=''])::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+}
+#camWorld[data-wx='rain']::after,
+#camWorld[data-wx='storm']::after {
+  background: repeating-linear-gradient(
+    105deg,
+    transparent 0 14px,
+    rgba(200, 215, 255, 0.28) 14px 15px,
+    transparent 15px 31px
+  );
+  background-size: 120px 120px;
+  animation: wxRain 0.35s linear infinite;
+  background-color: rgba(40, 50, 80, 0.18);
+}
+#camWorld[data-wx='snow']::after {
+  background-image:
+    radial-gradient(circle, rgba(255, 255, 255, 0.9) 0 1.5px, transparent 2px),
+    radial-gradient(circle, rgba(255, 255, 255, 0.7) 0 1px, transparent 1.5px);
+  background-size:
+    46px 46px,
+    29px 29px;
+  animation: wxSnow 6s linear infinite;
+}
+#camWorld[data-wx='ash']::after {
+  background-image:
+    radial-gradient(circle, rgba(60, 50, 48, 0.8) 0 1.5px, transparent 2px),
+    radial-gradient(circle, rgba(255, 140, 60, 0.9) 0 1px, transparent 1.5px);
+  background-size:
+    40px 40px,
+    97px 97px;
+  animation: wxSnow 8s linear infinite;
+  background-color: rgba(90, 60, 50, 0.12);
+}
+#camWorld[data-wx='fog']::after {
+  background: linear-gradient(to top, rgba(230, 235, 240, 0.5), rgba(230, 235, 240, 0.15));
+}
+#camWorld[data-wx='night']::after {
+  background: rgba(16, 22, 60, 0.35);
+  mix-blend-mode: multiply;
+}
+@media (prefers-reduced-motion: reduce) {
+  #camWorld[data-wx]::after {
+    animation: none;
+  }
+}
+html[data-flash='off'] .evo.run.flash canvas,
+html[data-flash='off'] .hatch.flash {
+  animation: none !important;
+  filter: none !important;
+}
+#battle.bt-rise :is(#dock, .cmd, .bmsg) {
+  animation: btRise 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+#battle.bt-rise :is(#hb0, #hb1, .ticker) {
+  animation: btRiseTop 0.55s 0.08s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+#battle.bt-leave :is(#dock, .cmd, .bmsg) {
+  animation: btLeave 0.34s ease-in both;
+}
+#battle.bt-leave :is(#hb0, #hb1, .ticker) {
+  animation: btLeaveTop 0.34s ease-in both;
+}
+@media (prefers-reduced-motion: reduce) {
+  #battle.bt-rise *,
+  #battle.bt-leave * {
+    animation: none !important;
+  }
+}
+
+/* ---------- UI-5: from v05.css, as it was ---------- */
+/* ---------- 0.5 battle: same layout, glass and rounder; moves 2×2, Tax it / Bag / Team / Run ---------- */
+.battle .bmsg {
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.06));
+  -webkit-backdrop-filter: blur(10px) saturate(1.3);
+  backdrop-filter: blur(10px) saturate(1.3);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.12),
+    0 6px 18px rgba(0, 0, 0, 0.25);
+  font-family: var(--font-voice);
+}
+.battle .bt {
+  border-radius: 14px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.18),
+    0 6px 14px rgba(0, 0, 0, 0.28);
+  transition:
+    transform 0.14s cubic-bezier(0.3, 1.6, 0.5, 1),
+    filter 0.14s;
+}
+.battle .bt:not(:disabled):active {
+  transform: translateY(2px) scale(0.97);
+  filter: brightness(1.08);
+}
+.battle .bt:disabled {
+  filter: saturate(0.35) brightness(0.8);
+  opacity: 0.7;
+}
+.battle .bt.fight {
+  border-radius: 18px;
+}
+.battle .bt-row {
+  gap: 7px;
+}
+.battle .bt.back {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.07));
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16);
+}
+.battle .moves {
+  gap: 8px;
+}
+.battle .mv {
+  border-radius: 14px;
+  background: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--tc) 92%, #fff 8%),
+    color-mix(in srgb, var(--tc) 78%, #000 22%)
+  );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.2),
+    0 6px 14px rgba(0, 0, 0, 0.28);
+  transition: transform 0.14s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+.battle .mv:active {
+  transform: scale(0.97);
+}
+.battle .mv em {
+  border-radius: 6px;
+}
+.battle .ccard,
+.battle .pick {
+  border-radius: 14px;
+}
