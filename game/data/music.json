@@ -1,5 +1,5 @@
 {
- "_help": "Sound track SND-2: the music. songs: a recipe per song, composed into notes by the tracker (game/js/audio/tracker.js). jingles: short tunes that play once (note lists of [midi, sixteenths]). cries: the base cries a species picks from. where: which song plays, an ordered list of rules, the first that matches wins (logic/music-where.js).",
+ "about": "Sound track SND-2: the music. songs: a recipe per song, composed into notes by the tracker (game/js/audio/tracker.js). jingles: short tunes that play once (note lists of [midi, sixteenths]). cries: the base cries a species picks from. where: which song plays, an ordered list of rules, the first that matches wins (logic/music-where.js).",
  "songs": {
   "town": {
    "bpm": 100,

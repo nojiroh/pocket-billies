@@ -142,7 +142,7 @@
   }
  },
  "properties": {
-  "_help": {
+  "about": {
    "type": "string"
   },
   "songs": {
