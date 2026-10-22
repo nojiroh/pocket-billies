@@ -24,6 +24,7 @@ import {
   bowlGridHeight,
   bowlGroundGrid,
   bowlHeight,
+  bowlIsles,
   bowlRelief,
   bowlReliefFeatures,
   bowlSeaInput,
@@ -522,7 +523,16 @@ function worldBowlSpots() {
       [x, y] = bowlXY(s.a, s.r);
     return { x, y, under: s.under, h: bowlGridHeight(G, x, y) };
   });
-  worldBowl.ground = { F, G, mesh: null, water: null, terrain: null, seaMs: Math.round(performance.now() - t0) };
+  worldBowl.ground = {
+    F,
+    G,
+    mesh: null,
+    water: null,
+    terrain: null,
+    seaMs: Math.round(performance.now() - t0),
+    /* RL-8b: an island world (the hub's island, a run's own land): sea to the rim, few rivers */
+    isle: !!bowlIsles(sea),
+  };
   return worldBowl.spots;
 }
 /* the terrain kinds: their keys in a fixed order (a layer each), their pictures' pixels and average colours */
