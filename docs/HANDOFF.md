@@ -34,8 +34,12 @@ today's framing (tune in the Studio); rising ground ahead kept as a goal.
   commit: the same 9 steps red as before the change (v34, v35, v38, v39/v40, v43, v44, v46, alpha 0.4 recipes, phase
   08 running); phase 08 running passes alone on both (full push 3.45 m/s), so its failure in the full run is load. A
   first full run on a loaded machine timed out page loads in six steps; rerun quiet, they passed.
-  Pictures against that baseline: being rechecked (the run that listed 17 differences was overwritten before they
-  could be looked at); this line is updated when the rerun ends.
+  Pictures against that baseline (a third, quiet run): 17 of 56 differ clearly, all looked at. Most are timing, not
+  the camera: rl12-pick's "before" was still black (loading), phone-map caught the postcard, the battles a different
+  moment of the turn, life-copperleaf a different rabbit (picked at random) and so a different spot. The walk scenes
+  that move the player and take the picture a second or two later (water-edge, a04-copperleaf, autumn) frame a
+  little differently because the spring's catch-up curve differs: measured after a 10 m jump, 1.42 m left at 0.5 s
+  (old 1.46 m), 0.25 m at 0.8 s (old 0.50), 0.03 m at 1.2 s (old 0.14). Standing still the framing is as before.
 - Risky / open:
   - The feel isn't tuned: at a slow walk the dead zone eats most of the look-ahead (headless: the aim 0.07 m ahead of
     you against 0.34 m before). Tune Dead zone and Look-ahead on the phone with the Studio guides.
