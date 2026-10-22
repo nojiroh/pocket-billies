@@ -855,6 +855,48 @@ def sound_fingerprints(b, base, R):
     return line
 
 
+BIOME_SONGS = {'meadow': 'meadow', 'thicket': 'spore', 'jungle': 'spore', 'lake': 'trench', 'sea': 'trench', 'canyon': 'hills',
+               'badlands': 'hills', 'volcano': 'innersun', 'tundra': 'crystal', 'ridge': 'crystal', 'autumn': 'spire'}
+
+
+@step("Run music: the run fixture's landing plays route, each node its biome's song, a town node town (SND-2)", 180)
+def run_music_step(b, base, R):
+    """sound track SND-2: the run fixture (seed RL7FIXTURE, the landing on day 1). musicFor picks route on the landing;
+    for every place of the run, what it picks follows its node (a town node town, the landing route, any other node its
+    biome's song, the owner's mapping); standing on a route node, the music sync asks for that biome's song. Nothing is
+    heard: soundEngine.want is what the game asked to play (headless, sound never starts without a touch)"""
+    errs = []
+    ctx = b.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=1)
+    for s in (CLOCK, NO_ACCOUNTS, TEST_GLOBALS): ctx.add_init_script(s)
+    ctx.set_default_timeout(90000); pg = ctx.new_page(); CUR['pg'] = pg
+    pg.on('pageerror', lambda e: errs.append(str(e)))
+    try:
+        pg.goto(base + '/index.html?fixture=run'); pg.evaluate(LOW_RENDER)
+        if not until(pg, "typeof walkView!=='undefined'&&walkView.ready&&!!saveData.run", 150): raise Exception('the run fixture never opened')
+        if pg.evaluate('saveData.trip.node') != 1: raise Exception('not on the landing')
+        if not until(pg, "soundEngine.want==='route'", 10): raise Exception(f'the landing asked for {pg.evaluate("soundEngine.want")!r}, not route')
+        places = pg.evaluate("""(()=>{const n0=saveData.trip.node,out=[];
+          for(let n=1;n<LOCATIONS.length;n++){const L=LOCATIONS[n],N=saveData.run.map.nodes[L.runNode];
+            saveData.trip.node=n;out.push({n,name:L.name,type:N.type,biome:N.biome||'',song:musicFor()})}
+          saveData.trip.node=n0;return out})()""")
+        bad = []; seen = {}
+        for P in places:
+            want = 'town' if P['type'] == 'town' else 'route' if P['type'] == 'landing' else BIOME_SONGS.get(P['biome'])
+            seen[P['song']] = seen.get(P['song'], 0) + 1
+            if P['song'] != want: bad.append(f"{P['name']} ({P['type']}, {P['biome']}): {P['song']}, not {want}")
+        if bad: raise Exception('; '.join(bad[:5]))
+        route = next((P for P in places if P['type'] == 'route'), None)
+        if not route: raise Exception('the fixture run has no route node')
+        pg.evaluate(f"saveData.trip.node={route['n']};0")
+        ok = until(pg, f"soundEngine.want==={route['song']!r}", 10)
+        pg.evaluate("saveData.trip.node=1;0")
+        if not ok: raise Exception(f"standing in {route['name']} the game asked for {pg.evaluate('soundEngine.want')!r}, not {route['song']}")
+        if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
+        return f"{len(places)} places: " + ', '.join(f'{k} {v}' for k, v in sorted(seen.items())) + f"; in {route['name']} ({route['biome']}) the sync asked for {route['song']}"
+    finally:
+        ctx.close()
+
+
 @step('In-game full test: one step headless, and nothing is saved while it runs', 120)
 def in_game_test_step(b, base, R):
     errs = []; ctx, pg = open_game(b, base, 1100, 700, False, errs)
@@ -2381,6 +2423,7 @@ def main():
                 targets_step(b, base, R)
                 sound_step(b, base, R)
                 sound_fingerprints(b, base, R)
+                run_music_step(b, base, R)
                 try:
                     desktop_steps(b, base, R)
                 except Exception as e:
