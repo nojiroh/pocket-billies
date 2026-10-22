@@ -58,7 +58,10 @@ knew; sessions can't push tags).
   - Rooms' light is tuned by eye on headless shots (software drawing); the owner's phone decides. The Studio's Engine
     section, "This scene", sets one room's look; the 23 share the builder's.
 - Verified: unit tests (495), lint, typecheck, modules, check-data, format on the touched files, the whole fast check
-  (13 of 13) and smoke (15 of 15) after the last code commit; the full quick check: see below. Pictures (headless, 390 x 760): the
+  (13 of 13) and smoke (15 of 15) after the last code commit; the full quick check (run during the docs, 31 min): 45 of 54, the 9 that fail are
+  the 9 stale steps that fail on main too (v34, v35, v38, v39/40, v43, v44's props scene, v46, alpha 0.4's shapes,
+  phase 08's running after the alpha steps); "Time, weather and rooms" passes with the new room light (the lab's
+  brightness 105 by day, inside the light lab's 40-215). Pictures (headless, 390 x 760): the
   lab before and after; the hub's map (one island, sea to the rim); runs from two seeds (two maps) and one seed twice
   (the same map).
 - Phone check wanted: after this deploys, keep the game open in the background, let the next deploy go out, switch
