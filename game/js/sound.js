@@ -52,6 +52,7 @@ expose({
   initAmbience: [() => initAmbience, v => (initAmbience = v)],
   initSound: [() => initSound, v => (initSound = v)],
   jingle: [() => jingle, v => ((jingle = v), provide({ jingle }))],
+  lowHpBeep: [() => lowHpBeep, v => (lowHpBeep = v)],
   music: [() => music, v => (music = v)],
   musicFor: [() => musicFor, v => (musicFor = v)],
   musicParts: [() => musicParts, v => (musicParts = v)],
@@ -476,6 +477,20 @@ export function soundEffect(name, o = {}) {
       break;
     }
   }
+}
+/* SND-5: the classic low-HP beep (Settings → Sound, off by default): twice a second-ish while the lead Billie is in the
+   red zone, on the effects bus. The music's tense version plays either way */
+function lowHpBeep() {
+  if (!soundPreferences().lowHpBeep || !soundEngine.ctx || soundEngine.ctx.state !== 'running') return;
+  const B = typeof activeBattle !== 'undefined' && activeBattle,
+    k = B ? liveActors(0)[0] : undefined,
+    L = k != null ? fighter(k) : null,
+    now = performance.now();
+  if (!L || !musicRedZone(L.hp, maxHp(L)) || now < (soundEngine.beepAt || 0)) return;
+  soundEngine.beepAt = now + 900;
+  const t = soundEngine.ctx.currentTime + 0.01;
+  synthVoice(soundEngine.fx, { type: 'p50', freq: 1760, t, dur: 0.07, vol: 0.035, r: 0.02 });
+  synthVoice(soundEngine.fx, { type: 'p50', freq: 1318.5, t: t + 0.11, dur: 0.07, vol: 0.035, r: 0.02 });
 }
 /* battle animations make their sounds */
 function battleSoundEffect(an, r) {
@@ -975,6 +990,7 @@ function updateAmbience() {
 setInterval(() => {
   try {
     updateAmbience();
+    lowHpBeep();
   } catch (e) {}
 }, 200);
 /* the ambience: which beds play here, and the occasional bird, owl and clock tick */

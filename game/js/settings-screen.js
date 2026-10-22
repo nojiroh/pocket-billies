@@ -448,6 +448,11 @@ function settingsHTML() {
         'Birdsong by day, crickets at night, leaves, a town’s murmur, a room’s clock.',
         0.5
       ) +
+      settingsRowHTML(
+        'Low HP beep',
+        'The classic beep while your lead Billie is under a quarter of its HP. The battle music turns tense either way.',
+        switchHTML('lowHpBeep', !!p.lowHpBeep, '1', '')
+      ) +
       `<p class="note">Sounds fade in when you arrive somewhere.</p>`;
   else if (tab === 'graphics') {
     const gp = p.aim === 'smooth' ? 'balanced' : 'best';
@@ -538,7 +543,7 @@ function changePreference(k, v) {
     return;
   }
   if (k === 'haptics') v = v !== 'off';
-  if (k === 'bigTargets' || k === 'alwaysRun') v = v === '1';
+  if (k === 'bigTargets' || k === 'alwaysRun' || k === 'lowHpBeep') v = v === '1';
   if (k === 'tilt') {
     v = v === 'on';
     if (v)
