@@ -2,6 +2,54 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Island track IS-0 - Contract and test island - 2026-10-22
+Branch `claude/new-session-3qlesh`, from main a10bfc6 (PR #118). The owner's brief (docs/phases/island-track.md,
+uploaded in chat): Copperleaf becomes a real island, one map, an orbit camera. IS-0 runs first and alone so wave 1
+(IS-1..IS-4) can run side by side without meeting in the schema and types. Plan approved in Plan Mode as proposed.
+- Changed (one cause per commit):
+  - **Docs**: the track file in docs/phases (with an "Checked in IS-0" note), ROADMAP's Island track bullet.
+  - **logic/island.js** (on the game page; nothing calls it yet): `ISLAND_ZONE_KINDS`, `islandPointIn` (point in a
+    polygon, for IS-2/5/7) and `islandProblems(sc)`: `cam.orbit` (pivot on the scene, `dead` under half the shorter
+    side, `lag` 0-10 s, `turn` 0-180), `island` (the coast 3+ points, on the scene, closed without repeating its first
+    point, never crossing itself, `c` inside it, the map's `edge` water), `zones` (a known kind, a sound polygon).
+  - **The contract fields** in map.schema.json and game-data.d.ts, all optional: `cam` (pitch, h, fov, `orbit {c,
+    dead, lag, turn}`), `island {c, coast}`, `zones [{k, poly, lock}]`, `islandGen {v, seed, dials}` (the dials an
+    open object: IS-2 owns them) and `waterKind` (enum = the renderer's nine kinds). check-data runs `islandProblems`
+    on every map.
+  - **test_island** (tools/build-test-island.py, rerunnable): 120 x 120 m; a cone 16 m high at (60, 60), flat top
+    r 3, foot r 27 (steepest 0.65, the walk allows 1.05); grass ring to r 48; sand, wet sand to r 52; sea past it
+    (`edge: "w"`, `waterKind: "sea"`, the coast biome's `far: "sea"`, `farH: 5`, `flatFar: 1`); `cam.orbit {c [60,
+    60], dead 3, lag 0.6, turn 30}`; zones mountain, town (locked, south), beach (south arc); six props (a sign,
+    a house, a bench, a lamp, two oaks) to judge turned standees by in IS-1. Hub (60, 30), the south side.
+  - **`?fixture=island`** opens it; check-fast's island step: it draws, the fields reach the scene, its walking checks
+    hold (hub open, the top and the north side reachable, the sea not).
+- Where the plan (the track file) was wrong or short:
+  - "The sea's water kind" already existed: `waterKind` (mapgen wrote `'sea'`; environment.js and sound.js read it).
+    It is typed and in the schema now, no new field.
+  - `edge: "w"` alone is not a sea: it paints the land past the edge with a water texture. The sea skirt that exists
+    is `flatFar: 1` (walk/ground-mesh.js:774-794: water quads 90 m out round the scene, the far land lowered). IS-3
+    should extend it rather than start a new one.
+  - `?test=1&scene=<id>` already opened any test map; the fixture is for check-fast (fixture pages only).
+  - Map rows are north first and z grows northward from the near (south) edge (mapgen.js's header): the track's
+    "town in the south" means small z. IS-2 and IS-5 keep to it.
+  - "an export" in IS-0's line taken as logic/island.js, the module the checks and later sessions share.
+- Verified: unit tests 534 (7 new: every game map passes, test_island has every field, the schema refuses 7 bad
+  shapes, 11 planted faults each give their words, the schema's water kinds and zone kinds match the renderer's and
+  the module's); lint, typecheck, check:modules, format:check, check:data (142 files); check-fast and smoke (see the
+  numbers in the PR); headless pictures at 390 x 760 from the south, the top and the north: the cone, ring, sand and sea
+  draw, no page errors. From the north the cone stands between the camera and you: the reason for IS-1.
+- Risky:
+  - The orbit fields do nothing yet: the camera is today's (fixed yaw, scene clamps) until IS-1.
+  - The `flatFar` skirt starts 90 m out with the far land between; low angles may show a seam (IS-3).
+  - `cam` is in the schema for the first time (only pitch, h, fov were ever used; all 142 files pass).
+  - logic/island.js is on the game page; IS-6 adds it to the Studio's page when the Studio needs it.
+- Not run: the full quick check's picture compare (its baseline is made by CI, not in git); a new test map adds its
+  `shots` (island-south, island-top) to it.
+- Next: wave 1, up to four sessions side by side: IS-1 orbit camera (owns walk/camera.js), IS-2 island generator
+  (owns logic/island-gen.js, not mapgen.js while TR-2c part 2 is open), IS-3 sea all round (water and sky), IS-4
+  island props (prop data and art). The track's "Ask me before" 1-12 are all still open; each session asks its own
+  (IS-1: 2 and 3; IS-2: 1, 6, 7, 9, 10; IS-5: 4, 11; IS-8: 8; IS-9: 5). Tag `is-0-done` is the owner's to push.
+
 ### Phase 09 batch 10 - every run tree a model; the _deep trees merged - 2026-10-22
 Branch `props/batch10-trees`, from main 6493ed4 (PR #113). Owner's request in chat: make sure all trees are 3D props in
 the style used, and list what else still needs converting. Plan approved with the owner's answers: only what the

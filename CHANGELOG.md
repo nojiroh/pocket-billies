@@ -9,6 +9,9 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- The island track begins (IS-0): a test island in the debug menu's Test scenes (a cone of a mountain, a grass ring,
+  beaches and the sea all round), the first step to Copperleaf becoming a real island you can walk round. Nothing
+  changes in Copperleaf yet.
 - The last flat trees on a run are 3D now (props batch 10): the ridge's pines and cypress, the autumn wood's rowan
   and great oak, and the thicket's oaks, birches and pines have a modelled trunk and roots like the other trees. The
   pines keep their drawn look; each tier sways on its own. The larch was rebuilt the same way, so it no longer shows
