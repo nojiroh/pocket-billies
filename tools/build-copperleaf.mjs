@@ -54,6 +54,9 @@ if (process.argv.includes('--extract')) {
     about: 'Copperleaf Town as it stood before the island (IS-5): the input of tools/build-copperleaf.mjs',
   };
   for (const k of keep) if (k in M) out[k] = M[k];
+  /* the opening is filmed by the lab's door */
+  const op = D.cutscenes.opening;
+  out.opening = { spots: op.spots, shots: op.shots, clear: op.clear };
   writeFileSync(INPUT, JSON.stringify(out, null, 1) + '\n');
   console.log(`wrote ${INPUT}: ${out.props.length} props, ${out.people.length} people`);
   process.exit(0);
@@ -262,8 +265,35 @@ const barnZone = G.zones.find(Z => Z.k === 'barn'),
   const trees = loose
       .filter(p => /^tree_(oak|blossom|fruit|chestnut|beech)/.test(p.k))
       .sort((a, b) => a.x - b.x || a.z - b.z),
-    spots = [];
-  for (let k = 0; k < 4000 && spots.length < 8; k++) {
+    spots = [],
+    clear = (x, z, r) => {
+      for (let d = 1; d <= r; d++)
+        for (let a = 0; a < 8; a++) {
+          const t = tileAt(x + Math.cos(a * 0.785) * d, z + Math.sin(a * 0.785) * d);
+          if (STREET.includes(t) || WATER.includes(t)) return false;
+        }
+      return true;
+    };
+  /* the great oak with its swing (the world map's landmark for Copperleaf, its postcard): on open ground nearest the
+     square, clear of the plots and streets for its crown */
+  {
+    const oak = loose.find(p => p.k === 'tree_giant_swing');
+    let best = null;
+    for (let dz = -40; dz <= 40; dz += 0.5)
+      for (let dx = -40; dx <= 40; dx += 0.5) {
+        const x = well.x + dx,
+          z = well.z + dz,
+          d = Math.hypot(dx, dz);
+        if (best && d >= best[2]) continue;
+        if (!islandPointIn(townZone.poly, x, z) || !'gGE'.includes(tileAt(x, z))) continue;
+        if (plots.some(L => inPlot(L, x, z, 4)) || !clear(x, z, 4)) continue;
+        best = [x, z, d];
+      }
+    if (!oak || !best) throw new Error('no room for the great oak by the square');
+    spots.push(best);
+    props.push({ ...oak, x: r2(best[0]), z: r2(best[1]) });
+  }
+  for (let k = 0; k < 4000 && spots.length < 9; k++) {
     const h = hashString('copperleaf town trees ' + k),
       x = townZone.poly.reduce((m, p) => Math.min(m, p[0]), 1e9) + ((h % 1000) / 1000) * 100,
       z = townZone.poly.reduce((m, p) => Math.min(m, p[1]), 1e9) + ((Math.floor(h / 1000) % 1000) / 1000) * 90;
@@ -277,7 +307,7 @@ const barnZone = G.zones.find(Z => Z.k === 'barn'),
     if (near) continue;
     spots.push([x, z]);
   }
-  spots.forEach((s, i) => trees[i] && props.push({ ...trees[i], x: r2(s[0]), z: r2(s[1]) }));
+  spots.slice(1).forEach((s, i) => trees[i] && props.push({ ...trees[i], x: r2(s[0]), z: r2(s[1]) }));
 }
 
 /* ---------- what can't stand where it landed ---------- */
@@ -367,6 +397,33 @@ const life = TOWN.life.map(L => {
   return AREA[L.k] ? { ...rest, area: AREA[L.k] } : rest;
 });
 
+/* ---------- the opening (cutscenes/opening.json): you wake outside the lab, so its spots, shots and the stage it keeps
+   clear move and turn with the lab's door (the shots' heights are above the ground: they stay) ---------- */
+{
+  const was = OLD.find(p => p.act === 'lab'),
+    now = kept.find(p => p.act === 'lab'),
+    mv = (x, z) => world(now, ...own(was, x, z)).map(r2),
+    O = TOWN.opening,
+    op = D.cutscenes.opening;
+  op.spots = Object.fromEntries(Object.entries(O.spots).map(([k, v]) => [k, mv(v[0], v[1])]));
+  op.shots = Object.fromEntries(
+    Object.entries(O.shots).map(([k, S]) => {
+      const e = mv(S.eye[0], S.eye[2]),
+        t = mv(S.tgt[0], S.tgt[2]);
+      return [k, { ...S, eye: [e[0], S.eye[1], e[1]], tgt: [t[0], S.tgt[1], t[1]] }];
+    })
+  );
+  op.clear = {
+    ...O.clear,
+    areas: O.clear.areas.map(([a, b, c, d]) => {
+      const p = mv(a, b),
+        q = mv(c, d);
+      return [Math.min(p[0], q[0]), Math.min(p[1], q[1]), Math.max(p[0], q[0]), Math.max(p[1], q[1])];
+    }),
+    eyes: O.clear.eyes.map(e => mv(e[0], e[1])),
+  };
+}
+
 /* ---------- the map ---------- */
 const GROUND = [
   'w',
@@ -414,7 +471,19 @@ for (const k of [
 for (const k of GROUND) if (k in G) sc[k] = G[k];
 Object.assign(sc, { edgeExits: [], bridges: bridgesOut, props: kept, people, npcSpots, life });
 /* the walking checks are the island's (build-island.mjs: from the square to each plot's front, the barn, the summit,
-   the dock); the in-game full test walks from the hub to every door besides (self-test.js stGeometry) */
+   the dock); the in-game full test walks from the hub to every door besides (self-test.js stGeometry). One that ends
+   where a building now stands (the barn's zone's middle) ends at its door instead */
+sc.checks = (G.checks || []).map(c => {
+  if (!c.reach) return c;
+  const B = kept.find(p => boxOf(p.k) && footDist(p, c.to[0], c.to[1]) < 0.5);
+  if (!B) return c;
+  const dx = C[B.k].door ? (C[B.k].door.x / PPU) * (B.s || 1) * (B.f ? -1 : 1) : 0;
+  return {
+    ...c,
+    to: world(B, dx, -1.5).map(r2),
+    what: c.what.replace(/(\(\d+ of \d+\))?$/, "'s door $1").replace(/ +$/, ''),
+  };
+});
 const bad = islandProblems(sc);
 if (bad.length) {
   console.error('copperleaf: the island fails its checks:\n  ' + bad.join('\n  '));

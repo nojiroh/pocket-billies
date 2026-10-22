@@ -23,7 +23,7 @@ validation/quick-baseline/ (make one with --baseline), each picture is compared 
 is changed."""
 # RL-5: --closeups and --seams=all went with their steps (every close-up spot and every seam was in a parked place);
 # the --scenes example names the hub, the one place left
-import io, json, os, re, shutil, socket, subprocess, sys, tempfile, threading, time
+import io, json, math, os, re, shutil, socket, subprocess, sys, tempfile, threading, time
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -279,13 +279,16 @@ def copperleaf_data():
     if 'copperleaf' not in (LO.get('locations') or {}): bad.append('no lore for copperleaf')
     if 'juniper' not in (LO.get('people') or {}): bad.append('Granny Juniper has no page in the Lore')
     # the opening's stage: east and south of the lab's door, where game/data/cutscenes/opening.json has its spots
+    # IS-5: in the lab's own metres (it faces its street on the island: x along its front, z back from it)
     lab = next(p for p in cl['props'] if p.get('act') == 'lab'); M = C[lab['k']]; dx = M['door']['x'] / 34 * lab.get('s', 1) * (-1 if lab.get('f') else 1)
-    d = (lab['x'] + dx, lab['z'])
+    ra = math.radians(lab.get('rot', 0)); own = lambda x, z: ((x - lab['x']) * math.cos(ra) + (z - lab['z']) * math.sin(ra), -(x - lab['x']) * math.sin(ra) + (z - lab['z']) * math.cos(ra))
+    d = (dx, 0)
     for p in cl['props']:
         Q = C.get(p['k']) or {}
         if Q.get('flat') or p is lab: continue
         solid = Q.get('box') or (Q.get('solid') or 0) > .25
-        if solid and d[0] + .8 < p['x'] < d[0] + 9.6 and d[1] - 4.8 < p['z'] < d[1] - 1.4: bad.append(f'{p["k"]} at {p["x"]},{p["z"]} stands on the opening’s stage')
+        lx, lz = own(p['x'], p['z'])
+        if solid and d[0] + .8 < lx < d[0] + 9.6 and d[1] - 4.8 < lz < d[1] - 1.4: bad.append(f'{p["k"]} at {p["x"]},{p["z"]} stands on the opening’s stage')
     if bad: raise Exception('; '.join(bad[:6]))
     return f'a new game starts in Copperleaf (node {ix["copperleaf"]}), the only place, with no road out; the lab and your room are there, Granny Juniper in her garden, no shop or clinic; the opening’s stage is clear'
 
@@ -1545,8 +1548,9 @@ def desktop_steps(b, base, R):
         if len(nat) < 70: raise Exception(f'{len(nat)} nature props (want 70)')
         out.append(f'{len(nat)} nature props in {len(fams)} families (' + ', '.join(f'{f} {n}' for f, n in sorted(fams.items())) + ')')
         # the wild growth: every outdoor scene grown, nothing it added stands on a path or in the sea (test scenes such as
-        # alpha 0.5's Graphics gallery, test: true, are laid out by hand)
-        bad = json.loads(pg.evaluate("""JSON.stringify((()=>{const C=walkData().sc.props,out=[];for(const [id,sc] of Object.entries(gameData.maps)){if(/^(test_|int_)/.test(id)||sc.test||sc.indoor||sc.room)continue;const g=(sc.props||[]).filter(p=>p.w===42);if(sc.wild!==42||!g.length){out.push(id+': not grown');continue}
+        # alpha 0.5's Graphics gallery, test: true, are laid out by hand; IS-5: the hub island grows its own ground and
+        # IS-9 dresses it, so it need not be grown, but what it kept of the old growth is checked)
+        bad = json.loads(pg.evaluate("""JSON.stringify((()=>{const C=walkData().sc.props,out=[];for(const [id,sc] of Object.entries(gameData.maps)){if(/^(test_|int_)/.test(id)||sc.test||sc.indoor||sc.room)continue;const g=(sc.props||[]).filter(p=>p.w===42);if(!sc.islandGen&&(sc.wild!==42||!g.length)){out.push(id+': not grown');continue}
          for(const p of g){const ch=(sc.tiles[sc.h-1-Math.floor(p.z)]||'')[Math.floor(p.x)],M=C[p.k];if(!M){out.push(id+': '+p.k+' unknown');break}if('pcmbaqheo'.includes(ch)){out.push(id+': '+p.k+' on paved ground');break}if('wd'.includes(ch)&&!(M.grow||'').includes(ch)){out.push(id+': '+p.k+' in water');break}}}return out})())"""))
         if bad: raise Exception('wild growth: ' + '; '.join(bad[:4]))
         grown = pg.evaluate("Object.values(gameData.maps).reduce((n,sc)=>n+(sc.props||[]).filter(p=>p.w===42).length,0)")
@@ -1730,7 +1734,8 @@ def desktop_steps(b, base, R):
             go_scene(pg, pg.evaluate(f"LOCATIONS.findIndex(l=>l.mapId==='{place}')"))
             d = json.loads(pg.evaluate("""JSON.stringify((()=>{const C=walkData().sc,bad=[];let n=0;
               for(const p of walkView.sc.props){if(!ROOM_BY_USE[p.act])continue;const M=C.props[p.k],E=doorOf(p),id=roomFor(p.act,p);if(!M||!M.box||!E||!id)continue;
-                const sc=seamlessRoomMap(walkView.id,id,[+E.at[0].toFixed(1),+E.at[1].toFixed(1),+E.mid[0].toFixed(1)]),R=sc&&sc.roomRect,d=sc?Math.abs(sc.exits[0][0]-E.at[0]):9;n++;
+                const q=roomTurnOf(p.rot),dr=[+E.at[0].toFixed(1),+E.at[1].toFixed(1),+E.mid[0].toFixed(1)];if(q)dr.push(q,+E.mid[1].toFixed(1));/* IS-5: a building facing any way, its doorway measured along its front */
+                const sc=seamlessRoomMap(walkView.id,id,dr),R=sc&&sc.roomRect,d=sc?Math.abs((sc.exits[0][0]-E.at[0])*-E.out[1]+(sc.exits[0][1]-E.at[1])*E.out[0]):9;n++;
                 if(d>.1||!R||R[0]<0||R[1]<0||R[0]+R[2]>sc.w||R[1]+R[3]>sc.h)bad.push(p.k+' at '+p.x+', '+p.z+': '+d.toFixed(2)+' m')}return {n,bad}})())"""))
             nd += d['n']; bad += [place + ' ' + b for b in d['bad']]
         if bad: raise Exception(f'{len(bad)} of {nd} doors: the room’s doorway isn’t at the door, or the room leaves the view: {bad[:4]}')
@@ -1748,7 +1753,7 @@ def desktop_steps(b, base, R):
         r = json.loads(pg.evaluate("""JSON.stringify((()=>{const sc=walkView.sc,I=uiState.inside,RD=roomDimming(sc),n=navGrid(),N=NAV_CELLS_PER_M,R=sc.roomRect,blocked=(x,z)=>!!n.blk[Math.floor(z*N)*n.gw+Math.floor(x*N)];
           return {exit:sc.exits[0],door:I&&I.door,dim:RD?RD.dim:0,outBlocked:blocked(R[0]-2,R[1]+R[3]/2)&&blocked(R[0]+R[2]/2,R[1]-2),inFree:!blocked(R[0]+R[2]/2,R[1]+R[3]/2-1),labGone:!sc.props.some(p=>p.act==='lab')}})())"""))
         shot(pg, 'v46-room-in-place')
-        if not r['door'] or abs(r['exit'][0] - r['door'][0]) > .3 or abs(r['exit'][1] - r['door'][1]) > .7: raise Exception(f'the room’s doorway {r["exit"]} isn’t at the lab’s door {r["door"]}')
+        if not r['door'] or math.hypot(r['exit'][0] - r['door'][0], r['exit'][1] - r['door'][1]) > .76: raise Exception(f'the room’s doorway {r["exit"]} isn’t at the lab’s door {r["door"]}')   # IS-5: whichever way the lab faces
         if r['dim'] < .4: raise Exception(f'the hamlet around the room isn’t dimmed ({r["dim"]:.2f})')
         if not r['outBlocked'] or not r['inFree']: raise Exception(f'walking: outside the room blocked {r["outBlocked"]}, the floor free {r["inFree"]}')
         if not r['labGone']: raise Exception('the lab’s outside is still standing in its own room')

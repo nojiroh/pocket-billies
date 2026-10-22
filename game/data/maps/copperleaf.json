@@ -1192,7 +1192,7 @@
   {"x":51.41,"z":169.19,"r":8.55,"n":43,"across":false}
  ],
  "checks": [
-  {"from":[177.72,111.8],"to":[67.97,87.85],"reach":true,"what":"from the town to the barn"},
+  {"from":[177.72,111.8],"to":[71.52,87.93],"reach":true,"what":"from the town to the barn's door"},
   {"from":[177.72,111.8],"to":[150.75,106.75],"reach":true,"what":"from the town to the pasture (1 of 4)"},
   {"from":[150.75,106.75],"to":[111.25,107.25],"reach":true,"what":"from the town to the pasture (2 of 4)"},
   {"from":[111.25,107.25],"to":[84.25,120.25],"reach":true,"what":"from the town to the pasture (3 of 4)"},
@@ -1347,14 +1347,15 @@
   {"k":"dandelion_clocks","x":82.73,"z":86.87,"w":42,"s":0.86,"f":1},
   {"k":"chalk_sun","x":63.14,"z":84.37,"v47life":1,"dry":true},
   {"k":"signpost","x":170.22,"z":114.43,"act":"sign"},
+  {"k":"tree_giant_swing","x":170.72,"z":122.3},
   {"k":"tree_beech","x":213.35,"z":135.26,"s":0.95},
   {"k":"tree_blossom","x":170.35,"z":144.8,"s":1.18},
   {"k":"tree_blossom","x":206.15,"z":93.77,"s":1.18,"f":1},
   {"k":"tree_oak","x":191.85,"z":123.74,"s":1.15},
   {"k":"tree_oak_autumn","x":196.55,"z":110.24,"s":1.12},
   {"k":"tree_fruit","x":161.05,"z":118.43,"s":1.02,"f":1},
-  {"k":"tree_fruit","x":171.25,"z":123.83,"s":0.91},
-  {"k":"tree_fruit","x":133.15,"z":103.85,"s":1.08}
+  {"k":"tree_fruit","x":133.15,"z":103.85,"s":0.91},
+  {"k":"tree_fruit","x":201.75,"z":131.75,"s":1.08}
  ],
  "people": [
   {
