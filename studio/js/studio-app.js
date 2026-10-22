@@ -3,7 +3,16 @@
    State, server calls, undo, form fields bound to paths in the game data, navigation, toasts and dialogs. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
-import { artStepPut, mountPreviews, provide, runCheck, scheduleCheck, spriteCacheClear } from '../../game/js/hooks.js';
+import {
+  artStepPut,
+  draftNow,
+  draftSoon,
+  mountPreviews,
+  provide,
+  runCheck,
+  scheduleCheck,
+  spriteCacheClear,
+} from '../../game/js/hooks.js';
 import { $, $$ } from '../../game/js/util.js';
 import { ICON_ATLAS, artLoad } from '../../game/js/art.js';
 import { battleStageStop } from '../../game/js/battle-stage.js';
@@ -297,12 +306,13 @@ export function updateTopBar() {
   $('#dirty').hidden = !(studioState.dirty || studioState.rigsDirty || studioState.artDirty.size);
   $('#undoBtn').disabled = !studioState.undo.length && studioState.last === snapshot();
   $('#redoBtn').disabled = !studioState.redo.length;
+  draftSoon(); /* T1.1: what is pending is kept in this browser 2 s later (drafts.js) */
 }
 /* ---------- save ----------
    Studio plan Phase 0: a save stages what it will send (stageChanges), sends it (writeStaged, which throws on the
    first error) and only then marks saved what is still as it was sent (confirmStaged, logic/publish-plan.js). A failed
    save leaves everything unsaved; a picture painted or data edited during the send stays unsaved. */
-const SAVE_REPLACER = (k, v) => (k[0] === '_' && k.length > 1 ? undefined : v);
+export const SAVE_REPLACER = (k, v) => (k[0] === '_' && k.length > 1 ? undefined : v);
 /** Check's problems before a save: true to go on (none, or "Save anyway"); false opens the Check */
 export async function checkBeforeSave() {
   const errs = runCheck().filter(p => p.lvl === 'error');
@@ -360,6 +370,7 @@ export function confirmStaged(staged) {
   if (ok.rigs) S.rigsDirty = false;
   for (const p of ok.art) S.artDirty.delete(p);
   updateTopBar();
+  draftNow(); /* T1.1: the draft goes (or keeps only what is still unsaved) at once, not 2 s later */
   return ok;
 }
 export async function saveAll() {
