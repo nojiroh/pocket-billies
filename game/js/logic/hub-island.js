@@ -7,24 +7,38 @@
        island, turned round it by a drag, auto-orbit or a snap to a side
      - the coast's and the zones' points: move, insert on the nearest edge, remove (never under three)
      - the lock: lock and unlock the ground, and the words a ground tool says when it is refused
+     - the dials (IS-6b): where they start (the map's own islandGen), why the island can't be made again, "Use this
+       island" (the generator's ground onto the map, its props, people and look kept), the walking checks on a draft
    Positions are the scene's metres: x across, z depth (z grows northward, from the near south edge). Yaw 0 looks
    along +z, so the camera stands south of what it looks at. Logic only: no DOM, runs in Node
    (tools/test/hub-island.test.mjs). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { mapgenReach, mapgenReached, mapgenTraps } from './mapgen.js';
+import { islandPointIn } from './island.js';
 import { FREE_CAM } from './free-camera.js';
 /* eslint-disable no-func-assign */
 expose({
+  HUB_GEN_GROUND: [() => HUB_GEN_GROUND],
   HUB_SIDES: [() => HUB_SIDES],
   HUB_VIEW: [() => HUB_VIEW],
   // @ts-expect-error -- replaced on purpose
   groundLockRefusal: [() => groundLockRefusal, v => (groundLockRefusal = v)],
   // @ts-expect-error -- replaced on purpose
   hubCoastLap: [() => hubCoastLap, v => (hubCoastLap = v)],
+  hubCopy: [() => hubCopy],
   // @ts-expect-error -- replaced on purpose
   hubDefaultMap: [() => hubDefaultMap, v => (hubDefaultMap = v)],
   // @ts-expect-error -- replaced on purpose
   hubEdgeDistance: [() => hubEdgeDistance, v => (hubEdgeDistance = v)],
+  // @ts-expect-error -- replaced on purpose
+  hubGenRefusal: [() => hubGenRefusal, v => (hubGenRefusal = v)],
+  // @ts-expect-error -- replaced on purpose
+  hubGenStart: [() => hubGenStart, v => (hubGenStart = v)],
+  // @ts-expect-error -- replaced on purpose
+  hubGenStats: [() => hubGenStats, v => (hubGenStats = v)],
+  // @ts-expect-error -- replaced on purpose
+  hubGenWalkProblems: [() => hubGenWalkProblems, v => (hubGenWalkProblems = v)],
   hubGroundLocked: [() => hubGroundLocked],
   // @ts-expect-error -- replaced on purpose
   hubInsertPoint: [() => hubInsertPoint, v => (hubInsertPoint = v)],
@@ -46,6 +60,8 @@ expose({
   hubSideOf: [() => hubSideOf, v => (hubSideOf = v)],
   // @ts-expect-error -- replaced on purpose
   hubUnlockGround: [() => hubUnlockGround, v => (hubUnlockGround = v)],
+  // @ts-expect-error -- replaced on purpose
+  hubUseIsland: [() => hubUseIsland, v => (hubUseIsland = v)],
   // @ts-expect-error -- replaced on purpose
   hubViewDrag: [() => hubViewDrag, v => (hubViewDrag = v)],
   // @ts-expect-error -- replaced on purpose
@@ -260,4 +276,133 @@ export function hubCoastLap(sc, inset = 6) {
   const lap = P.slice(s).concat(P.slice(0, s));
   lap.push(lap[0].slice());
   return lap;
+}
+
+/* ================= the generator's dials (IS-6b) ================= */
+/** the fields "Use this island" takes from the generator: the ground and the island's contract. Everything else on
+ * the map stays: props, people, life, exits, the look, the in-game checks. The orbit's pivot follows the new
+ * mountain; its dead zone, lag and turn stay as tuned. */
+export const HUB_GEN_GROUND = [
+  'w',
+  'h',
+  'edge',
+  'waterKind',
+  'far',
+  'farH',
+  'flatFar',
+  'island',
+  'zones',
+  'islandGen',
+  'hub',
+  'tiles',
+  'heights',
+  'plots',
+  'streams',
+  'bridges',
+  'spots',
+  'steps',
+  'stepm',
+];
+
+/** a copy of map data (JSON) @param {any} v */
+export const hubCopy = v => JSON.parse(JSON.stringify(v));
+
+/** the dials and seed the editor starts from: the map's own (so the island it was made with comes back), else the
+ * generator's defaults and the map's id as the seed @param {any} sc @param {string} id */
+export function hubGenStart(sc, id) {
+  const G = (sc && sc.islandGen) || {};
+  return {
+    dials: G.dials && typeof G.dials === 'object' ? hubCopy(G.dials) : {},
+    seed: G.seed ? String(G.seed) : String(id || 'island'),
+  };
+}
+
+/** why the island can't be made again from the dials, or '': a map with no coast yet, or a locked ground
+ * @param {any} sc */
+export function hubGenRefusal(sc) {
+  if (hubViewOnlyReason(sc)) return hubViewOnlyReason(sc);
+  return hubGroundLocked(sc)
+    ? 'The ground is locked: unlock it (Ground lock) to make the island again. The dials only show how it was made.'
+    : '';
+}
+
+/** "Use this island": the generator's ground onto the map (HUB_GEN_GROUND, copied), its locked zones as the
+ * generator kept them. Throws when hubGenRefusal says no. Returns the props now out at sea (past the new coast), left
+ * where they are. @param {any} sc @param {any} scene islandGenerate's scene, made with sc as prev */
+export function hubUseIsland(sc, scene) {
+  const why = hubGenRefusal(sc);
+  if (why) throw new Error(why);
+  for (const k of HUB_GEN_GROUND)
+    if (scene[k] !== undefined) sc[k] = hubCopy(scene[k]);
+    else delete sc[k];
+  const O = scene.cam && scene.cam.orbit;
+  if (O) {
+    sc.cam = sc.cam || {};
+    sc.cam.orbit = sc.cam.orbit ? { ...sc.cam.orbit, c: O.c.slice() } : hubCopy(O);
+  }
+  const coast = sc.island.coast;
+  return {
+    wet: (Array.isArray(sc.props) ? sc.props : []).filter(
+      (/** @type {any} */ p) => p && typeof p.x === 'number' && !islandPointIn(coast, p.x, p.z)
+    ),
+  };
+}
+
+/** the walking checks on a draft (IS-2: a rerun under a new seed can meet a kept town at another place): from the
+ * hub, every zone, the summit, the dock and every plot's front (not the well's, a plot you stand round) can be
+ * walked to, and nowhere you can walk to leaves you stuck. Problems in words, [] when it walks.
+ * @param {any} sc @param {any} scenery { terrains, props } */
+export function hubGenWalkProblems(sc, scenery) {
+  if (!sc.hub || !Array.isArray(sc.tiles)) return ['no hub to walk from'];
+  const out = [],
+    R = mapgenReach(sc, scenery, sc.hub, { slope: true });
+  for (const Z of Array.isArray(sc.zones) ? sc.zones : []) {
+    if (!Array.isArray(Z.poly)) continue;
+    let ok = false;
+    for (let j = 0; j < R.gh && !ok; j++)
+      for (let i = 0; i < R.gw && !ok; i++)
+        ok = !!R.seen[j * R.gw + i] && islandPointIn(Z.poly, (i + 0.5) / R.N, (j + 0.5) / R.N);
+    if (!ok) out.push(`the ${Z.k} zone can't be walked to`);
+  }
+  for (const S of Array.isArray(sc.spots) ? sc.spots : [])
+    if ((S.kind === 'summit' || S.kind === 'dock') && !mapgenReached(R, S.x, S.z))
+      out.push(`the ${S.kind} can't be walked to`);
+  for (const L of Array.isArray(sc.plots) ? sc.plots : []) {
+    const a = (L.a * Math.PI) / 180;
+    if (L.k !== 'well' && !mapgenReached(R, L.x + Math.cos(a) * (L.d / 2 + 0.9), L.z + Math.sin(a) * (L.d / 2 + 0.9)))
+      out.push(`the ${L.k} plot at (${L.x}, ${L.z}) can't be walked to`);
+  }
+  const T = mapgenTraps(sc, scenery);
+  if (T.n) out.push(`${T.n} spots you can walk to but not back from, first (${T.at[0]})`);
+  return out;
+}
+
+/** a draft's figures for the dials card: its size, the land's, the coast walk's length and time, the plots
+ * @param {any} sc */
+export function hubGenStats(sc) {
+  const C = (sc.island && sc.island.coast) || [];
+  let x0 = Infinity,
+    x1 = -Infinity,
+    z0 = Infinity,
+    z1 = -Infinity;
+  for (const [x, z] of C) {
+    x0 = Math.min(x0, x);
+    x1 = Math.max(x1, x);
+    z0 = Math.min(z0, z);
+    z1 = Math.max(z1, z);
+  }
+  const lap = hubCoastLap(sc);
+  let m = 0;
+  for (let k = 1; k < lap.length; k++) m += Math.hypot(lap[k][0] - lap[k - 1][0], lap[k][1] - lap[k - 1][1]);
+  const plots = /** @type {Record<string, number>} */ ({});
+  for (const L of Array.isArray(sc.plots) ? sc.plots : []) plots[L.k] = (plots[L.k] || 0) + 1;
+  return {
+    w: sc.w,
+    h: sc.h,
+    land: C.length ? [Math.round(x1 - x0), Math.round(z1 - z0)] : [0, 0],
+    lap: Math.round(m),
+    /* walk-view.js's walking speed, 3.4 m/s */
+    lapS: Math.round(m / 3.4),
+    plots,
+  };
 }
