@@ -53,8 +53,8 @@ import { walkRenderer } from '../../game/js/walk/walk-state.js';
 import { WALL_MATERIALS, rawHeightAt } from '../../game/js/walk/heights.js';
 import { mountWalkView } from '../../game/js/walk-view-gl.js';
 import { PEOPLE, escapeHtml } from './game-stand-ins.js';
-import { groundLockRefusal } from '../../game/js/logic/hub-island.js';
 import { pixelKeyAction } from '../../game/js/logic/pixel-ops.js';
+import { groundLockRefusal } from '../../game/js/logic/hub-island.js';
 import {
   ACTIONS,
   SECTIONS,

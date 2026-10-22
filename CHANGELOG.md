@@ -9,6 +9,11 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- The Studio's Hub island section has the island generator's dials (IS-6b): size, coast, mountain, cove, beaches,
+  cliffs, forest, stream, paths, the town and the hamlet, a seed and a seed for each part. A draft shows in the
+  orbit view and on the map as you change them, with its size, the walk round the coast and a walking check. "Use
+  this island" puts the new ground on the island (Undo takes it back); locked zones, props and people stay as they
+  are. A locked island shows its dials but is never made again.
 - Copperleaf is the island now (island track IS-5): the town stands on its generated island, a market town where the
   stream meets the bay. Professor Hazel's lab and the well on the square, the airship station by the harbour, Granny
   Juniper's cottage with her hives and lavender, the General store (closed for now), cottages along the streets and in

@@ -2,6 +2,64 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Island track IS-6b - Hub editor dials - 2026-10-22
+Branch `claude/is-6b-hub-dials`, from the wave-2 base `claude/new-session-3qlesh` (main plus IS-2, IS-3, IS-4 and IS-6a,
+PRs #122, #124, #123, #126, not merged yet); the PR goes against main, so its diff shrinks as those merge (then merge
+main into the branch). Ran beside IS-5 (copperleaf.json) and IS-7 (the world map): Studio files only, plus
+logic/hub-island.js, the pages' script lists and check-fast. Plan approved in Plan Mode with the recommended answers:
+the draft made on the page (not in a worker), a locked ground's dials read-only, props at sea named not moved, no
+"new island" button.
+- Changed (one cause per commit):
+  - **island-gen.js moved** from the game's page to the Studio's, after mapgen.js (IS-2's suggestion; the game never
+    calls it: only build-island.mjs, its unit test and now the Studio do).
+  - **logic/hub-island.js** (5 new unit tests): `hubGenStart` (the map's own islandGen dials and seed, a copy; else
+    the defaults and the map's id), `hubGenRefusal` (no coast, or a locked ground), `hubUseIsland` (copies
+    `HUB_GEN_GROUND`: size, sea fields, island, zones, islandGen, hub, tiles, heights, plots, streams, bridges, spots,
+    steps; a field the draft lacks goes; the orbit's pivot follows, its dead zone, lag and turn stay; returns the
+    props now past the coast), `hubGenWalkProblems` (IS-2's walking checks: every zone, the summit, the dock, every
+    plot's front from the hub; no traps), `hubGenStats`. It imports mapgen.js now, so it loads after island-gen.js
+    on the Studio's page.
+  - **The Dials card** (studio/js/hub-island.js): every generator dial in folding groups (↺ and Reset), the flat zones
+    and the beach and cliff arcs as rows, a seed (typed or 🎲) and a 🎲 per stage (Alt-click clears it). A draft is
+    made 0.5 s after a dial stops ("Generating…" first), shown in the orbit view as `_hubgen` (walkData chained, as
+    Walk scenes' `_gen` draft) and on the map; its figures, the generator's notes, the island's own problems and a
+    "Check the walks" button. The map's tools are off while a draft shows (it isn't the map). **Use this island**: one
+    undo step, refused while locked (the button isn't offered and the logic throws); the toast names props now at sea
+    and says the map's in-game checks were written for the old ground. A locked ground opens its dials read-only and
+    makes no draft. Picking another map drops the draft; a draft finishing after the section is left draws nothing.
+  - **check-fast**: "The Studio's Hub island dials" on IS-6a's page, after its step (it loads the Studio itself when
+    run alone).
+  - Docs: STUDIO.md (the Hub island part, the table row), the track file ("Done in IS-6b"), CHANGELOG.
+- Where the plan (the track file) was wrong or short:
+  - The dials listed were a third of the generator's; all are shown.
+  - "Live preview": one island is 1.75 s in Node, 2.5-3.6 s in the headless browser (copperleaf_island's own dials:
+    2.5 s), and the walk check another 1.2 s, so the draft comes after the dial stops and the walk check is a button.
+  - **A new seed often doesn't fit.** With a previous map the generator keeps its middle (so nothing on the map
+    moves) and grows the scene east and north only; a coast that would cross the west or south edge throws. 5 of 12
+    whole new seeds fit round copperleaf_island's middle (a larger open sea makes it worse: 0 of 12 at 20 m); a stage's
+    own seed fitted for coast, land, mountain, paths and ground once each, but a random one can miss too. The card
+    says so with what to try. test_island (120 m) only takes islands of about 30 m radius.
+  - **Small islands make a forest zone that crosses itself** (island-gen.js, radius ~30 m, every seed tried): the
+    draft lists it and Lock the ground refuses it until the zone's points are moved. Not fixed (IS-2's file).
+- Verified: unit tests 604 (5 new); lint, typecheck, check:modules, format:check; check-fast's Hub island steps (IS-6a
+  and IS-6b) pass; headless pictures at 1600 x 1000 (copperleaf_island: its own dials give back its tiles exactly,
+  the draft drawn, a mountain reroll). check-fast 24 of 24; smoke no problems; full quick check (40 min): 10 problems, the
+  9 old ones on main (roster counts 117/61, empty voxel bushes, buildings without a plan, the biped walk cycle, the
+  running step's "float division by zero"; see IS-6a's entry) and RL-8's run (Meadow Town's view never showed) while
+  other browser checks ran beside it; RL-8 alone passes on the merged branch. After merging main (IS-7 and the rest):
+  unit tests 614, lint, typecheck, modules, format, check-data, both Hub island steps pass.
+- Risky:
+  - The page pauses 2-4 s while a draft is made (no worker). Fine on a desktop; slow on a phone.
+  - "Use this island" leaves the map's in-game `checks` (copperleaf_island's walking legs from build-island) as they
+    were: they can fail on the new ground. Rerun tools/build-island.mjs, or edit them, before relying on them.
+  - The draft rides walkData through an Object.create view, like Walk scenes' draft. The prop editor's wrapper copies
+    own keys only; with a prop open in Walk scenes and a draft here, the hub view would still find its draft.
+  - Props past a new coast stay in the sea until moved (named in the toast).
+- Not done: a new island from the dials (a new map id); shifting the scene so any seed fits; copperleaf (no coast
+  until IS-5).
+- Next: IS-5 makes copperleaf the island (then its dials open here); the generator's "doesn't fit" and the small
+  forest zone are IS-2 follow-ups. Tag `is-6b-done` is the owner's.
+
 ### Island track IS-5 - Copperleaf moves onto the island - 2026-10-22
 Branch `claude/is-5-copperleaf-island`, from the wave-2 base `claude/new-session-3qlesh` (main with IS-0, IS-1 merged
 plus IS-2, IS-3, IS-4, IS-6a merged in; PRs #122, #124, #123, #126 not in main yet). PR against main; main gets merged

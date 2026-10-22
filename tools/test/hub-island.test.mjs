@@ -1,14 +1,17 @@
 // Island track IS-6a: the Studio's Hub island editor's logic (game/js/logic/hub-island.js): the orbit view's framing,
 // sides and drag; the coast's and zones' points; the ground lock with logic/island.js's hash; which maps it lists and
-// which it only shows.
+// which it only shows. IS-6b: the dials' start, the refusal, "Use this island" (the generator's ground onto the map,
+// its locked zones, props, people and look kept) and the walking checks on a draft.
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { ROOT } from './setup-real.mjs';
 import { FREE_CAM, freeCamLook } from '../../game/js/logic/free-camera.js';
-import { islandGroundHash, islandProblems } from '../../game/js/logic/island.js';
+import { islandGroundHash, islandPointIn, islandProblems } from '../../game/js/logic/island.js';
 import * as H from '../../game/js/logic/hub-island.js';
+import { islandGenerate } from '../../game/js/logic/island-gen.js';
+import { readGameData } from '../data-files.mjs';
 
 const near = (a, b, e = 1e-6) => assert.ok(Math.abs(a - b) < e, `${a} ≈ ${b}`);
 const testIsland = () => JSON.parse(readFileSync(join(ROOT, 'game/data/maps/test_island.json'), 'utf8'));
@@ -132,4 +135,96 @@ test('walk the coast: a closed lap inside the coast, from the south', () => {
   assert.equal(Math.min(...lap.map(p => p[1])), lap[0][1], 'it starts at the southernmost point');
   for (const p of lap) near(Math.hypot(p[0] - cx, p[1] - cz), 46, 0.02);
   assert.deepEqual(H.hubCoastLap({ w: 10, h: 10 }), []);
+});
+
+/* ---------- IS-6b: the dials ---------- */
+const GD = readGameData();
+const isleMap = () => structuredClone(GD.maps.copperleaf);
+/* a small island that fits round test_island's middle (60, 60) */
+const SMALL = { size: { r: 30 }, mountain: { r: 10, peak: 12 }, town: { on: 0 }, hamlet: { on: 0 }, zones: [] };
+
+test('the dials start from the map’s own islandGen (a copy), else the defaults and the map’s id', () => {
+  const sc = isleMap(),
+    g = H.hubGenStart(sc, 'copperleaf');
+  assert.equal(g.seed, sc.islandGen.seed);
+  assert.deepEqual(g.dials, sc.islandGen.dials);
+  g.dials.size.r = 1;
+  assert.notEqual(sc.islandGen.dials.size.r, 1, 'a copy: the map is not changed by moving a dial');
+  assert.deepEqual(H.hubGenStart({ w: 1 }, 'isle'), { dials: {}, seed: 'isle' });
+});
+
+test('the island is made again only when it has a coast and its ground is not locked', () => {
+  const sc = testIsland();
+  assert.equal(H.hubGenRefusal(sc), '');
+  assert.match(H.hubGenRefusal({ w: 1 }), /Not an island yet/);
+  H.hubLockGround(sc, islandGroundHash);
+  assert.match(H.hubGenRefusal(sc), /locked/);
+  assert.throws(() => H.hubUseIsland(sc, {}), /locked/, 'Use this island is refused while locked');
+  assert.throws(() => H.hubUseIsland({ w: 1 }, {}), /Not an island yet/);
+});
+
+test('Use this island: the generator’s ground, the locked zones as they were, props, people and look kept', () => {
+  const sc = testIsland();
+  sc.cam.orbit = { c: [1, 2], dead: 7, lag: 0.9, turn: 12 };
+  sc.props.push({ k: 'signpost', x: 2, z: 2 }); /* out at sea on any island round (60, 60) */
+  const before = structuredClone(sc),
+    town = sc.zones.find(Z => Z.k === 'town'),
+    { scene, notes } = islandGenerate(SMALL, 'dials', { scenery: GD.scenery }, sc);
+  assert.ok(Array.isArray(notes));
+  const { wet } = H.hubUseIsland(sc, scene);
+  assert.deepEqual(sc.tiles, scene.tiles);
+  assert.deepEqual(sc.heights, scene.heights);
+  assert.deepEqual(sc.island, scene.island);
+  assert.notEqual(sc.tiles, scene.tiles, 'copied, not shared with the draft');
+  assert.equal(sc.islandGen.seed, 'dials');
+  assert.equal(sc.islandGen.lock, undefined);
+  assert.deepEqual(
+    sc.zones.find(Z => Z.k === 'town'),
+    town,
+    'the locked town zone is the one the map had'
+  );
+  for (const k of ['name', 'kind', 'test', 'sky', 'haze', 'exits', 'checks', 'shots', 'props'])
+    assert.deepEqual(sc[k], before[k], k + ' kept');
+  assert.deepEqual(
+    sc.cam.orbit,
+    { c: scene.cam.orbit.c, dead: 7, lag: 0.9, turn: 12 },
+    'the pivot moves; the tuning stays'
+  );
+  assert.equal(sc.cam.pitch, before.cam.pitch);
+  assert.ok(
+    wet.some(p => p.k === 'signpost' && p.x === 2),
+    'the prop past the new coast is listed, left where it is'
+  );
+  for (const p of sc.props)
+    assert.equal(wet.includes(p), !islandPointIn(sc.island.coast, p.x, p.z), `${p.k} listed only when out at sea`);
+  /* the contract's problems are the generator's (these small dials make a forest zone that crosses itself; the
+     preview lists them), not this copy's: the map has exactly the draft's */
+  assert.deepEqual(islandProblems(sc), islandProblems(scene));
+  /* a field the new ground doesn't have goes (no plots on an island with no town) */
+  sc.plots = [{ k: 'house', x: 1, z: 1, w: 4, d: 4, a: 0, y: 0 }];
+  H.hubUseIsland(sc, scene);
+  assert.equal(sc.plots, undefined);
+});
+
+test('the walking checks: copperleaf (the hub island) walks; a summit out at sea is caught', () => {
+  /* the check is for a generator draft, which has no props: since IS-5 the hub's buildings and gardens stand on its
+     plots, so the island is checked as the generator made it */
+  const sc = Object.assign(isleMap(), { props: [] });
+  assert.deepEqual(H.hubGenWalkProblems(sc, GD.scenery), []);
+  const S = sc.spots.find(p => p.kind === 'summit');
+  S.x = 1;
+  S.z = 1;
+  assert.match(H.hubGenWalkProblems(sc, GD.scenery).join(), /the summit can't be walked to/);
+  assert.deepEqual(H.hubGenWalkProblems({ w: 1 }, GD.scenery), ['no hub to walk from']);
+});
+
+test('a draft’s figures: its size, the land, the coast walk and the plots', () => {
+  const sc = isleMap(),
+    s = H.hubGenStats(sc);
+  assert.equal(s.w, sc.w);
+  assert.ok(s.land[0] > 150 && s.land[0] < sc.w, `land ${s.land}`);
+  assert.ok(s.lap > 400 && s.lap < 700, `lap ${s.lap}`);
+  assert.equal(s.lapS, Math.round(s.lap / 3.4));
+  assert.equal(s.plots.well, 1);
+  assert.ok(s.plots.house > 3);
 });
