@@ -287,5 +287,5 @@
 /* RL-9: the ranch's sheet (ranch-screen.js) reuses storage's cards; a trainee's way to its next level spans the card */
 .ranch-card pb-stat-bar {
   align-self: stretch;
-  margin: 2px 4px 0;
+  margin: calc(var(--s1) / 2) var(--s1) 0;
 }
