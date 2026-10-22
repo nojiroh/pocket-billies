@@ -50,6 +50,7 @@ import {
 } from './hooks.js';
 import { clamp } from './util.js';
 import { pointInProp, turnedBounds, turnedPoint } from './logic/prop-turn.js';
+import { roomToLocal } from './logic/room-turn.js';
 import { stepCellsJoined, stepCornerHeight, stepGridCorners } from './logic/step-grid.js';
 import { orbitStickYaw, orbitWalkStep } from './logic/camera-orbit.js';
 import { frameStop } from './frame-scheduler.js';
@@ -2728,11 +2729,19 @@ export function navGrid() {
       a1 = R[0] + R[2] - 0.3,
       b0 = R[1] + 0.25,
       b1 = R[1] + R[3] - 0.3;
+    /* IS-5: a room turned with its door: its own metres (logic/room-turn.js), the margins kept to its near side */
+    const F = sc.roomFrame,
+      [c0, d0, cw, cd] = F ? F.rect : R,
+      c1 = c0 + cw,
+      d1 = d0 + cd;
     for (let j = 0; j < gh; j++)
       for (let i = 0; i < gw; i++) {
         const x = (i + 0.5) / N,
           z = (j + 0.5) / N;
-        if (x < a0 || x > a1 || z < b0 || z > b1) blk[j * gw + i] = 1;
+        if (F) {
+          const [u, v] = roomToLocal(F, x, z);
+          if (u < c0 + 0.3 || u > c1 - 0.3 || v < d0 + 0.25 || v > d1 - 0.3) blk[j * gw + i] = 1;
+        } else if (x < a0 || x > a1 || z < b0 || z > b1) blk[j * gw + i] = 1;
       }
   }
   /* alpha 0.2: in a joined view you walk in the place and where the next places meet it, not out into the countryside */

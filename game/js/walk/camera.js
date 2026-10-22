@@ -6,6 +6,7 @@
 import { expose } from '../test-globals.js';
 import { reducedMotion } from '../hooks.js';
 import { clamp } from '../util.js';
+import { roomToLocal, roomToWorld, roomYaw } from '../logic/room-turn.js';
 import { cameraRiseNeeded } from '../logic/camera-rise.js';
 import { orbitStart, orbitStep, wrapAngle } from '../logic/camera-orbit.js';
 import { BOB_M, walkView } from '../walk-view.js';
@@ -92,8 +93,25 @@ export function walkCamera(rw, rh, st, dt) {
     S.x = P.x;
     S.z = P.z;
   } else walkRenderer.orbit = null;
-  const baseYaw = O ? wrapAngle(walkRenderer.orbit.yaw) : 0,
-    bf = [Math.sin(baseYaw), Math.cos(baseYaw)];
+  /* IS-5: in a room turned with its door the base looks in through the door (logic/room-turn.js roomYaw). Going in
+     or out the base yaw eases the short way round over a moment instead of jumping (from the orbit's into the room's) */
+  const yaw0 = O ? wrapAngle(walkRenderer.orbit.yaw) : sc.room ? wrapAngle(roomYaw(sc.roomFrame)) : 0;
+  let baseYaw = yaw0;
+  {
+    const E = walkRenderer.baseEase;
+    const now = performance.now();
+    if (E && E.sc !== sc && !walkView.opt.instant && walkRenderer.camT && Math.abs(wrapAngle(yaw0 - E.yaw)) > 0.02)
+      walkRenderer.baseEase = { sc, from: E.yaw, t: 0, t0: now, yaw: E.yaw };
+    else if (!E || E.sc !== sc) walkRenderer.baseEase = { sc, from: yaw0, t: 1, t0: now, yaw: yaw0 };
+    const B = walkRenderer.baseEase;
+    if (B.t < 1) {
+      B.t = Math.min(1, (now - B.t0) / 700);
+      const e = B.t * B.t * (3 - 2 * B.t);
+      baseYaw = wrapAngle(B.from + wrapAngle(yaw0 - B.from) * e);
+    }
+    B.yaw = baseYaw;
+  }
+  const bf = [Math.sin(baseYaw), Math.cos(baseYaw)];
   walkRenderer.zoom += (walkRenderer.zoomT - walkRenderer.zoom) * Math.min(1, dt * 5);
   const vx = P.x - (walkRenderer.px ?? P.x),
     vz = P.z - (walkRenderer.pz ?? P.z);
@@ -174,11 +192,15 @@ export function walkCamera(rw, rh, st, dt) {
     tz = clamp(tz, 0, sc.h - 2) + ahead;
   }
   if (sc.room) {
-    const Rr = sc.roomRect || [0, 0, sc.w, sc.h],
+    /* IS-5: worked out in the room's own metres (a room turned with its door), then put back in the place's */
+    const F = sc.roomFrame,
+      Rr = (F && F.rect) || sc.roomRect || [0, 0, sc.w, sc.h],
       rx = Rr[0] + Rr[2] / 2,
-      rz = Rr[1] + Rr[3] * 0.55;
-    tx = rx + (P.x - rx) * 0.25;
-    tz = rz + (P.z - rz) * 0.15;
+      rz = Rr[1] + Rr[3] * 0.55,
+      Pl = roomToLocal(F, P.x, P.z),
+      Tw = roomToWorld(F, rx + (Pl[0] - rx) * 0.25, rz + (Pl[1] - rz) * 0.15);
+    tx = Tw[0];
+    tz = Tw[1];
   } /* v26: a room stays framed whole */
   if (st.focus) {
     tx = st.focus.x;

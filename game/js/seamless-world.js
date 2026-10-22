@@ -13,6 +13,14 @@ import { mapIdAt, provide } from './hooks.js';
 import { clamp } from './util.js';
 import { LOCATIONS, ROADS, ROADS_BY_NODE } from './game-data.js';
 import { mirroredTurn, turnedBounds } from './logic/prop-turn.js';
+import {
+  roomToLocal,
+  roomToWorld,
+  roomWorldRect,
+  turnCellArray,
+  turnHeightRows,
+  turnTileRows,
+} from './logic/room-turn.js';
 import { uiState } from './game-state.js';
 import { artLoad, hexToRgb } from './art.js';
 import {
@@ -82,6 +90,7 @@ expose({
   seamlessRoomId: [() => seamlessRoomId, v => (seamlessRoomId = v)],
   seamlessRoomMap: [() => seamlessRoomMap, v => (seamlessRoomMap = v)],
   seamlessRoomPlacement: [() => seamlessRoomPlacement, v => (seamlessRoomPlacement = v)],
+  seamlessRoomTurn: [() => seamlessRoomTurn, v => (seamlessRoomTurn = v)],
   seamlessRoomWindows: [() => seamlessRoomWindows, v => (seamlessRoomWindows = v)],
   seamlessSalt: [() => seamlessSalt, v => (seamlessSalt = v)],
   seamlessSeamOf: [() => seamlessSeamOf, v => (seamlessSeamOf = v)],
@@ -1300,14 +1309,27 @@ function seamlessRoomWindows(props, r0, R, C, BM, bp, ox, oz) {
     else props.splice(props.indexOf(q), 1);
   }
 }
-function seamlessRoomPlacement(B, R, door) {
+function seamlessRoomPlacement(B, R, door, turned) {
   const mid = door[2] ?? door[0];
   let ox = Math.round(mid - R.w / 2),
     oz = Math.round(door[1] - ((R.exits && R.exits[0]) || [0, 0.6])[1]);
   ox = clamp(ox, Math.ceil(door[0] - (R.w - 2.2)), Math.floor(door[0] - 2.2));
+  /* IS-5: a turned room is placed in its own metres; the place's edges don't line up with them */
+  if (turned) return [ox, oz];
   ox = clamp(ox, 0, Math.max(0, B.w - R.w));
   oz = clamp(oz, 0, Math.max(0, B.h - R.h));
   return [ox, oz];
+}
+/* IS-5: a door given as [x, z, the building's middle x] faces south; [x, z, middle x, q, middle z] faces the quarter q
+   (logic/room-turn.js). The room is made in its own metres, where its door is on the south side as always, then turned
+   about a point on whole metres by the door. Gives the frame and the door in the room's own metres. */
+function seamlessRoomTurn(door) {
+  const q = door[3] || 0;
+  if (!q) return { F: null, d: door };
+  const F = { q, p: [Math.round(door[0]), Math.round(door[1])], rect: [0, 0, 0, 0] },
+    a = roomToLocal(F, door[0], door[1]),
+    m = roomToLocal(F, door[2] ?? door[0], door[4] ?? door[1]);
+  return { F, d: [a[0], a[1], m[0]] };
 }
 export function seamlessRoomId(baseId, roomId, door) {
   return baseId + '#' + roomId + '@' + door.map(v => (+v).toFixed(1)).join(',');
@@ -1321,7 +1343,10 @@ export function seamlessRoomMap(baseId, roomId, door) {
     R = mapById(roomId);
   if (!B || !B.w || !R || !R.w) return null;
   const C = walkData().sc,
-    [ox, oz] = seamlessRoomPlacement(B, R, door),
+    T = seamlessRoomTurn(door),
+    qT = T.F ? T.F.q : 0,
+    dL = T.d /* the door in the room's own metres (the door itself when it faces south) */,
+    [ox, oz] = seamlessRoomPlacement(B, R, dL, !!qT),
     W = B.w,
     H = B.h;
   /* each building's room is its own: mirrored or not and a wall colour picked by where its door is (not your room, or a room set to stay as made) */
@@ -1331,7 +1356,7 @@ export function seamlessRoomMap(baseId, roomId, door) {
     mx = x => (mir ? R.w - x : x),
     WALLS = ['#E6CFA2', '#D9B79C', '#DCD2BC', '#E4D3B8', '#CBD6DC', '#E8CDBA', '#D8CCDC', '#D2DCC4'];
   /* the doorway, in the room's own metres: right where the building's door is */
-  const ex = clamp(door[0] - ox, 2.2, R.w - 2.2),
+  const ex = clamp(dL[0] - ox, 2.2, R.w - 2.2),
     gap = ROOM_GAP_BY_KIND[R.building] || ROOM_GAP_BY_KIND[R.room] || 2,
     fl = (() => {
       const n = {};
@@ -1352,11 +1377,15 @@ export function seamlessRoomMap(baseId, roomId, door) {
     }
     rt[R.h - 1 - lz] = out;
   }
+  /* IS-5: the room as it lies in the place: turned (on whole metres) when its door doesn't face south */
+  const FR = qT ? Object.assign(T.F, { rect: [ox, oz, R.w, R.h] }) : null,
+    [wx, wz, Fw, Fh] = FR ? roomWorldRect(FR) : [ox, oz, R.w, R.h],
+    rtW = turnTileRows(rt, R.w, R.h, qT);
   const tiles = (B.tiles || []).slice();
-  for (let lz = 0; lz < R.h; lz++) {
-    const j = H - 1 - (oz + lz),
+  for (let lz = 0; lz < Fh; lz++) {
+    const j = H - 1 - (wz + lz),
       row = tiles[j];
-    if (row != null) tiles[j] = row.slice(0, ox) + rt[R.h - 1 - lz] + row.slice(ox + R.w);
+    if (row != null) tiles[j] = row.slice(0, wx) + rtW[Fh - 1 - lz] + row.slice(wx + Fw);
   }
   /* heights: the floor lies flat at the door's height */
   const hv = (i, zc) => {
@@ -1365,13 +1394,14 @@ export function seamlessRoomMap(baseId, roomId, door) {
       return row ? (row[i] ?? 0) : 0;
     },
     fh = hv(clamp(Math.round(door[0]), 0, W), clamp(Math.round(door[1]), 0, H));
-  const heights = (B.heights || []).map(r => r.slice());
+  const heights = (B.heights || []).map(r => r.slice()),
+    RHW = qT && R.heights ? turnHeightRows(R.heights, R.w, R.h, qT) : R.heights;
   if (heights.length)
-    for (let zc = oz; zc <= oz + R.h; zc++) {
+    for (let zc = wz; zc <= wz + Fh; zc++) {
       const r = H - zc;
       if (!heights[r]) continue;
-      for (let i = ox; i <= ox + R.w; i++) {
-        const rh = R.heights ? (R.heights[R.h - (zc - oz)] || [])[i - ox] || 0 : 0;
+      for (let i = wx; i <= wx + Fw; i++) {
+        const rh = RHW ? (RHW[Fh - (zc - wz)] || [])[i - wx] || 0 : 0;
         heights[r][i] = +(fh + rh).toFixed(2);
       }
     }
@@ -1396,15 +1426,26 @@ export function seamlessRoomMap(baseId, roomId, door) {
     };
   for (let j = 0; j < ER.h; j++)
     for (let i = 0; i < ER.w; i++) {
-      const q = j * ER.w + i,
+      const c = j * ER.w + i,
         r = SR ? j * SR.w + (mir ? SR.w - 1 - i : i) : -1;
-      ER.H[q] = SR ? SR.H[r] : 0;
-      ER.M[q] = SR ? SR.M[r] : 0;
-      const jj = j + oz * 2,
-        ii = i + ox * 2;
-      if (jj < E.h && ii < E.w) {
-        E.H[jj * E.w + ii] = ER.H[q];
-        E.M[jj * E.w + ii] = ER.M[q];
+      ER.H[c] = SR ? SR.H[r] : 0;
+      ER.M[c] = SR ? SR.M[r] : 0;
+    }
+  /* IS-5: the floor's own step grid turned as the room lies in the place */
+  if (qT) {
+    ER.H = turnCellArray(ER.H, ER.w, ER.h, qT);
+    ER.M = turnCellArray(ER.M, ER.w, ER.h, qT);
+    ER.w = Fw * 2;
+    ER.h = Fh * 2;
+  }
+  for (let j = 0; j < ER.h; j++)
+    for (let i = 0; i < ER.w; i++) {
+      const c = j * ER.w + i,
+        jj = j + wz * 2,
+        ii = i + wx * 2;
+      if (jj < E.h && ii < E.w && jj >= 0 && ii >= 0) {
+        E.H[jj * E.w + ii] = ER.H[c];
+        E.M[jj * E.w + ii] = ER.M[c];
       }
     }
   const wallCol =
@@ -1413,20 +1454,29 @@ export function seamlessRoomMap(baseId, roomId, door) {
       : R.wallCol;
   const floor = Object.assign({}, R, {
     id: id + '|floor',
-    tiles: rt,
+    tiles: rtW,
     props: [],
     wallCol,
     steps: ER.s,
     stepm: ER.m0,
     stepsV: 1,
   });
+  if (qT) Object.assign(floor, { w: Fw, h: Fh, heights: RHW });
   STEP_GRID_CACHE.set(floor, ER);
   /* things: the place's, less what the room covers (and a strip in front of it, so nothing stands between you and the room), plus the room's */
   const x0 = ox - 0.6,
     x1 = ox + R.w + 0.6,
     z0 = oz - 3.2,
     z1 = oz + R.h + 0.6,
-    hits = (a0, b0, a1, b1) => a1 > x0 && a0 < x1 && b1 > z0 && b0 < z1;
+    hits = (a0, b0, a1, b1) => a1 > x0 && a0 < x1 && b1 > z0 && b0 < z1,
+    /* IS-5: a box in the place's metres, as a box in the room's own (a turned room) */
+    local = (a0, b0, a1, b1) => {
+      if (!FR) return [a0, b0, a1, b1];
+      const u = roomToLocal(FR, a0, b0),
+        v = roomToLocal(FR, a1, b1);
+      return [Math.min(u[0], v[0]), Math.min(u[1], v[1]), Math.max(u[0], v[0]), Math.max(u[1], v[1])];
+    },
+    hitsW = (a0, b0, a1, b1) => hits(...local(a0, b0, a1, b1));
   const props = [];
   for (const p of B.props || []) {
     const M = C.props[p.k],
@@ -1439,7 +1489,7 @@ export function seamlessRoomMap(baseId, roomId, door) {
       /* phase 09 batch 9: a turned building's turned footprint */
       [a0, b0, a1, b1] = turnedBounds(p, -(M.box[0] * s) / 2, -0.1, (M.box[0] * s) / 2, M.box[1] * s);
     }
-    if (hits(a0, b0, a1, b1)) continue;
+    if (hitsW(a0, b0, a1, b1)) continue;
     props.push(p);
   }
   const r0 = props.length;
@@ -1466,12 +1516,29 @@ export function seamlessRoomMap(baseId, roomId, door) {
       return (
         M &&
         M.box &&
-        Math.abs(p.z - door[1]) < 0.08 &&
-        Math.abs(p.x - (door[2] ?? door[0])) < (door[2] != null ? 0.08 : (M.box[0] * (p.s || 1)) / 2)
+        (qT
+          ? Math.hypot(p.x - door[2], p.z - door[4]) < 0.08
+          : Math.abs(p.z - door[1]) < 0.08 &&
+            Math.abs(p.x - (door[2] ?? door[0])) < (door[2] != null ? 0.08 : (M.box[0] * (p.s || 1)) / 2))
       );
     });
     if (bp) seamlessRoomWindows(props, r0, R, C, C.props[bp.k], bp, ox, oz);
   }
+  /* IS-5: the room's things, made in its own metres, as they lie in the place: turned with it (a picture turned is a
+     standee facing out of the door, toward the camera that looks in) */
+  if (FR)
+    for (let i = r0; i < props.length; i++) {
+      const p = props[i],
+        w = roomToWorld(FR, p.x, p.z);
+      props[i] = Object.assign({}, p, {
+        x: +w[0].toFixed(2),
+        z: +w[1].toFixed(2),
+        rot: ((p.rot || 0) + qT * 90) % 360,
+      });
+    }
+  const toW = (x, z) => (FR ? roomToWorld(FR, x, z).map(v => +v.toFixed(2)) : [x, z]),
+    WB = FR ? (([a, b, c, d]) => [a - 0.6, b - 0.6, a + c + 0.6, b + d + 0.6])([wx, wz, Fw, Fh]) : [x0, z0, x1, z1],
+    hitsB = (a0, b0, a1, b1) => (FR ? a1 > WB[0] && a0 < WB[2] && b1 > WB[1] && b0 < WB[3] : hits(a0, b0, a1, b1));
   sc = Object.assign({}, B, { tiles, heights, props, id, steps: E.s, stepm: E.m0, stepsV: 1 });
   STEP_GRID_CACHE.set(sc, E);
   for (const k of LOOK_KEYS) sc[k] = R[k];
@@ -1481,13 +1548,21 @@ export function seamlessRoomMap(baseId, roomId, door) {
     wallCol,
     keeper: R.keeper,
     folk: 0,
-    life: (B.life || []).filter(o => !o.area || o.area[2] < x0 || o.area[0] > x1 || o.area[3] < z0 || o.area[1] > z1),
-    hub: [ex + ox, (R.hub || [R.w / 2, 2.2])[1] + oz],
-    exits: [[ex + ox, Math.max(oz + 0.3, Math.min(oz + 1.2, door[1]))]],
+    life: (B.life || []).filter(
+      o =>
+        !o.area ||
+        (FR
+          ? !hitsB(o.area[0], o.area[1], o.area[2], o.area[3])
+          : o.area[2] < x0 || o.area[0] > x1 || o.area[3] < z0 || o.area[1] > z1)
+    ),
+    hub: toW(ex + ox, (R.hub || [R.w / 2, 2.2])[1] + oz),
+    exits: [toW(ex + ox, Math.max(oz + 0.3, Math.min(oz + 1.2, dL[1])))],
     roomGap: gap,
     /* the doorway exactly at the door, also front to back */ edgeExits: null,
-    npcSpots: (R.npcSpots || []).map(q => (Array.isArray(q) ? [mx(q[0]) + ox, q[1] + oz] : q)),
-    roomRect: [ox, oz, R.w, R.h],
+    npcSpots: (R.npcSpots || []).map(q => (Array.isArray(q) ? toW(mx(q[0]) + ox, q[1] + oz) : q)),
+    roomRect: [wx, wz, Fw, Fh],
+    /* IS-5: a room turned with its door (logic/room-turn.js); none for one facing south */
+    ...(FR ? { roomFrame: FR } : {}),
     roomOf: roomId,
     roomBase: baseId,
     roomDoor: [door[0], door[1]],
@@ -1496,7 +1571,7 @@ export function seamlessRoomMap(baseId, roomId, door) {
        the room's floor over it (roomScene) */
     groundOf: B,
     roomScene: floor,
-    arches: (B.arches || []).filter(o => !hits(o.x - 1, o.z - 1, o.x + 1, o.z + 1)),
+    arches: (B.arches || []).filter(o => !hitsB(o.x - 1, o.z - 1, o.x + 1, o.z + 1)),
     name: R.name,
   });
   seamlessWorld.cache.set(key, sc);

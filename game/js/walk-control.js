@@ -7,6 +7,7 @@ import { provide, render } from './hooks.js';
 import { $, clamp } from './util.js';
 import { LOCATIONS, PEOPLE, ROADS, ROADS_BY_NODE, RULES, SHOPS, gameData, trainersAt } from './game-data.js';
 import { blockerAt, canEnter, encounterBuild, encountersHere, gateText, healAll } from './logic/rules.js';
+import { roomTurnOf } from './logic/room-turn.js';
 import { runArrive, runMapNode } from './logic/run-map.js';
 import { startWild } from './logic/battle-engine.js';
 import { storyAllows } from './logic/script.js';
@@ -73,6 +74,7 @@ expose({
   roomAct: [() => roomAct, v => (roomAct = v)],
   roomAim: [() => roomAim, v => (roomAim = v)],
   roomFor: [() => roomFor, v => (roomFor = v)],
+  roomFrontOf: [() => roomFrontOf, v => (roomFrontOf = v)],
   roomLayIn: [() => roomLayIn, v => (roomLayIn = v)],
   roomRefresh: [() => roomRefresh, v => ((roomRefresh = v), provide({ roomRefresh }))],
   roomState: [() => roomState, v => ((roomState = v), provide({ roomState }))],
@@ -163,7 +165,7 @@ export function enterRoom(a, p) {
     Object.assign(info, lay);
     uiState.goingIn = info;
     const P = walkView.pl,
-      fr = [lay.door[0], lay.door[1] - 0.45];
+      fr = roomFrontOf(lay);
     if (Math.hypot(P.x - fr[0], P.z - fr[1]) > 1.6) walkTo(walkablePointNear(fr[0], fr[1]), () => roomStepIn(info));
     else roomStepIn(info);
     return true;
@@ -194,6 +196,9 @@ function roomLayIn(id, p, fresh) {
     +E.at[1].toFixed(1),
     +E.mid[0].toFixed(1),
   ]; /* the door, and the building's middle */
+  /* IS-5: a building turned to face east, north or west has its room turned with it: the quarter and the middle's z */
+  const q = roomTurnOf(p.rot);
+  if (q) door.push(q, +E.mid[1].toFixed(1));
   if (fresh)
     seamlessWorld.cache.delete(
       seamlessRoomId(walkView.id, id, door) + '|' + seamlessWorld.gen
@@ -221,10 +226,16 @@ function roomAim(h) {
     id = roomFor(h.act, q);
   if (id) roomLayIn(id, q);
 }
+/* where you stand to go in: just out of the door (IS-5: the way the building faces) */
+function roomFrontOf(I) {
+  const at = I.at || I.door,
+    out = I.out || [0, -1];
+  return I.door[3] ? [at[0] + out[0] * 0.45, at[1] + out[1] * 0.45] : [I.door[0], I.door[1] - 0.45];
+}
 function roomStepIn(info, n = 0) {
   if (uiState.goingIn !== info) return;
   const P = walkView.pl,
-    fr = [info.door[0], info.door[1] - 0.45];
+    fr = roomFrontOf(info);
   if (!P || walkView.id !== info.base || Math.hypot(P.x - fr[0], P.z - fr[1]) > 2.2) {
     uiState.goingIn = null;
     return;
@@ -352,7 +363,12 @@ export function roomState() {
     return null;
   }
   const dr = sc.roomDoor || I.door,
-    pos = walkView.id === I.view && walkView.pl ? [walkView.pl.x, walkView.pl.z] : [dr[0], dr[1] - 0.45];
+    pos =
+      walkView.id === I.view && walkView.pl
+        ? [walkView.pl.x, walkView.pl.z]
+        : I.door && I.door[3]
+          ? roomFrontOf(I)
+          : [dr[0], dr[1] - 0.45];
   return {
     id: I.view,
     node: saveData.trip.node,
