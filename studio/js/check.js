@@ -62,6 +62,11 @@ expose({
 /* eslint-enable no-func-assign */
 provide({ runCheck, scheduleCheck });
 /* to-module: end */
+/* Studio plan T1.3 (owner, 2026-10-22): an 'error' is what check-data (CI) fails on, and it blocks Propose; everything
+   else the Check finds is a 'warn' (shown, never blocking), however much the game has to work around it. An error here
+   matches one of check-data's rules: a schema (lines need names, a trainer a team), its references (moves, wild pool
+   and trainer species, a stop's map and pool, ground, props, the islands, the UI look's contrast, the story), or a
+   family of logic/data-checks.js */
 export function runCheck() {
   const D = studioState.D,
     P = [],
@@ -84,32 +89,32 @@ export function runCheck() {
     looksLegacy = id => typeof id === 'string' && /^[a-z]+\d+$/.test(id) && !D.lines.some(L => id.startsWith(L.id)),
     isLegacyRef = id => (legacyIds ? speciesKind(id) === 'legacy' : looksLegacy(id)),
     legacyRefs = {},
-    missingSp = (id, msg, go, sel) => {
-      if (!isLegacyRef(id)) return err(msg, go, sel);
+    missingSp = (id, msg, go, sel, lvl = err) => {
+      if (!isLegacyRef(id)) return lvl(msg, go, sel);
       (legacyRefs[go] = legacyRefs[go] || { go, sel, ids: new Set() }).ids.add(id);
     };
   if (!legacyIds)
     legacyLineIdsRead().then(ids => {
       if (ids) scheduleCheck();
     });
-  if (!D.types.length) err('There are no types.', 'types');
+  if (!D.types.length) warn('There are no types.', 'types');
   const tid = new Set();
   D.types.forEach(t => {
-    if (tid.has(t.id)) err(`Two types are called ${t.id}.`, 'types');
+    if (tid.has(t.id)) warn(`Two types are called ${t.id}.`, 'types');
     tid.add(t.id);
     [...t.strong, ...t.weak].forEach(x => {
       if (!types.has(x)) warn(`${t.id} lists unknown type ${x}.`, 'types');
     });
   });
   for (const [k, M] of Object.entries(moves)) {
-    if (M.t !== 'None' && !types.has(M.t)) err(`Move ${M.n} has unknown type ${M.t}.`, 'moves', { move: k });
+    if (M.t !== 'None' && !types.has(M.t)) warn(`Move ${M.n} has unknown type ${M.t}.`, 'moves', { move: k });
     if (M.c !== 'X' && !M.p && !(M.fx && M.fx.vary))
       warn(`Move ${M.n} does damage but has no power.`, 'moves', { move: k });
-    if (!M.n) err(`Move ${k} has no name.`, 'moves', { move: k });
+    if (!M.n) warn(`Move ${k} has no name.`, 'moves', { move: k });
   }
   const ids = new Set();
   D.lines.forEach(L => {
-    if (ids.has(L.id)) err(`Two Billie lines use the id ${L.id}.`, 'billionaires', { line: L.id });
+    if (ids.has(L.id)) warn(`Two Billie lines use the id ${L.id}.`, 'billionaires', { line: L.id });
     ids.add(L.id);
     const g = { line: L.id };
     if (!L.names.length) err(`Line ${L.id} has no stages.`, 'billionaires', g);
@@ -117,32 +122,32 @@ export function runCheck() {
       const id = L.id + i;
       if (!n) err(`${L.id} stage ${i + 1} has no name.`, 'billionaires', g);
       if (!studioState.rigs[id])
-        err(`${n || id} has no skeleton, so it can’t be drawn.`, 'billionaires', { line: L.id, stage: i });
+        warn(`${n || id} has no skeleton, so it can’t be drawn.`, 'billionaires', { line: L.id, stage: i });
       else
         ['front', 'back'].forEach(v => {
-          if (!studioState.rigs[id][v]) err(`${n} has no ${v} view.`, 'billionaires', { line: L.id, stage: i });
+          if (!studioState.rigs[id][v]) warn(`${n} has no ${v} view.`, 'billionaires', { line: L.id, stage: i });
         });
       ['front', 'back'].forEach(v => {
         const path = atlasPath(id, v);
         if (!studioState.artDirty.has(path) && !studioState.files.some(f => f.path === path))
-          err(`${n}: missing art file ${path}.`, 'billionaires', { line: L.id, stage: i });
+          warn(`${n}: missing art file ${path}.`, 'billionaires', { line: L.id, stage: i });
       });
       const ts = L.types[i] || [];
       if (!ts.length) warn(`${n} has no type.`, 'billionaires', g);
       ts.forEach(t => {
-        if (t !== 'None' && !types.has(t)) err(`${n} has unknown type ${t}.`, 'billionaires', g);
+        if (t !== 'None' && !types.has(t)) warn(`${n} has unknown type ${t}.`, 'billionaires', g);
       });
     });
-    if (!L.learn.length) err(`${L.names[0]} learns no moves.`, 'billionaires', g);
+    if (!L.learn.length) warn(`${L.names[0]} learns no moves.`, 'billionaires', g);
     L.learn.forEach(([lv, m]) => {
       if (!moves[m]) err(`${L.names[0]} learns a move that doesn’t exist (${m}).`, 'billionaires', g);
     });
     if (!L.learn.some(([lv]) => lv <= 1))
       warn(`${L.names[0]} learns nothing at level 1, so a fresh one may have only one move.`, 'billionaires', g);
-    if (!D.rarities[L.rar]) err(`${L.names[0]} has unknown rarity ${L.rar}.`, 'billionaires', g);
+    if (!D.rarities[L.rar]) warn(`${L.names[0]} has unknown rarity ${L.rar}.`, 'billionaires', g);
     (L.evo || []).slice(0, L.names.length - 1).forEach((e, i) => {
       if (e && e.k === 'item' && !items[e.item || 'bell'])
-        err(`${L.names[i]} evolves with an item that doesn’t exist.`, 'billionaires', g);
+        warn(`${L.names[i]} evolves with an item that doesn’t exist.`, 'billionaires', g);
     });
     if (L.prof && L.prof.length !== D.stats.length)
       err(`${L.names[0]}’s stat profile has the wrong number of stats.`, 'billionaires', g);
@@ -156,7 +161,8 @@ export function runCheck() {
   }
   for (const [k, Pl] of Object.entries(D.fishing || {})) {
     (Pl.list || []).forEach(([id]) => {
-      if (!sp.has(id)) missingSp(id, `Fishing in ${k} lists ${id}, which doesn’t exist.`, 'world', { wtab: 'fishing' });
+      if (!sp.has(id))
+        missingSp(id, `Fishing in ${k} lists ${id}, which doesn’t exist.`, 'world', { wtab: 'fishing' }, warn);
     });
   }
   /* phase 10, session 5: the world map's look (worldmap.json) and each place's landmark */
@@ -197,7 +203,7 @@ export function runCheck() {
   for (const [k, E] of Object.entries(D.eggs))
     E.list.forEach(([id]) => {
       if (!sp.has(id))
-        missingSp(id, `The ${E.need / 1000} km egg lists ${id}, which doesn’t exist.`, 'world', { wtab: 'eggs' });
+        missingSp(id, `The ${E.need / 1000} km egg lists ${id}, which doesn’t exist.`, 'world', { wtab: 'eggs' }, warn);
     });
   const seats = new Set(
     Object.values(D.trainers || {})
@@ -206,11 +212,11 @@ export function runCheck() {
   );
   D.locations.forEach((r, i) => {
     const g = { wtab: 'route', stop: i };
-    if (!D.pools[r.pool]) err(`${r.name} uses wild pool ${r.pool}, which doesn’t exist.`, 'world', g);
-    if (r.battleStage && !D.battleStages[r.battleStage]) err(`${r.name} uses an unknown battle backdrop.`, 'world', g);
-    if (r.shop && !(D.shops || {})[r.shop]) err(`${r.name} uses a shop that doesn’t exist.`, 'world', g);
+    if (!D.pools[r.pool]) (r.pool ? err : warn)(`${r.name} uses wild pool ${r.pool}, which doesn’t exist.`, 'world', g);
+    if (r.battleStage && !D.battleStages[r.battleStage]) warn(`${r.name} uses an unknown battle backdrop.`, 'world', g);
+    if (r.shop && !(D.shops || {})[r.shop]) warn(`${r.name} uses a shop that doesn’t exist.`, 'world', g);
     if (r.gate && !seats.has(r.gate))
-      err(`${r.name} is locked behind a badge nobody awards (${r.gate}). It could never open.`, 'world', g);
+      warn(`${r.name} is locked behind a badge nobody awards (${r.gate}). It could never open.`, 'world', g);
   });
   for (const [k, T] of Object.entries(D.trainers || {})) {
     const g = { trainer: k };
@@ -224,16 +230,17 @@ export function runCheck() {
     });
     if (!D.people[T.who]) warn(`${T.name} uses an unknown look.`, 'trainers', g);
     if (T.seat) {
-      for (const c in T.seat.coins || {}) if (!coins[c]) err(`${T.name}’s badge gives an unknown coin.`, 'trainers', g);
+      for (const c in T.seat.coins || {})
+        if (!coins[c]) warn(`${T.name}’s badge gives an unknown coin.`, 'trainers', g);
       for (const it in T.seat.items || {})
-        if (!items[it]) err(`${T.name}’s badge gives an unknown item.`, 'trainers', g);
+        if (!items[it]) warn(`${T.name}’s badge gives an unknown item.`, 'trainers', g);
     }
     if (T.egg && !D.eggs[T.egg]) warn(`${T.name} gives an egg size that doesn’t exist.`, 'trainers', g);
   }
   const seatIds = Object.values(D.trainers || {})
     .filter(T => T.seat)
     .map(T => T.seat.id);
-  if (new Set(seatIds).size !== seatIds.length) err('Two badges share an id.', 'trainers');
+  if (new Set(seatIds).size !== seatIds.length) warn('Two badges share an id.', 'trainers');
   /* v47: the lore: books on furniture, where clues lie, people's looks */
   {
     const LO = D.lore || {},
@@ -255,17 +262,17 @@ export function runCheck() {
   }
   for (const [k, s] of Object.entries(D.shops || {}))
     (s.stock || []).forEach(w => {
-      if (w.item && !items[w.item]) err(`${s.name} sells an item that doesn’t exist.`, 'shops', { shop: k });
-      if (w.coin && !coins[w.coin]) err(`${s.name} sells a coin that doesn’t exist.`, 'shops', { shop: k });
+      if (w.item && !items[w.item]) warn(`${s.name} sells an item that doesn’t exist.`, 'shops', { shop: k });
+      if (w.coin && !coins[w.coin]) warn(`${s.name} sells a coin that doesn’t exist.`, 'shops', { shop: k });
     });
   for (const [k, J] of Object.entries(D.jobs)) {
     const [kind, key] = J.out;
-    if (kind === 'item' && !items[key]) err(`Job ${J.n} pays an unknown item.`, 'jobs');
-    if (kind === 'coin' && !coins[key]) err(`Job ${J.n} pays an unknown coin.`, 'jobs');
+    if (kind === 'item' && !items[key]) warn(`Job ${J.n} pays an unknown item.`, 'jobs');
+    if (kind === 'coin' && !coins[key]) warn(`Job ${J.n} pays an unknown coin.`, 'jobs');
   }
   const R = D.rules;
   R.start.starters.forEach(l => {
-    if (!sp.has(l + '0')) err(`Starter ${l} doesn’t exist.`, 'rules');
+    if (!sp.has(l + '0')) warn(`Starter ${l} doesn’t exist.`, 'rules');
     if (!sp.has(R.start.rival[l])) warn(`The rival has no valid pick for starter ${l}.`, 'rules');
   });
   if (!sp.has(R.eggs.mythSpecies) && !isLegacyRef(R.eggs.mythSpecies))
@@ -280,7 +287,7 @@ export function runCheck() {
       warn(`Part sizes: the chances add up to ${Math.round(odds * 100)}%, not 100%.`, 'parts');
     if (Math.abs(share - 1) > 0.001)
       warn(`Part sizes: the weight shares add up to ${Math.round(share * 100)}%, not 100%.`, 'parts');
-    if (!PR.sizes || !PR.sizes.M) err('Part sizes: there is no normal size (M), so no Billie can be Prime.', 'parts');
+    if (!PR.sizes || !PR.sizes.M) warn('Part sizes: there is no normal size (M), so no Billie can be Prime.', 'parts');
     D.lines.forEach(L =>
       L.names.forEach((n, i) => {
         const meta = studioState.rigs[L.id + i] && studioState.rigs[L.id + i].front;
@@ -299,8 +306,8 @@ export function runCheck() {
   for (const it in R.start.items) if (!items[it]) warn(`Starting items include unknown ${it}.`, 'rules');
   if (R.battle.subpoenaMin > R.battle.subpoenaMax) warn('Sleep turns: least is above most.', 'rules');
   if (R.catching.offerMin > R.catching.offerMax) warn('Bargain: least is above most.', 'rules');
-  if (!types.has(R.battle.shockType)) err('The sandstorm type doesn’t exist.', 'rules');
-  if (!types.has(R.battle.spinType)) err('The Soak type doesn’t exist.', 'rules');
+  if (!types.has(R.battle.shockType)) warn('The sandstorm type doesn’t exist.', 'rules');
+  if (!types.has(R.battle.spinType)) warn('The Soak type doesn’t exist.', 'rules');
   /* T1.3: the scene and road checks are logic/data-checks.js's, so check-data (CI) runs them too */
   for (const f of [...dataSceneFindings(D, PB_DATA.road), ...dataRoadFindings(D, PB_DATA.road)])
     (f.lvl === 'error' ? err : warn)(f.msg, f.go, f.sel);
@@ -332,9 +339,9 @@ export function runCheck() {
       );
     }
   /* UI-3b: the UI rules (game/js/logic/ui-lint.js on the game's files), one line; Show me lists every value. UI-6: an
-     error when a rule is over its ceiling */
+     error when a rule is over its ceiling. T1.3: a warning, since it is the code's (npm run lint), not check-data's */
   const rules = uiRulesCheckLine();
-  if (rules) P.push({ lvl: rules.over ? 'error' : 'info', msg: rules.msg, go: 'ui', sel: { uiRules: 1 } });
+  if (rules) P.push({ lvl: rules.over ? 'warn' : 'info', msg: rules.msg, go: 'ui', sel: { uiRules: 1 } });
   /* Studio plan T1.3: check-data's own checks (logic/data-checks.js), in its words, file first. The UI look's family
      is left out: its Studio version is above, in the Studio's words. A family that stops on data in a shape it doesn't
      expect says so (check-data's schema check would refuse that data) */
@@ -436,7 +443,9 @@ SECTIONS.check = () => {
   afterRender(renderCheckList);
   afterRender(loadBackups);
   return `<div class="ed-col solo"><div class="ed-head"><h2>Check & backups</h2><div class="seg-row"><button class="btn" data-act="exportData">Download game data</button><button class="btn" data-act="importData">Load game data from a file</button><button class="btn" data-act="studioTest" title="Opens and edits every section, times the Studio’s own work and lists the slowest spots (about 90 s; nothing is saved)">Run the Studio test</button></div></div>
- ${card('Problems', `<ul class="checks" id="checkList"></ul>`, { sub: 'Problems are things the game will skip or patch over. Notes are worth a look.' })}
+ ${card('Problems', `<ul class="checks" id="checkList"></ul>`, {
+   sub: 'Problems fail the game data check every proposal must pass, so Propose waits until they are fixed. Notes are things the game works around: worth a look, never in the way.',
+ })}
  ${card('Backups', `<p class="help">Every save keeps the previous version in the backups folder. Restoring replaces the current file (which is backed up first). Reload the Studio afterwards.</p><div id="backupList">Loading…</div>`)}</div>`;
 };
 async function loadBackups() {

@@ -745,7 +745,8 @@ export function dataRobotProblems(D, R) {
 
 /* ---------- T1.3 step 5: the Studio's scene and road checks, here so check-data (CI) runs them too ----------
    In the Studio's words, with where Show me goes (go, sel) and a level: 'error' fails check-data and blocks Propose,
-   'warn' never does. They take `roadOf`, game/js/data-files.js PB_DATA.road (a link with its ends as stop numbers). */
+   'warn' never does. The owner's rule (2026-10-22): an error is only what check-data already refused (a schema, its
+   ground, prop, island and stop checks, logic/seam-rules.js); the rest of what the Studio found is a warning. They take `roadOf`, game/js/data-files.js PB_DATA.road (a link with its ends as stop numbers). */
 /** @typedef {{ lvl: 'error' | 'warn', where: string, msg: string, go?: string, sel?: object }} DataFinding */
 /** @typedef {(D: any, link: any) => any} DataRoadOf */
 /** the bytes a base64 text decodes to (the cliffs check, without decoding) @param {string} s */
@@ -778,13 +779,13 @@ export function dataSceneFindings(D, roadOf) {
     if ((kd === 'town' || kd === 'route') && !pl)
       warn(`${sc.name || k} is a ${kd} scene but no stop uses it.`, 'scenes');
     if (pl && pl.kind && pl.kind !== kd)
-      err(`${sc.name || k} is a ${kd} scene but its stop ${pl.name} is a ${pl.kind}.`, 'scenes');
+      warn(`${sc.name || k} is a ${kd} scene but its stop ${pl.name} is a ${pl.kind}.`, 'scenes');
     if (kd === 'room' && !sc.building)
       warn(`${sc.name || k} is a room but doesn’t say which building it’s the inside of.`, 'scenes');
   }
   locations.forEach((r, i) => {
     if (!['town', 'route'].includes(r.kind))
-      at('error', 'locations.json')(`Stop ${i + 1}, ${r.name}: doesn’t say whether it’s a town or a route.`, 'world');
+      at('warn', 'locations.json')(`Stop ${i + 1}, ${r.name}: doesn’t say whether it’s a town or a route.`, 'world');
   });
   /* v26: the rooms you walk into */
   for (const k of ['shop', 'clinic', 'lab', 'house'])
@@ -795,7 +796,7 @@ export function dataSceneFindings(D, roadOf) {
       );
   for (const [k, sc] of Object.entries(SCN))
     if (sc.room && sc.keeper && !String(sc.keeper).startsWith('folk:') && !people.has(sc.keeper))
-      at('error', `maps/${k}.json`)(
+      at('warn', `maps/${k}.json`)(
         `${sc.name || k}: the person behind the counter (${sc.keeper}) isn’t in People.`,
         'scenes'
       );
