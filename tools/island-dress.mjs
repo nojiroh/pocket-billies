@@ -71,7 +71,8 @@ const segDist = (x, z, a, b) => {
  * scenery: the game's scenery (props, terrains).
  * @param {any} sc
  * @param {any} scenery
- * @param {{ seed?: string }} [o]
+ * o.trees: the share of the forest's trees kept (0-1, default 1; the phone's draw calls: each tree is 4-5)
+ * @param {{ seed?: string, trees?: number }} [o]
  */
 export function islandDress(sc, scenery, o = {}) {
   const C = scenery.props,
@@ -268,7 +269,7 @@ export function islandDress(sc, scenery, o = {}) {
     if (!FOREST.includes(ch)) return;
     const inner = Math.min(1, toForestEdge[cellOf(x, z)] / 5),
       glade = noise(x, z, 9, 91) > 0.71;
-    if (glade || !rnd.chance(0.55 + 0.4 * inner)) return;
+    if (glade || !rnd.chance((0.55 + 0.4 * inner) * (o.trees ?? 1))) return;
     const y = groundAt(x, z),
       pool = y > 6 ? TREES_HIGH : y > 2.5 ? TREES_MID : TREES_LOW;
     put(rnd.pick(pool), x, z, rnd, { scale: [0.85, 1.2], gap: 0.7, slope: 0.7 });

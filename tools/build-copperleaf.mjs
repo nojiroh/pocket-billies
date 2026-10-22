@@ -535,10 +535,11 @@ sc.checks = (G.checks || []).map(c => {
 });
 /* IS-9: the dressing, last (tools/island-dress.mjs): the forest and its floor, the shore, the mountain, the heath and
    meadows; never the pasture or the barn's zone (IS-8's), the town, its plots, streets or doors. --no-dress leaves it
-   off */
+   off. Its dials are the input file's `dress` (trees: the share of the forest's trees kept, 0-1; each tree is 4-5 draw
+   calls on the phone) */
 let dressed = null;
 if (!process.argv.includes('--no-dress')) {
-  dressed = islandDress(sc, D.scenery);
+  dressed = islandDress(sc, D.scenery, TOWN.dress || {});
   sc.props = [...kept, ...dressed.props];
 }
 const bad = islandProblems(sc);

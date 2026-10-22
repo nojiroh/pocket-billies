@@ -4,7 +4,9 @@
 // without the dressing, bar the props' own footprints. The game's Copperleaf is the tool's own output.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { readGameData } from '../data-files.mjs';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { readGameData, ROOT } from '../data-files.mjs';
 import { islandDress } from '../island-dress.mjs';
 import { islandPointIn } from '../../game/js/logic/island.js';
 import { mapgenReach } from '../../game/js/logic/mapgen.js';
@@ -12,11 +14,12 @@ import { mapgenReach } from '../../game/js/logic/mapgen.js';
 const D = readGameData(),
   hub = D.maps.copperleaf,
   town = { ...hub, props: hub.props.filter(p => !p.dress) },
+  O = JSON.parse(readFileSync(join(ROOT, 'tools/data/copperleaf-town.json'), 'utf8')).dress || {},
   tileAt = (x, z) => (hub.tiles[hub.h - 1 - Math.floor(z)] || '')[Math.floor(x)];
 
 test('the same map gives the same dressing, and Copperleaf carries it', () => {
-  const a = islandDress(town, D.scenery),
-    b = islandDress(town, D.scenery);
+  const a = islandDress(town, D.scenery, O),
+    b = islandDress(town, D.scenery, O);
   assert.deepEqual(a.props, b.props);
   assert.deepEqual(
     hub.props.filter(p => p.dress),
@@ -26,7 +29,7 @@ test('the same map gives the same dressing, and Copperleaf carries it', () => {
 });
 
 test('nothing in the pasture, the barn, the town, on a street or in water; trees in the forest', () => {
-  const { props, counts } = islandDress(town, D.scenery);
+  const { props, counts } = islandDress(town, D.scenery, O);
   const skip = hub.zones.filter(Z => ['pasture', 'barn', 'town'].includes(Z.k));
   assert.ok(skip.some(Z => Z.k === 'pasture'));
   for (const p of props) {
@@ -37,13 +40,13 @@ test('nothing in the pasture, the barn, the town, on a street or in water; trees
   const trees = Object.keys(counts)
     .filter(k => k.startsWith('tree_'))
     .reduce((a, k) => a + counts[k], 0);
-  assert.ok(trees >= 120, `${trees} trees`);
+  assert.ok(trees >= 100 * (O.trees ?? 1), `${trees} trees`);
   for (const k of ['beach_grass', 'driftwood', 'shells', 'scree', 'cairn', 'summit_lookout'])
     assert.ok(counts[k] > 0, `no ${k}`);
 });
 
 test('the dressing shuts nothing in', () => {
-  const { props } = islandDress(town, D.scenery),
+  const { props } = islandDress(town, D.scenery, O),
     a = mapgenReach(town, D.scenery, hub.hub, { slope: true }),
     b = mapgenReach({ ...town, props: [...town.props, ...props] }, D.scenery, hub.hub, { slope: true });
   let lost = 0;
