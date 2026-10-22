@@ -17,6 +17,11 @@ kept aside in the browser).
   for the lab, the airship station, a shop, Juniper's home and the cottages. A hamlet sits round a green under the
   mountains and a farmhouse beside the barn and its pasture; a road runs all the way round (under three minutes'
   walk). No buildings stand on the plots yet, and Copperleaf itself is unchanged.
+- The orbit camera (island track IS-1): on the test island the camera stands out over the sea and looks in at the
+  island's middle, so walking round the coast turns it all the way round, smoothly and with no jump. Holding right
+  walks you round on the same circle. On the summit the camera holds still; your own turn (two fingers, Q/E) still
+  works on top, up to 30 degrees. Engine > Camera has "Orbit round an island" and, to compare, "Sun turns with the
+  camera" (off: the sun stays put in the world). Copperleaf is unchanged until it becomes the island.
 - The island track begins (IS-0): a test island in the debug menu's Test scenes (a cone of a mountain, a grass ring,
   beaches and the sea all round), the first step to Copperleaf becoming a real island you can walk round. Nothing
   changes in Copperleaf yet. The island will be the hub itself, with its own editor in the Studio and its ground

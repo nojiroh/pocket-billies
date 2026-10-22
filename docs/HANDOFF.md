@@ -107,6 +107,70 @@ mountain climbable, 9 the stream with a pond; 10 was answered before (reusable).
 - Next: IS-5 (needs IS-1 and IS-2) and IS-6b, IS-7 (need IS-2). Tag `is-2-done` is the owner's to push (after
   `is-0-done`).
 
+### Island track IS-1 - Orbit camera - 2026-10-22
+Branch `claude/is-1-orbit-camera`, from IS-0's `claude/new-session-3qlesh` (PR #119, not merged yet: the owner started
+wave 1 before `is-0-done`); the PR goes against main and shrinks once #119 merges. Ran beside IS-2, IS-3, IS-4 and IS-6a.
+Plan approved in Plan Mode; the owner's answers: question 2, the camera **holds still on the summit** (your own turn
+still works); question 3, the **sun stays put in the world**, with an Engine toggle to compare; the tree picture fix
+in sprites.js done here.
+- Changed (one cause per commit):
+  - **logic/camera-orbit.js** (pure, unit-tested; on the game and Studio pages, for IS-6a's "Walk the coast"):
+    `orbitYawAt` (the yaw that looks from you at `c`; 0 from the south, so the first view is today's), `orbitStart`,
+    `orbitStep` (the lag as a time constant of `lag` s; inside `dead` the target holds; the yaw kept unwrapped so the
+    easing always takes the short way past +/-180; trimmed back near 0 every 8 laps), `orbitStickYaw` (the joystick's
+    frame, below), `orbitWalkStep` (a step taken round the middle: the part across the radius moves you along your
+    circle), `wrapAngle`.
+  - **walk/camera.js**: `orbitOf(sc)`: the orbit applies outdoors, not in a room, not in the Studio's free camera,
+    with Engine > Camera > Orbit on. The base yaw is the orbit's and your turn (`walkRenderer.yaw`) is added on top,
+    limited to the map's `turn` (`cameraTurnLimit()`). No scene clamps on the target while orbiting. Four spots that
+    assumed a north view now use the base yaw (all equal to before at yaw 0, so every other map is unchanged): TR-3's
+    ground-ahead for the rise, the lean ahead of you (`rw > rh ? 2 : 1`), the swoop's offset, `landmarkTilt`. A new
+    scene, a cut (`camT` cleared, `opt.instant`) or a jump of over 8 m starts the orbit where it belongs.
+    `walkRenderer.orbit` holds the state. A turn kept from a map with a wider limit (Copperleaf's 35) is clamped to
+    the island's on arrival. The battle, cutscene and Studio cameras don't go through it.
+  - **walk-view.js** (joystick and keys): on an orbiting island the stick walks by `orbitStickYaw` (plus your turn)
+    and steps with `orbitWalkStep`; elsewhere it is unchanged (the camera's right).
+  - **sprites.js**: `landmarkTilt(P, sc, yaw = 0)`; a tree's crossing picture fades by `|sin yaw|`, not `|yaw|`.
+  - **Engine > Camera**: `orbit` (on) and `sunTurns` (off; on turns the sun with the camera in engine/light.js
+    `sunLight`).
+  - **Debug log**: the scene line's `orbit` (yaw, your turn, `hold` on the summit, `stickLocked`; degrees).
+  - **check-fast's island step**: 8 places round the coast (the camera looks at the middle within 0.06 rad and aims
+    within 4 m of you), the summit holds, the turn limit is 30 degrees, holding right goes an eighth of the way round
+    and stays within 1 m of its 44 m circle with no yaw jump.
+- Where the plan was wrong or short:
+  - **The walk drift fix needed more than "steer by the target yaw"**: a step straight along the tangent still adds
+    s^2/2r to the radius every frame (0.5 m a lap at 20 fps running, more on slow frames), and last frame's target is
+    stale by a frame. The stick reads the way to the middle from where you stand now, and the step goes round the
+    middle: a lap ends on its circle to 1e-13 m in Node (8, 20, 60 fps), 45.0 m of 45 in the browser.
+  - **Crossing the summit holding up** would bounce you at the dead zone's edge with any stick frame that follows
+    the orbit (the way to the middle flips half a turn as you step out the far side). So while the stick is held its
+    frame stays locked from the moment you are inside the dead zone until you let go. Leaving the summit northward
+    holding up, you keep walking north while the camera swings round behind you (lag 0.6 s); push again and up is
+    toward the middle.
+  - Shadows and culling needed nothing: both work from the camera's own view (screen rays, the frustum), not a
+    facing. The shadow map stops 6 m past the scene, where only sea is.
+  - The sun was already fixed in the world (Engine > Sun > angle); question 3's "fixed" option was free.
+- Verified: unit tests 577 (10 new); lint, typecheck, check:modules, format:check, check:data (143 files);
+  check-fast 22 of 22 (the island step 48 s with two browsers); smoke all fine. In a 390 x 760 page with full graphics
+  at 8 angles: the camera looks at the cone from every side, no page errors, TR-3's rise and rock fade 0 everywhere
+  on the ring; a full lap holding right (194 s of software drawing) ended at 45.0 m. Copperleaf's camera is unchanged
+  (no orbit; every changed spot is identical at yaw 0).
+- **Found for IS-3 (not fixed: water is IS-3's)**: from the west and east the far sea floats over the near ground.
+  The `flatFar` skirt (walk/ground-mesh.js ~775) is four quads of 4 corners each, and the world's bowl curve
+  (`curveY`, about 0.0012 x d^2 past 70 m from the scene's middle on test_island) lifts each corner by its own
+  distance. The west and east quads run 300 m long, so their inner edge at x 0 is lifted ~10 m (the corners at z -90
+  and 210) and the water sheet covers the sand and the ring up to ~20 m in. The north-facing camera never stood past
+  those edges, so it never showed. Fix: cut the skirt into a grid (e.g. 10 m cells) so the curve bends it like the
+  ground. From the south and north it looks right.
+- Risky:
+  - The stick's locked frame (above) is new behaviour; worth a feel on the phone at the summit.
+  - With "Sun turns with the camera" on, the shadow cache redraws every frame you turn (the sun moves): a
+    comparison setting, not for the phone's frame times.
+  - studio/index.html gained a script line next to camera-rise.js; IS-6a may add the same line (keep one when merging).
+  - Phone frame times at 8 angles are IS-9's; nothing here measured a phone.
+- Next: IS-3 (the sea skirt above), IS-6a can call `orbitStep`/`orbitStart` for "Walk the coast", IS-5 when IS-2
+  lands. Tag `is-1-done` is the owner's to push (after `is-0-done`).
+
 ### Island track IS-0 - Contract and test island - 2026-10-22
 Branch `claude/new-session-3qlesh`, from main a10bfc6 (PR #118). The owner's brief (docs/phases/island-track.md,
 uploaded in chat): Copperleaf becomes a real island, one map, an orbit camera. IS-0 runs first and alone so wave 1
