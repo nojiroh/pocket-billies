@@ -4,7 +4,8 @@
    home as Capital (logic/run-state.js payoutOf, its rows in the payout screen's words from logic/run-loop.js
    runPayoutRows), the Audit Seal a win adds, and on a loss the keep-one picker: one Billie of the party brings its run
    home (one from Copperleaf keeps what it learned, one caught on the run comes home); on a win everyone does (the
-   owner's answer). Everyone else from Copperleaf comes back as they left. "Fly home" ends the run (run.js runEndHome).
+   owner's answer). Everyone else from Copperleaf comes back as they left. RL-9b: on a win the bag goes home (no items
+   row), on a loss it is paid as Capital. "Fly home" ends the run (run.js runEndHome).
    Built from the run parts (js/ui-run-kit.js: pb-payout, pb-coin, pb-pick-card) in a sheet. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
@@ -59,7 +60,7 @@ function runPayoutOpen() {
     title: won ? 'You beat the run' : 'The run is over',
     cls: 'run-payout',
     lock: true,
-    html: `<p>${won ? 'The boss is down. The airship takes everyone home, with all they learned.' : 'The airship comes for you. What you found turns into Capital, for the Lab.'}</p><pb-payout rows="${escapeHtml(JSON.stringify(rows))}" total="${pay.capital}" total-label="Capital"></pb-payout>${pay.seals || pay.scrap ? `<p>${pay.scrap ? `<pb-coin kind="scrap" value="${pay.scrap}" label="Scrap, for the Ranch"></pb-coin> ` : ''}${pay.seals ? `<pb-coin kind="seals" value="${pay.seals}" label="Audit Seal"></pb-coin>` : ''}</p>` : ''}${cards}`,
+    html: `<p>${won ? 'The boss is down. The airship takes everyone home, with all they learned, and your bag goes into Copperleaf’s.' : 'The airship comes for you. What you found turns into Capital, for the Lab.'}</p><pb-payout rows="${escapeHtml(JSON.stringify(rows))}" total="${pay.capital}" total-label="Capital"></pb-payout>${pay.seals || pay.scrap ? `<p>${pay.scrap ? `<pb-coin kind="scrap" value="${pay.scrap}" label="Scrap, for the Ranch"></pb-coin> ` : ''}${pay.seals ? `<pb-coin kind="seals" value="${pay.seals}" label="Audit Seal"></pb-coin>` : ''}</p>` : ''}${cards}`,
     btns: [{ l: 'Fly home', c: 'gold', dis: !won && !saveData.team.some(m => m.uid === keep), f: runPayoutDone }],
     after: () => {
       const el = /** @type {any} */ (document.querySelector('#ov pb-payout'));

@@ -36,8 +36,9 @@ test('run fx: walking in heals by the share (rounded up), never past full HP, ne
   assert.equal(L.runArriveHeal(s.team, 0), 0, 'no share: nothing');
 });
 
-test('run fx: the payout with Stock Options and Write-off adds a Loopholes row; without them, as before', () => {
-  const end = { se: 1000, items: { taxbreak: 2 }, released: 1, cleared: 5, won: true },
+test('run fx: a lost run’s payout with Stock Options and Write-off adds a Loopholes row; without them, as before', () => {
+  /* a loss: RL-9b brings a win's items home, so they are paid (and Write-off counts) only on a loss */
+  const end = { se: 1000, items: { taxbreak: 2 }, released: 1, cleared: 5, won: false },
     price = () => 100,
     plain = S.payoutOf(end, RATES, price),
     same = S.payoutOf(end, E.fxPayoutRates(null, RATES), price);

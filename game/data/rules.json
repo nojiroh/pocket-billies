@@ -165,6 +165,8 @@
    "coins": {"penny":5},
    "items": {"taxbreak":2}
   },
+  "home": [1],
+  "pack": [5],
   "healCost": 60,
   "shop": {
    "always": ["coin:penny","taxbreak"],

@@ -472,6 +472,14 @@ debugLog.state = () => {
             held: typeof GAME.saveHeld === 'function' ? GAME.saveHeld() : null,
             party: GAME.saveData.team ? GAME.saveData.team.length : 0,
             money: GAME.saveData.se,
+            /* RL-9b: how many Billies came from home and how many things were packed (counts only) */
+            home: Array.isArray(run.home) ? run.home.length : null,
+            packed: run.pack
+              ? [run.pack.items, run.pack.coins].reduce(
+                  (a, r) => a + Object.values(r || {}).reduce((b, n) => b + (+n || 0), 0),
+                  0
+                )
+              : null,
             /* TR-2: the run's mods (dbg_mountains: the debug menu's mountains run), this place's mountains dial and
                its ground's triangles (the land and the step grid's walls; to weigh frame times against) */
             mods: (run.mods || []).slice(),

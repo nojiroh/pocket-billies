@@ -73,7 +73,7 @@
  },
  "writeoff": {
   "name": "Write-off",
-  "d": "At the payout, items count at their full price.",
+  "d": "If the run is lost, the payout counts your items at their full price.",
   "rarity": "rare",
   "fx": [
    {"kind":"payout","what":"itemShare","mult":2}

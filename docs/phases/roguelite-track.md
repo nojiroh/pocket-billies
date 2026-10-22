@@ -158,6 +158,18 @@ ranch's sheet shows storage and the Team tab keeps it. Rooms were made a little 
 and 16 x 11 m). A `runEnd` trap for RL-9b: a kept Billie that travelled from storage isn't in the restored team and
 would be pushed in twice.
 
+**Corrected in RL-9b (2026-10-22).** Before RL-9b the whole hub team travelled and the run's bag was only the rules'
+gift. The trap above was real and had two more faces: `runReleasePays` and the payout's cards called a Billie "from
+Copperleaf" by `run.start.team`, so one from storage would have been paid as caught on the run if released; and
+`saveData.buddy` was not a run field, so with one traveller the hub's buddy wasn't on the run. Built: `rules.run.home`
+[1] and `run.pack` [5] by Bracket; `runBegin` takes `home` (uids from the team or storage) and `pack` (taken from the
+hub's bag, so `run.start` keeps what stays home); `run.home`, `run.pack`, the buddy a run field; `runEnd` puts a kept
+Billie back where it lives (team or storage) and, on a win, the run's items and coins into the hub's bag, which then
+pay no Capital. The owner's answers: items and coins pack, 5 in all, on top of the gift; a win's bag goes home unpaid;
+the pick from the team or storage (a trainee stops, healed); the run fixture follows the rule (its lead alone). The
+sim (`--team`, `--pack`): one Lv 5 starter loses on the landing in 31 of 50 runs, as on main; packing 5 Potions
+changes little (balance is for the owner's play).
+
 **Changed in the TR-2 session (2026-10-21, the owner: "runs should go from east to west").** A run scene is entered
 by its east side and left ahead by its west: `east`/`east2` back, `west`/`west2` ahead (logic/run-scenes.js
 runSceneExits; runExits' `ahead`/`back`, renamed from north/south). Two links a side sit 10 m and 54 m along the 64 m
@@ -691,8 +703,9 @@ cut first if time is short), store and keep (the box behind it), train (Scrap + 
 `logic/ranch.js`, `ranch.js`, `scenery.json` props, `buildings.json` stub, `self-test.js` (ranch step),
 `check-quick.py` (edit-and-reload step, TESTING.md phase 12). Tests: `ranch.test.mjs`. Could break: team/box screens.
 2 sessions. First half done 2026-10-22 (HANDOFF; section 0 for what changed): the barn and its sheet (`ranch-screen.js`),
-`logic/ranch.js`, `rules.ranch`, Scrap from the payout, the fixture, check-fast and in-game steps. RL-9b: the mast's
-pick of 1 home Billie and the packed bag (8.2).
+`logic/ranch.js`, `rules.ranch`, Scrap from the payout, the fixture, check-fast and in-game steps. RL-9b done
+2026-10-22: the mast's pick of 1 home Billie and the packed bag (8.2), the storage trap in `runEnd`, the bag home on a
+win, the sim's policy, check-fast's "Packing for a run".
 
 **RL-10 Ranch B.** Breeding safe/risky with abominations, hatching on ranch time, passive income with cap, rollback
 guard, offline, the cloud `t` anchor and its rule. Files: `logic/breeding.js`, `logic/ranch.js`, `logic/rules.js`
@@ -801,7 +814,9 @@ Decided this session: the rework is a track RL-N (`rl-N-done`); parked phases ar
    clash) / `run` after renaming the story layer's `runBase/saveDuringRun/storyRun` / `voyage`. Player word "run".
 2. **Keep-one vs ranch levels:** option 3 in section 3 (recommended) / ranch Billies never at risk with a per-tier cap /
    everything at risk, the ranch only trains. **Answered in RL-9: option 3 with 1 home Billie a run at Bracket I**, and
-   a bag packed at the mast (a limited number of items) from Copperleaf's bag (RL-9b).
+   a bag packed at the mast (a limited number of items) from Copperleaf's bag (RL-9b). **RL-9b:** 5 items and coins in
+   all on top of the gift; the home Billie from the team or storage; on a win the run's bag goes home and is not paid,
+   on a loss it is paid as Capital.
 3. **Hub extent:** Copperleaf alone with the south exit removed (recommended) / Copperleaf + Hedgerow Lane as a practice
    route / the exit kept behind a fence (check-data needs a `closed` exit).
 4. **Legacy parking:** move under `game/data/legacy/` with a read-only Studio group (recommended) / a `world: 'legacy'`

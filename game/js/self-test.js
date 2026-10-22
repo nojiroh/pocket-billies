@@ -950,10 +950,10 @@ async function runFullTest(mode) {
         150
       );
     /* RL-8: a run from the mast to the payout, on a copy of the save (nothing is written while the test runs): a short
-       run (5 rows) taken off from Copperleaf, the airship's flight to the landing, a wild battle there, "Go there" to
-       the town (a paid heal; RL-12: its shop's Loophole bought), the mini-boss (beaten: a Loophole picked), to the
-       boss (an Alpha, its battle carrying the Loopholes) and its payout, then home: Copperleaf without the run. Then
-       the save as it was */
+       run (5 rows) taken off from Copperleaf (RL-9b: one Billie from home, the hub's team left as it was), the
+       airship's flight to the landing, a wild battle there, "Go there" to the town (a paid heal; RL-12: its shop's
+       Loophole bought), the mini-boss (beaten: a Loophole picked), to the boss (an Alpha, its battle carrying the
+       Loopholes) and its payout, then home: Copperleaf without the run. Then the save as it was */
     if (typeof runTakeOff === 'function' && !selfTest.stop)
       await phase(
         'A run: airship, nodes, payout',
@@ -985,9 +985,18 @@ async function runFullTest(mode) {
             });
             setSaveData(s);
             render();
+            const hubTeam = saveData.team.map(m => m.uid).join();
             runTakeOff('SELFTESTRUN8', { rows: 5, minibosses: 1 });
             if (!saveData.run || !(await wait(() => airshipFlight.on, 5000)))
               throw new Error('the run didn’t take off');
+            /* RL-9b: one Billie from home at Bracket I; the hub's team waits in Copperleaf as it was */
+            if (
+              saveData.team.length !== RULES.run.home[0] ||
+              saveData.run.start.team.map(m => m.uid).join() !== hubTeam
+            )
+              throw new Error(
+                `took off with ${saveData.team.length} Billies, the hub's team ${hubTeam ? 'changed' : 'empty'}`
+              );
             const made = [runWorld.scenes, runWorld.ms],
               t0 = performance.now();
             if (!(await wait(() => !airshipFlight.on && saveData.run.at.phase === 'walk', 20000)))
