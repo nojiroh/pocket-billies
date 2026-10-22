@@ -126,8 +126,8 @@
   "title": {
    "bpm": 92,
    "key": 62,
-   "scale": "major",
-   "prog": [0,4,5,3,0,4,1,4],
+   "scale": "mixo",
+   "prog": [0,6,3,0,0,6,3,6],
    "lead": "p25",
    "bass": "long",
    "arp": "updown",
@@ -135,7 +135,9 @@
    "extra": true,
    "night": false,
    "seed": 7,
-   "echo": 0.35
+   "echo": 0.35,
+   "hookName": "placeholder: the motif, I-bVII-I (Claude's draft)",
+   "hook": [[0,74,3],[3,81,3],[6,79,2],[8,78,4],[12,76,2],[14,72,2],[16,76,4],[20,72,4],[24,74,8]]
   },
   "fall": {
    "bpm": 72,
@@ -277,6 +279,10 @@
   },
   "hatch": {
    "notes": [[76,2],[79,2],[84,4]]
+  },
+  "motif": {
+   "name": "placeholder: the motif's first bar, home on D (Claude's draft)",
+   "notes": [[74,3],[81,3],[79,2],[78,4],[76,2],[72,2],[74,8]]
   }
  },
  "cries": {
