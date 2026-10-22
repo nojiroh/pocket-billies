@@ -188,7 +188,7 @@ Sources: [pret/pokeemerald](https://github.com/pret/pokeemerald) (map data, deco
 | TR-2a | (done, TR-2 session) Mountains as the border: the `mountains` (0-1, up to 20 m) and `massif` (sides) dials, ridged noise plus domain warp under a massif mask, its own `relief` seed; steep ground as step-grid shelves and cliffs; kept off the road, hub, exits and water; the Studio dials; the debug menu's mountains run for the phone measurement. | sweep of random dial sets reaching every exit (with the slope rule); seams of a mountains run; phone frame time (owner) |
 | TR-2b | (done, TR-2 session) Mountain trails (the owner: walkable to 15 m+, open routes): a footpath from the road up each massif to its summit, searched so it stays walkable (switchbacks), stairs where steep, ramps where gentle, a flat summit pocket as a marked spot; tiers and stairs where the land steps near the road. | sweep: every exit and every summit reached with the slope rule; seams; picture notes |
 | TR-2c | (ledges, stairs, no-trap check and pockets done in the TR-2 session; the rest left) Gen 3 route layout, part 2: generated ledges (moved from TR-5: short runs, loops, one-way in the reach check, hop arc and dust puff); tall grass as 3-6 patches across the path; the road pathfinder through tiers and the massif; the four mountain route types (valley floor, pass, ledge path, gorge with a rope bridge) as recipes of these parts. | unreachable check counting ledges one way; grass on the way north; sweep; phone frame time |
-| TR-3 | Camera for tall ground: rock fade, camera rise on tall ground, player silhouette. | visual check steps, smoke |
+| TR-3 | (done, TR-3 session, branch `terrain-generation`) Camera for tall ground: rock fade, camera rise on tall ground, player silhouette; the near shadow map at your height. | visual check steps, smoke |
 | TR-4 | Look: painting by height and steepness (rock, snow line per biome, scree, grass lip), strata bands on cliff faces per biome. | picture notes, smoke |
 | TR-5 | Terraces that follow the contours of the land (the old "rise toward the back" kept as a dial), edge styles. (Generated ledges moved to TR-2c.) | unit tests |
 | TR-6 | Cliff extras: climbable vines (ladders converted or retired), cave/mine entrances as room doors, waterfalls off terrace edges. | unit tests, room door check |
@@ -255,3 +255,24 @@ So TR-2b becomes: **mountain trails** (a footpath from the road up each massif t
 keeps it walkable so it winds in switchbacks; stairs where it is steep, a ramp where it is gentle; a flat summit
 pocket as a marked spot), plus tiers and stairs near the road where the land steps. TR-2c keeps ledges, grass patches,
 the main-road pathfinder and the four mountain route types.
+
+## TR-3 as built (2026-10-22, branch `terrain-generation`)
+- **Camera rise** (walk/camera.js, logic/camera-rise.js `cameraRiseNeeded`): the line from the eye to your head is
+  tested against the standing height (land plus step raise) at ten points 1.2-27 m back along the camera's turn; the
+  extra tilt that clears it by 0.4 m, capped by Engine > Camera > `rise` (18 degrees), eased (quick up, slow down); the
+  camera comes up to 15% closer. The old `upT` (up to 9 degrees for ground rising behind you) stays. At the foot of a
+  massif 3-14 m away no tilt can clear 17 m of rock (it would need about 80 degrees): there the fade and silhouette do
+  the work.
+- **Rock fade** (walk-shaders.js `ROCK_GLSL`, draw-common.js `setRockUniforms` from `useWalkProgram`): one snippet in
+  the ground (smooth slopes and walls), sprites, grass, water, waterfalls, solid props and trees, voxel props and
+  low-poly models (buildings keep their own fade): nearer the camera than you, 0.5 m above your feet, in a soft circle
+  on screen, dithered up to 80%. On only while ground cuts the line (camera `rockK`), so flat places draw as before
+  (checked: no walkable cell of Copperleaf or of a normal run's landing turns it on).
+- **Silhouette** (sprites.js `drawPlayerSilhouette`): the player's picture again after the structures, depth GREATER, no
+  depth writes, pulled 0.6 m toward the eye along each corner's own line of sight (the same pixels; the ground at your
+  feet doesn't count), a dark blue tint over 55% of its pixels.
+- **Shadows**: the near shadow map is centred at your height in whole metres (engine/light.js `beginSunShadow` cy).
+  The far map (and its cache) and the mist at an absolute height (lighting.js) are unchanged.
+- Corrections to the facts above: walls are not a separate index block of the ground mesh (only the `aWall`
+  attribute marks them; the fade works per pixel, so it needs none). The debug log's `mountains` read the drawn
+  scene's `gen`, which it doesn't have (always 0); fixed.

@@ -350,8 +350,9 @@ export function setLightUniforms(p, X) {
     gl.uniform1i(U.uNAO, X.ao.length);
   }
 }
-/* a sun shadow map covering a rectangle of the world; returns what lightContext needs */
-export function beginSunShadow(cx, cz, radius, sun, res, name = 'shadow') {
+/* a sun shadow map covering a rectangle of the world; returns what lightContext needs. Terrain TR-3: centred at height
+   cy (the near map: your standing height in whole metres), so on tall ground the square still holds you */
+export function beginSunShadow(cx, cz, radius, sun, res, name = 'shadow', cy = 0) {
   const gl = gpuState.gl,
     S = renderTarget(name, res, res, { depthOnly: true }),
     tr = sun.travel,
@@ -363,8 +364,8 @@ export function beginSunShadow(cx, cz, radius, sun, res, name = 'shadow') {
       rt = normalize3(cross3(f, upR)),
       up = cross3(rt, f),
       tw = (2 * radius) / res,
-      a = cx * rt[0] + cz * rt[2],
-      b = cx * up[0] + cz * up[2],
+      a = cx * rt[0] + cy * rt[1] + cz * rt[2],
+      b = cx * up[0] + cy * up[1] + cz * up[2],
       da = Math.round(a / tw) * tw - a,
       db = Math.round(b / tw) * tw - b;
     const dx = rt[0] * da + up[0] * db,
@@ -374,8 +375,8 @@ export function beginSunShadow(cx, cz, radius, sun, res, name = 'shadow') {
     cx += dx + f[0] * t;
     cz += dz + f[2] * t;
   }
-  const eye = [cx - tr[0] * dist, -tr[1] * dist + 2, cz - tr[2] * dist];
-  const view = matrix4.look(eye, [cx, 0, cz], Math.abs(tr[1]) > 0.98 ? [0, 0, 1] : [0, 1, 0]),
+  const eye = [cx - tr[0] * dist, cy - tr[1] * dist + 2, cz - tr[2] * dist];
+  const view = matrix4.look(eye, [cx, cy, cz], Math.abs(tr[1]) > 0.98 ? [0, 0, 1] : [0, 1, 0]),
     depth = 140,
     proj = matrix4.ortho(-radius, radius, -radius, radius, 1, depth),
     vp = matrix4.mul(proj, view);
@@ -393,7 +394,7 @@ export function beginSunShadow(cx, cz, radius, sun, res, name = 'shadow') {
   /* penumbra in texels per unit of depth gap: wider for a softer (or lower) sun */
   const texelWorld = (2 * radius) / res,
     pen = (depth * 0.03 * engineSetting('shadows', 'softness')) / texelWorld;
-  return { d: S.d, vp, size: res, pen, radius, cx, cz };
+  return { d: S.d, vp, size: res, pen, radius, cx, cy, cz };
 }
 /* v43: a lamp's shadow map: a wide-angled camera at the lamp looking straight down; what stands under the lamp throws
    its shadow outward on the ground. Perspective, so the texel is finest right under the lamp. */

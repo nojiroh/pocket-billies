@@ -116,10 +116,11 @@ export function runSceneParams(run, i, scenes, data) {
   return {
     ...dials,
     /* TR-2: the debug menu's mountains run (a mod on the run, so a reload makes the same scenes): every place gets
-       the tallest mountains on its north side (the back: a run goes east to west), with trails, and terraces whose
-       fronts are ledges (TR-2c), for measuring them on a phone and playing the route's shape */
+       the tallest mountains on its north and south sides (the back and the camera's side: a run goes east to west;
+       south since TR-3's camera), with trails, and terraces whose fronts are ledges (TR-2c), for measuring them on a
+       phone and playing the route's shape */
     ...((run.mods || []).includes(RUN_MOD_MOUNTAINS)
-      ? { land: { ...(dials.land || {}), mountains: 1, massif: 'N', terraces: 0.7, cliffs: 0.45, ledges: 1 } }
+      ? { land: { ...(dials.land || {}), mountains: 1, massif: 'NS', terraces: 0.7, cliffs: 0.45, ledges: 1 } }
       : {}),
     /* RL-8: the buildings a node's type needs, beside the main road near its middle (mapgen's props dials: MG-2) */
     props: { ...(dials.props || {}), ...(RUN_BUILDINGS[node.type] || {}) },

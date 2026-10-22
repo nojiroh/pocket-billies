@@ -85,7 +85,7 @@ import { drawSky } from './walk/sky.js';
 import { drawRoomFront } from './walk/rooms.js';
 import { drawWater, reflectionPass } from './walk/water.js';
 import { gatherFrameItems } from './walk/frame-items.js';
-import { drawBoxFaces, drawSprites } from './walk/sprites.js';
+import { drawBoxFaces, drawPlayerSilhouette, drawSprites } from './walk/sprites.js';
 import { battleCamera, cutsceneCamera, screenRay, walkCamera } from './walk/camera.js';
 import { mapSun, walkLightContext } from './walk/lighting.js';
 import { lampShadowMaps, shadowPass } from './walk/shadows.js';
@@ -495,6 +495,8 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   if (typeof drawBuildings === 'function') drawBuildings(C, X, items, walkRenderer.bfade);
   gpuPass('structures');
   if (typeof drawStructures === 'function') drawStructures(C, X);
+  gpuPass('silhouette');
+  drawPlayerSilhouette(C, items, X);
   gpuPass('water');
   gatherFountainBasins(items);
   if (walkRenderer.water || walkRenderer.basin) drawWater(C, X, rw, rh);

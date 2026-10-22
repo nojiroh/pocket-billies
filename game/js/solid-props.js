@@ -28,6 +28,7 @@ import {
   imageTexture,
 } from './engine/webgl.js';
 import { walkRenderer } from './walk/walk-state.js';
+import { ROCK_GLSL } from './walk/walk-shaders.js';
 import { useWalkProgram, worldCurveArgs } from './walk/draw-common.js';
 import { frameBudgetLeft } from './walk/quality-cull.js';
 import { foliageAmount, setPropLookUniforms } from './walk/prop-look.js';
@@ -1104,11 +1105,11 @@ export const SOLID_PROP_SHADERS = {
 precision highp float;${COMMON_GLSL}${SOLID_PROP_VERTEX_GLSL}out vec3 vW;out vec3 vN;out vec2 vUV;out float vFace;out float vId;
 void main(){vec3 n;vec3 p=p3dPos(n);vW=p;vN=n;vUV=qUV;vFace=qFace;vId=qId;gl_Position=uVP*vec4(p,1.);}`,
     `#version 300 es
-precision highp float;in vec3 vW;in vec3 vN;in vec2 vUV;in float vFace;in float vId;out vec4 o;uniform sampler2D uTex,uNrm;uniform float uFade,uFlip,uEmit,uRim,uClump,uRot;uniform vec4 uMat;uniform vec3 uBaseP,uVar;uniform vec4 uDet;${LIGHT_GLSL}${LOOK_GLSL}
+precision highp float;in vec3 vW;in vec3 vN;in vec2 vUV;in float vFace;in float vId;out vec4 o;uniform sampler2D uTex,uNrm;uniform float uFade,uFlip,uEmit,uRim,uClump,uRot;uniform vec4 uMat;uniform vec3 uBaseP,uVar;uniform vec4 uDet;${LIGHT_GLSL}${LOOK_GLSL}${ROCK_GLSL}
 float bay(vec2 p){ivec2 i=ivec2(mod(p,4.));int b[16]=int[16](0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5);return (float(b[i.y*4+i.x])+.5)/16.;}
 void main(){vec4 c=(vFace>.5&&uClump<.5)?texture(uTex,vUV):textureLod(uTex,vUV,0.);if(c.a<.5)discard;
  if(uClump>.5){float id=floor(c.a*255.+.5)-128.;if(vId<-.5){if(id<.5)discard;}else if(abs(id-vId)>.5)discard;}
- if(uFade<.99&&bay(gl_FragCoord.xy)>uFade)discard;c.rgb*=uVar;
+ if(uFade<.99&&bay(gl_FragCoord.xy)>uFade)discard;if(rockHides(vW))discard;c.rgb*=uVar;
  vec3 n=normalize(vN);if(vFace>.5){vec3 nn=texture(uNrm,vUV).xyz*2.-1.;float sx=vFace>1.5&&vFace<2.5?-1.:1.;vec3 t=vec3(nn.x*uFlip*sx,-nn.y,0.);t.xz=vec2(t.x*cos(uRot)-t.z*sin(uRot),t.x*sin(uRot)+t.z*cos(uRot));n=normalize(n*max(nn.z,.35)+t*.7);}
  float hy=vW.y-uBaseP.y;c.rgb=lookOn(c.rgb,floor(vUV*vec2(textureSize(uTex,0))),clamp(hy/2.5,0.,1.),uBaseP);
  /* v32: surface detail by material, in the picture's own pixel size. The sides, tops and backs a solid prop grows

@@ -9,6 +9,13 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- The camera on tall ground (terrain TR-3): when a mountain or a cliff stands between the camera and you, the camera
+  tilts down further to look over it (up to 18 degrees more), the rock, trees and water in the way thin out in a
+  circle round you, and where something still hides you your shape shows through it as a blue silhouette. On flat
+  ground nothing changes. Each can be switched off (Engine > Camera: "Rise on tall ground", "Rock fades in front of
+  you", "Your silhouette through rock"). Shadows near you now follow you up a mountain. The debug menu's mountains run
+  now has mountains on both sides (north and south), and the debug log says how far the camera has risen; it also
+  said 0 for a place's mountains on every run, now fixed.
 - The game always runs the latest version: after an update it loads the new one by itself (when you come back to
   it, or within ten minutes), saving first and waiting until a battle, cutscene, flight or window is over; it never
   mixes files of two versions.
