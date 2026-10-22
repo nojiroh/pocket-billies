@@ -20,6 +20,7 @@ import {
   environmentOdds,
   jingle,
   provide,
+  ranchStop,
   render,
   runNodeSeed,
   runWeather,
@@ -587,9 +588,11 @@ export function toBox(m) {
   m.boxedAt = Date.now();
   return true;
 }
-/** bring a Billie from storage onto the team (false during a run) */
+/** bring a Billie from storage onto the team (false during a run); one training at the ranch collects what it banked
+    and stops (RL-9) */
 export function toTeam(m) {
   if (saveData.run) return false;
+  if (RULES.ranch && saveData.ranch) ranchStop(saveData, m.uid, Date.now(), RULES.ranch, toast);
   const i = saveData.box.indexOf(m);
   if (i >= 0) saveData.box.splice(i, 1);
   if (!saveData.team.includes(m)) saveData.team.push(m);

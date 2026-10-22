@@ -26,6 +26,7 @@ import { isRobot, robotGemDef, robotPartDef, robotRules, speciesOf } from './fig
 import { cleanName, movesAt, refreshRobot, teamSize } from './rules.js';
 import { metaFill, newMeta, validMeta } from './meta-state.js';
 import { newRanch, ranchFill, validRanch } from './ranch-state.js';
+import { ranchTidy } from './ranch.js';
 import { runNodeCount, runRestore, validRun } from './run-state.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -161,6 +162,8 @@ export function migrate(o) {
   if (!s.wild || typeof s.wild !== 'object') s.wild = {};
   for (const w of Object.values(s.wild)) w.list = (w.list || []).filter(q => SPECIES[q.sp]);
   s.eggs = s.eggs.filter(e => EGGS[e.tier]);
+  /* RL-9: a trainee whose Billie isn't in storage any more stops training */
+  ranchTidy(s);
   if (s.run) {
     /* RL-3: during a run the trip is on the run's world (0 Copperleaf, then the map's nodes), which is made from the
        seed after loading (RL-7): it is kept as it is, bounded by the run's map, not by today's LOCATIONS */
