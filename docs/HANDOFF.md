@@ -39,7 +39,9 @@ Mid-session: the Studio is for a computer, not a phone (no phone layout work).
     a jingle played and lengthened, a cry set and heard, the Check and Show me, leaving stops the song; each part
     undone with nothing left to propose).
   - The self-test via `--only=studio_test`: 27 sections, music among them; the one problem is the Rules one above.
-  - Smoke on d6facb9: 179 s, no problems. Full quick check: started on d6facb9; its result follows in the next commit.
+  - Smoke on d6facb9: 179 s, no problems. The full quick check on d6facb9: 1640 s, the 9 known problems only (v34, v35,
+    v38, v39/40, v43, v44, v46, alpha 0.4, phase 08 running); Sound settings, Song fingerprints (71, 0 changed), Run
+    music, Unused (0 songs) and Studio: ok.
   - Screenshots at 1400 px of each tab and the Cry card.
 - Decisions I made (and why):
   - The music findings are built in music-editor.js (it can read the parked world, so a song only parked places play
