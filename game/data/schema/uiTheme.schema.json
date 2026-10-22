@@ -2,7 +2,7 @@
  "$schema": "https://json-schema.org/draft/2020-12/schema",
  "$id": "uiTheme.schema.json",
  "title": "game/data/uiTheme.json: the UI's look (UI track: UI-1 made it, UI-3 version 2 for the Studio's UI section)",
- "description": "Boot writes it as CSS variables (game/js/logic/ui-theme.js); without it the page keeps tokens.css. defaults is the look; a preset lays some groups over it (the Studio applies one onto the defaults or a screen); overrides lay colour and shape over the defaults on one screen. Version 2 (UI-3): every group the Studio's dials edit, the defaults equal to tokens.css and v05.css.",
+ "description": "Boot writes it as CSS variables (game/js/logic/ui-theme.js); without it the page keeps tokens.css. defaults is the look; a preset lays some groups over it (the Studio applies one onto the defaults or a screen); overrides lay colour and shape over the defaults on one screen. Version 2 (UI-3): every group the Studio's dials edit, the defaults equal to tokens.css and base.css (v05.css until UI-6).",
  "type": "object",
  "required": ["version", "defaults"],
  "additionalProperties": false,
