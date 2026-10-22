@@ -179,10 +179,17 @@ test('the island’s heights: the summit where the map says, the sea low', () =>
   assert.equal(bowlIslandHeights(M), H, 'read once');
 });
 
-test('the island’s size: its coast’s reach from its middle', () => {
+test('the island’s size: its coast’s reach from its middle; worldmap.json sea.island is it', () => {
   const r = bowlIslandRadius(maps[HUB_ISLAND]);
   assert.ok(r > 60 && r < 200, `${r} m`);
   assert.equal(bowlIslandRadius({ w: 9, h: 9 }), 0);
+  /* the bowl's 1000 m to its radius: when IS-5 or IS-6b reshape the island, set sea.island to the new reach */
+  const want = r / 1000,
+    has = GAME_DATA.worldmap.sea.island;
+  assert.ok(
+    Math.abs(has - want) <= want * 0.1,
+    `worldmap.json sea.island ${has}: the island reaches ${want.toFixed(3)}`
+  );
 });
 
 test('the island’s town on the bowl: a model on every free plot, the barn in its zone, none twice', () => {
