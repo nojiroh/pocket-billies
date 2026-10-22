@@ -161,15 +161,16 @@ export function runSimOn(env) {
           }
           const stock = runShopStock(run, i, run.clock, R.shop);
           at.shop = stock.map((/** @type {any} */ w) => w.coin || w.item);
-          const coin = data.COINS.penny;
+          /* the shop's price, with the Loopholes' price rows (shop.js warePrice) */
+          const price = fxRunPrice(run, data.RELICS, 'shop', data.COINS.penny.price);
           while (
             stock.some((/** @type {any} */ w) => w.coin === 'penny') &&
             (s.coins.penny || 0) < 5 &&
-            s.se >= coin.price + 100
+            s.se >= price + 100
           ) {
-            s.se -= coin.price;
+            s.se -= price;
             s.coins.penny = (s.coins.penny || 0) + 1;
-            stats.spent += coin.price;
+            stats.spent += price;
           }
         }
         /* the place's wild Billies, up to `fights` of them */
