@@ -24,6 +24,11 @@ kept aside in the browser).
   a water trough, round hay bales and a hay rack; driftwood, beach grass, shells, shore rocks and tide pools; a
   fishing boat and a net rack by a pier; granite boulders, a cairn and a summit lookout; forest litter. Scree and the
   mossy log and stump on runs are 3D too. Nothing moves in Copperleaf yet.
+- The Studio's Hub island section has the island generator's dials (IS-6b): size, coast, mountain, cove, beaches,
+  cliffs, forest, stream, paths, the town and the hamlet, a seed and a seed for each part. A draft shows in the
+  orbit view and on the map as you change them, with its size, the walk round the coast and a walking check. "Use
+  this island" puts the new ground on the island (Undo takes it back); locked zones, props and people stay as they
+  are. A locked island shows its dials but is never made again.
 - The Studio has a Hub island section (IS-6a): the hub's island in an orbiting 3D view and on a map, with its ground,
   coast, zones and the camera's pivot edited by hand, a walk round the coast, and a lock that freezes the island's
   ground once it is right (props stay free). It works on the test island until Copperleaf moves onto its island.
