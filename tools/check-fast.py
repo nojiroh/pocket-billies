@@ -304,8 +304,8 @@ def battle(pg, base):
 def run_loop(pg, base):
     """RL-8: on the run fixture's landing, a wild battle begins and the save holds it (phase 'battle', stored at once);
     a reload (?fixture=stored) starts the same battle again from its seed; lost, the run ends: the payout screen with
-    its rows and a keep-one card per Billie, one picked, "Fly home": back in Copperleaf by the mast, the hub's world in,
-    the run's Capital in meta"""
+    its rows and a keep-one card per Billie; a reload there opens it again (the run still on the save, nothing paid
+    yet); one card picked, "Fly home": back in Copperleaf by the mast, the hub's world in, the run's Capital in meta"""
     drawing(pg)
     if not until(pg, "!document.getElementById('loader')", 30): raise Exception('the loading screen never went')
     seed = pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();startWild(encountersHere()[0]);activeBattle&&activeBattle.seed")
@@ -320,13 +320,17 @@ def run_loop(pg, base):
     if not until(pg, "!!uiState.modal&&uiState.modal.cls==='run-payout'&&!!document.querySelector('#ov pb-payout')", 30): raise Exception('no payout screen after the loss')
     rows, cards = pg.evaluate("[document.querySelector('#ov pb-payout').rows.length,document.querySelectorAll('#ov pb-pick-card').length]")
     if rows < 4 or cards != pg.evaluate('saveData.team.length'): raise Exception(f'the payout: {rows} rows, {cards} cards')
+    pg.goto(base + '/index.html?fixture=stored')
+    if not until(pg, "!!uiState.modal&&uiState.modal.cls==='run-payout'&&!!document.querySelector('#ov pb-payout')", 90): raise Exception('a reload at the payout didn’t open it again')
+    again = pg.evaluate("[document.querySelector('#ov pb-payout').rows.length,document.querySelectorAll('#ov pb-pick-card').length,saveData.run&&saveData.run.at.phase,saveData.meta.runs]")
+    if again != [rows, cards, 'payout', 0]: raise Exception(f'after a reload at the payout: rows, cards, phase, runs {again}')
     pg.evaluate("document.querySelector('#ov pb-pick-card').shadowRoot.querySelector('button').click();0")
     if not until(pg, "!document.querySelector('#ov [data-a=mb]').disabled", 10): raise Exception('picking a card didn’t enable Fly home')
     pg.evaluate("document.querySelector('#ov [data-a=mb]').click();0")
     if not until(pg, "!saveData.run&&LOCATIONS.length===1&&saveData.meta.runs===1", 30): raise Exception('Fly home didn’t end the run')
     home = pg.evaluate("[saveData.meta.capital, !!uiState.roam, saveData.trip.node]")
     if home[0] <= 0 or not home[1] or home[2] != 0: raise Exception(f'home: capital {home[0]}, by the mast {home[1]}, node {home[2]}')
-    return f'a battle held as it began ({seed}), started again after a reload, lost: the payout ({rows} rows, {cards} cards), home with {home[0]} Capital'
+    return f'a battle held as it began ({seed}), started again after a reload, lost: the payout ({rows} rows, {cards} cards), again after a reload, home with {home[0]} Capital'
 
 
 def save_round_trip(pg, base):
@@ -407,7 +411,7 @@ PAGES = [   # (what the page opens, its checks in order); the longest first, so 
     ('room', [('A room opens and draws (the lab)', room), ('A save round-trips', save_round_trip)]),
     ('battle', [('A battle plays to the end', battle)]),
     ('run', [("A run's world: the landing, its places on the bowl, a seam walked a day later", run_world)]),
-    ('run', [("A run's battle held and started again after a reload; a loss, the payout and home", run_loop)]),
+    ('run', [("A run's battle held and started again after a reload; a loss, the payout (again after a reload) and home", run_loop)]),
     ('title', [('The game boots with no console or page errors', boots)]),
     ('studio', [('The Studio loads', studio), ("The Studio's world map look", studio_worldmap)]),
 ]

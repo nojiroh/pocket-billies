@@ -63,11 +63,11 @@ exports[`golden scene: water 1`] = `
   "tiles": 831468499,
   "heights": 907636989,
   "steps": 238425371,
-  "props": 3415530523,
+  "props": 1088717297,
   "exits": 2419090157,
-  "rest": 1329596514,
+  "rest": 3209785449,
   "counts": {
-    "props": 764,
+    "props": 763,
     "raised": false
   }
 }

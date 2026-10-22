@@ -128,13 +128,33 @@ visits and requests, friends' presence (node 0, "a run"). Run trainers, the land
 moved to RL-8 with their behaviour; RL-7's scenes are plain routes. A place's landmark picture on the bowl draws as a
 red block in headless Chromium, Copperleaf's in the hub too (not RL-7's; HANDOFF).
 
+**Corrected in RL-8 (2026-10-21).** No battle had a seed and `extra.wx` didn't exist; battle weather already
+followed the forecast (RL-7) except sunny and night (the real hour); a run's battles now take the forecast alone (clear
+counts as sunny). Run towns offered a free clinic on the place card, and no run scene had a mast, clinic or shop
+building (mapgen's MG-2 dials make them, by node type). "You hurried back to the clinic" healed where you stood. The
+in-game test had no airship step (a04's model check was the only one). The debug menu's "Go there" skipped the run's
+arrival. Leaks the plan didn't list: storage (`box`) isn't a run field, so a 7th catch or a move to or from storage
+leaked Billies into Copperleaf (storage is closed on a run; a 7th catch waits until one is released, as `validSave`
+refuses a team of 7); today's challenges kept counting and paid into the run's money; releasing a Billie from
+Copperleaf would have been paid though it comes home; moves waiting to be learned are kept by Billie id (cleared at a
+run's start and end). The account upload runs about 5 s after a save, so a checkpoint is uploaded at once (`saveNow`).
+No trainer stood anywhere; the leaders have `blocks: false` and scripts that fight the real leader (badge included),
+so a run copies them with ids of its own and no script, badge, egg or story conditions. The wild odds followed the real
+hour and new ids came from the clock (a run wasn't reproducible from its seed): both now come from the run. Section 5
+put Capital "in the Lab": the Lab's board is RL-11, so Capital shows in the Map header. `pb-payout` has one total and
+no Seals line, and there is no keep-one component: the payout lays out `pb-pick-card`s. The owner's answers: the full
+9-row map (8.8; the debug menu has a 5-row short run), formats by node type with an Alpha boss and the 40-turn cap
+(8.9), and the opening is the fall only (8.20). The owner's play found a trap RL-7 had left: a run's bridges couldn't be
+walked where a stream's banks are steep (walk/heights.js blocked the steep ground under the deck), and mapgen laid a
+bridge along a stream where the road ran beside it, often ending in the water; both fixed (MAPGEN_VERSION 4).
+
 **Changed in the TR-2 session (2026-10-21, the owner: "runs should go from east to west").** A run scene is entered
 by its east side and left ahead by its west: `east`/`east2` back, `west`/`west2` ahead (logic/run-scenes.js
 runSceneExits; runExits' `ahead`/`back`, renamed from north/south). Two links a side sit 10 m and 54 m along the 64 m
 edge (t 0.15625 and 0.84375, the seam rules' 44 m apart). Every run scene's east and west edges are pinned to height
 0 (mapgen `pin`), because on a 64 m edge the strips of two parents overlap and one scene can't follow both. On the
 bowl west is clockwise, so the run is an arc on the south side, landing in the south-east, boss in the south-west
-(RUN_BOWL a 270, span 120, r 0.62). MAPGEN_VERSION 4 leaves a run saved going north. The free sides of a run scene
+(RUN_BOWL a 270, span 120, r 0.62). MAPGEN_VERSION 5 (merged after RL-8 took 4) leaves a run saved going north. The free sides of a run scene
 are now north (the back, behind what the camera looks at) and south (toward the camera); the lines below that say
 N to S describe the layout before this change.
 
@@ -643,7 +663,12 @@ run towns, the mast act), `shop.js` (seeded stock), `things-to-do.js` (`extra.wx
 `battle-rewards.test.mjs`, `sim/run-sim.mjs` (replay equality; run-length statistics reported), a quick-check group on
 the `run` fixture (mast → flight → node → battle → town heal → mini-boss → payout; reload mid-run resumes), the
 smoke phone flow extended by the mast tap. Could break: Start-Game, the opening's end, the phone flow, the full
-test's airship step, the debug log export. Verify: all tiers, `--selftest`, then the owner's phone. 2 sessions.
+test's airship step, the debug log export. Verify: all tiers, `--selftest`, then the owner's phone. 2 sessions. Done 2026-10-21 in one session (HANDOFF;
+section 0 for what changed from this paragraph): `logic/battle-rewards.js`, `logic/run-loop.js`, `run.js`,
+`run-payout.js`, the run's buildings, battles (seed, forecast weather, checkpoint and restart), towns (paid clinic, the
+day's shop), mini-bosses and the Alpha boss, the payout and resume, `sim/run-sim.mjs`, the fall-only opening, hints, the
+debug menu's runs; tested by `battle-rewards`, `run-loop` and `run-sim` tests, a fast-check page, a quick-check step and
+an in-game test phase. The owner played it the same day (section 5's notes).
 **Nothing below starts before the owner has played.**
 
 **RL-9 Ranch A.** The ranch as a hub building (a barn room via `enterRoom`; `int_barn` exists; the walkable yard is
@@ -689,19 +714,32 @@ duplicate id refused). 1-2 sessions.
 
 ## 5. First playable cut (after RL-8)
 
-On the phone: the opening as today → Copperleaf → Hazel's last line points at the mast → "Start a run (Bracket I)" →
-a free flight over the run's bowl (five pins: landing, two second-row nodes, a town, the mini-boss arena; rows 0-1
-revealed; "Day 1 · deadline day 7") → the landing route (a hint, the forecast icon) → **one branch** (a grass route
-with a trainer, or another biome with other weather) → the town (clinic door charges $, shop sheet with seeded stock)
-→ the mini-boss arena (one of the 8 leaders rescaled, doubles) → win or lose → the payout screen converts $ and
-items to Capital, lists released Billies, the keep-one picker on a loss → Copperleaf with the Capital balance shown
-in the Lab. Killing the app anywhere reopens at the node (or the landing mid-flight). Five nodes made, four walked.
+As built in RL-8 (the owner's answers to 8.8, 8.9 and 8.20): New game plays the fall from the crust → Copperleaf
+(Hazel, the dressing room, the coins, the starter) → Hazel's last lines point at the airship mast → the mast's "Start a
+run (Bracket I)" (your team as a copy, $600, 5 Copper Coins, 2 Potions; storage stays home) → a free flight to the
+landing, day 1, beside the landing's mast → the run's map (9 rows, 9-14 places, about 9 walked; the next row shown,
+'?' after, the boss always) → wild battles one on one, each seeded and checkpointed → towns: a clinic at $60 a hurt
+Billie and a shop with the day's stock → two mini-bosses (a leader copied to the row's level + 3, doubles, blocking the
+way north) → the boss (a third leader's top Billie as an Alpha at + 5, fought by up to three) → win, or wipe → the
+payout (Capital from money, items and released Billies; Seals on a win; on a loss pick one Billie to keep) →
+Copperleaf by the mast, healed, Capital and Seals in the Map header. "Give up the run" in the Map tab, "Fly home" at the
+landing's mast. Killing the app anywhere reopens there: at the place, mid-battle (the battle starts again from its
+seed), mid-flight (on the landing) or at the payout.
 
-Stubbed: relics (three names shown, inert), modifiers (Bracket I = no effects), the final boss (the run ends at the
-mini-boss; the `boss` row exists and generates nothing), event and shop nodes (the shop is a town door), bots (the
-mini-boss fields Billies), ranch (storage as today), the unlock board (balance only), towns (a mapgen route with flat
-pads and clinic/shop door props; MG-3 not needed), deadline hardening (counts, hardens nothing), the return flight,
-online, hub trainers. Every stub's data shape is fixed in RL-3/RL-6 so later sessions fill rows.
+Stubbed: relics, modifiers (Bracket I = no effects), event nodes, route trainers, bots (the boss fields a Billie, not
+the Voltron), the ranch, the unlock board (Capital is a balance only), deadline hardening, the return flight's
+animation, online, hub trainers. Balance is untuned: the run simulation (`tools/test/sim/run-sim.mjs`) loses every run
+on the placeholders (HANDOFF RL-8).
+
+**The owner's notes after the first play (2026-10-21), for the plan:**
+- It got stuck: a run's landing couldn't be left (fixed in RL-8: bridges walkable over steep banks; bridges only where
+  the road crosses a stream, square to it, dry at both ends).
+- "The bridge was turned the wrong way" (the same fix).
+- Rooms are too bright.
+- Routes should be wider than they are long: it's an HD-2D diorama.
+- Copperleaf's world map should be Copperleaf's island alone.
+- A run gets its own world map, generated from its seed.
+The last four are new work, waiting for the owner's choices (HANDOFF RL-8, "Next").
 
 ## 6. Leave alone (no refactor without evidence)
 
@@ -755,7 +793,11 @@ Decided this session: the rework is a track RL-N (`rl-N-done`); parked phases ar
 7. **Mid-battle kill:** restart the battle at the node from the same seed and battle index (recommended for the first
    cut) / save the battle object every turn and resume it (phase 19's recommendation; later option).
 8. **First-cut shape:** five nodes made, four walked, one branch (recommended) / four in a line / the full ~14-node map.
+   **Answered in RL-8: the full map** (9 rows), with a 5-row short run in the debug menu.
 9. **Battle formats and turn cap:** by node type with a 40-turn cap (recommended) / singles everywhere / cap 30.
+   **Answered in RL-8: by node type** (wild single, a mini-boss a leader in doubles, the boss a leader's top Billie as
+   an Alpha fought by up to three), the cap 40; a wipe or a trainer battle at the cap ends the run; keep 1 Billie on a
+   loss, all on a win.
 10. **Clock numbers:** a day per arrival including backtracking, deadline = shortest path + 3, no tick for healing or
     waiting until the first play (recommended) / + 5 / healing +1 and waiting +2. **Answered in RL-6: the
     recommendation** (rules.json `run.clock`).
@@ -777,4 +819,5 @@ Decided this session: the rework is a track RL-N (`rl-N-done`); parked phases ar
 19. **Tags:** push the outstanding `phase-*`, `st-*`, `mg-*` tags from your machine so CI's full run can fire on
     `rl-*`.
 20. **Opening:** keep city → fall → Hazel/Blake and add Hazel's "the airship is waiting" lines (recommended) / shorten
-    to the fall only for a faster first run.
+    to the fall only for a faster first run. **Answered in RL-8: the fall only**, Blake cut from it (his data kept),
+    Hazel's new lines send you to the mast.

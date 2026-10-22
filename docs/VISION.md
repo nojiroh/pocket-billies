@@ -8,7 +8,7 @@ The single source of truth for what the game is becoming. Phase files implement 
 
 ## Setting and story
 - Still set in the Hollow Earth, but told as an alternative-future story.
-- Opening (scripted, not player-controlled): a map-like scene of a cyberpunk city with tall neon buildings and flying cars. A silhouette walks along the street below. A strange portal opens. When the figure steps through, the game goes into the existing "falling through the air" sequence, then arrives in the Hollow Earth. (Phase 11.)
+- Opening (scripted, not player-controlled): a map-like scene of a cyberpunk city with tall neon buildings and flying cars. A silhouette walks along the street below. A strange portal opens. When the figure steps through, the game goes into the existing "falling through the air" sequence, then arrives in the Hollow Earth. (Phase 11.) Since RL-8 (the owner's choice for a faster first run) New game plays the fall alone; the city scene is kept in the data for the story to bring back.
 - A shadowy, mysterious organization works in the background, in the spirit of the FBC from Control and the SCP Foundation (secretive, contains and studies the anomalous). It must be ORIGINAL: its own name, logo, terms and lore, with no copied names, text or terminology from either. (ASK: its name, goals and how often it appears. Phase 15.)
 - Possible contrast to confirm (ASK): cyberpunk surface city above, retro-futuristic solarpunk Hollow Earth within.
 

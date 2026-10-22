@@ -101,6 +101,52 @@ test("every run's scenes join: exits where the roads say, no gap, a straight wal
   assert.ok(scenes > 60 && roads > 60, `${scenes} scenes, ${roads} roads`);
 });
 
+test("a run's bridges cross the water (RL-8): both ends on dry ground, square to the stream within 25 degrees", () => {
+  /* the owner was stuck on a landing whose bridge ran along the stream and ended in the water: before RL-8 a bridge ran
+     from a road's first wet point to its last (60 of 468 bridges in 100 runs ended in water, 270 lay within 50 degrees
+     of the stream) */
+  const tile = (sc, x, z) => (sc.tiles[sc.h - 1 - Math.floor(z)] || '')[Math.floor(x)],
+    cross = (p, q, r, s) => {
+      const d = (q[0] - p[0]) * (s[1] - r[1]) - (q[1] - p[1]) * (s[0] - r[0]);
+      if (!d) return false;
+      const u = ((r[0] - p[0]) * (s[1] - r[1]) - (r[1] - p[1]) * (s[0] - r[0])) / d,
+        v = ((r[0] - p[0]) * (q[1] - p[1]) - (r[1] - p[1]) * (q[0] - p[0])) / d;
+      return u >= 0 && u <= 1 && v >= 0 && v <= 1;
+    };
+  let bridges = 0;
+  for (let k = 0; k < 24; k++) {
+    const seed = `RL8BRIDGE${k}`,
+      run = runOf(seed),
+      made = /** @type {any[]} */ ([]);
+    run.map.nodes.forEach((_, i) => {
+      const { scene } = runSceneMake(run, i, made, WORLD_DATA);
+      made.push(scene);
+      for (const b of scene.bridges || []) {
+        if (b.pier) continue;
+        bridges++;
+        const L = Math.hypot(b.b[0] - b.a[0], b.b[1] - b.a[1]),
+          ux = (b.b[0] - b.a[0]) / L,
+          uz = (b.b[1] - b.a[1]) / L,
+          at = `${seed} node ${i}, the bridge ${JSON.stringify(b)}`;
+        for (const [x, z] of [
+          [b.a[0] - ux * 0.3, b.a[1] - uz * 0.3],
+          [b.b[0] + ux * 0.3, b.b[1] + uz * 0.3],
+        ])
+          assert.ok(!'wd'.includes(tile(scene, x, z)), `${at}: an end in the water`);
+        const seg = (scene.streams || [])
+          .flatMap(st => st.pts.slice(1).map((q, j) => [st.pts[j], q]))
+          .find(([p, q]) => cross(b.a, b.b, p, q));
+        assert.ok(seg, `${at}: crosses no stream`);
+        const [p, q] = seg,
+          sl = Math.hypot(q[0] - p[0], q[1] - p[1]),
+          ang = (Math.acos(Math.abs(((q[0] - p[0]) * ux + (q[1] - p[1]) * uz) / sl)) * 180) / Math.PI;
+        assert.ok(ang >= 64, `${at}: ${ang.toFixed(0)} degrees to the stream`);
+      }
+    });
+  }
+  assert.ok(bridges > 40, `${bridges} bridges`);
+});
+
 test('the same seed makes the same scenes; every node its own', () => {
   const a = runScenesMake(runOf('RL7SAME'), WORLD_DATA),
     b = runScenesMake(runOf('RL7SAME'), WORLD_DATA);

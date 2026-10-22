@@ -212,7 +212,7 @@ function runStartSheet() {
  * @param {string} [seed] @param {Partial<import('../types/game-data').RunMapRules>} [map] the map's rules changed (the
  * debug menu's short run) @param {string[]} [mods] the run's mods (the debug menu's mountains run: RUN_MOD_MOUNTAINS)
  */
-function runTakeOff(seed, map, mods) {
+export function runTakeOff(seed, map, mods) {
   if (!runStartable()) return;
   closeModal();
   const s = saveData,
@@ -240,7 +240,7 @@ function runTakeOff(seed, map, mods) {
 /** the debug menu's "Go there" on a run: walked as you would, one linked place at a time (runArrive: a day each, the
  * path, what the map shows), the shortest way there over the map's links; Copperleaf can't be walked to on a run.
  * Returns whether it got there @param {number} n the world node */
-function runJump(n) {
+export function runJump(n) {
   const run = saveData.run;
   if (!run || !run.map) return false;
   const map = run.map,

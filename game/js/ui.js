@@ -790,7 +790,7 @@ function tripButtons() {
 }
 /** RL-8: a clinic heals the team: free in the hub (as before); on a run for rules.json run.healCost per hurt Billie,
     after a yes, a purchase saved at once (logic/run-loop.js runHealCost). `say`: the clinic prop's own line */
-function clinicHeal(say) {
+export function clinicHeal(say) {
   if (!saveData.run) {
     healAll();
     save();
