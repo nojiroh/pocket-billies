@@ -819,6 +819,8 @@ function seamlessCompose(id, F) {
   sc.exits = (F.base.exits || []).map(([x, z]) => [+(x + BO[0]).toFixed(2), +(z + BO[1]).toFixed(2)]);
   sc.baseOff = BO;
   sc.baseId = B0 ? B0.id : null;
+  /* TR-2c: a generated place's tall grass patches, where its wild Billies wait (walk-view.js encounterCandidates) */
+  if (F.base.grassPatches) sc.grassPatches = F.base.grassPatches.map(g => ({ ...g, x: g.x + BO[0], z: g.z + BO[1] }));
   /* steps (cliffs, terraces, stairs) on the half-metre grid, copied in place (alpha 0.2: the eased ones; the countryside
     carries on the rim's raise, so a place up on a shelf doesn't end in a drop) */
   const E = {
