@@ -201,11 +201,14 @@ export function runSimOn(env) {
             s.coins.penny--;
             const c = fn('catchRoll')('penny', 1 + logic.CATCH_RULES.ring * 0.5, false);
             if (c.caught) {
-              foe.hp = Math.max(1, foe.hp);
-              fn('addBilly')(foe);
+              fn('catchKeep')(foe);
               stats.caught++;
               res = { over: 'caught', turns: B.turn };
-            } else fn('enemyOnly')();
+            } else {
+              /* a miss: the foe's offer drawn as on the page (catchOffer), refused (the policy), then its turn */
+              if (fn('catchOffer')()) fn('catchOfferAnswer')(false);
+              fn('enemyOnly')();
+            }
           }
           res = res || playOut();
           const pay = modules['battle-rewards'].battleRewards({ kind: 'wild', over: res.over, foe: [foe] }, s, () =>
