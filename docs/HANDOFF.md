@@ -23,6 +23,15 @@ uploaded in chat): Copperleaf becomes a real island, one map, an orbit camera. I
     a house, a bench, a lamp, two oaks) to judge turned standees by in IS-1. Hub (60, 30), the south side.
   - **`?fixture=island`** opens it; check-fast's island step: it draws, the fields reach the scene, its walking checks
     hold (hub open, the top and the north side reachable, the sea not).
+  - **The owner's direction, after the first push** (chat, 2026-10-22): "The starting map will not be a node. It will
+    be the main hub. Make a separate editor for it in Studio with an orbiting cam. It will be locked after it's
+    right." Answers: the lock freezes the ground (props, people, buildings stay free; unlocking is deliberate); dials
+    then hand edits; the generator reusable (question 10). So: **the ground lock joined the contract**
+    (`islandGen.lock`, `islandGen.hash`, `islandGroundHash` over ground letters, heights, steps, coast and zones; a
+    changed locked ground or a lock without a hash fails check-data), and the track file splits IS-6 into **IS-6a,
+    the Hub island editor** (a Studio section of its own: an orbit view through `mountWalkView` with its own look
+    from logic/free-camera.js, a 2D map with coast, zones and pivot, map-editor.js's paint and height brushes, the
+    lock bar; wave 1, Studio files only) and **IS-6b**, its dials (after IS-2). No Studio code in this session.
 - Where the plan (the track file) was wrong or short:
   - "The sea's water kind" already existed: `waterKind` (mapgen wrote `'sea'`; environment.js and sound.js read it).
     It is typed and in the schema now, no new field.
@@ -33,22 +42,26 @@ uploaded in chat): Copperleaf becomes a real island, one map, an orbit camera. I
   - Map rows are north first and z grows northward from the near (south) edge (mapgen.js's header): the track's
     "town in the south" means small z. IS-2 and IS-5 keep to it.
   - "an export" in IS-0's line taken as logic/island.js, the module the checks and later sessions share.
-- Verified: unit tests 534 (7 new: every game map passes, test_island has every field, the schema refuses 7 bad
+- Verified: unit tests 535 (8 new: every game map passes, test_island has every field, the schema refuses 7 bad
   shapes, 11 planted faults each give their words, the schema's water kinds and zone kinds match the renderer's and
-  the module's); lint, typecheck, check:modules, format:check, check:data (142 files); check-fast and smoke (see the
-  numbers in the PR); headless pictures at 390 x 760 from the south, the top and the north: the cone, ring, sand and sea
+  the module's, the lock: props free, five ground changes refused); lint, typecheck, check:modules, format:check,
+  check:data (142 files); check-fast 19 of 20 with two browsers (the island step 27 s; RL-9b's packing step timed
+  out at "Take off" under load, then passed alone in 42 s: its 30 s wait is tight with two browsers, nothing this
+  branch touches); smoke 15 of 15; headless pictures at 390 x 760 from the south, the top and the north: the cone, ring, sand and sea
   draw, no page errors. From the north the cone stands between the camera and you: the reason for IS-1.
 - Risky:
   - The orbit fields do nothing yet: the camera is today's (fixed yaw, scene clamps) until IS-1.
   - The `flatFar` skirt starts 90 m out with the far land between; low angles may show a seam (IS-3).
   - `cam` is in the schema for the first time (only pitch, h, fov were ever used; all 142 files pass).
-  - logic/island.js is on the game page; IS-6 adds it to the Studio's page when the Studio needs it.
+  - logic/island.js is on the game page; IS-6a adds it to the Studio's page.
+  - The lock's hash trips on any rewrite of the ground, rounding included (a tool that re-rounds heights would need
+    an unlock and relock); intended, and the message says how.
 - Not run: the full quick check's picture compare (its baseline is made by CI, not in git); a new test map adds its
   `shots` (island-south, island-top) to it.
-- Next: wave 1, up to four sessions side by side: IS-1 orbit camera (owns walk/camera.js), IS-2 island generator
+- Next: wave 1, up to five sessions side by side: IS-1 orbit camera (owns walk/camera.js), IS-2 island generator
   (owns logic/island-gen.js, not mapgen.js while TR-2c part 2 is open), IS-3 sea all round (water and sky), IS-4
-  island props (prop data and art). The track's "Ask me before" 1-12 are all still open; each session asks its own
-  (IS-1: 2 and 3; IS-2: 1, 6, 7, 9, 10; IS-5: 4, 11; IS-8: 8; IS-9: 5). Tag `is-0-done` is the owner's to push.
+  island props (prop data and art), IS-6a the Hub island editor (Studio files). The track's "Ask me before" 1-12 are all still open; each session asks its own
+  (IS-1: 2 and 3; IS-2: 1, 6, 7, 9; IS-5: 4, 11; IS-8: 8; IS-9: 5); 10 is answered (reusable). Tag `is-0-done` is the owner's to push.
 
 ### Phase 09 batch 10 - every run tree a model; the _deep trees merged - 2026-10-22
 Branch `props/batch10-trees`, from main 6493ed4 (PR #113). Owner's request in chat: make sure all trees are 3D props in
