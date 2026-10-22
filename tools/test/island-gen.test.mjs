@@ -154,6 +154,10 @@ test('the island passes the contract and the schema, a closed coast with only se
       seed
     );
     assert.ok(sc.island.coast.length >= 100, 'the coast has its points');
+    assert.ok(
+      isle(seed).paths.some(p => p.name === 'town to the mountain'),
+      `${seed}: a path from the town to the mountain's foot (the trail starts there)`
+    );
     for (const k of ['town', 'barn', 'pasture', 'mountain', 'forest', 'cove', 'beach'])
       assert.ok(
         sc.zones.some(Z => Z.k === k),
@@ -206,7 +210,7 @@ test('the town, barn and pasture are flat and empty, ready to build on', () => {
   /* planted: a corner in the town raised half a metre */
   const bad = copy(isle().scene),
     T = bad.zones.find(Z => Z.k === 'town'),
-    m = T.poly.reduce((a, p) => [a[0] + p[0] / 4, a[1] + p[1] / 4], [0, 0]).map(Math.round);
+    m = T.poly.reduce((a, p, _, L) => [a[0] + p[0] / L.length, a[1] + p[1] / L.length], [0, 0]).map(Math.round);
   bad.heights[bad.h - m[1]][m[0]] += 0.5;
   assert.match(flatProblems(bad).join(), /the town zone rises 0\.5/);
 });
@@ -216,7 +220,7 @@ test("a second run keeps the locked zones' ground exactly; a locked ground is re
     town = A.zones.find(Z => Z.k === 'town'),
     S = steps(A) || new Int16Array(4 * A.w * A.h);
   /* hand edits in the town, as the Studio would make them: a paved square, a raised corner, a step */
-  const m = town.poly.reduce((a, p) => [a[0] + p[0] / 4, a[1] + p[1] / 4], [0, 0]).map(Math.floor);
+  const m = town.poly.reduce((a, p, _, L) => [a[0] + p[0] / L.length, a[1] + p[1] / L.length], [0, 0]).map(Math.floor);
   for (let j = m[1] - 2; j <= m[1] + 2; j++) for (let i = m[0] - 2; i <= m[0] + 2; i++) setTile(A, i, j, 'K');
   A.heights[A.h - m[1]][m[0]] += 0.3;
   S[m[1] * 2 * A.w * 2 + m[0] * 2] = 6;
@@ -251,10 +255,17 @@ test("a second run keeps the locked zones' ground exactly; a locked ground is re
   assert.throws(() => islandGenerate({}, 'x', ctx, L), /locked/);
 });
 
-test('zones on top of each other are named in the notes', () => {
+test('zones placed on top of each other are turned apart; organic 0 keeps plain rectangles', () => {
   const dials = structuredClone(ISLAND_GEN_DEFAULTS);
   dials.zones[1] = { ...dials.zones[0], k: 'barn', w: 10, h: 10 };
-  assert.match(islandGenerate(dials, 'x', ctx).notes.join(), /the town and barn zones overlap/);
+  const { scene, notes } = islandGenerate(dials, 'x', ctx),
+    town = scene.zones.find(Z => Z.k === 'town'),
+    barn = scene.zones.find(Z => Z.k === 'barn');
+  assert.ok(!barn.poly.some(p => islandPointIn(town.poly, p[0], p[1])), 'the barn was turned off the town');
+  assert.ok(!notes.some(n => /overlap/.test(n)), notes.join());
+  /* organic 0: every built zone the dial's rectangle */
+  const plain = islandGenerate({ organic: 0 }, 'x', ctx).scene;
+  for (const Z of plain.zones.filter(Z => ISLAND_GEN_BUILT.includes(Z.k))) assert.equal(Z.poly.length, 4, Z.k);
 });
 
 test("the game's island is the generator's own output for its stored dials and seed", () => {

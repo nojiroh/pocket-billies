@@ -71,11 +71,14 @@ expose({
   islandRound2pt: [() => islandRound2pt],
   // @ts-expect-error -- replaced on purpose
   islandZoneRect: [() => islandZoneRect, v => (islandZoneRect = v)],
+  // @ts-expect-error -- replaced on purpose
+  islandZoneShape: [() => islandZoneShape, v => (islandZoneShape = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-/* 1: IS-2's first island */
-export const ISLAND_GEN_VERSION = 1;
+/* 1: IS-2's first island; 2: a natural layout (the owner: more natural and dynamic): rounded zones, headlands and
+   bays, a ridged massif with a shoulder, wandering shelves, curved paths, groves, outcrops and wet ground */
+export const ISLAND_GEN_VERSION = 2;
 export const ISLAND_GEN_STAGES = ['coast', 'heights', 'mountain', 'water', 'paths', 'trail', 'ground'];
 /* the zones a dial places as a rectangle (flat, empty and locked: the town and the barn are built there by hand) */
 export const ISLAND_GEN_BUILT = ['town', 'barn', 'pasture'];
@@ -85,8 +88,13 @@ export const ISLAND_GEN_DEFAULTS = {
   /* the land's radius round the middle (the coast is pushed out further round the zones), how much the coast wobbles
      (0-1), the open sea between the coast and the scene's edge */
   size: { r: 68, wobble: 0.35, sea: 10 },
-  /* the mountain in the middle: the radius of its foot, its peak, how tall its shelves are (0-1: 0.8-2 m, the cliffs) */
-  mountain: { r: 22, peak: 22, cliffs: 0.5 },
+  /* how natural every shape is (0-1): 0 is plain geometry (round coast, rectangles, a cone, straight spokes); up from
+     there headlands and bays, rounded uneven zones, a warped massif, wandering shelves and paths, ragged ground */
+  organic: 0.7,
+  /* the mountain in the middle: the radius of its foot, its peak, how tall its shelves are (0-1: 0.8-2 m, the cliffs),
+     how long it runs along its ridge (0-1: up to 1.45 times its width), a shoulder peak along the ridge (0-1 of the
+     peak's height, times 0.6) */
+  mountain: { r: 22, peak: 22, cliffs: 0.5, stretch: 0.5, shoulder: 0.6 },
   /* rolling land (0-1: up to 1.6 m) and the foot hills round the mountain */
   hills: 0.4,
   /* the cove: a horseshoe bay cut into the coast; its middle's angle, its width in degrees, its depth, the deep
@@ -147,7 +155,20 @@ export function islandArcWeight(t, a, span) {
   return mapgenSmooth((half - d) / soft);
 }
 /* the distance from a point to a closed polygon's sides (0 inside) */
-export function islandPolyDist(poly, x, z) {
+export function islandPolyDist(poly, x, z, cut = Infinity) {
+  if (cut < Infinity) {
+    let x0 = 1e9,
+      z0 = 1e9,
+      x1 = -1e9,
+      z1 = -1e9;
+    const bb =
+      poly.bb ||
+      (poly.bb = poly.reduce(
+        (b, p) => [Math.min(b[0], p[0]), Math.min(b[1], p[1]), Math.max(b[2], p[0]), Math.max(b[3], p[1])],
+        [x0, z0, x1, z1]
+      ));
+    if (x < bb[0] - cut || z < bb[1] - cut || x > bb[2] + cut || z > bb[3] + cut) return cut;
+  }
   if (islandPointIn(poly, x, z)) return 0;
   let best = 1e9;
   for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
@@ -184,6 +205,9 @@ export function islandGenDials(d) {
   D.mountain.r = num(D.mountain.r, 0, D.size.r * 0.6, 22);
   D.mountain.peak = num(D.mountain.peak, 0, 40, 22);
   D.mountain.cliffs = num(D.mountain.cliffs, 0, 1, 0.5);
+  D.mountain.stretch = num(D.mountain.stretch, 0, 1, 0.5);
+  D.mountain.shoulder = num(D.mountain.shoulder, 0, 1, 0.6);
+  D.organic = num(D.organic, 0, 1, 0.7);
   D.hills = num(D.hills, 0, 1, 0.4);
   D.cove.on = D.cove.on ? 1 : 0;
   D.cove.a = islandAngle(num(D.cove.a, -720, 720, 0));
@@ -246,6 +270,39 @@ export function islandZoneRect(c, Z) {
   ].map(islandRound2pt);
 }
 
+/**
+ * a flat zone's outline: with organic 0 its rectangle; above that a rounded shape (a superellipse round the rectangle,
+ * so the rectangle the dial asks for always fits inside) whose edge bulges out by up to 4 m with noise, turned a few
+ * degrees. s: a noise salt
+ */
+export function islandZoneShape(c, Z, organic, s) {
+  if (organic <= 0) return islandZoneRect(c, Z);
+  const a = (Z.a + (mapgenNoise(Z.a / 37 + 1.7, 3.1, s) - 0.5) * 14 * organic) * ISLAND_RAD,
+    ux = Math.cos(a),
+    uz = Math.sin(a),
+    vx = -uz,
+    vz = ux,
+    mx = c[0] + Math.cos(Z.a * ISLAND_RAD) * Z.d,
+    mz = c[1] + Math.sin(Z.a * ISLAND_RAD) * Z.d,
+    /* a superellipse |x/A|^6 + |y/B|^6 = 1 holds the w x h rectangle when A = w/2 * 2^(1/6) */
+    k = Math.pow(2, 1 / 6),
+    n = 40,
+    out = [];
+  for (let m = 0; m < n; m++) {
+    const f = (m / n) * Math.PI * 2,
+      cf = Math.cos(f),
+      sf = Math.sin(f),
+      pad = 0.6 + organic * 4 * mapgenFbm(Math.cos(f) * 1.6 + 5, Math.sin(f) * 1.6 + 5, s + 11),
+      A = (Z.w / 2) * k + pad,
+      B = (Z.h / 2) * k + pad,
+      x = A * Math.sign(cf) * Math.pow(Math.abs(cf), 1 / 3),
+      y = B * Math.sign(sf) * Math.pow(Math.abs(sf), 1 / 3);
+    /* x across (v), y toward the sea (u) */
+    out.push([mx + vx * x + ux * y, mz + vz * x + uz * y]);
+  }
+  return out.map(islandRound2pt);
+}
+
 /* a previous map's ground, decoded: tiles (near row first), corner heights, step raise and flags */
 export function islandDecodeGround(sc) {
   const { w, h } = sc,
@@ -297,7 +354,40 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
 
   /* ---------- the zones' rectangles, round a provisional middle (0, 0); kept zones are placed later ---------- */
   const keptKinds = new Set(kept.map(Z => Z.k));
-  const built = D.zones.filter(Z => !keptKinds.has(Z.k)).map(Z => ({ k: Z.k, poly: islandZoneRect([0, 0], Z) }));
+  const sZone = salt('coast', 'zones'),
+    built = D.zones
+      .filter(Z => !keptKinds.has(Z.k))
+      .map((Z, k) => ({
+        k: Z.k,
+        Z: { ...Z },
+        s: sZone + 97 * k,
+        poly: islandZoneShape([0, 0], Z, D.organic, sZone + 97 * k),
+      }));
+  /* zones whose outlines meet are turned apart round the island, a degree at a time: the biggest (the town) stays,
+     any other pair both move, so a zone between two others doesn't bounce back and forth */
+  const meets = (A, B) =>
+      islandPolyDense(A).some(p => islandPointIn(B, p[0], p[1])) ||
+      islandPolyDense(B).some(p => islandPointIn(A, p[0], p[1])),
+    sizeOf = B => B.Z.w * B.Z.h,
+    biggest = built.reduce((m, B) => (!m || sizeOf(B) > sizeOf(m) ? B : m), /** @type {any} */ (null));
+  for (let it = 0; it < 120; it++) {
+    let moved = false;
+    for (let a = 0; a < built.length; a++)
+      for (let b = a + 1; b < built.length; b++) {
+        if (!meets(built[a].poly, built[b].poly)) continue;
+        const away = islandAngleDiff(built[a].Z.a, built[b].Z.a) >= 0 ? 1 : -1;
+        for (const [B, dir] of [
+          [built[a], -away],
+          [built[b], away],
+        ]) {
+          if (B === biggest) continue;
+          B.Z.a = islandAngle(B.Z.a + dir * (built[a] === biggest || built[b] === biggest ? 2 : 1));
+          B.poly = islandZoneShape([0, 0], B.Z, D.organic, B.s);
+        }
+        moved = true;
+      }
+    if (!moved) break;
+  }
 
   /* ---------- coast: a radius per degree (the noise round a circle, so it joins), the cove, pushed round the zones ---------- */
   const sCoast = salt('coast'),
@@ -310,12 +400,36 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
     const u = Math.abs(islandAngleDiff(D.cove.a, t)) / (D.cove.span / 2);
     return u >= 1 ? 0 : mapgenSmooth(mapgenBetween((1 - u) / 0.45, 0, 1));
   };
+  /* headlands and bays: a few bumps out and dents in along the coast, none in the cove */
+  const rC = rng('coast'),
+    O = D.organic,
+    capes = [];
+  for (let k = 0, n = Math.round(3 + 4 * O); k < n; k++) {
+    const a = rC.range(0, 360),
+      span = rC.range(7, 24),
+      amp = (rC.chance(0.55) ? 1 : -0.8) * rC.range(5, 13) * O;
+    if (D.cove.on && Math.abs(islandAngleDiff(D.cove.a, a)) < D.cove.span / 2 + span / 2 + 6) continue;
+    capes.push({ a, span, amp });
+  }
   for (let t = 0; t < 360; t++) {
-    const cx = Math.cos(t * ISLAND_RAD),
-      cz = Math.sin(t * ISLAND_RAD),
+    /* the noise is read a little off round the circle (an angular warp), so the wobble isn't even */
+    const tw =
+        (t +
+          (mapgenFbm(Math.cos(t * ISLAND_RAD) * 1.3 + 2, Math.sin(t * ISLAND_RAD) * 1.3 + 2, sCoast + 21) - 0.5) *
+            30 *
+            O) *
+        ISLAND_RAD,
+      cx = Math.cos(tw),
+      cz = Math.sin(tw),
       n = mapgenFbm(cx * 1.7 + 7, cz * 1.7 + 7, sCoast) - 0.5,
-      n2 = mapgenNoise(cx * 5 + 3, cz * 5 + 3, sCoast + 9) - 0.5;
-    coastR[t] = R0 * (1 + D.size.wobble * (0.32 * n + 0.08 * n2)) - D.cove.depth * coveAt(t);
+      n2 = mapgenNoise(cx * 5 + 3, cz * 5 + 3, sCoast + 9) - 0.5,
+      n3 = mapgenNoise(cx * 11 + 4, cz * 11 + 4, sCoast + 13) - 0.5;
+    let cape = 0;
+    for (const C of capes) {
+      const u = Math.abs(islandAngleDiff(C.a, t)) / (C.span / 2);
+      if (u < 1) cape += C.amp * mapgenSmooth(1 - u);
+    }
+    coastR[t] = R0 * (1 + D.size.wobble * (0.32 * n + 0.08 * n2 + 0.05 * O * n3)) + cape - D.cove.depth * coveAt(t);
     let cw = 0,
       ch = 0;
     for (const C of D.cliffs) {
@@ -362,8 +476,8 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
     /* smoothed a little, never inside what the zones need */
     const sm = Float64Array.from(coastR, (_, t) => {
       let s = 0;
-      for (let k = -2; k <= 2; k++) s += coastR[(t + k + 360) % 360];
-      return Math.max(s / 5, need[t]);
+      for (let k = -1; k <= 1; k++) s += coastR[(t + k + 360) % 360];
+      return Math.max(s / 3, need[t]);
     });
     coastR.set(sm);
   };
@@ -428,9 +542,10 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
     },
     arrAt = (A, t) => A[Math.round(islandAngle(t)) % 360],
     polar = (x, z) => [Math.hypot(x - c[0], z - c[1]), islandAngle(Math.atan2(z - c[1], x - c[0]) / ISLAND_RAD)],
-    at = (r, t) => [c[0] + Math.cos(t * ISLAND_RAD) * r, c[1] + Math.sin(t * ISLAND_RAD) * r];
+    at = (r, t) => [c[0] + Math.cos(t * ISLAND_RAD) * r, c[1] + Math.sin(t * ISLAND_RAD) * r],
+    at0 = (r, t) => [Math.cos(t * ISLAND_RAD) * r, Math.sin(t * ISLAND_RAD) * r];
   const coast = [];
-  for (let t = 0; t < 360; t += 2.5) coast.push(islandRound2pt(at(coastAt(t), t)));
+  for (let t = 0; t < 360; t += 1.5) coast.push(islandRound2pt(at(coastAt(t), t)));
 
   /* ---------- mapgen's working state (its trail, stream, road and water helpers read it) ---------- */
   const P = {
@@ -453,7 +568,16 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
 
   /* ---------- heights: beaches, hills, cliffs, the zones flat ---------- */
   const sH = salt('heights'),
-    hillAmp = D.hills * 1.6;
+    hillAmp = D.hills * 1.6,
+    rH = rng('heights'),
+    O2 = D.organic;
+  /* a few knolls out in the lowland (not near the mountain), each a gentle rise */
+  const knolls = [];
+  for (let k = 0, n = Math.round(D.hills * O2 * 8); k < n; k++) {
+    const t = rH.range(0, 360),
+      r = rH.range(Rf + 14, R0 - 12);
+    knolls.push({ p: at0(r, t), r: rH.range(6, 11), h: rH.range(1, 2.6) * D.hills * 2 });
+  }
   const zoneLevel = zones.map(Z => {
     if (!Z.lock || !kept.some(K => K.k === Z.k) || !prev || !prev.heights) return D.level;
     /* a kept zone lies at the level it had */
@@ -477,11 +601,25 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
       if (s > 0) {
         const inl = mapgenSmooth(mapgenBetween((s - bw) / 12, 0, 1)),
           rise = s < bw ? 0.1 + (0.6 * s) / Math.max(bw, 0.5) : 0.7;
-        H = rise + inl * (0.3 + hillAmp * (mapgenFbm(i / 24, j / 24, sH) - 0.4));
+        /* rolling land on warped ground, so the hills run in uneven lines rather than blobs */
+        const wx = i + (mapgenFbm(i / 30, j / 30, sH + 5) - 0.5) * 22 * O2,
+          wz = j + (mapgenFbm(i / 30, j / 30, sH + 7) - 0.5) * 22 * O2;
+        let knoll = 0;
+        for (const K of knolls) {
+          const dk = Math.hypot(i - c[0] - K.p[0], j - c[1] - K.p[1]) / K.r;
+          if (dk < 1) knoll += K.h * mapgenSmooth(1 - dk);
+        }
+        H =
+          rise +
+          inl *
+            (0.3 +
+              hillAmp * (mapgenFbm(wx / 24, wz / 24, sH) - 0.4) +
+              0.4 * O2 * (mapgenNoise(wx / 7, wz / 7, sH + 3) - 0.5) +
+              knoll);
         /* the foot hills round the mountain */
         if (Rf > 0) H += D.hills * 3 * Math.pow(mapgenBetween(1 - (d - Rf) / 22, 0, 1), 2) * inl;
         /* cliffs: a face 2.2 m deep, a top 10 m wide, then down to the land over 18 m */
-        const ch = arrAt(cliffH, t);
+        const ch = arrAt(cliffH, t) * (1 + 0.5 * O2 * (mapgenNoise(i / 6, j / 6, sH + 9) - 0.5));
         if (ch > 0.2) {
           const top =
             ch * mapgenSmooth(mapgenBetween(s / 2.2, 0, 1)) * (1 - mapgenSmooth(mapgenBetween((s - 12) / 18, 0, 1)));
@@ -490,9 +628,10 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
       }
       /* the flat zones and their 7 m round */
       zones.forEach((Z, k) => {
-        const dz = islandPolyDist(Z.poly, i, j);
-        if (dz < 7) {
-          const f = dz <= 0 ? 1 : 1 - mapgenSmooth(dz / 7);
+        const dz = islandPolyDist(Z.poly, i, j, 12),
+          bl = 5 + 6 * O2 * mapgenNoise(i / 9, j / 9, sH + 11);
+        if (dz < bl) {
+          const f = dz <= 0 ? 1 : 1 - mapgenSmooth(dz / bl);
           H = H * (1 - f) + zoneLevel[k] * f;
         }
       });
@@ -510,27 +649,80 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
       }
 
   /* ---------- the mountain: a quarter smooth land, the rest step-grid shelves (as TR-2's mapgenMountains) ---------- */
+  /* a massif, not a cone: stretched along a ridge that runs across the island (square to the biggest flat zone, so it
+     leans away from the town), its peak a little off the middle, a shoulder peak along the ridge, its outline and
+     slopes warped by noise; a flat top 3.5 m round (the summit lookout) where the trail ends */
   const sM = salt('mountain'),
+    rM = rng('mountain'),
     E = new Float32Array(W1 * (h + 1)),
-    footR = new Float64Array(360);
-  for (let t = 0; t < 360; t++)
-    footR[t] =
-      Rf * (1 + 0.36 * (mapgenFbm(Math.cos(t * ISLAND_RAD) * 1.8 + 11, Math.sin(t * ISLAND_RAD) * 1.8 + 11, sM) - 0.5));
-  const footAt = t => arrAt(footR, t);
+    footR = new Float64Array(360),
+    O3 = D.organic,
+    area = poly =>
+      Math.abs(
+        poly.reduce((a, p, k) => a + p[0] * poly[(k + 1) % poly.length][1] - poly[(k + 1) % poly.length][0] * p[1], 0)
+      ) / 2,
+    big = zones.slice().sort((a, b) => area(b.poly) - area(a.poly))[0],
+    bigA = big
+      ? polar(...big.poly.reduce((m, p) => [m[0] + p[0] / big.poly.length, m[1] + p[1] / big.poly.length], [0, 0]))[1]
+      : 270,
+    /* the ridge's line: the one furthest (either end) from the biggest zone and the cove, a little off by noise */
+    awayFrom = [bigA, ...(D.cove.on ? [D.cove.a] : [])],
+    lineGap = (l, a) => Math.min(Math.abs(islandAngleDiff(l, a)), Math.abs(islandAngleDiff(l + 180, a))),
+    bestLine = [...Array(36).keys()]
+      .map(k => k * 5)
+      .reduce(
+        (b, l) =>
+          Math.min(...awayFrom.map(a => lineGap(l, a))) > Math.min(...awayFrom.map(a => lineGap(b, a))) ? l : b,
+        0
+      ),
+    ridgeA = (bestLine + rM.range(-15, 15) * O3) * ISLAND_RAD,
+    st = 1 + 0.45 * D.mountain.stretch * Math.min(1, O3 * 1.5),
+    lean = rM.range(0, 360) * ISLAND_RAD,
+    off = rM.range(0, 2.5) * O3,
+    peakP = [c[0] + Math.cos(lean) * off, c[1] + Math.sin(lean) * off],
+    shSide = rM.chance(0.5) ? 1 : -1,
+    shP = [
+      peakP[0] + Math.cos(ridgeA) * Rf * 0.62 * st * shSide,
+      peakP[1] + Math.sin(ridgeA) * Rf * 0.62 * st * shSide,
+    ],
+    shH = D.mountain.shoulder * 0.6 * Math.min(1, O3 * 1.5),
+    topF = Math.max(0.05, 3.5 / Math.max(Rf, 4));
   if (Rf > 0 && D.mountain.peak > 0)
     for (let j = 0; j <= h; j++)
       for (let i = 0; i <= w; i++) {
-        const [d, t] = polar(i, j),
-          u = mapgenBetween(1 - d / footAt(t), 0, 1);
-        if (u <= 0) continue;
+        /* warped ground, then turned onto the ridge and squeezed across it */
+        const wx = i - peakP[0] + (mapgenFbm(i / 18, j / 18, sM + 3) - 0.5) * 12 * O3,
+          wz = j - peakP[1] + (mapgenFbm(i / 18, j / 18, sM + 5) - 0.5) * 12 * O3,
+          along = wx * Math.cos(ridgeA) + wz * Math.sin(ridgeA),
+          across = -wx * Math.sin(ridgeA) + wz * Math.cos(ridgeA),
+          rag = 1 + 0.36 * O3 * (mapgenFbm(i / 13, j / 13, sM + 7) - 0.5),
+          dn = (Math.hypot(along / st, across * Math.sqrt(st)) / Rf) * rag;
+        let e = 0;
+        if (dn < 1) {
+          const f = Math.min(1, (1 - dn) / (1 - topF)),
+            r = mapgenRidged(i / 16, j / 16, sM + 41);
+          e = D.mountain.peak * Math.pow(f, 1.1) * (0.8 + 0.2 * r * (1 - 0.6 * f));
+        }
+        if (shH > 0) {
+          const ds = (Math.hypot(i - shP[0], j - shP[1]) / (Rf * 0.55)) * rag;
+          if (ds < 1) e = Math.max(e, D.mountain.peak * shH * Math.pow(1 - ds, 1.3));
+        }
+        if (e <= 0) continue;
         let keep = 1;
-        for (const Z of zones) keep *= mapgenSmooth(mapgenBetween((islandPolyDist(Z.poly, i, j) - 3) / 6, 0, 1));
-        /* a flat top 3.5 m round (the summit lookout), ridges that fade toward it (a trail must leave the top) */
-        const f = Math.min(1, u / Math.max(0.2, 1 - 3.5 / footAt(t))),
-          r = mapgenRidged(i / 16, j / 16, sM + 41);
-        E[j * W1 + i] =
-          D.mountain.peak * Math.pow(f, 1.1) * (0.84 + 0.16 * r * (1 - 0.6 * f)) * keep * (inLand(i, j) ? 1 : 0);
+        for (const Z of zones) keep *= mapgenSmooth(mapgenBetween((islandPolyDist(Z.poly, i, j, 12) - 5) / 6, 0, 1));
+        E[j * W1 + i] = e * keep * (inLand(i, j) ? 1 : 0);
       }
+  /* the mountain's foot round the middle: the last of it along each line out */
+  for (let t = 0; t < 360; t++) {
+    let last = 0;
+    for (let r = 0; r < Math.max(w, h); r += 0.5) {
+      const [x, z] = at(r, t);
+      if (x < 0 || z < 0 || x > w || z > h) break;
+      if (E[mapgenBetween(Math.round(z), 0, h) * W1 + mapgenBetween(Math.round(x), 0, w)] > 0.05) last = r;
+    }
+    footR[t] = Math.max(last, 1);
+  }
+  const footAt = t => arrAt(footR, t);
   const SMOOTH = 0.25,
     band = Math.round((0.8 + D.mountain.cliffs * 1.2) * 20) / 20;
   G.S0 = Float32Array.from(G.S);
@@ -551,7 +743,19 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
   let shelves = 0;
   for (let j = 0; j < h * 2; j++)
     for (let i = 0; i < W2; i++) {
-      const n = Math.floor((Eat((i + 0.5) / 2, (j + 0.5) / 2) * (1 - SMOOTH)) / band);
+      const x = (i + 0.5) / 2,
+        z = (j + 0.5) / 2,
+        e = Eat(x, z),
+        /* the shelves' edges wander (not rings): an offset by noise, none on the flat top */
+        wob =
+          e > 0.3
+            ? band *
+              0.7 *
+              O3 *
+              (mapgenFbm(x / 7, z / 7, sM + 17) - 0.5) *
+              mapgenBetween(1.2 - e / D.mountain.peak, 0, 1)
+            : 0,
+        n = Math.floor((e * (1 - SMOOTH) + wob) / band);
       if (n > 0) {
         G.S[j * W2 + i] += n * band;
         shelves++;
@@ -565,7 +769,8 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
 
   /* ---------- water: the pond at the mountain's foot, the stream down to the cove with a small fall ---------- */
   const spots = /** @type {{ kind: string, x: number, z: number, y: number }[]} */ ([]);
-  const rW = rng('water');
+  const rW = rng('water'),
+    wetPts = /** @type {number[][]} */ ([]);
   /* the stream comes into one side of the cove's back, the dock stands on the other */
   const side = rW.chance(0.5) ? 1 : -1,
     streamA = D.cove.a + side * D.cove.span * 0.2,
@@ -639,6 +844,8 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
           }
       }
       mapgenPaintStream(G, pts, 1.8, 'water');
+      wetPts.push(...pts.filter((_, k) => k % 4 === 0));
+      for (let k = 0; k < 12; k++) wetPts.push(at0(pr, k * 30).map((v, m) => v + (m ? pz : px)));
       spots.push({ kind: 'fall', x: mapgenRound2(pts[1][0]), z: mapgenRound2(pts[1][1]), y: mapgenRound2(start) });
     }
   }
@@ -648,7 +855,18 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
   const loop = [];
   for (let k = 0; k <= 360; k++) {
     const t = 180 + k;
-    let r = coastAt(t) - arrAt(beachW, t) - D.paths.inland - D.paths.width / 2;
+    /* it wanders a little in and out (never onto the beach) */
+    let r =
+      coastAt(t) -
+      arrAt(beachW, t) -
+      D.paths.inland -
+      D.paths.width / 2 -
+      Math.max(
+        0,
+        (mapgenFbm(Math.cos(t * ISLAND_RAD) * 3 + 9, Math.sin(t * ISLAND_RAD) * 3 + 9, salt('paths')) - 0.35) *
+          7 *
+          D.organic
+      );
     if (arrAt(cliffW, t) > 0.3) r = Math.min(r, coastAt(t) - 5);
     let p = at(r, t);
     for (let push = 0; push < 30 && zoneAvoid(p[0], p[1]) && r < coastAt(t) - 1.5; push++) p = at((r += 0.5), t);
@@ -681,9 +899,22 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
     }
     return best;
   };
+  /* a spoke bends a little (a curve with its middle pushed aside by noise), straight at both ends */
+  const sP = salt('paths', 'spokes');
   const spoke = (a, b, name) => {
-    if (Math.hypot(b[0] - a[0], b[1] - a[1]) < 1) return;
-    roads.push({ pts: mapgenResample([a, b], 0.5), width: Math.max(1.6, D.paths.width * 0.9), main: false, name });
+    const L = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    if (L < 1) return;
+    const bend = (mapgenNoise(a[0] / 11 + 3, a[1] / 11 + 3, sP) - 0.5) * 2 * 0.22 * L * D.organic,
+      nx = -(b[1] - a[1]) / L,
+      nz = (b[0] - a[0]) / L,
+      m = [(a[0] + b[0]) / 2 + nx * bend, (a[1] + b[1]) / 2 + nz * bend],
+      raw = [];
+    for (let k = 0; k <= 16; k++) {
+      const f = k / 16,
+        u = 1 - f;
+      raw.push([u * u * a[0] + 2 * u * f * m[0] + f * f * b[0], u * u * a[1] + 2 * u * f * m[1] + f * f * b[1]]);
+    }
+    roads.push({ pts: mapgenResample(raw, 0.5), width: Math.max(1.6, D.paths.width * 0.9), main: false, name });
   };
   /* each flat zone: from the middle of its side facing the sea to the loop, and the town's side facing the mountain
      to the mountain's foot */
@@ -715,7 +946,12 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
       /* out from the mountain's middle along this line until no mountain is left, then 1.5 m more */
       let r = 0;
       while (r < 120 && Eat(...at(r, t)) > 0.05) r += 0.5;
-      const foot = at(r + 1.5, t);
+      let foot = at(r + 1.5, t);
+      /* the mountain's foot right by the town: the spoke still runs 3 m up toward it */
+      if (Math.hypot(foot[0] - inn[0], foot[1] - inn[1]) < 3) {
+        const L = Math.hypot(c[0] - inn[0], c[1] - inn[1]) || 1;
+        foot = [inn[0] + ((c[0] - inn[0]) / L) * 3, inn[1] + ((c[1] - inn[1]) / L) * 3];
+      }
       footSpoke = foot;
       spoke(inn, foot, 'town to the mountain');
     }
@@ -791,7 +1027,6 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
           b: islandRound2pt(b),
           w: mapgenRound2(Math.min(2, Rd.width)),
           kind: 'wood',
-          pier: 1,
         });
       k = e;
     }
@@ -808,12 +1043,12 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
   /* ---------- the trail: from the town's spoke at the mountain's foot up to a summit lookout (TR-2b) ---------- */
   if (shelves) {
     const goalOf = () => {
-      /* the highest corner within 5 m of the middle whose ground round it is gentle */
+      /* the highest corner within 5 m of the peak whose ground round it is gentle */
       let best = -1,
         bh = -1e9;
-      for (let j = Math.round(c[1]) - 5; j <= Math.round(c[1]) + 5; j++)
-        for (let i = Math.round(c[0]) - 5; i <= Math.round(c[0]) + 5; i++) {
-          if (Math.hypot(i - c[0], j - c[1]) > 5) continue;
+      for (let j = Math.round(peakP[1]) - 5; j <= Math.round(peakP[1]) + 5; j++)
+        for (let i = Math.round(peakP[0]) - 5; i <= Math.round(peakP[0]) + 5; i++) {
+          if (Math.hypot(i - peakP[0], j - peakP[1]) > 5) continue;
           let steep = false;
           for (let dj = -2; dj <= 2 && !steep; dj++)
             for (let di = -2; di <= 2 && !steep; di++) steep = mapgenSteepAt(G, (j + dj) * W1 + i + di);
@@ -861,7 +1096,14 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
 
   /* ---------- ground: the terrain kinds ---------- */
   const sG = salt('ground'),
+    O4 = D.organic,
     nz = (i, j, sc, k) => mapgenFbm(i / sc, j / sc, sG + k);
+  /* how far each cell is from the pond and the stream (up to 6 m): the ground is lusher there */
+  const wetD = new Float32Array(w * h).fill(99);
+  for (const [px, pz] of wetPts)
+    for (let j = Math.max(0, Math.floor(pz - 6)); j < Math.min(h, Math.ceil(pz + 6)); j++)
+      for (let i = Math.max(0, Math.floor(px - 6)); i < Math.min(w, Math.ceil(px + 6)); i++)
+        wetD[j * w + i] = Math.min(wetD[j * w + i], Math.hypot(i + 0.5 - px, j + 0.5 - pz));
   for (let j = 0; j < h; j++)
     for (let i = 0; i < w; i++) {
       const q = j * w + i;
@@ -873,37 +1115,66 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
         bw = arrAt(beachW, t),
         cw = arrAt(cliffW, t),
         e = D.mountain.peak > 0 ? Eat(x, z) / D.mountain.peak : 0,
-        zk = zones.find(Z => ISLAND_GEN_BUILT.includes(Z.k) && islandPointIn(Z.poly, x, z));
+        zk = zones.find(Z => ISLAND_GEN_BUILT.includes(Z.k) && islandPointIn(Z.poly, x, z)),
+        /* the arcs (forest, dunes, heath) read at a warped angle, so their ends are ragged, not straight lines out */
+        tw = t + (nz(i, j, 14, 30) - 0.5) * 40 * O4,
+        /* every edge a little ragged */
+        jit = (nz(i, j, 2.2, 31) - 0.5) * 2 * O4;
       let ch;
-      if (zk) ch = zk.k === 'pasture' ? 'l' : 'g';
+      if (zk)
+        ch =
+          zk.k === 'pasture'
+            ? nz(i, j, 3, 32) > 0.7 - 0.1 * O4
+              ? 'C'
+              : 'l'
+            : nz(i, j, 4, 41) > 0.7 - 0.06 * O4
+              ? 'G'
+              : 'g';
       else if (e > 0.02) {
-        if (e > 0.55) ch = nz(i, j, 5, 1) > 0.58 ? 'r' : 'C';
+        if (e > 0.55) ch = nz(i, j, 5, 1) > 0.58 ? 'r' : nz(i, j, 4, 33) > 0.62 ? 'H' : 'C';
         else if (e > 0.14) ch = nz(i, j, 4, 2) > 0.5 ? 'r' : nz(i, j, 6, 3) > 0.55 ? 'C' : 'P';
-        else ch = nz(i, j, 3, 4) > 0.45 ? 'P' : 'G';
-      } else if (cw > 0.3 && s < 2.6) ch = s < 1 ? '3' : 'j';
-      else if (s < 1.4 + 0.8 * nz(i, j, 3, 5)) {
+        else ch = nz(i, j, 3, 4) > 0.45 + jit * 0.1 ? 'P' : 'G';
+      } else if (cw > 0.3 && s < 2.6 + jit) ch = s < 1 ? '3' : 'j';
+      else if (s < 1.4 + 0.8 * nz(i, j, 3, 5) + jit * 0.5) {
         if (bw - D.shore * 0.5 < 1.2 && cw < 0.3) ch = 'S';
         else if (bw < 1.6) ch = nz(i, j, 2.5, 6) > 0.55 ? '2' : '3';
         else ch = 'S';
-      } else if (s < bw) ch = islandArcWeight(t, D.dunes.a, D.dunes.span) > 0.4 && nz(i, j, 3, 7) > 0.6 ? 'B' : 's';
+      } else if (s < bw + jit * 1.5)
+        ch =
+          islandArcWeight(tw, D.dunes.a, D.dunes.span) > 0.4 && nz(i, j, 3, 7) > 0.6
+            ? 'B'
+            : nz(i, j, 2, 34) > 0.8
+              ? 'P'
+              : 's';
       else {
-        const fw =
-            islandArcWeight(t, D.forest.a, D.forest.span) *
-            (d - footAt(t) < D.forest.deep ? 1 : 0) *
+        const fd = d - footAt(t),
+          /* the belt thins out with noise toward its far edge instead of stopping on a line */
+          deep = D.forest.deep * (0.75 + 0.5 * nz(i, j, 12, 35)),
+          fw =
+            islandArcWeight(tw, D.forest.a, D.forest.span) *
+            (1 - mapgenSmooth(mapgenBetween((fd - deep + 6) / 12, 0, 1))) *
             (s > bw + 4 ? 1 : 0),
-          dunes = islandArcWeight(t, D.dunes.a, D.dunes.span),
-          heath = islandArcWeight(t, D.heath.a, D.heath.span);
-        if (fw > 0 && nz(i, j, 9, 8) * fw > 1 - D.forest.density * 0.9) {
-          if (d - footAt(t) < 7) ch = nz(i, j, 4, 9) > 0.45 ? 'F' : 'y';
+          /* groves out in the open, clearings in the forest */
+          grove = s > bw + 6 && nz(i, j, 6, 36) > 0.74 - 0.06 * O4,
+          clearing = nz(i, j, 7, 37) > 0.78,
+          dunes = islandArcWeight(tw, D.dunes.a, D.dunes.span),
+          heath = islandArcWeight(tw, D.heath.a, D.heath.span),
+          wet = wetD[q];
+        if (wet < 2.5 + jit) ch = nz(i, j, 2, 38) > 0.5 ? 'M' : 'C';
+        else if (((fw > 0 && nz(i, j, 9, 8) * fw > 1 - D.forest.density * 0.9) || grove) && !clearing) {
+          if (fd < 7 + jit * 2) ch = nz(i, j, 4, 9) > 0.45 ? 'F' : 'y';
           else {
             const v = nz(i, j, 4, 10);
             ch = v > 0.62 ? 'L' : v < 0.38 ? 'M' : 'y';
           }
-        } else if (dunes > 0.4 && s < bw + 7) ch = nz(i, j, 3, 11) > 0.45 ? 'B' : 's';
+        } else if (dunes > 0.4 && s < bw + 7 + jit * 2) ch = nz(i, j, 3, 11) > 0.45 ? 'B' : 's';
         else if (heath > 0.3 && nz(i, j, 8, 12) * heath > 0.35) ch = nz(i, j, 3, 13) > 0.6 ? 'B' : 'H';
+        else if (s > bw + 6 && nz(i, j, 3.5, 20) > 0.8 - 0.04 * O4) ch = nz(i, j, 1.5, 21) > 0.5 ? 'r' : 'P';
+        else if (wet < 5) ch = nz(i, j, 3, 39) > 0.5 ? 'E' : 'G';
         else {
-          const v = nz(i, j, 7, 14);
-          ch = v > 0.64 ? 'E' : v < 0.4 ? 'g' : 'G';
+          const v = nz(i, j, 7, 14),
+            v2 = nz(i, j, 3, 40);
+          ch = v > 0.64 ? 'E' : v < 0.36 ? (v2 > 0.62 ? 'C' : 'g') : v2 > 0.72 ? 'f' : 'G';
         }
       }
       G.T[q] = ch;
@@ -955,8 +1226,18 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
   if (D.forest.span > 0 && D.forest.deep > 0) {
     const a0 = D.forest.a - D.forest.span / 2,
       a1 = D.forest.a + D.forest.span / 2,
-      n = Math.max(4, Math.round(D.forest.span / 6));
-    const outer = ring(t => Math.min(footAt(t) + D.forest.deep, coastAt(t) - arrAt(beachW, t) - 4), n, a0, a1),
+      n = Math.max(4, Math.round(D.forest.span / 4));
+    const sF = salt('ground', 'forest'),
+      outer = ring(
+        t =>
+          Math.min(
+            footAt(t) + D.forest.deep * (0.8 + 0.4 * D.organic * mapgenNoise(t / 15, 1.3, sF)),
+            coastAt(t) - arrAt(beachW, t) - 4
+          ),
+        n,
+        a0,
+        a1
+      ),
       inner = ring(t => footAt(t) + 1, n, a0, a1).reverse();
     zones.push({ k: 'forest', poly: [...outer, ...inner], lock: false });
   }
