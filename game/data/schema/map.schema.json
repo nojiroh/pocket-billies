@@ -51,7 +51,12 @@
   "zones": {
    "description": "island track: areas of the island; a locked zone's ground and props are never touched when the island is made again",
    "type": "array",
-   "items": {"type": "object", "required": ["k", "poly"], "properties": {"k": {"enum": ["town", "barn", "pasture", "forest", "mountain", "cove", "beach", "path"]}, "poly": {"$ref": "#/$defs/poly"}, "lock": {"type": "boolean"}}}
+   "items": {"type": "object", "required": ["k", "poly"], "properties": {"k": {"enum": ["town", "barn", "pasture", "forest", "mountain", "cove", "beach", "path", "hamlet"]}, "poly": {"$ref": "#/$defs/poly"}, "lock": {"type": "boolean"}}}
+  },
+  "plots": {
+   "description": "island track: building plots the island generator laid out (IS-2): where a building of kind k may stand, its middle (x, z), width along its street, depth, the angle its front faces (degrees, 0 east, 90 north) and the level its pad was made at; the buildings themselves are props",
+   "type": "array",
+   "items": {"type": "object", "required": ["k", "x", "z", "w", "d", "a"], "properties": {"k": {"enum": ["house", "home", "lab", "mast", "shop", "well", "farmhouse"]}, "x": {"type": "number"}, "z": {"type": "number"}, "w": {"type": "number", "exclusiveMinimum": 0}, "d": {"type": "number", "exclusiveMinimum": 0}, "a": {"type": "number"}, "y": {"type": "number"}}}
   },
   "islandGen": {
    "description": "island track: the island generator's version, seed and dials (IS-2 owns the dials), so the ground can be made again; lock and hash freeze the ground",

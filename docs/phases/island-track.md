@@ -46,6 +46,30 @@ things the list missed:
   water quads 90 m out and lowers the far land; the coast biome sets it (`far: "sea"`, `farH: 5`). IS-3 builds on it.
 - `?test=1&scene=<id>` already opens any test map; `?fixture=island` is for the fast check.
 
+**Checked in IS-2** (logic/island-gen.js, tools/build-island.mjs, `copperleaf_island`):
+- The town does not fit a 135 m island: today's buildings span about 72 x 46 m with the barn (60 x 34 m without); with a
+  45 m mountain foot the town box's south corners fell in the sea. The owner chose ~150 m (question 1). The generator
+  pushes the coast out round every flat zone (a beach, the loop path and a margin past it), so a zone always fits.
+- The lap is longer than "~90 s": the coast loop is 472 m, about 139 s walking (it bends round the cove and bulges
+  round the town and barn). A smaller `size.r` dial shortens it.
+- mapgen's helpers do the work read-only: its working state (`mapgenNewWork`), TR-2b's trail search and carving, the
+  stream painter, the road flattening, the water lowering, the shelves' rock edges. No export was added to mapgen.js.
+- TR-2's mountain shape needed a flat top: a sharp peak drops more than the trail's grade on every side, so no trail
+  could leave it (15 of 24 seeds had no trail before; 24 of 24 after).
+- The game's `findPath` gives up after 30000 cells, under a third of a 174 x 167 m map: the 102 m way from the town to
+  the summit is found only with a bigger budget. Walking with the joystick is not affected; tap-to-walk across the
+  island is (IS-5 and IS-9 should look at it). The map's in-game checks test the summit from the trail's foot.
+- A plain shape reads as made by a program (the owner, after the first look): generator version 2 adds the `organic`
+  dial (rounded zones, headlands and bays, a ridged massif with a shoulder, wandering shelves and paths, groves,
+  outcrops, wet ground). The massif's ridge has to stay clear of the cove as well as the town, or the stream has no room.
+- A bridge must not carry `pier: 1`: that marks a jetty (a deck ending over water), and the smoke's water rule fails it.
+- A new file under game/js must be on a page (a unit test follows the pages): island-gen.js is on the game page after
+  island.js until IS-6b adds it to the Studio's.
+- Terrain kinds with no letter of their own: dunes are sand with sunburnt grass (`s`, `B`), scree is pebbles (`P`),
+  alpine grass is clover (`C`), the stream bed pebbles (`P`). The rest as listed: `w`/`d` sea, `S` wet sand, `s` sand,
+  `2` tide pools, `3` seaweed rock, `j` basalt cliffs, `G`/`E`/`g` meadow, `l` pasture, `y`/`L`/`M`/`F` forest floor,
+  `H` heath, `r` rock, `p` paths, `v` the trail. Farmland waits for IS-5 (Copperleaf's farm patch moves with the barn).
+
 ## The proposed island (starting dials; IS-2 confirms them)
 
 ```
@@ -86,6 +110,8 @@ So the parallel sessions mesh, the new map fields are fixed first, in the schema
 - `islandGen`: the generator's dials and seed, kept in the map so the ground can be made again; `lock` and `hash`
   freeze the ground (logic/island.js `islandGroundHash`; added in IS-0 after the owner's direction).
 - `edge: "w"` and the sea's water kind.
+- **Added in IS-2**: zone kind `hamlet`; `plots: [{ k, x, z, w, d, a, y }]`, building plots the generator lays out (k one
+  of house, home, lab, mast, shop, well, farmhouse; a the angle the front faces; y the pad's level).
 - A crude `test_island` map (a cone, a flat ring, sea round it) so IS-1 and IS-3 have an island on day one.
 
 ## Sessions and waves
@@ -171,6 +197,11 @@ sea past it, `cam.orbit` set. A quick fixture `?fixture=island` that boots into 
   stays batch 11's.
 
 ### IS-5 Copperleaf moves onto the island
+**Changed in IS-2** (the owner: the town in the generator): the generator lays the town out itself (streets, a square,
+bridges, a quay) and leaves `plots` for the buildings: put the lab, the airship station (`mast`), Juniper's home, the
+shop and the well on theirs and the cottages on `house` plots, the barn in its zone; the hub is by the well. The town's
+ground is not flat: a building stays on its plot's level pad. The list below still holds for everything that names a
+Copperleaf position.
 - The one session that edits `copperleaf.json`. Move the town, the barn, the mast and airship, the well, the great
   oak and the people into their zones on `copperleaf_island`, keeping their layout where it fits; turn the buildings
   at the sector's ends to face outward. Then `copperleaf_island` replaces `copperleaf` (same id).
@@ -233,6 +264,8 @@ placed (question 5), the phone's frame times at 8 angles round the coast, then t
 
 ## Ask me before (recommendation first)
 1. **Size**: ~135 m across, a lap ~90 s walking, ~50 s running (rec) / ~180 m, ~2 min walking / ~110 m, ~70 s.
+   **Answered in IS-2: ~150 m, then ~220 m** (after the sketches: room for the river town, the hamlet and the
+   mountains; the coast loop 580 m, ~170 s walking).
 2. **On the mountain top** (inside the dead zone): the camera holds still (rec) / you turn it freely there.
    **Answered 2026-10-22 (IS-1): holds still; your own turn (`turn`) still works on top.**
 3. **The sun**: fixed in the world, shadows stay put as you circle (rec) / locked to the camera, the same slant on
@@ -240,10 +273,11 @@ placed (question 5), the phone's frame times at 8 angles round the coast, then t
    **Answered 2026-10-22 (IS-1): fixed in the world; the toggle is Engine > Camera > Sun turns with the camera (off).**
 4. **The town**: kept as it is in the south, end buildings turned outward (rec) / relaid as a ring facing the sea.
 5. **Wild Billies in the hub**: tall grass in the forest and heath, low levels, as Copperleaf has now (rec) / none.
-6. **The cove**: dock and fishing now, boats to other islands later (rec) / scenery only.
-7. **The mountain**: climbable, summit lookout (rec) / scenery only.
+6. **The cove**: dock and fishing now, boats to other islands later (rec) / scenery only. **Answered in IS-2: a dock
+   landing and a deep channel** (the dock itself is IS-4's).
+7. **The mountain**: climbable, summit lookout (rec) / scenery only. **Answered in IS-2: climbable.**
 8. **The pasture**: ranch Billies roam in it, up to ~6 (rec) / fence and props only for now.
-9. **The stream and fall** from the mountain to the cove: yes (rec) / no.
+9. **The stream and fall** from the mountain to the cove: yes (rec) / no. **Answered in IS-2: yes, with a pond.**
 10. **The generator for later islands**: built reusable now, a Studio "island" kind later (rec) / one-off tool.
     **Answered 2026-10-22: reusable.**
 11. **New game's fall** lands in the town square (rec) / on the beach.
