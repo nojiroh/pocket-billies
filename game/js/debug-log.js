@@ -808,6 +808,7 @@ debugLog.hook = () => {
     ['drawPropModels', 'models'],
     ['drawBoxFaces', 'box faces'],
     ['drawStructures', 'structures'],
+    ['drawPlayerSilhouette', 'silhouette'],
     ['drawPostEffects', 'post'],
     ['drawGround', 'ground'],
     ['reflectionPass', 'reflections'],

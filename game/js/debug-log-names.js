@@ -50,7 +50,14 @@ import { buildGroundMesh, setBuildGroundMesh } from './walk/ground-mesh.js';
 import { setSwapMapCache, setUpdateNearRing, swapMapCache, updateNearRing } from './walk/map-cache.js';
 import { drawWater, reflectionPass, setDrawWater, setReflectionPass } from './walk/water.js';
 import { gatherFrameItems, setGatherFrameItems } from './walk/frame-items.js';
-import { drawBoxFaces, drawSprites, setDrawBoxFaces, setDrawSprites } from './walk/sprites.js';
+import {
+  drawBoxFaces,
+  drawPlayerSilhouette,
+  drawSprites,
+  setDrawBoxFaces,
+  setDrawPlayerSilhouette,
+  setDrawSprites,
+} from './walk/sprites.js';
 import { setShadowPass, shadowPass } from './walk/shadows.js';
 import { drawGrass, drawGround, setDrawGrass, setDrawGround } from './walk/ground-draw.js';
 import { effectsPass, setEffectsPass } from './walk/effects.js';
@@ -103,6 +110,7 @@ Object.defineProperties(GAME, {
   drawBuildings: { get: () => drawBuildings, set: setDrawBuildings },
   drawGrass: { get: () => drawGrass, set: setDrawGrass },
   drawGround: { get: () => drawGround, set: setDrawGround },
+  drawPlayerSilhouette: { get: () => drawPlayerSilhouette, set: setDrawPlayerSilhouette },
   drawPostEffects: { get: () => drawPostEffects, set: setDrawPostEffects },
   drawPropModels: { get: () => drawPropModels, set: setDrawPropModels },
   drawSolidProps: { get: () => drawSolidProps, set: setDrawSolidProps },

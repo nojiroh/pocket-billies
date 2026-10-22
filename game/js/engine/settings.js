@@ -176,6 +176,7 @@ export const ENGINE_DEFAULTS = {
     pixelGrid: false,
     rise: 18,
     rockFade: true,
+    silhouette: true,
   },
   quality: {
     resolution: 1,
@@ -697,6 +698,12 @@ export const ENGINE_SPEC = [
         'Rock fades in front of you',
         'bool',
         'Terrain TR-3: ground and cliffs between the camera and you thin out.',
+      ],
+      [
+        'silhouette',
+        'Your silhouette through rock',
+        'bool',
+        'Terrain TR-3: where rock still hides you, your shape shows through it as a tint.',
       ],
     ],
   ],
