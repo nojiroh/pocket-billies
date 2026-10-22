@@ -2,6 +2,60 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Sound track SND-2 - The tracker as data - 2026-10-22
+Branch `sound` (PR #120). Plan approved at the start in Plan Mode; the owner's answer to its one question: the
+biome-to-song mapping as the track file first guessed it (not waiting to hear the pairs in SND-3).
+- Changed (one cause per commit):
+  - `tools/check-sound.py` and the committed `validation/sound-baseline/` (71 fingerprints: 21 songs by day and at
+    night, 5 jingles, 24 cries), made before anything moved; the full check's "Song fingerprints" step.
+  - `game/js/audio/tracker.js` in three moves: instruments, composer (`trackerCompose`, which no longer writes notes
+    into the recipe), player (`play`, `stop`, `tick`, `jingle`). It imports nothing; sound.js keeps every exported name.
+  - `game/data/music.json` + `music.schema.json` (songs, jingles, cries.bases, where), `MUSIC` in game-data.js, types,
+    check-data rules; sound.js reads it.
+  - `game/js/logic/music-where.js` `songFor`; `musicFor` builds the state; `tools/test/sound.test.mjs` (the musicFor
+    test SND-1 left).
+  - Biome music in a run (the owner's mapping), a town node town, the landing route; the full check's "Run music" step.
+  - The tracker's 25 ms timer stops with no song and while the page is hidden; the footstep poller skips its work
+    while no sound can play.
+  - The Unused report lists songs nothing plays (none).
+  - Docs: sound-track.md (as built, corrections), ROADMAP, TESTING, CHANGELOG.
+- Risky or unfinished:
+  - Only five biomes reach a run (meadow, lake, thicket, ridge, autumn): a run plays meadow, trench, spore, crystal and
+    spire. Nobody has heard these songs in a run yet: please listen on the phone (`?fixture=run`, then walk on).
+  - `musicSync` was not made event-driven (planned): the calls would go in ui.js, the battle and the cutscenes, which
+    the track keeps out of, and a 1 s sync that finds the same song costs nothing. The footstep poller was not moved
+    onto the walk view: it already did nothing on the title, in battle and hidden.
+  - The fingerprints compare loudness per 50 ms, not the waveform: a change that keeps every window within 1% (a
+    wave swapped for one as loud) would pass. A changed seed fails at once (seen).
+  - `JINGLES.item` (lore.js) still doesn't exist; seen in SND-1, not changed.
+  - The first full run here failed "Run music" (it passed alone): the step moved trip.node by hand and the walk view
+    put it back before the 1 s sync. The step now calls the sync itself (75333d0).
+  - Tags can't be pushed (HTTP 403): `snd-1-done` (4f7ace1, re-made here: the clone didn't have it) and `snd-2-done`
+    exist only in this container; please tag after merging.
+- Verified (what ran, what passed):
+  - After each edit: lint, typecheck, check:modules; before each commit format:check, check:data; unit tests 467
+    (459 before: 8 in sound.test.mjs). Fingerprints after every commit from the first move on: 71, none changed.
+  - Planted faults: a song's seed changed by one fails its fingerprints only; a where-rule naming no song and a last
+    rule that doesn't always match fail check-data; "Run music" fails on the code before the biome rules; an extra
+    song shows in the Unused report.
+  - In a browser: the old and new musicFor agree on every place of the town fixture; hiding the page stops the
+    scheduler and suspends the audio, showing it brings both back; a faked walk works out no step before sound
+    starts and plays steps once it runs.
+  - Smoke, each run alone in a worktree: 6d79857 (after the split) 255 s, no problems; 187ff03 270 s, no problems.
+  - The full quick check on 187ff03: 1928 s, 56 steps, 46 passed; 9 of the 10 problems are the known ones (v34, v35,
+    v38, v39/40, v43, v44, v46, alpha 0.4, phase 08 running), the tenth "Run music" (fixed above). Sound settings,
+    Song fingerprints (41 s) and Unused: ok. A second full run on 75333d0 is noted below when it ends.
+  - Not run: `--selftest`. Not tried on a phone.
+- Decisions I made (and why):
+  - Fingerprints go through the game's own initSound with a stand-in AudioContext (the same tool before and after
+    the split, so it proves the split), renders in batches of 12 in parallel (7 minutes became 1).
+  - A cry base holds only its wave; the cry's shape stays code until SND-6 gives species their own.
+  - The legacy map rules (mall, verdigris) are kept as data so nothing changes; recommend deleting them in SND-4.
+- Questions waiting for the owner: how do the biome songs sound in a run on your phone? Is `musicSync` at 1 s fine
+  to keep (my recommendation), or do you want it event-driven when UI-5 opens ui.js?
+- Next session starts with: SND-3, the Studio's Music & sound section (ask first: a Game-group section or a Sound
+  group of its own).
+
 ### Sound track SND-1 - Settings and routing - 2026-10-22
 Branch `sound` (made by the owner's request from the session branch, which holds the track plan: docs/phases/sound-track.md,
 two commits on main 1d35666). Plan approved at the start in Plan Mode; the owner answered its three questions: jingles
