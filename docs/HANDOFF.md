@@ -43,7 +43,12 @@ said to go ahead. Mid-session the owner asked to check the other sessions merge 
 - Verified: unit tests 536 after the merge (breeding 8, breeding-sim 1; battle-rewards, rules and ranch-state changed
   on purpose); lint, typecheck, modules, format, check-data (planted faults caught); check-fast 20 of 20 after the
   merge (Breeding seen failing with Breed not paying); the in-game "The ranch" phases alone (breeding seen failing with
-  eggs always ready); headless pictures (390 x 760) of the sheet. The full quick check: running at this commit (its result in the next commit).
+  eggs always ready); headless pictures (390 x 760) of the sheet. The full quick check after the merge (a0df71b, 24
+  min): 45 of 54; the 9 red are the stale steps red on main too (v34 biped walk cycle, v35/v38/v39 roster counts 117/61,
+  v43 and alpha 0.4 empty bush recipes, v44 props scene, v46 buildings without a plan, phase 08 running). CI's smoke
+  was red on this PR as on main (#114, #115) in RL-9b's "Packing for a run": a race in the check (the flight landed
+  before the wait looked); RL-11's session found it and its fix (fbdb456) is ported here, reproduced with the page's
+  CPU slowed 6x (old fails, new passes).
 - Sim (49 pairs x 40 eggs, report only): risky eggs 59 / 31 / 11 % (odds 60/30/10), an abomination for about 47
   Scrap. Battles at Lv 30 (the duel's control, plain against plain, is 0.43): an abomination against its unmarked twin
   0.44, a quirk 0.46 (the mark about even); against a plain all-M Billie 0.17 and 0.11, since mixed part sizes lose
