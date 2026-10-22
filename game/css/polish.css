@@ -272,35 +272,6 @@ section > h2::before,
   color: var(--orn2);
 }
 
-/* ---------- shops ---------- */
-.shop-say {
-  background: linear-gradient(180deg, var(--panel-s), var(--panel2));
-}
-.shop-bal {
-  background: var(--chip-money-bg);
-  color: var(--chip-money-fg);
-  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--gold) 60%, transparent);
-}
-.shop-bal b {
-  color: var(--chip-money-fg);
-}
-.ware2 {
-  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0) 40%);
-}
-.ware2:not(.locked):hover {
-  box-shadow:
-    0 0 0 2px var(--line),
-    inset 0 2px 0 var(--hi),
-    0 8px 16px -10px var(--shadow);
-}
-.qb {
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--line) 30%, transparent);
-}
-.qb:hover:not(:disabled) {
-  background: var(--gold);
-  color: #3a2408;
-}
-
 /* ---------- field guide ---------- */
 .fchip {
   box-shadow:
@@ -407,9 +378,6 @@ section > h2::before,
   .option:active {
     transform: scale(0.94);
   }
-  .ware2:not(.locked):hover {
-    transform: translateY(-2px);
-  }
 
   /* staggered entrances on tab change */
   .screen.enter :is(.slot, .vit, .empty) {
@@ -443,10 +411,6 @@ section > h2::before,
   .screen.enter .fchip:nth-child(n + 4) {
     animation-delay: 75ms;
   }
-  .scrim.still .ware2,
-  .scrim.still .shop-say p {
-    animation: none;
-  }
 
   /* title and dialog */
   .title .pb.gold {
@@ -467,9 +431,6 @@ section > h2::before,
   .ware2:not(.locked) .w-ic,
   .ware .pxi:first-child {
     transition: transform 0.25s var(--spring);
-  }
-  .ware2:not(.locked):hover .w-ic {
-    transform: rotate(-8deg) scale(1.08);
   }
 }
 
