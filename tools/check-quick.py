@@ -1172,9 +1172,11 @@ def desktop_steps(b, base, R):
         pg.evaluate("environment.force={time:13,weather:'clear',season:'autumn'};0"); time.sleep(2); shot(pg, 'autumn'); pg.evaluate("environment.force=null;0")
         # rooms: light through the window by day, lamps at night, the floor ends at the door
         walk_in(pg, 'house', 'cottage_moss'); until(pg, "walkView.ready&&(walkView.id==='int_house'||(walkView.sc&&walkView.sc.roomOf==='int_house'))", 30); time.sleep(1.5)   # phase 08b: through a house's door (no room opens without one); RL-5: a moss-roof cottage of Copperleaf (Marigold's red-roof house is parked)
-        pg.evaluate("environment.force={time:15.5,weather:'clear',season:'summer'};walkRenderer.roomSkyT=0;0"); time.sleep(2); shot(pg, 'room-day')
+        # IS-5: waits for frames drawn in the room, not a fixed time (the island hub draws more slowly in software)
+        frames = lambda: (lambda f0: until(pg, f'walkRenderer.frames>={f0 + 2}&&!!walkRenderer.roomSky', 60))(pg.evaluate('walkRenderer.frames'))
+        pg.evaluate("environment.force={time:15.5,weather:'clear',season:'summer'};walkRenderer.roomSkyT=0;0"); time.sleep(.5); frames(); shot(pg, 'room-day')
         day = pg.evaluate("[walkRenderer.roomSky&&walkRenderer.roomSky.I,walkRenderer.roomSky&&walkRenderer.roomSky.lamp,(roomLamps(walkView.sc)||[]).length,!!walkRenderer.roomBox]")
-        pg.evaluate("environment.force={time:23,weather:'clear',season:'summer'};walkRenderer.roomSkyT=0;0"); time.sleep(2); shot(pg, 'room-night')
+        pg.evaluate("environment.force={time:23,weather:'clear',season:'summer'};walkRenderer.roomSkyT=0;0"); time.sleep(.5); frames(); shot(pg, 'room-night')
         night = pg.evaluate("[walkRenderer.roomSky&&walkRenderer.roomSky.night,walkRenderer.roomSky&&walkRenderer.roomSky.lamp]")
         pg.evaluate("environment.force=null;leaveRoom();0"); until(pg, "walkView.ready&&!walkView.sc.roomRect&&(walkView.id==='copperleaf'||(walkView.sc&&walkView.sc.baseId==='copperleaf'))", 30)   # RL-5: back out in Copperleaf
         if not day[3] or not day[0] or day[0] < .2 or night[1] < .9 or day[2] < 1: raise Exception(f'room light: day {day}, night {night}')
@@ -1202,7 +1204,9 @@ def desktop_steps(b, base, R):
         # the map: drag the land, turn, zoom right down to the miniatures
         pg.evaluate("uiState.tab='map';render();0"); time.sleep(6)
         if pg.evaluate("typeof worldBowl!=='undefined'&&worldBowl.on"):
-            # phase 10: the bowl map (game/js/world-bowl.js): drag, turn and zoom with its own camera, then Home
+            # phase 10: the bowl map (game/js/world-bowl.js): drag, turn and zoom with its own camera, then Home (IS-5:
+            # from Home, so where an earlier step left the camera doesn't decide how far the pan lands from the rim)
+            pg.evaluate("(()=>{const me=worldBowlSpots()[saveData.trip.node];worldBowl.goal=null;worldBowl.tween=null;worldBowl.cam=bowlCamClamp(bowlCamHome(me.x,me.y));worldBowl.dirty=true})();0"); time.sleep(.5)
             c0 = pg.evaluate("JSON.stringify(worldBowl.cam)")
             pg.evaluate("(()=>{const W=worldMapWidth,H=worldMapHeight;let c=bowlCamPan(worldBowl.cam,bowlCamView(worldBowl.cam,W,H),-120,40);c=bowlCamTurn(c,.8,.2);for(let i=0;i<20;i++)c=bowlCamZoom(c,.8);worldBowl.goal=null;worldBowl.cam=c;worldBowl.dirty=true})();0"); time.sleep(2); shot(pg, 'map-close')
             m = pg.evaluate("(()=>{const c=worldBowl.cam,v=bowlCamView(c,worldMapWidth,worldMapHeight);return [JSON.stringify(c),c.dist,v.C[1]]})()")
