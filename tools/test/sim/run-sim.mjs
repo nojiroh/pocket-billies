@@ -174,7 +174,9 @@ export function runSim(seed, o = {}) {
           } else fn('enemyOnly')();
         }
         res = res || playOut();
-        const pay = modules['battle-rewards'].battleRewards({ kind: 'wild', over: res.over, foe: [foe] }, s);
+        const pay = modules['battle-rewards'].battleRewards({ kind: 'wild', over: res.over, foe: [foe] }, s, () =>
+          B.rng()
+        );
         s.se += pay.prize;
         fn('dropEncounter')(q.id);
         hooks.provide({ activeBattle: null });
@@ -209,7 +211,8 @@ export function runSim(seed, o = {}) {
           B = hooks.activeBattle,
           pay = modules['battle-rewards'].battleRewards(
             { kind: 'trainer', over: res.over, T: TRAINERS[T.id], tid: T.id, foe: team },
-            s
+            s,
+            () => B.rng()
           );
         hooks.provide({ activeBattle: null });
         hooks.uiState.learnQ.length = 0;

@@ -937,7 +937,11 @@ export function endBattle() {
     tid = activeBattle.tid,
     /* RL-8: what it pays and costs (logic/battle-rewards.js); RL-4: a battle called off at the turn cap ends as if you
        walked away (wild) or lost (a trainer) */
-    pay = battleRewards({ kind, over: activeBattle.over, T, tid, foe: activeBattle.sides[1].team }, saveData),
+    pay = battleRewards(
+      { kind, over: activeBattle.over, T, tid, foe: activeBattle.sides[1].team },
+      saveData,
+      battleRoll
+    ),
     o = pay.o,
     lead = findBilly(activeBattle.lead),
     /* RL-8: a run's battle (run.js): it has ended, so the save may be written again (game-state.js saveHeld) */

@@ -23,14 +23,16 @@ expose({
 export const battleOutcome = (kind, over) => (over === 'draw' ? (kind === 'wild' ? 'ran' : 'lose') : over);
 /**
  * What a battle that has ended pays and costs. `rules` defaults to the game's. RL-10: it draws no chance any more
- * (a wild win's egg drop, the one roll it took, is gone: eggs come from the ranch).
+ * (a wild win's egg drop, the one roll it took, is gone: eggs come from the ranch); `roll`, the battle's chance, is
+ * still taken so every caller's arguments keep their places.
  * @param {{ kind: string, over: string | null, T?: any, tid?: string, foe: { lvl: number }[] }} b
  * @param {{ se: number, flags: Record<string, number>, seats: string[], run?: any }} s
+ * @param {(() => number) | null} roll unused since RL-10
  * @param {{ battle: { loseFee: number } }} [rules]
  * @returns {{ o: string | null, fee: number, prize: number, reward: number, first: boolean,
  *   seat: null | { id: string, nu: boolean, coins: Record<string, number>, items: Record<string, number> } }}
  */
-export function battleRewards(b, s, rules = RULES) {
+export function battleRewards(b, s, roll, rules = RULES) {
   const o = battleOutcome(b.kind, b.over),
     out = { o, fee: 0, prize: 0, reward: 0, first: false, seat: /** @type {any} */ (null) };
   /* RL-8: on a run a loss ends the run (no fee) and wins no badge */

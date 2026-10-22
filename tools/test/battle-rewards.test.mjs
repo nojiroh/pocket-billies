@@ -40,11 +40,15 @@ test('battle rewards: the same numbers endBattle worked out before the move', ()
               s: { se, flags: beaten ? { crude: 1 } : {}, seats: beaten ? ['oil'] : [] },
             });
   for (const { b, s } of cases)
-    assert.deepEqual(battleRewards(b, s, RULES_HERE), before(b, s), JSON.stringify({ b, s }));
+    assert.deepEqual(
+      battleRewards(b, s, () => 0.5, RULES_HERE),
+      before(b, s),
+      JSON.stringify({ b, s })
+    );
 });
 
 test('battle rewards: a lose costs a tenth of the money, a wild win pays $20 a level, a trainer its reward', () => {
-  const R = (b, s) => battleRewards(b, s, RULES_HERE);
+  const R = (b, s) => battleRewards(b, s, () => 0.5, RULES_HERE);
   assert.equal(R({ kind: 'wild', over: 'lose', foe: [] }, { se: 995, flags: {}, seats: [] }).fee, 99);
   assert.equal(R({ kind: 'wild', over: 'win', foe: [{ lvl: 5 }] }, { se: 0, flags: {}, seats: [] }).prize, 100);
   assert.equal(R({ kind: 'wild', over: 'draw', foe: [] }, { se: 50, flags: {}, seats: [] }).o, 'ran');
@@ -58,7 +62,7 @@ test('battle rewards: a lose costs a tenth of the money, a wild win pays $20 a l
 test('battle rewards on a run (RL-8): no lose fee, no badge; the prize and the reward as in the hub', () => {
   const T = { reward: 300, seat: { id: 'oil', coins: { silver: 3 }, items: {} } },
     s = { se: 1000, flags: {}, seats: [], run: {} };
-  const R = b => battleRewards(b, s, RULES_HERE);
+  const R = b => battleRewards(b, s, () => 0.5, RULES_HERE);
   assert.equal(R({ kind: 'wild', over: 'lose', foe: [] }).fee, 0);
   assert.equal(R({ kind: 'trainer', over: 'draw', T, tid: 't', foe: [] }).fee, 0);
   const w = R({ kind: 'wild', over: 'win', foe: [{ lvl: 5 }] });
