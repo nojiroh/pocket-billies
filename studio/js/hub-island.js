@@ -19,17 +19,27 @@ import { previewViewport } from '../../game/js/hooks.js';
 import { $, $$, clamp } from '../../game/js/util.js';
 import { ISLAND_ZONE_KINDS, islandGroundHash, islandPointIn, islandProblems } from '../../game/js/logic/island.js';
 import { makeCanvas } from '../../game/js/art.js';
-import { artImage, mapHub, walkView, walkablePointNear } from '../../game/js/walk-view.js';
+import { artImage, mapHub, setWalkData, walkData, walkView, walkablePointNear } from '../../game/js/walk-view.js';
 import { groundHeightAt, rawHeightAt } from '../../game/js/walk/heights.js';
 import { mountWalkView } from '../../game/js/walk-view-gl.js';
 import { escapeHtml } from './game-stand-ins.js';
 import { FREE_CAM, freeCamCopy, freeCamGlide, freeCamLook, freeCamZoom } from '../../game/js/logic/free-camera.js';
+import {
+  ISLAND_GEN_BUILT,
+  ISLAND_GEN_DEFAULTS,
+  ISLAND_GEN_STAGES,
+  islandGenerate,
+} from '../../game/js/logic/island-gen.js';
 import {
   HUB_SIDES,
   HUB_VIEW,
   groundLockRefusal,
   hubCoastLap,
   hubDefaultMap,
+  hubGenRefusal,
+  hubGenStart,
+  hubGenStats,
+  hubGenWalkProblems,
   hubGroundLocked,
   hubInsertPoint,
   hubIslandCentre,
@@ -40,6 +50,7 @@ import {
   hubRemovePoint,
   hubSideOf,
   hubUnlockGround,
+  hubUseIsland,
   hubViewDrag,
   hubViewFrame,
   hubViewOnlyReason,
@@ -63,6 +74,10 @@ import { atlasGet } from './sprites.js';
 import { drawSceneryThumbs, paintGroundBrush, sceneryArtPaths, sceneryCatalog, sculptHeights } from './map-editor.js';
 /* eslint-disable no-func-assign */
 expose({
+  HUB_DRAFT_ID: [() => HUB_DRAFT_ID],
+  HUB_GEN_ANGLE: [() => HUB_GEN_ANGLE],
+  HUB_GEN_DIALS: [() => HUB_GEN_DIALS],
+  HUB_GEN_STAGE_NAMES: [() => HUB_GEN_STAGE_NAMES],
   HUB_TOOLS: [() => HUB_TOOLS],
   ZONE_COLOURS: [() => ZONE_COLOURS],
   bindHubFields: [() => bindHubFields, v => (bindHubFields = v)],
@@ -71,6 +86,29 @@ expose({
   drawHubMap: [() => drawHubMap, v => (drawHubMap = v)],
   hubBrushHTML: [() => hubBrushHTML],
   hubEd: [() => hubEd],
+  hubGen: [() => hubGen],
+  hubGenArcsHTML: [() => hubGenArcsHTML, v => (hubGenArcsHTML = v)],
+  hubGenCard: [() => hubGenCard],
+  hubGenCopy: [() => hubGenCopy],
+  hubGenDefault: [() => hubGenDefault],
+  hubGenDialHTML: [() => hubGenDialHTML, v => (hubGenDialHTML = v)],
+  hubGenGet: [() => hubGenGet],
+  hubGenGroupHTML: [() => hubGenGroupHTML, v => (hubGenGroupHTML = v)],
+  hubGenHTML: [() => hubGenHTML, v => (hubGenHTML = v)],
+  hubGenInput: [() => hubGenInput, v => (hubGenInput = v)],
+  hubGenNum: [() => hubGenNum],
+  hubGenNumIn: [() => hubGenNumIn],
+  hubGenOwn: [() => hubGenOwn],
+  hubGenRun: [() => hubGenRun, v => (hubGenRun = v)],
+  hubGenSet: [() => hubGenSet, v => (hubGenSet = v)],
+  hubGenShowing: [() => hubGenShowing],
+  hubGenSoon: [() => hubGenSoon, v => (hubGenSoon = v)],
+  hubGenStatsHTML: [() => hubGenStatsHTML, v => (hubGenStatsHTML = v)],
+  hubGenStatus: [() => hubGenStatus],
+  hubGenStop: [() => hubGenStop, v => (hubGenStop = v)],
+  hubGenTimer: [() => hubGenTimer, v => (hubGenTimer = v)],
+  hubGenValue: [() => hubGenValue],
+  hubGenZonesHTML: [() => hubGenZonesHTML, v => (hubGenZonesHTML = v)],
   hubGroundChanged: [() => hubGroundChanged],
   hubLockHTML: [() => hubLockHTML, v => (hubLockHTML = v)],
   hubLook: [() => hubLook, v => (hubLook = v)],
@@ -81,6 +119,7 @@ expose({
   hubPointsDown: [() => hubPointsDown, v => (hubPointsDown = v)],
   hubPolyOf: [() => hubPolyOf],
   hubRefusal: [() => hubRefusal],
+  hubShown: [() => hubShown],
   hubToolBarHTML: [() => hubToolBarHTML, v => (hubToolBarHTML = v)],
   hubViewBar: [() => hubViewBar],
   hubViewBarHTML: [() => hubViewBarHTML, v => (hubViewBarHTML = v)],
@@ -149,8 +188,11 @@ const hubMap = () => {
   const id = hubMapId();
   return id ? studioState.D.maps[id] : null;
 };
-/** why the map can't be edited here now ('' when it can) */
-const hubRefusal = sc => hubViewOnlyReason(sc) || groundLockRefusal(sc);
+/** why the map can't be edited here now ('' when it can): no coast, a locked ground, or a draft from the dials shown */
+const hubRefusal = sc =>
+  hubViewOnlyReason(sc) ||
+  groundLockRefusal(sc) ||
+  (hubGenShowing() ? 'The map shows a draft from the dials: Use this island or discard it to edit by hand.' : '');
 /* the map's pixels a metre: as set with − and +, else the whole map in the card's width and the window's height */
 const hubZoom = sc => {
   if (hubEd.zoom) return hubEd.zoom;
@@ -197,6 +239,7 @@ ${why ? '' : hubToolBarHTML(sc)}
 <div class="hub-legend">${ISLAND_ZONE_KINDS.map(k => `<span><i style="background:${ZONE_COLOURS[k]}"></i>${k}</span>`).join('')}<span><i class="hub-hatch"></i>locked zone</span><span><i class="hub-pivot"></i>pivot and dead zone</span></div>`
 )}
 </div>
+${card('Dials', `<div id="hubGen">${hubGenHTML(sc)}</div>`)}
 ${card('Ground lock', `<div id="hubLock">${hubLockHTML(sc)}</div>`)}
 </div>`;
 };
@@ -295,8 +338,8 @@ function mountHubView() {
   /* a walk round the coast stops when the section is left: back here, the button is off again */
   if (hubEd.walk && !walkView.pl.route) hubEd.walk = false;
   walkView.pl.t = -1;
-  mountWalkView(cv, id, {
-    state: () => ({ mode: 'roam', roam: true, pos: mapHub(hubMap() || walkView.sc), who: 'boy', enc: [], npcs: [] }),
+  mountWalkView(cv, hubGenShowing() ? HUB_DRAFT_ID : id, {
+    state: () => ({ mode: 'roam', roam: true, pos: mapHub(hubShown() || walkView.sc), who: 'boy', enc: [], npcs: [] }),
     keys: () => hubEd.walk,
     onPick: () => {},
     cap: () => (studioState.sec === 'hub' ? 30 : 0),
@@ -432,7 +475,7 @@ const polyPath = (x, P, Z, H) => {
 };
 function drawHubMap() {
   const cv = $('#hubMap'),
-    sc = hubMap();
+    sc = hubShown();
   if (!cv || !sc) return;
   const Z = hubZoom(sc),
     W = sc.w,
@@ -576,7 +619,7 @@ function drawHubMap() {
 function drawHubCamera() {
   const cv = $('#hubMapCam'),
     base = $('#hubMap'),
-    sc = hubMap();
+    sc = hubShown();
   if (!cv || !base || !sc) return;
   const Z = hubZoom(sc),
     H = sc.h,
@@ -626,7 +669,7 @@ function drawHubCamera() {
 function hubPointer(ev) {
   const cv = $('#hubMap'),
     r = cv.getBoundingClientRect(),
-    sc = hubMap(),
+    sc = hubShown(),
     Z = hubZoom(sc),
     mx = ((ev.clientX - r.left) / r.width) * cv.width,
     my = ((ev.clientY - r.top) / r.height) * cv.height;
@@ -831,6 +874,7 @@ function bindHubFields() {
 
 /* ---------- actions ---------- */
 ACTIONS.hubPick = d => {
+  if (d.k !== studioState.sel.hub) hubGenStop();
   studioState.sel.hub = d.k;
   render();
 };
@@ -848,7 +892,7 @@ ACTIONS.hubHMode = d => {
   render();
 };
 ACTIONS.hubZoom = d => {
-  const sc = hubMap();
+  const sc = hubShown();
   hubEd.zoom = clamp(hubZoom(sc) + +d.z, 2, 16);
   drawHubMap();
 };
@@ -887,7 +931,7 @@ ACTIONS.hubFrame = () => {
   hubEd.goal = f;
 };
 ACTIONS.hubWalk = () => {
-  const sc = hubMap(),
+  const sc = hubShown(),
     P = walkView.pl;
   if (hubEd.walk) {
     hubEd.walk = false;
@@ -916,6 +960,7 @@ ACTIONS.hubWalk = () => {
 };
 ACTIONS.hubLock = () => {
   const sc = hubMap();
+  if (hubGenShowing()) return void toast('Use this island or discard the draft first.');
   if (hubViewOnlyReason(sc) || islandProblems(sc).length) return;
   hubLockGround(sc, islandGroundHash);
   changed();
@@ -956,3 +1001,445 @@ document.addEventListener('keydown', ev => {
     render();
   }
 });
+
+/* ================= the generator's dials (island track IS-6b) =================
+   IS-2's islandGenerate in the editor: the map's own dials and seed to start, a draft made 0.5 s after a dial stops
+   moving (about 2 s of work on the page), shown in the orbit view and on the map under the id `_hubgen` (the draft is
+   not game data: never in D.maps, Undo or a save). "Use this island" puts its ground on the map in one undo step
+   (logic/hub-island.js hubUseIsland): the generator keeps the locked zones (and their plots), the map keeps its
+   props, people and look. A locked ground shows its dials read-only and is never made again. */
+const HUB_DRAFT_ID = '_hubgen';
+const hubGen = {
+  on: false,
+  mapId: /** @type {string|null} */ (null),
+  dials: /** @type {any} */ ({}),
+  seed: '',
+  draft: /** @type {any} */ (null),
+  notes: /** @type {string[]} */ ([]),
+  err: '',
+  busy: false,
+  ms: 0,
+  n: 0,
+  walk: /** @type {string[]|null} */ (null),
+  open: /** @type {Record<string, boolean>} */ ({ size: true }),
+};
+const HUB_GEN_ANGLE = 'Degrees: 0 east, 90 north, 180 west, 270 south (the town’s side)';
+/* [path, label, min, max, step, help] a slider; [path, label, 'bool'|'sel'|'arcs'|'zones', ...] */
+const HUB_GEN_DIALS = [
+  [
+    'size',
+    'Size and coast',
+    [
+      [
+        'size.r',
+        'Land radius (m)',
+        20,
+        120,
+        1,
+        'The land round the middle; the coast is pushed out further round the zones',
+      ],
+      ['size.wobble', 'Coast wobble', 0, 1, 0.05],
+      ['size.stretch', 'Longer island', 0, 1, 0.05, 'Up to 1.3 times as long as it is wide'],
+      ['size.lobes', 'Lobes and a peninsula', 0, 1, 0.05],
+      ['size.sea', 'Open sea past the coast (m)', 4, 40, 1],
+      [
+        'organic',
+        'Natural shapes',
+        0,
+        1,
+        0.05,
+        '0: plain geometry (a round coast, rectangles, a cone, straight paths)',
+      ],
+      ['shore', 'Narrow shore (m)', 1, 10, 0.5, 'The beach’s width where no long beach is'],
+    ],
+  ],
+  [
+    'mountain',
+    'Mountain and hills',
+    [
+      ['mountain.r', 'Foot radius (m)', 0, 72, 1, 'At most 0.6 of the land radius'],
+      ['mountain.peak', 'Peak (m)', 0, 40, 0.5],
+      ['mountain.cliffs', 'Shelf height', 0, 1, 0.05, '0.8 m shelves up to 2 m cliffs'],
+      ['mountain.stretch', 'Long ridge', 0, 1, 0.05],
+      ['mountain.shoulder', 'Shoulder peak', 0, 1, 0.05],
+      ['mountain.range', 'Range round it', 0, 1, 0.05, '2 to 6 lower peaks and ridges'],
+      ['hills', 'Rolling land', 0, 1, 0.05, 'Up to 1.6 m'],
+    ],
+  ],
+  [
+    'cove',
+    'Cove',
+    [
+      ['cove.on', 'A cove', 'bool'],
+      ['cove.a', 'Where (°)', 0, 359, 1, HUB_GEN_ANGLE],
+      ['cove.span', 'Width (°)', 10, 90, 1],
+      ['cove.depth', 'Depth (m)', 4, 60, 1, 'At most half the land radius'],
+      ['cove.channel', 'Deep channel from the dock (m)', 0, 12, 0.5],
+      ['cove.beach', 'Inner beach (m)', 0, 16, 0.5],
+      ['cove.shape', 'Shape', 'sel', { bay: 'A wide bay', cove: 'A horseshoe cove' }],
+    ],
+  ],
+  [
+    'shore',
+    'Beaches, cliffs, dunes, heath',
+    [
+      ['beaches', 'Long beaches', 'arcs', ['w', 'Width (m)', 0, 30, 1]],
+      ['cliffs', 'Cliffs', 'arcs', ['h', 'Height (m)', 0, 20, 0.5]],
+      ['dunes.a', 'Dunes: where (°)', 0, 359, 1, HUB_GEN_ANGLE],
+      ['dunes.span', 'Dunes: width (°)', 0, 360, 1],
+      ['heath.a', 'Heath: where (°)', 0, 359, 1, HUB_GEN_ANGLE],
+      ['heath.span', 'Heath: width (°)', 0, 360, 1],
+    ],
+  ],
+  [
+    'forest',
+    'Forest',
+    [
+      ['forest.a', 'Where (°)', 0, 359, 1, HUB_GEN_ANGLE],
+      ['forest.span', 'Arc (°)', 0, 360, 1],
+      ['forest.deep', 'Depth from the mountain’s foot (m)', 0, 60, 1],
+      ['forest.density', 'Density', 0, 1, 0.05],
+    ],
+  ],
+  [
+    'stream',
+    'Stream',
+    [
+      ['stream.on', 'A stream from a pond to the cove', 'bool'],
+      ['stream.pond', 'Pond (m)', 0, 12, 0.5],
+      ['stream.fall', 'Fall (m)', 0, 2, 0.1],
+    ],
+  ],
+  [
+    'paths',
+    'Paths',
+    [
+      ['paths.width', 'Width (m)', 1.2, 5, 0.1],
+      ['paths.inland', 'Coast road inland (m)', 0, 12, 0.5],
+      ['paths.wander', 'Wander', 0, 1, 0.05],
+    ],
+  ],
+  [
+    'town',
+    'Town, hamlet, barn',
+    [
+      ['town.on', 'The town on the river', 'bool'],
+      ['town.houses', 'Houses', 0, 40, 1],
+      ['town.lanes', 'Side lanes', 0, 6, 1],
+      ['hamlet.on', 'A hamlet', 'bool'],
+      ['hamlet.houses', 'Hamlet houses', 0, 10, 1],
+      ['level', 'Flat zones’ level (m)', 0.3, 6, 0.1],
+      ['zones', 'Flat zones', 'zones'],
+    ],
+  ],
+];
+const HUB_GEN_STAGE_NAMES = {
+  coast: 'Coast',
+  heights: 'Land',
+  mountain: 'Mountain',
+  water: 'Water',
+  paths: 'Paths',
+  trail: 'Trail',
+  ground: 'Ground',
+};
+const hubGenGet = (o, path) => path.split('.').reduce((v, k) => (v == null ? v : v[k]), o);
+const hubGenCopy = v => (v === undefined ? v : JSON.parse(JSON.stringify(v)));
+const hubGenDefault = path => hubGenGet(ISLAND_GEN_DEFAULTS, path);
+const hubGenValue = path => hubGenGet(hubGen.dials, path) ?? hubGenDefault(path);
+/** a dial set by path; a list (beaches, cliffs, zones) is copied into the dials whole before one of its rows changes */
+function hubGenSet(path, v) {
+  const ks = path.split('.'),
+    last = ks.pop();
+  if (Array.isArray(hubGenDefault(ks[0] || last)) && !Array.isArray(hubGen.dials[ks[0] || last]))
+    hubGen.dials[ks[0] || last] = hubGenCopy(hubGenValue(ks[0] || last));
+  let t = hubGen.dials;
+  for (const k of ks) t = t[k] == null ? (t[k] = {}) : t[k];
+  t[last] = v;
+}
+const hubGenOwn = path => JSON.stringify(hubGenValue(path)) !== JSON.stringify(hubGenDefault(path));
+const hubGenNum = (v, step) => (typeof v === 'number' ? +v.toFixed(step < 0.1 ? 2 : step < 1 ? 1 : 0) : v);
+/** the draft is what the orbit view and the map show */
+const hubGenShowing = () => !!(hubGen.on && hubGen.draft && hubGen.mapId === studioState.sel.hub);
+/** what the view and the map draw: the draft, else the map */
+const hubShown = () => (hubGenShowing() ? hubGen.draft : hubMap());
+
+/* the renderer reads scenes through walkData: the Studio's (Walk scenes' draft included), with this draft on top */
+{
+  const base = walkData;
+  let view = { scenes: null, draft: null, out: null };
+  setWalkData(() => {
+    const r = base();
+    if (!hubGenShowing()) return r;
+    if (view.scenes !== r.scenes || view.draft !== hubGen.draft)
+      view = {
+        scenes: r.scenes,
+        draft: hubGen.draft,
+        out: Object.assign(Object.create(r.scenes), { [HUB_DRAFT_ID]: hubGen.draft }),
+      };
+    return { ...r, scenes: view.out };
+  });
+}
+
+/* ---------- the card ---------- */
+function hubGenHTML(sc) {
+  const ro = hubViewOnlyReason(sc);
+  if (ro) return `<p class="help">${escapeHtml(ro)}</p>`;
+  const locked = hubGroundLocked(sc);
+  if (!hubGen.on || hubGen.mapId !== hubMapId())
+    return `<p class="help">IS-2's island generator: the coast, the mountain, the cove, beaches, forest, stream, paths, the town and the hamlet from dials and a seed. The draft shows in the orbit view and on the map; <b>Use this island</b> puts its ground on the map (one undo step). Locked zones and their plots are left as they are; props, people and the look stay.</p>
+<div class="seg-row"><button class="btn" data-act="hubGenOpen">${locked ? 'Show the dials it was made with' : 'Make it again from dials…'}</button></div>`;
+  const dis = locked ? 'disabled' : '',
+    kept = (sc.zones || []).filter(Z => Z.lock).map(Z => Z.k),
+    S = hubGen.dials.seeds || {};
+  return `${locked ? `<p class="hub-note">${escapeHtml(hubGenRefusal(sc))}</p>` : ''}
+<div class="seg-row hub-gen-acts">${locked ? '' : `<button class="btn primary" data-act="hubGenUse" ${hubGen.draft && !hubGen.busy ? '' : 'disabled'} title="The draft's ground onto the map (one undo step; Ctrl+S saves it)">Use this island</button>`}<button class="btn subtle" data-act="hubGenClose">${hubGen.draft ? 'Discard the draft' : 'Close the dials'}</button></div>
+${locked ? '' : `<div id="hubGenStats">${hubGenStatsHTML()}</div>`}
+<p class="help">${kept.length ? `Kept as they are (locked zones): ${kept.map(escapeHtml).join(', ')}.` : 'No locked zones: the whole ground is made again.'}</p>
+<section class="card eng-g open"><div class="card-b eng-fields">
+ <div class="eng-f"><span class="eng-lab">Seed</span><div class="gen-wh"><input type="text" id="hubGenSeed" value="${escapeHtml(hubGen.seed)}" aria-label="Seed" ${dis}><button class="btn sm" data-act="hubGenSeed" title="A new seed for everything" ${dis}>🎲 New seed</button></div>
+ <div class="gen-reroll"><small class="help">New seed for one part only (Alt-click: back to the main seed):</small>${ISLAND_GEN_STAGES.map(
+   st =>
+     `<button class="btn sm subtle ${S[st] != null ? 'on' : ''}" data-act="hubGenReroll" data-st="${st}" title="${S[st] != null ? 'Its own seed ' + escapeHtml(String(S[st])) : 'Uses the main seed'}" ${dis}>🎲 ${HUB_GEN_STAGE_NAMES[st] || st}</button>`
+ ).join('')}</div></div>
+</div></section>
+${HUB_GEN_DIALS.map(g => hubGenGroupHTML(g, dis)).join('')}`;
+}
+function hubGenGroupHTML([g, title, fields], dis) {
+  const open = !!hubGen.open[g],
+    set = fields.filter(f => hubGenOwn(f[0])).length;
+  return `<section class="card eng-g ${open ? 'open' : ''}"><header><button class="eng-gh" data-act="hubGenG" data-g="${g}"><span class="eng-tw">${open ? '▾' : '▸'}</span><h3>${escapeHtml(title)}</h3>${set ? `<span class="badge">${set} set</span>` : ''}</button>${set && !dis ? `<button class="btn sm subtle" data-act="hubGenResetG" data-g="${g}">Reset</button>` : ''}</header>
+${open ? `<div class="card-b eng-fields">${fields.map(f => hubGenDialHTML(f, dis)).join('')}</div>` : ''}</section>`;
+}
+function hubGenDialHTML(f, dis) {
+  const [path, label] = f,
+    typ = typeof f[2] === 'string' ? f[2] : 'range',
+    v = hubGenValue(path),
+    def = hubGenDefault(path);
+  const reset = dis
+    ? ''
+    : `<button class="eng-reset" data-act="hubGenReset" data-path="${path}" title="Back to ${escapeHtml(Array.isArray(def) ? 'the defaults' : typ === 'sel' ? f[3][def] : String(def))}">↺</button>`;
+  let body = '';
+  if (typ === 'range')
+    body = `<span class="eng-lab">${escapeHtml(label)} <output data-hubgen-out="${path}">${hubGenNum(v, f[4])}</output></span><input type="range" data-hubgen="${path}" data-k="num" value="${v}" min="${f[2]}" max="${f[3]}" step="${f[4]}" ${dis}>`;
+  else if (typ === 'bool')
+    body = `<label class="eng-chk"><input type="checkbox" data-hubgen="${path}" data-k="bool" ${v ? 'checked' : ''} ${dis}><span>${escapeHtml(label)}</span></label>`;
+  else if (typ === 'sel')
+    body = `<span class="eng-lab">${escapeHtml(label)}</span><select data-hubgen="${path}" data-k="sel" ${dis}>${Object.entries(
+      f[3]
+    )
+      .map(([a, n]) => `<option value="${a}" ${v === a ? 'selected' : ''}>${escapeHtml(n)}</option>`)
+      .join('')}</select>`;
+  else if (typ === 'arcs') body = hubGenArcsHTML(path, label, v || [], f[3], dis);
+  else if (typ === 'zones') body = hubGenZonesHTML(v || [], dis);
+  return `<div class="eng-f ${hubGenOwn(path) ? 'own' : ''}">${body}${reset}${f[5] ? `<small class="help">${escapeHtml(f[5])}</small>` : ''}</div>`;
+}
+const hubGenNumIn = (path, v, lo, hi, st, name, dis) =>
+  `<label><small>${escapeHtml(name)}</small><input type="number" data-hubgen="${path}" data-k="num" value="${v}" min="${lo}" max="${hi}" step="${st}" ${dis}></label>`;
+function hubGenArcsHTML(path, label, L, [k, name, lo, hi, st], dis) {
+  return `<span class="eng-lab">${escapeHtml(label)}</span>${L.map(
+    (b, i) =>
+      `<div class="hub-gen-row">${hubGenNumIn(`${path}.${i}.a`, b.a, 0, 359, 1, 'Where (°)', dis)}${hubGenNumIn(`${path}.${i}.span`, b.span, 4, 180, 1, 'Width (°)', dis)}${hubGenNumIn(`${path}.${i}.${k}`, b[k], lo, hi, st, name, dis)}${dis ? '' : `<button class="btn sm subtle" data-act="hubGenRowDel" data-path="${path}" data-i="${i}" aria-label="Remove">×</button>`}</div>`
+  ).join('')}${dis ? '' : `<button class="btn sm subtle" data-act="hubGenRowAdd" data-path="${path}">+ Add</button>`}`;
+}
+function hubGenZonesHTML(L, dis) {
+  return `<span class="eng-lab">Flat zones (a town here makes the old flat town instead of the river town)</span>${L.map(
+    (Z, i) =>
+      `<div class="hub-gen-row"><b>${escapeHtml(Z.k)}</b>${hubGenNumIn(`zones.${i}.a`, Z.a, 0, 359, 1, 'Where (°)', dis)}${hubGenNumIn(`zones.${i}.d`, Z.d, 0, 200, 1, 'Out (m)', dis)}${hubGenNumIn(`zones.${i}.w`, Z.w, 4, 120, 1, 'Across (m)', dis)}${hubGenNumIn(`zones.${i}.h`, Z.h, 4, 120, 1, 'Deep (m)', dis)}${dis ? '' : `<button class="btn sm subtle" data-act="hubGenRowDel" data-path="zones" data-i="${i}" aria-label="Remove">×</button>`}</div>`
+  ).join(
+    ''
+  )}${dis ? '' : `<div class="seg-row">${ISLAND_GEN_BUILT.map(k => `<button class="btn sm subtle" data-act="hubGenZoneAdd" data-k="${k}">+ ${k}</button>`).join('')}</div>`}`;
+}
+function hubGenStatsHTML() {
+  if (hubGen.busy) return '<p class="help">Generating…</p>';
+  if (hubGen.err) return `<p class="help warn">${escapeHtml(hubGen.err)}</p>`;
+  const d = hubGen.draft;
+  if (!d) return '<p class="help">Move a dial to make a draft.</p>';
+  const s = hubGenStats(d),
+    plots = Object.entries(s.plots)
+      .map(([k, n]) => `${n} ${k}`)
+      .join(', '),
+    P = islandProblems(d),
+    W = hubGen.walk;
+  return `<p class="hub-note">Draft, not saved: the orbit view and the map show it.</p>
+<p class="help">${s.w} × ${s.h} m scene · land ${s.land[0]} × ${s.land[1]} m · the coast walk ${s.lap} m (about ${s.lapS} s) · ${(d.bridges || []).length} bridges${plots ? ' · plots: ' + escapeHtml(plots) : ''} · made in ${Math.round(hubGen.ms)} ms</p>
+${hubGen.notes.length ? `<p class="help warn">${hubGen.notes.map(escapeHtml).join('; ')}</p>` : ''}
+${P.length ? `<p class="help warn">The island's own problems (Lock the ground refuses them):</p><ul class="hub-probs">${P.map(p => `<li>${escapeHtml(p)}</li>`).join('')}</ul>` : ''}
+<div class="seg-row"><button class="btn sm" data-act="hubGenWalk" title="From the hub: every zone, the summit, the dock and every plot's front walked to, and nowhere you get stuck (about a second)">Check the walks</button>${W ? (W.length ? '' : '<span class="help">Every zone, the summit, the dock and every plot can be walked to.</span>') : ''}</div>
+${W && W.length ? `<ul class="hub-probs">${W.map(p => `<li>${escapeHtml(p)}</li>`).join('')}</ul>` : ''}`;
+}
+const hubGenCard = () => {
+  const el = $('#hubGen'),
+    sc = hubMap();
+  if (el && sc) el.innerHTML = hubGenHTML(sc);
+};
+const hubGenStatus = () => {
+  const el = $('#hubGenStats');
+  if (el) el.innerHTML = hubGenStatsHTML();
+  const u = $('[data-act="hubGenUse"]');
+  if (u) u.disabled = !hubGen.draft || hubGen.busy;
+};
+
+/* ---------- making the draft ---------- */
+let hubGenTimer = 0;
+/** a draft soon: the card says "Generating…" first, so it shows before the page is busy */
+function hubGenSoon(ms = 500) {
+  clearTimeout(hubGenTimer);
+  hubGen.busy = true;
+  hubGenStatus();
+  hubGenTimer = setTimeout(hubGenRun, ms);
+}
+function hubGenRun() {
+  const sc = hubMap();
+  hubGen.busy = false;
+  if (!sc || !hubGen.on || hubGenRefusal(sc)) return hubGenStatus();
+  const t = performance.now(),
+    was = hubGenShowing();
+  try {
+    const r = islandGenerate(hubGen.dials, hubGen.seed, { scenery: sceneryCatalog() }, sc);
+    /* a new draft is new ground (the ground cache reads stepsV) */
+    r.scene.stepsV = ++hubGen.n;
+    r.scene.name = 'Draft';
+    hubGen.draft = r.scene;
+    hubGen.notes = r.notes;
+    hubGen.err = '';
+  } catch (e) {
+    hubGen.draft = null;
+    hubGen.notes = [];
+    hubGen.err = /no longer fits/.test(e.message)
+      ? 'This island doesn’t fit round the map’s middle: its coast would cross the map’s west or south edge. The map keeps its middle, so its locked zones, props and people stay where they are. Try another seed (or one part’s), a smaller land radius or open sea, or less stretch and lobes.'
+      : `The generator stopped: ${e.message}`;
+  }
+  hubGen.ms = performance.now() - t;
+  hubGen.walk = null;
+  hubGroundChanged();
+  if (studioState.sec !== 'hub') return;
+  /* a draft shown or gone: the map's tools turn off or on again with the whole section */
+  if (was !== hubGenShowing()) return void render();
+  hubGenStatus();
+  drawHubMap();
+  mountHubView();
+}
+
+/* ---------- the dials' fields ---------- */
+function hubGenInput(ev, settle) {
+  const t = ev.target;
+  if (!t || !t.dataset || (!t.dataset.hubgen && t.id !== 'hubGenSeed') || !hubGen.on) return;
+  if (t.id === 'hubGenSeed') {
+    if (!settle) return;
+    hubGen.seed = t.value.trim() || hubMapId();
+    return void hubGenSoon(30);
+  }
+  const path = t.dataset.hubgen,
+    k = t.dataset.k,
+    v = k === 'bool' ? (t.checked ? 1 : 0) : k === 'num' ? parseFloat(t.value) : t.value;
+  if (k === 'num' && !Number.isFinite(v)) return;
+  hubGenSet(path, v);
+  const o = document.querySelector(`[data-hubgen-out="${path}"]`);
+  if (o) o.textContent = String(hubGenNum(v, +(t.step || 1)));
+  const f = t.closest('.eng-f');
+  const top = path.split('.')[0];
+  if (f) f.classList.toggle('own', hubGenOwn(Array.isArray(hubGenDefault(top)) ? top : path));
+  if (settle && k !== 'num') hubGenCard();
+  hubGenSoon();
+}
+document.addEventListener('input', ev => hubGenInput(ev, false));
+document.addEventListener('change', ev => hubGenInput(ev, true));
+
+/* ---------- actions ---------- */
+function hubGenStop() {
+  clearTimeout(hubGenTimer);
+  const had = hubGen.draft;
+  Object.assign(hubGen, { on: false, draft: null, notes: [], err: '', busy: false, walk: null });
+  if (had) hubGroundChanged();
+}
+ACTIONS.hubGenOpen = () => {
+  const sc = hubMap(),
+    id = hubMapId();
+  if (!sc || hubViewOnlyReason(sc)) return;
+  const g = hubGenStart(sc, id);
+  Object.assign(hubGen, { on: true, mapId: id, dials: g.dials, seed: g.seed, draft: null, err: '', walk: null });
+  hubGenCard();
+  if (!hubGenRefusal(sc)) hubGenSoon(30);
+};
+ACTIONS.hubGenClose = () => {
+  hubGenStop();
+  render();
+};
+ACTIONS.hubGenG = d => {
+  hubGen.open[d.g] = !hubGen.open[d.g];
+  hubGenCard();
+};
+ACTIONS.hubGenReset = d => {
+  const ks = d.path.split('.'),
+    last = ks.pop();
+  let t = hubGen.dials;
+  for (const k of ks) t = t && t[k];
+  if (t) delete t[last];
+  hubGenCard();
+  hubGenSoon(30);
+};
+ACTIONS.hubGenResetG = d => {
+  const G = HUB_GEN_DIALS.find(g => g[0] === d.g);
+  if (G) for (const f of G[2]) ACTIONS.hubGenReset({ path: f[0] });
+};
+ACTIONS.hubGenRowDel = d => {
+  hubGenSet(
+    d.path,
+    hubGenValue(d.path).filter((_, i) => i !== +d.i)
+  );
+  hubGenCard();
+  hubGenSoon(30);
+};
+ACTIONS.hubGenRowAdd = d => {
+  const row = d.path === 'cliffs' ? { a: 0, span: 20, h: 4 } : { a: 0, span: 30, w: 10 };
+  hubGenSet(d.path, hubGenValue(d.path).concat([row]));
+  hubGenCard();
+  hubGenSoon(30);
+};
+ACTIONS.hubGenZoneAdd = d => {
+  hubGenSet('zones', hubGenValue('zones').concat([{ k: d.k, a: 270, d: 50, w: 20, h: 16 }]));
+  hubGenCard();
+  hubGenSoon(30);
+};
+ACTIONS.hubGenSeed = () => {
+  hubGen.seed = String(Math.floor(Math.random() * 1e6));
+  hubGen.dials.seeds = {};
+  hubGenCard();
+  hubGenSoon(30);
+};
+ACTIONS.hubGenReroll = (d, el, ev) => {
+  const S = hubGen.dials.seeds || (hubGen.dials.seeds = {});
+  if (ev && ev.altKey) delete S[d.st];
+  else S[d.st] = String(Math.floor(Math.random() * 1e6));
+  hubGenCard();
+  hubGenSoon(30);
+};
+ACTIONS.hubGenWalk = () => {
+  if (!hubGen.draft) return;
+  hubGen.walk = hubGenWalkProblems(hubGen.draft, sceneryCatalog());
+  hubGenStatus();
+};
+ACTIONS.hubGenUse = () => {
+  const sc = hubMap(),
+    d = hubGen.draft;
+  if (!sc || !d || hubGen.busy) return;
+  const why = hubGenRefusal(sc);
+  if (why) return void toast(why);
+  const { wet } = hubUseIsland(sc, d);
+  hubGen.draft = null;
+  hubGen.walk = null;
+  hubGroundChanged();
+  changed();
+  commit(true);
+  render();
+  const more = [];
+  if (wet.length)
+    more.push(
+      `${wet.length} prop${wet.length > 1 ? 's are' : ' is'} now out at sea (${[...new Set(wet.map(p => p.k))].slice(0, 4).join(', ')}): move ${wet.length > 1 ? 'them' : 'it'} in Walk scenes`
+    );
+  if (Array.isArray(sc.checks) && sc.checks.length)
+    more.push("the map's in-game checks were written for the old ground");
+  toast(
+    `The island's ground is the draft's now (Undo takes it back).${more.length ? ' ' + more.join('; ') + '.' : ''}`
+  );
+};
