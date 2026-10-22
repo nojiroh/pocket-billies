@@ -185,6 +185,50 @@ below against main and report what differs.
 - Studio: the sharp strip tinted on the ground and a blur heatmap on the preview.
 - Measure on the phone with the GPU timer before and after.
 
+#### CAM-3 as built (2026-10-22)
+- **Corrections to the plan** (checked against `CAM-2` at the start of CAM-3):
+  - A player blur control already existed: Settings > Graphics > Expert > "Depth of field" (`lens.blur`), shown only
+    with Expert on, and it replaced the game's blur instead of scaling it. The new slider replaces it.
+  - The slowest quality step (4) switched the blur off (`noDof`); steps 1-3 (or a render scale under 0.75) already
+    used a 14-tap fast path.
+  - The game's lens is `blur` 2 (built-in 0.5), `bokeh` 1.25 and `vignette` 0.72 as well as `focusBand` 0.62 and
+    `blurFar` 2.6; `blurNear` is the built-in 0.9.
+  - No background sample was ever clamped: a pixel blurred under 0.02 skipping the gather was the only halo guard.
+    Near samples already bled outward (`max(cs, cc*.35)`).
+  - The composite drew the half-size blur and its amount up bilinearly (the blocky edges).
+  - Talking moved the blur's focus for 2.6 s only; the encounter's swoop never moved it.
+  - No per-pass GPU time in play: only the whole frame's (debug overlay, debug log `gpu`); the diagnostics test
+    timed every post effect as one "final pass".
+  - The blur still read the dead `st.focusY` (x0.6); removed.
+  - The plan's "prep pass" isn't needed: a pixel's distance from any plane is `z * (g0 + gx*u + gy*v) - h`, three
+    numbers from the camera a frame (below).
+- **The plane of focus** (logic/lens-focus.js, 9 unit tests): `focusPlane` from the inverse view-projection (eye, the
+  view's axis, a ray per screen place); the normal leans from the view's axis (tilt 0) to the axis laid flat (tilt 1,
+  upright); the plane passes through the focus point moved along the view so its depth is the eased focus (so tilt
+  0 is exactly the old slab, and passes the old uniform: no picture moves). `focusBlur` is the shader's curve,
+  `edgeBlur` its edge term, `focusAim` what the focus is on, `leanStep` the eased lean. Battles keep the slab.
+- **The blur pass** (engine/post-effects.js `drawDepthOfField`, timed apart as "blur" in the diagnostics test and the
+  debug log's pass timings; the rest is `drawPostRest`, "final pass"): samples count where their own blur reaches
+  (Gustafsson): behind the focus a sample behind the pixel is held to twice the pixel's blur, a sharp thing in front
+  never leaks into the blur behind it; in front of the focus everything behind counts as before (the near tree stays
+  smooth). Four probes at the widest reach find a blurred thing in front, which then spills over sharp pixels beside
+  it (the alpha carries only that spill). The composite works out each pixel's blur at full size from full-size
+  depth with the same plane, so the sharp/blur edge follows the real edges. Quality step 4: two dual-Kawase steps
+  down and one up (the bloom's own passes), blended by the same full-size amount (`cheapDof`, path "cheap").
+- **Dials** (Engine > Lens): Tilt of the sharp zone (built-in 0), Edge blur (0), Miniature look (0: up to +25%
+  saturation, +12% contrast, +0.2 vignette, times the blur in use), Focus moves in (0.35 s). Preset "Miniature" (tilt
+  1, band 0.35, far 1.8, near 0.7, blur 2.2, miniature 0.8). The game's look: see "The game's tilt" below.
+- **The focus follows the moments** (walk-view-gl.js): the middle of you and who you talk to for the whole talk, the
+  encounter's spot while the camera swoops, a boss as it is revealed, else a tapped spot (as before); camera.js
+  records the speaker's and boss's spots (`walkRenderer.momSpots`, the Studio's Play moment included).
+- **Settings > Graphics > Blur**: 0-150% (`preferences.blur`, 1 = Medium, the game's look), in walks and battles; Off
+  skips the blur pass; the Miniature look follows it.
+- **State, log, checks**: `walkRenderer.lensInfo` (path, what the focus is on, focus distance, the focus point, tilt,
+  blur in use, slider), `lensPlane`, `focusLean`. Debug log: a `lens` section (no names, no places). check-fast "Blur
+  focus" (from state; a planted fault caught); the debug log step wants `lens`. tools/look-blur.py: pictures.
+- **Studio** (Engine preview): Blur guides (ground cells the blur keeps sharp, tinted; the focus point; a line with
+  path, focus, tilt, strength) and Blur heatmap (the composite colours each pixel by its blur).
+
 ## Ideas for later (not planned)
 - Screen shake from trauma (hits, boss slams, landings), scaled by a setting, off with reduced motion.
 - Walk bob off by default (Nesky #44).

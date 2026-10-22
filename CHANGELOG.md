@@ -9,6 +9,16 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- The blur looks like a diorama (CAM-3): the sharp zone can stand upright through where you are, so whatever stands
+  there is sharp head to toe and the ground ahead and behind melts away, as in a tilt-shift photo of a model town.
+  The sharp zone follows what the camera is about: you, the middle of you and who you talk to (for the whole talk),
+  the spot of an encounter, a boss as it is revealed. Sharp things no longer leave a halo in the blur behind them, a
+  blurred thing in front spills over what is behind it, and the edge between sharp and blurred is smooth. On the
+  slowest graphics setting the blur is a cheap one instead of none. Settings > Graphics > Blur: Off, Low, Medium (the
+  game's look) or Strong; Off costs nothing (it replaces the Expert "Depth of field" dial). The Studio: Engine > Lens
+  dials for the tilt, an edge blur, a Miniature look (a little more colour, contrast and vignette) and how fast the
+  focus moves; a Miniature preset; Blur guides (the sharp strip tinted on the ground) and a Blur heatmap on the
+  preview.
 - The camera frames what matters (CAM-2): while someone talks to you it frames you both and comes in closer; the swoop
   into a battle frames you and the spot and the battle comes up once the camera is there; the first time you come
   near a run's boss in a place the camera leans toward them; by a landmark, a shop, a clinic, the lab or the ranch it
