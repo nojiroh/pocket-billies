@@ -456,15 +456,18 @@ def camera_moments(pg, base):
     sp = pg.evaluate(MOMENT_SPOTS)
     if not sp['quiet']: raise Exception('no reachable spot without a point of interest near the hub')
     cam = "(()=>{const I=walkRenderer.camInfo;return {moment:I.moment,zoom:I.zoom,user:walkRenderer.zoom,goal:I.goal,P:[walkView.pl.x,walkView.pl.z],w:Object.assign({},walkRenderer.fol.w),interest:I.interest}})()"
-    wait = lambda ms: until(pg, f'walkView.t>{pg.evaluate("walkView.t") + ms}', 60) or (_ for _ in ()).throw(Exception('the page stopped drawing'))
+    # the game's clock runs slower than real time when the page draws slowly (CI), so the waits get room
+    wait = lambda ms: until(pg, f'walkView.t>{pg.evaluate("walkView.t") + ms}', 150) or (_ for _ in ()).throw(Exception(f'the page stopped drawing (waiting {ms} ms of game time)'))
     delay = pg.evaluate("engineSetting('camera','idleDelay')") * 1000
     stand(pg, *sp['quiet'], 5)
     wait(800)
     a = pg.evaluate(cam)
     if a['moment']: raise Exception(f'a moment right after standing there: {a}')
-    wait(delay + 2500)
+    # standing still counted up to just short of the delay (the state the walk keeps), then the real drift in
+    pg.evaluate(f"walkRenderer.mom.still={delay / 1000 - 0.3};0")
+    wait(2500)
     b = pg.evaluate(cam)
-    if b['moment'] != 'idle' or not b['zoom'] < a['zoom'] - 0.02: raise Exception(f'standing still {delay / 1000 + 3:.0f} s the camera didn’t drift in: {a} then {b}')
+    if b['moment'] != 'idle' or not b['zoom'] < a['zoom'] - 0.02: raise Exception(f'standing still past {delay / 1000:.0f} s the camera didn’t drift in: {a} then {b}')
     pg.evaluate('walkView.stick={x:1,y:0};0')
     wait(500)
     c = pg.evaluate(cam)
