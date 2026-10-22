@@ -368,7 +368,7 @@ section {
   body {
     background:
       linear-gradient(90deg, rgba(21, 53, 67, 0.25), rgba(33, 66, 73, 0.08)),
-      url('../art/background/sundown.webp') center/cover fixed;
+      linear-gradient(180deg, #7ea4c3, #99aec6 22%, #909f9c 42%, #889a76 52%, #869b55 75%, #6f7b4a) fixed;
   }
   #bgfx {
     opacity: 0.08;

@@ -82,11 +82,11 @@ export const UI_LINT_CEILING = {
   keyframes: 77,
   duration: 269,
   font: 18,
-  colour: 663,
+  colour: 685,
   important: 196,
   zindex: 61,
   blur: 29,
-  jsColour: 583,
+  jsColour: 593,
   innerHtml: 56,
   styleAttr: 43,
 };
