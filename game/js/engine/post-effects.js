@@ -152,7 +152,7 @@ void main(){float d0=texture(uDep,vUV).r;vec4 wp=uIVP*vec4(vUV*2.-1.,min(d0,.999
     `#version 300 es
 precision highp float;in vec2 aC;out vec2 vUV;void main(){vUV=aC;gl_Position=vec4(aC*2.-1.,0.,1.);}`,
     `#version 300 es
-precision highp float;in vec2 vUV;out vec4 o;uniform sampler2D uCol,uDof,uBloom,uAO,uRays,uDep,uVol;uniform vec2 uPx;uniform vec4 uHeatS[6];uniform float uHeatN;uniform vec4 uDofPl,uDofB;uniform float uVolK,uExp,uShoulder,uCon,uSat,uWarm,uVig,uCA,uGrain,uSharp,uBloomK,uTime,uDofOn,uAOK,uRaysK,uTone,uHeat,uInk,uNear,uFar,uGlare;uniform vec3 uLift,uGam,uGain,uShT,uHiT,uRayC,uSunP;
+precision highp float;in vec2 vUV;out vec4 o;uniform sampler2D uCol,uDof,uBloom,uAO,uRays,uDep,uVol;uniform vec2 uPx;uniform vec4 uHeatS[6];uniform float uHeatN;uniform vec4 uDofPl,uDofB;uniform float uDofView;uniform float uVolK,uExp,uShoulder,uCon,uSat,uWarm,uVig,uCA,uGrain,uSharp,uBloomK,uTime,uDofOn,uAOK,uRaysK,uTone,uHeat,uInk,uNear,uFar,uGlare;uniform vec3 uLift,uGam,uGain,uShT,uHiT,uRayC,uSunP;
 float linz(float d){float z=d*2.-1.;return 2.*uNear*uFar/(uFar+uNear-z*(uFar-uNear));}
 /* film grain (2026-10): a hash without sine (Dave Hoskins), steady on phone graphics chips where the sine one makes
    patterns; soft grains about 1.5 pixels across, a new field 24 times a second, mostly brightness with a little colour,
@@ -175,8 +175,8 @@ void main(){vec2 uv=vUV;/* v32: heat shimmer above hot ground (lava, desert noon
  /* CAM-3: the blur's amount worked out here at full size from the full-size depth (the same plane of focus as the
     blur pass), so the edge between sharp and blurred follows the real edges; the half-size alpha adds only the spill
     of a blurred thing in front */
- vec4 b=texture(uDof,vUV);vec3 c=s;if(uDofOn>.5){float dz=linz(texture(uDep,vUV).r)*dot(vec3(1.,vUV),uDofPl.xyz)-uDofPl.w,
-  k=dz>0.?smoothstep(uDofB.x,uDofB.x+uDofB.y,dz):smoothstep(uDofB.x*.6,uDofB.x*.6+uDofB.z,-dz);{vec2 e=(vUV-.5)*2.;k=max(k,uDofB.w*smoothstep(.6,1.25,length(vec2(e.x,e.y*.85))));}c=mix(s,b.rgb,smoothstep(.02,.4,uDofOn>1.5?k:max(k,b.a)));}
+ vec4 b=texture(uDof,vUV);vec3 c=s;float kb=0.;if(uDofOn>.5){float dz=linz(texture(uDep,vUV).r)*dot(vec3(1.,vUV),uDofPl.xyz)-uDofPl.w,
+  k=dz>0.?smoothstep(uDofB.x,uDofB.x+uDofB.y,dz):smoothstep(uDofB.x*.6,uDofB.x*.6+uDofB.z,-dz);{vec2 e=(vUV-.5)*2.;k=max(k,uDofB.w*smoothstep(.6,1.25,length(vec2(e.x,e.y*.85))));}kb=uDofOn>1.5?k:max(k,b.a);c=mix(s,b.rgb,smoothstep(.02,.4,kb));}
  if(uAOK>0.){vec2 e=uPx*1.5;float ao=texture(uAO,vUV).r*.4+(texture(uAO,vUV+vec2(e.x,e.y)).r+texture(uAO,vUV-vec2(e.x,e.y)).r+texture(uAO,vUV+vec2(e.x,-e.y)).r+texture(uAO,vUV+vec2(-e.x,e.y)).r)*.15;c*=1.-clamp(ao*uAOK,0.,.75);}
  /* v33: ink outlines where depth jumps (silhouettes of props, people and billionaires), thinner with distance */
  if(uInk>0.){float d0=texture(uDep,vUV).r;if(d0<.9999){float z0=linz(d0),e=0.;vec2 q=uPx*1.;float zs[4];zs[0]=linz(texture(uDep,vUV+vec2(q.x,0)).r);zs[1]=linz(texture(uDep,vUV-vec2(q.x,0)).r);zs[2]=linz(texture(uDep,vUV+vec2(0,q.y)).r);zs[3]=linz(texture(uDep,vUV-vec2(0,q.y)).r);
@@ -189,7 +189,10 @@ void main(){vec2 uv=vUV;/* v32: heat shimmer above hot ground (lava, desert noon
  else if(uGlare>0.&&uSunP.z<0.){vec2 a=vec2(uPx.y/uPx.x,1.);vec2 e=clamp(uSunP.xy,-.05,1.05);float r=length((vUV-e)*a);c+=uRayC*(exp(-r*2.6)*.16+exp(-r*7.)*.1)*-uSunP.z*uGlare;}
  c=uTone>.5?mix(roll(c*uExp),film(c*uExp*1.25),uTone>1.5?1.:.85):roll(c*uExp);if(uTone>1.5)c=(c-.5)*1.08+.5;c.r*=1.+uWarm*.08;c.b*=1.-uWarm*.1;float l=dot(c,vec3(.3,.59,.11));c=mix(vec3(l),c,uSat);c=(c-.5)*uCon+.5;
  c=pow(max(c*uGain+uLift*(1.-c),0.),1./uGam);float lg=clamp(dot(c,vec3(.3,.59,.11)),0.,1.);c+=uShT*(1.-lg)*(1.-lg)+uHiT*lg*lg;
- c*=1.-uVig*pow(length(d*vec2(1.,.85))*1.25,2.6);if(uGrain>0.)c=grain(c);/* v34: a fixed half-step dither against banding in sky gradients, fog and dusk light */{vec2 q=floor(gl_FragCoord.xy);float bd=fract(52.9829189*fract(dot(q,vec2(.06711056,.00583715))));c+=(bd-.5)/255.;}o=vec4(c,1.);}`,
+ c*=1.-uVig*pow(length(d*vec2(1.,.85))*1.25,2.6);if(uGrain>0.)c=grain(c);/* v34: a fixed half-step dither against banding in sky gradients, fog and dusk light */{vec2 q=floor(gl_FragCoord.xy);float bd=fract(52.9829189*fract(dot(q,vec2(.06711056,.00583715))));c+=(bd-.5)/255.;}
+ /* CAM-3: the Studio's blur heatmap (Engine > Blur heatmap): sharp green, then yellow, then red at full blur */
+ if(uDofView>.5){vec3 hm=kb<.02?vec3(.1,.85,.3):kb<.5?mix(vec3(.95,.9,.15),vec3(1.,.55,.1),kb*2.):mix(vec3(1.,.55,.1),vec3(.9,.1,.1),kb*2.-1.);c=mix(c,hm,.55);}
+ o=vec4(c,1.);}`,
   ],
 };
 provide({ POST_EFFECT_SHADERS }); /* to-module */
@@ -402,6 +405,7 @@ export function drawPostRest(S, C, rw, rh, o, F) {
   gl.uniform1f(U.uDofOn, !dofOn ? 0 : F.cheap ? 2 : 1);
   gl.uniform4f(U.uDofPl, F.pl[0], F.pl[1], F.pl[2], F.pl[3]);
   gl.uniform4f(U.uDofB, F.band[0], F.band[1], F.band[2], F.band[3]);
+  gl.uniform1f(U.uDofView, o.dofView ? 1 : 0);
   gl.uniform1f(U.uBloomK, bk > 0.01 ? bk * 0.6 : 0);
   gl.uniform1f(U.uExp, engineSetting('color', 'exposure'));
   if (U.uTone) {

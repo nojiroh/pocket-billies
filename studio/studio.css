@@ -2175,7 +2175,9 @@ select.sm {
 .sc-pv canvas.eng-guides[hidden] {
   display: none;
 }
-#engGuidesBtn.on {
+#engGuidesBtn.on,
+#engBlurBtn.on,
+#engHeatBtn.on {
   background: var(--acc);
   border-color: var(--acc);
   color: #fff;
