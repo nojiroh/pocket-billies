@@ -4555,3 +4555,40 @@ body.wb-dropping::after {
   font-size: 12px;
   color: var(--text2);
 }
+/* Sound track SND-3: the Music & sound section (studio/js/music-editor.js) */
+.mus-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.mus-row .lcard {
+  flex: 1;
+  min-width: 0;
+}
+.mus-row.on .lcard {
+  background: var(--acc2);
+  border-color: color-mix(in srgb, var(--acc) 40%, transparent);
+}
+.mus-play {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  min-height: 40px;
+  padding: 0;
+}
+.mus-play.on {
+  background: var(--acc);
+  color: #fff;
+}
+.mus-loop {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+}
+.mus-uses {
+  margin: 0;
+  padding-left: 18px;
+}

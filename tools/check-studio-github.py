@@ -983,6 +983,33 @@ def studio_test_steps(pg, errs):
 
 
 # the steps after sign-in, in order (--only picks some by name; 'sections' and 'art' are the two blocks in main)
+def music_steps(pg, errs):
+    """SND-3: the Music & sound section (studio/js/music-editor.js): a song plays through the game's tracker on the
+    Studio's own AudioContext (a real click starts it), the bar playing shows, Stop stops it, and leaving the section
+    stops it too (no scheduler left running)."""
+    n = len(errs)
+    pg.evaluate("void openSection('music')")
+    try: pg.wait_for_selector('#musList [data-act=musPlay][data-song=town]', timeout=20000)
+    except Exception:
+        errs.append('music: the song list never showed'); return
+    pg.click('#musList [data-act=musPlay][data-song=town]')
+    time.sleep(1.2)
+    state = pg.evaluate("[musicStudio.ctx && musicStudio.ctx.state, musicPlaying(), document.querySelector('#musNow').textContent, !!musicStudio.tracker.timer]")
+    if state[0] != 'running': errs.append(f'music: the AudioContext is {state[0]!r}, not running')
+    if state[1] != 'town' or not state[2].startswith('\u25b6 town · bar'): errs.append(f'music: playing {state[1]!r}, shown {state[2]!r}')
+    if not state[3]: errs.append('music: the scheduler is not running')
+    pg.click('.ed-head [data-act=musStop]')
+    time.sleep(0.3)
+    if pg.evaluate("musicPlaying()") != '': errs.append('music: Stop did not stop the song')
+    pg.click('#musList [data-act=musPlay][data-song=meadow]')
+    time.sleep(0.5)
+    pg.evaluate("void openSection('rules')")
+    time.sleep(0.5)
+    if pg.evaluate("[musicPlaying(), !!musicStudio.tracker.timer]") != ['', False]: errs.append('music: leaving the section left the song playing')
+    if len(errs) > n: errs[n:] = [f'music: {e}' if not e.startswith('music:') else e for e in errs[n:]]
+    else: print('music: town played (context running, bar shown), stopped; meadow stopped when the section was left', flush=True)
+
+
 STEPS = [
     ('story', story_steps),
     ('free_camera', free_camera_steps),
@@ -997,6 +1024,7 @@ STEPS = [
     ('ui', ui_steps),
     ('ui_tools', ui_tools_steps),
     ('ui_screens', ui_screens_steps),
+    ('music', music_steps),
     ('studio_test', studio_test_steps),
 ]
 
