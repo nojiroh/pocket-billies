@@ -1010,8 +1010,8 @@ def pasture(pg, base):
     f0 = pg.evaluate('walkRenderer.frames')
     if not until(pg, f'walkRenderer.frames>={f0 + 30}', 90): raise Exception('the pasture isn’t drawing')
     if not pg.evaluate(inside): raise Exception('a Billie wandered out of the fence')
-    # one brought 1.8 m from you, inside the wander line
-    uid = pg.evaluate("""(()=>{const P=walkView.pl,F=worldBillies.pasture,u=F.list[0].uid,b=F.mons[u],L=pastureRoamLine(pastureZone(walkView.sc));
+    # one brought 1.8 m from you, inside the wander line; your buddy off, so it can't wander in front of it
+    uid = pg.evaluate("""(()=>{saveData.preferences.buddyWalk='off';const P=walkView.pl,F=worldBillies.pasture,u=F.list[0].uid,b=F.mons[u],L=pastureRoamLine(pastureZone(walkView.sc));
       for(let k=0;k<64;k++){const q=[P.x+Math.cos(k/10)*1.8,P.z+Math.sin(k/10)*1.8];
         if(pastureIn(L,q[0],q[1])){b.x=q[0];b.z=q[1];b.tx=null;b.wait=99;return u}}return null})()""")
     if not uid: raise Exception('no spot in the field 1.8 m from the gate')
@@ -1019,10 +1019,16 @@ def pasture(pg, base):
     if not until(pg, f"walkRenderer.frames>={f0 + 3}&&walkView.hits.some(h=>h.k==='ranchBilly'&&h.uid==='{uid}')", 90):
         raise Exception('the Billie beside you is no tap target')
     pg.evaluate("uiState.modal=null;uiState.mq=[];0")
-    pg.evaluate(f"""(()=>{{const h=walkView.hits.find(h=>h.k==='ranchBilly'&&h.uid==='{uid}'),r=walkView.cv.getBoundingClientRect();
-      handleWalkClick({{clientX:r.left+((h.x0+h.x1)/2)/walkView.cv.width*r.width,clientY:r.top+((h.y0+h.y1)/2)/walkView.cv.height*r.height}});return 0}})()""")
+    # a point on its tap box that answers as the Billie (nothing nearer in front of it there), tapped
+    tap = pg.evaluate(f"""(()=>{{const h=walkView.hits.find(h=>h.k==='ranchBilly'&&h.uid==='{uid}'),cv=walkView.cv,r=cv.getBoundingClientRect(),
+        ev=(x,y)=>({{clientX:r.left+x/cv.width*r.width,clientY:r.top+y/cv.height*r.height}});
+      for(let j=1;j<8;j++)for(let i=1;i<8;i++){{const e=ev(h.x0+(h.x1-h.x0)*i/8,h.y0+(h.y1-h.y0)*j/8),w=hitAt(e);
+        if(w&&w.k==='ranchBilly'&&w.uid==='{uid}'){{handleWalkClick(e);return 'ok'}}}}
+      const w=hitAt(ev((h.x0+h.x1)/2,(h.y0+h.y1)/2));return 'covered by '+(w?w.k+(w.act?' '+w.act:''):'nothing')}})()""")
+    if tap != 'ok': raise Exception(f'the Billie beside you can’t be tapped: {tap}')
     sheet = "!!(uiState.modal&&uiState.modal.cls==='ranch-sheet'&&document.querySelector('#ov .ranch-sheet'))"
-    if not until(pg, sheet, 10): raise Exception('tapping a Billie in the pasture didn’t open the ranch’s sheet')
+    if not until(pg, sheet, 10):
+        raise Exception(f"tapping a Billie in the pasture didn’t open the ranch’s sheet: {pg.evaluate('JSON.stringify([uiState.modal&&uiState.modal.cls,uiState.mq.length,!!uiState.inside])')}")
     pg.evaluate("closeModal();uiState.modal=null;uiState.mq=[];0")
     pg.evaluate("(()=>{const p=walkView.sc.props.find(q=>q.act==='pasture');walkPick({k:'act',p,act:'pasture'});return 0})()")
     if not until(pg, sheet, 10): raise Exception('the pasture’s gate didn’t open the ranch’s sheet')

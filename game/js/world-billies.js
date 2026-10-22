@@ -396,15 +396,16 @@ function pastureItems(out, t, dt) {
       rounds: pastureRounds(sc, zone),
       mid: line.reduce((a, p) => [a[0] + p[0] / line.length, a[1] + p[1] / line.length], [0, 0]),
       list: [],
-      listT: 0,
+      listAt: -1e9,
       mons: {},
     };
   }
-  /* who's out: looked at again every second (storage changes at the ranch's sheet, the Team tab, a run) */
-  F.listT -= dt;
-  if (F.listT <= 0) {
+  /* who's out: looked at again every real second, however slow the frames (the walk's own clock is held back on a
+     slow frame); storage changes at the ranch's sheet, the Team tab, a run */
+  const now = performance.now();
+  if (!(now - F.listAt < 1000 && now >= F.listAt)) {
     F.list = pastureBillies(saveData, (RULES.ranch && RULES.ranch.pasture) ?? 6);
-    F.listT = 1;
+    F.listAt = now;
     const keep = new Set(F.list.map(m => m.uid));
     for (const u of Object.keys(F.mons)) if (!keep.has(u)) delete F.mons[u];
   }
