@@ -9,6 +9,9 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- The Studio has a Hub island section (IS-6a): the hub's island in an orbiting 3D view and on a map, with its ground,
+  coast, zones and the camera's pivot edited by hand, a walk round the coast, and a lock that freezes the island's
+  ground once it is right (props stay free). It works on the test island until Copperleaf moves onto its island.
 - Island props (IS-4): the ranch barn is 3D now (still its red gambrel barn, every side finished, its colour looks
   kept), and a new set for the island waits in the debug menu's Test scenes ("the island props"): a field gate,
   a water trough, round hay bales and a hay rack; driftwood, beach grass, shells, shore rocks and tide pools; a
