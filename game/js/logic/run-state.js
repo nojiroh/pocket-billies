@@ -210,7 +210,8 @@ export function runBegin(s, give) {
 /**
  * @param {{ se: number, items: Record<string, number>, released: number, cleared: number, won: boolean }} end
  * @param {{ money: number, itemShare: number, released: number, node: number, win: number, winSeals: number,
- *   scrapNode?: number, scrapWin?: number }} rates
+ *   scrapNode?: number, scrapWin?: number, capital?: number }} rates capital (RL-12, a Loophole's): the Capital times
+ *   this, the difference as a line of its own
  * @param {(id: string) => number} itemPrice an item's shop price ($), 0 for none
  * @returns {{ capital: number, seals: number, scrap: number, lines: { what: string, n: number, capital: number }[] }}
  */
@@ -226,6 +227,12 @@ export function payoutOf(end, rates, itemPrice) {
     { what: 'nodes', n: end.cleared, capital: end.cleared * rates.node },
     { what: 'win', n: end.won ? 1 : 0, capital: end.won ? rates.win : 0 },
   ];
+  /* RL-12: a Loophole's payout row (logic/effects.js fxPayoutRates): the Capital above times rates.capital, as a row */
+  const k = rates.capital ?? 1;
+  if (k !== 1) {
+    const sum = lines.reduce((a, l) => a + l.capital, 0);
+    lines.push({ what: 'fx', n: Math.round((k - 1) * 100), capital: Math.floor(sum * k) - sum });
+  }
   return {
     capital: lines.reduce((sum, l) => sum + l.capital, 0),
     seals: end.won ? rates.winSeals : 0,

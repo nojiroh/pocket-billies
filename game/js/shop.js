@@ -6,9 +6,10 @@
 import { expose } from './test-globals.js';
 import { closeModal, modal, provide, renderOverlay, soundEffect, toast } from './hooks.js';
 import { clamp, random } from './util.js';
-import { COINS, ITEMS, RULES, SHOPS } from './game-data.js';
+import { COINS, ITEMS, RELICS, RULES, SHOPS } from './game-data.js';
 import { formatNumber, plural } from './logic/rules.js';
 import { runShopStock } from './logic/run-loop.js';
+import { fxOfRun, fxPrice } from './logic/effects.js';
 import { escapeHtml, save, saveData, saveNow, uiState } from './game-state.js';
 import { coinHTML, uiIconHTML } from './art.js';
 import { portraitHTML } from './person-art.js';
@@ -23,6 +24,7 @@ expose({
   shopHTML: [() => shopHTML, v => (shopHTML = v)],
   shopRefresh: [() => shopRefresh, v => (shopRefresh = v)],
   wareInfo: [() => wareInfo],
+  warePrice: [() => warePrice],
 });
 /* eslint-enable no-func-assign */
 export function setOpenShop(v) {
@@ -57,6 +59,11 @@ const wareInfo = w => {
     ? { kind: 'item', key: w.item, n: I.n, d: I.d, base: I.price, need: 0, have: saveData.items[w.item] || 0 }
     : null;
 };
+/** a ware's price: its own or its base; in a run shop, with the Loopholes' price rows (RL-12, logic/effects.js) */
+const warePrice = (sh, w, it) => {
+  const p = w.price ?? it.base;
+  return sh.runNode != null && saveData.run ? fxPrice(fxOfRun(saveData.run, RELICS), 'shop', p) : p;
+};
 function shopHTML(id) {
   const sh = SHOPS[id],
     q = uiState.shopQty || (uiState.shopQty = {}),
@@ -67,7 +74,7 @@ function shopHTML(id) {
       if (!it) return '';
       const k = ix + ':' + it.kind + ':' + it.key,
         n = q[k] || 1,
-        price = w.price ?? it.base,
+        price = warePrice(sh, w, it),
         locked = it.need && seats < it.need,
         cost = price * n,
         deal = price < it.base;
@@ -125,7 +132,7 @@ function shopBuy(id, k) {
   const it = wareInfo(w);
   if (!it) return;
   const n = (uiState.shopQty || {})[k] || 1,
-    price = w.price ?? it.base,
+    price = warePrice(sh, w, it),
     cost = price * n;
   if (it.need && saveData.seats.length < it.need) return;
   if (saveData.se < cost) {

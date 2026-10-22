@@ -14,8 +14,8 @@ import { billyName, formatNumber, healAll, plural } from './logic/rules.js';
 import { runBegin, runEnd } from './logic/run-state.js';
 import { runArrive, runBack, runMapNode, runMapStart, runNext, runWeather } from './logic/run-map.js';
 import { MAPGEN_VERSION } from './logic/mapgen.js';
-import { runBattleSeed, runGive, runRelease, runReleasePays } from './logic/run-loop.js';
-import { fxRows } from './logic/effects.js';
+import { runArriveHeal, runBattleSeed, runGive, runRelease, runReleasePays } from './logic/run-loop.js';
+import { fxHealShare, fxOfRun, fxPayoutRates, fxPrice, fxRows } from './logic/effects.js';
 import {
   BATTLE_RULES,
   battleHost,
@@ -33,11 +33,13 @@ import { runWorld, runWorldData, runWorldSync } from './run-world.js';
 /* eslint-disable no-func-assign */
 expose({
   RUN_HINTS: [() => RUN_HINTS],
+  runArrivedFx: [() => runArrivedFx, v => (runArrivedFx = v)],
   runArrivedHint: [() => runArrivedHint, v => (runArrivedHint = v)],
   runBattleAgain: [() => runBattleAgain, v => (runBattleAgain = v)],
   runBattleStart: [() => runBattleStart, v => ((runBattleStart = v), provide({ runBattleStart }))],
   runBattleWeather: [() => runBattleWeather],
   runCatch: [() => runCatch],
+  runClinicEach: [() => runClinicEach],
   runEndHome: [() => runEndHome, v => (runEndHome = v)],
   runFoeRef: [() => runFoeRef],
   runGiveUp: [() => runGiveUp, v => ((runGiveUp = v), provide({ runGiveUp }))],
@@ -138,7 +140,9 @@ export function runGiveUp() {
  * Copperleaf's mast @param {boolean} won @param {string[]} keep @param {(id: string) => number} itemPrice */
 export function runEndHome(won, keep, itemPrice) {
   if (!saveData.run) return;
-  const pay = runEnd(saveData, { won, keep }, RULES.run.payout, itemPrice);
+  /* RL-12: the Loopholes' payout rows, read before the run ends */
+  const rates = fxPayoutRates(fxOfRun(saveData.run, RELICS), RULES.run.payout),
+    pay = runEnd(saveData, { won, keep }, rates, itemPrice);
   /* a move waiting to be learned names a Billie by its uid, which a run's copy shares with the hub's */
   uiState.learnQ = [];
   runCatch.m = null;
@@ -354,13 +358,23 @@ function runBattleAgain() {
   battleHost().open();
 }
 
+/* ---------- Loopholes on the walk (RL-12, logic/effects.js) ---------- */
+/** a run town's clinic: $ a hurt Billie, with the Loopholes' heal price rows */
+export const runClinicEach = () => fxPrice(fxOfRun(saveData.run, RELICS), 'heal', RULES.run.healCost);
+/** walking into a place on a run: a Loophole's heal row heals the team (before the arrival's save) */
+export function runArrivedFx() {
+  const share = fxHealShare(fxOfRun(saveData.run, RELICS)),
+    gained = share ? runArriveHeal(saveData.team, share) : 0;
+  if (gained > 0) toast(`Your Loopholes paid out: your team healed ${formatNumber(gained)} HP.`);
+}
+
 /* ---------- hints, on a player's first run only ---------- */
 /** the first run's hints, each shown once (run.hints) as a toast */
 const RUN_HINTS = {
   landing: run =>
     `Day 1 of the run. Walk north into the next place: each place you walk into takes a day. The boss waits at the far end; the deadline is day ${run.deadline}.`,
   map: () => 'The map shows the places ahead and their weather. A ? is further on. The boss is always shown.',
-  town: () => `A town: its clinic heals for $${RULES.run.healCost} a Billie, and its shop has new stock every day.`,
+  town: () => `A town: its clinic heals for $${runClinicEach()} a Billie, and its shop has new stock every day.`,
   miniboss: () => 'A mini-boss blocks the way north. Beat them to go on.',
   boss: () => 'The boss. Beat it and the run is won.',
 };

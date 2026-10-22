@@ -30,6 +30,7 @@ expose({
   fxMoney: [() => fxMoney],
   // @ts-expect-error -- replaced on purpose
   fxMult: [() => fxMult, v => (fxMult = v)],
+  fxOfRun: [() => fxOfRun],
   // @ts-expect-error -- replaced on purpose
   fxPayoutRates: [() => fxPayoutRates, v => (fxPayoutRates = v)],
   fxPrice: [() => fxPrice],
@@ -49,6 +50,10 @@ export const FX_STAGES = 6;
  * gives none @param {string[]} ids @param {Record<string, Relic>} relics @returns {Fx[]} */
 export const fxRows = (ids, relics) =>
   ids.flatMap(id => (relics[id] ? relics[id].fx.map(f => /** @type {Fx} */ ({ ...f, src: id })) : []));
+
+/** the effect rows of a run's Loopholes (null in the hub, or with none held) @param {{ relics: string[] } | null | undefined} run
+ * @param {Record<string, Relic>} relics @returns {Fx[] | null} */
+export const fxOfRun = (run, relics) => (run && run.relics.length ? fxRows(run.relics, relics) : null);
 
 /** the product of the multipliers of the rows that pass `test`, smallest first, within FX_LIMIT (1 when none)
  * @param {Fx[] | null | undefined} fx @param {(f: Fx) => boolean} test */

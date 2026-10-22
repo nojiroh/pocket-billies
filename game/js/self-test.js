@@ -88,7 +88,7 @@ import { cutscene, cutsceneTeardown } from './cutscene/director.js';
 import { fallOverWorldMap, fallWorldMapCanvas } from './opening-fall.js';
 import { airshipFlight } from './airship.js';
 import { runWorld, runWorldData, runWorldSync } from './run-world.js';
-import { runJump, runTakeOff } from './run.js';
+import { runClinicEach, runJump, runTakeOff } from './run.js';
 import { ranchOpen } from './ranch-screen.js';
 import { closeModal, modal, renderOverlay, toast } from './overlay.js';
 import { clinicHeal } from './walk-tab.js';
@@ -1013,7 +1013,7 @@ async function runFullTest(mode) {
             saveData.team[0].hp = Math.max(1, saveData.team[0].hp - 3);
             saveData.se = Math.max(saveData.se, 500);
             const se = saveData.se,
-              cost = runHealCost(saveData.team, RULES.run.healCost).cost;
+              cost = runHealCost(saveData.team, runClinicEach()).cost;
             clinicHeal();
             if (!uiState.modal || !uiState.modal.btns) throw new Error('the clinic asked nothing');
             uiState.modal.btns[0].f();

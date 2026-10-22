@@ -9,10 +9,11 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { provide, renderOverlay } from './hooks.js';
-import { ITEMS, RULES } from './game-data.js';
+import { ITEMS, RELICS, RULES } from './game-data.js';
 import { billyName } from './logic/rules.js';
 import { payoutOf } from './logic/run-state.js';
 import { runPayoutRows, runReleasePays } from './logic/run-loop.js';
+import { fxOfRun, fxPayoutRates } from './logic/effects.js';
 import { escapeHtml, saveData, uiState } from './game-state.js';
 import { rigCanvasHTML } from './skeleton-rig.js';
 import { runEndHome } from './run.js';
@@ -34,7 +35,7 @@ function runPayoutNow() {
     run = s.run;
   return payoutOf(
     { se: s.se, items: s.items, released: run.released.length, cleared: new Set(run.path).size, won: !!run.at.won },
-    RULES.run.payout,
+    fxPayoutRates(fxOfRun(run, RELICS), RULES.run.payout),
     runItemPrice
   );
 }

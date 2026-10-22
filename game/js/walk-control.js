@@ -52,7 +52,7 @@ import { cutscene } from './cutscene/director.js';
 import { loreBook } from './lore.js';
 import { flyMenu, rideGlassLift } from './airship.js';
 import { runWorldData } from './run-world.js';
-import { runArrivedHint } from './run.js';
+import { runArrivedFx, runArrivedHint } from './run.js';
 import { ranchOpen } from './ranch-screen.js';
 import { postcardCheck } from './postcards.js';
 import { legendCheck, personTalk, storyCheck, trainerTalk } from './story.js';
@@ -641,6 +641,7 @@ export function walkCross() {
       );
     /* RL-8: a run's arrival is a checkpoint: the account too, at once */
     if (saveData.run) {
+      runArrivedFx();
       saveNow();
       runArrivedHint();
     } else save();

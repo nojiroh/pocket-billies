@@ -27,7 +27,7 @@ import { cleanTrainer, personHTML } from './person-art.js';
 import { rigCanvasHTML } from './skeleton-rig.js';
 import { mapById } from './walk-view.js';
 import { environment, environmentHint, environmentIcon, environmentLabel } from './environment.js';
-import { runGiveUp } from './run.js';
+import { runClinicEach, runGiveUp } from './run.js';
 import { trainerTalk } from './story.js';
 import { challengeCardHTML, requestListHTML } from './things-to-do.js';
 import { progressBarHTML } from './ui-bits.js';
@@ -72,7 +72,7 @@ function tripButtons() {
     return `<button class="pb small" data-a="stoptrip">Stop guiding me</button><button class="pb small quiet" data-a="tab" data-t="map">Change plans</button>`;
   return `<button class="pb small gold" data-a="tab" data-t="map">${uiIconHTML('map', 16)} Choose where to go</button>`;
 }
-/** RL-8: a clinic heals the team: free in the hub (as before); on a run for rules.json run.healCost per hurt Billie,
+/** RL-8: a clinic heals the team: free in the hub (as before); on a run for rules.json run.healCost per hurt Billie (RL-12: with the Loopholes' price rows),
     after a yes, a purchase saved at once (logic/run-loop.js runHealCost). `say`: the clinic prop's own line */
 export function clinicHeal(say) {
   if (!saveData.run) {
@@ -82,8 +82,8 @@ export function clinicHeal(say) {
     toast(say || 'The clinic patched everyone up. No charge.');
     return;
   }
-  const { hurt, cost } = runHealCost(saveData.team, RULES.run.healCost),
-    each = formatNumber(RULES.run.healCost);
+  const { hurt, cost } = runHealCost(saveData.team, runClinicEach()),
+    each = formatNumber(runClinicEach());
   if (!hurt) {
     toast('Everyone is in good shape. Nothing to pay.');
     return;
@@ -103,7 +103,7 @@ export function clinicHeal(say) {
         c: 'gold',
         f: () => {
           closeModal();
-          const now = runHealCost(saveData.team, RULES.run.healCost);
+          const now = runHealCost(saveData.team, runClinicEach());
           if (!now.hurt || saveData.se < now.cost) return;
           saveData.se -= now.cost;
           healAll();
@@ -128,7 +128,7 @@ function nodeActions(i) {
   /* RL-8: on a run the clinic charges for each hurt Billie and there is no rest stop on the road */
   if (saveData.run) {
     if (n.town) {
-      const { hurt, cost } = runHealCost(saveData.team, RULES.run.healCost);
+      const { hurt, cost } = runHealCost(saveData.team, runClinicEach());
       x += hurt
         ? `<button class="pb small" data-a="clinic">Clinic: heal ${plural(hurt, 'Billie')} for $${formatNumber(cost)}</button>`
         : '<button class="pb small quiet" data-a="clinic">Clinic: everyone is fine</button>';
