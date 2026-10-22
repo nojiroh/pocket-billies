@@ -10,7 +10,7 @@ import { expose } from './test-globals.js';
 import { cutscene, mapIdAt, provide } from './hooks.js';
 import { clamp } from './util.js';
 import { LOCATIONS, MUSIC, SPECIES } from './game-data.js';
-import { songFor } from './logic/music-where.js';
+import { songFor, songVariant } from './logic/music-where.js';
 import { cryRecipe, cryVoices } from './logic/cries.js';
 import { activeBattle, saveData, uiState } from './game-state.js';
 import { battleStage } from './battle-stage.js';
@@ -53,6 +53,7 @@ expose({
   musicState: [() => musicState, v => (musicState = v)],
   musicStop: [() => musicStop, v => (musicStop = v)],
   musicSync: [() => musicSync, v => (musicSync = v)],
+  musicVariant: [() => musicVariant, v => (musicVariant = v)],
   nearestSoundSource: [() => nearestSoundSource, v => (nearestSoundSource = v)],
   playBirdCall: [() => playBirdCall, v => (playBirdCall = v)],
   playClockTick: [() => playClockTick, v => (playClockTick = v)],
@@ -213,6 +214,8 @@ function musicState() {
   return {
     started: true,
     battle,
+    /* SND-4: the environment's night level outdoors (updateAmbience), for songVariant */
+    night: soundEngine.L ? soundEngine.L.night || 0 : 0,
     tab: uiState.tab,
     indoor: !!(sc && sc.indoor),
     map: id,
@@ -227,7 +230,13 @@ function musicState() {
 function musicSync() {
   if (typeof cutscene !== 'undefined' && cutscene.on) return;
   if (soundEngine.jingle && performance.now() < soundEngine.jingle) return;
-  music(musicFor());
+  /* SND-4: at night outdoors, the song's night version (logic/music-where.js songVariant); the switch crossfades */
+  const st = musicState();
+  music(songVariant(songFor(st, MUSIC.where, SONGS), st, SONGS, soundEngine.want));
+}
+/* SND-4: a song's name as it plays at this night level (1 night, 0 day): 'town@night' or the name itself */
+function musicVariant(name, night) {
+  return songVariant(name, { night }, SONGS, null);
 }
 setInterval(() => {
   try {
@@ -883,6 +892,7 @@ function updateAmbience() {
   soundEngine.L = {
     drums: (moving || (typeof activeBattle !== 'undefined' && activeBattle) ? 1 : 0.45) * (1 - night * 0.4),
     pad: sc && !sc.indoor ? night : 0,
+    night: sc && !sc.indoor ? night : 0,
   };
   if (soundEngine.song && soundEngine.song.drums)
     soundEngine.song.drums.gain.setTargetAtTime(soundEngine.L.drums, t, 0.6);

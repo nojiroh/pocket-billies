@@ -13,6 +13,7 @@ expose({
   songRandom: [() => songRandom, v => (songRandom = v)],
   trackerCompose: [() => trackerCompose, v => (trackerCompose = v)],
   trackerCreate: [() => trackerCreate, v => (trackerCreate = v)],
+  trackerNight: [() => trackerNight, v => (trackerNight = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -120,6 +121,20 @@ export function trackerCompose(D) {
   return { ...D, notes: lead, counterNotes: counter, counterBars, steps, deg };
 }
 export const midiToFrequency = m => 440 * Math.pow(2, (m - 69) / 12);
+/* SND-4: a song's night version, the recipe with its `night` changes; with none written, slower by 8 bpm, a fourth
+   down and soft drums (a song with no drums keeps none). null when the song has `night: false` */
+function trackerNight(D) {
+  if (!D || D.night === false) return null;
+  const { night, ...day } = D,
+    auto = { bpm: Math.max(40, D.bpm - 8), key: D.key - 5, drums: D.drums === 'none' ? 'none' : 'soft' };
+  const N = { ...day, ...(night && typeof night === 'object' ? night : auto) },
+    by = N.key - D.key,
+    move = line => line && line.map(([st, m, l]) => [st, m + by, l]);
+  /* a written hook and counter move with the key, unless the night writes its own */
+  if (by && D.hook && !(night && night.hook)) N.hook = move(D.hook);
+  if (by && D.counter && !(night && night.counter)) N.counter = move(D.counter);
+  return N;
+}
 export function trackerCreate(ctx, bus, opts = {}) {
   const c = ctx,
     T = { ctx, bus, waves: {} };
@@ -257,8 +272,13 @@ export function trackerCreate(ctx, bus, opts = {}) {
   T.song = null;
   T.voices = [];
   T.timer = null;
+  /* SND-4: 'town@night' is town's night version (trackerNight) */
+  T.recipe = name => {
+    const [base, part] = String(name).split('@');
+    return part === 'night' ? trackerNight(songs[base]) : part ? null : songs[base] || null;
+  };
   T.compose = name => {
-    const D = songs[name];
+    const D = T.recipe(name);
     if (!D) return null;
     if (!composed.has(name)) composed.set(name, trackerCompose(D));
     return composed.get(name);

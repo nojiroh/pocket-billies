@@ -9,7 +9,7 @@ import { test } from 'node:test';
 globalThis.window = globalThis;
 globalThis.PB_TEST_GLOBALS = true;
 await import('../../game/js/audio/tracker.js');
-const { trackerCompose } = /** @type {any} */ (globalThis);
+const { trackerCompose, trackerNight } = /** @type {any} */ (globalThis);
 
 const MUSIC = JSON.parse(readFileSync(new URL('../../game/data/music.json', import.meta.url), 'utf8'));
 const town = MUSIC.songs.town;
@@ -85,4 +85,24 @@ test('the composer does not change the recipe it is given', () => {
   const R = structuredClone({ ...town, hook: [[0, 72, 4]] });
   trackerCompose(R);
   assert.deepEqual(R, { ...town, hook: [[0, 72, 4]] });
+});
+
+test('the night version: written changes win; with none, 8 bpm slower, a fourth down, soft drums', () => {
+  const n = trackerNight(town);
+  assert.equal(n.bpm, town.bpm - 8);
+  assert.equal(n.key, town.key - 5);
+  assert.equal(n.drums, 'soft');
+  assert.equal('night' in n, false);
+  assert.equal(trackerNight({ ...MUSIC.songs.cave, night: undefined }).drums, 'none', 'no drums stay none');
+  const w = trackerNight({ ...town, night: { bpm: 90 } });
+  assert.equal(w.bpm, 90);
+  assert.equal(w.key, town.key, 'a written night changes only what it names');
+  assert.equal(trackerNight({ ...town, night: false }), null);
+});
+
+test('at night a written hook and counter move with the key', () => {
+  const n = trackerNight({ ...town, hook: [[0, 72, 4]], counter: [[0, 64, 4]] });
+  assert.deepEqual(n.hook, [[0, 67, 4]]);
+  assert.deepEqual(n.counter, [[0, 59, 4]]);
+  assert.equal(trackerNight(town).hook, undefined);
 });

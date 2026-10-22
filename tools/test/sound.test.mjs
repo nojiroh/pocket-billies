@@ -4,7 +4,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
-import { musicWhereMatches, songFor } from '../../game/js/logic/music-where.js';
+import { musicWhereMatches, songFor, songVariant } from '../../game/js/logic/music-where.js';
 
 const MUSIC = JSON.parse(readFileSync(new URL('../../game/data/music.json', import.meta.url), 'utf8'));
 const pick = state => songFor(state, MUSIC.where, MUSIC.songs);
@@ -104,4 +104,26 @@ test('matching: the first rule wins; map is any of a list, row a range, started 
   assert.equal(songFor({}, [{ song: '$place' }], songs), null);
   assert.equal(songFor({ placeMusic: 'a' }, [{ song: '$place' }], songs), 'a');
   assert.equal(songFor({}, [], songs), null);
+});
+
+// SND-4: night versions
+test('night outdoors plays the night version; day, indoors, in battle or with night: false, the song itself', () => {
+  const S = { town: {}, cave: {}, wild: { night: false } },
+    v = (name, o, playing) => songVariant(name, { ...out(o) }, S, playing);
+  assert.equal(v('town', { night: 1 }), 'town@night');
+  assert.equal(v('town', { night: 0 }), 'town');
+  assert.equal(v('town', { night: 1, indoor: true }), 'town');
+  assert.equal(v('town', { night: 1, battle: 'wild' }), 'town');
+  assert.equal(v('wild', { night: 1 }), 'wild');
+  assert.equal(v(null, { night: 1 }), null);
+  assert.equal(v('nosuch', { night: 1 }), 'nosuch');
+});
+
+test('dusk and dawn: night from 0.6, day again below 0.4, in between what plays stays', () => {
+  const S = { town: {} },
+    v = (n, playing) => songVariant('town', { night: n }, S, playing);
+  assert.equal(v(0.5, 'town'), 'town');
+  assert.equal(v(0.61, 'town'), 'town@night');
+  assert.equal(v(0.5, 'town@night'), 'town@night');
+  assert.equal(v(0.39, 'town@night'), 'town');
 });

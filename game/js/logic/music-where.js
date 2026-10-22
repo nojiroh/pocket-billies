@@ -14,6 +14,8 @@ expose({
   musicWhereMatches: [() => musicWhereMatches, v => (musicWhereMatches = v)],
   // @ts-expect-error -- replaced on purpose
   songFor: [() => songFor, v => (songFor = v)],
+  // @ts-expect-error -- replaced on purpose
+  songVariant: [() => songVariant, v => (songVariant = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -59,4 +61,22 @@ export function songFor(state, where, songs) {
     return W.song;
   }
   return null;
+}
+
+/**
+ * SND-4: day or night. The song's night version ('town@night', audio/tracker.js trackerNight) when it is night
+ * outdoors, out of battle, and the song has one (not `night: false`). Night from 0.6, day again below 0.4: in between,
+ * what plays stays, so dusk doesn't flip the song back and forth
+ * @param {string | null} name the song for the place (songFor)
+ * @param {Record<string, any>} state songFor's state plus `night`, the environment's night level (0 day, 1 night)
+ * @param {Record<string, any>} songs
+ * @param {string | null} [playing] the song playing now
+ * @returns {string | null}
+ */
+export function songVariant(name, state, songs, playing = null) {
+  const S = name ? songs[name] : null;
+  if (!S || S.night === false || state.indoor || state.battle) return name;
+  const n = state.night || 0,
+    night = name + '@night';
+  return n > 0.6 || (playing === night && n >= 0.4) ? night : name;
 }

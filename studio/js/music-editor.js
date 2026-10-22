@@ -92,6 +92,7 @@ export const musicStudio = {
   /** @type {AudioContext | null} */ ctx: null,
   /** @type {any} */ tracker: null,
   loop: true,
+  /** SND-4: play songs' night versions (town@night) */ night: false,
   shown: '',
   /** the where rule last moved, added or shown (marked in the table) */ picked: -1,
   /** the line the hook roll edits: hook or counter */ line: 'hook',
@@ -156,7 +157,9 @@ export function musicPlay(name) {
   if (musicStudio.ctx.state !== 'running') musicStudio.ctx.resume().catch(() => {});
   T.refresh(musicData().songs);
   if (T.song) T.stop();
-  T.play(name);
+  /* SND-4: with Night on, the night version, if the song has one */
+  const S = musicData().songs[name];
+  T.play(musicStudio.night && S && S.night !== false ? name + '@night' : name);
   musicNowShow();
 }
 export function musicStop() {
@@ -175,7 +178,7 @@ function musicNowShow() {
   const el = document.getElementById('musNow');
   if (el) el.textContent = text;
   for (const b of document.querySelectorAll('[data-act="musPlay"]'))
-    b.classList.toggle('on', !!sg && /** @type {HTMLElement} */ (b).dataset.song === sg.name);
+    b.classList.toggle('on', !!sg && /** @type {HTMLElement} */ (b).dataset.song === sg.name.split('@')[0]);
 }
 /** the song playing, or '' (for the self-test and the Studio check) */
 export const musicPlaying = () =>
@@ -874,10 +877,16 @@ SECTIONS.music = () => {
  ${musicRecipeHTML(id)}${musicHookHTML(id)}${card('Where it plays', plays, { sub: 'From the where table (first rule that fits wins), the places’ own songs, the story scripts and the game’s code.' })}</div></div>`;
 };
 const musicLoopHTML = () =>
-  `<label class="mus-loop" title="Off: a song stops after its last bar"><input type="checkbox" id="musLoop" ${musicStudio.loop ? 'checked' : ''}>Loop</label>`;
+  `<label class="mus-loop" title="Off: a song stops after its last bar"><input type="checkbox" id="musLoop" ${musicStudio.loop ? 'checked' : ''}>Loop</label><label class="mus-loop" title="On: the night version, as outdoors at night (slower and lower unless the song writes its own)"><input type="checkbox" id="musNight" ${musicStudio.night ? 'checked' : ''}>Night</label>`;
 document.addEventListener('change', ev => {
   const el = /** @type {HTMLInputElement} */ (ev.target);
   if (el && el.id === 'musLoop') musicStudio.loop = el.checked;
+  if (el && el.id === 'musNight') {
+    musicStudio.night = el.checked;
+    /* the song playing switches to its other version from the start */
+    const now = musicPlaying();
+    if (now) musicPlay(now.split('@')[0]);
+  }
 });
 ACTIONS.musPlay = d => musicPlay(d.song);
 ACTIONS.musStop = () => musicStop();

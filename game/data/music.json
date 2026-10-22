@@ -33,6 +33,7 @@
    "bass": "long",
    "arp": "drip",
    "drums": "none",
+   "night": false,
    "seed": 21,
    "echo": 0.55
   },
@@ -58,6 +59,7 @@
    "bass": "walk",
    "arp": "chord7",
    "drums": "bossa",
+   "night": false,
    "seed": 31,
    "seventh": 1
   },
@@ -70,6 +72,7 @@
    "bass": "long",
    "arp": "up",
    "drums": "none",
+   "night": false,
    "seed": 41,
    "echo": 0.3
   },
@@ -93,6 +96,7 @@
    "bass": "drive",
    "arp": "up",
    "drums": "drive",
+   "night": false,
    "seed": 61
   },
   "trainer": {
@@ -104,6 +108,7 @@
    "bass": "drive",
    "arp": "updown",
    "drums": "march",
+   "night": false,
    "seed": 71
   },
   "rival": {
@@ -115,6 +120,7 @@
    "bass": "drive",
    "arp": "up",
    "drums": "drive",
+   "night": false,
    "seed": 81
   },
   "title": {
@@ -127,6 +133,7 @@
    "arp": "updown",
    "drums": "soft",
    "extra": true,
+   "night": false,
    "seed": 7,
    "echo": 0.35
   },
@@ -140,6 +147,7 @@
    "arp": "drip",
    "drums": "none",
    "extra": true,
+   "night": false,
    "seed": 13,
    "echo": 0.6
   },

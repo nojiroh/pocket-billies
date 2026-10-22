@@ -1549,7 +1549,8 @@ export interface SongRecipe {
   hook?: [number, number, number][];
   counter?: [number, number, number][];
   intro?: number;
-  night?: Partial<SongRecipe>;
+  /** SND-4: the night version's changes; false: none (audio/tracker.js trackerNight) */
+  night?: Partial<SongRecipe> | false;
 }
 
 /** music.json: a rule of the where table; the first whose every key matches picks the song (logic/music-where.js) */
