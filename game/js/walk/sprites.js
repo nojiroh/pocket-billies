@@ -246,12 +246,15 @@ export function drawSprites(C, items, X, hits, labels, PPU) {
     }
     gl.drawArrays(gl.TRIANGLES, 0, 6);
     if (it.eyeward) gl.uniform1f(U.uDZ, 0);
-    /* trees get a second picture crossing the first, so a turned camera sees a crown, not a cut-out's edge */
-    if (it.cross && Math.abs(C.yaw) > 0.04) {
+    /* trees get a second picture crossing the first, so a turned camera sees a crown, not a cut-out's edge (IS-1: by
+       the sine of the turn, so a camera looking south, as an orbiting one does, sees the first picture face on again
+       and the second edge-on fades out) */
+    const crossK = Math.abs(Math.sin(C.yaw || 0));
+    if (it.cross && crossK > 0.04) {
       gl.uniform3f(U.uRight, 0, 0, it.flip > 0 ? 1 : -1);
       gl.uniform3f(U.uBack, -1, 0, 0);
       gl.uniform1f(U.uFixed, 0);
-      gl.uniform1f(U.uFade, fade * Math.min(1, Math.abs(C.yaw) * 4));
+      gl.uniform1f(U.uFade, fade * Math.min(1, crossK * 4));
       setSpriteUniforms(p, it);
       gl.drawArrays(gl.TRIANGLES, 0, 6);
     }
