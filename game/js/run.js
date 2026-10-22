@@ -45,6 +45,7 @@ import { activeBattle, escapeHtml, save, saveData, saveNow, uiState } from './ga
 import { coinHTML } from './art.js';
 import { rigCanvasHTML } from './skeleton-rig.js';
 import { itemIcon } from './battle.js';
+import { JINGLES, jingle } from './sound.js';
 import { standByMast, startAirshipFlight } from './airship.js';
 import { runWorld, runWorldData, runWorldSync } from './run-world.js';
 /* eslint-disable no-func-assign */
@@ -381,6 +382,8 @@ export function runTakeOff(seed, map, mods, pick) {
   saveNow();
   if (typeof debugLog !== 'undefined') debugLog.add('scene', `a run starts: ${s.run.map.nodes.length} places`);
   startAirshipFlight(s.trip.node, { free: true, from: START_NODE });
+  /* SND-4: the run's first bookend, the title's motif as the airship leaves the mast (the payout is the other) */
+  if (typeof jingle === 'function' && JINGLES.motif) jingle(JINGLES.motif);
 }
 
 /* ---------- arrivals ---------- */
