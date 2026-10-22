@@ -1937,7 +1937,10 @@ const DIAGNOSTICS_PASSES = {
   ],
   water: ['reflectionPass', 'drawWater'],
   effects: ['effectsPass'],
-  'final pass': ['drawPostEffects'],
+  /* CAM-3: the blur timed on its own; "final pass" is the rest of the post chain (both run inside drawPostEffects, one
+     after the other, so the graphics chip's timers never nest) */
+  blur: ['drawDepthOfField'],
+  'final pass': ['drawPostRest'],
 };
 export function diagnosticsTimersOn() {
   const gl = typeof gpuState !== 'undefined' ? gpuState.gl : null,

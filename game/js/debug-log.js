@@ -880,6 +880,9 @@ debugLog.hook = () => {
     ['drawStructures', 'structures'],
     ['drawPlayerSilhouette', 'silhouette'],
     ['drawPostEffects', 'post'],
+    /* CAM-3: the blur and the rest of the post chain, apart (inside drawPostEffects) */
+    ['drawDepthOfField', 'blur'],
+    ['drawPostRest', 'post rest'],
     ['drawGround', 'ground'],
     ['reflectionPass', 'reflections'],
     ['drawWater', 'water'],

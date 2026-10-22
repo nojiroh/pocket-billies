@@ -18,15 +18,27 @@ expose({
   COLOR_GRADES: [() => COLOR_GRADES],
   POST_EFFECT_SHADERS: [() => POST_EFFECT_SHADERS],
   colorGrade: [() => colorGrade, v => (colorGrade = v)],
+  drawDepthOfField: [() => drawDepthOfField, v => setDrawDepthOfField(v)],
   drawPostEffects: [() => drawPostEffects, v => setDrawPostEffects(v)],
+  drawPostRest: [() => drawPostRest, v => setDrawPostRest(v)],
+  postTex: [() => postTex, v => (postTex = v)],
+  postUse: [() => postUse, v => (postUse = v)],
   projectToScreenUv: [() => projectToScreenUv, v => (projectToScreenUv = v)],
   screenSnapshot: [() => screenSnapshot, v => setScreenSnapshot(v)],
   sunScreenPosition: [() => sunScreenPosition, v => (sunScreenPosition = v)],
 });
 /* eslint-enable no-func-assign */
+export function setDrawDepthOfField(v) {
+  drawDepthOfField = v; // eslint-disable-line no-func-assign
+  provide({ drawDepthOfField });
+}
 export function setDrawPostEffects(v) {
   drawPostEffects = v; // eslint-disable-line no-func-assign
   provide({ drawPostEffects });
+}
+export function setDrawPostRest(v) {
+  drawPostRest = v; // eslint-disable-line no-func-assign
+  provide({ drawPostRest });
 }
 export function setScreenSnapshot(v) {
   screenSnapshot = v; // eslint-disable-line no-func-assign
@@ -166,6 +178,21 @@ void main(){vec2 uv=vUV;/* v32: heat shimmer above hot ground (lava, desert noon
   ],
 };
 provide({ POST_EFFECT_SHADERS }); /* to-module */
+/* a post pass: its program on target F (null: the screen) at w x h; returns the uniforms */
+function postUse(name, F, w, h) {
+  const gl = gpuState.gl,
+    p = gpuState.P[name];
+  gl.bindFramebuffer(gl.FRAMEBUFFER, F ? F.f : null);
+  gl.viewport(0, 0, w, h);
+  gl.useProgram(p.p);
+  return p.U;
+}
+function postTex(U, name, unit, t) {
+  const gl = gpuState.gl;
+  gl.activeTexture(gl.TEXTURE0 + unit);
+  gl.bindTexture(gl.TEXTURE_2D, t);
+  gl.uniform1i(U[name], unit);
+}
 /* draws the post chain from scene target S (color + depth) to the screen */
 export function drawPostEffects(S, C, focusDist, rw, rh, o = {}) {
   const gl = gpuState.gl;
@@ -173,20 +200,16 @@ export function drawPostEffects(S, C, focusDist, rw, rh, o = {}) {
   gl.disable(gl.DEPTH_TEST);
   gl.disable(gl.BLEND);
   bindQuad();
-  const hw = Math.max(16, rw >> 1),
+  const { D, dofOn } = drawDepthOfField(S, C, focusDist, rw, rh, o);
+  drawPostRest(S, C, rw, rh, o, D, dofOn);
+}
+/* CAM-3: the blur on its own (the diagnostics test times it apart from the rest of the post chain) */
+export function drawDepthOfField(S, C, focusDist, rw, rh, o = {}) {
+  const gl = gpuState.gl,
+    hw = Math.max(16, rw >> 1),
     hh = Math.max(16, rh >> 1),
-    use = (name, F, w, h) => {
-      const p = gpuState.P[name];
-      gl.bindFramebuffer(gl.FRAMEBUFFER, F ? F.f : null);
-      gl.viewport(0, 0, w, h);
-      gl.useProgram(p.p);
-      return p.U;
-    },
-    tex = (U, name, unit, t) => {
-      gl.activeTexture(gl.TEXTURE0 + unit);
-      gl.bindTexture(gl.TEXTURE_2D, t);
-      gl.uniform1i(U[name], unit);
-    };
+    use = postUse,
+    tex = postTex;
   /* depth of field */
   const blur = (o.blur ?? 1) * engineSetting('lens', 'blur'),
     dofOn = blur > 0.01 && !o.noDof,
@@ -208,6 +231,15 @@ export function drawPostEffects(S, C, focusDist, rw, rh, o = {}) {
     gl.uniform1i(U.uTaps, o.fast ? 14 : 28);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   }
+  return { D, dofOn };
+}
+/* the rest of the post chain: bloom, AO, shafts, light in the air, then the grade to the screen with the blur D */
+export function drawPostRest(S, C, rw, rh, o, D, dofOn) {
+  const gl = gpuState.gl,
+    hw = Math.max(16, rw >> 1),
+    hh = Math.max(16, rh >> 1),
+    use = postUse,
+    tex = postTex;
   /* bloom: bright pass at half size, down to 1/16, back up */
   const bk = engineSetting('color', 'bloom') * (o.bloom ?? 1),
     chain = [];

@@ -41,7 +41,16 @@ import {
   setMakeNormalMap,
   setRunNormalMapJobs,
 } from './engine/webgl.js';
-import { drawPostEffects, screenSnapshot, setDrawPostEffects, setScreenSnapshot } from './engine/post-effects.js';
+import {
+  drawDepthOfField,
+  drawPostEffects,
+  drawPostRest,
+  screenSnapshot,
+  setDrawDepthOfField,
+  setDrawPostEffects,
+  setDrawPostRest,
+  setScreenSnapshot,
+} from './engine/post-effects.js';
 import { environment } from './environment.js';
 import { walkRenderer } from './walk/walk-state.js';
 import { groundOcclusion, setGroundOcclusion } from './walk/ground-textures.js';
@@ -109,10 +118,12 @@ Object.defineProperties(GAME, {
   cutsceneStart: { get: () => cutsceneStart, set: setCutsceneStart },
   drawBoxFaces: { get: () => drawBoxFaces, set: setDrawBoxFaces },
   drawBuildings: { get: () => drawBuildings, set: setDrawBuildings },
+  drawDepthOfField: { get: () => drawDepthOfField, set: setDrawDepthOfField },
   drawGrass: { get: () => drawGrass, set: setDrawGrass },
   drawGround: { get: () => drawGround, set: setDrawGround },
   drawPlayerSilhouette: { get: () => drawPlayerSilhouette, set: setDrawPlayerSilhouette },
   drawPostEffects: { get: () => drawPostEffects, set: setDrawPostEffects },
+  drawPostRest: { get: () => drawPostRest, set: setDrawPostRest },
   drawPropModels: { get: () => drawPropModels, set: setDrawPropModels },
   drawSolidProps: { get: () => drawSolidProps, set: setDrawSolidProps },
   drawSprites: { get: () => drawSprites, set: setDrawSprites },
