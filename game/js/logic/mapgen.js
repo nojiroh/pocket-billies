@@ -27,6 +27,7 @@ expose({
   MAPGEN_FAMILY_SHARE: [() => MAPGEN_FAMILY_SHARE],
   MAPGEN_FEATURES: [() => MAPGEN_FEATURES],
   MAPGEN_FOUR: [() => MAPGEN_FOUR],
+  MAPGEN_GRASS_PATCH: [() => MAPGEN_GRASS_PATCH],
   MAPGEN_HUB_BUILDINGS: [() => MAPGEN_HUB_BUILDINGS],
   MAPGEN_INWARD: [() => MAPGEN_INWARD],
   MAPGEN_LEDGE_PIECE: [() => MAPGEN_LEDGE_PIECE],
@@ -83,6 +84,8 @@ expose({
   mapgenFbm: [() => mapgenFbm, v => (mapgenFbm = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenFlattenRoads: [() => mapgenFlattenRoads, v => (mapgenFlattenRoads = v)],
+  // @ts-expect-error -- replaced on purpose
+  mapgenGrassPatches: [() => mapgenGrassPatches, v => (mapgenGrassPatches = v)],
   mapgenGround: [() => mapgenGround],
   // @ts-expect-error -- replaced on purpose
   mapgenGrowWild: [() => mapgenGrowWild, v => (mapgenGrowWild = v)],
@@ -228,7 +231,7 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-export const MAPGEN_VERSION = 5; /* 2: MG-2's terraces at ground level by exits; 3: pictures are never scaled, plants get a drawn variant (v) instead; 4: a bridge only where the road crosses a stream (RL-8); 5: a run's scenes go east to west (logic/run-scenes.js) */
+export const MAPGEN_VERSION = 6; /* 2: MG-2's terraces at ground level by exits; 3: pictures are never scaled, plants get a drawn variant (v) instead; 4: a bridge only where the road crosses a stream (RL-8); 5: a run's scenes go east to west (logic/run-scenes.js); 6: tall grass in patches, one across the way west (TR-2c) */
 export const MAPGEN_STAGES = ['heights', 'relief', 'ground', 'road', 'exits', 'lots', 'plants', 'feature', 'props'];
 export const MAPGEN_SHAPES = {
   straight: 'Straight',
@@ -572,6 +575,8 @@ export function mapgenNewWork(P, ctx) {
     /* TR-2c: the ledges' cells and their flights of stairs (mapgenLedges) */
     ledgeCells: 0,
     ledgeStairs: 0,
+    /* TR-2c: the tall grass patches (mapgenGrassPatches), [{ x, z, r, n: cells, across: on the way west }] */
+    grassPatches: /** @type {{ x: number, z: number, r: number, n: number, across: boolean }[]} */ ([]),
     /* TR-2b: marked spots (a trail's summit: { kind, x, z, y }) */
     spots: /** @type {{ kind: string, x: number, z: number, y: number }[]} */ ([]),
     /* TR-2: the mountains' height per corner (mapgenMountainField), once made */
@@ -2337,25 +2342,8 @@ export function mapgenStageLand(G) {
   if (lv > 0) mapgenTerraces(G, lv);
   if (P.land.mountains > 0) mapgenMountains(G);
   if (P.land.ledges > 0 && G.stepsUsed) mapgenLedges(G);
-  /* tall grass in drifts beside the road (where the wild billionaires wait), away from the hub and the exits */
-  const away = q => {
-    const x = (q % G.w) + 0.5,
-      z = Math.floor(q / G.w) + 0.5;
-    if (Math.hypot(x - G.hub[0], z - G.hub[1]) < 7) return false;
-    for (const e of G.exits) if (Math.hypot(x - e.pt[0], z - e.pt[1]) < 7) return false;
-    return true;
-  };
-  if (P.nature.tall > 0) {
-    const ok = q => {
-      if (G.F[q] & (1 | 2 | 4 | 64)) return false;
-      const d = G.dist[q] - (G.near[q] >= 0 ? G.roadPts[G.near[q]].r : 0);
-      return d > 1.5 && d < 11 && away(q);
-    };
-    for (const q of mapgenShareMask(G, ok, 0.08 + P.nature.tall * 0.42, s + 7, 4)) {
-      G.T[q] = B.ground.tall;
-      G.F[q] |= 32;
-    }
-  }
+  /* TR-2c: tall grass in patches (where the wild billionaires wait), one of them across the way west */
+  if (P.nature.tall > 0) mapgenGrassPatches(G);
   /* clearings: open ground where no tree grows, a ragged blob whose floor thins out toward its edge */
   const nc = Math.round(P.nature.clearings * 4);
   for (let c = 0; c < nc; c++) {
@@ -2375,6 +2363,119 @@ export function mapgenStageLand(G) {
         G.T[q] = B.ground.floor;
     });
   }
+}
+/* ---------- TR-2c: tall grass in patches ---------- */
+/** a patch's size in cells (m²): Gen 3's routes have 3-6 patches of 15-70 tiles */
+export const MAPGEN_GRASS_PATCH = [15, 70];
+/** tall grass in patches (Gen 3: a few patches a route, one across the path you take), in place of the old drifts
+ * beside the road: 3-6 (by the nature.tall dial) ragged ovals of 15-70 m². The first lies across the road on the way
+ * west (from the hub to the westmost exit, else the longest way out), the road under it too, so walking on means
+ * walking through it; the rest lie off the road, 2-14 m from it. None within 7 m of the hub or an exit, on water, a
+ * bank, a bridge, a jetty or a mountain. Sets G.grassPatches: [{ x, z, r: the reach from its middle, n: cells, across }] */
+export function mapgenGrassPatches(G) {
+  const { P, B, w, h } = G,
+    rnd = G.rng('ground', 'grass'),
+    s = G.salt('ground', 'grass'),
+    E = G.mtnE,
+    want = 3 + Math.min(3, Math.floor(P.nature.tall * 4)),
+    [AMIN, AMAX] = MAPGEN_GRASS_PATCH;
+  /** can cell q take tall grass (road: a road or verge cell may) */
+  const free = (q, road) => {
+    if (G.F[q] & (4 | 8 | 32 | 64 | 128)) return false;
+    if (!road && G.F[q] & (1 | 2)) return false;
+    const i = q % w,
+      j = Math.floor(q / w),
+      x = i + 0.5,
+      z = j + 0.5;
+    if (Math.hypot(x - G.hub[0], z - G.hub[1]) < 7) return false;
+    for (const e of G.exits) if (Math.hypot(x - e.pt[0], z - e.pt[1]) < 7) return false;
+    if (E)
+      for (const c of [j * (w + 1) + i, j * (w + 1) + i + 1, (j + 1) * (w + 1) + i, (j + 1) * (w + 1) + i + 1])
+        if (E[c] > 0) return false;
+    return true;
+  };
+  /** the free cells of a ragged oval round (cx, cz): half axis a along (ux, uz), b square to it; at most AMAX, the
+   * nearest the middle kept */
+  const oval = (cx, cz, ux, uz, a, b, road, k) => {
+    const out = [],
+      r = Math.max(a, b) * 1.1 + 1;
+    for (let j = Math.max(0, Math.floor(cz - r)); j <= Math.min(h - 1, Math.ceil(cz + r)); j++)
+      for (let i = Math.max(0, Math.floor(cx - r)); i <= Math.min(w - 1, Math.ceil(cx + r)); i++) {
+        const dx = i + 0.5 - cx,
+          dz = j + 0.5 - cz,
+          p = (dx * ux + dz * uz) / a,
+          o = (-dx * uz + dz * ux) / b,
+          ang = Math.atan2(o, p),
+          edge = 0.75 + 0.3 * mapgenNoise(Math.cos(ang) * 1.5 + k * 7, Math.sin(ang) * 1.5 + 3, s),
+          rr = Math.hypot(p, o) / edge;
+        if (rr <= 1 && free(j * w + i, road)) out.push([j * w + i, rr]);
+      }
+    out.sort((m, n) => m[1] - n[1] || m[0] - n[0]);
+    return out.slice(0, AMAX).map(c => c[0]);
+  };
+  /** the oval's half axes for an area of A m² (the ragged edge takes about a fifth off) */
+  const axes = (A, aspect) => {
+    const ab = A / (Math.PI * 0.8);
+    return [Math.sqrt(ab * aspect), Math.sqrt(ab / aspect)];
+  };
+  const patches = /** @type {{ x: number, z: number, n: number, across: boolean, r: number }[]} */ ([]);
+  const put = (cells, x, z, across, r) => {
+    for (const q of cells) {
+      G.T[q] = B.ground.tall;
+      G.F[q] |= 32;
+    }
+    patches.push({ x: mapgenRound2(x), z: mapgenRound2(z), r: mapgenRound2(r * 1.05 + 0.75), n: cells.length, across });
+  };
+  /* the first: across the road on the way west */
+  const ways = G.edgeExits.filter(e => e.path && e.path.length > 1);
+  const west = ways.filter(e => e.side === 'W'),
+    way = (west.length ? west : ways).reduce(
+      (m, e) =>
+        !m || (west.length ? e.path[e.path.length - 1][0] < m.path[m.path.length - 1][0] : e.len > m.len) ? e : m,
+      /** @type {any} */ (null)
+    );
+  if (way) {
+    const pts = mapgenResample(way.path, 0.5),
+      half = P.road.width / 2;
+    for (let tries = 0; tries < 24; tries++) {
+      const k = Math.floor(pts.length * rnd.range(0.3, 0.75)),
+        c = pts[Math.min(pts.length - 2, Math.max(1, k))],
+        n = pts[Math.min(pts.length - 1, Math.max(2, k + 1))],
+        len = Math.hypot(n[0] - c[0], n[1] - c[1]) || 1,
+        vx = (n[0] - c[0]) / len,
+        vz = (n[1] - c[1]) / len,
+        a = half + rnd.range(2.5, 5) /* across the road */,
+        b = mapgenBetween(rnd.range(30, AMAX) / (Math.PI * 0.8 * a), 1.6, 4.5) /* along it */,
+        end = way.path[way.path.length - 1];
+      if (Math.hypot(c[0] - G.hub[0], c[1] - G.hub[1]) < 8 + b) continue;
+      if (Math.hypot(c[0] - end[0], c[1] - end[1]) < 8 + b) continue;
+      /* across: a half axis square to the road */
+      const cells = oval(c[0], c[1], -vz, vx, a, b, true, 0),
+        on = q => cells.includes(q);
+      /* it must cover the road where it crosses and reach past both sides of it */
+      const at = (d, t) => mapgenCellAt(G, c[0] - vz * d + vx * t, c[1] + vx * d + vz * t);
+      if (cells.length < AMIN || ![-half - 1, -half / 2, 0, half / 2, half + 1].every(d => on(at(d, 0)))) continue;
+      if (![0.6, -0.6].every(t => on(at(0, t)))) continue;
+      put(cells, c[0], c[1], true, Math.max(a, b));
+      break;
+    }
+    if (!patches.length) G.notes.push('no room for tall grass across the road');
+  }
+  /* the rest: off the road, 2-14 m from it */
+  for (let tries = 0; patches.length < want && tries < 80 * want; tries++) {
+    const x = rnd.range(2, w - 2),
+      z = rnd.range(2, h - 2),
+      q = mapgenCellAt(G, x, z),
+      d = G.near[q] >= 0 ? G.dist[q] - G.roadPts[G.near[q]].r : 1e9;
+    if (d < 2 || d > 14 || !free(q, false)) continue;
+    const ang = rnd.range(0, Math.PI),
+      [a, b] = axes(rnd.range(AMIN + 5, AMAX), rnd.range(1, 2.2)),
+      r = Math.max(a, b);
+    if (patches.some(p => Math.hypot(p.x - x, p.z - z) < p.r + r + 2)) continue;
+    const cells = oval(x, z, Math.cos(ang), Math.sin(ang), a, b, false, patches.length);
+    if (cells.length >= AMIN) put(cells, x, z, false, r);
+  }
+  G.grassPatches = patches;
 }
 /* RL-8: where a road meets water. A bridge goes only where the road's line crosses a stream's centre line (on water
    still: the exits' straight runs and joined edges were dried), square to the water (or along the road when it comes
@@ -3095,6 +3196,7 @@ export function mapgenScene(params, ctx) {
   if (G.waters.length) sc.waters = G.waters;
   if (G.waterKind) sc.waterKind = G.waterKind;
   if (G.spots.length) sc.spots = G.spots;
+  if (G.grassPatches.length) sc.grassPatches = G.grassPatches;
   if (G.stepsUsed) {
     const raw = new Int16Array(G.S.length);
     let any = false;

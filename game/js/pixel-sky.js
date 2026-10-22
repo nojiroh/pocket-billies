@@ -7,9 +7,10 @@ import { provide } from './hooks.js';
 import { random } from './util.js';
 import { activeBattle, reducedMotion } from './game-state.js';
 import { frameTask } from './frame-scheduler.js';
-import { ART_CACHE, makeCanvas } from './art.js';
+import { makeCanvas } from './art.js';
 /* eslint-disable no-func-assign */
 expose({
+  SKY_STOPS: [() => SKY_STOPS],
   buildPixelSky: [() => buildPixelSky, v => (buildPixelSky = v)],
   initPixelSky: [() => initPixelSky, v => (initPixelSky = v)],
   isDark: [() => isDark],
@@ -20,29 +21,29 @@ expose({
 /* eslint-enable no-func-assign */
 /* to-module: end */
 /* ---------- animated pixel sky behind the app ---------- */
-const pixelSky = { cv: null, x: null, last: 0, w: 160, h: 300, dark: null, base: null, isl: [], cl: [], sp: [] };
+const pixelSky = { cv: null, x: null, last: 0, w: 160, h: 300, dark: null, base: null, isl: [], sp: [] };
 provide({ pixelSky }); /* to-module */
 const isDark = () => {
   const t = document.documentElement.dataset.theme;
   return t === 'dark' || (t !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
 };
+/* the sky's colours top to bottom (the old sky pictures, deleted from art/background on main, drawn as a gradient) */
+const SKY_STOPS = {
+  light: ['#9a86b8', '#dcc0de', '#eecac8', '#fae4c8', '#fdf0da'],
+  dark: ['#05040a', '#100c22', '#1c1538', '#3a2758', '#4a2e5e'],
+};
 function buildPixelSky() {
   const W = pixelSky.w,
     H = pixelSky.h,
     dk = pixelSky.dark,
-    m = dk ? 'dark' : 'light',
-    sky = ART_CACHE.img[`background/sky_${m}.png`],
+    stops = SKY_STOPS[dk ? 'dark' : 'light'],
     c = makeCanvas(W, H),
-    x = c.getContext('2d');
-  x.imageSmoothingEnabled = false;
-  x.drawImage(sky, 0, 0, W, H);
+    x = c.getContext('2d'),
+    g = x.createLinearGradient(0, 0, 0, H);
+  stops.forEach((col, i) => g.addColorStop(i / (stops.length - 1), col));
+  x.fillStyle = g;
+  x.fillRect(0, 0, W, H);
   pixelSky.base = c;
-  pixelSky.cl = [0, 1, 2, 3].map(i => ({
-    img: ART_CACHE.img[`background/cloud_${m}_${i}.png`],
-    x: random() * W,
-    y: 20 + i * 28 + random() * 10,
-    v: 0.003 + i * 0.002,
-  }));
   pixelSky.sp = Array.from({ length: dk ? 40 : 14 }, () => ({
     x: random() * W,
     y: random() * H * 0.8,
@@ -102,11 +103,6 @@ function pixelSkyTick(ts) {
   x.beginPath();
   x.arc(Math.round(sx), Math.round(sy), 6, 0, 7);
   x.fill();
-  pixelSky.cl.forEach(c => {
-    const w = c.img.width,
-      xx = ((c.x + t * c.v) % (W + w)) - w;
-    x.drawImage(c.img, Math.round(xx), Math.round(c.y));
-  });
   pixelSky.sp.forEach(p => {
     const a = 0.5 + 0.5 * Math.sin(t / 500 + p.p);
     if (a < 0.55) return;

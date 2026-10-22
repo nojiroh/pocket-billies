@@ -12,7 +12,7 @@
   left: -10px;
   right: -10px;
   height: 280px;
-  background: url('../art/background/sundown.webp') center/cover;
+  background: linear-gradient(180deg, #7ea4c3, #99aec6 22%, #909f9c 42%, #889a76 52%, #869b55 75%, #6f7b4a);
   border: 3px solid var(--line);
   box-shadow: 0 8px 0 var(--lo);
   border-radius: 7px;

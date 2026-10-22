@@ -50,6 +50,46 @@ little smaller (done); the deleted art/background left to another session (not t
   a run's payout shows Scrap; rooms feel smaller; export the debug log.
 - Next: RL-9b (the mast's pick of 1 home Billie, the packed bag of `run.pack` items, a kept storage Billie on a loss,
   items home on a win, the run sim's policy), then the tag `rl-9-done`.
+### Terrain track TR-2c part 1 - Grass patches, wild Billies in them, the dust puff - 2026-10-22
+Branch `terrain-generation`, restarted from main 9760857 (PR #108, TR-3, was already merged). Plan approved in Plan
+Mode with the owner's answers: remove what loads the deleted art/background (not restore it); TR-2c in two sessions
+(this one: grass, encounters, dust puff; next: road pathfinder and the four mountain route types); wild Billies in any
+patch; grass patches in runs now.
+- Changed (one cause per commit):
+  - **update-check.js** imports toast from overlay.js (npm run modules regenerated it; main had ui.js).
+  - **No art/background** (main deleted the folder): the pixel sky draws its gradient in code (the old pictures'
+    colours, no clouds); the title, Trainer card, route card and wide-screen backdrop use a gradient in sundown's
+    colours. The fast check's 404 on every page is gone. The Studio's Art section still has a "Rebuild sundown.webp"
+    card for the background group (harmless: no files there).
+  - **Grass patches** (mapgen.js `mapgenGrassPatches`, terrain-track.md "TR-2c part 1 as built"): 3-6 ragged ovals of
+    15-70 m², the first across the road on the way west, road cells under it too; `scene.grassPatches`.
+    MAPGEN_VERSION 6; golden scenes and the scene hash remade on purpose.
+  - **Encounters**: on a place with `grassPatches`, wild Billies wait in any patch (no 13 m or path rule there);
+    seamless-world.js copies the patches into the drawn scene. Copperleaf unchanged.
+  - **Dust puff** where you land off a ledge (six puffs, none with reduced motion).
+- Where the plan was wrong: `grass` was already a scene key (a room's grass blades, a seamless look key), so the
+  patches are `grassPatches`. A version bump has no "left" path: `run.mapgenV` is never compared, so a run already
+  going remakes its scenes with patches on its next load. "One patch a ledge or side path skips" isn't built: routes
+  are open, so any off-road patch can be walked round.
+- Verified: unit tests 507 (new mapgen-grass.test); lint, typecheck, modules, format. Sweep of 120 dial sets: every
+  one has a patch across, 4-6 patches, 15-70 m² (median 43), every exit reached, no trap. In the page (run fixture
+  landing): 241 encounter spots, all in patches, up to 55 m from the middle; its 4 wild Billies all in patches; a 1.2 m
+  drop hops and puffs, no errors. check-fast 16 of 16 after the art fix and again after the grass work.
+- **Not verified**: smoke had 2 timeouts (the in-game full test, the Studio's screenshot) while the fast check ran
+  alongside on the same machine; see the PR for the re-run alone. The full quick check was not run.
+- Risky:
+  - Much less tall grass: about 220 m² a scene (was 770) and 80 grass props (was 315); 517 props a scene (was 755).
+    Cheaper on the phone; the land may look barer. The dial's floor (3 patches) and sizes are `MAPGEN_GRASS_PATCH`.
+  - Wild Billies can now stand far from the middle (55 m): the spread is for the phone test to judge.
+  - The patch across the road turns a few metres of road into tall grass (Gen 3's look); on the phone it may read as a
+    gap in the road.
+  - The sky behind the menus has no clouds now.
+- Phone check wanted: start a run, walk west from the landing through the grass across the road, find the wild
+  Billies in the patches; the debug run "Mountains and ledges": hop down a ledge (the dust puff); the title and the
+  Trainer card (the gradients); export the debug log.
+- Next: the owner pushes `tr-2c-1-done` (sessions can't push tags); TR-2c part 2 (the road pathfinder through tiers
+  and the massif, reusing mapgenTrailSearch, for 15 m+ summits; the four mountain route types; generated gorges with
+  rope bridges: structures.js already draws `kind: 'rope'`).
 
 ### Terrain track TR-3 - The camera on tall ground - 2026-10-22
 Branch `terrain-generation` (the owner's name for it), from main dcced21 (PR #105, TR-2), main (UI-5) merged in at
@@ -153,7 +193,10 @@ knew; sessions can't push tags).
   - Rooms' light is tuned by eye on headless shots (software drawing); the owner's phone decides. The Studio's Engine
     section, "This scene", sets one room's look; the 23 share the builder's.
 - Verified: unit tests (495), lint, typecheck, modules, check-data, format on the touched files, the whole fast check
-  (13 of 13) and smoke (15 of 15) after the last code commit; the full quick check: see below. Pictures (headless, 390 x 760): the
+  (13 of 13) and smoke (15 of 15) after the last code commit; the full quick check (run during the docs, 31 min): 45 of 54, the 9 that fail are
+  the 9 stale steps that fail on main too (v34, v35, v38, v39/40, v43, v44's props scene, v46, alpha 0.4's shapes,
+  phase 08's running after the alpha steps); "Time, weather and rooms" passes with the new room light (the lab's
+  brightness 105 by day, inside the light lab's 40-215). Pictures (headless, 390 x 760): the
   lab before and after; the hub's map (one island, sea to the rim); runs from two seeds (two maps) and one seed twice
   (the same map).
 - Phone check wanted: after this deploys, keep the game open in the background, let the next deploy go out, switch
