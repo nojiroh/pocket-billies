@@ -2597,7 +2597,15 @@ export function mapBridges(sc = walkView.sc) {
   const L = sc && sc.bridges;
   if (!L || !L.length) return null;
   let E = STEP_GRID_CACHE.get(L);
-  if (E && E.v === JSON.stringify(L) + (sc.stepsV || 0)) return E.list;
+  /* IS-5: asked once a vertex while a ground is built (the island's: hundreds of thousands); the bridges' words are
+     compared again only after a quarter of a second (the Studio edits them in place) */
+  const now = performance.now();
+  if (E && E.sv === (sc.stepsV || 0) && now - E.t < 250) return E.list;
+  if (E && E.v === JSON.stringify(L) + (sc.stepsV || 0)) {
+    E.t = now;
+    E.sv = sc.stepsV || 0;
+    return E.list;
+  }
   const list = L.map(b => {
     const a = b.a,
       c = b.b,
@@ -2623,7 +2631,7 @@ export function mapBridges(sc = walkView.sc) {
       w: b.w || 1.6,
     };
   });
-  STEP_GRID_CACHE.set(L, { v: JSON.stringify(L) + (sc.stepsV || 0), list });
+  STEP_GRID_CACHE.set(L, { v: JSON.stringify(L) + (sc.stepsV || 0), list, t: now, sv: sc.stepsV || 0 });
   return list;
 }
 export function bridgeAt(x, z, sc = walkView.sc) {
