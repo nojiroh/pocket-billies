@@ -9,13 +9,14 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
-- Copperleaf's island has its ground (IS-2): a generated island in the debug menu's Test scenes, "Copperleaf island
-  (generated ground)", about 150 m across, with a natural, uneven shape (headlands and bays, rolling hills): a
-  mountain ridge in the middle with a shoulder peak, which you can climb by a switchback trail to a lookout on top, a forest round its north side, a long beach in the west, a cove in the east with a pond, a stream, a small
-  fall and a wooden bridge, cliffs either side of the cove, dunes and heath in the south-east, and a path all the way
-  round the coast (a little over two minutes' walk), with groves, clearings, rock outcrops and mossy banks by the
-  water. The town, the barn and its pasture have flat, empty ground kept
-  for them in the south and south-west; nothing has moved in yet, and Copperleaf itself is unchanged.
+- Copperleaf's island has its ground and its town's layout (IS-2): a generated island in the debug menu's Test scenes,
+  "Copperleaf island (generated ground)", about 215 m across with a natural shape (lobes, headlands, rolling hills): a
+  mountain with spurs in the middle, climbed by a switchback trail to a lookout; forest round its north side; a long
+  beach in the west; a wide bay in the south-east. A river runs from a pond under the mountain down to the bay, and the
+  town's streets follow it: a main street along the bank, a square with a bridge, a quay on the bay, lanes, with plots
+  for the lab, the airship station, a shop, Juniper's home and the cottages. A hamlet sits round a green under the
+  mountains and a farmhouse beside the barn and its pasture; a road runs all the way round (under three minutes'
+  walk). No buildings stand on the plots yet, and Copperleaf itself is unchanged.
 - The island track begins (IS-0): a test island in the debug menu's Test scenes (a cone of a mountain, a grass ring,
   beaches and the sea all round), the first step to Copperleaf becoming a real island you can walk round. Nothing
   changes in Copperleaf yet. The island will be the hub itself, with its own editor in the Studio and its ground

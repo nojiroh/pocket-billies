@@ -110,6 +110,8 @@ So the parallel sessions mesh, the new map fields are fixed first, in the schema
 - `islandGen`: the generator's dials and seed, kept in the map so the ground can be made again; `lock` and `hash`
   freeze the ground (logic/island.js `islandGroundHash`; added in IS-0 after the owner's direction).
 - `edge: "w"` and the sea's water kind.
+- **Added in IS-2**: zone kind `hamlet`; `plots: [{ k, x, z, w, d, a, y }]`, building plots the generator lays out (k one
+  of house, home, lab, mast, shop, well, farmhouse; a the angle the front faces; y the pad's level).
 - A crude `test_island` map (a cone, a flat ring, sea round it) so IS-1 and IS-3 have an island on day one.
 
 ## Sessions and waves
@@ -176,6 +178,11 @@ sea past it, `cam.orbit` set. A quick fixture `?fixture=island` that boots into 
 - Owns the prop files and their art; touches no map but the showcase.
 
 ### IS-5 Copperleaf moves onto the island
+**Changed in IS-2** (the owner: the town in the generator): the generator lays the town out itself (streets, a square,
+bridges, a quay) and leaves `plots` for the buildings: put the lab, the airship station (`mast`), Juniper's home, the
+shop and the well on theirs and the cottages on `house` plots, the barn in its zone; the hub is by the well. The town's
+ground is not flat: a building stays on its plot's level pad. The list below still holds for everything that names a
+Copperleaf position.
 - The one session that edits `copperleaf.json`. Move the town, the barn, the mast and airship, the well, the great
   oak and the people into their zones on `copperleaf_island`, keeping their layout where it fits; turn the buildings
   at the sector's ends to face outward. Then `copperleaf_island` replaces `copperleaf` (same id).
@@ -229,7 +236,8 @@ placed (question 5), the phone's frame times at 8 angles round the coast, then t
 
 ## Ask me before (recommendation first)
 1. **Size**: ~135 m across, a lap ~90 s walking, ~50 s running (rec) / ~180 m, ~2 min walking / ~110 m, ~70 s.
-   **Answered in IS-2: ~150 m** (the town and barn fit as they are; the lap is 461 m, ~136 s walking).
+   **Answered in IS-2: ~150 m, then ~220 m** (after the sketches: room for the river town, the hamlet and the
+   mountains; the coast loop 580 m, ~170 s walking).
 2. **On the mountain top** (inside the dead zone): the camera holds still (rec) / you turn it freely there.
 3. **The sun**: fixed in the world, shadows stay put as you circle (rec) / locked to the camera, the same slant on
    screen everywhere (shadows swim). A Studio toggle to compare both.

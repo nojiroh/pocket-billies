@@ -4,7 +4,8 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 
 ### Island track IS-2 - Island ground generator - 2026-10-22
 Branch `claude/is-2-island-gen`, from IS-0's `claude/new-session-3qlesh` (PR #119, not merged yet: the owner started
-wave 1 before `is-0-done`); the PR goes against main, so its diff shrinks once #119 merges. Wave 1 ran alongside: IS-1
+wave 1 before `is-0-done`); the PR goes against main, so its diff shrinks once #119 merges. The session grew with the
+owner's direction: a natural layout, five direction sketches (scratch, not committed), then the town in the generator. Wave 1 ran alongside: IS-1
 (orbit camera), IS-3 (sea), IS-4 (island props), IS-6a (the Hub island editor). Plan approved in Plan Mode with the
 owner's answers: question 1 ~150 m (the town and barn fit as they are), 6 a dock landing and a deep channel, 7 the
 mountain climbable, 9 the stream with a pond; 10 was answered before (reusable).
@@ -40,8 +41,26 @@ mountain climbable, 9 the stream with a pond; 10 was answered before (reusable).
     (`mountain.stretch`, `mountain.shoulder`), its peak a little off the middle, a shoulder peak, shelf edges that
     wander instead of rings, a 5 m apron of open ground between it and any zone; curved spokes, a loop that wanders;
     ragged arc edges, groves and clearings, rock outcrops, lush moss and clover by the pond and stream, more meadow kinds.
-  - **copperleaf_island** (new data, index.json's maps list): 178 x 171 m scene, land 157 x 150 m, the coast loop 472 m
-    (139 s walking), one bridge; `cam.orbit` pivot on the summit, `dead` 3, `lag` 0.6, `turn` 30 (IS-1 tunes them);
+  - **A more dynamic island** (the owner, after five direction sketches; dials `size.stretch`, `size.lobes`,
+    `mountain.range`, `cove.shape`, `paths.wander`): a longer island with big lobes and a peninsula; spurs running out
+    from the mountain; the cove a wide bay with a headland on each arm; the coast road across headlands and inland.
+  - **The town in the generator** (the owner chose a mix of the sketches C, D and E and approved the plan; question 1
+    re-answered: ~220 m): a market town where the stream comes down into the bay: the main street along one bank, a
+    paved square with a bridge for the cross street, an east-bank street and a lower bridge, the quay, side lanes,
+    links to the coast road. **Plots** facing their streets: the well and the lab at the square, the airship station
+    by the harbour (else any town street), the shop, Juniper's home, houses, cottages where a house won't go; each on a
+    level pad at its street's height, eased into the land over 3 m; the rest of the town keeps its slopes. A **hamlet**
+    (4 houses round a green under the mountains, 70 m or more from the town) and a **farmhouse** by the barn. The town
+    and hamlet zones are outlines (the town's the hull round its streets, plots and links), locked. A rerun that keeps
+    them reproduces the map exactly: their plots, bridges and the `trailhead` spot come through, and they join the zone
+    list at the end as new ones do. The old flat town is still there when the dials ask for a town rectangle.
+  - **The contract grew** (additions only): zone kind `hamlet`; the map field `plots [{ k, x, z, w, d, a, y }]` (k:
+    house, home, lab, mast, shop, well, farmhouse; a the angle the front faces, y the pad's level), in the schema, the
+    types and `islandProblems`; contract tests with three planted plot faults.
+  - **build-island**: `--defaults`; the in-game checks walk in legs of about 40 m along the way the walk grid finds
+    (the game's findPath gives up after 30000 cells), each leg checked by the game.
+  - **copperleaf_island** (new data, index.json's maps list): 235 x 237 m scene, land 213 x 216 m, the coast loop 580 m
+    (170 s walking), 6 bridges, 14 town houses, 4 in the hamlet; `cam.orbit` pivot on the summit, `dead` 3, `lag` 0.6, `turn` 30 (IS-1 tunes them);
     `edge: "w"`, `waterKind: "sea"`, `far: "sea"`, `farH` 5, `flatFar` 1 (IS-3's skirt); no props (IS-4, IS-9).
 - Where the plan (the track file) was wrong or short: see the track file's "Checked in IS-2" (the town didn't fit
   135 m; the lap is ~139 s, not ~90 or the ~105 I estimated in the plan; the sharp peak blocked every trail; findPath's
@@ -52,15 +71,20 @@ mountain climbable, 9 the stream with a pond; 10 was answered before (reusable).
   the dock, have no traps, every zone reached, one bridge, the town's path to the mountain, no notes; in a headless game
   `?test=1&scene=copperleaf_island` opens and draws with no page errors and its 7 walking checks hold; pictures at
   390 x 760 (the trail's stairs on the shelves; the coast barely reads under today's camera and haze). On version 1:
-  check-fast 22 of 22; smoke one problem, the bridge's jetty flag (fixed in version 2). Version 2's check-fast and smoke:
-  running when this was written; see the PR.
+  check-fast 22 of 22; smoke one problem, the bridge's jetty flag (fixed in version 2). Version 2: check-fast 22 of 22,
+  smoke no problems. With the town: unit tests 575; 24 seeds each place the well, lab, airship station, shop, home and
+  farmhouse with 5-11 houses (plus the hamlet's), every plot's front walked to, every zone reached, no traps; the
+  game's 21 walking legs hold headless; check-fast and smoke: see the PR.
 - Risky:
   - **findPath's cap**: tap-to-walk from the town to the summit (102 m) fails with the default 30000 cells; the
     joystick isn't affected. When `copperleaf_island` becomes the hub (IS-5), long taps across it will stop short.
   - **On the game page**: island-gen.js loads in the game (about 57 KB, unused there) because every game/js file must
     be on a page; IS-6b can move it to the Studio's page (then the unit test's crawl reaches it from there).
-  - **The file is 660 KB** (30 KB gzipped; Copperleaf's is 73 KB, 14 KB gzipped): the steps grid is stored whole
-    (base64 Int16 over the scene). `loadAllMaps` fetches it in the background after boot.
+  - **The size** (the owner's ~220 m): 1.2 MB (52 KB gzipped; Copperleaf's 73 KB, 14 KB gzipped), about 8.5 times
+    Copperleaf's ground; the steps grid is stored whole. `loadAllMaps` fetches it in the background after boot. The
+    phone's frame times are IS-9's to measure; the fallback is a smaller `size.r`.
+  - **A kept town under a new seed**: its ground comes back exactly, but the new river or coast road may meet it at
+    another place (a seam at its outline). IS-6b's preview should show the walk checks after a rerun.
   - The lock compares exact numbers: a later generator version (ISLAND_GEN_VERSION 2) changes unlocked ground freely;
     a locked one is never touched.
   - The coast in the headless pictures barely reads under today's fixed north camera and the haze; the orbit (IS-1)
@@ -74,9 +98,12 @@ mountain climbable, 9 the stream with a pond; 10 was answered before (reusable).
   - **IS-6a/6b**: `islandGenerate(dials, seed, { scenery }, prev)` is the call; it throws on a locked ground; `notes`
     say what didn't fit; `paths` are the loop and spokes as lines. The defaults' `zones` are dial rectangles; a kept
     (locked) zone in `prev` wins over its dial.
-  - **IS-5**: the town zone holds a 64 x 40 m rectangle facing south (its rounded outline is a few metres bigger), the
-    barn's 18 x 16 m and the pasture's 26 x 22 m to the south-west and west; the flat level is 1.2 m; the hub is the town
-    zone's middle.
+  - **IS-5**: its job changes: put Copperleaf's buildings on the plots (`plots`: the lab, the airship station on
+    `mast`, Juniper's home, the shop, the well; cottages on `house`), the barn in the barn zone, the people and life in
+    the town; the hub is by the well. The town is no longer one flat box, so a building's footprint must stay on its
+    plot (pads are level only there).
+  - **IS-4**: the spots `trailhead`, plus a well and a farmhouse are wanted (plot kinds).
+  - **IS-7**: the world map can draw the plots as the town's buildings until IS-5 places them.
 - Next: IS-5 (needs IS-1 and IS-2) and IS-6b, IS-7 (need IS-2). Tag `is-2-done` is the owner's to push (after
   `is-0-done`).
 
