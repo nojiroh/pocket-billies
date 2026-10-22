@@ -140,8 +140,10 @@ export function migrate(o) {
   s.box = (s.box || []).filter(m => speciesOf(m));
   const start = s.run && s.run.start;
   if (start) start.team = start.team.filter(m => speciesOf(m));
-  /* every Billie the save holds: the team, the box and, during a run, the hub's team as the run started */
-  const members = () => [...s.team, ...s.box, ...(start ? start.team : [])];
+  s.ranch.nursery = s.ranch.nursery.filter(n => !isRobot(n.egg) && speciesOf(n.egg));
+  /* every Billie the save holds: the team, the box, the nursery's eggs (RL-10) and, during a run, the hub's team as
+     the run started */
+  const members = () => [...s.team, ...s.box, ...s.ranch.nursery.map(n => n.egg), ...(start ? start.team : [])];
   /* phase 17: robot parts you own, and robots' sp and moves made again from their parts */
   s.parts = (Array.isArray(o.parts) ? o.parts : [])
     .filter(p => p && typeof p.uid === 'string' && (robotPartDef(p.id) || robotGemDef(p.id)))
@@ -232,7 +234,17 @@ export function validSave(o) {
   /* RL-3: the run's checks; during a run the hub's team as it started is checked like the team */
   if (!validMeta(o.meta) || !validRanch(o.ranch) || (o.run !== null && !validRun(o.run))) return false;
   const nodes = o.run ? runNodeCount(o.run) : HUB_LOCATIONS.length;
-  if (!billiesOk(o.team.concat(o.box)) || (o.run && !billiesOk(o.run.start.team))) return false;
+  /* RL-10: the nursery's eggs are Billies to be: checked with the team and storage (one set of uids) */
+  if (
+    !billiesOk(
+      o.team.concat(
+        o.box,
+        o.ranch.nursery.map(n => n.egg)
+      )
+    ) ||
+    (o.run && !billiesOk(o.run.start.team))
+  )
+    return false;
   if (!o.trip || !Number.isInteger(o.trip.node) || !num(o.trip.node, 0, nodes - 1) || !num(o.se, 0, 1e12)) return false;
   if (o.run && !num(o.run.start.trip.node, 0, HUB_LOCATIONS.length - 1)) return false;
   if (!Array.isArray(o.eggs) || o.eggs.some(e => !e || !num(e.prog, 0, 1e12))) return false;

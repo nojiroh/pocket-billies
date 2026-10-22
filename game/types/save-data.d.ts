@@ -108,8 +108,11 @@ export interface Ranch {
   pens: string[];
   /** Billies training between runs: uid, Date.now() when training started */
   trainees: { uid: string; at: number }[];
-  /** breeding pairs: the parents' uids, the mode, when it started and when the egg is ready (Date.now()) */
-  nursery: { a: string; b: string; mode: 'safe' | 'risky'; at: number; ready: number }[];
+  /** breeding pairs: the parents' uids, the mode, when it started and when the egg is ready (Date.now()), and the
+      Billie it hatches into (rolled when it started, RL-10 logic/breeding.js) */
+  nursery: { a: string; b: string; mode: 'safe' | 'risky'; at: number; ready: number; egg: Billy }[];
+  /** RL-10: how many pairs have bred (part of each egg's seed) */
+  bred: number;
   /** passive income: per hour, banked so far, the last time it was counted (Date.now(); only moves forward) */
   income: { rate: number; bank: number; lastAt: number };
 }
