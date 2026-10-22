@@ -1051,8 +1051,52 @@ def run_lab_steps(pg, errs):
     if pg.evaluate("document.querySelectorAll('#main .rl-map').length") != 2: errs.append('run lab: beside the loaded data did not draw a second map')
     pg.uncheck('#rlBeside')
     logic = run_lab_logic_steps(pg, errs, want)
+    rules = run_lab_rules_steps(pg, errs)
     if len(errs) > n: errs[n:] = [f'run lab: {e}' if not e.startswith('run lab') else e for e in errs[n:]]
-    else: print(f"run lab: LABCHECK7 drawn as the game makes it ({len(want['none'])} places, no unlocks and all), a nodeTypes edit redrawn in {ms:.0f} ms, node 3's seed, beside the loaded data; {logic}", flush=True)
+    else: print(f"run lab: LABCHECK7 drawn as the game makes it ({len(want['none'])} places, no unlocks and all), a nodeTypes edit redrawn in {ms:.0f} ms, node 3's seed, beside the loaded data; {logic}; {rules}", flush=True)
+
+
+def run_lab_rules_steps(pg, errs):
+    """Studio plan T2.5: the run rules card. Typing in a field redraws the map (rows), the edit is in what Propose would
+    send (rules.json, nodeTypes.json), the shop's always-stocked box edits the list, a value the game can't lay out
+    shows its error beside the map, every rule in code finds its line, and putting the values back leaves nothing to
+    propose in those files."""
+    rows_drawn = lambda: pg.evaluate("(()=>{const m=document.querySelector('#main .rl-map');if(!m)return 0;return new Set([...m.querySelectorAll('.rl-node circle')].map(c=>c.getAttribute('cx'))).size})()")
+    pending = lambda: pg.evaluate("changedDataFiles(studioState.D).map(f=>f.path).filter(p=>/rules\\.json$|nodeTypes\\.json$/.test(p)).sort()")
+    if not pg.locator('#main .rl-rules').count(): errs.append('no run rules card'); return 'no rules card'
+    was = pg.evaluate('studioState.D.rules.run.map.rows')
+    before = rows_drawn()
+    pg.fill('#main .rl-rules [data-p="rules.run.map.rows"]', '7')
+    t0 = time.time()
+    while time.time() - t0 < 5 and rows_drawn() == before: time.sleep(0.05)
+    drawn = rows_drawn()
+    if drawn != 7: errs.append(f'rows 7 typed in the rules card: the map has {drawn} rows')
+    if pg.evaluate('studioState.D.rules.run.map.rows') != 7: errs.append('the rows field did not write rules.run.map.rows')
+    name_was = pg.evaluate('studioState.D.nodeTypes.town.name')
+    pg.fill('#main .rl-rules [data-p="nodeTypes.town.name"]', 'Market')
+    pg.evaluate("document.querySelector('#main .rl-rules [data-rl-always=\"taxbreak\"]').click()")
+    sent = pending()
+    rules_text = pg.evaluate("(changedDataFiles(studioState.D).find(f=>/rules\\.json$/.test(f.path))||{}).text||''")
+    if not any(p.endswith('rules.json') for p in sent) or not any(p.endswith('nodeTypes.json') for p in sent): errs.append(f'Propose would send {sent}, not rules.json and nodeTypes.json')
+    elif '"rows": 7' not in rules_text.replace('"rows":7', '"rows": 7'): errs.append('the proposed rules.json does not hold rows 7')
+    if 'taxbreak' in pg.evaluate('studioState.D.rules.run.shop.always'): errs.append('unticking the Potion left it always on the shelves')
+    # a value the map can't lay out (more mini-bosses than rows hold): the game's own error beside the map
+    pg.fill('#main .rl-rules [data-p="rules.run.map.minibosses"]', '6')
+    t0 = time.time()
+    while time.time() - t0 < 5 and not pg.locator('#main .rl-error').count(): time.sleep(0.05)
+    if not pg.locator('#main .rl-error').count(): errs.append('6 mini-bosses on 7 rows drew a map, not the game’s error')
+    mb = pg.evaluate('studioState.loaded.rules.run.map.minibosses')
+    pg.fill('#main .rl-rules [data-p="rules.run.map.minibosses"]', str(mb))
+    pg.fill('#main .rl-rules [data-p="rules.run.map.rows"]', str(was))
+    pg.fill('#main .rl-rules [data-p="nodeTypes.town.name"]', name_was)
+    pg.evaluate("document.querySelector('#main .rl-rules [data-rl-always=\"taxbreak\"]').click()")
+    left = pending()
+    if left: errs.append(f'every rules card value put back, Propose would still send {left}')
+    t0 = time.time()
+    while time.time() - t0 < 10 and pg.evaluate("[...document.querySelectorAll('#main [data-rl-code]')].some(e=>!e.dataset.line)"): time.sleep(0.1)
+    lines = pg.evaluate("[...document.querySelectorAll('#main [data-rl-code]')].map(e=>e.textContent)")
+    if not lines or any(l.endswith(':?') or ':' not in l for l in lines): errs.append(f'the rules in code did not all find their line: {lines}')
+    return f"the rules card: rows 7 redrawn, proposed in rules.json and nodeTypes.json, the game's error for 6 mini-bosses, put back with nothing left to send, {len(lines)} rules in code with their lines ({lines[0] if lines else ''})"
 
 
 def run_lab_logic_steps(pg, errs, want):
