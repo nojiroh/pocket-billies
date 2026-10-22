@@ -54,6 +54,7 @@ import { flyMenu, rideGlassLift } from './airship.js';
 import { runWorldData } from './run-world.js';
 import { runArrivedHint } from './run.js';
 import { ranchOpen } from './ranch-screen.js';
+import { labBoardOpen } from './lab-board.js';
 import { postcardCheck } from './postcards.js';
 import { legendCheck, personTalk, storyCheck, trainerTalk } from './story.js';
 import { storyResumeCheck } from './story-stage.js';
@@ -306,6 +307,11 @@ function roomAct(h) {
     flyMenu(h.p);
     return;
   }
+  /* RL-11: the unlock board in Hazel's lab opens the Lab tab */
+  if (pa === 'board' && typeof labBoardOpen === 'function') {
+    labBoardOpen();
+    return;
+  }
   if (pa === 'lift' && typeof rideGlassLift === 'function') {
     rideGlassLift(h.p);
     return;
@@ -513,6 +519,7 @@ export function walkPick(h) {
     else if (a === 'lab' && typeof talkHazel === 'function') talkHazel(p);
     else if (a === 'read' && typeof loreBook === 'function') loreBook(p.book);
     else if (a === 'ranch' && typeof ranchOpen === 'function') ranchOpen();
+    else if (a === 'board' && typeof labBoardOpen === 'function') labBoardOpen();
     else
       toast(
         p.say ||

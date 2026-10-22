@@ -1,17 +1,29 @@
 'use strict';
 /* ================= THE LAB BOARD (roguelite track RL-11) =================
-   The unlock table on screen (logic/unlocks.js, game/data/unlocks.json): milestones earned in the hub (after a run
-   and on load), with a toast for each. */
+   The unlock table on screen (logic/unlocks.js, game/data/unlocks.json), in the hub's Lab tab (also opened by the
+   machine in Hazel's lab): the three meta currencies, then each building of buildings.json with its level and its
+   rows (the Lab's are bought here; the others show here and are bought at their building), the Workshop as coming
+   later, and the milestones (earned, or what earns them). Milestones are granted in the hub after a run and on load,
+   with a toast for each. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { provide, toast } from './hooks.js';
+import { provide, render, toast } from './hooks.js';
 import { CURRENCIES, UNLOCK_DATA } from './game-data.js';
 import { formatNumber } from './logic/rules.js';
-import { unlockAuto } from './logic/unlocks.js';
-import { save, saveData } from './game-state.js';
+import { buildingLevel, unlockAuto, unlockBuy, unlockCurrency, unlockReady, unlockRows } from './logic/unlocks.js';
+import { escapeHtml, save, saveData, uiState } from './game-state.js';
+import { uiIconHTML } from './art.js';
 /* eslint-disable no-func-assign */
 expose({
+  LAB_WHERE: [() => LAB_WHERE],
+  LAB_WHY: [() => LAB_WHY],
+  labAction: [() => labAction, v => (labAction = v)],
+  labBoardOpen: [() => labBoardOpen, v => (labBoardOpen = v)],
+  labBuy: [() => labBuy, v => (labBuy = v)],
   labMilestones: [() => labMilestones, v => ((labMilestones = v), provide({ labMilestones }))],
+  labPrice: [() => labPrice, v => (labPrice = v)],
+  labRowHTML: [() => labRowHTML, v => (labRowHTML = v)],
+  renderLabBoard: [() => renderLabBoard, v => (renderLabBoard = v)],
   unlockGiftText: [() => unlockGiftText, v => (unlockGiftText = v)],
 });
 /* eslint-enable no-func-assign */
@@ -40,4 +52,105 @@ export function labMilestones() {
   if (typeof debugLog !== 'undefined') debugLog.add('meta', `milestones: ${got.join(', ')}`);
   save();
   return got;
+}
+
+/* why a row can't be bought, in words (logic/unlocks.js unlockReady) */
+const LAB_WHY = {
+  owned: 'Owned',
+  earned: 'Earned by a milestone',
+  soon: 'Coming later',
+  requires: 'Needs another unlock first',
+  run: 'Bought between runs',
+  cost: 'Not enough',
+  unknown: 'Gone',
+};
+/** where a building's rows are bought, for its section */
+const LAB_WHERE = { airship: 'at the airship mast', ranch: 'at the ranch' };
+/** a price: "60 Capital", "1 Audit Seal" @param {number} n @param {string | null} c */
+function labPrice(n, c) {
+  const C = (c && CURRENCIES[c]) || { name: c || '', one: c || '' };
+  return `${formatNumber(n)} ${n === 1 ? C.one : C.name}`;
+}
+/** one row of the board: its name, what it gives, what it needs, and its button or state @param {any} r */
+function labRowHTML(r) {
+  const R = r.R,
+    needs = (R.requires || [])
+      .filter(q => !saveData.meta.unlocks[q])
+      .map(q => (UNLOCK_DATA.unlocks[q] || { name: q }).name),
+    note = needs.length ? `<small>Needs ${escapeHtml(needs.join(', '))}</small>` : '';
+  let act = '';
+  if (r.owned)
+    act = `<span class="lab-state on">${uiIconHTML('spark', 14)}${r.door === 'earned' ? 'Earned' : 'Owned'}</span>`;
+  else if (r.door === 'earned') act = `<span class="lab-state">Not yet</span>`;
+  else if (r.door === 'board')
+    act = `<button class="pb small${r.why ? ' quiet' : ' gold'}" data-a="lab-buy" data-k="${escapeHtml(r.id)}"${r.why ? ' disabled' : ''} aria-label="${escapeHtml(`Buy ${R.name} for ${labPrice(R.cost, r.currency)}`)}">${escapeHtml(labPrice(R.cost, r.currency))}</button>`;
+  else act = `<span class="lab-state">${escapeHtml(labPrice(R.cost, r.currency))}</span>`;
+  return `<div class="lab-row k-card${r.owned ? ' owned' : ''}"><span class="lab-t"><b>${escapeHtml(R.name)}</b><small>${escapeHtml(R.about)}</small>${note}${!r.owned && r.why && r.why !== 'cost' && r.why !== 'requires' && r.door === 'board' ? `<small>${LAB_WHY[r.why]}</small>` : ''}</span>${act}</div>`;
+}
+/** the Lab tab: the unlock board */
+export function renderLabBoard() {
+  const s = saveData,
+    M = s.meta,
+    rows = unlockRows(s, UNLOCK_DATA),
+    chips = ['capital', 'scrap', 'seals']
+      .map(
+        c =>
+          `<pb-coin kind="${c}" value="${M[c]}" label="${escapeHtml((CURRENCIES[c] || { name: c }).name)}"></pb-coin>`
+      )
+      .join(' '),
+    owned = rows.filter(r => r.owned).length;
+  const sections = Object.entries(UNLOCK_DATA.buildings).map(([b, B]) => {
+    const mine = rows.filter(r => r.R.at === b),
+      lv = buildingLevel(s, b),
+      head = `<div class="sec-h"><h2>${escapeHtml(B.name)}${B.levels > 1 ? ` · Lv ${lv}` : ''}</h2>${mine.length ? `<span class="count tnum">${mine.filter(r => r.owned).length} of ${mine.length}</span>` : ''}</div>`;
+    if (B.soon)
+      return `<section class="tpanel lab-sec soon">${head}<p class="note">${escapeHtml(B.about)}</p></section>`;
+    const where = LAB_WHERE[b]
+      ? `<p class="note">Bought ${LAB_WHERE[b]}, with ${escapeHtml((CURRENCIES[B.currency] || { name: B.currency }).name)}.</p>`
+      : '';
+    return `<section class="tpanel lab-sec">${head}<p class="note">${escapeHtml(B.about)}</p>${where}<div class="lab-list">${mine.map(labRowHTML).join('')}</div></section>`;
+  });
+  const earned = rows.filter(r => r.door === 'earned');
+  if (earned.length)
+    sections.push(
+      `<section class="tpanel lab-sec"><div class="sec-h"><h2>Milestones</h2><span class="count tnum">${earned.filter(r => r.owned).length} of ${earned.length}</span></div><p class="note">Earned in Copperleaf after a run.</p><div class="lab-list">${earned.map(labRowHTML).join('')}</div></section>`
+    );
+  return `<header class="bar"><div><div class="sub">${owned} of ${rows.length} unlocked</div><h1 class="where">Lab</h1></div></header>
+ <p class="lab-chips">${chips}</p>
+ ${s.run ? '<p class="note">The Lab’s board waits for you in Copperleaf: unlocks are bought between runs.</p>' : ''}${sections.join('')}`;
+}
+/** a sold row bought from a screen (the board, the ranch, the mast): paid, granted, saved; true when it was bought
+ * @param {string} id */
+function labBuy(id) {
+  const R = UNLOCK_DATA.unlocks[id];
+  if (!R) return false;
+  const why = unlockReady(saveData, id, UNLOCK_DATA);
+  if (why) {
+    toast(
+      why === 'cost'
+        ? `Not enough ${(CURRENCIES[unlockCurrency(R, UNLOCK_DATA) || ''] || { name: '' }).name}.`
+        : `${LAB_WHY[why]}.`
+    );
+    return false;
+  }
+  unlockBuy(saveData, id, UNLOCK_DATA);
+  if (typeof debugLog !== 'undefined') debugLog.add('meta', `bought ${id}`);
+  toast(`Unlocked: ${R.name}.`);
+  save();
+  render();
+  return true;
+}
+/** the machine in Hazel's lab: the board, in the hub */
+export function labBoardOpen() {
+  if (saveData.run) {
+    toast('The Lab’s board waits for you in Copperleaf.');
+    return;
+  }
+  uiState.tab = 'lab';
+  render();
+  scrollTo(0, 0);
+}
+/** the board's buttons (ui.js's click switch) @param {string} a @param {DOMStringMap} d */
+export function labAction(a, d) {
+  if (a === 'lab-buy' && d.k) labBuy(d.k);
 }
