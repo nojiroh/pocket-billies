@@ -284,3 +284,15 @@ test('the deadline version: the drums and the hook on the triangle alone; writte
   assert.equal(trackerDeadline({ ...m, deadline: false }), null);
   assert.deepEqual(trackerRecipe({ meadow: m }, 'meadow@deadline'), d);
 });
+
+test('restart starts a playing song again (a new battle with the same song); without it the song plays on', () => {
+  const c = fakeContext(),
+    T = trackerCreate(c, {}, { songs: { a: { ...town, intro: [[0, 76, 4]] } } });
+  const first = T.play('a');
+  assert.equal(T.play('a', { intro: true }), first);
+  const again = T.play('a', { intro: true, hold: true, restart: true });
+  clearInterval(T.timer);
+  assert.notEqual(again, first);
+  assert.equal(again.step, -16, 'from its intro');
+  assert.ok(again.hold);
+});

@@ -206,7 +206,7 @@ function synthKick(bus, t, v) {
 /* SND-2: the songs' recipes are data (music.json songs) */
 const SONGS = MUSIC.songs;
 /* SND-2: the song plays on the tracker (audio/tracker.js); this keeps what was asked for (the first touch starts it) */
-/* SND-5: o as the tracker's play takes it ({ intro, hold }: a battle's start) */
+/* SND-5: o as the tracker's play takes it ({ intro, hold, restart }: a battle's start) */
 export function music(name, o) {
   soundEngine.want = name;
   if (!soundEngine.ctx || soundEngine.ctx.state !== 'running') {
@@ -287,7 +287,7 @@ function battleMusicStart() {
   const st = musicState(),
     name = songVariant(songFor(st, MUSIC.where, SONGS), st, SONGS, null, MUSIC.run);
   if (!name) return;
-  music(name, { intro: true, hold: true });
+  music(name, { intro: true, hold: true, restart: true });
   const sg = soundEngine.song;
   soundLog('battle ' + st.battle + ': ' + name + (sg && sg.name === name && sg.D.introSteps ? ', its intro' : ''));
 }

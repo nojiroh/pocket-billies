@@ -368,9 +368,10 @@ export function trackerCreate(ctx, bus, opts = {}) {
     if (D) T.song.D = D;
     else T.stop();
   };
-  /* SND-5: o.intro plays the song's intro first; o.hold keeps the drums out until drumsIn() (the throw), or 8 s */
+  /* SND-5: o.intro plays the song's intro first; o.hold keeps the drums out until drumsIn() (the throw), or 8 s;
+     o.restart starts the song again even when it is playing (a new battle with the same song) */
   T.play = (name, o = {}) => {
-    if (T.song && T.song.name === name) return T.song;
+    if (T.song && T.song.name === name && !o.restart) return T.song;
     const D = T.compose(name);
     if (!D) return null;
     if (T.song) {
