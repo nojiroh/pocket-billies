@@ -649,6 +649,8 @@ export function addHitTarget(it, C, hits, labels, PPU) {
     if (lb) labels.push({ k: 'act', x: q.x, y: box.y0 - 4, t: lb, act: lb === 'Closed' ? 'closed' : it.p.act });
   } else if (it.k === 'buddy') {
     hits.push({ k: 'buddy', ...box, z: q.d - 0.5 });
+  } else if (it.k === 'ranchBilly') {
+    hits.push({ k: 'ranchBilly', uid: it.uid, ...box, z: q.d - 0.3 });
   } else if (it.k === 'pet') {
     hits.push({ k: 'npc', n: it.n, ...box, z: q.d + 0.2, go: approachPoint(it.x, it.z), look: [it.x, it.z] });
   } else if (it.k === 'encm') {

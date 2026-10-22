@@ -32,6 +32,7 @@ import {
   needMaps,
   paintGroundRect,
   paintWorkerState,
+  pastureTap,
   propModelArtPaths,
   provide,
   rawHeightAt,
@@ -3159,6 +3160,10 @@ export function handleWalkClick(ev) {
     P = walkView.pl;
   if (h && h.k === 'buddy') {
     if (typeof buddyTap === 'function') buddyTap();
+    return;
+  }
+  if (h && h.k === 'ranchBilly') {
+    if (typeof pastureTap === 'function') pastureTap(h.uid);
     return;
   }
   if (h && h.k === 'folk') {

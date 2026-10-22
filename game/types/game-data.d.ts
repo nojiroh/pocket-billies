@@ -951,6 +951,8 @@ export interface RanchRules {
   trainCost: number;
   /** a clock this far behind a trainee's start (ms) is allowed; further back, nothing is gained and it starts again */
   guardMs: number;
+  /** IS-8: at most this many of the ranch's Billies wander in the hub's pasture (logic/pasture.js) */
+  pasture: number;
   /** RL-10: breeding at the ranch (logic/breeding.js) */
   breed: BreedRules;
 }

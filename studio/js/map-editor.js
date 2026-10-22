@@ -338,6 +338,7 @@ SECTIONS.scenes = () => {
         ['house', 'Show a message (house)'],
         ['home', 'Your room (walk into it)'],
         ['ranch', 'The ranch (walk in; training and storage)'],
+        ['pasture', 'The pasture’s gate (opens the ranch’s sheet)'],
         ['board', 'The Lab’s unlock board (opens the Lab tab)'],
         ['climb', 'A ladder to climb'],
         ['sign', 'Show a message (sign)'],
