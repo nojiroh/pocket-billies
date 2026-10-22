@@ -309,6 +309,10 @@ export function stat(m, k) {
   let v = k === 'hp' ? Math.floor((2 * b * m.lvl) / 100) + m.lvl + 10 : Math.floor((2 * b * m.lvl) / 100) + 5;
   /* phase 16: its parts (weight and Prime) */
   if (m.build) v = Math.max(1, Math.round(v * buildStatFactor(m.build, k)));
+  /* RL-10: an abomination's spike and drawback (rules.json ranch.breed) */
+  const mu = m.mut,
+    B = mu && mu.k === 'abom' && RULES.ranch && RULES.ranch.breed;
+  if (B && (k === mu.up || k === mu.down)) v = Math.max(1, Math.round(v * (k === mu.up ? B.abomUp : B.abomDown)));
   /* v33: an Alpha in battle is much tougher (m.boss); one you caught keeps a little of it (m.alpha) */
   if (m.boss) v = Math.floor(v * (k === 'hp' ? m.boss.hp : m.boss.st));
   else if (m.alpha) v = Math.floor(v * ((RULES.battle && RULES.battle.alphaKeep) ?? 1.08));
@@ -480,7 +484,7 @@ export function upgradePart(p) {
   for (const { m, previousMaxHp } of fitted) refreshRobot(m, previousMaxHp);
   return true;
 }
-export const billyName = m => m.nick || speciesOf(m).name;
+export const billyName = m => m.nick || (m.mut && m.mut.name) || speciesOf(m).name;
 /* RL-8: during a run storage stays in Copperleaf (the box isn't a run field): only the party counts, so nothing in a run
    reads, heals, merges or moves a Billie that is resting at home */
 export const allBillies = () => (saveData.run ? saveData.team.slice() : saveData.team.concat(saveData.box));

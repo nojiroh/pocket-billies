@@ -20,6 +20,7 @@ import {
   SPECIES,
   START_NODE,
   STATUS_NAMES,
+  STAT_IDS,
   hubRoadCost,
 } from '../game-data.js';
 import { isRobot, robotGemDef, robotPartDef, robotRules, speciesOf } from './fighters.js';
@@ -150,6 +151,7 @@ export function migrate(o) {
   });
   members().forEach(m => {
     if (m.nick != null) m.nick = cleanName(m.nick, 16);
+    if (m.mut && m.mut.name != null) m.mut.name = cleanName(m.mut.name, 24) || speciesOf(m).name;
   });
   if (s.avatar && typeof s.avatar === 'object' && 'name' in s.avatar)
     s.avatar.name = cleanName(s.avatar.name, 18) || 'Trainer';
@@ -300,5 +302,21 @@ export function billiesOk(list) {
       return false;
   for (const m of list)
     if (typeof (m.nick || '') !== 'string' || (m.status != null && !STATUS_NAMES[m.status])) return false;
+  /* RL-10: a bred Billie's mark: a quirk, or an abomination with a short name and two different stats */
+  for (const m of list) {
+    const u = m.mut;
+    if (u == null) continue;
+    if (typeof u !== 'object' || Array.isArray(u) || (u.k !== 'quirk' && u.k !== 'abom')) return false;
+    if (
+      u.k === 'abom' &&
+      (typeof u.name !== 'string' ||
+        !u.name ||
+        u.name.length > 24 ||
+        !STAT_IDS.includes(u.up) ||
+        !STAT_IDS.includes(u.down) ||
+        u.up === u.down)
+    )
+      return false;
+  }
   return true;
 }

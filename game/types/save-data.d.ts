@@ -274,6 +274,9 @@ export interface Billy {
   boss?: { hp: number; st: number };
   /** phase 16: the size of each part (rules.js rollBuild); missing means all M */
   build?: Build;
+  /** RL-10: a risky egg's surprise (logic/breeding.js): a quirk, or an abomination with its own name, one stat raised
+      (rules.json ranch.breed.abomUp) and another lowered (abomDown); missing for every other Billie */
+  mut?: BillieMut;
   /** phase 17: 'robot' for a robot (sp is then made from its parts: logic/fighters.js robotSp); missing for a Billie */
   kind?: 'robot';
   /** phase 17: a robot's gem (a key of robots.json gems): the gem is the robot, its level and XP */
@@ -293,6 +296,16 @@ export interface PartInstance {
   up: number;
 }
 export type RobotFit = Record<'torso' | 'armL' | 'armR' | 'legs', PartInstance>;
+
+/** RL-10: what a risky egg did to a Billie (logic/breeding.js) */
+export interface BillieMut {
+  k: 'quirk' | 'abom';
+  /** an abomination's name, made from its parents' (shown unless it has a nickname) */
+  name?: string;
+  /** an abomination's raised and lowered stats (stats.json ids) */
+  up?: string;
+  down?: string;
+}
 
 /** phase 16: a part size per slot (RULES.parts) */
 export type PartSize = 'S' | 'M' | 'L';
