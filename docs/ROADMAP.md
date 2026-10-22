@@ -75,7 +75,7 @@ No `phase-NN-done` tag was ever pushed; "done" means the HANDOFF entry says the 
 | 06 | 06-ui-structure | mostly done (06-1..06-4); ui.js not split, old CSS layers not emptied | absorbed: UI-5 and UI-6 (docs/phases/ui-track.md); `phase-06-done` when UI-6 ends |
 | 07 | 07-portraits | part 1 only (kit, slicer, portraits.json; nothing uses them) | parked: after the first cut is fun |
 | 08 | 08-classic-movement-seamless-maps-rooms | 08a-1..3 and 08b-1..2 done; 08b-3 not | absorbed: the run world uses 08b's seam model; 08b-3 templates parked |
-| 09 | 09-props-and-terrain | partly: Copperleaf, Route 1, Marigold and the city set redone | parked: the other towns are legacy; run biomes reuse the done kits |
+| 09 | 09-props-and-terrain | partly: Copperleaf, Route 1, Marigold and the city set redone; every tree of the run biomes a model (batch 10) | parked: the other towns are legacy; run biomes reuse the done kits (left: the rooms' furniture, the barn, the mossy boulder, campfire, lookout tower, wind-sail flower) |
 | 10 | 10-world-map-bowl | done, waiting on the owner's phone look and the tag | absorbed: RL-7 makes the bowl show a run |
 | 11 | archive/11-opening-sequence | moved to Project Story S7-S8; since RL-8 New game plays the fall only | absorbed: RL-8 (the fall only, Hazel's mast lines) |
 | 12 | 12-ranch | not started | absorbed: RL-9, RL-10 |

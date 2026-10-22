@@ -606,14 +606,14 @@ def route_thicket(D, i, old):
     s.stream([(30, s.H + .2), (32, 52), (36, 40), (44, 32), (52, 26), (70, 20), (90, 12), (s.W + .2, 6)], 1.2, .5, banks='M')
     s.bridges_over('wood')
     for cx, cz, rx, rz, n in ((16, 40, 10, 8, 24), (90, 44, 12, 8, 26), (66, 46, 6, 5, 12), (16, 14, 6, 4, 9), (100, 22, 6, 4, 9)):
-        s.grove(cx, cz, rx, rz, n, ['tree_oak_deep', 'tree_pine_deep', 'tree_birch_deep', 'tree_oak_b_deep', 'tree_hazel', '@tree_oak'], floor=None, under=UNDER, gap=.05)
+        s.grove(cx, cz, rx, rz, n, ['tree_oak', 'tree_pine', 'tree_birch', 'tree_oak_b', 'tree_hazel', '@tree_oak'], floor=None, under=UNDER, gap=.05)
     # the mushroom glade: a ring of mushrooms in a mossy clearing, a ledge with a ladder above it
     s.blob(60, 34, 5, 3.4, 'M', .2); s.ring('mushroom_ring', 60, 34, 3.2, 1); s.put('mushroom_giant', 64, 36.4); s.put('mushroom_giant', 56.4, 35.6, .8)
     s.ring('mushroom', 60, 34, 4.2, 7, .9)
     s.terrace(70, 46, 100, 65, 1.9, wall=False, wobble=.3)
     s.drifts(10, (4, 7, 2.2, 3.4), density=.7)
     s.scatter(['@fern', 'bracken', 'log_mossy', 'stump_mossy', '@mushroom', 'boulder_mossy', 'rocks_mossy', 'fallen_leaves', 'tree_fallen'], 50, (0, 0, 112, 64), avoid=AV + 't', gap=.4)
-    s.belt(['tree_pine_deep', 'tree_oak_deep', 'tree_birch_deep'], 'back', 6, 34, UNDER)
+    s.belt(['tree_pine', 'tree_oak', 'tree_birch'], 'back', 6, 34, UNDER)
     s.rolling(.8, 6); s.hill(20, 40, 10, 1.4)
     return s.out(7, 'wood'), {}
 

@@ -135,7 +135,8 @@
     "test_props_marigold",
     "test_props_city",
     "city_opening",
-    "test_props_turn"
+    "test_props_turn",
+    "test_props_wild"
    ]
   },
   "cutscenes": {"ids":["opening","city"]}
