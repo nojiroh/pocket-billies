@@ -14,6 +14,11 @@ kept aside in the browser).
   walks you round on the same circle. On the summit the camera holds still; your own turn (two fingers, Q/E) still
   works on top, up to 30 degrees. Engine > Camera has "Orbit round an island" and, to compare, "Sun turns with the
   camera" (off: the sun stays put in the world). Copperleaf is unchanged until it becomes the island.
+- The sea all round (island track IS-3): on the test island the sea now runs out to the horizon on every side
+  with no line where it meets the shore's water; waves and their whitecaps roll in toward the island from every
+  direction, lines of surf break along the whole coast, the water washes up the beach and leaves the sand wet, and
+  a cove's water stays calm. Trees no longer stand out on the open sea past the edge. The far wall of the Hollow
+  Earth in the sky has a softer outline.
 - The island track begins (IS-0): a test island in the debug menu's Test scenes (a cone of a mountain, a grass ring,
   beaches and the sea all round), the first step to Copperleaf becoming a real island you can walk round. Nothing
   changes in Copperleaf yet. The island will be the hub itself, with its own editor in the Studio and its ground
