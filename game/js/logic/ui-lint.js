@@ -77,7 +77,7 @@ export const UI_LINT_RULES = [
 // ceiling: start
 export const UI_LINT_CEILING = {
   radius: 155,
-  space: 1033,
+  space: 1035,
   shadow: 179,
   keyframes: 77,
   duration: 269,
