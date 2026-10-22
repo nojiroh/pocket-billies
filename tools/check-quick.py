@@ -919,6 +919,49 @@ def run_music_step(b, base, R):
         ctx.close()
 
 
+@step("Battle music: the song starts on the flash with its intro, the drums wait for the throw; a mini-boss plays the leader song (SND-5)", 180)
+def battle_music_step(b, base, R):
+    """sound track SND-5: the run fixture, sound unlocked by a tap. A wild battle: soundEngine.log (the music's cues,
+    in memory) must show the battle's song starting with its intro on the encounter's flash, and the drums coming in
+    on the first throw, after the player taps through to it (not by the 8 s fallback); then the run's first mini-boss
+    plays the leader song the same way"""
+    errs = []
+    ctx = b.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=1)
+    for s in (CLOCK, NO_ACCOUNTS, TEST_GLOBALS): ctx.add_init_script(s)
+    ctx.set_default_timeout(90000); pg = ctx.new_page(); CUR['pg'] = pg
+    pg.on('pageerror', lambda e: errs.append(str(e)))
+    def fight(start, kind, song):
+        pg.evaluate("soundEngine.log.length=0;0")
+        pg.evaluate(start)
+        if not until(pg, "soundEngine.log.some(e=>e.e.startsWith('battle '))", 6): raise Exception(f'{kind}: no battle cue')
+        held = pg.evaluate("!!(soundEngine.song&&soundEngine.song.hold)")
+        # the player taps through the opening lines; the throw ('enter') lets the drums in
+        # (in a run the battle can begin again from its seed at once, "The battle starts again.": its cue comes again)
+        if not until(pg, "soundEngine.log.some(e=>e.e==='drums in')", 15, "uiState.evReady&&nextEvent()"): raise Exception(f'{kind}: the drums never came in on a throw ({pg.evaluate("JSON.stringify(soundEngine.log)")})')
+        L = pg.evaluate("soundEngine.log.map(e=>e.e)"); T = pg.evaluate("soundEngine.log.map(e=>e.at)")
+        d = L.index('drums in'); c = max(i for i in range(d) if L[i].startswith('battle '))
+        cue = L[c]
+        if cue != f'battle {kind}: {song}, its intro': raise Exception(f'{kind}: the cue was {cue!r}')
+        if not held: raise Exception(f'{kind}: the drums were not held at the flash')
+        gap = T[d] - T[c]
+        if gap >= 8000: raise Exception(f'{kind}: the drums came in {gap} ms after the flash, past the 8 s fallback')
+        return f"{song} with its intro, drums in {gap} ms later on the throw"
+    try:
+        pg.goto(base + '/index.html?fixture=run'); pg.evaluate(LOW_RENDER)
+        if not until(pg, "typeof walkView!=='undefined'&&walkView.ready&&!!saveData.run", 150): raise Exception('the run fixture never opened')
+        pg.mouse.click(200, 300)
+        if not until(pg, "!!soundEngine.ctx&&soundEngine.ctx.state==='running'", 8): return 'not checked: sound did not start in this browser'
+        a = fight("screenWipe=f=>f();const q={id:'tbm',sp:'swift1',lvl:3,no:1};encountersHere().splice(0,1e9,q);saveData.team.forEach(m=>{m.hp=maxHp(m)});startWild(q);0", 'wild', 'wild')
+        pg.evaluate("closeModal();activeBattle=null;0")
+        boss = pg.evaluate("Object.keys(TRAINERS).find(k=>TRAINERS[k].runFoe==='miniboss')")
+        if not boss: raise Exception('the run fixture has no mini-boss')
+        c = fight(f"saveData.team.forEach(m=>{{m.hp=maxHp(m)}});startTrainer('{boss}');0", 'leader', 'leader')
+        if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
+        return f'wild: {a}; mini-boss {boss}: {c}'
+    finally:
+        ctx.close()
+
+
 @step("Run map music hears the forecast: on a run's map tab, today's storm or rain where you stand muffles the map song, clear opens it (SND-5)", 180)
 def run_map_weather_step(b, base, R):
     """sound track SND-5: the run fixture, sound unlocked by a tap. Today's forecast where the player stands is set to
@@ -2581,6 +2624,7 @@ def main():
                 sound_step(b, base, R)
                 sound_fingerprints(b, base, R)
                 run_music_step(b, base, R)
+                battle_music_step(b, base, R)
                 run_map_weather_step(b, base, R)
                 try:
                     desktop_steps(b, base, R)
