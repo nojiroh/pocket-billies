@@ -73,6 +73,7 @@ expose({
   exportSave: [() => exportSave, v => (exportSave = v)],
   graphicsDialHTML: [() => graphicsDialHTML, v => (graphicsDialHTML = v)],
   importSave: [() => importSave, v => (importSave = v)],
+  muteButtonHTML: [() => muteButtonHTML, v => (muteButtonHTML = v)],
   segmentedHTML: [() => segmentedHTML, v => (segmentedHTML = v)],
   settingsHTML: [() => settingsHTML, v => (settingsHTML = v)],
   settingsRefresh: [() => settingsRefresh, v => (settingsRefresh = v)],
@@ -490,7 +491,14 @@ export function settingsHTML() {
       `<p class="note">${typeof account !== 'undefined' && account.user ? 'Your progress is saved to your account, and in this browser.' : 'Your progress is saved in this browser. Sign in to keep it online, or download a backup before changing device or clearing browser data.'}</p><div class="two"><button class="pb small" data-a="export-save">Export save</button><button class="pb small" data-a="import-save">Import save</button></div>`;
   else
     body = `<details class="help" open><summary>How to play</summary><p>Walk through towns and along the roads between them with the joystick, the D-pad or a tap on the ground. Tap a Billie in the grass to battle it; a win pays prize money, and more Billies come out while you play. Walking outdoors hatches your eggs. Lower its HP, then throw a coin to tax it.</p><p>The map shows where to go next; pick a place and gold arrows guide you there.</p></details><div class="dbg-help"><b>Something look wrong or run slowly?</b><p class="note">The full test takes a few minutes: it walks through every place and room, plays battles, the map and the opening, checks each for errors, then piles on more and more until your device can't keep up. Your save isn't changed. The debug log holds those numbers, errors and details about your device and graphics, plus a small picture of the scene. It has no save data or names. Send it to whoever is helping you. The graphics test tries each graphics setting on its own and saves a short report. The graphics cost test measures what each graphics setting costs on your device. The world map test opens the map and checks every place, the camera and the frame rate on your device.</p><div class="two"><button class="pb small" data-a="quicktest">Run the full test</button><button class="pb small" data-a="diagtest">Run the diagnostics test (2 min)</button><button class="pb small" data-a="gfxtest">Run the graphics test</button><button class="pb small" data-a="gfxbench">Run the graphics cost test (10 min)</button><button class="pb small" data-a="bowltest">Run the world map test (1 min)</button><button class="pb small" data-a="dbglog">Export debug log</button></div></div><button class="pb small quiet wide dbg-open" data-a="debug">${uiIconHTML('bug', 14)} Debug menu</button>`;
-  return `<div class="set-tabs" role="tablist">${SETTINGS_TABS.map(([k, n]) => `<button type="button" role="tab" aria-selected="${k === tab}" class="${k === tab ? 'on' : ''}" data-a="set-tab" data-k="${k}">${n}</button>`).join('')}</div><div class="set-body">${body}</div>`;
+  return `<div class="set-top">${muteButtonHTML(p)}</div><div class="set-tabs" role="tablist">${SETTINGS_TABS.map(([k, n]) => `<button type="button" role="tab" aria-selected="${k === tab}" class="${k === tab ? 'on' : ''}" data-a="set-tab" data-k="${k}">${n}</button>`).join('')}</div><div class="set-body">${body}</div>`;
+}
+/* SND-1: mute from any tab, beside the sheet's title (the title is drawn by ui.js, which the UI track keeps until
+   UI-5, so the button comes first in the sheet's body and menus.css lifts it into the title's row); the same
+   preference as the Sound tab's switch, through the same click handler */
+function muteButtonHTML(p) {
+  const muted = !!p.mute;
+  return `<button type="button" class="pb small quiet set-mute" data-pref-set="mute" data-v="${muted ? '' : '1'}" aria-pressed="${muted}" aria-label="Mute" title="${muted ? 'Sound off' : 'Sound on'}">${uiIconHTML(muted ? 'sound-off' : 'sound', 18)}</button>`;
 }
 /* one preference changed, from a switch, a segment, a slider or a menu */
 function changePreference(k, v) {
@@ -577,10 +585,13 @@ document.addEventListener('click', ev => {
     if (typeof testVolume === 'function') testVolume(d.k);
     return;
   }
+  const head = el.classList.contains('set-mute');
   changePreference(d.prefSet, d.v);
   settingsRefresh();
   requestAnimationFrame(() => {
-    const t = document.querySelector(`[data-pref-set="${d.prefSet}"].on,[data-pref-set="${d.prefSet}"].sw`);
+    const t = head
+      ? document.querySelector('.set-mute')
+      : document.querySelector(`[data-pref-set="${d.prefSet}"].on,[data-pref-set="${d.prefSet}"].sw`);
     if (t) t.focus({ preventScroll: true });
   });
 });
