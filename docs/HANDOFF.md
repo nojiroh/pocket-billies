@@ -36,7 +36,7 @@ waystation; 8.14 a cap of 6. RL-9b, RL-10 and RL-11 ran at the same time (see "M
   only counts on a loss since RL-9b; four effect kinds wait for RL-13/14).
 - Verified: unit tests 542 after the merge with main; lint, typecheck, modules, format, check-data; check-fast 19 of 19
   on this branch; the Loopholes step's planted fault (no pick after a mini-boss) seen to fail; the in-game run and
-  ranch phases alone headless; the quick check's RL-8 step alone; smoke 15 of 15 before the work. Headless pictures
+  ranch phases alone headless; the quick check's RL-8 step alone; smoke 15 of 15 before the work and at the end. Headless pictures
   (390 x 760) of the pick, the tab, the shop row and "Let one go". The full quick check: see the PR.
 - Merging with the sessions running beside this one (test merges in scratch copies, not pushed):
   - **RL-9b** (PR #114, merged): merged into this branch; conflicts were both-sides additions.
