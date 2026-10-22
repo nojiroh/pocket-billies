@@ -487,10 +487,10 @@ const wbsLibrary = {
   state: null,
   slot(b) {
     const role = b.a || b.n;
-    if (/^(ear|horn|crest|antler)/i.test(role)) return 'head-extra';
-    if (/^(shell|ruff)/i.test(role)) return 'body-extra';
+    if (/^(ear|horn|crest|antler)/i.test(role)) return 'headExtra';
+    if (/^(shell|ruff)/i.test(role)) return 'bodyExtra';
     const slot = boneSlot(b);
-    return slot === 'sig' ? 'signature' : slot || '';
+    return slot || '';
   },
   pair(M, name) {
     const b = M?.bones.find(x => x.n === name);

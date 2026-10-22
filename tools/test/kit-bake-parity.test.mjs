@@ -1,5 +1,5 @@
 // Studio plan Phase 5, T5.1: the kit Billies bake in JS exactly as tools/build-kit-billies.py baked them. Each of the
-// 24 recipes in tools/art-source/part-kit/builds.json is baked with game/js/logic/kit-assemble.js and compared with
+// 24 recipes in game/data/kitBuilds.json are baked with game/js/logic/kit-assemble.js and compared with
 // what the Python builder wrote: the sheet (game/art/next/billionaires/<name>.png, alpha exactly and colour where a
 // pixel shows), the rig (game/art/next/rigs-next.js, both views, values and key order), the piece layout (<name>.json)
 // and the stage's native parts (game/data/lines/<line>.json "parts"). The committed files are the Python builder's
@@ -14,7 +14,8 @@ import { modules, ROOT } from './setup-real.mjs';
 
 const A = modules['kit-assemble'];
 const K = JSON.parse(readFileSync(join(ROOT, 'game/data/partKits.json'), 'utf8'));
-const B = JSON.parse(readFileSync(join(ROOT, 'tools/art-source/part-kit/builds.json'), 'utf8'));
+const B = JSON.parse(readFileSync(join(ROOT, 'game/data/kitBuilds.json'), 'utf8'));
+const RULES = JSON.parse(readFileSync(join(ROOT, 'game/data/rules.json'), 'utf8'));
 const RIGS = (() => {
   const box = { window: {} };
   vm.runInNewContext(readFileSync(join(ROOT, 'game/art/next/rigs-next.js'), 'utf8'), box);
@@ -68,13 +69,14 @@ function pixelDiff(made, ref) {
 
 test('every kit Billie bakes in JS as tools/build-kit-billies.py baked it', () => {
   const C = B.colours,
+    D = B.bake,
     problems = [];
   assert.equal(B.forms.length, 24);
   for (const form of B.forms) {
     const where = `${form.name} (${form.rig})`;
     let made;
     try {
-      made = A.kitBakeForm(K, form, C, pics);
+      made = A.kitBakeForm(K, form, C, pics, D);
     } catch (e) {
       problems.push(`${where}: ${e.stack.split('\n').slice(0, 3).join(' / ')}`);
       continue;
@@ -86,7 +88,8 @@ test('every kit Billie bakes in JS as tools/build-kit-billies.py baked it', () =
     const layout = JSON.parse(readFileSync(join(ROOT, `game/art/next/billionaires/${form.name}.json`), 'utf8'));
     for (const d of jsonDiff(JSON.parse(JSON.stringify(made.layout)), layout, 'layout')) problems.push(`${where} ${d}`);
     const line = JSON.parse(readFileSync(join(ROOT, `game/data/lines/${form.line}.json`), 'utf8'));
-    for (const d of jsonDiff(A.kitNativeParts(form), line.parts[form.stage], 'parts')) problems.push(`${where} ${d}`);
+    for (const d of jsonDiff(A.kitNativeParts(form, K.slots, RULES.parts.slots), line.parts[form.stage], 'parts'))
+      problems.push(`${where} ${d}`);
   }
   assert.deepEqual(problems, []);
 });

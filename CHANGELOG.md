@@ -9,6 +9,10 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- The 24 kit Billies' recipes are game data now (Studio plan Phase 5): game/data/kitBuilds.json, which part sits on
+  which bone at what size and colour, and the baker's settings, checked by `npm run check:data`. `npm run bake:kits`
+  bakes them with the game's own code and writes only what changed; on today's data it changes nothing. The part
+  kits use the game's slot words (sig, headExtra, bodyExtra). No change in the game.
 - The Studio's Billie previews move the way the game moves them (Studio plan Phase 5): on the game's 12 frames a
   second, tails and hair lagging a frame behind, in the animated previews and in Parts' "As drawn". They used to
   play the plain 60 fps pose, so a Billie could look smoother in the Studio than in the game.

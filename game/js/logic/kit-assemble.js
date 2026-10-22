@@ -1,14 +1,14 @@
 // @ts-check
 'use strict';
 /* ================= KIT ASSEMBLE (Studio plan Phase 5, T5.1) =================
-   A kit Billie baked from its recipe (tools/art-source/part-kit/builds.json: which kit part on which bone, at what
+   A kit Billie baked from its recipe (game/data/kitBuilds.json: which kit part on which bone, at what
    size and colour, plus extras such as horns, ears, a crest or a shell), as tools/build-kit-billies.py builds it,
    number for number: the pieces of each view (legs set the torso's height, arms and extras mirrored by the kinds'
    sides in partKits.json, draw order from partKits' z, a tail turned to its aim, the head on the neck with its blink),
    the stage scale that fits both views in the stage box, the packed sheet, the rig of each view, the piece layout and
    the stage's native parts. tools/test/kit-bake-parity.test.mjs checks all 24 against what the Python builder wrote.
    Logic only: no DOM, runs in Node. A picture is ImageData-shaped. */
-/** @import { PartKits } from '../../types/game-data' */
+/** @import { KitBake, PartKits } from '../../types/game-data' */
 /** @typedef {import('./kit-pixels.js').Pixels} Pixels */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
@@ -30,7 +30,6 @@ import {
 } from './kit-pixels.js';
 /* eslint-disable no-func-assign */
 expose({
-  KIT_BAKE: [() => KIT_BAKE],
   colourOf: [() => colourOf],
   // @ts-expect-error -- replaced on purpose
   kitArmRest: [() => kitArmRest, v => (kitArmRest = v)],
@@ -56,56 +55,6 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-/** the builder's constants (session 2 moves them into the data, with the parity test still green) */
-export const KIT_BAKE = {
-  /** the stage box every Billie fits in, its middle and ground line */
-  box: { w: 128, h: 128, cx: 64, base: 120 },
-  /** keep this many pixels clear of the box's edges */
-  margin: 2,
-  /** room round a torso for its squash and stretch frames, and their shapes */
-  pad: 3,
-  squash: /** @type {Record<string, [number, number]>} */ ({
-    main: [1, 1],
-    squash: [1.08, 0.9],
-    stretch: [0.93, 1.08],
-  }),
-  sheetW: 512,
-  /** which slot of rules.json "parts" each bone kind fills (a form's "slots" and an extra's slot override it) */
-  kindSlot: /** @type {Record<string, string>} */ ({
-    head: 'head',
-    torso: 'body',
-    arm: 'front',
-    leg: 'back',
-    tail: 'sig',
-  }),
-  slots: ['head', 'body', 'front', 'back', 'sig'],
-  /** where a tail points from the front (degrees, 0 = out to the right, 90 = up); from behind it sweeps flatter */
-  tailAim: /** @type {Record<string, number>} */ ({
-    fox_tail: 60,
-    cat_tail: 45,
-    reptile_tail: -15,
-    shark_tailfin: 10,
-    duck_tail: -40,
-  }),
-  tailBackSweep: 0.6,
-  /** how an arm rests: hanging straight down, the paw this many degrees out (a form can change it: armOut) */
-  armOut: 15,
-  /** how far apart the feet stand, as their width; the chin sits this much of the head's height below the neck */
-  footGap: 1.15,
-  chinDrop: 0.12,
-  /** the extras' anchors: the top left from the head (hw, hh) or torso (tw) as fractions of the extra (ew, eh), its
-   * draw order front and back, its bone's name, and on what it hangs */
-  anchors:
-    /** @type {Record<string, { on: 'head' | 'torso', x: [number, number], y: [number, number], z: number, zb: number, name: string }>} */ ({
-      brow: { on: 'head', x: [0.08, -0.5], y: [0, -0.55], z: 10, zb: 10, name: 'horn' },
-      ears: { on: 'head', x: [0.14, -0.5], y: [0, -0.45], z: 8, zb: 8, name: 'ear' },
-      crown: { on: 'head', x: [0.5, -0.5], y: [0, -0.55], z: 11, zb: 11, name: 'crest' },
-      chin: { on: 'head', x: [0.5, -0.5], y: [0.78, 0], z: 10, zb: 4, name: 'beard' },
-      back: { on: 'torso', x: [0.5, -0.5], y: [0, -0.15], z: 4, zb: 6, name: 'pack' },
-      collar: { on: 'torso', x: [0, -0.5], y: [0, -0.45], z: 8.5, zb: 8.5, name: 'ruff' },
-    }),
-};
-
 /**
  * @typedef {{ n: string, par: string, frames: Record<string, Pixels>, pivot: [number, number], at: [number, number],
  *   z: number, zb: number, rr?: number, lag?: number, slot?: string | null, face?: boolean }} KitPiece
@@ -154,8 +103,8 @@ export function kitArmRest(im, joint, outRight, outDeg) {
 
 /** build_view: the pieces of one view at stage scale k
  * @param {PartKits} K @param {KitForm} form @param {Record<string, number[]>} C @param {string} view @param {number} k
- * @param {KitPartPixels} pics @param {typeof KIT_BAKE} [D] @returns {KitPiece[]} */
-export function kitBuildView(K, form, C, view, k, pics, D = KIT_BAKE) {
+ * @param {KitPartPixels} pics @param {KitBake} D @returns {KitPiece[]} */
+export function kitBuildView(K, form, C, view, k, pics, D) {
   const P = form.parts,
     /** @type {Record<string, Pixels>} */ get = {};
   for (const [kind, [pid, size, col]] of Object.entries(P)) {
@@ -341,8 +290,8 @@ export const matMul = (m, n) => [
   m[1] * n[4] + m[3] * n[5] + m[5],
 ];
 /** each piece's matrix in the rest pose, as skeleton-rig.js works them out (the back view drawn mirrored), in draw
- * order @param {KitPiece[]} pieces @param {boolean} back @param {typeof KIT_BAKE} [D] */
-export function kitRestPose(pieces, back, D = KIT_BAKE) {
+ * order @param {KitPiece[]} pieces @param {boolean} back @param {KitBake} D */
+export function kitRestPose(pieces, back, D) {
   let M = [1, 0, 0, 1, D.box.cx, D.box.base];
   if (back) M = matMul(M, [-1, 0, 0, 1, 0, 0]);
   /** @type {Record<string, number[]>} */
@@ -362,8 +311,8 @@ export function kitRestPose(pieces, back, D = KIT_BAKE) {
   return out.sort((a, b) => a[0] - b[0]);
 }
 /** the rest pose drawn into the stage box (Pillow's nearest-neighbour affine, as the builder drew it)
- * @param {KitPiece[]} pieces @param {boolean} back @param {typeof KIT_BAKE} [D] */
-export function kitDrawRest(pieces, back, D = KIT_BAKE) {
+ * @param {KitPiece[]} pieces @param {boolean} back @param {KitBake} D */
+export function kitDrawRest(pieces, back, D) {
   const cv = kitBlank(D.box.w, D.box.h);
   for (const [, m, p] of kitRestPose(pieces, back, D)) {
     const im = p.frames.main || p.frames.idle,
@@ -401,8 +350,8 @@ export function kitBounds(img) {
 /* ---------- one form: fit, sheet, rig, layout ---------- */
 /** fit_form: the stage scale that keeps both views inside the stage box (shrunk from the recipe's if it doesn't fit)
  * @param {PartKits} K @param {KitForm} form @param {Record<string, number[]>} C @param {KitPartPixels} pics
- * @param {typeof KIT_BAKE} [D] */
-export function kitFitScale(K, form, C, pics, D = KIT_BAKE) {
+ * @param {KitBake} D */
+export function kitFitScale(K, form, C, pics, D) {
   let k = form.scale;
   for (let n = 0; n < 30; n++) {
     let ok = true;
@@ -439,8 +388,8 @@ export function kitPack(images, width) {
 /** build_form: a kit Billie baked from its recipe: its stage scale, both views' pieces, the sheet, the rig (both
  * views, as rigs-next.js holds it) and the piece layout (game/art/next/billionaires/<name>.json)
  * @param {PartKits} K @param {KitForm} form @param {Record<string, number[]>} C @param {KitPartPixels} pics
- * @param {typeof KIT_BAKE} [D] */
-export function kitBakeForm(K, form, C, pics, D = KIT_BAKE) {
+ * @param {KitBake} D */
+export function kitBakeForm(K, form, C, pics, D) {
   const k = kitFitScale(K, form, C, pics, D),
     { w: BW, h: BH, cx: CX, base: BASE } = D.box,
     /** @type {Record<string, KitPiece[]>} */ views = {},
@@ -465,7 +414,7 @@ export function kitBakeForm(K, form, C, pics, D = KIT_BAKE) {
       cx: CX,
       base: BASE,
       plan: 'biped',
-      kit: 'builds.json',
+      kit: 'kitBuilds.json',
       pieces: /** @type {any[]} */ ([]),
     };
   for (const v of ['front', 'back']) {
@@ -498,7 +447,7 @@ export function kitBakeForm(K, form, C, pics, D = KIT_BAKE) {
       bones,
       clock: 12,
       sheet: `next/billionaires/${form.name}.png`,
-      kit: 'builds.json',
+      kit: 'kitBuilds.json',
     };
     /* the piece layout: rest-pose boxes without turns */
     /** @type {Record<string, number[]>} */
@@ -526,14 +475,17 @@ export function kitBakeForm(K, form, C, pics, D = KIT_BAKE) {
   }
   return { k, views, sheet, rig, layout };
 }
-/** native_parts: the stage's fitting set, the kit part on the bone that fills each slot
- * @param {KitForm} form @param {typeof KIT_BAKE} [D] @returns {Record<string, string>} */
-export function kitNativeParts(form, D = KIT_BAKE) {
+/** native_parts: the stage's fitting set, the kit part on the bone that fills each slot of rules.json parts.slots
+ * (`slotList`); a bone kind fills its partKits.json "slots" one (`kindSlot`) unless the form's "slots" or an extra's
+ * slot says otherwise
+ * @param {KitForm} form @param {Record<string, string>} kindSlot @param {string[]} slotList
+ * @returns {Record<string, string>} */
+export function kitNativeParts(form, kindSlot, slotList) {
   /** @type {Record<string, string>} */
   const slots = {},
     over = form.slots || {};
   for (const [kind, [pid]] of Object.entries(form.parts)) {
-    const s = over[kind] ?? D.kindSlot[kind];
+    const s = over[kind] ?? kindSlot[kind];
     if (s in slots) throw new Error(`${form.name}: two parts fill slot ${s}`);
     slots[s] = pid;
   }
@@ -542,7 +494,7 @@ export function kitNativeParts(form, D = KIT_BAKE) {
       if (ex[5] in slots) throw new Error(`${form.name}: two parts fill slot ${ex[5]}`);
       slots[ex[5]] = ex[0];
     }
-  const miss = D.slots.filter(s => !(s in slots));
+  const miss = slotList.filter(s => !(s in slots));
   if (miss.length) throw new Error(`${form.name}: no part fills ${miss}`);
-  return Object.fromEntries(D.slots.map(s => [s, slots[s]]));
+  return Object.fromEntries(slotList.map(s => [s, slots[s]]));
 }
