@@ -9,7 +9,7 @@ import { openShortcutSheet, openSkeleton, provide } from '../../game/js/hooks.js
 import { $, $$, clamp } from '../../game/js/util.js';
 import { coatArt } from '../../game/js/logic/coats.js';
 import { makeCanvas } from '../../game/js/art.js';
-import { coatAtlas, drawRig, rigFromMeta, rigPose, setCoatRigData } from '../../game/js/skeleton-rig.js';
+import { coatAtlas, drawRig, rigFrame, rigFromMeta, setCoatRigData } from '../../game/js/skeleton-rig.js';
 import { escapeHtml } from './game-stand-ins.js';
 import { pixelKeyAction, pixelZoomNext } from '../../game/js/logic/pixel-ops.js';
 import { ask, redo, render, speciesName, studioState, toast, undo, updateTopBar } from './studio-app.js';
@@ -221,7 +221,8 @@ function drawSpritePreview(c, ts) {
   const tau = ts - o.t0,
     act = o.act && (o.act === 'faint' || tau < 1100) ? o.act : null;
   if (o.act && !act && o.loop) o.t0 = ts;
-  const P = rigPose(act, tau, o.still ? 0 : ts, o.seed);
+  /* studio plan T5.6: the game's pose on the rig's clock (12 fps, lagging tails), as the game draws it */
+  const P = rigFrame(R, act, tau, o.still ? 0 : ts, o.seed);
   /* phase 16: a preview can show a build (part sizes) */
   if (o.build) P.build = o.build;
   drawRig(x, R, P, o.view || 'front');

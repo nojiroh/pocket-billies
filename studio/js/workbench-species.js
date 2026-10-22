@@ -12,7 +12,7 @@
 import { expose } from '../../game/js/test-globals.js';
 import { provide } from '../../game/js/hooks.js';
 import { makeCanvas } from '../../game/js/art.js';
-import { boneSlot, drawRig, rigMatrices, rigPose } from '../../game/js/skeleton-rig.js';
+import { boneSlot, drawRig, rigFrame, rigMatrices } from '../../game/js/skeleton-rig.js';
 import { escapeHtml } from './game-stand-ins.js';
 import { partForSide, partJoint } from '../../game/js/logic/part-joints.js';
 import { rigBox, rigKit, rigSetBox, rigSetPivot, rigSetSocket, rigSetZ } from '../../game/js/logic/rig-joints.js';
@@ -379,7 +379,7 @@ function wbsDrawFit(ts) {
       s = wbsLibrary.active(),
       act = s?.action === 'idle' ? null : s?.action,
       clock = ts || performance.now(),
-      P = wbPart.play ? rigPose(act || null, act === 'walk' ? clock : clock % 1200, clock, 1) : neutralPose();
+      P = wbPart.play ? rigFrame(R, act || null, act === 'walk' ? clock : clock % 1200, clock, 1) : neutralPose();
     if (cv.width !== R.BW * Z || cv.height !== R.BH * Z) {
       cv.width = R.BW * Z;
       cv.height = R.BH * Z;
