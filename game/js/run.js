@@ -27,7 +27,7 @@ import { ranchStop } from './logic/ranch.js';
 import { runByTier, runEnd } from './logic/run-state.js';
 import { runArrive, runBack, runMapNode, runNext } from './logic/run-map.js';
 import { runArriveHeal, runBattleExtra, runRelease, runReleasePays } from './logic/run-loop.js';
-import { fxHealShare, fxOfRun, fxPayoutRates, fxPrice } from './logic/effects.js';
+import { fxHealShare, fxOfRun, fxPayoutRates, fxRunPrice } from './logic/effects.js';
 import {
   BATTLE_RULES,
   battleHost,
@@ -484,7 +484,7 @@ function runBattleAgain() {
 
 /* ---------- Loopholes on the walk (RL-12, logic/effects.js) ---------- */
 /** a run town's clinic: $ a hurt Billie, with the Loopholes' heal price rows */
-export const runClinicEach = () => fxPrice(fxOfRun(saveData.run, RELICS), 'heal', RULES.run.healCost);
+export const runClinicEach = () => fxRunPrice(saveData.run, RELICS, 'heal', RULES.run.healCost);
 /** walking into a place on a run: a Loophole's heal row heals the team (before the arrival's save) */
 export function runArrivedFx() {
   const share = fxHealShare(fxOfRun(saveData.run, RELICS)),

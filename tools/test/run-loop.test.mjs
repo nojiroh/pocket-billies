@@ -31,6 +31,25 @@ test("a run town's clinic charges for each hurt Billie: below full HP, fainted, 
   assert.deepEqual(L.runHealCost(s.team, 0), { hurt: 3, cost: 0 });
 });
 
+test("a run town's clinic: paid and healed when hurt and the money is there, else nothing changes", () => {
+  reseed();
+  const s = startedSave('musk0', 10),
+    mk = () => fn('makeBilly')('musk0', 10);
+  s.team.push(mk());
+  s.se = 100;
+  assert.deepEqual(L.runClinic(s, 60), { hurt: 0, cost: 0, paid: 0 }, 'nobody hurt: nothing to pay');
+  s.team[0].hp = 1;
+  s.team[1].status = 'scn';
+  assert.deepEqual(L.runClinic(s, 60), { hurt: 2, cost: 120, paid: 0 }, 'too little money');
+  assert.equal(s.se, 100);
+  assert.equal(s.team[0].hp, 1);
+  s.se = 130;
+  assert.deepEqual(L.runClinic(s, 60), { hurt: 2, cost: 120, paid: 120 });
+  assert.equal(s.se, 10);
+  assert.equal(s.team[0].hp, fn('maxHp')(s.team[0]));
+  assert.equal(s.team[1].status, null);
+});
+
 test("a run town's shop: always its wares, then more drawn by weight, the same on a reload, by day", () => {
   const run = runOf('SHOPRUN'),
     stocks = new Set();

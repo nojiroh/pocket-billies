@@ -37,8 +37,8 @@ export function runSimOn(env) {
     { runArrive, runNext, runWorldNode, runWeather } = modules['run-map'],
     { payoutOf, runByTier } = modules['run-state'],
     { runScenesMake, runWorldTables } = modules['run-scenes'],
-    { runFoes, runBattleExtra, runHealCost, runShopStock } = modules['run-loop'],
-    { fxOfRun } = modules.effects,
+    { runFoes, runBattleExtra, runClinic, runShopStock } = modules['run-loop'],
+    { fxOfRun, fxRunPrice } = modules.effects,
     { runStartOn, runStartPlan } = modules['run-start'],
     { runUnlocks } = modules.unlocks;
   const MAP_DATA = { nodeTypes: GAME_DATA.nodeTypes, biomes: GAME_DATA.biomes, rules: R },
@@ -154,12 +154,10 @@ export function runSimOn(env) {
         log.places.push(at);
         /* a town: heal when hurt, then the day's shop (Copper Coins up to five) */
         if (node.type === 'town') {
-          const { hurt, cost } = runHealCost(s.team, R.healCost);
-          if (hurt && s.se >= cost) {
-            s.se -= cost;
-            fn('healAll')();
-            stats.healed += cost;
-            at.healed = cost;
+          const { paid } = runClinic(s, fxRunPrice(run, data.RELICS, 'heal', R.healCost));
+          if (paid) {
+            stats.healed += paid;
+            at.healed = paid;
           }
           const stock = runShopStock(run, i, run.clock, R.shop);
           at.shop = stock.map((/** @type {any} */ w) => w.coin || w.item);

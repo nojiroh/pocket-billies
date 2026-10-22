@@ -17,7 +17,7 @@
 import { expose } from '../test-globals.js';
 import { rngFrom } from './rng.js';
 import { battleWeatherOf } from './weather.js';
-import { maxHp } from './rules.js';
+import { healAll, maxHp } from './rules.js';
 import { runHome } from './run-state.js';
 import { runNodeSeed, runWeather, runWorldNode } from './run-map.js';
 import { runWildLevels } from './run-scenes.js';
@@ -28,6 +28,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   runBattleExtra: [() => runBattleExtra, v => (runBattleExtra = v)],
   runBattleSeed: [() => runBattleSeed],
+  // @ts-expect-error -- replaced on purpose
+  runClinic: [() => runClinic, v => (runClinic = v)],
   runFoeId: [() => runFoeId],
   runFoeWinText: [() => runFoeWinText],
   // @ts-expect-error -- replaced on purpose
@@ -68,6 +70,17 @@ export function runArriveHeal(team, share) {
 export function runHealCost(team, each) {
   const hurt = team.filter(runHurt).length;
   return { hurt, cost: hurt * each };
+}
+/** Studio plan T3.2: a run town's clinic, after the player's yes (walk-tab.js clinicHeal, and the run's simulation):
+ * when a Billie is hurt and the money is there, pay `each` per hurt Billie and heal everyone (healAll: the save in
+ * play, `s`); else nothing changes. Returns what was hurt, what it costs and what was paid (0: nothing done)
+ * @param {SaveData} s @param {number} each @returns {{ hurt: number, cost: number, paid: number }} */
+export function runClinic(s, each) {
+  const { hurt, cost } = runHealCost(s.team, each);
+  if (!hurt || s.se < cost) return { hurt, cost, paid: 0 };
+  s.se -= cost;
+  healAll();
+  return { hurt, cost, paid: cost };
 }
 
 /** a run town's wares on a day: `always`, then `more` drawn by weight from `pick` (none twice, none already there),

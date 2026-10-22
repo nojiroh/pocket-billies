@@ -35,6 +35,7 @@ expose({
   fxPayoutRates: [() => fxPayoutRates, v => (fxPayoutRates = v)],
   fxPrice: [() => fxPrice],
   fxRows: [() => fxRows],
+  fxRunPrice: [() => fxRunPrice],
   // @ts-expect-error -- replaced on purpose
   fxStages: [() => fxStages, v => (fxStages = v)],
 });
@@ -79,6 +80,11 @@ export const fxPrice = (fx, what, n) => {
   const k = fxMult(fx, f => f.kind === 'price' && f.what === what);
   return k === 1 ? n : Math.max(0, Math.round(n * k));
 };
+
+/** Studio plan T3.2: a price on a run with its Loopholes' price rows of `what` (the page's clinic and shops, and the
+ * run's simulation): the price itself with no run or none held @param {{ relics: string[] } | null | undefined} run
+ * @param {Record<string, Relic>} relics @param {'shop' | 'heal'} what @param {number} n */
+export const fxRunPrice = (run, relics, what, n) => fxPrice(fxOfRun(run, relics), what, n);
 
 /** what multiplies a coin's chance to catch (the chance itself stays at most 1) @param {Fx[] | null | undefined} fx */
 export const fxCatch = fx => fxMult(fx, f => f.kind === 'catch');
