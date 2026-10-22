@@ -8,7 +8,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
 import { provide } from '../../game/js/hooks.js';
-import { MUSIC_WHERE_KEYS, musicWhereMatches, songFor } from '../../game/js/logic/music-where.js';
+import { MUSIC_BATTLE_KINDS, MUSIC_WHERE_KEYS, musicWhereMatches, songFor } from '../../game/js/logic/music-where.js';
 import { cryLowHealth, cryRecipe, cryVoices } from '../../game/js/logic/cries.js';
 import { midiToFrequency, trackerCompose, trackerCreate } from '../../game/js/audio/tracker.js';
 import { escapeHtml } from './game-stand-ins.js';
@@ -653,7 +653,7 @@ function musicWhereOptions() {
   const D = studioState.D,
     W = musicData().where;
   return {
-    battle: ['wild', 'trainer', 'rival'],
+    battle: MUSIC_BATTLE_KINDS,
     tab: [...new Set([...MUSIC_TABS, ...W.map(w => w.tab).filter(Boolean)])],
     placeKind: ['city', 'town'],
     nodeType: Object.keys(D.nodeTypes || {}),

@@ -4,7 +4,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
-import { musicWhereMatches, songFor, songVariant } from '../../game/js/logic/music-where.js';
+import { musicBattleKind, musicWhereMatches, songFor, songVariant } from '../../game/js/logic/music-where.js';
 
 const MUSIC = JSON.parse(readFileSync(new URL('../../game/data/music.json', import.meta.url), 'utf8'));
 const pick = state => songFor(state, MUSIC.where, MUSIC.songs);
@@ -30,6 +30,18 @@ test('battles: rival (Chad), trainer, wild; a battle wins over the map tab and a
   assert.equal(pick(out({ battle: 'trainer' })), 'trainer');
   assert.equal(pick(out({ battle: 'wild' })), 'wild');
   assert.equal(pick(out({ battle: 'wild', tab: 'map', indoor: true })), 'wild');
+});
+
+// SND-5: a run's mini-boss is a leader, its boss the boss
+test('the kind of battle: wild, trainer, rival (Chad), leader (a mini-boss), boss', () => {
+  assert.equal(musicBattleKind(null), null);
+  assert.equal(musicBattleKind({ kind: 'wild' }), 'wild');
+  assert.equal(musicBattleKind({ kind: 'trainer', T: { who: 'gini' } }), 'trainer');
+  assert.equal(musicBattleKind({ kind: 'trainer' }), 'trainer');
+  assert.equal(musicBattleKind({ kind: 'trainer', T: { who: 'chad' } }), 'rival');
+  assert.equal(musicBattleKind({ kind: 'trainer', T: { who: 'chad', runFoe: 'miniboss' } }), 'leader');
+  assert.equal(musicBattleKind({ kind: 'trainer', T: { runFoe: 'boss' } }), 'boss');
+  for (const k of ['leader', 'boss']) assert.ok(MUSIC.songs[pick(out({ battle: k }))], k + ' plays a song');
 });
 
 test('the map tab: map, over a room and a place of its own', () => {

@@ -321,6 +321,8 @@
  "where": [
   {"started":false,"song":"hazel"},
   {"battle":"rival","song":"rival"},
+  {"battle":"leader","song":"trainer"},
+  {"battle":"boss","song":"trainer"},
   {"battle":"trainer","song":"trainer"},
   {"battle":"wild","song":"wild"},
   {"tab":"map","song":"map"},

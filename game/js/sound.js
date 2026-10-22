@@ -10,7 +10,7 @@ import { expose } from './test-globals.js';
 import { cutscene, mapIdAt, provide } from './hooks.js';
 import { clamp } from './util.js';
 import { LOCATIONS, MUSIC, SPECIES } from './game-data.js';
-import { songFor, songVariant } from './logic/music-where.js';
+import { musicBattleKind, songFor, songVariant } from './logic/music-where.js';
 import { cryRecipe, cryVoices } from './logic/cries.js';
 import { activeBattle, saveData, uiState } from './game-state.js';
 import { battleStage } from './battle-stage.js';
@@ -214,7 +214,7 @@ export function musicFor() {
 function musicState() {
   if (typeof saveData === 'undefined' || !saveData || !saveData.started) return { started: false };
   const B = typeof activeBattle !== 'undefined' && activeBattle,
-    battle = B ? (B.kind === 'trainer' ? (B.T && B.T.who === 'chad' ? 'rival' : 'trainer') : 'wild') : null,
+    battle = musicBattleKind(B),
     id = typeof mapIdAt === 'function' ? mapIdAt(saveData.trip.node) : null,
     sc = id && mapById(id),
     r = LOCATIONS[saveData.trip.node],

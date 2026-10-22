@@ -312,7 +312,7 @@
       "type": "boolean"
      },
      "battle": {
-      "description": "the kind of battle: wild, trainer, rival",
+      "description": "the kind of battle: wild, trainer, rival (Chad), leader (a run's mini-boss), boss (a run's boss)",
       "$ref": "#/$defs/id"
      },
      "tab": {

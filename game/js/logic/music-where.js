@@ -9,7 +9,10 @@
 import { expose } from '../test-globals.js';
 /* eslint-disable no-func-assign */
 expose({
+  MUSIC_BATTLE_KINDS: [() => MUSIC_BATTLE_KINDS],
   MUSIC_WHERE_KEYS: [() => MUSIC_WHERE_KEYS],
+  // @ts-expect-error -- replaced on purpose
+  musicBattleKind: [() => musicBattleKind, v => (musicBattleKind = v)],
   // @ts-expect-error -- replaced on purpose
   musicWhereMatches: [() => musicWhereMatches, v => (musicWhereMatches = v)],
   // @ts-expect-error -- replaced on purpose
@@ -19,6 +22,22 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
+/** SND-5: the kinds of battle a where-rule's `battle` names. A friend's ghost (RL-15) joins when it exists */
+export const MUSIC_BATTLE_KINDS = ['wild', 'trainer', 'rival', 'leader', 'boss'];
+
+/**
+ * SND-5: the kind of a battle, for the where table: a run's mini-boss is a leader and its boss the boss (logic/run-loop.js
+ * runFoes' runFoe), Chad the rival, any other trainer a trainer, else wild. null out of battle
+ * @param {{ kind?: string, T?: { who?: string, runFoe?: string } } | null | undefined} B the battle
+ * @returns {string | null}
+ */
+export function musicBattleKind(B) {
+  if (!B) return null;
+  if (B.kind !== 'trainer') return 'wild';
+  const T = B.T || {};
+  return T.runFoe === 'boss' ? 'boss' : T.runFoe === 'miniboss' ? 'leader' : T.who === 'chad' ? 'rival' : 'trainer';
+}
+
 /** the keys a where-rule can match on; a rule's `song` is what it picks */
 export const MUSIC_WHERE_KEYS = ['started', 'battle', 'tab', 'indoor', 'map', 'placeKind', 'nodeType', 'biome', 'row'];
 
