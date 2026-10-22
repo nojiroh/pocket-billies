@@ -892,8 +892,13 @@ function studioLive(D) {
     gameData.uiTheme = D.uiTheme;
     applyUiTheme(D.uiTheme);
   }
-  /* Project Story S3: the story and the trainers, in place (STORY_DATA and TRAINERS are these objects) */
-  for (const k of ['story', 'trainers'])
+  /* Project Story S3: the story and the trainers, in place (STORY_DATA and TRAINERS are these objects). Studio plan
+     T2.6: in a test run (never a player's game, which would save what draft rules gave) also what a run is made of,
+     before a Play this seed run takes off (&draft=1) and while it goes: RULES, NODE_TYPES, RELICS, UNLOCKS and ITEMS
+     are these objects too, so a clinic's price or a shop's wares follow an unsaved edit */
+  for (const k of TEST_RUN
+    ? ['story', 'trainers', 'rules', 'nodeTypes', 'relics', 'unlocks', 'items']
+    : ['story', 'trainers'])
     if (D[k] && gameData[k]) {
       for (const x of Object.keys(gameData[k])) delete gameData[k][x];
       Object.assign(gameData[k], D[k]);

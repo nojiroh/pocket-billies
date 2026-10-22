@@ -223,7 +223,8 @@ export function changed(rigs) {
 }
 /* v29: live update. A game tab open from this Studio (a test run, or the game on the same address) gets your scenes,
    props and engine settings (Project Story S3: and the story and trainers) half a second after each change, before
-   you save; UI-3: and the UI's look */
+   you save; UI-3: and the UI's look; Studio plan T2.6: and the run's rules, place types, Loopholes, unlocks and items
+   (a test run only applies those) */
 const LIVE_UPDATE_CHANNEL = (() => {
   try {
     const c = new BroadcastChannel('networth-studio');
@@ -255,6 +256,12 @@ export function studioBroadcast() {
           landmarks: Object.fromEntries((studioState.D.locations || []).map(l => [l.id, l.landmark || ''])),
           /* UI-3: the UI's look (the game writes it as its theme sheet) */
           uiTheme: studioState.D.uiTheme,
+          /* Studio plan T2.6: what a run is made of, for a test run (Play this seed); game data only, never a save */
+          rules: studioState.D.rules,
+          nodeTypes: studioState.D.nodeTypes,
+          relics: studioState.D.relics,
+          unlocks: studioState.D.unlocks,
+          items: studioState.D.items,
         },
       });
     } catch (e) {}
