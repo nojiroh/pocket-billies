@@ -78,7 +78,7 @@ RENDER = r"""async ({jobs, rate, win}) => {
 
 def render_all(pg, only=None):
     """{file name: {part: [rms, ...]}} for every song (day and night), jingle and cry"""
-    N = pg.evaluate("({ songs: Object.keys(SONGS), jingles: Object.keys(JINGLES), cries: (gameData.roster || []).map(r => r.id) })")
+    N = pg.evaluate("({ songs: Object.keys(SONGS), jingles: Object.keys(JINGLES), cries: (gameData.lines || []).flatMap(L => L.names.map((n, i) => L.id + i)) })")
     keep = lambda n: not only or n in only
     jobs = [(s, p, {'kind': 'song', 'name': s, 'night': p == 'night'}) for s in N['songs'] if keep(s) for p in ('day', 'night')]
     jobs += [(file, n, {'kind': kind, 'name': n, 'night': False}) for kind, file in (('jingle', 'jingles'), ('cry', 'cries')) for n in N[file] if keep(n)]
