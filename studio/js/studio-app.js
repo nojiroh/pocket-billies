@@ -10,12 +10,14 @@ import { battleStageStop } from '../../game/js/battle-stage.js';
 import { engineContext } from '../../game/js/engine/settings.js';
 import { escapeHtml } from './game-stand-ins.js';
 import { historyCommit, historyRedo, historyUndo } from '../../game/js/logic/history.js';
+import { publishConfirm, publishEmpty } from '../../game/js/logic/publish-plan.js';
 /* eslint-disable no-func-assign */
 expose({
   ACTIONS: [() => ACTIONS],
   LIVE_UPDATE_CHANNEL: [() => LIVE_UPDATE_CHANNEL],
   PANE2_REFUSED: [() => PANE2_REFUSED],
   RANGE_FORMATS: [() => RANGE_FORMATS],
+  SAVE_REPLACER: [() => SAVE_REPLACER],
   SECTIONS: [() => SECTIONS],
   SECTION_GROUPS: [() => SECTION_GROUPS],
   SECTION_LIST: [() => SECTION_LIST],
@@ -28,11 +30,13 @@ expose({
   boot: [() => boot, v => (boot = v)],
   card: [() => card],
   changed: [() => changed, v => (changed = v)],
+  checkBeforeSave: [() => checkBeforeSave, v => (checkBeforeSave = v)],
   checkboxField: [() => checkboxField, v => (checkboxField = v)],
   clone: [() => clone],
   coinOptions: [() => coinOptions],
   colorField: [() => colorField, v => (colorField = v)],
   commit: [() => commit, v => (commit = v)],
+  confirmStaged: [() => confirmStaged, v => (confirmStaged = v)],
   dialog: [() => dialog, v => (dialog = v)],
   fieldOutputId: [() => fieldOutputId],
   foldedSectionGroups: [() => foldedSectionGroups],
@@ -67,6 +71,7 @@ expose({
   snapshot: [() => snapshot],
   speciesName: [() => speciesName],
   speciesOptions: [() => speciesOptions],
+  stageChanges: [() => stageChanges, v => (stageChanges = v)],
   statOptions: [() => statOptions],
   statusOptions: [() => statusOptions],
   studioBroadcast: [() => studioBroadcast, v => (studioBroadcast = v)],
@@ -80,6 +85,7 @@ expose({
   uniqueKey: [() => uniqueKey],
   updateTopBar: [() => updateTopBar, v => (updateTopBar = v)],
   writePath: [() => writePath, v => setWritePath(v)],
+  writeStaged: [() => writeStaged, v => (writeStaged = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -292,53 +298,84 @@ export function updateTopBar() {
   $('#undoBtn').disabled = !studioState.undo.length && studioState.last === snapshot();
   $('#redoBtn').disabled = !studioState.redo.length;
 }
-/* ---------- save ---------- */
+/* ---------- save ----------
+   Studio plan Phase 0: a save stages what it will send (stageChanges), sends it (writeStaged, which throws on the
+   first error) and only then marks saved what is still as it was sent (confirmStaged, logic/publish-plan.js). A failed
+   save leaves everything unsaved; a picture painted or data edited during the send stays unsaved. */
+const SAVE_REPLACER = (k, v) => (k[0] === '_' && k.length > 1 ? undefined : v);
+/** Check's problems before a save: true to go on (none, or "Save anyway"); false opens the Check */
+async function checkBeforeSave() {
+  const errs = runCheck().filter(p => p.lvl === 'error');
+  if (
+    errs.length &&
+    !(await ask(
+      `There ${errs.length === 1 ? 'is 1 problem' : 'are ' + errs.length + ' problems'} the game can work around, but you’ll probably want to fix ${errs.length === 1 ? 'it' : 'them'}. Save anyway?`,
+      'Save anyway',
+      'Review problems'
+    ))
+  ) {
+    openSection('check');
+    return false;
+  }
+  return true;
+}
+/** what a save will send, without marking anything saved: each unsaved picture with its version, the rigs' text, the
+ * data's text (with meta.artVersion one up when pictures go too; the data itself changes only on confirm) */
+function stageChanges() {
+  const S = studioState,
+    art = [...S.artDirty].map(([path, c]) => ({ path, c, ver: c._ver || 0 })),
+    artVersion = art.length ? (S.D.meta.artVersion || 0) + 1 : null;
+  let dataText = null;
+  if (S.dirty || art.length) {
+    const meta = S.D.meta;
+    if (artVersion != null) S.D.meta = { ...meta, artVersion };
+    try {
+      dataText = JSON.stringify(S.D, SAVE_REPLACER);
+    } finally {
+      S.D.meta = meta;
+    }
+  }
+  return { art, artVersion, dataText, rigsText: S.rigsDirty ? JSON.stringify(S.rigs) : null };
+}
+/** sends a stage through api(): pictures, rigs, data. Throws on the first failure (on GitHub nothing has left yet) */
+async function writeStaged(staged) {
+  for (const a of staged.art) {
+    const blob = await new Promise(r => a.c.toBlob(r, a.path.endsWith('.webp') ? 'image/webp' : 'image/png', 0.85));
+    if (!blob) throw new Error(`${a.path} could not be turned into a picture.`);
+    await api('file?path=' + encodeURIComponent(a.path), { method: 'POST', body: blob });
+  }
+  if (staged.rigsText != null) await api('rigs', { method: 'POST', body: staged.rigsText });
+  if (staged.dataText != null) await api('gamedata', { method: 'POST', body: staged.dataText });
+}
+/** after the server took a stage: marks saved what is still as it was sent */
+function confirmStaged(staged) {
+  const S = studioState;
+  if (staged.artVersion != null) S.D.meta.artVersion = Math.max(S.D.meta.artVersion || 0, staged.artVersion);
+  const ok = publishConfirm(staged, {
+    dataText: staged.dataText != null ? JSON.stringify(S.D, SAVE_REPLACER) : null,
+    rigsText: staged.rigsText != null ? JSON.stringify(S.rigs) : null,
+    art: Object.fromEntries(staged.art.map(a => [a.path, S.artDirty.get(a.path) === a.c ? a.c._ver || 0 : null])),
+  });
+  if (ok.data) S.dirty = false;
+  if (ok.rigs) S.rigsDirty = false;
+  for (const p of ok.art) S.artDirty.delete(p);
+  updateTopBar();
+  return ok;
+}
 export async function saveAll() {
   const btn = $('#saveBtn');
   if (btn.disabled) return;
   btn.disabled = true;
   btn.textContent = 'Saving…';
   try {
-    const errs = runCheck().filter(p => p.lvl === 'error');
-    if (
-      errs.length &&
-      !(await ask(
-        `There ${errs.length === 1 ? 'is 1 problem' : 'are ' + errs.length + ' problems'} the game can work around, but you’ll probably want to fix ${errs.length === 1 ? 'it' : 'them'}. Save anyway?`,
-        'Save anyway',
-        'Review problems'
-      ))
-    ) {
-      openSection('check');
-      return;
-    }
-    let n = 0;
-    if (studioState.artDirty.size) {
-      for (const [path, c] of studioState.artDirty) {
-        const blob = await new Promise(r => c.toBlob(r, path.endsWith('.webp') ? 'image/webp' : 'image/png', 0.85));
-        await api('file?path=' + encodeURIComponent(path), { method: 'POST', body: blob });
-        n++;
-      }
-      studioState.artDirty.clear();
-      studioState.D.meta.artVersion = (studioState.D.meta.artVersion || 0) + 1;
-      studioState.dirty = true;
-    }
-    if (studioState.rigsDirty) {
-      await api('rigs', { method: 'POST', body: JSON.stringify(studioState.rigs) });
-      studioState.rigsDirty = false;
-      n++;
-    }
-    if (studioState.dirty) {
-      await api('gamedata', {
-        method: 'POST',
-        body: JSON.stringify(studioState.D, (k, v) => (k[0] === '_' && k.length > 1 ? undefined : v)),
-      });
-      studioState.dirty = false;
-      n++;
-    }
-    toast(n ? 'Saved to the game. Reload the game tab to see the changes.' : 'Everything was already saved.', 'ok');
-    updateTopBar();
+    if (!(await checkBeforeSave())) return;
+    const staged = stageChanges();
+    if (publishEmpty(staged)) return toast('Everything was already saved.', 'ok');
+    await writeStaged(staged);
+    confirmStaged(staged);
+    toast('Saved to the game. Reload the game tab to see the changes.', 'ok');
   } catch (e) {
-    toast('Save failed: ' + e.message, 'err');
+    toast('Save failed: ' + e.message + ' Nothing was marked saved: save again.', 'err');
   } finally {
     btn.disabled = false;
     btn.textContent = 'Save to game';
