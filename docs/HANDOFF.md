@@ -2,6 +2,72 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Studio plan Phase 2 (second session) - Logic worker, run rules card, Play this seed - 2026-10-22
+Branch `claude/sr-2-run-lab` (PR #135, against `ccr-81011a25-lf3exv`). Plans are pre-approved in these sessions: the
+recommended option is taken for every decision and recorded in the plan doc's "Decisions".
+
+**Plan**
+0. Merge the Phase 1 base (drafts, the first `data-checks.js`, the owner's decisions) into this branch.
+1. **T2.4 spike:** what game-data.js, rules.js, run-loop.js, battle-engine.js (and what they import) touch outside a
+   Web Worker. Result below.
+2. **T2.4:** the game's logic in a module worker on the draft data.
+   - `game/js/logic/run-preview.js` (pure; reads the tables from game-data.js as the game does, so it is on no page):
+     `runPreview(seed, {unlocks, map, tier})` = the plan, foes per node (`runFoes` with the leaders run-world.js
+     passes), each town's stock per day from the day it can first be reached to the deadline (`runShopStock` with the
+     run's shop unlocks, as shop.js) and its shelf's Loophole, wild tables per node (`runWorldTables` pools), and the
+     relic offer order (`relicOffer` for picks 0..n with nothing held).
+   - `studio/js/logic-worker.js` (module worker, on no page): GAMEDATA = the draft, the page stand-ins
+     load-logic.mjs gives, then game-data.js and every logic module in load-logic.mjs's order (a unit test keeps its
+     list equal to game/js/logic/).
+   - `studio/js/logic-client.js` (Studio page): `logicAsk(fn, ...args)`; one worker per data version (the draft's JSON
+     text), made on the first ask, terminated when an ask comes with other data.
+   - The Run Lab's node panel shows the place's wild table, leader and team, shop stock by day; the run's Loophole
+     offers.
+   - Tests: a Node test that `runPreview` equals the game's own path (runStartOn on a save, then the calls run-world.js,
+     shop.js and battle.js make); a stand-in step in check-studio-github.py (`run_lab`) that opens the panel and
+     compares it with Node.
+3. **T2.5:** a "Run rules" card in the Run Lab: rules.run map, clock, reveal, wild, foes, shop, healCost, payout and
+   nodeTypes weights and names with the standard field helpers; each change redraws the map. Code-only constants
+   (lanes, the cross-link side, RUN_EXIT_T, RUN_BUILDINGS...) read-only with file:line, found by searching the source
+   so the line can't go stale (a unit test). Stand-in step: edit a rule, the map redraws, the field round-trips.
+4. **T2.6:** "Play this seed".
+   - Game, behind ?debug only: `?debug&run=<seed>&unlocks=none|all|<ids>&short=1&tier=&party=<sp@lv,...>&relics=<ids>`
+     starts a run on a fresh test save that is never saved (as TEST_RUN does), through runStartPlan/runStartOn.
+   - Studio live channel: also rules, nodeTypes, relics, unlocks, items, trainers (no save data); the game applies them
+     before the run starts (`&draft=1` waits for them as the test run does).
+   - The Run Lab's "Play this seed" button opens it.
+   - check-fast step: `?debug&run=TESTSEED&party=...` and the map equals runStartPlan's.
+   - The debug log gets `run.unlocks` (ids only), so the Lab reads the run's own unlocks.
+5. **T2.3** only if Phase 1's data-checks.js has landed: it has (one function so far; T1.3 itself has not moved
+   check-data's checks yet). Map invariants over 1,000 seeds as pure functions in data-checks.js, shown in the Lab.
+
+**The logic worker's messages (fixed; Phase 3's dashboard builds on them)**
+- Page side: `logicAsk(fn, ...args)` in `studio/js/logic-client.js` returns a Promise of the value. It sends the
+  Studio's data as it is now (`studioState.D` as JSON text, `_` keys left out); that text is the data version: the
+  same text reuses the worker, other text ends it (its waiting asks reject with `replaced`) and starts a new one.
+  `logicWorker` holds `state` ('off' | 'loading' | 'ready' | 'failed'), `loadMs`, `error`, `made`.
+- page -> worker: `{ kind: 'data', v, version, json }` once (GAMEDATA = JSON.parse(json), PB_VERSION = version), then
+  `{ kind: 'ask', id, fn, args }`.
+- worker -> page: `{ kind: 'ready', v, ms }` or `{ kind: 'failed', v, error }`; `{ kind: 'answer', id, ok: true, value,
+  ms }` or `{ kind: 'answer', id, ok: false, error }`. An ask sent before the data loaded waits for it.
+- What may be asked: `LOGIC_WORKER_FNS` in `studio/js/logic-worker.js`, name -> (modules) => function; the modules are
+  `studio/js/logic-worker-modules.js`'s exports. To add runSim: export it there, add `runSim: m => m.runSim`. The
+  worker loads game-data.js and every logic module in load-logic.mjs's order (a unit test keeps the list equal to
+  game/js/logic/: a new or moved logic module must be listed there too) and stands in for the page's hooks as
+  load-logic.mjs does (no Math.random seeding: the logic's streams are seeded).
+- `runPreview(seed, { unlocks, map, tier })` (game/js/logic/run-preview.js) returns `{ seed, tier, unlocks, map,
+  deadline, forecast, nodes: [{ wild: { lv, list }, foe, shop: null | [{ day, stock, relic }] }], relicOffers }`.
+
+**T2.4 spike: what the logic touches outside a worker**
+- game-data.js, rules.js, run-loop.js, battle-engine.js, run-scenes.js, run-start.js, run-map.js, relics.js and all
+  they import (hooks.js, test-globals.js, util.js, rng, effects, fighters, battle-state, conditions, mapgen, parts,
+  robot-math, meta-state, run-state, unlocks, weather): no `window`, `document`, `localStorage`, `navigator` or
+  `location` while loading or running, except:
+  - test-globals.js reads `window.PB_TEST_GLOBALS` and `location.search` inside a try: in a worker it is off;
+  - util.js's `$` and `$$` default to `document`, but only when called (the logic never calls them).
+- They need `globalThis.GAMEDATA` before game-data.js loads (it reads the tables once) and `PB_VERSION` (a new save's
+  gameVersion), both set by the worker.
+
 ### Studio plan Phase 2 (first session) - One run start, Run Lab v1 - 2026-10-22
 Branch `claude/sr-2-run-lab`, from the Phase 0 branch `ccr-81011a25-lf3exv` (PR #131, where the plan doc lives); PR
 #135 goes against that branch. Phase 1 runs at the same time in another session from the same branch: this session
