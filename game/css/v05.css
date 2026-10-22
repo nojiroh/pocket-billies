@@ -1071,10 +1071,6 @@ nav#nav button[aria-current='page']::after {
   body.on-scene #app .topbar {
     top: 0;
   }
-  body.on-scene .s-profile .pf-top,
-  body.on-scene .s-profile .pf-row {
-    display: block;
-  }
   body.on-scene .s-ledger .ledger,
   body.on-scene .s-ledger .ledsum {
     max-width: none;
@@ -1094,17 +1090,6 @@ nav#nav button[aria-current='page']::after {
   body.on-scene #app {
     animation: none;
   }
-}
-
-/* ---------- 0.5 friends (Trainer screen, map pins) ---------- */
-.pf-friends {
-  margin-top: 12px;
-}
-.pf-friends .sec-h {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
 }
 .fr-code {
   font: 500 13px/1 var(--font-voice);
