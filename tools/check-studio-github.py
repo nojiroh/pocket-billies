@@ -1027,26 +1027,28 @@ def music_steps(pg, errs):
     if left: errs.append(f'music: after the undo these still differ from GitHub: {left}')
     # the hook roll: a click on an empty cell of the roll writes a note, a drag makes it longer, and the song playing
     # plays the hook at once; a click on the note takes it away; the countermelody is its own line; all undone
+    # SND-4: on hills, whose rolls are empty (town has a placeholder hook and counter now), played and picked first
+    pg.click('#musList [data-act=musPick][data-song=hills]'); pg.click('#musList [data-act=musPlay][data-song=hills]'); time.sleep(0.3)
     undo0 = pg.evaluate("studioState.undo.length")
     pg.locator('#musRoll').scroll_into_view_if_needed(); box = pg.locator('#musRoll').bounding_box()
     cell = lambda st, row: (box['x'] + 40 + st * 22 + 11, box['y'] + 18 + row * 16 + 8)
     x, y = cell(4, 3); pg.mouse.click(x, y)
-    hook = pg.evaluate("studioState.D.music.songs.town.hook")
+    hook = pg.evaluate("studioState.D.music.songs.hills.hook")
     if not hook or len(hook) != 1 or hook[0][0] != 4 or hook[0][2] != 2: errs.append(f'music: a click on the roll wrote {hook}')
     elif pg.evaluate("JSON.stringify(musicStudio.tracker.song.D.notes.slice(0, 32).filter(Boolean))") != json.dumps([[hook[0][1], 2]], separators=(',', ':')):
         errs.append('music: the song playing does not play the hook')
     pg.locator('#musRoll').scroll_into_view_if_needed(); box = pg.locator('#musRoll').bounding_box()
     x, y = cell(4, 3); pg.mouse.click(x, y)
-    if pg.evaluate("'hook' in studioState.D.music.songs.town"): errs.append('music: a click on the note did not take it away')
+    if pg.evaluate("'hook' in studioState.D.music.songs.hills"): errs.append('music: a click on the note did not take it away')
     pg.click('[data-act=musLine][data-l=counter]')
     pg.locator('#musRoll').scroll_into_view_if_needed(); box = pg.locator('#musRoll').bounding_box()
     x, y = cell(8, 10); x2, _ = cell(13, 10)
     pg.mouse.move(x, y); pg.mouse.down(); pg.mouse.move(x2, y, steps=4); pg.mouse.up()
-    ctr = pg.evaluate("studioState.D.music.songs.town.counter")
+    ctr = pg.evaluate("studioState.D.music.songs.hills.counter")
     if not ctr or ctr[0][0] != 8 or ctr[0][2] != 6: errs.append(f'music: a drag on the counter roll wrote {ctr}')
     elif pg.evaluate("musicStudio.tracker.song.D.counterNotes[8]") != [ctr[0][1], 6]: errs.append('music: the song playing does not play the counter')
     while pg.evaluate("studioState.undo.length") > undo0: pg.click('#undoBtn')
-    if pg.evaluate("['hook', 'counter'].some(k => k in studioState.D.music.songs.town)"): errs.append('music: undo left a hook or counter')
+    if pg.evaluate("['hook', 'counter'].some(k => k in studioState.D.music.songs.hills)"): errs.append('music: undo left a hook or counter')
     pg.click('[data-act=musLine][data-l=hook]')
     pg.click('.ed-head [data-act=musStop]')
     time.sleep(0.3)
@@ -1115,7 +1117,7 @@ def music_steps(pg, errs):
     time.sleep(0.5)
     if pg.evaluate("[musicPlaying(), !!musicStudio.tracker.timer]") != ['', False]: errs.append('music: leaving the section left the song playing')
     if len(errs) > n: errs[n:] = [f'music: {e}' if not e.startswith('music:') else e for e in errs[n:]]
-    else: print('music: town played (context running, bar shown), its tempo and a chord changed while playing and undone, a hook note and a counter note drawn and heard and undone, stopped; the where table: a rule moved, a condition, a rule added, Try a place following, all undone; a jingle played and lengthened and undone; a cry set, heard (and low on health) and emptied; the Check’s music findings and Show me; meadow stopped when the section was left', flush=True)
+    else: print('music: town played (context running, bar shown), its tempo and a chord changed while playing and undone, a hook note and a counter note drawn and heard and undone (on hills), stopped; the where table: a rule moved, a condition, a rule added, Try a place following, all undone; a jingle played and lengthened and undone; a cry set, heard (and low on health) and emptied; the Check’s music findings and Show me; meadow stopped when the section was left', flush=True)
 
 
 # the steps after sign-in, in order (--only picks some by name; 'sections' and 'art' are the two blocks in main)
