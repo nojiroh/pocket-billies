@@ -7,7 +7,7 @@
    the party is full waits in runCatch, never in the save (a team of seven can't be saved), until one is released. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { closeModal, mapIdAt, modal, provide, render, runPayoutOpen, toast } from './hooks.js';
+import { closeModal, mapIdAt, modal, provide, relicPickOpen, render, runPayoutOpen, toast } from './hooks.js';
 import { COINS, ITEMS, RELICS, RULES, START_NODE, TRAINERS } from './game-data.js';
 import { battleWeatherOf } from './logic/weather.js';
 import { billyName, formatNumber, healAll, plural } from './logic/rules.js';
@@ -172,6 +172,8 @@ export function runResume() {
   const run = saveData.run;
   if (!run) return;
   if (run.at.phase === 'payout') runPayoutOpen();
+  /* RL-12: a mini-boss's pick not answered yet (the offer was saved before it showed) */
+  else if (run.offer && run.at.phase === 'walk') relicPickOpen();
   /* killed mid-battle: the same battle again, from its seed (the owner's answer, roguelite-track.md 8.7) */
   if (run.at.phase === 'battle') runBattleAgain();
   /* killed mid-flight: you are on the landing (runArrive ran before the flight) */
@@ -377,6 +379,8 @@ const RUN_HINTS = {
   town: () => `A town: its clinic heals for $${runClinicEach()} a Billie, and its shop has new stock every day.`,
   miniboss: () => 'A mini-boss blocks the way north. Beat them to go on.',
   boss: () => 'The boss. Beat it and the run is won.',
+  relic: () =>
+    `Loopholes last the run: hold up to ${RULES.run.relics.cap}. The Loopholes tab shows what each one does; town shops sell them too.`,
 };
 /** show a first-run hint once (nothing on a later run, or once shown) @param {keyof typeof RUN_HINTS} id */
 export function runHint(id) {

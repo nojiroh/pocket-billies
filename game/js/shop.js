@@ -4,12 +4,13 @@
    Each shop has a keeper (drawn by the trainer renderer from PEOPLE), a greeting and a stock list. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { closeModal, modal, provide, renderOverlay, soundEffect, toast } from './hooks.js';
+import { closeModal, modal, provide, relicDropOpen, renderOverlay, soundEffect, toast } from './hooks.js';
 import { clamp, random } from './util.js';
 import { COINS, ITEMS, RELICS, RULES, SHOPS } from './game-data.js';
 import { formatNumber, plural } from './logic/rules.js';
 import { runShopStock } from './logic/run-loop.js';
 import { fxOfRun, fxPrice } from './logic/effects.js';
+import { relicBuy, relicPrice, relicShelf } from './logic/relics.js';
 import { escapeHtml, save, saveData, saveNow, uiState } from './game-state.js';
 import { coinHTML, uiIconHTML } from './art.js';
 import { portraitHTML } from './person-art.js';
@@ -23,6 +24,9 @@ expose({
   shopBuy: [() => shopBuy, v => (shopBuy = v)],
   shopHTML: [() => shopHTML, v => (shopHTML = v)],
   shopRefresh: [() => shopRefresh, v => (shopRefresh = v)],
+  shopRelic: [() => shopRelic, v => (shopRelic = v)],
+  shopRelicBuy: [() => shopRelicBuy, v => (shopRelicBuy = v)],
+  shopRelicHTML: [() => shopRelicHTML, v => (shopRelicHTML = v)],
   wareInfo: [() => wareInfo],
   warePrice: [() => warePrice],
 });
@@ -64,6 +68,23 @@ const warePrice = (sh, w, it) => {
   const p = w.price ?? it.base;
   return sh.runNode != null && saveData.run ? fxPrice(fxOfRun(saveData.run, RELICS), 'shop', p) : p;
 };
+/** RL-12: a run shop's Loophole today (logic/relics.js relicShelf, drawn when the shop opened): its id and price, or
+ * null (not a run shop, bought, or none left) */
+function shopRelic(sh) {
+  const run = saveData.run;
+  if (sh.runNode == null || !run) return null;
+  const id = run.shelf[sh.runNode + ':' + run.clock];
+  if (!id || !RELICS[id]) return null;
+  return { id, price: fxPrice(fxOfRun(run, RELICS), 'shop', relicPrice(RELICS[id], RULES.run.relics)) };
+}
+/** RL-12: the Loophole's row: what it does, its rarity and price, Buy */
+function shopRelicHTML(id, sh) {
+  const L = shopRelic(sh);
+  if (!L) return '';
+  const R = RELICS[L.id],
+    can = saveData.se >= L.price;
+  return `<div class="ware2 k-card"><span class="w-ic">${uiIconHTML('relic', 36)}</span><span class="w-t"><b>${escapeHtml(R.name)}</b><small>${escapeHtml(R.d)}</small><small class="note">A Loophole, for the rest of the run · you hold ${saveData.run.relics.length} of ${RULES.run.relics.cap}</small></span><span class="w-buy"><button class="pb small ${can ? 'gold' : ''}" data-a="shoprelic" data-s="${id}" ${can ? '' : 'disabled'}>$${formatNumber(L.price)}</button></span></div>`;
+}
 function shopHTML(id) {
   const sh = SHOPS[id],
     q = uiState.shopQty || (uiState.shopQty = {}),
@@ -94,7 +115,9 @@ function shopHTML(id) {
      k =>
        `<span class="sb-c${saveData.coins[k] ? '' : ' none'}" role="img" title="${escapeHtml(COINS[k].n)}" aria-label="${escapeHtml(COINS[k].n)}: ${formatNumber(saveData.coins[k] || 0)}">${coinHTML(k, 18, 32)}<b class="tnum">${formatNumber(saveData.coins[k] || 0)}</b></span>`
    )
-   .join('')}</div><div class="wares2">${rows || '<p class="note">The shelves are empty today.</p>'}</div>`;
+   .join(
+     ''
+   )}</div><div class="wares2">${shopRelicHTML(id, sh)}${rows || '<p class="note">The shelves are empty today.</p>'}</div>`;
 }
 export function openShop(id) {
   const sh = SHOPS[id];
@@ -105,8 +128,11 @@ export function openShop(id) {
     return;
   }
   /* RL-8: a run town's shop has the day's stock (logic/run-loop.js runShopStock: its own stream for the day) */
-  if (sh.runNode != null && saveData.run)
+  if (sh.runNode != null && saveData.run) {
     sh.stock = runShopStock(saveData.run, sh.runNode, saveData.run.clock, RULES.run.shop);
+    /* RL-12: and a Loophole, drawn the first time it opens today (kept on the run, saved with the next save) */
+    relicShelf(saveData.run, sh.runNode, saveData.run.clock, RELICS, RULES.run.relics);
+  }
   uiState.shopLine = null;
   uiState.shopQty = {};
   const m = {
@@ -153,6 +179,35 @@ function shopBuy(id, k) {
   shopRefresh();
   toast(`Bought ${n} × ${it.n}.`);
 }
+/** RL-12: buy the shop's Loophole (past the cap, which to let go first); a checkpoint, as every run purchase */
+function shopRelicBuy(id, drop) {
+  const sh = SHOPS[id],
+    run = saveData.run,
+    L = sh && shopRelic(sh);
+  if (!L || !run) return;
+  if (saveData.se < L.price) {
+    toast('Not enough money for that one.');
+    return;
+  }
+  if (drop == null && run.relics.length >= RULES.run.relics.cap) {
+    relicDropOpen(
+      L.id,
+      d => {
+        openShop(id);
+        shopRelicBuy(id, d);
+      },
+      () => openShop(id)
+    );
+    return;
+  }
+  if (relicBuy(run, sh.runNode, run.clock, RELICS, RULES.run.relics, drop)) return;
+  saveData.se -= L.price;
+  if (typeof soundEffect === 'function') soundEffect('buy');
+  saveNow();
+  if (typeof debugLog !== 'undefined') debugLog.add('scene', `Loophole bought: ${L.id}${drop ? ` for ${drop}` : ''}`);
+  shopRefresh();
+  toast(`${RELICS[L.id].name}: ${RELICS[L.id].d}`);
+}
 document.addEventListener('click', ev => {
   const el = ev.target.closest('[data-a]');
   if (!el) return;
@@ -163,4 +218,5 @@ document.addEventListener('click', ev => {
     q[d.k] = clamp((q[d.k] || 1) + +d.d, 1, 99);
     shopRefresh();
   } else if (d.a === 'shopbuy') shopBuy(d.s, d.k);
+  else if (d.a === 'shoprelic') shopRelicBuy(d.s);
 });

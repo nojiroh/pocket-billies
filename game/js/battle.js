@@ -15,6 +15,7 @@ import {
   limbPipsHTML,
   modal,
   provide,
+  relicPickOpen,
   render,
   runCatch,
   runOver,
@@ -27,7 +28,7 @@ import {
   typeBadgeHTML,
 } from './hooks.js';
 import { $, $$, clamp, random } from './util.js';
-import { COINS, ITEMS, MOVES, STAT_NAMES, TYPE_COLORS, typeEffectiveness } from './game-data.js';
+import { COINS, ITEMS, MOVES, RELICS, RULES, STAT_NAMES, TYPE_COLORS, typeEffectiveness } from './game-data.js';
 import { ROBOT_LIMBS, ROBOT_SLOT_NAMES, isRobot, robotPartDef, speciesOf } from './logic/fighters.js';
 import {
   addBilly,
@@ -45,6 +46,7 @@ import {
   partMaxHp,
   plural,
 } from './logic/rules.js';
+import { relicOfferMake } from './logic/relics.js';
 import {
   ACTOR_SIDE,
   BATTLE_RULES,
@@ -1008,6 +1010,8 @@ export function endBattle() {
   }
   if (kind === 'trainer' && o === 'win') {
     saveData.se += pay.reward;
+    /* RL-12: a run's mini-boss beaten: a pick of Loopholes, saved on the run before it shows (logic/relics.js) */
+    if (run && T && T.runFoe === 'miniboss') relicOfferMake(run, RELICS, RULES.run.relics);
     const first = pay.first;
     saveData.flags[tid] = 1;
     let extra = '';
@@ -1034,7 +1038,7 @@ export function endBattle() {
         btns: [
           {
             c: 'dark',
-            l: run && T.runFoe === 'boss' ? 'On to the payout' : 'Keep walking',
+            l: run && T.runFoe === 'boss' ? 'On to the payout' : run && run.offer ? 'Pick a Loophole' : 'Keep walking',
             f:
               /* RL-8: the run's boss beaten: the run is won */
               run && T.runFoe === 'boss'
@@ -1042,12 +1046,17 @@ export function endBattle() {
                     uiState.modal = null;
                     runOver(true);
                   }
-                : first && (T.clue || T.ending) && typeof storyAfterWin === 'function'
+                : run && run.offer
                   ? () => {
-                      closeModal();
-                      storyAfterWin(T);
+                      uiState.modal = null;
+                      relicPickOpen();
                     }
-                  : closeModal,
+                  : first && (T.clue || T.ending) && typeof storyAfterWin === 'function'
+                    ? () => {
+                        closeModal();
+                        storyAfterWin(T);
+                      }
+                    : closeModal,
           },
         ],
       });
