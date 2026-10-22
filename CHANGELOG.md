@@ -17,6 +17,10 @@ kept aside in the browser).
   and cliffs, kept away from the road, the exits and water, and a footpath that winds up each one in switchbacks, stone
   steps where it's steep, to a flat summit (most about 11 m up, the highest 15-19 m). The debug log says whether a run
   has mountains and how many triangles the ground has, for measuring them on a phone.
+- Ledges (terrain TR-2c), in the map generator and the debug menu's test run ("Mountains and ledges"): terrace edges
+  facing you become ledges you hop down but can't climb, with stone stairs here and there to get back up, so a raised
+  shelf runs beside the road like a second lane; no ledge ever drops you somewhere you can't get out of. Far corners
+  and raised shelves get marked spots for things to find later.
 - A run's world (roguelite track RL-7), not playable yet (a run starts at the airship from RL-8; to look at one, open
   the game with `?fixture=run`): each place on a run's map is a walkable route made from the run's seed, joined
   seamlessly to the places before and after it, in its biome's look, ground and weather, with a little variety of its
