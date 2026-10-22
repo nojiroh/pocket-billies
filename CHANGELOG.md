@@ -9,6 +9,11 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- Island props (IS-4): the ranch barn is 3D now (still its red gambrel barn, every side finished, its colour looks
+  kept), and a new set for the island waits in the debug menu's Test scenes ("the island props"): a field gate,
+  a water trough, round hay bales and a hay rack; driftwood, beach grass, shells, shore rocks and tide pools; a
+  fishing boat and a net rack by a pier; granite boulders, a cairn and a summit lookout; forest litter. Scree and the
+  mossy log and stump on runs are 3D too. Nothing moves in Copperleaf yet.
 - The sea all round (island track IS-3): on the test island the sea now runs out to the horizon on every side
   with no line where it meets the shore's water; waves and their whitecaps roll in toward the island from every
   direction, lines of surf break along the whole coast, the water washes up the beach and leaves the sand wet, and
