@@ -50,7 +50,8 @@ Everything is synthesized in `game/js/sound.js` (2,013 lines) with the Web Audio
 
 ### Bugs found (SND-1 fixes them)
 1. The Music **Test** button plays the level-up jingle, which plays on the effects bus: with music up and effects
-   at 0 it is silent (`sound.js:849`). By the same routing, music at 0 still plays every victory tune.
+   at 0 it is silent (`sound.js:849`). By the same routing, music at 0 still plays every victory tune (kept in
+   SND-1: the owner chose to leave jingles on Sound effects).
 2. The master **Test** button plays nothing: `testVolume` has no master branch (`sound.js:1924`).
 3. Master and Ambience do not apply while dragging; the live listener covers music, sfx and world only
    (`sound.js:1165`).
@@ -71,7 +72,7 @@ Everything is synthesized in `game/js/sound.js` (2,013 lines) with the Web Audio
 ## Sessions
 | # | Session | Goal | Depends on | Sessions | Verified by |
 | --- | --- | --- | --- | --- | --- |
-| SND-1 | Settings and routing | the five bugs above, jingles on the music bus, preferences that survive a deleted save, a one-tap mute | none | 1 | unit test for `musicFor`; a quick-check step for the Sound tab; phone |
+| SND-1 (done 2026-10-22) | Settings and routing | the five bugs above, the Music Test on the music bus, a one-tap mute beside the sheet's title, the Sound tab translated | none | 1 | unit test for the levels; the quick check's Sound settings step; phone |
 | SND-2 | The tracker as data | `game/js/audio/tracker.js` with no game imports; `music.json` + schema (songs, jingles, cries, where); biome music in a run; timers that stop when idle; a song fingerprint baseline | SND-1 | 1-2 | fingerprints unchanged; check-data; modules check; the run fixture plays a biome song |
 | SND-3 | The Studio's Music & sound section | play and loop any song, the recipe's dials, a piano roll for the hook, the where table, a cry card on Billies, check warnings | SND-2 | 1-2 | Studio self-test; quick check; the owner plays it |
 | SND-4 | The Pokémon rework: themes | four voices, written hooks and countermelodies, the title motif as a leitmotif, Copperleaf as two voices, night variants | SND-3, RL-8 played | 1-2 | fingerprints updated on purpose; the owner listens on the phone |
@@ -82,25 +83,31 @@ Budget: SND-1 to SND-3 are three to five sessions before the play test; SND-4 to
 and time budgets follow docs/phases/13: lint, type-check and unit tests after each change, the smoke subset after
 each commit, the full quick check at the end of a session.
 
-## SND-1: settings and routing
-One cause per commit, in this order:
-1. `testVolume('master')` plays a short chord on the master bus (the sfx coin through the music's echo is enough).
-2. The live-apply listener covers master and amb too; the number next to the slider stays as it is.
-3. Jingles get their own gain into the music bus (`soundEngine.jin`), scaled by the music volume, and the Music Test
-   button plays through it. **Ask me before:** whether jingles follow Music, Sound effects, or get a sixth slider
-   (recommendation: Music, no new slider; the hint already says "tunes for each place and battle").
-4. `unlockSound` and the visibility handler resume from any state but `running`; the debug log's `audio` line adds
-   the five volumes and the mute flag (no names, no save data).
-5. Audio preferences (the five volumes, mute) move out of the save into the device's own storage
-   (`localStorage['pb-sound']`), read by `volumePreference`; theme and motion stay where they are (UI track's call).
-   `newSaveKeepingPreferences` and `migrate` stop carrying them. **Ask me before:** whether to move them at all.
-6. Translations for the Sound tab's strings.
-7. The tab's text: keep the note that sounds fade in on arrival, drop "turn a slider to 0 to mute it" (the mute
-   switch covers it), and say under Music that jingles follow it (after step 3's answer).
-8. A one-tap mute on the pause sheet (the same switch, no new preference).
-9. Tests: `tools/test/sound.test.mjs` for `musicFor` through the hooks seams (hub, each run node type, indoor, each
-   battle kind) and for `volumePreference`; the quick check's settings step presses each Test button and checks that
-   the right bus's gain moved (`soundEngine.*.gain.value`), not that the page heard anything.
+## SND-1: settings and routing (done 2026-10-22, branch `sound`, tag `snd-1-done` local)
+The owner's answers at the start: **jingles stay on Sound effects** (no new slider), **volumes stay in the save**
+(they follow the account, and reset with the save), **the mute goes in the settings sheet's header**. What was built,
+one cause per commit:
+1. `game/js/audio/levels.js` (pure): `soundLevel` and `soundLevels`, the five bus gains from the preferences.
+   `applyVolumes` and `applyAmbienceVolume` use it; `tools/test/sound-levels.test.mjs` tests it. No change in sound.
+2. The Volume (master) Test button plays a two-note chime on the master bus (it played nothing).
+3. The Music Test button plays on the music bus: `jingle()` takes an optional bus (the effects bus by default, so
+   every jingle in the game is where it was).
+4. Volume and Ambience apply while dragging (`LIVE_VOLUMES`, all five).
+5. Any touch resumes audio from any state but running or closed (iOS's `interrupted`; to confirm on the phone).
+6. A mute button beside the sheet's title (`game/art/ui/sound.svg`, `sound-off.svg`): first in the sheet's body in a
+   box of no height (`.set-top`), lifted into the title's row by menus.css, because ui.js draws the title and stays
+   closed until UI-5. A first try put it at the end of the tab strip: at 390 px that cut the Help tab off.
+7. The tab's words: Sound effects names the short tunes; the "0 mutes" note went; the Volume slider is announced
+   "Volume", not "Volume volume".
+8. Translations for every Sound-tab string and the button's labels (nl, de, es, fr).
+9. Quick check: the "Sound settings" step (full check). It failed on the code before 2-4, as it should.
+
+Corrections to this file's plan, found in SND-1:
+- The `musicFor` test moved to SND-2 (item 4 below): sound.js imports the walk view, renderer and battle stage, so it
+  can't load in plain Node; `songFor` will be pure.
+- The debug log already exports every preference (debug-log.js `preferences`), so the volumes and mute were already
+  in it; nothing added.
+- Moving preferences out of the save (planned step 5) was declined by the owner.
 
 ## SND-2: the tracker as data
 Two halves, the first all renames and moves (no-op commits), the second new data with the old values in it.
@@ -119,7 +126,7 @@ Two halves, the first all renames and moves (no-op commits), the second new data
    `jingles` (note lists, bpm, wave), `cries` (`bases`: the base recipes; a species names `base`, `pitch` and
    `length` in `roster.json`, like Gen 1), and `where`: an ordered list of rules `{battle, nodeType, biome, row,
    indoor, tab, song}`, first match wins, with today's choices written out so nothing changes.
-4. **`logic/music-where.js`**: `songFor(state)` reads the where table from a small state object (started, battle
+4. **`logic/music-where.js`** (with the `musicFor` test SND-1 left for here): `songFor(state)` reads the where table from a small state object (started, battle
    kind, tab, node type, biome, row, indoor, location music). Pure, tested in `sound.test.mjs`; `musicFor` builds
    the state and calls it.
 5. **Biome music in a run.** Where-rules by biome, mapping today's eleven biomes onto the seven biome songs
@@ -199,7 +206,7 @@ Audible changes, fingerprints regenerated at the end on purpose.
    jingles; the owner's phone.
 
 ## Ask me before (collected)
-- SND-1: jingles follow Music, Sound effects, or a sixth slider; moving audio preferences out of the save.
+- SND-1 (answered 2026-10-22): jingles stay on Sound effects; volumes stay in the save; the mute beside the sheet's title.
 - SND-2: the biome-to-song mapping; whether to hear the pairs in the Studio (SND-3) before fixing it.
 - SND-3: a Game-group section or a Sound group of its own.
 - SND-4: who writes the hooks; whether the title motif should be the game's theme everywhere or the hub's only.

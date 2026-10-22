@@ -264,6 +264,12 @@ same phase:
   `talk` (game/js/fixture.js) open those screens for the Studio's preview. The Studio check's `ui_tools` step (rule
   report, inspect, Connections, overlays; about 30 s) and `ui_screens` (each real screen and before/after; about 4
   min, as each screen boots the game) run with `--only=ui_tools,ui_screens`.
+- **Sound track** (docs/phases/sound-track.md): the volume maths is pure (`game/js/audio/levels.js`) and tested in
+  Node (`sound-levels.test.mjs`). The full check's "Sound settings" step (SND-1; alone with `--steps="sound
+  settings"`, about 1 min) opens Settings → Sound on a phone page in the town, starts the audio with a touch, and
+  reads only gains and connections: each Test button reaches its own bus (a wrapper on `AudioNode.connect`), each
+  slider sets its bus while dragged, the header mute silences the master and keeps the levels. A browser that won't
+  start audio is reported, not failed. SND-2 adds a song fingerprint baseline (`validation/sound-baseline/`).
 - **18 Trading and battles with friends**: every new Firestore rule gets emulator tests in `firebase/test/`;
   trade validation is logic with unit tests.
 

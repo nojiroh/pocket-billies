@@ -9,6 +9,10 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- Settings → Sound (sound track SND-1): the Volume and Music Test buttons play again (Volume played nothing; Music
+  was silent when Sound effects was at 0). Volume and Ambience change while you drag them, like the others. A
+  speaker button beside the Settings title mutes everything from any tab, keeping your levels. Sound comes back with
+  the next tap after a phone call or Siri on an iPhone. The Sound tab reads in Dutch, German, Spanish and French.
 - A run's world (roguelite track RL-7), not playable yet (a run starts at the airship from RL-8; to look at one, open
   the game with `?fixture=run`): each place on a run's map is a walkable route made from the run's seed, joined
   seamlessly to the places before and after it, in its biome's look, ground and weather, with a little variety of its
