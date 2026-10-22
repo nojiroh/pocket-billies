@@ -192,3 +192,21 @@ test('songVariant in a run: the band first, then night; arc: false keeps the son
   assert.equal(v('meadow', { row: 7, indoor: true }), 'meadow');
   assert.equal(v('meadow', { row: 7, battle: 'wild' }), 'meadow');
 });
+
+test('the deadline: the last day (run.deadlineDays 1) and every day past it play the deadline version, over band and night', () => {
+  const S = { meadow: {}, town: {}, off: { deadline: false } },
+    v = (name, o) => songVariant(name, out({ nodeType: 'route', row: 7, ...o }), S, null, MUSIC.run);
+  assert.equal(MUSIC.run.deadlineDays, 1);
+  assert.equal(v('meadow', { daysLeft: 2 }), 'meadow@late');
+  assert.equal(v('meadow', { daysLeft: 1 }), 'meadow@deadline');
+  assert.equal(v('meadow', { daysLeft: -2, night: 1 }), 'meadow@deadline');
+  assert.equal(v('town', { nodeType: 'town', daysLeft: 1 }), 'town@deadline', 'a town node too');
+  assert.equal(v('off', { daysLeft: 1 }), 'off@late');
+  assert.equal(v('meadow', { daysLeft: 1, tab: 'map' }), 'meadow', 'not on the map tab');
+  assert.equal(v('meadow', { daysLeft: 1, nodeType: null }), 'meadow', 'not out of a run');
+  assert.equal(v('meadow', { daysLeft: 1, battle: 'wild' }), 'meadow', 'battles keep their own');
+  assert.equal(
+    songVariant('meadow', out({ nodeType: 'route', row: 1, daysLeft: 2 }), S, null, { deadlineDays: 2 }),
+    'meadow@deadline'
+  );
+});

@@ -9,9 +9,8 @@ import { test } from 'node:test';
 globalThis.window = globalThis;
 globalThis.PB_TEST_GLOBALS = true;
 await import('../../game/js/audio/tracker.js');
-const { trackerArc, trackerCompose, trackerCreate, trackerNight, trackerRecipe, trackerTense } = /** @type {any} */ (
-  globalThis
-);
+const { trackerArc, trackerCompose, trackerCreate, trackerDeadline, trackerNight, trackerRecipe, trackerTense } =
+  /** @type {any} */ (globalThis);
 
 const MUSIC = JSON.parse(readFileSync(new URL('../../game/data/music.json', import.meta.url), 'utf8'));
 // town's recipe without its written lines (SND-4 gave it a placeholder hook): the tests write their own
@@ -269,4 +268,19 @@ test('counterAuto: a counter from the hook, each note a chord tone at least a th
     trackerCompose({ ...town, counterAuto: true }).counterNotes.every(n => n === null),
     'no hook, no counter'
   );
+});
+
+test('the deadline version: the drums and the hook on the triangle alone; written changes win; false opts out', () => {
+  const m = MUSIC.songs.meadow,
+    d = trackerDeadline(m);
+  assert.equal(d.lead, 'triangle');
+  assert.equal(d.bass, 'none');
+  assert.equal(d.arp, 'none');
+  assert.deepEqual(d.counter, []);
+  assert.equal(d.drums, 'march', 'soft drums march');
+  assert.deepEqual(d.hook, m.hook);
+  assert.equal(trackerDeadline({ ...m, drums: 'drive' }).drums, 'drive');
+  assert.equal(trackerDeadline({ ...m, deadline: { bpm: 140 } }).lead, m.lead);
+  assert.equal(trackerDeadline({ ...m, deadline: false }), null);
+  assert.deepEqual(trackerRecipe({ meadow: m }, 'meadow@deadline'), d);
 });

@@ -878,7 +878,8 @@ def run_music_step(b, base, R):
     for every place of the run, what it picks follows its node (a town node town, the landing route, any other node its
     biome's song, the owner's mapping); on a route node, the music sync (musicSync, called there) asks for that biome's
     song. SND-5: each walkable node plays its row's arc band (music.json run.arc: 'meadow@mid' on rows 3-5,
-    '@late' on 6-8), a town node and the landing the song as written; the sync asks for the band. Nothing is
+    '@late' on 6-8), a town node and the landing the song as written; the sync asks for the band, and on the deadline
+    day for the deadline version. Nothing is
     heard: soundEngine.want is what the game asked to play (headless, sound never starts without a touch)"""
     errs = []
     ctx = b.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=1)
@@ -909,8 +910,11 @@ def run_music_step(b, base, R):
         # the node and the sync in one go: the walk view puts trip.node back where the player stands (the landing)
         got = pg.evaluate(f"(()=>{{const n0=saveData.trip.node;saveData.trip.node={route['n']};musicSync();const w=soundEngine.want;saveData.trip.node=n0;return w}})()")
         if got != route['plays']: raise Exception(f"standing in {route['name']} the music sync asked for {got!r}, not {route['plays']}")
+        # SND-5: on the deadline day (music.json run.deadlineDays 1) the sync asks for the deadline version
+        late = pg.evaluate(f"(()=>{{const R=saveData.run,c=R.clock,n0=saveData.trip.node;R.clock=R.deadline;saveData.trip.node={route['n']};musicSync();const w=soundEngine.want;R.clock=c;saveData.trip.node=n0;return [w,R.deadline]}})()")
+        if late[0] != route['song'] + '@deadline': raise Exception(f"on the deadline day (day {late[1]}) the sync asked for {late[0]!r}, not {route['song']}@deadline")
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
-        return f"{len(places)} places: " + ', '.join(f'{k} {v}' for k, v in sorted(seen.items())) + f"; in {route['name']} ({route['biome']}, row {route['row']}) the sync asked for {route['plays']}"
+        return f"{len(places)} places: " + ', '.join(f'{k} {v}' for k, v in sorted(seen.items())) + f"; in {route['name']} ({route['biome']}, row {route['row']}) the sync asked for {route['plays']}, on the deadline day (day {late[1]}) for {late[0]}"
     finally:
         ctx.close()
 

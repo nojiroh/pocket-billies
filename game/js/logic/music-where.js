@@ -115,18 +115,29 @@ export function musicArcBand(state, run) {
  * outdoors, out of battle, and the song has one (not `night: false`). Night from 0.6, day again below 0.4: in between,
  * what plays stays, so dusk doesn't flip the song back and forth. SND-5: in battle, the tense version ('wild@tense',
  * trackerTense) while the lead Billie is in the red zone (state.redZone), unless the song has `tense: false`. In a run, the
- * arc band's version first ('meadow@late', musicArcBand), unless the song has `arc: false`; at night 'meadow@late@night'
+ * arc band's version first ('meadow@late', musicArcBand), unless the song has `arc: false`; at night 'meadow@late@night'.
+ * In the run's last days (run.deadlineDays, and past the deadline) the deadline version alone ('meadow@deadline')
  * @param {string | null} name the song for the place (songFor)
  * @param {Record<string, any>} state songFor's state plus `night`, the environment's night level (0 day, 1 night)
  * @param {Record<string, any>} songs
  * @param {string | null} [playing] the song playing now
- * @param {{ arc?: { name: string, row: number[] }[] }} [run] music.json's run (the arc)
+ * @param {{ arc?: { name: string, row: number[] }[], deadlineDays?: number }} [run] music.json's run
  * @returns {string | null}
  */
 export function songVariant(name, state, songs, playing = null, run = undefined) {
   const S = name ? songs[name] : null;
   if (S && state.battle) return state.redZone && S.tense !== false ? name + '@tense' : name;
   if (!S || state.indoor) return name;
+  /* SND-5: the run's last days before its deadline, and every day past it: the deadline version, over the band and
+     the night (state.daysLeft: 1 on the deadline day, 0 or less past it) */
+  if (
+    S.deadline !== false &&
+    state.nodeType &&
+    state.tab !== 'map' &&
+    typeof state.daysLeft === 'number' &&
+    state.daysLeft <= ((run && run.deadlineDays) || 1)
+  )
+    return name + '@deadline';
   const band = S.arc === false ? null : musicArcBand(state, run),
     day = band ? name + '@' + band : name;
   if (S.night === false) return day;

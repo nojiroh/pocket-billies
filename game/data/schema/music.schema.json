@@ -248,6 +248,17 @@
        "arc": {
         "description": "SND-5: false: the run's arc bands (music.json run.arc) leave this song as written",
         "const": false
+       },
+       "deadline": {
+        "description": "SND-5: the deadline version (a run's last days, logic/music-where.js songVariant): the recipe's changes. With none written, the drums and the hook on the triangle alone (audio/tracker.js trackerDeadline). false: no deadline version",
+        "anyOf": [
+         {
+          "const": false
+         },
+         {
+          "$ref": "#/$defs/recipe"
+         }
+        ]
        }
       },
       "additionalProperties": false
@@ -371,6 +382,12 @@
        }
       }
      }
+    },
+    "deadlineDays": {
+     "description": "the run's last days that play a song's deadline version (1: the deadline day alone); past the deadline it always plays",
+     "type": "integer",
+     "minimum": 1,
+     "maximum": 3
     }
    }
   },

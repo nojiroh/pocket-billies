@@ -14,6 +14,7 @@ expose({
   trackerArc: [() => trackerArc, v => (trackerArc = v)],
   trackerCompose: [() => trackerCompose, v => (trackerCompose = v)],
   trackerCreate: [() => trackerCreate, v => (trackerCreate = v)],
+  trackerDeadline: [() => trackerDeadline, v => (trackerDeadline = v)],
   trackerNight: [() => trackerNight, v => (trackerNight = v)],
   trackerRecipe: [() => trackerRecipe, v => (trackerRecipe = v)],
   trackerTense: [() => trackerTense, v => (trackerTense = v)],
@@ -177,8 +178,24 @@ function trackerArc(D, band) {
   if (D.arc === false) return D;
   return { ...D, ...(band.changes || {}) };
 }
+/* SND-5: a run's song near the deadline (music.json run.deadlineDays): the song's `deadline` changes, or by default the
+   drums and the hook on the triangle alone (no bass, arp or counter; soft or no drums become a march). null when the
+   song has `deadline: false` */
+function trackerDeadline(D) {
+  if (!D || D.deadline === false) return null;
+  const { deadline, ...rest } = D,
+    auto = {
+      lead: 'triangle',
+      bass: 'none',
+      arp: 'none',
+      counter: [],
+      counterAuto: false,
+      drums: D.drums === 'none' || D.drums === 'soft' ? 'march' : D.drums,
+    };
+  return { ...rest, ...(deadline && typeof deadline === 'object' ? deadline : auto) };
+}
 /* SND-5: the recipe a song name plays: 'town' itself, 'town@night' its night version; null for a song or a part that
-   doesn't exist; 'wild@tense' its tense version, 'meadow@late' its arc band's (run.arc), 'meadow@late@night' both. `run` is music.json's run (the arc's bands), for the parts that need
+   doesn't exist; 'wild@tense' its tense version, 'meadow@deadline' its deadline version, 'meadow@late' its arc band's (run.arc), 'meadow@late@night' both. `run` is music.json's run (the arc's bands), for the parts that need
    it */
 function trackerRecipe(songs, name, run) {
   const [base, ...parts] = String(name).split('@');
@@ -187,6 +204,7 @@ function trackerRecipe(songs, name, run) {
     if (!D) return null;
     if (p === 'night') D = trackerNight(D);
     else if (p === 'tense') D = trackerTense(D);
+    else if (p === 'deadline') D = trackerDeadline(D);
     else
       D = trackerArc(
         D,
