@@ -2,6 +2,67 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Island track IS-0 - Contract and test island - 2026-10-22
+Branch `claude/new-session-3qlesh`, from main a10bfc6 (PR #118). The owner's brief (docs/phases/island-track.md,
+uploaded in chat): Copperleaf becomes a real island, one map, an orbit camera. IS-0 runs first and alone so wave 1
+(IS-1..IS-4) can run side by side without meeting in the schema and types. Plan approved in Plan Mode as proposed.
+- Changed (one cause per commit):
+  - **Docs**: the track file in docs/phases (with an "Checked in IS-0" note), ROADMAP's Island track bullet.
+  - **logic/island.js** (on the game page; nothing calls it yet): `ISLAND_ZONE_KINDS`, `islandPointIn` (point in a
+    polygon, for IS-2/5/7) and `islandProblems(sc)`: `cam.orbit` (pivot on the scene, `dead` under half the shorter
+    side, `lag` 0-10 s, `turn` 0-180), `island` (the coast 3+ points, on the scene, closed without repeating its first
+    point, never crossing itself, `c` inside it, the map's `edge` water), `zones` (a known kind, a sound polygon).
+  - **The contract fields** in map.schema.json and game-data.d.ts, all optional: `cam` (pitch, h, fov, `orbit {c,
+    dead, lag, turn}`), `island {c, coast}`, `zones [{k, poly, lock}]`, `islandGen {v, seed, dials}` (the dials an
+    open object: IS-2 owns them) and `waterKind` (enum = the renderer's nine kinds). check-data runs `islandProblems`
+    on every map.
+  - **test_island** (tools/build-test-island.py, rerunnable): 120 x 120 m; a cone 16 m high at (60, 60), flat top
+    r 3, foot r 27 (steepest 0.65, the walk allows 1.05); grass ring to r 48; sand, wet sand to r 52; sea past it
+    (`edge: "w"`, `waterKind: "sea"`, the coast biome's `far: "sea"`, `farH: 5`, `flatFar: 1`); `cam.orbit {c [60,
+    60], dead 3, lag 0.6, turn 30}`; zones mountain, town (locked, south), beach (south arc); six props (a sign,
+    a house, a bench, a lamp, two oaks) to judge turned standees by in IS-1. Hub (60, 30), the south side.
+  - **`?fixture=island`** opens it; check-fast's island step: it draws, the fields reach the scene, its walking checks
+    hold (hub open, the top and the north side reachable, the sea not).
+  - **The owner's direction, after the first push** (chat, 2026-10-22): "The starting map will not be a node. It will
+    be the main hub. Make a separate editor for it in Studio with an orbiting cam. It will be locked after it's
+    right." Answers: the lock freezes the ground (props, people, buildings stay free; unlocking is deliberate); dials
+    then hand edits; the generator reusable (question 10). So: **the ground lock joined the contract**
+    (`islandGen.lock`, `islandGen.hash`, `islandGroundHash` over ground letters, heights, steps, coast and zones; a
+    changed locked ground or a lock without a hash fails check-data), and the track file splits IS-6 into **IS-6a,
+    the Hub island editor** (a Studio section of its own: an orbit view through `mountWalkView` with its own look
+    from logic/free-camera.js, a 2D map with coast, zones and pivot, map-editor.js's paint and height brushes, the
+    lock bar; wave 1, Studio files only) and **IS-6b**, its dials (after IS-2). No Studio code in this session.
+- Where the plan (the track file) was wrong or short:
+  - "The sea's water kind" already existed: `waterKind` (mapgen wrote `'sea'`; environment.js and sound.js read it).
+    It is typed and in the schema now, no new field.
+  - `edge: "w"` alone is not a sea: it paints the land past the edge with a water texture. The sea skirt that exists
+    is `flatFar: 1` (walk/ground-mesh.js:774-794: water quads 90 m out round the scene, the far land lowered). IS-3
+    should extend it rather than start a new one.
+  - `?test=1&scene=<id>` already opened any test map; the fixture is for check-fast (fixture pages only).
+  - Map rows are north first and z grows northward from the near (south) edge (mapgen.js's header): the track's
+    "town in the south" means small z. IS-2 and IS-5 keep to it.
+  - "an export" in IS-0's line taken as logic/island.js, the module the checks and later sessions share.
+- Verified: unit tests 535 (8 new: every game map passes, test_island has every field, the schema refuses 7 bad
+  shapes, 11 planted faults each give their words, the schema's water kinds and zone kinds match the renderer's and
+  the module's, the lock: props free, five ground changes refused); lint, typecheck, check:modules, format:check,
+  check:data (142 files); check-fast 19 of 20 with two browsers (the island step 27 s; RL-9b's packing step timed
+  out at "Take off" under load, then passed alone in 42 s: its 30 s wait is tight with two browsers, nothing this
+  branch touches); smoke 15 of 15; headless pictures at 390 x 760 from the south, the top and the north: the cone, ring, sand and sea
+  draw, no page errors. From the north the cone stands between the camera and you: the reason for IS-1.
+- Risky:
+  - The orbit fields do nothing yet: the camera is today's (fixed yaw, scene clamps) until IS-1.
+  - The `flatFar` skirt starts 90 m out with the far land between; low angles may show a seam (IS-3).
+  - `cam` is in the schema for the first time (only pitch, h, fov were ever used; all 142 files pass).
+  - logic/island.js is on the game page; IS-6a adds it to the Studio's page.
+  - The lock's hash trips on any rewrite of the ground, rounding included (a tool that re-rounds heights would need
+    an unlock and relock); intended, and the message says how.
+- Not run: the full quick check's picture compare (its baseline is made by CI, not in git); a new test map adds its
+  `shots` (island-south, island-top) to it.
+- Next: wave 1, up to five sessions side by side: IS-1 orbit camera (owns walk/camera.js), IS-2 island generator
+  (owns logic/island-gen.js, not mapgen.js while TR-2c part 2 is open), IS-3 sea all round (water and sky), IS-4
+  island props (prop data and art), IS-6a the Hub island editor (Studio files). The track's "Ask me before" 1-12 are all still open; each session asks its own
+  (IS-1: 2 and 3; IS-2: 1, 6, 7, 9; IS-5: 4, 11; IS-8: 8; IS-9: 5); 10 is answered (reusable). Tag `is-0-done` is the owner's to push.
+
 ### Roguelite track RL-12a - Relics and effects, first half: Loopholes, picks, shops - 2026-10-22
 Branch `claude/dazzling-keller-qyw5vq` (PR #117), from main 6a8a3e7; main merged in twice: RL-9b and UI-6a mid-session,
 then RL-11 (PR #115, bb51f13) at the end. Plan approved in

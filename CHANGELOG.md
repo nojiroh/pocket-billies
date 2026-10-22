@@ -9,6 +9,10 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- The island track begins (IS-0): a test island in the debug menu's Test scenes (a cone of a mountain, a grass ring,
+  beaches and the sea all round), the first step to Copperleaf becoming a real island you can walk round. Nothing
+  changes in Copperleaf yet. The island will be the hub itself, with its own editor in the Studio and its ground
+  locked once it is right.
 - Loopholes (RL-12): beat a mini-boss on a run and pick one of three Loopholes, or buy one in a town's shop (one a
   day, priced by rarity). Each lasts the rest of the run and bends a rule: cheaper shops or clinics, better catches,
   more money from wins, a Speed boost at the start of every battle, harder physical hits, less damage taken, a little

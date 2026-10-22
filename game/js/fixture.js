@@ -13,6 +13,7 @@
      ranch   inside Copperleaf's ranch (RL-9): three Billies in storage (one two levels under the cap), 50 Scrap
      relics  the run, holding five Loopholes (RL-12: one under the cap), $2,000, a mini-boss's pick waiting
      lab     Copperleaf after a run (RL-11): 500 Capital, 60 Scrap, 2 Audit Seals, one run ended (a milestone met)
+     island  the test island (island track IS-0: test_island, the map with the island contract's fields)
    UI-3b, for the Studio's UI look preview (the real screens with the look being edited):
      team    the Team screen          bag     the Bag, with a few of each item
      talk    the dialogue box with a line from Professor Hazel
@@ -67,6 +68,7 @@ const FIXTURE_PLACES = {
   relics: 'copperleaf',
   ranch: 'copperleaf',
   lab: 'copperleaf',
+  island: 'copperleaf',
 };
 /** RL-12: the Loopholes the relics fixture holds (a shop's and a clinic's price rows, a catch row, a battle's stage, a
  * heal on arrival) */
@@ -141,6 +143,8 @@ export function fixtureStart() {
   uiState.modal = null;
   uiState.mq = [];
   uiState.tab = 'walk';
+  /* island track IS-0: the test island instead of the town (as the debug menu's Test scenes opens it) */
+  if (FIXTURE === 'island') uiState.bench = { id: 'test_island', test: 1 };
   renderOverlay();
   render();
   /* phase 08b: into a room through its door, as soon as the town is on screen (RL-5: Hazel's lab in Copperleaf) */

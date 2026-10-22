@@ -451,11 +451,70 @@ export interface MapData {
   building?: string;
   keeper?: string | null;
   indoor?: number;
+  /** the walking camera (island track: orbit) */
+  cam?: MapCam;
+  /** island track: the island's middle and coastline */
+  island?: IslandShape;
+  /** island track: areas of the island */
+  zones?: MapZone[];
+  /** island track: the island generator's version, seed and dials */
+  islandGen?: IslandGen;
+  /** the kind of the map's water (walk/water-data.js WATER_KIND_LOOKS) */
+  waterKind?: WaterKind;
   /** on a lite map (gamedata.js): the ground kinds and props it uses, so its look can start before its file comes */
   _lite?: { tiles: string; props: { k: string; v?: number; roof?: string }[] };
   /** the rest: the look (sky, haze, cam, moods), life, water, rails... read by the walk view and the renderer */
   [key: string]: any;
 }
+
+/** a map's walking camera: tilt (degrees), height (m), field of view */
+export interface MapCam {
+  pitch?: number;
+  h?: number;
+  fov?: number;
+  orbit?: CamOrbit;
+}
+
+/** island track (docs/phases/island-track.md, "The contract"; logic/island.js checks it): the camera sits out over
+    the sea and looks in at c */
+export interface CamOrbit {
+  /** the pivot, the island's middle */
+  c: MapPoint;
+  /** metres from c inside which the yaw holds its last value (the mountain top) */
+  dead: number;
+  /** seconds the yaw takes to follow */
+  lag: number;
+  /** degrees the player may still turn the camera on top of the orbit */
+  turn: number;
+}
+
+/** island track: the island's middle and its coastline, a closed polygon (the last point joins the first) */
+export interface IslandShape {
+  c: MapPoint;
+  coast: MapPoint[];
+}
+
+export type MapZoneKind = 'town' | 'barn' | 'pasture' | 'forest' | 'mountain' | 'cove' | 'beach' | 'path';
+
+/** island track: an area of the island; a locked zone's ground and props are never touched when it is made again */
+export interface MapZone {
+  k: MapZoneKind;
+  poly: MapPoint[];
+  lock?: boolean;
+}
+
+/** island track: what the island generator (IS-2) needs to make the ground again (IS-2 owns the dials), and the lock */
+export interface IslandGen {
+  v: number;
+  seed: string;
+  dials?: Record<string, unknown>;
+  /** the ground is frozen (the hub, once it is right): a change to it fails the data check; props stay free */
+  lock?: boolean;
+  /** the frozen ground's fingerprint (logic/island.js islandGroundHash) */
+  hash?: string;
+}
+
+export type WaterKind = 'pond' | 'stream' | 'canal' | 'spring' | 'swamp' | 'lake' | 'sea' | 'lava' | 'ice';
 
 /** the fields a lite map lacks (js/map-files.js MAP_FIELDS, tools/build-data.mjs) */
 export type MapFileField = 'heights' | 'steps' | 'stepm' | 'tiles' | 'props';

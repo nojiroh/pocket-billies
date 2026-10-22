@@ -27,7 +27,43 @@
    "items": {"type": "object", "required": ["k", "x", "z"], "properties": {"k": {"type": "string", "minLength": 1}, "x": {"type": "number"}, "z": {"type": "number"}, "s": {"type": "number"}, "rot": {"description": "degrees it is turned about its base point (the middle of its front): positive turns its right-hand end away from you; -180 to 180", "type": "number", "minimum": -180, "maximum": 180}}}
   },
   "chat": {"type": "array", "items": {"type": "string"}},
+  "cam": {
+   "description": "the walking camera: tilt (degrees), height (m), field of view; island track: orbit",
+   "type": "object",
+   "properties": {
+    "pitch": {"type": "number"},
+    "h": {"type": "number"},
+    "fov": {"type": "number"},
+    "orbit": {
+     "description": "island track: the camera sits out over the sea and looks in at c; inside dead metres of c the yaw holds; lag: seconds the yaw takes to follow; turn: degrees the player may still turn it",
+     "type": "object",
+     "required": ["c", "dead", "lag", "turn"],
+     "properties": {"c": {"$ref": "#/$defs/point"}, "dead": {"type": "number", "minimum": 0}, "lag": {"type": "number", "exclusiveMinimum": 0, "maximum": 10}, "turn": {"type": "number", "minimum": 0, "maximum": 180}}
+    }
+   }
+  },
+  "island": {
+   "description": "island track: the island's middle and its coastline, a closed polygon (the last point joins the first)",
+   "type": "object",
+   "required": ["c", "coast"],
+   "properties": {"c": {"$ref": "#/$defs/point"}, "coast": {"$ref": "#/$defs/poly"}}
+  },
+  "zones": {
+   "description": "island track: areas of the island; a locked zone's ground and props are never touched when the island is made again",
+   "type": "array",
+   "items": {"type": "object", "required": ["k", "poly"], "properties": {"k": {"enum": ["town", "barn", "pasture", "forest", "mountain", "cove", "beach", "path"]}, "poly": {"$ref": "#/$defs/poly"}, "lock": {"type": "boolean"}}}
+  },
+  "islandGen": {
+   "description": "island track: the island generator's version, seed and dials (IS-2 owns the dials), so the ground can be made again; lock and hash freeze the ground",
+   "type": "object",
+   "required": ["v", "seed"],
+   "properties": {"v": {"type": "integer", "minimum": 0}, "seed": {"type": "string"}, "dials": {"type": "object"}, "lock": {"description": "the ground is frozen: a change to it fails the data check (props stay free)", "type": "boolean"}, "hash": {"description": "the frozen ground's fingerprint (logic/island.js islandGroundHash)", "type": "string"}}
+  },
+  "waterKind": {"description": "the kind of the map's water (walk/water-data.js WATER_KIND_LOOKS)", "enum": ["pond", "stream", "canal", "spring", "swamp", "lake", "sea", "lava", "ice"]},
   "test": {"type": ["boolean", "number"]}
  },
- "$defs": {"point": {"type": "array", "prefixItems": [{"type": "number"}, {"type": "number"}], "minItems": 2}}
+ "$defs": {
+  "point": {"type": "array", "prefixItems": [{"type": "number"}, {"type": "number"}], "minItems": 2},
+  "poly": {"type": "array", "items": {"$ref": "#/$defs/point"}, "minItems": 3}
+ }
 }
