@@ -196,3 +196,8 @@
   background: linear-gradient(180deg, #f6d36b, #d39b22);
   color: #3a2603;
 }
+/* RL-9: the ranch's sheet (ranch-screen.js) reuses storage's cards; a trainee's way to its next level spans the card */
+.ranch-card pb-stat-bar {
+  align-self: stretch;
+  margin: 2px 4px 0;
+}

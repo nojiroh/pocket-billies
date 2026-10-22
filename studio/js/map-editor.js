@@ -334,6 +334,7 @@ SECTIONS.scenes = () => {
         ['lab', 'Show a message (lab)'],
         ['house', 'Show a message (house)'],
         ['home', 'Your room (walk into it)'],
+        ['ranch', 'The ranch (walk in; training and storage)'],
         ['climb', 'A ladder to climb'],
         ['sign', 'Show a message (sign)'],
         ['talk', 'Show a message'],

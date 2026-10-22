@@ -245,7 +245,9 @@ same phase:
   not). Replace the full test's two World map steps, v32's miniatures and the airship step with checks of the bowl.
 - **11 Opening**: the smoke phone flow and the full test's two Opening steps play the opening; update them with it.
 - **12 Ranch**: a full-test step for the ranch, a quick-check step that edits it, and its save fields in the save
-  tests (`saves.test.mjs`, `validSave`).
+  tests (`saves.test.mjs`, `validSave`). RL-9: `tools/test/ranch.test.mjs` (training's logic on the game's rules),
+  check-fast's ranch step on `?fixture=ranch` (Train, a level with the page's clock moved on, the cap, a clock turned
+  back, a reload) and the in-game test's "The ranch: training between runs".
 - **14 Studio**: `tools/check-studio-github.py` and smoke's "Studio opens" keep passing; `--studio` follows the
   Studio local mode decision. A new Studio feature adds a step function to its `STEPS` (UI-3), so it can also run
   alone with `--only=<name>`.

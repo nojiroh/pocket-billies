@@ -187,6 +187,7 @@ export let ALTERNATE_PROPS,
   propModelArtPaths,
   propModelImageItems,
   propModelShaders,
+  ranchStop,
   rawHeightAt,
   rebuildFromSettings,
   recordThingsToDoEvent,
@@ -309,7 +310,8 @@ export let ALTERNATE_PROPS,
   worldBillyGlows,
   worldBillyItem,
   worldBillyLabels,
-  worldMapLookTab;
+  worldMapLookTab,
+  xpProgress;
 const set = {
   ALTERNATE_PROPS: v => (ALTERNATE_PROPS = v),
   BATTLE_STAGES: v => (BATTLE_STAGES = v),
@@ -496,6 +498,7 @@ const set = {
   propModelArtPaths: v => (propModelArtPaths = v),
   propModelImageItems: v => (propModelImageItems = v),
   propModelShaders: v => (propModelShaders = v),
+  ranchStop: v => (ranchStop = v),
   rawHeightAt: v => (rawHeightAt = v),
   rebuildFromSettings: v => (rebuildFromSettings = v),
   recordThingsToDoEvent: v => (recordThingsToDoEvent = v),
@@ -619,6 +622,7 @@ const set = {
   worldBillyItem: v => (worldBillyItem = v),
   worldBillyLabels: v => (worldBillyLabels = v),
   worldMapLookTab: v => (worldMapLookTab = v),
+  xpProgress: v => (xpProgress = v),
 };
 // a setter hands its new value over whether or not another module reads it through here
 export function provide(names) {

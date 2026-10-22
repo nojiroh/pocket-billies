@@ -10,6 +10,8 @@ appear on the route. Each has
 
     python3 tools/build-interiors.py          # adds the rooms that are missing
     python3 tools/build-interiors.py --force  # rebuilds all four (anything you changed in them in the Studio is lost)
+    python3 tools/build-interiors.py --shrink # rooms at the old sizes take the new ones (SIZE), keeping their props
+                                              # (moved in, fit), lines and other fields
 """
 import gamedata  # phase 04b: the data files in game/data
 import importlib.util, json, sys
@@ -20,10 +22,25 @@ spec = importlib.util.spec_from_file_location('bscenes', ROOT / 'tools' / 'build
 B = importlib.util.module_from_spec(spec); spec.loader.exec_module(B)
 Scene, DATA = B.Scene, B.DATA
 W, H, WALL = 14, 11, 3.2
+# RL-9 session (the owner: "rooms overall can be shrunk a little; still bigger on the inside, but not as much"): a room
+# laid out on the old sizes is built at the new ones. The functions below keep the old sizes' coordinates; fit() moves
+# them in, so the doorway's strip keeps its depth, the back wall's things stay on the back wall and the rest closes up
+SIZE = {(14, 11): (12, 10), (18, 12): (16, 11)}
+FRONT, SIDE, BACK = 2.5, .9, 1.55
+
+
+def fit(w, h):
+    """the old size's (x, z) -> the new size's: x toward the middle (the side walls' insides stay put), z unchanged in
+    the doorway's strip, as far from the back wall on it and in between in proportion"""
+    nw, nh = SIZE.get((w, h), (w, h)); c, nc, back, nback = w / 2, nw / 2, h - BACK, nh - BACK
+    fx = lambda x: round(nc + (x - c) * (nc - SIDE) / (c - SIDE), 2)
+    fz = lambda z: z if z <= FRONT else round(z + nh - h, 2) if z >= back else round(FRONT + (z - FRONT) * (nback - FRONT) / (back - FRONT), 2)
+    return fx, fz
 
 
 def room(sid, name, floor, wall, seed, kind, keeper, spot, chat, w=W, h=H):
     # v47: floor is each room's own indoor floor (tools/build-terrain-v47.py, tools/room-floors-v47.py)
+    fx, fz = fit(w, h); spot = (fx(spot[0]), fz(spot[1])); w, h = SIZE.get((w, h), (w, h))
     s = Scene(sid, name, floor, seed, w, h, sky=['#2A2836', '#3A3848', '#4A4658'], haze='#4A4658', hazeD=40, amb='dust', tint=None, indoor=1, far='mall', farH=4, folk=0,
               cam={'pitch': 28, 'h': 8.5, 'fov': 1}, blur=.6, chat=chat,
               # light from above, soft shadows: a room lit by its ceiling, not the sun through the roof
@@ -38,6 +55,8 @@ def room(sid, name, floor, wall, seed, kind, keeper, spot, chat, w=W, h=H):
     s.terrace(w - .7, -1, w + 1, h - 1.4, WALL, wall=True, wobble=0, mat=10)
     s.rect(c - 1, 0, c + 1, 1.2, 'q')                      # the doormat
     s.clear.append((c, 2.2, 1.2)); s.clear.append((c, .8, 1))
+    put = s.put
+    s.put = lambda k, x, z, *a, **kw: put(k, fx(x), fz(z), *a, **kw)
     return s
 
 
@@ -188,7 +207,9 @@ def int_barn():
              ['Mind the hay. The billionaires love hiding in it.', 'We grow the town’s food. And its gossip.', 'The cow’s name is Dividend.'])
     s.put('haybale_stack', 2.4, 8.8); s.put('haybale', 4.6, 8.4); s.put('haybale', 11.6, 8.6); s.put('wheelbarrow', 10.6, 6.0)
     s.put('sack', 12.6, 4.6); s.put('sack', 12.2, 5.4, .9, 1); s.put('barrel', 1.6, 4.2); s.put('crate', 2.6, 3.0); s.put('ladder', 7.6, 9.4)
-    hang(s, 'wall_window', 4.6); return s.out(10)
+    hang(s, 'wall_window', 4.6)
+    # RL-9: the ranch's training board (Copperleaf's barn, act 'ranch': ranch-screen.js)
+    hang(s, 'blackboard', 10); s.props[-1].update(act='ranch', label='Training board'); return s.out(10)
 
 
 def int_greenhouse():
@@ -311,15 +332,38 @@ def repair_corners(D):
     return fixed
 
 
+SHELL = ('w', 'h', 'tiles', 'steps', 'stepm', 'hub', 'exits', 'edgeExits', 'wallCol', 'edge')
+
+
+def shrink(D):
+    """rooms still at an old size: the new size's walls and floor from the builder; their own props (moved in by fit),
+    keeper's spot, lines and every other field kept"""
+    done = []
+    for f in BUILD:
+        sid = f.__name__; old = D['maps'].get(sid)
+        if not old or (old['w'], old['h']) not in SIZE: continue
+        new = f(); fx, fz = fit(old['w'], old['h'])
+        out = dict(old)
+        for k in SHELL:
+            if k in new: out[k] = new[k]
+        out['props'] = [{**p, 'x': fx(p['x']), 'z': fz(p['z'])} for p in old.get('props', [])]
+        out['npcSpots'] = [[fx(x), fz(z)] for x, z in old.get('npcSpots', [])]
+        out['stepsV'] = old.get('stepsV', 0) + 1
+        D['maps'][sid] = out; done.append(f"{sid} {old['w']}x{old['h']} -> {out['w']}x{out['h']}")
+    return done
+
+
 def main():
     force = '--force' in sys.argv
     src = gamedata.js_text(); head = src[:src.index('window.GAMEDATA=')]
     D = json.JSONDecoder().raw_decode(src[src.index('window.GAMEDATA=') + len('window.GAMEDATA='):])[0]
-    for f in BUILD:
+    for f in BUILD if '--shrink' not in sys.argv else []:
         sid = f.__name__
         if sid in D['maps'] and not force: print(f'  {sid}: kept'); continue
         sc = f(); D['maps'][sid] = sc
         print(f'  {sid}: {sc["w"]}x{sc["h"]}, {len(sc.get("props", []))} props')
+    if '--shrink' in sys.argv:
+        for line in shrink(D): print(' ', line)
     fx = repair_corners(D)
     if fx: print('  corners brought down to the wall height:', ', '.join(fx))
     gamedata.save_js(head + 'window.GAMEDATA=' + json.dumps(D, ensure_ascii=False, indent=1) + ';\n')

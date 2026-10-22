@@ -188,6 +188,7 @@ function roomHero() {
         lab: 'Tap the professor or the machine to talk.',
         house: 'Tap whoever lives here to chat.',
         home: 'Your room in Granny Juniper’s cottage. Decorate it with what you’ve found.',
+        ranch: 'Tap the training board or the rancher to train your Billies.',
       }[I.kind] || '';
   return `<div class="walk-hero" id="walkHero">${locationCardHTML(escapeHtml(here.name), escapeHtml(I.name || sc.name || 'Inside'), `<p class="wh-gate">${escapeHtml(what)}</p>`, (I.kind === 'home' ? `<button class="pb small gold" data-a="decorate">Decorate</button>` : '') + `<button class="pb small" data-a="leaveroom">${uiIconHTML('door', 14)} Go outside</button>`)}
  <div class="wh-foot"><div class="wh-row"><button class="pb small glass fish-btn" data-a="fish" hidden>${uiIconHTML('fish', 14)} Fish</button><button class="wh-down glass k-btn" data-a="walkdown" aria-label="Show actions">${uiIconHTML('chev', 18)}<span>Actions</span></button></div></div></div>`;

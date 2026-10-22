@@ -41,6 +41,7 @@ export const xpProgress = m => {
     b = xpFor(m.lvl + 1);
   return clamp((m.xp - a) / (b - a), 0, 1);
 };
+provide({ xpProgress }); /* to-module */
 export const xpLeft = m =>
   m.lvl >= maxLevel() ? 'Max level' : `${formatNumber(xpFor(m.lvl + 1) - m.xp)} to Lv ${m.lvl + 1}`;
 export const needsCare = m => m.hp < maxHp(m) || !!m.status;

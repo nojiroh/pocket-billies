@@ -43,6 +43,7 @@ Lint enforces what it can (see the end). Every old -> new name of phase 05 is in
 | The debug log | `debugLog` (debug-log.js) | was NWLOG, log.js |
 | Lore: a location's history, landmark and legend | `lore.locations`; an unlock `location:<id>` | was lore.places, `place:<id>` |
 | Customizable home | `ranch` | phase 12 |
+| The ranch's training | `logic/ranch.js` (`ranchTrainStart`, `ranchCollect`, `ranchStop`, `ranchCap`, `ranchSlots`), its sheet `ranchOpen` (ranch-screen.js), the act and room `ranch` → `int_barn`, rules `rules.ranch` | RL-9. "Ranch", "Training board", "Scrap" |
 | The old world outside the hub | `legacy` (folder `game/data/legacy`, its own `legacy/index.json`; `readLegacyData()`, `oldWorld()` in tests; the Studio's `legacyView`) | RL-5: kept for the Studio, never loaded by the game |
 | A leader who stands on no stop | `miniboss` (a trainer's `miniboss: true`, no `node`) | RL-5: the eight badge leaders; RL-13 makes them the runs' mini-boss pool. A `tutorial` trainer stands nowhere too |
 | A run's node map | `run.map` (`{nodes}`), made by logic/run-map.js `runMapMake` (`runMap*`, `run*`); a node's `type` (data section `nodeTypes`), `row`, `lane`, `to`, `seen`, `biome`; its rows' plan `runMapRows` (`first`, `rest`, `guard`, `last`, as rules.json `run.map` names them) | RL-6. Map node i is world node i + 1 (`runWorldNode`, `runMapNode`): `run.path`, `to` and `runNodeSeed` count map nodes, `trip.node` and `run.forecast` the world's. Not `route` (a kind of place) or `road` (a seam between two) |

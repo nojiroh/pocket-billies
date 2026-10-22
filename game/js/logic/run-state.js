@@ -205,12 +205,14 @@ export function runBegin(s, give) {
 }
 /** what a run pays when it ends, as Capital and Audit Seals, with the lines the payout screen lists: the money at a
     rate, the items at a share of their price (then at the money rate), each released Billie, each node cleared, a
-    win bonus; seals for a win. Rates are rules.json run.payout (placeholders until the first play) */
+    win bonus; seals for a win; Scrap (RL-9, the ranch's material) for each node cleared and a win. Rates are
+    rules.json run.payout (placeholders until the first play) */
 /**
  * @param {{ se: number, items: Record<string, number>, released: number, cleared: number, won: boolean }} end
- * @param {{ money: number, itemShare: number, released: number, node: number, win: number, winSeals: number }} rates
+ * @param {{ money: number, itemShare: number, released: number, node: number, win: number, winSeals: number,
+ *   scrapNode?: number, scrapWin?: number }} rates
  * @param {(id: string) => number} itemPrice an item's shop price ($), 0 for none
- * @returns {{ capital: number, seals: number, lines: { what: string, n: number, capital: number }[] }}
+ * @returns {{ capital: number, seals: number, scrap: number, lines: { what: string, n: number, capital: number }[] }}
  */
 export function payoutOf(end, rates, itemPrice) {
   const itemValue = Object.entries(end.items || {}).reduce(
@@ -227,6 +229,7 @@ export function payoutOf(end, rates, itemPrice) {
   return {
     capital: lines.reduce((sum, l) => sum + l.capital, 0),
     seals: end.won ? rates.winSeals : 0,
+    scrap: Math.max(0, end.cleared) * (rates.scrapNode || 0) + (end.won ? rates.scrapWin || 0 : 0),
     lines,
   };
 }
@@ -260,6 +263,7 @@ export function runEnd(s, how, rates, itemPrice) {
   }
   s.meta.capital += pay.capital;
   s.meta.seals += pay.seals;
+  s.meta.scrap += pay.scrap;
   s.meta.runs += 1;
   if (how.won) s.meta.wins += 1;
   return pay;

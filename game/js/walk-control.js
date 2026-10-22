@@ -53,6 +53,7 @@ import { loreBook } from './lore.js';
 import { flyMenu, rideGlassLift } from './airship.js';
 import { runWorldData } from './run-world.js';
 import { runArrivedHint } from './run.js';
+import { ranchOpen } from './ranch-screen.js';
 import { postcardCheck } from './postcards.js';
 import { legendCheck, personTalk, storyCheck, trainerTalk } from './story.js';
 import { storyResumeCheck } from './story-stage.js';
@@ -330,6 +331,7 @@ function roomAct(h) {
   } else if (I.kind === 'clinic') clinicHeal(I.p.say);
   else if (I.kind === 'lab' && typeof talkHazel === 'function') talkHazel(I.p);
   else if (I.kind === 'home' && typeof homeDecorate === 'function') homeDecorate();
+  else if (I.kind === 'ranch' && typeof ranchOpen === 'function') ranchOpen();
   else {
     const c = (mapById(I.id) || {}).chat || [];
     toast(c.length ? `“${c[Math.floor(Math.random() * c.length)]}”` : 'They wave hello.');
@@ -510,6 +512,7 @@ export function walkPick(h) {
     } else if (a === 'clinic') clinicHeal(p.say);
     else if (a === 'lab' && typeof talkHazel === 'function') talkHazel(p);
     else if (a === 'read' && typeof loreBook === 'function') loreBook(p.book);
+    else if (a === 'ranch' && typeof ranchOpen === 'function') ranchOpen();
     else
       toast(
         p.say ||

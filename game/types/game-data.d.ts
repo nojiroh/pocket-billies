@@ -802,6 +802,9 @@ export interface Rules {
       win: number;
       /** Audit Seals for a win */
       winSeals: number;
+      /** RL-9: Scrap per node cleared, and for a win */
+      scrapNode: number;
+      scrapWin: number;
     };
     /** RL-6: the run's node map (logic/run-map.js) */
     map: RunMapRules;
@@ -831,6 +834,25 @@ export interface Rules {
     /** RL-8: a mini-boss's and the boss's levels: `up` over the top wild level of their row; their reward in $ */
     foes: { miniboss: { up: number; reward: number }; boss: { up: number; reward: number } };
   };
+  /** roguelite track RL-9: the ranch (logic/ranch.js). Placeholders until the owner has played it */
+  ranch: RanchRules;
+}
+
+/** rules.json ranch: training between runs (logic/ranch.js) */
+export interface RanchRules {
+  /** training slots by ranch level (index 0 = level 1; past the end, the last) */
+  slots: number[];
+  /** the highest level a Billie trains to: capBase at ranch level 1, capStep more each level */
+  capBase: number;
+  capStep: number;
+  /** a trainee banks at most this many hours between collections */
+  bankHours: number;
+  /** levels gained an hour of training (each level its own share of XP) */
+  levelsPerHour: number;
+  /** Scrap to start training one Billie */
+  trainCost: number;
+  /** a clock this far behind a trainee's start (ms) is allowed; further back, nothing is gained and it starts again */
+  guardMs: number;
 }
 
 /** rules.json run.scene: mapgen's dials as ranges and weights (RL-7) */
