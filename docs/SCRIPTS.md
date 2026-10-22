@@ -93,6 +93,7 @@ An entry of `cycle` or `seq` starts after `- `; its other lines go under it, two
 | `visited:copperleaf` | you have been there |
 | `billie:musk` | a Billie of that line caught (`billie:musk1`: that one) |
 | `robot`, `badges >= 2`, `caught >= 15` | you have a robot; badges won; kinds of Billie caught (the Index) |
+| `unlock:ranch_2`, `runs >= 3`, `wins >= 1` | an unlock is owned (unlocks.json); runs ended; runs won (RL-11: what lasts between runs, the same in a run and in the hub) |
 
 Combine with `and`, `or`, `not` / `!` and parentheses; `and` binds tighter than `or`. A count on its own
 (`item:honey`, `badges`) means more than 0. Conditions are parsed once and never run as code. A mistake says where:

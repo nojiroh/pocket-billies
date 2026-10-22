@@ -9,6 +9,12 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- The Lab's unlock board (RL-11): the Lab tab is in Copperleaf's bottom bar now (and the machine in Hazel's lab opens
+  it). Spend Capital there on wares for the shops in a run's towns (Nerve Tonic, Wake-Up Tea and Revives are no longer
+  sold there until you unlock them). The ranch's sheet sells Ranch Lv 2 and 3 for Scrap (more training slots, a higher
+  level cap); the airship mast sells Airship Lv 2 for an Audit Seal, then the ridge and autumn lands (a new player's
+  runs have meadow, lake and thicket places only). Milestones pay on their own: your first run, five runs, your first
+  win, fifteen kinds caught. Buildings with levels say theirs on their label. All prices are first guesses.
 - The ranch (RL-9): a red barn by Copperleaf's farm. Walk in and tap the training board or the rancher: Billies resting
   in storage can train there for a little Scrap, gaining a level every two hours of real time (up to eight hours
   between visits, up to level 15 for now), collected when you come back. Storage shows there too, and the Team tab

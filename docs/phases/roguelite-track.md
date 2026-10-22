@@ -158,6 +158,20 @@ ranch's sheet shows storage and the Team tab keeps it. Rooms were made a little 
 and 16 x 11 m). A `runEnd` trap for RL-9b: a kept Billie that travelled from storage isn't in the restored team and
 would be pushed in twice.
 
+**Corrected in RL-11 (2026-10-22).** There is no `hub.js`: the board is `lab-board.js` in the hub's Lab tab (hidden
+since UI-5 for it), and Hazel's lab machine (now act `board`) opens it. `won:bracket_N` can't be built yet: meta keeps a
+win count and the highest tier, and nothing raises the tier (RL-13); RL-11 added the condition kinds `unlock:<id>`,
+`runs` and `wins`. The three doors are one field each: a row with `at` (and `cost`) is sold at that building in its
+currency (the Lab's rows are the board), a row with `when` is earned (a milestone; no `door` field). A grant is one of a
+building's level, an item into run shops, a biome onto run maps, or a currency; nothing else needed effects (RL-12).
+`meta.buildings` stays where a level lives (`ranchLevel` read it already); the load step rebuilds it from the owned
+rows. A run copies its shop and biome unlocks at the start (`run.unlocks`), so a run is still made by its seed and that
+copy; a run from before RL-11 has none and keeps everything open. Milestones are granted in the hub only (after the
+payout and when the world shows at boot), never on a run. Building looks per level: no art, so the label shows the level
+(the owner's answer). The Workshop is a row "coming later" (the owner's answer). The run sim, the fixture's run and the
+in-game test's run are made without `runTakeOff`, so they keep everything open. The owner's answers: 8.5 the
+recommendation; the first unlocks ranch levels, run shop wares, new biomes and milestones.
+
 **Changed in the TR-2 session (2026-10-21, the owner: "runs should go from east to west").** A run scene is entered
 by its east side and left ahead by its west: `east`/`east2` back, `west`/`west2` ahead (logic/run-scenes.js
 runSceneExits; runExits' `ahead`/`back`, renamed from north/south). Two links a side sit 10 m and 54 m along the 64 m
@@ -703,7 +717,10 @@ after the emulator passes). 2 sessions.
 **RL-11 Hub upgrades, currencies, unlock board.** `currencies.json`, `buildings.json` (Lab, Ranch, Workshop, Airship),
 `unlocks.json` with the three doors, `logic/unlocks.js` (`unlockReady`, buy, auto at payout and on load),
 `conditions.js` (`unlock:`, `won:`), `hub.js` board screen, `copperleaf.json` building variants per level. Tests:
-`unlocks.test.mjs`, `conditions.test.mjs`, check-data (a fifth currency fails, every grant exists). 1-2 sessions.
+`unlocks.test.mjs`, `conditions.test.mjs`, check-data (a fifth currency fails, every grant exists). 1-2 sessions. Done
+2026-10-22 in one session (HANDOFF; section 0 for what changed from this paragraph): the three sections,
+`logic/unlocks.js`, the conditions `unlock:`, `runs`, `wins`, `run.unlocks`, `lab-board.js` (the Lab tab, the ranch's
+and the mast's upgrade rows, levels in labels), the `lab` fixture, check-fast's Lab step, the in-game phase.
 
 **RL-12 Relics and effects.** `relics.json`, `events.json` (scripts with `relic`, `wager`), `logic/effects.js` (kinds,
 hooks, `B().fx`; phase 19's handler idea), one hook call each in `calcDamage`, `catchOdds`, `newBattle`, the pick
@@ -808,6 +825,7 @@ Decided this session: the rework is a track RL-N (`rl-N-done`); parked phases ar
    flag (nothing moves; 13 MB and 47 map fetches stay).
 5. **Currency names and buildings:** $ / Capital / Scrap / Audit Seals with Lab = Capital, Ranch and Workshop = Scrap,
    Airship = Seals (recommended) / Money/Capital/Scrap/Seal / $/Ledger/Copper/Bonds / the Platinum Coin reused (no).
+   **Answered in RL-11: the recommendation** (currencies.json, buildings.json).
 6. **Menu nodes on a walked map:** tiny generated waystation scenes whose hub prop opens the menu (recommended, from
    RL-12) / a gate prop at the previous seam / events and shops folded into towns (the first cut has only this).
 7. **Mid-battle kill:** restart the battle at the node from the same seed and battle index (recommended for the first
