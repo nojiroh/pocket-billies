@@ -76,7 +76,7 @@ Everything is synthesized in `game/js/sound.js` (2,013 lines) with the Web Audio
 | SND-2 (done 2026-10-22) | The tracker as data | `game/js/audio/tracker.js` with no game imports; `music.json` + schema (songs, jingles, cries, where); biome music in a run; timers that stop when idle; a song fingerprint baseline | SND-1 | 1-2 | fingerprints unchanged; check-data; modules check; the run fixture plays a biome song |
 | SND-3 (done 2026-10-22) | The Studio's Music & sound section | play and loop any song, the recipe's dials, a piano roll for the hook, the where table, a cry card on Billies, check warnings | SND-2 | 1-2 | Studio self-test; quick check; the owner plays it |
 | SND-4 (done 2026-10-22) | The Pokémon rework: themes | four voices, written hooks and countermelodies, the title motif as a leitmotif, Copperleaf as two voices, night variants | SND-3, RL-8 played | 1-2 | fingerprints updated on purpose; the owner listens on the phone |
-| SND-5 | Battle and run music | intros timed to the throw, wild/trainer/leader/boss/rival/ghost, biome × row variants, the deadline variant, the red zone | SND-4, RL-8 | 1-2 | battle fixture; run fixture; phone |
+| SND-5 (done 2026-10-22) | Battle and run music | intros timed to the throw, wild/trainer/leader/boss/rival/ghost, biome × row variants, the deadline variant, the red zone | SND-4, RL-8 | 1-2 | battle fixture; run fixture; phone |
 | SND-6 | Sound effects and jingles | a cry per species with a low-HP cry, four UI sounds, jingles for the run's beats, a mix pass | SND-4, RL-12 for relics | 1 | battle golden record untouched; phone |
 
 Budget: SND-1 to SND-3 are three to five sessions before the play test; SND-4 to SND-6 three to five after. Tiers
@@ -304,6 +304,49 @@ Corrections to this section's plan, found in SND-4:
 5. Verified by: the battle fixture's log shows the intro, throw and drum entry at the right ticks; the run fixture
    plays each row band; the owner listens on the phone.
 
+### SND-5 as built (2026-10-22, branch `sound`, tag `snd-5-done` local)
+The owner said "Start" to the plan without picking options, so the recommended answers were taken: **the tense
+variant, with the classic beep as a switch off by default**; **the deadline version on the deadline day alone (and
+every day past it)**; **no ghost song until RL-15**; **the weather filter in**. One cause per commit:
+1. `check-sound.py` renders a song's intro and the variants sound.js `musicParts` names. Tool only.
+2. The tracker: a song's `intro` (one or two bars, the lead alone) played once when asked (`{ intro }`); `{ hold }`
+   keeps the drums out until `drumsIn()` or 8 s; `trackerRecipe` reads a name with parts ('town@night').
+3. Battle kinds: `musicBattleKind` (a run's mini-boss is `leader`, its boss `boss`); two where-rules sent both to
+   trainer first, so nothing changed yet.
+4. Timed to the throw: `battleSoundEffect` 'wild' and 'trainerIn' start the battle's song with its intro and the
+   drums held; the first 'enter' lets them in. The music sync waits up to 2.5 s for a battle's flash. `soundEngine.log`
+   keeps the cues for the checks.
+5. The battle songs: hooks and intros for wild, trainer and rival; a `leader` song (the title's motif in D minor) and
+   a `boss` song; all placeholders.
+6. The red zone: `trackerTense` (16 bpm faster, march drums, a new `pedal` bass on the flat seventh) while the lead
+   Billie (the player's first standing) is under a quarter (`RED_ZONE`, `musicRedZone`); a song taking over a held one
+   keeps the hold.
+7. Settings → Sound: a Low HP beep switch (`lowHpBeep`, off), translated.
+8. The run's arc: music.json `run.arc`, rows 3-5 `mid` (march, the arp an octave up) and 6-8 `late` (plus a counter
+   made from the hook, `counterAuto`); `musicArcBand`; at night 'meadow@late@night'. A song's `arc: false` opts out.
+9. The deadline version: `run.deadlineDays` 1; the drums and the hook on the triangle alone (`trackerDeadline`), over
+   the band and the night; not on the map tab or in battle.
+10. The map song hears the forecast: `run.weather` (storm 1400 Hz ... ash 2400), `musicWeatherCut`, on the map tab.
+11. Fix: a new battle with the song already playing restarts it (`restart`); found by the Battle music step.
+12. The full check's Battle music step; the Studio's music check reads the rules' places from the table (the new
+    rules had moved them).
+13. The Studio: an Intro roll, a Version pick (tense, deadline, a band), an In a run card.
+14. The fingerprint baseline written again (109), in its own commit.
+
+Corrections to this section's plan, found in SND-5:
+- Item 2's ghost (a friend's run) has no battle to play in before RL-15: no song, no rule. `MUSIC_BATTLE_KINDS`
+  gets it then.
+- Item 4's "rows 1-3, 4-6, 7-9" count from 1; the map's rows count from 0 (the landing), so the bands are 0-2 (as
+  written), 3-5 and 6-8, and each starts on a mini-boss's row. "With the counter on": the biome songs have no
+  written counter, so the late band makes one from the hook.
+- Item 4's "a where-rule can name a row band": rules could already match `row` (SND-2); the arc is a version of the
+  same song, not another song, so it is `run.arc`, not a where-rule.
+- Item 4's "the `map` song gets the forecast's weather as a low-pass": the music already had a low-pass that closes in
+  the place's own rain (v27); on the map tab it now follows today's forecast where you stand instead.
+- Item 1's "the battle fixture's log": there was none; `soundEngine.log` is new, in memory, read by the full check.
+- In a run a battle can begin again at once from its seed ("The battle starts again."), asking for the song already
+  playing: hence `restart`.
+
 ## SND-6: sound effects and jingles
 1. **Cries.** About eight base cries by kind (beast, bird, slime, machine, fish, insect, ghost, suit) in
    `music.json`; each of the 24 Billies sets base, pitch and length per stage in `lines/*.json` `cry` (from SND-3); the Studio card from SND-3
@@ -325,7 +368,9 @@ Corrections to this section's plan, found in SND-4:
   stage in lines/*.json).
 - SND-4 (answered 2026-10-22): Claude writes placeholder hooks, named as placeholders, the owner edits them; the motif
   on the hub and the run's bookends (title, Copperleaf, the take-off, the payout); main merged first; item 6 deferred.
-- SND-5: the red-zone variant versus the beep; whether the deadline variant plays on the last day or the last two.
+- SND-5 (taken as recommended when the owner said Start, 2026-10-22): the tense variant, the beep a switch off by
+  default; the deadline version on the deadline day alone (`run.deadlineDays`, 2 for two); no ghost song before RL-15;
+  the weather filter in.
 - The order of SND-4 to SND-6 after the play test, and whether any of them should go before it.
 
 ## Not in this track

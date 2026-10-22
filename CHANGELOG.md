@@ -9,6 +9,15 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- Battle and run music (sound track SND-5): a battle's song starts on the encounter's flash with a short intro
+  run and holds its drums until your first Billie is sent out. A run's mini-bosses have a song of their own (the
+  title's theme in a minor key) and its boss another. While your lead Billie is under a quarter of its HP, the battle
+  song turns tense (faster, marching drums), back when healed; Settings → Sound has the classic low-HP beep as a
+  switch, off by default. A run's music builds as you go: from the first mini-boss's row the biome's song marches
+  with its arpeggio higher, from the second it adds a countermelody; on the deadline day and after it, the songs drop
+  to drums and the tune alone. On the run's map tab the map song is muffled by today's rain, storm, snow, fog or ash
+  where you stand. The battle songs' hooks and intros are drafts, named "placeholder" in the Studio, which can now
+  edit intros, play each version and edit the run's settings.
 - The music's first rework toward the Game Boy Pokémon sound (sound track SND-4): every song plays on four voices
   (two pulse waves, a triangle bass, noise drums), except the title and the fall, which keep their fuller sound. A
   written hook comes back answered in bars 3-4. The title has a theme of its own (I-bVII-I) that returns under

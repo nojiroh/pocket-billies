@@ -352,6 +352,21 @@ same phase:
   purpose (four voices, the hooks, the night versions). Night versions by day/night level: `songVariant` in
   `sound.test.mjs`; the composer's answer and `trackerNight` in `tracker.test.mjs`; placeholders in
   `music-studio.test.mjs`.
+  SND-5: a song also renders its intro (`intro`), a battle song its tense version (`tense`), a biome's song its arc
+  bands (`mid`, `late`) and a run's song its deadline version (`deadline`): sound.js `musicParts` names them, each
+  rendered as long as `trackerRecipe` makes it (109 fingerprints). To check a commit against the one before (not the
+  baseline), render the earlier commit's fingerprints in a worktree with `--baseline` and compare against those.
+  Full-check steps: "Run music" also expects each node's arc band and, on the deadline day, the deadline version;
+  "Battle music" (alone with `--steps="battle music"`, about 30 s) taps sound on in the run fixture, starts a wild
+  battle and the first mini-boss and reads `soundEngine.log` (the music's battle cues, in memory, never sent): the
+  song with its intro on the flash, the drums held, then in on the first throw (not the 8 s fallback), the mini-boss
+  on the leader song; "Run map music" (`--steps="run map music"`, about 20 s) sets today's forecast to storm, rain and
+  clear on the map tab and reads the low-pass each gives (a wrapper on `setTargetAtTime`). Unit tests:
+  `tracker.test.mjs` (the intro, the hold and `restart`, `trackerTense`, `trackerArc`, `counterAuto`,
+  `trackerDeadline`, `trackerRecipe`), `sound.test.mjs` (`musicBattleKind`, `musicRedZone`, `musicArcBand`, the
+  deadline, `musicWeatherCut`, `songVariant`'s order: battle tense; else deadline; else band then night).
+  `check-studio-github.py --only=music` also draws an intro note, plays wild on its intro and as wild@tense, and sets
+  an arc band's drums, all undone; it reads the where rules' places from the table.
   SND-3: the cry fingerprints are the 24 species by id (bezos0), as the game asks for them (they were the roster's
   names, which the game never passes). The Studio's **Music & sound** section: `python3 tools/check-studio-github.py
   --only=music` (about a minute) plays a song with a real click (the context running, the bar shown), changes its tempo
