@@ -45,6 +45,9 @@ is still to be pushed.
   moment you move), run (the ease out), walk past the lab door and the airship mast (the lean), a wild battle (the
   swoop, and your zoom kept after), a run's boss; Studio Engine > Camera guides and Play moment; Walk scenes > Camera
   zones; export the debug log (`camera`).
+- Merged `CAM` again at the end (main's island track, IS-1's orbit camera): CAM-2's aim points now go up the screen
+  along the orbit's direction, not north. After the merge: unit tests 643, lint, typecheck, modules, data; check-fast
+  25 of 25 (the orbit camera and Studio Hub island steps with CAM-2's, Tall ground 16.9 m and 18.0 degrees).
 - Next: the owner pushes `cam-2-done`; CAM-3 (the diorama blur) has its own session, waiting on this entry and the
   tag.
 
