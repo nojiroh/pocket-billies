@@ -131,7 +131,8 @@ Lint enforces what it can (see the end). Every old -> new name of phase 05 is in
 - `node tools/rename.mjs name|prefix|file|prop ... [--dry]`, then `node tools/rename.mjs verify --expect ...`: renames
   across the game, the Studio, the Node and Python tools and the current docs, and proves the syntax trees differ by
   the rename only. Read its header first.
-- `node tools/rename-data.mjs key|section ...` and its `verify`: a data key or section, with a JSON-level proof.
+- `node tools/rename-data.mjs key|section|value ...` and its `verify`: a data key, a section or a string value (an enum
+  word, where the selectors point), with a JSON-level proof.
 - `python3 tools/rename-strings.py`: the code names inside the Python tools' strings and comments (rename.mjs calls
   it).
 - `node tools/rename-ids.mjs map|apply|verify`: the location ids (the art named by an id moves with it).

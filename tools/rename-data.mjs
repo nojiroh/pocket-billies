@@ -2,11 +2,15 @@
 //
 //   node tools/rename-data.mjs key <selector> <old> <new> [--dry]   the key <old> of every object the selector finds
 //   node tools/rename-data.mjs section <old> <new> [--dry]          a top-level section (its file or folder too)
-//   node tools/rename-data.mjs verify key|section ... [--base <rev>]  the staged data (git add -A first) against <rev>
+//   node tools/rename-data.mjs value <selector>[,<selector>...] <old> <new> [--dry]
+//                                                                   the string value <old> where the selectors point
+//   node tools/rename-data.mjs verify key|section|value ... [--base <rev>]  the staged data (git add -A first) against <rev>
 //
 // A selector starts at a section and walks: .name (a key), .* (every value of an object), [] (every element of a
 // list). scenery.props.* is every prop of the catalogue, scenes.* every map, scenes.*.props[] every prop placed on a
-// map, route[] every location. A key keeps its place among its object's keys; the files are written as the game, the
+// map, route[] every location. In value mode the selector points at the values themselves: partKits.parts.*.slot is
+// every part's slot, partKits.socketRules.*[] every slot a socket rule lists; a value is renamed only where it is the
+// whole string, and never into a value already used there. A key keeps its place among its object's keys; the files are written as the game, the
 // Studio and the build write them (game/js/data-files.js). The code that reads the key is renamed with
 // tools/rename.mjs prop, in the same commit.
 import { execFileSync } from 'node:child_process';
@@ -66,6 +70,49 @@ function renameKey(D, sel, a, b) {
   return { objects: objs.length, renamed: n };
 }
 
+// every place (object or list, and its key or index) the selector points at
+function places(D, sel) {
+  let at = [[{ D }, 'D']];
+  for (const s of steps(sel)) {
+    const next = [];
+    for (const [o, k] of at) {
+      const v = o[k];
+      if (v === null || typeof v !== 'object') continue;
+      if (s === '.*') for (const kk of Object.keys(v)) next.push([v, Array.isArray(v) ? Number(kk) : kk]);
+      else if (s === '[]') {
+        if (Array.isArray(v)) v.forEach((_, i) => next.push([v, i]));
+      } else {
+        const kk = s.startsWith('.') ? s.slice(1) : s;
+        if (!Array.isArray(v) && Object.hasOwn(v, kk)) next.push([v, kk]);
+      }
+    }
+    at = next;
+  }
+  return at;
+}
+
+// renames the string value a to b wherever the selectors (comma-separated) point
+function renameValue(D, sels, a, b) {
+  const at = sels.split(',').flatMap(sel => places(D, sel));
+  if (at.some(([o, k]) => o[k] === b)) throw new Error(`${b} is already a value at ${sels}`);
+  let n = 0;
+  for (const [o, k] of at)
+    if (o[k] === a) {
+      o[k] = b;
+      n++;
+    }
+  return { places: at.length, renamed: n };
+}
+
+// how many strings anywhere in the data are exactly v (what a value rename left elsewhere)
+function countValue(v, x) {
+  if (x === v) return 1;
+  if (x === null || typeof x !== 'object') return 0;
+  let n = 0;
+  for (const y of Object.values(x)) n += countValue(v, y);
+  return n;
+}
+
 function renameSection(D, a, b) {
   if (!Object.hasOwn(D, a)) throw new Error(`no section ${a}`);
   if (Object.hasOwn(D, b)) throw new Error(`a section ${b} exists`);
@@ -119,13 +166,19 @@ function verify(rule, base) {
     if (!same(old, now)) throw new Error(`the data differs from ${base} in more than ${sel}: ${a} -> ${b}`);
     return `${r.renamed} of ${r.objects} objects at ${sel}: ${a} -> ${b}, nothing else changed`;
   }
+  if (kind === 'value') {
+    const [sel, a, b] = args;
+    const r = renameValue(old, sel, a, b);
+    if (!same(old, now)) throw new Error(`the data differs from ${base} in more than the value ${a} -> ${b} at ${sel}`);
+    return `${r.renamed} of ${r.places} places at ${sel}: ${a} -> ${b}, nothing else changed`;
+  }
   if (kind === 'section') {
     const [a, b] = args;
     renameSection(old, a, b);
     if (!same(old, now)) throw new Error(`the data differs from ${base} in more than the section ${a} -> ${b}`);
     return `section ${a} -> ${b}, nothing else changed`;
   }
-  throw new Error('verify key|section ...');
+  throw new Error('verify key|section|value ...');
 }
 
 function main(argv) {
@@ -142,12 +195,20 @@ function main(argv) {
     if (!r.renamed) throw new Error(`no object at ${rest[0]} has the key ${rest[1]} (${r.objects} objects there)`);
     const w = dry ? { wrote: '-', gone: '-' } : save(D);
     console.log(`${rest[1]} -> ${rest[2]} in ${r.renamed} of ${r.objects} objects at ${rest[0]}; ${w.wrote} file(s) written`);
+  } else if (cmd === 'value') {
+    if (rest.length !== 3) throw new Error('value <selector>[,<selector>...] <old> <new>');
+    const r = renameValue(D, ...rest);
+    if (!r.renamed) throw new Error(`no place at ${rest[0]} holds ${rest[1]} (${r.places} places there)`);
+    const left = countValue(rest[1], D);
+    const w = dry ? { wrote: '-', gone: '-' } : save(D);
+    console.log(`${rest[1]} -> ${rest[2]} in ${r.renamed} of ${r.places} places at ${rest[0]}; ${w.wrote} file(s) written`);
+    if (left) console.log(`note: ${left} other string(s) in the data are exactly ${rest[1]} (not renamed)`);
   } else if (cmd === 'section') {
     if (rest.length !== 2) throw new Error('section <old> <new>');
     renameSection(D, ...rest);
     const w = dry ? { wrote: '-', gone: '-' } : save(D);
     console.log(`section ${rest[0]} -> ${rest[1]}; ${w.wrote} file(s) written, ${w.gone} removed`);
-  } else throw new Error('usage: node tools/rename-data.mjs key|section|verify ... (see the top of the file)');
+  } else throw new Error('usage: node tools/rename-data.mjs key|section|value|verify ... (see the top of the file)');
 }
 
 try {
