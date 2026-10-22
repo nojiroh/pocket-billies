@@ -3,7 +3,7 @@
    Phase 20 (stage B): building the ground mesh and uploading its textures, moved from walk-view-gl.js as it was. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { freeNearRing, groundOcclusionTexture, provide, seaSkirt } from '../hooks.js';
+import { freeNearRing, groundOcclusionTexture, provide, seaCalmAt, seaSkirt } from '../hooks.js';
 import { clamp } from '../util.js';
 import { stepGridCorners } from '../logic/step-grid.js';
 import {
@@ -619,7 +619,10 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
     fi = [];
   T.falls = [];
   let wn = 0;
-  const sea = !!(sc.flatFar && !bare);
+  const sea = !!(sc.flatFar && !bare),
+    /* IS-3: a cove's calm rides in the kind (kind + calm * 0.4; the water shader takes it apart) */
+    cove = sea && (sc.zones || []).some(zn => zn && zn.k === 'cove'),
+    calmK = (kd, x, z) => (cove && WATER_KIND_LOOKS[kd].k === 'sea' ? seaCalmAt(sc, x, z) * 0.4 : 0);
   const stream = [],
     spring = [];
   for (let j = 0; j < H2; j++) {
@@ -681,7 +684,7 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
           fw[0],
           fw[1],
           dd / 4,
-          kd
+          kd + calmK(kd, vx, vz)
         );
       }
       wi.push(b0, b0 + 2, b0 + 1, b0 + 1, b0 + 2, b0 + 3);
@@ -768,7 +771,16 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
         ]) {
           const vx = i * 0.5 + a * 0.5,
             vz = j * 0.5 + c * 0.5;
-          wv.push(vx, run ? rawHeightAt(sc, vx, vz) + s0 - 0.12 : wy[nq], vz, 0, fw[0], fw[1], 0, wk[nq]);
+          wv.push(
+            vx,
+            run ? rawHeightAt(sc, vx, vz) + s0 - 0.12 : wy[nq],
+            vz,
+            0,
+            fw[0],
+            fw[1],
+            0,
+            wk[nq] + calmK(wk[nq], vx, vz)
+          );
         }
         wi.push(b0, b0 + 2, b0 + 1, b0 + 1, b0 + 2, b0 + 3);
       }
@@ -810,7 +822,7 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
       },
       S = seaSkirt(W, H, edgeDep),
       b0 = wv.length / 8;
-    for (let q = 0; q < S.x.length; q++) wv.push(S.x[q], y, S.z[q], 0, 0, 0, S.dep[q], kd);
+    for (let q = 0; q < S.x.length; q++) wv.push(S.x[q], y, S.z[q], 0, 0, 0, S.dep[q], kd + calmK(kd, S.x[q], S.z[q]));
     for (let m = 0; m < S.idx.length; m++) wi.push(b0 + S.idx[m]);
     T.seaSkirt = { level: y, rings: S.rings, n: S.n, out: S.o[S.o.length - 1] };
   }

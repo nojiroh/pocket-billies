@@ -4,6 +4,7 @@
    they were. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { seaCentre } from '../hooks.js';
 import { clamp } from '../util.js';
 import { valueNoise2d } from '../walk-view.js';
 import { engineSetting } from '../engine/settings.js';
@@ -242,6 +243,11 @@ export function setShoreUniforms(U, sc) {
   gl.bindSampler(5, null);
   gl.uniform1i(U.uShore, 5);
   gl.uniform3f(U.uShoreR, 1 / sc.w, 1 / sc.h, on ? 1 : 0);
+  /* island track IS-3: the sea all round: where its swell rolls in toward, and whether it is on */
+  if (U.uSea) {
+    const c = seaCentre(sc);
+    gl.uniform4f(U.uSea, c[0], c[1], sc.flatFar ? 1 : 0, 0);
+  }
 }
 function shoreAt(x, z) {
   const F = walkRenderer.shoreF;

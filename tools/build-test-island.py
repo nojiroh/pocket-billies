@@ -55,6 +55,8 @@ def test_map():
             {'k': 'mountain', 'poly': ring(FOOT, 16)},
             {'k': 'town', 'poly': [[50, 16], [70, 16], [70, 28], [50, 28]], 'lock': True},
             {'k': 'beach', 'poly': ring(COAST + 1, 7, 240, 300) + ring(RING - 1, 7, 300, 240)},
+            # IS-3: the east shore's water as a stand-in cove (zone only, no ground change): the sea is calm there
+            {'k': 'cove', 'poly': [[104, 44], [119.5, 44], [119.5, 76], [104, 76]]},
         ],
         'islandGen': {'v': 0, 'seed': 'test', 'dials': {}},
         'hub': [C, 30], 'exits': [],

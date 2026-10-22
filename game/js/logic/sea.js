@@ -17,9 +17,9 @@ expose({
   SEA_RAMP: [() => SEA_RAMP],
   SEA_RINGS: [() => SEA_RINGS],
   // @ts-expect-error -- replaced on purpose
-  seaCalmAt: [() => seaCalmAt, v => (seaCalmAt = v)],
+  seaCalmAt: [() => seaCalmAt, v => ((seaCalmAt = v), provide({ seaCalmAt }))],
   // @ts-expect-error -- replaced on purpose
-  seaCentre: [() => seaCentre, v => (seaCentre = v)],
+  seaCentre: [() => seaCentre, v => ((seaCentre = v), provide({ seaCentre }))],
   // @ts-expect-error -- replaced on purpose
   seaPolyDist: [() => seaPolyDist, v => (seaPolyDist = v)],
   // @ts-expect-error -- replaced on purpose
@@ -29,7 +29,7 @@ expose({
   seaSmooth: [() => seaSmooth],
 });
 /* eslint-enable no-func-assign */
-provide({ seaSkirt });
+provide({ seaCalmAt, seaCentre, seaSkirt });
 /* to-module: end */
 /** how far out each ring lies from the scene's edge, metres (the camera sees 420 m: the last ring is past the fog; close
    enough that the world's curve, worked out at each vertex, bends smoothly) */
