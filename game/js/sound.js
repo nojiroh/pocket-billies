@@ -30,6 +30,7 @@ import { soundLevel, soundLevels } from './audio/levels.js';
 expose({
   BIRD_CALLS: [() => BIRD_CALLS],
   JINGLES: [() => JINGLES],
+  LIVE_VOLUMES: [() => LIVE_VOLUMES],
   RARE_BIRDS: [() => RARE_BIRDS],
   SCALES: [() => SCALES],
   SONGS: [() => SONGS],
@@ -1173,10 +1174,11 @@ setInterval(() => {
     soundEffect('step', { ter });
   } catch (e) {}
 }, 50);
-/* volume sliders apply while you drag */
+/* volume sliders apply while you drag (SND-1: all five; Volume and Ambience only applied when you let go) */
+const LIVE_VOLUMES = ['master', 'music', 'sfx', 'world', 'amb'];
 document.addEventListener('input', ev => {
   const k = ev.target.dataset && ev.target.dataset.preference;
-  if (k !== 'music' && k !== 'sfx' && k !== 'world') return;
+  if (!LIVE_VOLUMES.includes(k)) return;
   saveData.preferences = saveData.preferences || {};
   saveData.preferences[k] = +ev.target.value / 100;
   applyVolumes();
