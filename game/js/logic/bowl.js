@@ -16,6 +16,7 @@ import { expose } from '../test-globals.js';
 expose({
   BOWL_GROUND_CELLS: [() => BOWL_GROUND_CELLS],
   BOWL_GROUND_EXTENT: [() => BOWL_GROUND_EXTENT],
+  BOWL_ISLE_RIM: [() => BOWL_ISLE_RIM],
   BOWL_RELIEF_DEFAULT: [() => BOWL_RELIEF_DEFAULT],
   BOWL_RELIEF_KINDS: [() => BOWL_RELIEF_KINDS],
   BOWL_RELIEF_MAX: [() => BOWL_RELIEF_MAX],
@@ -49,6 +50,8 @@ expose({
   bowlGroundGrid: [() => bowlGroundGrid, v => (bowlGroundGrid = v)],
   // @ts-expect-error -- replaced on purpose
   bowlHeight: [() => bowlHeight, v => (bowlHeight = v)],
+  // @ts-expect-error -- replaced on purpose
+  bowlIsles: [() => bowlIsles, v => (bowlIsles = v)],
   // @ts-expect-error -- replaced on purpose
   bowlPaintStroke: [() => bowlPaintStroke, v => (bowlPaintStroke = v)],
   // @ts-expect-error -- replaced on purpose
@@ -503,8 +506,11 @@ export const BOWL_SEA_DEPTH = 0.035;
 export const BOWL_SEA_RIM_LAND = 0.45;
 /** the sea's settings (worldmap.json sea): share before painting, floor depth, the rise towards the rim, coast
  * roughness and seed, brush strokes forcing land or sea
- * @typedef {{ share: number, depth: number, rimLand: number, rough: number, seed: number,
- *   paint?: { land: boolean, r: number, pts: [number, number][] }[] }} BowlSeaLook */
+ * @typedef {{ share: number, depth: number, rimLand: number, rough: number, seed: number, island?: number,
+ *   isles?: BowlIsle[], paint?: { land: boolean, r: number, pts: [number, number][] }[] }} BowlSeaLook */
+/** RL-8b: a round of land the sea leaves alone (bowl radii, seen from above) @typedef {{ x: number, y: number, r: number }} BowlIsle */
+/** RL-8b, an island world: past this far from the centre the sea always wins, so the land never reaches the rim */
+export const BOWL_ISLE_RIM = 0.86;
 /** @typedef {{ places: { x: number, y: number, reach: number }[], roads: [number, number, number, number][],
  *   opt?: BowlSeaLook }} BowlSeaInput */
 /** the land the sea must leave alone: each place with its walk map's half-diagonal (w, h in metres, BOWL_METRES to the
@@ -538,6 +544,9 @@ export function bowlCoastNoise(/** @type {number} */ x, /** @type {number} */ y)
 /** the coast on the ground's grid: per corner, below 0 land, above 0 sea, about BOWL_SEA_SHARE of the bowl at sea,
  * every place's ground and every road on land. How far a corner is from being land: its distance past the nearest
  * place's ground or road, plus the coast's noise; the line is then drawn at the share's quantile.
+ * RL-8b, an island world (sea.island above 0, or sea.isles given): no share and no rise toward the rim; the land is
+ * the places' ground, the roads and rounds of land (sea.isles, or one of radius sea.island round the places' middle),
+ * the coast where the distance past them plus the noise crosses 0, and the sea always past BOWL_ISLE_RIM.
  * Also how far each corner is past the nearest place's ground (dp, below 0 inside it).
  * @param {BowlSeaInput} S @param {number} n @returns {{ c: Float32Array, dp: Float32Array }} */
 export function bowlCoastGrid(S, n) {
@@ -556,7 +565,10 @@ export function bowlCoastGrid(S, n) {
     share = o ? o.share : BOWL_SEA_SHARE,
     rimLand = o ? o.rimLand : BOWL_SEA_RIM_LAND,
     rough = o ? o.rough : 1,
-    seed = o ? o.seed : 0;
+    seed = o ? o.seed : 0,
+    isles = bowlIsles(S),
+    I = Float64Array.from((isles || []).flatMap(b => [b.x, b.y, b.r])),
+    ni = I.length;
   let count = 0;
   for (let j = 0; j <= n; j++)
     for (let i = 0; i <= n; i++) {
@@ -583,8 +595,24 @@ export function bowlCoastGrid(S, n) {
         if (q < dr) dr = q;
       }
       dr = Math.sqrt(dr) - 0.022;
-      /* the land rises towards the rim, so the continent wraps round the sea and the sea stays inland */
-      const rr = Math.sqrt(x * x + y * y),
+      const rr = Math.sqrt(x * x + y * y);
+      let v;
+      if (isles) {
+        /* RL-8b: an island world: land within the rounds and round the places, sea toward the rim */
+        let di = 81;
+        for (let k = 0; k < ni; k += 3) {
+          const dx = x - I[k],
+            dy = y - I[k + 1],
+            q = Math.sqrt(dx * dx + dy * dy) - I[k + 2];
+          if (q < di) di = q;
+        }
+        v =
+          Math.min(dp, dr, di) +
+          0.02 +
+          bowlCoastNoise(x + seed * 3.17, y - seed * 1.93) * rough +
+          Math.max(0, rr - BOWL_ISLE_RIM) * 4;
+      } else
+        /* the land rises towards the rim, so the continent wraps round the sea and the sea stays inland */
         v =
           Math.min(dp, dr) +
           0.02 +
@@ -595,14 +623,26 @@ export function bowlCoastGrid(S, n) {
       dpg[j * w + i] = dp;
       if (x * x + y * y <= 1) inside[count++] = v;
     }
-  const sorted = inside.subarray(0, count).sort(),
-    T = sorted[Math.min(count - 1, Math.floor(count * (1 - share)))],
+  const sorted = isles ? null : inside.subarray(0, count).sort(),
+    T = sorted ? sorted[Math.min(count - 1, Math.floor(count * (1 - share)))] : 0,
     c = new Float32Array(w * w);
   for (let k = 0; k < w * w; k++) c[k] = raw[k] - T;
   /* brush strokes (the Studio's land and sea brush): the line is drawn first, so painting moves only what it touches */
   for (const st of (o && o.paint) || []) bowlPaintStroke(c, n, e, st);
   for (let k = 0; k < w * w; k++) c[k] = Math.min(c[k], keep[k] - 0.004);
   return { c, dp: dpg };
+}
+/** RL-8b: an island world's rounds of land (sea.isles as given, or one of radius sea.island round the middle of the
+ * places), null when the world isn't an island world @param {BowlSeaInput} S @returns {BowlIsle[] | null} */
+export function bowlIsles(S) {
+  const o = S.opt || null;
+  if (o && o.isles && o.isles.length) return o.isles;
+  const r = (o && o.island) || 0;
+  if (!(r > 0)) return null;
+  const n = S.places.length || 1,
+    x = S.places.reduce((a, p) => a + p.x, 0) / n,
+    y = S.places.reduce((a, p) => a + p.y, 0) / n;
+  return [{ x, y, r }];
 }
 /** one brush stroke on the coast: within r of its line land (below 0) or sea (above 0), softly at the edge
  * @param {Float32Array} c @param {number} n @param {number} e @param {{ land: boolean, r: number, pts: [number, number][] }} st */

@@ -52,6 +52,12 @@
      "minimum": 0,
      "maximum": 9999
     },
+    "island": {
+     "description": "RL-8b: above 0, the world is one island of this radius round the places' middle (bowl radii) and sea all the way to the rim; share and rimLand are then not used",
+     "type": "number",
+     "minimum": 0,
+     "maximum": 0.8
+    },
     "paint": {
      "description": "brush strokes forcing land or sea: points seen from above, bowl radii",
      "type": "array",

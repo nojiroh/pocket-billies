@@ -156,3 +156,74 @@ test('the brush makes land or sea where it paints, never over a place or a road'
   assert.ok(bowlCoastAt(base, sx, sy) > 0 && bowlCoastAt(g, sx, sy) < 0, 'painted land');
   assert.ok(bowlCoastAt(g, ...cl.xy) < 0, 'Copperleaf stays dry');
 });
+
+// RL-8b: an island world (sea.island, or sea.isles): the land is the places' ground and rounds of land, sea to the rim
+const landBodies = g => {
+  const w = g.n + 1,
+    seen = new Uint8Array(w * w),
+    sizes = [];
+  for (let k = 0; k < w * w; k++) {
+    if (g.c[k] >= 0 || seen[k]) continue;
+    let size = 0;
+    const todo = [k];
+    seen[k] = 1;
+    while (todo.length) {
+      const q = todo.pop(),
+        i = q % w,
+        j = (q - i) / w;
+      size++;
+      for (const [a, b] of [
+        [1, 0],
+        [-1, 0],
+        [0, 1],
+        [0, -1],
+      ]) {
+        const ii = i + a,
+          jj = j + b,
+          z = jj * w + ii;
+        if (ii < 0 || jj < 0 || ii > g.n || jj > g.n || seen[z] || g.c[z] >= 0) continue;
+        seen[z] = 1;
+        todo.push(z);
+      }
+    }
+    sizes.push(size);
+  }
+  return sizes.sort((a, b) => b - a);
+};
+const ISLAND = { ...BASE, rimLand: 0, rough: 0.8, island: 0.2 };
+
+test('an island world: one island round the places, sea all the way to the rim', () => {
+  const g = withSea(ISLAND),
+    land = 1 - seaShare(g),
+    bodies = landBodies(g),
+    cl = at(byId('copperleaf'));
+  assert.ok(land > 0.02 && land < 0.08, `land ${(land * 100).toFixed(1)}% of the bowl`);
+  assert.equal(bodies.length, 1, `${bodies.length} pieces of land`);
+  assert.ok(bowlCoastAt(g, ...cl.xy) < 0, 'Copperleaf is on it');
+  for (let k = 0; k < 360; k += 5) {
+    const a = (k * Math.PI) / 180;
+    assert.ok(bowlCoastAt(g, Math.cos(a) * 0.9, Math.sin(a) * 0.9) > 0, `land near the rim at ${k}°`);
+  }
+});
+
+test('an island world: the same settings make the same coast, another seed another', () => {
+  const a = withSea(ISLAND),
+    b = withSea(ISLAND),
+    c = withSea({ ...ISLAND, seed: 5 });
+  assert.deepEqual(a.c, b.c);
+  let moved = 0;
+  for (let k = 0; k < a.c.length; k++) if (a.c[k] > 0 !== c.c[k] > 0) moved++;
+  assert.ok(moved > 30, `another seed moves the coast (${moved} corners)`);
+});
+
+test('an island world from rounds of land: land in each, the places on land, the rest sea', () => {
+  const isles = [
+      { x: 0.5, y: -0.1, r: 0.12 },
+      { x: -0.5, y: 0.2, r: 0.1 },
+    ],
+    g = withSea({ ...BASE, rough: 0.5, isles });
+  for (const b of isles) assert.ok(bowlCoastAt(g, b.x, b.y) < 0, `no land at ${b.x},${b.y}`);
+  assert.ok(bowlCoastAt(g, ...at(byId('copperleaf')).xy) < 0, 'Copperleaf is on land');
+  assert.ok(bowlCoastAt(g, 0, -0.6) > 0, 'sea between');
+  assert.ok(landBodies(g).length >= 2, 'separate islands');
+});
