@@ -21,6 +21,7 @@ validation/quick/
 validation/rooms/
 validation/quick-baseline/
 validation/fast/
+validation/tall-ground/
 validation/ui-gallery-out/
 validation/sim/
 results.json
