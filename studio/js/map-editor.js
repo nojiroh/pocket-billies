@@ -7,6 +7,7 @@
 import { expose } from '../../game/js/test-globals.js';
 import {
   blocksToolBarHTML,
+  camZoneToolBarHTML,
   drawExtraTools,
   drawPropEditor,
   extraMapTools,
@@ -483,21 +484,23 @@ SECTIONS.scenes = () => {
           ? scatterToolBarHTML()
           : mapEditor.tool === 'stamp' && typeof blocksToolBarHTML === 'function'
             ? blocksToolBarHTML()
-            : mapEditor.tool === 'height'
-              ? `<div class="sc-hbar">${[
-                  ['raise', 'Raise'],
-                  ['lower', 'Lower'],
-                  ['smooth', 'Smooth'],
-                  ['flatten', 'Flatten'],
-                ]
-                  .map(
-                    ([k, n]) =>
-                      `<button class="seg ${mapEditor.hmode === k ? 'on' : ''}" data-act="scHMode" data-m="${k}">${n}</button>`
-                  )
-                  .join(
-                    ''
-                  )}<label class="mp-size"><span>Strength</span><input type="range" id="scHStr" min=".05" max=".8" step=".05" value="${mapEditor.hstr}"></label><button class="btn sm subtle" data-act="scHFlat">Make it all flat</button></div>`
-              : `<div class="sc-ters">${terr}</div>`
+            : mapEditor.tool === 'camzone' && typeof camZoneToolBarHTML === 'function'
+              ? camZoneToolBarHTML()
+              : mapEditor.tool === 'height'
+                ? `<div class="sc-hbar">${[
+                    ['raise', 'Raise'],
+                    ['lower', 'Lower'],
+                    ['smooth', 'Smooth'],
+                    ['flatten', 'Flatten'],
+                  ]
+                    .map(
+                      ([k, n]) =>
+                        `<button class="seg ${mapEditor.hmode === k ? 'on' : ''}" data-act="scHMode" data-m="${k}">${n}</button>`
+                    )
+                    .join(
+                      ''
+                    )}<label class="mp-size"><span>Strength</span><input type="range" id="scHStr" min=".05" max=".8" step=".05" value="${mapEditor.hstr}"></label><button class="btn sm subtle" data-act="scHFlat">Make it all flat</button></div>`
+                : `<div class="sc-ters">${terr}</div>`
   }
   <div class="sc-stage" id="scStage"><canvas id="scMap"></canvas></div>
   <p class="help" id="scHint">${mapToolHint()}</p>${mapEditor.tool === 'path' ? `<div class="seg-row"><button class="btn sm" data-act="scxSmoothPath">Smooth the path into a curve</button></div>` : ''}${selCard}`,
