@@ -304,7 +304,7 @@ export function updateTopBar() {
    save leaves everything unsaved; a picture painted or data edited during the send stays unsaved. */
 const SAVE_REPLACER = (k, v) => (k[0] === '_' && k.length > 1 ? undefined : v);
 /** Check's problems before a save: true to go on (none, or "Save anyway"); false opens the Check */
-async function checkBeforeSave() {
+export async function checkBeforeSave() {
   const errs = runCheck().filter(p => p.lvl === 'error');
   if (
     errs.length &&
@@ -321,7 +321,7 @@ async function checkBeforeSave() {
 }
 /** what a save will send, without marking anything saved: each unsaved picture with its version, the rigs' text, the
  * data's text (with meta.artVersion one up when pictures go too; the data itself changes only on confirm) */
-function stageChanges() {
+export function stageChanges() {
   const S = studioState,
     art = [...S.artDirty].map(([path, c]) => ({ path, c, ver: c._ver || 0 })),
     artVersion = art.length ? (S.D.meta.artVersion || 0) + 1 : null;
@@ -338,7 +338,7 @@ function stageChanges() {
   return { art, artVersion, dataText, rigsText: S.rigsDirty ? JSON.stringify(S.rigs) : null };
 }
 /** sends a stage through api(): pictures, rigs, data. Throws on the first failure (on GitHub nothing has left yet) */
-async function writeStaged(staged) {
+export async function writeStaged(staged) {
   for (const a of staged.art) {
     const blob = await new Promise(r => a.c.toBlob(r, a.path.endsWith('.webp') ? 'image/webp' : 'image/png', 0.85));
     if (!blob) throw new Error(`${a.path} could not be turned into a picture.`);
@@ -348,7 +348,7 @@ async function writeStaged(staged) {
   if (staged.dataText != null) await api('gamedata', { method: 'POST', body: staged.dataText });
 }
 /** after the server took a stage: marks saved what is still as it was sent */
-function confirmStaged(staged) {
+export function confirmStaged(staged) {
   const S = studioState;
   if (staged.artVersion != null) S.D.meta.artVersion = Math.max(S.D.meta.artVersion || 0, staged.artVersion);
   const ok = publishConfirm(staged, {
@@ -396,7 +396,7 @@ export function toast(t, k = '') {
   setTimeout(() => el.remove(), 3000);
 }
 /* phase 04d: github.js takes the GitHub route, connections.js redraws the links */
-export function setToast(v) {
+function setToast(v) {
   toast = v; // eslint-disable-line no-func-assign
   provide({ toast });
 }

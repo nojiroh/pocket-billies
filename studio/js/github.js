@@ -12,18 +12,20 @@
 import { expose } from '../../game/js/test-globals.js';
 import { $ } from '../../game/js/util.js';
 import { escapeHtml } from './game-stand-ins.js';
+import { publishEmpty } from '../../game/js/logic/publish-plan.js';
 import {
   ACTIONS,
   ask,
   boot,
+  checkBeforeSave,
+  confirmStaged,
   dialog,
-  saveAll,
   setApi,
   setSaveAll,
-  setToast,
+  stageChanges,
   studioState,
   toast,
-  updateTopBar,
+  writeStaged,
 } from './studio-app.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -333,9 +335,7 @@ async function studioApiViaGithub(path, opt = {}) {
   throw new Error('Unknown request.');
 }
 /* everything saved in one go: a branch, one commit, a pull request */
-async function proposeOnGithub(summary) {
-  const files = githubMode.batch;
-  githubMode.batch = null;
+async function proposeOnGithub(summary, files) {
   if (!files.length) return null;
   const base = await githubFetch(repoApiPath(`git/ref/heads/${GITHUB_CONFIG.branch}`)),
     baseSha = base.object.sha,
@@ -384,9 +384,25 @@ async function proposeOnGithub(summary) {
 /* the Studio's own api() and saveAll() take this route when it runs from GitHub */
 if (githubMode.on) {
   setApi(studioApiViaGithub);
-  const save0 = saveAll;
+  /* Studio plan Phase 0: one proposal at a time, from the summary to the answer. Staging and the batch are built
+     whole before anything is sent (an error there sends nothing); unsaved marks are cleared only after GitHub opened
+     the pull request, and only for what is still as it was sent */
+  let proposing = false;
   setSaveAll(async function () {
-    if ($('#saveBtn').disabled) return;
+    const btn = $('#saveBtn');
+    if (proposing || btn.disabled) return;
+    proposing = true;
+    btn.disabled = true;
+    try {
+      await proposeChanges(btn);
+    } finally {
+      proposing = false;
+      githubMode.batch = null;
+      btn.textContent = 'Propose changes';
+      btn.disabled = false;
+    }
+  });
+  const proposeChanges = async btn => {
     const what = await dialog(
       'Propose these changes',
       '<label class="fld"><span>What did you change? (the owner sees this)</span><input type="text" id="ghSum" maxlength="90" placeholder="New props in Copperleaf, brighter lamps"></label>',
@@ -400,43 +416,32 @@ if (githubMode.on) {
       ]
     );
     if (!what) return;
-    githubMode.batch = [];
-    const t0 = toast;
-    let pr = null,
-      err = null;
-    setToast((t, k) => {
-      if (k === 'err') t0(t, k);
-    });
-    let none = false;
+    if (!(await checkBeforeSave())) return;
+    const staged = stageChanges();
+    if (publishEmpty(staged)) return toast('Nothing to send: everything is as it is in the game.');
+    let pr = null;
     try {
-      await save0();
-      none = !(githubMode.batch && githubMode.batch.length);
-      if (!none) {
-        $('#saveBtn').textContent = 'Sending…';
-        pr = await proposeOnGithub(what);
-      }
-    } catch (e) {
-      err = e;
-    } finally {
-      setToast(t0);
+      githubMode.batch = [];
+      await writeStaged(staged);
+      const files = githubMode.batch;
       githubMode.batch = null;
-      $('#saveBtn').textContent = 'Propose changes';
-      $('#saveBtn').disabled = false;
+      btn.textContent = 'Sending…';
+      pr = await proposeOnGithub(what, files);
+    } catch (e) {
+      return toast(
+        `Couldn’t send the changes: ${e.message}. Nothing was lost: everything is still unsaved, so Propose again.`,
+        'err'
+      );
     }
-    if (err) {
-      studioState.dirty = true;
-      updateTopBar();
-      return toast('Couldn’t send the changes: ' + err.message, 'err');
-    }
-    if (pr) {
+    confirmStaged(staged);
+    if (pr)
       await dialog(
         'Sent for approval',
         `<p>Your changes are pull request <b>#${pr.number}</b>. They go into the game when ${escapeHtml(GITHUB_CONFIG.owner)} merges it. Until then the Studio (and the game) show the game as it is now.</p><p><a href="${escapeHtml(pr.html_url)}" target="_blank" rel="noopener">Open the pull request on GitHub</a></p>`,
         [{ l: 'OK', c: 'primary', v: 1 }]
       );
-    } else if (none && !(studioState.dirty || studioState.rigsDirty || studioState.artDirty.size))
-      toast('Nothing to send: everything is as it is in the game.');
-  });
+    else toast('Nothing to send: everything is as it is in the game.');
+  };
   /* the Studio waits for sign-in before it loads anything */
   const boot0 = boot;
   removeEventListener('load', boot);
