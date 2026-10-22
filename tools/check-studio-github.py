@@ -32,7 +32,7 @@ proposal at the end must carry uiTheme.json with it.
                                                                  # (step names: STEPS below)
 
 Needs Python 3 and Playwright (tools/requirements-check.txt). About a minute."""
-import json, re, sys, threading, time
+import json, re, subprocess, sys, threading, time
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -985,6 +985,64 @@ def studio_test_steps(pg, errs):
     print(f"studio test: {len(r['sections'])} sections, {edits} edits undone, {len(r['findings'])} findings, {r['seconds']} s", flush=True)
 
 
+# Studio plan T2.2: the same seed's run as the game's own start makes it in Node (tools/test/setup-real.mjs, the
+# logic on the game's data), each node as type:biome, with no unlocks and with all of them
+RUN_LAB_NODE = """import { GAME_DATA as D, modules } from './tools/test/setup-real.mjs';
+const U = { unlocks: D.unlocks, buildings: D.buildings }, out = {};
+for (const [k, ids] of [['none', []], ['all', Object.keys(D.unlocks)]]) {
+  const un = modules.unlocks.runUnlocks({ meta: { unlocks: Object.fromEntries(ids.map(i => [i, 1])) } }, U);
+  const p = modules['run-start'].runStartPlan('LABCHECK7', { nodeTypes: D.nodeTypes, biomes: D.biomes, rules: D.rules.run, unlockData: U }, { unlocks: un });
+  out[k] = p.map.nodes.map(n => n.type + ':' + n.biome);
+}
+console.log(JSON.stringify(out));"""
+
+
+def run_lab_steps(pg, errs):
+    """Studio plan T2.2: the Run Lab draws the game's own run start. A typed seed's map equals, node for node, the one
+    the game's logic makes in Node on the same data, with no unlocks and with all; an edit elsewhere (nodeTypes) redraws
+    it within 100 ms; a node's click shows its seed; beside the loaded data shows the loaded map too."""
+    n = len(errs)
+    tree = ROOT if (ROOT / 'tools/test/setup-real.mjs').is_file() else REPO  # the served tree's data, when it has the loader
+    r = subprocess.run(['node', '--input-type=module', '-e', RUN_LAB_NODE], cwd=tree, capture_output=True, text=True)
+    try: want = json.loads(r.stdout.strip().splitlines()[-1])
+    except Exception: errs.append(f'run lab: the Node run start failed: {r.stderr[-400:]}'); return
+    pg.evaluate("void openSection('runlab')")
+    pg.wait_for_selector('#rlSeed', timeout=20000)
+    got = lambda: pg.evaluate("[...(document.querySelector('#main .rl-map')||{querySelectorAll:()=>[]}).querySelectorAll('.rl-node')].map(g=>g.dataset.type+':'+g.dataset.biome)")
+    def settle(before):
+        t0 = time.time()
+        while time.time() - t0 < 5 and got() == before: time.sleep(0.05)
+        return got()
+    first = got()
+    pg.fill('#rlSeed', 'LABCHECK7')
+    none = settle(first)
+    if none != want['none']: errs.append(f"run lab: seed LABCHECK7 with no unlocks drew {none}, the game's start makes {want['none']}")
+    pg.select_option('#rlUnlocks', 'all')
+    every = settle(none) if want['all'] != want['none'] else got()
+    if every != want['all']: errs.append(f"run lab: with all unlocks it drew {every}, the game's start makes {want['all']}")
+    # an edit made elsewhere (a field of another section) redraws the map: no route weight, so no routes
+    ms = pg.evaluate("""(async()=>{const T=studioState.D.nodeTypes,was=T.route.weight;T.route.weight=0;
+      const f=document.createElement('input');f.dataset.p='nodeTypes.route.weight';document.body.appendChild(f);
+      const before=document.querySelector('#main .rl-figures').textContent,t0=performance.now();
+      f.dispatchEvent(new Event('input',{bubbles:true}));
+      while(document.querySelector('#main .rl-figures').textContent===before&&performance.now()-t0<2000)await new Promise(r=>setTimeout(r,5));
+      const ms=performance.now()-t0;window.__rlRoutes=document.querySelectorAll('#main .rl-map .rl-node[data-type=route]').length;
+      T.route.weight=was;f.dispatchEvent(new Event('input',{bubbles:true}));f.remove();return ms})()""")
+    routes = pg.evaluate('window.__rlRoutes')
+    if ms > 100 or routes: errs.append(f'run lab: a nodeTypes edit (no route weight) redrew in {ms:.0f} ms with {routes} routes (want under 100 ms and none)')
+    time.sleep(0.2)
+    pg.click('#main .rl-node[data-i="3"]')
+    info = pg.evaluate("(document.querySelector('#main .rl-node-info')||{}).textContent||''")
+    if 'LABCHECK7|n3' not in info: errs.append(f'run lab: clicking node 3 did not show its seed ({info[:120]!r})')
+    pg.check('#rlBeside')
+    t0 = time.time()
+    while time.time() - t0 < 5 and pg.evaluate("document.querySelectorAll('#main .rl-map').length") < 2: time.sleep(0.05)
+    if pg.evaluate("document.querySelectorAll('#main .rl-map').length") != 2: errs.append('run lab: beside the loaded data did not draw a second map')
+    pg.uncheck('#rlBeside')
+    if len(errs) > n: errs[n:] = [f'run lab: {e}' if not e.startswith('run lab') else e for e in errs[n:]]
+    else: print(f"run lab: LABCHECK7 drawn as the game makes it ({len(want['none'])} places, no unlocks and all), a nodeTypes edit redrawn in {ms:.0f} ms, node 3's seed, beside the loaded data", flush=True)
+
+
 # the steps after sign-in, in order (--only picks some by name; 'sections' and 'art' are the two blocks in main)
 STEPS = [
     ('story', story_steps),
@@ -1001,6 +1059,7 @@ STEPS = [
     ('ui_tools', ui_tools_steps),
     ('ui_screens', ui_screens_steps),
     ('studio_test', studio_test_steps),
+    ('run_lab', run_lab_steps),
 ]
 
 
