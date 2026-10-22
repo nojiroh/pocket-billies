@@ -223,7 +223,8 @@ async function runBowlMapTest() {
       if (!g.shadow || !g.shadow.t) return { ok: false, note: 'no shadow map (the ground is lit without shadows)' };
       if (!g.lines) return { ok: false, note: "the routes' line map is missing" };
       const n = (g.G.rivers || []).length;
-      if (n < (g.isle ? 1 : 4)) return { ok: false, note: `only ${n} rivers` };
+      /* IS-7: the hub's island drawn from its map has its own streams, none made on it */
+      if (n < (g.islandMap ? 0 : g.isle ? 1 : 4)) return { ok: false, note: `only ${n} rivers` };
       return `shadow map drawn in ${g.shadow.ms} ms; route and river lines made in ${g.lines.ms} ms; ${n} rivers`;
     });
     await step('Clouds and weather', async () => {

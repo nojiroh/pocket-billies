@@ -73,6 +73,7 @@ import {
   bowlPropClass,
   bowlTreeStyle,
 } from './logic/bowl-things.js';
+import { bowlHasCoast, bowlIslandHeights, bowlIslandMapId, bowlIslandPlotThings } from './logic/bowl-island.js';
 import { isLiteMap, loadMapFile } from './map-files.js';
 import { escapeHtml, reducedMotion, saveData, uiState } from './game-state.js';
 import { frameCount, frameStop, frameTask } from './frame-scheduler.js';
@@ -131,10 +132,13 @@ expose({
   worldBowlFallNow: [() => worldBowlFallNow, v => (worldBowlFallNow = v)],
   worldBowlFilm: [() => worldBowlFilm, v => (worldBowlFilm = v)],
   worldBowlGpu: [() => worldBowlGpu, v => (worldBowlGpu = v)],
+  worldBowlIslandLoad: [() => worldBowlIslandLoad, v => (worldBowlIslandLoad = v)],
   worldBowlLightMatrix: [() => worldBowlLightMatrix, v => (worldBowlLightMatrix = v)],
   worldBowlLine: [() => worldBowlLine, v => (worldBowlLine = v)],
   worldBowlLineMap: [() => worldBowlLineMap, v => (worldBowlLineMap = v)],
   worldBowlLock: [() => worldBowlLock, v => (worldBowlLock = v)],
+  worldBowlMapId: [() => worldBowlMapId, v => (worldBowlMapId = v)],
+  worldBowlMapOf: [() => worldBowlMapOf, v => (worldBowlMapOf = v)],
   worldBowlMesh: [() => worldBowlMesh, v => (worldBowlMesh = v)],
   worldBowlModelShape: [() => worldBowlModelShape, v => (worldBowlModelShape = v)],
   worldBowlOverlay: [() => worldBowlOverlay, v => (worldBowlOverlay = v)],
@@ -452,6 +456,29 @@ function worldMapLook() {
     seed: W.seed || 0,
   };
 }
+/* IS-7: the walk map the bowl draws for place i: its own, or for the hub the map holding its island
+   (logic/bowl-island.js bowlIslandMapId, by its fields); its id, and the map itself */
+function worldBowlMapId(i) {
+  return bowlIslandMapId(LOCATIONS, i, (gameData && gameData.maps) || {});
+}
+function worldBowlMapOf(i) {
+  const id = worldBowlMapId(i);
+  return (id && gameData.maps && gameData.maps[id]) || null;
+}
+/* IS-7: an island map still lite (its outline only) is fetched once; when it is in, the ground is worked out again
+   with its heights */
+function worldBowlIslandLoad(i) {
+  const id = worldBowlMapId(i),
+    M = id && gameData.maps && gameData.maps[id];
+  if (!M || !bowlHasCoast(M) || bowlIslandHeights(M) || worldBowl.islandLoading === id) return;
+  if (typeof isLiteMap !== 'function' || !isLiteMap(id)) return;
+  worldBowl.islandLoading = id;
+  loadMapFile(id)
+    .catch(() => {})
+    .then(() => {
+      if (bowlIslandHeights(gameData.maps[id])) worldBowlReset();
+    });
+}
 /* where a place is on the bowl: x, y seen from above and the ground's height there */
 export function worldMapSpot(i) {
   return worldBowlSpots()[i] || { x: 0, y: 0, h: 0, under: 0 };
@@ -512,13 +539,19 @@ function worldBowlSpots() {
     sea = bowlSeaInput(
       LOCATIONS,
       ROADS.map(r => [r[0], r[1]]),
-      l => (gameData.maps && gameData.maps[l.mapId]) || null,
+      l => worldBowlMapOf(LOCATIONS.indexOf(l)),
       BOWL_METRES,
-      look.sea
+      look.sea,
+      /* IS-7: an island map's own heights, once its file is in */
+      l => {
+        const M = worldBowlMapOf(LOCATIONS.indexOf(l));
+        return bowlHasCoast(M) ? bowlIslandHeights(M) : null;
+      }
     ),
     F = bowlReliefFeatures(LOCATIONS, look.relief, look.seed),
     G = bowlGroundGrid(F, undefined, sea);
   bowlCamUseGround(G);
+  LOCATIONS.forEach((l, i) => worldBowlIslandLoad(i));
   const byId = id => LOCATION_BY_ID[id];
   worldBowl.spots = LOCATIONS.map(l => {
     const s = bowlSpotOf(l, byId),
@@ -535,6 +568,11 @@ function worldBowlSpots() {
     seaMs: Math.round(performance.now() - t0),
     /* RL-8b: an island world (the hub's island, a run's own land): sea to the rim, few rivers */
     isle: !!bowlIsles(sea),
+    /* IS-7: the island map drawn from its own coast and ground (its streams are its own: no rivers made on it) */
+    islandMap:
+      (sea.places.some(p => p.poly) &&
+        LOCATIONS.map((l, i) => worldBowlMapId(i)).find(id => bowlHasCoast(gameData.maps[id]))) ||
+      null,
   };
   return worldBowl.spots;
 }
@@ -784,7 +822,7 @@ function worldBowlLineMap() {
   /* each place's own ground (its walk map, turned), where its own paths take over up close */
   LOCATIONS.forEach((l, i) => {
     const s = S[i],
-      m = gameData.maps && gameData.maps[l.mapId];
+      m = worldBowlMapOf(i);
     if (!s || s.under || s.off || !m) return;
     const half = Math.min(m.w, m.h) / 2 / BOWL_METRES,
       i0 = Math.max(0, Math.floor(((s.x - half + 1) / 2) * M)),
@@ -1041,13 +1079,15 @@ function worldBowlModelShape(path) {
 function worldBowlThingsOfPlace(W, i) {
   const l = LOCATIONS[i],
     s = worldBowl.spots[i],
-    M = l && gameData.maps && gameData.maps[l.mapId],
+    M = l && worldBowlMapOf(i),
+    own = (l && gameData.maps && gameData.maps[l.mapId]) || M,
     A = (gameData.scenery && gameData.scenery.props) || {};
   if (!M || !M.props || s.under || s.off) return false;
   const k = BOWL_THING_SCALE / BOWL_METRES,
     { north, east } = bowlCompass(s.x, s.y, s.up),
     base = (x, y) => bowlToGpu(x, y, worldBowlSkyFloor(x, y)),
-    lm = bowlLandmarkPick(l, M, A);
+    /* the landmark from the place's own map (Copperleaf's oak until IS-5 moves the town onto its island) */
+    lm = bowlLandmarkPick(l, own && own.props ? own : M, A);
   if (lm && A[lm.k] && A[lm.k].img) W.stand.push({ i, k: lm.k, x: s.x, y: s.y, g: 0, s: lm.s || 1 });
   let n = 0;
   for (const p of M.props) {
@@ -1088,6 +1128,31 @@ function worldBowlThingsOfPlace(W, i) {
       ]);
     } else if (art && art.img) W.stand.push({ i, k: p.k, x, y, g: 1, s: p.s || 1 });
   }
+  /* IS-7: an island map's plots no building stands on yet get one of their kind, turned to face where the plot does */
+  for (const t of bowlIslandPlotThings(M, p => bowlPropClass(p.k, A[p.k]) === 'building')) {
+    const art = A[t.k];
+    if (!art || !art.model || !/\.json$/.test(art.model)) continue;
+    const [x, y] = bowlMapPoint(s, M, t.x, t.z, BOWL_METRES);
+    if (Math.hypot(x, y) > 0.99) continue;
+    const a = (t.turn * Math.PI) / 180,
+      ca = Math.cos(a),
+      sa = Math.sin(a),
+      key = 'm:' + art.model;
+    W.models.add(art.model);
+    n++;
+    (W.inst[key] = W.inst[key] || []).push([
+      ...base(x, y),
+      k,
+      ca * east[0] + sa * north[0],
+      ca * east[1] + sa * north[1],
+      ca * north[0] - sa * east[0],
+      ca * north[1] - sa * east[1],
+      1,
+      0.05 + ((0.9 * (((Math.sin(x * 9137.1 + y * 5711.3) * 43758.5) % 1) + 1)) % 1),
+      0,
+      0,
+    ]);
+  }
   W.counts[i] = n;
   return true;
 }
@@ -1099,7 +1164,7 @@ function worldBowlClumpsInto(W) {
     roads = [];
   LOCATIONS.forEach((l, i) => {
     const s = S[i],
-      m = gameData.maps && gameData.maps[l.mapId];
+      m = worldBowlMapOf(i);
     if (s && !s.under && !s.off)
       places.push({
         x: s.x,
@@ -1404,7 +1469,7 @@ function worldBowlRoadsInto(T) {
 function worldBowlStampMap(T, i) {
   const l = LOCATIONS[i],
     s = worldBowl.spots[i],
-    M = l && gameData.maps && gameData.maps[l.mapId];
+    M = l && worldBowlMapOf(i);
   if (!M || !M.tiles || !M.tiles.length || s.under || s.off || T.stamped.has(i)) return false;
   T.stamped.add(i);
   const N = BOWL_INDEX,
@@ -1416,7 +1481,10 @@ function worldBowlStampMap(T, i) {
     i1 = Math.min(N - 1, Math.ceil(((s.x + half + 1) / 2) * N)),
     j0 = Math.max(0, Math.floor(((1 - (s.y + half)) / 2) * N)),
     j1 = Math.min(N - 1, Math.ceil(((1 - (s.y - half)) / 2) * N)),
-    L = T.K.layer;
+    L = T.K.layer,
+    /* IS-7: an island map only where the bowl has its land: its own sea squares would show through the water as a
+       box round it */
+    G = bowlHasCoast(M) && worldBowl.ground ? worldBowl.ground.G : null;
   for (let j = j0; j <= j1; j++)
     for (let ii = i0; ii <= i1; ii++) {
       const x = -1 + ((ii + 0.5) / N) * 2 - s.x,
@@ -1424,6 +1492,7 @@ function worldBowlStampMap(T, i) {
         mx = (x * east[0] + y * east[1]) * BOWL_METRES + w / 2,
         mz = (x * north[0] + y * north[1]) * BOWL_METRES + h / 2;
       if (mx < 0 || mz < 0 || mx >= w || mz >= h) continue;
+      if (G && bowlCoastAt(G, x + s.x, y + s.y) > 0) continue;
       const ch = (M.tiles[h - 1 - Math.floor(mz)] || '')[Math.floor(mx)],
         t = L[ch];
       if (t != null) T.idx[j * N + ii] = t;
@@ -1436,7 +1505,7 @@ function worldBowlStampMaps(T) {
   if (T.loading) return;
   for (let i = 0; i < LOCATIONS.length; i++) {
     if (T.stamped.has(i) || worldBowl.spots[i].under || worldBowl.spots[i].off) continue;
-    const id = LOCATIONS[i].mapId;
+    const id = worldBowlMapId(i);
     if (!id || !gameData.maps[id]) {
       T.stamped.add(i);
       continue;
