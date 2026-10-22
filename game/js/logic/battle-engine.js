@@ -967,10 +967,21 @@ export function makeAlpha(sp, lvl, o = {}) {
   m.hp = maxHp(m);
   return m;
 }
-export function startWild(q) {
-  const o = { build: encounterBuild(q), coat: q.coat },
-    foe = q.alpha ? makeAlpha(q.sp, q.lvl, o) : makeBilly(q.sp, q.lvl, o);
-  if (!newBattle('wild', [foe], { qid: q.id, area: battleStageKey(), fmt: q.alpha ? 'alpha' : 'single' })) return;
+/** a wild Billie's battle. Studio plan T3.2: `o.host` and `o.extra` (a run battle's seed, weather and Loopholes:
+ * logic/run-loop.js runBattleExtra) as for startTrainer, so the run's simulation starts it as the page does */
+export function startWild(q, o = {}) {
+  const made = { build: encounterBuild(q), coat: q.coat },
+    foe = q.alpha ? makeAlpha(q.sp, q.lvl, made) : makeBilly(q.sp, q.lvl, made);
+  if (
+    !newBattle('wild', [foe], {
+      qid: q.id,
+      area: battleStageKey(),
+      fmt: q.alpha ? 'alpha' : 'single',
+      ...(o.host && { host: o.host }),
+      ...o.extra,
+    })
+  )
+    return;
   const nm = SPECIES[q.sp].name;
   if (q.alpha) {
     battleSay(`An Alpha ${coatPrefix(q.coat)}${nm} rose out of the grass!`, { k: 'wild', alpha: 1 });
@@ -1006,6 +1017,9 @@ export function startTrainer(id, o = {}) {
       area: BATTLE_STAGES[/** @type {string} */ (T.battleStage)] ? T.battleStage : battleStageKey(),
       fmt: T.alpha ? 'alpha' : dbl ? 'double' : 'single',
       ...(o.host && { host: o.host }),
+      /* Studio plan T3.2: a run battle's seed, weather and Loopholes given with a host (the run's simulation; the
+         page's own run battles get them from run.js runBattleStart) */
+      ...o.extra,
     })
   )
     return;

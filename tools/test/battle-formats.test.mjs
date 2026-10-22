@@ -3,7 +3,7 @@
 // a move and a target by hand, catching.
 import assert from 'node:assert/strict';
 import { beforeEach, test } from 'node:test';
-import { data, fn, hooks, reseed, startedSave } from './setup-real.mjs';
+import { data, fn, hooks, logic, reseed, startedSave } from './setup-real.mjs';
 
 const { DEX_ORDER, MOVES, RULES, SPECIES, TRAINERS } = data;
 const liveActors = fn('liveActors'),
@@ -105,4 +105,29 @@ test('phase 08: your buddy gets the full XP of a win even when it sat out; the r
   assert.ok(got[0] > 0, 'the fighter got nothing');
   assert.equal(got[2], got[0], `the buddy got ${got[2]}, the fighter ${got[0]}`);
   assert.equal(got[1], Math.floor(got[0] * RULES.progression.teamXpShare));
+});
+
+test("a battle's start takes a host and the run's extras (seed, weather, Loopholes), trainer and wild alike", () => {
+  const SILENT = logic.SILENT_HOST;
+  teamOfThree();
+  const tid = Object.keys(TRAINERS).find(k => TRAINERS[k].market && TRAINERS[k].team.length) || doubleTrainer(),
+    wx = { m: { Fire: 1.5 } },
+    fx = [{ kind: 'money', mult: 2, src: 'x' }];
+  fn('startTrainer')(tid, { host: SILENT, extra: { seed: 'T3SEED', wx, fx } });
+  let B = hooks.activeBattle;
+  assert.equal(B.host, SILENT);
+  assert.equal(B.seed, 'T3SEED');
+  assert.equal(B.wx, wx);
+  assert.equal(B.fx, fx);
+  if (TRAINERS[tid].market) assert.ok(B.market, 'its market opens the battle');
+  hooks.provide({ activeBattle: null });
+  const sp = Object.keys(SPECIES).find(k => SPECIES[k].stage === 0 && !RULES.start.starters.includes(SPECIES[k].line)),
+    q = { id: 'wildx', sp, lvl: 5, no: 2 };
+  fn('encountersHere')().push(q);
+  fn('startWild')(q, { host: SILENT, extra: { seed: 'T3WILD', wx } });
+  B = hooks.activeBattle;
+  assert.equal(B.host, SILENT);
+  assert.equal(B.seed, 'T3WILD');
+  assert.equal(B.wx, wx);
+  assert.equal(B.fmt, 'single');
 });
