@@ -6,7 +6,7 @@
     python3 tools/check-sound.py --only=meadow,victory   # only these songs, jingles or cries
 
 It opens the game page in a headless browser and renders, through an OfflineAudioContext, 8 bars of every song (by day,
-and at night with the pad), every jingle and every species' cry, through the game's own sound code: initSound builds
+and at night: the night version once the game has them (SND-4), with the pad), every jingle and every species' cry, through the game's own sound code: initSound builds
 its buses on the offline context (a stand-in AudioContext hands it over), then the song, jingle or cry is asked for as
 the game asks for it. Math.random is seeded for each render (the drums' noise uses it), and the context's clock is
 held still while the notes are scheduled, so one tick schedules all 8 bars. Each render is written as the loudness (RMS)
@@ -35,7 +35,11 @@ RENDER = r"""async ({jobs, rate, win}) => {
     Math.random = () => { seed |= 0; seed = (seed + 0x6d2b79f5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
       t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
     let len = 1, spb = 0;
-    if (kind === 'song') { const D = songs[name]; spb = 60 / D.bpm / 4; len = 0.08 + D.prog.length * 16 * spb + 1.5; }
+    /* SND-4: at night the game asks for the song's night version (sound.js musicVariant), which can be slower: the
+       render is as long as the recipe that plays (tracker.js trackerNight) */
+    const play = kind === 'song' && night && typeof musicVariant === 'function' ? musicVariant(name, 1) : name;
+    if (kind === 'song') { const D = play !== name ? trackerNight(songs[name]) : songs[name];
+      spb = 60 / D.bpm / 4; len = 0.08 + D.prog.length * 16 * spb + 1.5; }
     else if (kind === 'jingle') { len = 0.05 + jingles[name].reduce((a, [, l]) => a + l, 0) * 60 / 150 / 4 + 1.2; }
     const oc = new OfflineAudioContext(1, Math.ceil(len * rate), rate);
     let now = 0;
@@ -48,8 +52,8 @@ RENDER = r"""async ({jobs, rate, win}) => {
     try {
       if (!initSound()) throw new Error('initSound failed on the offline context');
       if (kind === 'song') {
-        music(name);
-        if (!E.song) throw new Error('no song started for ' + name);
+        music(play);
+        if (!E.song) throw new Error('no song started for ' + play);
         now = 0.08 + (E.song.D.steps - 0.5) * spb - 0.14;
         if (typeof musicTick === 'function') musicTick(); else E.tracker.tick();
       } else if (kind === 'jingle') jingle(jingles[name]);
