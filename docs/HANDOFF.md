@@ -27,8 +27,8 @@ patch; grass patches in runs now.
   one has a patch across, 4-6 patches, 15-70 m² (median 43), every exit reached, no trap. In the page (run fixture
   landing): 241 encounter spots, all in patches, up to 55 m from the middle; its 4 wild Billies all in patches; a 1.2 m
   drop hops and puffs, no errors. check-fast 16 of 16 after the art fix and again after the grass work.
-- **Not verified**: smoke had 2 timeouts (the in-game full test, the Studio's screenshot) while the fast check ran
-  alongside on the same machine; see the PR for the re-run alone. The full quick check was not run.
+- Smoke: 2 timeouts (the in-game full test, the Studio's screenshot) while the fast check ran alongside on the same
+  machine; run alone, no problems (176 s). **Not verified**: the full quick check was not run.
 - Risky:
   - Much less tall grass: about 220 m² a scene (was 770) and 80 grass props (was 315); 517 props a scene (was 755).
     Cheaper on the phone; the land may look barer. The dial's floor (3 patches) and sizes are `MAPGEN_GRASS_PATCH`.
