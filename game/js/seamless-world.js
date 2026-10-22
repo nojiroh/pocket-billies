@@ -1744,6 +1744,15 @@ export function shiftWalkView(id, dx, dz) {
     if (walkRenderer.swoop) {
       walkRenderer.swoop.x += dx;
       walkRenderer.swoop.z += dz;
+      /* CAM-2: where you and the encounter were */
+      for (const [kx, kz] of [
+        ['px', 'pz'],
+        ['ex', 'ez'],
+      ])
+        if (walkRenderer.swoop[kx] != null) {
+          walkRenderer.swoop[kx] += dx;
+          walkRenderer.swoop[kz] += dz;
+        }
     }
     if (walkRenderer.focusT) {
       walkRenderer.focusT.x += dx;

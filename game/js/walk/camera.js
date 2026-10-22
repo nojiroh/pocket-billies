@@ -159,13 +159,25 @@ export function walkCamera(rw, rh, st, dt) {
       rz = Rr[1] + Rr[3] * 0.55;
     goals.push({ id: 'room', w: 1, blend: 0.15, at: [rx + (P.x - rx) * 0.25, rz + (P.z - rz) * 0.15] });
   }
-  if (walkRenderer.swoop)
-    goals.push({
-      id: 'swoop',
-      w: 1,
-      blend: 0.15,
-      at: [walkRenderer.swoop.x, walkRenderer.swoop.z + (rw > rh ? 1 : 0.5)],
-    });
+  const visW = Math.min(sc.w * 0.95, Math.max(11, (rw / rh) * 15)) / ((c.fov || 1) * set('fov')),
+    half = visW / 2;
+  /* CAM-2: the encounter shot: aims between you and the spot and zooms in (Engine > Camera > Encounter zoom), but
+     never so far that you and the spot don't both fit */
+  const S = walkRenderer.swoop;
+  if (S) {
+    let zs = S.zoom ?? 1;
+    if (S.ex != null && zs < 1) {
+      const need = (Math.hypot(S.ex - S.px, S.ez - S.pz) + 2.5) / 0.7 / visW;
+      zs = Math.min(1, Math.max(zs, need / Math.max(0.1, walkRenderer.zoom)));
+    }
+    goals.push({ id: 'swoop', w: 1, blend: 0.15, at: [S.x, S.z + (rw > rh ? 1 : 0.5)], zoom: zs });
+  }
+  /* CAM-2: after a battle the camera starts close and pulls back out (it was a jump of the zoom, v31) */
+  if (walkRenderer.leaveAt != null) {
+    const w = Math.exp(-Math.max(0, walkView.t - walkRenderer.leaveAt) / 200);
+    if (w < 1e-3 || snap) walkRenderer.leaveAt = null;
+    else goals.push({ id: 'leave', w, blend: 0, zoom: set('leaveZoom') });
+  }
   const G = blendGoals(fol, goals, dt, set('blend'), snap);
   /* CAM-2: one zoom (your pinch times the goals') drives the tilt, distance and field of view along their curves */
   const zoomEff = clamp(walkRenderer.zoom * G.zoom, 0.3, Math.max(1, set('zoomMax')) * 1.25),
@@ -200,8 +212,6 @@ export function walkCamera(rw, rh, st, dt) {
   const occ = walkRenderer.occT,
     pitch = ((pitchDeg0 + occ) * Math.PI) / 180;
   if (riseMax) df *= 1 - 0.15 * Math.min(1, occ / riseMax);
-  const visW = Math.min(sc.w * 0.95, Math.max(11, (rw / rh) * 15)) / ((c.fov || 1) * set('fov')),
-    half = visW / 2;
   /* the aim: you and the look-ahead, kept inside the scene, a little up the screen; pulled toward the goals' points */
   let gx = P.x + lead[0],
     gz = P.z + lead[1];
@@ -235,6 +245,8 @@ export function walkCamera(rw, rh, st, dt) {
     dt
   );
   const T = (walkRenderer.camT = [fol.x, fol.z, fol.y]);
+  /* CAM-2: the encounter shot has arrived once the swoop is in full and the camera is on its aim */
+  if (S) S.arrived = (fol.w.swoop ?? 0) >= 0.95 && Math.hypot(T[0] - gx, T[1] - gz) < 0.2;
   /* CAM-1: what the camera is doing, for the debug log and the Studio's guides */
   walkRenderer.camInfo = {
     mode: freeCameraOn() ? 'free' : walkRenderer.swoop ? 'swoop' : sc.room ? 'room' : sc.indoor ? 'indoor' : 'walk',

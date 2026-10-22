@@ -28,6 +28,8 @@ export const walkRenderer = {
   /* CAM-1: the camera's follow (logic/camera-follow.js) and what it is doing (the debug log, the Studio's guides) */
   fol: null,
   camInfo: null,
+  /* CAM-2: when a battle let go of the camera (walkView.t), for the pull back out */
+  leaveAt: null,
   focus: null,
   focusT: null,
   frames: 0,
