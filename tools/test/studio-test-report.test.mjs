@@ -75,14 +75,25 @@ test('the undo copy is reported once for every edit, from the slowest, and the f
   });
   const r = report({
     sections: [section('moves', { edit: edit(120, 6.5) }), section('types', { edit: edit(80, 6.5) })],
-    undo: { max: 80, snapMB: 6.5, fullMB: 520 },
+    undo: { max: 80, snapMB: 6.5, lastMB: 13, edits: 2, stepsMB: 507, fullMB: 520 },
   });
   const f = studioTestFindings(r);
   const copy = f.filter(x => x.area === 'every edit');
   assert.equal(copy.length, 1);
   assert.match(copy[0].text, /6\.5 MB\) in up to 120 ms/);
-  assert.equal(f[0].area, 'undo', 'the full undo (high) comes first');
-  assert.match(f[0].text, /about 520 MB when full \(80 steps of 6\.5 MB/);
+  assert.equal(f[0].area, 'undo', 'the undo (high) comes first');
+  assert.equal(
+    f[0].text,
+    'The undo holds 520 MB after the test’s 2 edits: the data once (13 MB) and what each edit changed (507 MB)'
+  );
+});
+
+test('the undo as measured: under its limit, nothing to look at', () => {
+  const r = report({ undo: { max: 80, snapMB: 2.7, lastMB: 5.4, edits: 14, stepsMB: 1.2, fullMB: 6.6 } });
+  assert.deepEqual(
+    studioTestFindings(r).filter(x => x.area === 'undo'),
+    []
+  );
 });
 
 test('errors and data that did not come back come before everything else', () => {
@@ -145,7 +156,7 @@ test('metrics name each number the same way in every run', () => {
   const m = studioTestMetrics(report());
   assert.equal(m['moves opens (ms)'], 40);
   assert.equal(m['types frame p95 (ms)'], 18);
-  assert.equal(m['undo when full (MB)'], 80);
+  assert.equal(m['undo after the edits (MB)'], 80);
   assert.ok(!('moves beside (ms)' in m), 'a section that does not open beside has no number for it');
 });
 

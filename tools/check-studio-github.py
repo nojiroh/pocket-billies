@@ -986,6 +986,10 @@ def studio_test_steps(pg, errs):
     if pg.evaluate("studioProbe.on !== null || studioProbe.running"): errs.append('studio test: the probe was left on')
     edits = sum(1 for s in r['sections'] if s.get('edit'))
     print(f"studio test: {len(r['sections'])} sections, {edits} edits undone, {len(r['findings'])} findings, {r['seconds']} s", flush=True)
+    U = r.get('undo') or {}
+    big = sorted((s for s in r['sections'] if s.get('edit') and s['edit'].get('stepBytes')), key=lambda s: -s['edit']['stepBytes'])[:3]
+    print(f"studio test: the undo holds {U.get('fullMB')} MB after {U.get('edits')} edits (the data once {U.get('lastMB')} MB, the steps {U.get('stepsMB')} MB; biggest: "
+          + ', '.join(f"{s['id']} {s['edit']['path']} {s['edit']['stepBytes'] / 1e3:.0f} kB" for s in big) + ')', flush=True)
     # Studio plan T1.2: the undo holds only the parts an edit changed, and puts back only those
     u = pg.evaluate("""(() => {
       const S = studioState, ids = Object.keys(S.D.maps), id = ids[0], before = {};

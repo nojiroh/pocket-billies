@@ -92,6 +92,11 @@ test('bytes: 2 a character for data, the pixels for art; a data step only counts
   assert.equal(H.historyBytes(a, 'data'), 0);
   assert.equal(H.historyPartsBytes(new Map([['ab', 'cde']])), 10);
   assert.equal(H.historyPartsBytes(null), 0);
+  /* as the browser stores them: 1 byte a character unless a character is past U+00FF */
+  assert.equal(H.historyBytes(s, 'data', true), 8);
+  assert.equal(H.historyPartsBytes(new Map([['ab', 'cdé']]), true), 5);
+  assert.equal(H.historyPartsBytes(new Map([['ab', 'c—e']]), true), 2 + 6);
+  assert.equal(H.historyBytes({ parts: { x: ['“a”', null] } }, undefined, true), 6);
 });
 
 test('art and data steps come back in the order they were made', () => {
