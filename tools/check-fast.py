@@ -14,7 +14,7 @@ with their places); a run's world (RL-7) opens on its landing, its places on the
 at the next node a day later; a battle plays to the end; a save round-trips; the Studio loads; the exported debug
 log holds no names; the world map opens as the bowl, a tap opens a card, Home comes back; every screen opens with its parts (UI-5);
 on tall ground (TR-3, the mountains fixture) the camera rises, rock fades and the player's silhouette is drawn, and
-none of it on flat ground. The page is small (400x300) with every costly graphics dial
+none of it on flat ground; the Lab's unlock board (RL-11) grants, sells and keeps. The page is small (400x300) with every costly graphics dial
 off before it loads; nothing waits a fixed time, only for frames or the game's state. No pictures are taken.
 
 Graphics are not judged here: software drawing can't. The game's own graphics test (Settings → Help) is for a person
@@ -433,6 +433,38 @@ def ranch(pg, base):
     return f'Train paid {R["trainCost"]} Scrap each; a level’s time: Lv {first} → {first + 1}; a whole bank from Lv {last} stopped at the cap ({cap}); the clock turned back gained nothing; a reload kept it'
 
 
+def lab(pg, base):
+    """RL-11: the lab fixture stands in Copperleaf after a run (500 Capital, 60 Scrap, 2 Seals, one run ended). The
+    first milestone was granted on load; the bottom bar's Lab tab opens the board with every row; a board row bought
+    pays its Capital; the ranch's sheet sells Ranch Lv 2 for Scrap (its slots rise); the mast's sheet sells Airship Lv 2
+    for a Seal and then offers the ridge lands; a run would carry the shop unlock; a reload (?fixture=stored) keeps it all"""
+    if not until(pg, "typeof saveData!=='undefined'&&!!saveData.meta.unlocks.first_run&&walkView.ready", 60): raise Exception(f'no first milestone on load: {pg.evaluate("JSON.stringify(saveData.meta)")}')
+    if pg.evaluate("saveData.meta.scrap") != 70: raise Exception(f'the milestone paid {pg.evaluate("saveData.meta.scrap") - 60} Scrap, not 10')
+    pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();0")
+    if not pg.evaluate(nav_tap('lab')): raise Exception('no Lab tab in the bottom bar')
+    if not until(pg, "!!document.querySelector('.s-lab')", 10): raise Exception('the Lab tab didn’t open the board')
+    rows, want = pg.evaluate("[document.querySelectorAll('.s-lab .lab-row').length,Object.keys(UNLOCK_DATA.unlocks).length]")
+    if rows != want: raise Exception(f'the board shows {rows} rows of {want}')
+    cost = pg.evaluate("UNLOCK_DATA.unlocks.shop_bailout.cost")
+    pg.click(".s-lab [data-a=lab-buy][data-k=shop_bailout]")
+    st = pg.evaluate("[saveData.meta.capital,!!saveData.meta.unlocks.shop_bailout]")
+    if st != [500 - cost, True]: raise Exception(f'buying Revives: Capital and owned {st}')
+    pg.evaluate("uiState.tab='walk';render();uiState.modal=null;uiState.mq=[];ranchOpen();0")
+    pg.click("#ov .ranch-sheet [data-a=lab-buy][data-k=ranch_2]")
+    st = pg.evaluate("[saveData.meta.scrap,ranchLevel(saveData),ranchSlots(saveData,RULES.ranch),uiState.modal&&uiState.modal.title]")
+    if st[:3] != [70 - pg.evaluate("UNLOCK_DATA.unlocks.ranch_2.cost"), 2, pg.evaluate("RULES.ranch.slots[1]")] or 'Lv 2' not in (st[3] or ''): raise Exception(f'Ranch Lv 2: Scrap, level, slots, title {st}')
+    pg.evaluate("uiState.modal=null;uiState.mq=[];flyMenu(walkView.sc.props.find(q=>q.act==='fly'));0")
+    pg.click("#ov .fly-sheet [data-a=lab-buy][data-k=airship_2]")
+    if not until(pg, "saveData.meta.seals===1&&!!document.querySelector('#ov .fly-sheet [data-k=biome_ridge]:not([disabled])')", 10): raise Exception('Airship Lv 2 didn’t open the ridge lands on the mast’s sheet')
+    if pg.evaluate("runUnlocks(saveData,UNLOCK_DATA).join()") != 'shop_bailout': raise Exception('a run wouldn’t carry the shop unlock')
+    keep = pg.evaluate("JSON.stringify(saveData.meta)")
+    pg.goto(base + '/index.html?fixture=stored')
+    if not until(pg, "typeof saveData!=='undefined'&&!!saveData.meta&&!document.getElementById('loader')", 90): raise Exception('the reload never booted')
+    back = pg.evaluate("JSON.stringify(saveData.meta)")
+    if back != keep: raise Exception(f'after a reload {back}, not {keep}')
+    return f'the first milestone on load (+10 Scrap); {rows} rows on the board; Revives for {cost} Capital; Ranch Lv 2 (3 slots); Airship Lv 2 opened the ridge lands; a reload kept it'
+
+
 def save_round_trip(pg, base):
     """the save written in this browser comes back whole after a reload (under the fixture's own key)"""
     drawing(pg, 1)
@@ -575,6 +607,7 @@ PAGES = [   # (what the page opens, its checks in order); the longest first, so 
               ('The world map opens as the bowl', bowl_map)]),
     ('room', [('A room opens and draws (the lab)', room), ('A save round-trips', save_round_trip)]),
     ('ranch', [('The ranch trains: Train, a level with time, the cap, a clock turned back, a reload (RL-9)', ranch)]),
+    ('lab', [('The Lab: a milestone on load, the board, buying at the Lab, the ranch and the mast, a reload (RL-11)', lab)]),
     ('battle', [('A battle plays to the end', battle)]),
     ('run', [("A run's world: the landing, its places on the bowl, a seam walked a day later", run_world),
              ("A run town's shop opens (UI-5)", run_shop)]),

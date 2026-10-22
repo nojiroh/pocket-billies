@@ -141,7 +141,7 @@ export function renderLabBoard() {
 }
 /** a sold row bought from a screen (the board, the ranch, the mast): paid, granted, saved; true when it was bought
  * @param {string} id */
-function labBuy(id) {
+export function labBuy(id) {
   const R = UNLOCK_DATA.unlocks[id];
   if (!R) return false;
   const why = unlockReady(saveData, id, UNLOCK_DATA);
