@@ -292,15 +292,25 @@ def bowl_map(pg, base):
 def island(pg, base):
     """island track IS-0: the island fixture opens test_island (the island contract's fields: cam.orbit, island,
     zones, islandGen, a sea edge) and draws; you stand on open ground; its walking checks hold (the top and the north
-    side reachable, the sea not)"""
+    side reachable, the sea not). IS-3: the sea skirt reaches the horizon at the sea's level; it draws from 8 angles"""
     if not until(pg, "typeof walkView!=='undefined'&&walkView.ready&&walkView.id==='test_island'", 90): raise Exception(f'not on the test island: {pg.evaluate("typeof walkView!==\'undefined\'&&walkView.id")}')
     drawing(pg)
     if not pg.evaluate("!!(walkView.sc.cam&&walkView.sc.cam.orbit&&walkView.sc.island&&walkView.sc.zones&&walkView.sc.islandGen)"): raise Exception('the island contract fields didn’t reach the scene')
     res = pg.evaluate("testMapChecks('test_island')")
     bad = [r['what'] for r in res if not r['ok']]
     if bad: raise Exception('walking checks failed: ' + '; '.join(bad))
+    # IS-3: the sea all round: one skirt out to the horizon at the sea's level, and the scene draws looking in from
+    # over the sea at 8 angles round the island (the Studio's free camera hook, so the walk camera is left alone)
+    sk = pg.evaluate("walkRenderer.seaSkirt&&{out:walkRenderer.seaSkirt.out,rings:walkRenderer.seaSkirt.rings,level:walkRenderer.seaSkirt.level}")
+    if not sk or sk['out'] < 380: raise Exception(f'no sea skirt out to the horizon: {sk}')
+    if abs(sk['level'] - pg.evaluate("walkRenderer.wlevel")) > 0.05: raise Exception(f"the skirt lies at {sk['level']}, the sea at {pg.evaluate('walkRenderer.wlevel')}")
+    for k in range(8):
+        f = pg.evaluate("walkRenderer.frames")
+        pg.evaluate(f"(()=>{{const a={k}*Math.PI/4;walkView.opt.look=()=>({{eye:[60-Math.sin(a)*75,30,60-Math.cos(a)*75],tgt:[60-Math.sin(a)*20,0,60-Math.cos(a)*20],fov:60}})}})()")
+        if not until(pg, f"walkRenderer.frames>{f}+2", 20): raise Exception(f'stopped drawing looking in from {k * 45} degrees')
+    pg.evaluate("delete walkView.opt.look")
     orbit = island_orbit(pg)
-    return f'test_island drew {pg.evaluate("walkRenderer.frames")} frames; {len(res)} walking checks hold; {orbit}'
+    return f'test_island drew {pg.evaluate("walkRenderer.frames")} frames; {len(res)} walking checks hold; the sea skirt has {sk["rings"]} rings out to {sk["out"]:.0f} m and draws from 8 angles; {orbit}'
 
 
 # IS-1: the camera's yaw (0 looking north) and the wrapped difference between two angles, in the page

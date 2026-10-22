@@ -68,6 +68,107 @@ the coast hand-editable.
 - Next: IS-6b once IS-2 lands (the dials beside logic/hub-island.js; "Use this island" refused while locked: the
   check is `hubGroundLocked`). Tag `is-6a-done` is the owner's.
 
+### Island track IS-4 - Island props (phase 09 batch 11's barn folded in) - 2026-10-22
+Branch `claude/is-4-island-props`, from the IS-0 branch `claude/new-session-3qlesh` (PR #119, not merged yet; the
+owner asked to start wave 1 before `is-0-done`). PR against main; its diff shrinks once #119 merges. Wave 1 beside
+IS-1, IS-2, IS-3 and IS-6a. Plan approved in Plan Mode as proposed (defaults 1-5 taken). This session owns the prop
+data and art; no map but the showcase is touched.
+- Changed (one cause per commit; tools/build-props-island.py, rerunnable, in steps `new barn scree forest`):
+  - **New props**, every one finished on every side for the orbit camera: pasture `fence_gate` (matches
+    `fence_wood`, 2.2 m), `water_trough`, `hay_round`, `hay_feeder`; beach `driftwood` (3 shapes as variants),
+    `shore_rocks` (3), `tidepool_rim`, `beach_grass` (flat on purpose: 4 forms, sways) and `shells` (a ground decal,
+    3 forms); cove `fishing_boat` (moored: `bob`) and `net_rack`; mountain `boulder_granite` (3), `cairn`,
+    `summit_lookout` (a stone platform with a rail, scope, flag and bench; a landmark); `forest_litter` (a ground
+    decal, 3 forms). Tags `island` plus their place. Each model's fallback picture is **baked from the model** by the
+    builder (a small rasterizer, scene/next/island/*.png): seen from the front and above, cel-lit, outlined.
+  - **The barn** (batch 11's) as a model under its key, batch 7's way: the House kit with a **gambrel** roof, red
+    board walls, braced sliding doors, the hay loft door and its hoist, a lamp, a weather vane, side windows, a back
+    door, a loft window, a woodpile under a lean-to. Its five looks are colour swaps; `room: int_barn`, the door at the
+    big doors, name and tags kept; footprint 5.5 x 4.1 m (was 5.4 x 4).
+  - **Swapped in** as models under their keys: `scree` (base and four forms) and `log_mossy`, `stump_mossy`; their
+    old pictures stay the fallbacks. **Golden scenes remade on purpose**: scree moves the props hash of `feature`
+    and `terraced` (only that part; a model's placement keeps its size, `s`).
+  - **Showcase** `test_props_island` (64 x 58 m): sea and a walkable pier (a `bridges` entry, `pier: 1`) to the south,
+    the beach, a fenced paddock with the gate, the barn three times (a look and a turned one), a mountain corner and
+    forest floor; seven `shots`; `cam.orbit` set for IS-1's camera.
+- Where the plan was wrong or short:
+  - Many of the track's "new" props already were models: `fence_wood` and its post, `haybale`, `rowboat`,
+    `dock_post`, `buoy`, rocks, `boulder_lichen`, `stone_wall`, `waystone`, `log`, `stump`. Reused, not duplicated.
+  - **The walkable dock is a map field**, not a prop: `bridges` with `pier: 1` (Copperleaf's wood bridge is one).
+    IS-5/IS-9 place the island's; the showcase has one.
+  - **The barn's old `build` plan said a gable**; its picture is a gambrel. The model follows the picture.
+  - A roof made by the kit's 4-sided cone has closed ends: the gable's loft door and window go on the roof's end face,
+    as the kit's gableF does, or the roof hides them.
+  - `lookout_tower` stays batch 11's; the summit has its own prop.
+- Verified: unit tests 567 (2 golden scenes remade on purpose); lint, typecheck, check:modules, format:check,
+  check:data (144 files); a full rerun of the builder writes nothing; check-fast 22 of 22; smoke no problems. Headless
+  pictures (390 x 760, low graphics) of the showcase at 8 camera turns a full circle (the free camera) and close-ups
+  of the barn (front, both sides, back, a look, turned), the boats and pier, the paddock, the lookout, beach,
+  mountain and forest; Copperleaf's barn in the town. No page errors.
+- Risky:
+  - Triangles (from the builder's mesh): barn ~3,400, fishing boat ~3,700, net rack ~1,600, lookout ~1,400, the rest
+    under 1,000 (scree 230-360). Not measured on a phone; IS-9 measures.
+  - Scree is placed widely on runs (ridge, snow, canyon): every placement is a model now. Small, but many.
+  - The baked pictures are a flat-lit approximation (rocks without their lumps); they show only with models off or
+    as the far view of a neighbouring scene.
+  - The fishing boat bobs (`bob` 0.09) on water tiles only; on land it sits still.
+  - The barn's footprint grew 0.1 m each way; Copperleaf's barn has room round it (checked in the picture).
+- Not run: the full quick check's picture compare (CI makes its baseline); the new map's `shots` join it.
+- Phone check wanted: `?test=1&scene=test_props_island` (turn the camera round the barn, the boats, the lookout);
+  Copperleaf's barn and its door into the ranch; a run with a ridge node (scree); export the debug log.
+- Next: IS-5 places these on `copperleaf_island` (the barn in its zone, the pier at the cove); IS-8 the pasture with
+  `fence_wood` and `fence_gate`; batch 11's remaining list: boulder_mossy, campfire, lookout_tower, wind_sail_flower
+  and the rooms' 20 furniture props. Tag `is-4-done` is the owner's to push.
+
+### Island track IS-3 - Sea all round - 2026-10-22
+Branch `claude/is-3-sea-all-round`, from IS-0's `claude/new-session-3qlesh` (PR #119, not merged yet; started before
+`is-0-done` at the owner's word). Wave 1, beside IS-1 (camera.js), IS-2 (generator), IS-4 (props), IS-6a (Studio).
+Plan approved in Plan Mode as proposed. Owns water and sky: touched no camera, mapgen, Studio or world-bowl code.
+- Changed (one cause per commit):
+  - **logic/sea.js** (new, on the page): `seaSkirt` (rings round the scene out to 400 m, the inner ring on the edge
+    every half metre with rounded corners), `seaRamp` (the edge's water depth to the open sea's over 25 m),
+    `seaCentre` (`island.c`, else `cam.orbit.c`, else the middle), `seaCalmAt` (a `cove` zone's calm, soft 6 m edge).
+  - **The skirt** (walk/ground-mesh.js, the `flatFar` block): the four quads 90 m out became one ring mesh at the
+    sea's level along the edge (the commonest edge water level, not a hard -0.12), its first ring as deep as the
+    scene's water beside it; the scene's edge vertices count the edge cell twice instead of nothing (they were half
+    as deep: part of the seam). Opaque past the 8 m border of land. ~23k vertices on test_island (23 rings x 992).
+  - **No far props on a `flatFar` map** (grass-build.js): the trees scattered past the edge stood on the sea.
+  - **The bowl's far wall** (sky shader only): outline averaged over 5 texels (no stair steps), a soft top, its foot
+    hazed into the horizon.
+  - **The coast** (water shader, uniform `uSea` from water-data.js `setShoreUniforms`, so the ground shader has it
+    too): whitecaps and a long swell roll in toward `seaCentre` from every side (they were stretched along x, streaks
+    from the east and west); surf lines over the shallows breaking on the whole coast; a bigger swash; wet sand above
+    the line on the same clock; past 140 m no fish, rings or caustics (cost). A cove's calm rides in the vertex's
+    kind (kind + calm * 0.4; `int(k + .5)` still gives the kind; the shader takes the rest apart). Only K = sea on a
+    `flatFar` map changes; other maps' water is as it was.
+  - **test_island**: a stand-in `cove` zone over the east shore's water (zone only, no ground change), via
+    tools/build-test-island.py.
+  - **check-fast island step**: the skirt reaches 400 m at the sea's level; draws from 8 angles through the free
+    camera hook (`walkView.opt.look`). Planted fault (no skirt) seen to fail.
+- Where the plan was wrong or short:
+  - The "turquoise band" from above was the scene's own shallow edge water, not land: the seam was depth, as planned,
+    plus the half-depth edge vertices (new).
+  - Step 3's extra fade of the far sea into the sky wasn't needed: the fog already takes it to the haze by 400 m
+    with no edge; only the cheap far path went in.
+  - The bowl wall's colour is the far bowl's own (phase 10), a pale cream; I softened it, didn't recolour it.
+  - With full graphics the sky looking south washes white (bloom and glare into the 12:30 sun): direction dependent,
+    so it belongs to the sun question (3) of IS-1, not changed here. The diagonal glints on the sea are the existing
+    glint pattern, not the whitecaps.
+- Verified: unit tests 572 (5 new: no gap at 48 angles out to 400 m, the inner ring on the edge, the depth at the
+  edge and by 25 m, the triangles' turn, calm); lint, typecheck, check:modules, format:check, check:data (143 files);
+  check-fast 22 of 22; smoke before the shader work and at the end; headless pictures at 390 x 760 from S, E, N, W, SE,
+  low S, three outward views and three coast close-ups, before and after (in the PR).
+- Risky:
+  - Phone cost: the skirt covers much of the screen when looking out; its far fragments skip the small things, but
+    the reflection sample and fog remain. Needs the frame times on the phone (`?fixture=island`).
+  - `gamedata.js` is generated (`npm run data`); a stale one hides data changes in local pictures.
+  - The calm-in-the-kind trick: anything new that reads the water mesh's kind must round, not truncate.
+  - Every `flatFar` map gets the new sea: test_island, five legacy maps, Studio-made coast scenes. Runs don't use the
+    coast biome.
+- Not run: the full quick check's picture compare (its baseline is made by CI).
+- Next: switch the pictures to `copperleaf_island` when IS-2 lands (its real cove gets the calm from its zone); IS-1's
+  sun choice (question 3) decides the backlit side. Tag `is-3-done` is the owner's to push.
+
 ### Island track IS-1 - Orbit camera - 2026-10-22
 Branch `claude/is-1-orbit-camera`, from IS-0's `claude/new-session-3qlesh` (PR #119, not merged yet: the owner started
 wave 1 before `is-0-done`); the PR goes against main and shrinks once #119 merges. Ran beside IS-2, IS-3, IS-4 and IS-6a.
