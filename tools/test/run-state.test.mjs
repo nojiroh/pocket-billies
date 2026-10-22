@@ -84,6 +84,8 @@ test('run: the load check refuses broken or tampered runs', () => {
   assert.equal(validRun({ ...ok, map: { nodes: MAP.nodes.map(n => ({ ...n, seen: 2, biome: 'meadow' })) } }), true);
   assert.equal(validRun({ ...ok, at: { phase: 'payout', battle: -1, won: 1 } }), true);
   assert.equal(validRun({ ...ok, at: { phase: 'battle', battle: 3, foe: FOE } }), true);
+  assert.equal(validRun({ ...ok, unlocks: ['biome_ridge', 'shop_bailout'] }), true, 'RL-11: the run’s copy');
+  assert.equal(validRun({ ...ok, unlocks: [] }), true);
   const bad = [
     null,
     [],
@@ -106,6 +108,9 @@ test('run: the load check refuses broken or tampered runs', () => {
     { ...ok, at: { phase: 'battle', battle: 0, foe: { ...FOE, team: [{ sp: 'sparky0', lvl: 0 }] } } },
     { ...ok, at: { phase: 'battle', battle: 0, foe: { ...FOE, tid: 'Not An Id' } } },
     { ...ok, at: { phase: 'battle', battle: 0, foe: { ...FOE, hp: 9 } } },
+    { ...ok, unlocks: 'shop_bailout' }, // RL-11: a list
+    { ...ok, unlocks: ['Not An Id'] },
+    { ...ok, unlocks: Array(201).fill('a') },
     { ...ok, clock: 0 },
     { ...ok, forecast: [['sun'], 'rain'] },
     { ...ok, forecast: Array(7).fill([]) }, // more nodes than the map has

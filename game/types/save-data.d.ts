@@ -195,6 +195,9 @@ export interface Run {
   released: { sp: SpeciesId; lvl: number }[];
   /** the one-time hints already shown */
   hints: Record<string, 1>;
+  /** RL-11: the shop and biome unlocks (unlocks.json ids) the run started with: its shops and map read this copy, so
+   * the same seed and copy make the same run. None on a run started before RL-11 (everything open) */
+  unlocks?: string[];
 }
 
 /** the player's travel: where you are, and the locations still ahead (the gold arrows' guide) */
