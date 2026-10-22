@@ -53,6 +53,37 @@ test("a place's own song when it is a song; else the place is a city, a town or 
   assert.equal(pick(out({})), 'route');
 });
 
+// the owner's mapping (2026-10-22): today's eleven biomes onto the seven biome songs
+const BIOME_SONGS = {
+  meadow: 'meadow',
+  thicket: 'spore',
+  jungle: 'spore',
+  lake: 'trench',
+  sea: 'trench',
+  canyon: 'hills',
+  badlands: 'hills',
+  volcano: 'innersun',
+  tundra: 'crystal',
+  ridge: 'crystal',
+  autumn: 'spire',
+};
+const BIOMES = JSON.parse(readFileSync(new URL('../../game/data/biomes.json', import.meta.url), 'utf8'));
+
+test("a run: a route, mini-boss or boss node plays its biome's song; a town node town; the landing route", () => {
+  assert.deepEqual(Object.keys(BIOME_SONGS).sort(), Object.keys(BIOMES).sort());
+  for (const [biome, song] of Object.entries(BIOME_SONGS))
+    for (const nodeType of ['route', 'miniboss', 'boss'])
+      assert.equal(pick(out({ nodeType, biome, row: 3 })), song, `${nodeType} in ${biome}`);
+  // a run's town is a town place too (locations' town flag); the node type alone already picks town
+  assert.equal(pick(out({ nodeType: 'town', biome: 'lake', placeKind: 'town' })), 'town');
+  assert.equal(pick(out({ nodeType: 'town', biome: 'lake' })), 'town');
+  assert.equal(pick(out({ nodeType: 'landing', biome: 'meadow' })), 'route');
+  // a battle, the map tab and a room still win over the biome
+  assert.equal(pick(out({ nodeType: 'route', biome: 'lake', battle: 'wild' })), 'wild');
+  assert.equal(pick(out({ nodeType: 'route', biome: 'lake', tab: 'map' })), 'map');
+  assert.equal(pick(out({ nodeType: 'route', biome: 'lake', indoor: true })), 'cave');
+});
+
 test('every song a rule names is a song, and the last rule always matches', () => {
   for (const W of MUSIC.where) if (W.song !== '$place') assert.ok(MUSIC.songs[W.song], W.song);
   const last = MUSIC.where[MUSIC.where.length - 1];

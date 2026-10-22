@@ -197,7 +197,9 @@ function musicState() {
     battle = B ? (B.kind === 'trainer' ? (B.T && B.T.who === 'chad' ? 'rival' : 'trainer') : 'wild') : null,
     id = typeof mapIdAt === 'function' ? mapIdAt(saveData.trip.node) : null,
     sc = id && mapById(id),
-    r = LOCATIONS[saveData.trip.node];
+    r = LOCATIONS[saveData.trip.node],
+    run = saveData.run,
+    node = run && run.map && r && r.runNode != null ? run.map.nodes[r.runNode] : null;
   return {
     started: true,
     battle,
@@ -206,6 +208,10 @@ function musicState() {
     map: id,
     placeKind: r && r.t === 'city' ? 'city' : r && r.town ? 'town' : null,
     placeMusic: (r && r.music) || null,
+    /* a run's place: its node's type, biome and row (logic/run-map.js) */
+    nodeType: node ? node.type : null,
+    biome: node ? node.biome || null : null,
+    row: node ? node.row : null,
   };
 }
 function musicSync() {
