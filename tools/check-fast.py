@@ -545,7 +545,7 @@ def run_shop(pg, base):
 
 
 def screens(pg, base):
-    """UI-5: every screen opens with its parts, through the buttons a player taps: the bottom bar's Map, Team and Bag, the
+    """UI-5: every screen opens with its parts, through the buttons a player taps: the bottom bar's Map, Team, Bag and Lab, the
     world again (the open tab tapped again, and Esc), the Trainer card from the portrait and the Guide from it,
     the Billie sheet and its four tabs, a Guide page, Settings, the evolution window, the inbox, a toast (a run town's shop: run_shop). The check each
     screen moved out of ui.js must pass (docs/phases/ui-track.md, UI-5)"""
@@ -558,15 +558,15 @@ def screens(pg, base):
             raise Exception(f'{what}: not there ({cond}); on screen: ' + pg.evaluate("[uiState.tab,uiState.modal&&(uiState.modal.cls||uiState.modal.title),document.querySelector('#ov').className+' '+(document.querySelector('#ov .sheet')||{}).className].join(' / ')"))
         seen.append(what)
     screen = lambda t, part: f"!!document.querySelector('.screen.s-{t}')&&!!document.querySelector('.screen.s-{t} :is({part})')"
-    # UI-5: the bar holds Map, Team and Bag (the hub's set; Lab waits for RL-11)
+    # UI-5: the bar holds Map, Team and Bag, and RL-11's Lab (the hub's set)
     tabs = pg.evaluate("[...document.querySelector('#nav').shadowRoot.querySelectorAll('button')].map(b=>b.dataset.t).join(',')")
-    if tabs != 'map,team,bag': raise Exception(f'the bottom bar holds {tabs}')
+    if tabs != 'map,team,bag,lab': raise Exception(f'the bottom bar holds {tabs}')
     for t, part in (('map', '.map-head,pb-day-chip,.map-full'), ('team', '.u-team .u-hero'),
-                    ('bag', '.bag-tabs,.bag-list,.bag-empty,[data-a^=bag]')):
+                    ('bag', '.bag-tabs,.bag-list,.bag-empty,[data-a^=bag]'), ('lab', '.lab-sec .lab-row')):
         if not pg.evaluate(nav_tap(t)): raise Exception(f'no {t} tab to tap')
         need(t, screen(t, part))
     # the world is the base view: the open tab tapped again, or Esc, goes back to it
-    pg.evaluate(nav_tap('bag'))
+    pg.evaluate(nav_tap('lab'))
     need('the world (the open tab again)', screen('walk', '#walkHero'))
     pg.evaluate(nav_tap('team')); need('team again', screen('team', '.u-hero'))
     pg.keyboard.press('Escape')
