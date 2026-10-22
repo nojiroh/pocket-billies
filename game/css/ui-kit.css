@@ -322,17 +322,69 @@ hr.pb-rule::after {
   --k-clip: var(--clip-action);
   --k-edge: var(--edge-action);
 }
-/* the shell's own glass joins the panel family (the top bar draws its own: shell.css): a screen's title box (its ::after is the gold dash, so
-   it has the outline only) and the section panels of the Trainer card and Team */
+/* a row of tabs is the tab family (cut on top) and a segmented choice's options are buttons, in a track with the
+   button's outline; only the chosen one draws the edge line, so the others stay flat as before */
+.set-tabs button,
+.guide-tabs button,
+.lore-tabs button,
+.bag-pockets button,
+.ms-tabs button {
+  --k-clip: var(--clip-tab);
+  --k-edge: var(--edge-tab);
+}
+.seg > button,
+.seg,
+.set-tabs,
+.guide-tabs,
+.lore-tabs,
+.ms-tabs {
+  --k-clip: var(--clip-button);
+  --k-edge: var(--edge-button);
+}
+/* the shell's own glass joins the panel family (the top bar draws its own: shell.css): a screen's title box (its
+   ::after is the gold dash, so it has the outline only) and the section panels of the Trainer card and Team */
 .tpanel,
 .screen > .bar > div:first-child {
   --k-clip: var(--clip-panel);
   --k-edge: var(--edge-panel);
 }
-:where(.k-panel, .k-card, .k-btn, .k-action, .k-tab, .pb) {
+:where(
+  .k-panel,
+  .k-card,
+  .k-btn,
+  .k-action,
+  .k-tab,
+  .pb,
+  .set-tabs button,
+  .guide-tabs button,
+  .lore-tabs button,
+  .bag-pockets button,
+  .ms-tabs button,
+  .seg > button
+) {
   position: relative;
 }
-:is(.k-panel, .k-card, .k-btn, .k-action, .k-tab, .pb, .tpanel, .screen > .bar > div:first-child):not(#k) {
+:is(
+  .k-panel,
+  .k-card,
+  .k-btn,
+  .k-action,
+  .k-tab,
+  .pb,
+  .tpanel,
+  .screen > .bar > div:first-child,
+  .set-tabs button,
+  .guide-tabs button,
+  .lore-tabs button,
+  .bag-pockets button,
+  .ms-tabs button,
+  .seg > button,
+  .seg,
+  .set-tabs,
+  .guide-tabs,
+  .lore-tabs,
+  .ms-tabs
+):not(#k) {
   /* !important only against v05.css's .px and .pb.big corners (!important themselves); goes with v05 in UI-6 */
   border-radius: 0 !important;
   clip-path: var(--k-clip);
@@ -349,5 +401,21 @@ hr.pb-rule::after {
   background: var(--edge);
   opacity: 1;
   transform: none;
+  pointer-events: none;
+}
+
+:is(.set-tabs button, .guide-tabs button, .lore-tabs button, .bag-pockets button, .ms-tabs button, .seg > button):is(
+    .on,
+    [aria-selected='true'],
+    [aria-pressed='true'],
+    [aria-checked='true']
+  ):not(#k)::after {
+  content: '';
+  display: block;
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  clip-path: var(--k-edge);
+  background: var(--edge);
   pointer-events: none;
 }
