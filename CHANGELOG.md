@@ -16,6 +16,17 @@ kept aside in the browser).
   you", "Your silhouette through rock"). Shadows near you now follow you up a mountain. The debug menu's mountains run
   now has mountains on both sides (north and south), and the debug log says how far the camera has risen; it also
   said 0 for a place's mountains on every run, now fixed.
+- The game always runs the latest version: after an update it loads the new one by itself (when you come back to
+  it, or within ten minutes), saving first and waiting until a battle, cutscene, flight or window is over; it never
+  mixes files of two versions.
+- Runs look like your own (RL-8b, after the first play): the world map in Copperleaf shows Copperleaf's island alone,
+  in open sea; a run has its own world map, made from its seed: its own land, coast, hills, woods and clouds, the
+  run laid across the whole bowl from the landing in the east to the boss in the west, each place's own ground round
+  it, and no Copperleaf on it. Rooms are darker: their fill light was set almost nine times higher than outdoors, which
+  washed them out to white.
+- Runs go east to west: you enter each place on a run from the east and the way on is to the west (RL-8b: and on
+  the world map the run crosses the bowl from east to west). A run started before this is left (its places were
+  laid out the other way).
 - Every screen in the angular look (UI track UI-5): buttons have cut corners and a screen's main action is a long
   hexagon; the top bar, the place card and the Walk sheet, the Map's card, the Trainer card, the Guide's pages, Team's
   storage, the Bag, shops, Settings and the pickers in sheets have cut panels and cards with a fine edge line; tabs are

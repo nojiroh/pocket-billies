@@ -16,6 +16,7 @@ import { expose } from '../test-globals.js';
 expose({
   BOWL_GROUND_CELLS: [() => BOWL_GROUND_CELLS],
   BOWL_GROUND_EXTENT: [() => BOWL_GROUND_EXTENT],
+  BOWL_ISLE_RIM: [() => BOWL_ISLE_RIM],
   BOWL_RELIEF_DEFAULT: [() => BOWL_RELIEF_DEFAULT],
   BOWL_RELIEF_KINDS: [() => BOWL_RELIEF_KINDS],
   BOWL_RELIEF_MAX: [() => BOWL_RELIEF_MAX],
@@ -50,6 +51,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   bowlHeight: [() => bowlHeight, v => (bowlHeight = v)],
   // @ts-expect-error -- replaced on purpose
+  bowlIsles: [() => bowlIsles, v => (bowlIsles = v)],
+  // @ts-expect-error -- replaced on purpose
   bowlPaintStroke: [() => bowlPaintStroke, v => (bowlPaintStroke = v)],
   // @ts-expect-error -- replaced on purpose
   bowlRelief: [() => bowlRelief, v => (bowlRelief = v)],
@@ -65,6 +68,8 @@ expose({
   bowlSeaInput: [() => bowlSeaInput, v => (bowlSeaInput = v)],
   // @ts-expect-error -- replaced on purpose
   bowlSeamTurn: [() => bowlSeamTurn, v => (bowlSeamTurn = v)],
+  // @ts-expect-error -- replaced on purpose
+  bowlSeedShift: [() => bowlSeedShift, v => (bowlSeedShift = v)],
   // @ts-expect-error -- replaced on purpose
   bowlSpotOf: [() => bowlSpotOf, v => (bowlSpotOf = v)],
   // @ts-expect-error -- replaced on purpose
@@ -102,7 +107,7 @@ export function bowlXY(a, r) {
 
 /** a place's spot, following "under" to the place it hangs below (and how many levels it went down)
  * @param {LocationData} place @param {(id: string) => LocationData | undefined} byId
- * @returns {{ a: number, r: number, under: number }} */
+ * (RL-8b: and its up and off, when it has them) @returns {{ a: number, r: number, under: number, up?: number, off?: boolean }} */
 export function bowlSpotOf(place, byId) {
   /** @type {BowlSpot} */
   let s = place.bowl,
@@ -112,7 +117,14 @@ export function bowlSpotOf(place, byId) {
     if (!p || ++under > 4) throw new Error(`${place.id}: its bowl spot hangs under ${s.under}, which has none`);
     s = p.bowl;
   }
-  return { a: s.a, r: s.r, under };
+  const o = /** @type {{ a: number, r: number, under: number, up?: number, off?: boolean }} */ ({
+    a: s.a,
+    r: s.r,
+    under,
+  });
+  if ('up' in s && typeof s.up === 'number') o.up = s.up;
+  if ('off' in s && s.off) o.off = true;
+  return o;
 }
 
 /** a point on the ground: [x east, y north, h up] @param {number} x @param {number} y
@@ -122,12 +134,15 @@ export function bowlGround(x, y) {
 }
 
 /** a map's compass where it sits on the bowl: its north faces the centre, its east runs counter-clockwise. Unit
- * vectors seen from above. At the very centre north is the bowl's north. @param {number} x @param {number} y
+ * vectors seen from above. At the very centre north is the bowl's north. RL-8b: a spot's up (degrees, 90 the bowl's
+ * north) turns its north that way instead (a run's places all face the bowl's north)
+ * @param {number} x @param {number} y @param {number} [up]
  * @returns {{ north: [number, number], east: [number, number] }} */
-export function bowlCompass(x, y) {
-  const r = Math.hypot(x, y);
+export function bowlCompass(x, y, up) {
+  const r = Math.hypot(x, y),
+    u = typeof up === 'number' ? (up * Math.PI) / 180 : null;
   /** @type {[number, number]} */
-  const north = r < 1e-6 ? [0, 1] : [-x / r, -y / r];
+  const north = u !== null ? [Math.cos(u), Math.sin(u)] : r < 1e-6 ? [0, 1] : [-x / r, -y / r];
   return { north, east: [north[1], -north[0]] };
 }
 
@@ -142,10 +157,11 @@ export function bowlExitSide(exit) {
 }
 
 /** how far, in degrees, a seam on the bowl turns from its two exits: 0 when the road leaves A the way A's exit
- * faces and reaches B the way B's exit faces back. The compass is taken at the road's midpoint.
- * @param {[number, number]} A @param {[number, number]} B @param {string} exitA @param {string} exitB
+ * faces and reaches B the way B's exit faces back. The compass is taken at the road's midpoint (RL-8b: or turned
+ * to up, as both places' maps are) @param {[number, number]} A @param {[number, number]} B @param {string} exitA
+ * @param {string} exitB @param {number} [up]
  * @returns {number} */
-export function bowlSeamTurn(A, B, exitA, exitB) {
+export function bowlSeamTurn(A, B, exitA, exitB, up) {
   const sa = bowlExitSide(exitA),
     sb = bowlExitSide(exitB);
   let dx = sa[0] - sb[0],
@@ -153,7 +169,7 @@ export function bowlSeamTurn(A, B, exitA, exitB) {
   const n = Math.hypot(dx, dy) || 1;
   dx /= n;
   dy /= n;
-  const { north, east } = bowlCompass((A[0] + B[0]) / 2, (A[1] + B[1]) / 2),
+  const { north, east } = bowlCompass((A[0] + B[0]) / 2, (A[1] + B[1]) / 2, up),
     want = [dx * east[0] + dy * north[0], dx * east[1] + dy * north[1]],
     ex = B[0] - A[0],
     ey = B[1] - A[1],
@@ -210,18 +226,27 @@ export const BOWL_RELIEF_DEFAULT = /** @type {[number, number]} */ ([0.008, 0.06
 export const BOWL_RELIEF_MAX = 0.115;
 
 /** @typedef {{ x: number, y: number, h: number, r: number }} BowlFeature */
+/** RL-8b: where a world's seed moves the bowl's noise to (a run's own hills, patches and trees; 0: as made) @param {number} seed
+ * @returns {[number, number]} */
+export function bowlSeedShift(seed) {
+  const s = Math.abs(Math.round(seed || 0)) % 9973;
+  return s ? [(s % 997) * 1.731 + 11.3, (s % 991) * 2.377 + 7.9] : [0, 0];
+}
 /** @typedef {{ max: number, default: [number, number], kinds: Record<string, [number, number]> }} BowlReliefLook */
-/** each place's bump or dip, from the world map's look (worldmap.json relief; without it the values above)
- * @param {LocationData[]} places @param {BowlReliefLook | null} [R] @returns {BowlFeature[] & { max?: number }} */
-export function bowlReliefFeatures(places, R = null) {
+/** each place's bump or dip, from the world map's look (worldmap.json relief; without it the values above); RL-8b: a
+ * world's seed moves the hills between them (bowlSeedShift)
+ * @param {LocationData[]} places @param {BowlReliefLook | null} [R] @param {number} [seed]
+ * @returns {BowlFeature[] & { max?: number, seed?: number }} */
+export function bowlReliefFeatures(places, R = null, seed = 0) {
   const byId = (/** @type {string} */ id) => places.find(p => p.id === id),
     kinds = R ? R.kinds : BOWL_RELIEF_KINDS,
     def = R ? R.default : BOWL_RELIEF_DEFAULT;
-  /** @type {BowlFeature[] & { max?: number }} */
+  /** @type {BowlFeature[] & { max?: number, seed?: number }} */
   const out = [];
   out.max = R ? R.max : BOWL_RELIEF_MAX;
+  out.seed = seed;
   for (const p of places) {
-    if (!p.bowl || 'under' in p.bowl) continue;
+    if (!p.bowl || 'under' in p.bowl || p.bowl.off) continue;
     const s = bowlSpotOf(p, byId),
       [x, y] = bowlXY(s.a, s.r),
       [h, r] = /** @type {Record<string, [number, number]>} */ (kinds)[p.t] || def;
@@ -251,14 +276,15 @@ export function bowlRoll(x, y) {
 /** the relief at a point: the places' bumps and dips, a little roll, kept within BOWL_RELIEF_MAX and fading out
  * beyond the rim @param {BowlFeature[]} F @param {number} x @param {number} y */
 export function bowlRelief(F, x, y) {
-  const max = /** @type {BowlFeature[] & { max?: number }} */ (F).max ?? BOWL_RELIEF_MAX;
+  const max = /** @type {BowlFeature[] & { max?: number }} */ (F).max ?? BOWL_RELIEF_MAX,
+    [ox, oy] = bowlSeedShift(/** @type {BowlFeature[] & { seed?: number }} */ (F).seed || 0);
   let h = 0;
   for (const f of F) {
     const d2 = ((x - f.x) ** 2 + (y - f.y) ** 2) / (f.r * f.r);
     if (d2 < 9) h += f.h * Math.exp(-d2);
   }
   /* broad hills and dales between the places, and a little roll on them */
-  h += bowlRoll(x / 3.2, y / 3.2) * 0.032 + bowlRoll(x, y) * 0.009;
+  h += bowlRoll(x / 3.2 + ox, y / 3.2 + oy) * 0.032 + bowlRoll(x + ox, y + oy) * 0.009;
   const r = Math.hypot(x, y),
     fade = r <= 1 ? 1 : Math.max(0, 1 - (r - 1) / 0.08);
   return Math.max(-max, Math.min(max, h)) * fade || 0;
@@ -288,7 +314,8 @@ export function bowlGroundGrid(F, n = BOWL_GROUND_CELLS, sea = null) {
     h = new Float32Array(w * w),
     coast = sea ? bowlCoastGrid(sea, n) : null,
     c = coast ? coast.c : null,
-    depth = (sea && sea.opt && sea.opt.depth) || BOWL_SEA_DEPTH;
+    depth = (sea && sea.opt && sea.opt.depth) || BOWL_SEA_DEPTH,
+    [ox, oy] = bowlSeedShift(/** @type {BowlFeature[] & { seed?: number }} */ (F).seed || 0);
   for (let j = 0; j <= n; j++)
     for (let i = 0; i <= n; i++) {
       const x = -e + (2 * e * i) / n,
@@ -298,7 +325,7 @@ export function bowlGroundGrid(F, n = BOWL_GROUND_CELLS, sea = null) {
         /* the land comes down to the water's edge, the sea floor falls away from it */
         /* high land meets the sea as a cliff (it keeps its height almost to the edge), low land slopes to a beach */
         /* some stretches of coast are headlands: the land stands up there and drops to the sea as a cliff */
-        const head = Math.min(1, Math.max(0, (bowlRoll(x / 2.2 + 5.3, y / 2.2 - 1.7) + 0.08) * 5));
+        const head = Math.min(1, Math.max(0, (bowlRoll(x / 2.2 + 5.3 + ox, y / 2.2 - 1.7 + oy) + 0.08) * 5));
         if (c[j * w + i] <= 0) rel += head * 0.024;
         /* and land never sinks below the water (that would be a dry pit): its dips flatten out into low ground */
         if (rel < 0.004) rel = 0.004 * Math.exp((rel - 0.004) / 0.004);
@@ -503,8 +530,11 @@ export const BOWL_SEA_DEPTH = 0.035;
 export const BOWL_SEA_RIM_LAND = 0.45;
 /** the sea's settings (worldmap.json sea): share before painting, floor depth, the rise towards the rim, coast
  * roughness and seed, brush strokes forcing land or sea
- * @typedef {{ share: number, depth: number, rimLand: number, rough: number, seed: number,
- *   paint?: { land: boolean, r: number, pts: [number, number][] }[] }} BowlSeaLook */
+ * @typedef {{ share: number, depth: number, rimLand: number, rough: number, seed: number, island?: number,
+ *   isles?: BowlIsle[], paint?: { land: boolean, r: number, pts: [number, number][] }[] }} BowlSeaLook */
+/** RL-8b: a round of land the sea leaves alone (bowl radii, seen from above) @typedef {{ x: number, y: number, r: number }} BowlIsle */
+/** RL-8b, an island world: past this far from the centre the sea always wins, so the land never reaches the rim */
+export const BOWL_ISLE_RIM = 0.86;
 /** @typedef {{ places: { x: number, y: number, reach: number }[], roads: [number, number, number, number][],
  *   opt?: BowlSeaLook }} BowlSeaInput */
 /** the land the sea must leave alone: each place with its walk map's half-diagonal (w, h in metres, BOWL_METRES to the
@@ -515,7 +545,8 @@ export function bowlSeaInput(places, roads, mapOf, metres = 1000, opt = null) {
   const byId = (/** @type {string} */ id) => places.find(p => p.id === id),
     at = places.map(p => {
       const s = bowlSpotOf(p, byId);
-      return { xy: bowlXY(s.a, s.r), under: s.under };
+      /* RL-8b: a place off this world's map (Copperleaf in a run) keeps no land, as one hung under another */
+      return { xy: bowlXY(s.a, s.r), under: s.under || (s.off ? 1 : 0) };
     });
   return {
     places: places
@@ -538,6 +569,9 @@ export function bowlCoastNoise(/** @type {number} */ x, /** @type {number} */ y)
 /** the coast on the ground's grid: per corner, below 0 land, above 0 sea, about BOWL_SEA_SHARE of the bowl at sea,
  * every place's ground and every road on land. How far a corner is from being land: its distance past the nearest
  * place's ground or road, plus the coast's noise; the line is then drawn at the share's quantile.
+ * RL-8b, an island world (sea.island above 0, or sea.isles given): no share and no rise toward the rim; the land is
+ * the places' ground, the roads and rounds of land (sea.isles, or one of radius sea.island round the places' middle),
+ * the coast where the distance past them plus the noise crosses 0, and the sea always past BOWL_ISLE_RIM.
  * Also how far each corner is past the nearest place's ground (dp, below 0 inside it).
  * @param {BowlSeaInput} S @param {number} n @returns {{ c: Float32Array, dp: Float32Array }} */
 export function bowlCoastGrid(S, n) {
@@ -556,7 +590,10 @@ export function bowlCoastGrid(S, n) {
     share = o ? o.share : BOWL_SEA_SHARE,
     rimLand = o ? o.rimLand : BOWL_SEA_RIM_LAND,
     rough = o ? o.rough : 1,
-    seed = o ? o.seed : 0;
+    seed = o ? o.seed : 0,
+    isles = bowlIsles(S),
+    I = Float64Array.from((isles || []).flatMap(b => [b.x, b.y, b.r])),
+    ni = I.length;
   let count = 0;
   for (let j = 0; j <= n; j++)
     for (let i = 0; i <= n; i++) {
@@ -583,8 +620,24 @@ export function bowlCoastGrid(S, n) {
         if (q < dr) dr = q;
       }
       dr = Math.sqrt(dr) - 0.022;
-      /* the land rises towards the rim, so the continent wraps round the sea and the sea stays inland */
-      const rr = Math.sqrt(x * x + y * y),
+      const rr = Math.sqrt(x * x + y * y);
+      let v;
+      if (isles) {
+        /* RL-8b: an island world: land within the rounds and round the places, sea toward the rim */
+        let di = 81;
+        for (let k = 0; k < ni; k += 3) {
+          const dx = x - I[k],
+            dy = y - I[k + 1],
+            q = Math.sqrt(dx * dx + dy * dy) - I[k + 2];
+          if (q < di) di = q;
+        }
+        v =
+          Math.min(dp, dr, di) +
+          0.02 +
+          bowlCoastNoise(x + seed * 3.17, y - seed * 1.93) * rough +
+          Math.max(0, rr - BOWL_ISLE_RIM) * 4;
+      } else
+        /* the land rises towards the rim, so the continent wraps round the sea and the sea stays inland */
         v =
           Math.min(dp, dr) +
           0.02 +
@@ -595,14 +648,26 @@ export function bowlCoastGrid(S, n) {
       dpg[j * w + i] = dp;
       if (x * x + y * y <= 1) inside[count++] = v;
     }
-  const sorted = inside.subarray(0, count).sort(),
-    T = sorted[Math.min(count - 1, Math.floor(count * (1 - share)))],
+  const sorted = isles ? null : inside.subarray(0, count).sort(),
+    T = sorted ? sorted[Math.min(count - 1, Math.floor(count * (1 - share)))] : 0,
     c = new Float32Array(w * w);
   for (let k = 0; k < w * w; k++) c[k] = raw[k] - T;
   /* brush strokes (the Studio's land and sea brush): the line is drawn first, so painting moves only what it touches */
   for (const st of (o && o.paint) || []) bowlPaintStroke(c, n, e, st);
   for (let k = 0; k < w * w; k++) c[k] = Math.min(c[k], keep[k] - 0.004);
   return { c, dp: dpg };
+}
+/** RL-8b: an island world's rounds of land (sea.isles as given, or one of radius sea.island round the middle of the
+ * places), null when the world isn't an island world @param {BowlSeaInput} S @returns {BowlIsle[] | null} */
+export function bowlIsles(S) {
+  const o = S.opt || null;
+  if (o && o.isles && o.isles.length) return o.isles;
+  const r = (o && o.island) || 0;
+  if (!(r > 0)) return null;
+  const n = S.places.length || 1,
+    x = S.places.reduce((a, p) => a + p.x, 0) / n,
+    y = S.places.reduce((a, p) => a + p.y, 0) / n;
+  return [{ x, y, r }];
 }
 /** one brush stroke on the coast: within r of its line land (below 0) or sea (above 0), softly at the edge
  * @param {Float32Array} c @param {number} n @param {number} e @param {{ land: boolean, r: number, pts: [number, number][] }} st */

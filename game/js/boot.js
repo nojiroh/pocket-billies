@@ -47,6 +47,7 @@ import { initPixelSky } from './pixel-sky.js';
 import { mapIdAt } from './walk-control.js';
 import { render, startGame } from './ui.js';
 import { fixtureStart } from './fixture.js';
+import { updateCheckStart } from './update-check.js';
 /* eslint-disable no-func-assign */
 expose({
   ART_VERSION_KEY: [() => ART_VERSION_KEY],
@@ -962,5 +963,8 @@ else
     });
 /* the fast check's fixture never signs in */
 if (typeof initAccount === 'function' && !FIXTURE) initAccount();
+/* a new build's worker is fetched past the browser's cache (sw.js and the version.js it imports) */
 if ('serviceWorker' in navigator && location.protocol !== 'file:')
-  addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+  addEventListener('load', () => navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {}));
+/* the owner, 2026-10-22: a phone always plays the site's latest build (update-check.js; off without a build) */
+addEventListener('load', () => updateCheckStart());

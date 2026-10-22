@@ -254,5 +254,7 @@ export function runWorldTables(run, hub, data) {
       });
     })
   );
-  return { locations: [hub, ...places], roads, pools, shops };
+  /* RL-8b: the run's map is its own land: Copperleaf stays world node 0 (flying home, a save's checks) but is off it */
+  const home = { ...hub, bowl: { a: 0, r: 0, ...hub.bowl, off: true } };
+  return { locations: [home, ...places], roads, pools, shops };
 }

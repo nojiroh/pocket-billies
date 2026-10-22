@@ -455,16 +455,20 @@ export const hubRoadsByNode = ROADS_BY_NODE.map(e => e.slice());
    gameData.maps (a road's length is its exits' walk) and its pools into POOLS (a place keeps only a pool that
    exists), then its places and roads. worldHubBack takes them out and puts the hub's world back */
 export const worldExtra = {
+  /* RL-8b: the world map's look of the world that is in (a run's own, logic/run-bowl.js); null: worldmap.json's */
+  look: /** @type {any} */ (null),
   maps: /** @type {Record<string, any>} */ ({}),
   pools: /** @type {string[]} */ ([]),
   shops: /** @type {string[]} */ ([]),
   trainers: /** @type {string[]} */ ([]),
 };
-/** RL-8: and its shops (a run town's) into SHOPS and its trainers (a run's mini-bosses and boss) into TRAINERS
+/** RL-8: and its shops (a run town's) into SHOPS and its trainers (a run's mini-bosses and boss) into TRAINERS;
+ * RL-8b: and its own world map look
  * @param {{ locations: LocationData[], roads: RoadLink[], pools: Record<string, Pool>, maps: Record<string, any>,
- *   shops?: Record<string, any>, trainers?: Record<string, any> }} w */
+ *   shops?: Record<string, any>, trainers?: Record<string, any>, look?: any }} w */
 export function worldPut(w) {
   worldHubBack();
+  worldExtra.look = w.look || null;
   Object.assign(worldExtra.maps, w.maps);
   Object.assign(gameData.maps, w.maps);
   Object.assign(POOLS, w.pools);
@@ -478,6 +482,7 @@ export function worldPut(w) {
   worldSetGraph(w.locations, w.roads);
 }
 export function worldHubBack() {
+  worldExtra.look = null;
   for (const id of Object.keys(worldExtra.maps)) {
     delete gameData.maps[id];
     delete worldExtra.maps[id];

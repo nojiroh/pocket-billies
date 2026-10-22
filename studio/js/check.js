@@ -172,7 +172,8 @@ export function runCheck() {
               wtab: 'look',
             });
     const sh = typeof wmlSeaShare === 'function' ? wmlSeaShare() : null;
-    if (sh != null && (sh < 0.3 || sh > 0.5))
+    /* RL-8b: an island world (sea.island) is mostly sea on purpose */
+    if (sh != null && !(WM.sea && WM.sea.island > 0) && (sh < 0.3 || sh > 0.5))
       warn(`World map look: ${Math.round(sh * 100)}% of the bowl is sea; between 30% and 50% reads best.`, 'world', {
         wtab: 'look',
       });
