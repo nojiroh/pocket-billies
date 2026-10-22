@@ -459,32 +459,6 @@ body.in-cs #nav {
   border-radius: var(--r, 14px);
   margin-bottom: 12px;
 }
-.chal .ch-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 0;
-  border-top: 1px solid color-mix(in srgb, currentColor 10%, transparent);
-}
-.chal .ch-row:first-of-type {
-  border-top: 0;
-}
-.chal .ch-t {
-  flex: 1;
-  min-width: 0;
-  display: grid;
-  gap: 3px;
-}
-.chal .ch-t b {
-  font-size: 14px;
-}
-.chal .ch-row.claimed {
-  opacity: 0.6;
-}
-.chal .ch-ok {
-  font-size: 12px;
-  color: var(--text2);
-}
 /* v28: decorating your room */
 .home-grid {
   display: grid;
