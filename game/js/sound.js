@@ -11,7 +11,8 @@ import { cutscene, mapIdAt, provide } from './hooks.js';
 import { clamp } from './util.js';
 import { LOCATIONS, MUSIC, SPECIES } from './game-data.js';
 import { maxHp } from './logic/rules.js';
-import { musicBattleKind, musicRedZone, songFor, songVariant } from './logic/music-where.js';
+import { runWeather } from './logic/run-map.js';
+import { musicBattleKind, musicRedZone, musicWeatherCut, songFor, songVariant } from './logic/music-where.js';
 import { cryRecipe, cryVoices } from './logic/cries.js';
 import { fighter, liveActors } from './logic/battle-engine.js';
 import { activeBattle, saveData, uiState } from './game-state.js';
@@ -55,6 +56,7 @@ expose({
   lowHpBeep: [() => lowHpBeep, v => (lowHpBeep = v)],
   music: [() => music, v => (music = v)],
   musicFor: [() => musicFor, v => (musicFor = v)],
+  musicMapCut: [() => musicMapCut, v => (musicMapCut = v)],
   musicParts: [() => musicParts, v => (musicParts = v)],
   musicState: [() => musicState, v => (musicState = v)],
   musicStop: [() => musicStop, v => (musicStop = v)],
@@ -499,6 +501,15 @@ function lowHpBeep() {
   const t = soundEngine.ctx.currentTime + 0.01;
   synthVoice(soundEngine.fx, { type: 'p50', freq: 1760, t, dur: 0.07, vol: 0.035, r: 0.02 });
   synthVoice(soundEngine.fx, { type: 'p50', freq: 1318.5, t: t + 0.11, dur: 0.07, vol: 0.035, r: 0.02 });
+}
+/* SND-5: on a run's map tab the map song is muffled by today's forecast where you stand (logic/run-map.js runWeather,
+   music.json run.weather); null off the map tab or out of a run */
+function musicMapCut() {
+  const run = typeof saveData !== 'undefined' && saveData && saveData.run;
+  if (!run || !run.map || uiState.tab !== 'map' || (typeof activeBattle !== 'undefined' && activeBattle)) return null;
+  const r = LOCATIONS[saveData.trip.node];
+  if (!r || r.runNode == null) return null;
+  return musicWeatherCut(runWeather(run, r.runNode, run.clock), MUSIC.run);
 }
 /* battle animations make their sounds */
 function battleSoundEffect(an, r) {
@@ -992,8 +1003,14 @@ function updateAmbience() {
   };
   if (soundEngine.song && soundEngine.song.drums)
     soundEngine.song.drums.gain.setTargetAtTime(soundEngine.L.drums, t, 0.6);
-  if (soundEngine.musLP)
-    soundEngine.musLP.frequency.setTargetAtTime(E && sc && !sc.indoor && E.rain > 0.3 ? 2200 : 20000, t, 0.8);
+  if (soundEngine.musLP) {
+    const cut = musicMapCut();
+    soundEngine.musLP.frequency.setTargetAtTime(
+      cut != null ? cut : E && sc && !sc.indoor && E.rain > 0.3 ? 2200 : 20000,
+      t,
+      0.8
+    );
+  }
 }
 setInterval(() => {
   try {

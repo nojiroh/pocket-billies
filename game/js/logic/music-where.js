@@ -19,6 +19,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   musicRedZone: [() => musicRedZone, v => (musicRedZone = v)],
   // @ts-expect-error -- replaced on purpose
+  musicWeatherCut: [() => musicWeatherCut, v => (musicWeatherCut = v)],
+  // @ts-expect-error -- replaced on purpose
   musicWhereMatches: [() => musicWhereMatches, v => (musicWhereMatches = v)],
   // @ts-expect-error -- replaced on purpose
   songFor: [() => songFor, v => (songFor = v)],
@@ -108,6 +110,16 @@ export function musicArcBand(state, run) {
   if (!state.nodeType || state.nodeType === 'town' || state.tab === 'map' || typeof state.row !== 'number') return null;
   const B = ((run && run.arc) || []).find(b => state.row >= b.row[0] && state.row <= b.row[1]);
   return B ? B.name : null;
+}
+
+/**
+ * SND-5: the map song hears the forecast: the low-pass on the music, in Hz, for a day's weather (music.json run.weather,
+ * e.g. rain 2200); open (20000) for weather it doesn't name, clear and cloudy
+ * @param {string} weather @param {{ weather?: Record<string, number> } | undefined} run music.json's run
+ */
+export function musicWeatherCut(weather, run) {
+  const w = run && run.weather;
+  return (w && weather && w[weather]) || 20000;
 }
 
 /**

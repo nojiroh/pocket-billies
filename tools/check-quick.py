@@ -919,6 +919,38 @@ def run_music_step(b, base, R):
         ctx.close()
 
 
+@step("Run map music hears the forecast: on a run's map tab, today's storm or rain where you stand muffles the map song, clear opens it (SND-5)", 180)
+def run_map_weather_step(b, base, R):
+    """sound track SND-5: the run fixture, sound unlocked by a tap. Today's forecast where the player stands is set to
+    storm, then rain, then clear; on the map tab the music's low-pass is given music.json run.weather's cut for it
+    (read through a wrapper on setTargetAtTime, as the Sound settings step does: Chrome stops working out a param no
+    sound goes through). Back on the walk tab the old rain filter decides again"""
+    errs = []
+    ctx = b.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=1)
+    for s in (CLOCK, NO_ACCOUNTS, TEST_GLOBALS): ctx.add_init_script(s)
+    ctx.set_default_timeout(90000); pg = ctx.new_page(); CUR['pg'] = pg
+    pg.on('pageerror', lambda e: errs.append(str(e)))
+    try:
+        pg.goto(base + '/index.html?fixture=run'); pg.evaluate(LOW_RENDER)
+        if not until(pg, "typeof walkView!=='undefined'&&walkView.ready&&!!saveData.run", 150): raise Exception('the run fixture never opened')
+        pg.mouse.click(200, 300)
+        if not until(pg, "!!soundEngine.ctx&&soundEngine.ctx.state==='running'", 8): return 'not checked: sound did not start in this browser'
+        pg.evaluate("window.__cut=[];const f=soundEngine.musLP.frequency,o=f.setTargetAtTime.bind(f);f.setTargetAtTime=(v,t,c)=>{__cut.push(v);return o(v,t,c)};0")
+        setw = "(w=>{const R=saveData.run,i=LOCATIONS[saveData.trip.node].runNode;R.forecast[runWorldNode(i)][R.clock-1]=w})"
+        pg.evaluate("uiState.tab='map';render();0"); seen = []
+        for w in ('storm', 'rain', 'clear'):
+            want = pg.evaluate(f"{setw}('{w}');musicWeatherCut('{w}',MUSIC.run)")
+            if not until(pg, f"__cut.length&&__cut[__cut.length-1]==={want}", 4): raise Exception(f"{w} on the map tab: the low-pass was given {pg.evaluate('__cut.slice(-1)[0]')}, not {want}")
+            seen.append(f'{w} {want} Hz')
+        if pg.evaluate('soundEngine.want') != 'map': raise Exception(f"the map tab asked for {pg.evaluate('soundEngine.want')!r}, not map")
+        pg.evaluate(f"{setw}('storm');uiState.tab='walk';render();0")
+        if not until(pg, "__cut[__cut.length-1]!==1400", 4): raise Exception('back on the walk tab the forecast still muffled the music')
+        if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
+        return 'map tab: ' + ', '.join(seen) + f"; walk tab: {pg.evaluate('__cut.slice(-1)[0]')} Hz (the place's own weather)"
+    finally:
+        ctx.close()
+
+
 @step('In-game full test: one step headless, and nothing is saved while it runs', 120)
 def in_game_test_step(b, base, R):
     errs = []; ctx, pg = open_game(b, base, 1100, 700, False, errs)
@@ -2549,6 +2581,7 @@ def main():
                 sound_step(b, base, R)
                 sound_fingerprints(b, base, R)
                 run_music_step(b, base, R)
+                run_map_weather_step(b, base, R)
                 try:
                     desktop_steps(b, base, R)
                 except Exception as e:

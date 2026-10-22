@@ -388,6 +388,15 @@
      "type": "integer",
      "minimum": 1,
      "maximum": 3
+    },
+    "weather": {
+     "description": "the low-pass on the music (Hz) for each weather on a run's map tab (logic/music-where.js musicWeatherCut); weather not named plays open",
+     "type": "object",
+     "additionalProperties": {
+      "type": "number",
+      "minimum": 200,
+      "maximum": 20000
+     }
     }
    }
   },

@@ -6,6 +6,7 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import {
   musicArcBand,
+  musicWeatherCut,
   musicBattleKind,
   musicRedZone,
   musicWhereMatches,
@@ -209,4 +210,11 @@ test('the deadline: the last day (run.deadlineDays 1) and every day past it play
     songVariant('meadow', out({ nodeType: 'route', row: 1, daysLeft: 2 }), S, null, { deadlineDays: 2 }),
     'meadow@deadline'
   );
+});
+
+test("the map song hears the forecast: rain, storm, snow, fog and ash close the low-pass; clear and cloudy don't", () => {
+  for (const w of ['rain', 'storm', 'snow', 'fog', 'ash']) assert.ok(musicWeatherCut(w, MUSIC.run) < 5000, w);
+  for (const w of ['clear', 'cloudy', '', 'nosuch']) assert.equal(musicWeatherCut(w, MUSIC.run), 20000, w || 'none');
+  assert.ok(musicWeatherCut('storm', MUSIC.run) < musicWeatherCut('rain', MUSIC.run), 'a storm muffles more');
+  assert.equal(musicWeatherCut('rain', undefined), 20000);
 });
