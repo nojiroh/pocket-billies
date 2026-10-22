@@ -26,6 +26,7 @@ import {
 import { environment, environmentHour, environmentState } from './environment.js';
 import { walkRenderer } from './walk/walk-state.js';
 import { soundLevel, soundLevels } from './audio/levels.js';
+import { midiToFrequency, trackerCreate } from './audio/tracker.js';
 /* eslint-disable no-func-assign */
 expose({
   BIRD_CALLS: [() => BIRD_CALLS],
@@ -46,7 +47,6 @@ expose({
   initAmbience: [() => initAmbience, v => (initAmbience = v)],
   initSound: [() => initSound, v => (initSound = v)],
   jingle: [() => jingle, v => ((jingle = v), provide({ jingle }))],
-  midiToFrequency: [() => midiToFrequency],
   music: [() => music, v => (music = v)],
   musicFor: [() => musicFor, v => (musicFor = v)],
   musicStop: [() => musicStop, v => (musicStop = v)],
@@ -117,34 +117,13 @@ function initSound() {
     soundEngine.musLP.connect(soundEngine.master);
     soundEngine.fx.connect(soundEngine.master);
     applyVolumes();
-    /* a soft echo for the music (caves get more of it) */
-    const d = c.createDelay(1),
-      fb = c.createGain(),
-      wet = c.createGain();
-    d.delayTime.value = 0.27;
-    fb.gain.value = 0.28;
-    wet.gain.value = 0.16;
-    soundEngine.echoIn = c.createGain();
-    soundEngine.echoIn.connect(d);
-    d.connect(fb);
-    fb.connect(d);
-    d.connect(wet);
-    wet.connect(soundEngine.mus);
-    soundEngine.echoWet = wet;
-    const n = c.createBuffer(1, c.sampleRate, c.sampleRate),
-      nd = n.getChannelData(0);
-    for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
-    soundEngine.noise = n;
-    const pw = duty => {
-      const N = 32,
-        re = new Float32Array(N),
-        im = new Float32Array(N);
-      for (let k = 1; k < N; k++) im[k] = (2 / (k * Math.PI)) * Math.sin(k * Math.PI * duty);
-      return c.createPeriodicWave(re, im);
-    };
-    soundEngine.waves.p25 = pw(0.25);
-    soundEngine.waves.p12 = pw(0.125);
-    soundEngine.waves.p50 = pw(0.5);
+    /* SND-2: the echo, the noise and the waves are the tracker's (audio/tracker.js), on the music bus */
+    const T = trackerCreate(c, soundEngine.mus);
+    soundEngine.tracker = T;
+    soundEngine.echoIn = T.echoIn;
+    soundEngine.echoWet = T.echoWet;
+    soundEngine.noise = T.noise;
+    soundEngine.waves = T.waves;
     if (typeof debugLog !== 'undefined') debugLog.add('audio', 'ready ' + c.sampleRate + ' Hz');
     return true;
   } catch (e) {
@@ -176,106 +155,15 @@ document.addEventListener('visibilitychange', () => {
   if (document.hidden) soundEngine.ctx.suspend();
   else soundEngine.ctx.resume();
 });
-const midiToFrequency = m => 440 * Math.pow(2, (m - 69) / 12);
-/* ---------- instruments ---------- */
-function synthVoice(
-  bus,
-  {
-    type = 'p25',
-    freq,
-    t,
-    dur,
-    vol = 0.1,
-    a = 0.005,
-    d = 0.08,
-    s = 0.6,
-    r = 0.08,
-    slide = 0,
-    vib = 0,
-    cut = 0,
-    echo = 0,
-  }
-) {
-  const c = soundEngine.ctx,
-    o = c.createOscillator(),
-    g = c.createGain();
-  if (soundEngine.waves[type]) o.setPeriodicWave(soundEngine.waves[type]);
-  else o.type = type;
-  o.frequency.setValueAtTime(freq, t);
-  if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(20, freq * slide), t + dur);
-  if (vib) {
-    const l = c.createOscillator(),
-      lg = c.createGain();
-    l.frequency.value = 5.5;
-    lg.gain.value = freq * 0.012 * vib;
-    l.connect(lg);
-    lg.connect(o.frequency);
-    l.start(t + 0.08);
-    l.stop(t + dur + r);
-  }
-  g.gain.setValueAtTime(0, t);
-  g.gain.linearRampToValueAtTime(vol, t + a);
-  g.gain.linearRampToValueAtTime(vol * s, t + a + d);
-  g.gain.setValueAtTime(vol * s, t + Math.max(a + d, dur));
-  g.gain.linearRampToValueAtTime(0, t + Math.max(a + d, dur) + r);
-  let out = g;
-  if (cut) {
-    const f = c.createBiquadFilter();
-    f.type = 'lowpass';
-    f.frequency.value = cut;
-    g.connect(f);
-    out = f;
-  }
-  o.connect(g);
-  out.connect(bus);
-  if (echo && soundEngine.echoIn) {
-    const e = c.createGain();
-    e.gain.value = echo;
-    out.connect(e);
-    e.connect(soundEngine.echoIn);
-  }
-  o.start(t);
-  o.stop(t + Math.max(a + d, dur) + r + 0.02);
+/* ---------- instruments (SND-2: the tracker's, audio/tracker.js; every sound plays through them) ---------- */
+function synthVoice(bus, o) {
+  soundEngine.tracker.synthVoice(bus, o);
 }
-function synthNoise(bus, { t, dur = 0.05, vol = 0.2, hp = 0, lp = 0, bp = 0, q = 1 }) {
-  const c = soundEngine.ctx,
-    s = c.createBufferSource(),
-    g = c.createGain();
-  s.buffer = soundEngine.noise;
-  s.loop = true;
-  /* v47: longer than the one-second buffer (the fall) */ let n = s;
-  for (const [type, f] of [
-    ['highpass', hp],
-    ['lowpass', lp],
-    ['bandpass', bp],
-  ])
-    if (f) {
-      const F = c.createBiquadFilter();
-      F.type = type;
-      F.frequency.value = f;
-      F.Q.value = q;
-      n.connect(F);
-      n = F;
-    }
-  g.gain.setValueAtTime(vol, t);
-  g.gain.exponentialRampToValueAtTime(0.001, t + dur);
-  n.connect(g);
-  g.connect(bus);
-  s.start(t, Math.random() * 0.5);
-  s.stop(t + dur + 0.02);
+function synthNoise(bus, o) {
+  soundEngine.tracker.synthNoise(bus, o);
 }
-function synthKick(bus, t, v = 0.5) {
-  const c = soundEngine.ctx,
-    o = c.createOscillator(),
-    g = c.createGain();
-  o.frequency.setValueAtTime(140, t);
-  o.frequency.exponentialRampToValueAtTime(42, t + 0.12);
-  g.gain.setValueAtTime(v, t);
-  g.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
-  o.connect(g);
-  g.connect(bus);
-  o.start(t);
-  o.stop(t + 0.22);
+function synthKick(bus, t, v) {
+  soundEngine.tracker.synthKick(bus, t, v);
 }
 
 /* ---------- songs ---------- */
