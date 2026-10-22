@@ -161,10 +161,13 @@ function applyVolumes() {
   soundEngine.mus.gain.setTargetAtTime(L.music, t, 0.05);
   soundEngine.fx.gain.setTargetAtTime(L.sfx, t, 0.05);
 }
-/* the first touch unlocks sound; the song that was asked for starts then */
+/* the first touch unlocks sound; the song that was asked for starts then. SND-1: any touch also wakes sound that
+   stopped for something else, as iOS Safari does after a call or Siri (its state is then 'interrupted', not
+   'suspended') */
 function unlockSound() {
   if (!initSound()) return;
-  if (soundEngine.ctx.state === 'suspended') soundEngine.ctx.resume();
+  const st = soundEngine.ctx.state;
+  if (st !== 'running' && st !== 'closed') soundEngine.ctx.resume().catch(() => {});
   if (soundEngine.want && !soundEngine.song) music(soundEngine.want);
 }
 ['pointerdown', 'keydown', 'touchend'].forEach(e => addEventListener(e, unlockSound, { capture: true, passive: true }));
