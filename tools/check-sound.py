@@ -24,11 +24,10 @@ RATE = 44100
 WINDOW = 0.05
 REL, ABS = 0.01, 1e-4
 
-# runs in the page. Works on the code before and after the tracker split: it only uses initSound, music, jingle,
-# soundEffect, soundEngine and the songs' data, plus the tick (sound.js's musicTick, or the tracker's tick)
+# runs in the page. Works on the code before and after the tracker split: it only uses sound.js's initSound, music,
+# jingle, soundEffect, soundEngine, SONGS and JINGLES, plus the tick (sound.js's musicTick, or the tracker's tick)
 RENDER = r"""async ({jobs, rate, win}) => {
-  const songs = (typeof MUSIC !== 'undefined' && MUSIC.songs) || SONGS;
-  const jingles = (typeof MUSIC !== 'undefined' && MUSIC.jingles) || JINGLES;
+  const songs = SONGS, jingles = JINGLES;   /* sound.js's names: the songs' recipes, the jingles' note lists */
   const real = Math.random, AC = window.AudioContext, E = soundEngine;
   /* each job is scheduled alone (with Math.random seeded the same), then all of them render at once */
   const schedule = ({kind, name, night}) => {
@@ -79,9 +78,7 @@ RENDER = r"""async ({jobs, rate, win}) => {
 
 def render_all(pg, only=None):
     """{file name: {part: [rms, ...]}} for every song (day and night), jingle and cry"""
-    N = pg.evaluate("""(() => { const songs = (typeof MUSIC !== 'undefined' && MUSIC.songs) || SONGS,
-      jingles = (typeof MUSIC !== 'undefined' && MUSIC.jingles) || JINGLES;
-      return { songs: Object.keys(songs), jingles: Object.keys(jingles), cries: (gameData.roster || []).map(r => r.id) }; })()""")
+    N = pg.evaluate("({ songs: Object.keys(SONGS), jingles: Object.keys(JINGLES), cries: (gameData.roster || []).map(r => r.id) })")
     keep = lambda n: not only or n in only
     jobs = [(s, p, {'kind': 'song', 'name': s, 'night': p == 'night'}) for s in N['songs'] if keep(s) for p in ('day', 'night')]
     jobs += [(file, n, {'kind': kind, 'name': n, 'night': False}) for kind, file in (('jingle', 'jingles'), ('cry', 'cries')) for n in N[file] if keep(n)]
