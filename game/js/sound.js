@@ -9,7 +9,7 @@
 import { expose } from './test-globals.js';
 import { cutscene, mapIdAt, provide } from './hooks.js';
 import { clamp } from './util.js';
-import { LOCATIONS } from './game-data.js';
+import { LOCATIONS, MUSIC } from './game-data.js';
 import { activeBattle, saveData, uiState } from './game-state.js';
 import { battleStage } from './battle-stage.js';
 import {
@@ -30,6 +30,7 @@ import { midiToFrequency, trackerCreate } from './audio/tracker.js';
 /* eslint-disable no-func-assign */
 expose({
   BIRD_CALLS: [() => BIRD_CALLS],
+  CRIES: [() => CRIES],
   JINGLES: [() => JINGLES],
   LIVE_VOLUMES: [() => LIVE_VOLUMES],
   RARE_BIRDS: [() => RARE_BIRDS],
@@ -163,261 +164,8 @@ function synthKick(bus, t, v) {
 }
 
 /* ---------- songs ---------- */
-const SONGS = {
-  town: {
-    bpm: 100,
-    key: 60,
-    scale: 'major',
-    prog: [0, 5, 3, 4, 0, 5, 1, 4],
-    lead: 'p25',
-    bass: 'bounce',
-    arp: 'up',
-    drums: 'soft',
-    seed: 3,
-    swing: 0.08,
-  },
-  route: {
-    bpm: 122,
-    key: 67,
-    scale: 'major',
-    prog: [0, 3, 5, 4, 0, 3, 1, 4],
-    lead: 'p25',
-    bass: 'gallop',
-    arp: 'updown',
-    drums: 'skip',
-    seed: 11,
-  },
-  cave: {
-    bpm: 80,
-    key: 57,
-    scale: 'dorian',
-    prog: [0, 6, 5, 6, 0, 3, 6, 4],
-    lead: 'triangle',
-    bass: 'long',
-    arp: 'drip',
-    drums: 'none',
-    seed: 21,
-    echo: 0.55,
-  },
-  city: {
-    bpm: 116,
-    key: 63,
-    scale: 'mixo',
-    prog: [0, 3, 4, 3, 0, 5, 3, 4],
-    lead: 'p50',
-    bass: 'walk',
-    arp: 'chord7',
-    drums: 'skip',
-    seed: 91,
-    seventh: 1,
-    swing: 0.06,
-  },
-  mall: {
-    bpm: 108,
-    key: 65,
-    scale: 'lydian',
-    prog: [0, 1, 2, 1, 0, 1, 3, 4],
-    lead: 'p50',
-    bass: 'walk',
-    arp: 'chord7',
-    drums: 'bossa',
-    seed: 31,
-    seventh: 1,
-  },
-  hazel: {
-    bpm: 88,
-    key: 65,
-    scale: 'major',
-    prog: [0, 3, 4, 0, 5, 3, 1, 4],
-    lead: 'triangle',
-    bass: 'long',
-    arp: 'up',
-    drums: 'none',
-    seed: 41,
-    echo: 0.3,
-  },
-  map: {
-    bpm: 96,
-    key: 62,
-    scale: 'mixo',
-    prog: [0, 6, 3, 0, 0, 6, 4, 4],
-    lead: 'p25',
-    bass: 'long',
-    arp: 'updown',
-    drums: 'soft',
-    seed: 51,
-  },
-  wild: {
-    bpm: 152,
-    key: 64,
-    scale: 'minor',
-    prog: [0, 5, 6, 0, 0, 5, 3, 4],
-    lead: 'p25',
-    bass: 'drive',
-    arp: 'up',
-    drums: 'drive',
-    seed: 61,
-  },
-  trainer: {
-    bpm: 162,
-    key: 62,
-    scale: 'minor',
-    prog: [0, 3, 6, 2, 0, 3, 4, 4],
-    lead: 'p12',
-    bass: 'drive',
-    arp: 'updown',
-    drums: 'march',
-    seed: 71,
-  },
-  rival: {
-    bpm: 146,
-    key: 59,
-    scale: 'minor',
-    prog: [0, 6, 5, 6, 0, 6, 3, 4],
-    lead: 'p25',
-    bass: 'drive',
-    arp: 'up',
-    drums: 'drive',
-    seed: 81,
-  },
-  /* v47: the title, the fall into the Hollow Earth, the Variants, the Inner Sun */
-  title: {
-    bpm: 92,
-    key: 62,
-    scale: 'major',
-    prog: [0, 4, 5, 3, 0, 4, 1, 4],
-    lead: 'p25',
-    bass: 'long',
-    arp: 'updown',
-    drums: 'soft',
-    seed: 7,
-    echo: 0.35,
-  },
-  fall: {
-    bpm: 72,
-    key: 57,
-    scale: 'dorian',
-    prog: [0, 6, 5, 6, 0, 3, 6, 4],
-    lead: 'triangle',
-    bass: 'long',
-    arp: 'drip',
-    drums: 'none',
-    seed: 13,
-    echo: 0.6,
-  },
-  variants: {
-    bpm: 132,
-    key: 61,
-    scale: 'minor',
-    prog: [0, 5, 3, 6, 0, 5, 4, 4],
-    lead: 'p12',
-    bass: 'bounce',
-    arp: 'chord7',
-    drums: 'march',
-    seed: 23,
-    seventh: 1,
-  },
-  innersun: {
-    bpm: 140,
-    key: 64,
-    scale: 'mixo',
-    prog: [0, 6, 3, 4, 0, 6, 5, 4],
-    lead: 'p25',
-    bass: 'drive',
-    arp: 'updown',
-    drums: 'drive',
-    seed: 29,
-  },
-  /* v47 part 4: a song for each region (a place names it as "music") */
-  meadow: {
-    bpm: 112,
-    key: 67,
-    scale: 'lydian',
-    prog: [0, 3, 4, 0, 5, 3, 4, 4],
-    lead: 'triangle',
-    bass: 'bounce',
-    arp: 'updown',
-    drums: 'soft',
-    seed: 101,
-    swing: 0.1,
-  },
-  hills: {
-    bpm: 100,
-    key: 65,
-    scale: 'mixo',
-    prog: [0, 4, 3, 0, 5, 4, 3, 4],
-    lead: 'p50',
-    bass: 'walk',
-    arp: 'chord7',
-    drums: 'bossa',
-    seed: 111,
-    seventh: 1,
-    swing: 0.08,
-  },
-  spore: {
-    bpm: 84,
-    key: 59,
-    scale: 'dorian',
-    prog: [0, 3, 6, 3, 0, 5, 6, 4],
-    lead: 'triangle',
-    bass: 'long',
-    arp: 'drip',
-    drums: 'soft',
-    seed: 121,
-    echo: 0.45,
-  },
-  crystal: {
-    bpm: 90,
-    key: 57,
-    scale: 'dorian',
-    prog: [0, 5, 3, 6, 0, 5, 4, 4],
-    lead: 'triangle',
-    bass: 'long',
-    arp: 'drip',
-    drums: 'soft',
-    seed: 131,
-    echo: 0.5,
-  },
-  trench: {
-    bpm: 84,
-    key: 55,
-    scale: 'minor',
-    prog: [0, 6, 3, 4, 0, 6, 5, 4],
-    lead: 'p50',
-    bass: 'long',
-    arp: 'updown',
-    drums: 'soft',
-    seed: 141,
-    echo: 0.45,
-    swing: 0.06,
-  },
-  spire: {
-    bpm: 124,
-    key: 62,
-    scale: 'lydian',
-    prog: [0, 4, 5, 3, 0, 4, 1, 4],
-    lead: 'p12',
-    bass: 'bounce',
-    arp: 'chord7',
-    drums: 'skip',
-    seed: 151,
-    seventh: 1,
-  },
-  /* alpha 0.4: Copperleaf, the hamlet where it all starts: an easy, swinging tune for round doors and beehives */
-  copperleaf: {
-    bpm: 94,
-    key: 67,
-    scale: 'major',
-    prog: [0, 4, 5, 3, 0, 4, 3, 4],
-    lead: 'p25',
-    bass: 'bounce',
-    arp: 'up',
-    drums: 'soft',
-    seed: 171,
-    swing: 0.14,
-    echo: 0.25,
-  },
-};
+/* SND-2: the songs' recipes are data (music.json songs) */
+const SONGS = MUSIC.songs;
 /* SND-2: the song plays on the tracker (audio/tracker.js); this keeps what was asked for (the first touch starts it) */
 export function music(name) {
   soundEngine.want = name;
@@ -472,44 +220,12 @@ export function jingle(notes, bpm = 150, type = 'p25', bus = null) {
   const end = soundEngine.tracker.jingle(notes, bpm, type, bus || soundEngine.fx) - soundEngine.ctx.currentTime;
   soundEngine.jingle = performance.now() + end * 1000 + 200;
 }
-export const JINGLES = {
-  victory: [
-    [72, 2],
-    [76, 2],
-    [79, 2],
-    [84, 6],
-    [83, 2],
-    [84, 8],
-  ],
-  levelup: [
-    [72, 1],
-    [76, 1],
-    [79, 1],
-    [84, 3],
-  ],
-  evolve: [
-    [67, 2],
-    [71, 2],
-    [74, 2],
-    [79, 2],
-    [83, 2],
-    [86, 6],
-  ],
-  caught: [
-    [79, 2],
-    [84, 2],
-    [88, 4],
-    [86, 2],
-    [88, 6],
-  ],
-  hatch: [
-    [76, 2],
-    [79, 2],
-    [84, 4],
-  ],
-};
+/* SND-2: the jingles are data (music.json jingles); here each is its note list, as jingle() takes it */
+export const JINGLES = Object.fromEntries(Object.entries(MUSIC.jingles).map(([k, J]) => [k, J.notes]));
 provide({ JINGLES }); /* to-module */
 /* ---------- sound effects ---------- */
+/* SND-2: the base cries are data (music.json cries.bases); a species picks one by its name */
+const CRIES = MUSIC.cries.bases;
 export function soundEffect(name, o = {}) {
   if (!soundEngine.ctx || soundEngine.ctx.state !== 'running') return;
   const c = soundEngine.ctx,
@@ -652,7 +368,7 @@ export function soundEffect(name, o = {}) {
       for (const ch of String(o.sp || '')) h = (h * 31 + ch.charCodeAt(0)) % 997;
       const b = 48 + (h % 24);
       synthVoice(F, {
-        type: ['p25', 'p12', 'p50', 'square'][h % 4],
+        type: (CRIES[h % CRIES.length] || {}).wave || 'p25',
         freq: midiToFrequency(b),
         t,
         dur: 0.18,
