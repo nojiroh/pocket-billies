@@ -8,7 +8,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
 import { MUSIC_WHERE_KEYS, musicWhereMatches, songFor } from '../../game/js/logic/music-where.js';
-import { trackerCreate } from '../../game/js/audio/tracker.js';
+import { midiToFrequency, trackerCompose, trackerCreate } from '../../game/js/audio/tracker.js';
 import { escapeHtml } from './game-stand-ins.js';
 import {
   MUSIC_CHOICES,
@@ -38,14 +38,24 @@ import { legacyLoad, legacyView } from './legacy-view.js';
 /* eslint-disable no-func-assign */
 expose({
   MUSIC_TABS: [() => MUSIC_TABS],
+  ROLL_CELL_H: [() => ROLL_CELL_H],
+  ROLL_CELL_W: [() => ROLL_CELL_W],
+  ROLL_LEFT: [() => ROLL_LEFT],
+  ROLL_TOP: [() => ROLL_TOP],
   musicData: [() => musicData],
+  musicHookHTML: [() => musicHookHTML, v => (musicHookHTML = v)],
+  musicHookMount: [() => musicHookMount, v => (musicHookMount = v)],
+  musicLineSet: [() => musicLineSet, v => (musicLineSet = v)],
   musicListColHTML: [() => musicListColHTML],
   musicLoopHTML: [() => musicLoopHTML],
+  musicNoteHear: [() => musicNoteHear, v => (musicNoteHear = v)],
   musicNowShow: [() => musicNowShow, v => (musicNowShow = v)],
   musicPickHTML: [() => musicPickHTML],
   musicPlay: [() => musicPlay, v => (musicPlay = v)],
   musicPlaying: [() => musicPlaying],
   musicRecipeHTML: [() => musicRecipeHTML, v => (musicRecipeHTML = v)],
+  musicRollMount: [() => musicRollMount, v => (musicRollMount = v)],
+  musicRollRows: [() => musicRollRows, v => (musicRollRows = v)],
   musicSelected: [() => musicSelected],
   musicSongIds: [() => musicSongIds],
   musicSongListHTML: [() => musicSongListHTML, v => (musicSongListHTML = v)],
@@ -68,6 +78,7 @@ const musicStudio = {
   loop: true,
   shown: '',
   /** the where rule last moved, added or shown (marked in the table) */ picked: -1,
+  /** the line the hook roll edits: hook or counter */ line: 'hook',
   /** Try a place: where you are, made up */
   tryState: /** @type {Record<string, any>} */ ({
     started: true,
@@ -234,6 +245,208 @@ ACTIONS.musSeed = () => {
   if (musicStudio.tracker) musicStudio.tracker.refresh(musicData().songs);
   render();
 };
+/* ---------- the roll: a small piano roll on its own canvas (the hook, the countermelody, a jingle) ----------
+   Columns are sixteenths, rows the scale's notes. A click on an empty cell writes a note (drag right for a longer one;
+   a note it overlaps gives way); a click on a note takes it away. One line is edited, another may show faintly
+   behind it (the composed tune under a hook, the hook under its counter). Each change is one undo step. */
+const ROLL_CELL_W = 22,
+  ROLL_CELL_H = 16,
+  ROLL_LEFT = 40,
+  ROLL_TOP = 18;
+/** the rows: the scale's notes from low to high, `span` semitones up from `base` */
+function musicRollRows(key, scale, base, span) {
+  const sc = MUSIC_SCALES[scale] || MUSIC_SCALES.major,
+    out = [];
+  for (let m = base; m <= base + span; m++) if (sc.includes((((m - key) % 12) + 12) % 12)) out.push(m);
+  return out;
+}
+/**
+ * draw a roll and let it be edited
+ * @param {HTMLCanvasElement} cv
+ * @param {{steps: number, rows: number[], home?: number, notes: number[][], ghost?: number[][], labels?: string[], onChange: (notes: number[][]) => void, onNote?: (midi: number) => void}} o
+ */
+function musicRollMount(cv, o) {
+  const W = ROLL_LEFT + o.steps * ROLL_CELL_W,
+    H = ROLL_TOP + o.rows.length * ROLL_CELL_H,
+    dpr = window.devicePixelRatio || 1;
+  cv.width = W * dpr;
+  cv.height = H * dpr;
+  cv.style.width = W + 'px';
+  cv.style.height = H + 'px';
+  let notes = o.notes.map(n => [...n]),
+    drag = null;
+  const css = getComputedStyle(cv),
+    col = k => css.getPropertyValue(k).trim() || '#888';
+  const rowOf = m => o.rows.length - 1 - o.rows.indexOf(m);
+  const draw = () => {
+    const g = cv.getContext('2d');
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    g.clearRect(0, 0, W, H);
+    g.font = '10px ui-monospace, monospace';
+    o.rows.forEach((m, i) => {
+      const y = ROLL_TOP + (o.rows.length - 1 - i) * ROLL_CELL_H;
+      g.fillStyle = o.home != null && (((m - o.home) % 12) + 12) % 12 === 0 ? col('--acc2') : col('--panel');
+      g.fillRect(ROLL_LEFT, y, W - ROLL_LEFT, ROLL_CELL_H);
+      g.fillStyle = col('--text2');
+      g.fillText(musicNoteName(m), 2, y + 12);
+    });
+    for (let st = 0; st <= o.steps; st++) {
+      g.fillStyle = st % 16 === 0 ? col('--line2') : st % 4 === 0 ? col('--line') : col('--panel2');
+      g.fillRect(ROLL_LEFT + st * ROLL_CELL_W, ROLL_TOP, st % 4 === 0 ? 1.5 : 1, H - ROLL_TOP);
+    }
+    (o.labels || []).forEach((t, b) => {
+      g.fillStyle = col('--text2');
+      g.fillText(t, ROLL_LEFT + b * 16 * ROLL_CELL_W + 4, 12);
+    });
+    const bar = (n, fill, alpha) => {
+      const r = rowOf(n[1]);
+      if (r < 0 || r >= o.rows.length) return;
+      g.globalAlpha = alpha;
+      g.fillStyle = fill;
+      g.fillRect(
+        ROLL_LEFT + n[0] * ROLL_CELL_W + 1,
+        ROLL_TOP + r * ROLL_CELL_H + 2,
+        n[2] * ROLL_CELL_W - 2,
+        ROLL_CELL_H - 4
+      );
+      g.globalAlpha = 1;
+    };
+    for (const n of o.ghost || []) bar(n, col('--text2'), 0.25);
+    for (const n of notes) bar(n, col('--acc'), 1);
+  };
+  const cell = ev => {
+    const r = cv.getBoundingClientRect(),
+      x = ev.clientX - r.left - ROLL_LEFT,
+      y = ev.clientY - r.top - ROLL_TOP;
+    const st = Math.floor(x / ROLL_CELL_W),
+      row = Math.floor(y / ROLL_CELL_H);
+    if (st < 0 || st >= o.steps || row < 0 || row >= o.rows.length) return null;
+    return { st, midi: o.rows[o.rows.length - 1 - row] };
+  };
+  /* a note written over others: the ones it overlaps go */
+  const place = n => notes.filter(m => m === n || m[0] + m[2] <= n[0] || m[0] >= n[0] + n[2]);
+  cv.addEventListener('pointerdown', ev => {
+    const c = cell(ev);
+    if (!c) return;
+    ev.preventDefault();
+    const hit = notes.find(n => n[1] === c.midi && c.st >= n[0] && c.st < n[0] + n[2]);
+    if (hit) {
+      notes = notes.filter(n => n !== hit);
+      draw();
+      o.onChange(notes);
+      return;
+    }
+    const n = [c.st, c.midi, 2 > o.steps - c.st ? 1 : 2];
+    notes.push(n);
+    notes = place(n);
+    drag = n;
+    cv.setPointerCapture(ev.pointerId);
+    if (o.onNote) o.onNote(c.midi);
+    draw();
+  });
+  cv.addEventListener('pointermove', ev => {
+    if (!drag) return;
+    const r = cv.getBoundingClientRect(),
+      st = Math.floor((ev.clientX - r.left - ROLL_LEFT) / ROLL_CELL_W);
+    const len = Math.max(1, Math.min(o.steps - drag[0], st - drag[0] + 1));
+    if (len !== drag[2]) {
+      drag[2] = len;
+      draw();
+    }
+  });
+  const end = () => {
+    if (!drag) return;
+    notes = place(drag);
+    drag = null;
+    draw();
+    o.onChange(notes.sort((a, b) => a[0] - b[0]));
+  };
+  cv.addEventListener('pointerup', end);
+  cv.addEventListener('pointercancel', end);
+  draw();
+}
+/** a note heard as it is written, on the section's tracker */
+function musicNoteHear(midi, type = 'p25') {
+  const T = musicTracker();
+  if (musicStudio.ctx.state !== 'running') musicStudio.ctx.resume().catch(() => {});
+  T.synthVoice(T.bus, {
+    type,
+    freq: midiToFrequency(midi),
+    t: musicStudio.ctx.currentTime + 0.02,
+    dur: 0.18,
+    vol: 0.09,
+  });
+}
+
+/* ---------- the hook card ---------- */
+function musicHookHTML(id) {
+  const S = musicData().songs[id],
+    line = musicStudio.line === 'counter' ? 'counter' : 'hook',
+    has = k => (S[k] || []).length;
+  const tabs = [
+    ['hook', `Hook${has('hook') ? ` (${has('hook')})` : ''}`],
+    ['counter', `Countermelody${has('counter') ? ` (${has('counter')})` : ''}`],
+  ]
+    .map(
+      ([k, n]) =>
+        `<button class="seg ${k === line ? 'on' : ''}" data-act="musLine" data-l="${k}" aria-pressed="${k === line}">${n}</button>`
+    )
+    .join('');
+  return card(
+    'Hook',
+    `<div class="seg-row">${tabs}<span class="grow"></span><button class="btn subtle" data-act="musHookFromTune" ${line === 'hook' ? '' : 'hidden'} title="Start from the composed tune’s first two bars">Copy the tune’s bars 1-2</button><button class="btn subtle" data-act="musLineClear" ${has(line) ? '' : 'disabled'}>Clear</button></div>
+<div class="mus-roll-wrap"><canvas id="musRoll" class="mus-roll" aria-label="${line === 'hook' ? 'Hook' : 'Countermelody'} roll, 32 sixteenths: ${(S[line] || []).map(n => musicNoteName(n[1]) + ' at ' + (n[0] + 1)).join(', ') || 'empty'}"></canvas></div>`,
+    {
+      sub:
+        line === 'hook'
+          ? 'Two bars the game plays instead of its own tune in bars 1-2 and again in 5-6. The faint notes are the composed tune; an empty hook keeps it.'
+          : 'A second, quieter line under bars 1-2 and 5-6. The faint notes are the lead it plays against.',
+    }
+  );
+}
+function musicHookMount(id) {
+  const cv = /** @type {HTMLCanvasElement | null} */ (document.getElementById('musRoll'));
+  if (!cv) return;
+  const S = musicData().songs[id],
+    line = musicStudio.line === 'counter' ? 'counter' : 'hook',
+    C = trackerCompose(S),
+    base = S.key >= 64 ? S.key - 12 : S.key;
+  const lead = [];
+  for (let st = 0; st < 32; st++) if (C.notes[st]) lead.push([st, C.notes[st][0], C.notes[st][1]]);
+  musicRollMount(cv, {
+    steps: 32,
+    /* the composed tune walks from the octave above the key up to about an octave and a half over it */
+    rows: musicRollRows(S.key, S.scale, base + 5, 26),
+    home: S.key,
+    notes: S[line] || [],
+    ghost: line === 'hook' && !(S.hook || []).length ? lead : line === 'counter' ? lead : [],
+    labels: [0, 1].map(b => `bar ${b + 1}: ${chordNumeral(S.scale, S.prog[b])}`),
+    onNote: m => musicNoteHear(m, line === 'hook' ? S.lead : 'p12'),
+    onChange: notes => musicLineSet(id, line, notes),
+  });
+}
+function musicLineSet(id, line, notes) {
+  const S = musicData().songs[id];
+  if (notes.length) S[line] = notes.map(n => [n[0], n[1], n[2]]);
+  else delete S[line];
+  changed();
+  commit(true);
+  if (musicStudio.tracker) musicStudio.tracker.refresh(musicData().songs);
+  render();
+}
+ACTIONS.musLine = d => {
+  musicStudio.line = d.l;
+  render();
+};
+ACTIONS.musLineClear = () => musicLineSet(musicSelected(), musicStudio.line === 'counter' ? 'counter' : 'hook', []);
+ACTIONS.musHookFromTune = () => {
+  const id = musicSelected(),
+    C = trackerCompose(musicData().songs[id]),
+    out = [];
+  for (let st = 0; st < 32; st++) if (C.notes[st]) out.push([st, C.notes[st][0], C.notes[st][1]]);
+  musicLineSet(id, 'hook', out);
+};
+
 /* ---------- the where table ---------- */
 /* a rule's keys as the table edits them: yes/no keys, lists, a row range; an empty choice takes the key away (any) */
 const MUSIC_TABS = ['walk', 'map', 'profile'];
@@ -441,6 +654,7 @@ SECTIONS.music = () => {
     : '<p class="warn">Nothing plays this song: no where-rule, place, story script or code names it.</p>';
   musicStudio.shown = '';
   afterRender(musicNowShow);
+  if (studioState.sel.musicTab !== 'where') afterRender(() => musicHookMount(id));
   const tab = studioState.sel.musicTab === 'where' ? 'where' : 'songs',
     tabs = `<div class="seg-row tabs" role="tablist">${[
       ['songs', 'Songs'],
@@ -455,7 +669,7 @@ SECTIONS.music = () => {
     return `<div class="split"><aside class="list-col">${musicListColHTML(uses)}</aside><div class="ed-col">${tabs}${musicWhereHTML()}</div></div>`;
   return `<div class="split"><aside class="list-col">${musicListColHTML(uses)}</aside>
  <div class="ed-col">${tabs}<div class="ed-head"><div><small class="mono">music.json · songs.${escapeHtml(id)}</small><h2>${escapeHtml(id)}</h2></div><div class="seg-row"><button class="btn primary" data-act="musPlay" data-song="${escapeHtml(id)}">▶ Play</button><button class="btn" data-act="musStop">■ Stop</button></div></div>
- ${musicRecipeHTML(id)}${card('Where it plays', plays, { sub: 'From the where table (first rule that fits wins), the places’ own songs, the story scripts and the game’s code.' })}</div></div>`;
+ ${musicRecipeHTML(id)}${musicHookHTML(id)}${card('Where it plays', plays, { sub: 'From the where table (first rule that fits wins), the places’ own songs, the story scripts and the game’s code.' })}</div></div>`;
 };
 const musicLoopHTML = () =>
   `<label class="mus-loop" title="Off: a song stops after its last bar"><input type="checkbox" id="musLoop" ${musicStudio.loop ? 'checked' : ''}>Loop</label>`;

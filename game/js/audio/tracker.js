@@ -33,7 +33,7 @@ function songRandom(seed) {
 }
 /* a song's recipe (bpm, key, scale, the chords, the parts) made into notes: the lead is a seeded random walk over the
    chord tones. Returns a new object, the recipe with notes, steps and deg (scale degree to midi note) */
-function trackerCompose(D) {
+export function trackerCompose(D) {
   const sc = SCALES[D.scale],
     R = songRandom(D.seed),
     deg = n => {

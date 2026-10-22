@@ -4646,3 +4646,14 @@ body.wb-dropping::after {
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 8px;
 }
+.mus-roll-wrap {
+  overflow-x: auto;
+  margin-top: 8px;
+}
+.mus-roll {
+  display: block;
+  cursor: crosshair;
+  touch-action: none;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
