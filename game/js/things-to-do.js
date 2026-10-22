@@ -502,18 +502,19 @@ const FURNITURE = [
   ['lab_machine', 'Coin tube'],
 ];
 /* where things can go: floor spots, two on the back wall, one for a rug */
+/* RL-9 session: on the home's smaller floor (tools/build-interiors.py SIZE and fit) */
 const HOME_SLOTS = [
-  { x: 2.6, z: 8.6, n: 'Back left' },
-  { x: 7, z: 9.0, n: 'Back wall, middle' },
-  { x: 11.4, z: 8.6, n: 'Back right' },
-  { x: 2.4, z: 5.4, n: 'Left' },
-  { x: 11.6, z: 5.4, n: 'Right' },
-  { x: 7, z: 6.2, n: 'Middle' },
-  { x: 2.2, z: 2.6, n: 'Front left' },
-  { x: 11.8, z: 2.6, n: 'Front right' },
-  { x: 4.2, z: 9.45, n: 'On the wall, left', wall: 1 },
-  { x: 9.8, z: 9.45, n: 'On the wall, right', wall: 1 },
-  { x: 7, z: 3.9, n: 'Floor (rug)', rug: 1 },
+  { x: 2.32, z: 7.72, n: 'Back left' },
+  { x: 6, z: 8.06, n: 'Back wall, middle' },
+  { x: 9.68, z: 7.72, n: 'Back right' },
+  { x: 2.15, z: 4.98, n: 'Left' },
+  { x: 9.85, z: 4.98, n: 'Right' },
+  { x: 6, z: 5.67, n: 'Middle' },
+  { x: 1.99, z: 2.59, n: 'Front left' },
+  { x: 10.01, z: 2.59, n: 'Front right' },
+  { x: 3.66, z: 8.45, n: 'On the wall, left', wall: 1 },
+  { x: 8.34, z: 8.45, n: 'On the wall, right', wall: 1 },
+  { x: 6, z: 3.7, n: 'Floor (rug)', rug: 1 },
 ];
 const furnitureFits = (k, s) => (s.wall ? /^wall_/.test(k) : s.rug ? /^rug_/.test(k) : !/^wall_|^rug_/.test(k));
 export function refreshHomeFurniture() {
