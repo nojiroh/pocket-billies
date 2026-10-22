@@ -74,7 +74,7 @@ export async function runStudioTest(G, opts = {}) {
     snap: G.snapshot(),
     undo: S.undo.slice(),
     redo: S.redo.slice(),
-    last: S.last,
+    last: S.last && new Map(S.last) /* undo and redo change it in place */,
     dirty: S.dirty,
     rigsDirty: S.rigsDirty,
     artDirty: new Map(S.artDirty),
@@ -316,9 +316,9 @@ export async function runStudioTest(G, opts = {}) {
 async function outsideEdit(G) {
   const S = G.studioState;
   for (let i = 0; i < 20 && S.snapT != null; i++) await wait(100);
-  const now = G.snapshot();
-  if (S.last == null || now === S.last) return [];
-  const paths = studioTestChangedPaths(JSON.parse(S.last), JSON.parse(now));
+  const now = G.snapshotParts();
+  if (S.last == null || !G.historyDiff(S.last, now)) return [];
+  const paths = studioTestChangedPaths(G.historyPartsData(S.last), G.historyPartsData(now));
   G.commit(true);
   return paths;
 }
