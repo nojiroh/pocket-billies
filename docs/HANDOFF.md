@@ -43,7 +43,11 @@ the draft made on the page (not in a worker), a locked ground's dials read-only,
     draft lists it and Lock the ground refuses it until the zone's points are moved. Not fixed (IS-2's file).
 - Verified: unit tests 604 (5 new); lint, typecheck, check:modules, format:check; check-fast's Hub island steps (IS-6a
   and IS-6b) pass; headless pictures at 1600 x 1000 (copperleaf_island: its own dials give back its tiles exactly,
-  the draft drawn, a mountain reroll). Full check-fast, smoke and the full quick check: see the PR.
+  the draft drawn, a mountain reroll). check-fast 24 of 24; smoke no problems; full quick check (40 min): 10 problems, the
+  9 old ones on main (roster counts 117/61, empty voxel bushes, buildings without a plan, the biped walk cycle, the
+  running step's "float division by zero"; see IS-6a's entry) and RL-8's run (Meadow Town's view never showed) while
+  other browser checks ran beside it; RL-8 alone passes on the merged branch. After merging main (IS-7 and the rest):
+  unit tests 614, lint, typecheck, modules, format, check-data, both Hub island steps pass.
 - Risky:
   - The page pauses 2-4 s while a draft is made (no worker). Fine on a desktop; slow on a phone.
   - "Use this island" leaves the map's in-game `checks` (copperleaf_island's walking legs from build-island) as they
