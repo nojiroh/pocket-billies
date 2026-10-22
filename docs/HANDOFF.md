@@ -38,7 +38,9 @@ its label (art later). RL-9b (PR #114, the mast's home Billie and packed bag) me
 - Verified: unit tests 523; lint, typecheck, modules, format, check-data; smoke 15 of 15; check-fast 18 of 18 (its
   screens step updated for the Lab tab); the in-game phases "The Lab: unlocks" and the ranch's alone in a browser,
   nothing written while they ran; headless at 390 x 760: the board, the ranch's and the mast's upgrades, the lab's
-  machine. **Not run**: the full quick check (the PR was asked for first).
+  machine. After merging main (RL-9b): unit tests 527, smoke 15 of 15, check-fast 19 of 19 (one earlier full run
+  failed RL-9b's "Packing for a run" when its take-off took over the step's 30 s wait on a loaded machine; it passes
+  alone in 26 s and in the next full run). **Not run**: the full quick check (the PR was asked for first).
 - Risky / open:
   - **New players lose wares and lands until unlocked**: Nerve Tonic, Wake-Up Tea and Revives left run shops, and
     ridge and autumn left run maps. Runs were already lost on the placeholders (the run sim, RL-8); without Revives
