@@ -456,7 +456,10 @@ function battleSoundEffect(an, r) {
 let footstepAt = 0;
 setInterval(() => {
   try {
+    /* SND-2: nothing to work out while no sound can play (before the first touch, or suspended) */
     if (
+      !soundEngine.ctx ||
+      soundEngine.ctx.state !== 'running' ||
       typeof walkView === 'undefined' ||
       !walkView.ready ||
       !walkView.pl ||
