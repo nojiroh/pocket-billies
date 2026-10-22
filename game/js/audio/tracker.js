@@ -267,11 +267,21 @@ export function trackerCreate(ctx, bus, opts = {}) {
     }
     T.song = null;
     T.voices = [];
+    T.idle();
+  };
+  /* the scheduler's timer runs only while a song plays: idle() stops it (no song, or the page hidden), wake() starts
+     it again for the song that was playing */
+  T.idle = () => {
+    if (T.timer) clearInterval(T.timer);
+    T.timer = null;
+  };
+  T.wake = () => {
+    if (T.song && !T.timer) T.timer = setInterval(T.tick, 25);
   };
   /* the scheduler: called every 25 ms, it schedules each step that starts in the next 140 ms */
   T.tick = () => {
     const sg = T.song;
-    if (!sg) return;
+    if (!sg) return T.idle();
     const D = sg.D,
       spb = 60 / D.bpm / 4;
     while (sg.next < c.currentTime + 0.14) {

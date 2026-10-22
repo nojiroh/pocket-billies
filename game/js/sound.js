@@ -151,8 +151,16 @@ function unlockSound() {
 ['pointerdown', 'keydown', 'touchend'].forEach(e => addEventListener(e, unlockSound, { capture: true, passive: true }));
 document.addEventListener('visibilitychange', () => {
   if (!soundEngine.ctx) return;
-  if (document.hidden) soundEngine.ctx.suspend();
-  else soundEngine.ctx.resume();
+  /* SND-2: the music's scheduler stops too while hidden (it ran every 25 ms with nothing to do) */
+  const T = soundEngine.tracker;
+  if (document.hidden) {
+    soundEngine.ctx.suspend();
+    if (T) T.idle();
+  } else {
+    soundEngine.ctx.resume();
+    if (T) T.wake();
+  }
+  soundEngine.timer = T ? T.timer : null;
 });
 /* ---------- instruments (SND-2: the tracker's, audio/tracker.js; every sound plays through them) ---------- */
 function synthVoice(bus, o) {
@@ -182,6 +190,7 @@ export function music(name) {
 }
 function musicStop() {
   if (soundEngine.tracker) soundEngine.tracker.stop();
+  soundEngine.timer = null;
   soundEngine.song = null;
   soundEngine.want = null;
   soundEngine.voices = [];
