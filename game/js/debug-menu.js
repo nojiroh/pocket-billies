@@ -153,7 +153,7 @@ function debugHTML() {
    EGG_TIERS[0]
  )}${debugButtonHTML('egg', 'Add egg')}${debugButtonHTML('hatch', 'Finish all incubators')}</div>
   <div class="dbg-row">${debugButtonHTML('idle', 'Age storage by a day')}${debugButtonHTML('streak', 'Lead +3 win streak')}</div>
-  <div class="dbg-row">${debugButtonHTML('ranchhour', 'Age the ranch by an hour')}${debugButtonHTML('scrap', '+50 Scrap')}</div></details>
+  <div class="dbg-row">${debugButtonHTML('ranchhour', 'Age the ranch by an hour')}${debugButtonHTML('scrap', '+50 Scrap')}${debugButtonHTML('eggsready', 'Eggs ready now')}</div></details>
  <details ${inB ? 'open' : ''}><summary>Battle${inB ? '' : ' (start one first)'}</summary><div class="dbg-row">${debugButtonHTML('win', 'Win now', 'gold')}${debugButtonHTML('lose', 'Lose now')}${debugButtonHTML('foe1', 'Foe to 1 HP')}${debugButtonHTML('catch', uiState.dbgCatch ? 'Taxing works as normal' : 'Every throw taxes')}</div>
   <div class="dbg-row">${[1, 2, 4].map(x => debugButtonHTML('speed' + x, `${x}× speed`, battleStage.speed === x ? 'dark' : '')).join('')}</div></details>
  <details><summary>Save</summary><div class="dbg-row">${debugButtonHTML('copy', 'Copy save as text')}${debugButtonHTML('export', 'Download backup')}${debugButtonHTML('wipe', 'Erase save', 'red')}</div></details>
@@ -436,6 +436,13 @@ function debugAction(x) {
         t.at = Math.max(0, t.at - 3600000);
       });
       toast(`${saveData.ranch.trainees.length} training: an hour older.`);
+      break;
+    /* RL-10: every egg in the ranch's nursery ready to hatch now */
+    case 'eggsready':
+      saveData.ranch.nursery.forEach(n => {
+        n.ready = Math.max(n.at, Math.min(n.ready, Date.now()));
+      });
+      toast(`${saveData.ranch.nursery.length} egg(s) ready to hatch at the ranch.`);
       break;
     case 'scrap':
       saveData.meta.scrap += 50;

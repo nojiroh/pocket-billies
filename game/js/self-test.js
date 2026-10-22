@@ -1117,6 +1117,64 @@ async function runFullTest(mode) {
         3,
         60
       );
+    /* RL-10: breeding at the ranch, on a copy of the save: two of the lead's line in storage, a safe pair picked on the
+       ranch's sheet shows its egg, Breed pays and puts that egg in the nursery, it can't hatch at once; ready (its time
+       moved to now), Hatch brings it home. Then the save as it was */
+    if (typeof ranchOpen === 'function' && RULES.ranch && RULES.ranch.breed && !saveData.run && !selfTest.stop)
+      await phase(
+        'The ranch: breeding a pair',
+        'dio',
+        async () => {
+          const was = saveData,
+            BR = RULES.ranch.breed;
+          try {
+            const s = JSON.parse(JSON.stringify(saveData)),
+              line = SPECIES[s.team[0].sp].line,
+              a = makeBilly(line + '0', 6),
+              b = makeBilly(line + '0', 7);
+            s.box.push(a, b);
+            s.ranch.nursery = [];
+            s.meta.scrap = BR.safeCost;
+            setSaveData(s);
+            uiState.modal = null;
+            uiState.mq = [];
+            ranchOpen();
+            uiState.breedPick = { a: a.uid, b: b.uid, mode: 'safe' };
+            ranchOpen();
+            const btn = /** @type {HTMLButtonElement | null} */ (
+              document.querySelector('#ov .ranch-sheet [data-r=breed]')
+            );
+            if (!document.querySelector('#ov .ranch-sheet .breed-preview'))
+              throw new Error('a safe pair showed no egg');
+            if (!btn || btn.disabled) throw new Error('Breed is off for a safe pair with the Scrap');
+            btn.click();
+            const e = s.ranch.nursery[0];
+            if (!e || s.meta.scrap !== 0)
+              throw new Error(`after Breed: ${s.ranch.nursery.length} eggs, ${s.meta.scrap} Scrap`);
+            if (e.egg.sp !== line + '0') throw new Error(`the egg hatches into ${e.egg.sp}, not ${line}0`);
+            const hatch = () =>
+              /** @type {HTMLButtonElement | null} */ (
+                document.querySelector('#ov .ranch-sheet [data-r=hatch][data-i="0"]')
+              );
+            if (!hatch() || !hatch().disabled) throw new Error('a new egg could hatch at once');
+            e.ready = Math.max(e.at, Date.now());
+            ranchOpen();
+            hatch().click();
+            if (s.ranch.nursery.length || !s.team.concat(s.box).some(m => m.uid === e.egg.uid))
+              throw new Error('Hatch didn’t bring the egg home');
+            return `a safe pair of ${SPECIES[line + '0'].name} for ${BR.safeCost} Scrap; its egg shown, bred and hatched`;
+          } finally {
+            uiState.modal = null;
+            uiState.mq = [];
+            uiState.breedPick = null;
+            renderOverlay();
+            setSaveData(was);
+            render();
+          }
+        },
+        3,
+        60
+      );
     /* v46: a room that opens in place: into a building and out again, without leaving the town (RL-5: Professor Hazel's
        lab in Copperleaf, the hub; it was Marigold's shop) */
     if (typeof seamlessRoomMap === 'function' && LOCATIONS[START_NODE] && !selfTest.stop)
