@@ -312,8 +312,9 @@ export interface RosterEntry {
 /* ---------- the world: locations, roads, regions, maps ---------- */
 
 /** phase 10: a place on the bowl, seen from above. a: degrees counter-clockwise from east; r: 0 at the centre of
- * the floor, 1 at the rim. A place reached only by lift (Pearlantis) sits under another place instead. */
-export type BowlSpot = { a: number; r: number } | { under: DataId };
+ * the floor, 1 at the rim. A place reached only by lift (Pearlantis) sits under another place instead. RL-8b: up, the
+ * way its map's north faces (degrees like a; 90 the bowl's north); without it the map's north faces the centre. */
+export type BowlSpot = { a: number; r: number; up?: number } | { under: DataId };
 
 /** locations.json: a place on the world map (a town or a route area), in node order */
 export interface LocationData {

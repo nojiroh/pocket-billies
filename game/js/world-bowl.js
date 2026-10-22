@@ -21,6 +21,7 @@ import { runMarkDraw } from './logic/run-marks.js';
 import {
   BOWL_GROUND_EXTENT,
   bowlCoastAt,
+  bowlCompass,
   bowlGridHeight,
   bowlGroundGrid,
   bowlHeight,
@@ -521,7 +522,7 @@ function worldBowlSpots() {
   worldBowl.spots = LOCATIONS.map(l => {
     const s = bowlSpotOf(l, byId),
       [x, y] = bowlXY(s.a, s.r);
-    return { x, y, under: s.under, h: bowlGridHeight(G, x, y) };
+    return { x, y, under: s.under, up: s.up, h: bowlGridHeight(G, x, y) };
   });
   worldBowl.ground = {
     F,
@@ -1042,9 +1043,7 @@ function worldBowlThingsOfPlace(W, i) {
     A = (gameData.scenery && gameData.scenery.props) || {};
   if (!M || !M.props || s.under) return false;
   const k = BOWL_THING_SCALE / BOWL_METRES,
-    r = Math.hypot(s.x, s.y),
-    north = r < 1e-6 ? [0, 1] : [-s.x / r, -s.y / r],
-    east = [north[1], -north[0]],
+    { north, east } = bowlCompass(s.x, s.y, s.up),
     base = (x, y) => bowlToGpu(x, y, worldBowlSkyFloor(x, y)),
     lm = bowlLandmarkPick(l, M, A);
   if (lm && A[lm.k] && A[lm.k].img) W.stand.push({ i, k: lm.k, x: s.x, y: s.y, g: 0, s: lm.s || 1 });
@@ -1400,9 +1399,7 @@ function worldBowlStampMap(T, i) {
   if (!M || !M.tiles || !M.tiles.length || s.under || T.stamped.has(i)) return false;
   T.stamped.add(i);
   const N = BOWL_INDEX,
-    r = Math.hypot(s.x, s.y),
-    north = r < 1e-6 ? [0, 1] : [-s.x / r, -s.y / r],
-    east = [north[1], -north[0]],
+    { north, east } = bowlCompass(s.x, s.y, s.up),
     w = M.w,
     h = M.h,
     half = Math.hypot(w, h) / 2 / BOWL_METRES,
@@ -1690,9 +1687,7 @@ function bowlWallTexture() {
   if (worldBowl.wall && worldBowl.wall.node === node && worldBowl.wall.gl === gl) return worldBowl.wall.t;
   worldBowlSpots();
   const P = worldBowl.spots[node] || { x: 0, y: 0 },
-    r = Math.hypot(P.x, P.y),
-    north = r < 1e-6 ? [0, 1] : [-P.x / r, -P.y / r],
-    east = [north[1], -north[0]],
+    { north, east } = bowlCompass(P.x, P.y, P.up),
     eye = bowlSurface(P.x, P.y) + 0.004,
     px = new Uint8Array(BOWL_WALL_W * 4 * 4);
   for (let k = 0; k < BOWL_WALL_W; k++) {

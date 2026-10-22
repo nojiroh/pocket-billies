@@ -156,20 +156,23 @@ export function runExits(map, i) {
     back: back.map((from, k) => ({ from, t: RUN_EXIT_T[back.length][k] })),
   };
 }
-/** where a run's map sits on the bowl: its rows clockwise (westward) along an arc at radius r, centred on angle a
- * (the bowl's south side) and `span` degrees long, from the landing in the south-east to the boss in the south-west;
- * two lanes a fixed distance apart across it (in bowl radii), lane 0 outermost */
-export const RUN_BOWL = { a: 270, span: 120, r: 0.62, lane: 0.07 };
-/** a node's spot on the bowl ({a, r} as locations.json "bowl"), worked out from its row and lane, never stored
- * @param {RunMap} map @param {number} i @returns {{ a: number, r: number }} */
+/** where a run's map sits on the bowl (RL-8b, the owner: the run across the whole bowl, on land of its own; Copperleaf
+ * isn't on it): its rows from the landing at x east of the centre to the boss at -x west of it, `step` apart at most
+ * (bowl radii; a 9-row map spans the whole width), the line bowed `bend` north in the middle; two lanes `lane` apart
+ * north and south of it, lane 0 the southern. Every place's map faces the bowl's north (up 90), so a run's places read
+ * east to west on the map as they are walked */
+export const RUN_BOWL = { x: 0.72, step: 0.18, lane: 0.1, bend: 0.06 };
+/** a node's spot on the bowl ({a, r, up} as locations.json "bowl"), worked out from its row and lane, never stored
+ * @param {RunMap} map @param {number} i @returns {{ a: number, r: number, up: number }} */
 export function runSpot(map, i) {
   const node = map.nodes[i],
     rows = 1 + Math.max(...map.nodes.map(n => n.row)),
     width = map.nodes.filter(n => n.row === node.row).length,
-    a = rows > 1 ? RUN_BOWL.a + RUN_BOWL.span / 2 - (node.row * RUN_BOWL.span) / (rows - 1) : RUN_BOWL.a,
-    side = (node.lane - (width - 1) / 2) * RUN_BOWL.lane;
-  /* lanes `lane` apart across the arc: half of it either side of its circle, the higher lane nearer the centre */
-  return { a, r: RUN_BOWL.r - side };
+    step = rows > 1 ? Math.min(RUN_BOWL.step, (2 * RUN_BOWL.x) / (rows - 1)) : 0,
+    x = ((rows - 1) / 2 - node.row) * step,
+    y = RUN_BOWL.bend * Math.cos((x / RUN_BOWL.x) * (Math.PI / 2)) + (node.lane - (width - 1) / 2) * RUN_BOWL.lane,
+    a = (Math.atan2(y, x) * 180) / Math.PI;
+  return { a: Math.round((a < 0 ? a + 360 : a) * 1e9) / 1e9, r: Math.hypot(x, y), up: 90 };
 }
 /** the run's world node of a map node (Copperleaf is world node 0) @param {number} i */
 export const runWorldNode = i => i + 1;

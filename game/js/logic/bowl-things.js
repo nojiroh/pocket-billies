@@ -7,7 +7,7 @@
    Logic only: no DOM, runs in Node; world-bowl.js draws with it. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { bowlSeedShift } from './bowl.js';
+import { bowlCompass, bowlSeedShift } from './bowl.js';
 /* eslint-disable no-func-assign */
 expose({
   BOWL_BUILDING_GROUP: [() => BOWL_BUILDING_GROUP],
@@ -41,22 +41,21 @@ export const BOWL_THING_SCALE = 3;
 /** @typedef {{ k: string, x: number, z: number, s?: number, rot?: number, f?: number }} BowlMapProp */
 
 /** a point of a walk map on the bowl: the map sits with its north to the centre, its east counter-clockwise (as the
- * terrain stamps it). mx east and mz north in metres from the map's south-west corner.
- * @param {{ x: number, y: number }} spot @param {{ w: number, h: number }} map @param {number} mx @param {number} mz
+ * terrain stamps it; RL-8b: or its north turned to the spot's up, bowlCompass). mx east and mz north in metres from
+ * the map's south-west corner.
+ * @param {{ x: number, y: number, up?: number }} spot @param {{ w: number, h: number }} map @param {number} mx @param {number} mz
  * @param {number} [metres] @returns {[number, number]} */
 export function bowlMapPoint(spot, map, mx, mz, metres = 1000) {
-  const r = Math.hypot(spot.x, spot.y),
-    north = r < 1e-6 ? [0, 1] : [-spot.x / r, -spot.y / r],
-    east = [north[1], -north[0]],
+  const { north, east } = bowlCompass(spot.x, spot.y, spot.up),
     u = (mx - map.w / 2) / metres,
     v = (mz - map.h / 2) / metres;
   return [spot.x + east[0] * u + north[0] * v, spot.y + east[1] * u + north[1] * v];
 }
 /** the turn of a walk map on the bowl (radians, counter-clockwise from the bowl's own east to the map's east)
- * @param {{ x: number, y: number }} spot */
+ * @param {{ x: number, y: number, up?: number }} spot */
 export function bowlMapTurn(spot) {
-  const r = Math.hypot(spot.x, spot.y);
-  return r < 1e-6 ? 0 : Math.atan2(spot.x / r, -spot.y / r);
+  const { east } = bowlCompass(spot.x, spot.y, spot.up);
+  return Math.atan2(east[1], east[0]);
 }
 
 export const BOWL_BUILDING_GROUP =

@@ -107,7 +107,7 @@ export function bowlXY(a, r) {
 
 /** a place's spot, following "under" to the place it hangs below (and how many levels it went down)
  * @param {LocationData} place @param {(id: string) => LocationData | undefined} byId
- * @returns {{ a: number, r: number, under: number }} */
+ * (RL-8b: and its up, when it has one) @returns {{ a: number, r: number, under: number, up?: number }} */
 export function bowlSpotOf(place, byId) {
   /** @type {BowlSpot} */
   let s = place.bowl,
@@ -117,7 +117,7 @@ export function bowlSpotOf(place, byId) {
     if (!p || ++under > 4) throw new Error(`${place.id}: its bowl spot hangs under ${s.under}, which has none`);
     s = p.bowl;
   }
-  return { a: s.a, r: s.r, under };
+  return 'up' in s && typeof s.up === 'number' ? { a: s.a, r: s.r, under, up: s.up } : { a: s.a, r: s.r, under };
 }
 
 /** a point on the ground: [x east, y north, h up] @param {number} x @param {number} y
@@ -127,12 +127,15 @@ export function bowlGround(x, y) {
 }
 
 /** a map's compass where it sits on the bowl: its north faces the centre, its east runs counter-clockwise. Unit
- * vectors seen from above. At the very centre north is the bowl's north. @param {number} x @param {number} y
+ * vectors seen from above. At the very centre north is the bowl's north. RL-8b: a spot's up (degrees, 90 the bowl's
+ * north) turns its north that way instead (a run's places all face the bowl's north)
+ * @param {number} x @param {number} y @param {number} [up]
  * @returns {{ north: [number, number], east: [number, number] }} */
-export function bowlCompass(x, y) {
-  const r = Math.hypot(x, y);
+export function bowlCompass(x, y, up) {
+  const r = Math.hypot(x, y),
+    u = typeof up === 'number' ? (up * Math.PI) / 180 : null;
   /** @type {[number, number]} */
-  const north = r < 1e-6 ? [0, 1] : [-x / r, -y / r];
+  const north = u !== null ? [Math.cos(u), Math.sin(u)] : r < 1e-6 ? [0, 1] : [-x / r, -y / r];
   return { north, east: [north[1], -north[0]] };
 }
 
@@ -147,10 +150,11 @@ export function bowlExitSide(exit) {
 }
 
 /** how far, in degrees, a seam on the bowl turns from its two exits: 0 when the road leaves A the way A's exit
- * faces and reaches B the way B's exit faces back. The compass is taken at the road's midpoint.
- * @param {[number, number]} A @param {[number, number]} B @param {string} exitA @param {string} exitB
+ * faces and reaches B the way B's exit faces back. The compass is taken at the road's midpoint (RL-8b: or turned
+ * to up, as both places' maps are) @param {[number, number]} A @param {[number, number]} B @param {string} exitA
+ * @param {string} exitB @param {number} [up]
  * @returns {number} */
-export function bowlSeamTurn(A, B, exitA, exitB) {
+export function bowlSeamTurn(A, B, exitA, exitB, up) {
   const sa = bowlExitSide(exitA),
     sb = bowlExitSide(exitB);
   let dx = sa[0] - sb[0],
@@ -158,7 +162,7 @@ export function bowlSeamTurn(A, B, exitA, exitB) {
   const n = Math.hypot(dx, dy) || 1;
   dx /= n;
   dy /= n;
-  const { north, east } = bowlCompass((A[0] + B[0]) / 2, (A[1] + B[1]) / 2),
+  const { north, east } = bowlCompass((A[0] + B[0]) / 2, (A[1] + B[1]) / 2, up),
     want = [dx * east[0] + dy * north[0], dx * east[1] + dy * north[1]],
     ex = B[0] - A[0],
     ey = B[1] - A[1],
