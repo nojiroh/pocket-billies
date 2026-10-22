@@ -16,6 +16,8 @@ import { expose } from '../test-globals.js';
 expose({
   BOWL_GROUND_CELLS: [() => BOWL_GROUND_CELLS],
   BOWL_GROUND_EXTENT: [() => BOWL_GROUND_EXTENT],
+  BOWL_ISLAND_BASE: [() => BOWL_ISLAND_BASE],
+  BOWL_ISLAND_LIFT: [() => BOWL_ISLAND_LIFT],
   BOWL_ISLE_RIM: [() => BOWL_ISLE_RIM],
   BOWL_RELIEF_DEFAULT: [() => BOWL_RELIEF_DEFAULT],
   BOWL_RELIEF_KINDS: [() => BOWL_RELIEF_KINDS],
@@ -51,9 +53,15 @@ expose({
   // @ts-expect-error -- replaced on purpose
   bowlHeight: [() => bowlHeight, v => (bowlHeight = v)],
   // @ts-expect-error -- replaced on purpose
+  bowlIslandPoly: [() => bowlIslandPoly, v => (bowlIslandPoly = v)],
+  // @ts-expect-error -- replaced on purpose
   bowlIsles: [() => bowlIsles, v => (bowlIsles = v)],
   // @ts-expect-error -- replaced on purpose
   bowlPaintStroke: [() => bowlPaintStroke, v => (bowlPaintStroke = v)],
+  // @ts-expect-error -- replaced on purpose
+  bowlPolyBox: [() => bowlPolyBox, v => (bowlPolyBox = v)],
+  // @ts-expect-error -- replaced on purpose
+  bowlPolyDistance: [() => bowlPolyDistance, v => (bowlPolyDistance = v)],
   // @ts-expect-error -- replaced on purpose
   bowlRelief: [() => bowlRelief, v => (bowlRelief = v)],
   // @ts-expect-error -- replaced on purpose
@@ -321,6 +329,14 @@ export function bowlGroundGrid(F, n = BOWL_GROUND_CELLS, sea = null) {
       const x = -e + (2 * e * i) / n,
         y = -e + (2 * e * j) / n;
       let rel = bowlRelief(F, x, y);
+      /* IS-7: on an island drawn from its map, its own ground: its heights (once its map is in), not the bump of its
+         kind or the hills between places; no headland, and no fall toward the coast (its beaches are its own) */
+      const isle = coast ? coast.isle[j * w + i] : 0;
+      if (isle && sea) {
+        const P = sea.places[isle - 1];
+        h[j * w + i] = bowlBaseHeight(x, y) + BOWL_ISLAND_BASE + Math.max(0, (P.hAt && P.hAt(x, y)) || 0);
+        continue;
+      }
       if (c) {
         /* the land comes down to the water's edge, the sea floor falls away from it */
         /* high land meets the sea as a cliff (it keeps its height almost to the edge), low land slopes to a beach */
@@ -535,25 +551,115 @@ export const BOWL_SEA_RIM_LAND = 0.45;
 /** RL-8b: a round of land the sea leaves alone (bowl radii, seen from above) @typedef {{ x: number, y: number, r: number }} BowlIsle */
 /** RL-8b, an island world: past this far from the centre the sea always wins, so the land never reaches the rim */
 export const BOWL_ISLE_RIM = 0.86;
-/** @typedef {{ places: { x: number, y: number, reach: number }[], roads: [number, number, number, number][],
+/** IS-7: a place drawn from an island map: its coast as a polygon (bowl radii, flat x, y pairs) and, once its map is in,
+ * its ground's height (bowl radii, lifted) at a point of the bowl
+ * @typedef {{ x: number, y: number, reach: number, poly?: Float64Array,
+ *   hAt?: ((x: number, y: number) => number) | null }} BowlSeaPlace */
+/** @typedef {{ places: BowlSeaPlace[], roads: [number, number, number, number][],
  *   opt?: BowlSeaLook }} BowlSeaInput */
+/** IS-7: how much higher an island's own hills and mountain are drawn on the bowl than they are, like the buildings
+ * and trees (logic/bowl-things.js BOWL_THING_SCALE, the owner's "about 3x"), so a 25 m mountain reads */
+export const BOWL_ISLAND_LIFT = 3;
+/** IS-7: the island's ground stands this far above the water at its lowest (bowl radii), as the land elsewhere does */
+export const BOWL_ISLAND_BASE = 0.004;
+/** IS-7: an island map's coast on the bowl: its points turned as the map lies there (its middle on the spot, its north
+ * to the centre, as the terrain stamps it), flat x, y pairs; null without a coast
+ * @param {{ x: number, y: number, up?: number }} spot @param {{ w: number, h: number, island?: { coast?: number[][] } }} map
+ * @param {number} [metres] @returns {Float64Array | null} */
+export function bowlIslandPoly(spot, map, metres = 1000) {
+  const C = map && map.island && map.island.coast;
+  if (!Array.isArray(C) || C.length < 3) return null;
+  const { north, east } = bowlCompass(spot.x, spot.y, spot.up),
+    out = new Float64Array(C.length * 2);
+  C.forEach(([mx, mz], k) => {
+    const u = (mx - map.w / 2) / metres,
+      v = (mz - map.h / 2) / metres;
+    out[k * 2] = spot.x + east[0] * u + north[0] * v;
+    out[k * 2 + 1] = spot.y + east[1] * u + north[1] * v;
+  });
+  return out;
+}
+/** IS-7: how far a point is from a polygon's edge (flat x, y pairs), below 0 inside @param {Float64Array} P
+ * @param {number} x @param {number} y */
+export function bowlPolyDistance(P, x, y) {
+  const n = P.length / 2;
+  let d = Infinity,
+    inside = false;
+  for (let a = 0, b = n - 1; a < n; b = a++) {
+    const ax = P[a * 2],
+      ay = P[a * 2 + 1],
+      bx = P[b * 2],
+      by = P[b * 2 + 1],
+      vx = bx - ax,
+      vy = by - ay;
+    if (ay > y !== by > y && x < ax + ((y - ay) * vx) / (vy || 1e-12)) inside = !inside;
+    let t = ((x - ax) * vx + (y - ay) * vy) / (vx * vx + vy * vy || 1);
+    t = t < 0 ? 0 : t > 1 ? 1 : t;
+    const dx = x - ax - vx * t,
+      dy = y - ay - vy * t;
+    d = Math.min(d, dx * dx + dy * dy);
+  }
+  return inside ? -Math.sqrt(d) : Math.sqrt(d);
+}
+/** a polygon's box (flat x, y pairs): [x0, y0, x1, y1] @param {Float64Array} P */
+export function bowlPolyBox(P) {
+  let x0 = Infinity,
+    y0 = Infinity,
+    x1 = -Infinity,
+    y1 = -Infinity;
+  for (let k = 0; k < P.length; k += 2) {
+    x0 = Math.min(x0, P[k]);
+    x1 = Math.max(x1, P[k]);
+    y0 = Math.min(y0, P[k + 1]);
+    y1 = Math.max(y1, P[k + 1]);
+  }
+  return [x0, y0, x1, y1];
+}
 /** the land the sea must leave alone: each place with its walk map's half-diagonal (w, h in metres, BOWL_METRES to the
- * radius), and each road @param {LocationData[]} places @param {[number, number][]} roads pairs of place numbers
- * @param {(p: LocationData) => { w: number, h: number } | null} mapOf @param {number} [metres]
+ * radius), and each road. IS-7: a place whose map has an island coast keeps exactly its coast instead (poly), and with
+ * heightOf its ground's own heights (hAt, lifted by BOWL_ISLAND_LIFT).
+ * @param {LocationData[]} places @param {[number, number][]} roads pairs of place numbers
+ * @param {(p: LocationData) => { w: number, h: number, island?: { coast?: number[][] } } | null} mapOf
+ * @param {number} [metres] @param {BowlSeaLook | null} [opt]
+ * @param {((p: LocationData) => ((mx: number, mz: number) => number) | null) | null} [heightOf] the map's ground height
+ * in metres at a point of it (east, north from its south-west corner)
  * @returns {BowlSeaInput} */
-export function bowlSeaInput(places, roads, mapOf, metres = 1000, opt = null) {
+export function bowlSeaInput(places, roads, mapOf, metres = 1000, opt = null, heightOf = null) {
   const byId = (/** @type {string} */ id) => places.find(p => p.id === id),
     at = places.map(p => {
       const s = bowlSpotOf(p, byId);
       /* RL-8b: a place off this world's map (Copperleaf in a run) keeps no land, as one hung under another */
-      return { xy: bowlXY(s.a, s.r), under: s.under || (s.off ? 1 : 0) };
+      return { xy: bowlXY(s.a, s.r), under: s.under || (s.off ? 1 : 0), up: s.up };
     });
   return {
     places: places
       .map((p, i) => {
         const m = mapOf(p),
           half = m ? Math.hypot(m.w, m.h) / 2 / metres : 0.06;
-        return at[i].under ? null : { x: at[i].xy[0], y: at[i].xy[1], reach: half + 0.012 };
+        if (at[i].under) return null;
+        /** @type {BowlSeaPlace} */
+        const o = { x: at[i].xy[0], y: at[i].xy[1], reach: half + 0.012 },
+          spot = { x: o.x, y: o.y, up: at[i].up },
+          poly = m ? bowlIslandPoly(spot, m, metres) : null;
+        if (poly && m) {
+          o.poly = poly;
+          const H = heightOf ? heightOf(p) : null;
+          if (H) {
+            const { north, east } = bowlCompass(o.x, o.y, at[i].up),
+              k = BOWL_ISLAND_LIFT / metres;
+            o.hAt = (x, y) => {
+              const dx = x - o.x,
+                dy = y - o.y;
+              return (
+                H(
+                  (dx * east[0] + dy * east[1]) * metres + m.w / 2,
+                  (dx * north[0] + dy * north[1]) * metres + m.h / 2
+                ) * k
+              );
+            };
+          }
+        }
+        return o;
       })
       .filter(o => o !== null),
     roads: roads
@@ -573,7 +679,9 @@ export function bowlCoastNoise(/** @type {number} */ x, /** @type {number} */ y)
  * the places' ground, the roads and rounds of land (sea.isles, or one of radius sea.island round the places' middle),
  * the coast where the distance past them plus the noise crosses 0, and the sea always past BOWL_ISLE_RIM.
  * Also how far each corner is past the nearest place's ground (dp, below 0 inside it).
- * @param {BowlSeaInput} S @param {number} n @returns {{ c: Float32Array, dp: Float32Array }} */
+ * IS-7: a place drawn from an island map (poly) has exactly its coast: land inside, sea outside, no noise; isle says
+ * which corners are inside one (its place's number + 1, 0 elsewhere).
+ * @param {BowlSeaInput} S @param {number} n @returns {{ c: Float32Array, dp: Float32Array, isle: Uint8Array }} */
 export function bowlCoastGrid(S, n) {
   const e = BOWL_GROUND_EXTENT,
     w = n + 1,
@@ -582,7 +690,12 @@ export function bowlCoastGrid(S, n) {
     dpg = new Float32Array(w * w),
     inside = new Float32Array(w * w),
     /* flat arrays: the loop below runs about 100 000 corners times 100 places and roads */
-    P = Float64Array.from(S.places.flatMap(p => [p.x, p.y, p.reach])),
+    P = Float64Array.from(S.places.flatMap(p => (p.poly ? [] : [p.x, p.y, p.reach]))),
+    /* IS-7: the island maps' coasts, each with its box: further out than the sea floor's full depth (and the beach's
+       ground) its box's distance stands in (shorter than the true one, so read exactly any nearer: a step in the
+       water's depth showed as a square round the island) */
+    polys = S.places.map((p, k) => (p.poly ? { k, P: p.poly, box: bowlPolyBox(p.poly) } : null)).filter(o => !!o),
+    isle = new Uint8Array(w * w),
     R = Float64Array.from(S.roads.flatMap(([ax, ay, bx, by]) => [ax, ay, bx - ax, by - ay])),
     np = P.length,
     nr = R.length,
@@ -621,6 +734,15 @@ export function bowlCoastGrid(S, n) {
       }
       dr = Math.sqrt(dr) - 0.022;
       const rr = Math.sqrt(x * x + y * y);
+      let dq = 81;
+      for (const Q of polys) {
+        const [x0, y0, x1, y1] = Q.box,
+          bx = Math.max(x0 - x, 0, x - x1),
+          by = Math.max(y0 - y, 0, y - y1),
+          q = bx > 0.08 || by > 0.08 ? Math.hypot(bx, by) : bowlPolyDistance(Q.P, x, y);
+        if (q < dq) dq = q;
+        if (q < 0) isle[j * w + i] = Q.k + 1;
+      }
       let v;
       if (isles) {
         /* RL-8b: an island world: land within the rounds and round the places, sea toward the rim */
@@ -643,9 +765,11 @@ export function bowlCoastGrid(S, n) {
           0.02 +
           bowlCoastNoise(x + seed * 3.17, y - seed * 1.93) * rough -
           rimLand * Math.max(0, (rr - 0.8) / 0.2);
+      /* IS-7: an island's own coast, exactly: nothing else moves it */
+      if (dq < 81) v = Math.min(v, dq + Math.max(0, rr - BOWL_ISLE_RIM) * 4);
       raw[j * w + i] = v;
-      keep[j * w + i] = Math.min(dp, dr);
-      dpg[j * w + i] = dp;
+      keep[j * w + i] = Math.min(dp, dr, dq + 0.004);
+      dpg[j * w + i] = Math.min(dp, dq);
       if (x * x + y * y <= 1) inside[count++] = v;
     }
   const sorted = isles ? null : inside.subarray(0, count).sort(),
@@ -655,7 +779,7 @@ export function bowlCoastGrid(S, n) {
   /* brush strokes (the Studio's land and sea brush): the line is drawn first, so painting moves only what it touches */
   for (const st of (o && o.paint) || []) bowlPaintStroke(c, n, e, st);
   for (let k = 0; k < w * w; k++) c[k] = Math.min(c[k], keep[k] - 0.004);
-  return { c, dp: dpg };
+  return { c, dp: dpg, isle };
 }
 /** RL-8b: an island world's rounds of land (sea.isles as given, or one of radius sea.island round the middle of the
  * places), null when the world isn't an island world @param {BowlSeaInput} S @returns {BowlIsle[] | null} */
@@ -664,6 +788,8 @@ export function bowlIsles(S) {
   if (o && o.isles && o.isles.length) return o.isles;
   const r = (o && o.island) || 0;
   if (!(r > 0)) return null;
+  /* IS-7: an island drawn from its map is the land itself: no round of land round it (sea.island says its size) */
+  if (S.places.some(p => p.poly)) return [];
   const n = S.places.length || 1,
     x = S.places.reduce((a, p) => a + p.x, 0) / n,
     y = S.places.reduce((a, p) => a + p.y, 0) / n;

@@ -5,7 +5,7 @@
      Orbit view  the game's renderer (mountWalkView) through a camera of its own that looks at the island's middle:
                  drag turns round it, Shift-drag (or the right button) tilts, the wheel or a pinch zooms; auto-orbit,
                  a side (S, W, N, E), "Whole island"; "Walk the coast" walks the walker round it under the game's own
-                 walk camera (IS-1's orbit camera once it is merged)
+                 walk camera (IS-1's orbit camera)
      Map         the ground, its heights (a contour every 2 m), the coast, the zones by kind (locked ones hatched), the
                  orbit's pivot and its dead zone, where the camera stands. Tools: Paint ground and Shape the land
                  (map-editor.js's brushes), Coast & zones (move, add and remove points; a zone's kind and lock), Pivot
@@ -124,6 +124,7 @@ expose({
   hubViewBar: [() => hubViewBar],
   hubViewBarHTML: [() => hubViewBarHTML, v => (hubViewBarHTML = v)],
   hubViewEnd: [() => hubViewEnd],
+  hubWalkCamera: [() => hubWalkCamera],
   hubZoom: [() => hubZoom],
   mountHubIsland: [() => mountHubIsland, v => (mountHubIsland = v)],
   mountHubView: [() => mountHubView, v => (mountHubView = v)],
@@ -348,7 +349,14 @@ function mountHubView() {
     const l = $('#hubPvLoad');
     if (l) l.hidden = true;
   });
+  hubWalkCamera();
 }
+/* walking the coast shows the game's own walk camera, IS-1's orbit included: the Studio marks its previews as free
+   cameras (viewport.js), and the orbit stays off in a free camera (walk/camera.js orbitOf), so the mark is taken
+   off while the walk lasts */
+const hubWalkCamera = () => {
+  if (walkView.opt) walkView.opt.freeCam = !hubEd.walk;
+};
 /** each frame: where the orbit view looks from (null while walking the coast: the game's walk camera) */
 function hubLook(dt) {
   const sc = walkView.sc;
@@ -938,6 +946,7 @@ ACTIONS.hubWalk = () => {
     P.route = null;
     P.goal = null;
     hubEd.at = 0;
+    hubWalkCamera();
     hubViewBar();
     return;
   }
@@ -956,6 +965,7 @@ ACTIONS.hubWalk = () => {
     P.goal = go;
   };
   go();
+  hubWalkCamera();
   hubViewBar();
 };
 ACTIONS.hubLock = () => {
