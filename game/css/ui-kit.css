@@ -313,14 +313,23 @@ hr.pb-rule::after {
   --k-clip: var(--clip-tab);
   --k-edge: var(--edge-tab);
 }
-:where(.k-panel, .k-card, .k-btn, .k-action, .k-tab) {
+/* every page button (.pb) is in the button family, and a gold one, a screen's main action, is the long hexagon */
+.pb {
+  --k-clip: var(--clip-button);
+  --k-edge: var(--edge-button);
+}
+.pb.gold {
+  --k-clip: var(--clip-action);
+  --k-edge: var(--edge-action);
+}
+:where(.k-panel, .k-card, .k-btn, .k-action, .k-tab, .pb) {
   position: relative;
 }
-:is(.k-panel, .k-card, .k-btn, .k-action, .k-tab):not(#k) {
+:is(.k-panel, .k-card, .k-btn, .k-action, .k-tab, .pb):not(#k) {
   border-radius: 0;
   clip-path: var(--k-clip);
 }
-:is(.k-panel, .k-card, .k-btn, .k-action, .k-tab):not(.k-plain, #k)::after {
+:is(.k-panel, .k-card, .k-btn, .k-action, .k-tab, .pb):not(.k-plain, #k)::after {
   content: '';
   display: block;
   position: absolute;
