@@ -289,3 +289,9 @@
   align-self: stretch;
   margin: var(--s1) var(--s1) 0;
 }
+/* RL-12: a Loophole pick and letting one go (relic-screen.js): one card a row, so each name and line reads whole */
+.relic-cards {
+  display: grid;
+  gap: var(--s2);
+  margin-top: var(--s2);
+}

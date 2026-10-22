@@ -176,6 +176,12 @@
   "foes": {
    "miniboss": {"up":3,"reward":300},
    "boss": {"up":5,"reward":600}
+  },
+  "relics": {
+   "cap": 6,
+   "pick": 3,
+   "rarity": {"common":6,"uncommon":3,"rare":1},
+   "price": {"common":150,"uncommon":250,"rare":400}
   }
  },
  "ranch": {

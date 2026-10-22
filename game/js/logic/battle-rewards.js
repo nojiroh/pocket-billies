@@ -10,6 +10,7 @@
 import { expose } from '../test-globals.js';
 import { RULES } from '../game-data.js';
 import { wildPrize } from './rules.js';
+import { fxMoney } from './effects.js';
 /* eslint-disable no-func-assign */
 expose({
   battleOutcome: [() => battleOutcome],
@@ -25,7 +26,8 @@ export const battleOutcome = (kind, over) => (over === 'draw' ? (kind === 'wild'
  * What a battle that has ended pays and costs. `rules` defaults to the game's. RL-10: it draws no chance any more
  * (a wild win's egg drop, the one roll it took, is gone: eggs come from the ranch); `roll`, the battle's chance, is
  * still taken so every caller's arguments keep their places.
- * @param {{ kind: string, over: string | null, T?: any, tid?: string, foe: { lvl: number }[] }} b
+ * @param {{ kind: string, over: string | null, T?: any, tid?: string, foe: { lvl: number }[], fx?: any[] }} b b.fx: a run's
+ *   Loopholes (logic/effects.js), which change the money a win pays
  * @param {{ se: number, flags: Record<string, number>, seats: string[], run?: any }} s
  * @param {(() => number) | null} roll unused since RL-10
  * @param {{ battle: { loseFee: number } }} [rules]
@@ -39,10 +41,13 @@ export function battleRewards(b, s, roll, rules = RULES) {
   const run = !!s.run;
   if (o === 'lose' && !run) out.fee = Math.floor(s.se * rules.battle.loseFee);
   if (b.kind === 'wild' && o === 'win') {
-    out.prize = b.foe.reduce((a, m) => a + wildPrize(m.lvl), 0);
+    out.prize = fxMoney(
+      b.fx,
+      b.foe.reduce((a, m) => a + wildPrize(m.lvl), 0)
+    );
   }
   if (b.kind === 'trainer' && o === 'win' && b.T) {
-    out.reward = b.T.reward || 0;
+    out.reward = fxMoney(b.fx, b.T.reward || 0);
     out.first = !s.flags[b.tid || ''];
     const st = b.T.seat;
     if (st && !run)

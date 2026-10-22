@@ -8,6 +8,7 @@
 import { expose } from '../test-globals.js';
 import { RULES, STAT_IDS } from '../game-data.js';
 import { rngFn } from './rng.js';
+import { fxStages } from './effects.js';
 /* eslint-disable no-func-assign */
 expose({
   // @ts-expect-error -- replaced on purpose
@@ -91,6 +92,13 @@ export function makeBattle(kind, team, foe, extra) {
   );
   addAct(b.sides[0]);
   addAct(b.sides[1]);
+  /* RL-12: a run's Loopholes (b.fx, logic/effects.js): stat stages for yours on the field as it starts */
+  if (b.fx) {
+    const up = fxStages(b.fx),
+      most = RULES.battle.stageMax;
+    for (const f of b.sides[0].f)
+      if (f.on) for (const s in up) f.v.st[s] = Math.max(-most, Math.min(most, (f.v.st[s] || 0) + up[s]));
+  }
   /* RL-4: a battle with a seed draws its chances from its own stream (battle-engine.js battleRoll) */
   if (b.seed != null && !b.rng) b.rng = rngFn(String(b.seed), 'battle');
   return b;

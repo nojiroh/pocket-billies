@@ -15,6 +15,7 @@ import {
   limbPipsHTML,
   modal,
   provide,
+  relicPickOpen,
   render,
   runCatch,
   runOver,
@@ -27,7 +28,7 @@ import {
   typeBadgeHTML,
 } from './hooks.js';
 import { $, $$, clamp, random } from './util.js';
-import { COINS, ITEMS, MOVES, STAT_NAMES, TYPE_COLORS, typeEffectiveness } from './game-data.js';
+import { COINS, ITEMS, MOVES, RELICS, RULES, STAT_NAMES, TYPE_COLORS, typeEffectiveness } from './game-data.js';
 import { ROBOT_LIMBS, ROBOT_SLOT_NAMES, isRobot, robotPartDef, speciesOf } from './logic/fighters.js';
 import {
   addBilly,
@@ -43,6 +44,7 @@ import {
   partMaxHp,
   plural,
 } from './logic/rules.js';
+import { relicOfferMake } from './logic/relics.js';
 import {
   ACTOR_SIDE,
   BATTLE_RULES,
@@ -938,7 +940,7 @@ export function endBattle() {
     /* RL-8: what it pays and costs (logic/battle-rewards.js); RL-4: a battle called off at the turn cap ends as if you
        walked away (wild) or lost (a trainer) */
     pay = battleRewards(
-      { kind, over: activeBattle.over, T, tid, foe: activeBattle.sides[1].team },
+      { kind, over: activeBattle.over, T, tid, foe: activeBattle.sides[1].team, fx: activeBattle.fx },
       saveData,
       battleRoll
     ),
@@ -996,6 +998,8 @@ export function endBattle() {
   }
   if (kind === 'trainer' && o === 'win') {
     saveData.se += pay.reward;
+    /* RL-12: a run's mini-boss beaten: a pick of Loopholes, saved on the run before it shows (logic/relics.js) */
+    if (run && T && T.runFoe === 'miniboss') relicOfferMake(run, RELICS, RULES.run.relics);
     const first = pay.first;
     saveData.flags[tid] = 1;
     let extra = '';
@@ -1010,18 +1014,18 @@ export function endBattle() {
       after.push({
         title: nu ? escapeHtml(st.title || 'Badge') : 'Rematch won',
         top: `<div class="sheet-art">${coinHTML(st.coin || 'penny', 96, 32)}</div>`,
-        html: `<p>${escapeHtml(T.win || '')}</p><p>You earned $${formatNumber(T.reward || 0)}${nu && st.rewardText ? `, ${escapeHtml(st.rewardText)}` : ''}${extra}.</p>${nu && st.unlockText ? `<p class="note">${escapeHtml(st.unlockText)}</p>` : ''}`,
+        html: `<p>${escapeHtml(T.win || '')}</p><p>You earned $${formatNumber(pay.reward)}${nu && st.rewardText ? `, ${escapeHtml(st.rewardText)}` : ''}${extra}.</p>${nu && st.unlockText ? `<p class="note">${escapeHtml(st.unlockText)}</p>` : ''}`,
         btns: [{ l: 'Back to walking', c: 'dark', f: closeModal }],
       });
     } else
       after.push({
         title: `You beat ${escapeHtml(T.name)}`,
         top: `<div class="sheet-art">${portraitHTML(T.who, 96, 'sad')}</div>`,
-        html: `<p>${escapeHtml(T.win || '')}</p><p>You earned $${formatNumber(T.reward || 0)}${extra}.</p>`,
+        html: `<p>${escapeHtml(T.win || '')}</p><p>You earned $${formatNumber(pay.reward)}${extra}.</p>`,
         btns: [
           {
             c: 'dark',
-            l: run && T.runFoe === 'boss' ? 'On to the payout' : 'Keep walking',
+            l: run && T.runFoe === 'boss' ? 'On to the payout' : run && run.offer ? 'Pick a Loophole' : 'Keep walking',
             f:
               /* RL-8: the run's boss beaten: the run is won */
               run && T.runFoe === 'boss'
@@ -1029,12 +1033,17 @@ export function endBattle() {
                     uiState.modal = null;
                     runOver(true);
                   }
-                : first && (T.clue || T.ending) && typeof storyAfterWin === 'function'
+                : run && run.offer
                   ? () => {
-                      closeModal();
-                      storyAfterWin(T);
+                      uiState.modal = null;
+                      relicPickOpen();
                     }
-                  : closeModal,
+                  : first && (T.clue || T.ending) && typeof storyAfterWin === 'function'
+                    ? () => {
+                        closeModal();
+                        storyAfterWin(T);
+                      }
+                    : closeModal,
           },
         ],
       });

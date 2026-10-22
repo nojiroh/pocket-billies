@@ -260,6 +260,12 @@ same phase:
   `conditions.test.mjs`, `run.unlocks` in `run-state.test.mjs`; check-data's blocks for `currencies`, `buildings` and
   `unlocks` (planted faults in the commits); check-fast's Lab step on `?fixture=lab` (a milestone on load, the board,
   buying at the Lab, the ranch and the mast, a reload) and the in-game test's "The Lab: unlocks".
+- **RL-12 Loopholes**: `effects.test.mjs` (each effect kind, stacking in any order, every Loophole at once finite, no
+  rows change nothing), `relics.test.mjs` (offers from the seed, the cap, a shop's shelf, validRun, a run saved
+  before), `battle-fx.test.mjs` (stages, damage, catch, win money), `run-fx.test.mjs` (arrival heal, the payout row),
+  a fifth golden battle holding three Loopholes; check-fast's "Loopholes" on `?fixture=relics`; the in-game run
+  phase and quick check's RL-8 step buy a shop's Loophole or take a mini-boss's pick and see the boss's battle carry
+  it.
 - **14 Studio**: `tools/check-studio-github.py` and smoke's "Studio opens" keep passing; `--studio` follows the
   Studio local mode decision. A new Studio feature adds a step function to its `STEPS` (UI-3), so it can also run
   alone with `--only=<name>`.
