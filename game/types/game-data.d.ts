@@ -457,6 +457,8 @@ export interface MapData {
   island?: IslandShape;
   /** island track: areas of the island */
   zones?: MapZone[];
+  /** island track: building plots (IS-2) */
+  plots?: MapPlot[];
   /** island track: the island generator's version, seed and dials */
   islandGen?: IslandGen;
   /** the kind of the map's water (walk/water-data.js WATER_KIND_LOOKS) */
@@ -494,7 +496,24 @@ export interface IslandShape {
   coast: MapPoint[];
 }
 
-export type MapZoneKind = 'town' | 'barn' | 'pasture' | 'forest' | 'mountain' | 'cove' | 'beach' | 'path';
+export type MapZoneKind = 'town' | 'barn' | 'pasture' | 'forest' | 'mountain' | 'cove' | 'beach' | 'path' | 'hamlet';
+
+export type MapPlotKind = 'house' | 'home' | 'lab' | 'mast' | 'shop' | 'well' | 'farmhouse';
+
+/** island track: a building plot the island generator laid out (IS-2): where a building of kind k may stand */
+export interface MapPlot {
+  k: MapPlotKind;
+  /** its middle */
+  x: number;
+  z: number;
+  /** its width along its street and its depth (m) */
+  w: number;
+  d: number;
+  /** the angle its front faces (degrees, 0 east, 90 north) */
+  a: number;
+  /** the level its pad was made at */
+  y?: number;
+}
 
 /** island track: an area of the island; a locked zone's ground and props are never touched when it is made again */
 export interface MapZone {
