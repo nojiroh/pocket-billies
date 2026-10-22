@@ -73,6 +73,48 @@ below against main and report what differs.
   preview: the zones (dragged to resize) and the look-ahead arrow.
 - Debug log: a camera line (mode, zoom, the goals in play). No save data or names.
 
+#### CAM-1 as built (2026-10-22)
+- **Corrections to "Verified facts"** (checked against the code at the start of CAM-1):
+  - The list of forces missed four: rising ground 3.5 m ahead tilted the camera down up to 9 degrees (`upT`, apart
+    from TR-3); the scene's own tilt and height glided on changes (`cpe`); the aim was clamped inside the scene with a
+    fixed +2 m (landscape) / +1 m (portrait) up the screen; indoors the camera came closer so it stayed inside the
+    near wall.
+  - `st.focus` and `st.focusY` were never set by the walking game (the `focus:` values in title.js and the director
+    belong to the cutscene camera): dead code, removed from `walkCamera`.
+  - `walkView.opt.instant` is never set by anything. The camera snaps when something sets `walkRenderer.camT = null`
+    (title, battle-3d, story-stage, the director, a new scene); rooms save and restore the camera at the door and the
+    self-test compares `camT` exactly.
+  - The blur numbers quoted are the code's fallbacks; the game's engine.json sets `focusBand` 0.62 and `blurFar` 2.6
+    (and the camera's `fov` 0.68, `pitchAdd` -8).
+  - There is no `validation/quick-baseline` in the repo: CI fetches it from the release `baseline-<version>`, remade
+    only on `phase-*` tags or by hand (Actions > Check > Run workflow > "Make the picture baseline").
+  - The Studio's Engine preview has no joystick (click to walk, WASD), so the look-ahead also takes the walking
+    direction.
+- **The follow** (logic/camera-follow.js, 12 unit tests): `springStep` is a critically damped spring solved exactly
+  for a target moving in a straight line during the step (30, 60 and 144 fps agree to 0.00001 m; a still target is
+  never passed); `zoneAxis`/`zoneMetres` the dead and soft zones as shares of the screen, measured along the screen's
+  axes on the ground; `followStep` (the dead zone closes over about 0.35 s when you stop, so a still picture is
+  framed as before; a hard limit at the soft zone; a goal jump past the soft zone is a cut, not a move; ground
+  changes under the band ignored while you walk); `leadStep` (its own spring; the sideways part x`leadSide` on a tall
+  screen); `blendGoals` (weights ramp in and out, a goal no longer asked for fades as it last was; tilts add,
+  distances multiply, aim points pull in order).
+- **One goal** in walk/camera.js: `tilt` (phone and mouse, at once), `indoor` (+12 degrees), `ahead` (up to 9),
+  `landmark` (up to -11), `room` (the room framed whole, 0.15 s), `swoop` (0.15 s). TR-3's rise keeps its own uneven
+  ramp and code, fed the blended tilt: check-fast's Tall ground gives the same numbers as TR-3 (16.9 m of rock, 18.0
+  degrees). The swoop still halves `zoomT` (one zoom curve is CAM-2). The scene's own tilt/height glide (`cpe`) stays
+  as a glide of the base, not a goal. Yaw, zoom and `cpe` eases are exact exponentials now.
+- **Dials** (Engine > Camera): Look-ahead 1.3 m (was "Leads your walk"), Look-ahead smoothing 0.6 s, sideways on a
+  tall screen x1.5, Follow smoothing 0.3 s (the old follow's lag at a steady walk), Dead zone 10% x 8%, Soft zone 50%
+  x 50%, Ignore ground changes under 0.5 m, Camera goals blend 0.4 s. Studio: "Camera guides" over the preview (soft
+  zone tinted, dead zone outlined, the aim, you, the goal, the look-ahead arrow, a line with the mode, zoom and goals;
+  drag a zone's edge to set its dial, one undo step).
+- **State**: `walkRenderer.fol` (the follow; `camT` stays its aim, so every reset and the door's save/restore keep
+  working; the door also saves `fol`), `walkRenderer.camInfo` (for the debug log and the guides). The seamless
+  world's re-anchor shifts `camT`, the follow's last targets, the goals' aim points, the swoop and `px/pz`.
+- **Debug log**: a `camera` section (mode, zoom, yaw, pitch, rise, goals, lead, off, moving).
+- **Checks**: check-fast "Camera follow" (Copperleaf: settled standing, the look-ahead from the stick, inside the
+  soft zone, settled again; a look-ahead that ignores the stick is caught); the debug log step wants the camera line.
+
 ### CAM-2 - Moments of interest
 - One zoom value drives distance, tilt and field of view along curves (Studio dials for each end).
 - Points of interest from data: the catalogue's `landmark` grows into `interest {weight, radius, zoom, pull}`;
