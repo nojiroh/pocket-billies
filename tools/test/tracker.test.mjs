@@ -9,7 +9,9 @@ import { test } from 'node:test';
 globalThis.window = globalThis;
 globalThis.PB_TEST_GLOBALS = true;
 await import('../../game/js/audio/tracker.js');
-const { trackerCompose, trackerCreate, trackerNight, trackerRecipe, trackerTense } = /** @type {any} */ (globalThis);
+const { trackerArc, trackerCompose, trackerCreate, trackerNight, trackerRecipe, trackerTense } = /** @type {any} */ (
+  globalThis
+);
 
 const MUSIC = JSON.parse(readFileSync(new URL('../../game/data/music.json', import.meta.url), 'utf8'));
 // town's recipe without its written lines (SND-4 gave it a placeholder hook): the tests write their own
@@ -231,4 +233,40 @@ test('a song that takes over a held one keeps the drums out until the throw', ()
   assert.ok(T.song.hold);
   T.drumsIn();
   assert.equal(T.song.hold, 0);
+});
+
+test('the run arc: a band changes the recipe; arc: false leaves it; parts stack (meadow@late@night)', () => {
+  const band = { name: 'late', row: [6, 8], changes: { drums: 'march', arpOctave: 1, counterAuto: true } },
+    run = { arc: [band] },
+    m = MUSIC.songs.meadow;
+  const a = trackerArc(m, band);
+  assert.equal(a.drums, 'march');
+  assert.equal(a.arpOctave, 1);
+  assert.equal(trackerArc({ ...m, arc: false }, band).drums, m.drums);
+  assert.deepEqual(trackerRecipe({ meadow: m }, 'meadow@late', run), a);
+  assert.deepEqual(trackerRecipe({ meadow: m }, 'meadow@late@night', run), trackerNight(a));
+  assert.equal(trackerRecipe({ meadow: m }, 'meadow@nosuch', run), null);
+  assert.equal(trackerRecipe({ meadow: m }, 'meadow@late'), null, 'no arc given, no band');
+});
+
+test('counterAuto: a counter from the hook, each note a chord tone at least a third below; a written counter wins', () => {
+  const hook = [
+      [0, 72, 4],
+      [16, 76, 4],
+    ],
+    D = trackerCompose({ ...town, hook, counterAuto: true });
+  for (const st of [0, 16]) {
+    const [c] = D.counterNotes[st],
+      h = D.notes[st][0];
+    assert.ok(c <= h - 3 && c > h - 15, `step ${st}: ${c} under ${h}`);
+    const ch = town.prog[st / 16],
+      tones = [0, 2, 4].map(x => D.deg(ch + x) % 12);
+    assert.ok(tones.includes(c % 12), `step ${st}: ${c} is a chord tone`);
+  }
+  const w = trackerCompose({ ...town, hook, counter: [[0, 60, 4]], counterAuto: true });
+  assert.deepEqual(w.counterNotes[0], [60, 4]);
+  assert.ok(
+    trackerCompose({ ...town, counterAuto: true }).counterNotes.every(n => n === null),
+    'no hook, no counter'
+  );
 });

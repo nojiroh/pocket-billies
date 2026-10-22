@@ -5,6 +5,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import {
+  musicArcBand,
   musicBattleKind,
   musicRedZone,
   musicWhereMatches,
@@ -162,4 +163,32 @@ test('in battle the red zone plays the tense version; out of it, or with tense: 
   assert.equal(v('calm', { battle: 'wild', redZone: true }), 'calm');
   assert.equal(v('town', { redZone: true }), 'town', 'only in battle');
   assert.equal(v('wild', { battle: 'wild', redZone: true, night: 1 }), 'wild@tense', 'no night in battle');
+});
+
+// SND-5: the run's arc
+test("the run arc: a run's walkable node in a band's rows plays its band; towns, the map tab and rows no band names don't", () => {
+  const run = MUSIC.run,
+    band = o => musicArcBand(out({ nodeType: 'route', row: 0, ...o }), run);
+  assert.equal(band({ row: 0 }), null);
+  assert.equal(band({ row: 2 }), null);
+  assert.equal(band({ row: 3 }), 'mid');
+  assert.equal(band({ row: 5, nodeType: 'miniboss' }), 'mid');
+  assert.equal(band({ row: 6 }), 'late');
+  assert.equal(band({ row: 8, nodeType: 'boss' }), 'late');
+  assert.equal(band({ row: 7, nodeType: 'town' }), null);
+  assert.equal(band({ row: 7, tab: 'map' }), null);
+  assert.equal(band({ row: 7, nodeType: null }), null, 'not in a run');
+});
+
+test('songVariant in a run: the band first, then night; arc: false keeps the song; battle and rooms as before', () => {
+  const S = { meadow: {}, still: { arc: false }, cave: { night: false } },
+    v = (name, o, playing) => songVariant(name, out({ nodeType: 'route', ...o }), S, playing, MUSIC.run);
+  assert.equal(v('meadow', { row: 1 }), 'meadow');
+  assert.equal(v('meadow', { row: 4 }), 'meadow@mid');
+  assert.equal(v('meadow', { row: 7, night: 1 }), 'meadow@late@night');
+  assert.equal(v('meadow', { row: 7, night: 0.5 }, 'meadow@late@night'), 'meadow@late@night', 'dusk holds');
+  assert.equal(v('still', { row: 7 }), 'still');
+  assert.equal(v('cave', { row: 7, night: 1 }), 'cave@late', 'no night version, the band still');
+  assert.equal(v('meadow', { row: 7, indoor: true }), 'meadow');
+  assert.equal(v('meadow', { row: 7, battle: 'wild' }), 'meadow');
 });

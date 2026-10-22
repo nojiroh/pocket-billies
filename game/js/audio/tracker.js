@@ -11,6 +11,7 @@ expose({
   SCALES: [() => SCALES],
   midiToFrequency: [() => midiToFrequency],
   songRandom: [() => songRandom, v => (songRandom = v)],
+  trackerArc: [() => trackerArc, v => (trackerArc = v)],
   trackerCompose: [() => trackerCompose, v => (trackerCompose = v)],
   trackerCreate: [() => trackerCreate, v => (trackerCreate = v)],
   trackerNight: [() => trackerNight, v => (trackerNight = v)],
@@ -117,7 +118,24 @@ export function trackerCompose(D) {
     if (steps > 64) lead.fill(null, 64, Math.min(96, steps));
     written(D.hook, lead);
   }
-  written(D.counter, counter);
+  /* SND-5: a counter made from the hook where none is written (the run's late rows): each note on the nearest tone of
+     its bar's chord at least a third below it */
+  const below = (m, ch) => {
+      let best = m - 12;
+      for (let o = -3; o <= 3; o++)
+        for (const x of [0, 2, 4]) {
+          const t = deg(ch + x) + 12 * o;
+          if (t <= m - 3 && t > best) best = t;
+        }
+      return best;
+    },
+    counterLine =
+      D.counter && D.counter.length
+        ? D.counter
+        : D.counterAuto && D.hook
+          ? D.hook.map(([st, m, l]) => [st, below(m, D.prog[Math.floor(st / 16)] || 0), l])
+          : null;
+  written(counterLine, counter);
   /* SND-4: the bars where the countermelody has the second pulse (the arp rests there) */
   const counterBars = Array.from({ length: bars }, (_, b) => counter.slice(b * 16, b * 16 + 16).some(Boolean));
   /* SND-5: the intro, one or two bars on the lead alone that play once before the song (a battle's chromatic run).
@@ -152,8 +170,15 @@ function trackerTense(D) {
     auto = { bpm: Math.min(300, D.bpm + 16), drums: 'march', bass: 'pedal' };
   return { ...rest, ...(tense && typeof tense === 'object' ? tense : auto) };
 }
+/* SND-5: a song in a run's arc band (music.json run.arc: a band of rows and the recipe's changes there, the run's
+   later rows busier); a song with `arc: false` stays as written */
+function trackerArc(D, band) {
+  if (!D || !band) return null;
+  if (D.arc === false) return D;
+  return { ...D, ...(band.changes || {}) };
+}
 /* SND-5: the recipe a song name plays: 'town' itself, 'town@night' its night version; null for a song or a part that
-   doesn't exist; 'wild@tense' its tense version. `run` is music.json's run (the arc's bands), for the parts that need
+   doesn't exist; 'wild@tense' its tense version, 'meadow@late' its arc band's (run.arc), 'meadow@late@night' both. `run` is music.json's run (the arc's bands), for the parts that need
    it */
 function trackerRecipe(songs, name, run) {
   const [base, ...parts] = String(name).split('@');
@@ -162,7 +187,11 @@ function trackerRecipe(songs, name, run) {
     if (!D) return null;
     if (p === 'night') D = trackerNight(D);
     else if (p === 'tense') D = trackerTense(D);
-    else return null;
+    else
+      D = trackerArc(
+        D,
+        ((run && run.arc) || []).find(b => b.name === p)
+      );
   }
   return D;
 }
@@ -518,8 +547,8 @@ export function trackerCreate(ctx, bus, opts = {}) {
           vol: 0.07,
           cut: 900,
         });
-      /* harmony */ const ar = D.arp,
-        tri = [0, 2, 4, D.seventh ? 6 : 7].map(x => dg(ch + x)),
+      /* harmony (SND-5: arpOctave lifts the arp, the run's later rows) */ const ar = D.arp,
+        tri = [0, 2, 4, D.seventh ? 6 : 7].map(x => dg(ch + x) + 12 * (D.arpOctave || 0)),
         pick = k => tri[((k % 4) + 4) % 4];
       if (pulse2Busy) {
         /* the second pulse plays the countermelody or the bass this bar */

@@ -13,6 +13,8 @@ expose({
   MUSIC_WHERE_KEYS: [() => MUSIC_WHERE_KEYS],
   RED_ZONE: [() => RED_ZONE],
   // @ts-expect-error -- replaced on purpose
+  musicArcBand: [() => musicArcBand, v => (musicArcBand = v)],
+  // @ts-expect-error -- replaced on purpose
   musicBattleKind: [() => musicBattleKind, v => (musicBattleKind = v)],
   // @ts-expect-error -- replaced on purpose
   musicRedZone: [() => musicRedZone, v => (musicRedZone = v)],
@@ -96,21 +98,39 @@ export function songFor(state, where, songs) {
 }
 
 /**
+ * SND-5: the run's arc: the band of music.json's run.arc whose rows hold this place's row, on a run's walkable node
+ * (not a town node, not the map tab); null elsewhere and on the rows no band names (the first, as written)
+ * @param {Record<string, any>} state songFor's state
+ * @param {{ arc?: { name: string, row: number[] }[] } | undefined} run music.json's run
+ * @returns {string | null} the band's name
+ */
+export function musicArcBand(state, run) {
+  if (!state.nodeType || state.nodeType === 'town' || state.tab === 'map' || typeof state.row !== 'number') return null;
+  const B = ((run && run.arc) || []).find(b => state.row >= b.row[0] && state.row <= b.row[1]);
+  return B ? B.name : null;
+}
+
+/**
  * SND-4: day or night. The song's night version ('town@night', audio/tracker.js trackerNight) when it is night
  * outdoors, out of battle, and the song has one (not `night: false`). Night from 0.6, day again below 0.4: in between,
  * what plays stays, so dusk doesn't flip the song back and forth. SND-5: in battle, the tense version ('wild@tense',
- * trackerTense) while the lead Billie is in the red zone (state.redZone), unless the song has `tense: false`
+ * trackerTense) while the lead Billie is in the red zone (state.redZone), unless the song has `tense: false`. In a run, the
+ * arc band's version first ('meadow@late', musicArcBand), unless the song has `arc: false`; at night 'meadow@late@night'
  * @param {string | null} name the song for the place (songFor)
  * @param {Record<string, any>} state songFor's state plus `night`, the environment's night level (0 day, 1 night)
  * @param {Record<string, any>} songs
  * @param {string | null} [playing] the song playing now
+ * @param {{ arc?: { name: string, row: number[] }[] }} [run] music.json's run (the arc)
  * @returns {string | null}
  */
-export function songVariant(name, state, songs, playing = null) {
+export function songVariant(name, state, songs, playing = null, run = undefined) {
   const S = name ? songs[name] : null;
   if (S && state.battle) return state.redZone && S.tense !== false ? name + '@tense' : name;
-  if (!S || S.night === false || state.indoor) return name;
+  if (!S || state.indoor) return name;
+  const band = S.arc === false ? null : musicArcBand(state, run),
+    day = band ? name + '@' + band : name;
+  if (S.night === false) return day;
   const n = state.night || 0,
-    night = name + '@night';
-  return n > 0.6 || (playing === night && n >= 0.4) ? night : name;
+    night = day + '@night';
+  return n > 0.6 || (playing === night && n >= 0.4) ? night : day;
 }

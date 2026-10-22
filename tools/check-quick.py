@@ -872,12 +872,13 @@ BIOME_SONGS = {'meadow': 'meadow', 'thicket': 'spore', 'jungle': 'spore', 'lake'
                'badlands': 'hills', 'volcano': 'innersun', 'tundra': 'crystal', 'ridge': 'crystal', 'autumn': 'spire'}
 
 
-@step("Run music: the run fixture's landing plays route, each node its biome's song, a town node town (SND-2)", 180)
+@step("Run music: the run fixture's landing plays route, each node its biome's song, a town node town (SND-2), in its row's arc band (SND-5)", 180)
 def run_music_step(b, base, R):
     """sound track SND-2: the run fixture (seed RL7FIXTURE, the landing on day 1). musicFor picks route on the landing;
     for every place of the run, what it picks follows its node (a town node town, the landing route, any other node its
     biome's song, the owner's mapping); on a route node, the music sync (musicSync, called there) asks for that biome's
-    song. Nothing is
+    song. SND-5: each walkable node plays its row's arc band (music.json run.arc: 'meadow@mid' on rows 3-5,
+    '@late' on 6-8), a town node and the landing the song as written; the sync asks for the band. Nothing is
     heard: soundEngine.want is what the game asked to play (headless, sound never starts without a touch)"""
     errs = []
     ctx = b.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=1)
@@ -891,21 +892,25 @@ def run_music_step(b, base, R):
         if not until(pg, "soundEngine.want==='route'", 10): raise Exception(f'the landing asked for {pg.evaluate("soundEngine.want")!r}, not route')
         places = pg.evaluate("""(()=>{const n0=saveData.trip.node,out=[];
           for(let n=1;n<LOCATIONS.length;n++){const L=LOCATIONS[n],N=saveData.run.map.nodes[L.runNode];
-            saveData.trip.node=n;out.push({n,name:L.name,type:N.type,biome:N.biome||'',song:musicFor()})}
+            saveData.trip.node=n;const st=musicState();out.push({n,name:L.name,type:N.type,biome:N.biome||'',row:N.row,song:musicFor(),
+              plays:songVariant(musicFor(),{...st,night:0},SONGS,null,MUSIC.run)})}
           saveData.trip.node=n0;return out})()""")
         bad = []; seen = {}
         for P in places:
             want = 'town' if P['type'] == 'town' else 'route' if P['type'] == 'landing' else BIOME_SONGS.get(P['biome'])
             seen[P['song']] = seen.get(P['song'], 0) + 1
             if P['song'] != want: bad.append(f"{P['name']} ({P['type']}, {P['biome']}): {P['song']}, not {want}")
+            band = None if P['type'] in ('town', 'landing') else 'mid' if 3 <= P['row'] <= 5 else 'late' if 6 <= P['row'] <= 8 else None
+            if P['plays'] != (want + '@' + band if band else want): bad.append(f"{P['name']} (row {P['row']}): plays {P['plays']}, not in its band {band}")
+            if band: seen['@' + band] = seen.get('@' + band, 0) + 1
         if bad: raise Exception('; '.join(bad[:5]))
-        route = next((P for P in places if P['type'] == 'route'), None)
+        route = next((P for P in places if P['type'] == 'route' and P['row'] >= 3), None) or next((P for P in places if P['type'] == 'route'), None)
         if not route: raise Exception('the fixture run has no route node')
         # the node and the sync in one go: the walk view puts trip.node back where the player stands (the landing)
         got = pg.evaluate(f"(()=>{{const n0=saveData.trip.node;saveData.trip.node={route['n']};musicSync();const w=soundEngine.want;saveData.trip.node=n0;return w}})()")
-        if got != route['song']: raise Exception(f"standing in {route['name']} the music sync asked for {got!r}, not {route['song']}")
+        if got != route['plays']: raise Exception(f"standing in {route['name']} the music sync asked for {got!r}, not {route['plays']}")
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
-        return f"{len(places)} places: " + ', '.join(f'{k} {v}' for k, v in sorted(seen.items())) + f"; in {route['name']} ({route['biome']}) the sync asked for {route['song']}"
+        return f"{len(places)} places: " + ', '.join(f'{k} {v}' for k, v in sorted(seen.items())) + f"; in {route['name']} ({route['biome']}, row {route['row']}) the sync asked for {route['plays']}"
     finally:
         ctx.close()
 

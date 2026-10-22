@@ -426,6 +426,21 @@
    {"wave":"square"}
   ]
  },
+ "run": {
+  "about": "SND-5: the run's music. arc: bands of rows (row 0 is the landing; the mini-bosses stand on rows 3 and 6) and how a biome's song changes there, so a run builds as it goes; rows no band names play the song as written",
+  "arc": [
+   {
+    "name": "mid",
+    "row": [3,5],
+    "changes": {"drums":"march","arpOctave":1}
+   },
+   {
+    "name": "late",
+    "row": [6,8],
+    "changes": {"drums":"march","arpOctave":1,"counterAuto":true}
+   }
+  ]
+ },
  "where": [
   {"started":false,"song":"hazel"},
   {"battle":"rival","song":"rival"},

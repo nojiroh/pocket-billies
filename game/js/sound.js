@@ -172,7 +172,7 @@ function unlockSound() {
         updateAmbience();
       } catch (e) {}
     const w = soundEngine.want;
-    music(w.includes('@') ? w : songVariant(w, musicState(), SONGS, null));
+    music(w.includes('@') ? w : songVariant(w, musicState(), SONGS, null, MUSIC.run));
   }
 }
 ['pointerdown', 'keydown', 'touchend'].forEach(e => addEventListener(e, unlockSound, { capture: true, passive: true }));
@@ -272,7 +272,7 @@ function musicSync() {
     soundEngine.cued = B;
     soundLog('battle ' + st.battle + ': no flash, the song without its intro');
   }
-  music(songVariant(songFor(st, MUSIC.where, SONGS), st, SONGS, soundEngine.want));
+  music(songVariant(songFor(st, MUSIC.where, SONGS), st, SONGS, soundEngine.want, MUSIC.run));
 }
 /* SND-5: a battle's music, timed as Masuda timed it: the song starts on the encounter's flash (or the trainer coming
    in) with its intro, and the drums wait for the first throw (battleDrumsIn) */
@@ -281,7 +281,7 @@ function battleMusicStart() {
   if (!B || soundEngine.cued === B) return;
   soundEngine.cued = B;
   const st = musicState(),
-    name = songVariant(songFor(st, MUSIC.where, SONGS), st, SONGS, null);
+    name = songVariant(songFor(st, MUSIC.where, SONGS), st, SONGS, null, MUSIC.run);
   if (!name) return;
   music(name, { intro: true, hold: true });
   const sg = soundEngine.song;
@@ -295,12 +295,15 @@ function battleDrumsIn() {
   }
 }
 /* SND-5: the parts of a song the fingerprints (tools/check-sound.py) render besides day and night: its intro, its tense
-   version */
+   version, its run arc bands */
 function musicParts(name) {
   const S = SONGS[name];
   const out = S && S.intro && S.intro.length ? ['intro'] : [];
   /* a battle song's tense version */
   if (S && S.tense !== false && MUSIC.where.some(W => W.battle && W.song === name)) out.push('tense');
+  /* a run's songs (a biome's): each arc band */
+  if (S && S.arc !== false && MUSIC.where.some(W => W.biome && W.song === name))
+    for (const B of (MUSIC.run && MUSIC.run.arc) || []) out.push(B.name);
   return out;
 }
 /* SND-4: a song's name as it plays at this night level (1 night, 0 day): 'town@night' or the name itself */

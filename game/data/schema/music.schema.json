@@ -148,6 +148,16 @@
     "pluck": {
      "description": "SND-4: a music-box lead: every note short, with no vibrato (Copperleaf)",
      "type": "boolean"
+    },
+    "arpOctave": {
+     "description": "SND-5: lift the arp by octaves (the run's later rows)",
+     "type": "integer",
+     "minimum": 0,
+     "maximum": 2
+    },
+    "counterAuto": {
+     "description": "SND-5: with no counter written, make one from the hook (each note on a chord tone a third or more below it; the run's last rows)",
+     "type": "boolean"
     }
    }
   }
@@ -232,6 +242,12 @@
         "description": "SND-4: a name for the hook and its countermelody. Claude's drafts start with \"placeholder\" (the Studio's Check lists them)",
         "type": "string",
         "maxLength": 80
+       },
+       "arpOctave": true,
+       "counterAuto": true,
+       "arc": {
+        "description": "SND-5: false: the run's arc bands (music.json run.arc) leave this song as written",
+        "const": false
        }
       },
       "additionalProperties": false
@@ -300,6 +316,58 @@
       "properties": {
        "wave": {
         "$ref": "#/$defs/wave"
+       }
+      }
+     }
+    }
+   }
+  },
+  "run": {
+   "description": "SND-5: the run's music (logic/music-where.js musicArcBand, audio/tracker.js trackerArc)",
+   "type": "object",
+   "additionalProperties": false,
+   "properties": {
+    "about": {
+     "type": "string"
+    },
+    "arc": {
+     "description": "bands of a run's rows (row 0 is the landing) and the changes to a biome's song there; a song plays as 'meadow@mid'",
+     "type": "array",
+     "items": {
+      "type": "object",
+      "required": [
+       "name",
+       "row",
+       "changes"
+      ],
+      "additionalProperties": false,
+      "properties": {
+       "name": {
+        "description": "the band's name, the song's part ('meadow@late'); not night, tense or deadline",
+        "$ref": "#/$defs/id",
+        "not": {
+         "enum": [
+          "night",
+          "tense",
+          "deadline",
+          "intro",
+          "day"
+         ]
+        }
+       },
+       "row": {
+        "description": "the rows, from and to",
+        "type": "array",
+        "items": {
+         "type": "integer",
+         "minimum": 0
+        },
+        "minItems": 2,
+        "maxItems": 2
+       },
+       "changes": {
+        "description": "the recipe's changes in these rows",
+        "$ref": "#/$defs/recipe"
        }
       }
      }
