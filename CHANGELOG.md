@@ -9,6 +9,12 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- Copperleaf's island has its ground (IS-2): a generated island in the debug menu's Test scenes, "Copperleaf island
+  (generated ground)", about 150 m across: a mountain in the middle you can climb by a switchback trail to a lookout
+  on top, a forest round its north side, a long beach in the west, a cove in the east with a pond, a stream, a small
+  fall and a wooden bridge, cliffs either side of the cove, dunes and heath in the south-east, and a path all the way
+  round the coast (a little over two minutes' walk). The town, the barn and its pasture have flat, empty ground kept
+  for them in the south and south-west; nothing has moved in yet, and Copperleaf itself is unchanged.
 - The island track begins (IS-0): a test island in the debug menu's Test scenes (a cone of a mountain, a grass ring,
   beaches and the sea all round), the first step to Copperleaf becoming a real island you can walk round. Nothing
   changes in Copperleaf yet. The island will be the hub itself, with its own editor in the Studio and its ground

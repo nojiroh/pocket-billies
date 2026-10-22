@@ -46,6 +46,26 @@ things the list missed:
   water quads 90 m out and lowers the far land; the coast biome sets it (`far: "sea"`, `farH: 5`). IS-3 builds on it.
 - `?test=1&scene=<id>` already opens any test map; `?fixture=island` is for the fast check.
 
+**Checked in IS-2** (logic/island-gen.js, tools/build-island.mjs, `copperleaf_island`):
+- The town does not fit a 135 m island: today's buildings span about 72 x 46 m with the barn (60 x 34 m without); with a
+  45 m mountain foot the town box's south corners fell in the sea. The owner chose ~150 m (question 1). The generator
+  pushes the coast out round every flat zone (a beach, the loop path and a margin past it), so a zone always fits.
+- The lap is longer than "~90 s": the coast loop is 461 m, about 136 s walking (it bends round the cove and bulges
+  round the town and barn). A smaller `size.r` dial shortens it.
+- mapgen's helpers do the work read-only: its working state (`mapgenNewWork`), TR-2b's trail search and carving, the
+  stream painter, the road flattening, the water lowering, the shelves' rock edges. No export was added to mapgen.js.
+- TR-2's mountain shape needed a flat top: a sharp peak drops more than the trail's grade on every side, so no trail
+  could leave it (15 of 24 seeds had no trail before; 24 of 24 after).
+- The game's `findPath` gives up after 30000 cells, under a third of a 174 x 167 m map: the 102 m way from the town to
+  the summit is found only with a bigger budget. Walking with the joystick is not affected; tap-to-walk across the
+  island is (IS-5 and IS-9 should look at it). The map's in-game checks test the summit from the trail's foot.
+- A new file under game/js must be on a page (a unit test follows the pages): island-gen.js is on the game page after
+  island.js until IS-6b adds it to the Studio's.
+- Terrain kinds with no letter of their own: dunes are sand with sunburnt grass (`s`, `B`), scree is pebbles (`P`),
+  alpine grass is clover (`C`), the stream bed pebbles (`P`). The rest as listed: `w`/`d` sea, `S` wet sand, `s` sand,
+  `2` tide pools, `3` seaweed rock, `j` basalt cliffs, `G`/`E`/`g` meadow, `l` pasture, `y`/`L`/`M`/`F` forest floor,
+  `H` heath, `r` rock, `p` paths, `v` the trail. Farmland waits for IS-5 (Copperleaf's farm patch moves with the barn).
+
 ## The proposed island (starting dials; IS-2 confirms them)
 
 ```
@@ -205,15 +225,17 @@ placed (question 5), the phone's frame times at 8 angles round the coast, then t
 
 ## Ask me before (recommendation first)
 1. **Size**: ~135 m across, a lap ~90 s walking, ~50 s running (rec) / ~180 m, ~2 min walking / ~110 m, ~70 s.
+   **Answered in IS-2: ~150 m** (the town and barn fit as they are; the lap is 461 m, ~136 s walking).
 2. **On the mountain top** (inside the dead zone): the camera holds still (rec) / you turn it freely there.
 3. **The sun**: fixed in the world, shadows stay put as you circle (rec) / locked to the camera, the same slant on
    screen everywhere (shadows swim). A Studio toggle to compare both.
 4. **The town**: kept as it is in the south, end buildings turned outward (rec) / relaid as a ring facing the sea.
 5. **Wild Billies in the hub**: tall grass in the forest and heath, low levels, as Copperleaf has now (rec) / none.
-6. **The cove**: dock and fishing now, boats to other islands later (rec) / scenery only.
-7. **The mountain**: climbable, summit lookout (rec) / scenery only.
+6. **The cove**: dock and fishing now, boats to other islands later (rec) / scenery only. **Answered in IS-2: a dock
+   landing and a deep channel** (the dock itself is IS-4's).
+7. **The mountain**: climbable, summit lookout (rec) / scenery only. **Answered in IS-2: climbable.**
 8. **The pasture**: ranch Billies roam in it, up to ~6 (rec) / fence and props only for now.
-9. **The stream and fall** from the mountain to the cove: yes (rec) / no.
+9. **The stream and fall** from the mountain to the cove: yes (rec) / no. **Answered in IS-2: yes, with a pond.**
 10. **The generator for later islands**: built reusable now, a Studio "island" kind later (rec) / one-off tool.
     **Answered 2026-10-22: reusable.**
 11. **New game's fall** lands in the town square (rec) / on the beach.

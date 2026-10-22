@@ -2,6 +2,69 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Island track IS-2 - Island ground generator - 2026-10-22
+Branch `claude/is-2-island-gen`, from IS-0's `claude/new-session-3qlesh` (PR #119, not merged yet: the owner started
+wave 1 before `is-0-done`); the PR goes against main, so its diff shrinks once #119 merges. Wave 1 ran alongside: IS-1
+(orbit camera), IS-3 (sea), IS-4 (island props), IS-6a (the Hub island editor). Plan approved in Plan Mode with the
+owner's answers: question 1 ~150 m (the town and barn fit as they are), 6 a dock landing and a deep channel, 7 the
+mountain climbable, 9 the stream with a pond; 10 was answered before (reusable).
+- Changed (one cause per commit):
+  - **logic/island-gen.js** (new; on the game page after island.js, see "Risky"): `islandGenerate(dials, seed, ctx,
+    prev)` returns `{ scene, notes, paths }`. Pure, seeded (each stage its own stream; `dials.seeds[stage]` rerolls one
+    stage), Node-runnable. `ISLAND_GEN_DEFAULTS` (the dials IS-6b shows: size, mountain, hills, cove, shore,
+    beaches, cliffs, dunes, heath, forest, stream, paths, zones, level, seeds), `islandGenDials` (fills in and
+    clamps), `islandZoneRect`, `ISLAND_GEN_STAGES`, `ISLAND_GEN_BUILT` (town, barn, pasture). Nothing Copperleaf's in
+    it: the town, barn and pasture are dial-placed rectangles (angle, distance, width, depth) turned to face out.
+  - The stages: the coast (a radius per degree with noise, pushed out round every flat zone, the cove cut in), the
+    heights (beaches, hills, foot hills, cliffs with a 2.2 m face, the zones flat with a 7 m blend), the mountain
+    (TR-2's smooth quarter plus step-grid shelves, a flat top 3.5 m round), the water (the sea past the coast, a
+    pond at the mountain's foot, a stream to one side of the cove's back with a small fall, the cove's deep channel
+    out from the dock), the paths (a loop round the coast inland of the beach, spokes from each flat zone to it,
+    from the town up to the mountain's foot, from the loop to the dock; a wooden bridge where a path crosses water;
+    mapgen's road flattening), TR-2b's trail from the mountain spoke to a summit lookout, the built zones made level
+    again, the terrain kinds (see the track file's "Checked in IS-2"), the shelves' rock edges, the water lowered
+    under its banks. Spots for the later sessions: `summit`, `dock` (the landing, IS-4's dock runs out from it),
+    `pond`, `fall`.
+  - **Locks**: a map whose `islandGen.lock` is set is refused (throws; the tool exits). With `prev`, its locked zones
+    keep their polygons, ground letters, corner heights and steps exactly, and the scene keeps its middle (and grows
+    only if the coast needs it); a kept zone's surroundings blend to its own level.
+  - **tools/build-island.mjs** (new): writes `game/data/maps/copperleaf_island.json` through write-data.mjs: the map's
+    own dials and seed when it exists (default seed "copperleaf"), `--seed`, `--dials file.json`, `--id`, `--fresh`
+    (drop the kept zones). Copperleaf's look; a test map (`kind: test`, `test: 1`) until IS-5. The walking checks for
+    the in-game test. Prints the size, the lap and the notes.
+  - **copperleaf_island** (new data, index.json's maps list): 174 x 167 m scene, land 153 x 146 m, the coast loop 461 m
+    (136 s walking), one bridge; `cam.orbit` pivot on the summit, `dead` 3, `lag` 0.6, `turn` 30 (IS-1 tunes them);
+    `edge: "w"`, `waterKind: "sea"`, `far: "sea"`, `farH` 5, `flatFar` 1 (IS-3's skirt); no props (IS-4, IS-9).
+- Where the plan (the track file) was wrong or short: see the track file's "Checked in IS-2" (the town didn't fit
+  135 m; the lap is ~136 s, not ~90 or the ~105 I estimated in the plan; the sharp peak blocked every trail; findPath's
+  30000-cell cap; a new game/js file has to be on a page; the terrain kinds without a letter). Also: CLAUDE.md's
+  `gamedata.js` gotcha still holds (it is built from the data files by tools/build-data.mjs and ignored by git).
+- Verified: VERIFIED_PLACEHOLDER
+- Risky:
+  - **findPath's cap**: tap-to-walk from the town to the summit (102 m) fails with the default 30000 cells; the
+    joystick isn't affected. When `copperleaf_island` becomes the hub (IS-5), long taps across it will stop short.
+  - **On the game page**: island-gen.js loads in the game (about 44 KB, unused there) because every game/js file must
+    be on a page; IS-6b can move it to the Studio's page (then the unit test's crawl reaches it from there).
+  - **The file is 628 KB** (27 KB gzipped; Copperleaf's is 73 KB, 14 KB gzipped): the steps grid is stored whole
+    (base64 Int16 over the scene). `loadAllMaps` fetches it in the background after boot.
+  - The lock compares exact numbers: a later generator version (ISLAND_GEN_VERSION 2) changes unlocked ground freely;
+    a locked one is never touched.
+  - The coast in the headless pictures barely reads under today's fixed north camera and the haze; the orbit (IS-1)
+    and the sea (IS-3) are what make it an island on screen.
+- For the sessions alongside:
+  - **IS-1**: test on `?test=1&scene=copperleaf_island` too; the pivot is the summit spot, the island's middle
+    `island.c` is within a few metres.
+  - **IS-3**: the map carries the coast biome's sea fields; the cove's water is shallow (`w`) except its channel.
+  - **IS-4**: the spots `dock` (a landing at the waterline facing the cove), `summit` (the lookout's pocket, 2.5 m
+    round), `pond`, `fall`; `test_props_island` stays yours.
+  - **IS-6a/6b**: `islandGenerate(dials, seed, { scenery }, prev)` is the call; it throws on a locked ground; `notes`
+    say what didn't fit; `paths` are the loop and spokes as lines. The defaults' `zones` are dial rectangles; a kept
+    (locked) zone in `prev` wins over its dial.
+  - **IS-5**: the town zone is 64 x 40 m facing south (z 23 to 63 m), the barn's 18 x 16 m and the pasture's 26 x 22 m
+    to the south-west and west; the flat level is 1.2 m; the hub is the town zone's middle.
+- Next: IS-5 (needs IS-1 and IS-2) and IS-6b, IS-7 (need IS-2). Tag `is-2-done` is the owner's to push (after
+  `is-0-done`).
+
 ### Island track IS-0 - Contract and test island - 2026-10-22
 Branch `claude/new-session-3qlesh`, from main a10bfc6 (PR #118). The owner's brief (docs/phases/island-track.md,
 uploaded in chat): Copperleaf becomes a real island, one map, an orbit camera. IS-0 runs first and alone so wave 1
