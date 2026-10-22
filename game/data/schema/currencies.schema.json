@@ -1,0 +1,65 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "currencies.schema.json",
+ "title": "game/data/currencies.json: the game's four currencies (roguelite track RL-11; check-data refuses a fifth)",
+ "type": "object",
+ "propertyNames": {
+  "enum": [
+   "money",
+   "capital",
+   "scrap",
+   "seals"
+  ]
+ },
+ "minProperties": 4,
+ "maxProperties": 4,
+ "additionalProperties": {
+  "type": "object",
+  "required": [
+   "name",
+   "one",
+   "icon",
+   "kept",
+   "about"
+  ],
+  "additionalProperties": false,
+  "properties": {
+   "name": {
+    "description": "what the player reads (a chip's label, a price)",
+    "type": "string",
+    "minLength": 1,
+    "maxLength": 24
+   },
+   "long": {
+    "description": "the name spelled out where the short one is a sign ($)",
+    "type": "string",
+    "minLength": 1,
+    "maxLength": 24
+   },
+   "one": {
+    "description": "one of it, for counts (1 Audit Seal)",
+    "type": "string",
+    "minLength": 1,
+    "maxLength": 24
+   },
+   "icon": {
+    "description": "its icon (ui-run-kit.js pb-coin)",
+    "type": "string",
+    "pattern": "^[a-z][a-z0-9_]*$"
+   },
+   "kept": {
+    "description": "run: the run's working field (saveData.se), lost or converted at the end; meta: saveData.meta.<id>, kept between runs",
+    "enum": [
+     "run",
+     "meta"
+    ]
+   },
+   "about": {
+    "description": "what it is for, for the Lab board's help",
+    "type": "string",
+    "minLength": 1,
+    "maxLength": 200
+   }
+  }
+ }
+}

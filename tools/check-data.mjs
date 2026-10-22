@@ -458,6 +458,12 @@ if (D.nodeTypes && check('nodeTypes.schema.json', D.nodeTypes, 'nodeTypes.json')
   if (!Object.values(D.nodeTypes).some(T => (T.weight || 0) > 0))
     problem('nodeTypes.json', 'no type has a weight, so nothing can fill a free row of the run map');
 }
+// RL-11: the four currencies (the schema refuses a fifth or a missing one); money is the run's, the others meta's,
+// each read by its id from saveData.meta (logic/meta-state.js)
+if (D.currencies && check('currencies.schema.json', D.currencies, 'currencies.json')) {
+  for (const [k, C] of Object.entries(D.currencies))
+    if ((C.kept === 'run') !== (k === 'money')) problem('currencies.json', `${k}.kept: ${k === 'money' ? 'money is the run\'s' : 'kept between runs (meta)'}`);
+}
 // phase 10: the world map's look: the schema, then the terrain keys it names and the regions it covers
 if (D.worldmap && check('worldmap.schema.json', D.worldmap, 'worldmap.json')) {
   const terr = new Set(Object.keys((D.scenery && D.scenery.terrains) || {}));

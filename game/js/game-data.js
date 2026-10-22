@@ -18,6 +18,7 @@ expose({
   BATTLE_STAGES: [() => BATTLE_STAGES],
   COATS: [() => COATS],
   COINS: [() => COINS],
+  CURRENCIES: [() => CURRENCIES],
   CUTSCENES: [() => CUTSCENES],
   DATA_WARN: [() => DATA_WARN],
   DEFAULT_EVOLUTIONS: [() => DEFAULT_EVOLUTIONS],
@@ -353,6 +354,8 @@ provide({ PEOPLE }); /* to-module */
 export const SHOPS = gameData.shops || {};
 /* roguelite track RL-6: the kinds of node on a run's map (logic/run-map.js takes them as an argument) */
 export const NODE_TYPES = gameData.nodeTypes || {};
+/* roguelite track RL-11: the four currencies (currencies.json) */
+export const CURRENCIES = gameData.currencies || {};
 /* Project Story: the story layer's flags, speakers, quests and start presets (story.json) */
 export const STORY_DATA = gameData.story;
 /* cutscenes, one file each (game/data/cutscenes/<id>.json, docs/CUTSCENES.md) */

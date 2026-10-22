@@ -50,6 +50,8 @@ export interface GameData {
   biomes?: Record<DataId, Biome>;
   /** roguelite track RL-6: the kinds of node on a run's map (game/data/nodeTypes.json; logic/run-map.js) */
   nodeTypes?: Record<DataId, NodeType>;
+  /** roguelite track RL-11: the four currencies (game/data/currencies.json) */
+  currencies?: Partial<Record<CurrencyId, Currency>>;
   /** UI track UI-1: the UI's look: palette, glass, cuts, fonts (game/data/uiTheme.json; logic/ui-theme.js) */
   uiTheme?: UiTheme;
   lines: Line[];
@@ -1391,6 +1393,20 @@ export interface NodeType {
   engine: 'scene' | 'menu';
   /** how often it fills a free row (rules.json run.map gives the other rows their types); 0 or none: never */
   weight?: number;
+}
+
+/** currencies.json: one of the game's four currencies (roguelite track RL-11) */
+export type CurrencyId = 'money' | 'capital' | 'scrap' | 'seals';
+export interface Currency {
+  /** what the player reads; `long` where the short name is a sign ($); `one` for a count of one */
+  name: string;
+  long?: string;
+  one: string;
+  /** its icon (ui-run-kit.js pb-coin) */
+  icon: string;
+  /** run: the run's working field (saveData.se); meta: saveData.meta.<id>, kept between runs */
+  kept: 'run' | 'meta';
+  about: string;
 }
 
 /** uiTheme.json: the UI's look (UI track UI-1; version 2 in UI-3, for the Studio's UI section) */
