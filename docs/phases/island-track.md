@@ -170,12 +170,31 @@ sea past it, `cam.orbit` set. A quick fixture `?fixture=island` that boots into 
 - The far backdrop (`far`, `farH`, sky.js's bowl wall) checked from every angle: the bowl's wall over the sea.
 - Tested on `test_island`; switch to `copperleaf_island` when IS-2 lands.
 
+**Checked in IS-3** (pictures of `?fixture=island` from 8 sides through the Studio's free-camera hook):
+- The old skirt (four quads 90 m out) met the scene's sea with a seam: it started fully deep while the scene's edge
+  water is shallow and see-through, and the scene's own edge vertices were half as deep (cells past the edge counted
+  as nothing). Its far edge showed from high up. Now one skirt of rings (logic/sea.js) out to 400 m.
+- Whitecaps were stretched along x, streaks from the east and west: they now roll in toward `island.c`.
+- There was no surf on a sea coast: the foam came from `aShore`, which is 0 at sea.
+- `far: "sea"` only preloads `scene/far/sea.png`; nothing draws it. `farH` is read by nothing. Both left alone.
+- Far props (trees, rocks scattered past the edge) stood on the water of any `flatFar` map: off there now.
+- The bowl's far wall (the sky shader, from world-bowl.js's `bowlWallTexture`) already goes all the way round; it
+  reads as a pale cream band because of the far bowl's own colours (phase 10's look; softened in IS-3, not recoloured).
+- Looking south (into the noon sun) the sky washes white with bloom and glare: the sun question (3) for IS-1.
+- A cove is calm by its zone (`zones[].k = "cove"`); IS-2's real cove gets it for free.
+
 ### IS-4 Island props
 - Phase 09 batch 11's barn (now a picture) becomes a model; the rest of batch 11 stays its own batch.
 - New, in the existing low-poly 32 px/m style, duplicates as variants: pasture fence and gate, trough, hay bales,
   feeder; driftwood, shells, beach grass, shore rocks, tide pool rims; the dock and a moored boat (scenery); boulders,
   scree, a cairn, the summit lookout; forest floor bits. A showcase map `test_props_island`.
 - Owns the prop files and their art; touches no map but the showcase.
+
+- **Checked in IS-4**: many listed props already were models (fence_wood and its post, haybale, rowboat, dock_post,
+  buoy, rocks, boulder_lichen, stone_wall, waystone, log, stump) and are reused. The walkable dock is a map's
+  `bridges` entry with `pier: 1`, not a prop: IS-5 places it at the cove. The barn's picture is a gambrel (its old
+  `build` said a gable); the model follows the picture. The summit has its own `summit_lookout`; `lookout_tower`
+  stays batch 11's.
 
 ### IS-5 Copperleaf moves onto the island
 **Changed in IS-2** (the owner: the town in the generator): the generator lays the town out itself (streets, a square,
@@ -204,6 +223,16 @@ A Studio section of its own ("Hub island", not inside Walk scenes), editing the 
   read-only (props stay editable here and in Walk scenes, whose ground brushes refuse a locked map too). "Unlock"
   asks first and clears the hash. check-data refuses a changed locked ground (IS-0).
 - Check: a check-fast Studio step (the section opens and draws, a drag turns the orbit, locking disables the brushes).
+
+**Done in IS-6a** (2026-10-22, the owner's answers in chat): "Walk the coast" uses the game's own walk camera (it
+orbits since IS-1 merged; no import of camera-orbit.js. IS-1's orbitOf is off in a Studio free-camera preview, so
+the hub view takes that mark off while it walks); no prop tools in the editor
+("Props in Walk scenes" opens the map there); Copperleaf view-only until it has a coast (IS-5 owns copperleaf.json);
+the coast is hand-editable with the zones' point tool. Checked against the code: the ground the lock covers is
+changed in Walk scenes by Paint, Fill, Shape the land, Cliffs & stairs, Curved road (map-editor-tools.js), Resize and
+Flatten, so the guard is one helper (logic/hub-island.js `groundLockRefusal`) asked in those places; map-generate.js
+only makes new maps and needed none. The editor's logic is game/js/logic/hub-island.js (unit-tested); IS-6b adds the
+dials beside it.
 
 ### IS-6b Hub editor dials
 The generator's dials in the hub editor: size, coast wobble, mountain size and height, forest arc and density, cove
