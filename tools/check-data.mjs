@@ -12,7 +12,8 @@
 // - studio track ST-3: partKits.json against its schema, and every part's picture is there at its size,
 // - phase 08b: the links between places (roads.json) join them as the walk needs, and every door opens a room (below),
 // - UI-1: uiTheme.json against its schema, and its text reads on its ground and surface (4.5:1, light and dark; UI-3:
-//   danger and primary at 3:1, screens' overrides too).
+//   danger and primary at 3:1, screens' overrides too),
+// - Studio plan T1.3: the Studio's scene and road checks (game/js/logic/data-checks.js); their warnings are printed.
 import Ajv2020 from 'ajv/dist/2020.js';
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -27,6 +28,7 @@ import {
   dataNodeTypes,
   dataRanchRules,
   dataRelics,
+  dataRoadFindings,
   dataRobotProblems,
   dataRobots,
   dataRunClock,
@@ -34,6 +36,7 @@ import {
   dataRunMapRules,
   dataRunPayout,
   dataRunScene,
+  dataSceneFindings,
   dataSpeciesKind,
   dataUiTheme,
   dataUnderscoreKeys,
@@ -379,6 +382,11 @@ for (const [id, sc] of Object.entries(S)) {
   for (const p of islandProblems(sc)) problem(where, p);
 }
 
+// Studio plan T1.3: the Studio's scene and road checks (logic/data-checks.js), so CI runs what the Studio's Check
+// shows: an error fails here (each is one of the rules above too), a warning is printed and never fails
+for (const f of [...dataSceneFindings(D, PB_DATA.road), ...dataRoadFindings(D, PB_DATA.road)])
+  if (f.lvl === 'error') problem(f.where, f.msg);
+  else console.log(`  warning: ${f.where}: ${f.msg}`);
 const n = listed.size;
 if (fixed) console.log(`${fixed} file(s) laid out again`);
 // Project Story: story.json, the schema, then the people, places, trainers, Billies and coins it names
