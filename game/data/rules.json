@@ -178,5 +178,23 @@
    "boss": {"up":5,"reward":600}
   }
  },
- "ranch": {"slots":[2,3,4],"capBase":15,"capStep":10,"bankHours":8,"levelsPerHour":0.5,"trainCost":5,"guardMs":60000}
+ "ranch": {
+  "slots": [2,3,4],
+  "capBase": 15,
+  "capStep": 10,
+  "bankHours": 8,
+  "levelsPerHour": 0.5,
+  "trainCost": 5,
+  "guardMs": 60000,
+  "breed": {
+   "nests": [1,2,3],
+   "safeCost": 10,
+   "riskyCost": 5,
+   "hours": 4,
+   "lvl": 5,
+   "odds": {"safe":0.6,"quirk":0.3,"abom":0.1},
+   "abomUp": 1.3,
+   "abomDown": 0.75
+  }
+ }
 }

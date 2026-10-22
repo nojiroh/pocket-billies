@@ -857,6 +857,26 @@ export interface RanchRules {
   trainCost: number;
   /** a clock this far behind a trainee's start (ms) is allowed; further back, nothing is gained and it starts again */
   guardMs: number;
+  /** RL-10: breeding at the ranch (logic/breeding.js) */
+  breed: BreedRules;
+}
+
+/** rules.json ranch.breed: two Billies from home make an egg that hatches at the ranch (RL-10) */
+export interface BreedRules {
+  /** eggs the nursery holds at once, by ranch level (index 0 = level 1; past the end, the last) */
+  nests: number[];
+  /** Scrap for a safe pair (two of one line) and a risky one (any two; costs less) */
+  safeCost: number;
+  riskyCost: number;
+  /** real hours from the pair's start to the egg hatching */
+  hours: number;
+  /** the level a Billie hatches at */
+  lvl: number;
+  /** a risky egg's odds: like a safe one, a quirk, an abomination (they add up to 1) */
+  odds: { safe: number; quirk: number; abom: number };
+  /** an abomination's stat spike and drawback: one stat times abomUp, another times abomDown */
+  abomUp: number;
+  abomDown: number;
 }
 
 /** rules.json run.scene: mapgen's dials as ranges and weights (RL-7) */

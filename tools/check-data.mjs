@@ -247,7 +247,7 @@ check('roads.schema.json', D.roads || [], 'roads.json');
 {
   const RA = D.rules && D.rules.ranch,
     whole = (v, lo, hi) => Number.isInteger(v) && v >= lo && v <= hi,
-    KEYS = ['slots', 'capBase', 'capStep', 'bankHours', 'levelsPerHour', 'trainCost', 'guardMs'];
+    KEYS = ['slots', 'capBase', 'capStep', 'bankHours', 'levelsPerHour', 'trainCost', 'guardMs', 'breed'];
   if (!RA || typeof RA !== 'object' || Array.isArray(RA)) problem('rules.json', 'ranch missing');
   else {
     for (const k of Object.keys(RA)) if (!KEYS.includes(k)) problem('rules.json', `ranch.${k}: no such rule`);
@@ -262,6 +262,36 @@ check('roads.schema.json', D.roads || [], 'roads.json');
       problem('rules.json', 'ranch.levelsPerHour is not a number above 0 and at most 10');
     if (!whole(RA.trainCost, 0, 10000)) problem('rules.json', 'ranch.trainCost is not a whole number of Scrap (0-10,000)');
     if (!whole(RA.guardMs, 0, 3600000)) problem('rules.json', 'ranch.guardMs is not a whole number of ms (0-3,600,000)');
+    // RL-10: breeding (logic/breeding.js): nests by ranch level as slots are, the two costs (a risky pair never costs
+    // more than a safe one), the hours to hatch (1-168), the level it hatches at, the risky odds adding up to 1, the
+    // abomination's spike (1-3) and drawback (0.1-1); nothing else
+    const B = RA.breed,
+      BKEYS = ['nests', 'safeCost', 'riskyCost', 'hours', 'lvl', 'odds', 'abomUp', 'abomDown'];
+    if (!B || typeof B !== 'object' || Array.isArray(B)) problem('rules.json', 'ranch.breed missing');
+    else {
+      for (const k of Object.keys(B)) if (!BKEYS.includes(k)) problem('rules.json', `ranch.breed.${k}: no such rule`);
+      const N = B.nests;
+      if (!Array.isArray(N) || N.length < 1 || N.length > 12 || !N.every((n, i) => whole(n, 1, 20) && (!i || n >= N[i - 1])))
+        problem('rules.json', 'ranch.breed.nests is not a list of 1-12 whole numbers (1-20), none fewer than the one before');
+      if (!whole(B.safeCost, 0, 10000) || !whole(B.riskyCost, 0, 10000) || B.riskyCost > B.safeCost)
+        problem('rules.json', 'ranch.breed.safeCost and riskyCost are not whole Scrap (0-10,000), risky at most safe');
+      if (!whole(B.hours, 1, 168)) problem('rules.json', 'ranch.breed.hours is not a whole number of hours (1-168)');
+      if (!whole(B.lvl, 1, most)) problem('rules.json', `ranch.breed.lvl is not a whole level (1-${most})`);
+      const O = B.odds,
+        OK = ['safe', 'quirk', 'abom'];
+      if (
+        !O ||
+        typeof O !== 'object' ||
+        Object.keys(O).length !== 3 ||
+        !OK.every(k => typeof O[k] === 'number' && O[k] >= 0 && O[k] <= 1) ||
+        Math.abs(OK.reduce((a, k) => a + O[k], 0) - 1) > 1e-9
+      )
+        problem('rules.json', 'ranch.breed.odds is not safe, quirk and abom (each 0-1) adding up to 1');
+      if (typeof B.abomUp !== 'number' || !(B.abomUp >= 1 && B.abomUp <= 3))
+        problem('rules.json', 'ranch.breed.abomUp is not a number from 1 to 3');
+      if (typeof B.abomDown !== 'number' || !(B.abomDown >= 0.1 && B.abomDown <= 1))
+        problem('rules.json', 'ranch.breed.abomDown is not a number from 0.1 to 1');
+    }
   }
 }
 // RL-6: how a run's node map is laid out (logic/run-map.js): 5 to 12 rows, mini-bosses that fit (each on a row of
