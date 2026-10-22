@@ -8,6 +8,7 @@ import { reducedMotion } from '../hooks.js';
 import { clamp } from '../util.js';
 import { cameraRiseNeeded } from '../logic/camera-rise.js';
 import { blendGoals, followNew, followStep, leadStep, zoneMetres } from '../logic/camera-follow.js';
+import { zoomShape } from '../logic/camera-zoom.js';
 import { BOB_M, walkView } from '../walk-view.js';
 import { engineSetting } from '../engine/settings.js';
 import { matrix4 } from '../engine/webgl.js';
@@ -25,6 +26,7 @@ expose({
   freeCameraOn: [() => freeCameraOn],
   screenRay: [() => screenRay, v => (screenRay = v)],
   walkCamera: [() => walkCamera, v => (walkCamera = v)],
+  zoomEnds: [() => zoomEnds, v => (zoomEnds = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -56,6 +58,21 @@ export const freeCameraOn = () => !!(walkView.opt && walkView.opt.freeCam),
 /* ---------- camera ---------- */
 /* CAM-1: an exact ease toward a value at `rate` a second, the same at any frame rate */
 const ease = (rate, dt) => 1 - Math.exp(-rate * dt);
+/* CAM-2: the zoom curve's ends (Engine > Camera > Zoom curve; logic/camera-zoom.js) */
+function zoomEnds() {
+  const set = k => engineSetting('camera', k);
+  return {
+    min: set('zoomMin'),
+    max: set('zoomMax'),
+    nearPitch: set('zoomNearPitch'),
+    nearDist: set('zoomNearDist'),
+    nearFov: set('zoomNearFov'),
+    farPitch: set('zoomFarPitch'),
+    farDist: set('zoomFarDist'),
+    farFov: set('zoomFarFov'),
+    curve: set('zoomCurve'),
+  };
+}
 /* CAM-1: the way you push, on the ground (x, z; length 0-1): the joystick or d-pad, else the arrow keys, else the way
    you walk (tapping somewhere, the Studio's preview); none when standing, or moving faster than walking or running can
    (a jump to somewhere else) */
@@ -150,9 +167,12 @@ export function walkCamera(rw, rh, st, dt) {
       at: [walkRenderer.swoop.x, walkRenderer.swoop.z + (rw > rh ? 1 : 0.5)],
     });
   const G = blendGoals(fol, goals, dt, set('blend'), snap);
-  const pitchDeg0 = pe + (walkRenderer.zoom - 1) * 14 + G.pitch,
+  /* CAM-2: one zoom (your pinch times the goals') drives the tilt, distance and field of view along their curves */
+  const zoomEff = clamp(walkRenderer.zoom * G.zoom, 0.3, Math.max(1, set('zoomMax')) * 1.25),
+    Z = zoomShape(zoomEff, zoomEnds());
+  const pitchDeg0 = pe + Z.pitch + G.pitch,
     yaw = walkRenderer.yaw + G.yaw;
-  let df = (he / Math.sin((pe * Math.PI) / 180)) * walkRenderer.zoom * G.dist;
+  let df = (he / Math.sin((pe * Math.PI) / 180)) * Z.dist * G.dist;
   /* terrain TR-3: on tall ground the camera tilts down further (and comes a little closer) until the line from it to
     your head clears the rock between you; it rises quickly and settles back slowly (its own ramp, kept as it was) */
   const tall = !(sc.indoor || sc.room || freeCameraOn()),
@@ -193,7 +213,7 @@ export function walkCamera(rw, rh, st, dt) {
   }
   /* CAM-1: the follow (logic/camera-follow.js): dead and soft zones as shares of the screen, a critically damped
      spring. camT is its aim, so whatever moves or resets camT (a room's door, the seamless world's re-anchor) moves it */
-  const shown = visW * walkRenderer.zoom,
+  const shown = visW * Z.dist * Z.fov,
     dead = zoneMetres(set('deadW'), set('deadH'), shown, rw, rh, pitch),
     soft = zoneMetres(set('softW'), set('softH'), shown, rw, rh, pitch);
   if (snap) walkRenderer.camT = [gx, gz, feet];
@@ -218,6 +238,7 @@ export function walkCamera(rw, rh, st, dt) {
   /* CAM-1: what the camera is doing, for the debug log and the Studio's guides */
   walkRenderer.camInfo = {
     mode: freeCameraOn() ? 'free' : walkRenderer.swoop ? 'swoop' : sc.room ? 'room' : sc.indoor ? 'indoor' : 'walk',
+    zoom: zoomEff,
     goals: G.list,
     goal: [gx, gz],
     lead: [lead[0], lead[1]],
@@ -247,7 +268,7 @@ export function walkCamera(rw, rh, st, dt) {
     }
   }
   const eye = [tgt[0] - f[0] * df, tgt[1] - f[1] * df, tgt[2] - f[2] * df];
-  const hfov = Math.min(1.3, 2 * Math.atan((visW * walkRenderer.zoom) / 2 / df)),
+  const hfov = Math.min(1.3, 2 * Math.atan((visW * Z.dist) / 2 / df) * Z.fov),
     vfov = 2 * Math.atan((Math.tan(hfov / 2) * rh) / rw);
   const proj = matrix4.persp(vfov, rw / rh, 0.5, 420);
   proj[0] = -proj[0];

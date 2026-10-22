@@ -235,11 +235,13 @@ export function followStep(st, I, dt) {
  * @property {number} [pitch] degrees added to the tilt at full weight
  * @property {number} [yaw] radians added to the turn at full weight
  * @property {number} [dist] the distance's factor at full weight
+ * @property {number} [zoom] CAM-2: the zoom's factor at full weight (logic/camera-zoom.js turns the zoom into tilt,
+ *   distance and field of view)
  * @property {number[]} [at] an aim point ([x, z]) it pulls toward
  */
 /**
  * Blends the goals into one: each goal's weight ramps toward what it asks (`st.w`, by id; a goal that stops being
- * asked for ramps out as it last was, `st.last`), then the tilts add up, the distance factors multiply and the aim points pull in order. `snap` jumps
+ * asked for ramps out as it last was, `st.last`), then the tilts add up, the distance and zoom factors multiply and the aim points pull in order. `snap` jumps
  * every weight to its target.
  * @param {FollowState} st
  * @param {CameraGoal[]} goals
@@ -253,6 +255,7 @@ export function blendGoals(st, goals, dt, blend, snap) {
       pitch: 0,
       yaw: 0,
       dist: 1,
+      zoom: 1,
       at: /** @type {number[] | null} */ (null),
       atW: 0,
       list: /** @type {[string, number][]} */ ([]),
@@ -283,6 +286,7 @@ export function blendGoals(st, goals, dt, blend, snap) {
     out.pitch += (g.pitch || 0) * w;
     out.yaw += (g.yaw || 0) * w;
     if (g.dist != null) out.dist *= 1 + (g.dist - 1) * w;
+    if (g.zoom != null) out.zoom *= 1 + (g.zoom - 1) * w;
     if (g.at) {
       pulls.push([g.at, w]);
       keep *= 1 - w;
