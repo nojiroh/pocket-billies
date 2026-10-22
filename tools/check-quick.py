@@ -1901,14 +1901,16 @@ def desktop_steps(b, base, R):
         return f'{made[0]} scenes made in {made[1]} ms ({made[2]} places); {walked:.0f} m over the seam (views {len(views)}, {unready} not ready), day 2, back on day 3; the hub back'
     rl7_run_roads()
 
-    @step('RL-8: a run from the mast — the flight, a battle, a seam, a paid heal, the shop, a mini-boss, the boss, the payout, home', 420)
+    @step('RL-8: a run from the mast — the flight, a battle, a seam, a paid heal, the shop, a mini-boss and its Loophole pick (RL-12), the boss, the payout, home', 420)
     def rl8_run_from_mast():
         """Copperleaf's mast sheet (tapped as walkPick does) offers "Start a run"; its sheet's "Take off" puts a run on the
         save with its world and flies to the landing (skipped to the end: day 1, beside the landing's mast); a wild
         battle won pays and lets saving go on; the north seam walked (cross()) is day 2; "Go there" walks to the first
-        town: the clinic charges $60 a hurt Billie (after a yes), the shop has the day's stock; on to the first
-        mini-boss, which blocks the way north and fights a double battle (won); on to the boss, an Alpha (won): "On to
-        the payout", the payout as won, "Fly home": Copperleaf with Capital, no run. The hub's save is put back after"""
+        town: the clinic charges $60 a hurt Billie (after a yes), the shop has the day's stock and (RL-12) a Loophole;
+        on to the first mini-boss, which blocks the way north and fights a double battle (won): "Pick a Loophole" opens
+        the pick, a card tapped and "Take it" holds it; on to the boss, an Alpha (won, its battle carrying the
+        Loophole): "On to the payout", the payout as won, "Fly home": Copperleaf with Capital, no run. The hub's save is
+        put back after"""
         if not pg.evaluate("typeof runTakeOff==='function'"): return 'not in this build'
         pg.evaluate("window.rl8Hub=JSON.parse(JSON.stringify(saveData));uiState.inside=null;uiState.bench=null;uiState.modal=null;uiState.mq=[];renderOverlay();uiState.tab='walk';saveData.team.forEach(m=>{m.hp=maxHp(m);m.status=null});render();0")
         try:
@@ -1944,6 +1946,7 @@ def desktop_steps(b, base, R):
             pg.click('#ov [data-a=mb][data-i="0"]')
             if pg.evaluate("saveData.se") != heal[1] - heal[0] or not pg.evaluate("saveData.team.every(m=>m.hp===maxHp(m))"): raise Exception(f'the clinic: ${heal[1]} - ${heal[0]} gave ${pg.evaluate("saveData.se")}')
             wares = pg.evaluate(f"openShop(LOCATIONS[{town}].shop);SHOPS[LOCATIONS[{town}].shop].stock.length")
+            if not pg.evaluate("!!document.querySelector('#ov .shop-sheet [data-a=shoprelic]')"): raise Exception('the town’s shop has no Loophole (RL-12)')
             pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();0")
             if wares != len(pg.evaluate('RULES.run.shop.always')) + pg.evaluate('RULES.run.shop.more'): raise Exception(f'the shop has {wares} wares')
             # the first mini-boss: it blocks, a double battle, won
@@ -1955,6 +1958,17 @@ def desktop_steps(b, base, R):
             if not until(pg, "!!activeBattle&&activeBattle.fmt==='double'", 20): raise Exception('the mini-boss’s battle isn’t a double battle')
             pg.evaluate("stopTimers();activeBattle.over='win';endBattle();0")
             if not until(pg, f"!activeBattle&&!blockerAt({mb})", 30): raise Exception('beaten, the mini-boss still blocks')
+            # RL-12: its pick of Loopholes, stored before the sheet; tapped through
+            if not until(pg, "uiState.modal&&uiState.modal.btns&&uiState.modal.btns[0].l==='Pick a Loophole'", 30): raise Exception('no “Pick a Loophole” after the mini-boss')
+            if len(pg.evaluate("JSON.parse(localStorage.getItem(SAVE_KEY)).run.offer||[]")) != pg.evaluate('RULES.run.relics.pick'): raise Exception('the pick isn’t stored before it shows')
+            pg.click('#ov [data-a=mb][data-i="0"]')
+            if not until(pg, "uiState.modal&&uiState.modal.cls==='relic-pick'&&document.querySelectorAll('#ov pb-pick-card').length===RULES.run.relics.pick", 10): raise Exception('the pick didn’t open')
+            pg.evaluate("document.querySelector('#ov pb-pick-card').shadowRoot.querySelector('button').click();0")
+            if not until(pg, "!document.querySelector('#ov [data-a=mb][data-i=\"0\"]').disabled", 10): raise Exception('a card didn’t enable “Take it”')
+            shot(pg, 'rl12-pick')
+            pg.click('#ov [data-a=mb][data-i="0"]')
+            relic = pg.evaluate("saveData.run.relics.length===1&&!saveData.run.offer&&saveData.run.relics[0]")
+            if not relic: raise Exception(f'the pick: held {pg.evaluate("JSON.stringify([saveData.run.relics,saveData.run.offer])")}')
             # the boss: an Alpha, won, the payout, home
             boss = pg.evaluate("saveData.run.map.nodes.length")
             pg.evaluate(f"uiState.modal=null;uiState.mq=[];renderOverlay();runJump({boss});render();0")
@@ -1962,6 +1976,7 @@ def desktop_steps(b, base, R):
             if not B: raise Exception('no boss stands on the boss’s place')
             pg.evaluate(f"saveData.team.forEach(m=>{{m.hp=maxHp(m)}});startTrainer('{B}',{{talked:true}});0")
             if not until(pg, "!!activeBattle&&activeBattle.fmt==='alpha'&&!!activeBattle.sides[1].team[0].boss", 20): raise Exception('the boss isn’t an Alpha battle')
+            if pg.evaluate("(activeBattle.fx||[]).map(f=>f.src).join()") != relic: raise Exception('the boss’s battle doesn’t carry the Loophole')
             pg.evaluate("stopTimers();activeBattle.over='win';endBattle();0")
             if not until(pg, "uiState.modal&&uiState.modal.btns&&uiState.modal.btns[0].l==='On to the payout'", 30): raise Exception('no “On to the payout” after the boss')
             pg.click('#ov [data-a=mb][data-i="0"]')
@@ -1972,7 +1987,7 @@ def desktop_steps(b, base, R):
             home = pg.evaluate("[saveData.meta.runs, saveData.meta.wins, saveData.meta.capital, saveData.meta.seals]")
             if home[0] < 1 or home[1] < 1 or home[2] <= 0: raise Exception(f'home: {home}')
             if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
-            return f'seed {land[0]}: {land[4]} scenes, landed day 1 by the mast; a battle won; day 2 over the seam; healed for ${heal[0]}; {wares} wares; {foe[1]} beaten (doubles); the boss (an Alpha) beaten; payout; home: {home[2]} Capital, {home[3]} Seal'
+            return f'seed {land[0]}: {land[4]} scenes, landed day 1 by the mast; a battle won; day 2 over the seam; healed for ${heal[0]}; {wares} wares and a Loophole; {foe[1]} beaten (doubles), {relic} picked; the boss (an Alpha) beaten; payout; home: {home[2]} Capital, {home[3]} Seal'
         finally:
             pg.evaluate("if(activeBattle){stopTimers();setActiveBattle(null);battleStageStop()}airshipFlight.on=false;uiState.modal=null;uiState.mq=[];renderOverlay();setSaveData(window.rl8Hub);render();0")
     rl8_run_from_mast()

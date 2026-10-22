@@ -1,24 +1,14 @@
 'use strict';
 /* ================= PENDING WINDOWS ================= */
-/* UI-5: the windows that wait for the world to show (a move to learn, an evolution, a hatch), moved from ui.js as they were */
+/* UI-5: the windows that wait for the world to show (a move to learn, an evolution), moved from ui.js as they were;
+   RL-10: the hatch window is the ranch's now (eggs hatch there, not by walking), opened by its Hatch button */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { provide, render } from './hooks.js';
 import { $, $$ } from './util.js';
 import { MOVES, SPECIES } from './game-data.js';
 import { speciesOf } from './logic/fighters.js';
-import {
-  allBillies,
-  billyName,
-  canEvolve,
-  coatPrefix,
-  eggKm,
-  evolve,
-  findBilly,
-  hatchEgg,
-  hatchable,
-  moveSlotCount,
-} from './logic/rules.js';
+import { allBillies, billyName, canEvolve, coatPrefix, evolve, findBilly, moveSlotCount } from './logic/rules.js';
 import { activeBattle, escapeHtml, reducedMotion, save, saveData, uiState } from './game-state.js';
 import { eggHTML } from './art.js';
 import { rigCanvasHTML } from './skeleton-rig.js';
@@ -28,14 +18,14 @@ import { closeModal, modal, toast } from './overlay.js';
 /* eslint-disable no-func-assign */
 expose({
   evolutionModal: [() => evolutionModal, v => (evolutionModal = v)],
-  hatchModal: [() => hatchModal, v => (hatchModal = v)],
+  hatchModal: [() => hatchModal, v => ((hatchModal = v), provide({ hatchModal }))],
   learnModal: [() => learnModal, v => (learnModal = v)],
   runEvolution: [() => runEvolution, v => ((runEvolution = v), provide({ runEvolution }))],
   showPendingWindows: [() => showPendingWindows, v => ((showPendingWindows = v), provide({ showPendingWindows }))],
   whenWorldShows: [() => whenWorldShows, v => (whenWorldShows = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ runEvolution, showPendingWindows });
+provide({ hatchModal, runEvolution, showPendingWindows });
 /* to-module: end */
 /* ---------- post-step events ---------- */
 /* phase 06: runs fn once the world is on screen and the player has had a moment to see it (no loader, title or
@@ -59,11 +49,6 @@ export function whenWorldShows(fn, settle = 1200) {
 }
 export function showPendingWindows() {
   if (activeBattle || uiState.modal || !saveData.started || uiState.title) return;
-  const eg = hatchable()[0];
-  if (eg) {
-    hatchModal(eg);
-    return;
-  }
   const lq = uiState.learnQ.shift();
   if (lq) {
     const m = findBilly(lq.uid);
@@ -178,10 +163,12 @@ export function runEvolution(m, note, path = 'A') {
     },
   });
 }
-function hatchModal(e) {
+/** RL-10: an egg hatching at the ranch: the egg (drawn as eggs/egg_<tier>), "Hatch it" calls `hatch` (the ranch's
+    breedHatch: the Billie and where it went, or null), then the Billie it was; `then` after "Welcome aboard" */
+function hatchModal(tier, hatch, then) {
   modal({
-    title: `A ${eggKm(e.tier)} km egg is hatching`,
-    top: `<div class="hatch" id="hatchBox">${eggHTML(e.tier, 96, 'wob')}</div>`,
+    title: 'An egg is hatching',
+    top: `<div class="hatch" id="hatchBox">${eggHTML(tier, 96, 'wob')}</div>`,
     html: '<p>Something is moving inside.</p>',
     lock: 1,
     btns: [
@@ -190,16 +177,36 @@ function hatchModal(e) {
         c: 'dark',
         f: () => {
           const box = $('#hatchBox');
-          const res = hatchEgg(e);
+          const res = hatch();
+          if (!res) {
+            closeModal();
+            if (then) then();
+            return;
+          }
           const m = res.m,
-            s = speciesOf(m);
+            s = speciesOf(m),
+            name = m.mut && m.mut.k === 'abom' ? billyName(m) : coatPrefix(m.coat) + s.name,
+            mark = !m.mut
+              ? ''
+              : m.mut.k === 'abom'
+                ? '<p><b>Something is very wrong with it.</b> An abomination: odd parts, its own name, one stat far up and another down.</p>'
+                : '<p>It has a quirk: a parent’s move, and something odd about its size or coat.</p>';
           const done = () => {
             uiState.modal = null;
             modal({
-              title: `It’s ${/^[AEIOU]/.test(s.name) ? 'an' : 'a'} ${escapeHtml(coatPrefix(m.coat) + s.name)}`,
+              title: `It’s ${/^[AEIOU]/.test(name) ? 'an' : 'a'} ${escapeHtml(name)}`,
               top: `<div class="hatch done">${rigCanvasHTML(m.sp, 128, { build: m.build, coat: m.coat })}</div>`,
-              html: `<p>${s.types.map(typeBadgeHTML).join('')} <b class="tnum">Lv ${m.lvl}</b></p><p>${escapeHtml(s.blurb)}</p>${res.where === 'box' ? '<p class="note">It went to storage because your team is full.</p>' : ''}`,
-              btns: [{ l: 'Welcome aboard', c: 'dark', f: closeModal }],
+              html: `<p>${s.types.map(typeBadgeHTML).join('')} <b class="tnum">Lv ${m.lvl}</b></p>${mark}<p>${escapeHtml(s.blurb)}</p>${res.where === 'box' ? '<p class="note">It went to storage because your team is full.</p>' : ''}`,
+              btns: [
+                {
+                  l: 'Welcome aboard',
+                  c: 'dark',
+                  f: () => {
+                    closeModal();
+                    if (then) then();
+                  },
+                },
+              ],
             });
             render();
           };
@@ -207,7 +214,7 @@ function hatchModal(e) {
             done();
             return;
           }
-          box.innerHTML = eggHTML(e.tier, 96, 'shake');
+          box.innerHTML = eggHTML(tier, 96, 'shake');
           $$('.sheet .btns button').forEach(b => (b.disabled = true));
           setTimeout(() => {
             box.classList.add('flash');

@@ -78,7 +78,7 @@ const RUN_NAV_SETS = {
     { id: 'map', label: 'Map', icon: 'map' },
     { id: 'team', label: 'Team', icon: 'team' },
     { id: 'bag', label: 'Bag', icon: 'bag' },
-    { id: 'relics', label: 'Relics', icon: 'relic' },
+    { id: 'relics', label: 'Loopholes', icon: 'relic' },
   ],
   hub: [
     { id: 'map', label: 'Map', icon: 'map' },

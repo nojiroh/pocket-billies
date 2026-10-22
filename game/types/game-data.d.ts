@@ -50,6 +50,8 @@ export interface GameData {
   biomes?: Record<DataId, Biome>;
   /** roguelite track RL-6: the kinds of node on a run's map (game/data/nodeTypes.json; logic/run-map.js) */
   nodeTypes?: Record<DataId, NodeType>;
+  /** roguelite track RL-12: a run's Loopholes (relics), each a list of effect rows (game/data/relics.json; logic/effects.js) */
+  relics?: Record<DataId, Relic>;
   /** roguelite track RL-11: the four currencies (game/data/currencies.json) */
   currencies?: Partial<Record<CurrencyId, Currency>>;
   /** RL-11: Copperleaf's hub buildings (game/data/buildings.json) */
@@ -902,6 +904,14 @@ export interface Rules {
     shop: { always: string[]; more: number; pick: Record<string, number> };
     /** RL-8: a mini-boss's and the boss's levels: `up` over the top wild level of their row; their reward in $ */
     foes: { miniboss: { up: number; reward: number }; boss: { up: number; reward: number } };
+    /** RL-12: Loopholes: at most `cap` held, a pick of `pick` after a mini-boss, offered by `rarity` weight, sold in a
+        run shop at `price` by rarity (placeholders) */
+    relics: {
+      cap: number;
+      pick: number;
+      rarity: Record<RelicRarity, number>;
+      price: Record<RelicRarity, number>;
+    };
   };
   /** roguelite track RL-9: the ranch (logic/ranch.js). Placeholders until the owner has played it */
   ranch: RanchRules;
@@ -922,6 +932,26 @@ export interface RanchRules {
   trainCost: number;
   /** a clock this far behind a trainee's start (ms) is allowed; further back, nothing is gained and it starts again */
   guardMs: number;
+  /** RL-10: breeding at the ranch (logic/breeding.js) */
+  breed: BreedRules;
+}
+
+/** rules.json ranch.breed: two Billies from home make an egg that hatches at the ranch (RL-10) */
+export interface BreedRules {
+  /** eggs the nursery holds at once, by ranch level (index 0 = level 1; past the end, the last) */
+  nests: number[];
+  /** Scrap for a safe pair (two of one line) and a risky one (any two; costs less) */
+  safeCost: number;
+  riskyCost: number;
+  /** real hours from the pair's start to the egg hatching */
+  hours: number;
+  /** the level a Billie hatches at */
+  lvl: number;
+  /** a risky egg's odds: like a safe one, a quirk, an abomination (they add up to 1) */
+  odds: { safe: number; quirk: number; abom: number };
+  /** an abomination's stat spike and drawback: one stat times abomUp, another times abomDown */
+  abomUp: number;
+  abomDown: number;
 }
 
 /** rules.json run.scene: mapgen's dials as ranges and weights (RL-7) */
@@ -1460,6 +1490,27 @@ export interface NodeType {
   engine: 'scene' | 'menu';
   /** how often it fills a free row (rules.json run.map gives the other rows their types); 0 or none: never */
   weight?: number;
+}
+
+/** relics.json: how often a Loophole is offered and what a shop asks for it (rules.json run.relics) */
+export type RelicRarity = 'common' | 'uncommon' | 'rare';
+/** relics.json: one effect row (logic/effects.js FX_KINDS; the schema says what each kind takes) */
+export type FxRow =
+  | { kind: 'money'; mult: number }
+  | { kind: 'price'; what: 'shop' | 'heal'; mult: number }
+  | { kind: 'catch'; mult: number }
+  | { kind: 'stat'; stat: 'lev' | 'law' | 'lob' | 'pr' | 'hus'; stages: number }
+  | { kind: 'damage'; side: 'deal' | 'take'; cat?: 'H' | 'S'; type?: string; mult: number }
+  | { kind: 'heal'; share: number }
+  | { kind: 'payout'; what: 'capital' | 'itemShare'; mult: number };
+/** relics.json: a Loophole (roguelite track RL-12): held for one run, its effect rows apply while it is held */
+export interface Relic {
+  /** what the player reads */
+  name: string;
+  /** what it does, in one sentence */
+  d: string;
+  rarity: RelicRarity;
+  fx: FxRow[];
 }
 
 /** currencies.json: one of the game's four currencies (roguelite track RL-11) */

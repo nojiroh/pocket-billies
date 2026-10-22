@@ -487,6 +487,10 @@ debugLog.state = () => {
             groundTris: GAME.walkRenderer && GAME.walkRenderer.mesh ? Math.round(GAME.walkRenderer.mesh.n / 3) : null,
             /* TR-3: the camera's extra tilt on tall ground right now (degrees) */
             camRise: GAME.walkRenderer && GAME.walkRenderer.occT != null ? +GAME.walkRenderer.occT.toFixed(1) : null,
+            /* RL-12: the Loopholes held (relics.json ids, not names), the pick waiting (how many) and offers made */
+            relics: (run.relics || []).slice(),
+            offer: run.offer ? run.offer.length : 0,
+            offers: run.offerN || 0,
           }
         : null;
     /* RL-8: what the runs brought home (numbers only) */
@@ -511,6 +515,9 @@ debugLog.state = () => {
           training: ranch.trainees.length,
           hours: ranch.trainees.map(t => +((Date.now() - t.at) / 3600000).toFixed(1)),
           stored: (GAME.saveData.box || []).length,
+          /* RL-10: the nursery (numbers only): each egg's mode and hours left, and how many pairs have bred */
+          eggs: (ranch.nursery || []).map(n => [n.mode, +Math.max(0, (n.ready - Date.now()) / 3600000).toFixed(1)]),
+          bred: ranch.bred || 0,
         }
       : null;
     s.frameHz = GAME.frameScheduler.hz;

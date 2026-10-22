@@ -23,6 +23,8 @@ import { runNodeSeed, runWorldNode } from './run-map.js';
 import { runWildLevels } from './run-scenes.js';
 /* eslint-disable no-func-assign */
 expose({
+  // @ts-expect-error -- replaced on purpose
+  runArriveHeal: [() => runArriveHeal, v => (runArriveHeal = v)],
   runBattleSeed: [() => runBattleSeed],
   runFoeId: [() => runFoeId],
   runFoeWinText: [() => runFoeWinText],
@@ -57,6 +59,21 @@ export const runGive = (seed, tier, mapgenV, start) => ({
 /** is a Billie hurt: below its full HP, fainted, with a status, or (a robot) with a damaged part @param {Billy} m */
 export const runHurt = m =>
   m.hp < maxHp(m) || !!m.status || Object.values(m.partDmg || {}).some(d => /** @type {number} */ (d) > 0);
+/** RL-12: walking into a place with a heal row (logic/effects.js fxHealShare): every Billie that hasn't fainted gains
+ * `share` of its HP (rounded up), never past its full HP; returns the HP gained in all @param {Billy[]} team
+ * @param {number} share */
+export function runArriveHeal(team, share) {
+  let gained = 0;
+  if (!(share > 0)) return 0;
+  for (const m of team) {
+    if (m.hp <= 0) continue;
+    const top = maxHp(m),
+      to = Math.min(top, m.hp + Math.ceil(top * share));
+    gained += to - m.hp;
+    m.hp = to;
+  }
+  return gained;
+}
 /** what a run town's clinic charges to heal the party: `each` per hurt Billie @param {Billy[]} team
  * @param {number} each @returns {{ hurt: number, cost: number }} */
 export function runHealCost(team, each) {
@@ -167,6 +184,7 @@ export function runPayoutRows(pay, rates) {
       released: n => ['Billies released', `${n} × ${rates.released}`],
       nodes: n => ['Places reached', `${n} × ${rates.node}`],
       win: () => ['The boss beaten', ''],
+      fx: n => ['Loopholes', `${n > 0 ? '+' : ''}${n}%`],
     };
   const won = pay.lines.some(l => l.what === 'win' && l.n > 0);
   return pay.lines

@@ -63,6 +63,129 @@ uploaded in chat): Copperleaf becomes a real island, one map, an orbit camera. I
   island props (prop data and art), IS-6a the Hub island editor (Studio files). The track's "Ask me before" 1-12 are all still open; each session asks its own
   (IS-1: 2 and 3; IS-2: 1, 6, 7, 9; IS-5: 4, 11; IS-8: 8; IS-9: 5); 10 is answered (reusable). Tag `is-0-done` is the owner's to push.
 
+### Roguelite track RL-12a - Relics and effects, first half: Loopholes, picks, shops - 2026-10-22
+Branch `claude/dazzling-keller-qyw5vq` (PR #117), from main 6a8a3e7; main merged in twice: RL-9b and UI-6a mid-session,
+then RL-11 (PR #115, bb51f13) at the end. Plan approved in
+Plan Mode with the owner's answers: RL-12 may go before RL-11 (every Loophole on offer from the first run); split in
+two (RL-12a here: effects, Loopholes, picks, shops; RL-12b: events and the event and shop places); 8.6 the
+waystation; 8.14 a cap of 6. RL-9b, RL-10 and RL-11 ran at the same time (see "Merging" below).
+- Changed (one cause per commit):
+  - **UI lint was red on main** (RL-9's ranch card margin): fixed with tokens; main fixed it too, so the merge kept
+    main's and lowered the space ceiling back to 1033.
+  - **Data**: `relics.json` (ten Loopholes: Offshore Account, Tax Shelter, Lobbyist, Fine Print, Insider Tip, Hostile
+    Takeover, Hedge Fund, Severance Package, Stock Options, Write-off), schema, types, `RELICS`, check-data;
+    rules.json `run.relics` (cap 6, pick 3, rarity weights 6/3/1, prices $150/250/400; placeholders).
+  - **logic/effects.js**: held Loopholes as effect rows; kinds `money`, `price` (shop, heal), `catch`, `stat`,
+    `damage` (deal/take, by category or type), `heal` (walking in), `payout` (Capital, the items' share). Rows of a
+    kind combine in any order, within limits; no rows change nothing.
+  - **Battles**: a run battle carries `b.fx`; stat stages for yours on the field as it starts (a line says so);
+    `calcDamage` and `catchOdds` multiply by their rows; a win's $ through the money rows. Golden battles unchanged;
+    a fifth holds three Loopholes.
+  - **The walk**: a run shop's prices and a run clinic through the price rows; walking in heals by the heal rows;
+    the payout through the payout rows (a "Loopholes" row keeps the rows adding up to the total).
+  - **logic/relics.js** and the save: `run.offerN` (the offers' stream) and `run.shelf` (a shop's Loophole by node and
+    day); `migrate` fills them for a run saved before (it carries on).
+  - **Screens** (relic-screen.js): beating a mini-boss stores a pick with the battle's end; "Pick a Loophole" opens it
+    (cards one to a row, Take it / Take none, locked, reopened by a reload); past the cap, "Let one go"; a run shop's
+    first row is the day's Loophole; the run bar's fourth tab (hidden since UI-4) opens as "Loopholes".
+  - **Debug**: Runs section "Give a Loophole", "A mini-boss's pick", the list held; the debug log's run line has the
+    ids held (no names), the pick waiting and offers made.
+  - **Checks**: `?fixture=relics`; check-fast "Loopholes"; the in-game run phase and the quick check's RL-8 step buy a
+    shop's Loophole, take a mini-boss's pick and see the boss's battle carry it; unit tests effects (7), relics (8),
+    battle-fx (4), run-fx (3).
+- Where the plan was wrong: see roguelite-track.md section 0, "Corrected in RL-12" (the save needed `offerN` and
+  `shelf`; UI-4 had built the tab and pick card; "tiny" waystations can't be, every run scene is 112 x 64 m; Write-off
+  only counts on a loss since RL-9b; four effect kinds wait for RL-13/14).
+- Verified: unit tests 542 after the merge with main; lint, typecheck, modules, format, check-data; check-fast 19 of 19
+  on this branch; the Loopholes step's planted fault (no pick after a mini-boss) seen to fail; the in-game run and
+  ranch phases alone headless; the quick check's RL-8 step alone; smoke 15 of 15 before the work and at the end. Headless pictures
+  (390 x 760) of the pick, the tab, the shop row and "Let one go". The full quick check: see the PR.
+- Merging with the sessions running beside this one (test merges in scratch copies, not pushed):
+  - **RL-9b** (PR #114, merged): merged into this branch; conflicts were both-sides additions.
+  - **RL-11** (PR #115, merged into main and then into this branch at the end; first test-merged in a scratch copy):
+    the code conflicts were all two additions in the same place (index.json keys,
+    game-data exports, types, check-data blocks, check-fast pages, run-state checks, ui.js tabs: keep both, both tabs
+    shown, `NAV_HIDDEN` empty; shop.js: RL-11's unlocked stock then RL-12's `relicShelf`); generated imports remade by
+    `npm run modules`. Combined: unit tests 550, lint, typecheck, modules, data all pass; check-fast 19 of 20, the 20th
+    passing alone (below). After the real merge: unit tests 550, lint, typecheck, modules, data, check-data-text.
+  - **RL-10** (draft, `claude/pensive-brahmagupta-5rjlgf`): one conflict (check-fast, both add a step). Combined: unit
+    tests 550, all fast checks; check-fast 20 of 20 on the second full run.
+  - **A flaky check on main**: RL-9b's "Packing for a run" sometimes fails in a full check-fast with 20 pages ("Take
+    off didn't start a run" within 30 s) and passes alone and on the next full run; not caused by RL-10, 11 or 12.
+- Risky / open:
+  - Every number is a placeholder (prices, rarities, multipliers); the run sim doesn't pick Loopholes yet.
+  - A shop's Loophole depends on what you held the first time it opened that day (drawn once, then kept).
+  - The pick sheet's three tall cards need a scroll on a small phone to reach "Take it".
+- Phone check wanted: `?fixture=relics` (or the debug menu's Runs: "A mini-boss's pick"): pick a Loophole, look at the
+  Loopholes tab; walk into a town (prices lower, clinic half, the Loophole row; buy at the cap); a battle with Insider
+  Tip (the line at the start); export the debug log.
+- Next: RL-12b (events.json with `relic` and `wager`, the event and shop waystations, no two shops side by side),
+  then the tag `rl-12-done`.
+
+### Roguelite track RL-10a - Ranch B, first half: breeding and hatching - 2026-10-22
+Branch `claude/pensive-brahmagupta-5rjlgf`, from main fb43358 (PR #114), main (RL-11, PR #115) merged in at the end.
+Draft PR #116. Plan approved in Plan Mode; the owner split RL-10 in two (RL-10a breeding, RL-10b income and the cloud
+anchor) and took every recommendation: you pick the parents and the ranch picks the parts (phase 16's 5.1: both); an
+abomination wears one parent's art with its own name and a stat swing; the old walking eggs are retired; the parents
+stay free while their egg waits. `rl-9-done` was not on the remote at the start (sessions can't push tags); the owner
+said to go ahead. Mid-session the owner asked to check the other sessions merge cleanly (below).
+- Changed (one cause per commit):
+  - **Rules**: `rules.ranch.breed` (nests 1/2/3 by ranch level, 10 Scrap a safe pair and 5 a risky one, 4 h to hatch, Lv
+    5, risky odds 60/30/10, an abomination's x1.3 and x0.75; placeholders); types and check-data.
+  - **A bred Billie's mark** `m.mut`: a quirk, or an abomination (`name`, `up`, `down`); `stat()` applies the swing
+    after the build, `billyName` shows the name unless nicknamed, `billiesOk` checks it, `migrate` cleans the name.
+  - **logic/breeding.js**: `breedCan` (why not: run, parent, same, line, full, scrap), `breedRoll` (the egg from the
+    parents' uids and `ranch.bred`: shown before paying, the same however often asked), `breedStart` (pays, fills a
+    nest with the rolled Billie), `breedHatch` (team, or storage when full; met at the ranch, caught, `hatched` +1).
+    An egg's ready time never moves. The save: nursery entries hold `egg` (checked with the team and storage as one
+    set of uids), `ranch.bred`.
+  - **The ranch's sheet**: Nursery (eggs, time left, Hatch) and "Breed a pair" (Safe/Risky, pick cards, the safe egg
+    previewed, the risky odds spelled out). Hatch opens the old hatch window (`hatchModal`, now the ranch's): "Hatch it",
+    the shake, the Billie with a line for a quirk or an abomination; "Welcome aboard" brings the sheet back.
+  - **The old eggs retired**: no drops (battleRewards draws no chance; its `roll` stays, unused, so callers keep their
+    places), no trainer or starter eggs, walking hatches nothing; the incubators, the Bag's Eggs pocket, the debug
+    menu's egg buttons, the Guide's egg sizes and the walking tip are gone.
+  - **Checks and debug**: `breeding.test.mjs` (8), check-fast "Breeding", the in-game "The ranch: breeding a pair",
+    the debug menu's "Eggs ready now", the debug log's `eggs` and `bred` (numbers only).
+  - **The sim** `tools/test/sim/breeding-sim.mjs` (report only) and `breeding-sim.test.mjs`.
+- Where the plan was wrong (roguelite-track.md section 0): eggs hatched by metres walked, not time; `eggs.json` lists
+  legacy species (stand-ins play them); no Billie has a passive of its own, so a quirk's or abomination's passive waits
+  for RL-12's effects (RL-10a uses a stat swing); an abomination can't look mixed (art is built per species offline);
+  the cloud save is written in two places in `account.js`, not one. **A bug found in RL-9's training guard**: a clock
+  turned back moves a trainee's start back with it, so turning the clock forward again pays the gap. Eggs avoid it (the
+  ready time never moves); training's fix belongs to RL-10b's shared guard.
+- Merging with the other sessions (the owner's ask): RL-11 (PR #115) and RL-12 both branched before RL-9b and each
+  conflicted with main on its own (8 and 11 files); both sessions were told what conflicts and why. RL-11 merged first;
+  main was merged here (both sides kept in the ranch sheet, saves.js, the debug menu, self-test, check-fast and the
+  docs). RL-12 meets RL-10a in battle.js, debug-menu.js and battle-rewards.js; to keep that merge safe RL-10a kept
+  `battleRewards(b, s, roll, rules)`'s order (RL-12 changes it too and passes a roll), and RL-12 was told how to
+  resolve it (keep `fxMoney`, drop the egg block).
+- Verified: unit tests 536 after the merge (breeding 8, breeding-sim 1; battle-rewards, rules and ranch-state changed
+  on purpose); lint, typecheck, modules, format, check-data (planted faults caught); check-fast 20 of 20 after the
+  merge (Breeding seen failing with Breed not paying); the in-game "The ranch" phases alone (breeding seen failing with
+  eggs always ready); headless pictures (390 x 760) of the sheet. The full quick check after the merge (a0df71b, 24
+  min): 45 of 54; the 9 red are the stale steps red on main too (v34 biped walk cycle, v35/v38/v39 roster counts 117/61,
+  v43 and alpha 0.4 empty bush recipes, v44 props scene, v46 buildings without a plan, phase 08 running). CI's smoke
+  was red on this PR as on main (#114, #115) in RL-9b's "Packing for a run": a race in the check (the flight landed
+  before the wait looked); RL-11's session found it and its fix (fbdb456) is ported here, reproduced with the page's
+  CPU slowed 6x (old fails, new passes).
+- Sim (49 pairs x 40 eggs, report only): risky eggs 59 / 31 / 11 % (odds 60/30/10), an abomination for about 47
+  Scrap. Battles at Lv 30 (the duel's control, plain against plain, is 0.43): an abomination against its unmarked twin
+  0.44, a quirk 0.46 (the mark about even); against a plain all-M Billie 0.17 and 0.11, since mixed part sizes lose
+  phase 16's Prime bonus. A safe pair of two Prime parents breeds a Prime Billie; the owner's play decides the numbers.
+- Risky / open:
+  - The dormant egg data stays: `eggs.json`, `saveData.eggs`, `RULES.eggs`, trainers' `egg`, the Studio's egg editors
+    (world rules, data editors, check), the incubators' CSS and i18n lines. A cleanup session removes them.
+  - An abomination looks like its body parent with odd part sizes; a real mix of parts is a renderer job.
+  - Eggs trust the device clock forward (an egg hatches early if the clock is set ahead); RL-10b's anchor.
+  - Closing the hatch window lets any waiting window (an evolution) show before the ranch's sheet comes back.
+  - The sheet lists every Billie at home as a pick card; with many in storage it is long.
+- Phone check wanted: at the ranch, +50 Scrap from the debug menu if needed; Safe: pick two of one line, see the egg,
+  Breed; "Eggs ready now"; Hatch (the window, the Billie); Risky with two lines (try a few for an abomination); the
+  Bag has no Eggs pocket; the Trainer card's Eggs hatched; export the debug log (`eggs`, `bred`).
+- Next: RL-10b (passive income with its cap, the shared rollback guard fixing training's, offline, the cloud `t`
+  anchor and the `saves/{uid}` key whitelist, 8.12, emulator first); the owner pushes `rl-9-done` and `rl-11-done`.
+
 ### Phase 09 batch 10 - every run tree a model; the _deep trees merged - 2026-10-22
 Branch `props/batch10-trees`, from main 6493ed4 (PR #113). Owner's request in chat: make sure all trees are 3D props in
 the style used, and list what else still needs converting. Plan approved with the owner's answers: only what the

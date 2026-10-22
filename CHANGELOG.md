@@ -13,6 +13,18 @@ kept aside in the browser).
   beaches and the sea all round), the first step to Copperleaf becoming a real island you can walk round. Nothing
   changes in Copperleaf yet. The island will be the hub itself, with its own editor in the Studio and its ground
   locked once it is right.
+- Loopholes (RL-12): beat a mini-boss on a run and pick one of three Loopholes, or buy one in a town's shop (one a
+  day, priced by rarity). Each lasts the rest of the run and bends a rule: cheaper shops or clinics, better catches,
+  more money from wins, a Speed boost at the start of every battle, harder physical hits, less damage taken, a little
+  healing each time you walk into a place, more Capital at the payout. You hold up to six; past that, a new one takes
+  the place of one you let go. The run's bottom bar has a Loopholes tab listing what you hold. Ten to start with, all
+  on offer from the first run; the numbers are first guesses.
+- Breeding (RL-10a): the ranch's sheet has a Nursery and "Breed a pair". Safe: two Billies of one line, 10 Scrap, and
+  you see the egg before paying. Risky: any two, 5 Scrap, and anything can hatch: most often a plain Billie, sometimes
+  one with a quirk (a parent's move, an odd size or coat), and one time in ten an abomination with odd parts, a name
+  made from both parents' and one stat far up and another down. Eggs hatch at the ranch after 4 hours of real time,
+  even while you're away; the parents stay free meanwhile. The old eggs are gone: wild Billies and trainers don't
+  give them, walking doesn't hatch them, and the incubators and the Bag's Eggs pocket went with them.
 - The last flat trees on a run are 3D now (props batch 10): the ridge's pines and cypress, the autumn wood's rowan
   and great oak, and the thicket's oaks, birches and pines have a modelled trunk and roots like the other trees. The
   pines keep their drawn look; each tier sways on its own. The larch was rebuilt the same way, so it no longer shows

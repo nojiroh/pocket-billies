@@ -15,20 +15,30 @@ import {
   mapIdAt,
   modal,
   provide,
+  relicPickOpen,
   render,
   renderOverlay,
   runPayoutOpen,
   toast,
 } from './hooks.js';
-import { COINS, ITEMS, RULES, START_NODE, TRAINERS, UNLOCK_DATA } from './game-data.js';
+import { COINS, ITEMS, RELICS, RULES, START_NODE, TRAINERS, UNLOCK_DATA } from './game-data.js';
 import { battleWeatherOf } from './logic/weather.js';
 import { billyName, formatNumber, healAll, plural } from './logic/rules.js';
 import { ranchStop } from './logic/ranch.js';
 import { runBegin, runByTier, runEnd } from './logic/run-state.js';
 import { runArrive, runBack, runMapNode, runMapStart, runNext, runWeather } from './logic/run-map.js';
 import { MAPGEN_VERSION } from './logic/mapgen.js';
-import { runBattleSeed, runGive, runRelease, runReleasePays } from './logic/run-loop.js';
-import { BATTLE_RULES, battleHost, battleSay, joinNames, liveActors, newBattle } from './logic/battle-engine.js';
+import { runArriveHeal, runBattleSeed, runGive, runRelease, runReleasePays } from './logic/run-loop.js';
+import { fxHealShare, fxOfRun, fxPayoutRates, fxPrice, fxRows } from './logic/effects.js';
+import {
+  BATTLE_RULES,
+  battleHost,
+  battleSay,
+  joinNames,
+  liveActors,
+  newBattle,
+  sayBattleFx,
+} from './logic/battle-engine.js';
 import { runUnlocks, unlockOpen } from './logic/unlocks.js';
 import { isLiteMap, loadMapFile } from './map-files.js';
 import { activeBattle, escapeHtml, save, saveData, saveNow, uiState } from './game-state.js';
@@ -40,11 +50,13 @@ import { runWorld, runWorldData, runWorldSync } from './run-world.js';
 /* eslint-disable no-func-assign */
 expose({
   RUN_HINTS: [() => RUN_HINTS],
+  runArrivedFx: [() => runArrivedFx, v => (runArrivedFx = v)],
   runArrivedHint: [() => runArrivedHint, v => (runArrivedHint = v)],
   runBattleAgain: [() => runBattleAgain, v => (runBattleAgain = v)],
   runBattleStart: [() => runBattleStart, v => ((runBattleStart = v), provide({ runBattleStart }))],
   runBattleWeather: [() => runBattleWeather],
   runCatch: [() => runCatch],
+  runClinicEach: [() => runClinicEach],
   runEndHome: [() => runEndHome, v => (runEndHome = v)],
   runFoeRef: [() => runFoeRef],
   runGiveUp: [() => runGiveUp, v => ((runGiveUp = v), provide({ runGiveUp }))],
@@ -150,7 +162,9 @@ export function runGiveUp() {
  * Copperleaf's mast @param {boolean} won @param {string[]} keep @param {(id: string) => number} itemPrice */
 export function runEndHome(won, keep, itemPrice) {
   if (!saveData.run) return;
-  const pay = runEnd(saveData, { won, keep }, RULES.run.payout, itemPrice);
+  /* RL-12: the Loopholes' payout rows, read before the run ends */
+  const rates = fxPayoutRates(fxOfRun(saveData.run, RELICS), RULES.run.payout),
+    pay = runEnd(saveData, { won, keep }, rates, itemPrice);
   /* a move waiting to be learned names a Billie by its uid, which a run's copy shares with the hub's */
   uiState.learnQ = [];
   runCatch.m = null;
@@ -182,6 +196,8 @@ export function runResume() {
   const run = saveData.run;
   if (!run) return;
   if (run.at.phase === 'payout') runPayoutOpen();
+  /* RL-12: a mini-boss's pick not answered yet (the offer was saved before it showed) */
+  else if (run.offer && run.at.phase === 'walk') relicPickOpen();
   /* killed mid-battle: the same battle again, from its seed (the owner's answer, roguelite-track.md 8.7) */
   if (run.at.phase === 'battle') runBattleAgain();
   /* killed mid-flight: you are on the landing (runArrive ran before the flight) */
@@ -429,7 +445,13 @@ function runBattleStart(kind, foe, extra) {
     k = again ? run.at.battle : run.battleN,
     ref = again && run.at.foe ? run.at.foe : runFoeRef(kind, foe, extra);
   return {
-    extra: { ...extra, seed: runBattleSeed(run, i, k), wx: runBattleWeather(run, i) },
+    extra: {
+      ...extra,
+      seed: runBattleSeed(run, i, k),
+      wx: runBattleWeather(run, i),
+      /* RL-12: the Loopholes held (logic/effects.js); none: no fx, the battle as before */
+      ...(run.relics.length ? { fx: fxRows(run.relics, RELICS) } : {}),
+    },
     begun: b => {
       if (!again) run.battleN = k + 1;
       run.at = { phase: 'battle', battle: k, foe: ref };
@@ -466,7 +488,18 @@ function runBattleAgain() {
   );
   const K = liveActors(0);
   K.forEach((kk, n) => battleSay(n ? '' : `Go, ${joinNames(K)}!`, { k: 'enter', si: kk, quiet: n > 0 }));
+  sayBattleFx();
   battleHost().open();
+}
+
+/* ---------- Loopholes on the walk (RL-12, logic/effects.js) ---------- */
+/** a run town's clinic: $ a hurt Billie, with the Loopholes' heal price rows */
+export const runClinicEach = () => fxPrice(fxOfRun(saveData.run, RELICS), 'heal', RULES.run.healCost);
+/** walking into a place on a run: a Loophole's heal row heals the team (before the arrival's save) */
+export function runArrivedFx() {
+  const share = fxHealShare(fxOfRun(saveData.run, RELICS)),
+    gained = share ? runArriveHeal(saveData.team, share) : 0;
+  if (gained > 0) toast(`Your Loopholes paid out: your team healed ${formatNumber(gained)} HP.`);
 }
 
 /* ---------- hints, on a player's first run only ---------- */
@@ -475,9 +508,11 @@ const RUN_HINTS = {
   landing: run =>
     `Day 1 of the run. Walk north into the next place: each place you walk into takes a day. The boss waits at the far end; the deadline is day ${run.deadline}.`,
   map: () => 'The map shows the places ahead and their weather. A ? is further on. The boss is always shown.',
-  town: () => `A town: its clinic heals for $${RULES.run.healCost} a Billie, and its shop has new stock every day.`,
+  town: () => `A town: its clinic heals for $${runClinicEach()} a Billie, and its shop has new stock every day.`,
   miniboss: () => 'A mini-boss blocks the way north. Beat them to go on.',
   boss: () => 'The boss. Beat it and the run is won.',
+  relic: () =>
+    `Loopholes last the run: hold up to ${RULES.run.relics.cap}. The Loopholes tab shows what each one does; town shops sell them too.`,
 };
 /** show a first-run hint once (nothing on a later run, or once shown) @param {keyof typeof RUN_HINTS} id */
 export function runHint(id) {

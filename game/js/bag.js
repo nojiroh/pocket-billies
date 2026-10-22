@@ -6,11 +6,11 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { closeModal, modal, render, toast } from './hooks.js';
-import { COINS, EGGS, ITEMS, STATUS_NAMES } from './game-data.js';
-import { billyName, eggKm, formatNumber, maxHp, metresToKm } from './logic/rules.js';
+import { COINS, ITEMS, STATUS_NAMES } from './game-data.js';
+import { billyName, formatNumber, maxHp } from './logic/rules.js';
 import { applyItem, canUse, teamNeedsHp } from './logic/battle-engine.js';
 import { escapeHtml, saveData, uiState } from './game-state.js';
-import { coinHTML, eggHTML, uiIconHTML } from './art.js';
+import { coinHTML, uiIconHTML } from './art.js';
 import { bustHTML } from './skeleton-rig.js';
 import { itemIcon } from './battle.js';
 /* eslint-disable no-func-assign */
@@ -26,7 +26,6 @@ const BAG_POCKETS = [
   ['heal', 'Healing', 'heart'],
   ['coins', 'Coins', 'coin'],
   ['special', 'Special', 'spark'],
-  ['eggs', 'Eggs', 'leaf'],
 ];
 const bagHeal = k => {
   const I = ITEMS[k];
@@ -39,28 +38,16 @@ function bagList(p) {
   return [];
 }
 export function renderBag() {
-  const p = uiState.bagP || 'heal',
+  /* RL-10: the Eggs pocket is gone (eggs hatch at the ranch); a pocket that isn't there any more opens Healing */
+  const p = BAG_POCKETS.some(([k]) => k === uiState.bagP) ? uiState.bagP : 'heal',
     sel = uiState.bagSel;
   const tabs = `<div class="bag-pockets glass px k-panel" role="tablist" aria-label="Pockets">${BAG_POCKETS.map(
     ([k, l, ic]) => {
-      const n = k === 'eggs' ? saveData.eggs.length : bagList(k).length;
+      const n = bagList(k).length;
       return `<button role="tab" aria-selected="${p === k}" data-a="bag-p" data-p="${k}">${uiIconHTML(ic, 20)}<span>${l}</span>${n ? `<small class="tnum">${n}</small>` : ''}</button>`;
     }
   ).join('')}</div>`;
-  let body = '';
-  if (p === 'eggs') {
-    body = saveData.eggs.length
-      ? `<div class="bag-list px">${saveData.eggs
-          .map(e => {
-            const E = EGGS[e.tier] || { need: 1 },
-              f = Math.min(1, (e.prog || 0) / E.need),
-              left = Math.max(0, E.need - (e.prog || 0));
-            return `<div class="bag-row k-card"><span class="bag-ic">${eggHTML(e.tier, 30)}</span><span class="bag-t"><b>${eggKm(e.tier)} km egg</b><small>${e.slot != null ? (left ? `${metresToKm(left)} km to go` : 'Ready to hatch') : 'Waiting for a free incubator'}</small><span class="bag-prog"><i style="width:${Math.round(f * 100)}%"></i></span></span></div>`;
-          })
-          .join('')}</div>`
-      : `<p class="note bag-empty">No eggs right now. Some trainers and shops give them; they hatch as you walk.</p>`;
-  } else {
-    const L = bagList(p);
+  const L = bagList(p),
     body = L.length
       ? `<div class="bag-list px">${L.map(k => {
           const I = p === 'coins' ? COINS[k] : ITEMS[k],
@@ -69,10 +56,9 @@ export function renderBag() {
           return `<button class="bag-row k-card ${on ? 'on' : ''}" data-a="bag-sel" data-k="${escapeHtml(k)}" aria-pressed="${on}"><span class="bag-ic">${p === 'coins' ? coinHTML(k, 30) : itemIcon(k, 30)}</span><span class="bag-t"><b>${escapeHtml(I.n)}</b><small>${escapeHtml(I.d || '')}</small></span><b class="bag-n tnum">×${formatNumber(n)}</b></button>`;
         }).join('')}</div>`
       : `<p class="note bag-empty">${p === 'coins' ? 'No coins. Shops sell them.' : p === 'special' ? 'Nothing special yet.' : 'No healing items. Shops sell them.'}</p>`;
-  }
   /* what the chosen thing can do */
   let act = '';
-  if (sel && p !== 'eggs' && bagList(p).includes(sel)) {
+  if (sel && bagList(p).includes(sel)) {
     if (p === 'heal') {
       const I = ITEMS[sel],
         ok = I.hpAll ? teamNeedsHp() : saveData.team.some(m => canUse(sel, m));

@@ -170,6 +170,25 @@ the pick from the team or storage (a trainee stops, healed); the run fixture fol
 sim (`--team`, `--pack`): one Lv 5 starter loses on the landing in 31 of 50 runs, as on main; packing 5 Potions
 changes little (balance is for the owner's play).
 
+**Corrected in RL-10a (2026-10-22).** RL-10 split in two at the owner's word: RL-10a breeding and hatching, RL-10b
+passive income and the cloud `t` anchor. Where section 3 and RL-10 were wrong: eggs hatched by metres walked
+(`addWalked`), not by time, and nothing gave eggs any more on the hub's terms; `eggs.json` lists legacy species
+(played by stand-ins, `standInSpecies`); no Billie has a passive of its own (only types do), so a quirk's or an
+abomination's "passive" waits for RL-12's effects; an abomination can't look mixed (the art is built per species
+offline; `logic/parts.js` is size arithmetic); `account.js` writes the cloud save in two places (`flushAccountSave`,
+`accountSignOut`), not one; and training's rollback guard (RL-9) moves a trainee's start back to a turned-back clock,
+so turning it forward again pays the gap (RL-10b's shared guard should fix it). The owner's answers (the
+recommendations): you pick the parents and the ranch picks the parts (16's 5.1: both); an abomination wears one
+parent's art with its own name and a stat swing; the walking eggs are retired; the parents stay free. Built:
+`rules.ranch.breed`; `logic/breeding.js` (the egg rolled from the parents' uids and `ranch.bred` when the pair starts,
+kept in the nursery entry, its ready time never moving); `m.mut` (a quirk, or an abomination's name, one stat
+`abomUp`, another `abomDown`) read by `stat()` and `billyName`; the ranch sheet's Nursery and "Breed a pair"; the
+hatch window moved to the ranch. The old eggs no longer drop, are no longer given or hatched by walking, and their
+screens are gone; their data (`eggs.json`, `saveData.eggs`, trainers' `egg`, the Studio's editors, the incubators'
+CSS) is dormant, for a cleanup session. The sim's first numbers: 59/31/11 % (odds 60/30/10); a bred Billie's mark
+is about even against its unmarked twin, but mixed part sizes lose phase 16's Prime bonus (0.11-0.17 against a plain
+Billie; the duel's control is 0.43).
+
 **Corrected in RL-11 (2026-10-22).** There is no `hub.js`: the board is `lab-board.js` in the hub's Lab tab (hidden
 since UI-5 for it), and Hazel's lab machine (now act `board`) opens it. `won:bracket_N` can't be built yet: meta keeps a
 win count and the highest tier, and nothing raises the tier (RL-13); RL-11 added the condition kinds `unlock:<id>`,
@@ -183,6 +202,21 @@ payout and when the world shows at boot), never on a run. Building looks per lev
 (the owner's answer). The Workshop is a row "coming later" (the owner's answer). The run sim, the fixture's run and the
 in-game test's run are made without `runTakeOff`, so they keep everything open. The owner's answers: 8.5 the
 recommendation; the first unlocks ranch levels, run shop wares, new biomes and milestones.
+
+**Corrected in RL-12 (RL-12a, 2026-10-22).** The owner let RL-12 go before RL-11 (every Loophole on offer from the
+first run; RL-11's unlocks may narrow the pool later) and split it: RL-12a is the effects, the Loopholes, the
+mini-boss pick and the shops; RL-12b is `events.json` (`relic`, `wager`) and the event and shop places. The calls named
+in 4 were all there (`calcDamage`, `catchOdds`, `newBattle` with the run's `runBattleStart`), and the save already had
+`run.relics`, `run.offer` and the `menu` phase; RL-12a added `run.offerN` (the offers' stream) and `run.shelf` (a run
+shop's Loophole by node and day, so buying it doesn't put another on the shelf), filled by `migrate` for a run saved
+before. The effect kinds built are `money`, `price` (shop, heal), `catch`, `stat`, `damage` (deal, take, by category or
+type), `heal` (walking in) and `payout` (Capital, the items' share); `rule`, `clock`, `start` and `boss` wait for RL-13
+and RL-14. Stat rows apply as the battle is made (yours on the field), said after the sides come out. UI-4 had already
+built the run bar's fourth tab (hidden) and the pick card: the tab opens as "Loopholes" and the pick shows its cards
+one to a row (three across cut the names). "Tiny waystation scenes" (8.6) can't be: every run scene is 112 x 64 m for
+the seams; the owner chose a normal-sized place with a stand (RL-12b). RL-9b (merged during RL-12) brings a won run's
+items home, so Write-off (items at full price) counts only on a loss. Names: "Loophole" on screen, `relics` in the data
+(the item id `loophole` is the Hi-Potion).
 
 **Changed in the TR-2 session (2026-10-21, the owner: "runs should go from east to west").** A run scene is entered
 by its east side and left ahead by its west: `east`/`east2` back, `west`/`west2` ahead (logic/run-scenes.js
@@ -725,7 +759,9 @@ win, the sim's policy, check-fast's "Packing for a run".
 guard, offline, the cloud `t` anchor and its rule. Files: `logic/breeding.js`, `logic/ranch.js`, `logic/rules.js`
 (eggs), `account.js:331-351`, `firebase/firestore.rules` + `firebase/test/rules.test.mjs`,
 `tools/test/sim/breeding-sim.mjs` (reports only until bounds are agreed). Could break: cloud saves (publish the rule
-after the emulator passes). 2 sessions.
+after the emulator passes). 2 sessions. RL-10a done 2026-10-22 (HANDOFF; section 0 for what changed): breeding,
+hatching, `m.mut`, the old walking eggs retired, the sim. RL-10b next: passive income, the shared rollback guard
+(training's included), offline, the cloud `t` anchor and the key whitelist (8.12).
 
 **RL-11 Hub upgrades, currencies, unlock board.** `currencies.json`, `buildings.json` (Lab, Ranch, Workshop, Airship),
 `unlocks.json` with the three doors, `logic/unlocks.js` (`unlockReady`, buy, auto at payout and on load),
@@ -738,7 +774,10 @@ and the mast's upgrade rows, levels in labels), the `lab` fixture, check-fast's 
 **RL-12 Relics and effects.** `relics.json`, `events.json` (scripts with `relic`, `wager`), `logic/effects.js` (kinds,
 hooks, `B().fx`; phase 19's handler idea), one hook call each in `calcDamage`, `catchOdds`, `newBattle`, the pick
 sheet, the Bag's relic list, the waystation node engine. Tests: `effects.test.mjs` (each kind, stacking order, a run
-with every relic stays finite), a golden battle with a relic, story checks on events. 1-2 sessions.
+with every relic stays finite), a golden battle with a relic, story checks on events. 1-2 sessions. RL-12a done 2026-10-22 (HANDOFF; section 0 for what changed): `relics.json`
+(ten Loopholes), `logic/effects.js`, `logic/relics.js`, the battle, shop, clinic, arrival and payout hooks, the
+mini-boss pick and a shop's Loophole, the Loopholes tab (`relic-screen.js`). RL-12b: `events.json` with `relic` and
+`wager`, the event and shop places (waystations, 8.6), the no-two-shops rule.
 
 **RL-13 Modifiers, tiers, mini-boss leaders.** `modifiers.json`, the bracket pick at the mast, the 8 leaders as the
 pool with badge relics, overdue hardening as effect rows. Tests: tier effects on levels, prices, deadline; leader
@@ -843,6 +882,8 @@ Decided this session: the rework is a track RL-N (`rl-N-done`); parked phases ar
    **Answered in RL-11: the recommendation** (currencies.json, buildings.json).
 6. **Menu nodes on a walked map:** tiny generated waystation scenes whose hub prop opens the menu (recommended, from
    RL-12) / a gate prop at the previous seam / events and shops folded into towns (the first cut has only this).
+   **Answered in RL-12: the waystation**, as a normal-sized place (every run scene is 112 x 64 m) with a stand by the
+   road and fewer wild Billies; built in RL-12b.
 7. **Mid-battle kill:** restart the battle at the node from the same seed and battle index (recommended for the first
    cut) / save the battle object every turn and resume it (phase 19's recommendation; later option).
 8. **First-cut shape:** five nodes made, four walked, one branch (recommended) / four in a line / the full ~14-node map.
@@ -859,7 +900,7 @@ Decided this session: the rework is a track RL-N (`rl-N-done`); parked phases ar
 12. **SAVE_VERSION 4** sets aside every current save on your phone and account; and the `saves/{uid}` key whitelist
     with `t` in RL-10 (recommended yes to both).
 13. **`seen`/`caught`:** stay top level (recommended) / move to `meta.dex` now (14 reader files).
-14. **Relic cap:** 6 held (recommended) / 8.
+14. **Relic cap:** 6 held (recommended) / 8. **Answered in RL-12: 6** (rules.json `run.relics.cap`).
 15. **Hub island look after parking:** only Copperleaf on the terrain (recommended) / parked places as bowl-only pins
     (both world-graph tests change on purpose). **Corrected in RL-8b:** "the sea share set in the Studio" couldn't make
     an island (the share stops at 0.8 and the land rose toward the rim); the island is `sea.island` (0.2, the owner's

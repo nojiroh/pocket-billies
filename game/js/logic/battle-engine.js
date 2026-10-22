@@ -30,6 +30,7 @@ import {
   ITEMS,
   MOVES,
   PASSIVE,
+  RELICS,
   RULES,
   SPECIES,
   STATUS_NAMES,
@@ -62,6 +63,7 @@ import {
   stat,
   xpFor,
 } from './rules.js';
+import { fxCatch, fxDamage, fxStages } from './effects.js';
 import { makeBattle, newFieldState } from './battle-state.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -145,10 +147,13 @@ expose({
   newBattle: [() => newBattle, v => setNewBattle(v)],
   // @ts-expect-error -- replaced on purpose
   refreshLastSnapshot: [() => refreshLastSnapshot, v => (refreshLastSnapshot = v)],
+  relicNamesFor: [() => relicNamesFor],
   // @ts-expect-error -- replaced on purpose
   retarget: [() => retarget, v => (retarget = v)],
   // @ts-expect-error -- replaced on purpose
   runTurn: [() => runTurn, v => (runTurn = v)],
+  // @ts-expect-error -- replaced on purpose
+  sayBattleFx: [() => sayBattleFx, v => (sayBattleFx = v)],
   shockName: [() => shockName],
   // @ts-expect-error -- replaced on purpose
   startTrainer: [() => startTrainer, v => (startTrainer = v)],
@@ -357,8 +362,15 @@ export function calcDamage(k, tk, mid, src) {
   const me = src ? null : fighter(k),
     gem = isRobot(me) ? robotGemDef(me.gem) : null,
     gx = gem && gem.type === M.t ? robotRules().gemAffinity : 1;
+  /* RL-12: a run's Loopholes (logic/effects.js): what yours deal and take; 1 without any */
+  const fm = battleNow().fx
+    ? fxDamage(battleNow().fx, { cat: M.c, type: M.t, deal: !src && ACTOR_SIDE[k] === 0, take: ACTOR_SIDE[tk] === 0 })
+    : 1;
   return {
-    dmg: Math.max(1, Math.floor(base * stab * te * roll * (crit ? BATTLE_RULES.critMult : 1) * mk * eco * wx * gx)),
+    dmg: Math.max(
+      1,
+      Math.floor(base * stab * te * roll * (crit ? BATTLE_RULES.critMult : 1) * mk * eco * wx * gx * fm)
+    ),
     te,
     crit,
   };
@@ -972,6 +984,7 @@ export function startWild(q) {
     battleSay(`It looks too picky for ${COINS.penny ? 'a ' + COINS.penny.n : 'cheap coins'}.`);
   const K = liveActors(0);
   K.forEach((k, n) => battleSay(n ? '' : `Go, ${joinNames(K)}!`, { k: 'enter', si: k, quiet: n > 0 }));
+  sayBattleFx();
   battleHost().open();
 }
 export function startTrainer(id, o = {}) {
@@ -1012,8 +1025,26 @@ export function startTrainer(id, o = {}) {
   F.forEach((k, n) => battleSay(n ? '' : `${T.name} sent out ${joinNames(F)}.`, { k: 'enter', si: k, quiet: n > 0 }));
   const K = liveActors(0);
   K.forEach((k, n) => battleSay(n ? '' : `Go, ${joinNames(K)}!`, { k: 'enter', si: k, quiet: n > 0 }));
+  sayBattleFx();
   battleHost().open();
 }
+/** RL-12: a run's Loopholes that raised stats as the battle started (makeBattle): one line each, after the sides
+ * come out */
+export function sayBattleFx() {
+  const b = battleNow();
+  if (!b || !b.fx) return;
+  const up = fxStages(b.fx),
+    K = liveActors(0);
+  for (const s in up)
+    battleSay(
+      `${relicNamesFor(b.fx, s)}: ${K.length > 1 ? 'your team’s' : `${billyName(fighter(K[0]))}’s`} ${STAT_NAMES[s]} ${up[s] > 0 ? 'rose' : 'fell'}${Math.abs(up[s]) > 1 ? ' sharply' : ''}.`
+    );
+}
+/** the names of the Loopholes whose stat rows change stat s ("A and B") */
+export const relicNamesFor = (fx, s) =>
+  [
+    ...new Set(fx.filter(f => f.kind === 'stat' && f.stat === s).map(f => (RELICS[f.src] || { name: f.src }).name)),
+  ].join(' and ');
 export function battleStageKey() {
   return hereLocation().battleStage;
 }
@@ -1126,7 +1157,9 @@ export function catchOdds(id, T, spin, b) {
         T *
         (spin ? CATCH_RULES.spin : 1) *
         battleNow().integrity *
-        (e.boss ? (CATCH_RULES.alpha ?? 0.4) : 1)
+        (e.boss ? (CATCH_RULES.alpha ?? 0.4) : 1) *
+        /* RL-12: a run's Loopholes (logic/effects.js) */
+        (battleNow().fx ? fxCatch(battleNow().fx) : 1)
     );
   });
 }

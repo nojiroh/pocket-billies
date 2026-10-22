@@ -74,7 +74,6 @@ Requests you’re helping with|Verzoeken waar je mee helpt|Bitten, bei denen du 
 Encounters|Ontmoetingen|Begegnungen|Encuentros|Rencontres
 Eggs|Eieren|Eier|Huevos|Œufs
 Empty incubator|Lege broedmachine|Leerer Brutkasten|Incubadora vacía|Couveuse vide
-Win battles to find eggs.|Win gevechten om eieren te vinden.|Gewinne Kämpfe, um Eier zu finden.|Gana combates para encontrar huevos.|Gagnez des combats pour trouver des œufs.
 Buddy|Maatje|Kumpel|Compañero|Compagnon
 Money|Geld|Geld|Dinero|Argent
 Your team|Jouw team|Dein Team|Tu equipo|Ton équipe

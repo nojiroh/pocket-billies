@@ -446,6 +446,126 @@ def ranch(pg, base):
     return f'Train paid {R["trainCost"]} Scrap each; a level’s time: Lv {first} → {first + 1}; a whole bank from Lv {last} stopped at the cap ({cap}); the clock turned back gained nothing; a reload kept it'
 
 
+def relics(pg, base):
+    """RL-12: the relics fixture is on a run holding five Loopholes with a mini-boss's pick waiting: the pick opens once
+    the world shows, three cards; one taken: six held, the pick gone, stored; the Loopholes tab lists them; a battle
+    starts with the Speed stage and the catch row; walking in heals; a town's clinic charges half and its shop sells the
+    day's Loophole 15% cheaper; bought at the cap, one is let go; a mini-boss beaten stores a new pick before its sheet,
+    whose button opens it; a reload (?fixture=stored) opens the same pick; Take none clears it"""
+    pick = "!!uiState.modal&&uiState.modal.cls==='relic-pick'&&document.querySelectorAll('#ov pb-pick-card').length===3"
+    stored = lambda: pg.evaluate("JSON.parse(localStorage.getItem(SAVE_KEY)).run")
+    if not until(pg, pick, 90): raise Exception('the waiting pick didn’t open')
+    offer = pg.evaluate("saveData.run.offer.slice()")
+    pg.evaluate("document.querySelectorAll('#ov pb-pick-card')[1].shadowRoot.querySelector('button').click();0")
+    if not until(pg, "!document.querySelector('#ov [data-a=mb]').disabled", 10): raise Exception('a card didn’t enable Take it')
+    pg.evaluate("document.querySelector('#ov [data-a=mb]').click();0")
+    took = offer[1]
+    if not until(pg, f"saveData.run.relics.length===6&&saveData.run.relics.includes('{took}')&&!saveData.run.offer&&!(uiState.modal&&uiState.modal.cls==='relic-pick')", 10):
+        raise Exception(f'taking {took}: {pg.evaluate("JSON.stringify([saveData.run.relics,saveData.run.offer])")}')
+    if len(stored()['relics']) != 6: raise Exception('the pick wasn’t stored')
+    pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();uiState.tab='relics';render();0")
+    if not until(pg, "document.querySelectorAll('.s-relics .bag-row').length===6", 10): raise Exception('the Loopholes tab doesn’t list six')
+    pg.evaluate("uiState.tab='walk';render();0")
+    st = pg.evaluate("startWild(encountersHere()[0]);[!!activeBattle.fx,activeBattle.sides[0].f[0].v.st.hus]")
+    if st != [True, 1]: raise Exception(f'a battle’s Loopholes and Speed stage: {st}')
+    odds = pg.evaluate("[catchOdds('penny',1,false),(activeBattle.fx=null,catchOdds('penny',1,false))]")
+    if abs(odds[0] - min(1, odds[1] * 1.25)) > 1e-9: raise Exception(f'the catch row: {odds}')
+    pg.evaluate("stopTimers();activeBattle.over='ran';endBattle();0")
+    if not until(pg, "!activeBattle", 20): raise Exception('the battle didn’t end')
+    heal = pg.evaluate("uiState.modal=null;uiState.mq=[];saveData.team[0].hp=1;runArrivedFx();saveData.team[0].hp")
+    if heal <= 1: raise Exception('walking in didn’t heal')
+    town = pg.evaluate("saveData.run.map.nodes.findIndex(n=>n.type==='town')")
+    if not pg.evaluate(f"runJump({town}+1)"): raise Exception('couldn’t walk to a town')
+    clinic = pg.evaluate("[runClinicEach(),RULES.run.healCost]")
+    if clinic[0] != round(clinic[1] / 2): raise Exception(f'the clinic charges {clinic[0]} a Billie, not half of {clinic[1]}')
+    sid = pg.evaluate(f"Object.keys(SHOPS).find(k=>SHOPS[k].runNode==={town})")
+    pg.evaluate(f"uiState.modal=null;uiState.mq=[];openShop('{sid}');0")
+    if not until(pg, "!!document.querySelector('#ov .shop-sheet [data-a=shoprelic]')", 10): raise Exception('the town’s shop has no Loophole')
+    shelf = pg.evaluate("Object.values(saveData.run.shelf)[0]")
+    price = pg.evaluate(f"Math.round(RULES.run.relics.price[RELICS['{shelf}'].rarity]*0.85)")
+    se, held = pg.evaluate("[saveData.se,saveData.run.relics.slice()]")
+    pg.evaluate("document.querySelector('#ov [data-a=shoprelic]').click();0")
+    if not until(pg, "!!uiState.modal&&uiState.modal.cls==='relic-drop'&&document.querySelectorAll('#ov pb-pick-card').length===6", 10): raise Exception('buying at the cap didn’t ask which to let go')
+    pg.evaluate("document.querySelector('#ov pb-pick-card').shadowRoot.querySelector('button').click();0")
+    if not until(pg, f"saveData.run.relics.includes('{shelf}')&&!saveData.run.relics.includes('{held[0]}')", 10): raise Exception('the Loophole wasn’t bought')
+    after = pg.evaluate("[saveData.se,saveData.run.relics.length,Object.values(saveData.run.shelf)[0],!!document.querySelector('#ov .shop-sheet [data-a=shoprelic]')]")
+    if after != [se - price, 6, '', False]: raise Exception(f'after buying: money, held, shelf, row {after} (paid {se - after[0]}, price {price})')
+    if stored()['shelf'] != {f'{town}:{pg.evaluate("saveData.run.clock")}': ''}: raise Exception(f'the bought shelf isn’t stored: {stored()["shelf"]}')
+    # a mini-boss beaten: the pick is stored with the battle's end, before its sheet
+    mb = pg.evaluate("saveData.run.map.nodes.findIndex(n=>n.type==='miniboss')")
+    if not pg.evaluate(f"uiState.modal=null;uiState.mq=[];renderOverlay();runJump({mb}+1)"): raise Exception('couldn’t walk to a mini-boss')
+    pg.evaluate(f"startTrainer(runFoeId({mb}),{{talked:true}});0")
+    if not until(pg, "!!activeBattle&&activeBattle.T&&activeBattle.T.runFoe==='miniboss'", 20): raise Exception('the mini-boss battle didn’t start')
+    pg.evaluate("stopTimers();activeBattle.over='win';endBattle();0")
+    if not until(pg, "!activeBattle&&!!uiState.modal&&!!(uiState.modal.btns||[]).find(b=>b.l==='Pick a Loophole')", 30):
+        raise Exception(f'no “Pick a Loophole” after the mini-boss: {pg.evaluate("uiState.modal&&uiState.modal.title")}')
+    offer2 = stored()['offer']
+    if not offer2 or len(offer2) != 3 or offer2 != pg.evaluate("saveData.run.offer"): raise Exception(f'the new pick isn’t stored: {offer2}')
+    pg.evaluate("uiState.modal.btns.find(b=>b.l==='Pick a Loophole').f();0")
+    if not until(pg, pick, 10): raise Exception('the button didn’t open the pick')
+    pg.goto(base + '/index.html?fixture=stored')
+    if not until(pg, pick, 90): raise Exception('a reload didn’t open the pick again')
+    if pg.evaluate("saveData.run.offer") != offer2: raise Exception('a reload showed another pick')
+    pg.evaluate("document.querySelectorAll('#ov [data-a=mb]')[1].click();0")
+    if not until(pg, "!saveData.run.offer&&!(uiState.modal&&uiState.modal.cls==='relic-pick')", 10): raise Exception('Take none didn’t clear the pick')
+    return f'the pick ({", ".join(offer)}), {took} taken; six on the tab; a battle with Speed +1 and catch x1.25; walking in healed to {heal} HP; the clinic ${clinic[0]}; {shelf} bought for ${price} in place of {held[0]}; a mini-boss beaten: a stored pick ({", ".join(offer2)}), the same after a reload, none taken'
+
+
+def breed(pg, base):
+    """RL-10: the ranch fixture (three Billies of the lead's line in storage, 50 Scrap). Two storage cards picked show
+    the safe egg before paying, the very egg Breed puts in the nursery (safeCost paid); it can't hatch before
+    breed.hours, then Hatch brings it onto the team. A risky pair (storage and the team's second) pays riskyCost; the
+    clock turned back keeps its ready time (no hatch); a reload (?fixture=stored) keeps the nursery, the count and Scrap"""
+    if not until(pg, "!!uiState.inside&&uiState.inside.kind==='ranch'&&walkView.ready", 60): raise Exception(f'not in the ranch: {pg.evaluate("walkView.id")}')
+    pg.evaluate("window.__d0=Date.now;window.__shift=0;Date.now=()=>__d0.call(Date)+__shift;0")
+    board = "(()=>{const p=walkView.sc.props.find(q=>q.act==='ranch'&&q.k==='blackboard');uiState.modal=null;uiState.mq=[];walkPick({k:'act',p,act:'ranch'});return !!(uiState.modal&&uiState.modal.cls==='ranch-sheet'&&document.querySelector('#ov .ranch-sheet'))})()"
+    B = pg.evaluate("RULES.ranch.breed"); H = 3600000
+    if not pg.evaluate(board): raise Exception('the training board didn’t open the ranch’s sheet')
+    tap = lambda uid: pg.evaluate(f"document.querySelector('#ov pb-pick-card[data-u=\"{uid}\"]').shadowRoot.querySelector('button').click();0")
+    a, b = pg.evaluate("[saveData.box[0].uid,saveData.box[1].uid]")
+    for u in (a, b):
+        tap(u)
+        if not until(pg, f"!!document.querySelector('#ov pb-pick-card[data-u=\"{u}\"][selected]')", 10): raise Exception('a tapped card wasn’t picked')
+    if not until(pg, "!!document.querySelector('#ov .breed-preview')&&!document.querySelector('#ov [data-r=breed]').disabled", 10): raise Exception('two of one line picked: no egg shown, or Breed off')
+    shown = pg.evaluate("document.querySelector('#ov .breed-preview b').textContent")
+    rolled = pg.evaluate(f"JSON.stringify((m=>[m.sp,m.build,m.uid])(breedRoll(saveData,saveData.box[0],saveData.box[1],'safe',RULES.ranch.breed).m))")
+    pg.click('#ov [data-r=breed]')
+    got = pg.evaluate("JSON.stringify([saveData.meta.scrap,saveData.ranch.nursery.length,saveData.ranch.bred,(m=>[m.sp,m.build,m.uid])(saveData.ranch.nursery[0].egg)])")
+    want = json.dumps([50 - B['safeCost'], 1, 1, json.loads(rolled)], separators=(',', ':'))
+    if got != want: raise Exception(f'after Breed {got}, not {want}')
+    if not pg.evaluate("document.querySelector('#ov [data-r=hatch][data-i=\"0\"]').disabled"): raise Exception('a new egg could hatch at once')
+    egg = json.loads(rolled)[2]
+    pg.evaluate(f"__shift={B['hours'] * H};0")
+    pg.evaluate(board)
+    pg.click('#ov [data-r=hatch][data-i="0"]')
+    if not until(pg, "!!uiState.modal&&uiState.modal.title==='An egg is hatching'", 10): raise Exception('Hatch opened no hatch window')
+    pg.click('#ov [data-a=mb][data-i="0"]')
+    if not until(pg, f"saveData.ranch.nursery.length===0&&saveData.team.some(m=>m.uid==='{egg}')", 10): raise Exception('“Hatch it” didn’t bring the egg onto the team')
+    if not until(pg, "!!uiState.modal&&/^It’s/.test(uiState.modal.title)", 10): raise Exception('the hatch window never showed the Billie')
+    pg.click('#ov [data-a=mb][data-i="0"]')
+    # the ranch's sheet comes back, or waits behind a window that was waiting (the fixture's lead can evolve)
+    if not until(pg, "[uiState.modal,...uiState.mq].some(m=>m&&m.cls==='ranch-sheet')", 10): raise Exception('“Welcome aboard” didn’t bring the ranch’s sheet back')
+    pg.evaluate("uiState.mq=[];uiState.modal=null;renderOverlay();0")
+    pg.evaluate(board)
+    second = pg.evaluate("saveData.team[1].uid")
+    pg.click('#ov [data-r=mode][data-m=risky]')
+    for u in (a, second): tap(u)
+    if not until(pg, "!!document.querySelector('#ov .breed-preview')&&!document.querySelector('#ov [data-r=breed]').disabled", 10): raise Exception('a risky pair: no odds shown, or Breed off')
+    pg.click('#ov [data-r=breed]')
+    st = pg.evaluate("JSON.stringify([saveData.meta.scrap,saveData.ranch.nursery.map(n=>n.mode),saveData.ranch.bred])")
+    if st != json.dumps([50 - B['safeCost'] - B['riskyCost'], ['risky'], 2], separators=(',', ':')): raise Exception(f'after a risky Breed {st}')
+    ready = pg.evaluate("saveData.ranch.nursery[0].ready")
+    pg.evaluate(f"__shift={-30 * H};0")
+    pg.evaluate(board)
+    if not pg.evaluate("document.querySelector('#ov [data-r=hatch][data-i=\"0\"]').disabled") or pg.evaluate("saveData.ranch.nursery[0].ready") != ready: raise Exception('the clock turned back moved the egg’s time')
+    keep = pg.evaluate("JSON.stringify([saveData.meta.scrap,saveData.ranch.bred,saveData.ranch.nursery,saveData.team.map(m=>m.uid)])")
+    pg.goto(base + '/index.html?fixture=stored')
+    if not until(pg, "typeof saveData!=='undefined'&&!!saveData.ranch&&!document.getElementById('loader')", 90): raise Exception('the reload never booted')
+    back = pg.evaluate("JSON.stringify([saveData.meta.scrap,saveData.ranch.bred,saveData.ranch.nursery,saveData.team.map(m=>m.uid)])")
+    if back != keep: raise Exception(f'after a reload the nursery changed')
+    return f'a safe pair showed “{shown}” before paying {B["safeCost"]} Scrap, the same egg hatched after {B["hours"]} h onto the team; a risky pair paid {B["riskyCost"]}; the clock turned back kept its time; a reload kept it'
+
+
 def lab(pg, base):
     """RL-11: the lab fixture stands in Copperleaf after a run (500 Capital, 60 Scrap, 2 Seals, one run ended). The
     first milestone was granted on load; the bottom bar's Lab tab opens the board with every row; a board row bought
@@ -636,7 +756,8 @@ def run_pack(pg, base):
     packed = pg.evaluate("document.querySelector('#ov h3 small').textContent")
     if not packed.startswith('2 of '): raise Exception(f'the pack says “{packed}”')
     pg.click('#ov [data-a=mb][data-i="0"]')
-    if not until(pg, "!!saveData.run&&airshipFlight.on", 30): raise Exception('“Take off” didn’t start a run')
+    # the flight is 2-3 s: on a slow page (CI's software drawing) it may have landed already when the wait first looks
+    if not until(pg, "!!saveData.run&&(airshipFlight.on||saveData.run.at.phase==='walk')", 30): raise Exception('“Take off” didn’t start a run')
     got = pg.evaluate(f"JSON.stringify([saveData.team.map(m=>m.uid),saveData.team[0].hp===maxHp(saveData.team[0]),saveData.ranch.trainees.some(t=>t.uid==='{who}'),saveData.run.start.team.map(m=>m.uid),saveData.box.map(m=>m.uid),saveData.run.start.items.taxbreak,saveData.items.taxbreak,saveData.buddy])")
     want = json.dumps([[who], True, False, json.loads(hub)[0], json.loads(hub)[1], 1, gift + 2, who], separators=(',', ':'))
     if got != want: raise Exception(f'at take-off {got}, not {want}')
@@ -654,7 +775,7 @@ def run_pack(pg, base):
     if back != json.dumps([H[0], H[1], H[2], lv, 1], separators=(',', ':')): raise Exception(f'home after a loss {back}: team, storage, buddy as before, Lv {lv} kept, 1 Potion')
     lead = H[0][0]
     pg.evaluate(f"runTakeOff(undefined,undefined,undefined,{{home:['{lead}'],pack:{{items:{{taxbreak:1}},coins:{{}}}}}});0")
-    if not until(pg, "!!saveData.run&&airshipFlight.on", 30): raise Exception('the second run didn’t start')
+    if not until(pg, "!!saveData.run&&(airshipFlight.on||saveData.run.at.phase==='walk')", 30): raise Exception('the second run didn’t start')
     pg.evaluate("flySkip();0")
     if not until(pg, "!airshipFlight.on&&saveData.run.at.phase==='walk'&&walkView.ready", 90): raise Exception('the second run never landed')
     bag = pg.evaluate("saveData.items.taxbreak")
@@ -679,6 +800,8 @@ PAGES = [   # (what the page opens, its checks in order); the longest first, so 
               ('The world map opens as the bowl', bowl_map)]),
     ('room', [('A room opens and draws (the lab)', room), ('A save round-trips', save_round_trip)]),
     ('ranch', [('The ranch trains: Train, a level with time, the cap, a clock turned back, a reload (RL-9)', ranch)]),
+    ('relics', [("Loopholes: the pick (again after a reload), the tab, a battle's and a walk's effects, a town's prices, buying at the cap (RL-12)", relics)]),
+    ('ranch', [('Breeding: a safe egg shown and hatched, a risky pair, a clock turned back, a reload (RL-10)', breed)]),
     ('lab', [('The Lab: a milestone on load, the board, buying at the Lab, the ranch and the mast, a reload (RL-11)', lab)]),
     ('ranch', [('Packing for a run: a Billie from storage, a packed bag; kept on a loss, the bag home on a win (RL-9b)', run_pack)]),
     ('battle', [('A battle plays to the end', battle)]),

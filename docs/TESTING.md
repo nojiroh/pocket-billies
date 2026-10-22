@@ -250,12 +250,22 @@ same phase:
   back, a reload) and the in-game test's "The ranch: training between runs". RL-9b: check-fast's "Packing for a run"
   on `?fixture=ranch` (a trainee from storage picked, two Potions packed; kept on a loss, back in storage once; a win
   brings the bag home; a reload), run-state tests for the pick, the pack and the storage trap, the in-game run phase's
-  party of one.
+  party of one. RL-10a: `tools/test/breeding.test.mjs` (the mark, the reasons a pair can't breed, safe and risky eggs,
+  paying, hatching, a clock turned back, the save's checks), check-fast's "Breeding" on `?fixture=ranch` (the safe
+  egg shown is the one bred, hatched through the hatch window after `breed.hours`; a risky pair; the clock turned
+  back; a reload), the in-game test's "The ranch: breeding a pair", and the breeding sim (`tools/test/sim/
+  breeding-sim.mjs`, report only; `breeding-sim.test.mjs` runs it small).
 - **RL-11 Unlocks**: `tools/test/unlocks.test.mjs` (doors and currencies, buying once, refusals, milestones never on a
   run, the tidy-up on load, a run's copy making the same map and stock), the new condition kinds in
   `conditions.test.mjs`, `run.unlocks` in `run-state.test.mjs`; check-data's blocks for `currencies`, `buildings` and
   `unlocks` (planted faults in the commits); check-fast's Lab step on `?fixture=lab` (a milestone on load, the board,
   buying at the Lab, the ranch and the mast, a reload) and the in-game test's "The Lab: unlocks".
+- **RL-12 Loopholes**: `effects.test.mjs` (each effect kind, stacking in any order, every Loophole at once finite, no
+  rows change nothing), `relics.test.mjs` (offers from the seed, the cap, a shop's shelf, validRun, a run saved
+  before), `battle-fx.test.mjs` (stages, damage, catch, win money), `run-fx.test.mjs` (arrival heal, the payout row),
+  a fifth golden battle holding three Loopholes; check-fast's "Loopholes" on `?fixture=relics`; the in-game run
+  phase and quick check's RL-8 step buy a shop's Loophole or take a mini-boss's pick and see the boss's battle carry
+  it.
 - **14 Studio**: `tools/check-studio-github.py` and smoke's "Studio opens" keep passing; `--studio` follows the
   Studio local mode decision. A new Studio feature adds a step function to its `STEPS` (UI-3), so it can also run
   alone with `--only=<name>`.

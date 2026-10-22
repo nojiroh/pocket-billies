@@ -4,9 +4,9 @@
 import { expose } from './test-globals.js';
 import { provide } from './hooks.js';
 import { $, $$ } from './util.js';
-import { EGGS, LOCATIONS, RULES, START_NODE, TRAINERS } from './game-data.js';
+import { LOCATIONS, RULES, START_NODE, TRAINERS } from './game-data.js';
 import { speciesOf } from './logic/fighters.js';
-import { addEgg, eggKm, formatNumber, makeBilly, spawn } from './logic/rules.js';
+import { formatNumber, makeBilly, spawn } from './logic/rules.js';
 import { pbFloat, pbInboxDot, pbInboxPop } from './ui-kit.js';
 import { newSaveKeepingPreferences } from './logic/saves.js';
 import {
@@ -30,6 +30,7 @@ import { worldMapAction, worldMapFit, worldMapMount, worldMapOpenFromWalk } from
 import { cutscene } from './cutscene/director.js';
 import { cutsceneStart, cutsceneWanted } from './cutscene/opening.js';
 import { renderTitle, titleMount } from './title.js';
+import { renderRelics } from './relic-screen.js';
 import { labAction, renderLabBoard } from './lab-board.js';
 import { renderBag } from './bag.js';
 import { storyRivalBattle } from './story.js';
@@ -65,7 +66,7 @@ export function setRender(v) {
 /* ---------- screens ---------- */
 /* the screens, in the order that decides which side a screen slides in from (UI-5: the bottom bar holds Map, Team
    and Bag, updateNav below; the world, the Guide and the Trainer card are reached otherwise) */
-const TABS = ['walk', 'map', 'team', 'ledger', 'bag', 'lab'],
+const TABS = ['walk', 'map', 'team', 'ledger', 'bag', 'relics', 'lab'],
   SCREENS = [...TABS, 'profile'];
 function topbar() {
   const shut = !!(saveData.preferences && saveData.preferences.cardClosed),
@@ -113,11 +114,13 @@ export function render() {
             ? renderProfile()
             : T === 'bag'
               ? renderBag()
-              : T === 'lab'
-                ? renderLabBoard()
-                : T === 'map'
-                  ? renderWorldMapTab()
-                  : renderWalk();
+              : T === 'relics'
+                ? renderRelics()
+                : T === 'lab'
+                  ? renderLabBoard()
+                  : T === 'map'
+                    ? renderWorldMapTab()
+                    : renderWalk();
   const enter = uiState.lastTab !== T,
     dir = uiState.lastTab && enter ? (SCREENS.indexOf(T) > SCREENS.indexOf(uiState.lastTab) ? ' fromR' : ' fromL') : '';
   uiState.lastTab = T;
@@ -168,8 +171,8 @@ function openTab(t) {
 }
 /* UI-5: the bottom bar is the kit's <pb-nav-bar> (ui-run-kit.js): the hub's tabs, or a run's; the world itself is the
    base view (no Walk tab: the open tab tapped again, or Esc, goes back to it) and the Guide opens from the Trainer
-   card. Lab is the unlock board (RL-11, lab-board.js); Relics (RL-12) waits for its screen. */
-const NAV_HIDDEN = 'relics';
+   card. Lab is the unlock board (RL-11, lab-board.js); a run's Loopholes tab is RL-12's (relic-screen.js). */
+const NAV_HIDDEN = '';
 function updateNav(show) {
   let n = /** @type {any} */ ($('#nav'));
   if (!n) {
@@ -182,7 +185,7 @@ function updateNav(show) {
   }
   n.hidden = !show;
   n.set = saveData.run ? 'run' : 'hub';
-  n.value = ['map', 'team', 'bag', 'lab'].includes(uiState.tab) ? uiState.tab : '';
+  n.value = ['map', 'team', 'bag', 'relics', 'lab'].includes(uiState.tab) ? uiState.tab : '';
   /* its labels follow the language (i18nText) */
   if (typeof n.requestUpdate === 'function') n.requestUpdate();
 }
@@ -215,7 +218,6 @@ export function startGame(l, o = {}) {
   saveData.visited = { [START_NODE]: 1 };
   saveData.mapSeen = null;
   for (let i = 0; i < R.starterEncounters; i++) spawn(true);
-  const egg = R.starterEgg && EGGS[R.starterEgg] ? addEgg(R.starterEgg) : false;
   save();
   flushSave();
   uiState.tab = 'walk';
@@ -225,7 +227,7 @@ export function startGame(l, o = {}) {
   const W = {
     title: `${speciesOf(m).name} joined your team`,
     top: `<div class="sheet-art">${rigCanvasHTML(m.sp, 128)}</div>`,
-    html: `${nE ? `<p>${words[nE] || nE} Billie${nE === 1 ? ' is' : 's are'} already rustling in the grass. Tap one to battle it, then flick a coin.</p>` : ''}<p>When you’re ready, the airship at the mast flies you out on a run.</p>${egg ? `<p>Professor Hazel also gave you a ${eggKm(R.starterEgg)} km egg. It’s warming up in an incubator and hatches after ${eggKm(R.starterEgg)} km of walking outdoors.</p>` : ''}`,
+    html: `${nE ? `<p>${words[nE] || nE} Billie${nE === 1 ? ' is' : 's are'} already rustling in the grass. Tap one to battle it, then flick a coin.</p>` : ''}<p>When you’re ready, the airship at the mast flies you out on a run.</p>`,
     btns: [{ l: 'Let’s go', c: 'dark', f: closeModal }],
   };
   if (o.rival && TRAINERS.blake0 && typeof storyRivalBattle === 'function') {

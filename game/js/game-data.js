@@ -8,7 +8,7 @@
    its own small data there before it imports this module. */
 /**
  * @import { EggTier, Evolution, GameData, LocationData, LocationEntry, Pool, Road, RoadFromNode, RoadLink } from '../types/game-data'
- * @import { CutsceneData, Seat, Species, TrainerEntry } from '../types/game-data'
+ * @import { CutsceneData, Relic, Seat, Species, TrainerEntry } from '../types/game-data'
  */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
@@ -40,6 +40,7 @@ expose({
   POOLS: [() => POOLS],
   RARITY_STAT_TOTALS: [() => RARITY_STAT_TOTALS],
   REGIONS: [() => REGIONS],
+  RELICS: [() => RELICS],
   ROADS: [() => ROADS],
   ROADS_BY_NODE: [() => ROADS_BY_NODE],
   ROBOTS: [() => ROBOTS],
@@ -357,6 +358,8 @@ provide({ PEOPLE }); /* to-module */
 export const SHOPS = gameData.shops || {};
 /* roguelite track RL-6: the kinds of node on a run's map (logic/run-map.js takes them as an argument) */
 export const NODE_TYPES = gameData.nodeTypes || {};
+/* roguelite track RL-12: a run's Loopholes (relics) and their effect rows (logic/effects.js) */
+export const RELICS = /** @type {Record<string, Relic>} */ (gameData.relics || {});
 /* roguelite track RL-11: the four currencies (currencies.json) */
 export const CURRENCIES = gameData.currencies || {};
 /* RL-11: the hub's buildings, each upgraded with one currency (buildings.json; levels are unlocks.json rows) */
