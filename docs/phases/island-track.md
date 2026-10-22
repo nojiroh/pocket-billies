@@ -174,6 +174,15 @@ A Studio section of its own ("Hub island", not inside Walk scenes), editing the 
   asks first and clears the hash. check-data refuses a changed locked ground (IS-0).
 - Check: a check-fast Studio step (the section opens and draws, a drag turns the orbit, locking disables the brushes).
 
+**Done in IS-6a** (2026-10-22, the owner's answers in chat): "Walk the coast" uses the game's own walk camera (it
+orbits once IS-1 merges; no import of camera-orbit.js, so the merge order doesn't matter); no prop tools in the editor
+("Props in Walk scenes" opens the map there); Copperleaf view-only until it has a coast (IS-5 owns copperleaf.json);
+the coast is hand-editable with the zones' point tool. Checked against the code: the ground the lock covers is
+changed in Walk scenes by Paint, Fill, Shape the land, Cliffs & stairs, Curved road (map-editor-tools.js), Resize and
+Flatten, so the guard is one helper (logic/hub-island.js `groundLockRefusal`) asked in those places; map-generate.js
+only makes new maps and needed none. The editor's logic is game/js/logic/hub-island.js (unit-tested); IS-6b adds the
+dials beside it.
+
 ### IS-6b Hub editor dials
 The generator's dials in the hub editor: size, coast wobble, mountain size and height, forest arc and density, cove
 angle and depth, beach arcs, cliffs, stream on/off, seed. Live preview (map-generate.js's draft pattern); "Use this
