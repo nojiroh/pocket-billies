@@ -68,6 +68,57 @@ recommended option is taken for every decision and recorded in the plan doc's "D
 - They need `globalThis.GAMEDATA` before game-data.js loads (it reads the tables once) and `PB_VERSION` (a new save's
   gameVersion), both set by the worker.
 
+**Changed** (one cause per commit; two merges of the Phase 1 base)
+- **T2.4** run-preview.js + test (equals the game's own path for 5 seeds x none/all/short); the worker
+  (logic-worker.js, logic-worker-modules.js, unit test); logic-client.js and the Lab's "From the game's logic" panel.
+- **T2.5** logic/run-rules-code.js (11 rules in code, snippet + unit test) and the "Run rules" card beside the map.
+- **T2.6** logic/run-test.js (the address, unit test); boot.js: `?debug&run=` is a TEST_RUN that takes off through
+  runTakeOff (runTestStart); the live channel carries rules, nodeTypes, relics, unlocks, items (applied only in a test
+  run); the debug log's `state.run.unlocks`; the Lab's "▶ Play this seed"; check-fast step "Play this seed".
+- **T2.3** data-checks.js runMapProblems / runMapSweep (after Phase 1's moved checks) + unit test (1,000 seeds, about
+  150 ms); the Lab's "Over 1,000 seeds" block, run in the worker and cached while its rules stay the same.
+- check-studio-github.py `run_lab`: the panel against runPreview in Node, one worker per data version, the rules card
+  (redraw, Propose carries rules.json and nodeTypes.json, the game's error, put back leaves nothing), the code lines,
+  the sweep (clean; a planted "last row a mini-boss" named with a seed that opens), reading both log forms, Play this
+  seed in a popup (the Lab's map, an unsaved clinic price 77, a live edit to 88, no save keys on the channel).
+- Docs: STUDIO.md Run Lab, CHANGELOG, the plan's Decisions (item 9).
+
+**Where the plan doc was wrong or short**
+- The worker needs no data-version counter: the draft's JSON text is 2.4 MB now (legacy maps moved out) and
+  stringifies in about 20 ms, so it is the version.
+- `tier=` does nothing for a run's map or start today (first session's finding); left out of the address.
+- "run-map.js:102" in T2.5 is right for the lanes rule today; the card finds it by searching, not by number.
+- T2.3's "a guard row on the last row" can't be planted as written: runMapRowsFit refuses it and runMapMake throws,
+  which the sweep reports as "these rules can't make a map" with a seed. The check that matters on a map is "the last
+  row is not the boss" (rules.run.map.last), which the stand-in step plants.
+- runTakeOff calls saveNow, which calls flushAccountSave directly (setNoSaving doesn't stub it). A test run is safe
+  only because accountOn() is off for TEST_RUN; "Play this seed" relies on that, so it is a TEST_RUN.
+
+**Verified**
+- Unit tests 660 (after the second merge); lint, typecheck, check:modules, format:check, check:data.
+- `check-studio-github.py --only=run_lab,publish`: run_lab passes; publish 0 problems.
+- `check:fast`: 25 of 26 on the first full run; "Packing for a run" failed once ("no start sheet") while I was
+  editing files under the running check, then passed alone with Play this seed; after the merge, the Studio pages and
+  Play this seed pass (5 of 5).
+- Screenshots of the Lab at 1400 px: the map and rules card side by side; the logic panel.
+- **Not run:** the full quick check (end of Phase 2), the full check-studio-github chain, a real phone or iPad.
+
+**Risky**
+- **Module workers on the owner's iPad** (Safari 15+ has them). Without one, the panel says the logic can't run; the
+  map, rules card and Play this seed still work.
+- A test run takes the Studio's rules, nodeTypes, relics, unlocks and items in place; a table the game derives from
+  them once at load (none found for the run's needs) would keep the old values.
+- The Studio page is about 900 px wide on a phone already (the top bar; every section), so the rules card sits beside
+  the map there too.
+- data-checks.js now holds Phase 1's checks and T2.3's; Phase 4 and later sessions add to the same file.
+
+**Next**
+- Phase 3: the worker's message shape above; add runSim to LOGIC_WORKER_FNS and logic-worker-modules.js's exports.
+- check-data.mjs could run runMapSweep over 1,000 seeds (CI) — one line, for its owner.
+- Manual (owner): Play this seed from the Studio on the phone; an unsaved clinic price in a run town; the Lab's
+  logic panel on the iPad.
+- Phase 2's tickets are all done: the full quick check and the tag `sr-2-done` close it, after #135's CI is green.
+
 ### Studio plan Phase 2 (first session) - One run start, Run Lab v1 - 2026-10-22
 Branch `claude/sr-2-run-lab`, from the Phase 0 branch `ccr-81011a25-lf3exv` (PR #131, where the plan doc lives); PR
 #135 goes against that branch. Phase 1 runs at the same time in another session from the same branch: this session

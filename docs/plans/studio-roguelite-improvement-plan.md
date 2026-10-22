@@ -1413,6 +1413,19 @@ The owner took the recommendation on every open question:
    - Convert the 9 old-style people to `look` in one data-only commit.
    - Remove the convert-on-open.
    - Make `look` required.
+9. **Phase 2, second session** (recommended options taken under the standing instruction; the owner may revisit):
+   - T2.4: the worker's data version is the draft's JSON text (2.4 MB, about 20 ms), not an edit counter, so undo,
+     drafts and Phase 1's undo by parts need no hook. It loads every logic module (load-logic.mjs's list, kept by a
+     unit test). runPreview lives in game/js/logic/run-preview.js, on no page.
+   - T2.5: the code-only rules are listed in logic/run-rules-code.js with a code snippet; the Studio finds the line in
+     the file as served, so "run-map.js:102" can't go stale. Moving them into data stays a game ticket.
+   - T2.6: "Play this seed" is a kind of test run (TEST_RUN), so it inherits no saving, no account and no resume. It
+     takes off through runTakeOff itself. No `tier=`: tier changes neither the map nor the start today (only how many
+     come from home, and the party given all fly). The live channel's run data (rules, nodeTypes, relics, unlocks,
+     items) applies only in a test run, never in a player's game open beside the Studio.
+   - T2.3: done after Phase 1's T1.3 landed: the map checks are pure functions in data-checks.js shown in the Lab
+     (run in the worker). check-data.mjs doesn't run the 1,000-seed sweep yet (the unit test does); adding it is one
+     line for whoever owns check-data next.
 
 ## Ask me before (owner decisions this plan needs)
 1. **T5.1:** recipe as the truth with a JS baker (recommended), or Python stays and Studio writes recipes.
