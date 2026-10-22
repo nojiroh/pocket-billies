@@ -987,6 +987,59 @@ def studio_test_steps(pg, errs):
     print(f"studio test: {len(r['sections'])} sections, {edits} edits undone, {len(r['findings'])} findings, {r['seconds']} s", flush=True)
 
 
+def rig_preview_steps(pg, errs):
+    """Studio plan Phase 5 (T5.6): a Studio preview draws a Billie as the game does. For a kit Billie, front and back,
+    at fixed clocks (idle, walk, attack, hurt): the Studio's preview canvas (drawSpritePreview on rigFor) is pixel-equal
+    to the game's drawing (rigFromMeta on the game's rigs-next.js and sheet, rigFrame, drawRig). The Studio's rig has
+    the game's 12 fps clock and lag, and the old 60 fps pose (rigPose) differs on some of those clocks, so the check
+    can tell the two apart."""
+    n = len(errs)
+    sp = pg.evaluate("studioState.D.lines[0].id + '0'")
+    out = pg.evaluate("""async sp => {
+      const rigs = await (await fetch('../game/art/next/rigs-next.js')).text(),
+        RN = JSON.parse(rigs.slice(rigs.indexOf('{'), rigs.lastIndexOf('}') + 1)),
+        CASES = [[null, 1000], [null, 1234], [null, 1517], ['walk', 300], ['walk', 377], ['attack', 210], ['hurt', 95]],
+        pixels = c => c.getContext('2d').getImageData(0, 0, c.width, c.height).data,
+        same = (a, b) => a.length === b.length && a.every((v, i) => v === b[i]),
+        res = { views: {} };
+      for (const view of ['front', 'back']) {
+        const meta = RN[sp][view],
+          img = new Image();
+        img.src = '../game/art/' + meta.sheet;
+        await img.decode();
+        const R = rigFromMeta(meta, img), S = rigFor(sp, view);
+        const r = { clock: S && S.clock, lag: S && S.lag, differ: 0, old: 0 };
+        for (const [act, tau] of CASES) {
+          const ts = 5000 + tau, c = document.createElement('canvas');
+          c.width = c.height = 10;
+          c._p = { sp, view, seed: 1, t0: 5000, act, loop: false };
+          drawSpritePreview(c, ts);
+          const g = document.createElement('canvas');
+          g.width = R.BW; g.height = R.BH;
+          const x = g.getContext('2d');
+          x.imageSmoothingEnabled = false;
+          drawRig(x, R, rigFrame(R, act, tau, ts, 1), view);
+          if (!same(pixels(c), pixels(g))) r.differ++;
+          const o = document.createElement('canvas');
+          o.width = R.BW; o.height = R.BH;
+          const y = o.getContext('2d');
+          y.imageSmoothingEnabled = false;
+          drawRig(y, R, rigPose(act, tau, ts, 1), view);
+          if (!same(pixels(o), pixels(g))) r.old++;
+        }
+        res.views[view] = r;
+      }
+      return res;
+    }""", sp)
+    for view, r in out['views'].items():
+        if r['clock'] != 12 or not r['lag']: errs.append(f"{view}: the Studio's rig has clock {r['clock']} and lag {r['lag']}, not the game's 12 and lag")
+        if r['differ']: errs.append(f"{view}: {r['differ']} of 7 preview frames differ from the game's drawing")
+        if not r['old']: errs.append(f"{view}: the 60 fps pose drew every frame the same as the game's clock (the check can't tell them apart)")
+    if len(errs) > n: errs[n:] = [f'rig preview: {e}' for e in errs[n:]]
+    print(f"rig preview: {sp} front and back, 7 clocks each, pixel-equal to the game's drawing (the old pose differs on "
+          f"{out['views']['front']['old']} and {out['views']['back']['old']})", flush=True)
+
+
 # the steps after sign-in, in order (--only picks some by name; 'sections' and 'art' are the two blocks in main)
 STEPS = [
     ('story', story_steps),
@@ -998,6 +1051,7 @@ STEPS = [
     ('robot_joints', robot_joint_steps),
     ('generate', generate_steps),
     ('species_parts', species_part_steps),
+    ('rig_preview', rig_preview_steps),
     ('wardrobe', wardrobe_steps),
     ('ui', ui_steps),
     ('ui_tools', ui_tools_steps),
