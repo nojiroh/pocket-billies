@@ -78,8 +78,8 @@ expose({
 /* to-module: end */
 /* 1: IS-2's first island; 2: a natural layout (the owner: more natural and dynamic): rounded zones, headlands and
    bays, a ridged massif with a shoulder, wandering shelves, curved paths, groves, outcrops and wet ground */
-export const ISLAND_GEN_VERSION = 2;
-export const ISLAND_GEN_STAGES = ['coast', 'heights', 'mountain', 'water', 'paths', 'trail', 'ground'];
+export const ISLAND_GEN_VERSION = 3;
+export const ISLAND_GEN_STAGES = ['coast', 'heights', 'mountain', 'water', 'paths', 'trail', 'ground', 'wild'];
 /* the zones a dial places as a rectangle (flat, empty and locked: the town and the barn are built there by hand) */
 export const ISLAND_GEN_BUILT = ['town', 'barn', 'pasture'];
 
@@ -134,6 +134,9 @@ export const ISLAND_GEN_DEFAULTS = {
   town: { on: 1, houses: 14, lanes: 3 },
   /* a hamlet: a few houses round a green under the mountains, joined to the coast road */
   hamlet: { on: 1, houses: 4 },
+  /* IS-5: where wild Billies wait: n patches of tall grass (15-70 m² each, as a run's) out on the meadow and heath by
+     the forest, never in the town, the hamlet, the barn's or the pasture's zones, on the beach, a path or a slope */
+  wild: { n: 5 },
   level: 1.2,
   /* a stage's own seed (rerolls that stage alone), by stage name */
   seeds: {},
@@ -267,6 +270,7 @@ export function islandGenDials(d) {
   D.town.lanes = Math.round(num(D.town.lanes, 0, 6, 3));
   D.hamlet.on = D.hamlet.on ? 1 : 0;
   D.hamlet.houses = Math.round(num(D.hamlet.houses, 0, 10, 4));
+  D.wild.n = Math.round(num(D.wild.n, 0, 12, 5));
   if (!D.seeds || typeof D.seeds !== 'object' || Array.isArray(D.seeds)) D.seeds = {};
   for (const k of Object.keys(D.seeds)) if (!ISLAND_GEN_STAGES.includes(k)) delete D.seeds[k];
   return D;
@@ -1905,6 +1909,90 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
   /* a zone of the scene's: on it, never crossing itself (islandProblems checks the rest) */
   for (const Z of zones) Z.poly = Z.poly.map(p => [mapgenBetween(p[0], 0, w), mapgenBetween(p[1], 0, h)]);
 
+  /* ---------- IS-5: the wild Billies' tall grass, in patches (the game's encounters then wait in them alone,
+     walk-view.js encounterCandidates, as on a run's map) ---------- */
+  const grassPatches = /** @type {{ x: number, z: number, r: number, n: number, across: boolean }[]} */ ([]);
+  if (D.wild.n > 0) {
+    const rW = rng('wild'),
+      sW = salt('wild'),
+      [AMIN, AMAX] = [15, 70],
+      off = zones.filter(Z => ['town', 'hamlet', 'barn', 'pasture', 'beach', 'cove', 'mountain'].includes(Z.k)),
+      homes = zones.filter(Z => ['town', 'hamlet', 'barn', 'pasture'].includes(Z.k)),
+      OPEN = 'GgEfHCB',
+      WOODS = 'yLMFH',
+      cellOk = q => {
+        if (!OPEN.includes(G.T[q]) || G.F[q] & (1 | 2 | 4 | 8 | 16 | 32 | 64 | 128)) return false;
+        const i = q % w,
+          j = Math.floor(q / w),
+          x = i + 0.5,
+          z = j + 0.5;
+        if (G.S[j * 2 * W2 + i * 2] || G.S[(j * 2 + 1) * W2 + i * 2 + 1]) return false;
+        const H4 = [G.H[j * W1 + i], G.H[j * W1 + i + 1], G.H[(j + 1) * W1 + i], G.H[(j + 1) * W1 + i + 1]];
+        if (Math.max(...H4) - Math.min(...H4) > 0.5) return false;
+        if (off.some(Z => islandPointIn(Z.poly, x, z))) return false;
+        /* and a stretch of open ground between the grass and where people live and the animals graze */
+        if (homes.some(Z => islandPolyDist(Z.poly, x, z, 8) < 8)) return false;
+        return !plots.some(L => Math.hypot(L.x - x, L.z - z) < Math.max(L.w, L.d) / 2 + 6);
+      },
+      /* by the woods or on the heath: a fifth of the ground within 9 m is forest floor or heath */
+      wooded = (x, z) => {
+        let n = 0,
+          m = 0;
+        for (let dj = -9; dj <= 9; dj += 3)
+          for (let di = -9; di <= 9; di += 3) {
+            const i = Math.floor(x + di),
+              j = Math.floor(z + dj);
+            if (i < 0 || j < 0 || i >= w || j >= h) continue;
+            m++;
+            if (WOODS.includes(G.T[j * w + i])) n++;
+          }
+        return m && n / m >= 0.2;
+      };
+    for (let tries = 0; grassPatches.length < D.wild.n && tries < 400 * D.wild.n; tries++) {
+      const x = rW.range(4, w - 4),
+        z = rW.range(4, h - 4),
+        q = Math.floor(z) * w + Math.floor(x);
+      if (!cellOk(q) || !wooded(x, z)) continue;
+      const A = rW.range(AMIN + 10, AMAX),
+        asp = rW.range(1, 2.2),
+        ab = A / (Math.PI * 0.8),
+        a = Math.sqrt(ab * asp),
+        b = Math.sqrt(ab / asp),
+        r = Math.max(a, b),
+        ang = rW.range(0, Math.PI),
+        ux = Math.cos(ang),
+        uz = Math.sin(ang);
+      if (grassPatches.some(g => Math.hypot(g.x - x, g.z - z) < g.r + r + 6)) continue;
+      const cells = [];
+      for (let j = Math.max(0, Math.floor(z - r - 1)); j <= Math.min(h - 1, Math.ceil(z + r + 1)); j++)
+        for (let i = Math.max(0, Math.floor(x - r - 1)); i <= Math.min(w - 1, Math.ceil(x + r + 1)); i++) {
+          const dx = i + 0.5 - x,
+            dz = j + 0.5 - z,
+            u = (dx * ux + dz * uz) / a,
+            v = (-dx * uz + dz * ux) / b,
+            t = Math.atan2(v, u),
+            edge = 0.75 + 0.3 * mapgenNoise(Math.cos(t) * 1.5 + grassPatches.length * 7, Math.sin(t) * 1.5 + 3, sW),
+            rr = Math.hypot(u, v) / edge;
+          if (rr <= 1 && cellOk(j * w + i)) cells.push([j * w + i, rr]);
+        }
+      cells.sort((m, n) => m[1] - n[1] || m[0] - n[0]);
+      const take = cells.slice(0, AMAX).map(c => c[0]);
+      if (take.length < AMIN) continue;
+      for (const c of take) {
+        G.T[c] = 't';
+        G.F[c] |= 32;
+      }
+      grassPatches.push({
+        x: mapgenRound2(x),
+        z: mapgenRound2(z),
+        r: mapgenRound2(r * 1.05 + 0.75),
+        n: take.length,
+        across: false,
+      });
+    }
+    if (grassPatches.length < D.wild.n) notes.push(`room for ${grassPatches.length} of ${D.wild.n} tall grass patches`);
+  }
+
   /* ---------- the scene ---------- */
   const tiles = [];
   for (let j = h - 1; j >= 0; j--) tiles.push(G.T.slice(j * w, (j + 1) * w).join(''));
@@ -1968,6 +2056,7 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
       : {}),
   };
   if (G.streams.length) sc.streams = G.streams;
+  if (grassPatches.length) sc.grassPatches = grassPatches;
   if (bridges.length) sc.bridges = bridges;
   const allSpots = [...G.spots, ...spots];
   if (allSpots.length) sc.spots = allSpots;

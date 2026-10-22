@@ -95,9 +95,35 @@ function reachProblems(sc) {
     if (L.k !== 'well' && !mapgenReached(R, L.x + Math.cos(a) * (L.d / 2 + 0.9), L.z + Math.sin(a) * (L.d / 2 + 0.9)))
       out.push(`the ${L.k} plot's front at (${L.x}, ${L.z}) can't be walked to from the town`);
   }
+  /* IS-5: the wild Billies' grass */
+  for (const g of sc.grassPatches || [])
+    if (!mapgenReached(R, g.x, g.z)) out.push(`the tall grass at (${g.x}, ${g.z}) can't be walked to from the town`);
   const T = mapgenTraps(sc, sc.scenery);
   if (T.n) out.push(`${T.n} cells you can walk to but not back from, first (${T.at[0]})`);
   return out;
+}
+/** IS-5: the tall grass lies in its patches only, 15-70 m² each, none in a built zone, on the beach or the mountain */
+function grassProblems(sc) {
+  const out = [],
+    P = sc.grassPatches || [],
+    want = (sc.islandGen.dials.wild || {}).n ?? 5;
+  if (P.length !== want) out.push(`${P.length} tall grass patches, not ${want}`);
+  for (const g of P) if (g.n < 15 || g.n > 70) out.push(`a patch of ${g.n} m²`);
+  let tall = 0;
+  for (let j = 0; j < sc.h; j++)
+    for (let i = 0; i < sc.w; i++) {
+      if (tileAt(sc, i, j) !== 't') continue;
+      tall++;
+      const x = i + 0.5,
+        z = j + 0.5;
+      if (!P.some(g => Math.hypot(g.x - x, g.z - z) <= g.r)) out.push(`tall grass outside any patch at (${x}, ${z})`);
+      const Z = sc.zones.find(
+        Z => ['town', 'hamlet', 'barn', 'pasture', 'beach', 'mountain'].includes(Z.k) && islandPointIn(Z.poly, x, z)
+      );
+      if (Z) out.push(`tall grass in the ${Z.k} zone at (${x}, ${z})`);
+    }
+  if (tall !== P.reduce((n, g) => n + g.n, 0)) out.push(`${tall} tall grass cells, the patches say otherwise`);
+  return out.slice(0, 6);
 }
 /** a plot whose pad isn't level (corners under it within 0.1 m) or has steps in it; a town that is one flat box */
 function padProblems(sc) {
@@ -335,6 +361,20 @@ test("a second run keeps the locked zones' ground exactly; a locked ground is re
   const L = copy(A);
   L.islandGen = { ...L.islandGen, lock: true, hash: 'g00000000' };
   assert.throws(() => islandGenerate({}, 'x', ctx, L), /locked/);
+});
+
+test('the wild Billies wait in tall grass patches out by the woods, away from the town and the farm (IS-5)', () => {
+  for (const seed of ['copperleaf', 's1', 's2']) {
+    const sc = withScenery(isle(seed).scene);
+    assert.deepEqual(grassProblems(sc), [], seed);
+  }
+  /* none asked for, none made; a planted fault seen */
+  assert.equal(islandGenerate({ wild: { n: 0 } }, 'x', ctx).scene.grassPatches, undefined);
+  const bad = copy(isle().scene),
+    town = bad.zones.find(Z => Z.k === 'town'),
+    [x, z] = town.poly.reduce((a, p) => [a[0] + p[0] / town.poly.length, a[1] + p[1] / town.poly.length], [0, 0]);
+  setTile(bad, Math.floor(x), Math.floor(z), 't');
+  assert.ok(grassProblems(bad).length > 0);
 });
 
 test('zones placed on top of each other are turned apart; organic 0 keeps plain rectangles', () => {
