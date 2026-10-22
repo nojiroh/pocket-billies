@@ -11,6 +11,7 @@
      run     on a run (RL-7): standing on its landing on day 1, its world made from the seed RL7FIXTURE
      mountains   the same run with the debug menu's mountains mod (TR-3: mountains north and south, for the camera)
      ranch   inside Copperleaf's ranch (RL-9): three Billies in storage (one two levels under the cap), 50 Scrap
+     relics  the run, holding five Loopholes (RL-12: one under the cap), $2,000, a mini-boss's pick waiting
    UI-3b, for the Studio's UI look preview (the real screens with the look being edited):
      team    the Team screen          bag     the Bag, with a few of each item
      talk    the dialogue box with a line from Professor Hazel
@@ -20,13 +21,14 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { provide } from './hooks.js';
-import { LOCATIONS, RULES, SPECIES, START_NODE, TRAINERS } from './game-data.js';
+import { LOCATIONS, RELICS, RULES, SPECIES, START_NODE, TRAINERS } from './game-data.js';
 import { makeBilly } from './logic/rules.js';
 import { applyUiTheme } from './theme-sheet.js';
 import { runBegin } from './logic/run-state.js';
 import { runArrive, runMapStart } from './logic/run-map.js';
 import { MAPGEN_VERSION } from './logic/mapgen.js';
 import { RUN_MOD_MOUNTAINS } from './logic/run-scenes.js';
+import { relicOfferMake } from './logic/relics.js';
 import { newSave } from './logic/saves.js';
 import { startTrainer } from './logic/battle-engine.js';
 import { FIXTURE, saveData, setSaveData, uiState } from './game-state.js';
@@ -42,6 +44,7 @@ import { render } from './ui.js';
 expose({
   FIXTURE_NAMES: [() => FIXTURE_NAMES],
   FIXTURE_PLACES: [() => FIXTURE_PLACES],
+  FIXTURE_RELICS: [() => FIXTURE_RELICS],
   FIXTURE_RUN_SEED: [() => FIXTURE_RUN_SEED],
   fixtureLook: [() => fixtureLook, v => (fixtureLook = v)],
   fixtureSave: [() => fixtureSave, v => (fixtureSave = v)],
@@ -60,8 +63,12 @@ const FIXTURE_PLACES = {
   talk: 'copperleaf',
   run: 'copperleaf',
   mountains: 'copperleaf',
+  relics: 'copperleaf',
   ranch: 'copperleaf',
 };
+/** RL-12: the Loopholes the relics fixture holds (a shop's and a clinic's price rows, a catch row, a battle's stage, a
+ * heal on arrival) */
+const FIXTURE_RELICS = ['shelter', 'lobbyist', 'fineprint', 'insider', 'severance'];
 /** RL-7: the run fixture's seed */
 const FIXTURE_RUN_SEED = 'RL7FIXTURE';
 function fixtureSave() {
@@ -105,7 +112,7 @@ function fixtureSave() {
   for (const T of Object.values(TRAINERS)) if (T.runsUp) s.story['met_' + T.id] = 1;
   /* RL-7: a run from the mast (RL-8 does this at the airship) that has landed: its map, day 1 on the landing; its
      world goes in at boot (run-world.js) */
-  if (FIXTURE === 'run' || FIXTURE === 'mountains') {
+  if (FIXTURE === 'run' || FIXTURE === 'mountains' || FIXTURE === 'relics') {
     const data = runWorldData();
     runBegin(s, { seed: FIXTURE_RUN_SEED, tier: 1, mapgenV: MAPGEN_VERSION, se: RULES.start.se });
     if (FIXTURE === 'mountains') s.run.mods = [RUN_MOD_MOUNTAINS];
@@ -113,6 +120,13 @@ function fixtureSave() {
     runArrive(s, 0, data);
     s.run.at.phase = 'walk';
     s.visited[s.trip.node] = 1;
+  }
+  /* RL-12: five Loopholes held (one under the cap), money for the shop, and a mini-boss's pick waiting (it opens once
+     the world shows, as after a reload: run.js runResume) */
+  if (FIXTURE === 'relics') {
+    s.run.relics = FIXTURE_RELICS.filter(id => RELICS[id]);
+    s.se = 2000;
+    relicOfferMake(s.run, RELICS, RULES.run.relics);
   }
   return s;
 }
