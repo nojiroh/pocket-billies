@@ -2,6 +2,88 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Terrain track TR-2 (TR-2a mountains, TR-2b trails, TR-2c ledges) and runs east to west - 2026-10-21/22
+Branch `ccr-526699d5-vjfbk5`, from main ca9aa54 (PR #103, RL-8's last commits; the owner: "RL-8 is done"). Plan
+approved in the session ("Start"), then changed twice by the owner mid-session: "take way more inspiration from how
+routes are built in Pokémon Gen 3-5" (research, then the plan adapted) and "runs should go from east to west".
+- Changed (one cause per commit):
+  - **TR-2a, mountains** (mapgen.js): `land.mountains` (0-1, up to 20 m) and `land.massif` (east and west, one side,
+    back, north and south, back and sides, all round), kept in the dials only when given, so scenes made without them
+    are byte for byte the same (no MAPGEN_VERSION bump for it). Ridged noise on warped ground under a massif mask with
+    a ragged foot, its own `relief` seed; none near the road, hub, exits' stretch of edge or water. A quarter of the
+    height is smooth land, the rest step-grid shelves a terrace's height apart, so steep ground is cliffs with scree;
+    nothing planted across a cliff. Studio Generate card: the two dials and a "Mountains" reroll.
+  - **TR-2b, mountain trails** (mapgen.js mapgenTrails, mapgenTrailSearch, mapgenCarveTrail): a footpath from the road
+    up each massif side to a summit (highest gentle corner, 4 m in, 7 m from pinned or joined edges). Searched on a
+    2 m grid with its heading (turns cost, hairpins most) within a 0.56 grade, avoiding water and smooth land steeper
+    than 0.8; carved 1.8 m wide, starting level with the road cell, each cell's height from where it falls on the line,
+    landings at hairpins, cuts below the land as negative raises (hand-made maps have them), stone steps where steep,
+    ramps where gentle; a flat summit pocket, a marked spot `scene.spots: [{ kind: 'summit', x, z, y }]`.
+  - **The reach check** (`mapgenWalkGrid/Reach/Unreachable`) takes `{ slope: true }`: the game's slope rule (over 1.05
+    blocks) and steps measured on the whole standing height (smooth land plus raise), a bridge's deck walked. Off by
+    default, so the old tests keep their meaning.
+  - **Runs go east to west** (the owner): runSceneExits gives `east`/`east2` back and `west`/`west2` ahead; two links a
+    side at 10 m and 54 m along the 64 m edge (t 0.15625, 0.84375: whole metres, the seam rules' 44 m); every run
+    scene's east and west edges pinned to height 0 (new mapgen `pin`), since two parents' strips overlap on a 64 m edge
+    (a 0.63 m step before); the run on the bowl is an arc on the south side, clockwise (RUN_BOWL a 270, span 120, r
+    0.62). MAPGEN_VERSION 5 after merging main, where RL-8 took 4 (a run saved going north is left). Then, alone, the rename runExits `north/south` ->
+    `ahead/back`.
+  - **Debug**: the debug menu's Runs section has a "Mountains" box (the run's mod `dbg_mountains` in `run.mods`, so a
+    reload makes the same scenes: mountains 1 on each scene's north side, with trails); the debug log's run line has
+    `mods`, the place's `mountains` dial and `groundTris`.
+  - **TR-2c, ledges and pockets** (the owner: "be inspired by how the routes work, don't copy them"): a `land.ledges`
+    dial (kept only when given). The terraces' south fronts (toward the camera) dropping 0.35-1.8 m are walked as
+    whole fronts (they zigzag) and cut into 3-10 m pieces, ledges by the dial's share (stepm flag 16: hop down, never
+    climb), with a flight of stone steps now and then (a third of the time, at least every 24 m) as the way back up:
+    the shelf above is a lane beside the road you drop off anywhere. `mapgenTraps` / `mapgenUntrap`: on the finished
+    scene no ledge drops you where you can't walk back from. Pockets: two marked spots (`scene.spots` kind
+    `pocket`) at the end of the longest walk, raised shelves first. `mapgenReach` with `{ slope: true }` honours ledges
+    and returns walk distances. The debug run is now "Mountains and ledges"; the Studio has a Ledges dial.
+  - Docs: terrain-track.md (the Gen 3-5 research with numbers and sources, what it changes, the owner's answers, TR-2
+    split into 2a/2b/2c, ledges moved from TR-5 to TR-2c), roguelite-track.md (east to west), ROADMAP, TESTING,
+    STUDIO, CHANGELOG.
+- **The research** (terrain-track.md "How Pokémon Gen 3-5 build their routes"): wikis refused direct reads, so the
+  numbers come from the Emerald decompilation's own map data (pret/pokeemerald), decoded for 13 land routes: 31-65%
+  walkable (median 47%), 1-3 walkable levels, 10-80 ledge tiles (mostly jumping south), 3-6 grass patches of 15-70
+  tiles, 4-17 trainers seeing 1-7 tiles (median 3), 1-9 items and 0-5 hidden ones, a gimmick a route. The owner chose:
+  walkable to 15 m+ in one scene, routes stay open (70%+), ledges jump south.
+- Where the plan was wrong: TR-2 was far too big for one session (split 2a/2b/2c). The terrain track's "big relief on
+  the free E/W sides" is now north/south (runs east to west). A massif side with an exit gets no mountains (by design:
+  exits' edges stay low), so on a run the free sides are north and south only. My first 15 m sweep bound was wrong
+  (the probe had exits on the mountain sides).
+- Verified (TR-2c): unit tests 486 (new mapgen-ledges.test); 80 ledge dial sets: no trap, every exit reached, stairs in
+  74, two pockets each, about 25 ms more a scene; check-fast 13 of 13; smoke 15 of 15; in the page a ledge reads as
+  a low bank across the meadow. **The full quick check: 9 problems, the same 9 steps fail on main** (old roster
+  counts 117/61, empty voxel bushes, buildings without a plan, a biped walk cycle, the running-controls step: on main
+  "copperleaf didn't open", here "float division by zero"): stale checks from before the fresh base, not this work.
+- Verified (TR-2a/b): unit tests 481 pass (new mapgen-mountains.test; run-map, run-scenes, run-world-real, rng updated: the
+  frozen dials snapshot remade with the same dials, the scene hash remade for gen.v only); lint, typecheck, modules,
+  format, data. Sweeps: 160 trail dial sets reach every exit and every summit (237 summits); 240 mountain scenes at the
+  dial's top with mountains on a side without exits: 96% reach 15 m, the lowest 12.3 m. check-fast: 12 of 13, the
+  world-map bowl check failed once and passed on a rerun; it fails the same way on main (a flaky tap, not this work).
+  Smoke 15 of 15. In the page (run fixture): the landing's sign points west; the mountains run draws shelves and
+  cliffs at the back; the game's own findPath walks to a summit and stands at 10.4 m. The full quick check: see below.
+- Risky / open:
+  - **Summit height:** trails stop short of the highest ground: at the dial's top summits are about 11 m (median),
+    15-19 m at best, while the ground reaches 17 m. The owner wants 15 m+: TR-2c's main-road pathfinder and longer
+    trails along the 112 m axis should lift them.
+  - **Phone cost:** a mountains scene's ground has about 167k triangles against about 82k flat (the shelves' walls).
+    Not measured on a phone yet: the owner starts a test run with the debug menu's "Mountains" box and sends the log.
+  - South mountains (toward the camera) hide the player until TR-3's rock fade and silhouette; the debug run uses the
+    north side only. There is no "south only" massif choice yet.
+  - A coast scene (seed 508701) has the sea's lowered bank cutting its road under the slope rule; it predates this and
+    runs never use coast.
+  - Ledges and pockets are generator features: runs don't use terraces or ledges yet (rules.json run.scene has no
+    terraces). Turning them on for runs changes every run's scenes (MAPGEN_VERSION, the frozen dials): the owner's call
+    after playing the debug run.
+  - The quick check's 9 stale steps (above) want their own fix session (phase 13 style).
+  - Summit height: two tries this session (the massif full height 4 m in; more summit candidates) gave nothing or
+    broke trails and were reverted.
+- Next: the owner plays a run with the debug menu's "Mountains and ledges" box on the phone and sends the debug log
+  (frame times, groundTris); decides whether runs get terraces, ledges and mountains; pushes `tr-2c-done`. Left of
+  TR-2: the main-road pathfinder, the four mountain route types, higher summits; grass patches along the route wait
+  until wild Billies appear beyond 13 m of a place's middle (an RL change).
+
 ### Roguelite track RL-8 - Run loop and payout - 2026-10-21
 Branch `ccr-0f465f3f-hh2rq2`, from main 1d35666 (RL-7 merged). PR #103 went up at the owner's "Push pr" before the
 phase's end and was merged at 3f6f1c8; the owner played that build on the phone the same day. The rest (the full-check

@@ -48,7 +48,9 @@ town node needs it.
   roguelite version (seam agreement), with terrain TR-1 folded in; MG-3 when a town node needs it; MG-4 and MG-5
   after RL-8.
 - **Terrain track** (docs/phases/terrain-track.md, the owner's brief 2026-10-21): smooth roads, mountains, height as
-  gameplay, terrain features. TR-1 (smooth roads) is folded into MG-2, before RL-7; TR-2..TR-7 alongside RL-9..RL-11
+  gameplay, terrain features. TR-1 (smooth roads) is folded into MG-2, before RL-7; TR-2a (mountains as the border) and
+  TR-2b (mountain trails) done 2026-10-21, after the Gen 3-5 route research; TR-2c next. Runs now go east to west (the
+  owner, TR-2 session). TR-3..TR-7 alongside RL-9..RL-11
   after the first cut; the gameplay sessions TR-8..TR-11 wait for their RL parts. Tags `tr-N-done`.
 - **Project Story** (docs/phases/project-story.md): S1-S3 and S7 done, S8 partly (RL-8: New game plays the fall only; the city's files stay).
   S6 (Hazel vs Blake as a real battle) is unblocked by RL-4; S4, S5 and S8's leftovers wait until the first cut has

@@ -53,6 +53,7 @@ import {
   spawn,
   xpFor,
 } from './logic/rules.js';
+import { RUN_MOD_MOUNTAINS } from './logic/run-scenes.js';
 import { newSaveKeepingPreferences } from './logic/saves.js';
 import { allSnapshots, battleSay, checkFaints, fighter, startTrainer, startWild } from './logic/battle-engine.js';
 import {
@@ -132,7 +133,7 @@ function debugHTML() {
  <details><summary>Runs (roguelite track)</summary>${
    saveData.run
      ? `<p class="note">On a run: seed ${escapeHtml(saveData.run.seed)}, day ${saveData.run.clock}, ${saveData.run.at.phase}. “Go there” above walks it a place at a time.</p><div class="dbg-row">${debugButtonHTML('runwin', 'Win the run', 'gold')}${debugButtonHTML('runlose', 'Lose the run', 'red')}</div>`
-     : `<div class="dbg-row"><input id="dbgRunSeed" maxlength="20" placeholder="Seed (empty: a new one)" aria-label="Run seed" value="${escapeHtml(uiState.dbgRunSeed || '')}"><label><input id="dbgRunShort" type="checkbox"${uiState.dbgRunShort ? ' checked' : ''}> Short (5 rows)</label>${debugButtonHTML('runstart', 'Start a run', 'gold')}</div><p class="note">From Copperleaf, as the mast does (Bracket I). Short: one mini-boss, a town before it, the boss.</p>`
+     : `<div class="dbg-row"><input id="dbgRunSeed" maxlength="20" placeholder="Seed (empty: a new one)" aria-label="Run seed" value="${escapeHtml(uiState.dbgRunSeed || '')}"><label><input id="dbgRunShort" type="checkbox"${uiState.dbgRunShort ? ' checked' : ''}> Short (5 rows)</label><label><input id="dbgRunMountains" type="checkbox"${uiState.dbgRunMountains ? ' checked' : ''}> Mountains and ledges</label>${debugButtonHTML('runstart', 'Start a run', 'gold')}</div><p class="note">From Copperleaf, as the mast does (Bracket I). Short: one mini-boss, a town before it, the boss. Mountains and ledges: every place gets mountains of 15-20 m on its north side with a trail up, and terraces with ledges (terrain TR-2, for a phone measurement; the debug log has the frame times).</p>`
  }</details>
  <details><summary>Story scripts (Project Story)</summary><div class="dbg-row">${debugSelectHTML(
    'dbgScript',
@@ -374,13 +375,19 @@ function debugAction(x) {
           .trim()
           .replace(/[^A-Za-z0-9_-]/g, '')
           .slice(0, 20),
-        short = !!($('#dbgRunShort') || {}).checked;
+        short = !!($('#dbgRunShort') || {}).checked,
+        mountains = !!($('#dbgRunMountains') || {}).checked;
       uiState.dbgRunSeed = sd;
       uiState.dbgRunShort = short;
+      uiState.dbgRunMountains = mountains;
       if (!runStartable())
         return refreshDebugMenu('A run can’t start now (on a run, in a battle, or no Billie can fight).');
       uiState.modal = null;
-      runTakeOff(sd || undefined, short ? { rows: 5, minibosses: 1 } : undefined);
+      runTakeOff(
+        sd || undefined,
+        short ? { rows: 5, minibosses: 1 } : undefined,
+        mountains ? [RUN_MOD_MOUNTAINS] : undefined
+      );
       return;
     }
     case 'runwin':

@@ -5,16 +5,18 @@
    you down) to the boss (the last row), one or two nodes a row, links only to the next row, so every path is as long
    as the map has rows. Mini-boss rows and the boss row hold one node, so every path meets them, and the row before
    each mini-boss is a town (rules.json run.map). The other rows take a filler type by weight (nodeTypes.json).
-   A link leaves its node by the north side and arrives by the next node's south: one link at t 0.5, two at 0.25 and
-   0.75 (the seam rules allow two exits a side, 44 m apart; logic/seam-rules.js), so a node has at most two links each
-   way. Two lanes run straight, split, merge, or switch once (one diagonal, never two, so links never cross).
-   On the bowl every map's north faces the centre (logic/bowl.js), so a run's rows go from the rim towards it, on the
-   bowl's south side, and each node's exits run west to east in the order of its neighbours.
+   A link leaves its node by the west side and arrives by the next node's east (the owner: runs go east to west): one
+   link at t 0.5, two at 0.15625 and 0.84375, 10 m and 54 m along (the seam rules allow two exits a side, 44 m apart, logic/seam-rules.js, and an
+   east or west edge is 64 m), so a node has at most two links each way. runExits' `ahead` is the way west,
+   `back` the way east. Two lanes run straight, split, merge, or switch once (one diagonal, never two, so links never cross).
+   On the bowl every map's north faces the centre (logic/bowl.js), so west is clockwise round it: a run's rows go
+   clockwise along an arc on the bowl's south side, lane 0 outermost (a map's south), and each node's exits run south
+   to north in the order of its neighbours.
    The clock (owner, 8.10): a day per arrival, backtracking included; the landing is day 1; the deadline is the
    shortest walk to the boss plus a slack (rules.json run.clock), past which RL-13 hardens the world. The map shows the
    next row from where you stand, the row after as '?', and the boss always (run.reveal). Each node has a forecast by
    day, rolled from its biome's climate on a stream of its own per day (logic/weather.js weatherPick).
-   Numbering: the map's nodes are 0..n-1, row by row, west to east (run.path, a node's `to`, the seeds); the run's world
+   Numbering: the map's nodes are 0..n-1, row by row, lane by lane (run.path, a node's `to`, the seeds); the run's world
    puts Copperleaf first, so map node i is world node i + 1 (saveData.trip.node, run.forecast).
    Logic only: no DOM, runs in Node (tools/test/run-map.test.mjs). It reads no game data: every table comes in as an
    argument, so the data check can use it too. */
@@ -136,33 +138,38 @@ export const runNext = (map, i) => map.nodes[i].to.slice();
 export const runBack = (map, i) => map.nodes.flatMap((n, j) => (n.to.includes(i) ? [j] : []));
 /** where links meet a side of a scene: one in the middle, two at a quarter and three quarters (56 m apart on a 112 m
  * run scene; the seam rules want 44 m) */
-export const RUN_EXIT_T = [[], [0.5], [0.25, 0.75]];
+export const RUN_EXIT_T = [
+  [],
+  [0.5],
+  [0.15625, 0.84375],
+]; /* 10 m and 54 m along a 64 m edge: whole metres, 44 m apart */
 /** a node's exits, west to east: north to the nodes it leads to, south to the ones that lead to it
  * @param {RunMap} map @param {number} i
- * @returns {{ north: { to: number, t: number }[], south: { from: number, t: number }[] }} */
+ * @returns {{ ahead: { to: number, t: number }[], back: { from: number, t: number }[] }} */
 export function runExits(map, i) {
   const byLane = (/** @type {number[]} */ js) => js.slice().sort((a, b) => map.nodes[a].lane - map.nodes[b].lane),
     ahead = byLane(runNext(map, i)),
     back = byLane(runBack(map, i));
   if (ahead.length > 2 || back.length > 2) throw new Error(`runExits: node ${i} has more than two links a side`);
   return {
-    north: ahead.map((to, k) => ({ to, t: RUN_EXIT_T[ahead.length][k] })),
-    south: back.map((from, k) => ({ from, t: RUN_EXIT_T[back.length][k] })),
+    ahead: ahead.map((to, k) => ({ to, t: RUN_EXIT_T[ahead.length][k] })),
+    back: back.map((from, k) => ({ from, t: RUN_EXIT_T[back.length][k] })),
   };
 }
-/** where a run's map sits on the bowl: its rows from the rim (the landing) towards the centre (the boss), on the
- * bowl's south side, two lanes a fixed distance apart (in bowl radii) */
-export const RUN_BOWL = { a: 270, outer: 0.94, inner: 0.12, lane: 0.07 };
+/** where a run's map sits on the bowl: its rows clockwise (westward) along an arc at radius r, centred on angle a
+ * (the bowl's south side) and `span` degrees long, from the landing in the south-east to the boss in the south-west;
+ * two lanes a fixed distance apart across it (in bowl radii), lane 0 outermost */
+export const RUN_BOWL = { a: 270, span: 120, r: 0.62, lane: 0.07 };
 /** a node's spot on the bowl ({a, r} as locations.json "bowl"), worked out from its row and lane, never stored
  * @param {RunMap} map @param {number} i @returns {{ a: number, r: number }} */
 export function runSpot(map, i) {
   const node = map.nodes[i],
     rows = 1 + Math.max(...map.nodes.map(n => n.row)),
     width = map.nodes.filter(n => n.row === node.row).length,
-    r = rows > 1 ? RUN_BOWL.outer - (node.row * (RUN_BOWL.outer - RUN_BOWL.inner)) / (rows - 1) : RUN_BOWL.outer,
+    a = rows > 1 ? RUN_BOWL.a + RUN_BOWL.span / 2 - (node.row * RUN_BOWL.span) / (rows - 1) : RUN_BOWL.a,
     side = (node.lane - (width - 1) / 2) * RUN_BOWL.lane;
-  /* lanes `lane` apart in a straight line: half of it either side of the middle, on the row's circle */
-  return { a: RUN_BOWL.a + (Math.asin(side / r) * 180) / Math.PI, r };
+  /* lanes `lane` apart across the arc: half of it either side of its circle, the higher lane nearer the centre */
+  return { a, r: RUN_BOWL.r - side };
 }
 /** the run's world node of a map node (Copperleaf is world node 0) @param {number} i */
 export const runWorldNode = i => i + 1;

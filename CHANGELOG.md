@@ -9,6 +9,18 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- Runs go east to west: you enter each place on a run from the east and the way on is to the west, and on the world
+  map the run is an arc across the south of the bowl, from the south-east to the south-west. A run started before
+  this is left (its places were laid out the other way).
+- Mountains and mountain trails (terrain TR-2a, TR-2b), in the Studio's map generator and in a test run from the debug
+  menu (Runs, "Mountains"); runs don't use them yet: ridges up to 20 m on the sides you choose, rising in rock shelves
+  and cliffs, kept away from the road, the exits and water, and a footpath that winds up each one in switchbacks, stone
+  steps where it's steep, to a flat summit (most about 11 m up, the highest 15-19 m). The debug log says whether a run
+  has mountains and how many triangles the ground has, for measuring them on a phone.
+- Ledges (terrain TR-2c), in the map generator and the debug menu's test run ("Mountains and ledges"): terrace edges
+  facing you become ledges you hop down but can't climb, with stone stairs here and there to get back up, so a raised
+  shelf runs beside the road like a second lane; no ledge ever drops you somewhere you can't get out of. Far corners
+  and raised shelves get marked spots for things to find later.
 - Runs are playable (roguelite track RL-8): the airship at Copperleaf's mast takes your team on a run. You land on
   day 1 and walk the run's places: wild battles, towns where the clinic charges $60 a hurt Billie and the shop sells
   the day's stock, two mini-bosses (leaders, in double battles, who block the way on until beaten) and the boss (a
