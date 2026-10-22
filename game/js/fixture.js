@@ -23,16 +23,16 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { provide } from './hooks.js';
-import { LOCATIONS, RELICS, RULES, SPECIES, START_NODE, TRAINERS } from './game-data.js';
+import { LOCATIONS, RELICS, RULES, SPECIES, START_NODE, TRAINERS, UNLOCK_DATA } from './game-data.js';
 import { makeBilly } from './logic/rules.js';
 import { applyUiTheme } from './theme-sheet.js';
-import { runBegin } from './logic/run-state.js';
-import { runArrive, runMapStart } from './logic/run-map.js';
-import { MAPGEN_VERSION } from './logic/mapgen.js';
+import { runArrive } from './logic/run-map.js';
 import { RUN_MOD_MOUNTAINS } from './logic/run-scenes.js';
 import { relicOfferMake } from './logic/relics.js';
 import { newSave } from './logic/saves.js';
 import { startTrainer } from './logic/battle-engine.js';
+import { runUnlocks } from './logic/unlocks.js';
+import { runStartOn, runStartPlan } from './logic/run-start.js';
 import { FIXTURE, saveData, setSaveData, uiState } from './game-state.js';
 import { LOOK_PRESETS, cleanLook } from './person-art.js';
 import { applyPreferences } from './settings-screen.js';
@@ -120,10 +120,14 @@ function fixtureSave() {
      world goes in at boot (run-world.js) */
   if (FIXTURE === 'run' || FIXTURE === 'mountains' || FIXTURE === 'relics') {
     const data = runWorldData();
-    /* RL-9b: one Billie from home at Bracket I, the lead (the second stays in Copperleaf) */
-    runBegin(s, { seed: FIXTURE_RUN_SEED, tier: 1, mapgenV: MAPGEN_VERSION, se: RULES.start.se, home: [lead.uid] });
-    if (FIXTURE === 'mountains') s.run.mods = [RUN_MOD_MOUNTAINS];
-    runMapStart(s.run, data);
+    /* RL-9b: one Billie from home at Bracket I, the lead (the second stays in Copperleaf). Studio plan T2.1: started
+       as the mast starts a run (logic/run-start.js), with a fresh save's unlocks (none: no ridge or autumn) */
+    const plan = runStartPlan(
+      FIXTURE_RUN_SEED,
+      { ...data, unlockData: UNLOCK_DATA },
+      { unlocks: runUnlocks(s, UNLOCK_DATA), mods: FIXTURE === 'mountains' ? [RUN_MOD_MOUNTAINS] : [] }
+    );
+    runStartOn(s, plan, { home: [lead.uid] });
     runArrive(s, 0, data);
     s.run.at.phase = 'walk';
     s.visited[s.trip.node] = 1;

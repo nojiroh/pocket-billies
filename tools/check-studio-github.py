@@ -34,7 +34,7 @@ proposal at the end must carry uiTheme.json with it.
     python3 tools/check-studio-github.py --only=drafts   # Studio plan Phase 1 (T1.1): kept drafts, restore, discard
 
 Needs Python 3 and Playwright (tools/requirements-check.txt). About a minute."""
-import json, re, sys, threading, time
+import json, re, subprocess, sys, threading, time
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -1008,6 +1008,237 @@ def studio_test_steps(pg, errs):
     print(f"undo: a map edit's step holds {u['parts']}; its undo kept the other {u['n'] - 1} maps the same objects", flush=True)
 
 
+# Studio plan T2.2: the same seed's run as the game's own start makes it in Node (tools/test/setup-real.mjs, the
+# logic on the game's data), each node as type:biome, with no unlocks and with all of them
+RUN_LAB_NODE = """import { GAME_DATA as D, modules } from './tools/test/setup-real.mjs';
+const U = { unlocks: D.unlocks, buildings: D.buildings }, out = {};
+for (const [k, ids] of [['none', []], ['all', Object.keys(D.unlocks)]]) {
+  const un = modules.unlocks.runUnlocks({ meta: { unlocks: Object.fromEntries(ids.map(i => [i, 1])) } }, U);
+  const p = modules['run-start'].runStartPlan('LABCHECK7', { nodeTypes: D.nodeTypes, biomes: D.biomes, rules: D.rules.run, unlockData: U }, { unlocks: un });
+  out[k] = p.map.nodes.map(n => n.type + ':' + n.biome);
+}
+/* T2.4: what the logic worker's panel must show: runPreview with no unlocks, for the first mini-boss and town */
+const P = modules['run-preview'].runPreview('LABCHECK7', { unlocks: [] }),
+  at = t => P.map.nodes.findIndex(n => n.type === t),
+  g = at('miniboss'), w = at('town'), F = P.nodes[g].foe;
+out.preview = {
+  guard: { i: g, foe: [F.from, F.team.map(e => e.sp + '@' + e.lvl).join(',')], wild: P.nodes[g].wild.list.map(e => e.join(':')).join(',') },
+  town: { i: w, shop: P.nodes[w].shop.map(S => [S.day, S.stock.map(x => x.item || 'coin:' + x.coin).join(','), S.relic]) },
+  offers: P.relicOffers.map(o => o.join(',')),
+};
+console.log(JSON.stringify(out));"""
+
+
+def run_lab_steps(pg, errs):
+    """Studio plan T2.2: the Run Lab draws the game's own run start. A typed seed's map equals, node for node, the one
+    the game's logic makes in Node on the same data, with no unlocks and with all; an edit elsewhere (nodeTypes) redraws
+    it within 100 ms; a node's click shows its seed; beside the loaded data shows the loaded map too."""
+    n = len(errs)
+    tree = ROOT if (ROOT / 'tools/test/setup-real.mjs').is_file() else REPO  # the served tree's data, when it has the loader
+    r = subprocess.run(['node', '--input-type=module', '-e', RUN_LAB_NODE], cwd=tree, capture_output=True, text=True)
+    try: want = json.loads(r.stdout.strip().splitlines()[-1])
+    except Exception: errs.append(f'run lab: the Node run start failed: {r.stderr[-400:]}'); return
+    pg.evaluate("void openSection('runlab')")
+    pg.wait_for_selector('#rlSeed', timeout=20000)
+    got = lambda: pg.evaluate("[...(document.querySelector('#main .rl-map')||{querySelectorAll:()=>[]}).querySelectorAll('.rl-node')].map(g=>g.dataset.type+':'+g.dataset.biome)")
+    def settle(before):
+        t0 = time.time()
+        while time.time() - t0 < 5 and got() == before: time.sleep(0.05)
+        return got()
+    first = got()
+    pg.fill('#rlSeed', 'LABCHECK7')
+    none = settle(first)
+    if none != want['none']: errs.append(f"run lab: seed LABCHECK7 with no unlocks drew {none}, the game's start makes {want['none']}")
+    pg.select_option('#rlUnlocks', 'all')
+    every = settle(none) if want['all'] != want['none'] else got()
+    if every != want['all']: errs.append(f"run lab: with all unlocks it drew {every}, the game's start makes {want['all']}")
+    # an edit made elsewhere (a field of another section) redraws the map: no route weight, so no routes
+    ms = pg.evaluate("""(async()=>{const T=studioState.D.nodeTypes,was=T.route.weight;T.route.weight=0;
+      const f=document.createElement('input');f.dataset.p='nodeTypes.route.weight';document.body.appendChild(f);
+      const before=document.querySelector('#main .rl-figures').textContent,t0=performance.now();
+      f.dispatchEvent(new Event('input',{bubbles:true}));
+      while(document.querySelector('#main .rl-figures').textContent===before&&performance.now()-t0<2000)await new Promise(r=>setTimeout(r,5));
+      const ms=performance.now()-t0;window.__rlRoutes=document.querySelectorAll('#main .rl-map .rl-node[data-type=route]').length;
+      T.route.weight=was;f.dispatchEvent(new Event('input',{bubbles:true}));f.remove();return ms})()""")
+    routes = pg.evaluate('window.__rlRoutes')
+    if ms > 100 or routes: errs.append(f'run lab: a nodeTypes edit (no route weight) redrew in {ms:.0f} ms with {routes} routes (want under 100 ms and none)')
+    time.sleep(0.2)
+    pg.click('#main .rl-node[data-i="3"]')
+    info = pg.evaluate("(document.querySelector('#main .rl-node-info')||{}).textContent||''")
+    if 'LABCHECK7|n3' not in info: errs.append(f'run lab: clicking node 3 did not show its seed ({info[:120]!r})')
+    pg.check('#rlBeside')
+    t0 = time.time()
+    while time.time() - t0 < 5 and pg.evaluate("document.querySelectorAll('#main .rl-map').length") < 2: time.sleep(0.05)
+    if pg.evaluate("document.querySelectorAll('#main .rl-map').length") != 2: errs.append('run lab: beside the loaded data did not draw a second map')
+    pg.uncheck('#rlBeside')
+    # T2.6: a debug log's run carries its own unlocks; an older log only the save's
+    read = pg.evaluate("""[runLabReadLog(JSON.stringify({state:{run:{seed:'LOGSEED',unlocks:['biome_ridge'],nodes:12},meta:{unlocks:['biome_ridge','shop_appeal']}}})),
+      runLabReadLog(JSON.stringify({state:{run:{seed:'OLDLOG',nodes:12},meta:{unlocks:['shop_appeal']}}}))]""")
+    if [read[0]['unlocks'], read[0]['own'], read[1]['unlocks'], read[1]['own']] != [['biome_ridge'], True, ['shop_appeal'], False]:
+        errs.append(f'a debug log read for the run’s own unlocks gave {read}')
+    logic = run_lab_logic_steps(pg, errs, want)
+    rules = run_lab_rules_steps(pg, errs)
+    sweep = run_lab_sweep_steps(pg, errs)
+    play = run_lab_play_steps(pg, errs)
+    if len(errs) > n: errs[n:] = [f'run lab: {e}' if not e.startswith('run lab') else e for e in errs[n:]]
+    else: print(f"run lab: LABCHECK7 drawn as the game makes it ({len(want['none'])} places, no unlocks and all), a nodeTypes edit redrawn in {ms:.0f} ms, node 3's seed, beside the loaded data; {logic}; {rules}; {sweep}; {play}", flush=True)
+
+
+def run_lab_sweep_steps(pg, errs):
+    """Studio plan T2.3: the map checks over 1,000 seeds under the map: none on the game's rules; a planted bad rule
+    (the last row a mini-boss) is named with a seed, and its button opens that seed."""
+    ready = "(()=>{const e=document.querySelector('#main [data-runlab-sweep][data-ready]');return e?+e.dataset.problems:-1})()"
+    t0 = time.time()
+    while time.time() - t0 < 30 and pg.evaluate(ready) < 0: time.sleep(0.05)
+    if pg.evaluate(ready) != 0:
+        said = pg.evaluate("(document.querySelector('#main [data-runlab-sweep]')||{}).textContent||''")
+        errs.append(f"the seed sweep on the game's rules: {pg.evaluate(ready)} problem(s) ({said[:200]})"); return 'no sweep'
+    ratio = pg.evaluate("document.querySelector('#main [data-runlab-sweep] [data-ratio]').dataset.ratio")
+    pg.select_option('#main .rl-rules [data-p="rules.run.map.last"]', 'miniboss')
+    t0 = time.time()
+    while time.time() - t0 < 30 and pg.evaluate(ready) < 1: time.sleep(0.05)
+    seed = pg.evaluate("(document.querySelector('#main .rl-sweep-problems li')||{dataset:{}}).dataset.seed||''")
+    text = pg.evaluate("(document.querySelector('#main .rl-sweep-problems li')||{}).textContent||''")
+    if not seed or 'not the boss' not in text: errs.append(f'the last row a mini-boss: the sweep said {text[:160]!r}')
+    else:
+        pg.click(f'#main .rl-sweep-problems [data-act=runLabOpenSeed][data-seed="{seed}"]')
+        if pg.input_value('#rlSeed') != seed: errs.append(f"the sweep's Open {seed} left the seed at {pg.input_value('#rlSeed')}")
+    pg.select_option('#main .rl-rules [data-p="rules.run.map.last"]', 'boss')
+    t0 = time.time()
+    while time.time() - t0 < 30 and pg.evaluate(ready) != 0: time.sleep(0.05)
+    return f"1,000 seeds checked with no problems (towns : routes {ratio}); the last row a mini-boss named with {seed}, which opens"
+
+
+def run_lab_play_steps(pg, errs):
+    """Studio plan T2.6: "Play this seed" opens the game in a test run on the Lab's seed (short map), after the Studio's
+    unsaved data: its map is the one the Lab draws, an unsaved clinic price (rules.run.healCost) is the run's, an edit
+    made while it runs reaches it, and the live channel carries no save."""
+    if not (ROOT / 'game/data/gamedata.js').is_file(): subprocess.run(['node', 'tools/build-data.mjs'], cwd=ROOT, check=True, capture_output=True)
+    pg.fill('#rlSeed', 'PLAYCHECK1')
+    pg.select_option('#rlUnlocks', 'none')
+    pg.check('#rlShort')
+    t0 = time.time()
+    rows = "(()=>{const m=document.querySelector('#main .rl-map');return m?new Set([...m.querySelectorAll('circle')].map(c=>c.getAttribute('cx'))).size:0})()"
+    while time.time() - t0 < 5 and pg.evaluate(rows) != 5: time.sleep(0.05)
+    lab = pg.evaluate("[...document.querySelector('#main .rl-map').querySelectorAll('.rl-node')].map(g=>g.dataset.type+':'+g.dataset.biome)")
+    was = pg.evaluate('studioState.D.rules.run.healCost')
+    pg.fill('#main .rl-rules [data-p="rules.run.healCost"]', '77')
+    sent = []
+    pg.evaluate("window.__sent=[];const c=new BroadcastChannel('networth-studio');c.onmessage=e=>window.__sent.push(Object.keys((e.data&&e.data.D)||{}).sort().join(','));0")
+    with pg.context.expect_page(timeout=20000) as info: pg.click('#main [data-act=runLabPlay]')
+    gp = info.value
+    gp_errs = []
+    gp.on('pageerror', lambda e: gp_errs.append(str(e)[:300]))
+    try:
+        t0 = time.time()
+        ok = False
+        while time.time() - t0 < 150:
+            try: ok = gp.evaluate("typeof saveData!=='undefined'&&!!saveData.run&&runWorld.seed==='PLAYCHECK1'")
+            except Exception: ok = False
+            if ok: break
+            time.sleep(0.5)
+        if not ok: errs.append(f'Play this seed: no run on PLAYCHECK1 took off in the game ({gp.url})'); return 'no run'
+        got = gp.evaluate("({map: saveData.run.map.nodes.map(n=>n.type+':'+n.biome), test: !!TEST_RUN, heal: RULES.run.healCost, clinic: runClinicEach(), live: !!studioLive.told})")
+        if not got['test']: errs.append('Play this seed: the game is not in a test run')
+        if got['map'] != lab: errs.append(f"Play this seed: the game's map {got['map']} isn't the Lab's {lab}")
+        if got['heal'] != 77 or got['clinic'] != 77: errs.append(f"Play this seed: the unsaved clinic price 77 isn't the run's (rules {got['heal']}, the clinic {got['clinic']}; Studio data came: {got['live']})")
+        pg.fill('#main .rl-rules [data-p="rules.run.healCost"]', '88')
+        t0 = time.time()
+        while time.time() - t0 < 5 and gp.evaluate('RULES.run.healCost') != 88: time.sleep(0.1)
+        if gp.evaluate('runClinicEach()') != 88: errs.append('Play this seed: a clinic price edited while the run goes did not reach it')
+        keys = set(','.join(pg.evaluate('window.__sent')).split(','))
+        if keys & {'saveData', 'save', 'meta', 'team', 'run'}: errs.append(f'the live channel carried save fields: {sorted(keys)}')
+        if not {'rules', 'nodeTypes', 'relics', 'unlocks', 'items', 'trainers'} <= keys: errs.append(f'the live channel did not carry the run data: {sorted(keys)}')
+        for e in gp_errs: errs.append(f'Play this seed: the game: {e}')
+    finally:
+        gp.close()
+        pg.fill('#main .rl-rules [data-p="rules.run.healCost"]', str(was))
+        pg.uncheck('#rlShort')
+    return f"Play this seed opened PLAYCHECK1 in a test run with the Lab's {len(lab)} places, the unsaved clinic price 77 and a live edit to 88"
+
+
+def run_lab_rules_steps(pg, errs):
+    """Studio plan T2.5: the run rules card. Typing in a field redraws the map (rows), the edit is in what Propose would
+    send (rules.json, nodeTypes.json), the shop's always-stocked box edits the list, a value the game can't lay out
+    shows its error beside the map, every rule in code finds its line, and putting the values back leaves nothing to
+    propose in those files."""
+    rows_drawn = lambda: pg.evaluate("(()=>{const m=document.querySelector('#main .rl-map');if(!m)return 0;return new Set([...m.querySelectorAll('.rl-node circle')].map(c=>c.getAttribute('cx'))).size})()")
+    pending = lambda: pg.evaluate("changedDataFiles(studioState.D).map(f=>f.path).filter(p=>/rules\\.json$|nodeTypes\\.json$/.test(p)).sort()")
+    if not pg.locator('#main .rl-rules').count(): errs.append('no run rules card'); return 'no rules card'
+    was = pg.evaluate('studioState.D.rules.run.map.rows')
+    before = rows_drawn()
+    pg.fill('#main .rl-rules [data-p="rules.run.map.rows"]', '7')
+    t0 = time.time()
+    while time.time() - t0 < 5 and rows_drawn() == before: time.sleep(0.05)
+    drawn = rows_drawn()
+    if drawn != 7: errs.append(f'rows 7 typed in the rules card: the map has {drawn} rows')
+    if pg.evaluate('studioState.D.rules.run.map.rows') != 7: errs.append('the rows field did not write rules.run.map.rows')
+    name_was = pg.evaluate('studioState.D.nodeTypes.town.name')
+    pg.fill('#main .rl-rules [data-p="nodeTypes.town.name"]', 'Market')
+    pg.evaluate("document.querySelector('#main .rl-rules [data-rl-always=\"taxbreak\"]').click()")
+    sent = pending()
+    rules_text = pg.evaluate("(changedDataFiles(studioState.D).find(f=>/rules\\.json$/.test(f.path))||{}).text||''")
+    if not any(p.endswith('rules.json') for p in sent) or not any(p.endswith('nodeTypes.json') for p in sent): errs.append(f'Propose would send {sent}, not rules.json and nodeTypes.json')
+    elif '"rows": 7' not in rules_text.replace('"rows":7', '"rows": 7'): errs.append('the proposed rules.json does not hold rows 7')
+    if 'taxbreak' in pg.evaluate('studioState.D.rules.run.shop.always'): errs.append('unticking the Potion left it always on the shelves')
+    # a value the map can't lay out (more mini-bosses than rows hold): the game's own error beside the map
+    pg.fill('#main .rl-rules [data-p="rules.run.map.minibosses"]', '6')
+    t0 = time.time()
+    while time.time() - t0 < 5 and not pg.locator('#main .rl-error').count(): time.sleep(0.05)
+    if not pg.locator('#main .rl-error').count(): errs.append('6 mini-bosses on 7 rows drew a map, not the game’s error')
+    mb = pg.evaluate('studioState.loaded.rules.run.map.minibosses')
+    pg.fill('#main .rl-rules [data-p="rules.run.map.minibosses"]', str(mb))
+    pg.fill('#main .rl-rules [data-p="rules.run.map.rows"]', str(was))
+    pg.fill('#main .rl-rules [data-p="nodeTypes.town.name"]', name_was)
+    pg.evaluate("document.querySelector('#main .rl-rules [data-rl-always=\"taxbreak\"]').click()")
+    left = pending()
+    if left: errs.append(f'every rules card value put back, Propose would still send {left}')
+    t0 = time.time()
+    while time.time() - t0 < 10 and pg.evaluate("[...document.querySelectorAll('#main [data-rl-code]')].some(e=>!e.dataset.line)"): time.sleep(0.1)
+    lines = pg.evaluate("[...document.querySelectorAll('#main [data-rl-code]')].map(e=>e.textContent)")
+    if not lines or any(l.endswith(':?') or ':' not in l for l in lines): errs.append(f'the rules in code did not all find their line: {lines}')
+    return f"the rules card: rows 7 redrawn, proposed in rules.json and nodeTypes.json, the game's error for 6 mini-bosses, put back with nothing left to send, {len(lines)} rules in code with their lines ({lines[0] if lines else ''})"
+
+
+def run_lab_logic_steps(pg, errs, want):
+    """Studio plan T2.4: the node panel's part from the game's logic, worked out in the Studio's logic worker on the
+    data as it is now, equals runPreview in Node for the same seed: a mini-boss's leader and team, a town's stock and
+    Loophole on each day, the Loophole picks. One worker per data version: another click asks the same worker; an
+    edit makes a new one."""
+    P = want['preview']
+    pg.select_option('#rlUnlocks', 'none')
+    def panel(i):
+        pg.click(f'#main .rl-node[data-i="{i}"]')
+        t0 = time.time()
+        while time.time() - t0 < 30 and not pg.evaluate(f"!!document.querySelector('#main [data-runlab-logic][data-ready=LABCHECK7] .rl-logic-node[data-node=\"{i}\"]')"): time.sleep(0.05)
+        return pg.evaluate("""i=>{const el=document.querySelector('#main [data-runlab-logic]');const t=el&&el.querySelector('.rl-logic-node[data-node="'+i+'"]');
+          if(!t)return {err:(el||{}).textContent||'no panel'};const f=t.querySelector('[data-foe]');
+          return {ms:+el.dataset.ms,foe:f?[f.dataset.foe,f.dataset.team]:null,wild:(t.querySelector('[data-wild]')||{dataset:{}}).dataset.wild||'',
+            shop:[...t.querySelectorAll('[data-day]')].map(r=>[+r.dataset.day,r.dataset.stock,r.dataset.relic]),
+            offers:[...el.querySelectorAll('[data-offer]')].map(o=>o.dataset.offer)}}""", i)
+    boss = panel(P['guard']['i'])
+    if 'err' in boss: errs.append(f"the logic panel for mini-boss node {P['guard']['i']} never came: {boss['err'][:200]}"); return 'no logic panel'
+    if boss['foe'] != P['guard']['foe']: errs.append(f"mini-boss node {P['guard']['i']}: the panel shows {boss['foe']}, runPreview in Node {P['guard']['foe']}")
+    if boss['wild'] != P['guard']['wild']: errs.append(f"mini-boss node {P['guard']['i']}: wild {boss['wild']!r}, Node {P['guard']['wild']!r}")
+    if boss['offers'] != P['offers']: errs.append(f"the Loophole picks: the panel shows {boss['offers']}, Node {P['offers']}")
+    made = pg.evaluate('logicWorker.made')
+    town = panel(P['town']['i'])
+    if 'err' in town: errs.append(f"the logic panel for town node {P['town']['i']} never came: {town['err'][:200]}"); return 'no logic panel'
+    if town['shop'] != P['town']['shop']: errs.append(f"town node {P['town']['i']}: the panel's shop {town['shop']}, Node {P['town']['shop']}")
+    if pg.evaluate('logicWorker.made') != made: errs.append('a second click on the same data made a new logic worker')
+    # an edit: a new worker on the new data, and the panel follows it (the town's first day sells no Potion)
+    pg.evaluate("studioState.D.rules.run.shop.always=studioState.D.rules.run.shop.always.filter(w=>w!=='taxbreak');"
+                "document.querySelector('#main [data-runlab-logic]').removeAttribute('data-ready');runLabRedraw()")
+    t0 = time.time()
+    while time.time() - t0 < 30 and not pg.evaluate("!!document.querySelector('#main [data-runlab-logic][data-ready]')"): time.sleep(0.05)
+    stock = pg.evaluate("[...document.querySelectorAll('#main [data-runlab-logic] [data-day]')].map(r=>r.dataset.stock)")
+    more = pg.evaluate('logicWorker.made') - made
+    pg.evaluate("studioState.D.rules.run.shop.always.push('taxbreak');runLabRedraw()")
+    if more != 1: errs.append(f"an edit made {more} new logic workers (want 1)")
+    if not stock or any('taxbreak' in s.split(',') for s in stock): errs.append(f'after taking the Potion off the shop rules the panel still sells it: {stock}')
+    return f"the logic worker's panel equals runPreview (mini-boss {boss['foe'][0] if boss['foe'] else '?'}, a town's {len(town['shop'])} days, {len(P['offers'])} picks; {boss['ms']} ms), one worker per data version"
+
+
 # the steps after sign-in, in order (--only picks some by name; 'sections' and 'art' are the two blocks in main)
 STEPS = [
     ('story', story_steps),
@@ -1024,6 +1255,7 @@ STEPS = [
     ('ui_tools', ui_tools_steps),
     ('ui_screens', ui_screens_steps),
     ('studio_test', studio_test_steps),
+    ('run_lab', run_lab_steps),
 ]
 
 

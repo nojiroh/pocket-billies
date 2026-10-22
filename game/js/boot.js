@@ -7,10 +7,22 @@
 import { expose } from './test-globals.js';
 import { provide } from './hooks.js';
 import { TEST_BOOT } from './test-boot.js';
-import { DATA_WARN, LOCATIONS, RULES, SPECIES, START_NODE, gameData, worldExtraMaps } from './game-data.js';
+import {
+  DATA_WARN,
+  LOCATIONS,
+  RELICS,
+  RULES,
+  SPECIES,
+  START_NODE,
+  UNLOCKS,
+  gameData,
+  worldExtraMaps,
+} from './game-data.js';
+import { makeBilly } from './logic/rules.js';
 import { applyUiTheme } from './theme-sheet.js';
 import { SAVE_NEW_MSG, SAVE_OLD_MSG, newSave } from './logic/saves.js';
 import { battleStageKey } from './logic/battle-engine.js';
+import { RUN_TEST_SHORT, runTestOf } from './logic/run-test.js';
 import { storySwitches, storySwitchesOf } from './logic/story-checks.js';
 import { applyStoryPreset } from './logic/script.js';
 import { loadAllMaps, loadMapsAhead, watchMapsAhead } from './map-files.js';
@@ -39,7 +51,7 @@ import { cutsceneStart, cutsceneWanted } from './cutscene/opening.js';
 import { titleMount, titleScreen, titleStart, titleWanted } from './title.js';
 import { loreLoadingLines } from './lore.js';
 import { runWorld, runWorldSync } from './run-world.js';
-import { runResume } from './run.js';
+import { runResume, runTakeOff } from './run.js';
 import { labMilestones } from './lab-board.js';
 import { initAccount } from './account.js';
 import { notice, renderOverlay, toast } from './overlay.js';
@@ -77,6 +89,7 @@ expose({
   mountLoaderTown: [() => mountLoaderTown, v => (mountLoaderTown = v)],
   noWebGL: [() => noWebGL, v => ((noWebGL = v), provide({ noWebGL }))],
   preloadAll: [() => preloadAll, v => (preloadAll = v)],
+  runTestStart: [() => runTestStart, v => (runTestStart = v)],
   studioChannel: [() => studioChannel, v => (studioChannel = v)],
   studioDraftReady: [() => studioDraftReady, v => (studioDraftReady = v)],
   studioLive: [() => studioLive, v => (studioLive = v)],
@@ -746,13 +759,16 @@ function loaderHide() {
    point in the story (story.json presets), alone or with ?test=1. S3, the Studio's Play from here: &place=<location>
    starts you in the real place (its people, trainers and exits; not the scene alone), &at=x,z on that spot,
    &flags=a,!b,beat:chad switches flags and trainers on top of the preset, and &draft=1 waits for the open Studio's
-   unsaved data (2 s at most) before starting. */
+   unsaved data (2 s at most) before starting. Studio plan T2.6, "Play this seed": ?debug&run=<seed> (logic/run-test.js:
+   the unlocks, short map, party and Loopholes) is a test run that takes off at once on that seed (runTestStart). */
 const TEST_RUN = (() => {
   try {
     const q = new URLSearchParams(location.search),
-      at = (q.get('at') || '').split(',').map(Number);
-    return q.get('test') || q.get('story')
+      at = (q.get('at') || '').split(',').map(Number),
+      run = runTestOf(q, { species: SPECIES, unlocks: UNLOCKS, relics: RELICS, cap: RULES.run.relics.cap });
+    return q.get('test') || q.get('story') || run
       ? {
+          run,
           scene: q.get('scene'),
           story: q.get('story'),
           place: q.get('place'),
@@ -773,6 +789,7 @@ if (TEST_RUN) {
 }
 function studioTestStart() {
   if (!TEST_RUN) return;
+  if (TEST_RUN.run) return runTestStart(TEST_RUN.run);
   uiState.pg = 'girl';
   startGame((RULES.start.starters || [])[0]);
   saveData.story = { met_chad: 1, met_chad2: 1 };
@@ -807,6 +824,33 @@ function studioTestStart() {
         : '';
   toast(
     `Test run${preset ? ' at ' + TEST_RUN.story : ''}${where ? ' in ' + where : ''}${TEST_RUN.draft ? (studioLive.told ? ' with your Studio edits' : ' (the Studio’s edits didn’t come: saved data)') : ''}. Nothing here is saved.`
+  );
+}
+/** Studio plan T2.6, "Play this seed": a new game (the party asked for, else the first starter) with the unlocks asked
+ * for takes off from the mast at once on the seed, through runTakeOff as the mast does (logic/run-start.js), every
+ * Billie in the party flying; then the Loopholes asked for are held. A test run: nothing is saved, no account
+ * @param {NonNullable<ReturnType<typeof runTestOf>>} R */
+function runTestStart(R) {
+  uiState.pg = 'girl';
+  startGame((RULES.start.starters || [])[0]);
+  const s = saveData;
+  s.story = { met_chad: 1, met_chad2: 1 };
+  if (R.party.length) {
+    s.team = R.party.map(p => makeBilly(p.sp, p.lv));
+    s.buddy = s.team[0].uid;
+    for (const m of s.team) s.caught[m.sp] = s.seen[m.sp] = 1;
+  }
+  for (const id of R.unlocks) s.meta.unlocks[id] = 1;
+  uiState.modal = null;
+  uiState.mq = [];
+  runTakeOff(R.seed, R.short ? RUN_TEST_SHORT : undefined, [], {
+    home: s.team.map(m => m.uid),
+    pack: { items: {}, coins: {} },
+  });
+  if (!saveData.run) return toast(`Test run: seed ${R.seed} couldn’t take off with this data.`);
+  if (R.relics.length) saveData.run.relics = R.relics.slice();
+  toast(
+    `Test run on seed ${R.seed}${R.short ? ', short map' : ''}${TEST_RUN.draft ? (studioLive.told ? ', with your Studio edits' : ' (the Studio’s edits didn’t come: saved data)') : ''}${R.left.length ? `. Left out: ${R.left.join(', ')}` : ''}. Nothing here is saved.`
   );
 }
 /* &draft=1: the open Studio's unsaved data first (it answers hello), 2 s at most */
@@ -848,8 +892,13 @@ function studioLive(D) {
     gameData.uiTheme = D.uiTheme;
     applyUiTheme(D.uiTheme);
   }
-  /* Project Story S3: the story and the trainers, in place (STORY_DATA and TRAINERS are these objects) */
-  for (const k of ['story', 'trainers'])
+  /* Project Story S3: the story and the trainers, in place (STORY_DATA and TRAINERS are these objects). Studio plan
+     T2.6: in a test run (never a player's game, which would save what draft rules gave) also what a run is made of,
+     before a Play this seed run takes off (&draft=1) and while it goes: RULES, NODE_TYPES, RELICS, UNLOCKS and ITEMS
+     are these objects too, so a clinic's price or a shop's wares follow an unsaved edit */
+  for (const k of TEST_RUN
+    ? ['story', 'trainers', 'rules', 'nodeTypes', 'relics', 'unlocks', 'items']
+    : ['story', 'trainers'])
     if (D[k] && gameData[k]) {
       for (const x of Object.keys(gameData[k])) delete gameData[k][x];
       Object.assign(gameData[k], D[k]);
