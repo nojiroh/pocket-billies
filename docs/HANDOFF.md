@@ -32,6 +32,13 @@ data-editors.js and the person schema, and merges (never rebases) before every p
 11. Local mode dropped: `check-quick.py --studio` and the remaining start-studio.py text go.
 12. Docs: STUDIO.md, TESTING.md, CHANGELOG, the plan's Decisions, this entry.
 
+**Status for the parent session: `game/js/logic/data-checks.js` has the moved checks and is pushed** (step 3 above,
+commit "Move: check-data's run, ranch, ..."). Phase 4 (content editors) can start on it: each family is
+`dataX(D, valid?)` returning `[file, message]` pairs (dataRunPayout, dataRanchRules, dataRunMapRules, dataRunClock,
+dataRunScene, dataRunLoop, dataRobots, dataUiTheme, dataBiomes, dataNodeTypes, dataRelics, dataCurrencies,
+dataBuildings, dataUnlocks, dataBattleRules; dataRobotProblems for a trainer's robot). The later steps here add
+families (scenes, roads) and change some words (fx.stat, currencies), not the shape.
+
 ### Studio plan Phase 1, session A - Local drafts (T1.1) and hygiene (T1.6) - 2026-10-22
 Branch `ccr-81011a25-lf3exv`, on top of Phase 0 (PR #131, not merged yet). Approved in Plan Mode with Phase 1 split
 over four sessions: **A** T1.1 + T1.6 (this one); **B** T1.2 undo per file + T1.5 the F14 hunt; **C** T1.3 part 1 (move
