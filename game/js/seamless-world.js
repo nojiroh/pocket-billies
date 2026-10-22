@@ -1731,6 +1731,20 @@ export function shiftWalkView(id, dx, dz) {
       walkRenderer.camT[0] += dx;
       walkRenderer.camT[1] += dz;
     }
+    /* CAM-1: the follow's last targets and the goals' aim points move with the world (its look-ahead and speeds are
+       relative), and so does where you were last frame, so the shift isn't read as a step */
+    const F = walkRenderer.fol;
+    if (F) {
+      if (F.tg[0] != null) F.tg[0] += dx;
+      if (F.tg[1] != null) F.tg[1] += dz;
+      for (const g of Object.values(F.last)) if (g.at) g.at = [g.at[0] + dx, g.at[1] + dz];
+    }
+    if (walkRenderer.px != null) walkRenderer.px += dx;
+    if (walkRenderer.pz != null) walkRenderer.pz += dz;
+    if (walkRenderer.swoop) {
+      walkRenderer.swoop.x += dx;
+      walkRenderer.swoop.z += dz;
+    }
     if (walkRenderer.focusT) {
       walkRenderer.focusT.x += dx;
       walkRenderer.focusT.z += dz;
