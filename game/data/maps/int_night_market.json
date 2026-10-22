@@ -20,8 +20,8 @@
   "Blake bought the last three of everything. Twice."
  ],
  "look": {
-  "color": {"exposure":1.12},
-  "sun": {"height":82,"angle":60,"strength":0.85,"ambient":1.75,"clouds":0,"cloudShadows":0,"shafts":0},
+  "color": {"exposure":1},
+  "sun": {"height":82,"angle":60,"strength":0.85,"ambient":0.5,"clouds":0,"cloudShadows":0,"shafts":0},
   "shadows": {"strength":0.35,"softness":2.2},
   "lights": {"brightness":1.25,"windowsDay":0.6},
   "air": {"mist":0}
