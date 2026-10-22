@@ -663,6 +663,11 @@ export function dataUnlocks(D, valid = () => true) {
         problem('unlocks.json', `${k}.grant.shop: "${G.shop}" is always stocked (run.shop.always)`);
       if (G.biome && !(G.biome in biomes))
         problem('unlocks.json', `${k}.grant.biome: "${G.biome}" is not in rules.json run.map.biomes`);
+      /* T1.3: a currency it grants is one of currencies.json kept between runs (not a list in the schema) */
+      for (const c of Object.keys(G))
+        if (!['building', 'level', 'shop', 'biome'].includes(c) && D.currencies)
+          if (!(D.currencies[c] && D.currencies[c].kept === 'meta'))
+            problem('unlocks.json', `${k}.grant.${c}: "${c}" is not a currency kept between runs (currencies.json)`);
     }
     for (const [b, Bd] of Object.entries(B))
       for (let n = 2; n <= Bd.levels; n++) {
