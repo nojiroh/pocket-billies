@@ -16,6 +16,7 @@ import {
   MUSIC_CHOICES,
   MUSIC_SCALES,
   chordNumeral,
+  musicFindings,
   musicJingleList,
   musicJingleNotes,
   musicNoteName,
@@ -38,6 +39,7 @@ import {
   studioState,
   writePath,
 } from './studio-app.js';
+import { scheduleCheck } from './check.js';
 import { legacyLoad, legacyView } from './legacy-view.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -47,6 +49,7 @@ expose({
   ROLL_CELL_W: [() => ROLL_CELL_W],
   ROLL_LEFT: [() => ROLL_LEFT],
   ROLL_TOP: [() => ROLL_TOP],
+  musicCheckFindings: [() => musicCheckFindings, v => ((musicCheckFindings = v), provide({ musicCheckFindings }))],
   musicCryCardHTML: [() => musicCryCardHTML, v => ((musicCryCardHTML = v), provide({ musicCryCardHTML }))],
   musicCryPlay: [() => musicCryPlay, v => (musicCryPlay = v)],
   musicCryTidy: [() => musicCryTidy, v => ((musicCryTidy = v), provide({ musicCryTidy }))],
@@ -83,7 +86,7 @@ expose({
   musicYesNoHTML: [() => musicYesNoHTML],
 });
 /* eslint-enable no-func-assign */
-provide({ musicCryCardHTML, musicCryTidy });
+provide({ musicCheckFindings, musicCryCardHTML, musicCryTidy });
 /* to-module: end */
 const musicStudio = {
   /** @type {AudioContext | null} */ ctx: null,
@@ -593,6 +596,41 @@ ACTIONS.musCryReset = d => {
   render();
 };
 
+/* ---------- the Check (studio/js/check.js) ----------
+   the music's errors and warnings (logic/music-studio.js musicFindings, the errors check-data reports too) and one
+   note on the cries. A song only parked places play is not called unused, so the warnings wait for the parked world */
+function musicCheckFindings() {
+  const D = studioState.D,
+    out = [];
+  if (!D.music) return out;
+  if (!legacyView.data && !legacyView.loading && !legacyView.error) legacyLoad().then(() => scheduleCheck());
+  const parked = legacyView.data ? legacyView.data.locations || [] : [];
+  for (const f of musicFindings(D.music, {
+    nodeTypes: D.nodeTypes || {},
+    biomes: D.biomes || {},
+    locations: [...(D.locations || []), ...parked],
+    scriptText: JSON.stringify([D.story, D.trainers, D.cutscenes, legacyView.data ? legacyView.data.trainers : null]),
+  })) {
+    if (f.lvl === 'warn' && !legacyView.data) continue;
+    const sel = f.song
+      ? { musicTab: 'songs', musicSong: f.song }
+      : f.rule != null
+        ? { musicTab: 'where', musicRule: f.rule }
+        : {};
+    out.push({ lvl: f.lvl, msg: `Music: ${f.msg}`, go: f.place ? 'world' : 'music', sel: f.place ? {} : sel });
+  }
+  const species = D.lines.flatMap(L => L.names.map((n, i) => (L.cry || [])[i])),
+    own = species.filter(Boolean).length;
+  if (own < species.length)
+    out.push({
+      lvl: 'info',
+      msg: `Cries: ${species.length - own} of ${species.length} Billies use the cry their id makes. Set one in a Billy’s Cry card (sound track SND-6 gives each its own).`,
+      go: 'billionaires',
+      sel: {},
+    });
+  return out;
+}
+
 /* ---------- the where table ---------- */
 /* a rule's keys as the table edits them: yes/no keys, lists, a row range; an empty choice takes the key away (any) */
 const MUSIC_TABS = ['walk', 'map', 'profile'];
@@ -792,6 +830,16 @@ SECTIONS.music = () => {
       if (sectionShown('music')) render();
     });
   if (musicStudio.tracker) musicStudio.tracker.refresh(musicData().songs);
+  /* the Check's Show me: a where rule to mark and scroll to */
+  if (studioState.sel.musicRule != null) {
+    const r = +studioState.sel.musicRule;
+    delete studioState.sel.musicRule;
+    musicStudio.picked = r;
+    afterRender(() => {
+      const el = document.getElementById('musRule' + r);
+      if (el) el.scrollIntoView({ block: 'center' });
+    });
+  }
   const id = musicSelected(),
     uses = musicUses(),
     u = uses[id] || [];

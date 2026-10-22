@@ -210,6 +210,18 @@ def split_steps(pg, errs):
         for (const i of new Set([...document.querySelectorAll('#main [id]')].map(e => e.id))) (by[i] = by[i] || []).push(k); }
       openSection(keep); return Object.entries(by).filter(([i, ks]) => ks.length > 1).map(([i, ks]) => i + ' in ' + ks.join(', ')); })()""")
     if shared: errs.append('split: sections share ids: ' + '; '.join(shared[:5]))
+    # the Check: none of the music's warnings on the game's data (once the parked world is read, variants is played by a
+    # parked place); a rule naming no song is an error and a song nothing plays a warning, and Show me opens them;
+    # the cries are one note
+    pg.wait_for_function("legacyView.data !== null", timeout=30000)
+    got = pg.evaluate("runCheck().filter(c => c.msg.startsWith('Music:') || c.msg.startsWith('Cries:')).map(c => [c.lvl, c.msg.slice(0, 40)])")
+    if len(got) != 1 or got[0][0] != 'info': errs.append(f'music: the Check on the game data says {got}')
+    pg.evaluate("studioState.D.music.where[2].song = 'nosuch'; studioState.D.music.songs.lonely = {...studioState.D.music.songs.town}")
+    found = pg.evaluate("runCheck().filter(c => c.go === 'music').map(c => [c.lvl, c.sel])")
+    if found != [['error', {'musicTab': 'where', 'musicRule': 2}], ['warn', {'musicTab': 'songs', 'musicSong': 'lonely'}]]: errs.append(f'music: the Check found {found}')
+    pg.evaluate("void openSection('music', {musicTab: 'where', musicRule: 2})")
+    if not pg.evaluate("!!document.querySelector('#musRule2.mus-hit')"): errs.append('music: Show me did not mark the rule')
+    pg.evaluate("studioState.D.music.where[2].song = 'trainer'; delete studioState.D.music.songs.lonely; void render()")
     pg.evaluate("void openSection('billionaires')"); time.sleep(0.3)
     pg.locator('.nav[data-s=moves]').click(modifiers=['Shift']); time.sleep(0.8)
     if pg.evaluate("[studioState.sec, studioState.sec2, document.querySelector('#main2').hidden]") != ['billionaires', 'moves', False]:
@@ -1101,7 +1113,7 @@ def music_steps(pg, errs):
     time.sleep(0.5)
     if pg.evaluate("[musicPlaying(), !!musicStudio.tracker.timer]") != ['', False]: errs.append('music: leaving the section left the song playing')
     if len(errs) > n: errs[n:] = [f'music: {e}' if not e.startswith('music:') else e for e in errs[n:]]
-    else: print('music: town played (context running, bar shown), its tempo and a chord changed while playing and undone, a hook note and a counter note drawn and heard and undone, stopped; the where table: a rule moved, a condition, a rule added, Try a place following, all undone; a jingle played and lengthened and undone; a cry set, heard (and low on health) and emptied; meadow stopped when the section was left', flush=True)
+    else: print('music: town played (context running, bar shown), its tempo and a chord changed while playing and undone, a hook note and a counter note drawn and heard and undone, stopped; the where table: a rule moved, a condition, a rule added, Try a place following, all undone; a jingle played and lengthened and undone; a cry set, heard (and low on health) and emptied; the Check’s music findings and Show me; meadow stopped when the section was left', flush=True)
 
 
 STEPS = [
