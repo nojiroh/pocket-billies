@@ -31,6 +31,8 @@ Lint enforces what it can (see the end). Every old -> new name of phase 05 is in
 | Creatures | `billy`, `billies` (`billyName`, `worldBillies`, `buddyBilly`) | was mon, owm, ow, owmon.js |
 | A Billie's recolour | `coat` (data section `coats`, `COATS`, a Billie's or encounter's `coat` id, logic/coats.js `coat*`) | studio track ST-0, in place of Golden (`gold`); not `variant`: the Variants are a group of people, and props have `variants` |
 | Phase 16 part kits | `partKits` (data section, game/data/partKits.json; a part is a `KitPart`), logic/sheet-slice.js `sheet*` | studio track ST-3; was game/art/next/parts/parts.json. Not `parts`: rules.json `parts` are the part sizes and robots.json `parts` the robot parts |
+| A part slot | `head`, `body`, `front`, `back`, `sig` (rules.json `parts.slots`, lines' `parts`, skeleton-rig.js `boneSlot`); partKits.json adds `headExtra` and `bodyExtra` for the extras (ears, horns, crests; shells, ruffs) | Studio plan T5.5: partKits said `signature`, `head-extra`, `body-extra`. partKits `slots` maps every kind to one (tail, tailfin, spikes, mane, sail -> sig). `boneSlot`'s rules for the hand-drawn rigs' bone names (`mane` -> head, `shell` -> body) are about those rigs and stay |
+| A kit Billie's recipe | `kitBuilds` (game/data/kitBuilds.json: `bake`, `colours`, `forms`), baked by logic/kit-assemble.js `kit*` (tools/bake-kit-billies.mjs) | Studio plan T5.1; was tools/art-source/part-kit/builds.json |
 
 | The world map's look | `worldmap` (data section `worldmap`: `sea`, `relief`, `regions`, `kinds`; a place's `landmark` prop key; Studio `wml*`) | phase 10; the map itself is the bowl (`bowl*` in logic/bowl*.js, `worldBowl*` in world-bowl.js) |
 | Drawn people | `person*` (person-art.js) | was tr*, trainer.js |

@@ -1430,6 +1430,17 @@ The owner took the recommendation on every open question:
      asking first.
    - **Code:** `logic/kit-pixels.js` (the picture steps, Pillow-exact) and `logic/kit-assemble.js` (the figure), with
      `partFit` grown only for per-socket maths. (Not `pixel-ops.js`: that name is taken.)
+10. **Phase 5, session 2** (2026-10-22; recommended options taken under decision 9's standing instruction):
+   - **Tail aims stay in the recipe** (`kitBuilds.json` `bake.tailAim`, by part id), not in partKits as session 1's
+     HANDOFF suggested. A tail's aim is a pose the baker picks, and the Art workbench rebuilds partKits entries when a
+     kit is sliced again, so a field there could be lost.
+   - **The bake CLI writes only what changed:** a sheet only when a shown pixel differs (alpha, colour where alpha is
+     not 0), rigs-next.js the way the Studio's Propose writes it (`JSON.stringify`, so 83.0 reads 83). It draws no
+     preview sheet.
+   - **The Python builder keeps its own constants** until it retires (session 3), with a note to keep them equal; it
+     reads the recipe from its new place.
+   - **A stage's native parts are checked against its recipe** by check-data, so a recipe edited without a bake fails
+     CI.
 
 ## Ask me before (owner decisions this plan needs)
 1. **T5.1:** recipe as the truth with a JS baker (recommended), or Python stays and Studio writes recipes.
