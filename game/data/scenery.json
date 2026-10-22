@@ -8976,70 +8976,39 @@
    "flat": 0,
    "tags": ["farm"],
    "group": "barn",
-   "box": [5.4,4],
+   "box": [5.5,4.1],
    "door": {"x":0,"y":0},
-   "build": {
-    "kind": "gableF",
-    "wall": [-86,86],
-    "eave": -121,
-    "apex": -195,
-    "over": 0.35,
-    "roofCol": "#545C70",
-    "roofTex": 12,
-    "wallCol": "#A8382E",
-    "wallTex": 4,
-    "trimCol": "#EAEEEC",
-    "floors": 1,
-    "rooms": [6],
-    "sideWin": false,
-    "win": [],
-    "glass": ["#3D5879","#598CAF","#70C4E4","#9BD2DA","#C6E6E8","#746250","#B79E68","#FFDE78","#FFE58F","#FFF0BC"],
-    "roofRamp": ["#32304C","#474863","#545C70","#878A89","#BBBCB9"],
-    "pitch": 40,
-    "variants": [
-     {
-      "wallCol": "#F6E6BE",
-      "roofCol": "#A05040",
-      "trimCol": "#84543C",
-      "roofRamp": ["#502B3A","#794143","#A05040","#BC8168","#D9B7A6"],
-      "extra": [],
-      "img": "scene/props/barn_v1.png"
-     },
-     {
-      "wallCol": "#DEECD6",
-      "roofCol": "#547854",
-      "trimCol": "#6E543C",
-      "roofRamp": ["#323B42","#475B51","#547854","#879D76","#BBC7AE"],
-      "extra": [],
-      "img": "scene/props/barn_v2.png"
-     },
-     {
-      "wallCol": "#F0D6D6",
-      "roofCol": "#785478",
-      "trimCol": "#604860",
-      "roofRamp": ["#402D50","#5E4368","#785478","#A0848F","#C9B9BC"],
-      "extra": [],
-      "img": "scene/props/barn_v3.png"
-     },
-     {
-      "wallCol": "#D6E2F0",
-      "roofCol": "#465A82",
-      "trimCol": "#5A463C",
-      "roofRamp": ["#2D2F53","#3E486E","#465A82","#7E8896","#B5BBC0"],
-      "extra": [],
-      "img": "scene/props/barn_v4.png"
-     },
-     {
-      "wallCol": "#ECDEB0",
-      "roofCol": "#B06E40",
-      "trimCol": "#785038",
-      "roofRamp": ["#55373A","#845443","#B06E40","#C89668","#DFC3A6"],
-      "extra": [],
-      "img": "scene/props/barn_v5.png"
-     }
-    ]
-   },
-   "room": "int_barn"
+   "room": "int_barn",
+   "model": "scene/next/models/barn.json",
+   "fx": [
+    {"k":"window","x":0,"y":-122},
+    {"k":"window","x":0,"y":-121},
+    {"k":"glow","x":0,"y":-99}
+   ],
+   "ppm": 32,
+   "variants": [
+    {
+     "img": "scene/props/barn_v1.png",
+     "swap": {"#A8382E":"#F6E6BE","#545C70":"#A05040","#EAEEEC":"#84543C","#7E2E34":"#84543C"}
+    },
+    {
+     "img": "scene/props/barn_v2.png",
+     "swap": {"#A8382E":"#DEECD6","#545C70":"#547854","#EAEEEC":"#6E543C","#7E2E34":"#6E543C"}
+    },
+    {
+     "img": "scene/props/barn_v3.png",
+     "swap": {"#A8382E":"#F0D6D6","#545C70":"#785478","#EAEEEC":"#604860","#7E2E34":"#604860"}
+    },
+    {
+     "img": "scene/props/barn_v4.png",
+     "swap": {"#A8382E":"#D6E2F0","#545C70":"#465A82","#EAEEEC":"#5A463C","#7E2E34":"#5A463C"}
+    },
+    {
+     "img": "scene/props/barn_v5.png",
+     "swap": {"#A8382E":"#ECDEB0","#545C70":"#B06E40","#EAEEEC":"#785038","#7E2E34":"#785038"}
+    }
+   ],
+   "vary": {"rot":0,"lean":0,"size":0}
   },
   "greenhouse": {
    "name": "Greenhouse",
