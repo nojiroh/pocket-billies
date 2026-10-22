@@ -1016,28 +1016,3 @@ nav#nav button[aria-current='page']::after {
   background: var(--g-solid);
   color: var(--text);
 }
-.mpin.friend {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 8px 2px 2px;
-  border-radius: 999px;
-  background: rgba(255, 250, 240, 0.92);
-  border: 2px solid #4fb3e8;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
-  color: #2e2140;
-  font: 500 12px/1 var(--font-voice);
-}
-.mpin.friend .mp-face {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  overflow: hidden;
-  display: grid;
-  place-items: center;
-  background: #cdebfa;
-}
-.mpin.friend .mp-face img {
-  width: 26px;
-  height: auto;
-}

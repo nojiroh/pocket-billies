@@ -38,6 +38,7 @@ OPEN = "uiState.modal=null;uiState.mq=[];renderOverlay();"
 VIEWS = [
     ('walk', 'town', '', "!!document.querySelector('.screen.s-walk')"),
     ('map', 'town', "uiState.tab='map';render()", "!!document.querySelector('.screen.s-map')"),
+    ('map-card', 'town', "uiState.tab='map';render();setTimeout(()=>{worldMapSelect(0)},800)", "!!document.querySelector('.screen.s-map .mapcard')"),
     ('team', 'team', '', "!!document.querySelector('.screen.s-team')"),
     ('sheet', 'team', "document.querySelector('[data-a=mon]').click()", "!!document.querySelector('#ov .mon-sheet')"),
     ('sheet-build', 'team', "document.querySelector('[data-a=mon]').click();setTimeout(()=>document.querySelector('#ov [data-a=ms-tab][data-k=build]').click(),300)", "!!document.querySelector('#ov [data-a=ms-tab][data-k=build][aria-selected=true]')"),
@@ -109,7 +110,7 @@ VALUES = "(i) => { const r = window.__sd.rows[i]; return { props: window.__sd.pr
 DARK = "saveData.preferences.theme='dark';applyPreferences();0"
 LIGHT = "saveData.preferences.theme='light';applyPreferences();"
 # back to the plain screen between two views on one page
-RESET = OPEN + "uiState.tab='walk';uiState.dex=null;uiState.guideTab=null;render();"
+RESET = OPEN + "uiState.mapSel=null;uiState.tab='walk';uiState.dex=null;uiState.guideTab=null;render();"
 
 
 def unpack_ref():

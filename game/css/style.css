@@ -1273,87 +1273,10 @@ nav#nav[hidden] {
     clip-path: inset(50% 0 50% 0);
   }
 }
-/* map */
-.mapcard {
-  padding: 10px 12px 8px;
-  position: sticky;
-  bottom: calc(90px + env(safe-area-inset-bottom, 0px));
-  z-index: 3;
-  margin-top: 14px;
-  animation: up 0.3s ease-out;
-}
-.mapcard .mc-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 8px;
-}
-.mapcard .note {
-  margin-top: 2px;
-}
-.mapcard h2 {
-  font-size: 21px;
-}
-.mapcard .status {
-  margin-top: 4px;
-  font-size: 14.5px;
-  font-weight: 600;
-}
-.poolstrip {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0;
-  margin-top: 4px;
-}
-.mapwrap {
-  position: relative;
-  margin: 12px 3px 0;
-  padding: 0;
-  overflow: hidden;
-  aspect-ratio: 176/232;
-  max-height: calc(100dvh - 300px);
-  min-height: 280px;
-}
-.mapwrap canvas {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-.mapwrap canvas {
-  display: block;
-  cursor: pointer;
-}
 #maplabels {
   position: absolute;
   inset: 0;
   pointer-events: none;
-}
-.mlab {
-  position: absolute;
-  transform: translateY(-50%);
-  pointer-events: auto;
-  border: 0;
-  font: 400 12px/1 var(--font-voice);
-  padding: 4px 6px;
-  background: rgba(20, 14, 30, 0.8);
-  color: #f3eef8;
-  white-space: nowrap;
-  box-shadow: 0 0 0 2px #0b0912;
-  transition: transform 0.2s;
-}
-.mlab.here {
-  background: #f2c14e;
-  color: #3a2408;
-  box-shadow:
-    0 0 0 2px #0b0912,
-    0 0 14px rgba(242, 193, 78, 0.7);
-}
-.mlab.sel {
-  box-shadow: 0 0 0 2px #fff;
-}
-.mlab.fog {
-  background: rgba(10, 8, 20, 0.72);
-  color: #8e86a6;
 }
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -1366,52 +1289,6 @@ nav#nav[hidden] {
   .spr img {
     animation: none !important;
   }
-}
-.mapwrap canvas {
-  image-rendering: pixelated;
-  touch-action: none;
-  cursor: grab;
-}
-.mapwrap canvas:active {
-  cursor: grabbing;
-}
-.mlab.sun {
-  background: linear-gradient(90deg, #ffe08a, #ffb84a);
-  color: #3a2408;
-  box-shadow:
-    0 0 0 2px #0b0912,
-    0 0 18px rgba(255, 214, 120, 0.9);
-}
-.mapctl {
-  position: absolute;
-  right: 8px;
-  bottom: 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  z-index: 2;
-}
-.mbtn {
-  width: 34px;
-  height: 34px;
-  display: grid;
-  place-items: center;
-  border: 0;
-  font: 400 20px/1 var(--font-voice);
-  color: #f3eef8;
-  background: rgba(20, 14, 30, 0.78);
-  box-shadow:
-    0 0 0 2px #0b0912,
-    0 4px 10px rgba(0, 0, 0, 0.35);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-}
-.mbtn:active {
-  transform: translateY(1px);
-}
-.mbtn .uico {
-  width: 16px;
-  height: 16px;
 }
 /* ===== Ledger: field guide meets accounting book ===== */
 :root {
@@ -1613,16 +1490,6 @@ nav#nav[hidden] {
   to {
     opacity: 1;
   }
-}
-.mapwrap.loading::after {
-  content: 'Charting the inner sphere…';
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  font: 400 16px var(--font-voice);
-  color: #f3eef8;
-  background: rgba(20, 14, 40, 0.65);
 }
 
 /* v6 visual polish: crisp field journal panels, rich pixel scenery, clear controls. */
@@ -3150,13 +3017,6 @@ nav#nav .ind::before {
 .col {
   display: contents;
 }
-/* map */
-.s-map .mapwrap {
-  border-radius: 4px;
-}
-.mapcard {
-  border-radius: 10px;
-}
 /* town shops */
 .shop-sheet {
   max-width: 560px;
@@ -3447,27 +3307,6 @@ nav#nav .ind::before {
   .s-ledger .dexpage {
     max-width: 780px;
   }
-  .s-map {
-    display: grid;
-    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
-    grid-template-rows: auto auto 1fr;
-    gap: 0 24px;
-  }
-  .s-map > header,
-  .s-map > p {
-    grid-column: 1/-1;
-  }
-  .s-map .mapwrap {
-    grid-row: 3;
-    max-height: calc(100dvh - 210px);
-  }
-  .s-map .mapcard {
-    grid-row: 3;
-    align-self: start;
-    position: sticky;
-    top: 80px;
-    margin-top: 12px;
-  }
   .queue {
     margin: 4px 0 0;
     padding: 10px 4px 16px;
@@ -3484,10 +3323,6 @@ nav#nav .ind::before {
     -webkit-backdrop-filter: blur(6px);
     backdrop-filter: blur(6px);
   }
-}
-.mapctl {
-  top: 8px;
-  bottom: auto;
 }
 .enc b {
   position: relative;
@@ -3725,129 +3560,6 @@ body.on-walk .wh-foot > * {
     display: none;
   }
 }
-/* ================= v10: full-screen world map ================= */
-body.on-map #app {
-  background: transparent !important;
-  border-color: transparent !important;
-  pointer-events: none;
-  -webkit-backdrop-filter: none !important;
-  backdrop-filter: none !important;
-}
-body.on-map #app .topbar,
-body.on-map .map-full > *:not(#mapcv) {
-  pointer-events: auto;
-}
-body.on-map #bgfx {
-  display: none;
-}
-.map-full {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-}
-.map-full #mapcv {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  image-rendering: pixelated;
-  pointer-events: auto;
-  touch-action: none;
-  cursor: grab;
-  background: #b0baec;
-}
-body.map-loading .map-full::after {
-  content: 'Unrolling the map…';
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  font: 400 22px var(--font-voice);
-  color: #fff;
-  text-shadow: 0 2px 0 #2a2238;
-  background: rgba(40, 40, 90, 0.35);
-}
-.map-full #maplabels {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-.map-full #maplabels .mlab {
-  pointer-events: auto;
-}
-.mlab.dest {
-  background: #ffe27a;
-  color: #3a2408;
-}
-.mlab.new::after {
-  content: '•';
-  margin-left: 4px;
-  color: var(--gold);
-}
-.map-head {
-  position: absolute;
-  left: 12px;
-  top: calc(70px + env(safe-area-inset-top, 0px));
-  max-width: min(360px, calc(100% - 90px));
-  padding: 8px 14px 10px;
-  border-radius: 14px;
-  background: color-mix(in srgb, var(--panel-s) 84%, transparent);
-  box-shadow:
-    0 0 0 2px var(--line),
-    0 12px 28px -18px var(--shadow);
-}
-.map-head .sub {
-  letter-spacing: 1.6px;
-  font-size: 11px;
-  text-transform: uppercase;
-  color: var(--text2);
-}
-.map-head .where {
-  font-size: 26px;
-  margin: 2px 0;
-}
-.map-trip {
-  margin: 0;
-  font-size: 13px;
-  color: var(--text2);
-}
-.map-trip.go::before {
-  content: '▶ ';
-  color: var(--gold);
-}
-.map-trip.blocked,
-.map-trip.hold {
-  color: #b9541c;
-}
-.map-full .mapctl {
-  position: absolute;
-  right: 12px;
-  top: calc(70px + env(safe-area-inset-top, 0px));
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.map-full .mapcard {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  bottom: calc(96px + env(safe-area-inset-bottom, 0px));
-  width: min(560px, calc(100% - 24px));
-  max-height: 34vh;
-  overflow: auto;
-  margin: 0;
-  padding: 12px 14px;
-  border-radius: 16px;
-  background: color-mix(in srgb, var(--panel-s) 92%, transparent);
-}
-.map-full .mapcard .racts {
-  margin-top: 8px;
-}
-.mc-nb {
-  margin-top: 6px;
-  font-size: 12.5px;
-}
 .wh-acts {
   display: flex;
   flex-wrap: wrap;
@@ -3859,24 +3571,7 @@ body.map-loading .map-full::after {
   font-size: 13px;
   padding: 0 10px;
 }
-@media (min-width: 850px) {
-  .map-full .mapcard {
-    left: auto;
-    right: 16px;
-    transform: none;
-    bottom: 20px;
-    width: 400px;
-    max-height: calc(100vh - 120px);
-  }
-}
 @media (max-height: 520px) {
-  .map-full .mapcard {
-    max-height: 40vh;
-    bottom: 76px;
-  }
-  .map-head {
-    display: none;
-  }
   .wh-acts {
     display: none;
   }
