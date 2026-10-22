@@ -100,12 +100,14 @@ function followDirection(P, R, F, vx, vz, sp) {
 }
 /* CAM-2: this frame's moment (logic/camera-moments.js), from what the walk knows: who talks to you (while the talk box
    is up), where a run's boss stands, the point of interest, whether you walk or run */
-function moments(sc, P, push, I, dt) {
+function moments(sc, P, push, I, dt, snap) {
   /* a new scene starts the moments afresh, but a boss already revealed stays so */
   if (!walkRenderer.mom || walkRenderer.mom.sc !== sc)
     walkRenderer.mom = { ...momentNew(), sc, seen: walkRenderer.mom ? walkRenderer.mom.seen : {} };
   const st = walkRenderer.mom,
     D = /** @type {any} */ ({});
+  /* a cut starts the shot afresh: standing still counts from now */
+  if (snap) st.still = 0;
   for (const k of Object.keys(MOMENT_DIALS)) D[k] = engineSetting('camera', k) ?? MOMENT_DIALS[k];
   let talk = talkBox?.on && walkRenderer.talkAt ? [walkRenderer.talkAt.x, walkRenderer.talkAt.z] : null,
     boss = walkRenderer.bossAt,
@@ -218,7 +220,7 @@ export function walkCamera(rw, rh, st, dt) {
   const I = !sc.indoor && !sc.room && set('intOn') ? interestPick(interestPoints(sc), P.x, P.z, set('intPull')) : null;
   /* CAM-2: the moments (logic/camera-moments.js): talking, a run's boss, a point of interest, standing still,
      running; at most one at a time. The Studio's "Play moment" stands in for the real thing (walkRenderer.momentTest) */
-  const M = moments(sc, P, push, I, dt);
+  const M = moments(sc, P, push, I, dt, snap);
   /* CAM-2: a camera zone you stand in (the scene's camZones, placed in the Studio's Walk scenes editor) */
   const zi = freeCameraOn() ? -1 : zoneAt(sc.camZones, P.x, P.z);
   if (zi >= 0) {

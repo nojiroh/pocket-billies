@@ -32,6 +32,7 @@ import { foliageAmount, setPropLookUniforms } from './prop-look.js';
 /* eslint-disable no-func-assign */
 expose({
   BOX_INFO_CACHE: [() => BOX_INFO_CACHE],
+  DOOR_INTEREST: [() => DOOR_INTEREST],
   IMAGE_IDS: [() => IMAGE_IDS],
   SILHOUETTE_AMOUNT: [() => SILHOUETTE_AMOUNT],
   SILHOUETTE_PULL: [() => SILHOUETTE_PULL],
@@ -589,8 +590,10 @@ export function landmarkTilt(P, sc) {
   return best;
 }
 /* CAM-2: the scene's points of interest (logic/camera-interest.js), kept per scene: a catalogue entry's `interest`
-   ({weight, radius, zoom, pull}, any of them), else a landmark's default, else a shop's or clinic's door; props not
+   ({weight, radius, zoom, pull}, any of them), else a landmark's default, else a door that counts; props not
    shown now (propShown) are left out when asked */
+/* the doors that count: where you buy, heal or work (a run town's shop and clinic, the hub's lab and ranch) */
+const DOOR_INTEREST = ['shop', 'clinic', 'lab', 'ranch'];
 export function interestPoints(sc) {
   if (!sc) return [];
   const C0 = walkData().sc;
@@ -600,7 +603,7 @@ export function interestPoints(sc) {
     (sc.props || []).forEach((p, i) => {
       const M = C0.props[p.k];
       if (!M) return;
-      const door = (p.act === 'shop' || p.act === 'clinic') && !!M.door,
+      const door = DOOR_INTEREST.includes(p.act) && !!M.door,
         base = M.landmark ? INTEREST_DEFAULTS.landmark : door ? INTEREST_DEFAULTS.door : null;
       if (!base && !M.interest) return;
       list.push({ p, door, pt: { id: `${p.k}#${i}`, ...INTEREST_DEFAULTS.landmark, ...base, ...M.interest } });
