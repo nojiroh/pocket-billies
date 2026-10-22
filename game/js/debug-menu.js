@@ -152,7 +152,8 @@ function debugHTML() {
    EGG_TIERS.map(t => [t, eggKm(t) + ' km']),
    EGG_TIERS[0]
  )}${debugButtonHTML('egg', 'Add egg')}${debugButtonHTML('hatch', 'Finish all incubators')}</div>
-  <div class="dbg-row">${debugButtonHTML('idle', 'Age storage by a day')}${debugButtonHTML('streak', 'Lead +3 win streak')}</div></details>
+  <div class="dbg-row">${debugButtonHTML('idle', 'Age storage by a day')}${debugButtonHTML('streak', 'Lead +3 win streak')}</div>
+  <div class="dbg-row">${debugButtonHTML('ranchhour', 'Age the ranch by an hour')}${debugButtonHTML('scrap', '+50 Scrap')}</div></details>
  <details ${inB ? 'open' : ''}><summary>Battle${inB ? '' : ' (start one first)'}</summary><div class="dbg-row">${debugButtonHTML('win', 'Win now', 'gold')}${debugButtonHTML('lose', 'Lose now')}${debugButtonHTML('foe1', 'Foe to 1 HP')}${debugButtonHTML('catch', uiState.dbgCatch ? 'Taxing works as normal' : 'Every throw taxes')}</div>
   <div class="dbg-row">${[1, 2, 4].map(x => debugButtonHTML('speed' + x, `${x}× speed`, battleStage.speed === x ? 'dark' : '')).join('')}</div></details>
  <details><summary>Save</summary><div class="dbg-row">${debugButtonHTML('copy', 'Copy save as text')}${debugButtonHTML('export', 'Download backup')}${debugButtonHTML('wipe', 'Erase save', 'red')}</div></details>
@@ -427,6 +428,18 @@ function debugAction(x) {
       saveData.box.forEach(m => {
         if (m.boxedAt) m.boxedAt -= 864e5;
       });
+      break;
+    /* RL-9: the ranch's trainees started an hour earlier (an hour's training, collected when the ranch opens), and
+       Scrap to train with */
+    case 'ranchhour':
+      saveData.ranch.trainees.forEach(t => {
+        t.at = Math.max(0, t.at - 3600000);
+      });
+      toast(`${saveData.ranch.trainees.length} training: an hour older.`);
+      break;
+    case 'scrap':
+      saveData.meta.scrap += 50;
+      toast(`${saveData.meta.scrap} Scrap.`);
       break;
     case 'streak':
       if (saveData.team[0]) saveData.team[0].streak = (saveData.team[0].streak || 0) + 3;

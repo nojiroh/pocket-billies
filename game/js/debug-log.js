@@ -486,6 +486,16 @@ debugLog.state = () => {
     s.meta = meta
       ? { runs: meta.runs, wins: meta.wins, capital: meta.capital, seals: meta.seals, scrap: meta.scrap }
       : null;
+    /* RL-9: the ranch (numbers only): its level, how many train, how long since each started (hours), storage's size */
+    const ranch = GAME.saveData.ranch;
+    s.ranch = ranch
+      ? {
+          level: (meta && meta.buildings && meta.buildings.ranch) || 1,
+          training: ranch.trainees.length,
+          hours: ranch.trainees.map(t => +((Date.now() - t.at) / 3600000).toFixed(1)),
+          stored: (GAME.saveData.box || []).length,
+        }
+      : null;
     s.frameHz = GAME.frameScheduler.hz;
     s.fpsCap = GAME.userFps();
   } catch (e) {
