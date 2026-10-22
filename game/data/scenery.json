@@ -8238,12 +8238,49 @@
    "weight": 1,
    "ppm": 32,
    "variants": [
-    {"img":"scene/props/scree_small.png","ox":-38,"oy":-12,"form":"small","weight":1,"span":1,"name":"Scree (small)"},
-    {"img":"scene/props/scree_pair.png","ox":-55,"oy":-14,"form":"pair","weight":0.9,"span":1.45,"name":"Scree (pair)"},
-    {"img":"scene/props/scree_row.png","ox":-77,"oy":-13,"form":"row","weight":0.5,"span":2.03,"name":"Scree (row)"},
-    {"img":"scene/props/scree_big.png","ox":-47,"oy":-20,"form":"big","weight":0.5,"span":1.24,"name":"Scree (big)"}
+    {
+     "img": "scene/props/scree_small.png",
+     "ox": -38,
+     "oy": -12,
+     "form": "small",
+     "weight": 1,
+     "span": 1,
+     "name": "Scree (small)",
+     "model": "scene/next/models/scree_small.json"
+    },
+    {
+     "img": "scene/props/scree_pair.png",
+     "ox": -55,
+     "oy": -14,
+     "form": "pair",
+     "weight": 0.9,
+     "span": 1.45,
+     "name": "Scree (pair)",
+     "model": "scene/next/models/scree_pair.json"
+    },
+    {
+     "img": "scene/props/scree_row.png",
+     "ox": -77,
+     "oy": -13,
+     "form": "row",
+     "weight": 0.5,
+     "span": 2.03,
+     "name": "Scree (row)",
+     "model": "scene/next/models/scree_row.json"
+    },
+    {
+     "img": "scene/props/scree_big.png",
+     "ox": -47,
+     "oy": -20,
+     "form": "big",
+     "weight": 0.5,
+     "span": 1.24,
+     "name": "Scree (big)",
+     "model": "scene/next/models/scree_big.json"
+    }
    ],
-   "vary": {"size":0}
+   "vary": {"size":0},
+   "model": "scene/next/models/scree.json"
   },
   "molehill": {
    "name": "Molehill",
