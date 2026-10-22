@@ -84,7 +84,20 @@ function trackerCompose(D) {
       lead[b * 16 + s] = [n + sh, l];
     });
   }
-  return { ...D, notes: lead, steps, deg };
+  /* SND-3: a written hook takes bars 1-2 and their repeat in bars 5-6 from the walk; a countermelody plays under them
+     on a second pulse. Notes are [step from the song's start, midi, length in sixteenths]; only steps 0-31 count */
+  const counter = new Array(steps).fill(null),
+    written = (line, out) => {
+      for (const [st, m, l] of line || [])
+        if (st >= 0 && st < 32) for (const at of [st, st + 64]) if (at < steps) out[at] = [m, l];
+    };
+  if (D.hook && D.hook.length) {
+    lead.fill(null, 0, Math.min(32, steps));
+    if (steps > 64) lead.fill(null, 64, Math.min(96, steps));
+    written(D.hook, lead);
+  }
+  written(D.counter, counter);
+  return { ...D, notes: lead, counterNotes: counter, steps, deg };
 }
 export const midiToFrequency = m => 440 * Math.pow(2, (m - 69) / 12);
 export function trackerCreate(ctx, bus, opts = {}) {
@@ -316,6 +329,19 @@ export function trackerCreate(ctx, bus, opts = {}) {
           r: 0.06,
           vib: L[1] >= 6 ? 1 : 0,
           echo: D.echo || 0.15,
+        });
+      /* the countermelody (SND-3), when the song has one */ const C = D.counterNotes && D.counterNotes[st];
+      if (C)
+        T.synthVoice(bus, {
+          type: 'p12',
+          freq: midiToFrequency(C[0]),
+          t,
+          dur: C[1] * spb * 0.9,
+          vol: 0.05,
+          d: 0.1,
+          s: 0.5,
+          r: 0.06,
+          echo: 0.1,
         });
       /* bass */ const bs = D.bass,
         root = dg(ch) - 24;
