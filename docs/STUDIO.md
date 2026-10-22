@@ -186,7 +186,7 @@ logic/island.js's contract (docs/phases/island-track.md). It opens on the left o
   drag turns round it, Shift-drag (or the right button) tilts, the wheel or a pinch zooms. **Auto-orbit** turns it
   slowly (a drag stops it); **S W N E** look from that side; **Whole island** frames it again. **Walk the coast**
   walks the walker round the island 6 m in from the coast under the game's own walk camera, so it shows what a player
-  sees (an orbiting camera once IS-1 is merged); press it again to stop.
+  sees (IS-1's orbit camera; the preview's free-camera mark is off while it walks); press it again to stop.
 - **Map.** The ground (each letter's colour), the heights (lighter is higher, a contour every 2 m), the coast (white),
   the zones by kind (hatched when locked, labelled), the orbit's pivot (the red cross) and its dead zone (dashed), the
   island's middle (the yellow diamond) and where the orbit camera stands. − and + change its size.
