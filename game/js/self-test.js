@@ -1523,7 +1523,7 @@ async function runFullTest(mode) {
         [
           'Plus 150 more trees and rocks',
           () => {
-            const pool = ['tree_oak', 'tree_pine', 'tree_birch', 'boulder', 'bush_round', 'tree_oak_deep'].filter(
+            const pool = ['tree_oak', 'tree_pine', 'tree_birch', 'boulder', 'bush_round', 'tree_oak_b'].filter(
               k => walkData().sc.props[k]
             );
             sc.props = props0.concat(
