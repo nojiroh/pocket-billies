@@ -243,6 +243,22 @@ The hub's bowl map draws the real island: `island.coast` as the outline, its gro
 is (phase 10's 1.5 m pixel ground), the mountain's relief, the town's buildings close in. `worldmap.json`
 `sea.island` from the real size. World map test step.
 
+**Checked in IS-7** (world-bowl.js, logic/bowl.js, the new logic/bowl-island.js):
+- The bowl is 1000 m to its radius; its ground grid is 6.25 m a corner and its terrain picture ~1 m a pixel (phase 10
+  says 1.5 m). Nothing of a map's `heights` reached the bowl: a place's relief was one bump by its kind.
+- An island world's land was each place's circle of its map's half-diagonal plus the `sea.island` round and noise;
+  for a 235 x 237 m scene that made the whole square (its sea too) land. The hub's island now keeps exactly its coast.
+- The hub place still points at copperleaf.json (no coast). The bowl finds the island map by its fields: the place's
+  own map when it has a coast (after IS-5), else for the hub (world node 0) the biggest map with a coast and plots.
+- The map's own sea squares stamped on the sea floor showed through the water as a box: the island is stamped only
+  where the bowl has land. Bowl rivers would cut across the island's own ground: none is made on it (its stream is
+  its own map's); the checks that wanted one river on an island world want none there.
+- `copperleaf_island` has no props: the town is drawn from its `plots` (a model per kind) plus the barn in its zone
+  until IS-5 puts buildings on them; a plot with a building on it is skipped then. The landmark (the oak) still comes
+  from copperleaf.json until IS-5.
+- The well and the airship station are not "buildings" by the bowl's own rule (too small, no door), so Copperleaf's
+  were never on the bowl; on the plots they are.
+
 ### IS-8 Barn and pasture
 The fenced pasture beside the barn (IS-4's fence and gate), up to ~6 ranch Billies wandering in it (from storage and
 trainees, RL-10's data), tap one or the gate to open the ranch sheet. Waits for RL-10 to merge.

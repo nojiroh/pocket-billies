@@ -9,6 +9,11 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- The world map shows Copperleaf's real island (island track IS-7): its own coastline with the cove and the
+  headlands, its beaches, meadows, forest and paths as they are on the ground, its mountain standing up in the
+  middle, and the town's buildings close in (the lab, the airship station, the houses, the well, the barn). The
+  shallows follow the coast. The island is drawn at its true size, so it is smaller than the old round blob; zoom in
+  to see the town. The debug menu's Bowl map test has a step for it.
 - The orbit camera (island track IS-1): on the test island the camera stands out over the sea and looks in at the
   island's middle, so walking round the coast turns it all the way round, smoothly and with no jump. Holding right
   walks you round on the same circle. On the summit the camera holds still; your own turn (two fingers, Q/E) still
