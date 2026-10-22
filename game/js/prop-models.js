@@ -16,6 +16,7 @@ import { artImage, walkView } from './walk-view.js';
 import { engineSetting } from './engine/settings.js';
 import { COMMON_GLSL, LIGHT_GLSL, ensurePrograms, gpuState, imageTexture } from './engine/webgl.js';
 import { walkRenderer } from './walk/walk-state.js';
+import { ROCK_GLSL } from './walk/walk-shaders.js';
 import { useWalkProgram, worldCurveArgs } from './walk/draw-common.js';
 import { setPropLookUniforms, windLeanAt } from './walk/prop-look.js';
 import { addHitTarget } from './walk/sprites.js';
@@ -1292,9 +1293,11 @@ function lowPolyFragmentShader() {
   const f = BUILDING_SHADERS.bld[1],
     a = 'shade(c,n,vW,sh,ao,vec4(.1,30.,0.,.3),0.)';
   if (!f.includes(a)) return f;
+  /* terrain TR-3: a model between the camera and you (a tree's trunk on a mountain's shelf) thins out like the rock */
   return f
     .replace(a, 'shade(c,n,vW,sh,ao,vec4(.06,20.,0.,.22),uCel)')
-    .replace('uniform vec3 uBP;', 'uniform vec3 uBP;uniform float uCel;');
+    .replace('uniform vec3 uBP;', 'uniform vec3 uBP;uniform float uCel;' + ROCK_GLSL)
+    .replace('void main(){', 'void main(){if(rockHides(vW))discard;');
 }
 /* the models among the items, drawn after the voxel props: L is [item, mesh] */
 /* alpha 0.4: the props' shaders with the low-poly model's, for compiling ahead when the 3D view starts (walk-view-gl.js ensureWalkGl) */
@@ -1346,9 +1349,9 @@ precision highp float;layout(location=0) in vec3 qPos;layout(location=1) in vec3
 void main(){float cr=cos(uRot),sr=sin(uRot);vec3 q0=voxSpin(qPos*uQ-uSpinC)+uSpinC,n0=voxSpin(qNrm);vec3 p=vec3(q0.x*uFlip,q0.y,q0.z)*uS;p=vec3(p.x*cr-p.z*sr,p.y,p.x*sr+p.z*cr);vec3 n=vec3(n0.x*uFlip,n0.y,n0.z);n=vec3(n.x*cr-n.z*sr,n.y,n.x*sr+n.z*cr);
  vec3 w=uBase+p;w.y+=curveY(uBase.xz);vW=w;vN=n;vC=qCol;gl_Position=uVP*vec4(w,1.);}`,
     `#version 300 es
-precision highp float;in vec3 vW;in vec3 vN;in vec3 vC;out vec4 o;uniform vec3 uBaseP;uniform float uFade,uEmit;${LIGHT_GLSL}
+precision highp float;in vec3 vW;in vec3 vN;in vec3 vC;out vec4 o;uniform vec3 uBaseP;uniform float uFade,uEmit;${LIGHT_GLSL}${ROCK_GLSL}
 float bay(vec2 p){ivec2 i=ivec2(mod(p,4.));int b[16]=int[16](0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5);return (float(b[i.y*4+i.x])+.5)/16.;}
-void main(){if(uFade<.99&&bay(gl_FragCoord.xy)>uFade)discard;vec3 n=normalize(vN);vec3 c=vC;float hy=vW.y-uBaseP.y;
+void main(){if(uFade<.99&&bay(gl_FragCoord.xy)>uFade)discard;if(rockHides(vW))discard;vec3 n=normalize(vN);vec3 c=vC;float hy=vW.y-uBaseP.y;
  float sh=shadowAtN(vW+n*.05,n,.0015),ao=mix(contactAO(vW),1.,clamp(hy*2.,0.,1.)),occ=min(sh,ao);
  /* cel shading: the sun in three tones, a hard terminator, like the painted props */
  vec3 v=normalize(uEye-vW);float rim=pow(1.-max(dot(n,v),0.),3.)*.1;

@@ -175,6 +175,7 @@ export const ENGINE_DEFAULTS = {
     zoomMax: 1.7,
     pixelGrid: false,
     rise: 18,
+    rockFade: true,
   },
   quality: {
     resolution: 1,
@@ -690,6 +691,12 @@ export const ENGINE_SPEC = [
         30,
         1,
         'Terrain TR-3: the most the camera tilts down further so rock between it and you does not hide you. 0: off.',
+      ],
+      [
+        'rockFade',
+        'Rock fades in front of you',
+        'bool',
+        'Terrain TR-3: ground and cliffs between the camera and you thin out.',
       ],
     ],
   ],

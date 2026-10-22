@@ -8,9 +8,14 @@ import { walkView } from '../walk-view.js';
 import { engineSetting } from '../engine/settings.js';
 import { gpuState } from '../engine/webgl.js';
 import { setLightUniforms } from '../engine/light.js';
+import { walkRenderer } from './walk-state.js';
+import { standingHeightAt } from './heights.js';
 /* eslint-disable no-func-assign */
 expose({
   FULL_UV: [() => FULL_UV],
+  ROCK_STATE: [() => ROCK_STATE],
+  rockUniformsFor: [() => rockUniformsFor, v => (rockUniformsFor = v)],
+  setRockUniforms: [() => setRockUniforms, v => (setRockUniforms = v)],
   setSpriteUniforms: [() => setSpriteUniforms, v => (setSpriteUniforms = v)],
   useWalkProgram: [() => useWalkProgram, v => (useWalkProgram = v)],
   worldCurveArgs: [() => worldCurveArgs, v => (worldCurveArgs = v)],
@@ -36,7 +41,50 @@ export function useWalkProgram(name, C, X) {
   gl.useProgram(p.p);
   if (p.U.uVP && C) gl.uniformMatrix4fv(p.U.uVP, false, C.vp);
   if (X) setLightUniforms(p, X);
+  if (p.U.uRock && C) setRockUniforms(p, C);
   return p;
+}
+/* terrain TR-3: what the walk programs with ROCK_GLSL (walk-shaders.js) need to thin out rock between the camera and
+   you: your spot on screen and its depth (uPlC: [x, y, w] in clip space at your middle; off screen [9, 9, -1], as in
+   battle), and uRock: your feet's height, the soft circle's radius on screen (0: off; it widens as the camera rises
+   on tall ground) and how much of it at most goes. Worked out once a camera (a frame), nothing made per draw */
+const ROCK_STATE = { C: null, plc: new Float32Array(3), rock: new Float32Array(4) };
+function rockUniformsFor(C) {
+  const R = ROCK_STATE;
+  if (R.C === C) return R;
+  R.C = C;
+  R.plc[0] = 9;
+  R.plc[1] = 9;
+  R.plc[2] = -1;
+  R.rock.fill(0);
+  const P = walkView.pl,
+    sc = walkView.sc;
+  if (walkRenderer.bt || !P || !sc || !C.vp) return R;
+  const feet = (P.yv ?? standingHeightAt(P.x, P.z)) + worldCurveDrop(P.x, P.z),
+    y = feet + 0.9,
+    m = C.vp,
+    w = m[3] * P.x + m[7] * y + m[11] * P.z + m[15];
+  if (!(w > 0.2)) return R;
+  R.plc[0] = (m[0] * P.x + m[4] * y + m[8] * P.z + m[12]) / w;
+  R.plc[1] = (m[1] * P.x + m[5] * y + m[9] * P.z + m[13]) / w;
+  R.plc[2] = w;
+  /* only while the camera's line to you is cut by ground (walk/camera.js rockK, 0-1): on flat ground nothing changes */
+  const k = C.rockK || 0;
+  if (C === walkView.C && k > 0.01 && !sc.indoor && !sc.room && engineSetting('camera', 'rockFade')) {
+    const rm = +engineSetting('camera', 'rise') || 0;
+    R.rock[0] = feet;
+    R.rock[1] = 0.3 + (rm > 0 ? 0.16 * Math.min(1, (C.occ || 0) / rm) : 0.16);
+    R.rock[2] = 0.8 * k;
+  }
+  return R;
+}
+function setRockUniforms(p, C) {
+  const gl = gpuState.gl,
+    U = p.U,
+    R = rockUniformsFor(C);
+  gl.uniform3fv(U.uPlC, R.plc);
+  gl.uniform4fv(U.uRock, R.rock);
+  if (U.uAspect) gl.uniform1f(U.uAspect, C.rw / C.rh);
 }
 /* phase 20 C2: z and rk stand in for a copy of the item (a slice of a thick sprite at another depth, a picture rising
    with its town at rk of its height), so nothing is made per draw */

@@ -94,8 +94,9 @@ export function walkCamera(rw, rh, st, dt) {
   let df = (he / Math.sin(((pe - (sc.indoor ? 12 : 0)) * Math.PI) / 180)) * walkRenderer.zoom;
   /* terrain TR-3: on tall ground the camera tilts down further (and comes a little closer) until the line from it to
     your head clears the rock between you; it rises quickly and settles back slowly */
-  const riseMax = sc.indoor || sc.room || freeCameraOn() || st.focus ? 0 : +engineSetting('camera', 'rise') || 0,
-    riseT = riseMax
+  const tall = !(sc.indoor || sc.room || freeCameraOn() || st.focus),
+    riseMax = tall ? +engineSetting('camera', 'rise') || 0 : 0,
+    need = tall
       ? cameraRiseNeeded(
           standingHeightAt,
           P.x,
@@ -104,9 +105,15 @@ export function walkCamera(rw, rh, st, dt) {
           yaw,
           pitchDeg0,
           Math.cos((pitchDeg0 * Math.PI) / 180) * df,
-          riseMax
+          90
         )
-      : 0;
+      : 0,
+    riseT = Math.min(need, riseMax);
+  /* terrain TR-3: while ground cuts the line (by more than half a degree) the rock between you and the camera thins
+    out (draw-common.js rockUniformsFor); it comes and goes over about a third of a second */
+  const rockT = need > 0.5 ? 1 : 0;
+  if (!walkRenderer.camT || walkView.opt.instant || walkRenderer.rockK == null) walkRenderer.rockK = rockT;
+  else walkRenderer.rockK += (rockT - walkRenderer.rockK) * Math.min(1, dt * 3);
   if (!walkRenderer.camT || walkView.opt.instant || walkRenderer.occT == null) walkRenderer.occT = riseT;
   else walkRenderer.occT += (riseT - walkRenderer.occT) * Math.min(1, dt * (riseT > walkRenderer.occT ? 2.6 : 1.1));
   const occ = walkRenderer.occT,
@@ -194,6 +201,7 @@ export function walkCamera(rw, rh, st, dt) {
     cp: Math.cos(pitch),
     yaw,
     occ,
+    rockK: walkRenderer.rockK,
   };
 }
 /* the battle stage's camera (battle-stage.js battleStageProjectWith) as a matrix: a level pinhole camera with an off-center horizon, in stage pixels */
