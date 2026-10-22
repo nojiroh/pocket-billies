@@ -25,7 +25,7 @@ are sessions of Claude's working time, not calendar time, and exclude the owner'
 | RL-8 | Run loop and payout (done 2026-10-21, played) | airship start, a town with paid healing, a mini-boss, the payout screen, resume: **the first playable cut** | RL-4, RL-7 | 2 | yes |
 | RL-9 | Ranch A (done 2026-10-22: the building, training, Scrap; RL-9b the mast's pick of 1 home Billie and the packed bag) | the building, store and keep, train between runs, the keep-one rule (8.2: 1 home Billie a run; a packed bag) | RL-8, played | 2 | yes |
 | RL-10 | Ranch B (RL-10a done 2026-10-22: breeding safe/risky, abominations and quirks, hatching at the ranch, the walking eggs retired; RL-10b next) | breed safe/risky with abominations, hatch, passive income (cap, rollback guard, offline, server anchor) | RL-9 | 2 | yes |
-| RL-11 | Hub upgrades, currencies, unlocks | `currencies/buildings/unlocks.json`, the Lab board, one unlock registry | RL-8 | 1-2 | yes |
+| RL-11 | Hub upgrades, currencies, unlocks (done 2026-10-22) | `currencies/buildings/unlocks.json`, the Lab board, one unlock registry | RL-8 | 1-2 | yes |
 | RL-12 | Relics and effects | `relics.json`, `events.json`, `logic/effects.js`, picks | RL-11 | 1-2 | yes |
 | RL-13 | Modifiers, tiers, mini-boss leaders | `modifiers.json`, the bracket pick, the 8 leaders as the pool | RL-12 | 1 | yes |
 | RL-14 | Bots as enemies, salvage, the Voltron | `factions.json`, `bosses.json`, data-driven `alphaPhase`, a robot phase in the full test | RL-13 | 2 | yes |
@@ -98,7 +98,8 @@ never store/keep or training.
 The 20 "Ask me before" items in docs/phases/roguelite-track.md, section 8: the run's internal key (RL-3); keep-one vs
 ranch levels (answered in RL-9: 1 home Billie a run at Bracket I, and a bag packed at the mast from Copperleaf's); the hub's extent and Copperleaf's south exit (answered in RL-5: Copperleaf alone, its south exit gone); legacy by
 moving files (answered in RL-5: moved to game/data/legacy, a read-only Studio list); currency
-names and the building mapping (RL-11); menu nodes (RL-12); the first cut's shape (answered in RL-8: the full 9-row map); battle formats by node type
+names and the building mapping (answered in RL-11: $ / Capital / Scrap / Audit Seals; Lab = Capital, Ranch and
+Workshop = Scrap, Airship = Seals); menu nodes (RL-12); the first cut's shape (answered in RL-8: the full 9-row map); battle formats by node type
 (answered in RL-8: wild single, mini-boss doubles, an Alpha boss; the turn cap was answered in RL-4: 40, a draw; a killed battle restarts from its seed); the clock's numbers (answered in
 RL-6: a day per arrival, backtracking included, deadline = the shortest walk + 3, no tick for healing or waiting); the token link, Remember me and deleting the
 versioned tools (RL-1); SAVE_VERSION 4 and the cloud key whitelist (RL-3, RL-10); the dex's place (RL-3); the relic

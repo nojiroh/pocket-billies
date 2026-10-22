@@ -30,6 +30,7 @@ import { worldMapAction, worldMapFit, worldMapMount, worldMapOpenFromWalk } from
 import { cutscene } from './cutscene/director.js';
 import { cutsceneStart, cutsceneWanted } from './cutscene/opening.js';
 import { renderTitle, titleMount } from './title.js';
+import { labAction, renderLabBoard } from './lab-board.js';
 import { renderBag } from './bag.js';
 import { storyRivalBattle } from './story.js';
 import { workshopAction } from './workshop.js';
@@ -64,7 +65,7 @@ export function setRender(v) {
 /* ---------- screens ---------- */
 /* the screens, in the order that decides which side a screen slides in from (UI-5: the bottom bar holds Map, Team
    and Bag, updateNav below; the world, the Guide and the Trainer card are reached otherwise) */
-const TABS = ['walk', 'map', 'team', 'ledger', 'bag'],
+const TABS = ['walk', 'map', 'team', 'ledger', 'bag', 'lab'],
   SCREENS = [...TABS, 'profile'];
 function topbar() {
   const shut = !!(saveData.preferences && saveData.preferences.cardClosed),
@@ -112,9 +113,11 @@ export function render() {
             ? renderProfile()
             : T === 'bag'
               ? renderBag()
-              : T === 'map'
-                ? renderWorldMapTab()
-                : renderWalk();
+              : T === 'lab'
+                ? renderLabBoard()
+                : T === 'map'
+                  ? renderWorldMapTab()
+                  : renderWalk();
   const enter = uiState.lastTab !== T,
     dir = uiState.lastTab && enter ? (SCREENS.indexOf(T) > SCREENS.indexOf(uiState.lastTab) ? ' fromR' : ' fromL') : '';
   uiState.lastTab = T;
@@ -165,8 +168,8 @@ function openTab(t) {
 }
 /* UI-5: the bottom bar is the kit's <pb-nav-bar> (ui-run-kit.js): the hub's tabs, or a run's; the world itself is the
    base view (no Walk tab: the open tab tapped again, or Esc, goes back to it) and the Guide opens from the Trainer
-   card. Lab (RL-11) and Relics (RL-12) wait for their screens. */
-const NAV_HIDDEN = 'lab,relics';
+   card. Lab is the unlock board (RL-11, lab-board.js); Relics (RL-12) waits for its screen. */
+const NAV_HIDDEN = 'relics';
 function updateNav(show) {
   let n = /** @type {any} */ ($('#nav'));
   if (!n) {
@@ -179,7 +182,7 @@ function updateNav(show) {
   }
   n.hidden = !show;
   n.set = saveData.run ? 'run' : 'hub';
-  n.value = ['map', 'team', 'bag'].includes(uiState.tab) ? uiState.tab : '';
+  n.value = ['map', 'team', 'bag', 'lab'].includes(uiState.tab) ? uiState.tab : '';
   /* its labels follow the language (i18nText) */
   if (typeof n.requestUpdate === 'function') n.requestUpdate();
 }
@@ -264,6 +267,9 @@ document.addEventListener('click', ev => {
       break;
     case 'tab':
       openTab(d.t);
+      break;
+    case 'lab-buy':
+      labAction(a, d);
       break;
     case 'fish':
       if (typeof fishStart === 'function') fishStart();

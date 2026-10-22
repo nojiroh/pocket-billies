@@ -255,6 +255,11 @@ same phase:
   egg shown is the one bred, hatched through the hatch window after `breed.hours`; a risky pair; the clock turned
   back; a reload), the in-game test's "The ranch: breeding a pair", and the breeding sim (`tools/test/sim/
   breeding-sim.mjs`, report only; `breeding-sim.test.mjs` runs it small).
+- **RL-11 Unlocks**: `tools/test/unlocks.test.mjs` (doors and currencies, buying once, refusals, milestones never on a
+  run, the tidy-up on load, a run's copy making the same map and stock), the new condition kinds in
+  `conditions.test.mjs`, `run.unlocks` in `run-state.test.mjs`; check-data's blocks for `currencies`, `buildings` and
+  `unlocks` (planted faults in the commits); check-fast's Lab step on `?fixture=lab` (a milestone on load, the board,
+  buying at the Lab, the ranch and the mast, a reload) and the in-game test's "The Lab: unlocks".
 - **14 Studio**: `tools/check-studio-github.py` and smoke's "Studio opens" keep passing; `--studio` follows the
   Studio local mode decision. A new Studio feature adds a step function to its `STEPS` (UI-3), so it can also run
   alone with `--only=<name>`.

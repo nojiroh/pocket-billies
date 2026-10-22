@@ -12,7 +12,7 @@
    rolls it the same however often it is asked), a risky pair's odds spelled out instead. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { closeModal, hatchModal, modal, render, renderOverlay, toast, xpProgress } from './hooks.js';
+import { buildingRowsHTML, closeModal, hatchModal, modal, render, renderOverlay, toast, xpProgress } from './hooks.js';
 import { COATS, RULES, SPECIES } from './game-data.js';
 import { billyName, teamSize, toTeam } from './logic/rules.js';
 import {
@@ -170,9 +170,9 @@ export function ranchOpen() {
     body = again && document.querySelector('#ov .sheet .body'),
     scroll = sheet ? [sheet.scrollTop, body ? body.scrollTop : 0] : null;
   const M = {
-    title: 'The ranch',
+    title: `The ranch · Lv ${ranchLevel(s)}`,
     cls: 'ranch-sheet',
-    html: `<p class="ranch-head"><pb-coin kind="scrap" value="${s.meta.scrap}" label="Scrap"></pb-coin> <span class="note">Ranch level ${ranchLevel(s)} · trains up to Lv ${cap} · ${R.levelsPerHour < 1 ? `a level every ${+(1 / R.levelsPerHour).toFixed(1)} h` : `${R.levelsPerHour} levels an hour`}, banking up to ${R.bankHours} h between visits</span></p><section class="tpanel"><div class="sec-h"><h2>Training</h2><span class="count tnum">${training.length} of ${slots}</span></div>${trainHTML}</section><section class="tpanel"><div class="sec-h"><h2>Storage</h2><span class="count tnum">${resting.length}</span></div>${restHTML}</section>${R.breed ? breedHTML(s, now, R.breed) : ''}<p class="note">Runs bring Scrap home: a little for every place you reach.</p>`,
+    html: `<p class="ranch-head"><pb-coin kind="scrap" value="${s.meta.scrap}" label="Scrap"></pb-coin> <span class="note">Ranch level ${ranchLevel(s)} · trains up to Lv ${cap} · ${R.levelsPerHour < 1 ? `a level every ${+(1 / R.levelsPerHour).toFixed(1)} h` : `${R.levelsPerHour} levels an hour`}, banking up to ${R.bankHours} h between visits</span></p><section class="tpanel"><div class="sec-h"><h2>Training</h2><span class="count tnum">${training.length} of ${slots}</span></div>${trainHTML}</section><section class="tpanel"><div class="sec-h"><h2>Storage</h2><span class="count tnum">${resting.length}</span></div>${restHTML}</section>${R.breed ? breedHTML(s, now, R.breed) : ''}${typeof buildingRowsHTML === 'function' && buildingRowsHTML('ranch', 'ranch') ? `<section class="tpanel"><div class="sec-h"><h2>Upgrades</h2></div>${buildingRowsHTML('ranch', 'ranch')}</section>` : ''}<p class="note">Runs bring Scrap home: a little for every place you reach.</p>`,
     btns: [{ l: 'Done', c: 'gold', f: closeModal }],
     after: () => {
       for (const b of document.querySelectorAll('#ov .ranch-sheet [data-r]'))

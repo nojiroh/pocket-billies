@@ -200,6 +200,9 @@ export interface Run {
   released: { sp: SpeciesId; lvl: number }[];
   /** the one-time hints already shown */
   hints: Record<string, 1>;
+  /** RL-11: the shop and biome unlocks (unlocks.json ids) the run started with: its shops and map read this copy, so
+   * the same seed and copy make the same run. None on a run started before RL-11 (everything open) */
+  unlocks?: string[];
   /** RL-9b: the uids of the Billies from home (picked at the mast, from the team or storage; logic/run-state.js
       runHome reads a run saved before as the hub's team) */
   home?: string[];

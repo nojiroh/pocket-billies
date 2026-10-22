@@ -6,9 +6,10 @@
 import { expose } from './test-globals.js';
 import { closeModal, modal, provide, renderOverlay, soundEffect, toast } from './hooks.js';
 import { clamp, random } from './util.js';
-import { COINS, ITEMS, RULES, SHOPS } from './game-data.js';
+import { COINS, ITEMS, RULES, SHOPS, UNLOCK_DATA } from './game-data.js';
 import { formatNumber, plural } from './logic/rules.js';
 import { runShopStock } from './logic/run-loop.js';
+import { unlockOpen } from './logic/unlocks.js';
 import { escapeHtml, save, saveData, saveNow, uiState } from './game-state.js';
 import { coinHTML, uiIconHTML } from './art.js';
 import { portraitHTML } from './person-art.js';
@@ -98,8 +99,14 @@ export function openShop(id) {
     return;
   }
   /* RL-8: a run town's shop has the day's stock (logic/run-loop.js runShopStock: its own stream for the day) */
-  if (sh.runNode != null && saveData.run)
-    sh.stock = runShopStock(saveData.run, sh.runNode, saveData.run.clock, RULES.run.shop);
+  if (sh.runNode != null && saveData.run) {
+    /* RL-11: only the wares the run has unlocked (its copy, run.unlocks) */
+    const rule = RULES.run.shop;
+    sh.stock = runShopStock(saveData.run, sh.runNode, saveData.run.clock, {
+      ...rule,
+      pick: unlockOpen(rule.pick, 'shop', saveData.run.unlocks, UNLOCK_DATA),
+    });
+  }
   uiState.shopLine = null;
   uiState.shopQty = {};
   const m = {

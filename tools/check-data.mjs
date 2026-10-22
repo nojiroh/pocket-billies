@@ -22,6 +22,7 @@ import { seamRulesLinks, seamRulesPlaces } from '../game/js/logic/seam-rules.js'
 import { CLIMATE_WEATHER_ODDS } from '../game/js/logic/weather.js';
 import { RUN_MARK_TYPES } from '../game/js/logic/run-marks.js';
 import { runMapRowsFit } from '../game/js/logic/run-map.js';
+import { conditionNames, conditionProblem, conditionTree } from '../game/js/logic/conditions.js';
 import { MAPGEN_DEFAULTS, MAPGEN_FEATURES, MAPGEN_SHAPES, MAPGEN_SURFACES, MAPGEN_WATER } from '../game/js/logic/mapgen.js';
 
 const FIX = process.argv.includes('--fix');
@@ -494,6 +495,81 @@ if (D.nodeTypes && check('nodeTypes.schema.json', D.nodeTypes, 'nodeTypes.json')
   }
   if (!Object.values(D.nodeTypes).some(T => (T.weight || 0) > 0))
     problem('nodeTypes.json', 'no type has a weight, so nothing can fill a free row of the run map');
+}
+// RL-11: the four currencies (the schema refuses a fifth or a missing one); money is the run's, the others meta's,
+// each read by its id from saveData.meta (logic/meta-state.js)
+if (D.currencies && check('currencies.schema.json', D.currencies, 'currencies.json')) {
+  for (const [k, C] of Object.entries(D.currencies))
+    if ((C.kept === 'run') !== (k === 'money')) problem('currencies.json', `${k}.kept: ${k === 'money' ? 'money is the run\'s' : 'kept between runs (meta)'}`);
+}
+// RL-11: the hub's buildings: a meta currency each, an act some Copperleaf prop has, and the ranch's levels within what
+// rules.json ranch gives slots for
+if (D.buildings && check('buildings.schema.json', D.buildings, 'buildings.json')) {
+  const hub = ((D.maps || {}).copperleaf || {}).props || [],
+    slots = (((D.rules || {}).ranch || {}).slots || []).length;
+  for (const [k, B] of Object.entries(D.buildings)) {
+    if (D.currencies && !(D.currencies[B.currency] && D.currencies[B.currency].kept === 'meta'))
+      problem('buildings.json', `${k}.currency: "${B.currency}" is not a currency kept between runs (currencies.json)`);
+    if (B.act && !hub.some(p => p.act === B.act)) problem('buildings.json', `${k}.act: no prop in Copperleaf has act "${B.act}"`);
+    if (B.soon && B.levels > 1) problem('buildings.json', `${k}: a building that is coming later has no levels to sell`);
+  }
+  if (D.buildings.ranch && slots && D.buildings.ranch.levels > slots)
+    problem('buildings.json', `ranch.levels: ${D.buildings.ranch.levels}, but rules.json ranch.slots has ${slots} levels`);
+}
+// RL-11: the unlock table: sold at a building that is built, or earned by a condition that reads and names real
+// unlocks; what it needs exists and goes round in no circle; every building level above 1 sold once, at its own
+// building, after the level below; a shop item or biome it opens is one the run's rules can draw, and the rules keep
+// something always open (a biome; the shop's always-stocked wares are never locked)
+if (D.unlocks && check('unlocks.schema.json', D.unlocks, 'unlocks.json')) {
+  const U = D.unlocks,
+    B = D.buildings || {},
+    run = (D.rules || {}).run || {},
+    pick = (run.shop || {}).pick || {},
+    always = (run.shop || {}).always || [],
+    biomes = (run.map || {}).biomes || {},
+    levelRow = {};
+  for (const [k, R] of Object.entries(U)) {
+    if (R.at && !B[R.at]) problem('unlocks.json', `${k}.at: no building "${R.at}" (buildings.json)`);
+    else if (R.at && B[R.at].soon) problem('unlocks.json', `${k}.at: ${R.at} is coming later and sells nothing yet`);
+    if (R.when) {
+      const p = conditionProblem(R.when);
+      if (p) problem('unlocks.json', `${k}.when: ${p.message}`);
+      else for (const u of conditionNames(conditionTree(R.when)).unlock || []) if (!U[u]) problem('unlocks.json', `${k}.when: unlock:${u}, no such unlock`);
+    }
+    for (const r of R.requires || []) if (!U[r] || r === k) problem('unlocks.json', `${k}.requires: no unlock "${r}"`);
+    const G = R.grant;
+    if (G.building) {
+      const b = B[G.building];
+      if (!b) problem('unlocks.json', `${k}.grant.building: no building "${G.building}"`);
+      else if (G.level > b.levels) problem('unlocks.json', `${k}.grant: ${G.building} goes up to level ${b.levels}`);
+      else if (R.at !== G.building) problem('unlocks.json', `${k}: a level of ${G.building} is sold at ${G.building}`);
+      const key = `${G.building}:${G.level}`;
+      if (levelRow[key]) problem('unlocks.json', `${k}: ${G.building} level ${G.level} is sold by ${levelRow[key]} already`);
+      levelRow[key] = k;
+    }
+    if (G.shop && !(G.shop in pick)) problem('unlocks.json', `${k}.grant.shop: "${G.shop}" is not in rules.json run.shop.pick`);
+    if (G.shop && always.includes(G.shop)) problem('unlocks.json', `${k}.grant.shop: "${G.shop}" is always stocked (run.shop.always)`);
+    if (G.biome && !(G.biome in biomes)) problem('unlocks.json', `${k}.grant.biome: "${G.biome}" is not in rules.json run.map.biomes`);
+  }
+  for (const [b, Bd] of Object.entries(B))
+    for (let n = 2; n <= Bd.levels; n++) {
+      const k = levelRow[`${b}:${n}`];
+      if (!k) problem('unlocks.json', `no row sells ${b} level ${n} (buildings.json ${b}.levels ${Bd.levels})`);
+      else if (n > 2 && !(U[k].requires || []).includes(levelRow[`${b}:${n - 1}`]))
+        problem('unlocks.json', `${k}: ${b} level ${n} requires the level below (${levelRow[`${b}:${n - 1}`] || 'none sold'})`);
+    }
+  const seen = {},
+    loop = (k, path) => {
+      if (seen[k] === 2 || !U[k]) return;
+      if (seen[k] === 1) return problem('unlocks.json', `${k}.requires goes round in a circle: ${[...path, k].join(' -> ')}`);
+      seen[k] = 1;
+      for (const r of U[k].requires || []) loop(r, [...path, k]);
+      seen[k] = 2;
+    };
+  for (const k of Object.keys(U)) loop(k, []);
+  const locked = new Set(Object.values(U).map(R => R.grant.biome).filter(Boolean));
+  if (Object.keys(biomes).length && Object.keys(biomes).every(b => locked.has(b)))
+    problem('unlocks.json', 'every biome of rules.json run.map.biomes is locked: a new player\'s run map would have none');
 }
 // phase 10: the world map's look: the schema, then the terrain keys it names and the regions it covers
 if (D.worldmap && check('worldmap.schema.json', D.worldmap, 'worldmap.json')) {

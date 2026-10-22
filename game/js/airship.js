@@ -11,6 +11,7 @@
 import { expose } from './test-globals.js';
 import {
   arrivedAt,
+  buildingRowsHTML,
   closeModal,
   mapIdAt,
   modal,
@@ -104,6 +105,8 @@ export function flyMenu(p) {
     });
     return;
   }
+  /* RL-11: the mast's sheet comes back after an upgrade bought on it */
+  uiState.flyAt = p;
   const L = flyTowns(),
     here = saveData.trip.node;
   const rows = L.map(i => {
@@ -116,11 +119,17 @@ export function flyMenu(p) {
     typeof runStartable === 'function' && runStartable()
       ? `<button class="pickrow fly-row" data-a="runstart"><span class="fly-ico">${uiIconHTML('map', 18)}</span><span class="pr-t"><b>Start a run</b><small>Bracket I · the wild lands past the island</small></span><span class="fly-fare">Free</span></button>`
       : '';
+  /* RL-11: the airship's upgrades, for Audit Seals */
+  const ups = typeof buildingRowsHTML === 'function' ? buildingRowsHTML('airship', 'fly') : '',
+    upHTML = ups
+      ? `<p class="note">Airship upgrades, paid in Audit Seals. You have ${formatNumber(saveData.meta.seals)}.</p>${ups}`
+      : '';
   modal({
     title: escapeHtml((p && p.label) || 'Airship mast'),
     cls: 'fly-sheet',
     html:
       (runRow ? `<div class="list">${runRow}</div>` : '') +
+      upHTML +
       (L.length
         ? `<p class="note">The airships fly to the towns you’ve been to. A ticket is paid in money. You have $${formatNumber(saveData.se)}.</p><div class="list">${rows}</div>`
         : runRow

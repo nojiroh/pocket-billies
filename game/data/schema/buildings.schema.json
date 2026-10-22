@@ -1,0 +1,57 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "buildings.schema.json",
+ "title": "game/data/buildings.json: Copperleaf's hub buildings, each upgraded with one currency (roguelite track RL-11; levels are sold as unlocks.json rows)",
+ "type": "object",
+ "propertyNames": {
+  "pattern": "^[a-z][a-z0-9_]*$"
+ },
+ "minProperties": 1,
+ "additionalProperties": {
+  "type": "object",
+  "required": [
+   "name",
+   "currency",
+   "levels",
+   "about"
+  ],
+  "additionalProperties": false,
+  "properties": {
+   "name": {
+    "description": "what the player reads",
+    "type": "string",
+    "minLength": 1,
+    "maxLength": 40
+   },
+   "currency": {
+    "description": "the currency it is upgraded with: one kept between runs (currencies.json, not money)",
+    "enum": [
+     "capital",
+     "scrap",
+     "seals"
+    ]
+   },
+   "act": {
+    "description": "the act of its building in Copperleaf (a prop's act): its sheet sells its rows, its label shows its level",
+    "type": "string",
+    "pattern": "^[a-z][a-z0-9_]*$"
+   },
+   "levels": {
+    "description": "its highest level; level 1 is where it starts, every level above has one unlocks.json row granting it",
+    "type": "integer",
+    "minimum": 1,
+    "maximum": 99
+   },
+   "soon": {
+    "description": "not built yet: shown on the Lab board as coming later, nothing sold",
+    "const": true
+   },
+   "about": {
+    "description": "what it does, for the Lab board",
+    "type": "string",
+    "minLength": 1,
+    "maxLength": 200
+   }
+  }
+ }
+}

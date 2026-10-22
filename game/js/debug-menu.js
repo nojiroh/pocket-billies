@@ -134,7 +134,7 @@ function debugHTML() {
   )}${debugButtonHTML('test', 'Go there')}${debugButtonHTML('testchk', 'Run its checks')}${uiState.bench && uiState.bench.test ? debugButtonHTML('untest', 'Back to the game', 'gold') : ''}</div>
   ${uiState.testRes ? `<ul class="dbg-warn">${uiState.testRes.map(r => `<li>${r.ok ? '✓' : '✗'} ${escapeHtml(r.what)}${r.ok ? '' : ` (expected ${r.reach ? 'reachable' : 'not reachable'})`}</li>`).join('')}</ul>` : ''}</details>
  <details><summary>Storage, the ranch and evolution</summary><div class="dbg-row">${debugButtonHTML('idle', 'Age storage by a day')}${debugButtonHTML('streak', 'Lead +3 win streak')}</div>
-  <div class="dbg-row">${debugButtonHTML('ranchhour', 'Age the ranch by an hour')}${debugButtonHTML('scrap', '+50 Scrap')}${debugButtonHTML('eggsready', 'Eggs ready now')}</div></details>
+  <div class="dbg-row">${debugButtonHTML('ranchhour', 'Age the ranch by an hour')}${debugButtonHTML('scrap', '+50 Scrap')}${debugButtonHTML('eggsready', 'Eggs ready now')}${debugButtonHTML('capital', '+500 Capital, +2 Seals')}</div></details>
  <details ${inB ? 'open' : ''}><summary>Battle${inB ? '' : ' (start one first)'}</summary><div class="dbg-row">${debugButtonHTML('win', 'Win now', 'gold')}${debugButtonHTML('lose', 'Lose now')}${debugButtonHTML('foe1', 'Foe to 1 HP')}${debugButtonHTML('catch', uiState.dbgCatch ? 'Taxing works as normal' : 'Every throw taxes')}</div>
   <div class="dbg-row">${[1, 2, 4].map(x => debugButtonHTML('speed' + x, `${x}× speed`, battleStage.speed === x ? 'dark' : '')).join('')}</div></details>
  <details><summary>Save</summary><div class="dbg-row">${debugButtonHTML('copy', 'Copy save as text')}${debugButtonHTML('export', 'Download backup')}${debugButtonHTML('wipe', 'Erase save', 'red')}</div></details>
@@ -420,6 +420,12 @@ function debugAction(x) {
     case 'scrap':
       saveData.meta.scrap += 50;
       toast(`${saveData.meta.scrap} Scrap.`);
+      break;
+    /* RL-11: Capital and Seals to try the Lab's board and the airship's upgrades with */
+    case 'capital':
+      saveData.meta.capital += 500;
+      saveData.meta.seals += 2;
+      toast(`${saveData.meta.capital} Capital, ${saveData.meta.seals} Audit Seals.`);
       break;
     case 'streak':
       if (saveData.team[0]) saveData.team[0].streak = (saveData.team[0].streak || 0) + 3;

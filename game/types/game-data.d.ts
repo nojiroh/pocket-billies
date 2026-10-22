@@ -50,6 +50,12 @@ export interface GameData {
   biomes?: Record<DataId, Biome>;
   /** roguelite track RL-6: the kinds of node on a run's map (game/data/nodeTypes.json; logic/run-map.js) */
   nodeTypes?: Record<DataId, NodeType>;
+  /** roguelite track RL-11: the four currencies (game/data/currencies.json) */
+  currencies?: Partial<Record<CurrencyId, Currency>>;
+  /** RL-11: Copperleaf's hub buildings (game/data/buildings.json) */
+  buildings?: Record<DataId, HubBuilding>;
+  /** RL-11: the one unlock table (game/data/unlocks.json; logic/unlocks.js) */
+  unlocks?: Record<DataId, Unlock>;
   /** UI track UI-1: the UI's look: palette, glass, cuts, fonts (game/data/uiTheme.json; logic/ui-theme.js) */
   uiTheme?: UiTheme;
   lines: Line[];
@@ -1415,6 +1421,53 @@ export interface NodeType {
   engine: 'scene' | 'menu';
   /** how often it fills a free row (rules.json run.map gives the other rows their types); 0 or none: never */
   weight?: number;
+}
+
+/** currencies.json: one of the game's four currencies (roguelite track RL-11) */
+export type CurrencyId = 'money' | 'capital' | 'scrap' | 'seals';
+export interface Currency {
+  /** what the player reads; `long` where the short name is a sign ($); `one` for a count of one */
+  name: string;
+  long?: string;
+  one: string;
+  /** its icon (ui-run-kit.js pb-coin) */
+  icon: string;
+  /** run: the run's working field (saveData.se); meta: saveData.meta.<id>, kept between runs */
+  kept: 'run' | 'meta';
+  about: string;
+}
+
+/** buildings.json: a hub building, upgraded with one currency kept between runs (roguelite track RL-11) */
+export interface HubBuilding {
+  name: string;
+  currency: Exclude<CurrencyId, 'money'>;
+  /** the act of its building in Copperleaf: its sheet sells its rows, its label shows its level */
+  act?: string;
+  /** its highest level (1 is where it starts); each level above is an unlocks.json row */
+  levels: number;
+  /** not built yet: on the Lab board as coming later */
+  soon?: true;
+  about: string;
+}
+
+/** unlocks.json: what an unlock gives (exactly one kind) */
+export type UnlockGrant =
+  | { building: string; level: number }
+  | { shop: string }
+  | { biome: string }
+  | { capital: number }
+  | { scrap: number }
+  | { seals: number };
+/** unlocks.json: one row of the unlock table (roguelite track RL-11): sold at a building (at + cost, in its currency;
+ * the Lab's rows are its board) or earned when a condition holds (when) */
+export interface Unlock {
+  name: string;
+  about: string;
+  at?: string;
+  cost?: number;
+  when?: string;
+  requires?: string[];
+  grant: UnlockGrant;
 }
 
 /** uiTheme.json: the UI's look (UI track UI-1; version 2 in UI-3, for the Studio's UI section) */
