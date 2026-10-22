@@ -15,7 +15,7 @@
 import { expose } from './test-globals.js';
 import { airshipFlight, flyDraw, flySkip, flyTick, paintWorldMapCard, provide, render } from './hooks.js';
 import { $ } from './util.js';
-import { LOCATIONS, LOCATION_BY_ID, ROADS, gameData, locationSubtitle } from './game-data.js';
+import { LOCATIONS, LOCATION_BY_ID, ROADS, gameData, locationSubtitle, worldExtra } from './game-data.js';
 import { canEnter, distanceText, tripTo } from './logic/rules.js';
 import { runMarkDraw } from './logic/run-marks.js';
 import {
@@ -429,7 +429,8 @@ export function worldBowlReset() {
 /* ---------- the places and the ground ---------- */
 /* the world map's look from worldmap.json (the Studio edits it), each part falling back to the values in code */
 function worldMapLook() {
-  const W = (gameData && gameData.worldmap) || {},
+  /* RL-8b: a run's own look (logic/run-bowl.js, put in with its world) stands in for worldmap.json's */
+  const W = worldExtra.look || (gameData && gameData.worldmap) || {},
     regions = {};
   for (const r of new Set([...Object.keys(BOWL_REGION_GROUND), ...Object.keys(W.regions || {})])) {
     const R = (W.regions || {})[r],
