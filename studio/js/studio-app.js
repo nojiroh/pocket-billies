@@ -198,7 +198,9 @@ export const snapshot = () =>
   JSON.stringify({ D: studioState.D, R: studioState.rigs }, (k, v) => (k[0] === '_' && k.length > 1 ? undefined : v));
 export function commit(now) {
   clearTimeout(studioState.snapT);
+  studioState.snapT = null;
   const go = () => {
+    studioState.snapT = null; /* T1.5: null when no commit is pending */
     const P = studioProbe.on,
       a = P ? performance.now() : 0,
       snap = snapshot(),

@@ -981,6 +981,7 @@ def studio_test_steps(pg, errs):
     if not r['restored']: errs.append('studio test: the data was not put back as it was')
     for s in r['sections']:
         if s.get('edit') and s['edit']['back'] is False: errs.append(f"studio test: the edit in {s['id']} did not come back with undo")
+        if s.get('outside'): errs.append(f"studio test: opening {s['id']} changed the data outside an edit: {', '.join(s['outside'])}")
     if r['privacy']: errs.append('studio test: the report holds ' + ', '.join(r['privacy']))
     if pg.evaluate("studioProbe.on !== null || studioProbe.running"): errs.append('studio test: the probe was left on')
     edits = sum(1 for s in r['sections'] if s.get('edit'))
