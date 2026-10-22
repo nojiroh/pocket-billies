@@ -134,7 +134,10 @@ function save(D) {
     writeFile(p, t);
     wrote++;
   }
-  for (const dir of readdirSync(DATA, { withFileTypes: true }).filter(d => d.isDirectory() && d.name !== 'schema'))
+  /* schema/ and legacy/ (RL-5's parked world, its own index) are not the index's files: leave them be */
+  for (const dir of readdirSync(DATA, { withFileTypes: true }).filter(
+    d => d.isDirectory() && d.name !== 'schema' && d.name !== 'legacy'
+  ))
     for (const f of readdirSync(join(DATA, dir.name)))
       if (f.endsWith('.json') && !(`${dir.name}/${f}` in texts)) {
         unlinkSync(join(DATA, dir.name, f));
