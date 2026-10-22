@@ -9,6 +9,12 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- The walking camera follows more smoothly (CAM-1): it trails you by the same amount at any frame rate, holds still
+  while you move a little and catches up as you go further, and settles on you again when you stop. It looks ahead
+  the way you push the joystick (or the way you walk when you tap), further sideways on a phone held upright. Looking
+  up at a landmark, tilting indoors, rising ground ahead, a room framed whole and the swoop into a battle now blend
+  in and out as one camera instead of each pulling on its own. The camera on tall ground behaves as before. The
+  Studio's Engine preview has Camera guides: the zones drawn on the scene, dragged to resize.
 - Loopholes (RL-12): beat a mini-boss on a run and pick one of three Loopholes, or buy one in a town's shop (one a
   day, priced by rarity). Each lasts the rest of the run and bends a rule: cheaper shops or clinics, better catches,
   more money from wins, a Speed boost at the start of every battle, harder physical hits, less damage taken, a little
