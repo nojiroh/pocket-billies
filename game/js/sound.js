@@ -1929,7 +1929,12 @@ function testVolume(k) {
     ambience.arrive = -9;
     applyAmbienceVolume();
     const t = soundEngine.ctx.currentTime + 0.05;
-    if (k === 'music') jingle(JINGLES.levelup);
+    /* SND-1: the master volume plays a chime straight on the master bus, so it sounds whatever the other sliders are */
+    if (k === 'master')
+      [72, 79].forEach((n, i) =>
+        synthVoice(soundEngine.master, { type: 'p25', freq: midiToFrequency(n), t: t + i * 0.12, dur: 0.14, vol: 0.06 })
+      );
+    else if (k === 'music') jingle(JINGLES.levelup);
     else if (k === 'sfx') soundEffect('coin');
     else if (k === 'world') {
       synthNoise(ambience.bus, { t, dur: 1.2, vol: 0.35, bp: 1500, q: 0.9 });
