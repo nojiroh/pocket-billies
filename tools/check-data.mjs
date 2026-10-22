@@ -18,6 +18,7 @@ import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { DATA, PB_DATA } from './data-files.mjs';
 import { uiThemeContrast } from '../game/js/logic/ui-theme.js';
+import { musicFindings } from '../game/js/logic/music-studio.js';
 import { seamRulesLinks, seamRulesPlaces } from '../game/js/logic/seam-rules.js';
 import { CLIMATE_WEATHER_ODDS } from '../game/js/logic/weather.js';
 import { RUN_MARK_TYPES } from '../game/js/logic/run-marks.js';
@@ -391,20 +392,11 @@ if (D.nodeTypes && check('nodeTypes.schema.json', D.nodeTypes, 'nodeTypes.json')
     problem('nodeTypes.json', 'no type has a weight, so nothing can fill a free row of the run map');
 }
 // SND-2: the music: the schema, then every song a where-rule or a place names is a song, and the where table ends in a
-// rule that always matches (so something always plays)
+// rule that always matches (so something always plays). SND-3: the rules are logic/music-studio.js musicFindings, which
+// the Studio's Check shows too; its warnings (a song nothing plays) are the quick check's Unused report here
 if (D.music && check('music.schema.json', D.music, 'music.json')) {
-  const songs = D.music.songs;
-  D.music.where.forEach((W, i) => {
-    if (W.song !== '$place' && !songs[W.song]) problem('music.json', `where[${i}]: no song "${W.song}"`);
-    if (W.nodeType && !(D.nodeTypes || {})[W.nodeType]) problem('music.json', `where[${i}]: no node type "${W.nodeType}" (nodeTypes.json)`);
-    if (W.biome && !(D.biomes || {})[W.biome]) problem('music.json', `where[${i}]: no biome "${W.biome}" (biomes.json)`);
-  });
-  const last = D.music.where[D.music.where.length - 1];
-  if (Object.keys(last).some(k => k !== 'song') || last.song === '$place')
-    problem('music.json', 'the last where-rule must match everywhere (a song and nothing else), so some song always plays');
-  (D.locations || []).forEach((L, i) => {
-    if (L && L.music && !songs[L.music]) problem('locations.json', `${L.id || i}: music "${L.music}" is not a song (music.json)`);
-  });
+  for (const F of musicFindings(D.music, { nodeTypes: D.nodeTypes || {}, biomes: D.biomes || {}, locations: D.locations || [] }))
+    if (F.lvl === 'error') problem(F.place ? 'locations.json' : 'music.json', F.msg);
 }
 // phase 10: the world map's look: the schema, then the terrain keys it names and the regions it covers
 if (D.worldmap && check('worldmap.schema.json', D.worldmap, 'worldmap.json')) {
