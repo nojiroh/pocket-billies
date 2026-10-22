@@ -86,20 +86,23 @@ export const ISLAND_GEN_BUILT = ['town', 'barn', 'pasture'];
 /** the dials (IS-6b shows them): sizes in metres, angles in degrees (0 east, 90 north, 270 south) */
 export const ISLAND_GEN_DEFAULTS = {
   /* the land's radius round the middle (the coast is pushed out further round the zones), how much the coast wobbles
-     (0-1), the open sea between the coast and the scene's edge */
-  size: { r: 68, wobble: 0.35, sea: 10 },
+     (0-1), the open sea between the coast and the scene's edge, how long the island is (0-1: up to 1.3 times its
+     width), its big lobes and a peninsula (0-1) */
+  size: { r: 68, wobble: 0.35, sea: 10, stretch: 0.3, lobes: 0.6 },
   /* how natural every shape is (0-1): 0 is plain geometry (round coast, rectangles, a cone, straight spokes); up from
      there headlands and bays, rounded uneven zones, a warped massif, wandering shelves and paths, ragged ground */
   organic: 0.7,
   /* the mountain in the middle: the radius of its foot, its peak, how tall its shelves are (0-1: 0.8-2 m, the cliffs),
      how long it runs along its ridge (0-1: up to 1.45 times its width), a shoulder peak along the ridge (0-1 of the
-     peak's height, times 0.6) */
-  mountain: { r: 22, peak: 22, cliffs: 0.5, stretch: 0.5, shoulder: 0.6 },
+     peak's height, times 0.6), a range of lower peaks and ridges round it (0-1: 2 to 6 of them, a third to a half of
+     its height), kept away from the biggest zone and the cove */
+  mountain: { r: 22, peak: 22, cliffs: 0.5, stretch: 0.5, shoulder: 0.6, range: 0.6 },
   /* rolling land (0-1: up to 1.6 m) and the foot hills round the mountain */
   hills: 0.4,
-  /* the cove: a horseshoe bay cut into the coast; its middle's angle, its width in degrees, its depth, the deep
-     channel from the dock out to the open sea (0 for none), its inner beach's width */
-  cove: { on: 1, a: 0, span: 40, depth: 18, channel: 6, beach: 7 },
+  /* the cove: cut into the coast; its middle's angle, its width in degrees, its depth, the deep channel from the dock
+     out to the open sea (0 for none), its inner beach's width, its shape ('bay' wide and rounded, 'cove' a horseshoe
+     with steep sides) */
+  cove: { on: 1, a: 0, span: 70, depth: 22, channel: 6, beach: 7, shape: 'bay' },
   /* the beach's width where no beach arc is (the narrow shore) and the long beaches (an angle, a width in degrees) */
   shore: 3,
   beaches: [{ a: 180, span: 80, w: 11 }],
@@ -115,8 +118,9 @@ export const ISLAND_GEN_DEFAULTS = {
   forest: { a: 95, span: 156, deep: 26, density: 0.75 },
   /* the stream from a pond at the mountain's foot down to the cove (a small fall where it leaves the pond) */
   stream: { on: 1, pond: 4, fall: 0.8 },
-  /* the paths: the loop round the coast and its spokes; how far inland from the beach the loop runs */
-  paths: { width: 2.2, inland: 3 },
+  /* the paths: the loop round the coast and its spokes; how far inland from the beach the loop runs at least, how
+     freely it wanders (0-1: inland by up to 14 m, across headlands rather than round them) */
+  paths: { width: 2.2, inland: 3, wander: 0.6 },
   /* the flat zones: kind, angle and distance of the middle from the island's middle, width (across) and depth (toward
      the middle), the height they lie at */
   zones: [
@@ -202,11 +206,14 @@ export function islandGenDials(d) {
   D.size.r = num(D.size.r, 20, 120, 68);
   D.size.wobble = num(D.size.wobble, 0, 1, 0.35);
   D.size.sea = num(D.size.sea, 4, 40, 10);
+  D.size.stretch = num(D.size.stretch, 0, 1, 0.3);
+  D.size.lobes = num(D.size.lobes, 0, 1, 0.6);
   D.mountain.r = num(D.mountain.r, 0, D.size.r * 0.6, 22);
   D.mountain.peak = num(D.mountain.peak, 0, 40, 22);
   D.mountain.cliffs = num(D.mountain.cliffs, 0, 1, 0.5);
   D.mountain.stretch = num(D.mountain.stretch, 0, 1, 0.5);
   D.mountain.shoulder = num(D.mountain.shoulder, 0, 1, 0.6);
+  D.mountain.range = num(D.mountain.range, 0, 1, 0.6);
   D.organic = num(D.organic, 0, 1, 0.7);
   D.hills = num(D.hills, 0, 1, 0.4);
   D.cove.on = D.cove.on ? 1 : 0;
@@ -215,6 +222,7 @@ export function islandGenDials(d) {
   D.cove.depth = num(D.cove.depth, 4, D.size.r * 0.5, 18);
   D.cove.channel = num(D.cove.channel, 0, 12, 6);
   D.cove.beach = num(D.cove.beach, 0, 16, 7);
+  if (D.cove.shape !== 'cove') D.cove.shape = 'bay';
   D.shore = num(D.shore, 1, 10, 3);
   const arcs = (L, w) =>
     (Array.isArray(L) ? L : [])
@@ -237,6 +245,7 @@ export function islandGenDials(d) {
   D.stream.fall = num(D.stream.fall, 0, 2, 0.8);
   D.paths.width = num(D.paths.width, 1.2, 5, 2.2);
   D.paths.inland = num(D.paths.inland, 0, 12, 3);
+  D.paths.wander = num(D.paths.wander, 0, 1, 0.6);
   D.zones = (Array.isArray(D.zones) ? D.zones : [])
     .filter(Z => Z && ISLAND_GEN_BUILT.includes(Z.k))
     .map(Z => ({
@@ -398,7 +407,11 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
   const coveAt = t => {
     if (!D.cove.on) return 0;
     const u = Math.abs(islandAngleDiff(D.cove.a, t)) / (D.cove.span / 2);
-    return u >= 1 ? 0 : mapgenSmooth(mapgenBetween((1 - u) / 0.45, 0, 1));
+    if (u >= 1) return 0;
+    /* a bay: one wide, rounded sweep; a cove: steep sides and a flat back */
+    return D.cove.shape === 'bay'
+      ? Math.pow((Math.cos(Math.PI * u) + 1) / 2, 0.8)
+      : mapgenSmooth(mapgenBetween((1 - u) / 0.45, 0, 1));
   };
   /* headlands and bays: a few bumps out and dents in along the coast, none in the cove */
   const rC = rng('coast'),
@@ -411,6 +424,33 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
     if (D.cove.on && Math.abs(islandAngleDiff(D.cove.a, a)) < D.cove.span / 2 + span / 2 + 6) continue;
     capes.push({ a, span, amp });
   }
+  /* a bay has arms: a headland either side of its mouth, so it reads as a bay and not a bend in the coast */
+  if (D.cove.on && D.cove.shape === 'bay')
+    for (const side of [-1, 1])
+      capes.push({ a: D.cove.a + side * (D.cove.span / 2 + 7), span: 20, amp: D.cove.depth * 0.4 });
+  /* big lobes and a peninsula (the lobes dial), none across the cove */
+  const Lb = D.size.lobes;
+  for (let k = 0, n = Math.round(1 + 2 * Lb); k < n; k++) {
+    const a = rC.range(0, 360),
+      span = rC.range(40, 75),
+      amp = (rC.chance(0.6) ? 1 : -0.7) * rC.range(10, 22) * Lb;
+    if (D.cove.on && Math.abs(islandAngleDiff(D.cove.a, a)) < D.cove.span / 2 + span / 2 + 18) continue;
+    capes.push({ a, span, amp });
+  }
+  if (rC.chance(0.4 + 0.5 * Lb)) {
+    const a = rC.range(0, 360);
+    if (!D.cove.on || Math.abs(islandAngleDiff(D.cove.a, a)) > D.cove.span / 2 + 20)
+      capes.push({ a, span: rC.range(12, 18), amp: rC.range(16, 28) * Lb });
+  }
+  /* a longer island: stretched along a line (an ellipse's radius at each angle) */
+  const elA = rC.range(0, 180),
+    elX = 1 + 0.3 * D.size.stretch,
+    elZ = 1 / (1 + 0.12 * D.size.stretch),
+    ellipse = t => {
+      const u = Math.cos((t - elA) * ISLAND_RAD) / elX,
+        v = Math.sin((t - elA) * ISLAND_RAD) / elZ;
+      return 1 / Math.hypot(u, v);
+    };
   for (let t = 0; t < 360; t++) {
     /* the noise is read a little off round the circle (an angular warp), so the wobble isn't even */
     const tw =
@@ -429,7 +469,8 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
       const u = Math.abs(islandAngleDiff(C.a, t)) / (C.span / 2);
       if (u < 1) cape += C.amp * mapgenSmooth(1 - u);
     }
-    coastR[t] = R0 * (1 + D.size.wobble * (0.32 * n + 0.08 * n2 + 0.05 * O * n3)) + cape - D.cove.depth * coveAt(t);
+    coastR[t] =
+      R0 * ellipse(t) * (1 + D.size.wobble * (0.32 * n + 0.08 * n2 + 0.05 * O * n3)) + cape - D.cove.depth * coveAt(t);
     let cw = 0,
       ch = 0;
     for (const C of D.cliffs) {
@@ -686,7 +727,27 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
       peakP[1] + Math.sin(ridgeA) * Rf * 0.62 * st * shSide,
     ],
     shH = D.mountain.shoulder * 0.6 * Math.min(1, O3 * 1.5),
-    topF = Math.max(0.05, 3.5 / Math.max(Rf, 4));
+    topF = Math.max(0.05, 3.5 / Math.max(Rf, 4)),
+    /* the range: spurs running out from the mountain, ridges that fall away from it (not toward the biggest zone or
+       the cove) */
+    range = /** @type {{ a: number[], b: number[], r: number, h0: number, h1: number }[]} */ ([]);
+  for (let k = 0, n = Math.round(2 + 4 * D.mountain.range); k < n && D.mountain.range > 0; k++) {
+    const t0 = rM.range(0, 360);
+    if (awayFrom.some(b => Math.abs(islandAngleDiff(t0, b)) < 40)) continue;
+    const bend = rM.range(-25, 25),
+      d0 = Rf * rM.range(0.35, 0.6),
+      d1 = Rf * rM.range(1.2, 1.75),
+      a = t0 * ISLAND_RAD,
+      b = (t0 + bend) * ISLAND_RAD,
+      top = D.mountain.peak * rM.range(0.35, 0.55) * (0.6 + 0.4 * D.mountain.range);
+    range.push({
+      a: [peakP[0] + Math.cos(a) * d0, peakP[1] + Math.sin(a) * d0],
+      b: [peakP[0] + Math.cos(b) * d1, peakP[1] + Math.sin(b) * d1],
+      r: Rf * rM.range(0.32, 0.5),
+      h0: top,
+      h1: top * rM.range(0.25, 0.5),
+    });
+  }
   if (Rf > 0 && D.mountain.peak > 0)
     for (let j = 0; j <= h; j++)
       for (let i = 0; i <= w; i++) {
@@ -706,6 +767,20 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
         if (shH > 0) {
           const ds = (Math.hypot(i - shP[0], j - shP[1]) / (Rf * 0.55)) * rag;
           if (ds < 1) e = Math.max(e, D.mountain.peak * shH * Math.pow(1 - ds, 1.3));
+        }
+        for (const F of range) {
+          /* the distance to the spur's line, and how far along it (its height falls away from the mountain) */
+          const px = wx + peakP[0],
+            pz = wz + peakP[1],
+            vx = F.b[0] - F.a[0],
+            vz = F.b[1] - F.a[1],
+            u = mapgenBetween(((px - F.a[0]) * vx + (pz - F.a[1]) * vz) / (vx * vx + vz * vz), 0, 1),
+            ds = (Math.hypot(px - F.a[0] - vx * u, pz - F.a[1] - vz * u) / (F.r * (1 - 0.35 * u))) * rag;
+          if (ds < 1)
+            e = Math.max(
+              e,
+              (F.h0 + (F.h1 - F.h0) * u) * Math.pow(1 - ds, 1.2) * (0.7 + 0.3 * mapgenRidged(i / 11, j / 11, sM + 61))
+            );
         }
         if (e <= 0) continue;
         let keep = 1;
@@ -868,22 +943,44 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
           D.organic
       );
     if (arrAt(cliffW, t) > 0.3) r = Math.min(r, coastAt(t) - 5);
+    /* across a headland rather than round it (the lowest of the line's radius nearby), inland now and then, clear
+       of the mountains' feet where there's room */
+    const Wn = Math.round(4 + 14 * D.paths.wander);
+    let cut = r;
+    for (let m = -Wn; m <= Wn; m += 2)
+      cut = Math.min(
+        cut,
+        coastAt(t + m) - arrAt(beachW, t + m) - D.paths.inland - D.paths.width / 2 + Math.abs(m) * 0.25
+      );
+    const room = Math.max(0, cut - footAt(t) - 6);
+    r =
+      cut -
+      Math.min(
+        room,
+        Math.max(
+          0,
+          mapgenFbm(Math.cos(t * ISLAND_RAD) * 1.6 + 4, Math.sin(t * ISLAND_RAD) * 1.6 + 4, salt('paths', 'wander')) -
+            0.42
+        ) *
+          30 *
+          D.paths.wander
+      );
     let p = at(r, t);
     for (let push = 0; push < 30 && zoneAvoid(p[0], p[1]) && r < coastAt(t) - 1.5; push++) p = at((r += 0.5), t);
     loop.push(p);
   }
-  /* smoothed (twice, a window of 5 points), its two ends one point */
+  /* smoothed (twice, a window of 7 points), its two ends one point */
   let lp = loop;
   for (let pass = 0; pass < 2; pass++)
     lp = lp.map((_, k) => {
       let sx = 0,
         sz = 0;
-      for (let m = -2; m <= 2; m++) {
+      for (let m = -3; m <= 3; m++) {
         const q = lp[(((k + m) % 360) + 360) % 360];
         sx += q[0];
         sz += q[1];
       }
-      return [sx / 5, sz / 5];
+      return [sx / 7, sz / 7];
     });
   lp[360] = lp[0];
   const roads = [{ pts: mapgenResample(lp, 0.5), width: D.paths.width, main: true, name: 'loop' }];
@@ -1244,7 +1341,17 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
   if (D.cove.on) {
     const half = D.cove.span / 2,
       n = Math.max(6, Math.round(D.cove.span / 3));
-    zones.push({ k: 'cove', poly: ring(coastAt, n, D.cove.a - half, D.cove.a + half), lock: false });
+    /* the water between the shore and an arc out at sea past the mouth (never crossing itself, however wide) */
+    let out = 0;
+    for (let t = D.cove.a - half; t <= D.cove.a + half; t++) out = Math.max(out, coastAt(t));
+    zones.push({
+      k: 'cove',
+      poly: [
+        ...ring(coastAt, n, D.cove.a - half, D.cove.a + half),
+        ...ring(() => out + 3, n, D.cove.a - half, D.cove.a + half).reverse(),
+      ],
+      lock: false,
+    });
   }
   for (const B of D.beaches) {
     const n = Math.max(4, Math.round(B.span / 5)),
