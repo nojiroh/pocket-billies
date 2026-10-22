@@ -9,8 +9,30 @@
 import { expose } from '../../game/js/test-globals.js';
 import { trackerCreate } from '../../game/js/audio/tracker.js';
 import { escapeHtml } from './game-stand-ins.js';
-import { musicNoteName, musicSongUses } from '../../game/js/logic/music-studio.js';
-import { ACTIONS, SECTIONS, afterRender, card, render, sectionShown, studioState } from './studio-app.js';
+import {
+  MUSIC_CHOICES,
+  MUSIC_SCALES,
+  chordNumeral,
+  musicNoteName,
+  musicSongUses,
+} from '../../game/js/logic/music-studio.js';
+import {
+  ACTIONS,
+  SECTIONS,
+  afterRender,
+  card,
+  changed,
+  checkboxField,
+  commit,
+  grid,
+  numberField,
+  rangeField,
+  render,
+  sectionShown,
+  selectField,
+  studioState,
+  writePath,
+} from './studio-app.js';
 import { legacyLoad, legacyView } from './legacy-view.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -19,6 +41,7 @@ expose({
   musicNowShow: [() => musicNowShow, v => (musicNowShow = v)],
   musicPlay: [() => musicPlay, v => (musicPlay = v)],
   musicPlaying: [() => musicPlaying],
+  musicRecipeHTML: [() => musicRecipeHTML, v => (musicRecipeHTML = v)],
   musicSelected: [() => musicSelected],
   musicSongIds: [() => musicSongIds],
   musicSongListHTML: [() => musicSongListHTML, v => (musicSongListHTML = v)],
@@ -122,6 +145,72 @@ function musicSongListHTML(uses) {
     })
     .join('');
 }
+/* the recipe: every dial is a field on the data (undo and redo work as anywhere); each change composes the song again
+   and, if it plays, it keeps playing with the change (studioState.hooks.music) */
+function musicRecipeHTML(id) {
+  const S = musicData().songs[id],
+    p = `music.songs.${id}`,
+    keys = [];
+  for (let m = 40; m <= 80; m++) keys.push([m, `${musicNoteName(m)} (${m})`]);
+  const chords = S.prog
+    .map(
+      (deg, b) =>
+        `<label class="fld mus-chord"><span>Bar ${b + 1}</span><select data-p="${p}.prog.${b}" data-k="num">${[
+          0, 1, 2, 3, 4, 5, 6,
+        ]
+          .map(
+            d =>
+              `<option value="${d}" ${d === deg ? 'selected' : ''}>${chordNumeral(S.scale, d)} · ${musicNoteName(S.key + MUSIC_SCALES[S.scale][d]).replace(/-?\d+$/, '')}</option>`
+          )
+          .join('')}</select></label>`
+    )
+    .join('');
+  const body =
+    grid(
+      numberField('Tempo', `${p}.bpm`, { min: 30, max: 300, step: 1, unit: 'bpm' }),
+      selectField('Key (home note)', `${p}.key`, keys, { num: 1, rr: 1 }),
+      selectField('Scale', `${p}.scale`, MUSIC_CHOICES.scale, { rr: 1, help: 'The chord names below follow it.' }),
+      selectField('Lead', `${p}.lead`, MUSIC_CHOICES.wave),
+      selectField('Bass', `${p}.bass`, MUSIC_CHOICES.bass),
+      selectField('Arpeggio', `${p}.arp`, MUSIC_CHOICES.arp),
+      selectField('Drums', `${p}.drums`, MUSIC_CHOICES.drums)
+    ) +
+    `<div class="mus-chords">${chords}</div>` +
+    grid(
+      rangeField('Swing', `${p}.swing`, {
+        min: 0,
+        max: 0.5,
+        step: 0.01,
+        def: 0,
+        showKey: 'pct',
+        show: v => Math.round(v * 100) + '%',
+      }),
+      rangeField('Echo on the lead', `${p}.echo`, {
+        min: 0,
+        max: 1,
+        step: 0.05,
+        def: 0.15,
+        showKey: 'pct',
+        show: v => Math.round(v * 100) + '%',
+      }),
+      checkboxField('Sevenths in the arpeggio', `${p}.seventh`, { num: 1 }),
+      `<div class="fld"><span>Seed (the tune)</span><span class="seg-row"><input type="number" data-p="${p}.seed" data-k="num" step="1" value="${S.seed}" aria-label="Seed"><button class="btn subtle" data-act="musSeed" title="Another tune over the same chords">New tune</button></span></div>`
+    );
+  return card('Recipe', body, {
+    sub: 'The game composes the tune from this: a seeded walk over the chords; bars 5-6 repeat 1-2, bar 8 comes home.',
+  });
+}
+studioState.hooks.music = path => {
+  if (path.startsWith('music.songs.') && musicStudio.tracker) musicStudio.tracker.refresh(musicData().songs);
+};
+ACTIONS.musSeed = () => {
+  const id = musicSelected();
+  writePath(`music.songs.${id}.seed`, Math.floor(Math.random() * 1000));
+  changed();
+  commit(true);
+  if (musicStudio.tracker) musicStudio.tracker.refresh(musicData().songs);
+  render();
+};
 SECTIONS.music = () => {
   if (!studioState.D.music) return card('Music', '<p class="help">This game data has no music.json.</p>');
   if (!legacyView.data && !legacyView.loading && !legacyView.error)
@@ -139,7 +228,7 @@ SECTIONS.music = () => {
   afterRender(musicNowShow);
   return `<div class="split"><aside class="list-col"><div class="list-head"><div class="seg-row"><button class="btn primary" data-act="musStop">■ Stop</button>${musicLoopHTML()}</div><small id="musNow" class="mono" aria-live="polite">Nothing playing</small></div><div class="llist" id="musList">${musicSongListHTML(uses)}</div></aside>
  <div class="ed-col"><div class="ed-head"><div><small class="mono">music.json · songs.${escapeHtml(id)}</small><h2>${escapeHtml(id)}</h2></div><div class="seg-row"><button class="btn primary" data-act="musPlay" data-song="${escapeHtml(id)}">▶ Play</button><button class="btn" data-act="musStop">■ Stop</button></div></div>
- ${card('Where it plays', plays, { sub: 'From the where table (first rule that fits wins), the places’ own songs, the story scripts and the game’s code.' })}</div></div>`;
+ ${musicRecipeHTML(id)}${card('Where it plays', plays, { sub: 'From the where table (first rule that fits wins), the places’ own songs, the story scripts and the game’s code.' })}</div></div>`;
 };
 const musicLoopHTML = () =>
   `<label class="mus-loop" title="Off: a song stops after its last bar"><input type="checkbox" id="musLoop" ${musicStudio.loop ? 'checked' : ''}>Loop</label>`;

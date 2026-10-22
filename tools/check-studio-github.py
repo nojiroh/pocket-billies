@@ -998,6 +998,19 @@ def music_steps(pg, errs):
     if state[0] != 'running': errs.append(f'music: the AudioContext is {state[0]!r}, not running')
     if state[1] != 'town' or not state[2].startswith('\u25b6 town · bar'): errs.append(f'music: playing {state[1]!r}, shown {state[2]!r}')
     if not state[3]: errs.append('music: the scheduler is not running')
+    # the recipe: a tempo typed in while it plays reaches the song playing, which keeps its place; Undo too
+    pg.click('#musList [data-act=musPick][data-song=town]')
+    box = pg.locator('#main input[data-p="music.songs.town.bpm"]')
+    box.fill('140'); box.press('Tab'); time.sleep(0.3)
+    got = pg.evaluate("[musicPlaying(), musicStudio.tracker.song.D.bpm, studioState.D.music.songs.town.bpm, musicStudio.tracker.song.step > 4]")
+    if got != ['town', 140, 140, True]: errs.append(f'music: a tempo change while playing gave {got}')
+    pg.select_option('#main select[data-p="music.songs.town.prog.1"]', '3'); time.sleep(0.3)
+    if pg.evaluate("musicStudio.tracker.song.D.prog[1]") != 3: errs.append('music: a chord change did not reach the song playing')
+    pg.click('#undoBtn'); pg.click('#undoBtn'); time.sleep(0.3)
+    got = pg.evaluate("[musicPlaying(), musicStudio.tracker.song.D.bpm, musicStudio.tracker.song.D.prog[1], studioState.D.music.songs.town.bpm]")
+    if got != ['town', 100, 5, 100]: errs.append(f'music: undo gave {got} (playing, its tempo and second chord, the data’s tempo)')
+    left = pg.evaluate("changedDataFiles(studioState.D).map(f => f.path)")
+    if left: errs.append(f'music: after the undo these still differ from GitHub: {left}')
     pg.click('.ed-head [data-act=musStop]')
     time.sleep(0.3)
     if pg.evaluate("musicPlaying()") != '': errs.append('music: Stop did not stop the song')
@@ -1007,7 +1020,7 @@ def music_steps(pg, errs):
     time.sleep(0.5)
     if pg.evaluate("[musicPlaying(), !!musicStudio.tracker.timer]") != ['', False]: errs.append('music: leaving the section left the song playing')
     if len(errs) > n: errs[n:] = [f'music: {e}' if not e.startswith('music:') else e for e in errs[n:]]
-    else: print('music: town played (context running, bar shown), stopped; meadow stopped when the section was left', flush=True)
+    else: print('music: town played (context running, bar shown), its tempo and a chord changed while playing and undone, stopped; meadow stopped when the section was left', flush=True)
 
 
 STEPS = [

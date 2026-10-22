@@ -9,6 +9,7 @@
 import { expose } from '../test-globals.js';
 /* eslint-disable no-func-assign */
 expose({
+  MUSIC_CHOICES: [() => MUSIC_CHOICES],
   MUSIC_CODE_SONGS: [() => MUSIC_CODE_SONGS],
   MUSIC_SCALES: [() => MUSIC_SCALES],
   NOTE_NAMES: [() => NOTE_NAMES],
@@ -32,6 +33,47 @@ export const MUSIC_SCALES = {
   dorian: [0, 2, 3, 5, 7, 9, 10],
   lydian: [0, 2, 4, 6, 7, 9, 11],
   mixo: [0, 2, 4, 5, 7, 9, 10],
+};
+/** a recipe's choices with the words the Studio shows for them (music.schema.json's enums, in the same order: a test
+    holds them together) */
+export const MUSIC_CHOICES = {
+  scale: [
+    ['major', 'Major'],
+    ['minor', 'Minor'],
+    ['dorian', 'Dorian (minor, bright sixth)'],
+    ['lydian', 'Lydian (major, raised fourth)'],
+    ['mixo', 'Mixolydian (major, flat seventh)'],
+  ],
+  wave: [
+    ['p12', 'Pulse 12.5 % (thin)'],
+    ['p25', 'Pulse 25 %'],
+    ['p50', 'Pulse 50 % (square)'],
+    ['square', 'Square (browser)'],
+    ['triangle', 'Triangle (soft)'],
+    ['sine', 'Sine (pure)'],
+    ['sawtooth', 'Sawtooth (buzzy)'],
+  ],
+  bass: [
+    ['bounce', 'Bounce (root, fifth)'],
+    ['gallop', 'Gallop'],
+    ['long', 'Long (one note a bar)'],
+    ['walk', 'Walk (up the chord)'],
+    ['drive', 'Drive (pulse eighths)'],
+  ],
+  arp: [
+    ['up', 'Up'],
+    ['updown', 'Up and down'],
+    ['drip', 'Drip (three high drops)'],
+    ['chord7', 'Chords (four sines)'],
+  ],
+  drums: [
+    ['soft', 'Soft'],
+    ['skip', 'Skip'],
+    ['drive', 'Drive'],
+    ['march', 'March'],
+    ['bossa', 'Bossa'],
+    ['none', 'None'],
+  ],
 };
 /** the songs the game's code starts by name (title.js and story.js the title, opening-fall.js the fall), not the
     where table: tools/test/music-studio.test.mjs checks this list against the code */

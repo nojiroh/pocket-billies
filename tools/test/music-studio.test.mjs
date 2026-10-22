@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 import { test } from 'node:test';
 import {
+  MUSIC_CHOICES,
   MUSIC_CODE_SONGS,
   MUSIC_SCALES,
   chordNumeral,
@@ -29,6 +30,16 @@ test('the songs the code starts by name are the ones the list says', () => {
       for (const m of readFileSync(new URL(String(f), root), 'utf8').matchAll(/\bmusic\(\s*'([a-z0-9_]+)'/g))
         found.add(m[1]);
   assert.deepEqual([...found].sort(), [...MUSIC_CODE_SONGS].sort());
+});
+
+test('the Studio offers exactly the schema’s choices', () => {
+  const S = json('schema/music.schema.json').$defs,
+    R = S.recipe.properties;
+  const ids = k => MUSIC_CHOICES[k].map(c => c[0]);
+  assert.deepEqual(ids('scale'), R.scale.enum);
+  assert.deepEqual(ids('wave'), S.wave.enum);
+  for (const k of ['bass', 'arp', 'drums']) assert.deepEqual(ids(k), R[k].enum, k);
+  assert.deepEqual(Object.keys(MUSIC_SCALES), R.scale.enum);
 });
 
 test('numerals: major, minor, mixolydian (bVII), dorian, lydian', () => {
