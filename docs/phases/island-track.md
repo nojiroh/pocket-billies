@@ -306,6 +306,31 @@ trainees, RL-10's data), tap one or the gate to open the ranch sheet. Waits for 
 Forest density and clearings, the terrain kinds dressed with props, gulls and crabs on the beach, the wild patches
 placed (question 5), the phone's frame times at 8 angles round the coast, then the owner's play test.
 
+### Look pass (before wave 3; the owner's feedback rounds)
+The owner looks at headless phone pictures each round (tools/island-shots.py: 8 coast views with the game's orbit
+camera, the square, the summit, from above, a ground map) and asks for changes; the island is rebuilt with the tools
+(build-island, then build-copperleaf), never by hand. One draft PR for the whole pass.
+
+**Round 1** (the owner: too big, the sea too low, the river into the bay at a logical point, no hamlet, a better
+mountain from the run maps' generator, two bridges at most, apart). Answers in chat: ~150 m, a 2-minute lap; the sea up
+to the beach (and the run maps' coasts too); a long craggy ridge, shelves with ragged edges, forest up its foot; the
+river from the pond into the bay's head; the bridges at the square and upstream, the pier not counted; 6-8 cottages on
+both banks; the barn and pasture inland beside the town; the generator copies the run maps' recipe (mapgen.js not
+shared). Checked against the code:
+- **The sea's 1.8 m** was a mapgen bug, not a dial: `mapgenLowerWater` lowered a corner once for each of its (up to
+  four) water cells, so a stream's water, and a sea joined to a stream, sank up to 1.8 m under its banks. Fixed for
+  every map (run maps' rivers too; the golden water scene remade on purpose). The island's open sea then lies at
+  `ISLAND_SEA_BED` (-0.1 m), its surface about 0.2 m under the sand at the waterline.
+- **A ~150 m island with the old mountain finds no trail on most seeds**: a 19 m foot under a 28 m peak is too steep for
+  the switchback search. The mountain keeps a 22 m foot and a 24 m peak; the craggy look cuts down from the smooth
+  shape the trail climbs (`G.mtnE` is the smooth one), so the trail is found on every seed tried.
+- **The river is short** on a 150 m island (the mountain's foot to the bay's head is ~30 m in a straight line). The
+  pond sits 60 degrees round the foot and the river curves (41-52 m); the square moved two thirds of the way down the
+  main street, so the second bridge (a footbridge path upstream, when no path crosses there) can be 25 m away, not 40.
+- Many seeds miss a plot or the second bridge (the generator notes it); the seed is `copperleaf-13`, which places
+  everything. The lab, the airship station, the shop and the home fall back to the coast road near the square.
+- The flat barn zone, laid over the river, wiped it out (a zone resets its cells): the barn and pasture moved west.
+
 ## Running sessions side by side
 - **One owner per file at a time.** `copperleaf.json`: IS-5 only. `logic/mapgen.js`: nobody here while TR-2c part 2
   is open. `walk/camera.js`: IS-1 only. Water and sky: IS-3 only. Prop data and art: IS-4 only. Studio: IS-6a/6b only.
