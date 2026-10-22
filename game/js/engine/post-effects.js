@@ -53,11 +53,19 @@ precision highp float;in vec2 aC;out vec2 vUV;void main(){vUV=aC;gl_Position=vec
 precision highp float;in vec2 vUV;out vec4 o;uniform sampler2D uCol,uDep;uniform vec2 uPx;uniform float uN,uF,uBand,uRampF,uRampN,uMaxR,uBokeh;uniform vec4 uPlane;uniform int uTaps;
 float lin(float d){float z=d*2.-1.;return 2.*uN*uF/(uF+uN-z*(uF-uN));}
 /* CAM-3: the distance from the plane of focus at screen place q and view depth z (logic/lens-focus.js; tilt 0: z - focus) */
-float coc(vec2 q,float z){float dz=z*dot(vec3(1.,q),uPlane.xyz)-uPlane.w;return dz>0.?smoothstep(uBand,uBand+uRampF,dz):smoothstep(uBand*.6,uBand*.6+uRampN,-dz);}
-void main(){float zc=lin(texture(uDep,vUV).r),cc=coc(vUV,zc);vec3 acc=texture(uCol,vUV).rgb;float ws=1.;
- if(cc>.02){float nt=float(uTaps);for(int i=0;i<28;i++){if(i>=uTaps)break;float a=float(i)*2.39996,r=sqrt((float(i)+.5)/nt);vec2 q=vUV+vec2(cos(a),sin(a))*r*uMaxR*cc*uPx;
-  float zs=lin(texture(uDep,q).r),cs=coc(q,zs);float w=zs<zc?max(cs,cc*.35):cc;vec3 s=texture(uCol,q).rgb;float l=dot(s,vec3(.3,.59,.11));w*=1.+smoothstep(.8,1.6,l)*2.5*uBokeh;acc+=s*w;ws+=w;}}
- o=vec4(acc/ws,cc);}`,
+float pd(vec2 q,float z){return z*dot(vec3(1.,q),uPlane.xyz)-uPlane.w;}
+float cocd(float dz){return dz>0.?smoothstep(uBand,uBand+uRampF,dz):smoothstep(uBand*.6,uBand*.6+uRampN,-dz);}
+float coc(vec2 q,float z){return cocd(pd(q,z));}
+/* CAM-3: a sample counts where its own blur reaches this pixel (scatter as gather, after Dennis Gustafsson): a sharp
+   thing in front keeps out of the blur behind it (no halo round it), a sample behind counts with its blur held to
+   twice this pixel's (only behind the focus: in front of it, as before, everything behind counts), and a blurred thing in front spills over the sharp pixels beside it (four probes at the widest
+   reach find it, then the gather is as wide as its blur). The alpha says how blurred the pixel is, the spill too. */
+float cover(float s,float d){return clamp((s-d)*12.+.5,0.,1.);}
+void main(){float zc=lin(texture(uDep,vUV).r),dc=pd(vUV,zc),cc=cocd(dc),R=cc;bool far=dc>0.;vec3 acc=texture(uCol,vUV).rgb;float ws=1.,wn=0.;
+ for(int k=0;k<4;k++){vec2 q=vUV+vec2(k<2?-.6:.6,k==0||k==2?-.6:.6)*uMaxR*uPx;float zs=lin(texture(uDep,q).r);if(zs<zc)R=max(R,coc(q,zs));}
+ if(R>.02){float nt=float(uTaps);for(int i=0;i<28;i++){if(i>=uTaps)break;float a=float(i)*2.39996,r=sqrt((float(i)+.5)/nt);vec2 q=vUV+vec2(cos(a),sin(a))*r*uMaxR*R*uPx;
+  float zs=lin(texture(uDep,q).r),cs=coc(q,zs),d=r*R;bool fr=zs<zc;float w=fr?cover(cs,d):far?cover(min(cs,cc*2.),d):1.;vec3 s=texture(uCol,q).rgb;float l=dot(s,vec3(.3,.59,.11));w*=1.+smoothstep(.8,1.6,l)*2.5*uBokeh;acc+=s*w;ws+=w;if(fr)wn+=w;}}
+ o=vec4(acc/ws,max(cc,min(1.,wn/ws*2.)*R));}`,
   ],
   bright: [
     `#version 300 es
