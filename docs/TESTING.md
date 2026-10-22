@@ -131,7 +131,10 @@ Two rules hold everywhere:
   dial sets reach every exit and every summit with `{ slope: true }` (the game's slope rule and whole standing heights,
   a bridge's deck walked), the dial's top reaches 15 m, nothing planted across a cliff, the relief seed moves only the
   mountains, a mountains run (`dbg_mountains`) joins; `mapgen-ledges` (TR-2c) ledges one way, no trap (`mapgenTraps`, the game's
-  canStepBetween rule), stairs and reachable pockets, a scene without the dial unchanged. TR-3 (the camera on tall
+  canStepBetween rule), stairs and reachable pockets, a scene without the dial unchanged. `mapgen-grass` (TR-2c) the tall grass
+  patches: 3-6 of 15-70 m² by the dial, one across the way west (the westmost exit's path goes through tall grass),
+  none within 7 m of the hub or an exit, every exit reached and no trap, the road unchanged by the dial. MAPGEN_VERSION
+  6 remade the golden scenes and the scene hash (rng.test). TR-3 (the camera on tall
   ground): `camera-rise.test.mjs` the tilt that clears the line from the eye to your head (logic/camera-rise.js: none
   on flat ground or for ground behind you, capped, follows the camera's turn); `tall-ground-draw.test.mjs`, on the
   walk renderer with a recording WebGL stand-in (`walk-renderer.mjs`), the rock fade's uniforms (off on flat ground,

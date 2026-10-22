@@ -9,6 +9,12 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- Tall grass grows in patches (terrain TR-2c): every place on a run has 4-6 patches of tall grass instead of strips
+  beside the road, and one of them lies across the road west, so the way on goes through it. Wild Billies wait in any
+  patch, anywhere on the map (before, only near the middle). Hopping down a ledge now kicks up a puff of dust where you
+  land. The places of a run already going change to match the next time it loads.
+- The pictures behind the menus (the pixel sky's sky and clouds, the sunset on the title, Trainer card and route card)
+  were deleted; the sky and those cards now use plain gradients in the same colours, and the sky has no clouds.
 - The camera on tall ground (terrain TR-3): when a mountain or a cliff stands between the camera and you, the camera
   tilts down further to look over it (up to 18 degrees more), the rock, trees and water in the way thin out in a
   circle round you, and where something still hides you your shape shows through it as a blue silhouette. On flat
