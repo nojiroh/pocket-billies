@@ -53,7 +53,8 @@ town node needs it.
 - **Sound track** (docs/phases/sound-track.md, planned 2026-10-21): settings fixes, the tracker as data, a Studio
   section for music and cries, then a Pokémon-style rework (four voices, written hooks, battle intros, a cry per
   species). SND-1 to SND-3 beside RL-8; SND-4 to SND-6 after the RL-8 play test. Tags `snd-N-done`. SND-1 (settings and
-  routing) done 2026-10-22; SND-2 (the tracker as data, biome music in a run) next.
+  routing) and SND-2 (the tracker as data, biome music in a run) done 2026-10-22; SND-3 (the Studio's Music & sound
+  section) next.
 - **Project Story** (docs/phases/project-story.md): S1-S3 and S7 done, S8 partly (the city plays before the fall).
   S6 (Hazel vs Blake as a real battle) is unblocked by RL-4; S4, S5 and S8's leftovers wait until the first cut has
   been played. The opening stays as built; RL-8 adds Hazel's lines sending the player to the airship mast.

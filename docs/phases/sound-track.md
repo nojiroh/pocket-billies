@@ -73,7 +73,7 @@ Everything is synthesized in `game/js/sound.js` (2,013 lines) with the Web Audio
 | # | Session | Goal | Depends on | Sessions | Verified by |
 | --- | --- | --- | --- | --- | --- |
 | SND-1 (done 2026-10-22) | Settings and routing | the five bugs above, the Music Test on the music bus, a one-tap mute beside the sheet's title, the Sound tab translated | none | 1 | unit test for the levels; the quick check's Sound settings step; phone |
-| SND-2 | The tracker as data | `game/js/audio/tracker.js` with no game imports; `music.json` + schema (songs, jingles, cries, where); biome music in a run; timers that stop when idle; a song fingerprint baseline | SND-1 | 1-2 | fingerprints unchanged; check-data; modules check; the run fixture plays a biome song |
+| SND-2 (done 2026-10-22) | The tracker as data | `game/js/audio/tracker.js` with no game imports; `music.json` + schema (songs, jingles, cries, where); biome music in a run; timers that stop when idle; a song fingerprint baseline | SND-1 | 1-2 | fingerprints unchanged; check-data; modules check; the run fixture plays a biome song |
 | SND-3 | The Studio's Music & sound section | play and loop any song, the recipe's dials, a piano roll for the hook, the where table, a cry card on Billies, check warnings | SND-2 | 1-2 | Studio self-test; quick check; the owner plays it |
 | SND-4 | The Pokémon rework: themes | four voices, written hooks and countermelodies, the title motif as a leitmotif, Copperleaf as two voices, night variants | SND-3, RL-8 played | 1-2 | fingerprints updated on purpose; the owner listens on the phone |
 | SND-5 | Battle and run music | intros timed to the throw, wild/trainer/leader/boss/rival/ghost, biome × row variants, the deadline variant, the red zone | SND-4, RL-8 | 1-2 | battle fixture; run fixture; phone |
@@ -143,6 +143,42 @@ Two halves, the first all renames and moves (no-op commits), the second new data
 7. `check-data` validates `music.json`; the quick check's `unused` list names songs no where-rule and no script
    uses (the Studio's story scripts play songs by name: `music rival`).
 
+### SND-2 as built (2026-10-22, branch `sound`, tag `snd-2-done` local)
+The owner's answer at the start: **the mapping as written in item 5**. One cause per commit:
+1. `tools/check-sound.py` and `validation/sound-baseline/` (23 files, 71 fingerprints: 21 songs by day and at night,
+   5 jingles, 24 cries) before anything moved; the full check's "Song fingerprints" step runs it. It drives the
+   game's own `initSound` with a stand-in `AudioContext` that hands it an `OfflineAudioContext`, seeds `Math.random`
+   and holds the clock still while one tick schedules 8 bars. Every later commit: none changed.
+2. `game/js/audio/tracker.js`, in three moves: the instruments (`trackerCreate(ctx, bus, { songs, levels })`: echo,
+   noise, pulse waves, `synthVoice`, `synthNoise`, `synthKick`), the composer (`trackerCompose(recipe)`, pure, returns
+   a new object: it no longer writes notes into the recipe), the player (`play`, `stop`, `tick`, `jingle`). It imports
+   nothing; `levels()` is sound.js's say on the drums and the night pad. sound.js keeps its exported names.
+3. `music.json` + `music.schema.json` (songs, jingles `{notes}`, `cries.bases` (the four waves), `where`), then sound.js
+   reading it. check-data: songs a rule or place names exist, node types and biomes exist, the last rule always
+   matches.
+4. `logic/music-where.js` `songFor`; `musicFor` builds the state; `tools/test/sound.test.mjs`. In a browser the old and
+   new `musicFor` agree on every place of the town fixture.
+5. Biome music: after a place's own song, a town node town, the landing route, then the eleven biome rules. The full
+   check's "Run music" step on the run fixture (it fails on the code before the rules).
+6. Timers: the tracker's 25 ms timer stops with no song and while the page is hidden; the footstep poller skips its
+   terrain work while no sound can play.
+7. The Unused report names songs nothing plays (none today).
+
+Corrections to this file's plan, found in SND-2:
+- `variants` is not unreachable: three parked places (legacy/locations.json) name it. Nothing in the run does.
+- The drums' noise is random (`Math.random`, the buffer and each hit's offset): fingerprints need it seeded.
+- `composeSong` wrote its notes into `SONGS`; data read from music.json must not be changed in place (a Studio save
+  would write the notes back), so the composer returns a new object.
+- The debug log has no timer count (item 6's "the debug log's timer count"): nothing measured it before or after.
+- `musicSync` stays on its 1 s interval (item 6 planned calls from the tab change, battles, arrivals and cutscenes
+  with a slower fallback): those are in ui.js, the battle and the cutscenes, which this track keeps out of, and a
+  sync that finds the same song does no audio work. The footstep poller already did nothing on the title, in battle
+  and hidden, so it was not moved onto the walk view either.
+- Only five biomes reach a run today (rules.json `run.map.biomes`: meadow, lake, thicket, ridge, autumn); the other
+  six rules wait for the biomes.
+- Cries: the four bases hold only their wave; the shape (pitch from the name's hash, the slide, the second note) is
+  still code, for SND-6.
+
 ## SND-3: the Studio's Music & sound section
 A section `music` in the Game group (**ask me before:** its own group "Sound" instead), built like the UI section:
 1. **Song list** with play, stop and loop, through the shared tracker on the Studio's own `AudioContext` (a button
@@ -207,7 +243,7 @@ Audible changes, fingerprints regenerated at the end on purpose.
 
 ## Ask me before (collected)
 - SND-1 (answered 2026-10-22): jingles stay on Sound effects; volumes stay in the save; the mute beside the sheet's title.
-- SND-2: the biome-to-song mapping; whether to hear the pairs in the Studio (SND-3) before fixing it.
+- SND-2 (answered 2026-10-22): the mapping as first guessed (below), not waiting for the Studio; SND-3 lets you hear the pairs, SND-4 revises it.
 - SND-3: a Game-group section or a Sound group of its own.
 - SND-4: who writes the hooks; whether the title motif should be the game's theme everywhere or the hub's only.
 - SND-5: the red-zone variant versus the beep; whether the deadline variant plays on the last day or the last two.

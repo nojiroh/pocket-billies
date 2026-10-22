@@ -9,6 +9,10 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- Music in a run (sound track SND-2): each place on a run's map plays its biome's song (a meadow its own, a lake the
+  trench song, a thicket spore, a ridge crystal, an autumn wood spire), a run's town the town song and the landing
+  the route song. The songs, jingles and cries are now data (game/data/music.json) and play exactly as before; the
+  music's timer stops while the game is in the background.
 - Settings → Sound (sound track SND-1): the Volume and Music Test buttons play again (Volume played nothing; Music
   was silent when Sound effects was at 0). Volume and Ambience change while you drag them, like the others. A
   speaker button beside the Settings title mutes everything from any tab, keeping your levels. Sound comes back with

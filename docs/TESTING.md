@@ -271,7 +271,18 @@ same phase:
   `AudioNode.connect`), each slider sets its bus while dragged (a wrapper on `AudioParam.setTargetAtTime`; the wanted
   level comes from where the slider stands), the header mute silences the master and keeps the levels. Don't read
   `gain.value` for this: Chrome stops working out a gain no sound goes through, so an idle bus's value stops part
-  way. A browser that won't start audio is reported, not failed. SND-2 adds a song fingerprint baseline (`validation/sound-baseline/`).
+  way. A browser that won't start audio is reported, not failed.
+  SND-2: **song fingerprints**. `python3 tools/check-sound.py` (about 1 min; `--only=meadow,victory` for some) renders
+  8 bars of every song (by day, and at night with the pad), every jingle and every species' cry through an
+  `OfflineAudioContext`, through the game's own `initSound`, `music`, `jingle` and `soundEffect`, and compares the
+  loudness of each 50 ms window with `validation/sound-baseline/` (committed; 1% or 0.0001 per window). Run it after
+  any change to `sound.js`, `audio/tracker.js` or `music.json`: a refactor that changes a fingerprint is a bug.
+  `--baseline` writes it again, only when a change to the sound is on purpose (SND-4, SND-5), in its own commit.
+  It seeds `Math.random` (the drums' noise uses it) and holds the context's clock still while one tick schedules all 8
+  bars. The full check runs it as "Song fingerprints". Which song plays where is `logic/music-where.js` `songFor`,
+  tested in Node on the real table (`sound.test.mjs`); the full check's "Run music" step (alone with `--steps="run
+  music"`, about 20 s) opens the run fixture and checks each place's pick and that the sync asks for a biome's song
+  (`soundEngine.want`: nothing is heard). The Unused report lists songs nothing plays.
 - **18 Trading and battles with friends**: every new Firestore rule gets emulator tests in `firebase/test/`;
   trade validation is logic with unit tests.
 
