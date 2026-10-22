@@ -9,6 +9,10 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- The Studio keeps what you haven't proposed yet in the browser (Studio plan Phase 1). Closing the tab, a crash or a
+  phone dropping the page no longer loses work: the next time the Studio opens it offers the changes back (Restore,
+  Later or Discard), at the commit they were made on, so nothing merged since is put back. Only the changed files and
+  pictures are kept, never the sign-in.
 - The Studio's Propose changes no longer loses work (Studio plan Phase 0). A failed proposal used to drop the
   pictures and rigs you had changed from the next try while showing them as saved; now nothing is marked saved until
   the pull request is open, a retry sends everything, and a proposal that can't be packed sends nothing. The Studio
