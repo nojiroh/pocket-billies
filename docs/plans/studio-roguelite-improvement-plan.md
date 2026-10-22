@@ -1413,6 +1413,23 @@ The owner took the recommendation on every open question:
    - Convert the 9 old-style people to `look` in one data-only commit.
    - Remove the convert-on-open.
    - Make `look` required.
+9. **Phase 5 plan** (session 1, 2026-10-22; the owner approved the Phase 5 sessions' plans with their recommended
+   options, relayed by the plan's parent session):
+   - **Split:** 5 sessions. 1: T5.6, then T5.1's JS assembly and parity test. 2: parity kept green while the builder's
+     constants move into data, then T5.5. 3: the Studio bakes on "Write Billie" (a browser bake equal to the Node
+     bake), then the Python builder retires. 4: T5.2. 5: T5.3 (into `data-checks.js`), T5.4, T5.7, `sr-5-done`.
+   - **The recipe lives in `game/data`** as `kitBuilds.json` (moved from `tools/art-source/part-kit/builds.json`, with
+     a schema and a check-data check), so it has the Studio's drafts, undo and Propose.
+   - **T5.5 slot words:** partKits `signature` → `sig`, `head-extra` → `headExtra`, `body-extra` → `bodyExtra`; the
+     kinds map as head → head; torso → body; arm, wing, frontfin → front; leg, foot, backfin → back; tail, tailfin,
+     spikes, mane, sail → sig; ear, crest, dorsal, horn, plume, crown, spike, lure → headExtra; shell, ruff, scales →
+     bodyExtra. `tools/rename-data.mjs` first gets a value mode (its own commit), then one rename per commit. The
+     builder's `KIND_SLOT` gives way to partKits' `slots`. The game's `boneSlot` rules (bone names of the hand-drawn
+     rigs: `mane` → head, `shell` → body) stay, noted in NAMING.md.
+   - **Parity:** exact (alpha exactly, colour where a pixel shows), as `sheet-slice-parity`. No tolerance without
+     asking first.
+   - **Code:** `logic/kit-pixels.js` (the picture steps, Pillow-exact) and `logic/kit-assemble.js` (the figure), with
+     `partFit` grown only for per-socket maths. (Not `pixel-ops.js`: that name is taken.)
 
 ## Ask me before (owner decisions this plan needs)
 1. **T5.1:** recipe as the truth with a JS baker (recommended), or Python stays and Studio writes recipes.

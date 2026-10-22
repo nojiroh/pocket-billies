@@ -9,6 +9,9 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- The Studio's Billie previews move the way the game moves them (Studio plan Phase 5): on the game's 12 frames a
+  second, tails and hair lagging a frame behind, in the animated previews and in Parts' "As drawn". They used to
+  play the plain 60 fps pose, so a Billie could look smoother in the Studio than in the game.
 - The Studio keeps what you haven't proposed yet in the browser (Studio plan Phase 1). Closing the tab, a crash or a
   phone dropping the page no longer loses work: the next time the Studio opens it offers the changes back (Restore,
   Later or Discard), at the commit they were made on, so nothing merged since is put back. Only the changed files and

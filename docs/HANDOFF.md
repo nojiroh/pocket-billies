@@ -2,6 +2,68 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Studio plan Phase 5, session 1 - Previews on the game's rig path (T5.6) and the JS kit baker with parity (T5.1, step 1) - 2026-10-22
+Branch `claude/sr-5-parts`, from `ccr-81011a25-lf3exv` (the plan's PR #131, not merged yet); its own draft PR. The plan
+was approved with its recommended options (the owner told the plan's parent session to approve the Phase sessions'
+plans that way; recorded as decision 9 in docs/plans/studio-roguelite-improvement-plan.md, with the split over 5
+sessions, the recipe moving to `game/data/kitBuilds.json`, and the T5.5 slot words).
+
+**Changed** (one cause per commit):
+- **T5.6 (F10).**
+  - `skeleton-rig.js` `rigFromMeta(meta, atlas)`: the rig put together from one view's metadata and its sheet (cut
+    pieces, bones with pictures, `clock`, `lag`). `rigParts` uses it (no change in the game: every rig has `q`, none
+    has an empty box).
+  - The Studio's `rigFor` builds through it, from the Studio's own rigs and pictures, so its rigs have `clock` and `lag`.
+  - The animated sprite previews and Parts' "As drawn" use `rigFrame` (12 fps, lagging tails). The skeleton builder
+    keeps `rigPose`: it has its own 12 fps grid, pause and frame steps.
+  - `check-studio-github.py --only=rig_preview`: a kit Billie, front and back, 7 fixed clocks: the Studio preview is
+    pixel-equal to the game's drawing. Before the fix it reported 7 of 7 frames differing in both views.
+- **T5.1, step 1 (F12).**
+  - `game/js/logic/kit-pixels.js`: the builder's picture steps, number for number with Pillow 12.3.0, numpy and
+    colorsys (part scaling with Pillow's double premultiply, recolour and face mask, blink, squash frames, mirrors,
+    Pillow's nearest affine in its scaling and 16.16 fixed-point paths). Reuses sheet-slice.js's box filter and
+    Python rounding. 4 unit tests; a scratch fuzz of 300 random cases against Pillow was all equal (not committed:
+    it needs Python and Pillow).
+  - `game/js/logic/kit-assemble.js`: `build_view`, `fit_form`, `build_form`, `native_parts` ported. Mirroring comes
+    from partKits `sides` (`partForSide`), the main bones' z from partKits `z` (`partZ`). The extras' anchors, the tail
+    aims and the rest are in `KIT_BAKE` for now.
+  - `tools/test/kit-bake-parity.test.mjs`: all 24 recipes baked and compared with the committed sheet (alpha exact,
+    colour where shown), rig (values and key order), layout and the line's `parts`. **Green on the first run** (under
+    1 s), so it never failed "first"; instead five planted faults (arm angle, chin drop, tail sweep, an ear's z, the
+    blink frame) each failed it with the form and pixel named.
+
+**Where the plan doc was wrong or short**
+- "z from partKits": true for head, torso, limbs and tail; the extras' z comes from where they sit (ear 8 vs partKits
+  10, crest 11 vs 10, beard 10/4, pack 4/6, collar 8.5), so the anchors carry their own z.
+- "Grow `partFit`": the builder lays out a whole figure (leg length sets the torso's height, the hip gap, the chin
+  drop, anchors that are not sockets, rest tilts from pixels). That is kit-assemble.js; `partFit` gets only per-socket
+  maths, later.
+- "Replace `rigFor` with `rigParts`": `rigParts` reads the game's globals and caches forever; the Studio must draw its
+  unsaved rigs. Both now share `rigFromMeta`.
+- `tools/rename-data.mjs` renames keys and sections, not values; T5.5 needs a value mode first.
+- `logic/pixel-ops.js` already exists, so the new module is `kit-pixels.js`.
+- The committed kit art is exactly what the Python builder writes today (re-run in a scratch worktree: every sheet,
+  layout, rig and line byte for byte), so the parity test compares against the repository, not a Python run.
+
+**Verified**
+- Unit tests 633 pass (the parity test about 1 s); lint, typecheck, `check:modules`, `format:check`.
+- `check:fast`: VERIFY_FAST
+- `check-studio-github.py --only=publish,workbench,part_mode,robot_joints,species_parts,wardrobe,rig_preview`:
+  VERIFY_STUDIO
+- **Not run:** the full quick check (at the end of the phase).
+
+**Risky**
+- The parity rests on Pillow 12.3.0's arithmetic. If the builder is re-run with another Pillow before it retires, the
+  committed art may move and the test with it; re-check then.
+- Previews now step at 12 fps: a designer may read that as the Studio being slower. It is what the game shows.
+- `studio/index.html` gained two script tags (`kit-pixels.js`, `kit-assemble.js`) beside Phase 1's; expect a merge there.
+
+**Next (session 2)**
+- Move `KIT_BAKE` and builds.json into data (`game/data/kitBuilds.json` with a schema and check-data; the tail aims
+  per part in partKits), parity still green; a Node CLI that bakes and writes (sheet PNG, layout, rigs-next.js, lines).
+- Then T5.5: the `rename-data` value mode, then `signature` → `sig`, `head-extra` → `headExtra`, `body-extra` →
+  `bodyExtra`, one per commit.
+
 ### Studio plan Phase 1, session A - Local drafts (T1.1) and hygiene (T1.6) - 2026-10-22
 Branch `ccr-81011a25-lf3exv`, on top of Phase 0 (PR #131, not merged yet). Approved in Plan Mode with Phase 1 split
 over four sessions: **A** T1.1 + T1.6 (this one); **B** T1.2 undo per file + T1.5 the F14 hunt; **C** T1.3 part 1 (move
