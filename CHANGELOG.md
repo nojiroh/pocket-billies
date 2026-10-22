@@ -14,6 +14,11 @@ kept aside in the browser).
   a water trough, round hay bales and a hay rack; driftwood, beach grass, shells, shore rocks and tide pools; a
   fishing boat and a net rack by a pier; granite boulders, a cairn and a summit lookout; forest litter. Scree and the
   mossy log and stump on runs are 3D too. Nothing moves in Copperleaf yet.
+- The orbit camera (island track IS-1): on the test island the camera stands out over the sea and looks in at the
+  island's middle, so walking round the coast turns it all the way round, smoothly and with no jump. Holding right
+  walks you round on the same circle. On the summit the camera holds still; your own turn (two fingers, Q/E) still
+  works on top, up to 30 degrees. Engine > Camera has "Orbit round an island" and, to compare, "Sun turns with the
+  camera" (off: the sun stays put in the world). Copperleaf is unchanged until it becomes the island.
 - The island track begins (IS-0): a test island in the debug menu's Test scenes (a cone of a mountain, a grass ring,
   beaches and the sea all round), the first step to Copperleaf becoming a real island you can walk round. Nothing
   changes in Copperleaf yet. The island will be the hub itself, with its own editor in the Studio and its ground
