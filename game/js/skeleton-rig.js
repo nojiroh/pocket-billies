@@ -515,9 +515,10 @@ export function rigParts(sp, k = 1, coat) {
 /* studio plan T5.6: a rig put together from one view of its metadata (rigs-next.js) and its sheet: the pieces cut
    out, the bones given their pictures, its clock and lag. The game's rigParts and the Studio's previews (sprites.js
    rigFor, on the Studio's own rigs and pictures) both use it, so both animate the same way. */
-function rigFromMeta(meta, atlas) {
+export function rigFromMeta(meta, atlas) {
+  /* at least 1 x 1: a box the Studio is editing can be empty for a moment (no rig in the game has one) */
   const cut = ([x, y, w, h]) => {
-    const c = makeCanvas(w, h);
+    const c = makeCanvas(Math.max(1, w), Math.max(1, h));
     c.getContext('2d').drawImage(atlas, x, y, w, h, 0, 0, w, h);
     return c;
   };
