@@ -59,6 +59,7 @@ expose({
   TYPE_RESISTED_BY: [() => TYPE_RESISTED_BY],
   TYPE_STRONG_AGAINST: [() => TYPE_STRONG_AGAINST],
   UNLOCKS: [() => UNLOCKS],
+  UNLOCK_DATA: [() => UNLOCK_DATA],
   atOrLast: [() => atOrLast],
   // @ts-expect-error -- replaced on purpose
   exitLength: [() => exitLength, v => (exitLength = v)],
@@ -362,6 +363,8 @@ export const CURRENCIES = gameData.currencies || {};
 export const BUILDINGS = gameData.buildings || {};
 /* RL-11: the one unlock table (unlocks.json; logic/unlocks.js) */
 export const UNLOCKS = gameData.unlocks || {};
+/* the tables logic/unlocks.js is given */
+export const UNLOCK_DATA = { unlocks: UNLOCKS, buildings: BUILDINGS };
 /* Project Story: the story layer's flags, speakers, quests and start presets (story.json) */
 export const STORY_DATA = gameData.story;
 /* cutscenes, one file each (game/data/cutscenes/<id>.json, docs/CUTSCENES.md) */

@@ -8,7 +8,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { closeModal, mapIdAt, modal, provide, render, runPayoutOpen, toast } from './hooks.js';
-import { COINS, ITEMS, RULES, START_NODE, TRAINERS } from './game-data.js';
+import { COINS, ITEMS, RULES, START_NODE, TRAINERS, UNLOCK_DATA } from './game-data.js';
 import { battleWeatherOf } from './logic/weather.js';
 import { billyName, formatNumber, healAll, plural } from './logic/rules.js';
 import { runBegin, runEnd } from './logic/run-state.js';
@@ -16,6 +16,7 @@ import { runArrive, runBack, runMapNode, runMapStart, runNext, runWeather } from
 import { MAPGEN_VERSION } from './logic/mapgen.js';
 import { runBattleSeed, runGive, runRelease, runReleasePays } from './logic/run-loop.js';
 import { BATTLE_RULES, battleHost, battleSay, joinNames, liveActors, newBattle } from './logic/battle-engine.js';
+import { runUnlocks, unlockOpen } from './logic/unlocks.js';
 import { isLiteMap, loadMapFile } from './map-files.js';
 import { activeBattle, escapeHtml, save, saveData, saveNow, uiState } from './game-state.js';
 import { rigCanvasHTML } from './skeleton-rig.js';
@@ -220,12 +221,16 @@ export function runTakeOff(seed, map, mods) {
     data = runWorldData();
   runBegin(s, runGive(sd, 1, MAPGEN_VERSION, RULES.run.start));
   if (mods && mods.length && s.run) s.run.mods = mods.slice();
+  /* RL-11: the shop and biome unlocks it starts with; its map draws only the biomes open to it */
+  const run = /** @type {any} */ (s.run);
+  run.unlocks = runUnlocks(s, UNLOCK_DATA);
   uiState.learnQ = [];
   runCatch.m = null;
-  runMapStart(
-    /** @type {any} */ (s.run),
-    map ? { ...data, rules: { ...data.rules, map: { ...data.rules.map, ...map } } } : data
-  );
+  const rules = { ...data.rules.map, ...(map || {}) };
+  runMapStart(run, {
+    ...data,
+    rules: { ...data.rules, map: { ...rules, biomes: unlockOpen(rules.biomes, 'biome', run.unlocks, UNLOCK_DATA) } },
+  });
   runWorldSync();
   if (!s.run || runWorld.seed !== sd) return;
   runArrive(s, 0, data);
