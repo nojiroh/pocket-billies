@@ -9,12 +9,13 @@ import { clamp } from '../util.js';
 import { cameraRiseNeeded } from '../logic/camera-rise.js';
 import { blendGoals, followNew, followStep, leadStep, zoneMetres } from '../logic/camera-follow.js';
 import { zoomShape } from '../logic/camera-zoom.js';
+import { interestPick } from '../logic/camera-interest.js';
 import { BOB_M, walkView } from '../walk-view.js';
 import { engineSetting } from '../engine/settings.js';
 import { matrix4 } from '../engine/webgl.js';
 import { walkRenderer } from './walk-state.js';
 import { groundHeightAt, standingHeightAt } from './heights.js';
-import { landmarkTilt } from './sprites.js';
+import { interestPoints, landmarkTilt } from './sprites.js';
 /* eslint-disable no-func-assign */
 expose({
   battleCamera: [() => battleCamera, v => (battleCamera = v)],
@@ -178,6 +179,16 @@ export function walkCamera(rw, rh, st, dt) {
     if (w < 1e-3 || snap) walkRenderer.leaveAt = null;
     else goals.push({ id: 'leave', w, blend: 0, zoom: set('leaveZoom') });
   }
+  /* CAM-2: the strongest point of interest near you (a landmark, a shop's or clinic's door) leans the aim toward it
+     (no more than Engine > Camera > Interest: most lean) and zooms a little */
+  const I = !sc.indoor && !sc.room && set('intOn') ? interestPick(interestPoints(sc), P.x, P.z, set('intPull')) : null;
+  if (I)
+    goals.push({
+      id: 'interest',
+      w: I.w,
+      at: [P.x + I.lean[0], P.z + I.lean[1] + (rw > rh ? 2.0 : 1.0)],
+      zoom: I.zoom,
+    });
   const G = blendGoals(fol, goals, dt, set('blend'), snap);
   /* CAM-2: one zoom (your pinch times the goals') drives the tilt, distance and field of view along their curves */
   const zoomEff = clamp(walkRenderer.zoom * G.zoom, 0.3, Math.max(1, set('zoomMax')) * 1.25),
@@ -251,6 +262,7 @@ export function walkCamera(rw, rh, st, dt) {
   walkRenderer.camInfo = {
     mode: freeCameraOn() ? 'free' : walkRenderer.swoop ? 'swoop' : sc.room ? 'room' : sc.indoor ? 'indoor' : 'walk',
     zoom: zoomEff,
+    interest: I ? [I.n, I.w, I.at[0], I.at[1]] : null,
     goals: G.list,
     goal: [gx, gz],
     lead: [lead[0], lead[1]],

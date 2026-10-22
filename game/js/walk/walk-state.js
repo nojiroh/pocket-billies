@@ -30,6 +30,8 @@ export const walkRenderer = {
   camInfo: null,
   /* CAM-2: when a battle let go of the camera (walkView.t), for the pull back out */
   leaveAt: null,
+  /* CAM-2: the scene's points of interest (walk/sprites.js interestPoints) */
+  intL: null,
   focus: null,
   focusT: null,
   frames: 0,

@@ -7,6 +7,7 @@ import { expose } from '../test-globals.js';
 import { loadingScreen, provide, reducedMotion, requestAsker } from '../hooks.js';
 import { clamp } from '../util.js';
 import { pictureFacing } from '../logic/prop-turn.js';
+import { INTEREST_DEFAULTS } from '../logic/camera-interest.js';
 import { filterInto } from '../engine/frame-lists.js';
 import { makeCanvas } from '../art.js';
 import {
@@ -15,6 +16,7 @@ import {
   approachPoint,
   artImage,
   climbStartEnd,
+  doorOf,
   propShown,
   walkData,
   walkView,
@@ -48,6 +50,7 @@ expose({
   drawSprites: [() => drawSprites, v => setDrawSprites(v)],
   imageId: [() => imageId, v => (imageId = v)],
   imageIdCount: [() => imageIdCount, v => (imageIdCount = v)],
+  interestPoints: [() => interestPoints, v => (interestPoints = v)],
   landmarkTilt: [() => landmarkTilt, v => (landmarkTilt = v)],
   spriteDrawn: [() => spriteDrawn],
   startTownRise: [() => startTownRise, v => (startTownRise = v)],
@@ -584,6 +587,34 @@ export function landmarkTilt(P, sc) {
     best = Math.max(best, k * clamp((hm - 5) * 1.6, 0, 11));
   }
   return best;
+}
+/* CAM-2: the scene's points of interest (logic/camera-interest.js), kept per scene: a catalogue entry's `interest`
+   ({weight, radius, zoom, pull}, any of them), else a landmark's default, else a shop's or clinic's door; props not
+   shown now (propShown) are left out when asked */
+export function interestPoints(sc) {
+  if (!sc) return [];
+  const C0 = walkData().sc;
+  let L = walkRenderer.intL;
+  if (!L || L.sc !== sc) {
+    const list = [];
+    (sc.props || []).forEach((p, i) => {
+      const M = C0.props[p.k];
+      if (!M) return;
+      const door = (p.act === 'shop' || p.act === 'clinic') && !!M.door,
+        base = M.landmark ? INTEREST_DEFAULTS.landmark : door ? INTEREST_DEFAULTS.door : null;
+      if (!base && !M.interest) return;
+      list.push({ p, door, pt: { id: `${p.k}#${i}`, ...INTEREST_DEFAULTS.landmark, ...base, ...M.interest } });
+    });
+    L = walkRenderer.intL = { sc, list };
+  }
+  /* where each is, read now (the seamless world moves the props when it re-anchors) */
+  const out = [];
+  for (const o of L.list) {
+    if (typeof propShown === 'function' && !propShown(o.p)) continue;
+    const at = o.door ? doorOf(o.p).at : [+o.p.x, +o.p.z];
+    out.push({ ...o.pt, x: at[0], z: at[1] });
+  }
+  return out;
 }
 function drawFlatItem(fp, it, T) {
   const gl = gpuState.gl,

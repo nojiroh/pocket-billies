@@ -196,6 +196,9 @@ export const ENGINE_DEFAULTS = {
     encMin: 400,
     encMax: 900,
     leaveZoom: 0.55,
+    /* CAM-2: points of interest (logic/camera-interest.js) */
+    intOn: true,
+    intPull: 1.5,
     pixelGrid: false,
     rise: 18,
     rockFade: true,
@@ -825,6 +828,20 @@ export const ENGINE_SPEC = [
         1,
         0.01,
         'Leaving a battle the camera starts this close and pulls back out.',
+      ],
+      [
+        'intOn',
+        'Points of interest',
+        'bool',
+        'CAM-2: landmarks and shop and clinic doors near you lean the camera toward them and zoom it a little (the catalogue’s `interest`: weight, radius, zoom, pull).',
+      ],
+      [
+        'intPull',
+        'Interest: most lean (m)',
+        0,
+        4,
+        0.05,
+        'However strong the point, the aim leans no further than this.',
       ],
       [
         'rise',
