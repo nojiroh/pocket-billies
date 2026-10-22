@@ -516,11 +516,12 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
     v = [fx - C.eye[0], fy - C.eye[1], fz - C.eye[2]],
     dir = normalize3([C.tgt[0] - C.eye[0], C.tgt[1] - C.eye[1], C.tgt[2] - C.eye[2]]),
     fd = v[0] * dir[0] + v[1] * dir[1] + v[2] * dir[2];
+  /* CAM-1: the focus moves 12% of the way a frame at 60 fps, and as fast at any frame rate (was 12% of every frame) */
   walkRenderer.focus = BT
     ? BT.focus
     : walkRenderer.focus == null
       ? fd
-      : walkRenderer.focus + (fd - walkRenderer.focus) * 0.12;
+      : walkRenderer.focus + (fd - walkRenderer.focus) * (1 - Math.pow(0.88, dt * 60));
   if (D.noPost) {
     gl.bindFramebuffer(gl.READ_FRAMEBUFFER, S.f);
     gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, null);
