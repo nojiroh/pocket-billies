@@ -2,30 +2,30 @@
  "about": "The opening in Copperleaf, after the fall: you wake outside Professor Hazel’s lab, make yourself up, three coins pop open into the starters, you pick one, and Hazel sends you to the airship mast. Started by New game (cutscene/opening.js); the fall before it is opening-fall.js. RL-8 (the owner's \"fall only\"): Blake's entrance, Hazel's fight with him and his battle left the opening; his spots and shots stay for the story.",
  "map": "copperleaf",
  "spots": {
-  "door": [50.32,50.4],
-  "hazel": [52.22,48.25],
-  "me": [53.97,47.95],
-  "meFrom": [57.52,47.4],
-  "star1": [51.72,46.55],
-  "star2": [53.07,46.2],
-  "star3": [54.42,46.55],
-  "blake": [55.47,47.7],
-  "blakeFrom": [59.32,47.1]
+  "door": [186.87,109.61],
+  "hazel": [184.66,107.78],
+  "me": [184.31,106.04],
+  "meFrom": [183.65,102.5],
+  "star1": [182.98,108.33],
+  "star2": [182.59,106.99],
+  "star3": [182.9,105.63],
+  "blake": [184.01,104.54],
+  "blakeFrom": [183.3,100.71]
  },
  "shots": {
-  "wake": {"eye":[54.03,0.4,47.63],"tgt":[56.37,3.9,53.35],"fov":58,"w":1.3},
-  "door": {"eye":[54.03,0.62,47.63],"tgt":[50.32,1.25,50.4],"fov":52,"w":1.3},
-  "hazelRuns": {"eye":[54.03,0.78,47.63],"tgt":[52.22,1.08,48.25],"fov":58,"w":1.3},
-  "standing": {"eye":[53.32,1.25,43],"tgt":[53.12,0.55,47.9],"fov":40,"w":3.8},
-  "coins": {"eye":[53.07,1,42.3],"tgt":[53.07,0.2,46.9],"fov":40,"w":4.4},
-  "trio": {"eye":[53.85,1.9,42.75],"tgt":[53.85,1,47.95],"fov":40,"w":5.9},
-  "picked": {"eye":[53.32,0.95,43],"tgt":[53.32,0.35,47.2],"fov":40,"w":3.6}
+  "wake": {"eye":[183.99,0.4,105.98],"tgt":[189.64,3.9,103.48],"fov":58,"w":1.3},
+  "door": {"eye":[183.99,0.62,105.98],"tgt":[186.87,1.25,109.61],"fov":52,"w":1.3},
+  "hazelRuns": {"eye":[183.99,0.78,105.98],"tgt":[184.66,1.08,107.78],"fov":58,"w":1.3},
+  "standing": {"eye":[179.38,1.25,106.83],"tgt":[184.28,0.55,106.89],"fov":40,"w":3.8},
+  "coins": {"eye":[178.69,1,107.1],"tgt":[183.29,0.2,106.97],"fov":40,"w":4.4},
+  "trio": {"eye":[179.11,1.9,106.31],"tgt":[184.31,1,106.16],"fov":40,"w":5.9},
+  "picked": {"eye":[179.38,0.95,106.83],"tgt":[183.58,0.35,106.71],"fov":40,"w":3.6}
  },
  "clear": {
-  "areas": [[50.82,44.6,55.82,48.9]],
+  "areas": [[181.05,104.16,185.2,109.28]],
   "paths": [["blakeFrom","blake"]],
   "pathWidth": 1.1,
-  "eyes": [[55.52,41.2],[53.42,43.4],[53.32,43],[53.07,42.3]],
+  "eyes": [[177.52,104.69],[179.78,106.72],[179.38,106.83],[178.69,107.1]],
   "eyeRadius": 2.3
  },
  "script": [

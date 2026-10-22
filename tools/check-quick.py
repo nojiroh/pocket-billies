@@ -23,7 +23,7 @@ validation/quick-baseline/ (make one with --baseline), each picture is compared 
 is changed."""
 # RL-5: --closeups and --seams=all went with their steps (every close-up spot and every seam was in a parked place);
 # the --scenes example names the hub, the one place left
-import io, json, os, re, shutil, socket, subprocess, sys, tempfile, threading, time
+import io, json, math, os, re, shutil, socket, subprocess, sys, tempfile, threading, time
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -279,13 +279,16 @@ def copperleaf_data():
     if 'copperleaf' not in (LO.get('locations') or {}): bad.append('no lore for copperleaf')
     if 'juniper' not in (LO.get('people') or {}): bad.append('Granny Juniper has no page in the Lore')
     # the opening's stage: east and south of the lab's door, where game/data/cutscenes/opening.json has its spots
+    # IS-5: in the lab's own metres (it faces its street on the island: x along its front, z back from it)
     lab = next(p for p in cl['props'] if p.get('act') == 'lab'); M = C[lab['k']]; dx = M['door']['x'] / 34 * lab.get('s', 1) * (-1 if lab.get('f') else 1)
-    d = (lab['x'] + dx, lab['z'])
+    ra = math.radians(lab.get('rot', 0)); own = lambda x, z: ((x - lab['x']) * math.cos(ra) + (z - lab['z']) * math.sin(ra), -(x - lab['x']) * math.sin(ra) + (z - lab['z']) * math.cos(ra))
+    d = (dx, 0)
     for p in cl['props']:
         Q = C.get(p['k']) or {}
         if Q.get('flat') or p is lab: continue
         solid = Q.get('box') or (Q.get('solid') or 0) > .25
-        if solid and d[0] + .8 < p['x'] < d[0] + 9.6 and d[1] - 4.8 < p['z'] < d[1] - 1.4: bad.append(f'{p["k"]} at {p["x"]},{p["z"]} stands on the opening’s stage')
+        lx, lz = own(p['x'], p['z'])
+        if solid and d[0] + .8 < lx < d[0] + 9.6 and d[1] - 4.8 < lz < d[1] - 1.4: bad.append(f'{p["k"]} at {p["x"]},{p["z"]} stands on the opening’s stage')
     if bad: raise Exception('; '.join(bad[:6]))
     return f'a new game starts in Copperleaf (node {ix["copperleaf"]}), the only place, with no road out; the lab and your room are there, Granny Juniper in her garden, no shop or clinic; the opening’s stage is clear'
 
@@ -1169,9 +1172,11 @@ def desktop_steps(b, base, R):
         pg.evaluate("environment.force={time:13,weather:'clear',season:'autumn'};0"); time.sleep(2); shot(pg, 'autumn'); pg.evaluate("environment.force=null;0")
         # rooms: light through the window by day, lamps at night, the floor ends at the door
         walk_in(pg, 'house', 'cottage_moss'); until(pg, "walkView.ready&&(walkView.id==='int_house'||(walkView.sc&&walkView.sc.roomOf==='int_house'))", 30); time.sleep(1.5)   # phase 08b: through a house's door (no room opens without one); RL-5: a moss-roof cottage of Copperleaf (Marigold's red-roof house is parked)
-        pg.evaluate("environment.force={time:15.5,weather:'clear',season:'summer'};walkRenderer.roomSkyT=0;0"); time.sleep(2); shot(pg, 'room-day')
+        # IS-5: waits for frames drawn in the room, not a fixed time (the island hub draws more slowly in software)
+        frames = lambda: (lambda f0: until(pg, f'walkRenderer.frames>={f0 + 2}&&!!walkRenderer.roomSky', 60))(pg.evaluate('walkRenderer.frames'))
+        pg.evaluate("environment.force={time:15.5,weather:'clear',season:'summer'};walkRenderer.roomSkyT=0;0"); time.sleep(.5); frames(); shot(pg, 'room-day')
         day = pg.evaluate("[walkRenderer.roomSky&&walkRenderer.roomSky.I,walkRenderer.roomSky&&walkRenderer.roomSky.lamp,(roomLamps(walkView.sc)||[]).length,!!walkRenderer.roomBox]")
-        pg.evaluate("environment.force={time:23,weather:'clear',season:'summer'};walkRenderer.roomSkyT=0;0"); time.sleep(2); shot(pg, 'room-night')
+        pg.evaluate("environment.force={time:23,weather:'clear',season:'summer'};walkRenderer.roomSkyT=0;0"); time.sleep(.5); frames(); shot(pg, 'room-night')
         night = pg.evaluate("[walkRenderer.roomSky&&walkRenderer.roomSky.night,walkRenderer.roomSky&&walkRenderer.roomSky.lamp]")
         pg.evaluate("environment.force=null;leaveRoom();0"); until(pg, "walkView.ready&&!walkView.sc.roomRect&&(walkView.id==='copperleaf'||(walkView.sc&&walkView.sc.baseId==='copperleaf'))", 30)   # RL-5: back out in Copperleaf
         if not day[3] or not day[0] or day[0] < .2 or night[1] < .9 or day[2] < 1: raise Exception(f'room light: day {day}, night {night}')
@@ -1199,7 +1204,9 @@ def desktop_steps(b, base, R):
         # the map: drag the land, turn, zoom right down to the miniatures
         pg.evaluate("uiState.tab='map';render();0"); time.sleep(6)
         if pg.evaluate("typeof worldBowl!=='undefined'&&worldBowl.on"):
-            # phase 10: the bowl map (game/js/world-bowl.js): drag, turn and zoom with its own camera, then Home
+            # phase 10: the bowl map (game/js/world-bowl.js): drag, turn and zoom with its own camera, then Home (IS-5:
+            # from Home, so where an earlier step left the camera doesn't decide how far the pan lands from the rim)
+            pg.evaluate("(()=>{const me=worldBowlSpots()[saveData.trip.node];worldBowl.goal=null;worldBowl.tween=null;worldBowl.cam=bowlCamClamp(bowlCamHome(me.x,me.y));worldBowl.dirty=true})();0"); time.sleep(.5)
             c0 = pg.evaluate("JSON.stringify(worldBowl.cam)")
             pg.evaluate("(()=>{const W=worldMapWidth,H=worldMapHeight;let c=bowlCamPan(worldBowl.cam,bowlCamView(worldBowl.cam,W,H),-120,40);c=bowlCamTurn(c,.8,.2);for(let i=0;i<20;i++)c=bowlCamZoom(c,.8);worldBowl.goal=null;worldBowl.cam=c;worldBowl.dirty=true})();0"); time.sleep(2); shot(pg, 'map-close')
             m = pg.evaluate("(()=>{const c=worldBowl.cam,v=bowlCamView(c,worldMapWidth,worldMapHeight);return [JSON.stringify(c),c.dist,v.C[1]]})()")
@@ -1545,8 +1552,9 @@ def desktop_steps(b, base, R):
         if len(nat) < 70: raise Exception(f'{len(nat)} nature props (want 70)')
         out.append(f'{len(nat)} nature props in {len(fams)} families (' + ', '.join(f'{f} {n}' for f, n in sorted(fams.items())) + ')')
         # the wild growth: every outdoor scene grown, nothing it added stands on a path or in the sea (test scenes such as
-        # alpha 0.5's Graphics gallery, test: true, are laid out by hand)
-        bad = json.loads(pg.evaluate("""JSON.stringify((()=>{const C=walkData().sc.props,out=[];for(const [id,sc] of Object.entries(gameData.maps)){if(/^(test_|int_)/.test(id)||sc.test||sc.indoor||sc.room)continue;const g=(sc.props||[]).filter(p=>p.w===42);if(sc.wild!==42||!g.length){out.push(id+': not grown');continue}
+        # alpha 0.5's Graphics gallery, test: true, are laid out by hand; IS-5: the hub island grows its own ground and
+        # IS-9 dresses it, so it need not be grown, but what it kept of the old growth is checked)
+        bad = json.loads(pg.evaluate("""JSON.stringify((()=>{const C=walkData().sc.props,out=[];for(const [id,sc] of Object.entries(gameData.maps)){if(/^(test_|int_)/.test(id)||sc.test||sc.indoor||sc.room)continue;const g=(sc.props||[]).filter(p=>p.w===42);if(!sc.islandGen&&(sc.wild!==42||!g.length)){out.push(id+': not grown');continue}
          for(const p of g){const ch=(sc.tiles[sc.h-1-Math.floor(p.z)]||'')[Math.floor(p.x)],M=C[p.k];if(!M){out.push(id+': '+p.k+' unknown');break}if('pcmbaqheo'.includes(ch)){out.push(id+': '+p.k+' on paved ground');break}if('wd'.includes(ch)&&!(M.grow||'').includes(ch)){out.push(id+': '+p.k+' in water');break}}}return out})())"""))
         if bad: raise Exception('wild growth: ' + '; '.join(bad[:4]))
         grown = pg.evaluate("Object.values(gameData.maps).reduce((n,sc)=>n+(sc.props||[]).filter(p=>p.w===42).length,0)")
@@ -1730,7 +1738,8 @@ def desktop_steps(b, base, R):
             go_scene(pg, pg.evaluate(f"LOCATIONS.findIndex(l=>l.mapId==='{place}')"))
             d = json.loads(pg.evaluate("""JSON.stringify((()=>{const C=walkData().sc,bad=[];let n=0;
               for(const p of walkView.sc.props){if(!ROOM_BY_USE[p.act])continue;const M=C.props[p.k],E=doorOf(p),id=roomFor(p.act,p);if(!M||!M.box||!E||!id)continue;
-                const sc=seamlessRoomMap(walkView.id,id,[+E.at[0].toFixed(1),+E.at[1].toFixed(1),+E.mid[0].toFixed(1)]),R=sc&&sc.roomRect,d=sc?Math.abs(sc.exits[0][0]-E.at[0]):9;n++;
+                const q=roomTurnOf(p.rot),dr=[+E.at[0].toFixed(1),+E.at[1].toFixed(1),+E.mid[0].toFixed(1)];if(q)dr.push(q,+E.mid[1].toFixed(1));/* IS-5: a building facing any way, its doorway measured along its front */
+                const sc=seamlessRoomMap(walkView.id,id,dr),R=sc&&sc.roomRect,d=sc?Math.abs((sc.exits[0][0]-E.at[0])*-E.out[1]+(sc.exits[0][1]-E.at[1])*E.out[0]):9;n++;
                 if(d>.1||!R||R[0]<0||R[1]<0||R[0]+R[2]>sc.w||R[1]+R[3]>sc.h)bad.push(p.k+' at '+p.x+', '+p.z+': '+d.toFixed(2)+' m')}return {n,bad}})())"""))
             nd += d['n']; bad += [place + ' ' + b for b in d['bad']]
         if bad: raise Exception(f'{len(bad)} of {nd} doors: the room’s doorway isn’t at the door, or the room leaves the view: {bad[:4]}')
@@ -1748,7 +1757,7 @@ def desktop_steps(b, base, R):
         r = json.loads(pg.evaluate("""JSON.stringify((()=>{const sc=walkView.sc,I=uiState.inside,RD=roomDimming(sc),n=navGrid(),N=NAV_CELLS_PER_M,R=sc.roomRect,blocked=(x,z)=>!!n.blk[Math.floor(z*N)*n.gw+Math.floor(x*N)];
           return {exit:sc.exits[0],door:I&&I.door,dim:RD?RD.dim:0,outBlocked:blocked(R[0]-2,R[1]+R[3]/2)&&blocked(R[0]+R[2]/2,R[1]-2),inFree:!blocked(R[0]+R[2]/2,R[1]+R[3]/2-1),labGone:!sc.props.some(p=>p.act==='lab')}})())"""))
         shot(pg, 'v46-room-in-place')
-        if not r['door'] or abs(r['exit'][0] - r['door'][0]) > .3 or abs(r['exit'][1] - r['door'][1]) > .7: raise Exception(f'the room’s doorway {r["exit"]} isn’t at the lab’s door {r["door"]}')
+        if not r['door'] or math.hypot(r['exit'][0] - r['door'][0], r['exit'][1] - r['door'][1]) > .76: raise Exception(f'the room’s doorway {r["exit"]} isn’t at the lab’s door {r["door"]}')   # IS-5: whichever way the lab faces
         if r['dim'] < .4: raise Exception(f'the hamlet around the room isn’t dimmed ({r["dim"]:.2f})')
         if not r['outBlocked'] or not r['inFree']: raise Exception(f'walking: outside the room blocked {r["outBlocked"]}, the floor free {r["inFree"]}')
         if not r['labGone']: raise Exception('the lab’s outside is still standing in its own room')

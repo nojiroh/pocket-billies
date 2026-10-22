@@ -27,6 +27,7 @@ import {
 import { $, clamp } from './util.js';
 import { LOCATIONS, LOCATION_BY_ID, isTown, locationFullName } from './game-data.js';
 import { canEnter, formatNumber } from './logic/rules.js';
+import { turnedPoint } from './logic/prop-turn.js';
 import { bowlSurface } from './logic/bowl-camera.js';
 import { setStoryFlag } from './logic/script.js';
 import { isLiteMap, loadMapFile, loadMapsAhead } from './map-files.js';
@@ -293,7 +294,9 @@ export function standByMast(b) {
     s = m.s || 1,
     f = m.f ? -1 : 1,
     bx = M.box ? M.box[0] * s : 1.2;
-  uiState.roam = { id: sid, node: b, x: m.x + (bx / 2 + 0.9) * f, z: m.z - 0.9 };
+  /* IS-5: beside it as it is turned (the island's mast faces its street); the walk puts you on open ground near it */
+  const [x, z] = turnedPoint(m, (bx / 2 + 0.9) * f, -0.9);
+  uiState.roam = { id: sid, node: b, x, z };
   return true;
 }
 /* landing: the walk screen in the new town, standing by its mast */

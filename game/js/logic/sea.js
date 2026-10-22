@@ -13,12 +13,15 @@ import { islandPointIn } from './island.js';
 /* eslint-disable no-func-assign */
 expose({
   SEA_CORNER: [() => SEA_CORNER],
+  SEA_POLY_BOX: [() => SEA_POLY_BOX],
   SEA_RAMP: [() => SEA_RAMP],
   SEA_RINGS: [() => SEA_RINGS],
   // @ts-expect-error -- replaced on purpose
   seaCalmAt: [() => seaCalmAt, v => (seaCalmAt = v)],
   // @ts-expect-error -- replaced on purpose
   seaCentre: [() => seaCentre, v => (seaCentre = v)],
+  // @ts-expect-error -- replaced on purpose
+  seaPolyBox: [() => seaPolyBox, v => (seaPolyBox = v)],
   // @ts-expect-error -- replaced on purpose
   seaPolyDist: [() => seaPolyDist, v => (seaPolyDist = v)],
   // @ts-expect-error -- replaced on purpose
@@ -71,11 +74,26 @@ export function seaPolyDist(poly, x, z) {
   return best;
 }
 
+export const SEA_POLY_BOX = new WeakMap();
+/** a polygon's bounds [x0, z0, x1, z1], kept with it @param {number[][]} poly @returns {number[]} */
+export function seaPolyBox(poly) {
+  let b = SEA_POLY_BOX.get(poly);
+  if (!b) {
+    b = [Infinity, Infinity, -Infinity, -Infinity];
+    for (const [px, pz] of poly) b = [Math.min(b[0], px), Math.min(b[1], pz), Math.max(b[2], px), Math.max(b[3], pz)];
+    SEA_POLY_BOX.set(poly, b);
+  }
+  return b;
+}
+
 /** how calm the water is at (x, z): 1 inside a cove zone, easing to 0 over `soft` metres outside it, else 0 */
 export function seaCalmAt(sc, x, z, soft = 6) {
   let k = 0;
   for (const zn of sc.zones || []) {
     if (!zn || zn.k !== 'cove' || !Array.isArray(zn.poly) || zn.poly.length < 3) continue;
+    /* IS-5: asked for every water vertex of a scene: most are nowhere near the cove */
+    const b = seaPolyBox(zn.poly);
+    if (x < b[0] - soft || x > b[2] + soft || z < b[1] - soft || z > b[3] + soft) continue;
     if (islandPointIn(zn.poly, x, z)) return 1;
     k = Math.max(k, 1 - seaSmooth(seaPolyDist(zn.poly, x, z) / soft));
   }
