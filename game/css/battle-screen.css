@@ -1,4 +1,170 @@
 /* UI-5: the battle screen's rules (its stage and camera, the plates and HP cards, the message and the command dock, moves, items, the team list, taxing and aiming, landscape and portrait), moved as they were from the old layers (style, battle, polish, screens, v05), in the order the page loaded them. They load right after those layers and before the kit (battle-ui.css), so the cascade is as before (tools/style-diff.py) */
+/* ---------- UI-6: from style.css, screens.css, as it was ---------- */
+.pops {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 6;
+  overflow: hidden;
+}
+.pop {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  font: 400 28px/1 var(--font-voice);
+  color: #fff;
+  white-space: nowrap;
+  --o: #1a1030;
+  text-shadow:
+    0 2px 0 var(--o),
+    2px 0 0 var(--o),
+    -2px 0 0 var(--o),
+    0 -2px 0 var(--o),
+    2px 2px 0 var(--o),
+    -2px 2px 0 var(--o),
+    0 8px 16px rgba(0, 0, 0, 0.45);
+  animation: popup 1.35s cubic-bezier(0.2, 1.3, 0.3, 1) forwards;
+}
+.pop.se {
+  color: #ffb25a;
+  font-size: 34px;
+}
+.pop.crit {
+  color: #ffe27a;
+  font-size: 36px;
+}
+.pop.heal {
+  color: #8cff9c;
+}
+.pop.miss {
+  color: #e2e6ee;
+  font-size: 21px;
+}
+.pop.lvl {
+  color: #ffe27a;
+  font-size: 22px;
+}
+.pop.tag.crit {
+  color: #ffe27a;
+}
+.pop.tag.se {
+  color: #ffb25a;
+}
+@keyframes popup {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -60%) scale(0.4);
+  }
+  12% {
+    opacity: 1;
+    transform: translate(calc(-50% + var(--dx) * 0.3), -125%) scale(1.18);
+  }
+  28% {
+    transform: translate(calc(-50% + var(--dx) * 0.5), -135%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--dx)), -240%) scale(0.94);
+  }
+}
+@keyframes tick {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+/* HP cards */
+@keyframes cardhit {
+  20% {
+    translate: -4px 0;
+  }
+  45% {
+    translate: 4px 0;
+  }
+  70% {
+    translate: -2px 0;
+  }
+}
+@keyframes twinkle {
+  50% {
+    opacity: 0.35;
+    transform: scale(0.8);
+  }
+}
+.stg {
+  font: 600 10.5px/1 var(--font-voice);
+  padding: 3px 4px;
+  border-radius: 3px;
+  background: rgba(80, 200, 255, 0.2);
+  color: #a8e6ff;
+}
+.stg.dn {
+  background: rgba(255, 90, 90, 0.2);
+  color: #ffb8b8;
+}
+@keyframes low {
+  50% {
+    filter: brightness(1.5);
+  }
+}
+@keyframes bob {
+  50% {
+    transform: translateY(3px);
+  }
+}
+.c-choose {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+@keyframes glowb {
+  50% {
+    opacity: 0.4;
+    scale: 0.85;
+  }
+}
+@keyframes hint {
+  50% {
+    top: -16px;
+    opacity: 0.5;
+  }
+}
+/* v31: the battle's panels slide up over the walk scene when a battle starts on the 3D stage, and away at the end */
+@keyframes btRise {
+  from {
+    transform: translateY(64px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+@keyframes btRiseTop {
+  from {
+    transform: translateY(-48px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+@keyframes btLeave {
+  to {
+    transform: translateY(80px);
+    opacity: 0;
+  }
+}
+@keyframes btLeaveTop {
+  to {
+    transform: translateY(-60px);
+    opacity: 0;
+  }
+}
+/* ---------- (UI-5 and earlier) ---------- */
 
 /* ---------- UI-5: from style.css, as it was ---------- */
 .evo.run.flash canvas {

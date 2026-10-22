@@ -1,4 +1,163 @@
 /* UI-5: the Walk tab's rules (the place card over the scene, its sheet: encounters, eggs, your buddy), moved as they were from the old layers (style, polish, screens, v05), in the order the page loaded them. They load right after those layers and before the kit; a rule a later old rule overrode at equal specificity stays where it was, so the cascade is as before (tools/style-diff.py) */
+/* ---------- UI-6: from style.css, polish.css, v05.css, as it was ---------- */
+.gate {
+  color: var(--red);
+}
+@keyframes breathe {
+  50% {
+    opacity: 0.4;
+    transform: translateX(-50%) scale(0.85);
+  }
+}
+.pipe {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+.wob {
+  animation: wob 2.6s ease-in-out infinite;
+  transform-origin: 50% 90%;
+}
+@keyframes wob {
+  0%,
+  70%,
+  100% {
+    transform: rotate(0);
+  }
+  76% {
+    transform: rotate(-9deg);
+  }
+  84% {
+    transform: rotate(8deg);
+  }
+  92% {
+    transform: rotate(-4deg);
+  }
+}
+.bd {
+  flex: 1;
+  min-width: 0;
+}
+.bn {
+  font-family: var(--font-voice);
+  font-size: 19px;
+}
+.route-profile {
+  position: absolute;
+  bottom: 13px;
+  right: 12px;
+  max-width: 65%;
+  border: 2px solid #fff4d4;
+  border-radius: 3px;
+  background: #223d48;
+  color: #fff7dc;
+  padding: 9px 11px;
+  font-size: 12px;
+  font-weight: 600;
+  min-height: 40px;
+}
+@media (max-width: 370px) {
+  .route-profile {
+    max-width: 60%;
+    font-size: 11px;
+  }
+}
+@keyframes sway {
+  0%,
+  100% {
+    transform: skewX(0);
+  }
+  50% {
+    transform: skewX(1.4deg);
+  }
+}
+@keyframes bloom {
+  50% {
+    opacity: 0.72;
+    scale: 1.12;
+  }
+}
+@media (hover: hover) {
+  .mon:hover,
+  .buddy:hover,
+  .ware:hover {
+    transform: translateY(-2px);
+  }
+}
+@media (min-width: 960px) {
+  .enc {
+    flex-basis: 150px;
+  }
+}
+@keyframes whBob {
+  50% {
+    transform: translateY(3px);
+  }
+}
+@keyframes rustle {
+  0%,
+  70%,
+  100% {
+    transform: skewX(0);
+  }
+  76% {
+    transform: skewX(6deg);
+  }
+  84% {
+    transform: skewX(-6deg);
+  }
+  92% {
+    transform: skewX(3deg);
+  }
+}
+/* empty states: dashed "slot" outline */
+.empty,
+.slot.empty {
+  outline: 2px dashed color-mix(in srgb, var(--line) 28%, transparent);
+  outline-offset: -5px;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .screen.enter :is(.shop > .ware, .slots > .slot, .vitals > .vit):nth-child(2) {
+    --d: 50ms;
+  }
+  .screen.enter :is(.shop > .ware, .slots > .slot, .vitals > .vit):nth-child(3) {
+    --d: 100ms;
+  }
+  .screen.enter :is(.shop > .ware, .slots > .slot, .vitals > .vit):nth-child(4) {
+    --d: 150ms;
+  }
+  .screen.enter :is(.shop > .ware, .slots > .slot, .vitals > .vit):nth-child(5) {
+    --d: 200ms;
+  }
+  .screen.enter :is(.shop > .ware, .slots > .slot, .vitals > .vit):nth-child(n + 6) {
+    --d: 240ms;
+  }
+}
+.px.mon,
+.px.ware,
+.px.buddy,
+.px.slot,
+.px.vit {
+  transition:
+    transform 0.16s var(--spring),
+    box-shadow 0.2s;
+}
+@media (hover: hover) {
+  .px.mon:hover,
+  .px.ware:hover,
+  .px.slot:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--g-in), var(--g-sh2) !important;
+  }
+}
+.px.mon:active,
+.px.ware:active,
+.px.slot:active {
+  transform: translateY(1px) scale(0.98);
+}
+/* ---------- (UI-5 and earlier) ---------- */
 
 /* ---------- UI-5: from style.css, as it was ---------- */
 .today::before {

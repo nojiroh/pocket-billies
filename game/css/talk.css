@@ -1,4 +1,58 @@
 /* UI-5: the dialogue box's older rules (the talk layer, its box and speaker), moved as they were from the old layers (style, polish, screens, v05), in the order the page loaded them. They load right after those layers and before the kit; a rule a later old rule overrode at equal specificity stays where it was, so the cascade is as before (tools/style-diff.py) */
+/* ---------- UI-6: from style.css, polish.css, as it was ---------- */
+.dlg {
+  padding: 16px;
+}
+.line {
+  font-size: 19px;
+  line-height: 1.4;
+  margin: 8px 0 16px;
+  font-weight: 600;
+  animation: type 0.7s steps(28);
+}
+@keyframes type {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+}
+@keyframes dlg {
+  from {
+    transform: translateY(18px) scale(0.97);
+    opacity: 0;
+  }
+}
+.dlg {
+  position: relative;
+}
+.dlg::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: -12px;
+  width: 14px;
+  height: 14px;
+  transform: translateX(-50%) rotate(45deg);
+  background: var(--panel);
+  box-shadow: -2px -2px 0 var(--line);
+  pointer-events: none;
+}
+.talk .dlg .pb::before {
+  content: '';
+  position: absolute;
+  right: 18px;
+  top: 50%;
+  margin-top: -3px;
+  border: 6px solid transparent;
+  border-top-color: currentColor;
+  border-bottom: 0;
+  opacity: 0.8;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .talk .dlg .pb::before {
+    animation: bob 0.8s ease-in-out infinite;
+  }
+}
+/* ---------- (UI-5 and earlier) ---------- */
 
 /* ---------- UI-5: from style.css, as it was ---------- */
 .talk {

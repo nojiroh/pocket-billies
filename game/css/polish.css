@@ -53,12 +53,6 @@
   outline: 3px solid var(--focus);
   outline-offset: 4px;
 }
-.fchip:focus-visible,
-.qb:focus-visible,
-.tb-btn:focus-visible,
-.swatch:focus-visible {
-  outline-offset: 3px;
-}
 /* ---------- pixel buttons: bevel + ledge, press sinks into the ledge ---------- */
 .pb:not(.wh-row .pb) {
   --dep: 3px;
@@ -172,24 +166,6 @@ section > h2::before,
   background: repeating-linear-gradient(90deg, var(--gold) 0 10px, transparent 10px 14px);
   filter: drop-shadow(0 2px 0 color-mix(in srgb, var(--line) 35%, transparent));
 }
-/* ---------- cards: faint pixel texture and top highlight ---------- */
-/* the team lead gets a gold rail */
-.s-team > .mons > .mon:first-child {
-  background-image:
-    linear-gradient(90deg, var(--gold) 0 5px, transparent 5px),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0) 38%),
-    radial-gradient(var(--dither) 1px, transparent 1.2px);
-  background-size:
-    auto,
-    auto,
-    4px 4px;
-}
-/* empty states: dashed "slot" outline */
-.empty,
-.slot.empty {
-  outline: 2px dashed color-mix(in srgb, var(--line) 28%, transparent);
-  outline-offset: -5px;
-}
 /* chips, badges, bars: a touch of depth */
 .chip {
   box-shadow:
@@ -235,64 +211,8 @@ section > h2::before,
   font-weight: 400;
   font-size: 16px;
 }
-.help summary::marker {
-  color: var(--orn2);
-}
-/* ---------- field guide ---------- */
-.fchip {
-  box-shadow:
-    0 0 0 2px var(--line),
-    inset 0 -2px 0 var(--lo);
-}
-.fchip.on {
-  background: linear-gradient(180deg, var(--gold-hi), var(--gold) 60%);
-  box-shadow:
-    0 0 0 2px var(--line),
-    inset 0 -2px 0 rgba(150, 90, 10, 0.35);
-}
-.fchip:hover:not(.on) {
-  background: var(--panel2);
-}
 .plate {
   border-radius: 2px;
-}
-/* ---------- title Professor dialog ---------- */
-.logo {
-  text-shadow:
-    4px 4px 0 var(--gold),
-    0 0 24px var(--halo),
-    0 0 6px var(--halo);
-}
-.title .tag {
-  text-shadow:
-    0 0 8px var(--halo),
-    0 0 2px var(--halo);
-}
-.dlg {
-  position: relative;
-}
-.dlg::before {
-  content: '';
-  position: absolute;
-  left: 50%;
-  top: -12px;
-  width: 14px;
-  height: 14px;
-  transform: translateX(-50%) rotate(45deg);
-  background: var(--panel);
-  box-shadow: -2px -2px 0 var(--line);
-  pointer-events: none;
-}
-.talk .dlg .pb::before {
-  content: '';
-  position: absolute;
-  right: 18px;
-  top: 50%;
-  margin-top: -3px;
-  border: 6px solid transparent;
-  border-top-color: currentColor;
-  border-bottom: 0;
-  opacity: 0.8;
 }
 @media (prefers-reduced-motion: no-preference) {
   /* ---------- motion (only when the viewer allows it) ---------- */
@@ -320,42 +240,13 @@ section > h2::before,
       box-shadow 0.2s,
       background-color 0.2s;
   }
-  .fchip:active,
-  .qb:active:not(:disabled),
-  .option:active {
-    transform: scale(0.94);
-  }
   /* staggered entrances on tab change */
   .screen.enter :is(.slot, .vit, .empty) {
     animation: rise 0.42s var(--out) backwards;
     animation-delay: var(--d, 0ms);
   }
-  .screen.enter :is(.shop > .ware, .slots > .slot, .vitals > .vit):nth-child(2) {
-    --d: 50ms;
-  }
-  .screen.enter :is(.shop > .ware, .slots > .slot, .vitals > .vit):nth-child(3) {
-    --d: 100ms;
-  }
-  .screen.enter :is(.shop > .ware, .slots > .slot, .vitals > .vit):nth-child(4) {
-    --d: 150ms;
-  }
-  .screen.enter :is(.shop > .ware, .slots > .slot, .vitals > .vit):nth-child(5) {
-    --d: 200ms;
-  }
-  .screen.enter :is(.shop > .ware, .slots > .slot, .vitals > .vit):nth-child(n + 6) {
-    --d: 240ms;
-  }
   .screen.enter .fchip {
     animation: nwPop 0.32s var(--spring) backwards;
-  }
-  .screen.enter .fchip:nth-child(2) {
-    animation-delay: 25ms;
-  }
-  .screen.enter .fchip:nth-child(3) {
-    animation-delay: 50ms;
-  }
-  .screen.enter .fchip:nth-child(n + 4) {
-    animation-delay: 75ms;
   }
   /* title and dialog */
   .title .pb.gold {
@@ -366,13 +257,6 @@ section > h2::before,
   }
   .talk .dlg {
     animation: nwFadeUp 0.36s var(--out) 0.08s backwards;
-  }
-  .talk .dlg .pb::before {
-    animation: bob 0.8s ease-in-out infinite;
-  }
-  .ware2:not(.locked) .w-ic,
-  .ware .pxi:first-child {
-    transition: transform 0.25s var(--spring);
   }
 }
 @keyframes nwSheet {

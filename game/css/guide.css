@@ -1,4 +1,169 @@
 /* UI-5: the Guide's rules (the list, an entry's page, the Lore tab), moved as they were from the old layers (style, polish, screens, v05), in the order the page loaded them. They load right after those layers and before the kit, so the cascade is as before (tools/style-diff.py) */
+/* ---------- UI-6: from style.css, polish.css, as it was ---------- */
+.ls-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.ls-k {
+  font-size: 12.5px;
+  color: var(--ink2);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.fchips {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 14px 3px 8px;
+  margin: 0 -16px;
+  padding-left: 16px;
+  padding-right: 16px;
+  scrollbar-width: none;
+}
+.fchips::-webkit-scrollbar {
+  display: none;
+}
+.fchip {
+  flex: none;
+  border: 0;
+  padding: 7px 12px;
+  font: 600 13.5px/1 var(--font-voice);
+  background: var(--panel-s);
+  color: var(--text);
+  box-shadow: 0 0 0 2px var(--line);
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.fchip.on {
+  background: var(--gold);
+  color: var(--goldink);
+}
+.lempty {
+  padding: 20px 50px;
+  color: var(--ink2);
+}
+.plate-sky {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    120% 90% at 50% 105%,
+    color-mix(in srgb, var(--c1) 55%, #fff) 0%,
+    color-mix(in srgb, var(--c2) 35%, #1a1430) 75%
+  );
+}
+.plate-sky::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.06) 0 1px, transparent 1px 16px),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.06) 0 1px, transparent 1px 16px);
+}
+.plate-floor {
+  position: absolute;
+  left: 18%;
+  right: 18%;
+  bottom: 22px;
+  height: 38px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.1) 70%, transparent);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
+}
+.plate-spr {
+  position: absolute;
+  left: 50%;
+  bottom: 36px;
+  transform: translateX(-50%);
+  display: grid;
+  place-items: end center;
+}
+.cattag {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  font: 400 12.5px/1 var(--font-voice);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #fff;
+  background: rgba(14, 10, 26, 0.62);
+  padding: 6px 8px;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.5);
+}
+@keyframes stampIn {
+  0% {
+    transform: rotate(-9deg) scale(2.2);
+    opacity: 0;
+  }
+  100% {
+    transform: rotate(-9deg) scale(1);
+    opacity: 1;
+  }
+}
+.specno {
+  position: absolute;
+  left: 10px;
+  bottom: 8px;
+  font: 400 12px var(--font-voice);
+  color: rgba(255, 255, 255, 0.85);
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.5);
+}
+.dexname {
+  font-size: 36px;
+  margin-top: 16px;
+}
+.rar {
+  margin: 0 0 0 6px;
+}
+@media (min-width: 960px) {
+  .s-ledger .ledger,
+  .s-ledger .ledsum,
+  .s-ledger .fchips,
+  .s-ledger .dexpage {
+    max-width: 780px;
+  }
+}
+.fchip:focus-visible,
+.qb:focus-visible,
+.tb-btn:focus-visible,
+.swatch:focus-visible {
+  outline-offset: 3px;
+}
+/* ---------- field guide ---------- */
+.fchip {
+  box-shadow:
+    0 0 0 2px var(--line),
+    inset 0 -2px 0 var(--lo);
+}
+.fchip.on {
+  background: linear-gradient(180deg, var(--gold-hi), var(--gold) 60%);
+  box-shadow:
+    0 0 0 2px var(--line),
+    inset 0 -2px 0 rgba(150, 90, 10, 0.35);
+}
+.fchip:hover:not(.on) {
+  background: var(--panel2);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .fchip:active,
+  .qb:active:not(:disabled),
+  .option:active {
+    transform: scale(0.94);
+  }
+  .screen.enter .fchip:nth-child(2) {
+    animation-delay: 25ms;
+  }
+  .screen.enter .fchip:nth-child(3) {
+    animation-delay: 50ms;
+  }
+  .screen.enter .fchip:nth-child(n + 4) {
+    animation-delay: 75ms;
+  }
+}
+/* ---------- (UI-5 and earlier) ---------- */
 
 /* ---------- UI-5: from style.css, as it was ---------- */
 .dex {

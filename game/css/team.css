@@ -1,4 +1,92 @@
 /* UI-5: the Team screen's rules (the lead's ribbons, quick buttons, storage), moved as they were from the old layers (style, polish, screens, v05), in the order the page loaded them. They load right after those layers and before the kit, so the cascade is as before (tools/style-diff.py) */
+/* ---------- UI-6: from polish.css, screens.css, v05.css, as it was ---------- */
+/* ---------- cards: faint pixel texture and top highlight ---------- */
+/* the team lead gets a gold rail */
+.s-team > .mons > .mon:first-child {
+  background-image:
+    linear-gradient(90deg, var(--gold) 0 5px, transparent 5px),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0) 38%),
+    radial-gradient(var(--dither) 1px, transparent 1.2px);
+  background-size:
+    auto,
+    auto,
+    4px 4px;
+}
+.tpanel > .sec-h {
+  margin: 0;
+}
+.tpanel > .sec-h h2 {
+  font-size: 22px;
+}
+/* ---------- shared: a little stage tinted by the billionaire's types ---------- */
+.tm-spr,
+.bx-spr,
+.ms-plate {
+  background:
+    radial-gradient(ellipse 34% 9% at 50% 88%, rgba(0, 0, 0, 0.22), transparent 72%),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--c1, #8bbdd2) 20%, var(--panel-s)) 0 64%,
+      color-mix(in srgb, var(--c2, #8bbdd2) 42%, var(--panel-s)) 64% 100%
+    );
+}
+.badge.bud {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 4px;
+  background: var(--rose);
+  color: #fff;
+}
+/* ---------- Team: party cards ---------- */
+.tm-spr {
+  position: relative;
+  display: grid;
+  place-items: end center;
+  height: 84px;
+  padding-bottom: 2px;
+  border-radius: 7px;
+  overflow: hidden;
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--line) 22%, transparent);
+}
+@media (prefers-reduced-motion: no-preference) {
+  /* ---------- small phones ---------- */
+  /* ---------- wide screens ---------- */
+  /* ---------- motion ---------- */
+  .bx,
+  .pf-tile,
+  .pickrow,
+  .pf-bud {
+    transition:
+      transform 0.22s var(--out, ease),
+      box-shadow 0.2s,
+      background-color 0.2s;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  @media (hover: hover) {
+    .bx:hover,
+    .pf-bud:hover {
+      transform: translateY(-2px);
+    }
+  }
+}
+/* ---------- Team: glass cards with depth ---------- */
+.tpanel {
+  background: var(--g-bg) !important;
+  -webkit-backdrop-filter: var(--g-blur);
+  backdrop-filter: var(--g-blur);
+  border: 1px solid var(--g-bd);
+  border-radius: var(--r3) !important;
+  box-shadow: var(--g-in), var(--g-sh) !important;
+}
+.tm-spr {
+  border-radius: var(--r1) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    inset 0 -10px 18px -12px rgba(46, 33, 64, 0.35) !important;
+}
+/* ---------- (UI-5 and earlier) ---------- */
 
 /* ---------- UI-5: from style.css, as it was ---------- */
 @media (min-width: 960px) {
