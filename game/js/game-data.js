@@ -58,6 +58,7 @@ expose({
   TYPE_COLORS: [() => TYPE_COLORS],
   TYPE_RESISTED_BY: [() => TYPE_RESISTED_BY],
   TYPE_STRONG_AGAINST: [() => TYPE_STRONG_AGAINST],
+  UNLOCKS: [() => UNLOCKS],
   atOrLast: [() => atOrLast],
   // @ts-expect-error -- replaced on purpose
   exitLength: [() => exitLength, v => (exitLength = v)],
@@ -359,6 +360,8 @@ export const NODE_TYPES = gameData.nodeTypes || {};
 export const CURRENCIES = gameData.currencies || {};
 /* RL-11: the hub's buildings, each upgraded with one currency (buildings.json; levels are unlocks.json rows) */
 export const BUILDINGS = gameData.buildings || {};
+/* RL-11: the one unlock table (unlocks.json; logic/unlocks.js) */
+export const UNLOCKS = gameData.unlocks || {};
 /* Project Story: the story layer's flags, speakers, quests and start presets (story.json) */
 export const STORY_DATA = gameData.story;
 /* cutscenes, one file each (game/data/cutscenes/<id>.json, docs/CUTSCENES.md) */

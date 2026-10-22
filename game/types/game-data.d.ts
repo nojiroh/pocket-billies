@@ -54,6 +54,8 @@ export interface GameData {
   currencies?: Partial<Record<CurrencyId, Currency>>;
   /** RL-11: Copperleaf's hub buildings (game/data/buildings.json) */
   buildings?: Record<DataId, HubBuilding>;
+  /** RL-11: the one unlock table (game/data/unlocks.json; logic/unlocks.js) */
+  unlocks?: Record<DataId, Unlock>;
   /** UI track UI-1: the UI's look: palette, glass, cuts, fonts (game/data/uiTheme.json; logic/ui-theme.js) */
   uiTheme?: UiTheme;
   lines: Line[];
@@ -1422,6 +1424,26 @@ export interface HubBuilding {
   /** not built yet: on the Lab board as coming later */
   soon?: true;
   about: string;
+}
+
+/** unlocks.json: what an unlock gives (exactly one kind) */
+export type UnlockGrant =
+  | { building: string; level: number }
+  | { shop: string }
+  | { biome: string }
+  | { capital: number }
+  | { scrap: number }
+  | { seals: number };
+/** unlocks.json: one row of the unlock table (roguelite track RL-11): sold at a building (at + cost, in its currency;
+ * the Lab's rows are its board) or earned when a condition holds (when) */
+export interface Unlock {
+  name: string;
+  about: string;
+  at?: string;
+  cost?: number;
+  when?: string;
+  requires?: string[];
+  grant: UnlockGrant;
 }
 
 /** uiTheme.json: the UI's look (UI track UI-1; version 2 in UI-3, for the Studio's UI section) */
