@@ -247,7 +247,7 @@ const BOWL_PIN = 22; /* a pin's height on screen, in pixels */
 const BOWL_SEA_FAR = [0.16, 0.42, 0.62]; /* the sea's colour far away (the walk scenes' far wall) */
 
 /* the ground's scale: metres to the bowl's radius, squares across the terrain map, and the far-colours' size */
-const BOWL_METRES = 1000;
+export const BOWL_METRES = 1000;
 const BOWL_INDEX = 2048;
 const BOWL_MIX = 1024;
 /* the routes' and rivers' line map: distance to the nearest route (red, up to BOWL_ROUTE_FIELD), whether a place's own
