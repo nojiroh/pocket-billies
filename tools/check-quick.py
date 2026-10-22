@@ -873,7 +873,8 @@ BIOME_SONGS = {'meadow': 'meadow', 'thicket': 'spore', 'jungle': 'spore', 'lake'
 def run_music_step(b, base, R):
     """sound track SND-2: the run fixture (seed RL7FIXTURE, the landing on day 1). musicFor picks route on the landing;
     for every place of the run, what it picks follows its node (a town node town, the landing route, any other node its
-    biome's song, the owner's mapping); standing on a route node, the music sync asks for that biome's song. Nothing is
+    biome's song, the owner's mapping); on a route node, the music sync (musicSync, called there) asks for that biome's
+    song. Nothing is
     heard: soundEngine.want is what the game asked to play (headless, sound never starts without a touch)"""
     errs = []
     ctx = b.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=1)
@@ -897,10 +898,9 @@ def run_music_step(b, base, R):
         if bad: raise Exception('; '.join(bad[:5]))
         route = next((P for P in places if P['type'] == 'route'), None)
         if not route: raise Exception('the fixture run has no route node')
-        pg.evaluate(f"saveData.trip.node={route['n']};0")
-        ok = until(pg, f"soundEngine.want==={route['song']!r}", 10)
-        pg.evaluate("saveData.trip.node=1;0")
-        if not ok: raise Exception(f"standing in {route['name']} the game asked for {pg.evaluate('soundEngine.want')!r}, not {route['song']}")
+        # the node and the sync in one go: the walk view puts trip.node back where the player stands (the landing)
+        got = pg.evaluate(f"(()=>{{const n0=saveData.trip.node;saveData.trip.node={route['n']};musicSync();const w=soundEngine.want;saveData.trip.node=n0;return w}})()")
+        if got != route['song']: raise Exception(f"standing in {route['name']} the music sync asked for {got!r}, not {route['song']}")
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return f"{len(places)} places: " + ', '.join(f'{k} {v}' for k, v in sorted(seen.items())) + f"; in {route['name']} ({route['biome']}) the sync asked for {route['song']}"
     finally:
