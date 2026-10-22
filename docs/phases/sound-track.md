@@ -74,7 +74,7 @@ Everything is synthesized in `game/js/sound.js` (2,013 lines) with the Web Audio
 | --- | --- | --- | --- | --- | --- |
 | SND-1 (done 2026-10-22) | Settings and routing | the five bugs above, the Music Test on the music bus, a one-tap mute beside the sheet's title, the Sound tab translated | none | 1 | unit test for the levels; the quick check's Sound settings step; phone |
 | SND-2 (done 2026-10-22) | The tracker as data | `game/js/audio/tracker.js` with no game imports; `music.json` + schema (songs, jingles, cries, where); biome music in a run; timers that stop when idle; a song fingerprint baseline | SND-1 | 1-2 | fingerprints unchanged; check-data; modules check; the run fixture plays a biome song |
-| SND-3 | The Studio's Music & sound section | play and loop any song, the recipe's dials, a piano roll for the hook, the where table, a cry card on Billies, check warnings | SND-2 | 1-2 | Studio self-test; quick check; the owner plays it |
+| SND-3 (done 2026-10-22) | The Studio's Music & sound section | play and loop any song, the recipe's dials, a piano roll for the hook, the where table, a cry card on Billies, check warnings | SND-2 | 1-2 | Studio self-test; quick check; the owner plays it |
 | SND-4 | The Pokémon rework: themes | four voices, written hooks and countermelodies, the title motif as a leitmotif, Copperleaf as two voices, night variants | SND-3, RL-8 played | 1-2 | fingerprints updated on purpose; the owner listens on the phone |
 | SND-5 | Battle and run music | intros timed to the throw, wild/trainer/leader/boss/rival/ghost, biome × row variants, the deadline variant, the red zone | SND-4, RL-8 | 1-2 | battle fixture; run fixture; phone |
 | SND-6 | Sound effects and jingles | a cry per species with a low-HP cry, four UI sounds, jingles for the run's beats, a mix pass | SND-4, RL-12 for relics | 1 | battle golden record untouched; phone |
@@ -195,6 +195,40 @@ A section `music` in the Game group (**ask me before:** its own group "Sound" in
 8. Verified by: the Studio self-test opens the section, plays a song for a second and checks the context is
    running; the quick check's Studio step; the owner tries it.
 
+### SND-3 as built (2026-10-22, branch `sound`, tag `snd-3-done` local)
+The owner's answers at the start: **a Sound group of its own**; **the tracker plays a hook and a counter now** (not
+from SND-4); **a cry per stage in lines/*.json, read by the game**. One cause per commit:
+1. `tracker.refresh(songs)`: compose again after an edit; the song playing keeps its place (the cache and the table it
+   was made with hid every edit). The game never calls it.
+2. `logic/music-studio.js`: `chordNumeral`, `musicNoteName`, `musicRuleText`, `musicSongUses` (`MUSIC_CODE_SONGS`:
+   title and fall, which code starts by name; a test holds the list to the code), `musicFindings` (check-data's
+   errors now come from it), `MUSIC_CHOICES` (held to the schema's enums), `musicJingleNotes` / `musicJingleList`.
+3. The section (`studio/js/music-editor.js`, group Sound): the song list and player on the Studio's own
+   AudioContext, made on the first ▶; it stops by itself off screen (the tracker's tick checks).
+4. music.json's note is `about`, not `_help` (a rename: the Studio drops `_` keys from undo and saves).
+5. The recipe card; 6. the where table (one line per rule with only its conditions, ↑ ↓, Try a place);
+7. the tracker plays `hook` (bars 1-2 and 5-6) and `counter` (a quieter 12.5 % pulse); 8. the hook roll (its own
+   canvas); 9. the jingle editor (the same roll).
+10. Song fingerprints: the cries are the species' (by id, as the game asks); `cries.json` written again, nothing
+    else. Then `logic/cries.js` (`cryRecipe`, `cryVoices`, `cryLowHealth`), `cry` per stage in line.schema.json,
+    SPECIES[id].cry, sound.js plays it; the Cry card on the Billies page.
+11. The Studio's Check: music-editor.js `musicCheckFindings`, Show me; the cries as one note.
+12. The self-test's `music` row; `check-studio-github.py --only=music`.
+Fingerprints after every commit that touched the tracker, sound.js or the data: 71, none changed (a cry set on
+bezos0 changes its fingerprint alone: seen).
+
+Corrections to this section's plan, found in SND-3:
+- `hook` and `counter` were in the schema but nothing played them; the roll would have edited silence until SND-4.
+- roster.json is the art-progress board, not the species: cries live per stage in `lines/*.json`, beside names and
+  types. No species had a cry; a "species with no cry" warning would have fired 24 times, so it is one note.
+- Jingles are 6 to 22 sixteenths, not one bar: the roll is as long as the jingle plus a bar.
+- Drag to reorder became ↑ ↓ buttons (keyboard, and HTML drag needs more code for little); the pixel canvas is RGBA
+  art with art undo, so the roll is its own canvas.
+- The quick check's Studio step only proves every script loads; the section's own check is in
+  `tools/check-studio-github.py` (`--only=music`).
+- The SND-2 cry fingerprints were of roster names (cartotter), which the game never plays; now species ids.
+- The Studio is for a computer, not a phone (the owner): no phone layout work.
+
 ## SND-4: the Pokémon rework, themes
 Audible changes, fingerprints regenerated at the end on purpose.
 1. **Four voices.** A song declares its voices: two pulse (lead and counter or arp), one triangle (bass), one noise
@@ -229,7 +263,7 @@ Audible changes, fingerprints regenerated at the end on purpose.
 
 ## SND-6: sound effects and jingles
 1. **Cries.** About eight base cries by kind (beast, bird, slime, machine, fish, insect, ghost, suit) in
-   `music.json`; each of the 24 Billies sets base, pitch and length in `roster.json`; the Studio card from SND-3
+   `music.json`; each of the 24 Billies sets base, pitch and length per stage in `lines/*.json` `cry` (from SND-3); the Studio card from SND-3
    edits them. A low-HP cry is the same cry faster and a third down. A robot's cry comes from its torso part.
 2. **UI sounds.** Four instead of one: select (the tick), confirm (a rising fifth), cancel (a falling one), can't
    (a dull buzz); the click listener picks by `data-a` and the button's class, so no screen changes.
@@ -244,7 +278,8 @@ Audible changes, fingerprints regenerated at the end on purpose.
 ## Ask me before (collected)
 - SND-1 (answered 2026-10-22): jingles stay on Sound effects; volumes stay in the save; the mute beside the sheet's title.
 - SND-2 (answered 2026-10-22): the mapping as first guessed (below), not waiting for the Studio; SND-3 lets you hear the pairs, SND-4 revises it.
-- SND-3: a Game-group section or a Sound group of its own.
+- SND-3: a Game-group section or a Sound group of its own (answered: a Sound group; also: hooks heard now, cries per
+  stage in lines/*.json).
 - SND-4: who writes the hooks; whether the title motif should be the game's theme everywhere or the hub's only.
 - SND-5: the red-zone variant versus the beep; whether the deadline variant plays on the last day or the last two.
 - The order of SND-4 to SND-6 after the play test, and whether any of them should go before it.

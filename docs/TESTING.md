@@ -283,6 +283,17 @@ same phase:
   tested in Node on the real table (`sound.test.mjs`); the full check's "Run music" step (alone with `--steps="run
   music"`, about 20 s) opens the run fixture and checks each place's pick and that the sync asks for a biome's song
   (`soundEngine.want`: nothing is heard). The Unused report lists songs nothing plays.
+  SND-3: the cry fingerprints are the 24 species by id (bezos0), as the game asks for them (they were the roster's
+  names, which the game never passes). The Studio's **Music & sound** section: `python3 tools/check-studio-github.py
+  --only=music` (about a minute) plays a song with a real click (the context running, the bar shown), changes its tempo
+  and a chord while it plays and undoes them, draws a hook and a counter note on the roll and hears them, moves,
+  adds and undoes where-rules with Try a place following, plays and lengthens a jingle, sets and empties a Billy's
+  cry, checks the Check's music findings and Show me, and that leaving the section stops the song; each part ends with
+  nothing left to propose. The Studio self-test has a `music` tool row (a song for a second, no timer left; a context
+  that won't run is failed only when the test was started by a click). Unit tests: `music-studio.test.mjs` (numerals,
+  rules in words, where songs play, the findings, the schema's choices, jingles as notes and back),
+  `tracker.test.mjs` (the hook and counter; the tracker is a page module, so it is read through the test globals),
+  `cries.test.mjs`.
 - **18 Trading and battles with friends**: every new Firestore rule gets emulator tests in `firebase/test/`;
   trade validation is logic with unit tests.
 

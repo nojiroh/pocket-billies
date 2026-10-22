@@ -9,6 +9,12 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- The Studio's Music & sound section (sound track SND-3): play and loop any song and change its recipe while it
+  plays (tempo, key, scale, the chords as numerals, the instruments, swing, echo, a new tune from a seed); write a
+  two-bar hook and a countermelody on a piano roll, which the game now plays in place of the composed tune's first
+  bars; edit the table of which song plays where, with Try a place to hear what it picks; edit the jingles. Each
+  Billy can have its own cry (base, pitch and length) on its Billies page, with a low-health preview; until one is
+  set, every cry sounds as before. The Studio's Check flags a where-rule that names no song and a song nothing plays.
 - Music in a run (sound track SND-2): each place on a run's map plays its biome's song (a meadow its own, a lake the
   trench song, a thicket spore, a ridge crystal, an autumn wood spire), a run's town the town song and the landing
   the route song. The songs, jingles and cries are now data (game/data/music.json) and play exactly as before; the

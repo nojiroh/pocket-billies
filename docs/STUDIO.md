@@ -207,11 +207,40 @@ Game → **UI look** edits game/data/uiTheme.json, the look of the game's menus 
 - **Rule check**: the Check has one report line (not counted in its badge) with the raw values tools/ui-lint.mjs
   counts; Show me opens the list by rule and file, each line linked on GitHub. A report until UI-6.
 
+## Music & sound (sound track SND-3)
+
+Sound → **Music & sound** edits game/data/music.json. Sound plays through the game's own tracker
+(game/js/audio/tracker.js) on the Studio's own AudioContext, made on the first press of a ▶ (a browser starts sound
+only after a click). It stops by itself when the section is off screen.
+
+- **The song list** (left, on every tab): ▶ plays a song from its start, **Stop**, **Loop** (off: a song stops after
+  its last bar), the bar playing under them; a song nothing plays is marked unused.
+- **Songs**: the song picked. **Recipe**: tempo, key, scale, lead wave, bass, arpeggio, drums, the eight bars' chords
+  as roman numerals for the scale with their root (IV · F; bVII in mixolydian), swing, echo, sevenths, the seed and
+  **New tune**. Every change is heard at once: the song playing keeps its place with the new notes. **Hook**: a
+  32-step roll for bars 1-2, played instead of the composed tune in bars 1-2 and again in 5-6 (the composed tune shows
+  faintly; **Copy the tune's bars 1-2** starts from it), and a **Countermelody** under them on a quieter pulse. Click
+  an empty cell to write a note (you hear it), drag right to lengthen it, click a note to take it away; one note at a
+  time, so a note you write over another replaces it. **Where it plays**: the where-rules, places (parked ones too),
+  story scripts and code that play it.
+- **Where they play**: the where table, read from the top; the first rule whose every condition fits picks the song.
+  Each rule shows only the conditions it sets (✕ leaves one out, **+ condition** adds one), its song (or the place's
+  own), ▶, ↑ ↓ to reorder and ✕ to remove; **+ Add a rule** goes before the last, which must fit everywhere. **Try a
+  place** (above it): set where you are (battle, tab, room, node, biome, row, the place's own song) and it names the
+  rule that wins and plays its song.
+- **Jingles**: each jingle with ▶ (150 bpm on a 25 % pulse with a triangle an octave down, as the game plays them),
+  and a roll for the one picked: one note at a time, a gap a rest.
+- **Cry** card on the Billies page (after Stats): the stage's base cry, pitch and length, each shown as its id makes it
+  until set; ▶ **Cry**, ▶ **Low on health** (a preview; the game's use comes in SND-6), **Use the cry its id makes**.
+  Saved per stage as `cry` in lines/*.json.
+- The Check lists a where-rule that names no song (an error, as check-data) and a song nothing plays (a warning),
+  with Show me, and one note on how many Billies use the cry their id makes.
+
 ## Sections
 
 | Section | What you can do |
 |---|---|
-| **Billies** | Names, Field Guide text, types, height and weight per stage; stat profile or exact stats; moves learned and when; how and when each stage evolves; where it appears. Animated front/back preview with every action, in any coat. |
+| **Billies** | Names, Field Guide text, types, height and weight per stage; stat profile or exact stats; moves learned and when; how and when each stage evolves; where it appears; its cry (base, pitch, length; ▶ to hear it). Animated front/back preview with every action, in any coat. |
 | **Coats** | A coat recolours a Billie's art (in place of the old Golden sheets). Swap whole palette ramps (every shade of one becomes the same shade of another), then exact colours; art a little off the palette follows the nearest shade. How often each coat turns up in the wild, from eggs and on the line (empty: never). Give one Billie its own hand-painted sheet for a coat: it starts as the recolour; download it, paint it, upload it back. A before/after preview on any Billie. |
 | **Edit pixels and skeleton** | Pixel editor on the real sprite sheets (the pixel canvas, above): every tool, part outlines, an onion skin of the other view, a live animated preview. Download a sheet, edit it in another app, upload it back. Nudge where each body part attaches and how parts stack. |
 | **Skeleton builder** | Build or reshape a body: add parts (blank or from a PNG), drag parts and pivots, tilt, re-parent, mirror a limb with everything attached to it, choose which motion each part follows, switch the body plan, and copy a layout between the front and back views. Whole-step zoom with the pixel canvas's keys; **Parts on the workbench** for boxes, pivots and draw order on the sheet. |
@@ -232,6 +261,7 @@ Game → **UI look** edits game/data/uiTheme.json, the look of the game's menus 
 | **Story scripts** | Project Story S3: story.json's own scripts (Hazel's lab, after Blake's first battle, the ending): add, rename, remove and edit them in the script field; the story's flags, start presets (with ▶ Play) and quests to read. |
 | **Scripts everywhere** | Every script field (a trainer's, a person's, story.json's) shows the parser's error at once and the story checks a moment later, each on its line (click to go there); **Add line ids**; **Commands**, a reference built from the parser's own tables that puts a command in the script. Condition fields (when, unless, a place's requires) are checked the same way, and the Check lists every story finding. docs/SCRIPTS.md. |
 | **UI look** | The menus' look (uiTheme.json): colours light and dark with contrast grades, glass, depth, shapes, space, type and motion, for the whole game or one screen's colours and shapes; presets, Hold to compare, the UI gallery as a live preview. UI track UI-3, above. |
+| **Music & sound** (group Sound) | The songs (play, loop, the recipe's dials heard at once, a hook and countermelody roll), the where table with Try a place, and the jingles (music.json). A Billy's cry is on its Billies page. Sound track SND-3, above. |
 | **Rules** | Every number that tunes the game: starting items, starters and rival, wild Billies per place and how fast they come back, prize money, leveling curve, team size, eggs, damage, critical hits, type abilities, taxing, bargains. |
 | **Art files** | Browse, download and replace any image. |
 | **Check & backups** | Lists problems with "Show me" links; restores earlier versions. |
