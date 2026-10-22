@@ -551,8 +551,12 @@ function worldBowlSpots() {
     F = bowlReliefFeatures(LOCATIONS, look.relief, look.seed),
     G = bowlGroundGrid(F, undefined, sea);
   bowlCamUseGround(G);
-  LOCATIONS.forEach((l, i) => worldBowlIslandLoad(i));
   const byId = id => LOCATION_BY_ID[id];
+  /* not for a place off this world's map (the hub during a run) */
+  LOCATIONS.forEach((l, i) => {
+    const s = bowlSpotOf(l, byId);
+    if (!s.off && !s.under) worldBowlIslandLoad(i);
+  });
   worldBowl.spots = LOCATIONS.map(l => {
     const s = bowlSpotOf(l, byId),
       [x, y] = bowlXY(s.a, s.r);
