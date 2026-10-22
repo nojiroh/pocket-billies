@@ -1534,13 +1534,17 @@ export interface SongRecipe {
   /** each bar's chord, as a scale degree (0 is I) */
   prog: number[];
   lead: string;
-  bass: 'bounce' | 'gallop' | 'long' | 'walk' | 'drive';
-  arp: 'up' | 'updown' | 'drip' | 'chord7';
+  bass: 'bounce' | 'gallop' | 'long' | 'walk' | 'drive' | 'none';
+  arp: 'up' | 'updown' | 'drip' | 'chord7' | 'none';
   drums: 'soft' | 'skip' | 'drive' | 'march' | 'bossa' | 'none';
   seed: number;
   swing?: number;
   echo?: number;
   seventh?: 0 | 1;
+  /** SND-4: keep the thicker mix (sine arps, the night pad) instead of four voices: the title and the fall */
+  extra?: boolean;
+  /** SND-4: a music-box lead: short notes, no vibrato (Copperleaf) */
+  pluck?: boolean;
   /** SND-4 and SND-5 (none yet): written lines of [step, midi, length], intro bars, night changes */
   hook?: [number, number, number][];
   counter?: [number, number, number][];

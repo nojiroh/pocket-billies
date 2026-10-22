@@ -85,19 +85,39 @@ export function trackerCompose(D) {
     });
   }
   /* SND-3: a written hook takes bars 1-2 and their repeat in bars 5-6 from the walk; a countermelody plays under them
-     on a second pulse. Notes are [step from the song's start, midi, length in sixteenths]; only steps 0-31 count */
+     on a second pulse. Notes are [step from the song's start, midi, length in sixteenths]; only steps 0-31 count.
+     SND-4: bars 3-4 answer them: the same rhythm, each note moved to the nearest tone of its new bar's chord */
   const counter = new Array(steps).fill(null),
+    chordTone = (m, ch) => {
+      let best = m,
+        gap = Infinity;
+      for (let o = -3; o <= 3; o++)
+        for (const x of [0, 2, 4]) {
+          const t = deg(ch + x) + 12 * o,
+            g = Math.abs(t - m);
+          /* a tie goes down: an answer falls */
+          if (g < gap || (g === gap && t < best)) ((best = t), (gap = g));
+        }
+      return best;
+    },
     written = (line, out) => {
       for (const [st, m, l] of line || [])
-        if (st >= 0 && st < 32) for (const at of [st, st + 64]) if (at < steps) out[at] = [m, l];
+        if (st >= 0 && st < 32) {
+          for (const at of [st, st + 64]) if (at < steps) out[at] = [m, l];
+          const at = st + 32,
+            b = Math.floor(at / 16);
+          if (at < steps) out[at] = [chordTone(m, D.prog[b]), l];
+        }
     };
   if (D.hook && D.hook.length) {
-    lead.fill(null, 0, Math.min(32, steps));
+    lead.fill(null, 0, Math.min(64, steps));
     if (steps > 64) lead.fill(null, 64, Math.min(96, steps));
     written(D.hook, lead);
   }
   written(D.counter, counter);
-  return { ...D, notes: lead, counterNotes: counter, steps, deg };
+  /* SND-4: the bars where the countermelody has the second pulse (the arp rests there) */
+  const counterBars = Array.from({ length: bars }, (_, b) => counter.slice(b * 16, b * 16 + 16).some(Boolean));
+  return { ...D, notes: lead, counterNotes: counter, counterBars, steps, deg };
 }
 export const midiToFrequency = m => 440 * Math.pow(2, (m - 69) / 12);
 export function trackerCreate(ctx, bus, opts = {}) {
@@ -315,7 +335,23 @@ export function trackerCreate(ctx, bus, opts = {}) {
         t = sg.next + (i % 2 ? spb * (D.swing || 0) : 0),
         bus = sg.gain,
         ch = D.prog[b],
-        dg = D.deg;
+        dg = D.deg,
+        /* SND-4: four voices, as on the Game Boy: a pulse for the lead, a second pulse for the countermelody or the
+           arp, the triangle for the bass, noise for the drums. A lead on the triangle keeps it, and the bass moves to
+           the second pulse. An `extra` song (the title, the fall) keeps the thicker mix: sine arps and the night pad */
+        four = !D.extra,
+        waveLead = four && D.lead === 'triangle',
+        pulse2Busy = four && (waveLead || (D.counterBars && D.counterBars[b])),
+        bassVoice = o =>
+          !(waveLead && D.counterBars && D.counterBars[b]) &&
+          T.synthVoice(
+            bus,
+            !four
+              ? o
+              : waveLead
+                ? { ...o, type: 'p50', vol: 0.07, cut: 900 }
+                : { ...o, type: 'triangle', vol: o.type === 'triangle' ? o.vol : 0.18, cut: 0 }
+          );
       /* lead */ const L = D.notes[st];
       if (L)
         T.synthVoice(bus, {
@@ -324,10 +360,11 @@ export function trackerCreate(ctx, bus, opts = {}) {
           t,
           dur: L[1] * spb * 0.9,
           vol: D.lead === 'triangle' ? 0.13 : 0.075,
-          d: 0.1,
-          s: 0.55,
-          r: 0.06,
-          vib: L[1] >= 6 ? 1 : 0,
+          /* SND-4: a music-box lead (pluck) is short, with no vibrato */
+          d: D.pluck ? 0.14 : 0.1,
+          s: D.pluck ? 0.12 : 0.55,
+          r: D.pluck ? 0.12 : 0.06,
+          vib: !D.pluck && L[1] >= 6 ? 1 : 0,
           echo: D.echo || 0.15,
         });
       /* the countermelody (SND-3), when the song has one */ const C = D.counterNotes && D.counterNotes[st];
@@ -346,7 +383,7 @@ export function trackerCreate(ctx, bus, opts = {}) {
       /* bass */ const bs = D.bass,
         root = dg(ch) - 24;
       if (bs === 'bounce' && i % 4 === 0)
-        T.synthVoice(bus, {
+        bassVoice({
           type: 'triangle',
           freq: midiToFrequency(i % 8 ? root + 7 : root),
           t,
@@ -355,7 +392,7 @@ export function trackerCreate(ctx, bus, opts = {}) {
           s: 0.7,
         });
       else if (bs === 'gallop' && [0, 3, 4, 8, 11, 12].includes(i))
-        T.synthVoice(bus, {
+        bassVoice({
           type: 'triangle',
           freq: midiToFrequency(i % 8 === 4 ? root + 12 : root),
           t,
@@ -363,7 +400,7 @@ export function trackerCreate(ctx, bus, opts = {}) {
           vol: 0.2,
         });
       else if (bs === 'long' && i === 0)
-        T.synthVoice(bus, {
+        bassVoice({
           type: 'triangle',
           freq: midiToFrequency(root),
           t,
@@ -374,7 +411,7 @@ export function trackerCreate(ctx, bus, opts = {}) {
           r: 0.4,
         });
       else if (bs === 'walk' && i % 4 === 0)
-        T.synthVoice(bus, {
+        bassVoice({
           type: 'triangle',
           freq: midiToFrequency(dg(ch + [0, 2, 4, 5][i / 4]) - 24),
           t,
@@ -382,7 +419,7 @@ export function trackerCreate(ctx, bus, opts = {}) {
           vol: 0.2,
         });
       else if (bs === 'drive' && i % 2 === 0)
-        T.synthVoice(bus, {
+        bassVoice({
           type: 'p50',
           freq: midiToFrequency(root + (i % 8 === 6 ? 12 : 0)),
           t,
@@ -393,7 +430,30 @@ export function trackerCreate(ctx, bus, opts = {}) {
       /* harmony */ const ar = D.arp,
         tri = [0, 2, 4, D.seventh ? 6 : 7].map(x => dg(ch + x)),
         pick = k => tri[((k % 4) + 4) % 4];
-      if (ar === 'up' && i % 2 === 0)
+      if (pulse2Busy) {
+        /* the second pulse plays the countermelody or the bass this bar */
+      } else if (four && ar === 'drip' && (i === 0 || i === 6 || i === 11))
+        T.synthVoice(bus, {
+          type: 'p12',
+          freq: midiToFrequency(pick(i) + 12),
+          t,
+          dur: spb * 1.5,
+          vol: 0.04,
+          s: 0.2,
+          r: 0.15,
+          echo: 0.5,
+        });
+      else if (four && ar === 'chord7' && i % 2 === 0)
+        T.synthVoice(bus, {
+          type: 'p12',
+          freq: midiToFrequency(tri[i % 4 ? 3 : 1] + 12),
+          t,
+          dur: spb * 1.2,
+          vol: 0.035,
+          s: 0.3,
+          echo: 0.15,
+        });
+      else if (ar === 'up' && i % 2 === 0)
         T.synthVoice(bus, {
           type: 'p12',
           freq: midiToFrequency(pick(i / 2) + 12),
@@ -461,7 +521,8 @@ export function trackerCreate(ctx, bus, opts = {}) {
         if (i === 0 || i === 6 || i === 8 || i === 14) T.synthKick(db, t, 0.2);
         if ([3, 6, 10, 13].includes(i)) T.synthNoise(db, { t, dur: 0.03, vol: 0.05, bp: 3500, q: 2 });
       }
-      /* v27: a soft pad under the night */ if (i === 0 && (Lv = levels()) && Lv.pad > 0.05)
+      /* v27: a soft pad under the night (SND-4: an `extra` song's only; a four-voice song has its night version) */
+      if (!four && i === 0 && (Lv = levels()) && Lv.pad > 0.05)
         [0, 2, 4].forEach(x =>
           T.synthVoice(bus, {
             type: 'sine',

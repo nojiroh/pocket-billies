@@ -94,7 +94,8 @@
       "gallop",
       "long",
       "walk",
-      "drive"
+      "drive",
+      "none"
      ]
     },
     "arp": {
@@ -102,7 +103,8 @@
       "up",
       "updown",
       "drip",
-      "chord7"
+      "chord7",
+      "none"
      ]
     },
     "drums": {
@@ -137,6 +139,14 @@
       0,
       1
      ]
+    },
+    "extra": {
+     "description": "SND-4: keep the thicker mix (sine arps and chords, the night pad) instead of four voices; the title and the fall only",
+     "type": "boolean"
+    },
+    "pluck": {
+     "description": "SND-4: a music-box lead: every note short, with no vibrato (Copperleaf)",
+     "type": "boolean"
     }
    }
   }
@@ -198,7 +208,9 @@
        "night": {
         "description": "SND-4: what changes at night (none yet)",
         "$ref": "#/$defs/recipe"
-       }
+       },
+       "extra": true,
+       "pluck": true
       },
       "additionalProperties": false
      }

@@ -245,10 +245,12 @@ function musicRecipeHTML(id) {
         show: v => Math.round(v * 100) + '%',
       }),
       checkboxField('Sevenths in the arpeggio', `${p}.seventh`, { num: 1 }),
+      checkboxField('Music-box lead (short notes)', `${p}.pluck`),
+      checkboxField('Thicker mix (more than four voices: sine chords, a night pad)', `${p}.extra`),
       `<div class="fld"><span>Seed (the tune)</span><span class="seg-row"><input type="number" data-p="${p}.seed" data-k="num" step="1" value="${S.seed}" aria-label="Seed"><button class="btn subtle" data-act="musSeed" title="Another tune over the same chords">New tune</button></span></div>`
     );
   return card('Recipe', body, {
-    sub: 'The game composes the tune from this: a seeded walk over the chords; bars 5-6 repeat 1-2, bar 8 comes home.',
+    sub: 'The game composes the tune from this: a seeded walk over the chords; bars 5-6 repeat 1-2, bar 8 comes home. A written hook takes bars 1-2 and 5-6, and bars 3-4 answer it on their chords.',
   });
 }
 studioState.hooks.music = path => {

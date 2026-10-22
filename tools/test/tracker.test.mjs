@@ -21,7 +21,7 @@ test('an empty hook and counter change nothing', () => {
   assert.ok(b.counterNotes.every(n => n === null));
 });
 
-test('a hook takes bars 1-2 and their repeat in bars 5-6; the other bars stay', () => {
+test('a hook takes bars 1-2 and their repeat in bars 5-6; bars 3-4 answer it; 7-8 stay', () => {
   const hook = [
     [0, 72, 4],
     [4, 74, 4],
@@ -47,16 +47,38 @@ test('a hook takes bars 1-2 and their repeat in bars 5-6; the other bars stay', 
     at(b, 64, 96),
     want.map(([s, m, l]) => [s + 64, m, l])
   );
-  assert.deepEqual(b.notes.slice(32, 64), a.notes.slice(32, 64));
   assert.deepEqual(b.notes.slice(96), a.notes.slice(96));
+  /* SND-4: bars 3-4 keep the hook's rhythm, each note on the nearest tone of the bar's chord (town: bar 3 is IV, F A C
+     in C; bar 4 is V, G B D) */
+  assert.deepEqual(at(b, 32, 64), [
+    [32, 72, 4],
+    [36, 72, 4],
+    [40, 77, 8],
+    [48, 79, 16],
+  ]);
 });
 
-test('a countermelody sits beside the lead, in bars 1-2 and 5-6', () => {
+test('bars 3-4 answer a hook already on the new chord with the same note; a tie goes down', () => {
+  /* town bar 3 is IV (F A C): C stays C; G is as near F as A, and goes down to F */
+  const b = trackerCompose({
+    ...town,
+    hook: [
+      [0, 72, 8],
+      [8, 67, 8],
+    ],
+  });
+  assert.deepEqual(b.notes[32], [72, 8]);
+  assert.deepEqual(b.notes[40], [65, 8]);
+});
+
+test('a countermelody sits beside the lead in bars 1-2, answers in 3-4, again in 5-6', () => {
   const b = trackerCompose({ ...town, counter: [[2, 64, 6]] });
   assert.deepEqual(b.counterNotes[2], [64, 6]);
   assert.deepEqual(b.counterNotes[66], [64, 6]);
-  assert.equal(b.counterNotes.filter(Boolean).length, 2);
+  assert.equal(b.counterNotes.filter(Boolean).length, 3, 'bars 1-2, the answer in 3-4, the repeat in 5-6');
+  assert.deepEqual(b.counterNotes[34], [65, 6], 'E answers on F, the nearest tone of town bar 3 (IV: F A C)');
   assert.deepEqual(b.notes, trackerCompose(town).notes);
+  assert.deepEqual(b.counterBars, [true, false, true, false, true, false, false, false]);
 });
 
 test('the composer does not change the recipe it is given', () => {

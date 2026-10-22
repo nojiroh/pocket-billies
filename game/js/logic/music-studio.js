@@ -62,13 +62,15 @@ export const MUSIC_CHOICES = {
     ['gallop', 'Gallop'],
     ['long', 'Long (one note a bar)'],
     ['walk', 'Walk (up the chord)'],
-    ['drive', 'Drive (pulse eighths)'],
+    ['drive', 'Drive (eighths)'],
+    ['none', 'None'],
   ],
   arp: [
     ['up', 'Up'],
     ['updown', 'Up and down'],
     ['drip', 'Drip (three high drops)'],
-    ['chord7', 'Chords (four sines)'],
+    ['chord7', 'Chords (four sines; two notes in a four-voice song)'],
+    ['none', 'None'],
   ],
   drums: [
     ['soft', 'Soft'],

@@ -126,6 +126,7 @@
    "bass": "long",
    "arp": "updown",
    "drums": "soft",
+   "extra": true,
    "seed": 7,
    "echo": 0.35
   },
@@ -138,6 +139,7 @@
    "bass": "long",
    "arp": "drip",
    "drums": "none",
+   "extra": true,
    "seed": 13,
    "echo": 0.6
   },
