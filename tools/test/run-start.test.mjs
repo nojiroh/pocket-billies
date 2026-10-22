@@ -1,18 +1,16 @@
 // Studio plan T2.1: how a run starts, on the game's own data. The run's money and items, the unlocks it carries, its map
 // (biomes filtered by those unlocks), deadline, what the map shows and the forecast, for 200 seeds with no unlocks,
 // with every unlock, and on the debug menu's short map. Frozen from runTakeOff (game/js/run.js) before the start became
-// one shared function, so the fixture, the self-test, the simulator and the Studio's Run Lab start runs as it does.
+// one shared function (logic/run-start.js runStartPlan, runStartOn), which the fixture, the self-test, the simulator and
+// the Studio's Run Lab call too.
 //   node --test --test-update-snapshots tools/test/run-start.test.mjs   remakes it (say why in the commit)
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { test } from 'node:test';
 import { fn, GAME_DATA, hooks, modules, reseed } from './setup-real.mjs';
 
-const { runMapStart } = modules['run-map'];
-const { runBegin } = modules['run-state'];
-const { runGive } = modules['run-start'];
-const { runUnlocks, unlockOpen } = modules.unlocks;
-const { MAPGEN_VERSION } = modules.mapgen;
+const { runGive, runStartOn, runStartPlan } = modules['run-start'];
+const { runUnlocks } = modules.unlocks;
 const UNLOCK_DATA = { unlocks: GAME_DATA.unlocks, buildings: GAME_DATA.buildings },
   DATA = {
     nodeTypes: GAME_DATA.nodeTypes,
@@ -20,6 +18,7 @@ const UNLOCK_DATA = { unlocks: GAME_DATA.unlocks, buildings: GAME_DATA.buildings
     pools: GAME_DATA.pools,
     scenery: GAME_DATA.scenery,
     rules: GAME_DATA.rules.run,
+    unlockData: UNLOCK_DATA,
   },
   SEEDS = Array.from({ length: 200 }, (_, k) => `S${k.toString(36).toUpperCase()}START`),
   CASES = {
@@ -43,13 +42,8 @@ function mast(/** @type {string[]} */ unlocks) {
 /** the run runTakeOff starts (its part that isn't the page: no heal, ranch, world or flight) */
 function takeOff(/** @type {string} */ seed, /** @type {{ unlocks: string[], map?: object }} */ c) {
   const s = mast(c.unlocks);
-  runBegin(s, { ...runGive(seed, 1, MAPGEN_VERSION, DATA.rules.start), home: [s.team[0].uid] });
-  const run = s.run;
-  run.unlocks = runUnlocks(s, UNLOCK_DATA);
-  const rules = { ...DATA.rules.map, ...(c.map || {}) };
-  runMapStart(run, {
-    ...DATA,
-    rules: { ...DATA.rules, map: { ...rules, biomes: unlockOpen(rules.biomes, 'biome', run.unlocks, UNLOCK_DATA) } },
+  runStartOn(s, runStartPlan(seed, DATA, { unlocks: runUnlocks(s, UNLOCK_DATA), map: c.map }), {
+    home: [s.team[0].uid],
   });
   return s;
 }
@@ -100,4 +94,25 @@ test('a run starts with run.start (copies), on its seed, tier and generator vers
   });
   g.coins.penny = 99;
   assert.notEqual(GAME_DATA.rules.run.start.coins.penny, 99);
+});
+
+test('a plan touches nothing: the data stays as it was, the same seed plans the same run, a save it goes on is its own', () => {
+  const before = JSON.stringify(DATA),
+    a = runStartPlan('PURE', DATA, { unlocks: ['biome_ridge'], map: { rows: 5, minibosses: 1 }, mods: ['m'] }),
+    b = runStartPlan('PURE', DATA, { unlocks: ['biome_ridge'], map: { rows: 5, minibosses: 1 }, mods: ['m'] });
+  assert.equal(JSON.stringify(DATA), before);
+  assert.deepEqual(a, b);
+  assert.equal(a.map.nodes.length >= 5, true);
+  const s = mast([]),
+    run = runStartOn(s, a, { home: [s.team[0].uid] });
+  assert.deepEqual(run.mods, ['m']);
+  assert.deepEqual(run.unlocks, ['biome_ridge']);
+  run.map.nodes[0].seen = 0;
+  assert.notEqual(a.map.nodes[0].seen, 0, "the save's map is a copy");
+});
+
+test('a map its rules can’t make stops the start before the save changes', () => {
+  const s = mast([]);
+  assert.throws(() => runStartPlan('BAD', DATA, { map: { rows: 3, minibosses: 2 } }), /can't hold/);
+  assert.equal(s.run, null);
 });
