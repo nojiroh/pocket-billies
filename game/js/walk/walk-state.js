@@ -25,7 +25,9 @@ export const walkRenderer = {
   zoomT: 1,
   tiltX: 0,
   tiltY: 0,
-  lead: [0, 0],
+  /* CAM-1: the camera's follow (logic/camera-follow.js) and what it is doing (the debug log, the Studio's guides) */
+  fol: null,
+  camInfo: null,
   focus: null,
   focusT: null,
   frames: 0,

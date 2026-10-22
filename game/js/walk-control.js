@@ -250,6 +250,8 @@ function roomStepIn(info, n = 0) {
     info.cam = {
       T: walkRenderer.camT.slice(),
       cpe: walkRenderer.cpe ? walkRenderer.cpe.slice() : null,
+      /* CAM-1: the follow's state (its speeds, look-ahead and goals) */
+      fol: walkRenderer.fol ? JSON.parse(JSON.stringify(walkRenderer.fol)) : null,
       yaw: walkRenderer.yawT,
       zoom: walkRenderer.zoomT,
     };
@@ -290,6 +292,7 @@ export function leaveRoom() {
   if (I.cam && typeof walkRenderer !== 'undefined') {
     walkRenderer.camT = I.cam.T.slice();
     if (I.cam.cpe) walkRenderer.cpe = I.cam.cpe.slice();
+    if (I.cam.fol) walkRenderer.fol = JSON.parse(JSON.stringify(I.cam.fol));
     walkRenderer.yawT = walkRenderer.yaw = I.cam.yaw;
     walkRenderer.zoomT = walkRenderer.zoom = I.cam.zoom;
   }

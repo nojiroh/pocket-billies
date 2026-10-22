@@ -7,6 +7,7 @@ import { expose } from '../test-globals.js';
 import { reducedMotion } from '../hooks.js';
 import { clamp } from '../util.js';
 import { cameraRiseNeeded } from '../logic/camera-rise.js';
+import { blendGoals, followNew, followStep, leadStep, zoneMetres } from '../logic/camera-follow.js';
 import { BOB_M, walkView } from '../walk-view.js';
 import { engineSetting } from '../engine/settings.js';
 import { matrix4 } from '../engine/webgl.js';
@@ -19,6 +20,8 @@ expose({
   cameraTurnLimit: [() => cameraTurnLimit],
   clampZoom: [() => clampZoom],
   cutsceneCamera: [() => cutsceneCamera, v => (cutsceneCamera = v)],
+  ease: [() => ease],
+  followDirection: [() => followDirection, v => (followDirection = v)],
   freeCameraOn: [() => freeCameraOn],
   screenRay: [() => screenRay, v => (screenRay = v)],
   walkCamera: [() => walkCamera, v => (walkCamera = v)],
@@ -51,57 +54,115 @@ export const freeCameraOn = () => !!(walkView.opt && walkView.opt.freeCam),
       ? clamp(v, 0.3, 3.2)
       : clamp(v, engineSetting('camera', 'zoomMin'), engineSetting('camera', 'zoomMax'));
 /* ---------- camera ---------- */
+/* CAM-1: an exact ease toward a value at `rate` a second, the same at any frame rate */
+const ease = (rate, dt) => 1 - Math.exp(-rate * dt);
+/* CAM-1: the way you push, on the ground (x, z; length 0-1): the joystick or d-pad, else the arrow keys, else the way
+   you walk (tapping somewhere, the Studio's preview); none when standing, or moving faster than walking or running can
+   (a jump to somewhere else) */
+function followDirection(P, R, F, vx, vz, sp) {
+  if (!P.walk || sp >= 12) return [0, 0];
+  const J = walkView.stick,
+    K = walkView.keys || {};
+  let kx = (K.r ? 1 : 0) - (K.l ? 1 : 0),
+    kz = (K.u ? 1 : 0) - (K.d ? 1 : 0),
+    km = Math.hypot(kx, kz) ? 1 : 0;
+  if (J && Math.hypot(J.x, J.y) > 0.12) {
+    kx = J.x;
+    kz = J.y;
+    km = Math.min(1, Math.hypot(J.x, J.y));
+  }
+  if (km) {
+    const l = Math.hypot(kx, kz) || 1;
+    return [((kx * R[0] + kz * F[0]) / l) * km, ((kx * R[1] + kz * F[1]) / l) * km];
+  }
+  const vl = Math.hypot(vx, vz);
+  return vl > 1e-4 ? [vx / vl, vz / vl] : [0, 0];
+}
 export function walkCamera(rw, rh, st, dt) {
   const sc = walkView.sc,
     c = sc.cam || {},
     P = walkView.pl,
-    k = Math.min(1, dt * 3.2);
-  walkRenderer.yaw += (walkRenderer.yawT - walkRenderer.yaw) * Math.min(1, dt * 5);
-  walkRenderer.zoom += (walkRenderer.zoomT - walkRenderer.zoom) * Math.min(1, dt * 5);
+    set = k => engineSetting('camera', k),
+    /* a cut: a new scene, a reset (camT = null), or a page asking for no glide */
+    snap = !walkRenderer.camT || !walkRenderer.fol || !!walkView.opt.instant,
+    feet = P.yv ?? standingHeightAt(P.x, P.z);
+  walkRenderer.yaw += (walkRenderer.yawT - walkRenderer.yaw) * ease(5, dt);
+  walkRenderer.zoom += (walkRenderer.zoomT - walkRenderer.zoom) * ease(5, dt);
+  if (snap) walkRenderer.fol = followNew(P.x, P.z, feet);
+  const fol = walkRenderer.fol;
   const vx = P.x - (walkRenderer.px ?? P.x),
     vz = P.z - (walkRenderer.pz ?? P.z);
   walkRenderer.px = P.x;
   walkRenderer.pz = P.z;
   const sp = Math.hypot(vx, vz) / Math.max(dt, 1e-3),
-    ld = P.walk && sp < 12 ? engineSetting('camera', 'lead') : 0,
-    vl = Math.max(1e-4, Math.hypot(vx, vz));
-  walkRenderer.lead[0] += ((ld ? (vx / vl) * ld : 0) - walkRenderer.lead[0]) * Math.min(1, dt * 1.6);
-  walkRenderer.lead[1] += ((ld ? (vz / vl) * ld : 0) - walkRenderer.lead[1]) * Math.min(1, dt * 1.6);
-  const tk = engineSetting('camera', 'tilt'),
+    /* the screen's right and up, on the ground */
+    R = [Math.cos(walkRenderer.yaw), -Math.sin(walkRenderer.yaw)],
+    F = [-R[1], R[0]],
+    lead = leadStep(
+      fol,
+      followDirection(P, R, F, vx, vz, sp),
+      set('lead'),
+      R,
+      set('leadSide'),
+      rh > rw,
+      snap ? 0 : set('leadSmooth'),
+      dt
+    );
+  const tk = set('tilt'),
     tilt = [
       (walkRenderer.tiltX + (walkRenderer.mouse ? walkRenderer.mouse[0] * 0.35 : 0)) * tk,
       (walkRenderer.tiltY + (walkRenderer.mouse ? walkRenderer.mouse[1] * 0.25 : 0)) * tk,
     ];
-  const pitch0 = engineSetting('camera', 'pitch') ?? (c.pitch || 34) + engineSetting('camera', 'pitchAdd'),
-    h0 = (engineSetting('camera', 'height') ?? (c.h || 9)) * engineSetting('camera', 'distance');
-  const hb = groundHeightAt(P.x, Math.min(sc.h - 0.5, P.z + 3.5)) - groundHeightAt(P.x, P.z);
-  walkRenderer.upT =
-    (walkRenderer.upT || 0) + (clamp((hb - 0.8) * 3.2, 0, 9) - (walkRenderer.upT || 0)) * Math.min(1, dt * 2);
-  /* v47: the camera looks up at a landmark ahead of you (landmarkTilt), and settles back as you pass */
-  walkRenderer.lmT = (walkRenderer.lmT || 0) + (landmarkTilt(P, sc) - (walkRenderer.lmT || 0)) * Math.min(1, dt * 2.4);
-  /* v46: the camera's height and tilt glide when they change without a cut (into and out of a room laid into the place) */
-  if (!walkRenderer.camT || !walkRenderer.cpe || walkView.opt.instant)
-    walkRenderer.cpe = [pitch0 + (sc.indoor ? 12 : 0), h0];
+  const pitch0 = set('pitch') ?? (c.pitch || 34) + set('pitchAdd'),
+    h0 = (set('height') ?? (c.h || 9)) * set('distance');
+  /* v46: the camera's height and tilt glide when the scene's own change without a cut (into and out of a room laid
+     into the place) */
+  if (snap || !walkRenderer.cpe) walkRenderer.cpe = [pitch0, h0];
   {
-    const e = Math.min(1, dt * 3.2);
-    walkRenderer.cpe[0] += (pitch0 + (sc.indoor ? 12 : 0) - walkRenderer.cpe[0]) * e;
+    const e = ease(3.2, dt);
+    walkRenderer.cpe[0] += (pitch0 - walkRenderer.cpe[0]) * e;
     walkRenderer.cpe[1] += (h0 - walkRenderer.cpe[1]) * e;
   }
   const pe = walkRenderer.cpe[0],
     he = walkRenderer.cpe[1];
-  const pitchDeg0 = pe + (walkRenderer.zoom - 1) * 14 - tilt[1] * 3 + walkRenderer.upT - walkRenderer.lmT,
-    yaw = walkRenderer.yaw + tilt[0] * 0.07;
-  let df = (he / Math.sin(((pe - (sc.indoor ? 12 : 0)) * Math.PI) / 180)) * walkRenderer.zoom;
+  /* CAM-1: one camera goal. Each wish is a goal whose weight ramps in and out (logic/camera-follow.js blendGoals),
+     blended into one tilt, turn, distance and aim: the phone's tilt and the mouse (at once), indoors 12 degrees more
+     tilt, rising ground just ahead tilts down further (up to 9 degrees), a landmark ahead tilts up to look at it
+     (v47, up to 11), a room laid into the place framed whole (v26) and the swoop into a battle (v31) */
+  const ahead = groundHeightAt(P.x, Math.min(sc.h - 0.5, P.z + 3.5)) - groundHeightAt(P.x, P.z),
+    goals = [
+      { id: 'tilt', w: 1, blend: 0, pitch: -tilt[1] * 3, yaw: tilt[0] * 0.07 },
+      { id: 'indoor', w: sc.indoor ? 1 : 0, pitch: 12 },
+      { id: 'ahead', w: clamp((ahead - 0.8) * 3.2, 0, 9) / 9, pitch: 9 },
+      { id: 'landmark', w: landmarkTilt(P, sc) / 11, pitch: -11 },
+    ];
+  if (sc.room) {
+    const Rr = sc.roomRect || [0, 0, sc.w, sc.h],
+      rx = Rr[0] + Rr[2] / 2,
+      rz = Rr[1] + Rr[3] * 0.55;
+    goals.push({ id: 'room', w: 1, blend: 0.15, at: [rx + (P.x - rx) * 0.25, rz + (P.z - rz) * 0.15] });
+  }
+  if (walkRenderer.swoop)
+    goals.push({
+      id: 'swoop',
+      w: 1,
+      blend: 0.15,
+      at: [walkRenderer.swoop.x, walkRenderer.swoop.z + (rw > rh ? 1 : 0.5)],
+    });
+  const G = blendGoals(fol, goals, dt, set('blend'), snap);
+  const pitchDeg0 = pe + (walkRenderer.zoom - 1) * 14 + G.pitch,
+    yaw = walkRenderer.yaw + G.yaw;
+  let df = (he / Math.sin((pe * Math.PI) / 180)) * walkRenderer.zoom * G.dist;
   /* terrain TR-3: on tall ground the camera tilts down further (and comes a little closer) until the line from it to
-    your head clears the rock between you; it rises quickly and settles back slowly */
-  const tall = !(sc.indoor || sc.room || freeCameraOn() || st.focus),
-    riseMax = tall ? +engineSetting('camera', 'rise') || 0 : 0,
+    your head clears the rock between you; it rises quickly and settles back slowly (its own ramp, kept as it was) */
+  const tall = !(sc.indoor || sc.room || freeCameraOn()),
+    riseMax = tall ? +set('rise') || 0 : 0,
     need = tall
       ? cameraRiseNeeded(
           standingHeightAt,
           P.x,
           P.z,
-          P.yv ?? standingHeightAt(P.x, P.z),
+          feet,
           yaw,
           pitchDeg0,
           Math.cos((pitchDeg0 * Math.PI) / 180) * df,
@@ -112,39 +173,59 @@ export function walkCamera(rw, rh, st, dt) {
   /* terrain TR-3: while ground cuts the line (by more than half a degree) the rock between you and the camera thins
     out (draw-common.js rockUniformsFor); it comes and goes over about a third of a second */
   const rockT = need > 0.5 ? 1 : 0;
-  if (!walkRenderer.camT || walkView.opt.instant || walkRenderer.rockK == null) walkRenderer.rockK = rockT;
+  if (snap || walkRenderer.rockK == null) walkRenderer.rockK = rockT;
   else walkRenderer.rockK += (rockT - walkRenderer.rockK) * Math.min(1, dt * 3);
-  if (!walkRenderer.camT || walkView.opt.instant || walkRenderer.occT == null) walkRenderer.occT = riseT;
+  if (snap || walkRenderer.occT == null) walkRenderer.occT = riseT;
   else walkRenderer.occT += (riseT - walkRenderer.occT) * Math.min(1, dt * (riseT > walkRenderer.occT ? 2.6 : 1.1));
   const occ = walkRenderer.occT,
     pitch = ((pitchDeg0 + occ) * Math.PI) / 180;
   if (riseMax) df *= 1 - 0.15 * Math.min(1, occ / riseMax);
-  const visW = Math.min(sc.w * 0.95, Math.max(11, (rw / rh) * 15)) / ((c.fov || 1) * engineSetting('camera', 'fov')),
+  const visW = Math.min(sc.w * 0.95, Math.max(11, (rw / rh) * 15)) / ((c.fov || 1) * set('fov')),
     half = visW / 2;
-  let tx = P.x + walkRenderer.lead[0],
-    tz = P.z + walkRenderer.lead[1];
-  tx = sc.w > visW ? clamp(tx, half - 2, sc.w - half + 2) : sc.w / 2;
-  tz = clamp(tz, 0, sc.h - 2) + (rw > rh ? 2.0 : 1.0);
-  if (sc.room) {
-    const Rr = sc.roomRect || [0, 0, sc.w, sc.h],
-      rx = Rr[0] + Rr[2] / 2,
-      rz = Rr[1] + Rr[3] * 0.55;
-    tx = rx + (P.x - rx) * 0.25;
-    tz = rz + (P.z - rz) * 0.15;
-  } /* v26: a room stays framed whole */
-  if (st.focus) {
-    tx = st.focus.x;
-    tz = st.focus.z;
+  /* the aim: you and the look-ahead, kept inside the scene, a little up the screen; pulled toward the goals' points */
+  let gx = P.x + lead[0],
+    gz = P.z + lead[1];
+  gx = sc.w > visW ? clamp(gx, half - 2, sc.w - half + 2) : sc.w / 2;
+  gz = clamp(gz, 0, sc.h - 2) + (rw > rh ? 2.0 : 1.0);
+  if (G.at) {
+    gx += (G.at[0] - gx) * G.atW;
+    gz += (G.at[1] - gz) * G.atW;
   }
-  if (walkRenderer.swoop) {
-    tx = walkRenderer.swoop.x;
-    tz = walkRenderer.swoop.z + (rw > rh ? 1 : 0.5);
-  }
-  if (!walkRenderer.camT || walkView.opt.instant) walkRenderer.camT = [tx, tz, standingHeightAt(tx, tz)];
-  const T = walkRenderer.camT;
-  T[0] += (tx - T[0]) * k;
-  T[1] += (tz - T[1]) * k;
-  T[2] += ((P.yv ?? standingHeightAt(P.x, P.z)) - T[2]) * k;
+  /* CAM-1: the follow (logic/camera-follow.js): dead and soft zones as shares of the screen, a critically damped
+     spring. camT is its aim, so whatever moves or resets camT (a room's door, the seamless world's re-anchor) moves it */
+  const shown = visW * walkRenderer.zoom,
+    dead = zoneMetres(set('deadW'), set('deadH'), shown, rw, rh, pitch),
+    soft = zoneMetres(set('softW'), set('softH'), shown, rw, rh, pitch);
+  if (snap) walkRenderer.camT = [gx, gz, feet];
+  [fol.x, fol.z, fol.y] = walkRenderer.camT;
+  followStep(
+    fol,
+    {
+      gx,
+      gz,
+      gy: feet,
+      right: R,
+      dead,
+      soft,
+      smooth: snap ? 0 : set('smooth'),
+      band: set('band'),
+      moving: !!P.walk,
+      free: 1 - G.atW,
+    },
+    dt
+  );
+  const T = (walkRenderer.camT = [fol.x, fol.z, fol.y]);
+  /* CAM-1: what the camera is doing, for the debug log and the Studio's guides */
+  walkRenderer.camInfo = {
+    mode: freeCameraOn() ? 'free' : walkRenderer.swoop ? 'swoop' : sc.room ? 'room' : sc.indoor ? 'indoor' : 'walk',
+    goals: G.list,
+    goal: [gx, gz],
+    lead: [lead[0], lead[1]],
+    dead,
+    soft,
+    right: R,
+    move: fol.move,
+  };
   /* indoors the camera stays inside the room: never farther back than just past the near wall */
   if (sc.indoor && !sc.room) {
     const back = Math.cos(pitch) * df,
@@ -156,14 +237,7 @@ export function walkCamera(rw, rh, st, dt) {
   let tgt = [T[0], T[2] + bob, T[1]];
   /* v35: pixel-grid camera (Engine > Camera > Pixel grid, off until the new art): when you stand still the camera
     target settles onto the art grid (1/32 m), so still pictures sit on whole pixels and don't shimmer */
-  if (
-    engineSetting('camera', 'pixelGrid') &&
-    !P.walk &&
-    !P.route &&
-    !st.focus &&
-    !walkRenderer.swoop &&
-    !reducedMotion
-  ) {
+  if (engineSetting('camera', 'pixelGrid') && !P.walk && !P.route && !walkRenderer.swoop && !reducedMotion) {
     const g = 1 / 32,
       sn = v => Math.round(v / g) * g,
       dx = sn(tgt[0]) - tgt[0],

@@ -14,7 +14,8 @@ with their places); a run's world (RL-7) opens on its landing, its places on the
 at the next node a day later; a battle plays to the end; a save round-trips; the Studio loads; the exported debug
 log holds no names; the world map opens as the bowl, a tap opens a card, Home comes back; every screen opens with its parts (UI-5);
 on tall ground (TR-3, the mountains fixture) the camera rises, rock fades and the player's silhouette is drawn, and
-none of it on flat ground; the Lab's unlock board (RL-11) grants, sells and keeps. The page is small (400x300) with every costly graphics dial
+none of it on flat ground; the camera follow (CAM-1, in Copperleaf) settles on you standing, leads the way the stick
+pushes while you stay inside its soft zone, and settles again when you let go; the Lab's unlock board (RL-11) grants, sells and keeps. The page is small (400x300) with every costly graphics dial
 off before it loads; nothing waits a fixed time, only for frames or the game's state. No pictures are taken.
 
 Graphics are not judged here: software drawing can't. The game's own graphics test (Settings → Help) is for a person
@@ -393,6 +394,34 @@ def tall_ground(pg, base):
     stand(pg, home[0], home[1], 5)
     if pg.evaluate('window.__sil') != sil0 or circle2 != 0 or rise2 > 0.05: raise Exception(f'on flat ground: rise {rise2}, rockK {k2}, circle {circle2}, silhouettes still drawn')
     return f'at the foot of {spot["up"]} m of rock: the camera rose {rise:.1f} degrees, the rock fade and the silhouette on; on flat ground off'
+
+
+def camera_follow(pg, base):
+    """CAM-1: in Copperleaf, standing, the camera settles on its aim; pushing the stick moves the look-ahead that way and
+    you stay inside the soft zone; letting go, the look-ahead dies away and the camera settles again"""
+    drawing(pg)
+    home = pg.evaluate('[walkView.pl.x, walkView.pl.z]')
+    stand(pg, home[0], home[1], 20)
+    info = "(()=>{const I=walkRenderer.camInfo,T=walkRenderer.camT,R=I.right,F=[-R[1],R[0]],dx=I.goal[0]-T[0],dz=I.goal[1]-T[1];return {mode:I.mode,off:[dx*R[0]+dz*R[1],dx*F[0]+dz*F[1]],lead:[I.lead[0]*R[0]+I.lead[1]*R[1],I.lead[0]*F[0]+I.lead[1]*F[1]],soft:I.soft,P:[walkView.pl.x,walkView.pl.z],t:walkView.t}})()"
+    wait = lambda ms: until(pg, f'walkView.t>{pg.evaluate("walkView.t") + ms}', 60) or (_ for _ in ()).throw(Exception('the page stopped drawing'))
+    wait(1500)
+    a = pg.evaluate(info)
+    if a['mode'] != 'walk' or max(abs(v) for v in a['off'] + a['lead']) > 0.05: raise Exception(f'standing, the camera isn’t settled on its aim: {a}')
+    for sx, sy in ((1, 0), (-1, 0), (0, -1), (0, 1)):
+        stand(pg, home[0], home[1], 5)
+        pg.evaluate(f'walkView.stick={{x:{sx},y:{sy}}};0')
+        wait(1500)
+        b = pg.evaluate(info)
+        if abs(b['P'][0] - home[0]) + abs(b['P'][1] - home[1]) > 1.5: break
+    else: raise Exception('the stick moved you nowhere from the hub spot')
+    along = b['lead'][0] * sx + b['lead'][1] * sy
+    if along < 0.6: raise Exception(f'pushing ({sx}, {sy}) the look-ahead is {b["lead"]}, not that way')
+    if abs(b['off'][0]) > b['soft'][0] + 0.05 or abs(b['off'][1]) > b['soft'][1] + 0.05: raise Exception(f'you left the soft zone: {b}')
+    pg.evaluate('walkView.stick=null;0')
+    wait(3500)
+    c = pg.evaluate(info)
+    if max(abs(v) for v in c['lead']) > 0.1 or max(abs(v) for v in c['off']) > 0.1: raise Exception(f'let go, the camera didn’t settle: {c}')
+    return f'standing settled; pushing ({sx}, {sy}) a look-ahead of {along:.2f} m that way, inside the soft zone; let go, settled again'
 
 
 def ranch(pg, base):
@@ -785,6 +814,7 @@ PAGES = [   # (what the page opens, its checks in order); the longest first, so 
     ('town', [('A town opens and draws (Copperleaf Town)', scene('copperleaf')),
               ('The exported debug log holds no names', debug_log),
               ('The world map opens as the bowl', bowl_map)]),
+    ('town', [('Camera follow: settled standing, the look-ahead from the stick, the soft zone, settled again (CAM-1)', camera_follow)]),
     ('room', [('A room opens and draws (the lab)', room), ('A save round-trips', save_round_trip)]),
     ('ranch', [('The ranch trains: Train, a level with time, the cap, a clock turned back, a reload (RL-9)', ranch)]),
     ('relics', [("Loopholes: the pick (again after a reload), the tab, a battle's and a walk's effects, a town's prices, buying at the cap (RL-12)", relics)]),
