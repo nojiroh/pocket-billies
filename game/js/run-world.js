@@ -26,10 +26,14 @@ import {
   worldHubBack,
   worldPut,
 } from './game-data.js';
+import { rngFrom } from './logic/rng.js';
 import { runRestore } from './logic/run-state.js';
-import { runWeather } from './logic/run-map.js';
+import { runSpot, runWeather } from './logic/run-map.js';
 import { runScenesMake, runWorldTables } from './logic/run-scenes.js';
+import { runBowlLook } from './logic/run-bowl.js';
 import { runFoes } from './logic/run-loop.js';
+import { bowlXY } from './logic/bowl.js';
+import { bowlTreeStyle } from './logic/bowl-things.js';
 import { saveData, uiState } from './game-state.js';
 import { stopWalkView, walkView } from './walk-view.js';
 import { environment } from './environment.js';
@@ -72,9 +76,23 @@ export function runWorldSync() {
       const t0 = performance.now(),
         data = runWorldData(),
         scenes = runScenesMake(run, data),
-        W = runWorldTables(run, gameData.locations[START_NODE], data);
+        W = runWorldTables(run, gameData.locations[START_NODE], data),
+        /* RL-8b: the run's own world map, from its seed */
+        look = runBowlLook(
+          run.seed,
+          run.map,
+          run.map.nodes.map((_, i) => {
+            const s = runSpot(run.map, i);
+            return bowlXY(s.a, s.r);
+          }),
+          data.biomes,
+          gameData.worldmap,
+          bowlTreeStyle,
+          rngFrom
+        );
       worldPut({
         ...W,
+        look,
         maps: Object.fromEntries(W.locations.slice(1).map((p, i) => [p.mapId, scenes[i]])),
         /* RL-8: its mini-bosses and boss, each a leader's copy (logic/run-loop.js runFoes) */
         trainers: runFoes(run, { leaders: Object.values(TRAINERS).filter(T => T.miniboss), rules: RULES.run }),

@@ -9,6 +9,30 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- Tall grass grows in patches (terrain TR-2c): every place on a run has 4-6 patches of tall grass instead of strips
+  beside the road, and one of them lies across the road west, so the way on goes through it. Wild Billies wait in any
+  patch, anywhere on the map (before, only near the middle). Hopping down a ledge now kicks up a puff of dust where you
+  land. The places of a run already going change to match the next time it loads.
+- The pictures behind the menus (the pixel sky's sky and clouds, the sunset on the title, Trainer card and route card)
+  were deleted; the sky and those cards now use plain gradients in the same colours, and the sky has no clouds.
+- The camera on tall ground (terrain TR-3): when a mountain or a cliff stands between the camera and you, the camera
+  tilts down further to look over it (up to 18 degrees more), the rock, trees and water in the way thin out in a
+  circle round you, and where something still hides you your shape shows through it as a blue silhouette. On flat
+  ground nothing changes. Each can be switched off (Engine > Camera: "Rise on tall ground", "Rock fades in front of
+  you", "Your silhouette through rock"). Shadows near you now follow you up a mountain. The debug menu's mountains run
+  now has mountains on both sides (north and south), and the debug log says how far the camera has risen; it also
+  said 0 for a place's mountains on every run, now fixed.
+- The game always runs the latest version: after an update it loads the new one by itself (when you come back to
+  it, or within ten minutes), saving first and waiting until a battle, cutscene, flight or window is over; it never
+  mixes files of two versions.
+- Runs look like your own (RL-8b, after the first play): the world map in Copperleaf shows Copperleaf's island alone,
+  in open sea; a run has its own world map, made from its seed: its own land, coast, hills, woods and clouds, the
+  run laid across the whole bowl from the landing in the east to the boss in the west, each place's own ground round
+  it, and no Copperleaf on it. Rooms are darker: their fill light was set almost nine times higher than outdoors, which
+  washed them out to white.
+- Runs go east to west: you enter each place on a run from the east and the way on is to the west (RL-8b: and on
+  the world map the run crosses the bowl from east to west). A run started before this is left (its places were
+  laid out the other way).
 - Every screen in the angular look (UI track UI-5): buttons have cut corners and a screen's main action is a long
   hexagon; the top bar, the place card and the Walk sheet, the Map's card, the Trainer card, the Guide's pages, Team's
   storage, the Bag, shops, Settings and the pickers in sheets have cut panels and cards with a fine edge line; tabs are

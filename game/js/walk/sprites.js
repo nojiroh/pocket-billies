@@ -31,6 +31,9 @@ import { foliageAmount, setPropLookUniforms } from './prop-look.js';
 expose({
   BOX_INFO_CACHE: [() => BOX_INFO_CACHE],
   IMAGE_IDS: [() => IMAGE_IDS],
+  SILHOUETTE_AMOUNT: [() => SILHOUETTE_AMOUNT],
+  SILHOUETTE_PULL: [() => SILHOUETTE_PULL],
+  SILHOUETTE_TINT: [() => SILHOUETTE_TINT],
   SPRITE_LIST: [() => SPRITE_LIST],
   TURNED_BACK: [() => TURNED_BACK],
   TURNED_RIGHT: [() => TURNED_RIGHT],
@@ -40,6 +43,7 @@ expose({
   drawBoxFaces: [() => drawBoxFaces, v => setDrawBoxFaces(v)],
   drawClockHands: [() => drawClockHands, v => (drawClockHands = v)],
   drawFlatItem: [() => drawFlatItem, v => (drawFlatItem = v)],
+  drawPlayerSilhouette: [() => drawPlayerSilhouette, v => setDrawPlayerSilhouette(v)],
   drawRotatingBlades: [() => drawRotatingBlades, v => (drawRotatingBlades = v)],
   drawSprites: [() => drawSprites, v => setDrawSprites(v)],
   imageId: [() => imageId, v => (imageId = v)],
@@ -54,6 +58,10 @@ expose({
 export function setDrawBoxFaces(v) {
   drawBoxFaces = v; // eslint-disable-line no-func-assign
   provide({ drawBoxFaces });
+}
+export function setDrawPlayerSilhouette(v) {
+  drawPlayerSilhouette = v; // eslint-disable-line no-func-assign
+  provide({ drawPlayerSilhouette });
 }
 export function setDrawSprites(v) {
   drawSprites = v; // eslint-disable-line no-func-assign
@@ -278,6 +286,49 @@ export function drawSprites(C, items, X, hits, labels, PPU) {
    Worked out once per picture: where the walls stand at the base, which rows reach each wall (so a gable or an
    awning shapes the side), the wall colour just inside each edge and the roof colour at the eaves. */
 const BOX_INFO_CACHE = new WeakMap();
+/* terrain TR-3: your silhouette through rock. Where ground cuts the camera's line to you (walk/camera.js rockK), you
+   are drawn again as a flat dithered tint wherever something clearly nearer the camera hides you (depth GREATER, the
+   picture pulled 0.6 m toward the eye so the ground at your feet doesn't count); nothing is written to depth. Off on
+   flat ground, indoors, in battle and with Engine > Camera > "Your silhouette through rock" off */
+const SILHOUETTE_TINT = [0.16, 0.27, 0.55],
+  SILHOUETTE_AMOUNT = 0.55,
+  SILHOUETTE_PULL = 0.6;
+export function drawPlayerSilhouette(C, items, X) {
+  const sc = walkView.sc,
+    k = C.rockK || 0;
+  if (walkRenderer.bt || !sc || sc.indoor || sc.room || k < 0.01 || !engineSetting('camera', 'silhouette')) return 0;
+  const it = items.find(i => i.k === 'me');
+  if (!it || !it.im) return 0;
+  const T = imageTexture(it.im);
+  if (!T) return 0;
+  const gl = gpuState.gl,
+    p = useWalkProgram('sprite', C, X),
+    U = p.U;
+  bindQuad();
+  gl.uniform3fv(U.uRight, C.right);
+  gl.uniform3fv(U.uBack, C.back);
+  gl.uniform3fv(U.uFwd, C.fwd);
+  gl.uniform1f(U.uDZ, 0);
+  gl.uniform1f(U.uCurveOn, 1);
+  gl.uniform1f(U.uAlpha, 1);
+  gl.uniform1f(U.uFade, 1);
+  if (U.uWave) gl.uniform3f(U.uWave, 0, 0, 0);
+  gl.uniform4f(U.uGhost, SILHOUETTE_TINT[0], SILHOUETTE_TINT[1], SILHOUETTE_TINT[2], SILHOUETTE_AMOUNT * k);
+  gl.uniform4f(U.uGhostV, C.eye[0], C.eye[1], C.eye[2], SILHOUETTE_PULL);
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, T.t);
+  setSpriteUniforms(p, it);
+  gl.enable(gl.DEPTH_TEST);
+  gl.depthFunc(gl.GREATER);
+  gl.depthMask(false);
+  gl.disable(gl.BLEND);
+  gl.drawArrays(gl.TRIANGLES, 0, 6);
+  gl.depthFunc(gl.LEQUAL);
+  gl.depthMask(true);
+  gl.uniform4f(U.uGhost, 0, 0, 0, 0);
+  gl.uniform4f(U.uGhostV, 0, 0, 0, 0);
+  return 1;
+}
 function boxInfo(im) {
   let B = BOX_INFO_CACHE.get(im);
   if (B !== undefined) return B;

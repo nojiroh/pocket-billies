@@ -165,6 +165,9 @@ World & encounters → **World map look** edits game/data/worldmap.json, the wor
   picture. A place's own ground and the routes always stay dry. Each stroke is one step of Undo.
 - **The sea.** How much of the bowl is sea (before painting), how rough the coast is, how much the land rises towards
   the rim (high: an inland sea), how deep it is, and a seed for another coast. The Check warns outside 30-50% sea.
+- **Island** (RL-8b). Above 0 the hub is one island of that radius round its places (0.2 is 200 m) with sea all the
+  way to the rim; the sea's share and the rise to the rim aren't used then, and the Check doesn't warn about the share.
+  The game's hub is an island of 0.2. A run's map isn't edited here: it is made from the run's seed.
 - **Relief.** How much each kind of place lifts or lowers the ground round it, and its own ground there.
 - **Regions.** Each region's ground between places, its wet lowland, dry slopes and high ground (the game's terrain
   tiles; ✎ opens one in the pixel canvas), and the trees in its clumps.

@@ -138,7 +138,13 @@ test("wild levels by row: the landing's, one more a row, never past 100", () => 
 
 test("the run's world: Copperleaf first, a place per node, a seam road per link, each node's pool", () => {
   const W = runWorldTables(RUN, HUB, DATA);
-  assert.equal(W.locations[0], HUB, 'Copperleaf is world node 0, as it is');
+  /* RL-8b: off the run's own map (no land, pin or things on it), the rest as it is */
+  assert.deepEqual(
+    W.locations[0],
+    { ...HUB, bowl: { a: 0, r: 0, ...HUB.bowl, off: true } },
+    'Copperleaf is world node 0'
+  );
+  assert.equal((HUB.bowl || {}).off, undefined, "the hub's own row is left alone");
   const places = W.locations.slice(1);
   assert.deepEqual(
     places.map(p => [p.id, p.name, p.kind, p.route, p.town || 0, p.pool, p.runNode]),

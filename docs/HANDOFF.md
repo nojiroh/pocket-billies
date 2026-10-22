@@ -2,6 +2,159 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Terrain track TR-2c part 1 - Grass patches, wild Billies in them, the dust puff - 2026-10-22
+Branch `terrain-generation`, restarted from main 9760857 (PR #108, TR-3, was already merged). Plan approved in Plan
+Mode with the owner's answers: remove what loads the deleted art/background (not restore it); TR-2c in two sessions
+(this one: grass, encounters, dust puff; next: road pathfinder and the four mountain route types); wild Billies in any
+patch; grass patches in runs now.
+- Changed (one cause per commit):
+  - **update-check.js** imports toast from overlay.js (npm run modules regenerated it; main had ui.js).
+  - **No art/background** (main deleted the folder): the pixel sky draws its gradient in code (the old pictures'
+    colours, no clouds); the title, Trainer card, route card and wide-screen backdrop use a gradient in sundown's
+    colours. The fast check's 404 on every page is gone. The Studio's Art section still has a "Rebuild sundown.webp"
+    card for the background group (harmless: no files there).
+  - **Grass patches** (mapgen.js `mapgenGrassPatches`, terrain-track.md "TR-2c part 1 as built"): 3-6 ragged ovals of
+    15-70 m², the first across the road on the way west, road cells under it too; `scene.grassPatches`.
+    MAPGEN_VERSION 6; golden scenes and the scene hash remade on purpose.
+  - **Encounters**: on a place with `grassPatches`, wild Billies wait in any patch (no 13 m or path rule there);
+    seamless-world.js copies the patches into the drawn scene. Copperleaf unchanged.
+  - **Dust puff** where you land off a ledge (six puffs, none with reduced motion).
+- Where the plan was wrong: `grass` was already a scene key (a room's grass blades, a seamless look key), so the
+  patches are `grassPatches`. A version bump has no "left" path: `run.mapgenV` is never compared, so a run already
+  going remakes its scenes with patches on its next load. "One patch a ledge or side path skips" isn't built: routes
+  are open, so any off-road patch can be walked round.
+- Verified: unit tests 507 (new mapgen-grass.test); lint, typecheck, modules, format. Sweep of 120 dial sets: every
+  one has a patch across, 4-6 patches, 15-70 m² (median 43), every exit reached, no trap. In the page (run fixture
+  landing): 241 encounter spots, all in patches, up to 55 m from the middle; its 4 wild Billies all in patches; a 1.2 m
+  drop hops and puffs, no errors. check-fast 16 of 16 after the art fix and again after the grass work.
+- **Not verified**: smoke had 2 timeouts (the in-game full test, the Studio's screenshot) while the fast check ran
+  alongside on the same machine; see the PR for the re-run alone. The full quick check was not run.
+- Risky:
+  - Much less tall grass: about 220 m² a scene (was 770) and 80 grass props (was 315); 517 props a scene (was 755).
+    Cheaper on the phone; the land may look barer. The dial's floor (3 patches) and sizes are `MAPGEN_GRASS_PATCH`.
+  - Wild Billies can now stand far from the middle (55 m): the spread is for the phone test to judge.
+  - The patch across the road turns a few metres of road into tall grass (Gen 3's look); on the phone it may read as a
+    gap in the road.
+  - The sky behind the menus has no clouds now.
+- Phone check wanted: start a run, walk west from the landing through the grass across the road, find the wild
+  Billies in the patches; the debug run "Mountains and ledges": hop down a ledge (the dust puff); the title and the
+  Trainer card (the gradients); export the debug log.
+- Next: the owner pushes `tr-2c-1-done` (sessions can't push tags); TR-2c part 2 (the road pathfinder through tiers
+  and the massif, reusing mapgenTrailSearch, for 15 m+ summits; the four mountain route types; generated gorges with
+  rope bridges: structures.js already draws `kind: 'rope'`).
+
+### Terrain track TR-3 - The camera on tall ground - 2026-10-22
+Branch `terrain-generation` (the owner's name for it), from main dcced21 (PR #105, TR-2), main (UI-5) merged in at
+the end. The owner chose: TR-3 now, the rest of TR-2c next on the same branch in a new session, one PR. Plan approved
+in Plan Mode (silhouette a dark blue tint about 55% dithered, rise capped at 18 degrees on top of the old 9).
+- Changed (one cause per commit):
+  - **Camera rise** (walk/camera.js, new logic/camera-rise.js `cameraRiseNeeded`): the line from the eye to your head
+    tested against the standing height at ten points 1.2-27 m back; the camera tilts down further until it clears by
+    0.4 m, up to Engine > Camera > "Rise on tall ground" (18 degrees, 0 off), and comes up to 15% closer; quick up,
+    slow down; none indoors, in rooms, with the free camera or a focus. The debug log's run line has `camRise`.
+  - **Rock fade** (walk-shaders.js `ROCK_GLSL`, draw-common.js `setRockUniforms` from `useWalkProgram`): ground, walls,
+    sprites, grass, water, waterfalls, solid props and trees, voxel props and low-poly models nearer the camera than
+    you and 0.5 m above your feet thin out in a soft circle round you (up to 80%). On only while ground cuts the line
+    (the camera's `rockK`). Buildings keep their own fade. Setting "Rock fades in front of you".
+  - **Silhouette** (sprites.js `drawPlayerSilhouette`, gpuPass and debug-log timer `silhouette`): the player drawn again
+    after the structures, depth GREATER, no depth writes, pulled 0.6 m toward the eye along each corner's line of sight
+    (sprite shader `uGhostV`), a dark blue dithered tint (`uGhost`). Setting "Your silhouette through rock".
+  - **Shadows**: the near shadow map is centred at your height (engine/light.js `beginSunShadow` cy).
+  - **Debug**: the mountains run (`dbg_mountains`) has massif `NS` (was `N`); the debug log's `mountains` read the drawn
+    scene (no `gen`, always 0) and now reads the place's map.
+  - **Checks**: `?fixture=mountains`; check-fast's "Tall ground" step; `tools/look-tall-ground.py` (five pictures,
+    validation/tall-ground/, ignored); tests camera-rise and tall-ground-draw.
+- Where the plan was wrong: rise alone can't clear a massif 3-14 m away (17 m of rock would need about 80 degrees):
+  the fade and the silhouette carry the worst spots. The fade had to reach trees and models too, not only "steep smooth
+  ground", and it had to switch on only when ground cuts the line, else trees and signs in front of you would thin out
+  in Copperleaf. check-fast takes no pictures by design, so its new step checks the state and the pictures come from
+  the separate script. Walls aren't a separate index block (terrain-track.md "TR-3 as built").
+- Verified: unit tests 496; lint, typecheck, modules, format; smoke 15 of 15 after each step; check-fast 14 of 14
+  before the merge (Tall ground: 16.9 m of rock, rise 18 degrees, fade and silhouette on, off on flat ground); no
+  walkable cell of Copperleaf (4,670) or of a normal run's landing (4,070) turns any of it on; pictures of the five
+  settings at the worst spot of the fixture's landing.
+- **Not verified**: the full quick check (stopped for the merge, never finished). **After the merge check-fast fails on
+  every page because main's last commit (6f7ae74, "Delete game/art/background directory") removed pictures the game
+  still loads** (art/background/sky_light.png, cloud_light_*.png: 404, then the loading screen never goes). Not this
+  branch's; main fails the same way. The owner decides: bring the folder back, or remove what loads it.
+- Risky / open:
+  - Phone cost not measured: about a 4x4 matrix product more per pixel in the drawn shaders while the fade is on (a
+    uniform early-out when off), one extra player draw, ten height samples a frame. The owner's debug log from the
+    Mountains run (frame times, `camRise`) answers it.
+  - The fade's circle is fixed on screen (0.3-0.46 of the height); on a wide screen the hole may look small.
+  - The far shadow map and the mist still sit at absolute heights.
+- Next: the owner pushes the tag `tr-3-done` (sessions can't push tags) and plays the Mountains run on the phone. Next
+  session on this branch: the rest of TR-2c (the hop arc already exists in walk-view.js updatePlayerHeight, only the
+  dust puff is left; tall grass patches, waiting on wild Billies beyond 13 m of a place's middle; the main-road
+  pathfinder through the massif, reusing mapgenTrailSearch; the four mountain route types; generated rope bridges,
+  which the renderer already draws). Then the PR to main.
+
+### Roguelite track RL-8b - Run look - 2026-10-22
+Branch `ccr-b71dfee2-w5pwgh`, from main dcced21 (PR #105, TR-2). Proposed in RL-8's "Next"; the owner asked about
+combining it with RL-9 (advised against: different areas, 4 sessions), then "Start RL-8b". Plan approved in Plan Mode,
+with the owner's answers: rooms by lowering the shared dials (data only); a medium island (about a fifth of the
+bowl's radius); a run laid across the bowl, no hub on it. Started without `rl-*-done` tags on the remote (the owner
+knew; sessions can't push tags).
+- Changed (one cause per commit):
+  - **Rooms darker** (a807353): all 22 `int_*` rooms and `test_light_room` share one look from
+    `tools/build-interiors.py`, with the sky light (`sun.ambient`) at 1.75 where the game's default is 0.2: now 0.5,
+    exposure 1 (was 1.12); the builder writes the same, so `--force` won't bring the old light back. `roomLight`
+    stays off (the owner's Studio choice of 2026-10-20). Headless, the lab at 13:00: brightness 146 (washed out) to
+    105, the town outside 142.
+  - **An island world for the bowl** (c3e7808, logic/bowl.js): the sea's settings take `island` (a radius, worldmap.json)
+    or `isles` (rounds of land, from code); then no share quantile and no land rising to the rim: land is the places,
+    roads and rounds, the coast where the distance past them plus the seeded noise crosses 0, sea always past
+    `BOWL_ISLE_RIM` 0.86. Without them nothing changes.
+  - **A seed for the bowl's noise** (749ca4e): the look's `seed` moves the hills, headlands, ground patches, tree
+    clumps and clouds (`bowlSeedShift`); 0 moves nothing (the hub's picture is as before).
+  - **The hub is Copperleaf's island alone** (f2e9eb1): worldmap.json `sea.island` 0.2, rough 0.8. Checks changed on
+    purpose: bowl-sea's game-data sea test (now one island, 90-99% sea), the fast check's and the Bowl map test's
+    rivers (1+ on an island) and sea share (70%+), the Studio Check's 30-50% warning (not on an island); the Studio's
+    World map look has an Island dial. The camera is unchanged: its home view already frames the island.
+  - **A run laid across the bowl** (c4c5370): `RUN_BOWL` is a line from the landing near the east rim to the boss near
+    the west (x 0.72, rows 0.18 apart at most, lanes 0.1, bowed 0.06 north). A bowl spot can carry `up` (the way its
+    map's north faces): `bowlCompass`, `bowlSeamTurn`, `bowlMapPoint`, `bowlMapTurn` take it, and the bowl's stamps,
+    things and walk-scene horizon read their compass from `bowlCompass` (three copies of "north to the centre" gone).
+    Run places are `up` 90, so their maps sit square east to west.
+  - **Copperleaf off a run's map** (6bbd485): a spot can be `off`: no land, relief, ground, stamp, things, routes,
+    weather, pin, tap or list row. Copperleaf stays world node 0 in a run (flying home, the save's checks).
+  - **A run's own world map** (e4fff0f, new logic/run-bowl.js `runBowlLook`): from the seed (stream 'bowl'): a round of
+    land under each place (its whole map on land), 3-5 lobes along the way, 3-6 islets; its own coast and noise
+    seeds; near each place its biome's ground (biomes.json), between them the run's commonest biome's ground and
+    trees. `worldPut` takes it (`worldExtra.look`), `worldHubBack` drops it, `worldMapLook` reads it.
+  - **The latest deploy, always** (a1faf85, the owner's ask mid-session): sw.js asks past the browser's cache
+    (no-cache; GitHub Pages lets files be kept 10 minutes, so a load right after a deploy could mix two builds), the
+    worker registers with updateViaCache 'none'; the build names each deploy (vite.config.js stampBuild: the commit,
+    in dist's version.js PB_BUILD and build.json); new update-check.js asks for build.json at start, on coming back
+    to the screen and every 10 minutes, and on a new build saves and reloads when nothing is going on (no battle,
+    cutscene, flight or window), after the worker updates; once a session per build. The debug log says which deploy
+    (`deploy`). Off without a build (Start-Game, the checks).
+- Risky:
+  - The update reload is new behaviour on the phone: it was tried only in headless Chromium against the built site
+    on a plain local server (no 10-minute cache there). If a reload ever lands at a bad moment, `updateSafe` in
+    update-check.js is the list of moments it waits for. Art can still show one load late after it changes (it comes
+    from the cache first, refreshed behind).
+  - Every run already going moves its pins and land on the map (spots are never stored); nothing saved changes.
+  - The run's land is worked out at run start and on resume as before (headless about 190 ms, the hub's 160-210 ms);
+    the phone's time is in the debug log only if the Bowl map test is run.
+  - Run places' red blocks on the headless map are the landmark standees drawn without their pictures (the old
+    "red block" seen on Copperleaf since RL-7, headless only as far as known): a run now shows one per place. Look on
+    the phone; if they are red there too, that's a fix of its own.
+  - The airship flight and the walk scenes' far horizon draw the same bowl: in the hub they now show sea all round
+    Copperleaf. The fast check's flight lands; nobody has looked at the horizon on a phone.
+  - Rooms' light is tuned by eye on headless shots (software drawing); the owner's phone decides. The Studio's Engine
+    section, "This scene", sets one room's look; the 23 share the builder's.
+- Verified: unit tests (495), lint, typecheck, modules, check-data, format on the touched files, the whole fast check
+  (13 of 13) and smoke (15 of 15) after the last code commit; the full quick check: see below. Pictures (headless, 390 x 760): the
+  lab before and after; the hub's map (one island, sea to the rim); runs from two seeds (two maps) and one seed twice
+  (the same map).
+- Phone check wanted: after this deploys, keep the game open in the background, let the next deploy go out, switch
+  back: it should reload by itself (the debug log's `deploy` is the new commit); the Map tab in Copperleaf (the island); start a run and open the map (its own land, the landing
+  in the east); walk a seam and look again; Fly home (the island again); the lab and Granny Juniper's cottage by day
+  and at night; export the debug log.
+- Next: the owner pushes the tags (`rl-1-done` .. `rl-8-done`, `tr-2c-done`, `rl-8b-done`) and plays the phone check;
+  then RL-9 (Ranch A; open questions 8.2's per-run cap on ranch Billies, 8.16, 8.17). Left from the first play: the
+  balance tuning with the run simulation's numbers.
 ### UI track UI-5 - Every screen onto the kit - 2026-10-22
 Branch `ccr-0284fd60-fx7dki`, from main ca9aa54 (RL-8 merged and played); main merged in twice since (RL-8's
 follow-ups, then TR-2: mountains, trails, ledges, runs east to west). Plan approved in Plan Mode; the owner's

@@ -23,6 +23,10 @@ The quick check needs Python Playwright matching the installed Chromium (tools/r
 full check are over budget today; 13b brings them down (parallel groups, fixtures, waits instead of sleeps, fewer
 legacy steps). A phase that makes a tier slower says by how much and why in its HANDOFF entry.
 
+The update check (update-check.js, the owner 2026-10-22) works only on the built site (`npm run build`, then serve
+`dist/game`): no check runs it, since the checks serve the repository, where PB_BUILD is '' and it is off. To try it,
+load the built game, build again while it runs, and bring the page back to the front: it loads the new build.
+
 ## Where a new test goes
 
 Pick the first that fits:
@@ -83,8 +87,11 @@ Two rules hold everywhere:
   it (`--test-update-snapshots`) and says so in the commit; each choice has its own stream (`map|shape|<row>`,
   `map|type|<row>|<lane>`, `map|biome|<row>|<lane>`, a node's `weather|<day>`), so a rule's change moves only what it
   rules (tested for `cross`). The structure rules run over 1,300 maps of 5 to 12 rows; the bowl's are the hub's
-  (`bowl-layout.test.mjs`: pins apart, roads within 30 degrees of their exits) but 0.07 apart and 45 degrees for a
-  lane switch, which the rows' spacing can't keep within 30. weather.test checks `weatherPick` against the page's old
+  (`bowl-layout.test.mjs`: pins apart, roads within 30 degrees of their exits) but 0.1 apart and 45 degrees for a
+  lane switch, which the rows' spacing can't keep within 30. RL-8b: the run runs east to west across the bowl, maps
+  facing north, no two places' maps overlapping; `run-bowl.test.mjs` checks a run's own map (land under every place's
+  whole map, sea at the rim, the same seed the same look), `bowl-seed.test.mjs` the seed's noise (0 moves nothing) and
+  `bowl-sea.test.mjs` the island world (one island round Copperleaf, the game's hub an island). weather.test checks `weatherPick` against the page's old
   pick for every roll its hash can give: a change to the weather's odds or its order fails it on purpose.
 - The run's world (RL-7: `run-scenes.test.mjs`, `run-world-real.test.mjs`): run-scenes.test on small tables of its
   own (a node's exits in the order its scene is made with them and the ids the generator gives them, the dials drawn
@@ -124,7 +131,19 @@ Two rules hold everywhere:
   dial sets reach every exit and every summit with `{ slope: true }` (the game's slope rule and whole standing heights,
   a bridge's deck walked), the dial's top reaches 15 m, nothing planted across a cliff, the relief seed moves only the
   mountains, a mountains run (`dbg_mountains`) joins; `mapgen-ledges` (TR-2c) ledges one way, no trap (`mapgenTraps`, the game's
-  canStepBetween rule), stairs and reachable pockets, a scene without the dial unchanged. `rng.test.mjs` freezes the default scene's hash, `gen` included: a new dial or version changes it
+  canStepBetween rule), stairs and reachable pockets, a scene without the dial unchanged. `mapgen-grass` (TR-2c) the tall grass
+  patches: 3-6 of 15-70 m² by the dial, one across the way west (the westmost exit's path goes through tall grass),
+  none within 7 m of the hub or an exit, every exit reached and no trap, the road unchanged by the dial. MAPGEN_VERSION
+  6 remade the golden scenes and the scene hash (rng.test). TR-3 (the camera on tall
+  ground): `camera-rise.test.mjs` the tilt that clears the line from the eye to your head (logic/camera-rise.js: none
+  on flat ground or for ground behind you, capped, follows the camera's turn); `tall-ground-draw.test.mjs`, on the
+  walk renderer with a recording WebGL stand-in (`walk-renderer.mjs`), the rock fade's uniforms (off on flat ground,
+  in battle and for a reflection camera), the silhouette's one draw (depth GREATER, no depth writes, the state put
+  back; none on flat ground, in battle, indoors) and the near shadow map centred at your height. The fast check's
+  `mountains` fixture is the run fixture with `dbg_mountains`; its step "Tall ground" stands you at the foot of the
+  most rock on the camera's side and checks the rise, the fade and the silhouette are on, and off on flat ground. Its
+  pictures come from `python3 tools/look-tall-ground.py` (five, settings off to all on, in validation/tall-ground/;
+  `--full` with the game's graphics). `rng.test.mjs` freezes the default scene's hash, `gen` included: a new dial or version changes it
   (remade on purpose, said in the commit). The seam rules are `logic/seam-rules.js` (`seam-rules.test.mjs` freezes
   each fault's words); check-data runs the same module.
 - On the game's data, test what must hold whatever the content (every road has its exits, every gate its trainer),

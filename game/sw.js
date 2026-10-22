@@ -1,5 +1,8 @@
 /* Pocket Billies service worker: art and fonts come from the cache instantly and refresh in the background;
-   code and game data always try the network first, so edits from Pocket Billies Studio show up on the next load. */
+   code and game data always try the network first, so edits from Pocket Billies Studio show up on the next load.
+   The network is asked past the browser's own cache (no-cache: the server says whether the file changed; GitHub
+   Pages lets a browser keep a file 10 minutes), so a new deploy is never mixed with the last one's files. A new
+   build is a new worker: it imports version.js, which names the build (PB_BUILD, update-check.js). */
 importScripts('version.js');
 const CACHE_PREFIX = 'pocketbillies-' + PB_VERSION_ID;
 self.addEventListener('install', () => self.skipWaiting());
@@ -21,7 +24,7 @@ self.addEventListener('fetch', e => {
     e.respondWith(
       caches.open(CACHE_PREFIX + '-art').then(async c => {
         const hit = await c.match(r);
-        const net = fetch(r)
+        const net = fetch(new Request(r, { cache: 'no-cache' }))
           .then(res => {
             if (res.ok) c.put(r, res.clone());
             return res;
@@ -32,8 +35,11 @@ self.addEventListener('fetch', e => {
     );
     return;
   }
+  /* a page load can't be copied with options: its address is asked for instead */
+  const fresh =
+    r.mode === 'navigate' ? new Request(r.url, { cache: 'no-cache' }) : new Request(r, { cache: 'no-cache' });
   e.respondWith(
-    fetch(r)
+    fetch(fresh)
       .then(res => {
         if (res.ok) {
           const cl = res.clone();

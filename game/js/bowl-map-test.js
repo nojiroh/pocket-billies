@@ -211,8 +211,10 @@ async function runBowlMapTest() {
       const share = Math.round((sea / all) * 100);
       if (wet.length) return { ok: false, note: `under water: ${wet.map(l => l.id).join(', ')}` };
       if (!g.water) return { ok: false, note: "the water isn't drawn" };
-      if (share < 35 || share > 45) return { ok: false, note: `the sea is ${share}% of the bowl` };
-      return `${share}% of the bowl is sea, every place on land; worked out in ${g.seaMs} ms; the water is ${g.water.n / 3} triangles`;
+      /* RL-8b: an island world (the hub's island, a run's own land) is mostly sea */
+      if (g.isle ? share < 70 : share < 35 || share > 45)
+        return { ok: false, note: `the sea is ${share}% of the bowl${g.isle ? ' (an island world)' : ''}` };
+      return `${share}% of the bowl is sea${g.isle ? ' (an island world)' : ''}, every place on land; worked out in ${g.seaMs} ms; the water is ${g.water.n / 3} triangles`;
     });
     await step('Light, shadows, routes and rivers', async () => {
       const g = worldBowl.ground,
@@ -221,7 +223,7 @@ async function runBowlMapTest() {
       if (!g.shadow || !g.shadow.t) return { ok: false, note: 'no shadow map (the ground is lit without shadows)' };
       if (!g.lines) return { ok: false, note: "the routes' line map is missing" };
       const n = (g.G.rivers || []).length;
-      if (n < 4) return { ok: false, note: `only ${n} rivers` };
+      if (n < (g.isle ? 1 : 4)) return { ok: false, note: `only ${n} rivers` };
       return `shadow map drawn in ${g.shadow.ms} ms; route and river lines made in ${g.lines.ms} ms; ${n} rivers`;
     });
     await step('Clouds and weather', async () => {

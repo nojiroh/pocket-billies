@@ -9,6 +9,7 @@
      battle  a trainer battle (Leader Rocco) in Copperleaf that the team wins
      stored  whatever the fixture saved last in this browser (the save round trip)
      run     on a run (RL-7): standing on its landing on day 1, its world made from the seed RL7FIXTURE
+     mountains   the same run with the debug menu's mountains mod (TR-3: mountains north and south, for the camera)
    UI-3b, for the Studio's UI look preview (the real screens with the look being edited):
      team    the Team screen          bag     the Bag, with a few of each item
      talk    the dialogue box with a line from Professor Hazel
@@ -24,6 +25,7 @@ import { applyUiTheme } from './theme-sheet.js';
 import { runBegin } from './logic/run-state.js';
 import { runArrive, runMapStart } from './logic/run-map.js';
 import { MAPGEN_VERSION } from './logic/mapgen.js';
+import { RUN_MOD_MOUNTAINS } from './logic/run-scenes.js';
 import { newSave } from './logic/saves.js';
 import { startTrainer } from './logic/battle-engine.js';
 import { FIXTURE, saveData, setSaveData, uiState } from './game-state.js';
@@ -56,6 +58,7 @@ const FIXTURE_PLACES = {
   bag: 'copperleaf',
   talk: 'copperleaf',
   run: 'copperleaf',
+  mountains: 'copperleaf',
 };
 /** RL-7: the run fixture's seed */
 const FIXTURE_RUN_SEED = 'RL7FIXTURE';
@@ -89,9 +92,10 @@ function fixtureSave() {
   for (const T of Object.values(TRAINERS)) if (T.runsUp) s.story['met_' + T.id] = 1;
   /* RL-7: a run from the mast (RL-8 does this at the airship) that has landed: its map, day 1 on the landing; its
      world goes in at boot (run-world.js) */
-  if (FIXTURE === 'run') {
+  if (FIXTURE === 'run' || FIXTURE === 'mountains') {
     const data = runWorldData();
     runBegin(s, { seed: FIXTURE_RUN_SEED, tier: 1, mapgenV: MAPGEN_VERSION, se: RULES.start.se });
+    if (FIXTURE === 'mountains') s.run.mods = [RUN_MOD_MOUNTAINS];
     runMapStart(s.run, data);
     runArrive(s, 0, data);
     s.run.at.phase = 'walk';

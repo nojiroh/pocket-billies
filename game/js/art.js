@@ -16,7 +16,6 @@ expose({
   EGG_ART: [() => EGG_ART],
   ICON_ATLAS: [() => ICON_ATLAS],
   ICON_CACHE: [() => ICON_CACHE],
-  MENU_BACKGROUND_ART: [() => MENU_BACKGROUND_ART],
   artBoot: [() => artBoot, v => (artBoot = v)],
   artImg: [() => artImg, v => (artImg = v)],
   artLoad: [() => artLoad, v => setArtLoad(v)],
@@ -213,12 +212,7 @@ function eggCanvas(tier, crack) {
 export function eggHTML(tier, css = 40, cls = '') {
   return `<img class="pxi ${cls}" src="${artURL(`eggs/egg_${tier}.png`)}" width="${css}" height="${Math.round((css * 24) / 20)}" alt="">`;
 }
-/* ---- menu background ---- */
-export const MENU_BACKGROUND_ART = ['light', 'dark'].flatMap(m => [
-  `background/sky_${m}.png`,
-  ...[0, 1, 2, 3].map(i => `background/cloud_${m}_${i}.png`),
-]);
 /* everything the menus need before the first screen draws */
 export function artBoot() {
-  return artLoad([ICON_ATLAS, ...COIN_ART, ...EGG_ART, ...MENU_BACKGROUND_ART]);
+  return artLoad([ICON_ATLAS, ...COIN_ART, ...EGG_ART]);
 }

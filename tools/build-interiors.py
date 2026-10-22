@@ -27,7 +27,7 @@ def room(sid, name, floor, wall, seed, kind, keeper, spot, chat, w=W, h=H):
     s = Scene(sid, name, floor, seed, w, h, sky=['#2A2836', '#3A3848', '#4A4658'], haze='#4A4658', hazeD=40, amb='dust', tint=None, indoor=1, far='mall', farH=4, folk=0,
               cam={'pitch': 28, 'h': 8.5, 'fov': 1}, blur=.6, chat=chat,
               # light from above, soft shadows: a room lit by its ceiling, not the sun through the roof
-              look={'color': {'exposure': 1.12}, 'sun': {'height': 82, 'angle': 60, 'strength': .85, 'ambient': 1.75, 'clouds': 0, 'cloudShadows': 0, 'shafts': 0},
+              look={'color': {'exposure': 1}, 'sun': {'height': 82, 'angle': 60, 'strength': .85, 'ambient': 0.5, 'clouds': 0, 'cloudShadows': 0, 'shafts': 0},
                     'shadows': {'strength': .35, 'softness': 2.2}, 'lights': {'brightness': 1.25, 'windowsDay': .6}, 'air': {'mist': 0}})
     c = w / 2
     s.d.update({'room': kind, 'kind': 'room', 'building': kind, 'locationId': None, 'keeper': keeper, 'npcSpots': [list(spot)], 'hub': [c, 2.2], 'exits': [[c, .6]], 'wallCol': [None] * 10 + [wall, None], 'edgeExits': [{'side': 'S', 't': .5, 'in': .6, 'width': 2, 'id': 'south'}]})

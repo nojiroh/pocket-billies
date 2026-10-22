@@ -82,19 +82,8 @@ export function drawGround(C, X) {
   }
   gl.uniform3fv(U.uWallCol, walkRenderer.wallColF);
   gl.uniform1f(U.uWallDef, defaultWallMaterial(sc));
-  const Pq = walkRenderer.bt
-    ? null
-    : (() => {
-        const P = walkView.pl,
-          y = (P.yv ?? standingHeightAt(P.x, P.z)) + 0.9 + worldCurveDrop(P.x, P.z),
-          m = C.vp,
-          cx = m[0] * P.x + m[4] * y + m[8] * P.z + m[12],
-          cy = m[1] * P.x + m[5] * y + m[9] * P.z + m[13],
-          w = m[3] * P.x + m[7] * y + m[11] * P.z + m[15];
-        return w > 0.2 ? [cx / w, cy / w, w] : null;
-      })();
-  gl.uniform3fv(U.uPlC, Pq || [9, 9, -1]);
-  gl.uniform1f(U.uAspect, C.rw / C.rh);
+  /* your spot on screen (uPlC: walls and, since terrain TR-3, rock between the camera and you thin out round it)
+    is set with the program (draw-common.js setRockUniforms) */
   if (U.uFol) gl.uniform2f(U.uFol, 0.6, sc.indoor ? 0 : 1);
   gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, walkRenderer.gtex);

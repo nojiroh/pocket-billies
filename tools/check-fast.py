@@ -12,7 +12,9 @@ game/js/fixture.js), never through the opening and never waiting for every map: 
 errors; a town and a room each open and draw frames (RL-5: the hub, Copperleaf; the route and the cave were parked
 with their places); a run's world (RL-7) opens on its landing, its places on the bowl, and a walk over a seam arrives
 at the next node a day later; a battle plays to the end; a save round-trips; the Studio loads; the exported debug
-log holds no names; the world map opens as the bowl, a tap opens a card, Home comes back; every screen opens with its parts (UI-5). The page is small (400x300) with every costly graphics dial
+log holds no names; the world map opens as the bowl, a tap opens a card, Home comes back; every screen opens with its parts (UI-5);
+on tall ground (TR-3, the mountains fixture) the camera rises, rock fades and the player's silhouette is drawn, and
+none of it on flat ground. The page is small (400x300) with every costly graphics dial
 off before it loads; nothing waits a fixed time, only for frames or the game's state. No pictures are taken.
 
 Graphics are not judged here: software drawing can't. The game's own graphics test (Settings → Help) is for a person
@@ -240,10 +242,11 @@ def bowl_map(pg, base):
     # calm ground (fix 2026-10-19): few single squares of another ground in the middle of the map (it read as camouflage)
     sp = pg.evaluate("(()=>{const I=worldBowl.ground.terrain.idx,N=2048;let s=0,n=0;for(let j=600;j<1450;j++)for(let i=600;i<1450;i++){const v=I[j*N+i];n++;if(I[j*N+i+1]!==v&&I[j*N+i-1]!==v&&I[(j+1)*N+i]!==v&&I[(j-1)*N+i]!==v)s++}return s/n})()")
     if sp > 0.07: raise Exception(f'the ground is speckled: {sp * 100:.1f}% single squares')
-    # the sea (look session 1): a water sheet over about 40% of the bowl, its shader in the same programs
+    # the sea (look session 1): a water sheet (RL-8b: round the hub's island), its shader in the same programs
     if not pg.evaluate("!!(worldBowl.ground.water&&gpuState.P.mwater)"): raise Exception('the sea isn’t drawn')
     # look session 2: the shadow map, the routes' and rivers' line map and the rivers
-    if not until(pg, "!!(worldBowl.ground.shadow&&worldBowl.ground.shadow.t&&worldBowl.ground.lines&&(worldBowl.ground.G.rivers||[]).length>=4)", 20): raise Exception('no shadow map, route lines or rivers')
+    # RL-8b: the hub is an island (worldmap.json sea.island): a river or two, not four
+    if not until(pg, "!!(worldBowl.ground.shadow&&worldBowl.ground.shadow.t&&worldBowl.ground.lines&&(worldBowl.ground.G.rivers||[]).length>=(worldBowl.ground.isle?1:4))", 20): raise Exception('no shadow map, route lines or rivers')
     # look session 3: the clouds follow the setting (Off: none; High: 40), the shaders draw with them
     for lv, want in (('off', 0), ('high', 40)):
         pg.evaluate(f"saveData.preferences.mapClouds='{lv}';worldBowl.dirty=true;0")
@@ -340,6 +343,56 @@ def run_loop(pg, base):
     home = pg.evaluate("[saveData.meta.capital, !!uiState.roam, saveData.trip.node]")
     if home[0] <= 0 or not home[1] or home[2] != 0: raise Exception(f'home: capital {home[0]}, by the mast {home[1]}, node {home[2]}')
     return f'a battle held as it began ({seed}), started again after a reload, lost: the payout ({rows} rows, {cards} cards), again after a reload, home with {home[0]} Capital'
+
+
+# TR-3: the reachable spot with the most ground above the player's head on the camera's side (smaller z), 3-14 m off
+TALL_SPOT = """(() => {
+  const sc = walkView.sc, P = walkView.pl, c = [];
+  for (let x = 4; x < sc.w - 4; x += 1.5)
+    for (let z = 4; z < sc.h - 4; z += 1.5) {
+      const h = standingHeightAt(x, z);
+      let up = 0;
+      for (let s = 3; s <= 14; s += 1) up = Math.max(up, standingHeightAt(x, z - s) - h);
+      if (up > 3) c.push([up, x, z]);
+    }
+  c.sort((a, b) => b[0] - a[0]);
+  for (const [up, x, z] of c.slice(0, 80)) {
+    const R = findPath(P.x, P.z, x, z, { max: 1e6 });
+    if (R) { const e = R[R.length - 1]; return { up: +up.toFixed(1), x: e[0], z: e[1], h: +standingHeightAt(e[0], e[1]).toFixed(1) }; }
+  }
+  return null;
+})()"""
+
+
+def stand(pg, x, z, frames=30):
+    """put the player at (x, z) and let the camera settle there (no glide in: its target is reset)"""
+    pg.evaluate(f"(()=>{{const P=walkView.pl;P.x={x};P.z={z};P.route=null;P.yv=null;walkRenderer.camT=null;return 0}})()")
+    f0 = pg.evaluate('walkRenderer.frames')
+    if not until(pg, f'walkRenderer.frames>={f0 + frames}', 60): raise Exception(f'{pg.evaluate("walkView.id")} isn’t drawing')
+
+
+def tall_ground(pg, base):
+    """TR-3: the mountains fixture (the run fixture with the debug menu's mountains mod: mountains north and south) at
+    its landing; at the reachable spot with the most rock on the camera's side the camera tilts down further (rise),
+    the rock between it and the player thins out (the rock fade's circle is on) and the player's silhouette is drawn;
+    back where the player started (flat ground) none of it. No pictures: tools/look-tall-ground.py takes those"""
+    drawing(pg)
+    if not until(pg, "!document.getElementById('loader')", 30): raise Exception('the loading screen never went')
+    if pg.evaluate("(((mapById(walkView.sc.baseId||walkView.id).gen||{}).params||{}).land||{}).mountains||0") != 1: raise Exception('the landing has no mountains: the mod isn’t on')
+    home = pg.evaluate('[walkView.pl.x, walkView.pl.z]')
+    spot = pg.evaluate(TALL_SPOT)
+    if not spot: raise Exception('no reachable spot with rock on the camera’s side')
+    pg.evaluate("(()=>{const f=drawPlayerSilhouette;window.__sil=0;drawPlayerSilhouette=(...a)=>{const r=f(...a);window.__sil+=r;return r};return 0})()")
+    stand(pg, spot['x'], spot['z'])
+    rise, k, circle, sil = pg.evaluate("[walkRenderer.occT, walkView.C.rockK, rockUniformsFor(walkView.C).rock[1], window.__sil]")
+    if not (rise > 1): raise Exception(f'the camera didn’t rise at the foot of {spot["up"]} m of rock: {rise}')
+    if not (k > 0.9 and circle > 0): raise Exception(f'the rock fade isn’t on there: rockK {k}, circle {circle}')
+    if not sil: raise Exception('no silhouette was drawn there')
+    stand(pg, home[0], home[1], 60)
+    rise2, k2, circle2, sil0 = pg.evaluate("[walkRenderer.occT, walkView.C.rockK, rockUniformsFor(walkView.C).rock[1], window.__sil]")
+    stand(pg, home[0], home[1], 5)
+    if pg.evaluate('window.__sil') != sil0 or circle2 != 0 or rise2 > 0.05: raise Exception(f'on flat ground: rise {rise2}, rockK {k2}, circle {circle2}, silhouettes still drawn')
+    return f'at the foot of {spot["up"]} m of rock: the camera rose {rise:.1f} degrees, the rock fade and the silhouette on; on flat ground off'
 
 
 def save_round_trip(pg, base):
@@ -487,6 +540,7 @@ PAGES = [   # (what the page opens, its checks in order); the longest first, so 
     ('run', [("A run's world: the landing, its places on the bowl, a seam walked a day later", run_world),
              ("A run town's shop opens (UI-5)", run_shop)]),
     ('run', [("A run's battle held and started again after a reload; a loss, the payout (again after a reload) and home", run_loop)]),
+    ('mountains', [('Tall ground: behind a south mountain the camera rises, rock fades, your silhouette shows; none on flat ground', tall_ground)]),
     ('team', [('Every screen opens with its parts (UI-5)', screens)]),
     ('title', [('The game boots with no console or page errors', boots)]),
     ('studio', [('The Studio loads', studio), ("The Studio's world map look", studio_worldmap)]),

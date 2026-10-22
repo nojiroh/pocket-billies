@@ -42,7 +42,8 @@ test('rng: a generated scene hashes the same as before the move', () => {
   // (and 3312083804 until MAPGEN_VERSION 3: pictures no longer scaled, plants given drawn variants)
   // (and 2974976760 until MAPGEN_VERSION 4, RL-8: bridges cross the water; this scene has none, so only gen.v)
   // (and 3214287923 until MAPGEN_VERSION 5: a run's scenes go east to west; this scene is the same but for gen.v)
-  assert.equal(hashString(JSON.stringify(sc)), 2783618042);
+  // (and 2783618042 until MAPGEN_VERSION 6, TR-2c: tall grass in patches, one across the way west)
+  assert.equal(hashString(JSON.stringify(sc)), 2339577951);
 });
 
 test('rng: the helpers stay in their ranges', () => {

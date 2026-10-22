@@ -24,7 +24,7 @@ import {
   setSaveData,
   uiState,
 } from './game-state.js';
-import { ART_CACHE, COIN_ART, EGG_ART, ICON_ATLAS, MENU_BACKGROUND_ART, artBoot, artImg, uiIconURL } from './art.js';
+import { ART_CACHE, COIN_ART, EGG_ART, ICON_ATLAS, artBoot, artImg, uiIconURL } from './art.js';
 import { personArtPaths } from './person-art.js';
 import { rigAtlas } from './skeleton-rig.js';
 import { AREAS, battleStagePrepare } from './battle-stage.js';
@@ -47,6 +47,7 @@ import { initPixelSky } from './pixel-sky.js';
 import { mapIdAt } from './walk-control.js';
 import { render, startGame } from './ui.js';
 import { fixtureStart } from './fixture.js';
+import { updateCheckStart } from './update-check.js';
 /* eslint-disable no-func-assign */
 expose({
   ART_VERSION_KEY: [() => ART_VERSION_KEY],
@@ -175,7 +176,7 @@ function loadList() {
     add = (p, ph) => {
       if (p && !L.has(p)) L.set(p, ph);
     };
-  [ICON_ATLAS, ...COIN_ART, ...EGG_ART, ...MENU_BACKGROUND_ART].forEach(p => add(p, 0));
+  [ICON_ATLAS, ...COIN_ART, ...EGG_ART].forEach(p => add(p, 0));
   for (const sp of Object.keys(SPECIES)) {
     const R = RIGS[sp];
     if (!R) continue;
@@ -962,5 +963,8 @@ else
     });
 /* the fast check's fixture never signs in */
 if (typeof initAccount === 'function' && !FIXTURE) initAccount();
+/* a new build's worker is fetched past the browser's cache (sw.js and the version.js it imports) */
 if ('serviceWorker' in navigator && location.protocol !== 'file:')
-  addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+  addEventListener('load', () => navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {}));
+/* the owner, 2026-10-22: a phone always plays the site's latest build (update-check.js; off without a build) */
+addEventListener('load', () => updateCheckStart());

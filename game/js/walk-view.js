@@ -3002,7 +3002,7 @@ export function findPath(ax, az, bx, bz, o = {}) {
   }
   return out;
 }
-/* ---------- encounter spots: tall grass first, around where you stand ---------- */
+/* ---------- encounter spots: tall grass first, around where you stand (a generated place: in its grass patches) -------- */
 function encounterCandidates(sc) {
   const ck = 'hub';
   if (walkView.cand && walkView.candK === ck) return walkView.cand;
@@ -3011,7 +3011,8 @@ function encounterCandidates(sc) {
     good = 'tgGfnsxCH',
     rows = sc.tiles || [],
     hub = mapHub(sc),
-    ex = sc.exits || [];
+    ex = sc.exits || [],
+    patches = sc.grassPatches && sc.grassPatches.length ? sc.grassPatches : null;
   navGrid();
   for (let j = 0; j < sc.h; j++)
     for (let i = 1; i < sc.w - 1; i++) {
@@ -3021,8 +3022,17 @@ function encounterCandidates(sc) {
         z = sc.h - j - 0.5;
       if (!isWalkable(x, z)) continue;
       const d = Math.hypot(x - hub[0], z - hub[1]);
-      if (d < 2.2 || d > 13) continue;
       if (ex.some(e => Math.hypot(e[0] - x, e[1] - z) < 2.2)) continue;
+      /* TR-2c: a generated place's tall grass lies in patches (sc.grassPatches) across the whole map: they wait in any
+         of them, whatever the distance (not in a neighbour's grass over the seam), beside the grass's own tufts but not
+         on other things */
+      if (patches) {
+        if (ch !== 't' || d < 2.2 || !patches.some(g => Math.hypot(g.x - x, g.z - z) <= g.r)) continue;
+        if ((sc.props || []).some(p => !/tallgrass/.test(p.k) && Math.hypot(p.x - x, p.z - z) < 0.9)) continue;
+        out.push([x, z, 1]);
+        continue;
+      }
+      if (d < 2.2 || d > 13) continue;
       if ((sc.props || []).some(p => Math.hypot(p.x - x, p.z - z) < 1.1)) continue;
       if (!sc.hub) {
         let dm = 1e9;
@@ -3375,6 +3385,23 @@ function updatePlayerHeight(dt) {
       P.hop = null;
       P.yv = gh;
       if (typeof soundEffect === 'function') soundEffect('step', { hard: 1 });
+      /* TR-2c: a puff of dust round your feet where you land (walk/effects.js draws it, rising a little and fading) */
+      if (!reducedMotion && walkView.parts)
+        for (let i = 0; i < 6; i++) {
+          const a = (i / 6) * Math.PI * 2 + Math.random() * 0.5;
+          walkView.parts.push({
+            k: 'dust',
+            x: P.x + Math.cos(a) * 0.15,
+            z: P.z + Math.sin(a) * 0.15,
+            y: 0.02,
+            vx: Math.cos(a) * 1.1,
+            vz: Math.sin(a) * 1.1,
+            vy: 0.35,
+            life: 0,
+            max: 0.5,
+            g: 0.6,
+          });
+        }
     }
   } else P.yv += (gh - P.yv) * Math.min(1, dt * 18);
   /* lean into a climb (and back going down), seen as a tilt when you walk across the screen */
