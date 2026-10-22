@@ -18,7 +18,15 @@ import { ICON_ATLAS, artLoad } from '../../game/js/art.js';
 import { battleStageStop } from '../../game/js/battle-stage.js';
 import { engineContext } from '../../game/js/engine/settings.js';
 import { escapeHtml } from './game-stand-ins.js';
-import { historyCommit, historyRedo, historyUndo } from '../../game/js/logic/history.js';
+import {
+  HISTORY_ORDER,
+  historyBytes,
+  historyCommit,
+  historyParts,
+  historyPartsData,
+  historyRedo,
+  historyUndo,
+} from '../../game/js/logic/history.js';
 import { publishConfirm, publishEmpty } from '../../game/js/logic/publish-plan.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -68,6 +76,7 @@ expose({
   renderSide: [() => renderSide, v => (renderSide = v)],
   renderingPane: [() => renderingPane, v => (renderingPane = v)],
   restore: [() => restore, v => (restore = v)],
+  restoreParts: [() => restoreParts, v => (restoreParts = v)],
   saveAll: [() => saveAll, v => setSaveAll(v)],
   sectionShown: [() => sectionShown],
   selectField: [() => selectField, v => (selectField = v)],
@@ -78,6 +87,7 @@ expose({
   setToast: [() => setToast, v => (setToast = v)],
   setWritePath: [() => setWritePath, v => (setWritePath = v)],
   snapshot: [() => snapshot],
+  snapshotParts: [() => snapshotParts],
   speciesName: [() => speciesName],
   speciesOptions: [() => speciesOptions],
   stageChanges: [() => stageChanges, v => (stageChanges = v)],
@@ -193,18 +203,30 @@ export function setWritePath(v) {
 }
 /* ---------- undo / dirty ---------- */
 /* caches kept on the data (keys starting with _, as the height cache's clock in a map) are left out, as saving does:
-   otherwise the snapshot changes on its own and an undo only takes that back */
+   otherwise the snapshot changes on its own and an undo only takes that back. The whole data as one text: the
+   self-test's before and after (restore puts it back) */
 export const snapshot = () =>
   JSON.stringify({ D: studioState.D, R: studioState.rigs }, (k, v) => (k[0] === '_' && k.length > 1 ? undefined : v));
+/* Studio plan T1.2: the data as the undo holds it, one text per entry (logic/history.js historyParts) */
+export const snapshotParts = () => historyParts(studioState.D, studioState.rigs);
 export function commit(now) {
   clearTimeout(studioState.snapT);
+  studioState.snapT = null;
   const go = () => {
+    studioState.snapT = null; /* T1.5: null when no commit is pending */
     const P = studioProbe.on,
       a = P ? performance.now() : 0,
-      snap = snapshot(),
-      b = P ? performance.now() : 0;
-    if (historyCommit(studioState, snap)) updateTopBar();
-    if (P) P('commit', { snapMs: b - a, chars: snap.length, ms: performance.now() - a });
+      parts = snapshotParts(),
+      b = P ? performance.now() : 0,
+      top = studioState.undo[studioState.undo.length - 1];
+    if (historyCommit(studioState, parts)) updateTopBar();
+    if (P) {
+      let chars = 0;
+      for (const v of parts.values()) chars += v.length;
+      const step = studioState.undo[studioState.undo.length - 1];
+      /* bytes: what this edit's undo step holds */
+      P('commit', { snapMs: b - a, chars, bytes: step !== top ? historyBytes(step) : 0, ms: performance.now() - a });
+    }
   };
   if (now) go();
   else studioState.snapT = setTimeout(go, 450);
@@ -270,9 +292,9 @@ export function undo() {
   if (!u) return toast('Nothing to undo.');
   if (u.kind === 'art') {
     artStepPut(u.step, u.put);
-    if (u.step.snapshot) restore(u.step.snapshot.before);
+    if (u.parts) restoreParts(u.parts);
     updateTopBar();
-  } else restore(u.snap);
+  } else restoreParts(u.put);
   toast('Undone.');
 }
 export function redo() {
@@ -281,9 +303,9 @@ export function redo() {
   if (!u) return toast('Nothing to redo.');
   if (u.kind === 'art') {
     artStepPut(u.step, u.put);
-    if (u.step.snapshot) restore(u.step.snapshot.after);
+    if (u.parts) restoreParts(u.parts);
     updateTopBar();
-  } else restore(u.snap);
+  } else restoreParts(u.put);
   toast('Redone.');
 }
 export function restore(s) {
@@ -302,9 +324,49 @@ export function restore(s) {
   scheduleCheck();
   if (P) P('restore', { parseMs: b - a, ms: performance.now() - a });
 }
+/* Studio plan T1.2: an undo or redo puts back only the parts it holds (logic/history.js has already put them in
+   `last`); a change to the keys or their order (@order) rebuilds the whole data from `last` */
+function restoreParts(put) {
+  const P = studioProbe.on,
+    a = P ? performance.now() : 0,
+    S = studioState;
+  let data = false,
+    rigs = false;
+  if (HISTORY_ORDER in put) {
+    const o = historyPartsData(S.last);
+    S.D = o.D;
+    S.rigs = o.R;
+    data = rigs = true;
+  } else
+    for (const name of Object.keys(put)) {
+      const v = JSON.parse(put[name]);
+      if (name.startsWith('R/')) {
+        S.rigs[name.slice(2)] = v;
+        rigs = true;
+        continue;
+      }
+      const i = name.indexOf('/', 2),
+        k = i < 0 ? name.slice(2) : name.slice(2, i);
+      if (i < 0) S.D[k] = v;
+      else S.D[k][Array.isArray(S.D[k]) ? +name.slice(i + 1) : name.slice(i + 1)] = v;
+      data = true;
+    }
+  const b = P ? performance.now() : 0;
+  if (data) S.dirty = true;
+  if (rigs) {
+    S.rigsDirty = true;
+    window.RIGS = S.rigs;
+  }
+  spriteCacheClear();
+  render();
+  updateTopBar();
+  scheduleCheck();
+  if (P) P('restore', { parseMs: b - a, parts: Object.keys(put).length, ms: performance.now() - a });
+}
 export function updateTopBar() {
   $('#dirty').hidden = !(studioState.dirty || studioState.rigsDirty || studioState.artDirty.size);
-  $('#undoBtn').disabled = !studioState.undo.length && studioState.last === snapshot();
+  /* an edit whose commit is pending can be undone too */
+  $('#undoBtn').disabled = !studioState.undo.length && studioState.snapT == null;
   $('#redoBtn').disabled = !studioState.redo.length;
   draftSoon(); /* T1.1: what is pending is kept in this browser 2 s later (drafts.js) */
 }
@@ -469,7 +531,7 @@ export function checkboxField(label, p, o = {}) {
   return `<label class="fld chk ${o.cls || ''}"><input type="checkbox" data-p="${p}" data-k="bool" ${o.num ? 'data-num="1"' : ''} ${o.rr ? 'data-rr="1"' : ''} ${v ? 'checked' : ''}><span>${label}</span>${helpHTML(o.help)}</label>`;
 }
 export function colorField(label, p, o = {}) {
-  const v = readPath(p) || '#000000';
+  const v = readPath(p) || o.def || '#000000'; /* o.def: shown when the data has none, not written */
   return `<label class="fld color ${o.cls || ''}"><span>${label}</span><span class="colw"><input type="color" data-p="${p}" data-k="color" value="${/^#[0-9a-f]{6}$/i.test(v) ? v : '#000000'}"><input type="text" data-p="${p}" data-k="color" value="${escapeHtml(v)}" maxlength="7" class="hex"></span>${helpHTML(o.help)}</label>`;
 }
 export const card = (title, body, o = {}) =>
@@ -748,7 +810,7 @@ export async function boot() {
     if (window.RIGS_NEXT) for (const k in window.RIGS_NEXT) if (!R[k]) R[k] = window.RIGS_NEXT[k];
     window.RIGS = R;
     studioState.files = F;
-    studioState.last = snapshot();
+    studioState.last = snapshotParts();
     const h = location.hash.slice(1);
     if (SECTION_LIST.some(n => n[0] === h)) studioState.sec = h;
     renderSide();

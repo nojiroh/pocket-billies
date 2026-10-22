@@ -19,7 +19,7 @@ import {
   ask,
   dialog,
   render,
-  snapshot,
+  snapshotParts,
   studioProbe,
   studioState,
   toast,
@@ -232,7 +232,7 @@ async function draftStart(d) {
       for (const [path, c] of art) markArt(path, c);
       S.undo = [];
       S.redo = [];
-      S.last = snapshot();
+      S.last = snapshotParts();
       spriteCacheClear();
       render();
       updateTopBar();

@@ -981,10 +981,31 @@ def studio_test_steps(pg, errs):
     if not r['restored']: errs.append('studio test: the data was not put back as it was')
     for s in r['sections']:
         if s.get('edit') and s['edit']['back'] is False: errs.append(f"studio test: the edit in {s['id']} did not come back with undo")
+        if s.get('outside'): errs.append(f"studio test: opening {s['id']} changed the data outside an edit: {', '.join(s['outside'])}")
     if r['privacy']: errs.append('studio test: the report holds ' + ', '.join(r['privacy']))
     if pg.evaluate("studioProbe.on !== null || studioProbe.running"): errs.append('studio test: the probe was left on')
     edits = sum(1 for s in r['sections'] if s.get('edit'))
     print(f"studio test: {len(r['sections'])} sections, {edits} edits undone, {len(r['findings'])} findings, {r['seconds']} s", flush=True)
+    # Studio plan T1.2: the undo holds only the parts an edit changed, and puts back only those
+    u = pg.evaluate("""(() => {
+      const S = studioState, ids = Object.keys(S.D.maps), id = ids[0], before = {};
+      const text = v => JSON.stringify(v, SAVE_REPLACER);  // the undo, like saving, keeps no _ caches
+      commit(true);
+      const was = text(S.D.maps[id]), steps = S.undo.length;
+      for (const k of ids) before[k] = S.D.maps[k];
+      S.D.maps[id].name = (S.D.maps[id].name || '') + ' x';
+      changed();
+      commit(true);
+      const step = S.undo[S.undo.length - 1], parts = step && step.parts ? Object.keys(step.parts) : [];
+      undo();
+      const same = ids.filter(k => k !== id && S.D.maps[k] !== before[k]);
+      return { parts, steps: S.undo.length - steps, back: text(S.D.maps[id]) === was, same, n: ids.length };
+    })()""")
+    if u['parts'] != ['D/maps/' + pg.evaluate("Object.keys(studioState.D.maps)[0]")]: errs.append(f"undo: a map edit's step holds {u['parts']}")
+    if not u['back']: errs.append('undo: the map edit did not come back')
+    if u['same']: errs.append(f"undo: an undo of one map replaced other maps: {u['same'][:5]}")
+    if u['steps'] != 0: errs.append(f"undo: the edit and its undo left {u['steps']} steps")
+    print(f"undo: a map edit's step holds {u['parts']}; its undo kept the other {u['n'] - 1} maps the same objects", flush=True)
 
 
 # the steps after sign-in, in order (--only picks some by name; 'sections' and 'art' are the two blocks in main)
