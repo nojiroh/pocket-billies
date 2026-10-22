@@ -1492,6 +1492,9 @@ function propModelImageItems(it, out) {
       sh: L.shadow ? (it.M && it.M.shadow ? it.M.shadow : 1) * s : 0,
       glow: L.glow ? L.glow * (typeof lampLit === 'function' ? lampLit(it.x, it.z, 0) : 1) : 0,
       noRecv: L.recv === 0,
+      /* phase 09 batch 10: metres toward the eye (along the camera's line of sight), so a conifer's tiers, centred on
+         its modelled mast, stay in front of it from every side (walk/sprites.js uDZ) */
+      eyeward: L.front && L.face !== 'fixed' ? L.front * s : 0,
       fixed: L.face === 'fixed',
       plane: L.face === 'fixed',
       yaw: L.face === 'fixed' ? (+L.yaw || 0) + ro : 0 /* phase 09 batch 9: a decal turns with its model */,
@@ -1555,6 +1558,30 @@ function leafCut(im, L) {
       o.data[i + 2] = data[i + 2] * sh;
       o.data[i + 3] = data[i + 3];
     }
+    X.putImageData(o, 0, 0);
+  } else if (L.clip.length >= 4) {
+    /* phase 09 batch 10: a box [left, top, right, bottom] (picture pixels, right and bottom excluded), a pine's tier:
+       a wide, short band with its own drawn hem, so no outline is added; the layer stands on the box's bottom middle
+       as a circle's clump stands on its circle's */
+    const [x0, y0, x1, y1] = L.clip.map(Math.round),
+      w = Math.max(1, x1 - x0),
+      h = Math.max(1, y1 - y0);
+    out = makeCanvas(w, h);
+    const X = out.getContext('2d'),
+      o = X.createImageData(w, h);
+    for (let y = 0; y < h; y++)
+      for (let x = 0; x < w; x++) {
+        const px = x0 + x,
+          py = y0 + y;
+        if (px < 0 || py < 0 || px >= W || py >= H) continue;
+        const i = (py * W + px) * 4,
+          j = (y * w + x) * 4;
+        if (data[i + 3] <= 127) continue;
+        o.data[j] = data[i] * sh;
+        o.data[j + 1] = data[i + 1] * sh;
+        o.data[j + 2] = data[i + 2] * sh;
+        o.data[j + 3] = 255;
+      }
     X.putImageData(o, 0, 0);
   } else {
     const [cx, cy, r] = L.clip,
