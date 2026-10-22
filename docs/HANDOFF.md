@@ -2,6 +2,52 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Roguelite track RL-9b - Ranch A, second half: 1 home Billie and a packed bag - 2026-10-22
+Branch `claude/dazzling-darwin-jvooys`, from main 6a8a3e7 (PR #112). Plan approved in Plan Mode with the owner's
+answers: the pack holds items and coins, 5 in all at Bracket I, on top of the run's gift; on a win the run's bag goes
+home and pays no Capital (a loss pays it as before); the home Billie from the team or storage (a trainee stops, the
+traveller leaves healed); the run fixture and the debug runs follow the rule. No `rl-*-done` tag is on the remote yet
+(sessions can't push tags).
+- Changed (one cause per commit):
+  - **UI lint was red on main**: RL-9's ranch card CSS (`margin: 2px 4px 0`) merged after UI-6 set the ceilings
+    (space 1035 > 1033); now `var(--s1) var(--s1) 0` (its top gap 2 -> 4 px).
+  - **Rules**: `run.home` [1] and `run.pack` [5] by Bracket (placeholders); types, check-data.
+  - **Logic** (run-state.js, run-loop.js): `runBegin` takes `home` (uids from the team or storage) and `pack` (taken
+    from the hub's bag, never more than it holds; added to the gift); `run.home`, `run.pack`, the buddy a run field (the
+    traveller walks with you, the hub's comes back). `runEnd` puts a kept Billie back where it lives, team **or
+    storage** (the trap RL-9 found), and on a win adds the run's items and coins to the hub's bag; the payout's items
+    line is 0 on a win and its row left out. `runReleasePays` reads `runHome` (a storage traveller released pays
+    nothing). `runByTier` reads the Bracket lists. A run saved before RL-9b reads its home as `run.start.team`.
+  - **The mast's start sheet** (run.js): "Who comes from home" (pick cards: team, then storage, "training" named; the
+    buddy picked first) and "Pack the bag" (each item and coin with − and +, "n of 5"); it opens again in place on a
+    tap, its scroll kept. `runTakeOff(seed, map, mods, pick)`: without a pick (the debug menu, tests) the default pick
+    and nothing packed; a trainee's training stops first (`ranchStop`), everyone at home is healed (`healAll`).
+  - **Fixture**: `?fixture=run`/`mountains` take the lead alone.
+  - **Run sim**: the policy picks as the mast does; `--team` is Billies at home, `--pack=N` packs Potions.
+  - **Checks and debug**: check-fast "Packing for a run" (ranch fixture); the in-game run phase checks a party of one
+    and the hub's team untouched; the debug log's run line has `home` and `packed` (counts only).
+- Where the plan was wrong: the trap had two more faces than HANDOFF said: the release payment and the payout's
+  "from Copperleaf" read `run.start.team`, and the buddy wasn't a run field (with one traveller the hub's buddy would
+  have been missing on the run). Nothing in `ranch.js` needed to change: a trainee picked is simply stopped.
+- Verified: unit tests 519 (4 new run-state tests; the payout test changed on purpose); lint, typecheck, modules,
+  format, check-data (planted faults caught); check-fast 17 of 17 after the fixture change and the new step alone (it
+  turns red with the old trap planted); smoke 15 of 15; the in-game phases "A run's road", "A run: airship, nodes,
+  payout" and "The ranch" alone; headless pictures (390 x 760) of the start sheet. The full quick check: running at this commit (its result in the next commit).
+- Sim (50 runs, report only): one Lv 5 starter wins none and loses on the landing in 31 (as on main); three at home
+  is now the same as one (main's three-starter party also won none, losing at the mini-boss 20 times); five Potions
+  packed: lost on the landing 31, route 9, town 9, mini-boss 1, Capital 121.5 (82.3 without).
+- Risky / open:
+  - Balance: one Lv 5 Billie a run is hard (the sim's crude policy loses most runs on the landing). The owner's play
+    decides `run.home`, `run.pack` and the gift; all are placeholders in rules.json.
+  - Take-off now heals everyone at home and plays the heal sound.
+  - A run saved before this update keeps going with its whole team (its home read as `run.start.team`).
+  - The sheet re-renders on every tap (as the payout's picker does); on a phone with many Billies in storage it is a
+    long sheet: the cards come first, the bag below.
+- Phone check wanted: at the mast, "Start a run": pick a Billie from storage, pack two things, take off (a party of
+  one, the bag); give up, keep it: it is back in storage with its run's levels; a short debug run won: the bag in
+  Copperleaf's; export the debug log (`home`, `packed`).
+- Next: the owner pushes `rl-9-done` (the end of RL-9); then RL-10 (Ranch B) or the balance pass with these numbers.
+
 ### Roguelite track RL-9 (first half) - Ranch A: the building, storage, training - 2026-10-22
 Branch `claude/great-hamilton-bj2wsa`, from main 9760857 (PR #108, TR-3). Plan approved in Plan Mode with the owner's
 answers: **8.2** 1 home Billie a run at Bracket I; **a packed bag**: at the mast you pack a limited bag from
