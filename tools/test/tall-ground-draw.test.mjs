@@ -138,3 +138,21 @@ test('no silhouette on flat ground, in battle, indoors or without the player', (
   assert.equal(drawPlayerSilhouette(C, [], {}), 0, 'no player');
   assert.equal(calls.filter(c => c[0] === 'drawArrays').length, 0);
 });
+
+test("the near shadow map is centred at the player's height: a point there lands in the middle, not near the edge", () => {
+  setup(camera());
+  gpuState.fb = {};
+  const sun = { travel: [0.45, -0.7, 0.55], dir: [-0.45, 0.7, -0.55] },
+    at = (SH, x, y, z) => {
+      const m = SH.vp,
+        X = m[0] * x + m[4] * y + m[8] * z + m[12],
+        Y = m[1] * x + m[5] * y + m[9] * z + m[13];
+      return Math.hypot(X, Y);
+    };
+  const low = G.beginSunShadow(40, 30, 13, sun, 1024, 'shadowN'),
+    high = G.beginSunShadow(40, 30, 13, sun, 1024, 'shadowN', 15);
+  assert.ok(at(low, 40, 0, 30) < 0.01, 'at height 0 the centre is in the middle');
+  assert.ok(at(low, 40, 15, 30) > 0.6, 'without the height, a player 15 m up is far off the middle');
+  assert.ok(at(high, 40, 15, 30) < 0.01, 'with it, in the middle');
+  assert.equal(high.cy, 15);
+});

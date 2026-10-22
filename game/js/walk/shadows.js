@@ -99,7 +99,7 @@ export function shadowPass(items0, sun, C) {
       SHADOW_LISTS.near
     );
   gpuPass('shadowNear');
-  const SH = beginSunShadow(P.x, P.z, R, sun, res, 'shadowN'),
+  const SH = beginSunShadow(P.x, P.z, R, sun, res, 'shadowN', Math.round(P.yv ?? standingHeightAt(P.x, P.z))),
     ca = worldCurveArgs();
   {
     const p = gpuState.P.shadowG;
