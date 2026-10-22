@@ -32,6 +32,12 @@ export const walkRenderer = {
   leaveAt: null,
   /* CAM-2: the scene's points of interest (walk/sprites.js interestPoints) */
   intL: null,
+  /* CAM-2: the moments (logic/camera-moments.js): their state, who you talk to, where a run's boss stands, and a moment
+     the Studio plays ({id, at, until}) */
+  mom: null,
+  talkAt: null,
+  bossAt: null,
+  momentTest: null,
   focus: null,
   focusT: null,
   frames: 0,

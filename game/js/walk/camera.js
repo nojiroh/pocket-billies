@@ -4,12 +4,13 @@
    walk-view-gl.js as they were. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { reducedMotion } from '../hooks.js';
+import { reducedMotion, talkBox } from '../hooks.js';
 import { clamp } from '../util.js';
 import { cameraRiseNeeded } from '../logic/camera-rise.js';
 import { blendGoals, followNew, followStep, leadStep, zoneMetres } from '../logic/camera-follow.js';
 import { zoomShape } from '../logic/camera-zoom.js';
 import { interestPick } from '../logic/camera-interest.js';
+import { MOMENT_DIALS, momentNew, momentStep } from '../logic/camera-moments.js';
 import { BOB_M, walkView } from '../walk-view.js';
 import { engineSetting } from '../engine/settings.js';
 import { matrix4 } from '../engine/webgl.js';
@@ -25,6 +26,7 @@ expose({
   ease: [() => ease],
   followDirection: [() => followDirection, v => (followDirection = v)],
   freeCameraOn: [() => freeCameraOn],
+  moments: [() => moments, v => (moments = v)],
   screenRay: [() => screenRay, v => (screenRay = v)],
   walkCamera: [() => walkCamera, v => (walkCamera = v)],
   zoomEnds: [() => zoomEnds, v => (zoomEnds = v)],
@@ -96,6 +98,44 @@ function followDirection(P, R, F, vx, vz, sp) {
   const vl = Math.hypot(vx, vz);
   return vl > 1e-4 ? [vx / vl, vz / vl] : [0, 0];
 }
+/* CAM-2: this frame's moment (logic/camera-moments.js), from what the walk knows: who talks to you (while the talk box
+   is up), where a run's boss stands, the point of interest, whether you walk or run */
+function moments(sc, P, push, I, dt) {
+  if (!walkRenderer.mom || walkRenderer.mom.sc !== sc) walkRenderer.mom = { ...momentNew(), sc };
+  const st = walkRenderer.mom,
+    D = /** @type {any} */ ({});
+  for (const k of Object.keys(MOMENT_DIALS)) D[k] = engineSetting('camera', k) ?? MOMENT_DIALS[k];
+  let talk = talkBox?.on && walkRenderer.talkAt ? [walkRenderer.talkAt.x, walkRenderer.talkAt.z] : null,
+    boss = walkRenderer.bossAt,
+    moving = !!(P.walk || P.route);
+  const T = walkRenderer.momentTest;
+  if (T && walkView.t > T.until) walkRenderer.momentTest = null;
+  else if (T) {
+    if (T.id === 'talk') talk = T.at;
+    else if (T.id === 'boss') boss = { id: 'test:' + T.until, x: T.at[0], z: T.at[1] };
+    else if (T.id === 'idle') {
+      moving = false;
+      st.still = Math.max(st.still, D.idleDelay);
+    }
+  }
+  if (freeCameraOn() || sc.indoor || sc.room) return { id: null, goals: [] };
+  return momentStep(
+    st,
+    {
+      px: P.x,
+      pz: P.z,
+      moving,
+      running: !!P.running,
+      dir: push,
+      talk,
+      boss,
+      interest: I,
+      reduced: !!reducedMotion,
+    },
+    D,
+    dt
+  );
+}
 export function walkCamera(rw, rh, st, dt) {
   const sc = walkView.sc,
     c = sc.cam || {},
@@ -116,16 +156,8 @@ export function walkCamera(rw, rh, st, dt) {
     /* the screen's right and up, on the ground */
     R = [Math.cos(walkRenderer.yaw), -Math.sin(walkRenderer.yaw)],
     F = [-R[1], R[0]],
-    lead = leadStep(
-      fol,
-      followDirection(P, R, F, vx, vz, sp),
-      set('lead'),
-      R,
-      set('leadSide'),
-      rh > rw,
-      snap ? 0 : set('leadSmooth'),
-      dt
-    );
+    push = followDirection(P, R, F, vx, vz, sp),
+    lead = leadStep(fol, push, set('lead'), R, set('leadSide'), rh > rw, snap ? 0 : set('leadSmooth'), dt);
   const tk = set('tilt'),
     tilt = [
       (walkRenderer.tiltX + (walkRenderer.mouse ? walkRenderer.mouse[0] * 0.35 : 0)) * tk,
@@ -182,13 +214,13 @@ export function walkCamera(rw, rh, st, dt) {
   /* CAM-2: the strongest point of interest near you (a landmark, a shop's or clinic's door) leans the aim toward it
      (no more than Engine > Camera > Interest: most lean) and zooms a little */
   const I = !sc.indoor && !sc.room && set('intOn') ? interestPick(interestPoints(sc), P.x, P.z, set('intPull')) : null;
-  if (I)
-    goals.push({
-      id: 'interest',
-      w: I.w,
-      at: [P.x + I.lean[0], P.z + I.lean[1] + (rw > rh ? 2.0 : 1.0)],
-      zoom: I.zoom,
-    });
+  /* CAM-2: the moments (logic/camera-moments.js): talking, a run's boss, a point of interest, standing still,
+     running; at most one at a time. The Studio's "Play moment" stands in for the real thing (walkRenderer.momentTest) */
+  const M = moments(sc, P, push, I, dt);
+  for (const g of M.goals) {
+    if (g.at) g.at = [g.at[0], g.at[1] + (rw > rh ? 2.0 : 1.0)];
+    goals.push(g);
+  }
   const G = blendGoals(fol, goals, dt, set('blend'), snap);
   /* CAM-2: one zoom (your pinch times the goals') drives the tilt, distance and field of view along their curves */
   const zoomEff = clamp(walkRenderer.zoom * G.zoom, 0.3, Math.max(1, set('zoomMax')) * 1.25),
@@ -263,6 +295,7 @@ export function walkCamera(rw, rh, st, dt) {
     mode: freeCameraOn() ? 'free' : walkRenderer.swoop ? 'swoop' : sc.room ? 'room' : sc.indoor ? 'indoor' : 'walk',
     zoom: zoomEff,
     interest: I ? [I.n, I.w, I.at[0], I.at[1]] : null,
+    moment: M.id,
     goals: G.list,
     goal: [gx, gz],
     lead: [lead[0], lead[1]],

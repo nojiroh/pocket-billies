@@ -232,6 +232,7 @@ export function followStep(st, I, dt) {
  * @property {string} id
  * @property {number} w how much it wants to apply now (0-1)
  * @property {number} [blend] its own ramp time (seconds; 0: no ramp), else the common one
+ * @property {number} [out] CAM-2: its ramp time going out, if not the same
  * @property {number} [pitch] degrees added to the tilt at full weight
  * @property {number} [yaw] radians added to the turn at full weight
  * @property {number} [dist] the distance's factor at full weight
@@ -260,9 +261,14 @@ export function blendGoals(st, goals, dt, blend, snap) {
       atW: 0,
       list: /** @type {[string, number][]} */ ([]),
     };
-  const ramp = (/** @type {string} */ id, /** @type {number} */ to, /** @type {number | undefined} */ b) => {
-    const t = b ?? blend,
-      w0 = st.w[id] ?? 0,
+  const ramp = (
+    /** @type {string} */ id,
+    /** @type {number} */ to,
+    /** @type {number | undefined} */ b,
+    /** @type {number | undefined} */ o
+  ) => {
+    const w0 = st.w[id] ?? 0,
+      t = (to < w0 ? o : undefined) ?? b ?? blend,
       w = snap || !(t > 0) ? to : w0 + (to - w0) * (1 - Math.exp(-dt / t));
     if (w < 1e-3 && to === 0) delete st.w[id];
     else st.w[id] = w;
@@ -279,7 +285,7 @@ export function blendGoals(st, goals, dt, blend, snap) {
   for (const g of all) {
     seen.add(g.id);
     st.last[g.id] = g;
-    const w = ramp(g.id, Math.max(0, Math.min(1, g.w)), g.blend);
+    const w = ramp(g.id, Math.max(0, Math.min(1, g.w)), g.blend, g.out);
     if (!(g.id in st.w)) delete st.last[g.id];
     if (!w) continue;
     out.list.push([g.id, w]);

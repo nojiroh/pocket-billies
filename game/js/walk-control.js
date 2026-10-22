@@ -434,7 +434,7 @@ export function walkState() {
         const e = v.exits.find(e => !saveData.visited[e.to]);
         if (e && sc.exits) exit = sc.exits[e.i];
       }
-      return { who: T.who, id: T.id, done: !!saveData.flags[T.id], exit, dir: 'down' };
+      return { who: T.who, id: T.id, done: !!saveData.flags[T.id], exit, dir: 'down', boss: T.runFoe === 'boss' };
     });
   /* alpha 0.4: people who only talk (Granny Juniper in her garden): the place's own (scene.people), in the view's metres */
   {
@@ -484,6 +484,9 @@ export function walkPick(h) {
       startWild(q);
     }
   } else if (h.k === 'npc') {
+    /* CAM-2: who you talk to, for the camera's two-shot (walk/camera.js) */
+    const at = h.n && walkView.npcAt[h.n.id];
+    if (at) walkRenderer.talkAt = { x: at[0], z: at[1] };
     if (h.n && h.n.talk && typeof personTalk === 'function') {
       personTalk(h.n.talk);
       return;

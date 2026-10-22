@@ -3493,8 +3493,10 @@ function movePlayer(st, dt) {
       }
       /* phase 08: a light push walks slowly, a full push walks; running (the ring, the d-pad's centre, Shift, or a full
          push with "Always run") is RUN_FACTOR faster. The keys and the d-pad push fully. */
-      const run = walkView.run || K.run || (km > 0.92 && alwaysRun()) ? RUN_FACTOR : km < 0.5 ? 0.6 : 1,
-        s = WALK_SPEED * dt * run * slopeSpeedFactor(P.x, P.z, wx / l, wz / l);
+      const run = walkView.run || K.run || (km > 0.92 && alwaysRun()) ? RUN_FACTOR : km < 0.5 ? 0.6 : 1;
+      /* CAM-2: whether you run, for the camera's ease out (walk/camera.js) */
+      P.running = run === RUN_FACTOR;
+      const s = WALK_SPEED * dt * run * slopeSpeedFactor(P.x, P.z, wx / l, wz / l);
       let nx = P.x + (wx / l) * s,
         nz = P.z + (wz / l) * s;
       if (canStepTo(P.x, P.z, nx, P.z)) P.x = nx;
@@ -3504,6 +3506,7 @@ function movePlayer(st, dt) {
     } else if (P.route) {
       const tg0 = P.route[P.ri],
         d0 = Math.hypot(tg0[0] - P.x, tg0[1] - P.z) || 1;
+      P.running = !!(K.run || alwaysRun());
       let left =
         WALK_SPEED *
         (P.rush || 1) *

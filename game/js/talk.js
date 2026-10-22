@@ -46,6 +46,7 @@ export const talkBox = {
   /* Project Story: the choice on screen (talkChoose), if any */
   choice: /** @type {{ pick: (i: number) => void, n: number } | null} */ (null),
 };
+provide({ talkBox }); /* to-module */
 const SPEAKER_NAMES = { gini: 'Professor Hazel' };
 const FOLK_NAMES = [
   'Ada',
@@ -305,7 +306,11 @@ export async function talkFolk(f) {
   f.route = null;
   f.walk = 0;
   turnToPlayer(f);
-  if (typeof walkRenderer !== 'undefined') walkRenderer.focusT = { x: f.x, z: f.z, t: walkView.t };
+  if (typeof walkRenderer !== 'undefined') {
+    walkRenderer.focusT = { x: f.x, z: f.z, t: walkView.t };
+    /* CAM-2: who you talk to, for the camera's two-shot (walk/camera.js) */
+    walkRenderer.talkAt = { x: f.x, z: f.z };
+  }
   await talk([
     [who, a],
     [who, b === a ? FOLK_TALK[0] : b],
