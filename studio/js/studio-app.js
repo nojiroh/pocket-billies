@@ -747,7 +747,7 @@ export async function boot() {
     performance.mark('studio-first-draw');
   } catch (e) {
     $('#main').innerHTML =
-      `<div class="loading err"><h2>The Studio couldn’t load the game data</h2><p>${escapeHtml(e.message)}</p><p>Start the Studio with <b>Start-Studio</b> (or <code>python3 start-studio.py</code>) and keep that window open.</p></div>`;
+      `<div class="loading err"><h2>The Studio couldn’t load the game data</h2><p>${escapeHtml(e.message)}</p><p>From the game's site: check your connection and reload; if it says the sign-in expired, sign out and in again. Local mode (<code>start-studio.py</code>) is not in this repository.</p></div>`;
   }
 }
 addEventListener('load', boot);

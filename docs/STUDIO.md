@@ -1,14 +1,38 @@
 # Pocket Billies Studio
 
 The Studio edits the game's data, skeletons and art. It runs from the game's site (`…/studio/`): sign in with a GitHub
-token, and **Save to game** puts your changes on a new branch with a pull request, so nothing changes in the game
-until the owner merges it. Started from `start-studio.py` on your own computer (not in this repository yet), saves go
-straight into `game/data` and `game/art`.
+token, and **Propose changes** puts your changes on a new branch with a pull request, so nothing changes in the game
+until the owner merges it. Started from `start-studio.py` on your own computer, saves would go straight into
+`game/data` and `game/art`, but that server is **not in this repository** (see the end of this file); the GitHub
+route is the one that works.
 
-## Local mode (start-studio.py)
+## Propose changes: what it does, and what happens when it fails (Studio plan Phase 0)
+
+- **What is sent.** Every picture, the rigs and the data you changed, as one commit on a new branch
+  (`studio/<you>-<date>-<time>-<4 letters>`) and a pull request against main. Nothing is marked saved until GitHub
+  has opened the pull request; then only what is still as it was sent is. A picture you paint, or a field you change,
+  while it is sending stays unsaved for the next proposal.
+- **When it fails** (no connection, GitHub busy, a permission missing), the toast says so and **nothing is lost**:
+  everything stays unsaved ("Unsaved changes" stays in the top bar) and Propose sends all of it again. If the branch was made before the
+  failure, the retry reuses it.
+- **An expired sign-in** opens the sign-in card over the Studio. Sign in with a new token and the same changes are
+  sent; Cancel keeps them unsaved. There is no need to sign out (Sign out does lose unsaved changes).
+- **If something can't be packed** (a bad id, a picture that won't encode), nothing is sent and the toast names it.
+- **Main has moved on.** The Studio reads the game at the commit main was on when you opened it, and makes your
+  proposal on that commit. If main has new commits that changed files your proposal also writes, a question names
+  them first: *Propose anyway* (the pull request shows them as conflicts for the owner to settle) or *Cancel* (reload
+  the Studio and make the change again on the new version). New commits that touch other files ask nothing.
+- **One at a time.** Propose (and Ctrl+S) does nothing while a proposal is on its way.
+- **Proposals add up.** Until the Studio is reloaded, a new proposal also carries the data changes of your earlier
+  ones (it compares with the commit it loaded); pictures and rigs go in the proposal they were changed for.
+- Closing the tab still loses unsaved changes (the browser asks first). Drafts that survive a closed tab are the
+  plan's next step (T1.1).
+
+## Local mode (start-studio.py, not in this repository)
 
 Double-click `Start-Studio.bat` / `Start-Studio.command`, or run
-`python3 start-studio.py`. It opens at **http://localhost:8001**.
+`python3 start-studio.py`. It opens at **http://localhost:8001**. The server is not in this repository, so this mode
+can't be used from a clone of it today.
 
 ## Layout (studio track ST-1)
 

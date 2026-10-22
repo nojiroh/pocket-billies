@@ -9,6 +9,13 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- The Studio's Propose changes no longer loses work (Studio plan Phase 0). A failed proposal used to drop the
+  pictures and rigs you had changed from the next try while showing them as saved; now nothing is marked saved until
+  the pull request is open, a retry sends everything, and a proposal that can't be packed sends nothing. The Studio
+  reads the game at the commit it opened on and proposes on that commit, so it can't quietly undo what was merged in
+  the meantime: if main changed the same files, it names them and asks first. An expired sign-in opens the sign-in
+  card over the Studio and sends the same changes afterwards. Branch names carry the second, so two proposals in a
+  minute no longer clash, and a retry reuses the branch a failed try left.
 - The Studio's Hub island section has the island generator's dials (IS-6b): size, coast, mountain, cove, beaches,
   cliffs, forest, stream, paths, the town and the hamlet, a seed and a seed for each part. A draft shows in the
   orbit view and on the map as you change them, with its size, the walk round the coast and a walking check. "Use
