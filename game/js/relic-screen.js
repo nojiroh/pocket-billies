@@ -51,7 +51,7 @@ function relicCardsOn(f) {
 
 /* ---------- the pick after a mini-boss ---------- */
 /** the run's offer as a sheet (nothing when there is none) */
-function relicPickOpen() {
+export function relicPickOpen() {
   const run = saveData.run;
   if (!run || !run.offer) return;
   const rule = RULES.run.relics,
