@@ -53,6 +53,7 @@ import '../../game/js/logic/run-loop.js';
 import '../../game/js/logic/run-map.js';
 import '../../game/js/logic/run-marks.js';
 import '../../game/js/logic/run-preview.js';
+import '../../game/js/logic/run-rules-code.js';
 import '../../game/js/logic/run-scenes.js';
 import '../../game/js/logic/run-start.js';
 import '../../game/js/logic/run-state.js';
