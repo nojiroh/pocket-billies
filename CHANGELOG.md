@@ -9,6 +9,11 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- The ranch (RL-9): a red barn by Copperleaf's farm. Walk in and tap the training board or the rancher: Billies resting
+  in storage can train there for a little Scrap, gaining a level every two hours of real time (up to eight hours
+  between visits, up to level 15 for now), collected when you come back. Storage shows there too, and the Team tab
+  keeps it. Runs now bring Scrap home: a little for every place reached, more for a win. Rooms are a little smaller
+  inside (still bigger than the building).
 - The camera on tall ground (terrain TR-3): when a mountain or a cliff stands between the camera and you, the camera
   tilts down further to look over it (up to 18 degrees more), the rock, trees and water in the way thin out in a
   circle round you, and where something still hides you your shape shows through it as a blue silhouette. On flat

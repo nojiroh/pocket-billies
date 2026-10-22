@@ -148,6 +148,16 @@ no Seals line, and there is no keep-one component: the payout lays out `pb-pick-
 walked where a stream's banks are steep (walk/heights.js blocked the steep ground under the deck), and mapgen laid a
 bridge along a stream where the road ran beside it, often ending in the water; both fixed (MAPGEN_VERSION 4).
 
+**Corrected in RL-9 (2026-10-22).** Copperleaf had no barn and no live map used `int_barn` (no acts in it); the barn's
+opening hours (`OPEN_HOURS.barn`) would have closed the ranch at night; `meta.scrap` and `meta.buildings` were never
+used; storage is the Team tab, not a building. The ranch is a barn by Copperleaf's farm patch (act `ranch`) into
+`int_barn`, with a training board; training is `logic/ranch.js` with `rules.ranch` (placeholders); Scrap comes from the
+payout (`scrapNode`, `scrapWin`). No `buildings.json` stub (RL-11). The owner's answers: 8.2, 1 home Billie a run at
+Bracket I, and a bag packed at the mast from Copperleaf's bag, which keeps everything gathered (RL-9b builds both); the
+ranch's sheet shows storage and the Team tab keeps it. Rooms were made a little smaller at the owner's word (12 x 10
+and 16 x 11 m). A `runEnd` trap for RL-9b: a kept Billie that travelled from storage isn't in the restored team and
+would be pushed in twice.
+
 **Changed in the TR-2 session (2026-10-21, the owner: "runs should go from east to west").** A run scene is entered
 by its east side and left ahead by its west: `east`/`east2` back, `west`/`west2` ahead (logic/run-scenes.js
 runSceneExits; runExits' `ahead`/`back`, renamed from north/south). Two links a side sit 10 m and 54 m along the 64 m
@@ -680,7 +690,9 @@ cut first if time is short), store and keep (the box behind it), train (Scrap + 
 `gainXp`, capped by building level, the rollback guard shared with income), the keep-one rule as decided. Files:
 `logic/ranch.js`, `ranch.js`, `scenery.json` props, `buildings.json` stub, `self-test.js` (ranch step),
 `check-quick.py` (edit-and-reload step, TESTING.md phase 12). Tests: `ranch.test.mjs`. Could break: team/box screens.
-2 sessions.
+2 sessions. First half done 2026-10-22 (HANDOFF; section 0 for what changed): the barn and its sheet (`ranch-screen.js`),
+`logic/ranch.js`, `rules.ranch`, Scrap from the payout, the fixture, check-fast and in-game steps. RL-9b: the mast's
+pick of 1 home Billie and the packed bag (8.2).
 
 **RL-10 Ranch B.** Breeding safe/risky with abominations, hatching on ranch time, passive income with cap, rollback
 guard, offline, the cloud `t` anchor and its rule. Files: `logic/breeding.js`, `logic/ranch.js`, `logic/rules.js`
@@ -788,7 +800,8 @@ Decided this session: the rework is a track RL-N (`rl-N-done`); parked phases ar
 1. **Internal key for the run:** `run` as is (recommended; `storyRun`, `runBase`, `runTurn` are functions, no save-key
    clash) / `run` after renaming the story layer's `runBase/saveDuringRun/storyRun` / `voyage`. Player word "run".
 2. **Keep-one vs ranch levels:** option 3 in section 3 (recommended) / ranch Billies never at risk with a per-tier cap /
-   everything at risk, the ranch only trains.
+   everything at risk, the ranch only trains. **Answered in RL-9: option 3 with 1 home Billie a run at Bracket I**, and
+   a bag packed at the mast (a limited number of items) from Copperleaf's bag (RL-9b).
 3. **Hub extent:** Copperleaf alone with the south exit removed (recommended) / Copperleaf + Hedgerow Lane as a practice
    route / the exit kept behind a fence (check-data needs a `closed` exit).
 4. **Legacy parking:** move under `game/data/legacy/` with a read-only Studio group (recommended) / a `world: 'legacy'`
@@ -819,6 +832,7 @@ Decided this session: the rework is a track RL-N (`rl-N-done`); parked phases ar
     an island (the share stops at 0.8 and the land rose toward the rim); the island is `sea.island` (0.2, the owner's
     "medium"), sea all the way to the rim.
 16. **Ranch cut order if RL-9/10 overrun:** server timestamp, then risky breeding, then the walkable yard (recommended).
+    **RL-9:** the walkable yard and pens wait; the barn room stands in.
 17. **Order after the first cut:** the brief's (ranch, hub upgrades, relics, modifiers, bots, online; recommended) /
     relics and currencies before the ranch.
 18. **Tuning placeholders in `rules.run`:** rows 9, slack 3, healCost 60, the Capital rate, relic cap 6, turnCap 40,

@@ -2,6 +2,55 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Roguelite track RL-9 (first half) - Ranch A: the building, storage, training - 2026-10-22
+Branch `claude/great-hamilton-bj2wsa`, from main 9760857 (PR #108, TR-3). Plan approved in Plan Mode with the owner's
+answers: **8.2** 1 home Billie a run at Bracket I; **a packed bag**: at the mast you pack a limited bag from
+Copperleaf's bag, which keeps everything you've gathered; the ranch's sheet trains and shows storage (the Team tab
+keeps storage too); Scrap from a payout row; training by slots, a level cap and real time. Split in two: this half is
+the ranch; **RL-9b** is the run's start (the pick of 1 home Billie and the packed bag). Mid-session asks: rooms a
+little smaller (done); the deleted art/background left to another session (not touched here).
+- Changed (one cause per commit):
+  - **update-check.js's generated imports** remade (`toast` moved to overlay.js in UI-5): typecheck and
+    check:modules were red on main and the module failed to load.
+  - **Rules** (rules.json `ranch`: slots 2/3/4 by ranch level, cap 15 + 10 a level, 8 h banked, a level every 2 h,
+    5 Scrap to start, a minute's clock slack; `run.payout.scrapNode` 2, `scrapWin` 10; all placeholders): types and
+    check-data blocks.
+  - **logic/ranch.js**: `ranchLevel/Slots/Cap`, `ranchCanTrain`, `ranchTrainStart` (pays), `ranchXp` (each level its
+    own size of XP, never past the cap), `ranchBanked`, `ranchCollect` (through `gainXp`: levels, HP, moves, and the
+    evolution offer as in battle), `ranchStop`, `ranchTidy`. The clock is passed in; a clock more than `guardMs`
+    behind a trainee's start pays nothing and starts it again. `toTeam` collects and stops a trainee; `migrate`
+    tidies trainees that left storage.
+  - **Scrap from a run**: `payoutOf` pays it, `runEnd` adds it to `meta.scrap`; a chip on the payout screen (not a row:
+    the rows add up to Capital), the toast home, the Map header, the debug log.
+  - **Rooms smaller**: 14 x 11 m → 12 x 10, 18 x 12 → 16 x 11. tools/build-interiors.py builds the new sizes (`SIZE`,
+    `fit()`); `--shrink` remade every stored room's walls and floor and kept its own props (moved in), lines and keeper
+    spot, so the Studio's edits stay. Granny Juniper's furniture spots moved the same way; one window cleared.
+  - **The ranch**: a barn in Copperleaf (x 22, z 41.5, the meadow by the farm patch; act `ranch`, label Ranch) into
+    `int_barn` (`ROOM_BY_USE.ranch`), open at all hours; inside, a "Training board" (the blackboard) and the rancher
+    open the new **ranch-screen.js** sheet: Scrap, level, cap; trainees with their way to the next level and Stop;
+    storage with Train and To team. Opening it collects. The Studio's act list has `ranch`.
+  - **Checks**: `?fixture=ranch`; check-fast's ranch step; the in-game test's "The ranch: training between runs";
+    `tools/test/ranch.test.mjs` (6).
+  - **Debug**: "Age the ranch by an hour", "+50 Scrap"; the debug log's `ranch` line (numbers only).
+- Where the plan was wrong: Copperleaf had no barn and `int_barn` no acts, and the barn's opening hours would have
+  closed the ranch at night. Scrap and `meta.buildings` were never used. No `buildings.json` stub (RL-11 designs it with
+  the costs). Pens and the walkable yard are not built (8.16's first cut). The "quick-check step that edits it"
+  (TESTING phase 12) is check-fast's ranch step: it edits, moves the clock and reloads.
+- Verified: unit tests 510; lint, typecheck, modules, format, check-data; smoke 15 of 15; check-fast 17 of 17; the
+  in-game phase alone in a browser; headless pictures (390 x 760) of the barn, the room, the sheet and the smaller lab.
+  The full quick check: see the PR. Browser checks ran with art/background put back locally (not committed), since
+  main still loads it.
+- Risky / open:
+  - Training's numbers are placeholders; a Billie in storage gains about four levels in 8 h at Lv 5-15.
+  - A level-up in training can open the evolution offer when the ranch opens (as in battle).
+  - The home's furniture spots and the shrunk rooms were looked at headless only.
+  - main still loads the deleted `art/background` pictures (another session is on it).
+- Phone check wanted: walk to the barn (west of the lab, by the crops), in, tap the board; Train a Billie from storage
+  (+50 Scrap in the debug menu if you have none); "Age the ranch by an hour" twice and open the sheet again (a level);
+  a run's payout shows Scrap; rooms feel smaller; export the debug log.
+- Next: RL-9b (the mast's pick of 1 home Billie, the packed bag of `run.pack` items, a kept storage Billie on a loss,
+  items home on a win, the run sim's policy), then the tag `rl-9-done`.
+
 ### Terrain track TR-3 - The camera on tall ground - 2026-10-22
 Branch `terrain-generation` (the owner's name for it), from main dcced21 (PR #105, TR-2), main (UI-5) merged in at
 the end. The owner chose: TR-3 now, the rest of TR-2c next on the same branch in a new session, one PR. Plan approved
