@@ -11,6 +11,7 @@
      run     on a run (RL-7): standing on its landing on day 1, its world made from the seed RL7FIXTURE
      mountains   the same run with the debug menu's mountains mod (TR-3: mountains north and south, for the camera)
      ranch   inside Copperleaf's ranch (RL-9): three Billies in storage (one two levels under the cap), 50 Scrap
+     pasture the ranch's save, standing outside the pasture's gate by the barn (IS-8: the three wander inside)
      relics  the run, holding five Loopholes (RL-12: one under the cap), $2,000, a mini-boss's pick waiting
      lab     Copperleaf after a run (RL-11): 500 Capital, 60 Scrap, 2 Audit Seals, one run ended (a milestone met)
      island  the test island (island track IS-0: test_island, the map with the island contract's fields)
@@ -67,6 +68,7 @@ const FIXTURE_PLACES = {
   mountains: 'copperleaf',
   relics: 'copperleaf',
   ranch: 'copperleaf',
+  pasture: 'copperleaf',
   lab: 'copperleaf',
   island: 'copperleaf',
 };
@@ -99,7 +101,7 @@ function fixtureSave() {
   s.buddy = lead.uid;
   for (const m of s.team) s.caught[m.sp] = s.seen[m.sp] = 1;
   /* RL-9: the ranch's fixture has Billies resting in storage and Scrap to train them */
-  if (FIXTURE === 'ranch') {
+  if (FIXTURE === 'ranch' || FIXTURE === 'pasture') {
     const R = RULES.ranch;
     s.meta.scrap = 50;
     for (const lvl of [5, 8, R.capBase - 2]) {
@@ -161,6 +163,21 @@ export function fixtureStart() {
       walkView.pl.x = g[0];
       walkView.pl.z = g[1];
       enterRoom(act, p);
+    };
+    go();
+  }
+  /* IS-8: outside the pasture's gate, the field in front of you */
+  if (FIXTURE === 'pasture') {
+    const go = (n = 0) => {
+      const p = walkView.ready && walkView.sc && !walkView.pl.fresh && walkView.sc.props.find(q => q.act === 'pasture');
+      if (!p) {
+        if (n < 600) setTimeout(() => go(n + 1), 100);
+        return;
+      }
+      const g = actionSpot(p, walkData().sc.props[p.k]);
+      walkView.pl.route = null;
+      walkView.pl.x = g[0];
+      walkView.pl.z = g[1];
     };
     go();
   }
