@@ -1050,10 +1050,90 @@ def run_lab_steps(pg, errs):
     while time.time() - t0 < 5 and pg.evaluate("document.querySelectorAll('#main .rl-map').length") < 2: time.sleep(0.05)
     if pg.evaluate("document.querySelectorAll('#main .rl-map').length") != 2: errs.append('run lab: beside the loaded data did not draw a second map')
     pg.uncheck('#rlBeside')
+    # T2.6: a debug log's run carries its own unlocks; an older log only the save's
+    read = pg.evaluate("""[runLabReadLog(JSON.stringify({state:{run:{seed:'LOGSEED',unlocks:['biome_ridge'],nodes:12},meta:{unlocks:['biome_ridge','shop_appeal']}}})),
+      runLabReadLog(JSON.stringify({state:{run:{seed:'OLDLOG',nodes:12},meta:{unlocks:['shop_appeal']}}}))]""")
+    if [read[0]['unlocks'], read[0]['own'], read[1]['unlocks'], read[1]['own']] != [['biome_ridge'], True, ['shop_appeal'], False]:
+        errs.append(f'a debug log read for the run’s own unlocks gave {read}')
     logic = run_lab_logic_steps(pg, errs, want)
     rules = run_lab_rules_steps(pg, errs)
+    sweep = run_lab_sweep_steps(pg, errs)
+    play = run_lab_play_steps(pg, errs)
     if len(errs) > n: errs[n:] = [f'run lab: {e}' if not e.startswith('run lab') else e for e in errs[n:]]
-    else: print(f"run lab: LABCHECK7 drawn as the game makes it ({len(want['none'])} places, no unlocks and all), a nodeTypes edit redrawn in {ms:.0f} ms, node 3's seed, beside the loaded data; {logic}; {rules}", flush=True)
+    else: print(f"run lab: LABCHECK7 drawn as the game makes it ({len(want['none'])} places, no unlocks and all), a nodeTypes edit redrawn in {ms:.0f} ms, node 3's seed, beside the loaded data; {logic}; {rules}; {sweep}; {play}", flush=True)
+
+
+def run_lab_sweep_steps(pg, errs):
+    """Studio plan T2.3: the map checks over 1,000 seeds under the map: none on the game's rules; a planted bad rule
+    (the last row a mini-boss) is named with a seed, and its button opens that seed."""
+    ready = "(()=>{const e=document.querySelector('#main [data-runlab-sweep][data-ready]');return e?+e.dataset.problems:-1})()"
+    t0 = time.time()
+    while time.time() - t0 < 30 and pg.evaluate(ready) < 0: time.sleep(0.05)
+    if pg.evaluate(ready) != 0:
+        said = pg.evaluate("(document.querySelector('#main [data-runlab-sweep]')||{}).textContent||''")
+        errs.append(f"the seed sweep on the game's rules: {pg.evaluate(ready)} problem(s) ({said[:200]})"); return 'no sweep'
+    ratio = pg.evaluate("document.querySelector('#main [data-runlab-sweep] [data-ratio]').dataset.ratio")
+    pg.select_option('#main .rl-rules [data-p="rules.run.map.last"]', 'miniboss')
+    t0 = time.time()
+    while time.time() - t0 < 30 and pg.evaluate(ready) < 1: time.sleep(0.05)
+    seed = pg.evaluate("(document.querySelector('#main .rl-sweep-problems li')||{dataset:{}}).dataset.seed||''")
+    text = pg.evaluate("(document.querySelector('#main .rl-sweep-problems li')||{}).textContent||''")
+    if not seed or 'not the boss' not in text: errs.append(f'the last row a mini-boss: the sweep said {text[:160]!r}')
+    else:
+        pg.click(f'#main .rl-sweep-problems [data-act=runLabOpenSeed][data-seed="{seed}"]')
+        if pg.input_value('#rlSeed') != seed: errs.append(f"the sweep's Open {seed} left the seed at {pg.input_value('#rlSeed')}")
+    pg.select_option('#main .rl-rules [data-p="rules.run.map.last"]', 'boss')
+    t0 = time.time()
+    while time.time() - t0 < 30 and pg.evaluate(ready) != 0: time.sleep(0.05)
+    return f"1,000 seeds checked with no problems (towns : routes {ratio}); the last row a mini-boss named with {seed}, which opens"
+
+
+def run_lab_play_steps(pg, errs):
+    """Studio plan T2.6: "Play this seed" opens the game in a test run on the Lab's seed (short map), after the Studio's
+    unsaved data: its map is the one the Lab draws, an unsaved clinic price (rules.run.healCost) is the run's, an edit
+    made while it runs reaches it, and the live channel carries no save."""
+    if not (ROOT / 'game/data/gamedata.js').is_file(): subprocess.run(['node', 'tools/build-data.mjs'], cwd=ROOT, check=True, capture_output=True)
+    pg.fill('#rlSeed', 'PLAYCHECK1')
+    pg.select_option('#rlUnlocks', 'none')
+    pg.check('#rlShort')
+    t0 = time.time()
+    rows = "(()=>{const m=document.querySelector('#main .rl-map');return m?new Set([...m.querySelectorAll('circle')].map(c=>c.getAttribute('cx'))).size:0})()"
+    while time.time() - t0 < 5 and pg.evaluate(rows) != 5: time.sleep(0.05)
+    lab = pg.evaluate("[...document.querySelector('#main .rl-map').querySelectorAll('.rl-node')].map(g=>g.dataset.type+':'+g.dataset.biome)")
+    was = pg.evaluate('studioState.D.rules.run.healCost')
+    pg.fill('#main .rl-rules [data-p="rules.run.healCost"]', '77')
+    sent = []
+    pg.evaluate("window.__sent=[];const c=new BroadcastChannel('networth-studio');c.onmessage=e=>window.__sent.push(Object.keys((e.data&&e.data.D)||{}).sort().join(','))")
+    with pg.context.expect_page(timeout=20000) as info: pg.click('#main [data-act=runLabPlay]')
+    gp = info.value
+    gp_errs = []
+    gp.on('pageerror', lambda e: gp_errs.append(str(e)[:300]))
+    try:
+        t0 = time.time()
+        ok = False
+        while time.time() - t0 < 150:
+            try: ok = gp.evaluate("typeof saveData!=='undefined'&&!!saveData.run&&runWorld.seed==='PLAYCHECK1'")
+            except Exception: ok = False
+            if ok: break
+            time.sleep(0.5)
+        if not ok: errs.append(f'Play this seed: no run on PLAYCHECK1 took off in the game ({gp.url})'); return 'no run'
+        got = gp.evaluate("({map: saveData.run.map.nodes.map(n=>n.type+':'+n.biome), test: !!TEST_RUN, heal: RULES.run.healCost, clinic: runClinicEach(), live: !!studioLive.told})")
+        if not got['test']: errs.append('Play this seed: the game is not in a test run')
+        if got['map'] != lab: errs.append(f"Play this seed: the game's map {got['map']} isn't the Lab's {lab}")
+        if got['heal'] != 77 or got['clinic'] != 77: errs.append(f"Play this seed: the unsaved clinic price 77 isn't the run's (rules {got['heal']}, the clinic {got['clinic']}; Studio data came: {got['live']})")
+        pg.fill('#main .rl-rules [data-p="rules.run.healCost"]', '88')
+        t0 = time.time()
+        while time.time() - t0 < 5 and gp.evaluate('RULES.run.healCost') != 88: time.sleep(0.1)
+        if gp.evaluate('runClinicEach()') != 88: errs.append('Play this seed: a clinic price edited while the run goes did not reach it')
+        keys = set(','.join(pg.evaluate('window.__sent')).split(','))
+        if keys & {'saveData', 'save', 'meta', 'team', 'run'}: errs.append(f'the live channel carried save fields: {sorted(keys)}')
+        if not {'rules', 'nodeTypes', 'relics', 'unlocks', 'items', 'trainers'} <= keys: errs.append(f'the live channel did not carry the run data: {sorted(keys)}')
+        for e in gp_errs: errs.append(f'Play this seed: the game: {e}')
+    finally:
+        gp.close()
+        pg.fill('#main .rl-rules [data-p="rules.run.healCost"]', str(was))
+        pg.uncheck('#rlShort')
+    return f"Play this seed opened PLAYCHECK1 in a test run with the Lab's {len(lab)} places, the unsaved clinic price 77 and a live edit to 88"
 
 
 def run_lab_rules_steps(pg, errs):
