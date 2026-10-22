@@ -75,3 +75,4 @@ import '../../game/js/logic/ui-theme.js';
 import '../../game/js/logic/unlocks.js';
 import '../../game/js/logic/weather.js';
 export { runPreview } from '../../game/js/logic/run-preview.js';
+export { runMapSweep } from '../../game/js/logic/data-checks.js';

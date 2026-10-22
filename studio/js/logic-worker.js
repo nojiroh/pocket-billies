@@ -18,6 +18,8 @@
 /** the functions the page may ask for: name -> (module namespace) -> function. Phase 3 adds runSim here */
 export const LOGIC_WORKER_FNS = {
   runPreview: (/** @type {any} */ m) => m.runPreview,
+  /* T2.3: the map checks over many seeds (data-checks.js) */
+  runMapSweep: (/** @type {any} */ m) => m.runMapSweep,
 };
 
 /** what the logic asks the page for through hooks.js, as tools/test/load-logic.mjs stands in for it in Node */
