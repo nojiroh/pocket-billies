@@ -3,8 +3,9 @@
    Phase 20 (stage B): building the ground mesh and uploading its textures, moved from walk-view-gl.js as it was. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { freeNearRing, groundOcclusionTexture, provide, seaCalmAt, seaSkirt } from '../hooks.js';
+import { freeNearRing, groundOcclusionTexture, provide } from '../hooks.js';
 import { clamp } from '../util.js';
+import { seaCalmAt, seaSkirt } from '../logic/sea.js';
 import { stepGridCorners } from '../logic/step-grid.js';
 import {
   GROUND_BORDER_M,

@@ -9,7 +9,6 @@
    Logic only: no DOM, no game data, runs in Node (tools/test/sea.test.mjs). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { provide } from '../hooks.js';
 import { islandPointIn } from './island.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -17,19 +16,18 @@ expose({
   SEA_RAMP: [() => SEA_RAMP],
   SEA_RINGS: [() => SEA_RINGS],
   // @ts-expect-error -- replaced on purpose
-  seaCalmAt: [() => seaCalmAt, v => ((seaCalmAt = v), provide({ seaCalmAt }))],
+  seaCalmAt: [() => seaCalmAt, v => (seaCalmAt = v)],
   // @ts-expect-error -- replaced on purpose
-  seaCentre: [() => seaCentre, v => ((seaCentre = v), provide({ seaCentre }))],
+  seaCentre: [() => seaCentre, v => (seaCentre = v)],
   // @ts-expect-error -- replaced on purpose
   seaPolyDist: [() => seaPolyDist, v => (seaPolyDist = v)],
   // @ts-expect-error -- replaced on purpose
   seaRamp: [() => seaRamp, v => (seaRamp = v)],
   // @ts-expect-error -- replaced on purpose
-  seaSkirt: [() => seaSkirt, v => ((seaSkirt = v), provide({ seaSkirt }))],
+  seaSkirt: [() => seaSkirt, v => (seaSkirt = v)],
   seaSmooth: [() => seaSmooth],
 });
 /* eslint-enable no-func-assign */
-provide({ seaCalmAt, seaCentre, seaSkirt });
 /* to-module: end */
 /** how far out each ring lies from the scene's edge, metres (the camera sees 420 m: the last ring is past the fog; close
    enough that the world's curve, worked out at each vertex, bends smoothly) */
