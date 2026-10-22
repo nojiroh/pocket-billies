@@ -151,8 +151,11 @@ void main(){vec4 a=uIVP*vec4(vP,-1.,1.),b=uIVP*vec4(vP,1.,1.);vec3 d=normalize(b
   c+=uSunCol*cl*(1.-cl)*4.*.06*(1.-uEnv.x)*(1.-uEnv.z)*smoothstep(-.02,.2,e);c=mix(c,uSky2*1.06+.02,exp(-abs(e-.02)*16.)*.22*(1.-uEnv.x*.6));
   /* phase 10: the bowl's far wall rising round the horizon (world-bowl.js bowlWallTexture: its colour, and in alpha how
      high the land reaches there), hazed by the distance; x is east and z north, as the walk scene's own map */
-  float lon=atan(d.z,d.x),lat=asin(clamp(d.y,-1.,1.));vec4 wl=texture(uWorld,vec2(lon/6.2832+.5,.5));float top=wl.a*.6*uWallOn;
-  if(top>.002&&e<top){vec3 land=mix(wl.rgb*(1.-uEnv.x*.75),uSky2*1.02,.42);land=mix(land,uSky1,.18*smoothstep(0.,top,e));c=mix(c,land,smoothstep(top,top-.01,e)*(1.-cl*.5));}
+  float lon=atan(d.z,d.x),lat=asin(clamp(d.y,-1.,1.)),wu=lon/6.2832+.5;
+  /* island track IS-3: the wall from every side: its outline averaged over a few texels (no steps), a soft top, its
+     foot lost in the horizon's haze and its own colour higher up */
+  vec4 wl=(texture(uWorld,vec2(wu,.5))*2.+texture(uWorld,vec2(wu+.003,.5))+texture(uWorld,vec2(wu-.003,.5))+(texture(uWorld,vec2(wu+.007,.5))+texture(uWorld,vec2(wu-.007,.5)))*.5)*(1./5.);float top=wl.a*.6*uWallOn;
+  if(top>.002&&e<top+.03){float up=smoothstep(0.,top,e);vec3 land=mix(wl.rgb*(1.-uEnv.x*.75),uSky2*1.02,mix(.62,.3,up));land=mix(land,uSky1,.18*up);c=mix(c,land,smoothstep(top+.02,top-.025,e)*(1.-cl*.5));}
   /* stars and the moon */
   if(uEnv.x>.02){vec2 sq=vec2(lon*70.,lat*70.);vec2 ce=floor(sq);float h=hsh(ce);if(h>.972){vec2 f=fract(sq)-.5-(vec2(hsh(ce+3.1),hsh(ce+7.7))-.5)*.6;float st=smoothstep(.16,0.,length(f))*(.55+.45*sin(uTime*.002+h*97.));c+=vec3(.92,.94,1.)*st*uEnv.x*(1.-cl)*smoothstep(.02,.2,e)*(.6+.8*fract(h*37.));}
    float md=dot(d,normalize(uMoon));c+=vec3(.96,.95,.86)*smoothstep(.9986,.9991,md)*uEnv.x*(1.-cl*.8)+vec3(.45,.5,.7)*pow(max(md,0.),90.)*.35*uEnv.x;}
