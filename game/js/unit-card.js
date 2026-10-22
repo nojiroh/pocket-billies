@@ -38,7 +38,8 @@ import {
 import { escapeHtml, saveData } from './game-state.js';
 import { uiIconHTML } from './art.js';
 import { rigCanvasHTML } from './skeleton-rig.js';
-import { needsCare, plateVars, typeBadgeHTML } from './ui.js';
+import { typeBadgeHTML } from './ui-bits.js';
+import { needsCare, plateVars } from './team.js';
 /* eslint-disable no-func-assign */
 expose({
   BILLY_SLOT_NAMES: [() => BILLY_SLOT_NAMES],

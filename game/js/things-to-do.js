@@ -224,7 +224,7 @@ function recordThingsToDoEvent(k, o = {}) {
 export function challengeCardHTML() {
   if (!saveData.started || saveData.run) return '';
   const C = challengesToday();
-  return `<section class="chal px glass"><div class="sec-h"><h2>Today’s challenges</h2><span class="count tnum">${C.list.filter(c => c.claimed).length}/${C.list.length}</span></div>${C.list
+  return `<section class="chal px glass k-card"><div class="sec-h"><h2>Today’s challenges</h2><span class="count tnum">${C.list.filter(c => c.claimed).length}/${C.list.length}</span></div>${C.list
     .map((c, i) => {
       const h = Math.min(challengeProgress(c), c.need),
         done = h >= c.need;

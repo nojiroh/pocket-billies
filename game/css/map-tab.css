@@ -1,0 +1,375 @@
+/* UI-5: the Map tab's rules (the bowl's header and its card, the pins and the places list, the older flat map), moved as they were from the old layers (style, polish, screens, v05), in the order the page loaded them. They load right after those layers and before the kit, so the cascade is as before (tools/style-diff.py) */
+
+/* ---------- UI-5: from style.css, as it was ---------- */
+/* map */
+.mapcard {
+  padding: 10px 12px 8px;
+  position: sticky;
+  bottom: calc(90px + env(safe-area-inset-bottom, 0px));
+  z-index: 3;
+  margin-top: 14px;
+  animation: up 0.3s ease-out;
+}
+.mapcard .mc-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+.mapcard .note {
+  margin-top: 2px;
+}
+.mapcard h2 {
+  font-size: 21px;
+}
+.mapcard .status {
+  margin-top: 4px;
+  font-size: 14.5px;
+  font-weight: 600;
+}
+.poolstrip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  margin-top: 4px;
+}
+.mapctl {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 2;
+}
+.mbtn {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  font: 400 20px/1 var(--font-voice);
+  color: #f3eef8;
+  background: rgba(20, 14, 30, 0.78);
+  box-shadow:
+    0 0 0 2px #0b0912,
+    0 4px 10px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+.mbtn:active {
+  transform: translateY(1px);
+}
+.mbtn .uico {
+  width: 16px;
+  height: 16px;
+}
+/* map */
+.mapcard {
+  border-radius: 10px;
+}
+@media (min-width: 960px) {
+  .s-map {
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+    grid-template-rows: auto auto 1fr;
+    gap: 0 24px;
+  }
+  .s-map > header,
+  .s-map > p {
+    grid-column: 1/-1;
+  }
+  .s-map .mapcard {
+    grid-row: 3;
+    align-self: start;
+    position: sticky;
+    top: 80px;
+    margin-top: 12px;
+  }
+}
+.mapctl {
+  top: 8px;
+  bottom: auto;
+}
+/* ================= v10: full-screen world map ================= */
+body.on-map #app {
+  background: transparent !important;
+  border-color: transparent !important;
+  pointer-events: none;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+body.on-map #app .topbar,
+body.on-map .map-full > *:not(#mapcv) {
+  pointer-events: auto;
+}
+body.on-map #bgfx {
+  display: none;
+}
+.map-full {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+.map-full #mapcv {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  pointer-events: auto;
+  touch-action: none;
+  cursor: grab;
+  background: #b0baec;
+}
+.map-full #maplabels {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.map-head {
+  position: absolute;
+  left: 12px;
+  top: calc(70px + env(safe-area-inset-top, 0px));
+  max-width: min(360px, calc(100% - 90px));
+  padding: 8px 14px 10px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--panel-s) 84%, transparent);
+  box-shadow:
+    0 0 0 2px var(--line),
+    0 12px 28px -18px var(--shadow);
+}
+.map-head .sub {
+  letter-spacing: 1.6px;
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--text2);
+}
+.map-head .where {
+  font-size: 26px;
+  margin: 2px 0;
+}
+.map-trip {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text2);
+}
+.map-trip.go::before {
+  content: '▶ ';
+  color: var(--gold);
+}
+.map-trip.blocked,
+.map-trip.hold {
+  color: #b9541c;
+}
+.map-full .mapctl {
+  position: absolute;
+  right: 12px;
+  top: calc(70px + env(safe-area-inset-top, 0px));
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.map-full .mapcard {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+  width: min(560px, calc(100% - 24px));
+  max-height: 34vh;
+  overflow: auto;
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--panel-s) 92%, transparent);
+}
+.map-full .mapcard .racts {
+  margin-top: 8px;
+}
+.mc-nb {
+  margin-top: 6px;
+  font-size: 12.5px;
+}
+@media (min-width: 850px) {
+  .map-full .mapcard {
+    left: auto;
+    right: 16px;
+    transform: none;
+    bottom: 20px;
+    width: 400px;
+    max-height: calc(100vh - 120px);
+  }
+}
+@media (max-height: 520px) {
+  .map-full .mapcard {
+    max-height: 40vh;
+    bottom: 76px;
+  }
+  .map-head {
+    display: none;
+  }
+}
+
+/* ---------- UI-5: from screens.css, as it was ---------- */
+/* v14: the map on the engine */
+body.map-gl.on-map #dio {
+  filter: none !important;
+  transform: none !important;
+  opacity: 1;
+}
+/* phase 10: the bowl is drawn on #dio but touched through #mapcv; #dio can end up on top of it (both fixed at z-index
+   0, the later one wins), so on the Map tab it lets every touch through */
+body.on-map #dio {
+  pointer-events: none;
+}
+/* phase 10: the Map tab's screen must not slide in: its enter animation (v05.css, fill-mode both) leaves a transform
+   on .screen, which makes the fixed .map-full inside it size itself to .screen (0 px high), so the map's touch and
+   pin layer had no height */
+.screen.s-map,
+.screen.s-map.enter {
+  animation: none !important;
+  transform: none !important;
+}
+body.map-gl .map-full #mapcv {
+  background: transparent;
+  image-rendering: auto;
+}
+body.map-gl #dioui {
+  display: none;
+}
+.mbtn.on {
+  background: #f2c14e;
+  color: #3a2408;
+}
+.mplaces {
+  position: absolute;
+  left: 12px;
+  top: calc(70px + env(safe-area-inset-top, 0px));
+  bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+  width: min(340px, calc(100% - 24px));
+  display: flex;
+  flex-direction: column;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--panel-s) 94%, transparent);
+  box-shadow:
+    0 0 0 2px var(--line),
+    0 18px 40px -18px var(--shadow);
+  z-index: 3;
+  overflow: hidden;
+  animation: up 0.25s ease-out;
+}
+.mpl-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px 6px;
+  font: 400 18px var(--font-voice);
+}
+.mbtn.sm {
+  width: 28px;
+  height: 28px;
+  font-size: 16px;
+}
+.mpl-body {
+  overflow: auto;
+  padding: 0 8px 10px;
+}
+.mpl-g {
+  margin: 10px 6px 4px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text2);
+}
+.mpl-row {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: none;
+  padding: 8px 6px;
+  border-radius: 10px;
+  color: var(--text);
+  cursor: pointer;
+}
+.mpl-row:hover {
+  background: color-mix(in srgb, var(--text) 7%, transparent);
+}
+.mpl-row .mp-i {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--text) 10%, transparent);
+}
+.mpl-row .mp-i .uico {
+  background: currentColor;
+}
+.mpl-row.here .mp-i {
+  background: #f2c14e;
+  color: #3a2408;
+}
+.mpl-row.town .mp-i {
+  background: #5da9e9;
+  color: #fff;
+}
+.mpl-n {
+  font-weight: 600;
+  display: flex;
+  flex-direction: column;
+}
+.mpl-n small {
+  font-weight: 500;
+  color: var(--text2);
+  font-size: 11.5px;
+}
+.mpl-s {
+  font-size: 12px;
+  color: var(--text2);
+  font-variant-numeric: tabular-nums;
+}
+.mpl-row.locked {
+  opacity: 0.6;
+}
+@media (min-width: 850px) {
+  .mplaces {
+    bottom: 20px;
+  }
+}
+/* v31: turn and tilt on the world map */
+.mapview {
+  position: absolute;
+  left: 12px;
+  bottom: calc(92px + env(safe-area-inset-bottom, 0px));
+  z-index: 5;
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 12px;
+  box-shadow: 0 0 0 2px var(--line);
+}
+.mapview .mbtn {
+  font-size: 17px;
+  line-height: 1;
+}
+.mapview[hidden] {
+  display: none;
+}
+body.map-gl #mapcv {
+  cursor: grab;
+  touch-action: none;
+}
+body.map-gl #mapcv:active {
+  cursor: grabbing;
+}
+/* v31: the pin layer covers the map but must let drags through to it (only the pins themselves take taps) */
+body.on-map .map-full > #maplabels {
+  pointer-events: none;
+}
+
+/* ---------- UI-5: from v05.css, as it was ---------- */

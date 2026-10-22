@@ -88,19 +88,10 @@ import { fallOverWorldMap, fallWorldMapCanvas } from './opening-fall.js';
 import { airshipFlight } from './airship.js';
 import { runWorld, runWorldData, runWorldSync } from './run-world.js';
 import { runJump, runTakeOff } from './run.js';
-import {
-  clinicHeal,
-  closeModal,
-  leaveRoom,
-  mapIdAt,
-  modal,
-  render,
-  renderOverlay,
-  toast,
-  walkCross,
-  walkPick,
-  walkState,
-} from './ui.js';
+import { closeModal, modal, renderOverlay, toast } from './overlay.js';
+import { clinicHeal } from './walk-tab.js';
+import { leaveRoom, mapIdAt, walkCross, walkPick, walkState } from './walk-control.js';
+import { render } from './ui.js';
 /* eslint-disable no-func-assign */
 expose({
   DIAGNOSTICS_PASSES: [() => DIAGNOSTICS_PASSES],

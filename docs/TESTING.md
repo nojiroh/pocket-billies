@@ -13,6 +13,7 @@ those sessions; until then, follow the rule next to them.
 | (b) unit tests | `npm test` | about 30 s (RL-8: 474 tests; the scene sweeps take most) | under 30 s | after every edit to logic, data or tests (the hook) |
 | before a commit | `npm run check:modules`, `npm run format:check`, `npm run check:data`, `npm run build` | about 15 s | none | every commit |
 | UI pictures (UI-2) | `npm run check:ui` | about 1.5 min | none | after a change to the kit, its CSS, uiTheme.json or studio/gallery.html |
+| style diff (UI-5) | `python3 tools/style-diff.py` (`--only=<screens>`, `--ref=<rev>`) | about 8 min (16 screens, 2 browsers) | none | a commit that moves CSS or screen code and must change nothing on screen: 0 differences against HEAD |
 | (c) smoke | `npm run check:smoke` | about 2.5 min | 1-2 min | before every commit that touches game/, tools/check-quick.py, vite.config.js or tools/to-module.mjs |
 | (d) full | `npm run check:quick` | about 32 min | about 10 min | at the end of a phase, nightly in CI |
 | (e) in-game test | `python3 tools/check-quick.py --selftest` | about 25 min | outside the budget | nightly in CI; at the end of a phase that touched what it plays |
@@ -192,11 +193,15 @@ same phase:
 ## What each phase does
 
 - **06 UI structure**: the smoke phone flow clicks real buttons (`[data-a=intro]`, the dressing room, `cs-next`,
-  `cs-choose`, `cs-yes`, and since RL-8 the mast's `runstart`); it switches the five tabs, opens the shop and starts
+  `cs-choose`, `cs-yes`, and since RL-8 the mast's `runstart`); it switches the tabs, opens the shop and starts
   the in-game test and the log export by script (corrected in RL-8: this line said it tapped them). The Help buttons
   `quicktest`, `diagtest` and `dbglog` are how the owner starts them on the phone: keep them, or change the checks in
   the same commit. Pure UI logic that
-  moves out of a screen (prices, sorting, text building) gets unit tests.
+  moves out of a screen (prices, sorting, text building) gets unit tests. UI-5: the bottom bar is the kit's
+  `<pb-nav-bar id="nav">` (Map, Team, Bag; no Walk or Guide tab), its tabs in its shadow tree with `data-t`
+  (check-fast.py `nav_tap`); the fast check's "Every screen opens with its parts" opens each screen by the buttons a
+  player taps, and a move that must change nothing on screen proves it with `tools/style-diff.py` (0 differences
+  against HEAD).
 - **07 Portraits**: `tools/test/expressions.test.mjs` checks that every expression asked for has face pieces;
   replace it with the real tag-to-expression mapping test (task 8's second half). Add a portrait to the full test.
 - **08 Step tracking removed, maps and rooms (Part A and B)**: remove or replace everything driven by steps:

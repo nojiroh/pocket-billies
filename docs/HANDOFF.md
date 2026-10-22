@@ -2,6 +2,64 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### UI track UI-5 - Every screen onto the kit - 2026-10-22
+Branch `ccr-0284fd60-fx7dki`, from main ca9aa54 (RL-8 merged and played); main merged in twice since (RL-8's
+follow-ups, then TR-2: mountains, trails, ledges, runs east to west). Plan approved in Plan Mode; the owner's
+answers: RL-8 played; one session (not split); per screen move, then reshape; swap the bottom bar now (my
+recommendation for it taken: no Walk tab, the Guide from the Trainer card).
+- Changed (one cause per commit; about 50 commits):
+  - Setup: the dead gender pop-up deleted; tools/style-diff.py (computed styles of 33
+    screens and states, light and dark, against a git revision; the proof that a move changed nothing); the fast
+    check's "Every screen opens with its parts" (by the buttons a player taps) and a run town's shop; the icon test
+    reads every game script; the fast check's world map step no longer tripped on a postcard (it failed ~1 run in
+    3; TR-2 fixed the same flake by waiting for the postcard to close, and the merge keeps that fix alone).
+  - JS: ui.js 3,048 -> 441 lines (about 170 of them the generated header): ui-bits, overlay, pending-windows,
+    pixel-sky, profile, guide, team, billie-sheet, map-tab, walk-tab, walk-control, battle-input; openSettings into
+    settings-screen.js. A screen's click cases became `<screen>Action(a, d)`, called from the switch at the same place.
+    ui.js keeps the router (render, the top bar, the bottom bar, openTab, startGame) and the input listeners.
+  - CSS: the old layers (style, battle, polish, screens, v05) 10,602 -> 4,117 lines: one file per screen (shell,
+    walk-tab, map-tab, team, billie-sheet, guide, profile, bag, shop, settings, battle-screen, talk, dressing-room,
+    debug-menu, title, things-to-do, friends), loaded after v05.css and before the kit; every move shown the same by
+    style-diff; rules a later old rule overrode at equal specificity stay put. 75 rules nothing used deleted: the
+    unused-CSS list 72 -> 2 (both the kit's motion.css).
+  - Reshape: ui-kit.css .k-panel/.k-card/.k-btn/.k-action/.k-tab (the family outlines from uiTheme.json, the edge
+    line in ::after); every .pb button (gold: the long hexagon), the top bar (a clipped ::before, the portrait breaks
+    out), title boxes and section panels, Walk, Map, the Trainer card, the Guide, Team's storage, Bag, shops, Settings'
+    presets, tabs, segmented choices and pick rows.
+  - The bottom bar: <pb-nav-bar id="nav">, the hub's or a run's set (Map, Team, Bag; Lab and Relics hidden until
+    RL-11/RL-12); no Walk tab (the open tab again, or Esc); the Guide from the Trainer card; the kit's labels through
+    i18n.js i18nText. Checks changed with it.
+  - Docs: ui-track.md ("UI-5 found", row done), ROADMAP, TESTING, CHANGELOG.
+- Where the plan was wrong: see ui-track.md "UI-5 found" (the cascade makes a CSS move not a move; the target files;
+  "moves only" vs a visible change; one test per screen didn't exist).
+- ui-lint (start -> end): radii 167 -> 155, spacing 1,098 -> 1,033, shadows 195 -> 179, times 281 -> 269, CSS
+  colours 745 -> 663, !important 207 -> 196, blurred rules 30 -> 29, innerHTML writes 57 -> 56; keyframes 77, fonts
+  18, layers 61 and style= strings 43 unchanged. Report only; UI-6 enforces.
+- Verified: the fast tier at every commit (lint, typecheck, 473 unit tests, modules, format, data, build); smoke
+  (15 of 15) and the new screens check before every game commit; the UI gallery's 89 pictures after every CSS or kit
+  change (remade once, on purpose, when .pb took the button shape); tools/style-diff.py 0 differences on every move
+  (33 of 33 screens at the end of the moves); the style diff, the screens check and the icon test each seen to fail
+  on a planted fault. Phase end: the whole fast check (15 of 15); the full quick check in parts (the container
+  restarted during one whole run): every step passes except v34, v35, v38, v39/v40, v43, v44, v46, "alpha 0.4:
+  props made of shapes" and, when run after the alpha steps, "phase 08: running" (it passes alone) - each red the
+  same way on main ca9aa54 (the roster of 24, props and buildings data, the step order); the Studio check's ui,
+  ui_tools and ui_screens; --selftest: 12 of 13 steps, the in-game test red on "Light lab" and "Opening: falling",
+  both the same on main. The debug log's privacy check after the overlay move. Seen on headless pictures: every
+  reshaped screen, light and dark; the bar in the hub and on a run; Dutch tab labels.
+- Risky: the reshape is judged on headless pictures only; the phone is the judge. A clipped part loses its outer
+  shadow (as UI-2's old sheets did). Inset frames (the Trainer card's gold) stay rectangular inside the cuts. The
+  kit's outline rule carries one !important (square corners) against v05's own; it goes with v05. Moving the nav to a
+  shadow tree: the tap-target and safety steps no longer see its buttons (the kit sizes them). Screens the style diff
+  has no view of kept their CSS where it was (the opening, the postcard pop-up, the flight, joystick, photo mode,
+  workshop, fishing). Parts given a kit class become position: relative unless their own rules place them (the place
+  card and the Walk sheet among them; their children looked right in the pictures).
+- Found for UI-6: the Studio's overlays on the gallery count 15 tap targets under 44 px and 45 texts under their
+  contrast; Team now blurs 2 surfaces (UI-3b: 4).
+- Phone check wanted: every tab and the world, light and dark; the bar in the hub and on a run (`?fixture=run`); the
+  open tab tapped again; the Guide from the Trainer card; a sheet, the shop and Settings; text size large.
+- Next: the owner merges and pushes `ui-5-done` (and `rl-8-done`); UI-6 (old layers gone, lint enforced,
+  accessibility) or RL-9.
+
 ### Terrain track TR-2 (TR-2a mountains, TR-2b trails, TR-2c ledges) and runs east to west - 2026-10-21/22
 Branch `ccr-526699d5-vjfbk5`, from main ca9aa54 (PR #103, RL-8's last commits; the owner: "RL-8 is done"). Plan
 approved in the session ("Start"), then changed twice by the owner mid-session: "take way more inspiration from how
