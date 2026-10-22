@@ -47,9 +47,11 @@ function fixture() {
       state.rigVer++;
       state.rigsDirty = true;
     },
-    artSteps: (steps, snapshot) => {
-      group = { steps, snapshot };
-      state.last = snapshot.after;
+    /* the data as the undo holds it (Studio plan T1.2: parts); one text is enough here */
+    snapshotParts: () => JSON.stringify({ D: state.D, R: state.rigs }),
+    artSteps: (steps, parts) => {
+      group = { steps, snapshot: { before: state.last, after: parts } };
+      state.last = parts;
     },
   };
   const lib = vm.runInNewContext(code, context);
