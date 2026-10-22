@@ -251,6 +251,11 @@ same phase:
   on `?fixture=ranch` (a trainee from storage picked, two Potions packed; kept on a loss, back in storage once; a win
   brings the bag home; a reload), run-state tests for the pick, the pack and the storage trap, the in-game run phase's
   party of one.
+- **RL-11 Unlocks**: `tools/test/unlocks.test.mjs` (doors and currencies, buying once, refusals, milestones never on a
+  run, the tidy-up on load, a run's copy making the same map and stock), the new condition kinds in
+  `conditions.test.mjs`, `run.unlocks` in `run-state.test.mjs`; check-data's blocks for `currencies`, `buildings` and
+  `unlocks` (planted faults in the commits); check-fast's Lab step on `?fixture=lab` (a milestone on load, the board,
+  buying at the Lab, the ranch and the mast, a reload) and the in-game test's "The Lab: unlocks".
 - **RL-12 Loopholes**: `effects.test.mjs` (each effect kind, stacking in any order, every Loophole at once finite, no
   rows change nothing), `relics.test.mjs` (offers from the seed, the cap, a shop's shelf, validRun, a run saved
   before), `battle-fx.test.mjs` (stages, damage, catch, win money), `run-fx.test.mjs` (arrival heal, the payout row),

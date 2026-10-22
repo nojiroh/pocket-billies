@@ -12,6 +12,7 @@
      mountains   the same run with the debug menu's mountains mod (TR-3: mountains north and south, for the camera)
      ranch   inside Copperleaf's ranch (RL-9): three Billies in storage (one two levels under the cap), 50 Scrap
      relics  the run, holding five Loopholes (RL-12: one under the cap), $2,000, a mini-boss's pick waiting
+     lab     Copperleaf after a run (RL-11): 500 Capital, 60 Scrap, 2 Audit Seals, one run ended (a milestone met)
    UI-3b, for the Studio's UI look preview (the real screens with the look being edited):
      team    the Team screen          bag     the Bag, with a few of each item
      talk    the dialogue box with a line from Professor Hazel
@@ -65,6 +66,7 @@ const FIXTURE_PLACES = {
   mountains: 'copperleaf',
   relics: 'copperleaf',
   ranch: 'copperleaf',
+  lab: 'copperleaf',
 };
 /** RL-12: the Loopholes the relics fixture holds (a shop's and a clinic's price rows, a catch row, a battle's stage, a
  * heal on arrival) */
@@ -105,6 +107,8 @@ function fixtureSave() {
       s.caught[m.sp] = s.seen[m.sp] = 1;
     }
   }
+  /* RL-11: the Lab's fixture has what a few runs bring home, and one run ended (the first milestone, granted on load) */
+  if (FIXTURE === 'lab') Object.assign(s.meta, { capital: 500, scrap: 60, seals: 2, runs: 1 });
   /* UI-3b: the Bag fixture has something in it */
   if (FIXTURE === 'bag') for (const k of Object.keys(s.items)) s.items[k] = 3;
   /* the people who would stop you to talk have met you already */

@@ -16,8 +16,10 @@ import { makeBilly, makeRobot, provide, saveData, storyAllows } from './hooks.js
 /* eslint-disable no-func-assign */
 expose({
   BATTLE_STAGES: [() => BATTLE_STAGES],
+  BUILDINGS: [() => BUILDINGS],
   COATS: [() => COATS],
   COINS: [() => COINS],
+  CURRENCIES: [() => CURRENCIES],
   CUTSCENES: [() => CUTSCENES],
   DATA_WARN: [() => DATA_WARN],
   DEFAULT_EVOLUTIONS: [() => DEFAULT_EVOLUTIONS],
@@ -57,6 +59,8 @@ expose({
   TYPE_COLORS: [() => TYPE_COLORS],
   TYPE_RESISTED_BY: [() => TYPE_RESISTED_BY],
   TYPE_STRONG_AGAINST: [() => TYPE_STRONG_AGAINST],
+  UNLOCKS: [() => UNLOCKS],
+  UNLOCK_DATA: [() => UNLOCK_DATA],
   atOrLast: [() => atOrLast],
   // @ts-expect-error -- replaced on purpose
   exitLength: [() => exitLength, v => (exitLength = v)],
@@ -356,6 +360,14 @@ export const SHOPS = gameData.shops || {};
 export const NODE_TYPES = gameData.nodeTypes || {};
 /* roguelite track RL-12: a run's Loopholes (relics) and their effect rows (logic/effects.js) */
 export const RELICS = /** @type {Record<string, Relic>} */ (gameData.relics || {});
+/* roguelite track RL-11: the four currencies (currencies.json) */
+export const CURRENCIES = gameData.currencies || {};
+/* RL-11: the hub's buildings, each upgraded with one currency (buildings.json; levels are unlocks.json rows) */
+export const BUILDINGS = gameData.buildings || {};
+/* RL-11: the one unlock table (unlocks.json; logic/unlocks.js) */
+export const UNLOCKS = gameData.unlocks || {};
+/* the tables logic/unlocks.js is given */
+export const UNLOCK_DATA = { unlocks: UNLOCKS, buildings: BUILDINGS };
 /* Project Story: the story layer's flags, speakers, quests and start presets (story.json) */
 export const STORY_DATA = gameData.story;
 /* cutscenes, one file each (game/data/cutscenes/<id>.json, docs/CUTSCENES.md) */

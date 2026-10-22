@@ -11,6 +11,7 @@
 import { expose } from './test-globals.js';
 import {
   closeModal,
+  labMilestones,
   mapIdAt,
   modal,
   provide,
@@ -20,7 +21,7 @@ import {
   runPayoutOpen,
   toast,
 } from './hooks.js';
-import { COINS, ITEMS, RELICS, RULES, START_NODE, TRAINERS } from './game-data.js';
+import { COINS, ITEMS, RELICS, RULES, START_NODE, TRAINERS, UNLOCK_DATA } from './game-data.js';
 import { battleWeatherOf } from './logic/weather.js';
 import { billyName, formatNumber, healAll, plural } from './logic/rules.js';
 import { ranchStop } from './logic/ranch.js';
@@ -38,6 +39,7 @@ import {
   newBattle,
   sayBattleFx,
 } from './logic/battle-engine.js';
+import { runUnlocks, unlockOpen } from './logic/unlocks.js';
 import { isLiteMap, loadMapFile } from './map-files.js';
 import { activeBattle, escapeHtml, save, saveData, saveNow, uiState } from './game-state.js';
 import { coinHTML } from './art.js';
@@ -184,6 +186,8 @@ export function runEndHome(won, keep, itemPrice) {
   toast(
     `+${formatNumber(pay.capital)} Capital${pay.scrap ? `, ${formatNumber(pay.scrap)} Scrap` : ''}${pay.seals ? ` and ${plural(pay.seals, 'Audit Seal')}` : ''}. You have ${formatNumber(saveData.meta.capital)} Capital.`
   );
+  /* RL-11: milestones the run has met (ended runs, wins), each with its own toast after this one */
+  if (typeof labMilestones === 'function') labMilestones();
 }
 
 /* ---------- a reload picks the run up ---------- */
@@ -359,12 +363,16 @@ export function runTakeOff(seed, map, mods, pick) {
   healAll();
   runBegin(s, { ...runGive(sd, 1, MAPGEN_VERSION, RULES.run.start), home: P.home, pack: P.pack });
   if (mods && mods.length && s.run) s.run.mods = mods.slice();
+  /* RL-11: the shop and biome unlocks it starts with; its map draws only the biomes open to it */
+  const run = /** @type {any} */ (s.run);
+  run.unlocks = runUnlocks(s, UNLOCK_DATA);
   uiState.learnQ = [];
   runCatch.m = null;
-  runMapStart(
-    /** @type {any} */ (s.run),
-    map ? { ...data, rules: { ...data.rules, map: { ...data.rules.map, ...map } } } : data
-  );
+  const rules = { ...data.rules.map, ...(map || {}) };
+  runMapStart(run, {
+    ...data,
+    rules: { ...data.rules, map: { ...rules, biomes: unlockOpen(rules.biomes, 'biome', run.unlocks, UNLOCK_DATA) } },
+  });
   runWorldSync();
   if (!s.run || runWorld.seed !== sd) return;
   runArrive(s, 0, data);

@@ -11,6 +11,7 @@
      visited:copperleaf     a place you have been        billie:musk                    a Billie of that line caught
      robot                  you have a robot             badges >= 2                    badges won
      caught >= 15           kinds of Billie caught (the Index)
+     unlock:shop_bailout    an unlock is owned (RL-11)  runs >= 3, wins >= 1           runs ended, runs won (RL-11)
    combined with `and`, `or`, `not` / `!` and parentheses (`and` binds tighter than `or`). A bare count term
    (`item:honey`, `visits:juniper`, `badges`) means more than 0. Logic only: no DOM, runs in Node. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
@@ -54,7 +55,7 @@ expose({
 /** @typedef {{ flags: Record<string, any>, beaten: Record<string, any>, items: Record<string, number>,
  *   coins: Record<string, number>, quests: Record<string, string>, visits: Record<string, number>,
  *   visited: Record<string, any>, lines: Record<string, any>, robots: number, badges: number, caught: number,
- *   questStages?: Record<string, string[]> }} StoryState */
+ *   unlocks: Record<string, any>, runs: number, wins: number, questStages?: Record<string, string[]> }} StoryState */
 
 /** each term kind: whether it takes an id after the colon, whether it is a count (compared as a number), and what it
  * reads, for the Studio's reference (Project Story S3) */
@@ -69,6 +70,9 @@ export const CONDITION_KINDS = {
   robot: { id: false, count: true, about: 'you have a robot' },
   badges: { id: false, count: true, about: 'badges won: badges >= 3' },
   caught: { id: false, count: true, about: 'kinds of Billie caught (the Index)' },
+  unlock: { id: true, count: false, about: 'an unlock is owned (unlocks.json): unlock:ranch_2' },
+  runs: { id: false, count: true, about: 'runs ended, won or lost: runs >= 3' },
+  wins: { id: false, count: true, about: 'runs won: wins >= 1' },
 };
 export const OPS = ['>=', '<=', '!=', '==', '=', '>', '<'];
 export const WORDS = new Set(['and', 'or', 'not']);
@@ -299,6 +303,12 @@ export function termValue(c, S) {
       return S.badges;
     case 'caught':
       return S.caught;
+    case 'unlock':
+      return !!S.unlocks[c.id];
+    case 'runs':
+      return S.runs;
+    case 'wins':
+      return S.wins;
   }
 }
 /** whether a condition holds for the state @param {Cond | string} c @param {StoryState} S @returns {boolean} */
@@ -335,7 +345,9 @@ export function storyStateOf(save, o = {}) {
     lines[sp] = 1;
     lines[sp.replace(/\d+$/, '')] = 1;
   }
-  const all = [...(save.team || []), ...(save.box || [])];
+  const all = [...(save.team || []), ...(save.box || [])],
+    /* RL-11: what lasts between runs (the same in a run and in the hub) */
+    meta = save.meta || {};
   return {
     flags: story,
     beaten: save.flags || {},
@@ -348,6 +360,9 @@ export function storyStateOf(save, o = {}) {
     robots: all.filter(m => m && m.kind === 'robot').length,
     badges: (save.seats || []).length,
     caught: Object.keys(save.caught || {}).length,
+    unlocks: meta.unlocks || {},
+    runs: meta.runs || 0,
+    wins: meta.wins || 0,
     questStages: o.questStages,
   };
 }

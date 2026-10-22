@@ -51,7 +51,7 @@
   {"k":"wall_painting","x":3.66,"z":8.45},
   {"k":"bookshelf","x":1.49,"z":8.06,"act":"read","book":"fieldguide"},
   {"k":"bookshelf","x":10.51,"z":8.06},
-  {"k":"lab_machine","x":6,"z":7.55,"act":"lab","label":"Machine"},
+  {"k":"lab_machine","x":6,"z":7.55,"act":"board","label":"Unlock board"},
   {"k":"lab_desk","x":2.49,"z":5.84},
   {"k":"lab_desk","x":9.51,"z":5.84},
   {"k":"chair_wood","x":2.49,"z":4.81},

@@ -1,0 +1,30 @@
+{
+ "lab": {
+  "name": "Lab",
+  "currency": "capital",
+  "act": "lab",
+  "levels": 1,
+  "about": "Professor Hazel's lab. Its board sells unlocks for Capital."
+ },
+ "airship": {
+  "name": "Airship",
+  "currency": "seals",
+  "act": "fly",
+  "levels": 2,
+  "about": "The airship at the mast. Upgrades for Audit Seals take runs to new lands."
+ },
+ "ranch": {
+  "name": "Ranch",
+  "currency": "scrap",
+  "act": "ranch",
+  "levels": 3,
+  "about": "The barn by the farm patch. Each level trains more Billies, higher."
+ },
+ "workshop": {
+  "name": "Workshop",
+  "currency": "scrap",
+  "levels": 1,
+  "soon": true,
+  "about": "Where robots will be built and refitted. Coming later."
+ }
+}

@@ -15,6 +15,7 @@ import {
   addWalked,
   artCacheVersion,
   buddyTap,
+  buildingLabel,
   cachedBuildingSignature,
   currentLocationMap,
   defaultWallMaterial,
@@ -653,7 +654,8 @@ export function closedText(kind) {
 }
 /* the label over something you can use: what it is, Read for a book you haven't read, Closed after hours */
 export function actionLabel(p, M) {
-  if (p.label) return p.label;
+  /* RL-11: a hub building with levels shows its level */
+  if (p.label) return typeof buildingLabel === 'function' ? buildingLabel(p.label, p.act) : p.label;
   if (p.act === 'read') return typeof loreFlags === 'function' && !loreFlags()['read_' + p.book] ? 'Read' : null;
   if (!(M && (M.door || M.box))) return null;
   const b = { shop: 'Shop', clinic: 'Clinic', lab: 'Lab' }[p.act];

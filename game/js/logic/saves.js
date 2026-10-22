@@ -7,7 +7,7 @@
 /** @import { SaveData } from '../../types/save-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { saveData } from '../hooks.js';
+import { saveData, unlockTidy } from '../hooks.js';
 import { random } from '../util.js';
 import {
   COINS,
@@ -20,6 +20,7 @@ import {
   SPECIES,
   START_NODE,
   STATUS_NAMES,
+  UNLOCK_DATA,
   hubRoadCost,
 } from '../game-data.js';
 import { isRobot, robotGemDef, robotPartDef, robotRules, speciesOf } from './fighters.js';
@@ -169,6 +170,8 @@ export function migrate(o) {
   s.eggs = s.eggs.filter(e => EGGS[e.tier]);
   /* RL-9: a trainee whose Billie isn't in storage any more stops training */
   ranchTidy(s);
+  /* RL-11: owned unlocks the table no longer has are forgotten; the buildings' levels follow the owned ones */
+  unlockTidy(s, UNLOCK_DATA);
   if (s.run) {
     /* RL-3: during a run the trip is on the run's world (0 Copperleaf, then the map's nodes), which is made from the
        seed after loading (RL-7): it is kept as it is, bounded by the run's map, not by today's LOCATIONS */
