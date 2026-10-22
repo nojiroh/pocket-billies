@@ -50,18 +50,20 @@ export const POST_EFFECT_SHADERS = {
     `#version 300 es
 precision highp float;in vec2 aC;out vec2 vUV;void main(){vUV=aC;gl_Position=vec4(aC*2.-1.,0.,1.);}`,
     `#version 300 es
-precision highp float;in vec2 vUV;out vec4 o;uniform sampler2D uCol,uDep;uniform vec2 uPx;uniform float uN,uF,uBand,uRampF,uRampN,uMaxR,uBokeh;uniform vec4 uPlane;uniform int uTaps;
+precision highp float;in vec2 vUV;out vec4 o;uniform sampler2D uCol,uDep;uniform vec2 uPx;uniform float uN,uF,uBand,uRampF,uRampN,uMaxR,uBokeh,uEdge;uniform vec4 uPlane;uniform int uTaps;
 float lin(float d){float z=d*2.-1.;return 2.*uN*uF/(uF+uN-z*(uF-uN));}
 /* CAM-3: the distance from the plane of focus at screen place q and view depth z (logic/lens-focus.js; tilt 0: z - focus) */
 float pd(vec2 q,float z){return z*dot(vec3(1.,q),uPlane.xyz)-uPlane.w;}
 float cocd(float dz){return dz>0.?smoothstep(uBand,uBand+uRampF,dz):smoothstep(uBand*.6,uBand*.6+uRampN,-dz);}
-float coc(vec2 q,float z){return cocd(pd(q,z));}
+/* CAM-3: Engine > Lens > Edge blur: none in the middle of the screen, the most in the corners (logic/lens-focus.js edgeBlur) */
+float edge(vec2 q){vec2 e=(q-.5)*2.;return uEdge*smoothstep(.6,1.25,length(vec2(e.x,e.y*.85)));}
+float coc(vec2 q,float z){return max(cocd(pd(q,z)),edge(q));}
 /* CAM-3: a sample counts where its own blur reaches this pixel (scatter as gather, after Dennis Gustafsson): a sharp
    thing in front keeps out of the blur behind it (no halo round it), a sample behind counts with its blur held to
    twice this pixel's (only behind the focus: in front of it, as before, everything behind counts), and a blurred thing in front spills over the sharp pixels beside it (four probes at the widest
    reach find it, then the gather is as wide as its blur). The alpha is the spill only: the composite works out each pixel's own blur at full size. */
 float cover(float s,float d){return clamp((s-d)*12.+.5,0.,1.);}
-void main(){float zc=lin(texture(uDep,vUV).r),dc=pd(vUV,zc),cc=cocd(dc),R=cc;bool far=dc>0.;vec3 acc=texture(uCol,vUV).rgb;float ws=1.,wn=0.;
+void main(){float zc=lin(texture(uDep,vUV).r),dc=pd(vUV,zc),cc=max(cocd(dc),edge(vUV)),R=cc;bool far=dc>0.;vec3 acc=texture(uCol,vUV).rgb;float ws=1.,wn=0.;
  for(int k=0;k<4;k++){vec2 q=vUV+vec2(k<2?-.6:.6,k==0||k==2?-.6:.6)*uMaxR*uPx;float zs=lin(texture(uDep,q).r);if(zs<zc)R=max(R,coc(q,zs));}
  if(R>.02){float nt=float(uTaps);for(int i=0;i<28;i++){if(i>=uTaps)break;float a=float(i)*2.39996,r=sqrt((float(i)+.5)/nt);vec2 q=vUV+vec2(cos(a),sin(a))*r*uMaxR*R*uPx;
   float zs=lin(texture(uDep,q).r),cs=coc(q,zs),d=r*R;bool fr=zs<zc;float w=fr?cover(cs,d):far?cover(min(cs,cc*2.),d):1.;vec3 s=texture(uCol,q).rgb;float l=dot(s,vec3(.3,.59,.11));w*=1.+smoothstep(.8,1.6,l)*2.5*uBokeh;acc+=s*w;ws+=w;if(fr)wn+=w;}}
@@ -150,7 +152,7 @@ void main(){float d0=texture(uDep,vUV).r;vec4 wp=uIVP*vec4(vUV*2.-1.,min(d0,.999
     `#version 300 es
 precision highp float;in vec2 aC;out vec2 vUV;void main(){vUV=aC;gl_Position=vec4(aC*2.-1.,0.,1.);}`,
     `#version 300 es
-precision highp float;in vec2 vUV;out vec4 o;uniform sampler2D uCol,uDof,uBloom,uAO,uRays,uDep,uVol;uniform vec2 uPx;uniform vec4 uHeatS[6];uniform float uHeatN;uniform vec4 uDofPl;uniform vec3 uDofB;uniform float uVolK,uExp,uShoulder,uCon,uSat,uWarm,uVig,uCA,uGrain,uSharp,uBloomK,uTime,uDofOn,uAOK,uRaysK,uTone,uHeat,uInk,uNear,uFar,uGlare;uniform vec3 uLift,uGam,uGain,uShT,uHiT,uRayC,uSunP;
+precision highp float;in vec2 vUV;out vec4 o;uniform sampler2D uCol,uDof,uBloom,uAO,uRays,uDep,uVol;uniform vec2 uPx;uniform vec4 uHeatS[6];uniform float uHeatN;uniform vec4 uDofPl,uDofB;uniform float uVolK,uExp,uShoulder,uCon,uSat,uWarm,uVig,uCA,uGrain,uSharp,uBloomK,uTime,uDofOn,uAOK,uRaysK,uTone,uHeat,uInk,uNear,uFar,uGlare;uniform vec3 uLift,uGam,uGain,uShT,uHiT,uRayC,uSunP;
 float linz(float d){float z=d*2.-1.;return 2.*uNear*uFar/(uFar+uNear-z*(uFar-uNear));}
 /* film grain (2026-10): a hash without sine (Dave Hoskins), steady on phone graphics chips where the sine one makes
    patterns; soft grains about 1.5 pixels across, a new field 24 times a second, mostly brightness with a little colour,
@@ -174,7 +176,7 @@ void main(){vec2 uv=vUV;/* v32: heat shimmer above hot ground (lava, desert noon
     blur pass), so the edge between sharp and blurred follows the real edges; the half-size alpha adds only the spill
     of a blurred thing in front */
  vec4 b=texture(uDof,vUV);vec3 c=s;if(uDofOn>.5){float dz=linz(texture(uDep,vUV).r)*dot(vec3(1.,vUV),uDofPl.xyz)-uDofPl.w,
-  k=dz>0.?smoothstep(uDofB.x,uDofB.x+uDofB.y,dz):smoothstep(uDofB.x*.6,uDofB.x*.6+uDofB.z,-dz);c=mix(s,b.rgb,smoothstep(.02,.4,uDofOn>1.5?k:max(k,b.a)));}
+  k=dz>0.?smoothstep(uDofB.x,uDofB.x+uDofB.y,dz):smoothstep(uDofB.x*.6,uDofB.x*.6+uDofB.z,-dz);{vec2 e=(vUV-.5)*2.;k=max(k,uDofB.w*smoothstep(.6,1.25,length(vec2(e.x,e.y*.85))));}c=mix(s,b.rgb,smoothstep(.02,.4,uDofOn>1.5?k:max(k,b.a)));}
  if(uAOK>0.){vec2 e=uPx*1.5;float ao=texture(uAO,vUV).r*.4+(texture(uAO,vUV+vec2(e.x,e.y)).r+texture(uAO,vUV-vec2(e.x,e.y)).r+texture(uAO,vUV+vec2(e.x,-e.y)).r+texture(uAO,vUV+vec2(-e.x,e.y)).r)*.15;c*=1.-clamp(ao*uAOK,0.,.75);}
  /* v33: ink outlines where depth jumps (silhouettes of props, people and billionaires), thinner with distance */
  if(uInk>0.){float d0=texture(uDep,vUV).r;if(d0<.9999){float z0=linz(d0),e=0.;vec2 q=uPx*1.;float zs[4];zs[0]=linz(texture(uDep,vUV+vec2(q.x,0)).r);zs[1]=linz(texture(uDep,vUV-vec2(q.x,0)).r);zs[2]=linz(texture(uDep,vUV+vec2(0,q.y)).r);zs[3]=linz(texture(uDep,vUV-vec2(0,q.y)).r);
@@ -232,11 +234,12 @@ export function drawDepthOfField(S, C, focusDist, rw, rh, o = {}) {
     /* the plane of focus (logic/lens-focus.js focusPlane): o.plane [g0, gx, gy, h], else facing the camera */
     pl = o.plane || [1, 0, 0, focusDist],
     dr = o.dofRef ?? C.df,
-    /* the sharp band and the ramps behind and in front, in metres */
+    /* the sharp band and the ramps behind and in front, in metres, and the edge blur */
     band = [
       dr * engineSetting('lens', 'focusBand'),
       dr * engineSetting('lens', 'blurFar'),
       dr * engineSetting('lens', 'blurNear'),
+      engineSetting('lens', 'edgeBlur') || 0,
     ];
   if (cheap) {
     const qw = Math.max(8, hw >> 1),
@@ -267,6 +270,7 @@ export function drawDepthOfField(S, C, focusDist, rw, rh, o = {}) {
     gl.uniform1f(U.uBand, band[0]);
     gl.uniform1f(U.uRampF, band[1]);
     gl.uniform1f(U.uRampN, band[2]);
+    gl.uniform1f(U.uEdge, band[3]);
     gl.uniform1f(U.uMaxR, Math.max(3, hh / (o.dofRef ? 50 : 70)) * blur); /* (the walk view's blur a little wider) */
     gl.uniform1f(U.uBokeh, engineSetting('lens', 'bokeh'));
     gl.uniform1i(U.uTaps, o.fast ? 14 : 28);
@@ -387,7 +391,7 @@ export function drawPostRest(S, C, rw, rh, o, F) {
   gl.uniform2f(U.uPx, 1 / rw, 1 / rh);
   gl.uniform1f(U.uDofOn, !dofOn ? 0 : F.cheap ? 2 : 1);
   gl.uniform4f(U.uDofPl, F.pl[0], F.pl[1], F.pl[2], F.pl[3]);
-  gl.uniform3f(U.uDofB, F.band[0], F.band[1], F.band[2]);
+  gl.uniform4f(U.uDofB, F.band[0], F.band[1], F.band[2], F.band[3]);
   gl.uniform1f(U.uBloomK, bk > 0.01 ? bk * 0.6 : 0);
   gl.uniform1f(U.uExp, engineSetting('color', 'exposure'));
   if (U.uTone) {

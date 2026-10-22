@@ -34,6 +34,7 @@ export const ENGINE_DEFAULTS = {
   lens: {
     focusBand: 0.3,
     focusTilt: 0,
+    edgeBlur: 0,
     blurFar: 1.5,
     blurNear: 0.9,
     blur: 0.5,
@@ -263,6 +264,14 @@ export const ENGINE_SPEC = [
         1,
         0.01,
         'CAM-3, the diorama look: 0, the sharp zone faces the camera (a slab of distance); 1, it stands upright through you, so whatever stands in the strip is sharp head to toe and the ground ahead and behind melts away.',
+      ],
+      [
+        'edgeBlur',
+        'Edge blur',
+        0,
+        1,
+        0.01,
+        "CAM-3: blur toward the screen's edges and corners whatever the distance (none in the middle 60%). Off by default: players turned it off in other games.",
       ],
       ['blurFar', 'Blur growth behind', 0.1, 3, 0.05],
       ['blurNear', 'Blur growth in front', 0.1, 3, 0.05],
