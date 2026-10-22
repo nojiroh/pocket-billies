@@ -151,7 +151,7 @@ test('a map without a coast is drawn as before', () => {
 const { maps, locations } = GAME_DATA;
 const ART = GAME_DATA.scenery.props;
 const isBuilding = p => bowlPropClass(p.k, ART[p.k]) === 'building';
-/* the map holding the hub's island today (copperleaf_island until IS-5 renames it copperleaf): found by its fields */
+/* the map holding the hub's island (copperleaf since IS-5): found by its fields */
 const HUB_ISLAND = bowlIslandMapId(locations, 0, maps);
 
 test('the hub’s island map is found by its fields: a coast and plots, never test_island', () => {
@@ -193,10 +193,13 @@ test('the island’s size: its coast’s reach from its middle; worldmap.json se
 });
 
 test('the island’s town on the bowl: a model on every free plot, the barn in its zone, none twice', () => {
-  const M = maps[HUB_ISLAND],
-    T = bowlIslandPlotThings(M, isBuilding),
-    built = (M.props || []).filter(isBuilding).length;
-  if (!built) assert.equal(T.length, M.plots.length + 1, 'every plot and the barn');
+  /* IS-5: the hub's town stands on its plots: the island before its buildings (a model on every plot, the barn) */
+  const M0 = maps[HUB_ISLAND],
+    M = { ...M0, props: [] },
+    T = bowlIslandPlotThings(M, isBuilding);
+  assert.equal(T.length, M.plots.length + 1, 'every plot and the barn');
+  /* with its buildings: none of the plots or the barn is drawn twice */
+  assert.equal(bowlIslandPlotThings(M0, isBuilding).length, 0, 'every plot built on');
   for (const t of T) {
     assert.ok(ART[t.k] && /\.json$/.test(ART[t.k].model || ''), `${t.k} has a low-poly model`);
   }
