@@ -901,7 +901,7 @@ async function runFullTest(mode) {
             for (let i = 0; i < 150 && !(walkView.ready && walkView.id === landing); i++) await selfTestSleep(100);
             if (walkView.id !== landing) throw new Error(`the run's landing isn't shown (still ${walkView.id})`);
             measureFromHere();
-            /* the way to the exit north and on past where a run's crossing counts (rules.json run.seamIn) */
+            /* the way to the exit ahead (west) and on past where a run's crossing counts (rules.json run.seamIn) */
             const to = runWorldNode(runNext(s.run.map, 0)[0]),
               e = (walkState().exits || []).find(x => x.to === to);
             if (!e) throw new Error(`no exit from the landing to ${LOCATIONS[to].name}`);
@@ -913,7 +913,7 @@ async function runFullTest(mode) {
               R = findPath(walkView.pl.x, walkView.pl.z, pt[0] + side[0] * past, pt[1] + side[1] * past, {
                 max: 1e6,
               });
-            if (!R) throw new Error('no path out of the landing to its north exit');
+            if (!R) throw new Error('no path out of the landing to its west exit');
             let crossed = false;
             for (let k = 1; k < R.length && !crossed; k++) {
               const [ax, az] = R[k - 1],

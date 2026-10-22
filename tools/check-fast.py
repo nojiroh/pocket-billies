@@ -191,7 +191,7 @@ def walk_over(pg, n1, past, sec=60):
 def run_world(pg, base):
     """RL-7: the run fixture boots on its landing (day 1), its world made from the seed at boot: Copperleaf and a place
     per node, the landing's view drawing; the Map tab opens as the bowl with every place on it; a walk over the
-    landing's north seam (rules.json run.seamIn metres in) arrives at the next node on day 2 and opens its view"""
+    landing's west seam (the way ahead; rules.json run.seamIn metres in) arrives at the next node on day 2 and opens its view"""
     drawing(pg)
     seed, scenes, ms, places, want, node, day, view = pg.evaluate("[runWorld.seed, runWorld.scenes, runWorld.ms, LOCATIONS.length, 1 + saveData.run.map.nodes.length, saveData.trip.node, saveData.run.clock, walkView.id]")
     if seed != 'RL7FIXTURE' or places != want: raise Exception(f"the run's world isn't in: {places} places for {want}, made from {seed!r}")
@@ -221,10 +221,6 @@ def bowl_map(pg, base):
     # RL-5: and the loading screen gone (it takes a few seconds to fade; the route and cave checks that ran before this
     # one on this page went with their places)
     if not until(pg, "!document.getElementById('loader')", 30): raise Exception('the loading screen never went')
-    # UI-5: a postcard shown on the walk tab (postcards.js, 3 s after the town is calm) stays up to 9 s and lies over
-    # the map's tap points; it goes on a tap, as a player would dismiss it
-    pg.evaluate("postcardState.last=postcardTownHere();document.querySelectorAll('.pcard-wrap').forEach(e=>e.click());0")
-    if not until(pg, "!document.querySelector('.pcard-wrap')", 5): raise Exception('a postcard wouldn’t go')
     z0 = pg.evaluate("typeof walkRenderer!=='undefined'?walkRenderer.zoomT:null")
     pg.evaluate("uiState.mapSel=null;0"); pg.evaluate(nav_tap('map'))
     if not until(pg, "typeof worldBowl!=='undefined'&&worldBowl.on&&worldBowl.frames>=3", 30):
@@ -233,7 +229,10 @@ def bowl_map(pg, base):
     # touches must reach the map: its layer fills the screen and some of it is not under the card or the buttons (on a
     # phone-sized page: this page's 300 px are mostly card)
     pg.set_viewport_size({'width': 400, 'height': 760}); time.sleep(.5)
-    hit = pg.evaluate("(()=>{const r=worldMap.cv.getBoundingClientRect();if(r.height<innerHeight*.9)return 'a map layer '+Math.round(r.height)+' px high';for(const fy of [.2,.3,.4,.5])for(const fx of [.3,.5,.7]){const e=document.elementFromPoint(innerWidth*fx,innerHeight*fy);if(e===worldMap.cv)return ''}const e=document.elementFromPoint(innerWidth/2,innerHeight/2);return e?e.tagName+'#'+e.id:'nothing'})()")
+    # a postcard that came while walking (postcards.js: 3 s of calm in Copperleaf, shown 9 s) lies over everything until
+    # it closes by itself; none comes on the Map tab. It made this check fail now and then (once in six here, and in CI)
+    if not until(pg, "!document.querySelector('.pcard-wrap')", 15): raise Exception('a postcard never closed')
+    hit = pg.evaluate("(()=>{const r=worldMap.cv.getBoundingClientRect();if(r.height<innerHeight*.9)return 'a map layer '+Math.round(r.height)+' px high';for(const fy of [.2,.3,.4,.5])for(const fx of [.3,.5,.7]){const e=document.elementFromPoint(innerWidth*fx,innerHeight*fy);if(e===worldMap.cv)return ''}const e=document.elementFromPoint(innerWidth/2,innerHeight/2),p=e&&e.parentElement;return e?e.tagName+'#'+e.id+'.'+e.className+(e.src?' src '+String(e.src).split('/').pop().slice(0,40):'')+' in '+(p?p.tagName+'#'+p.id+'.'+p.className:'?'):'nothing'})()")
     if hit: raise Exception(f'a touch on the map lands on {hit}, not the map')
     pg.set_viewport_size({'width': 400, 'height': 300})
     # the ground's terrain map fills and the terrain pictures go up (graphics off: nothing is judged by eye)
