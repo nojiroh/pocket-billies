@@ -5,7 +5,7 @@ import { LOCATIONS, gameData } from './game-data.js';
 import { encountersHere, setSetTrip, setTrip } from './logic/rules.js';
 import { battleStageKey, newBattle, setNewBattle } from './logic/battle-engine.js';
 import { mapFiles } from './map-files.js';
-import { activeBattle, save, saveData, setSave, uiState } from './game-state.js';
+import { activeBattle, save, saveData, saveHeld, setSave, uiState } from './game-state.js';
 import { gpuCountSummary, gpuCounters } from './engine/gpu-counters.js';
 import { frameScheduler, userFps } from './frame-scheduler.js';
 import { artPixels, setArtPixels } from './art.js';
@@ -50,7 +50,14 @@ import { buildGroundMesh, setBuildGroundMesh } from './walk/ground-mesh.js';
 import { setSwapMapCache, setUpdateNearRing, swapMapCache, updateNearRing } from './walk/map-cache.js';
 import { drawWater, reflectionPass, setDrawWater, setReflectionPass } from './walk/water.js';
 import { gatherFrameItems, setGatherFrameItems } from './walk/frame-items.js';
-import { drawBoxFaces, drawSprites, setDrawBoxFaces, setDrawSprites } from './walk/sprites.js';
+import {
+  drawBoxFaces,
+  drawPlayerSilhouette,
+  drawSprites,
+  setDrawBoxFaces,
+  setDrawPlayerSilhouette,
+  setDrawSprites,
+} from './walk/sprites.js';
 import { setShadowPass, shadowPass } from './walk/shadows.js';
 import { drawGrass, drawGround, setDrawGrass, setDrawGround } from './walk/ground-draw.js';
 import { effectsPass, setEffectsPass } from './walk/effects.js';
@@ -78,7 +85,8 @@ import { cutsceneStart, setCutsceneStart } from './cutscene/opening.js';
 import { runWorld } from './run-world.js';
 import { account } from './account.js';
 import { challengesToday, stampCount } from './things-to-do.js';
-import { render, renderOverlay, setRender, setRenderOverlay, toast } from './ui.js';
+import { renderOverlay, setRenderOverlay, toast } from './overlay.js';
+import { render, setRender } from './ui.js';
 Object.defineProperties(GAME, {
   LOCATIONS: { get: () => LOCATIONS },
   PERSON_ART_CACHE: { get: () => PERSON_ART_CACHE },
@@ -103,6 +111,7 @@ Object.defineProperties(GAME, {
   drawBuildings: { get: () => drawBuildings, set: setDrawBuildings },
   drawGrass: { get: () => drawGrass, set: setDrawGrass },
   drawGround: { get: () => drawGround, set: setDrawGround },
+  drawPlayerSilhouette: { get: () => drawPlayerSilhouette, set: setDrawPlayerSilhouette },
   drawPostEffects: { get: () => drawPostEffects, set: setDrawPostEffects },
   drawPropModels: { get: () => drawPropModels, set: setDrawPropModels },
   drawSolidProps: { get: () => drawSolidProps, set: setDrawSolidProps },
@@ -144,6 +153,7 @@ Object.defineProperties(GAME, {
   runWorld: { get: () => runWorld },
   save: { get: () => save, set: setSave },
   saveData: { get: () => saveData },
+  saveHeld: { get: () => saveHeld },
   screenSnapshot: { get: () => screenSnapshot, set: setScreenSnapshot },
   seamlessWorld: { get: () => seamlessWorld },
   setTrip: { get: () => setTrip, set: setSetTrip },

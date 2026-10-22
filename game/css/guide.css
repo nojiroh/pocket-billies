@@ -1,0 +1,713 @@
+/* UI-5: the Guide's rules (the list, an entry's page, the Lore tab), moved as they were from the old layers (style, polish, screens, v05), in the order the page loaded them. They load right after those layers and before the kit, so the cascade is as before (tools/style-diff.py) */
+/* ---------- UI-6: from style.css, polish.css, as it was ---------- */
+.ls-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.ls-k {
+  font-size: 12.5px;
+  color: var(--ink2);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.fchips {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 14px 3px 8px;
+  margin: 0 -16px;
+  padding-left: 16px;
+  padding-right: 16px;
+  scrollbar-width: none;
+}
+.fchips::-webkit-scrollbar {
+  display: none;
+}
+.fchip {
+  flex: none;
+  border: 0;
+  padding: 7px 12px;
+  font: 600 13.5px/1 var(--font-voice);
+  background: var(--panel-s);
+  color: var(--text);
+  box-shadow: 0 0 0 2px var(--line);
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.fchip.on {
+  background: var(--gold);
+  color: var(--goldink);
+}
+.lempty {
+  padding: 20px 50px;
+  color: var(--ink2);
+}
+.plate-sky {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    120% 90% at 50% 105%,
+    color-mix(in srgb, var(--c1) 55%, #fff) 0%,
+    color-mix(in srgb, var(--c2) 35%, #1a1430) 75%
+  );
+}
+.plate-sky::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.06) 0 1px, transparent 1px 16px),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.06) 0 1px, transparent 1px 16px);
+}
+.plate-floor {
+  position: absolute;
+  left: 18%;
+  right: 18%;
+  bottom: 22px;
+  height: 38px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.1) 70%, transparent);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
+}
+.plate-spr {
+  position: absolute;
+  left: 50%;
+  bottom: 36px;
+  transform: translateX(-50%);
+  display: grid;
+  place-items: end center;
+}
+.cattag {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  font: 400 12.5px/1 var(--font-voice);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #fff;
+  background: rgba(14, 10, 26, 0.62);
+  padding: 6px 8px;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.5);
+}
+@keyframes stampIn {
+  0% {
+    transform: rotate(-9deg) scale(2.2);
+    opacity: 0;
+  }
+  100% {
+    transform: rotate(-9deg) scale(1);
+    opacity: 1;
+  }
+}
+.specno {
+  position: absolute;
+  left: 10px;
+  bottom: 8px;
+  font: 400 12px var(--font-voice);
+  color: rgba(255, 255, 255, 0.85);
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.5);
+}
+.dexname {
+  font-size: 36px;
+  margin-top: 16px;
+}
+.rar {
+  margin: 0 0 0 6px;
+}
+@media (min-width: 960px) {
+  .s-ledger .ledger,
+  .s-ledger .ledsum,
+  .s-ledger .fchips,
+  .s-ledger .dexpage {
+    max-width: 780px;
+  }
+}
+.fchip:focus-visible,
+.qb:focus-visible,
+.tb-btn:focus-visible,
+.swatch:focus-visible {
+  outline-offset: 3px;
+}
+/* ---------- field guide ---------- */
+.fchip {
+  box-shadow:
+    0 0 0 2px var(--line),
+    inset 0 -2px 0 var(--lo);
+}
+.fchip.on {
+  background: linear-gradient(180deg, var(--gold-hi), var(--gold) 60%);
+  box-shadow:
+    0 0 0 2px var(--line),
+    inset 0 -2px 0 rgba(150, 90, 10, 0.35);
+}
+.fchip:hover:not(.on) {
+  background: var(--panel2);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .fchip:active,
+  .qb:active:not(:disabled),
+  .option:active {
+    transform: scale(0.94);
+  }
+  .screen.enter .fchip:nth-child(2) {
+    animation-delay: 25ms;
+  }
+  .screen.enter .fchip:nth-child(3) {
+    animation-delay: 50ms;
+  }
+  .screen.enter .fchip:nth-child(n + 4) {
+    animation-delay: 75ms;
+  }
+}
+/* ---------- (UI-5 and earlier) ---------- */
+
+/* ---------- UI-5: from style.css, as it was ---------- */
+.dex {
+  padding: 6px 6px 8px;
+  text-align: center;
+  border: 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: var(--text);
+}
+.dex .dn {
+  font-family: var(--font-voice);
+  font-size: 14px;
+  line-height: 1.1;
+}
+.dex .got {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+}
+.paper {
+  background: var(--paper) repeating-linear-gradient(180deg, transparent 0 27px, var(--rule) 27px 28px);
+  color: var(--ink);
+  position: relative;
+}
+.paper::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 38px;
+  width: 4px;
+  border-left: 1px solid var(--margin);
+  border-right: 1px solid var(--margin);
+  pointer-events: none;
+}
+.paper h3 {
+  margin: 0 0 6px;
+  padding-left: 40px;
+  font-size: 18px;
+  color: var(--ink);
+}
+.hand {
+  font: 600 21px/1.1 var(--hand);
+  color: var(--ink2);
+  transform: rotate(-1.2deg);
+  transform-origin: left;
+  margin-top: 8px;
+}
+.hand.red {
+  color: var(--redink);
+}
+.ledsum {
+  padding: 14px 14px 10px 52px;
+  margin-top: 14px;
+}
+.ledger {
+  list-style: none;
+  margin: 10px 3px 0;
+  padding: 6px 0;
+}
+.ledger li {
+  border-bottom: 1px solid var(--rule);
+}
+.ledger li:last-child {
+  border-bottom: 0;
+}
+.lrow {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 38px 58px 1fr auto 30px;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  background: none;
+  padding: 4px 10px 4px 0;
+  text-align: left;
+  color: var(--ink);
+  min-height: 64px;
+  transition: background 0.2s;
+}
+.lrow:hover {
+  background: rgba(242, 193, 78, 0.12);
+}
+.lrow:active {
+  background: rgba(242, 193, 78, 0.24);
+}
+.lno {
+  font: 400 13px var(--font-voice);
+  color: var(--redink);
+  text-align: center;
+}
+.lspr {
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 52px;
+  overflow: visible;
+}
+.ltx {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.ltx b {
+  font: 400 17px/1.1 var(--font-voice);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ltx small {
+  font-size: 12.5px;
+  color: var(--ink2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ltypes {
+  display: flex;
+  gap: 3px;
+}
+.ltypes i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--tc);
+  box-shadow: 0 0 0 1.5px var(--line);
+}
+.lst {
+  display: grid;
+  place-items: center;
+}
+.lst em {
+  font: 600 16px/1 var(--hand);
+  color: var(--blueink);
+  transform: rotate(-6deg);
+}
+.lrow.none .ltx b {
+  color: var(--ink2);
+}
+.lrow.none {
+  opacity: 0.75;
+}
+.dexbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.dexnav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font: 400 15px var(--font-voice);
+}
+.dexpage {
+  animation: up 0.35s ease-out;
+}
+.stamp {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  transform: rotate(-9deg);
+  font: 400 16px/1 var(--font-voice);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 6px 9px;
+  border: 3px double currentColor;
+  color: #e2343e;
+  background: rgba(255, 255, 255, 0.72);
+  animation: stampIn 0.5s cubic-bezier(0.3, 1.8, 0.5, 1) 0.15s both;
+}
+.stamp.seen {
+  color: #2e5ea8;
+}
+.vit {
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.vit span {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text2);
+}
+.vit b {
+  font-weight: 600;
+  font-size: 14.5px;
+  line-height: 1.3;
+}
+.dexpage section {
+  padding: 12px 14px 12px 50px;
+  margin-top: 16px;
+}
+.dexpage section p {
+  line-height: 28px;
+}
+.redact {
+  background: var(--ink);
+  color: transparent;
+  border-radius: 2px;
+  letter-spacing: -1px;
+}
+.bsheet,
+.expo {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14.5px;
+}
+.bsheet td {
+  padding: 4px 0;
+  height: 28px;
+}
+.bsheet td:first-child {
+  width: 42%;
+}
+.bsheet td:nth-child(2) {
+  width: 40px;
+  text-align: right;
+  padding-right: 10px;
+  font-weight: 600;
+}
+.bbar {
+  display: block;
+  height: 9px;
+  width: var(--w);
+  background: linear-gradient(90deg, #f2c14e, #f59a2a);
+  box-shadow: 0 0 0 1.5px var(--line);
+  border-radius: 1px;
+}
+.bsheet tr.tot td {
+  border-top: 3px double var(--ink);
+  font-weight: 600;
+  padding-top: 6px;
+}
+.expo td {
+  padding: 5px 0;
+  vertical-align: top;
+}
+.expo td:first-child {
+  width: 36%;
+  color: var(--ink2);
+  font-size: 13.5px;
+}
+.chain {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.evnode {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  border: 0;
+  background: none;
+  padding: 4px;
+  color: var(--ink);
+  min-width: 70px;
+}
+.evnode small {
+  font: 400 12px var(--font-voice);
+}
+.evnode.cur {
+  background: rgba(242, 193, 78, 0.22);
+  box-shadow: 0 0 0 2px var(--gold);
+}
+.evarrow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 76px;
+  text-align: center;
+}
+.evarrow i {
+  font-style: normal;
+  font: 400 18px var(--font-voice);
+  color: var(--redink);
+}
+.evarrow small {
+  font-size: 11px;
+  color: var(--ink2);
+  line-height: 1.2;
+}
+.sig {
+  margin: 22px 4px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.sigline {
+  font: 600 38px/1 var(--hand);
+  color: var(--blueink);
+  transform: rotate(-4deg);
+  padding: 0 22px 6px;
+  border-bottom: 2px solid var(--ink2);
+}
+.sig small {
+  margin-top: 8px;
+  color: var(--text2);
+  font-size: 12.5px;
+}
+.lrow {
+  grid-template-columns: 38px 58px 1fr auto 56px;
+  padding-right: 6px;
+}
+.lst em {
+  font-size: 15px;
+}
+.dexpage section h3 {
+  padding-left: 0;
+}
+.chain {
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  gap: 2px;
+}
+.evnode {
+  flex: 1 1 0;
+  min-width: 0;
+}
+.evnode small {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.evarrow {
+  flex: 0 0 54px;
+}
+.dexpage section.lin {
+  padding-left: 14px;
+}
+.dexpage section.lin h3 {
+  padding-left: 36px;
+}
+.redact {
+  display: inline;
+  line-height: 1;
+}
+
+/* ---------- UI-5: from polish.css, as it was ---------- */
+.lrow:focus-visible {
+  outline-offset: -3px;
+}
+.vit span {
+  color: var(--text2);
+}
+.stamp {
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.12);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .lrow .lspr,
+  .lrow .ltx {
+    transition: transform 0.22s var(--spring);
+  }
+  .lrow:hover .lspr {
+    transform: translateY(-2px) scale(1.06);
+  }
+  .lrow:hover .ltx {
+    transform: translateX(2px);
+  }
+  .screen.enter .ledger > li {
+    animation: nwSlideIn 0.36s var(--out) backwards;
+  }
+  .screen.enter .ledger > li:nth-child(2) {
+    animation-delay: 30ms;
+  }
+  .screen.enter .ledger > li:nth-child(3) {
+    animation-delay: 60ms;
+  }
+  .screen.enter .ledger > li:nth-child(4) {
+    animation-delay: 90ms;
+  }
+  .screen.enter .ledger > li:nth-child(5) {
+    animation-delay: 120ms;
+  }
+  .screen.enter .ledger > li:nth-child(6) {
+    animation-delay: 150ms;
+  }
+  .screen.enter .ledger > li:nth-child(7) {
+    animation-delay: 180ms;
+  }
+  .screen.enter .ledger > li:nth-child(8) {
+    animation-delay: 210ms;
+  }
+  .screen.enter .ledger > li:nth-child(n + 9) {
+    animation-delay: 240ms;
+  }
+  .dexpage > section {
+    animation: rise 0.4s var(--out) backwards;
+  }
+  .dexpage > section:nth-of-type(2) {
+    animation-delay: 50ms;
+  }
+  .dexpage > section:nth-of-type(3) {
+    animation-delay: 100ms;
+  }
+  .dexpage > section:nth-of-type(4) {
+    animation-delay: 150ms;
+  }
+  .dexpage > section:nth-of-type(n + 5) {
+    animation-delay: 200ms;
+  }
+  .dexpage .vit {
+    animation: rise 0.36s var(--out) backwards;
+  }
+  .dexpage .vit:nth-child(2) {
+    animation-delay: 40ms;
+  }
+  .dexpage .vit:nth-child(3) {
+    animation-delay: 80ms;
+  }
+  .dexpage .vit:nth-child(4) {
+    animation-delay: 120ms;
+  }
+}
+
+/* ---------- UI-5: from screens.css, as it was ---------- */
+/* v47: the Lore page of the Guide, books and clues: framed pixel panels (square corners notched by a pixel, a dark
+   outline, light along the top), headings in the pixel font */
+.guide-tabs,
+.lore-tabs {
+  margin: 10px 3px 0;
+}
+.lore-tabs button {
+  font-size: 12.5px;
+  padding: 6px 8px;
+}
+.lore {
+  display: grid;
+  gap: 12px;
+  margin: 12px 3px 18px;
+}
+.lore-card {
+  display: block;
+  width: 100%;
+  text-align: left;
+  position: relative;
+  padding: 12px 14px 13px;
+  background: var(--panel-s);
+  color: var(--text);
+  border: 0;
+  border-radius: 0;
+  box-shadow:
+    0 -3px 0 0 var(--line),
+    0 3px 0 0 var(--line),
+    -3px 0 0 0 var(--line),
+    3px 0 0 0 var(--line),
+    inset 0 3px 0 0 rgba(255, 255, 255, 0.22),
+    inset 0 -3px 0 0 rgba(0, 0, 0, 0.08),
+    0 7px 0 1px rgba(20, 14, 36, 0.18);
+  margin: 3px;
+}
+.lore-card h3 {
+  margin: 0 0 4px;
+  font: 400 16px/1.1 var(--font-voice);
+  letter-spacing: 0.02em;
+  color: var(--text);
+}
+.lore-card small {
+  display: block;
+  margin: -1px 0 6px;
+  font-size: 12.5px;
+  color: var(--text2);
+}
+.lore-card p {
+  margin: 6px 0 0;
+  font-size: 14px;
+  line-height: 1.45;
+}
+.lore-card p b {
+  font: 400 12px/1 var(--font-voice);
+  letter-spacing: 0.03em;
+  margin-right: 4px;
+  color: var(--text2);
+}
+.lore-card .hand {
+  font-size: 19px;
+  margin-top: 8px;
+}
+.lore-card.locked {
+  opacity: 0.55;
+}
+.lore-card.locked h3 {
+  color: var(--text2);
+}
+.lore-card.person {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 12px;
+  align-items: start;
+}
+.lore-face {
+  display: block;
+  width: 52px;
+  height: 52px;
+  overflow: hidden;
+}
+.lore-card.book {
+  cursor: pointer;
+}
+.lore-card.book:hover {
+  transform: translateY(-1px);
+}
+.lore-more {
+  margin: 2px 6px 8px;
+}
+.book-sheet .book-by {
+  font: 400 12px/1 var(--font-voice);
+  letter-spacing: 0.04em;
+  opacity: 0.75;
+  margin-bottom: 6px;
+}
+.book-page {
+  padding: 16px 18px;
+  min-height: 8em;
+  font-size: 15px;
+  line-height: 1.55;
+}
+.book-n {
+  text-align: center;
+  font: 400 12px/1 var(--font-voice);
+  opacity: 0.7;
+  margin: 8px 0 0;
+}
+.clue-sheet .clue-k {
+  font: 400 22px/1.1 var(--font-voice);
+  letter-spacing: 0.02em;
+  text-align: center;
+  padding: 14px 8px 4px;
+  color: var(--gold, #c99a1e);
+}
+
+/* ---------- UI-5: from v05.css, as it was ---------- */
+@media (min-width: 960px) and (orientation: landscape) {
+  body.on-scene .s-ledger .ledger,
+  body.on-scene .s-ledger .ledsum {
+    max-width: none;
+  }
+}

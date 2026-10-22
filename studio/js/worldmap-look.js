@@ -398,7 +398,13 @@ function worldMapLookTab() {
       min: 0.1,
       max: 0.7,
       step: 0.01,
-      help: 'The share of the bowl under water; the coast is drawn so this much is sea.',
+      help: 'The share of the bowl under water; the coast is drawn so this much is sea. Not used for an island.',
+    }),
+    rangeField('Island', 'worldmap.sea.island', {
+      min: 0,
+      max: 0.6,
+      step: 0.01,
+      help: "RL-8b: above 0, the hub is one island of this radius round the places (0.2 is 200 m) and the sea reaches the rim; the share and the rise to the rim aren't used. 0: a continent round an inland sea.",
     }),
     rangeField('Coast roughness', 'worldmap.sea.rough', {
       min: 0,

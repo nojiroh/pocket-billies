@@ -178,19 +178,19 @@ test('the 9-row map: 9 on every path, two lanes on a free or town row as often a
   assert.ok(switches > 100 && switches < 400, `${switches} of 500 maps switch lanes`);
 });
 
-test('exits: one link in the middle of a side, two at a quarter and three quarters; both ends of a link agree', () => {
+test('exits: one link in the middle of a side, two 10 m and 54 m along its 64 m; both ends of a link agree', () => {
   for (const s of seeds(200)) {
     const map = runMapMake(s, NODE_TYPES, MAP_RULES);
     map.nodes.forEach((n, i) => {
       const e = runExits(map, i);
-      for (const side of [e.north, e.south])
+      for (const side of [e.ahead, e.back])
         assert.deepEqual(
           side.map(x => x.t),
-          [[], [0.5], [0.25, 0.75]][side.length]
+          [[], [0.5], [0.15625, 0.84375]][side.length]
         );
-      for (const { to } of e.north) assert.ok(runExits(map, to).south.some(x => x.from === i));
-      assert.deepEqual(e.north.map(x => x.to).sort(), runNext(map, i).sort());
-      assert.deepEqual(e.south.map(x => x.from).sort(), runBack(map, i).sort());
+      for (const { to } of e.ahead) assert.ok(runExits(map, to).back.some(x => x.from === i));
+      assert.deepEqual(e.ahead.map(x => x.to).sort(), runNext(map, i).sort());
+      assert.deepEqual(e.back.map(x => x.from).sort(), runBack(map, i).sort());
     });
   }
   const tooMany = {
@@ -202,42 +202,48 @@ test('exits: one link in the middle of a side, two at a quarter and three quarte
   assert.throws(() => runExits(tooMany, 0), /more than two/);
 });
 
-test('on the bowl: rows from the rim towards the centre, lanes apart, roads leave and arrive the way their exits face', () => {
+test('on the bowl (RL-8b): rows from the east to the west across the bowl, lanes apart, maps facing north, roads leave and arrive the way their exits face', () => {
   for (let rows = 5; rows <= 12; rows++)
     for (const s of seeds(60)) {
       const map = runMapMake(s, NODE_TYPES, rulesFor(rows)),
         N = map.nodes,
         P = N.map((_, i) => xy(map, i));
       N.forEach((n, i) => {
-        const { a, r } = runSpot(map, i);
-        assert.ok(a >= 0 && a < 360 && r > 0 && r < 1, `${a}, ${r}`);
-        if (n.row === 0) assert.ok(Math.abs(r - RUN_BOWL.outer) < 1e-9);
-        if (n.row === rows - 1) assert.ok(Math.abs(r - RUN_BOWL.inner) < 1e-9);
+        const { a, r, up } = runSpot(map, i);
+        assert.ok(a >= 0 && a < 360 && r >= 0 && r < 0.8, `${a}, ${r}`);
+        assert.equal(up, 90, "a run's maps face the bowl's north");
+        if (n.row === 0) assert.ok(P[i][0] > 0.3, `the landing is in the east (${P[i][0]})`);
+        if (n.row === rows - 1) assert.ok(P[i][0] < -0.3, `the boss is in the west (${P[i][0]})`);
+        for (const j of n.to) assert.ok(P[j][0] < P[i][0], `${i}->${j} goes west`);
       });
-      // pins at least 0.07 of the bowl's radius apart, Copperleaf at the centre too
-      const all = [[0, 0], ...P];
-      for (let i = 0; i < all.length; i++)
-        for (let j = i + 1; j < all.length; j++) {
-          const d = Math.hypot(all[i][0] - all[j][0], all[i][1] - all[j][1]);
-          assert.ok(d >= 0.07 - 1e-9, `${s}, ${rows} rows: pins ${i - 1} and ${j - 1} are ${d.toFixed(3)} apart`);
+      // pins at least 0.1 of the bowl's radius apart; a place's map (112 x 64 m, facing north) never over another's
+      for (let i = 0; i < P.length; i++)
+        for (let j = i + 1; j < P.length; j++) {
+          const dx = Math.abs(P[i][0] - P[j][0]),
+            dy = Math.abs(P[i][1] - P[j][1]);
+          assert.ok(
+            Math.hypot(dx, dy) >= 0.1 - 1e-9,
+            `${s}, ${rows} rows: pins ${i} and ${j} are ${Math.hypot(dx, dy).toFixed(3)} apart`
+          );
+          assert.ok(dx >= 0.112 || dy >= 0.064, `${s}, ${rows} rows: the maps of ${i} and ${j} overlap`);
         }
       // a road turns within the hub's 30 degrees from its exits, a lane switch within 45
       for (const [a, b] of links(map)) {
-        const turn = bowlSeamTurn(P[a], P[b], 'north', 'south'),
+        const turn = bowlSeamTurn(P[a], P[b], 'west', 'east', 90),
           switching = N[a].lane !== N[b].lane && widthOf(map, N[a].row) === 2 && widthOf(map, N[b].row) === 2;
         assert.ok(turn <= (switching ? 45 : 30), `${s}, ${rows} rows: ${a}->${b} turns ${turn.toFixed(1)}`);
       }
-      // each node's exits run west to east in the order its neighbours lie along its east on the bowl
+      // each node's exits run south to north in the order its neighbours lie along its north on the bowl
       N.forEach((_, i) => {
-        const { east } = bowlCompass(P[i][0], P[i][1]),
-          along = j => (P[j][0] - P[i][0]) * east[0] + (P[j][1] - P[i][1]) * east[1],
+        const { north } = bowlCompass(P[i][0], P[i][1], 90),
+          along = j => (P[j][0] - P[i][0]) * north[0] + (P[j][1] - P[i][1]) * north[1],
           e = runExits(map, i);
-        for (const side of [e.north.map(x => [x.to, x.t]), e.south.map(x => [x.from, x.t])]) {
+        for (const side of [e.ahead.map(x => [x.to, x.t]), e.back.map(x => [x.from, x.t])]) {
           const byPlace = side
             .slice()
             .sort((p, q) => along(p[0]) - along(q[0]))
             .map(x => x[1]);
-          assert.deepEqual(byPlace, byPlace.slice().sort(), `${s} node ${i}: its exits' t run west to east`);
+          assert.deepEqual(byPlace, byPlace.slice().sort(), `${s} node ${i}: its exits' t run south to north`);
         }
       });
     }

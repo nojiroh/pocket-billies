@@ -17,8 +17,15 @@
 import { expose } from './test-globals.js';
 import { provide } from './hooks.js';
 import { $ } from './util.js';
-import { LOCATIONS } from './game-data.js';
-import { BOWL_RIM_HEIGHT, bowlCoastAt } from './logic/bowl.js';
+import { LOCATIONS, gameData } from './game-data.js';
+import {
+  BOWL_ISLAND_BASE,
+  BOWL_ISLAND_LIFT,
+  BOWL_RIM_HEIGHT,
+  bowlBaseHeight,
+  bowlCoastAt,
+  bowlGridHeight,
+} from './logic/bowl.js';
 import {
   BOWL_CAMERA,
   bowlCamHome,
@@ -31,9 +38,12 @@ import {
   bowlToGpu,
 } from './logic/bowl-camera.js';
 import { BOWL_CLOUD_LEVELS } from './logic/bowl-weather.js';
+import { bowlMapPoint, bowlPropClass } from './logic/bowl-things.js';
+import { bowlHasCoast, bowlIslandHeights, bowlIslandMapId, bowlIslandPlotThings } from './logic/bowl-island.js';
 import { activeBattle, escapeHtml, pauseSaving, resumeSaving, saveData, uiState } from './game-state.js';
 import { ensurePrograms, gpuState } from './engine/webgl.js';
 import {
+  BOWL_METRES,
   WORLD_BOWL_SHADERS,
   worldBowl,
   worldBowlPick,
@@ -43,7 +53,8 @@ import {
   worldMapReset,
   worldMapWidth,
 } from './world-bowl.js';
-import { closeModal, modal, render, toast } from './ui.js';
+import { closeModal, modal, toast } from './overlay.js';
+import { render } from './ui.js';
 import { selfTest, shareReportFile } from './self-test.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -122,7 +133,7 @@ async function runBowlMapTest() {
   };
   const stepEl = box.querySelector('.nb-step'),
     bar = box.querySelector('.nb-bar i'),
-    TOTAL = 9;
+    TOTAL = 10;
   const step = async (name, fn) => {
     if (bowlMapTest.stop) return;
     stepEl.textContent = name;
@@ -210,8 +221,10 @@ async function runBowlMapTest() {
       const share = Math.round((sea / all) * 100);
       if (wet.length) return { ok: false, note: `under water: ${wet.map(l => l.id).join(', ')}` };
       if (!g.water) return { ok: false, note: "the water isn't drawn" };
-      if (share < 35 || share > 45) return { ok: false, note: `the sea is ${share}% of the bowl` };
-      return `${share}% of the bowl is sea, every place on land; worked out in ${g.seaMs} ms; the water is ${g.water.n / 3} triangles`;
+      /* RL-8b: an island world (the hub's island, a run's own land) is mostly sea */
+      if (g.isle ? share < 70 : share < 35 || share > 45)
+        return { ok: false, note: `the sea is ${share}% of the bowl${g.isle ? ' (an island world)' : ''}` };
+      return `${share}% of the bowl is sea${g.isle ? ' (an island world)' : ''}, every place on land; worked out in ${g.seaMs} ms; the water is ${g.water.n / 3} triangles`;
     });
     await step('Light, shadows, routes and rivers', async () => {
       const g = worldBowl.ground,
@@ -220,7 +233,8 @@ async function runBowlMapTest() {
       if (!g.shadow || !g.shadow.t) return { ok: false, note: 'no shadow map (the ground is lit without shadows)' };
       if (!g.lines) return { ok: false, note: "the routes' line map is missing" };
       const n = (g.G.rivers || []).length;
-      if (n < 4) return { ok: false, note: `only ${n} rivers` };
+      /* IS-7: the hub's island drawn from its map has its own streams, none made on it */
+      if (n < (g.islandMap ? 0 : g.isle ? 1 : 4)) return { ok: false, note: `only ${n} rivers` };
       return `shadow map drawn in ${g.shadow.ms} ms; route and river lines made in ${g.lines.ms} ms; ${n} rivers`;
     });
     await step('Clouds and weather', async () => {
@@ -252,6 +266,73 @@ async function runBowlMapTest() {
         near = W.stand.length - far;
       if (!far) return { ok: false, note: 'no landmarks' };
       return `${far} landmarks; ${n} trees and buildings (${models} building models, ${W.clumps} trees in clumps), ${near} standees close in; ${W.done.size} places in, last update ${W.ms} ms; ${Math.round((W.tris || 0) / 1000)}k triangles last frame`;
+    });
+    /* IS-7: the hub's world map draws its real island (logic/bowl-island.js): its coast, its heights, its town */
+    await step('The hub’s island', async () => {
+      const t = performance.now(),
+        hub = worldBowl.spots && worldBowl.spots[0];
+      if (!hub || hub.off) return 'the hub is not on this map (a run’s own land)';
+      const id = bowlIslandMapId(LOCATIONS, 0, gameData.maps || {}),
+        M = id && gameData.maps[id];
+      if (!bowlHasCoast(M)) return `the hub’s map (${id}) has no coast: drawn as a place`;
+      /* its file in and the ground worked out again with its heights, the town built */
+      const ready = () => {
+        const g = worldBowl.ground;
+        return (
+          bowlIslandHeights(M) &&
+          g &&
+          g.islandMap === id &&
+          g.terrain &&
+          g.terrain.ready &&
+          g.terrain.stamped.has(0) &&
+          g.things &&
+          g.things.done.has(0)
+        );
+      };
+      while (!ready() && performance.now() - t < 30000) await bowlTestWait(200);
+      if (!ready()) return { ok: false, note: `${id}: its file, ground or town never came` };
+      const g = worldBowl.ground,
+        G = g.G,
+        s = worldBowl.spots[0],
+        [cx, cz] = (M.island.c && M.island.c.length === 2 && M.island.c) || [M.w / 2, M.h / 2],
+        C = M.island.coast,
+        wrong = [];
+      /* 12 m inside the coast is land, 12 m outside is sea (the ground's corners are 6.25 m apart) */
+      let tried = 0;
+      for (let k = 0; k < C.length; k += Math.max(1, Math.floor(C.length / 24))) {
+        const [x, z] = C[k],
+          L = Math.hypot(x - cx, z - cz) || 1;
+        for (const d of [-12, 12]) {
+          const [bx, by] = bowlMapPoint(s, M, x + ((x - cx) / L) * d, z + ((z - cz) / L) * d, BOWL_METRES),
+            c = bowlCoastAt(G, bx, by);
+          tried++;
+          if (d < 0 ? c >= 0 : c <= 0) wrong.push(`${d < 0 ? 'sea' : 'land'} at ${Math.round(x)},${Math.round(z)}`);
+        }
+      }
+      if (wrong.length) return { ok: false, note: `${id}: the coast is off: ${wrong.slice(0, 4).join('; ')}` };
+      /* the mountain: the highest ground on the map is the highest on the island, lifted as drawn */
+      const H = bowlIslandHeights(M);
+      let top = -Infinity,
+        tx = 0,
+        tz = 0;
+      for (let z = 1; z < M.h; z += 2)
+        for (let x = 1; x < M.w; x += 2)
+          if (H(x, z) > top) {
+            top = H(x, z);
+            tx = x;
+            tz = z;
+          }
+      const [px, py] = bowlMapPoint(s, M, tx, tz, BOWL_METRES),
+        drawn =
+          ((bowlGridHeight(G, px, py) - bowlBaseHeight(px, py) - BOWL_ISLAND_BASE) * BOWL_METRES) / BOWL_ISLAND_LIFT;
+      if (Math.abs(drawn - top) > Math.max(3, top * 0.25))
+        return { ok: false, note: `${id}: its top is ${top.toFixed(1)} m, drawn ${drawn.toFixed(1)} m` };
+      /* its town: a model on every plot nothing stands on yet (and its own buildings) */
+      const A = (gameData.scenery && gameData.scenery.props) || {},
+        plots = bowlIslandPlotThings(M, p => bowlPropClass(p.k, A[p.k]) === 'building').length,
+        drawnN = g.things.counts[0] || 0;
+      if (drawnN < plots) return { ok: false, note: `${id}: ${drawnN} things drawn for ${plots} plots` };
+      return `${id}: its coast (${C.length} points; ${tried} land and sea checks hold), its ground laid on, its top ${top.toFixed(1)} m drawn ${drawn.toFixed(1)} m (x${BOWL_ISLAND_LIFT}), ${plots} plot buildings of ${drawnN} things; ready in ${Math.round(performance.now() - t)} ms`;
     });
     await step('Every place is on the bowl', async () => {
       const S = worldBowl.spots || [],

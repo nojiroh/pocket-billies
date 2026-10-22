@@ -7,6 +7,7 @@ What each branch on GitHub is for. Written 2026-10-21 in a clean-up session; upd
 | Branch | What it is |
 |---|---|
 | `main` | The game. |
+| `terrain-generation` | Terrain track: TR-3 (the camera on tall ground) merged as PR #108; restarted from main for TR-2c part 1 (grass patches, dust puff, 2026-10-22); part 2 (road pathfinder, the four mountain route types) next. |
 | `legacy` | The old build (Net Worth v47.x / alpha 0.5), reference only (CLAUDE.md). The `legacy` tag is missing on GitHub: only `Baseline` is there. |
 | `ui/ui-3-studio-section` | UI track UI-3a/3b: the Studio's UI section (look preview, real screens, inspect, overlays). Was `ccr-dc41c006-00p8dj`. |
 | `terrain/tr-1-roads` | Terrain TR-1: road gradient cap and switchbacks (includes the mapgen terrace move). Was `ccr-be1fe0b2-8j7yqr`. |

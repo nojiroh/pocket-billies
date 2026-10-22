@@ -24,7 +24,7 @@ import {
   setSaveData,
   uiState,
 } from './game-state.js';
-import { ART_CACHE, COIN_ART, EGG_ART, ICON_ATLAS, MENU_BACKGROUND_ART, artBoot, artImg, uiIconURL } from './art.js';
+import { ART_CACHE, COIN_ART, EGG_ART, ICON_ATLAS, artBoot, artImg, uiIconURL } from './art.js';
 import { personArtPaths } from './person-art.js';
 import { rigAtlas } from './skeleton-rig.js';
 import { AREAS, battleStagePrepare } from './battle-stage.js';
@@ -39,19 +39,16 @@ import { cutsceneStart, cutsceneWanted } from './cutscene/opening.js';
 import { titleMount, titleScreen, titleStart, titleWanted } from './title.js';
 import { loreLoadingLines } from './lore.js';
 import { runWorld, runWorldSync } from './run-world.js';
+import { runResume } from './run.js';
+import { labMilestones } from './lab-board.js';
 import { initAccount } from './account.js';
-import {
-  initPixelSky,
-  mapIdAt,
-  notice,
-  render,
-  renderOverlay,
-  showPendingWindows,
-  startGame,
-  toast,
-  whenWorldShows,
-} from './ui.js';
+import { notice, renderOverlay, toast } from './overlay.js';
+import { showPendingWindows, whenWorldShows } from './pending-windows.js';
+import { initPixelSky } from './pixel-sky.js';
+import { mapIdAt } from './walk-control.js';
+import { render, startGame } from './ui.js';
 import { fixtureStart } from './fixture.js';
+import { updateCheckStart } from './update-check.js';
 /* eslint-disable no-func-assign */
 expose({
   ART_VERSION_KEY: [() => ART_VERSION_KEY],
@@ -164,7 +161,7 @@ const LOAD_PHASES = [
 ];
 const LOAD_TIPS = [
   'Billies wait in the tall grass along the roads. More come out while you play.',
-  'Eggs hatch as you walk outdoors: a 2 km egg after 2 km, an 8 km egg after 8.',
+  'The ranch breeds two of your Billies into an egg. It hatches a few hours later, even while you’re away.',
   'Tap the ground to walk around. Tap a building to visit it.',
   'Push the joystick past its rim to run. On a keyboard, hold Shift.',
   'Clinics heal your whole team for free. Just walk up to the door.',
@@ -180,7 +177,7 @@ function loadList() {
     add = (p, ph) => {
       if (p && !L.has(p)) L.set(p, ph);
     };
-  [ICON_ATLAS, ...COIN_ART, ...EGG_ART, ...MENU_BACKGROUND_ART].forEach(p => add(p, 0));
+  [ICON_ATLAS, ...COIN_ART, ...EGG_ART].forEach(p => add(p, 0));
   for (const sp of Object.keys(SPECIES)) {
     const R = RIGS[sp];
     if (!R) continue;
@@ -951,6 +948,10 @@ else
         });
       /* phase 06: a waiting choice (hatch, learn a move, evolve) opens only once the world is showing */
       if (saveData.started && !TEST_RUN && !FIXTURE) whenWorldShows(showPendingWindows);
+      /* RL-8: a run picks up where it was (its payout screen) */
+      if (saveData.started && saveData.run && !TEST_RUN) whenWorldShows(runResume);
+      /* RL-11: milestones met since the last visit (in the hub) */
+      if (saveData.started && !saveData.run && !TEST_RUN) whenWorldShows(labMilestones);
       if (TEST_BOOT && !TEST_RUN && !FIXTURE)
         setTimeout(() => toast('Test boot: the opening with Professor Hazel, nothing is saved.'), 900);
       if (location.protocol === 'file:')
@@ -965,5 +966,8 @@ else
     });
 /* the fast check's fixture never signs in */
 if (typeof initAccount === 'function' && !FIXTURE) initAccount();
+/* a new build's worker is fetched past the browser's cache (sw.js and the version.js it imports) */
 if ('serviceWorker' in navigator && location.protocol !== 'file:')
-  addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+  addEventListener('load', () => navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {}));
+/* the owner, 2026-10-22: a phone always plays the site's latest build (update-check.js; off without a build) */
+addEventListener('load', () => updateCheckStart());

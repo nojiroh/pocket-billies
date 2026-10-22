@@ -8,7 +8,7 @@
    its own small data there before it imports this module. */
 /**
  * @import { EggTier, Evolution, GameData, LocationData, LocationEntry, Pool, Road, RoadFromNode, RoadLink } from '../types/game-data'
- * @import { CutsceneData, Seat, Species, TrainerEntry } from '../types/game-data'
+ * @import { CutsceneData, Relic, Seat, Species, TrainerEntry } from '../types/game-data'
  */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
@@ -16,8 +16,10 @@ import { makeBilly, makeRobot, provide, saveData, storyAllows } from './hooks.js
 /* eslint-disable no-func-assign */
 expose({
   BATTLE_STAGES: [() => BATTLE_STAGES],
+  BUILDINGS: [() => BUILDINGS],
   COATS: [() => COATS],
   COINS: [() => COINS],
+  CURRENCIES: [() => CURRENCIES],
   CUTSCENES: [() => CUTSCENES],
   DATA_WARN: [() => DATA_WARN],
   DEFAULT_EVOLUTIONS: [() => DEFAULT_EVOLUTIONS],
@@ -39,6 +41,7 @@ expose({
   POOLS: [() => POOLS],
   RARITY_STAT_TOTALS: [() => RARITY_STAT_TOTALS],
   REGIONS: [() => REGIONS],
+  RELICS: [() => RELICS],
   ROADS: [() => ROADS],
   ROADS_BY_NODE: [() => ROADS_BY_NODE],
   ROBOTS: [() => ROBOTS],
@@ -57,6 +60,8 @@ expose({
   TYPE_COLORS: [() => TYPE_COLORS],
   TYPE_RESISTED_BY: [() => TYPE_RESISTED_BY],
   TYPE_STRONG_AGAINST: [() => TYPE_STRONG_AGAINST],
+  UNLOCKS: [() => UNLOCKS],
+  UNLOCK_DATA: [() => UNLOCK_DATA],
   atOrLast: [() => atOrLast],
   // @ts-expect-error -- replaced on purpose
   exitLength: [() => exitLength, v => (exitLength = v)],
@@ -358,6 +363,16 @@ export const SHOPS = gameData.shops || {};
 export const NODE_TYPES = gameData.nodeTypes || {};
 /* sound track SND-2: the songs, jingles, cries' bases and where each song plays (music.json; audio/tracker.js plays them) */
 export const MUSIC = gameData.music || { songs: {}, jingles: {}, cries: { bases: [] }, where: [] };
+/* roguelite track RL-12: a run's Loopholes (relics) and their effect rows (logic/effects.js) */
+export const RELICS = /** @type {Record<string, Relic>} */ (gameData.relics || {});
+/* roguelite track RL-11: the four currencies (currencies.json) */
+export const CURRENCIES = gameData.currencies || {};
+/* RL-11: the hub's buildings, each upgraded with one currency (buildings.json; levels are unlocks.json rows) */
+export const BUILDINGS = gameData.buildings || {};
+/* RL-11: the one unlock table (unlocks.json; logic/unlocks.js) */
+export const UNLOCKS = gameData.unlocks || {};
+/* the tables logic/unlocks.js is given */
+export const UNLOCK_DATA = { unlocks: UNLOCKS, buildings: BUILDINGS };
 /* Project Story: the story layer's flags, speakers, quests and start presets (story.json) */
 export const STORY_DATA = gameData.story;
 /* cutscenes, one file each (game/data/cutscenes/<id>.json, docs/CUTSCENES.md) */
@@ -441,8 +456,10 @@ export function worldSetGraph(locations, roads) {
     const T = TRAINERS[id];
     if (T.tutorial || T.miniboss) {
       /* it waits on no location */
-    } else if (T.node !== undefined && LOCATIONS[T.node]) LOCATIONS[T.node].trainers.push(id);
-    else warnData(`Trainer ${id} stands on a stop that doesn’t exist.`);
+    } else if (T.node !== undefined && LOCATIONS[T.node]) {
+      /* RL-8: a world's trainers stand only in that world: a run's on its place (runNode), the hub's off a run's */
+      if ((T.runNode ?? null) === (LOCATIONS[T.node].runNode ?? null)) LOCATIONS[T.node].trainers.push(id);
+    } else warnData(`Trainer ${id} stands on a stop that doesn’t exist.`);
   }
   /* the first trainer at a stop that hands out a Board Seat (or doesn’t block the road) is that stop’s Boardroom */
   LOCATIONS.forEach(r => {
@@ -457,22 +474,42 @@ export const hubRoadsByNode = ROADS_BY_NODE.map(e => e.slice());
 /* RL-7: another world goes in (a run's: game/js/run-world.js) with what its places need first: its scenes into
    gameData.maps (a road's length is its exits' walk) and its pools into POOLS (a place keeps only a pool that
    exists), then its places and roads. worldHubBack takes them out and puts the hub's world back */
-export const worldExtra = { maps: /** @type {Record<string, any>} */ ({}), pools: /** @type {string[]} */ ([]) };
-/** @param {{ locations: LocationData[], roads: RoadLink[], pools: Record<string, Pool>, maps: Record<string, any> }} w */
+export const worldExtra = {
+  /* RL-8b: the world map's look of the world that is in (a run's own, logic/run-bowl.js); null: worldmap.json's */
+  look: /** @type {any} */ (null),
+  maps: /** @type {Record<string, any>} */ ({}),
+  pools: /** @type {string[]} */ ([]),
+  shops: /** @type {string[]} */ ([]),
+  trainers: /** @type {string[]} */ ([]),
+};
+/** RL-8: and its shops (a run town's) into SHOPS and its trainers (a run's mini-bosses and boss) into TRAINERS;
+ * RL-8b: and its own world map look
+ * @param {{ locations: LocationData[], roads: RoadLink[], pools: Record<string, Pool>, maps: Record<string, any>,
+ *   shops?: Record<string, any>, trainers?: Record<string, any>, look?: any }} w */
 export function worldPut(w) {
   worldHubBack();
+  worldExtra.look = w.look || null;
   Object.assign(worldExtra.maps, w.maps);
   Object.assign(gameData.maps, w.maps);
   Object.assign(POOLS, w.pools);
   worldExtra.pools.push(...Object.keys(w.pools));
+  Object.assign(SHOPS, w.shops || {});
+  worldExtra.shops.push(...Object.keys(w.shops || {}));
+  for (const [id, T] of Object.entries(w.trainers || {})) {
+    TRAINERS[id] = /** @type {TrainerEntry} */ ({ ...T, id, who: PEOPLE[T.who] ? T.who : 'gini' });
+    worldExtra.trainers.push(id);
+  }
   worldSetGraph(w.locations, w.roads);
 }
 export function worldHubBack() {
+  worldExtra.look = null;
   for (const id of Object.keys(worldExtra.maps)) {
     delete gameData.maps[id];
     delete worldExtra.maps[id];
   }
   for (const id of worldExtra.pools.splice(0)) delete POOLS[id];
+  for (const id of worldExtra.shops.splice(0)) delete SHOPS[id];
+  for (const id of worldExtra.trainers.splice(0)) delete TRAINERS[id];
   worldSetGraph(gameData.locations, gameData.roads);
 }
 /** the scenes of the world that is in when it isn't the hub's, by map id (none in the hub) */

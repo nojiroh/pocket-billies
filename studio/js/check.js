@@ -6,6 +6,7 @@ import { expose } from '../../game/js/test-globals.js';
 import { musicCheckFindings, provide, uiRulesCheckLine } from '../../game/js/hooks.js';
 import { $ } from '../../game/js/util.js';
 import { uiThemeContrast } from '../../game/js/logic/ui-theme.js';
+import { islandProblems } from '../../game/js/logic/island.js';
 import { storyFindings } from '../../game/js/logic/story-checks.js';
 import { boneSlot } from '../../game/js/skeleton-rig.js';
 import { decodeBase64Array } from '../../game/js/walk-view.js';
@@ -172,7 +173,8 @@ export function runCheck() {
               wtab: 'look',
             });
     const sh = typeof wmlSeaShare === 'function' ? wmlSeaShare() : null;
-    if (sh != null && (sh < 0.3 || sh > 0.5))
+    /* RL-8b: an island world (sea.island) is mostly sea on purpose */
+    if (sh != null && !(WM.sea && WM.sea.island > 0) && (sh < 0.3 || sh > 0.5))
       warn(`World map look: ${Math.round(sh * 100)}% of the bowl is sea; between 30% and 50% reads best.`, 'world', {
         wtab: 'look',
       });
@@ -345,6 +347,8 @@ export function runCheck() {
       for (const ch of row) if (!SY.terrains[ch]) bad.add(ch);
     });
     if (bad.size) err(`Scene ${s.name || k} uses unknown ground ${[...bad].join(', ')}.`, 'scenes', g);
+    /* IS-6a: the island fields and the ground lock (check-data refuses the same); they open in Hub island */
+    for (const msg of islandProblems(s)) err(`Island ${s.name || k}: ${msg}.`, 'hub', { hub: k });
     if ((s.tiles || []).length !== s.h)
       warn(`Scene ${s.name || k} has ${(s.tiles || []).length} rows of ground but is ${s.h} tall.`, 'scenes', g);
     (s.props || []).forEach(p => {
@@ -475,9 +479,10 @@ export function runCheck() {
         where ? { uiFocus: { scope: where, rel: `color.${f.side}.${f.fg}` } } : {}
       );
     }
-  /* UI-3b: the UI rules (game/js/logic/ui-lint.js on the game's files), one report line; Show me lists every value */
+  /* UI-3b: the UI rules (game/js/logic/ui-lint.js on the game's files), one line; Show me lists every value. UI-6: an
+     error when a rule is over its ceiling */
   const rules = uiRulesCheckLine();
-  if (rules) P.push({ lvl: 'info', msg: rules, go: 'ui', sel: { uiRules: 1 } });
+  if (rules) P.push({ lvl: rules.over ? 'error' : 'info', msg: rules.msg, go: 'ui', sel: { uiRules: 1 } });
   /* SND-3: the music (music-editor.js): a rule naming no song, a song nothing plays; a note on the cries */
   for (const f of musicCheckFindings()) P.push(f);
   /* Project Story S3: the story checks, the same ones check-data runs (game/js/logic/story-checks.js) */

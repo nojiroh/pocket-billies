@@ -31,6 +31,9 @@ import { foliageAmount, setPropLookUniforms } from './prop-look.js';
 expose({
   BOX_INFO_CACHE: [() => BOX_INFO_CACHE],
   IMAGE_IDS: [() => IMAGE_IDS],
+  SILHOUETTE_AMOUNT: [() => SILHOUETTE_AMOUNT],
+  SILHOUETTE_PULL: [() => SILHOUETTE_PULL],
+  SILHOUETTE_TINT: [() => SILHOUETTE_TINT],
   SPRITE_LIST: [() => SPRITE_LIST],
   TURNED_BACK: [() => TURNED_BACK],
   TURNED_RIGHT: [() => TURNED_RIGHT],
@@ -40,6 +43,7 @@ expose({
   drawBoxFaces: [() => drawBoxFaces, v => setDrawBoxFaces(v)],
   drawClockHands: [() => drawClockHands, v => (drawClockHands = v)],
   drawFlatItem: [() => drawFlatItem, v => (drawFlatItem = v)],
+  drawPlayerSilhouette: [() => drawPlayerSilhouette, v => setDrawPlayerSilhouette(v)],
   drawRotatingBlades: [() => drawRotatingBlades, v => (drawRotatingBlades = v)],
   drawSprites: [() => drawSprites, v => setDrawSprites(v)],
   imageId: [() => imageId, v => (imageId = v)],
@@ -54,6 +58,10 @@ expose({
 export function setDrawBoxFaces(v) {
   drawBoxFaces = v; // eslint-disable-line no-func-assign
   provide({ drawBoxFaces });
+}
+export function setDrawPlayerSilhouette(v) {
+  drawPlayerSilhouette = v; // eslint-disable-line no-func-assign
+  provide({ drawPlayerSilhouette });
 }
 export function setDrawSprites(v) {
   drawSprites = v; // eslint-disable-line no-func-assign
@@ -224,21 +232,29 @@ export function drawSprites(C, items, X, hits, labels, PPU) {
     gl.activeTexture(gl.TEXTURE1);
     gl.bindTexture(gl.TEXTURE_2D, T.n);
     setSpriteUniforms(p, it, null, it.z, rk);
+    /* phase 09 batch 10: a model's picture layer may be pulled toward the eye (prop-models.js eyeward); uFwd points
+       away from the eye */
+    if (it.eyeward) gl.uniform1f(U.uDZ, -it.eyeward);
     if (it.wave) {
       gl.uniform3fv(U.uWave, it.wave);
       bindGridQuad();
       gl.drawArrays(gl.TRIANGLES, 0, gpuState.gridN);
       gl.uniform3f(U.uWave, 0, 0, 0);
+      if (it.eyeward) gl.uniform1f(U.uDZ, 0);
       bindQuad();
       continue;
     }
     gl.drawArrays(gl.TRIANGLES, 0, 6);
-    /* trees get a second picture crossing the first, so a turned camera sees a crown, not a cut-out's edge */
-    if (it.cross && Math.abs(C.yaw) > 0.04) {
+    if (it.eyeward) gl.uniform1f(U.uDZ, 0);
+    /* trees get a second picture crossing the first, so a turned camera sees a crown, not a cut-out's edge (IS-1: by
+       the sine of the turn, so a camera looking south, as an orbiting one does, sees the first picture face on again
+       and the second edge-on fades out) */
+    const crossK = Math.abs(Math.sin(C.yaw || 0));
+    if (it.cross && crossK > 0.04) {
       gl.uniform3f(U.uRight, 0, 0, it.flip > 0 ? 1 : -1);
       gl.uniform3f(U.uBack, -1, 0, 0);
       gl.uniform1f(U.uFixed, 0);
-      gl.uniform1f(U.uFade, fade * Math.min(1, Math.abs(C.yaw) * 4));
+      gl.uniform1f(U.uFade, fade * Math.min(1, crossK * 4));
       setSpriteUniforms(p, it);
       gl.drawArrays(gl.TRIANGLES, 0, 6);
     }
@@ -278,6 +294,49 @@ export function drawSprites(C, items, X, hits, labels, PPU) {
    Worked out once per picture: where the walls stand at the base, which rows reach each wall (so a gable or an
    awning shapes the side), the wall colour just inside each edge and the roof colour at the eaves. */
 const BOX_INFO_CACHE = new WeakMap();
+/* terrain TR-3: your silhouette through rock. Where ground cuts the camera's line to you (walk/camera.js rockK), you
+   are drawn again as a flat dithered tint wherever something clearly nearer the camera hides you (depth GREATER, the
+   picture pulled 0.6 m toward the eye so the ground at your feet doesn't count); nothing is written to depth. Off on
+   flat ground, indoors, in battle and with Engine > Camera > "Your silhouette through rock" off */
+const SILHOUETTE_TINT = [0.16, 0.27, 0.55],
+  SILHOUETTE_AMOUNT = 0.55,
+  SILHOUETTE_PULL = 0.6;
+export function drawPlayerSilhouette(C, items, X) {
+  const sc = walkView.sc,
+    k = C.rockK || 0;
+  if (walkRenderer.bt || !sc || sc.indoor || sc.room || k < 0.01 || !engineSetting('camera', 'silhouette')) return 0;
+  const it = items.find(i => i.k === 'me');
+  if (!it || !it.im) return 0;
+  const T = imageTexture(it.im);
+  if (!T) return 0;
+  const gl = gpuState.gl,
+    p = useWalkProgram('sprite', C, X),
+    U = p.U;
+  bindQuad();
+  gl.uniform3fv(U.uRight, C.right);
+  gl.uniform3fv(U.uBack, C.back);
+  gl.uniform3fv(U.uFwd, C.fwd);
+  gl.uniform1f(U.uDZ, 0);
+  gl.uniform1f(U.uCurveOn, 1);
+  gl.uniform1f(U.uAlpha, 1);
+  gl.uniform1f(U.uFade, 1);
+  if (U.uWave) gl.uniform3f(U.uWave, 0, 0, 0);
+  gl.uniform4f(U.uGhost, SILHOUETTE_TINT[0], SILHOUETTE_TINT[1], SILHOUETTE_TINT[2], SILHOUETTE_AMOUNT * k);
+  gl.uniform4f(U.uGhostV, C.eye[0], C.eye[1], C.eye[2], SILHOUETTE_PULL);
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, T.t);
+  setSpriteUniforms(p, it);
+  gl.enable(gl.DEPTH_TEST);
+  gl.depthFunc(gl.GREATER);
+  gl.depthMask(false);
+  gl.disable(gl.BLEND);
+  gl.drawArrays(gl.TRIANGLES, 0, 6);
+  gl.depthFunc(gl.LEQUAL);
+  gl.depthMask(true);
+  gl.uniform4f(U.uGhost, 0, 0, 0, 0);
+  gl.uniform4f(U.uGhostV, 0, 0, 0, 0);
+  return 1;
+}
 function boxInfo(im) {
   let B = BOX_INFO_CACHE.get(im);
   if (B !== undefined) return B;
@@ -504,7 +563,9 @@ function drawClockHands(p, it, C, X) {
 /* v47: how far the camera tilts up for the landmarks near you: a thing marked "landmark" in the catalogue (the clock
    tower, the giant tree, the crane...) between 2 and 18 metres ahead and within 8 to the side, by how far its top
    rises above what the camera shows anyway (about 5 m); up to 11 degrees */
-export function landmarkTilt(P, sc) {
+/* island track IS-1: `yaw` is the way the camera faces (0, north, everywhere but an orbiting island); a landmark counts
+   when it stands ahead along that way */
+export function landmarkTilt(P, sc, yaw = 0) {
   if (!sc || sc.indoor || !P || reducedMotion) return 0;
   const C0 = walkData().sc;
   let L = walkRenderer.lmL;
@@ -517,11 +578,15 @@ export function landmarkTilt(P, sc) {
       }),
     };
   let best = 0;
+  const fx = Math.sin(yaw),
+    fz = Math.cos(yaw);
   for (const p of L.list) {
     if (typeof propShown === 'function' && !propShown(p)) continue;
     const M = C0.props[p.k],
-      dz = p.z - P.z,
-      dx = Math.abs(p.x - P.x);
+      ox = p.x - P.x,
+      oz = p.z - P.z,
+      dz = ox * fx + oz * fz,
+      dx = Math.abs(ox * fz - oz * fx);
     if (dz < 2 || dz > 18 || dx > 8) continue;
     const hm = (-M.oy / 34) * (p.s || 1),
       k = Math.min(1, (dz - 2) / 3) * Math.min(1, (18 - dz) / 6) * Math.min(1, (8 - dx) / 4);

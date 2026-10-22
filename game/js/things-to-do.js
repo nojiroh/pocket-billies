@@ -8,6 +8,7 @@ import { expose } from './test-globals.js';
 import { closeModal, modal, progressBarHTML, provide, render, roomRefresh, toast } from './hooks.js';
 import { clamp } from './util.js';
 import { COINS, ITEMS, LOCATIONS, ROADS_BY_NODE, RULES, gameData, isTown } from './game-data.js';
+import { battleWeatherOf } from './logic/weather.js';
 import { speciesOf } from './logic/fighters.js';
 import { billyName, formatNumber, today } from './logic/rules.js';
 import { battleSay } from './logic/battle-engine.js';
@@ -39,7 +40,6 @@ expose({
   REQUEST_KINDS: [() => REQUEST_KINDS],
   STAMP_SPOTS: [() => STAMP_SPOTS],
   WEATHER_BATTLE_NOTES: [() => WEATHER_BATTLE_NOTES],
-  WEATHER_TYPE_BOOSTS: [() => WEATHER_TYPE_BOOSTS],
   arrivedAt: [() => arrivedAt, v => ((arrivedAt = v), provide({ arrivedAt }))],
   battleWeather: [() => battleWeather, v => (battleWeather = v)],
   battleWeatherMultiplier: [
@@ -197,7 +197,8 @@ export function arrivedAt(node) {
 const challengeText = c => (CHALLENGE_KINDS.find(t => t.k === c.k) || { text: () => c.k }).text(c);
 /* something happened: a catch (with its types), a win, a fish landed, a stamp found */
 function recordThingsToDoEvent(k, o = {}) {
-  if (!saveData || !saveData.started) return;
+  /* RL-8: today's challenges are the hub's (a run's wins and catches don't count, its money isn't the hub's) */
+  if (!saveData || !saveData.started || saveData.run) return;
   const C = challengesToday();
   let ch = false;
   for (const c of C.list) {
@@ -221,9 +222,9 @@ function recordThingsToDoEvent(k, o = {}) {
   if (ch) save();
 }
 export function challengeCardHTML() {
-  if (!saveData.started) return '';
+  if (!saveData.started || saveData.run) return '';
   const C = challengesToday();
-  return `<section class="chal px glass"><div class="sec-h"><h2>Today’s challenges</h2><span class="count tnum">${C.list.filter(c => c.claimed).length}/${C.list.length}</span></div>${C.list
+  return `<section class="chal px glass k-card"><div class="sec-h"><h2>Today’s challenges</h2><span class="count tnum">${C.list.filter(c => c.claimed).length}/${C.list.length}</span></div>${C.list
     .map((c, i) => {
       const h = Math.min(challengeProgress(c), c.need),
         done = h >= c.need;
@@ -233,7 +234,7 @@ export function challengeCardHTML() {
 }
 function claimChallenge(i) {
   const c = challengesToday().list[+i];
-  if (!c || c.claimed || challengeProgress(c) < c.need) return;
+  if (!c || c.claimed || challengeProgress(c) < c.need || saveData.run) return;
   c.claimed = true;
   const got = thingsToDoReward(1.4);
   save();
@@ -501,18 +502,19 @@ const FURNITURE = [
   ['lab_machine', 'Coin tube'],
 ];
 /* where things can go: floor spots, two on the back wall, one for a rug */
+/* RL-9 session: on the home's smaller floor (tools/build-interiors.py SIZE and fit) */
 const HOME_SLOTS = [
-  { x: 2.6, z: 8.6, n: 'Back left' },
-  { x: 7, z: 9.0, n: 'Back wall, middle' },
-  { x: 11.4, z: 8.6, n: 'Back right' },
-  { x: 2.4, z: 5.4, n: 'Left' },
-  { x: 11.6, z: 5.4, n: 'Right' },
-  { x: 7, z: 6.2, n: 'Middle' },
-  { x: 2.2, z: 2.6, n: 'Front left' },
-  { x: 11.8, z: 2.6, n: 'Front right' },
-  { x: 4.2, z: 9.45, n: 'On the wall, left', wall: 1 },
-  { x: 9.8, z: 9.45, n: 'On the wall, right', wall: 1 },
-  { x: 7, z: 3.9, n: 'Floor (rug)', rug: 1 },
+  { x: 2.32, z: 7.72, n: 'Back left' },
+  { x: 6, z: 8.06, n: 'Back wall, middle' },
+  { x: 9.68, z: 7.72, n: 'Back right' },
+  { x: 2.15, z: 4.98, n: 'Left' },
+  { x: 9.85, z: 4.98, n: 'Right' },
+  { x: 6, z: 5.67, n: 'Middle' },
+  { x: 1.99, z: 2.59, n: 'Front left' },
+  { x: 10.01, z: 2.59, n: 'Front right' },
+  { x: 3.66, z: 8.45, n: 'On the wall, left', wall: 1 },
+  { x: 8.34, z: 8.45, n: 'On the wall, right', wall: 1 },
+  { x: 6, z: 3.7, n: 'Floor (rug)', rug: 1 },
 ];
 const furnitureFits = (k, s) => (s.wall ? /^wall_/.test(k) : s.rug ? /^rug_/.test(k) : !/^wall_|^rug_/.test(k));
 export function refreshHomeFurniture() {
@@ -675,15 +677,6 @@ document.addEventListener('click', ev => {
 });
 
 /* ---------- battles feel the weather ---------- */
-const WEATHER_TYPE_BOOSTS = {
-  rain: { Water: 1.2, Fire: 0.8 },
-  storm: { Electric: 1.25, Water: 1.15, Fire: 0.8 },
-  snow: { Steel: 1.1, Grass: 0.9 },
-  fog: { Psychic: 1.1 },
-  ash: { Fire: 1.15, Ground: 1.15, Water: 0.9 },
-  sunny: { Fire: 1.15, Grass: 1.1, Water: 0.95 },
-  night: { Psychic: 1.15, Dragon: 1.1 },
-};
 const WEATHER_BATTLE_NOTES = {
   rain: 'It’s raining: Water moves hit harder and Fire moves fizzle.',
   storm: 'A storm is raging: Electric and Water moves are stronger, Fire weaker.',
@@ -701,9 +694,8 @@ function battleWeather() {
   const sc = currentLocationMap();
   if (!sc || sc.indoor) return (activeBattle.wx = null);
   const st = environmentState(sc),
-    k = st.night > 0.5 ? (st.wx === 'clear' ? 'night' : st.wx) : st.wx === 'clear' ? 'sunny' : st.wx,
-    m = Object.assign({}, WEATHER_TYPE_BOOSTS[k] || {}, ((RULES.env || {}).battle || {})[k] || {});
-  return (activeBattle.wx = Object.keys(m).length ? { k, m } : null);
+    k = st.night > 0.5 ? (st.wx === 'clear' ? 'night' : st.wx) : st.wx === 'clear' ? 'sunny' : st.wx;
+  return (activeBattle.wx = battleWeatherOf(k, RULES.env));
 }
 function battleWeatherMultiplier(t) {
   const w = battleWeather();

@@ -15,16 +15,15 @@
 import { expose } from '../test-globals.js';
 import {
   JINGLES,
-  activeBattle,
   coatRoll,
   environmentOdds,
   jingle,
   provide,
-  render,
+  ranchStop,
   runNodeSeed,
+  runWeather,
   save,
   saveData,
-  showPendingWindows,
   soundEffect,
   storyHolds,
   toast,
@@ -52,6 +51,7 @@ import {
   typeEffectiveness,
 } from '../game-data.js';
 import { rngFn } from './rng.js';
+import { wildOddsBy } from './weather.js';
 import { partsLean, partsPrime, partsStatFactor, partsWeightRatio } from './parts.js';
 import {
   ROBOT_LIMBS,
@@ -219,7 +219,14 @@ export const cleanName = (s, max) =>
     .slice(0, max);
 provide({ cleanName }); /* to-module */
 export const formatNumber = n => Math.floor(n).toLocaleString('en-US');
-export const newUid = () => 'm' + Date.now().toString(36) + Math.floor(random() * 1e8).toString(36);
+/* RL-8: on a run, from the run's own counter (run.uidN: 'r' + the runs played before + '-' + n), so a run made again
+   from its seed (a resume, its simulation) gives its Billies, encounters and eggs the same ids; the hub's from the
+   clock as before */
+export const newUid = () => {
+  const run = saveData && saveData.run;
+  if (run) return `r${(saveData.meta && saveData.meta.runs) || 0}-${run.uidN++}`;
+  return 'm' + Date.now().toString(36) + Math.floor(random() * 1e8).toString(36);
+};
 export const today = () => {
   const d = new Date();
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
@@ -299,6 +306,10 @@ export function stat(m, k) {
   let v = k === 'hp' ? Math.floor((2 * b * m.lvl) / 100) + m.lvl + 10 : Math.floor((2 * b * m.lvl) / 100) + 5;
   /* phase 16: its parts (weight and Prime) */
   if (m.build) v = Math.max(1, Math.round(v * buildStatFactor(m.build, k)));
+  /* RL-10: an abomination's spike and drawback (rules.json ranch.breed) */
+  const mu = m.mut,
+    B = mu && mu.k === 'abom' && RULES.ranch && RULES.ranch.breed;
+  if (B && (k === mu.up || k === mu.down)) v = Math.max(1, Math.round(v * (k === mu.up ? B.abomUp : B.abomDown)));
   /* v33: an Alpha in battle is much tougher (m.boss); one you caught keeps a little of it (m.alpha) */
   if (m.boss) v = Math.floor(v * (k === 'hp' ? m.boss.hp : m.boss.st));
   else if (m.alpha) v = Math.floor(v * ((RULES.battle && RULES.battle.alphaKeep) ?? 1.08));
@@ -470,8 +481,10 @@ export function upgradePart(p) {
   for (const { m, previousMaxHp } of fitted) refreshRobot(m, previousMaxHp);
   return true;
 }
-export const billyName = m => m.nick || speciesOf(m).name;
-export const allBillies = () => saveData.team.concat(saveData.box);
+export const billyName = m => m.nick || (m.mut && m.mut.name) || speciesOf(m).name;
+/* RL-8: during a run storage stays in Copperleaf (the box isn't a run field): only the party counts, so nothing in a run
+   reads, heals, merges or moves a Billie that is resting at home */
+export const allBillies = () => (saveData.run ? saveData.team.slice() : saveData.team.concat(saveData.box));
 export const findBilly = id => allBillies().find(m => m.uid === id);
 export function gainXp(m, amt, say) {
   if (m.lvl >= maxLevel() || amt <= 0) return;
@@ -567,17 +580,25 @@ export function healAll() {
     repairParts(m);
   }
 }
+/** move a Billie to storage (false during a run: storage stays in Copperleaf) */
 export function toBox(m) {
+  if (saveData.run) return false;
   const i = saveData.team.indexOf(m);
   if (i >= 0) saveData.team.splice(i, 1);
   if (!saveData.box.includes(m)) saveData.box.push(m);
   m.boxedAt = Date.now();
+  return true;
 }
+/** bring a Billie from storage onto the team (false during a run); one training at the ranch collects what it banked
+    and stops (RL-9) */
 export function toTeam(m) {
+  if (saveData.run) return false;
+  if (RULES.ranch && saveData.ranch) ranchStop(saveData, m.uid, Date.now(), RULES.ranch, toast);
   const i = saveData.box.indexOf(m);
   if (i >= 0) saveData.box.splice(i, 1);
   if (!saveData.team.includes(m)) saveData.team.push(m);
   m.boxedAt = null;
+  return true;
 }
 export function addBilly(m) {
   /* phase 17: robots aren't in the Guide */
@@ -589,6 +610,9 @@ export function addBilly(m) {
     saveData.team.push(m);
     return 'team';
   }
+  /* RL-8: a run's party is full: the Billie waits with the caller until one is released (a team of seven can't be
+     saved, and storage is the hub's) */
+  if (saveData.run) return 'full';
   m.boxedAt = Date.now();
   saveData.box.push(m);
   return 'box';
@@ -760,8 +784,20 @@ export function dropEncounter(id) {
 }
 /* RL-2: every outcome draw (species, level, sizes, coat, Alpha) comes from rnd; a run passes its own stream */
 export function spawn(gentle, force, node = saveData.trip.node, rnd = random) {
-  const P = encounterPoolHere(node);
-  let list = typeof environmentOdds === 'function' ? environmentOdds(P.list) : P.list;
+  const P = encounterPoolHere(node),
+    L = LOCATIONS[node],
+    run = saveData.run;
+  /* RL-8: a run's place draws by its forecast for today alone, here in logic (a run has no hour: the same Billies on
+     every device, at any time of day, and in a run's simulation); the hub by the real clock's weather and hour */
+  const anyRules = /** @type {any} */ (RULES),
+    likes = anyRules.env ? anyRules.env.likes : undefined,
+    typesOf = (/** @type {string} */ id) => (SPECIES[id] ? SPECIES[id].types : []);
+  let list =
+    L && L.runNode != null && run && run.map
+      ? wildOddsBy(P.list, runWeather(run, L.runNode, run.clock), likes, typesOf)
+      : typeof environmentOdds === 'function'
+        ? environmentOdds(P.list)
+        : P.list;
   if (gentle) {
     const my = SPECIES[saveData.starter + '0'].types,
       g = list.filter(([id]) => !SPECIES[id].types.some(t => typeEffectiveness(t, my) > 1));
@@ -787,28 +823,17 @@ export function spawn(gentle, force, node = saveData.trip.node, rnd = random) {
 
 /* ---------- walking and eggs ---------- */
 /* phase 08: the metres you walk outdoors (walk-view.js movePlayer; not in rooms, on ladders or test benches, and not a
-   jump to a new view): the distance on your trainer card, and what hatches the eggs in your incubators (eggs.json need,
-   in metres). Saved every 20 m, and at once when an egg is ready */
+   jump to a new view): the distance on your trainer card. Saved every 20 m. RL-10: walking hatches nothing any more
+   (eggs hatch at the ranch on real time, logic/breeding.js) */
 export let walkedUnsaved = 0;
 export function addWalked(m) {
   if (!saveData.started || !Number.isFinite(m) || m <= 0 || m > 1000) return;
   const S = saveData.stats || (saveData.stats = {});
   S.walked = (S.walked || 0) + m;
-  let ready = false;
-  for (const e of saveData.eggs) {
-    const need = EGGS[e.tier].need;
-    if (e.slot == null || e.prog >= need) continue;
-    e.prog = Math.min(need, e.prog + m);
-    if (e.prog >= need) ready = true;
-  }
   walkedUnsaved += m;
-  if (!ready && walkedUnsaved < 20) return;
+  if (walkedUnsaved < 20) return;
   walkedUnsaved = 0;
   save();
-  if (ready && !activeBattle) {
-    render();
-    showPendingWindows();
-  }
 }
 export const metresToKm = m => (m / 1000).toFixed(1);
 /* a walking distance for people: "80 m", "850 m", "1.2 km" */

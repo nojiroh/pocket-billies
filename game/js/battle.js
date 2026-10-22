@@ -15,7 +15,11 @@ import {
   limbPipsHTML,
   modal,
   provide,
+  relicPickOpen,
   render,
+  runCatch,
+  runOver,
+  runReleaseSheet,
   showPendingWindows,
   statusBadgeHTML,
   storyAfterRival,
@@ -24,24 +28,12 @@ import {
   typeBadgeHTML,
 } from './hooks.js';
 import { $, $$, clamp, random } from './util.js';
-import {
-  COINS,
-  EGGS,
-  EGG_TIERS,
-  ITEMS,
-  MOVES,
-  RULES,
-  STAT_NAMES,
-  TYPE_COLORS,
-  typeEffectiveness,
-} from './game-data.js';
+import { COINS, ITEMS, MOVES, RELICS, RULES, STAT_NAMES, TYPE_COLORS, typeEffectiveness } from './game-data.js';
 import { ROBOT_LIMBS, ROBOT_SLOT_NAMES, isRobot, robotPartDef, speciesOf } from './logic/fighters.js';
 import {
   addBilly,
-  addEgg,
   billyName,
   dropEncounter,
-  eggKm,
   findBilly,
   formatNumber,
   healAll,
@@ -50,10 +42,9 @@ import {
   partBroken,
   partHpLeft,
   partMaxHp,
-  pickWeighted,
   plural,
-  wildPrize,
 } from './logic/rules.js';
+import { relicOfferMake } from './logic/relics.js';
 import {
   ACTOR_SIDE,
   BATTLE_RULES,
@@ -74,8 +65,9 @@ import {
   shockName,
   teamNeedsHp,
 } from './logic/battle-engine.js';
+import { battleRewards } from './logic/battle-rewards.js';
 import { activeBattle, escapeHtml, reducedMotion, save, saveData, setActiveBattle, uiState } from './game-state.js';
-import { artURL, coinHTML, eggHTML, iconURL, uiIconHTML } from './art.js';
+import { artURL, coinHTML, iconURL, uiIconHTML } from './art.js';
 import { portraitHTML } from './person-art.js';
 import { RIG_BACK_VIEW, bustHTML, rigPreload } from './skeleton-rig.js';
 import {
@@ -920,6 +912,11 @@ function finishThrow(res, id, lab, spin) {
     e.hp = Math.max(1, e.hp);
     const where = addBilly(e);
     if (where === 'box') battleSay(`${billyName(e)} went to storage. Your team is full.`);
+    /* RL-8: a run's party is full: after the battle, one of the seven leaves the party (run.js) */
+    if (where === 'full') {
+      runCatch.m = e;
+      battleSay(`Your party is full. After the battle, pick who leaves it.`);
+    }
     activeBattle.over = 'caught';
     save();
     return playTurnEvents();
@@ -938,11 +935,20 @@ function finishThrow(res, id, lab, spin) {
 export function endBattle() {
   stopTimers();
   const kind = activeBattle.kind,
-    /* RL-4: a battle called off at the turn cap ends as if you walked away (wild) or lost (a trainer) */
-    o = activeBattle.over === 'draw' ? (kind === 'wild' ? 'ran' : 'lose') : activeBattle.over,
     T = activeBattle.T,
     tid = activeBattle.tid,
-    lead = findBilly(activeBattle.lead);
+    /* RL-8: what it pays and costs (logic/battle-rewards.js); RL-4: a battle called off at the turn cap ends as if you
+       walked away (wild) or lost (a trainer) */
+    pay = battleRewards(
+      { kind, over: activeBattle.over, T, tid, foe: activeBattle.sides[1].team, fx: activeBattle.fx },
+      saveData,
+      battleRoll
+    ),
+    o = pay.o,
+    lead = findBilly(activeBattle.lead),
+    /* RL-8: a run's battle (run.js): it has ended, so the save may be written again (game-state.js saveHeld) */
+    run = saveData.run && activeBattle.runK != null ? saveData.run : null;
+  if (run) run.at = { phase: 'walk', battle: -1 };
   if (o === 'win' && typeof jingle === 'function') jingle(JINGLES.victory);
   if (o === 'win') for (const m of saveData.team) if (m.hp > 0) m.wins = (m.wins || 0) + 1; /* v36: the Hype counter */
   if (typeof battleTipHide === 'function') battleTipHide();
@@ -971,8 +977,9 @@ export function endBattle() {
     return;
   }
   const after = [];
-  if (o === 'lose') {
-    const fee = Math.floor(saveData.se * BATTLE_RULES.loseFee);
+  /* RL-8: on a run, a loss ends the run (its payout, after the battle) */
+  if (o === 'lose' && !run) {
+    const fee = pay.fee;
     saveData.se -= fee;
     healAll();
     after.push({
@@ -983,62 +990,60 @@ export function endBattle() {
   }
   /* phase 08: beating a wild Billie pays prize money (steps paid before) */
   if (kind === 'wild' && o === 'win') {
-    const prize = activeBattle.sides[1].team.reduce((a, m) => a + wildPrize(m.lvl), 0);
+    const prize = pay.prize;
     if (prize > 0) {
       saveData.se += prize;
       toast(`You earned $${formatNumber(prize)}.`);
     }
   }
-  const E = RULES.eggs;
-  if (kind === 'wild' && o === 'win' && battleRoll() < E.dropChance) {
-    const tiers = Object.entries(E.dropTiers)
-      .filter(([t]) => EGGS[t])
-      .map(([t, w]) => [+t, w]);
-    const tier = tiers.length ? pickWeighted(tiers, battleRoll) : EGG_TIERS[0];
-    if (addEgg(tier))
-      after.push({
-        title: 'It dropped an egg',
-        top: `<div class="sheet-art">${eggHTML(tier, 72, 'wob')}</div>`,
-        html: `<p>A ${eggKm(tier)} km egg rolled out of the grass. Walk ${eggKm(tier)} km with it in an incubator to see what hatches.</p>`,
-        btns: [{ l: 'Nice', c: 'dark', f: closeModal }],
-      });
-  }
   if (kind === 'trainer' && o === 'win') {
-    saveData.se += T.reward || 0;
-    const first = !saveData.flags[tid];
+    saveData.se += pay.reward;
+    /* RL-12: a run's mini-boss beaten: a pick of Loopholes, saved on the run before it shows (logic/relics.js) */
+    if (run && T && T.runFoe === 'miniboss') relicOfferMake(run, RELICS, RULES.run.relics);
+    const first = pay.first;
     saveData.flags[tid] = 1;
     let extra = '';
-    if (first && T.egg && addEgg(T.egg)) extra += ` and a ${eggKm(T.egg)} km egg`;
     const st = T.seat;
-    if (st) {
-      const nu = !saveData.seats.includes(st.id);
+    if (st && pay.seat) {
+      const nu = pay.seat.nu;
       if (nu) {
-        saveData.seats.push(st.id);
-        for (const k in st.coins || {}) saveData.coins[k] = (saveData.coins[k] || 0) + st.coins[k];
-        for (const k in st.items || {}) saveData.items[k] = (saveData.items[k] || 0) + st.items[k];
+        saveData.seats.push(pay.seat.id);
+        for (const k in pay.seat.coins) saveData.coins[k] = (saveData.coins[k] || 0) + pay.seat.coins[k];
+        for (const k in pay.seat.items) saveData.items[k] = (saveData.items[k] || 0) + pay.seat.items[k];
       }
       after.push({
         title: nu ? escapeHtml(st.title || 'Badge') : 'Rematch won',
         top: `<div class="sheet-art">${coinHTML(st.coin || 'penny', 96, 32)}</div>`,
-        html: `<p>${escapeHtml(T.win || '')}</p><p>You earned $${formatNumber(T.reward || 0)}${nu && st.rewardText ? `, ${escapeHtml(st.rewardText)}` : ''}${extra}.</p>${nu && st.unlockText ? `<p class="note">${escapeHtml(st.unlockText)}</p>` : ''}`,
+        html: `<p>${escapeHtml(T.win || '')}</p><p>You earned $${formatNumber(pay.reward)}${nu && st.rewardText ? `, ${escapeHtml(st.rewardText)}` : ''}${extra}.</p>${nu && st.unlockText ? `<p class="note">${escapeHtml(st.unlockText)}</p>` : ''}`,
         btns: [{ l: 'Back to walking', c: 'dark', f: closeModal }],
       });
     } else
       after.push({
         title: `You beat ${escapeHtml(T.name)}`,
         top: `<div class="sheet-art">${portraitHTML(T.who, 96, 'sad')}</div>`,
-        html: `<p>${escapeHtml(T.win || '')}</p><p>You earned $${formatNumber(T.reward || 0)}${extra}.</p>`,
+        html: `<p>${escapeHtml(T.win || '')}</p><p>You earned $${formatNumber(pay.reward)}${extra}.</p>`,
         btns: [
           {
-            l: 'Keep walking',
             c: 'dark',
+            l: run && T.runFoe === 'boss' ? 'On to the payout' : run && run.offer ? 'Pick a Loophole' : 'Keep walking',
             f:
-              first && (T.clue || T.ending) && typeof storyAfterWin === 'function'
+              /* RL-8: the run's boss beaten: the run is won */
+              run && T.runFoe === 'boss'
                 ? () => {
-                    closeModal();
-                    storyAfterWin(T);
+                    uiState.modal = null;
+                    runOver(true);
                   }
-                : closeModal,
+                : run && run.offer
+                  ? () => {
+                      uiState.modal = null;
+                      relicPickOpen();
+                    }
+                  : first && (T.clue || T.ending) && typeof storyAfterWin === 'function'
+                    ? () => {
+                        closeModal();
+                        storyAfterWin(T);
+                      }
+                    : closeModal,
           },
         ],
       });
@@ -1050,8 +1055,13 @@ export function endBattle() {
     document.body.classList.remove('in-battle');
     uiState.tab = 'walk';
     render();
+    /* RL-8: a Billie caught with a full party: the release sheet comes first */
+    const rel = runReleaseSheet();
+    if (rel) after.unshift(rel);
     after.forEach(m => modal(m));
-    if (!after.length) showPendingWindows();
+    /* RL-8: the run's party fainted: the run is over */
+    if (run && o === 'lose') runOver(false);
+    else if (!after.length) showPendingWindows();
   });
 }
 /* phase 04d: things-to-do.js adds the weather and its events around it */

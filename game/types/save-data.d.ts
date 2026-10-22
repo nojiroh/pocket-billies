@@ -108,8 +108,11 @@ export interface Ranch {
   pens: string[];
   /** Billies training between runs: uid, Date.now() when training started */
   trainees: { uid: string; at: number }[];
-  /** breeding pairs: the parents' uids, the mode, when it started and when the egg is ready (Date.now()) */
-  nursery: { a: string; b: string; mode: 'safe' | 'risky'; at: number; ready: number }[];
+  /** breeding pairs: the parents' uids, the mode, when it started and when the egg is ready (Date.now()), and the
+      Billie it hatches into (rolled when it started, RL-10 logic/breeding.js) */
+  nursery: { a: string; b: string; mode: 'safe' | 'risky'; at: number; ready: number; egg: Billy }[];
+  /** RL-10: how many pairs have bred (part of each egg's seed) */
+  bred: number;
   /** passive income: per hour, banked so far, the last time it was counted (Date.now(); only moves forward) */
   income: { rate: number; bank: number; lastAt: number };
 }
@@ -135,6 +138,16 @@ export interface RunMap {
 }
 
 /** what a run changes in the working fields, copied when it starts and put back when it ends */
+/** RL-8: a run battle's foe as it began (logic/run-state.js validRunFoe) */
+export interface RunFoe {
+  kind: 'wild' | 'trainer';
+  fmt: 'single' | 'double' | 'alpha';
+  team: Billy[];
+  qid?: string;
+  tid?: string;
+  area?: string;
+  fished?: 1;
+}
 export interface RunStart {
   team: Billy[];
   se: number;
@@ -146,6 +159,8 @@ export interface RunStart {
   flags: Record<string, number>;
   seats: string[];
   visited: Record<LocationNode, number>;
+  /** RL-9b: the hub's buddy (a run's is its first Billie from home); missing on a run saved before */
+  buddy?: string | null;
 }
 
 /** roguelite track RL-3: the run in progress (logic/run-state.js); null in the hub */
@@ -160,7 +175,9 @@ export interface Run {
   map: RunMap | null;
   /** what is happening, and the battle being fought (its battle number, -1 for none: a resume restarts it from
       the seed). Where the player is stays saveData.trip.node: 0 Copperleaf, i + 1 the map's node i */
-  at: { phase: 'fly' | 'walk' | 'battle' | 'menu' | 'payout'; battle: number };
+  /** RL-8: won, at the payout (1 won, 0 lost or given up) */
+  /** RL-8: in a battle, its foe as it began (a reload starts the same battle again) */
+  at: { phase: 'fly' | 'walk' | 'battle' | 'menu' | 'payout'; battle: number; won?: 0 | 1; foe?: RunFoe };
   /** the day (one per node arrival, backtracking included) and the deadline day */
   clock: number;
   deadline: number;
@@ -171,6 +188,11 @@ export interface Run {
   relics: string[];
   offer: string[] | null;
   mods: string[];
+  /** RL-12: Loophole offers made so far (the next offer's stream, logic/relics.js relicOffer) */
+  offerN: number;
+  /** RL-12: each run shop's Loophole for a day, by '<map node>:<day>' ('' once bought), drawn when the shop first
+      opens that day (logic/relics.js relicShelf) */
+  shelf: Record<string, string>;
   /** the hub's working fields as the run started */
   start: RunStart;
   /** counters, so a resumed run carries on its random streams and ids */
@@ -183,6 +205,14 @@ export interface Run {
   released: { sp: SpeciesId; lvl: number }[];
   /** the one-time hints already shown */
   hints: Record<string, 1>;
+  /** RL-11: the shop and biome unlocks (unlocks.json ids) the run started with: its shops and map read this copy, so
+   * the same seed and copy make the same run. None on a run started before RL-11 (everything open) */
+  unlocks?: string[];
+  /** RL-9b: the uids of the Billies from home (picked at the mast, from the team or storage; logic/run-state.js
+      runHome reads a run saved before as the hub's team) */
+  home?: string[];
+  /** RL-9b: what was packed from Copperleaf's bag at the mast */
+  pack?: { items: Record<DataId, number>; coins: Record<DataId, number> };
 }
 
 /** the player's travel: where you are, and the locations still ahead (the gold arrows' guide) */
@@ -255,6 +285,9 @@ export interface Billy {
   boss?: { hp: number; st: number };
   /** phase 16: the size of each part (rules.js rollBuild); missing means all M */
   build?: Build;
+  /** RL-10: a risky egg's surprise (logic/breeding.js): a quirk, or an abomination with its own name, one stat raised
+      (rules.json ranch.breed.abomUp) and another lowered (abomDown); missing for every other Billie */
+  mut?: BillieMut;
   /** phase 17: 'robot' for a robot (sp is then made from its parts: logic/fighters.js robotSp); missing for a Billie */
   kind?: 'robot';
   /** phase 17: a robot's gem (a key of robots.json gems): the gem is the robot, its level and XP */
@@ -274,6 +307,16 @@ export interface PartInstance {
   up: number;
 }
 export type RobotFit = Record<'torso' | 'armL' | 'armR' | 'legs', PartInstance>;
+
+/** RL-10: what a risky egg did to a Billie (logic/breeding.js) */
+export interface BillieMut {
+  k: 'quirk' | 'abom';
+  /** an abomination's name, made from its parents' (shown unless it has a nickname) */
+  name?: string;
+  /** an abomination's raised and lowered stats (stats.json ids) */
+  up?: string;
+  down?: string;
+}
 
 /** phase 16: a part size per slot (RULES.parts) */
 export type PartSize = 'S' | 'M' | 'L';

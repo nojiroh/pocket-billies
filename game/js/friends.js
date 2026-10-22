@@ -357,7 +357,7 @@ export function friendsHTML() {
   <span class="fr-face">${typeof portraitHTML === 'function' ? portraitHTML('friend:' + u, 44) : ''}</span>
   <span class="fr-t"><b>${escapeHtml(d.name || 'Friend')}</b><small>${a.place ? `In ${escapeHtml(a.place)} · ${timeAgo(a.t)}` : 'Not seen yet'}</small>${p && SPECIES[p.sp] ? `<small class="fr-pt">with ${escapeHtml(p.name || SPECIES[p.sp].n)} · Lv ${p.lvl || 1}</small>` : ''}</span>
   ${p && SPECIES[p.sp] ? `<span class="fr-mon">${rigCanvasHTML(p.sp, 48, { build: p.build, coat: p.coat })}</span>` : ''}
-  <span class="fr-acts">${a.node != null && LOCATIONS[a.node] ? `<button class="pb small" data-a="fr-map" data-n="${a.node}">Map</button>` : ''}<button class="pb small quiet" data-a="fr-rm" data-u="${escapeHtml(u)}" aria-label="Remove ${escapeHtml(d.name || 'friend')}">✕</button></span></div>`;
+  <span class="fr-acts">${a.node != null && LOCATIONS[a.node] && !saveData.run ? `<button class="pb small" data-a="fr-map" data-n="${a.node}">Map</button>` : ''}<button class="pb small quiet" data-a="fr-rm" data-u="${escapeHtml(u)}" aria-label="Remove ${escapeHtml(d.name || 'friend')}">✕</button></span></div>`;
     })
     .join('');
   return `<section class="tpanel pf-friends">${head}

@@ -52,6 +52,14 @@ export interface GameData {
   nodeTypes?: Record<DataId, NodeType>;
   /** sound track SND-2: the songs, jingles, cries' bases and where each song plays (game/data/music.json) */
   music?: Music;
+  /** roguelite track RL-12: a run's Loopholes (relics), each a list of effect rows (game/data/relics.json; logic/effects.js) */
+  relics?: Record<DataId, Relic>;
+  /** roguelite track RL-11: the four currencies (game/data/currencies.json) */
+  currencies?: Partial<Record<CurrencyId, Currency>>;
+  /** RL-11: Copperleaf's hub buildings (game/data/buildings.json) */
+  buildings?: Record<DataId, HubBuilding>;
+  /** RL-11: the one unlock table (game/data/unlocks.json; logic/unlocks.js) */
+  unlocks?: Record<DataId, Unlock>;
   /** UI track UI-1: the UI's look: palette, glass, cuts, fonts (game/data/uiTheme.json; logic/ui-theme.js) */
   uiTheme?: UiTheme;
   lines: Line[];
@@ -326,8 +334,10 @@ export interface RosterEntry {
 /* ---------- the world: locations, roads, regions, maps ---------- */
 
 /** phase 10: a place on the bowl, seen from above. a: degrees counter-clockwise from east; r: 0 at the centre of
- * the floor, 1 at the rim. A place reached only by lift (Pearlantis) sits under another place instead. */
-export type BowlSpot = { a: number; r: number } | { under: DataId };
+ * the floor, 1 at the rim. A place reached only by lift (Pearlantis) sits under another place instead. RL-8b: up, the
+ * way its map's north faces (degrees like a; 90 the bowl's north); without it the map's north faces the centre; off,
+ * not on this world's map (Copperleaf during a run: no land, pin, things or weather of its own). */
+export type BowlSpot = { a: number; r: number; up?: number; off?: boolean } | { under: DataId };
 
 /** locations.json: a place on the world map (a town or a route area), in node order */
 export interface LocationData {
@@ -455,11 +465,89 @@ export interface MapData {
   building?: string;
   keeper?: string | null;
   indoor?: number;
+  /** the walking camera (island track: orbit) */
+  cam?: MapCam;
+  /** island track: the island's middle and coastline */
+  island?: IslandShape;
+  /** island track: areas of the island */
+  zones?: MapZone[];
+  /** island track: building plots (IS-2) */
+  plots?: MapPlot[];
+  /** island track: the island generator's version, seed and dials */
+  islandGen?: IslandGen;
+  /** the kind of the map's water (walk/water-data.js WATER_KIND_LOOKS) */
+  waterKind?: WaterKind;
   /** on a lite map (gamedata.js): the ground kinds and props it uses, so its look can start before its file comes */
   _lite?: { tiles: string; props: { k: string; v?: number; roof?: string }[] };
   /** the rest: the look (sky, haze, cam, moods), life, water, rails... read by the walk view and the renderer */
   [key: string]: any;
 }
+
+/** a map's walking camera: tilt (degrees), height (m), field of view */
+export interface MapCam {
+  pitch?: number;
+  h?: number;
+  fov?: number;
+  orbit?: CamOrbit;
+}
+
+/** island track (docs/phases/island-track.md, "The contract"; logic/island.js checks it): the camera sits out over
+    the sea and looks in at c */
+export interface CamOrbit {
+  /** the pivot, the island's middle */
+  c: MapPoint;
+  /** metres from c inside which the yaw holds its last value (the mountain top) */
+  dead: number;
+  /** seconds the yaw takes to follow */
+  lag: number;
+  /** degrees the player may still turn the camera on top of the orbit */
+  turn: number;
+}
+
+/** island track: the island's middle and its coastline, a closed polygon (the last point joins the first) */
+export interface IslandShape {
+  c: MapPoint;
+  coast: MapPoint[];
+}
+
+export type MapZoneKind = 'town' | 'barn' | 'pasture' | 'forest' | 'mountain' | 'cove' | 'beach' | 'path' | 'hamlet';
+
+export type MapPlotKind = 'house' | 'home' | 'lab' | 'mast' | 'shop' | 'well' | 'farmhouse';
+
+/** island track: a building plot the island generator laid out (IS-2): where a building of kind k may stand */
+export interface MapPlot {
+  k: MapPlotKind;
+  /** its middle */
+  x: number;
+  z: number;
+  /** its width along its street and its depth (m) */
+  w: number;
+  d: number;
+  /** the angle its front faces (degrees, 0 east, 90 north) */
+  a: number;
+  /** the level its pad was made at */
+  y?: number;
+}
+
+/** island track: an area of the island; a locked zone's ground and props are never touched when it is made again */
+export interface MapZone {
+  k: MapZoneKind;
+  poly: MapPoint[];
+  lock?: boolean;
+}
+
+/** island track: what the island generator (IS-2) needs to make the ground again (IS-2 owns the dials), and the lock */
+export interface IslandGen {
+  v: number;
+  seed: string;
+  dials?: Record<string, unknown>;
+  /** the ground is frozen (the hub, once it is right): a change to it fails the data check; props stay free */
+  lock?: boolean;
+  /** the frozen ground's fingerprint (logic/island.js islandGroundHash) */
+  hash?: string;
+}
+
+export type WaterKind = 'pond' | 'stream' | 'canal' | 'spring' | 'swamp' | 'lake' | 'sea' | 'lava' | 'ice';
 
 /** the fields a lite map lacks (js/map-files.js MAP_FIELDS, tools/build-data.mjs) */
 export type MapFileField = 'heights' | 'steps' | 'stepm' | 'tiles' | 'props';
@@ -640,6 +728,12 @@ export interface Trainer {
 export interface TrainerEntry extends Trainer {
   /** its key in gameData.trainers */
   id: DataId;
+  /** RL-8: a run's foe (logic/run-loop.js runFoes): its map node, 'miniboss' or 'boss', the leader it copies, and
+      for the boss its top Billie fought alone as an Alpha */
+  runNode?: number;
+  runFoe?: 'miniboss' | 'boss';
+  from?: DataId;
+  alpha?: boolean;
 }
 
 /** a trainer's Billie: a species, or '@rival' ('@rival1', '@rival2': evolved) for the starter that beats yours */
@@ -808,6 +902,9 @@ export interface Rules {
       win: number;
       /** Audit Seals for a win */
       winSeals: number;
+      /** RL-9: Scrap per node cleared, and for a win */
+      scrapNode: number;
+      scrapWin: number;
     };
     /** RL-6: the run's node map (logic/run-map.js) */
     map: RunMapRules;
@@ -827,7 +924,67 @@ export interface Rules {
     /** RL-7: metres past a seam before a crossing counts in a run (the hub's is 1), so a step over and back costs
         no day */
     seamIn: number;
+    /** RL-8: what a run starts with, besides the Billies from home and the packed bag: its money, coins and items (placeholders) */
+    start: { se: number; coins: Record<string, number>; items: Record<string, number> };
+    /** RL-9b: by Bracket (index 0 = Bracket I; past the end, the last): how many Billies from home a run takes, and
+        how many items and coins (in all) are packed from Copperleaf's bag at the mast (placeholders) */
+    home: number[];
+    pack: number[];
+    /** RL-8: a run town's clinic: $ per hurt Billie (free in the hub) */
+    healCost: number;
+    /** RL-8: a run town's shop: `always` on sale, then `more` wares a day drawn by weight from `pick` (an item id, or
+        `coin:<id>`), at their own prices; drawn from the town's seed and the day */
+    shop: { always: string[]; more: number; pick: Record<string, number> };
+    /** RL-8: a mini-boss's and the boss's levels: `up` over the top wild level of their row; their reward in $ */
+    foes: { miniboss: { up: number; reward: number }; boss: { up: number; reward: number } };
+    /** RL-12: Loopholes: at most `cap` held, a pick of `pick` after a mini-boss, offered by `rarity` weight, sold in a
+        run shop at `price` by rarity (placeholders) */
+    relics: {
+      cap: number;
+      pick: number;
+      rarity: Record<RelicRarity, number>;
+      price: Record<RelicRarity, number>;
+    };
   };
+  /** roguelite track RL-9: the ranch (logic/ranch.js). Placeholders until the owner has played it */
+  ranch: RanchRules;
+}
+
+/** rules.json ranch: training between runs (logic/ranch.js) */
+export interface RanchRules {
+  /** training slots by ranch level (index 0 = level 1; past the end, the last) */
+  slots: number[];
+  /** the highest level a Billie trains to: capBase at ranch level 1, capStep more each level */
+  capBase: number;
+  capStep: number;
+  /** a trainee banks at most this many hours between collections */
+  bankHours: number;
+  /** levels gained an hour of training (each level its own share of XP) */
+  levelsPerHour: number;
+  /** Scrap to start training one Billie */
+  trainCost: number;
+  /** a clock this far behind a trainee's start (ms) is allowed; further back, nothing is gained and it starts again */
+  guardMs: number;
+  /** RL-10: breeding at the ranch (logic/breeding.js) */
+  breed: BreedRules;
+}
+
+/** rules.json ranch.breed: two Billies from home make an egg that hatches at the ranch (RL-10) */
+export interface BreedRules {
+  /** eggs the nursery holds at once, by ranch level (index 0 = level 1; past the end, the last) */
+  nests: number[];
+  /** Scrap for a safe pair (two of one line) and a risky one (any two; costs less) */
+  safeCost: number;
+  riskyCost: number;
+  /** real hours from the pair's start to the egg hatching */
+  hours: number;
+  /** the level a Billie hatches at */
+  lvl: number;
+  /** a risky egg's odds: like a safe one, a quirk, an abomination (they add up to 1) */
+  odds: { safe: number; quirk: number; abom: number };
+  /** an abomination's stat spike and drawback: one stat times abomUp, another times abomDown */
+  abomUp: number;
+  abomDown: number;
 }
 
 /** rules.json run.scene: mapgen's dials as ranges and weights (RL-7) */
@@ -1413,6 +1570,74 @@ export interface Music {
   jingles: Record<DataId, { notes: [number, number][] }>;
   cries: { bases: { wave: string }[] };
   where: MusicWhere[];
+}
+
+/** relics.json: how often a Loophole is offered and what a shop asks for it (rules.json run.relics) */
+export type RelicRarity = 'common' | 'uncommon' | 'rare';
+/** relics.json: one effect row (logic/effects.js FX_KINDS; the schema says what each kind takes) */
+export type FxRow =
+  | { kind: 'money'; mult: number }
+  | { kind: 'price'; what: 'shop' | 'heal'; mult: number }
+  | { kind: 'catch'; mult: number }
+  | { kind: 'stat'; stat: 'lev' | 'law' | 'lob' | 'pr' | 'hus'; stages: number }
+  | { kind: 'damage'; side: 'deal' | 'take'; cat?: 'H' | 'S'; type?: string; mult: number }
+  | { kind: 'heal'; share: number }
+  | { kind: 'payout'; what: 'capital' | 'itemShare'; mult: number };
+/** relics.json: a Loophole (roguelite track RL-12): held for one run, its effect rows apply while it is held */
+export interface Relic {
+  /** what the player reads */
+  name: string;
+  /** what it does, in one sentence */
+  d: string;
+  rarity: RelicRarity;
+  fx: FxRow[];
+}
+
+/** currencies.json: one of the game's four currencies (roguelite track RL-11) */
+export type CurrencyId = 'money' | 'capital' | 'scrap' | 'seals';
+export interface Currency {
+  /** what the player reads; `long` where the short name is a sign ($); `one` for a count of one */
+  name: string;
+  long?: string;
+  one: string;
+  /** its icon (ui-run-kit.js pb-coin) */
+  icon: string;
+  /** run: the run's working field (saveData.se); meta: saveData.meta.<id>, kept between runs */
+  kept: 'run' | 'meta';
+  about: string;
+}
+
+/** buildings.json: a hub building, upgraded with one currency kept between runs (roguelite track RL-11) */
+export interface HubBuilding {
+  name: string;
+  currency: Exclude<CurrencyId, 'money'>;
+  /** the act of its building in Copperleaf: its sheet sells its rows, its label shows its level */
+  act?: string;
+  /** its highest level (1 is where it starts); each level above is an unlocks.json row */
+  levels: number;
+  /** not built yet: on the Lab board as coming later */
+  soon?: true;
+  about: string;
+}
+
+/** unlocks.json: what an unlock gives (exactly one kind) */
+export type UnlockGrant =
+  | { building: string; level: number }
+  | { shop: string }
+  | { biome: string }
+  | { capital: number }
+  | { scrap: number }
+  | { seals: number };
+/** unlocks.json: one row of the unlock table (roguelite track RL-11): sold at a building (at + cost, in its currency;
+ * the Lab's rows are its board) or earned when a condition holds (when) */
+export interface Unlock {
+  name: string;
+  about: string;
+  at?: string;
+  cost?: number;
+  when?: string;
+  requires?: string[];
+  grant: UnlockGrant;
 }
 
 /** uiTheme.json: the UI's look (UI track UI-1; version 2 in UI-3, for the Studio's UI section) */

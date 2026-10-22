@@ -5,9 +5,9 @@
    watch what changes. Day and night swap at a tap (lamps need the dark). "Leave" brings you back to your settings. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { closeModal, openSettings, provide, render, renderOverlay, toast } from './hooks.js';
+import { closeModal, provide, render, renderOverlay, toast } from './hooks.js';
 import { uiState } from './game-state.js';
-import { GRAPHICS_DIALS, graphicsDialHTML } from './settings-screen.js';
+import { GRAPHICS_DIALS, graphicsDialHTML, openSettings } from './settings-screen.js';
 import { mapById, walkView } from './walk-view.js';
 import { environment } from './environment.js';
 /* eslint-disable no-func-assign */

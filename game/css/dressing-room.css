@@ -1,0 +1,394 @@
+/* UI-5: the dressing room's rules (its stage, the outfit tabs and rows, the keeper, the views), moved as they were from the old layers (style, polish, screens, v05), in the order the page loaded them. They load right after those layers and before the kit; a rule a later old rule overrode at equal specificity stays where it was, so the cascade is as before (tools/style-diff.py) */
+/* ---------- UI-6: from screens.css, as it was ---------- */
+.dr {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 480px);
+  background: color-mix(in srgb, var(--bg) 70%, #0b0912 30%);
+  animation: up 0.25s ease-out;
+}
+#drCv {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  cursor: grab;
+  touch-action: none;
+}
+@media (max-width: 760px), (orientation: portrait) and (max-width: 900px) {
+  .dr {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(220px, 40vh) minmax(0, 1fr);
+  }
+}
+/* ---------- (UI-5 and earlier) ---------- */
+
+/* ---------- UI-5: from screens.css, as it was ---------- */
+/* ================= v14: dressing room ================= */
+#dressing[hidden] {
+  display: none;
+}
+body.dressing #nav {
+  display: none;
+}
+.dr-stage {
+  position: relative;
+  min-height: 0;
+  background:
+    radial-gradient(ellipse at 50% 92%, rgba(255, 255, 255, 0.55), transparent 38%),
+    linear-gradient(180deg, #bfe3ee 0%, #f4e8c8 72%, #d9c7a0 100%);
+}
+:root[data-theme='dark'] .dr-stage {
+  background:
+    radial-gradient(ellipse at 50% 92%, rgba(255, 255, 255, 0.18), transparent 38%),
+    linear-gradient(180deg, #24304a 0%, #3a3550 72%, #2a2438 100%);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .dr-stage {
+    background:
+      radial-gradient(ellipse at 50% 92%, rgba(255, 255, 255, 0.18), transparent 38%),
+      linear-gradient(180deg, #24304a 0%, #3a3550 72%, #2a2438 100%);
+  }
+}
+.dr-viewbar {
+  position: absolute;
+  left: 50%;
+  bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  padding: 6px;
+  border-radius: 999px;
+}
+.dr-tog {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  color: inherit;
+  font: 600 13px var(--font-voice);
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+  cursor: pointer;
+}
+.dr-tog[aria-pressed='true'] {
+  background: #f2c14e;
+  color: #3a2408;
+}
+.dr-tog .uico {
+  background: currentColor;
+}
+.dr-keeper {
+  position: absolute;
+  left: 12px;
+  top: calc(12px + env(safe-area-inset-top, 0px));
+  right: 12px;
+  max-width: 420px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 16px;
+}
+.dr-keeper p {
+  margin: 2px 0 0;
+  font-size: 13.5px;
+}
+.dr-top {
+  display: flex;
+  gap: 8px;
+  align-items: end;
+  padding: 12px 14px 8px;
+}
+.dr-name {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text2);
+}
+.dr-name input {
+  width: 100%;
+  min-width: 0;
+  min-height: 38px;
+  border: 2px solid color-mix(in srgb, var(--line) 55%, var(--panel-s));
+  border-radius: var(--r-s, 6px);
+  padding: 0 10px;
+  font: 600 15px var(--font-voice);
+  background: var(--hi);
+  color: var(--text);
+}
+.dr-tabs {
+  display: flex;
+  gap: 2px;
+  overflow-x: auto;
+  padding: 0 10px;
+  border-bottom: 2px solid color-mix(in srgb, var(--line) 25%, transparent);
+  scrollbar-width: none;
+}
+.dr-tabs button {
+  flex: none;
+  border: 0;
+  background: none;
+  padding: 10px 10px 9px;
+  font: 600 13.5px var(--font-voice);
+  color: var(--text2);
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+}
+.dr-tabs button[aria-selected='true'] {
+  color: var(--text);
+  border-bottom-color: #f2c14e;
+}
+.dr-body {
+  flex: 1;
+  overflow: auto;
+  padding: 4px 14px 16px;
+  overscroll-behavior: contain;
+}
+.dr-sec h3 {
+  font: 400 15px var(--font-voice);
+  margin: 14px 0 8px;
+}
+.dr-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 8px;
+}
+.dr-it {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 6px 4px 7px;
+  border: 2px solid color-mix(in srgb, var(--line) 30%, transparent);
+  border-radius: 10px;
+  background: var(--hi);
+  color: var(--text);
+  cursor: pointer;
+  min-height: 96px;
+}
+.dr-it .dr-th {
+  width: 60px;
+  height: 60px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  color: var(--text2);
+}
+.dr-it b {
+  font-size: 11.5px;
+  line-height: 1.2;
+  text-align: center;
+}
+.dr-it small {
+  font-size: 10.5px;
+  color: var(--text2);
+  display: flex;
+  gap: 3px;
+  align-items: center;
+  text-align: center;
+}
+.dr-it small .uico {
+  background: currentColor;
+}
+.dr-it[aria-pressed='true'] {
+  border-color: #275c60;
+  box-shadow: 0 0 0 2px #275c60 inset;
+  background: color-mix(in srgb, #f2c14e 18%, var(--hi));
+}
+.dr-it.locked .dr-th {
+  opacity: 0.55;
+}
+.dr-it.here {
+  border-style: dashed;
+  border-color: #c8862a;
+}
+.dr-it.here small {
+  color: #9a5a10;
+  font-weight: 700;
+}
+.dr-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+}
+.dr-l {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text2);
+}
+.dr-row .custom-color,
+.dr-sec .custom-color {
+  width: 30px;
+  height: 30px;
+  font-size: 18px;
+}
+.dr-sl {
+  display: grid;
+  grid-template-columns: 110px 1fr 28px;
+  gap: 8px;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 600;
+  margin: 6px 0;
+}
+.dr-sl input {
+  width: 100%;
+  accent-color: #275c60;
+}
+.dr-rs {
+  border: 0;
+  background: none;
+  color: var(--text2);
+  font-size: 15px;
+  cursor: pointer;
+}
+.dr-outfits {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.dr-out {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 6px;
+  border-radius: 10px;
+  text-align: center;
+}
+.dr-out img {
+  height: 92px;
+  image-rendering: pixelated;
+}
+.dr-empty {
+  height: 92px;
+  display: grid;
+  place-items: center;
+  color: var(--text2);
+  font-size: 13px;
+}
+.dr-out .racts {
+  flex-direction: column;
+  gap: 5px;
+  width: 100%;
+}
+.dr-foot {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px));
+  border-top: 2px solid color-mix(in srgb, var(--line) 25%, transparent);
+}
+.dr-msg {
+  flex: 1;
+  min-width: 0;
+  font-size: 12.5px;
+  color: var(--text2);
+  line-height: 1.3;
+}
+@media (max-width: 760px), (orientation: portrait) and (max-width: 900px) {
+  .dr-viewbar {
+    max-width: calc(100% - 20px);
+  }
+  .dr-tog {
+    padding: 0 9px;
+  }
+  .dr-viewbar {
+    bottom: 22px;
+  }
+  .dr-keeper {
+    padding: 6px 10px;
+  }
+  .dr-keeper p {
+    font-size: 12.5px;
+  }
+}
+.dr-presets {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+}
+.dr-pre {
+  display: grid;
+  place-items: end center;
+  height: 84px;
+  padding: 4px;
+  border-radius: 10px;
+  cursor: pointer;
+  border: 2px solid transparent;
+  background: var(--panel2);
+}
+.dr-pre {
+  overflow: hidden;
+}
+.dr-pre img {
+  height: 100%;
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
+  object-position: bottom;
+  image-rendering: pixelated;
+}
+.dr-pre:hover {
+  border-color: var(--gold);
+}
+@media (max-width: 560px) {
+  .dr-presets {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+/* v40: the six-choice dressing room */
+.dr-builds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.dr-more {
+  border-top: 1px dashed rgba(0, 0, 0, 0.12);
+  padding-top: 8px;
+}
+.dr-moreb {
+  margin-bottom: 8px;
+}
+.dr-outgrid {
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+}
+.dr-outfit {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 0;
+}
+.dr-outfit .dr-outmain {
+  all: unset;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 4px 2px;
+}
+.dr-outfit[aria-pressed='true'] {
+  outline: 2px solid var(--gold, #d9a441);
+  outline-offset: -2px;
+}
+.dr-ways {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  padding: 2px 0 6px;
+}

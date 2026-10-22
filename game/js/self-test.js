@@ -16,18 +16,24 @@ import {
   LOCATIONS,
   MOVES,
   RULES,
+  SHOPS,
   SPECIES,
   START_NODE,
   TRAINERS,
+  UNLOCK_DATA,
   gameData,
   locationKind,
+  trainersAt,
   worldExtraMaps,
 } from './game-data.js';
 import { encountersHere, makeBilly, maxHp, spawn } from './logic/rules.js';
+import { ranchLevel, ranchSlots, ranchTrainStart } from './logic/ranch.js';
 import { runBegin, runRestore } from './logic/run-state.js';
 import { runArrive, runMapStart, runNext, runWorldNode } from './logic/run-map.js';
 import { MAPGEN_VERSION } from './logic/mapgen.js';
+import { runHealCost } from './logic/run-loop.js';
 import { fighter, liveActors, startTrainer, startWild } from './logic/battle-engine.js';
+import { runUnlocks } from './logic/unlocks.js';
 import { loadAllMaps } from './map-files.js';
 import {
   activeBattle,
@@ -36,6 +42,7 @@ import {
   resumeSaving,
   save,
   saveData,
+  saveHeld,
   setActiveBattle,
   setSave,
   setSaveData,
@@ -79,22 +86,20 @@ import { buddyTap, companionSpecies, worldBillies } from './world-billies.js';
 import { seamlessRoomMap, seamlessWorld } from './seamless-world.js';
 import { endBattle, pickMove, pickTarget, stopTimers, tapMessage } from './battle.js';
 import { WORLD_BOWL_SHADERS, worldBowl, worldMap, worldMapReset } from './world-bowl.js';
+import { openShop } from './shop.js';
 import { talkBox, talkHide } from './talk.js';
 import { cutscene, cutsceneTeardown } from './cutscene/director.js';
-import { battleTipHide, fallOverWorldMap, fallWorldMapCanvas } from './opening-fall.js';
+import { fallOverWorldMap, fallWorldMapCanvas } from './opening-fall.js';
+import { airshipFlight } from './airship.js';
 import { runWorld, runWorldData, runWorldSync } from './run-world.js';
-import {
-  closeModal,
-  leaveRoom,
-  mapIdAt,
-  modal,
-  render,
-  renderOverlay,
-  toast,
-  walkCross,
-  walkPick,
-  walkState,
-} from './ui.js';
+import { runClinicEach, runJump, runTakeOff } from './run.js';
+import { relicPickOpen } from './relic-screen.js';
+import { ranchOpen } from './ranch-screen.js';
+import { labBuy, labMilestones, renderLabBoard } from './lab-board.js';
+import { closeModal, modal, renderOverlay, toast } from './overlay.js';
+import { clinicHeal } from './walk-tab.js';
+import { leaveRoom, mapIdAt, walkCross, walkPick, walkState } from './walk-control.js';
+import { render } from './ui.js';
 /* eslint-disable no-func-assign */
 expose({
   DIAGNOSTICS_PASSES: [() => DIAGNOSTICS_PASSES],
@@ -904,7 +909,7 @@ async function runFullTest(mode) {
             for (let i = 0; i < 150 && !(walkView.ready && walkView.id === landing); i++) await selfTestSleep(100);
             if (walkView.id !== landing) throw new Error(`the run's landing isn't shown (still ${walkView.id})`);
             measureFromHere();
-            /* the way to the exit north and on past where a run's crossing counts (rules.json run.seamIn) */
+            /* the way to the exit ahead (west) and on past where a run's crossing counts (rules.json run.seamIn) */
             const to = runWorldNode(runNext(s.run.map, 0)[0]),
               e = (walkState().exits || []).find(x => x.to === to);
             if (!e) throw new Error(`no exit from the landing to ${LOCATIONS[to].name}`);
@@ -916,7 +921,7 @@ async function runFullTest(mode) {
               R = findPath(walkView.pl.x, walkView.pl.z, pt[0] + side[0] * past, pt[1] + side[1] * past, {
                 max: 1e6,
               });
-            if (!R) throw new Error('no path out of the landing to its north exit');
+            if (!R) throw new Error('no path out of the landing to its west exit');
             let crossed = false;
             for (let k = 1; k < R.length && !crossed; k++) {
               const [ax, az] = R[k - 1],
@@ -946,6 +951,339 @@ async function runFullTest(mode) {
         },
         8,
         150
+      );
+    /* RL-8: a run from the mast to the payout, on a copy of the save (nothing is written while the test runs): a short
+       run (5 rows) taken off from Copperleaf (RL-9b: one Billie from home, the hub's team left as it was), the
+       airship's flight to the landing, a wild battle there, "Go there" to the town (a paid heal; RL-12: its shop's
+       Loophole bought), the mini-boss (beaten: a Loophole picked), to the boss (an Alpha, its battle carrying the
+       Loopholes) and its payout, then home: Copperleaf without the run. Then the save as it was */
+    if (typeof runTakeOff === 'function' && !selfTest.stop)
+      await phase(
+        'A run: airship, nodes, payout',
+        'dio',
+        async () => {
+          const was = saveData,
+            s = JSON.parse(JSON.stringify(saveData)),
+            wait = async (f, ms) => {
+              const end = performance.now() + ms * (selfTest.slow || 1);
+              while (performance.now() < end) {
+                if (f()) return true;
+                if (activeBattle && activeBattle.phase === 'playing') tapMessage();
+                await selfTestSleep(100);
+              }
+              return !!f();
+            };
+          try {
+            uiState.bench = null;
+            uiState.inside = null;
+            uiState.goingIn = null;
+            uiState.modal = null;
+            uiState.mq = [];
+            uiState.tab = 'walk';
+            if (s.run) runRestore(s);
+            s.trip = { node: START_NODE, plan: [] };
+            s.team.forEach(m => {
+              m.hp = maxHp(m);
+              m.status = null;
+            });
+            setSaveData(s);
+            render();
+            const hubTeam = saveData.team.map(m => m.uid).join();
+            runTakeOff('SELFTESTRUN8', { rows: 5, minibosses: 1 });
+            if (!saveData.run || !(await wait(() => airshipFlight.on, 5000)))
+              throw new Error('the run didn’t take off');
+            /* RL-9b: one Billie from home at Bracket I; the hub's team waits in Copperleaf as it was */
+            if (
+              saveData.team.length !== RULES.run.home[0] ||
+              saveData.run.start.team.map(m => m.uid).join() !== hubTeam
+            )
+              throw new Error(
+                `took off with ${saveData.team.length} Billies, the hub's team ${hubTeam ? 'changed' : 'empty'}`
+              );
+            const made = [runWorld.scenes, runWorld.ms],
+              t0 = performance.now();
+            if (!(await wait(() => !airshipFlight.on && saveData.run.at.phase === 'walk', 20000)))
+              throw new Error('the flight never landed');
+            const flew = Math.round(performance.now() - t0),
+              landing = 'w:' + LOCATIONS[1].mapId + '*';
+            if (!(await wait(() => walkView.ready && walkView.id === landing, 15000)))
+              throw new Error(`landed but the view is ${walkView.id}`);
+            measureFromHere();
+            uiState.modal = null;
+            uiState.mq = [];
+            const q = encountersHere()[0];
+            if (q) {
+              startWild(q);
+              if (!activeBattle || !saveHeld()) throw new Error('a run battle didn’t hold the save');
+              stopTimers();
+              activeBattle.over = 'win';
+              endBattle();
+              if (!(await wait(() => !activeBattle && saveData.run.at.phase === 'walk', 15000)))
+                throw new Error('the run battle never ended');
+            }
+            const map = saveData.run.map,
+              town = runWorldNode(map.nodes.findIndex(n => n.type === 'town'));
+            if (!runJump(town)) throw new Error('couldn’t walk to the town');
+            uiState.modal = null;
+            uiState.mq = [];
+            saveData.team[0].hp = Math.max(1, saveData.team[0].hp - 3);
+            saveData.se = Math.max(saveData.se, 500);
+            const se = saveData.se,
+              cost = runHealCost(saveData.team, runClinicEach()).cost;
+            clinicHeal();
+            if (!uiState.modal || !uiState.modal.btns) throw new Error('the clinic asked nothing');
+            uiState.modal.btns[0].f();
+            if (saveData.se !== se - cost) throw new Error(`the clinic took $${se - saveData.se}, not $${cost}`);
+            /* RL-12: the town's shop sells the day's Loophole; the mini-boss leaves a pick; the boss's battle carries
+               both */
+            uiState.modal = null;
+            uiState.mq = [];
+            saveData.se = Math.max(saveData.se, 1000);
+            const shopId = Object.keys(SHOPS).find(k => SHOPS[k].runNode === town - 1);
+            openShop(shopId);
+            const buy = /** @type {HTMLElement | null} */ (
+              document.querySelector('#ov .shop-sheet [data-a=shoprelic]')
+            );
+            if (!buy) throw new Error('the town’s shop has no Loophole');
+            buy.click();
+            if (saveData.run.relics.length !== 1) throw new Error('the shop’s Loophole wasn’t bought');
+            uiState.modal = null;
+            uiState.mq = [];
+            const mb = runWorldNode(map.nodes.findIndex(n => n.type === 'miniboss'));
+            if (!runJump(mb)) throw new Error('couldn’t walk to the mini-boss');
+            const MB = trainersAt(mb)[0];
+            if (!MB || MB.runFoe !== 'miniboss') throw new Error('no mini-boss on its place');
+            startTrainer(MB.id, { talked: true });
+            if (!activeBattle) throw new Error('the mini-boss battle didn’t start');
+            stopTimers();
+            activeBattle.over = 'win';
+            endBattle();
+            const pickBtn = () => uiState.modal && (uiState.modal.btns || []).find(b => b.l === 'Pick a Loophole');
+            if (!(await wait(() => !activeBattle && !!pickBtn(), 15000)))
+              throw new Error('no pick after the mini-boss');
+            pickBtn().f();
+            if (!uiState.modal || uiState.modal.cls !== 'relic-pick' || !saveData.run.offer)
+              throw new Error('the pick didn’t open');
+            const took = saveData.run.offer[0];
+            uiState.relicSel = took;
+            relicPickOpen();
+            uiState.modal.btns[0].f();
+            if (saveData.run.relics.length !== 2 || !saveData.run.relics.includes(took) || saveData.run.offer)
+              throw new Error('the pick wasn’t taken');
+            uiState.modal = null;
+            uiState.mq = [];
+            const boss = map.nodes.length;
+            runJump(boss);
+            const B = trainersAt(boss)[0];
+            if (!B || !B.alpha) throw new Error('no Alpha boss on the boss’s place');
+            uiState.modal = null;
+            uiState.mq = [];
+            startTrainer(B.id, { talked: true });
+            if (!activeBattle || activeBattle.fmt !== 'alpha') throw new Error('the boss isn’t an Alpha battle');
+            if (!activeBattle.fx || !activeBattle.fx.length) throw new Error('the boss’s battle has no Loopholes');
+            stopTimers();
+            activeBattle.over = 'win';
+            endBattle();
+            if (
+              !(await wait(() => uiState.modal && uiState.modal.btns && /payout/.test(uiState.modal.btns[0].l), 15000))
+            )
+              throw new Error('no way on to the payout after the boss');
+            uiState.modal.btns[0].f();
+            if (!(await wait(() => uiState.modal && uiState.modal.cls === 'run-payout', 5000)))
+              throw new Error('no payout screen');
+            uiState.modal.btns[0].f();
+            if (!(await wait(() => !saveData.run && LOCATIONS.length === gameData.locations.length, 10000)))
+              throw new Error('the run didn’t end');
+            return `${made[0]} scenes made in ${made[1]} ms; flew in ${flew} ms; a battle, a heal for $${cost}, a Loophole bought and one picked after the mini-boss, the boss; home with ${saveData.meta.capital} Capital`;
+          } finally {
+            if (activeBattle) {
+              stopTimers();
+              setActiveBattle(null);
+              battleStageStop();
+            }
+            airshipFlight.on = false;
+            document.body.classList.remove('flying');
+            uiState.modal = null;
+            uiState.mq = [];
+            renderOverlay();
+            setSaveData(was);
+            render();
+          }
+        },
+        10,
+        180
+      );
+    /* RL-9: the ranch, on a copy of the save (nothing is written while the test runs): Copperleaf's barn leads into the
+       ranch's room; a Billie put in storage starts training for Scrap; a level's time later (its start moved back)
+       the ranch's sheet collects the level; Stop ends it. Then the save as it was */
+    if (typeof ranchOpen === 'function' && RULES.ranch && !saveData.run && !selfTest.stop)
+      await phase(
+        'The ranch: training between runs',
+        'dio',
+        async () => {
+          const was = saveData,
+            R = RULES.ranch,
+            hub = mapById(LOCATIONS[START_NODE].mapId) || { props: [] },
+            door = (hub.props || []).find(p => p.act === 'ranch');
+          try {
+            if (!door) throw new Error('no ranch in ' + LOCATIONS[START_NODE].name);
+            const rooms = PB_DATA.doorRooms(door, walkData().sc.props[door.k], 'ranch');
+            if (!rooms.some(id => mapById(id)))
+              throw new Error('the ranch’s door leads to no room: ' + rooms.join(', '));
+            const s = JSON.parse(JSON.stringify(saveData)),
+              m = makeBilly(s.team[0].sp, 5);
+            s.box.push(m);
+            s.meta.scrap = R.trainCost;
+            setSaveData(s);
+            uiState.modal = null;
+            uiState.mq = [];
+            const why = ranchTrainStart(s, m.uid, Date.now() - Math.ceil(3600000 / R.levelsPerHour), R);
+            if (why) throw new Error('training didn’t start: ' + why);
+            if (s.meta.scrap !== 0)
+              throw new Error(`training cost ${R.trainCost - s.meta.scrap} Scrap, not ${R.trainCost}`);
+            ranchOpen();
+            if (!uiState.modal || uiState.modal.cls !== 'ranch-sheet' || !document.querySelector('#ov .ranch-sheet'))
+              throw new Error('the ranch’s sheet didn’t open');
+            if (m.lvl !== 6) throw new Error(`a level’s training gave Lv 5 → ${m.lvl}`);
+            const stop = /** @type {HTMLElement | null} */ (
+              document.querySelector(`#ov .ranch-sheet [data-r=stop][data-u="${m.uid}"]`)
+            );
+            if (!stop) throw new Error('no Stop on the trainee’s card');
+            stop.click();
+            if (s.ranch.trainees.length) throw new Error('Stop left it training');
+            return `the barn leads into ${rooms.find(id => mapById(id))}; trained a level for ${R.trainCost} Scrap; Stop ended it`;
+          } finally {
+            uiState.modal = null;
+            uiState.mq = [];
+            renderOverlay();
+            setSaveData(was);
+            render();
+          }
+        },
+        3,
+        60
+      );
+    /* RL-10: breeding at the ranch, on a copy of the save: two of the lead's line in storage, a safe pair picked on the
+       ranch's sheet shows its egg, Breed pays and puts that egg in the nursery, it can't hatch at once; ready (its time
+       moved to now), Hatch brings it home. Then the save as it was */
+    if (typeof ranchOpen === 'function' && RULES.ranch && RULES.ranch.breed && !saveData.run && !selfTest.stop)
+      await phase(
+        'The ranch: breeding a pair',
+        'dio',
+        async () => {
+          const was = saveData,
+            BR = RULES.ranch.breed;
+          try {
+            const s = JSON.parse(JSON.stringify(saveData)),
+              line = SPECIES[s.team[0].sp].line,
+              a = makeBilly(line + '0', 6),
+              b = makeBilly(line + '0', 7);
+            s.box.push(a, b);
+            s.ranch.nursery = [];
+            s.meta.scrap = BR.safeCost;
+            setSaveData(s);
+            uiState.modal = null;
+            uiState.mq = [];
+            ranchOpen();
+            uiState.breedPick = { a: a.uid, b: b.uid, mode: 'safe' };
+            ranchOpen();
+            const btn = /** @type {HTMLButtonElement | null} */ (
+              document.querySelector('#ov .ranch-sheet [data-r=breed]')
+            );
+            if (!document.querySelector('#ov .ranch-sheet .breed-preview'))
+              throw new Error('a safe pair showed no egg');
+            if (!btn || btn.disabled) throw new Error('Breed is off for a safe pair with the Scrap');
+            btn.click();
+            const e = s.ranch.nursery[0];
+            if (!e || s.meta.scrap !== 0)
+              throw new Error(`after Breed: ${s.ranch.nursery.length} eggs, ${s.meta.scrap} Scrap`);
+            if (e.egg.sp !== line + '0') throw new Error(`the egg hatches into ${e.egg.sp}, not ${line}0`);
+            const hatch = () =>
+              /** @type {HTMLButtonElement | null} */ (
+                document.querySelector('#ov .ranch-sheet [data-r=hatch][data-i="0"]')
+              );
+            if (!hatch() || !hatch().disabled) throw new Error('a new egg could hatch at once');
+            e.ready = Math.max(e.at, Date.now());
+            ranchOpen();
+            hatch().click();
+            /* the hatch window: "Hatch it", then the Billie it was (after the egg's shake) */
+            const it = /** @type {HTMLElement | null} */ (document.querySelector('#ov [data-a="mb"][data-i="0"]'));
+            if (!uiState.modal || uiState.modal.title !== 'An egg is hatching' || !it)
+              throw new Error('Hatch opened no hatch window');
+            it.click();
+            if (s.ranch.nursery.length || !s.team.concat(s.box).some(m => m.uid === e.egg.uid))
+              throw new Error('Hatch didn’t bring the egg home');
+            const shown = () => !!uiState.modal && /^It’s/.test(uiState.modal.title);
+            for (let n = 0; n < 50 * (selfTest.slow || 1) && !shown(); n++) await selfTestSleep(100);
+            if (!shown()) throw new Error('the hatch window never showed the Billie');
+            return `a safe pair of ${SPECIES[line + '0'].name} for ${BR.safeCost} Scrap; its egg shown, bred and hatched`;
+          } finally {
+            uiState.modal = null;
+            uiState.mq = [];
+            uiState.breedPick = null;
+            renderOverlay();
+            setSaveData(was);
+            render();
+          }
+        },
+        3,
+        60
+      );
+    /* RL-11: the Lab's unlock board, on a copy of the save (nothing is written while the test runs): the Lab tab draws
+       every row of unlocks.json; a board row bought pays its Capital; the ranch's upgrade raises its level and slots;
+       a milestone met is granted once; a run's copy holds the shop unlock. Then the save as it was */
+    if (typeof renderLabBoard === 'function' && !saveData.run && !selfTest.stop)
+      await phase(
+        'The Lab: unlocks',
+        'dio',
+        async () => {
+          const was = saveData,
+            tab = uiState.tab,
+            D = UNLOCK_DATA;
+          try {
+            const s = JSON.parse(JSON.stringify(saveData));
+            Object.assign(s.meta, {
+              capital: 1000,
+              scrap: 200,
+              seals: 0,
+              unlocks: {},
+              buildings: {},
+              runs: 1,
+              wins: 0,
+            });
+            setSaveData(s);
+            uiState.modal = null;
+            uiState.mq = [];
+            uiState.tab = 'lab';
+            render();
+            const rows = document.querySelectorAll('.s-lab .lab-row').length;
+            if (rows !== Object.keys(D.unlocks).length)
+              throw new Error(`the board shows ${rows} rows, unlocks.json has ${Object.keys(D.unlocks).length}`);
+            const buy = /** @type {HTMLElement | null} */ (
+              document.querySelector('.s-lab [data-a=lab-buy][data-k=shop_settlement]')
+            );
+            if (!buy) throw new Error('no Buy on Nerve Tonic');
+            buy.click();
+            if (!s.meta.unlocks.shop_settlement || s.meta.capital !== 1000 - D.unlocks.shop_settlement.cost)
+              throw new Error(`buying Nerve Tonic left ${s.meta.capital} Capital`);
+            if (!labBuy('ranch_2') || ranchLevel(s) !== 2 || ranchSlots(s, RULES.ranch) !== RULES.ranch.slots[1])
+              throw new Error('the ranch’s upgrade didn’t raise its level and slots');
+            const got = labMilestones();
+            if (!got.includes('first_run') || labMilestones().length)
+              throw new Error('the first milestone: ' + got.join());
+            if (!runUnlocks(s, D).includes('shop_settlement')) throw new Error('a run wouldn’t carry the shop unlock');
+            return `${rows} rows; bought Nerve Tonic for ${D.unlocks.shop_settlement.cost} Capital and Ranch Lv 2; milestone ${got.join(', ')}`;
+          } finally {
+            uiState.modal = null;
+            uiState.mq = [];
+            uiState.tab = tab;
+            renderOverlay();
+            setSaveData(was);
+            render();
+          }
+        },
+        3,
+        60
       );
     /* v46: a room that opens in place: into a building and out again, without leaving the town (RL-5: Professor Hazel's
        lab in Copperleaf, the hub; it was Marigold's shop) */
@@ -999,7 +1337,11 @@ async function runFullTest(mode) {
             const sc = walkView.sc,
               I = uiState.inside,
               ex = sc.exits[0],
-              dx = I && I.at ? Math.abs(ex[0] - I.at[0]) : 9,
+              /* IS-5: along the building's front, whichever way it faces */
+              dx =
+                I && I.at
+                  ? Math.abs((ex[0] - I.at[0]) * -(I.out || [0, -1])[1] + (ex[1] - I.at[1]) * (I.out || [0, -1])[0])
+                  : 9,
               off = I && I.door ? Math.hypot(ex[0] - I.door[0], ex[1] - I.door[1]) : 9,
               RD = roomDimming(sc),
               R = sc.roomRect,
@@ -1033,8 +1375,10 @@ async function runFullTest(mode) {
                 walkRenderer.camT.every((v, k) => Math.abs(v - cam.T[k]) < 1e-6) &&
                 walkRenderer.yawT === cam.yaw &&
                 walkRenderer.zoomT === cam.zoom;
-            if (pd > 0.01 || P.dir !== 'down')
-              throw new Error(`out at ${pd.toFixed(2)} m from the door, facing ${P.dir}`);
+            const o = I.out || [0, -1],
+              way = Math.abs(o[0]) > Math.abs(o[1]) ? (o[0] > 0 ? 'right' : 'left') : o[1] < 0 ? 'down' : 'up';
+            if (pd > 0.01 || P.dir !== way)
+              throw new Error(`out at ${pd.toFixed(2)} m from the door, facing ${P.dir} (not ${way})`);
             if (!camOk) throw new Error('the camera isn’t as it was when you went in');
             for (let i = 0; i < 60 && !(walkView.ready && walkView.id === 'w:' + hub.mapId + '*'); i++)
               await selfTestSleep(100);
@@ -1212,91 +1556,8 @@ async function runFullTest(mode) {
         6,
         40
       );
-    /* v47: Blake's first battle: Hazel's first tip shows, a turn plays, and after it Blake and Hazel talk and your team is healed */
-    if (TRAINERS.blake0 && !selfTest.stop)
-      await phase(
-        'Opening: Blake’s first battle',
-        'scene',
-        async () => {
-          uiState.bench = null;
-          uiState.inside = null;
-          uiState.tab = 'walk';
-          saveData.trip.node = back.node;
-          render();
-          await selfTestSleep(1200);
-          let od = null;
-          try {
-            od = localStorage.getItem('nw-opening-done');
-          } catch (e) {}
-          const story0 = JSON.stringify(saveData.story || {});
-          saveData.team.forEach(m => {
-            m.hp = maxHp(m);
-            m.status = null;
-          });
-          startTrainer('blake0', { talked: true });
-          const g0 = selfTest.gen || 0,
-            want = async (ph, ms) => {
-              const end = performance.now() + ms * (selfTest.slow || 1);
-              while (performance.now() < end) {
-                if (!activeBattle || (selfTest.gen || 0) !== g0) return false;
-                if (ph.includes(activeBattle.phase)) return true;
-                if (activeBattle.phase === 'playing') tapMessage();
-                await selfTestSleep(150);
-              }
-              return false;
-            };
-          try {
-            if (!(await want(['choose'], 45000)))
-              throw new Error(`never got to the menu (${activeBattle ? activeBattle.phase : 'no battle'})`);
-            const tip = !!document.querySelector('#btip.on'),
-              foe = fighter(1),
-              fm = foe ? foe.moves.join(',') : '';
-            pickMove(fighter(0).moves[0]);
-            if (!(await want(['choose', 'end', 'switch'], 60000)))
-              throw new Error(`the turn never finished (${activeBattle ? activeBattle.phase : 'no battle'})`);
-            const tip2 = (document.querySelector('#btip') || {}).textContent || '';
-            stopTimers();
-            activeBattle.over = 'win';
-            endBattle();
-            let said = 0;
-            for (let i = 0; i < 120 && !(said && !talkBox.on); i++) {
-              if (talkBox.cur) {
-                said++;
-                talkBox.cur.tap();
-              }
-              await selfTestSleep(200);
-            }
-            const st = (saveData.story || {}).rival0,
-              healed = saveData.team.every(m => m.hp === maxHp(m));
-            if (!tip) throw new Error('Hazel’s first tip didn’t show');
-            if (!said) throw new Error('nobody spoke after the battle');
-            if (st !== 'win') throw new Error('the story didn’t carry on (rival0 ' + st + ')');
-            if (!healed) throw new Error('the team wasn’t healed');
-            return `tip shown; Blake’s Billie knows ${fm}; after a turn: ${tip2 ? '“' + tip2.replace(/^Professor Hazel/, '').slice(0, 60) + '…”' : 'no new tip'}; ${said} lines after; healed`;
-          } finally {
-            if (activeBattle) {
-              stopTimers();
-              setActiveBattle(null);
-              battleStageStop();
-            }
-            talkHide();
-            if (typeof battleTipHide === 'function') battleTipHide();
-            saveData.story = JSON.parse(story0);
-            uiState.welcome = null;
-            uiState.modal = null;
-            uiState.mq = [];
-            renderOverlay();
-            try {
-              if (od == null) localStorage.removeItem('nw-opening-done');
-              else localStorage.setItem('nw-opening-done', od);
-            } catch (e) {}
-            render();
-            await selfTestSleep(500);
-          }
-        },
-        10,
-        150
-      );
+    /* RL-8: the phase 'Opening: Blake’s first battle' went with Blake's battle, which left the opening (the owner's
+       "fall only") */
     /* v33: the billionaires out in the world: the wild ones move about in the grass, your buddy keeps up, trainers' companions stand by */
     if (typeof worldBillies !== 'undefined')
       await phase(
@@ -1445,7 +1706,7 @@ async function runFullTest(mode) {
         [
           'Plus 150 more trees and rocks',
           () => {
-            const pool = ['tree_oak', 'tree_pine', 'tree_birch', 'boulder', 'bush_round', 'tree_oak_deep'].filter(
+            const pool = ['tree_oak', 'tree_pine', 'tree_birch', 'boulder', 'bush_round', 'tree_oak_b'].filter(
               k => walkData().sc.props[k]
             );
             sc.props = props0.concat(
@@ -1671,7 +1932,15 @@ const DIAGNOSTICS_PASSES = {
   shadows: ['shadowPass'],
   ground: ['drawGround'],
   grass: ['drawGrass'],
-  props: ['drawSprites', 'drawSolidProps', 'drawPropModels', 'drawBuildings', 'drawBoxFaces', 'drawStructures'],
+  props: [
+    'drawSprites',
+    'drawSolidProps',
+    'drawPropModels',
+    'drawBuildings',
+    'drawBoxFaces',
+    'drawStructures',
+    'drawPlayerSilhouette',
+  ],
   water: ['reflectionPass', 'drawWater'],
   effects: ['effectsPass'],
   'final pass': ['drawPostEffects'],

@@ -1,0 +1,547 @@
+/* UI-5: the title screen's rules (the logo and ring, its chips and cards, the account picker, the loader's handover), moved as they were from the old layers (style, polish, screens, v05), in the order the page loaded them. They load right after those layers and before the kit; a rule a later old rule overrode at equal specificity stays where it was, so the cascade is as before (tools/style-diff.py) */
+/* ---------- UI-6: from style.css, polish.css, screens.css, as it was ---------- */
+@keyframes hop {
+  40% {
+    transform: translateY(-5px) scale(1.15);
+  }
+}
+/* title & intro */
+.title {
+  min-height: calc(100dvh - 40px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 18px;
+  padding: 20px 4px;
+  text-align: center;
+}
+@keyframes float {
+  50% {
+    transform: translateY(-10px) rotate(-4deg);
+  }
+}
+.logo {
+  font: 400 68px/0.95 var(--font-voice);
+  color: var(--text);
+  text-shadow:
+    4px 4px 0 var(--gold),
+    0 0 30px var(--glow);
+  animation: titleIn 0.8s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+.tag {
+  font-size: 16.5px;
+  color: var(--text2);
+  max-width: 30ch;
+}
+.title .pb {
+  max-width: 340px;
+}
+.starters {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+.starter .sn {
+  font: 400 24px/1.05 var(--font-voice);
+}
+.title {
+  position: relative;
+  isolation: isolate;
+  padding-top: 265px;
+  min-height: 80vh;
+}
+.title .logo {
+  margin-top: 36px;
+  font-size: 64px;
+}
+/* ---------- title Professor dialog ---------- */
+.logo {
+  text-shadow:
+    4px 4px 0 var(--gold),
+    0 0 24px var(--halo),
+    0 0 6px var(--halo);
+}
+.title .tag {
+  text-shadow:
+    0 0 8px var(--halo),
+    0 0 2px var(--halo);
+}
+@keyframes ttlRing {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes ttlBlink {
+  50% {
+    opacity: 0.35;
+  }
+}
+@keyframes ttlReveal {
+  from {
+    clip-path: circle(0% at 50% 56%);
+  }
+  12% {
+    clip-path: circle(9% at 50% 56%);
+  }
+  to {
+    clip-path: circle(120% at 50% 56%);
+  }
+}
+/* ---------- (UI-5 and earlier) ---------- */
+
+/* ---------- UI-5: from style.css, as it was ---------- */
+.title-coin {
+  animation: float 3.2s ease-in-out infinite;
+  filter: drop-shadow(0 0 22px var(--glow));
+}
+.title-landscape {
+  position: absolute;
+  z-index: -1;
+  top: 20px;
+  left: -10px;
+  right: -10px;
+  height: 280px;
+  background: linear-gradient(180deg, #7ea4c3, #99aec6 22%, #909f9c 42%, #889a76 52%, #869b55 75%, #6f7b4a);
+  border: 3px solid var(--line);
+  box-shadow: 0 8px 0 var(--lo);
+  border-radius: 7px;
+}
+.title .title-coin {
+  position: absolute;
+  top: 228px;
+  left: calc(50% - 35px);
+  width: 70px;
+  height: 70px;
+  filter: drop-shadow(0 3px 0 #354455);
+}
+.title .title-coin img {
+  width: 70px;
+  height: 70px;
+}
+
+/* ---------- UI-5: from polish.css, as it was ---------- */
+.title-landscape {
+  box-shadow:
+    0 8px 0 var(--lo),
+    inset 0 0 0 3px rgba(255, 255, 255, 0.35),
+    inset 0 -40px 50px -30px rgba(20, 30, 40, 0.35);
+}
+
+/* ---------- UI-5: from screens.css, as it was ---------- */
+/* v47: the title screen over the live scene of Sundown: the pixel logo at the top, Continue / New game / Settings below */
+body.in-title {
+  overflow: hidden;
+}
+body.in-title #app {
+  padding: 0;
+}
+.ttl {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  padding: max(28px, env(safe-area-inset-top)) 18px max(22px, env(safe-area-inset-bottom));
+  text-align: center;
+  color: #fff7e6;
+  background: linear-gradient(
+    180deg,
+    rgba(20, 14, 40, 0.55) 0%,
+    rgba(20, 14, 40, 0) 34%,
+    rgba(20, 14, 40, 0) 58%,
+    rgba(20, 14, 40, 0.62) 100%
+  );
+}
+.ttl.can-tap {
+  cursor: pointer;
+}
+.ttl-bg {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: radial-gradient(120% 80% at 50% 110%, #f6c56a 0%, #e8875c 22%, #7b4f8f 52%, #28264f 82%, #1a1838 100%);
+  opacity: 1;
+  transition: opacity 1.2s;
+}
+/* alpha 0.4.1: no painted picture any more; the town shows as soon as it is drawn */
+body.ttl-live .ttl-bg {
+  opacity: 0;
+}
+.ttl-top {
+  margin-top: 4vh;
+  animation: ldIn 0.9s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+.ttl-logo {
+  margin: 0;
+  font-family: 'Tiny5', monospace;
+  font-weight: 400;
+  font-size: clamp(56px, 17vw, 96px);
+  line-height: 0.86;
+  letter-spacing: 0.02em;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #ffe9a8;
+  text-shadow:
+    0 4px 0 #9a4b2c,
+    0 8px 0 #4b2340,
+    0 16px 26px rgba(20, 10, 40, 0.5);
+}
+.ttl-logo span:last-child {
+  color: #fff7e6;
+}
+.ttl-logo span {
+  display: block;
+  animation: ldWord 3.2s ease-in-out infinite;
+}
+.ttl-logo span:last-child {
+  animation-delay: -1.6s;
+}
+.ttl-tag {
+  margin: 14px 0 0;
+  font: 600 13px/1 var(--font-voice);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #ffe2c0;
+  text-shadow: 0 2px 0 rgba(20, 10, 40, 0.6);
+}
+.ttl-bottom {
+  width: min(420px, 100%);
+  display: grid;
+  gap: 12px;
+  animation: ldIn 0.9s 0.25s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+.ttl-cont {
+  /* 2026-10-19: the Continue card on the new look: frosted glass, the portrait in a ring that fills while it waits */
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--s3);
+  align-items: center;
+  text-align: left;
+  width: 100%;
+  padding: var(--s3) var(--s4);
+  border: 1px solid var(--g-bd);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  color: var(--text);
+  background: var(--g-bg);
+  backdrop-filter: var(--g-blur);
+  -webkit-backdrop-filter: var(--g-blur);
+  box-shadow: var(--depth-float);
+  transition: transform var(--m-fast) var(--spring);
+}
+.ttl-cont:active {
+  transform: scale(0.96);
+}
+.ttl-face {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+}
+.ttl-face > :not(svg) {
+  width: 56px;
+  height: 56px;
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--g-bg2);
+}
+/* the ring round the portrait: empty, and filling over 4 s while Continue waits to press itself (title.js) */
+.ttl-ring {
+  position: absolute;
+  inset: 0;
+  width: 64px;
+  height: 64px;
+  transform: rotate(-90deg);
+  pointer-events: none;
+}
+.ttl-ring circle {
+  fill: none;
+  stroke: var(--gold-b);
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-dasharray: 182.2;
+  stroke-dashoffset: 182.2;
+  opacity: 0;
+}
+body.ttl-auto .ttl-ring circle {
+  opacity: 1;
+  animation: ttlRing 4s linear forwards;
+}
+[data-motion='reduced'] body.ttl-auto .ttl-ring circle {
+  animation: none;
+  stroke-dashoffset: 0;
+}
+.ttl-ct b {
+  display: block;
+  font: 400 var(--fs-title) / 1 var(--font-voice);
+  letter-spacing: 0.02em;
+}
+.ttl-ct small {
+  display: block;
+  margin-top: 4px;
+  font-size: var(--fs-caption);
+  color: var(--text2);
+}
+/* signed out: the sign-in card under the logo */
+.ttl-card {
+  width: min(360px, 100%);
+  margin: var(--s5) auto 0;
+  padding: var(--s4) var(--s5);
+  display: grid;
+  gap: var(--s2);
+  justify-items: center;
+  border: 1px solid var(--g-bd);
+  border-radius: var(--r-lg);
+  color: var(--text);
+  background: var(--g-bg);
+  backdrop-filter: var(--g-blur);
+  -webkit-backdrop-filter: var(--g-blur);
+  box-shadow: var(--depth-float);
+  animation: ldIn 0.9s 0.35s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+.ttl-card > b {
+  font: 400 var(--fs-title) / 1.1 var(--font-voice);
+}
+.ttl-card > p {
+  margin: 0;
+  font: 400 var(--fs-caption) / var(--lh-prose) var(--font-prose);
+  color: var(--text2);
+}
+.ttl-google {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  min-height: var(--tap);
+  margin-top: var(--s1);
+}
+.ttl-google svg {
+  width: 18px;
+  height: 18px;
+}
+.ttl-warn {
+  color: #b23a3a !important;
+}
+.ttl-link {
+  min-height: 32px;
+  padding: 0 var(--s2);
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font: 400 var(--fs-caption) / 1 var(--font-voice);
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  opacity: 0.85;
+}
+/* signed in: your account in the corner */
+.ttl-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  min-height: 36px;
+  padding: 3px var(--s3) 3px 3px;
+  border: 1px solid var(--g-bd);
+  border-radius: var(--r-pill);
+  cursor: pointer;
+  color: var(--text);
+  background: var(--g-bg);
+  backdrop-filter: var(--g-blur);
+  -webkit-backdrop-filter: var(--g-blur);
+  box-shadow: var(--depth-raised);
+  font: 400 var(--fs-caption) / 1 var(--font-voice);
+}
+.ttl-chip img,
+.ttl-chip i {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.ttl-chip i {
+  display: grid;
+  place-items: center;
+  font-style: normal;
+  color: #fff;
+  background: var(--t-profile);
+}
+/* the version and What's new, at the bottom */
+.ttl-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font: 600 10px/1 var(--font-voice);
+  letter-spacing: 0.08em;
+  color: rgba(255, 226, 192, 0.75);
+  text-shadow: 0 1px 0 rgba(20, 10, 40, 0.6);
+}
+.ttl-foot .ttl-link {
+  color: #ffe2c0;
+}
+.ttl-news {
+  margin: 0;
+  padding-left: 1.2em;
+  display: grid;
+  gap: var(--s2);
+  font: 400 var(--fs-body) / var(--lh-prose) var(--font-prose);
+}
+/* the two saves side by side (account.js) */
+.acc-pick {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s3);
+  margin: var(--s3) 0;
+}
+.acc-pick-card {
+  display: grid;
+  gap: 3px;
+  padding: var(--s3);
+  border-radius: var(--r-md);
+  background: var(--g-bg2);
+  border: 1px solid var(--line);
+}
+.acc-pick-card small {
+  font-size: var(--fs-caption);
+  color: var(--text2);
+}
+.acc-pick-card b {
+  font: 400 var(--fs-title) / 1.1 var(--font-voice);
+}
+.ttl-btns {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+.ttl-hint {
+  margin: 0;
+  font: 400 12px/1 var(--font-voice);
+  letter-spacing: 0.06em;
+  opacity: 0.85;
+  animation: ttlBlink 2.4s ease-in-out infinite;
+}
+[data-motion='reduced'] .ttl * {
+  animation: none !important;
+}
+/* alpha 0.4.1: the title comes out of the loading screen (css/loader.css, js/boot.js). While the loader is up the title
+   keeps its logo hidden (the loader's stands in the same place) and its buttons back; the town opens in a circle */
+body.ld-on .ttl-top {
+  visibility: hidden;
+  animation: none;
+}
+/* the opening in pictures (when the cutscene can't run) */
+body.ld-on .ttl-bottom {
+  opacity: 0;
+  animation: none;
+}
+body.ld-on .ttl-bg {
+  display: none;
+}
+body.ttl-reveal {
+  background: radial-gradient(120% 80% at 50% 110%, #f6c56a 0%, #e8875c 22%, #7b4f8f 52%, #28264f 82%, #1a1838 100%);
+}
+body.ttl-reveal #dio {
+  animation: ttlReveal 2s cubic-bezier(0.35, 0, 0.2, 1) both;
+}
+[data-motion='reduced'] body.ttl-reveal #dio {
+  animation: none;
+}
+/* the title and the loading town fill the screen: on a wide screen the app's panel column mustn't stand over them */
+body.in-title #app,
+body.ld-on #app {
+  background: transparent !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  border-color: transparent !important;
+  max-width: none;
+  margin: 0;
+  min-height: 0;
+}
+/* alpha 0.4.1: accounts (js/account.js) */
+.ttl-acc {
+  position: absolute;
+  top: max(12px, env(safe-area-inset-top));
+  right: 12px;
+  z-index: 2;
+}
+/* 0.1.0 alpha: the game version (game/version.js); 2026-10-19 in .ttl-foot, this stays for older markup */
+.acc-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px 6px 6px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(20, 14, 40, 0.55);
+  color: #fff7e6;
+  font: 600 13px var(--font-voice);
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+}
+.acc-chip.google {
+  background: #fff;
+  color: #2a2238;
+  padding: 7px 14px 7px 10px;
+  box-shadow: 0 2px 0 rgba(20, 14, 40, 0.35);
+}
+.acc-chip.quiet {
+  opacity: 0.75;
+  padding: 6px 12px;
+  cursor: default;
+}
+.acc-g {
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+.acc-ph {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  background: #7b4f8f;
+  color: #fff;
+  font-weight: 700;
+}
+.acc-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  margin: 0 0 12px;
+  border-radius: 14px;
+  background: var(--panel2, rgba(0, 0, 0, 0.04));
+  flex-wrap: wrap;
+}
+.acc-box .acc-ph {
+  width: 40px;
+  height: 40px;
+}
+.acc-t {
+  flex: 1 1 180px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.acc-gbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff !important;
+  color: #2a2238 !important;
+}
+/* after the loader the logo is already in place; the buttons come in without holding back (no fill), so they show
+   even where animations stall on a busy first frame */
+body.from-ld .ttl-top {
+  animation: none;
+}
+body.from-ld .ttl-bottom {
+  animation: ldIn 0.7s cubic-bezier(0.2, 1.4, 0.4, 1);
+}

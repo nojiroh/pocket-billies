@@ -25,6 +25,139 @@ kept aside in the browser).
   the next tap after a phone call or Siri on an iPhone. The Sound tab reads in Dutch, German, Spanish and French.
 - A run's world (roguelite track RL-7), not playable yet (a run starts at the airship from RL-8; to look at one, open
   the game with `?fixture=run`): each place on a run's map is a walkable route made from the run's seed, joined
+- The Studio's Hub island section has the island generator's dials (IS-6b): size, coast, mountain, cove, beaches,
+  cliffs, forest, stream, paths, the town and the hamlet, a seed and a seed for each part. A draft shows in the
+  orbit view and on the map as you change them, with its size, the walk round the coast and a walking check. "Use
+  this island" puts the new ground on the island (Undo takes it back); locked zones, props and people stay as they
+  are. A locked island shows its dials but is never made again.
+- Copperleaf is the island now (island track IS-5): the town stands on its generated island, a market town where the
+  stream meets the bay. Professor Hazel's lab and the well on the square, the airship station by the harbour, Granny
+  Juniper's cottage with her hives and lavender, the General store (closed for now), cottages along the streets and in
+  the hamlet under the mountains, the barn by its pasture with the farm patch, the great oak with its swing by the
+  square, a pier at the cove. A new game falls onto the square and wakes in front of the lab. Wild Billies hide in tall
+  grass out by the woods and on the heath, not in town. Rooms open in place behind a door facing any way, the camera
+  looking in through the door. A tap walks you all the way across the island.
+- The world map shows Copperleaf's real island (island track IS-7): its own coastline with the cove and the
+  headlands, its beaches, meadows, forest and paths as they are on the ground, its mountain standing up in the
+  middle, and the town's buildings close in (the lab, the airship station, the houses, the well, the barn). The
+  shallows follow the coast. The island is drawn at its true size, so it is smaller than the old round blob; zoom in
+  to see the town. The debug menu's Bowl map test has a step for it.
+- Copperleaf's island has its ground and its town's layout (IS-2): a generated island in the debug menu's Test scenes,
+  "Copperleaf island (generated ground)", about 215 m across with a natural shape (lobes, headlands, rolling hills): a
+  mountain with spurs in the middle, climbed by a switchback trail to a lookout; forest round its north side; a long
+  beach in the west; a wide bay in the south-east. A river runs from a pond under the mountain down to the bay, and the
+  town's streets follow it: a main street along the bank, a square with a bridge, a quay on the bay, lanes, with plots
+  for the lab, the airship station, a shop, Juniper's home and the cottages. A hamlet sits round a green under the
+  mountains and a farmhouse beside the barn and its pasture; a road runs all the way round (under three minutes'
+  walk). No buildings stand on the plots yet, and Copperleaf itself is unchanged.
+- The Studio has a Hub island section (IS-6a): the hub's island in an orbiting 3D view and on a map, with its ground,
+  coast, zones and the camera's pivot edited by hand, a walk round the coast, and a lock that freezes the island's
+  ground once it is right (props stay free). It works on the test island until Copperleaf moves onto its island.
+- Island props (IS-4): the ranch barn is 3D now (still its red gambrel barn, every side finished, its colour looks
+  kept), and a new set for the island waits in the debug menu's Test scenes ("the island props"): a field gate,
+  a water trough, round hay bales and a hay rack; driftwood, beach grass, shells, shore rocks and tide pools; a
+  fishing boat and a net rack by a pier; granite boulders, a cairn and a summit lookout; forest litter. Scree and the
+  mossy log and stump on runs are 3D too. Nothing moves in Copperleaf yet.
+- The sea all round (island track IS-3): on the test island the sea now runs out to the horizon on every side
+  with no line where it meets the shore's water; waves and their whitecaps roll in toward the island from every
+  direction, lines of surf break along the whole coast, the water washes up the beach and leaves the sand wet, and
+  a cove's water stays calm. Trees no longer stand out on the open sea past the edge. The far wall of the Hollow
+  Earth in the sky has a softer outline.
+- The orbit camera (island track IS-1): on the test island the camera stands out over the sea and looks in at the
+  island's middle, so walking round the coast turns it all the way round, smoothly and with no jump. Holding right
+  walks you round on the same circle. On the summit the camera holds still; your own turn (two fingers, Q/E) still
+  works on top, up to 30 degrees. Engine > Camera has "Orbit round an island" and, to compare, "Sun turns with the
+  camera" (off: the sun stays put in the world). Copperleaf is unchanged until it becomes the island.
+- The island track begins (IS-0): a test island in the debug menu's Test scenes (a cone of a mountain, a grass ring,
+  beaches and the sea all round), the first step to Copperleaf becoming a real island you can walk round. Nothing
+  changes in Copperleaf yet. The island will be the hub itself, with its own editor in the Studio and its ground
+  locked once it is right.
+- Loopholes (RL-12): beat a mini-boss on a run and pick one of three Loopholes, or buy one in a town's shop (one a
+  day, priced by rarity). Each lasts the rest of the run and bends a rule: cheaper shops or clinics, better catches,
+  more money from wins, a Speed boost at the start of every battle, harder physical hits, less damage taken, a little
+  healing each time you walk into a place, more Capital at the payout. You hold up to six; past that, a new one takes
+  the place of one you let go. The run's bottom bar has a Loopholes tab listing what you hold. Ten to start with, all
+  on offer from the first run; the numbers are first guesses.
+- Breeding (RL-10a): the ranch's sheet has a Nursery and "Breed a pair". Safe: two Billies of one line, 10 Scrap, and
+  you see the egg before paying. Risky: any two, 5 Scrap, and anything can hatch: most often a plain Billie, sometimes
+  one with a quirk (a parent's move, an odd size or coat), and one time in ten an abomination with odd parts, a name
+  made from both parents' and one stat far up and another down. Eggs hatch at the ranch after 4 hours of real time,
+  even while you're away; the parents stay free meanwhile. The old eggs are gone: wild Billies and trainers don't
+  give them, walking doesn't hatch them, and the incubators and the Bag's Eggs pocket went with them.
+- The last flat trees on a run are 3D now (props batch 10): the ridge's pines and cypress, the autumn wood's rowan
+  and great oak, and the thicket's oaks, birches and pines have a modelled trunk and roots like the other trees. The
+  pines keep their drawn look; each tier sways on its own. The larch was rebuilt the same way, so it no longer shows
+  its stem through its branches.
+- The Lab's unlock board (RL-11): the Lab tab is in Copperleaf's bottom bar now (and the machine in Hazel's lab opens
+  it). Spend Capital there on wares for the shops in a run's towns (Nerve Tonic, Wake-Up Tea and Revives are no longer
+  sold there until you unlock them). The ranch's sheet sells Ranch Lv 2 and 3 for Scrap (more training slots, a higher
+  level cap); the airship mast sells Airship Lv 2 for an Audit Seal, then the ridge and autumn lands (a new player's
+  runs have meadow, lake and thicket places only). Milestones pay on their own: your first run, five runs, your first
+  win, fifteen kinds caught. Buildings with levels say theirs on their label. All prices are first guesses.
+- Packing for a run (RL-9b): at the airship mast you now pick who comes from home, one Billie at Bracket I, from your
+  team or storage (one training at the ranch stops while it is away), and pack up to 5 things from Copperleaf's bag
+  (items and Copper Coins) on top of what the airship gives. The rest stay home. Your travellers leave fully healed.
+  Win, and everyone comes home with what they learned and the run's bag goes into Copperleaf's; lose, and you keep one
+  Billie (one from storage goes back to storage with its run's levels) while the bag turns into Capital.
+- The ranch (RL-9): a red barn by Copperleaf's farm. Walk in and tap the training board or the rancher: Billies resting
+  in storage can train there for a little Scrap, gaining a level every two hours of real time (up to eight hours
+  between visits, up to level 15 for now), collected when you come back. Storage shows there too, and the Team tab
+  keeps it. Runs now bring Scrap home: a little for every place reached, more for a win. Rooms are a little smaller
+  inside (still bigger than the building).
+- Tall grass grows in patches (terrain TR-2c): every place on a run has 4-6 patches of tall grass instead of strips
+  beside the road, and one of them lies across the road west, so the way on goes through it. Wild Billies wait in any
+  patch, anywhere on the map (before, only near the middle). Hopping down a ledge now kicks up a puff of dust where you
+  land. The places of a run already going change to match the next time it loads.
+- The pictures behind the menus (the pixel sky's sky and clouds, the sunset on the title, Trainer card and route card)
+  were deleted; the sky and those cards now use plain gradients in the same colours, and the sky has no clouds.
+- The camera on tall ground (terrain TR-3): when a mountain or a cliff stands between the camera and you, the camera
+  tilts down further to look over it (up to 18 degrees more), the rock, trees and water in the way thin out in a
+  circle round you, and where something still hides you your shape shows through it as a blue silhouette. On flat
+  ground nothing changes. Each can be switched off (Engine > Camera: "Rise on tall ground", "Rock fades in front of
+  you", "Your silhouette through rock"). Shadows near you now follow you up a mountain. The debug menu's mountains run
+  now has mountains on both sides (north and south), and the debug log says how far the camera has risen; it also
+  said 0 for a place's mountains on every run, now fixed.
+- The game always runs the latest version: after an update it loads the new one by itself (when you come back to
+  it, or within ten minutes), saving first and waiting until a battle, cutscene, flight or window is over; it never
+  mixes files of two versions.
+- Runs look like your own (RL-8b, after the first play): the world map in Copperleaf shows Copperleaf's island alone,
+  in open sea; a run has its own world map, made from its seed: its own land, coast, hills, woods and clouds, the
+  run laid across the whole bowl from the landing in the east to the boss in the west, each place's own ground round
+  it, and no Copperleaf on it. Rooms are darker: their fill light was set almost nine times higher than outdoors, which
+  washed them out to white.
+- Runs go east to west: you enter each place on a run from the east and the way on is to the west (RL-8b: and on
+  the world map the run crosses the bowl from east to west). A run started before this is left (its places were
+  laid out the other way).
+- Every screen in the angular look (UI track UI-5): buttons have cut corners and a screen's main action is a long
+  hexagon; the top bar, the place card and the Walk sheet, the Map's card, the Trainer card, the Guide's pages, Team's
+  storage, the Bag, shops, Settings and the pickers in sheets have cut panels and cards with a fine edge line; tabs are
+  cut on top. The bottom bar is new: Map, Team and Bag (a run has its own set; Lab and Relics come with their
+  screens). There's no Walk tab any more: tap the open tab again, or press Esc, to go back to the world. The Guide
+  opens from your Trainer card (tap your portrait). Under the hood the screens each have their own code and styles,
+  and 75 unused style rules are gone.
+- Runs go east to west: you enter each place on a run from the east and the way on is to the west, and on the world
+  map the run is an arc across the south of the bowl, from the south-east to the south-west. A run started before
+  this is left (its places were laid out the other way).
+- Mountains and mountain trails (terrain TR-2a, TR-2b), in the Studio's map generator and in a test run from the debug
+  menu (Runs, "Mountains"); runs don't use them yet: ridges up to 20 m on the sides you choose, rising in rock shelves
+  and cliffs, kept away from the road, the exits and water, and a footpath that winds up each one in switchbacks, stone
+  steps where it's steep, to a flat summit (most about 11 m up, the highest 15-19 m). The debug log says whether a run
+  has mountains and how many triangles the ground has, for measuring them on a phone.
+- Ledges (terrain TR-2c), in the map generator and the debug menu's test run ("Mountains and ledges"): terrace edges
+  facing you become ledges you hop down but can't climb, with stone stairs here and there to get back up, so a raised
+  shelf runs beside the road like a second lane; no ledge ever drops you somewhere you can't get out of. Far corners
+  and raised shelves get marked spots for things to find later.
+- Runs are playable (roguelite track RL-8): the airship at Copperleaf's mast takes your team on a run. You land on
+  day 1 and walk the run's places: wild battles, towns where the clinic charges $60 a hurt Billie and the shop sells
+  the day's stock, two mini-bosses (leaders, in double battles, who block the way on until beaten) and the boss (a
+  leader's strongest Billie as an Alpha). Win, or lose your whole party, and the payout turns your money and finds
+  into Capital (Seals too on a win); on a loss you keep one Billie of your choice. Then you're back in Copperleaf by
+  the mast. Storage stays home during a run; a seventh Billie caught means letting one go. Closing the game anywhere
+  brings you back where you were, even mid-battle (the battle starts again). "Give up the run" is in the Map tab.
+  New game now plays the fall alone: you wake in Copperleaf, meet Hazel, make yourself up and pick your starter, and
+  Hazel sends you to the airship (Blake is out of the opening for now). Bridges on a run's routes now cross the
+  stream square and can be walked; one could trap you on the landing.
+- A run's world (roguelite track RL-7): each place on a run's map is a walkable route made from the run's seed, joined
   seamlessly to the places before and after it, in its biome's look, ground and weather, with a little variety of its
   own (hills, cliffs, a stream or a pond, the road's shape, a lookout, a glade or a bridge). Walking into the next
   place, or back, takes a day; a step over the edge and back doesn't. Each place has the weather of its forecast for

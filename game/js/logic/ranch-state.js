@@ -2,7 +2,8 @@
 'use strict';
 /* ================= RANCH STATE (roguelite track RL-3) =================
    The ranch, a hub building, kept in the save as saveData.ranch: the Billies kept there (by uid; they stay in
-   saveData.box), the ones training between runs, the breeding pairs and the passive income. RL-3 fixes the shape and
+   saveData.box), the ones training between runs, the breeding pairs (RL-10: each with its egg, the Billie it hatches
+   into, checked with the team by validSave) and the count of pairs bred, and the passive income. RL-3 fixes the shape and
    the load check only; the ranch itself comes in RL-9 (store, keep, train) and RL-10 (breeding, income). Logic only:
    no DOM, runs in Node (tools/test/ranch-state.test.mjs). */
 /** @import { Ranch } from '../../types/save-data' */
@@ -24,7 +25,7 @@ expose({
 /* to-module: end */
 /** @returns {Ranch} */
 export function newRanch() {
-  return { pens: [], trainees: [], nursery: [], income: { rate: 0, bank: 0, lastAt: 0 } };
+  return { pens: [], trainees: [], nursery: [], bred: 0, income: { rate: 0, bank: 0, lastAt: 0 } };
 }
 export const RANCH_MOST = 500,
   RANCH_TIME = 1e13;
@@ -35,6 +36,7 @@ export function validRanch(o) {
     plain = v => !!v && typeof v === 'object' && !Array.isArray(v) && !Object.hasOwn(v, '__proto__'),
     list = v => Array.isArray(v) && v.length <= RANCH_MOST;
   if (!plain(o) || !list(o.pens) || !list(o.trainees) || !list(o.nursery) || !plain(o.income)) return false;
+  if (!wholeIn(o.bred, 0, META_MAX)) return false;
   if (!o.pens.every(uid) || new Set(o.pens).size !== o.pens.length) return false;
   if (!o.trainees.every(t => plain(t) && uid(t.uid) && wholeIn(t.at, 0, RANCH_TIME))) return false;
   if (
@@ -46,7 +48,8 @@ export function validRanch(o) {
         n.a !== n.b &&
         (n.mode === 'safe' || n.mode === 'risky') &&
         wholeIn(n.at, 0, RANCH_TIME) &&
-        wholeIn(n.ready, n.at, RANCH_TIME)
+        wholeIn(n.ready, n.at, RANCH_TIME) &&
+        plain(n.egg)
     )
   )
     return false;

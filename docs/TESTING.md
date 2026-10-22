@@ -10,9 +10,10 @@ those sessions; until then, follow the rule next to them.
 | Tier | Command | Now | Budget | When |
 |---|---|---|---|---|
 | (a) lint, types | `npm run lint`, `npm run typecheck` | 4 s warm (9 s cold) + 0.6 s | under 10 s | after every edit (the Claude Code hook runs it) |
-| (b) unit tests | `npm test` | about 1 s | under 30 s | after every edit to logic, data or tests (the hook) |
+| (b) unit tests | `npm test` | about 30 s (RL-8: 474 tests; the scene sweeps take most) | under 30 s | after every edit to logic, data or tests (the hook) |
 | before a commit | `npm run check:modules`, `npm run format:check`, `npm run check:data`, `npm run build` | about 15 s | none | every commit |
 | UI pictures (UI-2) | `npm run check:ui` | about 1.5 min | none | after a change to the kit, its CSS, uiTheme.json or studio/gallery.html |
+| style diff (UI-5) | `python3 tools/style-diff.py` (`--only=<screens>`, `--ref=<rev>`) | about 8 min (16 screens, 2 browsers) | none | a commit that moves CSS or screen code and must change nothing on screen: 0 differences against HEAD |
 | (c) smoke | `npm run check:smoke` | about 2.5 min | 1-2 min | before every commit that touches game/, tools/check-quick.py, vite.config.js or tools/to-module.mjs |
 | (d) full | `npm run check:quick` | about 32 min | about 10 min | at the end of a phase, nightly in CI |
 | (e) in-game test | `python3 tools/check-quick.py --selftest` | about 25 min | outside the budget | nightly in CI; at the end of a phase that touched what it plays |
@@ -21,6 +22,10 @@ those sessions; until then, follow the rule next to them.
 The quick check needs Python Playwright matching the installed Chromium (tools/requirements-check.txt). Smoke and the
 full check are over budget today; 13b brings them down (parallel groups, fixtures, waits instead of sleeps, fewer
 legacy steps). A phase that makes a tier slower says by how much and why in its HANDOFF entry.
+
+The update check (update-check.js, the owner 2026-10-22) works only on the built site (`npm run build`, then serve
+`dist/game`): no check runs it, since the checks serve the repository, where PB_BUILD is '' and it is off. To try it,
+load the built game, build again while it runs, and bring the page back to the front: it loads the new build.
 
 ## Where a new test goes
 
@@ -82,8 +87,11 @@ Two rules hold everywhere:
   it (`--test-update-snapshots`) and says so in the commit; each choice has its own stream (`map|shape|<row>`,
   `map|type|<row>|<lane>`, `map|biome|<row>|<lane>`, a node's `weather|<day>`), so a rule's change moves only what it
   rules (tested for `cross`). The structure rules run over 1,300 maps of 5 to 12 rows; the bowl's are the hub's
-  (`bowl-layout.test.mjs`: pins apart, roads within 30 degrees of their exits) but 0.07 apart and 45 degrees for a
-  lane switch, which the rows' spacing can't keep within 30. weather.test checks `weatherPick` against the page's old
+  (`bowl-layout.test.mjs`: pins apart, roads within 30 degrees of their exits) but 0.1 apart and 45 degrees for a
+  lane switch, which the rows' spacing can't keep within 30. RL-8b: the run runs east to west across the bowl, maps
+  facing north, no two places' maps overlapping; `run-bowl.test.mjs` checks a run's own map (land under every place's
+  whole map, sea at the rim, the same seed the same look), `bowl-seed.test.mjs` the seed's noise (0 moves nothing) and
+  `bowl-sea.test.mjs` the island world (one island round Copperleaf, the game's hub an island). weather.test checks `weatherPick` against the page's old
   pick for every roll its hash can give: a change to the weather's odds or its order fails it on purpose.
 - The run's world (RL-7: `run-scenes.test.mjs`, `run-world-real.test.mjs`): run-scenes.test on small tables of its
   own (a node's exits in the order its scene is made with them and the ids the generator gives them, the dials drawn
@@ -95,6 +103,15 @@ Two rules hold everywhere:
   own stream. A node's dials are frozen in `run-world-real.test.mjs.snapshot`: a change to how they are drawn changes
   every run's scenes, so remake it (`--test-update-snapshots`) only on purpose and say so in the commit. A change to
   the generator itself shows in the mapgen tests first.
+- The run loop (RL-8): `battle-rewards.test.mjs` proves `battleRewards` gives what `endBattle` worked out before the
+  move (every outcome, both kinds, seeded egg rolls); `run-loop.test.mjs` the start's give, the heal price, a town's
+  stock for a day (the same after a reload), the run's foes (none twice, levels by row, the boss an Alpha), battle
+  seeds, release pay, the payout rows and a run's ids; `run-sim.test.mjs` plays whole runs with
+  `tools/test/sim/run-sim.mjs` (one seed twice the same whatever util.js random does; the report's numbers). The
+  simulation's full report: `node tools/test/sim/run-sim.mjs --runs=50 --team=1` (validation/sim/runs.json; it reports,
+  bounds wait for the owner). `run-world-real.test.mjs` also checks a run's buildings (the landing's mast, a town's
+  clinic and shop), its trainers in their own world and its bridges (both ends dry, a stream crossed square within
+  25 degrees).
 - The world (RL-5): the game's world is Copperleaf alone; the old one is parked in `game/data/legacy` (its own
   `legacy/index.json`, read by `readLegacyData()` in `tools/data-files.mjs`, null without one). A test that uses the
   old places as test data (the bowl's ground and landmarks, scripts said there) reads `oldWorld()`
@@ -110,7 +127,23 @@ Two rules hold everywhere:
   height gap over the neighbour band, no step, a straight walk across; terraces at ground level by exits; a node
   with two parents; the pair laid as one scene); `mapgen-roads` roads measured with the game's own riser rule
   (`logic/step-grid.js`, moved from walk-view.js so a test sees the road as the game draws it); `mapgen-lots` the
-  hub's buildings. `rng.test.mjs` freezes the default scene's hash, `gen` included: a new dial or version changes it
+  hub's buildings; `mapgen-mountains` (TR-2) the mountains and their trails: without the dials a scene is unchanged,
+  dial sets reach every exit and every summit with `{ slope: true }` (the game's slope rule and whole standing heights,
+  a bridge's deck walked), the dial's top reaches 15 m, nothing planted across a cliff, the relief seed moves only the
+  mountains, a mountains run (`dbg_mountains`) joins; `mapgen-ledges` (TR-2c) ledges one way, no trap (`mapgenTraps`, the game's
+  canStepBetween rule), stairs and reachable pockets, a scene without the dial unchanged. `mapgen-grass` (TR-2c) the tall grass
+  patches: 3-6 of 15-70 m² by the dial, one across the way west (the westmost exit's path goes through tall grass),
+  none within 7 m of the hub or an exit, every exit reached and no trap, the road unchanged by the dial. MAPGEN_VERSION
+  6 remade the golden scenes and the scene hash (rng.test). TR-3 (the camera on tall
+  ground): `camera-rise.test.mjs` the tilt that clears the line from the eye to your head (logic/camera-rise.js: none
+  on flat ground or for ground behind you, capped, follows the camera's turn); `tall-ground-draw.test.mjs`, on the
+  walk renderer with a recording WebGL stand-in (`walk-renderer.mjs`), the rock fade's uniforms (off on flat ground,
+  in battle and for a reflection camera), the silhouette's one draw (depth GREATER, no depth writes, the state put
+  back; none on flat ground, in battle, indoors) and the near shadow map centred at your height. The fast check's
+  `mountains` fixture is the run fixture with `dbg_mountains`; its step "Tall ground" stands you at the foot of the
+  most rock on the camera's side and checks the rise, the fade and the silhouette are on, and off on flat ground. Its
+  pictures come from `python3 tools/look-tall-ground.py` (five, settings off to all on, in validation/tall-ground/;
+  `--full` with the game's graphics). `rng.test.mjs` freezes the default scene's hash, `gen` included: a new dial or version changes it
   (remade on purpose, said in the commit). The seam rules are `logic/seam-rules.js` (`seam-rules.test.mjs` freezes
   each fault's words); check-data runs the same module.
 - On the game's data, test what must hold whatever the content (every road has its exits, every gate its trainer),
@@ -145,7 +178,8 @@ same phase:
 - A removed system loses its step in the same commit as the system.
 - The Road phase was removed in RL-5 (the hub has no road); RL-7 brought it back as "A run's road" (a run put on a
   copy of the save, its world made, the landing's north seam walked a step at a time, the next place on day 2, the
-  save and the hub's world put back). The Room phase walks into Hazel's lab; the night, Billies-in-the-world and
+  save and the hub's world put back). RL-8 added "A run: airship, nodes, payout" (a short run taken off from the mast
+  on a copy of the save, the flight, a battle, a paid heal, the Alpha boss, the payout, home). The Room phase walks into Hazel's lab; the night, Billies-in-the-world and
   Stress phases run on the hub's map. The scenes of a run's world are not in the "Walk:" list.
 - The test never writes the save: it pauses saving (`pauseSaving`/`resumeSaving`, game-state.js) and puts the save
   back. Don't call `writeStoredSave` or the account directly from a step.
@@ -178,9 +212,15 @@ same phase:
 ## What each phase does
 
 - **06 UI structure**: the smoke phone flow clicks real buttons (`[data-a=intro]`, the dressing room, `cs-next`,
-  `cs-choose`, `cs-yes`, the five tabs, the shop) and the Help buttons `quicktest`, `diagtest` and `dbglog` start
-  the in-game test and the log export: keep them, or change the checks in the same commit. Pure UI logic that
-  moves out of a screen (prices, sorting, text building) gets unit tests.
+  `cs-choose`, `cs-yes`, and since RL-8 the mast's `runstart`); it switches the tabs, opens the shop and starts
+  the in-game test and the log export by script (corrected in RL-8: this line said it tapped them). The Help buttons
+  `quicktest`, `diagtest` and `dbglog` are how the owner starts them on the phone: keep them, or change the checks in
+  the same commit. Pure UI logic that
+  moves out of a screen (prices, sorting, text building) gets unit tests. UI-5: the bottom bar is the kit's
+  `<pb-nav-bar id="nav">` (Map, Team, Bag; no Walk or Guide tab), its tabs in its shadow tree with `data-t`
+  (check-fast.py `nav_tap`); the fast check's "Every screen opens with its parts" opens each screen by the buttons a
+  player taps, and a move that must change nothing on screen proves it with `tools/style-diff.py` (0 differences
+  against HEAD).
 - **07 Portraits**: `tools/test/expressions.test.mjs` checks that every expression asked for has face pieces;
   replace it with the real tag-to-expression mapping test (task 8's second half). Add a portrait to the full test.
 - **08 Step tracking removed, maps and rooms (Part A and B)**: remove or replace everything driven by steps:
@@ -205,7 +245,27 @@ same phase:
   not). Replace the full test's two World map steps, v32's miniatures and the airship step with checks of the bowl.
 - **11 Opening**: the smoke phone flow and the full test's two Opening steps play the opening; update them with it.
 - **12 Ranch**: a full-test step for the ranch, a quick-check step that edits it, and its save fields in the save
-  tests (`saves.test.mjs`, `validSave`).
+  tests (`saves.test.mjs`, `validSave`). RL-9: `tools/test/ranch.test.mjs` (training's logic on the game's rules),
+  check-fast's ranch step on `?fixture=ranch` (Train, a level with the page's clock moved on, the cap, a clock turned
+  back, a reload) and the in-game test's "The ranch: training between runs". RL-9b: check-fast's "Packing for a run"
+  on `?fixture=ranch` (a trainee from storage picked, two Potions packed; kept on a loss, back in storage once; a win
+  brings the bag home; a reload), run-state tests for the pick, the pack and the storage trap, the in-game run phase's
+  party of one. RL-10a: `tools/test/breeding.test.mjs` (the mark, the reasons a pair can't breed, safe and risky eggs,
+  paying, hatching, a clock turned back, the save's checks), check-fast's "Breeding" on `?fixture=ranch` (the safe
+  egg shown is the one bred, hatched through the hatch window after `breed.hours`; a risky pair; the clock turned
+  back; a reload), the in-game test's "The ranch: breeding a pair", and the breeding sim (`tools/test/sim/
+  breeding-sim.mjs`, report only; `breeding-sim.test.mjs` runs it small).
+- **RL-11 Unlocks**: `tools/test/unlocks.test.mjs` (doors and currencies, buying once, refusals, milestones never on a
+  run, the tidy-up on load, a run's copy making the same map and stock), the new condition kinds in
+  `conditions.test.mjs`, `run.unlocks` in `run-state.test.mjs`; check-data's blocks for `currencies`, `buildings` and
+  `unlocks` (planted faults in the commits); check-fast's Lab step on `?fixture=lab` (a milestone on load, the board,
+  buying at the Lab, the ranch and the mast, a reload) and the in-game test's "The Lab: unlocks".
+- **RL-12 Loopholes**: `effects.test.mjs` (each effect kind, stacking in any order, every Loophole at once finite, no
+  rows change nothing), `relics.test.mjs` (offers from the seed, the cap, a shop's shelf, validRun, a run saved
+  before), `battle-fx.test.mjs` (stages, damage, catch, win money), `run-fx.test.mjs` (arrival heal, the payout row),
+  a fifth golden battle holding three Loopholes; check-fast's "Loopholes" on `?fixture=relics`; the in-game run
+  phase and quick check's RL-8 step buy a shop's Loophole or take a mini-boss's pick and see the boss's battle carry
+  it.
 - **14 Studio**: `tools/check-studio-github.py` and smoke's "Studio opens" keep passing; `--studio` follows the
   Studio local mode decision. A new Studio feature adds a step function to its `STEPS` (UI-3), so it can also run
   alone with `--only=<name>`.
@@ -254,7 +314,11 @@ same phase:
   world is made at boot), the fast check's run page (the landing drawing, every place on the bowl, a seam walked a
   day later; about 50 s), the full check's step "RL-7: a run's roads" (a run swapped in, a seam walked each way with
   `cross()`, the hub swapped back) and the in-game test's "A run's road". `cross()` walks `run.seamIn` metres further
-  in a run, where a crossing counts that far in. The flight to a run comes with RL-8. Smoke's shop steps open `CHECK_SHOP`, a shop the check makes for itself (the game has none
+  in a run, where a crossing counts that far in. RL-8: smoke's phone flow taps Copperleaf's mast and opens the run's
+  sheet; the fast check's second run page holds a run battle, reloads (`?fixture=stored`) into the same battle, loses,
+  reloads at the payout, keeps one Billie and flies home; the full check's step "RL-8: a run from the mast" plays a run
+  from the mast to home (the flight, a battle, a seam, a paid heal, the shop, a mini-boss in doubles, the Alpha boss,
+  the payout). Smoke's shop steps open `CHECK_SHOP`, a shop the check makes for itself (the game has none
   now). check-data checks `game/data/legacy` only for being readable: every listed file is there, nothing unlisted,
   maps and trainers against their schemas; the Unused report counts props the parked maps place as used.
   UI-3b: the lint's rules are game/js/logic/ui-lint.js (the Studio runs them; `node tools/ui-lint.mjs --lines` lists

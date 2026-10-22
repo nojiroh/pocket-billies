@@ -128,6 +128,109 @@ visits and requests, friends' presence (node 0, "a run"). Run trainers, the land
 moved to RL-8 with their behaviour; RL-7's scenes are plain routes. A place's landmark picture on the bowl draws as a
 red block in headless Chromium, Copperleaf's in the hub too (not RL-7's; HANDOFF).
 
+**Corrected in RL-8 (2026-10-21).** No battle had a seed and `extra.wx` didn't exist; battle weather already
+followed the forecast (RL-7) except sunny and night (the real hour); a run's battles now take the forecast alone (clear
+counts as sunny). Run towns offered a free clinic on the place card, and no run scene had a mast, clinic or shop
+building (mapgen's MG-2 dials make them, by node type). "You hurried back to the clinic" healed where you stood. The
+in-game test had no airship step (a04's model check was the only one). The debug menu's "Go there" skipped the run's
+arrival. Leaks the plan didn't list: storage (`box`) isn't a run field, so a 7th catch or a move to or from storage
+leaked Billies into Copperleaf (storage is closed on a run; a 7th catch waits until one is released, as `validSave`
+refuses a team of 7); today's challenges kept counting and paid into the run's money; releasing a Billie from
+Copperleaf would have been paid though it comes home; moves waiting to be learned are kept by Billie id (cleared at a
+run's start and end). The account upload runs about 5 s after a save, so a checkpoint is uploaded at once (`saveNow`).
+No trainer stood anywhere; the leaders have `blocks: false` and scripts that fight the real leader (badge included),
+so a run copies them with ids of its own and no script, badge, egg or story conditions. The wild odds followed the real
+hour and new ids came from the clock (a run wasn't reproducible from its seed): both now come from the run. Section 5
+put Capital "in the Lab": the Lab's board is RL-11, so Capital shows in the Map header. `pb-payout` has one total and
+no Seals line, and there is no keep-one component: the payout lays out `pb-pick-card`s. The owner's answers: the full
+9-row map (8.8; the debug menu has a 5-row short run), formats by node type with an Alpha boss and the 40-turn cap
+(8.9), and the opening is the fall only (8.20). The owner's play found a trap RL-7 had left: a run's bridges couldn't be
+walked where a stream's banks are steep (walk/heights.js blocked the steep ground under the deck), and mapgen laid a
+bridge along a stream where the road ran beside it, often ending in the water; both fixed (MAPGEN_VERSION 4).
+
+**Corrected in RL-9 (2026-10-22).** Copperleaf had no barn and no live map used `int_barn` (no acts in it); the barn's
+opening hours (`OPEN_HOURS.barn`) would have closed the ranch at night; `meta.scrap` and `meta.buildings` were never
+used; storage is the Team tab, not a building. The ranch is a barn by Copperleaf's farm patch (act `ranch`) into
+`int_barn`, with a training board; training is `logic/ranch.js` with `rules.ranch` (placeholders); Scrap comes from the
+payout (`scrapNode`, `scrapWin`). No `buildings.json` stub (RL-11). The owner's answers: 8.2, 1 home Billie a run at
+Bracket I, and a bag packed at the mast from Copperleaf's bag, which keeps everything gathered (RL-9b builds both); the
+ranch's sheet shows storage and the Team tab keeps it. Rooms were made a little smaller at the owner's word (12 x 10
+and 16 x 11 m). A `runEnd` trap for RL-9b: a kept Billie that travelled from storage isn't in the restored team and
+would be pushed in twice.
+
+**Corrected in RL-9b (2026-10-22).** Before RL-9b the whole hub team travelled and the run's bag was only the rules'
+gift. The trap above was real and had two more faces: `runReleasePays` and the payout's cards called a Billie "from
+Copperleaf" by `run.start.team`, so one from storage would have been paid as caught on the run if released; and
+`saveData.buddy` was not a run field, so with one traveller the hub's buddy wasn't on the run. Built: `rules.run.home`
+[1] and `run.pack` [5] by Bracket; `runBegin` takes `home` (uids from the team or storage) and `pack` (taken from the
+hub's bag, so `run.start` keeps what stays home); `run.home`, `run.pack`, the buddy a run field; `runEnd` puts a kept
+Billie back where it lives (team or storage) and, on a win, the run's items and coins into the hub's bag, which then
+pay no Capital. The owner's answers: items and coins pack, 5 in all, on top of the gift; a win's bag goes home unpaid;
+the pick from the team or storage (a trainee stops, healed); the run fixture follows the rule (its lead alone). The
+sim (`--team`, `--pack`): one Lv 5 starter loses on the landing in 31 of 50 runs, as on main; packing 5 Potions
+changes little (balance is for the owner's play).
+
+**Corrected in RL-10a (2026-10-22).** RL-10 split in two at the owner's word: RL-10a breeding and hatching, RL-10b
+passive income and the cloud `t` anchor. Where section 3 and RL-10 were wrong: eggs hatched by metres walked
+(`addWalked`), not by time, and nothing gave eggs any more on the hub's terms; `eggs.json` lists legacy species
+(played by stand-ins, `standInSpecies`); no Billie has a passive of its own (only types do), so a quirk's or an
+abomination's "passive" waits for RL-12's effects; an abomination can't look mixed (the art is built per species
+offline; `logic/parts.js` is size arithmetic); `account.js` writes the cloud save in two places (`flushAccountSave`,
+`accountSignOut`), not one; and training's rollback guard (RL-9) moves a trainee's start back to a turned-back clock,
+so turning it forward again pays the gap (RL-10b's shared guard should fix it). The owner's answers (the
+recommendations): you pick the parents and the ranch picks the parts (16's 5.1: both); an abomination wears one
+parent's art with its own name and a stat swing; the walking eggs are retired; the parents stay free. Built:
+`rules.ranch.breed`; `logic/breeding.js` (the egg rolled from the parents' uids and `ranch.bred` when the pair starts,
+kept in the nursery entry, its ready time never moving); `m.mut` (a quirk, or an abomination's name, one stat
+`abomUp`, another `abomDown`) read by `stat()` and `billyName`; the ranch sheet's Nursery and "Breed a pair"; the
+hatch window moved to the ranch. The old eggs no longer drop, are no longer given or hatched by walking, and their
+screens are gone; their data (`eggs.json`, `saveData.eggs`, trainers' `egg`, the Studio's editors, the incubators'
+CSS) is dormant, for a cleanup session. The sim's first numbers: 59/31/11 % (odds 60/30/10); a bred Billie's mark
+is about even against its unmarked twin, but mixed part sizes lose phase 16's Prime bonus (0.11-0.17 against a plain
+Billie; the duel's control is 0.43).
+
+**Corrected in RL-11 (2026-10-22).** There is no `hub.js`: the board is `lab-board.js` in the hub's Lab tab (hidden
+since UI-5 for it), and Hazel's lab machine (now act `board`) opens it. `won:bracket_N` can't be built yet: meta keeps a
+win count and the highest tier, and nothing raises the tier (RL-13); RL-11 added the condition kinds `unlock:<id>`,
+`runs` and `wins`. The three doors are one field each: a row with `at` (and `cost`) is sold at that building in its
+currency (the Lab's rows are the board), a row with `when` is earned (a milestone; no `door` field). A grant is one of a
+building's level, an item into run shops, a biome onto run maps, or a currency; nothing else needed effects (RL-12).
+`meta.buildings` stays where a level lives (`ranchLevel` read it already); the load step rebuilds it from the owned
+rows. A run copies its shop and biome unlocks at the start (`run.unlocks`), so a run is still made by its seed and that
+copy; a run from before RL-11 has none and keeps everything open. Milestones are granted in the hub only (after the
+payout and when the world shows at boot), never on a run. Building looks per level: no art, so the label shows the level
+(the owner's answer). The Workshop is a row "coming later" (the owner's answer). The run sim, the fixture's run and the
+in-game test's run are made without `runTakeOff`, so they keep everything open. The owner's answers: 8.5 the
+recommendation; the first unlocks ranch levels, run shop wares, new biomes and milestones.
+
+**Corrected in RL-12 (RL-12a, 2026-10-22).** The owner let RL-12 go before RL-11 (every Loophole on offer from the
+first run; RL-11's unlocks may narrow the pool later) and split it: RL-12a is the effects, the Loopholes, the
+mini-boss pick and the shops; RL-12b is `events.json` (`relic`, `wager`) and the event and shop places. The calls named
+in 4 were all there (`calcDamage`, `catchOdds`, `newBattle` with the run's `runBattleStart`), and the save already had
+`run.relics`, `run.offer` and the `menu` phase; RL-12a added `run.offerN` (the offers' stream) and `run.shelf` (a run
+shop's Loophole by node and day, so buying it doesn't put another on the shelf), filled by `migrate` for a run saved
+before. The effect kinds built are `money`, `price` (shop, heal), `catch`, `stat`, `damage` (deal, take, by category or
+type), `heal` (walking in) and `payout` (Capital, the items' share); `rule`, `clock`, `start` and `boss` wait for RL-13
+and RL-14. Stat rows apply as the battle is made (yours on the field), said after the sides come out. UI-4 had already
+built the run bar's fourth tab (hidden) and the pick card: the tab opens as "Loopholes" and the pick shows its cards
+one to a row (three across cut the names). "Tiny waystation scenes" (8.6) can't be: every run scene is 112 x 64 m for
+the seams; the owner chose a normal-sized place with a stand (RL-12b). RL-9b (merged during RL-12) brings a won run's
+items home, so Write-off (items at full price) counts only on a loss. Names: "Loophole" on screen, `relics` in the data
+(the item id `loophole` is the Hi-Potion).
+
+**Changed in the TR-2 session (2026-10-21, the owner: "runs should go from east to west").** A run scene is entered
+by its east side and left ahead by its west: `east`/`east2` back, `west`/`west2` ahead (logic/run-scenes.js
+runSceneExits; runExits' `ahead`/`back`, renamed from north/south). Two links a side sit 10 m and 54 m along the 64 m
+edge (t 0.15625 and 0.84375, the seam rules' 44 m apart). Every run scene's east and west edges are pinned to height
+0 (mapgen `pin`), because on a 64 m edge the strips of two parents overlap and one scene can't follow both. On the
+bowl west is clockwise, so the run is an arc on the south side, landing in the south-east, boss in the south-west
+(RUN_BOWL a 270, span 120, r 0.62). **Changed in RL-8b:** the run runs straight across the bowl, the landing near the
+east rim and the boss near the west (RUN_BOWL x 0.72, step 0.18, lane 0.1, bend 0.06), every run place's map facing
+the bowl's north (a spot's `up` 90), on land of its own made from the seed (logic/run-bowl.js); Copperleaf is off a
+run's map. MAPGEN_VERSION 5 (merged after RL-8 took 4) leaves a run saved going north. The free sides of a run scene
+are now north (the back, behind what the camera looks at) and south (toward the camera); the lines below that say
+N to S describe the layout before this change.
+
 ### Findings A: battle, state, randomness, saves (verified)
 
 - `game/js/hooks.js` is generated by `tools/to-module.mjs` (one `export let` slot per name, ~274 slots, `provide()`
@@ -381,6 +484,7 @@ Count: 14 parked items, 10 on the path.
 | RL-6 | Run map and clock logic | `logic/run-map.js`, `nodeTypes.json`, forecast, deadline; no UI | 1 | no |
 | RL-7 | Run world | generated scenes installed and walkable, the bowl shows the run | 1-2 | no |
 | RL-8 | Run loop and payout | airship start, town with paid healing, mini-boss, payout, resume: **first playable cut** | 2 | yes |
+| RL-8b | Run look | the owner's notes from the first play: rooms darker, the hub an island, a run's own world map | 1 | yes |
 | RL-9 | Ranch A | the building, store and keep, train between runs, the keep-one rule | 2 | yes |
 | RL-10 | Ranch B | breed safe/risky with abominations, hatch, passive income (cap, rollback guard, offline, server anchor) | 2 | yes |
 | RL-11 | Hub upgrades, currencies, unlocks | `currencies/buildings/unlocks.json`, the Lab board, one unlock registry | 1-2 | yes |
@@ -633,7 +737,12 @@ run towns, the mast act), `shop.js` (seeded stock), `things-to-do.js` (`extra.wx
 `battle-rewards.test.mjs`, `sim/run-sim.mjs` (replay equality; run-length statistics reported), a quick-check group on
 the `run` fixture (mast → flight → node → battle → town heal → mini-boss → payout; reload mid-run resumes), the
 smoke phone flow extended by the mast tap. Could break: Start-Game, the opening's end, the phone flow, the full
-test's airship step, the debug log export. Verify: all tiers, `--selftest`, then the owner's phone. 2 sessions.
+test's airship step, the debug log export. Verify: all tiers, `--selftest`, then the owner's phone. 2 sessions. Done 2026-10-21 in one session (HANDOFF;
+section 0 for what changed from this paragraph): `logic/battle-rewards.js`, `logic/run-loop.js`, `run.js`,
+`run-payout.js`, the run's buildings, battles (seed, forecast weather, checkpoint and restart), towns (paid clinic, the
+day's shop), mini-bosses and the Alpha boss, the payout and resume, `sim/run-sim.mjs`, the fall-only opening, hints, the
+debug menu's runs; tested by `battle-rewards`, `run-loop` and `run-sim` tests, a fast-check page, a quick-check step and
+an in-game test phase. The owner played it the same day (section 5's notes).
 **Nothing below starts before the owner has played.**
 
 **RL-9 Ranch A.** The ranch as a hub building (a barn room via `enterRoom`; `int_barn` exists; the walkable yard is
@@ -641,23 +750,34 @@ cut first if time is short), store and keep (the box behind it), train (Scrap + 
 `gainXp`, capped by building level, the rollback guard shared with income), the keep-one rule as decided. Files:
 `logic/ranch.js`, `ranch.js`, `scenery.json` props, `buildings.json` stub, `self-test.js` (ranch step),
 `check-quick.py` (edit-and-reload step, TESTING.md phase 12). Tests: `ranch.test.mjs`. Could break: team/box screens.
-2 sessions.
+2 sessions. First half done 2026-10-22 (HANDOFF; section 0 for what changed): the barn and its sheet (`ranch-screen.js`),
+`logic/ranch.js`, `rules.ranch`, Scrap from the payout, the fixture, check-fast and in-game steps. RL-9b done
+2026-10-22: the mast's pick of 1 home Billie and the packed bag (8.2), the storage trap in `runEnd`, the bag home on a
+win, the sim's policy, check-fast's "Packing for a run".
 
 **RL-10 Ranch B.** Breeding safe/risky with abominations, hatching on ranch time, passive income with cap, rollback
 guard, offline, the cloud `t` anchor and its rule. Files: `logic/breeding.js`, `logic/ranch.js`, `logic/rules.js`
 (eggs), `account.js:331-351`, `firebase/firestore.rules` + `firebase/test/rules.test.mjs`,
 `tools/test/sim/breeding-sim.mjs` (reports only until bounds are agreed). Could break: cloud saves (publish the rule
-after the emulator passes). 2 sessions.
+after the emulator passes). 2 sessions. RL-10a done 2026-10-22 (HANDOFF; section 0 for what changed): breeding,
+hatching, `m.mut`, the old walking eggs retired, the sim. RL-10b next: passive income, the shared rollback guard
+(training's included), offline, the cloud `t` anchor and the key whitelist (8.12).
 
 **RL-11 Hub upgrades, currencies, unlock board.** `currencies.json`, `buildings.json` (Lab, Ranch, Workshop, Airship),
 `unlocks.json` with the three doors, `logic/unlocks.js` (`unlockReady`, buy, auto at payout and on load),
 `conditions.js` (`unlock:`, `won:`), `hub.js` board screen, `copperleaf.json` building variants per level. Tests:
-`unlocks.test.mjs`, `conditions.test.mjs`, check-data (a fifth currency fails, every grant exists). 1-2 sessions.
+`unlocks.test.mjs`, `conditions.test.mjs`, check-data (a fifth currency fails, every grant exists). 1-2 sessions. Done
+2026-10-22 in one session (HANDOFF; section 0 for what changed from this paragraph): the three sections,
+`logic/unlocks.js`, the conditions `unlock:`, `runs`, `wins`, `run.unlocks`, `lab-board.js` (the Lab tab, the ranch's
+and the mast's upgrade rows, levels in labels), the `lab` fixture, check-fast's Lab step, the in-game phase.
 
 **RL-12 Relics and effects.** `relics.json`, `events.json` (scripts with `relic`, `wager`), `logic/effects.js` (kinds,
 hooks, `B().fx`; phase 19's handler idea), one hook call each in `calcDamage`, `catchOdds`, `newBattle`, the pick
 sheet, the Bag's relic list, the waystation node engine. Tests: `effects.test.mjs` (each kind, stacking order, a run
-with every relic stays finite), a golden battle with a relic, story checks on events. 1-2 sessions.
+with every relic stays finite), a golden battle with a relic, story checks on events. 1-2 sessions. RL-12a done 2026-10-22 (HANDOFF; section 0 for what changed): `relics.json`
+(ten Loopholes), `logic/effects.js`, `logic/relics.js`, the battle, shop, clinic, arrival and payout hooks, the
+mini-boss pick and a shop's Loophole, the Loopholes tab (`relic-screen.js`). RL-12b: `events.json` with `relic` and
+`wager`, the event and shop places (waystations, 8.6), the no-two-shops rule.
 
 **RL-13 Modifiers, tiers, mini-boss leaders.** `modifiers.json`, the bracket pick at the mast, the 8 leaders as the
 pool with badge relics, overdue hardening as effect rows. Tests: tier effects on levels, prices, deadline; leader
@@ -679,19 +799,35 @@ duplicate id refused). 1-2 sessions.
 
 ## 5. First playable cut (after RL-8)
 
-On the phone: the opening as today → Copperleaf → Hazel's last line points at the mast → "Start a run (Bracket I)" →
-a free flight over the run's bowl (five pins: landing, two second-row nodes, a town, the mini-boss arena; rows 0-1
-revealed; "Day 1 · deadline day 7") → the landing route (a hint, the forecast icon) → **one branch** (a grass route
-with a trainer, or another biome with other weather) → the town (clinic door charges $, shop sheet with seeded stock)
-→ the mini-boss arena (one of the 8 leaders rescaled, doubles) → win or lose → the payout screen converts $ and
-items to Capital, lists released Billies, the keep-one picker on a loss → Copperleaf with the Capital balance shown
-in the Lab. Killing the app anywhere reopens at the node (or the landing mid-flight). Five nodes made, four walked.
+As built in RL-8 (the owner's answers to 8.8, 8.9 and 8.20): New game plays the fall from the crust → Copperleaf
+(Hazel, the dressing room, the coins, the starter) → Hazel's last lines point at the airship mast → the mast's "Start a
+run (Bracket I)" (your team as a copy, $600, 5 Copper Coins, 2 Potions; storage stays home) → a free flight to the
+landing, day 1, beside the landing's mast → the run's map (9 rows, 9-14 places, about 9 walked; the next row shown,
+'?' after, the boss always) → wild battles one on one, each seeded and checkpointed → towns: a clinic at $60 a hurt
+Billie and a shop with the day's stock → two mini-bosses (a leader copied to the row's level + 3, doubles, blocking the
+way north) → the boss (a third leader's top Billie as an Alpha at + 5, fought by up to three) → win, or wipe → the
+payout (Capital from money, items and released Billies; Seals on a win; on a loss pick one Billie to keep) →
+Copperleaf by the mast, healed, Capital and Seals in the Map header. "Give up the run" in the Map tab, "Fly home" at the
+landing's mast. Killing the app anywhere reopens there: at the place, mid-battle (the battle starts again from its
+seed), mid-flight (on the landing) or at the payout.
 
-Stubbed: relics (three names shown, inert), modifiers (Bracket I = no effects), the final boss (the run ends at the
-mini-boss; the `boss` row exists and generates nothing), event and shop nodes (the shop is a town door), bots (the
-mini-boss fields Billies), ranch (storage as today), the unlock board (balance only), towns (a mapgen route with flat
-pads and clinic/shop door props; MG-3 not needed), deadline hardening (counts, hardens nothing), the return flight,
-online, hub trainers. Every stub's data shape is fixed in RL-3/RL-6 so later sessions fill rows.
+Stubbed: relics, modifiers (Bracket I = no effects), event nodes, route trainers, bots (the boss fields a Billie, not
+the Voltron), the ranch, the unlock board (Capital is a balance only), deadline hardening, the return flight's
+animation, online, hub trainers. Balance is untuned: the run simulation (`tools/test/sim/run-sim.mjs`) loses every run
+on the placeholders (HANDOFF RL-8).
+
+**The owner's notes after the first play (2026-10-21), for the plan:**
+- It got stuck: a run's landing couldn't be left (fixed in RL-8: bridges walkable over steep banks; bridges only where
+  the road crosses a stream, square to it, dry at both ends).
+- "The bridge was turned the wrong way" (the same fix).
+- Rooms are too bright.
+- Routes should be wider than they are long: it's an HD-2D diorama.
+- Copperleaf's world map should be Copperleaf's island alone.
+- A run gets its own world map, generated from its seed.
+The last four are new work, waiting for the owner's choices (HANDOFF RL-8, "Next"). **Done in RL-8b (2026-10-22):**
+rooms darker (ambient 0.5, was 1.75); routes were already wider than long (TR-2: 112 x 64 m, joined east and west);
+the hub's map is Copperleaf's island alone (worldmap.json sea.island); a run gets its own map from its seed, laid
+across the bowl east to west, with no hub on it (HANDOFF RL-8b).
 
 ## 6. Leave alone (no refactor without evidence)
 
@@ -733,19 +869,29 @@ Decided this session: the rework is a track RL-N (`rl-N-done`); parked phases ar
 1. **Internal key for the run:** `run` as is (recommended; `storyRun`, `runBase`, `runTurn` are functions, no save-key
    clash) / `run` after renaming the story layer's `runBase/saveDuringRun/storyRun` / `voyage`. Player word "run".
 2. **Keep-one vs ranch levels:** option 3 in section 3 (recommended) / ranch Billies never at risk with a per-tier cap /
-   everything at risk, the ranch only trains.
+   everything at risk, the ranch only trains. **Answered in RL-9: option 3 with 1 home Billie a run at Bracket I**, and
+   a bag packed at the mast (a limited number of items) from Copperleaf's bag (RL-9b). **RL-9b:** 5 items and coins in
+   all on top of the gift; the home Billie from the team or storage; on a win the run's bag goes home and is not paid,
+   on a loss it is paid as Capital.
 3. **Hub extent:** Copperleaf alone with the south exit removed (recommended) / Copperleaf + Hedgerow Lane as a practice
    route / the exit kept behind a fence (check-data needs a `closed` exit).
 4. **Legacy parking:** move under `game/data/legacy/` with a read-only Studio group (recommended) / a `world: 'legacy'`
    flag (nothing moves; 13 MB and 47 map fetches stay).
 5. **Currency names and buildings:** $ / Capital / Scrap / Audit Seals with Lab = Capital, Ranch and Workshop = Scrap,
    Airship = Seals (recommended) / Money/Capital/Scrap/Seal / $/Ledger/Copper/Bonds / the Platinum Coin reused (no).
+   **Answered in RL-11: the recommendation** (currencies.json, buildings.json).
 6. **Menu nodes on a walked map:** tiny generated waystation scenes whose hub prop opens the menu (recommended, from
    RL-12) / a gate prop at the previous seam / events and shops folded into towns (the first cut has only this).
+   **Answered in RL-12: the waystation**, as a normal-sized place (every run scene is 112 x 64 m) with a stand by the
+   road and fewer wild Billies; built in RL-12b.
 7. **Mid-battle kill:** restart the battle at the node from the same seed and battle index (recommended for the first
    cut) / save the battle object every turn and resume it (phase 19's recommendation; later option).
 8. **First-cut shape:** five nodes made, four walked, one branch (recommended) / four in a line / the full ~14-node map.
+   **Answered in RL-8: the full map** (9 rows), with a 5-row short run in the debug menu.
 9. **Battle formats and turn cap:** by node type with a 40-turn cap (recommended) / singles everywhere / cap 30.
+   **Answered in RL-8: by node type** (wild single, a mini-boss a leader in doubles, the boss a leader's top Billie as
+   an Alpha fought by up to three), the cap 40; a wipe or a trainer battle at the cap ends the run; keep 1 Billie on a
+   loss, all on a win.
 10. **Clock numbers:** a day per arrival including backtracking, deadline = shortest path + 3, no tick for healing or
     waiting until the first play (recommended) / + 5 / healing +1 and waiting +2. **Answered in RL-6: the
     recommendation** (rules.json `run.clock`).
@@ -754,10 +900,13 @@ Decided this session: the rework is a track RL-N (`rl-N-done`); parked phases ar
 12. **SAVE_VERSION 4** sets aside every current save on your phone and account; and the `saves/{uid}` key whitelist
     with `t` in RL-10 (recommended yes to both).
 13. **`seen`/`caught`:** stay top level (recommended) / move to `meta.dex` now (14 reader files).
-14. **Relic cap:** 6 held (recommended) / 8.
+14. **Relic cap:** 6 held (recommended) / 8. **Answered in RL-12: 6** (rules.json `run.relics.cap`).
 15. **Hub island look after parking:** only Copperleaf on the terrain (recommended) / parked places as bowl-only pins
-    (both world-graph tests change on purpose).
+    (both world-graph tests change on purpose). **Corrected in RL-8b:** "the sea share set in the Studio" couldn't make
+    an island (the share stops at 0.8 and the land rose toward the rim); the island is `sea.island` (0.2, the owner's
+    "medium"), sea all the way to the rim.
 16. **Ranch cut order if RL-9/10 overrun:** server timestamp, then risky breeding, then the walkable yard (recommended).
+    **RL-9:** the walkable yard and pens wait; the barn room stands in.
 17. **Order after the first cut:** the brief's (ranch, hub upgrades, relics, modifiers, bots, online; recommended) /
     relics and currencies before the ranch.
 18. **Tuning placeholders in `rules.run`:** rows 9, slack 3, healCost 60, the Capital rate, relic cap 6, turnCap 40,
@@ -767,4 +916,5 @@ Decided this session: the rework is a track RL-N (`rl-N-done`); parked phases ar
 19. **Tags:** push the outstanding `phase-*`, `st-*`, `mg-*` tags from your machine so CI's full run can fire on
     `rl-*`.
 20. **Opening:** keep city → fall → Hazel/Blake and add Hazel's "the airship is waiting" lines (recommended) / shorten
-    to the fall only for a faster first run.
+    to the fall only for a faster first run. **Answered in RL-8: the fall only**, Blake cut from it (his data kept),
+    Hazel's new lines send you to the mast.

@@ -141,9 +141,12 @@ function modelEditorHTML(k) {
         rangeField('Glows when the lamps are on', `${p}.glow`, { min: 0, max: 1, step: 0.05, def: 0 }),
         rangeField('Darker (a crown’s core)', `${p}.shade`, { min: 0.4, max: 1, step: 0.02, def: 1 })
       )}${
-        l.clip
-          ? `<div class="grid">${numberField('Clump: across in the picture (px)', `${p}.clip.0`, { min: 0, max: 400, step: 0.5 })}${numberField('Clump: down in the picture (px)', `${p}.clip.1`, { min: 0, max: 400, step: 0.5 })}${numberField('Clump: radius (px)', `${p}.clip.2`, { min: 2, max: 200, step: 0.5 })}</div>`
-          : ''
+        l.clip && l.clip.length >= 4
+          ? /* phase 09 batch 10: a band (a pine's tier), a box in the picture */
+            `<div class="grid">${numberField('Band: left in the picture (px)', `${p}.clip.0`, { min: 0, max: 400, step: 1 })}${numberField('Band: top (px)', `${p}.clip.1`, { min: 0, max: 400, step: 1 })}${numberField('Band: right (px, not included)', `${p}.clip.2`, { min: 1, max: 400, step: 1 })}${numberField('Band: bottom (px, not included)', `${p}.clip.3`, { min: 1, max: 400, step: 1 })}</div>`
+          : l.clip
+            ? `<div class="grid">${numberField('Clump: across in the picture (px)', `${p}.clip.0`, { min: 0, max: 400, step: 0.5 })}${numberField('Clump: down in the picture (px)', `${p}.clip.1`, { min: 0, max: 400, step: 0.5 })}${numberField('Clump: radius (px)', `${p}.clip.2`, { min: 2, max: 200, step: 0.5 })}</div>`
+            : ''
       }<div class="grid">${pos}</div><div class="seg-row"><button class="btn sm subtle" data-act="vxeImgPick" data-i="${i}">Pick a PNG…</button></div>`;
     else if (kind === 'raw')
       body = `<p class="help">${escapeHtml(String(l.n || '?'))} voxels imported from ${escapeHtml(l.src || 'a .vox')}. Move it with the sliders; its colours are its own.</p><div class="grid">${pos}</div>`;
@@ -212,16 +215,17 @@ function leafSheetSVG(path, clips) {
   c.getContext('2d').drawImage(im, 0, 0);
   const z = Math.max(1, Math.min(4, Math.floor(260 / Math.max(w, h))));
   return `<svg class="leaf-sheet" width="${w * z}" height="${h * z}" viewBox="0 0 ${w} ${h}" style="image-rendering:pixelated;background:repeating-conic-gradient(#0001 0 25%,#0000 0 50%) 0 0/8px 8px"><image href="${c.toDataURL()}" width="${w}" height="${h}"/>${clips
-    .map(
-      q =>
-        `<circle cx="${q[0]}" cy="${q[1]}" r="${q[2]}" fill="none" stroke="#fff" stroke-width="${0.6}" stroke-dasharray="2 2" opacity=".85"/>`
+    .map(q =>
+      q.length >= 4
+        ? `<rect x="${q[0]}" y="${q[1]}" width="${q[2] - q[0]}" height="${q[3] - q[1]}" fill="none" stroke="#fff" stroke-width="${0.6}" stroke-dasharray="2 2" opacity=".85"/>`
+        : `<circle cx="${q[0]}" cy="${q[1]}" r="${q[2]}" fill="none" stroke="#fff" stroke-width="${0.6}" stroke-dasharray="2 2" opacity=".85"/>`
     )
     .join('')}</svg>`;
 }
 function leavesHTML(M, L) {
   const S = leafSheets(M, L);
   if (!S.length) return '';
-  return `<div class="vxe-leaves"><h4>Leaves</h4><p class="help">The leaves are one picture per look: the crown as drawn. Each dashed circle is a clump cut from it; paint the picture and every clump changes with it. A clump's circle can be moved in its picture layer below.</p>${S.map(
+  return `<div class="vxe-leaves"><h4>Leaves</h4><p class="help">The leaves are one picture per look: the crown as drawn. Each dashed circle is a clump cut from it (a dashed box is a band: a pine's tier); paint the picture and every clump changes with it. A clump's circle or box can be moved in its picture layer below.</p>${S.map(
     o =>
       `<div class="vxe-leaf"><b>${escapeHtml(o.who)}</b> <small>${escapeHtml(o.path)}</small><div>${leafSheetSVG(o.path, o.clips)}</div><div class="seg-row"><button class="btn sm" data-act="vxeLeafPaint" data-path="${escapeHtml(o.path)}">Paint the leaves</button><button class="btn sm subtle" data-act="vxeLeafReplace" data-path="${escapeHtml(o.path)}">Replace from PNG…</button></div></div>`
   ).join('')}</div>`;

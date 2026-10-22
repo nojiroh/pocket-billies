@@ -4,9 +4,9 @@
    What a run's node map (logic/run-map.js) becomes when you stand in it: a walkable scene per node, made by the map
    generator (logic/mapgen.js) from the run's seed, and the world tables the game reads (game-data.js worldSetGraph):
    Copperleaf first (world node 0), then a place per map node (world node i + 1), joined by seam roads.
-   - A node's scene is a 112 × 64 route (MAPGEN_SIZES.route). Its exits are runExits': north to the nodes it leads
-     to, south to the ones that lead to it, at t 0.5, or 0.25 and 0.75. The main road runs from its first south exit
-     to its first north exit; the second ones branch off it.
+   - A node's scene is a 112 × 64 route (MAPGEN_SIZES.route). Its exits are runExits' (the owner: runs go east to
+     west): west to the nodes it leads to, east to the ones that lead to it, at t 0.5, or 0.15625 and 0.84375 (10 m and 54 m along). The main road
+     runs from its first east exit to its first west exit; the second ones branch off it.
    - A node's scene is made from every parent's edge (mapgenEdgeStrip into params.edges, map generator MG-2), so the
      two meet with no gap and a straight walk across. The map numbers nodes row by row, so every parent comes before
      its children: making the scenes in order makes each one after the ones it needs.
@@ -25,6 +25,8 @@ import { runExits, runNodeSeed, runSpot } from './run-map.js';
 import { MAPGEN_SIZES, mapgenEdgeStrip, mapgenScene } from './mapgen.js';
 /* eslint-disable no-func-assign */
 expose({
+  RUN_BUILDINGS: [() => RUN_BUILDINGS],
+  RUN_MOD_MOUNTAINS: [() => RUN_MOD_MOUNTAINS],
   RUN_SIDE_ID: [() => RUN_SIDE_ID],
   runMapIdOf: [() => runMapIdOf],
   runPlaceId: [() => runPlaceId],
@@ -41,6 +43,7 @@ expose({
   runSceneParams: [() => runSceneParams, v => (runSceneParams = v)],
   // @ts-expect-error -- replaced on purpose
   runScenesMake: [() => runScenesMake, v => (runScenesMake = v)],
+  runShopId: [() => runShopId],
   // @ts-expect-error -- replaced on purpose
   runWildLevels: [() => runWildLevels, v => (runWildLevels = v)],
   // @ts-expect-error -- replaced on purpose
@@ -54,20 +57,22 @@ expose({
  */
 /** a run node's place id (its row in the world tables, its wild Billies in saveData.wild) @param {number} i */
 export const runPlaceId = i => `run_${i}`;
+/** RL-8: a run town's shop id @param {number} i */
+export const runShopId = i => `run_${i}_shop`;
 /** a run node's map id: its place id and a tag of the run's seed, so no cache keyed by map id mixes two runs
  * @param {string} seed @param {number} i */
 export const runMapIdOf = (seed, i) => `run_${i}_${(hashString(seed) % 1679616).toString(36)}`;
 /** the side names mapgen gives a scene's exits, the first and then the second on a side (mapgenStageExits) */
-export const RUN_SIDE_ID = { S: ['south', 'south2'], N: ['north', 'north2'] };
-/** a node's exits in the order its scene is made with them, with the ids the generator gives them: the first south,
- * the first north (the main road between them), then the second south and the second north
+export const RUN_SIDE_ID = { E: ['east', 'east2'], W: ['west', 'west2'] };
+/** a node's exits in the order its scene is made with them, with the ids the generator gives them: the first east
+ * (back), the first west (ahead; the main road between them), then the second east and the second west
  * @param {RunMap} map @param {number} i
- * @returns {{ side: 'N' | 'S', t: number, id: string, node: number }[]} node: the neighbour the exit leads to */
+ * @returns {{ side: 'E' | 'W', t: number, id: string, node: number }[]} node: the neighbour the exit leads to */
 export function runSceneExits(map, i) {
   const ex = runExits(map, i),
-    S = ex.south.map((e, k) => ({ side: /** @type {'S'} */ ('S'), t: e.t, id: RUN_SIDE_ID.S[k], node: e.from })),
-    N = ex.north.map((e, k) => ({ side: /** @type {'N'} */ ('N'), t: e.t, id: RUN_SIDE_ID.N[k], node: e.to }));
-  return [S[0], N[0], S[1], N[1]].filter(e => !!e);
+    E = ex.back.map((e, k) => ({ side: /** @type {'E'} */ ('E'), t: e.t, id: RUN_SIDE_ID.E[k], node: e.from })),
+    W = ex.ahead.map((e, k) => ({ side: /** @type {'W'} */ ('W'), t: e.t, id: RUN_SIDE_ID.W[k], node: e.to }));
+  return [E[0], W[0], E[1], W[1]].filter(e => !!e);
 }
 /** the exit of node i that leads to node j, or null @param {RunMap} map @param {number} i @param {number} j */
 export const runSceneExitTo = (map, i, j) => runSceneExits(map, i).find(e => e.node === j) || null;
@@ -99,7 +104,7 @@ export function runSceneParams(run, i, scenes, data) {
     exits = runSceneExits(map, i),
     dials = runSceneDials(data.rules.scene, rngFrom(nodeSeed, 'scene|dials'));
   const edges = exits
-    .filter(e => e.side === 'S')
+    .filter(e => e.side === 'E')
     .map(e => {
       const parent = scenes[e.node],
         out = runSceneExitTo(map, e.node, i);
@@ -110,15 +115,35 @@ export function runSceneParams(run, i, scenes, data) {
     });
   return {
     ...dials,
+    /* TR-2: the debug menu's mountains run (a mod on the run, so a reload makes the same scenes): every place gets
+       the tallest mountains on its north and south sides (the back and the camera's side: a run goes east to west;
+       south since TR-3's camera), with trails, and terraces whose fronts are ledges (TR-2c), for measuring them on a
+       phone and playing the route's shape */
+    ...((run.mods || []).includes(RUN_MOD_MOUNTAINS)
+      ? { land: { ...(dials.land || {}), mountains: 1, massif: 'NS', terraces: 0.7, cliffs: 0.45, ledges: 1 } }
+      : {}),
+    /* RL-8: the buildings a node's type needs, beside the main road near its middle (mapgen's props dials: MG-2) */
+    props: { ...(dials.props || {}), ...(RUN_BUILDINGS[node.type] || {}) },
     kind: 'route',
     biome: node.biome || Object.keys(data.biomes)[0],
     w: size.w,
     h: size.h,
     seed: hashString(nodeSeed + '|scene') % 2147483647,
+    /* its east and west edges at height 0, so it meets any neighbour with no step (two neighbours' strips overlap on
+       a 64 m edge, where one scene can't follow both) */
+    pin: 'EW',
     road: { ...(dials.road || {}), exits: exits.map(e => ({ side: e.side, t: e.t, width: 2 })) },
     edges,
   };
 }
+/** TR-2: the debug menu's run mod that gives every place mountains (runSceneParams) */
+export const RUN_MOD_MOUNTAINS = 'dbg_mountains';
+/** RL-8: what stands beside the main road of a node of each type: the airship's mast where it lands you, a clinic
+ * (paid healing) and a shop in a town (mapgen.js MAPGEN_HUB_BUILDINGS) */
+export const RUN_BUILDINGS = /** @type {Record<string, Record<string, number>>} */ ({
+  landing: { mast: 1 },
+  town: { clinic: 1, shop: 1 },
+});
 /** a run node's name (a placeholder, the owner's call: its biome and its type, "Meadow Route")
  * @param {RunMap} map @param {number} i @param {RunWorldData} data */
 export function runPlaceName(map, i, data) {
@@ -165,13 +190,15 @@ export function runWildLevels(map, i, data) {
  * node's north exits to its children's south ones) and each node's pool (its biome's species at its row's levels).
  * A place is an ordinary row (game-data.js worldSetGraph) plus runNode, its map node
  * @param {Run} run @param {LocationData} hub @param {RunWorldData} data
- * @returns {{ locations: LocationData[], roads: RoadLink[], pools: Record<string, Pool> }} */
+ * @returns {{ locations: LocationData[], roads: RoadLink[], pools: Record<string, Pool>, shops: Record<string, any> }} */
 export function runWorldTables(run, hub, data) {
   const map = /** @type {RunMap} */ (run.map),
     /** @type {Record<string, Pool>} */
     pools = {},
     /** @type {RoadLink[]} */
-    roads = [];
+    roads = [],
+    /** @type {Record<string, any>} */
+    shops = {};
   const places = map.nodes.map((node, i) => {
     const B = data.biomes[node.biome || ''] || /** @type {Biome} */ ({}),
       T = data.nodeTypes[node.type],
@@ -198,7 +225,19 @@ export function runWorldTables(run, hub, data) {
       bowl: runSpot(map, i),
       runNode: i,
     };
-    if (town) row.town = 1;
+    if (town) {
+      row.town = 1;
+      /* RL-8: its shop (stocked by the day when it opens: logic/run-loop.js runShopStock) */
+      row.shop = runShopId(i);
+      shops[row.shop] = {
+        name: `${row.name} Shop`,
+        keeper: 'The shopkeeper',
+        who: 'clerk',
+        greeting: 'New stock every morning. Have a look.',
+        stock: [],
+        runNode: i,
+      };
+    }
     return row;
   });
   map.nodes.forEach((node, i) =>
@@ -215,5 +254,7 @@ export function runWorldTables(run, hub, data) {
       });
     })
   );
-  return { locations: [hub, ...places], roads, pools };
+  /* RL-8b: the run's map is its own land: Copperleaf stays world node 0 (flying home, a save's checks) but is off it */
+  const home = { ...hub, bowl: { a: 0, r: 0, ...hub.bowl, off: true } };
+  return { locations: [home, ...places], roads, pools, shops };
 }

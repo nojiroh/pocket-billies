@@ -15,6 +15,10 @@
   "biomes",
   "nodeTypes",
   "music",
+  "relics",
+  "currencies",
+  "buildings",
+  "unlocks",
   "uiTheme",
   "lines",
   "locations",
@@ -132,7 +136,10 @@
     "test_props_marigold",
     "test_props_city",
     "city_opening",
-    "test_props_turn"
+    "test_props_turn",
+    "test_props_wild",
+    "test_island",
+    "test_props_island"
    ]
   },
   "cutscenes": {"ids":["opening","city"]}

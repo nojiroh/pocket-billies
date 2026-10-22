@@ -1,5 +1,5 @@
 {
- "sea": {"share":0.4,"depth":0.035,"rimLand":0.45,"rough":1,"seed":0,"paint":[]},
+ "sea": {"share":0.4,"depth":0.035,"rimLand":0.45,"rough":0.8,"seed":0,"island":0.12,"paint":[]},
  "relief": {
   "max": 0.115,
   "default": [0.008,0.06],

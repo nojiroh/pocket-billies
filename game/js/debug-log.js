@@ -450,7 +450,10 @@ debugLog.state = () => {
     s.visited = Object.keys(GAME.saveData.visited || {}).length;
     /* RL-7: on a run, where it stands (no names): its seed (to make the same run again), the day and deadline, the
        map node you are on, the arrivals so far, and its world's scenes and how long they took to make on this device */
-    const run = GAME.saveData.run;
+    const run = GAME.saveData.run,
+      /* TR-2: the place's land dials are on its map (the drawn scene has no gen) */
+      placeMap = (GAME.gameData.maps || {})[(GAME.walkView.sc || {}).baseId || GAME.walkView.id],
+      placeLand = (placeMap && placeMap.gen && placeMap.gen.params && placeMap.gen.params.land) || {};
     s.run =
       run && run.map
         ? {
@@ -462,8 +465,61 @@ debugLog.state = () => {
             nodes: run.map.nodes.length,
             scenes: GAME.runWorld.scenes,
             makeMs: GAME.runWorld.ms,
+            /* RL-8: its phase (fly, walk, battle, payout), the battles fought, whether saving is held for a battle, the
+               party's size and the run's money (numbers only) */
+            phase: run.at.phase,
+            battles: run.battleN,
+            held: typeof GAME.saveHeld === 'function' ? GAME.saveHeld() : null,
+            party: GAME.saveData.team ? GAME.saveData.team.length : 0,
+            money: GAME.saveData.se,
+            /* RL-9b: how many Billies came from home and how many things were packed (counts only) */
+            home: Array.isArray(run.home) ? run.home.length : null,
+            packed: run.pack
+              ? [run.pack.items, run.pack.coins].reduce(
+                  (a, r) => a + Object.values(r || {}).reduce((b, n) => b + (+n || 0), 0),
+                  0
+                )
+              : null,
+            /* TR-2: the run's mods (dbg_mountains: the debug menu's mountains run), this place's mountains dial and
+               its ground's triangles (the land and the step grid's walls; to weigh frame times against) */
+            mods: (run.mods || []).slice(),
+            mountains: placeLand.mountains || 0,
+            groundTris: GAME.walkRenderer && GAME.walkRenderer.mesh ? Math.round(GAME.walkRenderer.mesh.n / 3) : null,
+            /* TR-3: the camera's extra tilt on tall ground right now (degrees) */
+            camRise: GAME.walkRenderer && GAME.walkRenderer.occT != null ? +GAME.walkRenderer.occT.toFixed(1) : null,
+            /* RL-12: the Loopholes held (relics.json ids, not names), the pick waiting (how many) and offers made */
+            relics: (run.relics || []).slice(),
+            offer: run.offer ? run.offer.length : 0,
+            offers: run.offerN || 0,
           }
         : null;
+    /* RL-8: what the runs brought home (numbers only) */
+    const meta = GAME.saveData.meta;
+    s.meta = meta
+      ? {
+          runs: meta.runs,
+          wins: meta.wins,
+          capital: meta.capital,
+          seals: meta.seals,
+          scrap: meta.scrap,
+          /* RL-11: the unlock ids owned (game data ids, no names) and the buildings' levels */
+          unlocks: Object.keys(meta.unlocks || {}).sort(),
+          buildings: Object.assign({}, meta.buildings || {}),
+        }
+      : null;
+    /* RL-9: the ranch (numbers only): its level, how many train, how long since each started (hours), storage's size */
+    const ranch = GAME.saveData.ranch;
+    s.ranch = ranch
+      ? {
+          level: (meta && meta.buildings && meta.buildings.ranch) || 1,
+          training: ranch.trainees.length,
+          hours: ranch.trainees.map(t => +((Date.now() - t.at) / 3600000).toFixed(1)),
+          stored: (GAME.saveData.box || []).length,
+          /* RL-10: the nursery (numbers only): each egg's mode and hours left, and how many pairs have bred */
+          eggs: (ranch.nursery || []).map(n => [n.mode, +Math.max(0, (n.ready - Date.now()) / 3600000).toFixed(1)]),
+          bred: ranch.bred || 0,
+        }
+      : null;
     s.frameHz = GAME.frameScheduler.hz;
     s.fpsCap = GAME.userFps();
   } catch (e) {
@@ -528,6 +584,15 @@ debugLog.more = () => {
       resolution: GAME.walkView.R,
       inside: GAME.uiState.inside ? GAME.uiState.inside.id : null,
       room: !!sc.room,
+      /* island track IS-1: the orbit camera now (degrees: its yaw, 0 looking north; your turn on top; held still on
+         the summit) */
+      orbit: (() => {
+        const R = typeof GAME.walkRenderer !== 'undefined' ? GAME.walkRenderer : null,
+          S = R && R.orbit;
+        if (!S) return null;
+        const d = v => Math.round(((((v * 180) / Math.PI + 180) % 360) + 360) % 360) - 180;
+        return { yaw: d(S.yaw), turn: d(R.yaw || 0), hold: !!S.hold, stickLocked: !!S.lock };
+      })(),
     };
   });
   t('caches', () => ({
@@ -614,6 +679,8 @@ debugLog.build = () => ({
   kind: 'debug-log',
   format: 1,
   build: BUILD_VERSION,
+  /* which deploy (vite.config.js stampBuild: the commit; '' when not the built site) */
+  deploy: self.PB_BUILD || '',
   dataVersion: (GAME.gameData.meta && GAME.gameData.meta.version) || null,
   artVersion: (GAME.gameData.meta && GAME.gameData.meta.artVersion) || 0,
   created: new Date().toISOString(),
@@ -791,6 +858,7 @@ debugLog.hook = () => {
     ['drawPropModels', 'models'],
     ['drawBoxFaces', 'box faces'],
     ['drawStructures', 'structures'],
+    ['drawPlayerSilhouette', 'silhouette'],
     ['drawPostEffects', 'post'],
     ['drawGround', 'ground'],
     ['reflectionPass', 'reflections'],

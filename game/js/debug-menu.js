@@ -10,35 +10,26 @@ import {
   modal,
   playStoryScript,
   provide,
+  relicPickOpen,
   render,
   renderOverlay,
   runBowlMapTest,
   runEvolution,
+  runJump,
+  runOver,
+  runStartable,
+  runTakeOff,
   storyScriptIds,
   testMapChecks,
   testMaps,
   toast,
 } from './hooks.js';
 import { $, $$, clamp } from './util.js';
-import {
-  COATS,
-  COINS,
-  DATA_WARN,
-  DEX_ORDER,
-  EGGS,
-  EGG_TIERS,
-  ITEMS,
-  LOCATIONS,
-  RULES,
-  SPECIES,
-  TRAINERS,
-} from './game-data.js';
+import { COATS, COINS, DATA_WARN, DEX_ORDER, ITEMS, LOCATIONS, RELICS, RULES, SPECIES, TRAINERS } from './game-data.js';
 import { speciesOf } from './logic/fighters.js';
 import {
   addBilly,
-  addEgg,
   addWalked,
-  eggKm,
   encounterStock,
   encountersHere,
   gainXp,
@@ -49,6 +40,8 @@ import {
   spawn,
   xpFor,
 } from './logic/rules.js';
+import { RUN_MOD_MOUNTAINS } from './logic/run-scenes.js';
+import { relicOfferMake, relicTake } from './logic/relics.js';
 import { newSaveKeepingPreferences } from './logic/saves.js';
 import { allSnapshots, battleSay, checkFaints, fighter, startTrainer, startWild } from './logic/battle-engine.js';
 import {
@@ -57,6 +50,7 @@ import {
   flushSave,
   save,
   saveData,
+  saveNow,
   setActiveBattle,
   setSaveData,
   uiState,
@@ -125,6 +119,15 @@ function debugHTML() {
   )}${debugButtonHTML('jump', 'Go there')}</div>
   <div class="dbg-row">${debugButtonHTML('bowltest', 'Bowl map test', 'gold')}</div><p class="note">Phase 10: opens the bowl world map and checks its shaders, that every place is on it and opens its card when tapped, that the camera keeps above the rim, Home, and the frame rate on this device.</p>
   <div class="dbg-row">${debugButtonHTML('seats', 'Earn every badge')}${debugButtonHTML('flags', 'Reset trainer wins')}${debugButtonHTML('fillq', 'Fill encounters here')}${debugButtonHTML('clearq', 'Clear encounters here')}</div></details>
+ <details><summary>Runs (roguelite track)</summary>${
+   saveData.run
+     ? `<p class="note">On a run: seed ${escapeHtml(saveData.run.seed)}, day ${saveData.run.clock}, ${saveData.run.at.phase}. “Go there” above walks it a place at a time.</p><div class="dbg-row">${debugButtonHTML('runwin', 'Win the run', 'gold')}${debugButtonHTML('runlose', 'Lose the run', 'red')}</div><div class="dbg-row">${debugSelectHTML(
+         'dbgRelic',
+         Object.keys(RELICS).map(k => [k, RELICS[k].name]),
+         uiState.dbgRelic || Object.keys(RELICS)[0] || ''
+       )}${debugButtonHTML('relicgive', 'Give a Loophole')}${debugButtonHTML('relicpick', 'A mini-boss’s pick')}</div><p class="note">RL-12: Loopholes held: ${saveData.run.relics.length} of ${RULES.run.relics.cap}${saveData.run.relics.length ? ` (${escapeHtml(saveData.run.relics.map(k => (RELICS[k] || { name: k }).name).join(', '))})` : ''}. Past the cap, the one held longest makes room.</p>`
+     : `<div class="dbg-row"><input id="dbgRunSeed" maxlength="20" placeholder="Seed (empty: a new one)" aria-label="Run seed" value="${escapeHtml(uiState.dbgRunSeed || '')}"><label><input id="dbgRunShort" type="checkbox"${uiState.dbgRunShort ? ' checked' : ''}> Short (5 rows)</label><label><input id="dbgRunMountains" type="checkbox"${uiState.dbgRunMountains ? ' checked' : ''}> Mountains and ledges</label>${debugButtonHTML('runstart', 'Start a run', 'gold')}</div><p class="note">From Copperleaf, as the mast does (Bracket I). Short: one mini-boss, a town before it, the boss. Mountains and ledges: every place gets mountains of 15-20 m on its north and south sides with trails up, and terraces with ledges (terrain TR-2, for a phone measurement; the debug log has the frame times).</p>`
+ }</details>
  <details><summary>Story scripts (Project Story)</summary><div class="dbg-row">${debugSelectHTML(
    'dbgScript',
    storyScriptIds().map(id => [id, id]),
@@ -137,12 +140,8 @@ function debugHTML() {
     uiState.dbgTest || testMaps()[0] || ''
   )}${debugButtonHTML('test', 'Go there')}${debugButtonHTML('testchk', 'Run its checks')}${uiState.bench && uiState.bench.test ? debugButtonHTML('untest', 'Back to the game', 'gold') : ''}</div>
   ${uiState.testRes ? `<ul class="dbg-warn">${uiState.testRes.map(r => `<li>${r.ok ? '✓' : '✗'} ${escapeHtml(r.what)}${r.ok ? '' : ` (expected ${r.reach ? 'reachable' : 'not reachable'})`}</li>`).join('')}</ul>` : ''}</details>
- <details><summary>Eggs and evolution</summary><div class="dbg-row">${debugSelectHTML(
-   'dbgEgg',
-   EGG_TIERS.map(t => [t, eggKm(t) + ' km']),
-   EGG_TIERS[0]
- )}${debugButtonHTML('egg', 'Add egg')}${debugButtonHTML('hatch', 'Finish all incubators')}</div>
-  <div class="dbg-row">${debugButtonHTML('idle', 'Age storage by a day')}${debugButtonHTML('streak', 'Lead +3 win streak')}</div></details>
+ <details><summary>Storage, the ranch and evolution</summary><div class="dbg-row">${debugButtonHTML('idle', 'Age storage by a day')}${debugButtonHTML('streak', 'Lead +3 win streak')}</div>
+  <div class="dbg-row">${debugButtonHTML('ranchhour', 'Age the ranch by an hour')}${debugButtonHTML('scrap', '+50 Scrap')}${debugButtonHTML('eggsready', 'Eggs ready now')}${debugButtonHTML('capital', '+500 Capital, +2 Seals')}</div></details>
  <details ${inB ? 'open' : ''}><summary>Battle${inB ? '' : ' (start one first)'}</summary><div class="dbg-row">${debugButtonHTML('win', 'Win now', 'gold')}${debugButtonHTML('lose', 'Lose now')}${debugButtonHTML('foe1', 'Foe to 1 HP')}${debugButtonHTML('catch', uiState.dbgCatch ? 'Taxing works as normal' : 'Every throw taxes')}</div>
   <div class="dbg-row">${[1, 2, 4].map(x => debugButtonHTML('speed' + x, `${x}× speed`, battleStage.speed === x ? 'dark' : '')).join('')}</div></details>
  <details><summary>Save</summary><div class="dbg-row">${debugButtonHTML('copy', 'Copy save as text')}${debugButtonHTML('export', 'Download backup')}${debugButtonHTML('wipe', 'Erase save', 'red')}</div></details>
@@ -348,11 +347,68 @@ function debugAction(x) {
     }
     case 'jump': {
       const n = clamp(+v('dbgNode'), 0, LOCATIONS.length - 1);
+      /* RL-8: on a run, walked there as you would (a day a place, the path, what the map shows) */
+      if (saveData.run) {
+        if (!runJump(n)) toast('That place can’t be walked to on this run.');
+        saveData.mapSeen = null;
+        break;
+      }
       saveData.trip = { node: n, plan: [] };
       saveData.visited[n] = 1;
       saveData.mapSeen = null;
       break;
     }
+    /* RL-8: runs */
+    case 'runstart': {
+      const sd = (v('dbgRunSeed') || '')
+          .trim()
+          .replace(/[^A-Za-z0-9_-]/g, '')
+          .slice(0, 20),
+        short = !!($('#dbgRunShort') || {}).checked,
+        mountains = !!($('#dbgRunMountains') || {}).checked;
+      uiState.dbgRunSeed = sd;
+      uiState.dbgRunShort = short;
+      uiState.dbgRunMountains = mountains;
+      if (!runStartable())
+        return refreshDebugMenu('A run can’t start now (on a run, in a battle, or no Billie can fight).');
+      uiState.modal = null;
+      runTakeOff(
+        sd || undefined,
+        short ? { rows: 5, minibosses: 1 } : undefined,
+        mountains ? [RUN_MOD_MOUNTAINS] : undefined
+      );
+      return;
+    }
+    /* RL-12: a Loophole for nothing (past the cap, in the place of the one held longest), and a mini-boss's pick */
+    case 'relicgive': {
+      const run = saveData.run,
+        id = v('dbgRelic');
+      uiState.dbgRelic = id;
+      if (!run) return refreshDebugMenu('No run.');
+      const why = relicTake(
+        run,
+        id,
+        RELICS,
+        RULES.run.relics,
+        run.relics.length >= RULES.run.relics.cap ? run.relics[0] : undefined
+      );
+      if (why) return refreshDebugMenu(why === 'held' ? 'Already held.' : 'That Loophole can’t be given.');
+      saveNow();
+      return refreshDebugMenu(`${RELICS[id].name}: held.`);
+    }
+    case 'relicpick':
+      if (!saveData.run || activeBattle) return refreshDebugMenu('No run, or a battle is on.');
+      if (!relicOfferMake(saveData.run, RELICS, RULES.run.relics)) return refreshDebugMenu('Every Loophole is held.');
+      saveNow();
+      uiState.modal = null;
+      relicPickOpen();
+      return;
+    case 'runwin':
+    case 'runlose':
+      if (!saveData.run || activeBattle) return refreshDebugMenu('No run, or a battle is on.');
+      uiState.modal = null;
+      runOver(x === 'runwin');
+      return;
     case 'seats':
       Object.values(TRAINERS).forEach(T => {
         if (T.seat && !saveData.seats.includes(T.seat.id)) saveData.seats.push(T.seat.id);
@@ -372,18 +428,35 @@ function debugAction(x) {
     case 'clearq':
       encountersHere().length = 0;
       break;
-    case 'egg':
-      addEgg(+v('dbgEgg'));
-      break;
-    case 'hatch':
-      saveData.eggs.forEach(e => {
-        if (e.slot != null) e.prog = EGGS[e.tier].need;
-      });
-      break;
     case 'idle':
       saveData.box.forEach(m => {
         if (m.boxedAt) m.boxedAt -= 864e5;
       });
+      break;
+    /* RL-9: the ranch's trainees started an hour earlier (an hour's training, collected when the ranch opens), and
+       Scrap to train with */
+    case 'ranchhour':
+      saveData.ranch.trainees.forEach(t => {
+        t.at = Math.max(0, t.at - 3600000);
+      });
+      toast(`${saveData.ranch.trainees.length} training: an hour older.`);
+      break;
+    /* RL-10: every egg in the ranch's nursery ready to hatch now */
+    case 'eggsready':
+      saveData.ranch.nursery.forEach(n => {
+        n.ready = Math.max(n.at, Math.min(n.ready, Date.now()));
+      });
+      toast(`${saveData.ranch.nursery.length} egg(s) ready to hatch at the ranch.`);
+      break;
+    case 'scrap':
+      saveData.meta.scrap += 50;
+      toast(`${saveData.meta.scrap} Scrap.`);
+      break;
+    /* RL-11: Capital and Seals to try the Lab's board and the airship's upgrades with */
+    case 'capital':
+      saveData.meta.capital += 500;
+      saveData.meta.seals += 2;
+      toast(`${saveData.meta.capital} Capital, ${saveData.meta.seals} Audit Seals.`);
       break;
     case 'streak':
       if (saveData.team[0]) saveData.team[0].streak = (saveData.team[0].streak || 0) + 3;

@@ -4,13 +4,14 @@
    report line (report only until UI-6, so it is not counted in the Check's badge) and its Show me opens the list in
    the UI look section: each raw value with its file, line and the line's text, linked to that line on GitHub. The
    files are read once, the way the browser can (the pages and what their modules import), as the page has them:
-   the Studio does not edit CSS or code, so the list changes only when the page is loaded again. */
+   the Studio does not edit CSS or code, so the list changes only when the page is loaded again. UI-6: a rule over its
+   ceiling (the ratchet, UI_LINT_CEILING) is a problem in the Check; otherwise the line stays a note. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
 import { provide } from '../../game/js/hooks.js';
 import { $ } from '../../game/js/util.js';
 import { escapeHtml } from './game-stand-ins.js';
-import { UI_LINT_RULES, uiLintCrawl, uiLintFindings } from '../../game/js/logic/ui-lint.js';
+import { UI_LINT_RULES, uiLintCrawl, uiLintFindings, uiLintRatchet } from '../../game/js/logic/ui-lint.js';
 import { ACTIONS, afterRender } from './studio-app.js';
 import { scheduleCheck } from './check.js';
 import { GITHUB_CONFIG } from './github.js';
@@ -84,16 +85,27 @@ function uiRulesCounts(found = uiRules.found) {
 }
 const uiRuleName = id => (UI_LINT_RULES.find(r => r.id === id) || { name: id }).name;
 
-/** the Check's one line (null while the files are still being read) */
+/** the Check's one line (null while the files are still being read); over: a rule is above its ceiling (UI-6) */
 function uiRulesCheckLine() {
   uiRulesLoad();
-  if (uiRules.state === 'failed') return `UI rules: couldn’t read the game’s files (${uiRules.err}).`;
+  if (uiRules.state === 'failed')
+    return { over: false, msg: `UI rules: couldn’t read the game’s files (${uiRules.err}).` };
   if (uiRules.state !== 'ready') return null;
-  const top = uiRulesCounts()
+  const counts = uiRulesCounts(),
+    { over } = uiLintRatchet(Object.fromEntries(counts));
+  if (over.length)
+    return {
+      over: true,
+      msg: `UI rules: ${over.map(o => `${uiRuleName(o.id).toLowerCase()} ${o.raw} (ceiling ${o.max})`).join(', ')}. A new raw value: use a token.`,
+    };
+  const top = counts
     .slice(0, 3)
     .map(([r, n]) => `${uiRuleName(r).toLowerCase()} ${n}`)
     .join(', ');
-  return `UI rules: ${uiRules.found.length} raw values in ${uiRules.files} files (${top}…). A report until UI-6, not a problem yet.`;
+  return {
+    over: false,
+    msg: `UI rules: ${uiRules.found.length} raw values in ${uiRules.files} files (${top}…), every rule within its ceiling.`,
+  };
 }
 
 /** a line on GitHub (the branch the Studio proposes to) */
@@ -114,7 +126,7 @@ function uiRulesHTML() {
         rows = R.file ? byRule.filter(f => f.file === R.file) : byRule,
         perFile = {};
       for (const f of byRule) perFile[f.file] = (perFile[f.file] || 0) + 1;
-      body = `<p class="help">The raw values tools/ui-lint.mjs counts (docs/phases/06-plan.md): each should be a token. A report only until UI-6, when the rules start to fail. The Studio doesn’t edit these files; a line opens on GitHub.</p>
+      body = `<p class="help">The raw values tools/ui-lint.mjs counts (docs/phases/06-plan.md): each should be a token. A rule over its ceiling (UI_LINT_CEILING in game/js/logic/ui-lint.js) is a problem in the Check. The Studio doesn’t edit these files; a line opens on GitHub.</p>
  <div class="seg-row"><select id="uiRulesRule" aria-label="Rule"><option value="">Every rule · ${R.found.length}</option>${uiRulesCounts()
    .map(
      ([r, n]) => `<option value="${r}" ${R.rule === r ? 'selected' : ''}>${escapeHtml(uiRuleName(r))} · ${n}</option>`

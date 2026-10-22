@@ -54,6 +54,7 @@ const GPU_PASSES = [
   'box',
   'buildings',
   'structures',
+  'silhouette',
   'water',
   'effects',
   'post',

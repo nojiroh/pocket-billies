@@ -16,6 +16,7 @@ import {
   openBattle,
   playTurnEvents,
   provide,
+  runBattleStart,
   save,
   saveData,
   setActiveBattle,
@@ -29,6 +30,7 @@ import {
   ITEMS,
   MOVES,
   PASSIVE,
+  RELICS,
   RULES,
   SPECIES,
   STATUS_NAMES,
@@ -61,6 +63,7 @@ import {
   stat,
   xpFor,
 } from './rules.js';
+import { fxCatch, fxDamage, fxStages } from './effects.js';
 import { makeBattle, newFieldState } from './battle-state.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -144,10 +147,13 @@ expose({
   newBattle: [() => newBattle, v => setNewBattle(v)],
   // @ts-expect-error -- replaced on purpose
   refreshLastSnapshot: [() => refreshLastSnapshot, v => (refreshLastSnapshot = v)],
+  relicNamesFor: [() => relicNamesFor],
   // @ts-expect-error -- replaced on purpose
   retarget: [() => retarget, v => (retarget = v)],
   // @ts-expect-error -- replaced on purpose
   runTurn: [() => runTurn, v => (runTurn = v)],
+  // @ts-expect-error -- replaced on purpose
+  sayBattleFx: [() => sayBattleFx, v => (sayBattleFx = v)],
   shockName: [() => shockName],
   // @ts-expect-error -- replaced on purpose
   startTrainer: [() => startTrainer, v => (startTrainer = v)],
@@ -356,8 +362,15 @@ export function calcDamage(k, tk, mid, src) {
   const me = src ? null : fighter(k),
     gem = isRobot(me) ? robotGemDef(me.gem) : null,
     gx = gem && gem.type === M.t ? robotRules().gemAffinity : 1;
+  /* RL-12: a run's Loopholes (logic/effects.js): what yours deal and take; 1 without any */
+  const fm = battleNow().fx
+    ? fxDamage(battleNow().fx, { cat: M.c, type: M.t, deal: !src && ACTOR_SIDE[k] === 0, take: ACTOR_SIDE[tk] === 0 })
+    : 1;
   return {
-    dmg: Math.max(1, Math.floor(base * stab * te * roll * (crit ? BATTLE_RULES.critMult : 1) * mk * eco * wx * gx)),
+    dmg: Math.max(
+      1,
+      Math.floor(base * stab * te * roll * (crit ? BATTLE_RULES.critMult : 1) * mk * eco * wx * gx * fm)
+    ),
     te,
     crit,
   };
@@ -929,7 +942,9 @@ export function hitPart(tk, dmg, M, aim) {
 }
 /* a battle against foe on the save's team, made the current one (makeBattle, battle-state.js); false when all have fainted */
 export function newBattle(kind, foe, extra) {
-  const b = makeBattle(kind, saveData.team, foe, extra);
+  /* RL-8: on a run the page gives the battle its seed and weather, and holds the save once it has begun (run.js) */
+  const R = typeof runBattleStart === 'function' ? runBattleStart(kind, foe, extra) : null,
+    b = makeBattle(kind, saveData.team, foe, R ? R.extra : extra);
   if (!b) {
     battleHost(extra || null).toast('Everyone on your team has fainted. Rest first, or use a Revive.');
     return false;
@@ -938,6 +953,7 @@ export function newBattle(kind, foe, extra) {
   foe.forEach(m => {
     if (!isRobot(m)) saveData.seen[m.sp] = 1;
   });
+  if (R) R.begun(b);
   return true;
 }
 export const joinNames = K => {
@@ -968,12 +984,14 @@ export function startWild(q) {
     battleSay(`It looks too picky for ${COINS.penny ? 'a ' + COINS.penny.n : 'cheap coins'}.`);
   const K = liveActors(0);
   K.forEach((k, n) => battleSay(n ? '' : `Go, ${joinNames(K)}!`, { k: 'enter', si: k, quiet: n > 0 }));
+  sayBattleFx();
   battleHost().open();
 }
 export function startTrainer(id, o = {}) {
   const T = TRAINERS[id];
   if (!T) return;
-  const team = trainerTeam(T);
+  /* RL-8: a run's boss is its leader's top Billie alone, as an Alpha (logic/run-loop.js runFoes) */
+  const team = T.alpha ? T.team.slice(0, 1).map(e => makeAlpha(e.sp, e.lvl)) : trainerTeam(T);
   if (!team.length) {
     battleHost(o).toast(`${T.name} has no team yet. Add one in Pocket Billies Studio.`);
     return;
@@ -986,12 +1004,19 @@ export function startTrainer(id, o = {}) {
       T,
       /* BATTLE_STAGES[undefined] is undefined: a trainer without a stage gets the place's */
       area: BATTLE_STAGES[/** @type {string} */ (T.battleStage)] ? T.battleStage : battleStageKey(),
-      fmt: dbl ? 'double' : 'single',
+      fmt: T.alpha ? 'alpha' : dbl ? 'double' : 'single',
       ...(o.host && { host: o.host }),
     })
   )
     return;
-  battleSay(dbl ? `${T.name} wants a double battle!` : `${T.name} wants to battle.`, { k: 'trainerIn', who: T.who });
+  battleSay(
+    T.alpha
+      ? `${T.name} sends out an Alpha! It acts twice a turn. Your team steps up together.`
+      : dbl
+        ? `${T.name} wants a double battle!`
+        : `${T.name} wants to battle.`,
+    { k: 'trainerIn', who: T.who }
+  );
   if (T.market) {
     battleNow().market = { k: 'sand', n: T.market.n || BATTLE_RULES.shockTurns };
     battleSay(T.marketText || `The battle opened in a ${shockName().toLowerCase()}.`, { k: 'market' });
@@ -1000,8 +1025,26 @@ export function startTrainer(id, o = {}) {
   F.forEach((k, n) => battleSay(n ? '' : `${T.name} sent out ${joinNames(F)}.`, { k: 'enter', si: k, quiet: n > 0 }));
   const K = liveActors(0);
   K.forEach((k, n) => battleSay(n ? '' : `Go, ${joinNames(K)}!`, { k: 'enter', si: k, quiet: n > 0 }));
+  sayBattleFx();
   battleHost().open();
 }
+/** RL-12: a run's Loopholes that raised stats as the battle started (makeBattle): one line each, after the sides
+ * come out */
+export function sayBattleFx() {
+  const b = battleNow();
+  if (!b || !b.fx) return;
+  const up = fxStages(b.fx),
+    K = liveActors(0);
+  for (const s in up)
+    battleSay(
+      `${relicNamesFor(b.fx, s)}: ${K.length > 1 ? 'your team’s' : `${billyName(fighter(K[0]))}’s`} ${STAT_NAMES[s]} ${up[s] > 0 ? 'rose' : 'fell'}${Math.abs(up[s]) > 1 ? ' sharply' : ''}.`
+    );
+}
+/** the names of the Loopholes whose stat rows change stat s ("A and B") */
+export const relicNamesFor = (fx, s) =>
+  [
+    ...new Set(fx.filter(f => f.kind === 'stat' && f.stat === s).map(f => (RELICS[f.src] || { name: f.src }).name)),
+  ].join(' and ');
 export function battleStageKey() {
   return hereLocation().battleStage;
 }
@@ -1114,7 +1157,9 @@ export function catchOdds(id, T, spin, b) {
         T *
         (spin ? CATCH_RULES.spin : 1) *
         battleNow().integrity *
-        (e.boss ? (CATCH_RULES.alpha ?? 0.4) : 1)
+        (e.boss ? (CATCH_RULES.alpha ?? 0.4) : 1) *
+        /* RL-12: a run's Loopholes (logic/effects.js) */
+        (battleNow().fx ? fxCatch(battleNow().fx) : 1)
     );
   });
 }

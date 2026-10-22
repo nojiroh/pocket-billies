@@ -1,0 +1,20 @@
+/* UI-6: The in-game full test's result table. Moved as they were from battle.css, in the order the page loaded them. */
+@keyframes plateaim {
+  50% {
+    box-shadow:
+      0 0 0 2px #ffffff,
+      0 0 22px rgba(255, 107, 107, 0.7);
+  }
+}
+/* v33: full test details */
+.nb-table td small.nb-det {
+  font-size: 11.5px;
+  opacity: 0.85;
+  font-variant-numeric: tabular-nums;
+}
+.nb-table td small.nb-why {
+  color: var(--red);
+  font-size: 12px;
+  margin-top: 2px;
+  line-height: 1.35;
+}

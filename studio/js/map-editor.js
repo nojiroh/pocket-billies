@@ -54,6 +54,7 @@ import { WALL_MATERIALS, rawHeightAt } from '../../game/js/walk/heights.js';
 import { mountWalkView } from '../../game/js/walk-view-gl.js';
 import { PEOPLE, escapeHtml } from './game-stand-ins.js';
 import { pixelKeyAction } from '../../game/js/logic/pixel-ops.js';
+import { groundLockRefusal } from '../../game/js/logic/hub-island.js';
 import {
   ACTIONS,
   SECTIONS,
@@ -96,6 +97,7 @@ import { freeCameraBarHTML, freeCameraLook, freeCameraSpot } from './free-camera
 /* eslint-disable no-func-assign */
 expose({
   GROUND_KEYS: [() => GROUND_KEYS],
+  LOCKED_GROUND_TOOLS: [() => LOCKED_GROUND_TOOLS],
   PAINTED_WATER_KINDS: [() => PAINTED_WATER_KINDS],
   addSceneryProp: [() => addSceneryProp, v => (addSceneryProp = v)],
   applyPreviewEnvironment: [() => applyPreviewEnvironment, v => (applyPreviewEnvironment = v)],
@@ -127,6 +129,7 @@ expose({
   mountSceneryPixelEditor: [() => mountSceneryPixelEditor, v => (mountSceneryPixelEditor = v)],
   newEdgeExitName: [() => newEdgeExitName, v => (newEdgeExitName = v)],
   openSceneryPixelEditor: [() => openSceneryPixelEditor, v => (openSceneryPixelEditor = v)],
+  paintGroundBrush: [() => paintGroundBrush, v => (paintGroundBrush = v)],
   paintMapTile: [() => paintMapTile, v => (paintMapTile = v)],
   paintStepCells: [() => paintStepCells, v => (paintStepCells = v)],
   parseMapLife: [() => parseMapLife, v => (parseMapLife = v)],
@@ -334,6 +337,8 @@ SECTIONS.scenes = () => {
         ['lab', 'Show a message (lab)'],
         ['house', 'Show a message (house)'],
         ['home', 'Your room (walk into it)'],
+        ['ranch', 'The ranch (walk in; training and storage)'],
+        ['board', 'The Lab’s unlock board (opens the Lab tab)'],
         ['climb', 'A ladder to climb'],
         ['sign', 'Show a message (sign)'],
         ['talk', 'Show a message'],
@@ -472,6 +477,7 @@ SECTIONS.scenes = () => {
    'Map',
    `<div class="sc-bar"><span class="px-tools">${tools}</span><span class="px-tools"><button class="seg" data-act="scZoom" data-z="-4">−</button><span id="scZ">${mapEditor.zoom}px</span><button class="seg" data-act="scZoom" data-z="4">+</button></span>
    <label class="mp-size"><span>Brush</span><input type="range" id="scBrush" min="1" max="5" value="${mapEditor.brush}"><output id="scBrushO">${mapEditor.brush}</output></label></div>
+  ${groundLockRefusal(sc) ? `<p class="hub-note">🔒 ${escapeHtml(groundLockRefusal(sc))} Paint, Fill, Shape the land, Cliffs & stairs, Curved road, Resize and Flatten are off.</p>` : ''}
   ${
     mapEditor.tool === 'steps'
       ? stepsToolBarHTML()
@@ -769,7 +775,7 @@ async function mountMapEditor() {
     });
   if (mapEditor.pe) mountSceneryPixelEditor();
 }
-function drawSceneryThumbs() {
+export function drawSceneryThumbs() {
   const C = sceneryCatalog();
   $$('canvas[data-tile]').forEach(c => {
     const T = C.terrains[c.dataset.tile];
@@ -1375,6 +1381,18 @@ export function paintMapTile(sc, i, j, ch) {
   sc.tiles[j] = row.slice(0, i) + ch + row.slice(i + 1);
   return true;
 }
+/* the round ground brush (Walk scenes and the Hub island editor): paints the tiles within the brush's size round
+   tile (i, j) (rows from the far edge); true when a tile changed */
+export function paintGroundBrush(sc, i, j, ch, brush) {
+  const r = brush - 1;
+  let any = false;
+  for (let a = -r; a <= r; a++)
+    for (let b = -r; b <= r; b++) {
+      if (a * a + b * b > r * r + r) continue;
+      any = paintMapTile(sc, i + a, j + b, ch) || any;
+    }
+  return any;
+}
 export function propAtPointer(m) {
   const L = mapEditor.boxes || [];
   for (let k = L.length - 1; k >= 0; k--) {
@@ -1383,21 +1401,15 @@ export function propAtPointer(m) {
   }
   return null;
 }
+/* the tools that change what the ground lock covers (logic/island.js islandGroundHash) */
+const LOCKED_GROUND_TOOLS = { paint: 1, fill: 1, height: 1, steps: 1, road: 1 };
 function bindEditorMap() {
   const cv = $('#scMap');
   if (!cv || cv._b) return;
   cv._b = 1;
   cv.addEventListener('contextmenu', e => e.preventDefault());
   const paint = m => {
-    const sc = currentMap(),
-      r = mapEditor.brush - 1;
-    let any = false;
-    for (let a = -r; a <= r; a++)
-      for (let b = -r; b <= r; b++) {
-        if (a * a + b * b > r * r + r) continue;
-        any = paintMapTile(sc, m.i + a, m.j + b, mapEditor.ter) || any;
-      }
-    if (any) {
+    if (paintGroundBrush(currentMap(), m.i, m.j, mapEditor.ter, mapEditor.brush)) {
       walkView.gkey = '';
       drawEditorMap();
     }
@@ -1412,6 +1424,8 @@ function bindEditorMap() {
       storyPreviewChanged();
       return;
     }
+    /* IS-6a: a locked island's ground (letters, heights, steps) can't change here; props, water, exits still can */
+    if (LOCKED_GROUND_TOOLS[mapEditor.tool] && groundLockRefusal(sc)) return void toast(groundLockRefusal(sc));
     if (typeof extraToolPointerDown === 'function' && extraToolPointerDown(sc, m, ev)) return;
     if (mapEditor.tool === 'paint' || mapEditor.tool === 'fill') {
       if (ev.altKey) {
@@ -1656,10 +1670,13 @@ function ensureHeightGrid(sc) {
     );
   return sc.heights;
 }
-function sculptHeights(sc, m) {
+/* the height brush at m ({x, z} in metres); o: the brush's size, strength, mode (raise, lower, flatten, smooth), the
+   height flatten goes to and the lowest and highest it leaves (hmin, hmax: -8 and 12 m unless given). Walk scenes
+   passes its own settings; the Hub island editor passes its own, with room for the island's mountain */
+export function sculptHeights(sc, m, o = mapEditor) {
   const H = ensureHeightGrid(sc),
-    R = Math.max(1, mapEditor.brush * 0.9),
-    k = mapEditor.hstr * 0.35;
+    R = Math.max(1, o.brush * 0.9),
+    k = o.hstr * 0.35;
   for (let r = 0; r <= sc.h; r++)
     for (let i = 0; i <= sc.w; i++) {
       const z = sc.h - r,
@@ -1668,9 +1685,9 @@ function sculptHeights(sc, m) {
       const w = (1 - d / R) ** 2,
         v = H[r][i];
       let n = v;
-      if (mapEditor.hmode === 'raise') n = v + k * w;
-      else if (mapEditor.hmode === 'lower') n = v - k * w;
-      else if (mapEditor.hmode === 'flatten') n = v + (mapEditor.hflat - v) * Math.min(1, w * k * 4);
+      if (o.hmode === 'raise') n = v + k * w;
+      else if (o.hmode === 'lower') n = v - k * w;
+      else if (o.hmode === 'flatten') n = v + (o.hflat - v) * Math.min(1, w * k * 4);
       else {
         let s = 0,
           c = 0;
@@ -1689,7 +1706,7 @@ function sculptHeights(sc, m) {
         }
         if (c) n = v + (s / c - v) * Math.min(1, w * k * 4);
       }
-      H[r][i] = Math.round(clamp(n, -8, 12) * 100) / 100;
+      H[r][i] = Math.round(clamp(n, o.hmin ?? -8, o.hmax ?? 12) * 100) / 100;
     }
   sc._hv = (sc._hv || 0) + 1;
   /* alpha 0.2: the game's smoothed land (heightGrid) is made again */ walkView.nav = null;
@@ -1707,6 +1724,7 @@ ACTIONS.scHMode = d => {
 };
 ACTIONS.scHFlat = async () => {
   const sc = currentMap();
+  if (groundLockRefusal(sc)) return void toast(groundLockRefusal(sc));
   if (!(await ask('Make the whole scene flat?', 'Flatten'))) return;
   delete sc.heights;
   walkView.nav = null;
@@ -1997,6 +2015,7 @@ ACTIONS.scResize = () => {
     w = clamp(+$('#scW').value || sc.w, 10, 240),
     h = clamp(+$('#scH').value || sc.h, 8, 200);
   if (w === sc.w && h === sc.h) return;
+  if (groundLockRefusal(sc)) return void toast(groundLockRefusal(sc));
   const oldE = stepGrid(sc),
     before = clone(sc);
   /* v42: an exit on the north or east edge moves out with that edge (the rest of the map keeps its place); its id and width stay */

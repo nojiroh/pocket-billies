@@ -6,6 +6,9 @@
 import { expose } from '../test-globals.js';
 import { reducedMotion } from '../hooks.js';
 import { clamp } from '../util.js';
+import { roomToLocal, roomToWorld, roomYaw } from '../logic/room-turn.js';
+import { cameraRiseNeeded } from '../logic/camera-rise.js';
+import { orbitStart, orbitStep, wrapAngle } from '../logic/camera-orbit.js';
 import { BOB_M, walkView } from '../walk-view.js';
 import { engineSetting } from '../engine/settings.js';
 import { matrix4 } from '../engine/webgl.js';
@@ -19,6 +22,7 @@ expose({
   clampZoom: [() => clampZoom],
   cutsceneCamera: [() => cutsceneCamera, v => (cutsceneCamera = v)],
   freeCameraOn: [() => freeCameraOn],
+  orbitOf: [() => orbitOf],
   screenRay: [() => screenRay, v => (screenRay = v)],
   walkCamera: [() => walkCamera, v => (walkCamera = v)],
 });
@@ -43,8 +47,26 @@ export function screenRay(C, sx, sy) {
 }
 /* ---------- input: taps (focus follows them), two-finger turn and pinch, Ctrl+wheel zoom, Q/E/R, phone tilt ---------- */
 /* alpha 0.4.1: a preview that asks for a free camera (the Studio's) turns all the way round, zooms further and zooms with the plain wheel */
-export const freeCameraOn = () => !!(walkView.opt && walkView.opt.freeCam),
-  cameraTurnLimit = () => (freeCameraOn() ? Math.PI : (engineSetting('camera', 'turn') * Math.PI) / 180),
+/* island track IS-1: the map's orbit (cam.orbit) when the walking camera turns round it: outdoors, not in a room, not the
+   Studio's free camera, Engine > Camera > Orbit on */
+export const orbitOf = sc =>
+    sc &&
+    sc.cam &&
+    sc.cam.orbit &&
+    Array.isArray(sc.cam.orbit.c) &&
+    !sc.indoor &&
+    !sc.room &&
+    !freeCameraOn() &&
+    engineSetting('camera', 'orbit') !== false
+      ? sc.cam.orbit
+      : null,
+  freeCameraOn = () => !!(walkView.opt && walkView.opt.freeCam),
+  /* while orbiting, your own turn on top of the orbit is the map's `turn` */
+  cameraTurnLimit = () => {
+    if (freeCameraOn()) return Math.PI;
+    const O = orbitOf(walkView.sc);
+    return ((O && O.turn != null ? +O.turn : engineSetting('camera', 'turn')) * Math.PI) / 180;
+  },
   clampZoom = v =>
     freeCameraOn()
       ? clamp(v, 0.3, 3.2)
@@ -55,7 +77,41 @@ export function walkCamera(rw, rh, st, dt) {
     c = sc.cam || {},
     P = walkView.pl,
     k = Math.min(1, dt * 3.2);
+  /* island track IS-1: a turn kept from a map with a wider limit is brought inside the island's */
+  if (orbitOf(sc)) walkRenderer.yawT = clamp(walkRenderer.yawT, -cameraTurnLimit(), cameraTurnLimit());
   walkRenderer.yaw += (walkRenderer.yawT - walkRenderer.yaw) * Math.min(1, dt * 5);
+  /* island track IS-1: on an island the camera's base yaw turns round the middle (logic/camera-orbit.js); your own turn
+     (walkRenderer.yaw) is added on top. Elsewhere the base is 0, the north view. A new scene, a cut or a jump of
+     more than 8 m starts the orbit where it belongs. */
+  const O = orbitOf(sc);
+  if (O) {
+    let S = walkRenderer.orbit;
+    const jump = S && Math.hypot(P.x - S.x, P.z - S.z) > 8;
+    if (!S || S.sc !== sc || !walkRenderer.camT || walkView.opt.instant || jump) {
+      S = walkRenderer.orbit = Object.assign(orbitStart(O, P.x, P.z, S && S.sc === sc ? S.yaw : 0), { sc });
+    } else orbitStep(S, O, P.x, P.z, dt);
+    S.x = P.x;
+    S.z = P.z;
+  } else walkRenderer.orbit = null;
+  /* IS-5: in a room turned with its door the base looks in through the door (logic/room-turn.js roomYaw). Going in
+     or out the base yaw eases the short way round over a moment instead of jumping (from the orbit's into the room's) */
+  const yaw0 = O ? wrapAngle(walkRenderer.orbit.yaw) : sc.room ? wrapAngle(roomYaw(sc.roomFrame)) : 0;
+  let baseYaw = yaw0;
+  {
+    const E = walkRenderer.baseEase;
+    const now = performance.now();
+    if (E && E.sc !== sc && !walkView.opt.instant && walkRenderer.camT && Math.abs(wrapAngle(yaw0 - E.yaw)) > 0.02)
+      walkRenderer.baseEase = { sc, from: E.yaw, t: 0, t0: now, yaw: E.yaw };
+    else if (!E || E.sc !== sc) walkRenderer.baseEase = { sc, from: yaw0, t: 1, t0: now, yaw: yaw0 };
+    const B = walkRenderer.baseEase;
+    if (B.t < 1) {
+      B.t = Math.min(1, (now - B.t0) / 700);
+      const e = B.t * B.t * (3 - 2 * B.t);
+      baseYaw = wrapAngle(B.from + wrapAngle(yaw0 - B.from) * e);
+    }
+    B.yaw = baseYaw;
+  }
+  const bf = [Math.sin(baseYaw), Math.cos(baseYaw)];
   walkRenderer.zoom += (walkRenderer.zoomT - walkRenderer.zoom) * Math.min(1, dt * 5);
   const vx = P.x - (walkRenderer.px ?? P.x),
     vz = P.z - (walkRenderer.pz ?? P.z);
@@ -73,11 +129,14 @@ export function walkCamera(rw, rh, st, dt) {
     ];
   const pitch0 = engineSetting('camera', 'pitch') ?? (c.pitch || 34) + engineSetting('camera', 'pitchAdd'),
     h0 = (engineSetting('camera', 'height') ?? (c.h || 9)) * engineSetting('camera', 'distance');
-  const hb = groundHeightAt(P.x, Math.min(sc.h - 0.5, P.z + 3.5)) - groundHeightAt(P.x, P.z);
+  const hb =
+    groundHeightAt(clamp(P.x + bf[0] * 3.5, 0.5, Math.max(0.5, sc.w - 0.5)), Math.min(sc.h - 0.5, P.z + bf[1] * 3.5)) -
+    groundHeightAt(P.x, P.z);
   walkRenderer.upT =
     (walkRenderer.upT || 0) + (clamp((hb - 0.8) * 3.2, 0, 9) - (walkRenderer.upT || 0)) * Math.min(1, dt * 2);
   /* v47: the camera looks up at a landmark ahead of you (landmarkTilt), and settles back as you pass */
-  walkRenderer.lmT = (walkRenderer.lmT || 0) + (landmarkTilt(P, sc) - (walkRenderer.lmT || 0)) * Math.min(1, dt * 2.4);
+  walkRenderer.lmT =
+    (walkRenderer.lmT || 0) + (landmarkTilt(P, sc, baseYaw) - (walkRenderer.lmT || 0)) * Math.min(1, dt * 2.4);
   /* v46: the camera's height and tilt glide when they change without a cut (into and out of a room laid into the place) */
   if (!walkRenderer.camT || !walkRenderer.cpe || walkView.opt.instant)
     walkRenderer.cpe = [pitch0 + (sc.indoor ? 12 : 0), h0];
@@ -88,30 +147,69 @@ export function walkCamera(rw, rh, st, dt) {
   }
   const pe = walkRenderer.cpe[0],
     he = walkRenderer.cpe[1];
-  const pitch =
-      ((pe + (walkRenderer.zoom - 1) * 14 - tilt[1] * 3 + walkRenderer.upT - walkRenderer.lmT) * Math.PI) / 180,
-    yaw = walkRenderer.yaw + tilt[0] * 0.07;
+  const pitchDeg0 = pe + (walkRenderer.zoom - 1) * 14 - tilt[1] * 3 + walkRenderer.upT - walkRenderer.lmT,
+    yaw = wrapAngle(baseYaw + walkRenderer.yaw + tilt[0] * 0.07);
   let df = (he / Math.sin(((pe - (sc.indoor ? 12 : 0)) * Math.PI) / 180)) * walkRenderer.zoom;
+  /* terrain TR-3: on tall ground the camera tilts down further (and comes a little closer) until the line from it to
+    your head clears the rock between you; it rises quickly and settles back slowly */
+  const tall = !(sc.indoor || sc.room || freeCameraOn() || st.focus),
+    riseMax = tall ? +engineSetting('camera', 'rise') || 0 : 0,
+    need = tall
+      ? cameraRiseNeeded(
+          standingHeightAt,
+          P.x,
+          P.z,
+          P.yv ?? standingHeightAt(P.x, P.z),
+          yaw,
+          pitchDeg0,
+          Math.cos((pitchDeg0 * Math.PI) / 180) * df,
+          90
+        )
+      : 0,
+    riseT = Math.min(need, riseMax);
+  /* terrain TR-3: while ground cuts the line (by more than half a degree) the rock between you and the camera thins
+    out (draw-common.js rockUniformsFor); it comes and goes over about a third of a second */
+  const rockT = need > 0.5 ? 1 : 0;
+  if (!walkRenderer.camT || walkView.opt.instant || walkRenderer.rockK == null) walkRenderer.rockK = rockT;
+  else walkRenderer.rockK += (rockT - walkRenderer.rockK) * Math.min(1, dt * 3);
+  if (!walkRenderer.camT || walkView.opt.instant || walkRenderer.occT == null) walkRenderer.occT = riseT;
+  else walkRenderer.occT += (riseT - walkRenderer.occT) * Math.min(1, dt * (riseT > walkRenderer.occT ? 2.6 : 1.1));
+  const occ = walkRenderer.occT,
+    pitch = ((pitchDeg0 + occ) * Math.PI) / 180;
+  if (riseMax) df *= 1 - 0.15 * Math.min(1, occ / riseMax);
   const visW = Math.min(sc.w * 0.95, Math.max(11, (rw / rh) * 15)) / ((c.fov || 1) * engineSetting('camera', 'fov')),
     half = visW / 2;
   let tx = P.x + walkRenderer.lead[0],
     tz = P.z + walkRenderer.lead[1];
-  tx = sc.w > visW ? clamp(tx, half - 2, sc.w - half + 2) : sc.w / 2;
-  tz = clamp(tz, 0, sc.h - 2) + (rw > rh ? 2.0 : 1.0);
+  /* the view leans a little ahead of you (up the screen); IS-1: an orbiting camera is not held inside the scene, the
+     sea runs on past its edges */
+  const ahead = rw > rh ? 2.0 : 1.0;
+  if (O) {
+    tx += bf[0] * ahead;
+    tz += bf[1] * ahead;
+  } else {
+    tx = sc.w > visW ? clamp(tx, half - 2, sc.w - half + 2) : sc.w / 2;
+    tz = clamp(tz, 0, sc.h - 2) + ahead;
+  }
   if (sc.room) {
-    const Rr = sc.roomRect || [0, 0, sc.w, sc.h],
+    /* IS-5: worked out in the room's own metres (a room turned with its door), then put back in the place's */
+    const F = sc.roomFrame,
+      Rr = (F && F.rect) || sc.roomRect || [0, 0, sc.w, sc.h],
       rx = Rr[0] + Rr[2] / 2,
-      rz = Rr[1] + Rr[3] * 0.55;
-    tx = rx + (P.x - rx) * 0.25;
-    tz = rz + (P.z - rz) * 0.15;
+      rz = Rr[1] + Rr[3] * 0.55,
+      Pl = roomToLocal(F, P.x, P.z),
+      Tw = roomToWorld(F, rx + (Pl[0] - rx) * 0.25, rz + (Pl[1] - rz) * 0.15);
+    tx = Tw[0];
+    tz = Tw[1];
   } /* v26: a room stays framed whole */
   if (st.focus) {
     tx = st.focus.x;
     tz = st.focus.z;
   }
   if (walkRenderer.swoop) {
-    tx = walkRenderer.swoop.x;
-    tz = walkRenderer.swoop.z + (rw > rh ? 1 : 0.5);
+    const sa = rw > rh ? 1 : 0.5;
+    tx = walkRenderer.swoop.x + bf[0] * sa;
+    tz = walkRenderer.swoop.z + bf[1] * sa;
   }
   if (!walkRenderer.camT || walkView.opt.instant) walkRenderer.camT = [tx, tz, standingHeightAt(tx, tz)];
   const T = walkRenderer.camT;
@@ -173,6 +271,8 @@ export function walkCamera(rw, rh, st, dt) {
     sp: Math.sin(pitch),
     cp: Math.cos(pitch),
     yaw,
+    occ,
+    rockK: walkRenderer.rockK,
   };
 }
 /* the battle stage's camera (battle-stage.js battleStageProjectWith) as a matrix: a level pinhole camera with an off-center horizon, in stage pixels */

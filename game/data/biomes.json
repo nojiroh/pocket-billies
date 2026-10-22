@@ -78,9 +78,9 @@
    "tree_beech": 4,
    "tree_hazel": 3,
    "tree_chestnut": 3,
-   "tree_oak_deep": 2,
-   "tree_birch_deep": 2,
-   "tree_pine_deep": 2,
+   "tree_oak": 2,
+   "tree_birch": 2,
+   "tree_pine": 2,
    "tree_fallen": 2,
    "tree_oak_b": 1
   },

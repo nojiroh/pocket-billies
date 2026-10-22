@@ -176,6 +176,1323 @@ stay on Sound effects, volumes stay in the save, the mute goes in the settings s
 - Questions waiting for the owner: none new. The track's later asks (SND-2's biome-to-song mapping) come with SND-2.
 - Next session starts with: SND-2, the tracker as data (docs/phases/sound-track.md): the fingerprint baseline first,
   then the split into `game/js/audio/tracker.js`, `music.json`, `songFor`, biome music in a run, idle timers.
+### Island track IS-6b - Hub editor dials - 2026-10-22
+Branch `claude/is-6b-hub-dials`, from the wave-2 base `claude/new-session-3qlesh` (main plus IS-2, IS-3, IS-4 and IS-6a,
+PRs #122, #124, #123, #126, not merged yet); the PR goes against main, so its diff shrinks as those merge (then merge
+main into the branch). Ran beside IS-5 (copperleaf.json) and IS-7 (the world map): Studio files only, plus
+logic/hub-island.js, the pages' script lists and check-fast. Plan approved in Plan Mode with the recommended answers:
+the draft made on the page (not in a worker), a locked ground's dials read-only, props at sea named not moved, no
+"new island" button.
+- Changed (one cause per commit):
+  - **island-gen.js moved** from the game's page to the Studio's, after mapgen.js (IS-2's suggestion; the game never
+    calls it: only build-island.mjs, its unit test and now the Studio do).
+  - **logic/hub-island.js** (5 new unit tests): `hubGenStart` (the map's own islandGen dials and seed, a copy; else
+    the defaults and the map's id), `hubGenRefusal` (no coast, or a locked ground), `hubUseIsland` (copies
+    `HUB_GEN_GROUND`: size, sea fields, island, zones, islandGen, hub, tiles, heights, plots, streams, bridges, spots,
+    steps; a field the draft lacks goes; the orbit's pivot follows, its dead zone, lag and turn stay; returns the
+    props now past the coast), `hubGenWalkProblems` (IS-2's walking checks: every zone, the summit, the dock, every
+    plot's front from the hub; no traps), `hubGenStats`. It imports mapgen.js now, so it loads after island-gen.js
+    on the Studio's page.
+  - **The Dials card** (studio/js/hub-island.js): every generator dial in folding groups (↺ and Reset), the flat zones
+    and the beach and cliff arcs as rows, a seed (typed or 🎲) and a 🎲 per stage (Alt-click clears it). A draft is
+    made 0.5 s after a dial stops ("Generating…" first), shown in the orbit view as `_hubgen` (walkData chained, as
+    Walk scenes' `_gen` draft) and on the map; its figures, the generator's notes, the island's own problems and a
+    "Check the walks" button. The map's tools are off while a draft shows (it isn't the map). **Use this island**: one
+    undo step, refused while locked (the button isn't offered and the logic throws); the toast names props now at sea
+    and says the map's in-game checks were written for the old ground. A locked ground opens its dials read-only and
+    makes no draft. Picking another map drops the draft; a draft finishing after the section is left draws nothing.
+  - **check-fast**: "The Studio's Hub island dials" on IS-6a's page, after its step (it loads the Studio itself when
+    run alone).
+  - Docs: STUDIO.md (the Hub island part, the table row), the track file ("Done in IS-6b"), CHANGELOG.
+- Where the plan (the track file) was wrong or short:
+  - The dials listed were a third of the generator's; all are shown.
+  - "Live preview": one island is 1.75 s in Node, 2.5-3.6 s in the headless browser (copperleaf_island's own dials:
+    2.5 s), and the walk check another 1.2 s, so the draft comes after the dial stops and the walk check is a button.
+  - **A new seed often doesn't fit.** With a previous map the generator keeps its middle (so nothing on the map
+    moves) and grows the scene east and north only; a coast that would cross the west or south edge throws. 5 of 12
+    whole new seeds fit round copperleaf_island's middle (a larger open sea makes it worse: 0 of 12 at 20 m); a stage's
+    own seed fitted for coast, land, mountain, paths and ground once each, but a random one can miss too. The card
+    says so with what to try. test_island (120 m) only takes islands of about 30 m radius.
+  - **Small islands make a forest zone that crosses itself** (island-gen.js, radius ~30 m, every seed tried): the
+    draft lists it and Lock the ground refuses it until the zone's points are moved. Not fixed (IS-2's file).
+- Verified: unit tests 604 (5 new); lint, typecheck, check:modules, format:check; check-fast's Hub island steps (IS-6a
+  and IS-6b) pass; headless pictures at 1600 x 1000 (copperleaf_island: its own dials give back its tiles exactly,
+  the draft drawn, a mountain reroll). check-fast 24 of 24; smoke no problems; full quick check (40 min): 10 problems, the
+  9 old ones on main (roster counts 117/61, empty voxel bushes, buildings without a plan, the biped walk cycle, the
+  running step's "float division by zero"; see IS-6a's entry) and RL-8's run (Meadow Town's view never showed) while
+  other browser checks ran beside it; RL-8 alone passes on the merged branch. After merging main (IS-7 and the rest):
+  unit tests 614, lint, typecheck, modules, format, check-data, both Hub island steps pass.
+- Risky:
+  - The page pauses 2-4 s while a draft is made (no worker). Fine on a desktop; slow on a phone.
+  - "Use this island" leaves the map's in-game `checks` (copperleaf_island's walking legs from build-island) as they
+    were: they can fail on the new ground. Rerun tools/build-island.mjs, or edit them, before relying on them.
+  - The draft rides walkData through an Object.create view, like Walk scenes' draft. The prop editor's wrapper copies
+    own keys only; with a prop open in Walk scenes and a draft here, the hub view would still find its draft.
+  - Props past a new coast stay in the sea until moved (named in the toast).
+- Not done: a new island from the dials (a new map id); shifting the scene so any seed fits; copperleaf (no coast
+  until IS-5).
+- Next: IS-5 makes copperleaf the island (then its dials open here); the generator's "doesn't fit" and the small
+  forest zone are IS-2 follow-ups. Tag `is-6b-done` is the owner's.
+
+### Island track IS-5 - Copperleaf moves onto the island - 2026-10-22
+Branch `claude/is-5-copperleaf-island`, from the wave-2 base `claude/new-session-3qlesh` (main with IS-0, IS-1 merged
+plus IS-2, IS-3, IS-4, IS-6a merged in; PRs #122, #124, #123, #126 not in main yet). PR against main; main gets merged
+in when those land. Wave 2 beside IS-6b (the editor's dials) and IS-7 (the world map's island). Plan approved in Plan
+Mode with the owner's answers: the fall lands in the **town square** (question 11); the shop plot gets the **General
+store, closed**; **cottages on every house plot** and the farmhouse plot; **gardens travel with their houses**, free
+nature left to IS-9; **rooms face four ways**; **wild grass in patches** by the woods and on the heath. Question 4 is
+moot (the generator lays the town out).
+- Changed (one cause per commit):
+  - **findPath's budget** grows with the map (`max(30000, the nav grid's cells)`): the island is ~220,000 cells; the
+    old cap stopped a tap a third of the way across. Every other map is under 30000, so unchanged.
+  - **Rooms that face four ways** (logic/room-turn.js, unit-tested): a room is made in its own metres as before
+    (door south, back wall +z), then its tiles, heights, step grid, floor scene and things are turned by quarter turns
+    about a point on whole metres by the door and stamped in; the view keeps `roomFrame {q, p, rect}`. Readers:
+    rooms.js (box, lamps, window light, front cut), the ground shader (`uRoomT`: skirting, corner trim, wall shading),
+    the room's walking margins (walk-view.js), the camera (base yaw `roomYaw`; in and out the base yaw eases the short
+    way over 0.7 s of wall time instead of jumping; this also smooths going from the orbit into a south room),
+    walk-control.js (walk in and out along the door's own way; the door array gains `[q, middle z]` for a turned
+    building, so a south door's id is unchanged), self-test's room step (doorway along the front, the way out).
+  - **Island generator stage `wild`** (version 3, dial `wild.n` 5): ragged tall-grass ovals of 15-70 m² on open meadow
+    and heath with a fifth of forest or heath within 9 m, 8 m clear of the town, hamlet, barn and pasture, never on the
+    beach, mountain, a path or a slope; written as `grassPatches`, so encounters use the run maps' patch rule (they
+    waited within 13 m of the hub: the square). Own seed stream; only 174 cells of the island changed.
+  - **tools/build-copperleaf.mjs** (new, rerunnable) and **tools/data/copperleaf-town.json** (the old town as it stood:
+    props, people, life, chat, place fields, the opening's spots and shots). Each building in the middle of its plot,
+    `rot = a + 90`: lab, airship station + airship (mast), Juniper's home, the General store (no act), the well, the
+    five cottages on the town house plots nearest the square, 14 more cottages in turn on the other house plots and
+    the farmhouse plot; the barn in its zone, doors toward the farmhouse, its crops with it. A building's garden moves
+    in its own metres (models turn with it, pictures keep facing you); what lands on a street (`p v c`), water, a
+    bridge, another plot or before a door is left out (25). The great oak with its swing (the world map's landmark) on
+    open ground nearest the square, 8 town trees. A pier from the dock spot along the channel. Juniper by her door;
+    npcSpots at the lab, mast, square, shop, home; life in areas (ducks pond, chickens farmhouse, rabbits pasture,
+    squirrels forest, cats town). The opening's spots, shots and stage move and turn with the lab's door. A walking
+    check that ended inside a building (the barn zone's middle) ends at its door.
+  - **The swap**: `copperleaf.json` is the island with the town (235 x 237 m, 25 buildings, 127 props, 7 bridges);
+    `copperleaf_island` is gone. build-island.mjs makes the hub's ground by default and keeps a place's own fields and
+    their order (a rerun that changes nothing writes nothing; then rerun build-copperleaf to follow new plots).
+  - **Re-pointed**: island-gen.test reads `copperleaf` (the pier left out); `standByMast` turns with the station; the
+    hub's view carries `island` and `zones` (the sea's middle, the cove's calm); check-quick's opening stage, room
+    doorway and lab-room checks work in the building's frame, its v42 "grown" check leaves out a generated island;
+    check-fast's new step "Copperleaf is the island" (walking checks, every door a tap from the square, wild spots in
+    the patches, the orbit); postcards look at the square; the Hub island editor's view-only words.
+- Where the plan (the track file) was wrong or short: see the track file's "Checked in IS-5". Mine: the turned rooms
+  were more than "a third of the session" (the room's front cut, window light, lamps and the ground shader all assumed
+  a south door); a south-facing room was proven unchanged field by field (all 8 of the old Copperleaf's rooms, step
+  grids and floors, against the base). Juniper's lavender garden (10 m behind her old cottage) mostly didn't fit her
+  plot: the plot is 7.5 x 6.2 m among streets.
+- Verified: unit tests 603; lint, typecheck, check:modules, format:check, check:data (144 files); both tools rerun to
+  the identical file; check-fast 22 of 23 on the full run (the Studio world-map look wanted the great oak: fixed; that step and the new hub step pass alone); smoke 15 of 15 (New game: the fall, Hazel, the starters on the
+  square); check-fast 24 of 24 after the ground-build fixes (CI green); full quick check: besides the
+  failures main has too (roster counts, biped walk, voxel bushes, buildings without plans, the props scene), two
+  findings: (1) "shaped terraces change where you can walk: copperleaf": 5,979 half-metre cells (all on the mountain's
+  shelves off the trail) are reachable with unrounded terraces but not rounded ones; the trail, summit and every zone
+  stay reachable (the island's walking checks pass); IS-2's mountain meeting the engine's terrace rounding, left open
+  for the owner (terrain); (2) after that step runs in the same page, RL-7's and RL-8's first road walk on a run start
+  from the hub's spot (off the landing's map: "no path to the exit"), and the mast and postcard steps after them
+  fail in turn; RL-7 + RL-8 together, and RL-7 alone, pass, so it is something the terrace step leaves on the page
+  with the big hub; not found yet. Headless: the lab, a cottage, Juniper's home and the barn turned each of
+  the four ways (doorway 0.02 m from the door, nothing walkable outside, pictures squared to the camera); pictures of
+  the square from four sides, the barn and pasture, the pier, the hamlet, the island from above. Longest tap search on
+  the island headless: 18 ms.
+- Risky:
+  - Turned rooms are new everywhere a building faces away from south (all of the island's but a few). Worth a feel on
+    the phone: going into the lab (it faces west) and out, the camera's turn in and out.
+  - The hub is 1.2 MB (was 73 KB) and loads at boot; phone frame times are IS-9's.
+  - A tap to an unreachable spot now searches the whole reachable island (~220k cells) before giving up.
+  - Rerunning build-copperleaf rewrites every prop: hand edits to Copperleaf's props in the Studio are lost unless
+    folded into tools/data/copperleaf-town.json or the tool. After the owner places things by hand, stop rerunning it.
+  - The orbit's pivot in the hub's view isn't shifted by the view's offset (0 for an island with no neighbours).
+  - The first frame on the hub builds the whole island's ground mesh at once: ~6.7 s headless after the fixes (was
+    13 s; the old town ~7 s with shader compiles). On a phone it is a boot hitch to measure (IS-9).
+  - check-quick v31 now waits for frames in rooms and starts the bowl camera check from Home.
+- For the sessions alongside: **IS-6b**: "Use this island" must keep the hub's town (build-island.mjs's `GROUND` list
+  is the split; then build-copperleaf.mjs re-places the town on new plots); hub-island.js only had its view-only
+  words changed. **IS-7**: the town's buildings are props now (`plots` stay). **IS-8**: the barn stands in its zone,
+  doors east toward the farmhouse; the pasture zone is free. **IS-9**: 357 old props belonged to no building and
+  were not brought over (the old meadow's flowers, trees, reeds); the island needs dressing.
+- Next: IS-8 (after RL-10), IS-9. Tag `is-5-done` is the owner's to push.
+
+
+### Island track IS-7 - The world map's island - 2026-10-22
+Branch `claude/is-7-world-map-island`, from the wave-2 base `claude/new-session-3qlesh` (fcda361: main with IS-0 and
+IS-1, plus the IS-2, IS-3, IS-4 and IS-6a branches, PRs #122, #124, #123, #126, not merged yet); the PR goes against
+main and shrinks once those merge (merge main in then). Ran beside IS-6b (the Studio's dials). Plan approved in Plan
+Mode; its three "ask me" items went with the recommendations: the island at its true size, its relief lifted x3 like
+the bowl's buildings and trees, the buildings at the usual 3x.
+- Changed (one cause per commit):
+  - **logic/bowl.js**: a place whose map has `island.coast` keeps exactly that coast on the bowl (`bowlIslandPoly`,
+    `bowlPolyDistance`): land inside, sea outside, no coast noise, the map's own sea stays sea, no `sea.island` round
+    round it (`bowlIsles` gives `[]`: still an island world). With `heightOf` its ground's own heights replace the
+    bump of its kind and the hills between places (`BOWL_ISLAND_LIFT` 3, `BOWL_ISLAND_BASE` 0.004). Out to 80 m the
+    coast's distance is read exactly (the box's distance from 30 m out made a square in the water's depth).
+  - **logic/bowl-island.js** (new, game page after bowl-things.js): `bowlIslandMapId` (the map by its fields: the
+    place's own when it has a coast; else for the hub, world node 0, the biggest map with a coast and plots, so
+    `copperleaf_island` now and `copperleaf` after IS-5's rename, never `test_island`); `bowlIslandHeights` (smooth
+    land plus step raises, every 2 m); `bowlIslandRadius`; `bowlIslandPlotThings` (a model per plot kind,
+    `BOWL_PLOT_PROPS`, turned to face where the plot does, and the barn in its zone; skipped where a building or a
+    prop of the plot's kinds stands).
+  - **world-bowl.js**: every read of a place's map goes through the resolver (the sea input, the route mask, the
+    stamps, the things, the clumps); the island's file is fetched once (not during a run) and the ground worked out
+    again with its heights (`worldBowlReset`); stamped only where the bowl has land; plot models drawn; the landmark
+    still from copperleaf.json; `ground.islandMap` names the map drawn.
+  - **worldmap.json** `sea.island` 0.2 to **0.12** (the coast reaches 120 m from `island.c`); a unit test keeps it
+    within 10% of the coast's reach. The schema's description says so.
+  - **The World map test** (Bowl map test) step "The hub's island": 24 points round the coast, land 12 m in and sea
+    12 m out; the highest ground drawn where it is (24.9 m, drawn 23.6 m); a model on every free plot; ground laid on.
+  - Checks changed on purpose: no bowl river is made on an island drawn from its map (its stream is its own), so the
+    fast check's and the World map test's river count want 0 there (1 on an island world without one, 4 elsewhere).
+- Where the plan or the docs were wrong: phase 10's "1.5 m a pixel" ground is ~1 m (2048 pixels over 2000 m); the
+  camera's zoom limit stays (the plan offered distMin 0.45 to 0.3: at 0.45 the island already fills a phone's width
+  and the town reads, pictures in the PR); `test_island` does have `islandGen` (no seed, no plots). Also the well and
+  the airship station never showed on the bowl (not "buildings" by bowl-things.js's rule); on the plots they do.
+- Not touched (other sessions own them): copperleaf.json (IS-5), the Studio (IS-6b; its World map look's Island
+  dial help still says "0.2 is 200 m", still true), walk/camera.js, the sea and sky, prop data and art, mapgen.js.
+- Verified: unit tests 609 (bowl-island.test.mjs new, 10 tests; a planted fault in the resolver seen to fail), lint,
+  typecheck, check:modules, check:data (145 files), format; check-fast's world map check (with the run's world beside
+  it); the in-game World map test headless: every step passes but "The Map tab opens" (9 frames in 4 s: software
+  drawing at ~3 fps; the base fcda361 fails it the same way), the new step "copperleaf_island: its coast (240
+  points; 48 land and sea checks hold), its top 24.9 m drawn 23.6 m (x3), 25 plot buildings"; pictures at 390 x 760
+  (home, close, close from above, the whole bowl). The whole fast check 23 of 23. Smoke: one problem, the in-game
+  full test's step timing out at 60 s on a slow run (the Studio step took 94 s in the same run); run alone it passes
+  here (65 s) as on the base (57 s).
+- Risky:
+  - **The fetch**: the island's file (1.2 MB, 52 KB gzipped) is fetched when the map first opens if `loadAllMaps`
+    hasn't brought it yet, and the ground is worked out a second time (headless ~200-260 ms, the hub's before 160-210).
+    The outline is right from the first frame; the mountain and the ground come a moment later.
+  - **Size on screen**: at true size the island is about half the old round blob; the home view shows it with a lot
+    of sea. If the phone says it's too small, the fix is the home view's zoom for the hub, not a bigger island.
+  - **The town at 3x on its plots**: the plots are laid out for buildings at 1x, so at 3x the houses stand close; in
+    the headless pictures they read as separate buildings. One number (`BOWL_THING_SCALE`, shared with every place)
+    if the phone shows them crowded.
+  - **IS-5**: when the town's buildings become props on the plots, the plot models step aside by themselves (tested);
+    the barn's zone model too once a barn prop stands within 20 m of the zone's middle. After the rename the resolver
+    takes copperleaf by its own coast; nothing here names an id. `sea.island` must follow any reshaping (the test says).
+  - Headless the landmark (the oak) is still the red block seen since RL-7 (its picture not loaded): look on the phone.
+- For the sessions alongside: **IS-5** see above; **IS-6b**: a reshaped island trips the `sea.island` unit test on
+  purpose (set it to the coast's reach / 1000); the Studio's World map look could show that number next to its dial.
+- Next: the owner's phone look (the Map tab in Copperleaf, zoomed out and in; the Bowl map test from the debug menu;
+  export the debug log); tag `is-7-done` is the owner's to push. Then IS-8 and IS-9 (wave 3).
+
+### Island track IS-2 - Island ground generator - 2026-10-22
+Branch `claude/is-2-island-gen`, from IS-0's `claude/new-session-3qlesh` (PR #119, not merged yet: the owner started
+wave 1 before `is-0-done`); the PR goes against main, so its diff shrinks once #119 merges. The session grew with the
+owner's direction: a natural layout, five direction sketches (scratch, not committed), then the town in the generator. Wave 1 ran alongside: IS-1
+(orbit camera), IS-3 (sea), IS-4 (island props), IS-6a (the Hub island editor). Plan approved in Plan Mode with the
+owner's answers: question 1 ~150 m (the town and barn fit as they are), 6 a dock landing and a deep channel, 7 the
+mountain climbable, 9 the stream with a pond; 10 was answered before (reusable).
+- Changed (one cause per commit):
+  - **logic/island-gen.js** (new; on the game page after island.js, see "Risky"): `islandGenerate(dials, seed, ctx,
+    prev)` returns `{ scene, notes, paths }`. Pure, seeded (each stage its own stream; `dials.seeds[stage]` rerolls one
+    stage), Node-runnable. `ISLAND_GEN_DEFAULTS` (the dials IS-6b shows: size, mountain, hills, cove, shore,
+    beaches, cliffs, dunes, heath, forest, stream, paths, zones, level, seeds), `islandGenDials` (fills in and
+    clamps), `islandZoneRect`, `ISLAND_GEN_STAGES`, `ISLAND_GEN_BUILT` (town, barn, pasture). Nothing Copperleaf's in
+    it: the town, barn and pasture are dial-placed rectangles (angle, distance, width, depth) turned to face out.
+  - The stages: the coast (a radius per degree with noise, pushed out round every flat zone, the cove cut in), the
+    heights (beaches, hills, foot hills, cliffs with a 2.2 m face, the zones flat with a 7 m blend), the mountain
+    (TR-2's smooth quarter plus step-grid shelves, a flat top 3.5 m round), the water (the sea past the coast, a
+    pond at the mountain's foot, a stream to one side of the cove's back with a small fall, the cove's deep channel
+    out from the dock), the paths (a loop round the coast inland of the beach, spokes from each flat zone to it,
+    from the town up to the mountain's foot, from the loop to the dock; a wooden bridge where a path crosses water;
+    mapgen's road flattening), TR-2b's trail from the mountain spoke to a summit lookout, the built zones made level
+    again, the terrain kinds (see the track file's "Checked in IS-2"), the shelves' rock edges, the water lowered
+    under its banks. Spots for the later sessions: `summit`, `dock` (the landing, IS-4's dock runs out from it),
+    `pond`, `fall`.
+  - **Locks**: a map whose `islandGen.lock` is set is refused (throws; the tool exits). With `prev`, its locked zones
+    keep their polygons, ground letters, corner heights and steps exactly, and the scene keeps its middle (and grows
+    only if the coast needs it); a kept zone's surroundings blend to its own level.
+  - **tools/build-island.mjs** (new): writes `game/data/maps/copperleaf_island.json` through write-data.mjs: the map's
+    own dials and seed when it exists (default seed "copperleaf"), `--seed`, `--dials file.json`, `--id`, `--fresh`
+    (drop the kept zones). Copperleaf's look; a test map (`kind: test`, `test: 1`) until IS-5. The walking checks for
+    the in-game test. Prints the size, the lap and the notes.
+  - **A natural layout** (the owner, mid-session: "make the layout and terrain more natural and dynamic"; generator
+    version 2): a new dial `organic` (0-1, default 0.7; 0 gives plain geometry back: round coast, rectangles, a cone,
+    straight spokes). Rounded, uneven zones round the dial's rectangle (the rectangle always fits inside; zones that meet
+    are turned apart round the island, the biggest stays); headlands and bays on a warped coast; warped hills and a few
+    knolls, uneven cliffs; the mountain a massif along a ridge kept clear of the biggest zone and the cove
+    (`mountain.stretch`, `mountain.shoulder`), its peak a little off the middle, a shoulder peak, shelf edges that
+    wander instead of rings, a 5 m apron of open ground between it and any zone; curved spokes, a loop that wanders;
+    ragged arc edges, groves and clearings, rock outcrops, lush moss and clover by the pond and stream, more meadow kinds.
+  - **A more dynamic island** (the owner, after five direction sketches; dials `size.stretch`, `size.lobes`,
+    `mountain.range`, `cove.shape`, `paths.wander`): a longer island with big lobes and a peninsula; spurs running out
+    from the mountain; the cove a wide bay with a headland on each arm; the coast road across headlands and inland.
+  - **The town in the generator** (the owner chose a mix of the sketches C, D and E and approved the plan; question 1
+    re-answered: ~220 m): a market town where the stream comes down into the bay: the main street along one bank, a
+    paved square with a bridge for the cross street, an east-bank street and a lower bridge, the quay, side lanes,
+    links to the coast road. **Plots** facing their streets: the well and the lab at the square, the airship station
+    by the harbour (else any town street), the shop, Juniper's home, houses, cottages where a house won't go; each on a
+    level pad at its street's height, eased into the land over 3 m; the rest of the town keeps its slopes. A **hamlet**
+    (4 houses round a green under the mountains, 70 m or more from the town) and a **farmhouse** by the barn. The town
+    and hamlet zones are outlines (the town's the hull round its streets, plots and links), locked. A rerun that keeps
+    them reproduces the map exactly: their plots, bridges and the `trailhead` spot come through, and they join the zone
+    list at the end as new ones do. The old flat town is still there when the dials ask for a town rectangle.
+  - **The contract grew** (additions only): zone kind `hamlet`; the map field `plots [{ k, x, z, w, d, a, y }]` (k:
+    house, home, lab, mast, shop, well, farmhouse; a the angle the front faces, y the pad's level), in the schema, the
+    types and `islandProblems`; contract tests with three planted plot faults.
+  - **build-island**: `--defaults`; the in-game checks walk in legs of about 40 m along the way the walk grid finds
+    (the game's findPath gives up after 30000 cells), each leg checked by the game.
+  - **copperleaf_island** (new data, index.json's maps list): 235 x 237 m scene, land 213 x 216 m, the coast loop 580 m
+    (170 s walking), 6 bridges, 14 town houses, 4 in the hamlet; `cam.orbit` pivot on the summit, `dead` 3, `lag` 0.6, `turn` 30 (IS-1 tunes them);
+    `edge: "w"`, `waterKind: "sea"`, `far: "sea"`, `farH` 5, `flatFar` 1 (IS-3's skirt); no props (IS-4, IS-9).
+- Where the plan (the track file) was wrong or short: see the track file's "Checked in IS-2" (the town didn't fit
+  135 m; the lap is ~139 s, not ~90 or the ~105 I estimated in the plan; the sharp peak blocked every trail; findPath's
+  30000-cell cap; a new game/js file has to be on a page; the terrain kinds without a letter). Also: CLAUDE.md's
+  `gamedata.js` gotcha still holds (it is built from the data files by tools/build-data.mjs and ignored by git).
+- Verified: unit tests 575 (8 new in island-gen.test.mjs, each with a planted fault seen to fail); lint, typecheck,
+  check:modules, format:check, check:data (144 files); 24 seeds (s0-s23) each pass the contract, reach the summit and
+  the dock, have no traps, every zone reached, one bridge, the town's path to the mountain, no notes; in a headless game
+  `?test=1&scene=copperleaf_island` opens and draws with no page errors and its 7 walking checks hold; pictures at
+  390 x 760 (the trail's stairs on the shelves; the coast barely reads under today's camera and haze). On version 1:
+  check-fast 22 of 22; smoke one problem, the bridge's jetty flag (fixed in version 2). Version 2: check-fast 22 of 22,
+  smoke no problems. With the town: unit tests 575; 24 seeds each place the well, lab, airship station, shop, home and
+  farmhouse with 5-11 houses (plus the hamlet's), every plot's front walked to, every zone reached, no traps; the
+  game's 21 walking legs hold headless; check-fast and smoke: see the PR.
+- Risky:
+  - **findPath's cap**: tap-to-walk from the town to the summit (102 m) fails with the default 30000 cells; the
+    joystick isn't affected. When `copperleaf_island` becomes the hub (IS-5), long taps across it will stop short.
+  - **On the game page**: island-gen.js loads in the game (about 57 KB, unused there) because every game/js file must
+    be on a page; IS-6b can move it to the Studio's page (then the unit test's crawl reaches it from there).
+  - **The size** (the owner's ~220 m): 1.2 MB (52 KB gzipped; Copperleaf's 73 KB, 14 KB gzipped), about 8.5 times
+    Copperleaf's ground; the steps grid is stored whole. `loadAllMaps` fetches it in the background after boot. The
+    phone's frame times are IS-9's to measure; the fallback is a smaller `size.r`.
+  - **A kept town under a new seed**: its ground comes back exactly, but the new river or coast road may meet it at
+    another place (a seam at its outline). IS-6b's preview should show the walk checks after a rerun.
+  - The lock compares exact numbers: a later generator version (ISLAND_GEN_VERSION 2) changes unlocked ground freely;
+    a locked one is never touched.
+  - The coast in the headless pictures barely reads under today's fixed north camera and the haze; the orbit (IS-1)
+    and the sea (IS-3) are what make it an island on screen.
+- For the sessions alongside:
+  - **IS-1**: test on `?test=1&scene=copperleaf_island` too; the pivot is the summit spot, the island's middle
+    `island.c` is within a few metres.
+  - **IS-3**: the map carries the coast biome's sea fields; the cove's water is shallow (`w`) except its channel.
+  - **IS-4**: the spots `dock` (a landing at the waterline facing the cove), `summit` (the lookout's pocket, 2.5 m
+    round), `pond`, `fall`; `test_props_island` stays yours.
+  - **IS-6a/6b**: `islandGenerate(dials, seed, { scenery }, prev)` is the call; it throws on a locked ground; `notes`
+    say what didn't fit; `paths` are the loop and spokes as lines. The defaults' `zones` are dial rectangles; a kept
+    (locked) zone in `prev` wins over its dial.
+  - **IS-5**: its job changes: put Copperleaf's buildings on the plots (`plots`: the lab, the airship station on
+    `mast`, Juniper's home, the shop, the well; cottages on `house`), the barn in the barn zone, the people and life in
+    the town; the hub is by the well. The town is no longer one flat box, so a building's footprint must stay on its
+    plot (pads are level only there).
+  - **IS-4**: the spots `trailhead`, plus a well and a farmhouse are wanted (plot kinds).
+  - **IS-7**: the world map can draw the plots as the town's buildings until IS-5 places them.
+- Next: IS-5 (needs IS-1 and IS-2) and IS-6b, IS-7 (need IS-2). Tag `is-2-done` is the owner's to push (after
+  `is-0-done`).
+
+### Island track IS-6a - Hub island editor - 2026-10-22
+Branch `claude/is-6a-hub-island-editor`, made from IS-0's branch `claude/new-session-3qlesh` (PR #119, not merged yet;
+the owner asked to start wave 1 before `is-0-done`), PR against main (its diff shrinks once #119 merges). Ran beside
+IS-1..IS-4; kept to Studio files plus the guard in map-editor.js. Plan approved in Plan Mode with the owner's four
+answers: Walk the coast under the game's own walk camera; props only in Walk scenes; Copperleaf view-only until IS-5;
+the coast hand-editable.
+- Changed (one cause per commit):
+  - **map-editor.js, no behaviour change**: `paintGroundBrush` (the round ground brush, out of bindEditorMap) and
+    `sculptHeights(sc, m, o)` taking its settings; Walk scenes passes its own.
+  - **game/js/logic/hub-island.js** (Studio page only; 9 unit tests): the orbit view's frame (the whole island from
+    the south, `FREE_CAM`'s field of view), sides S/W/N/E (yaw 0 looks north, so the camera is south), a drag's turn
+    and tilt; the coast's and zones' points (nearest, insert on the nearest edge including the closing one, move on
+    the scene, remove never under three; a new zone a 12 m square); lock, unlock, `groundLockRefusal`; the maps listed
+    (Copperleaf first, then every map with an island; view-only without a coast); `hubCoastLap`, the walk round.
+    logic/island.js joins the Studio's page too.
+  - **The Hub island section** (studio/js/hub-island.js; World & places after Walk scenes; left pane only, like the
+    other 3D views): the orbit view (mountWalkView with its own `look`, the pointer caught before the walk view's as
+    the free camera does: drag turns, Shift-drag or right button tilts, wheel or pinch zooms; Auto-orbit, S W N E,
+    Whole island, Walk the coast); the map (each ground letter's average colour, heights with a 2 m contour, coast,
+    zones by kind with locked ones hatched, pivot and dead zone, the island's middle, where the camera stands, on a
+    layer of its own so it moves without redrawing the ground); tools Paint ground, Shape the land, Coast & zones
+    (kind, lock, add, remove), Pivot (Shift-drag: the island's middle; the dead zone); the Ground lock card.
+  - **The guard** in Walk scenes: on a locked island Paint, Fill, Shape the land, Cliffs & stairs, Curved road,
+    Resize and Flatten refuse with the reason; the Map card says so. Props, water, exits stay free.
+  - **The Studio's Check** lists `islandProblems` for every map (as check-data); "Show me" opens Hub island.
+  - **check-fast**: "The Studio's Hub island", a Studio page of its own (see Verified).
+  - **Fixes found reviewing the diff**: the height brush clamped every stroke to -8..12 m (Walk scenes' limit), which
+    would cut test_island's 16 m peak (and IS-2's ~22 m one) to 12; its floor and ceiling are settings now, the hub
+    editor -8..40 m, Walk scenes unchanged. Walk the coast's button resets after a walk that ended away.
+  - **After merging main (IS-0, IS-1)**: IS-1's `orbitOf` is off whenever `walkView.opt.freeCam` is set, and the
+    Studio sets it on every 3D preview (viewport.js), so Walk the coast still showed the fixed camera. The hub view
+    takes the mark off while it walks (`hubWalkCamera`) and puts it back after; on test_island's east side the camera's
+    yaw read -1.58 rad (looking west at the middle).
+  - **CI's first run** failed the new step ("the orbit view never looked at the island"); reproduced locally with
+    runs side by side: the island's frames take seconds each in headless software GL and come back to back, which
+    starves the page timers that until() polls on (the camera was set a moment after the wait gave up). The step
+    polls from Python now (`poll()` in check-fast) with drawing()'s waits; five runs side by side pass.
+  - Docs: STUDIO.md (a Hub island section, the table row, the left-pane list), the track file ("Done in IS-6a"),
+    CHANGELOG.
+- Where the plan (the track file) was wrong or short:
+  - "Walk the coast (IS-1's logic/camera-orbit.js once merged)": not needed. The game's walk camera reads the map's
+    `cam.orbit`, so the walk shows IS-1's orbit (once the free-camera mark is off, above).
+  - "one guard in map-editor.js": one helper, asked in seven places (the ground tools, Resize, Flatten); the Curved
+    road (map-editor-tools.js) paints ground too. map-generate.js only makes new maps and needs none.
+  - "the 2D map ... (map-editor.js's brush functions, exported, not copied)": the height brush read Walk scenes'
+    settings and clamp; it takes them as an argument now (see Fixes).
+  - Planned as three commits (section, map, lock bar); landed as one, since the section's card holds all three.
+- Verified: unit tests 576 (9 new); lint, typecheck, check:modules, format:check; check-fast 23 of 23 (the new step
+  67 s on a page of its own, beside the others; the island's 3D view draws about one frame in 3 s in headless
+  software GL, so it is not on the other Studio checks' page); smoke: no problems (171 s); full quick check (39 min): 9 problems, the same 9 old steps
+  that fail on main (roster counts 117/61, empty voxel bushes, buildings without a plan, the biped walk cycle, the
+  running step's "float division by zero"; see RL-8b's and TR-2's entries), none in what this branch touches.
+  Headless pictures at 1600 x 1000 (orbit from the south and the east, the map with zones and handles, locked,
+  walking the coast, Copperleaf view-only): no page errors.
+- Risky:
+  - Walk scenes' own height brush still clamps to -8..12 m: one stroke on a TR-2 mountain (up to 20 m) or on the
+    island's mountain in Walk scenes cuts it to 12 (pre-existing; left as it was; a one-line change if wanted).
+  - The orbit view and Walk scenes share the one walk view; leaving the section mid-walk leaves the walker's route in
+    place until the section is opened again.
+  - Locking stores the hash of the ground as the Studio holds it; Save writes it. A hand edit of the file afterwards
+    fails check-data, as intended.
+  - hooks.js unchanged (317 names); a merge with IS-1..IS-4 can still need `npm run modules`.
+- Not done: the dials and live preview (IS-6b, after IS-2); copperleaf editing (after IS-5).
+- Next: IS-6b once IS-2 lands (the dials beside logic/hub-island.js; "Use this island" refused while locked: the
+  check is `hubGroundLocked`). Tag `is-6a-done` is the owner's.
+
+### Island track IS-4 - Island props (phase 09 batch 11's barn folded in) - 2026-10-22
+Branch `claude/is-4-island-props`, from the IS-0 branch `claude/new-session-3qlesh` (PR #119, not merged yet; the
+owner asked to start wave 1 before `is-0-done`). PR against main; its diff shrinks once #119 merges. Wave 1 beside
+IS-1, IS-2, IS-3 and IS-6a. Plan approved in Plan Mode as proposed (defaults 1-5 taken). This session owns the prop
+data and art; no map but the showcase is touched.
+- Changed (one cause per commit; tools/build-props-island.py, rerunnable, in steps `new barn scree forest`):
+  - **New props**, every one finished on every side for the orbit camera: pasture `fence_gate` (matches
+    `fence_wood`, 2.2 m), `water_trough`, `hay_round`, `hay_feeder`; beach `driftwood` (3 shapes as variants),
+    `shore_rocks` (3), `tidepool_rim`, `beach_grass` (flat on purpose: 4 forms, sways) and `shells` (a ground decal,
+    3 forms); cove `fishing_boat` (moored: `bob`) and `net_rack`; mountain `boulder_granite` (3), `cairn`,
+    `summit_lookout` (a stone platform with a rail, scope, flag and bench; a landmark); `forest_litter` (a ground
+    decal, 3 forms). Tags `island` plus their place. Each model's fallback picture is **baked from the model** by the
+    builder (a small rasterizer, scene/next/island/*.png): seen from the front and above, cel-lit, outlined.
+  - **The barn** (batch 11's) as a model under its key, batch 7's way: the House kit with a **gambrel** roof, red
+    board walls, braced sliding doors, the hay loft door and its hoist, a lamp, a weather vane, side windows, a back
+    door, a loft window, a woodpile under a lean-to. Its five looks are colour swaps; `room: int_barn`, the door at the
+    big doors, name and tags kept; footprint 5.5 x 4.1 m (was 5.4 x 4).
+  - **Swapped in** as models under their keys: `scree` (base and four forms) and `log_mossy`, `stump_mossy`; their
+    old pictures stay the fallbacks. **Golden scenes remade on purpose**: scree moves the props hash of `feature`
+    and `terraced` (only that part; a model's placement keeps its size, `s`).
+  - **Showcase** `test_props_island` (64 x 58 m): sea and a walkable pier (a `bridges` entry, `pier: 1`) to the south,
+    the beach, a fenced paddock with the gate, the barn three times (a look and a turned one), a mountain corner and
+    forest floor; seven `shots`; `cam.orbit` set for IS-1's camera.
+- Where the plan was wrong or short:
+  - Many of the track's "new" props already were models: `fence_wood` and its post, `haybale`, `rowboat`,
+    `dock_post`, `buoy`, rocks, `boulder_lichen`, `stone_wall`, `waystone`, `log`, `stump`. Reused, not duplicated.
+  - **The walkable dock is a map field**, not a prop: `bridges` with `pier: 1` (Copperleaf's wood bridge is one).
+    IS-5/IS-9 place the island's; the showcase has one.
+  - **The barn's old `build` plan said a gable**; its picture is a gambrel. The model follows the picture.
+  - A roof made by the kit's 4-sided cone has closed ends: the gable's loft door and window go on the roof's end face,
+    as the kit's gableF does, or the roof hides them.
+  - `lookout_tower` stays batch 11's; the summit has its own prop.
+- Verified: unit tests 567 (2 golden scenes remade on purpose); lint, typecheck, check:modules, format:check,
+  check:data (144 files); a full rerun of the builder writes nothing; check-fast 22 of 22; smoke no problems. Headless
+  pictures (390 x 760, low graphics) of the showcase at 8 camera turns a full circle (the free camera) and close-ups
+  of the barn (front, both sides, back, a look, turned), the boats and pier, the paddock, the lookout, beach,
+  mountain and forest; Copperleaf's barn in the town. No page errors.
+- Risky:
+  - Triangles (from the builder's mesh): barn ~3,400, fishing boat ~3,700, net rack ~1,600, lookout ~1,400, the rest
+    under 1,000 (scree 230-360). Not measured on a phone; IS-9 measures.
+  - Scree is placed widely on runs (ridge, snow, canyon): every placement is a model now. Small, but many.
+  - The baked pictures are a flat-lit approximation (rocks without their lumps); they show only with models off or
+    as the far view of a neighbouring scene.
+  - The fishing boat bobs (`bob` 0.09) on water tiles only; on land it sits still.
+  - The barn's footprint grew 0.1 m each way; Copperleaf's barn has room round it (checked in the picture).
+- Not run: the full quick check's picture compare (CI makes its baseline); the new map's `shots` join it.
+- Phone check wanted: `?test=1&scene=test_props_island` (turn the camera round the barn, the boats, the lookout);
+  Copperleaf's barn and its door into the ranch; a run with a ridge node (scree); export the debug log.
+- Next: IS-5 places these on `copperleaf_island` (the barn in its zone, the pier at the cove); IS-8 the pasture with
+  `fence_wood` and `fence_gate`; batch 11's remaining list: boulder_mossy, campfire, lookout_tower, wind_sail_flower
+  and the rooms' 20 furniture props. Tag `is-4-done` is the owner's to push.
+
+### Island track IS-3 - Sea all round - 2026-10-22
+Branch `claude/is-3-sea-all-round`, from IS-0's `claude/new-session-3qlesh` (PR #119, not merged yet; started before
+`is-0-done` at the owner's word). Wave 1, beside IS-1 (camera.js), IS-2 (generator), IS-4 (props), IS-6a (Studio).
+Plan approved in Plan Mode as proposed. Owns water and sky: touched no camera, mapgen, Studio or world-bowl code.
+- Changed (one cause per commit):
+  - **logic/sea.js** (new, on the page): `seaSkirt` (rings round the scene out to 400 m, the inner ring on the edge
+    every half metre with rounded corners), `seaRamp` (the edge's water depth to the open sea's over 25 m),
+    `seaCentre` (`island.c`, else `cam.orbit.c`, else the middle), `seaCalmAt` (a `cove` zone's calm, soft 6 m edge).
+  - **The skirt** (walk/ground-mesh.js, the `flatFar` block): the four quads 90 m out became one ring mesh at the
+    sea's level along the edge (the commonest edge water level, not a hard -0.12), its first ring as deep as the
+    scene's water beside it; the scene's edge vertices count the edge cell twice instead of nothing (they were half
+    as deep: part of the seam). Opaque past the 8 m border of land. ~23k vertices on test_island (23 rings x 992).
+  - **No far props on a `flatFar` map** (grass-build.js): the trees scattered past the edge stood on the sea.
+  - **The bowl's far wall** (sky shader only): outline averaged over 5 texels (no stair steps), a soft top, its foot
+    hazed into the horizon.
+  - **The coast** (water shader, uniform `uSea` from water-data.js `setShoreUniforms`, so the ground shader has it
+    too): whitecaps and a long swell roll in toward `seaCentre` from every side (they were stretched along x, streaks
+    from the east and west); surf lines over the shallows breaking on the whole coast; a bigger swash; wet sand above
+    the line on the same clock; past 140 m no fish, rings or caustics (cost). A cove's calm rides in the vertex's
+    kind (kind + calm * 0.4; `int(k + .5)` still gives the kind; the shader takes the rest apart). Only K = sea on a
+    `flatFar` map changes; other maps' water is as it was.
+  - **test_island**: a stand-in `cove` zone over the east shore's water (zone only, no ground change), via
+    tools/build-test-island.py.
+  - **check-fast island step**: the skirt reaches 400 m at the sea's level; draws from 8 angles through the free
+    camera hook (`walkView.opt.look`). Planted fault (no skirt) seen to fail.
+- Where the plan was wrong or short:
+  - The "turquoise band" from above was the scene's own shallow edge water, not land: the seam was depth, as planned,
+    plus the half-depth edge vertices (new).
+  - Step 3's extra fade of the far sea into the sky wasn't needed: the fog already takes it to the haze by 400 m
+    with no edge; only the cheap far path went in.
+  - The bowl wall's colour is the far bowl's own (phase 10), a pale cream; I softened it, didn't recolour it.
+  - With full graphics the sky looking south washes white (bloom and glare into the 12:30 sun): direction dependent,
+    so it belongs to the sun question (3) of IS-1, not changed here. The diagonal glints on the sea are the existing
+    glint pattern, not the whitecaps.
+- Verified: unit tests 572 (5 new: no gap at 48 angles out to 400 m, the inner ring on the edge, the depth at the
+  edge and by 25 m, the triangles' turn, calm); lint, typecheck, check:modules, format:check, check:data (143 files);
+  check-fast 22 of 22; smoke before the shader work and at the end; headless pictures at 390 x 760 from S, E, N, W, SE,
+  low S, three outward views and three coast close-ups, before and after (in the PR).
+- Risky:
+  - Phone cost: the skirt covers much of the screen when looking out; its far fragments skip the small things, but
+    the reflection sample and fog remain. Needs the frame times on the phone (`?fixture=island`).
+  - `gamedata.js` is generated (`npm run data`); a stale one hides data changes in local pictures.
+  - The calm-in-the-kind trick: anything new that reads the water mesh's kind must round, not truncate.
+  - Every `flatFar` map gets the new sea: test_island, five legacy maps, Studio-made coast scenes. Runs don't use the
+    coast biome.
+- Not run: the full quick check's picture compare (its baseline is made by CI).
+- Next: switch the pictures to `copperleaf_island` when IS-2 lands (its real cove gets the calm from its zone); IS-1's
+  sun choice (question 3) decides the backlit side. Tag `is-3-done` is the owner's to push.
+
+### Island track IS-1 - Orbit camera - 2026-10-22
+Branch `claude/is-1-orbit-camera`, from IS-0's `claude/new-session-3qlesh` (PR #119, not merged yet: the owner started
+wave 1 before `is-0-done`); the PR goes against main and shrinks once #119 merges. Ran beside IS-2, IS-3, IS-4 and IS-6a.
+Plan approved in Plan Mode; the owner's answers: question 2, the camera **holds still on the summit** (your own turn
+still works); question 3, the **sun stays put in the world**, with an Engine toggle to compare; the tree picture fix
+in sprites.js done here.
+- Changed (one cause per commit):
+  - **logic/camera-orbit.js** (pure, unit-tested; on the game and Studio pages, for IS-6a's "Walk the coast"):
+    `orbitYawAt` (the yaw that looks from you at `c`; 0 from the south, so the first view is today's), `orbitStart`,
+    `orbitStep` (the lag as a time constant of `lag` s; inside `dead` the target holds; the yaw kept unwrapped so the
+    easing always takes the short way past +/-180; trimmed back near 0 every 8 laps), `orbitStickYaw` (the joystick's
+    frame, below), `orbitWalkStep` (a step taken round the middle: the part across the radius moves you along your
+    circle), `wrapAngle`.
+  - **walk/camera.js**: `orbitOf(sc)`: the orbit applies outdoors, not in a room, not in the Studio's free camera,
+    with Engine > Camera > Orbit on. The base yaw is the orbit's and your turn (`walkRenderer.yaw`) is added on top,
+    limited to the map's `turn` (`cameraTurnLimit()`). No scene clamps on the target while orbiting. Four spots that
+    assumed a north view now use the base yaw (all equal to before at yaw 0, so every other map is unchanged): TR-3's
+    ground-ahead for the rise, the lean ahead of you (`rw > rh ? 2 : 1`), the swoop's offset, `landmarkTilt`. A new
+    scene, a cut (`camT` cleared, `opt.instant`) or a jump of over 8 m starts the orbit where it belongs.
+    `walkRenderer.orbit` holds the state. A turn kept from a map with a wider limit (Copperleaf's 35) is clamped to
+    the island's on arrival. The battle, cutscene and Studio cameras don't go through it.
+  - **walk-view.js** (joystick and keys): on an orbiting island the stick walks by `orbitStickYaw` (plus your turn)
+    and steps with `orbitWalkStep`; elsewhere it is unchanged (the camera's right).
+  - **sprites.js**: `landmarkTilt(P, sc, yaw = 0)`; a tree's crossing picture fades by `|sin yaw|`, not `|yaw|`.
+  - **Engine > Camera**: `orbit` (on) and `sunTurns` (off; on turns the sun with the camera in engine/light.js
+    `sunLight`).
+  - **Debug log**: the scene line's `orbit` (yaw, your turn, `hold` on the summit, `stickLocked`; degrees).
+  - **check-fast's island step**: 8 places round the coast (the camera looks at the middle within 0.06 rad and aims
+    within 4 m of you), the summit holds, the turn limit is 30 degrees, holding right goes an eighth of the way round
+    and stays within 1 m of its 44 m circle with no yaw jump.
+- Where the plan was wrong or short:
+  - **The walk drift fix needed more than "steer by the target yaw"**: a step straight along the tangent still adds
+    s^2/2r to the radius every frame (0.5 m a lap at 20 fps running, more on slow frames), and last frame's target is
+    stale by a frame. The stick reads the way to the middle from where you stand now, and the step goes round the
+    middle: a lap ends on its circle to 1e-13 m in Node (8, 20, 60 fps), 45.0 m of 45 in the browser.
+  - **Crossing the summit holding up** would bounce you at the dead zone's edge with any stick frame that follows
+    the orbit (the way to the middle flips half a turn as you step out the far side). So while the stick is held its
+    frame stays locked from the moment you are inside the dead zone until you let go. Leaving the summit northward
+    holding up, you keep walking north while the camera swings round behind you (lag 0.6 s); push again and up is
+    toward the middle.
+  - Shadows and culling needed nothing: both work from the camera's own view (screen rays, the frustum), not a
+    facing. The shadow map stops 6 m past the scene, where only sea is.
+  - The sun was already fixed in the world (Engine > Sun > angle); question 3's "fixed" option was free.
+- Verified: unit tests 577 (10 new); lint, typecheck, check:modules, format:check, check:data (143 files);
+  check-fast 22 of 22 (the island step 48 s with two browsers); smoke all fine. In a 390 x 760 page with full graphics
+  at 8 angles: the camera looks at the cone from every side, no page errors, TR-3's rise and rock fade 0 everywhere
+  on the ring; a full lap holding right (194 s of software drawing) ended at 45.0 m. Copperleaf's camera is unchanged
+  (no orbit; every changed spot is identical at yaw 0).
+- **Found for IS-3 (not fixed: water is IS-3's)**: from the west and east the far sea floats over the near ground.
+  The `flatFar` skirt (walk/ground-mesh.js ~775) is four quads of 4 corners each, and the world's bowl curve
+  (`curveY`, about 0.0012 x d^2 past 70 m from the scene's middle on test_island) lifts each corner by its own
+  distance. The west and east quads run 300 m long, so their inner edge at x 0 is lifted ~10 m (the corners at z -90
+  and 210) and the water sheet covers the sand and the ring up to ~20 m in. The north-facing camera never stood past
+  those edges, so it never showed. Fix: cut the skirt into a grid (e.g. 10 m cells) so the curve bends it like the
+  ground. From the south and north it looks right.
+- Risky:
+  - The stick's locked frame (above) is new behaviour; worth a feel on the phone at the summit.
+  - With "Sun turns with the camera" on, the shadow cache redraws every frame you turn (the sun moves): a
+    comparison setting, not for the phone's frame times.
+  - studio/index.html gained a script line next to camera-rise.js; IS-6a may add the same line (keep one when merging).
+  - Phone frame times at 8 angles are IS-9's; nothing here measured a phone.
+- Next: IS-3 (the sea skirt above), IS-6a can call `orbitStep`/`orbitStart` for "Walk the coast", IS-5 when IS-2
+  lands. Tag `is-1-done` is the owner's to push (after `is-0-done`).
+
+### Island track IS-0 - Contract and test island - 2026-10-22
+Branch `claude/new-session-3qlesh`, from main a10bfc6 (PR #118). The owner's brief (docs/phases/island-track.md,
+uploaded in chat): Copperleaf becomes a real island, one map, an orbit camera. IS-0 runs first and alone so wave 1
+(IS-1..IS-4) can run side by side without meeting in the schema and types. Plan approved in Plan Mode as proposed.
+- Changed (one cause per commit):
+  - **Docs**: the track file in docs/phases (with an "Checked in IS-0" note), ROADMAP's Island track bullet.
+  - **logic/island.js** (on the game page; nothing calls it yet): `ISLAND_ZONE_KINDS`, `islandPointIn` (point in a
+    polygon, for IS-2/5/7) and `islandProblems(sc)`: `cam.orbit` (pivot on the scene, `dead` under half the shorter
+    side, `lag` 0-10 s, `turn` 0-180), `island` (the coast 3+ points, on the scene, closed without repeating its first
+    point, never crossing itself, `c` inside it, the map's `edge` water), `zones` (a known kind, a sound polygon).
+  - **The contract fields** in map.schema.json and game-data.d.ts, all optional: `cam` (pitch, h, fov, `orbit {c,
+    dead, lag, turn}`), `island {c, coast}`, `zones [{k, poly, lock}]`, `islandGen {v, seed, dials}` (the dials an
+    open object: IS-2 owns them) and `waterKind` (enum = the renderer's nine kinds). check-data runs `islandProblems`
+    on every map.
+  - **test_island** (tools/build-test-island.py, rerunnable): 120 x 120 m; a cone 16 m high at (60, 60), flat top
+    r 3, foot r 27 (steepest 0.65, the walk allows 1.05); grass ring to r 48; sand, wet sand to r 52; sea past it
+    (`edge: "w"`, `waterKind: "sea"`, the coast biome's `far: "sea"`, `farH: 5`, `flatFar: 1`); `cam.orbit {c [60,
+    60], dead 3, lag 0.6, turn 30}`; zones mountain, town (locked, south), beach (south arc); six props (a sign,
+    a house, a bench, a lamp, two oaks) to judge turned standees by in IS-1. Hub (60, 30), the south side.
+  - **`?fixture=island`** opens it; check-fast's island step: it draws, the fields reach the scene, its walking checks
+    hold (hub open, the top and the north side reachable, the sea not).
+  - **The owner's direction, after the first push** (chat, 2026-10-22): "The starting map will not be a node. It will
+    be the main hub. Make a separate editor for it in Studio with an orbiting cam. It will be locked after it's
+    right." Answers: the lock freezes the ground (props, people, buildings stay free; unlocking is deliberate); dials
+    then hand edits; the generator reusable (question 10). So: **the ground lock joined the contract**
+    (`islandGen.lock`, `islandGen.hash`, `islandGroundHash` over ground letters, heights, steps, coast and zones; a
+    changed locked ground or a lock without a hash fails check-data), and the track file splits IS-6 into **IS-6a,
+    the Hub island editor** (a Studio section of its own: an orbit view through `mountWalkView` with its own look
+    from logic/free-camera.js, a 2D map with coast, zones and pivot, map-editor.js's paint and height brushes, the
+    lock bar; wave 1, Studio files only) and **IS-6b**, its dials (after IS-2). No Studio code in this session.
+- Where the plan (the track file) was wrong or short:
+  - "The sea's water kind" already existed: `waterKind` (mapgen wrote `'sea'`; environment.js and sound.js read it).
+    It is typed and in the schema now, no new field.
+  - `edge: "w"` alone is not a sea: it paints the land past the edge with a water texture. The sea skirt that exists
+    is `flatFar: 1` (walk/ground-mesh.js:774-794: water quads 90 m out round the scene, the far land lowered). IS-3
+    should extend it rather than start a new one.
+  - `?test=1&scene=<id>` already opened any test map; the fixture is for check-fast (fixture pages only).
+  - Map rows are north first and z grows northward from the near (south) edge (mapgen.js's header): the track's
+    "town in the south" means small z. IS-2 and IS-5 keep to it.
+  - "an export" in IS-0's line taken as logic/island.js, the module the checks and later sessions share.
+- Verified: unit tests 535 (8 new: every game map passes, test_island has every field, the schema refuses 7 bad
+  shapes, 11 planted faults each give their words, the schema's water kinds and zone kinds match the renderer's and
+  the module's, the lock: props free, five ground changes refused); lint, typecheck, check:modules, format:check,
+  check:data (142 files); check-fast 19 of 20 with two browsers (the island step 27 s; RL-9b's packing step timed
+  out at "Take off" under load, then passed alone in 42 s: its 30 s wait is tight with two browsers, nothing this
+  branch touches); smoke 15 of 15; headless pictures at 390 x 760 from the south, the top and the north: the cone, ring, sand and sea
+  draw, no page errors. From the north the cone stands between the camera and you: the reason for IS-1.
+- Risky:
+  - The orbit fields do nothing yet: the camera is today's (fixed yaw, scene clamps) until IS-1.
+  - The `flatFar` skirt starts 90 m out with the far land between; low angles may show a seam (IS-3).
+  - `cam` is in the schema for the first time (only pitch, h, fov were ever used; all 142 files pass).
+  - logic/island.js is on the game page; IS-6a adds it to the Studio's page.
+  - The lock's hash trips on any rewrite of the ground, rounding included (a tool that re-rounds heights would need
+    an unlock and relock); intended, and the message says how.
+- Not run: the full quick check's picture compare (its baseline is made by CI, not in git); a new test map adds its
+  `shots` (island-south, island-top) to it.
+- Next: wave 1, up to five sessions side by side: IS-1 orbit camera (owns walk/camera.js), IS-2 island generator
+  (owns logic/island-gen.js, not mapgen.js while TR-2c part 2 is open), IS-3 sea all round (water and sky), IS-4
+  island props (prop data and art), IS-6a the Hub island editor (Studio files). The track's "Ask me before" 1-12 are all still open; each session asks its own
+  (IS-1: 2 and 3; IS-2: 1, 6, 7, 9; IS-5: 4, 11; IS-8: 8; IS-9: 5); 10 is answered (reusable). Tag `is-0-done` is the owner's to push.
+
+### Roguelite track RL-12a - Relics and effects, first half: Loopholes, picks, shops - 2026-10-22
+Branch `claude/dazzling-keller-qyw5vq` (PR #117), from main 6a8a3e7; main merged in twice: RL-9b and UI-6a mid-session,
+then RL-11 (PR #115, bb51f13) at the end. Plan approved in
+Plan Mode with the owner's answers: RL-12 may go before RL-11 (every Loophole on offer from the first run); split in
+two (RL-12a here: effects, Loopholes, picks, shops; RL-12b: events and the event and shop places); 8.6 the
+waystation; 8.14 a cap of 6. RL-9b, RL-10 and RL-11 ran at the same time (see "Merging" below).
+- Changed (one cause per commit):
+  - **UI lint was red on main** (RL-9's ranch card margin): fixed with tokens; main fixed it too, so the merge kept
+    main's and lowered the space ceiling back to 1033.
+  - **Data**: `relics.json` (ten Loopholes: Offshore Account, Tax Shelter, Lobbyist, Fine Print, Insider Tip, Hostile
+    Takeover, Hedge Fund, Severance Package, Stock Options, Write-off), schema, types, `RELICS`, check-data;
+    rules.json `run.relics` (cap 6, pick 3, rarity weights 6/3/1, prices $150/250/400; placeholders).
+  - **logic/effects.js**: held Loopholes as effect rows; kinds `money`, `price` (shop, heal), `catch`, `stat`,
+    `damage` (deal/take, by category or type), `heal` (walking in), `payout` (Capital, the items' share). Rows of a
+    kind combine in any order, within limits; no rows change nothing.
+  - **Battles**: a run battle carries `b.fx`; stat stages for yours on the field as it starts (a line says so);
+    `calcDamage` and `catchOdds` multiply by their rows; a win's $ through the money rows. Golden battles unchanged;
+    a fifth holds three Loopholes.
+  - **The walk**: a run shop's prices and a run clinic through the price rows; walking in heals by the heal rows;
+    the payout through the payout rows (a "Loopholes" row keeps the rows adding up to the total).
+  - **logic/relics.js** and the save: `run.offerN` (the offers' stream) and `run.shelf` (a shop's Loophole by node and
+    day); `migrate` fills them for a run saved before (it carries on).
+  - **Screens** (relic-screen.js): beating a mini-boss stores a pick with the battle's end; "Pick a Loophole" opens it
+    (cards one to a row, Take it / Take none, locked, reopened by a reload); past the cap, "Let one go"; a run shop's
+    first row is the day's Loophole; the run bar's fourth tab (hidden since UI-4) opens as "Loopholes".
+  - **Debug**: Runs section "Give a Loophole", "A mini-boss's pick", the list held; the debug log's run line has the
+    ids held (no names), the pick waiting and offers made.
+  - **Checks**: `?fixture=relics`; check-fast "Loopholes"; the in-game run phase and the quick check's RL-8 step buy a
+    shop's Loophole, take a mini-boss's pick and see the boss's battle carry it; unit tests effects (7), relics (8),
+    battle-fx (4), run-fx (3).
+- Where the plan was wrong: see roguelite-track.md section 0, "Corrected in RL-12" (the save needed `offerN` and
+  `shelf`; UI-4 had built the tab and pick card; "tiny" waystations can't be, every run scene is 112 x 64 m; Write-off
+  only counts on a loss since RL-9b; four effect kinds wait for RL-13/14).
+- Verified: unit tests 542 after the merge with main; lint, typecheck, modules, format, check-data; check-fast 19 of 19
+  on this branch; the Loopholes step's planted fault (no pick after a mini-boss) seen to fail; the in-game run and
+  ranch phases alone headless; the quick check's RL-8 step alone; smoke 15 of 15 before the work and at the end. Headless pictures
+  (390 x 760) of the pick, the tab, the shop row and "Let one go". The full quick check: see the PR.
+- Merging with the sessions running beside this one (test merges in scratch copies, not pushed):
+  - **RL-9b** (PR #114, merged): merged into this branch; conflicts were both-sides additions.
+  - **RL-11** (PR #115, merged into main and then into this branch at the end; first test-merged in a scratch copy):
+    the code conflicts were all two additions in the same place (index.json keys,
+    game-data exports, types, check-data blocks, check-fast pages, run-state checks, ui.js tabs: keep both, both tabs
+    shown, `NAV_HIDDEN` empty; shop.js: RL-11's unlocked stock then RL-12's `relicShelf`); generated imports remade by
+    `npm run modules`. Combined: unit tests 550, lint, typecheck, modules, data all pass; check-fast 19 of 20, the 20th
+    passing alone (below). After the real merge: unit tests 550, lint, typecheck, modules, data, check-data-text.
+  - **RL-10** (draft, `claude/pensive-brahmagupta-5rjlgf`): one conflict (check-fast, both add a step). Combined: unit
+    tests 550, all fast checks; check-fast 20 of 20 on the second full run.
+  - **A flaky check on main**: RL-9b's "Packing for a run" sometimes fails in a full check-fast with 20 pages ("Take
+    off didn't start a run" within 30 s) and passes alone and on the next full run; not caused by RL-10, 11 or 12.
+- Risky / open:
+  - Every number is a placeholder (prices, rarities, multipliers); the run sim doesn't pick Loopholes yet.
+  - A shop's Loophole depends on what you held the first time it opened that day (drawn once, then kept).
+  - The pick sheet's three tall cards need a scroll on a small phone to reach "Take it".
+- Phone check wanted: `?fixture=relics` (or the debug menu's Runs: "A mini-boss's pick"): pick a Loophole, look at the
+  Loopholes tab; walk into a town (prices lower, clinic half, the Loophole row; buy at the cap); a battle with Insider
+  Tip (the line at the start); export the debug log.
+- Next: RL-12b (events.json with `relic` and `wager`, the event and shop waystations, no two shops side by side),
+  then the tag `rl-12-done`.
+
+### Roguelite track RL-10a - Ranch B, first half: breeding and hatching - 2026-10-22
+Branch `claude/pensive-brahmagupta-5rjlgf`, from main fb43358 (PR #114), main (RL-11, PR #115) merged in at the end.
+Draft PR #116. Plan approved in Plan Mode; the owner split RL-10 in two (RL-10a breeding, RL-10b income and the cloud
+anchor) and took every recommendation: you pick the parents and the ranch picks the parts (phase 16's 5.1: both); an
+abomination wears one parent's art with its own name and a stat swing; the old walking eggs are retired; the parents
+stay free while their egg waits. `rl-9-done` was not on the remote at the start (sessions can't push tags); the owner
+said to go ahead. Mid-session the owner asked to check the other sessions merge cleanly (below).
+- Changed (one cause per commit):
+  - **Rules**: `rules.ranch.breed` (nests 1/2/3 by ranch level, 10 Scrap a safe pair and 5 a risky one, 4 h to hatch, Lv
+    5, risky odds 60/30/10, an abomination's x1.3 and x0.75; placeholders); types and check-data.
+  - **A bred Billie's mark** `m.mut`: a quirk, or an abomination (`name`, `up`, `down`); `stat()` applies the swing
+    after the build, `billyName` shows the name unless nicknamed, `billiesOk` checks it, `migrate` cleans the name.
+  - **logic/breeding.js**: `breedCan` (why not: run, parent, same, line, full, scrap), `breedRoll` (the egg from the
+    parents' uids and `ranch.bred`: shown before paying, the same however often asked), `breedStart` (pays, fills a
+    nest with the rolled Billie), `breedHatch` (team, or storage when full; met at the ranch, caught, `hatched` +1).
+    An egg's ready time never moves. The save: nursery entries hold `egg` (checked with the team and storage as one
+    set of uids), `ranch.bred`.
+  - **The ranch's sheet**: Nursery (eggs, time left, Hatch) and "Breed a pair" (Safe/Risky, pick cards, the safe egg
+    previewed, the risky odds spelled out). Hatch opens the old hatch window (`hatchModal`, now the ranch's): "Hatch it",
+    the shake, the Billie with a line for a quirk or an abomination; "Welcome aboard" brings the sheet back.
+  - **The old eggs retired**: no drops (battleRewards draws no chance; its `roll` stays, unused, so callers keep their
+    places), no trainer or starter eggs, walking hatches nothing; the incubators, the Bag's Eggs pocket, the debug
+    menu's egg buttons, the Guide's egg sizes and the walking tip are gone.
+  - **Checks and debug**: `breeding.test.mjs` (8), check-fast "Breeding", the in-game "The ranch: breeding a pair",
+    the debug menu's "Eggs ready now", the debug log's `eggs` and `bred` (numbers only).
+  - **The sim** `tools/test/sim/breeding-sim.mjs` (report only) and `breeding-sim.test.mjs`.
+- Where the plan was wrong (roguelite-track.md section 0): eggs hatched by metres walked, not time; `eggs.json` lists
+  legacy species (stand-ins play them); no Billie has a passive of its own, so a quirk's or abomination's passive waits
+  for RL-12's effects (RL-10a uses a stat swing); an abomination can't look mixed (art is built per species offline);
+  the cloud save is written in two places in `account.js`, not one. **A bug found in RL-9's training guard**: a clock
+  turned back moves a trainee's start back with it, so turning the clock forward again pays the gap. Eggs avoid it (the
+  ready time never moves); training's fix belongs to RL-10b's shared guard.
+- Merging with the other sessions (the owner's ask): RL-11 (PR #115) and RL-12 both branched before RL-9b and each
+  conflicted with main on its own (8 and 11 files); both sessions were told what conflicts and why. RL-11 merged first;
+  main was merged here (both sides kept in the ranch sheet, saves.js, the debug menu, self-test, check-fast and the
+  docs). RL-12 meets RL-10a in battle.js, debug-menu.js and battle-rewards.js; to keep that merge safe RL-10a kept
+  `battleRewards(b, s, roll, rules)`'s order (RL-12 changes it too and passes a roll), and RL-12 was told how to
+  resolve it (keep `fxMoney`, drop the egg block).
+- Verified: unit tests 536 after the merge (breeding 8, breeding-sim 1; battle-rewards, rules and ranch-state changed
+  on purpose); lint, typecheck, modules, format, check-data (planted faults caught); check-fast 20 of 20 after the
+  merge (Breeding seen failing with Breed not paying); the in-game "The ranch" phases alone (breeding seen failing with
+  eggs always ready); headless pictures (390 x 760) of the sheet. The full quick check after the merge (a0df71b, 24
+  min): 45 of 54; the 9 red are the stale steps red on main too (v34 biped walk cycle, v35/v38/v39 roster counts 117/61,
+  v43 and alpha 0.4 empty bush recipes, v44 props scene, v46 buildings without a plan, phase 08 running). CI's smoke
+  was red on this PR as on main (#114, #115) in RL-9b's "Packing for a run": a race in the check (the flight landed
+  before the wait looked); RL-11's session found it and its fix (fbdb456) is ported here, reproduced with the page's
+  CPU slowed 6x (old fails, new passes).
+- Sim (49 pairs x 40 eggs, report only): risky eggs 59 / 31 / 11 % (odds 60/30/10), an abomination for about 47
+  Scrap. Battles at Lv 30 (the duel's control, plain against plain, is 0.43): an abomination against its unmarked twin
+  0.44, a quirk 0.46 (the mark about even); against a plain all-M Billie 0.17 and 0.11, since mixed part sizes lose
+  phase 16's Prime bonus. A safe pair of two Prime parents breeds a Prime Billie; the owner's play decides the numbers.
+- Risky / open:
+  - The dormant egg data stays: `eggs.json`, `saveData.eggs`, `RULES.eggs`, trainers' `egg`, the Studio's egg editors
+    (world rules, data editors, check), the incubators' CSS and i18n lines. A cleanup session removes them.
+  - An abomination looks like its body parent with odd part sizes; a real mix of parts is a renderer job.
+  - Eggs trust the device clock forward (an egg hatches early if the clock is set ahead); RL-10b's anchor.
+  - Closing the hatch window lets any waiting window (an evolution) show before the ranch's sheet comes back.
+  - The sheet lists every Billie at home as a pick card; with many in storage it is long.
+- Phone check wanted: at the ranch, +50 Scrap from the debug menu if needed; Safe: pick two of one line, see the egg,
+  Breed; "Eggs ready now"; Hatch (the window, the Billie); Risky with two lines (try a few for an abomination); the
+  Bag has no Eggs pocket; the Trainer card's Eggs hatched; export the debug log (`eggs`, `bred`).
+- Next: RL-10b (passive income with its cap, the shared rollback guard fixing training's, offline, the cloud `t`
+  anchor and the `saves/{uid}` key whitelist, 8.12, emulator first); the owner pushes `rl-9-done` and `rl-11-done`.
+
+### Phase 09 batch 10 - every run tree a model; the _deep trees merged - 2026-10-22
+Branch `props/batch10-trees`, from main 6493ed4 (PR #113). Owner's request in chat: make sure all trees are 3D props in
+the style used, and list what else still needs converting. Plan approved with the owner's answers: only what the
+roguelite loads (the hub, its rooms, run towns and the five run biomes; the legacy trees stay parked); the pines keep
+how they look now, adapted as 3D props; this first batch the trees only.
+- Changed (one cause per commit):
+  - **Engine** (c230457): a leaf clip may be a band, a box `[left, top, right, bottom]` in the leaf picture cut without
+    the clump's rim outline (prop-models.js `leafCut`), and a model's picture layer may be pulled toward the eye
+    (`front`, metres: walk/sprites.js passes it as `uDZ`, which the sprite shader had but nothing used). The Studio's
+    leaves part draws a band as a dashed box; its picture layer has the band's four fields.
+  - **Trees** (tools/build-props-batch10.py, swapped in under their own keys): tree_pine, tree_pine_b, tree_pine_small
+    and tree_cypress (ridge), tree_rowan_autumn and tree_giant_autumn (autumn). Conifers: batch 1's trunk, mast and
+    roots, the mast straight; each drawn tier a band of its own (tiers found from the crown's width, `tiers_of`) that
+    sways on its own, the cypress's lobes as clumps; every part centred on the mast and pulled toward the eye by a
+    little more than the mast is thick. The autumn rowan is the rowan's model with its own leaves (as the autumn hazel);
+    the great autumn oak is built as Copperleaf's great oak from its own drawing, without the swing. **tree_larch**
+    (batch 2's) rebuilt the same way: its crown was one picture and its mast showed through it. Showcase map
+    `test_props_wild`. Golden scenes and the frozen scene hash remade on purpose (models keep their size, `s`).
+  - **_deep trees merged** (tools/merge-deep-trees.py, phase 09 task 4): the ten `*_deep` entries go; their placements
+    (10 in the game's maps, 68 in the legacy thicket) and the thicket biome's weights name the base tree; their 20
+    layer pictures (scene/props/layers/*_back, *_front) are deleted. The in-game test's tree pool and build-places-v46.py
+    name the bases. Golden 'feature' (thicket) remade: 582 props -> 581.
+- Where the plan was wrong: the circle clip can't cut a pine's tier (a wide, short band with its own hem), so the
+  band clip was needed. Clumps standing off the mast in depth (the broadleaf way) made a pine zigzag when the camera
+  turned, and the mast showed through camera-facing tiers (the larch already did), hence `front`. tools/prop-sheet.py
+  draws model trees without their leaves (they load after its capture; the game draws them): its pictures can't judge
+  trees.
+- Verified: unit tests 515 (all pass after the remade goldens); headless pictures of `test_props_wild` (front and
+  turned 1.2 rad) and of generated ridge, thicket and autumn scenes (front and turned 1.0 rad): no mast through a
+  crown, no zigzag; no page errors. Every tree and shrub the hub, its rooms and the run biomes place is a model
+  (bush_flower is a flat flower plant, flat on purpose). check-fast 16 of 17 (the one left, "Game data is valid",
+  needs ajv; check-data with its schema step stubbed: 138 files, all fine); smoke 15 of 15. **Not run here:** lint
+  (ESLint's packages), typecheck (the session's tsc is 6.0, the project's 7.0; it reports battle-engine.js errors
+  that aren't from this branch), check:modules and check:data (missing packages: the npm registry is unreachable from
+  this session). CI runs them.
+- Risky:
+  - Sprites per tree: pines 5-9 (were 3 as pictures), cypress 6 (1), larch 5 (1), autumn rowan 7 (1), great autumn
+    oak 18 (3). A ridge route places about 90 conifers. Not measured on a phone.
+  - Trees moved from 34 to 32 px/m are about 6% bigger (batch 1 noted the same for its trees).
+  - The tiers sway separately (the top most); in strong wind check they don't come apart at the hems.
+  - The old pines' depth pictures (scene/props/layers/tree_pine*_lb/_lf.png) and the tree pictures themselves stay:
+    the pictures are the fallback when 3D models are off and the far view.
+- Phone check wanted: a run with a ridge node (pines, larches, cypresses) and an autumn node (rowans, the great oak);
+  turn the camera round a pine; Copperleaf's larches; export the debug log.
+- Next: batch 11, the other standing pictures the roguelite shows: boulder_mossy (thicket), campfire and lookout_tower
+  (the generator places them), the barn (the ranch), wind_sail_flower (Copperleaf), then the six live rooms' 20
+  furniture props (plant_tall, bookshelf, sack, crate_goods, shop_counter, shop_shelf, wall_clock, wall_painting,
+  wall_window, sofa, fireplace, barrel, blackboard, clinic_bed, counter_white, fridge_drinks, haybale_stack, lab_desk,
+  lab_machine, privacy_screen). The flat plants (54) and ground decals (11) stay flat unless the owner says otherwise.
+
+### Roguelite track RL-11 - Hub upgrades, currencies, unlocks - 2026-10-22
+Branch `claude/hopeful-cannon-o98ywr`, from main 6a8a3e7 (PR #112). Plan approved in Plan Mode with the owner's
+answers: **8.5** $ / Capital / Scrap / Audit Seals, Lab = Capital, Ranch and Workshop = Scrap, Airship = Seals; the first
+unlocks: ranch levels, run shop wares, new biomes, milestones; the Workshop shown as coming later; a building's level in
+its label (art later). RL-9b (PR #114, the mast's home Billie and packed bag) merged while RL-11 ran; main merged in
+(both changed runTakeOff, validRun and the run's type: kept both).
+- Changed (one cause per commit):
+  - **main was red**: PRs #110 and #112 each stayed under the ratchet's spacing ceiling, together 2 over (1033 ->
+    1035); the ceiling set to main's count, as UI-6 did after its merge.
+  - **Three data sections** (file, index key, schema, type, check-data block, export): `currencies.json` (four rows,
+    a fifth refused), `buildings.json` (Lab, Airship 2 levels, Ranch 3, Workshop coming later), `unlocks.json` (12
+    rows: Nerve Tonic, Wake-Up Tea, Revives in run shops for 60/60/150 Capital; Airship Lv 2, ridge and autumn lands
+    for 1 Seal each; Ranch Lv 2 and 3 for 40/120 Scrap; milestones: first run +10 Scrap, five runs +50 Capital, first
+    win +1 Seal, fifteen kinds caught +100 Capital). All prices are placeholders. check-data refuses 16 planted faults.
+  - **Conditions** `unlock:<id>`, `runs`, `wins` (read `saveData.meta`; the story checks refuse an unknown unlock).
+  - **logic/unlocks.js**: `unlockReady` (why not), `unlockBuy`, `unlockAuto` (milestones, hub only, chained),
+    `unlockTidy` (on load: lost ids dropped, `meta.buildings` rebuilt from the owned rows), `runUnlocks` and
+    `unlockOpen` (a weight table filtered by a run's copy), `unlockRows`.
+  - **A run's copy** `run.unlocks` (optional in `validRun`: a run from before keeps everything open, no save set aside).
+    `runTakeOff` sets it and makes the map from the open biomes; a run town's shop draws from the open wares.
+  - **Milestones** granted after the payout and when the world shows at boot (hub only), a toast each.
+  - **The Lab board** (`lab-board.js`, `lab.css` on tokens only): the hub's Lab tab is shown; chips, a section per
+    building with its level, the Workshop coming later, the milestones. Hazel's lab machine is the "Unlock board"
+    (act `board`, also in build-interiors.py and the Studio's act list) and opens the tab.
+  - **Upgrades at their buildings**: the ranch's sheet sells its levels, the Copperleaf mast's sheet the airship's
+    rows; labels read "Ranch · Lv 2", "Airship station · Lv 2".
+  - **Checks and debug**: `?fixture=lab`; check-fast's Lab step; the in-game test's "The Lab: unlocks";
+    `unlocks.test.mjs` (7); debug menu "+500 Capital, +2 Seals"; the debug log's meta line has the unlock ids and
+    buildings' levels (no names).
+- Where the plan was wrong: no `hub.js` (the board is the Lab tab UI-5 kept hidden for it); `won:bracket_N` can't be
+  built before Brackets (RL-13), so `runs`/`wins` instead; no `door` field (a row's `at` or `when` is its door); no
+  building art per level (labels instead); grants needed no effect system (RL-12). The quick check's picture baseline
+  is not in git (CI makes it), so there was no baseline commit to make: the hub's pictures change (the bar's Lab tab).
+- Verified: unit tests 523; lint, typecheck, modules, format, check-data; smoke 15 of 15; check-fast 18 of 18 (its
+  screens step updated for the Lab tab); the in-game phases "The Lab: unlocks" and the ranch's alone in a browser,
+  nothing written while they ran; headless at 390 x 760: the board, the ranch's and the mast's upgrades, the lab's
+  machine. After merging main (RL-9b): unit tests 527, smoke 15 of 15, check-fast 19 of 19 (one earlier full run
+  failed RL-9b's "Packing for a run" when its take-off took over the step's 30 s wait on a loaded machine; it passes
+  alone in 26 s and in the next full run). **Not run**: the full quick check (the PR was asked for first).
+- Risky / open:
+  - **New players lose wares and lands until unlocked**: Nerve Tonic, Wake-Up Tea and Revives left run shops, and
+    ridge and autumn left run maps. Runs were already lost on the placeholders (the run sim, RL-8); without Revives
+    they may be harder. Prices and milestones need a play.
+  - A Seal comes only from a win (and the first-win milestone), so the airship's rows are far away for now.
+  - The run sim, the fixture's run and the in-game test's run are made without `runTakeOff`, so they keep everything
+    open: they don't test the locked shop or map. unlocks.test does.
+  - Milestones met mid-session in the hub (e.g. the fifteenth kind caught in Copperleaf) pay after the next run or the
+    next load.
+- Phone check wanted: open the Lab tab (+500 Capital, +2 Seals in the debug menu if needed), buy Revives; at the
+  ranch's sheet buy Ranch Lv 2 (a third slot; the barn's label says Lv 2); at the mast buy Airship Lv 2, then Ridge
+  lands; start a run and find Revives in a town's shop and a ridge place on the map (not always: drawn by weight);
+  tap the machine in Hazel's lab; export the debug log.
+- Next: the owner pushes `rl-11-done` (sessions can't push tags); RL-10 and RL-12 are under way in other sessions.
+### Roguelite track RL-9b - Ranch A, second half: 1 home Billie and a packed bag - 2026-10-22
+Branch `claude/dazzling-darwin-jvooys`, from main 6a8a3e7 (PR #112). Plan approved in Plan Mode with the owner's
+answers: the pack holds items and coins, 5 in all at Bracket I, on top of the run's gift; on a win the run's bag goes
+home and pays no Capital (a loss pays it as before); the home Billie from the team or storage (a trainee stops, the
+traveller leaves healed); the run fixture and the debug runs follow the rule. No `rl-*-done` tag is on the remote yet
+(sessions can't push tags).
+- Changed (one cause per commit):
+  - **UI lint was red on main**: RL-9's ranch card CSS (`margin: 2px 4px 0`) merged after UI-6 set the ceilings
+    (space 1035 > 1033); now `var(--s1) var(--s1) 0` (its top gap 2 -> 4 px).
+  - **Rules**: `run.home` [1] and `run.pack` [5] by Bracket (placeholders); types, check-data.
+  - **Logic** (run-state.js, run-loop.js): `runBegin` takes `home` (uids from the team or storage) and `pack` (taken
+    from the hub's bag, never more than it holds; added to the gift); `run.home`, `run.pack`, the buddy a run field (the
+    traveller walks with you, the hub's comes back). `runEnd` puts a kept Billie back where it lives, team **or
+    storage** (the trap RL-9 found), and on a win adds the run's items and coins to the hub's bag; the payout's items
+    line is 0 on a win and its row left out. `runReleasePays` reads `runHome` (a storage traveller released pays
+    nothing). `runByTier` reads the Bracket lists. A run saved before RL-9b reads its home as `run.start.team`.
+  - **The mast's start sheet** (run.js): "Who comes from home" (pick cards: team, then storage, "training" named; the
+    buddy picked first) and "Pack the bag" (each item and coin with − and +, "n of 5"); it opens again in place on a
+    tap, its scroll kept. `runTakeOff(seed, map, mods, pick)`: without a pick (the debug menu, tests) the default pick
+    and nothing packed; a trainee's training stops first (`ranchStop`), everyone at home is healed (`healAll`).
+  - **Fixture**: `?fixture=run`/`mountains` take the lead alone.
+  - **Run sim**: the policy picks as the mast does; `--team` is Billies at home, `--pack=N` packs Potions.
+  - **Checks and debug**: check-fast "Packing for a run" (ranch fixture); the in-game run phase checks a party of one
+    and the hub's team untouched; the debug log's run line has `home` and `packed` (counts only).
+- Where the plan was wrong: the trap had two more faces than HANDOFF said: the release payment and the payout's
+  "from Copperleaf" read `run.start.team`, and the buddy wasn't a run field (with one traveller the hub's buddy would
+  have been missing on the run). Nothing in `ranch.js` needed to change: a trainee picked is simply stopped.
+- Verified: unit tests 519 (4 new run-state tests; the payout test changed on purpose); lint, typecheck, modules,
+  format, check-data (planted faults caught); check-fast 17 of 17 after the fixture change and the new step alone (it
+  turns red with the old trap planted); smoke 15 of 15; the in-game phases "A run's road", "A run: airship, nodes,
+  payout" and "The ranch" alone; headless pictures (390 x 760) of the start sheet. The full quick check: running at this commit (its result in the next commit).
+- Sim (50 runs, report only): one Lv 5 starter wins none and loses on the landing in 31 (as on main); three at home
+  is now the same as one (main's three-starter party also won none, losing at the mini-boss 20 times); five Potions
+  packed: lost on the landing 31, route 9, town 9, mini-boss 1, Capital 121.5 (82.3 without).
+- Risky / open:
+  - Balance: one Lv 5 Billie a run is hard (the sim's crude policy loses most runs on the landing). The owner's play
+    decides `run.home`, `run.pack` and the gift; all are placeholders in rules.json.
+  - Take-off now heals everyone at home and plays the heal sound.
+  - A run saved before this update keeps going with its whole team (its home read as `run.start.team`).
+  - The sheet re-renders on every tap (as the payout's picker does); on a phone with many Billies in storage it is a
+    long sheet: the cards come first, the bag below.
+- Phone check wanted: at the mast, "Start a run": pick a Billie from storage, pack two things, take off (a party of
+  one, the bag); give up, keep it: it is back in storage with its run's levels; a short debug run won: the bag in
+  Copperleaf's; export the debug log (`home`, `packed`).
+- Next: the owner pushes `rl-9-done` (the end of RL-9); then RL-10 (Ranch B) or the balance pass with these numbers.
+
+### Roguelite track RL-9 (first half) - Ranch A: the building, storage, training - 2026-10-22
+Branch `claude/great-hamilton-bj2wsa`, from main 9760857 (PR #108, TR-3). Plan approved in Plan Mode with the owner's
+answers: **8.2** 1 home Billie a run at Bracket I; **a packed bag**: at the mast you pack a limited bag from
+Copperleaf's bag, which keeps everything you've gathered; the ranch's sheet trains and shows storage (the Team tab
+keeps storage too); Scrap from a payout row; training by slots, a level cap and real time. Split in two: this half is
+the ranch; **RL-9b** is the run's start (the pick of 1 home Billie and the packed bag). Mid-session asks: rooms a
+little smaller (done); the deleted art/background left to another session (not touched here).
+- Changed (one cause per commit):
+  - **update-check.js's generated imports** remade (`toast` moved to overlay.js in UI-5): typecheck and
+    check:modules were red on main and the module failed to load.
+  - **Rules** (rules.json `ranch`: slots 2/3/4 by ranch level, cap 15 + 10 a level, 8 h banked, a level every 2 h,
+    5 Scrap to start, a minute's clock slack; `run.payout.scrapNode` 2, `scrapWin` 10; all placeholders): types and
+    check-data blocks.
+  - **logic/ranch.js**: `ranchLevel/Slots/Cap`, `ranchCanTrain`, `ranchTrainStart` (pays), `ranchXp` (each level its
+    own size of XP, never past the cap), `ranchBanked`, `ranchCollect` (through `gainXp`: levels, HP, moves, and the
+    evolution offer as in battle), `ranchStop`, `ranchTidy`. The clock is passed in; a clock more than `guardMs`
+    behind a trainee's start pays nothing and starts it again. `toTeam` collects and stops a trainee; `migrate`
+    tidies trainees that left storage.
+  - **Scrap from a run**: `payoutOf` pays it, `runEnd` adds it to `meta.scrap`; a chip on the payout screen (not a row:
+    the rows add up to Capital), the toast home, the Map header, the debug log.
+  - **Rooms smaller**: 14 x 11 m → 12 x 10, 18 x 12 → 16 x 11. tools/build-interiors.py builds the new sizes (`SIZE`,
+    `fit()`); `--shrink` remade every stored room's walls and floor and kept its own props (moved in), lines and keeper
+    spot, so the Studio's edits stay. Granny Juniper's furniture spots moved the same way; one window cleared.
+  - **The ranch**: a barn in Copperleaf (x 22, z 41.5, the meadow by the farm patch; act `ranch`, label Ranch) into
+    `int_barn` (`ROOM_BY_USE.ranch`), open at all hours; inside, a "Training board" (the blackboard) and the rancher
+    open the new **ranch-screen.js** sheet: Scrap, level, cap; trainees with their way to the next level and Stop;
+    storage with Train and To team. Opening it collects. The Studio's act list has `ranch`.
+  - **Checks**: `?fixture=ranch`; check-fast's ranch step; the in-game test's "The ranch: training between runs";
+    `tools/test/ranch.test.mjs` (6).
+  - **Debug**: "Age the ranch by an hour", "+50 Scrap"; the debug log's `ranch` line (numbers only).
+- Where the plan was wrong: Copperleaf had no barn and `int_barn` no acts, and the barn's opening hours would have
+  closed the ranch at night. Scrap and `meta.buildings` were never used. No `buildings.json` stub (RL-11 designs it with
+  the costs). Pens and the walkable yard are not built (8.16's first cut). The "quick-check step that edits it"
+  (TESTING phase 12) is check-fast's ranch step: it edits, moves the clock and reloads.
+- Verified: unit tests 510; lint, typecheck, modules, format, check-data; smoke 15 of 15; check-fast 17 of 17; the
+  in-game phase alone in a browser; headless pictures (390 x 760) of the barn, the room, the sheet and the smaller lab.
+  The full quick check: see the PR. Browser checks ran with art/background put back locally (not committed), since
+  main still loads it.
+- Risky / open:
+  - Training's numbers are placeholders; a Billie in storage gains about four levels in 8 h at Lv 5-15.
+  - A level-up in training can open the evolution offer when the ranch opens (as in battle).
+  - The home's furniture spots and the shrunk rooms were looked at headless only.
+  - main still loads the deleted `art/background` pictures (another session is on it).
+- Phone check wanted: walk to the barn (west of the lab, by the crops), in, tap the board; Train a Billie from storage
+  (+50 Scrap in the debug menu if you have none); "Age the ranch by an hour" twice and open the sheet again (a level);
+  a run's payout shows Scrap; rooms feel smaller; export the debug log.
+- Next: RL-9b (the mast's pick of 1 home Billie, the packed bag of `run.pack` items, a kept storage Billie on a loss,
+  items home on a win, the run sim's policy), then the tag `rl-9-done`.
+### Terrain track TR-2c part 1 - Grass patches, wild Billies in them, the dust puff - 2026-10-22
+Branch `terrain-generation`, restarted from main 9760857 (PR #108, TR-3, was already merged). Plan approved in Plan
+Mode with the owner's answers: remove what loads the deleted art/background (not restore it); TR-2c in two sessions
+(this one: grass, encounters, dust puff; next: road pathfinder and the four mountain route types); wild Billies in any
+patch; grass patches in runs now.
+- Changed (one cause per commit):
+  - **update-check.js** imports toast from overlay.js (npm run modules regenerated it; main had ui.js).
+  - **No art/background** (main deleted the folder): the pixel sky draws its gradient in code (the old pictures'
+    colours, no clouds); the title, Trainer card, route card and wide-screen backdrop use a gradient in sundown's
+    colours. The fast check's 404 on every page is gone. The Studio's Art section still has a "Rebuild sundown.webp"
+    card for the background group (harmless: no files there).
+  - **Grass patches** (mapgen.js `mapgenGrassPatches`, terrain-track.md "TR-2c part 1 as built"): 3-6 ragged ovals of
+    15-70 m², the first across the road on the way west, road cells under it too; `scene.grassPatches`.
+    MAPGEN_VERSION 6; golden scenes and the scene hash remade on purpose.
+  - **Encounters**: on a place with `grassPatches`, wild Billies wait in any patch (no 13 m or path rule there);
+    seamless-world.js copies the patches into the drawn scene. Copperleaf unchanged.
+  - **Dust puff** where you land off a ledge (six puffs, none with reduced motion).
+- Where the plan was wrong: `grass` was already a scene key (a room's grass blades, a seamless look key), so the
+  patches are `grassPatches`. A version bump has no "left" path: `run.mapgenV` is never compared, so a run already
+  going remakes its scenes with patches on its next load. "One patch a ledge or side path skips" isn't built: routes
+  are open, so any off-road patch can be walked round.
+- Verified: unit tests 507 (new mapgen-grass.test); lint, typecheck, modules, format. Sweep of 120 dial sets: every
+  one has a patch across, 4-6 patches, 15-70 m² (median 43), every exit reached, no trap. In the page (run fixture
+  landing): 241 encounter spots, all in patches, up to 55 m from the middle; its 4 wild Billies all in patches; a 1.2 m
+  drop hops and puffs, no errors. check-fast 16 of 16 after the art fix and again after the grass work.
+- **Not verified**: smoke had 2 timeouts (the in-game full test, the Studio's screenshot) while the fast check ran
+  alongside on the same machine; see the PR for the re-run alone. The full quick check was not run.
+- Risky:
+  - Much less tall grass: about 220 m² a scene (was 770) and 80 grass props (was 315); 517 props a scene (was 755).
+    Cheaper on the phone; the land may look barer. The dial's floor (3 patches) and sizes are `MAPGEN_GRASS_PATCH`.
+  - Wild Billies can now stand far from the middle (55 m): the spread is for the phone test to judge.
+  - The patch across the road turns a few metres of road into tall grass (Gen 3's look); on the phone it may read as a
+    gap in the road.
+  - The sky behind the menus has no clouds now.
+- Phone check wanted: start a run, walk west from the landing through the grass across the road, find the wild
+  Billies in the patches; the debug run "Mountains and ledges": hop down a ledge (the dust puff); the title and the
+  Trainer card (the gradients); export the debug log.
+- Next: the owner pushes `tr-2c-1-done` (sessions can't push tags); TR-2c part 2 (the road pathfinder through tiers
+  and the massif, reusing mapgenTrailSearch, for 15 m+ summits; the four mountain route types; generated gorges with
+  rope bridges: structures.js already draws `kind: 'rope'`).
+
+### Terrain track TR-3 - The camera on tall ground - 2026-10-22
+Branch `terrain-generation` (the owner's name for it), from main dcced21 (PR #105, TR-2), main (UI-5) merged in at
+the end. The owner chose: TR-3 now, the rest of TR-2c next on the same branch in a new session, one PR. Plan approved
+in Plan Mode (silhouette a dark blue tint about 55% dithered, rise capped at 18 degrees on top of the old 9).
+- Changed (one cause per commit):
+  - **Camera rise** (walk/camera.js, new logic/camera-rise.js `cameraRiseNeeded`): the line from the eye to your head
+    tested against the standing height at ten points 1.2-27 m back; the camera tilts down further until it clears by
+    0.4 m, up to Engine > Camera > "Rise on tall ground" (18 degrees, 0 off), and comes up to 15% closer; quick up,
+    slow down; none indoors, in rooms, with the free camera or a focus. The debug log's run line has `camRise`.
+  - **Rock fade** (walk-shaders.js `ROCK_GLSL`, draw-common.js `setRockUniforms` from `useWalkProgram`): ground, walls,
+    sprites, grass, water, waterfalls, solid props and trees, voxel props and low-poly models nearer the camera than
+    you and 0.5 m above your feet thin out in a soft circle round you (up to 80%). On only while ground cuts the line
+    (the camera's `rockK`). Buildings keep their own fade. Setting "Rock fades in front of you".
+  - **Silhouette** (sprites.js `drawPlayerSilhouette`, gpuPass and debug-log timer `silhouette`): the player drawn again
+    after the structures, depth GREATER, no depth writes, pulled 0.6 m toward the eye along each corner's line of sight
+    (sprite shader `uGhostV`), a dark blue dithered tint (`uGhost`). Setting "Your silhouette through rock".
+  - **Shadows**: the near shadow map is centred at your height (engine/light.js `beginSunShadow` cy).
+  - **Debug**: the mountains run (`dbg_mountains`) has massif `NS` (was `N`); the debug log's `mountains` read the drawn
+    scene (no `gen`, always 0) and now reads the place's map.
+  - **Checks**: `?fixture=mountains`; check-fast's "Tall ground" step; `tools/look-tall-ground.py` (five pictures,
+    validation/tall-ground/, ignored); tests camera-rise and tall-ground-draw.
+- Where the plan was wrong: rise alone can't clear a massif 3-14 m away (17 m of rock would need about 80 degrees):
+  the fade and the silhouette carry the worst spots. The fade had to reach trees and models too, not only "steep smooth
+  ground", and it had to switch on only when ground cuts the line, else trees and signs in front of you would thin out
+  in Copperleaf. check-fast takes no pictures by design, so its new step checks the state and the pictures come from
+  the separate script. Walls aren't a separate index block (terrain-track.md "TR-3 as built").
+- Verified: unit tests 496; lint, typecheck, modules, format; smoke 15 of 15 after each step; check-fast 14 of 14
+  before the merge (Tall ground: 16.9 m of rock, rise 18 degrees, fade and silhouette on, off on flat ground); no
+  walkable cell of Copperleaf (4,670) or of a normal run's landing (4,070) turns any of it on; pictures of the five
+  settings at the worst spot of the fixture's landing.
+- **Not verified**: the full quick check (stopped for the merge, never finished). **After the merge check-fast fails on
+  every page because main's last commit (6f7ae74, "Delete game/art/background directory") removed pictures the game
+  still loads** (art/background/sky_light.png, cloud_light_*.png: 404, then the loading screen never goes). Not this
+  branch's; main fails the same way. The owner decides: bring the folder back, or remove what loads it.
+- Risky / open:
+  - Phone cost not measured: about a 4x4 matrix product more per pixel in the drawn shaders while the fade is on (a
+    uniform early-out when off), one extra player draw, ten height samples a frame. The owner's debug log from the
+    Mountains run (frame times, `camRise`) answers it.
+  - The fade's circle is fixed on screen (0.3-0.46 of the height); on a wide screen the hole may look small.
+  - The far shadow map and the mist still sit at absolute heights.
+- Next: the owner pushes the tag `tr-3-done` (sessions can't push tags) and plays the Mountains run on the phone. Next
+  session on this branch: the rest of TR-2c (the hop arc already exists in walk-view.js updatePlayerHeight, only the
+  dust puff is left; tall grass patches, waiting on wild Billies beyond 13 m of a place's middle; the main-road
+  pathfinder through the massif, reusing mapgenTrailSearch; the four mountain route types; generated rope bridges,
+  which the renderer already draws). Then the PR to main.
+
+### Roguelite track RL-8b - Run look - 2026-10-22
+Branch `ccr-b71dfee2-w5pwgh`, from main dcced21 (PR #105, TR-2). Proposed in RL-8's "Next"; the owner asked about
+combining it with RL-9 (advised against: different areas, 4 sessions), then "Start RL-8b". Plan approved in Plan Mode,
+with the owner's answers: rooms by lowering the shared dials (data only); a medium island (about a fifth of the
+bowl's radius); a run laid across the bowl, no hub on it. Started without `rl-*-done` tags on the remote (the owner
+knew; sessions can't push tags).
+- Changed (one cause per commit):
+  - **Rooms darker** (a807353): all 22 `int_*` rooms and `test_light_room` share one look from
+    `tools/build-interiors.py`, with the sky light (`sun.ambient`) at 1.75 where the game's default is 0.2: now 0.5,
+    exposure 1 (was 1.12); the builder writes the same, so `--force` won't bring the old light back. `roomLight`
+    stays off (the owner's Studio choice of 2026-10-20). Headless, the lab at 13:00: brightness 146 (washed out) to
+    105, the town outside 142.
+  - **An island world for the bowl** (c3e7808, logic/bowl.js): the sea's settings take `island` (a radius, worldmap.json)
+    or `isles` (rounds of land, from code); then no share quantile and no land rising to the rim: land is the places,
+    roads and rounds, the coast where the distance past them plus the seeded noise crosses 0, sea always past
+    `BOWL_ISLE_RIM` 0.86. Without them nothing changes.
+  - **A seed for the bowl's noise** (749ca4e): the look's `seed` moves the hills, headlands, ground patches, tree
+    clumps and clouds (`bowlSeedShift`); 0 moves nothing (the hub's picture is as before).
+  - **The hub is Copperleaf's island alone** (f2e9eb1): worldmap.json `sea.island` 0.2, rough 0.8. Checks changed on
+    purpose: bowl-sea's game-data sea test (now one island, 90-99% sea), the fast check's and the Bowl map test's
+    rivers (1+ on an island) and sea share (70%+), the Studio Check's 30-50% warning (not on an island); the Studio's
+    World map look has an Island dial. The camera is unchanged: its home view already frames the island.
+  - **A run laid across the bowl** (c4c5370): `RUN_BOWL` is a line from the landing near the east rim to the boss near
+    the west (x 0.72, rows 0.18 apart at most, lanes 0.1, bowed 0.06 north). A bowl spot can carry `up` (the way its
+    map's north faces): `bowlCompass`, `bowlSeamTurn`, `bowlMapPoint`, `bowlMapTurn` take it, and the bowl's stamps,
+    things and walk-scene horizon read their compass from `bowlCompass` (three copies of "north to the centre" gone).
+    Run places are `up` 90, so their maps sit square east to west.
+  - **Copperleaf off a run's map** (6bbd485): a spot can be `off`: no land, relief, ground, stamp, things, routes,
+    weather, pin, tap or list row. Copperleaf stays world node 0 in a run (flying home, the save's checks).
+  - **A run's own world map** (e4fff0f, new logic/run-bowl.js `runBowlLook`): from the seed (stream 'bowl'): a round of
+    land under each place (its whole map on land), 3-5 lobes along the way, 3-6 islets; its own coast and noise
+    seeds; near each place its biome's ground (biomes.json), between them the run's commonest biome's ground and
+    trees. `worldPut` takes it (`worldExtra.look`), `worldHubBack` drops it, `worldMapLook` reads it.
+  - **The latest deploy, always** (a1faf85, the owner's ask mid-session): sw.js asks past the browser's cache
+    (no-cache; GitHub Pages lets files be kept 10 minutes, so a load right after a deploy could mix two builds), the
+    worker registers with updateViaCache 'none'; the build names each deploy (vite.config.js stampBuild: the commit,
+    in dist's version.js PB_BUILD and build.json); new update-check.js asks for build.json at start, on coming back
+    to the screen and every 10 minutes, and on a new build saves and reloads when nothing is going on (no battle,
+    cutscene, flight or window), after the worker updates; once a session per build. The debug log says which deploy
+    (`deploy`). Off without a build (Start-Game, the checks).
+- Risky:
+  - The update reload is new behaviour on the phone: it was tried only in headless Chromium against the built site
+    on a plain local server (no 10-minute cache there). If a reload ever lands at a bad moment, `updateSafe` in
+    update-check.js is the list of moments it waits for. Art can still show one load late after it changes (it comes
+    from the cache first, refreshed behind).
+  - Every run already going moves its pins and land on the map (spots are never stored); nothing saved changes.
+  - The run's land is worked out at run start and on resume as before (headless about 190 ms, the hub's 160-210 ms);
+    the phone's time is in the debug log only if the Bowl map test is run.
+  - Run places' red blocks on the headless map are the landmark standees drawn without their pictures (the old
+    "red block" seen on Copperleaf since RL-7, headless only as far as known): a run now shows one per place. Look on
+    the phone; if they are red there too, that's a fix of its own.
+  - The airship flight and the walk scenes' far horizon draw the same bowl: in the hub they now show sea all round
+    Copperleaf. The fast check's flight lands; nobody has looked at the horizon on a phone.
+  - Rooms' light is tuned by eye on headless shots (software drawing); the owner's phone decides. The Studio's Engine
+    section, "This scene", sets one room's look; the 23 share the builder's.
+- Verified: unit tests (495), lint, typecheck, modules, check-data, format on the touched files, the whole fast check
+  (13 of 13) and smoke (15 of 15) after the last code commit; the full quick check (run during the docs, 31 min): 45 of 54, the 9 that fail are
+  the 9 stale steps that fail on main too (v34, v35, v38, v39/40, v43, v44's props scene, v46, alpha 0.4's shapes,
+  phase 08's running after the alpha steps); "Time, weather and rooms" passes with the new room light (the lab's
+  brightness 105 by day, inside the light lab's 40-215). Pictures (headless, 390 x 760): the
+  lab before and after; the hub's map (one island, sea to the rim); runs from two seeds (two maps) and one seed twice
+  (the same map).
+- Phone check wanted: after this deploys, keep the game open in the background, let the next deploy go out, switch
+  back: it should reload by itself (the debug log's `deploy` is the new commit); the Map tab in Copperleaf (the island); start a run and open the map (its own land, the landing
+  in the east); walk a seam and look again; Fly home (the island again); the lab and Granny Juniper's cottage by day
+  and at night; export the debug log.
+- Next: the owner pushes the tags (`rl-1-done` .. `rl-8-done`, `tr-2c-done`, `rl-8b-done`) and plays the phone check;
+  then RL-9 (Ranch A; open questions 8.2's per-run cap on ranch Billies, 8.16, 8.17). Left from the first play: the
+  balance tuning with the run simulation's numbers.
+### UI track UI-5 - Every screen onto the kit - 2026-10-22
+Branch `ccr-0284fd60-fx7dki`, from main ca9aa54 (RL-8 merged and played); main merged in twice since (RL-8's
+follow-ups, then TR-2: mountains, trails, ledges, runs east to west). Plan approved in Plan Mode; the owner's
+answers: RL-8 played; one session (not split); per screen move, then reshape; swap the bottom bar now (my
+recommendation for it taken: no Walk tab, the Guide from the Trainer card).
+- Changed (one cause per commit; about 50 commits):
+  - Setup: the dead gender pop-up deleted; tools/style-diff.py (computed styles of 33
+    screens and states, light and dark, against a git revision; the proof that a move changed nothing); the fast
+    check's "Every screen opens with its parts" (by the buttons a player taps) and a run town's shop; the icon test
+    reads every game script; the fast check's world map step no longer tripped on a postcard (it failed ~1 run in
+    3; TR-2 fixed the same flake by waiting for the postcard to close, and the merge keeps that fix alone).
+  - JS: ui.js 3,048 -> 441 lines (about 170 of them the generated header): ui-bits, overlay, pending-windows,
+    pixel-sky, profile, guide, team, billie-sheet, map-tab, walk-tab, walk-control, battle-input; openSettings into
+    settings-screen.js. A screen's click cases became `<screen>Action(a, d)`, called from the switch at the same place.
+    ui.js keeps the router (render, the top bar, the bottom bar, openTab, startGame) and the input listeners.
+  - CSS: the old layers (style, battle, polish, screens, v05) 10,602 -> 4,117 lines: one file per screen (shell,
+    walk-tab, map-tab, team, billie-sheet, guide, profile, bag, shop, settings, battle-screen, talk, dressing-room,
+    debug-menu, title, things-to-do, friends), loaded after v05.css and before the kit; every move shown the same by
+    style-diff; rules a later old rule overrode at equal specificity stay put. 75 rules nothing used deleted: the
+    unused-CSS list 72 -> 2 (both the kit's motion.css).
+  - Reshape: ui-kit.css .k-panel/.k-card/.k-btn/.k-action/.k-tab (the family outlines from uiTheme.json, the edge
+    line in ::after); every .pb button (gold: the long hexagon), the top bar (a clipped ::before, the portrait breaks
+    out), title boxes and section panels, Walk, Map, the Trainer card, the Guide, Team's storage, Bag, shops, Settings'
+    presets, tabs, segmented choices and pick rows.
+  - The bottom bar: <pb-nav-bar id="nav">, the hub's or a run's set (Map, Team, Bag; Lab and Relics hidden until
+    RL-11/RL-12); no Walk tab (the open tab again, or Esc); the Guide from the Trainer card; the kit's labels through
+    i18n.js i18nText. Checks changed with it.
+  - Docs: ui-track.md ("UI-5 found", row done), ROADMAP, TESTING, CHANGELOG.
+- Where the plan was wrong: see ui-track.md "UI-5 found" (the cascade makes a CSS move not a move; the target files;
+  "moves only" vs a visible change; one test per screen didn't exist).
+- ui-lint (start -> end): radii 167 -> 155, spacing 1,098 -> 1,033, shadows 195 -> 179, times 281 -> 269, CSS
+  colours 745 -> 663, !important 207 -> 196, blurred rules 30 -> 29, innerHTML writes 57 -> 56; keyframes 77, fonts
+  18, layers 61 and style= strings 43 unchanged. Report only; UI-6 enforces.
+- Verified: the fast tier at every commit (lint, typecheck, 473 unit tests, modules, format, data, build); smoke
+  (15 of 15) and the new screens check before every game commit; the UI gallery's 89 pictures after every CSS or kit
+  change (remade once, on purpose, when .pb took the button shape); tools/style-diff.py 0 differences on every move
+  (33 of 33 screens at the end of the moves); the style diff, the screens check and the icon test each seen to fail
+  on a planted fault. Phase end: the whole fast check (15 of 15); the full quick check in parts (the container
+  restarted during one whole run): every step passes except v34, v35, v38, v39/v40, v43, v44, v46, "alpha 0.4:
+  props made of shapes" and, when run after the alpha steps, "phase 08: running" (it passes alone) - each red the
+  same way on main ca9aa54 (the roster of 24, props and buildings data, the step order); the Studio check's ui,
+  ui_tools and ui_screens; --selftest: 12 of 13 steps, the in-game test red on "Light lab" and "Opening: falling",
+  both the same on main. The debug log's privacy check after the overlay move. Seen on headless pictures: every
+  reshaped screen, light and dark; the bar in the hub and on a run; Dutch tab labels.
+- Risky: the reshape is judged on headless pictures only; the phone is the judge. A clipped part loses its outer
+  shadow (as UI-2's old sheets did). Inset frames (the Trainer card's gold) stay rectangular inside the cuts. The
+  kit's outline rule carries one !important (square corners) against v05's own; it goes with v05. Moving the nav to a
+  shadow tree: the tap-target and safety steps no longer see its buttons (the kit sizes them). Screens the style diff
+  has no view of kept their CSS where it was (the opening, the postcard pop-up, the flight, joystick, photo mode,
+  workshop, fishing). Parts given a kit class become position: relative unless their own rules place them (the place
+  card and the Walk sheet among them; their children looked right in the pictures).
+- Found for UI-6: the Studio's overlays on the gallery count 15 tap targets under 44 px and 45 texts under their
+  contrast; Team now blurs 2 surfaces (UI-3b: 4).
+- Phone check wanted: every tab and the world, light and dark; the bar in the hub and on a run (`?fixture=run`); the
+  open tab tapped again; the Guide from the Trainer card; a sheet, the shop and Settings; text size large.
+- Next: the owner merges and pushes `ui-5-done` (and `rl-8-done`); UI-6 (old layers gone, lint enforced,
+  accessibility) or RL-9.
+
+### Terrain track TR-2 (TR-2a mountains, TR-2b trails, TR-2c ledges) and runs east to west - 2026-10-21/22
+Branch `ccr-526699d5-vjfbk5`, from main ca9aa54 (PR #103, RL-8's last commits; the owner: "RL-8 is done"). Plan
+approved in the session ("Start"), then changed twice by the owner mid-session: "take way more inspiration from how
+routes are built in Pokémon Gen 3-5" (research, then the plan adapted) and "runs should go from east to west".
+- Changed (one cause per commit):
+  - **TR-2a, mountains** (mapgen.js): `land.mountains` (0-1, up to 20 m) and `land.massif` (east and west, one side,
+    back, north and south, back and sides, all round), kept in the dials only when given, so scenes made without them
+    are byte for byte the same (no MAPGEN_VERSION bump for it). Ridged noise on warped ground under a massif mask with
+    a ragged foot, its own `relief` seed; none near the road, hub, exits' stretch of edge or water. A quarter of the
+    height is smooth land, the rest step-grid shelves a terrace's height apart, so steep ground is cliffs with scree;
+    nothing planted across a cliff. Studio Generate card: the two dials and a "Mountains" reroll.
+  - **TR-2b, mountain trails** (mapgen.js mapgenTrails, mapgenTrailSearch, mapgenCarveTrail): a footpath from the road
+    up each massif side to a summit (highest gentle corner, 4 m in, 7 m from pinned or joined edges). Searched on a
+    2 m grid with its heading (turns cost, hairpins most) within a 0.56 grade, avoiding water and smooth land steeper
+    than 0.8; carved 1.8 m wide, starting level with the road cell, each cell's height from where it falls on the line,
+    landings at hairpins, cuts below the land as negative raises (hand-made maps have them), stone steps where steep,
+    ramps where gentle; a flat summit pocket, a marked spot `scene.spots: [{ kind: 'summit', x, z, y }]`.
+  - **The reach check** (`mapgenWalkGrid/Reach/Unreachable`) takes `{ slope: true }`: the game's slope rule (over 1.05
+    blocks) and steps measured on the whole standing height (smooth land plus raise), a bridge's deck walked. Off by
+    default, so the old tests keep their meaning.
+  - **Runs go east to west** (the owner): runSceneExits gives `east`/`east2` back and `west`/`west2` ahead; two links a
+    side at 10 m and 54 m along the 64 m edge (t 0.15625, 0.84375: whole metres, the seam rules' 44 m); every run
+    scene's east and west edges pinned to height 0 (new mapgen `pin`), since two parents' strips overlap on a 64 m edge
+    (a 0.63 m step before); the run on the bowl is an arc on the south side, clockwise (RUN_BOWL a 270, span 120, r
+    0.62). MAPGEN_VERSION 5 after merging main, where RL-8 took 4 (a run saved going north is left). Then, alone, the rename runExits `north/south` ->
+    `ahead/back`.
+  - **Debug**: the debug menu's Runs section has a "Mountains" box (the run's mod `dbg_mountains` in `run.mods`, so a
+    reload makes the same scenes: mountains 1 on each scene's north side, with trails); the debug log's run line has
+    `mods`, the place's `mountains` dial and `groundTris`.
+  - **TR-2c, ledges and pockets** (the owner: "be inspired by how the routes work, don't copy them"): a `land.ledges`
+    dial (kept only when given). The terraces' south fronts (toward the camera) dropping 0.35-1.8 m are walked as
+    whole fronts (they zigzag) and cut into 3-10 m pieces, ledges by the dial's share (stepm flag 16: hop down, never
+    climb), with a flight of stone steps now and then (a third of the time, at least every 24 m) as the way back up:
+    the shelf above is a lane beside the road you drop off anywhere. `mapgenTraps` / `mapgenUntrap`: on the finished
+    scene no ledge drops you where you can't walk back from. Pockets: two marked spots (`scene.spots` kind
+    `pocket`) at the end of the longest walk, raised shelves first. `mapgenReach` with `{ slope: true }` honours ledges
+    and returns walk distances. The debug run is now "Mountains and ledges"; the Studio has a Ledges dial.
+  - Docs: terrain-track.md (the Gen 3-5 research with numbers and sources, what it changes, the owner's answers, TR-2
+    split into 2a/2b/2c, ledges moved from TR-5 to TR-2c), roguelite-track.md (east to west), ROADMAP, TESTING,
+    STUDIO, CHANGELOG.
+- **The research** (terrain-track.md "How Pokémon Gen 3-5 build their routes"): wikis refused direct reads, so the
+  numbers come from the Emerald decompilation's own map data (pret/pokeemerald), decoded for 13 land routes: 31-65%
+  walkable (median 47%), 1-3 walkable levels, 10-80 ledge tiles (mostly jumping south), 3-6 grass patches of 15-70
+  tiles, 4-17 trainers seeing 1-7 tiles (median 3), 1-9 items and 0-5 hidden ones, a gimmick a route. The owner chose:
+  walkable to 15 m+ in one scene, routes stay open (70%+), ledges jump south.
+- Where the plan was wrong: TR-2 was far too big for one session (split 2a/2b/2c). The terrain track's "big relief on
+  the free E/W sides" is now north/south (runs east to west). A massif side with an exit gets no mountains (by design:
+  exits' edges stay low), so on a run the free sides are north and south only. My first 15 m sweep bound was wrong
+  (the probe had exits on the mountain sides).
+- Verified (TR-2c): unit tests 486 (new mapgen-ledges.test); 80 ledge dial sets: no trap, every exit reached, stairs in
+  74, two pockets each, about 25 ms more a scene; check-fast 13 of 13; smoke 15 of 15; in the page a ledge reads as
+  a low bank across the meadow. **The full quick check: 9 problems, the same 9 steps fail on main** (old roster
+  counts 117/61, empty voxel bushes, buildings without a plan, a biped walk cycle, the running-controls step: on main
+  "copperleaf didn't open", here "float division by zero"): stale checks from before the fresh base, not this work.
+- Verified (TR-2a/b): unit tests 481 pass (new mapgen-mountains.test; run-map, run-scenes, run-world-real, rng updated: the
+  frozen dials snapshot remade with the same dials, the scene hash remade for gen.v only); lint, typecheck, modules,
+  format, data. Sweeps: 160 trail dial sets reach every exit and every summit (237 summits); 240 mountain scenes at the
+  dial's top with mountains on a side without exits: 96% reach 15 m, the lowest 12.3 m. check-fast: 12 of 13, the
+  world-map bowl check failed once and passed on a rerun; it fails the same way on main (a flaky tap, not this work).
+  Smoke 15 of 15. In the page (run fixture): the landing's sign points west; the mountains run draws shelves and
+  cliffs at the back; the game's own findPath walks to a summit and stands at 10.4 m. The full quick check: see below.
+- Risky / open:
+  - **Summit height:** trails stop short of the highest ground: at the dial's top summits are about 11 m (median),
+    15-19 m at best, while the ground reaches 17 m. The owner wants 15 m+: TR-2c's main-road pathfinder and longer
+    trails along the 112 m axis should lift them.
+  - **Phone cost:** a mountains scene's ground has about 167k triangles against about 82k flat (the shelves' walls).
+    Not measured on a phone yet: the owner starts a test run with the debug menu's "Mountains" box and sends the log.
+  - South mountains (toward the camera) hide the player until TR-3's rock fade and silhouette; the debug run uses the
+    north side only. There is no "south only" massif choice yet.
+  - A coast scene (seed 508701) has the sea's lowered bank cutting its road under the slope rule; it predates this and
+    runs never use coast.
+  - Ledges and pockets are generator features: runs don't use terraces or ledges yet (rules.json run.scene has no
+    terraces). Turning them on for runs changes every run's scenes (MAPGEN_VERSION, the frozen dials): the owner's call
+    after playing the debug run.
+  - The quick check's 9 stale steps (above) want their own fix session (phase 13 style).
+  - Summit height: two tries this session (the massif full height 4 m in; more summit candidates) gave nothing or
+    broke trails and were reverted.
+- Next: the owner plays a run with the debug menu's "Mountains and ledges" box on the phone and sends the debug log
+  (frame times, groundTris); decides whether runs get terraces, ledges and mountains; pushes `tr-2c-done`. Left of
+  TR-2: the main-road pathfinder, the four mountain route types, higher summits; grass patches along the route wait
+  until wild Billies appear beyond 13 m of a place's middle (an RL change).
+
+### Roguelite track RL-8 - Run loop and payout - 2026-10-21
+Branch `ccr-0f465f3f-hh2rq2`, from main 1d35666 (RL-7 merged). PR #103 went up at the owner's "Push pr" before the
+phase's end and was merged at 3f6f1c8; the owner played that build on the phone the same day. The rest (the full-check
+step, the in-game phase, the fixes from the owner's play, the docs) followed on the same branch, with main (ca9aa54)
+merged in (e18a604), for a new PR. Plan approved at the start ("Start rl8", the plan in Plan Mode). The owner's answers: the full 9-row map (8.8), with a 5-row short run in the debug menu; wild battles single,
+a mini-boss a leader in doubles, the boss a third leader's strongest Billie as an Alpha, the 40-turn cap kept (8.9);
+a wipe (or a trainer battle at the turn cap) ends the run, keep 1 Billie on a loss and the whole party on a win,
+Billies from Copperleaf come back as they left; the opening is the fall only (8.20), Blake cut from it, Hazel's new
+lines send you to the mast. The plan's decisions 1-13 were taken as written.
+- Changed (one cause per commit):
+  - Moves, no change in play, each proven against the code before it: `endBattle`'s arithmetic into
+    `logic/battle-rewards.js` (`battleRewards`); battle weather (`WEATHER_TYPE_BOOSTS`, `battleWeatherOf`) and the wild
+    odds by weather (`WILD_TYPE_BOOSTS`, `wildLikes`) into `logic/weather.js`.
+  - Data: rules.json `run.start` ($600, 5 Copper Coins, 2 Potions), `run.healCost` (60), `run.shop` (2 always, 2 more
+    drawn a day), `run.foes` (mini-boss +3 levels, $300; boss +5, $600); types, check-data, planted faults.
+  - New `logic/run-loop.js`: the start's give, the heal price, a town's stock for a day, the run's foes (a leader per
+    mini-boss node and the boss from the node's stream, none twice, own ids `run_<i>_foe`, no script, badge, egg or
+    story conditions), a battle's seed, release pay (only Billies caught on the run), the payout's rows.
+  - Leaks closed: today's challenges and the friends list's Map button stay in the hub; storage stays in Copperleaf
+    (a 7th catch waits outside the team until one is released: `validSave` refuses a team of 7).
+  - New `game/js/run.js` and `game/js/run-payout.js`: "Start a run" at Copperleaf's mast (a free flight: airship.js
+    `startAirshipFlight(i, {free, from})`), landing beside the landing's mast (`standByMast`), arrivals saved to the
+    account at once (game-state.js `saveNow`), "Give up the run" in the Map tab and "Fly home" at the landing's mast,
+    `runOver(won)` (the payout phase, saved at once), the payout screen (rows, Capital, Seals on a win, a keep-one card
+    per Billie on a loss), `runEndHome` (healed, by Copperleaf's mast), resume at boot (`runResume`), first-run hints.
+  - Run scenes get buildings by node type (mapgen's `mast`, `clinic`, `shop` dials through `runSceneParams`): the
+    landing's mast, a town's clinic and shop. The dials snapshot was remade on purpose.
+  - Run battles: one seam in `newBattle` (hooks `runBattleStart`) gives every run battle a seed (`<node seed>|battle|k`)
+    and the forecast's weather, and saves a checkpoint (`run.at`: phase `battle`, its number, the whole foe) to the
+    account at once; saving is then held (`saveHeld()`, worked out from the save and the battle on screen) until the
+    battle ends; a reload restarts it from its seed. Run rewards: no lose fee, egg or badge. A loss ends the run.
+  - Run towns: one `clinicHeal` for every clinic path charges `healCost` a hurt Billie after a yes (free in the hub);
+    each town's shop sells the day's stock; no rest stop; opening hours don't apply on a run.
+  - Mini-bosses block the way north (the existing blocker rule) and fight doubles; the boss fights alone as an Alpha
+    (`startTrainer` with `T.alpha`); beating it offers "On to the payout". `worldSetGraph` attaches a trainer only in
+    its own world.
+  - Determinism: on a run, wild odds by the forecast alone (`wildOddsBy`; a run has no hour, clear counts as sunny)
+    and new ids from the run's counter (`r<runs>-<run.uidN>`).
+  - `tools/test/sim/run-sim.mjs`: a whole run from its seed in Node (battles played by the AI on both sides, a fixed
+    player policy), the same twice; `runStats` reports to validation/sim/runs.json; a sample in `npm test`.
+  - The opening: New game plays the fall from the crust (the city scene no longer plays); Blake's entrance, Hazel's
+    staged fight and his battle are cut (beats 37-60 and 75-83; his trainer, script and shots stay in the data);
+    three new lines from Hazel after the starter pick send you to the mast; the welcome sheet mentions it. Postcards
+    wait for the opening's end, not Blake's flags.
+  - Debug menu "Runs": start a seeded run (short or full), win or lose the run. Debug log: the run line's phase,
+    battles, hold, party size and money; a `meta` line (runs, wins, Capital, Seals). Numbers only.
+  - Checks: `battle-rewards.test`, `run-loop.test`, `run-sim.test`, more cases in `run-state`, `run-world-real`,
+    `weather` and `opening-script` tests; the fast check's run page "a run's battle held and started again after a
+    reload; a loss, the payout (again after a reload) and home"; smoke's phone flow taps the mast and opens the run's
+    sheet; the full check's step "RL-8: a run from the mast"; the in-game test's phase "A run: airship, nodes,
+    payout". The in-game test's "Opening: Blake's first battle" went with the battle.
+  - Docs: roguelite-track.md (section 0 "Corrected in RL-8", section 5 as built, section 8's 8, 9 and 20 answered,
+    RL-8 done), ROADMAP, VISION (the opening), TESTING, NAMING, CHANGELOG.
+  - Fixes from the owner's first play (their diagnostics log: "Autumn wood Landing: can't walk to: an exit, across a
+    bridge"; "It got stuck"; "The bridge was turned the wrong way"): walk/heights.js blocked the steep ground under a
+    bridge's deck, so a run's bridges over steep stream banks couldn't be walked (11 of 18 landings with bridges
+    couldn't be left; the same on the RL-7 base); and mapgen laid a bridge from a road's first wet point to its last,
+    so where the road ran beside a stream the bridge lay along the water and often ended in it. Now bridges go only
+    where the road crosses a stream, square to it (within 25 degrees), dry at both ends, and the road is kept out of
+    the water elsewhere (`mapgenRoadOverWater`, MAPGEN_VERSION 4).
+- Where the plan was wrong: roguelite-track.md section 0 "Corrected in RL-8".
+- Verified:
+  - The fast tier at every commit (lint, typecheck, unit tests 455 -> 474, check:modules, format:check, check:data,
+    build). New tests seen to fail on planted faults (each commit says which).
+  - Smoke (15 steps) passed on 78f813d, 68d9020, 64b29f5, 94cbaf3, 37eb839, 6d2f257, ae67d51, 93c0ee8, a92382e,
+    27f9acd, bf0a027, 3729b6a, 6265a88 and 1576dbc, each in a checkout of its own, and on the working tree for 3f6f1c8
+    and 6e9bb2a. 4b0e984's smoke ran out of time twice while Chromium probes ran beside it; 93c0ee8 passed with it.
+    Not smoked alone (each inside the next smoked commit): 27a3168, 7cad9ce, 4fa8257, 7b9c848, 6d8f70e, 6474fbe,
+    7c4a81b, 1caf7c9, 78ca212, f23fc55.
+  - In Chromium: the fast check's run pages (`--only=run`); the full check's step "RL-8: a run from the mast" alone
+    (83 s); the in-game phase "A run: airship, nodes, payout" alone (10 s, nothing written while it ran); probes of
+    the mast start and flight, a reload mid-flight, mid-battle (the same seed and first roll) and at the payout, the
+    clinic ($120 for 2 hurt Billies, refused when short), the shop's stock, the mini-boss blocking and in doubles, the
+    Alpha boss, the payout won and lost, Copperleaf after; the in-game walk check on every place of 10 runs (126
+    places, 92 bridges) after the bridge fixes: every exit reachable, every bridge crossable.
+  - Node sweeps: 200 runs, 2,500 scenes with the buildings: all placed, every seam joined, no new generator note;
+    100 runs after the bridge fix: 421 bridges, none ending in water, all at 65 degrees or more to the stream.
+  - End of the phase: FULLCHECK
+- Run simulation (report only; the bounds are the owner's): on the placeholders a lone level-5 starter loses 50 of 50
+  runs (31 on the landing, about 1.6 places); three level-5 starters lose 50 of 50 too (20 at the first mini-boss,
+  levels 9-11 in doubles). No run reaches the boss.
+- Risky or unfinished:
+  - Balance is untuned (above); a bribe pays $600-900, more than a run's starting $600; leaders at low levels still
+    field evolved species; the boss is a stand-in until the Voltron (RL-14).
+  - Saving is held during a run battle by design: a kill after the result but before you tap past it replays the
+    battle (accepted).
+  - Robots are rebuilt from `saveData.parts`, which isn't a run field (only the debug menu gives robots today).
+  - The debug menu's "Go there" walks past a mini-boss that blocks (a test tool).
+  - The debug menu's "after the opening" story preset still mentions Blake; Blake's trainer, script and shots stay
+    in the data, unplayed. Hazel's joke "hot tips" left with his battle.
+  - Every run's scenes changed twice (buildings, then bridges); a run started before keeps its map and gets the new
+    scenes.
+  - One kind of bridge trap is left in principle: a deck end beside a terrace riser more than 0.34 m off the deck
+    (seen once, BR20, before the bridge rework; not seen after it in 126 places).
+  - Not in RL-8: relics, route trainers, event nodes, the return flight's animation, deadline hardening. Capital shows
+    in the Map header (the Lab's board is RL-11). The phone's cost of making a run's scenes is still only in the debug
+    log (`run.makeMs`).
+- Phone check wanted: a new game (the fall, Hazel, the starter, the mast lines); a run from the mast; a landing or
+  route with a stream (walk over the bridge); a town (paid heal, shop) and a mini-boss; kill the app mid-battle and
+  reopen; win or give up, the payout, Copperleaf; export the debug log (the run and meta lines).
+- Next: the owner merges this branch's PR and pushes `rl-8-done` (and the earlier tags). The owner's other notes from
+  the first play are new work waiting for their choices (roguelite-track.md section 5): rooms too bright; routes wider
+  than long (an HD-2D diorama); Copperleaf's world map its island alone; a run's own world map from its seed. My
+  proposal: one phase before RL-9, "RL-8b Run look": routes laid east to west across the screen (wide and shallow,
+  joined at their east and west edges), a run's world map generated from its seed, the hub's map Copperleaf's island
+  alone, and the rooms' light; 2 sessions; the balance tuning after it, with the simulation's numbers.
 
 ### Roguelite track RL-7 - Run world - 2026-10-21
 Branch `ccr-b5ce394e-4jhzbp`, from main dfc9d68 (RL-6 merged). Plan approved at the start ("Start rl7", then the plan

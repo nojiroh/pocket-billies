@@ -23,7 +23,7 @@ validation/quick-baseline/ (make one with --baseline), each picture is compared 
 is changed."""
 # RL-5: --closeups and --seams=all went with their steps (every close-up spot and every seam was in a parked place);
 # the --scenes example names the hub, the one place left
-import io, json, os, re, shutil, socket, subprocess, sys, tempfile, threading, time
+import io, json, math, os, re, shutil, socket, subprocess, sys, tempfile, threading, time
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -279,13 +279,16 @@ def copperleaf_data():
     if 'copperleaf' not in (LO.get('locations') or {}): bad.append('no lore for copperleaf')
     if 'juniper' not in (LO.get('people') or {}): bad.append('Granny Juniper has no page in the Lore')
     # the opening's stage: east and south of the lab's door, where game/data/cutscenes/opening.json has its spots
+    # IS-5: in the lab's own metres (it faces its street on the island: x along its front, z back from it)
     lab = next(p for p in cl['props'] if p.get('act') == 'lab'); M = C[lab['k']]; dx = M['door']['x'] / 34 * lab.get('s', 1) * (-1 if lab.get('f') else 1)
-    d = (lab['x'] + dx, lab['z'])
+    ra = math.radians(lab.get('rot', 0)); own = lambda x, z: ((x - lab['x']) * math.cos(ra) + (z - lab['z']) * math.sin(ra), -(x - lab['x']) * math.sin(ra) + (z - lab['z']) * math.cos(ra))
+    d = (dx, 0)
     for p in cl['props']:
         Q = C.get(p['k']) or {}
         if Q.get('flat') or p is lab: continue
         solid = Q.get('box') or (Q.get('solid') or 0) > .25
-        if solid and d[0] + .8 < p['x'] < d[0] + 9.6 and d[1] - 4.8 < p['z'] < d[1] - 1.4: bad.append(f'{p["k"]} at {p["x"]},{p["z"]} stands on the opening’s stage')
+        lx, lz = own(p['x'], p['z'])
+        if solid and d[0] + .8 < lx < d[0] + 9.6 and d[1] - 4.8 < lz < d[1] - 1.4: bad.append(f'{p["k"]} at {p["x"]},{p["z"]} stands on the opening’s stage')
     if bad: raise Exception('; '.join(bad[:6]))
     return f'a new game starts in Copperleaf (node {ix["copperleaf"]}), the only place, with no road out; the lab and your room are there, Granny Juniper in her garden, no shop or clinic; the opening’s stage is clear'
 
@@ -972,7 +975,7 @@ def in_game_test_whole(b, base, R):
         ctx.close()
 
 
-@step('Phone: opening, first battle, screens and a battle', 260)
+@step('Phone: opening, the airship mast, screens and a battle', 260)
 def phone_flow(b, base, R):
     errs = []; ctx, pg = open_game(b, base, 390, 844, True, errs)
     try:
@@ -986,19 +989,24 @@ def phone_flow(b, base, R):
         pg.click('[data-a=cs-next]'); time.sleep(.5); pg.click('[data-a=cs-choose]'); pg.click('[data-a=cs-yes]')
         if not until(pg, 'saveData.started', 40, skip): raise Exception('the game didn’t start after picking a starter')
         R['opening'] = pg.evaluate('[saveData.starter,saveData.avatar.name,saveData.team.length,LOCATIONS[saveData.trip.node].id]')
-        # phase 06-2b: Blake came before the pick and Hazel fought his first Billie herself
-        if not pg.evaluate('!!cutscene.foeName'): raise Exception('Hazel’s fight against Blake never ran in the opening')
         if R['opening'][3] != 'copperleaf': raise Exception(f'the game started at {R["opening"][3]}, not in Copperleaf')
-        # v47: Blake battles you on the spot, with Hazel's tips; win or lose, he talks, Hazel heals you, the welcome sheet
-        if not until(pg, "!!activeBattle&&activeBattle.phase==='choose'", 120): raise Exception('Blake’s first battle never reached the move menu')
-        R['rivalBattle'] = pg.evaluate("({tutorial:!!(activeBattle.T&&activeBattle.T.tutorial),foe:activeBattle.foeName,moves:activeBattle.sides[1].team[0].moves,tip:!!document.querySelector('#btip.on'),hot:!!document.querySelector('#btip.hot.on')})")
-        shot(pg, 'phone-rival-battle')
-        if not R['rivalBattle']['tutorial'] or not R['rivalBattle']['hot']: raise Exception(f'Blake’s first battle doesn’t open on Hazel’s HOT TIP: {R["rivalBattle"]}')
-        pg.evaluate("activeBattle.over='win';stopTimers();endBattle();0")
-        if not until(pg, '!!talkBox.cur', 40): raise Exception('nobody spoke after Blake’s battle')
-        if not until(pg, '!talkBox.on&&!!uiState.modal', 60, 'talkBox.cur&&talkBox.cur.tap()'): raise Exception('the talk after Blake’s battle never ended')
-        R['afterRival'] = pg.evaluate("({story:saveData.story.rival0,hp:saveData.team.map(m=>m.hp===maxHp(m)),welcome:uiState.modal&&uiState.modal.title})")
+        # RL-8 (the owner's "fall only"): Blake left the opening: no fight of Hazel's, no battle of his; the welcome
+        # sheet comes straight after the pick
+        if pg.evaluate('!!cutscene.foeName||!!activeBattle'): raise Exception('Blake is still in the opening (Hazel’s fight or his battle)')
+        if not until(pg, '!!uiState.modal', 30): raise Exception('no welcome sheet after the opening')
+        R['afterOpening'] = pg.evaluate("({welcome:uiState.modal&&uiState.modal.title,rival0:(saveData.story||{}).rival0||null})")
         pg.evaluate("closeModal();0")
+        # RL-8: Copperleaf's airship mast offers a run: tapped (walkPick, as a tap on it does), its sheet has "Start a
+        # run"; a real tap on that row opens the run's sheet (left there: the fast check and the full check fly it)
+        if not until(pg, "walkView.ready&&!!walkView.sc.props.find(p=>p.act==='fly')", 60): raise Exception('Copperleaf has no airship mast')
+        pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();(p=>walkPick({k:'act',p,act:'fly'}))(walkView.sc.props.find(p=>p.act==='fly'));0")
+        if not until(pg, "!!document.querySelector('#ov [data-a=runstart]')", 30): raise Exception('the mast’s sheet has no “Start a run”')
+        shot(pg, 'phone-mast')
+        pg.click('#ov [data-a=runstart]')
+        if not until(pg, "uiState.modal&&uiState.modal.title==='Start a run'", 10): raise Exception('“Start a run” didn’t open the run’s sheet')
+        R['runSheet'] = pg.evaluate("uiState.modal.btns.map(b=>b.l)")
+        shot(pg, 'phone-run-sheet')
+        pg.evaluate("closeModal();uiState.modal=null;uiState.mq=[];renderOverlay();0")
         play(pg)
         # UI-1: how many surfaces blur what's behind them on each screen (the plan's budget is 3); a report, not a failure
         blur = {}
@@ -1028,7 +1036,7 @@ def phone_flow(b, base, R):
         # kept for comparing logs across a phase (validation/ is not committed)
         shutil.copyfile(d.path(), OUT / 'phone-debug-log.json')
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
-        return f'the fall, Hazel, dressing room, Hazel’s fight, starter, Blake’s first battle (HOT TIP) and the talk after, five screens, shop, battle, speech kept out of the debug picture, debug log ({len(json.dumps(dlog)) // 1024} KB, no names); blurred surfaces per screen: {", ".join(f"{k} {v}" for k, v in blur.items())}'
+        return f'the fall, Hazel, dressing room, starter (no Blake: RL-8), the welcome sheet, the mast’s run sheet, five screens, shop, battle, speech kept out of the debug picture, debug log ({len(json.dumps(dlog)) // 1024} KB, no names); blurred surfaces per screen: {", ".join(f"{k} {v}" for k, v in blur.items())}'
     finally:
         R['phoneErrors'] = errs[:10]; ctx.close()
 
@@ -1291,9 +1299,11 @@ def desktop_steps(b, base, R):
         pg.evaluate("environment.force={time:13,weather:'clear',season:'autumn'};0"); time.sleep(2); shot(pg, 'autumn'); pg.evaluate("environment.force=null;0")
         # rooms: light through the window by day, lamps at night, the floor ends at the door
         walk_in(pg, 'house', 'cottage_moss'); until(pg, "walkView.ready&&(walkView.id==='int_house'||(walkView.sc&&walkView.sc.roomOf==='int_house'))", 30); time.sleep(1.5)   # phase 08b: through a house's door (no room opens without one); RL-5: a moss-roof cottage of Copperleaf (Marigold's red-roof house is parked)
-        pg.evaluate("environment.force={time:15.5,weather:'clear',season:'summer'};walkRenderer.roomSkyT=0;0"); time.sleep(2); shot(pg, 'room-day')
+        # IS-5: waits for frames drawn in the room, not a fixed time (the island hub draws more slowly in software)
+        frames = lambda: (lambda f0: until(pg, f'walkRenderer.frames>={f0 + 2}&&!!walkRenderer.roomSky', 60))(pg.evaluate('walkRenderer.frames'))
+        pg.evaluate("environment.force={time:15.5,weather:'clear',season:'summer'};walkRenderer.roomSkyT=0;0"); time.sleep(.5); frames(); shot(pg, 'room-day')
         day = pg.evaluate("[walkRenderer.roomSky&&walkRenderer.roomSky.I,walkRenderer.roomSky&&walkRenderer.roomSky.lamp,(roomLamps(walkView.sc)||[]).length,!!walkRenderer.roomBox]")
-        pg.evaluate("environment.force={time:23,weather:'clear',season:'summer'};walkRenderer.roomSkyT=0;0"); time.sleep(2); shot(pg, 'room-night')
+        pg.evaluate("environment.force={time:23,weather:'clear',season:'summer'};walkRenderer.roomSkyT=0;0"); time.sleep(.5); frames(); shot(pg, 'room-night')
         night = pg.evaluate("[walkRenderer.roomSky&&walkRenderer.roomSky.night,walkRenderer.roomSky&&walkRenderer.roomSky.lamp]")
         pg.evaluate("environment.force=null;leaveRoom();0"); until(pg, "walkView.ready&&!walkView.sc.roomRect&&(walkView.id==='copperleaf'||(walkView.sc&&walkView.sc.baseId==='copperleaf'))", 30)   # RL-5: back out in Copperleaf
         if not day[3] or not day[0] or day[0] < .2 or night[1] < .9 or day[2] < 1: raise Exception(f'room light: day {day}, night {night}')
@@ -1321,7 +1331,9 @@ def desktop_steps(b, base, R):
         # the map: drag the land, turn, zoom right down to the miniatures
         pg.evaluate("uiState.tab='map';render();0"); time.sleep(6)
         if pg.evaluate("typeof worldBowl!=='undefined'&&worldBowl.on"):
-            # phase 10: the bowl map (game/js/world-bowl.js): drag, turn and zoom with its own camera, then Home
+            # phase 10: the bowl map (game/js/world-bowl.js): drag, turn and zoom with its own camera, then Home (IS-5:
+            # from Home, so where an earlier step left the camera doesn't decide how far the pan lands from the rim)
+            pg.evaluate("(()=>{const me=worldBowlSpots()[saveData.trip.node];worldBowl.goal=null;worldBowl.tween=null;worldBowl.cam=bowlCamClamp(bowlCamHome(me.x,me.y));worldBowl.dirty=true})();0"); time.sleep(.5)
             c0 = pg.evaluate("JSON.stringify(worldBowl.cam)")
             pg.evaluate("(()=>{const W=worldMapWidth,H=worldMapHeight;let c=bowlCamPan(worldBowl.cam,bowlCamView(worldBowl.cam,W,H),-120,40);c=bowlCamTurn(c,.8,.2);for(let i=0;i<20;i++)c=bowlCamZoom(c,.8);worldBowl.goal=null;worldBowl.cam=c;worldBowl.dirty=true})();0"); time.sleep(2); shot(pg, 'map-close')
             m = pg.evaluate("(()=>{const c=worldBowl.cam,v=bowlCamView(c,worldMapWidth,worldMapHeight);return [JSON.stringify(c),c.dist,v.C[1]]})()")
@@ -1667,8 +1679,9 @@ def desktop_steps(b, base, R):
         if len(nat) < 70: raise Exception(f'{len(nat)} nature props (want 70)')
         out.append(f'{len(nat)} nature props in {len(fams)} families (' + ', '.join(f'{f} {n}' for f, n in sorted(fams.items())) + ')')
         # the wild growth: every outdoor scene grown, nothing it added stands on a path or in the sea (test scenes such as
-        # alpha 0.5's Graphics gallery, test: true, are laid out by hand)
-        bad = json.loads(pg.evaluate("""JSON.stringify((()=>{const C=walkData().sc.props,out=[];for(const [id,sc] of Object.entries(gameData.maps)){if(/^(test_|int_)/.test(id)||sc.test||sc.indoor||sc.room)continue;const g=(sc.props||[]).filter(p=>p.w===42);if(sc.wild!==42||!g.length){out.push(id+': not grown');continue}
+        # alpha 0.5's Graphics gallery, test: true, are laid out by hand; IS-5: the hub island grows its own ground and
+        # IS-9 dresses it, so it need not be grown, but what it kept of the old growth is checked)
+        bad = json.loads(pg.evaluate("""JSON.stringify((()=>{const C=walkData().sc.props,out=[];for(const [id,sc] of Object.entries(gameData.maps)){if(/^(test_|int_)/.test(id)||sc.test||sc.indoor||sc.room)continue;const g=(sc.props||[]).filter(p=>p.w===42);if(!sc.islandGen&&(sc.wild!==42||!g.length)){out.push(id+': not grown');continue}
          for(const p of g){const ch=(sc.tiles[sc.h-1-Math.floor(p.z)]||'')[Math.floor(p.x)],M=C[p.k];if(!M){out.push(id+': '+p.k+' unknown');break}if('pcmbaqheo'.includes(ch)){out.push(id+': '+p.k+' on paved ground');break}if('wd'.includes(ch)&&!(M.grow||'').includes(ch)){out.push(id+': '+p.k+' in water');break}}}return out})())"""))
         if bad: raise Exception('wild growth: ' + '; '.join(bad[:4]))
         grown = pg.evaluate("Object.values(gameData.maps).reduce((n,sc)=>n+(sc.props||[]).filter(p=>p.w===42).length,0)")
@@ -1852,7 +1865,8 @@ def desktop_steps(b, base, R):
             go_scene(pg, pg.evaluate(f"LOCATIONS.findIndex(l=>l.mapId==='{place}')"))
             d = json.loads(pg.evaluate("""JSON.stringify((()=>{const C=walkData().sc,bad=[];let n=0;
               for(const p of walkView.sc.props){if(!ROOM_BY_USE[p.act])continue;const M=C.props[p.k],E=doorOf(p),id=roomFor(p.act,p);if(!M||!M.box||!E||!id)continue;
-                const sc=seamlessRoomMap(walkView.id,id,[+E.at[0].toFixed(1),+E.at[1].toFixed(1),+E.mid[0].toFixed(1)]),R=sc&&sc.roomRect,d=sc?Math.abs(sc.exits[0][0]-E.at[0]):9;n++;
+                const q=roomTurnOf(p.rot),dr=[+E.at[0].toFixed(1),+E.at[1].toFixed(1),+E.mid[0].toFixed(1)];if(q)dr.push(q,+E.mid[1].toFixed(1));/* IS-5: a building facing any way, its doorway measured along its front */
+                const sc=seamlessRoomMap(walkView.id,id,dr),R=sc&&sc.roomRect,d=sc?Math.abs((sc.exits[0][0]-E.at[0])*-E.out[1]+(sc.exits[0][1]-E.at[1])*E.out[0]):9;n++;
                 if(d>.1||!R||R[0]<0||R[1]<0||R[0]+R[2]>sc.w||R[1]+R[3]>sc.h)bad.push(p.k+' at '+p.x+', '+p.z+': '+d.toFixed(2)+' m')}return {n,bad}})())"""))
             nd += d['n']; bad += [place + ' ' + b for b in d['bad']]
         if bad: raise Exception(f'{len(bad)} of {nd} doors: the room’s doorway isn’t at the door, or the room leaves the view: {bad[:4]}')
@@ -1870,7 +1884,7 @@ def desktop_steps(b, base, R):
         r = json.loads(pg.evaluate("""JSON.stringify((()=>{const sc=walkView.sc,I=uiState.inside,RD=roomDimming(sc),n=navGrid(),N=NAV_CELLS_PER_M,R=sc.roomRect,blocked=(x,z)=>!!n.blk[Math.floor(z*N)*n.gw+Math.floor(x*N)];
           return {exit:sc.exits[0],door:I&&I.door,dim:RD?RD.dim:0,outBlocked:blocked(R[0]-2,R[1]+R[3]/2)&&blocked(R[0]+R[2]/2,R[1]-2),inFree:!blocked(R[0]+R[2]/2,R[1]+R[3]/2-1),labGone:!sc.props.some(p=>p.act==='lab')}})())"""))
         shot(pg, 'v46-room-in-place')
-        if not r['door'] or abs(r['exit'][0] - r['door'][0]) > .3 or abs(r['exit'][1] - r['door'][1]) > .7: raise Exception(f'the room’s doorway {r["exit"]} isn’t at the lab’s door {r["door"]}')
+        if not r['door'] or math.hypot(r['exit'][0] - r['door'][0], r['exit'][1] - r['door'][1]) > .76: raise Exception(f'the room’s doorway {r["exit"]} isn’t at the lab’s door {r["door"]}')   # IS-5: whichever way the lab faces
         if r['dim'] < .4: raise Exception(f'the hamlet around the room isn’t dimmed ({r["dim"]:.2f})')
         if not r['outBlocked'] or not r['inFree']: raise Exception(f'walking: outside the room blocked {r["outBlocked"]}, the floor free {r["inFree"]}')
         if not r['labGone']: raise Exception('the lab’s outside is still standing in its own room')
@@ -2023,6 +2037,97 @@ def desktop_steps(b, base, R):
         return f'{made[0]} scenes made in {made[1]} ms ({made[2]} places); {walked:.0f} m over the seam (views {len(views)}, {unready} not ready), day 2, back on day 3; the hub back'
     rl7_run_roads()
 
+    @step('RL-8: a run from the mast — the flight, a battle, a seam, a paid heal, the shop, a mini-boss and its Loophole pick (RL-12), the boss, the payout, home', 420)
+    def rl8_run_from_mast():
+        """Copperleaf's mast sheet (tapped as walkPick does) offers "Start a run"; its sheet's "Take off" puts a run on the
+        save with its world and flies to the landing (skipped to the end: day 1, beside the landing's mast); a wild
+        battle won pays and lets saving go on; the north seam walked (cross()) is day 2; "Go there" walks to the first
+        town: the clinic charges $60 a hurt Billie (after a yes), the shop has the day's stock and (RL-12) a Loophole;
+        on to the first mini-boss, which blocks the way north and fights a double battle (won): "Pick a Loophole" opens
+        the pick, a card tapped and "Take it" holds it; on to the boss, an Alpha (won, its battle carrying the
+        Loophole): "On to the payout", the payout as won, "Fly home": Copperleaf with Capital, no run. The hub's save is
+        put back after"""
+        if not pg.evaluate("typeof runTakeOff==='function'"): return 'not in this build'
+        pg.evaluate("window.rl8Hub=JSON.parse(JSON.stringify(saveData));uiState.inside=null;uiState.bench=null;uiState.modal=null;uiState.mq=[];renderOverlay();uiState.tab='walk';saveData.team.forEach(m=>{m.hp=maxHp(m);m.status=null});render();0")
+        try:
+            if not until(pg, "walkView.ready&&!!walkView.sc.props.find(p=>p.act==='fly')", 90): raise Exception('Copperleaf’s mast isn’t in the view')
+            pg.evaluate("(p=>walkPick({k:'act',p,act:'fly'}))(walkView.sc.props.find(p=>p.act==='fly'));0")
+            if not until(pg, "!!document.querySelector('#ov [data-a=runstart]')", 20): raise Exception('the mast’s sheet has no “Start a run”')
+            pg.click('#ov [data-a=runstart]')
+            if not until(pg, "uiState.modal&&uiState.modal.title==='Start a run'", 10): raise Exception('no run sheet')
+            pg.click('#ov [data-a=mb][data-i="0"]')
+            if not until(pg, "!!saveData.run&&airshipFlight.on", 30): raise Exception('“Take off” didn’t start a run’s flight')
+            pg.evaluate("flySkip();0")
+            if not until(pg, "!airshipFlight.on&&saveData.run.at.phase==='walk'&&walkView.ready&&walkView.id==='w:'+LOCATIONS[1].mapId+'*'", 90): raise Exception(f'never landed on the landing ({pg.evaluate("saveData.run&&saveData.run.at.phase")}, {pg.evaluate("walkView.id")})')
+            land = pg.evaluate("[saveData.run.seed, saveData.trip.node, saveData.run.clock, !!uiState.roam, runWorld.scenes]")
+            if land[1] != 1 or land[2] != 1: raise Exception(f'landed at node {land[1]} on day {land[2]}')
+            # a wild battle, won
+            pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();startWild(encountersHere()[0]);0")
+            if not until(pg, "!!activeBattle&&saveHeld()", 20): raise Exception('a run battle didn’t hold the save')
+            pg.evaluate("stopTimers();activeBattle.over='win';endBattle();0")
+            if not until(pg, "!activeBattle&&!saveHeld()&&saveData.run.at.phase==='walk'", 30): raise Exception('the battle’s end didn’t let saving go on')
+            # the north seam, walked: day 2
+            pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();0")
+            n1 = pg.evaluate("runWorldNode(runNext(saveData.run.map,0)[0])")
+            cross(pg, n1)
+            if pg.evaluate('saveData.run.clock') != 2: raise Exception(f'walked over the seam: day {pg.evaluate("saveData.run.clock")}, not 2')
+            # the first town: a paid heal, the shop
+            town = pg.evaluate("runWorldNode(saveData.run.map.nodes.findIndex(n=>n.type==='town'))")
+            if not pg.evaluate(f"runJump({town})"): raise Exception('couldn’t walk to the first town')
+            pg.evaluate("render();0")
+            if not until(pg, f"walkView.ready&&walkView.id==='w:'+LOCATIONS[{town}].mapId+'*'", 90): raise Exception('the town’s view never opened')
+            heal = pg.evaluate("""(()=>{uiState.modal=null;uiState.mq=[];saveData.team.forEach(m=>{m.hp=Math.max(1,m.hp-5)});saveData.se=Math.max(saveData.se,500);
+              const c=runHealCost(saveData.team,RULES.run.healCost),se=saveData.se;clinicHeal();return [c.cost,se]})()""")
+            if not until(pg, "uiState.modal&&uiState.modal.title==='The clinic'", 10): raise Exception('the clinic asked nothing')
+            pg.click('#ov [data-a=mb][data-i="0"]')
+            if pg.evaluate("saveData.se") != heal[1] - heal[0] or not pg.evaluate("saveData.team.every(m=>m.hp===maxHp(m))"): raise Exception(f'the clinic: ${heal[1]} - ${heal[0]} gave ${pg.evaluate("saveData.se")}')
+            wares = pg.evaluate(f"openShop(LOCATIONS[{town}].shop);SHOPS[LOCATIONS[{town}].shop].stock.length")
+            if not pg.evaluate("!!document.querySelector('#ov .shop-sheet [data-a=shoprelic]')"): raise Exception('the town’s shop has no Loophole (RL-12)')
+            pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();0")
+            if wares != len(pg.evaluate('RULES.run.shop.always')) + pg.evaluate('RULES.run.shop.more'): raise Exception(f'the shop has {wares} wares')
+            # the first mini-boss: it blocks, a double battle, won
+            mb = pg.evaluate("runWorldNode(saveData.run.map.nodes.findIndex(n=>n.type==='miniboss'))")
+            pg.evaluate(f"runJump({mb});render();0")
+            foe = pg.evaluate(f"(b=>b&&[b.id,b.name])(blockerAt({mb}))")
+            if not foe: raise Exception('the mini-boss doesn’t block the way north')
+            pg.evaluate(f"saveData.team.forEach(m=>{{m.hp=maxHp(m)}});startTrainer('{foe[0]}',{{talked:true}});0")
+            if not until(pg, "!!activeBattle&&activeBattle.fmt==='double'", 20): raise Exception('the mini-boss’s battle isn’t a double battle')
+            pg.evaluate("stopTimers();activeBattle.over='win';endBattle();0")
+            if not until(pg, f"!activeBattle&&!blockerAt({mb})", 30): raise Exception('beaten, the mini-boss still blocks')
+            # RL-12: its pick of Loopholes, stored before the sheet; tapped through
+            if not until(pg, "uiState.modal&&uiState.modal.btns&&uiState.modal.btns[0].l==='Pick a Loophole'", 30): raise Exception('no “Pick a Loophole” after the mini-boss')
+            if len(pg.evaluate("JSON.parse(localStorage.getItem(SAVE_KEY)).run.offer||[]")) != pg.evaluate('RULES.run.relics.pick'): raise Exception('the pick isn’t stored before it shows')
+            pg.click('#ov [data-a=mb][data-i="0"]')
+            if not until(pg, "uiState.modal&&uiState.modal.cls==='relic-pick'&&document.querySelectorAll('#ov pb-pick-card').length===RULES.run.relics.pick", 10): raise Exception('the pick didn’t open')
+            pg.evaluate("document.querySelector('#ov pb-pick-card').shadowRoot.querySelector('button').click();0")
+            if not until(pg, "!document.querySelector('#ov [data-a=mb][data-i=\"0\"]').disabled", 10): raise Exception('a card didn’t enable “Take it”')
+            shot(pg, 'rl12-pick')
+            pg.click('#ov [data-a=mb][data-i="0"]')
+            relic = pg.evaluate("saveData.run.relics.length===1&&!saveData.run.offer&&saveData.run.relics[0]")
+            if not relic: raise Exception(f'the pick: held {pg.evaluate("JSON.stringify([saveData.run.relics,saveData.run.offer])")}')
+            # the boss: an Alpha, won, the payout, home
+            boss = pg.evaluate("saveData.run.map.nodes.length")
+            pg.evaluate(f"uiState.modal=null;uiState.mq=[];renderOverlay();runJump({boss});render();0")
+            B = pg.evaluate(f"(T=>T&&T.id)(trainersAt({boss})[0])")
+            if not B: raise Exception('no boss stands on the boss’s place')
+            pg.evaluate(f"saveData.team.forEach(m=>{{m.hp=maxHp(m)}});startTrainer('{B}',{{talked:true}});0")
+            if not until(pg, "!!activeBattle&&activeBattle.fmt==='alpha'&&!!activeBattle.sides[1].team[0].boss", 20): raise Exception('the boss isn’t an Alpha battle')
+            if pg.evaluate("(activeBattle.fx||[]).map(f=>f.src).join()") != relic: raise Exception('the boss’s battle doesn’t carry the Loophole')
+            pg.evaluate("stopTimers();activeBattle.over='win';endBattle();0")
+            if not until(pg, "uiState.modal&&uiState.modal.btns&&uiState.modal.btns[0].l==='On to the payout'", 30): raise Exception('no “On to the payout” after the boss')
+            pg.click('#ov [data-a=mb][data-i="0"]')
+            if not until(pg, "uiState.modal&&uiState.modal.cls==='run-payout'&&saveData.run.at.won===1", 20): raise Exception('no payout as won')
+            shot(pg, 'rl8-payout')
+            pg.click('#ov [data-a=mb][data-i="0"]')
+            if not until(pg, "!saveData.run&&LOCATIONS.length===gameData.locations.length&&walkView.ready&&walkView.id==='w:'+mapIdAt(saveData.trip.node)+'*'", 90): raise Exception('Fly home didn’t bring you back to Copperleaf')
+            home = pg.evaluate("[saveData.meta.runs, saveData.meta.wins, saveData.meta.capital, saveData.meta.seals]")
+            if home[0] < 1 or home[1] < 1 or home[2] <= 0: raise Exception(f'home: {home}')
+            if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
+            return f'seed {land[0]}: {land[4]} scenes, landed day 1 by the mast; a battle won; day 2 over the seam; healed for ${heal[0]}; {wares} wares and a Loophole; {foe[1]} beaten (doubles), {relic} picked; the boss (an Alpha) beaten; payout; home: {home[2]} Capital, {home[3]} Seal'
+        finally:
+            pg.evaluate("if(activeBattle){stopTimers();setActiveBattle(null);battleStageStop()}airshipFlight.on=false;uiState.modal=null;uiState.mq=[];renderOverlay();setSaveData(window.rl8Hub);render();0")
+    rl8_run_from_mast()
+
     @step('alpha 0.4: Copperleaf — Granny Juniper in her garden, the lab', 240)   # RL-5: the lane down to Marigold Town is parked
     def a04_copperleaf():
         """the new start drawn: Granny Juniper stands by her hives and talks (her first words, then a line), the lab's
@@ -2104,8 +2209,8 @@ def desktop_steps(b, base, R):
         is Copperleaf, the only one (Marigold Town is parked)"""
         if not pg.evaluate("typeof postcardCheck==='function'"): return 'not in this build'
         sd = pg.evaluate("LOCATION_BY_ID.copperleaf.node")   # RL-5: Copperleaf's postcard (Marigold Town is parked)
-        # alpha 0.5: no postcard before Blake's first battle (postcardAllowed); the checks skip the opening, so mark it as played
-        pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();uiState.bench=null;saveData.cards={};postcardState.last=null;postcardState.on=false;Object.assign(storyFlags(),{rival0:'win',met_blake0:1});0")
+        # alpha 0.5: no postcard before the opening has ended (postcardAllowed; RL-8: it waited for Blake's battle, which left the opening)
+        pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();uiState.bench=null;saveData.cards={};postcardState.last=null;postcardState.on=false;0")
         go_scene(pg, sd)
         if not until(pg, "!!document.querySelector('.pcard-wrap.in')", 12, "postcardCheck()"): raise Exception('no postcard came on walking into Copperleaf')   # RL-5: Copperleaf
         time.sleep(1.2)
@@ -2245,10 +2350,11 @@ def desktop_steps(b, base, R):
         if not acc['box']: raise Exception('no account box in Settings → Save')
         out.append(f'one save ({acc["key"]}), the account box in Settings')
         pg.evaluate("saveData.preferences.lang='nl';applyPreferences();uiState.tab='walk';render();0"); time.sleep(1)
-        nl = pg.evaluate("[...document.querySelectorAll('nav#nav button')].map(b=>b.textContent.trim()).join(',')")
+        # UI-5: the bottom bar is <pb-nav-bar id="nav">, its tabs in its shadow tree (Map, Team, Bag; no Walk tab)
+        nl = pg.evaluate("[...document.querySelector('#nav').shadowRoot.querySelectorAll('button')].map(b=>b.textContent.trim()).join(',')")
         pg.evaluate("saveData.preferences.lang='en';applyPreferences();render();0"); time.sleep(.5)
-        en = pg.evaluate("[...document.querySelectorAll('nav#nav button')].map(b=>b.textContent.trim()).join(',')")
-        if 'Lopen' not in nl or 'Walk' not in en: raise Exception(f'language switch: Dutch tabs “{nl}”, back to English “{en}”')
+        en = pg.evaluate("[...document.querySelector('#nav').shadowRoot.querySelectorAll('button')].map(b=>b.textContent.trim()).join(',')")
+        if 'Kaart' not in nl or 'Map' not in en: raise Exception(f'language switch: Dutch tabs “{nl}”, back to English “{en}”')
         out.append(f'Dutch tabs: {nl}')
         pg.evaluate("saveData.preferences.textSize='xlarge';saveData.preferences.contrast='high';applyPreferences();0"); time.sleep(.6); shot(pg, 'settings-large-contrast')
         a = pg.evaluate("[document.documentElement.dataset.text,document.documentElement.dataset.contrast]")

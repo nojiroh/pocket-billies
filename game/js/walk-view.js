@@ -15,6 +15,7 @@ import {
   addWalked,
   artCacheVersion,
   buddyTap,
+  buildingLabel,
   cachedBuildingSignature,
   currentLocationMap,
   defaultWallMaterial,
@@ -45,10 +46,13 @@ import {
   talkFolk,
   uiState,
   waitForPaintWorker,
+  walkRenderer,
 } from './hooks.js';
 import { clamp } from './util.js';
 import { pointInProp, turnedBounds, turnedPoint } from './logic/prop-turn.js';
+import { roomToLocal } from './logic/room-turn.js';
 import { stepCellsJoined, stepCornerHeight, stepGridCorners } from './logic/step-grid.js';
+import { orbitStickYaw, orbitWalkStep } from './logic/camera-orbit.js';
 import { frameStop } from './frame-scheduler.js';
 import { ART_CACHE, artLoad, makeCanvas, packHexPixel } from './art.js';
 /* eslint-disable no-func-assign */
@@ -633,10 +637,14 @@ export function doorOf(p) {
 }
 /* v47: the kind a door keeps hours as (not game-data.js locationKind(id), the kind of a place) */
 export function openingHoursKind(a, p) {
+  /* RL-9: the ranch keeps no hours (its barn would close at night) */
+  if (a === 'ranch') return a;
   const M = p && walkData().sc.props[p.k];
   return M && M.room ? p.k : a;
 }
 export function isOpenNow(kind) {
+  /* RL-8: a run's time is its days, not the real clock: its shops and clinics are always open */
+  if (saveData.run) return true;
   const H = OPEN_HOURS[kind];
   if (!H) return true;
   const h = propClock().h;
@@ -649,7 +657,8 @@ export function closedText(kind) {
 }
 /* the label over something you can use: what it is, Read for a book you haven't read, Closed after hours */
 export function actionLabel(p, M) {
-  if (p.label) return p.label;
+  /* RL-11: a hub building with levels shows its level */
+  if (p.label) return typeof buildingLabel === 'function' ? buildingLabel(p.label, p.act) : p.label;
   if (p.act === 'read') return typeof loreFlags === 'function' && !loreFlags()['read_' + p.book] ? 'Read' : null;
   if (!(M && (M.door || M.box))) return null;
   const b = { shop: 'Shop', clinic: 'Clinic', lab: 'Lab' }[p.act];
@@ -2588,7 +2597,15 @@ export function mapBridges(sc = walkView.sc) {
   const L = sc && sc.bridges;
   if (!L || !L.length) return null;
   let E = STEP_GRID_CACHE.get(L);
-  if (E && E.v === JSON.stringify(L) + (sc.stepsV || 0)) return E.list;
+  /* IS-5: asked once a vertex while a ground is built (the island's: hundreds of thousands); the bridges' words are
+     compared again only after a quarter of a second (the Studio edits them in place) */
+  const now = performance.now();
+  if (E && E.sv === (sc.stepsV || 0) && now - E.t < 250) return E.list;
+  if (E && E.v === JSON.stringify(L) + (sc.stepsV || 0)) {
+    E.t = now;
+    E.sv = sc.stepsV || 0;
+    return E.list;
+  }
   const list = L.map(b => {
     const a = b.a,
       c = b.b,
@@ -2614,7 +2631,7 @@ export function mapBridges(sc = walkView.sc) {
       w: b.w || 1.6,
     };
   });
-  STEP_GRID_CACHE.set(L, { v: JSON.stringify(L) + (sc.stepsV || 0), list });
+  STEP_GRID_CACHE.set(L, { v: JSON.stringify(L) + (sc.stepsV || 0), list, t: now, sv: sc.stepsV || 0 });
   return list;
 }
 export function bridgeAt(x, z, sc = walkView.sc) {
@@ -2720,11 +2737,19 @@ export function navGrid() {
       a1 = R[0] + R[2] - 0.3,
       b0 = R[1] + 0.25,
       b1 = R[1] + R[3] - 0.3;
+    /* IS-5: a room turned with its door: its own metres (logic/room-turn.js), the margins kept to its near side */
+    const F = sc.roomFrame,
+      [c0, d0, cw, cd] = F ? F.rect : R,
+      c1 = c0 + cw,
+      d1 = d0 + cd;
     for (let j = 0; j < gh; j++)
       for (let i = 0; i < gw; i++) {
         const x = (i + 0.5) / N,
           z = (j + 0.5) / N;
-        if (x < a0 || x > a1 || z < b0 || z > b1) blk[j * gw + i] = 1;
+        if (F) {
+          const [u, v] = roomToLocal(F, x, z);
+          if (u < c0 + 0.3 || u > c1 - 0.3 || v < d0 + 0.25 || v > d1 - 0.3) blk[j * gw + i] = 1;
+        } else if (x < a0 || x > a1 || z < b0 || z > b1) blk[j * gw + i] = 1;
       }
   }
   /* alpha 0.2: in a joined view you walk in the place and where the next places meet it, not out into the countryside */
@@ -2950,7 +2975,9 @@ export function findPath(ax, az, bx, bz, o = {}) {
   push(s, h(s));
   let found = false,
     it = 0;
-  while (H.length && it++ < (o.max || 30000)) {
+  /* IS-5: the budget grows with the map (the island hub is ~220,000 cells; 30000 stopped a tap a third of the way across) */
+  const cap = o.max || Math.max(30000, n);
+  while (H.length && it++ < cap) {
     const c = pop();
     if (c === e) {
       found = true;
@@ -3000,7 +3027,7 @@ export function findPath(ax, az, bx, bz, o = {}) {
   }
   return out;
 }
-/* ---------- encounter spots: tall grass first, around where you stand ---------- */
+/* ---------- encounter spots: tall grass first, around where you stand (a generated place: in its grass patches) -------- */
 function encounterCandidates(sc) {
   const ck = 'hub';
   if (walkView.cand && walkView.candK === ck) return walkView.cand;
@@ -3009,7 +3036,8 @@ function encounterCandidates(sc) {
     good = 'tgGfnsxCH',
     rows = sc.tiles || [],
     hub = mapHub(sc),
-    ex = sc.exits || [];
+    ex = sc.exits || [],
+    patches = sc.grassPatches && sc.grassPatches.length ? sc.grassPatches : null;
   navGrid();
   for (let j = 0; j < sc.h; j++)
     for (let i = 1; i < sc.w - 1; i++) {
@@ -3019,8 +3047,17 @@ function encounterCandidates(sc) {
         z = sc.h - j - 0.5;
       if (!isWalkable(x, z)) continue;
       const d = Math.hypot(x - hub[0], z - hub[1]);
-      if (d < 2.2 || d > 13) continue;
       if (ex.some(e => Math.hypot(e[0] - x, e[1] - z) < 2.2)) continue;
+      /* TR-2c: a generated place's tall grass lies in patches (sc.grassPatches) across the whole map: they wait in any
+         of them, whatever the distance (not in a neighbour's grass over the seam), beside the grass's own tufts but not
+         on other things */
+      if (patches) {
+        if (ch !== 't' || d < 2.2 || !patches.some(g => Math.hypot(g.x - x, g.z - z) <= g.r)) continue;
+        if ((sc.props || []).some(p => !/tallgrass/.test(p.k) && Math.hypot(p.x - x, p.z - z) < 0.9)) continue;
+        out.push([x, z, 1]);
+        continue;
+      }
+      if (d < 2.2 || d > 13) continue;
       if ((sc.props || []).some(p => Math.hypot(p.x - x, p.z - z) < 1.1)) continue;
       if (!sc.hub) {
         let dm = 1e9;
@@ -3373,6 +3410,23 @@ function updatePlayerHeight(dt) {
       P.hop = null;
       P.yv = gh;
       if (typeof soundEffect === 'function') soundEffect('step', { hard: 1 });
+      /* TR-2c: a puff of dust round your feet where you land (walk/effects.js draws it, rising a little and fading) */
+      if (!reducedMotion && walkView.parts)
+        for (let i = 0; i < 6; i++) {
+          const a = (i / 6) * Math.PI * 2 + Math.random() * 0.5;
+          walkView.parts.push({
+            k: 'dust',
+            x: P.x + Math.cos(a) * 0.15,
+            z: P.z + Math.sin(a) * 0.15,
+            y: 0.02,
+            vx: Math.cos(a) * 1.1,
+            vz: Math.sin(a) * 1.1,
+            vy: 0.35,
+            life: 0,
+            max: 0.5,
+            g: 0.6,
+          });
+        }
     }
   } else P.yv += (gh - P.yv) * Math.min(1, dt * 18);
   /* lean into a climb (and back going down), seen as a tilt when you walk across the screen */
@@ -3445,8 +3499,15 @@ function movePlayer(st, dt) {
       kz = J.y;
       km = Math.min(1, Math.hypot(J.x, J.y));
     }
+    /* island track IS-1: on an orbiting island the stick walks by the orbit's own frame (logic/camera-orbit.js
+       orbitStickYaw, plus your turn), not the eased camera's, and steps round the middle, so holding right walks a
+       circle instead of spiralling out */
+    const Orb = walkRenderer.orbit && walkRenderer.orbit.sc === walkView.sc ? walkRenderer.orbit : null,
+      OrbM = Orb && walkView.sc.cam ? walkView.sc.cam.orbit : null;
+    if (Orb && !km) orbitStickYaw(Orb, false);
     if (km) {
-      const R = walkView.C && walkView.C.right ? walkView.C.right : [1, 0, 0],
+      const oy = Orb ? orbitStickYaw(Orb, true, OrbM, P.x, P.z) + walkRenderer.yaw : 0,
+        R = Orb ? [Math.cos(oy), 0, -Math.sin(oy)] : walkView.C && walkView.C.right ? walkView.C.right : [1, 0, 0],
         rl = Math.hypot(R[0], R[2]) || 1,
         rx = R[0] / rl,
         rz = R[2] / rl,
@@ -3463,6 +3524,7 @@ function movePlayer(st, dt) {
         s = WALK_SPEED * dt * run * slopeSpeedFactor(P.x, P.z, wx / l, wz / l);
       let nx = P.x + (wx / l) * s,
         nz = P.z + (wz / l) * s;
+      if (OrbM) [nx, nz] = orbitWalkStep(OrbM.c, P.x, P.z, wx / l, wz / l, s, OrbM.dead || 0);
       if (canStepTo(P.x, P.z, nx, P.z)) P.x = nx;
       if (canStepTo(P.x, P.z, P.x, nz)) P.z = nz;
       mx = wx;
@@ -3504,7 +3566,7 @@ function movePlayer(st, dt) {
       }
     }
     P.walk = Math.hypot(P.x - ox, P.z - oz) > 1e-4 ? 1 : 0;
-    /* phase 08: the metres you walk outdoors hatch your eggs */
+    /* phase 08: the metres you walk outdoors (the distance on your trainer card; RL-10: they hatch nothing any more) */
     if (P.walk && !jumped && typeof addWalked === 'function' && !uiState.bench && !uiState.inside)
       addWalked(Math.hypot(P.x - ox, P.z - oz));
     if (P.walk && walkView.opt.onMove && walkView.t - P.saved > 400) {

@@ -20,11 +20,13 @@ are sessions of Claude's working time, not calendar time, and exclude the owner'
 | MG-2 | Seam agreement in mapgen (+ TR-1 smooth roads) | generated parent/child scenes pass the seam rules; roads ramp with no risers | none | 1-2 | no |
 | RL-6 | Run map and clock logic (done 2026-10-21) | `logic/run-map.js`, `nodeTypes.json`, forecast, deadline; no UI | RL-3, MG-2 | 1 | no |
 | RL-7 | Run world (done 2026-10-21) | generated scenes installed and walkable; the bowl shows the run | RL-5, RL-6 | 1-2 | no |
-| RL-8 | Run loop and payout | airship start, a town with paid healing, a mini-boss, the payout screen, resume: **the first playable cut** | RL-4, RL-7 | 2 | yes |
-| RL-9 | Ranch A | the building, store and keep, train between runs, the keep-one rule | RL-8, played | 2 | yes |
-| RL-10 | Ranch B | breed safe/risky with abominations, hatch, passive income (cap, rollback guard, offline, server anchor) | RL-9 | 2 | yes |
-| RL-11 | Hub upgrades, currencies, unlocks | `currencies/buildings/unlocks.json`, the Lab board, one unlock registry | RL-8 | 1-2 | yes |
-| RL-12 | Relics and effects | `relics.json`, `events.json`, `logic/effects.js`, picks | RL-11 | 1-2 | yes |
+| RL-8 | Run loop and payout (done 2026-10-21) | airship start, a town with paid healing, a mini-boss, the payout screen, resume: **the first playable cut** | RL-4, RL-7 | 2 | yes |
+| RL-8b | Run look (done 2026-10-22) | the owner's notes from the first play: rooms darker, the hub's world map Copperleaf's island alone, a run's own world map from its seed, laid across the bowl east to west | RL-8, played | 1 | yes |
+| RL-8 | Run loop and payout (done 2026-10-21, played) | airship start, a town with paid healing, a mini-boss, the payout screen, resume: **the first playable cut** | RL-4, RL-7 | 2 | yes |
+| RL-9 | Ranch A (done 2026-10-22: the building, training, Scrap; RL-9b the mast's pick of 1 home Billie and the packed bag) | the building, store and keep, train between runs, the keep-one rule (8.2: 1 home Billie a run; a packed bag) | RL-8, played | 2 | yes |
+| RL-10 | Ranch B (RL-10a done 2026-10-22: breeding safe/risky, abominations and quirks, hatching at the ranch, the walking eggs retired; RL-10b next) | breed safe/risky with abominations, hatch, passive income (cap, rollback guard, offline, server anchor) | RL-9 | 2 | yes |
+| RL-11 | Hub upgrades, currencies, unlocks (done 2026-10-22) | `currencies/buildings/unlocks.json`, the Lab board, one unlock registry | RL-8 | 1-2 | yes |
+| RL-12 | Relics and effects (RL-12a done 2026-10-22: effects, Loopholes, picks, shops; RL-12b next) | `relics.json`, `events.json`, `logic/effects.js`, picks | RL-11 (the owner: may go first, every Loophole on offer) | 1-2 | yes |
 | RL-13 | Modifiers, tiers, mini-boss leaders | `modifiers.json`, the bracket pick, the 8 leaders as the pool | RL-12 | 1 | yes |
 | RL-14 | Bots as enemies, salvage, the Voltron | `factions.json`, `bosses.json`, data-driven `alphaPhase`, a robot phase in the full test | RL-13 | 2 | yes |
 | RL-15 | Online | the run record, friend ghosts, daily seeds, rules and emulator tests | RL-14 | 2 | yes |
@@ -42,22 +44,35 @@ town node needs it.
   06's leftover. UI-1..UI-4 run beside RL-3..RL-7 (UI-4 before RL-7, so the run screens use the new parts); UI-5 and
   UI-6 after the RL-8 play test. Tags `ui-N-done`. UI-1 (theme as data, rules as a check) and UI-2 (kit v2, angular
   shapes, done whole, not split) done 2026-10-21; UI-3 split by the owner: UI-3a (the Studio's UI section, core) done
-  2026-10-21; UI-3b (its tools) and UI-4 (the run parts, beside it at the owner's word) done 2026-10-21; UI-5 next, after the
-  RL-8 play test.
+  2026-10-21; UI-3b (its tools) and UI-4 (the run parts, beside it at the owner's word) done 2026-10-21; UI-5 (every screen
+  onto the kit, one session at the owner's word, the bottom bar swapped) done 2026-10-22; UI-6 (old layers gone)
+  next.
 - **Map generator track** (docs/phases/mapgen-track.md): MG-1 done; MG-2 is on the RL path (before RL-6), the
   roguelite version (seam agreement), with terrain TR-1 folded in; MG-3 when a town node needs it; MG-4 and MG-5
   after RL-8.
 - **Terrain track** (docs/phases/terrain-track.md, the owner's brief 2026-10-21): smooth roads, mountains, height as
-  gameplay, terrain features. TR-1 (smooth roads) is folded into MG-2, before RL-7; TR-2..TR-7 alongside RL-9..RL-11
+  gameplay, terrain features. TR-1 (smooth roads) is folded into MG-2, before RL-7; TR-2a (mountains as the border) and
+  TR-2b (mountain trails) done 2026-10-21, after the Gen 3-5 route research; TR-2c next. Runs now go east to west (the
+  owner, TR-2 session). TR-3 (the camera on tall ground) done 2026-10-22 (PR #108). TR-2c split by the owner: part 1 (grass patches, wild Billies in any patch, the dust puff) done 2026-10-22; part 2 (the road pathfinder through tiers and the massif, the four mountain route types) next. TR-4..TR-7 alongside RL-9..RL-11
   after the first cut; the gameplay sessions TR-8..TR-11 wait for their RL parts. Tags `tr-N-done`.
 - **Sound track** (docs/phases/sound-track.md, planned 2026-10-21): settings fixes, the tracker as data, a Studio
   section for music and cries, then a Pokémon-style rework (four voices, written hooks, battle intros, a cry per
   species). SND-1 to SND-3 beside RL-8; SND-4 to SND-6 after the RL-8 play test. Tags `snd-N-done`. SND-1 (settings
   and routing), SND-2 (the tracker as data, biome music in a run) and SND-3 (the Studio's Music & sound section, a cry
   per stage) done 2026-10-22; SND-4 (the themes) waits for the RL-8 play test.
-- **Project Story** (docs/phases/project-story.md): S1-S3 and S7 done, S8 partly (the city plays before the fall).
+- **Island track** (docs/phases/island-track.md, the owner's brief 2026-10-22): Copperleaf becomes a real island, one
+  map with an orbit camera round a mountain, forest, cove, beaches, room for the town and the barn's pasture. IS-0
+  (contract and test island) first and alone; then wave 1 (IS-1 orbit camera, IS-2 island generator, IS-3 sea all
+  round, IS-4 island props, IS-6a the hub's own Studio editor with an orbiting camera and the ground lock), wave 2
+  (IS-5 Copperleaf moves on, IS-6b the editor's dials, IS-7 the world map's island), wave 3 (IS-8 barn and pasture
+  after RL-10, IS-9 dressing and the phone pass). The owner (2026-10-22): the island is the hub, never a run node,
+  and is locked once it is right. IS-2 (the island ground generator, `copperleaf_island`) done 2026-10-22. IS-7 (the world map's island: its coast,
+  ground, mountain and town on the hub's bowl) done 2026-10-22. IS-5 (Copperleaf moves onto the island; rooms face four ways)
+  done 2026-10-22. Tags `is-N-done`.
+- **Project Story** (docs/phases/project-story.md): S1-S3 and S7 done, S8 partly (RL-8: New game plays the fall only; the city's files stay).
   S6 (Hazel vs Blake as a real battle) is unblocked by RL-4; S4, S5 and S8's leftovers wait until the first cut has
-  been played. The opening stays as built; RL-8 adds Hazel's lines sending the player to the airship mast.
+  been played. RL-8 (the owner's answer): the opening is the fall only, Blake cut from it (his data kept), and Hazel's
+  new lines send the player to the airship mast.
 
 ## The old phases (status from docs/HANDOFF.md, 2026-10-20)
 
@@ -74,9 +89,9 @@ No `phase-NN-done` tag was ever pushed; "done" means the HANDOFF entry says the 
 | 06 | 06-ui-structure | mostly done (06-1..06-4); ui.js not split, old CSS layers not emptied | absorbed: UI-5 and UI-6 (docs/phases/ui-track.md); `phase-06-done` when UI-6 ends |
 | 07 | 07-portraits | part 1 only (kit, slicer, portraits.json; nothing uses them) | parked: after the first cut is fun |
 | 08 | 08-classic-movement-seamless-maps-rooms | 08a-1..3 and 08b-1..2 done; 08b-3 not | absorbed: the run world uses 08b's seam model; 08b-3 templates parked |
-| 09 | 09-props-and-terrain | partly: Copperleaf, Route 1, Marigold and the city set redone | parked: the other towns are legacy; run biomes reuse the done kits |
+| 09 | 09-props-and-terrain | partly: Copperleaf, Route 1, Marigold and the city set redone; every tree of the run biomes a model (batch 10) | parked: the other towns are legacy; run biomes reuse the done kits (left: the rooms' furniture, the barn, the mossy boulder, campfire, lookout tower, wind-sail flower) |
 | 10 | 10-world-map-bowl | done, waiting on the owner's phone look and the tag | absorbed: RL-7 makes the bowl show a run |
-| 11 | archive/11-opening-sequence | moved to Project Story S7-S8; the city plays from New game | absorbed: RL-8 (Hazel's mast lines) |
+| 11 | archive/11-opening-sequence | moved to Project Story S7-S8; since RL-8 New game plays the fall only | absorbed: RL-8 (the fall only, Hazel's mast lines) |
 | 12 | 12-ranch | not started | absorbed: RL-9, RL-10 |
 | 13 | 13-testing-and-debugging | 13a done; 13b, 13c not | absorbed in part (fixtures for runs, RL-7/8); 13c parked |
 | 14 | 14-studio | partly, through the Studio track | absorbed: editors come with their sections (RL-16) |
@@ -95,19 +110,23 @@ never store/keep or training.
 
 ## Questions I want to be asked (do not decide these alone)
 The 20 "Ask me before" items in docs/phases/roguelite-track.md, section 8: the run's internal key (RL-3); keep-one vs
-ranch levels (RL-9); the hub's extent and Copperleaf's south exit (answered in RL-5: Copperleaf alone, its south exit gone); legacy by
+ranch levels (answered in RL-9: 1 home Billie a run at Bracket I, and a bag packed at the mast from Copperleaf's); the hub's extent and Copperleaf's south exit (answered in RL-5: Copperleaf alone, its south exit gone); legacy by
 moving files (answered in RL-5: moved to game/data/legacy, a read-only Studio list); currency
-names and the building mapping (RL-11); menu nodes (RL-12); the first cut's shape (RL-8); battle formats by node type
-(RL-8; the turn cap was answered in RL-4: 40, a draw; a killed battle restarts from its seed); the clock's numbers (answered in
+names and the building mapping (answered in RL-11: $ / Capital / Scrap / Audit Seals; Lab = Capital, Ranch and
+Workshop = Scrap, Airship = Seals); menu nodes (answered in RL-12: a normal-sized waystation place with a stand, built in RL-12b); the first cut's shape (answered in RL-8: the full 9-row map); battle formats by node type
+(answered in RL-8: wild single, mini-boss doubles, an Alpha boss; the turn cap was answered in RL-4: 40, a draw; a killed battle restarts from its seed); the clock's numbers (answered in
 RL-6: a day per arrival, backtracking included, deadline = the shortest walk + 3, no tick for healing or waiting); the token link, Remember me and deleting the
 versioned tools (RL-1); SAVE_VERSION 4 and the cloud key whitelist (RL-3, RL-10); the dex's place (RL-3); the relic
-cap (RL-12); the hub island's look (answered in RL-5: the bowl shows Copperleaf alone; its sea share is set in the Studio); the ranch cut order (RL-9); the order after the first cut; the tuning
+cap (answered in RL-12: 6); the hub island's look (answered in RL-5: the bowl shows Copperleaf alone; its sea share is set in the Studio); the ranch cut order (answered in RL-9: the walkable yard and pens wait); the order after the first cut; the tuning
+cap (RL-12); the hub island's look (answered in RL-5: the bowl shows Copperleaf alone; RL-8b: as an island, worldmap.json sea.island); the ranch cut order (RL-9); the order after the first cut; the tuning
 placeholders (RL-6 took the map's: 9 rows, 2 mini-bosses, two lanes on 70% of free and town rows, a lane switch on 25%
 of lane pairs, the five biomes with finished plants; reveal the next row, '?' on the row after, the boss always; RL-7
 took the scenes': dial ranges in `run.scene`, wild levels 3-5 on the landing +1 a row, 2 on a walk back, a crossing
 counting 6 m in, a run kept across a new generator version, places named biome + type; the rest wait for their
-sessions); pushing the tags; the opening (RL-8). Still open from the old phases: phase 17's prototype
-approval and ask list (RL-14), phase 16's breeding mode (RL-10),
+sessions); pushing the tags; the opening (answered in RL-8: the fall only). New from the owner's first play (2026-10-21,
+roguelite-track.md section 5): rooms too bright; routes wider than long (an HD-2D diorama); Copperleaf's world map its
+island alone; a run's own world map generated from its seed. Still open from the old phases: phase 17's prototype
+approval and ask list (RL-14), phase 16's breeding mode (answered in RL-10a: both, you pick the parents, the ranch the parts),
 phase 10's phone look, phase 06's 06-5.
 
 ## Where the old brief went

@@ -1,0 +1,260 @@
+/* UI-6: The opening's page parts: the cutscene bars and captions, the pick, the fall, waking up and Hazel's tips. Moved as they were from screens.css, in the order the page loaded them. */
+/* ---------- v14: opening cutscene ---------- */
+.cs {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  pointer-events: auto;
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+}
+body.in-cs #bgfx {
+  display: none;
+}
+body.in-cs #dioui {
+  display: block;
+}
+.cs-bars i {
+  position: fixed;
+  left: 0;
+  right: 0;
+  height: 7vh;
+  background: #0b0912;
+  transition: transform 0.7s cubic-bezier(0.2, 0.8, 0.3, 1);
+  pointer-events: none;
+}
+.cs-bars i:first-child {
+  top: 0;
+}
+.cs-bars i:last-child {
+  bottom: 0;
+}
+body.cs-choosing .cs-bars i:first-child {
+  transform: translateY(-100%);
+}
+body.cs-choosing .cs-bars i:last-child {
+  transform: translateY(100%);
+}
+.cs-cap {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 16vh;
+  text-align: center;
+  color: #fff8ec;
+  opacity: 0;
+  transform: translateY(8px);
+  transition:
+    opacity 0.9s ease,
+    transform 0.9s ease;
+  pointer-events: none;
+  text-shadow:
+    0 2px 0 rgba(20, 10, 24, 0.55),
+    0 0 18px rgba(20, 10, 24, 0.45);
+}
+.cs-cap.on {
+  opacity: 1;
+  transform: none;
+}
+.cs-cap small {
+  display: block;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-size: 13px;
+}
+.cs-cap b {
+  display: block;
+  font: 400 54px/1 var(--font-voice);
+  margin-top: 6px;
+}
+.cs-skip {
+  position: fixed;
+  top: calc(7vh + 10px);
+  right: 12px;
+  z-index: 2;
+}
+body.cs-choosing .cs-skip,
+body.cs-dress .cs-skip {
+  display: none;
+}
+.cs-pick {
+  position: fixed;
+  left: 50%;
+  bottom: 14px;
+  transform: translateX(-50%);
+  width: min(460px, calc(100% - 24px));
+  padding: 12px 14px 14px;
+  border-radius: 16px;
+  background: var(--panel-s);
+  box-shadow: 0 10px 30px var(--shadow);
+  cursor: default;
+  animation: csUp 0.3s ease backwards;
+}
+.cs-pick .sd {
+  margin: 8px 0 0;
+  font-size: 14.5px;
+  color: var(--text2);
+}
+.cs-pick .pb.wide {
+  margin-top: 12px;
+  width: 100%;
+}
+.cs-pick .racts {
+  margin-top: 12px;
+  display: flex;
+  gap: 8px;
+}
+.cs-pick .racts .pb {
+  flex: 1;
+}
+.cs-fade {
+  position: fixed;
+  inset: 0;
+  background: #fff8ec;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.7s ease;
+}
+.cs-fade.on {
+  opacity: 1;
+}
+body.in-cs #dressing {
+  z-index: 20;
+}
+body.in-cs #app,
+body.in-cs #nav {
+  display: none;
+}
+@media (max-width: 560px) {
+  .cs-cap b {
+    font-size: 42px;
+  }
+  .cs-bars i {
+    height: 5vh;
+  }
+  .cs-skip {
+    top: calc(5vh + 8px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cs-bars i,
+  .cs-cap,
+  .cs-fade {
+    transition: none;
+  }
+  .cs-pick {
+    animation: none;
+  }
+}
+@keyframes csUp {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 10px);
+  }
+}
+/* ---------- v47: the opening's fall, waking up, and Hazel's tips in Blake's first battle ---------- */
+.cs-fall {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  background: #0b0912;
+}
+.cs-fall[hidden] {
+  display: none;
+}
+body.cs-falling #dioui {
+  display: none;
+}
+.cs-bars i {
+  transition:
+    transform 0.7s cubic-bezier(0.2, 0.8, 0.3, 1),
+    height 0.24s ease-out;
+}
+body.cs-blink .cs-bars i {
+  height: 51vh;
+  transition: height 0.15s ease-in;
+}
+body.cs-waking #dio {
+  transition:
+    opacity 0.45s ease,
+    filter 2.6s ease;
+}
+body.cs-dazed #dio,
+body.cs-dazed #dio.gl {
+  filter: blur(8px) brightness(1.12) saturate(0.8) !important;
+}
+.btip {
+  position: fixed;
+  z-index: 40;
+  left: 50%;
+  top: calc(env(safe-area-inset-top, 0px) + 30px);
+  transform: translateX(-50%);
+  width: min(520px, calc(100% - 20px));
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 12px 8px 8px;
+  border-radius: 14px;
+  background: var(--panel-s);
+  color: var(--text);
+  box-shadow: 0 8px 24px var(--shadow, rgba(0, 0, 0, 0.3));
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 0.3s ease,
+    transform 0.3s ease;
+}
+.btip.on {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
+}
+.btip.off {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-50%) translateY(-8px);
+}
+.btip-face {
+  width: 44px;
+  height: 54px;
+  border-radius: 10px;
+  background: rgba(127, 110, 90, 0.14);
+  overflow: hidden;
+  display: grid;
+  place-items: end center;
+}
+.btip-face img {
+  display: block;
+  image-rendering: pixelated;
+}
+.btip-t {
+  font-size: 14.5px;
+  line-height: 1.4;
+}
+.btip-t b {
+  display: block;
+  font: 400 16px/1.1 var(--font-voice);
+  color: var(--gold2);
+  margin-bottom: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .btip,
+  .cs-bars i {
+    transition: none;
+  }
+  body.cs-waking #dio {
+    transition: none;
+  }
+}
+.btip-b {
+  display: inline-flex;
+  margin-top: 6px;
+}

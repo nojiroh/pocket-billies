@@ -19,22 +19,26 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
       "wobble": 0.36,
       "exits": [
         {
-          "side": "N",
-          "t": 0.25,
+          "side": "W",
+          "t": 0.15625,
           "width": 2
         },
         {
-          "side": "N",
-          "t": 0.75,
+          "side": "W",
+          "t": 0.84375,
           "width": 2
         }
       ]
+    },
+    "props": {
+      "mast": 1
     },
     "kind": "route",
     "biome": "thicket",
     "w": 112,
     "h": 64,
     "seed": 477028837,
+    "pin": "EW",
     "edges": 0
   },
   {
@@ -56,22 +60,24 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
       "wobble": 0.59,
       "exits": [
         {
-          "side": "S",
+          "side": "E",
           "t": 0.5,
           "width": 2
         },
         {
-          "side": "N",
+          "side": "W",
           "t": 0.5,
           "width": 2
         }
       ]
     },
+    "props": {},
     "kind": "route",
     "biome": "ridge",
     "w": 112,
     "h": 64,
     "seed": 2108422820,
+    "pin": "EW",
     "edges": 1
   },
   {
@@ -93,22 +99,24 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
       "wobble": 0.56,
       "exits": [
         {
-          "side": "S",
+          "side": "E",
           "t": 0.5,
           "width": 2
         },
         {
-          "side": "N",
+          "side": "W",
           "t": 0.5,
           "width": 2
         }
       ]
     },
+    "props": {},
     "kind": "route",
     "biome": "autumn",
     "w": 112,
     "h": 64,
     "seed": 1923185927,
+    "pin": "EW",
     "edges": 1
   },
   {
@@ -130,27 +138,32 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
       "wobble": 0.74,
       "exits": [
         {
-          "side": "S",
-          "t": 0.25,
+          "side": "E",
+          "t": 0.15625,
           "width": 2
         },
         {
-          "side": "N",
+          "side": "W",
           "t": 0.5,
           "width": 2
         },
         {
-          "side": "S",
-          "t": 0.75,
+          "side": "E",
+          "t": 0.84375,
           "width": 2
         }
       ]
+    },
+    "props": {
+      "clinic": 1,
+      "shop": 1
     },
     "kind": "route",
     "biome": "thicket",
     "w": 112,
     "h": 64,
     "seed": 986359382,
+    "pin": "EW",
     "edges": 2
   },
   {
@@ -172,27 +185,29 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
       "wobble": 0.31,
       "exits": [
         {
-          "side": "S",
+          "side": "E",
           "t": 0.5,
           "width": 2
         },
         {
-          "side": "N",
-          "t": 0.25,
+          "side": "W",
+          "t": 0.15625,
           "width": 2
         },
         {
-          "side": "N",
-          "t": 0.75,
+          "side": "W",
+          "t": 0.84375,
           "width": 2
         }
       ]
     },
+    "props": {},
     "kind": "route",
     "biome": "thicket",
     "w": 112,
     "h": 64,
     "seed": 1951062480,
+    "pin": "EW",
     "edges": 1
   },
   {
@@ -214,27 +229,29 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
       "wobble": 0.4,
       "exits": [
         {
-          "side": "S",
+          "side": "E",
           "t": 0.5,
           "width": 2
         },
         {
-          "side": "N",
-          "t": 0.25,
+          "side": "W",
+          "t": 0.15625,
           "width": 2
         },
         {
-          "side": "N",
-          "t": 0.75,
+          "side": "W",
+          "t": 0.84375,
           "width": 2
         }
       ]
     },
+    "props": {},
     "kind": "route",
     "biome": "thicket",
     "w": 112,
     "h": 64,
     "seed": 553354720,
+    "pin": "EW",
     "edges": 1
   },
   {
@@ -256,22 +273,24 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
       "wobble": 0.73,
       "exits": [
         {
-          "side": "S",
+          "side": "E",
           "t": 0.5,
           "width": 2
         },
         {
-          "side": "N",
+          "side": "W",
           "t": 0.5,
           "width": 2
         }
       ]
     },
+    "props": {},
     "kind": "route",
     "biome": "ridge",
     "w": 112,
     "h": 64,
     "seed": 1581277298,
+    "pin": "EW",
     "edges": 1
   },
   {
@@ -293,22 +312,27 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
       "wobble": 0.54,
       "exits": [
         {
-          "side": "S",
+          "side": "E",
           "t": 0.5,
           "width": 2
         },
         {
-          "side": "N",
+          "side": "W",
           "t": 0.5,
           "width": 2
         }
       ]
+    },
+    "props": {
+      "clinic": 1,
+      "shop": 1
     },
     "kind": "route",
     "biome": "thicket",
     "w": 112,
     "h": 64,
     "seed": 63358577,
+    "pin": "EW",
     "edges": 1
   },
   {
@@ -330,27 +354,32 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
       "wobble": 0.72,
       "exits": [
         {
-          "side": "S",
-          "t": 0.25,
+          "side": "E",
+          "t": 0.15625,
           "width": 2
         },
         {
-          "side": "N",
+          "side": "W",
           "t": 0.5,
           "width": 2
         },
         {
-          "side": "S",
-          "t": 0.75,
+          "side": "E",
+          "t": 0.84375,
           "width": 2
         }
       ]
+    },
+    "props": {
+      "clinic": 1,
+      "shop": 1
     },
     "kind": "route",
     "biome": "meadow",
     "w": 112,
     "h": 64,
     "seed": 577964397,
+    "pin": "EW",
     "edges": 2
   },
   {
@@ -372,32 +401,34 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
       "wobble": 0.47,
       "exits": [
         {
-          "side": "S",
-          "t": 0.25,
+          "side": "E",
+          "t": 0.15625,
           "width": 2
         },
         {
-          "side": "N",
-          "t": 0.25,
+          "side": "W",
+          "t": 0.15625,
           "width": 2
         },
         {
-          "side": "S",
-          "t": 0.75,
+          "side": "E",
+          "t": 0.84375,
           "width": 2
         },
         {
-          "side": "N",
-          "t": 0.75,
+          "side": "W",
+          "t": 0.84375,
           "width": 2
         }
       ]
     },
+    "props": {},
     "kind": "route",
     "biome": "thicket",
     "w": 112,
     "h": 64,
     "seed": 553133995,
+    "pin": "EW",
     "edges": 2
   },
   {
@@ -419,22 +450,24 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
       "wobble": 0.43,
       "exits": [
         {
-          "side": "S",
+          "side": "E",
           "t": 0.5,
           "width": 2
         },
         {
-          "side": "N",
+          "side": "W",
           "t": 0.5,
           "width": 2
         }
       ]
     },
+    "props": {},
     "kind": "route",
     "biome": "meadow",
     "w": 112,
     "h": 64,
     "seed": 1584210054,
+    "pin": "EW",
     "edges": 1
   },
   {
@@ -456,22 +489,27 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
       "wobble": 0.68,
       "exits": [
         {
-          "side": "S",
+          "side": "E",
           "t": 0.5,
           "width": 2
         },
         {
-          "side": "N",
+          "side": "W",
           "t": 0.5,
           "width": 2
         }
       ]
+    },
+    "props": {
+      "clinic": 1,
+      "shop": 1
     },
     "kind": "route",
     "biome": "meadow",
     "w": 112,
     "h": 64,
     "seed": 1020292343,
+    "pin": "EW",
     "edges": 1
   },
   {
@@ -493,22 +531,24 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
       "wobble": 0.74,
       "exits": [
         {
-          "side": "S",
-          "t": 0.25,
+          "side": "E",
+          "t": 0.15625,
           "width": 2
         },
         {
-          "side": "S",
-          "t": 0.75,
+          "side": "E",
+          "t": 0.84375,
           "width": 2
         }
       ]
     },
+    "props": {},
     "kind": "route",
     "biome": "meadow",
     "w": 112,
     "h": 64,
     "seed": 137567764,
+    "pin": "EW",
     "edges": 2
   }
 ]

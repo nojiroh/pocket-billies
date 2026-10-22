@@ -119,7 +119,7 @@ test('UI-3: space, text sizes, motion, depth and drop shadows are written from t
   assert.equal(
     dark['--g-sh2'],
     '0 18px 38px -10px rgba(0, 0, 0, 0.75), 0 3px 8px rgba(0, 0, 0, 0.4)',
-    "v05.css's dark"
+    'the old dark glass (base.css, was v05.css)'
   );
   assert.equal(dark['--g-in'], 'inset 0 1px 0 rgba(255, 255, 255, 0.12)');
   assert.match(
@@ -323,7 +323,7 @@ test("UI-3: a screen's override: its colours and shapes on its root (and on data
 });
 
 test("UI-3: the variables a screen declares again are the style sheets' own", () => {
-  const css = ['tokens.css', 'polish.css']
+  const css = ['tokens.css', 'base.css']
     .map(f => readFileSync(join(import.meta.dirname, '../../game/css/' + f), 'utf8'))
     .join('\n');
   const norm = (/** @type {string} */ v) => v.replace(/\s+/g, ' ').trim();

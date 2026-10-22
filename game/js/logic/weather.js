@@ -5,14 +5,24 @@
    rolled in logic from a seeded stream (logic/run-map.js) and the page's real-clock weather reads the same table.
    weatherPick turns a roll into a weather: environment.js rolls with a hash of the climate, the day and the 3-hour block,
    a run rolls from its node's stream for the day.
+   What a weather does in a battle (WEATHER_TYPE_BOOSTS, moved here from things-to-do.js in RL-8) is here too, so a
+   run's battle can take its forecast's weather and a run's simulation can play it.
    Logic only: no DOM, runs in Node (tools/test/weather.test.mjs). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 /* eslint-disable no-func-assign */
 expose({
   CLIMATE_WEATHER_ODDS: [() => CLIMATE_WEATHER_ODDS],
+  WEATHER_TYPE_BOOSTS: [() => WEATHER_TYPE_BOOSTS],
+  WILD_TYPE_BOOSTS: [() => WILD_TYPE_BOOSTS],
+  // @ts-expect-error -- replaced on purpose
+  battleWeatherOf: [() => battleWeatherOf, v => (battleWeatherOf = v)],
   // @ts-expect-error -- replaced on purpose
   weatherPick: [() => weatherPick, v => (weatherPick = v)],
+  // @ts-expect-error -- replaced on purpose
+  wildLikes: [() => wildLikes, v => (wildLikes = v)],
+  // @ts-expect-error -- replaced on purpose
+  wildOddsBy: [() => wildOddsBy, v => (wildOddsBy = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -47,4 +57,55 @@ export function weatherPick(climate, roll, season) {
     if (r < acc) return k;
   }
   return 'clear';
+}
+
+/* ---------- battles feel the weather (moved from things-to-do.js, RL-8) ---------- */
+/* each battle weather's move type multipliers ('sunny' and 'night' are clear weather by day and by night) */
+/** @type {Record<string, Record<string, number>>} */
+export const WEATHER_TYPE_BOOSTS = {
+  rain: { Water: 1.2, Fire: 0.8 },
+  storm: { Electric: 1.25, Water: 1.15, Fire: 0.8 },
+  snow: { Steel: 1.1, Grass: 0.9 },
+  fog: { Psychic: 1.1 },
+  ash: { Fire: 1.15, Ground: 1.15, Water: 0.9 },
+  sunny: { Fire: 1.15, Grass: 1.1, Water: 0.95 },
+  night: { Psychic: 1.15, Dragon: 1.1 },
+};
+/** a battle's weather ({k, m}: its name and its move type multipliers, as battle.wx holds it), with the rules' own
+ * changes (rules.json env.battle) laid over; null when it changes nothing
+ * @param {string} k @param {{ battle?: Record<string, Record<string, number>> }} [env]
+ * @returns {{ k: string, m: Record<string, number> } | null} */
+export function battleWeatherOf(k, env) {
+  const m = Object.assign({}, WEATHER_TYPE_BOOSTS[k] || {}, ((env || {}).battle || {})[k] || {});
+  return Object.keys(m).length ? { k, m } : null;
+}
+
+/* ---------- who comes out in what weather (moved from environment.js, RL-8) ---------- */
+/* each time of day's and weather's move type multipliers for the wild odds ('sunny' is clear by day) */
+/** @type {Record<string, Record<string, number>>} */
+export const WILD_TYPE_BOOSTS = {
+  night: { Psychic: 2, Dragon: 1.6, Steel: 1.2, Grass: 0.8 },
+  dusk: { Flying: 1.4, Psychic: 1.2 },
+  sunny: { Grass: 1.25, Fire: 1.2 },
+  rain: { Water: 1.8, Electric: 1.3, Fire: 0.6 },
+  storm: { Electric: 2.2, Water: 1.6, Flying: 0.6 },
+  snow: { Steel: 1.5, Water: 1.2, Grass: 0.7 },
+  fog: { Psychic: 1.6, Dragon: 1.3 },
+  ash: { Fire: 1.8, Ground: 1.4, Water: 0.7 },
+};
+/** the wild odds' multipliers with the rules' own likes (rules.json env.likes) laid over
+ * @param {Record<string, Record<string, number>>} [likes] @returns {Record<string, Record<string, number>>} */
+export function wildLikes(likes) {
+  const L = Object.assign({}, WILD_TYPE_BOOSTS);
+  for (const k in likes || {}) L[k] = Object.assign({}, L[k] || {}, /** @type {any} */ (likes)[k]);
+  return L;
+}
+/** RL-8: the wild odds by a weather alone (a run's place: its forecast for today; a run has no hour, so clear is
+ * sunny): each [species, weight] times its types' multipliers @param {[string, number][]} list @param {string} weather
+ * @param {Record<string, Record<string, number>> | undefined} likes rules.json env.likes
+ * @param {(id: string) => string[]} typesOf @returns {[string, number][]} */
+export function wildOddsBy(list, weather, likes, typesOf) {
+  const F = wildLikes(likes)[!weather || weather === 'clear' ? 'sunny' : weather];
+  if (!F) return list;
+  return list.map(([id, w]) => [id, typesOf(id).reduce((m, t) => m * (F[t] || 1), w)]);
 }

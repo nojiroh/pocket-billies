@@ -4,9 +4,9 @@
 import { expose } from '../../game/js/test-globals.js';
 import { worldMapLookTab } from '../../game/js/hooks.js';
 import { $ } from '../../game/js/util.js';
+import { WILD_TYPE_BOOSTS } from '../../game/js/logic/weather.js';
 import { bowlLandmarkPick, bowlPropClass } from '../../game/js/logic/bowl-things.js';
 import { artURL, makeCanvas } from '../../game/js/art.js';
-import { WILD_TYPE_BOOSTS } from '../../game/js/environment.js';
 import { escapeHtml } from './game-stand-ins.js';
 import {
   ACTIONS,

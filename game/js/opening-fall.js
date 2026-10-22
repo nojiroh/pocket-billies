@@ -879,7 +879,7 @@ function battleTip(who, text, btn, hot) {
     if (bt && bt.dataset.a === 'tutskip') tutorSkip();
   };
 }
-export function battleTipHide() {
+function battleTipHide() {
   const el = $('#btip');
   if (el) {
     clearTimeout(el._t);

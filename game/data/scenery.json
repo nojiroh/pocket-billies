@@ -1330,10 +1330,8 @@
    "tags": ["route","town"],
    "group": "tree_pine",
    "solid": 0.4,
-   "layers": [
-    {"img":"scene/props/layers/tree_pine_lb.png","dz":0.53,"sway":0.7,"shadow":0},
-    {"img":"scene/props/layers/tree_pine_lf.png","dz":-0.37,"sway":1.4,"shadow":0}
-   ]
+   "model": "scene/next/models/tree_pine.json",
+   "ppm": 32
   },
   "tree_oak": {
    "name": "Oak tree",
@@ -2186,10 +2184,8 @@
    "tags": ["route","town"],
    "group": "tree_pine",
    "solid": 0.35,
-   "layers": [
-    {"img":"scene/props/layers/tree_pine_b_lb.png","dz":0.46,"sway":0.7,"shadow":0},
-    {"img":"scene/props/layers/tree_pine_b_lf.png","dz":-0.32,"sway":1.4,"shadow":0}
-   ]
+   "model": "scene/next/models/tree_pine_b.json",
+   "ppm": 32
   },
   "tree_pine_small": {
    "name": "Young pine",
@@ -2202,10 +2198,8 @@
    "tags": ["route","town"],
    "group": "tree_pine",
    "solid": 0.25,
-   "layers": [
-    {"img":"scene/props/layers/tree_pine_small_lb.png","dz":0.35,"sway":0.7,"shadow":0},
-    {"img":"scene/props/layers/tree_pine_small_lf.png","dz":-0.24,"sway":1.4,"shadow":0}
-   ]
+   "model": "scene/next/models/tree_pine_small.json",
+   "ppm": 32
   },
   "tree_birch_b": {
    "name": "Birch pair",
@@ -4971,166 +4965,6 @@
    "group": "kioskP",
    "box": [2.4,1.4]
   },
-  "tree_oak_deep": {
-   "name": "Oak tree (deep)",
-   "img": "scene/props/tree_oak.png",
-   "ox": -76,
-   "oy": -160,
-   "shadow": 1.3,
-   "sway": 0.35,
-   "flat": 0,
-   "tags": ["route","town"],
-   "group": "tree_oak",
-   "solid": 0.45,
-   "layers": [
-    {"img":"scene/props/layers/tree_oak_back.png","dz":0.45,"sway":0.7,"shadow":0},
-    {"img":"scene/props/layers/tree_oak_front.png","dz":-0.32,"sway":1.5,"shadow":0}
-   ]
-  },
-  "tree_oak_b_deep": {
-   "name": "Spreading oak (deep)",
-   "img": "scene/props/tree_oak_b.png",
-   "ox": -93,
-   "oy": -141,
-   "shadow": 1.4,
-   "sway": 0.35,
-   "flat": 0,
-   "tags": ["route","town"],
-   "group": "tree_oak",
-   "solid": 0.45,
-   "layers": [
-    {"img":"scene/props/layers/tree_oak_b_back.png","dz":0.45,"sway":0.7,"shadow":0},
-    {"img":"scene/props/layers/tree_oak_b_front.png","dz":-0.32,"sway":1.5,"shadow":0}
-   ]
-  },
-  "tree_oak_autumn_deep": {
-   "name": "Autumn oak (deep)",
-   "img": "scene/props/tree_oak_autumn.png",
-   "ox": -75,
-   "oy": -162,
-   "shadow": 1.3,
-   "sway": 0.35,
-   "flat": 0,
-   "tags": ["route","town"],
-   "group": "tree_oak",
-   "solid": 0.45,
-   "layers": [
-    {"img":"scene/props/layers/tree_oak_autumn_back.png","dz":0.45,"sway":0.7,"shadow":0},
-    {"img":"scene/props/layers/tree_oak_autumn_front.png","dz":-0.32,"sway":1.5,"shadow":0}
-   ]
-  },
-  "tree_birch_deep": {
-   "name": "Birch tree (deep)",
-   "img": "scene/props/tree_birch.png",
-   "ox": -34,
-   "oy": -154,
-   "shadow": 0.6,
-   "sway": 0.45,
-   "flat": 0,
-   "tags": ["route"],
-   "group": "tree_birch",
-   "solid": 0.3,
-   "layers": [
-    {"img":"scene/props/layers/tree_birch_back.png","dz":0.45,"sway":0.7,"shadow":0},
-    {"img":"scene/props/layers/tree_birch_front.png","dz":-0.32,"sway":1.5,"shadow":0}
-   ]
-  },
-  "tree_pine_deep": {
-   "name": "Pine tree (deep)",
-   "img": "scene/props/tree_pine.png",
-   "ox": -46,
-   "oy": -191,
-   "shadow": 0.9,
-   "sway": 0.35,
-   "flat": 0,
-   "tags": ["route","town"],
-   "group": "tree_pine",
-   "solid": 0.4,
-   "layers": [
-    {"img":"scene/props/layers/tree_pine_back.png","dz":0.45,"sway":0.7,"shadow":0},
-    {"img":"scene/props/layers/tree_pine_front.png","dz":-0.32,"sway":1.5,"shadow":0}
-   ]
-  },
-  "tree_blossom_deep": {
-   "name": "Blossom tree (deep)",
-   "img": "scene/props/tree_blossom.png",
-   "ox": -65,
-   "oy": -125,
-   "shadow": 0.9,
-   "sway": 0.35,
-   "flat": 0,
-   "tags": ["town","route"],
-   "group": "tree_blossom",
-   "solid": 0.35,
-   "layers": [
-    {"img":"scene/props/layers/tree_blossom_back.png","dz":0.45,"sway":0.7,"shadow":0},
-    {"img":"scene/props/layers/tree_blossom_front.png","dz":-0.32,"sway":1.5,"shadow":0}
-   ]
-  },
-  "tree_oak_small_deep": {
-   "name": "Oak sapling (deep)",
-   "img": "scene/props/tree_oak_small.png",
-   "ox": -47,
-   "oy": -103,
-   "shadow": 0.8,
-   "sway": 0.45,
-   "flat": 0,
-   "tags": ["route","town"],
-   "group": "tree_oak",
-   "solid": 0.3,
-   "layers": [
-    {"img":"scene/props/layers/tree_oak_small_back.png","dz":0.45,"sway":0.7,"shadow":0},
-    {"img":"scene/props/layers/tree_oak_small_front.png","dz":-0.32,"sway":1.5,"shadow":0}
-   ]
-  },
-  "tree_birch_b_deep": {
-   "name": "Birch pair (deep)",
-   "img": "scene/props/tree_birch_b.png",
-   "ox": -39,
-   "oy": -166,
-   "shadow": 0.7,
-   "sway": 0.45,
-   "flat": 0,
-   "tags": ["route"],
-   "group": "tree_birch",
-   "solid": 0.35,
-   "layers": [
-    {"img":"scene/props/layers/tree_birch_b_back.png","dz":0.45,"sway":0.7,"shadow":0},
-    {"img":"scene/props/layers/tree_birch_b_front.png","dz":-0.32,"sway":1.5,"shadow":0}
-   ]
-  },
-  "tree_pine_b_deep": {
-   "name": "Tall pine (deep)",
-   "img": "scene/props/tree_pine_b.png",
-   "ox": -40,
-   "oy": -241,
-   "shadow": 0.8,
-   "sway": 0.3,
-   "flat": 0,
-   "tags": ["route","town"],
-   "group": "tree_pine",
-   "solid": 0.35,
-   "layers": [
-    {"img":"scene/props/layers/tree_pine_b_back.png","dz":0.45,"sway":0.7,"shadow":0},
-    {"img":"scene/props/layers/tree_pine_b_front.png","dz":-0.32,"sway":1.5,"shadow":0}
-   ]
-  },
-  "tree_pine_small_deep": {
-   "name": "Young pine (deep)",
-   "img": "scene/props/tree_pine_small.png",
-   "ox": -31,
-   "oy": -113,
-   "shadow": 0.5,
-   "sway": 0.4,
-   "flat": 0,
-   "tags": ["route","town"],
-   "group": "tree_pine",
-   "solid": 0.25,
-   "layers": [
-    {"img":"scene/props/layers/tree_pine_small_back.png","dz":0.45,"sway":0.7,"shadow":0},
-    {"img":"scene/props/layers/tree_pine_small_front.png","dz":-0.32,"sway":1.5,"shadow":0}
-   ]
-  },
   "palm_tree": {
    "name": "Palm tree",
    "img": "scene/props/palm_tree.png",
@@ -6021,7 +5855,10 @@
    "flat": 0,
    "tags": ["route"],
    "group": "stump",
-   "solid": 0.45
+   "solid": 0.45,
+   "model": "scene/next/models/stump_mossy.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "log_mossy": {
    "name": "Mossy log",
@@ -6033,7 +5870,10 @@
    "flat": 0,
    "tags": ["route"],
    "group": "log",
-   "solid": 0
+   "solid": 0,
+   "model": "scene/next/models/log_mossy.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "mushroom_ring": {
    "name": "Mushroom ring",
@@ -7765,7 +7605,9 @@
    "solid": 0.3,
    "family": "trees",
    "grow": "lsv",
-   "weight": 0.6
+   "weight": 0.6,
+   "model": "scene/next/models/tree_cypress.json",
+   "ppm": 32
   },
   "tree_elm": {
    "name": "Elm",
@@ -8402,12 +8244,49 @@
    "weight": 1,
    "ppm": 32,
    "variants": [
-    {"img":"scene/props/scree_small.png","ox":-38,"oy":-12,"form":"small","weight":1,"span":1,"name":"Scree (small)"},
-    {"img":"scene/props/scree_pair.png","ox":-55,"oy":-14,"form":"pair","weight":0.9,"span":1.45,"name":"Scree (pair)"},
-    {"img":"scene/props/scree_row.png","ox":-77,"oy":-13,"form":"row","weight":0.5,"span":2.03,"name":"Scree (row)"},
-    {"img":"scene/props/scree_big.png","ox":-47,"oy":-20,"form":"big","weight":0.5,"span":1.24,"name":"Scree (big)"}
+    {
+     "img": "scene/props/scree_small.png",
+     "ox": -38,
+     "oy": -12,
+     "form": "small",
+     "weight": 1,
+     "span": 1,
+     "name": "Scree (small)",
+     "model": "scene/next/models/scree_small.json"
+    },
+    {
+     "img": "scene/props/scree_pair.png",
+     "ox": -55,
+     "oy": -14,
+     "form": "pair",
+     "weight": 0.9,
+     "span": 1.45,
+     "name": "Scree (pair)",
+     "model": "scene/next/models/scree_pair.json"
+    },
+    {
+     "img": "scene/props/scree_row.png",
+     "ox": -77,
+     "oy": -13,
+     "form": "row",
+     "weight": 0.5,
+     "span": 2.03,
+     "name": "Scree (row)",
+     "model": "scene/next/models/scree_row.json"
+    },
+    {
+     "img": "scene/props/scree_big.png",
+     "ox": -47,
+     "oy": -20,
+     "form": "big",
+     "weight": 0.5,
+     "span": 1.24,
+     "name": "Scree (big)",
+     "model": "scene/next/models/scree_big.json"
+    }
    ],
-   "vary": {"size":0}
+   "vary": {"size":0},
+   "model": "scene/next/models/scree.json"
   },
   "molehill": {
    "name": "Molehill",
@@ -8492,7 +8371,10 @@
    "solid": 0.35,
    "family": "seasons",
    "grow": "gGr",
-   "weight": 0.5
+   "weight": 0.5,
+   "model": "scene/next/models/tree_rowan.json",
+   "ppm": 32,
+   "swap": {"scene/next/leaves/rowan.png":"scene/next/leaves/rowan_autumn.png"}
   },
   "tree_beech_autumn": {
    "name": "Beech in autumn",
@@ -9137,70 +9019,39 @@
    "flat": 0,
    "tags": ["farm"],
    "group": "barn",
-   "box": [5.4,4],
+   "box": [5.5,4.1],
    "door": {"x":0,"y":0},
-   "build": {
-    "kind": "gableF",
-    "wall": [-86,86],
-    "eave": -121,
-    "apex": -195,
-    "over": 0.35,
-    "roofCol": "#545C70",
-    "roofTex": 12,
-    "wallCol": "#A8382E",
-    "wallTex": 4,
-    "trimCol": "#EAEEEC",
-    "floors": 1,
-    "rooms": [6],
-    "sideWin": false,
-    "win": [],
-    "glass": ["#3D5879","#598CAF","#70C4E4","#9BD2DA","#C6E6E8","#746250","#B79E68","#FFDE78","#FFE58F","#FFF0BC"],
-    "roofRamp": ["#32304C","#474863","#545C70","#878A89","#BBBCB9"],
-    "pitch": 40,
-    "variants": [
-     {
-      "wallCol": "#F6E6BE",
-      "roofCol": "#A05040",
-      "trimCol": "#84543C",
-      "roofRamp": ["#502B3A","#794143","#A05040","#BC8168","#D9B7A6"],
-      "extra": [],
-      "img": "scene/props/barn_v1.png"
-     },
-     {
-      "wallCol": "#DEECD6",
-      "roofCol": "#547854",
-      "trimCol": "#6E543C",
-      "roofRamp": ["#323B42","#475B51","#547854","#879D76","#BBC7AE"],
-      "extra": [],
-      "img": "scene/props/barn_v2.png"
-     },
-     {
-      "wallCol": "#F0D6D6",
-      "roofCol": "#785478",
-      "trimCol": "#604860",
-      "roofRamp": ["#402D50","#5E4368","#785478","#A0848F","#C9B9BC"],
-      "extra": [],
-      "img": "scene/props/barn_v3.png"
-     },
-     {
-      "wallCol": "#D6E2F0",
-      "roofCol": "#465A82",
-      "trimCol": "#5A463C",
-      "roofRamp": ["#2D2F53","#3E486E","#465A82","#7E8896","#B5BBC0"],
-      "extra": [],
-      "img": "scene/props/barn_v4.png"
-     },
-     {
-      "wallCol": "#ECDEB0",
-      "roofCol": "#B06E40",
-      "trimCol": "#785038",
-      "roofRamp": ["#55373A","#845443","#B06E40","#C89668","#DFC3A6"],
-      "extra": [],
-      "img": "scene/props/barn_v5.png"
-     }
-    ]
-   },
-   "room": "int_barn"
+   "room": "int_barn",
+   "model": "scene/next/models/barn.json",
+   "fx": [
+    {"k":"window","x":0,"y":-122},
+    {"k":"window","x":0,"y":-121},
+    {"k":"glow","x":0,"y":-99}
+   ],
+   "ppm": 32,
+   "variants": [
+    {
+     "img": "scene/props/barn_v1.png",
+     "swap": {"#A8382E":"#F6E6BE","#545C70":"#A05040","#EAEEEC":"#84543C","#7E2E34":"#84543C"}
+    },
+    {
+     "img": "scene/props/barn_v2.png",
+     "swap": {"#A8382E":"#DEECD6","#545C70":"#547854","#EAEEEC":"#6E543C","#7E2E34":"#6E543C"}
+    },
+    {
+     "img": "scene/props/barn_v3.png",
+     "swap": {"#A8382E":"#F0D6D6","#545C70":"#785478","#EAEEEC":"#604860","#7E2E34":"#604860"}
+    },
+    {
+     "img": "scene/props/barn_v4.png",
+     "swap": {"#A8382E":"#D6E2F0","#545C70":"#465A82","#EAEEEC":"#5A463C","#7E2E34":"#5A463C"}
+    },
+    {
+     "img": "scene/props/barn_v5.png",
+     "swap": {"#A8382E":"#ECDEB0","#545C70":"#B06E40","#EAEEEC":"#785038","#7E2E34":"#785038"}
+    }
+   ],
+   "vary": {"rot":0,"lean":0,"size":0}
   },
   "greenhouse": {
    "name": "Greenhouse",
@@ -10080,11 +9931,9 @@
    "tags": ["route","forest"],
    "group": "tree_giant_autumn",
    "solid": 1,
-   "layers": [
-    {"img":"scene/props/layers/tree_giant_autumn_lb.png","dz":0.6,"sway":0.7,"shadow":0},
-    {"img":"scene/props/layers/tree_giant_autumn_lf.png","dz":-0.45,"sway":1.4,"shadow":0}
-   ],
-   "landmark": 1
+   "landmark": 1,
+   "model": "scene/next/models/tree_giant_autumn.json",
+   "ppm": 32
   },
   "tree_jungle": {
    "name": "Jungle tree",
@@ -11291,6 +11140,339 @@
    "vary": {"rot":0,"lean":0,"size":0},
    "solid": 0.3,
    "glow": {"c":"#E6EBF0","r":1.6,"y":3.9,"day":0.05}
+  },
+  "fence_gate": {
+   "name": "Field gate",
+   "img": "scene/next/island/fence_gate.png",
+   "ox": -37,
+   "oy": -45,
+   "shadow": 0.35,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["island","farm"],
+   "group": "fence_gate",
+   "model": "scene/next/models/fence_gate.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0},
+   "box": [2.2,0.25]
+  },
+  "water_trough": {
+   "name": "Water trough",
+   "img": "scene/next/island/water_trough.png",
+   "ox": -41,
+   "oy": -25,
+   "shadow": 0.6,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["island","farm"],
+   "group": "water_trough",
+   "model": "scene/next/models/water_trough.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0},
+   "solid": 0.8
+  },
+  "hay_round": {
+   "name": "Round hay bale",
+   "img": "scene/next/island/hay_round.png",
+   "ox": -28,
+   "oy": -45,
+   "shadow": 0.8,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["island","farm"],
+   "group": "hay_round",
+   "model": "scene/next/models/hay_round.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0},
+   "solid": 0.7
+  },
+  "hay_feeder": {
+   "name": "Hay rack",
+   "img": "scene/next/island/hay_feeder.png",
+   "ox": -34,
+   "oy": -63,
+   "shadow": 0.8,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["island","farm"],
+   "group": "hay_feeder",
+   "model": "scene/next/models/hay_feeder.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0},
+   "solid": 0.85
+  },
+  "driftwood": {
+   "name": "Driftwood",
+   "img": "scene/next/island/driftwood.png",
+   "ox": -51,
+   "oy": -18,
+   "shadow": 0.3,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["island","beach"],
+   "group": "driftwood",
+   "model": "scene/next/models/driftwood.json",
+   "ppm": 32,
+   "vary": {"rot":1,"lean":0},
+   "solid": 0,
+   "variants": [
+    {
+     "img": "scene/next/island/driftwood_root.png",
+     "ox": -39,
+     "oy": -25,
+     "model": "scene/next/models/driftwood_root.json",
+     "name": "Driftwood (root)"
+    },
+    {
+     "img": "scene/next/island/driftwood_sticks.png",
+     "ox": -25,
+     "oy": -11,
+     "model": "scene/next/models/driftwood_sticks.json",
+     "name": "Driftwood (sticks)"
+    }
+   ]
+  },
+  "shore_rocks": {
+   "name": "Shore rocks",
+   "img": "scene/next/island/shore_rocks.png",
+   "ox": -31,
+   "oy": -21,
+   "shadow": 0.6,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["island","beach"],
+   "group": "shore_rocks",
+   "model": "scene/next/models/shore_rocks.json",
+   "ppm": 32,
+   "vary": {"rot":1,"lean":0},
+   "solid": 0.7,
+   "variants": [
+    {
+     "img": "scene/next/island/shore_rocks_b.png",
+     "ox": -25,
+     "oy": -28,
+     "model": "scene/next/models/shore_rocks_b.json",
+     "name": "Shore rocks (big)"
+    },
+    {
+     "img": "scene/next/island/shore_rocks_c.png",
+     "ox": -33,
+     "oy": -16,
+     "model": "scene/next/models/shore_rocks_c.json",
+     "name": "Shore rocks (row)"
+    }
+   ]
+  },
+  "tidepool_rim": {
+   "name": "Tide pool",
+   "img": "scene/next/island/tidepool_rim.png",
+   "ox": -36,
+   "oy": -22,
+   "shadow": 0.2,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["island","beach"],
+   "group": "tidepool_rim",
+   "model": "scene/next/models/tidepool_rim.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0},
+   "solid": 0
+  },
+  "fishing_boat": {
+   "name": "Fishing boat",
+   "img": "scene/next/island/fishing_boat.png",
+   "ox": -72,
+   "oy": -109,
+   "shadow": 0.8,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["island","water"],
+   "group": "fishing_boat",
+   "model": "scene/next/models/fishing_boat.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0},
+   "solid": 1.4,
+   "bob": 0.09
+  },
+  "net_rack": {
+   "name": "Net rack",
+   "img": "scene/next/island/net_rack.png",
+   "ox": -67,
+   "oy": -62,
+   "shadow": 0.6,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["island","beach"],
+   "group": "net_rack",
+   "model": "scene/next/models/net_rack.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0},
+   "solid": 0.6
+  },
+  "boulder_granite": {
+   "name": "Granite boulder",
+   "img": "scene/next/island/boulder_granite.png",
+   "ox": -45,
+   "oy": -49,
+   "shadow": 1,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["island","mountain"],
+   "group": "boulder",
+   "model": "scene/next/models/boulder_granite.json",
+   "ppm": 32,
+   "vary": {"rot":1,"lean":0},
+   "solid": 1.1,
+   "variants": [
+    {
+     "img": "scene/next/island/boulder_granite_b.png",
+     "ox": -41,
+     "oy": -39,
+     "model": "scene/next/models/boulder_granite_b.json",
+     "name": "Granite boulder (slab)"
+    },
+    {
+     "img": "scene/next/island/boulder_granite_c.png",
+     "ox": -36,
+     "oy": -60,
+     "model": "scene/next/models/boulder_granite_c.json",
+     "name": "Granite boulder (pair)"
+    }
+   ]
+  },
+  "cairn": {
+   "name": "Cairn",
+   "img": "scene/next/island/cairn.png",
+   "ox": -18,
+   "oy": -33,
+   "shadow": 0.4,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["island","mountain"],
+   "group": "cairn",
+   "model": "scene/next/models/cairn.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0},
+   "solid": 0.45
+  },
+  "summit_lookout": {
+   "name": "Summit lookout",
+   "img": "scene/next/island/summit_lookout.png",
+   "ox": -65,
+   "oy": -131,
+   "shadow": 1.6,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["island","mountain"],
+   "group": "summit_lookout",
+   "model": "scene/next/models/summit_lookout.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0},
+   "solid": 2,
+   "landmark": 1
+  },
+  "beach_grass": {
+   "name": "Beach grass",
+   "img": "scene/next/island/beach_grass.png",
+   "ox": -15,
+   "oy": -33,
+   "shadow": 0.2,
+   "sway": 1,
+   "flat": 0,
+   "tags": ["island","beach"],
+   "group": "beach_grass",
+   "solid": 0,
+   "ppm": 32,
+   "vary": {"size":0},
+   "variants": [
+    {
+     "img": "scene/next/island/beach_grass_tuft.png",
+     "ox": -11,
+     "oy": -21,
+     "form": "tuft",
+     "weight": 1,
+     "span": 0.7,
+     "name": "Beach grass (tuft)"
+    },
+    {
+     "img": "scene/next/island/beach_grass_clump.png",
+     "ox": -20,
+     "oy": -35,
+     "form": "clump",
+     "weight": 0.8,
+     "span": 1.3,
+     "name": "Beach grass (clump)"
+    },
+    {
+     "img": "scene/next/island/beach_grass_windswept.png",
+     "ox": -17,
+     "oy": -29,
+     "form": "windswept",
+     "weight": 0.6,
+     "span": 1.1,
+     "name": "Beach grass (windswept)"
+    }
+   ]
+  },
+  "shells": {
+   "name": "Shells",
+   "img": "scene/next/island/shells.png",
+   "ox": -12,
+   "oy": -11,
+   "shadow": 0,
+   "sway": 0,
+   "flat": 1,
+   "tags": ["island","beach"],
+   "group": "shells",
+   "solid": 0,
+   "ppm": 32,
+   "vary": {"size":0},
+   "variants": [
+    {"img":"scene/next/island/shells_few.png","ox":-8,"oy":-8,"form":"few","weight":1,"span":0.5,"name":"Shells (a few)"},
+    {
+     "img": "scene/next/island/shells_scatter.png",
+     "ox": -17,
+     "oy": -15,
+     "form": "scatter",
+     "weight": 0.6,
+     "span": 1.05,
+     "name": "Shells (scatter)"
+    }
+   ]
+  },
+  "forest_litter": {
+   "name": "Forest litter",
+   "img": "scene/next/island/forest_litter.png",
+   "ox": -14,
+   "oy": -13,
+   "shadow": 0,
+   "sway": 0,
+   "flat": 1,
+   "tags": ["island","forest"],
+   "group": "forest_litter",
+   "solid": 0,
+   "ppm": 32,
+   "vary": {"size":0},
+   "variants": [
+    {
+     "img": "scene/next/island/forest_litter_twigs.png",
+     "ox": -15,
+     "oy": -11,
+     "form": "twigs",
+     "weight": 1,
+     "span": 0.95,
+     "name": "Forest litter (twigs)"
+    },
+    {
+     "img": "scene/next/island/forest_litter_cones.png",
+     "ox": -10,
+     "oy": -11,
+     "form": "cones",
+     "weight": 0.8,
+     "span": 0.62,
+     "name": "Forest litter (cones)"
+    }
+   ]
   }
  },
  "person": 1.75,

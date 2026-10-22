@@ -43,10 +43,11 @@ import {
 } from './hooks.js';
 import { gameData } from './game-data.js';
 import { metresToKm, today } from './logic/rules.js';
-import { SAVE_NEW_MSG, SAVE_OLD_MSG, migrate, saveAge, validSave } from './logic/saves.js';
+import { SAVE_NEW_MSG, SAVE_OLD_MSG, migrate, newSaveKeepingPreferences, saveAge, validSave } from './logic/saves.js';
 import {
   activeBattle,
   escapeHtml,
+  flushSave,
   pauseSaving,
   reducedMotion,
   resumeSaving,
@@ -56,6 +57,7 @@ import {
   setSave,
   setSaveData,
   uiState,
+  writeStoredSave,
 } from './game-state.js';
 import { I18N_LANGS, i18nSet } from './i18n.js';
 import { gpuCountBegin, gpuCountEnd } from './engine/gpu-counters.js';
@@ -74,6 +76,7 @@ expose({
   graphicsDialHTML: [() => graphicsDialHTML, v => (graphicsDialHTML = v)],
   importSave: [() => importSave, v => (importSave = v)],
   muteButtonHTML: [() => muteButtonHTML, v => (muteButtonHTML = v)],
+  openSettings: [() => openSettings, v => (openSettings = v)],
   segmentedHTML: [() => segmentedHTML, v => (segmentedHTML = v)],
   settingsHTML: [() => settingsHTML, v => (settingsHTML = v)],
   settingsRefresh: [() => settingsRefresh, v => (settingsRefresh = v)],
@@ -296,7 +299,7 @@ function volumeSliderHTML(k, label, hint, def) {
     `<div class="vol"><input type="range" min="0" max="100" step="5" data-preference="${k}" value="${v}" aria-label="${escapeHtml(k === 'master' ? label : label + ' volume')}"><span class="vol-n">${v}</span><button type="button" class="pb small quiet" data-a="aud-test" data-k="${k}">Test</button></div>`
   );
 }
-export function settingsHTML() {
+function settingsHTML() {
   const p = saveData.preferences || {},
     tab = SETTINGS_TABS.some(t => t[0] === uiState.setTab) ? uiState.setTab : 'game',
     hz = frameScheduler.hz || 60;
@@ -455,7 +458,7 @@ export function settingsHTML() {
       ]
         .map(
           ([k, n, h]) =>
-            `<button type="button" role="radio" aria-checked="${gp === k}" class="gfx-pre ${gp === k ? 'on' : ''}" data-pref-set="graphics" data-v="${k}"><b>${n}</b><small>${h}</small></button>`
+            `<button type="button" role="radio" aria-checked="${gp === k}" class="gfx-pre k-card ${gp === k ? 'on' : ''}" data-pref-set="graphics" data-v="${k}"><b>${n}</b><small>${h}</small></button>`
         )
         .join('')}</div>` +
       settingsRowHTML(
@@ -495,7 +498,7 @@ export function settingsHTML() {
       (typeof accountSetAsideHTML === 'function' ? accountSetAsideHTML() : '') +
       `<p class="note">${typeof account !== 'undefined' && account.user ? 'Your progress is saved to your account, and in this browser.' : 'Your progress is saved in this browser. Sign in to keep it online, or download a backup before changing device or clearing browser data.'}</p><div class="two"><button class="pb small" data-a="export-save">Export save</button><button class="pb small" data-a="import-save">Import save</button></div>`;
   else
-    body = `<details class="help" open><summary>How to play</summary><p>Walk through towns and along the roads between them with the joystick, the D-pad or a tap on the ground. Tap a Billie in the grass to battle it; a win pays prize money, and more Billies come out while you play. Walking outdoors hatches your eggs. Lower its HP, then throw a coin to tax it.</p><p>The map shows where to go next; pick a place and gold arrows guide you there.</p></details><div class="dbg-help"><b>Something look wrong or run slowly?</b><p class="note">The full test takes a few minutes: it walks through every place and room, plays battles, the map and the opening, checks each for errors, then piles on more and more until your device can't keep up. Your save isn't changed. The debug log holds those numbers, errors and details about your device and graphics, plus a small picture of the scene. It has no save data or names. Send it to whoever is helping you. The graphics test tries each graphics setting on its own and saves a short report. The graphics cost test measures what each graphics setting costs on your device. The world map test opens the map and checks every place, the camera and the frame rate on your device.</p><div class="two"><button class="pb small" data-a="quicktest">Run the full test</button><button class="pb small" data-a="diagtest">Run the diagnostics test (2 min)</button><button class="pb small" data-a="gfxtest">Run the graphics test</button><button class="pb small" data-a="gfxbench">Run the graphics cost test (10 min)</button><button class="pb small" data-a="bowltest">Run the world map test (1 min)</button><button class="pb small" data-a="dbglog">Export debug log</button></div></div><button class="pb small quiet wide dbg-open" data-a="debug">${uiIconHTML('bug', 14)} Debug menu</button>`;
+    body = `<details class="help" open><summary>How to play</summary><p>Walk through towns and along the roads between them with the joystick, the D-pad or a tap on the ground. Tap a Billie in the grass to battle it; a win pays prize money, and more Billies come out while you play. The ranch breeds Billies into eggs that hatch on real time. Lower its HP, then throw a coin to tax it.</p><p>The map shows where to go next; pick a place and gold arrows guide you there.</p></details><div class="dbg-help"><b>Something look wrong or run slowly?</b><p class="note">The full test takes a few minutes: it walks through every place and room, plays battles, the map and the opening, checks each for errors, then piles on more and more until your device can't keep up. Your save isn't changed. The debug log holds those numbers, errors and details about your device and graphics, plus a small picture of the scene. It has no save data or names. Send it to whoever is helping you. The graphics test tries each graphics setting on its own and saves a short report. The graphics cost test measures what each graphics setting costs on your device. The world map test opens the map and checks every place, the camera and the frame rate on your device.</p><div class="two"><button class="pb small" data-a="quicktest">Run the full test</button><button class="pb small" data-a="diagtest">Run the diagnostics test (2 min)</button><button class="pb small" data-a="gfxtest">Run the graphics test</button><button class="pb small" data-a="gfxbench">Run the graphics cost test (10 min)</button><button class="pb small" data-a="bowltest">Run the world map test (1 min)</button><button class="pb small" data-a="dbglog">Export debug log</button></div></div><button class="pb small quiet wide dbg-open" data-a="debug">${uiIconHTML('bug', 14)} Debug menu</button>`;
   return `<div class="set-top">${muteButtonHTML(p)}</div><div class="set-tabs" role="tablist">${SETTINGS_TABS.map(([k, n]) => `<button type="button" role="tab" aria-selected="${k === tab}" class="${k === tab ? 'on' : ''}" data-a="set-tab" data-k="${k}">${n}</button>`).join('')}</div><div class="set-body">${body}</div>`;
 }
 /* SND-1: mute from any tab, beside the sheet's title (the title is drawn by ui.js, which the UI track keeps until
@@ -703,3 +706,47 @@ document.addEventListener('click', ev => {
     else toast('The Graphics gallery is on its way.');
   }
 });
+export function openSettings(tab) {
+  if (tab) uiState.setTab = tab;
+  modal({
+    title: 'Settings',
+    settings: true,
+    cls: 'set-sheet',
+    html: settingsHTML(),
+    btns: [
+      { l: 'Done', c: 'dark', f: closeModal },
+      {
+        l: 'Start over',
+        c: 'quiet',
+        f: () => {
+          uiState.modal = null;
+          modal({
+            title: 'Start over?',
+            html: '<p>This erases your team, Field Guide and money.</p>',
+            btns: [
+              {
+                l: 'Erase and start over',
+                c: 'red',
+                f: () => {
+                  setSaveData(newSaveKeepingPreferences());
+                  saveData.savedAt = Date.now();
+                  writeStoredSave(saveData);
+                  flushSave();
+                  uiState.intro = 0;
+                  uiState.pg = null;
+                  uiState.avatarDraft = null;
+                  uiState.trainerDraft = null;
+                  uiState.tab = 'walk';
+                  applyPreferences();
+                  closeModal();
+                  render();
+                },
+              },
+              { l: 'Keep my progress', c: 'quiet', f: closeModal },
+            ],
+          });
+        },
+      },
+    ],
+  });
+}
