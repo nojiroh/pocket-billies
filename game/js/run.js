@@ -22,13 +22,12 @@ import {
   toast,
 } from './hooks.js';
 import { COINS, ITEMS, RELICS, RULES, START_NODE, TRAINERS, UNLOCK_DATA } from './game-data.js';
-import { battleWeatherOf } from './logic/weather.js';
 import { billyName, formatNumber, healAll, plural } from './logic/rules.js';
 import { ranchStop } from './logic/ranch.js';
 import { runByTier, runEnd } from './logic/run-state.js';
-import { runArrive, runBack, runMapNode, runNext, runWeather } from './logic/run-map.js';
-import { runArriveHeal, runBattleSeed, runRelease, runReleasePays } from './logic/run-loop.js';
-import { fxHealShare, fxOfRun, fxPayoutRates, fxPrice, fxRows } from './logic/effects.js';
+import { runArrive, runBack, runMapNode, runNext } from './logic/run-map.js';
+import { runArriveHeal, runBattleExtra, runRelease, runReleasePays } from './logic/run-loop.js';
+import { fxHealShare, fxOfRun, fxPayoutRates, fxPrice } from './logic/effects.js';
 import {
   BATTLE_RULES,
   battleHost,
@@ -54,7 +53,6 @@ expose({
   runArrivedHint: [() => runArrivedHint, v => (runArrivedHint = v)],
   runBattleAgain: [() => runBattleAgain, v => (runBattleAgain = v)],
   runBattleStart: [() => runBattleStart, v => ((runBattleStart = v), provide({ runBattleStart }))],
-  runBattleWeather: [() => runBattleWeather],
   runCatch: [() => runCatch],
   runClinicEach: [() => runClinicEach],
   runEndHome: [() => runEndHome, v => (runEndHome = v)],
@@ -413,11 +411,6 @@ export function runJump(n) {
 }
 
 /* ---------- a run's battles ---------- */
-/** a run battle's weather: the place's forecast for today; clear is sunny (a run has no hour) */
-const runBattleWeather = (run, i) => {
-  const w = runWeather(run, i, run.clock) || 'clear';
-  return battleWeatherOf(w === 'clear' ? 'sunny' : w, RULES.env);
-};
 /** what a run battle needs to start again after a reload: its kind, format and foe as it began (copies), and what
  * the page gave it (the encounter, the trainer, the stage, a fish) */
 const runFoeRef = (kind, foe, extra = {}) => ({
@@ -445,10 +438,9 @@ function runBattleStart(kind, foe, extra) {
   return {
     extra: {
       ...extra,
-      seed: runBattleSeed(run, i, k),
-      wx: runBattleWeather(run, i),
-      /* RL-12: the Loopholes held (logic/effects.js); none: no fx, the battle as before */
-      ...(run.relics.length ? { fx: fxRows(run.relics, RELICS) } : {}),
+      /* its seed, the forecast's weather and (RL-12) the Loopholes held: none, no fx, the battle as before
+         (logic/run-loop.js runBattleExtra, which the run's simulation plays too) */
+      ...runBattleExtra(run, i, k, RULES.env, fxOfRun(run, RELICS)),
     },
     begun: b => {
       if (!again) run.battleN = k + 1;

@@ -16,14 +16,17 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { rngFrom } from './rng.js';
+import { battleWeatherOf } from './weather.js';
 import { maxHp } from './rules.js';
 import { runHome } from './run-state.js';
-import { runNodeSeed, runWorldNode } from './run-map.js';
+import { runNodeSeed, runWeather, runWorldNode } from './run-map.js';
 import { runWildLevels } from './run-scenes.js';
 /* eslint-disable no-func-assign */
 expose({
   // @ts-expect-error -- replaced on purpose
   runArriveHeal: [() => runArriveHeal, v => (runArriveHeal = v)],
+  // @ts-expect-error -- replaced on purpose
+  runBattleExtra: [() => runBattleExtra, v => (runBattleExtra = v)],
   runBattleSeed: [() => runBattleSeed],
   runFoeId: [() => runFoeId],
   runFoeWinText: [() => runFoeWinText],
@@ -146,6 +149,19 @@ export function runFoes(run, data) {
 /** a run battle's seed: its node's seed and its number in the run (run.battleN when it began), the stream the
  * battle draws its chances from (battle-state.js makeBattle) @param {Run} run @param {number} i @param {number} k */
 export const runBattleSeed = (run, i, k) => `${runNodeSeed(run.seed, i)}|battle|${k}`;
+/** Studio plan T3.2: what a run battle starts with, on the page (run.js runBattleStart) and in the simulation (logic/
+ * run-sim.js): its seed, the place's forecast for today as the battle's weather (clear is sunny: a run has no hour),
+ * and the Loopholes' effect rows when any are held (logic/effects.js fxOfRun: null when none)
+ * @param {Run} run @param {number} i the map node @param {number} k the battle's number in the run
+ * @param {any} env rules.json env @param {any[] | null} fx */
+export function runBattleExtra(run, i, k, env, fx) {
+  const w = runWeather(run, i, run.clock) || 'clear';
+  return {
+    seed: runBattleSeed(run, i, k),
+    wx: battleWeatherOf(w === 'clear' ? 'sunny' : w, env),
+    ...(fx ? { fx } : {}),
+  };
+}
 
 /** may this Billie be paid for as released: only one caught on the run (one from home comes back at the end anyway;
  * RL-9b: from the team or storage, run-state.js runHome) @param {Run} run @param {Billy} m */

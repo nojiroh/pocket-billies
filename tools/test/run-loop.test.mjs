@@ -104,6 +104,21 @@ test("a battle's seed is its node's and its number's", () => {
   assert.notEqual(L.runBattleSeed(run, 2, 5), L.runBattleSeed(run, 2, 6));
 });
 
+test("a run battle's start: its seed, the forecast's weather (clear is sunny), the Loopholes' rows when held", () => {
+  const run = runOf('RL8BATTLEX'),
+    { runWeather } = modules['run-map'],
+    { battleWeatherOf } = modules.weather;
+  for (let i = 0; i < run.map.nodes.length; i++) {
+    const w = runWeather(run, i, run.clock) || 'clear',
+      x = L.runBattleExtra(run, i, 4, GAME_DATA.rules.env, null);
+    assert.equal(x.seed, L.runBattleSeed(run, i, 4));
+    assert.deepEqual(x.wx, battleWeatherOf(w === 'clear' ? 'sunny' : w, GAME_DATA.rules.env), `node ${i}: ${w}`);
+    assert.ok(!('fx' in x), 'no Loopholes: no fx');
+  }
+  const fx = [{ kind: 'money', mult: 1.2, src: 'x' }];
+  assert.equal(L.runBattleExtra(run, 0, 0, GAME_DATA.rules.env, fx).fx, fx);
+});
+
 test('releasing: a Billie caught on the run is paid at the end, one from home only leaves the party', () => {
   reseed();
   const s = startedSave('musk0', 10),

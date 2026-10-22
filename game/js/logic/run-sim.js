@@ -37,10 +37,10 @@ export function runSimOn(env) {
     { runArrive, runNext, runWorldNode, runWeather } = modules['run-map'],
     { payoutOf, runByTier } = modules['run-state'],
     { runScenesMake, runWorldTables } = modules['run-scenes'],
-    { runFoes, runBattleSeed, runHealCost, runShopStock } = modules['run-loop'],
+    { runFoes, runBattleExtra, runHealCost, runShopStock } = modules['run-loop'],
+    { fxOfRun } = modules.effects,
     { runStartOn, runStartPlan } = modules['run-start'],
-    { runUnlocks } = modules.unlocks,
-    { battleWeatherOf } = modules.weather;
+    { runUnlocks } = modules.unlocks;
   const MAP_DATA = { nodeTypes: GAME_DATA.nodeTypes, biomes: GAME_DATA.biomes, rules: R },
     UNLOCK_DATA = { unlocks: GAME_DATA.unlocks, buildings: GAME_DATA.buildings };
   const worldData = () => ({
@@ -188,18 +188,13 @@ export function runSimOn(env) {
             full = s.team.reduce((/** @type {number} */ a, /** @type {any} */ m) => a + fn('maxHp')(m), 0);
           if (hp < full * 0.7) break;
           const k = run.battleN++,
-            wx = battleWeatherOf(
-              ((/** @type {string} */ w) => (w === 'clear' || !w ? 'sunny' : w))(runWeather(run, i, run.clock)),
-              RULES.env
-            ),
             build = { build: fn('encounterBuild')(q), coat: q.coat },
             foe = q.alpha ? fn('makeAlpha')(q.sp, q.lvl, build) : fn('makeBilly')(q.sp, q.lvl, build);
           if (
             !fn('newBattle')('wild', [foe], {
               qid: q.id,
               fmt: q.alpha ? 'alpha' : 'single',
-              seed: runBattleSeed(run, i, k),
-              wx,
+              ...runBattleExtra(run, i, k, RULES.env, fxOfRun(run, data.RELICS)),
               host: SIM_HOST,
             })
           )
@@ -237,10 +232,6 @@ export function runSimOn(env) {
         const T = Object.values(foes).find((/** @type {any} */ F) => F.runNode === i);
         if (T) {
           const k = run.battleN++,
-            wx = battleWeatherOf(
-              ((/** @type {string} */ w) => (w === 'clear' || !w ? 'sunny' : w))(runWeather(run, i, run.clock)),
-              RULES.env
-            ),
             team = T.alpha ? [fn('makeAlpha')(T.team[0].sp, T.team[0].lvl)] : fn('trainerTeam')(TRAINERS[T.id]);
           if (!s.team.some((/** @type {any} */ m) => m.hp > 0)) {
             stats.lostAt = node.type;
@@ -250,8 +241,7 @@ export function runSimOn(env) {
             tid: T.id,
             T: TRAINERS[T.id],
             fmt: T.alpha ? 'alpha' : T.double && team.length >= 2 ? 'double' : 'single',
-            seed: runBattleSeed(run, i, k),
-            wx,
+            ...runBattleExtra(run, i, k, RULES.env, fxOfRun(run, data.RELICS)),
             host: SIM_HOST,
           });
           const res = playOut(),
