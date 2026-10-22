@@ -184,18 +184,16 @@ export function runSimOn(env) {
           const hp = s.team.reduce((/** @type {number} */ a, /** @type {any} */ m) => a + m.hp, 0),
             full = s.team.reduce((/** @type {number} */ a, /** @type {any} */ m) => a + fn('maxHp')(m), 0);
           if (hp < full * 0.7) break;
-          const k = run.battleN++,
-            build = { build: fn('encounterBuild')(q), coat: q.coat },
-            foe = q.alpha ? fn('makeAlpha')(q.sp, q.lvl, build) : fn('makeBilly')(q.sp, q.lvl, build);
-          if (
-            !fn('newBattle')('wild', [foe], {
-              qid: q.id,
-              fmt: q.alpha ? 'alpha' : 'single',
-              ...runBattleExtra(run, i, k, RULES.env, fxOfRun(run, data.RELICS)),
-              host: SIM_HOST,
-            })
-          )
-            break;
+          /* started as the page starts it (battle-engine.js startWild), with the run's seed, weather and Loopholes; its
+             number is taken once it has begun, as run.js runBattleStart does */
+          const k = run.battleN;
+          fn('startWild')(q, {
+            host: SIM_HOST,
+            extra: runBattleExtra(run, i, k, RULES.env, fxOfRun(run, data.RELICS)),
+          });
+          if (!hooks.activeBattle) break;
+          run.battleN = k + 1;
+          const foe = hooks.activeBattle.sides[1].team[0];
           const B = hooks.activeBattle;
           let res;
           /* tax it while the party is small and there are coins: one throw, then fight on */
@@ -228,19 +226,19 @@ export function runSimOn(env) {
         /* its trainer: a mini-boss (doubles), the boss (an Alpha) */
         const T = Object.values(foes).find((/** @type {any} */ F) => F.runNode === i);
         if (T) {
-          const k = run.battleN++,
-            team = T.alpha ? [fn('makeAlpha')(T.team[0].sp, T.team[0].lvl)] : fn('trainerTeam')(TRAINERS[T.id]);
           if (!s.team.some((/** @type {any} */ m) => m.hp > 0)) {
             stats.lostAt = node.type;
             return finish();
           }
-          fn('newBattle')('trainer', team, {
-            tid: T.id,
-            T: TRAINERS[T.id],
-            fmt: T.alpha ? 'alpha' : T.double && team.length >= 2 ? 'double' : 'single',
-            ...runBattleExtra(run, i, k, RULES.env, fxOfRun(run, data.RELICS)),
+          /* its team, format and market as the page starts it (battle-engine.js startTrainer: the boss is its leader's
+             top Billie alone, as an Alpha) */
+          const k = run.battleN;
+          fn('startTrainer')(T.id, {
             host: SIM_HOST,
+            extra: runBattleExtra(run, i, k, RULES.env, fxOfRun(run, data.RELICS)),
           });
+          run.battleN = k + 1;
+          const team = hooks.activeBattle.sides[1].team;
           const res = playOut(),
             B = hooks.activeBattle,
             pay = modules['battle-rewards'].battleRewards(
