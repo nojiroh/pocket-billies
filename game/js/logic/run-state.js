@@ -78,6 +78,8 @@ export function newRun(seed, tier, mapgenV, start) {
     relics: [],
     offer: null,
     mods: [],
+    offerN: 0,
+    shelf: {},
     start,
     uidN: 0,
     battleN: 0,
@@ -127,6 +129,13 @@ export function validRun(o) {
   if (!list(o.forecast, nodes) || o.forecast.some(days => !list(days, RUN_DAYS) || !days.every(id))) return false;
   if (!list(o.relics, 32) || !o.relics.every(id) || !list(o.mods, 32) || !o.mods.every(id)) return false;
   if (o.offer !== null && (!list(o.offer, 5) || !o.offer.every(id))) return false;
+  /* RL-12: the offers made, and the run shops' Loopholes by '<map node>:<day>' ('' once bought) */
+  if (!wholeIn(o.offerN, 0, 1e6)) return false;
+  if (
+    !recordOf(o.shelf, RUN_LIST, v => v === '' || id(v)) ||
+    !Object.keys(o.shelf).every(k => /^\d{1,2}:\d{1,4}$/.test(k))
+  )
+    return false;
   if (!wholeIn(o.uidN, 0, 1e9) || !wholeIn(o.battleN, 0, 1e9)) return false;
   if (!list(o.path) || !o.path.every(i => wholeIn(i, 0, nodes - 2))) return false;
   if (!list(o.log) || !o.log.every(e => typeof e === 'string' && e.length <= 80)) return false;
