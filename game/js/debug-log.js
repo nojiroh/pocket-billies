@@ -587,7 +587,10 @@ debugLog.more = () => {
     };
   });
   /* CAM-1: what the walking camera is doing: its mode (walk, indoor, room, swoop, free), zoom, turn, tilt, the rise on
-     tall ground, the goals in play with their weights, the look-ahead and how far the aim is from its goal (metres) */
+     tall ground, the goals in play with their weights, the look-ahead and how far the aim is from its goal (metres).
+     CAM-2: the zoom the camera uses (yours times the goals'), the moment (talk, boss, interest, idle, run, or none),
+     the points of interest in reach and the strongest's weight, the camera zone you stand in (its index, -1 for none)
+     and how long you have stood still (seconds). Only numbers and ids, no names */
   t('camera', () => {
     const W = typeof GAME.walkRenderer !== 'undefined' ? GAME.walkRenderer : null,
       I = W && W.camInfo,
@@ -605,6 +608,11 @@ debugLog.more = () => {
       lead: [r(I.lead[0]), r(I.lead[1])],
       off: [r(I.goal[0] - T[0]), r(I.goal[1] - T[1])],
       moving: r(I.move),
+      zoomEff: I.zoom != null ? r(I.zoom) : null,
+      moment: I.moment ?? null,
+      interest: I.interest ? [I.interest[0], r(I.interest[1])] : null,
+      zone: I.zone ?? -1,
+      still: W.mom ? r(W.mom.still) : null,
     };
   });
   t('caches', () => ({
