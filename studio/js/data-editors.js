@@ -1148,7 +1148,7 @@ SECTIONS.shops = () => {
     )
     .join('');
   if (!sh)
-    return `<div class="split"><aside class="list-col"><div class="list-head"><button class="btn primary" data-act="shopNew">+ New shop</button><button class="btn" data-act="boutiqueNew">+ New boutique</button></div></aside><div class="ed-col"><p class="help">No shops yet.</p></div></div>`;
+    return `<div class="split"><aside class="list-col"><div class="list-head"><button class="btn primary" data-act="shopNew">+ New shop</button><button class="btn" data-act="boutiqueNew">+ New boutique</button></div></aside><div class="ed-col"><p class="help">No shops yet. Legacy: shops.json is the old world’s town shops; a run’s towns stock from the run rules (rules.json run.shop, in the Run Lab).</p></div></div>`;
   const wardrobe = sh.kind === 'wardrobe',
     p = `shops.${k}`,
     stock = (sh.stock || [])
@@ -1454,7 +1454,7 @@ SECTIONS.jobs = () => {
       )}${textField('What it did (after the Billie’s name)', `${p}.quip`, { help: '“Hoodini made 40 lattes. Most were wrong.”' })}<button class="btn danger subtle" data-act="jobDel" data-k="${k}">Delete job</button></div></div>`;
     })
     .join('');
-  return `<div class="ed-col solo"><div class="ed-head"><h2>Jobs</h2><button class="btn primary" data-act="jobNew">+ New job</button></div>${card('Jobs', rows, { sub: 'Kept for the ranch (phase 12): the game has no jobs for now, so nothing here is used yet.' })}</div>`;
+  return `<div class="ed-col solo"><div class="ed-head"><h2>Jobs</h2><button class="btn primary" data-act="jobNew">+ New job</button></div>${card('Jobs', rows, { sub: 'Legacy: kept for the ranch (phase 12). The game has no jobs, so nothing here is used.' })}</div>`;
 };
 document.addEventListener('change', ev => {
   const el = ev.target;

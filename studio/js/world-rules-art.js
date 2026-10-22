@@ -172,14 +172,16 @@ function bindWorldMap() {
 SECTIONS.world = () => {
   const D = studioState.D,
     tab = studioState.sel.wtab || 'route';
+  /* Studio plan T4.5: what a run reads (a run place's wild Billies come from the pool its biome names, biomes.json
+     pool) and what is legacy (the old world's route, eggs, regions and world map) */
   const tabs = [
-    ['route', 'Route stops'],
+    ['route', 'Route stops (legacy)'],
     ['pools', 'Wild encounters'],
     ['fishing', 'Fishing'],
-    ['eggs', 'Eggs'],
-    ['regions', 'Regions ahead'],
+    ['eggs', 'Eggs (legacy)'],
+    ['regions', 'Regions ahead (legacy)'],
     ['backdrops', 'Battle backdrops'],
-    ['look', 'World map look'],
+    ['look', 'World map look (legacy)'],
   ];
   const body = {
     route: worldLocations,
@@ -190,7 +192,7 @@ SECTIONS.world = () => {
     backdrops: worldBackdrops,
     look: worldMapLookTab,
   }[tab]();
-  return `<div class="ed-col solo"><div class="ed-head"><h2>World & encounters</h2></div><div class="seg-row tabs">${tabs.map(([k, n]) => `<button class="seg ${k === tab ? 'on' : ''}" data-act="wtab" data-t="${k}">${n}</button>`).join('')}</div>${body}</div>`;
+  return `<div class="ed-col solo"><div class="ed-head"><h2>World & encounters</h2></div><p class="help world-run-note">A run reads the wild encounters of the pools its biomes name (<code>biomes.json pool</code>), at the run’s own levels, and the battle backdrops. The route stops, eggs, regions and world map are the old world’s (legacy).</p><div class="seg-row tabs">${tabs.map(([k, n]) => `<button class="seg ${k === tab ? 'on' : ''}" data-act="wtab" data-t="${k}">${n}</button>`).join('')}</div>${body}</div>`;
 };
 ACTIONS.wtab = d => {
   studioState.sel.wtab = d.t;
