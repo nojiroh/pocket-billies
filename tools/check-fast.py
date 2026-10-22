@@ -1005,7 +1005,12 @@ def run_test(pg, base):
     drawing(pg)
     saved = pg.evaluate("Object.keys(localStorage).filter(k => k.startsWith('networth-save'))")
     if saved: raise Exception(f'it wrote a save in this browser: {saved}')
-    return f"TESTSEED took off: {len(got['map']['nodes'])} places as runStartPlan makes them, {len(got['unlocks'])} unlocks, the party and Loopholes asked for; nothing saved"
+    # the debug log names the run's own unlocks (ids), so the Studio's Run Lab draws this map from it
+    with pg.expect_download(timeout=30000) as dl:
+        pg.evaluate('exportDebugLog();0')
+    logged = (json.loads(Path(dl.value.path()).read_text(encoding='utf-8')).get('state') or {}).get('run') or {}
+    if logged.get('seed') != 'TESTSEED' or logged.get('unlocks') != want['unlocks']: raise Exception(f"the debug log's run is {logged.get('seed')!r} with unlocks {logged.get('unlocks')}, not the run's {want['unlocks']}")
+    return f"TESTSEED took off: {len(got['map']['nodes'])} places as runStartPlan makes them, {len(got['unlocks'])} unlocks (in the debug log too), the party and Loopholes asked for; nothing saved"
 
 
 def hub_island(pg, base):
