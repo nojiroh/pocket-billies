@@ -433,6 +433,71 @@ def ranch(pg, base):
     return f'Train paid {R["trainCost"]} Scrap each; a level’s time: Lv {first} → {first + 1}; a whole bank from Lv {last} stopped at the cap ({cap}); the clock turned back gained nothing; a reload kept it'
 
 
+def relics(pg, base):
+    """RL-12: the relics fixture is on a run holding five Loopholes with a mini-boss's pick waiting: the pick opens once
+    the world shows, three cards; one taken: six held, the pick gone, stored; the Loopholes tab lists them; a battle
+    starts with the Speed stage and the catch row; walking in heals; a town's clinic charges half and its shop sells the
+    day's Loophole 15% cheaper; bought at the cap, one is let go; a mini-boss beaten stores a new pick before its sheet,
+    whose button opens it; a reload (?fixture=stored) opens the same pick; Take none clears it"""
+    pick = "!!uiState.modal&&uiState.modal.cls==='relic-pick'&&document.querySelectorAll('#ov pb-pick-card').length===3"
+    stored = lambda: pg.evaluate("JSON.parse(localStorage.getItem(SAVE_KEY)).run")
+    if not until(pg, pick, 90): raise Exception('the waiting pick didn’t open')
+    offer = pg.evaluate("saveData.run.offer.slice()")
+    pg.evaluate("document.querySelectorAll('#ov pb-pick-card')[1].shadowRoot.querySelector('button').click();0")
+    if not until(pg, "!document.querySelector('#ov [data-a=mb]').disabled", 10): raise Exception('a card didn’t enable Take it')
+    pg.evaluate("document.querySelector('#ov [data-a=mb]').click();0")
+    took = offer[1]
+    if not until(pg, f"saveData.run.relics.length===6&&saveData.run.relics.includes('{took}')&&!saveData.run.offer&&!(uiState.modal&&uiState.modal.cls==='relic-pick')", 10):
+        raise Exception(f'taking {took}: {pg.evaluate("JSON.stringify([saveData.run.relics,saveData.run.offer])")}')
+    if len(stored()['relics']) != 6: raise Exception('the pick wasn’t stored')
+    pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();uiState.tab='relics';render();0")
+    if not until(pg, "document.querySelectorAll('.s-relics .bag-row').length===6", 10): raise Exception('the Loopholes tab doesn’t list six')
+    pg.evaluate("uiState.tab='walk';render();0")
+    st = pg.evaluate("startWild(encountersHere()[0]);[!!activeBattle.fx,activeBattle.sides[0].f[0].v.st.hus]")
+    if st != [True, 1]: raise Exception(f'a battle’s Loopholes and Speed stage: {st}')
+    odds = pg.evaluate("[catchOdds('penny',1,false),(activeBattle.fx=null,catchOdds('penny',1,false))]")
+    if abs(odds[0] - min(1, odds[1] * 1.25)) > 1e-9: raise Exception(f'the catch row: {odds}')
+    pg.evaluate("stopTimers();activeBattle.over='ran';endBattle();0")
+    if not until(pg, "!activeBattle", 20): raise Exception('the battle didn’t end')
+    heal = pg.evaluate("uiState.modal=null;uiState.mq=[];saveData.team[0].hp=1;runArrivedFx();saveData.team[0].hp")
+    if heal <= 1: raise Exception('walking in didn’t heal')
+    town = pg.evaluate("saveData.run.map.nodes.findIndex(n=>n.type==='town')")
+    if not pg.evaluate(f"runJump({town}+1)"): raise Exception('couldn’t walk to a town')
+    clinic = pg.evaluate("[runClinicEach(),RULES.run.healCost]")
+    if clinic[0] != round(clinic[1] / 2): raise Exception(f'the clinic charges {clinic[0]} a Billie, not half of {clinic[1]}')
+    sid = pg.evaluate(f"Object.keys(SHOPS).find(k=>SHOPS[k].runNode==={town})")
+    pg.evaluate(f"uiState.modal=null;uiState.mq=[];openShop('{sid}');0")
+    if not until(pg, "!!document.querySelector('#ov .shop-sheet [data-a=shoprelic]')", 10): raise Exception('the town’s shop has no Loophole')
+    shelf = pg.evaluate("Object.values(saveData.run.shelf)[0]")
+    price = pg.evaluate(f"Math.round(RULES.run.relics.price[RELICS['{shelf}'].rarity]*0.85)")
+    se, held = pg.evaluate("[saveData.se,saveData.run.relics.slice()]")
+    pg.evaluate("document.querySelector('#ov [data-a=shoprelic]').click();0")
+    if not until(pg, "!!uiState.modal&&uiState.modal.cls==='relic-drop'&&document.querySelectorAll('#ov pb-pick-card').length===6", 10): raise Exception('buying at the cap didn’t ask which to let go')
+    pg.evaluate("document.querySelector('#ov pb-pick-card').shadowRoot.querySelector('button').click();0")
+    if not until(pg, f"saveData.run.relics.includes('{shelf}')&&!saveData.run.relics.includes('{held[0]}')", 10): raise Exception('the Loophole wasn’t bought')
+    after = pg.evaluate("[saveData.se,saveData.run.relics.length,Object.values(saveData.run.shelf)[0],!!document.querySelector('#ov .shop-sheet [data-a=shoprelic]')]")
+    if after != [se - price, 6, '', False]: raise Exception(f'after buying: money, held, shelf, row {after} (paid {se - after[0]}, price {price})')
+    if stored()['shelf'] != {f'{town}:{pg.evaluate("saveData.run.clock")}': ''}: raise Exception(f'the bought shelf isn’t stored: {stored()["shelf"]}')
+    # a mini-boss beaten: the pick is stored with the battle's end, before its sheet
+    mb = pg.evaluate("saveData.run.map.nodes.findIndex(n=>n.type==='miniboss')")
+    if not pg.evaluate(f"uiState.modal=null;uiState.mq=[];renderOverlay();runJump({mb}+1)"): raise Exception('couldn’t walk to a mini-boss')
+    pg.evaluate(f"startTrainer(runFoeId({mb}),{{talked:true}});0")
+    if not until(pg, "!!activeBattle&&activeBattle.T&&activeBattle.T.runFoe==='miniboss'", 20): raise Exception('the mini-boss battle didn’t start')
+    pg.evaluate("stopTimers();activeBattle.over='win';endBattle();0")
+    if not until(pg, "!activeBattle&&!!uiState.modal&&!!(uiState.modal.btns||[]).find(b=>b.l==='Pick a Loophole')", 30):
+        raise Exception(f'no “Pick a Loophole” after the mini-boss: {pg.evaluate("uiState.modal&&uiState.modal.title")}')
+    offer2 = stored()['offer']
+    if not offer2 or len(offer2) != 3 or offer2 != pg.evaluate("saveData.run.offer"): raise Exception(f'the new pick isn’t stored: {offer2}')
+    pg.evaluate("uiState.modal.btns.find(b=>b.l==='Pick a Loophole').f();0")
+    if not until(pg, pick, 10): raise Exception('the button didn’t open the pick')
+    pg.goto(base + '/index.html?fixture=stored')
+    if not until(pg, pick, 90): raise Exception('a reload didn’t open the pick again')
+    if pg.evaluate("saveData.run.offer") != offer2: raise Exception('a reload showed another pick')
+    pg.evaluate("document.querySelectorAll('#ov [data-a=mb]')[1].click();0")
+    if not until(pg, "!saveData.run.offer&&!(uiState.modal&&uiState.modal.cls==='relic-pick')", 10): raise Exception('Take none didn’t clear the pick')
+    return f'the pick ({", ".join(offer)}), {took} taken; six on the tab; a battle with Speed +1 and catch x1.25; walking in healed to {heal} HP; the clinic ${clinic[0]}; {shelf} bought for ${price} in place of {held[0]}; a mini-boss beaten: a stored pick ({", ".join(offer2)}), the same after a reload, none taken'
+
+
 def save_round_trip(pg, base):
     """the save written in this browser comes back whole after a reload (under the fixture's own key)"""
     drawing(pg, 1)
@@ -575,6 +640,7 @@ PAGES = [   # (what the page opens, its checks in order); the longest first, so 
               ('The world map opens as the bowl', bowl_map)]),
     ('room', [('A room opens and draws (the lab)', room), ('A save round-trips', save_round_trip)]),
     ('ranch', [('The ranch trains: Train, a level with time, the cap, a clock turned back, a reload (RL-9)', ranch)]),
+    ('relics', [("Loopholes: the pick (again after a reload), the tab, a battle's and a walk's effects, a town's prices, buying at the cap (RL-12)", relics)]),
     ('battle', [('A battle plays to the end', battle)]),
     ('run', [("A run's world: the landing, its places on the bowl, a seam walked a day later", run_world),
              ("A run town's shop opens (UI-5)", run_shop)]),
