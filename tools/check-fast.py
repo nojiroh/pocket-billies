@@ -14,7 +14,7 @@ with their places); a run's world (RL-7) opens on its landing, its places on the
 at the next node a day later; a battle plays to the end; a save round-trips; the Studio loads; the exported debug
 log holds no names; the world map opens as the bowl, a tap opens a card, Home comes back; every screen opens with its parts (UI-5);
 on tall ground (TR-3, the mountains fixture) the camera rises, rock fades and the player's silhouette is drawn, and
-none of it on flat ground; the Lab's unlock board (RL-11) grants, sells and keeps. The page is small (400x300) with every costly graphics dial
+none of it on flat ground; the Lab's unlock board (RL-11) grants, sells and keeps; the test island (island track) opens with its contract fields. The page is small (400x300) with every costly graphics dial
 off before it loads; nothing waits a fixed time, only for frames or the game's state. No pictures are taken.
 
 Graphics are not judged here: software drawing can't. The game's own graphics test (Settings → Help) is for a person
@@ -287,6 +287,19 @@ def bowl_map(pg, base):
     pg.evaluate("flySkip();0")
     if not until(pg, f"!airshipFlight.on&&saveData.trip.node==={to}&&uiState.tab==='walk'", 30): raise Exception('the flight never landed')
     return f'{n} places on the bowl, {fr} frames; opened from the walk scene; a tap opens the card, Home comes back; the fall films it; a flight lands'
+
+
+def island(pg, base):
+    """island track IS-0: the island fixture opens test_island (the island contract's fields: cam.orbit, island,
+    zones, islandGen, a sea edge) and draws; you stand on open ground; its walking checks hold (the top and the north
+    side reachable, the sea not)"""
+    if not until(pg, "typeof walkView!=='undefined'&&walkView.ready&&walkView.id==='test_island'", 90): raise Exception(f'not on the test island: {pg.evaluate("typeof walkView!==\'undefined\'&&walkView.id")}')
+    drawing(pg)
+    if not pg.evaluate("!!(walkView.sc.cam&&walkView.sc.cam.orbit&&walkView.sc.island&&walkView.sc.zones&&walkView.sc.islandGen)"): raise Exception('the island contract fields didn’t reach the scene')
+    res = pg.evaluate("testMapChecks('test_island')")
+    bad = [r['what'] for r in res if not r['ok']]
+    if bad: raise Exception('walking checks failed: ' + '; '.join(bad))
+    return f'test_island drew {pg.evaluate("walkRenderer.frames")} frames; {len(res)} walking checks hold'
 
 
 def room(pg, base):
@@ -675,6 +688,7 @@ PAGES = [   # (what the page opens, its checks in order); the longest first, so 
     ('mountains', [('Tall ground: behind a south mountain the camera rises, rock fades, your silhouette shows; none on flat ground', tall_ground)]),
     ('team', [('Every screen opens with its parts (UI-5)', screens)]),
     ('title', [('The game boots with no console or page errors', boots)]),
+    ('island', [('The test island opens and draws; its walking checks hold (island track)', island)]),
     ('studio', [('The Studio loads', studio), ("The Studio's world map look", studio_worldmap)]),
 ]
 
