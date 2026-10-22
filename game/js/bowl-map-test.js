@@ -43,7 +43,8 @@ import {
   worldMapReset,
   worldMapWidth,
 } from './world-bowl.js';
-import { closeModal, modal, render, toast } from './ui.js';
+import { closeModal, modal, toast } from './overlay.js';
+import { render } from './ui.js';
 import { selfTest, shareReportFile } from './self-test.js';
 /* eslint-disable no-func-assign */
 expose({

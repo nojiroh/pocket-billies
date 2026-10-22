@@ -20,6 +20,16 @@ kept aside in the browser).
 - Runs go east to west: you enter each place on a run from the east and the way on is to the west (RL-8b: and on
   the world map the run crosses the bowl from east to west). A run started before this is left (its places were
   laid out the other way).
+- Every screen in the angular look (UI track UI-5): buttons have cut corners and a screen's main action is a long
+  hexagon; the top bar, the place card and the Walk sheet, the Map's card, the Trainer card, the Guide's pages, Team's
+  storage, the Bag, shops, Settings and the pickers in sheets have cut panels and cards with a fine edge line; tabs are
+  cut on top. The bottom bar is new: Map, Team and Bag (a run has its own set; Lab and Relics come with their
+  screens). There's no Walk tab any more: tap the open tab again, or press Esc, to go back to the world. The Guide
+  opens from your Trainer card (tap your portrait). Under the hood the screens each have their own code and styles,
+  and 75 unused style rules are gone.
+- Runs go east to west: you enter each place on a run from the east and the way on is to the west, and on the world
+  map the run is an arc across the south of the bowl, from the south-east to the south-west. A run started before
+  this is left (its places were laid out the other way).
 - Mountains and mountain trails (terrain TR-2a, TR-2b), in the Studio's map generator and in a test run from the debug
   menu (Runs, "Mountains"); runs don't use them yet: ridges up to 20 m on the sides you choose, rising in rock shelves
   and cliffs, kept away from the road, the exits and water, and a footpath that winds up each one in switchbacks, stone

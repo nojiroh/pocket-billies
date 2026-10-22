@@ -89,9 +89,31 @@ event, a small diamond for "?"; the event's slant is about 11°, as the plan's 1
 gallery's sticky bar lay over the top of tall sections in the pictures (older ones too): in picture mode it now stays
 at the top. A longer gallery moves what the light glass blurs, so panels and cards in light were remade.
 
+UI-5 found (read at ca9aa54): no screen had ever left ui.js (bag.js, shop.js and settings-screen.js were born
+outside it). A CSS "move" is not a pure move: the old layers load before the kit and v05.css carries 107 !important,
+so a rule moved out of style.css lands after rules that used to override it; each move was proven with a computed-
+style diff (tools/style-diff.py: 33 screens and states, light and dark) and the rules a later old rule overrode at
+equal specificity were found on the page beforehand and left in place (Walk's .today/.here/.enc/.slot.empty/.buddy,
+the shell's early .sheet, .dr-panel, .chal, the debug menu's fields). The screens' rules went into one file per
+screen loaded right after v05.css and before the kit (the plan's units.css/menus.css load after the kit and would have
+changed the cascade). The plan's "moves only" and "every remaining screen" (visible change) disagreed: the owner chose
+move, then reshape. Page markup takes the kit's shapes through ui-kit.css .k-panel, .k-card, .k-btn, .k-action, .k-tab
+(clipped to the family outline from uiTheme.json, the edge line in ::after; a clip-path cuts the old outer shadow);
+the old .pb button, the shell's panels, tabs, segmented choices and pick rows join the families in CSS. The top bar
+can't be clipped (the portrait breaks out below it): its glass is a clipped ::before. One !important stays in the kit
+(square corners) against v05's own !important corners; it goes with v05. Only Team and the toasts had their own UI
+test: the fast check's "Every screen opens with its parts" now opens each by the buttons a player taps. The bottom bar
+(the owner: swap now): <pb-nav-bar> with the hub's or a run's set, Map, Team, Bag; Lab and Relics hidden until RL-11/12;
+no Walk tab (the open tab again or Esc goes back to the world); the Guide from the Trainer card. The kit's shadow-tree
+labels needed i18n.js i18nText (the page's translation observer can't see a shadow tree). The fast check's world map
+step failed about one run in three on a postcard lying over the map (fixed in the check). Not moved, as the style
+diff has no view of them: the opening cutscene, the postcard pop-up, the airship flight, the joystick and d-pad,
+photo mode, the workshop and fishing; and the old shared pieces (.pb, .pbar, .px, .glass, .sec-h, .seg, .tpanel,
+.fchip, .note) stay in the old layers for UI-6 to fold into the kit.
+
 No rule yet but needed: a layer scale (24 distinct z-index values, -1 to 2147483000) and cut-corner tokens. The Studio
 is outside the 06 rules (studio.css: 108 raw radii, 372 raw spacing values, its own teal palette). The bottom bar's
-tabs (walk, map, team, ledger, bag) and `--t-*` colours are the pre-roguelite game's.
+`--t-*` colours are the pre-roguelite game's (UI-5 swapped the bar itself).
 
 ## The look: Semigloss Angular (owner's decisions)
 - **Kept:** frosted glass panels, the 1 px top highlight, layered shadows, the gold main action, light and dark for
@@ -164,7 +186,7 @@ Works like the Engine section (dials in groups, ↺ per dial, presets, Hold to c
 | UI-3a (done 2026-10-21) | Studio UI section, core | uiTheme.json version 2; overrides read; the section with every dial group, the whole game or a screen, presets as data (+ Save as preset), Hold to compare, the UI gallery as live preview, Find, the contrast check in the Studio's Check; a Studio check step (a dial changed, previewed, undone, saved as a PR) | Studio only | the Studio check step passes |
 | UI-3b (done 2026-10-21) | Studio UI section, tools | real screens from fixtures beside the gallery (Team, Bag, a battle, the dialogue box; payout and run chip once they exist); inspect (tap a part: its component and tokens) and Ctrl+L the reverse; overlays (tap targets under 44 px, contrast failures, glass layers); before/after shots; the rule check (ui-lint as a browser-safe module with lines) in the Studio's Check with Show me | Studio only | its check steps pass |
 | UI-4 (done 2026-10-21) | Run parts | day and deadline chip, forecast icon row, node markers, the four currency chips, the relic and keep-one card, payout rows with their motion, the hub/run bottom bar | gallery only | RL-7 and RL-8 can use them with no CSS of their own |
-| UI-5 | Every screen onto the kit | after the RL-8 play test: every screen, including ones the roguelite replaces, moves out of ui.js and the old CSS, one screen per commit, moves only (absorbs 06-5) | every remaining screen | each moved screen passes its UI test; the unused-CSS list shrinks |
+| UI-5 (done 2026-10-22) | Every screen onto the kit | after the RL-8 play test: every screen, including ones the roguelite replaces, moves out of ui.js and the old CSS, one screen per commit, moves only (absorbs 06-5) | every remaining screen | each moved screen passes its UI test; the unused-CSS list shrinks |
 | UI-6 | Old layers gone | style, polish, screens and v05 emptied and deleted; lint and the blur budget enforced (fail when raw values rise); accessibility pass; then `phase-06-done` and `ui-6-done` | none intended | ui-lint at or near zero; full quick check green apart from known reds |
 
 UI-2 is the biggest; if it runs long, split it: shapes, edge line, wipes and battle cards first, then icons, glyphs,

@@ -6,6 +6,7 @@
    To add a language, add a column: a code in I18N_LANGS and one more string in each row. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
+import { provide } from './hooks.js';
 /* eslint-disable no-func-assign */
 expose({
   I18N: [() => I18N],
@@ -18,8 +19,10 @@ expose({
   i18nNode: [() => i18nNode, v => (i18nNode = v)],
   i18nObserver: [() => i18nObserver, v => (i18nObserver = v)],
   i18nSet: [() => i18nSet, v => (i18nSet = v)],
+  i18nText: [() => i18nText, v => ((i18nText = v), provide({ i18nText }))],
 });
 /* eslint-enable no-func-assign */
+provide({ i18nText });
 /* to-module: end */
 export const I18N_LANGS = [
   ['en', 'English'],
@@ -244,6 +247,12 @@ function i18nNode(n) {
           i18nAttribute(c, a);
         }
   }
+}
+/* UI-5: a string in the chosen language, for text a kit part draws in its own shadow tree (the observer can't see
+   it there) */
+function i18nText(text) {
+  const tr = i18nLanguage === 'en' ? null : I18N[i18nLanguage] && I18N[i18nLanguage].get(text);
+  return tr || text;
 }
 function i18nAttribute(el, a) {
   const key = 'data-en-' + a,

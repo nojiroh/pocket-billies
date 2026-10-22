@@ -20,7 +20,6 @@ import {
   closeModal,
   mapIdAt,
   modal,
-  openSettings,
   render,
   showPendingWindows,
 } from './hooks.js';
@@ -43,7 +42,7 @@ import {
 import { userFps } from './frame-scheduler.js';
 import { uiIconHTML } from './art.js';
 import { personHTML } from './person-art.js';
-import { applyPreferences } from './settings-screen.js';
+import { applyPreferences, openSettings } from './settings-screen.js';
 import { mapById, stopWalkView, walkView } from './walk-view.js';
 import { environment } from './environment.js';
 import { walkRenderer } from './walk/walk-state.js';

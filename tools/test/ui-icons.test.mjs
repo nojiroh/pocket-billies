@@ -2,7 +2,7 @@
 // what its grid makes, and every icon the game names must exist. Remake the files with
 // `python3 tools/build-ui-icons.py`.
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
 
@@ -31,7 +31,11 @@ test('every icon file is what its grid in tools/build-ui-icons.py makes', () => 
 
 test('the icons the game names by key all exist', () => {
   const used = new Set();
-  for (const f of ['game/js/ui.js', 'game/js/unit-card.js', 'game/js/battle.js', 'game/js/settings-screen.js'])
-    for (const m of readFileSync(join(ROOT, f), 'utf8').matchAll(/uiIconHTML\('([a-z]+)'/g)) used.add(m[1]);
+  /* UI-5: every game script, so a screen moved out of ui.js stays covered */
+  const files = readdirSync(join(ROOT, 'game/js'), { recursive: true }).filter(f => String(f).endsWith('.js'));
+  for (const f of files)
+    for (const m of readFileSync(join(ROOT, 'game/js', String(f)), 'utf8').matchAll(/uiIconHTML\('([a-z]+)'/g))
+      used.add(m[1]);
+  assert.ok(used.size > 20, `only ${used.size} icons found`);
   for (const k of used) assert.ok(ICONS[k], `no icon "${k}"`);
 });

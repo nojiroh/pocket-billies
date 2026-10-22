@@ -29,7 +29,8 @@ import { environment } from './environment.js';
 import { walkRenderer } from './walk/walk-state.js';
 import { rebuildFromSettings } from './walk/map-cache.js';
 import { paintWorkerState } from './ground-paint-worker.js';
-import { closeModal, modal, render, renderOverlay, toast } from './ui.js';
+import { closeModal, modal, renderOverlay, toast } from './overlay.js';
+import { render } from './ui.js';
 import {
   diagnosticsTimersOff,
   diagnosticsTimersOn,
