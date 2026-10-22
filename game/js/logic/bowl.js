@@ -107,7 +107,7 @@ export function bowlXY(a, r) {
 
 /** a place's spot, following "under" to the place it hangs below (and how many levels it went down)
  * @param {LocationData} place @param {(id: string) => LocationData | undefined} byId
- * (RL-8b: and its up, when it has one) @returns {{ a: number, r: number, under: number, up?: number }} */
+ * (RL-8b: and its up and off, when it has them) @returns {{ a: number, r: number, under: number, up?: number, off?: boolean }} */
 export function bowlSpotOf(place, byId) {
   /** @type {BowlSpot} */
   let s = place.bowl,
@@ -117,7 +117,14 @@ export function bowlSpotOf(place, byId) {
     if (!p || ++under > 4) throw new Error(`${place.id}: its bowl spot hangs under ${s.under}, which has none`);
     s = p.bowl;
   }
-  return 'up' in s && typeof s.up === 'number' ? { a: s.a, r: s.r, under, up: s.up } : { a: s.a, r: s.r, under };
+  const o = /** @type {{ a: number, r: number, under: number, up?: number, off?: boolean }} */ ({
+    a: s.a,
+    r: s.r,
+    under,
+  });
+  if ('up' in s && typeof s.up === 'number') o.up = s.up;
+  if ('off' in s && s.off) o.off = true;
+  return o;
 }
 
 /** a point on the ground: [x east, y north, h up] @param {number} x @param {number} y
@@ -239,7 +246,7 @@ export function bowlReliefFeatures(places, R = null, seed = 0) {
   out.max = R ? R.max : BOWL_RELIEF_MAX;
   out.seed = seed;
   for (const p of places) {
-    if (!p.bowl || 'under' in p.bowl) continue;
+    if (!p.bowl || 'under' in p.bowl || p.bowl.off) continue;
     const s = bowlSpotOf(p, byId),
       [x, y] = bowlXY(s.a, s.r),
       [h, r] = /** @type {Record<string, [number, number]>} */ (kinds)[p.t] || def;
@@ -538,7 +545,8 @@ export function bowlSeaInput(places, roads, mapOf, metres = 1000, opt = null) {
   const byId = (/** @type {string} */ id) => places.find(p => p.id === id),
     at = places.map(p => {
       const s = bowlSpotOf(p, byId);
-      return { xy: bowlXY(s.a, s.r), under: s.under };
+      /* RL-8b: a place off this world's map (Copperleaf in a run) keeps no land, as one hung under another */
+      return { xy: bowlXY(s.a, s.r), under: s.under || (s.off ? 1 : 0) };
     });
   return {
     places: places

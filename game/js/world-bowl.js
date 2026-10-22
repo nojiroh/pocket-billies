@@ -522,7 +522,8 @@ function worldBowlSpots() {
   worldBowl.spots = LOCATIONS.map(l => {
     const s = bowlSpotOf(l, byId),
       [x, y] = bowlXY(s.a, s.r);
-    return { x, y, under: s.under, up: s.up, h: bowlGridHeight(G, x, y) };
+    /* RL-8b: off, not on this world's map (Copperleaf during a run): no ground, pin, things or weather of its own */
+    return { x, y, under: s.under, up: s.up, off: !!s.off, h: bowlGridHeight(G, x, y) };
   });
   worldBowl.ground = {
     F,
@@ -573,7 +574,7 @@ function worldBowlTerrainStart() {
     C = 256,
     near = new Uint8Array(C * C),
     own = [];
-  S.forEach((s, i) => !s.under && own.push(i));
+  S.forEach((s, i) => !s.under && !s.off && own.push(i));
   for (let j = 0; j < C; j++)
     for (let i = 0; i < C; i++) {
       const x = -1 + ((i + 0.5) / C) * 2,
@@ -767,7 +768,7 @@ function worldBowlLineMap() {
   for (const [a, b] of ROADS) {
     const A = S[a],
       B = S[b];
-    if (A && B && !A.under && !B.under) seg(rd, BOWL_ROUTE_FIELD, A.x, A.y, B.x, B.y, 0);
+    if (A && B && !A.under && !B.under && !A.off && !B.off) seg(rd, BOWL_ROUTE_FIELD, A.x, A.y, B.x, B.y, 0);
   }
   if (G.rivers) {
     const gw = G.n + 1;
@@ -783,7 +784,7 @@ function worldBowlLineMap() {
   LOCATIONS.forEach((l, i) => {
     const s = S[i],
       m = gameData.maps && gameData.maps[l.mapId];
-    if (!s || s.under || !m) return;
+    if (!s || s.under || s.off || !m) return;
     const half = Math.min(m.w, m.h) / 2 / BOWL_METRES,
       i0 = Math.max(0, Math.floor(((s.x - half + 1) / 2) * M)),
       i1 = Math.min(M - 1, Math.ceil(((s.x + half + 1) / 2) * M)),
@@ -1041,7 +1042,7 @@ function worldBowlThingsOfPlace(W, i) {
     s = worldBowl.spots[i],
     M = l && gameData.maps && gameData.maps[l.mapId],
     A = (gameData.scenery && gameData.scenery.props) || {};
-  if (!M || !M.props || s.under) return false;
+  if (!M || !M.props || s.under || s.off) return false;
   const k = BOWL_THING_SCALE / BOWL_METRES,
     { north, east } = bowlCompass(s.x, s.y, s.up),
     base = (x, y) => bowlToGpu(x, y, worldBowlSkyFloor(x, y)),
@@ -1098,7 +1099,7 @@ function worldBowlClumpsInto(W) {
   LOCATIONS.forEach((l, i) => {
     const s = S[i],
       m = gameData.maps && gameData.maps[l.mapId];
-    if (s && !s.under)
+    if (s && !s.under && !s.off)
       places.push({
         x: s.x,
         y: s.y,
@@ -1107,7 +1108,8 @@ function worldBowlClumpsInto(W) {
       });
   });
   for (const [a, b] of ROADS)
-    if (S[a] && S[b] && !S[a].under && !S[b].under) roads.push([S[a].x, S[a].y, S[b].x, S[b].y]);
+    if (S[a] && S[b] && !S[a].under && !S[b].under && !S[a].off && !S[b].off)
+      roads.push([S[a].x, S[a].y, S[b].x, S[b].y]);
   const look = worldMapLook(),
     trees = Object.fromEntries(Object.entries(look.regions).map(([k, R]) => [k, R.trees])),
     T = bowlClumps(
@@ -1200,7 +1202,13 @@ function worldBowlThingsTick(g) {
     worldBowlClumpsInto(W);
   }
   for (let i = 0; i < LOCATIONS.length; i++)
-    if (!W.done.has(i) && worldBowl.spots[i] && !worldBowl.spots[i].under && worldBowlThingsOfPlace(W, i)) {
+    if (
+      !W.done.has(i) &&
+      worldBowl.spots[i] &&
+      !worldBowl.spots[i].under &&
+      !worldBowl.spots[i].off &&
+      worldBowlThingsOfPlace(W, i)
+    ) {
       W.done.add(i);
       W.dirty = true;
     }
@@ -1375,7 +1383,7 @@ function worldBowlRoadsInto(T) {
   for (const [a, b] of ROADS) {
     const A = S[a],
       B = S[b];
-    if (!A || !B || A.under || B.under) continue;
+    if (!A || !B || A.under || B.under || A.off || B.off) continue;
     const len = Math.hypot(B.x - A.x, B.y - A.y) * (N / 2),
       steps = Math.ceil(len * 2);
     for (let k = 0; k <= steps; k++) {
@@ -1396,7 +1404,7 @@ function worldBowlStampMap(T, i) {
   const l = LOCATIONS[i],
     s = worldBowl.spots[i],
     M = l && gameData.maps && gameData.maps[l.mapId];
-  if (!M || !M.tiles || !M.tiles.length || s.under || T.stamped.has(i)) return false;
+  if (!M || !M.tiles || !M.tiles.length || s.under || s.off || T.stamped.has(i)) return false;
   T.stamped.add(i);
   const N = BOWL_INDEX,
     { north, east } = bowlCompass(s.x, s.y, s.up),
@@ -1426,7 +1434,7 @@ function worldBowlStampMap(T, i) {
 function worldBowlStampMaps(T) {
   if (T.loading) return;
   for (let i = 0; i < LOCATIONS.length; i++) {
-    if (T.stamped.has(i) || worldBowl.spots[i].under) continue;
+    if (T.stamped.has(i) || worldBowl.spots[i].under || worldBowl.spots[i].off) continue;
     const id = LOCATIONS[i].mapId;
     if (!id || !gameData.maps[id]) {
       T.stamped.add(i);
@@ -2081,7 +2089,7 @@ function worldBowlSkyTick() {
       P = [];
     LOCATIONS.forEach((l, i) => {
       const s = spots[i];
-      if (!s || s.under) return;
+      if (!s || s.under || s.off) return;
       const st = environmentState((gameData.maps && gameData.maps[l.mapId]) || null);
       P.push({ x: s.x, y: s.y, look: WEATHER_LOOKS[st.wx] || WEATHER_LOOKS.clear, wx: st.wx });
     });
@@ -2454,7 +2462,7 @@ function worldBowlOverlay(t) {
       base = at(s),
       rm = worldBowlRunMark(i);
     /* RL-7: a run's place the map doesn't show yet has no pin at all */
-    if (!base || (rm && !rm.seen)) return;
+    if (!base || s.off || (rm && !rm.seen)) return;
     let top = { x: base.x, y: base.y - BOWL_PIN, z: base.z };
     if (rm) worldBowlRunPin(c, base.x, base.y, rm, i === sel);
     else if (s.under) {
@@ -2839,7 +2847,7 @@ export function worldBowlPick(e) {
       let gd = 0.07;
       worldBowl.spots.forEach((s, i) => {
         const rm = worldBowlRunMark(i);
-        if (s.under || (rm && !rm.seen)) return;
+        if (s.under || s.off || (rm && !rm.seen)) return;
         const dd = Math.hypot(s.x - g[0], s.y - g[1]);
         if (dd < gd) {
           gd = dd;
@@ -2959,6 +2967,7 @@ function worldMapPinState(i) {
 function worldMapLocationListHTML() {
   /* RL-7: a run's places only once the map shows what they are */
   const shown = (/** @type {number} */ i) => {
+    if (worldBowl.spots && worldBowl.spots[i] && worldBowl.spots[i].off) return false;
     const rm = worldBowlRunMark(i);
     return !rm || rm.seen > 1;
   };
