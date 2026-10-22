@@ -215,7 +215,9 @@ export function drawPostEffects(S, C, focusDist, rw, rh, o = {}) {
   gl.disable(gl.DEPTH_TEST);
   gl.disable(gl.BLEND);
   bindQuad();
-  drawPostRest(S, C, rw, rh, o, drawDepthOfField(S, C, focusDist, rw, rh, o));
+  const F = drawDepthOfField(S, C, focusDist, rw, rh, o);
+  drawPostRest(S, C, rw, rh, o, F);
+  return F;
 }
 /* CAM-3: the blur on its own (the diagnostics test times it apart from the rest of the post chain) */
 export function drawDepthOfField(S, C, focusDist, rw, rh, o = {}) {
