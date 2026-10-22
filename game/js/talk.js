@@ -309,7 +309,7 @@ export async function talkFolk(f) {
   if (typeof walkRenderer !== 'undefined') {
     walkRenderer.focusT = { x: f.x, z: f.z, t: walkView.t };
     /* CAM-2: who you talk to, for the camera's two-shot (walk/camera.js) */
-    walkRenderer.talkAt = { x: f.x, z: f.z };
+    walkRenderer.talkAt = { x: f.x, z: f.z, t: walkView.t };
   }
   await talk([
     [who, a],

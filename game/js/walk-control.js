@@ -486,7 +486,7 @@ export function walkPick(h) {
   } else if (h.k === 'npc') {
     /* CAM-2: who you talk to, for the camera's two-shot (walk/camera.js) */
     const at = h.n && walkView.npcAt[h.n.id];
-    if (at) walkRenderer.talkAt = { x: at[0], z: at[1] };
+    if (at) walkRenderer.talkAt = { x: at[0], z: at[1], t: walkView.t };
     if (h.n && h.n.talk && typeof personTalk === 'function') {
       personTalk(h.n.talk);
       return;

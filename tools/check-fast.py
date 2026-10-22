@@ -472,7 +472,7 @@ def camera_moments(pg, base):
     if c['moment'] == 'idle' or c['w'].get('idle', 0) > 0.4: raise Exception(f'moving, the drift in didn’t go at once: {c}')
     # someone talks to you, 3 m east
     stand(pg, *sp['quiet'], 5)
-    pg.evaluate("(()=>{const P=walkView.pl;walkRenderer.talkAt={x:P.x+3,z:P.z};talkBox.on=true;return 0})()")
+    pg.evaluate("(()=>{const P=walkView.pl;walkRenderer.talkAt={x:P.x+3,z:P.z,t:walkView.t};talkBox.on=true;return 0})()")
     wait(1500)
     d = pg.evaluate(cam)
     pg.evaluate("talkBox.on=false;walkRenderer.talkAt=null;0")

@@ -110,7 +110,11 @@ function moments(sc, P, push, I, dt, snap) {
   /* a cut starts the shot afresh: standing still counts from now */
   if (snap) st.still = 0;
   for (const k of Object.keys(MOMENT_DIALS)) D[k] = engineSetting('camera', k) ?? MOMENT_DIALS[k];
-  let talk = talkBox?.on && walkRenderer.talkAt ? [walkRenderer.talkAt.x, walkRenderer.talkAt.z] : null,
+  /* who you talk to counts while the talk box is up (it opens a moment after the talk starts); once it is down they
+     are forgotten, so a sign or a shop's box later isn't framed toward them */
+  const ta = walkRenderer.talkAt;
+  if (ta && !talkBox?.on && walkView.t - (ta.t ?? 0) > 1000) walkRenderer.talkAt = null;
+  let talk = talkBox?.on && walkRenderer.talkAt && Math.hypot(ta.x - P.x, ta.z - P.z) < 12 ? [ta.x, ta.z] : null,
     boss = walkRenderer.bossAt,
     moving = !!(P.walk || P.route);
   const T = walkRenderer.momentTest;
@@ -242,7 +246,11 @@ export function walkCamera(rw, rh, st, dt) {
   }
   const G = blendGoals(fol, goals, dt, set('blend'), snap);
   /* CAM-2: one zoom (your pinch times the goals') drives the tilt, distance and field of view along their curves */
-  const zoomEff = clamp(walkRenderer.zoom * G.zoom, 0.3, Math.max(1, set('zoomMax')) * 1.25),
+  const zoomEff = clamp(
+      walkRenderer.zoom * G.zoom,
+      Math.min(0.3, walkRenderer.zoom),
+      Math.max(walkRenderer.zoom, set('zoomMax') * 1.25)
+    ),
     Z = zoomShape(zoomEff, zoomEnds());
   const pitchDeg0 = pe + Z.pitch + G.pitch,
     yaw = walkRenderer.yaw + G.yaw;
