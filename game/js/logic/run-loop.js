@@ -3,7 +3,6 @@
 /* ================= THE RUN LOOP'S RULES (roguelite track RL-8) =================
    What the run loop works out, kept apart from the page (game/js/run.js, run-payout.js) so a run's simulation plays the
    same rules (tools/test/sim/run-sim.mjs):
-   - what a run starts with (rules.json run.start), the hub's team travelling as it is;
    - a run town's clinic: rules.json run.healCost per hurt Billie;
    - a run town's shop: run.shop's `always` wares and `more` drawn by weight, from the town's own stream for the day
      (rngFrom(its node's seed, 'shop|' + day)), so a reload or another device sees the same stock;
@@ -30,7 +29,6 @@ expose({
   runFoeWinText: [() => runFoeWinText],
   // @ts-expect-error -- replaced on purpose
   runFoes: [() => runFoes, v => (runFoes = v)],
-  runGive: [() => runGive],
   // @ts-expect-error -- replaced on purpose
   runHealCost: [() => runHealCost, v => (runHealCost = v)],
   runHurt: [() => runHurt],
@@ -44,18 +42,6 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-/** what runBegin is given: the run's seed, tier and generator version, and its money, coins and items (run.start)
- * @param {string} seed @param {number} tier @param {number} mapgenV
- * @param {{ se: number, coins: Record<string, number>, items: Record<string, number> }} start */
-export const runGive = (seed, tier, mapgenV, start) => ({
-  seed,
-  tier,
-  mapgenV,
-  se: start.se,
-  coins: { ...start.coins },
-  items: { ...start.items },
-});
-
 /** is a Billie hurt: below its full HP, fainted, with a status, or (a robot) with a damaged part @param {Billy} m */
 export const runHurt = m =>
   m.hp < maxHp(m) || !!m.status || Object.values(m.partDmg || {}).some(d => /** @type {number} */ (d) > 0);

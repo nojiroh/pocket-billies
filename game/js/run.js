@@ -28,7 +28,7 @@ import { ranchStop } from './logic/ranch.js';
 import { runBegin, runByTier, runEnd } from './logic/run-state.js';
 import { runArrive, runBack, runMapNode, runMapStart, runNext, runWeather } from './logic/run-map.js';
 import { MAPGEN_VERSION } from './logic/mapgen.js';
-import { runArriveHeal, runBattleSeed, runGive, runRelease, runReleasePays } from './logic/run-loop.js';
+import { runArriveHeal, runBattleSeed, runRelease, runReleasePays } from './logic/run-loop.js';
 import { fxHealShare, fxOfRun, fxPayoutRates, fxPrice, fxRows } from './logic/effects.js';
 import {
   BATTLE_RULES,
@@ -40,6 +40,7 @@ import {
   sayBattleFx,
 } from './logic/battle-engine.js';
 import { runUnlocks, unlockOpen } from './logic/unlocks.js';
+import { runGive } from './logic/run-start.js';
 import { isLiteMap, loadMapFile } from './map-files.js';
 import { activeBattle, escapeHtml, save, saveData, saveNow, uiState } from './game-state.js';
 import { coinHTML } from './art.js';

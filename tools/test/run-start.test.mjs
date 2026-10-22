@@ -10,7 +10,7 @@ import { fn, GAME_DATA, hooks, modules, reseed } from './setup-real.mjs';
 
 const { runMapStart } = modules['run-map'];
 const { runBegin } = modules['run-state'];
-const { runGive } = modules['run-loop'];
+const { runGive } = modules['run-start'];
 const { runUnlocks, unlockOpen } = modules.unlocks;
 const { MAPGEN_VERSION } = modules.mapgen;
 const UNLOCK_DATA = { unlocks: GAME_DATA.unlocks, buildings: GAME_DATA.buildings },
@@ -86,4 +86,18 @@ test('the unlocks a run carries open its biomes: none leaves out ridge and autum
   const biomes = c => new Set(SEEDS.flatMap(seed => started(takeOff(seed, c)).map.nodes.map(n => n.biome)));
   assert.deepEqual([...biomes(CASES.none)].sort(), ['lake', 'meadow', 'thicket']);
   assert.deepEqual([...biomes(CASES.all)].sort(), ['autumn', 'lake', 'meadow', 'ridge', 'thicket']);
+});
+
+test('a run starts with run.start (copies), on its seed, tier and generator version', () => {
+  const g = runGive('S', 1, 7, GAME_DATA.rules.run.start);
+  assert.deepEqual(g, {
+    seed: 'S',
+    tier: 1,
+    mapgenV: 7,
+    se: GAME_DATA.rules.run.start.se,
+    coins: GAME_DATA.rules.run.start.coins,
+    items: GAME_DATA.rules.run.start.items,
+  });
+  g.coins.penny = 99;
+  assert.notEqual(GAME_DATA.rules.run.start.coins.penny, 99);
 });
