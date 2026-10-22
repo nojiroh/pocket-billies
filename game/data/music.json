@@ -251,17 +251,21 @@
    "seventh": 1
   },
   "copperleaf": {
-   "bpm": 94,
+   "bpm": 88,
    "key": 67,
    "scale": "major",
    "prog": [0,4,5,3,0,4,3,4],
-   "lead": "p25",
-   "bass": "bounce",
-   "arp": "up",
-   "drums": "soft",
+   "lead": "p12",
+   "bass": "none",
+   "arp": "none",
+   "drums": "none",
    "seed": 171,
-   "swing": 0.14,
-   "echo": 0.25
+   "swing": 0.18,
+   "echo": 0.25,
+   "pluck": true,
+   "hookName": "placeholder: Copperleaf, a music box over the motif (Claude's draft)",
+   "hook": [[0,79,2],[2,83,2],[4,86,4],[8,84,2],[10,83,2],[12,81,4],[16,78,2],[18,81,2],[20,86,4],[24,84,4],[28,81,4]],
+   "counter": [[0,55,3],[3,62,3],[6,60,2],[8,59,4],[12,57,2],[14,53,2],[16,57,4],[20,54,4],[24,50,8]]
   }
  },
  "jingles": {
