@@ -276,7 +276,15 @@ export function drawDepthOfField(S, C, focusDist, rw, rh, o = {}) {
     gl.uniform1i(U.uTaps, o.fast ? 14 : 28);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   }
-  return { D, dofOn, cheap, pl, band, path: !dofOn ? 'off' : cheap ? 'cheap' : o.fast ? 'fast' : 'full' };
+  return {
+    D,
+    dofOn,
+    cheap,
+    pl,
+    band,
+    scale: dofOn ? Math.min(1.5, o.blur ?? 1) : 0,
+    path: !dofOn ? 'off' : cheap ? 'cheap' : o.fast ? 'fast' : 'full',
+  };
 }
 /* the rest of the post chain: bloom, AO, shafts, light in the air, then the grade to the screen with the blur F
    (drawDepthOfField's: its target D, whether it's on, its plane and band) */
@@ -406,10 +414,12 @@ export function drawPostRest(S, C, rw, rh, o, F) {
   }
   gl.uniform1f(U.uShoulder, engineSetting('color', 'shoulder'));
   const MO = o.mood;
-  gl.uniform1f(U.uCon, engineSetting('color', 'contrast') * (MO ? MO.con : 1));
-  gl.uniform1f(U.uSat, engineSetting('color', 'saturation') * (MO ? MO.sat : 1));
+  /* CAM-3: Engine > Lens > Miniature look: saturation, contrast and vignette, as much as the blur in use */
+  const mini = (engineSetting('lens', 'miniature') || 0) * F.scale;
+  gl.uniform1f(U.uCon, engineSetting('color', 'contrast') * (MO ? MO.con : 1) * (1 + mini * 0.12));
+  gl.uniform1f(U.uSat, engineSetting('color', 'saturation') * (MO ? MO.sat : 1) * (1 + mini * 0.25));
   gl.uniform1f(U.uWarm, engineSetting('color', 'warmth') + (MO ? MO.warm : 0));
-  gl.uniform1f(U.uVig, engineSetting('lens', 'vignette'));
+  gl.uniform1f(U.uVig, Math.min(1, engineSetting('lens', 'vignette') + mini * 0.2));
   gl.uniform1f(U.uCA, engineSetting('lens', 'aberration'));
   gl.uniform1f(U.uGrain, reducedMotion ? 0 : engineSetting('lens', 'grain'));
   gl.uniform1f(U.uSharp, engineSetting('lens', 'sharpen'));

@@ -35,6 +35,7 @@ export const ENGINE_DEFAULTS = {
     focusBand: 0.3,
     focusTilt: 0,
     edgeBlur: 0,
+    miniature: 0,
     blurFar: 1.5,
     blurNear: 0.9,
     blur: 0.5,
@@ -272,6 +273,14 @@ export const ENGINE_SPEC = [
         1,
         0.01,
         "CAM-3: blur toward the screen's edges and corners whatever the distance (none in the middle 60%). Off by default: players turned it off in other games.",
+      ],
+      [
+        'miniature',
+        'Miniature look',
+        0,
+        1,
+        0.01,
+        "CAM-3: a little more saturation, contrast and vignette, as a tilt-shift photo of a model town; it follows the blur actually in use (the player's blur slider tones it down too, and it goes with the blur).",
       ],
       ['blurFar', 'Blur growth behind', 0.1, 3, 0.05],
       ['blurNear', 'Blur growth in front', 0.1, 3, 0.05],
@@ -1053,6 +1062,13 @@ export const ENGINE_PRESETS = {
       lights: { brightness: 1.4, glow: 1.3 },
       color: { bloom: 1, exposure: 1.05, grade: 'cold', gradeAmount: 0.5 },
       air: { mist: 0.18 },
+    },
+  },
+  /* CAM-3: the diorama look: an upright, narrow sharp strip, a quick melt away, and the Miniature colour */
+  miniature: {
+    name: 'Miniature',
+    v: {
+      lens: { focusTilt: 1, focusBand: 0.35, blurFar: 1.8, blurNear: 0.7, blur: 2.2, miniature: 0.8 },
     },
   },
   mall: {
