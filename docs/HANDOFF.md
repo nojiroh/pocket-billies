@@ -2,6 +2,82 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Island track IS-9 - Dressing, variety and the phone pass - 2026-10-22
+Branch `claude/is-9-dressing`, from `claude/island-look` (the look pass, PR #133, not merged yet); PR #136 against main
+(merge main in once #133 lands). Ran beside IS-8 (the barn's pasture: its zone is left alone). Plan approved in Plan
+Mode with the owner's answers: a **mixed, dense forest**; **steps up to the cut-off shelves** (the rest dressed as rock);
+**4-6 gulls and 4-6 crabs**; **5-6 wild patches** by the woods and heath (question 5); **far trees flat** if the phone is
+slow.
+- Changed (one cause per commit):
+  - **Terrace rounding keeps a slope's step walkable** (walk-view.js `stepEdgeShape`): on one level the land's own
+    rise between half-metre cells now counts toward the step the rounding may make. It promised "a step you could take
+    stays one you can" but checked the terrace's height alone; on a slope 0.13-0.22 m rises became 0.34-0.40 m (over
+    `MAX_STEP_RISE` 0.34). Every map's terraces go through it; only cells on a slope beside a rounded face change.
+  - **Copperleaf's ground** (build-island --dials, then build-copperleaf): forest span 120 -> 200, deep 18 -> 40,
+    density 0.7 -> 0.9 (forest ground 1,650 -> 2,692 m², north-west round to north-east); `wild.n` 4 -> 6, each patch by
+    the forest or the heath. Ground letters, patches and the walking checks only; heights, steps and plots identical.
+  - **tools/island-dress.mjs**, build-copperleaf's last step (`--no-dress` leaves it off; its dials are
+    tools/data/copperleaf-town.json `dress`): 428 props, each `dress: 1`. 151 trees (oak, beech, birch, hazel, rowan
+    low; pines and larch from 2.5 m and 6 m up), thinner to the forest's edge, glades by noise, a few stepping onto the
+    meadow; the forest floor; meadow flowers and lone trees; heath bushes; beach grass on the dunes, driftwood, shells,
+    shore rocks; boulders, scree at the foot of the shelves' faces, cairns every 25 m of trail, the summit lookout on
+    the top. Never in the pasture's, barn's or town's zone, on a plot, street, path, the trail, water, by a bridge,
+    before a door, on the hub or a person's spot, solid in the wild grass, on a slope or a shelf edge; a solid prop
+    that shuts walkable ground in is taken out again (the walk grid with and without). New island-dress.test.
+  - **Gulls and crabs**: 3 + 2 gulls over the two beaches, 6 crabs at two spots on each beach's wet sand.
+  - **check-fast's Copperleaf step**: a tap from the square reaches the coast at 8 bearings; the dressing is there and
+    none of it in the pasture.
+  - **tools/island-perf.py**: frame cost at the 8 coast places, headless (draws per pass, props drawn, frame times).
+- Where the brief was wrong or short (the track file's "Checked in IS-9"): the forest had no trees at all; the cut-off
+  shelves were ~150 m² in two pockets (IS-5's 1,500 m² was the old seed) and their cause was the engine's rounding, so
+  no stairs or rock dressing were needed; the three house fronts aren't blocked (fences either side of a ~2 m gap,
+  stepping stones; every door a tap away); far trees are already pictures past ~20 m (Engine > World > tree detail and
+  tree count), so that fallback is a setting.
+- Verified: unit tests 621; lint, typecheck, check:modules, format, check:data; check-fast's Copperleaf step (14
+  walking checks, 13 doors, the coast at 8 bearings, 159 wild spots all in the patches); the reach with and without
+  the rounding equal (58,419 cells); headless pictures (coast N, E, W, NW, the summit, from above; three house fronts).
+  The full fast check, smoke and the full quick check: results in the PR (they ran last).
+- **Frame cost** (tools/island-perf.py, 390 x 760, low graphics, software drawing: the milliseconds compare builds
+  only; draws carry over):
+
+  | Coast | N | NE | E | SE | S | SW | W | NW |
+  |---|---|---|---|---|---|---|---|---|
+  | Draws, bare island | 243 | 164 | 275 | 351 | 303 | 228 | 178 | 445 |
+  | Draws, dressed | 843 | 1045 | 1333 | 1284 | 1082 | 1002 | 1100 | 1313 |
+  | of which sprites | 399 | 605 | 855 | 761 | 643 | 589 | 665 | 616 |
+  | Dressing without trees | 371 | 350 | 469 | 466 | 397 | 383 | 359 | 563 |
+  | ms headless, bare -> dressed | 321 -> 368 | 255 -> 380 | 262 -> 342 | 311 -> 381 | 300 -> 398 | 283 -> 367 | 257 -> 348 | 294 -> 438 |
+
+  The game's own graphics draw about the same (823-1,296 where measured). Boot to the first frame 10.6 s -> 10.8 s.
+  **For the phone**: A8 measured the Android phone (Adreno 750) at about 1.1-1.5 ms of processor time per 100 draws,
+  and the owner's budget is **400 draws a frame on phones** (A8, 2026-10-19). The bare island was already over it
+  facing north-west; dressed it is 2-3x over: expect roughly 12-20 ms of processor time in draws alone, so likely under
+  30 fps at the game's own values, while that phone also waits on its graphics chip. The trees are three quarters of
+  it (4-5 draws each: crossed pictures, shadow, reflection). Levers: `dress.trees` (0.5: 77 trees, about -300 draws;
+  0.35: 59), Engine > World > tree count and detail, or phase 20's batching (sprites one call each today).
+- Risky:
+  - The rounding fix touches every map's terraces (on slopes beside a face); the full quick check's terrace step
+    compares the walk on every place.
+  - Rerunning build-copperleaf rewrites every prop, dressing included: hand edits to Copperleaf's props are lost
+    unless folded into the input file or the tools (IS-5's note stands).
+  - IS-8 adds the pasture's props: it should do it in build-copperleaf before the dressing step (the dressing keeps
+    out of the zone anyway), so the two meet by rebuilding.
+  - The ground is meant to be locked after the owner's play test: lock it in the Studio's Hub island editor then
+    (build-island refuses a locked map).
+- **Phone test for the owner** (Start Game, on the island):
+  1. Debug menu > Performance > Show FPS meter.
+  2. Walk the coast road a full lap holding right on the joystick (about 2 minutes); stop for 5 seconds at each of the
+     8 compass points (the camera faces the middle: north is the forest side, the town is south-east).
+  3. Walk into the forest on the north side, then up the trail to the summit and the lookout; try the two corners of
+     the summit's top that used to be cut off.
+  4. From the square tap the far west beach (a long tap-walk across the island); watch the gulls and crabs there.
+  5. Go into the lab and out again (it faces west).
+  6. Debug menu > Export debug log, and send it. It holds each second's frame times, draw calls per pass (`dc`,
+     `dcp`), the orbit's angle and the scene; no save data or names. If it runs under 30 fps, say so and pick: fewer
+     trees (`dress.trees`), Engine > World > tree count, or phase 20's batching next.
+- Next: the owner's phone test and debug log; then lock the ground (Hub island editor); IS-8 meets this branch by
+  rebuilding. Tag `is-9-done` is the owner's to push.
+
 ### Island track IS-6b - Hub editor dials - 2026-10-22
 Branch `claude/is-6b-hub-dials`, from the wave-2 base `claude/new-session-3qlesh` (main plus IS-2, IS-3, IS-4 and IS-6a,
 PRs #122, #124, #123, #126, not merged yet); the PR goes against main, so its diff shrinks as those merge (then merge

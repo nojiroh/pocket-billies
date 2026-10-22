@@ -306,6 +306,23 @@ trainees, RL-10's data), tap one or the gate to open the ranch sheet. Waits for 
 Forest density and clearings, the terrain kinds dressed with props, gulls and crabs on the beach, the wild patches
 placed (question 5), the phone's frame times at 8 angles round the coast, then the owner's play test.
 
+**Checked in IS-9** (the owner's answers: a mixed dense forest; steps up to the cut-off shelves, the rest dressed as
+rock; 4-6 gulls and crabs; 5-6 wild patches by the woods and heath; far trees flat if the phone is slow):
+- **The forest had no trees.** Copperleaf's 113 props were the town's; the forest was forest-floor ground only, about
+  1,650 m² of it. "Density" meant planting it; its dials grew (forest span 200, deep 40, density 0.9: 2,692 m²), which
+  changes ground letters only (heights, steps and plots identical).
+- **The cut-off shelves were ~150 m², not 1,500**: IS-5 measured the old seed. Two pockets by the summit. The cause was
+  the engine's terrace rounding (walk-view.js `stepEdgeShape`), not the generator: it promised a step you could take
+  stays one you can, but on one level it ignored the land's own slope, so 0.13-0.22 m rises became 0.34-0.40 m. Fixed
+  there (the slope counts), so no stairs and no rock dressing were needed: every cell reachable before the rounding is
+  reachable after.
+- **The three house fronts aren't blocked**: Juniper's home has a planter and a barrel beside its door, two cottages a
+  picket fence either side of theirs with a ~2 m gap and stepping stones; a tap reaches every door (17 ms at most).
+- **Tap-to-walk crosses the island**: from the square to the coast at 8 bearings, 95 ms headless at most (check-fast).
+- **Far trees are already flat**: the engine draws solid trees within ~20 m (at most 40, Engine > World > tree detail
+  and count) and pictures past that, so the fallback the owner picked is a setting, not new code.
+- The summit's flat top is about 8 x 8 m; the lookout (4 m across) stands on it 3.5-8 m from the summit spot.
+
 ### Look pass (before wave 3; the owner's feedback rounds)
 The owner looks at headless phone pictures each round (tools/island-shots.py: 8 coast views with the game's orbit
 camera, the square, the summit, from above, a ground map) and asks for changes; the island is rebuilt with the tools

@@ -118,7 +118,7 @@ export function islandDress(sc, scenery, o = {}) {
   const bridges = sc.bridges || [];
   const wild = sc.grassPatches || [];
 
-  /* how far each cell is from a street, path or the trail (metres, to 4) and from water (to 4) */
+  /* how far each cell is (in whole metres, up to a cap) from a street, path or the trail, from water, out of the forest */
   const far = (test, cap) => {
     const D = new Float32Array(w * h).fill(cap);
     const Q = [];
