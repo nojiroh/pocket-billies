@@ -9,7 +9,7 @@ import { test } from 'node:test';
 globalThis.window = globalThis;
 globalThis.PB_TEST_GLOBALS = true;
 await import('../../game/js/audio/tracker.js');
-const { trackerCompose, trackerNight } = /** @type {any} */ (globalThis);
+const { trackerCompose, trackerCreate, trackerNight, trackerRecipe } = /** @type {any} */ (globalThis);
 
 const MUSIC = JSON.parse(readFileSync(new URL('../../game/data/music.json', import.meta.url), 'utf8'));
 // town's recipe without its written lines (SND-4 gave it a placeholder hook): the tests write their own
@@ -108,4 +108,99 @@ test('at night a written hook and counter move with the key', () => {
   assert.deepEqual(n.hook, [[0, 67, 4]]);
   assert.deepEqual(n.counter, [[0, 59, 4]]);
   assert.equal(trackerNight(town).hook, undefined);
+});
+
+// SND-5: intros and the drums held until the throw
+test('an intro lasts the bars its notes reach (one or two), and only steps 0-31 count', () => {
+  assert.equal(trackerCompose(town).introSteps, 0);
+  const a = trackerCompose({
+    ...town,
+    intro: [
+      [0, 76, 2],
+      [14, 64, 2],
+    ],
+  });
+  assert.equal(a.introSteps, 16);
+  assert.deepEqual(a.introNotes[0], [76, 2]);
+  const b = trackerCompose({
+    ...town,
+    intro: [
+      [0, 76, 2],
+      [30, 64, 6],
+      [40, 60, 2],
+    ],
+  });
+  assert.equal(b.introSteps, 32);
+  assert.deepEqual(b.introNotes[30], [64, 2], "a note is cut at the intro's end");
+  assert.deepEqual(trackerCompose({ ...town, intro: [[0, 76, 2]] }).notes, trackerCompose(town).notes);
+});
+
+test('trackerRecipe: the song, its night version, null for what does not exist', () => {
+  const songs = { town };
+  assert.equal(trackerRecipe(songs, 'town'), town);
+  assert.deepEqual(trackerRecipe(songs, 'town@night'), trackerNight(town));
+  assert.equal(trackerRecipe(songs, 'nosuch'), null);
+  assert.equal(trackerRecipe(songs, 'town@nosuch'), null);
+  assert.equal(trackerRecipe({ town: { ...town, night: false } }, 'town@night'), null);
+});
+
+/** a context that does nothing: every node and param takes any call; the clock is set by hand */
+function fakeContext() {
+  const any = () => new Proxy(function () {}, { get: (t, k) => (k === 'value' ? 0 : any()), apply: () => any() });
+  const c = new Proxy(
+    { currentTime: 0, sampleRate: 8000 },
+    {
+      get: (t, k) =>
+        k in t ? t[k] : k === 'createBuffer' ? () => ({ getChannelData: () => new Float32Array(8) }) : any(),
+    }
+  );
+  return c;
+}
+/** what a song plays over its first `steps` steps: [step, voice] (lead, drum) */
+function playFor(D, o, steps, after) {
+  const c = fakeContext(),
+    T = trackerCreate(c, {}, { songs: { s: D } }),
+    out = [];
+  let step = 0;
+  T.synthVoice = (bus, v) => out.push([T.song.step, 'voice', v.type]);
+  T.synthNoise = () => out.push([T.song.step, 'drum']);
+  T.synthKick = () => out.push([T.song.step, 'drum']);
+  T.play('s', o);
+  clearInterval(T.timer);
+  const spb = 60 / D.bpm / 4;
+  for (; step < steps; step++) {
+    if (after && step === after.at) after.do(T);
+    c.currentTime = T.song.next - 0.13;
+    T.tick();
+  }
+  return out;
+}
+
+test('with an intro asked for, the intro plays first on the lead alone, then the song from its start', () => {
+  const D = {
+      ...town,
+      drums: 'drive',
+      intro: [
+        [0, 76, 1],
+        [1, 75, 1],
+        [2, 74, 1],
+      ],
+    },
+    out = playFor(D, { intro: true }, 20);
+  const intro = out.filter(([st]) => st < 0);
+  assert.equal(intro.length, 3, 'three intro notes, nothing else');
+  assert.ok(intro.every(([, k, type]) => k === 'voice' && type === D.lead));
+  assert.ok(
+    out.some(([st, k]) => st >= 0 && k === 'drum'),
+    'the drums come with the song'
+  );
+  assert.ok(!playFor(D, {}, 4).some(([st]) => st < 0), 'no intro unless asked');
+});
+
+test('held drums stay out until drumsIn (the throw)', () => {
+  const D = { ...town, drums: 'drive' };
+  assert.ok(!playFor(D, { hold: true }, 24).some(([, k]) => k === 'drum'));
+  const out = playFor(D, { hold: true }, 24, { at: 8, do: T => T.drumsIn() });
+  assert.ok(out.some(([, k]) => k === 'drum'));
+  assert.ok(!out.some(([st, k]) => k === 'drum' && st < 8));
 });

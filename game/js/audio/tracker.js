@@ -14,6 +14,7 @@ expose({
   trackerCompose: [() => trackerCompose, v => (trackerCompose = v)],
   trackerCreate: [() => trackerCreate, v => (trackerCreate = v)],
   trackerNight: [() => trackerNight, v => (trackerNight = v)],
+  trackerRecipe: [() => trackerRecipe, v => (trackerRecipe = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -118,7 +119,13 @@ export function trackerCompose(D) {
   written(D.counter, counter);
   /* SND-4: the bars where the countermelody has the second pulse (the arp rests there) */
   const counterBars = Array.from({ length: bars }, (_, b) => counter.slice(b * 16, b * 16 + 16).some(Boolean));
-  return { ...D, notes: lead, counterNotes: counter, counterBars, steps, deg };
+  /* SND-5: the intro, one or two bars on the lead alone that play once before the song (a battle's chromatic run).
+     Notes as a hook's, steps 0-31; it lasts the bars its notes reach */
+  const line = (D.intro || []).filter(([st]) => st >= 0 && st < 32),
+    introSteps = line.length ? Math.min(32, Math.ceil(Math.max(...line.map(([st, , l]) => st + l)) / 16) * 16) : 0,
+    introNotes = new Array(introSteps).fill(null);
+  for (const [st, m, l] of line) introNotes[st] = [m, Math.min(l, introSteps - st)];
+  return { ...D, notes: lead, counterNotes: counter, counterBars, steps, deg, introNotes, introSteps };
 }
 export const midiToFrequency = m => 440 * Math.pow(2, (m - 69) / 12);
 /* SND-4: a song's night version, the recipe with its `night` changes; with none written, slower by 8 bpm, a fourth
@@ -134,6 +141,18 @@ function trackerNight(D) {
   if (by && D.hook && !(night && night.hook)) N.hook = move(D.hook);
   if (by && D.counter && !(night && night.counter)) N.counter = move(D.counter);
   return N;
+}
+/* SND-5: the recipe a song name plays: 'town' itself, 'town@night' its night version; null for a song or a part that
+   doesn't exist. `run` is music.json's run (the arc's bands), for the parts that need it */
+function trackerRecipe(songs, name, run) {
+  const [base, ...parts] = String(name).split('@');
+  let D = (songs && songs[base]) || null;
+  for (const p of parts) {
+    if (!D) return null;
+    if (p === 'night') D = trackerNight(D);
+    else return null;
+  }
+  return D;
 }
 export function trackerCreate(ctx, bus, opts = {}) {
   const c = ctx,
@@ -272,11 +291,8 @@ export function trackerCreate(ctx, bus, opts = {}) {
   T.song = null;
   T.voices = [];
   T.timer = null;
-  /* SND-4: 'town@night' is town's night version (trackerNight) */
-  T.recipe = name => {
-    const [base, part] = String(name).split('@');
-    return part === 'night' ? trackerNight(songs[base]) : part ? null : songs[base] || null;
-  };
+  /* SND-4: 'town@night' is town's night version (trackerNight); SND-5: any name trackerRecipe knows */
+  T.recipe = name => trackerRecipe(songs, name, opts.run);
   T.compose = name => {
     const D = T.recipe(name);
     if (!D) return null;
@@ -293,7 +309,8 @@ export function trackerCreate(ctx, bus, opts = {}) {
     if (D) T.song.D = D;
     else T.stop();
   };
-  T.play = name => {
+  /* SND-5: o.intro plays the song's intro first; o.hold keeps the drums out until drumsIn() (the throw), or 8 s */
+  T.play = (name, o = {}) => {
     if (T.song && T.song.name === name) return T.song;
     const D = T.compose(name);
     if (!D) return null;
@@ -302,7 +319,14 @@ export function trackerCreate(ctx, bus, opts = {}) {
       old.fade = c.currentTime;
     }
     const L = levels();
-    T.song = { name, D, step: 0, next: c.currentTime + 0.08, gain: c.createGain() };
+    T.song = {
+      name,
+      D,
+      step: o.intro ? -(D.introSteps || 0) : 0,
+      next: c.currentTime + 0.08,
+      gain: c.createGain(),
+      hold: o.hold ? c.currentTime + 8 : 0,
+    };
     T.song.gain.connect(bus);
     T.song.drums = c.createGain();
     T.song.drums.gain.value = L ? L.drums : 1;
@@ -334,6 +358,10 @@ export function trackerCreate(ctx, bus, opts = {}) {
   };
   /* the scheduler's timer runs only while a song plays: idle() stops it (no song, or the page hidden), wake() starts
      it again for the song that was playing */
+  /* SND-5: the drums come in (a battle's first throw) */
+  T.drumsIn = () => {
+    if (T.song) T.song.hold = 0;
+  };
   T.idle = () => {
     if (T.timer) clearInterval(T.timer);
     T.timer = null;
@@ -347,7 +375,27 @@ export function trackerCreate(ctx, bus, opts = {}) {
     if (!sg) return T.idle();
     const D = sg.D,
       spb = 60 / D.bpm / 4;
+    if (sg.hold && c.currentTime > sg.hold) sg.hold = 0;
     while (sg.next < c.currentTime + 0.14) {
+      /* SND-5: the intro, on the lead alone */
+      if (sg.step < 0) {
+        const N = D.introNotes[sg.step + D.introSteps];
+        if (N)
+          T.synthVoice(sg.gain, {
+            type: D.lead,
+            freq: midiToFrequency(N[0]),
+            t: sg.next,
+            dur: N[1] * spb * 0.9,
+            vol: D.lead === 'triangle' ? 0.13 : 0.075,
+            d: 0.06,
+            s: 0.7,
+            r: 0.04,
+            echo: D.echo || 0.15,
+          });
+        sg.step++;
+        sg.next += spb;
+        continue;
+      }
       let Lv;
       const st = sg.step % D.steps,
         b = Math.floor(st / 16),
@@ -519,7 +567,8 @@ export function trackerCreate(ctx, bus, opts = {}) {
             r: 0.2,
           })
         );
-      /* drums (v27: on their own bus, softer when you stand still or at night) */ const dr = D.drums,
+      /* drums (v27: on their own bus, softer when you stand still or at night; SND-5: out until the throw) */ const dr =
+          sg.hold ? 'none' : D.drums,
         db = sg.drums || bus;
       if (dr === 'soft') {
         if (i === 0 || i === 8) T.synthKick(db, t, 0.25);

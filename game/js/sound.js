@@ -119,7 +119,7 @@ function initSound() {
     soundEngine.fx.connect(soundEngine.master);
     applyVolumes();
     /* SND-2: the echo, the noise and the waves are the tracker's (audio/tracker.js), on the music bus */
-    const T = trackerCreate(c, soundEngine.mus, { songs: SONGS, levels: () => soundEngine.L });
+    const T = trackerCreate(c, soundEngine.mus, { songs: SONGS, run: MUSIC.run, levels: () => soundEngine.L });
     soundEngine.tracker = T;
     soundEngine.echoIn = T.echoIn;
     soundEngine.echoWet = T.echoWet;
@@ -187,13 +187,14 @@ function synthKick(bus, t, v) {
 /* SND-2: the songs' recipes are data (music.json songs) */
 const SONGS = MUSIC.songs;
 /* SND-2: the song plays on the tracker (audio/tracker.js); this keeps what was asked for (the first touch starts it) */
-export function music(name) {
+/* SND-5: o as the tracker's play takes it ({ intro, hold }: a battle's start) */
+export function music(name, o) {
   soundEngine.want = name;
   if (!soundEngine.ctx || soundEngine.ctx.state !== 'running') {
     return;
   }
   const T = soundEngine.tracker;
-  T.play(name);
+  T.play(name, o);
   soundEngine.song = T.song;
   soundEngine.voices = T.voices;
   soundEngine.timer = T.timer;
