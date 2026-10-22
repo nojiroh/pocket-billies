@@ -19,6 +19,7 @@ import { gpuState, webgl2Supported } from '../../game/js/engine/webgl.js';
 import { walkRenderer } from '../../game/js/walk/walk-state.js';
 import { rebuildFromSettings } from '../../game/js/walk/map-cache.js';
 import { adaptQuality, setAdaptQuality } from '../../game/js/walk/quality-cull.js';
+import { interestPoints } from '../../game/js/walk/sprites.js';
 import { mountWalkView } from '../../game/js/walk-view-gl.js';
 import { escapeHtml } from './game-stand-ins.js';
 import {
@@ -177,7 +178,15 @@ SECTIONS.engine = () => {
   return `<div class="eng-split"><div class="eng-set" id="engSet">${engineSettingsHTML()}</div>
  <div class="eng-side"><div class="card"><div class="card-b"><div class="eng-pvbar"><label class="fld"><span>Preview scene</span><select id="engScene">${opts}</select></label>
    <button class="btn sm" id="engCmp" title="Hold to see the built-in look without any of your settings">Hold to compare</button>
-   <button class="btn sm ${engineEditor.guides ? 'on' : ''}" id="engGuidesBtn" data-act="engGuides" title="Draws the camera's dead and soft zones (drag their edges), its aim and the look-ahead on the preview">Camera guides</button></div>
+   <button class="btn sm ${engineEditor.guides ? 'on' : ''}" id="engGuidesBtn" data-act="engGuides" title="Draws the camera's dead and soft zones (drag their edges), its aim, the look-ahead, the points of interest and the camera zones on the preview">Camera guides</button></div>
+  <div class="eng-pvbar" title="CAM-2: plays one of the camera's moments in the preview, as if it happened (a talk or a boss 3 m up the screen)">Play moment ${[
+    ['talk', 'Talk'],
+    ['encounter', 'Encounter'],
+    ['boss', 'Boss'],
+    ['idle', 'Standing still'],
+  ]
+    .map(([k, n]) => `<button class="btn sm" data-act="engMoment" data-m="${k}">${n}</button>`)
+    .join('')}</div>
   <div class="sc-pv eng-pv"><canvas id="engPv"></canvas><canvas id="engGuides" class="eng-guides" ${engineEditor.guides ? '' : 'hidden'}></canvas><div class="sc-pv-load" id="engPvLoad">Loading…</div></div>
   <div class="eng-meter" id="engMeter">–</div>
   <p class="help">Click the ground to walk, drag to turn, scroll to zoom. What you see is the game’s own renderer with your unsaved values. Battles happen inside the walk scene, so they follow its look.</p></div></div></div></div>`;
@@ -207,6 +216,8 @@ async function mountEnginePreview() {
       engineEditor.pos = [id, [x, z]];
     },
     keys: () => false,
+    /* CAM-2: the camera's moments and zones play here, as in the game */
+    moments: true,
     onPick: h => {
       if (h.k !== 'ground') toast('That works in the game; here you can only walk.');
     },
@@ -529,6 +540,37 @@ function drawCameraGuides() {
     x.closePath();
     x.fill();
   }
+  /* CAM-2: the points of interest (a ring on the ground, its radius; brighter the more it counts now), the camera
+     zones (outlined; the one you stand in filled) and a played moment's spot */
+  const ring = (cx, cz, rad, stroke, fill) => {
+    const q = [];
+    for (let i = 0; i < 32; i++) {
+      const a = (i / 32) * Math.PI * 2,
+        p = guideProject(C, w, h, cx + Math.cos(a) * rad, feet, cz + Math.sin(a) * rad);
+      if (!p) return;
+      q.push(p);
+    }
+    poly(q, fill, stroke, [3, 3]);
+  };
+  for (const pt of typeof interestPoints === 'function' ? interestPoints(walkView.sc) : []) {
+    const top = I.interest && Math.abs(I.interest[2] - pt.x) < 1e-6 && Math.abs(I.interest[3] - pt.z) < 1e-6;
+    ring(pt.x, pt.z, pt.radius, `rgba(120, 255, 160, ${top ? 0.95 : 0.45})`, top ? 'rgba(120, 255, 160, 0.10)' : null);
+    dot(guideProject(C, w, h, pt.x, feet, pt.z), 'rgba(120, 255, 160, 0.95)', 3);
+  }
+  ((walkView.sc && walkView.sc.camZones) || []).forEach((zn, i) => {
+    const fill = i === I.zone ? 'rgba(181, 126, 220, 0.18)' : null,
+      stroke = 'rgba(181, 126, 220, 0.95)';
+    if (zn.shape === 'circle') return ring(zn.x, zn.z, zn.r || 0, stroke, fill);
+    const q = [
+      [zn.x, zn.z],
+      [zn.x + (zn.w || 0), zn.z],
+      [zn.x + (zn.w || 0), zn.z + (zn.h || 0)],
+      [zn.x, zn.z + (zn.h || 0)],
+    ].map(([a, b]) => guideProject(C, w, h, a, feet, b));
+    if (q.every(Boolean)) poly(q, fill, stroke, [3, 3]);
+  });
+  const MT = walkRenderer.momentTest;
+  if (MT && MT.at) dot(guideProject(C, w, h, MT.at[0], feet, MT.at[1]), 'rgba(255, 90, 200, 1)', 5);
   dot(guideProject(C, w, h, I.goal[0], feet, I.goal[1]), 'rgba(255, 196, 64, 1)', 3.5);
   dot(S.aim, 'rgba(255, 255, 255, 1)', 4);
   dot(you, 'rgba(80, 220, 255, 1)', 4);
@@ -538,7 +580,7 @@ function drawCameraGuides() {
     .join(' · ');
   x.font = '12px system-ui, sans-serif';
   x.fillStyle = 'rgba(0, 0, 0, 0.55)';
-  const line = `${I.mode} · zoom ${walkRenderer.zoom.toFixed(2)}${goals ? ' · ' + goals : ''}`;
+  const line = `${I.mode}${I.moment ? ' · moment ' + I.moment : ''} · zoom ${walkRenderer.zoom.toFixed(2)}${I.zoom != null && Math.abs(I.zoom - walkRenderer.zoom) > 0.005 ? ' → ' + I.zoom.toFixed(2) : ''}${goals ? ' · ' + goals : ''}`;
   x.fillRect(6, 6, x.measureText(line).width + 12, 20);
   x.fillStyle = '#fff';
   x.fillText(line, 12, 20);
@@ -613,6 +655,41 @@ function mountCameraGuides() {
   box.addEventListener('pointercancel', end, true);
   if (engineEditor.guides && !engineEditor.guideRaf) drawCameraGuides();
 }
+/* CAM-2: "Play moment": a talk or a boss stands 3 m up the screen from you, standing still starts at once, and an
+   encounter swoops at a spot 2.5 m up the screen (then lets go, no battle) */
+ACTIONS.engMoment = d => {
+  const P = walkView.pl,
+    I = walkRenderer.camInfo;
+  if (!P || !I) return;
+  const F = [-I.right[1], I.right[0]],
+    at = r => [P.x + F[0] * r, P.z + F[1] * r];
+  if (d.m === 'encounter') {
+    const e = at(2.5),
+      S = {
+        x: P.x * 0.6 + e[0] * 0.4,
+        z: P.z * 0.6 + e[1] * 0.4,
+        px: P.x,
+        pz: P.z,
+        ex: e[0],
+        ez: e[1],
+        zoom: engineSetting('camera', 'encZoom'),
+        arrived: false,
+      };
+    walkRenderer.swoop = S;
+    setTimeout(
+      () => {
+        if (walkRenderer.swoop === S) walkRenderer.swoop = null;
+      },
+      engineSetting('camera', 'encMax') + 600
+    );
+    return;
+  }
+  walkRenderer.momentTest = {
+    id: d.m,
+    at: d.m === 'idle' ? null : at(3),
+    until: walkView.t + (d.m === 'idle' ? 6000 : 3500),
+  };
+};
 ACTIONS.engGuides = () => {
   engineEditor.guides = !engineEditor.guides;
   /* the zones' dials show beside the guides they draw */

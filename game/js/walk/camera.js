@@ -99,7 +99,8 @@ function followDirection(P, R, F, vx, vz, sp) {
   return vl > 1e-4 ? [vx / vl, vz / vl] : [0, 0];
 }
 /* CAM-2: this frame's moment (logic/camera-moments.js), from what the walk knows: who talks to you (while the talk box
-   is up), where a run's boss stands, the point of interest, whether you walk or run */
+   is up), where a run's boss stands, the point of interest, whether you walk or run. A Studio preview's free camera has
+   none unless it asks (walkView.opt.moments: the Engine preview) */
 function moments(sc, P, push, I, dt, snap) {
   /* a new scene starts the moments afresh, but a boss already revealed stays so */
   if (!walkRenderer.mom || walkRenderer.mom.sc !== sc)
@@ -122,7 +123,7 @@ function moments(sc, P, push, I, dt, snap) {
       st.still = Math.max(st.still, D.idleDelay);
     }
   }
-  if (freeCameraOn() || sc.indoor || sc.room) return { id: null, goals: [] };
+  if ((freeCameraOn() && !walkView.opt.moments) || sc.indoor || sc.room) return { id: null, goals: [] };
   return momentStep(
     st,
     {
@@ -222,7 +223,7 @@ export function walkCamera(rw, rh, st, dt) {
      running; at most one at a time. The Studio's "Play moment" stands in for the real thing (walkRenderer.momentTest) */
   const M = moments(sc, P, push, I, dt, snap);
   /* CAM-2: a camera zone you stand in (the scene's camZones, placed in the Studio's Walk scenes editor) */
-  const zi = freeCameraOn() ? -1 : zoneAt(sc.camZones, P.x, P.z);
+  const zi = freeCameraOn() && !walkView.opt.moments ? -1 : zoneAt(sc.camZones, P.x, P.z);
   if (zi >= 0) {
     const Zn = sc.camZones[zi],
       off = Zn.at && (Zn.at[0] || Zn.at[1]) ? Zn.at : null;
