@@ -441,7 +441,7 @@ def build_form(form, C):
     sheet, spots = pack(pics)
     place = {w: (s, im.size) for w, s, im in zip(where, spots, pics)}
     rig, layout = {}, {'id': form['name'], 'w': BW, 'h': BH, 'cx': CX, 'base': BASE, 'plan': 'biped',
-                       'kit': 'builds.json', 'pieces': []}
+                       'kit': 'kitBuilds.json', 'pieces': []}
     for v in ('front', 'back'):
         ps = views[v]
         imgs, bones = [], []
@@ -462,7 +462,7 @@ def build_form(form, C):
                   'geo': {'cx': CX, 'base': BASE, 'top': int(y0), 'mid': (int(y0) + BASE) / 2, 'hw': (int(x1) - int(x0)) / 2,
                           'lift': 0, 'k': 1, 'cy': (int(y0) + BASE) / 2},
                   'size': list(sheet.size), 'imgs': imgs, 'bones': bones, 'clock': 12,
-                  'sheet': f"next/billionaires/{form['name']}.png", 'kit': 'builds.json'}
+                  'sheet': f"next/billionaires/{form['name']}.png", 'kit': 'kitBuilds.json'}
         # the piece layout (as tools/build-roster-sheets.py writes them): rest-pose boxes without turns
         pos = {'root': (CX, BASE)}
         for b, e in zip(bones, imgs):

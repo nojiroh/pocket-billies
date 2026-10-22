@@ -414,7 +414,7 @@ export function kitBakeForm(K, form, C, pics, D) {
       cx: CX,
       base: BASE,
       plan: 'biped',
-      kit: 'builds.json',
+      kit: 'kitBuilds.json',
       pieces: /** @type {any[]} */ ([]),
     };
   for (const v of ['front', 'back']) {
@@ -447,7 +447,7 @@ export function kitBakeForm(K, form, C, pics, D) {
       bones,
       clock: 12,
       sheet: `next/billionaires/${form.name}.png`,
-      kit: 'builds.json',
+      kit: 'kitBuilds.json',
     };
     /* the piece layout: rest-pose boxes without turns */
     /** @type {Record<string, number[]>} */
