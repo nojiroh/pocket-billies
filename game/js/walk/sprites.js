@@ -560,7 +560,9 @@ function drawClockHands(p, it, C, X) {
 /* v47: how far the camera tilts up for the landmarks near you: a thing marked "landmark" in the catalogue (the clock
    tower, the giant tree, the crane...) between 2 and 18 metres ahead and within 8 to the side, by how far its top
    rises above what the camera shows anyway (about 5 m); up to 11 degrees */
-export function landmarkTilt(P, sc) {
+/* island track IS-1: `yaw` is the way the camera faces (0, north, everywhere but an orbiting island); a landmark counts
+   when it stands ahead along that way */
+export function landmarkTilt(P, sc, yaw = 0) {
   if (!sc || sc.indoor || !P || reducedMotion) return 0;
   const C0 = walkData().sc;
   let L = walkRenderer.lmL;
@@ -573,11 +575,15 @@ export function landmarkTilt(P, sc) {
       }),
     };
   let best = 0;
+  const fx = Math.sin(yaw),
+    fz = Math.cos(yaw);
   for (const p of L.list) {
     if (typeof propShown === 'function' && !propShown(p)) continue;
     const M = C0.props[p.k],
-      dz = p.z - P.z,
-      dx = Math.abs(p.x - P.x);
+      ox = p.x - P.x,
+      oz = p.z - P.z,
+      dz = ox * fx + oz * fz,
+      dx = Math.abs(ox * fz - oz * fx);
     if (dz < 2 || dz > 18 || dx > 8) continue;
     const hm = (-M.oy / 34) * (p.s || 1),
       k = Math.min(1, (dz - 2) / 3) * Math.min(1, (18 - dz) / 6) * Math.min(1, (8 - dx) / 4);
