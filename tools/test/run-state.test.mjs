@@ -7,7 +7,7 @@ import { fn, modules, startedSave } from './setup-fixture.mjs';
 
 const { newRun, validRun, runBegin, runEnd, runRestore, payoutOf, runNodeCount, RUN_FIELDS } = modules['run-state'];
 const { newMeta } = modules['meta-state'];
-const RATES = { money: 0.1, itemShare: 0.5, released: 15, node: 10, win: 100, winSeals: 1 };
+const RATES = { money: 0.1, itemShare: 0.5, released: 15, node: 10, win: 100, winSeals: 1, scrapNode: 2, scrapWin: 10 };
 const PRICE = id => ({ potion: 200 })[id] || 0;
 const GIVE = { seed: 'ABCDE12345', tier: 1, mapgenV: 1, se: 300, items: { potion: 1 } };
 const copy = v => JSON.parse(JSON.stringify(v));
@@ -140,8 +140,9 @@ test('run: the payout converts money, items, releases, nodes and a win into Capi
   );
   assert.equal(p.capital, 245);
   assert.equal(p.seals, 1);
+  assert.equal(p.scrap, 4 * 2 + 10, 'RL-9: Scrap a node cleared, more for a win');
   const lost = payoutOf({ se: 0, items: {}, released: 0, cleared: 1, won: false }, RATES, PRICE);
-  assert.deepEqual([lost.capital, lost.seals], [10, 0]);
+  assert.deepEqual([lost.capital, lost.seals, lost.scrap], [10, 0, 2]);
 });
 
 test('run: ending one pays into meta, puts the hub back and keeps the chosen Billies', () => {
@@ -160,7 +161,7 @@ test('run: ending one pays into meta, puts the hub back and keeps the chosen Bil
   const pay = runEnd(s, { won: false, keep: [s.team[0].uid] }, RATES, PRICE);
   assert.equal(s.run, null);
   assert.equal(pay.capital, 50 + 20 + 15 + 30);
-  assert.deepEqual(s.meta, { ...newMeta(), capital: pay.capital, runs: 1 });
+  assert.deepEqual(s.meta, { ...newMeta(), capital: pay.capital, scrap: 3 * 2, runs: 1 });
   for (const k of RUN_FIELDS.filter(k => k !== 'team')) assert.deepEqual(s[k], hub[k], `${k} is the hub's again`);
   assert.equal(s.team.length, 2, 'the Billie caught in the run is gone');
   assert.equal(s.team[0].lvl, 14, 'the kept traveller keeps its gains');

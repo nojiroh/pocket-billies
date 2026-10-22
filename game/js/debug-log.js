@@ -483,7 +483,9 @@ debugLog.state = () => {
         : null;
     /* RL-8: what the runs brought home (numbers only) */
     const meta = GAME.saveData.meta;
-    s.meta = meta ? { runs: meta.runs, wins: meta.wins, capital: meta.capital, seals: meta.seals } : null;
+    s.meta = meta
+      ? { runs: meta.runs, wins: meta.wins, capital: meta.capital, seals: meta.seals, scrap: meta.scrap }
+      : null;
     s.frameHz = GAME.frameScheduler.hz;
     s.fpsCap = GAME.userFps();
   } catch (e) {

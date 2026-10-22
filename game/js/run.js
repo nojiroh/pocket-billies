@@ -147,9 +147,9 @@ export function runEndHome(won, keep, itemPrice) {
   closeModal();
   render();
   if (typeof debugLog !== 'undefined')
-    debugLog.add('scene', `back in the hub: +${pay.capital} Capital, +${pay.seals} Seals`);
+    debugLog.add('scene', `back in the hub: +${pay.capital} Capital, +${pay.seals} Seals, +${pay.scrap} Scrap`);
   toast(
-    `+${formatNumber(pay.capital)} Capital${pay.seals ? ` and ${plural(pay.seals, 'Audit Seal')}` : ''}. You have ${formatNumber(saveData.meta.capital)} Capital.`
+    `+${formatNumber(pay.capital)} Capital${pay.scrap ? `, ${formatNumber(pay.scrap)} Scrap` : ''}${pay.seals ? ` and ${plural(pay.seals, 'Audit Seal')}` : ''}. You have ${formatNumber(saveData.meta.capital)} Capital.`
   );
 }
 
