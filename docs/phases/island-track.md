@@ -144,6 +144,19 @@ sea past it, `cam.orbit` set. A quick fixture `?fixture=island` that boots into 
 - The far backdrop (`far`, `farH`, sky.js's bowl wall) checked from every angle: the bowl's wall over the sea.
 - Tested on `test_island`; switch to `copperleaf_island` when IS-2 lands.
 
+**Checked in IS-3** (pictures of `?fixture=island` from 8 sides through the Studio's free-camera hook):
+- The old skirt (four quads 90 m out) met the scene's sea with a seam: it started fully deep while the scene's edge
+  water is shallow and see-through, and the scene's own edge vertices were half as deep (cells past the edge counted
+  as nothing). Its far edge showed from high up. Now one skirt of rings (logic/sea.js) out to 400 m.
+- Whitecaps were stretched along x, streaks from the east and west: they now roll in toward `island.c`.
+- There was no surf on a sea coast: the foam came from `aShore`, which is 0 at sea.
+- `far: "sea"` only preloads `scene/far/sea.png`; nothing draws it. `farH` is read by nothing. Both left alone.
+- Far props (trees, rocks scattered past the edge) stood on the water of any `flatFar` map: off there now.
+- The bowl's far wall (the sky shader, from world-bowl.js's `bowlWallTexture`) already goes all the way round; it
+  reads as a pale cream band because of the far bowl's own colours (phase 10's look; softened in IS-3, not recoloured).
+- Looking south (into the noon sun) the sky washes white with bloom and glare: the sun question (3) for IS-1.
+- A cove is calm by its zone (`zones[].k = "cove"`); IS-2's real cove gets it for free.
+
 ### IS-4 Island props
 - Phase 09 batch 11's barn (now a picture) becomes a model; the rest of batch 11 stays its own batch.
 - New, in the existing low-poly 32 px/m style, duplicates as variants: pasture fence and gate, trough, hay bales,
