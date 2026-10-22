@@ -58,8 +58,8 @@ town node needs it.
 - **Camera track** (docs/phases/camera-track.md, the owner's brief and answers 2026-10-22): a follow with dead and
   soft zones and a joystick look-ahead (CAM-1), zooms for moments of interest (CAM-2), a diorama tilt-shift blur with
   a player slider (CAM-3); each session brings its Studio dials and preview overlays. Runs now, beside the RL track.
-  CAM-1 (the follow) done 2026-10-22 (PR #127); CAM-2 (moments of interest) done 2026-10-22; CAM-3 next. Tags
-  `cam-N-done`.
+  CAM-1 (the follow) done 2026-10-22 (PR #127); CAM-2 (moments of interest) done 2026-10-22 (PR #132); CAM-3 (the
+  diorama blur) done 2026-10-22 (PR #134): the track is done. Tags `cam-N-done`.
 - **Project Story** (docs/phases/project-story.md): S1-S3 and S7 done, S8 partly (RL-8: New game plays the fall only; the city's files stay).
   S6 (Hazel vs Blake as a real battle) is unblocked by RL-4; S4, S5 and S8's leftovers wait until the first cut has
   been played. RL-8 (the owner's answer): the opening is the fall only, Blake cut from it (his data kept), and Hazel's

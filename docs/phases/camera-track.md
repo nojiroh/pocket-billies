@@ -217,7 +217,8 @@ below against main and report what differs.
   down and one up (the bloom's own passes), blended by the same full-size amount (`cheapDof`, path "cheap").
 - **Dials** (Engine > Lens): Tilt of the sharp zone (built-in 0), Edge blur (0), Miniature look (0: up to +25%
   saturation, +12% contrast, +0.2 vignette, times the blur in use), Focus moves in (0.35 s). Preset "Miniature" (tilt
-  1, band 0.35, far 1.8, near 0.7, blur 2.2, miniature 0.8). The game's look: see "The game's tilt" below.
+  1, band 0.35, far 1.8, near 0.7, blur 2.2, miniature 0.8). The game's look (engine.json): tilt 0.7, chosen from tools/look-blur.py's pictures (at 1 a little
+  sharper up the mast, at 0.7 gentler); band, ramps and strength unchanged, so Medium is the old strength.
 - **The focus follows the moments** (walk-view-gl.js): the middle of you and who you talk to for the whole talk, the
   encounter's spot while the camera swoops, a boss as it is revealed, else a tapped spot (as before); camera.js
   records the speaker's and boss's spots (`walkRenderer.momSpots`, the Studio's Play moment included).
