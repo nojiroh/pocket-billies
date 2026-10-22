@@ -49,8 +49,16 @@ export function sunLight(indoor) {
     a = a + (t - 13) * 6;
     warm = clamp(0.6 - ph * 0.6, 0, 1);
   }
-  const ch = Math.cos(h * deg),
-    toSun = normalize3([-Math.cos(a * deg) * ch, Math.sin(h * deg), -Math.sin(a * deg) * ch]);
+  const ch = Math.cos(h * deg);
+  let toSun = normalize3([-Math.cos(a * deg) * ch, Math.sin(h * deg), -Math.sin(a * deg) * ch]);
+  /* island track IS-1 (Engine > Camera > Sun turns with the camera, off by default): the sun turned with the walking
+     camera, so its slant on screen stays the one it has looking north */
+  const Cw = !indoor && engineSetting('camera', 'sunTurns') && typeof walkView !== 'undefined' ? walkView.C : null;
+  if (Cw && Cw.yaw) {
+    const cy = Math.cos(Cw.yaw),
+      sy = Math.sin(Cw.yaw);
+    toSun = [toSun[0] * cy + toSun[2] * sy, toSun[1], -toSun[0] * sy + toSun[2] * cy];
+  }
   let k = engineSetting('sun', 'strength');
   if (warm) col = [col[0], col[1] * (1 - warm * 0.12), col[2] * (1 - warm * 0.3)];
   if (indoor) k *= 0.75;

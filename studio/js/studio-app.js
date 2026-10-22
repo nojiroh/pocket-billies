@@ -486,6 +486,7 @@ export const SECTION_LIST = [
   ['shops', 'Town shops', 'Keepers and what they sell'],
   ['world', 'World & encounters', 'Route stops, who appears where, eggs, map'],
   ['scenes', 'Walk scenes', 'Towns and routes on the Walk screen: ground, props and camera'],
+  ['hub', 'Hub island', 'The hub’s island: an orbit view, its ground, coast, zones and pivot, and the ground lock'],
   ['props', 'Props', 'Every prop: its picture, 3D model, leaves, variants, and where it stands'],
   ['engine', 'Engine', 'Light, shadows, blur, color and camera of the 3D scenes'],
   ['wardrobe', 'Wardrobe', 'Trainer body, hairstyles, faces and clothes'],
@@ -507,7 +508,7 @@ const SECTION_GROUPS = [
     'Billies & battles',
     ['billionaires', 'parts', 'workbench', 'coats', 'robots', 'roster', 'moves', 'preview', 'types'],
   ],
-  ['World & places', ['scenes', 'props', 'engine', 'world']],
+  ['World & places', ['scenes', 'hub', 'props', 'engine', 'world']],
   ['People & story', ['trainers', 'people', 'wardrobe', 'lore', 'story']],
   ['Money', ['items', 'shops', 'jobs']],
   ['Game', ['rules', 'ui', 'art', 'check']],
@@ -545,9 +546,9 @@ export function renderSide() {
     }).join('') +
     `<div class="side-foot"><small><kbd>Ctrl K</kbd> finds any setting · <kbd>Ctrl L</kbd> shows connections · <kbd>Ctrl S</kbd> saves · <kbd>?</kbd> lists the keys.<br>Saves go to <code>game/data</code> and <code>game/art</code>, with backups in <code>backups/</code>.</small></div>`;
 }
-/* studio track ST-1: the second pane shows any section but the four with a 3D view (they share one) and the one in
+/* studio track ST-1: the second pane shows any section but the ones with a 3D view (IS-6a: Hub island too) (they share one) and the one in
    the first pane (its ids would clash); why not, or '' */
-export const PANE2_REFUSED = { scenes: 1, props: 1, engine: 1, preview: 1 };
+export const PANE2_REFUSED = { scenes: 1, hub: 1, props: 1, engine: 1, preview: 1 };
 export function besideRefusal(s) {
   if (PANE2_REFUSED[s]) return 'Has a 3D view, so it only opens on the left';
   if (s === studioState.sec) return 'Already open on the left';

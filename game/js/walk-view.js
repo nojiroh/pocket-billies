@@ -47,10 +47,12 @@ import {
   talkFolk,
   uiState,
   waitForPaintWorker,
+  walkRenderer,
 } from './hooks.js';
 import { clamp } from './util.js';
 import { pointInProp, turnedBounds, turnedPoint } from './logic/prop-turn.js';
 import { stepCellsJoined, stepCornerHeight, stepGridCorners } from './logic/step-grid.js';
+import { orbitStickYaw, orbitWalkStep } from './logic/camera-orbit.js';
 import { frameStop } from './frame-scheduler.js';
 import { ART_CACHE, artLoad, makeCanvas, packHexPixel } from './art.js';
 /* eslint-disable no-func-assign */
@@ -3479,8 +3481,15 @@ function movePlayer(st, dt) {
       kz = J.y;
       km = Math.min(1, Math.hypot(J.x, J.y));
     }
+    /* island track IS-1: on an orbiting island the stick walks by the orbit's own frame (logic/camera-orbit.js
+       orbitStickYaw, plus your turn), not the eased camera's, and steps round the middle, so holding right walks a
+       circle instead of spiralling out */
+    const Orb = walkRenderer.orbit && walkRenderer.orbit.sc === walkView.sc ? walkRenderer.orbit : null,
+      OrbM = Orb && walkView.sc.cam ? walkView.sc.cam.orbit : null;
+    if (Orb && !km) orbitStickYaw(Orb, false);
     if (km) {
-      const R = walkView.C && walkView.C.right ? walkView.C.right : [1, 0, 0],
+      const oy = Orb ? orbitStickYaw(Orb, true, OrbM, P.x, P.z) + walkRenderer.yaw : 0,
+        R = Orb ? [Math.cos(oy), 0, -Math.sin(oy)] : walkView.C && walkView.C.right ? walkView.C.right : [1, 0, 0],
         rl = Math.hypot(R[0], R[2]) || 1,
         rx = R[0] / rl,
         rz = R[2] / rl,
@@ -3499,6 +3508,7 @@ function movePlayer(st, dt) {
       const s = WALK_SPEED * dt * run * slopeSpeedFactor(P.x, P.z, wx / l, wz / l);
       let nx = P.x + (wx / l) * s,
         nz = P.z + (wz / l) * s;
+      if (OrbM) [nx, nz] = orbitWalkStep(OrbM.c, P.x, P.z, wx / l, wz / l, s, OrbM.dead || 0);
       if (canStepTo(P.x, P.z, nx, P.z)) P.x = nx;
       if (canStepTo(P.x, P.z, P.x, nz)) P.z = nz;
       mx = wx;

@@ -11,6 +11,7 @@ import { blendGoals, followNew, followStep, leadStep, zoneMetres } from '../logi
 import { zoomShape } from '../logic/camera-zoom.js';
 import { interestPick, zoneAt } from '../logic/camera-interest.js';
 import { MOMENT_DIALS, momentNew, momentStep } from '../logic/camera-moments.js';
+import { orbitStart, orbitStep, wrapAngle } from '../logic/camera-orbit.js';
 import { BOB_M, walkView } from '../walk-view.js';
 import { engineSetting } from '../engine/settings.js';
 import { matrix4 } from '../engine/webgl.js';
@@ -27,6 +28,7 @@ expose({
   followDirection: [() => followDirection, v => (followDirection = v)],
   freeCameraOn: [() => freeCameraOn],
   moments: [() => moments, v => (moments = v)],
+  orbitOf: [() => orbitOf],
   screenRay: [() => screenRay, v => (screenRay = v)],
   walkCamera: [() => walkCamera, v => (walkCamera = v)],
   zoomEnds: [() => zoomEnds, v => (zoomEnds = v)],
@@ -52,8 +54,26 @@ export function screenRay(C, sx, sy) {
 }
 /* ---------- input: taps (focus follows them), two-finger turn and pinch, Ctrl+wheel zoom, Q/E/R, phone tilt ---------- */
 /* alpha 0.4.1: a preview that asks for a free camera (the Studio's) turns all the way round, zooms further and zooms with the plain wheel */
-export const freeCameraOn = () => !!(walkView.opt && walkView.opt.freeCam),
-  cameraTurnLimit = () => (freeCameraOn() ? Math.PI : (engineSetting('camera', 'turn') * Math.PI) / 180),
+/* island track IS-1: the map's orbit (cam.orbit) when the walking camera turns round it: outdoors, not in a room, not the
+   Studio's free camera, Engine > Camera > Orbit on */
+export const orbitOf = sc =>
+    sc &&
+    sc.cam &&
+    sc.cam.orbit &&
+    Array.isArray(sc.cam.orbit.c) &&
+    !sc.indoor &&
+    !sc.room &&
+    !freeCameraOn() &&
+    engineSetting('camera', 'orbit') !== false
+      ? sc.cam.orbit
+      : null,
+  freeCameraOn = () => !!(walkView.opt && walkView.opt.freeCam),
+  /* while orbiting, your own turn on top of the orbit is the map's `turn` */
+  cameraTurnLimit = () => {
+    if (freeCameraOn()) return Math.PI;
+    const O = orbitOf(walkView.sc);
+    return ((O && O.turn != null ? +O.turn : engineSetting('camera', 'turn')) * Math.PI) / 180;
+  },
   clampZoom = v =>
     freeCameraOn()
       ? clamp(v, 0.3, 3.2)
@@ -153,7 +173,27 @@ export function walkCamera(rw, rh, st, dt) {
     /* a cut: a new scene, a reset (camT = null), or a page asking for no glide */
     snap = !walkRenderer.camT || !walkRenderer.fol || !!walkView.opt.instant,
     feet = P.yv ?? standingHeightAt(P.x, P.z);
+  /* island track IS-1: a turn kept from a map with a wider limit is brought inside the island's */
+  if (orbitOf(sc)) walkRenderer.yawT = clamp(walkRenderer.yawT, -cameraTurnLimit(), cameraTurnLimit());
   walkRenderer.yaw += (walkRenderer.yawT - walkRenderer.yaw) * ease(5, dt);
+  /* island track IS-1: on an island the camera's base yaw turns round the middle (logic/camera-orbit.js); your own turn
+     (walkRenderer.yaw) is added on top. Elsewhere the base is 0, the north view. A new scene, a cut or a jump of
+     more than 8 m starts the orbit where it belongs. */
+  const O = orbitOf(sc);
+  if (O) {
+    let S = walkRenderer.orbit;
+    const jump = S && Math.hypot(P.x - S.x, P.z - S.z) > 8;
+    if (!S || S.sc !== sc || snap || jump) {
+      S = walkRenderer.orbit = Object.assign(orbitStart(O, P.x, P.z, S && S.sc === sc ? S.yaw : 0), { sc });
+    } else orbitStep(S, O, P.x, P.z, dt);
+    S.x = P.x;
+    S.z = P.z;
+  } else walkRenderer.orbit = null;
+  /* CAM-1: the base direction (the orbit's, else north) is "up the screen" for the follow, the look-ahead, the ground
+     ahead and the landmark tilt */
+  const baseYaw = O ? wrapAngle(walkRenderer.orbit.yaw) : 0,
+    bf = [Math.sin(baseYaw), Math.cos(baseYaw)],
+    turn = wrapAngle(baseYaw + walkRenderer.yaw);
   walkRenderer.zoom += (walkRenderer.zoomT - walkRenderer.zoom) * ease(5, dt);
   if (snap) walkRenderer.fol = followNew(P.x, P.z, feet);
   const fol = walkRenderer.fol;
@@ -163,7 +203,7 @@ export function walkCamera(rw, rh, st, dt) {
   walkRenderer.pz = P.z;
   const sp = Math.hypot(vx, vz) / Math.max(dt, 1e-3),
     /* the screen's right and up, on the ground */
-    R = [Math.cos(walkRenderer.yaw), -Math.sin(walkRenderer.yaw)],
+    R = [Math.cos(turn), -Math.sin(turn)],
     F = [-R[1], R[0]],
     push = followDirection(P, R, F, vx, vz, sp),
     lead = leadStep(fol, push, set('lead'), R, set('leadSide'), rh > rw, snap ? 0 : set('leadSmooth'), dt);
@@ -188,12 +228,16 @@ export function walkCamera(rw, rh, st, dt) {
      blended into one tilt, turn, distance and aim: the phone's tilt and the mouse (at once), indoors 12 degrees more
      tilt, rising ground just ahead tilts down further (up to 9 degrees), a landmark ahead tilts up to look at it
      (v47, up to 11), a room laid into the place framed whole (v26) and the swoop into a battle (v31) */
-  const ahead = groundHeightAt(P.x, Math.min(sc.h - 0.5, P.z + 3.5)) - groundHeightAt(P.x, P.z),
+  const ahead =
+      groundHeightAt(
+        clamp(P.x + bf[0] * 3.5, 0.5, Math.max(0.5, sc.w - 0.5)),
+        Math.min(sc.h - 0.5, P.z + bf[1] * 3.5)
+      ) - groundHeightAt(P.x, P.z),
     goals = [
       { id: 'tilt', w: 1, blend: 0, pitch: -tilt[1] * 3, yaw: tilt[0] * 0.07 },
       { id: 'indoor', w: sc.indoor ? 1 : 0, pitch: 12 },
       { id: 'ahead', w: clamp((ahead - 0.8) * 3.2, 0, 9) / 9, pitch: 9 },
-      { id: 'landmark', w: landmarkTilt(P, sc) / 11, pitch: -11 },
+      { id: 'landmark', w: landmarkTilt(P, sc, baseYaw) / 11, pitch: -11 },
     ];
   if (sc.room) {
     const Rr = sc.roomRect || [0, 0, sc.w, sc.h],
@@ -202,7 +246,9 @@ export function walkCamera(rw, rh, st, dt) {
     goals.push({ id: 'room', w: 1, blend: 0.15, at: [rx + (P.x - rx) * 0.25, rz + (P.z - rz) * 0.15] });
   }
   const visW = Math.min(sc.w * 0.95, Math.max(11, (rw / rh) * 15)) / ((c.fov || 1) * set('fov')),
-    half = visW / 2;
+    half = visW / 2,
+    /* CAM-2: an aim point a little up the screen from (x, z), as the follow's own aim is */
+    upAt = (x, z, k = rw > rh ? 2.0 : 1.0) => [x + bf[0] * k, z + bf[1] * k];
   /* CAM-2: the encounter shot: aims between you and the spot and zooms in (Engine > Camera > Encounter zoom), but
      never so far that you and the spot don't both fit */
   const S = walkRenderer.swoop;
@@ -212,7 +258,7 @@ export function walkCamera(rw, rh, st, dt) {
       const need = (Math.hypot(S.ex - S.px, S.ez - S.pz) + 2.5) / 0.7 / visW;
       zs = Math.min(1, Math.max(zs, need / Math.max(0.1, walkRenderer.zoom)));
     }
-    goals.push({ id: 'swoop', w: 1, blend: 0.15, at: [S.x, S.z + (rw > rh ? 1 : 0.5)], zoom: zs });
+    goals.push({ id: 'swoop', w: 1, blend: 0.15, at: upAt(S.x, S.z, rw > rh ? 1 : 0.5), zoom: zs });
   }
   /* CAM-2: after a battle the camera starts close and pulls back out (it was a jump of the zoom, v31) */
   if (walkRenderer.leaveAt != null) {
@@ -220,8 +266,8 @@ export function walkCamera(rw, rh, st, dt) {
     if (w < 1e-3 || snap) walkRenderer.leaveAt = null;
     else goals.push({ id: 'leave', w, blend: 0, zoom: set('leaveZoom') });
   }
-  /* CAM-2: the strongest point of interest near you (a landmark, a shop's or clinic's door) leans the aim toward it
-     (no more than Engine > Camera > Interest: most lean) and zooms a little */
+  /* CAM-2: the strongest point of interest near you (a landmark, a shop's, clinic's, lab's or ranch's door) leans the
+     aim toward it (no more than Engine > Camera > Interest: most lean) and zooms a little */
   const I = !sc.indoor && !sc.room && set('intOn') ? interestPick(interestPoints(sc), P.x, P.z, set('intPull')) : null;
   /* CAM-2: the moments (logic/camera-moments.js): talking, a run's boss, a point of interest, standing still,
      running; at most one at a time. The Studio's "Play moment" stands in for the real thing (walkRenderer.momentTest) */
@@ -237,11 +283,11 @@ export function walkCamera(rw, rh, st, dt) {
       blend: Zn.blend,
       pitch: Zn.tilt || 0,
       zoom: Zn.zoom || 1,
-      at: off ? [P.x + off[0], P.z + off[1] + (rw > rh ? 2.0 : 1.0)] : undefined,
+      at: off ? upAt(P.x + off[0], P.z + off[1]) : undefined,
     });
   }
   for (const g of M.goals) {
-    if (g.at) g.at = [g.at[0], g.at[1] + (rw > rh ? 2.0 : 1.0)];
+    if (g.at) g.at = upAt(g.at[0], g.at[1]);
     goals.push(g);
   }
   const G = blendGoals(fol, goals, dt, set('blend'), snap);
@@ -253,7 +299,7 @@ export function walkCamera(rw, rh, st, dt) {
     ),
     Z = zoomShape(zoomEff, zoomEnds());
   const pitchDeg0 = pe + Z.pitch + G.pitch,
-    yaw = walkRenderer.yaw + G.yaw;
+    yaw = wrapAngle(turn + G.yaw);
   let df = (he / Math.sin((pe * Math.PI) / 180)) * Z.dist * G.dist;
   /* terrain TR-3: on tall ground the camera tilts down further (and comes a little closer) until the line from it to
     your head clears the rock between you; it rises quickly and settles back slowly (its own ramp, kept as it was) */
@@ -282,11 +328,18 @@ export function walkCamera(rw, rh, st, dt) {
   const occ = walkRenderer.occT,
     pitch = ((pitchDeg0 + occ) * Math.PI) / 180;
   if (riseMax) df *= 1 - 0.15 * Math.min(1, occ / riseMax);
-  /* the aim: you and the look-ahead, kept inside the scene, a little up the screen; pulled toward the goals' points */
+  /* the aim: you and the look-ahead, kept inside the scene, a little up the screen; pulled toward the goals' points.
+     IS-1: an orbiting camera is not held inside the scene, the sea runs on past its edges */
   let gx = P.x + lead[0],
     gz = P.z + lead[1];
-  gx = sc.w > visW ? clamp(gx, half - 2, sc.w - half + 2) : sc.w / 2;
-  gz = clamp(gz, 0, sc.h - 2) + (rw > rh ? 2.0 : 1.0);
+  const up = rw > rh ? 2.0 : 1.0;
+  if (O) {
+    gx += bf[0] * up;
+    gz += bf[1] * up;
+  } else {
+    gx = sc.w > visW ? clamp(gx, half - 2, sc.w - half + 2) : sc.w / 2;
+    gz = clamp(gz, 0, sc.h - 2) + up;
+  }
   if (G.at) {
     gx += (G.at[0] - gx) * G.atW;
     gz += (G.at[1] - gz) * G.atW;
@@ -319,7 +372,17 @@ export function walkCamera(rw, rh, st, dt) {
   if (S) S.arrived = (fol.w.swoop ?? 0) >= 0.95 && Math.hypot(T[0] - gx, T[1] - gz) < 0.2;
   /* CAM-1: what the camera is doing, for the debug log and the Studio's guides */
   walkRenderer.camInfo = {
-    mode: freeCameraOn() ? 'free' : walkRenderer.swoop ? 'swoop' : sc.room ? 'room' : sc.indoor ? 'indoor' : 'walk',
+    mode: freeCameraOn()
+      ? 'free'
+      : walkRenderer.swoop
+        ? 'swoop'
+        : O
+          ? 'orbit'
+          : sc.room
+            ? 'room'
+            : sc.indoor
+              ? 'indoor'
+              : 'walk',
     zoom: zoomEff,
     interest: I ? [I.n, I.w, I.at[0], I.at[1]] : null,
     moment: M.id,
