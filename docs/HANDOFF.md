@@ -31,6 +31,10 @@ the coast hand-editable.
   - **Fixes found reviewing the diff**: the height brush clamped every stroke to -8..12 m (Walk scenes' limit), which
     would cut test_island's 16 m peak (and IS-2's ~22 m one) to 12; its floor and ceiling are settings now, the hub
     editor -8..40 m, Walk scenes unchanged. Walk the coast's button resets after a walk that ended away.
+  - **After merging main (IS-0, IS-1)**: IS-1's `orbitOf` is off whenever `walkView.opt.freeCam` is set, and the
+    Studio sets it on every 3D preview (viewport.js), so Walk the coast still showed the fixed camera. The hub view
+    takes the mark off while it walks (`hubWalkCamera`) and puts it back after; on test_island's east side the camera's
+    yaw read -1.58 rad (looking west at the middle).
   - **CI's first run** failed the new step ("the orbit view never looked at the island"); reproduced locally with
     runs side by side: the island's frames take seconds each in headless software GL and come back to back, which
     starves the page timers that until() polls on (the camera was set a moment after the wait gave up). The step
@@ -39,7 +43,7 @@ the coast hand-editable.
     CHANGELOG.
 - Where the plan (the track file) was wrong or short:
   - "Walk the coast (IS-1's logic/camera-orbit.js once merged)": not needed. The game's walk camera reads the map's
-    `cam.orbit`, so the walk shows IS-1's orbit by itself once it merges; until then it is today's fixed camera.
+    `cam.orbit`, so the walk shows IS-1's orbit (once the free-camera mark is off, above).
   - "one guard in map-editor.js": one helper, asked in seven places (the ground tools, Resize, Flatten); the Curved
     road (map-editor-tools.js) paints ground too. map-generate.js only makes new maps and needs none.
   - "the 2D map ... (map-editor.js's brush functions, exported, not copied)": the height brush read Walk scenes'

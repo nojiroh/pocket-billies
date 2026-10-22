@@ -175,7 +175,8 @@ A Studio section of its own ("Hub island", not inside Walk scenes), editing the 
 - Check: a check-fast Studio step (the section opens and draws, a drag turns the orbit, locking disables the brushes).
 
 **Done in IS-6a** (2026-10-22, the owner's answers in chat): "Walk the coast" uses the game's own walk camera (it
-orbits once IS-1 merges; no import of camera-orbit.js, so the merge order doesn't matter); no prop tools in the editor
+orbits since IS-1 merged; no import of camera-orbit.js. IS-1's orbitOf is off in a Studio free-camera preview, so
+the hub view takes that mark off while it walks); no prop tools in the editor
 ("Props in Walk scenes" opens the map there); Copperleaf view-only until it has a coast (IS-5 owns copperleaf.json);
 the coast is hand-editable with the zones' point tool. Checked against the code: the ground the lock covers is
 changed in Walk scenes by Paint, Fill, Shape the land, Cliffs & stairs, Curved road (map-editor-tools.js), Resize and
