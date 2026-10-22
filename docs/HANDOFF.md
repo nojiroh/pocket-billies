@@ -31,6 +31,10 @@ the coast hand-editable.
   - **Fixes found reviewing the diff**: the height brush clamped every stroke to -8..12 m (Walk scenes' limit), which
     would cut test_island's 16 m peak (and IS-2's ~22 m one) to 12; its floor and ceiling are settings now, the hub
     editor -8..40 m, Walk scenes unchanged. Walk the coast's button resets after a walk that ended away.
+  - **CI's first run** failed the new step ("the orbit view never looked at the island"); reproduced locally with
+    runs side by side: the island's frames take seconds each in headless software GL and come back to back, which
+    starves the page timers that until() polls on (the camera was set a moment after the wait gave up). The step
+    polls from Python now (`poll()` in check-fast) with drawing()'s waits; five runs side by side pass.
   - Docs: STUDIO.md (a Hub island section, the table row, the left-pane list), the track file ("Done in IS-6a"),
     CHANGELOG.
 - Where the plan (the track file) was wrong or short:
@@ -43,7 +47,9 @@ the coast hand-editable.
   - Planned as three commits (section, map, lock bar); landed as one, since the section's card holds all three.
 - Verified: unit tests 576 (9 new); lint, typecheck, check:modules, format:check; check-fast 23 of 23 (the new step
   67 s on a page of its own, beside the others; the island's 3D view draws about one frame in 3 s in headless
-  software GL, so it is not on the other Studio checks' page); smoke: no problems (171 s); full quick check QUICK_RESULT.
+  software GL, so it is not on the other Studio checks' page); smoke: no problems (171 s); full quick check (39 min): 9 problems, the same 9 old steps
+  that fail on main (roster counts 117/61, empty voxel bushes, buildings without a plan, the biped walk cycle, the
+  running step's "float division by zero"; see RL-8b's and TR-2's entries), none in what this branch touches.
   Headless pictures at 1600 x 1000 (orbit from the south and the east, the map with zones and handles, locked,
   walking the coast, Copperleaf view-only): no page errors.
 - Risky:
