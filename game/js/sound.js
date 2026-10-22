@@ -43,6 +43,8 @@ expose({
   ambienceOutput: [() => ambienceOutput, v => (ambienceOutput = v)],
   applyAmbienceVolume: [() => applyAmbienceVolume, v => ((applyAmbienceVolume = v), provide({ applyAmbienceVolume }))],
   applyVolumes: [() => applyVolumes, v => ((applyVolumes = v), provide({ applyVolumes }))],
+  battleDrumsIn: [() => battleDrumsIn, v => (battleDrumsIn = v)],
+  battleMusicStart: [() => battleMusicStart, v => (battleMusicStart = v)],
   battleSoundEffect: [() => battleSoundEffect, v => ((battleSoundEffect = v), provide({ battleSoundEffect }))],
   footstepAt: [() => footstepAt, v => (footstepAt = v)],
   initAmbience: [() => initAmbience, v => (initAmbience = v)],
@@ -62,6 +64,7 @@ expose({
   soundEffect: [() => soundEffect, v => ((soundEffect = v), provide({ soundEffect }))],
   soundEffectAt: [() => soundEffectAt, v => ((soundEffectAt = v), provide({ soundEffectAt }))],
   soundEngine: [() => soundEngine],
+  soundLog: [() => soundLog, v => (soundLog = v)],
   soundPlacement: [() => soundPlacement, v => (soundPlacement = v)],
   soundPreferences: [() => soundPreferences],
   synthKick: [() => synthKick, v => (synthKick = v)],
@@ -89,7 +92,17 @@ export const soundEngine = {
   next: 0,
   voices: [],
   lastStep: 0,
+  /* SND-5: the battle whose song started on its flash (battleMusicStart), the battle seen without one, and a short
+     log of the music's battle cues for the checks (kept here, never sent anywhere) */
+  cued: null,
+  seen: null,
+  log: [],
 };
+function soundLog(e) {
+  const L = soundEngine.log;
+  L.push({ at: Math.round(performance.now()), e });
+  if (L.length > 40) L.shift();
+}
 /* SND-1: the volume maths is audio/levels.js (soundLevel, soundLevels); this reads the save's preferences for it */
 const soundPreferences = () => (typeof saveData !== 'undefined' && saveData && saveData.preferences) || {};
 function volumePreference(k) {
@@ -241,7 +254,37 @@ function musicSync() {
   if (soundEngine.jingle && performance.now() < soundEngine.jingle) return;
   /* SND-4: at night outdoors, the song's night version (logic/music-where.js songVariant); the switch crossfades */
   const st = musicState();
+  /* SND-5: a battle's song starts on its flash, with its intro (battleMusicStart); until then the walk's song plays on,
+     for at most 2.5 s (a battle that never shows its flash then gets its song without one) */
+  const B = typeof activeBattle !== 'undefined' && activeBattle;
+  if (st.battle && B && soundEngine.cued !== B) {
+    const now = performance.now();
+    if (!soundEngine.seen || soundEngine.seen.B !== B) soundEngine.seen = { B, at: now };
+    if (now - soundEngine.seen.at < 2500) return;
+    soundEngine.cued = B;
+    soundLog('battle ' + st.battle + ': no flash, the song without its intro');
+  }
   music(songVariant(songFor(st, MUSIC.where, SONGS), st, SONGS, soundEngine.want));
+}
+/* SND-5: a battle's music, timed as Masuda timed it: the song starts on the encounter's flash (or the trainer coming
+   in) with its intro, and the drums wait for the first throw (battleDrumsIn) */
+function battleMusicStart() {
+  const B = typeof activeBattle !== 'undefined' && activeBattle;
+  if (!B || soundEngine.cued === B) return;
+  soundEngine.cued = B;
+  const st = musicState(),
+    name = songVariant(songFor(st, MUSIC.where, SONGS), st, SONGS, null);
+  if (!name) return;
+  music(name, { intro: true, hold: true });
+  const sg = soundEngine.song;
+  soundLog('battle ' + st.battle + ': ' + name + (sg && sg.name === name && sg.D.introSteps ? ', its intro' : ''));
+}
+function battleDrumsIn() {
+  const T = soundEngine.tracker;
+  if (T && T.song && T.song.hold) {
+    T.drumsIn();
+    soundLog('drums in');
+  }
 }
 /* SND-4: a song's name as it plays at this night level (1 night, 0 day): 'town@night' or the name itself */
 function musicVariant(name, night) {
@@ -425,6 +468,10 @@ function battleSoundEffect(an, r) {
   switch (an.k) {
     case 'wild':
       soundEffect('enc');
+      battleMusicStart();
+      break;
+    case 'trainerIn':
+      battleMusicStart();
       break;
     case 'cry': {
       const s = typeof battleStage !== 'undefined' && battleStage.s[an.si || 1];
@@ -432,6 +479,7 @@ function battleSoundEffect(an, r) {
       break;
     }
     case 'enter':
+      battleDrumsIn();
       soundEffect('throw');
       at(380, () => soundEffect('pop'));
       break;
