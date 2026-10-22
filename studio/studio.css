@@ -4598,3 +4598,51 @@ body.wb-dropping::after {
   gap: 8px;
   margin: 10px 0;
 }
+.mus-where-wrap {
+  overflow-x: auto;
+}
+.mus-where td {
+  vertical-align: middle;
+}
+.mus-where select,
+.mus-where input {
+  width: auto;
+  min-width: 0;
+  min-height: 34px;
+}
+.mus-where input[type='number'] {
+  width: 56px;
+}
+.mus-when > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.mus-cond {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px 2px 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel2);
+}
+.mus-cond small {
+  color: var(--text2);
+}
+.mus-where .mus-acts {
+  white-space: nowrap;
+}
+.mus-where .mus-acts .btn {
+  min-width: 34px;
+  padding: 0 6px;
+}
+.mus-where tr.mus-hit {
+  background: var(--acc2);
+}
+.mus-try {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+}
