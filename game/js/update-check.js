@@ -13,7 +13,7 @@ import { expose } from './test-globals.js';
 import { FIXTURE, activeBattle, saveHeld, saveNow, uiState } from './game-state.js';
 import { cutscene } from './cutscene/director.js';
 import { airshipFlight } from './airship.js';
-import { toast } from './ui.js';
+import { toast } from './overlay.js';
 /* eslint-disable no-func-assign */
 expose({
   UPDATE_EVERY: [() => UPDATE_EVERY],
