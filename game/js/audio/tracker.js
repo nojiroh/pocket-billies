@@ -218,8 +218,8 @@ export function trackerCreate(ctx, bus, opts = {}) {
   /* ---------- the player ---------- */
   /* a song starts 80 ms from now and fades in; the songs before it fade out. levels() is the game's say on the drums
      (softer standing still or at night) and the night pad; with none, drums are full and there is no pad */
-  const songs = opts.songs || {},
-    levels = opts.levels || (() => null),
+  let songs = opts.songs || {};
+  const levels = opts.levels || (() => null),
     composed = new Map();
   T.song = null;
   T.voices = [];
@@ -229,6 +229,16 @@ export function trackerCreate(ctx, bus, opts = {}) {
     if (!D) return null;
     if (!composed.has(name)) composed.set(name, trackerCompose(D));
     return composed.get(name);
+  };
+  /* the Studio (SND-3): after a recipe is edited, compose again; the song playing keeps its place and plays the new
+     notes from the next step. A new table (after an undo) replaces the old; a song gone from it stops */
+  T.refresh = table => {
+    if (table) songs = table;
+    composed.clear();
+    if (!T.song) return;
+    const D = T.compose(T.song.name);
+    if (D) T.song.D = D;
+    else T.stop();
   };
   T.play = name => {
     if (T.song && T.song.name === name) return T.song;
