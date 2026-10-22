@@ -5,6 +5,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   STUDIO_TEST_FORMAT,
+  studioTestChangedPaths,
   studioTestCompare,
   studioTestFilePath,
   studioTestFindings,
@@ -195,4 +196,21 @@ test('a high finding comes before a mid one even when the mid one is further pas
     ]
   );
   assert.ok(f[1].over > f[0].over, 'the mid row is further past its first limit');
+});
+
+test('opening a section that changes the data outside an edit fails the run, naming the section and the paths', () => {
+  const before = { D: { people: { boy: { hair: '#000' }, gini: { look: {} } }, moves: { a: 1 } }, R: {} },
+    after = {
+      D: { people: { boy: { hair: '#000', look: {} }, gini: { look: {} } }, moves: { a: 1 }, extra: [] },
+      R: {},
+    };
+  assert.deepEqual(studioTestChangedPaths(before, after), ['D.extra', 'D.people.boy']);
+  assert.deepEqual(studioTestChangedPaths(before, before), []);
+  const many = { D: Object.fromEntries(Array.from({ length: 20 }, (_, i) => ['k' + i, { v: i }])) };
+  assert.equal(studioTestChangedPaths({ D: {} }, many, 3).length, 3, 'a long list is cut');
+  const f = studioTestFindings(report({ sections: [section('people', { outside: ['D.people.boy'] })] }));
+  assert.equal(f.length, 1);
+  assert.equal(f[0].lvl, 'high');
+  assert.equal(f[0].area, 'people');
+  assert.equal(f[0].text, 'Opening people changed the data outside an edit: D.people.boy');
 });

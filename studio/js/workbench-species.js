@@ -23,6 +23,7 @@ import {
   openSection,
   render,
   sectionShown,
+  snapshotParts,
   speciesName,
   studioState,
   toast,
@@ -815,8 +816,7 @@ const wbsLibrary = {
       return toast('The sheet changed. Pick the library part again to refresh the preview.', 'err');
     // Finish earlier edits before taking the paired data/art snapshot.
     commit(true);
-    const before = studioState.last,
-      rigs = JSON.parse(JSON.stringify(studioState.rigs)),
+    const rigs = JSON.parse(JSON.stringify(studioState.rigs)),
       sheets = new Map(),
       steps = [];
     for (const p of s.prepared) {
@@ -847,10 +847,7 @@ const wbsLibrary = {
     studioState.rigs = rigs;
     window.RIGS = rigs;
     changed(true);
-    const after = JSON.stringify({ D: studioState.D, R: rigs }, (k, v) =>
-      k[0] === '_' && k.length > 1 ? undefined : v
-    );
-    artSteps(steps, { before, after });
+    artSteps(steps, snapshotParts());
     this.state = null;
     wbPart.frame = '';
     wbPart.sel = null;
