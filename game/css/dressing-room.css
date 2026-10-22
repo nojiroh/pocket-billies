@@ -211,15 +211,6 @@ body.dressing #nav {
   height: 30px;
   font-size: 18px;
 }
-.dr-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-.dr-chips .option {
-  min-height: 34px;
-  padding: 4px 11px;
-}
 .dr-sl {
   display: grid;
   grid-template-columns: 110px 1fr 28px;

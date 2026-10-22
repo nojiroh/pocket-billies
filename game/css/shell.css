@@ -629,10 +629,6 @@ button.tb-where.shut {
     0 12px 24px -6px rgba(46, 33, 64, 0.55),
     0 0 0 4px var(--t-profile);
 }
-.tb-gap {
-  width: 74px;
-  flex: none;
-}
 /* ---------- the bottom bar: every screen its own colour; the open one rises out of the glass (phase 06: on the tokens) ---------- */
 nav#nav .in {
   border-radius: var(--r-lg) !important;

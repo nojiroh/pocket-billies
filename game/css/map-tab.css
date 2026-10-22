@@ -33,66 +33,6 @@
   gap: 0;
   margin-top: 4px;
 }
-.mapwrap {
-  position: relative;
-  margin: 12px 3px 0;
-  padding: 0;
-  overflow: hidden;
-  aspect-ratio: 176/232;
-  max-height: calc(100dvh - 300px);
-  min-height: 280px;
-}
-.mapwrap canvas {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-.mapwrap canvas {
-  display: block;
-  cursor: pointer;
-}
-.mlab {
-  position: absolute;
-  transform: translateY(-50%);
-  pointer-events: auto;
-  border: 0;
-  font: 400 12px/1 var(--font-voice);
-  padding: 4px 6px;
-  background: rgba(20, 14, 30, 0.8);
-  color: #f3eef8;
-  white-space: nowrap;
-  box-shadow: 0 0 0 2px #0b0912;
-  transition: transform 0.2s;
-}
-.mlab.here {
-  background: #f2c14e;
-  color: #3a2408;
-  box-shadow:
-    0 0 0 2px #0b0912,
-    0 0 14px rgba(242, 193, 78, 0.7);
-}
-.mlab.sel {
-  box-shadow: 0 0 0 2px #fff;
-}
-.mlab.fog {
-  background: rgba(10, 8, 20, 0.72);
-  color: #8e86a6;
-}
-.mapwrap canvas {
-  image-rendering: pixelated;
-  touch-action: none;
-  cursor: grab;
-}
-.mapwrap canvas:active {
-  cursor: grabbing;
-}
-.mlab.sun {
-  background: linear-gradient(90deg, #ffe08a, #ffb84a);
-  color: #3a2408;
-  box-shadow:
-    0 0 0 2px #0b0912,
-    0 0 18px rgba(255, 214, 120, 0.9);
-}
 .mapctl {
   position: absolute;
   right: 8px;
@@ -124,20 +64,7 @@
   width: 16px;
   height: 16px;
 }
-.mapwrap.loading::after {
-  content: 'Charting the inner sphere…';
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  font: 400 16px var(--font-voice);
-  color: #f3eef8;
-  background: rgba(20, 14, 40, 0.65);
-}
 /* map */
-.s-map .mapwrap {
-  border-radius: 4px;
-}
 .mapcard {
   border-radius: 10px;
 }
@@ -151,10 +78,6 @@
   .s-map > header,
   .s-map > p {
     grid-column: 1/-1;
-  }
-  .s-map .mapwrap {
-    grid-row: 3;
-    max-height: calc(100dvh - 210px);
   }
   .s-map .mapcard {
     grid-row: 3;
@@ -200,33 +123,10 @@ body.on-map #bgfx {
   cursor: grab;
   background: #b0baec;
 }
-body.map-loading .map-full::after {
-  content: 'Unrolling the map…';
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  font: 400 22px var(--font-voice);
-  color: #fff;
-  text-shadow: 0 2px 0 #2a2238;
-  background: rgba(40, 40, 90, 0.35);
-}
 .map-full #maplabels {
   position: absolute;
   inset: 0;
   pointer-events: none;
-}
-.map-full #maplabels .mlab {
-  pointer-events: auto;
-}
-.mlab.dest {
-  background: #ffe27a;
-  color: #3a2408;
-}
-.mlab.new::after {
-  content: '•';
-  margin-left: 4px;
-  color: var(--gold);
 }
 .map-head {
   position: absolute;
@@ -338,124 +238,6 @@ body.map-gl .map-full #mapcv {
 body.map-gl #dioui {
   display: none;
 }
-.mpin {
-  position: absolute;
-  left: 0;
-  top: 0;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 4px 9px 4px 5px;
-  border: 0;
-  border-radius: 999px;
-  font: 600 12.5px/1 var(--font-voice);
-  color: #f3eef8;
-  background: rgba(22, 16, 36, 0.82);
-  box-shadow:
-    0 0 0 1.5px rgba(11, 9, 18, 0.9),
-    0 6px 14px -6px rgba(0, 0, 0, 0.55);
-  white-space: nowrap;
-  pointer-events: auto;
-  cursor: pointer;
-  -webkit-backdrop-filter: blur(4px);
-  backdrop-filter: blur(4px);
-}
-.mpin::after {
-  content: '';
-  position: absolute;
-  left: 50%;
-  bottom: -6px;
-  width: 10px;
-  height: 10px;
-  transform: translateX(-50%) rotate(45deg);
-  background: inherit;
-  box-shadow: 1.5px 1.5px 0 rgba(11, 9, 18, 0.9);
-  z-index: -1;
-}
-.mpin .mp-i {
-  display: grid;
-  place-items: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.14);
-}
-.mpin .mp-i .uico {
-  background: currentColor;
-}
-.mpin.town .mp-i {
-  background: #5da9e9;
-  color: #fff;
-}
-.mpin.new .mp-n::after {
-  content: 'new';
-  margin-left: 6px;
-  font-size: 9.5px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: #ffe27a;
-}
-.mpin.here {
-  background: #f2c14e;
-  color: #3a2408;
-  box-shadow:
-    0 0 0 1.5px #0b0912,
-    0 0 16px rgba(242, 193, 78, 0.75);
-}
-.mpin.here .mp-i {
-  background: #3a2408;
-  color: #f2c14e;
-}
-.mpin.dest {
-  background: #ffe27a;
-  color: #3a2408;
-}
-.mpin.dest .mp-i {
-  background: #3a2408;
-  color: #ffe27a;
-}
-.mpin.locked {
-  background: rgba(40, 36, 52, 0.85);
-  color: #a49db8;
-}
-.mpin.locked .mp-i {
-  background: rgba(255, 255, 255, 0.08);
-}
-.mpin.sel {
-  box-shadow:
-    0 0 0 2.5px #fff,
-    0 8px 18px -6px rgba(0, 0, 0, 0.6);
-  z-index: 2;
-}
-.mpin.fog {
-  padding: 4px 9px;
-  background: rgba(10, 8, 20, 0.66);
-  color: #b2aacb;
-  font-weight: 500;
-}
-.mpin.fog::after {
-  display: none;
-}
-.mpin.sun {
-  background: linear-gradient(90deg, #ffe08a, #ffb84a);
-  color: #3a2408;
-}
-.mchip {
-  position: absolute;
-  left: 0;
-  top: 0;
-  padding: 2px 7px;
-  border-radius: 999px;
-  font: 600 11px/1.3 var(--font-voice);
-  color: #2a2238;
-  background: rgba(255, 255, 255, 0.88);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
-  pointer-events: none;
-  white-space: nowrap;
-}
-.mchip.trip {
-  background: #ffe27a;
-}
 .mbtn.on {
   background: #f2c14e;
   color: #3a2408;
@@ -559,17 +341,6 @@ body.map-gl #dioui {
     bottom: 20px;
   }
 }
-.mpin.mini {
-  padding: 3px;
-}
-.mpin.mini .mp-n {
-  display: none;
-}
-.mpin.mini::after {
-  bottom: -5px;
-  width: 8px;
-  height: 8px;
-}
 /* v31: turn and tilt on the world map */
 .mapview {
   position: absolute;
@@ -602,28 +373,3 @@ body.on-map .map-full > #maplabels {
 }
 
 /* ---------- UI-5: from v05.css, as it was ---------- */
-.mpin.friend {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 8px 2px 2px;
-  border-radius: 999px;
-  background: rgba(255, 250, 240, 0.92);
-  border: 2px solid #4fb3e8;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
-  color: #2e2140;
-  font: 500 12px/1 var(--font-voice);
-}
-.mpin.friend .mp-face {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  overflow: hidden;
-  display: grid;
-  place-items: center;
-  background: #cdebfa;
-}
-.mpin.friend .mp-face img {
-  width: 26px;
-  height: auto;
-}

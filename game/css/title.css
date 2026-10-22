@@ -378,17 +378,6 @@ body.ld-on #app {
   z-index: 2;
 }
 /* 0.1.0 alpha: the game version (game/version.js); 2026-10-19 in .ttl-foot, this stays for older markup */
-.ttl-ver {
-  position: absolute;
-  left: 12px;
-  bottom: max(8px, env(safe-area-inset-bottom));
-  margin: 0;
-  font: 600 10px/1 var(--font-voice);
-  letter-spacing: 0.08em;
-  color: rgba(255, 226, 192, 0.7);
-  text-shadow: 0 1px 0 rgba(20, 10, 40, 0.6);
-  pointer-events: none;
-}
 .acc-chip {
   display: inline-flex;
   align-items: center;

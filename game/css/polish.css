@@ -180,27 +180,6 @@ section > h2::before,
 }
 
 /* ---------- cards: faint pixel texture and top highlight ---------- */
-:is(.today, .mon, .ware, .buddy, .dlg, .mapcard, .slot, .vit, .starter, .trainer-intro).px {
-  background-image:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0) 38%),
-    radial-gradient(var(--dither) 1px, transparent 1.2px);
-  background-size:
-    auto,
-    4px 4px;
-}
-:root[data-theme='dark'] :is(.today, .mon, .ware, .buddy, .dlg, .mapcard, .slot, .vit, .starter, .trainer-intro).px {
-  background-image:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0) 38%),
-    radial-gradient(var(--dither) 1px, transparent 1.2px);
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light'])
-    :is(.today, .mon, .ware, .buddy, .dlg, .mapcard, .slot, .vit, .starter, .trainer-intro).px {
-    background-image:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0) 38%),
-      radial-gradient(var(--dither) 1px, transparent 1.2px);
-  }
-}
 /* the team lead gets a gold rail */
 .s-team > .mons > .mon:first-child {
   background-image:
@@ -259,9 +238,6 @@ section > h2::before,
 .settings-fields select:hover,
 .option:hover {
   border-color: var(--line);
-}
-.settings-fields select {
-  box-shadow: inset 0 -3px 0 var(--panel2);
 }
 .help summary {
   font-family: var(--font-voice);

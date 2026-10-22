@@ -16,11 +16,6 @@
   font-size: 14px;
   line-height: 1.1;
 }
-.dex .dno {
-  font-size: 12px;
-  color: var(--text2);
-  font-weight: 600;
-}
 .dex .got {
   position: absolute;
   top: 6px;
