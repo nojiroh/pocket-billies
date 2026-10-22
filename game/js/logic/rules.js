@@ -15,18 +15,15 @@
 import { expose } from '../test-globals.js';
 import {
   JINGLES,
-  activeBattle,
   coatRoll,
   environmentOdds,
   jingle,
   provide,
   ranchStop,
-  render,
   runNodeSeed,
   runWeather,
   save,
   saveData,
-  showPendingWindows,
   soundEffect,
   storyHolds,
   toast,
@@ -826,28 +823,17 @@ export function spawn(gentle, force, node = saveData.trip.node, rnd = random) {
 
 /* ---------- walking and eggs ---------- */
 /* phase 08: the metres you walk outdoors (walk-view.js movePlayer; not in rooms, on ladders or test benches, and not a
-   jump to a new view): the distance on your trainer card, and what hatches the eggs in your incubators (eggs.json need,
-   in metres). Saved every 20 m, and at once when an egg is ready */
+   jump to a new view): the distance on your trainer card. Saved every 20 m. RL-10: walking hatches nothing any more
+   (eggs hatch at the ranch on real time, logic/breeding.js) */
 export let walkedUnsaved = 0;
 export function addWalked(m) {
   if (!saveData.started || !Number.isFinite(m) || m <= 0 || m > 1000) return;
   const S = saveData.stats || (saveData.stats = {});
   S.walked = (S.walked || 0) + m;
-  let ready = false;
-  for (const e of saveData.eggs) {
-    const need = EGGS[e.tier].need;
-    if (e.slot == null || e.prog >= need) continue;
-    e.prog = Math.min(need, e.prog + m);
-    if (e.prog >= need) ready = true;
-  }
   walkedUnsaved += m;
-  if (!ready && walkedUnsaved < 20) return;
+  if (walkedUnsaved < 20) return;
   walkedUnsaved = 0;
   save();
-  if (ready && !activeBattle) {
-    render();
-    showPendingWindows();
-  }
 }
 export const metresToKm = m => (m / 1000).toFixed(1);
 /* a walking distance for people: "80 m", "850 m", "1.2 km" */
