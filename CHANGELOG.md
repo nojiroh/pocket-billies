@@ -9,6 +9,11 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- Packing for a run (RL-9b): at the airship mast you now pick who comes from home, one Billie at Bracket I, from your
+  team or storage (one training at the ranch stops while it is away), and pack up to 5 things from Copperleaf's bag
+  (items and Copper Coins) on top of what the airship gives. The rest stay home. Your travellers leave fully healed.
+  Win, and everyone comes home with what they learned and the run's bag goes into Copperleaf's; lose, and you keep one
+  Billie (one from storage goes back to storage with its run's levels) while the bag turns into Capital.
 - The ranch (RL-9): a red barn by Copperleaf's farm. Walk in and tap the training board or the rancher: Billies resting
   in storage can train there for a little Scrap, gaining a level every two hours of real time (up to eight hours
   between visits, up to level 15 for now), collected when you come back. Storage shows there too, and the Team tab
