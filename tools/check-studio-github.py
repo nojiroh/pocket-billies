@@ -1004,6 +1004,137 @@ STEPS = [
 ]
 
 
+def publish_checks(b, url, errs):
+    """Studio plan Phase 0 (T0.1): Propose never drops, half-sends or doubles a proposal. Its own page and stand-in, so
+    the main flow's proposal is untouched. Each case leaves an art picture, a rig and a data edit pending, makes one
+    GitHub step fail (or holds it), and checks that nothing pending is lost and that the retry carries all of it."""
+    import base64
+    tree = [{'type': 'blob', 'path': str(p.relative_to(ROOT)), 'sha': 'x', 'size': p.stat().st_size}
+            for p in (ROOT / 'game' / 'art').rglob('*') if p.is_file()]
+    st = {'fail': {}, 'hold': None, 'held': [], 'log': []}
+
+    def api(route):
+        p = urlparse(route.request.url).path
+        if route.request.method != 'GET':
+            k = p.rsplit('/', 1)[-1]
+            if k == st['hold']:
+                st['held'].append(route); return
+            st['log'].append((k, route.request.post_data or ''))
+            if st['fail'].get(k):
+                code = st['fail'][k].pop(0)
+                return route.fulfill(status=code, json={'message': f'stand-in {code} at {k}'})
+            return route.fulfill(json={'sha': 'x', 'number': 7, 'html_url': 'x', 'object': {'sha': 'x'}, 'tree': {'sha': 'x'}})
+        if p == '/user': return route.fulfill(json={'login': 'nojiroh'})
+        if p.rstrip('/') == '/repos/nojiroh/pocket-billies': return route.fulfill(json={'permissions': {'push': True, 'admin': True}})
+        if '/git/trees/' in p: return route.fulfill(json={'tree': tree})
+        if '/git/commits/' in p: return route.fulfill(json={'sha': 'x', 'tree': {'sha': 'x'}})
+        if '/git/ref' in p: return route.fulfill(json={'object': {'sha': 'x'}})
+        if '/contents/' in p:
+            f = ROOT / unquote(p.split('/contents/', 1)[1])
+            if f.is_file(): return route.fulfill(body=f.read_bytes())
+        return route.fulfill(status=404, json={'message': 'Not Found'})
+
+    ctx = b.new_context(viewport={'width': 1400, 'height': 900})
+    ctx.add_init_script('window.PB_TEST_GLOBALS=true')
+    pg = ctx.new_page()
+    pg.on('pageerror', lambda e: errs.append('publish: ' + str(e)[:300]))
+    pg.route('https://api.github.com/**', api)
+    pg.add_init_script("localStorage.setItem('pb-studio-gh-token','ghp_stand-in')")
+    t0 = time.time()
+    pg.goto(url)
+    while time.time() - t0 < 120 and not pg.evaluate("typeof studioState!=='undefined'&&!!studioState.D&&!document.querySelector('#main .loading')"):
+        time.sleep(0.5)
+    ART = 'art/next/parts/front/publish_check.png'
+    pending = "({data: studioState.dirty, rigs: studioState.rigsDirty, art: studioState.artDirty.has(%s)})" % json.dumps(ART)
+
+    def make_edits(tag):
+        pg.evaluate("""tag => { const c = document.createElement('canvas'); c.width = c.height = 4;
+          const x = c.getContext('2d'); x.fillStyle = '#c03'; x.fillRect(0, 0, 4, 4);
+          markArt(%s, c);
+          const k = Object.keys(studioState.rigs).find(k => String((studioState.rigs[k].front || {}).sheet || '').startsWith('next/'));
+          studioState.rigs[k].publishCheck = tag; studioState.rigsDirty = true;
+          studioState.D.meta.publishCheck = tag; studioState.dirty = true; }""" % json.dumps(ART), tag)
+
+    def idle():
+        return pg.evaluate("document.querySelector('#saveBtn').textContent === 'Propose changes' && !document.querySelector('#saveBtn').disabled && !document.querySelector('#ghSum')")
+
+    def start(summary):
+        pg.evaluate("void saveAll()")
+        t1 = time.time()
+        while time.time() - t1 < 20 and not pg.locator('#ghSum').count(): time.sleep(0.1)
+        pg.fill('#ghSum', summary)
+        pg.locator('#dlg button', has_text='Propose changes').click()
+
+    def settle(limit=30):
+        t1 = time.time()
+        while time.time() - t1 < limit:
+            a = pg.locator('#dlg button', has_text='Save anyway')
+            if a.count(): a.first.click()
+            ok = pg.locator('#dlg button', has_text='OK')  # "Sent for approval"
+            if ok.count(): ok.first.click()
+            if idle(): return True
+            time.sleep(0.2)
+        return False
+
+    def last_tree():
+        trees = [json.loads(bd) for k, bd in st['log'] if k == 'trees']
+        return [t['path'] for t in trees[-1]['tree']] if trees else []
+
+    want = {'game/' + ART, 'game/art/rigs.js', 'game/art/next/rigs-next.js', 'game/data/meta.json'}
+    # 1. a failure at each step: everything stays pending, and the retry carries all of it
+    for step in ['blobs', 'trees', 'commits', 'refs', 'pulls']:
+        st['log'].clear(); st['fail'] = {step: [502]}
+        make_edits('fail-' + step)
+        start('publish check: ' + step + ' fails'); settle()
+        left = pg.evaluate(pending)
+        if not all(left.values()): errs.append(f'publish: after a {step} failure, pending changes were dropped: {left}')
+        st['log'].clear()
+        start('publish check: retry after ' + step); settle()
+        sent = last_tree()
+        if not any(k == 'pulls' for k, _ in st['log']): errs.append(f'publish: the retry after a {step} failure opened no pull request')
+        missing = sorted(want - set(sent))
+        if missing: errs.append(f'publish: the retry after a {step} failure left out {missing}')
+        left = pg.evaluate(pending)
+        if any(left.values()): errs.append(f'publish: after a successful retry ({step}), something still shows as pending: {left}')
+    # 2. an error while building the proposal sends nothing
+    st['log'].clear(); st['fail'] = {}
+    make_edits('bad-id')
+    pg.evaluate("studioState.D.maps['Bad id!'] = {}")
+    start('publish check: bad id'); settle()
+    if st['log']: errs.append(f"publish: a proposal that could not be built still sent {[k for k, _ in st['log']]}")
+    left = pg.evaluate(pending)
+    if not all(left.values()): errs.append(f'publish: a proposal that could not be built dropped pending changes: {left}')
+    pg.evaluate("delete studioState.D.maps['Bad id!']")
+    # 3. while a proposal is sending: a second Ctrl+S does nothing, and an edit made meanwhile stays pending
+    make_edits('held')
+    st['log'].clear(); st['hold'] = 'trees'
+    start('publish check: held'); t1 = time.time()
+    while time.time() - t1 < 30 and not st['held']:
+        a = pg.locator('#dlg button', has_text='Save anyway')
+        if a.count(): a.first.click()
+        time.sleep(0.1)
+    if not st['held']: errs.append('publish: the proposal never reached the tree step')
+    pg.evaluate("void saveAll()"); time.sleep(0.5)
+    if pg.locator('#ghSum').count():
+        errs.append('publish: a second Propose started while the first was sending')
+        pg.locator('#dlg button', has_text='Cancel').click()
+    pg.evaluate("""() => { const c = studioState.artDirty.get(%s); c.getContext('2d').fillRect(0, 0, 1, 1); markArt(%s, c);
+      studioState.D.meta.publishCheck = 'during'; studioState.dirty = true; }""" % (json.dumps(ART), json.dumps(ART)))
+    st['hold'] = None
+    for r in st['held']:
+        st['log'].append(('trees', r.request.post_data or ''))
+        r.fulfill(json={'sha': 'x'})
+    st['held'].clear(); settle()
+    if sum(1 for k, _ in st['log'] if k == 'pulls') != 1: errs.append(f"publish: the held proposal made {sum(1 for k, _ in st['log'] if k == 'pulls')} pull requests")
+    left = pg.evaluate(pending)
+    if not (left['art'] and left['data']): errs.append(f'publish: an edit made while sending was cleared without being sent: {left}')
+    # put the page back (nothing pending) so the context closes cleanly
+    pg.evaluate("studioState.artDirty.delete(%s); delete studioState.D.meta.publishCheck; studioState.dirty = studioState.rigsDirty = false" % json.dumps(ART))
+    n = sum(1 for e in errs if e.startswith('publish:'))
+    print(f'publish: failures at 5 steps, a proposal that cannot be built, a held send ({n} problem(s))', flush=True)
+    ctx.close()
+
+
 def main():
     srv = ThreadingHTTPServer(('127.0.0.1', 0), partial(Quiet, directory=str(ROOT)))
     threading.Thread(target=srv.serve_forever, daemon=True).start()
@@ -1093,6 +1224,8 @@ def main():
             if 'game/data/uiTheme.json' not in paths: errs.append(f'ui: uiTheme.json is not in the proposal ({paths})')
             elif not ui or ui['defaults']['shape']['cutLg'] != 20: errs.append('ui: the proposal does not carry the large cut at 20 px')
             else: print('ui: the proposal carries game/data/uiTheme.json with the large cut at 20 px', flush=True)
+        if ONLY is None or 'publish' in ONLY:
+            publish_checks(b, f'http://127.0.0.1:{srv.server_address[1]}/studio/index.html', errs)
         b.close()
     for e in errs: print('PROBLEM', e)
     print('ok' if not errs else f'{len(errs)} problem(s)')
