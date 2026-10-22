@@ -110,7 +110,6 @@ h4 {
   font-weight: 700;
   letter-spacing: 0.01em;
 }
-
 /* ---------- glass panels: every framed box in the game ---------- */
 .px {
   background: var(--g-bg) !important;
@@ -152,7 +151,6 @@ html[data-contrast='high'] .px {
   background: var(--g-solid) !important;
   border: 2px solid var(--line);
 }
-
 /* ---------- buttons: rounded, lit from above, press in ---------- */
 .pb {
   /* UI-5: its outline is the kit's button family (ui-kit.css); the edge line along it replaces the border */
@@ -209,7 +207,6 @@ html[data-contrast='high'] .px {
   font-size: 21px !important;
   border-radius: var(--r3) !important;
 }
-
 /* ---------- small things ---------- */
 .chip {
   border-radius: 8px !important;
@@ -239,7 +236,6 @@ html[data-contrast='high'] .px {
     transform: translateX(-18px);
   }
 }
-
 /* ---------- Team: glass cards with depth ---------- */
 .tpanel {
   background: var(--g-bg) !important;
@@ -305,9 +301,8 @@ html[data-contrast='high'] .px {
 .c-high {
   background: rgba(217, 83, 47, 0.2);
 }
-
-/* ---------- 0.5 wide screens: the world stays in view; Team, Guide, Bag and Trainer open in a glass side panel ---------- */
 @media (min-width: 960px) and (orientation: landscape) {
+  /* ---------- 0.5 wide screens: the world stays in view; Team, Guide, Bag and Trainer open in a glass side panel ---------- */
   body.on-scene #dio {
     filter: saturate(1) brightness(0.96);
     transform: none;

@@ -865,49 +865,6 @@ section > h2,
   color: var(--text);
   box-shadow: inset 0 0 0 3px var(--line);
 }
-.evo,
-.hatch {
-  position: relative;
-  width: 170px;
-  height: 170px;
-  margin: 0 auto 6px;
-  display: grid;
-  place-items: center;
-}
-.evo.run .ea,
-.evo.run .eb {
-  position: absolute;
-  inset: 0;
-  margin: auto;
-  display: grid;
-  place-items: center;
-}
-.evo.run canvas {
-  filter: brightness(0) invert(1) drop-shadow(0 0 10px #fff);
-}
-.evo.run .eb {
-  visibility: hidden;
-}
-.evo.run.b .ea {
-  visibility: hidden;
-}
-.evo.run.b .eb {
-  visibility: visible;
-}
-@keyframes evoflash {
-  from {
-    filter: brightness(4) drop-shadow(0 0 20px #fff);
-  }
-}
-.evo.done,
-.hatch.done {
-  animation: pop 0.55s cubic-bezier(0.3, 1.7, 0.5, 1);
-}
-@keyframes hflash {
-  50% {
-    filter: brightness(5);
-  }
-}
 @keyframes drop {
   from {
     transform: translate(-50%, -26px) scale(0.9);
@@ -1157,7 +1114,6 @@ section > h2,
   gap: 8px;
   margin-top: 12px;
 }
-
 .uico {
   display: inline-block;
   flex: none;
@@ -1181,7 +1137,6 @@ section > h2,
     opacity: 1;
   }
 }
-
 /* v6 visual polish: crisp field journal panels, rich pixel scenery, clear controls. */
 :root {
   --panel: rgba(255, 251, 239, 0.96);
@@ -1628,7 +1583,6 @@ section > h2,
     opacity: 0.5;
   }
 }
-
 /* ===================== v7 · interface ===================== */
 .boot {
   display: flex;
@@ -1710,8 +1664,8 @@ section > h2,
   color: var(--text);
   max-width: 100%;
 }
-/* wide screens: side rail, wider content, two-column layouts */
 @media (min-width: 960px) {
+  /* wide screens: side rail, wider content, two-column layouts */
   #app {
     max-width: 1120px;
     margin-left: max(120px, calc((100vw - 1120px) / 2));
@@ -1737,7 +1691,6 @@ section > h2,
     backdrop-filter: blur(6px);
   }
 }
-
 /* ================= v9: walk scene (tilt-shift diorama) ================= */
 #dio {
   position: fixed;
@@ -1778,7 +1731,6 @@ section > h2,
     transform: skewX(3deg);
   }
 }
-
 /* v11: the walk scene stays behind every screen except the map, softened so panels stay readable */
 body.on-scene #bgfx {
   display: none;

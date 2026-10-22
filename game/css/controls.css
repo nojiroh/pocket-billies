@@ -1,0 +1,147 @@
+/* UI-6: The walk controls: the joystick (push into its outer ring to run) and the d-pad. Moved as they were from polish.css, in the order the page loaded them. */
+.joy {
+  position: fixed;
+  z-index: 40;
+  width: 112px;
+  height: 112px;
+  margin: -56px 0 0 -56px;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0;
+  transform: scale(0.8);
+  transition:
+    opacity 0.15s,
+    transform 0.15s;
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.1) 0 55%,
+    rgba(255, 255, 255, 0.22) 56% 60%,
+    rgba(255, 255, 255, 0) 61%
+  );
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.35) inset;
+}
+.joy.on {
+  opacity: 1;
+  transform: none;
+}
+.joy-knob {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 48px;
+  height: 48px;
+  margin: -24px 0 0 -24px;
+  border-radius: 50%;
+  background: rgba(255, 248, 230, 0.85);
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.35),
+    0 0 0 3px rgba(201, 154, 30, 0.7);
+}
+/* phase 08: the outer ring: push into it to run */
+.joy-ring {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 168px;
+  height: 168px;
+  margin: -84px 0 0 -84px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.22) inset;
+  transition:
+    box-shadow 0.12s,
+    background-color 0.12s;
+}
+.joy.run .joy-ring {
+  background: rgba(240, 190, 60, 0.12);
+  box-shadow: 0 0 0 3px rgba(240, 190, 60, 0.8) inset;
+}
+.joy.run .joy-knob {
+  background: rgba(255, 226, 140, 0.95);
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.35),
+    0 0 0 3px rgba(240, 190, 60, 1),
+    0 0 14px rgba(240, 190, 60, 0.7);
+}
+.dpad {
+  position: fixed;
+  z-index: 40;
+  left: max(14px, env(safe-area-inset-left));
+  bottom: calc(96px + env(safe-area-inset-bottom));
+  width: 132px;
+  height: 132px;
+  display: none;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.dpad.on {
+  display: block;
+}
+.dpad b {
+  position: absolute;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: rgba(30, 26, 44, 0.55);
+  color: rgba(255, 248, 230, 0.92);
+  font-size: 16px;
+  box-shadow:
+    0 2px 0 rgba(0, 0, 0, 0.3),
+    0 0 0 2px rgba(255, 255, 255, 0.18) inset;
+}
+.dpad .u {
+  left: 44px;
+  top: 0;
+}
+.dpad .d {
+  left: 44px;
+  bottom: 0;
+}
+.dpad .l {
+  left: 0;
+  top: 44px;
+}
+.dpad .r {
+  right: 0;
+  top: 44px;
+}
+.dpad i {
+  position: absolute;
+  left: 44px;
+  top: 44px;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: rgba(30, 26, 44, 0.45);
+  color: rgba(255, 248, 230, 0.7);
+  font: 700 18px/1 sans-serif;
+  font-style: normal;
+}
+/* phase 08: hold the centre to run */
+.dpad i::after {
+  content: '»';
+}
+.dpad.run i {
+  background: rgba(240, 190, 60, 0.85);
+  color: rgba(30, 26, 44, 0.95);
+}
+.dpad[data-dir='2'] .u,
+.dpad[data-dir='1'] .u,
+.dpad[data-dir='3'] .u,
+.dpad[data-dir='-2'] .d,
+.dpad[data-dir='-1'] .d,
+.dpad[data-dir='-3'] .d,
+.dpad[data-dir='0'] .r,
+.dpad[data-dir='1'] .r,
+.dpad[data-dir='-1'] .r,
+.dpad[data-dir='4'] .l,
+.dpad[data-dir='-4'] .l,
+.dpad[data-dir='3'] .l,
+.dpad[data-dir='-3'] .l {
+  background: rgba(201, 154, 30, 0.85);
+  color: #241c10;
+}

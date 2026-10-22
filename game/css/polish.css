@@ -7,7 +7,6 @@
    @media (prefers-reduced-motion:no-preference); the in-game
    "Reduced motion" setting (:root[data-motion="reduced"]) is also honoured.
    ===================================================================== */
-
 /* ---------- tokens ---------- */
 :root {
   --r-s: 6px;
@@ -41,12 +40,10 @@
     --chip-money-fg: #ffe59a;
   }
 }
-
 ::selection {
   background: var(--gold);
   color: #3a2408;
 }
-
 /* ---------- focus: a crisp ring that reads in both themes ---------- */
 :focus-visible,
 .pb:focus-visible,
@@ -62,7 +59,6 @@
 .swatch:focus-visible {
   outline-offset: 3px;
 }
-
 /* ---------- pixel buttons: bevel + ledge, press sinks into the ledge ---------- */
 .pb:not(.wh-row .pb) {
   --dep: 3px;
@@ -119,7 +115,6 @@
     transparent 53%
   );
 }
-
 /* ---------- section headers with a little pixel sparkle ---------- */
 .sec-h > h2,
 section > h2,
@@ -167,7 +162,6 @@ section > h2::before,
     inset 0 -2px 0 var(--lo);
   text-shadow: none;
 }
-
 /* page title: a short gold dash ornament under the heading */
 .bar > div:first-child:has(> .where)::after {
   content: '';
@@ -178,7 +172,6 @@ section > h2::before,
   background: repeating-linear-gradient(90deg, var(--gold) 0 10px, transparent 10px 14px);
   filter: drop-shadow(0 2px 0 color-mix(in srgb, var(--line) 35%, transparent));
 }
-
 /* ---------- cards: faint pixel texture and top highlight ---------- */
 /* the team lead gets a gold rail */
 .s-team > .mons > .mon:first-child {
@@ -197,7 +190,6 @@ section > h2::before,
   outline: 2px dashed color-mix(in srgb, var(--line) 28%, transparent);
   outline-offset: -5px;
 }
-
 /* chips, badges, bars: a touch of depth */
 .chip {
   box-shadow:
@@ -224,7 +216,6 @@ section > h2::before,
 .stats td {
   border-bottom-style: dashed;
 }
-
 /* form controls: borders that pass 3:1 */
 .field-l input,
 .settings-fields select,
@@ -247,7 +238,6 @@ section > h2::before,
 .help summary::marker {
   color: var(--orn2);
 }
-
 /* ---------- field guide ---------- */
 .fchip {
   box-shadow:
@@ -266,7 +256,6 @@ section > h2::before,
 .plate {
   border-radius: 2px;
 }
-
 /* ---------- title Professor dialog ---------- */
 .logo {
   text-shadow:
@@ -305,9 +294,8 @@ section > h2::before,
   border-bottom: 0;
   opacity: 0.8;
 }
-
-/* ---------- motion (only when the viewer allows it) ---------- */
 @media (prefers-reduced-motion: no-preference) {
+  /* ---------- motion (only when the viewer allows it) ---------- */
   /* buttons */
   .pb:not(.wh-row .pb) {
     transition:
@@ -318,7 +306,6 @@ section > h2::before,
   .pb:not(.wh-row .pb):active:not(:disabled) {
     transition-duration: 0.06s;
   }
-
   /* cards and chips */
   .ware,
   .ware2,
@@ -338,7 +325,6 @@ section > h2::before,
   .option:active {
     transform: scale(0.94);
   }
-
   /* staggered entrances on tab change */
   .screen.enter :is(.slot, .vit, .empty) {
     animation: rise 0.42s var(--out) backwards;
@@ -371,7 +357,6 @@ section > h2::before,
   .screen.enter .fchip:nth-child(n + 4) {
     animation-delay: 75ms;
   }
-
   /* title and dialog */
   .title .pb.gold {
     animation: nwFadeUp 0.45s var(--out) 0.35s backwards;
@@ -390,7 +375,6 @@ section > h2::before,
     transition: transform 0.25s var(--spring);
   }
 }
-
 @keyframes nwSheet {
   0% {
     transform: translateY(56px) scale(0.97);
@@ -494,21 +478,6 @@ section > h2::before,
     transform: translate(-50%, 0);
   }
 }
-@keyframes nwCoinSpin {
-  0%,
-  86% {
-    transform: scaleX(1);
-  }
-  90% {
-    transform: scaleX(0.15);
-  }
-  95% {
-    transform: scaleX(-1);
-  }
-  100% {
-    transform: scaleX(1);
-  }
-}
 @keyframes nwFlip {
   0% {
     transform: scaleX(1);
@@ -522,486 +491,4 @@ section > h2::before,
   100% {
     transform: scaleX(1);
   }
-}
-
-/* alpha 0.4: airships */
-.fly-row .fly-ico {
-  flex: none;
-  display: grid;
-  place-items: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
-  background: var(--panel2);
-}
-.fly-row .pr-t {
-  flex: 1;
-  min-width: 0;
-}
-.fly-row .pr-t small {
-  display: block;
-  opacity: 0.75;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.fly-row .fly-fare {
-  flex: none;
-  font-weight: 700;
-  color: var(--gold, #e9b83c);
-}
-.fly-row.off {
-  opacity: 0.55;
-}
-.fly-cap {
-  position: absolute;
-  left: 50%;
-  top: calc(14px + env(safe-area-inset-top));
-  transform: translateX(-50%);
-  padding: 10px 16px;
-  border-radius: 14px;
-  text-align: center;
-  z-index: 5;
-  pointer-events: none;
-}
-.fly-cap small {
-  display: block;
-  font-size: 0.72rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  opacity: 0.75;
-}
-.fly-cap b {
-  display: block;
-  font-size: 1rem;
-}
-.fly-cap .note {
-  display: block;
-  margin: 2px 0 0;
-  font-size: 0.72rem;
-}
-body.flying #maplabels,
-body.flying .mapcard,
-body.flying .mapctl,
-body.flying .map-head {
-  display: none !important;
-}
-body.flying #mapcv {
-  pointer-events: none;
-}
-body.flying #nav {
-  visibility: hidden;
-}
-
-/* alpha 0.4: postcards — the big card the first time you walk into a town, the small stamp after, the Guide's page */
-.pcard-wrap {
-  position: fixed;
-  inset: 0;
-  z-index: 80;
-  display: grid;
-  place-items: center;
-  padding: 16px;
-  background: rgba(20, 16, 40, 0);
-  transition: background 0.4s ease;
-  cursor: pointer;
-}
-.pcard-wrap.in {
-  background: rgba(20, 16, 40, 0.38);
-}
-.pcard {
-  position: relative;
-  width: min(92vw, 520px);
-  background: #fbf6e6;
-  border-radius: 6px;
-  padding: 10px 10px 12px;
-  box-shadow:
-    0 18px 40px rgba(20, 16, 40, 0.45),
-    0 2px 0 #d9cdb0 inset;
-  transform: translate(30vw, 60vh) rotate(14deg);
-  opacity: 0;
-  transition:
-    transform 0.55s cubic-bezier(0.2, 0.9, 0.25, 1.15),
-    opacity 0.3s;
-}
-.pcard-wrap.in .pcard {
-  transform: rotate(-2.5deg);
-  opacity: 1;
-}
-.pcard-wrap.out .pcard {
-  transform: translate(-40vw, -20vh) rotate(-16deg) scale(0.4);
-  opacity: 0;
-  transition:
-    transform 0.45s ease-in,
-    opacity 0.45s ease-in;
-}
-.pc-pic {
-  position: relative;
-  border-radius: 3px;
-  overflow: hidden;
-  aspect-ratio: 3/2;
-  background: #7fa7c9;
-}
-.pc-pic img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  image-rendering: auto;
-}
-.pc-greet {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  padding: 22px 14px 10px;
-  background: linear-gradient(transparent, rgba(20, 16, 40, 0.55));
-}
-.pc-greet small {
-  display: block;
-  font-family: var(--hand, 'Caveat', cursive);
-  font-size: 26px;
-  line-height: 1;
-  color: #fff6dc;
-  text-shadow: 0 2px 0 rgba(20, 16, 40, 0.6);
-}
-.pc-greet b {
-  display: block;
-  font-family: var(--font-voice);
-  font-size: clamp(28px, 7.5vw, 44px);
-  line-height: 1;
-  letter-spacing: 0.02em;
-  color: #ffe58f;
-  text-shadow:
-    2px 2px 0 #c8643c,
-    4px 4px 0 rgba(20, 16, 40, 0.7),
-    -1px -1px 0 #7a3a28,
-    1px -1px 0 #7a3a28,
-    -1px 1px 0 #7a3a28;
-}
-.pc-stamp {
-  position: absolute;
-  top: -10px;
-  right: -8px;
-  width: 74px;
-  padding: 6px 6px 4px;
-  background: #fffdf4;
-  transform: rotate(6deg);
-  box-shadow: 0 3px 8px rgba(20, 16, 40, 0.3);
-  border: 2px dotted #cfc2a0;
-  border-radius: 3px;
-  text-align: center;
-}
-.pc-stamp img {
-  display: block;
-  width: 100%;
-  aspect-ratio: 4/3;
-  object-fit: cover;
-  image-rendering: pixelated;
-  border-radius: 2px;
-}
-.pc-stamp span {
-  display: block;
-  font-family: var(--font-voice);
-  font-size: 10px;
-  color: #5e3a2a;
-  margin-top: 3px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.pc-stamp.sm {
-  position: static;
-  width: 34px;
-  padding: 3px;
-  transform: rotate(-4deg);
-}
-.pc-note {
-  margin: 8px 4px 0;
-  font-family: var(--hand, 'Caveat', cursive);
-  font-size: 20px;
-  color: #5e6b80;
-  text-align: center;
-}
-.pc-mini {
-  position: fixed;
-  left: 12px;
-  top: calc(env(safe-area-inset-top, 0px) + 64px);
-  z-index: 60;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 12px 6px 8px;
-  background: #fbf6e6;
-  color: #22314a;
-  border-radius: 10px;
-  box-shadow: 0 6px 18px rgba(20, 16, 40, 0.3);
-  font-family: var(--font-voice);
-  font-size: 14px;
-  transform: translateX(-120%);
-  transition: transform 0.45s cubic-bezier(0.2, 0.9, 0.25, 1.15);
-  pointer-events: none;
-}
-.pc-mini.in {
-  transform: none;
-}
-.pc-count {
-  margin: 10px 16px;
-}
-.pc-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 14px;
-  padding: 4px 16px 24px;
-}
-.pc-thumb {
-  position: relative;
-  display: block;
-  padding: 6px 6px 8px;
-  background: #fbf6e6;
-  border: 0;
-  border-radius: 5px;
-  box-shadow: 0 4px 12px rgba(20, 16, 40, 0.25);
-  cursor: pointer;
-  text-align: left;
-  transform: rotate(-1.5deg);
-  transition: transform 0.2s;
-}
-.pc-thumb:nth-child(2n) {
-  transform: rotate(1.2deg);
-}
-.pc-thumb:active {
-  transform: scale(0.97);
-}
-.pc-thumb img {
-  display: block;
-  width: 100%;
-  aspect-ratio: 3/2;
-  object-fit: cover;
-  border-radius: 2px;
-}
-.pc-thumb span {
-  display: block;
-  margin-top: 6px;
-  font-family: var(--font-voice);
-  font-size: 13px;
-  color: #22314a;
-}
-.pc-thumb.none {
-  cursor: default;
-  box-shadow: none;
-  background: rgba(251, 246, 230, 0.35);
-  border: 2px dashed rgba(94, 107, 128, 0.4);
-}
-.pc-thumb.none i {
-  display: grid;
-  place-items: center;
-  aspect-ratio: 3/2;
-  font-style: normal;
-  font-family: var(--font-voice);
-  font-size: 34px;
-  color: rgba(94, 107, 128, 0.55);
-}
-.pc-thumb.none span {
-  color: #5e6b80;
-}
-@media (prefers-reduced-motion: reduce) {
-  .pcard,
-  .pcard-wrap.out .pcard,
-  .pc-mini {
-    transition: none;
-  }
-}
-
-/* alpha 0.4: the glass lift between Kelpport and Pearlantis */
-.lift-veil {
-  position: fixed;
-  inset: 0;
-  z-index: 85;
-  display: grid;
-  place-items: center;
-  opacity: 0;
-  transition: opacity 0.6s ease;
-  pointer-events: none;
-}
-.lift-veil.down {
-  background: linear-gradient(#2e8aa8, #0c3a5a 55%, #04182a);
-}
-.lift-veil.up {
-  background: linear-gradient(#f6f0dc, #7fc4d8 45%, #1c6a8a);
-}
-.lift-veil.in {
-  opacity: 1;
-  pointer-events: auto;
-}
-.lift-cap {
-  padding: 14px 18px;
-  border-radius: 14px;
-  text-align: center;
-  color: #fff6dc;
-  background: rgba(10, 30, 50, 0.45);
-}
-.lift-cap small {
-  display: block;
-  font-family: var(--hand, 'Caveat', cursive);
-  font-size: 22px;
-}
-.lift-cap b {
-  display: block;
-  font-family: var(--font-voice);
-  font-size: 26px;
-  margin: 4px 0;
-}
-.lift-cap .note {
-  color: #cfe6ee;
-}
-@media (prefers-reduced-motion: reduce) {
-  .lift-veil {
-    transition: none;
-  }
-}
-.joy {
-  position: fixed;
-  z-index: 40;
-  width: 112px;
-  height: 112px;
-  margin: -56px 0 0 -56px;
-  border-radius: 50%;
-  pointer-events: none;
-  opacity: 0;
-  transform: scale(0.8);
-  transition:
-    opacity 0.15s,
-    transform 0.15s;
-  background: radial-gradient(
-    circle,
-    rgba(255, 255, 255, 0.1) 0 55%,
-    rgba(255, 255, 255, 0.22) 56% 60%,
-    rgba(255, 255, 255, 0) 61%
-  );
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.35) inset;
-}
-.joy.on {
-  opacity: 1;
-  transform: none;
-}
-.joy-knob {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 48px;
-  height: 48px;
-  margin: -24px 0 0 -24px;
-  border-radius: 50%;
-  background: rgba(255, 248, 230, 0.85);
-  box-shadow:
-    0 2px 6px rgba(0, 0, 0, 0.35),
-    0 0 0 3px rgba(201, 154, 30, 0.7);
-}
-/* phase 08: the outer ring: push into it to run */
-.joy-ring {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 168px;
-  height: 168px;
-  margin: -84px 0 0 -84px;
-  border-radius: 50%;
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.22) inset;
-  transition:
-    box-shadow 0.12s,
-    background-color 0.12s;
-}
-.joy.run .joy-ring {
-  background: rgba(240, 190, 60, 0.12);
-  box-shadow: 0 0 0 3px rgba(240, 190, 60, 0.8) inset;
-}
-.joy.run .joy-knob {
-  background: rgba(255, 226, 140, 0.95);
-  box-shadow:
-    0 2px 6px rgba(0, 0, 0, 0.35),
-    0 0 0 3px rgba(240, 190, 60, 1),
-    0 0 14px rgba(240, 190, 60, 0.7);
-}
-.dpad {
-  position: fixed;
-  z-index: 40;
-  left: max(14px, env(safe-area-inset-left));
-  bottom: calc(96px + env(safe-area-inset-bottom));
-  width: 132px;
-  height: 132px;
-  display: none;
-  touch-action: none;
-  user-select: none;
-  -webkit-user-select: none;
-}
-.dpad.on {
-  display: block;
-}
-.dpad b {
-  position: absolute;
-  width: 44px;
-  height: 44px;
-  display: grid;
-  place-items: center;
-  border-radius: 12px;
-  background: rgba(30, 26, 44, 0.55);
-  color: rgba(255, 248, 230, 0.92);
-  font-size: 16px;
-  box-shadow:
-    0 2px 0 rgba(0, 0, 0, 0.3),
-    0 0 0 2px rgba(255, 255, 255, 0.18) inset;
-}
-.dpad .u {
-  left: 44px;
-  top: 0;
-}
-.dpad .d {
-  left: 44px;
-  bottom: 0;
-}
-.dpad .l {
-  left: 0;
-  top: 44px;
-}
-.dpad .r {
-  right: 0;
-  top: 44px;
-}
-.dpad i {
-  position: absolute;
-  left: 44px;
-  top: 44px;
-  width: 44px;
-  height: 44px;
-  display: grid;
-  place-items: center;
-  border-radius: 8px;
-  background: rgba(30, 26, 44, 0.45);
-  color: rgba(255, 248, 230, 0.7);
-  font: 700 18px/1 sans-serif;
-  font-style: normal;
-}
-/* phase 08: hold the centre to run */
-.dpad i::after {
-  content: '»';
-}
-.dpad.run i {
-  background: rgba(240, 190, 60, 0.85);
-  color: rgba(30, 26, 44, 0.95);
-}
-.dpad[data-dir='2'] .u,
-.dpad[data-dir='1'] .u,
-.dpad[data-dir='3'] .u,
-.dpad[data-dir='-2'] .d,
-.dpad[data-dir='-1'] .d,
-.dpad[data-dir='-3'] .d,
-.dpad[data-dir='0'] .r,
-.dpad[data-dir='1'] .r,
-.dpad[data-dir='-1'] .r,
-.dpad[data-dir='4'] .l,
-.dpad[data-dir='-4'] .l,
-.dpad[data-dir='3'] .l,
-.dpad[data-dir='-3'] .l {
-  background: rgba(201, 154, 30, 0.85);
-  color: #241c10;
 }
