@@ -50,7 +50,7 @@ things the list missed:
 - The town does not fit a 135 m island: today's buildings span about 72 x 46 m with the barn (60 x 34 m without); with a
   45 m mountain foot the town box's south corners fell in the sea. The owner chose ~150 m (question 1). The generator
   pushes the coast out round every flat zone (a beach, the loop path and a margin past it), so a zone always fits.
-- The lap is longer than "~90 s": the coast loop is 461 m, about 136 s walking (it bends round the cove and bulges
+- The lap is longer than "~90 s": the coast loop is 472 m, about 139 s walking (it bends round the cove and bulges
   round the town and barn). A smaller `size.r` dial shortens it.
 - mapgen's helpers do the work read-only: its working state (`mapgenNewWork`), TR-2b's trail search and carving, the
   stream painter, the road flattening, the water lowering, the shelves' rock edges. No export was added to mapgen.js.
@@ -59,6 +59,10 @@ things the list missed:
 - The game's `findPath` gives up after 30000 cells, under a third of a 174 x 167 m map: the 102 m way from the town to
   the summit is found only with a bigger budget. Walking with the joystick is not affected; tap-to-walk across the
   island is (IS-5 and IS-9 should look at it). The map's in-game checks test the summit from the trail's foot.
+- A plain shape reads as made by a program (the owner, after the first look): generator version 2 adds the `organic`
+  dial (rounded zones, headlands and bays, a ridged massif with a shoulder, wandering shelves and paths, groves,
+  outcrops, wet ground). The massif's ridge has to stay clear of the cove as well as the town, or the stream has no room.
+- A bridge must not carry `pier: 1`: that marks a jetty (a deck ending over water), and the smoke's water rule fails it.
 - A new file under game/js must be on a page (a unit test follows the pages): island-gen.js is on the game page after
   island.js until IS-6b adds it to the Studio's.
 - Terrain kinds with no letter of their own: dunes are sand with sunburnt grass (`s`, `B`), scree is pebbles (`P`),

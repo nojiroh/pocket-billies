@@ -32,20 +32,34 @@ mountain climbable, 9 the stream with a pond; 10 was answered before (reusable).
     own dials and seed when it exists (default seed "copperleaf"), `--seed`, `--dials file.json`, `--id`, `--fresh`
     (drop the kept zones). Copperleaf's look; a test map (`kind: test`, `test: 1`) until IS-5. The walking checks for
     the in-game test. Prints the size, the lap and the notes.
-  - **copperleaf_island** (new data, index.json's maps list): 174 x 167 m scene, land 153 x 146 m, the coast loop 461 m
-    (136 s walking), one bridge; `cam.orbit` pivot on the summit, `dead` 3, `lag` 0.6, `turn` 30 (IS-1 tunes them);
+  - **A natural layout** (the owner, mid-session: "make the layout and terrain more natural and dynamic"; generator
+    version 2): a new dial `organic` (0-1, default 0.7; 0 gives plain geometry back: round coast, rectangles, a cone,
+    straight spokes). Rounded, uneven zones round the dial's rectangle (the rectangle always fits inside; zones that meet
+    are turned apart round the island, the biggest stays); headlands and bays on a warped coast; warped hills and a few
+    knolls, uneven cliffs; the mountain a massif along a ridge kept clear of the biggest zone and the cove
+    (`mountain.stretch`, `mountain.shoulder`), its peak a little off the middle, a shoulder peak, shelf edges that
+    wander instead of rings, a 5 m apron of open ground between it and any zone; curved spokes, a loop that wanders;
+    ragged arc edges, groves and clearings, rock outcrops, lush moss and clover by the pond and stream, more meadow kinds.
+  - **copperleaf_island** (new data, index.json's maps list): 178 x 171 m scene, land 157 x 150 m, the coast loop 472 m
+    (139 s walking), one bridge; `cam.orbit` pivot on the summit, `dead` 3, `lag` 0.6, `turn` 30 (IS-1 tunes them);
     `edge: "w"`, `waterKind: "sea"`, `far: "sea"`, `farH` 5, `flatFar` 1 (IS-3's skirt); no props (IS-4, IS-9).
 - Where the plan (the track file) was wrong or short: see the track file's "Checked in IS-2" (the town didn't fit
-  135 m; the lap is ~136 s, not ~90 or the ~105 I estimated in the plan; the sharp peak blocked every trail; findPath's
+  135 m; the lap is ~139 s, not ~90 or the ~105 I estimated in the plan; the sharp peak blocked every trail; findPath's
   30000-cell cap; a new game/js file has to be on a page; the terrain kinds without a letter). Also: CLAUDE.md's
   `gamedata.js` gotcha still holds (it is built from the data files by tools/build-data.mjs and ignored by git).
-- Verified: VERIFIED_PLACEHOLDER
+- Verified: unit tests 575 (8 new in island-gen.test.mjs, each with a planted fault seen to fail); lint, typecheck,
+  check:modules, format:check, check:data (144 files); 24 seeds (s0-s23) each pass the contract, reach the summit and
+  the dock, have no traps, every zone reached, one bridge, the town's path to the mountain, no notes; in a headless game
+  `?test=1&scene=copperleaf_island` opens and draws with no page errors and its 7 walking checks hold; pictures at
+  390 x 760 (the trail's stairs on the shelves; the coast barely reads under today's camera and haze). On version 1:
+  check-fast 22 of 22; smoke one problem, the bridge's jetty flag (fixed in version 2). Version 2's check-fast and smoke:
+  running when this was written; see the PR.
 - Risky:
   - **findPath's cap**: tap-to-walk from the town to the summit (102 m) fails with the default 30000 cells; the
     joystick isn't affected. When `copperleaf_island` becomes the hub (IS-5), long taps across it will stop short.
-  - **On the game page**: island-gen.js loads in the game (about 44 KB, unused there) because every game/js file must
+  - **On the game page**: island-gen.js loads in the game (about 57 KB, unused there) because every game/js file must
     be on a page; IS-6b can move it to the Studio's page (then the unit test's crawl reaches it from there).
-  - **The file is 628 KB** (27 KB gzipped; Copperleaf's is 73 KB, 14 KB gzipped): the steps grid is stored whole
+  - **The file is 660 KB** (30 KB gzipped; Copperleaf's is 73 KB, 14 KB gzipped): the steps grid is stored whole
     (base64 Int16 over the scene). `loadAllMaps` fetches it in the background after boot.
   - The lock compares exact numbers: a later generator version (ISLAND_GEN_VERSION 2) changes unlocked ground freely;
     a locked one is never touched.
@@ -60,8 +74,9 @@ mountain climbable, 9 the stream with a pond; 10 was answered before (reusable).
   - **IS-6a/6b**: `islandGenerate(dials, seed, { scenery }, prev)` is the call; it throws on a locked ground; `notes`
     say what didn't fit; `paths` are the loop and spokes as lines. The defaults' `zones` are dial rectangles; a kept
     (locked) zone in `prev` wins over its dial.
-  - **IS-5**: the town zone is 64 x 40 m facing south (z 23 to 63 m), the barn's 18 x 16 m and the pasture's 26 x 22 m
-    to the south-west and west; the flat level is 1.2 m; the hub is the town zone's middle.
+  - **IS-5**: the town zone holds a 64 x 40 m rectangle facing south (its rounded outline is a few metres bigger), the
+    barn's 18 x 16 m and the pasture's 26 x 22 m to the south-west and west; the flat level is 1.2 m; the hub is the town
+    zone's middle.
 - Next: IS-5 (needs IS-1 and IS-2) and IS-6b, IS-7 (need IS-2). Tag `is-2-done` is the owner's to push (after
   `is-0-done`).
 
