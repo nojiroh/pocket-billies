@@ -24,6 +24,7 @@ expose({
   frameSettingsState: [() => frameSettingsState],
   gameDataDials: [() => gameDataDials, v => (gameDataDials = v)],
   lookDials: [() => lookDials, v => (lookDials = v)],
+  playerBlur: [() => playerBlur, v => (playerBlur = v)],
   playerDials: [() => playerDials, v => (playerDials = v)],
   setEngineDataSource: [() => setEngineDataSource, v => (setEngineDataSource = v)],
 });
@@ -1097,6 +1098,12 @@ export function setEngineDataSource(v) {
 function gameDataDials() {
   const d = engineDataSource();
   return (d && d.defaults) || null;
+}
+/* CAM-3: the player's blur slider (Settings → Graphics → Blur): a factor on the game's blur, 1 by default (Medium) */
+export function playerBlur() {
+  const p = typeof saveData !== 'undefined' && saveData && saveData.preferences,
+    v = p ? p.blur : null;
+  return typeof v === 'number' && isFinite(v) ? Math.max(0, Math.min(1.5, v)) : 1;
 }
 /* alpha 0.5: a player's own expert dials (Settings → Graphics → Expert) come first */
 function playerDials() {

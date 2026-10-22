@@ -53,7 +53,14 @@ import {
   walkView,
   worldToScreen,
 } from './walk-view.js';
-import { PLAIN_LOOK, beginFrameSettings, endFrameSettings, engineContext, engineSetting } from './engine/settings.js';
+import {
+  PLAIN_LOOK,
+  beginFrameSettings,
+  endFrameSettings,
+  engineContext,
+  engineSetting,
+  playerBlur,
+} from './engine/settings.js';
 import {
   beginGpuTimer,
   endGpuTimer,
@@ -534,7 +541,8 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
     gl.blitFramebuffer(0, 0, rw, rh, 0, 0, rw, rh, gl.COLOR_BUFFER_BIT, gl.NEAREST);
   } else
     drawPostEffects(S, C, walkRenderer.focus, rw, rh, {
-      blur: BT ? BT.blur : sc.plain ? 0 : (sc.blur ?? 1) * (walkView.opt.blur ?? 1),
+      /* CAM-3: times the player's blur slider (Settings → Graphics → Blur), in battles too */
+      blur: (BT ? BT.blur : sc.plain ? 0 : (sc.blur ?? 1) * (walkView.opt.blur ?? 1)) * playerBlur(),
       fast: walkView.R < 0.75 || QE >= 1,
       noAO: QE >= 1,
       noRays: QE >= 3,
