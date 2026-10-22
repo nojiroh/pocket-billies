@@ -273,7 +273,8 @@ placeholders**; **the motif on the hub and the run's bookends** (title, Copperle
    as its countermelody.
 8. Placeholder hooks for town (with a counter), route, map, hazel, cave, meadow, trench, spore, crystal, spire.
 9. The motif plays as the airship takes off for a run (`runTakeOff`) and once on the payout screen.
-10. The fingerprint baseline written again, in its own commit.
+10. The fingerprint baseline written again, in its own commit (72: the motif jingle added), after checking every
+    commit against the one before it.
 
 Corrections to this section's plan, found in SND-4:
 - Item 6 deferred: only meadow, lake, thicket, ridge and autumn reach a run (rules.json `run.map.biomes`), and they

@@ -2,6 +2,50 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Sound track SND-4 - The Pokémon rework: themes - 2026-10-22
+Branch `sound` (PR #120). Started before the owner's word on the RL-8 play test, at the owner's request (main's ROADMAP
+already had RL-8 done and played). Plan approved in Plan Mode; the owner's answers: **placeholder hooks the owner
+edits, clearly named as placeholders**; **the motif on the hub and the run's bookends**; **merge main first**; **item 6
+(two new biome songs) deferred**.
+- Changed (one cause per commit):
+  - Merged main (RL-8, RL-9, RL-11, RL-12a, the island track): both sides kept in 10 files.
+  - check-sound.py renders the night version (`musicVariant`); four voices and bars 3-4 answering a hook (tracker.js;
+    `extra` keeps the title and the fall thick; `pluck`, bass/arp `none`); night versions by data (`trackerNight`,
+    `songVariant`, `night: false` on battle, indoor, hazel, title, fall; the Studio's Night switch; the first touch
+    starts on the night version); `hookName` and jingle `name` with the Check's placeholder notes; the title in D
+    mixolydian with the motif hook and a `motif` jingle; Copperleaf as a two-voice music box over the motif; placeholder
+    hooks for ten place songs; the motif on the run's take-off and the payout.
+  - Tests fixed for the new data (CI's lint job caught three); the Studio music check draws on hills.
+  - Song fingerprint baseline written again (72: + the motif jingle). Docs: sound-track.md, ROADMAP, CHANGELOG, TESTING.
+- Risky or unfinished:
+  - Nobody has heard any of it. Every hook is a placeholder by Claude, who can't listen: please play the title,
+    Copperleaf (day and Night), town, route and a run's biome songs in Studio → Sound → Music & sound, and on the phone.
+  - No song has its own night changes (the plan said "tuned by ear"): all use the default (−8 bpm, a fourth down, soft
+    drums). Write a `night` in the Studio where the default sounds wrong.
+  - Copperleaf has no bass or drums now, by design (Pallet Town); bars 7-8 are the composed lead alone.
+  - Battle songs and the legacy songs (city, mall, variants, innersun, hills) have no hooks; SND-5 does the battles.
+  - Tags can't be pushed (HTTP 403): `snd-4-done` exists only in this container.
+- Verified (what ran, what passed):
+  - Every commit: lint, typecheck, check:modules, check:data, format:check; unit tests 653 (647 before).
+  - Song fingerprints commit by commit, each against the commit before (a worktree): only the songs each commit should
+    change changed (the list is in the baseline commit, d4e9058); the baseline rendered twice is byte-identical.
+  - Full quick check on the merge (7f21679): 2043 s, 57 steps, 46 passed; the 11 problems are the known ones (v34,
+    v35, v38, v39/40, v44, v46, alpha 0.4, phase 08) and main's (Copperleaf terraces; RL-8 after the terraces step;
+    v31 "bowl map camera", which fails the same way alone on main).
+  - On the final code: smoke 15 of 15 (143 s); the full check's Sound settings, Song fingerprints (72, 0 changed) and
+    Run music steps; RL-8 alone (the run with the take-off and the payout) passes; check-studio-github.py
+    --only=music passes; the Studio self-test: 28 sections, the one known Rules undo problem.
+  - CI on 5b59e16: green. Not run: a second full quick check on the final code (only sound and the Studio's music
+    section changed after the merge, and their steps ran). Not tried on a phone.
+- Decisions I made (and why):
+  - The pad goes in four-voice songs (the triangle is the bass); the night version is the night's colour.
+  - A triangle lead keeps the triangle and moves the bass to the second pulse, rather than rewriting six songs' leads.
+  - "On the mast" is the run's take-off from the mast, not every town-to-town flight.
+  - Night switches at a night level of 0.6 and back below 0.4, so dusk doesn't flip the song.
+- Questions waiting for the owner: how the placeholders sound (keep, change or rename each; the Check lists them);
+  whether Copperleaf should keep a soft bass; whether to delete the legacy mall/verdigris where-rules.
+- Next session starts with: SND-5, battle and run music (the owner, 2026-10-22).
+
 ### Sound track SND-3 - The Studio's Music & sound section - 2026-10-22
 Branch `sound` (PR #120). Plan approved at the start in Plan Mode; the owner's answers: **a Sound group of its own**,
 **the tracker plays a hook and a counter now** (not from SND-4), **a cry per stage in lines/*.json, read by the game**.
