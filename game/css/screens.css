@@ -691,30 +691,6 @@ body.in-cs #nav {
     transform: translate(-50%, 10px);
   }
 }
-/* talking portraits in battle messages */
-.bmsg.has-face {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  padding-left: 8px;
-}
-.bmsg .msg-face {
-  flex: none;
-  width: 46px;
-  height: 56px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.12);
-  overflow: hidden;
-  display: grid;
-  place-items: end center;
-}
-.bmsg .msg-face img {
-  image-rendering: pixelated;
-  display: block;
-}
-.tr-face {
-  image-rendering: pixelated;
-}
 /* ---------- v16: conversations ---------- */
 .talk-layer {
   position: fixed;
@@ -973,55 +949,6 @@ body.photo #toast {
   display: block;
   margin-bottom: 8px;
 }
-/* v28: weather over the painted battle stage */
-#camWorld {
-  position: relative;
-}
-#camWorld[data-wx]:not([data-wx=''])::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 3;
-}
-#camWorld[data-wx='rain']::after,
-#camWorld[data-wx='storm']::after {
-  background: repeating-linear-gradient(
-    105deg,
-    transparent 0 14px,
-    rgba(200, 215, 255, 0.28) 14px 15px,
-    transparent 15px 31px
-  );
-  background-size: 120px 120px;
-  animation: wxRain 0.35s linear infinite;
-  background-color: rgba(40, 50, 80, 0.18);
-}
-#camWorld[data-wx='snow']::after {
-  background-image:
-    radial-gradient(circle, rgba(255, 255, 255, 0.9) 0 1.5px, transparent 2px),
-    radial-gradient(circle, rgba(255, 255, 255, 0.7) 0 1px, transparent 1.5px);
-  background-size:
-    46px 46px,
-    29px 29px;
-  animation: wxSnow 6s linear infinite;
-}
-#camWorld[data-wx='ash']::after {
-  background-image:
-    radial-gradient(circle, rgba(60, 50, 48, 0.8) 0 1.5px, transparent 2px),
-    radial-gradient(circle, rgba(255, 140, 60, 0.9) 0 1px, transparent 1.5px);
-  background-size:
-    40px 40px,
-    97px 97px;
-  animation: wxSnow 8s linear infinite;
-  background-color: rgba(90, 60, 50, 0.12);
-}
-#camWorld[data-wx='fog']::after {
-  background: linear-gradient(to top, rgba(230, 235, 240, 0.5), rgba(230, 235, 240, 0.15));
-}
-#camWorld[data-wx='night']::after {
-  background: rgba(16, 22, 60, 0.35);
-  mix-blend-mode: multiply;
-}
 @keyframes wxRain {
   to {
     background-position: -30px 120px;
@@ -1032,11 +959,6 @@ body.photo #toast {
     background-position:
       20px 460px,
       -10px 290px;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  #camWorld[data-wx]::after {
-    animation: none;
   }
 }
 /* v30: save slots */
@@ -1099,11 +1021,6 @@ html[data-contrast='high'] .pb {
 html[data-contrast='high'] :focus-visible {
   outline: 3px solid #e2b92c !important;
   outline-offset: 2px;
-}
-html[data-flash='off'] .evo.run.flash canvas,
-html[data-flash='off'] .hatch.flash {
-  animation: none !important;
-  filter: none !important;
 }
 html[data-targets='big'] .pb,
 html[data-targets='big'] nav#nav button,
@@ -1175,24 +1092,6 @@ html[data-targets='big'] .set-tabs button {
   to {
     transform: translateY(-60px);
     opacity: 0;
-  }
-}
-#battle.bt-rise :is(#dock, .cmd, .bmsg) {
-  animation: btRise 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) both;
-}
-#battle.bt-rise :is(#hb0, #hb1, .ticker) {
-  animation: btRiseTop 0.55s 0.08s cubic-bezier(0.2, 0.8, 0.2, 1) both;
-}
-#battle.bt-leave :is(#dock, .cmd, .bmsg) {
-  animation: btLeave 0.34s ease-in both;
-}
-#battle.bt-leave :is(#hb0, #hb1, .ticker) {
-  animation: btLeaveTop 0.34s ease-in both;
-}
-@media (prefers-reduced-motion: reduce) {
-  #battle.bt-rise *,
-  #battle.bt-leave * {
-    animation: none !important;
   }
 }
 /* v40: the six-choice dressing room */

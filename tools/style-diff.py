@@ -8,6 +8,7 @@ a rule's place in the cascade, so "it looks the same" is checked here property b
     python3 tools/style-diff.py --ref=HEAD~2       # against another revision
     python3 tools/style-diff.py --only=team,sheet  # only these screens
     python3 tools/style-diff.py --workers=3        # screens side by side in this many browsers (default 2)
+    python3 tools/style-diff.py --size=1180x820    # another page size (default 390x844, a phone)
 
 Exit 0 when nothing differs. A property that differs between two loads of the revision itself (a clock, a random
 position) is left out, and said so. The revision's game/ is unpacked under validation/style-diff/ (git ignored) and
@@ -20,6 +21,7 @@ ROOT = Path(__file__).resolve().parent.parent
 ARGS = sys.argv[1:]
 REF = next((a.split('=', 1)[1] for a in ARGS if a.startswith('--ref=')), 'HEAD')
 ONLY = next((a.split('=', 1)[1].split(',') for a in ARGS if a.startswith('--only=')), None)
+SIZE = [int(x) for x in next((a.split('=', 1)[1] for a in ARGS if a.startswith('--size=')), '390x844').split('x')]
 WORKERS = int(next((a.split('=', 1)[1] for a in ARGS if a.startswith('--workers=')), 2))
 OUT = ROOT / 'validation' / 'style-diff'
 
@@ -58,6 +60,9 @@ VIEWS = [
     ('settings-save', 'town', OPEN + "openSettings('save')", "!!document.querySelector('#ov .set-sheet')"),
     ('settings-help', 'town', OPEN + "openSettings('help')", "!!document.querySelector('#ov .set-sheet')"),
     ('battle', 'battle', '', "!!activeBattle&&document.querySelectorAll('#acts button').length>0"),
+    ('battle-moves', 'battle', "battleStage.speed=4;const go=()=>{if(activeBattle.phase==='choose'){}else{if(activeBattle.phase==='playing')tapMessage();else{const k=document.querySelector('[data-a=bback]');if(k)k.click()}setTimeout(go,200)}};go()", "!!activeBattle&&activeBattle.phase==='choose'"),
+    ('battle-team', 'battle', "battleStage.speed=4;const go=()=>{if(activeBattle.phase==='choose'){const b=document.querySelector('[data-a=bteam]');if(b)b.click();else setTimeout(go,200)}else{if(activeBattle.phase==='playing')tapMessage();else{const k=document.querySelector('[data-a=bback]');if(k)k.click()}setTimeout(go,200)}};go()", "!!activeBattle&&activeBattle.phase==='team'"),
+    ('battle-items', 'battle', "battleStage.speed=4;const go=()=>{if(activeBattle.phase==='choose'){const b=document.querySelector('[data-a=bitems]');if(b)b.click();else setTimeout(go,200)}else{if(activeBattle.phase==='playing')tapMessage();else{const k=document.querySelector('[data-a=bback]');if(k)k.click()}setTimeout(go,200)}};go()", "!!activeBattle&&activeBattle.phase==='items'"),
     ('talk', 'talk', '', "!!document.querySelector('.talk-layer')"),
     ('run-walk', 'run', '', "!!document.querySelector('.screen.s-walk')"),
     ('run-map', 'run', "uiState.tab='map';render()", "!!document.querySelector('.screen.s-map pb-day-chip')"),
@@ -115,6 +120,7 @@ DUMP = r"""() => {
 VALUES = "(i) => { const r = window.__sd.rows[i]; return { props: window.__sd.props, geometry: window.__sd.geometry, parts: r.parts }; }"
 DARK = "saveData.preferences.theme='dark';applyPreferences();0"
 LIGHT = "saveData.preferences.theme='light';applyPreferences();"
+BATTLE_RESET = "if(activeBattle&&activeBattle.phase!=='playing'){activeBattle.phase='choose';paintActions()}"
 # back to the plain screen between two views on one page
 RESET = OPEN + "uiState.setTab=null;uiState.mapSel=null;uiState.tab='walk';uiState.dex=null;uiState.guideTab=null;render();"
 
@@ -132,7 +138,7 @@ def unpack_ref():
 
 def open_fixture(b, base, fixture):
     errs = []
-    ctx = b.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=1)
+    ctx = b.new_context(viewport={'width': SIZE[0], 'height': SIZE[1]}, device_scale_factor=1)
     for s in (FROZEN_CLOCK, cf.NO_ACCOUNTS, cf.TEST_GLOBALS, cf.LOW_GRAPHICS): ctx.add_init_script(s)
     ctx.set_default_timeout(120000)
     pg = ctx.new_page()
@@ -147,7 +153,8 @@ def open_fixture(b, base, fixture):
 def show(pg, view, first):
     name, fixture, setup, cond = view
     pg.evaluate(f'()=>{{{LIGHT}}}')
-    if not first: pg.evaluate(f'()=>{{{RESET}}}')
+    # a battle redraws its own menu (render() would rebuild its shell without the buttons)
+    if not first: pg.evaluate(f'()=>{{{BATTLE_RESET if fixture == "battle" else RESET}}}')
     if setup: pg.evaluate(f'()=>{{{setup}}}')
     if not cf.until(pg, cond, 60): raise Exception(f'{name}: the screen never showed ({cond})')
     pg.evaluate('document.fonts.ready')
