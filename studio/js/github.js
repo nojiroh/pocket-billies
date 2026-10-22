@@ -12,7 +12,7 @@
 import { expose } from '../../game/js/test-globals.js';
 import { $ } from '../../game/js/util.js';
 import { escapeHtml } from './game-stand-ins.js';
-import { publishEmpty } from '../../game/js/logic/publish-plan.js';
+import { publishEmpty, publishOverlap } from '../../game/js/logic/publish-plan.js';
 import {
   ACTIONS,
   ask,
@@ -354,9 +354,28 @@ async function studioApiViaGithub(path, opt = {}) {
 /* everything saved in one go: a branch, one commit, a pull request */
 async function proposeOnGithub(summary, files) {
   if (!files.length) return null;
-  const base = await githubFetch(repoApiPath(`git/ref/heads/${GITHUB_CONFIG.branch}`)),
-    baseSha = base.object.sha,
-    baseCommit = await githubFetch(repoApiPath(`git/commits/${baseSha}`));
+  /* T0.2: made on the commit the Studio loaded; if main has moved on and changed files this proposal also writes,
+     say which before anything is sent (the pull request will show them as conflicts) */
+  const baseSha = await githubBase(),
+    head = (await githubFetch(repoApiPath(`git/ref/heads/${GITHUB_CONFIG.branch}`))).object.sha;
+  if (head !== baseSha) {
+    const cmp = await githubFetch(repoApiPath(`compare/${baseSha}...${head}`)),
+      both = publishOverlap(
+        files.map(f => f.path),
+        (cmp.files || []).map((/** @type {{ filename: string }} */ f) => f.filename)
+      );
+    if (
+      both.length &&
+      !(await ask(
+        `Since you opened the Studio, main has new commits that changed ${both.length === 1 ? 'a file' : both.length + ' files'} this proposal also writes: ${both.map(f => '<code>' + escapeHtml(f) + '</code>').join(', ')}. Your pull request will show ${both.length === 1 ? 'it' : 'them'} as conflicts for the owner to settle. To start from the new version instead, cancel, reload the Studio and make the change again. Propose anyway?`,
+        'Propose anyway',
+        'Cancel',
+        'Main has moved on'
+      ))
+    )
+      throw Object.assign(new Error('Not sent.'), { cancelled: true });
+  }
+  const baseCommit = await githubFetch(repoApiPath(`git/commits/${baseSha}`));
   const tree = [];
   for (const f of files) {
     if (f.gone) {
@@ -445,6 +464,7 @@ if (githubMode.on) {
       btn.textContent = 'Sending…';
       pr = await proposeOnGithub(what, files);
     } catch (e) {
+      if (e.cancelled) return toast('Not sent: everything is still unsaved.');
       return toast(
         `Couldn’t send the changes: ${e.message}. Nothing was lost: everything is still unsaved, so Propose again.`,
         'err'

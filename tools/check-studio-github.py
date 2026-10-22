@@ -1011,7 +1011,7 @@ def publish_checks(b, url, errs):
     import base64
     tree = [{'type': 'blob', 'path': str(p.relative_to(ROOT)), 'sha': 'x', 'size': p.stat().st_size}
             for p in (ROOT / 'game' / 'art').rglob('*') if p.is_file()]
-    st = {'fail': {}, 'hold': None, 'held': [], 'log': [], 'head': 'base1', 'reads': []}
+    st = {'fail': {}, 'hold': None, 'held': [], 'log': [], 'head': 'base1', 'reads': [], 'compare': []}
 
     def api(route):
         u = urlparse(route.request.url)
@@ -1027,6 +1027,7 @@ def publish_checks(b, url, errs):
             return route.fulfill(json={'sha': 'x', 'number': 7, 'html_url': 'x', 'object': {'sha': 'x'}, 'tree': {'sha': 'x'}})
         if p == '/user': return route.fulfill(json={'login': 'nojiroh'})
         if p.rstrip('/') == '/repos/nojiroh/pocket-billies': return route.fulfill(json={'permissions': {'push': True, 'admin': True}})
+        if '/compare/' in p: return route.fulfill(json={'total_commits': 2, 'files': [{'filename': f} for f in st['compare']]})
         if '/git/trees/' in p:
             st['reads'].append(('tree', p.rsplit('/', 1)[-1]))
             return route.fulfill(json={'tree': tree})
@@ -1136,10 +1137,39 @@ def publish_checks(b, url, errs):
     if sum(1 for k, _ in st['log'] if k == 'pulls') != 1: errs.append(f"publish: the held proposal made {sum(1 for k, _ in st['log'] if k == 'pulls')} pull requests")
     left = pg.evaluate(pending)
     if not (left['art'] and left['data']): errs.append(f'publish: an edit made while sending was cleared without being sent: {left}')
+    # 4. T0.2: main moved on. A proposal sharing a file with main's new commits names it before anything is sent;
+    # one that doesn't goes without a question. Either way the commit is made on the loaded commit (base1).
+    def moved_case(files, answer):
+        st['log'].clear(); st['head'] = 'main2'; st['compare'] = files
+        make_edits('moved-' + answer)
+        start('publish check: main moved')
+        t1 = time.time(); asked = None
+        while time.time() - t1 < 30 and not idle():
+            h = pg.locator('#dlg h2')
+            if h.count() and h.first.text_content() == 'Main has moved on':
+                asked = pg.locator('#dlg .dlg-body').first.text_content()
+                pg.locator('#dlg button', has_text=answer).click()
+            a = pg.locator('#dlg button', has_text='Save anyway')
+            if a.count(): a.first.click()
+            ok = pg.locator('#dlg button', has_text='OK')
+            if ok.count(): ok.first.click()
+            time.sleep(0.2)
+        return asked
+    asked = moved_case(['game/data/meta.json', 'game/data/moves.json'], 'Cancel')
+    if not asked or 'game/data/meta.json' not in asked or 'moves.json' in asked: errs.append(f'publish: main moved and changed meta.json, but the question was {asked!r}')
+    if st['log']: errs.append(f"publish: a cancelled proposal still sent {[k for k, _ in st['log']]}")
+    if not all(pg.evaluate(pending).values()): errs.append('publish: a cancelled proposal dropped pending changes')
+    for files, answer in ((['game/data/meta.json'], 'Propose anyway'), (['game/data/moves.json'], 'none')):
+        asked = moved_case(files, answer)
+        if answer == 'none' and asked: errs.append(f'publish: main changed only other files, yet it asked: {asked!r}')
+        parents = [json.loads(bd).get('parents') for k, bd in st['log'] if k == 'commits']
+        if parents != [['base1']]: errs.append(f'publish: the proposal was not made on the loaded commit: parents {parents}')
+        if any(pg.evaluate(pending).values()): errs.append(f'publish: after proposing on a moved main ({answer}), changes still show as pending')
+    st['head'] = 'base1'; st['compare'] = []
     # put the page back (nothing pending) so the context closes cleanly
     pg.evaluate("studioState.artDirty.delete(%s); delete studioState.D.meta.publishCheck; studioState.dirty = studioState.rigsDirty = false" % json.dumps(ART))
     n = sum(1 for e in errs if e.startswith('publish:'))
-    print(f'publish: failures at 5 steps, a proposal that cannot be built, a held send ({n} problem(s))', flush=True)
+    print(f'publish: failures at 5 steps, a proposal that cannot be built, a held send, main moved on ({n} problem(s))', flush=True)
     ctx.close()
 
 
