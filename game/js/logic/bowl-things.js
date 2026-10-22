@@ -7,6 +7,7 @@
    Logic only: no DOM, runs in Node; world-bowl.js draws with it. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { bowlSeedShift } from './bowl.js';
 /* eslint-disable no-func-assign */
 expose({
   BOWL_BUILDING_GROUP: [() => BOWL_BUILDING_GROUP],
@@ -139,14 +140,14 @@ export function bowlThingHash(/** @type {number} */ i, /** @type {number} */ j) 
 /** @typedef {{ x: number, y: number, style: string, s: number, region: string }} BowlTree */
 /** clumps of trees between places: in patches (a slow noise) on land that suits them (not under water or snow, not
  * on cliffs or rivers, a little wet), clear of the places' own ground and of the routes; each clump a few trees of its
- * region's kinds. Deterministic.
+ * region's kinds. Deterministic; RL-8b: a world's seed moves the patches and the clumps (0: as made).
  * @param {{ n: number, e: number, h: Float32Array, c?: Float32Array, wet?: Float32Array, flow?: Uint8Array }} G
  * @param {{ x: number, y: number, reach: number, region: string }[]} places
  * @param {[number, number, number, number][]} roads segments seen from above
  * @param {(x: number, y: number) => number} relAt the height above the water at a point
  * @param {number} [spacing] between clump centres, in bowl radii
  * @param {Record<string, string[]>} [trees] each region's tree kinds (worldmap.json regions.*.trees) @returns {BowlTree[]} */
-export function bowlClumps(G, places, roads, relAt, spacing = 0.026, trees = BOWL_REGION_TREES) {
+export function bowlClumps(G, places, roads, relAt, spacing = 0.026, trees = BOWL_REGION_TREES, seed = 0) {
   /** @type {BowlTree[]} */
   const out = [];
   if (!G.c) return out;
@@ -172,17 +173,22 @@ export function bowlClumps(G, places, roads, relAt, spacing = 0.026, trees = BOW
       for (const p of places) if (Math.hypot(x - p.x, y - p.y) < p.reach + 0.004) return false;
       return roadGap(x, y) > 0.012;
     };
-  const n = Math.ceil(2 / spacing);
+  const n = Math.ceil(2 / spacing),
+    [ox, oy] = bowlSeedShift(seed),
+    si = Math.round(ox * 10),
+    sj = Math.round(oy * 10);
   for (let j = 0; j < n; j++)
     for (let i = 0; i < n; i++) {
-      const cx = -1 + (i + 0.2 + bowlThingHash(i, j) * 0.6) * spacing,
-        cy = -1 + (j + 0.2 + bowlThingHash(j, i + 91) * 0.6) * spacing;
+      const cx = -1 + (i + 0.2 + bowlThingHash(i + si, j + sj) * 0.6) * spacing,
+        cy = -1 + (j + 0.2 + bowlThingHash(j + sj, i + 91 + si) * 0.6) * spacing;
       if (cx * cx + cy * cy > 0.9) continue;
       /* forest patches: a slow wave pattern, denser where the land is wetter */
       const k = corner(cx, cy),
         wet = G.wet ? G.wet[k] : 0.3,
-        patch = Math.sin(cx * 11.3 + Math.sin(cy * 7.1) * 1.7) * Math.cos(cy * 9.7 - Math.sin(cx * 5.3) * 1.3);
-      if (patch + wet * 0.8 < 0.55 + bowlThingHash(i + 3, j + 7) * 0.4) continue;
+        px = cx + ox,
+        py = cy + oy,
+        patch = Math.sin(px * 11.3 + Math.sin(py * 7.1) * 1.7) * Math.cos(py * 9.7 - Math.sin(px * 5.3) * 1.3);
+      if (patch + wet * 0.8 < 0.55 + bowlThingHash(i + 3 + si, j + 7 + sj) * 0.4) continue;
       if (!dry(cx, cy)) continue;
       let near = places[0],
         nd = 9;

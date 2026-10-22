@@ -69,6 +69,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   bowlSeamTurn: [() => bowlSeamTurn, v => (bowlSeamTurn = v)],
   // @ts-expect-error -- replaced on purpose
+  bowlSeedShift: [() => bowlSeedShift, v => (bowlSeedShift = v)],
+  // @ts-expect-error -- replaced on purpose
   bowlSpotOf: [() => bowlSpotOf, v => (bowlSpotOf = v)],
   // @ts-expect-error -- replaced on purpose
   bowlSun: [() => bowlSun, v => (bowlSun = v)],
@@ -213,16 +215,25 @@ export const BOWL_RELIEF_DEFAULT = /** @type {[number, number]} */ ([0.008, 0.06
 export const BOWL_RELIEF_MAX = 0.115;
 
 /** @typedef {{ x: number, y: number, h: number, r: number }} BowlFeature */
+/** RL-8b: where a world's seed moves the bowl's noise to (a run's own hills, patches and trees; 0: as made) @param {number} seed
+ * @returns {[number, number]} */
+export function bowlSeedShift(seed) {
+  const s = Math.abs(Math.round(seed || 0)) % 9973;
+  return s ? [(s % 997) * 1.731 + 11.3, (s % 991) * 2.377 + 7.9] : [0, 0];
+}
 /** @typedef {{ max: number, default: [number, number], kinds: Record<string, [number, number]> }} BowlReliefLook */
-/** each place's bump or dip, from the world map's look (worldmap.json relief; without it the values above)
- * @param {LocationData[]} places @param {BowlReliefLook | null} [R] @returns {BowlFeature[] & { max?: number }} */
-export function bowlReliefFeatures(places, R = null) {
+/** each place's bump or dip, from the world map's look (worldmap.json relief; without it the values above); RL-8b: a
+ * world's seed moves the hills between them (bowlSeedShift)
+ * @param {LocationData[]} places @param {BowlReliefLook | null} [R] @param {number} [seed]
+ * @returns {BowlFeature[] & { max?: number, seed?: number }} */
+export function bowlReliefFeatures(places, R = null, seed = 0) {
   const byId = (/** @type {string} */ id) => places.find(p => p.id === id),
     kinds = R ? R.kinds : BOWL_RELIEF_KINDS,
     def = R ? R.default : BOWL_RELIEF_DEFAULT;
-  /** @type {BowlFeature[] & { max?: number }} */
+  /** @type {BowlFeature[] & { max?: number, seed?: number }} */
   const out = [];
   out.max = R ? R.max : BOWL_RELIEF_MAX;
+  out.seed = seed;
   for (const p of places) {
     if (!p.bowl || 'under' in p.bowl) continue;
     const s = bowlSpotOf(p, byId),
@@ -254,14 +265,15 @@ export function bowlRoll(x, y) {
 /** the relief at a point: the places' bumps and dips, a little roll, kept within BOWL_RELIEF_MAX and fading out
  * beyond the rim @param {BowlFeature[]} F @param {number} x @param {number} y */
 export function bowlRelief(F, x, y) {
-  const max = /** @type {BowlFeature[] & { max?: number }} */ (F).max ?? BOWL_RELIEF_MAX;
+  const max = /** @type {BowlFeature[] & { max?: number }} */ (F).max ?? BOWL_RELIEF_MAX,
+    [ox, oy] = bowlSeedShift(/** @type {BowlFeature[] & { seed?: number }} */ (F).seed || 0);
   let h = 0;
   for (const f of F) {
     const d2 = ((x - f.x) ** 2 + (y - f.y) ** 2) / (f.r * f.r);
     if (d2 < 9) h += f.h * Math.exp(-d2);
   }
   /* broad hills and dales between the places, and a little roll on them */
-  h += bowlRoll(x / 3.2, y / 3.2) * 0.032 + bowlRoll(x, y) * 0.009;
+  h += bowlRoll(x / 3.2 + ox, y / 3.2 + oy) * 0.032 + bowlRoll(x + ox, y + oy) * 0.009;
   const r = Math.hypot(x, y),
     fade = r <= 1 ? 1 : Math.max(0, 1 - (r - 1) / 0.08);
   return Math.max(-max, Math.min(max, h)) * fade || 0;
@@ -291,7 +303,8 @@ export function bowlGroundGrid(F, n = BOWL_GROUND_CELLS, sea = null) {
     h = new Float32Array(w * w),
     coast = sea ? bowlCoastGrid(sea, n) : null,
     c = coast ? coast.c : null,
-    depth = (sea && sea.opt && sea.opt.depth) || BOWL_SEA_DEPTH;
+    depth = (sea && sea.opt && sea.opt.depth) || BOWL_SEA_DEPTH,
+    [ox, oy] = bowlSeedShift(/** @type {BowlFeature[] & { seed?: number }} */ (F).seed || 0);
   for (let j = 0; j <= n; j++)
     for (let i = 0; i <= n; i++) {
       const x = -e + (2 * e * i) / n,
@@ -301,7 +314,7 @@ export function bowlGroundGrid(F, n = BOWL_GROUND_CELLS, sea = null) {
         /* the land comes down to the water's edge, the sea floor falls away from it */
         /* high land meets the sea as a cliff (it keeps its height almost to the edge), low land slopes to a beach */
         /* some stretches of coast are headlands: the land stands up there and drops to the sea as a cliff */
-        const head = Math.min(1, Math.max(0, (bowlRoll(x / 2.2 + 5.3, y / 2.2 - 1.7) + 0.08) * 5));
+        const head = Math.min(1, Math.max(0, (bowlRoll(x / 2.2 + 5.3 + ox, y / 2.2 - 1.7 + oy) + 0.08) * 5));
         if (c[j * w + i] <= 0) rel += head * 0.024;
         /* and land never sinks below the water (that would be a dry pit): its dips flatten out into low ground */
         if (rel < 0.004) rel = 0.004 * Math.exp((rel - 0.004) / 0.004);

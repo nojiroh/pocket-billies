@@ -27,6 +27,7 @@ import {
   bowlRelief,
   bowlReliefFeatures,
   bowlSeaInput,
+  bowlSeedShift,
   bowlSpotOf,
   bowlSun,
   bowlWaterLevel,
@@ -439,7 +440,14 @@ function worldMapLook() {
       trees: BOWL_REGION_TREES[r] || BOWL_REGION_TREES.starter,
     };
   }
-  return { sea: W.sea || null, relief: W.relief || null, regions, kinds: W.kinds || BOWL_KIND_GROUND };
+  /* RL-8b: seed moves the hills, ground patches, trees and clouds (0 as made; a run's own from its seed) */
+  return {
+    sea: W.sea || null,
+    relief: W.relief || null,
+    regions,
+    kinds: W.kinds || BOWL_KIND_GROUND,
+    seed: W.seed || 0,
+  };
 }
 /* where a place is on the bowl: x, y seen from above and the ground's height there */
 export function worldMapSpot(i) {
@@ -505,7 +513,7 @@ function worldBowlSpots() {
       BOWL_METRES,
       look.sea
     ),
-    F = bowlReliefFeatures(LOCATIONS, look.relief),
+    F = bowlReliefFeatures(LOCATIONS, look.relief, look.seed),
     G = bowlGroundGrid(F, undefined, sea);
   bowlCamUseGround(G);
   const byId = id => LOCATION_BY_ID[id];
@@ -597,7 +605,21 @@ function worldBowlTerrainStart() {
     slope[k] = Math.hypot(relAt(k + 1) - relAt(k - 1), relAt(k + gw) - relAt(k - gw)) / (2 * step);
   const slopeG = { n: G.n, e: G.e, h: slope };
   const L = K.layer;
-  g.terrain = { K, idx, near, lists, row: 0, ready: false, stamped: new Set(), dirty: true, gl: null };
+  /* RL-8b: a world's seed moves the ground's patches (bowlSeedShift, in squares of 9 m) */
+  const [ox, oy] = bowlSeedShift(g.F.seed || 0);
+  g.terrain = {
+    K,
+    idx,
+    near,
+    lists,
+    row: 0,
+    ready: false,
+    stamped: new Set(),
+    dirty: true,
+    gl: null,
+    ox: ox * 37,
+    oy: oy * 37,
+  };
   g.terrain.fill = rows => {
     const T = g.terrain,
       end = Math.min(N, T.row + rows);
@@ -618,8 +640,8 @@ function worldBowlTerrainStart() {
           ls = T.lists[p],
           d = Math.hypot(x - s.x, y - s.y),
           rel = bowlGridHeight(g.G, x, y) - bowlHeight(Math.min(1, r)) /* the relief, read from the grid: cheap */,
-          m = (x * BOWL_METRES) / 9,
-          n = (y * BOWL_METRES) / 9,
+          m = (x * BOWL_METRES) / 9 + T.ox,
+          n = (y * BOWL_METRES) / 9 + T.oy,
           th = BOWL_BAYER[(j & 3) * 4 + (i & 3)],
           /* calm ground (fix 2026-10-19: it read as camouflage): mostly a list's first ground, the others in broad
              patches some 40 m across, their edges dithered over a few squares; no outline rings */
@@ -1079,7 +1101,15 @@ function worldBowlClumpsInto(W) {
     if (S[a] && S[b] && !S[a].under && !S[b].under) roads.push([S[a].x, S[a].y, S[b].x, S[b].y]);
   const look = worldMapLook(),
     trees = Object.fromEntries(Object.entries(look.regions).map(([k, R]) => [k, R.trees])),
-    T = bowlClumps(G, places, roads, (x, y) => bowlGridHeight(G, x, y) - bowlWaterLevel(x, y), undefined, trees),
+    T = bowlClumps(
+      G,
+      places,
+      roads,
+      (x, y) => bowlGridHeight(G, x, y) - bowlWaterLevel(x, y),
+      undefined,
+      trees,
+      look.seed
+    ),
     k = BOWL_THING_SCALE / BOWL_METRES;
   for (const t of T) {
     const a = Math.sin(t.x * 733.1 + t.y * 197.7) * Math.PI;
@@ -2032,9 +2062,12 @@ function worldBowlSkyTick() {
     now = performance.now(),
     dt = Math.min(0.1, (now - (S.last || now)) / 1000);
   S.last = now;
-  if (level !== S.level) {
+  /* RL-8b: another world's seed lays the clouds out again (7 as made) */
+  const cseed = 7 + ((worldBowl.ground && worldBowl.ground.F && worldBowl.ground.F.seed) || 0);
+  if (level !== S.level || cseed !== S.seed) {
     S.level = level;
-    S.clouds = bowlCloudLayout(level);
+    S.seed = cseed;
+    S.clouds = bowlCloudLayout(level, cseed);
     S.parts = null;
   }
   if (now - S.at > 5000) {
