@@ -13,6 +13,11 @@ Tags `is-N-done` (the owner pushes them). Every session starts in Plan Mode and 
   turns it a full 360 degrees. The mountain stays behind you; the sea and coast frame the bottom of the screen.
 - **Mountain** in the middle, **forest**, a **cove**, **beaches**, several terrain kinds.
 - **Room left for the town and the barn**, the barn with a **pasture**.
+- **The hub, not a node** (the owner, 2026-10-22, after IS-0): the island is the main hub, never a run node. It gets
+  **its own editor in the Studio, with an orbiting camera** (IS-6a), and is **locked once it is right**. Answers in
+  chat: the lock freezes the **ground** (coast, heights, ground letters, steps, zones; a change fails the data
+  check; props, people and buildings stay free; unlocking is a deliberate toggle); the island is shaped by **dials,
+  then hand edits**, then locked; the generator is built **reusable** (question 10).
 
 ## What exists today (read from main a10bfc6)
 - `game/data/maps/copperleaf.json`: 88 x 76 m, 1 m tiles and heights, `edge: "g"` (grass past the edge), no exits,
@@ -78,7 +83,8 @@ So the parallel sessions mesh, the new map fields are fixed first, in the schema
 - `island`: `{ c: [x, z], coast: [[x, z], ...] }`. The coastline as a closed polygon (the world map reads it).
 - `zones`: `[{ k, poly, lock }]` with `k` one of town, barn, pasture, forest, mountain, cove, beach, path. A `lock`ed
   zone's ground and props are never touched when the island is generated again (the hand-placed town survives).
-- `islandGen`: the generator's dials and seed, kept in the map so the ground can be made again.
+- `islandGen`: the generator's dials and seed, kept in the map so the ground can be made again; `lock` and `hash`
+  freeze the ground (logic/island.js `islandGroundHash`; added in IS-0 after the owner's direction).
 - `edge: "w"` and the sea's water kind.
 - A crude `test_island` map (a cone, a flat ring, sea round it) so IS-1 and IS-3 have an island on day one.
 
@@ -92,12 +98,13 @@ So the parallel sessions mesh, the new map fields are fixed first, in the schema
 | IS-3 | Sea all round | sea past the edge to the horizon on every side, waves and foam on the whole coast, the far backdrop and sky from every angle, wet sand | IS-0 | 1 | 1 |
 | IS-4 | Island props (batch 11 folded in) | the barn as a model, pasture fence, gate, trough, hay; beach (driftwood, shells, beach grass, rocks), the dock, mountain (boulders, scree, cairn, lookout), forest floor | IS-0 | 1-2 | 1 |
 | IS-5 | Copperleaf moves onto the island | the town, barn, mast and people moved into their zones; `copperleaf_island` becomes `copperleaf`; acts, npcSpots, life, wild, fixtures, tests, goldens | IS-1, IS-2 | 1-2 | 2 |
-| IS-6 | Studio island dials | the generator's dials in the Studio map generator, preview, regenerate without touching locked zones | IS-2 | 1 | 2 |
+| IS-6a | Hub island editor | a Studio section of its own for the hub: the orbit view, the 2D map with coast, zones and pivot, hand edits (paint, height), the ground lock | IS-0 | 1-2 | 1 |
+| IS-6b | Hub editor dials | the generator's dials in the hub editor, live preview, "Use this island" leaving locked zones alone, refused while locked | IS-2, IS-6a | 1 | 2 |
 | IS-7 | The world map's island | the hub's bowl map draws the real island from `island.coast` and its ground | IS-2 | 1 | 2 |
 | IS-8 | Barn and pasture | the fenced pasture by the barn; ranch Billies wander in it; tap one to open the ranch | IS-4, IS-5, RL-10 | 1 | 3 |
 | IS-9 | Dressing, variety and phone pass | forest density, the terrain kinds placed, ambient life (gulls, crabs), wild patches, phone frame times, the play test | IS-3, IS-4, IS-5 | 1-2 | 3 |
 
-About 10-14 sessions. Up to four at once in wave 1, three in wave 2, two in wave 3.
+About 11-15 sessions. Up to five at once in wave 1, three in wave 2, two in wave 3.
 
 ### IS-0 Contract and test island (do first, alone)
 Add this file, the ROADMAP row and the contract fields (schema, types, check-data, an export). Make `test_island`
@@ -153,10 +160,24 @@ sea past it, `cam.orbit` set. A quick fixture `?fixture=island` that boots into 
   scene hash (remade on purpose), the opening fall's landing, the quick check's picture baseline (CI makes it).
 - A saved hub position that is now sea or rock moves to the nearest walkable spot on load (one small rule).
 
-### IS-6 Studio island dials
-The generator's dials in the Studio's map generator: size, coast wobble, mountain size and height, forest arc and
-density, cove angle and depth, beach arcs, cliffs, stream on/off, seed. Live preview; "Make again" leaves locked
-zones alone. Studio files only.
+### IS-6a Hub island editor (the owner, 2026-10-22)
+A Studio section of its own ("Hub island", not inside Walk scenes), editing the hub's map (`copperleaf`; a picker for
+`test_island` until IS-5). Studio files only, plus one guard in map-editor.js.
+- **Orbit view**: the game's renderer (`mountWalkView`) with its own `look` from logic/free-camera.js, the target the
+  island's middle (`island.c`). Drag turns round it, wheel or pinch zooms, Shift-drag tilts; auto-orbit, snap to
+  N/E/S/W, "Walk the coast" (IS-1's logic/camera-orbit.js once merged).
+- **2D map** beside it: the coast, zones by kind (locked ones hatched), the pivot and its dead-zone circle. Tools:
+  Paint ground and Height (map-editor.js's brush functions, exported, not copied), Zones (move, add, remove points;
+  kind and lock), Pivot (`cam.orbit.c`, `dead`).
+- **Lock**: "Lock the ground" stores `islandGen.lock` and `islandGen.hash`; the ground tools, zones and pivot go
+  read-only (props stay editable here and in Walk scenes, whose ground brushes refuse a locked map too). "Unlock"
+  asks first and clears the hash. check-data refuses a changed locked ground (IS-0).
+- Check: a check-fast Studio step (the section opens and draws, a drag turns the orbit, locking disables the brushes).
+
+### IS-6b Hub editor dials
+The generator's dials in the hub editor: size, coast wobble, mountain size and height, forest arc and density, cove
+angle and depth, beach arcs, cliffs, stream on/off, seed. Live preview (map-generate.js's draft pattern); "Use this
+island" leaves locked zones alone and is refused while the ground is locked.
 
 ### IS-7 The world map's island
 The hub's bowl map draws the real island: `island.coast` as the outline, its ground painted as each place's ground
@@ -173,7 +194,7 @@ placed (question 5), the phone's frame times at 8 angles round the coast, then t
 
 ## Running sessions side by side
 - **One owner per file at a time.** `copperleaf.json`: IS-5 only. `logic/mapgen.js`: nobody here while TR-2c part 2
-  is open. `walk/camera.js`: IS-1 only. Water and sky: IS-3 only. Prop data and art: IS-4 only. Studio: IS-6 only.
+  is open. `walk/camera.js`: IS-1 only. Water and sky: IS-3 only. Prop data and art: IS-4 only. Studio: IS-6a/6b only.
 - **Shared files merge by keeping both**: HANDOFF.md entries (newest on top), CHANGELOG.
 - **Never hand-merge `game/js/hooks.js`**: after a merge run `npm run modules` and commit what it makes.
 - **Ratchet ceilings** (lint's spacing count): two branches each under the ceiling can go over it together (PRs
@@ -194,6 +215,7 @@ placed (question 5), the phone's frame times at 8 angles round the coast, then t
 8. **The pasture**: ranch Billies roam in it, up to ~6 (rec) / fence and props only for now.
 9. **The stream and fall** from the mountain to the cove: yes (rec) / no.
 10. **The generator for later islands**: built reusable now, a Studio "island" kind later (rec) / one-off tool.
+    **Answered 2026-10-22: reusable.**
 11. **New game's fall** lands in the town square (rec) / on the beach.
 12. **Rooms** stay as they are, bigger inside (rec, no change).
 

@@ -58,8 +58,10 @@ town node needs it.
 - **Island track** (docs/phases/island-track.md, the owner's brief 2026-10-22): Copperleaf becomes a real island, one
   map with an orbit camera round a mountain, forest, cove, beaches, room for the town and the barn's pasture. IS-0
   (contract and test island) first and alone; then wave 1 (IS-1 orbit camera, IS-2 island generator, IS-3 sea all
-  round, IS-4 island props), wave 2 (IS-5 Copperleaf moves on, IS-6 Studio dials, IS-7 the world map's island), wave 3
-  (IS-8 barn and pasture after RL-10, IS-9 dressing and the phone pass). Tags `is-N-done`.
+  round, IS-4 island props, IS-6a the hub's own Studio editor with an orbiting camera and the ground lock), wave 2
+  (IS-5 Copperleaf moves on, IS-6b the editor's dials, IS-7 the world map's island), wave 3 (IS-8 barn and pasture
+  after RL-10, IS-9 dressing and the phone pass). The owner (2026-10-22): the island is the hub, never a run node,
+  and is locked once it is right. Tags `is-N-done`.
 - **Project Story** (docs/phases/project-story.md): S1-S3 and S7 done, S8 partly (RL-8: New game plays the fall only; the city's files stay).
   S6 (Hazel vs Blake as a real battle) is unblocked by RL-4; S4, S5 and S8's leftovers wait until the first cut has
   been played. RL-8 (the owner's answer): the opening is the fall only, Blake cut from it (his data kept), and Hazel's
