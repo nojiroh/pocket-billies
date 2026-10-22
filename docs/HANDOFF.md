@@ -81,232 +81,66 @@ moot (the generator lays the town out).
   were not brought over (the old meadow's flowers, trees, reeds); the island needs dressing.
 - Next: IS-8 (after RL-10), IS-9. Tag `is-5-done` is the owner's to push.
 
-### Island track IS-1 - Orbit camera - 2026-10-22
-Branch `claude/is-1-orbit-camera`, from IS-0's `claude/new-session-3qlesh` (PR #119, not merged yet: the owner started
-wave 1 before `is-0-done`); the PR goes against main and shrinks once #119 merges. Ran beside IS-2, IS-3, IS-4 and IS-6a.
-Plan approved in Plan Mode; the owner's answers: question 2, the camera **holds still on the summit** (your own turn
-still works); question 3, the **sun stays put in the world**, with an Engine toggle to compare; the tree picture fix
-in sprites.js done here.
-- Changed (one cause per commit):
-  - **logic/camera-orbit.js** (pure, unit-tested; on the game and Studio pages, for IS-6a's "Walk the coast"):
-    `orbitYawAt` (the yaw that looks from you at `c`; 0 from the south, so the first view is today's), `orbitStart`,
-    `orbitStep` (the lag as a time constant of `lag` s; inside `dead` the target holds; the yaw kept unwrapped so the
-    easing always takes the short way past +/-180; trimmed back near 0 every 8 laps), `orbitStickYaw` (the joystick's
-    frame, below), `orbitWalkStep` (a step taken round the middle: the part across the radius moves you along your
-    circle), `wrapAngle`.
-  - **walk/camera.js**: `orbitOf(sc)`: the orbit applies outdoors, not in a room, not in the Studio's free camera,
-    with Engine > Camera > Orbit on. The base yaw is the orbit's and your turn (`walkRenderer.yaw`) is added on top,
-    limited to the map's `turn` (`cameraTurnLimit()`). No scene clamps on the target while orbiting. Four spots that
-    assumed a north view now use the base yaw (all equal to before at yaw 0, so every other map is unchanged): TR-3's
-    ground-ahead for the rise, the lean ahead of you (`rw > rh ? 2 : 1`), the swoop's offset, `landmarkTilt`. A new
-    scene, a cut (`camT` cleared, `opt.instant`) or a jump of over 8 m starts the orbit where it belongs.
-    `walkRenderer.orbit` holds the state. A turn kept from a map with a wider limit (Copperleaf's 35) is clamped to
-    the island's on arrival. The battle, cutscene and Studio cameras don't go through it.
-  - **walk-view.js** (joystick and keys): on an orbiting island the stick walks by `orbitStickYaw` (plus your turn)
-    and steps with `orbitWalkStep`; elsewhere it is unchanged (the camera's right).
-  - **sprites.js**: `landmarkTilt(P, sc, yaw = 0)`; a tree's crossing picture fades by `|sin yaw|`, not `|yaw|`.
-  - **Engine > Camera**: `orbit` (on) and `sunTurns` (off; on turns the sun with the camera in engine/light.js
-    `sunLight`).
-  - **Debug log**: the scene line's `orbit` (yaw, your turn, `hold` on the summit, `stickLocked`; degrees).
-  - **check-fast's island step**: 8 places round the coast (the camera looks at the middle within 0.06 rad and aims
-    within 4 m of you), the summit holds, the turn limit is 30 degrees, holding right goes an eighth of the way round
-    and stays within 1 m of its 44 m circle with no yaw jump.
-- Where the plan was wrong or short:
-  - **The walk drift fix needed more than "steer by the target yaw"**: a step straight along the tangent still adds
-    s^2/2r to the radius every frame (0.5 m a lap at 20 fps running, more on slow frames), and last frame's target is
-    stale by a frame. The stick reads the way to the middle from where you stand now, and the step goes round the
-    middle: a lap ends on its circle to 1e-13 m in Node (8, 20, 60 fps), 45.0 m of 45 in the browser.
-  - **Crossing the summit holding up** would bounce you at the dead zone's edge with any stick frame that follows
-    the orbit (the way to the middle flips half a turn as you step out the far side). So while the stick is held its
-    frame stays locked from the moment you are inside the dead zone until you let go. Leaving the summit northward
-    holding up, you keep walking north while the camera swings round behind you (lag 0.6 s); push again and up is
-    toward the middle.
-  - Shadows and culling needed nothing: both work from the camera's own view (screen rays, the frustum), not a
-    facing. The shadow map stops 6 m past the scene, where only sea is.
-  - The sun was already fixed in the world (Engine > Sun > angle); question 3's "fixed" option was free.
-- Verified: unit tests 577 (10 new); lint, typecheck, check:modules, format:check, check:data (143 files);
-  check-fast 22 of 22 (the island step 48 s with two browsers); smoke all fine. In a 390 x 760 page with full graphics
-  at 8 angles: the camera looks at the cone from every side, no page errors, TR-3's rise and rock fade 0 everywhere
-  on the ring; a full lap holding right (194 s of software drawing) ended at 45.0 m. Copperleaf's camera is unchanged
-  (no orbit; every changed spot is identical at yaw 0).
-- **Found for IS-3 (not fixed: water is IS-3's)**: from the west and east the far sea floats over the near ground.
-  The `flatFar` skirt (walk/ground-mesh.js ~775) is four quads of 4 corners each, and the world's bowl curve
-  (`curveY`, about 0.0012 x d^2 past 70 m from the scene's middle on test_island) lifts each corner by its own
-  distance. The west and east quads run 300 m long, so their inner edge at x 0 is lifted ~10 m (the corners at z -90
-  and 210) and the water sheet covers the sand and the ring up to ~20 m in. The north-facing camera never stood past
-  those edges, so it never showed. Fix: cut the skirt into a grid (e.g. 10 m cells) so the curve bends it like the
-  ground. From the south and north it looks right.
-- Risky:
-  - The stick's locked frame (above) is new behaviour; worth a feel on the phone at the summit.
-  - With "Sun turns with the camera" on, the shadow cache redraws every frame you turn (the sun moves): a
-    comparison setting, not for the phone's frame times.
-  - studio/index.html gained a script line next to camera-rise.js; IS-6a may add the same line (keep one when merging).
-  - Phone frame times at 8 angles are IS-9's; nothing here measured a phone.
-- Next: IS-3 (the sea skirt above), IS-6a can call `orbitStep`/`orbitStart` for "Walk the coast", IS-5 when IS-2
-  lands. Tag `is-1-done` is the owner's to push (after `is-0-done`).
 
-### Island track IS-3 - Sea all round - 2026-10-22
-Branch `claude/is-3-sea-all-round`, from IS-0's `claude/new-session-3qlesh` (PR #119, not merged yet; started before
-`is-0-done` at the owner's word). Wave 1, beside IS-1 (camera.js), IS-2 (generator), IS-4 (props), IS-6a (Studio).
-Plan approved in Plan Mode as proposed. Owns water and sky: touched no camera, mapgen, Studio or world-bowl code.
+### Island track IS-7 - The world map's island - 2026-10-22
+Branch `claude/is-7-world-map-island`, from the wave-2 base `claude/new-session-3qlesh` (fcda361: main with IS-0 and
+IS-1, plus the IS-2, IS-3, IS-4 and IS-6a branches, PRs #122, #124, #123, #126, not merged yet); the PR goes against
+main and shrinks once those merge (merge main in then). Ran beside IS-6b (the Studio's dials). Plan approved in Plan
+Mode; its three "ask me" items went with the recommendations: the island at its true size, its relief lifted x3 like
+the bowl's buildings and trees, the buildings at the usual 3x.
 - Changed (one cause per commit):
-  - **logic/sea.js** (new, on the page): `seaSkirt` (rings round the scene out to 400 m, the inner ring on the edge
-    every half metre with rounded corners), `seaRamp` (the edge's water depth to the open sea's over 25 m),
-    `seaCentre` (`island.c`, else `cam.orbit.c`, else the middle), `seaCalmAt` (a `cove` zone's calm, soft 6 m edge).
-  - **The skirt** (walk/ground-mesh.js, the `flatFar` block): the four quads 90 m out became one ring mesh at the
-    sea's level along the edge (the commonest edge water level, not a hard -0.12), its first ring as deep as the
-    scene's water beside it; the scene's edge vertices count the edge cell twice instead of nothing (they were half
-    as deep: part of the seam). Opaque past the 8 m border of land. ~23k vertices on test_island (23 rings x 992).
-  - **No far props on a `flatFar` map** (grass-build.js): the trees scattered past the edge stood on the sea.
-  - **The bowl's far wall** (sky shader only): outline averaged over 5 texels (no stair steps), a soft top, its foot
-    hazed into the horizon.
-  - **The coast** (water shader, uniform `uSea` from water-data.js `setShoreUniforms`, so the ground shader has it
-    too): whitecaps and a long swell roll in toward `seaCentre` from every side (they were stretched along x, streaks
-    from the east and west); surf lines over the shallows breaking on the whole coast; a bigger swash; wet sand above
-    the line on the same clock; past 140 m no fish, rings or caustics (cost). A cove's calm rides in the vertex's
-    kind (kind + calm * 0.4; `int(k + .5)` still gives the kind; the shader takes the rest apart). Only K = sea on a
-    `flatFar` map changes; other maps' water is as it was.
-  - **test_island**: a stand-in `cove` zone over the east shore's water (zone only, no ground change), via
-    tools/build-test-island.py.
-  - **check-fast island step**: the skirt reaches 400 m at the sea's level; draws from 8 angles through the free
-    camera hook (`walkView.opt.look`). Planted fault (no skirt) seen to fail.
-- Where the plan was wrong or short:
-  - The "turquoise band" from above was the scene's own shallow edge water, not land: the seam was depth, as planned,
-    plus the half-depth edge vertices (new).
-  - Step 3's extra fade of the far sea into the sky wasn't needed: the fog already takes it to the haze by 400 m
-    with no edge; only the cheap far path went in.
-  - The bowl wall's colour is the far bowl's own (phase 10), a pale cream; I softened it, didn't recolour it.
-  - With full graphics the sky looking south washes white (bloom and glare into the 12:30 sun): direction dependent,
-    so it belongs to the sun question (3) of IS-1, not changed here. The diagonal glints on the sea are the existing
-    glint pattern, not the whitecaps.
-- Verified: unit tests 572 (5 new: no gap at 48 angles out to 400 m, the inner ring on the edge, the depth at the
-  edge and by 25 m, the triangles' turn, calm); lint, typecheck, check:modules, format:check, check:data (143 files);
-  check-fast 22 of 22; smoke before the shader work and at the end; headless pictures at 390 x 760 from S, E, N, W, SE,
-  low S, three outward views and three coast close-ups, before and after (in the PR).
+  - **logic/bowl.js**: a place whose map has `island.coast` keeps exactly that coast on the bowl (`bowlIslandPoly`,
+    `bowlPolyDistance`): land inside, sea outside, no coast noise, the map's own sea stays sea, no `sea.island` round
+    round it (`bowlIsles` gives `[]`: still an island world). With `heightOf` its ground's own heights replace the
+    bump of its kind and the hills between places (`BOWL_ISLAND_LIFT` 3, `BOWL_ISLAND_BASE` 0.004). Out to 80 m the
+    coast's distance is read exactly (the box's distance from 30 m out made a square in the water's depth).
+  - **logic/bowl-island.js** (new, game page after bowl-things.js): `bowlIslandMapId` (the map by its fields: the
+    place's own when it has a coast; else for the hub, world node 0, the biggest map with a coast and plots, so
+    `copperleaf_island` now and `copperleaf` after IS-5's rename, never `test_island`); `bowlIslandHeights` (smooth
+    land plus step raises, every 2 m); `bowlIslandRadius`; `bowlIslandPlotThings` (a model per plot kind,
+    `BOWL_PLOT_PROPS`, turned to face where the plot does, and the barn in its zone; skipped where a building or a
+    prop of the plot's kinds stands).
+  - **world-bowl.js**: every read of a place's map goes through the resolver (the sea input, the route mask, the
+    stamps, the things, the clumps); the island's file is fetched once (not during a run) and the ground worked out
+    again with its heights (`worldBowlReset`); stamped only where the bowl has land; plot models drawn; the landmark
+    still from copperleaf.json; `ground.islandMap` names the map drawn.
+  - **worldmap.json** `sea.island` 0.2 to **0.12** (the coast reaches 120 m from `island.c`); a unit test keeps it
+    within 10% of the coast's reach. The schema's description says so.
+  - **The World map test** (Bowl map test) step "The hub's island": 24 points round the coast, land 12 m in and sea
+    12 m out; the highest ground drawn where it is (24.9 m, drawn 23.6 m); a model on every free plot; ground laid on.
+  - Checks changed on purpose: no bowl river is made on an island drawn from its map (its stream is its own), so the
+    fast check's and the World map test's river count want 0 there (1 on an island world without one, 4 elsewhere).
+- Where the plan or the docs were wrong: phase 10's "1.5 m a pixel" ground is ~1 m (2048 pixels over 2000 m); the
+  camera's zoom limit stays (the plan offered distMin 0.45 to 0.3: at 0.45 the island already fills a phone's width
+  and the town reads, pictures in the PR); `test_island` does have `islandGen` (no seed, no plots). Also the well and
+  the airship station never showed on the bowl (not "buildings" by bowl-things.js's rule); on the plots they do.
+- Not touched (other sessions own them): copperleaf.json (IS-5), the Studio (IS-6b; its World map look's Island
+  dial help still says "0.2 is 200 m", still true), walk/camera.js, the sea and sky, prop data and art, mapgen.js.
+- Verified: unit tests 609 (bowl-island.test.mjs new, 10 tests; a planted fault in the resolver seen to fail), lint,
+  typecheck, check:modules, check:data (145 files), format; check-fast's world map check (with the run's world beside
+  it); the in-game World map test headless: every step passes but "The Map tab opens" (9 frames in 4 s: software
+  drawing at ~3 fps; the base fcda361 fails it the same way), the new step "copperleaf_island: its coast (240
+  points; 48 land and sea checks hold), its top 24.9 m drawn 23.6 m (x3), 25 plot buildings"; pictures at 390 x 760
+  (home, close, close from above, the whole bowl). The whole fast check 23 of 23. Smoke: one problem, the in-game
+  full test's step timing out at 60 s on a slow run (the Studio step took 94 s in the same run); run alone it passes
+  here (65 s) as on the base (57 s).
 - Risky:
-  - Phone cost: the skirt covers much of the screen when looking out; its far fragments skip the small things, but
-    the reflection sample and fog remain. Needs the frame times on the phone (`?fixture=island`).
-  - `gamedata.js` is generated (`npm run data`); a stale one hides data changes in local pictures.
-  - The calm-in-the-kind trick: anything new that reads the water mesh's kind must round, not truncate.
-  - Every `flatFar` map gets the new sea: test_island, five legacy maps, Studio-made coast scenes. Runs don't use the
-    coast biome.
-- Not run: the full quick check's picture compare (its baseline is made by CI).
-- Next: switch the pictures to `copperleaf_island` when IS-2 lands (its real cove gets the calm from its zone); IS-1's
-  sun choice (question 3) decides the backlit side. Tag `is-3-done` is the owner's to push.
-
-### Island track IS-4 - Island props (phase 09 batch 11's barn folded in) - 2026-10-22
-Branch `claude/is-4-island-props`, from the IS-0 branch `claude/new-session-3qlesh` (PR #119, not merged yet; the
-owner asked to start wave 1 before `is-0-done`). PR against main; its diff shrinks once #119 merges. Wave 1 beside
-IS-1, IS-2, IS-3 and IS-6a. Plan approved in Plan Mode as proposed (defaults 1-5 taken). This session owns the prop
-data and art; no map but the showcase is touched.
-- Changed (one cause per commit; tools/build-props-island.py, rerunnable, in steps `new barn scree forest`):
-  - **New props**, every one finished on every side for the orbit camera: pasture `fence_gate` (matches
-    `fence_wood`, 2.2 m), `water_trough`, `hay_round`, `hay_feeder`; beach `driftwood` (3 shapes as variants),
-    `shore_rocks` (3), `tidepool_rim`, `beach_grass` (flat on purpose: 4 forms, sways) and `shells` (a ground decal,
-    3 forms); cove `fishing_boat` (moored: `bob`) and `net_rack`; mountain `boulder_granite` (3), `cairn`,
-    `summit_lookout` (a stone platform with a rail, scope, flag and bench; a landmark); `forest_litter` (a ground
-    decal, 3 forms). Tags `island` plus their place. Each model's fallback picture is **baked from the model** by the
-    builder (a small rasterizer, scene/next/island/*.png): seen from the front and above, cel-lit, outlined.
-  - **The barn** (batch 11's) as a model under its key, batch 7's way: the House kit with a **gambrel** roof, red
-    board walls, braced sliding doors, the hay loft door and its hoist, a lamp, a weather vane, side windows, a back
-    door, a loft window, a woodpile under a lean-to. Its five looks are colour swaps; `room: int_barn`, the door at the
-    big doors, name and tags kept; footprint 5.5 x 4.1 m (was 5.4 x 4).
-  - **Swapped in** as models under their keys: `scree` (base and four forms) and `log_mossy`, `stump_mossy`; their
-    old pictures stay the fallbacks. **Golden scenes remade on purpose**: scree moves the props hash of `feature`
-    and `terraced` (only that part; a model's placement keeps its size, `s`).
-  - **Showcase** `test_props_island` (64 x 58 m): sea and a walkable pier (a `bridges` entry, `pier: 1`) to the south,
-    the beach, a fenced paddock with the gate, the barn three times (a look and a turned one), a mountain corner and
-    forest floor; seven `shots`; `cam.orbit` set for IS-1's camera.
-- Where the plan was wrong or short:
-  - Many of the track's "new" props already were models: `fence_wood` and its post, `haybale`, `rowboat`,
-    `dock_post`, `buoy`, rocks, `boulder_lichen`, `stone_wall`, `waystone`, `log`, `stump`. Reused, not duplicated.
-  - **The walkable dock is a map field**, not a prop: `bridges` with `pier: 1` (Copperleaf's wood bridge is one).
-    IS-5/IS-9 place the island's; the showcase has one.
-  - **The barn's old `build` plan said a gable**; its picture is a gambrel. The model follows the picture.
-  - A roof made by the kit's 4-sided cone has closed ends: the gable's loft door and window go on the roof's end face,
-    as the kit's gableF does, or the roof hides them.
-  - `lookout_tower` stays batch 11's; the summit has its own prop.
-- Verified: unit tests 567 (2 golden scenes remade on purpose); lint, typecheck, check:modules, format:check,
-  check:data (144 files); a full rerun of the builder writes nothing; check-fast 22 of 22; smoke no problems. Headless
-  pictures (390 x 760, low graphics) of the showcase at 8 camera turns a full circle (the free camera) and close-ups
-  of the barn (front, both sides, back, a look, turned), the boats and pier, the paddock, the lookout, beach,
-  mountain and forest; Copperleaf's barn in the town. No page errors.
-- Risky:
-  - Triangles (from the builder's mesh): barn ~3,400, fishing boat ~3,700, net rack ~1,600, lookout ~1,400, the rest
-    under 1,000 (scree 230-360). Not measured on a phone; IS-9 measures.
-  - Scree is placed widely on runs (ridge, snow, canyon): every placement is a model now. Small, but many.
-  - The baked pictures are a flat-lit approximation (rocks without their lumps); they show only with models off or
-    as the far view of a neighbouring scene.
-  - The fishing boat bobs (`bob` 0.09) on water tiles only; on land it sits still.
-  - The barn's footprint grew 0.1 m each way; Copperleaf's barn has room round it (checked in the picture).
-- Not run: the full quick check's picture compare (CI makes its baseline); the new map's `shots` join it.
-- Phone check wanted: `?test=1&scene=test_props_island` (turn the camera round the barn, the boats, the lookout);
-  Copperleaf's barn and its door into the ranch; a run with a ridge node (scree); export the debug log.
-- Next: IS-5 places these on `copperleaf_island` (the barn in its zone, the pier at the cove); IS-8 the pasture with
-  `fence_wood` and `fence_gate`; batch 11's remaining list: boulder_mossy, campfire, lookout_tower, wind_sail_flower
-  and the rooms' 20 furniture props. Tag `is-4-done` is the owner's to push.
-
-### Island track IS-6a - Hub island editor - 2026-10-22
-Branch `claude/is-6a-hub-island-editor`, made from IS-0's branch `claude/new-session-3qlesh` (PR #119, not merged yet;
-the owner asked to start wave 1 before `is-0-done`), PR against main (its diff shrinks once #119 merges). Ran beside
-IS-1..IS-4; kept to Studio files plus the guard in map-editor.js. Plan approved in Plan Mode with the owner's four
-answers: Walk the coast under the game's own walk camera; props only in Walk scenes; Copperleaf view-only until IS-5;
-the coast hand-editable.
-- Changed (one cause per commit):
-  - **map-editor.js, no behaviour change**: `paintGroundBrush` (the round ground brush, out of bindEditorMap) and
-    `sculptHeights(sc, m, o)` taking its settings; Walk scenes passes its own.
-  - **game/js/logic/hub-island.js** (Studio page only; 9 unit tests): the orbit view's frame (the whole island from
-    the south, `FREE_CAM`'s field of view), sides S/W/N/E (yaw 0 looks north, so the camera is south), a drag's turn
-    and tilt; the coast's and zones' points (nearest, insert on the nearest edge including the closing one, move on
-    the scene, remove never under three; a new zone a 12 m square); lock, unlock, `groundLockRefusal`; the maps listed
-    (Copperleaf first, then every map with an island; view-only without a coast); `hubCoastLap`, the walk round.
-    logic/island.js joins the Studio's page too.
-  - **The Hub island section** (studio/js/hub-island.js; World & places after Walk scenes; left pane only, like the
-    other 3D views): the orbit view (mountWalkView with its own `look`, the pointer caught before the walk view's as
-    the free camera does: drag turns, Shift-drag or right button tilts, wheel or pinch zooms; Auto-orbit, S W N E,
-    Whole island, Walk the coast); the map (each ground letter's average colour, heights with a 2 m contour, coast,
-    zones by kind with locked ones hatched, pivot and dead zone, the island's middle, where the camera stands, on a
-    layer of its own so it moves without redrawing the ground); tools Paint ground, Shape the land, Coast & zones
-    (kind, lock, add, remove), Pivot (Shift-drag: the island's middle; the dead zone); the Ground lock card.
-  - **The guard** in Walk scenes: on a locked island Paint, Fill, Shape the land, Cliffs & stairs, Curved road,
-    Resize and Flatten refuse with the reason; the Map card says so. Props, water, exits stay free.
-  - **The Studio's Check** lists `islandProblems` for every map (as check-data); "Show me" opens Hub island.
-  - **check-fast**: "The Studio's Hub island", a Studio page of its own (see Verified).
-  - **Fixes found reviewing the diff**: the height brush clamped every stroke to -8..12 m (Walk scenes' limit), which
-    would cut test_island's 16 m peak (and IS-2's ~22 m one) to 12; its floor and ceiling are settings now, the hub
-    editor -8..40 m, Walk scenes unchanged. Walk the coast's button resets after a walk that ended away.
-  - **CI's first run** failed the new step ("the orbit view never looked at the island"); reproduced locally with
-    runs side by side: the island's frames take seconds each in headless software GL and come back to back, which
-    starves the page timers that until() polls on (the camera was set a moment after the wait gave up). The step
-    polls from Python now (`poll()` in check-fast) with drawing()'s waits; five runs side by side pass.
-  - Docs: STUDIO.md (a Hub island section, the table row, the left-pane list), the track file ("Done in IS-6a"),
-    CHANGELOG.
-- Where the plan (the track file) was wrong or short:
-  - "Walk the coast (IS-1's logic/camera-orbit.js once merged)": not needed. The game's walk camera reads the map's
-    `cam.orbit`, so the walk shows IS-1's orbit by itself once it merges; until then it is today's fixed camera.
-  - "one guard in map-editor.js": one helper, asked in seven places (the ground tools, Resize, Flatten); the Curved
-    road (map-editor-tools.js) paints ground too. map-generate.js only makes new maps and needs none.
-  - "the 2D map ... (map-editor.js's brush functions, exported, not copied)": the height brush read Walk scenes'
-    settings and clamp; it takes them as an argument now (see Fixes).
-  - Planned as three commits (section, map, lock bar); landed as one, since the section's card holds all three.
-- Verified: unit tests 576 (9 new); lint, typecheck, check:modules, format:check; check-fast 23 of 23 (the new step
-  67 s on a page of its own, beside the others; the island's 3D view draws about one frame in 3 s in headless
-  software GL, so it is not on the other Studio checks' page); smoke: no problems (171 s); full quick check (39 min): 9 problems, the same 9 old steps
-  that fail on main (roster counts 117/61, empty voxel bushes, buildings without a plan, the biped walk cycle, the
-  running step's "float division by zero"; see RL-8b's and TR-2's entries), none in what this branch touches.
-  Headless pictures at 1600 x 1000 (orbit from the south and the east, the map with zones and handles, locked,
-  walking the coast, Copperleaf view-only): no page errors.
-- Risky:
-  - Walk scenes' own height brush still clamps to -8..12 m: one stroke on a TR-2 mountain (up to 20 m) or on the
-    island's mountain in Walk scenes cuts it to 12 (pre-existing; left as it was; a one-line change if wanted).
-  - The orbit view and Walk scenes share the one walk view; leaving the section mid-walk leaves the walker's route in
-    place until the section is opened again.
-  - Locking stores the hash of the ground as the Studio holds it; Save writes it. A hand edit of the file afterwards
-    fails check-data, as intended.
-  - hooks.js unchanged (317 names); a merge with IS-1..IS-4 can still need `npm run modules`.
-- Not done: the dials and live preview (IS-6b, after IS-2); copperleaf editing (after IS-5).
-- Next: IS-6b once IS-2 lands (the dials beside logic/hub-island.js; "Use this island" refused while locked: the
-  check is `hubGroundLocked`). Tag `is-6a-done` is the owner's.
+  - **The fetch**: the island's file (1.2 MB, 52 KB gzipped) is fetched when the map first opens if `loadAllMaps`
+    hasn't brought it yet, and the ground is worked out a second time (headless ~200-260 ms, the hub's before 160-210).
+    The outline is right from the first frame; the mountain and the ground come a moment later.
+  - **Size on screen**: at true size the island is about half the old round blob; the home view shows it with a lot
+    of sea. If the phone says it's too small, the fix is the home view's zoom for the hub, not a bigger island.
+  - **The town at 3x on its plots**: the plots are laid out for buildings at 1x, so at 3x the houses stand close; in
+    the headless pictures they read as separate buildings. One number (`BOWL_THING_SCALE`, shared with every place)
+    if the phone shows them crowded.
+  - **IS-5**: when the town's buildings become props on the plots, the plot models step aside by themselves (tested);
+    the barn's zone model too once a barn prop stands within 20 m of the zone's middle. After the rename the resolver
+    takes copperleaf by its own coast; nothing here names an id. `sea.island` must follow any reshaping (the test says).
+  - Headless the landmark (the oak) is still the red block seen since RL-7 (its picture not loaded): look on the phone.
+- For the sessions alongside: **IS-5** see above; **IS-6b**: a reshaped island trips the `sea.island` unit test on
+  purpose (set it to the coast's reach / 1000); the Studio's World map look could show that number next to its dial.
+- Next: the owner's phone look (the Map tab in Copperleaf, zoomed out and in; the Bowl map test from the debug menu;
+  export the debug log); tag `is-7-done` is the owner's to push. Then IS-8 and IS-9 (wave 3).
 
 ### Island track IS-2 - Island ground generator - 2026-10-22
 Branch `claude/is-2-island-gen`, from IS-0's `claude/new-session-3qlesh` (PR #119, not merged yet: the owner started
@@ -412,6 +246,237 @@ mountain climbable, 9 the stream with a pond; 10 was answered before (reusable).
   - **IS-7**: the world map can draw the plots as the town's buildings until IS-5 places them.
 - Next: IS-5 (needs IS-1 and IS-2) and IS-6b, IS-7 (need IS-2). Tag `is-2-done` is the owner's to push (after
   `is-0-done`).
+
+### Island track IS-6a - Hub island editor - 2026-10-22
+Branch `claude/is-6a-hub-island-editor`, made from IS-0's branch `claude/new-session-3qlesh` (PR #119, not merged yet;
+the owner asked to start wave 1 before `is-0-done`), PR against main (its diff shrinks once #119 merges). Ran beside
+IS-1..IS-4; kept to Studio files plus the guard in map-editor.js. Plan approved in Plan Mode with the owner's four
+answers: Walk the coast under the game's own walk camera; props only in Walk scenes; Copperleaf view-only until IS-5;
+the coast hand-editable.
+- Changed (one cause per commit):
+  - **map-editor.js, no behaviour change**: `paintGroundBrush` (the round ground brush, out of bindEditorMap) and
+    `sculptHeights(sc, m, o)` taking its settings; Walk scenes passes its own.
+  - **game/js/logic/hub-island.js** (Studio page only; 9 unit tests): the orbit view's frame (the whole island from
+    the south, `FREE_CAM`'s field of view), sides S/W/N/E (yaw 0 looks north, so the camera is south), a drag's turn
+    and tilt; the coast's and zones' points (nearest, insert on the nearest edge including the closing one, move on
+    the scene, remove never under three; a new zone a 12 m square); lock, unlock, `groundLockRefusal`; the maps listed
+    (Copperleaf first, then every map with an island; view-only without a coast); `hubCoastLap`, the walk round.
+    logic/island.js joins the Studio's page too.
+  - **The Hub island section** (studio/js/hub-island.js; World & places after Walk scenes; left pane only, like the
+    other 3D views): the orbit view (mountWalkView with its own `look`, the pointer caught before the walk view's as
+    the free camera does: drag turns, Shift-drag or right button tilts, wheel or pinch zooms; Auto-orbit, S W N E,
+    Whole island, Walk the coast); the map (each ground letter's average colour, heights with a 2 m contour, coast,
+    zones by kind with locked ones hatched, pivot and dead zone, the island's middle, where the camera stands, on a
+    layer of its own so it moves without redrawing the ground); tools Paint ground, Shape the land, Coast & zones
+    (kind, lock, add, remove), Pivot (Shift-drag: the island's middle; the dead zone); the Ground lock card.
+  - **The guard** in Walk scenes: on a locked island Paint, Fill, Shape the land, Cliffs & stairs, Curved road,
+    Resize and Flatten refuse with the reason; the Map card says so. Props, water, exits stay free.
+  - **The Studio's Check** lists `islandProblems` for every map (as check-data); "Show me" opens Hub island.
+  - **check-fast**: "The Studio's Hub island", a Studio page of its own (see Verified).
+  - **Fixes found reviewing the diff**: the height brush clamped every stroke to -8..12 m (Walk scenes' limit), which
+    would cut test_island's 16 m peak (and IS-2's ~22 m one) to 12; its floor and ceiling are settings now, the hub
+    editor -8..40 m, Walk scenes unchanged. Walk the coast's button resets after a walk that ended away.
+  - **After merging main (IS-0, IS-1)**: IS-1's `orbitOf` is off whenever `walkView.opt.freeCam` is set, and the
+    Studio sets it on every 3D preview (viewport.js), so Walk the coast still showed the fixed camera. The hub view
+    takes the mark off while it walks (`hubWalkCamera`) and puts it back after; on test_island's east side the camera's
+    yaw read -1.58 rad (looking west at the middle).
+  - **CI's first run** failed the new step ("the orbit view never looked at the island"); reproduced locally with
+    runs side by side: the island's frames take seconds each in headless software GL and come back to back, which
+    starves the page timers that until() polls on (the camera was set a moment after the wait gave up). The step
+    polls from Python now (`poll()` in check-fast) with drawing()'s waits; five runs side by side pass.
+  - Docs: STUDIO.md (a Hub island section, the table row, the left-pane list), the track file ("Done in IS-6a"),
+    CHANGELOG.
+- Where the plan (the track file) was wrong or short:
+  - "Walk the coast (IS-1's logic/camera-orbit.js once merged)": not needed. The game's walk camera reads the map's
+    `cam.orbit`, so the walk shows IS-1's orbit (once the free-camera mark is off, above).
+  - "one guard in map-editor.js": one helper, asked in seven places (the ground tools, Resize, Flatten); the Curved
+    road (map-editor-tools.js) paints ground too. map-generate.js only makes new maps and needs none.
+  - "the 2D map ... (map-editor.js's brush functions, exported, not copied)": the height brush read Walk scenes'
+    settings and clamp; it takes them as an argument now (see Fixes).
+  - Planned as three commits (section, map, lock bar); landed as one, since the section's card holds all three.
+- Verified: unit tests 576 (9 new); lint, typecheck, check:modules, format:check; check-fast 23 of 23 (the new step
+  67 s on a page of its own, beside the others; the island's 3D view draws about one frame in 3 s in headless
+  software GL, so it is not on the other Studio checks' page); smoke: no problems (171 s); full quick check (39 min): 9 problems, the same 9 old steps
+  that fail on main (roster counts 117/61, empty voxel bushes, buildings without a plan, the biped walk cycle, the
+  running step's "float division by zero"; see RL-8b's and TR-2's entries), none in what this branch touches.
+  Headless pictures at 1600 x 1000 (orbit from the south and the east, the map with zones and handles, locked,
+  walking the coast, Copperleaf view-only): no page errors.
+- Risky:
+  - Walk scenes' own height brush still clamps to -8..12 m: one stroke on a TR-2 mountain (up to 20 m) or on the
+    island's mountain in Walk scenes cuts it to 12 (pre-existing; left as it was; a one-line change if wanted).
+  - The orbit view and Walk scenes share the one walk view; leaving the section mid-walk leaves the walker's route in
+    place until the section is opened again.
+  - Locking stores the hash of the ground as the Studio holds it; Save writes it. A hand edit of the file afterwards
+    fails check-data, as intended.
+  - hooks.js unchanged (317 names); a merge with IS-1..IS-4 can still need `npm run modules`.
+- Not done: the dials and live preview (IS-6b, after IS-2); copperleaf editing (after IS-5).
+- Next: IS-6b once IS-2 lands (the dials beside logic/hub-island.js; "Use this island" refused while locked: the
+  check is `hubGroundLocked`). Tag `is-6a-done` is the owner's.
+
+### Island track IS-4 - Island props (phase 09 batch 11's barn folded in) - 2026-10-22
+Branch `claude/is-4-island-props`, from the IS-0 branch `claude/new-session-3qlesh` (PR #119, not merged yet; the
+owner asked to start wave 1 before `is-0-done`). PR against main; its diff shrinks once #119 merges. Wave 1 beside
+IS-1, IS-2, IS-3 and IS-6a. Plan approved in Plan Mode as proposed (defaults 1-5 taken). This session owns the prop
+data and art; no map but the showcase is touched.
+- Changed (one cause per commit; tools/build-props-island.py, rerunnable, in steps `new barn scree forest`):
+  - **New props**, every one finished on every side for the orbit camera: pasture `fence_gate` (matches
+    `fence_wood`, 2.2 m), `water_trough`, `hay_round`, `hay_feeder`; beach `driftwood` (3 shapes as variants),
+    `shore_rocks` (3), `tidepool_rim`, `beach_grass` (flat on purpose: 4 forms, sways) and `shells` (a ground decal,
+    3 forms); cove `fishing_boat` (moored: `bob`) and `net_rack`; mountain `boulder_granite` (3), `cairn`,
+    `summit_lookout` (a stone platform with a rail, scope, flag and bench; a landmark); `forest_litter` (a ground
+    decal, 3 forms). Tags `island` plus their place. Each model's fallback picture is **baked from the model** by the
+    builder (a small rasterizer, scene/next/island/*.png): seen from the front and above, cel-lit, outlined.
+  - **The barn** (batch 11's) as a model under its key, batch 7's way: the House kit with a **gambrel** roof, red
+    board walls, braced sliding doors, the hay loft door and its hoist, a lamp, a weather vane, side windows, a back
+    door, a loft window, a woodpile under a lean-to. Its five looks are colour swaps; `room: int_barn`, the door at the
+    big doors, name and tags kept; footprint 5.5 x 4.1 m (was 5.4 x 4).
+  - **Swapped in** as models under their keys: `scree` (base and four forms) and `log_mossy`, `stump_mossy`; their
+    old pictures stay the fallbacks. **Golden scenes remade on purpose**: scree moves the props hash of `feature`
+    and `terraced` (only that part; a model's placement keeps its size, `s`).
+  - **Showcase** `test_props_island` (64 x 58 m): sea and a walkable pier (a `bridges` entry, `pier: 1`) to the south,
+    the beach, a fenced paddock with the gate, the barn three times (a look and a turned one), a mountain corner and
+    forest floor; seven `shots`; `cam.orbit` set for IS-1's camera.
+- Where the plan was wrong or short:
+  - Many of the track's "new" props already were models: `fence_wood` and its post, `haybale`, `rowboat`,
+    `dock_post`, `buoy`, rocks, `boulder_lichen`, `stone_wall`, `waystone`, `log`, `stump`. Reused, not duplicated.
+  - **The walkable dock is a map field**, not a prop: `bridges` with `pier: 1` (Copperleaf's wood bridge is one).
+    IS-5/IS-9 place the island's; the showcase has one.
+  - **The barn's old `build` plan said a gable**; its picture is a gambrel. The model follows the picture.
+  - A roof made by the kit's 4-sided cone has closed ends: the gable's loft door and window go on the roof's end face,
+    as the kit's gableF does, or the roof hides them.
+  - `lookout_tower` stays batch 11's; the summit has its own prop.
+- Verified: unit tests 567 (2 golden scenes remade on purpose); lint, typecheck, check:modules, format:check,
+  check:data (144 files); a full rerun of the builder writes nothing; check-fast 22 of 22; smoke no problems. Headless
+  pictures (390 x 760, low graphics) of the showcase at 8 camera turns a full circle (the free camera) and close-ups
+  of the barn (front, both sides, back, a look, turned), the boats and pier, the paddock, the lookout, beach,
+  mountain and forest; Copperleaf's barn in the town. No page errors.
+- Risky:
+  - Triangles (from the builder's mesh): barn ~3,400, fishing boat ~3,700, net rack ~1,600, lookout ~1,400, the rest
+    under 1,000 (scree 230-360). Not measured on a phone; IS-9 measures.
+  - Scree is placed widely on runs (ridge, snow, canyon): every placement is a model now. Small, but many.
+  - The baked pictures are a flat-lit approximation (rocks without their lumps); they show only with models off or
+    as the far view of a neighbouring scene.
+  - The fishing boat bobs (`bob` 0.09) on water tiles only; on land it sits still.
+  - The barn's footprint grew 0.1 m each way; Copperleaf's barn has room round it (checked in the picture).
+- Not run: the full quick check's picture compare (CI makes its baseline); the new map's `shots` join it.
+- Phone check wanted: `?test=1&scene=test_props_island` (turn the camera round the barn, the boats, the lookout);
+  Copperleaf's barn and its door into the ranch; a run with a ridge node (scree); export the debug log.
+- Next: IS-5 places these on `copperleaf_island` (the barn in its zone, the pier at the cove); IS-8 the pasture with
+  `fence_wood` and `fence_gate`; batch 11's remaining list: boulder_mossy, campfire, lookout_tower, wind_sail_flower
+  and the rooms' 20 furniture props. Tag `is-4-done` is the owner's to push.
+
+### Island track IS-3 - Sea all round - 2026-10-22
+Branch `claude/is-3-sea-all-round`, from IS-0's `claude/new-session-3qlesh` (PR #119, not merged yet; started before
+`is-0-done` at the owner's word). Wave 1, beside IS-1 (camera.js), IS-2 (generator), IS-4 (props), IS-6a (Studio).
+Plan approved in Plan Mode as proposed. Owns water and sky: touched no camera, mapgen, Studio or world-bowl code.
+- Changed (one cause per commit):
+  - **logic/sea.js** (new, on the page): `seaSkirt` (rings round the scene out to 400 m, the inner ring on the edge
+    every half metre with rounded corners), `seaRamp` (the edge's water depth to the open sea's over 25 m),
+    `seaCentre` (`island.c`, else `cam.orbit.c`, else the middle), `seaCalmAt` (a `cove` zone's calm, soft 6 m edge).
+  - **The skirt** (walk/ground-mesh.js, the `flatFar` block): the four quads 90 m out became one ring mesh at the
+    sea's level along the edge (the commonest edge water level, not a hard -0.12), its first ring as deep as the
+    scene's water beside it; the scene's edge vertices count the edge cell twice instead of nothing (they were half
+    as deep: part of the seam). Opaque past the 8 m border of land. ~23k vertices on test_island (23 rings x 992).
+  - **No far props on a `flatFar` map** (grass-build.js): the trees scattered past the edge stood on the sea.
+  - **The bowl's far wall** (sky shader only): outline averaged over 5 texels (no stair steps), a soft top, its foot
+    hazed into the horizon.
+  - **The coast** (water shader, uniform `uSea` from water-data.js `setShoreUniforms`, so the ground shader has it
+    too): whitecaps and a long swell roll in toward `seaCentre` from every side (they were stretched along x, streaks
+    from the east and west); surf lines over the shallows breaking on the whole coast; a bigger swash; wet sand above
+    the line on the same clock; past 140 m no fish, rings or caustics (cost). A cove's calm rides in the vertex's
+    kind (kind + calm * 0.4; `int(k + .5)` still gives the kind; the shader takes the rest apart). Only K = sea on a
+    `flatFar` map changes; other maps' water is as it was.
+  - **test_island**: a stand-in `cove` zone over the east shore's water (zone only, no ground change), via
+    tools/build-test-island.py.
+  - **check-fast island step**: the skirt reaches 400 m at the sea's level; draws from 8 angles through the free
+    camera hook (`walkView.opt.look`). Planted fault (no skirt) seen to fail.
+- Where the plan was wrong or short:
+  - The "turquoise band" from above was the scene's own shallow edge water, not land: the seam was depth, as planned,
+    plus the half-depth edge vertices (new).
+  - Step 3's extra fade of the far sea into the sky wasn't needed: the fog already takes it to the haze by 400 m
+    with no edge; only the cheap far path went in.
+  - The bowl wall's colour is the far bowl's own (phase 10), a pale cream; I softened it, didn't recolour it.
+  - With full graphics the sky looking south washes white (bloom and glare into the 12:30 sun): direction dependent,
+    so it belongs to the sun question (3) of IS-1, not changed here. The diagonal glints on the sea are the existing
+    glint pattern, not the whitecaps.
+- Verified: unit tests 572 (5 new: no gap at 48 angles out to 400 m, the inner ring on the edge, the depth at the
+  edge and by 25 m, the triangles' turn, calm); lint, typecheck, check:modules, format:check, check:data (143 files);
+  check-fast 22 of 22; smoke before the shader work and at the end; headless pictures at 390 x 760 from S, E, N, W, SE,
+  low S, three outward views and three coast close-ups, before and after (in the PR).
+- Risky:
+  - Phone cost: the skirt covers much of the screen when looking out; its far fragments skip the small things, but
+    the reflection sample and fog remain. Needs the frame times on the phone (`?fixture=island`).
+  - `gamedata.js` is generated (`npm run data`); a stale one hides data changes in local pictures.
+  - The calm-in-the-kind trick: anything new that reads the water mesh's kind must round, not truncate.
+  - Every `flatFar` map gets the new sea: test_island, five legacy maps, Studio-made coast scenes. Runs don't use the
+    coast biome.
+- Not run: the full quick check's picture compare (its baseline is made by CI).
+- Next: switch the pictures to `copperleaf_island` when IS-2 lands (its real cove gets the calm from its zone); IS-1's
+  sun choice (question 3) decides the backlit side. Tag `is-3-done` is the owner's to push.
+
+### Island track IS-1 - Orbit camera - 2026-10-22
+Branch `claude/is-1-orbit-camera`, from IS-0's `claude/new-session-3qlesh` (PR #119, not merged yet: the owner started
+wave 1 before `is-0-done`); the PR goes against main and shrinks once #119 merges. Ran beside IS-2, IS-3, IS-4 and IS-6a.
+Plan approved in Plan Mode; the owner's answers: question 2, the camera **holds still on the summit** (your own turn
+still works); question 3, the **sun stays put in the world**, with an Engine toggle to compare; the tree picture fix
+in sprites.js done here.
+- Changed (one cause per commit):
+  - **logic/camera-orbit.js** (pure, unit-tested; on the game and Studio pages, for IS-6a's "Walk the coast"):
+    `orbitYawAt` (the yaw that looks from you at `c`; 0 from the south, so the first view is today's), `orbitStart`,
+    `orbitStep` (the lag as a time constant of `lag` s; inside `dead` the target holds; the yaw kept unwrapped so the
+    easing always takes the short way past +/-180; trimmed back near 0 every 8 laps), `orbitStickYaw` (the joystick's
+    frame, below), `orbitWalkStep` (a step taken round the middle: the part across the radius moves you along your
+    circle), `wrapAngle`.
+  - **walk/camera.js**: `orbitOf(sc)`: the orbit applies outdoors, not in a room, not in the Studio's free camera,
+    with Engine > Camera > Orbit on. The base yaw is the orbit's and your turn (`walkRenderer.yaw`) is added on top,
+    limited to the map's `turn` (`cameraTurnLimit()`). No scene clamps on the target while orbiting. Four spots that
+    assumed a north view now use the base yaw (all equal to before at yaw 0, so every other map is unchanged): TR-3's
+    ground-ahead for the rise, the lean ahead of you (`rw > rh ? 2 : 1`), the swoop's offset, `landmarkTilt`. A new
+    scene, a cut (`camT` cleared, `opt.instant`) or a jump of over 8 m starts the orbit where it belongs.
+    `walkRenderer.orbit` holds the state. A turn kept from a map with a wider limit (Copperleaf's 35) is clamped to
+    the island's on arrival. The battle, cutscene and Studio cameras don't go through it.
+  - **walk-view.js** (joystick and keys): on an orbiting island the stick walks by `orbitStickYaw` (plus your turn)
+    and steps with `orbitWalkStep`; elsewhere it is unchanged (the camera's right).
+  - **sprites.js**: `landmarkTilt(P, sc, yaw = 0)`; a tree's crossing picture fades by `|sin yaw|`, not `|yaw|`.
+  - **Engine > Camera**: `orbit` (on) and `sunTurns` (off; on turns the sun with the camera in engine/light.js
+    `sunLight`).
+  - **Debug log**: the scene line's `orbit` (yaw, your turn, `hold` on the summit, `stickLocked`; degrees).
+  - **check-fast's island step**: 8 places round the coast (the camera looks at the middle within 0.06 rad and aims
+    within 4 m of you), the summit holds, the turn limit is 30 degrees, holding right goes an eighth of the way round
+    and stays within 1 m of its 44 m circle with no yaw jump.
+- Where the plan was wrong or short:
+  - **The walk drift fix needed more than "steer by the target yaw"**: a step straight along the tangent still adds
+    s^2/2r to the radius every frame (0.5 m a lap at 20 fps running, more on slow frames), and last frame's target is
+    stale by a frame. The stick reads the way to the middle from where you stand now, and the step goes round the
+    middle: a lap ends on its circle to 1e-13 m in Node (8, 20, 60 fps), 45.0 m of 45 in the browser.
+  - **Crossing the summit holding up** would bounce you at the dead zone's edge with any stick frame that follows
+    the orbit (the way to the middle flips half a turn as you step out the far side). So while the stick is held its
+    frame stays locked from the moment you are inside the dead zone until you let go. Leaving the summit northward
+    holding up, you keep walking north while the camera swings round behind you (lag 0.6 s); push again and up is
+    toward the middle.
+  - Shadows and culling needed nothing: both work from the camera's own view (screen rays, the frustum), not a
+    facing. The shadow map stops 6 m past the scene, where only sea is.
+  - The sun was already fixed in the world (Engine > Sun > angle); question 3's "fixed" option was free.
+- Verified: unit tests 577 (10 new); lint, typecheck, check:modules, format:check, check:data (143 files);
+  check-fast 22 of 22 (the island step 48 s with two browsers); smoke all fine. In a 390 x 760 page with full graphics
+  at 8 angles: the camera looks at the cone from every side, no page errors, TR-3's rise and rock fade 0 everywhere
+  on the ring; a full lap holding right (194 s of software drawing) ended at 45.0 m. Copperleaf's camera is unchanged
+  (no orbit; every changed spot is identical at yaw 0).
+- **Found for IS-3 (not fixed: water is IS-3's)**: from the west and east the far sea floats over the near ground.
+  The `flatFar` skirt (walk/ground-mesh.js ~775) is four quads of 4 corners each, and the world's bowl curve
+  (`curveY`, about 0.0012 x d^2 past 70 m from the scene's middle on test_island) lifts each corner by its own
+  distance. The west and east quads run 300 m long, so their inner edge at x 0 is lifted ~10 m (the corners at z -90
+  and 210) and the water sheet covers the sand and the ring up to ~20 m in. The north-facing camera never stood past
+  those edges, so it never showed. Fix: cut the skirt into a grid (e.g. 10 m cells) so the curve bends it like the
+  ground. From the south and north it looks right.
+- Risky:
+  - The stick's locked frame (above) is new behaviour; worth a feel on the phone at the summit.
+  - With "Sun turns with the camera" on, the shadow cache redraws every frame you turn (the sun moves): a
+    comparison setting, not for the phone's frame times.
+  - studio/index.html gained a script line next to camera-rise.js; IS-6a may add the same line (keep one when merging).
+  - Phone frame times at 8 angles are IS-9's; nothing here measured a phone.
+- Next: IS-3 (the sea skirt above), IS-6a can call `orbitStep`/`orbitStart` for "Walk the coast", IS-5 when IS-2
+  lands. Tag `is-1-done` is the owner's to push (after `is-0-done`).
 
 ### Island track IS-0 - Contract and test island - 2026-10-22
 Branch `claude/new-session-3qlesh`, from main a10bfc6 (PR #118). The owner's brief (docs/phases/island-track.md,

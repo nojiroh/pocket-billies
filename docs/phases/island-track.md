@@ -246,7 +246,8 @@ A Studio section of its own ("Hub island", not inside Walk scenes), editing the 
 - Check: a check-fast Studio step (the section opens and draws, a drag turns the orbit, locking disables the brushes).
 
 **Done in IS-6a** (2026-10-22, the owner's answers in chat): "Walk the coast" uses the game's own walk camera (it
-orbits once IS-1 merges; no import of camera-orbit.js, so the merge order doesn't matter); no prop tools in the editor
+orbits since IS-1 merged; no import of camera-orbit.js. IS-1's orbitOf is off in a Studio free-camera preview, so
+the hub view takes that mark off while it walks); no prop tools in the editor
 ("Props in Walk scenes" opens the map there); Copperleaf view-only until it has a coast (IS-5 owns copperleaf.json);
 the coast is hand-editable with the zones' point tool. Checked against the code: the ground the lock covers is
 changed in Walk scenes by Paint, Fill, Shape the land, Cliffs & stairs, Curved road (map-editor-tools.js), Resize and
@@ -263,6 +264,22 @@ island" leaves locked zones alone and is refused while the ground is locked.
 The hub's bowl map draws the real island: `island.coast` as the outline, its ground painted as each place's ground
 is (phase 10's 1.5 m pixel ground), the mountain's relief, the town's buildings close in. `worldmap.json`
 `sea.island` from the real size. World map test step.
+
+**Checked in IS-7** (world-bowl.js, logic/bowl.js, the new logic/bowl-island.js):
+- The bowl is 1000 m to its radius; its ground grid is 6.25 m a corner and its terrain picture ~1 m a pixel (phase 10
+  says 1.5 m). Nothing of a map's `heights` reached the bowl: a place's relief was one bump by its kind.
+- An island world's land was each place's circle of its map's half-diagonal plus the `sea.island` round and noise;
+  for a 235 x 237 m scene that made the whole square (its sea too) land. The hub's island now keeps exactly its coast.
+- The hub place still points at copperleaf.json (no coast). The bowl finds the island map by its fields: the place's
+  own map when it has a coast (after IS-5), else for the hub (world node 0) the biggest map with a coast and plots.
+- The map's own sea squares stamped on the sea floor showed through the water as a box: the island is stamped only
+  where the bowl has land. Bowl rivers would cut across the island's own ground: none is made on it (its stream is
+  its own map's); the checks that wanted one river on an island world want none there.
+- `copperleaf_island` has no props: the town is drawn from its `plots` (a model per kind) plus the barn in its zone
+  until IS-5 puts buildings on them; a plot with a building on it is skipped then. The landmark (the oak) still comes
+  from copperleaf.json until IS-5.
+- The well and the airship station are not "buildings" by the bowl's own rule (too small, no door), so Copperleaf's
+  were never on the bowl; on the plots they are.
 
 ### IS-8 Barn and pasture
 The fenced pasture beside the barn (IS-4's fence and gate), up to ~6 ranch Billies wandering in it (from storage and

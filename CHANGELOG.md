@@ -16,24 +16,11 @@ kept aside in the browser).
   square, a pier at the cove. A new game falls onto the square and wakes in front of the lab. Wild Billies hide in tall
   grass out by the woods and on the heath, not in town. Rooms open in place behind a door facing any way, the camera
   looking in through the door. A tap walks you all the way across the island.
-- The orbit camera (island track IS-1): on the test island the camera stands out over the sea and looks in at the
-  island's middle, so walking round the coast turns it all the way round, smoothly and with no jump. Holding right
-  walks you round on the same circle. On the summit the camera holds still; your own turn (two fingers, Q/E) still
-  works on top, up to 30 degrees. Engine > Camera has "Orbit round an island" and, to compare, "Sun turns with the
-  camera" (off: the sun stays put in the world). Copperleaf is unchanged until it becomes the island.
-- The sea all round (island track IS-3): on the test island the sea now runs out to the horizon on every side
-  with no line where it meets the shore's water; waves and their whitecaps roll in toward the island from every
-  direction, lines of surf break along the whole coast, the water washes up the beach and leaves the sand wet, and
-  a cove's water stays calm. Trees no longer stand out on the open sea past the edge. The far wall of the Hollow
-  Earth in the sky has a softer outline.
-- Island props (IS-4): the ranch barn is 3D now (still its red gambrel barn, every side finished, its colour looks
-  kept), and a new set for the island waits in the debug menu's Test scenes ("the island props"): a field gate,
-  a water trough, round hay bales and a hay rack; driftwood, beach grass, shells, shore rocks and tide pools; a
-  fishing boat and a net rack by a pier; granite boulders, a cairn and a summit lookout; forest litter. Scree and the
-  mossy log and stump on runs are 3D too. Nothing moves in Copperleaf yet.
-- The Studio has a Hub island section (IS-6a): the hub's island in an orbiting 3D view and on a map, with its ground,
-  coast, zones and the camera's pivot edited by hand, a walk round the coast, and a lock that freezes the island's
-  ground once it is right (props stay free). It works on the test island until Copperleaf moves onto its island.
+- The world map shows Copperleaf's real island (island track IS-7): its own coastline with the cove and the
+  headlands, its beaches, meadows, forest and paths as they are on the ground, its mountain standing up in the
+  middle, and the town's buildings close in (the lab, the airship station, the houses, the well, the barn). The
+  shallows follow the coast. The island is drawn at its true size, so it is smaller than the old round blob; zoom in
+  to see the town. The debug menu's Bowl map test has a step for it.
 - Copperleaf's island has its ground and its town's layout (IS-2): a generated island in the debug menu's Test scenes,
   "Copperleaf island (generated ground)", about 215 m across with a natural shape (lobes, headlands, rolling hills): a
   mountain with spurs in the middle, climbed by a switchback trail to a lookout; forest round its north side; a long
@@ -42,6 +29,24 @@ kept aside in the browser).
   for the lab, the airship station, a shop, Juniper's home and the cottages. A hamlet sits round a green under the
   mountains and a farmhouse beside the barn and its pasture; a road runs all the way round (under three minutes'
   walk). No buildings stand on the plots yet, and Copperleaf itself is unchanged.
+- The Studio has a Hub island section (IS-6a): the hub's island in an orbiting 3D view and on a map, with its ground,
+  coast, zones and the camera's pivot edited by hand, a walk round the coast, and a lock that freezes the island's
+  ground once it is right (props stay free). It works on the test island until Copperleaf moves onto its island.
+- Island props (IS-4): the ranch barn is 3D now (still its red gambrel barn, every side finished, its colour looks
+  kept), and a new set for the island waits in the debug menu's Test scenes ("the island props"): a field gate,
+  a water trough, round hay bales and a hay rack; driftwood, beach grass, shells, shore rocks and tide pools; a
+  fishing boat and a net rack by a pier; granite boulders, a cairn and a summit lookout; forest litter. Scree and the
+  mossy log and stump on runs are 3D too. Nothing moves in Copperleaf yet.
+- The sea all round (island track IS-3): on the test island the sea now runs out to the horizon on every side
+  with no line where it meets the shore's water; waves and their whitecaps roll in toward the island from every
+  direction, lines of surf break along the whole coast, the water washes up the beach and leaves the sand wet, and
+  a cove's water stays calm. Trees no longer stand out on the open sea past the edge. The far wall of the Hollow
+  Earth in the sky has a softer outline.
+- The orbit camera (island track IS-1): on the test island the camera stands out over the sea and looks in at the
+  island's middle, so walking round the coast turns it all the way round, smoothly and with no jump. Holding right
+  walks you round on the same circle. On the summit the camera holds still; your own turn (two fingers, Q/E) still
+  works on top, up to 30 degrees. Engine > Camera has "Orbit round an island" and, to compare, "Sun turns with the
+  camera" (off: the sun stays put in the world). Copperleaf is unchanged until it becomes the island.
 - The island track begins (IS-0): a test island in the debug menu's Test scenes (a cone of a mountain, a grass ring,
   beaches and the sea all round), the first step to Copperleaf becoming a real island you can walk round. Nothing
   changes in Copperleaf yet. The island will be the hub itself, with its own editor in the Studio and its ground

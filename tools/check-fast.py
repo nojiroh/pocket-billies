@@ -245,8 +245,9 @@ def bowl_map(pg, base):
     # the sea (look session 1): a water sheet (RL-8b: round the hub's island), its shader in the same programs
     if not pg.evaluate("!!(worldBowl.ground.water&&gpuState.P.mwater)"): raise Exception('the sea isn’t drawn')
     # look session 2: the shadow map, the routes' and rivers' line map and the rivers
-    # RL-8b: the hub is an island (worldmap.json sea.island): a river or two, not four
-    if not until(pg, "!!(worldBowl.ground.shadow&&worldBowl.ground.shadow.t&&worldBowl.ground.lines&&(worldBowl.ground.G.rivers||[]).length>=(worldBowl.ground.isle?1:4))", 20): raise Exception('no shadow map, route lines or rivers')
+    # RL-8b: the hub is an island (worldmap.json sea.island): a river or two, not four; IS-7: none on an island drawn
+    # from its own map (its stream is its own)
+    if not until(pg, "!!(worldBowl.ground.shadow&&worldBowl.ground.shadow.t&&worldBowl.ground.lines&&(worldBowl.ground.G.rivers||[]).length>=(worldBowl.ground.islandMap?0:worldBowl.ground.isle?1:4))", 20): raise Exception('no shadow map, route lines or rivers')
     # look session 3: the clouds follow the setting (Off: none; High: 40), the shaders draw with them
     for lv, want in (('off', 0), ('high', 40)):
         pg.evaluate(f"saveData.preferences.mapClouds='{lv}';worldBowl.dirty=true;0")
