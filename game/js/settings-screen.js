@@ -293,7 +293,7 @@ function volumeSliderHTML(k, label, hint, def) {
   return settingsRowHTML(
     label,
     hint,
-    `<div class="vol"><input type="range" min="0" max="100" step="5" data-preference="${k}" value="${v}" aria-label="${escapeHtml(label)} volume"><span class="vol-n">${v}</span><button type="button" class="pb small quiet" data-a="aud-test" data-k="${k}">Test</button></div>`
+    `<div class="vol"><input type="range" min="0" max="100" step="5" data-preference="${k}" value="${v}" aria-label="${escapeHtml(k === 'master' ? label : label + ' volume')}"><span class="vol-n">${v}</span><button type="button" class="pb small quiet" data-a="aud-test" data-k="${k}">Test</button></div>`
   );
 }
 export function settingsHTML() {
@@ -432,7 +432,12 @@ export function settingsHTML() {
       ) +
       volumeSliderHTML('master', 'Volume', 'Everything together.', 1) +
       volumeSliderHTML('music', 'Music', 'Tunes for each place and battle.', 0.55) +
-      volumeSliderHTML('sfx', 'Sound effects', 'Buttons, battles, coins.', 0.8) +
+      volumeSliderHTML(
+        'sfx',
+        'Sound effects',
+        'Buttons, battles, coins, and the short tunes for a win or a level up.',
+        0.8
+      ) +
       volumeSliderHTML('world', 'World sounds', 'Water, fountains, fire, rain, wind and animals near you.', 0.5) +
       volumeSliderHTML(
         'amb',
@@ -440,7 +445,7 @@ export function settingsHTML() {
         'Birdsong by day, crickets at night, leaves, a town’s murmur, a room’s clock.',
         0.5
       ) +
-      `<p class="note">Sounds fade in when you arrive somewhere. Turn a slider to 0 to mute it.</p>`;
+      `<p class="note">Sounds fade in when you arrive somewhere.</p>`;
   else if (tab === 'graphics') {
     const gp = p.aim === 'smooth' ? 'balanced' : 'best';
     body =
