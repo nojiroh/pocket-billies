@@ -12,7 +12,10 @@
      and its forecast.
    - "Beside the loaded data" draws the same seed on the data as the Studio loaded it (studioState.loaded), so a
      change to rules.run, nodeTypes or biomes shows as a second map.
-   An edit made in the other pane redraws the map (the game's map code takes well under a millisecond). */
+   An edit made in the other pane redraws the map (the game's map code takes well under a millisecond).
+   T2.4: what the game's logic says about the run (logic/run-preview.js runPreview, in the Studio's logic worker on the
+   data as it is now): the clicked place's wild table, its leader and team (a mini-boss or the boss), a town's stock and
+   Loophole on each day it can be open; and the run's Loophole picks after each mini-boss row, with nothing held. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
 import { $ } from '../../game/js/util.js';
@@ -20,8 +23,19 @@ import { runBack, runMapRows, runNodeSeed, runWorldNode } from '../../game/js/lo
 import { runUnlocks } from '../../game/js/logic/unlocks.js';
 import { runStartPlan } from '../../game/js/logic/run-start.js';
 import { escapeHtml } from './game-stand-ins.js';
-import { ACTIONS, SECTIONS, card, dialog, render, sectionShown, studioState, toast } from './studio-app.js';
+import {
+  ACTIONS,
+  SECTIONS,
+  card,
+  dialog,
+  render,
+  sectionShown,
+  speciesName,
+  studioState,
+  toast,
+} from './studio-app.js';
 import { githubMode } from './github.js';
+import { logicAsk } from './logic-client.js';
 /* eslint-disable no-func-assign */
 expose({
   RUN_LAB_ROLE: [() => RUN_LAB_ROLE],
@@ -30,6 +44,10 @@ expose({
   runLab: [() => runLab],
   runLabBiomeColour: [() => runLabBiomeColour],
   runLabFigures: [() => runLabFigures, v => (runLabFigures = v)],
+  runLabLogicFill: [() => runLabLogicFill, v => (runLabLogicFill = v)],
+  runLabLogicHTML: [() => runLabLogicHTML, v => (runLabLogicHTML = v)],
+  runLabLogicSoon: [() => runLabLogicSoon],
+  runLabName: [() => runLabName],
   runLabNodeHTML: [() => runLabNodeHTML, v => (runLabNodeHTML = v)],
   runLabOutHTML: [() => runLabOutHTML, v => (runLabOutHTML = v)],
   runLabPlan: [() => runLabPlan, v => (runLabPlan = v)],
@@ -53,6 +71,9 @@ const runLab = {
   beside: false,
   pick: -1,
   redrawT: 0,
+  /** the latest ask to the logic worker (an older answer is dropped) */
+  logicN: 0,
+  logicT: 0,
 };
 /** the debug menu's short run (debug-menu.js runstart) */
 const RUN_LAB_SHORT = { rows: 5, minibosses: 1 };
@@ -178,6 +199,84 @@ function runLabNodeHTML(D, plan, roles, i) {
   ].join('')}</table>`;
 }
 
+/** a name from the data, its id beside it @param {any} table @param {string} id @param {string} [k] */
+const runLabName = (table, id, k = 'n') =>
+  `${escapeHtml(((table || {})[id] || {})[k] || id)} <small class="mono">${escapeHtml(id)}</small>`;
+/** what the game's logic says about the run (runPreview's answer): node i's part, then the run's Loophole picks
+ * @param {any} D @param {any} p @param {number} i */
+function runLabLogicHTML(D, p, i) {
+  const n = p.nodes[i],
+    row = (/** @type {string} */ k, /** @type {string} */ v, a = '') => `<tr${a}><th>${k}</th><td>${v}</td></tr>`,
+    rows = [];
+  if (n) {
+    const W = n.wild,
+      sum = W.list.reduce((a, e) => a + e[1], 0) || 1;
+    rows.push(
+      row(
+        'Wild',
+        `Lv ${W.lv[0]}–${W.lv[1]}: ${W.list
+          .slice()
+          .sort((a, b) => b[1] - a[1])
+          .map(([sp, w]) => `${escapeHtml(speciesName(sp))} ${Math.round((w / sum) * 100)}%`)
+          .join(', ')}`,
+        ` data-wild="${escapeHtml(W.list.map(e => e.join(':')).join(','))}"`
+      )
+    );
+    if (n.foe) {
+      const F = n.foe;
+      rows.push(
+        row(
+          F.runFoe === 'boss' ? 'Boss' : 'Mini-boss',
+          `${escapeHtml(F.name || F.from)} <small class="mono">${escapeHtml(F.from)}</small>: ${F.team
+            .map(e => `${escapeHtml(speciesName(e.sp))} Lv ${e.lvl}`)
+            .join(', ')}; ${F.double ? 'a double battle' : 'alone, as an Alpha'}; reward $${F.reward}`,
+          ` data-foe="${escapeHtml(F.from)}" data-team="${escapeHtml(F.team.map(e => e.sp + '@' + e.lvl).join(','))}"`
+        )
+      );
+    }
+    for (const S of n.shop || [])
+      rows.push(
+        row(
+          `Shop, day ${S.day}`,
+          `${S.stock.map(w => (w.coin ? runLabName(D.coins, w.coin) : runLabName(D.items, w.item))).join(', ')}${S.relic ? `; Loophole: ${runLabName(D.relics, S.relic, 'name')}` : ''}`,
+          ` data-day="${S.day}" data-stock="${escapeHtml(S.stock.map(w => w.item || 'coin:' + w.coin).join(','))}" data-relic="${escapeHtml(S.relic)}"`
+        )
+      );
+  }
+  const picks = p.relicOffers
+    .map(
+      (/** @type {string[]} */ ids, /** @type {number} */ k) =>
+        `<li data-offer="${escapeHtml(ids.join(','))}">after mini-boss ${k + 1}: ${ids.map(id => runLabName(D.relics, id, 'name')).join(', ') || 'nothing left'}</li>`
+    )
+    .join('');
+  return `<h4>From the game’s logic</h4>${rows.length ? `<table class="tbl rl-logic-node" data-node="${i}">${rows.join('')}</table>` : ''}<p class="help">Loophole picks, in order, with none held (a held one changes the later picks and the shelves):</p><ol class="rl-offers">${picks}</ol>`;
+}
+/** ask the logic worker about the run on the data as it is now, and fill the panel when it answers */
+function runLabLogicFill() {
+  const els = [...document.querySelectorAll('[data-runlab-logic]')];
+  if (!els.length) return;
+  const D = studioState.D,
+    k = ++runLab.logicN,
+    t0 = performance.now(),
+    seed = runLab.seed,
+    pick = runLab.pick;
+  logicAsk('runPreview', seed, { unlocks: runLabUnlocks(D), map: runLab.short ? RUN_LAB_SHORT : undefined }).then(
+    p => {
+      if (k !== runLab.logicN) return;
+      for (const el of els) {
+        el.innerHTML = runLabLogicHTML(D, p, pick);
+        el.dataset.ms = String(Math.round(performance.now() - t0));
+        el.dataset.ready = seed;
+      }
+    },
+    e => {
+      if (k !== runLab.logicN || e.message === 'replaced') return;
+      for (const el of els)
+        el.innerHTML = `<p class="err rl-logic-error">The game’s logic couldn’t work it out: ${escapeHtml(e.message)}</p>`;
+    }
+  );
+}
+
 /** the part of the Lab that changes with the seed and the data */
 function runLabOutHTML() {
   const D = studioState.D,
@@ -195,18 +294,28 @@ function runLabOutHTML() {
     RUN_LAB_TYPE_COLOUR
   )
     .map(([k, c]) => `<span><i style="border-color:${c}"></i>${escapeHtml((D.nodeTypes[k] || {}).name || k)}</span>`)
-    .join('')}</div>${runLabNodeHTML(D, now.plan, now.roles, runLab.pick)}`;
+    .join(
+      ''
+    )}</div>${runLabNodeHTML(D, now.plan, now.roles, runLab.pick)}<div class="rl-logic" data-runlab-logic><p class="help">The game’s logic is working it out…</p></div>`;
 }
 /** redraw the map and the node, not the inputs (the seed field keeps its caret) */
 function runLabRedraw() {
   for (const el of document.querySelectorAll('[data-runlab-out]')) el.innerHTML = runLabOutHTML();
+  runLabLogicSoon();
 }
+/** the logic worker's part a little after the map (it copies the whole data: not on every key typed) */
+const runLabLogicSoon = () => {
+  clearTimeout(runLab.logicT);
+  runLab.logicT = setTimeout(runLabLogicFill, 150);
+};
 const runLabSoon = () => {
   clearTimeout(runLab.redrawT);
   runLab.redrawT = setTimeout(runLabRedraw, 30);
 };
 
 SECTIONS.runlab = () => {
+  /* the logic worker's part fills in once the section is on the page */
+  setTimeout(runLabLogicFill);
   const opt = (/** @type {string} */ v, /** @type {string} */ l) =>
     `<option value="${v}"${runLab.unlocks === v ? ' selected' : ''}>${l}</option>`;
   return (

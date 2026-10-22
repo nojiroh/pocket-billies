@@ -996,6 +996,15 @@ for (const [k, ids] of [['none', []], ['all', Object.keys(D.unlocks)]]) {
   const p = modules['run-start'].runStartPlan('LABCHECK7', { nodeTypes: D.nodeTypes, biomes: D.biomes, rules: D.rules.run, unlockData: U }, { unlocks: un });
   out[k] = p.map.nodes.map(n => n.type + ':' + n.biome);
 }
+/* T2.4: what the logic worker's panel must show: runPreview with no unlocks, for the first mini-boss and town */
+const P = modules['run-preview'].runPreview('LABCHECK7', { unlocks: [] }),
+  at = t => P.map.nodes.findIndex(n => n.type === t),
+  g = at('miniboss'), w = at('town'), F = P.nodes[g].foe;
+out.preview = {
+  guard: { i: g, foe: [F.from, F.team.map(e => e.sp + '@' + e.lvl).join(',')], wild: P.nodes[g].wild.list.map(e => e.join(':')).join(',') },
+  town: { i: w, shop: P.nodes[w].shop.map(S => [S.day, S.stock.map(x => x.item || 'coin:' + x.coin).join(','), S.relic]) },
+  offers: P.relicOffers.map(o => o.join(',')),
+};
 console.log(JSON.stringify(out));"""
 
 
@@ -1041,8 +1050,48 @@ def run_lab_steps(pg, errs):
     while time.time() - t0 < 5 and pg.evaluate("document.querySelectorAll('#main .rl-map').length") < 2: time.sleep(0.05)
     if pg.evaluate("document.querySelectorAll('#main .rl-map').length") != 2: errs.append('run lab: beside the loaded data did not draw a second map')
     pg.uncheck('#rlBeside')
+    logic = run_lab_logic_steps(pg, errs, want)
     if len(errs) > n: errs[n:] = [f'run lab: {e}' if not e.startswith('run lab') else e for e in errs[n:]]
-    else: print(f"run lab: LABCHECK7 drawn as the game makes it ({len(want['none'])} places, no unlocks and all), a nodeTypes edit redrawn in {ms:.0f} ms, node 3's seed, beside the loaded data", flush=True)
+    else: print(f"run lab: LABCHECK7 drawn as the game makes it ({len(want['none'])} places, no unlocks and all), a nodeTypes edit redrawn in {ms:.0f} ms, node 3's seed, beside the loaded data; {logic}", flush=True)
+
+
+def run_lab_logic_steps(pg, errs, want):
+    """Studio plan T2.4: the node panel's part from the game's logic, worked out in the Studio's logic worker on the
+    data as it is now, equals runPreview in Node for the same seed: a mini-boss's leader and team, a town's stock and
+    Loophole on each day, the Loophole picks. One worker per data version: another click asks the same worker; an
+    edit makes a new one."""
+    P = want['preview']
+    pg.select_option('#rlUnlocks', 'none')
+    def panel(i):
+        pg.click(f'#main .rl-node[data-i="{i}"]')
+        t0 = time.time()
+        while time.time() - t0 < 30 and not pg.evaluate(f"!!document.querySelector('#main [data-runlab-logic][data-ready=LABCHECK7] .rl-logic-node[data-node=\"{i}\"]')"): time.sleep(0.05)
+        return pg.evaluate("""i=>{const el=document.querySelector('#main [data-runlab-logic]');const t=el&&el.querySelector('.rl-logic-node[data-node="'+i+'"]');
+          if(!t)return {err:(el||{}).textContent||'no panel'};const f=t.querySelector('[data-foe]');
+          return {ms:+el.dataset.ms,foe:f?[f.dataset.foe,f.dataset.team]:null,wild:(t.querySelector('[data-wild]')||{dataset:{}}).dataset.wild||'',
+            shop:[...t.querySelectorAll('[data-day]')].map(r=>[+r.dataset.day,r.dataset.stock,r.dataset.relic]),
+            offers:[...el.querySelectorAll('[data-offer]')].map(o=>o.dataset.offer)}}""", i)
+    boss = panel(P['guard']['i'])
+    if 'err' in boss: errs.append(f"the logic panel for mini-boss node {P['guard']['i']} never came: {boss['err'][:200]}"); return 'no logic panel'
+    if boss['foe'] != P['guard']['foe']: errs.append(f"mini-boss node {P['guard']['i']}: the panel shows {boss['foe']}, runPreview in Node {P['guard']['foe']}")
+    if boss['wild'] != P['guard']['wild']: errs.append(f"mini-boss node {P['guard']['i']}: wild {boss['wild']!r}, Node {P['guard']['wild']!r}")
+    if boss['offers'] != P['offers']: errs.append(f"the Loophole picks: the panel shows {boss['offers']}, Node {P['offers']}")
+    made = pg.evaluate('logicWorker.made')
+    town = panel(P['town']['i'])
+    if 'err' in town: errs.append(f"the logic panel for town node {P['town']['i']} never came: {town['err'][:200]}"); return 'no logic panel'
+    if town['shop'] != P['town']['shop']: errs.append(f"town node {P['town']['i']}: the panel's shop {town['shop']}, Node {P['town']['shop']}")
+    if pg.evaluate('logicWorker.made') != made: errs.append('a second click on the same data made a new logic worker')
+    # an edit: a new worker on the new data, and the panel follows it (the town's first day sells no Potion)
+    pg.evaluate("studioState.D.rules.run.shop.always=studioState.D.rules.run.shop.always.filter(w=>w!=='taxbreak');"
+                "document.querySelector('#main [data-runlab-logic]').removeAttribute('data-ready');runLabRedraw()")
+    t0 = time.time()
+    while time.time() - t0 < 30 and not pg.evaluate("!!document.querySelector('#main [data-runlab-logic][data-ready]')"): time.sleep(0.05)
+    stock = pg.evaluate("[...document.querySelectorAll('#main [data-runlab-logic] [data-day]')].map(r=>r.dataset.stock)")
+    more = pg.evaluate('logicWorker.made') - made
+    pg.evaluate("studioState.D.rules.run.shop.always.push('taxbreak');runLabRedraw()")
+    if more != 1: errs.append(f"an edit made {more} new logic workers (want 1)")
+    if not stock or any('taxbreak' in s.split(',') for s in stock): errs.append(f'after taking the Potion off the shop rules the panel still sells it: {stock}')
+    return f"the logic worker's panel equals runPreview (mini-boss {boss['foe'][0] if boss['foe'] else '?'}, a town's {len(town['shop'])} days, {len(P['offers'])} picks; {boss['ms']} ms), one worker per data version"
 
 
 # the steps after sign-in, in order (--only picks some by name; 'sections' and 'art' are the two blocks in main)
