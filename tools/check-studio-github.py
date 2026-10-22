@@ -36,7 +36,7 @@ import json, re, sys, threading, time
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import unquote, urlparse
+from urllib.parse import parse_qs, unquote, urlparse
 
 from playwright.sync_api import sync_playwright
 
@@ -1011,10 +1011,11 @@ def publish_checks(b, url, errs):
     import base64
     tree = [{'type': 'blob', 'path': str(p.relative_to(ROOT)), 'sha': 'x', 'size': p.stat().st_size}
             for p in (ROOT / 'game' / 'art').rglob('*') if p.is_file()]
-    st = {'fail': {}, 'hold': None, 'held': [], 'log': []}
+    st = {'fail': {}, 'hold': None, 'held': [], 'log': [], 'head': 'base1', 'reads': []}
 
     def api(route):
-        p = urlparse(route.request.url).path
+        u = urlparse(route.request.url)
+        p = u.path
         if route.request.method != 'GET':
             k = p.rsplit('/', 1)[-1]
             if k == st['hold']:
@@ -1026,11 +1027,14 @@ def publish_checks(b, url, errs):
             return route.fulfill(json={'sha': 'x', 'number': 7, 'html_url': 'x', 'object': {'sha': 'x'}, 'tree': {'sha': 'x'}})
         if p == '/user': return route.fulfill(json={'login': 'nojiroh'})
         if p.rstrip('/') == '/repos/nojiroh/pocket-billies': return route.fulfill(json={'permissions': {'push': True, 'admin': True}})
-        if '/git/trees/' in p: return route.fulfill(json={'tree': tree})
-        if '/git/commits/' in p: return route.fulfill(json={'sha': 'x', 'tree': {'sha': 'x'}})
-        if '/git/ref' in p: return route.fulfill(json={'object': {'sha': 'x'}})
+        if '/git/trees/' in p:
+            st['reads'].append(('tree', p.rsplit('/', 1)[-1]))
+            return route.fulfill(json={'tree': tree})
+        if '/git/commits/' in p: return route.fulfill(json={'sha': p.rsplit('/', 1)[-1], 'tree': {'sha': 'tree-' + p.rsplit('/', 1)[-1]}})
+        if '/git/ref' in p: return route.fulfill(json={'object': {'sha': st['head']}})
         if '/contents/' in p:
             f = ROOT / unquote(p.split('/contents/', 1)[1])
+            if 'studio/admins.json' not in p: st['reads'].append((p.split('/contents/', 1)[1], parse_qs(u.query).get('ref', [''])[0]))
             if f.is_file(): return route.fulfill(body=f.read_bytes())
         return route.fulfill(status=404, json={'message': 'Not Found'})
 
@@ -1044,6 +1048,10 @@ def publish_checks(b, url, errs):
     pg.goto(url)
     while time.time() - t0 < 120 and not pg.evaluate("typeof studioState!=='undefined'&&!!studioState.D&&!document.querySelector('#main .loading')"):
         time.sleep(0.5)
+    # T0.2: everything is read at the commit the Studio loaded, rigs-next.js included (not the page's own copy)
+    at = sorted({r for _, r in st['reads']})
+    if at != ['base1']: errs.append(f'publish: the Studio read at {at}, not only at the loaded commit base1')
+    if not any(f == 'game/art/next/rigs-next.js' for f, _ in st['reads']): errs.append('publish: rigs-next.js was not read from the repository')
     ART = 'art/next/parts/front/publish_check.png'
     pending = "({data: studioState.dirty, rigs: studioState.rigsDirty, art: studioState.artDirty.has(%s)})" % json.dumps(ART)
 

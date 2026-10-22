@@ -35,6 +35,7 @@ expose({
   changedDataFiles: [() => changedDataFiles, v => (changedDataFiles = v)],
   checkGithubToken: [() => checkGithubToken, v => (checkGithubToken = v)],
   gameFilePath: [() => gameFilePath],
+  githubBase: [() => githubBase, v => (githubBase = v)],
   githubDataText: [() => githubDataText],
   githubFetch: [() => githubFetch, v => (githubFetch = v)],
   githubLogin: [() => githubLogin, v => (githubLogin = v)],
@@ -61,6 +62,8 @@ export const githubMode = {
   login: '',
   batch: null,
   tree: null,
+  base: '', // the commit the Studio loaded (githubBase)
+  baseP: null,
   data: {}, // the text of each data file as read, to send only the ones that change
 };
 const GITHUB_TOKEN_KEY = 'pb-studio-gh-token';
@@ -227,8 +230,18 @@ ACTIONS.ghOut = async () => {
    that changed (and removes the files of entries that were deleted). */
 /* a data file's text from the branch (RL-5: the Legacy section reads the parked world with it; it stays out of
    githubMode.data, so Save never writes or removes what it reads) */
-export const githubDataText = (/** @type {string} */ path) =>
-  githubFetch(repoApiPath(`contents/${gameFilePath('data/' + path)}?ref=${GITHUB_CONFIG.branch}`), {}, true);
+export const githubDataText = async (/** @type {string} */ path) =>
+  githubFetch(repoApiPath(`contents/${gameFilePath('data/' + path)}?ref=${await githubBase()}`), {}, true);
+/* Studio plan Phase 0 (T0.2): the commit the Studio loaded, resolved once. Everything is read at it (the data, the
+   rigs, rigs-next.js, the art list) and a proposal is made on it, so a file changed on main since then shows as a
+   conflict on the pull request instead of being silently put back */
+function githubBase() {
+  if (!githubMode.baseP)
+    githubMode.baseP = githubFetch(repoApiPath(`git/ref/heads/${GITHUB_CONFIG.branch}`)).then(
+      r => (githubMode.base = r.object.sha)
+    );
+  return githubMode.baseP;
+}
 async function readGithubData() {
   const read = githubDataText;
   const index = JSON.parse(await read('index.json')),
@@ -272,15 +285,19 @@ async function studioApiViaGithub(path, opt = {}) {
   if (!post) {
     if (p === 'gamedata') return readGithubData();
     if (p === 'rigs') {
-      const R = parseScriptJson(
-        await githubFetch(repoApiPath(`contents/${gameFilePath('art/rigs.js')}?ref=${GITHUB_CONFIG.branch}`), {}, true),
-        'window.RIGS'
-      );
+      const at = await githubBase(),
+        read = (/** @type {string} */ f) => githubFetch(repoApiPath(`contents/${gameFilePath(f)}?ref=${at}`), {}, true);
+      const [R, N] = await Promise.all([
+        read('art/rigs.js').then(t => parseScriptJson(t, 'window.RIGS')),
+        read('art/next/rigs-next.js').then(t => parseScriptJson(t, 'window.RIGS_NEXT')),
+      ]);
+      /* the rigs at the loaded commit, not the copy the deployed page carries: Save writes rigs-next.js back whole */
+      window.RIGS_NEXT = N;
       return R;
     }
     if (p === 'files') {
       if (!githubMode.tree)
-        githubMode.tree = (await githubFetch(repoApiPath(`git/trees/${GITHUB_CONFIG.branch}?recursive=1`))).tree;
+        githubMode.tree = (await githubFetch(repoApiPath(`git/trees/${await githubBase()}?recursive=1`))).tree;
       const pre = gameFilePath('art/' + (q.get('dir') || '').replace(/^\/|\/$/g, '')).replace(/\/$/, '') + '/';
       return githubMode.tree
         .filter(
