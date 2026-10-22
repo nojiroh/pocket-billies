@@ -1103,7 +1103,7 @@ def run_lab_play_steps(pg, errs):
     was = pg.evaluate('studioState.D.rules.run.healCost')
     pg.fill('#main .rl-rules [data-p="rules.run.healCost"]', '77')
     sent = []
-    pg.evaluate("window.__sent=[];const c=new BroadcastChannel('networth-studio');c.onmessage=e=>window.__sent.push(Object.keys((e.data&&e.data.D)||{}).sort().join(','))")
+    pg.evaluate("window.__sent=[];const c=new BroadcastChannel('networth-studio');c.onmessage=e=>window.__sent.push(Object.keys((e.data&&e.data.D)||{}).sort().join(','));0")
     with pg.context.expect_page(timeout=20000) as info: pg.click('#main [data-act=runLabPlay]')
     gp = info.value
     gp_errs = []
