@@ -39,9 +39,11 @@ the bowl's buildings and trees, the buildings at the usual 3x.
 - Verified: unit tests 609 (bowl-island.test.mjs new, 10 tests; a planted fault in the resolver seen to fail), lint,
   typecheck, check:modules, check:data (145 files), format; check-fast's world map check (with the run's world beside
   it); the in-game World map test headless: every step passes but "The Map tab opens" (9 frames in 4 s: software
-  drawing at ~3 fps; see the PR for the base's run), the new step "copperleaf_island: its coast (240 points; 48 land
-  and sea checks hold), its top 24.9 m drawn 23.6 m (x3), 25 plot buildings"; pictures at 390 x 760 (home, close,
-  close from above, the whole bowl). The full fast check and smoke: see the PR.
+  drawing at ~3 fps; the base fcda361 fails it the same way), the new step "copperleaf_island: its coast (240
+  points; 48 land and sea checks hold), its top 24.9 m drawn 23.6 m (x3), 25 plot buildings"; pictures at 390 x 760
+  (home, close, close from above, the whole bowl). The whole fast check 23 of 23. Smoke: one problem, the in-game
+  full test's step timing out at 60 s on a slow run (the Studio step took 94 s in the same run); run alone it passes
+  here (65 s) as on the base (57 s).
 - Risky:
   - **The fetch**: the island's file (1.2 MB, 52 KB gzipped) is fetched when the map first opens if `loadAllMaps`
     hasn't brought it yet, and the ground is worked out a second time (headless ~200-260 ms, the hub's before 160-210).
