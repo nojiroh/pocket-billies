@@ -808,6 +808,11 @@ function seamlessCompose(id, F) {
       );
     if (S.npcSpots && !band)
       sc.npcSpots = (sc.npcSpots || []).concat(S.npcSpots.map(q => (Array.isArray(q) ? tr(q[0], q[1]) : q)));
+    /* CAM-2: the camera zones, moved with their place (not a neighbour's band) */
+    if (S.camZones && !band)
+      sc.camZones = (sc.camZones || []).concat(
+        S.camZones.map(o => Object.assign({}, o, { x: o.x + O[0], z: o.z + O[1] }))
+      );
     if (S.cliff && !sc.cliff) sc.cliff = S.cliff;
     if (S.ride && !band) sc.ride = S.ride;
     if (S.wallCol && !sc.wallCol) sc.wallCol = S.wallCol;

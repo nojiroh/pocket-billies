@@ -2,7 +2,7 @@
 // a radius, the strongest point wins, and the lean toward it is capped.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { INTEREST_DEFAULTS, interestFade, interestPick } from '../../game/js/logic/camera-interest.js';
+import { INTEREST_DEFAULTS, interestFade, interestPick, zoneAt, zoneHas } from '../../game/js/logic/camera-interest.js';
 
 const near = (a, b, e = 1e-9) => assert.ok(Math.abs(a - b) < e, `${a} ≈ ${b}`);
 const pt = (id, x, z, o = {}) => ({ id, x, z, ...INTEREST_DEFAULTS.door, ...o });
@@ -49,4 +49,20 @@ test('weights and zooms out of range are kept sane', () => {
   const I = interestPick([pt('a', 0, 0, { weight: 3, zoom: 0 })], 0, 0, 1.5);
   near(I.w, 1);
   near(I.zoom, 1);
+});
+
+test('camera zones: inside a rect or a circle, the highest priority wins, a tie goes to the later', () => {
+  const Z = [
+    { shape: 'rect', x: 0, z: 0, w: 10, h: 4 },
+    { shape: 'circle', x: 5, z: 2, r: 1.5, priority: 2 },
+    { shape: 'rect', x: 8, z: 0, w: 4, h: 4 },
+  ];
+  assert.equal(zoneHas(Z[0], 10, 4), true);
+  assert.equal(zoneHas(Z[0], 10.1, 4), false);
+  assert.equal(zoneHas(Z[1], 6.4, 2), true);
+  assert.equal(zoneAt(Z, 1, 1), 0);
+  assert.equal(zoneAt(Z, 5, 2.5), 1);
+  assert.equal(zoneAt(Z, 9, 1), 2);
+  assert.equal(zoneAt(Z, 20, 1), -1);
+  assert.equal(zoneAt(undefined, 1, 1), -1);
 });

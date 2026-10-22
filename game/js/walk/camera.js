@@ -9,7 +9,7 @@ import { clamp } from '../util.js';
 import { cameraRiseNeeded } from '../logic/camera-rise.js';
 import { blendGoals, followNew, followStep, leadStep, zoneMetres } from '../logic/camera-follow.js';
 import { zoomShape } from '../logic/camera-zoom.js';
-import { interestPick } from '../logic/camera-interest.js';
+import { interestPick, zoneAt } from '../logic/camera-interest.js';
 import { MOMENT_DIALS, momentNew, momentStep } from '../logic/camera-moments.js';
 import { BOB_M, walkView } from '../walk-view.js';
 import { engineSetting } from '../engine/settings.js';
@@ -101,7 +101,9 @@ function followDirection(P, R, F, vx, vz, sp) {
 /* CAM-2: this frame's moment (logic/camera-moments.js), from what the walk knows: who talks to you (while the talk box
    is up), where a run's boss stands, the point of interest, whether you walk or run */
 function moments(sc, P, push, I, dt) {
-  if (!walkRenderer.mom || walkRenderer.mom.sc !== sc) walkRenderer.mom = { ...momentNew(), sc };
+  /* a new scene starts the moments afresh, but a boss already revealed stays so */
+  if (!walkRenderer.mom || walkRenderer.mom.sc !== sc)
+    walkRenderer.mom = { ...momentNew(), sc, seen: walkRenderer.mom ? walkRenderer.mom.seen : {} };
   const st = walkRenderer.mom,
     D = /** @type {any} */ ({});
   for (const k of Object.keys(MOMENT_DIALS)) D[k] = engineSetting('camera', k) ?? MOMENT_DIALS[k];
@@ -217,6 +219,20 @@ export function walkCamera(rw, rh, st, dt) {
   /* CAM-2: the moments (logic/camera-moments.js): talking, a run's boss, a point of interest, standing still,
      running; at most one at a time. The Studio's "Play moment" stands in for the real thing (walkRenderer.momentTest) */
   const M = moments(sc, P, push, I, dt);
+  /* CAM-2: a camera zone you stand in (the scene's camZones, placed in the Studio's Walk scenes editor) */
+  const zi = freeCameraOn() ? -1 : zoneAt(sc.camZones, P.x, P.z);
+  if (zi >= 0) {
+    const Zn = sc.camZones[zi],
+      off = Zn.at && (Zn.at[0] || Zn.at[1]) ? Zn.at : null;
+    goals.push({
+      id: 'zone:' + zi,
+      w: 1,
+      blend: Zn.blend,
+      pitch: Zn.tilt || 0,
+      zoom: Zn.zoom || 1,
+      at: off ? [P.x + off[0], P.z + off[1] + (rw > rh ? 2.0 : 1.0)] : undefined,
+    });
+  }
   for (const g of M.goals) {
     if (g.at) g.at = [g.at[0], g.at[1] + (rw > rh ? 2.0 : 1.0)];
     goals.push(g);
@@ -296,6 +312,7 @@ export function walkCamera(rw, rh, st, dt) {
     zoom: zoomEff,
     interest: I ? [I.n, I.w, I.at[0], I.at[1]] : null,
     moment: M.id,
+    zone: zi,
     goals: G.list,
     goal: [gx, gz],
     lead: [lead[0], lead[1]],

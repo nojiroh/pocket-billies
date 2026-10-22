@@ -16,6 +16,10 @@ expose({
   interestFade: [() => interestFade, v => (interestFade = v)],
   // @ts-expect-error -- replaced on purpose
   interestPick: [() => interestPick, v => (interestPick = v)],
+  // @ts-expect-error -- replaced on purpose
+  zoneAt: [() => zoneAt, v => (zoneAt = v)],
+  // @ts-expect-error -- replaced on purpose
+  zoneHas: [() => zoneHas, v => (zoneHas = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -80,4 +84,42 @@ export function interestPick(points, px, pz, cap) {
     n,
     at: [p.x, p.z],
   };
+}
+/**
+ * @typedef {object} CameraZone a scene's camera zone (map.schema.json camZones)
+ * @property {'rect' | 'circle'} shape
+ * @property {number} x rect: the corner; circle: the centre
+ * @property {number} z
+ * @property {number} [w]
+ * @property {number} [h]
+ * @property {number} [r]
+ * @property {number} [zoom] the zoom's factor (1)
+ * @property {number[]} [at] the aim's offset from you, metres (none)
+ * @property {number} [tilt] degrees added to the tilt (0)
+ * @property {number} [priority] the highest wins where zones overlap (0; the later one on a tie)
+ * @property {number} [blend] seconds to come in and go (the camera goals' blend)
+ */
+/**
+ * Whether a point is inside a zone.
+ * @param {CameraZone} Z
+ * @param {number} x
+ * @param {number} z
+ */
+export function zoneHas(Z, x, z) {
+  if (Z.shape === 'circle') return Math.hypot(x - Z.x, z - Z.z) <= (Z.r || 0);
+  return x >= Z.x && x <= Z.x + (Z.w || 0) && z >= Z.z && z <= Z.z + (Z.h || 0);
+}
+/**
+ * The zone you stand in (its index in the list), the highest priority first; -1 for none.
+ * @param {CameraZone[] | undefined} zones
+ * @param {number} x
+ * @param {number} z
+ */
+export function zoneAt(zones, x, z) {
+  const L = zones || [];
+  let best = -1;
+  L.forEach((Z, i) => {
+    if (zoneHas(Z, x, z) && (best < 0 || (Z.priority || 0) >= (L[best].priority || 0))) best = i;
+  });
+  return best;
 }
