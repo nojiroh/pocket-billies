@@ -5,9 +5,9 @@
    logic-client.js (logicAsk); one worker per data version.
    Messages (fixed for Phase 3's dashboard, which adds its own functions to LOGIC_WORKER_FNS):
    - page -> worker, first and once: { kind: 'data', v, version, json }: json is the draft (studioState.D, `_` keys
-     left out) as JSON text, version the page's PB_VERSION. The worker sets GAMEDATA and PB_VERSION, hands hooks.js the
-     page stand-ins tools/test/load-logic.mjs gives, then loads logic-worker-modules.js (game-data.js and every logic
-     module in load-logic.mjs's order). It answers { kind: 'ready', v, ms } or { kind: 'failed', v, error }.
+     left out) as JSON text, version the page's PB_VERSION. The worker sets GAMEDATA and PB_VERSION, then loads
+     logic-worker-modules.js: the page stand-ins tools/test/load-logic.mjs gives (logic-worker-page.js), game-data.js
+     and every logic module in load-logic.mjs's order. It answers { kind: 'ready', v, ms } or { kind: 'failed', v, error }.
    - page -> worker: { kind: 'ask', id, fn, args }: fn is a name in LOGIC_WORKER_FNS, args its arguments (plain data).
      It answers { kind: 'answer', id, ok: true, value, ms } or { kind: 'answer', id, ok: false, error }; an ask sent
      before the data has loaded waits for it.
@@ -21,21 +21,6 @@ export const LOGIC_WORKER_FNS = {
   /* T2.3: the map checks over many seeds (data-checks.js) */
   runMapSweep: (/** @type {any} */ m) => m.runMapSweep,
 };
-
-/** what the logic asks the page for through hooks.js, as tools/test/load-logic.mjs stands in for it in Node */
-export function logicWorkerPage(/** @type {any} */ hooks) {
-  return {
-    uiState: { learnQ: [], mq: [] },
-    activeBattle: null,
-    setActiveBattle: (/** @type {any} */ v) => hooks.provide({ activeBattle: v }),
-    save: () => {},
-    toast: () => {},
-    render: () => {},
-    showPendingWindows: () => {},
-    openBattle: () => {},
-    playTurnEvents: () => {},
-  };
-}
 
 /** an ask's answer: the function called on the loaded modules (m), or why not
  * @param {{ id: number, fn: string, args?: any[] }} q @param {any} m */
@@ -58,8 +43,7 @@ async function logicWorkerLoad(/** @type {{ v: number, version: string, json: st
   const t0 = performance.now();
   globalThis.PB_VERSION = d.version;
   globalThis.GAMEDATA = JSON.parse(d.json);
-  const hooks = await import('../../game/js/hooks.js');
-  hooks.provide(logicWorkerPage(hooks));
+  /* one file in the built site (vite.config.js): the page stand-ins, game-data.js and the logic, in this order */
   const m = await import('./logic-worker-modules.js');
   return { m, ms: performance.now() - t0 };
 }
