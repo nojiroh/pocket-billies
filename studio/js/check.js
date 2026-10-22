@@ -475,9 +475,10 @@ export function runCheck() {
         where ? { uiFocus: { scope: where, rel: `color.${f.side}.${f.fg}` } } : {}
       );
     }
-  /* UI-3b: the UI rules (game/js/logic/ui-lint.js on the game's files), one report line; Show me lists every value */
+  /* UI-3b: the UI rules (game/js/logic/ui-lint.js on the game's files), one line; Show me lists every value. UI-6: an
+     error when a rule is over its ceiling */
   const rules = uiRulesCheckLine();
-  if (rules) P.push({ lvl: 'info', msg: rules, go: 'ui', sel: { uiRules: 1 } });
+  if (rules) P.push({ lvl: rules.over ? 'error' : 'info', msg: rules.msg, go: 'ui', sel: { uiRules: 1 } });
   /* Project Story S3: the story checks, the same ones check-data runs (game/js/logic/story-checks.js) */
   try {
     for (const f of storyFindings(D)) {

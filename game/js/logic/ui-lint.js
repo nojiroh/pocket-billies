@@ -12,6 +12,7 @@ expose({
   COLOUR: [() => COLOUR],
   JS_RULES: [() => JS_RULES],
   LENGTH: [() => LENGTH],
+  UI_LINT_CEILING: [() => UI_LINT_CEILING],
   UI_LINT_EXTRA: [() => UI_LINT_EXTRA],
   UI_LINT_PAGES: [() => UI_LINT_PAGES],
   UI_LINT_RULES: [() => UI_LINT_RULES],
@@ -45,6 +46,8 @@ expose({
   uiLintImports: [() => uiLintImports, v => (uiLintImports = v)],
   // @ts-expect-error -- replaced on purpose
   uiLintPageFiles: [() => uiLintPageFiles, v => (uiLintPageFiles = v)],
+  // @ts-expect-error -- replaced on purpose
+  uiLintRatchet: [() => uiLintRatchet, v => (uiLintRatchet = v)],
   uiLintReads: [() => uiLintReads],
 });
 /* eslint-enable no-func-assign */
@@ -67,6 +70,40 @@ export const UI_LINT_RULES = [
   { id: 'innerHtml', name: 'innerHTML writes in game JS', token: null },
   { id: 'styleAttr', name: 'style="..." strings in game JS', token: null },
 ];
+
+/* UI-6: the ratchet. The most raw values each rule may have in the whole game (game CSS and JS, as lintGame counts
+   them). A rise fails `npm run lint` and the Studio's Check; a fall is kept by `node tools/ui-lint.mjs --save`, which
+   rewrites this block. Totals, not per file: moving a rule from one sheet to another changes nothing here. */
+// ceiling: start
+export const UI_LINT_CEILING = {
+  radius: 155,
+  space: 1033,
+  shadow: 179,
+  keyframes: 77,
+  duration: 269,
+  font: 18,
+  colour: 663,
+  important: 196,
+  zindex: 61,
+  blur: 29,
+  jsColour: 583,
+  innerHtml: 56,
+  styleAttr: 43,
+};
+// ceiling: end
+
+/** the rules over or under their ceiling: raw is {ruleId: count} */
+export function uiLintRatchet(/** @type {Record<string, number>} */ raw, ceiling = UI_LINT_CEILING) {
+  const over = [],
+    under = [];
+  for (const { id } of UI_LINT_RULES) {
+    const n = raw[id] || 0,
+      max = /** @type {Record<string, number>} */ (ceiling)[id] ?? 0;
+    if (n > max) over.push({ id, raw: n, max });
+    else if (n < max) under.push({ id, raw: n, max });
+  }
+  return { over, under };
+}
 
 export const count = (s, re) => (re ? (s.match(re) || []).length : 0);
 // UI-3b: a comment becomes spaces (its line breaks kept), so a place in the stripped text is the same place in the file
