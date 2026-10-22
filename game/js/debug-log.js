@@ -450,7 +450,10 @@ debugLog.state = () => {
     s.visited = Object.keys(GAME.saveData.visited || {}).length;
     /* RL-7: on a run, where it stands (no names): its seed (to make the same run again), the day and deadline, the
        map node you are on, the arrivals so far, and its world's scenes and how long they took to make on this device */
-    const run = GAME.saveData.run;
+    const run = GAME.saveData.run,
+      /* TR-2: the place's land dials are on its map (the drawn scene has no gen) */
+      placeMap = (GAME.gameData.maps || {})[(GAME.walkView.sc || {}).baseId || GAME.walkView.id],
+      placeLand = (placeMap && placeMap.gen && placeMap.gen.params && placeMap.gen.params.land) || {};
     s.run =
       run && run.map
         ? {
@@ -472,7 +475,7 @@ debugLog.state = () => {
             /* TR-2: the run's mods (dbg_mountains: the debug menu's mountains run), this place's mountains dial and
                its ground's triangles (the land and the step grid's walls; to weigh frame times against) */
             mods: (run.mods || []).slice(),
-            mountains: ((((GAME.walkView.sc || {}).gen || {}).params || {}).land || {}).mountains || 0,
+            mountains: placeLand.mountains || 0,
             groundTris: GAME.walkRenderer && GAME.walkRenderer.mesh ? Math.round(GAME.walkRenderer.mesh.n / 3) : null,
             /* TR-3: the camera's extra tilt on tall ground right now (degrees) */
             camRise: GAME.walkRenderer && GAME.walkRenderer.occT != null ? +GAME.walkRenderer.occT.toFixed(1) : null,
