@@ -113,12 +113,21 @@ const seaShare = g => {
     }
   return s / a;
 };
-const withSea = opt =>
-  bowlGroundGrid(
-    bowlReliefFeatures(locations),
-    160,
-    bowlSeaInput(locations, roads, l => maps[l.mapId] || null, 1000, opt)
-  );
+/* IS-5: the hub's map has its island's coast, which the bowl draws exactly (IS-7); the seeded coast these tests try
+   is for a place whose map has none (a run's), so here the hub's map is given without it. The game's own (gameSea)
+   keeps it */
+const plainMap = l => {
+    const M = maps[l.mapId];
+    return M ? { w: M.w, h: M.h } : null;
+  },
+  withSea = opt =>
+    bowlGroundGrid(bowlReliefFeatures(locations), 160, bowlSeaInput(locations, roads, plainMap, 1000, opt)),
+  gameSea = opt =>
+    bowlGroundGrid(
+      bowlReliefFeatures(locations),
+      160,
+      bowlSeaInput(locations, roads, l => maps[l.mapId] || null, 1000, opt)
+    );
 const landBodies = g => {
   const w = g.n + 1,
     seen = new Uint8Array(w * w),
@@ -162,9 +171,10 @@ test("the sea's settings: the share, another seed, the game's own file", () => {
   assert.ok(moved > 200, 'another seed moves the coast');
   assert.ok(GAME_DATA.worldmap && GAME_DATA.worldmap.sea, 'worldmap.json has the sea');
   /* RL-8b: the game's hub is Copperleaf's island alone (sea.island): mostly sea, one piece of land */
-  const g = withSea(GAME_DATA.worldmap.sea);
+  const g = gameSea(GAME_DATA.worldmap.sea);
   assert.ok(GAME_DATA.worldmap.sea.island > 0, 'the hub is an island');
-  assert.ok(seaShare(g) > 0.9 && seaShare(g) < 0.99, `the game’s island is a sensible size (${seaShare(g)})`);
+  /* IS-5: the hub's island is drawn at its own size from its coast (IS-7): about 1% of the bowl */
+  assert.ok(seaShare(g) > 0.9 && seaShare(g) < 0.995, `the game’s island is a sensible size (${seaShare(g)})`);
   assert.equal(landBodies(g).length, 1, 'one island');
 });
 

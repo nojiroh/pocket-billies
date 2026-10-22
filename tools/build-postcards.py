@@ -22,7 +22,7 @@ SIZE = (480, 320)
 # each town's hour, and where the camera looks (offset from the town's middle, metres), how far back and how high
 # (ty: how high the point it looks at is, for a tall landmark; 1 m when not given)
 VIEW = {
-    'copperleaf': dict(time=9.5, at=(38, 42)), 'marigold': dict(time=16.6, at=(57, 25)), 'fizzwell': dict(time=12, dz=4, back=14, up=10),
+    'copperleaf': dict(time=9.5, dx=3, dz=-3), 'marigold': dict(time=16.6, at=(57, 25)), 'fizzwell': dict(time=12, dz=4, back=14, up=10),
     'pepperpot': dict(time=19.4, dz=6), 'lanternhall': dict(time=12, dz=5, back=14, up=10), 'clovercrest': dict(time=10.5, at=(56, 33)),
     'verdigris': dict(time=16, at=(36, 35), back=20, up=13), 'palmhaven': dict(time=12.5, at=(80, 16)), 'frostcrown': dict(time=11, dz=8, season='winter'),
     'twinpetal': dict(time=15, at=(48, 33)), 'goldvine': dict(time=17.8, dz=6), 'capshade': dict(time=19.6, at=(48, 40), back=24),

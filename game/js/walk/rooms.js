@@ -6,6 +6,7 @@
 import { expose } from '../test-globals.js';
 import { setPropLookUniforms } from '../hooks.js';
 import { clamp } from '../util.js';
+import { roomToLocal, roomToWorld, roomVecToWorld } from '../logic/room-turn.js';
 import { hexToRgb, makeCanvas } from '../art.js';
 import { stepRaiseAt, walkData, walkView } from '../walk-view.js';
 import { engineSetting } from '../engine/settings.js';
@@ -19,9 +20,14 @@ expose({
   drawRoomEffects: [() => drawRoomEffects, v => (drawRoomEffects = v)],
   drawRoomFront: [() => drawRoomFront, v => (drawRoomFront = v)],
   lampTexture: [() => lampTexture, v => (lampTexture = v)],
+  roomAt: [() => roomAt],
   roomBoxOf: [() => roomBoxOf, v => (roomBoxOf = v)],
+  roomDir: [() => roomDir],
+  roomHeightAt: [() => roomHeightAt],
   roomLamps: [() => roomLamps, v => (roomLamps = v)],
   roomLights: [() => roomLights, v => (roomLights = v)],
+  roomOwn: [() => roomOwn],
+  roomP: [() => roomP],
   roomSkyLight: [() => roomSkyLight, v => (roomSkyLight = v)],
   roomTexture: [() => roomTexture, v => (roomTexture = v)],
   windowBlocked: [() => windowBlocked, v => (windowBlocked = v)],
@@ -29,6 +35,21 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
+/* IS-5: a room laid in behind a door that doesn't face south is turned with it (seamless-world.js, logic/room-turn.js).
+   What's worked out here is in the room's own metres (its door on the near side, its back wall along +z), then put
+   into the place's: points with roomAt, directions with roomDir, the place's points back with roomOwn. A room facing
+   south has no frame, and all three give back what they're given. */
+const roomAt = (sc, x, z) => roomToWorld(sc.roomFrame, x, z),
+  roomOwn = (sc, x, z) => roomToLocal(sc.roomFrame, x, z),
+  roomDir = (sc, v) => {
+    const d = roomVecToWorld(sc.roomFrame, v[0], v[2]);
+    return [d[0], v[1], d[1]];
+  },
+  roomP = (sc, x, y, z) => {
+    const w = roomAt(sc, x, z);
+    return [w[0], y, w[1]];
+  },
+  roomHeightAt = (sc, x, z) => standingHeightAt(...roomAt(sc, x, z));
 /* v31: rooms lit from outside. The light of the town's hour and weather falls through each window: a bright patch on
    the floor with the panes' cross in it, moving with the sun (warm by day, golden at sunset, blue under the moon), a
    faint dusty shaft from the glass to the floor, the glass itself darkening at night; pendant lamps come on in the
@@ -38,12 +59,12 @@ export function roomBoxOf(sc) {
   walkRenderer.roomBoxId = walkView.id;
   walkRenderer.roomBox = null;
   if (!sc.room) return null;
-  const Rr = sc.roomRect || [0, 0, sc.w, sc.h],
+  const Rr = (sc.roomFrame && sc.roomFrame.rect) || sc.roomRect || [0, 0, sc.w, sc.h],
     X0 = Rr[0],
     Z0 = Rr[1],
     W = Rr[2],
     H = Rr[3],
-    hi = (x, z) => stepRaiseAt(x, z) > 1;
+    hi = (x, z) => stepRaiseAt(...roomAt(sc, x, z)) > 1;
   let x0 = X0 + W / 2,
     x1 = X0 + W / 2,
     zb = Z0 + H * 0.5;
@@ -137,8 +158,8 @@ function roomLamps(sc) {
   const B = roomBoxOf(sc);
   if (!B) return (walkRenderer.lamps = []);
   const W = B[1] - B[0],
-    near = (sc.props || []).filter(p => p.z > B[2] - 1.6),
-    free = x => near.every(p => Math.abs(p.x - x) > 0.95),
+    near = (sc.props || []).map(p => roomOwn(sc, p.x, p.z)).filter(p => p[1] > B[2] - 1.6),
+    free = x => near.every(p => Math.abs(p[0] - x) > 0.95),
     out = [];
   for (const side of [
     [0.2, 0.28, 0.12, 0.36, 0.06],
@@ -156,7 +177,9 @@ function windowBlocked(sc, w) {
     if (p === w.p || p === w) return false;
     const M = C0.props[p.k];
     if (!M || M.flat || /^wall_|rug/.test(p.k) || -M.oy * (p.s || 1) < 40) return false;
-    return Math.abs(p.x - w.x) < 0.75 && p.z < w.z - 0.02 && p.z > w.z - 1.3;
+    const a = roomOwn(sc, p.x, p.z),
+      b = roomOwn(sc, w.x, w.z);
+    return Math.abs(a[0] - b[0]) < 0.75 && a[1] < b[1] - 0.02 && a[1] > b[1] - 1.3;
   });
 }
 /* alpha 0.1: a room with many windows (it shows its building's own) shares their daylight, as if it had two or so: the
@@ -178,12 +201,12 @@ export function roomLights(sc, L, lb) {
   for (const [x, z, ly] of roomLamps(sc))
     if (R.lamp > 0.02) {
       L.push({
-        p: [x, standingHeightAt(x, z - 0.9) + ly, z - 0.9],
+        p: roomP(sc, x, roomHeightAt(sc, x, z - 0.9) + ly, z - 0.9),
         r: 6,
         c: [1.4, 1.04, 0.66].map(v => v * R.lamp * lb),
       });
       L.push({
-        p: [x, standingHeightAt(x, z - 1.9) + 0.3, z - 1.9],
+        p: roomP(sc, x, roomHeightAt(sc, x, z - 1.9) + 0.3, z - 1.9),
         r: 3.4,
         pool: 1,
         c: [0.85, 0.64, 0.4].map(v => v * R.lamp * lb),
@@ -191,9 +214,10 @@ export function roomLights(sc, L, lb) {
     }
   for (const p of sc.props || [])
     if (/wall_window/.test(p.k) && R.I > 0.03 && !windowBlocked(sc, p)) {
-      const u = 1.9 / Math.max(0.25, R.tan);
+      const u = 1.9 / Math.max(0.25, R.tan),
+        [px, pz] = roomOwn(sc, p.x, p.z);
       L.push({
-        p: [p.x + R.dx * u * 0.6, 0.9, Math.max(0.6, p.z - u * 0.7)],
+        p: roomP(sc, px + R.dx * u * 0.6, 0.9, Math.max(0.6, pz - u * 0.7)),
         r: 3.6,
         c: R.c.map(v => v * 1.25 * lb * ws),
       });
@@ -210,9 +234,9 @@ export function drawRoomEffects(C, U, items, glows, t, rm) {
     const T = imageTexture(cv, { noNormal: true });
     if (!T) return;
     gl.bindTexture(gl.TEXTURE_2D, T.t);
-    gl.uniform3f(U.uP, x, y, z);
-    gl.uniform3fv(U.uRight, r);
-    gl.uniform3fv(U.uUp, u);
+    gl.uniform3f(U.uP, ...roomP(sc, x, y, z));
+    gl.uniform3fv(U.uRight, roomDir(sc, r));
+    gl.uniform3fv(U.uUp, roomDir(sc, u));
     gl.uniform2f(U.uS, sw, sh);
     gl.uniform4f(U.uCol, col[0], col[1], col[2], a);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
@@ -224,12 +248,13 @@ export function drawRoomEffects(C, U, items, glows, t, rm) {
     if (it.k !== 'prop' || !/wall_window/.test(it.p.k)) continue;
     const s = it.mpp,
       f = it.flip || 1,
-      gx0 = it.x + (it.ox + 6) * s * f,
-      gx1 = it.x + (it.ox + 48) * s * f,
+      [ix, iz] = roomOwn(sc, it.x, it.z),
+      gx0 = ix + (it.ox + 6) * s * f,
+      gx1 = ix + (it.ox + 48) * s * f,
       yt = it.y - (it.oy + 5) * s,
       yb = it.y - (it.oy + 41) * s,
-      fy = standingHeightAt(it.x, it.z - 1),
-      zw = it.z - 0.04,
+      fy = roomHeightAt(sc, ix, iz - 1),
+      zw = iz - 0.04,
       cx = (gx0 + gx1) / 2,
       gw = Math.abs(gx1 - gx0),
       gh = yt - yb;
@@ -316,16 +341,14 @@ export function drawRoomEffects(C, U, items, glows, t, rm) {
     }
     /* dust turning in the light */
     for (let k = 0; k < 12; k++) {
-      const sd = k * 7.31 + it.x,
+      const sd = k * 7.31 + ix,
         ph = ((t * rm) / 9000 + k / 12) % 1,
         u = ut * (0.15 + 0.8 * ((k * 0.618) % 1)),
         px = cx + R.dx * u + (((k * 0.37) % 1) - 0.5) * gw * 0.8 + Math.sin(ph * 6.3 + sd) * 0.08,
         py = (yt + yb) / 2 - R.tan * u + (ph - 0.5) * gh * 0.8;
       if (py < fy + 0.05) continue;
       glows.push([
-        px,
-        py,
-        zw - u + Math.sin(sd) * 0.1,
+        ...roomP(sc, px, py, zw - u + Math.sin(sd) * 0.1),
         0.012,
         R.c.map(v => v * 1.4 + 0.3),
         0.9 * Math.sin(ph * Math.PI),
@@ -334,8 +357,8 @@ export function drawRoomEffects(C, U, items, glows, t, rm) {
   }
   /* daylight (or moonlight) spilling in through the open doorway */
   {
-    const ex = (sc.exits && sc.exits[0]) || [sc.w / 2, 0.6],
-      fy = standingHeightAt(ex[0], 0.8);
+    const ex = sc.exits && sc.exits[0] ? roomOwn(sc, sc.exits[0][0], sc.exits[0][1]) : [sc.w / 2, 0.6],
+      fy = roomHeightAt(sc, ex[0], 0.8);
     if (R.I > 0.03) {
       gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
       draw(
@@ -356,11 +379,11 @@ export function drawRoomEffects(C, U, items, glows, t, rm) {
   /* wall lamps, lit in the evening */
   const LT = lampTexture(R.lamp > 0.3);
   for (const [x, z, ly] of roomLamps(sc)) {
-    const y = standingHeightAt(x, z - 0.5) + ly;
+    const y = roomHeightAt(sc, x, z - 0.5) + ly;
     draw(LT, x, y, z, [1, 0, 0], [0, 1, 0], 0.33, 0.42, [1, 1, 1], 1);
     if (R.lamp > 0.02) {
-      glows.push([x, y + 0.06, z - 0.03, 0.07 * gk, [1, 0.86, 0.58], 2.4 * R.lamp]);
-      glows.push([x, y + 0.25, z, 0.42 * gk, [1, 0.78, 0.45], 0.3 * R.lamp]);
+      glows.push([...roomP(sc, x, y + 0.06, z - 0.03), 0.07 * gk, [1, 0.86, 0.58], 2.4 * R.lamp]);
+      glows.push([...roomP(sc, x, y + 0.25, z), 0.42 * gk, [1, 0.78, 0.45], 0.3 * R.lamp]);
     }
   }
 }
@@ -372,11 +395,11 @@ export function drawRoomFront(C, X) {
   const B = roomBoxOf(sc);
   if (!B) return;
   const gl = gpuState.gl;
-  const Rr = sc.roomRect || [0, 0, sc.w, sc.h],
-    ex = (sc.exits && sc.exits[0]) || [Rr[0] + Rr[2] / 2, Rr[1] + 0.6],
+  const Rr = (sc.roomFrame && sc.roomFrame.rect) || sc.roomRect || [0, 0, sc.w, sc.h],
+    ex = sc.exits && sc.exits[0] ? roomOwn(sc, sc.exits[0][0], sc.exits[0][1]) : [Rr[0] + Rr[2] / 2, Rr[1] + 0.6],
     dl = ex[0] - (sc.roomGap || 2) / 2,
     dr = ex[0] + (sc.roomGap || 2) / 2,
-    fy = standingHeightAt(Rr[0] + Rr[2] / 2, Rr[1] + 1.5),
+    fy = roomHeightAt(sc, Rr[0] + Rr[2] / 2, Rr[1] + 1.5),
     hw = 0.36,
     th = 0.2,
     deep = sc.roomRect ? 0.4 : 3.2,
@@ -424,33 +447,33 @@ export function drawRoomFront(C, X) {
   for (const [a, b] of segs) {
     gl.bindTexture(gl.TEXTURE_2D, F.t);
     gl.uniform4f(p.U.uUV, 0, 0, 1, 1);
-    gl.uniform3f(p.U.uO, a, fy + hw, zf);
-    gl.uniform3f(p.U.uA, b - a, 0, 0);
-    gl.uniform3f(p.U.uB, 0, -(hw + deep), 0);
-    gl.uniform3f(p.U.uN, 0, 0, -1);
+    gl.uniform3f(p.U.uO, ...roomP(sc, a, fy + hw, zf));
+    gl.uniform3fv(p.U.uA, roomDir(sc, [b - a, 0, 0]));
+    gl.uniform3fv(p.U.uB, roomDir(sc, [0, -(hw + deep), 0]));
+    gl.uniform3fv(p.U.uN, roomDir(sc, [0, 0, -1]));
     gl.drawArrays(gl.TRIANGLES, 0, 6);
     gl.bindTexture(gl.TEXTURE_2D, T.t);
-    gl.uniform3f(p.U.uO, a, fy + hw, zf);
-    gl.uniform3f(p.U.uA, b - a, 0, 0);
-    gl.uniform3f(p.U.uB, 0, 0, th);
-    gl.uniform3f(p.U.uN, 0, 1, 0);
+    gl.uniform3f(p.U.uO, ...roomP(sc, a, fy + hw, zf));
+    gl.uniform3fv(p.U.uA, roomDir(sc, [b - a, 0, 0]));
+    gl.uniform3fv(p.U.uB, roomDir(sc, [0, 0, th]));
+    gl.uniform3fv(p.U.uN, roomDir(sc, [0, 1, 0]));
     gl.drawArrays(gl.TRIANGLES, 0, 6);
     /* the wall's end at the doorway */
     const e = a < ex[0] ? b : a;
     gl.bindTexture(gl.TEXTURE_2D, F.t);
-    gl.uniform3f(p.U.uO, e, fy + hw, zf);
-    gl.uniform3f(p.U.uA, 0, 0, th);
-    gl.uniform3f(p.U.uB, 0, -hw, 0);
+    gl.uniform3f(p.U.uO, ...roomP(sc, e, fy + hw, zf));
+    gl.uniform3fv(p.U.uA, roomDir(sc, [0, 0, th]));
+    gl.uniform3fv(p.U.uB, roomDir(sc, [0, -hw, 0]));
     gl.uniform4f(p.U.uUV, 0, 0, 1, hw / (hw + deep));
-    gl.uniform3f(p.U.uN, a < ex[0] ? 1 : -1, 0, 0);
+    gl.uniform3fv(p.U.uN, roomDir(sc, [a < ex[0] ? 1 : -1, 0, 0]));
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   }
   /* the threshold: a worn stone sill across the doorway */
   gl.bindTexture(gl.TEXTURE_2D, T.t);
   gl.uniform4f(p.U.uUV, 0, 0, 1, 1);
-  gl.uniform3f(p.U.uO, dl, fy + 0.025, zf);
-  gl.uniform3f(p.U.uA, dr - dl, 0, 0);
-  gl.uniform3f(p.U.uB, 0, 0, 0.16);
-  gl.uniform3f(p.U.uN, 0, 1, 0);
+  gl.uniform3f(p.U.uO, ...roomP(sc, dl, fy + 0.025, zf));
+  gl.uniform3fv(p.U.uA, roomDir(sc, [dr - dl, 0, 0]));
+  gl.uniform3fv(p.U.uB, roomDir(sc, [0, 0, 0.16]));
+  gl.uniform3fv(p.U.uN, roomDir(sc, [0, 1, 0]));
   gl.drawArrays(gl.TRIANGLES, 0, 6);
 }

@@ -751,7 +751,7 @@ def studio_hub(pg, base):
     as long as drawing() does"""
     if not poll(pg, "typeof openSection==='function'&&typeof PB_DATA==='object'", 60): raise Exception('the Studio never loaded')
     pg.evaluate(STUDIO_DATA)
-    # the section opens on the hub's own island by default (copperleaf_island since IS-2); this check uses the small one
+    # the section opens on the hub's own island by default (copperleaf, since IS-5); this check uses the small one
     pg.evaluate("studioState.sel.hub='test_island';openSection('hub');0")
     if not poll(pg, "studioState.sel.hub==='test_island'&&walkView.id==='test_island'&&!!document.getElementById('hubMap')", 40):
         raise Exception('Hub island didn’t open on test_island: ' + str(pg.evaluate("[studioState.sel.hub,walkView.id]")))
@@ -976,8 +976,31 @@ def run_pack(pg, base):
     return f'a trainee from storage travelled alone with 2 Potions packed (training stopped, healed); given up and kept: back in storage once at Lv {lv}; a won run brought its bag home ({bag} Potions, no items row); a reload kept it'
 
 
+def hub_island(pg, base):
+    """island track IS-5: Copperleaf is the island. Its walking checks hold (the island's: from the square to the barn,
+    the pasture, the hamlet, each plot's door, up the trail to the summit, the dock; the sea not), with its houses on
+    their plots; from where you arrive a tap walks to every door in one go (findPath's budget grows with the map); the
+    wild Billies wait only in the tall grass patches; the camera orbits"""
+    drawing(pg)
+    if not pg.evaluate("!!(walkView.sc.island&&walkView.sc.cam&&walkView.sc.cam.orbit&&(walkView.sc.grassPatches||[]).length)"): raise Exception('Copperleaf has no island fields')
+    res = pg.evaluate("testMapChecks('copperleaf')")
+    bad = [r['what'] for r in res if not r['ok']]
+    if bad: raise Exception(f'{len(bad)} of {len(res)} walking checks fail: {bad[:3]}')
+    r = pg.evaluate("""(()=>{const sc=walkView.sc,C=walkData().sc,hub=mapHub(sc),out=[];let n=0,ms=0;
+      for(const p of sc.props){if(!p.act||!C.props[p.k])continue;const g=actionSpot(p,C.props[p.k],C.ppu||34);if(!g)continue;n++;
+        const t=performance.now(),q=findPath(hub[0],hub[1],g[0],g[1]);ms=Math.max(ms,performance.now()-t);const e=q&&q[q.length-1];
+        if(!e||Math.hypot(e[0]-g[0],e[1]-g[1])>1.6)out.push(p.k+' at '+p.x+','+p.z)}
+      const P=sc.grassPatches,cand=encounterCandidates(sc),off=cand.filter(c=>!P.some(g=>Math.hypot(g.x-c[0],g.z-c[1])<=g.r)).length;
+      return {n,bad:out,ms:Math.round(ms),cand:cand.length,off,orbit:!!walkRenderer.orbit}})()""")
+    if r['bad']: raise Exception(f"from where you arrive a tap doesn't reach {len(r['bad'])} of {r['n']} doors: {r['bad'][:3]}")
+    if not r['cand'] or r['off']: raise Exception(f"wild Billies' spots: {r['cand']}, {r['off']} outside the tall grass patches")
+    if not r['orbit']: raise Exception('the camera doesn’t orbit on the hub')
+    return f"{len(res)} walking checks hold; a tap reaches all {r['n']} doors from where you arrive (the longest search {r['ms']} ms); {r['cand']} wild spots, all in the patches; the camera orbits"
+
+
 PAGES = [   # (what the page opens, its checks in order); the longest first, so the browsers finish together
     ('town', [('A town opens and draws (Copperleaf Town)', scene('copperleaf')),
+              ('Copperleaf is the island: its walking checks, every door a tap away, the wild grass, the orbit (IS-5)', hub_island),
               ('The exported debug log holds no names', debug_log),
               ('The world map opens as the bowl', bowl_map)]),
     ('room', [('A room opens and draws (the lab)', room), ('A save round-trips', save_round_trip)]),

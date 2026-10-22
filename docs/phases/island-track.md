@@ -210,6 +210,27 @@ Copperleaf position.
   scene hash (remade on purpose), the opening fall's landing, the quick check's picture baseline (CI makes it).
 - A saved hub position that is now sea or rock moves to the nearest walkable spot on load (one small rule).
 
+**Checked in IS-5** (the owner's answers: the fall lands in the town square (11); the shop plot gets the General store,
+closed; cottages on every house plot and the farmhouse plot; gardens travel with their houses, free nature left to IS-9;
+rooms face four ways; wild grass in patches by the woods. Question 4 is moot: the generator lays the town out.)
+- **Rooms opened in place only behind a south-facing door**: the room was laid north of the door, you walked in
+  northward, the camera, the room's front cut, its lamps, window light and wall shading all assumed it. The island's
+  plots face every way (the lab's west, onto the square), so rooms now face four ways (logic/room-turn.js): made in
+  their own metres as before, turned by quarter turns about a point on whole metres by the door; what draws the room
+  reads the frame (`roomFrame`). A south room is laid in exactly as before.
+- **No hub position is saved across a reload** (only `trip.node`): "a saved hub position that is now sea" can't happen.
+  In a session the spot already goes through `walkablePointNear` when the walk starts; `standByMast` now turns with
+  the station.
+- **No golden scene or frozen hash covers Copperleaf** (they are run maps); the one that does is island-gen.test's "the
+  game's island is the generator's own output", now reading `copperleaf`.
+- **The opening's landing** is the opening cutscene's spots and shots, absolute metres by the lab's door: they move
+  and turn with the lab (tools/build-copperleaf.mjs).
+- `wild: 42` was still read, by check-quick's v42 "grown" step (it now leaves out a generated island); `grown`,
+  `grown2`, `v46` by nothing.
+- Hub wild Billies waited in tall grass within 13 m of the hub: the square on the island. The generator's new stage
+  `wild` lays `grassPatches` (the run maps' rule then applies).
+- The hub's view (`w:copperleaf*`) didn't carry `island` and `zones`: the sea's middle and the cove's calm need them.
+
 ### IS-6a Hub island editor (the owner, 2026-10-22)
 A Studio section of its own ("Hub island", not inside Walk scenes), editing the hub's map (`copperleaf`; a picker for
 `test_island` until IS-5). Studio files only, plus one guard in map-editor.js.

@@ -234,12 +234,12 @@ export function groundLockRefusal(sc) {
     : '';
 }
 
-/** why the Hub island editor only shows a map, or '': a map with no island (no coast) yet, Copperleaf until IS-5
- * moves it onto one (the owner, 2026-10-22: Copperleaf view-only until then) @param {any} sc */
+/** why the Hub island editor only shows a map, or '': a map with no island (no coast) yet (Copperleaf is one since
+ * IS-5) @param {any} sc */
 export function hubViewOnlyReason(sc) {
   return sc && sc.island && Array.isArray(sc.island.coast)
     ? ''
-    : 'Not an island yet (no coast): shown here, not edited (Copperleaf becomes one in IS-5).';
+    : 'Not an island yet (no coast): shown here, not edited.';
 }
 
 /** the maps the editor lists: the hub (copperleaf) first, then every map with an island, by id

@@ -3,14 +3,17 @@
 // generator's defaults; --seed and --dials change them. A map whose ground is locked (islandGen.lock) is never made
 // again: the tool stops. Its locked zones are kept exactly unless --fresh is given.
 //
-//   node tools/build-island.mjs                       # game/data/maps/copperleaf_island.json, seed "copperleaf"
+//   node tools/build-island.mjs                       # the hub's ground: game/data/maps/copperleaf.json, seed "copperleaf"
 //   node tools/build-island.mjs --seed hello          # another seed (the locked zones stay)
 //   node tools/build-island.mjs --dials d.json        # dials from a file (any left out: the defaults)
 //   node tools/build-island.mjs --defaults --fresh    # the generator's current defaults, nothing kept
 //   node tools/build-island.mjs --id test_isle --fresh
 //
-// The look (sky, haze, wind) is Copperleaf's; the map is a test map (kind test, test: 1) until IS-5 moves the town onto
-// it. Written through tools/write-data.mjs, as every build tool writes the data.
+// A new map is a test map (kind test, test: 1) with Copperleaf's look (sky, haze, wind). IS-5: a place's map (the hub,
+// copperleaf) keeps everything but its ground: its name, buildings, people, life and its pier; only the ground fields
+// (GROUND below) are made again. The town stands on the plots, so after a new ground run
+// node tools/build-copperleaf.mjs to put it on them again. Written through tools/write-data.mjs, as every build tool
+// writes the data.
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -24,7 +27,7 @@ const args = process.argv.slice(2),
     const i = args.indexOf(k);
     return i >= 0 ? args[i + 1] : undefined;
   };
-const ID = opt('--id') || 'copperleaf_island',
+const ID = opt('--id') || 'copperleaf',
   FRESH = args.includes('--fresh'),
   WALK_SPEED = 3.4; /* walk-view.js */
 
@@ -42,11 +45,47 @@ const dials = opt('--dials')
   seed = opt('--seed') || (prev && prev.islandGen && prev.islandGen.seed) || 'copperleaf';
 const { scene: sc, notes, paths } = islandGenerate(dials, seed, { scenery: D.scenery }, FRESH ? null : prev);
 
-/* Copperleaf's look, the walking checks for the in-game test */
-const look = D.maps.copperleaf || {};
-for (const k of ['sky', 'haze', 'hazeD', 'amb', 'wind', 'blur', 'tint', 'indoor']) if (k in look) sc[k] = look[k];
-sc.name = ID === 'copperleaf_island' ? 'Copperleaf island (generated ground)' : `Island ${ID}`;
-sc.folk = 0;
+/* IS-5: what the generator makes (the rest of a place's map is its own) */
+const GROUND = [
+  'w',
+  'h',
+  'edge',
+  'waterKind',
+  'far',
+  'farH',
+  'flatFar',
+  'cam',
+  'island',
+  'zones',
+  'islandGen',
+  'hub',
+  'exits',
+  'tiles',
+  'heights',
+  'plots',
+  'streams',
+  'spots',
+  'steps',
+  'stepm',
+  'grassPatches',
+  'checks',
+  'bridges',
+];
+const place = !!(prev && prev.locationId);
+if (place) {
+  for (const k of Object.keys(prev)) if (!GROUND.includes(k)) sc[k] = prev[k];
+  for (const k of ['kind', 'test']) if (!(k in prev)) delete sc[k];
+  /* its pier is the town's (build-copperleaf.mjs), not the generator's */
+  const same = b => JSON.stringify(b),
+    have = new Set((sc.bridges || []).map(same));
+  sc.bridges = [...(sc.bridges || []), ...(prev.bridges || []).filter(b => b.pier && !have.has(same(b)))];
+} else {
+  /* Copperleaf's look, the walking checks for the in-game test */
+  const look = D.maps.copperleaf || {};
+  for (const k of ['sky', 'haze', 'hazeD', 'amb', 'wind', 'blur', 'tint', 'indoor']) if (k in look) sc[k] = look[k];
+  sc.name = `Island ${ID}`;
+  sc.folk = 0;
+}
 const mid = poly => poly.reduce((a, p) => [a[0] + p[0] / poly.length, a[1] + p[1] / poly.length], [0, 0]),
   r2 = v => Math.round(v * 100) / 100,
   spot = k => (sc.spots || []).find(s => s.kind === k),
@@ -118,7 +157,12 @@ if (bad.length) {
   console.error(`${ID}: the island fails its checks:\n  ${bad.join('\n  ')}`);
   process.exit(1);
 }
-D.maps[ID] = sc;
+/* a place keeps its own order of fields, so a rerun that changes nothing writes nothing */
+D.maps[ID] = place
+  ? Object.fromEntries(
+      [...Object.keys(prev), ...Object.keys(sc)].filter((k, i, a) => a.indexOf(k) === i && k in sc).map(k => [k, sc[k]])
+    )
+  : sc;
 execFileSync('node', [join(ROOT, 'tools/write-data.mjs')], {
   input: JSON.stringify(D),
   stdio: ['pipe', 'inherit', 'inherit'],
@@ -135,3 +179,5 @@ console.log(
     `${Math.round(JSON.stringify(sc).length / 1024)} KB`
 );
 for (const n of notes) console.log('  note: ' + n);
+if (place)
+  console.log(`  ${ID}'s town, people and life kept: node tools/build-copperleaf.mjs puts the town on the new plots`);

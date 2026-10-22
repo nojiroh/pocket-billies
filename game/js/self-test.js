@@ -1337,7 +1337,11 @@ async function runFullTest(mode) {
             const sc = walkView.sc,
               I = uiState.inside,
               ex = sc.exits[0],
-              dx = I && I.at ? Math.abs(ex[0] - I.at[0]) : 9,
+              /* IS-5: along the building's front, whichever way it faces */
+              dx =
+                I && I.at
+                  ? Math.abs((ex[0] - I.at[0]) * -(I.out || [0, -1])[1] + (ex[1] - I.at[1]) * (I.out || [0, -1])[0])
+                  : 9,
               off = I && I.door ? Math.hypot(ex[0] - I.door[0], ex[1] - I.door[1]) : 9,
               RD = roomDimming(sc),
               R = sc.roomRect,
@@ -1371,8 +1375,10 @@ async function runFullTest(mode) {
                 walkRenderer.camT.every((v, k) => Math.abs(v - cam.T[k]) < 1e-6) &&
                 walkRenderer.yawT === cam.yaw &&
                 walkRenderer.zoomT === cam.zoom;
-            if (pd > 0.01 || P.dir !== 'down')
-              throw new Error(`out at ${pd.toFixed(2)} m from the door, facing ${P.dir}`);
+            const o = I.out || [0, -1],
+              way = Math.abs(o[0]) > Math.abs(o[1]) ? (o[0] > 0 ? 'right' : 'left') : o[1] < 0 ? 'down' : 'up';
+            if (pd > 0.01 || P.dir !== way)
+              throw new Error(`out at ${pd.toFixed(2)} m from the door, facing ${P.dir} (not ${way})`);
             if (!camOk) throw new Error('the camera isn’t as it was when you went in');
             for (let i = 0; i < 60 && !(walkView.ready && walkView.id === 'w:' + hub.mapId + '*'); i++)
               await selfTestSleep(100);

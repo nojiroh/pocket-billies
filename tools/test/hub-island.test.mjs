@@ -139,13 +139,13 @@ test('walk the coast: a closed lap inside the coast, from the south', () => {
 
 /* ---------- IS-6b: the dials ---------- */
 const GD = readGameData();
-const isleMap = () => structuredClone(GD.maps.copperleaf_island);
+const isleMap = () => structuredClone(GD.maps.copperleaf);
 /* a small island that fits round test_island's middle (60, 60) */
 const SMALL = { size: { r: 30 }, mountain: { r: 10, peak: 12 }, town: { on: 0 }, hamlet: { on: 0 }, zones: [] };
 
 test('the dials start from the map’s own islandGen (a copy), else the defaults and the map’s id', () => {
   const sc = isleMap(),
-    g = H.hubGenStart(sc, 'copperleaf_island');
+    g = H.hubGenStart(sc, 'copperleaf');
   assert.equal(g.seed, sc.islandGen.seed);
   assert.deepEqual(g.dials, sc.islandGen.dials);
   g.dials.size.r = 1;
@@ -206,8 +206,10 @@ test('Use this island: the generator’s ground, the locked zones as they were, 
   assert.equal(sc.plots, undefined);
 });
 
-test('the walking checks: copperleaf_island walks; a summit out at sea is caught', () => {
-  const sc = isleMap();
+test('the walking checks: copperleaf (the hub island) walks; a summit out at sea is caught', () => {
+  /* the check is for a generator draft, which has no props: since IS-5 the hub's buildings and gardens stand on its
+     plots, so the island is checked as the generator made it */
+  const sc = Object.assign(isleMap(), { props: [] });
   assert.deepEqual(H.hubGenWalkProblems(sc, GD.scenery), []);
   const S = sc.spots.find(p => p.kind === 'summit');
   S.x = 1;

@@ -2,9 +2,9 @@
 'use strict';
 /* ================= THE HUB'S ISLAND ON THE BOWL (island track IS-7) =================
    The hub's world map draws the real island: its coast (island.coast) as the outline, its ground, its hills and
-   mountain, and its town close in. Which map that is, by its fields: the place's own map when it has a coast (after
-   IS-5, when copperleaf_island becomes copperleaf); until then, for the hub (world node 0), the biggest map with a
-   coast and building plots (the island generator's: copperleaf_island; test_island has no plots). Its buildings: the
+   mountain, and its town close in. Which map that is, by its fields: the place's own map when it has a coast (since
+   IS-5 the hub's, copperleaf); else, for the hub (world node 0), the biggest map with a coast and building plots
+   (test_island has no plots). Its buildings: the
    map's own building props, and on every plot no building stands on yet a model of the plot's kind.
    Logic only: no DOM, runs in Node; world-bowl.js draws with it. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */

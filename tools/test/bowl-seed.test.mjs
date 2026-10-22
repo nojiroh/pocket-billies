@@ -20,7 +20,8 @@ const grid = seed =>
   bowlGroundGrid(
     bowlReliefFeatures(locations, null, seed),
     120,
-    bowlSeaInput(locations, [], l => maps[l.mapId] || null, 1000, SEA)
+    /* IS-5: as a run's place, with no island coast (the hub's own coast is drawn exactly, IS-7) */
+    bowlSeaInput(locations, [], l => (maps[l.mapId] ? { w: maps[l.mapId].w, h: maps[l.mapId].h } : null), 1000, SEA)
   );
 const clumps = (G, seed) =>
   bowlClumps(

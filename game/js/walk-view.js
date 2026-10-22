@@ -50,6 +50,7 @@ import {
 } from './hooks.js';
 import { clamp } from './util.js';
 import { pointInProp, turnedBounds, turnedPoint } from './logic/prop-turn.js';
+import { roomToLocal } from './logic/room-turn.js';
 import { stepCellsJoined, stepCornerHeight, stepGridCorners } from './logic/step-grid.js';
 import { orbitStickYaw, orbitWalkStep } from './logic/camera-orbit.js';
 import { frameStop } from './frame-scheduler.js';
@@ -2596,7 +2597,15 @@ export function mapBridges(sc = walkView.sc) {
   const L = sc && sc.bridges;
   if (!L || !L.length) return null;
   let E = STEP_GRID_CACHE.get(L);
-  if (E && E.v === JSON.stringify(L) + (sc.stepsV || 0)) return E.list;
+  /* IS-5: asked once a vertex while a ground is built (the island's: hundreds of thousands); the bridges' words are
+     compared again only after a quarter of a second (the Studio edits them in place) */
+  const now = performance.now();
+  if (E && E.sv === (sc.stepsV || 0) && now - E.t < 250) return E.list;
+  if (E && E.v === JSON.stringify(L) + (sc.stepsV || 0)) {
+    E.t = now;
+    E.sv = sc.stepsV || 0;
+    return E.list;
+  }
   const list = L.map(b => {
     const a = b.a,
       c = b.b,
@@ -2622,7 +2631,7 @@ export function mapBridges(sc = walkView.sc) {
       w: b.w || 1.6,
     };
   });
-  STEP_GRID_CACHE.set(L, { v: JSON.stringify(L) + (sc.stepsV || 0), list });
+  STEP_GRID_CACHE.set(L, { v: JSON.stringify(L) + (sc.stepsV || 0), list, t: now, sv: sc.stepsV || 0 });
   return list;
 }
 export function bridgeAt(x, z, sc = walkView.sc) {
@@ -2728,11 +2737,19 @@ export function navGrid() {
       a1 = R[0] + R[2] - 0.3,
       b0 = R[1] + 0.25,
       b1 = R[1] + R[3] - 0.3;
+    /* IS-5: a room turned with its door: its own metres (logic/room-turn.js), the margins kept to its near side */
+    const F = sc.roomFrame,
+      [c0, d0, cw, cd] = F ? F.rect : R,
+      c1 = c0 + cw,
+      d1 = d0 + cd;
     for (let j = 0; j < gh; j++)
       for (let i = 0; i < gw; i++) {
         const x = (i + 0.5) / N,
           z = (j + 0.5) / N;
-        if (x < a0 || x > a1 || z < b0 || z > b1) blk[j * gw + i] = 1;
+        if (F) {
+          const [u, v] = roomToLocal(F, x, z);
+          if (u < c0 + 0.3 || u > c1 - 0.3 || v < d0 + 0.25 || v > d1 - 0.3) blk[j * gw + i] = 1;
+        } else if (x < a0 || x > a1 || z < b0 || z > b1) blk[j * gw + i] = 1;
       }
   }
   /* alpha 0.2: in a joined view you walk in the place and where the next places meet it, not out into the countryside */
@@ -2958,7 +2975,9 @@ export function findPath(ax, az, bx, bz, o = {}) {
   push(s, h(s));
   let found = false,
     it = 0;
-  while (H.length && it++ < (o.max || 30000)) {
+  /* IS-5: the budget grows with the map (the island hub is ~220,000 cells; 30000 stopped a tap a third of the way across) */
+  const cap = o.max || Math.max(30000, n);
+  while (H.length && it++ < cap) {
     const c = pop();
     if (c === e) {
       found = true;
