@@ -229,14 +229,39 @@ check('roads.schema.json', D.roads || [], 'roads.json');
 // the items' share of their price at most 1, the seals for a win a whole number
 {
   const pay = D.rules && D.rules.run && D.rules.run.payout,
-    RATES = ['money', 'itemShare', 'released', 'node', 'win', 'winSeals'];
+    RATES = ['money', 'itemShare', 'released', 'node', 'win', 'winSeals', 'scrapNode', 'scrapWin'];
   if (!pay || typeof pay !== 'object') problem('rules.json', 'run.payout missing');
   else {
     for (const k of RATES)
       if (typeof pay[k] !== 'number' || !(pay[k] >= 0)) problem('rules.json', `run.payout.${k} is not a number of 0 or more`);
     for (const k of Object.keys(pay)) if (!RATES.includes(k)) problem('rules.json', `run.payout.${k}: no such rate`);
     if (pay.itemShare > 1) problem('rules.json', 'run.payout.itemShare is more than 1 (items would pay over their price)');
-    if (!Number.isInteger(pay.winSeals)) problem('rules.json', 'run.payout.winSeals is not a whole number');
+    for (const k of ['winSeals', 'scrapNode', 'scrapWin'])
+      if (!Number.isInteger(pay[k])) problem('rules.json', `run.payout.${k} is not a whole number`);
+  }
+}
+// RL-9: the ranch (logic/ranch.js): training slots by ranch level (1-12 levels, each 1-20 slots, never fewer than the
+// level before), the level cap (capBase at level 1, capStep more a level; at most the game's maxLevel), the hours a
+// trainee banks (1-168), levels an hour (above 0, at most 10), the Scrap to start (0-10,000), the clock's slack for a
+// rollback (0-1 hour); nothing else
+{
+  const RA = D.rules && D.rules.ranch,
+    whole = (v, lo, hi) => Number.isInteger(v) && v >= lo && v <= hi,
+    KEYS = ['slots', 'capBase', 'capStep', 'bankHours', 'levelsPerHour', 'trainCost', 'guardMs'];
+  if (!RA || typeof RA !== 'object' || Array.isArray(RA)) problem('rules.json', 'ranch missing');
+  else {
+    for (const k of Object.keys(RA)) if (!KEYS.includes(k)) problem('rules.json', `ranch.${k}: no such rule`);
+    const S = RA.slots;
+    if (!Array.isArray(S) || S.length < 1 || S.length > 12 || !S.every((n, i) => whole(n, 1, 20) && (!i || n >= S[i - 1])))
+      problem('rules.json', 'ranch.slots is not a list of 1-12 whole numbers (1-20), none fewer than the one before');
+    const most = (D.rules.progression && D.rules.progression.maxLevel) || 100;
+    if (!whole(RA.capBase, 2, most) || !whole(RA.capStep, 0, most))
+      problem('rules.json', `ranch.capBase (2-${most}) and capStep (0-${most}) are not whole levels`);
+    if (!whole(RA.bankHours, 1, 168)) problem('rules.json', 'ranch.bankHours is not a whole number of hours (1-168)');
+    if (typeof RA.levelsPerHour !== 'number' || !(RA.levelsPerHour > 0 && RA.levelsPerHour <= 10))
+      problem('rules.json', 'ranch.levelsPerHour is not a number above 0 and at most 10');
+    if (!whole(RA.trainCost, 0, 10000)) problem('rules.json', 'ranch.trainCost is not a whole number of Scrap (0-10,000)');
+    if (!whole(RA.guardMs, 0, 3600000)) problem('rules.json', 'ranch.guardMs is not a whole number of ms (0-3,600,000)');
   }
 }
 // RL-6: how a run's node map is laid out (logic/run-map.js): 5 to 12 rows, mini-bosses that fit (each on a row of

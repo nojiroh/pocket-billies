@@ -130,7 +130,7 @@
   "xpYield": 150
  },
  "run": {
-  "payout": {"money":0.1,"itemShare":0.5,"released":15,"node":10,"win":100,"winSeals":1},
+  "payout": {"money":0.1,"itemShare":0.5,"released":15,"node":10,"win":100,"winSeals":1,"scrapNode":2,"scrapWin":10},
   "map": {
    "rows": 9,
    "minibosses": 2,
@@ -175,5 +175,6 @@
    "miniboss": {"up":3,"reward":300},
    "boss": {"up":5,"reward":600}
   }
- }
+ },
+ "ranch": {"slots":[2,3,4],"capBase":15,"capStep":10,"bankHours":8,"levelsPerHour":0.5,"trainCost":5,"guardMs":60000}
 }
