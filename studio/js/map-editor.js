@@ -53,6 +53,7 @@ import { walkRenderer } from '../../game/js/walk/walk-state.js';
 import { WALL_MATERIALS, rawHeightAt } from '../../game/js/walk/heights.js';
 import { mountWalkView } from '../../game/js/walk-view-gl.js';
 import { PEOPLE, escapeHtml } from './game-stand-ins.js';
+import { groundLockRefusal } from '../../game/js/logic/hub-island.js';
 import { pixelKeyAction } from '../../game/js/logic/pixel-ops.js';
 import {
   ACTIONS,
@@ -96,6 +97,7 @@ import { freeCameraBarHTML, freeCameraLook, freeCameraSpot } from './free-camera
 /* eslint-disable no-func-assign */
 expose({
   GROUND_KEYS: [() => GROUND_KEYS],
+  LOCKED_GROUND_TOOLS: [() => LOCKED_GROUND_TOOLS],
   PAINTED_WATER_KINDS: [() => PAINTED_WATER_KINDS],
   addSceneryProp: [() => addSceneryProp, v => (addSceneryProp = v)],
   applyPreviewEnvironment: [() => applyPreviewEnvironment, v => (applyPreviewEnvironment = v)],
@@ -475,6 +477,7 @@ SECTIONS.scenes = () => {
    'Map',
    `<div class="sc-bar"><span class="px-tools">${tools}</span><span class="px-tools"><button class="seg" data-act="scZoom" data-z="-4">−</button><span id="scZ">${mapEditor.zoom}px</span><button class="seg" data-act="scZoom" data-z="4">+</button></span>
    <label class="mp-size"><span>Brush</span><input type="range" id="scBrush" min="1" max="5" value="${mapEditor.brush}"><output id="scBrushO">${mapEditor.brush}</output></label></div>
+  ${groundLockRefusal(sc) ? `<p class="hub-note">🔒 ${escapeHtml(groundLockRefusal(sc))} Paint, Fill, Shape the land, Cliffs & stairs, Curved road, Resize and Flatten are off.</p>` : ''}
   ${
     mapEditor.tool === 'steps'
       ? stepsToolBarHTML()
@@ -1398,6 +1401,8 @@ export function propAtPointer(m) {
   }
   return null;
 }
+/* the tools that change what the ground lock covers (logic/island.js islandGroundHash) */
+const LOCKED_GROUND_TOOLS = { paint: 1, fill: 1, height: 1, steps: 1, road: 1 };
 function bindEditorMap() {
   const cv = $('#scMap');
   if (!cv || cv._b) return;
@@ -1419,6 +1424,8 @@ function bindEditorMap() {
       storyPreviewChanged();
       return;
     }
+    /* IS-6a: a locked island's ground (letters, heights, steps) can't change here; props, water, exits still can */
+    if (LOCKED_GROUND_TOOLS[mapEditor.tool] && groundLockRefusal(sc)) return void toast(groundLockRefusal(sc));
     if (typeof extraToolPointerDown === 'function' && extraToolPointerDown(sc, m, ev)) return;
     if (mapEditor.tool === 'paint' || mapEditor.tool === 'fill') {
       if (ev.altKey) {
@@ -1716,6 +1723,7 @@ ACTIONS.scHMode = d => {
 };
 ACTIONS.scHFlat = async () => {
   const sc = currentMap();
+  if (groundLockRefusal(sc)) return void toast(groundLockRefusal(sc));
   if (!(await ask('Make the whole scene flat?', 'Flatten'))) return;
   delete sc.heights;
   walkView.nav = null;
@@ -2006,6 +2014,7 @@ ACTIONS.scResize = () => {
     w = clamp(+$('#scW').value || sc.w, 10, 240),
     h = clamp(+$('#scH').value || sc.h, 8, 200);
   if (w === sc.w && h === sc.h) return;
+  if (groundLockRefusal(sc)) return void toast(groundLockRefusal(sc));
   const oldE = stepGrid(sc),
     before = clone(sc);
   /* v42: an exit on the north or east edge moves out with that edge (the rest of the map keeps its place); its id and width stay */
