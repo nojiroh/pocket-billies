@@ -9,6 +9,15 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- The camera frames what matters (CAM-2): while someone talks to you it frames you both and comes in closer; the swoop
+  into a battle frames you and the spot and the battle comes up once the camera is there; the first time you come
+  near a run's boss in a place the camera leans toward them; by a landmark, a shop, a clinic, the lab or the ranch it
+  leans a little that way; standing still a few seconds it drifts slowly in, and running it eases out a little. One
+  thing at a time, nothing new right after a sharp turn; with reduced motion the drift and the ease are off and the
+  rest is gentler. Your own zoom is kept through all of it, battles included. Zoom now moves the tilt, distance and
+  field of view together along curves. The Studio: dials for all of it in Engine > Camera, the points of interest and
+  camera zones on the Camera guides, "Play moment" buttons, and a Camera zones tool in the Walk scenes editor (a
+  rectangle or circle where the camera frames differently).
 - The walking camera follows more smoothly (CAM-1): it trails you by the same amount at any frame rate, holds still
   while you move a little and catches up as you go further, and settles on you again when you stop. It looks ahead
   the way you push the joystick (or the way you walk when you tap), further sideways on a phone held upright. Looking

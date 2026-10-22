@@ -126,6 +126,54 @@ below against main and report what differs.
   (a slow drift in); running (a small ease-out). None right after a turn; all off or reduced with reduced motion.
 - Studio: point-of-interest rings and zones on the preview; "Play moment" buttons (talk, encounter, boss gate, idle).
 
+#### CAM-2 as built (2026-10-22)
+- **Corrections to the plan** (checked against `CAM` at the start of CAM-2):
+  - There is no "boss gate" in the walk: a run's boss is a trainer (logic/run-loop.js `runFoes`, `runFoe: 'boss'`),
+    placed like the other trainers. The reveal fires the first time you come near it in a place.
+  - Nothing noticed a door you stand by (doors only worked when tapped), and nothing counted time standing still:
+    both are new.
+  - Talking has no "ended" hook: the moment follows `talkBox.on`, with the speaker stored when the talk starts
+    (talk.js `talkFolk`, walk-control.js `walkPick` for trainers and people).
+  - The landmark catalogue is scenery.json (`props`, 41 with `landmark`), which has no schema.
+  - Zoom never changed the field of view: the distance and the width shown both scaled with it, so only distance and
+    tilt moved (14 degrees a unit).
+  - The swoop wrote your zoom (`zoomT` halved, restored after 720 ms) and leaving a battle set `zoom` to 0.55x; twelve
+    other places write `zoomT`/`yawT`, so no moment does.
+  - Copperleaf has no shop or clinic: the lab's and ranch's doors count as points of interest too.
+  - The Engine preview runs a free camera (studio/js/viewport.js), which had no goals beyond the follow; it asks for
+    the moments and zones now (`walkView.opt.moments`). The Studio's other previews don't.
+- **One zoom** (logic/camera-zoom.js, 7 unit tests): `zoomShape` turns a zoom into tilt, distance and field of view
+  along `t^curve` toward each end (Engine > Camera > Zoom curve: tilt, distance and field of view up close and far out,
+  and the shape), carrying on along the slope past an end. The defaults give the zoom as before (-6.3/+9.8 degrees,
+  0.55/1.7 distance at 0.55/1.7 zoom, field of view 1). The zoom used is your pinch zoom times the goals' zoom
+  (`blendGoals` multiplies a goal's `zoom` like its `dist`); it is never clamped below or above your own.
+- **Goals** gain `zoom` and `out` (a ramp time going out). New goals in walk/camera.js: `swoop` now with a zoom
+  (Encounter shot: zoom 0.5, never so close that you and the spot don't both fit), `leave` (after a battle the camera
+  starts at 0.55 and pulls back out over 0.2 s, as v31's jump of the zoom did), `zone:N`, and the moments'.
+- **Encounter shot** (battle.js): the battle comes up once the camera has arrived (the swoop at weight 0.95 and the
+  camera within 0.2 m of its aim), no sooner than 400 ms and no later than 900 ms (dials), instead of a fixed 720 ms.
+  Your `zoomT` is untouched. The seamless world's re-anchor moves the swoop's points.
+- **Points of interest** (logic/camera-interest.js, 6 unit tests; walk/sprites.js `interestPoints`): a catalogue
+  entry's `interest {weight, radius, zoom, pull}`, else a landmark's default (0.5, 14 m, zoom 1, 1.5 m), else a shop,
+  clinic, lab or ranch door (0.6, 3.5 m, zoom 0.92, 1 m). The weight fades in over the outer 60% of the radius; the
+  strongest wins; the lean is capped (Interest: most lean, 1.5 m). The v47 landmark tilt is unchanged.
+- **Moments** (logic/camera-moments.js, 9 unit tests): one a frame by priority: talk (a two-shot at the midpoint, zoom
+  0.75), boss (2.2 s, lean up to 3 m, zoom 0.85; once per boss, kept across the seamless world's re-anchor),
+  interest, idle (after 4 s still, in over 2 s to zoom 0.9, out in 0.3 s), run (zoom 1.06; `P.running` set where
+  the walk picks the run speed). None starts within 0.5 s of a turn past 60 degrees; one already on carries on.
+  Reduced motion: idle and run off, the others at half weight. A camera cut restarts the idle count.
+- **Camera zones**: a scene's `camZones` (map.schema.json: rect or circle, zoom, aim offset `at`, tilt, priority,
+  blend); the highest priority you stand in is a goal (`zoneAt`); the seamless world carries a place's zones. No scene
+  has any yet. Studio: Walk scenes > Camera zones (shortcut J; studio/js/camera-zones-editor.js): drag a rectangle or
+  a circle from its centre, click to pick and set its numbers, drag to move, right-click or Alt-click to remove.
+- **Studio** (Engine): the dials above; Camera guides also draw the interest rings (the one that counts brighter),
+  the zones (the one you stand in filled) and a played moment's spot, and the line names the moment and the zoom used;
+  "Play moment": Talk, Encounter, Boss, Standing still.
+- **Debug log**: the `camera` section adds `zoomEff`, `moment`, `interest` ([in reach, top weight]), `zone`, `still`.
+- **Checks**: check-fast "Camera moments" (Copperleaf, from state: the drift in and out, a talk's two-shot, a played
+  boss, the lab's door, the encounter shot keeping your zoom; a planted fault, the moments switched off, is caught);
+  the debug log step wants the moment, zoom and zone.
+
 ### CAM-3 - The diorama blur
 - A tilted plane of focus through the player (a Studio dial: 0 = today's slab, 1 = an upright plane, so whatever
   stands in the strip is sharp head to toe and the ground ahead and behind melts away), plus an optional edge blur.
