@@ -44,7 +44,7 @@ biome-to-song mapping as the track file first guessed it (not waiting to hear th
   - Smoke, each run alone in a worktree: 6d79857 (after the split) 255 s, no problems; 187ff03 270 s, no problems.
   - The full quick check on 187ff03: 1928 s, 56 steps, 46 passed; 9 of the 10 problems are the known ones (v34, v35,
     v38, v39/40, v43, v44, v46, alpha 0.4, phase 08 running), the tenth "Run music" (fixed above). Sound settings,
-    Song fingerprints (41 s) and Unused: ok. A second full run on 75333d0 is noted below when it ends.
+    Song fingerprints (41 s) and Unused: ok. Again on 75333d0 (the step fixed): 1959 s, 56 steps, 47 passed, the 9 known problems only; Song fingerprints 30 s, Run music 19 s.
   - Not run: `--selftest`. Not tried on a phone.
 - Decisions I made (and why):
   - Fingerprints go through the game's own initSound with a stand-in AudioContext (the same tool before and after
