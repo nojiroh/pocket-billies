@@ -36,7 +36,10 @@ slow.
 - Verified: unit tests 621; lint, typecheck, check:modules, format, check:data; check-fast's Copperleaf step (14
   walking checks, 13 doors, the coast at 8 bearings, 159 wild spots all in the patches); the reach with and without
   the rounding equal (58,419 cells); headless pictures (coast N, E, W, NW, the summit, from above; three house fronts).
-  The full fast check, smoke and the full quick check: results in the PR (they ran last).
+  check-fast 25 of 25; smoke no problems; full quick check (32 min): 9 problems, the 9 on main (roster counts 117/61,
+  the biped walk cycle, empty bush recipes, buildings without a plan, the props scene, the bowl map camera, the running
+  step's division by zero); **the terrace step passes on Copperleaf now** (IS-5's finding 1) and RL-7 and RL-8 pass
+  after it (IS-5's finding 2 gone with it). CI green.
 - **Frame cost** (tools/island-perf.py, 390 x 760, low graphics, software drawing: the milliseconds compare builds
   only; draws carry over):
 
