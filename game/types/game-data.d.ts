@@ -1110,7 +1110,7 @@ export interface PartZ {
   front?: number;
   back?: number;
 }
-export type PartSlot = 'head' | 'headExtra' | 'body' | 'body-extra' | 'front' | 'back' | 'sig';
+export type PartSlot = 'head' | 'headExtra' | 'body' | 'bodyExtra' | 'front' | 'back' | 'sig';
 export interface KitPart {
   kit: string;
   /** the animal it comes from, or 'any' (a kit's extras) */

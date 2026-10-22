@@ -33,13 +33,13 @@
   "horn": "headExtra",
   "spikes": "sig",
   "mane": "sig",
-  "shell": "body-extra",
-  "ruff": "body-extra",
+  "shell": "bodyExtra",
+  "ruff": "bodyExtra",
   "plume": "headExtra",
   "crown": "headExtra",
   "sail": "sig",
   "spike": "headExtra",
-  "scales": "body-extra",
+  "scales": "bodyExtra",
   "lure": "headExtra"
  },
  "pivots": {
@@ -129,7 +129,7 @@
   "hipR": ["back"],
   "tail": ["sig"],
   "top": ["headExtra"],
-  "spine": ["body-extra","sig"]
+  "spine": ["bodyExtra","sig"]
  },
  "sockets": {
   "fox_tail": {
@@ -1140,7 +1140,7 @@
    "kit": "beasts",
    "animal": "any",
    "kind": "shell",
-   "slot": "body-extra",
+   "slot": "bodyExtra",
    "pivot": [0.5,0.6],
    "size": "M",
    "views": {
@@ -2038,7 +2038,7 @@
    "kit": "birds",
    "animal": "any",
    "kind": "ruff",
-   "slot": "body-extra",
+   "slot": "bodyExtra",
    "pivot": [0.5,0.2],
    "size": "M",
    "views": {
@@ -3046,7 +3046,7 @@
    "kit": "fish",
    "animal": "any",
    "kind": "scales",
-   "slot": "body-extra",
+   "slot": "bodyExtra",
    "pivot": [0.5,0.5],
    "size": "M",
    "views": {
