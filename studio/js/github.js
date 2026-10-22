@@ -10,6 +10,7 @@
    Started from start-studio.py on your own computer, none of this is used: saves go straight into the game folder. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
+import { draftOffer, draftStart } from '../../game/js/hooks.js';
 import { $ } from '../../game/js/util.js';
 import { escapeHtml } from './game-stand-ins.js';
 import { publishBranchName, publishEmpty, publishOverlap } from '../../game/js/logic/publish-plan.js';
@@ -72,7 +73,7 @@ const RIG_FILE_HEADERS = {
   rigs: '/* Billionaire skeletons (bones, pivots, draw order) for art/billionaires/*.png. Edited by Pocket Billies Studio. */\n',
   next: '/* v36: rigs for the new piece sheets (art/next/billionaires), made by tools/build-starter-sheets.py and edited by Pocket Billies Studio. k=1: pieces at the final scale. */\n',
 };
-async function githubFetch(path, opt = {}, raw) {
+export async function githubFetch(path, opt = {}, raw) {
   const r = await fetch('https://api.github.com/' + path, {
     ...opt,
     headers: {
@@ -93,8 +94,8 @@ async function githubFetch(path, opt = {}, raw) {
   }
   return raw ? r.text() : r.status === 204 ? null : r.json();
 }
-const repoApiPath = p => `repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}${p ? '/' + p : ''}`;
-const gameFilePath = p => (GITHUB_CONFIG.game ? GITHUB_CONFIG.game + '/' : '') + p;
+export const repoApiPath = p => `repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}${p ? '/' + p : ''}`;
+export const gameFilePath = p => (GITHUB_CONFIG.game ? GITHUB_CONFIG.game + '/' : '') + p;
 const parseScriptJson = (t, name) => {
   const i = t.indexOf(name + '=');
   if (i < 0) throw new Error(`${name} not found`);
@@ -279,7 +280,7 @@ async function readGithubData() {
   performance.mark('studio-data-assembled');
   return D;
 }
-function changedDataFiles(D) {
+export function changedDataFiles(D) {
   const { index, files } = PB_DATA.split(D),
     now = { 'index.json': PB_DATA.text(index) },
     out = [];
@@ -529,6 +530,9 @@ if (githubMode.on) {
   removeEventListener('load', boot);
   addEventListener('load', async () => {
     await startGithubMode();
-    boot0();
+    /* T1.1: unsent changes from an earlier visit are offered before the data loads (a restore reads at their commit) */
+    const draft = await draftOffer();
+    await boot0();
+    await draftStart(draft);
   });
 }

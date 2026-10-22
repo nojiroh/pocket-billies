@@ -75,6 +75,72 @@ save's); the simulator defaults to none with `--unlocks=all`; the Run Lab gets a
 - T2.5 after T1.3; T2.6 in its own session (game boot code, a check-fast step; add `run.unlocks` to the debug log).
 - Manual (owner): play the run fixture once on the phone; compare one seed in the Lab with the debug menu's run.
 - No phase tag: Phase 2 continues.
+### Studio plan Phase 1, session A - Local drafts (T1.1) and hygiene (T1.6) - 2026-10-22
+Branch `ccr-81011a25-lf3exv`, on top of Phase 0 (PR #131, not merged yet). Approved in Plan Mode with Phase 1 split
+over four sessions: **A** T1.1 + T1.6 (this one); **B** T1.2 undo per file + T1.5 the F14 hunt; **C** T1.3 part 1 (move
+check-data's checks into `game/js/logic/data-checks.js`, output byte-identical); **D** T1.3 part 2 (the Studio's Check
+uses them, the severity review) + T1.4 CI, then tag `sr-1-done`. Owner's decision: a draft made on an older commit is
+restored **at that commit** (not laid over today's main).
+
+**Changed** (one cause per commit):
+- **Drafts (T1.1).** `studio/js/drafts.js` (new) and `game/js/logic/draft-record.js` (new, 4 unit tests).
+  - Written to IndexedDB (`pb-studio-drafts`, one record per `owner/repo@branch`) 2 s after the last change
+    (`updateTopBar` calls `draftSoon`) and when the tab is hidden. Holds only what is pending: the data files whose
+    text differs from the loaded commit (`changedDataFiles`, index.json included, so deletions come back), the rigs
+    when they differ from what loaded, each unsaved picture as a Blob (re-encoded only when its `_ver` changes), the
+    base commit, the login, the time. No token.
+  - `confirmStaged` writes at once: the draft goes when a proposal took everything, or keeps what changed meanwhile.
+    A failed proposal leaves it.
+  - Boot (github.js): sign-in → `draftOffer` (Restore / Later / Discard, before any data is read) → boot → `draftStart`.
+    Restore sets `githubMode.baseP` to the draft's commit, so every read and the proposal use it and T0.2's question
+    names files main changed since. The draft is applied all or nothing; undo starts empty. Later keeps the draft and
+    writes nothing over it this session; Discard asks again, then deletes.
+  - No IndexedDB (private window, blocked storage): the Studio works and the top bar shows "⚠ Not kept if the tab
+    closes".
+- **check-studio-github.py `drafts_checks`** (`--only=drafts`): restore of a data, a rig and a picture edit after
+  `page.close()`; the restored draft proposes all four files and the draft goes; a failed proposal keeps it; main
+  moved (the question says so, every read at the draft's commit, Propose names meta.json); Later; Discard; a browser
+  without IndexedDB. With the restore turned off it reports 6 problems; as committed, 0.
+- **T1.6.**
+  - check-data: a `_` key in a data file listed by index.json is an error (F7). The rule is the first function of
+    `game/js/logic/data-checks.js`, T1.3's module (2 unit tests; it is on the Studio page so the page lint test is
+    happy).
+  - TESTING.md: the unit tier is 628 tests in about 42 s here, over its 30 s budget.
+  - ESLint now lints `tools/*.mjs` with the unit tests' rules: 0 findings, so no code changed.
+- Docs: STUDIO.md "Unsent changes are kept in this browser", CHANGELOG.
+
+**Where the plan doc was wrong or short**
+- "Mirrors the ledger": there is no ledger since Phase 0; the draft is built from the same per-file diff Propose uses.
+- "Different base: restore with the overlap warning" would put back main's older text in the shared files; restoring at
+  the draft's commit avoids that (owner approved).
+- T1.2's acceptance uses `fullMB`, which studio-test.js computes as `snapMB x 80` (an estimate). Session B must make
+  it a measurement first. `updateTopBar` also stringifies the whole model on every call (`last === snapshot()`).
+- T1.4: `check-quick.py --studio` needs `start-studio.py`, which is not in the repository.
+- T1.6 `_` keys: only schema/ (`_help`) and legacy/README.json (`_world`) have them, neither listed in index.json.
+
+**Verified**
+- Unit tests 628 pass; lint, typecheck, `check:modules`, `format:check`, `check:data`.
+- `check-studio-github.py --only=publish`: 0 problems (Phase 0's regression check). `--only=drafts`: 0 problems.
+- A planted `_planted` key in meta.json: check-data names it.
+- `check:fast`: 25 of 25 pass.
+- `check-studio-github.py --only=sections,studio_test,publish,drafts`: 27 sections open, publish 0, drafts 0 (a write
+  took 63 ms in that run). One problem: "the edit in rules did not come back with undo", the plan's F14, which Phase 0
+  also saw on unchanged main; session B (T1.5) hunts it.
+- **Not run:** the full quick check (planned at the end of Phase 1, session D) and the full chain of
+  `check-studio-github.py` (it stalls at the story preview in this container, as noted in Phase 0).
+
+**Risky**
+- **Cost of a write.** A draft write takes 84-208 ms in headless Chromium here (stringify, split and format of the
+  data, then IndexedDB), once per pause in editing. On a phone it may be a visible hitch. Measure on the iPad.
+- **Two Studio tabs** on the same browser share one draft: the last to write wins. Each tab's own memory is unaffected.
+- **Proposals add up.** After a proposal the data still differs from the loaded commit; an undo marks it unsaved and
+  the draft then keeps those files too (as the next proposal would send them).
+- **Not tested on a real phone or a real GitHub** (stand-in only). Manual check: edit, close the tab, reopen.
+
+**Next**
+- Session B: T1.2 (undo per file; first make `fullMB` a measurement) and T1.5 (F14).
+- Owner decisions still open for C/D: T1.3 which Studio errors may block Propose (recommended: only what CI fails on);
+  T1.4 CI time (recommended: yes); local mode and `--studio` (recommended: drop).
 
 ### Studio plan Phase 0 - Reliability and data safety on publish - 2026-10-22
 Branch `ccr-81011a25-lf3exv`, PR #131. The PR also carries the plan itself,

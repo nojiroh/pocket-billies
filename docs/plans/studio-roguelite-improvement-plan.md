@@ -1398,6 +1398,22 @@ The unit tier is already 80 s against a 30 s budget. New tests must stay fast; T
 | Type-checking all Studio JS at once | Add `// @ts-check` file by file as tickets touch them (T6). |
 | Content packs (`mergeInto`, RL-16) | Belongs to RL-16. This plan's editors should land first, so RL-16 only adds the pack filter. |
 
+## Decisions (owner, 2026-10-22)
+The owner took the recommendation on every open question:
+1. **T5.1:** the recipe is the truth. Kit Billies are baked by a JS port of the builder, with a parity test against
+   the Python builder, which then retires.
+2. **T1.3:** only what CI's `check:data` fails on blocks Propose; everything else is a warning.
+3. **T1.4:** `check-studio-github.py` runs in CI on PRs that touch `studio/` or `game/js/logic/`.
+4. **T0.2:** "Continue from my proposal branch" comes later; proposals stay cumulative.
+5. **T5.5:** the game's words win (`rules.json`, `lines`, `boneSlot`). partKits kinds map onto them, and the Phase 5
+   session proposes the exact mapping in its plan.
+6. **RL-16:** Phase 4 replaces RL-16's generic editors for the new sections; RL-16 keeps content packs.
+7. **Local mode:** dropped. The `start-studio.py` docs and text go, and so does `check-quick.py --studio`.
+8. **F14** (raised in Phase 1):
+   - Convert the 9 old-style people to `look` in one data-only commit.
+   - Remove the convert-on-open.
+   - Make `look` required.
+
 ## Ask me before (owner decisions this plan needs)
 1. **T5.1:** recipe as the truth with a JS baker (recommended), or Python stays and Studio writes recipes.
 2. **T1.3:** which of today's Studio "errors" may block Propose. Recommended: only what CI already fails on.

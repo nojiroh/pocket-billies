@@ -25,8 +25,24 @@ route is the one that works.
 - **One at a time.** Propose (and Ctrl+S) does nothing while a proposal is on its way.
 - **Proposals add up.** Until the Studio is reloaded, a new proposal also carries the data changes of your earlier
   ones (it compares with the commit it loaded); pictures and rigs go in the proposal they were changed for.
-- Closing the tab still loses unsaved changes (the browser asks first). Drafts that survive a closed tab are the
-  plan's next step (T1.1).
+- **Closing the tab loses nothing** (Studio plan Phase 1, T1.1): see the next part.
+
+## Unsent changes are kept in this browser (Studio plan Phase 1)
+
+- **What is kept.** Two seconds after your last change, and whenever the tab is hidden, the Studio keeps what you
+  haven't proposed yet in this browser (IndexedDB): the data files that differ from the commit it opened on, the
+  skeletons if they changed, each unsaved picture, and that commit. Not the whole game, and never your token.
+- **Opening the Studio again** with kept changes asks first: **Restore** puts them back as unsaved (undo starts
+  empty), **Later** opens without them and keeps them for next time (nothing new is kept until then: the top bar says
+  "Not kept if the tab closes"), **Discard** deletes them after a second question.
+- **Main moved on since.** Restore opens the Studio at the commit the changes were made on, so nothing merged since is
+  put back; Propose then names any file main changed too, as above.
+- **When the draft goes.** When a proposal took everything (what was changed during the send stays kept), or on
+  Discard. A failed proposal keeps it.
+- **A browser that can't keep it** (some private windows, blocked site data): the Studio works as before and the top
+  bar says "Not kept if the tab closes".
+- The kept changes stay in this browser on this device. They are never sent anywhere; another browser or computer
+  doesn't see them. GitHub mode only.
 
 ## Local mode (start-studio.py, not in this repository)
 

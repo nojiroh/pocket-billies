@@ -30,6 +30,8 @@ proposal at the end must carry uiTheme.json with it.
     python3 tools/check-studio-github.py dist      # the build (`npm run build` first)
     python3 tools/check-studio-github.py --only=ui,studio_test   # sign in, only these steps, then the proposal
                                                                  # (step names: STEPS below)
+    python3 tools/check-studio-github.py --only=publish  # Studio plan Phase 0: Propose's failure cases alone
+    python3 tools/check-studio-github.py --only=drafts   # Studio plan Phase 1 (T1.1): kept drafts, restore, discard
 
 Needs Python 3 and Playwright (tools/requirements-check.txt). About a minute."""
 import json, re, subprocess, sys, threading, time
@@ -1269,6 +1271,200 @@ def publish_checks(b, url, errs):
     ctx.close()
 
 
+def drafts_checks(b, url, errs):
+    """Studio plan Phase 1 (T1.1): what isn't proposed yet is kept in the browser (IndexedDB) and offered back when the
+    Studio opens again. One context (one browser profile, so its IndexedDB lasts across pages) and a GitHub stand-in.
+    Each case edits a data field, a rig and a picture with the Studio's own calls, waits for the draft, closes the page
+    without saving and opens a new one."""
+    import base64
+    tree = [{'type': 'blob', 'path': str(p.relative_to(ROOT)), 'sha': 'x', 'size': p.stat().st_size}
+            for p in (ROOT / 'game' / 'art').rglob('*') if p.is_file()]
+    st = {'head': 'base1', 'reads': [], 'log': [], 'fail': {}, 'compare': []}
+
+    def api(route):
+        u = urlparse(route.request.url)
+        p = u.path
+        if route.request.method != 'GET':
+            k = p.rsplit('/', 1)[-1]
+            st['log'].append((k, route.request.post_data or ''))
+            if st['fail'].get(k):
+                code = st['fail'][k].pop(0)
+                return route.fulfill(status=code, json={'message': f'stand-in {code} at {k}'})
+            return route.fulfill(json={'sha': 'x', 'number': 8, 'html_url': 'x', 'object': {'sha': 'x'}, 'tree': {'sha': 'x'}})
+        if p == '/user': return route.fulfill(json={'login': 'nojiroh'})
+        if p.rstrip('/') == '/repos/nojiroh/pocket-billies': return route.fulfill(json={'permissions': {'push': True, 'admin': True}})
+        if '/compare/' in p: return route.fulfill(json={'total_commits': 1, 'files': [{'filename': f} for f in st['compare']]})
+        if '/git/trees/' in p: return route.fulfill(json={'tree': tree})
+        if '/git/commits/' in p: return route.fulfill(json={'sha': p.rsplit('/', 1)[-1], 'tree': {'sha': 'tree-x'}})
+        if '/git/ref' in p: return route.fulfill(json={'object': {'sha': st['head']}})
+        if '/contents/' in p:
+            f = ROOT / unquote(p.split('/contents/', 1)[1])
+            if 'studio/admins.json' not in p: st['reads'].append(parse_qs(u.query).get('ref', [''])[0])
+            if f.is_file(): return route.fulfill(body=f.read_bytes())
+        return route.fulfill(status=404, json={'message': 'Not Found'})
+
+    ctx = b.new_context(viewport={'width': 1400, 'height': 900})
+    ctx.add_init_script('window.PB_TEST_GLOBALS=true')
+    ctx.add_init_script("localStorage.setItem('pb-studio-gh-token','ghp_stand-in')")
+    ctx.route('https://api.github.com/**', api)
+    ART = 'art/next/parts/front/draft_check.png'
+    pending = "({data: studioState.dirty, rigs: studioState.rigsDirty, art: studioState.artDirty.has(%s)})" % json.dumps(ART)
+    stored = """async () => { const d = await draftRead(); return d ? {files: Object.keys(d.files), rigs: d.rigsText != null,
+      art: d.art.map(a => a.path), base: d.base, meta: d.files['meta.json'] || '', token: JSON.stringify(Object.keys(d)).includes('token')} : null }"""
+
+    def ready(pg):
+        return pg.evaluate("typeof studioState!=='undefined'&&!!studioState.D&&!document.querySelector('#main .loading')")
+
+    def open_page(answer=None):
+        """a new page; answers the draft question (Restore, Later, Discard) if asked. Returns (page, question text)"""
+        pg = ctx.new_page()
+        pg.on('pageerror', lambda e: errs.append('drafts: ' + str(e)[:300]))
+        st['reads'].clear()
+        pg.goto(url)
+        t0 = time.time(); asked = None
+        while time.time() - t0 < 120 and not ready(pg):
+            h = pg.locator('#dlg h2')
+            if asked is None and h.count() and h.first.text_content() == 'Unsent changes':
+                asked = pg.locator('#dlg .dlg-body').first.text_content()
+                if answer: pg.locator('#dlg button', has_text=answer).click()
+                if answer == 'Discard':
+                    pg.wait_for_selector('#dlg button:has-text("Delete")', timeout=5000)
+                    pg.locator('#dlg button', has_text='Delete').click()
+            time.sleep(0.3)
+        if not ready(pg): errs.append(f'drafts: the Studio did not load (asked {asked!r})')
+        time.sleep(0.5)
+        return pg, asked
+
+    def make_edits(pg, tag):
+        pg.evaluate("""tag => { const c = document.createElement('canvas'); c.width = c.height = 4;
+          const x = c.getContext('2d'); x.fillStyle = '#c03'; x.fillRect(0, 0, 4, 4);
+          markArt(%s, c);
+          const k = Object.keys(studioState.rigs).find(k => String((studioState.rigs[k].front || {}).sheet || '').startsWith('next/'));
+          studioState.rigs[k].draftCheck = tag; changed(true);
+          studioState.D.meta.draftCheck = tag; changed(); }""" % json.dumps(ART), tag)
+
+    def wait_draft(pg, tag, limit=10):
+        """the draft holds this tag, written by the Studio's own timer (2 s after the last change)"""
+        t0 = time.time()
+        while time.time() - t0 < limit:
+            d = pg.evaluate(stored)
+            if d and tag in d['meta']: return d, time.time() - t0
+            time.sleep(0.25)
+        return pg.evaluate(stored), None
+
+    def propose(pg, summary, answer='Propose anyway'):
+        pg.evaluate("void saveAll()")
+        t1 = time.time()
+        while time.time() - t1 < 20 and not pg.locator('#ghSum').count(): time.sleep(0.1)
+        pg.fill('#ghSum', summary)
+        pg.locator('#dlg button', has_text='Propose changes').click()
+        t1 = time.time(); moved = None
+        while time.time() - t1 < 30:
+            h = pg.locator('#dlg h2')
+            if h.count() and h.first.text_content() == 'Main has moved on':
+                moved = pg.locator('#dlg .dlg-body').first.text_content()
+                pg.locator('#dlg button', has_text=answer).click()
+            for t in ('Save anyway', 'OK'):
+                a = pg.locator('#dlg button', has_text=t)
+                if a.count(): a.first.click()
+            if pg.evaluate("document.querySelector('#saveBtn').textContent === 'Propose changes' && !document.querySelector('#saveBtn').disabled && !document.querySelector('#ghSum') && !document.querySelector('#dlg .dlg')"): break
+            time.sleep(0.2)
+        return moved
+
+    def last_tree():
+        trees = [json.loads(bd) for k, bd in st['log'] if k == 'trees']
+        return [t['path'] for t in trees[-1]['tree']] if trees else []
+
+    want = {'game/' + ART, 'game/art/rigs.js', 'game/art/next/rigs-next.js', 'game/data/meta.json'}
+    # 1. edits, the tab closed without proposing, reopened: one question; Restore brings all three back
+    pg, asked = open_page()
+    if asked: errs.append(f'drafts: a fresh browser was asked about a draft: {asked!r}')
+    make_edits(pg, 'kept-1')
+    d, secs = wait_draft(pg, 'kept-1')
+    if secs is None: errs.append(f'drafts: no draft 10 s after the edits ({d})')
+    else:
+        if set(d['files']) != {'meta.json'} or not d['rigs'] or d['art'] != [ART] or d['base'] != 'base1' or d['token']:
+            errs.append(f'drafts: the draft does not hold exactly the three changes at base1: {d}')
+        print(f'drafts: written {secs:.1f} s after the last edit ({len(d["files"])} data file, rigs, {len(d["art"])} picture)', flush=True)
+    ms = pg.evaluate("async () => { const a = performance.now(); studioState.D.meta.draftCheck += '+'; changed(); await draftNow(); return performance.now() - a }")
+    pg.close()
+    pg, asked = open_page('Restore')
+    if not asked or '1 data file, the skeletons and 1 picture' not in asked: errs.append(f'drafts: the question on reopening was {asked!r}')
+    elif 'Main has new commits' in asked: errs.append('drafts: main did not move, yet the question says it did')
+    left = pg.evaluate(pending)
+    if not all(left.values()): errs.append(f'drafts: Restore did not bring every change back as pending: {left}')
+    back = pg.evaluate("""() => { const k = Object.keys(studioState.rigs).find(k => studioState.rigs[k].draftCheck);
+      const c = studioState.artDirty.get(%s), px = c ? [...c.getContext('2d').getImageData(1, 1, 1, 1).data] : null;
+      return {meta: studioState.D.meta.draftCheck, rig: k ? studioState.rigs[k].draftCheck : null, px, undo: studioState.undo.length,
+        undoOff: document.querySelector('#undoBtn').disabled} }""" % json.dumps(ART))
+    if back['meta'] != 'kept-1+' or back['rig'] != 'kept-1' or back['px'] != [204, 0, 51, 255]: errs.append(f'drafts: the restored changes are not the ones made: {back}')
+    if back['undo'] or not back['undoOff']: errs.append(f'drafts: undo does not start empty after a restore: {back}')
+    # 2. a restored draft proposes correctly, and the draft goes once the proposal is confirmed
+    st['log'].clear()
+    propose(pg, 'drafts check: restored')
+    missing = sorted(want - set(last_tree()))
+    if missing: errs.append(f'drafts: the proposal after a restore left out {missing}')
+    meta = next((base64.b64decode(json.loads(bd)['content']).decode() for k, bd in st['log'] if k == 'blobs' and 'kept-1+' in base64.b64decode(json.loads(bd)['content']).decode('utf8', 'replace')), None)
+    if not meta: errs.append('drafts: the proposal does not carry the restored data edit')
+    if any(pg.evaluate(pending).values()): errs.append('drafts: after proposing, changes still show as pending')
+    if pg.evaluate(stored): errs.append('drafts: the draft is still there after a confirmed proposal')
+    pg.close()
+    # 3. a failed proposal keeps the draft
+    pg, asked = open_page()
+    if asked: errs.append(f'drafts: asked again after the draft was proposed: {asked!r}')
+    make_edits(pg, 'failed-3')
+    wait_draft(pg, 'failed-3')
+    st['fail'] = {'trees': [502]}
+    propose(pg, 'drafts check: fails')
+    time.sleep(0.5)
+    d = pg.evaluate(stored)
+    if not d or 'failed-3' not in d['meta'] or not d['rigs'] or d['art'] != [ART]: errs.append(f'drafts: a failed proposal did not keep the whole draft: {d}')
+    pg.close()
+    # 4. main moved on: the question says so, and Restore reads everything at the draft's commit (base1), not main's
+    st['head'] = 'main2'; st['compare'] = ['game/data/meta.json']
+    pg, asked = open_page('Restore')
+    if not asked or 'Main has new commits' not in asked: errs.append(f'drafts: main moved, but the question was {asked!r}')
+    at = sorted(set(st['reads']))
+    if at != ['base1']: errs.append(f'drafts: a restore on a moved main read at {at}, not only at the draft commit base1')
+    st['log'].clear()
+    moved = propose(pg, 'drafts check: moved', 'Cancel')
+    if not moved or 'meta.json' not in moved: errs.append(f'drafts: proposing a restored draft on a moved main did not name meta.json ({moved!r})')
+    if st['log']: errs.append(f"drafts: a cancelled proposal still sent {[k for k, _ in st['log']]}")
+    pg.close()
+    st['head'] = 'base1'; st['compare'] = []
+    # 5. Later keeps the draft and writes nothing over it; Discard removes it
+    pg, asked = open_page('Later')
+    if any(pg.evaluate(pending).values()): errs.append('drafts: Later still put changes back')
+    if not pg.locator('#draftOff').count(): errs.append('drafts: after Later, nothing says new changes are not kept')
+    make_edits(pg, 'later-5'); time.sleep(3)
+    d = pg.evaluate(stored)
+    if not d or 'failed-3' not in d['meta']: errs.append(f'drafts: an edit after Later wrote over the kept draft: {d}')
+    pg.close()
+    pg, asked = open_page('Discard')
+    if not asked: errs.append('drafts: the kept draft was not offered again after Later')
+    if any(pg.evaluate(pending).values()) or pg.evaluate(stored): errs.append('drafts: Discard left the draft or its changes')
+    pg.close()
+    # 6. a browser that can't keep drafts (IndexedDB refused): the Studio works and says changes aren't kept
+    ctx2 = b.new_context(viewport={'width': 1400, 'height': 900})
+    ctx2.add_init_script('window.PB_TEST_GLOBALS=true')
+    ctx2.add_init_script("localStorage.setItem('pb-studio-gh-token','ghp_stand-in')")
+    ctx2.add_init_script("IDBFactory.prototype.open = function () { throw new DOMException('stand-in: storage refused', 'SecurityError') }")
+    ctx2.route('https://api.github.com/**', api)
+    pg = ctx2.new_page()
+    pg.on('pageerror', lambda e: errs.append('drafts (no storage): ' + str(e)[:300]))
+    pg.goto(url); t0 = time.time()
+    while time.time() - t0 < 120 and not ready(pg): time.sleep(0.3)
+    if not ready(pg): errs.append('drafts: without IndexedDB the Studio did not load')
+    elif not pg.locator('#draftOff').count(): errs.append('drafts: without IndexedDB nothing says changes are not kept')
+    else:
+        make_edits(pg, 'none-6'); time.sleep(2.5)
+        if not all(pg.evaluate(pending).values()): errs.append('drafts: without IndexedDB, edits did not stay pending')
+    ctx2.close()
+    n = sum(1 for e in errs if e.startswith('drafts'))
+    print(f'drafts: restore, propose, a failed proposal, main moved on, Later, Discard, no storage; a write takes {ms:.0f} ms ({n} problem(s))', flush=True)
+    ctx.close()
+
+
 def main():
     srv = ThreadingHTTPServer(('127.0.0.1', 0), partial(Quiet, directory=str(ROOT)))
     threading.Thread(target=srv.serve_forever, daemon=True).start()
@@ -1360,6 +1556,8 @@ def main():
             else: print('ui: the proposal carries game/data/uiTheme.json with the large cut at 20 px', flush=True)
         if ONLY is None or 'publish' in ONLY:
             publish_checks(b, f'http://127.0.0.1:{srv.server_address[1]}/studio/index.html', errs)
+        if ONLY is None or 'drafts' in ONLY:
+            drafts_checks(b, f'http://127.0.0.1:{srv.server_address[1]}/studio/index.html', errs)
         b.close()
     for e in errs: print('PROBLEM', e)
     print('ok' if not errs else f'{len(errs)} problem(s)')
