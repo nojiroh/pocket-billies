@@ -830,8 +830,12 @@ export interface Rules {
     /** RL-7: metres past a seam before a crossing counts in a run (the hub's is 1), so a step over and back costs
         no day */
     seamIn: number;
-    /** RL-8: what a run starts with (the party travels as it is): its money, coins and items (placeholders) */
+    /** RL-8: what a run starts with, besides the Billies from home and the packed bag: its money, coins and items (placeholders) */
     start: { se: number; coins: Record<string, number>; items: Record<string, number> };
+    /** RL-9b: by Bracket (index 0 = Bracket I; past the end, the last): how many Billies from home a run takes, and
+        how many items and coins (in all) are packed from Copperleaf's bag at the mast (placeholders) */
+    home: number[];
+    pack: number[];
     /** RL-8: a run town's clinic: $ per hurt Billie (free in the hub) */
     healCost: number;
     /** RL-8: a run town's shop: `always` on sale, then `more` wares a day drawn by weight from `pick` (an item id, or

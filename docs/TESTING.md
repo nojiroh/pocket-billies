@@ -247,7 +247,10 @@ same phase:
 - **12 Ranch**: a full-test step for the ranch, a quick-check step that edits it, and its save fields in the save
   tests (`saves.test.mjs`, `validSave`). RL-9: `tools/test/ranch.test.mjs` (training's logic on the game's rules),
   check-fast's ranch step on `?fixture=ranch` (Train, a level with the page's clock moved on, the cap, a clock turned
-  back, a reload) and the in-game test's "The ranch: training between runs".
+  back, a reload) and the in-game test's "The ranch: training between runs". RL-9b: check-fast's "Packing for a run"
+  on `?fixture=ranch` (a trainee from storage picked, two Potions packed; kept on a loss, back in storage once; a win
+  brings the bag home; a reload), run-state tests for the pick, the pack and the storage trap, the in-game run phase's
+  party of one.
 - **RL-11 Unlocks**: `tools/test/unlocks.test.mjs` (doors and currencies, buying once, refusals, milestones never on a
   run, the tidy-up on load, a run's copy making the same map and stock), the new condition kinds in
   `conditions.test.mjs`, `run.unlocks` in `run-state.test.mjs`; check-data's blocks for `currencies`, `buildings` and

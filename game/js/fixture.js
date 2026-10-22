@@ -111,7 +111,8 @@ function fixtureSave() {
      world goes in at boot (run-world.js) */
   if (FIXTURE === 'run' || FIXTURE === 'mountains') {
     const data = runWorldData();
-    runBegin(s, { seed: FIXTURE_RUN_SEED, tier: 1, mapgenV: MAPGEN_VERSION, se: RULES.start.se });
+    /* RL-9b: one Billie from home at Bracket I, the lead (the second stays in Copperleaf) */
+    runBegin(s, { seed: FIXTURE_RUN_SEED, tier: 1, mapgenV: MAPGEN_VERSION, se: RULES.start.se, home: [lead.uid] });
     if (FIXTURE === 'mountains') s.run.mods = [RUN_MOD_MOUNTAINS];
     runMapStart(s.run, data);
     runArrive(s, 0, data);

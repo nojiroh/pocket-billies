@@ -156,6 +156,8 @@ export interface RunStart {
   flags: Record<string, number>;
   seats: string[];
   visited: Record<LocationNode, number>;
+  /** RL-9b: the hub's buddy (a run's is its first Billie from home); missing on a run saved before */
+  buddy?: string | null;
 }
 
 /** roguelite track RL-3: the run in progress (logic/run-state.js); null in the hub */
@@ -198,6 +200,11 @@ export interface Run {
   /** RL-11: the shop and biome unlocks (unlocks.json ids) the run started with: its shops and map read this copy, so
    * the same seed and copy make the same run. None on a run started before RL-11 (everything open) */
   unlocks?: string[];
+  /** RL-9b: the uids of the Billies from home (picked at the mast, from the team or storage; logic/run-state.js
+      runHome reads a run saved before as the hub's team) */
+  home?: string[];
+  /** RL-9b: what was packed from Copperleaf's bag at the mast */
+  pack?: { items: Record<DataId, number>; coins: Record<DataId, number> };
 }
 
 /** the player's travel: where you are, and the locations still ahead (the gold arrows' guide) */

@@ -111,7 +111,7 @@ test("a battle's seed is its node's and its number's", () => {
   assert.notEqual(L.runBattleSeed(run, 2, 5), L.runBattleSeed(run, 2, 6));
 });
 
-test('releasing: a Billie caught on the run is paid at the end, one from the hub only leaves the party', () => {
+test('releasing: a Billie caught on the run is paid at the end, one from home only leaves the party', () => {
   reseed();
   const s = startedSave('musk0', 10),
     home = s.team[0],
@@ -135,6 +135,7 @@ test("the payout screen's rows: payoutOf's lines with their words, the win row o
     ['Money left', 'Items in the bag', 'Billies released', 'Places reached']
   );
   assert.equal(won.at(-1).label, 'The boss beaten');
+  assert.ok(!won.some(r => r.label === 'Items in the bag'), 'RL-9b: a win takes the bag home, not paid');
   assert.equal(won.at(-1).value, R.payout.win);
   assert.equal(lost[0].value, Math.floor(750 * R.payout.money));
   assert.match(lost[0].note, /\$750 at 10%/);

@@ -297,7 +297,7 @@ check('roads.schema.json', D.roads || [], 'roads.json');
     V = R.reveal,
     whole = (v, lo, hi) => Number.isInteger(v) && v >= lo && v <= hi;
   for (const k of Object.keys(R))
-    if (!['payout', 'map', 'clock', 'reveal', 'scene', 'wild', 'seamIn', 'start', 'healCost', 'shop', 'foes'].includes(k)) problem('rules.json', `run.${k}: no such rule`);
+    if (!['payout', 'map', 'clock', 'reveal', 'scene', 'wild', 'seamIn', 'start', 'home', 'pack', 'healCost', 'shop', 'foes'].includes(k)) problem('rules.json', `run.${k}: no such rule`);
   if (!C || typeof C !== 'object' || !whole(C.slack, 0, 30) || !whole(C.ahead, 1, 30))
     problem('rules.json', 'run.clock: slack (0-30) and ahead (1-30) are not whole numbers of days');
   else for (const k of Object.keys(C)) if (!['slack', 'ahead'].includes(k)) problem('rules.json', `run.clock.${k}: no such rule`);
@@ -371,6 +371,13 @@ check('roads.schema.json', D.roads || [], 'roads.json');
     only(ST, ['se', 'coins', 'items'], 'run.start');
     for (const [k, n] of Object.entries(ST.coins)) if (!(D.coins || {})[k] || !whole(n, 0, 999)) problem('rules.json', `run.start.coins.${k}: no such coin, or not a whole count`);
     for (const [k, n] of Object.entries(ST.items)) if (!(D.items || {})[k] || !whole(n, 0, 999)) problem('rules.json', `run.start.items.${k}: no such item, or not a whole count`);
+  }
+  // RL-9b: by Bracket (index 0 = Bracket I; past the end, the last): Billies from home a run takes (1-6, never fewer
+  // than the Bracket before) and the things packed from Copperleaf's bag (0-99 items and coins in all)
+  for (const [k, lo, hi, what] of [['home', 1, 6, 'Billies from home'], ['pack', 0, 99, 'things packed']]) {
+    const L = R[k];
+    if (!Array.isArray(L) || L.length < 1 || L.length > 9 || !L.every((n, i) => whole(n, lo, hi) && (!i || n >= L[i - 1])))
+      problem('rules.json', `run.${k} is not a list of 1-9 whole numbers (${what}, ${lo}-${hi}), one a Bracket, none fewer than the one before`);
   }
   if (!whole(R.healCost, 0, 100000)) problem('rules.json', 'run.healCost is not a whole number of $ (0-100,000)');
   if (!rec(SH) || !Array.isArray(SH.always) || !whole(SH.more, 0, 12) || !rec(SH.pick))
