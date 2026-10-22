@@ -750,7 +750,8 @@ def studio_hub(pg, base):
     as long as drawing() does"""
     if not poll(pg, "typeof openSection==='function'&&typeof PB_DATA==='object'", 60): raise Exception('the Studio never loaded')
     pg.evaluate(STUDIO_DATA)
-    pg.evaluate("openSection('hub');0")
+    # the section opens on the hub's own island by default (copperleaf_island since IS-2); this check uses the small one
+    pg.evaluate("studioState.sel.hub='test_island';openSection('hub');0")
     if not poll(pg, "studioState.sel.hub==='test_island'&&walkView.id==='test_island'&&!!document.getElementById('hubMap')", 40):
         raise Exception('Hub island didn’t open on test_island: ' + str(pg.evaluate("[studioState.sel.hub,walkView.id]")))
     if not poll(pg, "walkView.ready&&walkRenderer.on", 90): raise Exception('the orbit view never got ready')

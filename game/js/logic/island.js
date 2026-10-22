@@ -5,6 +5,8 @@
      cam.orbit  { c: [x, z], dead, lag, turn }  the orbit camera's pivot; inside `dead` metres of it the yaw holds;
                 `lag` seconds for the yaw to follow; `turn` degrees the player may still turn it (IS-1)
      island     { c: [x, z], coast: [[x, z], ...] }  the coastline, a closed polygon (the last point joins the first)
+     plots      [{ k, x, z, w, d, a, y }]  building plots the generator laid out (IS-2): k one of ISLAND_PLOT_KINDS, the
+                middle, width along the street, depth, the angle the front faces, the pad's level; buildings are props
      zones      [{ k, poly, lock }]  k one of ISLAND_ZONE_KINDS; a locked zone's ground and props are never touched
                 when the island is made again (IS-2, IS-6)
      islandGen  { v, seed, dials, lock, hash }  the generator's version, seed and dials, so the ground can be made
@@ -19,6 +21,7 @@ import { expose } from '../test-globals.js';
 import { hashString } from './rng.js';
 /* eslint-disable no-func-assign */
 expose({
+  ISLAND_PLOT_KINDS: [() => ISLAND_PLOT_KINDS],
   ISLAND_WATER: [() => ISLAND_WATER],
   ISLAND_ZONE_KINDS: [() => ISLAND_ZONE_KINDS],
   // @ts-expect-error -- replaced on purpose
@@ -34,7 +37,9 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-export const ISLAND_ZONE_KINDS = ['town', 'barn', 'pasture', 'forest', 'mountain', 'cove', 'beach', 'path'];
+export const ISLAND_ZONE_KINDS = ['town', 'barn', 'pasture', 'forest', 'mountain', 'cove', 'beach', 'path', 'hamlet'];
+/* the kinds of building plot the island generator lays out (IS-2) */
+export const ISLAND_PLOT_KINDS = ['house', 'home', 'lab', 'mast', 'shop', 'well', 'farmhouse'];
 /* the ground letters that are water (walk-view.js navGrid, mapgen MAPGEN_WET) */
 export const ISLAND_WATER = 'wd';
 
@@ -120,6 +125,15 @@ export function islandProblems(sc) {
     const what = `zones[${i}] (${Z.k})`;
     if (!ISLAND_ZONE_KINDS.includes(Z.k)) out.push(`${what}: no such zone kind (${ISLAND_ZONE_KINDS.join(', ')})`);
     out.push(...islandPolyProblems(sc, Z.poly, what));
+  });
+  (Array.isArray(sc.plots) ? sc.plots : []).forEach((L, i) => {
+    if (!L || typeof L !== 'object') return void out.push(`plots[${i}] is not a plot`);
+    const what = `plots[${i}] (${L.k})`;
+    if (!ISLAND_PLOT_KINDS.includes(L.k)) out.push(`${what}: no such plot kind (${ISLAND_PLOT_KINDS.join(', ')})`);
+    if (!on([L.x, L.z])) out.push(`${what} is off the scene (${L.x}, ${L.z})`);
+    if (!(L.w > 0 && L.d > 0 && L.w <= 40 && L.d <= 40))
+      out.push(`${what} is ${L.w} x ${L.d} m, not above 0 and at most 40`);
+    if (!Number.isFinite(L.a)) out.push(`${what} faces no angle`);
   });
   const G = sc.islandGen;
   if (G && typeof G === 'object' && G.lock) {

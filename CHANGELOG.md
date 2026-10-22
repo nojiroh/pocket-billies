@@ -9,6 +9,14 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- Copperleaf's island has its ground and its town's layout (IS-2): a generated island in the debug menu's Test scenes,
+  "Copperleaf island (generated ground)", about 215 m across with a natural shape (lobes, headlands, rolling hills): a
+  mountain with spurs in the middle, climbed by a switchback trail to a lookout; forest round its north side; a long
+  beach in the west; a wide bay in the south-east. A river runs from a pond under the mountain down to the bay, and the
+  town's streets follow it: a main street along the bank, a square with a bridge, a quay on the bay, lanes, with plots
+  for the lab, the airship station, a shop, Juniper's home and the cottages. A hamlet sits round a green under the
+  mountains and a farmhouse beside the barn and its pasture; a road runs all the way round (under three minutes'
+  walk). No buildings stand on the plots yet, and Copperleaf itself is unchanged.
 - The Studio has a Hub island section (IS-6a): the hub's island in an orbiting 3D view and on a map, with its ground,
   coast, zones and the camera's pivot edited by hand, a walk round the coast, and a lock that freezes the island's
   ground once it is right (props stay free). It works on the test island until Copperleaf moves onto its island.

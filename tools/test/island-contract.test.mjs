@@ -9,7 +9,13 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 import Ajv2020 from 'ajv/dist/2020.js';
 import { GAME_DATA, ROOT } from './setup-real.mjs';
-import { ISLAND_ZONE_KINDS, islandGroundHash, islandPointIn, islandProblems } from '../../game/js/logic/island.js';
+import {
+  ISLAND_PLOT_KINDS,
+  ISLAND_ZONE_KINDS,
+  islandGroundHash,
+  islandPointIn,
+  islandProblems,
+} from '../../game/js/logic/island.js';
 
 const SCHEMA = join(ROOT, 'game/data/schema');
 const ajv = new Ajv2020({ allErrors: true, strict: false });
@@ -124,6 +130,16 @@ test('each planted fault gives its words', () => {
         `zones[0] (volcano): no such zone kind (${ISLAND_ZONE_KINDS.join(', ')})`,
       ],
       [{ zones: [{ k: 'town', poly: zone.slice(0, 2) }] }, 'zones[0] (town) is not 3 or more [x, z] points'],
+      /* IS-2: building plots */
+      [
+        { plots: [{ k: 'castle', x: 10, z: 10, w: 6, d: 5, a: 90 }] },
+        `plots[0] (castle): no such plot kind (${ISLAND_PLOT_KINDS.join(', ')})`,
+      ],
+      [{ plots: [{ k: 'house', x: 50, z: 10, w: 6, d: 5, a: 90 }] }, 'plots[0] (house) is off the scene (50, 10)'],
+      [
+        { plots: [{ k: 'lab', x: 10, z: 10, w: 0, d: 5, a: 90 }] },
+        'plots[0] (lab) is 0 x 5 m, not above 0 and at most 40',
+      ],
     ];
   for (const [o, words] of cases) assert.deepEqual(islandProblems(island(o)), [words], words);
 });
@@ -187,4 +203,5 @@ test("the schema's water kinds are the renderer's", () => {
   assert.ok(kinds.length >= 9, `found ${kinds.length} kinds`);
   assert.deepEqual(MAP_SCHEMA.properties.waterKind.enum, kinds);
   assert.deepEqual(MAP_SCHEMA.properties.zones.items.properties.k.enum, ISLAND_ZONE_KINDS);
+  assert.deepEqual(MAP_SCHEMA.properties.plots.items.properties.k.enum, ISLAND_PLOT_KINDS);
 });
