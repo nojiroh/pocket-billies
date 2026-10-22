@@ -341,6 +341,11 @@ hr.pb-rule::after {
   --k-clip: var(--clip-button);
   --k-edge: var(--edge-button);
 }
+/* a row to pick in a sheet (the mast's menu, a run's sheets, the heal and swap pickers) is a card */
+.pickrow {
+  --k-clip: var(--clip-card);
+  --k-edge: var(--edge-card);
+}
 /* the shell's own glass joins the panel family (the top bar draws its own: shell.css): a screen's title box (its
    ::after is the gold dash, so it has the outline only) and the section panels of the Trainer card and Team */
 .tpanel,
@@ -360,7 +365,8 @@ hr.pb-rule::after {
   .lore-tabs button,
   .bag-pockets button,
   .ms-tabs button,
-  .seg > button
+  .seg > button,
+  .pickrow
 ) {
   position: relative;
 }
@@ -383,13 +389,14 @@ hr.pb-rule::after {
   .set-tabs,
   .guide-tabs,
   .lore-tabs,
-  .ms-tabs
+  .ms-tabs,
+  .pickrow
 ):not(#k) {
   /* !important only against v05.css's .px and .pb.big corners (!important themselves); goes with v05 in UI-6 */
   border-radius: 0 !important;
   clip-path: var(--k-clip);
 }
-:is(.k-panel, .k-card, .k-btn, .k-action, .k-tab, .pb, .tpanel):not(.k-plain, #k)::after {
+:is(.k-panel, .k-card, .k-btn, .k-action, .k-tab, .pb, .tpanel, .pickrow):not(.k-plain, #k)::after {
   content: '';
   display: block;
   position: absolute;
