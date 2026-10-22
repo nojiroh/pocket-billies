@@ -167,6 +167,68 @@ data and art; no map but the showcase is touched.
   `fence_wood` and `fence_gate`; batch 11's remaining list: boulder_mossy, campfire, lookout_tower, wind_sail_flower
   and the rooms' 20 furniture props. Tag `is-4-done` is the owner's to push.
 
+### Island track IS-6a - Hub island editor - 2026-10-22
+Branch `claude/is-6a-hub-island-editor`, made from IS-0's branch `claude/new-session-3qlesh` (PR #119, not merged yet;
+the owner asked to start wave 1 before `is-0-done`), PR against main (its diff shrinks once #119 merges). Ran beside
+IS-1..IS-4; kept to Studio files plus the guard in map-editor.js. Plan approved in Plan Mode with the owner's four
+answers: Walk the coast under the game's own walk camera; props only in Walk scenes; Copperleaf view-only until IS-5;
+the coast hand-editable.
+- Changed (one cause per commit):
+  - **map-editor.js, no behaviour change**: `paintGroundBrush` (the round ground brush, out of bindEditorMap) and
+    `sculptHeights(sc, m, o)` taking its settings; Walk scenes passes its own.
+  - **game/js/logic/hub-island.js** (Studio page only; 9 unit tests): the orbit view's frame (the whole island from
+    the south, `FREE_CAM`'s field of view), sides S/W/N/E (yaw 0 looks north, so the camera is south), a drag's turn
+    and tilt; the coast's and zones' points (nearest, insert on the nearest edge including the closing one, move on
+    the scene, remove never under three; a new zone a 12 m square); lock, unlock, `groundLockRefusal`; the maps listed
+    (Copperleaf first, then every map with an island; view-only without a coast); `hubCoastLap`, the walk round.
+    logic/island.js joins the Studio's page too.
+  - **The Hub island section** (studio/js/hub-island.js; World & places after Walk scenes; left pane only, like the
+    other 3D views): the orbit view (mountWalkView with its own `look`, the pointer caught before the walk view's as
+    the free camera does: drag turns, Shift-drag or right button tilts, wheel or pinch zooms; Auto-orbit, S W N E,
+    Whole island, Walk the coast); the map (each ground letter's average colour, heights with a 2 m contour, coast,
+    zones by kind with locked ones hatched, pivot and dead zone, the island's middle, where the camera stands, on a
+    layer of its own so it moves without redrawing the ground); tools Paint ground, Shape the land, Coast & zones
+    (kind, lock, add, remove), Pivot (Shift-drag: the island's middle; the dead zone); the Ground lock card.
+  - **The guard** in Walk scenes: on a locked island Paint, Fill, Shape the land, Cliffs & stairs, Curved road,
+    Resize and Flatten refuse with the reason; the Map card says so. Props, water, exits stay free.
+  - **The Studio's Check** lists `islandProblems` for every map (as check-data); "Show me" opens Hub island.
+  - **check-fast**: "The Studio's Hub island", a Studio page of its own (see Verified).
+  - **Fixes found reviewing the diff**: the height brush clamped every stroke to -8..12 m (Walk scenes' limit), which
+    would cut test_island's 16 m peak (and IS-2's ~22 m one) to 12; its floor and ceiling are settings now, the hub
+    editor -8..40 m, Walk scenes unchanged. Walk the coast's button resets after a walk that ended away.
+  - **CI's first run** failed the new step ("the orbit view never looked at the island"); reproduced locally with
+    runs side by side: the island's frames take seconds each in headless software GL and come back to back, which
+    starves the page timers that until() polls on (the camera was set a moment after the wait gave up). The step
+    polls from Python now (`poll()` in check-fast) with drawing()'s waits; five runs side by side pass.
+  - Docs: STUDIO.md (a Hub island section, the table row, the left-pane list), the track file ("Done in IS-6a"),
+    CHANGELOG.
+- Where the plan (the track file) was wrong or short:
+  - "Walk the coast (IS-1's logic/camera-orbit.js once merged)": not needed. The game's walk camera reads the map's
+    `cam.orbit`, so the walk shows IS-1's orbit by itself once it merges; until then it is today's fixed camera.
+  - "one guard in map-editor.js": one helper, asked in seven places (the ground tools, Resize, Flatten); the Curved
+    road (map-editor-tools.js) paints ground too. map-generate.js only makes new maps and needs none.
+  - "the 2D map ... (map-editor.js's brush functions, exported, not copied)": the height brush read Walk scenes'
+    settings and clamp; it takes them as an argument now (see Fixes).
+  - Planned as three commits (section, map, lock bar); landed as one, since the section's card holds all three.
+- Verified: unit tests 576 (9 new); lint, typecheck, check:modules, format:check; check-fast 23 of 23 (the new step
+  67 s on a page of its own, beside the others; the island's 3D view draws about one frame in 3 s in headless
+  software GL, so it is not on the other Studio checks' page); smoke: no problems (171 s); full quick check (39 min): 9 problems, the same 9 old steps
+  that fail on main (roster counts 117/61, empty voxel bushes, buildings without a plan, the biped walk cycle, the
+  running step's "float division by zero"; see RL-8b's and TR-2's entries), none in what this branch touches.
+  Headless pictures at 1600 x 1000 (orbit from the south and the east, the map with zones and handles, locked,
+  walking the coast, Copperleaf view-only): no page errors.
+- Risky:
+  - Walk scenes' own height brush still clamps to -8..12 m: one stroke on a TR-2 mountain (up to 20 m) or on the
+    island's mountain in Walk scenes cuts it to 12 (pre-existing; left as it was; a one-line change if wanted).
+  - The orbit view and Walk scenes share the one walk view; leaving the section mid-walk leaves the walker's route in
+    place until the section is opened again.
+  - Locking stores the hash of the ground as the Studio holds it; Save writes it. A hand edit of the file afterwards
+    fails check-data, as intended.
+  - hooks.js unchanged (317 names); a merge with IS-1..IS-4 can still need `npm run modules`.
+- Not done: the dials and live preview (IS-6b, after IS-2); copperleaf editing (after IS-5).
+- Next: IS-6b once IS-2 lands (the dials beside logic/hub-island.js; "Use this island" refused while locked: the
+  check is `hubGroundLocked`). Tag `is-6a-done` is the owner's.
+
 ### Island track IS-0 - Contract and test island - 2026-10-22
 Branch `claude/new-session-3qlesh`, from main a10bfc6 (PR #118). The owner's brief (docs/phases/island-track.md,
 uploaded in chat): Copperleaf becomes a real island, one map, an orbit camera. IS-0 runs first and alone so wave 1

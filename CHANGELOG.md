@@ -24,6 +24,9 @@ kept aside in the browser).
   a water trough, round hay bales and a hay rack; driftwood, beach grass, shells, shore rocks and tide pools; a
   fishing boat and a net rack by a pier; granite boulders, a cairn and a summit lookout; forest litter. Scree and the
   mossy log and stump on runs are 3D too. Nothing moves in Copperleaf yet.
+- The Studio has a Hub island section (IS-6a): the hub's island in an orbiting 3D view and on a map, with its ground,
+  coast, zones and the camera's pivot edited by hand, a walk round the coast, and a lock that freezes the island's
+  ground once it is right (props stay free). It works on the test island until Copperleaf moves onto its island.
 - The island track begins (IS-0): a test island in the debug menu's Test scenes (a cone of a mountain, a grass ring,
   beaches and the sea all round), the first step to Copperleaf becoming a real island you can walk round. Nothing
   changes in Copperleaf yet. The island will be the hub itself, with its own editor in the Studio and its ground
