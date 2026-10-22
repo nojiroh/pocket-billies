@@ -5855,7 +5855,10 @@
    "flat": 0,
    "tags": ["route"],
    "group": "stump",
-   "solid": 0.45
+   "solid": 0.45,
+   "model": "scene/next/models/stump_mossy.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "log_mossy": {
    "name": "Mossy log",
@@ -5867,7 +5870,10 @@
    "flat": 0,
    "tags": ["route"],
    "group": "log",
-   "solid": 0
+   "solid": 0,
+   "model": "scene/next/models/log_mossy.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "mushroom_ring": {
    "name": "Mushroom ring",
