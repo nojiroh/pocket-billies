@@ -1011,13 +1011,14 @@ def publish_checks(b, url, errs):
     import base64
     tree = [{'type': 'blob', 'path': str(p.relative_to(ROOT)), 'sha': 'x', 'size': p.stat().st_size}
             for p in (ROOT / 'game' / 'art').rglob('*') if p.is_file()]
-    st = {'fail': {}, 'hold': None, 'held': [], 'log': [], 'head': 'base1', 'reads': [], 'compare': []}
+    st = {'fail': {}, 'hold': None, 'held': [], 'log': [], 'head': 'base1', 'reads': [], 'compare': [], 'calls': []}
 
     def api(route):
         u = urlparse(route.request.url)
         p = u.path
         if route.request.method != 'GET':
             k = p.rsplit('/', 1)[-1]
+            st['calls'].append((route.request.method, p, route.request.post_data or ''))
             if k == st['hold']:
                 st['held'].append(route); return
             st['log'].append((k, route.request.post_data or ''))
@@ -1097,8 +1098,16 @@ def publish_checks(b, url, errs):
         start('publish check: ' + step + ' fails'); settle()
         left = pg.evaluate(pending)
         if not all(left.values()): errs.append(f'publish: after a {step} failure, pending changes were dropped: {left}')
-        st['log'].clear()
+        made = [json.loads(bd)['ref'] for m, q, bd in st['calls'] if m == 'POST' and q.endswith('/git/refs')]
+        st['log'].clear(); st['calls'].clear()
         start('publish check: retry after ' + step); settle()
+        if step == 'pulls':
+            # T0.3: the branch made before the pull request failed is moved to the new commit, not made again
+            moved = [q for m, q, _ in st['calls'] if m == 'PATCH']
+            again = [q for m, q, _ in st['calls'] if m == 'POST' and q.endswith('/git/refs')]
+            if not made or again or not moved or not moved[0].endswith(made[-1][len('refs/heads/'):]): errs.append(f'publish: the retry after a pull request failure did not reuse its branch (made {made}, moved {moved}, made again {again})')
+        refs = [json.loads(bd)['ref'] for m, q, bd in st['calls'] if m == 'POST' and q.endswith('/git/refs')]
+        if any(not re.match(r'^refs/heads/studio/nojiroh-\d{8}-\d{6}-[a-z0-9]{1,4}$', r) for r in refs): errs.append(f'publish: branch names {refs}')
         sent = last_tree()
         if not any(k == 'pulls' for k, _ in st['log']): errs.append(f'publish: the retry after a {step} failure opened no pull request')
         missing = sorted(want - set(sent))

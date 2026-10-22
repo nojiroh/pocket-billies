@@ -12,7 +12,7 @@
 import { expose } from '../../game/js/test-globals.js';
 import { $ } from '../../game/js/util.js';
 import { escapeHtml } from './game-stand-ins.js';
-import { publishEmpty, publishOverlap } from '../../game/js/logic/publish-plan.js';
+import { publishBranchName, publishEmpty, publishOverlap } from '../../game/js/logic/publish-plan.js';
 import {
   ACTIONS,
   ask,
@@ -63,6 +63,7 @@ export const githubMode = {
   batch: null,
   tree: null,
   base: '', // the commit the Studio loaded (githubBase)
+  openBranch: '', // a proposal's branch whose pull request failed: the retry reuses it
   baseP: null,
   data: {}, // the text of each data file as read, to send only the ones that change
 };
@@ -392,8 +393,10 @@ async function proposeOnGithub(summary, files) {
     method: 'POST',
     body: JSON.stringify({ base_tree: baseCommit.tree.sha, tree }),
   });
-  const stamp = new Date().toISOString().slice(0, 16).replace(/[-:T]/g, ''),
-    branch = `studio/${githubMode.login}-${stamp}`;
+  /* T0.3: a branch name to the second with a random tail; a branch made by a proposal whose pull request then failed
+     is reused (moved to the new commit), so a retry neither collides nor leaves a branch behind */
+  const branch =
+    githubMode.openBranch || publishBranchName(githubMode.login, new Date(), Math.random().toString(36).slice(2, 6));
   const c = await githubFetch(repoApiPath('git/commits'), {
     method: 'POST',
     body: JSON.stringify({
@@ -402,10 +405,18 @@ async function proposeOnGithub(summary, files) {
       parents: [baseSha],
     }),
   });
-  await githubFetch(repoApiPath('git/refs'), {
-    method: 'POST',
-    body: JSON.stringify({ ref: 'refs/heads/' + branch, sha: c.sha }),
-  });
+  if (githubMode.openBranch)
+    await githubFetch(repoApiPath('git/refs/heads/' + branch), {
+      method: 'PATCH',
+      body: JSON.stringify({ sha: c.sha, force: true }),
+    });
+  else {
+    await githubFetch(repoApiPath('git/refs'), {
+      method: 'POST',
+      body: JSON.stringify({ ref: 'refs/heads/' + branch, sha: c.sha }),
+    });
+    githubMode.openBranch = branch;
+  }
   const pr = await githubFetch(repoApiPath('pulls'), {
     method: 'POST',
     body: JSON.stringify({
@@ -414,7 +425,16 @@ async function proposeOnGithub(summary, files) {
       base: GITHUB_CONFIG.branch,
       body: `Proposed by @${githubMode.login} in Pocket Billies Studio.\n\nChanged files:\n${files.map(f => '- `' + f.path + '`').join('\n')}\n\nMerge this pull request to put the changes in the game; close it to turn them down.`,
     }),
+  }).catch(async e => {
+    /* the pull request was opened but its answer lost: the branch already has one */
+    if (e.status !== 422) throw e;
+    const open = await githubFetch(
+      repoApiPath(`pulls?state=open&head=${encodeURIComponent(GITHUB_CONFIG.owner + ':' + branch)}`)
+    );
+    if (!open || !open.length) throw e;
+    return open[0];
   });
+  githubMode.openBranch = '';
   return pr;
 }
 /* the Studio's own api() and saveAll() take this route when it runs from GitHub */
