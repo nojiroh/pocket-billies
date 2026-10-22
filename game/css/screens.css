@@ -35,33 +35,6 @@
   text-shadow: none;
 }
 
-/* page titles get their own glass plate when the scene shows behind them */
-body.on-scene .screen > .bar > div:first-child:has(> .where) {
-  padding: 10px 16px 12px;
-  border-radius: 14px;
-  background: color-mix(in srgb, var(--panel-s) 88%, transparent);
-  box-shadow:
-    0 0 0 2px var(--line),
-    0 14px 28px -18px var(--shadow);
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
-}
-body.on-scene .screen > .bar .where,
-body.on-scene .screen > .bar .sub {
-  text-shadow: none;
-}
-body.on-scene .screen > .bar .where {
-  text-shadow: 2px 2px 0 var(--glow);
-}
-/* loose notes on scene screens (Field Guide) sit on a small glass strip */
-body.on-scene .screen > p.note {
-  padding: 6px 12px;
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--panel-s) 88%, transparent);
-  box-shadow: 0 0 0 2px var(--line);
-  text-shadow: none;
-}
-
 /* ---------- shared: a little stage tinted by the billionaire's types ---------- */
 .tm-spr,
 .bx-spr,
@@ -1329,31 +1302,6 @@ html[data-targets='big'] .set-tabs button {
   .sw i {
     transition: none;
   }
-}
-button.tb-where {
-  border: 0;
-  background: none;
-  padding: 4px 6px;
-  margin: -4px 0 -4px -6px;
-  border-radius: 8px;
-  cursor: pointer;
-  color: var(--text);
-}
-button.tb-where:hover {
-  background: color-mix(in srgb, var(--text) 8%, transparent);
-}
-button.tb-where svg {
-  flex: none;
-  opacity: 0.7;
-  transform: rotate(180deg);
-  transition: transform 0.15s;
-}
-button.tb-where.shut svg {
-  transform: none;
-}
-button.tb-where.shut {
-  color: var(--text);
-  font-weight: 600;
 }
 /* v31: the battle's panels slide up over the walk scene when a battle starts on the 3D stage, and away at the end */
 @keyframes btRise {

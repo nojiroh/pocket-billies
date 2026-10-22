@@ -39,7 +39,7 @@ VIEWS = [
     ('walk', 'town', '', "!!document.querySelector('.screen.s-walk')"),
     ('map', 'town', "uiState.tab='map';render()", "!!document.querySelector('.screen.s-map')"),
     ('map-card', 'town', "uiState.tab='map';render();setTimeout(()=>{worldMapSelect(0)},800)", "!!document.querySelector('.screen.s-map .mapcard')"),
-    ('team', 'team', '', "!!document.querySelector('.screen.s-team')"),
+    ('team', 'team', "uiState.tab='team';render()", "!!document.querySelector('.screen.s-team')"),
     ('sheet', 'team', "document.querySelector('[data-a=mon]').click()", "!!document.querySelector('#ov .mon-sheet')"),
     ('sheet-build', 'team', "document.querySelector('[data-a=mon]').click();setTimeout(()=>document.querySelector('#ov [data-a=ms-tab][data-k=build]').click(),300)", "!!document.querySelector('#ov [data-a=ms-tab][data-k=build][aria-selected=true]')"),
     ('sheet-moves', 'team', "document.querySelector('[data-a=mon]').click();setTimeout(()=>document.querySelector('#ov [data-a=ms-tab][data-k=moves]').click(),300)", "!!document.querySelector('#ov [data-a=ms-tab][data-k=moves][aria-selected=true]')"),
@@ -51,7 +51,7 @@ VIEWS = [
     ('lore', 'town', "uiState.tab='ledger';uiState.guideTab='lore';render()", "!!document.querySelector('.screen.s-ledger .lore')"),
     ('postcards', 'town', "uiState.tab='ledger';uiState.guideTab='cards';render()", "!!document.querySelector('.screen.s-ledger')"),
     ('profile', 'town', "uiState.tab='profile';render()", "!!document.querySelector('.screen.s-profile')"),
-    ('bag', 'bag', '', "!!document.querySelector('.screen.s-bag')"),
+    ('bag', 'bag', "uiState.tab='bag';render()", "!!document.querySelector('.screen.s-bag')"),
     ('settings', 'town', OPEN + "openSettings()", "!!document.querySelector('#ov .set-sheet')"),
     ('battle', 'battle', '', "!!activeBattle&&document.querySelectorAll('#acts button').length>0"),
     ('talk', 'talk', '', "!!document.querySelector('.talk-layer')"),
@@ -98,7 +98,9 @@ DUMP = r"""() => {
   for (const [key, el] of els) {
     /* a property the page's script writes on the element itself (a camera, a drag) is the script's, not a rule's */
     const inline = new Set([...el.style]);
-    const one = (pseudo) => { const cs = getComputedStyle(el, pseudo); return props.map(p => inline.has(p) && !pseudo ? '(inline)' : cs.getPropertyValue(p).split(location.origin).join('')); };
+    /* an element a script bumps for a moment (TRANSIENT) runs its animation whenever the script says */
+    const bumpable = el.matches && el.matches('pb-payout .v, .v');
+    const one = (pseudo) => { const cs = getComputedStyle(el, pseudo); return props.map(p => inline.has(p) && !pseudo ? '(inline)' : bumpable && p.startsWith('animation') ? '(bump)' : cs.getPropertyValue(p).split(location.origin).join('')); };
     const own = one(null), parts = { '': own };
     for (const ps of ['::before', '::after']) { const v = getComputedStyle(el, ps).getPropertyValue('content'); if (v && v !== 'none' && v !== 'normal') parts[ps] = one(ps); }
     rows.push({ key, parts, text: h((el.shadowRoot ? el.shadowRoot.textContent : '') + el.textContent) });

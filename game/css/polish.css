@@ -62,10 +62,6 @@
 .swatch:focus-visible {
   outline-offset: 3px;
 }
-nav#nav button:focus-visible {
-  outline-offset: -2px;
-  border-radius: 12px;
-}
 
 /* ---------- pixel buttons: bevel + ledge, press sinks into the ledge ---------- */
 .pb:not(.wh-row .pb) {
@@ -145,9 +141,6 @@ section > h2::before,
     0 4px 0 var(--orn2),
     -4px 0 0 var(--orn2),
     4px 0 0 var(--orn2);
-}
-.sheet > h2::before {
-  margin-right: 11px;
 }
 .sec-h:has(> h2)::after {
   content: '';
@@ -248,135 +241,6 @@ section > h2::before,
   box-shadow:
     inset 0 -3px 0 rgba(0, 0, 0, 0.18),
     inset 0 2px 0 rgba(255, 255, 255, 0.35);
-}
-
-/* ---------- top status bar ---------- */
-.topbar {
-  box-shadow:
-    0 0 0 2px var(--line),
-    inset 0 2px 0 var(--hi),
-    0 10px 24px -14px var(--shadow);
-}
-.tb-where {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.tb-where::before {
-  content: '';
-  flex: none;
-  width: 3px;
-  height: 3px;
-  margin: 0 3px;
-  background: var(--orn);
-  box-shadow:
-    0 -3px 0 var(--orn2),
-    0 3px 0 var(--orn2),
-    -3px 0 0 var(--orn2),
-    3px 0 0 var(--orn2);
-}
-.tb-chip {
-  box-shadow: inset 0 -2px 0 var(--lo);
-}
-.tb-chip[title='Money'] {
-  background: var(--chip-money-bg);
-  color: var(--chip-money-fg);
-  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--gold) 70%, transparent);
-}
-.tb-chip[title='Money'] small {
-  color: inherit;
-  opacity: 0.8;
-}
-
-/* ---------- bottom nav / side rail ---------- */
-nav#nav .ind::before {
-  background: linear-gradient(180deg, var(--gold-hi), var(--gold) 45%, #e6ae36);
-  box-shadow:
-    0 0 0 2px var(--line),
-    inset 0 -3px 0 rgba(150, 90, 10, 0.35),
-    inset 0 2px 0 rgba(255, 255, 255, 0.6),
-    0 0 18px var(--glow);
-}
-nav#nav .ind::after {
-  content: '';
-  position: absolute;
-  inset: 2px;
-  border-radius: 11px;
-  pointer-events: none;
-  background: linear-gradient(100deg, transparent 40%, var(--sheen) 40% 47%, transparent 47%) no-repeat;
-  background-size: 250% 100%;
-  background-position: 150% 0;
-}
-nav#nav button:not([aria-current='page']):hover {
-  color: var(--text);
-}
-
-/* ---------- toasts: a pill with a little spinning coin ---------- */
-.toast {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 9px 18px 9px 11px;
-  text-align: left;
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--panel-s) 96%, #fff),
-    color-mix(in srgb, var(--panel-s) 88%, transparent)
-  );
-  box-shadow:
-    0 0 0 2px var(--line),
-    inset 0 2px 0 var(--hi),
-    0 4px 0 0 color-mix(in srgb, var(--line) 85%, transparent),
-    0 18px 30px -14px var(--shadow);
-}
-.toast::before {
-  content: '';
-  flex: none;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 38% 34%, #fff4c2 0 2px, #f7cf5e 3px 5px, #e2a12c 6px 7px, #b97a16 8px);
-  box-shadow: 0 0 0 2px var(--line);
-}
-body:has(.topbar) .toast {
-  top: calc(66px + env(safe-area-inset-top, 0px));
-}
-
-/* ---------- modals ---------- */
-.scrim {
-  background: radial-gradient(140% 95% at 50% 105%, var(--scrim), color-mix(in srgb, var(--scrim) 50%, transparent));
-}
-.sheet.px {
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--panel-s), #fff 25%) 0, var(--panel-s) 90px), var(--panel-s);
-  box-shadow:
-    0 0 0 2px var(--line),
-    inset 0 4px 0 var(--gold),
-    inset 0 6px 0 color-mix(in srgb, var(--gold) 30%, transparent),
-    0 -10px 40px -14px rgba(0, 0, 0, 0.45);
-}
-:root[data-theme='dark'] .sheet.px {
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--panel-s), #fff 5%) 0, var(--panel-s) 90px), var(--panel-s);
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) .sheet.px {
-    background:
-      linear-gradient(180deg, color-mix(in srgb, var(--panel-s), #fff 5%) 0, var(--panel-s) 90px), var(--panel-s);
-  }
-}
-.sheet::before {
-  background: color-mix(in srgb, var(--line) 30%, transparent);
-  margin-top: -6px;
-}
-.sheet .btns {
-  background: repeating-linear-gradient(
-      90deg,
-      color-mix(in srgb, var(--line) 25%, transparent) 0 6px,
-      transparent 6px 12px
-    )
-    top/100% 2px no-repeat;
-  padding-top: 16px;
 }
 .stats td {
   border-bottom-style: dashed;
@@ -546,9 +410,6 @@ body:has(.topbar) .toast {
   .ware2:not(.locked):hover {
     transform: translateY(-2px);
   }
-  .tb-chip[title='Money'] .pxi {
-    animation: nwCoinSpin 6s ease-in-out 1s infinite;
-  }
 
   /* staggered entrances on tab change */
   .screen.enter :is(.slot, .vit, .empty) {
@@ -582,69 +443,6 @@ body:has(.topbar) .toast {
   .screen.enter .fchip:nth-child(n + 4) {
     animation-delay: 75ms;
   }
-  .screen.enter :is(.sec-h > h2, section > h2)::before {
-    animation: nwSpark 0.45s var(--spring) 0.1s backwards;
-  }
-  .screen.enter .bar > div:first-child:has(> .where)::after {
-    animation: nwDash 0.45s var(--out) 0.12s backwards;
-    transform-origin: left;
-  }
-
-  /* nav: a hop when chosen, then a slow idle bob; the pill glints now and then */
-  nav#nav button .uico {
-    transition: transform 0.22s var(--spring);
-  }
-  nav#nav button:not([aria-current='page']):hover .uico {
-    transform: translateY(-2px);
-  }
-  nav#nav button:active .uico {
-    transform: scale(0.86);
-  }
-  nav#nav button[aria-current='page'] .uico {
-    animation:
-      hop 0.45s var(--spring),
-      nwIdle 2.8s ease-in-out 0.6s infinite;
-  }
-  nav#nav .ind::after {
-    animation: nwGlint 5.5s ease-in-out 1.2s infinite;
-  }
-  .tb-btn {
-    transition:
-      transform 0.3s var(--spring),
-      background-color 0.2s;
-  }
-  .tb-btn:active {
-    transform: rotate(90deg) scale(0.9);
-  }
-
-  /* toasts and modals */
-  .toast {
-    animation: nwToast 0.42s var(--spring);
-  }
-  .toast::before {
-    animation: nwFlip 0.5s ease-out 0.12s backwards;
-  }
-  .scrim:not(.still) {
-    animation: fade 0.22s ease-out;
-  }
-  .scrim:not(.still) .sheet {
-    animation: nwSheet 0.42s cubic-bezier(0.2, 0.9, 0.3, 1.05);
-  }
-  .scrim:not(.still) .sheet > :is(h2, .body, .btns) {
-    animation: nwFadeUp 0.34s var(--out) backwards;
-  }
-  .scrim:not(.still) .sheet > h2 {
-    animation-delay: 60ms;
-  }
-  .scrim:not(.still) .sheet > .body {
-    animation-delay: 100ms;
-  }
-  .scrim:not(.still) .sheet > .btns {
-    animation-delay: 140ms;
-  }
-  .scrim:not(.still) .sheet > h2::before {
-    animation: nwSpark 0.45s var(--spring) 0.18s backwards;
-  }
   .scrim.still .ware2,
   .scrim.still .shop-say p {
     animation: none;
@@ -672,11 +470,6 @@ body:has(.topbar) .toast {
   }
   .ware2:not(.locked):hover .w-ic {
     transform: rotate(-8deg) scale(1.08);
-  }
-  @media (min-width: 700px) {
-    .scrim:not(.still) .sheet {
-      animation: nwDlg 0.38s cubic-bezier(0.2, 0.9, 0.3, 1.1);
-    }
   }
 }
 
