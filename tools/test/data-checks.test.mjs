@@ -132,3 +132,17 @@ test("one species rule: a loaded line's stages, a legacy line's (by its names, o
   assert.equal(kind('waltn0'), '');
   assert.equal(kind(null), '');
 });
+
+test("a relic's stat is one of stats.json's, not hp", () => {
+  const D = copy(),
+    R = Object.values(D.relics).find(r => r.fx.some(f => f.kind === 'stat')),
+    f = R.fx.find(f => f.kind === 'stat');
+  for (const [stat, ok] of [
+    ['hus', true],
+    ['hp', false],
+    ['luck', false],
+  ]) {
+    f.stat = stat;
+    assert.equal(!C.dataRelics(D).some(([, w]) => w.includes('.stat: no stat')), ok, stat);
+  }
+});

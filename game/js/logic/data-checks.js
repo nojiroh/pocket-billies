@@ -536,12 +536,16 @@ export function dataRelics(D, valid = () => true) {
     const RR = D.rules && D.rules.run && D.rules.run.relics,
       RARITIES = ['common', 'uncommon', 'rare'],
       whole = (v, lo, hi) => Number.isInteger(v) && v >= lo && v <= hi,
-      types = new Set((D.types || []).map(t => t.id));
+      types = new Set((D.types || []).map(t => t.id)),
+      stats = new Set((D.stats || []).map(t => t.id));
     if (D.relics && valid('relics.schema.json', D.relics, 'relics.json'))
       for (const [k, R] of Object.entries(D.relics))
         R.fx.forEach((f, n) => {
           if (f.type && !types.has(f.type))
             problem('relics.json', `${k}.fx[${n}].type: no type "${f.type}" (types.json)`);
+          /* T1.3: the stats from stats.json (a stage of HP means nothing), not a list in the schema */
+          if (f.kind === 'stat' && (f.stat === 'hp' || !stats.has(f.stat)))
+            problem('relics.json', `${k}.fx[${n}].stat: no stat "${f.stat}" a stage can raise (stats.json, not hp)`);
         });
     if (!RR || typeof RR !== 'object' || Array.isArray(RR)) problem('rules.json', 'run.relics missing');
     else {
