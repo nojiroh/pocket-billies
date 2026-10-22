@@ -69,20 +69,20 @@ function boxSection() {
   const full = saveData.team.length >= teamSize();
   const tools =
     all.length > 3
-      ? `<div class="fchips tm-tools" role="group" aria-label="Sort and filter storage">${BOX_SORTS.map(([k, l]) => `<button class="fchip${so === k ? ' on' : ''}" data-a="boxsort" data-k="${k}" aria-pressed="${so === k}">${l}</button>`).join('')}${types.length > 1 ? `<span class="tm-sep" aria-hidden="true"></span><button class="fchip${f === 'all' ? ' on' : ''}" data-a="boxf" data-f="all" aria-pressed="${f === 'all'}">All types</button>${types.map(t => `<button class="fchip tdot${f === t ? ' on' : ''}" data-a="boxf" data-f="${t}" style="--tc:${TYPE_COLORS[t][0]}" aria-pressed="${f === t}"><i></i>${t === 'None' ? 'Normal' : t}</button>`).join('')}` : ''}</div>`
+      ? `<div class="fchips tm-tools" role="group" aria-label="Sort and filter storage">${BOX_SORTS.map(([k, l]) => `<button class="fchip k-btn${so === k ? ' on' : ''}" data-a="boxsort" data-k="${k}" aria-pressed="${so === k}">${l}</button>`).join('')}${types.length > 1 ? `<span class="tm-sep" aria-hidden="true"></span><button class="fchip k-btn${f === 'all' ? ' on' : ''}" data-a="boxf" data-f="all" aria-pressed="${f === 'all'}">All types</button>${types.map(t => `<button class="fchip k-btn tdot${f === t ? ' on' : ''}" data-a="boxf" data-f="${t}" style="--tc:${TYPE_COLORS[t][0]}" aria-pressed="${f === t}"><i></i>${t === 'None' ? 'Normal' : t}</button>`).join('')}` : ''}</div>`
       : '';
   return `<section class="tpanel tm-box"><div class="sec-h"><h2>Storage</h2><span class="count tnum">${all.length}</span></div>${
     all.length
       ? `<p class="note">Billies resting here don’t battle. Tap one for details.</p>${tools}
  <div class="bx-grid">${L.map(
    m =>
-     `<div class="bx"><button class="bx-main" data-a="mon" data-u="${m.uid}"><span class="bx-spr" style="${plateVars(m)}">${rigCanvasHTML(m.sp, 60, { build: m.build, coat: m.coat })}</span><b>${escapeHtml(billyName(m))}</b><span class="bx-sub tnum">Lv ${m.lvl}<span class="bx-dots">${speciesOf(
+     `<div class="bx k-card"><button class="bx-main" data-a="mon" data-u="${m.uid}"><span class="bx-spr" style="${plateVars(m)}">${rigCanvasHTML(m.sp, 60, { build: m.build, coat: m.coat })}</span><b>${escapeHtml(billyName(m))}</b><span class="bx-sub tnum">Lv ${m.lvl}<span class="bx-dots">${speciesOf(
        m
      )
        .types.map(t => `<i style="--tc:${TYPE_COLORS[t][0]}" title="${t}"></i>`)
        .join(
          ''
-       )}</span></span></button><button class="qk" data-a="mteam" data-u="${m.uid}">${full ? 'Swap in' : 'To team'}</button></div>`
+       )}</span></span></button><button class="qk k-btn" data-a="mteam" data-u="${m.uid}">${full ? 'Swap in' : 'To team'}</button></div>`
  ).join('')}</div>`
       : '<div class="empty tm-empty">Storage is empty. When your team is full, new Billies you tax and hatchlings rest here.</div>'
   }</section>`;
