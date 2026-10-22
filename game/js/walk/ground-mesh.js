@@ -5,6 +5,7 @@
 import { expose } from '../test-globals.js';
 import { freeNearRing, groundOcclusionTexture, provide } from '../hooks.js';
 import { clamp } from '../util.js';
+import { seaCalmAt, seaSkirt } from '../logic/sea.js';
 import { stepGridCorners } from '../logic/step-grid.js';
 import {
   GROUND_BORDER_M,
@@ -619,6 +620,10 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
     fi = [];
   T.falls = [];
   let wn = 0;
+  const sea = !!(sc.flatFar && !bare),
+    /* IS-3: a cove's calm rides in the kind (kind + calm * 0.4; the water shader takes it apart) */
+    cove = sea && (sc.zones || []).some(zn => zn && zn.k === 'cove'),
+    calmK = (kd, x, z) => (cove && WATER_KIND_LOOKS[kd].k === 'sea' ? seaCalmAt(sc, x, z) * 0.4 : 0);
   const stream = [],
     spring = [];
   for (let j = 0; j < H2; j++) {
@@ -665,8 +670,9 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
           [-0.25, 0.25],
           [0.25, 0.25],
         ]) {
-          const ii = Math.floor((vx + p) * 2),
-            jj = Math.floor((vz + q2) * 2);
+          /* IS-3: a sea that runs on past the edge counts the edge cell again, not nothing (it was half as deep) */
+          const ii = sea ? clamp(Math.floor((vx + p) * 2), 0, W2 - 1) : Math.floor((vx + p) * 2),
+            jj = sea ? clamp(Math.floor((vz + q2) * 2), 0, H2 - 1) : Math.floor((vz + q2) * 2);
           if (!isW(vx + p, vz + q2)) sh++;
           else if (ii >= 0 && jj >= 0 && ii < W2 && jj < H2) dd += dep[jj * W2 + ii];
         }
@@ -679,7 +685,7 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
           fw[0],
           fw[1],
           dd / 4,
-          kd
+          kd + calmK(kd, vx, vz)
         );
       }
       wi.push(b0, b0 + 2, b0 + 1, b0 + 1, b0 + 2, b0 + 3);
@@ -766,31 +772,60 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
         ]) {
           const vx = i * 0.5 + a * 0.5,
             vz = j * 0.5 + c * 0.5;
-          wv.push(vx, run ? rawHeightAt(sc, vx, vz) + s0 - 0.12 : wy[nq], vz, 0, fw[0], fw[1], 0, wk[nq]);
+          wv.push(
+            vx,
+            run ? rawHeightAt(sc, vx, vz) + s0 - 0.12 : wy[nq],
+            vz,
+            0,
+            fw[0],
+            fw[1],
+            0,
+            wk[nq] + calmK(wk[nq], vx, vz)
+          );
         }
         wi.push(b0, b0 + 2, b0 + 1, b0 + 1, b0 + 2, b0 + 3);
       }
     }
-  /* v24: out at sea the water runs on past the edges of the scene to the horizon */
-  if (sc.flatFar && wn) {
+  /* v24: out at sea the water runs on past the edges of the scene to the horizon. IS-3: one skirt of rings
+    (logic/sea.js) from the scene's edge out to 400 m, at the level of the sea along the edge, its first ring as deep
+    as the water beside it, so the two meet without a seam */
+  T.seaSkirt = null;
+  if (sea && wn) {
     const kd = kindAt(-1, -1, false),
-      y = -0.12,
-      F = 90,
-      quad = (x0, z0, x1, z1) => {
-        const b0 = wv.length / 8;
-        for (const [a, c] of [
-          [x0, z0],
-          [x1, z0],
-          [x0, z1],
-          [x1, z1],
-        ])
-          wv.push(a, y, c, 0, 0, 0, 1, kd);
-        wi.push(b0, b0 + 2, b0 + 1, b0 + 1, b0 + 2, b0 + 3);
-      };
-    quad(-F, -F, 0, H + F);
-    quad(W, -F, W + F, H + F);
-    quad(0, -F, W, 0);
-    quad(0, H, W, H + F);
+      lvN = new Map();
+    /* the sea's level: the commonest level of the water cells along the edge */
+    for (let i = 0; i < W2; i++)
+      for (const j of [0, H2 - 1])
+        if (wd[j * W2 + i] !== -2) lvN.set(wy[j * W2 + i], (lvN.get(wy[j * W2 + i]) || 0) + 1);
+    for (let j = 0; j < H2; j++)
+      for (const i of [0, W2 - 1])
+        if (wd[j * W2 + i] !== -2) lvN.set(wy[j * W2 + i], (lvN.get(wy[j * W2 + i]) || 0) + 1);
+    let y = -0.12,
+      best = 0;
+    for (const [v, n] of lvN)
+      if (n > best) {
+        best = n;
+        y = v;
+      }
+    /* the depth at a point on the edge: as the scene's water vertex there works it out (the edge cells counted twice) */
+    const edgeDep = (vx, vz) => {
+        let dd = 0;
+        for (const [p, q2] of [
+          [-0.25, -0.25],
+          [0.25, -0.25],
+          [-0.25, 0.25],
+          [0.25, 0.25],
+        ]) {
+          if (!isW(vx + p, vz + q2)) continue;
+          dd += dep[clamp(Math.floor((vz + q2) * 2), 0, H2 - 1) * W2 + clamp(Math.floor((vx + p) * 2), 0, W2 - 1)];
+        }
+        return dd / 4;
+      },
+      S = seaSkirt(W, H, edgeDep),
+      b0 = wv.length / 8;
+    for (let q = 0; q < S.x.length; q++) wv.push(S.x[q], y, S.z[q], 0, 0, 0, S.dep[q], kd + calmK(kd, S.x[q], S.z[q]));
+    for (let m = 0; m < S.idx.length; m++) wi.push(b0 + S.idx[m]);
+    T.seaSkirt = { level: y, rings: S.rings, n: S.n, out: S.o[S.o.length - 1] };
   }
   freeMesh(T.water);
   T.water = wn

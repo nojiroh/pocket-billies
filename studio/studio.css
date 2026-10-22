@@ -4567,3 +4567,105 @@ body.wb-dropping::after {
   font-size: 12px;
   color: var(--text2);
 }
+/* ---------- island track IS-6a: the Hub island editor (js/hub-island.js) ---------- */
+.hub-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr));
+  gap: 14px;
+  align-items: start;
+}
+.hub-pv {
+  position: relative;
+  aspect-ratio: 4/3;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #24303a;
+  box-shadow: 0 0 0 1px var(--line);
+  touch-action: none;
+}
+.hub-pv canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  cursor: grab;
+  opacity: 1 !important;
+}
+.hub-pv #dioui {
+  pointer-events: none;
+}
+.hub-ed .sc-ters {
+  max-height: 116px;
+  overflow: auto;
+  padding: 2px;
+}
+.hub-vbar {
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+.hub-stage {
+  position: relative;
+  overflow: auto;
+  max-height: 70vh;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: #24303a;
+}
+.hub-stage canvas {
+  display: block;
+  cursor: crosshair;
+  touch-action: none;
+}
+.hub-map-in {
+  position: relative;
+  width: max-content;
+  margin: 0 auto;
+}
+.hub-map-in #hubMapCam {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+}
+.hub-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--text2);
+}
+.hub-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.hub-legend i {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  box-shadow: 0 0 0 1px var(--line);
+}
+.hub-legend .hub-hatch {
+  background: repeating-linear-gradient(45deg, transparent 0 3px, rgba(30, 20, 40, 0.5) 3px 4px);
+}
+.hub-legend .hub-pivot {
+  border-radius: 50%;
+  border: 2px dashed #e23d6e;
+  box-shadow: none;
+}
+.hub-note,
+.hub-locked {
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--acc2);
+}
+.hub-probs {
+  margin: 6px 0 10px;
+  padding-left: 18px;
+  color: var(--red);
+}
+.hub-polys .fld {
+  min-width: 140px;
+}

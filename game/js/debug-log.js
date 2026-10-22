@@ -584,6 +584,15 @@ debugLog.more = () => {
       resolution: GAME.walkView.R,
       inside: GAME.uiState.inside ? GAME.uiState.inside.id : null,
       room: !!sc.room,
+      /* island track IS-1: the orbit camera now (degrees: its yaw, 0 looking north; your turn on top; held still on
+         the summit) */
+      orbit: (() => {
+        const R = typeof GAME.walkRenderer !== 'undefined' ? GAME.walkRenderer : null,
+          S = R && R.orbit;
+        if (!S) return null;
+        const d = v => Math.round(((((v * 180) / Math.PI + 180) % 360) + 360) % 360) - 180;
+        return { yaw: d(S.yaw), turn: d(R.yaw || 0), hold: !!S.hold, stickLocked: !!S.lock };
+      })(),
     };
   });
   /* CAM-1: what the walking camera is doing: its mode (walk, indoor, room, swoop, free), zoom, turn, tilt, the rise on

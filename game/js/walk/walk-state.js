@@ -21,6 +21,8 @@ export const walkRenderer = {
   grass: null,
   yaw: 0,
   yawT: 0,
+  /* island track IS-1: the orbit camera's state on an island map (logic/camera-orbit.js; null elsewhere) */
+  orbit: null,
   zoom: 1,
   zoomT: 1,
   tiltX: 0,

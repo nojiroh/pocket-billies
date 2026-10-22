@@ -6,6 +6,7 @@ import { expose } from '../../game/js/test-globals.js';
 import { provide, uiRulesCheckLine } from '../../game/js/hooks.js';
 import { $ } from '../../game/js/util.js';
 import { uiThemeContrast } from '../../game/js/logic/ui-theme.js';
+import { islandProblems } from '../../game/js/logic/island.js';
 import { storyFindings } from '../../game/js/logic/story-checks.js';
 import { boneSlot } from '../../game/js/skeleton-rig.js';
 import { decodeBase64Array } from '../../game/js/walk-view.js';
@@ -346,6 +347,8 @@ export function runCheck() {
       for (const ch of row) if (!SY.terrains[ch]) bad.add(ch);
     });
     if (bad.size) err(`Scene ${s.name || k} uses unknown ground ${[...bad].join(', ')}.`, 'scenes', g);
+    /* IS-6a: the island fields and the ground lock (check-data refuses the same); they open in Hub island */
+    for (const msg of islandProblems(s)) err(`Island ${s.name || k}: ${msg}.`, 'hub', { hub: k });
     if ((s.tiles || []).length !== s.h)
       warn(`Scene ${s.name || k} has ${(s.tiles || []).length} rows of ground but is ${s.h} tall.`, 'scenes', g);
     (s.props || []).forEach(p => {

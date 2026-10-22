@@ -30,6 +30,11 @@ below against main and report what differs.
   or why. The free camera (logic/free-camera.js, studio/js/free-camera.js) and the cutscene camera are separate and
   stay so.
 
+- **Since this plan was written, main gained the island track's IS-1 orbit camera** (logic/camera-orbit.js, an orbit
+  mode in `walkCamera` when `sc.cam.orbit` is set, with its own yaw lag and dead zone, new Engine > Camera dials in
+  engine/settings.js). CAM-1 starts from main with it merged and builds on it: one dead zone and one smoothing model
+  for both the follow and the orbit, not two; IS-1's tests stay green.
+
 ## Research (outside sources, 2026-10-22)
 - Cinemachine Position Composer: dead zone, soft zone, hard limit, damping, lookahead time and smoothing; Target Group
   (weight and radius per member, weights ramped rather than toggled); its game-view guides (the zones drawn on the live
@@ -112,6 +117,13 @@ below against main and report what differs.
   working; the door also saves `fol`), `walkRenderer.camInfo` (for the debug log and the guides). The seamless
   world's re-anchor shifts `camT`, the follow's last targets, the goals' aim points, the swoop and `px/pz`.
 - **Debug log**: a `camera` section (mode, zoom, yaw, pitch, rise, goals, lead, off, moving).
+- **Merged with main's IS-1 orbit camera** (after CAM-1 was built, before its PR merged): the orbit sets the base
+  direction, and the follow's screen axes, the look-ahead from the stick, rising ground ahead, the landmark tilt, the
+  swoop's offset and "a little up the screen" all turn with it; an orbiting camera isn't held inside the scene; the
+  debug log's mode reads `orbit`. Not done yet: one smoothing model for both. The orbit still turns with its own
+  yaw lag and dead zone (logic/camera-orbit.js) while the follow's spring and zones move the aim. Merging them changes
+  how the island camera feels, so it waits for the owner's call (CAM-2 or a follow-up). check-fast 24 of 24 after
+  the merge (IS-1's orbit step, the Hub island editor, Tall ground, Camera follow); unit tests 621.
 - **Checks**: check-fast "Camera follow" (Copperleaf: settled standing, the look-ahead from the stick, inside the
   soft zone, settled again; a look-ahead that ignores the stick is caught); the debug log step wants the camera line.
 

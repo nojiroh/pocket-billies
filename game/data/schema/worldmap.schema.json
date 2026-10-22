@@ -53,7 +53,7 @@
      "maximum": 9999
     },
     "island": {
-     "description": "RL-8b: above 0, the world is one island of this radius round the places' middle (bowl radii) and sea all the way to the rim; share and rimLand are then not used",
+     "description": "RL-8b: above 0, the world is one island of this radius round the places' middle (bowl radii) and sea all the way to the rim; share and rimLand are then not used. IS-7: when the hub's island is drawn from its map (island.coast), its coast is the land and this is its size, the reach of its coast from island.c (a unit test keeps them within 10%)",
      "type": "number",
      "minimum": 0,
      "maximum": 0.8
