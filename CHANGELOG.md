@@ -9,6 +9,11 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- The world map shows Copperleaf's real island (island track IS-7): its own coastline with the cove and the
+  headlands, its beaches, meadows, forest and paths as they are on the ground, its mountain standing up in the
+  middle, and the town's buildings close in (the lab, the airship station, the houses, the well, the barn). The
+  shallows follow the coast. The island is drawn at its true size, so it is smaller than the old round blob; zoom in
+  to see the town. The debug menu's Bowl map test has a step for it.
 - Copperleaf's island has its ground and its town's layout (IS-2): a generated island in the debug menu's Test scenes,
   "Copperleaf island (generated ground)", about 215 m across with a natural shape (lobes, headlands, rolling hills): a
   mountain with spurs in the middle, climbed by a switchback trail to a lookout; forest round its north side; a long

@@ -2,6 +2,66 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Island track IS-7 - The world map's island - 2026-10-22
+Branch `claude/is-7-world-map-island`, from the wave-2 base `claude/new-session-3qlesh` (fcda361: main with IS-0 and
+IS-1, plus the IS-2, IS-3, IS-4 and IS-6a branches, PRs #122, #124, #123, #126, not merged yet); the PR goes against
+main and shrinks once those merge (merge main in then). Ran beside IS-6b (the Studio's dials). Plan approved in Plan
+Mode; its three "ask me" items went with the recommendations: the island at its true size, its relief lifted x3 like
+the bowl's buildings and trees, the buildings at the usual 3x.
+- Changed (one cause per commit):
+  - **logic/bowl.js**: a place whose map has `island.coast` keeps exactly that coast on the bowl (`bowlIslandPoly`,
+    `bowlPolyDistance`): land inside, sea outside, no coast noise, the map's own sea stays sea, no `sea.island` round
+    round it (`bowlIsles` gives `[]`: still an island world). With `heightOf` its ground's own heights replace the
+    bump of its kind and the hills between places (`BOWL_ISLAND_LIFT` 3, `BOWL_ISLAND_BASE` 0.004). Out to 80 m the
+    coast's distance is read exactly (the box's distance from 30 m out made a square in the water's depth).
+  - **logic/bowl-island.js** (new, game page after bowl-things.js): `bowlIslandMapId` (the map by its fields: the
+    place's own when it has a coast; else for the hub, world node 0, the biggest map with a coast and plots, so
+    `copperleaf_island` now and `copperleaf` after IS-5's rename, never `test_island`); `bowlIslandHeights` (smooth
+    land plus step raises, every 2 m); `bowlIslandRadius`; `bowlIslandPlotThings` (a model per plot kind,
+    `BOWL_PLOT_PROPS`, turned to face where the plot does, and the barn in its zone; skipped where a building or a
+    prop of the plot's kinds stands).
+  - **world-bowl.js**: every read of a place's map goes through the resolver (the sea input, the route mask, the
+    stamps, the things, the clumps); the island's file is fetched once (not during a run) and the ground worked out
+    again with its heights (`worldBowlReset`); stamped only where the bowl has land; plot models drawn; the landmark
+    still from copperleaf.json; `ground.islandMap` names the map drawn.
+  - **worldmap.json** `sea.island` 0.2 to **0.12** (the coast reaches 120 m from `island.c`); a unit test keeps it
+    within 10% of the coast's reach. The schema's description says so.
+  - **The World map test** (Bowl map test) step "The hub's island": 24 points round the coast, land 12 m in and sea
+    12 m out; the highest ground drawn where it is (24.9 m, drawn 23.6 m); a model on every free plot; ground laid on.
+  - Checks changed on purpose: no bowl river is made on an island drawn from its map (its stream is its own), so the
+    fast check's and the World map test's river count want 0 there (1 on an island world without one, 4 elsewhere).
+- Where the plan or the docs were wrong: phase 10's "1.5 m a pixel" ground is ~1 m (2048 pixels over 2000 m); the
+  camera's zoom limit stays (the plan offered distMin 0.45 to 0.3: at 0.45 the island already fills a phone's width
+  and the town reads, pictures in the PR); `test_island` does have `islandGen` (no seed, no plots). Also the well and
+  the airship station never showed on the bowl (not "buildings" by bowl-things.js's rule); on the plots they do.
+- Not touched (other sessions own them): copperleaf.json (IS-5), the Studio (IS-6b; its World map look's Island
+  dial help still says "0.2 is 200 m", still true), walk/camera.js, the sea and sky, prop data and art, mapgen.js.
+- Verified: unit tests 609 (bowl-island.test.mjs new, 10 tests; a planted fault in the resolver seen to fail), lint,
+  typecheck, check:modules, check:data (145 files), format; check-fast's world map check (with the run's world beside
+  it); the in-game World map test headless: every step passes but "The Map tab opens" (9 frames in 4 s: software
+  drawing at ~3 fps; the base fcda361 fails it the same way), the new step "copperleaf_island: its coast (240
+  points; 48 land and sea checks hold), its top 24.9 m drawn 23.6 m (x3), 25 plot buildings"; pictures at 390 x 760
+  (home, close, close from above, the whole bowl). The whole fast check 23 of 23. Smoke: one problem, the in-game
+  full test's step timing out at 60 s on a slow run (the Studio step took 94 s in the same run); run alone it passes
+  here (65 s) as on the base (57 s).
+- Risky:
+  - **The fetch**: the island's file (1.2 MB, 52 KB gzipped) is fetched when the map first opens if `loadAllMaps`
+    hasn't brought it yet, and the ground is worked out a second time (headless ~200-260 ms, the hub's before 160-210).
+    The outline is right from the first frame; the mountain and the ground come a moment later.
+  - **Size on screen**: at true size the island is about half the old round blob; the home view shows it with a lot
+    of sea. If the phone says it's too small, the fix is the home view's zoom for the hub, not a bigger island.
+  - **The town at 3x on its plots**: the plots are laid out for buildings at 1x, so at 3x the houses stand close; in
+    the headless pictures they read as separate buildings. One number (`BOWL_THING_SCALE`, shared with every place)
+    if the phone shows them crowded.
+  - **IS-5**: when the town's buildings become props on the plots, the plot models step aside by themselves (tested);
+    the barn's zone model too once a barn prop stands within 20 m of the zone's middle. After the rename the resolver
+    takes copperleaf by its own coast; nothing here names an id. `sea.island` must follow any reshaping (the test says).
+  - Headless the landmark (the oak) is still the red block seen since RL-7 (its picture not loaded): look on the phone.
+- For the sessions alongside: **IS-5** see above; **IS-6b**: a reshaped island trips the `sea.island` unit test on
+  purpose (set it to the coast's reach / 1000); the Studio's World map look could show that number next to its dial.
+- Next: the owner's phone look (the Map tab in Copperleaf, zoomed out and in; the Bowl map test from the debug menu;
+  export the debug log); tag `is-7-done` is the owner's to push. Then IS-8 and IS-9 (wave 3).
+
 ### Island track IS-2 - Island ground generator - 2026-10-22
 Branch `claude/is-2-island-gen`, from IS-0's `claude/new-session-3qlesh` (PR #119, not merged yet: the owner started
 wave 1 before `is-0-done`); the PR goes against main, so its diff shrinks once #119 merges. The session grew with the
