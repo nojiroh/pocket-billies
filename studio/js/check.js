@@ -13,6 +13,23 @@ import { decodeBase64Array } from '../../game/js/walk-view.js';
 import { escapeHtml } from './game-stand-ins.js';
 import { UI_ROLE_LABELS } from '../../game/js/logic/ui-dials.js';
 import {
+  dataBattleRules,
+  dataBiomes,
+  dataBuildings,
+  dataCurrencies,
+  dataNodeTypes,
+  dataRanchRules,
+  dataRelics,
+  dataRobotProblems,
+  dataRobots,
+  dataRunClock,
+  dataRunLoop,
+  dataRunMapRules,
+  dataRunPayout,
+  dataRunScene,
+  dataUnlocks,
+} from '../../game/js/logic/data-checks.js';
+import {
   ACTIONS,
   SECTIONS,
   afterRender,
@@ -32,6 +49,9 @@ import { atlasPath, pickFile } from './sprites.js';
 import { wmlSeaShare } from './worldmap-look.js';
 /* eslint-disable no-func-assign */
 expose({
+  CHECK_FILE_SECTIONS: [() => CHECK_FILE_SECTIONS],
+  STUDIO_DATA_FAMILIES: [() => STUDIO_DATA_FAMILIES],
+  checkFilePlace: [() => checkFilePlace, v => (checkFilePlace = v)],
   checkTimer: [() => checkTimer, v => (checkTimer = v)],
   loadBackups: [() => loadBackups, v => (loadBackups = v)],
   renderCheckList: [() => renderCheckList, v => (renderCheckList = v)],
@@ -483,6 +503,22 @@ export function runCheck() {
      error when a rule is over its ceiling */
   const rules = uiRulesCheckLine();
   if (rules) P.push({ lvl: rules.over ? 'error' : 'info', msg: rules.msg, go: 'ui', sel: { uiRules: 1 } });
+  /* Studio plan T1.3: check-data's own checks (logic/data-checks.js), in its words, file first. The UI look's family
+     is left out: its Studio version is above, in the Studio's words. A family that stops on data in a shape it doesn't
+     expect says so (check-data's schema check would refuse that data) */
+  for (const [what, family] of STUDIO_DATA_FAMILIES) {
+    let found;
+    try {
+      found = family(D);
+    } catch (e) {
+      found = [['', `the ${what} checks stopped: ${e.message}`]];
+    }
+    for (const [where, msg] of found) err(where ? `${where}: ${msg}` : msg, ...checkFilePlace(where));
+  }
+  for (const [k, T] of Object.entries(D.trainers || {}))
+    for (const m of T.team || [])
+      if (m.sp === 'robot')
+        for (const msg of dataRobotProblems(D, m.robot)) err(`${T.name || k} ${msg}.`, 'trainers', { trainer: k });
   /* Project Story S3: the story checks, the same ones check-data runs (game/js/logic/story-checks.js) */
   try {
     for (const f of storyFindings(D)) {
@@ -493,6 +529,40 @@ export function runCheck() {
     err(`The story checks stopped: ${e.message}`, 'story');
   }
   return P;
+}
+/* T1.3: the families of logic/data-checks.js the Check runs, in check-data's order */
+const STUDIO_DATA_FAMILIES = /** @type {[string, (D: any) => [string, string][]][]} */ ([
+  ['battle rules', dataBattleRules],
+  ['run payout', dataRunPayout],
+  ['ranch', dataRanchRules],
+  ['run map', dataRunMapRules],
+  ['run clock', dataRunClock],
+  ['run scene', dataRunScene],
+  ['run loop', dataRunLoop],
+  ['robot', dataRobots],
+  ['biome', dataBiomes],
+  ['node type', dataNodeTypes],
+  ['relic', dataRelics],
+  ['currency', dataCurrencies],
+  ['building', dataBuildings],
+  ['unlock', dataUnlocks],
+]);
+/** T1.3: the section (and selection) a data file's problem opens with Show me. Phase 4's editors add theirs (relics,
+ * unlocks, buildings, currencies, node types, biomes have no section yet, so their problems have no Show me) */
+const CHECK_FILE_SECTIONS = {
+  'rules.json': ['rules'],
+  'robots.json': ['robots'],
+  'uiTheme.json': ['ui'],
+  'pools.json': ['world', { wtab: 'pools' }],
+  'locations.json': ['world', { wtab: 'route' }],
+  'roads.json': ['world', { wtab: 'route' }],
+};
+/** @param {string} where a file as check-data names it @returns {[string?, object?]} */
+function checkFilePlace(where) {
+  const [dir, file] = where.split('/');
+  if (file && dir === 'trainers') return ['trainers', { trainer: file.replace(/\.json$/, '') }];
+  if (file && dir === 'maps') return ['scenes', { scene: file.replace(/\.json$/, '') }];
+  return /** @type {[string?, object?]} */ (CHECK_FILE_SECTIONS[where] || []);
 }
 let checkTimer = null;
 export function scheduleCheck(now) {
