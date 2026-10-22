@@ -73,6 +73,33 @@ VIEWS = [
     ('payout', 'run', OPEN + "runOver(false)", "!!document.querySelector('#ov pb-payout')&&!document.querySelector('#ov pb-payout').shadowRoot.querySelector('li.wait,.bump')"),
     ('title', 'title', '', "!!document.querySelector('.ttl,.title')"),
 ]
+# UI-6: the parts UI-5 had no view of (the opening, postcards, the flight and the lift, the walk controls, fishing,
+# photo mode, the workshop, evolving, the full test's table). Each is put on the page the way its code builds it
+# (the real builder where it has no timer, else a copy of its markup), still, so the cascade can be compared
+LEGACY_WORLD = ("const H=(h)=>document.body.insertAdjacentHTML('beforeend',h);"
+    "H('<div class=\"pcard-wrap in\" role=dialog><div class=pcard><div class=pc-pic><img alt=\"\"><div class=pc-greet><small>Greetings from</small><b>Copperleaf</b></div></div><div class=pc-stamp><img alt=\"\"><span>Copperleaf</span></div><p class=pc-note>A postcard for your Guide.</p></div></div>');"
+    "H('<div class=\"pc-mini in\"><div class=\"pc-stamp sm\"><img alt=\"\"></div><span>Copperleaf</span></div>');"
+    "H('<div class=\"lift-veil up in\"><div class=\"lift-cap glass\"><small>Glass lift</small><b>Up to Copperleaf</b><span class=note>Up</span></div></div>');"
+    "H('<div id=flycap class=\"fly-cap glass\"><small>Airship</small><b>A → B</b><span class=note>Tap to skip</span></div>');"
+    "H('<div class=fly-sheet><button class=\"pickrow fly-row\"><span class=fly-ico></span><span class=pr-t><b>Start a run</b><small>Bracket I</small></span><span class=fly-fare>Free</span></button><button class=\"pickrow fly-row off\"><span class=fly-ico></span><span class=pr-t><b>Town</b><small>x</small></span><span class=\"fly-fare tnum\">$5</span></button></div>');"
+    "H('<div class=fish-ui><canvas class=fish-cv></canvas><div class=\"fish-msg glass\">Casting…</div><div class=fish-reel><div class=fr-bar><div class=fr-zone></div><div class=\"fr-fish in\"></div></div><div class=fr-prog><i></i></div></div><div class=fish-acts><button class=\"pb small gold fish-tap\">Strike!</button><button class=\"pb small glass\">Stop fishing</button></div></div>');"
+    "H('<div class=\"evo run b\"><span class=ea><canvas class=rig></canvas></span><span class=eb><canvas class=rig></canvas></span></div><div class=\"hatch done\"><canvas class=rig></canvas></div>');"
+    "H('<table class=nb-table><tr><td>x<small class=nb-det>d</small><small class=nb-why>w</small></td></tr></table>');"
+    "joystickElement().classList.add('on','run');joystickDpad().classList.add('on','run');document.body.classList.add('flying')")
+LEGACY_OPENING = ("document.body.classList.add('in-cs','cs-choosing');const c=document.createElement('div');c.id='cs';c.className='cs';c.innerHTML=cutsceneHTML();document.body.appendChild(c);"
+    "const k=document.getElementById('csPick');k.hidden=false;k.innerHTML='<p class=sd>Pick one</p><div class=racts><button class=\"pb wide\">A</button><button class=pb>B</button></div>';"
+    "document.getElementById('csCap').classList.add('on');document.getElementById('csFade').classList.add('on');"
+    "document.body.insertAdjacentHTML('beforeend','<canvas class=cs-fall></canvas>');battleTip('gini','A tip',{a:'x',l:'Skip'},true)")
+LEGACY_PHOTO = ("document.body.classList.add('photo');document.body.insertAdjacentHTML('beforeend','<div class=\"photo-ui glass\" id=photoUI><div class=ph-row><button class=\"pb small on\">None</button><button class=\"pb small\">+</button></div><div class=ph-row><button class=\"pb gold\">Take photo</button><button class=\"pb quiet\">Done</button></div></div><div class=photo-prev></div>')")
+LEGACY_WORKSHOP = (OPEN + "document.body.insertAdjacentHTML('beforeend','<div id=wsTest class=\"sheet px\"><div class=ws-top><div class=ws-big></div><div class=ws-info><p class=row><b class=\"lv tnum\">Lv 5</b></p><div class=ws-stats><span><small>HP</small><b>10</b></span></div></div></div>"
+    "<div class=ws-slots><button class=\"ws-slot on\"><small>Head</small><b>Part</b><span class=ws-meta><span>Move</span></span><span class=ws-n>2</span><span class=ws-up>+</span><span class=\"ws-brk dmg\">!</span></button><button class=ws-slot><small>Arm</small><b>Part</b></button></div>"
+    "<div class=ws-pick><p class=note>Spare parts:</p><div class=ws-cand><span class=ws-ct><b>P</b><span class=ws-meta></span></span><span class=ws-ds><span class=\"ws-d up\">+1</span><span class=\"ws-d dn\">-1</span></span><button class=\"pb small\">Fit</button></div><div class=ws-upg><span class=note>Upgrade</span><button class=\"pb small quiet\">Upgrade</button></div></div></div>')")
+VIEWS += [
+    ('legacy-world', 'town', LEGACY_WORLD, "!!document.querySelector('.pcard-wrap')&&!!document.querySelector('.joy.on')"),
+    ('legacy-opening', 'town', LEGACY_OPENING, "!!document.querySelector('#cs .cs-cap.on')&&!!document.querySelector('#btip')"),
+    ('legacy-photo', 'town', LEGACY_PHOTO, "!!document.querySelector('#photoUI')"),
+    ('legacy-workshop', 'team', LEGACY_WORKSHOP, "!!document.querySelector('#wsTest')"),
+]
 if ONLY: VIEWS = [v for v in VIEWS if v[0] in ONLY]
 
 # every element in document order, into shadow trees; per element its own style and its ::before/::after when drawn.

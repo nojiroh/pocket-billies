@@ -1,0 +1,131 @@
+/* UI-6: The airship flight on the world map (the fare list, its caption, the map stepping aside) and the glass lift between two places. Moved as they were from polish.css, in the order the page loaded them. */
+@keyframes nwCoinSpin {
+  0%,
+  86% {
+    transform: scaleX(1);
+  }
+  90% {
+    transform: scaleX(0.15);
+  }
+  95% {
+    transform: scaleX(-1);
+  }
+  100% {
+    transform: scaleX(1);
+  }
+}
+/* alpha 0.4: airships */
+.fly-row .fly-ico {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: var(--panel2);
+}
+.fly-row .pr-t {
+  flex: 1;
+  min-width: 0;
+}
+.fly-row .pr-t small {
+  display: block;
+  opacity: 0.75;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fly-row .fly-fare {
+  flex: none;
+  font-weight: 700;
+  color: var(--gold, #e9b83c);
+}
+.fly-row.off {
+  opacity: 0.55;
+}
+.fly-cap {
+  position: absolute;
+  left: 50%;
+  top: calc(14px + env(safe-area-inset-top));
+  transform: translateX(-50%);
+  padding: 10px 16px;
+  border-radius: 14px;
+  text-align: center;
+  z-index: 5;
+  pointer-events: none;
+}
+.fly-cap small {
+  display: block;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+.fly-cap b {
+  display: block;
+  font-size: 1rem;
+}
+.fly-cap .note {
+  display: block;
+  margin: 2px 0 0;
+  font-size: 0.72rem;
+}
+body.flying #maplabels,
+body.flying .mapcard,
+body.flying .mapctl,
+body.flying .map-head {
+  display: none !important;
+}
+body.flying #mapcv {
+  pointer-events: none;
+}
+body.flying #nav {
+  visibility: hidden;
+}
+/* alpha 0.4: the glass lift between Kelpport and Pearlantis */
+.lift-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 85;
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+}
+.lift-veil.down {
+  background: linear-gradient(#2e8aa8, #0c3a5a 55%, #04182a);
+}
+.lift-veil.up {
+  background: linear-gradient(#f6f0dc, #7fc4d8 45%, #1c6a8a);
+}
+.lift-veil.in {
+  opacity: 1;
+  pointer-events: auto;
+}
+.lift-cap {
+  padding: 14px 18px;
+  border-radius: 14px;
+  text-align: center;
+  color: #fff6dc;
+  background: rgba(10, 30, 50, 0.45);
+}
+.lift-cap small {
+  display: block;
+  font-family: var(--hand, 'Caveat', cursive);
+  font-size: 22px;
+}
+.lift-cap b {
+  display: block;
+  font-family: var(--font-voice);
+  font-size: 26px;
+  margin: 4px 0;
+}
+.lift-cap .note {
+  color: #cfe6ee;
+}
+@media (prefers-reduced-motion: reduce) {
+  .lift-veil {
+    transition: none;
+  }
+}

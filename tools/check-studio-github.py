@@ -807,7 +807,7 @@ def ui_steps(pg, errs):
 
 def ui_tools_steps(pg, errs):
     """UI-3b: the UI look section's tools. The rule check: the Check has one report line (not in its badge) and its
-    Show me lists the raw values, each line's text equal to that line of the file."""
+    Show me lists the raw values, each line's text equal to that line of the file. UI-6: over a ceiling it's a problem."""
     n = len(errs)
     pg.evaluate("uiRulesLoad()")
     try: pg.wait_for_function("uiRules.state === 'ready' || uiRules.state === 'failed'", timeout=60000)
@@ -815,6 +815,9 @@ def ui_tools_steps(pg, errs):
     if pg.evaluate("uiRules.state") != 'ready': errs.append(f"the rule check: {pg.evaluate('uiRules.err')}")
     line = pg.evaluate("runCheck().find(c => c.lvl === 'info' && c.msg.startsWith('UI rules'))")
     if not line or line.get('go') != 'ui': errs.append(f'the Check has no rule report line ({line})')
+    # UI-6: one raw value over a rule's ceiling makes the line a problem
+    over = pg.evaluate("(() => { const f = uiRules.found; uiRules.found = f.concat(Array.from({length: UI_LINT_CEILING.radius + 1 - f.filter(x => x.rule === 'radius').length}, () => ({rule: 'radius', file: 'game/css/x.css', line: 1, text: ''}))); const c = runCheck().find(c => c.msg.startsWith('UI rules')); uiRules.found = f; return c })()")
+    if not over or over.get('lvl') != 'error' or 'ceiling' not in over.get('msg', ''): errs.append(f'a rule over its ceiling is not a problem in the Check ({over})')
     pg.evaluate("void openSection('check')")
     pg.evaluate("scheduleCheck(true)"); time.sleep(0.3)
     badge = pg.evaluate("document.querySelector('#checkCount').textContent")

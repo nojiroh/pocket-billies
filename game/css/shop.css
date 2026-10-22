@@ -1,4 +1,12 @@
 /* UI-5: a shop's rules (its keeper and line, the wares, the quantity buttons, what is in your bag), moved as they were from the old layers (style, polish, screens, v05), in the order the page loaded them. They load right after those layers and before the kit; a rule a later old rule overrode at equal specificity stays where it was, so the cascade is as before (tools/style-diff.py) */
+/* ---------- UI-6: from polish.css, as it was ---------- */
+@media (prefers-reduced-motion: no-preference) {
+  .ware2:not(.locked) .w-ic,
+  .ware .pxi:first-child {
+    transition: transform 0.25s var(--spring);
+  }
+}
+/* ---------- (UI-5 and earlier) ---------- */
 
 /* ---------- UI-5: from style.css, as it was ---------- */
 /* town shops */

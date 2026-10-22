@@ -108,3 +108,19 @@ test('page tags and imports become paths from the root', async () => {
     ['game/js/b.js', 'game/js/logic/c.js', 'game/js/logic/d.js']
   );
 });
+
+// UI-6: the ratchet
+import { UI_LINT_CEILING, uiLintRatchet } from '../../game/js/logic/ui-lint.js';
+
+test('the ratchet: a rise is over, a fall is under, equal is neither', () => {
+  const ceiling = { ...UI_LINT_CEILING, space: 10, radius: 5 };
+  const raw = { ...ceiling, space: 11, radius: 4 };
+  const { over, under } = uiLintRatchet(raw, ceiling);
+  assert.deepEqual(over, [{ id: 'space', raw: 11, max: 10 }]);
+  assert.deepEqual(under, [{ id: 'radius', raw: 4, max: 5 }]);
+});
+
+test('the game is within every ceiling', () => {
+  const raw = Object.fromEntries(Object.entries(lintGame()).map(([id, t]) => [id, t.raw]));
+  assert.deepEqual(uiLintRatchet(raw).over, []);
+});

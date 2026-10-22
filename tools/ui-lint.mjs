@@ -1,14 +1,25 @@
 // UI-1: counts the raw values that break the UI rules (docs/phases/06-plan.md, game/css/tokens.css), per rule and
-// file, next to the token uses that follow them. A report only: it never fails (UI-6 turns it into a gate).
+// file, next to the token uses that follow them. UI-6: a gate (the ratchet, UI_LINT_CEILING in game/js/logic/ui-lint.js).
 //   node tools/ui-lint.mjs            # the table: each rule, raw vs token, the worst files
+//   node tools/ui-lint.mjs --check    # UI-6: exit 1 when a rule has more raw values than its ceiling (npm run lint)
+//   node tools/ui-lint.mjs --save     # UI-6: lower the ceilings to today's counts (never raises one)
 //   node tools/ui-lint.mjs --json     # every count per rule and file
 //   node tools/ui-lint.mjs --lines    # UI-3b: every raw value: file:line, the rule, the line's text
 // The rules and how they count: game/js/logic/ui-lint.js.
 // Blurred surfaces per screen can't be read from the files: the smoke run logs uiBlurCount() per screen.
-import { readFileSync, readdirSync } from 'node:fs';
+import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { UI_LINT_RULES, lintCss, lintJs, report, uiLintFindings, uiLintReads } from '../game/js/logic/ui-lint.js';
+import {
+  UI_LINT_CEILING,
+  UI_LINT_RULES,
+  lintCss,
+  lintJs,
+  report,
+  uiLintFindings,
+  uiLintRatchet,
+  uiLintReads,
+} from '../game/js/logic/ui-lint.js';
 
 // UI-3b: the rules and the counting are in game/js/logic/ui-lint.js (the Studio runs them too)
 export { UI_LINT_RULES, lintCss, lintJs, report, stripCss, stripJs, uiLintFindings } from '../game/js/logic/ui-lint.js';
@@ -50,8 +61,37 @@ export function lintGame(root = ROOT) {
   return total;
 }
 
+/** UI-6: write lowered ceilings into game/js/logic/ui-lint.js (a rule over its ceiling keeps the old number) */
+export function saveCeiling(raw, root = ROOT) {
+  const file = join(root, 'game/js/logic/ui-lint.js');
+  const next = Object.fromEntries(
+    UI_LINT_RULES.map(({ id }) => [id, Math.min(raw[id] || 0, UI_LINT_CEILING[id] ?? 0)])
+  );
+  const body = Object.entries(next)
+    .map(([id, n]) => `  ${id}: ${n},`)
+    .join('\n');
+  const text = readFileSync(file, 'utf8').replace(
+    /(\/\/ ceiling: start\n)[\s\S]*?(\/\/ ceiling: end)/,
+    `$1export const UI_LINT_CEILING = {\n${body}\n};\n$2`
+  );
+  writeFileSync(file, text);
+  return next;
+}
+
 if (import.meta.url === pathToFileURL(process.argv[1] || '').href) {
-  if (process.argv.includes('--lines'))
+  if (process.argv.includes('--check') || process.argv.includes('--save')) {
+    const raw = Object.fromEntries(Object.entries(lintGame()).map(([id, t]) => [id, t.raw]));
+    const { over, under } = uiLintRatchet(raw);
+    const name = id => UI_LINT_RULES.find(r => r.id === id).name.toLowerCase();
+    for (const o of over) console.log(`ui-lint: ${name(o.id)}: ${o.raw} raw values, the ceiling is ${o.max}`);
+    if (process.argv.includes('--save')) {
+      saveCeiling(raw);
+      console.log(`ui-lint: ceilings saved (${under.length} lowered)`);
+    } else if (under.length)
+      console.log(`ui-lint: ${under.map(u => `${name(u.id)} ${u.max} -> ${u.raw}`).join(', ')}: keep it with --save`);
+    if (over.length) process.exit(1);
+    if (!under.length) console.log('ui-lint: every rule at its ceiling');
+  } else if (process.argv.includes('--lines'))
     for (const f of lintGameFindings()) console.log(`${f.file}:${f.line}\t${f.rule}\t${f.text}`);
   else {
     const total = lintGame();

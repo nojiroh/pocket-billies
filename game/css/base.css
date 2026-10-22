@@ -1,0 +1,747 @@
+/* UI-6: the page itself: the fonts the old look loaded, the old colour and glass variables (--text, --g-*, --gold-a/b: tokens.css and uiTheme.json win where they name the same), the reset, body and #app, the world scene behind the screens (#dio), the screen wipe, the accessibility settings (data-text, data-contrast, data-targets, data-motion), reduced motion and wide screens. Gathered from the old layers (style, polish, screens, v05) in the order the page loaded them. */
+/* fonts are bundled (fonts/, SIL Open Font License) so the game loads fast and works offline */
+@font-face {
+  font-family: 'Tiny5';
+  font-weight: 400;
+  font-display: swap;
+  src: url(../fonts/tiny5-400.woff2) format('woff2');
+}
+@font-face {
+  font-family: 'Chakra Petch';
+  font-weight: 500;
+  font-display: swap;
+  src: url(../fonts/chakra-petch-500.woff2) format('woff2');
+}
+@font-face {
+  font-family: 'Chakra Petch';
+  font-weight: 600;
+  font-display: swap;
+  src: url(../fonts/chakra-petch-600.woff2) format('woff2');
+}
+@font-face {
+  font-family: 'Caveat';
+  font-weight: 600;
+  font-display: swap;
+  src: url(../fonts/caveat-600.woff2) format('woff2');
+}
+/* Pocket Billies (then Net Worth v6): file artwork plus personalized trainer pixel rendering */
+:root {
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+[hidden] {
+  display: none !important;
+}
+/* Layout: one phone-width column over an animated pixel sky; glassy pixel-framed panels; battle as a full-screen stage */
+:root {
+  --bg: #eadfd2;
+  --panel: rgba(255, 250, 241, 0.86);
+  --panel-s: #fff8ec;
+  --panel2: rgba(240, 229, 214, 0.92);
+  --line: #2a1e2e;
+  --text: #2a1e2e;
+  --text2: #6a5866;
+  --hi: #ffffff;
+  --lo: #d8c6b4;
+  --gold: #f2c14e;
+  --gold2: #b9801c;
+  --goldink: #3a2408;
+  --mint: #2fa36e;
+  --rose: #e9739a;
+  --red: #d9434b;
+  --ok: #3fa45a;
+  --blue: #4f80e8;
+  --glow: rgba(242, 193, 78, 0.5);
+  --shadow: rgba(60, 30, 50, 0.22);
+  --scrim: rgba(20, 10, 24, 0.55);
+  --bat: #0b0912;
+  --halo: rgba(255, 249, 240, 0.9);
+  color-scheme: light;
+  box-sizing: border-box;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #110e1e;
+    --panel: rgba(30, 25, 50, 0.8);
+    --panel-s: #1e1a32;
+    --panel2: rgba(44, 37, 70, 0.86);
+    --line: #05040a;
+    --text: #f1ebf8;
+    --text2: #aba0c2;
+    --hi: rgba(255, 255, 255, 0.16);
+    --lo: rgba(0, 0, 0, 0.4);
+    --mint: #5bd6a0;
+    --glow: rgba(242, 193, 78, 0.42);
+    --shadow: rgba(0, 0, 0, 0.5);
+    --scrim: rgba(4, 2, 10, 0.66);
+    --halo: rgba(12, 9, 26, 0.9);
+    color-scheme: dark;
+  }
+}
+:root[data-theme='dark'] {
+  --halo: rgba(12, 9, 26, 0.9);
+  --bg: #110e1e;
+  --panel: rgba(30, 25, 50, 0.8);
+  --panel-s: #1e1a32;
+  --panel2: rgba(44, 37, 70, 0.86);
+  --line: #05040a;
+  --text: #f1ebf8;
+  --text2: #aba0c2;
+  --hi: rgba(255, 255, 255, 0.16);
+  --lo: rgba(0, 0, 0, 0.4);
+  --mint: #5bd6a0;
+  --glow: rgba(242, 193, 78, 0.42);
+  --shadow: rgba(0, 0, 0, 0.5);
+  --scrim: rgba(4, 2, 10, 0.66);
+  color-scheme: dark;
+}
+*,
+*::before,
+*::after {
+  box-sizing: inherit;
+}
+html {
+  height: 100%;
+}
+body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font: 500 15.5px/1.45 var(--font-voice);
+  -webkit-tap-highlight-color: transparent;
+  font-synthesis: none;
+}
+#bgfx {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+:focus-visible {
+  outline: 3px solid var(--gold);
+  outline-offset: 3px;
+}
+img {
+  max-width: 100%;
+}
+.pxi,
+canvas {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+#app {
+  position: relative;
+  z-index: 1;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 8px 16px calc(104px + env(safe-area-inset-bottom, 0px));
+}
+h1,
+h2,
+h3 {
+  font-family: var(--font-voice);
+  font-weight: 400;
+  margin: 0;
+  line-height: 1.05;
+  text-wrap: balance;
+}
+h2 {
+  font-size: 24px;
+}
+h3 {
+  font-size: 19px;
+  margin-top: 16px;
+}
+p {
+  margin: 0;
+}
+section {
+  margin-top: 26px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) canvas.rig.sil {
+    filter: invert(1);
+    opacity: 0.14;
+  }
+}
+:root[data-theme='dark'] canvas.rig.sil {
+  filter: invert(1);
+  opacity: 0.14;
+}
+@keyframes titleIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) skewX(-8deg);
+    letter-spacing: 0.12em;
+  }
+}
+@keyframes scr {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+@keyframes scrR {
+  from {
+    opacity: 0;
+    transform: translateX(26px);
+  }
+}
+@keyframes scrL {
+  from {
+    opacity: 0;
+    transform: translateX(-26px);
+  }
+}
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .mid {
+    color: var(--gold);
+  }
+}
+:root[data-theme='dark'] .mid {
+  color: var(--gold);
+}
+@keyframes pop {
+  from {
+    transform: scale(0.55) rotate(-6deg);
+    opacity: 0;
+  }
+}
+@keyframes shake {
+  25% {
+    transform: rotate(-14deg);
+  }
+  75% {
+    transform: rotate(14deg);
+  }
+}
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes up {
+  from {
+    transform: translateY(60px) scale(0.96);
+    opacity: 0.3;
+  }
+}
+#wipe {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+  display: none;
+  background: #0b0912;
+}
+#wipe.in {
+  display: block;
+  animation: wipeIn 0.52s linear forwards;
+}
+#wipe.out {
+  display: block;
+  animation: wipeOut 0.45s ease-in forwards;
+}
+@keyframes wipeIn {
+  0% {
+    background: #fff;
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+    background: #fff;
+  }
+  20% {
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+    background: #fff;
+  }
+  42% {
+    background: #0b0912;
+    clip-path: inset(50% 0 50% 0);
+  }
+  100% {
+    background: #0b0912;
+    clip-path: inset(0 0 0 0);
+  }
+}
+@keyframes wipeOut {
+  from {
+    clip-path: inset(0 0 0 0);
+  }
+  to {
+    clip-path: inset(50% 0 50% 0);
+  }
+}
+#maplabels {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+/* ===== Ledger: field guide meets accounting book ===== */
+:root {
+  --paper: #fbf6e6;
+  --rule: rgba(60, 140, 118, 0.2);
+  --margin: rgba(217, 67, 75, 0.4);
+  --ink: #22314a;
+  --ink2: #5e6b80;
+  --redink: #c8323c;
+  --blueink: #2e5ea8;
+  --hand: 'Caveat', 'Segoe Print', 'Comic Sans MS', cursive;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --paper: #1b1830;
+    --rule: rgba(110, 210, 176, 0.12);
+    --margin: rgba(233, 115, 154, 0.34);
+    --ink: #ece6f8;
+    --ink2: #a79dc2;
+    --redink: #ff8d9c;
+    --blueink: #8fb8ff;
+  }
+}
+:root[data-theme='dark'] {
+  --paper: #1b1830;
+  --rule: rgba(110, 210, 176, 0.12);
+  --margin: rgba(233, 115, 154, 0.34);
+  --ink: #ece6f8;
+  --ink2: #a79dc2;
+  --redink: #ff8d9c;
+  --blueink: #8fb8ff;
+}
+@keyframes pulse {
+  from {
+    opacity: 0.45;
+  }
+  to {
+    opacity: 1;
+  }
+}
+/* v6 visual polish: crisp field journal panels, rich pixel scenery, clear controls. */
+:root {
+  --panel: rgba(255, 251, 239, 0.96);
+  --panel-s: #fffbee;
+  --panel2: #e9eddf;
+  --line: #354455;
+  --text: #293c4b;
+  --text2: #5e706e;
+  --hi: #fffdf3;
+  --lo: #d4ddcc;
+  --bg: #dbe9dc;
+  --shadow: rgba(33, 64, 67, 0.2);
+}
+#app {
+  max-width: 520px;
+  padding-top: 14px;
+}
+@media (min-width: 850px) {
+  body {
+    background:
+      linear-gradient(90deg, rgba(21, 53, 67, 0.25), rgba(33, 66, 73, 0.08)),
+      linear-gradient(180deg, #7ea4c3, #99aec6 22%, #909f9c 42%, #889a76 52%, #869b55 75%, #6f7b4a) fixed;
+  }
+  #bgfx {
+    opacity: 0.08;
+  }
+  #app {
+    min-height: 100vh;
+    background: var(--panel);
+    padding-left: 24px;
+    padding-right: 24px;
+    border-left: 1px solid var(--lo);
+    border-right: 1px solid var(--lo);
+  }
+}
+:root[data-theme='dark'] {
+  --bg: #142735;
+  --panel: rgba(25, 42, 56, 0.97);
+  --panel-s: #213849;
+  --panel2: #2a4350;
+  --line: #0d202e;
+  --text: #e6f0e9;
+  --text2: #abbfbd;
+  --hi: #3a515d;
+  --lo: #162d3d;
+  --shadow: rgba(0, 0, 0, 0.4);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #142735;
+    --panel: rgba(25, 42, 56, 0.97);
+    --panel-s: #213849;
+    --panel2: #2a4350;
+    --line: #0d202e;
+    --text: #e6f0e9;
+    --text2: #abbfbd;
+    --hi: #3a515d;
+    --lo: #162d3d;
+  }
+}
+:root[data-motion='reduced'] *,
+:root[data-motion='reduced'] *::before,
+:root[data-motion='reduced'] *::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
+}
+@media (max-width: 370px) {
+  #app {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+}
+@media (min-width: 960px) {
+  /* wide screens: side rail, wider content, two-column layouts */
+  #app {
+    max-width: 1120px;
+    margin-left: max(120px, calc((100vw - 1120px) / 2));
+    margin-right: auto;
+    padding-left: 28px;
+    padding-right: 28px;
+  }
+}
+@media (min-width: 850px) {
+  #app {
+    background: color-mix(in srgb, var(--panel) 88%, transparent);
+    border-radius: 0;
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+  }
+}
+/* ================= v9: walk scene (tilt-shift diorama) ================= */
+#dio {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  display: block;
+  opacity: 0;
+  transition: opacity 0.45s ease;
+  image-rendering: auto;
+  filter: saturate(1.12) contrast(1.03);
+}
+#dio.in {
+  opacity: 1;
+}
+#dio[hidden] {
+  display: none;
+}
+/* v11: the walk scene stays behind every screen except the map, softened so panels stay readable */
+body.on-scene #bgfx {
+  display: none;
+}
+body.on-scene {
+  background: #2a3a3a;
+}
+body.on-scene #dio {
+  filter: saturate(0.95) brightness(0.78) blur(1.5px);
+  transform: scale(1.03);
+}
+body.on-scene::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(18, 14, 34, 0.35), rgba(18, 14, 34, 0.08) 30%, rgba(18, 14, 34, 0.25));
+}
+body.on-scene #app {
+  background: transparent !important;
+  border-color: transparent !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+#dio {
+  transition:
+    opacity 0.45s ease,
+    filter 0.5s ease,
+    transform 0.6s ease;
+}
+#dioui {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+  display: block;
+}
+#dioui[hidden] {
+  display: none;
+}
+#dio.gl {
+  filter: none;
+  image-rendering: auto;
+}
+body.on-scene #dio.gl {
+  filter: brightness(0.8) blur(1.5px);
+}
+body.on-scene #dioui {
+  display: none;
+}
+/* =====================================================================
+   Pocket Billies · polish layer
+   Loaded after style.css and battle.css. Purely cosmetic: colour depth,
+   pixel ornaments, refined button feel and short entrance/feedback motion.
+   Does not change layout of the walk hero/sheet or the battle screen.
+   Every animation and transform transition lives inside
+   @media (prefers-reduced-motion:no-preference); the in-game
+   "Reduced motion" setting (:root[data-motion="reduced"]) is also honoured.
+   ===================================================================== */
+/* ---------- tokens ---------- */
+:root {
+  --r-s: 6px;
+  --r-m: 10px;
+  --r-l: 16px;
+  --focus: #8a5a0c; /* focus ring, ≥3:1 on light panels */
+  --dither: rgba(53, 68, 85, 0.055); /* faint pixel texture on cards */
+  --sheen: rgba(255, 255, 255, 0.55);
+  --orn: var(--gold);
+  --orn2: #c98a1b; /* section ornaments */
+  --gold-hi: #ffe59a;
+  --gold-lo: #c98a1b;
+  --chip-money-bg: #fbeab8;
+  --chip-money-fg: #3a2408;
+  --spring: cubic-bezier(0.3, 1.6, 0.5, 1);
+  --out: cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+:root[data-theme='dark'] {
+  --focus: #f2c14e;
+  --dither: rgba(255, 255, 255, 0.035);
+  --orn2: #e0a62e;
+  --chip-money-bg: rgba(242, 193, 78, 0.16);
+  --chip-money-fg: #ffe59a;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --focus: #f2c14e;
+    --dither: rgba(255, 255, 255, 0.035);
+    --orn2: #e0a62e;
+    --chip-money-bg: rgba(242, 193, 78, 0.16);
+    --chip-money-fg: #ffe59a;
+  }
+}
+::selection {
+  background: var(--gold);
+  color: #3a2408;
+}
+html[data-contrast='high'] {
+  --text2: var(--text);
+  --panel: var(--panel-s);
+  --panel2: var(--panel-s);
+}
+html[data-contrast='high'] .glass {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  background: var(--panel-s) !important;
+  outline: 2px solid var(--line);
+}
+html[data-contrast='high'] .pb {
+  outline: 2px solid var(--line);
+  outline-offset: -2px;
+}
+html[data-contrast='high'] :focus-visible {
+  outline: 3px solid #e2b92c !important;
+  outline-offset: 2px;
+}
+html[data-targets='big'] .pb,
+html[data-targets='big'] .mv {
+  min-height: 48px;
+}
+html[data-targets='big'] .pb.small {
+  padding: 10px 14px;
+  font-size: 15px;
+}
+html[data-targets='big'] .seg button,
+html[data-targets='big'] .set-tabs button {
+  min-height: 46px;
+}
+/* ================= alpha 0.5: the new look =================
+   Clean and modern with a pixel-art flair: one readable pixel font (Pixelify Sans) for everything but the logo,
+   frosted glass panels over the world, soft layered shadows so things sit at different depths, rounded corners,
+   a colour for every screen in the bottom bar, and buttons and cards that answer a touch (they lift under a
+   finger or pointer and press in). Light and warm by default; dark glass when the phone is in dark mode.
+   Loaded after every other stylesheet; it restyles the existing parts rather than replacing them. */
+@font-face {
+  font-family: 'Pixelify Sans';
+  font-weight: 400;
+  font-display: swap;
+  src: url(../fonts/pixelify-sans-400.woff2) format('woff2');
+}
+@font-face {
+  font-family: 'Pixelify Sans';
+  font-weight: 500;
+  font-display: swap;
+  src: url(../fonts/pixelify-sans-500.woff2) format('woff2');
+}
+@font-face {
+  font-family: 'Pixelify Sans';
+  font-weight: 600;
+  font-display: swap;
+  src: url(../fonts/pixelify-sans-600.woff2) format('woff2');
+}
+@font-face {
+  font-family: 'Pixelify Sans';
+  font-weight: 700;
+  font-display: swap;
+  src: url(../fonts/pixelify-sans-700.woff2) format('woff2');
+}
+:root {
+  --text: #2e2140;
+  --text2: #5b4a6b;
+  --line: rgba(46, 33, 64, 0.18);
+  --hi: rgba(255, 255, 255, 0.7);
+  --lo: rgba(46, 33, 64, 0.08);
+  --g-bg: rgba(255, 251, 242, 0.7);
+  --g-bg2: rgba(255, 255, 255, 0.55);
+  --g-solid: #fff9ee;
+  --g-bd: rgba(255, 255, 255, 0.78);
+  --g-in: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  --g-sh: 0 10px 28px -10px rgba(46, 33, 64, 0.42), 0 2px 6px rgba(46, 33, 64, 0.14);
+  --g-sh2: 0 16px 34px -10px rgba(46, 33, 64, 0.5), 0 3px 8px rgba(46, 33, 64, 0.16);
+  --g-blur: blur(16px) saturate(1.5);
+  --r1: 12px;
+  --r2: 16px;
+  --r3: 22px;
+  --gold-a: #ffda7a;
+  --gold-b: #f2b84b;
+  --gold-sh: rgba(196, 130, 44, 0.6);
+  --t-walk: #3e8a3a;
+  --t-map: #2f74c6;
+  --t-team: #d9532f;
+  --t-ledger: #7d52c2;
+  --t-bag: #b97a12;
+  --t-profile: #c24a86;
+  --spring: cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --text: #f3edf9;
+    --text2: #b9adcc;
+    --line: rgba(255, 255, 255, 0.14);
+    --hi: rgba(255, 255, 255, 0.1);
+    --lo: rgba(0, 0, 0, 0.25);
+    --g-bg: rgba(36, 28, 58, 0.66);
+    --g-bg2: rgba(255, 255, 255, 0.08);
+    --g-solid: #241c3a;
+    --g-bd: rgba(255, 255, 255, 0.14);
+    --g-in: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    --g-sh: 0 12px 30px -10px rgba(0, 0, 0, 0.65), 0 2px 6px rgba(0, 0, 0, 0.35);
+    --g-sh2: 0 18px 38px -10px rgba(0, 0, 0, 0.75), 0 3px 8px rgba(0, 0, 0, 0.4);
+    --t-walk: #7bd371;
+    --t-map: #7fb2f5;
+    --t-team: #ff8a66;
+    --t-ledger: #b795f2;
+    --t-bag: #f2c14e;
+    --t-profile: #f08cc0;
+  }
+}
+:root[data-theme='dark'] {
+  --text: #f3edf9;
+  --text2: #b9adcc;
+  --line: rgba(255, 255, 255, 0.14);
+  --hi: rgba(255, 255, 255, 0.1);
+  --lo: rgba(0, 0, 0, 0.25);
+  --g-bg: rgba(36, 28, 58, 0.66);
+  --g-bg2: rgba(255, 255, 255, 0.08);
+  --g-solid: #241c3a;
+  --g-bd: rgba(255, 255, 255, 0.14);
+  --g-in: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  --g-sh: 0 12px 30px -10px rgba(0, 0, 0, 0.65), 0 2px 6px rgba(0, 0, 0, 0.35);
+  --g-sh2: 0 18px 38px -10px rgba(0, 0, 0, 0.75), 0 3px 8px rgba(0, 0, 0, 0.4);
+  --t-walk: #7bd371;
+  --t-map: #7fb2f5;
+  --t-team: #ff8a66;
+  --t-ledger: #b795f2;
+  --t-bag: #f2c14e;
+  --t-profile: #f08cc0;
+}
+body {
+  font: 500 16px/1.4 var(--font-voice);
+  letter-spacing: 0.01em;
+}
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-voice);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+@media (min-width: 960px) and (orientation: landscape) {
+  /* ---------- 0.5 wide screens: the world stays in view; Team, Guide, Bag and Trainer open in a glass side panel ---------- */
+  body.on-scene #dio {
+    filter: saturate(1) brightness(0.96);
+    transform: none;
+  }
+  body.on-scene::before {
+    background: linear-gradient(90deg, transparent 35%, rgba(18, 14, 34, 0.22));
+  }
+  body.on-scene #app {
+    position: fixed;
+    top: 12px;
+    bottom: 12px;
+    right: 14px;
+    left: auto;
+    width: min(580px, 48vw);
+    max-width: none;
+    min-height: 0;
+    margin: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 14px 22px 28px;
+    border-radius: 24px;
+    background: var(--g-bg);
+    border: 1px solid var(--g-bd);
+    -webkit-backdrop-filter: var(--g-blur);
+    backdrop-filter: var(--g-blur);
+    box-shadow: var(--g-in), var(--g-sh);
+    animation: v05side 0.36s cubic-bezier(0.2, 1.3, 0.4, 1) both;
+  }
+}
+@keyframes v05side {
+  from {
+    transform: translateX(40px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  body.on-scene #app {
+    animation: none;
+  }
+}

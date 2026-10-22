@@ -1,4 +1,30 @@
 /* UI-5: the dressing room's rules (its stage, the outfit tabs and rows, the keeper, the views), moved as they were from the old layers (style, polish, screens, v05), in the order the page loaded them. They load right after those layers and before the kit; a rule a later old rule overrode at equal specificity stays where it was, so the cascade is as before (tools/style-diff.py) */
+/* ---------- UI-6: from screens.css, as it was ---------- */
+.dr {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 480px);
+  background: color-mix(in srgb, var(--bg) 70%, #0b0912 30%);
+  animation: up 0.25s ease-out;
+}
+#drCv {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  cursor: grab;
+  touch-action: none;
+}
+@media (max-width: 760px), (orientation: portrait) and (max-width: 900px) {
+  .dr {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(220px, 40vh) minmax(0, 1fr);
+  }
+}
+/* ---------- (UI-5 and earlier) ---------- */
 
 /* ---------- UI-5: from screens.css, as it was ---------- */
 /* ================= v14: dressing room ================= */

@@ -1,4 +1,88 @@
 /* UI-5: the Settings sheet's rules (its tabs, rows, switches, volume, the graphics presets and dials), moved as they were from the old layers (style, polish, screens, v05), in the order the page loaded them. They load right after those layers and before the kit; a rule a later old rule overrode at equal specificity stays where it was, so the cascade is as before (tools/style-diff.py) */
+/* ---------- UI-6: from style.css, polish.css, screens.css, as it was ---------- */
+.swatches {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.swatch {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 3px solid var(--panel-s);
+  border-radius: 50%;
+  background: var(--sw);
+  box-shadow: 0 0 0 1px #97a7a1;
+  position: relative;
+}
+.swatch[aria-pressed='true'] {
+  box-shadow: 0 0 0 3px var(--text);
+  transform: scale(0.94);
+}
+.swatch[aria-pressed='true'] span {
+  visibility: visible;
+}
+.custom-color {
+  position: relative;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  width: 36px;
+  height: 36px;
+  border: 2px dashed var(--text2);
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 22px;
+}
+.custom-color:focus-within {
+  outline: 3px solid var(--gold);
+  outline-offset: 3px;
+}
+.settings-profile {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 6px 0 16px;
+}
+.help {
+  padding: 13px 0;
+  border-top: 1px solid var(--lo);
+  border-bottom: 1px solid var(--lo);
+  margin: 16px 0;
+}
+@media (max-width: 370px) {
+  .swatches {
+    gap: 6px;
+  }
+  .swatch,
+  .custom-color {
+    width: 34px;
+    height: 34px;
+  }
+}
+.help summary::marker {
+  color: var(--orn2);
+}
+.dr-row .swatch,
+.dr-sec .swatch {
+  width: 30px;
+  height: 30px;
+  border-width: 2px;
+}
+html[data-contrast='high'] .note,
+html[data-contrast='high'] .help,
+html[data-contrast='high'] small {
+  opacity: 1 !important;
+  color: var(--text) !important;
+}
+.dr-sec .dr-ways .swatch {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border-width: 1px;
+}
+/* ---------- (UI-5 and earlier) ---------- */
 
 /* ---------- UI-5: from screens.css, as it was ---------- */
 /* v31: settings in tabs, each option a row with a short explanation and segmented buttons or a switch */

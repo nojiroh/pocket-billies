@@ -1,0 +1,219 @@
+/* UI-6: The postcard: the big card the first time you walk into a town, the small one after, the Guide's postcard grid. Moved as they were from polish.css, in the order the page loaded them. */
+/* alpha 0.4: postcards — the big card the first time you walk into a town, the small stamp after, the Guide's page */
+.pcard-wrap {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(20, 16, 40, 0);
+  transition: background 0.4s ease;
+  cursor: pointer;
+}
+.pcard-wrap.in {
+  background: rgba(20, 16, 40, 0.38);
+}
+.pcard {
+  position: relative;
+  width: min(92vw, 520px);
+  background: #fbf6e6;
+  border-radius: 6px;
+  padding: 10px 10px 12px;
+  box-shadow:
+    0 18px 40px rgba(20, 16, 40, 0.45),
+    0 2px 0 #d9cdb0 inset;
+  transform: translate(30vw, 60vh) rotate(14deg);
+  opacity: 0;
+  transition:
+    transform 0.55s cubic-bezier(0.2, 0.9, 0.25, 1.15),
+    opacity 0.3s;
+}
+.pcard-wrap.in .pcard {
+  transform: rotate(-2.5deg);
+  opacity: 1;
+}
+.pcard-wrap.out .pcard {
+  transform: translate(-40vw, -20vh) rotate(-16deg) scale(0.4);
+  opacity: 0;
+  transition:
+    transform 0.45s ease-in,
+    opacity 0.45s ease-in;
+}
+.pc-pic {
+  position: relative;
+  border-radius: 3px;
+  overflow: hidden;
+  aspect-ratio: 3/2;
+  background: #7fa7c9;
+}
+.pc-pic img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  image-rendering: auto;
+}
+.pc-greet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 22px 14px 10px;
+  background: linear-gradient(transparent, rgba(20, 16, 40, 0.55));
+}
+.pc-greet small {
+  display: block;
+  font-family: var(--hand, 'Caveat', cursive);
+  font-size: 26px;
+  line-height: 1;
+  color: #fff6dc;
+  text-shadow: 0 2px 0 rgba(20, 16, 40, 0.6);
+}
+.pc-greet b {
+  display: block;
+  font-family: var(--font-voice);
+  font-size: clamp(28px, 7.5vw, 44px);
+  line-height: 1;
+  letter-spacing: 0.02em;
+  color: #ffe58f;
+  text-shadow:
+    2px 2px 0 #c8643c,
+    4px 4px 0 rgba(20, 16, 40, 0.7),
+    -1px -1px 0 #7a3a28,
+    1px -1px 0 #7a3a28,
+    -1px 1px 0 #7a3a28;
+}
+.pc-stamp {
+  position: absolute;
+  top: -10px;
+  right: -8px;
+  width: 74px;
+  padding: 6px 6px 4px;
+  background: #fffdf4;
+  transform: rotate(6deg);
+  box-shadow: 0 3px 8px rgba(20, 16, 40, 0.3);
+  border: 2px dotted #cfc2a0;
+  border-radius: 3px;
+  text-align: center;
+}
+.pc-stamp img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4/3;
+  object-fit: cover;
+  image-rendering: pixelated;
+  border-radius: 2px;
+}
+.pc-stamp span {
+  display: block;
+  font-family: var(--font-voice);
+  font-size: 10px;
+  color: #5e3a2a;
+  margin-top: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pc-stamp.sm {
+  position: static;
+  width: 34px;
+  padding: 3px;
+  transform: rotate(-4deg);
+}
+.pc-note {
+  margin: 8px 4px 0;
+  font-family: var(--hand, 'Caveat', cursive);
+  font-size: 20px;
+  color: #5e6b80;
+  text-align: center;
+}
+.pc-mini {
+  position: fixed;
+  left: 12px;
+  top: calc(env(safe-area-inset-top, 0px) + 64px);
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px 6px 8px;
+  background: #fbf6e6;
+  color: #22314a;
+  border-radius: 10px;
+  box-shadow: 0 6px 18px rgba(20, 16, 40, 0.3);
+  font-family: var(--font-voice);
+  font-size: 14px;
+  transform: translateX(-120%);
+  transition: transform 0.45s cubic-bezier(0.2, 0.9, 0.25, 1.15);
+  pointer-events: none;
+}
+.pc-mini.in {
+  transform: none;
+}
+.pc-count {
+  margin: 10px 16px;
+}
+.pc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 14px;
+  padding: 4px 16px 24px;
+}
+.pc-thumb {
+  position: relative;
+  display: block;
+  padding: 6px 6px 8px;
+  background: #fbf6e6;
+  border: 0;
+  border-radius: 5px;
+  box-shadow: 0 4px 12px rgba(20, 16, 40, 0.25);
+  cursor: pointer;
+  text-align: left;
+  transform: rotate(-1.5deg);
+  transition: transform 0.2s;
+}
+.pc-thumb:nth-child(2n) {
+  transform: rotate(1.2deg);
+}
+.pc-thumb:active {
+  transform: scale(0.97);
+}
+.pc-thumb img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 3/2;
+  object-fit: cover;
+  border-radius: 2px;
+}
+.pc-thumb span {
+  display: block;
+  margin-top: 6px;
+  font-family: var(--font-voice);
+  font-size: 13px;
+  color: #22314a;
+}
+.pc-thumb.none {
+  cursor: default;
+  box-shadow: none;
+  background: rgba(251, 246, 230, 0.35);
+  border: 2px dashed rgba(94, 107, 128, 0.4);
+}
+.pc-thumb.none i {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 3/2;
+  font-style: normal;
+  font-family: var(--font-voice);
+  font-size: 34px;
+  color: rgba(94, 107, 128, 0.55);
+}
+.pc-thumb.none span {
+  color: #5e6b80;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pcard,
+  .pcard-wrap.out .pcard,
+  .pc-mini {
+    transition: none;
+  }
+}

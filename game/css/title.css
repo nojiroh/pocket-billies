@@ -1,4 +1,94 @@
 /* UI-5: the title screen's rules (the logo and ring, its chips and cards, the account picker, the loader's handover), moved as they were from the old layers (style, polish, screens, v05), in the order the page loaded them. They load right after those layers and before the kit; a rule a later old rule overrode at equal specificity stays where it was, so the cascade is as before (tools/style-diff.py) */
+/* ---------- UI-6: from style.css, polish.css, screens.css, as it was ---------- */
+@keyframes hop {
+  40% {
+    transform: translateY(-5px) scale(1.15);
+  }
+}
+/* title & intro */
+.title {
+  min-height: calc(100dvh - 40px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 18px;
+  padding: 20px 4px;
+  text-align: center;
+}
+@keyframes float {
+  50% {
+    transform: translateY(-10px) rotate(-4deg);
+  }
+}
+.logo {
+  font: 400 68px/0.95 var(--font-voice);
+  color: var(--text);
+  text-shadow:
+    4px 4px 0 var(--gold),
+    0 0 30px var(--glow);
+  animation: titleIn 0.8s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+.tag {
+  font-size: 16.5px;
+  color: var(--text2);
+  max-width: 30ch;
+}
+.title .pb {
+  max-width: 340px;
+}
+.starters {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+.starter .sn {
+  font: 400 24px/1.05 var(--font-voice);
+}
+.title {
+  position: relative;
+  isolation: isolate;
+  padding-top: 265px;
+  min-height: 80vh;
+}
+.title .logo {
+  margin-top: 36px;
+  font-size: 64px;
+}
+/* ---------- title Professor dialog ---------- */
+.logo {
+  text-shadow:
+    4px 4px 0 var(--gold),
+    0 0 24px var(--halo),
+    0 0 6px var(--halo);
+}
+.title .tag {
+  text-shadow:
+    0 0 8px var(--halo),
+    0 0 2px var(--halo);
+}
+@keyframes ttlRing {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes ttlBlink {
+  50% {
+    opacity: 0.35;
+  }
+}
+@keyframes ttlReveal {
+  from {
+    clip-path: circle(0% at 50% 56%);
+  }
+  12% {
+    clip-path: circle(9% at 50% 56%);
+  }
+  to {
+    clip-path: circle(120% at 50% 56%);
+  }
+}
+/* ---------- (UI-5 and earlier) ---------- */
 
 /* ---------- UI-5: from style.css, as it was ---------- */
 .title-coin {

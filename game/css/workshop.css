@@ -1,0 +1,135 @@
+/* UI-6: The workshop (phase 17, the Team screen's robots) and the refit sheet. Moved as they were from screens.css, in the order the page loaded them. */
+/* ===================== phase 17: the workshop (Team screen) and the refit sheet ===================== */
+.ws-big {
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 10px;
+  background: radial-gradient(circle at 50% 70%, color-mix(in srgb, var(--c1) 45%, transparent), transparent 70%);
+}
+.ws-top {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.ws-big {
+  width: 120px;
+  height: 120px;
+  flex: none;
+}
+.ws-info {
+  flex: 1;
+  min-width: 0;
+}
+.ws-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  margin-top: 6px;
+}
+.ws-stats span {
+  display: flex;
+  justify-content: space-between;
+  padding: 3px 6px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.18);
+  font-size: 12px;
+}
+.ws-slots {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 12px;
+}
+.ws-slot {
+  display: grid;
+  grid-template-columns: 74px 1fr auto;
+  grid-template-areas: 'k n c' 'k m c';
+  align-items: center;
+  gap: 2px 8px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 10px;
+  text-align: left;
+  color: inherit;
+  background: rgba(0, 0, 0, 0.2);
+  min-height: 48px;
+}
+.ws-slot.on {
+  box-shadow: inset 0 0 0 2px var(--gold, #ffd86a);
+}
+.ws-slot small {
+  grid-area: k;
+  opacity: 0.75;
+}
+.ws-slot b {
+  grid-area: n;
+}
+.ws-slot .ws-meta {
+  grid-area: m;
+}
+.ws-slot .ws-n {
+  grid-area: c;
+  font-size: 11px;
+  opacity: 0.75;
+}
+.ws-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  font-size: 12px;
+}
+.ws-up {
+  margin-left: 4px;
+  color: var(--gold, #ffd86a);
+}
+.ws-brk {
+  color: #ff8a96;
+  font-weight: 700;
+}
+.ws-brk.dmg {
+  color: #ffb04a;
+}
+.ws-pick {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ws-cand,
+.ws-upg {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+}
+.ws-ct {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+.ws-ds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.ws-d {
+  font-size: 11px;
+  padding: 1px 5px;
+  border-radius: 5px;
+  background: rgba(0, 0, 0, 0.25);
+}
+.ws-d.up {
+  color: #8ff0a4;
+}
+.ws-d.dn {
+  color: #ff9aa6;
+}
+.ws-upg .note {
+  flex: 1;
+}

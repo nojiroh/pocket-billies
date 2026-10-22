@@ -1,0 +1,44 @@
+/* UI-6: Evolving and hatching: the flash and the swap. Moved as they were from style.css, in the order the page loaded them. */
+.evo,
+.hatch {
+  position: relative;
+  width: 170px;
+  height: 170px;
+  margin: 0 auto 6px;
+  display: grid;
+  place-items: center;
+}
+.evo.run .ea,
+.evo.run .eb {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  display: grid;
+  place-items: center;
+}
+.evo.run canvas {
+  filter: brightness(0) invert(1) drop-shadow(0 0 10px #fff);
+}
+.evo.run .eb {
+  visibility: hidden;
+}
+.evo.run.b .ea {
+  visibility: hidden;
+}
+.evo.run.b .eb {
+  visibility: visible;
+}
+@keyframes evoflash {
+  from {
+    filter: brightness(4) drop-shadow(0 0 20px #fff);
+  }
+}
+.evo.done,
+.hatch.done {
+  animation: pop 0.55s cubic-bezier(0.3, 1.7, 0.5, 1);
+}
+@keyframes hflash {
+  50% {
+    filter: brightness(5);
+  }
+}
