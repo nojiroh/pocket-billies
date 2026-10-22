@@ -50,12 +50,13 @@ export const POST_EFFECT_SHADERS = {
     `#version 300 es
 precision highp float;in vec2 aC;out vec2 vUV;void main(){vUV=aC;gl_Position=vec4(aC*2.-1.,0.,1.);}`,
     `#version 300 es
-precision highp float;in vec2 vUV;out vec4 o;uniform sampler2D uCol,uDep;uniform vec2 uPx;uniform float uN,uF,uFocus,uBand,uRampF,uRampN,uMaxR,uBokeh;uniform int uTaps;
+precision highp float;in vec2 vUV;out vec4 o;uniform sampler2D uCol,uDep;uniform vec2 uPx;uniform float uN,uF,uBand,uRampF,uRampN,uMaxR,uBokeh;uniform vec4 uPlane;uniform int uTaps;
 float lin(float d){float z=d*2.-1.;return 2.*uN*uF/(uF+uN-z*(uF-uN));}
-float coc(float z){float dz=z-uFocus;return dz>0.?smoothstep(uBand,uBand+uRampF,dz):smoothstep(uBand*.6,uBand*.6+uRampN,-dz);}
-void main(){float zc=lin(texture(uDep,vUV).r),cc=coc(zc);vec3 acc=texture(uCol,vUV).rgb;float ws=1.;
+/* CAM-3: the distance from the plane of focus at screen place q and view depth z (logic/lens-focus.js; tilt 0: z - focus) */
+float coc(vec2 q,float z){float dz=z*dot(vec3(1.,q),uPlane.xyz)-uPlane.w;return dz>0.?smoothstep(uBand,uBand+uRampF,dz):smoothstep(uBand*.6,uBand*.6+uRampN,-dz);}
+void main(){float zc=lin(texture(uDep,vUV).r),cc=coc(vUV,zc);vec3 acc=texture(uCol,vUV).rgb;float ws=1.;
  if(cc>.02){float nt=float(uTaps);for(int i=0;i<28;i++){if(i>=uTaps)break;float a=float(i)*2.39996,r=sqrt((float(i)+.5)/nt);vec2 q=vUV+vec2(cos(a),sin(a))*r*uMaxR*cc*uPx;
-  float zs=lin(texture(uDep,q).r),cs=coc(zs);float w=zs<zc?max(cs,cc*.35):cc;vec3 s=texture(uCol,q).rgb;float l=dot(s,vec3(.3,.59,.11));w*=1.+smoothstep(.8,1.6,l)*2.5*uBokeh;acc+=s*w;ws+=w;}}
+  float zs=lin(texture(uDep,q).r),cs=coc(q,zs);float w=zs<zc?max(cs,cc*.35):cc;vec3 s=texture(uCol,q).rgb;float l=dot(s,vec3(.3,.59,.11));w*=1.+smoothstep(.8,1.6,l)*2.5*uBokeh;acc+=s*w;ws+=w;}}
  o=vec4(acc/ws,cc);}`,
   ],
   bright: [
@@ -221,7 +222,9 @@ export function drawDepthOfField(S, C, focusDist, rw, rh, o = {}) {
     gl.uniform2f(U.uPx, 1 / hw, 1 / hh);
     gl.uniform1f(U.uN, C.near);
     gl.uniform1f(U.uF, C.far);
-    gl.uniform1f(U.uFocus, focusDist);
+    /* the plane of focus (logic/lens-focus.js focusPlane): o.plane [g0, gx, gy, h], else facing the camera */
+    const pl = o.plane || [1, 0, 0, focusDist];
+    gl.uniform4f(U.uPlane, pl[0], pl[1], pl[2], pl[3]);
     const dr = o.dofRef ?? C.df;
     gl.uniform1f(U.uBand, dr * engineSetting('lens', 'focusBand'));
     gl.uniform1f(U.uRampF, dr * engineSetting('lens', 'blurFar'));

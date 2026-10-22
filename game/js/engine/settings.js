@@ -33,6 +33,7 @@ provide({ engineSetting });
 export const ENGINE_DEFAULTS = {
   lens: {
     focusBand: 0.3,
+    focusTilt: 0,
     blurFar: 1.5,
     blurNear: 0.9,
     blur: 0.5,
@@ -254,6 +255,14 @@ export const ENGINE_SPEC = [
         1,
         0.01,
         'How deep the in-focus zone is, as a share of the camera distance (in the walk view, of 16 m at any zoom).',
+      ],
+      [
+        'focusTilt',
+        'Tilt of the sharp zone',
+        0,
+        1,
+        0.01,
+        'CAM-3, the diorama look: 0, the sharp zone faces the camera (a slab of distance); 1, it stands upright through you, so whatever stands in the strip is sharp head to toe and the ground ahead and behind melts away.',
       ],
       ['blurFar', 'Blur growth behind', 0.1, 3, 0.05],
       ['blurNear', 'Blur growth in front', 0.1, 3, 0.05],

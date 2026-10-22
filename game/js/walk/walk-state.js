@@ -40,6 +40,8 @@ export const walkRenderer = {
   momentTest: null,
   focus: null,
   focusT: null,
+  /* CAM-3: this frame's plane of focus (logic/lens-focus.js focusPlane), for the Studio's blur guides */
+  lensPlane: null,
   frames: 0,
   farProps: [],
   orient: null,

@@ -25,6 +25,7 @@ import {
   seamlessPrepareAhead,
   worldBillyLabels,
 } from './hooks.js';
+import { focusPlane } from './logic/lens-focus.js';
 import { gpuPass } from './engine/gpu-counters.js';
 import { frameCount, frameTask, userFps } from './frame-scheduler.js';
 import {
@@ -522,6 +523,11 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
     : walkRenderer.focus == null
       ? fd
       : walkRenderer.focus + (fd - walkRenderer.focus) * (1 - Math.pow(0.88, dt * 60));
+  /* CAM-3: the plane of focus through that point, leaning by Engine > Lens > Tilt of the sharp zone (0: facing the
+     camera, as before); battles keep the slab */
+  const tilt = BT ? 0 : engineSetting('lens', 'focusTilt') || 0,
+    FP = BT || !C.ivp ? null : focusPlane(C, [fx, fy, fz], walkRenderer.focus, tilt);
+  walkRenderer.lensPlane = FP;
   if (D.noPost) {
     gl.bindFramebuffer(gl.READ_FRAMEBUFFER, S.f);
     gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, null);
@@ -537,6 +543,7 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
       /* the sharp zone and the blur's growth in metres as if the camera stood 16 m off, whatever the zoom: measured
          from the real distance (36 m at zoom 1, 58 m at 1.6) the blur only built up past the edge of the place */
       dofRef: BT ? null : 16,
+      plane: FP && tilt > 0 ? [FP.g[0], FP.g[1], FP.g[2], FP.h] : null /* (tilt 0: the old slab, to the bit) */,
       heat: heatHaze(sc),
       heatS: heatSources(C),
       mood: easedMood(sc),
