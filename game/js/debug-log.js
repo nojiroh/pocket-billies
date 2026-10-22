@@ -629,6 +629,8 @@ debugLog.build = () => ({
   kind: 'debug-log',
   format: 1,
   build: BUILD_VERSION,
+  /* which deploy (vite.config.js stampBuild: the commit; '' when not the built site) */
+  deploy: self.PB_BUILD || '',
   dataVersion: (GAME.gameData.meta && GAME.gameData.meta.version) || null,
   artVersion: (GAME.gameData.meta && GAME.gameData.meta.artVersion) || 0,
   created: new Date().toISOString(),

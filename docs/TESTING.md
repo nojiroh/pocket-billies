@@ -23,6 +23,10 @@ The quick check needs Python Playwright matching the installed Chromium (tools/r
 full check are over budget today; 13b brings them down (parallel groups, fixtures, waits instead of sleeps, fewer
 legacy steps). A phase that makes a tier slower says by how much and why in its HANDOFF entry.
 
+The update check (update-check.js, the owner 2026-10-22) works only on the built site (`npm run build`, then serve
+`dist/game`): no check runs it, since the checks serve the repository, where PB_BUILD is '' and it is off. To try it,
+load the built game, build again while it runs, and bring the page back to the front: it loads the new build.
+
 ## Where a new test goes
 
 Pick the first that fits:
@@ -83,8 +87,11 @@ Two rules hold everywhere:
   it (`--test-update-snapshots`) and says so in the commit; each choice has its own stream (`map|shape|<row>`,
   `map|type|<row>|<lane>`, `map|biome|<row>|<lane>`, a node's `weather|<day>`), so a rule's change moves only what it
   rules (tested for `cross`). The structure rules run over 1,300 maps of 5 to 12 rows; the bowl's are the hub's
-  (`bowl-layout.test.mjs`: pins apart, roads within 30 degrees of their exits) but 0.07 apart and 45 degrees for a
-  lane switch, which the rows' spacing can't keep within 30. weather.test checks `weatherPick` against the page's old
+  (`bowl-layout.test.mjs`: pins apart, roads within 30 degrees of their exits) but 0.1 apart and 45 degrees for a
+  lane switch, which the rows' spacing can't keep within 30. RL-8b: the run runs east to west across the bowl, maps
+  facing north, no two places' maps overlapping; `run-bowl.test.mjs` checks a run's own map (land under every place's
+  whole map, sea at the rim, the same seed the same look), `bowl-seed.test.mjs` the seed's noise (0 moves nothing) and
+  `bowl-sea.test.mjs` the island world (one island round Copperleaf, the game's hub an island). weather.test checks `weatherPick` against the page's old
   pick for every roll its hash can give: a change to the weather's odds or its order fails it on purpose.
 - The run's world (RL-7: `run-scenes.test.mjs`, `run-world-real.test.mjs`): run-scenes.test on small tables of its
   own (a node's exits in the order its scene is made with them and the ids the generator gives them, the dials drawn

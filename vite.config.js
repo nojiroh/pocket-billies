@@ -68,6 +68,19 @@ async function bundlePage(outDir, page) {
   return [...srcs, ...ids.filter(id => id.startsWith(ROOT + '/'))].map(s => relative(ROOT, s));
 }
 
+// The owner, 2026-10-22: a phone must play the latest deploy. Each build is named (the commit on GitHub, else the
+// time) in dist's version.js (PB_BUILD, read by the game and the service worker, so a new build is a new worker) and
+// in build.json, which the game asks for to see whether the site has a newer one (game/js/update-check.js).
+function stampBuild(outDir) {
+  const sha = process.env.GITHUB_SHA,
+    id = sha ? sha.slice(0, 12) : 'local-' + Date.now().toString(36),
+    file = resolve(outDir, 'game/version.js'),
+    src = readFileSync(file, 'utf8');
+  if (!src.includes("self.PB_BUILD = '';")) throw new Error('game/version.js: no PB_BUILD line to stamp');
+  writeFileSync(file, src.replace("self.PB_BUILD = '';", `self.PB_BUILD = ${JSON.stringify(id)};`));
+  writeFileSync(resolve(outDir, 'game/build.json'), JSON.stringify({ build: id }) + '\n');
+}
+
 function copySite() {
   let outDir;
   return {
@@ -99,6 +112,7 @@ function copySite() {
       // phase 20: and the walk renderer's (walk-view-gl.js split into game/js/walk/)
       rmdirSync(resolve(outDir, 'game/js/walk'));
       if (existsSync(resolve(outDir, 'game/js/logic'))) rmdirSync(resolve(outDir, 'game/js/logic'));
+      stampBuild(outDir);
     },
   };
 }

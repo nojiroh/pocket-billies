@@ -154,7 +154,10 @@ runSceneExits; runExits' `ahead`/`back`, renamed from north/south). Two links a 
 edge (t 0.15625 and 0.84375, the seam rules' 44 m apart). Every run scene's east and west edges are pinned to height
 0 (mapgen `pin`), because on a 64 m edge the strips of two parents overlap and one scene can't follow both. On the
 bowl west is clockwise, so the run is an arc on the south side, landing in the south-east, boss in the south-west
-(RUN_BOWL a 270, span 120, r 0.62). MAPGEN_VERSION 5 (merged after RL-8 took 4) leaves a run saved going north. The free sides of a run scene
+(RUN_BOWL a 270, span 120, r 0.62). **Changed in RL-8b:** the run runs straight across the bowl, the landing near the
+east rim and the boss near the west (RUN_BOWL x 0.72, step 0.18, lane 0.1, bend 0.06), every run place's map facing
+the bowl's north (a spot's `up` 90), on land of its own made from the seed (logic/run-bowl.js); Copperleaf is off a
+run's map. MAPGEN_VERSION 5 (merged after RL-8 took 4) leaves a run saved going north. The free sides of a run scene
 are now north (the back, behind what the camera looks at) and south (toward the camera); the lines below that say
 N to S describe the layout before this change.
 
@@ -411,6 +414,7 @@ Count: 14 parked items, 10 on the path.
 | RL-6 | Run map and clock logic | `logic/run-map.js`, `nodeTypes.json`, forecast, deadline; no UI | 1 | no |
 | RL-7 | Run world | generated scenes installed and walkable, the bowl shows the run | 1-2 | no |
 | RL-8 | Run loop and payout | airship start, town with paid healing, mini-boss, payout, resume: **first playable cut** | 2 | yes |
+| RL-8b | Run look | the owner's notes from the first play: rooms darker, the hub an island, a run's own world map | 1 | yes |
 | RL-9 | Ranch A | the building, store and keep, train between runs, the keep-one rule | 2 | yes |
 | RL-10 | Ranch B | breed safe/risky with abominations, hatch, passive income (cap, rollback guard, offline, server anchor) | 2 | yes |
 | RL-11 | Hub upgrades, currencies, unlocks | `currencies/buildings/unlocks.json`, the Lab board, one unlock registry | 1-2 | yes |
@@ -739,7 +743,10 @@ on the placeholders (HANDOFF RL-8).
 - Routes should be wider than they are long: it's an HD-2D diorama.
 - Copperleaf's world map should be Copperleaf's island alone.
 - A run gets its own world map, generated from its seed.
-The last four are new work, waiting for the owner's choices (HANDOFF RL-8, "Next").
+The last four are new work, waiting for the owner's choices (HANDOFF RL-8, "Next"). **Done in RL-8b (2026-10-22):**
+rooms darker (ambient 0.5, was 1.75); routes were already wider than long (TR-2: 112 x 64 m, joined east and west);
+the hub's map is Copperleaf's island alone (worldmap.json sea.island); a run gets its own map from its seed, laid
+across the bowl east to west, with no hub on it (HANDOFF RL-8b).
 
 ## 6. Leave alone (no refactor without evidence)
 
@@ -808,7 +815,9 @@ Decided this session: the rework is a track RL-N (`rl-N-done`); parked phases ar
 13. **`seen`/`caught`:** stay top level (recommended) / move to `meta.dex` now (14 reader files).
 14. **Relic cap:** 6 held (recommended) / 8.
 15. **Hub island look after parking:** only Copperleaf on the terrain (recommended) / parked places as bowl-only pins
-    (both world-graph tests change on purpose).
+    (both world-graph tests change on purpose). **Corrected in RL-8b:** "the sea share set in the Studio" couldn't make
+    an island (the share stops at 0.8 and the land rose toward the rim); the island is `sea.island` (0.2, the owner's
+    "medium"), sea all the way to the rim.
 16. **Ranch cut order if RL-9/10 overrun:** server timestamp, then risky breeding, then the walkable yard (recommended).
 17. **Order after the first cut:** the brief's (ranch, hub upgrades, relics, modifiers, bots, online; recommended) /
     relics and currencies before the ranch.
