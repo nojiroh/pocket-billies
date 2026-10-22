@@ -2,6 +2,80 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Studio plan Phase 2 (first session) - One run start, Run Lab v1 - 2026-10-22
+Branch `claude/sr-2-run-lab`, from the Phase 0 branch `ccr-81011a25-lf3exv` (PR #131, where the plan doc lives); PR
+#135 goes against that branch. Phase 1 runs at the same time in another session from the same branch: this session
+left check.js, history.js, check-data.mjs and the save/undo code alone. Expect small merges in studio/index.html,
+studio-app.js (SECTION_LIST, groups, boot) and hooks.js (regenerate with `npm run modules`).
+The plan was approved in Plan Mode with the owner's answers: the fixture and self-test runs carry no unlocks (a fresh
+save's); the simulator defaults to none with `--unlocks=all`; the Run Lab gets a new "Runs" group; scope T2.1 + T2.2.
+
+**Changed** (one cause per commit):
+- **T2.1, one run start.** `game/js/logic/run-start.js`:
+  - `runStartPlan(seed, data, {unlocks, map, mods, tier})` decides the start without a save: `runGive`, the unlocks,
+    the map rules with only the unlocked biomes, the map, deadline, what the landing shows, the forecast.
+  - `runStartOn(s, plan, {home, pack})` puts it on a save (runBegin, mods, unlocks, a copy of the map).
+  - Commits: a frozen test of `runTakeOff`'s start first (`run-start.test.mjs`, 200 seeds x none/all/short map); the
+    move of `runGive` out of run-loop.js (it loads rules.js, which needs GAMEDATA); `runTakeOff`; the run fixtures;
+    the self-test's "A run's road"; the simulator. The frozen snapshot never changed.
+  - `runTakeOff` now makes the map before the save changes: rules that can't make a map stop the take-off with
+    nothing changed (it used to throw after runBegin, leaving a run without a map).
+  - **Fixtures** (run, mountains, relics): no unlocks, so no ridge or autumn, and `rules.run.start`'s money and items
+    (was `rules.start.se`, no items). Their pictures change.
+  - **Self-test** "A run's road": no unlocks, `rules.run.start`'s money (was 300).
+  - **Simulator**: `--unlocks=none|all`, default none; the report and each run's log name them. 50 runs, team 3: the
+    old numbers equal `--unlocks=all` exactly; the default moves a little (places 1.6 -> 1.7, battles 2.2 -> 2.4,
+    Capital 82.3 -> 84.4; 0 wins both).
+- **T2.2, Run Lab** (`studio/js/run-lab.js`, group Runs): seed (typed, 🎲, or a pasted debug log's run seed and save
+  unlocks), unlocks none/all/the log's, the debug menu's short map; an SVG map; a node's type, role, biome, links,
+  day, deadline, node seed and forecast; the same seed on the data as loaded (`studioState.loaded`, copied at boot);
+  "Copy seed + data version". An edit in the other pane redraws it (32 ms headless). The Studio page now also loads
+  meta-state, run-state, run-map, unlocks and run-start.
+- **check-studio-github.py `run_lab`**: the map node for node (type:biome) against the game's start in Node
+  (setup-real.mjs) with no unlocks and with all, the redraw after a nodeTypes edit (< 100 ms), node 3's seed, the
+  second map.
+- Docs: STUDIO.md (Run Lab), CHANGELOG.
+
+**Where the plan doc was wrong or short**
+- F13 is right, and there is no fifth start: the debug menu's run and the self-test's airship run already went
+  through `runTakeOff`.
+- The fixture changed more than biomes (money and items too). The quick-check baseline is gitignored, so "regenerate
+  the fixture's baseline in its own commit" can't be a commit: remake it locally with `--baseline`.
+- run-map.js also imports hooks.js and run-state.js (-> meta-state.js); the shared start needs unlocks.js (->
+  conditions.js) too.
+- "The cross-link 0.5" in T2.5: the cross-link chance is data (`rules.run.map.cross`, 0.25); 0.5 only picks which way
+  it crosses. In code: at most two lanes, and the exit points (`RUN_EXIT_T`).
+- Tier changes no map today (runMapMake doesn't read it), so the Lab has no tier input yet.
+- The debug log has the run's seed and the save's unlocks, not the run's own `run.unlocks` or a short map; a log taken
+  after buying an unlock mid-run would draw another map. Adding `run.unlocks` (ids only) to the log is a small game
+  change for T2.6.
+
+**Verified**
+- Unit tests 627; lint, typecheck, `check:modules`, `format:check`.
+- `check:fast` on the T2.1 code: 25 of 25.
+- In-game "A run's road" and "A run: airship, nodes, payout", headless: pass.
+- `check-studio-github.py --only=sections,studio_test,run_lab,publish`: 28 sections open; run_lab passes; publish 0
+  problems; one problem, the studio test's Rules edit not coming back with undo. It fails the same way on this
+  branch without the Run Lab: the plan's F14, T1.5's.
+- `check:smoke` (after T2.2): no problems in 158 s (Start-Game on a phone, the in-game test step, the Studio in GitHub mode).
+- **Not run:** the full quick check (Phase 2 isn't finished; it runs at the phase's end).
+
+**Risky**
+- The fixtures' and self-test's runs changed on purpose (above): any picture baseline or note that expected ridge or
+  autumn in RL7FIXTURE needs remaking.
+- `studioState.loaded` is copied right after the data loads. Phase 1's drafts (T1.1) restore into D at boot: they
+  must land after that copy, or "beside the loaded data" would compare drafts with drafts.
+- The Lab reads `D.rules.run`, `nodeTypes`, `biomes`, `unlocks` and `buildings` straight from the data; bad drafts
+  show the game's own error ("This data can't make a run") instead of a map.
+
+**Next**
+- T2.3 (map checks over 1,000 seeds) after Phase 1's T1.3, or as pure functions that move into data-checks.js later.
+- T2.4 (logic worker, spike first): only 7 lines touching window/document/localStorage in game-data.js, rules.js,
+  battle-engine.js, run-loop.js and run-scenes.js together.
+- T2.5 after T1.3; T2.6 in its own session (game boot code, a check-fast step; add `run.unlocks` to the debug log).
+- Manual (owner): play the run fixture once on the phone; compare one seed in the Lab with the debug menu's run.
+- No phase tag: Phase 2 continues.
+
 ### Studio plan Phase 0 - Reliability and data safety on publish - 2026-10-22
 Branch `ccr-81011a25-lf3exv`, PR #131. The PR also carries the plan itself,
 `docs/plans/studio-roguelite-improvement-plan.md`: a review of the Studio at 5a30303d with Phases 0-6 and tickets.
