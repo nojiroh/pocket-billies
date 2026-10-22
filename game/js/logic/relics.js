@@ -29,6 +29,8 @@ expose({
   relicOffer: [() => relicOffer],
   // @ts-expect-error -- replaced on purpose
   relicOfferMake: [() => relicOfferMake, v => (relicOfferMake = v)],
+  // @ts-expect-error -- replaced on purpose
+  relicOfferOrder: [() => relicOfferOrder, v => (relicOfferOrder = v)],
   relicPool: [() => relicPool],
   relicPrice: [() => relicPrice],
   // @ts-expect-error -- replaced on purpose
@@ -141,4 +143,25 @@ export function relicBuy(run, i, day, relics, rule, drop) {
   const why = relicTake(run, id, relics, rule, drop);
   if (!why) run.shelf[key] = '';
   return why;
+}
+
+/**
+ * Studio plan T4.1: a seed's Loophole picks in order, as the game makes them after each mini-boss (relicOfferMake on a
+ * run of that seed, then relicChoose): what is offered at each pick and what is taken. `take` is who chooses: 'none'
+ * takes nothing (the Run Lab's preview), 'first' the first offered, or a Loophole's id, taken when offered (else
+ * nothing). A taken one leaves the pool of the picks after it; past the cap nothing more is taken. Shops are left out.
+ * @param {string} seed @param {Record<string, Relic>} relics @param {RelicRules} rule @param {number} picks
+ * @param {string} [take] @returns {{ offer: string[], took: string | null }[]}
+ */
+export function relicOfferOrder(seed, relics, rule, picks, take = 'none') {
+  const run = /** @type {Run} */ (/** @type {any} */ ({ seed, relics: [], offer: null, offerN: 0, shelf: {} })),
+    out = [];
+  for (let k = 0; k < picks; k++) {
+    const offer = (relicOfferMake(run, relics, rule) || []).slice(),
+      want = take === 'first' ? offer[0] : take !== 'none' && offer.includes(take) ? take : null,
+      took = want && run.relics.length < rule.cap && !relicChoose(run, want, relics, rule) ? want : null;
+    if (!took && run.offer) relicChoose(run, null, relics, rule);
+    out.push({ offer, took });
+  }
+  return out;
 }
