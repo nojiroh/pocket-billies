@@ -2,6 +2,53 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Camera track CAM-1 - The follow - 2026-10-22
+Branch `CAM`, from the plan's branch `ccr-3d24989e-9cyftq` (PR #121, not merged yet). Draft PR #127. Plan approved in
+Plan Mode with every recommendation: with no joystick the look-ahead follows the walking direction; defaults match
+today's framing (tune in the Studio); rising ground ahead kept as a goal.
+- Changed (one cause per commit):
+  - **Blur focus** (walk-view-gl.js): 12% a frame at 60 fps, as an exact rate (was 12% of every frame).
+  - **logic/camera-follow.js** (new, 12 unit tests): an exact critically damped spring (30/60/144 fps agree to
+    0.00001 m), dead and soft zones as shares of the screen along its axes (the dead zone closes when you stop, a hard
+    limit at the soft zone), a look-ahead with its own spring (x1.5 sideways on a tall screen), a ground band, goals
+    whose weights ramp and blend (a goal no longer asked for fades as it last was).
+  - **Dials** (Engine > Camera): Look-ahead (was "Leads your walk"), its smoothing and sideways reach, Follow smoothing,
+    Dead and Soft zone width and height, Ignore ground changes under, Camera goals blend.
+  - **walk/camera.js**: the aim follows the spring; the look-ahead comes from the joystick or d-pad, else the keys,
+    else the way you walk; one goal blends the tilt, indoors, rising ground ahead, the landmark tilt, the room
+    framing and the swoop. TR-3's rise keeps its ramp and code. Yaw, zoom and the scene's tilt/height glide are exact
+    eases. The dead `st.focus` branch is gone. A room's door saves the follow's state too.
+  - **Re-anchor** (seamless-world.js): the follow's last targets, the goals' aim points, the swoop and `px/pz` shift.
+  - **Studio**: "Camera guides" on the Engine preview (zones, aim, you, goal, look-ahead arrow, mode and goals; drag
+    a zone's edge to set its dial, one undo step).
+  - **Debug log**: a `camera` section (mode, zoom, yaw, pitch, rise, goals, lead, off, moving). No names.
+  - **Checks**: check-fast "Camera follow" (planted fault caught); the debug log step wants the camera line.
+  - **Docs**: walk-view.js's blur note, CHANGELOG, camera-track.md "CAM-1 as built".
+- Where the plan was wrong (camera-track.md "CAM-1 as built"): four forces missing from the list (ground ahead, the
+  scene's tilt glide, the scene-edge clamp, the indoor wall pull); `st.focus` and `opt.instant` never set; the blur
+  numbers quoted were the code's fallbacks; no picture baseline in the repo (a CI release asset, remade by hand); the
+  Studio preview has no joystick.
+- Verified: unit tests 571; lint, typecheck, modules, format; check-fast 22 of 22 (Tall ground gives TR-3's numbers:
+  16.9 m of rock, 18.0 degrees); smoke; CI's smoke, lint and rules green on the PR. The Studio guides in a headless
+  Studio (drawn; a drag set the dead zone to 0.33). Full quick check against a local baseline made from the starting
+  commit: the same 9 steps red as before the change (v34, v35, v38, v39/v40, v43, v44, v46, alpha 0.4 recipes, phase
+  08 running); phase 08 running passes alone on both (full push 3.45 m/s), so its failure in the full run is load. A
+  first full run on a loaded machine timed out page loads in six steps; rerun quiet, they passed.
+  Pictures against that baseline: being rechecked (the run that listed 17 differences was overwritten before they
+  could be looked at); this line is updated when the rerun ends.
+- Risky / open:
+  - The feel isn't tuned: at a slow walk the dead zone eats most of the look-ahead (headless: the aim 0.07 m ahead of
+    you against 0.34 m before). Tune Dead zone and Look-ahead on the phone with the Studio guides.
+  - The swoop still halves `zoomT` (one zoom curve is CAM-2); room and swoop pulls now ramp in 0.15 s on top of the
+    spring, so a swoop arrives a little later than before.
+  - CI's picture baseline (release `baseline-0.1.0-alpha`) is stale after the merge: Actions > Check > Run workflow >
+    "Make the picture baseline".
+- Phone check wanted: walk Copperleaf with the joystick both ways and in portrait (the look-ahead, no lurch when you
+  stop), a landmark (the tilt fades in and out), into a room laid into the place and out, a battle's swoop, the
+  Mountains run (TR-3 as before); the Studio's Engine > Camera guides; export the debug log (`camera`).
+- Next: the owner pushes `cam-1-done`; CAM-2 (moments of interest) has its own session, waiting on this entry and the
+  tag.
+
 ### Camera track - planned - 2026-10-22
 Branch `ccr-3d24989e-9cyftq`. A planning session only: no code changed.
 - Changed: docs/phases/camera-track.md (new: verified facts about the walk camera and the blur, outside research,
