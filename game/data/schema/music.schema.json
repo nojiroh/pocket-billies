@@ -200,10 +200,8 @@
         "$ref": "#/$defs/line"
        },
        "intro": {
-        "description": "SND-5: bars that play once before the song (none yet)",
-        "type": "integer",
-        "minimum": 1,
-        "maximum": 2
+        "description": "SND-5: one or two bars on the lead alone that play once before the song when a battle starts it (the chromatic run); steps 0-31",
+        "$ref": "#/$defs/line"
        },
        "night": {
         "description": "SND-4: the night version (played outdoors at night, logic/music-where.js songVariant): the recipe's changes. With none written, 8 bpm slower, a fourth down, soft drums (audio/tracker.js trackerNight). false: no night version (battle songs, indoor songs, the title)",

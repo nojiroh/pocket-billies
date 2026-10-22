@@ -52,6 +52,7 @@ expose({
   jingle: [() => jingle, v => ((jingle = v), provide({ jingle }))],
   music: [() => music, v => (music = v)],
   musicFor: [() => musicFor, v => (musicFor = v)],
+  musicParts: [() => musicParts, v => (musicParts = v)],
   musicState: [() => musicState, v => (musicState = v)],
   musicStop: [() => musicStop, v => (musicStop = v)],
   musicSync: [() => musicSync, v => (musicSync = v)],
@@ -285,6 +286,11 @@ function battleDrumsIn() {
     T.drumsIn();
     soundLog('drums in');
   }
+}
+/* SND-5: the parts of a song the fingerprints (tools/check-sound.py) render besides day and night: its intro */
+function musicParts(name) {
+  const S = SONGS[name];
+  return S && S.intro && S.intro.length ? ['intro'] : [];
 }
 /* SND-4: a song's name as it plays at this night level (1 night, 0 day): 'town@night' or the name itself */
 function musicVariant(name, night) {
