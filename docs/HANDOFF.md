@@ -2,6 +2,82 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Studio plan Phase 0 - Reliability and data safety on publish - 2026-10-22
+Branch `ccr-81011a25-lf3exv`, PR #131. The PR also carries the plan itself,
+`docs/plans/studio-roguelite-improvement-plan.md`: a review of the Studio at 5a30303d with Phases 0-6 and tickets.
+The plan was approved in Plan Mode as written: tickets T0.1-T0.4 with a smaller design than the plan doc's "ledger".
+
+**Changed** (one cause per commit; the test came first and failed on the old code):
+- **check-studio-github.py `publish_checks`.** It runs on its own page with an injectable stand-in, after the main
+  flow, or alone with `--only=publish`. The cases:
+  - a 502 at blobs, trees, commits, refs and pulls (retry);
+  - a proposal that can't be built;
+  - a held send (a second Ctrl+S, and an edit made meanwhile);
+  - every read at the loaded commit;
+  - main moved on, sharing a file or not;
+  - branch reuse and branch names;
+  - a 401, with cancel or with a new token.
+
+  On the old code it reported **14 problems**: art and rigs dropped after every failure, and a partial proposal sent.
+  Now it reports 0.
+- **`game/js/logic/publish-plan.js`** (4 unit tests): `publishConfirm`, `publishEmpty`, `publishOverlap`,
+  `publishBranchName`.
+- **`studio/js/studio-app.js`.** `saveAll` is now `checkBeforeSave` → `stageChanges` → `writeStaged` → `confirmStaged`:
+  - Nothing is marked saved before the server answers.
+  - Then only what is unchanged is marked saved: pictures are matched by `c._ver`, which `markArt` already bumps;
+    data and rigs by their text.
+  - `meta.artVersion` goes up in the sent text and is set in `D` on confirm.
+- **`studio/js/github.js`.**
+  - **One proposal at a time.** The batch is built whole before anything is sent; an error sends nothing.
+  - **Pinned reads.** Everything is read at the commit main was on when the Studio loaded (`githubBase`), including
+    rigs-next.js, which used to come from the deployed page and was then written back whole.
+  - **Pinned proposal.** The proposal's parent is that commit. If main changed files the proposal also writes, a
+    question names them (Propose anyway / Cancel).
+  - **Branches.** Names are `studio/<login>-<date>-<time>-<4 letters>`. A branch left by a failed pull request is
+    reused (PATCH), and a 422 on pulls finds the PR that is already open.
+  - **Expired sign-in.** A 401 opens the sign-in card (now with Cancel) over the Studio, then resends the same
+    changes. A new token replaces an expired one kept in the other browser store.
+- **Docs.**
+  - STUDIO.md: "Propose changes: what it does, and what happens when it fails".
+  - Local mode is marked "not in this repository", in STUDIO.md and in the Studio's load-error text.
+  - CHANGELOG.
+
+**Where the plan doc was wrong or short**
+- `artDirty` is read in about 12 places as "the unsaved picture", so it stays. The ledger became a stage plus a
+  confirm-by-version-or-text.
+- The local-mode path could not be tested: there is no server in the repository.
+
+**Verified**
+- Unit tests: 622 pass.
+- lint, typecheck, `check:modules`, `format:check`.
+- `check-studio-github.py --only=publish`: 0 problems.
+- `check:fast`: 25 of 25 pass.
+- The full `check-studio-github.py` stopped in `story_steps`:
+  - First at `#scStoryOn`, then at the "Play from here" click.
+  - The same step fails on unchanged origin/main in this container, at the wait for the game's tab. This is the known
+    stall noted beside `--only`, not this phase.
+  - Every other step was run with `--only`:
+    - The publish checks, the UI steps, the uiTheme proposal and the self-test's restore all pass.
+    - Two problems, both also on origin/main:
+      - free camera "the ground under the pointer moved"; origin/main fails the same step alone in this container;
+      - the self-test's Rules edit not coming back with undo. That is the plan's F14, seen on main during the review;
+        the plan's T1.5 tracks it.
+- **Not run:** the full quick check. It was stopped at the owner's word, so the next session starts without waiting
+  for it.
+
+**Risky**
+- **Undo and confirm.** Undoing a change after it was proposed marks it unsaved again, as before; that is fine. A
+  restore (undo) during a send can make data differ from the sent text, so it stays unsaved: the safe direction.
+- **New requests.** GitHub mode now makes one extra request at load (the ref) and one or two at proposal time (the
+  ref, and compare when main moved).
+- **Tested only against the stand-in.** The API paths used are GitHub's documented ones: `git/ref/heads`,
+  `compare/a...b`, `PATCH git/refs/heads/<branch>`, `pulls?head=owner:branch`. One real proposal from the Pages Studio
+  is the owner's check.
+
+**Next**
+- Phase 1 (T1.1 drafts in IndexedDB first; then T1.2 undo per file, T1.3 shared checks, T1.4 Studio checks in CI).
+- Tag `sr-0-done` is the owner's.
+
 ### Island track IS-6b - Hub editor dials - 2026-10-22
 Branch `claude/is-6b-hub-dials`, from the wave-2 base `claude/new-session-3qlesh` (main plus IS-2, IS-3, IS-4 and IS-6a,
 PRs #122, #124, #123, #126, not merged yet); the PR goes against main, so its diff shrinks as those merge (then merge
