@@ -2,6 +2,58 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Island track IS-4 - Island props (phase 09 batch 11's barn folded in) - 2026-10-22
+Branch `claude/is-4-island-props`, from the IS-0 branch `claude/new-session-3qlesh` (PR #119, not merged yet; the
+owner asked to start wave 1 before `is-0-done`). PR against main; its diff shrinks once #119 merges. Wave 1 beside
+IS-1, IS-2, IS-3 and IS-6a. Plan approved in Plan Mode as proposed (defaults 1-5 taken). This session owns the prop
+data and art; no map but the showcase is touched.
+- Changed (one cause per commit; tools/build-props-island.py, rerunnable, in steps `new barn scree forest`):
+  - **New props**, every one finished on every side for the orbit camera: pasture `fence_gate` (matches
+    `fence_wood`, 2.2 m), `water_trough`, `hay_round`, `hay_feeder`; beach `driftwood` (3 shapes as variants),
+    `shore_rocks` (3), `tidepool_rim`, `beach_grass` (flat on purpose: 4 forms, sways) and `shells` (a ground decal,
+    3 forms); cove `fishing_boat` (moored: `bob`) and `net_rack`; mountain `boulder_granite` (3), `cairn`,
+    `summit_lookout` (a stone platform with a rail, scope, flag and bench; a landmark); `forest_litter` (a ground
+    decal, 3 forms). Tags `island` plus their place. Each model's fallback picture is **baked from the model** by the
+    builder (a small rasterizer, scene/next/island/*.png): seen from the front and above, cel-lit, outlined.
+  - **The barn** (batch 11's) as a model under its key, batch 7's way: the House kit with a **gambrel** roof, red
+    board walls, braced sliding doors, the hay loft door and its hoist, a lamp, a weather vane, side windows, a back
+    door, a loft window, a woodpile under a lean-to. Its five looks are colour swaps; `room: int_barn`, the door at the
+    big doors, name and tags kept; footprint 5.5 x 4.1 m (was 5.4 x 4).
+  - **Swapped in** as models under their keys: `scree` (base and four forms) and `log_mossy`, `stump_mossy`; their
+    old pictures stay the fallbacks. **Golden scenes remade on purpose**: scree moves the props hash of `feature`
+    and `terraced` (only that part; a model's placement keeps its size, `s`).
+  - **Showcase** `test_props_island` (64 x 58 m): sea and a walkable pier (a `bridges` entry, `pier: 1`) to the south,
+    the beach, a fenced paddock with the gate, the barn three times (a look and a turned one), a mountain corner and
+    forest floor; seven `shots`; `cam.orbit` set for IS-1's camera.
+- Where the plan was wrong or short:
+  - Many of the track's "new" props already were models: `fence_wood` and its post, `haybale`, `rowboat`,
+    `dock_post`, `buoy`, rocks, `boulder_lichen`, `stone_wall`, `waystone`, `log`, `stump`. Reused, not duplicated.
+  - **The walkable dock is a map field**, not a prop: `bridges` with `pier: 1` (Copperleaf's wood bridge is one).
+    IS-5/IS-9 place the island's; the showcase has one.
+  - **The barn's old `build` plan said a gable**; its picture is a gambrel. The model follows the picture.
+  - A roof made by the kit's 4-sided cone has closed ends: the gable's loft door and window go on the roof's end face,
+    as the kit's gableF does, or the roof hides them.
+  - `lookout_tower` stays batch 11's; the summit has its own prop.
+- Verified: unit tests 567 (2 golden scenes remade on purpose); lint, typecheck, check:modules, format:check,
+  check:data (144 files); a full rerun of the builder writes nothing; check-fast 22 of 22; smoke no problems. Headless
+  pictures (390 x 760, low graphics) of the showcase at 8 camera turns a full circle (the free camera) and close-ups
+  of the barn (front, both sides, back, a look, turned), the boats and pier, the paddock, the lookout, beach,
+  mountain and forest; Copperleaf's barn in the town. No page errors.
+- Risky:
+  - Triangles (from the builder's mesh): barn ~3,400, fishing boat ~3,700, net rack ~1,600, lookout ~1,400, the rest
+    under 1,000 (scree 230-360). Not measured on a phone; IS-9 measures.
+  - Scree is placed widely on runs (ridge, snow, canyon): every placement is a model now. Small, but many.
+  - The baked pictures are a flat-lit approximation (rocks without their lumps); they show only with models off or
+    as the far view of a neighbouring scene.
+  - The fishing boat bobs (`bob` 0.09) on water tiles only; on land it sits still.
+  - The barn's footprint grew 0.1 m each way; Copperleaf's barn has room round it (checked in the picture).
+- Not run: the full quick check's picture compare (CI makes its baseline); the new map's `shots` join it.
+- Phone check wanted: `?test=1&scene=test_props_island` (turn the camera round the barn, the boats, the lookout);
+  Copperleaf's barn and its door into the ranch; a run with a ridge node (scree); export the debug log.
+- Next: IS-5 places these on `copperleaf_island` (the barn in its zone, the pier at the cove); IS-8 the pasture with
+  `fence_wood` and `fence_gate`; batch 11's remaining list: boulder_mossy, campfire, lookout_tower, wind_sail_flower
+  and the rooms' 20 furniture props. Tag `is-4-done` is the owner's to push.
+
 ### Island track IS-0 - Contract and test island - 2026-10-22
 Branch `claude/new-session-3qlesh`, from main a10bfc6 (PR #118). The owner's brief (docs/phases/island-track.md,
 uploaded in chat): Copperleaf becomes a real island, one map, an orbit camera. IS-0 runs first and alone so wave 1

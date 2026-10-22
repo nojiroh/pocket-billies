@@ -151,6 +151,12 @@ sea past it, `cam.orbit` set. A quick fixture `?fixture=island` that boots into 
   scree, a cairn, the summit lookout; forest floor bits. A showcase map `test_props_island`.
 - Owns the prop files and their art; touches no map but the showcase.
 
+- **Checked in IS-4**: many listed props already were models (fence_wood and its post, haybale, rowboat, dock_post,
+  buoy, rocks, boulder_lichen, stone_wall, waystone, log, stump) and are reused. The walkable dock is a map's
+  `bridges` entry with `pier: 1`, not a prop: IS-5 places it at the cove. The barn's picture is a gambrel (its old
+  `build` said a gable); the model follows the picture. The summit has its own `summit_lookout`; `lookout_tower`
+  stays batch 11's.
+
 ### IS-5 Copperleaf moves onto the island
 - The one session that edits `copperleaf.json`. Move the town, the barn, the mast and airship, the well, the great
   oak and the people into their zones on `copperleaf_island`, keeping their layout where it fits; turn the buildings
