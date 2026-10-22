@@ -206,8 +206,10 @@ placed (question 5), the phone's frame times at 8 angles round the coast, then t
 ## Ask me before (recommendation first)
 1. **Size**: ~135 m across, a lap ~90 s walking, ~50 s running (rec) / ~180 m, ~2 min walking / ~110 m, ~70 s.
 2. **On the mountain top** (inside the dead zone): the camera holds still (rec) / you turn it freely there.
+   **Answered 2026-10-22 (IS-1): holds still; your own turn (`turn`) still works on top.**
 3. **The sun**: fixed in the world, shadows stay put as you circle (rec) / locked to the camera, the same slant on
    screen everywhere (shadows swim). A Studio toggle to compare both.
+   **Answered 2026-10-22 (IS-1): fixed in the world; the toggle is Engine > Camera > Sun turns with the camera (off).**
 4. **The town**: kept as it is in the south, end buildings turned outward (rec) / relaid as a ring facing the sea.
 5. **Wild Billies in the hub**: tall grass in the forest and heath, low levels, as Copperleaf has now (rec) / none.
 6. **The cove**: dock and fishing now, boats to other islands later (rec) / scenery only.
