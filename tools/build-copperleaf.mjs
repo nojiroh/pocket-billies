@@ -397,6 +397,55 @@ const life = TOWN.life.map(L => {
   const { area, ...rest } = L;
   return AREA[L.k] ? { ...rest, area: AREA[L.k] } : rest;
 });
+/* IS-9: gulls over the beaches and crabs on their wet sand (the owner: 4-6 of each). Spots spread along each beach's
+   wet sand, as far apart as they come (the first: the sand's middle); gulls in a wide box (they fly), crabs in a small
+   one by the water's edge (they only walk where you can) */
+{
+  const wetIn = poly => {
+    const out = [];
+    for (let j = 0; j < G.h; j++)
+      for (let i = 0; i < G.w; i++) {
+        const x = i + 0.5,
+          z = j + 0.5;
+        if (tileAt(x, z) === 'S' && islandPointIn(poly, x, z)) out.push([x, z]);
+      }
+    return out;
+  };
+  const spread = (pts, n) => {
+    if (!pts.length) return [];
+    const m = pts.reduce((a, p) => [a[0] + p[0] / pts.length, a[1] + p[1] / pts.length], [0, 0]),
+      pick = [
+        pts.reduce((b, p) => (Math.hypot(p[0] - m[0], p[1] - m[1]) < Math.hypot(b[0] - m[0], b[1] - m[1]) ? p : b)),
+      ];
+    while (pick.length < n) {
+      let best = null,
+        bd = -1;
+      for (const p of pts) {
+        const d = Math.min(...pick.map(q => Math.hypot(p[0] - q[0], p[1] - q[1])));
+        if (d > bd) {
+          bd = d;
+          best = p;
+        }
+      }
+      if (!best || bd < 8) break;
+      pick.push(best);
+    }
+    return pick;
+  };
+  /* the bigger beach first */
+  const beaches = G.zones
+    .filter(Z => Z.k === 'beach')
+    .map(Z => wetIn(Z.poly))
+    .sort((a, b) => b.length - a.length);
+  /* gulls 3 + 2; crabs: two spots a beach, 2 each on the big beach, 1 on the other (6) */
+  const gullN = [3, 2];
+  beaches.slice(0, 2).forEach((wet, b) => {
+    const [g] = spread(wet, 1);
+    if (g) life.push({ k: 'gull', n: gullN[b], area: box(g[0], g[1], 12) });
+    for (const c of spread(wet, 2)) life.push({ k: 'crab', n: b ? 1 : 2, area: box(c[0], c[1], 4) });
+  });
+}
+
 /* ---------- the opening (cutscenes/opening.json): you wake outside the lab, so its spots, shots and the stage it keeps
    clear move and turn with the lab's door (the shots' heights are above the ground: they stay) ---------- */
 {
