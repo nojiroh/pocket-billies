@@ -330,6 +330,13 @@ shared). Checked against the code:
 - Many seeds miss a plot or the second bridge (the generator notes it); the seed is `copperleaf-13`, which places
   everything. The lab, the airship station, the shop and the home fall back to the coast road near the square.
 - The flat barn zone, laid over the river, wiped it out (a zone resets its cells): the barn and pasture moved west.
+- **Five directions** (relief maps from the generator, the owner's ask): A as built, B the bay facing the first view,
+  C a big mountain with a rocky north, D a forest island, E a beach island. **The owner picked E**: two beaches (west,
+  wide with dunes; north-east), one short cliff, the forest north of the mountain; seed `copperleaf-e9`, the barn at
+  205 degrees 46 m, the pasture at 185 degrees 50 m (closer in, the town's outline from the first run covered the
+  barn's zone on a rerun). Copperleaf's own dials are in its `islandGen`; the generator's defaults stay option A.
+- **A game bug the island showed**: `navGrid` blocked a turned building's unturned box a second time on any map with
+  bridges, which for some angles lies over its own door (the barn's and Juniper's home's checks failed). Fixed.
 
 ## Running sessions side by side
 - **One owner per file at a time.** `copperleaf.json`: IS-5 only. `logic/mapgen.js`: nobody here while TR-2c part 2
