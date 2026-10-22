@@ -206,6 +206,8 @@ void main(){if(rockHides(vW))discard;if(vW.x>uHole.x&&vW.x<uHole.z&&vW.z>uHole.y
   o=vec4(fogit(icr,vW),.97);return;}
  /* the shallows let the bed show; murky water never does */
  float a=mix(clamp(ka.x/max(uClar,.05),0.,1.),.94,smoothstep(0.,.8,dep));a=mix(a,.97,kb.y*.6);a=max(a,clamp(foam,0.,1.)*.9);
+ /* IS-3: the sea past the scene's edge has no land under it beyond the 8 m border: there it is opaque */
+ {vec2 sz=1./max(uShoreR.xy,vec2(1e-4));float ou=max(max(-vW.x,vW.x-sz.x),max(-vW.z,vW.z-sz.y));a=mix(a,1.,smoothstep(3.,7.,ou));}
  o=vec4(fogit(c,vW),a);}`,
   ],
   fall: [
