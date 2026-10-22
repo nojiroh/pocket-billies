@@ -262,7 +262,8 @@ export function runCheck() {
       err(`${T.name} stands on a stop that doesn’t exist.`, 'trainers', g);
     if (!T.team.length) err(`${T.name} has no team.`, 'trainers', g);
     T.team.forEach(e => {
-      if (!/^@rival\d?$/.test(e.sp) && !sp.has(e.sp))
+      /* a robot (sp robot) is checked by its parts, below (data-checks.js dataRobotProblems, as check-data does) */
+      if (e.sp !== 'robot' && !/^@rival\d?$/.test(e.sp) && !sp.has(e.sp))
         missingSp(e.sp, `${T.name} uses ${e.sp}, which doesn’t exist.`, 'trainers', g);
     });
     if (!D.people[T.who]) warn(`${T.name} uses an unknown look.`, 'trainers', g);
