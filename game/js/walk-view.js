@@ -2,8 +2,9 @@
 /* ================= WALK SCENE: a tilt-shift diorama of the current route stop =================
    The ground is a tile map (scene.tiles, one character per tile) painted into a texture and projected row by row,
    like a camera looking down at a model railway. Props, people and hidden encounters are upright pixel billboards
-   that cast soft sun shadows. Distant hills (scene.far) stand behind the scene, haze grows with distance and a blur
-   that grows toward the top and bottom of the screen gives the miniature (tilt-shift) look.
+   that cast soft sun shadows. Distant hills (scene.far) stand behind the scene, haze grows with distance and a
+   depth blur (engine/post-effects.js, sharp in a slab round the focus distance, softer in front and behind) gives the
+   miniature look.
    v10: the player walks around freely (tap the ground, a building, a trainer, a road sign), townsfolk wander,
    chimneys smoke, fountains splash, windmills turn, butterflies and leaves drift by.
    Scenes and the prop catalog live in game data (scenes, scenery) and are edited in Pocket Billies Studio. */
