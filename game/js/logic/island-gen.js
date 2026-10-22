@@ -88,7 +88,7 @@ export const ISLAND_GEN_DEFAULTS = {
   /* the land's radius round the middle (the coast is pushed out further round the zones), how much the coast wobbles
      (0-1), the open sea between the coast and the scene's edge, how long the island is (0-1: up to 1.3 times its
      width), its big lobes and a peninsula (0-1) */
-  size: { r: 68, wobble: 0.35, sea: 10, stretch: 0.3, lobes: 0.6 },
+  size: { r: 96, wobble: 0.35, sea: 10, stretch: 0.5, lobes: 0.8 },
   /* how natural every shape is (0-1): 0 is plain geometry (round coast, rectangles, a cone, straight spokes); up from
      there headlands and bays, rounded uneven zones, a warped massif, wandering shelves and paths, ragged ground */
   organic: 0.7,
@@ -96,38 +96,44 @@ export const ISLAND_GEN_DEFAULTS = {
      how long it runs along its ridge (0-1: up to 1.45 times its width), a shoulder peak along the ridge (0-1 of the
      peak's height, times 0.6), a range of lower peaks and ridges round it (0-1: 2 to 6 of them, a third to a half of
      its height), kept away from the biggest zone and the cove */
-  mountain: { r: 22, peak: 22, cliffs: 0.5, stretch: 0.5, shoulder: 0.6, range: 0.6 },
+  mountain: { r: 24, peak: 28, cliffs: 0.5, stretch: 0.6, shoulder: 0.6, range: 0.9 },
   /* rolling land (0-1: up to 1.6 m) and the foot hills round the mountain */
   hills: 0.4,
   /* the cove: cut into the coast; its middle's angle, its width in degrees, its depth, the deep channel from the dock
      out to the open sea (0 for none), its inner beach's width, its shape ('bay' wide and rounded, 'cove' a horseshoe
      with steep sides) */
-  cove: { on: 1, a: 0, span: 70, depth: 22, channel: 6, beach: 7, shape: 'bay' },
+  cove: { on: 1, a: 300, span: 60, depth: 44, channel: 7, beach: 8, shape: 'bay' },
   /* the beach's width where no beach arc is (the narrow shore) and the long beaches (an angle, a width in degrees) */
   shore: 3,
-  beaches: [{ a: 180, span: 80, w: 11 }],
+  beaches: [{ a: 185, span: 60, w: 13 }],
   /* cliffs along the coast: angle, width in degrees, height */
   cliffs: [
-    { a: 33, span: 20, h: 5 },
-    { a: 330, span: 16, h: 4 },
+    { a: 60, span: 26, h: 7 },
+    { a: 245, span: 16, h: 5 },
   ],
   /* dunes behind the sand and heath inland: angle, width in degrees */
-  dunes: { a: 312, span: 34 },
-  heath: { a: 300, span: 56 },
+  dunes: { a: 250, span: 26 },
+  heath: { a: 20, span: 40 },
   /* the forest belt round the mountain's foot: angle, width in degrees, how deep it runs from the foot, density 0-1 */
-  forest: { a: 95, span: 156, deep: 26, density: 0.75 },
+  forest: { a: 110, span: 180, deep: 34, density: 0.8 },
   /* the stream from a pond at the mountain's foot down to the cove (a small fall where it leaves the pond) */
-  stream: { on: 1, pond: 4, fall: 0.8 },
+  stream: { on: 1, pond: 5, fall: 0.8 },
   /* the paths: the loop round the coast and its spokes; how far inland from the beach the loop runs at least, how
      freely it wanders (0-1: inland by up to 14 m, across headlands rather than round them) */
   paths: { width: 2.2, inland: 3, wander: 0.6 },
   /* the flat zones: kind, angle and distance of the middle from the island's middle, width (across) and depth (toward
      the middle), the height they lie at */
   zones: [
-    { k: 'town', a: 270, d: 47, w: 64, h: 40 },
-    { k: 'barn', a: 212, d: 56, w: 18, h: 16 },
-    { k: 'pasture', a: 182, d: 60, w: 26, h: 22 },
+    { k: 'barn', a: 205, d: 70, w: 18, h: 16 },
+    { k: 'pasture', a: 188, d: 72, w: 30, h: 24 },
   ],
+  /* the town (the owner, after the sketches: a market town on the river, a harbour quarter on the bay): it stands
+     where the stream comes down into the bay; its streets, square, bridges and plots are laid out on the land as it
+     is, with a level pad under each plot only. houses: how many house plots it aims for; lanes: side lanes. A town
+     zone in the zones above makes the old flat town instead */
+  town: { on: 1, houses: 14, lanes: 3 },
+  /* a hamlet: a few houses round a green under the mountains, joined to the coast road */
+  hamlet: { on: 1, houses: 4 },
   level: 1.2,
   /* a stage's own seed (rerolls that stage alone), by stage name */
   seeds: {},
@@ -256,6 +262,11 @@ export function islandGenDials(d) {
       h: num(Z.h, 4, 120, 20),
     }));
   D.level = num(D.level, 0.3, 6, 1.2);
+  D.town.on = D.town.on ? 1 : 0;
+  D.town.houses = Math.round(num(D.town.houses, 0, 40, 14));
+  D.town.lanes = Math.round(num(D.town.lanes, 0, 6, 3));
+  D.hamlet.on = D.hamlet.on ? 1 : 0;
+  D.hamlet.houses = Math.round(num(D.hamlet.houses, 0, 10, 4));
   if (!D.seeds || typeof D.seeds !== 'object' || Array.isArray(D.seeds)) D.seeds = {};
   for (const k of Object.keys(D.seeds)) if (!ISLAND_GEN_STAGES.includes(k)) delete D.seeds[k];
   return D;
@@ -357,7 +368,9 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
     rng = st => rngFrom(seedOf(st), 'island|' + st),
     salt = (st, sub = '') => hashString(`${seedOf(st)}|island|${st}${sub}|noise`) % 100000,
     notes = /** @type {string[]} */ ([]),
-    kept = (prev && Array.isArray(prev.zones) ? prev.zones : []).filter(Z => Z && Z.lock && Z.poly);
+    kept = (prev && Array.isArray(prev.zones) ? prev.zones : []).filter(Z => Z && Z.lock && Z.poly),
+    /* a flat zone: the barn, the pasture; a town only when the dials ask for the old flat one */
+    flatKind = k => ISLAND_GEN_BUILT.includes(k) && (k !== 'town' || D.zones.some(Z => Z.k === 'town'));
   const R0 = D.size.r,
     Rf = D.mountain.r;
 
@@ -524,8 +537,9 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
   };
   if (prev && prev.island && Array.isArray(prev.island.c)) {
     c = prev.island.c.slice(0, 2);
+    /* the kept flat zones need their room again; a kept town or hamlet was laid on land the coast already had */
     pushOut(
-      kept.map(Z => Z.poly),
+      kept.filter(Z => flatKind(Z.k)).map(Z => Z.poly),
       c[0],
       c[1]
     );
@@ -556,6 +570,16 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
       x1 = Math.max(x1, x);
       z1 = Math.max(z1, z);
     }
+    /* too big for a scene (260 m at most): the whole coast drawn in to fit */
+    const fit = (260 - 2 * D.size.sea - 2) / Math.max(x1 - x0, z1 - z0);
+    if (fit < 1) {
+      for (let t = 0; t < 360; t++) coastR[t] = Math.max(coastR[t] * fit, need[t]);
+      x0 *= fit;
+      z0 *= fit;
+      x1 *= fit;
+      z1 *= fit;
+      notes.push(`the island was drawn in to ${Math.round(fit * 100)}% to fit a 260 m scene`);
+    }
     c = [Math.ceil(D.size.sea - x0), Math.ceil(D.size.sea - z0)];
     w = Math.ceil(c[0] + x1 + D.size.sea);
     h = Math.ceil(c[1] + z1 + D.size.sea);
@@ -571,10 +595,15 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
         islandPolyDense(allBuilt[b]).some(p => islandPointIn(allBuilt[a], p[0], p[1]))
       )
         notes.push(`the ${allKinds[a]} and ${allKinds[b]} zones overlap`);
-  const zones = [
-    ...built.map(Z => ({ k: Z.k, poly: Z.poly.map(p => islandRound2pt([p[0] + c[0], p[1] + c[1]])), lock: true })),
-    ...kept.map(Z => ({ k: Z.k, poly: Z.poly.map(p => p.slice(0, 2)), lock: true })),
-  ];
+  /* a flat zone shapes the land round it from the start; a kept town or hamlet joins the list at the end, as a new one does (so a run that keeps them makes the rest
+     as a fresh run would) */
+  const keptPlaces = kept
+      .filter(Z => !flatKind(Z.k))
+      .map(Z => ({ k: Z.k, poly: Z.poly.map(p => p.slice(0, 2)), lock: true })),
+    zones = [
+      ...built.map(Z => ({ k: Z.k, poly: Z.poly.map(p => islandRound2pt([p[0] + c[0], p[1] + c[1]])), lock: true })),
+      ...kept.filter(Z => flatKind(Z.k)).map(Z => ({ k: Z.k, poly: Z.poly.map(p => p.slice(0, 2)), lock: true })),
+    ];
   const coastAt = t => {
       const a = islandAngle(t),
         i = Math.floor(a),
@@ -689,6 +718,11 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
         G.F[q] |= 4;
       }
 
+  /* the stream comes into one side of the bay's back and the town stands round its mouth, the dock beside it (chosen
+     here, before the mountain, whose spurs keep clear of the town) */
+  const side = rng('town').chance(0.5) ? 1 : -1,
+    streamA = D.cove.a + side * D.cove.span * 0.36,
+    dockA = streamA - side * Math.min(12, D.cove.span * 0.2);
   /* ---------- the mountain: a quarter smooth land, the rest step-grid shelves (as TR-2's mapgenMountains) ---------- */
   /* a massif, not a cone: stretched along a ridge that runs across the island (square to the biggest flat zone, so it
      leans away from the town), its peak a little off the middle, a shoulder peak along the ridge, its outline and
@@ -707,7 +741,7 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
       ? polar(...big.poly.reduce((m, p) => [m[0] + p[0] / big.poly.length, m[1] + p[1] / big.poly.length], [0, 0]))[1]
       : 270,
     /* the ridge's line: the one furthest (either end) from the biggest zone and the cove, a little off by noise */
-    awayFrom = [bigA, ...(D.cove.on ? [D.cove.a] : [])],
+    awayFrom = [bigA, ...(D.cove.on ? [D.cove.a] : []), ...(D.cove.on && D.stream.on && D.town.on ? [streamA] : [])],
     lineGap = (l, a) => Math.min(Math.abs(islandAngleDiff(l, a)), Math.abs(islandAngleDiff(l + 180, a))),
     bestLine = [...Array(36).keys()]
       .map(k => k * 5)
@@ -720,7 +754,12 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
     st = 1 + 0.45 * D.mountain.stretch * Math.min(1, O3 * 1.5),
     lean = rM.range(0, 360) * ISLAND_RAD,
     off = rM.range(0, 2.5) * O3,
-    peakP = [c[0] + Math.cos(lean) * off, c[1] + Math.sin(lean) * off],
+    /* away from the town (so the stream has its length), else a little off the middle at random */
+    away = D.cove.on && D.stream.on && D.town.on ? Rf * 0.4 : 0,
+    peakP = [
+      c[0] + Math.cos(lean) * off - Math.cos(streamA * ISLAND_RAD) * away,
+      c[1] + Math.sin(lean) * off - Math.sin(streamA * ISLAND_RAD) * away,
+    ],
     shSide = rM.chance(0.5) ? 1 : -1,
     shP = [
       peakP[0] + Math.cos(ridgeA) * Rf * 0.62 * st * shSide,
@@ -846,10 +885,7 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
   const spots = /** @type {{ kind: string, x: number, z: number, y: number }[]} */ ([]);
   const rW = rng('water'),
     wetPts = /** @type {number[][]} */ ([]);
-  /* the stream comes into one side of the cove's back, the dock stands on the other */
-  const side = rW.chance(0.5) ? 1 : -1,
-    streamA = D.cove.a + side * D.cove.span * 0.2,
-    dockA = D.cove.a - side * D.cove.span * 0.2;
+  let river = /** @type {number[][] | null} */ (null);
   if (D.stream.on && D.cove.on) {
     const ta = streamA + rW.range(-6, 6),
       pr = Math.max(D.stream.pond, 1.5),
@@ -919,6 +955,7 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
           }
       }
       mapgenPaintStream(G, pts, 1.8, 'water');
+      river = pts;
       wetPts.push(...pts.filter((_, k) => k % 4 === 0));
       for (let k = 0; k < 12; k++) wetPts.push(at0(pr, k * 30).map((v, m) => v + (m ? pz : px)));
       spots.push({ kind: 'fall', x: mapgenRound2(pts[1][0]), z: mapgenRound2(pts[1][1]), y: mapgenRound2(start) });
@@ -926,7 +963,11 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
   }
 
   /* ---------- paths: the loop round the coast, spokes to the zones, the mountain and the dock ---------- */
-  const zoneAvoid = (x, z) => zones.some(Z => islandPolyDist(Z.poly, x, z) < D.paths.width / 2 + 1.2);
+  /* the coast road keeps out of the flat zones; it runs through a town or a hamlet (it did when they were made) */
+  const zoneAvoid = (x, z) =>
+    zones.some(
+      Z => ISLAND_GEN_BUILT.includes(Z.k) && Z.k !== 'town' && islandPolyDist(Z.poly, x, z) < D.paths.width / 2 + 1.2
+    );
   const loop = [];
   for (let k = 0; k <= 360; k++) {
     const t = 180 + k;
@@ -982,6 +1023,14 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
       }
       return [sx / 7, sz / 7];
     });
+  /* smoothing can pull a corner of it into a zone: pushed back out toward the sea */
+  lp = lp.map((p, k) => {
+    const t = 180 + k;
+    let q = p,
+      r = polar(p[0], p[1])[0];
+    for (let push = 0; push < 30 && zoneAvoid(q[0], q[1]) && r < coastAt(t) - 1.5; push++) q = at((r += 0.5), t);
+    return q;
+  });
   lp[360] = lp[0];
   const roads = [{ pts: mapgenResample(lp, 0.5), width: D.paths.width, main: true, name: 'loop' }];
   const nearLoop = (x, z) => {
@@ -1074,6 +1123,204 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
         }
     }
   }
+  /* ---------- the town's streets (the owner: a market town on the river, a harbour quarter on the bay) ---------- */
+  const keptTown = kept.some(Z => Z.k === 'town'),
+    keptHamlet = kept.some(Z => Z.k === 'hamlet'),
+    rT = rng('town'),
+    townStreets = /** @type {{ pts: number[][], width: number, main: boolean, name: string }[]} */ ([]),
+    builtZones = zones.filter(Z => ISLAND_GEN_BUILT.includes(Z.k));
+  /* a point a street or a plot may take: on the land, dry, off the mountain, not on the beach's edge, on the scene */
+  const okAt = (x, z, m = 2) => {
+    if (x < 3 || z < 3 || x > w - 3 || z > h - 3 || !inLand(x, z)) return false;
+    if (G.F[mapgenCellAt(G, x, z)] & 4 || Eat(x, z) > 0.6) return false;
+    if (builtZones.some(Z => islandPointIn(Z.poly, x, z))) return false;
+    const [d, t] = polar(x, z);
+    return coastAt(t) - d > m;
+  };
+  /* the longest unbroken stretch of a line whose points are all fine (or wet where `wetOk` says), holding index k */
+  const stretch = (pts, k = -1, wetOk = (_p, _i) => false) => {
+    const ok = pts.map((p, i) => okAt(p[0], p[1]) || wetOk(p, i));
+    let best = [0, -1],
+      a = 0;
+    for (let i = 0; i <= pts.length; i++)
+      if (i === pts.length || !ok[i]) {
+        if ((k < 0 && i - a > best[1] - best[0] + 1) || (k >= a && k < i)) best = [a, i - 1];
+        if (k >= a && k < i) break;
+        a = i + 1;
+      }
+    return pts.slice(best[0], best[1] + 1);
+  };
+  /* a line beside another, `off` metres to its left */
+  const beside = (L, off) =>
+    L.slice(1, -1).map((p, i) => {
+      const dx = L[i + 2][0] - L[i][0],
+        dz = L[i + 2][1] - L[i][1],
+        n = Math.hypot(dx, dz) || 1;
+      return [p[0] - (dz / n) * off, p[1] + (dx / n) * off];
+    });
+  /* a curve from a to b bent `bend` metres aside in the middle, with a slow wobble */
+  const bendTo = (a, b, bend, n = 24) => {
+    const L = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1,
+      nx = -(b[1] - a[1]) / L,
+      nz = (b[0] - a[0]) / L,
+      ph = rT.range(0, 6);
+    return [...Array(n + 1).keys()].map(k => {
+      const f = k / n,
+        o = Math.sin(Math.PI * f) * bend + Math.sin(f * 7 + ph) * 1.2 * Math.sin(Math.PI * f);
+      return [a[0] + (b[0] - a[0]) * f + nx * o, a[1] + (b[1] - a[1]) * f + nz * o];
+    });
+  };
+  const street = (pts, width, name) => {
+    if (pts.length < 6) return null;
+    const r = { pts: mapgenResample(pts, 0.5), width, main: true, name };
+    roads.push(r);
+    townStreets.push(r);
+    return r.pts;
+  };
+  const tieToLoop = (p, name) => {
+    const q = nearLoop(p[0], p[1]),
+      d = Math.hypot(q[0] - p[0], q[1] - p[1]);
+    if (d > 1.5 && d < 40) spoke(p, q, name);
+  };
+  let square = /** @type {number[] | null} */ (null),
+    mainSt = /** @type {number[][] | null} */ (null),
+    quaySt = /** @type {number[][] | null} */ (null);
+  const sideBank = rT.chance(0.5) ? 1 : -1;
+  if (D.town.on && !keptTown && river && !D.zones.some(Z => Z.k === 'town')) {
+    const R = mapgenResample(river, 1),
+      n = R.length;
+    /* the main street along one bank, from the mountain's foot down to the bay */
+    mainSt = street(
+      stretch(beside(R, 7.5 * sideBank).slice(Math.floor(n * 0.03), Math.ceil(n * 0.97))),
+      3.6,
+      'town main street'
+    );
+    if (!mainSt) notes.push('no room for the town along the stream');
+    else {
+      /* the square beside the main street half way down, away from the river; the cross street over a bridge there */
+      const mid = mainSt[Math.floor(mainSt.length * 0.5)];
+      let k0 = 0;
+      for (let k = 0; k < n; k++)
+        if (Math.hypot(R[k][0] - mid[0], R[k][1] - mid[1]) < Math.hypot(R[k0][0] - mid[0], R[k0][1] - mid[1])) k0 = k;
+      const dx = R[Math.min(n - 1, k0 + 1)][0] - R[Math.max(0, k0 - 1)][0],
+        dz = R[Math.min(n - 1, k0 + 1)][1] - R[Math.max(0, k0 - 1)][1],
+        L = Math.hypot(dx, dz) || 1,
+        nx = (-dz / L) * sideBank,
+        nz = (dx / L) * sideBank,
+        sqR = 7.5;
+      square = [mid[0] + nx * (sqR + 2.2), mid[1] + nz * (sqR + 2.2), sqR];
+      const far = [square[0] + nx * rT.range(28, 40), square[1] + nz * rT.range(28, 40)],
+        over = [R[k0][0] - nx * rT.range(26, 36), R[k0][1] - nz * rT.range(26, 36)],
+        cross = [
+          ...bendTo(far, square, rT.range(-5, 5)),
+          ...bendTo([R[k0][0] + nx * 4, R[k0][1] + nz * 4], over, rT.range(-6, 6)),
+        ],
+        k1 = 24;
+      /* the river may be crossed (a bridge goes in) */
+      const nearRiver = p => R.some(q => Math.hypot(q[0] - p[0], q[1] - p[1]) < 4);
+      const crossSt = street(
+        stretch(cross, k1, p => nearRiver(p)),
+        3.4,
+        'town cross street'
+      );
+      /* the east bank: a lane along the river from the bridge down; a second bridge near the bay */
+      const eastSt = street(stretch(beside(R.slice(k0, Math.ceil(n * 0.95)), -7.5 * sideBank)), 3, 'town east bank');
+      const kb = Math.floor(k0 + (n - k0) * 0.6),
+        b0 = beside(R, 7.5 * sideBank)[Math.min(kb, n - 3)],
+        b1 = beside(R, -7.5 * sideBank)[Math.min(kb, n - 3)];
+      if (b0 && b1 && eastSt)
+        street(
+          stretch(bendTo(b0, b1, 0, 12), 6, p => nearRiver(p)),
+          3,
+          'town lower bridge'
+        );
+      /* the quay: along the bay's shore from the river's mouth past the dock */
+      const qa = Math.min(streamA, dockA) - 8,
+        qb = Math.max(streamA, dockA) + 8,
+        q = [];
+      for (let t = qa; t <= qb; t += 1) q.push(at(coastAt(t) - 5.5, t));
+      quaySt = street(
+        stretch(q, Math.floor(q.length / 2), p => nearRiver(p)),
+        3.4,
+        'town quay'
+      );
+      /* side lanes off the cross street and the main street, away from the river */
+      for (let k = 0; k < D.town.lanes; k++) {
+        const base = k % 2 && crossSt ? crossSt : mainSt,
+          i = Math.floor(base.length * rT.range(0.2, 0.8)),
+          p = base[i],
+          qn = base[Math.min(base.length - 1, i + 1)],
+          ddx = qn[0] - p[0],
+          ddz = qn[1] - p[1],
+          LL = Math.hypot(ddx, ddz) || 1,
+          s0 = base === mainSt ? 1 : rT.chance(0.5) ? 1 : -1,
+          lx = (-ddz / LL) * (base === mainSt ? sideBank : s0),
+          lz = (ddx / LL) * (base === mainSt ? sideBank : s0),
+          len = rT.range(16, 24),
+          lane = stretch(bendTo(p, [p[0] + lx * len, p[1] + lz * len], rT.range(-4, 4), 12), 0);
+        /* a lane keeps 9 m clear of every other road past its first 5 m (room for a plot each side) */
+        const clear = lane.every(
+          (q, i) =>
+            Math.hypot(q[0] - p[0], q[1] - p[1]) < 5 ||
+            roads.every(r => r.pts.every((o, m) => m % 2 || Math.hypot(o[0] - q[0], o[1] - q[1]) > 9))
+        );
+        if (clear) street(lane, 2.6, `town lane ${k + 1}`);
+      }
+      /* the town meets the coast road at its ends */
+      if (crossSt) {
+        tieToLoop(crossSt[0], 'town to the coast road');
+        tieToLoop(crossSt[crossSt.length - 1], 'town to the coast road, east');
+      }
+      tieToLoop(mainSt[mainSt.length - 1], 'town to the coast road, south');
+    }
+  }
+  /* the trail starts at the top of the main street, by the pond at the mountain's foot (a kept town: where it did) */
+  if (mainSt) footSpoke = mainSt[0];
+  else if (keptTown) {
+    const th = (prev.spots || []).find(S => S.kind === 'trailhead');
+    if (th) footSpoke = [th.x, th.z];
+  }
+  if (footSpoke && (mainSt || keptTown))
+    spots.push({ kind: 'trailhead', x: mapgenRound2(footSpoke[0]), z: mapgenRound2(footSpoke[1]), y: 0 });
+  /* ---------- the hamlet: a few houses round a green under the mountains, joined to the coast road ---------- */
+  let hamletAt = /** @type {{ c: number[], rx: number, rz: number, a: number } | null} */ (null);
+  if (D.hamlet.on && !keptHamlet) {
+    const zoneA = builtZones.map(
+        Z => polar(...Z.poly.reduce((m, p) => [m[0] + p[0] / Z.poly.length, m[1] + p[1] / Z.poly.length], [0, 0]))[1]
+      ),
+      cands = [];
+    for (let t = 0; t < 360; t += 5) {
+      if (
+        Math.abs(islandAngleDiff(t, streamA)) < 55 ||
+        (D.cove.on && Math.abs(islandAngleDiff(t, D.cove.a)) < D.cove.span / 2 + 12)
+      )
+        continue;
+      if (zoneA.some(a => Math.abs(islandAngleDiff(t, a)) < 30)) continue;
+      cands.push([coastAt(t) - arrAt(beachW, t) - footAt(t), t]);
+    }
+    cands.sort((a, b) => b[0] - a[0] || a[1] - b[1]);
+    for (const [room, t] of cands.slice(0, 12)) {
+      if (room < 34) break;
+      const cc = at(footAt(t) + Math.min(18, room * 0.45), t),
+        ring = [...Array(25).keys()].map(k => {
+          const f = (k / 24) * Math.PI * 2;
+          return [
+            cc[0] + Math.cos(f) * 11 * Math.cos(t * ISLAND_RAD) - Math.sin(f) * 9 * Math.sin(t * ISLAND_RAD),
+            cc[1] + Math.cos(f) * 11 * Math.sin(t * ISLAND_RAD) + Math.sin(f) * 9 * Math.cos(t * ISLAND_RAD),
+          ];
+        });
+      if (!ring.every(p => okAt(p[0], p[1], 4))) continue;
+      /* a hamlet is its own place: 70 m at least from the town's square (a kept town's well) */
+      const sq0 = square || (keptTown && (prev.plots || []).find(L => L.k === 'well'));
+      if (sq0 && Math.hypot(cc[0] - (sq0.x ?? sq0[0]), cc[1] - (sq0.z ?? sq0[1])) < 70) continue;
+      street(ring, 2.6, 'hamlet lane');
+      townStreets.pop(); /* the hamlet's lane is not the town's */
+      tieToLoop(ring[0], 'hamlet to the coast road');
+      hamletAt = { c: cc, rx: 11, rz: 9, a: t };
+      break;
+    }
+    if (!hamletAt) notes.push('no room for the hamlet under the mountains');
+  }
   /* the distance field and the paint (mapgenStageRoad's), then mapgen's flattening */
   G.road = roads.map(r => ({ pts: r.pts, width: r.width, main: r.main }));
   let along = 0;
@@ -1134,6 +1381,242 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
       const x = B.a[0] + ((B.b[0] - B.a[0]) * s) / L,
         z = B.a[1] + ((B.b[1] - B.a[1]) * s) / L;
       G.F[mapgenCellAt(G, x, z)] |= 8;
+    }
+  }
+
+  /* ---------- the square, the plots and their pads ---------- */
+  const plots =
+      /** @type {{ k: string, x: number, z: number, w: number, d: number, a: number, y: number, at: string }[]} */ ([]),
+    yard = new Uint8Array(w * h);
+  const cornerAt = (x, z) => G.H[mapgenBetween(Math.round(z), 0, h) * W1 + mapgenBetween(Math.round(x), 0, w)];
+  if (square) {
+    /* level, paved (plaza), walked like a street */
+    const [sx, sz, sr] = square,
+      y = cornerAt(sx, sz);
+    for (let j = Math.floor(sz - sr - 3); j <= Math.ceil(sz + sr + 3); j++)
+      for (let i = Math.floor(sx - sr - 3); i <= Math.ceil(sx + sr + 3); i++) {
+        if (i < 0 || j < 0 || i > w || j > h) continue;
+        const dd = Math.hypot(i - sx, j - sz);
+        if (dd <= sr + 0.5) G.H[j * W1 + i] = y;
+        else if (dd <= sr + 3) G.H[j * W1 + i] += (y - G.H[j * W1 + i]) * (1 - mapgenSmooth((dd - sr - 0.5) / 2.5));
+        if (i < w && j < h && Math.hypot(i + 0.5 - sx, j + 0.5 - sz) <= sr && !(G.F[j * w + i] & 4)) {
+          G.T[j * w + i] = 'c';
+          G.F[j * w + i] |= 1 | 16;
+        }
+      }
+  }
+  /* a plot fits: every point of it (and a metre round) on fine land, off the streets and the square, 2.5 m from water,
+     clear of the other plots, its ground rising no more than 2.4 m across it */
+  const plotPts = (x, z, pw, pd, a, m) => {
+    const ca = Math.cos(a),
+      sa = Math.sin(a),
+      out = [];
+    for (const u of [-1, -0.5, 0, 0.5, 1])
+      for (const v of [-1, -0.5, 0, 0.5, 1]) {
+        const ox = u * (pw / 2 + m),
+          oz = v * (pd / 2 + m);
+        out.push([x - sa * ox + ca * oz, z + ca * ox + sa * oz]);
+      }
+    return out;
+  };
+  const plotFits = (x, z, pw, pd, a) => {
+    /* the street field is measured per metre cell: the check samples half a metre inside the plot */
+    for (const [px, pz] of plotPts(x, z, pw, pd, a, -0.6)) {
+      const q = mapgenCellAt(G, px, pz);
+      if (G.F[q] & 1 || (G.near[q] >= 0 && G.dist[q] - G.roadPts[G.near[q]].r < 0.4)) return false;
+    }
+    for (const [px, pz] of plotPts(x, z, pw, pd, a, 1)) {
+      if (!okAt(px, pz, 1.5)) return false;
+      for (const [ox, oz] of [
+        [2.5, 0],
+        [-2.5, 0],
+        [0, 2.5],
+        [0, -2.5],
+      ])
+        if (G.F[mapgenCellAt(G, px + ox, pz + oz)] & 4) return false;
+    }
+    const r = Math.hypot(pw, pd) / 2;
+    if (plots.some(L => Math.hypot(L.x - x, L.z - z) < r + Math.hypot(L.w, L.d) / 2 + 0.6)) return false;
+    const hs = plotPts(x, z, pw, pd, a, 0).map(p => cornerAt(p[0], p[1]));
+    return Math.max(...hs) - Math.min(...hs) <= 2.4;
+  };
+  /* a plot facing its street: `front` the street's edge it opens onto (its pad lies at the street's level there) */
+  const addPlot = (k, x, z, pw, pd, a, front, where) => {
+    if (!plotFits(x, z, pw, pd, a)) return false;
+    plots.push({ k, x, z, w: pw, d: pd, a, y: cornerAt(front[0], front[1]), at: where });
+    return true;
+  };
+  /* along a street, one side or both: a plot every few metres, its front on the street */
+  const plotsAlong = (st, width, sides, k, size, count, where) => {
+    let placed = 0;
+    if (!st) return 0;
+    for (let i = 4; i < st.length - 4 && placed < count; i += Math.round((size[0] + rT.range(2, 4)) * 2)) {
+      const p = st[i],
+        dx = st[i + 2][0] - st[i - 2][0],
+        dz = st[i + 2][1] - st[i - 2][1],
+        L = Math.hypot(dx, dz) || 1;
+      for (const sd of sides) {
+        const pw0 = rT.range(size[0], size[1]),
+          pd0 = rT.range(size[2], size[3]),
+          nx = (-dz / L) * sd,
+          nz = (dx / L) * sd,
+          /* the angle its front faces: back toward the street */
+          a = Math.atan2(-nz, -nx);
+        /* as asked, else a size smaller (a cottage where a house won't go) */
+        for (const f of [1, 0.8]) {
+          const pw = pw0 * f,
+            pd = pd0 * f,
+            off = width / 2 + 1.2 + pd / 2;
+          if (
+            addPlot(
+              k,
+              p[0] + nx * off,
+              p[1] + nz * off,
+              pw,
+              pd,
+              a,
+              [p[0] + nx * (width / 2), p[1] + nz * (width / 2)],
+              where
+            )
+          ) {
+            placed++;
+            break;
+          }
+        }
+        if (placed >= count) break;
+      }
+    }
+    return placed;
+  };
+  const plotRing = (cx, cz, r0, k, size, tries, where) => {
+    for (let n = 0; n < tries; n++) {
+      const f = (n / tries) * Math.PI * 2 + rT.range(-0.1, 0.1),
+        pd = size[1],
+        rr = r0 + pd / 2 + 1.2,
+        x = cx + Math.cos(f) * rr,
+        z = cz + Math.sin(f) * rr;
+      if (
+        addPlot(k, x, z, size[0], pd, Math.atan2(cz - z, cx - x), [cx + Math.cos(f) * r0, cz + Math.sin(f) * r0], where)
+      )
+        return true;
+    }
+    return false;
+  };
+  const townSt = name => (townStreets.find(r => r.name === name) || { pts: null }).pts;
+  if (square) {
+    plots.push({
+      k: 'well',
+      x: square[0],
+      z: square[1],
+      w: 3,
+      d: 3,
+      a: 0,
+      y: cornerAt(square[0], square[1]),
+      at: 'town',
+    });
+    if (
+      !plotRing(square[0], square[1], square[2], 'lab', [14, 10], 24, 'town') &&
+      !plotRing(square[0], square[1], square[2], 'lab', [12, 9], 24, 'town') &&
+      !townStreets.some(r => plotsAlong(r.pts, r.width, [1, -1], 'lab', [12, 14, 9, 10], 1, 'town'))
+    )
+      notes.push('no room for the lab in the town');
+    const quay = townSt('town quay');
+    if (!(
+      plotsAlong(quay, 3.4, [-side, side], 'mast', [12, 12, 12, 12], 1, 'town') ||
+      plotsAlong(townSt('town east bank'), 3, [1, -1], 'mast', [12, 12, 12, 12], 1, 'town') ||
+      townStreets.some(r => plotsAlong(r.pts, r.width, [1, -1], 'mast', [10, 12, 10, 12], 1, 'town'))
+    ))
+      notes.push('no room for the airship station in the town');
+    plotsAlong(townSt('town cross street'), 3.4, [1, -1], 'shop', [8, 8, 7, 7], 1, 'town');
+    if (!plotsAlong(townSt('town main street'), 3.6, [sideBank], 'home', [8, 8, 7, 7], 1, 'town'))
+      townStreets.some(r => plotsAlong(r.pts, r.width, [1, -1], 'home', [7, 8, 6, 7], 1, 'town'));
+    let left = D.town.houses;
+    for (const [name, wd, sides] of [
+      ['town main street', 3.6, [sideBank]],
+      ['town cross street', 3.4, [1, -1]],
+      ['town quay', 3.4, [1, -1]],
+      ['town east bank', 3, [-sideBank]],
+      ...[...Array(D.town.lanes).keys()].map(k => [`town lane ${k + 1}`, 2.6, [1, -1]]),
+    ])
+      left -= plotsAlong(
+        townSt(/** @type {string} */ (name)),
+        /** @type {number} */ (wd),
+        /** @type {number[]} */ (sides),
+        'house',
+        [6, 9, 5, 7],
+        Math.ceil(left / 2),
+        'town'
+      );
+    if (left > 0)
+      for (const r of townStreets) left -= plotsAlong(r.pts, r.width, [1, -1], 'house', [6, 8, 5, 6], left, 'town');
+    /* still short: cottages along any road within 60 m of the square (the coast road through the town included) */
+    if (left > 0)
+      for (const r of roads) {
+        if (left <= 0) break;
+        if (r.name === 'hamlet lane') continue;
+        const near = r.pts.filter(p => Math.hypot(p[0] - square[0], p[1] - square[1]) < 60);
+        if (near.length > 10) left -= plotsAlong(near, r.width, [1, -1], 'house', [5, 7, 4.5, 5.5], left, 'town');
+      }
+  }
+  if (hamletAt) {
+    let n = 0;
+    for (let k = 0; k < D.hamlet.houses * 3 && n < D.hamlet.houses; k++) {
+      const f = (k / (D.hamlet.houses * 3)) * Math.PI * 2,
+        t = hamletAt.a * ISLAND_RAD,
+        ex = Math.cos(f) * (hamletAt.rx + 1.3),
+        ez = Math.sin(f) * (hamletAt.rz + 1.3),
+        fx = hamletAt.c[0] + ex * Math.cos(t) - ez * Math.sin(t),
+        fz = hamletAt.c[1] + ex * Math.sin(t) + ez * Math.cos(t),
+        dx = fx - hamletAt.c[0],
+        dz = fz - hamletAt.c[1],
+        L = Math.hypot(dx, dz) || 1,
+        pd = rT.range(5, 6.5);
+      if (
+        addPlot(
+          'house',
+          fx + (dx / L) * (pd / 2 + 1.2),
+          fz + (dz / L) * (pd / 2 + 1.2),
+          rT.range(6, 8),
+          pd,
+          Math.atan2(-dz, -dx),
+          [fx, fz],
+          'hamlet'
+        )
+      )
+        n++;
+    }
+  }
+  /* the farmhouse by the barn */
+  const barnZ = zones.find(Z => Z.k === 'barn');
+  if (barnZ) {
+    const bc = barnZ.poly.reduce((m, p) => [m[0] + p[0] / barnZ.poly.length, m[1] + p[1] / barnZ.poly.length], [0, 0]),
+      br = Math.max(...barnZ.poly.map(p => Math.hypot(p[0] - bc[0], p[1] - bc[1])));
+    if (!plotRing(bc[0], bc[1], br + 2, 'farmhouse', [8, 7], 24, 'farm'))
+      notes.push('no room for the farmhouse by the barn');
+  }
+  /* the pads: level at the street's height under each plot and a metre round it, eased back into the land over 3 m;
+     the yard's ground is grass (the well's, the plaza) */
+  for (const L of plots) {
+    const ca = Math.cos(L.a),
+      sa = Math.sin(L.a),
+      rr = Math.hypot(L.w, L.d) / 2 + 5;
+    for (let j = Math.floor(L.z - rr); j <= Math.ceil(L.z + rr); j++)
+      for (let i = Math.floor(L.x - rr); i <= Math.ceil(L.x + rr); i++) {
+        if (i < 0 || j < 0 || i > w || j > h) continue;
+        /* how far outside the plot's rectangle (0 inside) */
+        const ox = i - L.x,
+          oz = j - L.z,
+          u = Math.abs(-sa * ox + ca * oz) - L.w / 2,
+          v = Math.abs(ca * ox + sa * oz) - L.d / 2,
+          out = Math.hypot(Math.max(0, u), Math.max(0, v));
+        if (out <= 1) G.H[j * W1 + i] = L.y;
+        else if (out <= 4) G.H[j * W1 + i] += (L.y - G.H[j * W1 + i]) * (1 - mapgenSmooth((out - 1) / 3));
+        if (i < w && j < h && out <= 0.6 && !(G.F[j * w + i] & (1 | 4))) yard[j * w + i] = L.k === 'well' ? 0 : 1;
+      }
+    for (const [px, pz] of plotPts(L.x, L.z, L.w, L.d, L.a, 1.5)) {
+      const q = mapgenBetween(Math.floor(pz * 2), 0, h * 2 - 1) * W2 + mapgenBetween(Math.floor(px * 2), 0, W2 - 1);
+      G.S[q] = 0;
+      G.M[q] = 0;
     }
   }
 
@@ -1276,11 +1759,24 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
       }
       G.T[q] = ch;
     }
+  /* a plot's yard is grass */
+  for (let q = 0; q < w * h; q++) if (yard[q] && !(G.F[q] & (1 | 4))) G.T[q] = 'g';
   /* the rock at a shelf's top (mapgen's), after the trail is in */
   if (shelves) mapgenRockEdges(G);
 
-  /* ---------- the kept zones: their ground exactly as it was ---------- */
+  /* ---------- water sits under its banks (mapgen's; the stream follows the land, the sea is level) ---------- */
+  mapgenLowerWater(G);
+
+  /* ---------- the kept zones: their ground exactly as it was, and their plots (after the water is lowered, which would
+     lower theirs again) ---------- */
   if (kept.length && prev) {
+    /* a kept zone's bridges are its own (a new one over its ground goes) */
+    const inKept = B => kept.some(Z => islandPointIn(Z.poly, (B.a[0] + B.b[0]) / 2, (B.a[1] + B.b[1]) / 2));
+    for (let k = bridges.length - 1; k >= 0; k--) if (inKept(bridges[k])) bridges.splice(k, 1);
+    for (const B of Array.isArray(prev.bridges) ? prev.bridges : []) if (inKept(B)) bridges.push(B);
+    for (const L of Array.isArray(prev.plots) ? prev.plots : [])
+      if (kept.some(Z => islandPointIn(Z.poly, L.x, L.z)))
+        plots.push({ ...L, a: L.a * ISLAND_RAD, y: L.y ?? 0, at: 'kept' });
     const PG = islandDecodeGround(prev);
     for (const Z of kept) {
       for (let j = 0; j < Math.min(h, PG.h); j++)
@@ -1308,9 +1804,6 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
         }
     }
   }
-
-  /* ---------- water sits under its banks (mapgen's; the stream follows the land, the sea is level) ---------- */
-  mapgenLowerWater(G);
 
   /* ---------- the zones ---------- */
   const ring = (rOf, n, a0 = 0, a1 = 360) => {
@@ -1363,6 +1856,52 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
       lock: false,
     });
   }
+  /* the town: the outline round its streets and plots (the hull, 3 m out), locked so the hand-placed town survives a
+     new run; the hamlet round its green */
+  const townPts = [
+    ...townStreets.flatMap(r => r.pts.filter((_, i) => i % 4 === 0)),
+    ...roads.filter(r => r.name.startsWith('town to the coast road')).flatMap(r => r.pts.filter((_, i) => i % 4 === 0)),
+    ...plots.filter(L => L.at === 'town').flatMap(L => plotPts(L.x, L.z, L.w, L.d, L.a, 0)),
+  ];
+  if (townPts.length > 3) {
+    const P2 = townPts.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]),
+      cr = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]),
+      lo = [],
+      hi = [];
+    for (const p of P2) {
+      while (lo.length >= 2 && cr(lo[lo.length - 2], lo[lo.length - 1], p) <= 0) lo.pop();
+      lo.push(p);
+    }
+    for (const p of P2.reverse()) {
+      while (hi.length >= 2 && cr(hi[hi.length - 2], hi[hi.length - 1], p) <= 0) hi.pop();
+      hi.push(p);
+    }
+    const hull = [...lo.slice(0, -1), ...hi.slice(0, -1)],
+      m = hull.reduce((a, p) => [a[0] + p[0] / hull.length, a[1] + p[1] / hull.length], [0, 0]);
+    zones.push({
+      k: 'town',
+      poly: hull.map(p => {
+        const d = Math.hypot(p[0] - m[0], p[1] - m[1]) || 1;
+        return [p[0] + ((p[0] - m[0]) / d) * 3, p[1] + ((p[1] - m[1]) / d) * 3];
+      }),
+      lock: true,
+    });
+  }
+  if (hamletAt) {
+    const H0 = hamletAt,
+      t = H0.a * ISLAND_RAD;
+    zones.push({
+      k: 'hamlet',
+      poly: [...Array(20).keys()].map(k => {
+        const f = (k / 20) * Math.PI * 2,
+          ex = Math.cos(f) * (H0.rx + 10),
+          ez = Math.sin(f) * (H0.rz + 10);
+        return [H0.c[0] + ex * Math.cos(t) - ez * Math.sin(t), H0.c[1] + ex * Math.sin(t) + ez * Math.cos(t)];
+      }),
+      lock: true,
+    });
+  }
+  zones.push(...keptPlaces);
   /* a zone of the scene's: on it, never crossing itself (islandProblems checks the rest) */
   for (const Z of zones) Z.poly = Z.poly.map(p => [mapgenBetween(p[0], 0, w), mapgenBetween(p[1], 0, h)]);
 
@@ -1371,9 +1910,12 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
   for (let j = h - 1; j >= 0; j--) tiles.push(G.T.slice(j * w, (j + 1) * w).join(''));
   const heights = [];
   for (let j = h; j >= 0; j--) heights.push(Array.from(G.H.subarray(j * W1, (j + 1) * W1), v => mapgenRound2(v) || 0));
-  const town = zones.find(Z => Z.k === 'town') || zones.find(Z => ISLAND_GEN_BUILT.includes(Z.k));
+  const town = zones.find(Z => Z.k === 'town') || zones.find(Z => ISLAND_GEN_BUILT.includes(Z.k)),
+    well = plots.find(L => L.k === 'well');
   let hub = [c[0], c[1] - Rf - 8];
-  if (town) {
+  /* you arrive in the square, beside the well */
+  if (well) hub = [well.x + 3, well.z];
+  else if (town) {
     hub = [0, 0];
     for (const p of town.poly) hub = [hub[0] + p[0] / town.poly.length, hub[1] + p[1] / town.poly.length];
   }
@@ -1411,6 +1953,19 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
     tiles,
     heights,
     props: [],
+    ...(plots.length
+      ? {
+          plots: plots.map(L => ({
+            k: L.k,
+            x: mapgenRound2(L.x),
+            z: mapgenRound2(L.z),
+            w: mapgenRound2(L.w),
+            d: mapgenRound2(L.d),
+            a: Math.round(islandAngle(L.a / ISLAND_RAD) * 10) / 10,
+            y: mapgenRound2(L.y),
+          })),
+        }
+      : {}),
   };
   if (G.streams.length) sc.streams = G.streams;
   if (bridges.length) sc.bridges = bridges;

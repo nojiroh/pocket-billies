@@ -1,4 +1,5 @@
-// Island track IS-2: the island generator (game/js/logic/island-gen.js) on the game's own scenery. The same seed makes
+// Island track IS-2: the island generator (game/js/logic/island-gen.js) on the game's own scenery, its town on the
+// river (the owner, after the sketches) included: plots on level pads, every plot's front walked to. The same seed makes
 // the same island; the coast is closed and passes the contract (logic/island.js, the map schema); nothing but sea lies
 // past it; the coast path is one loop you can walk along; every zone, the summit and the dock are reached on foot from
 // the town, with nowhere you can't walk back from; the town, barn and pasture are flat; a second run keeps the locked
@@ -89,15 +90,63 @@ function reachProblems(sc) {
   for (const S of sc.spots || [])
     if (['summit', 'dock'].includes(S.kind) && !mapgenReached(R, S.x, S.z))
       out.push(`the ${S.kind} can't be walked to from the town`);
+  for (const L of sc.plots || []) {
+    const a = (L.a * Math.PI) / 180;
+    if (L.k !== 'well' && !mapgenReached(R, L.x + Math.cos(a) * (L.d / 2 + 0.9), L.z + Math.sin(a) * (L.d / 2 + 0.9)))
+      out.push(`the ${L.k} plot's front at (${L.x}, ${L.z}) can't be walked to from the town`);
+  }
   const T = mapgenTraps(sc, sc.scenery);
   if (T.n) out.push(`${T.n} cells you can walk to but not back from, first (${T.at[0]})`);
   return out;
 }
-/** a built zone (town, barn, pasture) that isn't flat: corners within 0.1 m, no steps, no water or path in it */
+/** a plot whose pad isn't level (corners under it within 0.1 m) or has steps in it; a town that is one flat box */
+function padProblems(sc) {
+  const out = [],
+    S = steps(sc);
+  for (const L of sc.plots || []) {
+    const a = (L.a * Math.PI) / 180,
+      ca = Math.cos(a),
+      sa = Math.sin(a),
+      inside = (x, z) => {
+        const ox = x - L.x,
+          oz = z - L.z;
+        return Math.abs(-sa * ox + ca * oz) <= L.w / 2 && Math.abs(ca * ox + sa * oz) <= L.d / 2;
+      };
+    let lo = 1e9,
+      hi = -1e9,
+      raised = 0;
+    for (let j = Math.floor(L.z - L.w - L.d); j <= Math.ceil(L.z + L.w + L.d); j++)
+      for (let i = Math.floor(L.x - L.w - L.d); i <= Math.ceil(L.x + L.w + L.d); i++) {
+        if (i < 0 || j < 0 || i > sc.w || j > sc.h || !inside(i, j)) continue;
+        const y = sc.heights[sc.h - j][i];
+        lo = Math.min(lo, y);
+        hi = Math.max(hi, y);
+        if (S && i < sc.w && j < sc.h && inside(i + 0.5, j + 0.5))
+          for (const q of [0, 1, sc.w * 2, sc.w * 2 + 1]) if (S[j * 2 * sc.w * 2 + i * 2 + q]) raised++;
+      }
+    if (hi - lo > 0.1) out.push(`the ${L.k} plot at (${L.x}, ${L.z}) rises ${(hi - lo).toFixed(2)} m`);
+    if (raised) out.push(`the ${L.k} plot at (${L.x}, ${L.z}) has ${raised} raised step cells`);
+  }
+  const T = sc.zones.find(Z => Z.k === 'town');
+  if (T) {
+    let lo = 1e9,
+      hi = -1e9;
+    for (let j = 0; j <= sc.h; j++)
+      for (let i = 0; i <= sc.w; i++)
+        if (islandPointIn(T.poly, i, j) && 'wd'.indexOf(tileAt(sc, Math.min(i, sc.w - 1), Math.min(j, sc.h - 1))) < 0) {
+          const y = sc.heights[sc.h - j][i];
+          lo = Math.min(lo, y);
+          hi = Math.max(hi, y);
+        }
+    if (hi - lo < 1) out.push(`the town is one flat box (it rises ${(hi - lo).toFixed(2)} m)`);
+  }
+  return out;
+}
+/** the barn's or the pasture's zone that isn't flat: corners within 0.1 m, no steps, no water or path in it */
 function flatProblems(sc) {
   const out = [],
     S = steps(sc);
-  for (const Z of sc.zones.filter(Z => ISLAND_GEN_BUILT.includes(Z.k))) {
+  for (const Z of sc.zones.filter(Z => ['barn', 'pasture'].includes(Z.k))) {
     let lo = 1e9,
       hi = -1e9,
       raised = 0,
@@ -139,7 +188,11 @@ test('the same seed makes the same island; another seed another; the dials are f
     d.zones.map(Z => [Z.k, Z.a]),
     [['town', 90]]
   );
-  assert.equal(ISLAND_GEN_DEFAULTS.zones.length, 3);
+  assert.deepEqual(
+    ISLAND_GEN_DEFAULTS.zones.map(Z => Z.k),
+    ['barn', 'pasture']
+  );
+  assert.equal(islandGenDials({ town: { houses: 99 } }).town.houses, 40);
 });
 
 test('the island passes the contract and the schema, a closed coast with only sea past it', () => {
@@ -155,19 +208,23 @@ test('the island passes the contract and the schema, a closed coast with only se
     );
     assert.ok(sc.island.coast.length >= 100, 'the coast has its points');
     assert.ok(
-      isle(seed).paths.some(p => p.name === 'town to the mountain'),
-      `${seed}: a path from the town to the mountain's foot (the trail starts there)`
+      isle(seed).paths.some(p => p.name === 'town main street'),
+      `${seed}: the town's main street (the trail starts at its top)`
     );
-    for (const k of ['town', 'barn', 'pasture', 'mountain', 'forest', 'cove', 'beach'])
+    const kinds = new Set((sc.plots || []).map(L => L.k));
+    for (const k of ['well', 'lab', 'mast', 'shop', 'home', 'farmhouse', 'house'])
+      assert.ok(kinds.has(k), `${seed}: a ${k} plot`);
+    assert.ok(sc.plots.filter(L => L.k === 'house').length >= 8, `${seed}: houses in the town and the hamlet`);
+    for (const k of ['town', 'barn', 'pasture', 'mountain', 'forest', 'cove', 'beach', 'hamlet'])
       assert.ok(
         sc.zones.some(Z => Z.k === k),
         `a ${k} zone`
       );
     assert.ok(
-      sc.zones.filter(Z => ISLAND_GEN_BUILT.includes(Z.k)).every(Z => Z.lock),
-      'the built zones are locked'
+      sc.zones.filter(Z => [...ISLAND_GEN_BUILT, 'hamlet'].includes(Z.k)).every(Z => Z.lock),
+      'the built zones, the town and the hamlet are locked'
     );
-    assert.deepEqual((sc.spots || []).map(S => S.kind).sort(), ['dock', 'fall', 'pond', 'summit']);
+    assert.deepEqual((sc.spots || []).map(S => S.kind).sort(), ['dock', 'fall', 'pond', 'summit', 'trailhead']);
   }
   /* planted: a cell of grass out at sea */
   const bad = copy(isle().scene);
@@ -203,16 +260,37 @@ test('every zone, the summit and the dock are walked to from the town, with nowh
     }
   bad.bridges = [];
   assert.match(reachProblems(bad).join(), /the summit can't be walked to/);
+  /* planted: deep water in front of the lab */
+  const bad2 = withScenery(isle().scene),
+    lab = bad2.plots.find(L => L.k === 'lab'),
+    la = (lab.a * Math.PI) / 180,
+    fx = lab.x + Math.cos(la) * (lab.d / 2 + 0.9),
+    fz = lab.z + Math.sin(la) * (lab.d / 2 + 0.9);
+  for (let j = Math.floor(fz) - 2; j <= Math.floor(fz) + 2; j++)
+    for (let i = Math.floor(fx) - 2; i <= Math.floor(fx) + 2; i++) setTile(bad2, i, j, 'd');
+  assert.match(reachProblems(bad2).join(), /the lab plot's front .* can't be walked to/);
 });
 
-test('the town, barn and pasture are flat and empty, ready to build on', () => {
-  assert.deepEqual(flatProblems(isle().scene), []);
-  /* planted: a corner in the town raised half a metre */
+test('the barn and pasture are flat; every plot stands on a level pad; the town keeps its slopes', () => {
+  for (const seed of ['copperleaf', 'another']) {
+    assert.deepEqual(flatProblems(isle(seed).scene), [], seed);
+    assert.deepEqual(padProblems(isle(seed).scene), [], seed);
+  }
+  /* planted: a corner in the barn's zone raised half a metre */
   const bad = copy(isle().scene),
-    T = bad.zones.find(Z => Z.k === 'town'),
-    m = T.poly.reduce((a, p, _, L) => [a[0] + p[0] / L.length, a[1] + p[1] / L.length], [0, 0]).map(Math.round);
+    B = bad.zones.find(Z => Z.k === 'barn'),
+    m = B.poly.reduce((a, p, _, L) => [a[0] + p[0] / L.length, a[1] + p[1] / L.length], [0, 0]).map(Math.round);
   bad.heights[bad.h - m[1]][m[0]] += 0.5;
-  assert.match(flatProblems(bad).join(), /the town zone rises 0\.5/);
+  assert.match(flatProblems(bad).join(), /the barn zone rises 0\.5/);
+  /* planted: a corner under the lab raised, and the whole town levelled */
+  const bad2 = copy(isle().scene),
+    lab = bad2.plots.find(L => L.k === 'lab');
+  bad2.heights[bad2.h - Math.round(lab.z)][Math.round(lab.x)] += 0.4;
+  assert.match(padProblems(bad2).join(), /the lab plot .* rises 0\.4/);
+  const flat = copy(isle().scene);
+  flat.heights = flat.heights.map(r => r.map(() => 1));
+  flat.plots = [];
+  assert.match(padProblems(flat).join(), /the town is one flat box/);
 });
 
 test("a second run keeps the locked zones' ground exactly; a locked ground is refused", () => {
@@ -249,6 +327,10 @@ test("a second run keeps the locked zones' ground exactly; a locked ground is re
       }
   }
   assert.deepEqual(islandProblems(B), []);
+  /* the locked zones' plots come through as they were */
+  const inLocked = L => A.zones.some(Z => Z.lock && islandPointIn(Z.poly, L.x, L.z)),
+    key = L => JSON.stringify([L.k, L.x, L.z, L.w, L.d, L.a]);
+  assert.deepEqual(B.plots.filter(inLocked).map(key).sort(), A.plots.filter(inLocked).map(key).sort());
   /* locked: never made again */
   const L = copy(A);
   L.islandGen = { ...L.islandGen, lock: true, hash: 'g00000000' };
@@ -257,15 +339,15 @@ test("a second run keeps the locked zones' ground exactly; a locked ground is re
 
 test('zones placed on top of each other are turned apart; organic 0 keeps plain rectangles', () => {
   const dials = structuredClone(ISLAND_GEN_DEFAULTS);
-  dials.zones[1] = { ...dials.zones[0], k: 'barn', w: 10, h: 10 };
+  dials.zones[1] = { ...dials.zones[0], k: 'pasture', w: 10, h: 10 };
   const { scene, notes } = islandGenerate(dials, 'x', ctx),
-    town = scene.zones.find(Z => Z.k === 'town'),
-    barn = scene.zones.find(Z => Z.k === 'barn');
-  assert.ok(!barn.poly.some(p => islandPointIn(town.poly, p[0], p[1])), 'the barn was turned off the town');
+    barn = scene.zones.find(Z => Z.k === 'barn'),
+    pasture = scene.zones.find(Z => Z.k === 'pasture');
+  assert.ok(!pasture.poly.some(p => islandPointIn(barn.poly, p[0], p[1])), 'the pasture was turned off the barn');
   assert.ok(!notes.some(n => /overlap/.test(n)), notes.join());
   /* organic 0: every built zone the dial's rectangle */
   const plain = islandGenerate({ organic: 0 }, 'x', ctx).scene;
-  for (const Z of plain.zones.filter(Z => ISLAND_GEN_BUILT.includes(Z.k))) assert.equal(Z.poly.length, 4, Z.k);
+  for (const Z of plain.zones.filter(Z => ['barn', 'pasture'].includes(Z.k))) assert.equal(Z.poly.length, 4, Z.k);
 });
 
 test("the game's island is the generator's own output for its stored dials and seed", () => {
@@ -274,7 +356,20 @@ test("the game's island is the generator's own output for its stored dials and s
   if (sc.islandGen.lock || sc.islandGen.v !== ISLAND_GEN_VERSION) return;
   /* as the tool makes it again: its own locked zones kept */
   const { scene } = islandGenerate(sc.islandGen.dials, sc.islandGen.seed, ctx, sc);
-  for (const k of ['w', 'h', 'tiles', 'heights', 'steps', 'stepm', 'island', 'zones', 'spots', 'bridges', 'streams'])
+  for (const k of [
+    'w',
+    'h',
+    'tiles',
+    'heights',
+    'steps',
+    'stepm',
+    'island',
+    'zones',
+    'spots',
+    'bridges',
+    'streams',
+    'plots',
+  ])
     assert.deepEqual(sc[k], scene[k], `${k} (run node tools/build-island.mjs to remake it)`);
   assert.deepEqual(sc.cam.orbit, scene.cam.orbit);
 });
