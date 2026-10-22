@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Phase 16: every Billie built from the part kits.
 
-Reads each form's recipe from tools/art-source/part-kit/builds.json (which part on which bone, at what size and
+Reads each form's recipe from game/data/kitBuilds.json (which part on which bone, at what size and
 colour, plus extras such as horns, ears, a crest or a shell) and the sliced parts in game/art/next/parts (cut by the
 Studio's Art workbench, sockets in game/data/partKits.json). For every form it writes:
 
@@ -28,7 +28,7 @@ import subprocess
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
-BUILDS = 'tools/art-source/part-kit/builds.json'
+BUILDS = 'game/data/kitBuilds.json'
 OUT = 'game/art/next/billionaires'
 PARTS = 'game/art/next/parts'
 RIGS = 'game/art/next/rigs-next.js'

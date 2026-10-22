@@ -1,7 +1,7 @@
 // @ts-check
 'use strict';
 /* ================= KIT ASSEMBLE (Studio plan Phase 5, T5.1) =================
-   A kit Billie baked from its recipe (tools/art-source/part-kit/builds.json: which kit part on which bone, at what
+   A kit Billie baked from its recipe (game/data/kitBuilds.json: which kit part on which bone, at what
    size and colour, plus extras such as horns, ears, a crest or a shell), as tools/build-kit-billies.py builds it,
    number for number: the pieces of each view (legs set the torso's height, arms and extras mirrored by the kinds'
    sides in partKits.json, draw order from partKits' z, a tail turned to its aim, the head on the neck with its blink),
