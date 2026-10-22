@@ -1670,8 +1670,9 @@ function ensureHeightGrid(sc) {
     );
   return sc.heights;
 }
-/* the height brush at m ({x, z} in metres); o: the brush's size, strength, mode (raise, lower, flatten, smooth) and
-   the height flatten goes to (Walk scenes pass its own settings; the Hub island editor passes its own) */
+/* the height brush at m ({x, z} in metres); o: the brush's size, strength, mode (raise, lower, flatten, smooth), the
+   height flatten goes to and the lowest and highest it leaves (hmin, hmax: -8 and 12 m unless given). Walk scenes
+   passes its own settings; the Hub island editor passes its own, with room for the island's mountain */
 export function sculptHeights(sc, m, o = mapEditor) {
   const H = ensureHeightGrid(sc),
     R = Math.max(1, o.brush * 0.9),
@@ -1705,7 +1706,7 @@ export function sculptHeights(sc, m, o = mapEditor) {
         }
         if (c) n = v + (s / c - v) * Math.min(1, w * k * 4);
       }
-      H[r][i] = Math.round(clamp(n, -8, 12) * 100) / 100;
+      H[r][i] = Math.round(clamp(n, o.hmin ?? -8, o.hmax ?? 12) * 100) / 100;
     }
   sc._hv = (sc._hv || 0) + 1;
   /* alpha 0.2: the game's smoothed land (heightGrid) is made again */ walkView.nav = null;

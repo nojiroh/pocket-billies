@@ -103,6 +103,10 @@ const hubEd = {
   hmode: 'raise',
   hstr: 0.5,
   hflat: 0,
+  /* the height brush's floor and ceiling: room for the island's mountain (the track's peak is ~22 m; Walk scenes keeps
+     its own -8 to 12 m) */
+  hmin: -8,
+  hmax: 40,
   zoom: 0,
   poly: 'coast',
   addKind: '',
@@ -288,6 +292,8 @@ function mountHubView() {
     hubEd.walk = false;
     hubEd.spin = false;
   }
+  /* a walk round the coast stops when the section is left: back here, the button is off again */
+  if (hubEd.walk && !walkView.pl.route) hubEd.walk = false;
   walkView.pl.t = -1;
   mountWalkView(cv, id, {
     state: () => ({ mode: 'roam', roam: true, pos: mapHub(hubMap() || walkView.sc), who: 'boy', enc: [], npcs: [] }),
