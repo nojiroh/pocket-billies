@@ -134,7 +134,7 @@ async function checkGithubToken(token) {
   githubMode.login = me.login;
   return me;
 }
-function githubLoginHTML(err) {
+function githubLoginHTML(err, cancel = false) {
   /* SECURITY.md option A (RL-1): a fine-grained token for this one repository, so a stolen one can't touch others */
   const tok = `https://github.com/settings/personal-access-tokens/new?name=${encodeURIComponent('Pocket Billies Studio')}&expires_in=90&contents=write&pull_requests=write`;
   return `<div class="gh-login"><div class="gh-card"><img src="../game/art/coins/penny_32.png" width="40" height="40" alt=""><h2>Pocket Billies Studio</h2>
@@ -144,10 +144,12 @@ function githubLoginHTML(err) {
  <li>Click <b>Generate token</b>, copy it (it starts with <code>github_pat_</code>) and paste it here.</li></ol>
  <label class="fld"><span>GitHub token</span><input type="password" id="ghTok" autocomplete="off" placeholder="github_pat_…"></label>
  <label class="fld chk"><input type="checkbox" id="ghKeep"><span>Remember me on this computer</span></label>
- ${err ? `<p class="gh-err">${escapeHtml(err)}</p>` : ''}<button class="btn primary" id="ghGo">Sign in</button>
+ ${err ? `<p class="gh-err">${escapeHtml(err)}</p>` : ''}${cancel ? '<button class="btn" id="ghCancel">Cancel</button> ' : ''}<button class="btn primary" id="ghGo">Sign in</button>
  <p class="help">The token is only sent to GitHub. Without “Remember me” it is forgotten when this tab closes; with it, it stays in this browser. To sign out, use the button at the top; to cut it off for good, delete it on GitHub (Settings → Developer settings → Tokens).</p></div></div>`;
 }
-function githubLogin(err) {
+/* T0.3: with `cancel` (a proposal hit an expired sign-in) the card opens over the Studio, whose changes stay in
+   memory, and has a Cancel; resolves true once signed in, false when cancelled */
+function githubLogin(err, cancel = false) {
   return new Promise(res => {
     let w = $('#ghLogin');
     if (!w) {
@@ -155,7 +157,8 @@ function githubLogin(err) {
       w.id = 'ghLogin';
       document.body.appendChild(w);
     }
-    w.innerHTML = githubLoginHTML(err);
+    const before = githubMode.token;
+    w.innerHTML = githubLoginHTML(err, cancel);
     const go = async () => {
       const t = $('#ghTok').value.trim();
       if (!t) return;
@@ -164,21 +167,30 @@ function githubLogin(err) {
       try {
         await checkGithubToken(t);
         try {
-          if ($('#ghKeep').checked) localStorage.setItem(GITHUB_TOKEN_KEY, t);
-          else sessionStorage.setItem(GITHUB_TOKEN_KEY, t);
+          /* the new token replaces an expired one kept in the other store, which would be read first next time */
+          const [keep, drop] = $('#ghKeep').checked ? [localStorage, sessionStorage] : [sessionStorage, localStorage];
+          keep.setItem(GITHUB_TOKEN_KEY, t);
+          drop.removeItem(GITHUB_TOKEN_KEY);
         } catch (e) {}
         w.remove();
-        res();
+        res(true);
       } catch (e) {
         githubMode.token = '';
         w.innerHTML = githubLoginHTML(
-          e.status === 401 ? 'GitHub didn’t accept that token. Copy it again, all of it.' : e.message
+          e.status === 401 ? 'GitHub didn’t accept that token. Copy it again, all of it.' : e.message,
+          cancel
         );
         bind();
       }
     };
     const bind = () => {
       $('#ghGo').onclick = go;
+      if (cancel)
+        $('#ghCancel').onclick = () => {
+          githubMode.token = before;
+          w.remove();
+          res(false);
+        };
       $('#ghTok').onkeydown = e => {
         if (e.key === 'Enter') go();
       };
@@ -476,19 +488,32 @@ if (githubMode.on) {
     const staged = stageChanges();
     if (publishEmpty(staged)) return toast('Nothing to send: everything is as it is in the game.');
     let pr = null;
-    try {
-      githubMode.batch = [];
-      await writeStaged(staged);
-      const files = githubMode.batch;
-      githubMode.batch = null;
-      btn.textContent = 'Sending…';
-      pr = await proposeOnGithub(what, files);
-    } catch (e) {
-      if (e.cancelled) return toast('Not sent: everything is still unsaved.');
-      return toast(
-        `Couldn’t send the changes: ${e.message}. Nothing was lost: everything is still unsaved, so Propose again.`,
-        'err'
-      );
+    for (let signedIn = false; ;) {
+      try {
+        githubMode.batch = [];
+        await writeStaged(staged);
+        const files = githubMode.batch;
+        githubMode.batch = null;
+        btn.textContent = 'Sending…';
+        pr = await proposeOnGithub(what, files);
+        break;
+      } catch (e) {
+        if (e.cancelled) return toast('Not sent: everything is still unsaved.');
+        /* T0.3: an expired or revoked sign-in: sign in again over the Studio and send the same changes, once */
+        if (e.status === 401 && !signedIn) {
+          btn.textContent = 'Signing in…';
+          signedIn = await githubLogin(
+            'Your GitHub sign-in has expired. Sign in again to send your changes: nothing was lost, they are still here.',
+            true
+          );
+          if (signedIn) continue;
+          return toast('Not sent: everything is still unsaved. Propose again once you are signed in.');
+        }
+        return toast(
+          `Couldn’t send the changes: ${e.message}. Nothing was lost: everything is still unsaved, so Propose again.`,
+          'err'
+        );
+      }
     }
     confirmStaged(staged);
     if (pr)

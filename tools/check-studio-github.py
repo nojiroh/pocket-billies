@@ -1011,7 +1011,7 @@ def publish_checks(b, url, errs):
     import base64
     tree = [{'type': 'blob', 'path': str(p.relative_to(ROOT)), 'sha': 'x', 'size': p.stat().st_size}
             for p in (ROOT / 'game' / 'art').rglob('*') if p.is_file()]
-    st = {'fail': {}, 'hold': None, 'held': [], 'log': [], 'head': 'base1', 'reads': [], 'compare': [], 'calls': []}
+    st = {'fail': {}, 'hold': None, 'held': [], 'log': [], 'head': 'base1', 'reads': [], 'compare': [], 'calls': [], 'auth': []}
 
     def api(route):
         u = urlparse(route.request.url)
@@ -1019,6 +1019,7 @@ def publish_checks(b, url, errs):
         if route.request.method != 'GET':
             k = p.rsplit('/', 1)[-1]
             st['calls'].append((route.request.method, p, route.request.post_data or ''))
+            st['auth'].append(route.request.headers.get('authorization', ''))
             if k == st['hold']:
                 st['held'].append(route); return
             st['log'].append((k, route.request.post_data or ''))
@@ -1175,10 +1176,37 @@ def publish_checks(b, url, errs):
         if parents != [['base1']]: errs.append(f'publish: the proposal was not made on the loaded commit: parents {parents}')
         if any(pg.evaluate(pending).values()): errs.append(f'publish: after proposing on a moved main ({answer}), changes still show as pending')
     st['head'] = 'base1'; st['compare'] = []
+    # 5. T0.3: an expired sign-in (401) opens the sign-in card over the Studio; Cancel keeps everything unsaved, a new
+    # token sends the same changes with no reload
+    def expired_case(token):
+        st['log'].clear(); st['calls'].clear(); st['auth'].clear(); st['fail'] = {'blobs': [401]}
+        make_edits('expired-' + (token or 'cancel'))
+        start('publish check: expired sign-in')
+        t1 = time.time()
+        while time.time() - t1 < 20 and not pg.locator('#ghLogin #ghTok').count():
+            a = pg.locator('#dlg button', has_text='Save anyway')
+            if a.count(): a.first.click()
+            time.sleep(0.2)
+        if not pg.locator('#ghLogin #ghTok').count():
+            errs.append('publish: a 401 did not open the sign-in card'); return
+        if token:
+            pg.fill('#ghTok', token); pg.click('#ghGo')
+        else: pg.click('#ghCancel')
+        settle()
+    expired_case('')
+    if any(k == 'pulls' for k, _ in st['log']): errs.append('publish: a cancelled sign-in still opened a pull request')
+    if not all(pg.evaluate(pending).values()): errs.append('publish: a cancelled sign-in dropped pending changes')
+    expired_case('ghp_fresh')
+    if not any(k == 'pulls' for k, _ in st['log']): errs.append('publish: no pull request after signing in again')
+    missing = sorted(want - set(last_tree()))
+    if missing: errs.append(f'publish: after signing in again the proposal left out {missing}')
+    if not st['auth'] or st['auth'][-1] != 'Bearer ghp_fresh': errs.append(f"publish: the retry did not use the new token ({st['auth'][-1:]})")
+    if any(pg.evaluate(pending).values()): errs.append('publish: after signing in again, changes still show as pending')
+    if pg.evaluate("performance.getEntriesByType('navigation').length !== 1"): errs.append('publish: the page reloaded')
     # put the page back (nothing pending) so the context closes cleanly
     pg.evaluate("studioState.artDirty.delete(%s); delete studioState.D.meta.publishCheck; studioState.dirty = studioState.rigsDirty = false" % json.dumps(ART))
     n = sum(1 for e in errs if e.startswith('publish:'))
-    print(f'publish: failures at 5 steps, a proposal that cannot be built, a held send, main moved on ({n} problem(s))', flush=True)
+    print(f'publish: failures at 5 steps, a proposal that cannot be built, a held send, main moved on, an expired sign-in ({n} problem(s))', flush=True)
     ctx.close()
 
 
