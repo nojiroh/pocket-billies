@@ -1901,6 +1901,82 @@ def desktop_steps(b, base, R):
         return f'{made[0]} scenes made in {made[1]} ms ({made[2]} places); {walked:.0f} m over the seam (views {len(views)}, {unready} not ready), day 2, back on day 3; the hub back'
     rl7_run_roads()
 
+    @step('RL-8: a run from the mast — the flight, a battle, a seam, a paid heal, the shop, a mini-boss, the boss, the payout, home', 420)
+    def rl8_run_from_mast():
+        """Copperleaf's mast sheet (tapped as walkPick does) offers "Start a run"; its sheet's "Take off" puts a run on the
+        save with its world and flies to the landing (skipped to the end: day 1, beside the landing's mast); a wild
+        battle won pays and lets saving go on; the north seam walked (cross()) is day 2; "Go there" walks to the first
+        town: the clinic charges $60 a hurt Billie (after a yes), the shop has the day's stock; on to the first
+        mini-boss, which blocks the way north and fights a double battle (won); on to the boss, an Alpha (won): "On to
+        the payout", the payout as won, "Fly home": Copperleaf with Capital, no run. The hub's save is put back after"""
+        if not pg.evaluate("typeof runTakeOff==='function'"): return 'not in this build'
+        pg.evaluate("window.rl8Hub=JSON.parse(JSON.stringify(saveData));uiState.inside=null;uiState.bench=null;uiState.modal=null;uiState.mq=[];renderOverlay();uiState.tab='walk';saveData.team.forEach(m=>{m.hp=maxHp(m);m.status=null});render();0")
+        try:
+            if not until(pg, "walkView.ready&&!!walkView.sc.props.find(p=>p.act==='fly')", 90): raise Exception('Copperleaf’s mast isn’t in the view')
+            pg.evaluate("(p=>walkPick({k:'act',p,act:'fly'}))(walkView.sc.props.find(p=>p.act==='fly'));0")
+            if not until(pg, "!!document.querySelector('#ov [data-a=runstart]')", 20): raise Exception('the mast’s sheet has no “Start a run”')
+            pg.click('#ov [data-a=runstart]')
+            if not until(pg, "uiState.modal&&uiState.modal.title==='Start a run'", 10): raise Exception('no run sheet')
+            pg.click('#ov [data-a=mb][data-i="0"]')
+            if not until(pg, "!!saveData.run&&airshipFlight.on", 30): raise Exception('“Take off” didn’t start a run’s flight')
+            pg.evaluate("flySkip();0")
+            if not until(pg, "!airshipFlight.on&&saveData.run.at.phase==='walk'&&walkView.ready&&walkView.id==='w:'+LOCATIONS[1].mapId+'*'", 90): raise Exception(f'never landed on the landing ({pg.evaluate("saveData.run&&saveData.run.at.phase")}, {pg.evaluate("walkView.id")})')
+            land = pg.evaluate("[saveData.run.seed, saveData.trip.node, saveData.run.clock, !!uiState.roam, runWorld.scenes]")
+            if land[1] != 1 or land[2] != 1: raise Exception(f'landed at node {land[1]} on day {land[2]}')
+            # a wild battle, won
+            pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();startWild(encountersHere()[0]);0")
+            if not until(pg, "!!activeBattle&&saveHeld()", 20): raise Exception('a run battle didn’t hold the save')
+            pg.evaluate("stopTimers();activeBattle.over='win';endBattle();0")
+            if not until(pg, "!activeBattle&&!saveHeld()&&saveData.run.at.phase==='walk'", 30): raise Exception('the battle’s end didn’t let saving go on')
+            # the north seam, walked: day 2
+            pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();0")
+            n1 = pg.evaluate("runWorldNode(runNext(saveData.run.map,0)[0])")
+            cross(pg, n1)
+            if pg.evaluate('saveData.run.clock') != 2: raise Exception(f'walked over the seam: day {pg.evaluate("saveData.run.clock")}, not 2')
+            # the first town: a paid heal, the shop
+            town = pg.evaluate("runWorldNode(saveData.run.map.nodes.findIndex(n=>n.type==='town'))")
+            if not pg.evaluate(f"runJump({town})"): raise Exception('couldn’t walk to the first town')
+            pg.evaluate("render();0")
+            if not until(pg, f"walkView.ready&&walkView.id==='w:'+LOCATIONS[{town}].mapId+'*'", 90): raise Exception('the town’s view never opened')
+            heal = pg.evaluate("""(()=>{uiState.modal=null;uiState.mq=[];saveData.team.forEach(m=>{m.hp=Math.max(1,m.hp-5)});saveData.se=Math.max(saveData.se,500);
+              const c=runHealCost(saveData.team,RULES.run.healCost),se=saveData.se;clinicHeal();return [c.cost,se]})()""")
+            if not until(pg, "uiState.modal&&uiState.modal.title==='The clinic'", 10): raise Exception('the clinic asked nothing')
+            pg.click('#ov [data-a=mb][data-i="0"]')
+            if pg.evaluate("saveData.se") != heal[1] - heal[0] or not pg.evaluate("saveData.team.every(m=>m.hp===maxHp(m))"): raise Exception(f'the clinic: ${heal[1]} - ${heal[0]} gave ${pg.evaluate("saveData.se")}')
+            wares = pg.evaluate(f"openShop(LOCATIONS[{town}].shop);SHOPS[LOCATIONS[{town}].shop].stock.length")
+            pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();0")
+            if wares != len(pg.evaluate('RULES.run.shop.always')) + pg.evaluate('RULES.run.shop.more'): raise Exception(f'the shop has {wares} wares')
+            # the first mini-boss: it blocks, a double battle, won
+            mb = pg.evaluate("runWorldNode(saveData.run.map.nodes.findIndex(n=>n.type==='miniboss'))")
+            pg.evaluate(f"runJump({mb});render();0")
+            foe = pg.evaluate(f"(b=>b&&[b.id,b.name])(blockerAt({mb}))")
+            if not foe: raise Exception('the mini-boss doesn’t block the way north')
+            pg.evaluate(f"saveData.team.forEach(m=>{{m.hp=maxHp(m)}});startTrainer('{foe[0]}',{{talked:true}});0")
+            if not until(pg, "!!activeBattle&&activeBattle.fmt==='double'", 20): raise Exception('the mini-boss’s battle isn’t a double battle')
+            pg.evaluate("stopTimers();activeBattle.over='win';endBattle();0")
+            if not until(pg, f"!activeBattle&&!blockerAt({mb})", 30): raise Exception('beaten, the mini-boss still blocks')
+            # the boss: an Alpha, won, the payout, home
+            boss = pg.evaluate("saveData.run.map.nodes.length")
+            pg.evaluate(f"uiState.modal=null;uiState.mq=[];renderOverlay();runJump({boss});render();0")
+            B = pg.evaluate(f"(T=>T&&T.id)(trainersAt({boss})[0])")
+            if not B: raise Exception('no boss stands on the boss’s place')
+            pg.evaluate(f"saveData.team.forEach(m=>{{m.hp=maxHp(m)}});startTrainer('{B}',{{talked:true}});0")
+            if not until(pg, "!!activeBattle&&activeBattle.fmt==='alpha'&&!!activeBattle.sides[1].team[0].boss", 20): raise Exception('the boss isn’t an Alpha battle')
+            pg.evaluate("stopTimers();activeBattle.over='win';endBattle();0")
+            if not until(pg, "uiState.modal&&uiState.modal.btns&&uiState.modal.btns[0].l==='On to the payout'", 30): raise Exception('no “On to the payout” after the boss')
+            pg.click('#ov [data-a=mb][data-i="0"]')
+            if not until(pg, "uiState.modal&&uiState.modal.cls==='run-payout'&&saveData.run.at.won===1", 20): raise Exception('no payout as won')
+            shot(pg, 'rl8-payout')
+            pg.click('#ov [data-a=mb][data-i="0"]')
+            if not until(pg, "!saveData.run&&LOCATIONS.length===gameData.locations.length&&walkView.ready&&walkView.id==='w:'+mapIdAt(saveData.trip.node)+'*'", 90): raise Exception('Fly home didn’t bring you back to Copperleaf')
+            home = pg.evaluate("[saveData.meta.runs, saveData.meta.wins, saveData.meta.capital, saveData.meta.seals]")
+            if home[0] < 1 or home[1] < 1 or home[2] <= 0: raise Exception(f'home: {home}')
+            if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
+            return f'seed {land[0]}: {land[4]} scenes, landed day 1 by the mast; a battle won; day 2 over the seam; healed for ${heal[0]}; {wares} wares; {foe[1]} beaten (doubles); the boss (an Alpha) beaten; payout; home: {home[2]} Capital, {home[3]} Seal'
+        finally:
+            pg.evaluate("if(activeBattle){stopTimers();setActiveBattle(null);battleStageStop()}airshipFlight.on=false;uiState.modal=null;uiState.mq=[];renderOverlay();setSaveData(window.rl8Hub);render();0")
+    rl8_run_from_mast()
+
     @step('alpha 0.4: Copperleaf — Granny Juniper in her garden, the lab', 240)   # RL-5: the lane down to Marigold Town is parked
     def a04_copperleaf():
         """the new start drawn: Granny Juniper stands by her hives and talks (her first words, then a line), the lab's

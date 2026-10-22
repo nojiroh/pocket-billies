@@ -21,12 +21,14 @@ import {
   TRAINERS,
   gameData,
   locationKind,
+  trainersAt,
   worldExtraMaps,
 } from './game-data.js';
 import { encountersHere, makeBilly, maxHp, spawn } from './logic/rules.js';
 import { runBegin, runRestore } from './logic/run-state.js';
 import { runArrive, runMapStart, runNext, runWorldNode } from './logic/run-map.js';
 import { MAPGEN_VERSION } from './logic/mapgen.js';
+import { runHealCost } from './logic/run-loop.js';
 import { fighter, liveActors, startTrainer, startWild } from './logic/battle-engine.js';
 import { loadAllMaps } from './map-files.js';
 import {
@@ -36,6 +38,7 @@ import {
   resumeSaving,
   save,
   saveData,
+  saveHeld,
   setActiveBattle,
   setSave,
   setSaveData,
@@ -77,13 +80,16 @@ import { SOLID_PROP_SHADERS, solidPropState } from './solid-props.js';
 import { propModelShaders, propModelState } from './prop-models.js';
 import { buddyTap, companionSpecies, worldBillies } from './world-billies.js';
 import { seamlessRoomMap, seamlessWorld } from './seamless-world.js';
-import { pickMove, pickTarget, stopTimers, tapMessage } from './battle.js';
+import { endBattle, pickMove, pickTarget, stopTimers, tapMessage } from './battle.js';
 import { WORLD_BOWL_SHADERS, worldBowl, worldMap, worldMapReset } from './world-bowl.js';
 import { talkBox, talkHide } from './talk.js';
 import { cutscene, cutsceneTeardown } from './cutscene/director.js';
 import { fallOverWorldMap, fallWorldMapCanvas } from './opening-fall.js';
+import { airshipFlight } from './airship.js';
 import { runWorld, runWorldData, runWorldSync } from './run-world.js';
+import { runJump, runTakeOff } from './run.js';
 import { closeModal, modal, renderOverlay, toast } from './overlay.js';
+import { clinicHeal } from './walk-tab.js';
 import { leaveRoom, mapIdAt, walkCross, walkPick, walkState } from './walk-control.js';
 import { render } from './ui.js';
 /* eslint-disable no-func-assign */
@@ -937,6 +943,118 @@ async function runFullTest(mode) {
         },
         8,
         150
+      );
+    /* RL-8: a run from the mast to the payout, on a copy of the save (nothing is written while the test runs): a short
+       run (5 rows) taken off from Copperleaf, the airship's flight to the landing, a wild battle there, "Go there" to
+       the town (a paid heal), to the boss (an Alpha) and its payout, then home: Copperleaf without the run. Then the
+       save as it was */
+    if (typeof runTakeOff === 'function' && !selfTest.stop)
+      await phase(
+        'A run: airship, nodes, payout',
+        'dio',
+        async () => {
+          const was = saveData,
+            s = JSON.parse(JSON.stringify(saveData)),
+            wait = async (f, ms) => {
+              const end = performance.now() + ms * (selfTest.slow || 1);
+              while (performance.now() < end) {
+                if (f()) return true;
+                if (activeBattle && activeBattle.phase === 'playing') tapMessage();
+                await selfTestSleep(100);
+              }
+              return !!f();
+            };
+          try {
+            uiState.bench = null;
+            uiState.inside = null;
+            uiState.goingIn = null;
+            uiState.modal = null;
+            uiState.mq = [];
+            uiState.tab = 'walk';
+            if (s.run) runRestore(s);
+            s.trip = { node: START_NODE, plan: [] };
+            s.team.forEach(m => {
+              m.hp = maxHp(m);
+              m.status = null;
+            });
+            setSaveData(s);
+            render();
+            runTakeOff('SELFTESTRUN8', { rows: 5, minibosses: 1 });
+            if (!saveData.run || !(await wait(() => airshipFlight.on, 5000)))
+              throw new Error('the run didn’t take off');
+            const made = [runWorld.scenes, runWorld.ms],
+              t0 = performance.now();
+            if (!(await wait(() => !airshipFlight.on && saveData.run.at.phase === 'walk', 20000)))
+              throw new Error('the flight never landed');
+            const flew = Math.round(performance.now() - t0),
+              landing = 'w:' + LOCATIONS[1].mapId + '*';
+            if (!(await wait(() => walkView.ready && walkView.id === landing, 15000)))
+              throw new Error(`landed but the view is ${walkView.id}`);
+            measureFromHere();
+            uiState.modal = null;
+            uiState.mq = [];
+            const q = encountersHere()[0];
+            if (q) {
+              startWild(q);
+              if (!activeBattle || !saveHeld()) throw new Error('a run battle didn’t hold the save');
+              stopTimers();
+              activeBattle.over = 'win';
+              endBattle();
+              if (!(await wait(() => !activeBattle && saveData.run.at.phase === 'walk', 15000)))
+                throw new Error('the run battle never ended');
+            }
+            const map = saveData.run.map,
+              town = runWorldNode(map.nodes.findIndex(n => n.type === 'town'));
+            if (!runJump(town)) throw new Error('couldn’t walk to the town');
+            uiState.modal = null;
+            uiState.mq = [];
+            saveData.team[0].hp = Math.max(1, saveData.team[0].hp - 3);
+            saveData.se = Math.max(saveData.se, 500);
+            const se = saveData.se,
+              cost = runHealCost(saveData.team, RULES.run.healCost).cost;
+            clinicHeal();
+            if (!uiState.modal || !uiState.modal.btns) throw new Error('the clinic asked nothing');
+            uiState.modal.btns[0].f();
+            if (saveData.se !== se - cost) throw new Error(`the clinic took $${se - saveData.se}, not $${cost}`);
+            const boss = map.nodes.length;
+            runJump(boss);
+            const B = trainersAt(boss)[0];
+            if (!B || !B.alpha) throw new Error('no Alpha boss on the boss’s place');
+            uiState.modal = null;
+            uiState.mq = [];
+            startTrainer(B.id, { talked: true });
+            if (!activeBattle || activeBattle.fmt !== 'alpha') throw new Error('the boss isn’t an Alpha battle');
+            stopTimers();
+            activeBattle.over = 'win';
+            endBattle();
+            if (
+              !(await wait(() => uiState.modal && uiState.modal.btns && /payout/.test(uiState.modal.btns[0].l), 15000))
+            )
+              throw new Error('no way on to the payout after the boss');
+            uiState.modal.btns[0].f();
+            if (!(await wait(() => uiState.modal && uiState.modal.cls === 'run-payout', 5000)))
+              throw new Error('no payout screen');
+            uiState.modal.btns[0].f();
+            if (!(await wait(() => !saveData.run && LOCATIONS.length === gameData.locations.length, 10000)))
+              throw new Error('the run didn’t end');
+            return `${made[0]} scenes made in ${made[1]} ms; flew in ${flew} ms; a battle, a heal for $${cost}, the boss; home with ${saveData.meta.capital} Capital`;
+          } finally {
+            if (activeBattle) {
+              stopTimers();
+              setActiveBattle(null);
+              battleStageStop();
+            }
+            airshipFlight.on = false;
+            document.body.classList.remove('flying');
+            uiState.modal = null;
+            uiState.mq = [];
+            renderOverlay();
+            setSaveData(was);
+            render();
+          }
+        },
+        10,
+        180
       );
     /* v46: a room that opens in place: into a building and out again, without leaving the town (RL-5: Professor Hazel's
        lab in Copperleaf, the hub; it was Marigold's shop) */

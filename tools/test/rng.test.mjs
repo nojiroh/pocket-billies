@@ -40,7 +40,8 @@ test('rng: a generated scene hashes the same as before the move', () => {
   // MG-2: 301195872 until MAPGEN_VERSION became 2 (the scene is the same but for gen.v), then 2111299369 until the
   // props dials gained mast, clinic and shop (gen.params; the scene is the same)
   // (and 3312083804 until MAPGEN_VERSION 3: pictures no longer scaled, plants given drawn variants)
-  assert.equal(hashString(JSON.stringify(sc)), 2974976760);
+  // (and 2974976760 until MAPGEN_VERSION 4, RL-8: bridges cross the water; this scene has none, so only gen.v)
+  assert.equal(hashString(JSON.stringify(sc)), 3214287923);
 });
 
 test('rng: the helpers stay in their ranges', () => {
