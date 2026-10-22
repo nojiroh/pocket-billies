@@ -7,7 +7,9 @@
    the section is off screen. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
+import { provide } from '../../game/js/hooks.js';
 import { MUSIC_WHERE_KEYS, musicWhereMatches, songFor } from '../../game/js/logic/music-where.js';
+import { cryLowHealth, cryRecipe, cryVoices } from '../../game/js/logic/cries.js';
 import { midiToFrequency, trackerCompose, trackerCreate } from '../../game/js/audio/tracker.js';
 import { escapeHtml } from './game-stand-ins.js';
 import {
@@ -45,6 +47,9 @@ expose({
   ROLL_CELL_W: [() => ROLL_CELL_W],
   ROLL_LEFT: [() => ROLL_LEFT],
   ROLL_TOP: [() => ROLL_TOP],
+  musicCryCardHTML: [() => musicCryCardHTML, v => ((musicCryCardHTML = v), provide({ musicCryCardHTML }))],
+  musicCryPlay: [() => musicCryPlay, v => (musicCryPlay = v)],
+  musicCryTidy: [() => musicCryTidy, v => ((musicCryTidy = v), provide({ musicCryTidy }))],
   musicData: [() => musicData],
   musicHookHTML: [() => musicHookHTML, v => (musicHookHTML = v)],
   musicHookMount: [() => musicHookMount, v => (musicHookMount = v)],
@@ -78,6 +83,7 @@ expose({
   musicYesNoHTML: [() => musicYesNoHTML],
 });
 /* eslint-enable no-func-assign */
+provide({ musicCryCardHTML, musicCryTidy });
 /* to-module: end */
 const musicStudio = {
   /** @type {AudioContext | null} */ ctx: null,
@@ -515,6 +521,75 @@ function musicJinglePlay(id) {
 ACTIONS.musJinglePlay = d => musicJinglePlay(d.j);
 ACTIONS.musJinglePick = d => {
   studioState.sel.musicJingle = d.j;
+  render();
+};
+
+/* ---------- a Billy's cry (the Billies page) ----------
+   Gen 1 style: a base (music.json cries.bases), a pitch and a length per stage (lines/*.json cry); what a stage leaves
+   out comes from its id, as before (logic/cries.js). Played on the music section's AudioContext */
+function musicCryCardHTML(L, li, st) {
+  const bases = ((studioState.D.music || {}).cries || {}).bases || [],
+    sp = L.id + st,
+    own = (L.cry || [])[st] || null,
+    made = cryRecipe(sp, null, bases),
+    p = `lines.${li}.cry.${st}`;
+  const body =
+    grid(
+      selectField(
+        'Base cry',
+        `${p}.base`,
+        bases.map((b, i) => [i, `${i + 1} · ${b.wave}`]),
+        { num: 1, opt: 1, none: `From its id (${made.base + 1} · ${made.wave})` }
+      ),
+      numberField('Pitch', `${p}.pitch`, {
+        opt: 1,
+        min: 24,
+        max: 96,
+        step: 1,
+        ph: `${made.pitch} (${musicNoteName(made.pitch)}, from its id)`,
+        help: 'The first note, as a midi note (60 is middle C).',
+      }),
+      numberField('Length', `${p}.length`, { opt: 1, min: 0.25, max: 4, step: 0.05, ph: '1 (from its id)', unit: '×' })
+    ) +
+    `<div class="seg-row"><button class="btn primary" data-act="musCry" data-sp="${escapeHtml(sp)}" data-li="${li}" data-st="${st}">▶ Cry</button><button class="btn" data-act="musCry" data-sp="${escapeHtml(sp)}" data-li="${li}" data-st="${st}" data-low="1" title="A preview: what the game does with it comes in SND-6">▶ Low on health</button>${own ? `<button class="btn subtle" data-act="musCryReset" data-li="${li}" data-st="${st}">Use the cry its id makes</button>` : ''}</div>`;
+  return card('Cry', body, {
+    sub: own
+      ? 'This stage has its own cry. Empty fields still come from its id.'
+      : 'Made from its id (every Billy’s is, until you set one). Set a base, pitch or length to give this stage its own.',
+  });
+}
+/* a stage's cry with nothing in it goes back to null, and a line with no cries loses the list */
+function musicCryTidy(li) {
+  const L = studioState.D.lines[li];
+  if (!L || !Array.isArray(L.cry)) return;
+  L.cry = L.cry.map(C => (C && Object.keys(C).some(k => C[k] !== undefined) ? C : null));
+  while (L.cry.length && !L.cry[L.cry.length - 1]) L.cry.pop();
+  if (!L.cry.length) delete L.cry;
+}
+function musicCryPlay(li, st, low) {
+  const T = musicTracker(),
+    L = studioState.D.lines[li],
+    C0 = cryRecipe(L.id + st, (L.cry || [])[st], ((studioState.D.music || {}).cries || {}).bases || []),
+    t = musicStudio.ctx.currentTime + 0.03;
+  if (musicStudio.ctx.state !== 'running') musicStudio.ctx.resume().catch(() => {});
+  for (const v of cryVoices(low ? cryLowHealth(C0) : C0))
+    T.synthVoice(T.bus, {
+      type: v.type,
+      freq: midiToFrequency(v.midi),
+      t: t + v.at,
+      dur: v.dur,
+      vol: v.vol,
+      slide: v.slide,
+      vib: v.vib,
+    });
+}
+ACTIONS.musCry = d => musicCryPlay(+d.li, +d.st, !!d.low);
+ACTIONS.musCryReset = d => {
+  const L = studioState.D.lines[+d.li];
+  if (L && L.cry) L.cry[+d.st] = null;
+  musicCryTidy(+d.li);
+  changed();
+  commit(true);
   render();
 };
 

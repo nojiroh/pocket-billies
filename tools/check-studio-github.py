@@ -1076,6 +1076,24 @@ def music_steps(pg, errs):
     if len(got) != 5 or got[3] != [0, 2] or got[4][1] != 2: errs.append(f'music: a note after the hatch jingle gave {got}')
     pg.click('#undoBtn')
     if pg.evaluate("studioState.D.music.jingles.hatch.notes") != [[76, 2], [79, 2], [84, 4]]: errs.append('music: undo did not put the jingle back')
+    # a Billy's cry (the Billies page): a pitch typed in is the stage's own cry and plays its two notes there; the
+    # field emptied leaves the line with no cry list; nothing to propose
+    pg.evaluate("void openSection('billionaires')")
+    pg.wait_for_selector('#main input[data-p$=".cry.0.pitch"]', timeout=20000)
+    li = pg.evaluate("+document.querySelector('#main input[data-p$=\".cry.0.pitch\"]').dataset.p.split('.')[1]")
+    box = pg.locator(f'#main input[data-p="lines.{li}.cry.0.pitch"]')
+    box.fill('60'); box.press('Tab')
+    if pg.evaluate(f"studioState.D.lines[{li}].cry") != [{'pitch': 60}]: errs.append(f"music: a cry pitch gave {pg.evaluate(f'studioState.D.lines[{li}].cry')}")
+    pg.evaluate("(() => { const T = musicStudio.tracker, f = T.synthVoice; window.__mv = []; T.synthVoice = (o, v) => { window.__mv.push(v); return f(o, v); }; window.__mvf = f })()")
+    pg.click('#main [data-act=musCry]:not([data-low])'); pg.click('#main [data-act=musCry][data-low]')
+    heard = pg.evaluate("window.__mv.map(v => Math.round(12 * Math.log2(v.freq / 440) + 69))")
+    pg.evaluate("void (musicStudio.tracker.synthVoice = window.__mvf)")
+    if heard[:2] != [60, 65] or len(heard) != 4 or heard[2] >= 60: errs.append(f'music: the cry and its low-health preview played notes {heard}')
+    box = pg.locator(f'#main input[data-p="lines.{li}.cry.0.pitch"]')
+    box.fill(''); box.press('Tab')
+    if pg.evaluate(f"'cry' in studioState.D.lines[{li}]") or pg.evaluate("changedDataFiles(studioState.D).map(f => f.path)"):
+        errs.append('music: an emptied cry left the line a cry list, or something to propose')
+    pg.evaluate("void openSection('music')")
     pg.click('[data-act=musTab][data-t=songs]')
     pg.click('#musList [data-act=musPlay][data-song=meadow]')
     time.sleep(0.5)
@@ -1083,7 +1101,7 @@ def music_steps(pg, errs):
     time.sleep(0.5)
     if pg.evaluate("[musicPlaying(), !!musicStudio.tracker.timer]") != ['', False]: errs.append('music: leaving the section left the song playing')
     if len(errs) > n: errs[n:] = [f'music: {e}' if not e.startswith('music:') else e for e in errs[n:]]
-    else: print('music: town played (context running, bar shown), its tempo and a chord changed while playing and undone, a hook note and a counter note drawn and heard and undone, stopped; the where table: a rule moved, a condition, a rule added, Try a place following, all undone; a jingle played and lengthened and undone; meadow stopped when the section was left', flush=True)
+    else: print('music: town played (context running, bar shown), its tempo and a chord changed while playing and undone, a hook note and a counter note drawn and heard and undone, stopped; the where table: a rule moved, a condition, a rule added, Try a place following, all undone; a jingle played and lengthened and undone; a cry set, heard (and low on health) and emptied; meadow stopped when the section was left', flush=True)
 
 
 STEPS = [

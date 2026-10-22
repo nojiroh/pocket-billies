@@ -7,6 +7,8 @@ import {
   PLAN_INFO,
   loadWardrobe,
   makeBlankBody,
+  musicCryCardHTML,
+  musicCryTidy,
   neutralPose,
   openSkeleton,
   wardrobeEditor,
@@ -218,7 +220,7 @@ SECTIONS.billionaires = () => {
       rows: 2,
       help: 'The red margin note in the Field Guide, visible after you tax one.',
     });
-  const stats = statsCard(L, li);
+  const stats = statsCard(L, li) + musicCryCardHTML(L, li, st);
   const learn = `<table class="tbl"><thead><tr><th>At Lv</th><th>Move</th><th></th><th></th></tr></thead><tbody>${L.learn
     .map(([lv, mv], i) => {
       const M = D.moves[mv];
@@ -272,6 +274,8 @@ function statsCard(L, li) {
   });
 }
 studioState.hooks.billionaires = path => {
+  const cry = path.match(/^lines\.(\d+)\.cry\./);
+  if (cry) musicCryTidy(+cry[1]);
   const m = path.match(/^lines\.(\d+)\.types\.(\d+)\.(\d)$/);
   if (m) {
     const L = studioState.D.lines[+m[1]],
