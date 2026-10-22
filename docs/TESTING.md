@@ -179,9 +179,12 @@ same phase:
 ## What each phase does
 
 - **06 UI structure**: the smoke phone flow clicks real buttons (`[data-a=intro]`, the dressing room, `cs-next`,
-  `cs-choose`, `cs-yes`, the five tabs, the shop) and the Help buttons `quicktest`, `diagtest` and `dbglog` start
+  `cs-choose`, `cs-yes`, the shop) and the Help buttons `quicktest`, `diagtest` and `dbglog` start
   the in-game test and the log export: keep them, or change the checks in the same commit. Pure UI logic that
-  moves out of a screen (prices, sorting, text building) gets unit tests.
+  moves out of a screen (prices, sorting, text building) gets unit tests. UI-5: the bottom bar is the kit's
+  `<pb-nav-bar id="nav">`, its tabs in its shadow tree with `data-t` (map, team, bag; check-fast.py `nav_tap`);
+  the fast check's "Every screen opens with its parts" opens each screen by the buttons a player taps, and a move
+  that must change nothing on screen proves it with `tools/style-diff.py` (0 differences against HEAD).
 - **07 Portraits**: `tools/test/expressions.test.mjs` checks that every expression asked for has face pieces;
   replace it with the real tag-to-expression mapping test (task 8's second half). Add a portrait to the full test.
 - **08 Step tracking removed, maps and rooms (Part A and B)**: remove or replace everything driven by steps:
