@@ -2,6 +2,56 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Phase 09 batch 10 - every run tree a model; the _deep trees merged - 2026-10-22
+Branch `props/batch10-trees`, from main 6493ed4 (PR #113). Owner's request in chat: make sure all trees are 3D props in
+the style used, and list what else still needs converting. Plan approved with the owner's answers: only what the
+roguelite loads (the hub, its rooms, run towns and the five run biomes; the legacy trees stay parked); the pines keep
+how they look now, adapted as 3D props; this first batch the trees only.
+- Changed (one cause per commit):
+  - **Engine** (c230457): a leaf clip may be a band, a box `[left, top, right, bottom]` in the leaf picture cut without
+    the clump's rim outline (prop-models.js `leafCut`), and a model's picture layer may be pulled toward the eye
+    (`front`, metres: walk/sprites.js passes it as `uDZ`, which the sprite shader had but nothing used). The Studio's
+    leaves part draws a band as a dashed box; its picture layer has the band's four fields.
+  - **Trees** (tools/build-props-batch10.py, swapped in under their own keys): tree_pine, tree_pine_b, tree_pine_small
+    and tree_cypress (ridge), tree_rowan_autumn and tree_giant_autumn (autumn). Conifers: batch 1's trunk, mast and
+    roots, the mast straight; each drawn tier a band of its own (tiers found from the crown's width, `tiers_of`) that
+    sways on its own, the cypress's lobes as clumps; every part centred on the mast and pulled toward the eye by a
+    little more than the mast is thick. The autumn rowan is the rowan's model with its own leaves (as the autumn hazel);
+    the great autumn oak is built as Copperleaf's great oak from its own drawing, without the swing. **tree_larch**
+    (batch 2's) rebuilt the same way: its crown was one picture and its mast showed through it. Showcase map
+    `test_props_wild`. Golden scenes and the frozen scene hash remade on purpose (models keep their size, `s`).
+  - **_deep trees merged** (tools/merge-deep-trees.py, phase 09 task 4): the ten `*_deep` entries go; their placements
+    (10 in the game's maps, 68 in the legacy thicket) and the thicket biome's weights name the base tree; their 20
+    layer pictures (scene/props/layers/*_back, *_front) are deleted. The in-game test's tree pool and build-places-v46.py
+    name the bases. Golden 'feature' (thicket) remade: 582 props -> 581.
+- Where the plan was wrong: the circle clip can't cut a pine's tier (a wide, short band with its own hem), so the
+  band clip was needed. Clumps standing off the mast in depth (the broadleaf way) made a pine zigzag when the camera
+  turned, and the mast showed through camera-facing tiers (the larch already did), hence `front`. tools/prop-sheet.py
+  draws model trees without their leaves (they load after its capture; the game draws them): its pictures can't judge
+  trees.
+- Verified: unit tests 515 (all pass after the remade goldens); headless pictures of `test_props_wild` (front and
+  turned 1.2 rad) and of generated ridge, thicket and autumn scenes (front and turned 1.0 rad): no mast through a
+  crown, no zigzag; no page errors. Every tree and shrub the hub, its rooms and the run biomes place is a model
+  (bush_flower is a flat flower plant, flat on purpose). check-fast 16 of 17 (the one left, "Game data is valid",
+  needs ajv; check-data with its schema step stubbed: 138 files, all fine); smoke 15 of 15. **Not run here:** lint
+  (ESLint's packages), typecheck (the session's tsc is 6.0, the project's 7.0; it reports battle-engine.js errors
+  that aren't from this branch), check:modules and check:data (missing packages: the npm registry is unreachable from
+  this session). CI runs them.
+- Risky:
+  - Sprites per tree: pines 5-9 (were 3 as pictures), cypress 6 (1), larch 5 (1), autumn rowan 7 (1), great autumn
+    oak 18 (3). A ridge route places about 90 conifers. Not measured on a phone.
+  - Trees moved from 34 to 32 px/m are about 6% bigger (batch 1 noted the same for its trees).
+  - The tiers sway separately (the top most); in strong wind check they don't come apart at the hems.
+  - The old pines' depth pictures (scene/props/layers/tree_pine*_lb/_lf.png) and the tree pictures themselves stay:
+    the pictures are the fallback when 3D models are off and the far view.
+- Phone check wanted: a run with a ridge node (pines, larches, cypresses) and an autumn node (rowans, the great oak);
+  turn the camera round a pine; Copperleaf's larches; export the debug log.
+- Next: batch 11, the other standing pictures the roguelite shows: boulder_mossy (thicket), campfire and lookout_tower
+  (the generator places them), the barn (the ranch), wind_sail_flower (Copperleaf), then the six live rooms' 19
+  furniture props (plant_tall, bookshelf, sack, crate_goods, shop_counter, shop_shelf, wall_clock, wall_painting,
+  wall_window, sofa, fireplace, barrel, blackboard, clinic_bed, counter_white, fridge_drinks, haybale_stack, lab_desk,
+  lab_machine). The flat plants (54) and ground decals (11) stay flat unless the owner says otherwise.
+
 ### Roguelite track RL-9 (first half) - Ranch A: the building, storage, training - 2026-10-22
 Branch `claude/great-hamilton-bj2wsa`, from main 9760857 (PR #108, TR-3). Plan approved in Plan Mode with the owner's
 answers: **8.2** 1 home Billie a run at Bracket I; **a packed bag**: at the mast you pack a limited bag from

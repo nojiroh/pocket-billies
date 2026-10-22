@@ -9,6 +9,10 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- The last flat trees on a run are 3D now (props batch 10): the ridge's pines and cypress, the autumn wood's rowan
+  and great oak, and the thicket's oaks, birches and pines have a modelled trunk and roots like the other trees. The
+  pines keep their drawn look; each tier sways on its own. The larch was rebuilt the same way, so it no longer shows
+  its stem through its branches.
 - The ranch (RL-9): a red barn by Copperleaf's farm. Walk in and tap the training board or the rancher: Billies resting
   in storage can train there for a little Scrap, gaining a level every two hours of real time (up to eight hours
   between visits, up to level 15 for now), collected when you come back. Storage shows there too, and the Team tab
