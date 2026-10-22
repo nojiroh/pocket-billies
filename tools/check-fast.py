@@ -14,12 +14,12 @@ with their places); a run's world (RL-7) opens on its landing, its places on the
 at the next node a day later; a battle plays to the end; a save round-trips; the Studio loads; the exported debug
 log holds no names; the world map opens as the bowl, a tap opens a card, Home comes back; every screen opens with its parts (UI-5);
 on tall ground (TR-3, the mountains fixture) the camera rises, rock fades and the player's silhouette is drawn, and
-none of it on flat ground; the Lab's unlock board (RL-11) grants, sells and keeps; the test island (island track) opens with its contract fields. The page is small (400x300) with every costly graphics dial
+none of it on flat ground; the Lab's unlock board (RL-11) grants, sells and keeps; the test island (island track) opens with its contract fields, and its orbit camera (IS-1) looks at the middle from 8 places, holds on the summit and walks a circle when you hold right. The page is small (400x300) with every costly graphics dial
 off before it loads; nothing waits a fixed time, only for frames or the game's state. No pictures are taken.
 
 Graphics are not judged here: software drawing can't. The game's own graphics test (Settings → Help) is for a person
 on a real device and is never run from a script."""
-import json, queue, socket, subprocess, sys, threading, time
+import json, math, queue, socket, subprocess, sys, threading, time
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -309,7 +309,55 @@ def island(pg, base):
         pg.evaluate(f"(()=>{{const a={k}*Math.PI/4;walkView.opt.look=()=>({{eye:[60-Math.sin(a)*75,30,60-Math.cos(a)*75],tgt:[60-Math.sin(a)*20,0,60-Math.cos(a)*20],fov:60}})}})()")
         if not until(pg, f"walkRenderer.frames>{f}+2", 20): raise Exception(f'stopped drawing looking in from {k * 45} degrees')
     pg.evaluate("delete walkView.opt.look")
-    return f'test_island drew {pg.evaluate("walkRenderer.frames")} frames; {len(res)} walking checks hold; the sea skirt has {sk["rings"]} rings out to {sk["out"]:.0f} m and draws from 8 angles'
+    orbit = island_orbit(pg)
+    return f'test_island drew {pg.evaluate("walkRenderer.frames")} frames; {len(res)} walking checks hold; the sea skirt has {sk["rings"]} rings out to {sk["out"]:.0f} m and draws from 8 angles; {orbit}'
+
+
+# IS-1: the camera's yaw (0 looking north) and the wrapped difference between two angles, in the page
+WRAP = "((a)=>a-2*Math.PI*Math.floor((a+Math.PI)/(2*Math.PI)))"
+
+
+def island_orbit(pg):
+    """island track IS-1: the orbit camera on test_island (middle 60, 60; dead zone 3 m; turn 30 degrees). From 8 places
+    round the coast it looks at the middle and follows you past the scene's edge (no clamp); on the summit it holds
+    still; holding right walks round the middle on the same circle, the yaw turning smoothly"""
+    if not pg.evaluate("!!walkRenderer.orbit"): raise Exception('no orbit on the island')
+    if abs(pg.evaluate("cameraTurnLimit()*180/Math.PI") - 30) > 1e-6: raise Exception("your turn limit isn't the map's 30 degrees")
+    pg.evaluate("walkRenderer.yawT=walkRenderer.yaw=0;0")
+    for i in range(8):
+        cut = f"(()=>{{const a={i}*Math.PI/4,P=walkView.pl;P.x=60-Math.sin(a)*44;P.z=60-Math.cos(a)*44;P.route=null;walkRenderer.camT=null;return 0}})()"
+        pg.evaluate(cut)
+        f0 = pg.evaluate('walkRenderer.frames')
+        if not until(pg, f'walkRenderer.frames>={f0 + 2}', 30): raise Exception('the island stopped drawing')
+        off = pg.evaluate(f"Math.abs({WRAP}(walkView.C.yaw-{i}*Math.PI/4))")
+        if off > 0.06: raise Exception(f'at {i * 45} degrees round the camera is {off:.2f} rad off the middle')
+        lag = pg.evaluate("Math.hypot(walkView.C.tgt[0]-walkView.pl.x,walkView.C.tgt[2]-walkView.pl.z)")
+        if lag > 4: raise Exception(f'at {i * 45} degrees round the camera aims {lag:.1f} m from you (held inside the scene?)')
+    # the summit: the yaw holds what it had
+    pg.evaluate("walkView.pl.x=60;walkView.pl.z=16;walkRenderer.camT=null;0")
+    f0 = pg.evaluate('walkRenderer.frames'); until(pg, f'walkRenderer.frames>={f0 + 2}', 30)
+    pg.evaluate("walkView.pl.x=60.5;walkView.pl.z=61;0")
+    f0 = pg.evaluate('walkRenderer.frames')
+    if not until(pg, f'walkRenderer.frames>={f0 + 6}', 30): raise Exception('the island stopped drawing')
+    if not pg.evaluate("walkRenderer.orbit.hold&&Math.abs(walkView.C.yaw)<0.02"): raise Exception(f'on the summit the camera turned: {pg.evaluate("walkView.C.yaw")}')
+    # holding right from the south: an eighth of the way round on the same circle, no jump in the yaw
+    pg.evaluate("walkView.pl.x=60;walkView.pl.z=16;walkRenderer.camT=null;window.__orb={y:[],a0:0};0")
+    f0 = pg.evaluate('walkRenderer.frames'); until(pg, f'walkRenderer.frames>={f0 + 2}', 30)
+    pg.evaluate("walkView.stick={x:1,y:0};walkView.run=true;0")
+    gone = "Math.abs(Math.atan2(walkView.pl.x-60,walkView.pl.z-60))"
+    t0 = time.time(); ys = []
+    while time.time() - t0 < 60:
+        ys.append(pg.evaluate("walkView.C.yaw"))
+        if pg.evaluate(f"{gone}<Math.PI*0.75"): break
+        pg.wait_for_timeout(100)
+    pg.evaluate("walkView.stick=null;walkView.run=false;0")
+    turned = pg.evaluate(f"Math.PI-{gone}")
+    if turned < 0.7: raise Exception(f'holding right walked only {turned:.2f} rad round in 60 s')
+    r = pg.evaluate("Math.hypot(walkView.pl.x-60,walkView.pl.z-60)")
+    if abs(r - 44) > 1: raise Exception(f'holding right drifted from the 44 m circle to {r:.2f} m')
+    jump = max((abs((ys[k] - ys[k - 1] + math.pi) % (2 * math.pi) - math.pi) for k in range(1, len(ys))), default=0)
+    if jump > 0.35: raise Exception(f'the yaw jumped {jump:.2f} rad between two looks')
+    return f'the orbit looks at the middle from 8 places, holds on the summit, holding right went {turned:.2f} rad round at {r:.2f} m'
 
 
 def room(pg, base):
@@ -821,7 +869,7 @@ PAGES = [   # (what the page opens, its checks in order); the longest first, so 
     ('mountains', [('Tall ground: behind a south mountain the camera rises, rock fades, your silhouette shows; none on flat ground', tall_ground)]),
     ('team', [('Every screen opens with its parts (UI-5)', screens)]),
     ('title', [('The game boots with no console or page errors', boots)]),
-    ('island', [('The test island opens and draws; its walking checks hold (island track)', island)]),
+    ('island', [('The test island opens and draws; its walking checks hold; the orbit camera (island track)', island)]),
     ('studio', [('The Studio loads', studio), ("The Studio's world map look", studio_worldmap)]),
 ]
 
