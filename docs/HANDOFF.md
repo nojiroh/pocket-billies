@@ -35,7 +35,18 @@ knew; sessions can't push tags).
     land under each place (its whole map on land), 3-5 lobes along the way, 3-6 islets; its own coast and noise
     seeds; near each place its biome's ground (biomes.json), between them the run's commonest biome's ground and
     trees. `worldPut` takes it (`worldExtra.look`), `worldHubBack` drops it, `worldMapLook` reads it.
+  - **The latest deploy, always** (a1faf85, the owner's ask mid-session): sw.js asks past the browser's cache
+    (no-cache; GitHub Pages lets files be kept 10 minutes, so a load right after a deploy could mix two builds), the
+    worker registers with updateViaCache 'none'; the build names each deploy (vite.config.js stampBuild: the commit,
+    in dist's version.js PB_BUILD and build.json); new update-check.js asks for build.json at start, on coming back
+    to the screen and every 10 minutes, and on a new build saves and reloads when nothing is going on (no battle,
+    cutscene, flight or window), after the worker updates; once a session per build. The debug log says which deploy
+    (`deploy`). Off without a build (Start-Game, the checks).
 - Risky:
+  - The update reload is new behaviour on the phone: it was tried only in headless Chromium against the built site
+    on a plain local server (no 10-minute cache there). If a reload ever lands at a bad moment, `updateSafe` in
+    update-check.js is the list of moments it waits for. Art can still show one load late after it changes (it comes
+    from the cache first, refreshed behind).
   - Every run already going moves its pins and land on the map (spots are never stored); nothing saved changes.
   - The run's land is worked out at run start and on resume as before (headless about 190 ms, the hub's 160-210 ms);
     the phone's time is in the debug log only if the Bowl map test is run.
@@ -50,7 +61,8 @@ knew; sessions can't push tags).
   (13 of 13) and smoke (15 of 15) after the last code commit; the full quick check: see below. Pictures (headless, 390 x 760): the
   lab before and after; the hub's map (one island, sea to the rim); runs from two seeds (two maps) and one seed twice
   (the same map).
-- Phone check wanted: the Map tab in Copperleaf (the island); start a run and open the map (its own land, the landing
+- Phone check wanted: after this deploys, keep the game open in the background, let the next deploy go out, switch
+  back: it should reload by itself (the debug log's `deploy` is the new commit); the Map tab in Copperleaf (the island); start a run and open the map (its own land, the landing
   in the east); walk a seam and look again; Fly home (the island again); the lab and Granny Juniper's cottage by day
   and at night; export the debug log.
 - Next: the owner pushes the tags (`rl-1-done` .. `rl-8-done`, `tr-2c-done`, `rl-8b-done`) and plays the phone check;

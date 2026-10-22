@@ -22,6 +22,10 @@ The quick check needs Python Playwright matching the installed Chromium (tools/r
 full check are over budget today; 13b brings them down (parallel groups, fixtures, waits instead of sleeps, fewer
 legacy steps). A phase that makes a tier slower says by how much and why in its HANDOFF entry.
 
+The update check (update-check.js, the owner 2026-10-22) works only on the built site (`npm run build`, then serve
+`dist/game`): no check runs it, since the checks serve the repository, where PB_BUILD is '' and it is off. To try it,
+load the built game, build again while it runs, and bring the page back to the front: it loads the new build.
+
 ## Where a new test goes
 
 Pick the first that fits:

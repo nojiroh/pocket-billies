@@ -9,6 +9,9 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- The game always runs the latest version: after an update it loads the new one by itself (when you come back to
+  it, or within ten minutes), saving first and waiting until a battle, cutscene, flight or window is over; it never
+  mixes files of two versions.
 - Runs look like your own (RL-8b, after the first play): the world map in Copperleaf shows Copperleaf's island alone,
   in open sea; a run has its own world map, made from its seed: its own land, coast, hills, woods and clouds, the
   run laid across the whole bowl from the landing in the east to the boss in the west, each place's own ground round
