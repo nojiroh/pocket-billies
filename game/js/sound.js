@@ -148,7 +148,15 @@ function unlockSound() {
   if (!initSound()) return;
   const st = soundEngine.ctx.state;
   if (st !== 'running' && st !== 'closed') soundEngine.ctx.resume().catch(() => {});
-  if (soundEngine.want && !soundEngine.song) music(soundEngine.want);
+  if (soundEngine.want && !soundEngine.song) {
+    /* SND-4: the night level first (updateAmbience), so a night starts on the night version, not a second of day */
+    if (!soundEngine.L && soundEngine.ctx.state === 'running')
+      try {
+        updateAmbience();
+      } catch (e) {}
+    const w = soundEngine.want;
+    music(w.includes('@') ? w : songVariant(w, musicState(), SONGS, null));
+  }
 }
 ['pointerdown', 'keydown', 'touchend'].forEach(e => addEventListener(e, unlockSound, { capture: true, passive: true }));
 document.addEventListener('visibilitychange', () => {
