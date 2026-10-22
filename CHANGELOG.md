@@ -9,6 +9,11 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- The sea all round (island track IS-3): on the test island the sea now runs out to the horizon on every side
+  with no line where it meets the shore's water; waves and their whitecaps roll in toward the island from every
+  direction, lines of surf break along the whole coast, the water washes up the beach and leaves the sand wet, and
+  a cove's water stays calm. Trees no longer stand out on the open sea past the edge. The far wall of the Hollow
+  Earth in the sky has a softer outline.
 - The orbit camera (island track IS-1): on the test island the camera stands out over the sea and looks in at the
   island's middle, so walking round the coast turns it all the way round, smoothly and with no jump. Holding right
   walks you round on the same circle. On the summit the camera holds still; your own turn (two fingers, Q/E) still
