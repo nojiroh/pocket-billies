@@ -19,18 +19,20 @@ import {
   SPECIES,
   START_NODE,
   TRAINERS,
+  UNLOCK_DATA,
   gameData,
   locationKind,
   trainersAt,
   worldExtraMaps,
 } from './game-data.js';
 import { encountersHere, makeBilly, maxHp, spawn } from './logic/rules.js';
-import { ranchTrainStart } from './logic/ranch.js';
+import { ranchLevel, ranchSlots, ranchTrainStart } from './logic/ranch.js';
 import { runBegin, runRestore } from './logic/run-state.js';
 import { runArrive, runMapStart, runNext, runWorldNode } from './logic/run-map.js';
 import { MAPGEN_VERSION } from './logic/mapgen.js';
 import { runHealCost } from './logic/run-loop.js';
 import { fighter, liveActors, startTrainer, startWild } from './logic/battle-engine.js';
+import { runUnlocks } from './logic/unlocks.js';
 import { loadAllMaps } from './map-files.js';
 import {
   activeBattle,
@@ -90,6 +92,7 @@ import { airshipFlight } from './airship.js';
 import { runWorld, runWorldData, runWorldSync } from './run-world.js';
 import { runJump, runTakeOff } from './run.js';
 import { ranchOpen } from './ranch-screen.js';
+import { labBuy, labMilestones, renderLabBoard } from './lab-board.js';
 import { closeModal, modal, renderOverlay, toast } from './overlay.js';
 import { clinicHeal } from './walk-tab.js';
 import { leaveRoom, mapIdAt, walkCross, walkPick, walkState } from './walk-control.js';
@@ -1109,6 +1112,62 @@ async function runFullTest(mode) {
           } finally {
             uiState.modal = null;
             uiState.mq = [];
+            renderOverlay();
+            setSaveData(was);
+            render();
+          }
+        },
+        3,
+        60
+      );
+    /* RL-11: the Lab's unlock board, on a copy of the save (nothing is written while the test runs): the Lab tab draws
+       every row of unlocks.json; a board row bought pays its Capital; the ranch's upgrade raises its level and slots;
+       a milestone met is granted once; a run's copy holds the shop unlock. Then the save as it was */
+    if (typeof renderLabBoard === 'function' && !saveData.run && !selfTest.stop)
+      await phase(
+        'The Lab: unlocks',
+        'dio',
+        async () => {
+          const was = saveData,
+            tab = uiState.tab,
+            D = UNLOCK_DATA;
+          try {
+            const s = JSON.parse(JSON.stringify(saveData));
+            Object.assign(s.meta, {
+              capital: 1000,
+              scrap: 200,
+              seals: 0,
+              unlocks: {},
+              buildings: {},
+              runs: 1,
+              wins: 0,
+            });
+            setSaveData(s);
+            uiState.modal = null;
+            uiState.mq = [];
+            uiState.tab = 'lab';
+            render();
+            const rows = document.querySelectorAll('.s-lab .lab-row').length;
+            if (rows !== Object.keys(D.unlocks).length)
+              throw new Error(`the board shows ${rows} rows, unlocks.json has ${Object.keys(D.unlocks).length}`);
+            const buy = /** @type {HTMLElement | null} */ (
+              document.querySelector('.s-lab [data-a=lab-buy][data-k=shop_settlement]')
+            );
+            if (!buy) throw new Error('no Buy on Nerve Tonic');
+            buy.click();
+            if (!s.meta.unlocks.shop_settlement || s.meta.capital !== 1000 - D.unlocks.shop_settlement.cost)
+              throw new Error(`buying Nerve Tonic left ${s.meta.capital} Capital`);
+            if (!labBuy('ranch_2') || ranchLevel(s) !== 2 || ranchSlots(s, RULES.ranch) !== RULES.ranch.slots[1])
+              throw new Error('the ranch’s upgrade didn’t raise its level and slots');
+            const got = labMilestones();
+            if (!got.includes('first_run') || labMilestones().length)
+              throw new Error('the first milestone: ' + got.join());
+            if (!runUnlocks(s, D).includes('shop_settlement')) throw new Error('a run wouldn’t carry the shop unlock');
+            return `${rows} rows; bought Nerve Tonic for ${D.unlocks.shop_settlement.cost} Capital and Ranch Lv 2; milestone ${got.join(', ')}`;
+          } finally {
+            uiState.modal = null;
+            uiState.mq = [];
+            uiState.tab = tab;
             renderOverlay();
             setSaveData(was);
             render();

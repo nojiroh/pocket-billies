@@ -40,6 +40,7 @@ import { titleMount, titleScreen, titleStart, titleWanted } from './title.js';
 import { loreLoadingLines } from './lore.js';
 import { runWorld, runWorldSync } from './run-world.js';
 import { runResume } from './run.js';
+import { labMilestones } from './lab-board.js';
 import { initAccount } from './account.js';
 import { notice, renderOverlay, toast } from './overlay.js';
 import { showPendingWindows, whenWorldShows } from './pending-windows.js';
@@ -949,6 +950,8 @@ else
       if (saveData.started && !TEST_RUN && !FIXTURE) whenWorldShows(showPendingWindows);
       /* RL-8: a run picks up where it was (its payout screen) */
       if (saveData.started && saveData.run && !TEST_RUN) whenWorldShows(runResume);
+      /* RL-11: milestones met since the last visit (in the hub) */
+      if (saveData.started && !saveData.run && !TEST_RUN) whenWorldShows(labMilestones);
       if (TEST_BOOT && !TEST_RUN && !FIXTURE)
         setTimeout(() => toast('Test boot: the opening with Professor Hazel, nothing is saved.'), 900);
       if (location.protocol === 'file:')

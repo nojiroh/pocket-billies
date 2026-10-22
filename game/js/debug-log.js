@@ -492,7 +492,16 @@ debugLog.state = () => {
     /* RL-8: what the runs brought home (numbers only) */
     const meta = GAME.saveData.meta;
     s.meta = meta
-      ? { runs: meta.runs, wins: meta.wins, capital: meta.capital, seals: meta.seals, scrap: meta.scrap }
+      ? {
+          runs: meta.runs,
+          wins: meta.wins,
+          capital: meta.capital,
+          seals: meta.seals,
+          scrap: meta.scrap,
+          /* RL-11: the unlock ids owned (game data ids, no names) and the buildings' levels */
+          unlocks: Object.keys(meta.unlocks || {}).sort(),
+          buildings: Object.assign({}, meta.buildings || {}),
+        }
       : null;
     /* RL-9: the ranch (numbers only): its level, how many train, how long since each started (hours), storage's size */
     const ranch = GAME.saveData.ranch;

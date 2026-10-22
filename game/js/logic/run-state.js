@@ -12,7 +12,7 @@
 /** @import { Run, RunStart, SaveData, Billy } from '../../types/save-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { META_MAX, recordOf, wholeIn } from './meta-state.js';
+import { META_IDS, META_MAX, recordOf, wholeIn } from './meta-state.js';
 /* eslint-disable no-func-assign */
 expose({
   RUN_DAYS: [() => RUN_DAYS],
@@ -145,6 +145,12 @@ export function validRun(o) {
   if (!list(o.log) || !o.log.every(e => typeof e === 'string' && e.length <= 80)) return false;
   if (!list(o.released, 500) || !o.released.every(b => plain(b) && id(b.sp) && wholeIn(b.lvl, 1, 100))) return false;
   if (!recordOf(o.hints, 200, v => v === 1)) return false;
+  /* RL-11: the shop and biome unlocks the run started with (logic/unlocks.js runUnlocks); none on a run from before */
+  if (
+    o.unlocks !== undefined &&
+    (!list(o.unlocks, META_IDS) || !o.unlocks.every(u => typeof u === 'string' && /^[a-z][a-z0-9_]{0,63}$/.test(u)))
+  )
+    return false;
   /* RL-9b: the Billies from home (uids) and what was packed (missing on a run saved before) */
   if (o.home !== undefined && (!list(o.home, 6) || !o.home.every(u => typeof u === 'string' && u.length <= 60)))
     return false;

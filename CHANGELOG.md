@@ -9,6 +9,12 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- The Lab's unlock board (RL-11): the Lab tab is in Copperleaf's bottom bar now (and the machine in Hazel's lab opens
+  it). Spend Capital there on wares for the shops in a run's towns (Nerve Tonic, Wake-Up Tea and Revives are no longer
+  sold there until you unlock them). The ranch's sheet sells Ranch Lv 2 and 3 for Scrap (more training slots, a higher
+  level cap); the airship mast sells Airship Lv 2 for an Audit Seal, then the ridge and autumn lands (a new player's
+  runs have meadow, lake and thicket places only). Milestones pay on their own: your first run, five runs, your first
+  win, fifteen kinds caught. Buildings with levels say theirs on their label. All prices are first guesses.
 - Packing for a run (RL-9b): at the airship mast you now pick who comes from home, one Billie at Bracket I, from your
   team or storage (one training at the ranch stops while it is away), and pack up to 5 things from Copperleaf's bag
   (items and Copper Coins) on top of what the airship gives. The rest stay home. Your travellers leave fully healed.

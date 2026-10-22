@@ -2,6 +2,59 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Roguelite track RL-11 - Hub upgrades, currencies, unlocks - 2026-10-22
+Branch `claude/hopeful-cannon-o98ywr`, from main 6a8a3e7 (PR #112). Plan approved in Plan Mode with the owner's
+answers: **8.5** $ / Capital / Scrap / Audit Seals, Lab = Capital, Ranch and Workshop = Scrap, Airship = Seals; the first
+unlocks: ranch levels, run shop wares, new biomes, milestones; the Workshop shown as coming later; a building's level in
+its label (art later). RL-9b (PR #114, the mast's home Billie and packed bag) merged while RL-11 ran; main merged in
+(both changed runTakeOff, validRun and the run's type: kept both).
+- Changed (one cause per commit):
+  - **main was red**: PRs #110 and #112 each stayed under the ratchet's spacing ceiling, together 2 over (1033 ->
+    1035); the ceiling set to main's count, as UI-6 did after its merge.
+  - **Three data sections** (file, index key, schema, type, check-data block, export): `currencies.json` (four rows,
+    a fifth refused), `buildings.json` (Lab, Airship 2 levels, Ranch 3, Workshop coming later), `unlocks.json` (12
+    rows: Nerve Tonic, Wake-Up Tea, Revives in run shops for 60/60/150 Capital; Airship Lv 2, ridge and autumn lands
+    for 1 Seal each; Ranch Lv 2 and 3 for 40/120 Scrap; milestones: first run +10 Scrap, five runs +50 Capital, first
+    win +1 Seal, fifteen kinds caught +100 Capital). All prices are placeholders. check-data refuses 16 planted faults.
+  - **Conditions** `unlock:<id>`, `runs`, `wins` (read `saveData.meta`; the story checks refuse an unknown unlock).
+  - **logic/unlocks.js**: `unlockReady` (why not), `unlockBuy`, `unlockAuto` (milestones, hub only, chained),
+    `unlockTidy` (on load: lost ids dropped, `meta.buildings` rebuilt from the owned rows), `runUnlocks` and
+    `unlockOpen` (a weight table filtered by a run's copy), `unlockRows`.
+  - **A run's copy** `run.unlocks` (optional in `validRun`: a run from before keeps everything open, no save set aside).
+    `runTakeOff` sets it and makes the map from the open biomes; a run town's shop draws from the open wares.
+  - **Milestones** granted after the payout and when the world shows at boot (hub only), a toast each.
+  - **The Lab board** (`lab-board.js`, `lab.css` on tokens only): the hub's Lab tab is shown; chips, a section per
+    building with its level, the Workshop coming later, the milestones. Hazel's lab machine is the "Unlock board"
+    (act `board`, also in build-interiors.py and the Studio's act list) and opens the tab.
+  - **Upgrades at their buildings**: the ranch's sheet sells its levels, the Copperleaf mast's sheet the airship's
+    rows; labels read "Ranch · Lv 2", "Airship station · Lv 2".
+  - **Checks and debug**: `?fixture=lab`; check-fast's Lab step; the in-game test's "The Lab: unlocks";
+    `unlocks.test.mjs` (7); debug menu "+500 Capital, +2 Seals"; the debug log's meta line has the unlock ids and
+    buildings' levels (no names).
+- Where the plan was wrong: no `hub.js` (the board is the Lab tab UI-5 kept hidden for it); `won:bracket_N` can't be
+  built before Brackets (RL-13), so `runs`/`wins` instead; no `door` field (a row's `at` or `when` is its door); no
+  building art per level (labels instead); grants needed no effect system (RL-12). The quick check's picture baseline
+  is not in git (CI makes it), so there was no baseline commit to make: the hub's pictures change (the bar's Lab tab).
+- Verified: unit tests 523; lint, typecheck, modules, format, check-data; smoke 15 of 15; check-fast 18 of 18 (its
+  screens step updated for the Lab tab); the in-game phases "The Lab: unlocks" and the ranch's alone in a browser,
+  nothing written while they ran; headless at 390 x 760: the board, the ranch's and the mast's upgrades, the lab's
+  machine. After merging main (RL-9b): unit tests 527, smoke 15 of 15, check-fast 19 of 19 (one earlier full run
+  failed RL-9b's "Packing for a run" when its take-off took over the step's 30 s wait on a loaded machine; it passes
+  alone in 26 s and in the next full run). **Not run**: the full quick check (the PR was asked for first).
+- Risky / open:
+  - **New players lose wares and lands until unlocked**: Nerve Tonic, Wake-Up Tea and Revives left run shops, and
+    ridge and autumn left run maps. Runs were already lost on the placeholders (the run sim, RL-8); without Revives
+    they may be harder. Prices and milestones need a play.
+  - A Seal comes only from a win (and the first-win milestone), so the airship's rows are far away for now.
+  - The run sim, the fixture's run and the in-game test's run are made without `runTakeOff`, so they keep everything
+    open: they don't test the locked shop or map. unlocks.test does.
+  - Milestones met mid-session in the hub (e.g. the fifteenth kind caught in Copperleaf) pay after the next run or the
+    next load.
+- Phone check wanted: open the Lab tab (+500 Capital, +2 Seals in the debug menu if needed), buy Revives; at the
+  ranch's sheet buy Ranch Lv 2 (a third slot; the barn's label says Lv 2); at the mast buy Airship Lv 2, then Ridge
+  lands; start a run and find Revives in a town's shop and a ridge place on the map (not always: drawn by weight);
+  tap the machine in Hazel's lab; export the debug log.
+- Next: the owner pushes `rl-11-done` (sessions can't push tags); RL-10 and RL-12 are under way in other sessions.
 ### Roguelite track RL-9b - Ranch A, second half: 1 home Billie and a packed bag - 2026-10-22
 Branch `claude/dazzling-darwin-jvooys`, from main 6a8a3e7 (PR #112). Plan approved in Plan Mode with the owner's
 answers: the pack holds items and coins, 5 in all at Bracket I, on top of the run's gift; on a win the run's bag goes
