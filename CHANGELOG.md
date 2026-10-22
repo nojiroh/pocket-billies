@@ -9,6 +9,12 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- Breeding (RL-10a): the ranch's sheet has a Nursery and "Breed a pair". Safe: two Billies of one line, 10 Scrap, and
+  you see the egg before paying. Risky: any two, 5 Scrap, and anything can hatch: most often a plain Billie, sometimes
+  one with a quirk (a parent's move, an odd size or coat), and one time in ten an abomination with odd parts, a name
+  made from both parents' and one stat far up and another down. Eggs hatch at the ranch after 4 hours of real time,
+  even while you're away; the parents stay free meanwhile. The old eggs are gone: wild Billies and trainers don't
+  give them, walking doesn't hatch them, and the incubators and the Bag's Eggs pocket went with them.
 - The last flat trees on a run are 3D now (props batch 10): the ridge's pines and cypress, the autumn wood's rowan
   and great oak, and the thicket's oaks, birches and pines have a modelled trunk and roots like the other trees. The
   pines keep their drawn look; each tier sways on its own. The larch was rebuilt the same way, so it no longer shows

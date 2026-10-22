@@ -2,6 +2,70 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Roguelite track RL-10a - Ranch B, first half: breeding and hatching - 2026-10-22
+Branch `claude/pensive-brahmagupta-5rjlgf`, from main fb43358 (PR #114), main (RL-11, PR #115) merged in at the end.
+Draft PR #116. Plan approved in Plan Mode; the owner split RL-10 in two (RL-10a breeding, RL-10b income and the cloud
+anchor) and took every recommendation: you pick the parents and the ranch picks the parts (phase 16's 5.1: both); an
+abomination wears one parent's art with its own name and a stat swing; the old walking eggs are retired; the parents
+stay free while their egg waits. `rl-9-done` was not on the remote at the start (sessions can't push tags); the owner
+said to go ahead. Mid-session the owner asked to check the other sessions merge cleanly (below).
+- Changed (one cause per commit):
+  - **Rules**: `rules.ranch.breed` (nests 1/2/3 by ranch level, 10 Scrap a safe pair and 5 a risky one, 4 h to hatch, Lv
+    5, risky odds 60/30/10, an abomination's x1.3 and x0.75; placeholders); types and check-data.
+  - **A bred Billie's mark** `m.mut`: a quirk, or an abomination (`name`, `up`, `down`); `stat()` applies the swing
+    after the build, `billyName` shows the name unless nicknamed, `billiesOk` checks it, `migrate` cleans the name.
+  - **logic/breeding.js**: `breedCan` (why not: run, parent, same, line, full, scrap), `breedRoll` (the egg from the
+    parents' uids and `ranch.bred`: shown before paying, the same however often asked), `breedStart` (pays, fills a
+    nest with the rolled Billie), `breedHatch` (team, or storage when full; met at the ranch, caught, `hatched` +1).
+    An egg's ready time never moves. The save: nursery entries hold `egg` (checked with the team and storage as one
+    set of uids), `ranch.bred`.
+  - **The ranch's sheet**: Nursery (eggs, time left, Hatch) and "Breed a pair" (Safe/Risky, pick cards, the safe egg
+    previewed, the risky odds spelled out). Hatch opens the old hatch window (`hatchModal`, now the ranch's): "Hatch it",
+    the shake, the Billie with a line for a quirk or an abomination; "Welcome aboard" brings the sheet back.
+  - **The old eggs retired**: no drops (battleRewards draws no chance; its `roll` stays, unused, so callers keep their
+    places), no trainer or starter eggs, walking hatches nothing; the incubators, the Bag's Eggs pocket, the debug
+    menu's egg buttons, the Guide's egg sizes and the walking tip are gone.
+  - **Checks and debug**: `breeding.test.mjs` (8), check-fast "Breeding", the in-game "The ranch: breeding a pair",
+    the debug menu's "Eggs ready now", the debug log's `eggs` and `bred` (numbers only).
+  - **The sim** `tools/test/sim/breeding-sim.mjs` (report only) and `breeding-sim.test.mjs`.
+- Where the plan was wrong (roguelite-track.md section 0): eggs hatched by metres walked, not time; `eggs.json` lists
+  legacy species (stand-ins play them); no Billie has a passive of its own, so a quirk's or abomination's passive waits
+  for RL-12's effects (RL-10a uses a stat swing); an abomination can't look mixed (art is built per species offline);
+  the cloud save is written in two places in `account.js`, not one. **A bug found in RL-9's training guard**: a clock
+  turned back moves a trainee's start back with it, so turning the clock forward again pays the gap. Eggs avoid it (the
+  ready time never moves); training's fix belongs to RL-10b's shared guard.
+- Merging with the other sessions (the owner's ask): RL-11 (PR #115) and RL-12 both branched before RL-9b and each
+  conflicted with main on its own (8 and 11 files); both sessions were told what conflicts and why. RL-11 merged first;
+  main was merged here (both sides kept in the ranch sheet, saves.js, the debug menu, self-test, check-fast and the
+  docs). RL-12 meets RL-10a in battle.js, debug-menu.js and battle-rewards.js; to keep that merge safe RL-10a kept
+  `battleRewards(b, s, roll, rules)`'s order (RL-12 changes it too and passes a roll), and RL-12 was told how to
+  resolve it (keep `fxMoney`, drop the egg block).
+- Verified: unit tests 536 after the merge (breeding 8, breeding-sim 1; battle-rewards, rules and ranch-state changed
+  on purpose); lint, typecheck, modules, format, check-data (planted faults caught); check-fast 20 of 20 after the
+  merge (Breeding seen failing with Breed not paying); the in-game "The ranch" phases alone (breeding seen failing with
+  eggs always ready); headless pictures (390 x 760) of the sheet. The full quick check after the merge (a0df71b, 24
+  min): 45 of 54; the 9 red are the stale steps red on main too (v34 biped walk cycle, v35/v38/v39 roster counts 117/61,
+  v43 and alpha 0.4 empty bush recipes, v44 props scene, v46 buildings without a plan, phase 08 running). CI's smoke
+  was red on this PR as on main (#114, #115) in RL-9b's "Packing for a run": a race in the check (the flight landed
+  before the wait looked); RL-11's session found it and its fix (fbdb456) is ported here, reproduced with the page's
+  CPU slowed 6x (old fails, new passes).
+- Sim (49 pairs x 40 eggs, report only): risky eggs 59 / 31 / 11 % (odds 60/30/10), an abomination for about 47
+  Scrap. Battles at Lv 30 (the duel's control, plain against plain, is 0.43): an abomination against its unmarked twin
+  0.44, a quirk 0.46 (the mark about even); against a plain all-M Billie 0.17 and 0.11, since mixed part sizes lose
+  phase 16's Prime bonus. A safe pair of two Prime parents breeds a Prime Billie; the owner's play decides the numbers.
+- Risky / open:
+  - The dormant egg data stays: `eggs.json`, `saveData.eggs`, `RULES.eggs`, trainers' `egg`, the Studio's egg editors
+    (world rules, data editors, check), the incubators' CSS and i18n lines. A cleanup session removes them.
+  - An abomination looks like its body parent with odd part sizes; a real mix of parts is a renderer job.
+  - Eggs trust the device clock forward (an egg hatches early if the clock is set ahead); RL-10b's anchor.
+  - Closing the hatch window lets any waiting window (an evolution) show before the ranch's sheet comes back.
+  - The sheet lists every Billie at home as a pick card; with many in storage it is long.
+- Phone check wanted: at the ranch, +50 Scrap from the debug menu if needed; Safe: pick two of one line, see the egg,
+  Breed; "Eggs ready now"; Hatch (the window, the Billie); Risky with two lines (try a few for an abomination); the
+  Bag has no Eggs pocket; the Trainer card's Eggs hatched; export the debug log (`eggs`, `bred`).
+- Next: RL-10b (passive income with its cap, the shared rollback guard fixing training's, offline, the cloud `t`
+  anchor and the `saves/{uid}` key whitelist, 8.12, emulator first); the owner pushes `rl-9-done` and `rl-11-done`.
+
 ### Phase 09 batch 10 - every run tree a model; the _deep trees merged - 2026-10-22
 Branch `props/batch10-trees`, from main 6493ed4 (PR #113). Owner's request in chat: make sure all trees are 3D props in
 the style used, and list what else still needs converting. Plan approved with the owner's answers: only what the

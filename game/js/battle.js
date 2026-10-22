@@ -31,10 +31,8 @@ import { COINS, ITEMS, MOVES, STAT_NAMES, TYPE_COLORS, typeEffectiveness } from 
 import { ROBOT_LIMBS, ROBOT_SLOT_NAMES, isRobot, robotPartDef, speciesOf } from './logic/fighters.js';
 import {
   addBilly,
-  addEgg,
   billyName,
   dropEncounter,
-  eggKm,
   findBilly,
   formatNumber,
   healAll,
@@ -67,7 +65,7 @@ import {
 } from './logic/battle-engine.js';
 import { battleRewards } from './logic/battle-rewards.js';
 import { activeBattle, escapeHtml, reducedMotion, save, saveData, setActiveBattle, uiState } from './game-state.js';
-import { artURL, coinHTML, eggHTML, iconURL, uiIconHTML } from './art.js';
+import { artURL, coinHTML, iconURL, uiIconHTML } from './art.js';
 import { portraitHTML } from './person-art.js';
 import { RIG_BACK_VIEW, bustHTML, rigPreload } from './skeleton-rig.js';
 import {
@@ -996,22 +994,11 @@ export function endBattle() {
       toast(`You earned $${formatNumber(prize)}.`);
     }
   }
-  if (pay.egg) {
-    const tier = pay.egg;
-    if (addEgg(tier))
-      after.push({
-        title: 'It dropped an egg',
-        top: `<div class="sheet-art">${eggHTML(tier, 72, 'wob')}</div>`,
-        html: `<p>A ${eggKm(tier)} km egg rolled out of the grass. Walk ${eggKm(tier)} km with it in an incubator to see what hatches.</p>`,
-        btns: [{ l: 'Nice', c: 'dark', f: closeModal }],
-      });
-  }
   if (kind === 'trainer' && o === 'win') {
     saveData.se += pay.reward;
     const first = pay.first;
     saveData.flags[tid] = 1;
     let extra = '';
-    if (first && T.egg && addEgg(T.egg)) extra += ` and a ${eggKm(T.egg)} km egg`;
     const st = T.seat;
     if (st && pay.seat) {
       const nu = pay.seat.nu;

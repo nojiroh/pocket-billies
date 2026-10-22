@@ -44,6 +44,7 @@ Lint enforces what it can (see the end). Every old -> new name of phase 05 is in
 | Lore: a location's history, landmark and legend | `lore.locations`; an unlock `location:<id>` | was lore.places, `place:<id>` |
 | Customizable home | `ranch` | phase 12 |
 | The ranch's training | `logic/ranch.js` (`ranchTrainStart`, `ranchCollect`, `ranchStop`, `ranchCap`, `ranchSlots`), its sheet `ranchOpen` (ranch-screen.js), the act and room `ranch` → `int_barn`, rules `rules.ranch` | RL-9. "Ranch", "Training board", "Scrap" |
+| Breeding at the ranch | `logic/breeding.js` (`breedCan`, `breedRoll`, `breedStart`, `breedHatch`, `breedNests`), the nursery `ranch.nursery` (each with its `egg`), `ranch.bred`, a bred Billie's mark `m.mut` (`quirk`, `abom`), rules `rules.ranch.breed`, the hatch window `hatchModal` | RL-10a. "Nursery", "Breed a pair", "Safe", "Risky", "Quirk", "Abomination" |
 | A run's start at the mast | the Billies from home `run.home` (`runHome`), the packed bag `run.pack`, rules `run.home` and `run.pack` by Bracket (`runByTier`), the sheet's `runPickNow` | RL-9b. "Who comes from home", "Pack the bag" |
 | The old world outside the hub | `legacy` (folder `game/data/legacy`, its own `legacy/index.json`; `readLegacyData()`, `oldWorld()` in tests; the Studio's `legacyView`) | RL-5: kept for the Studio, never loaded by the game |
 | A leader who stands on no stop | `miniboss` (a trainer's `miniboss: true`, no `node`) | RL-5: the eight badge leaders; RL-13 makes them the runs' mini-boss pool. A `tutorial` trainer stands nowhere too |

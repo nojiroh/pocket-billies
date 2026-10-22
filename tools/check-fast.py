@@ -433,6 +433,61 @@ def ranch(pg, base):
     return f'Train paid {R["trainCost"]} Scrap each; a level’s time: Lv {first} → {first + 1}; a whole bank from Lv {last} stopped at the cap ({cap}); the clock turned back gained nothing; a reload kept it'
 
 
+def breed(pg, base):
+    """RL-10: the ranch fixture (three Billies of the lead's line in storage, 50 Scrap). Two storage cards picked show
+    the safe egg before paying, the very egg Breed puts in the nursery (safeCost paid); it can't hatch before
+    breed.hours, then Hatch brings it onto the team. A risky pair (storage and the team's second) pays riskyCost; the
+    clock turned back keeps its ready time (no hatch); a reload (?fixture=stored) keeps the nursery, the count and Scrap"""
+    if not until(pg, "!!uiState.inside&&uiState.inside.kind==='ranch'&&walkView.ready", 60): raise Exception(f'not in the ranch: {pg.evaluate("walkView.id")}')
+    pg.evaluate("window.__d0=Date.now;window.__shift=0;Date.now=()=>__d0.call(Date)+__shift;0")
+    board = "(()=>{const p=walkView.sc.props.find(q=>q.act==='ranch'&&q.k==='blackboard');uiState.modal=null;uiState.mq=[];walkPick({k:'act',p,act:'ranch'});return !!(uiState.modal&&uiState.modal.cls==='ranch-sheet'&&document.querySelector('#ov .ranch-sheet'))})()"
+    B = pg.evaluate("RULES.ranch.breed"); H = 3600000
+    if not pg.evaluate(board): raise Exception('the training board didn’t open the ranch’s sheet')
+    tap = lambda uid: pg.evaluate(f"document.querySelector('#ov pb-pick-card[data-u=\"{uid}\"]').shadowRoot.querySelector('button').click();0")
+    a, b = pg.evaluate("[saveData.box[0].uid,saveData.box[1].uid]")
+    for u in (a, b):
+        tap(u)
+        if not until(pg, f"!!document.querySelector('#ov pb-pick-card[data-u=\"{u}\"][selected]')", 10): raise Exception('a tapped card wasn’t picked')
+    if not until(pg, "!!document.querySelector('#ov .breed-preview')&&!document.querySelector('#ov [data-r=breed]').disabled", 10): raise Exception('two of one line picked: no egg shown, or Breed off')
+    shown = pg.evaluate("document.querySelector('#ov .breed-preview b').textContent")
+    rolled = pg.evaluate(f"JSON.stringify((m=>[m.sp,m.build,m.uid])(breedRoll(saveData,saveData.box[0],saveData.box[1],'safe',RULES.ranch.breed).m))")
+    pg.click('#ov [data-r=breed]')
+    got = pg.evaluate("JSON.stringify([saveData.meta.scrap,saveData.ranch.nursery.length,saveData.ranch.bred,(m=>[m.sp,m.build,m.uid])(saveData.ranch.nursery[0].egg)])")
+    want = json.dumps([50 - B['safeCost'], 1, 1, json.loads(rolled)], separators=(',', ':'))
+    if got != want: raise Exception(f'after Breed {got}, not {want}')
+    if not pg.evaluate("document.querySelector('#ov [data-r=hatch][data-i=\"0\"]').disabled"): raise Exception('a new egg could hatch at once')
+    egg = json.loads(rolled)[2]
+    pg.evaluate(f"__shift={B['hours'] * H};0")
+    pg.evaluate(board)
+    pg.click('#ov [data-r=hatch][data-i="0"]')
+    if not until(pg, "!!uiState.modal&&uiState.modal.title==='An egg is hatching'", 10): raise Exception('Hatch opened no hatch window')
+    pg.click('#ov [data-a=mb][data-i="0"]')
+    if not until(pg, f"saveData.ranch.nursery.length===0&&saveData.team.some(m=>m.uid==='{egg}')", 10): raise Exception('“Hatch it” didn’t bring the egg onto the team')
+    if not until(pg, "!!uiState.modal&&/^It’s/.test(uiState.modal.title)", 10): raise Exception('the hatch window never showed the Billie')
+    pg.click('#ov [data-a=mb][data-i="0"]')
+    # the ranch's sheet comes back, or waits behind a window that was waiting (the fixture's lead can evolve)
+    if not until(pg, "[uiState.modal,...uiState.mq].some(m=>m&&m.cls==='ranch-sheet')", 10): raise Exception('“Welcome aboard” didn’t bring the ranch’s sheet back')
+    pg.evaluate("uiState.mq=[];uiState.modal=null;renderOverlay();0")
+    pg.evaluate(board)
+    second = pg.evaluate("saveData.team[1].uid")
+    pg.click('#ov [data-r=mode][data-m=risky]')
+    for u in (a, second): tap(u)
+    if not until(pg, "!!document.querySelector('#ov .breed-preview')&&!document.querySelector('#ov [data-r=breed]').disabled", 10): raise Exception('a risky pair: no odds shown, or Breed off')
+    pg.click('#ov [data-r=breed]')
+    st = pg.evaluate("JSON.stringify([saveData.meta.scrap,saveData.ranch.nursery.map(n=>n.mode),saveData.ranch.bred])")
+    if st != json.dumps([50 - B['safeCost'] - B['riskyCost'], ['risky'], 2], separators=(',', ':')): raise Exception(f'after a risky Breed {st}')
+    ready = pg.evaluate("saveData.ranch.nursery[0].ready")
+    pg.evaluate(f"__shift={-30 * H};0")
+    pg.evaluate(board)
+    if not pg.evaluate("document.querySelector('#ov [data-r=hatch][data-i=\"0\"]').disabled") or pg.evaluate("saveData.ranch.nursery[0].ready") != ready: raise Exception('the clock turned back moved the egg’s time')
+    keep = pg.evaluate("JSON.stringify([saveData.meta.scrap,saveData.ranch.bred,saveData.ranch.nursery,saveData.team.map(m=>m.uid)])")
+    pg.goto(base + '/index.html?fixture=stored')
+    if not until(pg, "typeof saveData!=='undefined'&&!!saveData.ranch&&!document.getElementById('loader')", 90): raise Exception('the reload never booted')
+    back = pg.evaluate("JSON.stringify([saveData.meta.scrap,saveData.ranch.bred,saveData.ranch.nursery,saveData.team.map(m=>m.uid)])")
+    if back != keep: raise Exception(f'after a reload the nursery changed')
+    return f'a safe pair showed “{shown}” before paying {B["safeCost"]} Scrap, the same egg hatched after {B["hours"]} h onto the team; a risky pair paid {B["riskyCost"]}; the clock turned back kept its time; a reload kept it'
+
+
 def lab(pg, base):
     """RL-11: the lab fixture stands in Copperleaf after a run (500 Capital, 60 Scrap, 2 Seals, one run ended). The
     first milestone was granted on load; the bottom bar's Lab tab opens the board with every row; a board row bought
@@ -623,7 +678,8 @@ def run_pack(pg, base):
     packed = pg.evaluate("document.querySelector('#ov h3 small').textContent")
     if not packed.startswith('2 of '): raise Exception(f'the pack says “{packed}”')
     pg.click('#ov [data-a=mb][data-i="0"]')
-    if not until(pg, "!!saveData.run&&airshipFlight.on", 30): raise Exception('“Take off” didn’t start a run')
+    # the flight is 2-3 s: on a slow page (CI's software drawing) it may have landed already when the wait first looks
+    if not until(pg, "!!saveData.run&&(airshipFlight.on||saveData.run.at.phase==='walk')", 30): raise Exception('“Take off” didn’t start a run')
     got = pg.evaluate(f"JSON.stringify([saveData.team.map(m=>m.uid),saveData.team[0].hp===maxHp(saveData.team[0]),saveData.ranch.trainees.some(t=>t.uid==='{who}'),saveData.run.start.team.map(m=>m.uid),saveData.box.map(m=>m.uid),saveData.run.start.items.taxbreak,saveData.items.taxbreak,saveData.buddy])")
     want = json.dumps([[who], True, False, json.loads(hub)[0], json.loads(hub)[1], 1, gift + 2, who], separators=(',', ':'))
     if got != want: raise Exception(f'at take-off {got}, not {want}')
@@ -641,7 +697,7 @@ def run_pack(pg, base):
     if back != json.dumps([H[0], H[1], H[2], lv, 1], separators=(',', ':')): raise Exception(f'home after a loss {back}: team, storage, buddy as before, Lv {lv} kept, 1 Potion')
     lead = H[0][0]
     pg.evaluate(f"runTakeOff(undefined,undefined,undefined,{{home:['{lead}'],pack:{{items:{{taxbreak:1}},coins:{{}}}}}});0")
-    if not until(pg, "!!saveData.run&&airshipFlight.on", 30): raise Exception('the second run didn’t start')
+    if not until(pg, "!!saveData.run&&(airshipFlight.on||saveData.run.at.phase==='walk')", 30): raise Exception('the second run didn’t start')
     pg.evaluate("flySkip();0")
     if not until(pg, "!airshipFlight.on&&saveData.run.at.phase==='walk'&&walkView.ready", 90): raise Exception('the second run never landed')
     bag = pg.evaluate("saveData.items.taxbreak")
@@ -666,6 +722,7 @@ PAGES = [   # (what the page opens, its checks in order); the longest first, so 
               ('The world map opens as the bowl', bowl_map)]),
     ('room', [('A room opens and draws (the lab)', room), ('A save round-trips', save_round_trip)]),
     ('ranch', [('The ranch trains: Train, a level with time, the cap, a clock turned back, a reload (RL-9)', ranch)]),
+    ('ranch', [('Breeding: a safe egg shown and hatched, a risky pair, a clock turned back, a reload (RL-10)', breed)]),
     ('lab', [('The Lab: a milestone on load, the board, buying at the Lab, the ranch and the mast, a reload (RL-11)', lab)]),
     ('ranch', [('Packing for a run: a Billie from storage, a packed bag; kept on a loss, the bag home on a win (RL-9b)', run_pack)]),
     ('battle', [('A battle plays to the end', battle)]),

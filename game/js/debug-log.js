@@ -511,6 +511,9 @@ debugLog.state = () => {
           training: ranch.trainees.length,
           hours: ranch.trainees.map(t => +((Date.now() - t.at) / 3600000).toFixed(1)),
           stored: (GAME.saveData.box || []).length,
+          /* RL-10: the nursery (numbers only): each egg's mode and hours left, and how many pairs have bred */
+          eggs: (ranch.nursery || []).map(n => [n.mode, +Math.max(0, (n.ready - Date.now()) / 3600000).toFixed(1)]),
+          bred: ranch.bred || 0,
         }
       : null;
     s.frameHz = GAME.frameScheduler.hz;
