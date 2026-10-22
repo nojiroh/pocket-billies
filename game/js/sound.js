@@ -10,6 +10,7 @@ import { expose } from './test-globals.js';
 import { cutscene, mapIdAt, provide } from './hooks.js';
 import { clamp } from './util.js';
 import { LOCATIONS, MUSIC } from './game-data.js';
+import { songFor } from './logic/music-where.js';
 import { activeBattle, saveData, uiState } from './game-state.js';
 import { battleStage } from './battle-stage.js';
 import {
@@ -48,6 +49,7 @@ expose({
   jingle: [() => jingle, v => ((jingle = v), provide({ jingle }))],
   music: [() => music, v => (music = v)],
   musicFor: [() => musicFor, v => (musicFor = v)],
+  musicState: [() => musicState, v => (musicState = v)],
   musicStop: [() => musicStop, v => (musicStop = v)],
   musicSync: [() => musicSync, v => (musicSync = v)],
   nearestSoundSource: [() => nearestSoundSource, v => (nearestSoundSource = v)],
@@ -184,24 +186,27 @@ function musicStop() {
   soundEngine.want = null;
   soundEngine.voices = [];
 }
-/* the music that fits where you are */
+/* the music that fits where you are. SND-2: music.json's where table picks it (logic/music-where.js songFor) */
 export function musicFor() {
-  if (typeof saveData === 'undefined' || !saveData || !saveData.started) return 'hazel';
-  if (typeof activeBattle !== 'undefined' && activeBattle)
-    return activeBattle.kind === 'trainer'
-      ? activeBattle.T && activeBattle.T.who === 'chad'
-        ? 'rival'
-        : 'trainer'
-      : 'wild';
-  if (uiState.tab === 'map') return 'map';
-  const id = typeof mapIdAt === 'function' ? mapIdAt(saveData.trip.node) : null,
+  return songFor(musicState(), MUSIC.where, SONGS);
+}
+/* what the where table matches on */
+function musicState() {
+  if (typeof saveData === 'undefined' || !saveData || !saveData.started) return { started: false };
+  const B = typeof activeBattle !== 'undefined' && activeBattle,
+    battle = B ? (B.kind === 'trainer' ? (B.T && B.T.who === 'chad' ? 'rival' : 'trainer') : 'wild') : null,
+    id = typeof mapIdAt === 'function' ? mapIdAt(saveData.trip.node) : null,
     sc = id && mapById(id),
     r = LOCATIONS[saveData.trip.node];
-  if (sc && sc.indoor) return /lanternhall|pepperpot/.test(id) ? 'mall' : 'cave';
-  if (r && r.music && SONGS[r.music]) return r.music;
-  /* v47: a place's own song */ if (/lanternhall|pepperpot/.test(id || '')) return 'mall';
-  if (id === 'verdigris' || (r && r.t === 'city')) return 'city';
-  return r && r.town ? 'town' : 'route';
+  return {
+    started: true,
+    battle,
+    tab: uiState.tab,
+    indoor: !!(sc && sc.indoor),
+    map: id,
+    placeKind: r && r.t === 'city' ? 'city' : r && r.town ? 'town' : null,
+    placeMusic: (r && r.music) || null,
+  };
 }
 function musicSync() {
   if (typeof cutscene !== 'undefined' && cutscene.on) return;
