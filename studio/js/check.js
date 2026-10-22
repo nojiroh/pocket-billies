@@ -3,7 +3,7 @@
    The game repairs or skips anything broken when it loads, but these checks point at it first. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
-import { provide, uiRulesCheckLine } from '../../game/js/hooks.js';
+import { legacyLineIds, legacyLineIdsRead, provide, uiRulesCheckLine } from '../../game/js/hooks.js';
 import { $ } from '../../game/js/util.js';
 import { uiThemeContrast } from '../../game/js/logic/ui-theme.js';
 import { islandProblems } from '../../game/js/logic/island.js';
@@ -27,6 +27,7 @@ import {
   dataRunMapRules,
   dataRunPayout,
   dataRunScene,
+  dataSpeciesKind,
   dataUnlocks,
 } from '../../game/js/logic/data-checks.js';
 import {
@@ -71,14 +72,26 @@ export function runCheck() {
     moves = D.moves,
     items = D.items,
     coins = D.coins;
-  /* phase 16: a Billie from a line moved to game/data/legacy (a name like walton0 whose line isn't loaded) is stood in
-     for by the game, so it is one warning per section, not an error per place */
-  const legacyRefs = {},
-    isLegacyRef = id => typeof id === 'string' && /^[a-z]+\d+$/.test(id) && !D.lines.some(L => id.startsWith(L.id)),
+  /* phase 16: a Billie from a line moved to game/data/legacy is stood in for by the game, so it is one warning per
+     section, not an error per place. T1.3: check-data's rule (logic/data-checks.js dataSpeciesKind), with the legacy
+     line ids the Legacy section reads; until they are read (or if they can't be), any name like walton0 whose line
+     isn't loaded counts as legacy, as before, and a note says so */
+  const legacyIds = legacyLineIds(),
+    speciesKind = dataSpeciesKind(
+      D.lines,
+      (legacyIds || []).map(id => ({ id }))
+    ),
+    looksLegacy = id => typeof id === 'string' && /^[a-z]+\d+$/.test(id) && !D.lines.some(L => id.startsWith(L.id)),
+    isLegacyRef = id => (legacyIds ? speciesKind(id) === 'legacy' : looksLegacy(id)),
+    legacyRefs = {},
     missingSp = (id, msg, go, sel) => {
       if (!isLegacyRef(id)) return err(msg, go, sel);
       (legacyRefs[go] = legacyRefs[go] || { go, sel, ids: new Set() }).ids.add(id);
     };
+  if (!legacyIds)
+    legacyLineIdsRead().then(ids => {
+      if (ids) scheduleCheck();
+    });
   if (!D.types.length) err('There are no types.', 'types');
   const tid = new Set();
   D.types.forEach(t => {
@@ -481,6 +494,11 @@ export function runCheck() {
     (sh.sells || []).forEach(o => {
       if (!(D.shops || {})[o]) warn(`${sh.name} sells the clothes of a shop that doesn’t exist (${o}).`, 'shops');
     });
+  if (!legacyIds && Object.keys(legacyRefs).length)
+    warn(
+      'The parked world (game/data/legacy) isn’t read yet, so Billies named like a legacy line are taken to be one. Open Legacy to read it.',
+      'legacy'
+    );
   for (const r of Object.values(legacyRefs))
     warn(
       `${r.ids.size} Billie${r.ids.size === 1 ? '' : 's'} named here ${r.ids.size === 1 ? 'is' : 'are'} in legacy (${[...r.ids].slice(0, 4).join(', ')}${r.ids.size > 4 ? '…' : ''}); the game stands in one of the new lines for ${r.ids.size === 1 ? 'it' : 'them'}.`,

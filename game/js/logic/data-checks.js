@@ -49,6 +49,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   dataRunScene: [() => dataRunScene, v => (dataRunScene = v)],
   // @ts-expect-error -- replaced on purpose
+  dataSpeciesKind: [() => dataSpeciesKind, v => (dataSpeciesKind = v)],
+  // @ts-expect-error -- replaced on purpose
   dataUiTheme: [() => dataUiTheme, v => (dataUiTheme = v)],
   // @ts-expect-error -- replaced on purpose
   dataUnderscoreKeys: [() => dataUnderscoreKeys, v => (dataUnderscoreKeys = v)],
@@ -690,6 +692,25 @@ export function dataUnlocks(D, valid = () => true) {
       );
   }
   return out;
+}
+/** phase 16 (Studio plan T1.3: one rule for check-data and the Studio): what a species id names: 'line' for a stage
+ * of a loaded line, 'legacy' for one of a line parked in game/data/legacy (the game stands in a new line's Billie for
+ * it), '' for nothing. A legacy line given with its names has that many stages; given as an id alone (the Studio
+ * reads only legacy/index.json), any stage counts
+ * @param {{ id: string, names?: unknown[] }[]} lines @param {{ id: string, names?: unknown[] }[]} legacyLines
+ * @returns {(sp: unknown) => 'line' | 'legacy' | ''} */
+export function dataSpeciesKind(lines, legacyLines) {
+  const stages = (/** @type {{ id: string, names?: unknown[] }[]} */ L) =>
+      new Set(L.flatMap(l => (l.names || []).map((_, i) => l.id + i))),
+    here = stages(lines || []),
+    parked = stages(legacyLines || []),
+    anyStage = new Set((legacyLines || []).filter(l => !l.names).map(l => l.id));
+  return sp => {
+    if (typeof sp !== 'string') return '';
+    if (here.has(sp)) return 'line';
+    const m = sp.match(/^(.*?)(\d+)$/);
+    return parked.has(sp) || (m && anyStage.has(m[1])) ? 'legacy' : '';
+  };
 }
 // phase 17: a trainer's robot: a gem and a part that fits each of its four slots
 export const ROBOT_FITS = { torso: 'torso', armL: 'arm', armR: 'arm', legs: 'legs' };

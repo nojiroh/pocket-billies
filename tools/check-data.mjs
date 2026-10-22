@@ -34,6 +34,7 @@ import {
   dataRunMapRules,
   dataRunPayout,
   dataRunScene,
+  dataSpeciesKind,
   dataUiTheme,
   dataUnderscoreKeys,
   dataUnlocks,
@@ -168,13 +169,14 @@ for (const L of D.lines || []) {
   }
 }
 // phase 16: a species from a line kept in game/data/legacy is fine; the game stands in a new line's Billie for it
-const legacy = new Set();
-if (existsSync(join(DATA, 'legacy', 'lines')))
-  for (const f of readdirSync(join(DATA, 'legacy', 'lines')).filter(f => f.endsWith('.json'))) {
-    const L = JSON.parse(readFileSync(join(DATA, 'legacy', 'lines', f), 'utf8'));
-    (L.names || []).forEach((n, i) => legacy.add(L.id + i));
-  }
-const known = sp => species.has(sp) || legacy.has(sp);
+// (logic/data-checks.js dataSpeciesKind, the Studio's Check's rule too)
+const legacyLines = existsSync(join(DATA, 'legacy', 'lines'))
+  ? readdirSync(join(DATA, 'legacy', 'lines'))
+      .filter(f => f.endsWith('.json'))
+      .map(f => JSON.parse(readFileSync(join(DATA, 'legacy', 'lines', f), 'utf8')))
+  : [];
+const speciesKind = dataSpeciesKind(D.lines || [], legacyLines),
+  known = sp => !!speciesKind(sp);
 for (const [k, P] of Object.entries(pools))
   for (const [sp] of P.list || []) if (!known(sp)) problem('pools.json', `${k} has ${sp}, no such species`);
 route.forEach((r, i) => {

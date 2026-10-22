@@ -118,3 +118,17 @@ test("a trainer's robot: a missing gem and a part in the wrong slot", () => {
   assert.ok(P.includes(`has ${torso} as armL, but it is a torso part`));
   assert.ok(P.includes('has robot armR x, no such part'));
 });
+
+test("one species rule: a loaded line's stages, a legacy line's (by its names, or any stage by its id alone)", () => {
+  const kind = C.dataSpeciesKind(
+    [{ id: 'nova', names: ['a', 'b'] }],
+    [{ id: 'walton', names: ['x', 'y', 'z'] }, { id: 'ford' }]
+  );
+  assert.equal(kind('nova1'), 'line');
+  assert.equal(kind('nova2'), '');
+  assert.equal(kind('walton2'), 'legacy');
+  assert.equal(kind('walton3'), '');
+  assert.equal(kind('ford7'), 'legacy');
+  assert.equal(kind('waltn0'), '');
+  assert.equal(kind(null), '');
+});
