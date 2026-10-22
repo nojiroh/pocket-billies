@@ -6,6 +6,7 @@ hub), the summit, a top-down view (the Studio's free-camera hook) and a flat gro
     python3 tools/island-shots.py OUT_DIR                # 390 x 760, the game's own graphics defaults
     python3 tools/island-shots.py OUT_DIR --low          # the fast check's low graphics
     python3 tools/island-shots.py OUT_DIR --scene=test_island
+    python3 tools/island-shots.py OUT_DIR --only=top-down,summit   # only these (the others in OUT_DIR stay)
     python3 tools/island-shots.py OUT_DIR --hud          # the whole page, the HUD too (default: the game's canvas alone)
 
 Run `npm run data` first (the page reads game/data/gamedata.js). Writes OUT_DIR/<name>.png and OUT_DIR/shots.json
@@ -22,6 +23,8 @@ ARGS = sys.argv[1:]
 OUT = Path(next((a for a in ARGS if not a.startswith('--')), 'island-shots')).resolve()
 LOW = '--low' in ARGS
 CANVAS = '--hud' not in ARGS
+ONLY = next((a.split('=', 1)[1].split(',') for a in ARGS if a.startswith('--only=')), None)
+want = lambda name: not ONLY or name in ONLY
 SCENE = next((a.split('=', 1)[1] for a in ARGS if a.startswith('--scene=')), 'copperleaf')
 W, H = 390, 760
 COMPASS = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']
@@ -107,27 +110,38 @@ def main():
             print(f'[{time.time() - t0:5.0f}s] {name}', flush=True)
 
         for k, nm in enumerate(COMPASS):
+            if not want(f'coast-{nm.lower()}'): continue
             x, z = pg.evaluate(f'{COAST_SPOT}({k * 45})')
             fast.stand(pg, x, z, frames=4)
             shot(f'coast-{nm.lower()}', f'From the coast, {nm} of the middle', [round(x, 1), round(z, 1)])
         hub = pg.evaluate('mapHub(walkView.sc)')
-        fast.stand(pg, hub[0], hub[1], frames=4)
-        shot('town-square', 'The town square (the hub)', [round(hub[0], 1), round(hub[1], 1)])
+        if want('town-square'):
+            fast.stand(pg, hub[0], hub[1], frames=4)
+            shot('town-square', 'The town square (the hub)', [round(hub[0], 1), round(hub[1], 1)])
         sm = pg.evaluate("((mapById(walkView.sc.baseId||walkView.id)||walkView.sc).spots||[]).find(s=>s.kind==='summit')")
-        if sm:
+        if sm and want('summit'):
             fast.stand(pg, sm['x'], sm['z'], frames=4)
             shot('summit', 'On the summit', [sm['x'], sm['z']])
+        # the views from above: no depth of field (it focuses on you, so the island blurs), as a player's own expert
+        # dials would set it; put back after
+        pg.evaluate("(()=>{const p=saveData.preferences=saveData.preferences||{};window.__pref={expert:p.expert,eng:p.eng};p.expert=true;p.eng={lens:{blur:0,bokeh:0}};return 0})()")
         c = pg.evaluate('walkView.sc.island.c')
         span = pg.evaluate('Math.max(walkView.sc.w,walkView.sc.h)')
         pg.evaluate(f"walkView.opt.look=()=>({{eye:[{c[0]},{span * 0.95},{c[1]}-{span * 0.12}],tgt:[{c[0]},0,{c[1]}],fov:62}})")
-        shot('top-down', 'From above (north up)')
+        if want('top-down'): shot('top-down', 'From above (north up)')
         pg.evaluate(f"walkView.opt.look=()=>({{eye:[{c[0]}+{span * 0.55},{span * 0.5},{c[1]}-{span * 0.55}],tgt:[{c[0]},0,{c[1]}],fov:55}})")
-        shot('overview-se', 'Overview from the south-east, high up')
+        if want('overview-se'): shot('overview-se', 'Overview from the south-east, high up')
         pg.evaluate('delete walkView.opt.look')
+        pg.evaluate("(()=>{const p=saveData.preferences;p.expert=window.__pref.expert;p.eng=window.__pref.eng;return 0})()")
         b.close()
     srv.shutdown()
-    ground_map(OUT / 'ground-map.png')
-    shots.append({'name': 'ground-map', 'label': 'Ground map (north up; red lines are bridges, white the pier)'})
+    if want('ground-map'):
+        ground_map(OUT / 'ground-map.png')
+        shots.append({'name': 'ground-map', 'label': 'Ground map (north up; red lines are bridges, white the pier)'})
+    # a partial run (--only) keeps the other pictures' entries
+    old = json.loads((OUT / 'shots.json').read_text()) if ONLY and (OUT / 'shots.json').exists() else {'shots': []}
+    new = {s['name'] for s in shots}
+    shots = [s for s in old['shots'] if s['name'] not in new] + shots
     (OUT / 'shots.json').write_text(json.dumps({'scene': SCENE, 'low': LOW, 'size': [W, H], 'shots': shots, 'pageErrors': errs[:10]}, indent=1))
     print(f'{len(shots)} pictures in {OUT}; page errors: {len(errs)}')
 
