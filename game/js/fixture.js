@@ -10,6 +10,7 @@
      stored  whatever the fixture saved last in this browser (the save round trip)
      run     on a run (RL-7): standing on its landing on day 1, its world made from the seed RL7FIXTURE
      mountains   the same run with the debug menu's mountains mod (TR-3: mountains north and south, for the camera)
+     ranch   inside Copperleaf's ranch (RL-9): three Billies in storage (one two levels under the cap), 50 Scrap
    UI-3b, for the Studio's UI look preview (the real screens with the look being edited):
      team    the Team screen          bag     the Bag, with a few of each item
      talk    the dialogue box with a line from Professor Hazel
@@ -59,6 +60,7 @@ const FIXTURE_PLACES = {
   talk: 'copperleaf',
   run: 'copperleaf',
   mountains: 'copperleaf',
+  ranch: 'copperleaf',
 };
 /** RL-7: the run fixture's seed */
 const FIXTURE_RUN_SEED = 'RL7FIXTURE';
@@ -85,6 +87,17 @@ function fixtureSave() {
   s.team = [lead, second];
   s.buddy = lead.uid;
   for (const m of s.team) s.caught[m.sp] = s.seen[m.sp] = 1;
+  /* RL-9: the ranch's fixture has Billies resting in storage and Scrap to train them */
+  if (FIXTURE === 'ranch') {
+    const R = RULES.ranch;
+    s.meta.scrap = 50;
+    for (const lvl of [5, 8, R.capBase - 2]) {
+      const m = makeBilly(sp + '0', lvl);
+      m.boxedAt = Date.now();
+      s.box.push(m);
+      s.caught[m.sp] = s.seen[m.sp] = 1;
+    }
+  }
   /* UI-3b: the Bag fixture has something in it */
   if (FIXTURE === 'bag') for (const k of Object.keys(s.items)) s.items[k] = 3;
   /* the people who would stop you to talk have met you already */
@@ -112,9 +125,10 @@ export function fixtureStart() {
   renderOverlay();
   render();
   /* phase 08b: into a room through its door, as soon as the town is on screen (RL-5: Hazel's lab in Copperleaf) */
-  if (FIXTURE === 'room') {
+  if (FIXTURE === 'room' || FIXTURE === 'ranch') {
+    const act = FIXTURE === 'ranch' ? 'ranch' : 'lab';
     const go = (n = 0) => {
-      const p = walkView.ready && walkView.sc && !walkView.pl.fresh && walkView.sc.props.find(q => q.act === 'lab');
+      const p = walkView.ready && walkView.sc && !walkView.pl.fresh && walkView.sc.props.find(q => q.act === act);
       if (!p) {
         if (n < 600) setTimeout(() => go(n + 1), 100);
         return;
@@ -123,7 +137,7 @@ export function fixtureStart() {
       walkView.pl.route = null;
       walkView.pl.x = g[0];
       walkView.pl.z = g[1];
-      enterRoom('lab', p);
+      enterRoom(act, p);
     };
     go();
   }

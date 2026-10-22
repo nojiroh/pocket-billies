@@ -25,6 +25,7 @@ import {
   worldExtraMaps,
 } from './game-data.js';
 import { encountersHere, makeBilly, maxHp, spawn } from './logic/rules.js';
+import { ranchTrainStart } from './logic/ranch.js';
 import { runBegin, runRestore } from './logic/run-state.js';
 import { runArrive, runMapStart, runNext, runWorldNode } from './logic/run-map.js';
 import { MAPGEN_VERSION } from './logic/mapgen.js';
@@ -88,6 +89,7 @@ import { fallOverWorldMap, fallWorldMapCanvas } from './opening-fall.js';
 import { airshipFlight } from './airship.js';
 import { runWorld, runWorldData, runWorldSync } from './run-world.js';
 import { runJump, runTakeOff } from './run.js';
+import { ranchOpen } from './ranch-screen.js';
 import { closeModal, modal, renderOverlay, toast } from './overlay.js';
 import { clinicHeal } from './walk-tab.js';
 import { leaveRoom, mapIdAt, walkCross, walkPick, walkState } from './walk-control.js';
@@ -1055,6 +1057,56 @@ async function runFullTest(mode) {
         },
         10,
         180
+      );
+    /* RL-9: the ranch, on a copy of the save (nothing is written while the test runs): Copperleaf's barn leads into the
+       ranch's room; a Billie put in storage starts training for Scrap; a level's time later (its start moved back)
+       the ranch's sheet collects the level; Stop ends it. Then the save as it was */
+    if (typeof ranchOpen === 'function' && RULES.ranch && !saveData.run && !selfTest.stop)
+      await phase(
+        'The ranch: training between runs',
+        'dio',
+        async () => {
+          const was = saveData,
+            R = RULES.ranch,
+            hub = mapById(LOCATIONS[START_NODE].mapId) || { props: [] },
+            door = (hub.props || []).find(p => p.act === 'ranch');
+          try {
+            if (!door) throw new Error('no ranch in ' + LOCATIONS[START_NODE].name);
+            const rooms = PB_DATA.doorRooms(door, walkData().sc.props[door.k], 'ranch');
+            if (!rooms.some(id => mapById(id)))
+              throw new Error('the ranch’s door leads to no room: ' + rooms.join(', '));
+            const s = JSON.parse(JSON.stringify(saveData)),
+              m = makeBilly(s.team[0].sp, 5);
+            s.box.push(m);
+            s.meta.scrap = R.trainCost;
+            setSaveData(s);
+            uiState.modal = null;
+            uiState.mq = [];
+            const why = ranchTrainStart(s, m.uid, Date.now() - Math.ceil(3600000 / R.levelsPerHour), R);
+            if (why) throw new Error('training didn’t start: ' + why);
+            if (s.meta.scrap !== 0)
+              throw new Error(`training cost ${R.trainCost - s.meta.scrap} Scrap, not ${R.trainCost}`);
+            ranchOpen();
+            if (!uiState.modal || uiState.modal.cls !== 'ranch-sheet' || !document.querySelector('#ov .ranch-sheet'))
+              throw new Error('the ranch’s sheet didn’t open');
+            if (m.lvl !== 6) throw new Error(`a level’s training gave Lv 5 → ${m.lvl}`);
+            const stop = /** @type {HTMLElement | null} */ (
+              document.querySelector(`#ov .ranch-sheet [data-r=stop][data-u="${m.uid}"]`)
+            );
+            if (!stop) throw new Error('no Stop on the trainee’s card');
+            stop.click();
+            if (s.ranch.trainees.length) throw new Error('Stop left it training');
+            return `the barn leads into ${rooms.find(id => mapById(id))}; trained a level for ${R.trainCost} Scrap; Stop ended it`;
+          } finally {
+            uiState.modal = null;
+            uiState.mq = [];
+            renderOverlay();
+            setSaveData(was);
+            render();
+          }
+        },
+        3,
+        60
       );
     /* v46: a room that opens in place: into a building and out again, without leaving the town (RL-5: Professor Hazel's
        lab in Copperleaf, the hub; it was Marigold's shop) */

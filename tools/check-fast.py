@@ -395,6 +395,44 @@ def tall_ground(pg, base):
     return f'at the foot of {spot["up"]} m of rock: the camera rose {rise:.1f} degrees, the rock fade and the silhouette on; on flat ground off'
 
 
+def ranch(pg, base):
+    """RL-9: the ranch fixture stands in Copperleaf's barn. The training board opens the ranch's sheet; Train on a
+    stored Billie pays the Scrap and starts it; two hours later (the page's clock moved on) the sheet opened again has
+    collected a level; the one two levels under the cap, trained for a whole bank, stops at the cap; the clock turned
+    back gains nothing and starts the trainees again; a reload (?fixture=stored) keeps it all"""
+    if not until(pg, "!!uiState.inside&&uiState.inside.kind==='ranch'&&walkView.ready", 60): raise Exception(f'not in the ranch: {pg.evaluate("walkView.id")}')
+    pg.evaluate("window.__d0=Date.now;window.__shift=0;Date.now=()=>__d0.call(Date)+__shift;0")
+    board = "(()=>{const p=walkView.sc.props.find(q=>q.act==='ranch'&&q.k==='blackboard');uiState.modal=null;uiState.mq=[];walkPick({k:'act',p,act:'ranch'});return !!(uiState.modal&&uiState.modal.cls==='ranch-sheet'&&document.querySelector('#ov .ranch-sheet'))})()"
+    R = pg.evaluate("RULES.ranch"); H = 3600000
+    if not pg.evaluate(board): raise Exception('the training board didn’t open the ranch’s sheet')
+    lv = lambda i: pg.evaluate(f"saveData.box[{i}].lvl")
+    first, last = lv(0), lv(2)
+    for i in (0, 2):
+        uid = pg.evaluate(f"saveData.box[{i}].uid")
+        pg.click(f"#ov .ranch-sheet [data-r=train][data-u='{uid}']")
+    st = pg.evaluate("[saveData.meta.scrap,saveData.ranch.trainees.length]")
+    if st != [50 - 2 * R['trainCost'], 2]: raise Exception(f'after two Trains: Scrap and trainees {st}')
+    pg.evaluate(f"__shift={int(2 * H / (2 * R['levelsPerHour']))};0")   # a level's time
+    if not pg.evaluate(board): raise Exception('the sheet didn’t open again')
+    if lv(0) != first + 1: raise Exception(f'a level’s time gave Lv {first} → {lv(0)}')
+    pg.evaluate(f"__shift={20 * H};0")
+    pg.evaluate(board)
+    cap = pg.evaluate("ranchCap(saveData,RULES.ranch)")
+    if lv(2) != cap: raise Exception(f'trained a whole bank from Lv {last}: Lv {lv(2)}, the cap is {cap}')
+    if lv(0) > first + 1 + R['bankHours'] * R['levelsPerHour']: raise Exception(f'more than a bank: Lv {lv(0)}')
+    got = lv(0)
+    pg.evaluate(f"__shift={-30 * H};0")
+    pg.evaluate(board)
+    at = pg.evaluate("saveData.ranch.trainees.map(t=>t.at)")
+    if lv(0) != got or any(abs(a - pg.evaluate("Date.now()")) > 60000 for a in at): raise Exception(f'the clock turned back: Lv {got} → {lv(0)}, starts {at}')
+    keep = pg.evaluate("JSON.stringify([saveData.meta.scrap,saveData.ranch.trainees.map(t=>t.uid),saveData.box.map(m=>m.lvl)])")
+    pg.goto(base + '/index.html?fixture=stored')
+    if not until(pg, "typeof saveData!=='undefined'&&!!saveData.ranch&&!document.getElementById('loader')", 90): raise Exception('the reload never booted')
+    back = pg.evaluate("JSON.stringify([saveData.meta.scrap,saveData.ranch.trainees.map(t=>t.uid),saveData.box.map(m=>m.lvl)])")
+    if back != keep: raise Exception(f'after a reload {back}, not {keep}')
+    return f'Train paid {R["trainCost"]} Scrap each; a level’s time: Lv {first} → {first + 1}; a whole bank from Lv {last} stopped at the cap ({cap}); the clock turned back gained nothing; a reload kept it'
+
+
 def save_round_trip(pg, base):
     """the save written in this browser comes back whole after a reload (under the fixture's own key)"""
     drawing(pg, 1)
@@ -536,6 +574,7 @@ PAGES = [   # (what the page opens, its checks in order); the longest first, so 
               ('The exported debug log holds no names', debug_log),
               ('The world map opens as the bowl', bowl_map)]),
     ('room', [('A room opens and draws (the lab)', room), ('A save round-trips', save_round_trip)]),
+    ('ranch', [('The ranch trains: Train, a level with time, the cap, a clock turned back, a reload (RL-9)', ranch)]),
     ('battle', [('A battle plays to the end', battle)]),
     ('run', [("A run's world: the landing, its places on the bowl, a seam walked a day later", run_world),
              ("A run town's shop opens (UI-5)", run_shop)]),
