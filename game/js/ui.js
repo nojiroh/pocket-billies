@@ -46,6 +46,7 @@ import { battleAction } from './battle-input.js';
 expose({
   SCREENS: [() => SCREENS],
   TABS: [() => TABS],
+  openTab: [() => openTab, v => (openTab = v)],
   render: [() => render, v => setRender(v)],
   renderIntro: [() => renderIntro, v => (renderIntro = v)],
   startGame: [() => startGame, v => ((startGame = v), provide({ startGame }))],
@@ -142,6 +143,23 @@ export function render() {
     };
     st();
   });
+}
+/* a tab of the bottom bar, or a button that leads to one (data-a="tab") */
+function openTab(t) {
+  /* phase 10: from a walk scene the walk camera rises first, then the bowl pulls back (world-bowl.js) */
+  if (t === 'map' && uiState.tab === 'walk' && typeof worldMapOpenFromWalk === 'function' && worldMapOpenFromWalk())
+    return;
+  if (uiState.tab !== t) {
+    if (t === 'map') uiState.mglFrom = uiState.tab;
+    uiState.tab = t;
+    if (t !== 'map') uiState.mapSel = null;
+    render();
+    scrollTo(0, 0);
+  } else if (t === 'ledger' && uiState.dex) {
+    uiState.dex = null;
+    render();
+    scrollTo(0, 0);
+  }
 }
 function updateNav(show) {
   let n = $('#nav');
@@ -247,25 +265,7 @@ document.addEventListener('click', ev => {
       }
       break;
     case 'tab':
-      /* phase 10: from a walk scene the walk camera rises first, then the bowl pulls back (world-bowl.js) */
-      if (
-        d.t === 'map' &&
-        uiState.tab === 'walk' &&
-        typeof worldMapOpenFromWalk === 'function' &&
-        worldMapOpenFromWalk()
-      )
-        break;
-      if (uiState.tab !== d.t) {
-        if (d.t === 'map') uiState.mglFrom = uiState.tab;
-        uiState.tab = d.t;
-        if (d.t !== 'map') uiState.mapSel = null;
-        render();
-        scrollTo(0, 0);
-      } else if (d.t === 'ledger' && uiState.dex) {
-        uiState.dex = null;
-        render();
-        scrollTo(0, 0);
-      }
+      openTab(d.t);
       break;
     case 'fish':
       if (typeof fishStart === 'function') fishStart();
