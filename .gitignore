@@ -22,6 +22,7 @@ validation/rooms/
 validation/quick-baseline/
 validation/fast/
 validation/tall-ground/
+validation/look-blur/
 validation/style-diff/
 validation/ui-gallery-out/
 validation/sim/
