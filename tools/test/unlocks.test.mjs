@@ -138,3 +138,12 @@ test('unlocks: a run’s copy opens its shops and map; the same seed and copy ma
     );
   }
 });
+
+test('unlocks: a loaded save (saves.js migrate) is tidied: lost rows forgotten, levels from what is owned', () => {
+  const s = hubSave();
+  s.meta.unlocks = { ranch_2: 1, ranch_3: 1, gone_row: 1 };
+  s.meta.buildings = { ranch: 1 };
+  const back = modules.saves.migrate(JSON.parse(JSON.stringify(s)));
+  assert.deepEqual(back.meta.unlocks, { ranch_2: 1, ranch_3: 1 });
+  assert.equal(modules.ranch.ranchLevel(back), 3);
+});

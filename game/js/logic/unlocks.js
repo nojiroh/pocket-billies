@@ -16,6 +16,7 @@
 /** @typedef {'unknown' | 'owned' | 'earned' | 'soon' | 'requires' | 'run' | 'cost'} UnlockRefusal */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { provide } from '../hooks.js';
 import { META_MAX } from './meta-state.js';
 import { conditionHolds, storyStateOf } from './conditions.js';
 /* eslint-disable no-func-assign */
@@ -38,9 +39,10 @@ expose({
   // @ts-expect-error -- replaced on purpose
   unlockRows: [() => unlockRows, v => (unlockRows = v)],
   // @ts-expect-error -- replaced on purpose
-  unlockTidy: [() => unlockTidy, v => (unlockTidy = v)],
+  unlockTidy: [() => unlockTidy, v => ((unlockTidy = v), provide({ unlockTidy }))],
 });
 /* eslint-enable no-func-assign */
+provide({ unlockTidy });
 /* to-module: end */
 /** where a row is got: on the Lab's board, at another building, or earned by its condition
  * @param {Unlock} R @returns {'board' | 'building' | 'earned'} */

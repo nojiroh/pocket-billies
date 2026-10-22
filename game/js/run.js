@@ -7,7 +7,7 @@
    the party is full waits in runCatch, never in the save (a team of seven can't be saved), until one is released. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { closeModal, mapIdAt, modal, provide, render, runPayoutOpen, toast } from './hooks.js';
+import { closeModal, labMilestones, mapIdAt, modal, provide, render, runPayoutOpen, toast } from './hooks.js';
 import { COINS, ITEMS, RULES, START_NODE, TRAINERS, UNLOCK_DATA } from './game-data.js';
 import { battleWeatherOf } from './logic/weather.js';
 import { billyName, formatNumber, healAll, plural } from './logic/rules.js';
@@ -152,6 +152,8 @@ export function runEndHome(won, keep, itemPrice) {
   toast(
     `+${formatNumber(pay.capital)} Capital${pay.scrap ? `, ${formatNumber(pay.scrap)} Scrap` : ''}${pay.seals ? ` and ${plural(pay.seals, 'Audit Seal')}` : ''}. You have ${formatNumber(saveData.meta.capital)} Capital.`
   );
+  /* RL-11: milestones the run has met (ended runs, wins), each with its own toast after this one */
+  if (typeof labMilestones === 'function') labMilestones();
 }
 
 /* ---------- a reload picks the run up ---------- */
