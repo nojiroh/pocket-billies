@@ -843,8 +843,10 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
     : null;
   /* fish live where the water is deep all round; leaves start on streams; springs steam */
   const homes = [];
-  for (let j = 0; j < H2; j++)
-    for (let i = 0; i < W2; i++) {
+  /* IS-5: only the first four are kept, so the search stops there (it compared every deep cell of a sea with every
+     home found so far: seconds on the island hub) */
+  for (let j = 0; j < H2 && homes.length < 4; j++)
+    for (let i = 0; i < W2 && homes.length < 4; i++) {
       const q = j * W2 + i;
       if (wd[q] < 4 || !WATER_KIND_LOOKS[wk[q]].fish) continue;
       const x = (i + 0.5) * 0.5,

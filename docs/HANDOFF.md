@@ -11,6 +11,144 @@ Branch `ccr-3d24989e-9cyftq`. A planning session only: no code changed.
 - Verified: nothing to run (docs only).
 - Next: CAM-1 (the follow), starting in Plan Mode.
 
+### Island track IS-6b - Hub editor dials - 2026-10-22
+Branch `claude/is-6b-hub-dials`, from the wave-2 base `claude/new-session-3qlesh` (main plus IS-2, IS-3, IS-4 and IS-6a,
+PRs #122, #124, #123, #126, not merged yet); the PR goes against main, so its diff shrinks as those merge (then merge
+main into the branch). Ran beside IS-5 (copperleaf.json) and IS-7 (the world map): Studio files only, plus
+logic/hub-island.js, the pages' script lists and check-fast. Plan approved in Plan Mode with the recommended answers:
+the draft made on the page (not in a worker), a locked ground's dials read-only, props at sea named not moved, no
+"new island" button.
+- Changed (one cause per commit):
+  - **island-gen.js moved** from the game's page to the Studio's, after mapgen.js (IS-2's suggestion; the game never
+    calls it: only build-island.mjs, its unit test and now the Studio do).
+  - **logic/hub-island.js** (5 new unit tests): `hubGenStart` (the map's own islandGen dials and seed, a copy; else
+    the defaults and the map's id), `hubGenRefusal` (no coast, or a locked ground), `hubUseIsland` (copies
+    `HUB_GEN_GROUND`: size, sea fields, island, zones, islandGen, hub, tiles, heights, plots, streams, bridges, spots,
+    steps; a field the draft lacks goes; the orbit's pivot follows, its dead zone, lag and turn stay; returns the
+    props now past the coast), `hubGenWalkProblems` (IS-2's walking checks: every zone, the summit, the dock, every
+    plot's front from the hub; no traps), `hubGenStats`. It imports mapgen.js now, so it loads after island-gen.js
+    on the Studio's page.
+  - **The Dials card** (studio/js/hub-island.js): every generator dial in folding groups (↺ and Reset), the flat zones
+    and the beach and cliff arcs as rows, a seed (typed or 🎲) and a 🎲 per stage (Alt-click clears it). A draft is
+    made 0.5 s after a dial stops ("Generating…" first), shown in the orbit view as `_hubgen` (walkData chained, as
+    Walk scenes' `_gen` draft) and on the map; its figures, the generator's notes, the island's own problems and a
+    "Check the walks" button. The map's tools are off while a draft shows (it isn't the map). **Use this island**: one
+    undo step, refused while locked (the button isn't offered and the logic throws); the toast names props now at sea
+    and says the map's in-game checks were written for the old ground. A locked ground opens its dials read-only and
+    makes no draft. Picking another map drops the draft; a draft finishing after the section is left draws nothing.
+  - **check-fast**: "The Studio's Hub island dials" on IS-6a's page, after its step (it loads the Studio itself when
+    run alone).
+  - Docs: STUDIO.md (the Hub island part, the table row), the track file ("Done in IS-6b"), CHANGELOG.
+- Where the plan (the track file) was wrong or short:
+  - The dials listed were a third of the generator's; all are shown.
+  - "Live preview": one island is 1.75 s in Node, 2.5-3.6 s in the headless browser (copperleaf_island's own dials:
+    2.5 s), and the walk check another 1.2 s, so the draft comes after the dial stops and the walk check is a button.
+  - **A new seed often doesn't fit.** With a previous map the generator keeps its middle (so nothing on the map
+    moves) and grows the scene east and north only; a coast that would cross the west or south edge throws. 5 of 12
+    whole new seeds fit round copperleaf_island's middle (a larger open sea makes it worse: 0 of 12 at 20 m); a stage's
+    own seed fitted for coast, land, mountain, paths and ground once each, but a random one can miss too. The card
+    says so with what to try. test_island (120 m) only takes islands of about 30 m radius.
+  - **Small islands make a forest zone that crosses itself** (island-gen.js, radius ~30 m, every seed tried): the
+    draft lists it and Lock the ground refuses it until the zone's points are moved. Not fixed (IS-2's file).
+- Verified: unit tests 604 (5 new); lint, typecheck, check:modules, format:check; check-fast's Hub island steps (IS-6a
+  and IS-6b) pass; headless pictures at 1600 x 1000 (copperleaf_island: its own dials give back its tiles exactly,
+  the draft drawn, a mountain reroll). check-fast 24 of 24; smoke no problems; full quick check (40 min): 10 problems, the
+  9 old ones on main (roster counts 117/61, empty voxel bushes, buildings without a plan, the biped walk cycle, the
+  running step's "float division by zero"; see IS-6a's entry) and RL-8's run (Meadow Town's view never showed) while
+  other browser checks ran beside it; RL-8 alone passes on the merged branch. After merging main (IS-7 and the rest):
+  unit tests 614, lint, typecheck, modules, format, check-data, both Hub island steps pass.
+- Risky:
+  - The page pauses 2-4 s while a draft is made (no worker). Fine on a desktop; slow on a phone.
+  - "Use this island" leaves the map's in-game `checks` (copperleaf_island's walking legs from build-island) as they
+    were: they can fail on the new ground. Rerun tools/build-island.mjs, or edit them, before relying on them.
+  - The draft rides walkData through an Object.create view, like Walk scenes' draft. The prop editor's wrapper copies
+    own keys only; with a prop open in Walk scenes and a draft here, the hub view would still find its draft.
+  - Props past a new coast stay in the sea until moved (named in the toast).
+- Not done: a new island from the dials (a new map id); shifting the scene so any seed fits; copperleaf (no coast
+  until IS-5).
+- Next: IS-5 makes copperleaf the island (then its dials open here); the generator's "doesn't fit" and the small
+  forest zone are IS-2 follow-ups. Tag `is-6b-done` is the owner's.
+
+### Island track IS-5 - Copperleaf moves onto the island - 2026-10-22
+Branch `claude/is-5-copperleaf-island`, from the wave-2 base `claude/new-session-3qlesh` (main with IS-0, IS-1 merged
+plus IS-2, IS-3, IS-4, IS-6a merged in; PRs #122, #124, #123, #126 not in main yet). PR against main; main gets merged
+in when those land. Wave 2 beside IS-6b (the editor's dials) and IS-7 (the world map's island). Plan approved in Plan
+Mode with the owner's answers: the fall lands in the **town square** (question 11); the shop plot gets the **General
+store, closed**; **cottages on every house plot** and the farmhouse plot; **gardens travel with their houses**, free
+nature left to IS-9; **rooms face four ways**; **wild grass in patches** by the woods and on the heath. Question 4 is
+moot (the generator lays the town out).
+- Changed (one cause per commit):
+  - **findPath's budget** grows with the map (`max(30000, the nav grid's cells)`): the island is ~220,000 cells; the
+    old cap stopped a tap a third of the way across. Every other map is under 30000, so unchanged.
+  - **Rooms that face four ways** (logic/room-turn.js, unit-tested): a room is made in its own metres as before
+    (door south, back wall +z), then its tiles, heights, step grid, floor scene and things are turned by quarter turns
+    about a point on whole metres by the door and stamped in; the view keeps `roomFrame {q, p, rect}`. Readers:
+    rooms.js (box, lamps, window light, front cut), the ground shader (`uRoomT`: skirting, corner trim, wall shading),
+    the room's walking margins (walk-view.js), the camera (base yaw `roomYaw`; in and out the base yaw eases the short
+    way over 0.7 s of wall time instead of jumping; this also smooths going from the orbit into a south room),
+    walk-control.js (walk in and out along the door's own way; the door array gains `[q, middle z]` for a turned
+    building, so a south door's id is unchanged), self-test's room step (doorway along the front, the way out).
+  - **Island generator stage `wild`** (version 3, dial `wild.n` 5): ragged tall-grass ovals of 15-70 m² on open meadow
+    and heath with a fifth of forest or heath within 9 m, 8 m clear of the town, hamlet, barn and pasture, never on the
+    beach, mountain, a path or a slope; written as `grassPatches`, so encounters use the run maps' patch rule (they
+    waited within 13 m of the hub: the square). Own seed stream; only 174 cells of the island changed.
+  - **tools/build-copperleaf.mjs** (new, rerunnable) and **tools/data/copperleaf-town.json** (the old town as it stood:
+    props, people, life, chat, place fields, the opening's spots and shots). Each building in the middle of its plot,
+    `rot = a + 90`: lab, airship station + airship (mast), Juniper's home, the General store (no act), the well, the
+    five cottages on the town house plots nearest the square, 14 more cottages in turn on the other house plots and
+    the farmhouse plot; the barn in its zone, doors toward the farmhouse, its crops with it. A building's garden moves
+    in its own metres (models turn with it, pictures keep facing you); what lands on a street (`p v c`), water, a
+    bridge, another plot or before a door is left out (25). The great oak with its swing (the world map's landmark) on
+    open ground nearest the square, 8 town trees. A pier from the dock spot along the channel. Juniper by her door;
+    npcSpots at the lab, mast, square, shop, home; life in areas (ducks pond, chickens farmhouse, rabbits pasture,
+    squirrels forest, cats town). The opening's spots, shots and stage move and turn with the lab's door. A walking
+    check that ended inside a building (the barn zone's middle) ends at its door.
+  - **The swap**: `copperleaf.json` is the island with the town (235 x 237 m, 25 buildings, 127 props, 7 bridges);
+    `copperleaf_island` is gone. build-island.mjs makes the hub's ground by default and keeps a place's own fields and
+    their order (a rerun that changes nothing writes nothing; then rerun build-copperleaf to follow new plots).
+  - **Re-pointed**: island-gen.test reads `copperleaf` (the pier left out); `standByMast` turns with the station; the
+    hub's view carries `island` and `zones` (the sea's middle, the cove's calm); check-quick's opening stage, room
+    doorway and lab-room checks work in the building's frame, its v42 "grown" check leaves out a generated island;
+    check-fast's new step "Copperleaf is the island" (walking checks, every door a tap from the square, wild spots in
+    the patches, the orbit); postcards look at the square; the Hub island editor's view-only words.
+- Where the plan (the track file) was wrong or short: see the track file's "Checked in IS-5". Mine: the turned rooms
+  were more than "a third of the session" (the room's front cut, window light, lamps and the ground shader all assumed
+  a south door); a south-facing room was proven unchanged field by field (all 8 of the old Copperleaf's rooms, step
+  grids and floors, against the base). Juniper's lavender garden (10 m behind her old cottage) mostly didn't fit her
+  plot: the plot is 7.5 x 6.2 m among streets.
+- Verified: unit tests 603; lint, typecheck, check:modules, format:check, check:data (144 files); both tools rerun to
+  the identical file; check-fast 22 of 23 on the full run (the Studio world-map look wanted the great oak: fixed; that step and the new hub step pass alone); smoke 15 of 15 (New game: the fall, Hazel, the starters on the
+  square); check-fast 24 of 24 after the ground-build fixes (CI green); full quick check: besides the
+  failures main has too (roster counts, biped walk, voxel bushes, buildings without plans, the props scene), two
+  findings: (1) "shaped terraces change where you can walk: copperleaf": 5,979 half-metre cells (all on the mountain's
+  shelves off the trail) are reachable with unrounded terraces but not rounded ones; the trail, summit and every zone
+  stay reachable (the island's walking checks pass); IS-2's mountain meeting the engine's terrace rounding, left open
+  for the owner (terrain); (2) after that step runs in the same page, RL-7's and RL-8's first road walk on a run start
+  from the hub's spot (off the landing's map: "no path to the exit"), and the mast and postcard steps after them
+  fail in turn; RL-7 + RL-8 together, and RL-7 alone, pass, so it is something the terrace step leaves on the page
+  with the big hub; not found yet. Headless: the lab, a cottage, Juniper's home and the barn turned each of
+  the four ways (doorway 0.02 m from the door, nothing walkable outside, pictures squared to the camera); pictures of
+  the square from four sides, the barn and pasture, the pier, the hamlet, the island from above. Longest tap search on
+  the island headless: 18 ms.
+- Risky:
+  - Turned rooms are new everywhere a building faces away from south (all of the island's but a few). Worth a feel on
+    the phone: going into the lab (it faces west) and out, the camera's turn in and out.
+  - The hub is 1.2 MB (was 73 KB) and loads at boot; phone frame times are IS-9's.
+  - A tap to an unreachable spot now searches the whole reachable island (~220k cells) before giving up.
+  - Rerunning build-copperleaf rewrites every prop: hand edits to Copperleaf's props in the Studio are lost unless
+    folded into tools/data/copperleaf-town.json or the tool. After the owner places things by hand, stop rerunning it.
+  - The orbit's pivot in the hub's view isn't shifted by the view's offset (0 for an island with no neighbours).
+  - The first frame on the hub builds the whole island's ground mesh at once: ~6.7 s headless after the fixes (was
+    13 s; the old town ~7 s with shader compiles). On a phone it is a boot hitch to measure (IS-9).
+  - check-quick v31 now waits for frames in rooms and starts the bowl camera check from Home.
+- For the sessions alongside: **IS-6b**: "Use this island" must keep the hub's town (build-island.mjs's `GROUND` list
+  is the split; then build-copperleaf.mjs re-places the town on new plots); hub-island.js only had its view-only
+  words changed. **IS-7**: the town's buildings are props now (`plots` stay). **IS-8**: the barn stands in its zone,
+  doors east toward the farmhouse; the pasture zone is free. **IS-9**: 357 old props belonged to no building and
+  were not brought over (the old meadow's flowers, trees, reeds); the island needs dressing.
+- Next: IS-8 (after RL-10), IS-9. Tag `is-5-done` is the owner's to push.
+
+
 ### Island track IS-7 - The world map's island - 2026-10-22
 Branch `claude/is-7-world-map-island`, from the wave-2 base `claude/new-session-3qlesh` (fcda361: main with IS-0 and
 IS-1, plus the IS-2, IS-3, IS-4 and IS-6a branches, PRs #122, #124, #123, #126, not merged yet); the PR goes against

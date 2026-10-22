@@ -63,8 +63,8 @@ things the list missed:
   dial (rounded zones, headlands and bays, a ridged massif with a shoulder, wandering shelves and paths, groves,
   outcrops, wet ground). The massif's ridge has to stay clear of the cove as well as the town, or the stream has no room.
 - A bridge must not carry `pier: 1`: that marks a jetty (a deck ending over water), and the smoke's water rule fails it.
-- A new file under game/js must be on a page (a unit test follows the pages): island-gen.js is on the game page after
-  island.js until IS-6b adds it to the Studio's.
+- A new file under game/js must be on a page (a unit test follows the pages): island-gen.js was on the game page after
+  island.js until IS-6b moved it to the Studio's.
 - Terrain kinds with no letter of their own: dunes are sand with sunburnt grass (`s`, `B`), scree is pebbles (`P`),
   alpine grass is clover (`C`), the stream bed pebbles (`P`). The rest as listed: `w`/`d` sea, `S` wet sand, `s` sand,
   `2` tide pools, `3` seaweed rock, `j` basalt cliffs, `G`/`E`/`g` meadow, `l` pasture, `y`/`L`/`M`/`F` forest floor,
@@ -210,6 +210,27 @@ Copperleaf position.
   scene hash (remade on purpose), the opening fall's landing, the quick check's picture baseline (CI makes it).
 - A saved hub position that is now sea or rock moves to the nearest walkable spot on load (one small rule).
 
+**Checked in IS-5** (the owner's answers: the fall lands in the town square (11); the shop plot gets the General store,
+closed; cottages on every house plot and the farmhouse plot; gardens travel with their houses, free nature left to IS-9;
+rooms face four ways; wild grass in patches by the woods. Question 4 is moot: the generator lays the town out.)
+- **Rooms opened in place only behind a south-facing door**: the room was laid north of the door, you walked in
+  northward, the camera, the room's front cut, its lamps, window light and wall shading all assumed it. The island's
+  plots face every way (the lab's west, onto the square), so rooms now face four ways (logic/room-turn.js): made in
+  their own metres as before, turned by quarter turns about a point on whole metres by the door; what draws the room
+  reads the frame (`roomFrame`). A south room is laid in exactly as before.
+- **No hub position is saved across a reload** (only `trip.node`): "a saved hub position that is now sea" can't happen.
+  In a session the spot already goes through `walkablePointNear` when the walk starts; `standByMast` now turns with
+  the station.
+- **No golden scene or frozen hash covers Copperleaf** (they are run maps); the one that does is island-gen.test's "the
+  game's island is the generator's own output", now reading `copperleaf`.
+- **The opening's landing** is the opening cutscene's spots and shots, absolute metres by the lab's door: they move
+  and turn with the lab (tools/build-copperleaf.mjs).
+- `wild: 42` was still read, by check-quick's v42 "grown" step (it now leaves out a generated island); `grown`,
+  `grown2`, `v46` by nothing.
+- Hub wild Billies waited in tall grass within 13 m of the hub: the square on the island. The generator's new stage
+  `wild` lays `grassPatches` (the run maps' rule then applies).
+- The hub's view (`w:copperleaf*`) didn't carry `island` and `zones`: the sea's middle and the cove's calm need them.
+
 ### IS-6a Hub island editor (the owner, 2026-10-22)
 A Studio section of its own ("Hub island", not inside Walk scenes), editing the hub's map (`copperleaf`; a picker for
 `test_island` until IS-5). Studio files only, plus one guard in map-editor.js.
@@ -238,6 +259,23 @@ dials beside it.
 The generator's dials in the hub editor: size, coast wobble, mountain size and height, forest arc and density, cove
 angle and depth, beach arcs, cliffs, stream on/off, seed. Live preview (map-generate.js's draft pattern); "Use this
 island" leaves locked zones alone and is refused while the ground is locked.
+
+**Done in IS-6b** (2026-10-22; the owner approved the plan with the recommended answers: the draft made on the page
+half a second after a dial stops, not in a worker; a locked ground's dials read-only; props at sea named, not moved;
+no "new island" button). Studio files plus logic/hub-island.js (the dials' logic, unit-tested) and check-fast's step.
+island-gen.js moved from the game's page to the Studio's (the game never calls it). Checked against the code:
+- The generator has more dials than listed above (`organic`, `size.stretch`/`lobes`, `mountain.range`/`shoulder`,
+  `cove.shape`/`channel`, the town, the hamlet, `paths`, `level`, the flat zones' rectangles, a seed per stage); the
+  editor shows them all.
+- One island takes about 1.75 s in Node (2-3 s in the browser); the walking checks another 1.2 s, so they are a
+  button ("Check the walks"), not run on every draft.
+- With a previous map the generator keeps its middle (so props and people stay put) and grows the scene only east
+  and north. A whole new seed's coast often crosses the west or south edge: 5 of 12 seeds fit round
+  copperleaf_island's middle, while a stage's own seed (coast, land, mountain, paths, ground) fits. The editor says
+  so and suggests another seed or a smaller island. Making the generator shift the scene would mean moving every
+  position on the map (props, people, exits, checks); not done.
+- Small islands (land radius ~30 m, as on test_island) make a forest zone that crosses itself (island-gen.js); the
+  draft lists it as a problem and Lock the ground refuses it. Not fixed here (IS-2's file).
 
 ### IS-7 The world map's island
 The hub's bowl map draws the real island: `island.coast` as the outline, its ground painted as each place's ground

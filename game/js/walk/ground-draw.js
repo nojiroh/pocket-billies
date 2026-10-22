@@ -121,6 +121,17 @@ export function drawGround(C, X) {
   if (U.uRoom) {
     const B = sc.room && (engineSetting('lights', 'roomLight') ?? true) !== false ? roomBoxOf(sc) : null;
     gl.uniform4f(U.uRoom, B ? B[0] : 0, B ? B[1] : 0, B ? B[2] : 0, B ? 1 : 0);
+    /* IS-5: the box is in the room's own metres; a turned room's frame turns the place's into them */
+    const F = B && sc.roomFrame,
+      r = F ? (F.q * Math.PI) / 2 : 0;
+    if (U.uRoomT)
+      gl.uniform4f(
+        U.uRoomT,
+        F ? F.p[0] : 0,
+        F ? F.p[1] : 0,
+        F ? Math.round(Math.cos(r)) : 1,
+        F ? Math.round(Math.sin(r)) : 0
+      );
     if (U.uRoomY) gl.uniform1f(U.uRoomY, B ? standingHeightAt(sc.w / 2, 1.5) : 0);
   }
   gl.uniform3fv(U.uFarTint, sc.farTint ? hexToRgb(sc.farTint).map(v => v / 200) : [1, 1, 1]);
