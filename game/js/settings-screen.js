@@ -452,7 +452,7 @@ function settingsHTML() {
       ]
         .map(
           ([k, n, h]) =>
-            `<button type="button" role="radio" aria-checked="${gp === k}" class="gfx-pre ${gp === k ? 'on' : ''}" data-pref-set="graphics" data-v="${k}"><b>${n}</b><small>${h}</small></button>`
+            `<button type="button" role="radio" aria-checked="${gp === k}" class="gfx-pre k-card ${gp === k ? 'on' : ''}" data-pref-set="graphics" data-v="${k}"><b>${n}</b><small>${h}</small></button>`
         )
         .join('')}</div>` +
       settingsRowHTML(
