@@ -19,6 +19,9 @@ function teamOfThree() {
   return s;
 }
 const doubleTrainer = () => Object.keys(TRAINERS).find(k => TRAINERS[k].team.length >= 2);
+/** a first-stage wild species that isn't a starter's */
+const WILD = () =>
+  Object.keys(SPECIES).find(k => SPECIES[k].stage === 0 && !RULES.start.starters.includes(SPECIES[k].line));
 const damaging = m => m.moves.find(id => MOVES[id] && MOVES[id].c !== 'X') || m.moves[0];
 
 beforeEach(() => {
@@ -130,4 +133,54 @@ test("a battle's start takes a host and the run's extras (seed, weather, Loophol
   assert.equal(B.seed, 'T3WILD');
   assert.equal(B.wx, wx);
   assert.equal(B.fmt, 'single');
+});
+
+test('a caught foe is kept (an Alpha stays one, at its share of HP, never below 1); a miss may bring an offer', () => {
+  teamOfThree();
+  fn('newBattle')('wild', [fn('makeAlpha')(WILD(), 10)]);
+  const a = fn('fighter')(1);
+  a.hp = Math.round(fn('maxHp')(a) / 2);
+  const share = a.hp / fn('maxHp')(a),
+    kept = fn('catchKeep')(a);
+  assert.deepEqual(kept, { where: 'team', alpha: true });
+  assert.ok(!a.boss && a.alpha, 'the Alpha is kept as an Alpha, its boss state gone');
+  assert.equal(a.hp, Math.max(1, Math.round(fn('maxHp')(a) * share)));
+  assert.equal(hooks.activeBattle.over, 'caught');
+  const b = fn('makeBilly')(WILD(), 5);
+  b.hp = 0;
+  fn('newBattle')('wild', [b]);
+  assert.deepEqual(fn('catchKeep')(b), { where: 'team', alpha: false });
+  assert.equal(b.hp, 1);
+  // a miss: an offer as often as rules.catching.offerChance, in steps of $10 within its bounds
+  const C = data.RULES.catching;
+  let offers = 0;
+  for (let i = 0; i < 200; i++) {
+    fn('newBattle')('wild', [fn('makeBilly')(WILD(), 5)], { seed: 'OFFER' + i });
+    const n = fn('catchOffer')();
+    assert.equal(hooks.activeBattle.offer || 0, n);
+    if (!n) continue;
+    offers++;
+    assert.ok(n % 10 === 0 && n >= C.offerMin - 5 && n <= C.offerMax + 5, String(n));
+  }
+  assert.ok(offers > 0 && offers < 200, `${offers} offers in 200 misses`);
+});
+
+test('an offer answered: yes takes the money and ends the battle; no raises the Focus Bonus', () => {
+  const s = teamOfThree();
+  fn('newBattle')('wild', [fn('makeBilly')(WILD(), 5)]);
+  const B = hooks.activeBattle,
+    se = s.se;
+  B.offer = 40;
+  assert.equal(fn('catchOfferAnswer')(true), 40);
+  assert.equal(s.se, se + 40);
+  assert.equal(B.over, 'bribed');
+  assert.equal(B.offer, null);
+  fn('newBattle')('wild', [fn('makeBilly')(WILD(), 5)]);
+  const B2 = hooks.activeBattle,
+    was = B2.integrity;
+  B2.offer = 40;
+  assert.equal(fn('catchOfferAnswer')(false), 0);
+  assert.equal(s.se, se + 40);
+  assert.ok(!B2.over);
+  assert.equal(B2.integrity, Math.min(data.RULES.catching.integrityMax, was * data.RULES.catching.integrityStep));
 });

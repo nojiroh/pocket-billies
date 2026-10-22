@@ -31,7 +31,6 @@ import { $, $$, clamp, random } from './util.js';
 import { COINS, ITEMS, MOVES, RELICS, RULES, STAT_NAMES, TYPE_COLORS, typeEffectiveness } from './game-data.js';
 import { ROBOT_LIMBS, ROBOT_SLOT_NAMES, isRobot, robotPartDef, speciesOf } from './logic/fighters.js';
 import {
-  addBilly,
   billyName,
   dropEncounter,
   findBilly,
@@ -54,7 +53,9 @@ import {
   battleRoll,
   battleSay,
   canUse,
+  catchKeep,
   catchOdds,
+  catchOffer,
   catchRoll,
   effectiveStat,
   enemyOnly,
@@ -902,30 +903,22 @@ function finishThrow(res, id, lab, spin) {
   if (res.edge) battleSay('It landed on its edge. Critical tax!');
   if (res.caught) {
     battleSay(`Gotcha! ${billyName(e)} was taxed.`, { k: 'caught' });
-    if (e.boss) {
-      const f = e.hp / maxHp(e);
-      delete e.boss;
-      e.alpha = true;
-      e.hp = Math.max(1, Math.round(maxHp(e) * f));
-      battleSay(`${billyName(e)} is an Alpha: a little bigger and stronger than others of its kind.`);
-    }
-    e.hp = Math.max(1, e.hp);
-    const where = addBilly(e);
+    /* logic/battle-engine.js catchKeep: an Alpha stays one, at least 1 HP, addBilly; the battle is over */
+    const { where, alpha } = catchKeep(e);
+    if (alpha) battleSay(`${billyName(e)} is an Alpha: a little bigger and stronger than others of its kind.`);
     if (where === 'box') battleSay(`${billyName(e)} went to storage. Your team is full.`);
     /* RL-8: a run's party is full: after the battle, one of the seven leaves the party (run.js) */
     if (where === 'full') {
       runCatch.m = e;
       battleSay(`Your party is full. After the battle, pick who leaves it.`);
     }
-    activeBattle.over = 'caught';
     save();
     return playTurnEvents();
   }
   battleSay(['It broke free right away.', 'It almost stayed in.', 'So close. It wobbled twice.'][res.w]);
-  /* RL-4: the bribe is the battle's chance (battleRoll: its own stream when it has a seed) */
-  if (battleRoll() < CATCH_RULES.offerChance) {
-    activeBattle.offer =
-      Math.round((CATCH_RULES.offerMin + battleRoll() * (CATCH_RULES.offerMax - CATCH_RULES.offerMin)) / 10) * 10;
+  /* RL-4: the bribe is the battle's chance (logic/battle-engine.js catchOffer, on battleRoll: its own stream when it
+     has a seed) */
+  if (catchOffer()) {
     battleSay(`${billyName(e)} is offering you money to let it go.`, { k: 'cry', si: 1 });
     return playTurnEvents();
   }

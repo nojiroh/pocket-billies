@@ -42,6 +42,7 @@ import {
 } from '../game-data.js';
 import { ROBOT_LIMBS, ROBOT_SLOT_NAMES, isRobot, moveSources, robotGemDef, robotRules, speciesOf } from './fighters.js';
 import {
+  addBilly,
   billyName,
   brokenParts,
   coatPrefix,
@@ -112,7 +113,13 @@ expose({
   calcDamage: [() => calcDamage, v => (calcDamage = v)],
   canUse: [() => canUse],
   // @ts-expect-error -- replaced on purpose
+  catchKeep: [() => catchKeep, v => (catchKeep = v)],
+  // @ts-expect-error -- replaced on purpose
   catchOdds: [() => catchOdds, v => (catchOdds = v)],
+  // @ts-expect-error -- replaced on purpose
+  catchOffer: [() => catchOffer, v => (catchOffer = v)],
+  // @ts-expect-error -- replaced on purpose
+  catchOfferAnswer: [() => catchOfferAnswer, v => (catchOfferAnswer = v)],
   // @ts-expect-error -- replaced on purpose
   catchRoll: [() => catchRoll, v => (catchRoll = v)],
   // @ts-expect-error -- replaced on purpose
@@ -1188,6 +1195,45 @@ export function catchRoll(id, T, spin, b) {
     while (w < 3 && battleRoll() < q) w++;
     return { caught: w === 3, w, edge: false, P };
   });
+}
+/* Studio plan T3.2: what follows a throw, the same on the page (battle.js finishThrow, battle-input.js) and in the
+   run's simulation (logic/run-sim.js) */
+/** a caught foe is kept: an Alpha stays one (its boss state gone, its share of HP kept), never below 1 HP, then
+ * addBilly; the battle is over ('caught'). Returns where it went and whether it was an Alpha @param {any} e */
+export function catchKeep(e) {
+  const alpha = !!e.boss;
+  if (e.boss) {
+    const f = e.hp / maxHp(e);
+    delete e.boss;
+    e.alpha = true;
+    e.hp = Math.max(1, Math.round(maxHp(e) * f));
+  }
+  e.hp = Math.max(1, e.hp);
+  const where = addBilly(e);
+  battleNow().over = 'caught';
+  return { where, alpha };
+}
+/** RL-4: after a missed throw the foe may offer money to be let go, as often as rules.catching.offerChance (the
+ * battle's chance, battleRoll): the offer ($, in tens; on the battle as b.offer), or 0 */
+export function catchOffer() {
+  if (battleRoll() >= CATCH_RULES.offerChance) return 0;
+  const b = battleNow();
+  b.offer = Math.round((CATCH_RULES.offerMin + battleRoll() * (CATCH_RULES.offerMax - CATCH_RULES.offerMin)) / 10) * 10;
+  return b.offer;
+}
+/** the player's answer to an offer: yes takes the money and the battle is over ('bribed'); no raises the Focus Bonus
+ * (b.integrity, within integrityMax) for the next throw. Returns the money taken (0 on a no) @param {boolean} yes */
+export function catchOfferAnswer(yes) {
+  const b = battleNow(),
+    amt = b.offer || 0;
+  b.offer = null;
+  if (yes) {
+    saveData.se += amt;
+    b.over = 'bribed';
+    return amt;
+  }
+  b.integrity = Math.min(CATCH_RULES.integrityMax, b.integrity * CATCH_RULES.integrityStep);
+  return 0;
 }
 /* the items: out of battle (b not given) on the save's team and bag; with a battle, on that battle's team and bag */
 export const teamNeedsHp = b => (b ? b.sides[0].team : saveData.team).some(m => m.hp > 0 && m.hp < maxHp(m));
