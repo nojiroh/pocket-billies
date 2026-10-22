@@ -842,6 +842,19 @@ def sound_step(b, base, R):
         ctx.close()
 
 
+@step('Song fingerprints: every song, jingle and cry renders as in validation/sound-baseline (SND-2)', 180)
+def sound_fingerprints(b, base, R):
+    """sound track SND-2: tools/check-sound.py on this browser. Every song (day and night), jingle and cry is rendered
+    offline through the game's own sound code and compared, 50 ms at a time, with the committed baseline. A change
+    in what the music sounds like is a problem here unless the baseline was written again on purpose (--baseline)"""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location('check_sound', ROOT / 'tools' / 'check-sound.py')
+    cs = importlib.util.module_from_spec(spec); spec.loader.exec_module(cs)
+    bad, line = cs.run(b, base)
+    if bad: raise Exception(f'{line}: ' + '; '.join(bad[:4]))
+    return line
+
+
 @step('In-game full test: one step headless, and nothing is saved while it runs', 120)
 def in_game_test_step(b, base, R):
     errs = []; ctx, pg = open_game(b, base, 1100, 700, False, errs)
@@ -2367,6 +2380,7 @@ def main():
                 safety_step(b, base, R)
                 targets_step(b, base, R)
                 sound_step(b, base, R)
+                sound_fingerprints(b, base, R)
                 try:
                     desktop_steps(b, base, R)
                 except Exception as e:
