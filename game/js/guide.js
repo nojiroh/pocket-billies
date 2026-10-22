@@ -6,7 +6,6 @@ import { expose } from './test-globals.js';
 import { render } from './hooks.js';
 import {
   DEX_ORDER,
-  EGGS,
   LINE_BY_ID,
   LOCATIONS,
   POOLS,
@@ -17,7 +16,7 @@ import {
   TYPE_COLORS,
   typeEffectiveness,
 } from './game-data.js';
-import { eggKm, evolutionHint, evolutionItemName, formatNumber } from './logic/rules.js';
+import { evolutionHint, evolutionItemName, formatNumber } from './logic/rules.js';
 import { escapeHtml, saveData, uiState } from './game-state.js';
 import { coinURL } from './art.js';
 import { bustHTML, rigCanvasHTML } from './skeleton-rig.js';
@@ -149,9 +148,8 @@ function renderDexEntry(id) {
         .map(r => r.name)
     ),
   ];
-  const eggs = Object.keys(EGGS)
-    .filter(k => EGGS[k].list.some(([x]) => x === id))
-    .map(k => eggKm(k) + ' km egg');
+  /* RL-10: a line's first stage hatches from a pair bred at the ranch */
+  const bred = SPECIES[id] && SPECIES[id].line + '0' === id;
   const strong = TYPES.filter(x => s.types.some(t => typeEffectiveness(t, [x]) > 1)),
     weak = TYPES.filter(x => typeEffectiveness(x, s.types) > 1),
     res = TYPES.filter(x => typeEffectiveness(x, s.types) < 1);
@@ -183,7 +181,7 @@ function renderDexEntry(id) {
   <section class="paper px k-panel"><h3>Base stats</h3>${got ? `<table class="bsheet"><tbody>${STAT_IDS.map((k, i) => `<tr><td>${STAT_NAMES[k]}</td><td class="tnum">${s.base[i]}</td><td><span class="bbar" style="--w:${((s.base[i] / mx) * 100).toFixed(0)}%"></span></td></tr>`).join('')}<tr class="tot"><td>Total</td><td class="tnum">${tot}</td><td></td></tr></tbody></table>` : `<p class="note">Tax one to see its stats.</p>`}</section>
   <section class="paper px k-panel lin"><h3>Evolution</h3><div class="chain">${chain}</div><p class="note">${escapeHtml(evolutionHint({ sp: id, lvl: 0 }))}</p></section>
   <section class="paper px k-panel"><h3>Type matchups</h3><table class="expo"><tbody><tr><td>Strong against</td><td>${strong.map(typeBadgeHTML).join('') || '—'}</td></tr><tr><td>Weak to</td><td>${weak.map(typeBadgeHTML).join('') || '—'}</td></tr><tr><td>Resists</td><td>${res.map(typeBadgeHTML).join('') || '—'}</td></tr></tbody></table></section>
-  <section class="paper px k-panel"><h3>Where to look</h3><table class="expo"><tbody><tr><td>Found at</td><td>${where.length ? escapeHtml(where.join(', ')) : 'Not found in the wild'}</td></tr><tr><td>Hatches from</td><td>${eggs.length ? escapeHtml(eggs.join(', ')) : '—'}</td></tr><tr><td>Tracks</td><td>${escapeHtml(TRACKS[D.plan] || 'Unremarkable')}</td></tr></tbody></table></section>
+  <section class="paper px k-panel"><h3>Where to look</h3><table class="expo"><tbody><tr><td>Found at</td><td>${where.length ? escapeHtml(where.join(', ')) : 'Not found in the wild'}</td></tr><tr><td>Hatches from</td><td>${bred ? 'A pair bred at the ranch' : '—'}</td></tr><tr><td>Tracks</td><td>${escapeHtml(TRACKS[D.plan] || 'Unremarkable')}</td></tr></tbody></table></section>
   ${got ? `<div class="sig"><span class="sigline">${escapeHtml(s.name)}</span><small>Recorded by Professor Hazel.</small></div>` : ''}
  </article>`;
 }

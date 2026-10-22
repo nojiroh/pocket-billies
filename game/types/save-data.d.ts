@@ -108,8 +108,11 @@ export interface Ranch {
   pens: string[];
   /** Billies training between runs: uid, Date.now() when training started */
   trainees: { uid: string; at: number }[];
-  /** breeding pairs: the parents' uids, the mode, when it started and when the egg is ready (Date.now()) */
-  nursery: { a: string; b: string; mode: 'safe' | 'risky'; at: number; ready: number }[];
+  /** breeding pairs: the parents' uids, the mode, when it started and when the egg is ready (Date.now()), and the
+      Billie it hatches into (rolled when it started, RL-10 logic/breeding.js) */
+  nursery: { a: string; b: string; mode: 'safe' | 'risky'; at: number; ready: number; egg: Billy }[];
+  /** RL-10: how many pairs have bred (part of each egg's seed) */
+  bred: number;
   /** passive income: per hour, banked so far, the last time it was counted (Date.now(); only moves forward) */
   income: { rate: number; bank: number; lastAt: number };
 }
@@ -282,6 +285,9 @@ export interface Billy {
   boss?: { hp: number; st: number };
   /** phase 16: the size of each part (rules.js rollBuild); missing means all M */
   build?: Build;
+  /** RL-10: a risky egg's surprise (logic/breeding.js): a quirk, or an abomination with its own name, one stat raised
+      (rules.json ranch.breed.abomUp) and another lowered (abomDown); missing for every other Billie */
+  mut?: BillieMut;
   /** phase 17: 'robot' for a robot (sp is then made from its parts: logic/fighters.js robotSp); missing for a Billie */
   kind?: 'robot';
   /** phase 17: a robot's gem (a key of robots.json gems): the gem is the robot, its level and XP */
@@ -301,6 +307,16 @@ export interface PartInstance {
   up: number;
 }
 export type RobotFit = Record<'torso' | 'armL' | 'armR' | 'legs', PartInstance>;
+
+/** RL-10: what a risky egg did to a Billie (logic/breeding.js) */
+export interface BillieMut {
+  k: 'quirk' | 'abom';
+  /** an abomination's name, made from its parents' (shown unless it has a nickname) */
+  name?: string;
+  /** an abomination's raised and lowered stats (stats.json ids) */
+  up?: string;
+  down?: string;
+}
 
 /** phase 16: a part size per slot (RULES.parts) */
 export type PartSize = 'S' | 'M' | 'L';

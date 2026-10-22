@@ -5,24 +5,21 @@
 import { expose } from './test-globals.js';
 import { provide, render, roomState } from './hooks.js';
 import { $ } from './util.js';
-import { EGGS, LOCATIONS, RULES, SHOPS, locationSubtitle, trainersAt } from './game-data.js';
+import { LOCATIONS, RULES, SHOPS, locationSubtitle, trainersAt } from './game-data.js';
 import {
   billyName,
-  eggKm,
-  eggSlotCount,
   encounterStock,
   encountersHere,
   findBilly,
   formatNumber,
   healAll,
-  metresToKm,
   plural,
   xpFor,
 } from './logic/rules.js';
 import { runHealCost } from './logic/run-loop.js';
 import { startWild } from './logic/battle-engine.js';
 import { escapeHtml, save, saveData, saveNow, uiState } from './game-state.js';
-import { artURL, eggHTML, uiIconHTML } from './art.js';
+import { artURL, uiIconHTML } from './art.js';
 import { cleanTrainer, personHTML } from './person-art.js';
 import { rigCanvasHTML } from './skeleton-rig.js';
 import { mapById } from './walk-view.js';
@@ -37,7 +34,6 @@ expose({
   boardNote: [() => boardNote, v => (boardNote = v)],
   buddyCard: [() => buddyCard, v => (buddyCard = v)],
   clinicHeal: [() => clinicHeal, v => (clinicHeal = v)],
-  eggSlots: [() => eggSlots, v => (eggSlots = v)],
   encounterCardHTML: [() => encounterCardHTML, v => (encounterCardHTML = v)],
   environmentLine: [() => environmentLine, v => (environmentLine = v)],
   hereCard: [() => hereCard, v => (hereCard = v)],
@@ -157,19 +153,6 @@ function hereCard() {
     prog = `<p class="note">Open the map to pick a place to walk to; gold arrows show you the way.</p>`;
   return `<section class="here px glass k-card"><div class="route-art"${here.banner ? ` style="background-image:url('${artURL(here.banner)}')"` : ''}><span>${personHTML('me', 64)}</span><button class="route-profile" data-a="customize">${escapeHtml(cleanTrainer(saveData.avatar, saveData.gender).name)} · Edit look</button></div><div class="sec-h"><div><div class="sub">${escapeHtml(locationSubtitle(here))}</div><h2>${here.name}</h2></div><button class="pb small quiet" data-a="tab" data-t="map">Open map</button></div><p class="note">${here.blurb}</p>${boardNote(node)}${prog}<div class="racts">${tripButtons()}</div>${nodeActions(node)}</section>`;
 }
-function eggSlots() {
-  const slots = Array.from({ length: eggSlotCount() }, (_, i) => i)
-    .map(sl => {
-      const e = saveData.eggs.find(x => x.slot === sl);
-      if (!e)
-        return `<div class="slot px k-card empty"><span class="egg-e"></span><b>Empty incubator</b><span class="note">Win battles to find eggs.</span></div>`;
-      const T = EGGS[e.tier];
-      return `<div class="slot px k-card">${eggHTML(e.tier, 48, 'wob')}<b>${eggKm(e.tier)} km egg</b>${progressBarHTML(e.prog / T.need, 'live')}<span class="note tnum">${metresToKm(e.prog)} of ${metresToKm(T.need)} km</span></div>`;
-    })
-    .join('');
-  const pipe = saveData.eggs.filter(e => e.slot == null);
-  return `<section><div class="sec-h"><h2>Eggs</h2><span class="count tnum">${saveData.eggs.length}/${RULES.eggs.capacity}</span></div><div class="slots">${slots}</div>${pipe.length ? `<div class="pipe"><span class="note">Waiting for an incubator:</span>${pipe.map(e => eggHTML(e.tier, 26)).join('')}</div>` : ''}</section>`;
-}
 function buddyCard() {
   const m = findBilly(saveData.buddy);
   if (!m) return '';
@@ -235,7 +218,7 @@ export function renderWalk() {
  <section class="pending"><div class="sec-h"><h2>Encounters here</h2><span class="count tnum">${q.length}/${cap}</span></div>
   <p class="note">${!cap ? 'No wild Billies live here. Try a route or a town with tall grass.' : q.length >= cap ? 'This place is full. Battle or tax a few to make room.' : 'Another one wanders over about every minute.'} You only see their level until the battle starts.</p>
   ${q.length ? `<div class="queue">${q.map(encounterCardHTML).join('')}</div>` : `<div class="empty px">No Billies nearby.${cap ? ' Give it a minute and one will wander over.' : ''}</div>`}</section>
- ${eggSlots()}${buddyCard()}</div></div></div>`;
+ ${buddyCard()}</div></div></div>`;
 }
 /* the Walk tab's buttons (UI-5: the cases of ui.js's click switch, as they were) */
 export function walkTabAction(a, d) {

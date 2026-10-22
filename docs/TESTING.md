@@ -250,7 +250,11 @@ same phase:
   back, a reload) and the in-game test's "The ranch: training between runs". RL-9b: check-fast's "Packing for a run"
   on `?fixture=ranch` (a trainee from storage picked, two Potions packed; kept on a loss, back in storage once; a win
   brings the bag home; a reload), run-state tests for the pick, the pack and the storage trap, the in-game run phase's
-  party of one.
+  party of one. RL-10a: `tools/test/breeding.test.mjs` (the mark, the reasons a pair can't breed, safe and risky eggs,
+  paying, hatching, a clock turned back, the save's checks), check-fast's "Breeding" on `?fixture=ranch` (the safe
+  egg shown is the one bred, hatched through the hatch window after `breed.hours`; a risky pair; the clock turned
+  back; a reload), the in-game test's "The ranch: breeding a pair", and the breeding sim (`tools/test/sim/
+  breeding-sim.mjs`, report only; `breeding-sim.test.mjs` runs it small).
 - **RL-11 Unlocks**: `tools/test/unlocks.test.mjs` (doors and currencies, buying once, refusals, milestones never on a
   run, the tidy-up on load, a run's copy making the same map and stock), the new condition kinds in
   `conditions.test.mjs`, `run.unlocks` in `run-state.test.mjs`; check-data's blocks for `currencies`, `buildings` and
