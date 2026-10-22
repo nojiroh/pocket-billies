@@ -23,6 +23,7 @@ import { CLIMATE_WEATHER_ODDS } from '../game/js/logic/weather.js';
 import { RUN_MARK_TYPES } from '../game/js/logic/run-marks.js';
 import { runMapRowsFit } from '../game/js/logic/run-map.js';
 import { islandProblems } from '../game/js/logic/island.js';
+import { dataUnderscoreKeys } from '../game/js/logic/data-checks.js';
 import { conditionNames, conditionProblem, conditionTree } from '../game/js/logic/conditions.js';
 import { MAPGEN_DEFAULTS, MAPGEN_FEATURES, MAPGEN_SHAPES, MAPGEN_SURFACES, MAPGEN_WATER } from '../game/js/logic/mapgen.js';
 
@@ -66,6 +67,9 @@ const read = (path, ix = 'index.json') => {
     problem(path, 'not JSON: ' + e.message);
     return undefined;
   }
+  /* Studio plan T1.6 (F7): the Studio drops keys starting with _ on every save */
+  for (const k of dataUnderscoreKeys(v))
+    problem(path, `${k}: a key starting with _ is dropped by every Studio save; rename it`);
   if (PB_DATA.text(v) !== text) {
     if (FIX) {
       writeFileSync(file, PB_DATA.text(v));
