@@ -28,16 +28,16 @@
   "leg": "back",
   "foot": "back",
   "backfin": "back",
-  "tail": "signature",
-  "tailfin": "signature",
+  "tail": "sig",
+  "tailfin": "sig",
   "horn": "head-extra",
-  "spikes": "signature",
-  "mane": "signature",
+  "spikes": "sig",
+  "mane": "sig",
   "shell": "body-extra",
   "ruff": "body-extra",
   "plume": "head-extra",
   "crown": "head-extra",
-  "sail": "signature",
+  "sail": "sig",
   "spike": "head-extra",
   "scales": "body-extra",
   "lure": "head-extra"
@@ -127,9 +127,9 @@
   "shoulderR": ["front"],
   "hipL": ["back"],
   "hipR": ["back"],
-  "tail": ["signature"],
+  "tail": ["sig"],
   "top": ["head-extra"],
-  "spine": ["body-extra","signature"]
+  "spine": ["body-extra","sig"]
  },
  "sockets": {
   "fox_tail": {
@@ -942,7 +942,7 @@
    "kit": "beasts",
    "animal": "cat",
    "kind": "tail",
-   "slot": "signature",
+   "slot": "sig",
    "pivot": [0.1,0.5],
    "size": "M",
    "views": {
@@ -964,7 +964,7 @@
    "kit": "beasts",
    "animal": "rabbit",
    "kind": "tail",
-   "slot": "signature",
+   "slot": "sig",
    "pivot": [0.1,0.5],
    "size": "M",
    "views": {
@@ -986,7 +986,7 @@
    "kit": "beasts",
    "animal": "fox",
    "kind": "tail",
-   "slot": "signature",
+   "slot": "sig",
    "pivot": [0.1,0.5],
    "size": "M",
    "views": {
@@ -1008,7 +1008,7 @@
    "kit": "beasts",
    "animal": "bear",
    "kind": "tail",
-   "slot": "signature",
+   "slot": "sig",
    "pivot": [0.1,0.5],
    "size": "M",
    "views": {
@@ -1030,7 +1030,7 @@
    "kit": "beasts",
    "animal": "bird",
    "kind": "tail",
-   "slot": "signature",
+   "slot": "sig",
    "pivot": [0.1,0.5],
    "size": "M",
    "views": {
@@ -1052,7 +1052,7 @@
    "kit": "beasts",
    "animal": "reptile",
    "kind": "tail",
-   "slot": "signature",
+   "slot": "sig",
    "pivot": [0.1,0.5],
    "size": "M",
    "views": {
@@ -1096,7 +1096,7 @@
    "kit": "beasts",
    "animal": "any",
    "kind": "spikes",
-   "slot": "signature",
+   "slot": "sig",
    "pivot": [0.5,0.95],
    "size": "M",
    "views": {
@@ -1118,7 +1118,7 @@
    "kit": "beasts",
    "animal": "any",
    "kind": "mane",
-   "slot": "signature",
+   "slot": "sig",
    "pivot": [0.5,0.6],
    "size": "M",
    "views": {
@@ -1906,7 +1906,7 @@
    "kit": "birds",
    "animal": "chick",
    "kind": "tail",
-   "slot": "signature",
+   "slot": "sig",
    "pivot": [0.1,0.5],
    "size": "M",
    "views": {
@@ -1928,7 +1928,7 @@
    "kit": "birds",
    "animal": "duck",
    "kind": "tail",
-   "slot": "signature",
+   "slot": "sig",
    "pivot": [0.1,0.5],
    "size": "M",
    "views": {
@@ -1950,7 +1950,7 @@
    "kit": "birds",
    "animal": "owl",
    "kind": "tail",
-   "slot": "signature",
+   "slot": "sig",
    "pivot": [0.1,0.5],
    "size": "M",
    "views": {
@@ -1972,7 +1972,7 @@
    "kit": "birds",
    "animal": "sparrow",
    "kind": "tail",
-   "slot": "signature",
+   "slot": "sig",
    "pivot": [0.1,0.5],
    "size": "M",
    "views": {
@@ -1994,7 +1994,7 @@
    "kit": "birds",
    "animal": "eagle",
    "kind": "tail",
-   "slot": "signature",
+   "slot": "sig",
    "pivot": [0.1,0.5],
    "size": "M",
    "views": {
@@ -2016,7 +2016,7 @@
    "kit": "birds",
    "animal": "hawk",
    "kind": "tail",
-   "slot": "signature",
+   "slot": "sig",
    "pivot": [0.1,0.5],
    "size": "M",
    "views": {
@@ -2870,7 +2870,7 @@
    "kit": "fish",
    "animal": "goldfish",
    "kind": "tailfin",
-   "slot": "signature",
+   "slot": "sig",
    "pivot": [0.05,0.5],
    "size": "M",
    "views": {
@@ -2892,7 +2892,7 @@
    "kit": "fish",
    "animal": "carp",
    "kind": "tailfin",
-   "slot": "signature",
+   "slot": "sig",
    "pivot": [0.05,0.5],
    "size": "M",
    "views": {
@@ -2914,7 +2914,7 @@
    "kit": "fish",
    "animal": "koi",
    "kind": "tailfin",
-   "slot": "signature",
+   "slot": "sig",
    "pivot": [0.05,0.5],
    "size": "M",
    "views": {
@@ -2936,7 +2936,7 @@
    "kit": "fish",
    "animal": "piranha",
    "kind": "tailfin",
-   "slot": "signature",
+   "slot": "sig",
    "pivot": [0.05,0.5],
    "size": "M",
    "views": {
@@ -2958,7 +2958,7 @@
    "kit": "fish",
    "animal": "betta",
    "kind": "tailfin",
-   "slot": "signature",
+   "slot": "sig",
    "pivot": [0.05,0.5],
    "size": "M",
    "views": {
@@ -2980,7 +2980,7 @@
    "kit": "fish",
    "animal": "shark",
    "kind": "tailfin",
-   "slot": "signature",
+   "slot": "sig",
    "pivot": [0.05,0.5],
    "size": "M",
    "views": {
@@ -3002,7 +3002,7 @@
    "kit": "fish",
    "animal": "any",
    "kind": "sail",
-   "slot": "signature",
+   "slot": "sig",
    "pivot": [0.2,0.95],
    "size": "M",
    "views": {

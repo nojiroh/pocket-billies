@@ -70,7 +70,7 @@ function fixture() {
 test('library matches size groups and detects only existing paired siblings', () => {
   const { lib, state } = fixture();
   assert.equal(lib.slot({ n: 'armL' }), 'front');
-  assert.equal(lib.slot({ n: 'tail' }), 'signature');
+  assert.equal(lib.slot({ n: 'tail' }), 'sig');
   assert.equal(lib.slot({ n: 'earL' }), 'head-extra');
   assert.equal(lib.pair(state.rigs.test.front, 'armL').n, 'armR');
   state.rigs.test.front.bones[1].par = 'other';

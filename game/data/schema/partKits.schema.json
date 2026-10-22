@@ -69,7 +69,7 @@
   },
   "slotList": {
    "type": "array",
-   "items": {"enum":["head","head-extra","body","body-extra","front","back","signature"]},
+   "items": {"enum":["head","head-extra","body","body-extra","front","back","sig"]},
    "uniqueItems": true
   },
   "rules": {
@@ -91,7 +91,7 @@
   "slots": {
    "description": "the slot each kind of part fills",
    "type": "object",
-   "additionalProperties": {"enum":["head","head-extra","body","body-extra","front","back","signature"]}
+   "additionalProperties": {"enum":["head","head-extra","body","body-extra","front","back","sig"]}
   },
   "pivots": {
    "description": "each kind's turning point",
@@ -140,7 +140,7 @@
      "kit": {"type":"string"},
      "animal": {"description":"the animal it comes from, or any (a kit's extras)","type":"string"},
      "kind": {"type":"string"},
-     "slot": {"enum":["head","head-extra","body","body-extra","front","back","signature"]},
+     "slot": {"enum":["head","head-extra","body","body-extra","front","back","sig"]},
      "pivot": {"$ref":"#/$defs/point"},
      "size": {"enum":["S","M","L"]},
      "z": {"description":"its draw order, in place of its kind's","$ref":"#/$defs/z"},

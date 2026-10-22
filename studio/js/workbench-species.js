@@ -489,7 +489,7 @@ const wbsLibrary = {
     if (/^(ear|horn|crest|antler)/i.test(role)) return 'head-extra';
     if (/^(shell|ruff)/i.test(role)) return 'body-extra';
     const slot = boneSlot(b);
-    return slot === 'sig' ? 'signature' : slot || '';
+    return slot || '';
   },
   pair(M, name) {
     const b = M?.bones.find(x => x.n === name);
