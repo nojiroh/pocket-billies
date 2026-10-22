@@ -1333,12 +1333,8 @@ SECTIONS.people = () => {
   const k = studioState.sel.person,
     P = D.people[k],
     W = D.wardrobe;
-  if (!P.look) {
-    personLook(k);
-    studioState.dirty = true;
-    updateTopBar();
-  }
-  const L = P.look,
+  /* every person has a look (person.schema.json); opening the section never writes to the data (Studio plan F14) */
+  const L = P.look || cleanLook(null),
     p = `people.${k}.look`;
   L.colors = L.colors || {};
   for (const id of Object.values(L.wear || {}))
