@@ -47,10 +47,10 @@ how they look now, adapted as 3D props; this first batch the trees only.
 - Phone check wanted: a run with a ridge node (pines, larches, cypresses) and an autumn node (rowans, the great oak);
   turn the camera round a pine; Copperleaf's larches; export the debug log.
 - Next: batch 11, the other standing pictures the roguelite shows: boulder_mossy (thicket), campfire and lookout_tower
-  (the generator places them), the barn (the ranch), wind_sail_flower (Copperleaf), then the six live rooms' 19
+  (the generator places them), the barn (the ranch), wind_sail_flower (Copperleaf), then the six live rooms' 20
   furniture props (plant_tall, bookshelf, sack, crate_goods, shop_counter, shop_shelf, wall_clock, wall_painting,
   wall_window, sofa, fireplace, barrel, blackboard, clinic_bed, counter_white, fridge_drinks, haybale_stack, lab_desk,
-  lab_machine). The flat plants (54) and ground decals (11) stay flat unless the owner says otherwise.
+  lab_machine, privacy_screen). The flat plants (54) and ground decals (11) stay flat unless the owner says otherwise.
 
 ### Roguelite track RL-11 - Hub upgrades, currencies, unlocks - 2026-10-22
 Branch `claude/hopeful-cannon-o98ywr`, from main 6a8a3e7 (PR #112). Plan approved in Plan Mode with the owner's

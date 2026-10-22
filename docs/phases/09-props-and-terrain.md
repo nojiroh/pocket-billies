@@ -21,7 +21,7 @@ My firm art commitments: terrain textures and the airship style (low-poly models
   cypress, the autumn rowan and great autumn oak, and the larch rebuilt to match. Conifers keep their drawn tiers as
   bands (a box clip) centred on a modelled mast and pulled toward the eye (a picture layer's `front`). Task 4 begun:
   the ten `_deep` trees merged into their bases (tools/merge-deep-trees.py). Standing pictures the roguelite still
-  shows: the six live rooms' furniture (19 props), the barn, boulder_mossy, campfire, lookout_tower, wind_sail_flower.
+  shows: the six live rooms' furniture (20 props), the barn, boulder_mossy, campfire, lookout_tower, wind_sail_flower.
 
 ## Tasks: scope first
 1. List which props the maps, rooms, the opening, the ranch and the world map still use. Delete the unused ones.
