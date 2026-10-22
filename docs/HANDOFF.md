@@ -2,6 +2,57 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Island track IS-8 - Barn and pasture - 2026-10-22
+Branch `claude/is-8-pasture`, from `claude/island-look` (the look pass, PR #133, not merged yet); the PR goes against
+main, so its diff shrinks once #133 merges (then merge main in). Ran beside IS-9 (dressing, variety and the phone pass)
+and the look pass. Plan approved in Plan Mode; question 8 answered: **the ranch's Billies roam, up to ~6**.
+- Changed (one cause per commit):
+  - **The pasture, a build step of its own** (tools/build-pasture.mjs, `pastureProps`): build-copperleaf.mjs runs it
+    just before writing the map, and it runs alone on the map as it stands (`node tools/build-pasture.mjs`). It takes
+    every prop off the pasture zone, then lays the fence along the zone's outline made straight and 1.2 m inside it
+    (logic/pasture.js `pastureFenceLine`): `fence_wood` sections (overlapping a little, never a gap), a
+    `fence_wood_post` at each corner; a 2.4 m gap on the side nearest the barn's door with `fence_gate` (act
+    `pasture`, label Pasture) swung open into the field; the `water_trough` by the gap; the `hay_feeder` with two
+    `hay_round` in the middle; two more bales. 65 props on Copperleaf. Only `props` changes, only inside the zone; a
+    rerun writes nothing. Unit-tested (tools/test/pasture.test.mjs): every prop in the zone, outside untouched, a rerun
+    the same, the fence closed but for the gap (a flood fill on the game's blocking rules, seen failing with any rail
+    left out), the hub as built carries it.
+  - **The Billies** (logic/pasture.js, unit-tested; world-billies.js `pastureItems`, beside the buddy and drawn the
+    same way): up to `rules.ranch.pasture` (6, a placeholder; check-data 0-12, types) of the Billies in storage, the
+    trainees first, then the highest levels, never the buddy. Each wanders inside a line 1.1 m inside the fence, in
+    straight walks that never cross it and keep clear of the trough and the hay; now and then a hop. Who's out is read
+    every second (a Billie moved to the team or packed for a run leaves). Nothing is saved: they spread out afresh when
+    the map opens. Not drawn from more than 75 m away.
+  - **Taps**: a pasture Billie is a tap target (`ranchBilly`): it hops and cries, then the ranch's sheet opens. The
+    gate's act `pasture` opens the sheet where you stand. The Studio's act list has it.
+  - **Checks and debug**: `?fixture=pasture` (the ranch's save at the gate); check-fast "The pasture" (three wander
+    inside the fence and stay there; the one beside you is a tap target and a tap opens the sheet; the gate opens it
+    without walking into the barn; one moved to the team leaves; seen failing with the tap target removed); the in-game
+    "The ranch" phase checks the trainee comes first and the gate stands in its zone; the debug log's ranch line has
+    `pasture` (a count).
+  - Docs: the track file ("Done in IS-8", question 8 answered), ROADMAP, CHANGELOG.
+- Where the plan was wrong or short: see the track file's "Done in IS-8" (a gate with act `ranch` walks into the barn;
+  a prop's box blocks for every placement, so the gate stands open; `ranch.pens` is unused). The fixture's Billies are
+  a first-stage species, about rabbit size on the field: that is the species' own size (the wild ones are the same).
+- Verified: unit tests 623 (5 new); lint, typecheck, check:modules, format:check, check:data (a planted `pasture: 13` caught);
+  check-fast 26 of 26 (Copperleaf's walking checks pass through the gate); smoke no problems; headless phone pictures
+  (390 x 760) of the gate, inside the field and round the fence. The full quick check: running at this commit (its result in the next commit).
+- Risky:
+  - Up to six more rigs drawn on the hub (the buddy's frame cache, 320 frames, is shared); not measured on a phone
+    (IS-9 measures frame times).
+  - The rabbits' `life` area is the pasture's box, so they hop over the fence now and then (life doesn't walk the nav
+    grid). Left alone: IS-9 owns the animals.
+  - Rerunning build-copperleaf or build-pasture rewrites the pasture's props: hand edits to them in the Studio are lost.
+  - If the look pass or IS-9 moves or reshapes the pasture zone, rerun build-island then build-copperleaf: the fence
+    and the Billies' line both follow the zone.
+- For the sessions alongside: **IS-9**: the pasture step clears its zone first, so dressing there is taken off; leave
+  the pasture zone out of the dressing step. When the branches meet, build-copperleaf.mjs's only change here is one
+  import and one call line; rerun the tools, never hand-merge copperleaf.json (or hooks.js: `npm run modules`).
+- Phone check wanted: walk to the barn and its pasture; look at the fence from round it; walk in through the gate; tap
+  a Billie (some in storage first: the ranch's sheet, or the debug menu) and the gate; move one to the team and see it
+  leave; export the debug log (`ranch.pasture`).
+- Next: IS-9 (dressing and the phone pass). Tag `is-8-done` is the owner's to push.
+
 ### Island track IS-6b - Hub editor dials - 2026-10-22
 Branch `claude/is-6b-hub-dials`, from the wave-2 base `claude/new-session-3qlesh` (main plus IS-2, IS-3, IS-4 and IS-6a,
 PRs #122, #124, #123, #126, not merged yet); the PR goes against main, so its diff shrinks as those merge (then merge

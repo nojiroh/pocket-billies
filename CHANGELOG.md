@@ -9,6 +9,10 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- The barn has its pasture (island track IS-8): a rail fence round the field beside Copperleaf's barn, a field gate
+  standing open so you can walk in, a water trough and a hay rack with round bales. Up to six of your Billies at home
+  (the ones training first) wander in it, poking about the hay and now and then hopping. Tap one, or the gate, and
+  the ranch opens. A Billie you take onto your team or on a run leaves the field.
 - The Studio's Hub island section has the island generator's dials (IS-6b): size, coast, mountain, cove, beaches,
   cliffs, forest, stream, paths, the town and the hamlet, a seed and a seed for each part. A draft shows in the
   orbit view and on the map as you change them, with its size, the walk round the coast and a walking check. "Use
