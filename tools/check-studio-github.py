@@ -1060,22 +1060,26 @@ def music_steps(pg, errs):
     pg.select_option('select[data-mt=nodeType]', 'town'); pg.select_option('select[data-mt=biome]', 'lake')
     pick = lambda: pg.evaluate("document.querySelector('#musTryOut').textContent")
     undo0 = pg.evaluate("studioState.undo.length")
-    if pick() != 'Rule 9 picks town': errs.append(f'music: a lake town gave {pick()!r}')
+    # SND-5: the rules' places are read from the table (new battle rules moved them)
+    town = pg.evaluate("studioState.D.music.where.findIndex(w => w.nodeType === 'town')") + 1
+    wild = pg.evaluate("studioState.D.music.where.findIndex(w => w.battle === 'wild')")
+    n0 = pg.evaluate("studioState.D.music.where.length")
+    if pick() != f'Rule {town} picks town': errs.append(f'music: a lake town gave {pick()!r}')
     lake = pg.evaluate("studioState.D.music.where.findIndex(w => w.biome === 'lake')")
-    for _ in range(5): pg.click(f'#musRule{lake} [data-act=musRuleMove][data-d="-1"]'); lake -= 1
-    if pg.evaluate(f"studioState.D.music.where[{lake}].biome") != 'lake' or pick() != 'Rule 9 picks trench':
+    for _ in range(lake - town + 1): pg.click(f'#musRule{lake} [data-act=musRuleMove][data-d="-1"]'); lake -= 1
+    if pg.evaluate(f"studioState.D.music.where[{lake}].biome") != 'lake' or pick() != f'Rule {town} picks trench':
         errs.append(f'music: the lake rule moved to {lake + 1} gave {pick()!r}, wanted trench')
-    pg.select_option('#musRule3 select[data-mk="+"]', 'indoor')
-    if pg.evaluate("studioState.D.music.where[3]") != {'battle': 'wild', 'indoor': True, 'song': 'wild'}: errs.append(f"music: adding a condition gave {pg.evaluate('studioState.D.music.where[3]')}")
-    pg.click('#musRule3 [data-act=musCondDel][data-k=indoor]')
+    pg.select_option(f'#musRule{wild} select[data-mk="+"]', 'indoor')
+    if pg.evaluate(f"studioState.D.music.where[{wild}]") != {'battle': 'wild', 'indoor': True, 'song': 'wild'}: errs.append(f"music: adding a condition gave {pg.evaluate(f'studioState.D.music.where[{wild}]')}")
+    pg.click(f'#musRule{wild} [data-act=musCondDel][data-k=indoor]')
     pg.click('[data-act=musRuleAdd]')
     W = pg.evaluate("studioState.D.music.where")
-    if len(W) != 27 or W[-1] != {'song': 'route'}: errs.append(f'music: a new rule went to {len(W)} (last {W[-1]})')
+    if len(W) != n0 + 1 or W[-1] != {'song': 'route'}: errs.append(f'music: a new rule went to {len(W)} (last {W[-1]})')
     if pg.evaluate("runCheck().filter(c => c.go === 'music' && c.lvl === 'error').length"): errs.append('music: the Check finds errors in a table only moved and added to')
-    pg.click('#musRule25 [data-act=musRulePlay]'); time.sleep(0.4)
-    if pg.evaluate("musicPlaying()") != pg.evaluate("studioState.D.music.where[25].song"): errs.append('music: a rule’s ▶ did not play its song')
+    pg.click(f'#musRule{n0 - 1} [data-act=musRulePlay]'); time.sleep(0.4)
+    if pg.evaluate("musicPlaying()") != pg.evaluate(f"studioState.D.music.where[{n0 - 1}].song"): errs.append('music: a rule’s ▶ did not play its song')
     while pg.evaluate("studioState.undo.length") > undo0: pg.click('#undoBtn')
-    if pick() != 'Rule 9 picks town' or pg.evaluate("changedDataFiles(studioState.D).map(f => f.path)"):
+    if pick() != f'Rule {town} picks town' or pg.evaluate("changedDataFiles(studioState.D).map(f => f.path)"):
         errs.append(f'music: undoing the table gave {pick()!r} and left {pg.evaluate("changedDataFiles(studioState.D).map(f => f.path)")}')
     # the jingles: one plays (its voices start on the context), a note drawn after its end lengthens it with a rest
     # between, undone
