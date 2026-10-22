@@ -306,7 +306,8 @@ export function buildFarProps() {
       pool.push(p.k);
   }
   walkRenderer.farProps = [];
-  if (!pool.length) return;
+  /* island track IS-3: past the edge of a scene with the sea all round there is only the sea */
+  if (!pool.length || sc.flatFar) return;
   const W = sc.w,
     H = sc.h;
   let k = 0;
