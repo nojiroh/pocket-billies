@@ -33,7 +33,7 @@ function songRandom(seed) {
 }
 /* a song's recipe (bpm, key, scale, the chords, the parts) made into notes: the lead is a seeded random walk over the
    chord tones. Returns a new object, the recipe with notes, steps and deg (scale degree to midi note) */
-export function trackerCompose(D) {
+function trackerCompose(D) {
   const sc = SCALES[D.scale],
     R = songRandom(D.seed),
     deg = n => {
@@ -87,7 +87,7 @@ export function trackerCompose(D) {
   return { ...D, notes: lead, steps, deg };
 }
 export const midiToFrequency = m => 440 * Math.pow(2, (m - 69) / 12);
-export function trackerCreate(ctx, bus) {
+export function trackerCreate(ctx, bus, opts = {}) {
   const c = ctx,
     T = { ctx, bus, waves: {} };
   /* a soft echo for the music (caves get more of it) */
@@ -214,6 +214,263 @@ export function trackerCreate(ctx, bus) {
     g.connect(out);
     o.start(t);
     o.stop(t + 0.22);
+  };
+  /* ---------- the player ---------- */
+  /* a song starts 80 ms from now and fades in; the songs before it fade out. levels() is the game's say on the drums
+     (softer standing still or at night) and the night pad; with none, drums are full and there is no pad */
+  const songs = opts.songs || {},
+    levels = opts.levels || (() => null),
+    composed = new Map();
+  T.song = null;
+  T.voices = [];
+  T.timer = null;
+  T.compose = name => {
+    const D = songs[name];
+    if (!D) return null;
+    if (!composed.has(name)) composed.set(name, trackerCompose(D));
+    return composed.get(name);
+  };
+  T.play = name => {
+    if (T.song && T.song.name === name) return T.song;
+    const D = T.compose(name);
+    if (!D) return null;
+    if (T.song) {
+      const old = T.song;
+      old.fade = c.currentTime;
+    }
+    const L = levels();
+    T.song = { name, D, step: 0, next: c.currentTime + 0.08, gain: c.createGain() };
+    T.song.gain.connect(bus);
+    T.song.drums = c.createGain();
+    T.song.drums.gain.value = L ? L.drums : 1;
+    T.song.drums.connect(T.song.gain);
+    T.song.gain.gain.setValueAtTime(0, c.currentTime);
+    T.song.gain.gain.linearRampToValueAtTime(1, c.currentTime + 0.6);
+    for (const v of T.voices) {
+      const t = c.currentTime;
+      v.gain.gain.cancelScheduledValues(t);
+      v.gain.gain.setValueAtTime(v.gain.gain.value, t);
+      v.gain.gain.linearRampToValueAtTime(0, t + 0.5);
+      setTimeout(() => v.gain.disconnect(), 700);
+    }
+    T.voices = [T.song];
+    if (!T.timer) T.timer = setInterval(T.tick, 25);
+    return T.song;
+  };
+  T.stop = () => {
+    if (T.song) {
+      const t = c.currentTime,
+        g = T.song.gain;
+      g.gain.setValueAtTime(g.gain.value, t);
+      g.gain.linearRampToValueAtTime(0, t + 0.4);
+      setTimeout(() => g.disconnect(), 600);
+    }
+    T.song = null;
+    T.voices = [];
+  };
+  /* the scheduler: called every 25 ms, it schedules each step that starts in the next 140 ms */
+  T.tick = () => {
+    const sg = T.song;
+    if (!sg) return;
+    const D = sg.D,
+      spb = 60 / D.bpm / 4;
+    while (sg.next < c.currentTime + 0.14) {
+      let Lv;
+      const st = sg.step % D.steps,
+        b = Math.floor(st / 16),
+        i = st % 16,
+        t = sg.next + (i % 2 ? spb * (D.swing || 0) : 0),
+        bus = sg.gain,
+        ch = D.prog[b],
+        dg = D.deg;
+      /* lead */ const L = D.notes[st];
+      if (L)
+        T.synthVoice(bus, {
+          type: D.lead,
+          freq: midiToFrequency(L[0]),
+          t,
+          dur: L[1] * spb * 0.9,
+          vol: D.lead === 'triangle' ? 0.13 : 0.075,
+          d: 0.1,
+          s: 0.55,
+          r: 0.06,
+          vib: L[1] >= 6 ? 1 : 0,
+          echo: D.echo || 0.15,
+        });
+      /* bass */ const bs = D.bass,
+        root = dg(ch) - 24;
+      if (bs === 'bounce' && i % 4 === 0)
+        T.synthVoice(bus, {
+          type: 'triangle',
+          freq: midiToFrequency(i % 8 ? root + 7 : root),
+          t,
+          dur: spb * 3,
+          vol: 0.2,
+          s: 0.7,
+        });
+      else if (bs === 'gallop' && [0, 3, 4, 8, 11, 12].includes(i))
+        T.synthVoice(bus, {
+          type: 'triangle',
+          freq: midiToFrequency(i % 8 === 4 ? root + 12 : root),
+          t,
+          dur: spb * 1.5,
+          vol: 0.2,
+        });
+      else if (bs === 'long' && i === 0)
+        T.synthVoice(bus, {
+          type: 'triangle',
+          freq: midiToFrequency(root),
+          t,
+          dur: spb * 15,
+          vol: 0.16,
+          a: 0.2,
+          s: 0.8,
+          r: 0.4,
+        });
+      else if (bs === 'walk' && i % 4 === 0)
+        T.synthVoice(bus, {
+          type: 'triangle',
+          freq: midiToFrequency(dg(ch + [0, 2, 4, 5][i / 4]) - 24),
+          t,
+          dur: spb * 3.5,
+          vol: 0.2,
+        });
+      else if (bs === 'drive' && i % 2 === 0)
+        T.synthVoice(bus, {
+          type: 'p50',
+          freq: midiToFrequency(root + (i % 8 === 6 ? 12 : 0)),
+          t,
+          dur: spb * 1.6,
+          vol: 0.07,
+          cut: 900,
+        });
+      /* harmony */ const ar = D.arp,
+        tri = [0, 2, 4, D.seventh ? 6 : 7].map(x => dg(ch + x)),
+        pick = k => tri[((k % 4) + 4) % 4];
+      if (ar === 'up' && i % 2 === 0)
+        T.synthVoice(bus, {
+          type: 'p12',
+          freq: midiToFrequency(pick(i / 2) + 12),
+          t,
+          dur: spb * 1.2,
+          vol: 0.035,
+          s: 0.3,
+          echo: 0.2,
+        });
+      else if (ar === 'updown' && i % 2 === 0) {
+        const k = i / 2,
+          seq = [0, 1, 2, 3, 2, 1, 0, 1];
+        T.synthVoice(bus, {
+          type: 'p12',
+          freq: midiToFrequency(pick(seq[k % 8]) + 12),
+          t,
+          dur: spb * 1.2,
+          vol: 0.035,
+          s: 0.3,
+          echo: 0.15,
+        });
+      } else if (ar === 'drip' && (i === 0 || i === 6 || i === 11))
+        T.synthVoice(bus, {
+          type: 'sine',
+          freq: midiToFrequency(pick(i) + 24),
+          t,
+          dur: spb * 2,
+          vol: 0.05,
+          s: 0.2,
+          r: 0.3,
+          echo: 0.7,
+        });
+      else if (ar === 'chord7' && (i === 0 || i === 6 || i === 10))
+        tri.forEach(n =>
+          T.synthVoice(bus, {
+            type: 'sine',
+            freq: midiToFrequency(n + 12),
+            t,
+            dur: spb * (i === 0 ? 5 : 3),
+            vol: 0.03,
+            a: 0.02,
+            s: 0.5,
+            r: 0.2,
+          })
+        );
+      /* drums (v27: on their own bus, softer when you stand still or at night) */ const dr = D.drums,
+        db = sg.drums || bus;
+      if (dr === 'soft') {
+        if (i === 0 || i === 8) T.synthKick(db, t, 0.25);
+        if (i === 4 || i === 12) T.synthNoise(db, { t, dur: 0.08, vol: 0.08, bp: 1800, q: 0.8 });
+        if (i % 4 === 2) T.synthNoise(db, { t, dur: 0.03, vol: 0.04, hp: 7000 });
+      } else if (dr === 'skip') {
+        if (i === 0 || i === 10) T.synthKick(db, t, 0.3);
+        if (i === 4 || i === 12) T.synthNoise(db, { t, dur: 0.1, vol: 0.1, bp: 2000, q: 0.7 });
+        if (i % 2 === 0) T.synthNoise(db, { t, dur: 0.025, vol: 0.035, hp: 8000 });
+      } else if (dr === 'drive') {
+        if (i % 4 === 0) T.synthKick(db, t, 0.42);
+        if (i === 4 || i === 12) T.synthNoise(db, { t, dur: 0.12, vol: 0.14, bp: 1800, q: 0.6 });
+        T.synthNoise(db, { t, dur: 0.02, vol: i % 2 ? 0.025 : 0.045, hp: 8000 });
+      } else if (dr === 'march') {
+        if (i === 0 || i === 8 || i === 11) T.synthKick(db, t, 0.42);
+        if (i % 4 === 2 || i === 14 || i === 15) T.synthNoise(db, { t, dur: 0.07, vol: 0.11, bp: 2400, q: 0.8 });
+        if (i % 2 === 0) T.synthNoise(db, { t, dur: 0.02, vol: 0.03, hp: 9000 });
+      } else if (dr === 'bossa') {
+        if (i === 0 || i === 6 || i === 8 || i === 14) T.synthKick(db, t, 0.2);
+        if ([3, 6, 10, 13].includes(i)) T.synthNoise(db, { t, dur: 0.03, vol: 0.05, bp: 3500, q: 2 });
+      }
+      /* v27: a soft pad under the night */ if (i === 0 && (Lv = levels()) && Lv.pad > 0.05)
+        [0, 2, 4].forEach(x =>
+          T.synthVoice(bus, {
+            type: 'sine',
+            freq: midiToFrequency(dg(ch + x) - 12),
+            t,
+            dur: spb * 15,
+            vol: 0.022 * Lv.pad,
+            a: 0.6,
+            s: 0.9,
+            r: 0.8,
+          })
+        );
+      sg.step++;
+      sg.next += spb;
+    }
+  };
+  /* a short tune that plays once over a lead and a bass an octave down, on the bus it is given; the song ducks to 0.15
+     for its length. Returns when it ends (on the context's clock) */
+  T.jingle = (notes, bpm, type, out) => {
+    const spb = 60 / bpm / 4,
+      t0 = c.currentTime + 0.05;
+    let t = t0;
+    if (T.song) {
+      const g = T.song.gain.gain;
+      g.cancelScheduledValues(t0);
+      g.setValueAtTime(g.value, t0);
+      g.linearRampToValueAtTime(0.15, t0 + 0.1);
+    }
+    for (const [n, l] of notes) {
+      if (n)
+        (T.synthVoice(out, {
+          type,
+          freq: midiToFrequency(n),
+          t,
+          dur: l * spb * 0.9,
+          vol: 0.12,
+          s: 0.6,
+          echo: 0.2,
+        }),
+          n &&
+            T.synthVoice(out, {
+              type: 'triangle',
+              freq: midiToFrequency(n - 12),
+              t,
+              dur: l * spb * 0.9,
+              vol: 0.12,
+            }));
+      t += l * spb;
+    }
+    if (T.song) {
+      const g = T.song.gain.gain;
+      g.linearRampToValueAtTime(0.15, t);
+      g.linearRampToValueAtTime(1, t + 0.8);
+    }
+    return t;
   };
   return T;
 }
