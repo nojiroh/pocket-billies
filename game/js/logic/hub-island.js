@@ -20,6 +20,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   groundLockRefusal: [() => groundLockRefusal, v => (groundLockRefusal = v)],
   // @ts-expect-error -- replaced on purpose
+  hubCoastLap: [() => hubCoastLap, v => (hubCoastLap = v)],
+  // @ts-expect-error -- replaced on purpose
   hubDefaultMap: [() => hubDefaultMap, v => (hubDefaultMap = v)],
   // @ts-expect-error -- replaced on purpose
   hubEdgeDistance: [() => hubEdgeDistance, v => (hubEdgeDistance = v)],
@@ -237,4 +239,25 @@ export function hubIslandMaps(maps) {
 export function hubDefaultMap(maps) {
   const L = hubIslandMaps(maps);
   return L.find(k => !hubViewOnlyReason(maps[k])) || L[0] || null;
+}
+
+/** "Walk the coast": a lap round the island `inset` metres in from its coast, from the southernmost point (where the
+ * town is and the camera first looks) round and back to it; [] with no coast
+ * @param {any} sc @param {number} [inset] @returns {XZ[]} */
+export function hubCoastLap(sc, inset = 6) {
+  const L = sc.island && Array.isArray(sc.island.coast) ? sc.island.coast : [];
+  if (L.length < 3) return [];
+  const [cx, cz] = hubIslandCentre(sc),
+    P = L.map((/** @type {XZ} */ p) => {
+      const d = Math.hypot(p[0] - cx, p[1] - cz) || 1,
+        k = Math.max(0, d - inset) / d;
+      return /** @type {XZ} */ ([toCm(cx + (p[0] - cx) * k), toCm(cz + (p[1] - cz) * k)]);
+    });
+  let s = 0;
+  P.forEach((p, k) => {
+    if (p[1] < P[s][1]) s = k;
+  });
+  const lap = P.slice(s).concat(P.slice(0, s));
+  lap.push(lap[0].slice());
+  return lap;
 }

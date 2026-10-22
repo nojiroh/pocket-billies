@@ -772,7 +772,7 @@ async function mountMapEditor() {
     });
   if (mapEditor.pe) mountSceneryPixelEditor();
 }
-function drawSceneryThumbs() {
+export function drawSceneryThumbs() {
   const C = sceneryCatalog();
   $$('canvas[data-tile]').forEach(c => {
     const T = C.terrains[c.dataset.tile];
@@ -1380,7 +1380,7 @@ export function paintMapTile(sc, i, j, ch) {
 }
 /* the round ground brush (Walk scenes and the Hub island editor): paints the tiles within the brush's size round
    tile (i, j) (rows from the far edge); true when a tile changed */
-function paintGroundBrush(sc, i, j, ch, brush) {
+export function paintGroundBrush(sc, i, j, ch, brush) {
   const r = brush - 1;
   let any = false;
   for (let a = -r; a <= r; a++)
@@ -1665,7 +1665,7 @@ function ensureHeightGrid(sc) {
 }
 /* the height brush at m ({x, z} in metres); o: the brush's size, strength, mode (raise, lower, flatten, smooth) and
    the height flatten goes to (Walk scenes pass its own settings; the Hub island editor passes its own) */
-function sculptHeights(sc, m, o = mapEditor) {
+export function sculptHeights(sc, m, o = mapEditor) {
   const H = ensureHeightGrid(sc),
     R = Math.max(1, o.brush * 0.9),
     k = o.hstr * 0.35;

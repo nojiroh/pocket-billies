@@ -122,3 +122,14 @@ test('the list: the hub first, then the islands; it opens on the first that can 
   assert.equal(H.hubDefaultMap({ copperleaf: {} }), 'copperleaf');
   assert.equal(H.hubDefaultMap({}), null);
 });
+
+test('walk the coast: a closed lap inside the coast, from the south', () => {
+  const sc = testIsland(),
+    lap = H.hubCoastLap(sc, 6),
+    [cx, cz] = sc.island.c;
+  assert.equal(lap.length, sc.island.coast.length + 1);
+  assert.deepEqual(lap[0], lap[lap.length - 1]);
+  assert.equal(Math.min(...lap.map(p => p[1])), lap[0][1], 'it starts at the southernmost point');
+  for (const p of lap) near(Math.hypot(p[0] - cx, p[1] - cz), 46, 0.02);
+  assert.deepEqual(H.hubCoastLap({ w: 10, h: 10 }), []);
+});
