@@ -2,6 +2,52 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Terrain track TR-3 - The camera on tall ground - 2026-10-22
+Branch `terrain-generation` (the owner's name for it), from main dcced21 (PR #105, TR-2), main (UI-5) merged in at
+the end. The owner chose: TR-3 now, the rest of TR-2c next on the same branch in a new session, one PR. Plan approved
+in Plan Mode (silhouette a dark blue tint about 55% dithered, rise capped at 18 degrees on top of the old 9).
+- Changed (one cause per commit):
+  - **Camera rise** (walk/camera.js, new logic/camera-rise.js `cameraRiseNeeded`): the line from the eye to your head
+    tested against the standing height at ten points 1.2-27 m back; the camera tilts down further until it clears by
+    0.4 m, up to Engine > Camera > "Rise on tall ground" (18 degrees, 0 off), and comes up to 15% closer; quick up,
+    slow down; none indoors, in rooms, with the free camera or a focus. The debug log's run line has `camRise`.
+  - **Rock fade** (walk-shaders.js `ROCK_GLSL`, draw-common.js `setRockUniforms` from `useWalkProgram`): ground, walls,
+    sprites, grass, water, waterfalls, solid props and trees, voxel props and low-poly models nearer the camera than
+    you and 0.5 m above your feet thin out in a soft circle round you (up to 80%). On only while ground cuts the line
+    (the camera's `rockK`). Buildings keep their own fade. Setting "Rock fades in front of you".
+  - **Silhouette** (sprites.js `drawPlayerSilhouette`, gpuPass and debug-log timer `silhouette`): the player drawn again
+    after the structures, depth GREATER, no depth writes, pulled 0.6 m toward the eye along each corner's line of sight
+    (sprite shader `uGhostV`), a dark blue dithered tint (`uGhost`). Setting "Your silhouette through rock".
+  - **Shadows**: the near shadow map is centred at your height (engine/light.js `beginSunShadow` cy).
+  - **Debug**: the mountains run (`dbg_mountains`) has massif `NS` (was `N`); the debug log's `mountains` read the drawn
+    scene (no `gen`, always 0) and now reads the place's map.
+  - **Checks**: `?fixture=mountains`; check-fast's "Tall ground" step; `tools/look-tall-ground.py` (five pictures,
+    validation/tall-ground/, ignored); tests camera-rise and tall-ground-draw.
+- Where the plan was wrong: rise alone can't clear a massif 3-14 m away (17 m of rock would need about 80 degrees):
+  the fade and the silhouette carry the worst spots. The fade had to reach trees and models too, not only "steep smooth
+  ground", and it had to switch on only when ground cuts the line, else trees and signs in front of you would thin out
+  in Copperleaf. check-fast takes no pictures by design, so its new step checks the state and the pictures come from
+  the separate script. Walls aren't a separate index block (terrain-track.md "TR-3 as built").
+- Verified: unit tests 496; lint, typecheck, modules, format; smoke 15 of 15 after each step; check-fast 14 of 14
+  before the merge (Tall ground: 16.9 m of rock, rise 18 degrees, fade and silhouette on, off on flat ground); no
+  walkable cell of Copperleaf (4,670) or of a normal run's landing (4,070) turns any of it on; pictures of the five
+  settings at the worst spot of the fixture's landing.
+- **Not verified**: the full quick check (stopped for the merge, never finished). **After the merge check-fast fails on
+  every page because main's last commit (6f7ae74, "Delete game/art/background directory") removed pictures the game
+  still loads** (art/background/sky_light.png, cloud_light_*.png: 404, then the loading screen never goes). Not this
+  branch's; main fails the same way. The owner decides: bring the folder back, or remove what loads it.
+- Risky / open:
+  - Phone cost not measured: about a 4x4 matrix product more per pixel in the drawn shaders while the fade is on (a
+    uniform early-out when off), one extra player draw, ten height samples a frame. The owner's debug log from the
+    Mountains run (frame times, `camRise`) answers it.
+  - The fade's circle is fixed on screen (0.3-0.46 of the height); on a wide screen the hole may look small.
+  - The far shadow map and the mist still sit at absolute heights.
+- Next: the owner pushes the tag `tr-3-done` (sessions can't push tags) and plays the Mountains run on the phone. Next
+  session on this branch: the rest of TR-2c (the hop arc already exists in walk-view.js updatePlayerHeight, only the
+  dust puff is left; tall grass patches, waiting on wild Billies beyond 13 m of a place's middle; the main-road
+  pathfinder through the massif, reusing mapgenTrailSearch; the four mountain route types; generated rope bridges,
+  which the renderer already draws). Then the PR to main.
+
 ### UI track UI-5 - Every screen onto the kit - 2026-10-22
 Branch `ccr-0284fd60-fx7dki`, from main ca9aa54 (RL-8 merged and played); main merged in twice since (RL-8's
 follow-ups, then TR-2: mountains, trails, ledges, runs east to west). Plan approved in Plan Mode; the owner's
