@@ -51,7 +51,15 @@ moot (the generator lays the town out).
   plot: the plot is 7.5 x 6.2 m among streets.
 - Verified: unit tests 603; lint, typecheck, check:modules, format:check, check:data (144 files); both tools rerun to
   the identical file; check-fast 22 of 23 on the full run (the Studio world-map look wanted the great oak: fixed; that step and the new hub step pass alone); smoke 15 of 15 (New game: the fall, Hazel, the starters on the
-  square); full quick check: running when this was written (see the PR). Headless: the lab, a cottage, Juniper's home and the barn turned each of
+  square); check-fast 24 of 24 after the ground-build fixes (CI green); full quick check: besides the
+  failures main has too (roster counts, biped walk, voxel bushes, buildings without plans, the props scene), two
+  findings: (1) "shaped terraces change where you can walk: copperleaf": 5,979 half-metre cells (all on the mountain's
+  shelves off the trail) are reachable with unrounded terraces but not rounded ones; the trail, summit and every zone
+  stay reachable (the island's walking checks pass); IS-2's mountain meeting the engine's terrace rounding, left open
+  for the owner (terrain); (2) after that step runs in the same page, RL-7's and RL-8's first road walk on a run start
+  from the hub's spot (off the landing's map: "no path to the exit"), and the mast and postcard steps after them
+  fail in turn; RL-7 + RL-8 together, and RL-7 alone, pass, so it is something the terrace step leaves on the page
+  with the big hub; not found yet. Headless: the lab, a cottage, Juniper's home and the barn turned each of
   the four ways (doorway 0.02 m from the door, nothing walkable outside, pictures squared to the camera); pictures of
   the square from four sides, the barn and pasture, the pier, the hamlet, the island from above. Longest tap search on
   the island headless: 18 ms.
@@ -63,6 +71,9 @@ moot (the generator lays the town out).
   - Rerunning build-copperleaf rewrites every prop: hand edits to Copperleaf's props in the Studio are lost unless
     folded into tools/data/copperleaf-town.json or the tool. After the owner places things by hand, stop rerunning it.
   - The orbit's pivot in the hub's view isn't shifted by the view's offset (0 for an island with no neighbours).
+  - The first frame on the hub builds the whole island's ground mesh at once: ~6.7 s headless after the fixes (was
+    13 s; the old town ~7 s with shader compiles). On a phone it is a boot hitch to measure (IS-9).
+  - check-quick v31 now waits for frames in rooms and starts the bowl camera check from Home.
 - For the sessions alongside: **IS-6b**: "Use this island" must keep the hub's town (build-island.mjs's `GROUND` list
   is the split; then build-copperleaf.mjs re-places the town on new plots); hub-island.js only had its view-only
   words changed. **IS-7**: the town's buildings are props now (`plots` stay). **IS-8**: the barn stands in its zone,
