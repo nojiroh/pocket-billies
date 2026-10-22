@@ -501,11 +501,15 @@ export interface MapZone {
   lock?: boolean;
 }
 
-/** island track: what the island generator (IS-2) needs to make the ground again; IS-2 owns the dials */
+/** island track: what the island generator (IS-2) needs to make the ground again (IS-2 owns the dials), and the lock */
 export interface IslandGen {
   v: number;
   seed: string;
   dials?: Record<string, unknown>;
+  /** the ground is frozen (the hub, once it is right): a change to it fails the data check; props stay free */
+  lock?: boolean;
+  /** the frozen ground's fingerprint (logic/island.js islandGroundHash) */
+  hash?: string;
 }
 
 export type WaterKind = 'pond' | 'stream' | 'canal' | 'spring' | 'swamp' | 'lake' | 'sea' | 'lava' | 'ice';

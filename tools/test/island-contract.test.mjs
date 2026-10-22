@@ -1,14 +1,15 @@
 // Island track IS-0: the island contract (docs/phases/island-track.md): the map fields cam.orbit, island, zones,
 // islandGen and waterKind. The game's maps pass the schema and logic/island.js (check-data runs both); test_island
 // carries every field; each planted fault on a small island gives its words; the schema's water kinds are the
-// renderer's (walk/water-data.js WATER_KIND_LOOKS, which can't load in Node).
+// renderer's (walk/water-data.js WATER_KIND_LOOKS, which can't load in Node). The lock (the owner, 2026-10-22): a locked
+// island's ground (letters, heights, steps, coast, zones) can't change without failing; its props can.
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import Ajv2020 from 'ajv/dist/2020.js';
 import { GAME_DATA, ROOT } from './setup-real.mjs';
-import { ISLAND_ZONE_KINDS, islandPointIn, islandProblems } from '../../game/js/logic/island.js';
+import { ISLAND_ZONE_KINDS, islandGroundHash, islandPointIn, islandProblems } from '../../game/js/logic/island.js';
 
 const SCHEMA = join(ROOT, 'game/data/schema');
 const ajv = new Ajv2020({ allErrors: true, strict: false });
@@ -125,6 +126,40 @@ test('each planted fault gives its words', () => {
       [{ zones: [{ k: 'town', poly: zone.slice(0, 2) }] }, 'zones[0] (town) is not 3 or more [x, z] points'],
     ];
   for (const [o, words] of cases) assert.deepEqual(islandProblems(island(o)), [words], words);
+});
+
+test("a locked island's ground can't change, its props can", () => {
+  const T = structuredClone(GAME_DATA.maps.test_island),
+    h0 = islandGroundHash(T);
+  T.islandGen = { ...T.islandGen, lock: true, hash: h0 };
+  assert.ok(fits(T), JSON.stringify(ajv.errors));
+  assert.deepEqual(islandProblems(T), []);
+  /* props, people and the look are free */
+  T.props.push({ k: 'bench_wood', x: 60, z: 40 });
+  T.sky = ['#000000', '#000000', '#000000'];
+  assert.equal(islandGroundHash(T), h0);
+  assert.deepEqual(islandProblems(T), []);
+  const LOCKED =
+    "the island's ground is locked but changed (unlock it in the Studio's Hub island editor first, then lock it again)";
+  const changes = {
+    'one ground letter': S => (S.tiles[0] = 'g' + S.tiles[0].slice(1)),
+    'one height': S => (S.heights[30][30] += 0.01),
+    'a coast point': S => (S.island.coast[0] = [S.island.coast[0][0] + 1, S.island.coast[0][1]]),
+    "a zone's lock": S => (S.zones[0].lock = true),
+    'a step': S => (S.steps = 'AAAA'),
+  };
+  for (const [what, change] of Object.entries(changes)) {
+    const S = structuredClone(T);
+    change(S);
+    assert.notEqual(islandGroundHash(S), h0, what);
+    assert.deepEqual(islandProblems(S), [LOCKED], what);
+  }
+  T.islandGen.hash = undefined;
+  assert.deepEqual(islandProblems(T), ['islandGen.lock is on with no hash (lock it again in the Studio)']);
+  /* unlocked, the ground is free again */
+  T.islandGen.lock = false;
+  T.tiles[0] = 'g' + T.tiles[0].slice(1);
+  assert.deepEqual(islandProblems(T), []);
 });
 
 test('a map without island fields has nothing to check', () => {

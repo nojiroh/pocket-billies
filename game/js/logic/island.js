@@ -7,17 +7,24 @@
      island     { c: [x, z], coast: [[x, z], ...] }  the coastline, a closed polygon (the last point joins the first)
      zones      [{ k, poly, lock }]  k one of ISLAND_ZONE_KINDS; a locked zone's ground and props are never touched
                 when the island is made again (IS-2, IS-6)
-     islandGen  { v, seed, dials }  the generator's version, seed and dials, so the ground can be made again (IS-2)
+     islandGen  { v, seed, dials, lock, hash }  the generator's version, seed and dials, so the ground can be made
+                again (IS-2); lock: the ground is frozen (the owner, 2026-10-22: the hub island is locked once it is
+                right): hash is islandGroundHash at the time, and a change to the ground fails the data check. Props,
+                people and buildings stay free; unlocking is deliberate, in the Studio's Hub island editor (IS-6a)
    map.schema.json checks the shapes; islandProblems the rest (inside the scene, closed, no crossing, a sea round an
-   island). Logic only: no DOM, no game data of its own, runs in Node (tools/check-data.mjs, tools/test). */
+   island, a locked ground unchanged). Logic only: no DOM, no game data of its own, runs in Node
+   (tools/check-data.mjs, tools/test). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { hashString } from './rng.js';
 /* eslint-disable no-func-assign */
 expose({
   ISLAND_WATER: [() => ISLAND_WATER],
   ISLAND_ZONE_KINDS: [() => ISLAND_ZONE_KINDS],
   // @ts-expect-error -- replaced on purpose
   islandCrosses: [() => islandCrosses, v => (islandCrosses = v)],
+  // @ts-expect-error -- replaced on purpose
+  islandGroundHash: [() => islandGroundHash, v => (islandGroundHash = v)],
   // @ts-expect-error -- replaced on purpose
   islandPointIn: [() => islandPointIn, v => (islandPointIn = v)],
   // @ts-expect-error -- replaced on purpose
@@ -71,6 +78,21 @@ export function islandPolyProblems(sc, poly, what) {
   return out;
 }
 
+/** the frozen ground's fingerprint: the ground letters, heights, steps, the coast and the zones (not props or people) */
+export function islandGroundHash(sc) {
+  const I = sc.island || {},
+    ground = [
+      sc.tiles,
+      sc.heights,
+      sc.steps,
+      sc.stepm,
+      I.c,
+      I.coast,
+      (sc.zones || []).map(Z => [Z.k, Z.poly, !!Z.lock]),
+    ];
+  return 'g' + hashString(JSON.stringify(ground)).toString(16).padStart(8, '0');
+}
+
 /** what is wrong with a map's island fields (cam.orbit, island, zones, islandGen), in words; [] when all is well */
 export function islandProblems(sc) {
   const out = [],
@@ -99,5 +121,13 @@ export function islandProblems(sc) {
     if (!ISLAND_ZONE_KINDS.includes(Z.k)) out.push(`${what}: no such zone kind (${ISLAND_ZONE_KINDS.join(', ')})`);
     out.push(...islandPolyProblems(sc, Z.poly, what));
   });
+  const G = sc.islandGen;
+  if (G && typeof G === 'object' && G.lock) {
+    if (!G.hash) out.push('islandGen.lock is on with no hash (lock it again in the Studio)');
+    else if (G.hash !== islandGroundHash(sc))
+      out.push(
+        "the island's ground is locked but changed (unlock it in the Studio's Hub island editor first, then lock it again)"
+      );
+  }
   return out;
 }
