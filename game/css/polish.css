@@ -303,12 +303,6 @@ section > h2::before,
     0 0 8px var(--halo),
     0 0 2px var(--halo);
 }
-.title-landscape {
-  box-shadow:
-    0 8px 0 var(--lo),
-    inset 0 0 0 3px rgba(255, 255, 255, 0.35),
-    inset 0 -40px 50px -30px rgba(20, 30, 40, 0.35);
-}
 .dlg {
   position: relative;
 }

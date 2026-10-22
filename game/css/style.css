@@ -740,10 +740,6 @@ section > h2,
   padding: 20px 4px;
   text-align: center;
 }
-.title-coin {
-  animation: float 3.2s ease-in-out infinite;
-  filter: drop-shadow(0 0 22px var(--glow));
-}
 @keyframes float {
   50% {
     transform: translateY(-10px) rotate(-4deg);
@@ -1290,30 +1286,6 @@ section > h2,
   isolation: isolate;
   padding-top: 265px;
   min-height: 80vh;
-}
-.title-landscape {
-  position: absolute;
-  z-index: -1;
-  top: 20px;
-  left: -10px;
-  right: -10px;
-  height: 280px;
-  background: url('../art/background/sundown.webp') center/cover;
-  border: 3px solid var(--line);
-  box-shadow: 0 8px 0 var(--lo);
-  border-radius: 7px;
-}
-.title .title-coin {
-  position: absolute;
-  top: 228px;
-  left: calc(50% - 35px);
-  width: 70px;
-  height: 70px;
-  filter: drop-shadow(0 3px 0 #354455);
-}
-.title .title-coin img {
-  width: 70px;
-  height: 70px;
 }
 .title .logo {
   margin-top: 36px;
