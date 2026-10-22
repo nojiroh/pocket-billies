@@ -23,6 +23,10 @@ My firm art commitments: terrain textures and the airship style (low-poly models
   the ten `_deep` trees merged into their bases (tools/merge-deep-trees.py). Standing pictures the roguelite still
   shows: the six live rooms' furniture (20 props), the barn, boulder_mossy, campfire, lookout_tower, wind_sail_flower.
 
+- Island track IS-4 (2026-10-22): batch 11's barn is a model (tools/build-props-island.py), with scree, log_mossy and
+  stump_mossy, and the island's new props (see HANDOFF.md). Batch 11 left: boulder_mossy, campfire, lookout_tower,
+  wind_sail_flower and the six live rooms' 20 furniture props.
+
 ## Tasks: scope first
 1. List which props the maps, rooms, the opening, the ranch and the world map still use. Delete the unused ones.
 2. Define the style references (the airship and the terrain textures) and write a short art-direction note: low-poly shapes, 32 px/m, retro-futuristic solarpunk for the Hollow Earth, cyberpunk for the opening city.

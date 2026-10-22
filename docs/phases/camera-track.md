@@ -30,6 +30,11 @@ below against main and report what differs.
   or why. The free camera (logic/free-camera.js, studio/js/free-camera.js) and the cutscene camera are separate and
   stay so.
 
+- **Since this plan was written, main gained the island track's IS-1 orbit camera** (logic/camera-orbit.js, an orbit
+  mode in `walkCamera` when `sc.cam.orbit` is set, with its own yaw lag and dead zone, new Engine > Camera dials in
+  engine/settings.js). CAM-1 starts from main with it merged and builds on it: one dead zone and one smoothing model
+  for both the follow and the orbit, not two; IS-1's tests stay green.
+
 ## Research (outside sources, 2026-10-22)
 - Cinemachine Position Composer: dead zone, soft zone, hard limit, damping, lookahead time and smoothing; Target Group
   (weight and radius per member, weights ramped rather than toggled); its game-view guides (the zones drawn on the live
