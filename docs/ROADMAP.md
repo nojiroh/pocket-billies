@@ -61,7 +61,8 @@ town node needs it.
   round, IS-4 island props, IS-6a the hub's own Studio editor with an orbiting camera and the ground lock), wave 2
   (IS-5 Copperleaf moves on, IS-6b the editor's dials, IS-7 the world map's island), wave 3 (IS-8 barn and pasture
   after RL-10, IS-9 dressing and the phone pass). The owner (2026-10-22): the island is the hub, never a run node,
-  and is locked once it is right. IS-2 (the island ground generator, `copperleaf_island`) done 2026-10-22. Tags `is-N-done`.
+  and is locked once it is right. IS-2 (the island ground generator, `copperleaf_island`) done 2026-10-22. IS-5 (Copperleaf moves onto the island; rooms face
+  four ways) done 2026-10-22. Tags `is-N-done`.
 - **Project Story** (docs/phases/project-story.md): S1-S3 and S7 done, S8 partly (RL-8: New game plays the fall only; the city's files stay).
   S6 (Hazel vs Blake as a real battle) is unblocked by RL-4; S4, S5 and S8's leftovers wait until the first cut has
   been played. RL-8 (the owner's answer): the opening is the fall only, Blake cut from it (his data kept), and Hazel's

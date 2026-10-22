@@ -2,6 +2,74 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Island track IS-5 - Copperleaf moves onto the island - 2026-10-22
+Branch `claude/is-5-copperleaf-island`, from the wave-2 base `claude/new-session-3qlesh` (main with IS-0, IS-1 merged
+plus IS-2, IS-3, IS-4, IS-6a merged in; PRs #122, #124, #123, #126 not in main yet). PR against main; main gets merged
+in when those land. Wave 2 beside IS-6b (the editor's dials) and IS-7 (the world map's island). Plan approved in Plan
+Mode with the owner's answers: the fall lands in the **town square** (question 11); the shop plot gets the **General
+store, closed**; **cottages on every house plot** and the farmhouse plot; **gardens travel with their houses**, free
+nature left to IS-9; **rooms face four ways**; **wild grass in patches** by the woods and on the heath. Question 4 is
+moot (the generator lays the town out).
+- Changed (one cause per commit):
+  - **findPath's budget** grows with the map (`max(30000, the nav grid's cells)`): the island is ~220,000 cells; the
+    old cap stopped a tap a third of the way across. Every other map is under 30000, so unchanged.
+  - **Rooms that face four ways** (logic/room-turn.js, unit-tested): a room is made in its own metres as before
+    (door south, back wall +z), then its tiles, heights, step grid, floor scene and things are turned by quarter turns
+    about a point on whole metres by the door and stamped in; the view keeps `roomFrame {q, p, rect}`. Readers:
+    rooms.js (box, lamps, window light, front cut), the ground shader (`uRoomT`: skirting, corner trim, wall shading),
+    the room's walking margins (walk-view.js), the camera (base yaw `roomYaw`; in and out the base yaw eases the short
+    way over 0.7 s of wall time instead of jumping; this also smooths going from the orbit into a south room),
+    walk-control.js (walk in and out along the door's own way; the door array gains `[q, middle z]` for a turned
+    building, so a south door's id is unchanged), self-test's room step (doorway along the front, the way out).
+  - **Island generator stage `wild`** (version 3, dial `wild.n` 5): ragged tall-grass ovals of 15-70 m² on open meadow
+    and heath with a fifth of forest or heath within 9 m, 8 m clear of the town, hamlet, barn and pasture, never on the
+    beach, mountain, a path or a slope; written as `grassPatches`, so encounters use the run maps' patch rule (they
+    waited within 13 m of the hub: the square). Own seed stream; only 174 cells of the island changed.
+  - **tools/build-copperleaf.mjs** (new, rerunnable) and **tools/data/copperleaf-town.json** (the old town as it stood:
+    props, people, life, chat, place fields, the opening's spots and shots). Each building in the middle of its plot,
+    `rot = a + 90`: lab, airship station + airship (mast), Juniper's home, the General store (no act), the well, the
+    five cottages on the town house plots nearest the square, 14 more cottages in turn on the other house plots and
+    the farmhouse plot; the barn in its zone, doors toward the farmhouse, its crops with it. A building's garden moves
+    in its own metres (models turn with it, pictures keep facing you); what lands on a street (`p v c`), water, a
+    bridge, another plot or before a door is left out (25). The great oak with its swing (the world map's landmark) on
+    open ground nearest the square, 8 town trees. A pier from the dock spot along the channel. Juniper by her door;
+    npcSpots at the lab, mast, square, shop, home; life in areas (ducks pond, chickens farmhouse, rabbits pasture,
+    squirrels forest, cats town). The opening's spots, shots and stage move and turn with the lab's door. A walking
+    check that ended inside a building (the barn zone's middle) ends at its door.
+  - **The swap**: `copperleaf.json` is the island with the town (235 x 237 m, 25 buildings, 127 props, 7 bridges);
+    `copperleaf_island` is gone. build-island.mjs makes the hub's ground by default and keeps a place's own fields and
+    their order (a rerun that changes nothing writes nothing; then rerun build-copperleaf to follow new plots).
+  - **Re-pointed**: island-gen.test reads `copperleaf` (the pier left out); `standByMast` turns with the station; the
+    hub's view carries `island` and `zones` (the sea's middle, the cove's calm); check-quick's opening stage, room
+    doorway and lab-room checks work in the building's frame, its v42 "grown" check leaves out a generated island;
+    check-fast's new step "Copperleaf is the island" (walking checks, every door a tap from the square, wild spots in
+    the patches, the orbit); postcards look at the square; the Hub island editor's view-only words.
+- Where the plan (the track file) was wrong or short: see the track file's "Checked in IS-5". Mine: the turned rooms
+  were more than "a third of the session" (the room's front cut, window light, lamps and the ground shader all assumed
+  a south door); a south-facing room was proven unchanged field by field (all 8 of the old Copperleaf's rooms, step
+  grids and floors, against the base). Juniper's lavender garden (10 m behind her old cottage) mostly didn't fit her
+  plot: the plot is 7.5 x 6.2 m among streets.
+- Verified: unit tests 603; lint, typecheck, check:modules, format:check, check:data (144 files); both tools rerun to
+  the identical file; check-fast 22 of 23 on the full run (the Studio world-map look wanted the great oak: fixed; that step and the new hub step pass alone); smoke 15 of 15 (New game: the fall, Hazel, the starters on the
+  square); full quick check: running when this was written (see the PR). Headless: the lab, a cottage, Juniper's home and the barn turned each of
+  the four ways (doorway 0.02 m from the door, nothing walkable outside, pictures squared to the camera); pictures of
+  the square from four sides, the barn and pasture, the pier, the hamlet, the island from above. Longest tap search on
+  the island headless: 18 ms.
+- Risky:
+  - Turned rooms are new everywhere a building faces away from south (all of the island's but a few). Worth a feel on
+    the phone: going into the lab (it faces west) and out, the camera's turn in and out.
+  - The hub is 1.2 MB (was 73 KB) and loads at boot; phone frame times are IS-9's.
+  - A tap to an unreachable spot now searches the whole reachable island (~220k cells) before giving up.
+  - Rerunning build-copperleaf rewrites every prop: hand edits to Copperleaf's props in the Studio are lost unless
+    folded into tools/data/copperleaf-town.json or the tool. After the owner places things by hand, stop rerunning it.
+  - The orbit's pivot in the hub's view isn't shifted by the view's offset (0 for an island with no neighbours).
+- For the sessions alongside: **IS-6b**: "Use this island" must keep the hub's town (build-island.mjs's `GROUND` list
+  is the split; then build-copperleaf.mjs re-places the town on new plots); hub-island.js only had its view-only
+  words changed. **IS-7**: the town's buildings are props now (`plots` stay). **IS-8**: the barn stands in its zone,
+  doors east toward the farmhouse; the pasture zone is free. **IS-9**: 357 old props belonged to no building and
+  were not brought over (the old meadow's flowers, trees, reeds); the island needs dressing.
+- Next: IS-8 (after RL-10), IS-9. Tag `is-5-done` is the owner's to push.
+
 ### Island track IS-1 - Orbit camera - 2026-10-22
 Branch `claude/is-1-orbit-camera`, from IS-0's `claude/new-session-3qlesh` (PR #119, not merged yet: the owner started
 wave 1 before `is-0-done`); the PR goes against main and shrinks once #119 merges. Ran beside IS-2, IS-3, IS-4 and IS-6a.

@@ -9,6 +9,13 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- Copperleaf is the island now (island track IS-5): the town stands on its generated island, a market town where the
+  stream meets the bay. Professor Hazel's lab and the well on the square, the airship station by the harbour, Granny
+  Juniper's cottage with her hives and lavender, the General store (closed for now), cottages along the streets and in
+  the hamlet under the mountains, the barn by its pasture with the farm patch, the great oak with its swing by the
+  square, a pier at the cove. A new game falls onto the square and wakes in front of the lab. Wild Billies hide in tall
+  grass out by the woods and on the heath, not in town. Rooms open in place behind a door facing any way, the camera
+  looking in through the door. A tap walks you all the way across the island.
 - The orbit camera (island track IS-1): on the test island the camera stands out over the sea and looks in at the
   island's middle, so walking round the coast turns it all the way round, smoothly and with no jump. Holding right
   walks you round on the same circle. On the summit the camera holds still; your own turn (two fingers, Q/E) still
