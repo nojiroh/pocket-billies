@@ -9,8 +9,9 @@
 import { expose } from './test-globals.js';
 import { cutscene, mapIdAt, provide } from './hooks.js';
 import { clamp } from './util.js';
-import { LOCATIONS, MUSIC } from './game-data.js';
+import { LOCATIONS, MUSIC, SPECIES } from './game-data.js';
 import { songFor } from './logic/music-where.js';
+import { cryRecipe, cryVoices } from './logic/cries.js';
 import { activeBattle, saveData, uiState } from './game-state.js';
 import { battleStage } from './battle-stage.js';
 import {
@@ -384,19 +385,17 @@ export function soundEffect(name, o = {}) {
       synthNoise(F, { t: t + 0.1, dur: 0.06, vol: 0.06, lp: 500 });
       break;
     case 'cry': {
-      let h = 0;
-      for (const ch of String(o.sp || '')) h = (h * 31 + ch.charCodeAt(0)) % 997;
-      const b = 48 + (h % 24);
-      synthVoice(F, {
-        type: (CRIES[h % CRIES.length] || {}).wave || 'p25',
-        freq: midiToFrequency(b),
-        t,
-        dur: 0.18,
-        vol: 0.07,
-        slide: 1.5 + (h % 5) * 0.2,
-        vib: 2,
-      });
-      synthVoice(F, { type: 'p25', freq: midiToFrequency(b + 5), t: t + 0.17, dur: 0.2, vol: 0.06, slide: 0.6 });
+      /* SND-3: a species' cry from its own base, pitch and length (lines/*.json cry), else from its id as before */
+      for (const v of cryVoices(cryRecipe(o.sp, (SPECIES[o.sp] || {}).cry, CRIES)))
+        synthVoice(F, {
+          type: v.type,
+          freq: midiToFrequency(v.midi),
+          t: t + v.at,
+          dur: v.dur,
+          vol: v.vol,
+          slide: v.slide,
+          vib: v.vib,
+        });
       break;
     }
   }

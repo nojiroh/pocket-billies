@@ -212,6 +212,8 @@ LINES.forEach(L => {
       diet: at(L.diet, ''),
       blurb: at(L.bio, ''),
       note: at(L.note, ''),
+      /* SND-3: its own cry (base, pitch, length), or null for the one its id makes; a stage doesn't take another's */
+      cry: (Array.isArray(L.cry) && L.cry[st0]) || null,
       cr:
         L.catchRate != null
           ? L.catchRate

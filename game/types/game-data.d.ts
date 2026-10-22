@@ -261,6 +261,16 @@ export interface Line {
   note?: string[];
   /** phase 16: each stage's native parts (its fitting set): a kit part id (partKits.json) per part slot */
   parts?: Record<string, string>[];
+  /** SND-3: each stage's cry (null: the one its id makes) */
+  cry?: (SpeciesCry | null)[];
+}
+
+/** SND-3: a species' own cry: a base (music.json cries.bases), the first note's pitch (midi) and a length (1 as made
+    from the id); a key left out comes from the id (logic/cries.js) */
+export interface SpeciesCry {
+  base?: number;
+  pitch?: number;
+  length?: number;
 }
 
 /** a species, made from its line at load (game-data.js SPECIES) */
@@ -294,6 +304,8 @@ export interface Species {
   rar: string;
   /** a split line's finals: 'A' (Build) or 'B' (Hype) */
   form: 'A' | 'B' | null;
+  /** SND-3: its own cry, or null for the one its id makes */
+  cry: SpeciesCry | null;
 }
 
 /** roster.json: the art and design state of each species (the Studio's Billies section) */

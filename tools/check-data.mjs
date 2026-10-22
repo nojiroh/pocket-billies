@@ -397,6 +397,12 @@ if (D.nodeTypes && check('nodeTypes.schema.json', D.nodeTypes, 'nodeTypes.json')
 if (D.music && check('music.schema.json', D.music, 'music.json')) {
   for (const F of musicFindings(D.music, { nodeTypes: D.nodeTypes || {}, biomes: D.biomes || {}, locations: D.locations || [] }))
     if (F.lvl === 'error') problem(F.place ? 'locations.json' : 'music.json', F.msg);
+  // SND-3: a species' own cry names a base that exists
+  const bases = (D.music.cries || {}).bases || [];
+  for (const L of D.lines || [])
+    (L.cry || []).forEach((C, st) => {
+      if (C && C.base != null && C.base >= bases.length) problem(`lines/${L.id}.json`, `cry ${st}: no base ${C.base} (music.json cries.bases has ${bases.length})`);
+    });
 }
 // phase 10: the world map's look: the schema, then the terrain keys it names and the regions it covers
 if (D.worldmap && check('worldmap.schema.json', D.worldmap, 'worldmap.json')) {
