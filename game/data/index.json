@@ -137,7 +137,8 @@
     "city_opening",
     "test_props_turn",
     "test_props_wild",
-    "test_island"
+    "test_island",
+    "copperleaf_island"
    ]
   },
   "cutscenes": {"ids":["opening","city"]}
