@@ -16,6 +16,7 @@ import { makeBilly, makeRobot, provide, saveData, storyAllows } from './hooks.js
 /* eslint-disable no-func-assign */
 expose({
   BATTLE_STAGES: [() => BATTLE_STAGES],
+  BUILDINGS: [() => BUILDINGS],
   COATS: [() => COATS],
   COINS: [() => COINS],
   CURRENCIES: [() => CURRENCIES],
@@ -356,6 +357,8 @@ export const SHOPS = gameData.shops || {};
 export const NODE_TYPES = gameData.nodeTypes || {};
 /* roguelite track RL-11: the four currencies (currencies.json) */
 export const CURRENCIES = gameData.currencies || {};
+/* RL-11: the hub's buildings, each upgraded with one currency (buildings.json; levels are unlocks.json rows) */
+export const BUILDINGS = gameData.buildings || {};
 /* Project Story: the story layer's flags, speakers, quests and start presets (story.json) */
 export const STORY_DATA = gameData.story;
 /* cutscenes, one file each (game/data/cutscenes/<id>.json, docs/CUTSCENES.md) */

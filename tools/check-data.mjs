@@ -464,6 +464,20 @@ if (D.currencies && check('currencies.schema.json', D.currencies, 'currencies.js
   for (const [k, C] of Object.entries(D.currencies))
     if ((C.kept === 'run') !== (k === 'money')) problem('currencies.json', `${k}.kept: ${k === 'money' ? 'money is the run\'s' : 'kept between runs (meta)'}`);
 }
+// RL-11: the hub's buildings: a meta currency each, an act some Copperleaf prop has, and the ranch's levels within what
+// rules.json ranch gives slots for
+if (D.buildings && check('buildings.schema.json', D.buildings, 'buildings.json')) {
+  const hub = ((D.maps || {}).copperleaf || {}).props || [],
+    slots = (((D.rules || {}).ranch || {}).slots || []).length;
+  for (const [k, B] of Object.entries(D.buildings)) {
+    if (D.currencies && !(D.currencies[B.currency] && D.currencies[B.currency].kept === 'meta'))
+      problem('buildings.json', `${k}.currency: "${B.currency}" is not a currency kept between runs (currencies.json)`);
+    if (B.act && !hub.some(p => p.act === B.act)) problem('buildings.json', `${k}.act: no prop in Copperleaf has act "${B.act}"`);
+    if (B.soon && B.levels > 1) problem('buildings.json', `${k}: a building that is coming later has no levels to sell`);
+  }
+  if (D.buildings.ranch && slots && D.buildings.ranch.levels > slots)
+    problem('buildings.json', `ranch.levels: ${D.buildings.ranch.levels}, but rules.json ranch.slots has ${slots} levels`);
+}
 // phase 10: the world map's look: the schema, then the terrain keys it names and the regions it covers
 if (D.worldmap && check('worldmap.schema.json', D.worldmap, 'worldmap.json')) {
   const terr = new Set(Object.keys((D.scenery && D.scenery.terrains) || {}));
