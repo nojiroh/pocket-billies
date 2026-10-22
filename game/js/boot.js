@@ -160,7 +160,7 @@ const LOAD_PHASES = [
 ];
 const LOAD_TIPS = [
   'Billies wait in the tall grass along the roads. More come out while you play.',
-  'Eggs hatch as you walk outdoors: a 2 km egg after 2 km, an 8 km egg after 8.',
+  'The ranch breeds two of your Billies into an egg. It hatches a few hours later, even while you’re away.',
   'Tap the ground to walk around. Tap a building to visit it.',
   'Push the joystick past its rim to run. On a keyboard, hold Shift.',
   'Clinics heal your whole team for free. Just walk up to the door.',

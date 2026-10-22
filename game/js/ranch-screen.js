@@ -12,7 +12,7 @@
    rolls it the same however often it is asked), a risky pair's odds spelled out instead. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { closeModal, modal, render, renderOverlay, toast, xpProgress } from './hooks.js';
+import { closeModal, hatchModal, modal, render, renderOverlay, toast, xpProgress } from './hooks.js';
 import { COATS, RULES, SPECIES } from './game-data.js';
 import { billyName, teamSize, toTeam } from './logic/rules.js';
 import {
@@ -246,16 +246,28 @@ function breedDo(what, uid, arg, now, BR) {
       P.a = P.b = '';
     }
   } else if (what === 'hatch') {
-    const got = breedHatch(s, Number(arg), now);
-    if (got) {
-      const nm = billyName(got.m),
-        mark = got.m.mut ? (got.m.mut.k === 'abom' ? ' Something is very wrong with it.' : ' It has a quirk.') : '';
-      toast(`${nm} hatched${got.where === 'team' ? ' and joins your team' : ' and rests in storage'}.${mark}`);
+    /* the hatch window (pending-windows.js) in place of the sheet; the sheet opens again after "Welcome aboard" */
+    const i = Number(arg),
+      e = s.ranch.nursery[i];
+    if (e && breedReady(e, now)) {
+      uiState.modal = null;
+      hatchModal(
+        e.mode === 'risky' ? 10 : 2,
+        () => {
+          const got = breedHatch(s, i, Date.now());
+          if (got && typeof debugLog !== 'undefined')
+            debugLog.add('ranch', `hatch: ${s.ranch.nursery.length} eggs, ${got.m.mut ? got.m.mut.k : 'plain'}`);
+          save();
+          return got;
+        },
+        ranchOpen
+      );
+      return;
     }
   }
-  if (what !== 'pick' && what !== 'mode' && typeof debugLog !== 'undefined')
-    debugLog.add('ranch', `${what}: ${s.ranch.nursery.length} eggs, ${s.ranch.bred} bred, ${s.meta.scrap} Scrap`);
-  if (what === 'breed' || what === 'hatch') {
+  if (what === 'breed' && typeof debugLog !== 'undefined')
+    debugLog.add('ranch', `breed: ${s.ranch.nursery.length} eggs, ${s.ranch.bred} bred, ${s.meta.scrap} Scrap`);
+  if (what === 'breed') {
     save();
     render();
   }

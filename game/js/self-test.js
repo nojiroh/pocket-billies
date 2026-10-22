@@ -1160,8 +1160,16 @@ async function runFullTest(mode) {
             e.ready = Math.max(e.at, Date.now());
             ranchOpen();
             hatch().click();
+            /* the hatch window: "Hatch it", then the Billie it was (after the egg's shake) */
+            const it = /** @type {HTMLElement | null} */ (document.querySelector('#ov [data-a="mb"][data-i="0"]'));
+            if (!uiState.modal || uiState.modal.title !== 'An egg is hatching' || !it)
+              throw new Error('Hatch opened no hatch window');
+            it.click();
             if (s.ranch.nursery.length || !s.team.concat(s.box).some(m => m.uid === e.egg.uid))
               throw new Error('Hatch didn’t bring the egg home');
+            const shown = () => !!uiState.modal && /^It’s/.test(uiState.modal.title);
+            for (let n = 0; n < 50 * (selfTest.slow || 1) && !shown(); n++) await selfTestSleep(100);
+            if (!shown()) throw new Error('the hatch window never showed the Billie');
             return `a safe pair of ${SPECIES[line + '0'].name} for ${BR.safeCost} Scrap; its egg shown, bred and hatched`;
           } finally {
             uiState.modal = null;

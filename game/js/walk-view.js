@@ -3535,7 +3535,7 @@ function movePlayer(st, dt) {
       }
     }
     P.walk = Math.hypot(P.x - ox, P.z - oz) > 1e-4 ? 1 : 0;
-    /* phase 08: the metres you walk outdoors hatch your eggs */
+    /* phase 08: the metres you walk outdoors (the distance on your trainer card; RL-10: they hatch nothing any more) */
     if (P.walk && !jumped && typeof addWalked === 'function' && !uiState.bench && !uiState.inside)
       addWalked(Math.hypot(P.x - ox, P.z - oz));
     if (P.walk && walkView.opt.onMove && walkView.t - P.saved > 400) {
