@@ -4,8 +4,8 @@
    they were. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { seaCentre } from '../hooks.js';
 import { clamp } from '../util.js';
+import { seaCentre } from '../logic/sea.js';
 import { valueNoise2d } from '../walk-view.js';
 import { engineSetting } from '../engine/settings.js';
 import { gpuState } from '../engine/webgl.js';
