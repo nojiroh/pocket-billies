@@ -633,6 +633,8 @@ export function doorOf(p) {
 }
 /* v47: the kind a door keeps hours as (not game-data.js locationKind(id), the kind of a place) */
 export function openingHoursKind(a, p) {
+  /* RL-9: the ranch keeps no hours (its barn would close at night) */
+  if (a === 'ranch') return a;
   const M = p && walkData().sc.props[p.k];
   return M && M.room ? p.k : a;
 }

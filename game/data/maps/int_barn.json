@@ -51,6 +51,7 @@
  ],
  "props": [
   {"k":"wall_window","x":3.99,"z":8.45},
+  {"k":"blackboard","x":8.51,"z":8.45,"act":"ranch","label":"Training board"},
   {"k":"ladder","x":6.5,"z":8.41},
   {"k":"haybale_stack","x":2.15,"z":7.89},
   {"k":"haybale","x":9.85,"z":7.72},

@@ -676,7 +676,8 @@
   {"k":"chalk_sun","x":18.61,"z":48.45,"v47life":1,"dry":true},
   {"k":"chalk_sun","x":58.95,"z":58.25,"v47life":1,"dry":true},
   {"k":"airship_station","x":56.49,"z":36.64,"act":"fly","label":"Airship station","a04mast":1,"f":1},
-  {"k":"airship","x":56.49,"z":36.64,"f":1}
+  {"k":"airship","x":56.49,"z":36.64,"f":1},
+  {"k":"barn","x":22,"z":41.5,"act":"ranch","label":"Ranch"}
  ],
  "a04place": 1,
  "biome": "town",

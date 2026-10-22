@@ -147,7 +147,14 @@ self.PB_DATA = (() => {
   // of building (scenery.json, the kind's room), else the one for what it does. The rooms to try, in that order (the
   // first that exists is the one); the game's door link is walk-view.js doorLinkOf
   /** @type {Record<string, string>} */
-  const ROOM_BY_USE = { shop: 'int_shop', clinic: 'int_clinic', lab: 'int_lab', house: 'int_house', home: 'int_home' };
+  const ROOM_BY_USE = {
+    shop: 'int_shop',
+    clinic: 'int_clinic',
+    lab: 'int_lab',
+    house: 'int_house',
+    home: 'int_home',
+    ranch: 'int_barn',
+  };
   /** @param {any} p @param {any} M @param {string | null} act @returns {string[]} */
   function doorRooms(p, M, act) {
     const out = [];

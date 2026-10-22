@@ -207,7 +207,9 @@ def int_barn():
              ['Mind the hay. The billionaires love hiding in it.', 'We grow the town’s food. And its gossip.', 'The cow’s name is Dividend.'])
     s.put('haybale_stack', 2.4, 8.8); s.put('haybale', 4.6, 8.4); s.put('haybale', 11.6, 8.6); s.put('wheelbarrow', 10.6, 6.0)
     s.put('sack', 12.6, 4.6); s.put('sack', 12.2, 5.4, .9, 1); s.put('barrel', 1.6, 4.2); s.put('crate', 2.6, 3.0); s.put('ladder', 7.6, 9.4)
-    hang(s, 'wall_window', 4.6); return s.out(10)
+    hang(s, 'wall_window', 4.6)
+    # RL-9: the ranch's training board (Copperleaf's barn, act 'ranch': ranch-screen.js)
+    hang(s, 'blackboard', 10); s.props[-1].update(act='ranch', label='Training board'); return s.out(10)
 
 
 def int_greenhouse():
