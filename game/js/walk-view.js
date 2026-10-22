@@ -2958,7 +2958,9 @@ export function findPath(ax, az, bx, bz, o = {}) {
   push(s, h(s));
   let found = false,
     it = 0;
-  while (H.length && it++ < (o.max || 30000)) {
+  /* IS-5: the budget grows with the map (the island hub is ~220,000 cells; 30000 stopped a tap a third of the way across) */
+  const cap = o.max || Math.max(30000, n);
+  while (H.length && it++ < cap) {
     const c = pop();
     if (c === e) {
       found = true;
