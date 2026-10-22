@@ -780,6 +780,61 @@ def targets_step(b, base, R):
         ctx.close()
 
 
+@step('Sound settings: each slider sets its bus, each Test plays on its bus, the header mute keeps the levels (SND-1)', 120)
+def sound_step(b, base, R):
+    """sound track SND-1: Settings → Sound on a 390 px phone. Each Test button must reach its own bus (a wrapper on
+    AudioNode.connect lists what each press connects to; every button's tick also reaches the effects bus); each slider,
+    dragged, must set its bus to soundLevels() at once; the mute button beside the title silences the master and keeps
+    every level. Nothing is heard: only the gains and the connections are read. A browser that won't start audio is
+    reported, not failed, like the world-sounds step"""
+    errs = []
+    ctx = b.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=1, is_mobile=True, has_touch=True)
+    for s in (CLOCK, NO_ACCOUNTS, TEST_GLOBALS): ctx.add_init_script(s)
+    ctx.set_default_timeout(90000); pg = ctx.new_page(); CUR['pg'] = pg
+    pg.on('pageerror', lambda e: errs.append(str(e)))
+    try:
+        pg.goto(base + '/index.html?fixture=town'); pg.evaluate(LOW_RENDER)
+        if not until(pg, "typeof walkView!=='undefined'&&walkView.ready", 120): raise Exception('the town never opened')
+        pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();openSettings('sound');0"); time.sleep(.8)
+        pg.click('.sheet h2')   # a touch unlocks sound, as on a phone
+        until(pg, "typeof soundEngine!=='undefined'&&!!soundEngine.ctx&&soundEngine.ctx.state==='running'", 8)
+        state = pg.evaluate("typeof soundEngine==='undefined'||!soundEngine.ctx?'no sound in this browser':soundEngine.ctx.state")
+        if state != 'running': return f'not checked: {state if state.startswith("no ") else "sound not started (" + state + ")"}'
+        if not until(pg, "!!ambience.bus&&!!ambience.amb", 10): raise Exception('the world and ambience buses never started in the town')
+        pg.evaluate("""(()=>{const B={master:[soundEngine.master],music:[soundEngine.mus],sfx:[soundEngine.fx],world:[ambience.bus],amb:[ambience.amb,ambience.lpA].filter(Boolean)};
+          window.__snd={B,hit:new Set()};const c=AudioNode.prototype.connect;window.__sndConnect=c;
+          AudioNode.prototype.connect=function(d,...a){for(const [k,L] of Object.entries(__snd.B))if(L.includes(d))__snd.hit.add(k);return c.call(this,d,...a)}})();0""")
+        missed = []
+        for k in ['master', 'music', 'sfx', 'world', 'amb']:
+            pg.evaluate("__snd.hit=new Set();0")
+            pg.click(f'[data-a=aud-test][data-k={k}]'); pg.wait_for_timeout(700)
+            hit = pg.evaluate("[...__snd.hit]")
+            if k not in hit: missed.append(f'{k} Test reached {", ".join(sorted(hit)) or "no bus"}')
+        pg.evaluate("AudioNode.prototype.connect=__sndConnect;0")
+        if missed: raise Exception('a Test button played somewhere else: ' + '; '.join(missed))
+        gains = """(()=>{const L=soundLevels(saveData.preferences),f=ambienceFadeIn();const g={master:soundEngine.master,music:soundEngine.mus,sfx:soundEngine.fx,world:ambience.bus,amb:ambience.amb};
+          const want={master:L.master,music:L.music,sfx:L.sfx,world:L.world*f,amb:L.amb*f};return Object.fromEntries(Object.keys(g).map(k=>[k,[+g[k].gain.value.toFixed(3),+want[k].toFixed(3)]]))})()"""
+        off = []
+        for k, v in [('master', 70), ('music', 40), ('sfx', 30), ('world', 60), ('amb', 20)]:
+            pg.evaluate(f"(()=>{{const e=document.querySelector('input[data-preference={k}]');e.value='{v}';e.dispatchEvent(new Event('input',{{bubbles:true}}))}})();0")
+            pg.wait_for_timeout(900)   # no 'change': the level must follow while the slider is still held
+            have, want = pg.evaluate(gains)[k]
+            if abs(have - want) > 0.02: off.append(f'{k} at {v}: bus {have}, wanted {want}')
+        if off: raise Exception('a slider didn’t set its bus while dragged: ' + '; '.join(off))
+        levels = pg.evaluate("JSON.stringify(['master','music','sfx','world','amb'].map(k=>saveData.preferences[k]))")
+        pg.click('.set-mute'); pg.wait_for_timeout(900)
+        m = pg.evaluate("({mute:!!saveData.preferences.mute,pressed:document.querySelector('.set-mute').getAttribute('aria-pressed'),sw:document.querySelector('[data-pref-set=mute].sw').getAttribute('aria-checked'),master:+soundEngine.master.gain.value.toFixed(3),levels:JSON.stringify(['master','music','sfx','world','amb'].map(k=>saveData.preferences[k]))})")
+        if not m['mute'] or m['pressed'] != 'true' or m['sw'] != 'false' or m['master'] > 0.01: raise Exception(f'the header mute didn’t mute: {m}')
+        if m['levels'] != levels: raise Exception(f'muting changed the levels: {levels} became {m["levels"]}')
+        pg.click('.set-mute'); pg.wait_for_timeout(900)
+        back = pg.evaluate("[!!saveData.preferences.mute,+soundEngine.master.gain.value.toFixed(3),+soundLevels(saveData.preferences).master.toFixed(3)]")
+        if back[0] or abs(back[1] - back[2]) > 0.02: raise Exception(f'the header mute didn’t unmute: mute {back[0]}, master {back[1]}, wanted {back[2]}')
+        if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
+        return 'five Test buttons on their own buses; five sliders set their bus while dragged; the header mute silenced the master, kept the levels and came back'
+    finally:
+        ctx.close()
+
+
 @step('In-game full test: one step headless, and nothing is saved while it runs', 120)
 def in_game_test_step(b, base, R):
     errs = []; ctx, pg = open_game(b, base, 1100, 700, False, errs)
@@ -2304,6 +2359,7 @@ def main():
                 team_step(b, base, R)
                 safety_step(b, base, R)
                 targets_step(b, base, R)
+                sound_step(b, base, R)
                 try:
                     desktop_steps(b, base, R)
                 except Exception as e:
