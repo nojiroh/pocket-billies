@@ -232,15 +232,20 @@ export function drawSprites(C, items, X, hits, labels, PPU) {
     gl.activeTexture(gl.TEXTURE1);
     gl.bindTexture(gl.TEXTURE_2D, T.n);
     setSpriteUniforms(p, it, null, it.z, rk);
+    /* phase 09 batch 10: a model's picture layer may be pulled toward the eye (prop-models.js eyeward); uFwd points
+       away from the eye */
+    if (it.eyeward) gl.uniform1f(U.uDZ, -it.eyeward);
     if (it.wave) {
       gl.uniform3fv(U.uWave, it.wave);
       bindGridQuad();
       gl.drawArrays(gl.TRIANGLES, 0, gpuState.gridN);
       gl.uniform3f(U.uWave, 0, 0, 0);
+      if (it.eyeward) gl.uniform1f(U.uDZ, 0);
       bindQuad();
       continue;
     }
     gl.drawArrays(gl.TRIANGLES, 0, 6);
+    if (it.eyeward) gl.uniform1f(U.uDZ, 0);
     /* trees get a second picture crossing the first, so a turned camera sees a crown, not a cut-out's edge */
     if (it.cross && Math.abs(C.yaw) > 0.04) {
       gl.uniform3f(U.uRight, 0, 0, it.flip > 0 ? 1 : -1);

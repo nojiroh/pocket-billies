@@ -15,6 +15,10 @@ kept aside in the browser).
   made from both parents' and one stat far up and another down. Eggs hatch at the ranch after 4 hours of real time,
   even while you're away; the parents stay free meanwhile. The old eggs are gone: wild Billies and trainers don't
   give them, walking doesn't hatch them, and the incubators and the Bag's Eggs pocket went with them.
+- The last flat trees on a run are 3D now (props batch 10): the ridge's pines and cypress, the autumn wood's rowan
+  and great oak, and the thicket's oaks, birches and pines have a modelled trunk and roots like the other trees. The
+  pines keep their drawn look; each tier sways on its own. The larch was rebuilt the same way, so it no longer shows
+  its stem through its branches.
 - The Lab's unlock board (RL-11): the Lab tab is in Copperleaf's bottom bar now (and the machine in Hazel's lab opens
   it). Spend Capital there on wares for the shops in a run's towns (Nerve Tonic, Wake-Up Tea and Revives are no longer
   sold there until you unlock them). The ranch's sheet sells Ranch Lv 2 and 3 for Scrap (more training slots, a higher

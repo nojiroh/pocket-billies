@@ -3,7 +3,7 @@ exports[`golden scene: default 1`] = `
   "tiles": 1797593573,
   "heights": 2967723235,
   "steps": 238425371,
-  "props": 1980195262,
+  "props": 3405683057,
   "exits": 2931372097,
   "rest": 1106048543,
   "counts": {
@@ -18,11 +18,11 @@ exports[`golden scene: feature 1`] = `
   "tiles": 1110730745,
   "heights": 2142064282,
   "steps": 238425371,
-  "props": 284873047,
+  "props": 332103262,
   "exits": 138117495,
   "rest": 186633712,
   "counts": {
-    "props": 582,
+    "props": 581,
     "raised": false
   }
 }
@@ -33,11 +33,11 @@ exports[`golden scene: terraced 1`] = `
   "tiles": 1451151688,
   "heights": 2247910161,
   "steps": 3063656668,
-  "props": 3373080796,
+  "props": 366912422,
   "exits": 3917193882,
   "rest": 1723260443,
   "counts": {
-    "props": 604,
+    "props": 603,
     "raised": true
   }
 }
