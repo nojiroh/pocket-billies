@@ -76,6 +76,8 @@ export function walkCamera(rw, rh, st, dt) {
     c = sc.cam || {},
     P = walkView.pl,
     k = Math.min(1, dt * 3.2);
+  /* island track IS-1: a turn kept from a map with a wider limit is brought inside the island's */
+  if (orbitOf(sc)) walkRenderer.yawT = clamp(walkRenderer.yawT, -cameraTurnLimit(), cameraTurnLimit());
   walkRenderer.yaw += (walkRenderer.yawT - walkRenderer.yaw) * Math.min(1, dt * 5);
   /* island track IS-1: on an island the camera's base yaw turns round the middle (logic/camera-orbit.js); your own turn
      (walkRenderer.yaw) is added on top. Elsewhere the base is 0, the north view. A new scene, a cut or a jump of
