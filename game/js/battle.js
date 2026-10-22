@@ -940,7 +940,7 @@ export function endBattle() {
     /* RL-8: what it pays and costs (logic/battle-rewards.js); RL-4: a battle called off at the turn cap ends as if you
        walked away (wild) or lost (a trainer) */
     pay = battleRewards(
-      { kind, over: activeBattle.over, T, tid, foe: activeBattle.sides[1].team },
+      { kind, over: activeBattle.over, T, tid, foe: activeBattle.sides[1].team, fx: activeBattle.fx },
       saveData,
       battleRoll
     ),
@@ -1023,14 +1023,14 @@ export function endBattle() {
       after.push({
         title: nu ? escapeHtml(st.title || 'Badge') : 'Rematch won',
         top: `<div class="sheet-art">${coinHTML(st.coin || 'penny', 96, 32)}</div>`,
-        html: `<p>${escapeHtml(T.win || '')}</p><p>You earned $${formatNumber(T.reward || 0)}${nu && st.rewardText ? `, ${escapeHtml(st.rewardText)}` : ''}${extra}.</p>${nu && st.unlockText ? `<p class="note">${escapeHtml(st.unlockText)}</p>` : ''}`,
+        html: `<p>${escapeHtml(T.win || '')}</p><p>You earned $${formatNumber(pay.reward)}${nu && st.rewardText ? `, ${escapeHtml(st.rewardText)}` : ''}${extra}.</p>${nu && st.unlockText ? `<p class="note">${escapeHtml(st.unlockText)}</p>` : ''}`,
         btns: [{ l: 'Back to walking', c: 'dark', f: closeModal }],
       });
     } else
       after.push({
         title: `You beat ${escapeHtml(T.name)}`,
         top: `<div class="sheet-art">${portraitHTML(T.who, 96, 'sad')}</div>`,
-        html: `<p>${escapeHtml(T.win || '')}</p><p>You earned $${formatNumber(T.reward || 0)}${extra}.</p>`,
+        html: `<p>${escapeHtml(T.win || '')}</p><p>You earned $${formatNumber(pay.reward)}${extra}.</p>`,
         btns: [
           {
             c: 'dark',

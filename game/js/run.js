@@ -8,14 +8,23 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { closeModal, mapIdAt, modal, provide, render, runPayoutOpen, toast } from './hooks.js';
-import { COINS, ITEMS, RULES, START_NODE, TRAINERS } from './game-data.js';
+import { COINS, ITEMS, RELICS, RULES, START_NODE, TRAINERS } from './game-data.js';
 import { battleWeatherOf } from './logic/weather.js';
 import { billyName, formatNumber, healAll, plural } from './logic/rules.js';
 import { runBegin, runEnd } from './logic/run-state.js';
 import { runArrive, runBack, runMapNode, runMapStart, runNext, runWeather } from './logic/run-map.js';
 import { MAPGEN_VERSION } from './logic/mapgen.js';
 import { runBattleSeed, runGive, runRelease, runReleasePays } from './logic/run-loop.js';
-import { BATTLE_RULES, battleHost, battleSay, joinNames, liveActors, newBattle } from './logic/battle-engine.js';
+import { fxRows } from './logic/effects.js';
+import {
+  BATTLE_RULES,
+  battleHost,
+  battleSay,
+  joinNames,
+  liveActors,
+  newBattle,
+  sayBattleFx,
+} from './logic/battle-engine.js';
 import { isLiteMap, loadMapFile } from './map-files.js';
 import { activeBattle, escapeHtml, save, saveData, saveNow, uiState } from './game-state.js';
 import { rigCanvasHTML } from './skeleton-rig.js';
@@ -298,7 +307,13 @@ function runBattleStart(kind, foe, extra) {
     k = again ? run.at.battle : run.battleN,
     ref = again && run.at.foe ? run.at.foe : runFoeRef(kind, foe, extra);
   return {
-    extra: { ...extra, seed: runBattleSeed(run, i, k), wx: runBattleWeather(run, i) },
+    extra: {
+      ...extra,
+      seed: runBattleSeed(run, i, k),
+      wx: runBattleWeather(run, i),
+      /* RL-12: the Loopholes held (logic/effects.js); none: no fx, the battle as before */
+      ...(run.relics.length ? { fx: fxRows(run.relics, RELICS) } : {}),
+    },
     begun: b => {
       if (!again) run.battleN = k + 1;
       run.at = { phase: 'battle', battle: k, foe: ref };
@@ -335,6 +350,7 @@ function runBattleAgain() {
   );
   const K = liveActors(0);
   K.forEach((kk, n) => battleSay(n ? '' : `Go, ${joinNames(K)}!`, { k: 'enter', si: kk, quiet: n > 0 }));
+  sayBattleFx();
   battleHost().open();
 }
 

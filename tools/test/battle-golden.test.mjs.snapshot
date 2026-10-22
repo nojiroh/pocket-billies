@@ -5283,6 +5283,822 @@ exports[`golden: a single wild battle 1`] = `
 }
 `;
 
+exports[`golden: a single wild battle holding Loopholes (RL-12: stages at the start, damage dealt and taken) 1`] = `
+{
+  "fmt": "single",
+  "kind": "wild",
+  "over": "lose",
+  "turns": 3,
+  "mine": [
+    {
+      "sp": "musk0",
+      "lvl": 10,
+      "hp": 0,
+      "xp": 800,
+      "status": null
+    }
+  ],
+  "foes": [
+    {
+      "sp": "swift0",
+      "lvl": 12,
+      "hp": 17,
+      "xp": 1382,
+      "status": null
+    }
+  ],
+  "se": 600,
+  "said": [
+    "playTurnEvents",
+    "playTurnEvents",
+    "playTurnEvents"
+  ],
+  "log": [
+    {
+      "turn": 0,
+      "events": [
+        {
+          "t": "Insider Tip: Emberox’s Speed rose.",
+          "an": null,
+          "s": [
+            {
+              "k": 0,
+              "sp": "musk0",
+              "name": "Emberox",
+              "lvl": 10,
+              "hp": 33,
+              "max": 33,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Fire"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 1
+              },
+              "bot": null
+            },
+            {
+              "k": 1,
+              "sp": "swift0",
+              "name": "Swiftlet",
+              "lvl": 12,
+              "hp": 34,
+              "max": 34,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Flying",
+                "Psychic"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            null,
+            null,
+            null
+          ],
+          "mk": null
+        }
+      ]
+    },
+    {
+      "turn": 1,
+      "events": [
+        {
+          "t": "Emberox used Cinders.",
+          "an": {
+            "k": "move",
+            "si": 0,
+            "ti": 1,
+            "mid": "spill",
+            "dmg": 8,
+            "te": 1,
+            "crit": false
+          },
+          "s": [
+            {
+              "k": 0,
+              "sp": "musk0",
+              "name": "Emberox",
+              "lvl": 10,
+              "hp": 33,
+              "max": 33,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Fire"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 1
+              },
+              "bot": null
+            },
+            {
+              "k": 1,
+              "sp": "swift0",
+              "name": "Swiftlet",
+              "lvl": 12,
+              "hp": 26,
+              "max": 34,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Flying",
+                "Psychic"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            null,
+            null,
+            null
+          ],
+          "mk": null
+        },
+        {
+          "t": "Swiftlet used Updraft.",
+          "an": {
+            "k": "move",
+            "si": 1,
+            "ti": 1,
+            "mid": "escvel",
+            "self": true
+          },
+          "s": [
+            {
+              "k": 0,
+              "sp": "musk0",
+              "name": "Emberox",
+              "lvl": 10,
+              "hp": 33,
+              "max": 33,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Fire"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 1
+              },
+              "bot": null
+            },
+            {
+              "k": 1,
+              "sp": "swift0",
+              "name": "Swiftlet",
+              "lvl": 12,
+              "hp": 26,
+              "max": 34,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Flying",
+                "Psychic"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            null,
+            null,
+            null
+          ],
+          "mk": null
+        },
+        {
+          "t": "Swiftlet’s Speed rose sharply.",
+          "an": {
+            "k": "stat",
+            "si": 1,
+            "up": true
+          },
+          "s": [
+            {
+              "k": 0,
+              "sp": "musk0",
+              "name": "Emberox",
+              "lvl": 10,
+              "hp": 33,
+              "max": 33,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Fire"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 1
+              },
+              "bot": null
+            },
+            {
+              "k": 1,
+              "sp": "swift0",
+              "name": "Swiftlet",
+              "lvl": 12,
+              "hp": 26,
+              "max": 34,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Flying",
+                "Psychic"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 2
+              },
+              "bot": null
+            },
+            null,
+            null,
+            null
+          ],
+          "mk": null
+        }
+      ]
+    },
+    {
+      "turn": 2,
+      "events": [
+        {
+          "t": "Swiftlet used Mind Pulse.",
+          "an": {
+            "k": "move",
+            "si": 1,
+            "ti": 0,
+            "mid": "pump",
+            "dmg": 17,
+            "te": 1,
+            "crit": true
+          },
+          "s": [
+            {
+              "k": 0,
+              "sp": "musk0",
+              "name": "Emberox",
+              "lvl": 10,
+              "hp": 16,
+              "max": 33,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Fire"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 1
+              },
+              "bot": null
+            },
+            {
+              "k": 1,
+              "sp": "swift0",
+              "name": "Swiftlet",
+              "lvl": 12,
+              "hp": 26,
+              "max": 34,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Flying",
+                "Psychic"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 2
+              },
+              "bot": null
+            },
+            null,
+            null,
+            null
+          ],
+          "mk": null
+        },
+        {
+          "t": "A critical hit!",
+          "an": {
+            "k": "crit",
+            "si": 0
+          },
+          "s": [
+            {
+              "k": 0,
+              "sp": "musk0",
+              "name": "Emberox",
+              "lvl": 10,
+              "hp": 16,
+              "max": 33,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Fire"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 1
+              },
+              "bot": null
+            },
+            {
+              "k": 1,
+              "sp": "swift0",
+              "name": "Swiftlet",
+              "lvl": 12,
+              "hp": 26,
+              "max": 34,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Flying",
+                "Psychic"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 2
+              },
+              "bot": null
+            },
+            null,
+            null,
+            null
+          ],
+          "mk": null
+        },
+        {
+          "t": "Emberox used Tackle.",
+          "an": {
+            "k": "move",
+            "si": 0,
+            "ti": 1,
+            "mid": "handshake",
+            "dmg": 9,
+            "te": 1,
+            "crit": false
+          },
+          "s": [
+            {
+              "k": 0,
+              "sp": "musk0",
+              "name": "Emberox",
+              "lvl": 10,
+              "hp": 16,
+              "max": 33,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Fire"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 1
+              },
+              "bot": null
+            },
+            {
+              "k": 1,
+              "sp": "swift0",
+              "name": "Swiftlet",
+              "lvl": 12,
+              "hp": 17,
+              "max": 34,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Flying",
+                "Psychic"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 2
+              },
+              "bot": null
+            },
+            null,
+            null,
+            null
+          ],
+          "mk": null
+        }
+      ]
+    },
+    {
+      "turn": 3,
+      "events": [
+        {
+          "t": "Swiftlet used Mind Pulse.",
+          "an": {
+            "k": "move",
+            "si": 1,
+            "ti": 0,
+            "mid": "pump",
+            "dmg": 26,
+            "te": 1,
+            "crit": true
+          },
+          "s": [
+            {
+              "k": 0,
+              "sp": "musk0",
+              "name": "Emberox",
+              "lvl": 10,
+              "hp": 0,
+              "max": 33,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Fire"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 1
+              },
+              "bot": null
+            },
+            {
+              "k": 1,
+              "sp": "swift0",
+              "name": "Swiftlet",
+              "lvl": 12,
+              "hp": 17,
+              "max": 34,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Flying",
+                "Psychic"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 2
+              },
+              "bot": null
+            },
+            null,
+            null,
+            null
+          ],
+          "mk": null
+        },
+        {
+          "t": "A critical hit!",
+          "an": {
+            "k": "crit",
+            "si": 0
+          },
+          "s": [
+            {
+              "k": 0,
+              "sp": "musk0",
+              "name": "Emberox",
+              "lvl": 10,
+              "hp": 0,
+              "max": 33,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Fire"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 1
+              },
+              "bot": null
+            },
+            {
+              "k": 1,
+              "sp": "swift0",
+              "name": "Swiftlet",
+              "lvl": 12,
+              "hp": 17,
+              "max": 34,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Flying",
+                "Psychic"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 2
+              },
+              "bot": null
+            },
+            null,
+            null,
+            null
+          ],
+          "mk": null
+        },
+        {
+          "t": "Emberox fainted.",
+          "an": {
+            "k": "faint",
+            "si": 0
+          },
+          "s": [
+            {
+              "k": 0,
+              "sp": "musk0",
+              "name": "Emberox",
+              "lvl": 10,
+              "hp": 0,
+              "max": 33,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Fire"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 1
+              },
+              "bot": null
+            },
+            {
+              "k": 1,
+              "sp": "swift0",
+              "name": "Swiftlet",
+              "lvl": 12,
+              "hp": 17,
+              "max": 34,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Flying",
+                "Psychic"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 2
+              },
+              "bot": null
+            },
+            null,
+            null,
+            null
+          ],
+          "mk": null
+        }
+      ]
+    }
+  ]
+}
+`;
+
 exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`] = `
 {
   "fmt": "alpha",

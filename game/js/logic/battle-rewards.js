@@ -10,6 +10,7 @@
 import { expose } from '../test-globals.js';
 import { EGGS, EGG_TIERS, RULES } from '../game-data.js';
 import { pickWeighted, wildPrize } from './rules.js';
+import { fxMoney } from './effects.js';
 /* eslint-disable no-func-assign */
 expose({
   battleOutcome: [() => battleOutcome],
@@ -24,7 +25,8 @@ export const battleOutcome = (kind, over) => (over === 'draw' ? (kind === 'wild'
 /**
  * What a battle that has ended pays and costs. `roll` is the battle's chance (battleRoll), drawn only for a wild win's
  * egg, in the order endBattle drew it. `rules` and `eggs` default to the game's.
- * @param {{ kind: string, over: string | null, T?: any, tid?: string, foe: { lvl: number }[] }} b
+ * @param {{ kind: string, over: string | null, T?: any, tid?: string, foe: { lvl: number }[], fx?: any[] }} b b.fx: a run's
+ *   Loopholes (logic/effects.js), which change the money a win pays
  * @param {{ se: number, flags: Record<string, number>, seats: string[], run?: any }} s
  * @param {() => number} roll
  * @param {{ battle: { loseFee: number }, eggs: { dropChance: number, dropTiers: Record<string, number> } }} [rules]
@@ -39,7 +41,10 @@ export function battleRewards(b, s, roll, rules = RULES, eggs = EGGS, eggTiers =
   const run = !!s.run;
   if (o === 'lose' && !run) out.fee = Math.floor(s.se * rules.battle.loseFee);
   if (b.kind === 'wild' && o === 'win') {
-    out.prize = b.foe.reduce((a, m) => a + wildPrize(m.lvl), 0);
+    out.prize = fxMoney(
+      b.fx,
+      b.foe.reduce((a, m) => a + wildPrize(m.lvl), 0)
+    );
     const E = rules.eggs;
     if (!run && roll() < E.dropChance) {
       const tiers = Object.entries(E.dropTiers)
@@ -49,7 +54,7 @@ export function battleRewards(b, s, roll, rules = RULES, eggs = EGGS, eggTiers =
     }
   }
   if (b.kind === 'trainer' && o === 'win' && b.T) {
-    out.reward = b.T.reward || 0;
+    out.reward = fxMoney(b.fx, b.T.reward || 0);
     out.first = !s.flags[b.tid || ''];
     const st = b.T.seat;
     if (st && !run)
