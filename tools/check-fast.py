@@ -14,7 +14,7 @@ with their places); a run's world (RL-7) opens on its landing, its places on the
 at the next node a day later; a battle plays to the end; a save round-trips; the Studio loads; the exported debug
 log holds no names; the world map opens as the bowl, a tap opens a card, Home comes back; every screen opens with its parts (UI-5);
 on tall ground (TR-3, the mountains fixture) the camera rises, rock fades and the player's silhouette is drawn, and
-none of it on flat ground; the Lab's unlock board (RL-11) grants, sells and keeps; the test island (island track) opens with its contract fields. The page is small (400x300) with every costly graphics dial
+none of it on flat ground; the Lab's unlock board (RL-11) grants, sells and keeps; the test island (island track) opens with its contract fields; the Studio's Hub island editor draws, turns, paints and locks (IS-6a). The page is small (400x300) with every costly graphics dial
 off before it loads; nothing waits a fixed time, only for frames or the game's state. No pictures are taken.
 
 Graphics are not judged here: software drawing can't. The game's own graphics test (Settings → Help) is for a person
@@ -668,6 +668,63 @@ def studio_worldmap(pg, base):
     return f'the bowl drawn ({round(share * 100)}% sea), a brush stroke and its undo, the landmark field'
 
 
+HUB_STROKE = """((id,x0,z0,x1,z1,o)=>{const c=document.getElementById(id);c.setPointerCapture=()=>{};const sc=studioState.D.maps.test_island,r=c.getBoundingClientRect(),Z=r.width/sc.w,
+ ev=(t,x,z)=>c.dispatchEvent(new PointerEvent(t,Object.assign({clientX:r.left+x*Z,clientY:r.top+(sc.h-z)*Z,pointerId:7,bubbles:true,button:0},o||{})));
+ ev('pointerdown',x0,z0);for(let i=1;i<=4;i++)ev('pointermove',x0+(x1-x0)*i/4,z0+(z1-z0)*i/4);ev('pointerup',x1,z1)})"""
+
+
+def studio_hub(pg, base):
+    """island track IS-6a: the Hub island section opens on test_island and draws (the orbit view and the map), a drag
+    turns the orbit, a brush stroke paints; locking stores the hash and turns the tools off, here and in Walk scenes,
+    where props stay free; the Studio's Check catches a changed locked ground; unlocking (asked first) frees it"""
+    if not until(pg, "typeof openSection==='function'&&typeof PB_DATA==='object'", 60): raise Exception('the Studio never loaded')
+    pg.evaluate(STUDIO_DATA)
+    pg.evaluate("openSection('hub');0")
+    if not until(pg, "studioState.sel.hub==='test_island'&&walkView.id==='test_island'&&!!document.getElementById('hubMap')", 30):
+        raise Exception('Hub island didn’t open on test_island: ' + str(pg.evaluate("[studioState.sel.hub,walkView.id]")))
+    drawing(pg)
+    if not until(pg, "!!hubEd.goal", 10): raise Exception('the orbit view never looked at the island')
+    if not pg.evaluate("(()=>{const c=document.getElementById('hubMap');return c.width>100&&c.getContext('2d').getImageData(c.width>>1,c.height>>1,1,1).data[3]>0})()"):
+        raise Exception('the map drew nothing')
+    y0 = pg.evaluate("hubEd.goal.yaw")
+    pg.evaluate("""(()=>{const c=document.getElementById('hubPv');c.setPointerCapture=()=>{};const r=c.getBoundingClientRect(),ev=(t,x)=>c.dispatchEvent(new PointerEvent(t,{clientX:r.left+x,clientY:r.top+r.height/2,pointerId:8,bubbles:true,button:0}));
+      ev('pointerdown',20);ev('pointermove',60);ev('pointermove',120);ev('pointerup',120)})();0""")
+    if abs(pg.evaluate("hubEd.goal.yaw") - y0) < 0.1: raise Exception('a drag on the orbit view didn’t turn it')
+    rows = "JSON.stringify(studioState.D.maps.test_island.tiles)"
+    t0 = pg.evaluate(rows)
+    bound = lambda id: until(pg, f"!!(document.getElementById('{id}')||{{}})._b", 20)   # the map's tools bind after its art loads
+    pg.evaluate("ACTIONS.hubTool({t:'paint'});ACTIONS.hubTer({c:'r'});0")
+    if not bound('hubMap'): raise Exception('the map’s tools never bound')
+    pg.evaluate(f"({HUB_STROKE})('hubMap',40,20,50,20);0")
+    if pg.evaluate(rows) == t0: raise Exception('a Paint ground stroke changed nothing')
+    pg.evaluate("undo();0")
+    if pg.evaluate(rows) != t0: raise Exception('Undo didn’t take the stroke back')
+    pg.evaluate("ACTIONS.hubLock();0")
+    bound('hubMap')
+    G = pg.evaluate("studioState.D.maps.test_island.islandGen")
+    if not (G.get('lock') and G.get('hash')): raise Exception(f'Lock the ground stored {G}')
+    if not pg.evaluate("[...document.querySelectorAll('[data-act=hubTool]')].every(b=>b.disabled)"): raise Exception('the tools stay on when locked')
+    pg.evaluate(f"({HUB_STROKE})('hubMap',40,20,50,20);0")
+    if pg.evaluate(rows) != t0: raise Exception('a locked ground took a brush stroke')
+    pg.evaluate("studioState.sel.scene='test_island';openSection('scenes');ACTIONS.scTool({t:'paint'});0")
+    if not until(pg, "!!document.getElementById('scMap')&&!!document.querySelector('#main .hub-note')", 30): raise Exception('Walk scenes doesn’t say the ground is locked')
+    if not bound('scMap'): raise Exception('Walk scenes’ map never bound')
+    n0 = pg.evaluate("studioState.D.maps.test_island.props.length")
+    pg.evaluate(f"({HUB_STROKE})('scMap',40,20,50,20);ACTIONS.scTool({{t:'props'}});mapEditor.prop=Object.keys(sceneryCatalog().props)[0];0")
+    bound('scMap')
+    pg.evaluate(f"({HUB_STROKE})('scMap',45,25,45,25);0")
+    if pg.evaluate(rows) != t0: raise Exception('Walk scenes painted a locked ground')
+    if pg.evaluate("studioState.D.maps.test_island.props.length") != n0 + 1: raise Exception('Walk scenes didn’t place a prop on a locked island')
+    pg.evaluate("studioState.D.maps.test_island.heights[10][10]+=1;0")
+    if not pg.evaluate("runCheck().some(p=>p.go==='hub'&&/locked but changed/.test(p.msg))"): raise Exception('the Studio’s Check missed a changed locked ground')
+    pg.evaluate("studioState.D.maps.test_island.heights[10][10]-=1;openSection('hub');ACTIONS.hubUnlock();0")
+    if not until(pg, "!!document.querySelector('#dlg button.primary')", 10): raise Exception('Unlock didn’t ask first')
+    pg.evaluate("document.querySelector('#dlg button.primary').click();0")
+    if not until(pg, "!studioState.D.maps.test_island.islandGen.lock&&!studioState.D.maps.test_island.islandGen.hash", 10): raise Exception('Unlock left the lock')
+    if not until(pg, "[...document.querySelectorAll('[data-act=hubTool]')].every(b=>!b.disabled)", 10): raise Exception('the tools stay off after Unlock')
+    return f'drawn, a drag turned it {abs(pg.evaluate("hubEd.goal.yaw") - y0):.2f} rad, a stroke and its undo, the lock here and in Walk scenes (props free), the Check, unlock'
+
+
 def run_shop(pg, base):
     """UI-5: a run town's shop opens with the day's wares (the hub has no shop since RL-5)"""
     pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();openShop(Object.keys(SHOPS)[0]);0")
@@ -813,6 +870,8 @@ PAGES = [   # (what the page opens, its checks in order); the longest first, so 
     ('title', [('The game boots with no console or page errors', boots)]),
     ('island', [('The test island opens and draws; its walking checks hold (island track)', island)]),
     ('studio', [('The Studio loads', studio), ("The Studio's world map look", studio_worldmap)]),
+    # IS-6a: a page of its own (it runs beside the others): the island's 3D view draws slowly in a headless browser
+    ('studio', [("The Studio's Hub island: the orbit view, the map's tools, the ground lock (IS-6a)", studio_hub)]),
 ]
 
 
