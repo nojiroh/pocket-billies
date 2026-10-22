@@ -19,7 +19,53 @@ Branch `claude/sr-5-parts`, draft PR #139 (base `ccr-81011a25-lf3exv`). Plan pre
    `body-extra` -> `bodyExtra`, one per commit (data, schema, types, Studio, tests together).
 6. The baker's slot table gives way to partKits `slots` and rules.json `parts.slots`. Parity green.
 7. Docs: NAMING.md, the plan's decisions, CHANGELOG, this entry.
-If time allows: session 3's first step (the Studio bakes on "Write Billie").
+If time allows: session 3's first step (the Studio bakes on "Write Billie"). (Not done: there is no "Write Billie"
+yet, it is a new Studio flow, and decision 9 gives it to session 3.) Steps 2 and 3 ran in the order 3, 2, so the schema
+covers `bake` from the start.
+
+**Changed** (one cause per commit):
+- `game/data/kitBuilds.json` (was `tools/art-source/part-kit/builds.json`), in index.json, with `bake` (the builder's
+  constants), `colours`, `forms`. Schema `kitBuilds.schema.json`; types `KitBuilds`, `KitBake`, `KitBuildForm`.
+- check-data (tools/check-data.mjs, **for Phase 1c's successor to move into data-checks.js**): the parts, colours,
+  anchors, tail aims and slots a recipe names; its line and stage; one recipe per stage of a line; each stage's
+  `parts` equal to what its recipe gives. 11 planted faults, each named.
+- kit-assemble.js: every function takes `bake` (`D`) as an argument; `kitNativeParts(form, kindSlot, slotList)` gets
+  partKits `slots` and rules.json `parts.slots`. `KIT_BAKE` and the slot table are gone.
+- `tools/bake-kit-billies.mjs` (`npm run bake:kits`, `--only=`, `--check`): bakes and writes only what changed.
+  png.mjs gains `encodePng` (round-trip test). About 1 s for all 24.
+- rename-data: `value` mode; and a bug fix: its save deleted `game/data/legacy/` (any rename did; caught before
+  commit).
+- T5.5: `signature` -> `sig` (28 places), `head-extra` -> `headExtra` (33), `body-extra` -> `bodyExtra` (7), each its
+  own commit with the schema, `PartSlot`, the Studio's slot buttons and library mapping, tests.
+- rigs-next.js reformatted as the Studio writes it (no-op), then the kit rigs' and layouts' `kit` value
+  `builds.json` -> `kitBuilds.json` (parse-level proof that nothing else changed).
+- Docs: NAMING.md (slot words, kitBuilds, rename-data value), decision 10, CHANGELOG.
+
+**Where the plan or session 1 was wrong or short**
+- "Tail aims per part in partKits": kept in the recipe (decision 10): the Workbench rebuilds partKits entries.
+- rename-data's save deleted the legacy world: a latent bug since RL-5, now fixed.
+- partKits had no other readers of the slot words in game code: the renames touched only the Studio, types and tests.
+
+**Verified**
+- Unit tests 634 pass; lint, typecheck, `check:modules`, `format:check`, `check:data`.
+- Parity green at every commit; `bake-kit-billies.mjs --check`: every form as committed.
+- The Python builder, re-run in a scratch worktree after the move: byte for byte the committed art.
+- `check:fast`: rc 0, every check ok.
+- `check-studio-github.py --only=publish,workbench,part_mode,robot_joints,species_parts,wardrobe,rig_preview`: 0
+  problems.
+- **Not run:** the full quick check (end of the phase).
+
+**Risky**
+- The Python builder keeps its own constants (with a note) until it retires; editing `bake` and then running Python
+  would disagree. Parity would show it.
+- check-data now fails when a recipe is edited without a bake: intended, but the Studio cannot bake yet (session 3).
+- The bake CLI rewrites rigs-next.js whole when a rig changes (as the Studio's Propose does).
+- check-data.mjs gained a block that Phase 1c is moving; expect a merge there.
+
+**Next (session 3)**
+- The Studio bakes kit Billies (a browser bake equal to the Node one: pictures through canvas ImageData, the sheet as
+  a Studio picture, rig and lines through the model, one undo step), then retire `tools/build-kit-billies.py` once
+  parity has held through the Studio flow. The preview sheet docs/samples/kit-billies.png goes with it unless wanted.
 
 ### Studio plan Phase 5, session 1 - Previews on the game's rig path (T5.6) and the JS kit baker with parity (T5.1, step 1) - 2026-10-22
 Branch `claude/sr-5-parts`, from `ccr-81011a25-lf3exv` (the plan's PR #131, not merged yet); its own draft PR. The plan
