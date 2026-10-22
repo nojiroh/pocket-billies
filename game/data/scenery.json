@@ -1330,10 +1330,8 @@
    "tags": ["route","town"],
    "group": "tree_pine",
    "solid": 0.4,
-   "layers": [
-    {"img":"scene/props/layers/tree_pine_lb.png","dz":0.53,"sway":0.7,"shadow":0},
-    {"img":"scene/props/layers/tree_pine_lf.png","dz":-0.37,"sway":1.4,"shadow":0}
-   ]
+   "model": "scene/next/models/tree_pine.json",
+   "ppm": 32
   },
   "tree_oak": {
    "name": "Oak tree",
@@ -2186,10 +2184,8 @@
    "tags": ["route","town"],
    "group": "tree_pine",
    "solid": 0.35,
-   "layers": [
-    {"img":"scene/props/layers/tree_pine_b_lb.png","dz":0.46,"sway":0.7,"shadow":0},
-    {"img":"scene/props/layers/tree_pine_b_lf.png","dz":-0.32,"sway":1.4,"shadow":0}
-   ]
+   "model": "scene/next/models/tree_pine_b.json",
+   "ppm": 32
   },
   "tree_pine_small": {
    "name": "Young pine",
@@ -2202,10 +2198,8 @@
    "tags": ["route","town"],
    "group": "tree_pine",
    "solid": 0.25,
-   "layers": [
-    {"img":"scene/props/layers/tree_pine_small_lb.png","dz":0.35,"sway":0.7,"shadow":0},
-    {"img":"scene/props/layers/tree_pine_small_lf.png","dz":-0.24,"sway":1.4,"shadow":0}
-   ]
+   "model": "scene/next/models/tree_pine_small.json",
+   "ppm": 32
   },
   "tree_birch_b": {
    "name": "Birch pair",
@@ -7765,7 +7759,9 @@
    "solid": 0.3,
    "family": "trees",
    "grow": "lsv",
-   "weight": 0.6
+   "weight": 0.6,
+   "model": "scene/next/models/tree_cypress.json",
+   "ppm": 32
   },
   "tree_elm": {
    "name": "Elm",
@@ -8492,7 +8488,10 @@
    "solid": 0.35,
    "family": "seasons",
    "grow": "gGr",
-   "weight": 0.5
+   "weight": 0.5,
+   "model": "scene/next/models/tree_rowan.json",
+   "ppm": 32,
+   "swap": {"scene/next/leaves/rowan.png":"scene/next/leaves/rowan_autumn.png"}
   },
   "tree_beech_autumn": {
    "name": "Beech in autumn",
@@ -10080,11 +10079,9 @@
    "tags": ["route","forest"],
    "group": "tree_giant_autumn",
    "solid": 1,
-   "layers": [
-    {"img":"scene/props/layers/tree_giant_autumn_lb.png","dz":0.6,"sway":0.7,"shadow":0},
-    {"img":"scene/props/layers/tree_giant_autumn_lf.png","dz":-0.45,"sway":1.4,"shadow":0}
-   ],
-   "landmark": 1
+   "landmark": 1,
+   "model": "scene/next/models/tree_giant_autumn.json",
+   "ppm": 32
   },
   "tree_jungle": {
    "name": "Jungle tree",
