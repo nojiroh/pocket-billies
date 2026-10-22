@@ -174,6 +174,7 @@ export const ENGINE_DEFAULTS = {
     zoomMin: 0.55,
     zoomMax: 1.7,
     pixelGrid: false,
+    rise: 18,
   },
   quality: {
     resolution: 1,
@@ -682,6 +683,14 @@ export const ENGINE_SPEC = [
       ['turn', 'Turn limit (degrees)', 0, 80, 1],
       ['zoomMin', 'Closest zoom', 0.3, 1, 0.05],
       ['zoomMax', 'Farthest zoom', 1, 3, 0.05],
+      [
+        'rise',
+        'Rise on tall ground (degrees)',
+        0,
+        30,
+        1,
+        'Terrain TR-3: the most the camera tilts down further so rock between it and you does not hide you. 0: off.',
+      ],
     ],
   ],
   [

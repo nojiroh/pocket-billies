@@ -474,6 +474,8 @@ debugLog.state = () => {
             mods: (run.mods || []).slice(),
             mountains: ((((GAME.walkView.sc || {}).gen || {}).params || {}).land || {}).mountains || 0,
             groundTris: GAME.walkRenderer && GAME.walkRenderer.mesh ? Math.round(GAME.walkRenderer.mesh.n / 3) : null,
+            /* TR-3: the camera's extra tilt on tall ground right now (degrees) */
+            camRise: GAME.walkRenderer && GAME.walkRenderer.occT != null ? +GAME.walkRenderer.occT.toFixed(1) : null,
           }
         : null;
     /* RL-8: what the runs brought home (numbers only) */
