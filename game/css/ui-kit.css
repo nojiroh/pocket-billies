@@ -292,7 +292,7 @@ hr.pb-rule::after {
    too) and ::after draws the 1 px edge line along the same outline, light on top and dark below. A clip-path cuts
    box-shadows and borders, so these parts lose their old outer shadow (as UI-2's old sheets did); .k-plain keeps the
    outline without the edge line, for a part whose ::after is taken. :not(#k) lifts the outline over the old layers'
-   corner rules (an id's weight; nothing is called #k) without !important. */
+   corner rules (an id's weight; nothing is called #k). */
 .k-panel {
   --k-clip: var(--clip-panel);
   --k-edge: var(--edge-panel);
@@ -322,14 +322,22 @@ hr.pb-rule::after {
   --k-clip: var(--clip-action);
   --k-edge: var(--edge-action);
 }
+/* the shell's own glass joins the panel family (the top bar draws its own: shell.css): a screen's title box (its ::after is the gold dash, so
+   it has the outline only) and the section panels of the Trainer card and Team */
+.tpanel,
+.screen > .bar > div:first-child {
+  --k-clip: var(--clip-panel);
+  --k-edge: var(--edge-panel);
+}
 :where(.k-panel, .k-card, .k-btn, .k-action, .k-tab, .pb) {
   position: relative;
 }
-:is(.k-panel, .k-card, .k-btn, .k-action, .k-tab, .pb):not(#k) {
-  border-radius: 0;
+:is(.k-panel, .k-card, .k-btn, .k-action, .k-tab, .pb, .tpanel, .screen > .bar > div:first-child):not(#k) {
+  /* !important only against v05.css's .px and .pb.big corners (!important themselves); goes with v05 in UI-6 */
+  border-radius: 0 !important;
   clip-path: var(--k-clip);
 }
-:is(.k-panel, .k-card, .k-btn, .k-action, .k-tab, .pb):not(.k-plain, #k)::after {
+:is(.k-panel, .k-card, .k-btn, .k-action, .k-tab, .pb, .tpanel):not(.k-plain, #k)::after {
   content: '';
   display: block;
   position: absolute;

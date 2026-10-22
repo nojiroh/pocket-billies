@@ -561,10 +561,6 @@ button.tb-where.shut {
 }
 /* ---------- top bar: place · your portrait · money and settings ---------- */
 .topbar {
-  border-radius: var(--r2) !important;
-  background: var(--g-bg) !important;
-  border: 1px solid var(--g-bd);
-  box-shadow: var(--g-in), var(--g-sh) !important;
   padding: 6px 8px 6px 12px !important;
   min-height: 56px;
   position: sticky;
@@ -747,4 +743,36 @@ nav#nav button[aria-current='page']::after {
   body.on-scene #app .topbar {
     top: 0;
   }
+}
+
+/* ---------- UI-5: the top bar on the kit ---------- */
+/* The portrait breaks out below the bar, so the bar can't be clipped itself: its glass face is ::before, clipped to
+   the panel family's outline (ui-kit.css, uiTheme.json), and ::after is the edge line along it; the bar keeps no
+   fill, frame or shadow of its own (a clip-path would cut a shadow anyway) */
+.topbar.glass {
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+.topbar.glass::before,
+.topbar.glass::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-below);
+  pointer-events: none;
+}
+.topbar.glass::before {
+  clip-path: var(--clip-panel);
+  background: var(--g-bg);
+  box-shadow: var(--g-in);
+  -webkit-backdrop-filter: var(--g-blur);
+  backdrop-filter: var(--g-blur);
+}
+.topbar.glass::after {
+  clip-path: var(--edge-panel);
+  background: var(--edge);
 }
