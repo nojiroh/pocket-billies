@@ -55,6 +55,10 @@ town node needs it.
   TR-2b (mountain trails) done 2026-10-21, after the Gen 3-5 route research; TR-2c next. Runs now go east to west (the
   owner, TR-2 session). TR-3 (the camera on tall ground) done 2026-10-22 (PR #108). TR-2c split by the owner: part 1 (grass patches, wild Billies in any patch, the dust puff) done 2026-10-22; part 2 (the road pathfinder through tiers and the massif, the four mountain route types) next. TR-4..TR-7 alongside RL-9..RL-11
   after the first cut; the gameplay sessions TR-8..TR-11 wait for their RL parts. Tags `tr-N-done`.
+- **Camera track** (docs/phases/camera-track.md, the owner's brief and answers 2026-10-22): a follow with dead and
+  soft zones and a joystick look-ahead (CAM-1), zooms for moments of interest (CAM-2), a diorama tilt-shift blur with
+  a player slider (CAM-3); each session brings its Studio dials and preview overlays. Runs now, beside the RL track.
+  CAM-1 next. Tags `cam-N-done`.
 - **Project Story** (docs/phases/project-story.md): S1-S3 and S7 done, S8 partly (RL-8: New game plays the fall only; the city's files stay).
   S6 (Hazel vs Blake as a real battle) is unblocked by RL-4; S4, S5 and S8's leftovers wait until the first cut has
   been played. RL-8 (the owner's answer): the opening is the fall only, Blake cut from it (his data kept), and Hazel's

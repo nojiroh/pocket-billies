@@ -2,6 +2,15 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Camera track - planned - 2026-10-22
+Branch `ccr-3d24989e-9cyftq`. A planning session only: no code changed.
+- Changed: docs/phases/camera-track.md (new: verified facts about the walk camera and the blur, outside research,
+  the owner's answers, sessions CAM-1..CAM-3); ROADMAP.md lists the track.
+- Where the brief's picture was wrong: the blur is already depth based (not a screen band, as walk-view.js's header
+  still says); talking only moves the blur's focus, not the camera.
+- Verified: nothing to run (docs only).
+- Next: CAM-1 (the follow), starting in Plan Mode.
+
 ### Roguelite track RL-12a - Relics and effects, first half: Loopholes, picks, shops - 2026-10-22
 Branch `claude/dazzling-keller-qyw5vq` (PR #117), from main 6a8a3e7; main merged in twice: RL-9b and UI-6a mid-session,
 then RL-11 (PR #115, bb51f13) at the end. Plan approved in
