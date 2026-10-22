@@ -16,17 +16,23 @@
 import { expose } from '../test-globals.js';
 /* eslint-disable no-func-assign */
 expose({
-  blendGoals: [() => blendGoals],
-  followNew: [() => followNew],
-  followStep: [() => followStep],
-  leadStep: [() => leadStep],
-  springStep: [() => springStep],
-  zoneAxis: [() => zoneAxis],
-  zoneMetres: [() => zoneMetres],
+  // @ts-expect-error -- replaced on purpose
+  blendGoals: [() => blendGoals, v => (blendGoals = v)],
+  // @ts-expect-error -- replaced on purpose
+  followNew: [() => followNew, v => (followNew = v)],
+  // @ts-expect-error -- replaced on purpose
+  followStep: [() => followStep, v => (followStep = v)],
+  // @ts-expect-error -- replaced on purpose
+  leadStep: [() => leadStep, v => (leadStep = v)],
+  // @ts-expect-error -- replaced on purpose
+  springStep: [() => springStep, v => (springStep = v)],
+  // @ts-expect-error -- replaced on purpose
+  zoneAxis: [() => zoneAxis, v => (zoneAxis = v)],
+  // @ts-expect-error -- replaced on purpose
+  zoneMetres: [() => zoneMetres, v => (zoneMetres = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-
 /**
  * One step of a critically damped spring from `x` (moving at `v`) toward `target`, over `dt` seconds. `smooth` is
  * the smooth time (seconds): how long it trails behind a target moving at a steady speed. `from` is where the target
@@ -97,9 +103,10 @@ export function zoneMetres(shareW, shareH, visW, rw, rh, pitch) {
 /**
  * The follow's state: the aim (`x`, `z`, `y`) and its speed `v`, the look-ahead `lead` and its speed, the targets
  * the springs headed for last frame (`tg` x, z, y and `lt` the look-ahead's; null: none, or held still), how much
- * you are moving (`move`, 0-1, ramped) and the goals' weights `w`.
+ * you are moving (`move`, 0-1, ramped), the goals' weights `w` and each goal as it was last asked for (`last`).
  * @typedef {{ x: number, z: number, y: number, v: number[], lead: number[], leadV: number[], move: number,
- *   tg: (number | null)[], lt: (number | null)[], w: Record<string, number> }} FollowState
+ *   tg: (number | null)[], lt: (number | null)[], w: Record<string, number>,
+ *   last: Record<string, CameraGoal> }} FollowState
  */
 /**
  * A follow state resting at an aim point.
@@ -120,6 +127,7 @@ export function followNew(x, z, y) {
     tg: [null, null, null],
     lt: [null, null],
     w: {},
+    last: {},
   };
 }
 
@@ -230,8 +238,8 @@ export function followStep(st, I, dt) {
  * @property {number[]} [at] an aim point ([x, z]) it pulls toward
  */
 /**
- * Blends the goals into one: each goal's weight ramps toward what it asks (`st.w`, by id; a goal that stops asking
- * ramps out), then the tilts add up, the distance factors multiply and the aim points pull in order. `snap` jumps
+ * Blends the goals into one: each goal's weight ramps toward what it asks (`st.w`, by id; a goal that stops being
+ * asked for ramps out as it last was, `st.last`), then the tilts add up, the distance factors multiply and the aim points pull in order. `snap` jumps
  * every weight to its target.
  * @param {FollowState} st
  * @param {CameraGoal[]} goals
@@ -258,10 +266,18 @@ export function blendGoals(st, goals, dt, blend, snap) {
     return w < 1e-3 ? 0 : w;
   };
   let keep = 1;
-  const pulls = /** @type {[number[], number][]} */ ([]);
-  for (const g of goals) {
+  const pulls = /** @type {[number[], number][]} */ ([]),
+    /* a goal that isn't asked for this frame ramps out as it last was (its tilt, its aim point) */
+    all = goals.concat(
+      Object.keys(st.w)
+        .filter(id => !goals.some(g => g.id === id) && st.last[id])
+        .map(id => ({ ...st.last[id], w: 0 }))
+    );
+  for (const g of all) {
     seen.add(g.id);
+    st.last[g.id] = g;
     const w = ramp(g.id, Math.max(0, Math.min(1, g.w)), g.blend);
+    if (!(g.id in st.w)) delete st.last[g.id];
     if (!w) continue;
     out.list.push([g.id, w]);
     out.pitch += (g.pitch || 0) * w;
@@ -272,8 +288,7 @@ export function blendGoals(st, goals, dt, blend, snap) {
       keep *= 1 - w;
     }
   }
-  /* a goal that wasn't asked for this frame ramps out (with the common time; its tilt etc. are gone with it) */
-  for (const id of Object.keys(st.w)) if (!seen.has(id)) ramp(id, 0, undefined);
+  for (const id of Object.keys(st.w)) if (!seen.has(id)) delete st.w[id];
   /* each pull moves the aim toward its point by its weight, in order: the follow's own aim keeps `keep` of it and
      the points share the rest (`at` is their mix, `atW` how much it counts) */
   if (pulls.length && keep < 1) {

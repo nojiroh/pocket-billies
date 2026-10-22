@@ -186,9 +186,17 @@ test('goals ramp in and out, their tilts add, their distances multiply, and thei
   near(o.pitch, 9, 1e-3);
   /* no longer asked: it ramps out and is forgotten */
   run(60, 0.2, dt => (o = blendGoals(st, [], dt, 0.4)));
-  assert.ok(o.pitch === 0 && st.w.up > 0, 'gone from the sum while ramping out of the record');
+  assert.ok(o.pitch > 0 && o.pitch < 9, `${o.pitch}: it ramps out as it last was`);
   run(60, 6, dt => (o = blendGoals(st, [], dt, 0.4)));
   assert.equal(st.w.up, undefined);
+  assert.equal(st.last.up, undefined);
+  near(o.pitch, 0);
+  /* an aim that stops being asked for lets go gradually, not at once */
+  blendGoals(st, [{ id: 'room', w: 1, at: [10, 0] }], 0.016, 0.4, true);
+  o = blendGoals(st, [], 0.1, 0.4);
+  assert.ok(o.atW > 0.5 && o.at[0] === 10, `${o.atW}`);
+  run(60, 6, dt => (o = blendGoals(st, [], dt, 0.4)));
+  assert.equal(o.at, null);
   /* snapped: at full weight at once; blend 0: no ramp */
   o = blendGoals(
     st,
