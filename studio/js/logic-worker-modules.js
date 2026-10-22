@@ -57,6 +57,7 @@ import '../../game/js/logic/run-rules-code.js';
 import '../../game/js/logic/run-scenes.js';
 import '../../game/js/logic/run-start.js';
 import '../../game/js/logic/run-state.js';
+import '../../game/js/logic/run-test.js';
 import '../../game/js/logic/saves.js';
 import '../../game/js/logic/script-parse.js';
 import '../../game/js/logic/script.js';
