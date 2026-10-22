@@ -40,6 +40,7 @@ import { sceneryCatalog } from './map-editor.js';
 import { buildSearchIndex, findRun } from './find.js';
 import { connectionsHTML } from './connections.js';
 import { githubMode } from './github.js';
+import { musicPlay, musicPlaying, musicStop, musicStudio } from './music-editor.js';
 /* eslint-disable no-func-assign */
 expose({
   startStudioTest: [() => startStudioTest, v => (startStudioTest = v)],
@@ -84,6 +85,10 @@ function studioTestHandles() {
     gpuCountEnd,
     gpuState,
     frameScheduler,
+    musicPlay,
+    musicStop,
+    musicPlaying,
+    musicStudio,
     githubOn: !!githubMode.on,
   };
 }

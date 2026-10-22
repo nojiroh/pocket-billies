@@ -994,7 +994,6 @@ def studio_test_steps(pg, errs):
     print(f"studio test: {len(r['sections'])} sections, {edits} edits undone, {len(r['findings'])} findings, {r['seconds']} s", flush=True)
 
 
-# the steps after sign-in, in order (--only picks some by name; 'sections' and 'art' are the two blocks in main)
 def music_steps(pg, errs):
     """SND-3: the Music & sound section (studio/js/music-editor.js): a song plays through the game's tracker on the
     Studio's own AudioContext (a real click starts it), the bar playing shows, Stop stops it, and leaving the section
@@ -1116,6 +1115,7 @@ def music_steps(pg, errs):
     else: print('music: town played (context running, bar shown), its tempo and a chord changed while playing and undone, a hook note and a counter note drawn and heard and undone, stopped; the where table: a rule moved, a condition, a rule added, Try a place following, all undone; a jingle played and lengthened and undone; a cry set, heard (and low on health) and emptied; the Check’s music findings and Show me; meadow stopped when the section was left', flush=True)
 
 
+# the steps after sign-in, in order (--only picks some by name; 'sections' and 'art' are the two blocks in main)
 STEPS = [
     ('story', story_steps),
     ('free_camera', free_camera_steps),

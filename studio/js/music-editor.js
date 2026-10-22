@@ -88,7 +88,7 @@ expose({
 /* eslint-enable no-func-assign */
 provide({ musicCheckFindings, musicCryCardHTML, musicCryTidy });
 /* to-module: end */
-const musicStudio = {
+export const musicStudio = {
   /** @type {AudioContext | null} */ ctx: null,
   /** @type {any} */ tracker: null,
   loop: true,
@@ -151,7 +151,7 @@ function musicTracker() {
   return T;
 }
 /** play a song from its start (pressed again, it starts over) */
-function musicPlay(name) {
+export function musicPlay(name) {
   const T = musicTracker();
   if (musicStudio.ctx.state !== 'running') musicStudio.ctx.resume().catch(() => {});
   T.refresh(musicData().songs);
@@ -159,7 +159,7 @@ function musicPlay(name) {
   T.play(name);
   musicNowShow();
 }
-function musicStop() {
+export function musicStop() {
   if (musicStudio.tracker && musicStudio.tracker.song) musicStudio.tracker.stop();
   musicNowShow();
 }
@@ -178,7 +178,8 @@ function musicNowShow() {
     b.classList.toggle('on', !!sg && /** @type {HTMLElement} */ (b).dataset.song === sg.name);
 }
 /** the song playing, or '' (for the self-test and the Studio check) */
-const musicPlaying = () => (musicStudio.tracker && musicStudio.tracker.song ? musicStudio.tracker.song.name : '');
+export const musicPlaying = () =>
+  musicStudio.tracker && musicStudio.tracker.song ? musicStudio.tracker.song.name : '';
 
 /* ---------- the section ---------- */
 const musicSummary = S =>
