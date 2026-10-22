@@ -7,9 +7,85 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 /* eslint-disable no-func-assign */
-expose({ midiToFrequency: [() => midiToFrequency], trackerCreate: [() => trackerCreate, v => (trackerCreate = v)] });
+expose({
+  SCALES: [() => SCALES],
+  midiToFrequency: [() => midiToFrequency],
+  songRandom: [() => songRandom, v => (songRandom = v)],
+  trackerCompose: [() => trackerCompose, v => (trackerCompose = v)],
+  trackerCreate: [() => trackerCreate, v => (trackerCreate = v)],
+});
 /* eslint-enable no-func-assign */
 /* to-module: end */
+const SCALES = {
+  major: [0, 2, 4, 5, 7, 9, 11],
+  minor: [0, 2, 3, 5, 7, 8, 10],
+  dorian: [0, 2, 3, 5, 7, 9, 10],
+  lydian: [0, 2, 4, 6, 7, 9, 11],
+  mixo: [0, 2, 4, 5, 7, 9, 10],
+};
+/* a seeded random number generator, so a song is composed the same way every time */
+function songRandom(seed) {
+  let s = seed * 9301 + 49297;
+  return () => {
+    s = (s * 9301 + 49297) % 233280;
+    return s / 233280;
+  };
+}
+/* a song's recipe (bpm, key, scale, the chords, the parts) made into notes: the lead is a seeded random walk over the
+   chord tones. Returns a new object, the recipe with notes, steps and deg (scale degree to midi note) */
+export function trackerCompose(D) {
+  const sc = SCALES[D.scale],
+    R = songRandom(D.seed),
+    deg = n => {
+      const o = Math.floor(n / 7),
+        i = ((n % 7) + 7) % 7;
+      return D.key + 12 * o + sc[i];
+    };
+  const bars = D.prog.length,
+    steps = bars * 16,
+    lead = new Array(steps).fill(null);
+  const rhythms = [
+    [0, 4, 6, 8, 12],
+    [0, 2, 4, 8, 10, 12],
+    [0, 3, 6, 8, 12, 14],
+    [0, 4, 8, 10, 12],
+    [0, 6, 8, 12],
+    [0, 2, 4, 6, 8, 12],
+  ];
+  const makeBar = (b, rng) => {
+    const ch = D.prog[b],
+      rh = rhythms[Math.floor(rng() * rhythms.length)];
+    let cur = ch + 7 + [0, 2, 4][Math.floor(rng() * 3)];
+    const out = [];
+    rh.forEach((st, i) => {
+      const strong = st % 8 === 0;
+      if (strong) {
+        const tones = [ch, ch + 2, ch + 4].map(x => x + 7);
+        cur = tones.reduce((a, b) => (Math.abs(b - cur) < Math.abs(a - cur) ? b : a));
+      } else cur += [-2, -1, 1, 2, 1, -1][Math.floor(rng() * 6)];
+      const len = (rh[i + 1] ?? 16) - st;
+      out.push([st, deg(cur), len]);
+    });
+    return out;
+  };
+  /* bars 1-4 a phrase, 5-6 repeat its start, 7-8 a cadence that lands on the home note */
+  const A = [0, 1, 2, 3].map(b => makeBar(b, R)),
+    R2 = songRandom(D.seed + 7);
+  for (let b = 0; b < bars; b++) {
+    let bar = b < 4 ? A[b] : b < 6 ? A[b - 4] : makeBar(b, R2);
+    if (b === bars - 1)
+      bar = [
+        [0, deg(D.prog[b] + 7 + 2), 4],
+        [4, deg(D.prog[b] + 7), 4],
+        [8, deg(7), 8],
+      ];
+    const sh = D.key >= 64 ? -12 : 0;
+    bar.forEach(([s, n, l]) => {
+      lead[b * 16 + s] = [n + sh, l];
+    });
+  }
+  return { ...D, notes: lead, steps, deg };
+}
 export const midiToFrequency = m => 440 * Math.pow(2, (m - 69) / 12);
 export function trackerCreate(ctx, bus) {
   const c = ctx,
