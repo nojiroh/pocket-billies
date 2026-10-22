@@ -7,7 +7,7 @@
 //   their own (story.json's speakers and start presets name real people, places, trainers and Billies),
 // - what refers to what exists: moves a line learns, species in pools and teams, a stop's map and wild pool, the
 //   ground kinds and props a map uses, the stops of links and trainers, a trainer's look,
-// - a map's ground is h rows of w, its heights (h+1) rows of w+1,
+// - a map's ground is h rows of w, its heights (h+1) rows of w+1, its island fields sound (island track),
 // - phase 07: portraits.json against its schema, and every picture, part and frame it names exists,
 // - studio track ST-3: partKits.json against its schema, and every part's picture is there at its size,
 // - phase 08b: the links between places (roads.json) join them as the walk needs, and every door opens a room (below),
@@ -22,6 +22,7 @@ import { seamRulesLinks, seamRulesPlaces } from '../game/js/logic/seam-rules.js'
 import { CLIMATE_WEATHER_ODDS } from '../game/js/logic/weather.js';
 import { RUN_MARK_TYPES } from '../game/js/logic/run-marks.js';
 import { runMapRowsFit } from '../game/js/logic/run-map.js';
+import { islandProblems } from '../game/js/logic/island.js';
 import { conditionNames, conditionProblem, conditionTree } from '../game/js/logic/conditions.js';
 import { MAPGEN_DEFAULTS, MAPGEN_FEATURES, MAPGEN_SHAPES, MAPGEN_SURFACES, MAPGEN_WATER } from '../game/js/logic/mapgen.js';
 
@@ -667,6 +668,8 @@ for (const [id, sc] of Object.entries(S)) {
     if (!scenery.terrains[c]) problem(where, `ground kind ${JSON.stringify(c)} isn't in scenery.terrains`);
   const props = new Set((sc.props || []).map(p => p.k));
   for (const k of props) if (!scenery.props[k]) problem(where, `prop ${k} isn't in scenery.props`);
+  // island track IS-0: the island fields beyond their shapes (logic/island.js)
+  for (const p of islandProblems(sc)) problem(where, p);
 }
 
 const n = listed.size;
