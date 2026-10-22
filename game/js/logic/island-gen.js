@@ -1556,7 +1556,6 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
         if (ts >= 0) townStreets.push(r);
       });
     }
-    if (kept.length < 2) notes.push(`one bridge only: no crossing ${ISLAND_BRIDGE_GAP} m up the river from the town's`);
   }
 
   /* the distance field and the paint (mapgenStageRoad's), then mapgen's flattening */
@@ -2096,6 +2095,10 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
         }
     }
   }
+
+  /* the look pass: two bridges over the river (a kept town's own come back with it) */
+  if (river && bridges.filter(B => !B.pier).length < ISLAND_BRIDGES)
+    notes.push(`one bridge only: no crossing ${ISLAND_BRIDGE_GAP} m up the river from the town's`);
 
   /* ---------- the zones ---------- */
   const ring = (rOf, n, a0 = 0, a1 = 360) => {
