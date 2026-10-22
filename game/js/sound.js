@@ -25,6 +25,7 @@ import {
 } from './walk-view.js';
 import { environment, environmentHour, environmentState } from './environment.js';
 import { walkRenderer } from './walk/walk-state.js';
+import { soundLevel, soundLevels } from './audio/levels.js';
 /* eslint-disable no-func-assign */
 expose({
   BIRD_CALLS: [() => BIRD_CALLS],
@@ -60,6 +61,7 @@ expose({
   soundEffectAt: [() => soundEffectAt, v => ((soundEffectAt = v), provide({ soundEffectAt }))],
   soundEngine: [() => soundEngine],
   soundPlacement: [() => soundPlacement, v => (soundPlacement = v)],
+  soundPreferences: [() => soundPreferences],
   synthKick: [() => synthKick, v => (synthKick = v)],
   synthNoise: [() => synthNoise, v => (synthNoise = v)],
   synthVoice: [() => synthVoice, v => (synthVoice = v)],
@@ -86,9 +88,10 @@ export const soundEngine = {
   voices: [],
   lastStep: 0,
 };
-function volumePreference(k, def) {
-  const p = (typeof saveData !== 'undefined' && saveData && saveData.preferences) || {};
-  return p[k] == null ? def : +p[k];
+/* SND-1: the volume maths is audio/levels.js (soundLevel, soundLevels); this reads the save's preferences for it */
+const soundPreferences = () => (typeof saveData !== 'undefined' && saveData && saveData.preferences) || {};
+function volumePreference(k) {
+  return soundLevel(soundPreferences(), k);
 }
 function initSound() {
   if (soundEngine.ctx) return true;
@@ -151,13 +154,11 @@ function initSound() {
 /* alpha 0.5: a master volume and mute over everything (music, effects, world sounds, ambience all go through the master) */
 function applyVolumes() {
   if (!soundEngine.ctx) return;
-  const m = volumePreference('music', 0.55),
-    f = volumePreference('sfx', 0.8),
-    t = soundEngine.ctx.currentTime,
-    mv = saveData.preferences && saveData.preferences.mute ? 0 : volumePreference('master', 1);
-  soundEngine.master.gain.setTargetAtTime(0.9 * mv * mv, t, 0.05);
-  soundEngine.mus.gain.setTargetAtTime(m * m, t, 0.05);
-  soundEngine.fx.gain.setTargetAtTime(f * f, t, 0.05);
+  const L = soundLevels(soundPreferences()),
+    t = soundEngine.ctx.currentTime;
+  soundEngine.master.gain.setTargetAtTime(L.master, t, 0.05);
+  soundEngine.mus.gain.setTargetAtTime(L.music, t, 0.05);
+  soundEngine.fx.gain.setTargetAtTime(L.sfx, t, 0.05);
 }
 /* the first touch unlocks sound; the song that was asked for starts then */
 function unlockSound() {
@@ -1205,12 +1206,11 @@ function ambienceFadeIn() {
 }
 function applyAmbienceVolume() {
   if (!ambience.bus || !soundEngine.ctx) return;
-  const v = volumePreference('world', 0.5),
-    a = volumePreference('amb', 0.5),
+  const L = soundLevels(soundPreferences()),
     f = ambienceFadeIn(),
     t = soundEngine.ctx.currentTime;
-  ambience.bus.gain.setTargetAtTime(v * v * f, t, 0.1);
-  if (ambience.amb) ambience.amb.gain.setTargetAtTime(a * a * 0.9 * f, t, 0.1);
+  ambience.bus.gain.setTargetAtTime(L.world * f, t, 0.1);
+  if (ambience.amb) ambience.amb.gain.setTargetAtTime(L.amb * f, t, 0.1);
 }
 function initAmbience() {
   if (ambience.bus) return true;
