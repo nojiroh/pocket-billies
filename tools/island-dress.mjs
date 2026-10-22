@@ -285,7 +285,7 @@ export function islandDress(sc, scenery, o = {}) {
   });
   /* its floor */
   sweep('forest floor', 2.1, (x, z, rnd) => {
-    if (!FOREST.includes(tileAt(x, z)) || !rnd.chance(0.42)) return;
+    if (!FOREST.includes(tileAt(x, z)) || !rnd.chance(0.25)) return;
     const k = rnd.pick({
       fern: 3,
       fern_b: 2,
@@ -338,7 +338,7 @@ export function islandDress(sc, scenery, o = {}) {
   /* ---------- the beaches and the shore ---------- */
   sweep('dunes', 1.7, (x, z, rnd) => {
     const ch = tileAt(x, z);
-    if ((ch === 'B' && rnd.chance(0.5)) || (ch === 's' && toWater[cellOf(x, z)] > 4 && rnd.chance(0.06)))
+    if ((ch === 'B' && rnd.chance(0.4)) || (ch === 's' && toWater[cellOf(x, z)] > 4 && rnd.chance(0.06)))
       put('beach_grass', x, z, rnd, { path: 0.6, wild: true });
   });
   sweep('driftwood', 6, (x, z, rnd) => {
@@ -349,7 +349,7 @@ export function islandDress(sc, scenery, o = {}) {
   });
   sweep('shells', 3, (x, z, rnd) => {
     const ch = tileAt(x, z);
-    if ((ch === 'S' && rnd.chance(0.12)) || (ch === 's' && rnd.chance(0.05))) put('shells', x, z, rnd, { path: 0.5 });
+    if ((ch === 'S' && rnd.chance(0.06)) || (ch === 's' && rnd.chance(0.025))) put('shells', x, z, rnd, { path: 0.5 });
   });
   sweep('shore rocks', 3, (x, z, rnd) => {
     const ch = tileAt(x, z);
