@@ -20,6 +20,7 @@ import { conditionNames, conditionProblem, conditionTree } from './conditions.js
 /* eslint-disable no-func-assign */
 expose({
   ROBOT_FITS: [() => ROBOT_FITS],
+  RUN_RULE_KEYS: [() => RUN_RULE_KEYS],
   // @ts-expect-error -- replaced on purpose
   dataBattleRules: [() => dataBattleRules, v => (dataBattleRules = v)],
   // @ts-expect-error -- replaced on purpose
@@ -226,6 +227,24 @@ export function dataRunMapRules(D) {
 }
 // RL-6: the run's clock and what its map shows: whole days of slack (0-30) and of forecast ahead (1-30), whole rows
 // shown ahead with their type (1-12) and as '?' (at least as far, up to 12); nothing else in rules.json run
+/** T1.3: the keys of rules.json run, each a rule a family here checks (any other is "no such rule"). The one list:
+ * an editor of run rules reads it from here */
+export const RUN_RULE_KEYS = Object.freeze([
+  'payout',
+  'map',
+  'clock',
+  'reveal',
+  'scene',
+  'wild',
+  'seamIn',
+  'start',
+  'home',
+  'pack',
+  'healCost',
+  'shop',
+  'foes',
+  'relics',
+]);
 /** RL-6: rules.json run.clock, run.reveal and the run keys @param {any} D @returns {DataProblem[]} */
 export function dataRunClock(D) {
   /** @type {DataProblem[]} */
@@ -236,26 +255,7 @@ export function dataRunClock(D) {
       C = R.clock,
       V = R.reveal,
       whole = (v, lo, hi) => Number.isInteger(v) && v >= lo && v <= hi;
-    for (const k of Object.keys(R))
-      if (
-        ![
-          'payout',
-          'map',
-          'clock',
-          'reveal',
-          'scene',
-          'wild',
-          'seamIn',
-          'start',
-          'home',
-          'pack',
-          'healCost',
-          'shop',
-          'foes',
-          'relics',
-        ].includes(k)
-      )
-        problem('rules.json', `run.${k}: no such rule`);
+    for (const k of Object.keys(R)) if (!RUN_RULE_KEYS.includes(k)) problem('rules.json', `run.${k}: no such rule`);
     if (!C || typeof C !== 'object' || !whole(C.slack, 0, 30) || !whole(C.ahead, 1, 30))
       problem('rules.json', 'run.clock: slack (0-30) and ahead (1-30) are not whole numbers of days');
     else
