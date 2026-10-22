@@ -250,7 +250,11 @@ same phase:
   back, a reload) and the in-game test's "The ranch: training between runs". RL-9b: check-fast's "Packing for a run"
   on `?fixture=ranch` (a trainee from storage picked, two Potions packed; kept on a loss, back in storage once; a win
   brings the bag home; a reload), run-state tests for the pick, the pack and the storage trap, the in-game run phase's
-  party of one.
+  party of one. RL-10a: `tools/test/breeding.test.mjs` (the mark, the reasons a pair can't breed, safe and risky eggs,
+  paying, hatching, a clock turned back, the save's checks), check-fast's "Breeding" on `?fixture=ranch` (the safe
+  egg shown is the one bred, hatched through the hatch window after `breed.hours`; a risky pair; the clock turned
+  back; a reload), the in-game test's "The ranch: breeding a pair", and the breeding sim (`tools/test/sim/
+  breeding-sim.mjs`, report only; `breeding-sim.test.mjs` runs it small).
 - **14 Studio**: `tools/check-studio-github.py` and smoke's "Studio opens" keep passing; `--studio` follows the
   Studio local mode decision. A new Studio feature adds a step function to its `STEPS` (UI-3), so it can also run
   alone with `--only=<name>`.

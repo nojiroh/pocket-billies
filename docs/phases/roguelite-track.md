@@ -170,6 +170,25 @@ the pick from the team or storage (a trainee stops, healed); the run fixture fol
 sim (`--team`, `--pack`): one Lv 5 starter loses on the landing in 31 of 50 runs, as on main; packing 5 Potions
 changes little (balance is for the owner's play).
 
+**Corrected in RL-10a (2026-10-22).** RL-10 split in two at the owner's word: RL-10a breeding and hatching, RL-10b
+passive income and the cloud `t` anchor. Where section 3 and RL-10 were wrong: eggs hatched by metres walked
+(`addWalked`), not by time, and nothing gave eggs any more on the hub's terms; `eggs.json` lists legacy species
+(played by stand-ins, `standInSpecies`); no Billie has a passive of its own (only types do), so a quirk's or an
+abomination's "passive" waits for RL-12's effects; an abomination can't look mixed (the art is built per species
+offline; `logic/parts.js` is size arithmetic); `account.js` writes the cloud save in two places (`flushAccountSave`,
+`accountSignOut`), not one; and training's rollback guard (RL-9) moves a trainee's start back to a turned-back clock,
+so turning it forward again pays the gap (RL-10b's shared guard should fix it). The owner's answers (the
+recommendations): you pick the parents and the ranch picks the parts (16's 5.1: both); an abomination wears one
+parent's art with its own name and a stat swing; the walking eggs are retired; the parents stay free. Built:
+`rules.ranch.breed`; `logic/breeding.js` (the egg rolled from the parents' uids and `ranch.bred` when the pair starts,
+kept in the nursery entry, its ready time never moving); `m.mut` (a quirk, or an abomination's name, one stat
+`abomUp`, another `abomDown`) read by `stat()` and `billyName`; the ranch sheet's Nursery and "Breed a pair"; the
+hatch window moved to the ranch. The old eggs no longer drop, are no longer given or hatched by walking, and their
+screens are gone; their data (`eggs.json`, `saveData.eggs`, trainers' `egg`, the Studio's editors, the incubators'
+CSS) is dormant, for a cleanup session. The sim's first numbers: 59/31/11 % (odds 60/30/10); a bred Billie's mark
+is about even against its unmarked twin, but mixed part sizes lose phase 16's Prime bonus (0.11-0.17 against a plain
+Billie; the duel's control is 0.43).
+
 **Changed in the TR-2 session (2026-10-21, the owner: "runs should go from east to west").** A run scene is entered
 by its east side and left ahead by its west: `east`/`east2` back, `west`/`west2` ahead (logic/run-scenes.js
 runSceneExits; runExits' `ahead`/`back`, renamed from north/south). Two links a side sit 10 m and 54 m along the 64 m
@@ -711,7 +730,9 @@ win, the sim's policy, check-fast's "Packing for a run".
 guard, offline, the cloud `t` anchor and its rule. Files: `logic/breeding.js`, `logic/ranch.js`, `logic/rules.js`
 (eggs), `account.js:331-351`, `firebase/firestore.rules` + `firebase/test/rules.test.mjs`,
 `tools/test/sim/breeding-sim.mjs` (reports only until bounds are agreed). Could break: cloud saves (publish the rule
-after the emulator passes). 2 sessions.
+after the emulator passes). 2 sessions. RL-10a done 2026-10-22 (HANDOFF; section 0 for what changed): breeding,
+hatching, `m.mut`, the old walking eggs retired, the sim. RL-10b next: passive income, the shared rollback guard
+(training's included), offline, the cloud `t` anchor and the key whitelist (8.12).
 
 **RL-11 Hub upgrades, currencies, unlock board.** `currencies.json`, `buildings.json` (Lab, Ranch, Workshop, Airship),
 `unlocks.json` with the three doors, `logic/unlocks.js` (`unlockReady`, buy, auto at payout and on load),
