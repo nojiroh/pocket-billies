@@ -95,94 +95,6 @@ body.on-scene .screen > p.note {
   box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--line) 22%, transparent);
 }
 
-/* ---------- billionaire sheet ---------- */
-.mon-sheet .ms-plate {
-  position: relative;
-  display: grid;
-  place-items: end center;
-  height: 172px;
-  margin: 0 0 12px;
-  padding-bottom: 8px;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow:
-    0 0 0 2px var(--line),
-    inset 0 2px 0 rgba(255, 255, 255, 0.4);
-}
-.mon-sheet .ms-plate .tm-ribbon {
-  left: 8px;
-  top: 8px;
-}
-.mon-sheet .ms-plate .tm-ribbon + .tm-ribbon {
-  top: 34px;
-}
-.mon-sheet .ms-plate .tm-ribbon + .tm-ribbon + .tm-ribbon {
-  top: 60px;
-}
-.ms-chips {
-  gap: 6px;
-}
-.ms-chips .lv {
-  margin-left: auto;
-}
-.ms-sp {
-  flex-basis: 100%;
-  font-size: 12.5px;
-  color: var(--text2);
-}
-.ms-meters {
-  display: grid;
-  gap: 9px;
-  margin: 12px 0 6px;
-  padding: 11px 12px;
-  border-radius: 10px;
-  background: var(--panel2);
-}
-.ms-job {
-  display: flex;
-  gap: 6px;
-  align-items: flex-start;
-}
-.ms-job .uico {
-  margin-top: 3px;
-}
-.ms-acts {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 2px;
-  margin: 12px -3px 2px;
-}
-.ms-acts .pb {
-  min-height: 46px;
-  justify-content: flex-start;
-  text-align: left;
-  margin: 3px;
-}
-.ms-acts .pb:last-child:nth-child(odd) {
-  grid-column: 1/-1;
-}
-.mon-sheet h3 {
-  font-size: 18px;
-  margin-top: 20px;
-}
-.ms-nick {
-  display: flex;
-  align-items: flex-end;
-  gap: 6px;
-  margin-top: 6px;
-}
-.ms-nick .field-l {
-  flex: 1;
-  min-width: 0;
-}
-.ms-nick .pb {
-  margin: 0 3px 3px;
-  min-height: 46px;
-}
-.mon-sheet .sheet-art {
-  display: none;
-}
-
 /* ---------- pick lists inside sheets (jobs, healing, swapping) ---------- */
 .list {
   display: grid;
@@ -224,10 +136,6 @@ body.on-scene .screen > p.note {
 .pr-t small {
   font-size: 12.5px;
   color: var(--text2);
-}
-.pr-n {
-  flex: none;
-  font: 400 16px/1 var(--font-voice);
 }
 
 /* ---------- town shop extras ---------- */

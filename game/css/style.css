@@ -1132,25 +1132,6 @@ nav#nav[hidden] {
   text-align: right;
   font-family: var(--font-voice);
 }
-.mvlist {
-  display: grid;
-  gap: 6px;
-  margin-top: 8px;
-}
-.mvi {
-  background: var(--panel2);
-  padding: 8px 10px;
-}
-.mvi .mh {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  font-family: var(--font-voice);
-}
-.mvi .md {
-  font-size: 13.5px;
-  color: var(--text2);
-}
 .field-l {
   display: block;
   font-size: 14px;
