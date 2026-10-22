@@ -2,6 +2,52 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Camera track CAM-2 - Moments of interest - 2026-10-22
+Branch `CAM-2`, from `CAM` (CAM-1, PR #127, not merged yet). Draft PR #132 against `CAM`. Plan approved in Plan Mode
+with every recommendation: moments multiply your pinch zoom; the encounter hands over when the camera arrives (at most
+900 ms); camera zones as a tool only, none placed. The CAM-1 HANDOFF entry reached `CAM` during planning; `cam-1-done`
+is still to be pushed.
+- Changed (one cause per commit):
+  - **One zoom** (logic/camera-zoom.js, 7 tests): tilt, distance and field of view from one zoom along curves (Engine >
+    Camera > Zoom curve); defaults equal the old zoom. The zoom used = your zoom x the goals' (`blendGoals` `zoom`).
+  - **Encounter shot and the pull back out** (battle.js, walk/camera.js): goals instead of writing `zoomT`; the
+    battle comes up once the camera arrives (400-900 ms).
+  - **Points of interest** (logic/camera-interest.js, 6 tests; walk/sprites.js `interestPoints`): landmarks, shop,
+    clinic, lab and ranch doors, or a catalogue `interest`; the strongest leans the aim (at most 1.5 m) and zooms.
+  - **Moments** (logic/camera-moments.js, 9 tests): talk (two-shot), a run's boss (once), interest, standing still
+    (drift in), running (ease out); none after a sharp turn; reduced motion: drift and ease off, the rest at half.
+  - **Camera zones**: `camZones` in a scene (schema), carried by the seamless world; Studio Walk scenes > Camera zones.
+  - **Studio**: dials; Camera guides draw interest rings, zones and the moment; "Play moment" (talk, encounter, boss,
+    standing still). The Engine preview asks for moments (`walkView.opt.moments`), other previews don't.
+  - **Debug log**: `camera` adds `zoomEff`, `moment`, `interest`, `zone`, `still`.
+  - **Checks**: check-fast "Camera moments" (planted fault caught); the debug log step wants the moment.
+  - Fixes found on the way: a camera cut restarts standing still; your own zoom is never clamped (the Studio's free
+    camera zooms to 3.2); a finished talk's spot is forgotten (a sign's box later isn't framed toward it).
+- Where the plan was wrong (camera-track.md "CAM-2 as built"): no boss gate in the walk (the boss is a run trainer);
+  no door nearness, no idle timer, no talk-ended hook; zoom never changed the field of view; the swoop wrote your
+  zoom; Copperleaf has no shop or clinic (the lab and ranch doors count instead); the Engine preview is a free camera.
+- Verified: unit tests 593; lint, typecheck, modules, format, check-data; check-fast 23 of 23 (Tall ground still
+  16.9 m of rock, 18.0 degrees); tools/look-tall-ground.py the same numbers before and after, pictures within 0.6 of
+  255; CI's smoke, lint and rules green on the PR. Headless Studio: Play moment talk and boss show in the guides
+  (moment and zoom on the line), a camera zone drawn, edited and undone, no errors. Full quick check against a local
+  baseline from the starting commit: the same 9 steps red as before (v34, v35, v38, v39/v40, v43, v44, v46, alpha 0.4
+  recipes, phase 08 running). 13 of 56 pictures differ clearly, all looked at: battles at another moment of the turn
+  (battle-3d, -alpha, -double, -rain, v36-starter-battle), screens caught mid-change (phone-opening-pick,
+  phone-mast, phone-map, v47-lore-places, rl12-pick), life-copperleaf a different rabbit, room-lab darker but framed
+  the same (no moments indoors); a04-airship-mast is the camera: it leans toward the airship mast, a landmark.
+- Risky / open:
+  - Not tuned on a phone: the zooms (talk 0.75, idle 0.9, run 1.06), the interest lean and radius, the boss reveal.
+    The landmark lean (0.5 weight, 14 m) may feel busy in a town full of landmarks; Engine > Camera has every dial.
+  - The boss reveal needs a real run to be seen (check-fast plays it through "Play moment"). The Studio preview's
+    free camera never reports the encounter shot as arrived; there it lets go after Encounter shot: longest + 0.6 s.
+  - CI's picture baseline is stale after the merge: Actions > Check > Run workflow > "Make the picture baseline".
+- Phone check wanted: talk to someone in Copperleaf (the two-shot), stand still 5 s (the drift in; it should go the
+  moment you move), run (the ease out), walk past the lab door and the airship mast (the lean), a wild battle (the
+  swoop, and your zoom kept after), a run's boss; Studio Engine > Camera guides and Play moment; Walk scenes > Camera
+  zones; export the debug log (`camera`).
+- Next: the owner pushes `cam-2-done`; CAM-3 (the diorama blur) has its own session, waiting on this entry and the
+  tag.
+
 ### Camera track CAM-1 - The follow - 2026-10-22
 Branch `CAM`, from the plan's branch `ccr-3d24989e-9cyftq` (PR #121, not merged yet). Draft PR #127. Plan approved in
 Plan Mode with every recommendation: with no joystick the look-ahead follows the walking direction; defaults match
