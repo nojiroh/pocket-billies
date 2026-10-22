@@ -324,16 +324,6 @@ section > h2::before,
   box-shadow: -2px -2px 0 var(--line);
   pointer-events: none;
 }
-.speaker {
-  display: inline-block;
-  padding: 4px 9px 5px;
-  background: var(--gold);
-  color: #3a2408;
-  box-shadow:
-    0 0 0 2px var(--line),
-    inset 0 -2px 0 rgba(150, 90, 10, 0.35);
-  font-size: 14px;
-}
 .talk .dlg .pb::before {
   content: '';
   position: absolute;
@@ -424,9 +414,6 @@ section > h2::before,
   }
   .talk .dlg .pb::before {
     animation: bob 0.8s ease-in-out infinite;
-  }
-  .speaker {
-    animation: nwPop 0.32s var(--spring) 0.15s backwards;
   }
   .ware2:not(.locked) .w-ic,
   .ware .pxi:first-child {

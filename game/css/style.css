@@ -765,21 +765,8 @@ section > h2,
 .title .pb {
   max-width: 340px;
 }
-.talk {
-  min-height: calc(100dvh - 40px);
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  gap: 14px;
-  padding: 20px 0 40px;
-}
 .dlg {
   padding: 16px;
-}
-.speaker {
-  font-family: var(--font-voice);
-  color: var(--text2);
-  font-size: 15px;
 }
 .line {
   font-size: 19px;

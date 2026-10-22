@@ -59,6 +59,9 @@ VIEWS = [
     ('settings-graphics', 'town', OPEN + "openSettings('graphics')", "!!document.querySelector('#ov .set-sheet')"),
     ('settings-save', 'town', OPEN + "openSettings('save')", "!!document.querySelector('#ov .set-sheet')"),
     ('settings-help', 'town', OPEN + "openSettings('help')", "!!document.querySelector('#ov .set-sheet')"),
+    ('debug', 'town', OPEN + "openDebug()", "!!document.querySelector('#ov .dbg-sheet')"),
+    # the dressing room takes the whole screen until it is left: the town's last view
+    ('dressing', 'town', OPEN + "openDressingRoom()", "!!document.querySelector('#dressing')"),
     ('battle', 'battle', '', "!!activeBattle&&document.querySelectorAll('#acts button').length>0"),
     ('battle-moves', 'battle', "battleStage.speed=4;const go=()=>{if(activeBattle.phase==='choose'){}else{if(activeBattle.phase==='playing')tapMessage();else{const k=document.querySelector('[data-a=bback]');if(k)k.click()}setTimeout(go,200)}};go()", "!!activeBattle&&activeBattle.phase==='choose'"),
     ('battle-team', 'battle', "battleStage.speed=4;const go=()=>{if(activeBattle.phase==='choose'){const b=document.querySelector('[data-a=bteam]');if(b)b.click();else setTimeout(go,200)}else{if(activeBattle.phase==='playing')tapMessage();else{const k=document.querySelector('[data-a=bback]');if(k)k.click()}setTimeout(go,200)}};go()", "!!activeBattle&&activeBattle.phase==='team'"),
