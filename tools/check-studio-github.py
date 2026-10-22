@@ -21,6 +21,7 @@ wardrobe on the shared pixel canvas: a pencil click paints the item and marks it
 (undone and redone together); the Colour area brush paints the mask only; Grow piece; everything undone.
 Studio track ST-T: the Studio self-test runs whole and must pass (no errors, every edit undone, everything put back,
 no token in its report); its times are not judged here.
+Studio plan Phase 1 (T1.3): the Check lists check-data's own problems (planted), and an error blocks Propose.
 UI track UI-3: the UI look section: a colour dial changed shows in the preview frame, Undo puts the data and the
 preview back; a screen's own colour shows on that screen only and ↺ takes it away; a preset applies and undoes; Find
 and the Check's Show me reach a dial; Hold to compare shows the saved look; a cut size is left changed, so the
@@ -32,6 +33,7 @@ proposal at the end must carry uiTheme.json with it.
                                                                  # (step names: STEPS below)
     python3 tools/check-studio-github.py --only=publish  # Studio plan Phase 0: Propose's failure cases alone
     python3 tools/check-studio-github.py --only=drafts   # Studio plan Phase 1 (T1.1): kept drafts, restore, discard
+    python3 tools/check-studio-github.py --only=checks   # Studio plan Phase 1 (T1.3): the shared checks, an error blocks
 
 Needs Python 3 and Playwright (tools/requirements-check.txt). About a minute."""
 import json, re, sys, threading, time
@@ -1008,6 +1010,49 @@ def studio_test_steps(pg, errs):
     print(f"undo: a map edit's step holds {u['parts']}; its undo kept the other {u['n'] - 1} maps the same objects", flush=True)
 
 
+def checks_steps(pg, errs):
+    """Studio plan Phase 1 (T1.3): the Check runs check-data's checks (logic/data-checks.js) and an error blocks
+    Propose. The game data has no error; a planted relic, unlock, run rule and robot problem, and a pool typo, are
+    each listed as an error; Propose with an error sends nothing and offers Show me; a warning never blocks."""
+    n = len(errs)
+    errors = "runCheck().filter(p => p.lvl === 'error').map(p => p.msg)"
+    base = pg.evaluate(errors)
+    for m in base: errs.append(f'the game data has a Check error: {m}')
+    pg.evaluate("window.__ckD = JSON.stringify(studioState.D)")
+    plants = {
+        'run.relics.cap': "studioState.D.rules.run.relics.cap = 0",
+        'goes round in a circle': "(() => { const U = studioState.D.unlocks, [a, b] = Object.keys(U); U[a].requires = [b]; U[b].requires = [a]; })()",
+        'run.typo: no such rule': "studioState.D.rules.run.typo = 1",
+        'nosuchmove, no such move': "Object.values(studioState.D.robots.gems)[0].move = 'nosuchmove'",
+        'lists waltn0': "studioState.D.pools[Object.keys(studioState.D.pools)[0]].list[0][0] = 'waltn0'",
+    }
+    for want, js in plants.items():
+        pg.evaluate(js)
+        if not any(want in m for m in pg.evaluate(errors)): errs.append(f'a planted problem is not a Check error: {want}')
+    # Propose with errors: nothing is sent, the dialog says why and offers Show me
+    pg.evaluate("studioState.dirty = true; window.__ckDone = false; void saveAll().then(() => window.__ckDone = true)")
+    pg.wait_for_selector('#dlg .dlg', timeout=10000)
+    text = pg.inner_text('#dlg .dlg')
+    if 'Show me' not in text: errs.append(f'the blocked Propose offers no Show me: {text[:200]}')
+    pg.evaluate("[...document.querySelectorAll('#dlg button')].find(b => /Show me/.test(b.textContent))?.click()")
+    t0 = time.time()
+    while time.time() - t0 < 10 and not pg.evaluate("window.__ckDone"): time.sleep(0.2)
+    if not pg.evaluate("studioState.dirty"): errs.append('Propose went ahead with Check errors')
+    if pg.evaluate("studioState.sec") != 'check': errs.append(f"Show me opened {pg.evaluate('studioState.sec')}, not the Check")
+    # a warning alone never blocks: the same data, a wild pool's levels the wrong way round
+    pg.evaluate("studioState.D = JSON.parse(window.__ckD); const P = Object.values(studioState.D.pools)[0]; P.lv = [P.lv[1] + 1, P.lv[0]]")
+    if pg.evaluate(errors): errs.append(f'the wrong-way pool levels are a Check error: {pg.evaluate(errors)}')
+    pg.evaluate("studioState.dirty = true; window.__ckDone = false; void saveAll().then(() => window.__ckDone = true)")
+    t0 = time.time()
+    while time.time() - t0 < 30 and not pg.evaluate("window.__ckDone"):
+        time.sleep(0.3)
+        pg.evaluate("document.querySelectorAll('#dlg button').forEach(b => /Propose|Send|OK/.test(b.textContent) && b.click())")
+    if pg.evaluate("studioState.dirty"): errs.append('Propose did not go ahead with only a warning')
+    pg.evaluate("studioState.D = JSON.parse(window.__ckD); delete window.__ckD; render()")
+    if len(errs) > n: errs[n:] = [f'checks: {e}' for e in errs[n:]]
+    print(f'checks: {len(base)} error(s) on the game data, 5 planted problems listed, Propose blocked on an error, not on a warning ({len(errs) - n} problem(s))', flush=True)
+
+
 # the steps after sign-in, in order (--only picks some by name; 'sections' and 'art' are the two blocks in main)
 STEPS = [
     ('story', story_steps),
@@ -1024,6 +1069,7 @@ STEPS = [
     ('ui_tools', ui_tools_steps),
     ('ui_screens', ui_screens_steps),
     ('studio_test', studio_test_steps),
+    ('checks', checks_steps),
 ]
 
 

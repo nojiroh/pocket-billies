@@ -472,6 +472,7 @@ if (githubMode.on) {
     }
   });
   const proposeChanges = async btn => {
+    if (!(await checkBeforeSave())) return; /* T1.3: before the summary is asked for, so nothing typed is wasted */
     const what = await dialog(
       'Propose these changes',
       '<label class="fld"><span>What did you change? (the owner sees this)</span><input type="text" id="ghSum" maxlength="90" placeholder="New props in Copperleaf, brighter lamps"></label>',
@@ -485,7 +486,6 @@ if (githubMode.on) {
       ]
     );
     if (!what) return;
-    if (!(await checkBeforeSave())) return;
     const staged = stageChanges();
     if (publishEmpty(staged)) return toast('Nothing to send: everything is as it is in the game.');
     let pr = null;
