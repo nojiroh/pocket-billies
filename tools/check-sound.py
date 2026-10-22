@@ -12,6 +12,10 @@ the game asks for it. Math.random is seeded for each render (the drums' noise us
 held still while the notes are scheduled, so one tick schedules all 8 bars. Each render is written as the loudness (RMS)
 of each 50 ms window. Nothing is heard and nothing in game/ is changed.
 
+SND-5: a song also renders its intro ('intro': the intro, then the song, as a battle starts it) and the variants
+sound.js musicParts names for it ('tense' for a battle song, 'mid', 'late' and 'deadline' for a run's songs), each as
+long as the recipe that plays (tracker.js trackerRecipe). On code without them, only day and night.
+
 A window may differ by 1% (or 0.0001) before it counts as changed. The baseline is committed: SND-4 and SND-5 write it
 again on purpose, like the picture baseline."""
 import json, sys, time
@@ -30,16 +34,23 @@ RENDER = r"""async ({jobs, rate, win}) => {
   const songs = SONGS, jingles = JINGLES;   /* sound.js's names: the songs' recipes, the jingles' note lists */
   const real = Math.random, AC = window.AudioContext, E = soundEngine;
   /* each job is scheduled alone (with Math.random seeded the same), then all of them render at once */
-  const schedule = ({kind, name, night}) => {
+  const schedule = ({kind, name, night, part}) => {
     let seed = 0x5eed;
     Math.random = () => { seed |= 0; seed = (seed + 0x6d2b79f5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
       t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
     let len = 1, spb = 0;
     /* SND-4: at night the game asks for the song's night version (sound.js musicVariant), which can be slower: the
        render is as long as the recipe that plays (tracker.js trackerNight) */
-    const play = kind === 'song' && night && typeof musicVariant === 'function' ? musicVariant(name, 1) : name;
-    if (kind === 'song') { const D = play !== name ? trackerNight(songs[name]) : songs[name];
-      spb = 60 / D.bpm / 4; len = 0.08 + D.prog.length * 16 * spb + 1.5; }
+    const extra = part && part !== 'day' && part !== 'night' && part !== 'intro',
+      play = extra ? name + '@' + part : kind === 'song' && night && typeof musicVariant === 'function' ? musicVariant(name, 1) : name;
+    let steps = 0;
+    /* SND-5: the recipe as the tracker makes it (variants, the intro's bars) when the code has trackerRecipe */
+    if (kind === 'song' && typeof trackerRecipe === 'function') {
+      const D = trackerCompose(trackerRecipe(songs, play, typeof MUSIC !== 'undefined' ? MUSIC.run : undefined));
+      steps = D.steps + (part === 'intro' ? D.introSteps || 0 : 0);
+      spb = 60 / D.bpm / 4; len = 0.08 + steps * spb + 1.5; }
+    else if (kind === 'song') { const D = play !== name ? trackerNight(songs[name]) : songs[name];
+      spb = 60 / D.bpm / 4; steps = D.prog.length * 16; len = 0.08 + steps * spb + 1.5; }
     else if (kind === 'jingle') { len = 0.05 + jingles[name].reduce((a, [, l]) => a + l, 0) * 60 / 150 / 4 + 1.2; }
     const oc = new OfflineAudioContext(1, Math.ceil(len * rate), rate);
     let now = 0;
@@ -52,9 +63,9 @@ RENDER = r"""async ({jobs, rate, win}) => {
     try {
       if (!initSound()) throw new Error('initSound failed on the offline context');
       if (kind === 'song') {
-        music(play);
+        if (part === 'intro') music(play, { intro: true }); else music(play);
         if (!E.song) throw new Error('no song started for ' + play);
-        now = 0.08 + (E.song.D.steps - 0.5) * spb - 0.14;
+        now = 0.08 + (steps - 0.5) * spb - 0.14;
         if (typeof musicTick === 'function') musicTick(); else E.tracker.tick();
       } else if (kind === 'jingle') jingle(jingles[name]);
       else soundEffect('cry', { sp: name });
@@ -82,9 +93,10 @@ RENDER = r"""async ({jobs, rate, win}) => {
 
 def render_all(pg, only=None):
     """{file name: {part: [rms, ...]}} for every song (day and night), jingle and cry"""
-    N = pg.evaluate("({ songs: Object.keys(SONGS), jingles: Object.keys(JINGLES), cries: (gameData.lines || []).flatMap(L => L.names.map((n, i) => L.id + i)) })")
+    N = pg.evaluate("({ songs: Object.keys(SONGS), jingles: Object.keys(JINGLES), cries: (gameData.lines || []).flatMap(L => L.names.map((n, i) => L.id + i)),"
+                    " parts: Object.fromEntries(Object.keys(SONGS).map(s => [s, ['day', 'night'].concat(typeof musicParts === 'function' ? musicParts(s) : [])])) })")
     keep = lambda n: not only or n in only
-    jobs = [(s, p, {'kind': 'song', 'name': s, 'night': p == 'night'}) for s in N['songs'] if keep(s) for p in ('day', 'night')]
+    jobs = [(s, p, {'kind': 'song', 'name': s, 'night': p == 'night', 'part': p}) for s in N['songs'] if keep(s) for p in N['parts'][s]]
     jobs += [(file, n, {'kind': kind, 'name': n, 'night': False}) for kind, file in (('jingle', 'jingles'), ('cry', 'cries')) for n in N[file] if keep(n)]
     out = {}
     for i in range(0, len(jobs), 12):   # in batches, so a page never holds every render at once
