@@ -61,17 +61,20 @@ expose({
   musicJingleMount: [() => musicJingleMount, v => (musicJingleMount = v)],
   musicJinglePlay: [() => musicJinglePlay, v => (musicJinglePlay = v)],
   musicJingleSelected: [() => musicJingleSelected],
+  musicLine: [() => musicLine],
   musicLineSet: [() => musicLineSet, v => (musicLineSet = v)],
   musicListColHTML: [() => musicListColHTML],
   musicLoopHTML: [() => musicLoopHTML],
   musicNoteHear: [() => musicNoteHear, v => (musicNoteHear = v)],
   musicNowShow: [() => musicNowShow, v => (musicNowShow = v)],
+  musicPartHTML: [() => musicPartHTML],
   musicPickHTML: [() => musicPickHTML],
   musicPlay: [() => musicPlay, v => (musicPlay = v)],
   musicPlaying: [() => musicPlaying],
   musicRecipeHTML: [() => musicRecipeHTML, v => (musicRecipeHTML = v)],
   musicRollMount: [() => musicRollMount, v => (musicRollMount = v)],
   musicRollRows: [() => musicRollRows, v => (musicRollRows = v)],
+  musicRunHTML: [() => musicRunHTML, v => (musicRunHTML = v)],
   musicSelected: [() => musicSelected],
   musicSongIds: [() => musicSongIds],
   musicSongListHTML: [() => musicSongListHTML, v => (musicSongListHTML = v)],
@@ -94,9 +97,10 @@ export const musicStudio = {
   /** @type {any} */ tracker: null,
   loop: true,
   /** SND-4: play songs' night versions (town@night) */ night: false,
+  /** SND-5: play another version: tense, deadline or a run arc band ('' as written) */ part: '',
   shown: '',
   /** the where rule last moved, added or shown (marked in the table) */ picked: -1,
-  /** the line the hook roll edits: hook or counter */ line: 'hook',
+  /** the line the hook roll edits: hook, counter or (SND-5) intro */ line: 'hook',
   /** Try a place: where you are, made up */
   tryState: /** @type {Record<string, any>} */ ({
     started: true,
@@ -110,6 +114,8 @@ export const musicStudio = {
   }),
 };
 const musicData = () => studioState.D.music;
+/** the line the hook roll edits */
+const musicLine = () => (['counter', 'intro'].includes(musicStudio.line) ? musicStudio.line : 'hook');
 const musicSongIds = () => Object.keys(musicData().songs);
 const musicSelected = () => {
   const ids = musicSongIds();
@@ -137,7 +143,13 @@ function musicTracker() {
   out.gain.value = 0.8;
   out.connect(squash);
   squash.connect(ctx.destination);
-  const T = trackerCreate(ctx, out, { songs: musicData().songs });
+  /* SND-5: the run's arc as the data has it now (an edit or an undo replaces it) */
+  const T = trackerCreate(ctx, out, {
+    songs: musicData().songs,
+    get run() {
+      return musicData().run;
+    },
+  });
   /* the tracker's scheduler also keeps the section honest: off screen it stops; with Loop off a song stops after its
      last bar; the bar playing shows beside the song */
   const tick = T.tick;
@@ -158,9 +170,13 @@ export function musicPlay(name) {
   if (musicStudio.ctx.state !== 'running') musicStudio.ctx.resume().catch(() => {});
   T.refresh(musicData().songs);
   if (T.song) T.stop();
-  /* SND-4: with Night on, the night version, if the song has one */
-  const S = musicData().songs[name];
-  T.play(musicStudio.night && S && S.night !== false ? name + '@night' : name);
+  /* SND-4: with Night on, the night version, if the song has one. SND-5: the version picked (tense, deadline, an arc
+     band; night over a band, not over tense or deadline), else the song as written; its intro first */
+  const S = musicData().songs[name],
+    part = musicStudio.part,
+    night = musicStudio.night && S && S.night !== false && !['tense', 'deadline'].includes(part),
+    want = name + (part ? '@' + part : '') + (night ? '@night' : '');
+  if (!T.play(want, { intro: true })) T.play(night ? name + '@night' : name, { intro: true });
   musicNowShow();
 }
 export function musicStop() {
@@ -172,7 +188,7 @@ function musicNowShow() {
   const T = musicStudio.tracker,
     sg = T && T.song,
     text = sg
-      ? `▶ ${sg.name} · bar ${Math.floor((sg.step % sg.D.steps) / 16) + 1} of ${sg.D.steps / 16}`
+      ? `▶ ${sg.name} · ${sg.step < 0 ? 'intro' : `bar ${Math.floor((sg.step % sg.D.steps) / 16) + 1} of ${sg.D.steps / 16}`}`
       : 'Nothing playing';
   if (text === musicStudio.shown) return;
   musicStudio.shown = text;
@@ -278,7 +294,8 @@ const ROLL_CELL_W = 22,
   ROLL_TOP = 18;
 /** the rows: the scale's notes from low to high, `span` semitones up from `base` */
 function musicRollRows(key, scale, base, span) {
-  const sc = MUSIC_SCALES[scale] || MUSIC_SCALES.major,
+  /* SND-5: 'chromatic', every semitone (an intro's runs) */
+  const sc = scale === 'chromatic' ? [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] : MUSIC_SCALES[scale] || MUSIC_SCALES.major,
     out = [];
   for (let m = base; m <= base + span; m++) if (sc.includes((((m - key) % 12) + 12) % 12)) out.push(m);
   return out;
@@ -404,11 +421,12 @@ function musicNoteHear(midi, type = 'p25') {
 /* ---------- the hook card ---------- */
 function musicHookHTML(id) {
   const S = musicData().songs[id],
-    line = musicStudio.line === 'counter' ? 'counter' : 'hook',
+    line = musicLine(),
     has = k => (S[k] || []).length;
   const tabs = [
     ['hook', `Hook${has('hook') ? ` (${has('hook')})` : ''}`],
     ['counter', `Countermelody${has('counter') ? ` (${has('counter')})` : ''}`],
+    ['intro', `Intro${has('intro') ? ` (${has('intro')})` : ''}`],
   ]
     .map(
       ([k, n]) =>
@@ -420,15 +438,17 @@ function musicHookHTML(id) {
     textField('Name', `music.songs.${id}.hookName`, {
       opt: 1,
       ph: 'unnamed',
-      help: 'One name for the hook and its countermelody. Claude’s drafts start with “placeholder”; the Check lists them until you rename them.',
+      help: 'One name for the hook, its countermelody and the intro. Claude’s drafts start with “placeholder”; the Check lists them until you rename them.',
     }) +
       `<div class="seg-row">${tabs}<span class="grow"></span><button class="btn subtle" data-act="musHookFromTune" ${line === 'hook' ? '' : 'hidden'} title="Start from the composed tune’s first two bars">Copy the tune’s bars 1-2</button><button class="btn subtle" data-act="musLineClear" ${has(line) ? '' : 'disabled'}>Clear</button></div>
-<div class="mus-roll-wrap"><canvas id="musRoll" class="mus-roll" aria-label="${line === 'hook' ? 'Hook' : 'Countermelody'} roll, 32 sixteenths: ${(S[line] || []).map(n => musicNoteName(n[1]) + ' at ' + (n[0] + 1)).join(', ') || 'empty'}"></canvas></div>`,
+<div class="mus-roll-wrap"><canvas id="musRoll" class="mus-roll" aria-label="${line === 'hook' ? 'Hook' : line === 'intro' ? 'Intro' : 'Countermelody'} roll, 32 sixteenths: ${(S[line] || []).map(n => musicNoteName(n[1]) + ' at ' + (n[0] + 1)).join(', ') || 'empty'}"></canvas></div>`,
     {
       sub:
         line === 'hook'
           ? 'Two bars the game plays instead of its own tune in bars 1-2 and again in 5-6. The faint notes are the composed tune; an empty hook keeps it.'
-          : 'A second, quieter line under bars 1-2 and 5-6. The faint notes are the lead it plays against.',
+          : line === 'intro'
+            ? 'One or two bars on the lead alone, played once before the song when a battle starts it (the chromatic run), with the drums held until the first throw. Every semitone is a row. ▶ Play starts with it.'
+            : 'A second, quieter line under bars 1-2 and 5-6. The faint notes are the lead it plays against.',
     }
   );
 }
@@ -436,7 +456,7 @@ function musicHookMount(id) {
   const cv = /** @type {HTMLCanvasElement | null} */ (document.getElementById('musRoll'));
   if (!cv) return;
   const S = musicData().songs[id],
-    line = musicStudio.line === 'counter' ? 'counter' : 'hook',
+    line = musicLine(),
     C = trackerCompose(S),
     base = S.key >= 64 ? S.key - 12 : S.key;
   const lead = [];
@@ -444,11 +464,15 @@ function musicHookMount(id) {
   musicRollMount(cv, {
     steps: 32,
     /* the composed tune walks from the octave above the key up to about an octave and a half over it */
-    rows: musicRollRows(S.key, S.scale, base + 5, 26),
+    rows:
+      line === 'intro' ? musicRollRows(S.key, 'chromatic', base - 2, 30) : musicRollRows(S.key, S.scale, base + 5, 26),
     home: S.key,
     notes: S[line] || [],
     ghost: line === 'hook' && !(S.hook || []).length ? lead : line === 'counter' ? lead : [],
-    labels: [0, 1].map(b => `bar ${b + 1}: ${chordNumeral(S.scale, S.prog[b])}`),
+    labels:
+      line === 'intro'
+        ? ['intro bar 1', 'intro bar 2']
+        : [0, 1].map(b => `bar ${b + 1}: ${chordNumeral(S.scale, S.prog[b])}`),
     onNote: m => musicNoteHear(m, line === 'hook' ? S.lead : 'p12'),
     onChange: notes => musicLineSet(id, line, notes),
   });
@@ -466,7 +490,7 @@ ACTIONS.musLine = d => {
   musicStudio.line = d.l;
   render();
 };
-ACTIONS.musLineClear = () => musicLineSet(musicSelected(), musicStudio.line === 'counter' ? 'counter' : 'hook', []);
+ACTIONS.musLineClear = () => musicLineSet(musicSelected(), musicLine(), []);
 ACTIONS.musHookFromTune = () => {
   const id = musicSelected(),
     C = trackerCompose(musicData().songs[id]),
@@ -711,7 +735,48 @@ function musicWhereHTML() {
     musicTryHTML() +
     card('Where each song plays', table, {
       sub: 'Read from the top: the first rule whose every condition fits where you are picks the song; a rule with none fits everywhere.',
-    })
+    }) +
+    musicRunHTML()
+  );
+}
+/* SND-5: the run's music: the arc's bands (a biome's song busier in later rows), the deadline days, the map song's
+   weather. Fields on music.json run; ▶ Play with Version set to a band plays it */
+function musicRunHTML() {
+  const R = musicData().run;
+  if (!R) return '';
+  const p = 'music.run',
+    bands = (R.arc || [])
+      .map((B, i) =>
+        grid(
+          textField('Band', `${p}.arc.${i}.name`, { help: 'Its name: the song plays as meadow@' + escapeHtml(B.name) }),
+          numberField('From row', `${p}.arc.${i}.row.0`, { min: 0, max: 20, step: 1 }),
+          numberField('To row', `${p}.arc.${i}.row.1`, { min: 0, max: 20, step: 1 }),
+          selectField('Drums', `${p}.arc.${i}.changes.drums`, MUSIC_CHOICES.drums, { opt: 1, none: 'as written' }),
+          numberField('Arp octaves up', `${p}.arc.${i}.changes.arpOctave`, { min: 0, max: 2, step: 1, opt: 1 }),
+          checkboxField('A counter from the hook', `${p}.arc.${i}.changes.counterAuto`)
+        )
+      )
+      .join(''),
+    weather = Object.keys(R.weather || {})
+      .map(w => numberField(w, `${p}.weather.${w}`, { min: 200, max: 20000, step: 100, unit: 'Hz' }))
+      .join('');
+  return card(
+    'In a run',
+    `<h4>The arc</h4>${bands}<h4>The deadline</h4>${grid(
+      selectField(
+        'Deadline version from',
+        `${p}.deadlineDays`,
+        [
+          [1, 'the deadline day'],
+          [2, 'two days before'],
+          [3, 'three days before'],
+        ],
+        { num: 1, help: 'And every day past the deadline. The drums and the hook on the triangle alone.' }
+      )
+    )}<h4>The map song hears the forecast</h4>${grid(weather)}`,
+    {
+      sub: 'Row 0 is the landing; the mini-bosses stand on rows 3 and 6. A biome’s song plays as written on rows no band names, a town node always does. Battles keep their own songs (and their tense version in the red zone).',
+    }
   );
 }
 /* try a place: a made-up state, the rule that wins and its song */
@@ -886,12 +951,27 @@ SECTIONS.music = () => {
  ${musicRecipeHTML(id)}${musicHookHTML(id)}${card('Where it plays', plays, { sub: 'From the where table (first rule that fits wins), the places’ own songs, the story scripts and the game’s code.' })}</div></div>`;
 };
 const musicLoopHTML = () =>
-  `<label class="mus-loop" title="Off: a song stops after its last bar"><input type="checkbox" id="musLoop" ${musicStudio.loop ? 'checked' : ''}>Loop</label><label class="mus-loop" title="On: the night version, as outdoors at night (slower and lower unless the song writes its own)"><input type="checkbox" id="musNight" ${musicStudio.night ? 'checked' : ''}>Night</label>`;
+  `<label class="mus-loop" title="Off: a song stops after its last bar"><input type="checkbox" id="musLoop" ${musicStudio.loop ? 'checked' : ''}>Loop</label><label class="mus-loop" title="On: the night version, as outdoors at night (slower and lower unless the song writes its own)"><input type="checkbox" id="musNight" ${musicStudio.night ? 'checked' : ''}>Night</label>${musicPartHTML()}`;
+/* SND-5: which version ▶ plays: as written, a battle song's tense version, a run song's deadline version or its arc
+   band (Night goes over a band) */
+const musicPartHTML = () =>
+  `<label class="mus-loop" title="Which version ▶ plays (a song without it plays as written)">Version <select id="musPart">${[
+    ['', 'as written'],
+    ['tense', 'tense (red zone)'],
+    ['deadline', 'deadline'],
+    ...((musicData().run && musicData().run.arc) || []).map(B => [B.name, `rows ${B.row[0]}-${B.row[1]} (${B.name})`]),
+  ]
+    .map(
+      ([k, n]) =>
+        `<option value="${escapeHtml(k)}" ${k === musicStudio.part ? 'selected' : ''}>${escapeHtml(n)}</option>`
+    )
+    .join('')}</select></label>`;
 document.addEventListener('change', ev => {
   const el = /** @type {HTMLInputElement} */ (ev.target);
   if (el && el.id === 'musLoop') musicStudio.loop = el.checked;
-  if (el && el.id === 'musNight') {
-    musicStudio.night = el.checked;
+  if (el && (el.id === 'musNight' || el.id === 'musPart')) {
+    if (el.id === 'musNight') musicStudio.night = el.checked;
+    else musicStudio.part = el.value;
     /* the song playing switches to its other version from the start */
     const now = musicPlaying();
     if (now) musicPlay(now.split('@')[0]);

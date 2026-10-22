@@ -1049,7 +1049,23 @@ def music_steps(pg, errs):
     elif pg.evaluate("musicStudio.tracker.song.D.counterNotes[8]") != [ctr[0][1], 6]: errs.append('music: the song playing does not play the counter')
     while pg.evaluate("studioState.undo.length") > undo0: pg.click('#undoBtn')
     if pg.evaluate("['hook', 'counter'].some(k => k in studioState.D.music.songs.hills)"): errs.append('music: undo left a hook or counter')
+    # SND-5: the intro on the roll (every semitone a row), drawn and undone; a battle song plays its intro first, and
+    # its tense version with Version set to it
+    pg.click('[data-act=musLine][data-l=intro]')
+    pg.locator('#musRoll').scroll_into_view_if_needed(); box = pg.locator('#musRoll').bounding_box()
+    x, y = cell(0, 5); pg.mouse.click(x, y)
+    intro = pg.evaluate("studioState.D.music.songs.hills.intro")
+    if not intro or intro[0][0] != 0: errs.append(f'music: a click on the intro roll wrote {intro}')
+    while pg.evaluate("studioState.undo.length") > undo0: pg.click('#undoBtn')
+    if pg.evaluate("'intro' in studioState.D.music.songs.hills"): errs.append('music: undo left an intro')
     pg.click('[data-act=musLine][data-l=hook]')
+    pg.evaluate("void musicPlay('wild')"); time.sleep(0.3)
+    if not pg.evaluate("musicStudio.tracker.song.step < 0 || musicStudio.tracker.song.step < 20"): errs.append('music: wild did not start on its intro')
+    pg.select_option('#musPart', 'tense'); time.sleep(0.3)
+    if pg.evaluate("musicPlaying()") != 'wild@tense': errs.append(f"music: Version tense played {pg.evaluate('musicPlaying()')!r}, not wild@tense")
+    pg.evaluate("void musicPlay('hazel')"); time.sleep(0.3)
+    if pg.evaluate("musicPlaying()") != 'hazel@tense' and pg.evaluate("musicPlaying()") != 'hazel': errs.append(f"music: a song with Version tense played {pg.evaluate('musicPlaying()')!r}")
+    pg.select_option('#musPart', ''); time.sleep(0.2)
     pg.click('.ed-head [data-act=musStop]')
     time.sleep(0.3)
     if pg.evaluate("musicPlaying()") != '': errs.append('music: Stop did not stop the song')
@@ -1078,6 +1094,9 @@ def music_steps(pg, errs):
     if pg.evaluate("runCheck().filter(c => c.go === 'music' && c.lvl === 'error').length"): errs.append('music: the Check finds errors in a table only moved and added to')
     pg.click(f'#musRule{n0 - 1} [data-act=musRulePlay]'); time.sleep(0.4)
     if pg.evaluate("musicPlaying()") != pg.evaluate(f"studioState.D.music.where[{n0 - 1}].song"): errs.append('music: a rule’s ▶ did not play its song')
+    # SND-5: the run's arc in the In a run card: a band's drums set, then undone with the rest
+    pg.select_option('select[data-p="music.run.arc.0.changes.drums"]', 'drive')
+    if pg.evaluate("studioState.D.music.run.arc[0].changes.drums") != 'drive': errs.append('music: the arc band\'s drums did not change')
     while pg.evaluate("studioState.undo.length") > undo0: pg.click('#undoBtn')
     if pick() != f'Rule {town} picks town' or pg.evaluate("changedDataFiles(studioState.D).map(f => f.path)"):
         errs.append(f'music: undoing the table gave {pick()!r} and left {pg.evaluate("changedDataFiles(studioState.D).map(f => f.path)")}')
@@ -1121,7 +1140,7 @@ def music_steps(pg, errs):
     time.sleep(0.5)
     if pg.evaluate("[musicPlaying(), !!musicStudio.tracker.timer]") != ['', False]: errs.append('music: leaving the section left the song playing')
     if len(errs) > n: errs[n:] = [f'music: {e}' if not e.startswith('music:') else e for e in errs[n:]]
-    else: print('music: town played (context running, bar shown), its tempo and a chord changed while playing and undone, a hook note and a counter note drawn and heard and undone (on hills), stopped; the where table: a rule moved, a condition, a rule added, Try a place following, all undone; a jingle played and lengthened and undone; a cry set, heard (and low on health) and emptied; the Check’s music findings and Show me; meadow stopped when the section was left', flush=True)
+    else: print('music: town played (context running, bar shown), its tempo and a chord changed while playing and undone, a hook note and a counter note drawn and heard and undone (on hills), an intro note drawn and undone, wild with its intro and its tense version, stopped; the where table: a rule moved, a condition, a rule added, Try a place following, an arc band’s drums, all undone; a jingle played and lengthened and undone; a cry set, heard (and low on health) and emptied; the Check’s music findings and Show me; meadow stopped when the section was left', flush=True)
 
 
 # the steps after sign-in, in order (--only picks some by name; 'sections' and 'art' are the two blocks in main)
