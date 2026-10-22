@@ -178,10 +178,8 @@ export function runSimOn(env) {
         for (const q of stock) {
           /* a careful player: a Potion on a Billie below 60%, and no wild fight while the party is below 70% */
           for (const m of s.team)
-            if (m.hp > 0 && m.hp < fn('maxHp')(m) * 0.6 && (s.items.taxbreak || 0) > 0) {
-              s.items.taxbreak--;
-              m.hp = Math.min(fn('maxHp')(m), m.hp + data.ITEMS.taxbreak.hp);
-            }
+            if (m.hp > 0 && m.hp < fn('maxHp')(m) * 0.6 && (s.items.taxbreak || 0) > 0)
+              fn('applyItem')('taxbreak', m.uid, false); /* the bag's use out of battle, as the page's */
           const hp = s.team.reduce((/** @type {number} */ a, /** @type {any} */ m) => a + m.hp, 0),
             full = s.team.reduce((/** @type {number} */ a, /** @type {any} */ m) => a + fn('maxHp')(m), 0);
           if (hp < full * 0.7) break;
