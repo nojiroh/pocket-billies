@@ -3460,9 +3460,6 @@ nav#nav .ind::before {
   .s-walk .col > section:first-child {
     margin-top: 12px;
   }
-  .s-team .mons {
-    grid-template-columns: 1fr 1fr;
-  }
   .s-ledger .ledger,
   .s-ledger .ledsum,
   .s-ledger .fchips,

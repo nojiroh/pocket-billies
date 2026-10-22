@@ -40,6 +40,7 @@ VIEWS = [
     ('map', 'town', "uiState.tab='map';render()", "!!document.querySelector('.screen.s-map')"),
     ('team', 'team', '', "!!document.querySelector('.screen.s-team')"),
     ('sheet', 'team', "document.querySelector('[data-a=mon]').click()", "!!document.querySelector('#ov .mon-sheet')"),
+    ('storage', 'team', "saveData.box=saveData.team.map((m,i)=>Object.assign({},m,{uid:m.uid+'b'+i}));uiState.tab='team';render()", "!!document.querySelector('.screen.s-team .bx')"),
     ('ledger', 'town', "uiState.tab='ledger';render()", "!!document.querySelector('.screen.s-ledger')"),
     ('dex', 'town', "uiState.tab='ledger';uiState.dex=saveData.team[0].sp;render()", "!!document.querySelector('.screen.s-ledger .dexpage')"),
     ('lore', 'town', "uiState.tab='ledger';uiState.guideTab='lore';render()", "!!document.querySelector('.screen.s-ledger .lore')"),
