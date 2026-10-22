@@ -18,6 +18,7 @@
 import { expose } from '../test-globals.js';
 import { rngFrom } from './rng.js';
 import { maxHp } from './rules.js';
+import { runHome } from './run-state.js';
 import { runNodeSeed, runWorldNode } from './run-map.js';
 import { runWildLevels } from './run-scenes.js';
 /* eslint-disable no-func-assign */
@@ -143,9 +144,9 @@ export function runFoes(run, data) {
  * battle draws its chances from (battle-state.js makeBattle) @param {Run} run @param {number} i @param {number} k */
 export const runBattleSeed = (run, i, k) => `${runNodeSeed(run.seed, i)}|battle|${k}`;
 
-/** may this Billie be paid for as released: only one caught on the run (one from the hub comes back at the end
- * anyway) @param {Run} run @param {Billy} m */
-export const runReleasePays = (run, m) => !run.start.team.some(t => t.uid === m.uid);
+/** may this Billie be paid for as released: only one caught on the run (one from home comes back at the end anyway;
+ * RL-9b: from the team or storage, run-state.js runHome) @param {Run} run @param {Billy} m */
+export const runReleasePays = (run, m) => !runHome(run).includes(m.uid);
 /** release a Billie from the run's party (it leaves the team; one caught on the run is paid at the end)
  * @param {SaveData} s @param {Billy} m */
 export function runRelease(s, m) {
@@ -156,7 +157,7 @@ export function runRelease(s, m) {
 }
 
 /** the payout screen's rows from payoutOf's lines: a label, a note and the Capital each brings (the win row only on a
- * win) @param {{ lines: { what: string, n: number, capital: number }[] }} pay
+ * win; RL-9b: the items row only on a loss, a win takes the bag home) @param {{ lines: { what: string, n: number, capital: number }[] }} pay
  * @param {{ money: number, itemShare: number, released: number, node: number }} rates */
 export function runPayoutRows(pay, rates) {
   const pct = Math.round(rates.money * 100),
@@ -167,8 +168,9 @@ export function runPayoutRows(pay, rates) {
       nodes: n => ['Places reached', `${n} × ${rates.node}`],
       win: () => ['The boss beaten', ''],
     };
+  const won = pay.lines.some(l => l.what === 'win' && l.n > 0);
   return pay.lines
-    .filter(l => l.what !== 'win' || l.n > 0)
+    .filter(l => (l.what !== 'win' || won) && (l.what !== 'items' || !won))
     .map(l => {
       const [label, note] = (say[/** @type {keyof typeof say} */ (l.what)] || (() => [l.what, '']))(l.n);
       return { label, note, value: l.capital };
