@@ -422,7 +422,7 @@ def check_ground():
     return f'{len(SY["terrains"])} kinds x 12 tiles in next/{folder.name}, all distinct'
 
 
-@step('Unused: art and props nothing names', 30)
+@step('Unused: art, props and songs nothing names', 30)
 def report_unused():
     """v47: lists pictures and sounds no code, page or data names, and catalogue props no place uses and no code
     names, so old things don't build up again. A report, not a failure. A folder the code builds names in (battle/
@@ -455,9 +455,19 @@ def report_unused():
     ctok = set(re.findall(r'[\'"`]([A-Za-z0-9_]+)[\'"`]', code)) | set(re.findall(r'[\'"`]([A-Za-z0-9_]+)[|,]', code))
     props = [k for k in SY.get('props', {}) if k not in placed and k not in ctok]
     spare = len([k for k in SY.get('props', {}) if k not in placed])
-    (OUT / 'unused.txt').write_text('Pictures and sounds nothing names:\n' + '\n'.join(sorted(unused)) + '\n\nCatalogue props no place uses and no code names:\n' + '\n'.join(sorted(props)) + '\n')
-    if unused or props: notes.append(f'unused: {len(unused)} pictures/sounds and {len(props)} props nothing names (validation/quick/unused.txt)')
-    return f'{len(unused)} pictures/sounds, {len(props)} props nothing names; {spare} props kept for the Studio palette, placed nowhere yet'
+    # SND-2: songs no where-rule, no place (locations' music, the parked ones too), no story script (`music <song>`) and no
+    # code (music('<song>')) names
+    M = D.get('music') or {}
+    named = {W['song'] for W in M.get('where', [])}
+    for f in [GAME / 'data' / 'locations.json', GAME / 'data' / 'legacy' / 'locations.json']:
+        if f.exists(): named |= set(re.findall(r'"music"\s*:\s*"([a-z0-9_]+)"', f.read_text(encoding='utf-8')))
+    for f in (GAME / 'data').rglob('*.json'):
+        if f.name != 'music.json': named |= set(re.findall(r'\bmusic ([a-z0-9_]+)', f.read_text(encoding='utf-8', errors='ignore')))
+    named |= set(re.findall(r"\bmusic\(\s*'([a-z0-9_]+)'", code))
+    songs = [k for k in M.get('songs', {}) if k not in named]
+    (OUT / 'unused.txt').write_text('Pictures and sounds nothing names:\n' + '\n'.join(sorted(unused)) + '\n\nCatalogue props no place uses and no code names:\n' + '\n'.join(sorted(props)) + '\n\nSongs no where-rule, place, script or code plays (music.json):\n' + '\n'.join(sorted(songs)) + '\n')
+    if unused or props or songs: notes.append(f'unused: {len(unused)} pictures/sounds, {len(props)} props and {len(songs)} songs nothing names (validation/quick/unused.txt)')
+    return f'{len(unused)} pictures/sounds, {len(props)} props, {len(songs)} songs ({", ".join(songs) or "none"}) nothing names; {spare} props kept for the Studio palette, placed nowhere yet'
 
 
 # ------------------------------------------------------------------ 2. in the browser
