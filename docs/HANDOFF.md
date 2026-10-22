@@ -2,6 +2,55 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Sound track SND-3 - The Studio's Music & sound section - 2026-10-22
+Branch `sound` (PR #120). Plan approved at the start in Plan Mode; the owner's answers: **a Sound group of its own**,
+**the tracker plays a hook and a counter now** (not from SND-4), **a cry per stage in lines/*.json, read by the game**.
+Mid-session: the Studio is for a computer, not a phone (no phone layout work).
+- Changed (one cause per commit):
+  - `tracker.refresh(songs)`: an edited recipe is heard at once, the song keeps its place.
+  - `game/js/logic/music-studio.js` (numerals, note names, rules in words, where each song plays, findings, the
+    schema's choices, jingles as notes and back); check-data's music errors come from it.
+  - `studio/js/music-editor.js`, group Sound: the song list and player (the Studio's own AudioContext, made on the
+    first ▶; it stops itself off screen), the recipe card, the where table (one line per rule, ↑ ↓, Try a place), the
+    hook roll (hook and countermelody, its own canvas), the jingle editor, the Cry card on the Billies page, the
+    Check's music findings with Show me, a self-test row.
+  - The tracker plays `hook` (bars 1-2 and 5-6) and `counter` (a quieter 12.5 % pulse). No song has either.
+  - `logic/cries.js`; `cry` per stage in line.schema.json; SPECIES[id].cry; sound.js plays it. No species sets one.
+  - music.json's note `_help` renamed `about` (the Studio drops `_` keys on undo and save).
+  - Song fingerprints: cries by species id (bezos0), as the game asks; `cries.json` rewritten (they were roster names
+    the game never plays).
+  - Docs: sound-track.md (as built, corrections), STUDIO.md, TESTING.md, ROADMAP, CHANGELOG.
+- Risky or unfinished:
+  - Nobody has heard the section yet: please open Studio → Sound → Music & sound, play a few songs, change a tempo
+    while one plays, draw a hook, and set a cry on a Billy.
+  - The hook replaces bars 1-2 and 5-6 only; bars 3-4 answering it is SND-4. A hook outside the roll's rows (lower
+    than a fourth above the key or higher than about two octaves) is kept but not drawn.
+  - The low-health cry is a Studio preview only; the game's use is SND-6.
+  - Seen, not mine (also on the pre-session commit eb42280): the Studio self-test's "the edit in rules did not come
+    back with undo". And any undo marks the rigs as changed, so a proposal after an undo carries rigs.js.
+  - Tags can't be pushed (HTTP 403): `snd-3-done` exists only in this container.
+- Verified (what ran, what passed):
+  - After each change: lint, typecheck, check:modules, unit tests (467 before, 484 after: music-studio 10, tracker
+    4, cries 3), check:data, format:check. Fingerprints after every commit touching the tracker, sound.js or the data:
+    71, none changed; a cry set on bezos0 changes its fingerprint alone; a base 9 and a rule naming no song fail
+    check-data.
+  - `python3 tools/check-studio-github.py --only=music`: passes (play with a real click and the context running,
+    tempo and chord while playing, hook and counter drawn and heard, where-rules moved and added with Try a place,
+    a jingle played and lengthened, a cry set and heard, the Check and Show me, leaving stops the song; each part
+    undone with nothing left to propose).
+  - The self-test via `--only=studio_test`: 27 sections, music among them; the one problem is the Rules one above.
+  - Smoke on d6facb9: 179 s, no problems. Full quick check: started on d6facb9; its result follows in the next commit.
+  - Screenshots at 1400 px of each tab and the Cry card.
+- Decisions I made (and why):
+  - The music findings are built in music-editor.js (it can read the parked world, so a song only parked places play
+    isn't called unused); its warnings wait until the parked world (284 KB without maps) is read.
+  - Cries are one Check note, not 24 warnings, until SND-6.
+  - The where table shows only each rule's own conditions: twelve columns of selects were too wide to read.
+  - The self-test fails a context that won't run only when it was started by a click (?selftest has none).
+- Questions waiting for the owner: how the section feels to use; whether the hook should be heard in bars 5-6 too
+  (as now) before SND-4 writes bars 3-4.
+- Next session starts with: SND-4 waits for the RL-8 play test (the track file). Pick the next session from ROADMAP.
+
 ### Sound track SND-2 - The tracker as data - 2026-10-22
 Branch `sound` (PR #120). Plan approved at the start in Plan Mode; the owner's answer to its one question: the
 biome-to-song mapping as the track file first guessed it (not waiting to hear the pairs in SND-3).
