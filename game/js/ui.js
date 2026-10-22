@@ -44,6 +44,7 @@ import { leaveRoom, roomState, walkMapSync } from './walk-control.js';
 import { battleAction } from './battle-input.js';
 /* eslint-disable no-func-assign */
 expose({
+  NAV_HIDDEN: [() => NAV_HIDDEN],
   SCREENS: [() => SCREENS],
   TABS: [() => TABS],
   openTab: [() => openTab, v => (openTab = v)],
@@ -61,7 +62,8 @@ export function setRender(v) {
 }
 /* to-module: end */
 /* ---------- screens ---------- */
-/* alpha 0.5: the bar holds Walk, Map, Team, Guide and Bag; your Trainer card opens from the portrait in the top bar */
+/* the screens, in the order that decides which side a screen slides in from (UI-5: the bottom bar holds Map, Team
+   and Bag, updateNav below; the world, the Guide and the Trainer card are reached otherwise) */
 const TABS = ['walk', 'map', 'team', 'ledger', 'bag'],
   SCREENS = [...TABS, 'profile'];
 function topbar() {
@@ -161,28 +163,25 @@ function openTab(t) {
     scrollTo(0, 0);
   }
 }
+/* UI-5: the bottom bar is the kit's <pb-nav-bar> (ui-run-kit.js): the hub's tabs, or a run's; the world itself is the
+   base view (no Walk tab: the open tab tapped again, or Esc, goes back to it) and the Guide opens from the Trainer
+   card. Lab (RL-11) and Relics (RL-12) wait for their screens. */
+const NAV_HIDDEN = 'lab,relics';
 function updateNav(show) {
-  let n = $('#nav');
-  const t = [
-    ['walk', 'Walk'],
-    ['map', 'Map'],
-    ['team', 'Team'],
-    ['ledger', 'Guide'],
-    ['bag', 'Bag'],
-  ];
+  let n = /** @type {any} */ ($('#nav'));
   if (!n) {
-    n = document.createElement('nav');
+    n = document.createElement('pb-nav-bar');
     n.id = 'nav';
-    n.setAttribute('aria-label', 'Main');
-    n.innerHTML = `<div class="in px glass"><span class="ind"></span>${t.map(([k, l]) => `<button data-a="tab" data-t="${k}">${uiIconHTML(k)}<span>${l}</span></button>`).join('')}</div>`;
+    n.setAttribute('hide', NAV_HIDDEN);
+    n.addEventListener('pb-change', (/** @type {any} */ e) => openTab(e.detail.value));
+    n.addEventListener('pb-reselect', () => openTab('walk'));
     document.body.appendChild(n);
   }
   n.hidden = !show;
-  n.querySelector('.ind').style.setProperty('--i', TABS.indexOf(uiState.tab));
-  n.querySelectorAll('button').forEach(b => {
-    if (b.dataset.t === uiState.tab) b.setAttribute('aria-current', 'page');
-    else b.removeAttribute('aria-current');
-  });
+  n.set = saveData.run ? 'run' : 'hub';
+  n.value = ['map', 'team', 'bag'].includes(uiState.tab) ? uiState.tab : '';
+  /* its labels follow the language (i18nText) */
+  if (typeof n.requestUpdate === 'function') n.requestUpdate();
 }
 /* phase 06-2: before a game starts, only the plain title (when the 3D one can't show) or, if the 3D opening couldn't
    start or broke, a screen to try it again. The old step-by-step intro (stills, Hazel's lines, the trainer step and a
@@ -362,7 +361,9 @@ document.addEventListener('keydown', ev => {
   if (ev.key === 'Escape' && uiState.modal && !uiState.modal.lock) {
     const c = uiState.modal.btns && uiState.modal.btns.find(b => b.l === 'Close' || b.l === 'Done' || b.l === 'Cancel');
     if (c) c.f();
-  }
+  } else if (ev.key === 'Escape' && !uiState.modal && !activeBattle && !uiState.title && saveData.started)
+    /* UI-5: no Walk tab: Esc goes back to the world */
+    openTab('walk');
   if ((ev.key === 'Enter' || ev.key === ' ') && ev.target.matches('[role=button][data-a]')) {
     ev.preventDefault();
     ev.target.click();

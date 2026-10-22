@@ -67,7 +67,7 @@ export function renderProfile() {
   const tile = (ic, k, v, sub, p) =>
     `<div class="pf-tile k-card"><span class="pf-k">${ic}${k}</span><b class="tnum">${v}</b>${sub ? `<small>${sub}</small>` : ''}${p != null ? progressBarHTML(p, 'gold') : ''}</div>`;
   const items = Object.keys(ITEMS).filter(k => saveData.items[k] > 0);
-  return `<header class="bar"><div><div class="sub">Your profile</div><h1 class="where">Trainer</h1></div><button class="pb small quiet" data-a="settings">${uiIconHTML('gear', 16)} Settings</button></header>
+  return `<header class="bar"><div><div class="sub">Your profile</div><h1 class="where">Trainer</h1></div><button class="pb small" data-a="tab" data-t="ledger">${uiIconHTML('ledger', 16)} Guide</button><button class="pb small quiet" data-a="settings">${uiIconHTML('gear', 16)} Settings</button></header>
  <div class="pf-top"><section class="tcard k-panel">
   <div class="tc-band"><span>Trainer card</span><span class="tnum">ID No. ${String(saveData.tid || 0).padStart(5, '0')}</span></div>
   <div class="tc-body"><div class="tc-photo k-card"><div class="tc-portrait">${personHTML('me', 92)}</div><button class="pb small" data-a="customize">Edit look</button></div>
