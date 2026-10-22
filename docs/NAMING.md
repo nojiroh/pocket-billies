@@ -58,6 +58,7 @@ Lint enforces what it can (see the end). Every old -> new name of phase 05 is in
 | A run's foes | `runFoes` (a leader per mini-boss node and the boss, `runFoeId` = `run_<i>_foe`); a trainer's `runFoe` (`miniboss`, `boss`), `runNode`, `from` (the leader copied), `alpha` | RL-8; rules.json `run.foes` |
 | A run town's clinic and shop | `clinicHeal` (ui.js, every clinic), `runHealCost`, rules.json `run.healCost`; `runShopStock` (the day's stock), `runShopId`, rules.json `run.shop` | RL-8. Free in the hub |
 | The payout | `runPayoutOpen` (run-payout.js), `runPayoutRows`, `runRelease`, `runReleasePays` (only Billies caught on the run), the keep-one pick `uiState.runKeep` | RL-8. "Capital", "Seals" as before |
+| A run's Loopholes (relics) | data `relics` (relics.json, `RELICS`), effect rows `fx` (a battle's `b.fx`; logic/effects.js `fxRows`, `fxOfRun`, `fxMoney`, `fxPrice`, `fxCatch`, `fxDamage`, `fxStages`, `fxHealShare`, `fxPayoutRates`); logic/relics.js `relicOffer`, `relicOfferMake`, `relicChoose`, `relicShelf`, `relicBuy`, `relicTake`; the run's `relics`, `offer`, `offerN`, `shelf`; relic-screen.js `relicPickOpen`, `relicDropOpen`, `renderRelics`; the tab id `relics`; rules `run.relics` | RL-12. "Loophole(s)" (never "relic" on screen); the item id `loophole` is the Hi-Potion, so the data is `relics` |
 | Robot pieces | `part` (torso, leftArm, rightArm, legs), `gem` | phase 17 |
 | Hidden organization | `organization` | final name in phase 15 |
 

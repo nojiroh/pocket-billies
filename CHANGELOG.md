@@ -9,6 +9,12 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- Loopholes (RL-12): beat a mini-boss on a run and pick one of three Loopholes, or buy one in a town's shop (one a
+  day, priced by rarity). Each lasts the rest of the run and bends a rule: cheaper shops or clinics, better catches,
+  more money from wins, a Speed boost at the start of every battle, harder physical hits, less damage taken, a little
+  healing each time you walk into a place, more Capital at the payout. You hold up to six; past that, a new one takes
+  the place of one you let go. The run's bottom bar has a Loopholes tab listing what you hold. Ten to start with, all
+  on offer from the first run; the numbers are first guesses.
 - Packing for a run (RL-9b): at the airship mast you now pick who comes from home, one Billie at Bracket I, from your
   team or storage (one training at the ranch stops while it is away), and pack up to 5 things from Copperleaf's bag
   (items and Copper Coins) on top of what the airship gives. The rest stay home. Your travellers leave fully healed.

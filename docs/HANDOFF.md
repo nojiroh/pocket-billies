@@ -2,6 +2,62 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Roguelite track RL-12a - Relics and effects, first half: Loopholes, picks, shops - 2026-10-22
+Branch `claude/dazzling-keller-qyw5vq`, from main 6a8a3e7; main (RL-9b, UI-6a) merged in mid-session. Plan approved in
+Plan Mode with the owner's answers: RL-12 may go before RL-11 (every Loophole on offer from the first run); split in
+two (RL-12a here: effects, Loopholes, picks, shops; RL-12b: events and the event and shop places); 8.6 the
+waystation; 8.14 a cap of 6. RL-9b, RL-10 and RL-11 ran at the same time (see "Merging" below).
+- Changed (one cause per commit):
+  - **UI lint was red on main** (RL-9's ranch card margin): fixed with tokens; main fixed it too, so the merge kept
+    main's and lowered the space ceiling back to 1033.
+  - **Data**: `relics.json` (ten Loopholes: Offshore Account, Tax Shelter, Lobbyist, Fine Print, Insider Tip, Hostile
+    Takeover, Hedge Fund, Severance Package, Stock Options, Write-off), schema, types, `RELICS`, check-data;
+    rules.json `run.relics` (cap 6, pick 3, rarity weights 6/3/1, prices $150/250/400; placeholders).
+  - **logic/effects.js**: held Loopholes as effect rows; kinds `money`, `price` (shop, heal), `catch`, `stat`,
+    `damage` (deal/take, by category or type), `heal` (walking in), `payout` (Capital, the items' share). Rows of a
+    kind combine in any order, within limits; no rows change nothing.
+  - **Battles**: a run battle carries `b.fx`; stat stages for yours on the field as it starts (a line says so);
+    `calcDamage` and `catchOdds` multiply by their rows; a win's $ through the money rows. Golden battles unchanged;
+    a fifth holds three Loopholes.
+  - **The walk**: a run shop's prices and a run clinic through the price rows; walking in heals by the heal rows;
+    the payout through the payout rows (a "Loopholes" row keeps the rows adding up to the total).
+  - **logic/relics.js** and the save: `run.offerN` (the offers' stream) and `run.shelf` (a shop's Loophole by node and
+    day); `migrate` fills them for a run saved before (it carries on).
+  - **Screens** (relic-screen.js): beating a mini-boss stores a pick with the battle's end; "Pick a Loophole" opens it
+    (cards one to a row, Take it / Take none, locked, reopened by a reload); past the cap, "Let one go"; a run shop's
+    first row is the day's Loophole; the run bar's fourth tab (hidden since UI-4) opens as "Loopholes".
+  - **Debug**: Runs section "Give a Loophole", "A mini-boss's pick", the list held; the debug log's run line has the
+    ids held (no names), the pick waiting and offers made.
+  - **Checks**: `?fixture=relics`; check-fast "Loopholes"; the in-game run phase and the quick check's RL-8 step buy a
+    shop's Loophole, take a mini-boss's pick and see the boss's battle carry it; unit tests effects (7), relics (8),
+    battle-fx (4), run-fx (3).
+- Where the plan was wrong: see roguelite-track.md section 0, "Corrected in RL-12" (the save needed `offerN` and
+  `shelf`; UI-4 had built the tab and pick card; "tiny" waystations can't be, every run scene is 112 x 64 m; Write-off
+  only counts on a loss since RL-9b; four effect kinds wait for RL-13/14).
+- Verified: unit tests 542 after the merge with main; lint, typecheck, modules, format, check-data; check-fast 19 of 19
+  on this branch; the Loopholes step's planted fault (no pick after a mini-boss) seen to fail; the in-game run and
+  ranch phases alone headless; the quick check's RL-8 step alone; smoke 15 of 15 before the work. Headless pictures
+  (390 x 760) of the pick, the tab, the shop row and "Let one go". The full quick check: see the PR.
+- Merging with the sessions running beside this one (test merges in scratch copies, not pushed):
+  - **RL-9b** (PR #114, merged): merged into this branch; conflicts were both-sides additions.
+  - **RL-11** (PR #115): 8 code files conflict, every one two additions in the same place (index.json keys,
+    game-data exports, types, check-data blocks, check-fast pages, run-state checks, ui.js tabs: keep both, both tabs
+    shown, `NAV_HIDDEN` empty; shop.js: RL-11's unlocked stock then RL-12's `relicShelf`); generated imports remade by
+    `npm run modules`. Combined: unit tests 550, lint, typecheck, modules, data all pass; check-fast 19 of 20, the 20th
+    passing alone (below). RL-11 also conflicts with main (RL-9b) itself; it is resolving that.
+  - **RL-10** (draft, `claude/pensive-brahmagupta-5rjlgf`): one conflict (check-fast, both add a step). Combined: unit
+    tests 550, all fast checks; check-fast 20 of 20 on the second full run.
+  - **A flaky check on main**: RL-9b's "Packing for a run" sometimes fails in a full check-fast with 20 pages ("Take
+    off didn't start a run" within 30 s) and passes alone and on the next full run; not caused by RL-10, 11 or 12.
+- Risky / open:
+  - Every number is a placeholder (prices, rarities, multipliers); the run sim doesn't pick Loopholes yet.
+  - A shop's Loophole depends on what you held the first time it opened that day (drawn once, then kept).
+  - The pick sheet's three tall cards need a scroll on a small phone to reach "Take it".
+- Phone check wanted: `?fixture=relics` (or the debug menu's Runs: "A mini-boss's pick"): pick a Loophole, look at the
+  Loopholes tab; walk into a town (prices lower, clinic half, the Loophole row; buy at the cap); a battle with Insider
+  Tip (the line at the start); export the debug log.
+- Next: RL-12b (events.json with `relic` and `wager`, the event and shop waystations, no two shops side by side),
+  then the tag `rl-12-done`.
 ### Roguelite track RL-9b - Ranch A, second half: 1 home Billie and a packed bag - 2026-10-22
 Branch `claude/dazzling-darwin-jvooys`, from main 6a8a3e7 (PR #112). Plan approved in Plan Mode with the owner's
 answers: the pack holds items and coins, 5 in all at Bracket I, on top of the run's gift; on a win the run's bag goes
