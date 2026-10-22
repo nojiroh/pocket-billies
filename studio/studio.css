@@ -4657,3 +4657,7 @@ body.wb-dropping::after {
   border: 1px solid var(--line);
   border-radius: 6px;
 }
+.mus-jpick {
+  display: inline-flex;
+  gap: 2px;
+}

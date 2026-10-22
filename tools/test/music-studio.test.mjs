@@ -9,6 +9,8 @@ import {
   MUSIC_SCALES,
   chordNumeral,
   musicFindings,
+  musicJingleList,
+  musicJingleNotes,
   musicNoteName,
   musicRuleText,
   musicSongUses,
@@ -111,6 +113,35 @@ test('findings: a rule with no song, an unknown biome and node type, a last rule
       ['error', 2],
       ['error', 'p'],
       ['warn', 'lonely'],
+    ]
+  );
+});
+
+test('jingles as notes on a timeline and back: every jingle comes back the same; a gap is a rest', () => {
+  for (const [k, J] of Object.entries(MUSIC.jingles))
+    assert.deepEqual(musicJingleList(musicJingleNotes(J.notes)), J.notes, k);
+  assert.deepEqual(
+    musicJingleNotes([
+      [0, 2],
+      [72, 1],
+      [0, 3],
+      [76, 2],
+    ]),
+    [
+      [2, 72, 1],
+      [6, 76, 2],
+    ]
+  );
+  assert.deepEqual(
+    musicJingleList([
+      [6, 76, 2],
+      [2, 72, 1],
+    ]),
+    [
+      [0, 2],
+      [72, 1],
+      [0, 3],
+      [76, 2],
     ]
   );
 });

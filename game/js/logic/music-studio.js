@@ -18,6 +18,10 @@ expose({
   chordNumeral: [() => chordNumeral, v => (chordNumeral = v)],
   // @ts-expect-error -- replaced on purpose
   musicFindings: [() => musicFindings, v => (musicFindings = v)],
+  // @ts-expect-error -- replaced on purpose
+  musicJingleList: [() => musicJingleList, v => (musicJingleList = v)],
+  // @ts-expect-error -- replaced on purpose
+  musicJingleNotes: [() => musicJingleNotes, v => (musicJingleNotes = v)],
   musicNoteName: [() => musicNoteName],
   // @ts-expect-error -- replaced on purpose
   musicRuleText: [() => musicRuleText, v => (musicRuleText = v)],
@@ -179,5 +183,35 @@ export function musicFindings(music, more = {}) {
   const uses = musicSongUses(music, more);
   for (const [id, u] of Object.entries(uses))
     if (!u.length) out.push({ lvl: 'warn', msg: `song "${id}": no where-rule, place or script plays it`, song: id });
+  return out;
+}
+
+/**
+ * a jingle's list ([midi, sixteenths] one after another, 0 a rest) as notes on a timeline ([step, midi, length])
+ * @param {number[][]} list
+ */
+export function musicJingleNotes(list) {
+  /** @type {number[][]} */
+  const out = [];
+  let st = 0;
+  for (const [m, l] of list) {
+    if (m) out.push([st, m, l]);
+    st += l;
+  }
+  return out;
+}
+/**
+ * notes on a timeline as a jingle's list: in order, a gap a rest
+ * @param {number[][]} notes
+ */
+export function musicJingleList(notes) {
+  /** @type {number[][]} */
+  const out = [];
+  let at = 0;
+  for (const [st, m, l] of [...notes].sort((a, b) => a[0] - b[0])) {
+    if (st > at) out.push([0, st - at]);
+    out.push([m, l]);
+    at = st + l;
+  }
   return out;
 }

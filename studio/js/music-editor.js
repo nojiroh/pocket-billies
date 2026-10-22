@@ -14,6 +14,8 @@ import {
   MUSIC_CHOICES,
   MUSIC_SCALES,
   chordNumeral,
+  musicJingleList,
+  musicJingleNotes,
   musicNoteName,
   musicSongUses,
 } from '../../game/js/logic/music-studio.js';
@@ -37,6 +39,7 @@ import {
 import { legacyLoad, legacyView } from './legacy-view.js';
 /* eslint-disable no-func-assign */
 expose({
+  MUSIC_JINGLE_BPM: [() => MUSIC_JINGLE_BPM],
   MUSIC_TABS: [() => MUSIC_TABS],
   ROLL_CELL_H: [() => ROLL_CELL_H],
   ROLL_CELL_W: [() => ROLL_CELL_W],
@@ -45,6 +48,10 @@ expose({
   musicData: [() => musicData],
   musicHookHTML: [() => musicHookHTML, v => (musicHookHTML = v)],
   musicHookMount: [() => musicHookMount, v => (musicHookMount = v)],
+  musicJingleHTML: [() => musicJingleHTML, v => (musicJingleHTML = v)],
+  musicJingleMount: [() => musicJingleMount, v => (musicJingleMount = v)],
+  musicJinglePlay: [() => musicJinglePlay, v => (musicJinglePlay = v)],
+  musicJingleSelected: [() => musicJingleSelected],
   musicLineSet: [() => musicLineSet, v => (musicLineSet = v)],
   musicListColHTML: [() => musicListColHTML],
   musicLoopHTML: [() => musicLoopHTML],
@@ -447,6 +454,70 @@ ACTIONS.musHookFromTune = () => {
   musicLineSet(id, 'hook', out);
 };
 
+/* ---------- the jingles: short tunes that play once (a win, a level up, a catch...) ----------
+   A jingle is a list of [midi, sixteenths] one after another, 0 a rest; on the roll it is notes on a timeline. The
+   game plays them at 150 bpm on a 25 % pulse with a triangle an octave down (the level up at 180 in battle) */
+const MUSIC_JINGLE_BPM = 150;
+const musicJingleSelected = () => {
+  const ids = Object.keys(musicData().jingles || {});
+  if (!ids.includes(studioState.sel.musicJingle)) studioState.sel.musicJingle = ids[0];
+  return studioState.sel.musicJingle;
+};
+function musicJingleHTML() {
+  const J = musicData().jingles || {},
+    cur = musicJingleSelected();
+  if (!cur) return card('Jingles', '<p class="help">music.json has no jingles.</p>');
+  const len = J[cur].notes.reduce((a, n) => a + n[1], 0);
+  const picks = Object.keys(J)
+    .map(
+      k =>
+        `<span class="mus-jpick"><button class="btn subtle mus-play" data-act="musJinglePlay" data-j="${escapeHtml(k)}" aria-label="Play ${escapeHtml(k)}" title="Play ${escapeHtml(k)}">▶</button><button class="seg ${k === cur ? 'on' : ''}" data-act="musJinglePick" data-j="${escapeHtml(k)}" aria-pressed="${k === cur}">${escapeHtml(k)}</button></span>`
+    )
+    .join('');
+  return card(
+    'Jingles',
+    `<div class="seg-row">${picks}</div>
+<div class="seg-row"><b>${escapeHtml(cur)}</b><small class="help">${len} sixteenths · ${J[cur].notes.filter(n => n[0]).length} notes</small><span class="grow"></span><button class="btn primary" data-act="musJinglePlay" data-j="${escapeHtml(cur)}">▶ Play</button></div>
+<div class="mus-roll-wrap"><canvas id="musJRoll" class="mus-roll" aria-label="${escapeHtml(cur)} roll: ${J[cur].notes.map(n => (n[0] ? musicNoteName(n[0]) : 'rest') + ' ' + n[1]).join(', ')}"></canvas></div>`,
+    {
+      sub: 'One note at a time, in sixteenths; a gap is a rest. The game plays them at 150 bpm on a 25 % pulse with a triangle an octave down (the battle’s level up at 180). They play on Sound effects.',
+    }
+  );
+}
+function musicJingleMount() {
+  const cv = /** @type {HTMLCanvasElement | null} */ (document.getElementById('musJRoll')),
+    id = musicJingleSelected();
+  if (!cv || !id) return;
+  const list = musicData().jingles[id].notes,
+    len = list.reduce((a, n) => a + n[1], 0);
+  musicRollMount(cv, {
+    steps: Math.max(16, Math.ceil((len + 4) / 4) * 4),
+    rows: musicRollRows(60, 'major', 60, 31),
+    home: 60,
+    notes: musicJingleNotes(list),
+    onNote: m => musicNoteHear(m),
+    onChange: notes => {
+      if (!notes.length) return render();
+      musicData().jingles[id].notes = musicJingleList(notes);
+      changed();
+      commit(true);
+      render();
+    },
+  });
+}
+function musicJinglePlay(id) {
+  const T = musicTracker(),
+    J = musicData().jingles[id];
+  if (!J) return;
+  if (musicStudio.ctx.state !== 'running') musicStudio.ctx.resume().catch(() => {});
+  T.jingle(J.notes, MUSIC_JINGLE_BPM, 'p25', T.bus);
+}
+ACTIONS.musJinglePlay = d => musicJinglePlay(d.j);
+ACTIONS.musJinglePick = d => {
+  studioState.sel.musicJingle = d.j;
+  render();
+};
+
 /* ---------- the where table ---------- */
 /* a rule's keys as the table edits them: yes/no keys, lists, a row range; an empty choice takes the key away (any) */
 const MUSIC_TABS = ['walk', 'map', 'profile'];
@@ -654,17 +725,22 @@ SECTIONS.music = () => {
     : '<p class="warn">Nothing plays this song: no where-rule, place, story script or code names it.</p>';
   musicStudio.shown = '';
   afterRender(musicNowShow);
-  if (studioState.sel.musicTab !== 'where') afterRender(() => musicHookMount(id));
-  const tab = studioState.sel.musicTab === 'where' ? 'where' : 'songs',
+  afterRender(() => musicHookMount(id));
+  const tab = ['where', 'jingles'].includes(studioState.sel.musicTab) ? studioState.sel.musicTab : 'songs',
     tabs = `<div class="seg-row tabs" role="tablist">${[
       ['songs', 'Songs'],
       ['where', 'Where they play'],
+      ['jingles', 'Jingles'],
     ]
       .map(
         ([k, n]) =>
           `<button class="seg ${k === tab ? 'on' : ''}" role="tab" aria-selected="${k === tab}" data-act="musTab" data-t="${k}">${n}</button>`
       )
       .join('')}</div>`;
+  if (tab === 'jingles') {
+    afterRender(musicJingleMount);
+    return `<div class="split"><aside class="list-col">${musicListColHTML(uses)}</aside><div class="ed-col">${tabs}${musicJingleHTML()}</div></div>`;
+  }
   if (tab === 'where')
     return `<div class="split"><aside class="list-col">${musicListColHTML(uses)}</aside><div class="ed-col">${tabs}${musicWhereHTML()}</div></div>`;
   return `<div class="split"><aside class="list-col">${musicListColHTML(uses)}</aside>

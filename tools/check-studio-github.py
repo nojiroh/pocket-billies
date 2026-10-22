@@ -1061,6 +1061,21 @@ def music_steps(pg, errs):
     while pg.evaluate("studioState.undo.length") > undo0: pg.click('#undoBtn')
     if pick() != 'Rule 9 picks town' or pg.evaluate("changedDataFiles(studioState.D).map(f => f.path)"):
         errs.append(f'music: undoing the table gave {pick()!r} and left {pg.evaluate("changedDataFiles(studioState.D).map(f => f.path)")}')
+    # the jingles: one plays (its voices start on the context), a note drawn after its end lengthens it with a rest
+    # between, undone
+    pg.click('[data-act=musTab][data-t=jingles]')
+    pg.click('[data-act=musJinglePick][data-j=hatch]')
+    pg.click('.list-head [data-act=musStop]'); time.sleep(0.6)
+    pg.evaluate("(() => { const T = musicStudio.tracker, f = T.synthVoice; window.__mv = 0; T.synthVoice = (...a) => { window.__mv++; return f(...a); }; window.__mvf = f })()")
+    pg.click('.card [data-act=musJinglePlay][data-j=hatch].primary'); time.sleep(0.2)
+    if pg.evaluate("window.__mv") != 6: errs.append(f'music: the hatch jingle started {pg.evaluate("window.__mv")} voices, not 6 (3 notes, each with its bass)')
+    pg.evaluate("void (musicStudio.tracker.synthVoice = window.__mvf)")
+    pg.locator('#musJRoll').scroll_into_view_if_needed(); box = pg.locator('#musJRoll').bounding_box()
+    pg.mouse.click(box['x'] + 40 + 10 * 22 + 11, box['y'] + 18 + 2 * 16 + 8)
+    got = pg.evaluate("studioState.D.music.jingles.hatch.notes")
+    if len(got) != 5 or got[3] != [0, 2] or got[4][1] != 2: errs.append(f'music: a note after the hatch jingle gave {got}')
+    pg.click('#undoBtn')
+    if pg.evaluate("studioState.D.music.jingles.hatch.notes") != [[76, 2], [79, 2], [84, 4]]: errs.append('music: undo did not put the jingle back')
     pg.click('[data-act=musTab][data-t=songs]')
     pg.click('#musList [data-act=musPlay][data-song=meadow]')
     time.sleep(0.5)
@@ -1068,7 +1083,7 @@ def music_steps(pg, errs):
     time.sleep(0.5)
     if pg.evaluate("[musicPlaying(), !!musicStudio.tracker.timer]") != ['', False]: errs.append('music: leaving the section left the song playing')
     if len(errs) > n: errs[n:] = [f'music: {e}' if not e.startswith('music:') else e for e in errs[n:]]
-    else: print('music: town played (context running, bar shown), its tempo and a chord changed while playing and undone, a hook note and a counter note drawn and heard and undone, stopped; the where table: a rule moved, a condition, a rule added, Try a place following, all undone; meadow stopped when the section was left', flush=True)
+    else: print('music: town played (context running, bar shown), its tempo and a chord changed while playing and undone, a hook note and a counter note drawn and heard and undone, stopped; the where table: a rule moved, a condition, a rule added, Try a place following, all undone; a jingle played and lengthened and undone; meadow stopped when the section was left', flush=True)
 
 
 STEPS = [
