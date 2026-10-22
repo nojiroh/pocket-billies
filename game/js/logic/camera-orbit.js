@@ -89,22 +89,26 @@ export function orbitStep(S, O, x, z, dt) {
 }
 
 /**
- * The yaw the joystick walks by. It follows the orbit's target, not the eased camera, so holding right walks round
- * the middle instead of spiralling out. While the stick is held it keeps the frame it had when you were last inside
- * the dead zone: crossing the summit holding up, the target flips half a turn as you leave the far side, and
- * following it would walk you straight back in. Let go and the frame is the target again.
+ * The yaw the joystick walks by. It follows the way to the middle from where you stand now (not the eased camera, and
+ * not last frame's target), so holding right walks round the middle instead of spiralling out. While the stick is
+ * held it keeps the frame it had when you were last inside the dead zone: crossing the summit holding up, the way to
+ * the middle flips half a turn as you leave the far side, and following it would walk you straight back in. Let go
+ * and the frame follows again.
  * @param {OrbitState} S @param {boolean} held the stick (or a key) is pushed this frame
+ * @param {CameraOrbit} [O] @param {number} [x] @param {number} [z] where you stand (without them: the last target)
  * @returns {number}
  */
-export function orbitStickYaw(S, held) {
+export function orbitStickYaw(S, held, O, x, z) {
+  const inDead = O && x != null && z != null ? orbitInDead(O, x, z) : S.hold,
+    now = O && x != null && z != null && !inDead ? S.yaw + wrapAngle(orbitYawAt(O.c, x, z) - S.yaw) : S.target;
   if (!held) {
     S.stick = null;
     S.lock = false;
-    return S.target;
+    return now;
   }
-  if (S.stick == null) S.stick = S.target;
-  if (S.hold) S.lock = true;
-  if (!S.lock) S.stick = S.target;
+  if (S.stick == null) S.stick = now;
+  if (inDead) S.lock = true;
+  if (!S.lock) S.stick = now;
   return S.stick;
 }
 

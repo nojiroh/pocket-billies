@@ -121,9 +121,8 @@ test("the joystick's frame follows the target, and stays locked while held after
   assert.equal(O.orbitStickYaw(S, true), S.target);
   // away from the dead zone a held stick follows the target as it turns
   const T = O.orbitStart(ORB, 60, 20);
-  O.orbitStickYaw(T, true);
-  O.orbitStep(T, ORB, 20, 60, 1 / 60);
-  assert.ok(near(O.orbitStickYaw(T, true), Math.PI / 2));
+  O.orbitStickYaw(T, true, ORB, 60, 20);
+  assert.ok(near(O.orbitStickYaw(T, true, ORB, 20, 60), Math.PI / 2), 'from where you stand, before the camera eases');
 });
 
 test('a step across the radius stays on the circle; along it moves in or out', () => {
@@ -141,8 +140,9 @@ test('a step across the radius stays on the circle; along it moves in or out', (
 
 test('holding right for a full lap ends within 1 m of the start radius (the walk drift)', () => {
   // the walk as walk-view.js does it: the stick's right along the frame orbitStickYaw gives, the step taken round
-  // the middle; 20 fps (a slow phone) running, and 60 fps walking
+  // the middle; 8 fps (software drawing) and 20 fps (a slow phone) running, and 60 fps walking
   for (const [fps, speed] of [
+    [8, 3.4 * 1.8],
     [20, 3.4 * 1.8],
     [60, 3.4],
   ]) {
@@ -153,17 +153,18 @@ test('holding right for a full lap ends within 1 m of the start radius (the walk
       last = Math.atan2(x - 60, z - 60);
     const dt = 1 / fps;
     for (let i = 0; i < fps * 400 && turned < Math.PI * 2; i++) {
-      O.orbitStep(S, ORB, x, z, dt);
-      const y = O.orbitStickYaw(S, true),
+      // the camera eases after the walk (as in a frame), so the stick reads where you stand now, not its target
+      const y = O.orbitStickYaw(S, true, ORB, x, z),
         rx = Math.cos(y),
         rz = -Math.sin(y);
       [x, z] = O.orbitWalkStep(ORB.c, x, z, rx, rz, speed * dt, ORB.dead);
+      O.orbitStep(S, ORB, x, z, dt);
       const a = Math.atan2(x - 60, z - 60);
       turned += Math.abs(O.wrapAngle(a - last));
       last = a;
     }
     assert.ok(turned >= Math.PI * 2, 'went all the way round');
-    assert.ok(Math.abs(Math.hypot(x - 60, z - 60) - 45) < 1, `radius ${Math.hypot(x - 60, z - 60)} at ${fps} fps`);
+    assert.ok(Math.abs(Math.hypot(x - 60, z - 60) - 45) < 0.01, `radius ${Math.hypot(x - 60, z - 60)} at ${fps} fps`);
     // and the camera's eased yaw turned with it, ending close behind
     assert.ok(Math.abs(O.wrapAngle(S.yaw - O.orbitYawAt(ORB.c, x, z))) < 0.15);
   }
