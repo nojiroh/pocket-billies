@@ -47,9 +47,9 @@ sessions, the recipe moving to `game/data/kitBuilds.json`, and the T5.5 slot wor
 
 **Verified**
 - Unit tests 633 pass (the parity test about 1 s); lint, typecheck, `check:modules`, `format:check`.
-- `check:fast`: VERIFY_FAST
+- `check:fast`: every check passes.
 - `check-studio-github.py --only=publish,workbench,part_mode,robot_joints,species_parts,wardrobe,rig_preview`:
-  VERIFY_STUDIO
+  0 problems (rig_preview pixel-equal on 7 clocks, front and back; publish 0).
 - **Not run:** the full quick check (at the end of the phase).
 
 **Risky**
