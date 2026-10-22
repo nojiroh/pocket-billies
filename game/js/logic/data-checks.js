@@ -825,7 +825,8 @@ export function dataSceneFindings(D, roadOf) {
     if (!s.hub && (!s.path || s.path.length < 2))
       warn(`Scene ${s.name || k} has no hub (where you stand) and no path.`, 'scenes', g);
     (s.life || []).forEach(L => {
-      if (!['duck', 'pigeon', 'chicken', 'sheep', 'car'].includes(L.k))
+      /* an animal of scenery.json life, or 'car' (ambient-life.js picks a coloured car on its road) */
+      if (L.k !== 'car' && !(SY.life || {})[L.k])
         warn(`Scene ${s.name || k} lists unknown life (${L.k}).`, 'scenes', g);
       else if (L.k === 'car' && !(L.path && L.path.length > 1))
         warn(`Scene ${s.name || k} has cars without a road to drive along.`, 'scenes', g);
