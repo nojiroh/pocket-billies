@@ -691,7 +691,9 @@ export function bowlCoastGrid(S, n) {
     inside = new Float32Array(w * w),
     /* flat arrays: the loop below runs about 100 000 corners times 100 places and roads */
     P = Float64Array.from(S.places.flatMap(p => (p.poly ? [] : [p.x, p.y, p.reach]))),
-    /* IS-7: the island maps' coasts, each with its box (far outside it the box's distance is enough: sea) */
+    /* IS-7: the island maps' coasts, each with its box: further out than the sea floor's full depth (and the beach's
+       ground) its box's distance stands in (shorter than the true one, so read exactly any nearer: a step in the
+       water's depth showed as a square round the island) */
     polys = S.places.map((p, k) => (p.poly ? { k, P: p.poly, box: bowlPolyBox(p.poly) } : null)).filter(o => !!o),
     isle = new Uint8Array(w * w),
     R = Float64Array.from(S.roads.flatMap(([ax, ay, bx, by]) => [ax, ay, bx - ax, by - ay])),
@@ -737,7 +739,7 @@ export function bowlCoastGrid(S, n) {
         const [x0, y0, x1, y1] = Q.box,
           bx = Math.max(x0 - x, 0, x - x1),
           by = Math.max(y0 - y, 0, y - y1),
-          q = bx > 0.03 || by > 0.03 ? Math.hypot(bx, by) : bowlPolyDistance(Q.P, x, y);
+          q = bx > 0.08 || by > 0.08 ? Math.hypot(bx, by) : bowlPolyDistance(Q.P, x, y);
         if (q < dq) dq = q;
         if (q < 0) isle[j * w + i] = Q.k + 1;
       }
