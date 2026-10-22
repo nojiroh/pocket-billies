@@ -2,6 +2,78 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Sound track SND-1 - Settings and routing - 2026-10-22
+Branch `sound` (made by the owner's request from the session branch, which holds the track plan: docs/phases/sound-track.md,
+two commits on main 1d35666). Plan approved at the start in Plan Mode; the owner answered its three questions: jingles
+stay on Sound effects, volumes stay in the save, the mute goes in the settings sheet's header.
+- Changed (one cause per commit):
+  - `game/js/audio/levels.js` (new, pure): `soundLevel`, `soundLevels` (the five bus gains: squared, the master's 0.9
+    headroom, mute on the master only, the ambience bed's 0.9 trim). sound.js `applyVolumes`, `applyAmbienceVolume`
+    and `volumePreference` read through it; on the page before sound.js. No change in what you hear.
+  - The Volume (master) Test button plays a two-note chime on the master bus (it played nothing).
+  - The Music Test button plays the level-up phrase on the music bus: `jingle(notes, bpm, type, bus)` (the effects bus
+    when no bus is given, so every jingle in the game is where it was).
+  - Volume and Ambience apply while dragging (`LIVE_VOLUMES`: all five sliders).
+  - `unlockSound` resumes the audio from any state but running or closed (iOS Safari's `interrupted` after a call or
+    Siri), ignoring a refused resume.
+  - A mute button beside the Settings title on every tab: `game/art/ui/sound.svg` and `sound-off.svg` (12x12, like the
+    gear), `settings-screen.js` `muteButtonHTML` (the same `mute` preference and click handler as the Sound tab's
+    switch, `aria-pressed`, "Sound on"/"Sound off", focus back on it after the refresh), menus.css `.set-top` and
+    `.set-mute`. ui.js draws the title and stays closed until UI-5, so the button comes first in the sheet's body in a
+    box of no height and CSS lifts it into the title's row; it scrolls away with the title.
+  - The Sound tab's words: Sound effects names the short tunes for a win or a level up; the "0 mutes" note went; the
+    Volume slider is announced "Volume", not "Volume volume".
+  - i18n.js: a row for every Sound-tab string and the button's labels in nl, de, es, fr (informal, as the table is).
+  - `tools/test/sound-levels.test.mjs`; the full quick check's "Sound settings" step.
+  - Docs: sound-track.md (SND-1 as built, corrections), ROADMAP (the sound track), TESTING, CHANGELOG.
+- Risky or unfinished:
+  - The iOS resume is a claim: only the owner's iPhone can show sound coming back after a call or Siri.
+  - The sheet focuses its first button when it opens (ui.js); that is now the mute button, not the Sound tab, and it
+    shows the same focus ring the tab did. A keyboard Enter right after opening mutes (undone the same way).
+  - The button is placed by CSS relative to the tab strip; UI-5, moving Settings onto the kit, should put it in the
+    sheet's own header and drop `.set-top`.
+  - ui-lint (report only): unchanged from the session's start (the mute commit's message says "two more token
+    spaces": true of a first try, not of the CSS committed).
+  - The icons are my pixel art; redraw them in the Studio if they don't fit.
+  - Seen on the way, not changed (before this session, outside SND-1): the Graphics, Game and Help tab names have no
+    translations; every settings switch is announced by its preference key ("mute", "expert"), `switchHTML`'s
+    aria-label; in the dark theme a scrolled sheet shows content above the sticky tabs and the panel's fill ends part
+    way down, and the selected segment's text is unreadable (white on white) on the Game tab; lore.js asks for
+    `JINGLES.item`, which doesn't exist (its guard keeps it silent).
+  - Tags can't be pushed (HTTP 403, as before): `snd-1-done` exists only in this container; please tag after merging.
+- Verified (what ran, what passed):
+  - After each edit: lint, typecheck, check:modules; before each commit format:check, check:data, build; unit tests
+    459 (455 before, plus the 4 in sound-levels.test.mjs).
+  - Smoke (each run alone in a worktree of its commit): the untouched branch 214 s, no problems; c4e14dd (levels)
+    209 s, no problems; aba4a61 (the mute, over the four sound.js fixes before it) 215 s, no problems; the tip
+    f678001 176 s, no problems. A run on 11c5ec3 (translations) overlapped two other browsers here and timed out in
+    the in-game step and a Studio screenshot (573 s); the tip's run alone, which holds that commit, passed.
+  - The full quick check on f678001: 1666 s, 54 steps, 45 passed; the 9 problems are 9 of the 10 known since RL-1
+    (v34, v35, v38, v39/40, v43, v44, v46, alpha 0.4, phase 08 running; v31 fountain passed this time). New "Sound
+    settings" step: ok (29 s). Safety (13 screens with Settings) and the 40 px tap targets: ok. World sounds: ok.
+  - The step proven: on c4e14dd (before the Test fixes) it fails "master Test reached sfx; music Test reached sfx";
+    with Volume and Ambience taken out of the live listener it fails "master at 70" and "amb at 20", nothing else.
+  - Headless screenshots at 390 px, light and dark, against main: the mute button beside the title (44 x 44, a tap at
+    its centre lands on it), all five tabs fit as on main, the sheet scrolled matches main; muting sets aria-pressed,
+    the Sound switch follows, focus comes back to the button (this browser draws about 3 frames a second, so focus
+    lands about a second later). Dutch and French: every Sound-tab text and label translated, the tabs still fit.
+  - ui-lint compared with the session's start: no change.
+  - Not run: `--selftest` (SND-1 doesn't touch what it plays; smoke's in-game step passed). Not tried on a phone.
+- Decisions I made (and why):
+  - The `musicFor` unit test moved to SND-2: sound.js imports the walk view, the renderer and the battle stage, so it
+    can't load in Node; SND-2 makes the choice a pure function (`songFor`).
+  - The debug log needed nothing: it already exports every preference, the volumes and mute among them.
+  - The mute button went beside the title, not at the end of the tab strip (the first try): at 390 px the strip then
+    cut the Help tab off.
+  - The Sound settings step reads the targets the gains are given, not `gain.value`: its first version compared each bus
+    with the saved preference and missed an undone drag fix (planted, it passed); reading `gain.value` then stopped
+    part way on an idle bus (Chrome stops working out a gain no sound goes through). Fixed in its own commit.
+  - Smoke ran on commits in a separate worktree while I kept editing, and once per group of small sound.js commits
+    (the master Test, the Music Test, live drag and resume, under the mute commit's run) rather than before each.
+- Questions waiting for the owner: none new. The track's later asks (SND-2's biome-to-song mapping) come with SND-2.
+- Next session starts with: SND-2, the tracker as data (docs/phases/sound-track.md): the fingerprint baseline first,
+  then the split into `game/js/audio/tracker.js`, `music.json`, `songFor`, biome music in a run, idle timers.
+
 ### Roguelite track RL-7 - Run world - 2026-10-21
 Branch `ccr-b5ce394e-4jhzbp`, from main dfc9d68 (RL-6 merged). Plan approved at the start ("Start rl7", then the plan
 in Plan Mode); its decisions A-J were taken at my recommendations (none answered otherwise). Done in one session,
