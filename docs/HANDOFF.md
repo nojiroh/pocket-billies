@@ -2,6 +2,25 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Studio plan Phase 5, session 2 - The recipe in game/data, a Node bake CLI, the slot words (T5.1, T5.5) - 2026-10-22
+Branch `claude/sr-5-parts`, draft PR #139 (base `ccr-81011a25-lf3exv`). Plan pre-approved with its recommended options
+(decision 9's standing instruction); this session's choices are decision 10 in the plan doc.
+
+**Plan**
+1. Rename-only: `tools/art-source/part-kit/builds.json` -> `game/data/kitBuilds.json`, listed in index.json, written
+   in the data files' layout (PB_DATA.text); the parity test and the Python builder read the new path.
+2. `game/data/schema/kitBuilds.schema.json`, its type in game-data.d.ts, and check-data coverage (parts, colours,
+   anchors, rigs, lines and stages). In tools/check-data.mjs (Phase 1c has not moved the checks yet).
+3. `KIT_BAKE` moves into kitBuilds.json `bake` (box, margins, squash, tail aims, arm rest, foot gap, chin drop,
+   anchors). Parity green.
+4. `tools/bake-kit-billies.mjs`: bakes every recipe (or `--only`) and writes what changed (sheet PNG, layout, rig in
+   rigs-next.js, the line's `parts`); `--check` only reports. On today's tree it writes nothing.
+5. `tools/rename-data.mjs` value mode (its own commit), then `signature` -> `sig`, `head-extra` -> `headExtra`,
+   `body-extra` -> `bodyExtra`, one per commit (data, schema, types, Studio, tests together).
+6. The baker's slot table gives way to partKits `slots` and rules.json `parts.slots`. Parity green.
+7. Docs: NAMING.md, the plan's decisions, CHANGELOG, this entry.
+If time allows: session 3's first step (the Studio bakes on "Write Billie").
+
 ### Studio plan Phase 5, session 1 - Previews on the game's rig path (T5.6) and the JS kit baker with parity (T5.1, step 1) - 2026-10-22
 Branch `claude/sr-5-parts`, from `ccr-81011a25-lf3exv` (the plan's PR #131, not merged yet); its own draft PR. The plan
 was approved with its recommended options (the owner told the plan's parent session to approve the Phase sessions'
