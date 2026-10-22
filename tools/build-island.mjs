@@ -45,15 +45,24 @@ sc.name = ID === 'copperleaf_island' ? 'Copperleaf island (generated ground)' : 
 sc.folk = 0;
 const mid = poly => poly.reduce((a, p) => [a[0] + p[0] / poly.length, a[1] + p[1] / poly.length], [0, 0]),
   r2 = v => Math.round(v * 100) / 100,
-  spot = k => (sc.spots || []).find(s => s.kind === k);
+  spot = k => (sc.spots || []).find(s => s.kind === k),
+  up = paths.find(p => p.name === 'town to the mountain'),
+  foot = up && up.pts[up.pts.length - 1],
+  summit = spot('summit'),
+  dock = spot('dock');
+/* the game's findPath gives up after 30000 cells, under a third of this map: the summit is checked from the trail's
+   foot (the way from the town to the foot checked on its own) */
 sc.checks = [
   ...sc.zones
     .filter(Z => ISLAND_GEN_BUILT.includes(Z.k) && Z.k !== 'town')
     .map(Z => ({ from: sc.hub, to: mid(Z.poly).map(r2), reach: true, what: `from the town to the ${Z.k}` })),
-  ...['summit', 'dock']
-    .map(spot)
-    .filter(Boolean)
-    .map(s => ({ from: sc.hub, to: [s.x, s.z], reach: true, what: `from the town to the ${s.kind}` })),
+  ...(foot && summit
+    ? [
+        { from: sc.hub, to: foot, reach: true, what: "from the town to the trail's foot" },
+        { from: foot, to: [summit.x, summit.z], reach: true, what: 'up the trail from its foot to the summit' },
+      ]
+    : []),
+  ...(dock ? [{ from: sc.hub, to: [dock.x, dock.z], reach: true, what: 'from the town to the dock' }] : []),
   { from: sc.hub, to: [4, 4], reach: false, what: 'out into the sea' },
 ];
 

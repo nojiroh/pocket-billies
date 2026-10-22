@@ -735,7 +735,8 @@
  "checks": [
   {"from":[101,43],"to":[53.51,60.33],"reach":true,"what":"from the town to the barn"},
   {"from":[101,43],"to":[41.04,87.91],"reach":true,"what":"from the town to the pasture"},
-  {"from":[101,43],"to":[104,89],"reach":true,"what":"from the town to the summit"},
+  {"from":[101,43],"to":[101,67.5],"reach":true,"what":"from the town to the trail's foot"},
+  {"from":[101,67.5],"to":[104,89],"reach":true,"what":"up the trail from its foot to the summit"},
   {"from":[101,43],"to":[148.61,83.31],"reach":true,"what":"from the town to the dock"},
   {"from":[101,43],"to":[4,4],"reach":false,"what":"out into the sea"}
  ]
