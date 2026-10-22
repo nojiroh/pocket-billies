@@ -8,6 +8,7 @@ import {
   MUSIC_CODE_SONGS,
   MUSIC_SCALES,
   chordNumeral,
+  isMusicPlaceholder,
   musicFindings,
   musicJingleList,
   musicJingleNotes,
@@ -144,4 +145,24 @@ test('jingles as notes on a timeline and back: every jingle comes back the same;
       [76, 2],
     ]
   );
+});
+
+test('SND-4: placeholder hooks and jingles are listed once each, as notes', () => {
+  const music = {
+    songs: {
+      a: { hookName: 'placeholder: a hook (Claude’s draft)' },
+      b: { hookName: 'Morning in Copperleaf' },
+      c: {},
+      d: { hookName: '  Placeholder d' },
+    },
+    jingles: { motif: { notes: [], name: 'placeholder: motif' }, levelup: { notes: [] } },
+    where: [{ song: 'a' }],
+  };
+  const F = musicFindings(music).filter(f => f.lvl === 'info');
+  assert.equal(F.length, 2);
+  assert.match(F[0].msg, /placeholder hooks \(2\): a, d/);
+  assert.equal(F[0].song, 'a');
+  assert.match(F[1].msg, /placeholder jingles \(1\): motif/);
+  assert.equal(F[1].jingle, 'motif');
+  assert.equal(isMusicPlaceholder('placeholders'), false);
 });

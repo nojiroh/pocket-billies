@@ -217,7 +217,12 @@
         ]
        },
        "extra": true,
-       "pluck": true
+       "pluck": true,
+       "hookName": {
+        "description": "SND-4: a name for the hook and its countermelody. Claude's drafts start with \"placeholder\" (the Studio's Check lists them)",
+        "type": "string",
+        "maxLength": 80
+       }
       },
       "additionalProperties": false
      }
@@ -256,6 +261,11 @@
        "minItems": 2,
        "maxItems": 2
       }
+     },
+     "name": {
+      "description": "SND-4: a name for the jingle. Claude's drafts start with \"placeholder\" (the Studio's Check lists them)",
+      "type": "string",
+      "maxLength": 80
      }
     }
    }

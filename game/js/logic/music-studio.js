@@ -16,6 +16,7 @@ expose({
   ROMAN: [() => ROMAN],
   // @ts-expect-error -- replaced on purpose
   chordNumeral: [() => chordNumeral, v => (chordNumeral = v)],
+  isMusicPlaceholder: [() => isMusicPlaceholder],
   // @ts-expect-error -- replaced on purpose
   musicFindings: [() => musicFindings, v => (musicFindings = v)],
   // @ts-expect-error -- replaced on purpose
@@ -154,13 +155,14 @@ export function musicSongUses(music, more = {}) {
 /**
  * the music's problems: errors (a rule names no song, a node type or biome that doesn't exist, a last rule that
  * doesn't always match, a place's song that isn't one) and warnings (a song nothing plays). Each says which song or
- * rule (its index) it is about, so the Studio can show it
- * @param {{songs: Record<string, unknown>, where: Record<string, any>[]}} music
+ * rule (its index) it is about, so the Studio can show it. SND-4: notes (info) on hooks and jingles still named as
+ * placeholders
+ * @param {{songs: Record<string, any>, where: Record<string, any>[], jingles?: Record<string, any>}} music
  * @param {{nodeTypes?: Record<string, unknown>, biomes?: Record<string, unknown>, locations?: any[], scriptText?: string}} [more]
- * @returns {{lvl: 'error' | 'warn', msg: string, song?: string, rule?: number, place?: string}[]}
+ * @returns {{lvl: 'error' | 'warn' | 'info', msg: string, song?: string, jingle?: string, rule?: number, place?: string}[]}
  */
 export function musicFindings(music, more = {}) {
-  /** @type {{lvl: 'error' | 'warn', msg: string, song?: string, rule?: number, place?: string}[]} */
+  /** @type {{lvl: 'error' | 'warn' | 'info', msg: string, song?: string, jingle?: string, rule?: number, place?: string}[]} */
   const out = [];
   const songs = music.songs || {},
     where = music.where || [];
@@ -185,8 +187,26 @@ export function musicFindings(music, more = {}) {
   const uses = musicSongUses(music, more);
   for (const [id, u] of Object.entries(uses))
     if (!u.length) out.push({ lvl: 'warn', msg: `song "${id}": no where-rule, place or script plays it`, song: id });
+  /* SND-4: hooks and jingles still named as placeholders (Claude's drafts, for the owner to keep, change or rename) */
+  const songsLeft = Object.keys(songs).filter(id => isMusicPlaceholder(songs[id].hookName)),
+    jingles = music.jingles || {},
+    jinglesLeft = Object.keys(jingles).filter(id => isMusicPlaceholder(jingles[id].name));
+  if (songsLeft.length)
+    out.push({
+      lvl: 'info',
+      msg: `placeholder hooks (${songsLeft.length}): ${songsLeft.join(', ')}. Keep, change or rename each`,
+      song: songsLeft[0],
+    });
+  if (jinglesLeft.length)
+    out.push({
+      lvl: 'info',
+      msg: `placeholder jingles (${jinglesLeft.length}): ${jinglesLeft.join(', ')}. Keep, change or rename each`,
+      jingle: jinglesLeft[0],
+    });
   return out;
 }
+/** SND-4: a hook's or jingle's name marks it as a placeholder while it starts with "placeholder" @param {unknown} name */
+export const isMusicPlaceholder = name => typeof name === 'string' && /^\s*placeholder\b/i.test(name);
 
 /**
  * a jingle's list ([midi, sixteenths] one after another, 0 a rest) as notes on a timeline ([step, midi, length])

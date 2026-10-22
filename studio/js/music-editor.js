@@ -37,6 +37,7 @@ import {
   sectionShown,
   selectField,
   studioState,
+  textField,
   writePath,
 } from './studio-app.js';
 import { scheduleCheck } from './check.js';
@@ -416,7 +417,12 @@ function musicHookHTML(id) {
     .join('');
   return card(
     'Hook',
-    `<div class="seg-row">${tabs}<span class="grow"></span><button class="btn subtle" data-act="musHookFromTune" ${line === 'hook' ? '' : 'hidden'} title="Start from the composed tune’s first two bars">Copy the tune’s bars 1-2</button><button class="btn subtle" data-act="musLineClear" ${has(line) ? '' : 'disabled'}>Clear</button></div>
+    textField('Name', `music.songs.${id}.hookName`, {
+      opt: 1,
+      ph: 'unnamed',
+      help: 'One name for the hook and its countermelody. Claude’s drafts start with “placeholder”; the Check lists them until you rename them.',
+    }) +
+      `<div class="seg-row">${tabs}<span class="grow"></span><button class="btn subtle" data-act="musHookFromTune" ${line === 'hook' ? '' : 'hidden'} title="Start from the composed tune’s first two bars">Copy the tune’s bars 1-2</button><button class="btn subtle" data-act="musLineClear" ${has(line) ? '' : 'disabled'}>Clear</button></div>
 <div class="mus-roll-wrap"><canvas id="musRoll" class="mus-roll" aria-label="${line === 'hook' ? 'Hook' : 'Countermelody'} roll, 32 sixteenths: ${(S[line] || []).map(n => musicNoteName(n[1]) + ' at ' + (n[0] + 1)).join(', ') || 'empty'}"></canvas></div>`,
     {
       sub:
@@ -493,6 +499,7 @@ function musicJingleHTML() {
     'Jingles',
     `<div class="seg-row">${picks}</div>
 <div class="seg-row"><b>${escapeHtml(cur)}</b><small class="help">${len} sixteenths · ${J[cur].notes.filter(n => n[0]).length} notes</small><span class="grow"></span><button class="btn primary" data-act="musJinglePlay" data-j="${escapeHtml(cur)}">▶ Play</button></div>
+${textField('Name', `music.jingles.${cur}.name`, { opt: 1, ph: 'unnamed', help: 'Claude’s drafts start with “placeholder”; the Check lists them until you rename them.' })}
 <div class="mus-roll-wrap"><canvas id="musJRoll" class="mus-roll" aria-label="${escapeHtml(cur)} roll: ${J[cur].notes.map(n => (n[0] ? musicNoteName(n[0]) : 'rest') + ' ' + n[1]).join(', ')}"></canvas></div>`,
     {
       sub: 'One note at a time, in sixteenths; a gap is a rest. The game plays them at 150 bpm on a 25 % pulse with a triangle an octave down (the battle’s level up at 180). They play on Sound effects.',
@@ -620,9 +627,11 @@ function musicCheckFindings() {
     if (f.lvl === 'warn' && !legacyView.data) continue;
     const sel = f.song
       ? { musicTab: 'songs', musicSong: f.song }
-      : f.rule != null
-        ? { musicTab: 'where', musicRule: f.rule }
-        : {};
+      : f.jingle
+        ? { musicTab: 'jingles', musicJingle: f.jingle }
+        : f.rule != null
+          ? { musicTab: 'where', musicRule: f.rule }
+          : {};
     out.push({ lvl: f.lvl, msg: `Music: ${f.msg}`, go: f.place ? 'world' : 'music', sel: f.place ? {} : sel });
   }
   const species = D.lines.flatMap(L => L.names.map((n, i) => (L.cry || [])[i])),

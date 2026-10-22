@@ -1549,6 +1549,8 @@ export interface SongRecipe {
   hook?: [number, number, number][];
   counter?: [number, number, number][];
   intro?: number;
+  /** SND-4: one name for the hook and counter; Claude's drafts start with "placeholder" */
+  hookName?: string;
   /** SND-4: the night version's changes; false: none (audio/tracker.js trackerNight) */
   night?: Partial<SongRecipe> | false;
 }
@@ -1572,7 +1574,10 @@ export interface MusicWhere {
 export interface Music {
   songs: Record<DataId, SongRecipe>;
   /** [midi note, length in sixteenths]; note 0 rests */
-  jingles: Record<DataId, { notes: [number, number][] }>;
+  jingles: Record<
+    DataId,
+    { notes: [number, number][]; /** SND-4: Claude's drafts start with "placeholder" */ name?: string }
+  >;
   cries: { bases: { wave: string }[] };
   where: MusicWhere[];
 }
