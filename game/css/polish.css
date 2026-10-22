@@ -66,9 +66,6 @@ nav#nav button:focus-visible {
   outline-offset: -2px;
   border-radius: 12px;
 }
-.lrow:focus-visible {
-  outline-offset: -3px;
-}
 
 /* ---------- pixel buttons: bevel + ledge, press sinks into the ledge ---------- */
 .pb:not(.wh-row .pb) {
@@ -465,14 +462,8 @@ body:has(.topbar) .toast {
 .fchip:hover:not(.on) {
   background: var(--panel2);
 }
-.vit span {
-  color: var(--text2);
-}
 .plate {
   border-radius: 2px;
-}
-.stamp {
-  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.12);
 }
 
 /* ---------- title Professor dialog ---------- */
@@ -565,16 +556,6 @@ body:has(.topbar) .toast {
   .ware2:not(.locked):hover {
     transform: translateY(-2px);
   }
-  .lrow .lspr,
-  .lrow .ltx {
-    transition: transform 0.22s var(--spring);
-  }
-  .lrow:hover .lspr {
-    transform: translateY(-2px) scale(1.06);
-  }
-  .lrow:hover .ltx {
-    transform: translateX(2px);
-  }
   .tb-chip[title='Money'] .pxi {
     animation: nwCoinSpin 6s ease-in-out 1s infinite;
   }
@@ -599,33 +580,6 @@ body:has(.topbar) .toast {
   .screen.enter :is(.shop > .ware, .slots > .slot, .vitals > .vit):nth-child(n + 6) {
     --d: 240ms;
   }
-  .screen.enter .ledger > li {
-    animation: nwSlideIn 0.36s var(--out) backwards;
-  }
-  .screen.enter .ledger > li:nth-child(2) {
-    animation-delay: 30ms;
-  }
-  .screen.enter .ledger > li:nth-child(3) {
-    animation-delay: 60ms;
-  }
-  .screen.enter .ledger > li:nth-child(4) {
-    animation-delay: 90ms;
-  }
-  .screen.enter .ledger > li:nth-child(5) {
-    animation-delay: 120ms;
-  }
-  .screen.enter .ledger > li:nth-child(6) {
-    animation-delay: 150ms;
-  }
-  .screen.enter .ledger > li:nth-child(7) {
-    animation-delay: 180ms;
-  }
-  .screen.enter .ledger > li:nth-child(8) {
-    animation-delay: 210ms;
-  }
-  .screen.enter .ledger > li:nth-child(n + 9) {
-    animation-delay: 240ms;
-  }
   .screen.enter .fchip {
     animation: nwPop 0.32s var(--spring) backwards;
   }
@@ -644,33 +598,6 @@ body:has(.topbar) .toast {
   .screen.enter .bar > div:first-child:has(> .where)::after {
     animation: nwDash 0.45s var(--out) 0.12s backwards;
     transform-origin: left;
-  }
-  .dexpage > section {
-    animation: rise 0.4s var(--out) backwards;
-  }
-  .dexpage > section:nth-of-type(2) {
-    animation-delay: 50ms;
-  }
-  .dexpage > section:nth-of-type(3) {
-    animation-delay: 100ms;
-  }
-  .dexpage > section:nth-of-type(4) {
-    animation-delay: 150ms;
-  }
-  .dexpage > section:nth-of-type(n + 5) {
-    animation-delay: 200ms;
-  }
-  .dexpage .vit {
-    animation: rise 0.36s var(--out) backwards;
-  }
-  .dexpage .vit:nth-child(2) {
-    animation-delay: 40ms;
-  }
-  .dexpage .vit:nth-child(3) {
-    animation-delay: 80ms;
-  }
-  .dexpage .vit:nth-child(4) {
-    animation-delay: 120ms;
   }
 
   /* nav: a hop when chosen, then a slow idle bob; the pill glints now and then */

@@ -42,6 +42,8 @@ VIEWS = [
     ('sheet', 'team', "document.querySelector('[data-a=mon]').click()", "!!document.querySelector('#ov .mon-sheet')"),
     ('ledger', 'town', "uiState.tab='ledger';render()", "!!document.querySelector('.screen.s-ledger')"),
     ('dex', 'town', "uiState.tab='ledger';uiState.dex=saveData.team[0].sp;render()", "!!document.querySelector('.screen.s-ledger .dexpage')"),
+    ('lore', 'town', "uiState.tab='ledger';uiState.guideTab='lore';render()", "!!document.querySelector('.screen.s-ledger .lore')"),
+    ('postcards', 'town', "uiState.tab='ledger';uiState.guideTab='cards';render()", "!!document.querySelector('.screen.s-ledger')"),
     ('profile', 'town', "uiState.tab='profile';render()", "!!document.querySelector('.screen.s-profile')"),
     ('bag', 'bag', '', "!!document.querySelector('.screen.s-bag')"),
     ('settings', 'town', OPEN + "openSettings()", "!!document.querySelector('#ov .set-sheet')"),
@@ -102,7 +104,7 @@ VALUES = "(i) => { const r = window.__sd.rows[i]; return { props: window.__sd.pr
 DARK = "saveData.preferences.theme='dark';applyPreferences();0"
 LIGHT = "saveData.preferences.theme='light';applyPreferences();"
 # back to the plain screen between two views on one page
-RESET = OPEN + "uiState.tab='walk';uiState.dex=null;render();"
+RESET = OPEN + "uiState.tab='walk';uiState.dex=null;uiState.guideTab=null;render();"
 
 
 def unpack_ref():

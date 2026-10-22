@@ -1071,10 +1071,6 @@ nav#nav button[aria-current='page']::after {
   body.on-scene #app .topbar {
     top: 0;
   }
-  body.on-scene .s-ledger .ledger,
-  body.on-scene .s-ledger .ledsum {
-    max-width: none;
-  }
 }
 @keyframes v05side {
   from {
