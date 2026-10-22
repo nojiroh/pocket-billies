@@ -2,6 +2,47 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Studio plan Phase 4 - Roguelite content editors (T4.1-T4.5) - 2026-10-22
+Branch `claude/sr-4-content-editors`, from `ccr-81011a25-lf3exv` (PR #131) with `origin/claude/sr-2-run-lab` (PR #135)
+merged in first (a merge commit). Plan pre-approved by the owner's standing instruction; the recommended option is
+taken for each decision and recorded in the plan doc's "Decisions". Other sessions own history.js, the save/undo/
+publish code, run-lab.js internals, the sim files and the workbench: this one adds beside them.
+
+**Plan** (one cause per commit; lint, typecheck, unit tests after each; the stand-in check at the end):
+0. Merge sr-2-run-lab; regenerate hooks.js with `npm run modules`.
+1. **T4.5 navigation.** Runs group: Run Lab, Loopholes (`relics`), Unlocks & hub (`unlocks`), Economy (`economy`).
+   Town shops and Jobs (both `{}`) move to Legacy with a note. World & encounters says what a run reads (the pools its
+   biomes name) and marks the rest legacy. Find indexes the new sections and their records.
+2. **Data check:** a Loophole row's factor outside effects.js `FX_LIMIT` (0.1-4) or stages past `FX_STAGES` (6) is a
+   `dataRelics` error (CI fails on it; the Studio shows it on the row).
+3. **Logic (pure, unit-tested):**
+   - relics.js `relicOfferOrder(seed, relics, rule, picks, take)`: a seed's picks in order (nothing taken, the first
+     offered, or one Loophole when offered), with the game's relicOfferMake/relicChoose.
+   - `logic/unlock-graph.js` (on the Studio page): the graph's nodes and edges, the cycle a `requires` edit would make
+     (with its path), and "what a save has" after N runs and W wins (newMeta, unlockAuto, unlockReady, runUnlocks,
+     unlockOpen).
+   - `logic/economy-view.js` (on the Studio page): every source and sink of each currency with the data path it
+     reads.
+   - `logic/content-preview.js` (worker only, like run-preview.js): `relicPreview` (fxRows, fxMult and the other fx
+     readers on a sample Billie made by rules.js, its stats before and after with the battle's stage factor),
+     `leaderRunValues` (run-loop.js runFoes on each mini-boss and boss row), `speciesStandIns` (game-data.js
+     standInSpecies).
+   - The worker's `LOGIC_WORKER_FNS` gains these four (the message shape is unchanged; documented here).
+4. **T4.1 Loopholes editor** (`studio/js/relics-editor.js`): list with rarity, weight and chance; rarity coverage
+   table; a row editor per fx kind with the code limits; data-check messages on their row; the sample-build preview;
+   the offer order for a seed.
+5. **T4.2 Unlocks & hub** (`studio/js/unlocks-editor.js`): SVG graph (a column per building, earned rows apart,
+   requires edges, currency colours); click to edit; a requires edit that closes a circle is refused naming the path;
+   buildings and currencies cards; "what a save has" after N runs / W wins.
+6. **T4.3 Leaders and encounters** (`studio/js/run-values.js` + one call each in Trainers and World): an editable
+   `miniboss` box; for a mini-boss leader the run reward and level range per row, labelled "overridden in runs"; pools
+   marked "a run reads this" by biome; legacy stand-in species marked with the stand-in the game uses (worker).
+7. **T4.4 Economy view** (`studio/js/economy-view.js`): sources and sinks by currency, each linked to its field. Phase
+   3's simulator numbers have not landed (no T3.4 dashboard on `claude/sr-3-sim-balance`): a placeholder says so.
+8. Stand-in steps in check-studio-github.py per editor (open, edit, undo, Propose carries the file); the required run
+   `--only=sections,publish,drafts,studio_test` at 0 problems.
+9. Docs: STUDIO.md, CHANGELOG, the plan's Decisions, this entry (results below once done).
+
 ### Studio plan Phase 1, sessions C+D - One validator for CI and the Studio (T1.3) and Studio checks in CI (T1.4) - 2026-10-22
 Branch `ccr-81011a25-lf3exv` (PR #131). Plan pre-approved by the owner's standing instruction (recommended options
 taken; recorded under the plan doc's "Decisions"). Phase 1b (T1.2 undo, T1.5, People) works on the same branch at the
