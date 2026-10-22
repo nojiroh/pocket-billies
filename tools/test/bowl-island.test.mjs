@@ -16,6 +16,15 @@ import {
   bowlReliefFeatures,
   bowlSeaInput,
 } from '../../game/js/logic/bowl.js';
+import {
+  BOWL_PLOT_PROPS,
+  bowlIslandHeights,
+  bowlIslandMapId,
+  bowlIslandPlotThings,
+  bowlIslandRadius,
+} from '../../game/js/logic/bowl-island.js';
+import { bowlPropClass } from '../../game/js/logic/bowl-things.js';
+import { GAME_DATA } from './setup-real.mjs';
 
 /* a made-up island map: 200 x 200 m, a round coast 80 m from (100, 100), a 30 m cone in the middle */
 const ROUND = Array.from({ length: 72 }, (_, k) => {
@@ -136,4 +145,70 @@ test('a map without a coast is drawn as before', () => {
     bowlSeaInput(P, [], l => maps[l.mapId], 1000, SEA)
   );
   assert.deepEqual(a.h, b.h);
+});
+
+/* ---------- bowl-island.js, on the game's own data ---------- */
+const { maps, locations } = GAME_DATA;
+const ART = GAME_DATA.scenery.props;
+const isBuilding = p => bowlPropClass(p.k, ART[p.k]) === 'building';
+/* the map holding the hub's island today (copperleaf_island until IS-5 renames it copperleaf): found by its fields */
+const HUB_ISLAND = bowlIslandMapId(locations, 0, maps);
+
+test('the hub’s island map is found by its fields: a coast and plots, never test_island', () => {
+  assert.ok(HUB_ISLAND && maps[HUB_ISLAND].island && maps[HUB_ISLAND].plots.length, `found ${HUB_ISLAND}`);
+  assert.notEqual(HUB_ISLAND, 'test_island');
+  /* IS-5: once the hub's own map has the coast, it is the one */
+  const renamed = { ...maps, copperleaf: maps[HUB_ISLAND] };
+  assert.equal(bowlIslandMapId([{ id: 'copperleaf', mapId: 'copperleaf' }], 0, renamed), 'copperleaf');
+  /* only test_island (a coast, no plots): the hub keeps its own map */
+  const L = [{ id: 'hub', mapId: 'hub' }];
+  assert.equal(bowlIslandMapId(L, 0, { hub: { w: 9, h: 9 }, test_island: maps.test_island }), 'hub');
+  /* any other place (a run's) keeps its own map */
+  assert.equal(bowlIslandMapId([L[0], { id: 'b', mapId: 'b' }], 1, { ...maps, b: { w: 9, h: 9 } }), 'b');
+});
+
+test('the island’s heights: the summit where the map says, the sea low', () => {
+  const M = maps[HUB_ISLAND],
+    H = bowlIslandHeights(M),
+    top = (M.spots || []).find(s => s.kind === 'summit');
+  assert.ok(H, 'heights');
+  assert.ok(top, 'the map has a summit');
+  assert.ok(Math.abs(H(top.x, top.z) - top.y) < 3, `summit ${H(top.x, top.z).toFixed(1)} m, the map says ${top.y}`);
+  assert.ok(H(1, 1) < 0.5, 'its corner (sea) is low');
+  assert.equal(bowlIslandHeights({ w: 9, h: 9 }), null, 'a lite map: no heights yet');
+  assert.equal(bowlIslandHeights(M), H, 'read once');
+});
+
+test('the island’s size: its coast’s reach from its middle', () => {
+  const r = bowlIslandRadius(maps[HUB_ISLAND]);
+  assert.ok(r > 60 && r < 200, `${r} m`);
+  assert.equal(bowlIslandRadius({ w: 9, h: 9 }), 0);
+});
+
+test('the island’s town on the bowl: a model on every free plot, the barn in its zone, none twice', () => {
+  const M = maps[HUB_ISLAND],
+    T = bowlIslandPlotThings(M, isBuilding),
+    built = (M.props || []).filter(isBuilding).length;
+  if (!built) assert.equal(T.length, M.plots.length + 1, 'every plot and the barn');
+  for (const t of T) {
+    assert.ok(ART[t.k] && /\.json$/.test(ART[t.k].model || ''), `${t.k} has a low-poly model`);
+  }
+  for (const L of Object.values(BOWL_PLOT_PROPS)) for (const k of L) assert.ok(ART[k], `${k} is a prop`);
+  /* the lab's plot: its front where the plot faces (a prop's front faces south: turn 0) */
+  const lab = M.plots.find(p => p.k === 'lab'),
+    t = T.find(q => q.x === lab.x && q.z === lab.z);
+  assert.equal(t.k, 'lab');
+  assert.equal(t.turn, lab.a + 90);
+  /* IS-5: a building put on a plot takes its place; the barn in its zone likewise */
+  const barnZone = M.zones.find(z => z.k === 'barn'),
+    bx = barnZone.poly.reduce((a, q) => a + q[0], 0) / barnZone.poly.length,
+    bz = barnZone.poly.reduce((a, q) => a + q[1], 0) / barnZone.poly.length,
+    withLab = {
+      ...M,
+      props: [...(M.props || []), { k: 'lab', x: lab.x, z: lab.z }, { k: 'barn', x: bx + 3, z: bz }],
+    },
+    U = bowlIslandPlotThings(withLab, isBuilding);
+  assert.equal(U.length, T.length - 2);
+  assert.ok(!U.some(q => q.k === 'lab' || q.k === 'barn'));
+  assert.deepEqual(bowlIslandPlotThings({ w: 9, h: 9, plots: [{ k: 'lab', x: 1, z: 1 }] }, isBuilding), []);
 });
