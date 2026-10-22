@@ -9,6 +9,11 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- The Studio has a Run Lab (Studio plan Phase 2): type or roll a seed, or paste a debug log, and see that run's map
+  as the game makes it, with your unsaved changes, and beside the data as loaded. Click a place for its type, biome,
+  the day you reach it, its seed and its weather. Every run now starts the same way, from the mast, the test runs and
+  the simulator alike, so the same seed and unlocks always make the same map. The test runs start as a new player's
+  would: no ridge or autumn until those are unlocked.
 - The Studio's Propose changes no longer loses work (Studio plan Phase 0). A failed proposal used to drop the
   pictures and rigs you had changed from the next try while showing them as saved; now nothing is marked saved until
   the pull request is open, a retry sends everything, and a proposal that can't be packed sends nothing. The Studio
