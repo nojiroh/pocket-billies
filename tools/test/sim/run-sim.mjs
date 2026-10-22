@@ -17,20 +17,23 @@
 //   node tools/test/sim/run-sim.mjs            50 runs, the report in validation/sim/runs.json (not committed)
 //   node tools/test/sim/run-sim.mjs --runs=200 --team=3 --fights=4 --pack=5   more runs, three starters at home
 //                                       (one travels), up to four wild fights a place, five Potions packed
+//   node tools/test/sim/run-sim.mjs --unlocks=all   runs with every unlock (default none: a fresh save's; Studio plan
+//                                       T2.1, the run starts through logic/run-start.js as the mast's does)
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { data, fn, hooks, logic, modules, reseed, ROOT, GAME_DATA } from '../setup-real.mjs';
 
 const { RULES, TRAINERS, SPECIES, POOLS } = data;
 const R = RULES.run,
-  { runMapStart, runArrive, runNext, runMapNode, runWorldNode, runWeather } = modules['run-map'],
-  { runBegin, payoutOf, runByTier } = modules['run-state'],
+  { runArrive, runNext, runMapNode, runWorldNode, runWeather } = modules['run-map'],
+  { payoutOf, runByTier } = modules['run-state'],
   { runScenesMake, runWorldTables } = modules['run-scenes'],
   { runFoes, runBattleSeed, runHealCost, runShopStock } = modules['run-loop'],
-  { runGive } = modules['run-start'],
-  { battleWeatherOf } = modules.weather,
-  { MAPGEN_VERSION } = modules.mapgen;
-const MAP_DATA = { nodeTypes: GAME_DATA.nodeTypes, biomes: GAME_DATA.biomes, rules: R };
+  { runStartOn, runStartPlan } = modules['run-start'],
+  { runUnlocks } = modules.unlocks,
+  { battleWeatherOf } = modules.weather;
+const MAP_DATA = { nodeTypes: GAME_DATA.nodeTypes, biomes: GAME_DATA.biomes, rules: R },
+  UNLOCK_DATA = { unlocks: GAME_DATA.unlocks, buildings: GAME_DATA.buildings };
 const worldData = () => ({
   nodeTypes: GAME_DATA.nodeTypes,
   biomes: GAME_DATA.biomes,
@@ -79,7 +82,7 @@ function playOut() {
 /**
  * One run from its seed, played by the policy. `random` reseeds util.js random first (the replay test plays the same
  * seed with two of them). Returns a log of everything that was drawn and how it went, and the run's numbers.
- * @param {string} seed @param {{ random?: number, fights?: number, team?: number, pack?: number }} [o]
+ * @param {string} seed @param {{ random?: number, fights?: number, team?: number, pack?: number, unlocks?: 'none' | 'all' }} [o]
  */
 export function runSim(seed, o = {}) {
   reseed(o.random ?? 1);
@@ -96,8 +99,14 @@ export function runSim(seed, o = {}) {
       .slice(0, runByTier(R.home, 1))
       .map(m => m.uid),
     pack = { items: { taxbreak: Math.min(o.pack ?? 0, runByTier(R.pack, 1)) }, coins: {} };
-  const run = runBegin(s, { ...runGive(seed, 1, MAPGEN_VERSION, R.start), home, pack });
-  runMapStart(run, MAP_DATA);
+  /* Studio plan T2.1: started as the mast starts a run (logic/run-start.js), with what the save has unlocked: none (a
+     fresh save, the default) or every unlock (unlocks: 'all') */
+  if (o.unlocks === 'all') for (const id of Object.keys(UNLOCK_DATA.unlocks)) s.meta.unlocks[id] = 1;
+  const run = runStartOn(
+    s,
+    runStartPlan(seed, { ...MAP_DATA, unlockData: UNLOCK_DATA }, { unlocks: runUnlocks(s, UNLOCK_DATA) }),
+    { home, pack }
+  );
   const scenes = runScenesMake(run, worldData()),
     W = runWorldTables(run, data.LOCATIONS[0], worldData()),
     foes = runFoes(run, { leaders: Object.values(TRAINERS).filter(T => T.miniboss), rules: R });
@@ -106,7 +115,7 @@ export function runSim(seed, o = {}) {
     maps: Object.fromEntries(W.locations.slice(1).map((p, i) => [p.mapId, scenes[i]])),
     trainers: foes,
   });
-  const log = { seed, scenes: scenes.map(sc => sc.gen.seed), places: [] },
+  const log = { seed, unlocks: run.unlocks, scenes: scenes.map(sc => sc.gen.seed), places: [] },
     stats = { battles: 0, turns: 0, caught: 0, healed: 0, spent: 0, won: false, lostAt: '' };
   try {
     runArrive(s, 0, MAP_DATA);
@@ -300,7 +309,14 @@ export function runStats(n = 50, o = {}) {
 if (process.argv[1] && process.argv[1].endsWith('run-sim.mjs')) {
   const arg = (k, d) => +((process.argv.find(a => a.startsWith(`--${k}=`)) || '').split('=')[1] || d),
     t0 = Date.now(),
-    report = runStats(arg('runs', 50), { team: arg('team', 1), fights: arg('fights', 2), pack: arg('pack', 0) });
+    unlocks = (process.argv.find(a => a.startsWith('--unlocks=')) || '--unlocks=none').split('=')[1],
+    report = runStats(arg('runs', 50), {
+      team: arg('team', 1),
+      fights: arg('fights', 2),
+      pack: arg('pack', 0),
+      unlocks,
+    });
+  report.unlocks = unlocks;
   report.seconds = Math.round((Date.now() - t0) / 1000);
   mkdirSync(join(ROOT, 'validation/sim'), { recursive: true });
   writeFileSync(join(ROOT, 'validation/sim/runs.json'), JSON.stringify(report, null, 1));

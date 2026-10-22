@@ -23,3 +23,10 @@ test('run sim: the report has its numbers', () => {
   for (const k of ['days', 'places', 'battles', 'turnsPerBattle', 'capital']) assert.ok(R[k] >= 0, k);
   assert.ok(R.won >= 0 && R.won <= 3);
 });
+
+test('run sim: a run starts as the mast starts it, with no unlocks or every one', () => {
+  const none = runSim('SIMUNLOCK0', { team: 3 }),
+    all = runSim('SIMUNLOCK0', { team: 3, unlocks: 'all' });
+  assert.deepEqual(none.log.unlocks, []);
+  assert.ok(all.log.unlocks.includes('biome_ridge') && all.log.unlocks.includes('shop_settlement'));
+});
