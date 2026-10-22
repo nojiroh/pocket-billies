@@ -11,8 +11,11 @@ import { expose } from '../test-globals.js';
 expose({
   MUSIC_BATTLE_KINDS: [() => MUSIC_BATTLE_KINDS],
   MUSIC_WHERE_KEYS: [() => MUSIC_WHERE_KEYS],
+  RED_ZONE: [() => RED_ZONE],
   // @ts-expect-error -- replaced on purpose
   musicBattleKind: [() => musicBattleKind, v => (musicBattleKind = v)],
+  // @ts-expect-error -- replaced on purpose
+  musicRedZone: [() => musicRedZone, v => (musicRedZone = v)],
   // @ts-expect-error -- replaced on purpose
   musicWhereMatches: [() => musicWhereMatches, v => (musicWhereMatches = v)],
   // @ts-expect-error -- replaced on purpose
@@ -36,6 +39,16 @@ export function musicBattleKind(B) {
   if (B.kind !== 'trainer') return 'wild';
   const T = B.T || {};
   return T.runFoe === 'boss' ? 'boss' : T.runFoe === 'miniboss' ? 'leader' : T.who === 'chad' ? 'rival' : 'trainer';
+}
+
+/** SND-5: the red zone, the share of its HP under which the lead Billie's battle song turns tense */
+export const RED_ZONE = 0.25;
+/**
+ * SND-5: is a Billie with this much HP in the red zone? (alive, under a quarter)
+ * @param {number} hp @param {number} max
+ */
+export function musicRedZone(hp, max) {
+  return max > 0 && hp > 0 && hp / max < RED_ZONE;
 }
 
 /** the keys a where-rule can match on; a rule's `song` is what it picks */
@@ -85,7 +98,8 @@ export function songFor(state, where, songs) {
 /**
  * SND-4: day or night. The song's night version ('town@night', audio/tracker.js trackerNight) when it is night
  * outdoors, out of battle, and the song has one (not `night: false`). Night from 0.6, day again below 0.4: in between,
- * what plays stays, so dusk doesn't flip the song back and forth
+ * what plays stays, so dusk doesn't flip the song back and forth. SND-5: in battle, the tense version ('wild@tense',
+ * trackerTense) while the lead Billie is in the red zone (state.redZone), unless the song has `tense: false`
  * @param {string | null} name the song for the place (songFor)
  * @param {Record<string, any>} state songFor's state plus `night`, the environment's night level (0 day, 1 night)
  * @param {Record<string, any>} songs
@@ -94,7 +108,8 @@ export function songFor(state, where, songs) {
  */
 export function songVariant(name, state, songs, playing = null) {
   const S = name ? songs[name] : null;
-  if (!S || S.night === false || state.indoor || state.battle) return name;
+  if (S && state.battle) return state.redZone && S.tense !== false ? name + '@tense' : name;
+  if (!S || S.night === false || state.indoor) return name;
   const n = state.night || 0,
     night = name + '@night';
   return n > 0.6 || (playing === night && n >= 0.4) ? night : name;

@@ -95,6 +95,7 @@
       "long",
       "walk",
       "drive",
+      "pedal",
       "none"
      ]
     },
@@ -205,6 +206,17 @@
        },
        "night": {
         "description": "SND-4: the night version (played outdoors at night, logic/music-where.js songVariant): the recipe's changes. With none written, 8 bpm slower, a fourth down, soft drums (audio/tracker.js trackerNight). false: no night version (battle songs, indoor songs, the title)",
+        "anyOf": [
+         {
+          "const": false
+         },
+         {
+          "$ref": "#/$defs/recipe"
+         }
+        ]
+       },
+       "tense": {
+        "description": "SND-5: the tense version of a battle song (played while the lead Billie is under a quarter of its HP, logic/music-where.js songVariant): the recipe's changes. With none written, 16 bpm faster, march drums, a pedal bass (audio/tracker.js trackerTense). false: no tense version",
         "anyOf": [
          {
           "const": false

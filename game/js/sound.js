@@ -10,8 +10,10 @@ import { expose } from './test-globals.js';
 import { cutscene, mapIdAt, provide } from './hooks.js';
 import { clamp } from './util.js';
 import { LOCATIONS, MUSIC, SPECIES } from './game-data.js';
-import { musicBattleKind, songFor, songVariant } from './logic/music-where.js';
+import { maxHp } from './logic/rules.js';
+import { musicBattleKind, musicRedZone, songFor, songVariant } from './logic/music-where.js';
 import { cryRecipe, cryVoices } from './logic/cries.js';
+import { fighter, liveActors } from './logic/battle-engine.js';
 import { activeBattle, saveData, uiState } from './game-state.js';
 import { battleStage } from './battle-stage.js';
 import {
@@ -229,6 +231,9 @@ function musicState() {
   if (typeof saveData === 'undefined' || !saveData || !saveData.started) return { started: false };
   const B = typeof activeBattle !== 'undefined' && activeBattle,
     battle = musicBattleKind(B),
+    /* SND-5: the lead Billie, the first of the player's side still standing, for the red zone */
+    lead = B ? liveActors(0)[0] : undefined,
+    L = lead != null ? fighter(lead) : null,
     id = typeof mapIdAt === 'function' ? mapIdAt(saveData.trip.node) : null,
     sc = id && mapById(id),
     r = LOCATIONS[saveData.trip.node],
@@ -237,6 +242,7 @@ function musicState() {
   return {
     started: true,
     battle,
+    redZone: !!L && musicRedZone(L.hp, maxHp(L)),
     /* SND-4: the environment's night level outdoors (updateAmbience), for songVariant */
     night: soundEngine.L ? soundEngine.L.night || 0 : 0,
     tab: uiState.tab,
@@ -287,10 +293,14 @@ function battleDrumsIn() {
     soundLog('drums in');
   }
 }
-/* SND-5: the parts of a song the fingerprints (tools/check-sound.py) render besides day and night: its intro */
+/* SND-5: the parts of a song the fingerprints (tools/check-sound.py) render besides day and night: its intro, its tense
+   version */
 function musicParts(name) {
   const S = SONGS[name];
-  return S && S.intro && S.intro.length ? ['intro'] : [];
+  const out = S && S.intro && S.intro.length ? ['intro'] : [];
+  /* a battle song's tense version */
+  if (S && S.tense !== false && MUSIC.where.some(W => W.battle && W.song === name)) out.push('tense');
+  return out;
 }
 /* SND-4: a song's name as it plays at this night level (1 night, 0 day): 'town@night' or the name itself */
 function musicVariant(name, night) {

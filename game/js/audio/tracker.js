@@ -15,6 +15,7 @@ expose({
   trackerCreate: [() => trackerCreate, v => (trackerCreate = v)],
   trackerNight: [() => trackerNight, v => (trackerNight = v)],
   trackerRecipe: [() => trackerRecipe, v => (trackerRecipe = v)],
+  trackerTense: [() => trackerTense, v => (trackerTense = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -142,14 +143,25 @@ function trackerNight(D) {
   if (by && D.counter && !(night && night.counter)) N.counter = move(D.counter);
   return N;
 }
+/* SND-5: a battle song's tense version, for the red zone (the lead Billie under a quarter of its HP, as Black and White
+   did it): the song's `tense` changes, or by default 16 bpm faster, march drums and a pedal bass on the flat seventh.
+   null when the song has `tense: false` */
+function trackerTense(D) {
+  if (!D || D.tense === false) return null;
+  const { tense, ...rest } = D,
+    auto = { bpm: Math.min(300, D.bpm + 16), drums: 'march', bass: 'pedal' };
+  return { ...rest, ...(tense && typeof tense === 'object' ? tense : auto) };
+}
 /* SND-5: the recipe a song name plays: 'town' itself, 'town@night' its night version; null for a song or a part that
-   doesn't exist. `run` is music.json's run (the arc's bands), for the parts that need it */
+   doesn't exist; 'wild@tense' its tense version. `run` is music.json's run (the arc's bands), for the parts that need
+   it */
 function trackerRecipe(songs, name, run) {
   const [base, ...parts] = String(name).split('@');
   let D = (songs && songs[base]) || null;
   for (const p of parts) {
     if (!D) return null;
     if (p === 'night') D = trackerNight(D);
+    else if (p === 'tense') D = trackerTense(D);
     else return null;
   }
   return D;
@@ -325,7 +337,8 @@ export function trackerCreate(ctx, bus, opts = {}) {
       step: o.intro ? -(D.introSteps || 0) : 0,
       next: c.currentTime + 0.08,
       gain: c.createGain(),
-      hold: o.hold ? c.currentTime + 8 : 0,
+      /* a song that takes over a held one (the red zone during the intro) keeps the drums out too */
+      hold: o.hold ? c.currentTime + 8 : (T.song && T.song.hold) || 0,
     };
     T.song.gain.connect(bus);
     T.song.drums = c.createGain();
@@ -490,6 +503,16 @@ export function trackerCreate(ctx, bus, opts = {}) {
         bassVoice({
           type: 'p50',
           freq: midiToFrequency(root + (i % 8 === 6 ? 12 : 0)),
+          t,
+          dur: spb * 1.6,
+          vol: 0.07,
+          cut: 900,
+        });
+      else if (bs === 'pedal' && i % 2 === 0)
+        /* SND-5: the tense pedal, eighths on the key's flat seventh (under the bass's home) whatever the chord */
+        bassVoice({
+          type: 'p50',
+          freq: midiToFrequency(D.key - 26 + (i % 8 === 6 ? 12 : 0)),
           t,
           dur: spb * 1.6,
           vol: 0.07,

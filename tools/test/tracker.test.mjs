@@ -9,7 +9,7 @@ import { test } from 'node:test';
 globalThis.window = globalThis;
 globalThis.PB_TEST_GLOBALS = true;
 await import('../../game/js/audio/tracker.js');
-const { trackerCompose, trackerCreate, trackerNight, trackerRecipe } = /** @type {any} */ (globalThis);
+const { trackerCompose, trackerCreate, trackerNight, trackerRecipe, trackerTense } = /** @type {any} */ (globalThis);
 
 const MUSIC = JSON.parse(readFileSync(new URL('../../game/data/music.json', import.meta.url), 'utf8'));
 // town's recipe without its written lines (SND-4 gave it a placeholder hook): the tests write their own
@@ -203,4 +203,32 @@ test('held drums stay out until drumsIn (the throw)', () => {
   const out = playFor(D, { hold: true }, 24, { at: 8, do: T => T.drumsIn() });
   assert.ok(out.some(([, k]) => k === 'drum'));
   assert.ok(!out.some(([st, k]) => k === 'drum' && st < 8));
+});
+
+test('the tense version (the red zone): written changes win; with none, 16 bpm faster, march drums, the pedal bass', () => {
+  const w = MUSIC.songs.wild,
+    t = trackerTense(w);
+  assert.equal(t.bpm, w.bpm + 16);
+  assert.equal(t.drums, 'march');
+  assert.equal(t.bass, 'pedal');
+  assert.equal(t.key, w.key);
+  assert.deepEqual(t.hook, w.hook, 'the hook stays');
+  assert.equal(
+    trackerTense({ ...w, tense: { bpm: 170 } }).drums,
+    w.drums,
+    'a written tense changes only what it names'
+  );
+  assert.equal(trackerTense({ ...w, tense: false }), null);
+  assert.deepEqual(trackerRecipe({ wild: w }, 'wild@tense'), t);
+});
+
+test('a song that takes over a held one keeps the drums out until the throw', () => {
+  const c = fakeContext(),
+    T = trackerCreate(c, {}, { songs: { a: { ...town, drums: 'drive' }, b: { ...town, drums: 'drive', bpm: 120 } } });
+  T.play('a', { hold: true });
+  T.play('b');
+  clearInterval(T.timer);
+  assert.ok(T.song.hold);
+  T.drumsIn();
+  assert.equal(T.song.hold, 0);
 });

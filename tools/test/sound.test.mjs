@@ -4,7 +4,13 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
-import { musicBattleKind, musicWhereMatches, songFor, songVariant } from '../../game/js/logic/music-where.js';
+import {
+  musicBattleKind,
+  musicRedZone,
+  musicWhereMatches,
+  songFor,
+  songVariant,
+} from '../../game/js/logic/music-where.js';
 
 const MUSIC = JSON.parse(readFileSync(new URL('../../game/data/music.json', import.meta.url), 'utf8'));
 const pick = state => songFor(state, MUSIC.where, MUSIC.songs);
@@ -138,4 +144,22 @@ test('dusk and dawn: night from 0.6, day again below 0.4, in between what plays 
   assert.equal(v(0.61, 'town'), 'town@night');
   assert.equal(v(0.5, 'town@night'), 'town@night');
   assert.equal(v(0.39, 'town@night'), 'town');
+});
+
+// SND-5: the red zone
+test('the red zone: alive and under a quarter of its HP', () => {
+  assert.ok(musicRedZone(24, 100));
+  assert.ok(!musicRedZone(25, 100));
+  assert.ok(!musicRedZone(0, 100), 'a fainted Billie is not in it');
+  assert.ok(!musicRedZone(1, 0));
+});
+
+test('in battle the red zone plays the tense version; out of it, or with tense: false, the song itself', () => {
+  const S = { wild: { night: false }, calm: { tense: false }, town: {} },
+    v = (name, o) => songVariant(name, { ...out(o) }, S, null);
+  assert.equal(v('wild', { battle: 'wild', redZone: true }), 'wild@tense');
+  assert.equal(v('wild', { battle: 'wild', redZone: false }), 'wild');
+  assert.equal(v('calm', { battle: 'wild', redZone: true }), 'calm');
+  assert.equal(v('town', { redZone: true }), 'town', 'only in battle');
+  assert.equal(v('wild', { battle: 'wild', redZone: true, night: 1 }), 'wild@tense', 'no night in battle');
 });

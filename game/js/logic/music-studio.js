@@ -64,6 +64,7 @@ export const MUSIC_CHOICES = {
     ['long', 'Long (one note a bar)'],
     ['walk', 'Walk (up the chord)'],
     ['drive', 'Drive (eighths)'],
+    ['pedal', 'Pedal (eighths on the flat seventh: tense)'],
     ['none', 'None'],
   ],
   arp: [
