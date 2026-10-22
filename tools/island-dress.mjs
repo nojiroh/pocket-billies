@@ -213,7 +213,10 @@ export function islandDress(sc, scenery, o = {}) {
    * one prop at (x, z) if the spot allows it: o.gap extra room round it, o.path how far from a path it stays (m),
    * o.slope the steepest ground it stands on, o.wild may stand in the wild grass, o.scale a size range for a model
    */
-  const put = (k, x, z, rnd, opt = {}) => {
+  const put = (k, x0, z0, rnd, opt = {}) => {
+    /* checked where it is stored: rounding can move a prop into the next cell */
+    const x = r2(x0),
+      z = r2(z0);
     const M = C[k];
     if (!M) {
       if (!notes.includes(`no prop ${k}`)) notes.push(`no prop ${k}`);
