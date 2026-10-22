@@ -28,12 +28,10 @@ import {
   typeBadgeHTML,
 } from './hooks.js';
 import { $, $$, clamp, random } from './util.js';
-import { COINS, ITEMS, MOVES, RELICS, RULES, STAT_NAMES, TYPE_COLORS, typeEffectiveness } from './game-data.js';
+import { COINS, ITEMS, MOVES, STAT_NAMES, TYPE_COLORS, typeEffectiveness } from './game-data.js';
 import { ROBOT_LIMBS, ROBOT_SLOT_NAMES, isRobot, robotPartDef, speciesOf } from './logic/fighters.js';
 import {
   billyName,
-  dropEncounter,
-  findBilly,
   formatNumber,
   healAll,
   maxHp,
@@ -43,14 +41,12 @@ import {
   partMaxHp,
   plural,
 } from './logic/rules.js';
-import { relicOfferMake } from './logic/relics.js';
 import {
   ACTOR_SIDE,
   BATTLE_RULES,
   CATCH_RULES,
   actorTypes,
   allSnapshots,
-  battleRoll,
   battleSay,
   canUse,
   catchKeep,
@@ -66,7 +62,7 @@ import {
   shockName,
   teamNeedsHp,
 } from './logic/battle-engine.js';
-import { battleRewards } from './logic/battle-rewards.js';
+import { battleSettle, battleSettleWin } from './logic/battle-rewards.js';
 import { activeBattle, escapeHtml, reducedMotion, save, saveData, setActiveBattle, uiState } from './game-state.js';
 import { artURL, coinHTML, iconURL, uiIconHTML } from './art.js';
 import { portraitHTML } from './person-art.js';
@@ -931,25 +927,12 @@ export function endBattle() {
     T = activeBattle.T,
     tid = activeBattle.tid,
     /* RL-8: what it pays and costs (logic/battle-rewards.js); RL-4: a battle called off at the turn cap ends as if you
-       walked away (wild) or lost (a trainer) */
-    pay = battleRewards(
-      { kind, over: activeBattle.over, T, tid, foe: activeBattle.sides[1].team, fx: activeBattle.fx },
-      saveData,
-      battleRoll
-    ),
-    o = pay.o,
-    lead = findBilly(activeBattle.lead),
-    /* RL-8: a run's battle (run.js): it has ended, so the save may be written again (game-state.js saveHeld) */
-    run = saveData.run && activeBattle.runK != null ? saveData.run : null;
-  if (run) run.at = { phase: 'walk', battle: -1 };
+       walked away (wild) or lost (a trainer). Studio plan T3.2: battleSettle also does what it does to the save (a
+       run battle's checkpoint, the Hype counter, the encounter, the lead's streak), as the run's simulation does */
+    { pay, run } = battleSettle(activeBattle, saveData),
+    o = pay.o;
   if (o === 'win' && typeof jingle === 'function') jingle(JINGLES.victory);
-  if (o === 'win') for (const m of saveData.team) if (m.hp > 0) m.wins = (m.wins || 0) + 1; /* v36: the Hype counter */
   if (typeof battleTipHide === 'function') battleTipHide();
-  if (kind === 'wild') dropEncounter(activeBattle.qid);
-  if (lead) {
-    if (o === 'win') lead.streak = (lead.streak || 0) + 1;
-    else if (o === 'lose') lead.streak = 0;
-  }
   /* v47: Blake's first battle, in the opening: no fee and no sheet, win or lose; the story picks it up (story.js) */
   if (T && T.tutorial) {
     if (o === 'win') saveData.flags[tid] = 1;
@@ -981,20 +964,12 @@ export function endBattle() {
       btns: [{ l: 'Back to walking', c: 'dark', f: closeModal }],
     });
   }
-  /* phase 08: beating a wild Billie pays prize money (steps paid before) */
-  if (kind === 'wild' && o === 'win') {
-    const prize = pay.prize;
-    if (prize > 0) {
-      saveData.se += prize;
-      toast(`You earned $${formatNumber(prize)}.`);
-    }
-  }
+  /* phase 08: beating a wild Billie pays prize money (steps paid before); a trainer its reward and its flag, and RL-12:
+     a run's mini-boss a pick of Loopholes, saved on the run before it shows (logic/battle-rewards.js battleSettleWin) */
+  battleSettleWin(activeBattle, saveData, pay, run);
+  if (kind === 'wild' && o === 'win' && pay.prize > 0) toast(`You earned $${formatNumber(pay.prize)}.`);
   if (kind === 'trainer' && o === 'win') {
-    saveData.se += pay.reward;
-    /* RL-12: a run's mini-boss beaten: a pick of Loopholes, saved on the run before it shows (logic/relics.js) */
-    if (run && T && T.runFoe === 'miniboss') relicOfferMake(run, RELICS, RULES.run.relics);
     const first = pay.first;
-    saveData.flags[tid] = 1;
     let extra = '';
     const st = T.seat;
     if (st && pay.seat) {

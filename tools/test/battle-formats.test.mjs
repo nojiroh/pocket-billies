@@ -184,3 +184,55 @@ test('an offer answered: yes takes the money and ends the battle; no raises the 
   assert.ok(!B2.over);
   assert.equal(B2.integrity, Math.min(data.RULES.catching.integrityMax, was * data.RULES.catching.integrityStep));
 });
+
+test("a battle's end on the save (battleSettle): the Hype counter and the lead's streak on a win, the encounter gone", () => {
+  const s = teamOfThree(),
+    q = { id: 'settle', sp: WILD(), lvl: 3, no: 9 };
+  fn('encountersHere')().push(q);
+  fn('startWild')(q);
+  const B = hooks.activeBattle,
+    lead = fn('findBilly')(B.lead);
+  lead.streak = 2;
+  B.over = 'win';
+  B.fx = [{ kind: 'money', mult: 2, src: 'x' }];
+  const { pay, run } = fn('battleSettle')(B, s);
+  assert.equal(run, null, 'not a run battle');
+  assert.equal(pay.o, 'win');
+  assert.equal(
+    pay.prize,
+    fn('battleRewards')({ kind: 'wild', over: 'win', foe: B.sides[1].team, fx: B.fx }, s, null).prize
+  );
+  assert.ok(
+    pay.prize > fn('battleRewards')({ kind: 'wild', over: 'win', foe: B.sides[1].team }, s, null).prize,
+    'with its fx'
+  );
+  assert.equal(lead.streak, 3);
+  for (const m of s.team) if (m.hp > 0) assert.equal(m.wins, 1);
+  assert.ok(!fn('encountersHere')().some(x => x.id === 'settle'), 'the encounter is gone');
+  const se = s.se;
+  fn('battleSettleWin')(B, s, pay, null);
+  assert.equal(s.se, se + pay.prize);
+  // a loss: the streak ends, no Hype
+  fn('startWild')({ id: 'settle2', sp: WILD(), lvl: 3, no: 10 });
+  const B2 = hooks.activeBattle;
+  B2.over = 'lose';
+  fn('battleSettle')(B2, s);
+  assert.equal(fn('findBilly')(B2.lead).streak, 0);
+});
+
+test("a run's mini-boss beaten (battleSettleWin): its reward, its flag and a pick of Loopholes made on the run", () => {
+  const s = teamOfThree(),
+    tid = doubleTrainer();
+  fn('startTrainer')(tid, { talked: true });
+  const B = hooks.activeBattle;
+  B.over = 'win';
+  B.T = { ...B.T, runFoe: 'miniboss', reward: 77 };
+  const run = { offer: null, offerN: 0, relics: [], seed: 'SETTLE' },
+    { pay } = fn('battleSettle')(B, s),
+    se = s.se;
+  fn('battleSettleWin')(B, s, pay, run);
+  assert.equal(s.se, se + 77);
+  assert.equal(s.flags[tid], 1);
+  assert.ok(Array.isArray(run.offer) && run.offer.length > 0, 'a pick of Loopholes');
+  assert.equal(run.offerN, 1);
+});
