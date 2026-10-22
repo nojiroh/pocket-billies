@@ -835,9 +835,11 @@ setInterval(() => {
   } catch (e) {}
 }, 1000);
 /* a short tune that plays once (victory, level up, evolution), after which the place's music comes back */
-export function jingle(notes, bpm = 150, type = 'p25') {
+/* SND-1: bus is where it plays, the effects bus unless asked (Settings → Sound → Music's Test plays one on the music bus) */
+export function jingle(notes, bpm = 150, type = 'p25', bus = null) {
   if (!initSound() || soundEngine.ctx.state !== 'running') return;
-  const c = soundEngine.ctx,
+  const out = bus || soundEngine.fx,
+    c = soundEngine.ctx,
     spb = 60 / bpm / 4,
     t0 = c.currentTime + 0.05;
   let t = t0;
@@ -849,7 +851,7 @@ export function jingle(notes, bpm = 150, type = 'p25') {
   }
   for (const [n, l] of notes) {
     if (n)
-      (synthVoice(soundEngine.fx, {
+      (synthVoice(out, {
         type,
         freq: midiToFrequency(n),
         t,
@@ -859,7 +861,7 @@ export function jingle(notes, bpm = 150, type = 'p25') {
         echo: 0.2,
       }),
         n &&
-          synthVoice(soundEngine.fx, {
+          synthVoice(out, {
             type: 'triangle',
             freq: midiToFrequency(n - 12),
             t,
@@ -1934,7 +1936,7 @@ function testVolume(k) {
       [72, 79].forEach((n, i) =>
         synthVoice(soundEngine.master, { type: 'p25', freq: midiToFrequency(n), t: t + i * 0.12, dur: 0.14, vol: 0.06 })
       );
-    else if (k === 'music') jingle(JINGLES.levelup);
+    else if (k === 'music') jingle(JINGLES.levelup, 150, 'p25', soundEngine.mus);
     else if (k === 'sfx') soundEffect('coin');
     else if (k === 'world') {
       synthNoise(ambience.bus, { t, dur: 1.2, vol: 0.35, bp: 1500, q: 0.9 });
