@@ -68,13 +68,14 @@ function pixelDiff(made, ref) {
 
 test('every kit Billie bakes in JS as tools/build-kit-billies.py baked it', () => {
   const C = B.colours,
+    D = B.bake,
     problems = [];
   assert.equal(B.forms.length, 24);
   for (const form of B.forms) {
     const where = `${form.name} (${form.rig})`;
     let made;
     try {
-      made = A.kitBakeForm(K, form, C, pics);
+      made = A.kitBakeForm(K, form, C, pics, D);
     } catch (e) {
       problems.push(`${where}: ${e.stack.split('\n').slice(0, 3).join(' / ')}`);
       continue;

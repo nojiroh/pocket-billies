@@ -35,6 +35,8 @@ RIGS = 'game/art/next/rigs-next.js'
 LINES = 'game/data/lines'
 PREVIEW = 'docs/samples/kit-billies.png'
 
+# These constants are also kitBuilds.json "bake", which the JS baker (game/js/logic/kit-assemble.js) reads. Keep them
+# equal until this builder retires (Studio plan Phase 5, T5.1); tools/test/kit-bake-parity.test.mjs compares the art.
 BW = BH = 128          # the stage box every Billie fits in
 CX, BASE = 64, 120     # its middle and ground line
 MARGIN = 2             # keep this many pixels clear of the box's edges
