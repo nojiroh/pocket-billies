@@ -30,8 +30,6 @@ import {
 } from './kit-pixels.js';
 /* eslint-disable no-func-assign */
 expose({
-  KIT_KIND_SLOT: [() => KIT_KIND_SLOT],
-  KIT_SLOTS: [() => KIT_SLOTS],
   colourOf: [() => colourOf],
   // @ts-expect-error -- replaced on purpose
   kitArmRest: [() => kitArmRest, v => (kitArmRest = v)],
@@ -57,17 +55,6 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-/** which slot of rules.json "parts" each bone kind fills (a form's "slots" and an extra's slot override it), and the
- * slots every stage fills (T5.5 swaps these for partKits.json "slots" and rules.json parts.slots) */
-export const KIT_KIND_SLOT = /** @type {Record<string, string>} */ ({
-  head: 'head',
-  torso: 'body',
-  arm: 'front',
-  leg: 'back',
-  tail: 'sig',
-});
-export const KIT_SLOTS = ['head', 'body', 'front', 'back', 'sig'];
-
 /**
  * @typedef {{ n: string, par: string, frames: Record<string, Pixels>, pivot: [number, number], at: [number, number],
  *   z: number, zb: number, rr?: number, lag?: number, slot?: string | null, face?: boolean }} KitPiece
@@ -488,10 +475,12 @@ export function kitBakeForm(K, form, C, pics, D) {
   }
   return { k, views, sheet, rig, layout };
 }
-/** native_parts: the stage's fitting set, the kit part on the bone that fills each slot
- * @param {KitForm} form @param {Record<string, string>} [kindSlot] @param {string[]} [slotList]
+/** native_parts: the stage's fitting set, the kit part on the bone that fills each slot of rules.json parts.slots
+ * (`slotList`); a bone kind fills its partKits.json "slots" one (`kindSlot`) unless the form's "slots" or an extra's
+ * slot says otherwise
+ * @param {KitForm} form @param {Record<string, string>} kindSlot @param {string[]} slotList
  * @returns {Record<string, string>} */
-export function kitNativeParts(form, kindSlot = KIT_KIND_SLOT, slotList = KIT_SLOTS) {
+export function kitNativeParts(form, kindSlot, slotList) {
   /** @type {Record<string, string>} */
   const slots = {},
     over = form.slots || {};

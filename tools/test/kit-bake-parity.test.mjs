@@ -15,6 +15,7 @@ import { modules, ROOT } from './setup-real.mjs';
 const A = modules['kit-assemble'];
 const K = JSON.parse(readFileSync(join(ROOT, 'game/data/partKits.json'), 'utf8'));
 const B = JSON.parse(readFileSync(join(ROOT, 'game/data/kitBuilds.json'), 'utf8'));
+const RULES = JSON.parse(readFileSync(join(ROOT, 'game/data/rules.json'), 'utf8'));
 const RIGS = (() => {
   const box = { window: {} };
   vm.runInNewContext(readFileSync(join(ROOT, 'game/art/next/rigs-next.js'), 'utf8'), box);
@@ -87,7 +88,8 @@ test('every kit Billie bakes in JS as tools/build-kit-billies.py baked it', () =
     const layout = JSON.parse(readFileSync(join(ROOT, `game/art/next/billionaires/${form.name}.json`), 'utf8'));
     for (const d of jsonDiff(JSON.parse(JSON.stringify(made.layout)), layout, 'layout')) problems.push(`${where} ${d}`);
     const line = JSON.parse(readFileSync(join(ROOT, `game/data/lines/${form.line}.json`), 'utf8'));
-    for (const d of jsonDiff(A.kitNativeParts(form), line.parts[form.stage], 'parts')) problems.push(`${where} ${d}`);
+    for (const d of jsonDiff(A.kitNativeParts(form, K.slots, RULES.parts.slots), line.parts[form.stage], 'parts'))
+      problems.push(`${where} ${d}`);
   }
   assert.deepEqual(problems, []);
 });

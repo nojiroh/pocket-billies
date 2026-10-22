@@ -50,6 +50,7 @@ function readRigs() {
 export function bakeKitBillies({ only = null, check = false, log = console.log } = {}) {
   const K = readJson('partKits.json'),
     B = readJson('kitBuilds.json'),
+    R = readJson('rules.json'),
     cache = new Map(),
     pics = (id, view) => {
       const key = id + '|' + view;
@@ -85,7 +86,7 @@ export function bakeKitBillies({ only = null, check = false, log = console.log }
       rigsChanged = true;
     }
     const L = (lines[form.line] ||= readJson(`lines/${form.line}.json`)),
-      parts = kitNativeParts(form);
+      parts = kitNativeParts(form, K.slots, R.parts.slots);
     if (form.stage >= L.names.length)
       throw new Error(`${form.name}: stage ${form.stage}, ${form.line} has ${L.names.length}`);
     L.parts ||= [];

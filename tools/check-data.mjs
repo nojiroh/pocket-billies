@@ -708,7 +708,7 @@ if (D.kitBuilds && check('kitBuilds.schema.json', D.kitBuilds, 'kitBuilds.json')
     for (const f of forms) {
       let want;
       try {
-        want = kitNativeParts(f);
+        want = kitNativeParts(f, D.partKits.slots || {}, [...slotNames]);
       } catch (e) {
         problem(at, e.message);
         continue;
