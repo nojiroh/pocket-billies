@@ -3385,6 +3385,23 @@ function updatePlayerHeight(dt) {
       P.hop = null;
       P.yv = gh;
       if (typeof soundEffect === 'function') soundEffect('step', { hard: 1 });
+      /* TR-2c: a puff of dust round your feet where you land (walk/effects.js draws it, rising a little and fading) */
+      if (!reducedMotion && walkView.parts)
+        for (let i = 0; i < 6; i++) {
+          const a = (i / 6) * Math.PI * 2 + Math.random() * 0.5;
+          walkView.parts.push({
+            k: 'dust',
+            x: P.x + Math.cos(a) * 0.15,
+            z: P.z + Math.sin(a) * 0.15,
+            y: 0.02,
+            vx: Math.cos(a) * 1.1,
+            vz: Math.sin(a) * 1.1,
+            vy: 0.35,
+            life: 0,
+            max: 0.5,
+            g: 0.6,
+          });
+        }
     }
   } else P.yv += (gh - P.yv) * Math.min(1, dt * 18);
   /* lean into a climb (and back going down), seen as a tilt when you walk across the screen */
