@@ -283,33 +283,6 @@ html[data-contrast='high'] .px {
     width: 0 !important;
   }
 }
-
-/* ---------- Settings ---------- */
-.set-sub {
-  margin: 18px 2px 6px;
-  font-size: 15px;
-  color: var(--text2);
-  text-transform: none;
-  letter-spacing: 0.02em;
-}
-.set-tabs {
-  border-radius: var(--r2) !important;
-  background: rgba(46, 33, 64, 0.07) !important;
-  padding: 4px !important;
-  box-shadow: inset 0 1px 3px rgba(46, 33, 64, 0.12) !important;
-}
-.set-tabs button {
-  border-radius: var(--r1) !important;
-  font: 600 14.5px/1 var(--font-voice) !important;
-}
-.set-tabs button.on,
-.set-tabs button[aria-selected='true'] {
-  background: linear-gradient(var(--gold-a), var(--gold-b)) !important;
-  color: #2e2140 !important;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.7),
-    0 6px 12px -5px var(--gold-sh) !important;
-}
 .seg {
   border-radius: var(--r1) !important;
   background: rgba(46, 33, 64, 0.07) !important;
@@ -326,83 +299,6 @@ html[data-contrast='high'] .px {
   color: var(--text) !important;
   box-shadow: 0 4px 10px -4px rgba(46, 33, 64, 0.45) !important;
 }
-.sw {
-  border-radius: 10px !important;
-}
-.gfx-presets {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-  margin: 6px 0 10px;
-}
-.gfx-pre {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  align-items: flex-start;
-  text-align: left;
-  padding: 12px 10px;
-  border-radius: var(--r2);
-  border: 1px solid var(--g-bd);
-  background: var(--g-bg2);
-  color: var(--text);
-  cursor: pointer;
-  box-shadow: 0 8px 16px -10px rgba(46, 33, 64, 0.5);
-  transition: transform 0.14s var(--spring);
-}
-.gfx-pre b {
-  font: 700 15px/1.1 var(--font-voice);
-}
-.gfx-pre small {
-  font-size: 12px;
-  color: var(--text2);
-  line-height: 1.25;
-}
-.gfx-pre.on {
-  background: linear-gradient(var(--gold-a), var(--gold-b));
-  color: #2e2140;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.7),
-    0 10px 18px -8px var(--gold-sh);
-}
-.gfx-pre.on small {
-  color: #5b4a2b;
-}
-.gfx-pre:active {
-  transform: scale(0.96);
-}
-.gfx-group {
-  display: flex;
-  flex-direction: column;
-  border-radius: var(--r2);
-  background: var(--g-bg2);
-  border: 1px solid var(--g-bd);
-  box-shadow: 0 8px 16px -10px rgba(46, 33, 64, 0.45);
-  overflow: hidden;
-}
-.gfx-dial {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 10px 12px;
-}
-.gfx-dial + .gfx-dial {
-  border-top: 1px solid rgba(46, 33, 64, 0.08);
-}
-.gfx-h {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.gfx-h b {
-  flex: 1;
-  font-size: 15.5px;
-}
-.gfx-cost {
-  font-size: 11.5px;
-  padding: 2px 7px;
-  border-radius: 8px;
-}
 .c-low {
   background: rgba(78, 154, 74, 0.18);
 }
@@ -411,66 +307,6 @@ html[data-contrast='high'] .px {
 }
 .c-high {
   background: rgba(217, 83, 47, 0.2);
-}
-.gfx-see,
-.gfx-reset {
-  border: 1px solid var(--g-bd);
-  background: rgba(255, 255, 255, 0.7);
-  color: var(--text);
-  border-radius: 10px;
-  padding: 4px 9px;
-  font: 600 12.5px/1 var(--font-voice);
-  cursor: pointer;
-  box-shadow: 0 3px 8px -4px rgba(46, 33, 64, 0.4);
-}
-.gfx-dial input[type='range'] {
-  width: 100%;
-  accent-color: var(--gold-b);
-}
-.gfx-dial small {
-  font-size: 12.5px;
-  color: var(--text2);
-}
-.gfx-panel {
-  position: fixed;
-  left: 12px;
-  right: 12px;
-  bottom: calc(96px + env(safe-area-inset-bottom, 0px));
-  z-index: 7;
-  max-width: 460px;
-  margin: 0 auto;
-  padding: 12px !important;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  animation: v05In 0.3s var(--spring) both;
-}
-.gfx-ph {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.gfx-ph b {
-  flex: 1;
-  font-size: 16px;
-}
-.gfx-near {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-.gfx-near button {
-  border: 1px solid var(--g-bd);
-  background: var(--g-bg2);
-  border-radius: 10px;
-  padding: 5px 9px;
-  font: 600 12.5px/1 var(--font-voice);
-  color: var(--text);
-  cursor: pointer;
-}
-.gfx-near button[aria-pressed='true'] {
-  background: linear-gradient(var(--gold-a), var(--gold-b));
-  color: #2e2140;
 }
 
 /* ---------- 0.5 battle: same layout, glass and rounder; moves 2×2, Tax it / Bag / Team / Run ---------- */

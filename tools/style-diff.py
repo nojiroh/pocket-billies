@@ -53,6 +53,10 @@ VIEWS = [
     ('profile', 'town', "uiState.tab='profile';render()", "!!document.querySelector('.screen.s-profile')"),
     ('bag', 'bag', "uiState.tab='bag';render()", "!!document.querySelector('.screen.s-bag')"),
     ('settings', 'town', OPEN + "openSettings()", "!!document.querySelector('#ov .set-sheet')"),
+    ('settings-sound', 'town', OPEN + "openSettings('sound')", "!!document.querySelector('#ov .set-sheet')"),
+    ('settings-graphics', 'town', OPEN + "openSettings('graphics')", "!!document.querySelector('#ov .set-sheet')"),
+    ('settings-save', 'town', OPEN + "openSettings('save')", "!!document.querySelector('#ov .set-sheet')"),
+    ('settings-help', 'town', OPEN + "openSettings('help')", "!!document.querySelector('#ov .set-sheet')"),
     ('battle', 'battle', '', "!!activeBattle&&document.querySelectorAll('#acts button').length>0"),
     ('talk', 'talk', '', "!!document.querySelector('.talk-layer')"),
     ('run-walk', 'run', '', "!!document.querySelector('.screen.s-walk')"),
@@ -112,7 +116,7 @@ VALUES = "(i) => { const r = window.__sd.rows[i]; return { props: window.__sd.pr
 DARK = "saveData.preferences.theme='dark';applyPreferences();0"
 LIGHT = "saveData.preferences.theme='light';applyPreferences();"
 # back to the plain screen between two views on one page
-RESET = OPEN + "uiState.mapSel=null;uiState.tab='walk';uiState.dex=null;uiState.guideTab=null;render();"
+RESET = OPEN + "uiState.setTab=null;uiState.mapSel=null;uiState.tab='walk';uiState.dex=null;uiState.guideTab=null;render();"
 
 
 def unpack_ref():
