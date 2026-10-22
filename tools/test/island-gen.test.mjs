@@ -391,8 +391,9 @@ test('zones placed on top of each other are turned apart; organic 0 keeps plain 
 });
 
 test("the game's island is the generator's own output for its stored dials and seed", () => {
-  const sc = D.maps.copperleaf_island;
-  assert.ok(sc, 'copperleaf_island is in the game data');
+  /* IS-5: the hub, copperleaf, stands on the generator's ground (its town, people and pier are its own) */
+  const sc = D.maps.copperleaf;
+  assert.ok(sc && sc.islandGen, 'copperleaf is on the island');
   if (sc.islandGen.lock || sc.islandGen.v !== ISLAND_GEN_VERSION) return;
   /* as the tool makes it again: its own locked zones kept */
   const { scene } = islandGenerate(sc.islandGen.dials, sc.islandGen.seed, ctx, sc);
@@ -406,10 +407,15 @@ test("the game's island is the generator's own output for its stored dials and s
     'island',
     'zones',
     'spots',
-    'bridges',
     'streams',
     'plots',
+    'grassPatches',
   ])
     assert.deepEqual(sc[k], scene[k], `${k} (run node tools/build-island.mjs to remake it)`);
+  assert.deepEqual(
+    sc.bridges.filter(b => !b.pier),
+    scene.bridges.filter(b => !b.pier),
+    "bridges (the pier is the town's own, tools/build-copperleaf.mjs; a kept town's comes back with it)"
+  );
   assert.deepEqual(sc.cam.orbit, scene.cam.orbit);
 });
