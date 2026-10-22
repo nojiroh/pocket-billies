@@ -2,6 +2,61 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Roguelite track RL-8b - Run look - 2026-10-22
+Branch `ccr-b71dfee2-w5pwgh`, from main dcced21 (PR #105, TR-2). Proposed in RL-8's "Next"; the owner asked about
+combining it with RL-9 (advised against: different areas, 4 sessions), then "Start RL-8b". Plan approved in Plan Mode,
+with the owner's answers: rooms by lowering the shared dials (data only); a medium island (about a fifth of the
+bowl's radius); a run laid across the bowl, no hub on it. Started without `rl-*-done` tags on the remote (the owner
+knew; sessions can't push tags).
+- Changed (one cause per commit):
+  - **Rooms darker** (a807353): all 22 `int_*` rooms and `test_light_room` share one look from
+    `tools/build-interiors.py`, with the sky light (`sun.ambient`) at 1.75 where the game's default is 0.2: now 0.5,
+    exposure 1 (was 1.12); the builder writes the same, so `--force` won't bring the old light back. `roomLight`
+    stays off (the owner's Studio choice of 2026-10-20). Headless, the lab at 13:00: brightness 146 (washed out) to
+    105, the town outside 142.
+  - **An island world for the bowl** (c3e7808, logic/bowl.js): the sea's settings take `island` (a radius, worldmap.json)
+    or `isles` (rounds of land, from code); then no share quantile and no land rising to the rim: land is the places,
+    roads and rounds, the coast where the distance past them plus the seeded noise crosses 0, sea always past
+    `BOWL_ISLE_RIM` 0.86. Without them nothing changes.
+  - **A seed for the bowl's noise** (749ca4e): the look's `seed` moves the hills, headlands, ground patches, tree
+    clumps and clouds (`bowlSeedShift`); 0 moves nothing (the hub's picture is as before).
+  - **The hub is Copperleaf's island alone** (f2e9eb1): worldmap.json `sea.island` 0.2, rough 0.8. Checks changed on
+    purpose: bowl-sea's game-data sea test (now one island, 90-99% sea), the fast check's and the Bowl map test's
+    rivers (1+ on an island) and sea share (70%+), the Studio Check's 30-50% warning (not on an island); the Studio's
+    World map look has an Island dial. The camera is unchanged: its home view already frames the island.
+  - **A run laid across the bowl** (c4c5370): `RUN_BOWL` is a line from the landing near the east rim to the boss near
+    the west (x 0.72, rows 0.18 apart at most, lanes 0.1, bowed 0.06 north). A bowl spot can carry `up` (the way its
+    map's north faces): `bowlCompass`, `bowlSeamTurn`, `bowlMapPoint`, `bowlMapTurn` take it, and the bowl's stamps,
+    things and walk-scene horizon read their compass from `bowlCompass` (three copies of "north to the centre" gone).
+    Run places are `up` 90, so their maps sit square east to west.
+  - **Copperleaf off a run's map** (6bbd485): a spot can be `off`: no land, relief, ground, stamp, things, routes,
+    weather, pin, tap or list row. Copperleaf stays world node 0 in a run (flying home, the save's checks).
+  - **A run's own world map** (e4fff0f, new logic/run-bowl.js `runBowlLook`): from the seed (stream 'bowl'): a round of
+    land under each place (its whole map on land), 3-5 lobes along the way, 3-6 islets; its own coast and noise
+    seeds; near each place its biome's ground (biomes.json), between them the run's commonest biome's ground and
+    trees. `worldPut` takes it (`worldExtra.look`), `worldHubBack` drops it, `worldMapLook` reads it.
+- Risky:
+  - Every run already going moves its pins and land on the map (spots are never stored); nothing saved changes.
+  - The run's land is worked out at run start and on resume as before (headless about 190 ms, the hub's 160-210 ms);
+    the phone's time is in the debug log only if the Bowl map test is run.
+  - Run places' red blocks on the headless map are the landmark standees drawn without their pictures (the old
+    "red block" seen on Copperleaf since RL-7, headless only as far as known): a run now shows one per place. Look on
+    the phone; if they are red there too, that's a fix of its own.
+  - The airship flight and the walk scenes' far horizon draw the same bowl: in the hub they now show sea all round
+    Copperleaf. The fast check's flight lands; nobody has looked at the horizon on a phone.
+  - Rooms' light is tuned by eye on headless shots (software drawing); the owner's phone decides. The Studio's Engine
+    section, "This scene", sets one room's look; the 23 share the builder's.
+- Verified: unit tests (495), lint, typecheck, modules, check-data, format on the touched files, the whole fast check
+  (13 of 13) and smoke (15 of 15) after the last code commit; the full quick check: see below. Pictures (headless, 390 x 760): the
+  lab before and after; the hub's map (one island, sea to the rim); runs from two seeds (two maps) and one seed twice
+  (the same map).
+- Phone check wanted: the Map tab in Copperleaf (the island); start a run and open the map (its own land, the landing
+  in the east); walk a seam and look again; Fly home (the island again); the lab and Granny Juniper's cottage by day
+  and at night; export the debug log.
+- Next: the owner pushes the tags (`rl-1-done` .. `rl-8-done`, `tr-2c-done`, `rl-8b-done`) and plays the phone check;
+  then RL-9 (Ranch A; open questions 8.2's per-run cap on ranch Billies, 8.16, 8.17). Left from the first play: the
+  balance tuning with the run simulation's numbers.
+
 ### Terrain track TR-2 (TR-2a mountains, TR-2b trails, TR-2c ledges) and runs east to west - 2026-10-21/22
 Branch `ccr-526699d5-vjfbk5`, from main ca9aa54 (PR #103, RL-8's last commits; the owner: "RL-8 is done"). Plan
 approved in the session ("Start"), then changed twice by the owner mid-session: "take way more inspiration from how

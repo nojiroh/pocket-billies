@@ -9,9 +9,14 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
-- Runs go east to west: you enter each place on a run from the east and the way on is to the west, and on the world
-  map the run is an arc across the south of the bowl, from the south-east to the south-west. A run started before
-  this is left (its places were laid out the other way).
+- Runs look like your own (RL-8b, after the first play): the world map in Copperleaf shows Copperleaf's island alone,
+  in open sea; a run has its own world map, made from its seed: its own land, coast, hills, woods and clouds, the
+  run laid across the whole bowl from the landing in the east to the boss in the west, each place's own ground round
+  it, and no Copperleaf on it. Rooms are darker: their fill light was set almost nine times higher than outdoors, which
+  washed them out to white.
+- Runs go east to west: you enter each place on a run from the east and the way on is to the west (RL-8b: and on
+  the world map the run crosses the bowl from east to west). A run started before this is left (its places were
+  laid out the other way).
 - Mountains and mountain trails (terrain TR-2a, TR-2b), in the Studio's map generator and in a test run from the debug
   menu (Runs, "Mountains"); runs don't use them yet: ridges up to 20 m on the sides you choose, rising in rock shelves
   and cliffs, kept away from the road, the exits and water, and a footpath that winds up each one in switchbacks, stone
