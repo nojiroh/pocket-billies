@@ -13,10 +13,14 @@ import { formatNumber } from './logic/rules.js';
 import { buildingLevel, unlockAuto, unlockBuy, unlockCurrency, unlockReady, unlockRows } from './logic/unlocks.js';
 import { escapeHtml, save, saveData, uiState } from './game-state.js';
 import { uiIconHTML } from './art.js';
+import { flyMenu } from './airship.js';
+import { ranchOpen } from './ranch-screen.js';
 /* eslint-disable no-func-assign */
 expose({
   LAB_WHERE: [() => LAB_WHERE],
   LAB_WHY: [() => LAB_WHY],
+  buildingLabel: [() => buildingLabel, v => ((buildingLabel = v), provide({ buildingLabel }))],
+  buildingRowsHTML: [() => buildingRowsHTML, v => ((buildingRowsHTML = v), provide({ buildingRowsHTML }))],
   labAction: [() => labAction, v => (labAction = v)],
   labBoardOpen: [() => labBoardOpen, v => (labBoardOpen = v)],
   labBuy: [() => labBuy, v => (labBuy = v)],
@@ -27,7 +31,7 @@ expose({
   unlockGiftText: [() => unlockGiftText, v => (unlockGiftText = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ labMilestones });
+provide({ buildingLabel, buildingRowsHTML, labMilestones });
 /* to-module: end */
 /** what an unlock gives, in a few words: "+10 Scrap", or its name @param {any} R */
 function unlockGiftText(R) {
@@ -71,8 +75,10 @@ function labPrice(n, c) {
   const C = (c && CURRENCIES[c]) || { name: c || '', one: c || '' };
   return `${formatNumber(n)} ${n === 1 ? C.one : C.name}`;
 }
-/** one row of the board: its name, what it gives, what it needs, and its button or state @param {any} r */
-function labRowHTML(r) {
+/** one row of the board: its name, what it gives, what it needs, and its button or state; `then` (a building's own
+ * sheet: 'ranch', 'fly') gives its building's rows a button too, and says which sheet to draw again after
+ * @param {any} r @param {string} [then] */
+function labRowHTML(r, then) {
   const R = r.R,
     needs = (R.requires || [])
       .filter(q => !saveData.meta.unlocks[q])
@@ -82,10 +88,24 @@ function labRowHTML(r) {
   if (r.owned)
     act = `<span class="lab-state on">${uiIconHTML('spark', 14)}${r.door === 'earned' ? 'Earned' : 'Owned'}</span>`;
   else if (r.door === 'earned') act = `<span class="lab-state">Not yet</span>`;
-  else if (r.door === 'board')
-    act = `<button class="pb small${r.why ? ' quiet' : ' gold'}" data-a="lab-buy" data-k="${escapeHtml(r.id)}"${r.why ? ' disabled' : ''} aria-label="${escapeHtml(`Buy ${R.name} for ${labPrice(R.cost, r.currency)}`)}">${escapeHtml(labPrice(R.cost, r.currency))}</button>`;
+  else if (r.door === 'board' || then)
+    act = `<button class="pb small${r.why ? ' quiet' : ' gold'}" data-a="lab-buy" data-k="${escapeHtml(r.id)}"${then ? ` data-then="${then}"` : ''}${r.why ? ' disabled' : ''} aria-label="${escapeHtml(`Buy ${R.name} for ${labPrice(R.cost, r.currency)}`)}">${escapeHtml(labPrice(R.cost, r.currency))}</button>`;
   else act = `<span class="lab-state">${escapeHtml(labPrice(R.cost, r.currency))}</span>`;
   return `<div class="lab-row k-card${r.owned ? ' owned' : ''}"><span class="lab-t"><b>${escapeHtml(R.name)}</b><small>${escapeHtml(R.about)}</small>${note}${!r.owned && r.why && r.why !== 'cost' && r.why !== 'requires' && r.door === 'board' ? `<small>${LAB_WHY[r.why]}</small>` : ''}</span>${act}</div>`;
+}
+/** a building's rows not yet owned, with their buttons, for its own sheet (the ranch's, the mast's); '' when every
+ * one is owned @param {string} b @param {string} then */
+function buildingRowsHTML(b, then) {
+  const rows = unlockRows(saveData, UNLOCK_DATA).filter(r => r.R.at === b && !r.owned);
+  return rows.length ? `<div class="lab-list">${rows.map(r => labRowHTML(r, then)).join('')}</div>` : '';
+}
+/** a hub building's label with its level ("Ranch · Lv 2"): a building of buildings.json with levels, in Copperleaf
+ * (not in a room, not on a run) @param {string} label @param {string} act */
+function buildingLabel(label, act) {
+  if (saveData.run || uiState.inside) return label;
+  for (const [b, B] of Object.entries(UNLOCK_DATA.buildings))
+    if (B.act === act && B.levels > 1) return `${label} · Lv ${buildingLevel(saveData, b)}`;
+  return label;
 }
 /** the Lab tab: the unlock board */
 export function renderLabBoard() {
@@ -152,5 +172,12 @@ export function labBoardOpen() {
 }
 /** the board's buttons (ui.js's click switch) @param {string} a @param {DOMStringMap} d */
 export function labAction(a, d) {
-  if (a === 'lab-buy' && d.k) labBuy(d.k);
+  if (a !== 'lab-buy' || !d.k || !labBuy(d.k)) return;
+  /* bought on a building's sheet: that sheet again, with its new level */
+  if (d.then === 'ranch' && typeof ranchOpen === 'function') ranchOpen();
+  else if (d.then === 'fly' && typeof flyMenu === 'function') {
+    /* in place of the open sheet (a second one would wait behind it) */
+    uiState.modal = null;
+    flyMenu(uiState.flyAt);
+  }
 }
