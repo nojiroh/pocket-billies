@@ -59,7 +59,7 @@
   place-items: end center;
   height: 126px;
   overflow: hidden;
-  background: #8bbdd2 url('../art/background/sundown.webp') center 62% / cover;
+  background: #8bbdd2 linear-gradient(180deg, #7ea4c3, #99aec6 22%, #909f9c 42%, #889a76 52%, #869b55 75%, #6f7b4a);
   image-rendering: pixelated;
   box-shadow:
     0 0 0 3px var(--line),

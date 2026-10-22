@@ -187,7 +187,7 @@ Sources: [pret/pokeemerald](https://github.com/pret/pokeemerald) (map data, deco
 | TR-1 | (folded into MG-2 by the owner, 2026-10-21) Smooth roads: road ramp cells flagged 32 in `stepm`; a graded shoulder beside cuts (bank in the wild, wall in towns, by biome/scene kind); a gradient cap with automatic switchbacks on main roads and stairs on footpaths; junctions and the hub round made with ramps instead of the lowering pass. One-off tool run on Copperleaf only. | unit test: no riser over 3 cm on any road cell; mapgenUnreachable sweep; a02_joins |
 | TR-2a | (done, TR-2 session) Mountains as the border: the `mountains` (0-1, up to 20 m) and `massif` (sides) dials, ridged noise plus domain warp under a massif mask, its own `relief` seed; steep ground as step-grid shelves and cliffs; kept off the road, hub, exits and water; the Studio dials; the debug menu's mountains run for the phone measurement. | sweep of random dial sets reaching every exit (with the slope rule); seams of a mountains run; phone frame time (owner) |
 | TR-2b | (done, TR-2 session) Mountain trails (the owner: walkable to 15 m+, open routes): a footpath from the road up each massif to its summit, searched so it stays walkable (switchbacks), stairs where steep, ramps where gentle, a flat summit pocket as a marked spot; tiers and stairs where the land steps near the road. | sweep: every exit and every summit reached with the slope rule; seams; picture notes |
-| TR-2c | (ledges, stairs, no-trap check and pockets done in the TR-2 session; the rest left) Gen 3 route layout, part 2: generated ledges (moved from TR-5: short runs, loops, one-way in the reach check, hop arc and dust puff); tall grass as 3-6 patches across the path; the road pathfinder through tiers and the massif; the four mountain route types (valley floor, pass, ledge path, gorge with a rope bridge) as recipes of these parts. | unreachable check counting ledges one way; grass on the way north; sweep; phone frame time |
+| TR-2c | (ledges, stairs, no-trap check and pockets done in the TR-2 session; split by the owner 2026-10-22) Part 1, done 2026-10-22: the dust puff off a ledge (the hop arc was already in); tall grass as 3-6 patches, one across the way west (was "north": runs go east to west), wild Billies in any patch. Part 2: the road pathfinder through tiers and the massif; the four mountain route types (valley floor, pass, ledge path, gorge with a rope bridge) as recipes of these parts. | unreachable check counting ledges one way; grass on the way west; sweep; phone frame time |
 | TR-3 | (done, TR-3 session, branch `terrain-generation`) Camera for tall ground: rock fade, camera rise on tall ground, player silhouette; the near shadow map at your height. | visual check steps, smoke |
 | TR-4 | Look: painting by height and steepness (rock, snow line per biome, scree, grass lip), strata bands on cliff faces per biome. | picture notes, smoke |
 | TR-5 | Terraces that follow the contours of the land (the old "rise toward the back" kept as a dial), edge styles. (Generated ledges moved to TR-2c.) | unit tests |
@@ -276,3 +276,17 @@ the main-road pathfinder and the four mountain route types.
 - Corrections to the facts above: walls are not a separate index block of the ground mesh (only the `aWall`
   attribute marks them; the fade works per pixel, so it needs none). The debug log's `mountains` read the drawn
   scene's `gen`, which it doesn't have (always 0); fixed.
+
+## TR-2c part 1 as built (2026-10-22, branch `terrain-generation`)
+- **Grass patches** (mapgen.js `mapgenGrassPatches`, stream `ground/grass`, `MAPGEN_GRASS_PATCH` 15-70): 3 + floor(tall x 4)
+  patches, at most 6, ragged ovals. The first across the road on the westmost exit's way from the hub (else the longest),
+  30-75% along it, 8 m + its length clear of the hub and the exit, the road cells under it turned to tall grass (their
+  road flag kept); the rest 2-14 m off the road, apart from each other. `scene.grassPatches: [{ x, z, r, n, across }]`
+  (not `grass`: that key already means "this room has grass blades" and is a look key of the seamless world).
+- **Encounters** (walk-view.js `encounterCandidates`): with `grassPatches` the spots are the tall grass cells within a
+  patch's `r`, anywhere on the map; seamless-world.js copies the patches, shifted, into the drawn scene.
+- "One a ledge or side path skips" is not built as such: routes are open (70%+), so every off-road patch can be walked
+  round; part 2's route types can place one under a ledge.
+- Corrections: the hop arc was already in (walk-view.js `updatePlayerHeight`); `run.mapgenV` is stored but never
+  compared, so a run already going simply remakes its scenes with the new generator (no "left" path for a version
+  bump).
