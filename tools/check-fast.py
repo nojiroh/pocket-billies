@@ -643,7 +643,19 @@ def debug_log(pg, base):
     if not isinstance(log_, dict) or not log_: raise Exception('the exported debug log is empty')
     found = [n for n in NAMES if n.lower() in text.lower()]
     if found: raise Exception(f'the exported debug log holds a name: {found}')
-    return f'{len(text) // 1024} KB, no names'
+    # CAM-1: the camera's line (its mode, zoom, the goals in play)
+    def find(o):
+        if isinstance(o, dict):
+            if isinstance(o.get('camera'), dict) and 'mode' in o['camera']: return o['camera']
+            o = list(o.values())
+        if isinstance(o, list):
+            for v in o:
+                r = find(v)
+                if r: return r
+        return None
+    cam = find(log_)
+    if not cam or cam.get('mode') != 'walk' or 'goals' not in cam: raise Exception(f'the debug log has no camera line: {cam}')
+    return f'{len(text) // 1024} KB, no names; the camera: {json.dumps(cam, separators=(",", ":"))}'
 
 
 def studio(pg, base):
@@ -812,7 +824,7 @@ def run_pack(pg, base):
 
 PAGES = [   # (what the page opens, its checks in order); the longest first, so the browsers finish together
     ('town', [('A town opens and draws (Copperleaf Town)', scene('copperleaf')),
-              ('The exported debug log holds no names', debug_log),
+              ('The exported debug log holds no names, and a camera line (CAM-1)', debug_log),
               ('The world map opens as the bowl', bowl_map)]),
     ('town', [('Camera follow: settled standing, the look-ahead from the stick, the soft zone, settled again (CAM-1)', camera_follow)]),
     ('room', [('A room opens and draws (the lab)', room), ('A save round-trips', save_round_trip)]),
