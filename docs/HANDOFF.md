@@ -21,7 +21,8 @@ in sprites.js done here.
     assumed a north view now use the base yaw (all equal to before at yaw 0, so every other map is unchanged): TR-3's
     ground-ahead for the rise, the lean ahead of you (`rw > rh ? 2 : 1`), the swoop's offset, `landmarkTilt`. A new
     scene, a cut (`camT` cleared, `opt.instant`) or a jump of over 8 m starts the orbit where it belongs.
-    `walkRenderer.orbit` holds the state. The battle, cutscene and Studio cameras don't go through it.
+    `walkRenderer.orbit` holds the state. A turn kept from a map with a wider limit (Copperleaf's 35) is clamped to
+    the island's on arrival. The battle, cutscene and Studio cameras don't go through it.
   - **walk-view.js** (joystick and keys): on an orbiting island the stick walks by `orbitStickYaw` (plus your turn)
     and steps with `orbitWalkStep`; elsewhere it is unchanged (the camera's right).
   - **sprites.js**: `landmarkTilt(P, sc, yaw = 0)`; a tree's crossing picture fades by `|sin yaw|`, not `|yaw|`.
@@ -60,8 +61,6 @@ in sprites.js done here.
   - The stick's locked frame (above) is new behaviour; worth a feel on the phone at the summit.
   - With "Sun turns with the camera" on, the shadow cache redraws every frame you turn (the sun moves): a
     comparison setting, not for the phone's frame times.
-  - `walkRenderer.yaw` (your turn) is still clamped where it is set (input.js); turning past 30 on Copperleaf and then
-    entering an island keeps it until the next turn input clamps it.
   - studio/index.html gained a script line next to camera-rise.js; IS-6a may add the same line (keep one when merging).
   - Phone frame times at 8 angles are IS-9's; nothing here measured a phone.
 - Next: IS-3 (the sea skirt above), IS-6a can call `orbitStep`/`orbitStart` for "Walk the coast", IS-5 when IS-2
