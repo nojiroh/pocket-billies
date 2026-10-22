@@ -539,7 +539,7 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
       noAO: QE >= 1,
       noRays: QE >= 3,
       bloomN: QE >= 3 ? 3 : 5,
-      noDof: QE >= 4,
+      cheapDof: QE >= 4 /* CAM-3: a cheap blur on the slowest setting, not none */,
       /* the sharp zone and the blur's growth in metres as if the camera stood 16 m off, whatever the zoom: measured
          from the real distance (36 m at zoom 1, 58 m at 1.6) the blur only built up past the edge of the place */
       dofRef: BT ? null : 16,

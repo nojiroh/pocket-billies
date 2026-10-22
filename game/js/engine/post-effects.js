@@ -174,7 +174,7 @@ void main(){vec2 uv=vUV;/* v32: heat shimmer above hot ground (lava, desert noon
     blur pass), so the edge between sharp and blurred follows the real edges; the half-size alpha adds only the spill
     of a blurred thing in front */
  vec4 b=texture(uDof,vUV);vec3 c=s;if(uDofOn>.5){float dz=linz(texture(uDep,vUV).r)*dot(vec3(1.,vUV),uDofPl.xyz)-uDofPl.w,
-  k=dz>0.?smoothstep(uDofB.x,uDofB.x+uDofB.y,dz):smoothstep(uDofB.x*.6,uDofB.x*.6+uDofB.z,-dz);c=mix(s,b.rgb,smoothstep(.02,.4,max(k,b.a)));}
+  k=dz>0.?smoothstep(uDofB.x,uDofB.x+uDofB.y,dz):smoothstep(uDofB.x*.6,uDofB.x*.6+uDofB.z,-dz);c=mix(s,b.rgb,smoothstep(.02,.4,uDofOn>1.5?k:max(k,b.a)));}
  if(uAOK>0.){vec2 e=uPx*1.5;float ao=texture(uAO,vUV).r*.4+(texture(uAO,vUV+vec2(e.x,e.y)).r+texture(uAO,vUV-vec2(e.x,e.y)).r+texture(uAO,vUV+vec2(e.x,-e.y)).r+texture(uAO,vUV+vec2(-e.x,e.y)).r)*.15;c*=1.-clamp(ao*uAOK,0.,.75);}
  /* v33: ink outlines where depth jumps (silhouettes of props, people and billionaires), thinner with distance */
  if(uInk>0.){float d0=texture(uDep,vUV).r;if(d0<.9999){float z0=linz(d0),e=0.;vec2 q=uPx*1.;float zs[4];zs[0]=linz(texture(uDep,vUV+vec2(q.x,0)).r);zs[1]=linz(texture(uDep,vUV-vec2(q.x,0)).r);zs[2]=linz(texture(uDep,vUV+vec2(0,q.y)).r);zs[3]=linz(texture(uDep,vUV-vec2(0,q.y)).r);
@@ -225,6 +225,9 @@ export function drawDepthOfField(S, C, focusDist, rw, rh, o = {}) {
   /* depth of field */
   const blur = (o.blur ?? 1) * engineSetting('lens', 'blur'),
     dofOn = blur > 0.01 && !o.noDof,
+    /* CAM-3: slow phones (o.cheapDof, quality 4) get a cheap blur instead of none: two dual-Kawase steps down and
+       one up (the bloom's own down and up passes), blended by the same full-size amount */
+    cheap = dofOn && !!o.cheapDof,
     D = renderTarget('dof', hw, hh, { hdr: true }),
     /* the plane of focus (logic/lens-focus.js focusPlane): o.plane [g0, gx, gy, h], else facing the camera */
     pl = o.plane || [1, 0, 0, focusDist],
@@ -235,7 +238,25 @@ export function drawDepthOfField(S, C, focusDist, rw, rh, o = {}) {
       dr * engineSetting('lens', 'blurFar'),
       dr * engineSetting('lens', 'blurNear'),
     ];
-  if (dofOn) {
+  if (cheap) {
+    const qw = Math.max(8, hw >> 1),
+      qh = Math.max(8, hh >> 1),
+      K0 = renderTarget('dofk0', hw, hh, { hdr: true }),
+      K1 = renderTarget('dofk1', qw, qh, { hdr: true });
+    let U = use('down', K0, hw, hh);
+    tex(U, 'uCol', 0, S.c);
+    gl.uniform2f(U.uPx, 1 / rw, 1 / rh);
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+    U = use('down', K1, qw, qh);
+    tex(U, 'uCol', 0, K0.c);
+    gl.uniform2f(U.uPx, 1 / hw, 1 / hh);
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+    U = use('up', D, hw, hh);
+    tex(U, 'uCol', 0, K1.c);
+    gl.uniform2f(U.uPx, 1 / qw, 1 / qh);
+    gl.uniform1f(U.uR, Math.min(3, 0.5 + blur));
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+  } else if (dofOn) {
     const U = use('dof', D, hw, hh);
     tex(U, 'uCol', 0, S.c);
     tex(U, 'uDep', 1, S.d);
@@ -251,7 +272,7 @@ export function drawDepthOfField(S, C, focusDist, rw, rh, o = {}) {
     gl.uniform1i(U.uTaps, o.fast ? 14 : 28);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   }
-  return { D, dofOn, pl, band };
+  return { D, dofOn, cheap, pl, band, path: !dofOn ? 'off' : cheap ? 'cheap' : o.fast ? 'fast' : 'full' };
 }
 /* the rest of the post chain: bloom, AO, shafts, light in the air, then the grade to the screen with the blur F
    (drawDepthOfField's: its target D, whether it's on, its plane and band) */
@@ -364,7 +385,7 @@ export function drawPostRest(S, C, rw, rh, o, F) {
   tex(U, 'uDof', 1, D.c);
   tex(U, 'uBloom', 2, bk > 0.01 ? chain[0].c : gpuState.white);
   gl.uniform2f(U.uPx, 1 / rw, 1 / rh);
-  gl.uniform1f(U.uDofOn, dofOn ? 1 : 0);
+  gl.uniform1f(U.uDofOn, !dofOn ? 0 : F.cheap ? 2 : 1);
   gl.uniform4f(U.uDofPl, F.pl[0], F.pl[1], F.pl[2], F.pl[3]);
   gl.uniform3f(U.uDofB, F.band[0], F.band[1], F.band[2]);
   gl.uniform1f(U.uBloomK, bk > 0.01 ? bk * 0.6 : 0);
