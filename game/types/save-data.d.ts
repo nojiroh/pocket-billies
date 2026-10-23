@@ -139,6 +139,27 @@ export interface RunNode {
   biome?: string;
   /** RL-R1: its zone in the run's region (run.region.zones); missing on a run from before regions */
   zone?: number;
+  /** RL-R2: 1 on a side area's place (run.map.side) */
+  side?: 1;
+}
+
+/** roguelite track RL-R2: a run's side area (logic/run-side.js runSideAdd) */
+export interface RunSide {
+  /** a detour off the main path and back, or an alternate path alongside it */
+  kind: 'detour' | 'alt' | string;
+  /** the field move that opens it (fieldMoves.json) and its name */
+  move: string;
+  name: string;
+  /** the main place with the obstacle, and where the way out goes (-1: an alternate path's own boss ends the run) */
+  from: number;
+  to: number;
+  /** its places in order (map node indices, after the main path's) */
+  nodes: number[];
+  /** its leader (a trainer id) and its own species */
+  leader?: string;
+  dex?: string[];
+  /** 1 once the obstacle is open */
+  open?: 1;
 }
 
 /** roguelite track RL-R1: a run's region (logic/run-region.js runRegionMake) */
@@ -160,6 +181,8 @@ export interface RunRegion {
 /** roguelite track RL-6: a run's node map (logic/run-map.js runMapMake): nodes row by row, west to east */
 export interface RunMap {
   nodes: RunNode[];
+  /** RL-R2: its side area, when it has one */
+  side?: RunSide;
 }
 
 /** what a run changes in the working fields, copied when it starts and put back when it ends */

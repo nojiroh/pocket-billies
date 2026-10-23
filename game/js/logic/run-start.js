@@ -14,9 +14,11 @@
 /**
  * @typedef {{ nodeTypes: Record<string, NodeType>, biomes: Record<string, { climate?: string }>,
  *   rules: any, unlockData: { unlocks: Record<string, Unlock>, buildings: Record<string, HubBuilding> },
- *   region?: import('./run-region.js').RunRegionData }} RunStartData
+ *   region?: import('./run-region.js').RunRegionData,
+ *   fieldMoves?: Record<string, import('../../types/game-data').FieldMove> }} RunStartData
  * rules is rules.json run (start, map, clock, reveal, ...); region what a run's region is made from (RL-R1,
- * logic/run-region.js runRegionData): without it a run has no region and its map rolls each place's biome
+ * logic/run-region.js runRegionData): without it a run has no region and its map rolls each place's biome; RL-R2:
+ * fieldMoves (fieldMoves.json moves) with rules.side make the run's side area (run-side.js; without them, none)
  * @typedef {{ give: ReturnType<typeof runGive>, unlocks: string[], mods: string[],
  *   data: { nodeTypes: Record<string, NodeType>, biomes: Record<string, { climate?: string }>, rules: any },
  *   map: RunMap, forecast: string[][], region: RunRegion | null }} RunStartPlan
@@ -25,6 +27,7 @@
 import { expose } from '../test-globals.js';
 import { copyOf, newRun, runBegin } from './run-state.js';
 import { runRegionMake } from './run-region.js';
+import { runSideForce } from './run-side.js';
 import { runMapStart } from './run-map.js';
 import { MAPGEN_VERSION } from './mapgen.js';
 import { unlockOpen } from './unlocks.js';
@@ -73,10 +76,27 @@ export function runStartPlan(seed, data, o = {}) {
         })
       : null,
     zoned = region ? { rows: region.zones.reduce((n, z) => n + z.rows, 0), zones: region.zones } : {},
+    /* RL-R2: the side area, leaning to the region's types, its species the lines the region left out, its leader one
+       the region didn't pick; the debug menu's mod can force one */
+    theme = region && data.region ? data.region.regions.themes[region.theme] : null,
+    side =
+      data.fieldMoves && data.rules.side
+        ? {
+            rules: data.rules.side,
+            moves: data.fieldMoves,
+            lean: theme ? theme.types : {},
+            lines: data.region ? data.region.lines : undefined,
+            dex: region ? region.dex : undefined,
+            leaders: data.region ? data.region.leaders : [],
+            used: region ? region.leaders : [],
+            force: runSideForce(o.mods || []),
+          }
+        : null,
     mapData = {
       nodeTypes: data.nodeTypes,
       biomes: data.biomes,
       rules: { ...data.rules, map: { ...rules, biomes, ...zoned } },
+      side,
     },
     scratch = newRun(seed, expedition, MAPGEN_VERSION, /** @type {any} */ ({}));
   runMapStart(scratch, mapData);

@@ -29,6 +29,7 @@ import { rngFrom } from './rng.js';
 import { weatherPick } from './weather.js';
 import { RUN_DAYS } from './run-state.js';
 import { runZoneOf } from './run-region.js';
+import { runSideAdd, runSideLinked, runSideMain } from './run-side.js';
 /* eslint-disable no-func-assign */
 expose({
   RUN_BOWL: [() => RUN_BOWL],
@@ -168,18 +169,31 @@ export function runExits(map, i) {
  * isn't on it): its rows from the landing at x east of the centre to the boss at -x west of it, `step` apart at most
  * (bowl radii; a 9-row map spans the whole width), the line bowed `bend` north in the middle; two lanes `lane` apart
  * north and south of it, lane 0 the southern. Every place's map faces the bowl's north (up 90), so a run's places read
- * east to west on the map as they are walked */
-export const RUN_BOWL = { x: 0.72, step: 0.18, lane: 0.1, bend: 0.06 };
+ * east to west on the map as they are walked. RL-R2: a side area's places `side` lanes north of the line */
+export const RUN_BOWL = { x: 0.72, step: 0.18, lane: 0.1, bend: 0.06, side: 2 };
 /** a node's spot on the bowl ({a, r, up} as locations.json "bowl"), worked out from its row and lane, never stored
  * @param {RunMap} map @param {number} i @returns {{ a: number, r: number, up: number }} */
 export function runSpot(map, i) {
   const node = map.nodes[i],
-    rows = 1 + Math.max(...map.nodes.map(n => n.row)),
-    width = map.nodes.filter(n => n.row === node.row).length,
+    main = map.nodes.filter(runSideMain),
+    rows = 1 + Math.max(...main.map(n => n.row)),
     step = rows > 1 ? Math.min(RUN_BOWL.step, (2 * RUN_BOWL.x) / (rows - 1)) : 0,
-    x = ((rows - 1) / 2 - node.row) * step,
-    y = RUN_BOWL.bend * Math.cos((x / RUN_BOWL.x) * (Math.PI / 2)) + (node.lane - (width - 1) / 2) * RUN_BOWL.lane,
-    a = (Math.atan2(y, x) * 180) / Math.PI;
+    S = map.side;
+  /* RL-R2: a side area's places north of the main path: a detour's spread between its obstacle's row and the next,
+     an alternate path's on their own rows, RUN_BOWL.side lanes north of the line */
+  let x, y;
+  if (node.side && S) {
+    const k = S.nodes.indexOf(i),
+      from = map.nodes[S.from],
+      x0 = ((rows - 1) / 2 - from.row) * step;
+    x = S.kind === 'detour' ? x0 - ((k + 1) * step) / (S.nodes.length + 1) : ((rows - 1) / 2 - node.row) * step;
+    y = RUN_BOWL.bend * Math.cos((x / RUN_BOWL.x) * (Math.PI / 2)) + RUN_BOWL.side * RUN_BOWL.lane;
+  } else {
+    const width = main.filter(n => n.row === node.row).length;
+    x = ((rows - 1) / 2 - node.row) * step;
+    y = RUN_BOWL.bend * Math.cos((x / RUN_BOWL.x) * (Math.PI / 2)) + (node.lane - (width - 1) / 2) * RUN_BOWL.lane;
+  }
+  const a = (Math.atan2(y, x) * 180) / Math.PI;
   return { a: Math.round((a < 0 ? a + 360 : a) * 1e9) / 1e9, r: Math.hypot(x, y), up: 90 };
 }
 /** the run's world node of a map node (Copperleaf is world node 0) @param {number} i */
@@ -193,7 +207,8 @@ export const runMapNode = node => node - 1;
  * @param {{ icons: number, unknown: number }} reveal */
 export function runReveal(map, row, reveal) {
   const last = Math.max(...map.nodes.map(n => n.row));
-  for (const n of map.nodes) {
+  /* RL-R2: a side area's places show once its obstacle is open (run-side.js runSideOpen), not by row */
+  for (const n of map.nodes.filter(runSideMain)) {
     const want = n.row <= row + reveal.icons || n.row === last ? 2 : n.row <= row + reveal.unknown ? 1 : 0;
     n.seen = Math.max(n.seen || 0, want);
   }
@@ -223,12 +238,16 @@ export const runWeather = (run, i, day) => (run.forecast[runWorldNode(i)] || [])
 provide({ runWeather }); /* to-module */
 /**
  * @typedef {{ nodeTypes: Record<string, NodeType>, biomes: Record<string, { climate?: string }>,
- *   rules: { map: RunMapRules, clock: { ahead: number }, reveal: { icons: number, unknown: number } } }} RunMapData
+ *   rules: { map: RunMapRules, clock: { ahead: number }, reveal: { icons: number, unknown: number } },
+ *   side?: import('./run-side.js').RunSideData | null }} RunMapData
+ * RL-R2: side, what the run's side area is made from (run-start.js; none: no side area)
  */
 /** give a new run its map (at the mast, before the flight): the map from the seed, the landing's view and the
  * forecast a week ahead @param {Run} run @param {RunMapData} data @returns {RunMap} */
 export function runMapStart(run, data) {
   run.map = runMapMake(run.seed, data.nodeTypes, data.rules.map);
+  /* RL-R2: its side area, from streams of its own after the main map (run-side.js) */
+  if (data.side) runSideAdd(run.seed, run.map, data.side);
   run.forecast = [];
   runReveal(run.map, 0, data.rules.reveal);
   runForecastFill(run, data.biomes, run.clock + data.rules.clock.ahead);
@@ -245,13 +264,21 @@ export function runArrive(s, i, data) {
   const map = run.map,
     at = runMapNode(s.trip ? s.trip.node : 0),
     here = map.nodes[at] ? at : -1,
-    linked = here < 0 ? map.nodes[i].row === 0 : runNext(map, here).includes(i) || runBack(map, here).includes(i);
+    linked =
+      here < 0
+        ? map.nodes[i].row === 0 && runSideMain(map.nodes[i])
+        : runNext(map, here).includes(i) || runBack(map, here).includes(i) || runSideLinked(map, here, i);
   if (!linked) return 0;
   /* the run's first arrival is day 1; every later one costs a day */
   if (run.path.length) run.clock = Math.min(RUN_DAYS, run.clock + 1);
   run.path.push(i);
   s.trip.node = runWorldNode(i);
-  runReveal(map, map.nodes[i].row, data.rules.reveal);
+  /* RL-R2: in a side area the main path shows as from the row it comes back to */
+  runReveal(
+    map,
+    map.nodes[i].side && map.side && map.side.to >= 0 ? map.nodes[map.side.to].row - 1 : map.nodes[i].row,
+    data.rules.reveal
+  );
   runForecastFill(run, data.biomes, run.clock + data.rules.clock.ahead);
   return run.clock;
 }
