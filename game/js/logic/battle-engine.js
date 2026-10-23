@@ -155,6 +155,7 @@ expose({
   // @ts-expect-error -- replaced on purpose
   sayBattleFx: [() => sayBattleFx, v => (sayBattleFx = v)],
   shockName: [() => shockName],
+  stageFactor: [() => stageFactor],
   // @ts-expect-error -- replaced on purpose
   startTrainer: [() => startTrainer, v => (startTrainer = v)],
   // @ts-expect-error -- replaced on purpose
@@ -257,12 +258,15 @@ export const foeSide = k => 1 - ACTOR_SIDE[k];
 export const actorTypes = k => fieldState(k).ov || speciesOf(fighter(k)).types;
 export const shockName = () => BATTLE_RULES.shockName || `${BATTLE_RULES.shockType} storm`;
 export const isMulti = () => !!battleNow() && (battleNow().sides[0].f.length > 1 || battleNow().sides[1].f.length > 1);
+/** what a stat's stages multiply it by in battle: +1 is x1.5, -1 is x2/3 (Studio plan T4.1: the Loophole preview
+ * reads it too) @param {number} s */
+export const stageFactor = s => (s >= 0 ? (2 + s) / 2 : 2 / (2 - s));
 export function effectiveStat(k, s2) {
   const m = fighter(k),
     v = fieldState(k);
   let x = stat(m, s2);
   const s = v.st[s2] || 0;
-  x *= s >= 0 ? (2 + s) / 2 : 2 / (2 - s);
+  x *= stageFactor(s);
   if (s2 === 'lev') {
     if (m.status === 'scn') x *= 0.5;
     if (hasPassive(actorTypes(k), 'ramp'))
