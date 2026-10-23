@@ -23,7 +23,7 @@ test('economy: each line reads its value from its path, in currencies.json order
   }
 });
 
-test('economy: the run’s rewards, clinic, shop, Loophole prices, payout and unlock costs are all there', () => {
+test('economy: the run’s rewards, clinic, shop, Perk prices, payout and unlock costs are all there', () => {
   const paths = new Set(economyLines(GAME_DATA).map(l => l.path)),
     R = GAME_DATA.rules.run;
   for (const k of Object.keys(R.foes)) assert.ok(paths.has(`rules.run.foes.${k}.reward`));
@@ -32,7 +32,7 @@ test('economy: the run’s rewards, clinic, shop, Loophole prices, payout and un
   for (const k of Object.keys(R.relics.price)) assert.ok(paths.has(`rules.run.relics.price.${k}`));
   for (const k of Object.keys(R.payout)) assert.ok(paths.has(`rules.run.payout.${k}`));
   for (const [k, U] of Object.entries(GAME_DATA.unlocks)) if (!U.when) assert.ok(paths.has(`unlocks.${k}.cost`), k);
-  assert.ok(paths.has('relics.offshore.fx.0.mult'), 'a money Loophole');
+  assert.ok(paths.has('relics.offshore.fx.0.mult'), 'a money Perk');
   const ranch = economyLines(GAME_DATA).find(l => l.path === 'unlocks.ranch_2.cost');
   assert.equal(ranch.currency, 'scrap', 'paid in its building’s currency');
 });

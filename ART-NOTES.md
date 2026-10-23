@@ -522,7 +522,7 @@ art pipeline (phase 17 task 11).
 
 
 ## UI icons, 36×36 "block and split" (2026-10-23)
-- All 48 interface icons in `game/art/ui/*.svg` are redrawn as 36×36 pixel art in fixed colours (they were 12×12
+- All 49 interface icons in `game/art/ui/*.svg` are redrawn as 36×36 pixel art in fixed colours (they were 12×12
   one-colour masks tinted by the text colour). The owner picked the look from samples: "P5", a mix of an extruded
   block and a diagonal split.
 - `tools/build-ui-icons.py` holds each icon as a 34×34 grid of colour letters (its `PALETTE`: the light theme's

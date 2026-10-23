@@ -7,7 +7,7 @@
      &unlocks=none|all|<ids>   what the save has unlocked (none: a fresh save's, the default)
      &short=1                  the debug menu's short map (RUN_TEST_SHORT)
      &party=<sp@lv,...>        who flies (species ids at a level, 1-100); none: the first starter, as a new game
-     &relics=<ids>             Loopholes held from the start (rules.json run.relics.cap at most)
+     &relics=<ids>             Perks held from the start (rules.json run.relics.cap at most)
      &draft=1                  the open Studio's unsaved data first (boot.js studioDraftReady)
    An id the data doesn't know is left out and named in `left`. Logic only: no DOM (tools/test/run-test.test.mjs). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
@@ -52,6 +52,6 @@ export function runTestOf(q, D) {
         return { sp, lv: Math.max(1, Math.min(100, Math.round(+lv) || 1)) };
       })
       .filter(p => Object.hasOwn(D.species, p.sp) || (left.push(`Billie ${p.sp}`), false)),
-    relics = known(list('relics'), D.relics, 'Loophole').slice(0, Math.max(0, D.cap));
+    relics = known(list('relics'), D.relics, 'Perk').slice(0, Math.max(0, D.cap));
   return { seed, unlocks, short: q.get('short') === '1', party, relics, draft: q.get('draft') === '1', left };
 }

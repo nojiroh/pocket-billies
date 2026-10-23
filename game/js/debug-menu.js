@@ -37,6 +37,7 @@ import {
   makeBilly,
   maxLevel,
   newUid,
+  plural,
   spawn,
   xpFor,
 } from './logic/rules.js';
@@ -155,21 +156,21 @@ function debugHTML() {
           .join('')}</ul>`
       : '<p class="note">Game data loaded with no warnings.</p>'
   }`;
-  const give = `<div class="dbg-row">${debugButtonHTML('se1', '+$1,000', 'gold')}${debugButtonHTML('se10', '+$10,000', 'gold')}${debugButtonHTML('coins', '+10 of every coin', 'gold')}${debugButtonHTML('items', '+5 of every item', 'gold')}</div>
-  <div class="dbg-row">${debugButtonHTML('scrap', '+50 Scrap', 'gold')}${debugButtonHTML('capital', '+500 Capital, +2 Seals', 'gold')}</div>`;
+  const give = `<div class="dbg-row">${debugButtonHTML('se1', '+1,000 Moneys', 'gold')}${debugButtonHTML('se10', '+10,000 Moneys', 'gold')}${debugButtonHTML('coins', '+10 of every pyramid', 'gold')}${debugButtonHTML('items', '+5 of every item', 'gold')}</div>
+  <div class="dbg-row">${debugButtonHTML('scrap', '+50 Scrap', 'gold')}${debugButtonHTML('capital', '+500 Research, +2 Crests', 'gold')}</div>`;
   const billies = `<div class="dbg-row">${debugSelectHTML('dbgSp', debugSpeciesOptions(), uiState.dbgSp || DEX_ORDER[0])}<input id="dbgLv" type="number" min="1" max="${maxLevel()}" value="${uiState.dbgLv || 10}" aria-label="Level">${debugSelectHTML('dbgCoat', [['', 'No coat'], ...Object.entries(COATS).map(([k, c]) => [k, c.name])], uiState.dbgCoat || '')}</div>
   <div class="dbg-row">${debugButtonHTML('give', 'Give it to me', 'gold')}${debugButtonHTML('enc', 'Add as encounter')}${debugButtonHTML('wild', 'Battle it now', 'red')}${debugButtonHTML('alpha', 'As an Alpha', 'red')}</div>
   <div class="dbg-row">${debugButtonHTML('heal', 'Heal everyone')}${debugButtonHTML('lv5', 'Team +5 levels', 'gold')}${debugButtonHTML('evo', 'Lead evolves now')}${debugButtonHTML('dex', 'Fill the Field Guide', 'gold')}</div>
   <div class="dbg-row">${debugButtonHTML('bots', 'Give the robot kit', 'gold')}</div><p class="note">Two robots and one of every robot part and gem. Battle Tinker Rho (under Places and test scenes) for a mixed team.</p>`;
-  const battle = `<div class="dbg-row">${debugButtonHTML('win', 'Win now', 'gold')}${debugButtonHTML('lose', 'Lose now')}${debugButtonHTML('foe1', 'Foe to 1 HP')}${debugButtonHTML('catch', uiState.dbgCatch ? 'Taxing works as normal' : 'Every throw taxes')}</div>
+  const battle = `<div class="dbg-row">${debugButtonHTML('win', 'Win now', 'gold')}${debugButtonHTML('lose', 'Lose now')}${debugButtonHTML('foe1', 'Foe to 1 HP')}${debugButtonHTML('catch', uiState.dbgCatch ? 'Catching works as normal' : 'Every throw catches')}</div>
   <div class="dbg-row">${[1, 2, 4].map(x => debugButtonHTML('speed' + x, `${x}× speed`, battleStage.speed === x ? 'dark' : '')).join('')}</div>`;
   const run = saveData.run
     ? `<p class="note">On a run: seed ${escapeHtml(saveData.run.seed)}, day ${saveData.run.clock}, ${saveData.run.at.phase}. “Go there” under Places and test scenes walks it a place at a time.</p><div class="dbg-row">${debugButtonHTML('runwin', 'Win the run', 'gold')}${debugButtonHTML('runlose', 'Lose the run', 'red')}</div><div class="dbg-row">${debugSelectHTML(
         'dbgRelic',
         Object.keys(RELICS).map(k => [k, RELICS[k].name]),
         uiState.dbgRelic || Object.keys(RELICS)[0] || ''
-      )}${debugButtonHTML('relicgive', 'Give a Loophole', 'gold')}${debugButtonHTML('relicpick', 'A mini-boss’s pick')}</div><p class="note">Loopholes held: ${saveData.run.relics.length} of ${RULES.run.relics.cap}${saveData.run.relics.length ? ` (${escapeHtml(saveData.run.relics.map(k => (RELICS[k] || { name: k }).name).join(', '))})` : ''}. Past the cap, the one held longest makes room.</p>`
-    : `<div class="dbg-row"><input id="dbgRunSeed" maxlength="20" placeholder="Seed (empty: a new one)" aria-label="Run seed" value="${escapeHtml(uiState.dbgRunSeed || '')}"><label><input id="dbgRunShort" type="checkbox"${uiState.dbgRunShort ? ' checked' : ''}> Short (5 rows)</label><label><input id="dbgRunMountains" type="checkbox"${uiState.dbgRunMountains ? ' checked' : ''}> Mountains and ledges</label>${debugButtonHTML('runstart', 'Start a run')}</div><p class="note">From Copperleaf, as the mast does (Bracket I). Short: one mini-boss, a town before it, the boss. Mountains and ledges: every place gets mountains of 15-20 m on its north and south sides with trails up, and terraces with ledges (for measuring on a phone; the debug log has the frame times).</p>`;
+      )}${debugButtonHTML('relicgive', 'Give a Perk', 'gold')}${debugButtonHTML('relicpick', 'A mini-boss’s pick')}</div><p class="note">Perks held: ${saveData.run.relics.length} of ${RULES.run.relics.cap}${saveData.run.relics.length ? ` (${escapeHtml(saveData.run.relics.map(k => (RELICS[k] || { name: k }).name).join(', '))})` : ''}. Past the cap, the one held longest makes room.</p>`
+    : `<div class="dbg-row"><input id="dbgRunSeed" maxlength="20" placeholder="Seed (empty: a new one)" aria-label="Run seed" value="${escapeHtml(uiState.dbgRunSeed || '')}"><label><input id="dbgRunShort" type="checkbox"${uiState.dbgRunShort ? ' checked' : ''}> Short (5 rows)</label><label><input id="dbgRunMountains" type="checkbox"${uiState.dbgRunMountains ? ' checked' : ''}> Mountains and ledges</label>${debugButtonHTML('runstart', 'Start a run')}</div><p class="note">From Copperleaf, as the mast does (Expedition I). Short: one mini-boss, a town before it, the boss. Mountains and ledges: every place gets mountains of 15-20 m on its north and south sides with trails up, and terraces with ledges (for measuring on a phone; the debug log has the frame times).</p>`;
   const places = `<div class="dbg-row">${debugSelectHTML(
     'dbgNode',
     LOCATIONS.map((r, i) => [i, `${i}. ${r.name}`]),
@@ -296,7 +297,7 @@ function debugAction(x) {
     },
     sp = v('dbgSp'),
     lv = clamp(+v('dbgLv') || 10, 1, maxLevel()),
-    money = () => `$${saveData.se.toLocaleString('en-US')}`;
+    money = () => plural(saveData.se, 'Money');
   /* what the button changed, said once the save is written (the cases that break) */
   let said = '';
   if (sp) {
@@ -325,11 +326,11 @@ function debugAction(x) {
       return refreshDebugMenu('Battle quality adapts to frame time again.');
     case 'se1':
       saveData.se += 1000;
-      said = `+$1,000: you have ${money()}.`;
+      said = `+1,000 Moneys: you have ${money()}.`;
       break;
     case 'se10':
       saveData.se += 10000;
-      said = `+$10,000: you have ${money()}.`;
+      said = `+10,000 Moneys: you have ${money()}.`;
       break;
     case 'coins':
       Object.keys(COINS).forEach(k => (saveData.coins[k] = (saveData.coins[k] || 0) + 10));
@@ -425,7 +426,7 @@ function debugAction(x) {
         saveData.seen[id] = 1;
         saveData.caught[id] = 1;
       });
-      said = `Field Guide filled: ${DEX_ORDER.length} Billies seen and taxed.`;
+      said = `Field Guide filled: ${DEX_ORDER.length} Billies seen and caught.`;
       break;
     case 'trainer2': {
       const id = v('dbgTr');
@@ -508,7 +509,7 @@ function debugAction(x) {
       );
       return;
     }
-    /* RL-12: a Loophole for nothing (past the cap, in the place of the one held longest), and a mini-boss's pick */
+    /* RL-12: a Perk for nothing (past the cap, in the place of the one held longest), and a mini-boss's pick */
     case 'relicgive': {
       const run = saveData.run,
         id = v('dbgRelic');
@@ -521,13 +522,13 @@ function debugAction(x) {
         RULES.run.relics,
         run.relics.length >= RULES.run.relics.cap ? run.relics[0] : undefined
       );
-      if (why) return refreshDebugMenu(why === 'held' ? 'Already held.' : 'That Loophole can’t be given.');
+      if (why) return refreshDebugMenu(why === 'held' ? 'Already held.' : 'That Perk can’t be given.');
       saveNow();
       return refreshDebugMenu(`${RELICS[id].name}: held.`);
     }
     case 'relicpick':
       if (!saveData.run || activeBattle) return refreshDebugMenu('No run, or a battle is on.');
-      if (!relicOfferMake(saveData.run, RELICS, RULES.run.relics)) return refreshDebugMenu('Every Loophole is held.');
+      if (!relicOfferMake(saveData.run, RELICS, RULES.run.relics)) return refreshDebugMenu('Every Perk is held.');
       saveNow();
       uiState.modal = null;
       relicPickOpen();
@@ -571,11 +572,11 @@ function debugAction(x) {
       saveData.meta.scrap += 50;
       said = `+50 Scrap: you have ${saveData.meta.scrap}.`;
       break;
-    /* RL-11: Capital and Seals to try the Lab's board and the airship's upgrades with */
+    /* RL-11: Research and Crests to try the Lab's board and the airship's upgrades with */
     case 'capital':
       saveData.meta.capital += 500;
       saveData.meta.seals += 2;
-      said = `+500 Capital, +2 Audit Seals: you have ${saveData.meta.capital} and ${saveData.meta.seals}.`;
+      said = `+500 Research, +2 Crests: you have ${saveData.meta.capital} and ${saveData.meta.seals}.`;
       break;
     case 'win':
       if (!activeBattle || activeBattle.phase === 'playing' || activeBattle.over)
@@ -607,7 +608,7 @@ function debugAction(x) {
     case 'catch':
       uiState.dbgCatch = !uiState.dbgCatch;
       return refreshDebugMenu(
-        uiState.dbgCatch ? 'Every throw taxes until you turn it off.' : 'Taxing is back to normal.'
+        uiState.dbgCatch ? 'Every throw catches until you turn it off.' : 'Catching is back to normal.'
       );
     case 'speed1':
     case 'speed2':

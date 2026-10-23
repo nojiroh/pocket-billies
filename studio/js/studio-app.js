@@ -265,7 +265,7 @@ export function changed(rigs) {
 }
 /* v29: live update. A game tab open from this Studio (a test run, or the game on the same address) gets your scenes,
    props and engine settings (Project Story S3: and the story and trainers) half a second after each change, before
-   you save; UI-3: and the UI's look; Studio plan T2.6: and the run's rules, place types, Loopholes, unlocks and items
+   you save; UI-3: and the UI's look; Studio plan T2.6: and the run's rules, place types, Perks, unlocks and items
    (a test run only applies those) */
 const LIVE_UPDATE_CHANNEL = (() => {
   try {
@@ -650,7 +650,7 @@ export const SECTION_LIST = [
   ['moves', 'Moves', 'Attacks and their effects'],
   ['preview', 'Battle preview', 'Watch moves, backdrops and Billies on the real battle stage'],
   ['types', 'Types', 'Colors, matchups and type abilities'],
-  ['items', 'Items & coins', 'Shop goods, tax coins'],
+  ['items', 'Items & pyramids', 'Shop goods, catch pyramids'],
   ['shops', 'Town shops', 'Legacy: keepers and what they sell (runs stock from the run rules)'],
   [
     'world',
@@ -676,11 +676,7 @@ export const SECTION_LIST = [
   ['runlab', 'Run Lab', 'A run’s map from its seed, as the game makes it, on your unsaved data'],
   ['economy', 'Economy', 'Every source and sink of each currency, with a link to its field'],
   ['unlocks', 'Unlocks & hub', 'The unlock graph, the hub’s buildings and currencies, and what a new save has'],
-  [
-    'relics',
-    'Loopholes',
-    'A run’s Loopholes: effects by kind, the code’s limits, a sample build, the offer order for a seed',
-  ],
+  ['relics', 'Perks', 'A run’s Perks: effects by kind, the code’s limits, a sample build, the offer order for a seed'],
 ];
 /* alpha 0.4.1: the sections in five groups that fold away; the one you're in always shows. The descriptions show as
    a tooltip and under the section you're in, so the list is short enough to see at once */
@@ -691,7 +687,7 @@ const SECTION_GROUPS = [
   ],
   ['World & places', ['scenes', 'hub', 'props', 'engine', 'world']],
   ['People & story', ['trainers', 'people', 'wardrobe', 'lore', 'story']],
-  ['Money', ['items']],
+  ['Moneys', ['items']],
   ['Game', ['rules', 'ui', 'art', 'check']],
   /* SND-3: the songs, the where table and the jingles (music-editor.js); the cries are on the Billies page */
   ['Sound', ['music']],

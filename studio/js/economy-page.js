@@ -1,7 +1,7 @@
 'use strict';
 /* ================= ECONOMY (Studio plan Phase 4, T4.4) =================
    One page that lists where each currency comes from and goes (logic/economy-view.js economyLines: the run's rewards,
-   wild prizes and Loopholes' money rows; the clinic, run shop wares and shop Loopholes; the payout's rates; the earned
+   wild prizes and Perks' money rows; the clinic, run shop wares and shop Perks; the payout's rates; the earned
    unlocks' grants, each building's unlock costs and the ranch's), each with a link to the field that sets it, and
    each currency's kept rule. Read-mostly: the numbers are edited where they live. There is no economy data model.
    The money in and out of simulated runs (Phase 3's balance dashboard, T3.4) belongs here too; it has not landed on
@@ -39,12 +39,12 @@ SECTIONS.economy = () => {
     .join('');
   return `<div class="ed-col solo"><div class="ed-head"><div><h2>Economy</h2><p class="sub">Every source and sink of each currency, read from the field that sets it. Click one to edit it where it lives.</p></div></div>
  ${card(
-   'Money in and out of runs',
+   'Moneys in and out of runs',
    '<p class="help eco-sim" data-eco-sim="none">Not here yet: the simulated runs’ money in and out (Studio plan Phase 3, the balance dashboard T3.4) has not landed. Until then, the Run Lab shows a seed’s rewards, shops and picks.</p>'
  )}
  ${tables}</div>`;
 };
-/* a field of one Loophole or unlock shows when that one is picked */
+/* a field of one Perk or unlock shows when that one is picked */
 ACTIONS.ecoGo = d => {
   const [top, id] = String(d.path).split('.'),
     sel = top === 'relics' ? { relic: id } : top === 'unlocks' ? { unlock: id } : undefined;

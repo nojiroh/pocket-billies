@@ -3,6 +3,7 @@
  "who": "markdown",
  "battleStage": "mall",
  "miniboss": true,
+ "type": "Steel",
  "blocks": false,
  "team": [
   {"sp":"walton1","lvl":19},
@@ -22,7 +23,7 @@
   "coin": "gold",
   "coins": {"gold":2,"tbtf":1},
   "items": {"bell":1},
-  "rewardText": "a Shining Stone, 2 Gold Coins and a Platinum Coin",
+  "rewardText": "a Shining Stone, 2 Gold Pyramids and a Capstone",
   "unlockText": "Route 11 · Hornpass, north of Verdigris City, is open, and snowy Frostcrown Town beyond it. A Billie big enough to ride can also carry you across Mirrormere Lake and the sea west of Marigold Town."
  },
  "double": true,

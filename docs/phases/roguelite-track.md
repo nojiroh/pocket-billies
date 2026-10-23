@@ -947,7 +947,7 @@ section records the owner's answers, the new and changed sessions, and the new "
 were read at 2361848; verify again before each session.
 
 **Words (2026-10-23, docs/phases/reflavour-track.md):** the owner moved the game off finance. Read Loopholes as
-**Perks**, Brackets as **Expeditions**, Capital as **Research**, Audit Seals as **Crests**, $ as **Coins**; catching is
+**Perks**, Brackets as **Expeditions**, Capital as **Research**, Audit Seals as **Crests**, $ as **Moneys** ("1 Money", RF-1); catching is
 with pyramids. The organization is the Bureau of Lost, Found and Beans; the game is Pocket B&B² (9.5 is superseded by
 reflavour-track.md section 4).
 
@@ -1034,7 +1034,8 @@ RL-S1, then play; side areas, the rival and relationships next; endless last.
   `lines/*.json` `forms`, `game-data.js` (`standInSpecies` not used for a run), `logic/rules.js spawn`. Tests: every
   run pool resolves without a stand-in; a form's types and name. Could break: wild battles, the dex, the Studio's
   line editor.
-- **RL-R1.** Files: new `game/data/regions.json` + schema, type, check, export; new `logic/run-region.js`;
+- **The region sessions (RL-R1, RL-R2)** live on one branch. Branch: track/regions
+- **RL-R1** (done 2026-10-23; HANDOFF has what changed and where this shape was wrong). Files: new `game/data/regions.json` + schema, type, check, export; new `logic/run-region.js`;
   `logic/run-map.js` (rows from zones); `logic/run-bowl.js` (zone bands); the Map tab's header. Tests: same seed same
   region; zones follow the graph; every dex entry resolvable; leaders match the region's types. Could break: the run
   map's snapshot tests (remade on purpose), the run sim.

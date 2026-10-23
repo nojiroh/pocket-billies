@@ -3,6 +3,7 @@
  "who": "carat",
  "battleStage": "grotto",
  "miniboss": true,
+ "type": "Electric",
  "blocks": false,
  "team": [
   {"sp":"slim2","lvl":51},
@@ -22,7 +23,7 @@
   "coin": "gold",
   "coins": {"gold":5,"tbtf":3},
   "items": {"parachute":1},
-  "rewardText": "a Golden Parachute, 5 Gold Coins and 3 Platinum Coins",
+  "rewardText": "a Max Revive, 5 Gold Pyramids and 3 Capstones",
   "unlockText": "The Rimefrost Caves, east of Glimmershaft Town, are open. Beyond them, the inner sea."
  },
  "v47region": 1,

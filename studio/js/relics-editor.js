@@ -1,15 +1,15 @@
 'use strict';
-/* ================= LOOPHOLES (Studio plan Phase 4, T4.1) =================
-   relics.json, a run's Loopholes ("relic" is the data's word; the player and this page say Loophole), and the rules
+/* ================= PERKS (Studio plan Phase 4, T4.1) =================
+   relics.json, a run's Perks ("relic" is the data's word; the player and this page say Perk), and the rules
    that offer them (rules.json run.relics). What the JSON can't show:
    - each effect row by its kind (logic/effects.js FX_KINDS), with the limits that live in the code (FX_LIMIT for a
      factor, FX_STAGES for stages) beside the field, and data-checks.js dataRelics's messages on the row they are about;
-   - the rarity table's coverage: each rarity's weight and price, how many Loopholes have it, and a Loophole's chance to
+   - the rarity table's coverage: each rarity's weight and price, how many Perks have it, and a Perk's chance to
      be drawn first (its weight over the pool's);
    - the effect on a sample build: the game's fx functions on a Billie made by rules.js (logic/content-preview.js
      relicPreview, in the Studio's logic worker on the data as it is now), with stats before and after;
    - the offer order for a seed: the picks after each mini-boss, as the game makes them (relics.js relicOfferOrder in
-     the worker), taking nothing, the first offered, or this Loophole when offered.
+     the worker), taking nothing, the first offered, or this Perk when offered.
    Edits are ordinary fields (saved, undone and proposed like any other); a row's kind is changed by its own select,
    which puts that kind's fields in with neutral values. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
@@ -58,7 +58,7 @@ expose({
 const relicEd = {
   sp: '',
   lvl: 30,
-  /** the other Loopholes held with the one being edited, for the preview */
+  /** the other Perks held with the one being edited, for the preview */
   also: /** @type {string[]} */ ([]),
   seed: 'LAB1',
   take: 'none',
@@ -68,13 +68,13 @@ const relicEd = {
 };
 /** what each kind of row means, and the fields it has */
 const RELIC_KINDS = {
-  money: 'A won battle pays more (or less) money',
+  money: 'A won battle pays more (or less) Moneys',
   price: 'A run shop’s prices, or a run town’s clinic',
   catch: 'A coin’s chance to catch',
   stat: 'Stat stages as a battle starts',
   damage: 'Damage your Billies deal or take',
   heal: 'Heal a share of HP on walking into a place',
-  payout: 'The payout’s Capital, or the share items count at',
+  payout: 'The payout’s Research, or the share items count at',
 };
 /** a new row of a kind: its fields with values that change little */
 const RELIC_ROW_NEW = {
@@ -96,12 +96,12 @@ const relicProblems = () => {
     return [{ f: 'relics.json', m: `the check stopped: ${e.message || e}` }];
   }
 };
-/** the messages that start with `pre` (a Loophole's or a row's), as error lines */
+/** the messages that start with `pre` (a Perk's or a row's), as error lines */
 const relicProblemHTML = (/** @type {{ f: string, m: string }[]} */ P, /** @type {string} */ pre, skip = '') =>
   P.filter(p => p.f === 'relics.json' && p.m.startsWith(pre) && !(skip && p.m.startsWith(skip)))
     .map(p => `<p class="err relic-err">${escapeHtml(p.m)}</p>`)
     .join('');
-/** each rarity's weight and how many Loopholes have it, and each Loophole's chance to be drawn first */
+/** each rarity's weight and how many Perks have it, and each Perk's chance to be drawn first */
 function relicCoverage(/** @type {any} */ D) {
   const RR = D.rules.run.relics,
     ids = Object.keys(D.relics || {}),
@@ -126,7 +126,7 @@ function relicRowHTML(/** @type {string} */ k, /** @type {any} */ f, /** @type {
       .filter((/** @type {any} */ s) => s.id !== 'hp')
       .map((/** @type {any} */ s) => [s.id, s.name]),
     fields = {
-      money: () => [mult('Money ×')],
+      money: () => [mult('Moneys ×')],
       price: () => [
         selectField('Which price', `${p}.what`, [
           ['shop', 'A run shop’s wares'],
@@ -176,7 +176,7 @@ function relicRowHTML(/** @type {string} */ k, /** @type {any} */ f, /** @type {
       ],
       payout: () => [
         selectField('Which', `${p}.what`, [
-          ['capital', 'The payout’s Capital'],
+          ['capital', 'The payout’s Research'],
           ['itemShare', 'The share of their price items count at (never above 1)'],
         ]),
         mult('×'),
@@ -199,7 +199,7 @@ function relicRarityHTML(/** @type {any} */ D, /** @type {any} */ cov, /** @type
         c = cov.count[r],
         note =
           w > 0 && !c
-            ? '<span class="warn">no Loophole has it: its weight draws nothing</span>'
+            ? '<span class="warn">no Perk has it: its weight draws nothing</span>'
             : !w && c
               ? `<span class="warn">weight 0: its ${c} never offered</span>`
               : cov.total
@@ -212,7 +212,7 @@ function relicRarityHTML(/** @type {any} */ D, /** @type {any} */ cov, /** @type
     .join('');
   return card(
     'Rarity and the picks',
-    `<table class="tbl relic-rarity"><thead><tr><th>Rarity</th><th>Weight</th><th>Shop price</th><th>Loopholes</th><th></th></tr></thead><tbody>${rows}</tbody></table>${grid(
+    `<table class="tbl relic-rarity"><thead><tr><th>Rarity</th><th>Weight</th><th>Shop price</th><th>Perks</th><th></th></tr></thead><tbody>${rows}</tbody></table>${grid(
       numberField('Held at most', 'rules.run.relics.cap', { min: 1, max: 12, step: 1 }),
       numberField('Offered at each pick', 'rules.run.relics.pick', { min: 1, max: 5, step: 1 })
     )}${rules}`,
@@ -237,7 +237,7 @@ SECTIONS.relics = () => {
         `<button class="lcard slim ${x === k ? 'on' : ''}" data-act="pickRelic" data-id="${escapeHtml(x)}"><span class="lt"><b>${escapeHtml(L[x].name || x)}${P.some(p => p.f === 'relics.json' && p.m.startsWith(x + '.')) ? ' <span class="warn">⚠</span>' : ''}</b><small>${escapeHtml(L[x].rarity)} · weight ${D.rules.run.relics.rarity[L[x].rarity] || 0} · ${relicPct(cov.chance[x])} first</small></span></button>`
     )
     .join('');
-  const head = `<div class="list-head"><button class="btn primary" data-act="relicNew">+ New Loophole</button></div>`;
+  const head = `<div class="list-head"><button class="btn primary" data-act="relicNew">+ New Perk</button></div>`;
   if (!R)
     return `<div class="split"><aside class="list-col">${head}</aside><div class="ed-col">${relicRarityHTML(D, cov, P)}</div></div>`;
   if (!relicEd.sp || !D.lines.some((/** @type {any} */ l) => relicEd.sp.startsWith(l.id)))
@@ -249,7 +249,7 @@ SECTIONS.relics = () => {
   return `<div class="split"><aside class="list-col">${head}<div class="llist">${list}</div></aside>
  <div class="ed-col"><div class="ed-head"><div><small class="mono">${escapeHtml(k)}</small><h2>${escapeHtml(R.name || k)}</h2></div><button class="btn danger" data-act="relicDel">Delete</button></div>
  ${card(
-   'The Loophole',
+   'The Perk',
    grid(
      textField('Name', `${p}.name`, { max: 40 }),
      selectField(
@@ -262,7 +262,7 @@ SECTIONS.relics = () => {
      textField('What it does (one sentence)', `${p}.d`, { area: 1, rows: 2, max: 160 }) +
      relicProblemHTML(P, `${k}.`, `${k}.fx[`),
    {
-     sub: `${escapeHtml(R.rarity)}: ${relicPct(cov.chance[k])} to be drawn first at a pick; a shop asks $${D.rules.run.relics.price[R.rarity] || 0}.`,
+     sub: `${escapeHtml(R.rarity)}: ${relicPct(cov.chance[k])} to be drawn first at a pick; a shop asks ${D.rules.run.relics.price[R.rarity] || 0} Moneys.`,
    }
  )}
  ${card(
@@ -299,7 +299,7 @@ SECTIONS.relics = () => {
      `<label class="fld"><span>At each pick, take</span><select data-relic-ed="take">${[
        ['none', 'Nothing'],
        ['first', 'The first offered'],
-       ['this', 'This Loophole when offered'],
+       ['this', 'This Perk when offered'],
      ]
        .map(([v, l]) => `<option value="${v}"${relicEd.take === v ? ' selected' : ''}>${l}</option>`)
        .join('')}</select></label>`
@@ -381,7 +381,7 @@ function relicPreviewHTML(/** @type {any} */ v) {
       'Healed walking into a place',
       v.heal.share ? `${relicPct(v.heal.share)} (${v.heal.hp} of ${v.sample.hp} HP)` : 'nothing'
     ),
-    one('Payout: Capital', relicX(v.payout.capital)),
+    one('Payout: Research', relicX(v.payout.capital)),
     one(
       'Payout: items count at',
       `${relicPct(v.payout.itemShare[0])}${v.payout.itemShare[1] !== v.payout.itemShare[0] ? ` → <b>${relicPct(v.payout.itemShare[1])}</b>` : ''} of their price`
@@ -393,7 +393,7 @@ function relicPreviewHTML(/** @type {any} */ v) {
     )
     .join('')}</div>`;
 }
-/** relicOfferOrder's answer: each pick, this Loophole marked */
+/** relicOfferOrder's answer: each pick, this Perk marked */
 function relicOffersHTML(/** @type {{ offer: string[], took: string | null }[]} */ v, /** @type {string} */ k) {
   const L = studioState.D.relics,
     at = v.findIndex(p => p.offer.includes(k));
@@ -404,7 +404,7 @@ function relicOffersHTML(/** @type {{ offer: string[], took: string | null }[]} 
     )
     .join(
       ''
-    )}</ol><p class="help">${at < 0 ? 'This Loophole isn’t offered at these picks.' : `This Loophole is first offered at pick ${at + 1}.`}</p>`;
+    )}</ol><p class="help">${at < 0 ? 'This Perk isn’t offered at these picks.' : `This Perk is first offered at pick ${at + 1}.`}</p>`;
 }
 
 /* the preview's own inputs: not data, so they redraw only the preview */
@@ -443,7 +443,7 @@ ACTIONS.pickRelic = d => {
 ACTIONS.relicNew = () => {
   const D = studioState.D,
     k = uniqueKey('loophole', x => !!(D.relics || {})[x]);
-  D.relics[k] = { name: 'New Loophole', d: 'Wins pay 10% more money.', rarity: 'common', fx: [RELIC_ROW_NEW.money()] };
+  D.relics[k] = { name: 'New Perk', d: 'Wins pay 10% more Moneys.', rarity: 'common', fx: [RELIC_ROW_NEW.money()] };
   studioState.sel.relic = k;
   changed();
   render();
@@ -452,7 +452,7 @@ ACTIONS.relicDel = async () => {
   const k = studioState.sel.relic;
   if (
     !(await ask(
-      `Delete the Loophole ${escapeHtml(studioState.D.relics[k].name || k)}? A run holding it loses it.`,
+      `Delete the Perk ${escapeHtml(studioState.D.relics[k].name || k)}? A run holding it loses it.`,
       'Delete'
     ))
   )

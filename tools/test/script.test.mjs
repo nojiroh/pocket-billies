@@ -141,10 +141,10 @@ test('once, cycle and seq remember, by key or by script and line', async () => {
 
 test('slots: {name} from the stage, {caught} and {badges} from the save; music is played', async () => {
   const save = { story: {}, items: {}, coins: {}, caught: { musk0: 1, swift0: 1 }, seats: ['a'] };
-  const lines = ['music rival', '{name}! {caught} taxed, {badges} badge.'];
+  const lines = ['music rival', '{name}! {caught} caught, {badges} badge.'];
   assert.deepEqual((await play(lines, { save, slots: { name: () => 'Rae' } })).said, [
     '<music rival>',
-    'Rae! 2 taxed, 1 badge.',
+    'Rae! 2 caught, 1 badge.',
   ]);
   assert.equal((await play(['Hi, {name}.'], { save })).said[0], 'Hi, Trainer.');
 });

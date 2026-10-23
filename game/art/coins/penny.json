@@ -1,0 +1,1 @@
+{"about": "RF-2: the penny catch pyramid (tools/build-pyramids.py)", "cel": 0.6, "layers": [{"k": "cone", "x": 0, "y": 0, "sides": 4, "rot": 0.7854, "facet": 1, "z": 0.02, "r": 0.2404, "h": 0.3, "col": "#d47a3e", "tex": "brick", "name": "pyramid"}]}

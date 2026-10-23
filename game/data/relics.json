@@ -1,14 +1,14 @@
 {
  "offshore": {
-  "name": "Offshore Account",
-  "d": "Wins pay 20% more money.",
+  "name": "Lucky Charm",
+  "d": "Wins pay 20% more Moneys.",
   "rarity": "common",
   "fx": [
    {"kind":"money","mult":1.2}
   ]
  },
  "shelter": {
-  "name": "Tax Shelter",
+  "name": "Clinic Loyalty Card",
   "d": "A town’s clinic charges half.",
   "rarity": "common",
   "fx": [
@@ -16,7 +16,7 @@
   ]
  },
  "lobbyist": {
-  "name": "Lobbyist",
+  "name": "Coupon Book",
   "d": "Shops on the run are 15% cheaper.",
   "rarity": "common",
   "fx": [
@@ -24,15 +24,15 @@
   ]
  },
  "fineprint": {
-  "name": "Fine Print",
-  "d": "Coins catch 25% more often.",
+  "name": "Steady Hand",
+  "d": "Pyramids catch 25% more often.",
   "rarity": "common",
   "fx": [
    {"kind":"catch","mult":1.25}
   ]
  },
  "insider": {
-  "name": "Insider Tip",
+  "name": "Running Shoes",
   "d": "Your Billies start each battle with their Speed up.",
   "rarity": "uncommon",
   "fx": [
@@ -40,7 +40,7 @@
   ]
  },
  "takeover": {
-  "name": "Hostile Takeover",
+  "name": "Power Gloves",
   "d": "Your physical moves hit 15% harder.",
   "rarity": "uncommon",
   "fx": [
@@ -48,7 +48,7 @@
   ]
  },
  "hedge": {
-  "name": "Hedge Fund",
+  "name": "Bubble Wrap",
   "d": "Your Billies take 10% less damage.",
   "rarity": "rare",
   "fx": [
@@ -56,7 +56,7 @@
   ]
  },
  "severance": {
-  "name": "Severance Package",
+  "name": "Trail Snacks",
   "d": "Each place you walk into heals your team by 15% of their HP.",
   "rarity": "uncommon",
   "fx": [
@@ -64,15 +64,15 @@
   ]
  },
  "options": {
-  "name": "Stock Options",
-  "d": "The payout gives 15% more Capital.",
+  "name": "Field Notebook",
+  "d": "The payout gives 15% more Research.",
   "rarity": "uncommon",
   "fx": [
    {"kind":"payout","what":"capital","mult":1.15}
   ]
  },
  "writeoff": {
-  "name": "Write-off",
+  "name": "Lost Property Form",
   "d": "If the run is lost, the payout counts your items at their full price.",
   "rarity": "rare",
   "fx": [

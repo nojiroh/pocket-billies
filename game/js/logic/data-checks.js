@@ -15,6 +15,7 @@ import { lineSpeciesIds } from './forms.js';
 import { CLIMATE_WEATHER_ODDS } from './weather.js';
 import { uiThemeContrast } from './ui-theme.js';
 import { RUN_MARK_TYPES } from './run-marks.js';
+import { runRegionData, runRegionMake } from './run-region.js';
 import { runMapMake, runMapRows, runMapRowsFit } from './run-map.js';
 import { MAPGEN_DEFAULTS, MAPGEN_FEATURES, MAPGEN_SHAPES, MAPGEN_SURFACES, MAPGEN_WATER } from './mapgen.js';
 import { FX_LIMIT, FX_STAGES } from './effects.js';
@@ -34,11 +35,15 @@ expose({
   // @ts-expect-error -- replaced on purpose
   dataBuildings: [() => dataBuildings, v => (dataBuildings = v)],
   // @ts-expect-error -- replaced on purpose
+  dataCatchArt: [() => dataCatchArt, v => (dataCatchArt = v)],
+  // @ts-expect-error -- replaced on purpose
   dataCurrencies: [() => dataCurrencies, v => (dataCurrencies = v)],
   // @ts-expect-error -- replaced on purpose
   dataNodeTypes: [() => dataNodeTypes, v => (dataNodeTypes = v)],
   // @ts-expect-error -- replaced on purpose
   dataRanchRules: [() => dataRanchRules, v => (dataRanchRules = v)],
+  // @ts-expect-error -- replaced on purpose
+  dataRegions: [() => dataRegions, v => (dataRegions = v)],
   // @ts-expect-error -- replaced on purpose
   dataRelics: [() => dataRelics, v => (dataRelics = v)],
   // @ts-expect-error -- replaced on purpose
@@ -428,8 +433,8 @@ export function dataRunLoop(D) {
         if (!(D.items || {})[k] || !whole(n, 0, 999))
           problem('rules.json', `run.start.items.${k}: no such item, or not a whole count`);
     }
-    // RL-9b: by Bracket (index 0 = Bracket I; past the end, the last): Billies from home a run takes (1-6, never fewer
-    // than the Bracket before) and the things packed from Copperleaf's bag (0-99 items and coins in all)
+    // RL-9b: by Expedition (index 0 = Expedition I; past the end, the last): Billies from home a run takes (1-6, never fewer
+    // than the Expedition before) and the things packed from Copperleaf's bag (0-99 items and coins in all)
     for (const [k, lo, hi, what] of [
       ['home', 1, 6, 'Billies from home'],
       ['pack', 0, 99, 'things packed'],
@@ -443,10 +448,11 @@ export function dataRunLoop(D) {
       )
         problem(
           'rules.json',
-          `run.${k} is not a list of 1-9 whole numbers (${what}, ${lo}-${hi}), one a Bracket, none fewer than the one before`
+          `run.${k} is not a list of 1-9 whole numbers (${what}, ${lo}-${hi}), one a Expedition, none fewer than the one before`
         );
     }
-    if (!whole(R.healCost, 0, 100000)) problem('rules.json', 'run.healCost is not a whole number of $ (0-100,000)');
+    if (!whole(R.healCost, 0, 100000))
+      problem('rules.json', 'run.healCost is not a whole number of Moneys (0-100,000)');
     if (!rec(SH) || !Array.isArray(SH.always) || !whole(SH.more, 0, 12) || !rec(SH.pick))
       problem('rules.json', 'run.shop: always (a list), more (whole, 0-12) and pick (weights) are needed');
     else {
@@ -466,7 +472,7 @@ export function dataRunLoop(D) {
       for (const k of ['miniboss', 'boss']) {
         const f = F[k];
         if (!rec(f) || !whole(f.up, -20, 50) || !whole(f.reward, 0, 1e6))
-          problem('rules.json', `run.foes.${k}: up (whole, -20-50) and reward (whole $, 0-1,000,000) are needed`);
+          problem('rules.json', `run.foes.${k}: up (whole, -20-50) and reward (whole Moneys, 0-1,000,000) are needed`);
         else only(f, ['up', 'reward'], `run.foes.${k}`);
       }
     }
@@ -555,6 +561,81 @@ export function dataBiomes(D, valid = () => true) {
   }
   return out;
 }
+// RL-R1: what a run's region is made from: the schema; biomes that exist and are run biomes (rules.json run.map.biomes:
+// the ones with finished plants, roguelite-track 9.3); real types; ranges low to high; every mini-boss leader with a
+// type; then a sweep: on a fresh save's biomes and on all of them, at every Expedition, each seed makes a region whose
+// rows fit the map's mini-bosses, whose dex is real species within its size, with a leader for each mini-boss and the boss
+/** RL-R1: regions.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
+export function dataRegions(D, valid = () => true) {
+  /** @type {DataProblem[]} */
+  const out = [],
+    problem = (/** @type {string} */ where, /** @type {string} */ what) => out.push([where, what]);
+  if (!D.regions || !valid('regions.schema.json', D.regions, 'regions.json')) return out;
+  const R = D.regions,
+    M = (D.rules && D.rules.run && D.rules.run.map) || {},
+    runBiomes = M.biomes || {},
+    types = new Set((D.types || []).map((/** @type {any} */ t) => t.id)),
+    biome = (/** @type {string} */ b, /** @type {string} */ at) => {
+      if (!(D.biomes || {})[b]) problem('regions.json', `${at}: no biome "${b}" (biomes.json)`);
+      else if (!Object.hasOwn(runBiomes, b))
+        problem('regions.json', `${at}: "${b}" is not a run biome (rules.json run.map.biomes, the finished ones)`);
+    };
+  for (const [b, G] of Object.entries(R.graph)) {
+    biome(b, 'graph');
+    for (const to of Object.keys(/** @type {any} */ (G))) biome(to, `graph.${b}`);
+  }
+  for (const [k, T] of Object.entries(R.themes)) {
+    for (const f of ['start', 'biomes'])
+      for (const b of Object.keys(T[f])) {
+        biome(b, `themes.${k}.${f}`);
+        if (!R.graph[b]) problem('regions.json', `themes.${k}.${f}: "${b}" is not in the graph`);
+      }
+    for (const t of Object.keys(T.types))
+      if (!types.has(t)) problem('regions.json', `themes.${k}.types: no type "${t}"`);
+  }
+  for (const f of ['rows', 'dex'])
+    if (R[f][0] > R[f][1]) problem('regions.json', `${f}: the fewest (${R[f][0]}) is more than the most (${R[f][1]})`);
+  for (const [id, T] of Object.entries(D.trainers || {}))
+    if (T && T.miniboss) {
+      if (!T.type)
+        problem(`trainers/${id}.json`, 'a mini-boss leader needs a type (RL-R1: a region picks its leaders by type)');
+      else if (!types.has(T.type)) problem(`trainers/${id}.json`, `type: no type "${T.type}"`);
+    }
+  if (out.length || !Array.isArray(D.lines)) return out;
+  /* the sweep: the biomes a fresh save has (none an unlock grants) and every run biome */
+  const granted = new Set(Object.values(D.unlocks || {}).map((/** @type {any} */ u) => u.grant && u.grant.biome)),
+    every = Object.keys(runBiomes).filter(b => runBiomes[b] > 0),
+    data = runRegionData(D, D.trainers || {}),
+    species = new Set(D.lines.flatMap((/** @type {any} */ L) => lineSpeciesIds(L))),
+    roster = D.lines.reduce((/** @type {number} */ n, /** @type {any} */ L) => n + L.names.length, 0),
+    seen = new Set();
+  for (const [what, open] of [
+    ['a fresh save', every.filter(b => !granted.has(b))],
+    ['every run biome', every],
+  ])
+    for (let tier = 1; tier <= R.zones.length; tier++)
+      for (let k = 0; k < 40; k++) {
+        const seed = `REGIONCHECK${k}`,
+          note = (/** @type {string} */ text) => {
+            if (seen.has(text)) return;
+            seen.add(text);
+            problem('regions.json', `${text} (${what}, Expedition ${tier}, seed ${seed})`);
+          },
+          G = runRegionMake(seed, data, { open: /** @type {string[]} */ (open), tier, guards: M.minibosses || 0 });
+        if (!G) {
+          note(`no theme can roll with only ${/** @type {string[]} */ (open).join(', ')} open`);
+          continue;
+        }
+        const rows = G.zones.reduce((n, z) => n + z.rows, 0);
+        if (!runMapRowsFit({ ...M, rows }))
+          note(`${rows} rows (${G.zones.length} zones) can't hold ${M.minibosses} mini-bosses`);
+        if (G.dex.some(sp => !species.has(sp))) note(`the dex names a species no line makes`);
+        if (G.dex.length > R.dex[1] || (G.dex.length < R.dex[0] && roster >= R.dex[0]))
+          note(`a dex of ${G.dex.length} species, not ${R.dex[0]}-${R.dex[1]}`);
+        if (G.leaders.length !== (M.minibosses || 0) + 1) note('a leader short for its mini-bosses and boss');
+      }
+  return out;
+}
 // RL-6: the kinds of node on a run's map: the schema, a marker for each, and something to fill the free rows with
 /** RL-6: nodeTypes.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
 export function dataNodeTypes(D, valid = () => true) {
@@ -575,7 +656,7 @@ export function dataNodeTypes(D, valid = () => true) {
   }
   return out;
 }
-// RL-12: Loopholes (relics): the schema, the types their damage rows name; rules.json run.relics: a cap of 1-12 held, a
+// RL-12: Perks (relics): the schema, the types their damage rows name; rules.json run.relics: a cap of 1-12 held, a
 // pick of 1-5 (run.offer holds up to 5), a weight of 0 or more and a whole price ($0-100,000) for each rarity, and
 // something to offer
 /** RL-12: relics.json and rules.json run.relics @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
@@ -624,15 +705,44 @@ export function dataRelics(D, valid = () => true) {
           if (g === 'rarity' ? !(typeof G[r] === 'number' && G[r] >= 0) : !whole(G[r], 0, 100000))
             problem(
               'rules.json',
-              `run.relics.${g}.${r} is not ${g === 'rarity' ? 'a weight of 0 or more' : 'a whole price ($0-100,000)'}`
+              `run.relics.${g}.${r} is not ${g === 'rarity' ? 'a weight of 0 or more' : 'a whole price (0-100,000 Moneys)'}`
             );
       }
       if (D.relics && !Object.values(D.relics).some(R => (RR.rarity || {})[R.rarity] > 0))
         problem(
           'rules.json',
-          'run.relics.rarity gives every Loophole in relics.json a weight of 0: nothing can be offered'
+          'run.relics.rarity gives every Perk in relics.json a weight of 0: nothing can be offered'
         );
     }
+  }
+  return out;
+}
+// RF-2: every catch item (coins.json; the ids stay the coins' until RF-4) has its icons and the model it is thrown as
+// (art/coins/<id>_16.png, _32.png and <id>.json, made by tools/build-pyramids.py): a recipe with at least one shape
+/** RF-2: coins.json against its art @param {any} coins @param {(path: string) => string | null} read the file under
+ * game/art, or null when it isn't there @returns {DataProblem[]} */
+export function dataCatchArt(coins, read) {
+  /** @type {DataProblem[]} */
+  const out = [],
+    problem = (/** @type {string} */ what) => out.push(['coins.json', what]);
+  for (const k of Object.keys(coins || {})) {
+    for (const f of [`coins/${k}_16.png`, `coins/${k}_32.png`])
+      if (read(f) == null) problem(`${k}: no icon art/${f} (tools/build-pyramids.py)`);
+    const t = read(`coins/${k}.json`);
+    if (t == null) {
+      problem(`${k}: no model art/coins/${k}.json (tools/build-pyramids.py)`);
+      continue;
+    }
+    /** @type {any} */
+    let rec = null;
+    try {
+      rec = JSON.parse(t);
+    } catch (e) {
+      problem(`${k}: its model art/coins/${k}.json is not JSON`);
+      continue;
+    }
+    if (!rec || !Array.isArray(rec.layers) || !rec.layers.length)
+      problem(`${k}: its model art/coins/${k}.json has no shapes`);
   }
   return out;
 }

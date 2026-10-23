@@ -3,7 +3,7 @@
    The run loop as the player meets it: starting a run at Copperleaf's airship mast, the checkpoints it saves, a
    reload picking it up where it was, giving up, and the end (the payout screen is run-payout.js). The rules it plays
    by are logic/run-loop.js, logic/run-map.js and logic/run-state.js; the run's world is run-world.js.
-   RL-9b: the start sheet picks who comes from home (the team or storage, rules.json run.home by Bracket) and packs a
+   RL-9b: the start sheet picks who comes from home (the team or storage, rules.json run.home by Expedition) and packs a
    bag from Copperleaf's (run.pack); the rest stay. Storage stays in Copperleaf during a run (logic/rules.js
    allBillies, toBox, toTeam, addBilly): a Billie caught while
    the party is full waits in runCatch, never in the save (a team of seven can't be saved), until one is released. */
@@ -93,17 +93,17 @@ provide({
 const runCatch = { m: /** @type {any} */ (null) };
 provide({ runCatch }); /* to-module */
 /** the sheet after a catch with a full party: who leaves the party, the new one included. One caught on the run is
- * paid as Capital at the end (logic/run-loop.js runRelease); one from Copperleaf only leaves the party */
+ * paid as Research at the end (logic/run-loop.js runRelease); one from Copperleaf only leaves the party */
 function runReleaseSheet() {
   const m = runCatch.m;
   if (!m || !saveData.run) return null;
   const all = saveData.team.concat([m]),
     row = (o, i) =>
-      `<button class="pickrow" data-a="mact" data-i="${i}">${rigCanvasHTML(o.sp, 40, { build: o.build, coat: o.coat })}<span class="pr-t"><b>${escapeHtml(billyName(o))}</b><small>Lv ${o.lvl}${o === m ? ', just taxed' : ''}${runReleasePays(saveData.run, o) ? '' : ', from Copperleaf: comes home at the end'}</small></span></button>`;
+      `<button class="pickrow" data-a="mact" data-i="${i}">${rigCanvasHTML(o.sp, 40, { build: o.build, coat: o.coat })}<span class="pr-t"><b>${escapeHtml(billyName(o))}</b><small>Lv ${o.lvl}${o === m ? ', just caught' : ''}${runReleasePays(saveData.run, o) ? '' : ', from Copperleaf: comes home at the end'}</small></span></button>`;
   return {
     title: 'Your party is full',
     lock: true,
-    html: `<p>Six can travel on a run. Pick who leaves the party. A Billie caught on the run is paid for in Capital at the end.</p><div class="list">${all.map(row).join('')}</div>`,
+    html: `<p>Six can travel on a run. Pick who leaves the party. A Billie caught on the run is paid for in Research at the end.</p><div class="list">${all.map(row).join('')}</div>`,
     acts: all.map(o => ({ f: () => runReleasePick(o) })),
     btns: [],
   };
@@ -143,7 +143,7 @@ export function runGiveUp() {
   if (!saveData.run || saveData.run.at.phase === 'payout' || activeBattle) return;
   modal({
     title: 'Give up the run?',
-    html: '<p>The run ends as a loss. You keep one Billie of your choice, and what you found turns into Capital.</p>',
+    html: '<p>The run ends as a loss. You keep one Billie of your choice, and what you found turns into Research.</p>',
     btns: [
       {
         l: 'Give up',
@@ -162,7 +162,7 @@ export function runGiveUp() {
  * Copperleaf's mast @param {boolean} won @param {string[]} keep @param {(id: string) => number} itemPrice */
 export function runEndHome(won, keep, itemPrice) {
   if (!saveData.run) return;
-  /* RL-12: the Loopholes' payout rows, read before the run ends */
+  /* RL-12: the Perks' payout rows, read before the run ends */
   const rates = fxPayoutRates(fxOfRun(saveData.run, RELICS), RULES.run.payout),
     pay = runEnd(saveData, { won, keep }, rates, itemPrice);
   /* a move waiting to be learned names a Billie by its uid, which a run's copy shares with the hub's */
@@ -182,9 +182,9 @@ export function runEndHome(won, keep, itemPrice) {
   closeModal();
   render();
   if (typeof debugLog !== 'undefined')
-    debugLog.add('scene', `back in the hub: +${pay.capital} Capital, +${pay.seals} Seals, +${pay.scrap} Scrap`);
+    debugLog.add('scene', `back in the hub: +${pay.capital} Research, +${pay.seals} Crests, +${pay.scrap} Scrap`);
   toast(
-    `+${formatNumber(pay.capital)} Capital${pay.scrap ? `, ${formatNumber(pay.scrap)} Scrap` : ''}${pay.seals ? ` and ${plural(pay.seals, 'Audit Seal')}` : ''}. You have ${formatNumber(saveData.meta.capital)} Capital.`
+    `+${formatNumber(pay.capital)} Research${pay.scrap ? `, ${formatNumber(pay.scrap)} Scrap` : ''}${pay.seals ? ` and ${plural(pay.seals, 'Crest')}` : ''}. You have ${formatNumber(saveData.meta.capital)} Research.`
   );
   /* RL-11: milestones the run has met (ended runs, wins), each with its own toast after this one */
   if (typeof labMilestones === 'function') labMilestones();
@@ -232,7 +232,7 @@ function runPickDefault() {
   return m ? m.uid : null;
 }
 /** the start sheet's choice as it stands (uiState.runPick, runPack), kept to what is at home, what the bag holds and
- * the Bracket's counts (rules.json run.home, run.pack): the Billies from home (the default pick when none), the pack
+ * the Expedition's counts (rules.json run.home, run.pack): the Billies from home (the default pick when none), the pack
  * and how many things are in it @param {number} [tier] */
 function runPickNow(tier = 1) {
   const all = runHomeList(),
@@ -274,7 +274,7 @@ export function runStartSheet() {
   const S = RULES.run.start,
     P = runPickNow(),
     gifts = [
-      `$${formatNumber(S.se)}`,
+      plural(S.se, 'Money'),
       ...Object.entries(S.coins).map(([k, n]) => `${n} ${COINS[k] ? COINS[k].n : k}${n === 1 ? '' : 's'}`),
       ...Object.entries(S.items).map(([k, n]) => `${n} ${ITEMS[k] ? ITEMS[k].n : k}${n === 1 ? '' : 's'}`),
     ],
@@ -295,7 +295,7 @@ export function runStartSheet() {
       return `<div class="bag-row k-card run-pack-row"><span class="bag-ic">${icon}</span><span class="bag-t"><b>${escapeHtml(name)}</b><small>${formatNumber(have)} in the bag</small></span><button class="pb" data-pk="${kind}" data-k="${escapeHtml(k)}" data-d="-1" aria-label="One ${escapeHtml(name)} less"${n ? '' : ' disabled'}>−</button><b class="bag-n tnum">${n}</b><button class="pb" data-pk="${kind}" data-k="${escapeHtml(k)}" data-d="1" aria-label="One ${escapeHtml(name)} more"${n < have && P.n < P.most ? '' : ' disabled'}>+</button></div>`;
     },
     trained = P.home.filter(trains);
-  const html = `<p>The airship flies you out to the wild lands past the island: a road of places, a town before each mini-boss, and a boss at the end.</p><h3>Who comes from home</h3><p class="note">${plural(P.cap, 'Billie')} from home at Bracket I. The rest stay at the ranch; on the run you tax wild ones.${trained.length ? ' Training stops while it is away (what it banked comes along).' : ''}</p><div class="bx-grid">${runHomeList().map(card).join('')}</div><h3>Pack the bag <small class="tnum">${P.n} of ${P.most}</small></h3>${things.length ? `<div class="bag-list px">${things.map(row).join('')}</div>` : '<p class="note">Copperleaf’s bag is empty.</p>'}<p>The airship adds ${escapeHtml(gifts.join(', '))}.</p><p class="note">Every place you walk into takes a day. Beat the boss to win: everyone comes home with what they learned, and the bag goes into Copperleaf’s. If your whole party faints, the run is over: you keep one Billie, and the bag turns into Capital.</p>`;
+  const html = `<p>The airship flies you out to the wild lands past the island: a road of places, a town before each mini-boss, and a boss at the end.</p><h3>Who comes from home</h3><p class="note">${plural(P.cap, 'Billie')} from home at Expedition I. The rest stay at the ranch; on the run you catch wild ones.${trained.length ? ' Training stops while it is away (what it banked comes along).' : ''}</p><div class="bx-grid">${runHomeList().map(card).join('')}</div><h3>Pack the bag <small class="tnum">${P.n} of ${P.most}</small></h3>${things.length ? `<div class="bag-list px">${things.map(row).join('')}</div>` : '<p class="note">Copperleaf’s bag is empty.</p>'}<p>The airship adds ${escapeHtml(gifts.join(', '))}.</p><p class="note">Every place you walk into takes a day. Beat the boss to win: everyone comes home with what they learned, and the bag goes into Copperleaf’s. If your whole party faints, the run is over: you keep one Billie, and the bag turns into Research.</p>`;
   const was = uiState.modal && uiState.modal.cls === 'fly-sheet run-start' ? uiState.modal : null,
     sheet = document.querySelector('#ov .sheet'),
     body = document.querySelector('#ov .sheet .body'),
@@ -443,7 +443,7 @@ function runBattleStart(kind, foe, extra) {
   return {
     extra: {
       ...extra,
-      /* its seed, the forecast's weather and (RL-12) the Loopholes held: none, no fx, the battle as before
+      /* its seed, the forecast's weather and (RL-12) the Perks held: none, no fx, the battle as before
          (logic/run-loop.js runBattleExtra, which the run's simulation plays too) */
       ...runBattleExtra(run, i, k, RULES.env, fxOfRun(run, RELICS)),
     },
@@ -487,13 +487,13 @@ function runBattleAgain() {
   battleHost().open();
 }
 
-/* ---------- Loopholes on the walk (RL-12, logic/effects.js) ---------- */
-/** a run town's clinic: $ a hurt Billie, with the Loopholes' heal price rows */
+/* ---------- Perks on the walk (RL-12, logic/effects.js) ---------- */
+/** a run town's clinic: $ a hurt Billie, with the Perks' heal price rows */
 export const runClinicEach = () => fxRunPrice(saveData.run, RELICS, 'heal', RULES.run.healCost);
-/** walking into a place on a run: a Loophole's heal row heals the team (before the arrival's save) */
+/** walking into a place on a run: a Perk's heal row heals the team (before the arrival's save) */
 export function runArrivedFx() {
   const gained = runArriveFx(saveData, RELICS);
-  if (gained > 0) toast(`Your Loopholes paid out: your team healed ${formatNumber(gained)} HP.`);
+  if (gained > 0) toast(`Your Perks paid out: your team healed ${formatNumber(gained)} HP.`);
 }
 
 /* ---------- hints, on a player's first run only ---------- */
@@ -502,11 +502,12 @@ const RUN_HINTS = {
   landing: run =>
     `Day 1 of the run. Walk north into the next place: each place you walk into takes a day. The boss waits at the far end; the deadline is day ${run.deadline}.`,
   map: () => 'The map shows the places ahead and their weather. A ? is further on. The boss is always shown.',
-  town: () => `A town: its clinic heals for $${runClinicEach()} a Billie, and its shop has new stock every day.`,
+  town: () =>
+    `A town: its clinic heals for ${plural(runClinicEach(), 'Money')} a Billie, and its shop has new stock every day.`,
   miniboss: () => 'A mini-boss blocks the way north. Beat them to go on.',
   boss: () => 'The boss. Beat it and the run is won.',
   relic: () =>
-    `Loopholes last the run: hold up to ${RULES.run.relics.cap}. The Loopholes tab shows what each one does; town shops sell them too.`,
+    `Perks last the run: hold up to ${RULES.run.relics.cap}. The Perks tab shows what each one does; town shops sell them too.`,
 };
 /** show a first-run hint once (nothing on a later run, or once shown) @param {keyof typeof RUN_HINTS} id */
 export function runHint(id) {

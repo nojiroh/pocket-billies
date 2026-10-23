@@ -2,14 +2,15 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
-### UI icons - 48 icons redrawn at 36x36, "block and split" - 2026-10-23
+### UI icons - 49 icons redrawn at 36x36, "block and split" - 2026-10-23
 Branch `ccr-6515f662-u0e47e` (the session's own: the owner named no branch; BRANCHES.md would call it
 `art/ui-icons`). Not a phase or track session: an art request. The look was picked from rounds of samples in chat
 (Pokemon-flavoured, then modern multi-tone in the theme colours): "P5", an extruded block with a diagonal split.
 - Changed (one cause per commit):
   - **tools/build-ui-icons.py**: each icon is a 34x34 grid of colour letters (PALETTE); the tool adds a 2 px block
     side, the 45-degree split, a lit edge and seams, and writes a 36x36 SVG with one path per colour. Stdlib only.
-    The two sound icons, drawn outside the tool before, are in it now (48 grids).
+    The two sound icons, drawn outside the tool before, are in it now. Merged with main's RF-1/RF-2: `capital` is
+    drawn as Research's lab flask and the new `pyramid` (the catch pyramid) is in the set: 49 grids.
   - **Shown as images**: `.uico` (parts.css) and the run kit's `.ic` use the SVG as a background image instead of
     a mask tinted by `currentColor`. Four rules that set `background: currentColor` on an icon are gone (map list,
     dressing room x2, walk card); they would have painted a solid square over the picture. Rules that only set
@@ -33,6 +34,226 @@ Branch `ccr-6515f662-u0e47e` (the session's own: the owner named no branch; BRAN
     owner approves the look, ideally on the CI-like browser.
 - Next: the owner's phone check of the bottom bar, the run HUD, the shop and the walk card on both themes.
 
+### Reflavour track RF-2 - Pyramids - 2026-10-23
+Branch `track/reflavour` (made this session from main and named in reflavour-track.md's `Branch:` line; RF-1 works
+here too and merged RF-2's pushed commits into its own, so the two sit on one line of history; PR #160). Plan approved with the owner's picks, all the recommended
+ones: lands point up, rocks on an edge, light climbs to the point (A1); the coins' tier colours (B1); the full set of
+sounds (C1); pyramids wherever a Billie comes out of one, the mail move keeping a coin (D1); RF-2 takes the throw's
+own lines whole, RF-1 the rest (E1); the plan on `track/reflavour` (F1). Internal ids unchanged (`penny`, `silver`,
+`gold`, `tbtf`, `art/coins/`, `coinArc`, `battleStage.coin`, `saveData.coins`, `bcoins`, `#aimCoin`, `throw-coins`):
+RF-4 renames them.
+- Where the track file was wrong (checked in the code):
+  - There was no coin model: the throw drew the coin's 16 px icon flat on the 2D layer over the 3D battle. The
+    pyramid is new engine use: a 3D-prop recipe item in the battle's world.
+  - The catch made no sound before the caught jingle; `wobble` was defined in sound.js and never played.
+  - The coin throw was used four times: the catch, every send-out, the mail move and the opening's throws.
+  - "Coins" would have meant two things (RF-1's money name and the bag's catch pocket).
+  - The Capstone comes only from the leaders' badges (eight trainer files); no run boss gives one. Unchanged.
+  - The `sound` branch (BRANCHES.md) was already merged into main.
+- Changed (one cause per commit; the rename of the tool is its own commit):
+  - **Names and text:** coins.json is Pyramid, Step Pyramid, Gold Pyramid, Capstone, with "catch odds" (odds and
+    prices unchanged); the leaders' reward texts and the catch perk name them; the Studio's labels (Items &
+    pyramids, Catch multiplier, Pyramid shown, Balances-on-its-tip chance, Alpha catch rate, Pyramid penalty...).
+  - **Icons:** `tools/build-pyramids.py` draws the eight icons at their own sizes (no scaling) in the coins' tier
+    colours and writes the four model recipes; `meta.artVersion` 1 so phones drop the cached coin art once. A 12 px
+    `pyramid` UI icon (its grid in tools/build-ui-icons.py) on the catch button and the bag's pocket.
+  - **The model:** `art/coins/<id>.json`: 4-sided cones (brick; gold; the capstone in platinum blue with a gold
+    point) and three stacked stone boxes for the Step Pyramid, the buildings' 32 px textures, 0.34 m square, 0.3 m
+    tall, drawn 1.6x (`PYRAMID_*` in battle-stage.js). They stand 2 cm up: a recipe shape on the ground gets no
+    underside, and a tumbling pyramid shows its underside.
+  - **Engine:** prop-models.js `setItemSpin`: a model item may carry its own turn (`it.spin`: axis, angle, pivot) in
+    the model, low-poly and shadow passes. battle-3d.js `pyramidWorldItem` (any scene) and `pyramidItem` (the battle;
+    the capstone and a sealing pyramid carry a light). The item has the icon as its picture (never drawn): the
+    sprite pass keys every item by its picture and threw on one without.
+  - **The throw:** tumbles about a tilted axis (faster with spin); under the hit flash it turns to a small lean and
+    rights itself as it drops; lands point up with a bounce (a critical catch turns over and lands on its point);
+    rocks on the base edge it leans to, once each way per wobble; seals with sparks up its four edges, then the glow
+    and stars; a break-out pops. Its flat icon draws only while the model can't (3D props off, GPU lost).
+  - **Send-outs and the opening:** the same model; the opening's three (and Blake's) tumble. The mail move's coin is
+    the atlas's money icon.
+  - **Sounds:** `pyramidLand` (a stone clunk) and `seal` (a click and a shimmer climbing a fifth and an octave) in
+    sound.js; the throw, the landing, a wobble each way, the seal, a pop on a break-out.
+  - **Throw lines (E1):** You threw a Pyramid, Throw it, Swipe the pyramid up, The pyramid is in the air, ~N% catch,
+    It landed on its point. Critical catch!; the bag's pocket Pyramids and its two lines; the profile's shop hint; the
+    debug menu's +10 of every pyramid.
+  - **check-data:** every catch item has its two icons and its model, a recipe with shapes (data-checks.js
+    `dataCatchArt`, its unit test).
+  - check-quick.py: not touched. Its catch step names catch items only by id, so no line needed changing.
+- Verified: lint, typecheck, check:modules, format, check:data, build and the unit tests after every commit (776,
+  then 777; 801 after merging RF-1 and main); smoke 14 of 14 (164 s). The full quick check (before the merge):
+  45 steps, 40 passed, 1964 s. Four of the five problems were red before this session (lane B's list: tap targets,
+  the v31 map camera, v46 buildings, the bush recipes; TC-3 has since fixed three on main). The fifth, the buddy
+  falling 7.9 m behind in Double and Alpha battles (after its battles and the catch passed, with 8 s frames), passed
+  when run alone on the merged tree (1.4 m). Its Alpha catch says "not caught" here, the same on a clean main: the step
+  waits 30 s of real time for a sure catch that takes about 5 s of battle time, longer than that under software
+  drawing.
+  The throw photographed in a real game frame by frame (scratch Playwright script, software drawing): all four
+  pyramids, caught, broken out, the critical catch on its point, spin, 3D props off (the flat icon), the opening's
+  throws. No page errors.
+  The in-game test (`--selftest`, on the merged tree, 698 s): 1 problem with two parts: the Light lab saw 0
+  buildings in view (it wants at least one; all 17 of 17 3D props drew), and the opening's fall over the world map
+  drew 0 frames (the test calls the bowl's fall directly, not the opening code RF-2 touched). Not confirmed against
+  main: that comparison run was stopped, and further long checks were skipped, at the owner's request ("speed them
+  along and skip the checks", relayed by the coordinating session). Worth a look in the nightly.
+- Risky:
+  - Not tried on a phone: the size (1.6x) and the tumble speed are judged from software-drawn frames; the opening's
+    pyramids look large close to the camera (0.8 of the battle's).
+  - The seal's light climbs as sparks (the low-poly shader has no glow uniform); the voxel path (Props as low-poly
+    off) is not photographed.
+  - artVersion 1 clears the phone's art cache once (every picture loads again on the first start).
+- For RF-1: after merging RF-1's commits, three lines still say coins, and all three may mean money, not the catch
+  items: boot.js's loading line "Polishing the coins", walk-view.js "Every coin counts, they say", and settings'
+  "Buttons, battles, coins, and the short tunes" (the sound effects; also in i18n.js). Yours to keep or change.
+- For RF-4: the ids above; `MONEY_COIN` ('$coin') in battle-stage.js; `coinArc`'s name; the opening's `coins` list.
+- Next: RF-3 (type passives), then RF-4. Tag `rf-2-done` on this entry's commit (the owner pushes tags).
+
+### Reflavour track RF-1 - Words players see - 2026-10-23
+Branch `track/reflavour` (shared with RF-2 and RF-3; main merged in first, pulled with --no-rebase before every
+push). PR #160 (draft). Plan approved in Plan Mode with the owner's answers: words only (jokes wait for RF-5), the
+Perks' drafted names, the title's "Gotta tax 'em all!" stays, a flask for Research, the Studio's labels change too,
+"First Crest", "120 Moneys" in plain text, and (changed mid-session) run money is **Moneys** / "1 Money", not Coins.
+- Where reflavour-track.md section 2 was wrong (checked at 2361848's successor, track/reflavour after RF-2): "tax"
+  is ~40 player-facing lines in 22 files (89/34 counted ids and comments); Capital ~37 in 17 (not 56/23); Loophole
+  ~50 in 20 plus ~30 in the Studio (not 123/31); Bracket 7 in 6 (not 18/11); the bribe reached 5 game files, 5
+  rules keys, the Studio, run-sim and tests (not 3 files). The leaders' reward lines still said "Bailouts" and "a
+  Golden Parachute" (items now Revive and Max Revive): fixed.
+- Changed (one cause per commit):
+  - **The bribe is cut** (behaviour): a miss goes to the foe's turn. catchOffer/catchOfferAnswer, the offer phase,
+    the Focus Bonus (`integrity`), the `bribed` end, rules.catching offer*/integrity* (and their types), the Studio's
+    Bargain fields and check, run-sim's draw, the battle-formats tests. Battle-state snapshot remade.
+  - **Catching**: Catch it, Caught!, was caught, the Guide's/profile's Caught, hints, haptics, settings, debug menu,
+    lore/story/people's lines, i18n rows (nl/de/es/fr), the Studio. check-quick's Guide step now wants Caught and no
+    Taxed (its function keeps the name `name_taxed_room_windows`: a rename for later).
+  - **Moneys**: `art.js moneyHTML(n, size)` (the `coin` UI icon, gold, and the number; read aloud as "N Moneys"),
+    `plural(n, 'Money')` in plain text. currencies.json money: name/long Moneys, one Money. The top bar's chip and
+    the trainer card used `coinHTML('penny')` (now RF-2's pyramid art) for money: they use the coin icon.
+  - **Research** (was Capital); its icon is a flask (tools/build-ui-icons.py, id still `capital`).
+  - **Crests** (was Audit Seals); unlock "First audit" is "First Crest".
+  - **Perks** (was Loopholes), then the ten names (Lucky Charm, Clinic Loyalty Card, Coupon Book, Steady Hand,
+    Running Shoes, Power Gloves, Bubble Wrap, Trail Snacks, Field Notebook, Lost Property Form).
+  - **Expeditions** (was Brackets).
+  - Docs: reflavour-track.md (RF-1 done, Moneys, item 9 with the wording answers), ROADMAP, roguelite 9's word
+    list, CHANGELOG.
+- Verified: after every change lint, typecheck, unit tests (801 pass), check:modules, format:check, check:data,
+  build; smoke before every commit (all green, 6 steps, ~170 s each); check-fast's Perks, Lab, payout and room steps
+  (pass); screenshots of the top bar, trainer card, Lab board and the Perk pick. **Not finished when this entry was
+  written:** the full quick check was running (its first 8 of ~39 steps passed: the phone opening and screens, the
+  in-game test's first step, the Actions sheet, hostile names) and the in-game test (`--selftest`) had not started:
+  the coordinating session relayed the owner's word to wrap up without waiting on long checks. Run both before
+  merging if there is time.
+- Risky:
+  - **For RF-3:** the battle golden record was remade for one line only ("Running Shoes: Emberox's Speed rose.",
+    was Insider Tip); expect a conflict on that snapshot if RF-3 remade it too: regenerate after the merge.
+  - The run sim's numbers move a little: a miss no longer draws the offer's roll.
+  - game/data/gamedata.js (ignored) must be rebuilt (`npm run data`) to see data text changes when serving the
+    repository by hand; the checks rebuild it.
+  - Not tried on a phone: the coin icon next to numbers (top bar, shop buttons, clinic, airship fares), the flask.
+- Left for later: RF-4 the ids (`taxbreak`, `capital`, `seals`, `money`, `relics`, tiers, the `taxed` local, the
+  Hi-Potion's id `loophole`); RF-5 the finance jokes in lore and lines, "Money down here" lore, Sterling Capital,
+  the parked city's "Capital Tower/Hall" prop names; the title's tagline stays on purpose.
+- Next: RF-3 and RF-2 finish on this branch; then #160 to main; RF-4 alone.
+
+### Roguelite track RL-R1 - Region generator - 2026-10-23
+Branch `track/regions` (new, from main after PR #158; the owner's choice: RL-R1 and RL-R2 work here, BRANCHES.md and
+roguelite-track 9.4 say so). Plan approved in Plan Mode with the owner's answers: zones by Expedition 3/3/4/4/5, rows
+per zone 2-3 by seed and seamless across zones, 2 mini-bosses a run (not tied to zone edges), leader types in the
+trainer files, leader teams left for RL-13, dex 15-25 species, world map = zone grounds + the name, the theme and
+name drafts as written. Round 2 beside RF-1..RF-3. Tag `rl-r1-done` for the owner.
+- Where the docs were wrong (checked at 69c4ec5 + #158):
+  - `regions.json` was read as the old list of regions beyond the route: map-tab.js (a branch nothing could reach any
+    more) and the Studio's "Regions ahead (legacy)" card. Both went (the list is in legacy/regions.json).
+  - Leaders had no type field; only their badge text said it. 8 leaders for 8 of the 9 types (no Dragon leader).
+  - The roster is 7 lines (24 species) + 4 forms (12): a 15-25 dex is 4-5 lines, so regions differ mostly by which
+    2-3 lines are missing and which forms appear, until RO-2.
+  - Ridge and Autumn are unlocks: a fresh save can roll Lakeland, Greenbelt and Wildwood (Wildwood without autumn
+    walks thicket and meadow); Highland and Harvest need the unlocks.
+  - "About 30 minutes" was never measured; a 3-zone run is now 6-9 rows (it was 9).
+- Changed (one cause per commit):
+  - **regions.json** (+ schema, types, `dataRegions` in check-data and the Studio's Check: references, run biomes
+    only, leader types, a sweep over seeds, Expeditions and a fresh save's biomes): zones by Expedition, rows [2,3],
+    dex [15,25], the biome graph over the 5 finished biomes, 5 themes (start, biomes, type leanings, own name
+    endings and nouns), shared name parts.
+  - **logic/run-region.js** `runRegionMake(seed, data, {open, tier, guards, rows})`: theme, name from parts, zones on
+    the graph (never the same biome twice in a row), dex of whole lines in one variety each (base or form, by the
+    theme's types) with `swap` (every other variety to the region's), leaders by type (mini-bosses, then the boss).
+    `runRegionData(gameData, trainers)` builds its input.
+  - **Leader types**: `type` in the 8 trainer files (schema); the Studio's type rename rewrites it and a theme's lean.
+  - **run-map.js**: with `zones` in the rules, each row takes its zone's biome on both lanes, nodes carry `zone`;
+    shape, types and links are as without them. **run-start.js**: makes the region from the open biomes (the debug
+    short map's 5 rows become zones 3+2) and puts it on `run.region` (optional, `validRunRegion`; no SAVE_VERSION
+    bump; a run from before loads and plays as before).
+  - **Callers** hand the region data: run-world.js runWorldData (the mast, fixtures, self-test), run-preview, run-sim,
+    the Studio's Run Lab (its row roles now come from the plan).
+  - **Wild and foes**: runWorldTables swaps each pool to the region's varieties and cuts it to the dex
+    (wild-pool.js takes `swap`); runFoes gives the mini-bosses and boss the region's leaders in order.
+  - **World map**: a place's bowl region is its zone's (`zone0`..), each with its biome's ground and trees
+    (run-bowl.js); the Map header shows "World map / <region name>", a place's card "Zone 2 of 3 · Lakeside".
+  - **In-game test**: the run step checks the zones, biomes, the header and the first leader.
+  - Tests: new run-region.test.mjs (8, small tables) and run-region-real.test.mjs (5, game data); run-map.test.mjs
+    (zones), wild-pools.test.mjs (swap). Remade on purpose: run-start.test.mjs's snapshot (the frozen start now has
+    the region). run-sim.test.mjs: "a dearer clinic leaves less money" was an interval below 0 that held only for
+    that seed list (main at 80 seeds: hi 6.6); now "no more money on average" (the mean is 0 with regions' leaders,
+    every run being lost on the placeholders). run-rules-code names the new leaders line.
+  - A bug found by the new real-data test before commit: runFoes counted its leader inside a find callback.
+- Verified: lint, typecheck, check:modules, format:check, check:data, build and the unit tests after every commit
+  (801 -> 816); test:slow 50 of 50; smoke before each game commit: 6 of 6, once 5 of 6 (the in-game step's download
+  timed out, 30 s; it passed on the re-run; on main it took 126 s against its 120 s budget). A browser look at phone
+  size (fixture run): the Map header "Spare Parts Commons", the card "Zone 1 of 3 · Thicket", the landing's wild
+  list cut to the dex with Folklore Swiftlet for Swiftlet, no page errors.
+  - Full quick check, in-game test (--selftest) and check:fast: started at the end; the coordinating session relayed
+    the owner's word to skip waiting for them, so this entry was written while they ran. Seen so far in the full
+    check: 21 steps passed, Sound effects "the payout, lost" failed (its log has the jingles, run_lost last: the same
+    timing kind as RO-1's "payout, won"; not yet compared on main). The results go on the PR when they finish.
+- Risky / open:
+  - Runs are 6-9 rows now (were 9): shorter runs on some seeds. Time one on the phone against "about 30 minutes".
+  - Expeditions III-V (4-5 zones) are untested in play: up to 15 rows, beyond the data check's 12-row rule and tight
+    on the bowl (RUN_BOWL step 0.10 at 15 rows; maps may overlap). Nothing sets a tier above 1 yet (RL-13).
+  - Joined names can be clumsy ("Deprecatedcrag"); the parts are for the owner to edit in regions.json.
+  - Leader teams are still legacy stand-ins: a Water leader doesn't field Water Billies (RL-13).
+  - The bowl's zone bands are only as visible as their biomes differ (meadow and thicket are both green).
+  - runMapSweep (data-checks.js, used by its tests only) still sweeps maps without regions.
+  - Overlap with round 2: the leaders' trainer files and the in-game test's run line (RF-1 edits words there too),
+    the Map tab's header line (RF-1's Capital/Seals labels sit two lines above).
+- Next: merge, then RF-4 (round 3). RL-R2 (side areas, field moves) on `track/regions`.
+
+### Reflavour track RF-3 - Type passives - 2026-10-23
+Branch `track/reflavour-rf-3` (reflavour-track.md has no `Branch:` line; roguelite-track 9.7 gives each round-2
+session its own branch and PR), PR #159. Plan approved in Plan Mode with the nine drafts. Tag `rf-3-done` is the
+owner's to push.
+- Where the plan file was wrong (checked against the code): only the passives' **ids** and rule keys were finance.
+  The effects were Pokémon ideas already (`subsidy` a Leftovers heal, `landlord` immunity to sharp stones, `inherit` a
+  Baton Pass on fainting; only `volatile` was a finance idea, crypto swings). They had names (Kindling, Regrowth...)
+  only in the Studio's dropdown; the player never saw one. No passive had a test. Water had none; Ground's only
+  mattered against the Gild line (the only stone movers, Ground themselves); Dragon's (one species, Marsox) fired only
+  with boosts.
+- Changed (one cause per commit):
+  - `types.json` `passiveName`/`passiveText` for all nine; `game-data.js` `PASSIVE_INFO`, `passiveName(types, id)`.
+  - **Undertow** (Water, new id `undertow`): its Water moves 1.3x at a third of its HP or less (`rules.json`
+    `undertowMult`, `undertowHp`).
+  - **Bedrock** (Ground, `landlord`): once a battle a knockout hit from full HP leaves 1 HP (moves and foreseen
+    attacks; `bedrockHolds`, each side's new `held` list); stone immunity kept.
+  - **Parting Roar** (Dragon, `inherit`): when it faints, the next in gets +1 Attack, +1 Sp. Atk (was: its own boosts).
+  - Battle lines name Regrowth, Slipstream, Bedrock, Parting Roar. Kindling, Live Wire (was Keen), Wild Mind (was
+    Erratic), Alloy work and stay silent as before.
+  - The Guide's species page: an Abilities panel under Type matchups.
+  - Studio: Ability labels, "Ability name" and "What it does" fields per type, Undertow's two numbers in World rules.
+  - `tools/test/type-passives-real.test.mjs` (10 tests, fixed roll lists).
+  - Snapshots remade on purpose: the golden record's Alpha battle (3 Regrowth lines, text only); battle-state (the
+    `held` field).
+- Strength (a scratch duel sweep, not committed: each type's Billies against every other species, 1v1 and 3v3, levels
+  10 and 25, same seeds before and after): no win rate moved more than 3 points (Dragon 3v3 L25 +3.0, Water +1.5).
+  Bedrock barely shows even 4 levels down: one more move rarely turns a loss. The run sim (200 seeds, --balance) came
+  out identical; its bot loses early with the Fire starter, so it can't show passives.
+- Verified: lint, typecheck, `npm test` 786/786, check:modules, format:check, check:data, build; smoke passes (one
+  earlier run timed out in the in-game test's download and passed on the re-run; main passed too); the Guide panel
+  and the Studio's Types editor looked at in a browser; PR CI green. Full quick check: 6 problems (a 16 px settings
+  input, the payout jingles, the bowl map camera, buildings without plans, six bush recipes, "Take off"), none in
+  battle code; compared with main below.
+- Risky: `rules.json`, `game-data.js`, `guide.js`, the CHANGELOG and this file conflict with RF-1/RF-2/RL-R1 (9.7):
+  merge one PR at a time, `npm run modules` after. RF-1 may reword battle text in battle-engine.js; my lines are the
+  four passive ones.
+- Next: RF-4 renames the passive ids and their rule keys (now listed in reflavour-track.md RF-4). RL-12b can lean on
+  the passives (RF-3 was its prerequisite).
 ### Roster track RO-1 - Real wild pools and regional forms - 2026-10-23
 Branch `track/roster` (new; the owner's choice: every RO session works here, BRANCHES.md and roguelite-track 9.4 say
 so). Plan approved in Plan Mode with the owner's answers: 4 forms (one per uncommon line, the drafts' names), weights

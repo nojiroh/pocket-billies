@@ -2,7 +2,7 @@
 // (biomes filtered by those unlocks), deadline, what the map shows and the forecast, for 200 seeds with no unlocks,
 // with every unlock, and on the debug menu's short map. Frozen from runTakeOff (game/js/run.js) before the start became
 // one shared function (logic/run-start.js runStartPlan, runStartOn), which the fixture, the self-test, the simulator and
-// the Studio's Run Lab call too.
+// the Studio's Run Lab call too. RL-R1: with the run's region (its zones give the map its rows and biomes).
 //   node --test --test-update-snapshots tools/test/run-start.test.mjs   remakes it (say why in the commit)
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
@@ -19,6 +19,8 @@ const UNLOCK_DATA = { unlocks: GAME_DATA.unlocks, buildings: GAME_DATA.buildings
     scenery: GAME_DATA.scenery,
     rules: GAME_DATA.rules.run,
     unlockData: UNLOCK_DATA,
+    /* RL-R1: the region, as run-world.js runWorldData gives it */
+    region: modules['run-region'].runRegionData(GAME_DATA, GAME_DATA.trainers),
   },
   SEEDS = Array.from({ length: 200 }, (_, k) => `S${k.toString(36).toUpperCase()}START`),
   CASES = {
@@ -62,6 +64,7 @@ const started = s => ({
   deadline: s.run.deadline,
   map: s.run.map,
   forecast: s.run.forecast,
+  region: s.run.region,
 });
 
 test('a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlock, the short map', t => {

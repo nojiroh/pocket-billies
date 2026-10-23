@@ -1,6 +1,6 @@
 'use strict';
 /* ================= BAG (alpha 0.5) =================
-   Your inventory, in pockets by what things are for: Healing (potions, salves, revives, snacks), Coins (for taxing
+   Your inventory, in pockets by what things are for: Healing (potions, salves, revives, snacks), Coins (for catching
    a Billie in battle), Special (stones that make some Billies evolve) and Eggs (with how far each still has to go).
    Tap a thing to choose it; healing is used straight from here on a Billie you pick. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
@@ -24,7 +24,7 @@ expose({
 /* to-module: end */
 const BAG_POCKETS = [
   ['heal', 'Healing', 'heart'],
-  ['coins', 'Coins', 'coin'],
+  ['coins', 'Pyramids', 'pyramid'],
   ['special', 'Special', 'spark'],
 ];
 const bagHeal = k => {
@@ -55,7 +55,7 @@ export function renderBag() {
             on = sel === k;
           return `<button class="bag-row k-card ${on ? 'on' : ''}" data-a="bag-sel" data-k="${escapeHtml(k)}" aria-pressed="${on}"><span class="bag-ic">${p === 'coins' ? coinHTML(k, 30) : itemIcon(k, 30)}</span><span class="bag-t"><b>${escapeHtml(I.n)}</b><small>${escapeHtml(I.d || '')}</small></span><b class="bag-n tnum">×${formatNumber(n)}</b></button>`;
         }).join('')}</div>`
-      : `<p class="note bag-empty">${p === 'coins' ? 'No coins. Shops sell them.' : p === 'special' ? 'Nothing special yet.' : 'No healing items. Shops sell them.'}</p>`;
+      : `<p class="note bag-empty">${p === 'coins' ? 'No pyramids. Shops sell them.' : p === 'special' ? 'Nothing special yet.' : 'No healing items. Shops sell them.'}</p>`;
   /* what the chosen thing can do */
   let act = '';
   if (sel && bagList(p).includes(sel)) {
@@ -64,7 +64,7 @@ export function renderBag() {
         ok = I.hpAll ? teamNeedsHp() : saveData.team.some(m => canUse(sel, m));
       act = `<div class="bag-act px"><span class="bag-t"><b>${escapeHtml(I.n)}</b><small>${ok ? (I.hpAll ? 'Shares out over your whole team' : 'Choose a Billie to use it on') : 'Nobody on your team needs it right now'}</small></span><button class="pb gold" data-a="bag-use" data-k="${escapeHtml(sel)}" ${ok ? '' : 'disabled'}>Use</button></div>`;
     } else if (p === 'coins')
-      act = `<div class="bag-act px"><span class="bag-t"><b>${escapeHtml(COINS[sel].n)}</b><small>Throw it in a battle to tax a tired Billie</small></span></div>`;
+      act = `<div class="bag-act px"><span class="bag-t"><b>${escapeHtml(COINS[sel].n)}</b><small>Throw it in a battle to catch a tired Billie</small></span></div>`;
     else
       act = `<div class="bag-act px"><span class="bag-t"><b>${escapeHtml(ITEMS[sel].n)}</b><small>Open a Billie’s details on the Team screen to use it</small></span><button class="pb" data-a="tab" data-t="team">Team</button></div>`;
   }

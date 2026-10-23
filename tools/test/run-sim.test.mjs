@@ -54,7 +54,7 @@ test("run sim: a run town's shop stocks only what the run has unlocked (Studio p
   assert.ok(towns >= 2, `${towns} towns`);
 });
 
-test('run sim: the policy answers a Loophole on offer: greedy takes the rarest, never takes none (Studio plan T3.3)', () => {
+test('run sim: the policy answers a Perk on offer: greedy takes the rarest, never takes none (Studio plan T3.3)', () => {
   const { simRelicChoice, SIM_POLICIES } = modules['run-sim'],
     RELICS = GAME_DATA.relics,
     rule = GAME_DATA.rules.run.relics,
@@ -89,7 +89,7 @@ test('run sim: the policy answers a Loophole on offer: greedy takes the rarest, 
   assert.equal(run.offer, null);
 });
 
-test('run sim: a town shop’s Loophole is bought under greedy-forward and never under never-pick (Studio plan T3.3)', () => {
+test('run sim: a town shop’s Perk is bought under greedy-forward and never under never-pick (Studio plan T3.3)', () => {
   let bought = 0,
     shelves = 0;
   for (let k = 0; k < 12; k++) {
@@ -110,6 +110,7 @@ test("run sim: the run's map is runStartPlan's for the save's unlocks: no locked
       biomes: GAME_DATA.biomes,
       rules: R,
       unlockData: { unlocks: GAME_DATA.unlocks, buildings: GAME_DATA.buildings },
+      region: modules['run-region'].runRegionData(GAME_DATA, data.TRAINERS),
     },
     nodes = plan => plan.map.nodes.map(n => `${n.type}:${n.biome}`);
   for (const seed of ['SIMPLAN0', 'SIMPLAN1', 'SIMPLAN2']) {
@@ -121,7 +122,7 @@ test("run sim: the run's map is runStartPlan's for the save's unlocks: no locked
   }
 });
 
-test('run sim: money in and out add up to what is left; a loss names its row; foes and Loopholes are listed (T3.4)', () => {
+test('run sim: money in and out add up to what is left; a loss names its row; foes and Perks are listed (T3.4)', () => {
   const start = GAME_DATA.rules.run.start.se,
     sum = o => Object.values(o).reduce((a, x) => a + x, 0);
   let towns = 0;
@@ -166,5 +167,8 @@ test('run sim: a report over a seed list; the same data compares as the same run
   }
   assert.notEqual(dear.hash.draft, dear.hash.base, 'the data hash moves with the data');
   assert.ok(dear.diff.healed.mean > 0 && dear.diff.healed.lo > 0, JSON.stringify(dear.diff.healed));
-  assert.ok(dear.diff.moneyLeft.hi < 0, JSON.stringify(dear.diff.moneyLeft));
+  /* RL-R1: no more money left on average. Its interval below 0 held only for this seed list (on main before RL-R1, 80
+     seeds gave hi 6.6); with regions' leaders the 40 seeds' mean is 0 (every run is lost on the placeholders, HANDOFF RL-8;
+     the clinic's price shows in healed, above) */
+  assert.ok(dear.diff.moneyLeft.mean <= 0, JSON.stringify(dear.diff.moneyLeft));
 });

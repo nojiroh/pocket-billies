@@ -1,5 +1,7 @@
 # Reflavour track (RF) - less finance, more Pokémon
 
+Branch: track/reflavour
+
 The owner's brief (2026-10-23): "overall a lot less finance focused and more like Pokémon". The Billies are the one
 finance thing that stays: they are the messed-up clones of billionaires, treated like Pokémon. Everything around them
 (catching, items, currencies, relics, tiers, battle words, the organization, the story's jokes) moves off finance.
@@ -19,7 +21,7 @@ Numbers below were read at 2361848; verify again before each session.
 | Tone | **Satire, other targets**: bureaucracy and corporations, tech and influencer culture, RPG and Pokémon clichés, celebrity and clone ethics |
 | The run's relics | **Perks** (was Loopholes) |
 | Difficulty tiers | **Expeditions I-V** (was Brackets), each a story chapter (roguelite-track.md 9.2) |
-| Currencies | **Coins** (run money, its own symbol), **Research** (was Capital, spent at the Lab), **Scrap** (stays), **Crests** (was Audit Seals, from bosses, for the airship), and a fifth, **Beans** (gifts for hub characters, rare finds on runs; roguelite-track 9.6, 29) |
+| Currencies | **Moneys** (run money, "1 Money", a silly plural on purpose; the owner, RF-1, 2026-10-23: was Coins), shown as the game's coin icon, **Research** (was Capital, spent at the Lab), **Scrap** (stays), **Crests** (was Audit Seals, from bosses, for the airship), and a fifth, **Beans** (gifts for hub characters, rare finds on runs; roguelite-track 9.6, 29) |
 | The organization | **A secret bureaucratic agency** (names in 4) |
 | Status ids | **Renamed internally** (`aud`, `sub`, `scn`; the player already sees Paralyzed, Asleep, Burned) |
 | The game's name | **Pocket B&B²** with the ² drawn as a small raised **B** (the owner, 2026-10-23): "Pocket B&B" and a superscript B in the logo |
@@ -50,10 +52,10 @@ Numbers below were read at 2361848; verify again before each session.
 
 | # | Session | Goal | Depends on | Sessions |
 |---|---|---|---|---|
-| RF-1 | Words players see | every player-facing finance word in 2 changed: catching ("catch"), currencies (Coins, Research, Crests), Perks, Expeditions, the bribe line, settings and haptics text; data text only, ids untouched | none | 1 |
+| RF-1 | Words players see (**done 2026-10-23**, HANDOFF) | every player-facing finance word in 2 changed: catching ("catch"), currencies (Moneys, Research, Crests), Perks, Expeditions, the bribe line, settings and haptics text; data text only, ids untouched | none | 1 |
 | RF-2 | Pyramids | `coins.json`'s four coins become pyramids (names, text, icons, a low-poly pyramid for the throw, its tumble and landing, the sound); catch odds unchanged; the never-fail one stays a boss/badge reward | RF-1 | 1 |
-| RF-3 | Type passives | the nine passives get Pokémon-like names and, where the idea was finance (`landlord`, `subsidy`, `inherit`), a new effect; the golden battle record remade on purpose for the changed ones | RF-1 | 1 |
-| RF-4 | Internal renames | one rename per commit: `relics` → `perks` (data section, `run.relics`, `logic/relics.js`, `relic-screen.js`), `capital` → `research`, `seals` → `crests`, `brackets`/Bracket keys → `expeditions`, status ids, item ids, coin ids → pyramid ids, `ledger` tab id; `npm run modules` and check:modules after each; SAVE_VERSION bumped once (old saves set aside, as CLAUDE.md allows) | RF-1..RF-3 | 2 |
+| RF-3 | Type passives (**done 2026-10-23**, section 6) | the nine passives get Pokémon-like names and, where the idea was finance (`landlord`, `subsidy`, `inherit`), a new effect; the golden battle record remade on purpose for the changed ones | RF-1 | 1 |
+| RF-4 | Internal renames | one rename per commit: `relics` → `perks` (data section, `run.relics`, `logic/relics.js`, `relic-screen.js`), `capital` → `research`, `seals` → `crests`, `brackets`/Bracket keys → `expeditions`, status ids, item ids, coin ids → pyramid ids, `ledger` tab id, the passive ids and their rule keys (6: `ramp`, `subsidy`, `sharp`, `landlord`, `pivot`, `volatile`, `synergy`, `inherit`; `financeRamp*`, `mediaCrit`, `cryptoRoll*`, `retailSynergy`, `rentFraction`, the stones' `fx.rent`/`sides.rent` and the move ids `renthike`/`eviction`); `npm run modules` and check:modules after each; SAVE_VERSION bumped once (old saves set aside, as CLAUDE.md allows) | RF-1..RF-3 | 2 |
 | RF-5 | The new tone in text | story.json, Chosen's and Hazel's tables, signs, lore, the opening, the Index text, the leaders' lines: satire moved onto bureaucracy, tech and influencers, RPG clichés and clone ethics; the clones' origin (billionaires' vanity cloning projects) written into the Index and lore; Claude drafts, the owner approves | RF-1 | 1-2 |
 | RF-6 | The game's name | **Pocket B&B²** (the raised B) in the title screen's logo, page titles, manifest, README, the changelog; storage keys untouched (or moved with a set-aside) | RF-1 | 1 |
 
@@ -92,6 +94,7 @@ coins. Names (5.3): **Pyramid** (was Copper Coin), **Step Pyramid** (Silver, 1.5
 3. **The pyramids' names:** answered 2026-10-23: **4's drafts** (Pyramid, Step Pyramid, Gold Pyramid, Capstone), their
    text **plain for now** (no pyramid-scheme joke).
 4. **The coins' symbol:** answered 2026-10-23: **the game's own small coin icon** beside the number, no text symbol.
+   RF-1 (the owner): the run money is named **Moneys** ("1 Money"), not Coins; plain text says "120 Moneys".
 5. **The failed-catch bribe:** answered: **cut** (RF-1 removes it with its text; catching works or it doesn't).
 6. **The new passives:** answered: **Claude drafts nine** in RF-3's plan, the owner approves.
 7. **SAVE_VERSION bump in RF-4:** answered: **yes**, old saves set aside, no migration.
@@ -99,3 +102,36 @@ coins. Names (5.3): **Pyramid** (was Copper Coin), **Step Pyramid** (Silver, 1.5
    moves to new keys named for the game and deletes the old ones on load (the saves are set aside by RF-4's bump
    anyway). The debug log and the account's cloud document keep working; the per-device "offer Skip" flag starts
    over once.
+9. **RF-1's wording** (the owner, 2026-10-23): RF-1 changes the words only; the finance jokes in lore, story, talk
+   and people's lines (Dividend the cow, "old money", "no refunds", Sterling Capital, the coin lore's body) wait for
+   RF-5. The ten Perks: **Lucky Charm** (was Offshore Account), **Clinic Loyalty Card** (Tax Shelter), **Coupon Book**
+   (Lobbyist), **Steady Hand** (Fine Print), **Running Shoes** (Insider Tip), **Power Gloves** (Hostile Takeover),
+   **Bubble Wrap** (Hedge Fund), **Trail Snacks** (Severance Package), **Field Notebook** (Stock Options), **Lost
+   Property Form** (Write-off). The title's tagline **"Gotta tax 'em all!" stays** (the one "tax" left, on purpose;
+   RF-4 and RF-6 leave it). Research's icon is a lab flask. "First audit" is "First Crest". The Studio's labels use
+   the new words too.
+
+## 6. RF-3 as built (2026-10-23)
+
+Checked against the code first: section 3's premise was half wrong. Only the passives' **ids** and rule keys were
+finance; the effects were already Pokémon ideas (`subsidy` is a Leftovers heal, `landlord` immunity to sharp stones,
+`inherit` a Baton Pass on fainting; only `volatile` kept a finance idea, crypto swings). They had Pokémon-like names
+too, but only in the Studio's dropdown: the player never saw a passive's name. No passive had a test.
+
+| Type | id (RF-4 renames) | Name | What it does | Against before |
+|---|---|---|---|---|
+| Fire | `ramp` | Kindling | Attack +10% a turn in, up to +100% | same |
+| Water | `undertow` (new) | Undertow | its Water moves 1.3× at 1/3 HP or less (rules `undertowMult`, `undertowHp`) | new; Water had none |
+| Grass | `subsidy` | Regrowth | 1/16 HP back each turn | same |
+| Electric | `sharp` | Live Wire | one crit stage up | same |
+| Ground | `landlord` | Bedrock | once a battle, a knockout hit from full HP leaves 1 HP; no stone damage | new effect added |
+| Flying | `pivot` | Slipstream | first switch out of a battle costs no turn | same |
+| Psychic | `volatile` | Wild Mind | damage 25%-160% instead of 85%-100% (same average) | same |
+| Steel | `synergy` | Alloy | +10% per living Steel teammate | same |
+| Dragon | `inherit` | Parting Roar | on fainting, the next in gets +1 Attack, +1 Sp. Atk | new effect (was: its own boosts, if any) |
+
+Names and texts are data (`types.json` `passiveName`, `passiveText`), shown in the Guide's species page (Abilities)
+and in the battle lines of Regrowth, Slipstream, Bedrock and Parting Roar. Strength (a seeded duel sweep, 1v1 and
+3v3 at levels 10 and 25): no type's win rate moved more than 3 points; Bedrock barely shows even 4 levels down (one
+more move rarely turns a loss).
+

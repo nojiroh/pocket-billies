@@ -216,7 +216,7 @@ SECTIONS.billionaires = () => {
     textField('Handwritten note', `${p}.note.${st}`, {
       area: 1,
       rows: 2,
-      help: 'The red margin note in the Field Guide, visible after you tax one.',
+      help: 'The red margin note in the Field Guide, visible after you catch one.',
     });
   const stats = statsCard(L, li) + musicCryCardHTML(L, li, st);
   const learn = `<table class="tbl"><thead><tr><th>At Lv</th><th>Move</th><th></th><th></th></tr></thead><tbody>${L.learn
@@ -262,7 +262,7 @@ function statsCard(L, li) {
           'Rarity',
           `${p}.rar`,
           Object.keys(D.rarities).map(k => [k, RARITY_LABELS[k] || k]),
-          { rr: 1, help: 'Sets the total stat points per stage and the base tax rate.' }
+          { rr: 1, help: 'Sets the total stat points per stage and the base catch rate.' }
         )
       ) +
       `<div class="sliders">${stats.map((s, k) => rangeField(s.name, `${p}.prof.${k}`, { min: 0.3, max: 1.8, step: 0.05, showKey: 'mul', show: v => (+v).toFixed(2) })).join('')}</div>${table}<button class="btn subtle" data-act="baseOn">Type exact numbers instead</button>`;
@@ -812,7 +812,7 @@ SECTIONS.moves = () => {
       )
       .join('')}</div>`;
   const fxB = `<div class="fxgrid">
-  ${selectField('Causes a status', `${p}.fx.status`, statusOptions(), { none: 'Nothing', opt: 1, help: 'Paralyzed: may lose turns, slower. Asleep: can’t act for 2–4 turns, easier to tax. Burned: loses HP each turn, weaker Attack.' })}
+  ${selectField('Causes a status', `${p}.fx.status`, statusOptions(), { none: 'Nothing', opt: 1, help: 'Paralyzed: may lose turns, slower. Asleep: can’t act for 2–4 turns, easier to catch. Burned: loses HP each turn, weaker Attack.' })}
   ${numberField('Status chance', `${p}.fx.chance`, { unit: '%', opt: 1, min: 1, max: 100, step: 1, help: 'For damaging moves. Leave empty for always.' })}
   ${st(fx.tgtStage, `${p}.fx.tgtStage`, 'Changes the target’s stats')}${st(fx.selfStage, `${p}.fx.selfStage`, 'Changes its own stats')}
   ${numberField('Self change chance', `${p}.fx.selfChance`, { unit: '%', opt: 1, min: 1, max: 100, step: 1, help: 'Chance for the self effects above and below.' })}
@@ -914,14 +914,15 @@ ACTIONS.moveDel = async () => {
 /* ================= TYPES ================= */
 const PASSIVES = [
   ['', 'No ability'],
-  ['pivot', 'Swift: switches out once per battle without losing the turn'],
-  ['volatile', 'Erratic: damage swings wildly'],
+  ['pivot', 'Slipstream: switches out once per battle without losing the turn'],
+  ['volatile', 'Wild Mind: damage swings wildly'],
   ['subsidy', 'Regrowth: restores a little HP each turn'],
   ['synergy', 'Alloy: +10% damage for each teammate of the same type'],
-  ['sharp', 'Keen: higher critical-hit chance'],
+  ['sharp', 'Live Wire: higher critical-hit chance'],
   ['ramp', 'Kindling: Attack rises every turn it stays in'],
-  ['inherit', 'Legacy: passes its stat boosts to the next teammate when it faints'],
-  ['landlord', 'Sure-footed: not hurt by sharp stones'],
+  ['inherit', 'Parting Roar: when it faints, the next teammate in gets +1 Attack and Sp. Atk'],
+  ['landlord', 'Bedrock: holds on at 1 HP from full once a battle; not hurt by sharp stones'],
+  ['undertow', 'Undertow: its moves of this type hit harder at a third of its HP or less'],
 ];
 /* Studio plan T6.3: an icon cut from the loaded icon atlas by CSS (scaled, pixelated), so a first open of Types does
    not encode a PNG per particle icon (toDataURL took most of its 0.5-2.7 s); iconURL while the atlas is not loaded */
@@ -970,7 +971,7 @@ SECTIONS.types = () => {
     (
       t,
       i
-    ) => `<div class="type-row">${typeChipHTML(t.id)}${grid(textField('Name', `types.${i}.id`, { max: 14, help: 'Renaming updates every move, Billie and rule that uses it.' }), colorField('Color', `types.${i}.color`), colorField('Text color', `types.${i}.text`), selectField('Ability', `types.${i}.passive`, PASSIVES))}
+    ) => `<div class="type-row">${typeChipHTML(t.id)}${grid(textField('Name', `types.${i}.id`, { max: 14, help: 'Renaming updates every move, Billie and rule that uses it.' }), colorField('Color', `types.${i}.color`), colorField('Text color', `types.${i}.text`), selectField('Ability', `types.${i}.passive`, PASSIVES), textField('Ability name', `types.${i}.passiveName`, { max: 20, help: 'What the player reads in the Guide and in battle.' }), textField('What it does', `types.${i}.passiveText`, { area: 1, rows: 2, help: 'One sentence for the Guide.' }))}
   <div class="fxpick"><span>Battle particles</span>${FX_ICONS.map(k => `<button class="icb ${(t.fx || []).includes(k) ? 'on' : ''}" data-act="typeFx" data-i="${i}" data-k="${k}" title="${k}">${iconSpriteHTML(k, 2, k)}</button>`).join('')}</div><button class="btn danger subtle" data-act="typeDel" data-i="${i}">Delete type</button></div>`
   ).join('');
   return `<div class="ed-col solo"><div class="ed-head"><h2>Types</h2><button class="btn primary" data-act="typeNew">+ New type</button></div>${card('Matchups', matrix)}${card('Types', rows + `<div class="type-row">${typeChipHTML('None')}${grid(colorField('Normal color', 'untyped.color'), colorField('Normal text', 'untyped.text'))}</div>`, { sub: 'Each type can have one ability. Abilities and their numbers are tuned under Rules → Battle.' })}</div>`;
@@ -1064,7 +1065,7 @@ SECTIONS.items = () => {
       return `<div class="item-row"><div class="item-ic">${I.img ? `<img src="../game/art/${escapeHtml(I.img)}" width="40" height="40" class="pix">` : `<img src="${iconURL('i_' + (I.icon || k), 3)}" class="pix" alt="">`}<small class="mono">${escapeHtml(k)}</small></div>
   <div>${grid(
     textField('Name', `${p}.n`, { max: 24 }),
-    numberField('Shop price ($)', `${p}.price`, { min: 0, step: 10 }),
+    numberField('Shop price (Moneys)', `${p}.price`, { min: 0, step: 10 }),
     checkboxField('Sold in the Shop', `${p}.mint`, { help: 'Untick to make it a town-shop special.' }),
     selectField(
       'Icon',
@@ -1080,10 +1081,10 @@ SECTIONS.items = () => {
   const coins = Object.entries(D.coins)
     .map(([k, C]) => {
       const p = `coins.${k}`;
-      return `<div class="item-row"><div class="item-ic"><img src="../game/art/coins/${k}_32.png" width="40" height="40" class="pix" onerror="this.style.opacity=.2"><small class="mono">${escapeHtml(k)}</small></div><div>${grid(textField('Name', `${p}.n`), numberField('Tax multiplier', `${p}.m`, { min: 0, max: 10, step: 0.1, help: '0 means it always taxes.' }), numberField('Shop price ($)', `${p}.price`, { min: 0, step: 10, help: '0 means it can’t be bought.' }), numberField('Badges needed', `${p}.need`, { opt: 1, min: 0, max: 8, step: 1 }))}${textField('Description', `${p}.d`, { area: 1, rows: 2 })}</div></div>`;
+      return `<div class="item-row"><div class="item-ic"><img src="../game/art/coins/${k}_32.png" width="40" height="40" class="pix" onerror="this.style.opacity=.2"><small class="mono">${escapeHtml(k)}</small></div><div>${grid(textField('Name', `${p}.n`), numberField('Catch multiplier', `${p}.m`, { min: 0, max: 10, step: 0.1, help: '0 means it always catches.' }), numberField('Shop price (Moneys)', `${p}.price`, { min: 0, step: 10, help: '0 means it can’t be bought.' }), numberField('Badges needed', `${p}.need`, { opt: 1, min: 0, max: 8, step: 1 }))}${textField('Description', `${p}.d`, { area: 1, rows: 2 })}</div></div>`;
     })
     .join('');
-  return `<div class="ed-col solo"><div class="ed-head"><h2>Items & coins</h2><button class="btn primary" data-act="itemNew">+ New item</button></div>${card('Items', items, { sub: 'An item can combine effects, like the Full Remedy (cure + heal).' })}${card('Tax coins', coins, { sub: 'Coin art is art/coins/<id>_16.png and _32.png. Replace it under Art files.' })}</div>`;
+  return `<div class="ed-col solo"><div class="ed-head"><h2>Items & pyramids</h2><button class="btn primary" data-act="itemNew">+ New item</button></div>${card('Items', items, { sub: 'An item can combine effects, like the Full Remedy (cure + heal).' })}${card('Pyramids', coins, { sub: 'Pyramid icons are art/coins/<id>_16.png and _32.png (tools/build-pyramids.py). Replace them under Art files.' })}</div>`;
 };
 ACTIONS.itemNew = () => {
   const D = studioState.D,
@@ -1149,11 +1150,11 @@ SECTIONS.shops = () => {
           base = isC ? (D.coins[key] || {}).price : (D.items[key] || {}).price;
         return `<tr><td><select data-act-sel="stockKind" data-i="${i}">${[
           ['item', 'Item'],
-          ['coin', 'Coin'],
+          ['coin', 'Pyramid'],
         ]
           .map(([v, n]) => `<option value="${v}" ${(isC ? 'coin' : 'item') === v ? 'selected' : ''}>${n}</option>`)
           .join('')}</select></td>
-  <td><select data-p="${p}.stock.${i}.${isC ? 'coin' : 'item'}" data-k="sel" data-rr="1">${(isC ? coinOptions() : itemOptions()).map(([v, n]) => `<option value="${v}" ${v === key ? 'selected' : ''}>${escapeHtml(n)}</option>`).join('')}</select></td><td><input type="number" min="0" step="10" data-p="${p}.stock.${i}.price" data-k="num" data-opt="1" value="${w.price ?? ''}" placeholder="${base ?? ''}"></td><td><small>${base != null ? `Shop price: $${base}` : ''}</small></td>
+  <td><select data-p="${p}.stock.${i}.${isC ? 'coin' : 'item'}" data-k="sel" data-rr="1">${(isC ? coinOptions() : itemOptions()).map(([v, n]) => `<option value="${v}" ${v === key ? 'selected' : ''}>${escapeHtml(n)}</option>`).join('')}</select></td><td><input type="number" min="0" step="10" data-p="${p}.stock.${i}.price" data-k="num" data-opt="1" value="${w.price ?? ''}" placeholder="${base ?? ''}"></td><td><small>${base != null ? `Shop price: ${base} Moneys` : ''}</small></td>
   <td><button class="x" data-act="stockMove" data-i="${i}" data-d="-1">↑</button><button class="x" data-act="stockDel" data-i="${i}">✕</button></td></tr>`;
       })
       .join('');
@@ -1169,7 +1170,7 @@ SECTIONS.shops = () => {
              .filter(([i, it]) => it.shop === k)
              .map(
                ([i, it]) =>
-                 `<button class="chk-chip" data-act="wdGo" data-k="${escapeHtml(i)}">${escapeHtml(it.name)} · $${formatThousands(it.price || 0)}</button>`
+                 `<button class="chk-chip" data-act="wdGo" data-k="${escapeHtml(i)}">${escapeHtml(it.name)} · ${formatThousands(it.price || 0)} Moneys</button>`
              )
              .join('') || '<span class="help">Nothing yet.</span>'
          }</div>`,
@@ -1179,8 +1180,8 @@ SECTIONS.shops = () => {
        )
      : card(
          'Stock',
-         `<table class="tbl"><thead><tr><th>Kind</th><th>What</th><th>Price ($)</th><th></th><th></th></tr></thead><tbody>${stock}</tbody></table><div class="seg-row"><button class="btn" data-act="stockAdd">Add to the shelves</button></div>`,
-         { sub: 'Leave the price empty to use the normal Shop price. Coins that need badges stay locked here too.' }
+         `<table class="tbl"><thead><tr><th>Kind</th><th>What</th><th>Price (Moneys)</th><th></th><th></th></tr></thead><tbody>${stock}</tbody></table><div class="seg-row"><button class="btn" data-act="stockAdd">Add to the shelves</button></div>`,
+         { sub: 'Leave the price empty to use the normal Shop price. Pyramids that need badges stay locked here too.' }
        )
  }
  ${card(
@@ -1429,8 +1430,8 @@ SECTIONS.jobs = () => {
         textField('Where', `${p}.where`),
         `<label class="fld"><span>Pays in</span><select data-act-sel="jobKind" data-k="${k}">${[
           ['item', 'Items'],
-          ['coin', 'Coins'],
-          ['se', 'Money'],
+          ['coin', 'Pyramids'],
+          ['se', 'Moneys'],
         ]
           .map(([v, n]) => `<option value="${v}" ${kind === v ? 'selected' : ''}>${n}</option>`)
           .join('')}</select></label>`,
@@ -1503,14 +1504,14 @@ SECTIONS.trainers = () => {
     ? grid(
         textField('Badge id', `${p}.seat.id`, { help: 'Route gates refer to this.' }),
         textField('Title', `${p}.seat.title`),
-        selectField('Coin shown', `${p}.seat.coin`, coinOptions())
+        selectField('Pyramid shown', `${p}.seat.coin`, coinOptions())
       ) +
       `<div class="grid">${Object.keys(D.coins)
         .map(c => numberField(`${D.coins[c].n} reward`, `${p}.seat.coins.${c}`, { opt: 1, min: 0, step: 1 }))
         .join('')}${Object.keys(D.items)
         .map(it => numberField(`${D.items[it].n} reward`, `${p}.seat.items.${it}`, { opt: 1, min: 0, step: 1 }))
         .join('')}</div>` +
-      textField('Reward text', `${p}.seat.rewardText`, { help: 'Read as “You earned $1,200, …”.' }) +
+      textField('Reward text', `${p}.seat.rewardText`, { help: 'Read as “You earned 1,200 Moneys, …”.' }) +
       textField('What it unlocks', `${p}.seat.unlockText`, { area: 1, rows: 2 }) +
       `<button class="btn danger subtle" data-act="seatOff">Remove the badge</button>`
     : `<p class="help">Beating this trainer doesn’t award a badge.</p><button class="btn" data-act="seatOn">Award a badge</button>`;
@@ -1535,7 +1536,10 @@ SECTIONS.trainers = () => {
        `${p}.battleStage`,
        Object.entries(D.battleStages).map(([b, v]) => [b, v.name || b])
      ),
-     numberField(T.miniboss ? 'Reward ($), outside runs only' : 'Reward ($)', `${p}.reward`, { min: 0, step: 50 }),
+     numberField(T.miniboss ? 'Reward (Moneys), outside runs only' : 'Reward (Moneys)', `${p}.reward`, {
+       min: 0,
+       step: 50,
+     }),
      selectField(
        'First-win egg',
        `${p}.egg`,
@@ -1649,7 +1653,7 @@ ACTIONS.seatOn = () => {
     coin: 'gold',
     coins: { tbtf: 1 },
     items: {},
-    rewardText: 'a Platinum Coin',
+    rewardText: 'a Capstone',
     unlockText: '',
   };
   changed();

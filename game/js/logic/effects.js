@@ -1,18 +1,18 @@
 // @ts-check
 'use strict';
 /* ================= EFFECTS (roguelite track RL-12) =================
-   What a run's Loopholes (relics.json) change, as effect rows read at named points of the game (roguelite-track.md 2d;
-   phase 19's handler-table idea). A Loophole is data: a list of rows, each of one kind in FX_KINDS. fxRows turns the
+   What a run's Perks (relics.json) change, as effect rows read at named points of the game (roguelite-track.md 2d;
+   phase 19's handler-table idea). A Perk is data: a list of rows, each of one kind in FX_KINDS. fxRows turns the
    ids held into one list; each point asks only for its kind:
      money   a won battle's money (battle-rewards.js)         price   a run shop's prices, a run clinic's charge
      catch   a coin's chance to catch (catchOdds)              stat    stat stages for your Billies as a battle starts
      damage  what your Billies deal or take (calcDamage)       heal    a share of HP on walking into a place
-     payout  the payout's Capital, or the share items count at
+     payout  the payout's Research, or the share items count at
    Stacking: rows of one kind combine whatever order they were picked in. Stages and shares add up; multipliers are
    multiplied smallest first (the same product for any order), and the product stays within FX_LIMIT, so a run holding
-   every Loophole stays finite. With no rows every answer is the number it was given (a multiplier of exactly 1), so a
-   battle or a run without Loopholes is the same as before them. Later sessions add rows from other places into the same
-   list (RL-11 building levels, RL-13 brackets).
+   every Perk stays finite. With no rows every answer is the number it was given (a multiplier of exactly 1), so a
+   battle or a run without Perks is the same as before them. Later sessions add rows from other places into the same
+   list (RL-11 building levels, RL-13 expeditions).
    Logic only: no DOM, no Date, no Math.random (tools/test/effects.test.mjs). */
 /** @import { FxRow, Relic } from '../../types/game-data' */
 /** @typedef {FxRow & { src: string }} Fx */
@@ -48,12 +48,12 @@ export const FX_LIMIT = { lo: 0.1, hi: 4 };
 /** stat stages from effects stay within these (the battle clamps again to its own stageMax) */
 export const FX_STAGES = 6;
 
-/** the effect rows of the Loopholes held, in the order held, each tagged with its Loophole's id; an id with no entry
+/** the effect rows of the Perks held, in the order held, each tagged with its Perk's id; an id with no entry
  * gives none @param {string[]} ids @param {Record<string, Relic>} relics @returns {Fx[]} */
 export const fxRows = (ids, relics) =>
   ids.flatMap(id => (relics[id] ? relics[id].fx.map(f => /** @type {Fx} */ ({ ...f, src: id })) : []));
 
-/** the effect rows of a run's Loopholes (null in the hub, or with none held) @param {{ relics: string[] } | null | undefined} run
+/** the effect rows of a run's Perks (null in the hub, or with none held) @param {{ relics: string[] } | null | undefined} run
  * @param {Record<string, Relic>} relics @returns {Fx[] | null} */
 export const fxOfRun = (run, relics) => (run && run.relics.length ? fxRows(run.relics, relics) : null);
 provide({ fxOfRun }); /* to-module */
@@ -83,7 +83,7 @@ export const fxPrice = (fx, what, n) => {
   return k === 1 ? n : Math.max(0, Math.round(n * k));
 };
 
-/** Studio plan T3.2: a price on a run with its Loopholes' price rows of `what` (the page's clinic and shops, and the
+/** Studio plan T3.2: a price on a run with its Perks' price rows of `what` (the page's clinic and shops, and the
  * run's simulation): the price itself with no run or none held @param {{ relics: string[] } | null | undefined} run
  * @param {Record<string, Relic>} relics @param {'shop' | 'heal'} what @param {number} n */
 export const fxRunPrice = (run, relics, what, n) => fxPrice(fxOfRun(run, relics), what, n);
@@ -132,7 +132,7 @@ provide({ fxHealShare }); /* to-module */
 
 /**
  * The payout's rates with the payout rows: `itemShare` times its rows (at most 1: an item never counts above its
- * price) and `capital`, what the payout's Capital is multiplied by (1 when none). The other rates as they were.
+ * price) and `capital`, what the payout's Research is multiplied by (1 when none). The other rates as they were.
  * @template {{ itemShare: number }} R
  * @param {Fx[] | null | undefined} fx @param {R} rates @returns {R & { capital: number }}
  */

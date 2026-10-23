@@ -40,6 +40,8 @@ expose({
   validRun: [() => validRun, v => (validRun = v)],
   // @ts-expect-error -- replaced on purpose
   validRunFoe: [() => validRunFoe, v => (validRunFoe = v)],
+  // @ts-expect-error -- replaced on purpose
+  validRunRegion: [() => validRunRegion, v => (validRunRegion = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -63,7 +65,7 @@ export const RUN_PHASES = ['fly', 'walk', 'battle', 'menu', 'payout'],
   RUN_LIST = 5000,
   RUN_TIERS = 9;
 export const copyOf = v => JSON.parse(JSON.stringify(v));
-/** RL-9b: a rule by Bracket (rules.json run.home, run.pack): the tier's entry, past the list's end its last */
+/** RL-9b: a rule by Expedition (rules.json run.home, run.pack): the tier's entry, past the list's end its last */
 /** @param {number[]} list @param {number} tier */
 export const runByTier = (list, tier) => list[Math.max(0, Math.min(list.length, Math.floor(tier) || 1) - 1)];
 /** RL-9b: the uids of the Billies that came from home (picked at the mast); a run saved before RL-9b took the hub's
@@ -105,6 +107,31 @@ export function newRun(seed, tier, mapgenV, start) {
 /** how many nodes the run's world has: Copperleaf (node 0) and the map's nodes (node i + 1 is map node i) */
 /** @param {Run | null | undefined} run */
 export const runNodeCount = run => 1 + (run && run.map && Array.isArray(run.map.nodes) ? run.map.nodes.length : 0);
+/** RL-R1: a run's region (logic/run-region.js runRegionMake), its shape only @param {any} R @returns {boolean} */
+export function validRunRegion(R) {
+  const plain = (/** @type {any} */ v) =>
+      !!v && typeof v === 'object' && !Array.isArray(v) && !Object.hasOwn(v, '__proto__'),
+    id = (/** @type {any} */ v) => typeof v === 'string' && /^[a-z0-9_]{1,40}$/.test(v),
+    ids = (/** @type {any} */ v, /** @type {number} */ most) => Array.isArray(v) && v.length <= most && v.every(id);
+  return (
+    plain(R) &&
+    Object.keys(R).every(k => ['theme', 'name', 'zones', 'dex', 'swap', 'forms', 'leaders'].includes(k)) &&
+    id(R.theme) &&
+    typeof R.name === 'string' &&
+    R.name.length >= 1 &&
+    R.name.length <= 40 &&
+    Array.isArray(R.zones) &&
+    R.zones.length >= 1 &&
+    R.zones.length <= 8 &&
+    R.zones.every((/** @type {any} */ z) => plain(z) && id(z.biome) && wholeIn(z.rows, 1, RUN_NODES)) &&
+    ids(R.dex, 200) &&
+    recordOf(R.swap, 400, id) &&
+    Object.keys(R.swap).every(id) &&
+    recordOf(R.forms, 100, id) &&
+    Object.keys(R.forms).every(id) &&
+    ids(R.leaders, 16)
+  );
+}
 /** the load check for saveData.run: strict, like validSave (the Billies in run.start.team are checked there) */
 /** @param {any} o @returns {boolean} */
 export function validRun(o) {
@@ -128,10 +155,13 @@ export function validRun(o) {
         node.to.some(j => !wholeIn(j, 0, n - 1) || j === i) ||
         new Set(node.to).size !== node.to.length ||
         (node.seen !== undefined && !wholeIn(node.seen, 0, 2)) ||
-        (node.biome !== undefined && !id(node.biome))
+        (node.biome !== undefined && !id(node.biome)) ||
+        (node.zone !== undefined && !wholeIn(node.zone, 0, 7))
       )
         return false;
   }
+  /* RL-R1: the region (missing on a run from before regions) */
+  if (o.region !== undefined && !validRunRegion(o.region)) return false;
   const nodes = runNodeCount(o);
   if (!plain(o.at) || !RUN_PHASES.includes(o.at.phase) || !wholeIn(o.at.battle, -1, 1e6)) return false;
   /* RL-8: at the payout, whether the run was won; in a battle, its foe as it began (run.js runFoeRef); nothing else */
@@ -142,7 +172,7 @@ export function validRun(o) {
   if (!list(o.forecast, nodes) || o.forecast.some(days => !list(days, RUN_DAYS) || !days.every(id))) return false;
   if (!list(o.relics, 32) || !o.relics.every(id) || !list(o.mods, 32) || !o.mods.every(id)) return false;
   if (o.offer !== null && (!list(o.offer, 5) || !o.offer.every(id))) return false;
-  /* RL-12: the offers made, and the run shops' Loopholes by '<map node>:<day>' ('' once bought) */
+  /* RL-12: the offers made, and the run shops' Perks by '<map node>:<day>' ('' once bought) */
   if (!wholeIn(o.offerN, 0, 1e6)) return false;
   if (
     !recordOf(o.shelf, RUN_LIST, v => v === '' || id(v)) ||
@@ -213,7 +243,7 @@ export function validRunFoe(f) {
   );
 }
 /** start a run on the save: the hub's working fields go into run.start and the run gets its own. The Billies from
-    home travel (`home`, by uid, from the team or storage; RL-9b: picked at the mast, the rules' count by Bracket is the
+    home travel (`home`, by uid, from the team or storage; RL-9b: picked at the mast, the rules' count by Expedition is the
     page's to keep; left out, the team as it is): copies, so what happens to them in the run never touches the hub's,
     and the first is the buddy. The packed bag (`pack`) leaves the hub's (no more than it holds, so run.start keeps what
     stays home) and joins the run's starting money, items and coins (`give`, from the rules in RL-8); the trip starts at
@@ -265,16 +295,16 @@ export function runBegin(s, give) {
   s.visited = { 0: 1 };
   return run;
 }
-/** what a run pays when it ends, as Capital and Audit Seals, with the lines the payout screen lists: the money at a
+/** what a run pays when it ends, as Research and Crests, with the lines the payout screen lists: the money at a
     rate, the items at a share of their price (then at the money rate; RL-9b: on a loss only, a win takes the bag
     home), each released Billie, each node cleared, a win bonus; seals for a win; Scrap (RL-9, the ranch's material)
     for each node cleared and a win. Rates are rules.json run.payout (placeholders until the first play) */
 /**
  * @param {{ se: number, items: Record<string, number>, released: number, cleared: number, won: boolean }} end
  * @param {{ money: number, itemShare: number, released: number, node: number, win: number, winSeals: number,
- *   scrapNode?: number, scrapWin?: number, capital?: number }} rates capital (RL-12, a Loophole's): the Capital times
+ *   scrapNode?: number, scrapWin?: number, capital?: number }} rates capital (RL-12, a Perk's): the Research times
  *   this, the difference as a line of its own
- * @param {(id: string) => number} itemPrice an item's shop price ($), 0 for none
+ * @param {(id: string) => number} itemPrice an item's shop price (Moneys), 0 for none
  * @returns {{ capital: number, seals: number, scrap: number, lines: { what: string, n: number, capital: number }[] }}
  */
 export function payoutOf(end, rates, itemPrice) {
@@ -289,7 +319,7 @@ export function payoutOf(end, rates, itemPrice) {
     { what: 'nodes', n: end.cleared, capital: end.cleared * rates.node },
     { what: 'win', n: end.won ? 1 : 0, capital: end.won ? rates.win : 0 },
   ];
-  /* RL-12: a Loophole's payout row (logic/effects.js fxPayoutRates): the Capital above times rates.capital, as a row */
+  /* RL-12: a Perk's payout row (logic/effects.js fxPayoutRates): the Research above times rates.capital, as a row */
   const k = rates.capital ?? 1;
   if (k !== 1) {
     const sum = lines.reduce((a, l) => a + l.capital, 0);
@@ -307,7 +337,7 @@ export function payoutOf(end, rates, itemPrice) {
     (the team or storage); one caught or bought in the run joins the team, or the box when the team is full. Every
     other Billie from home comes back as it left (roguelite-track.md section 3, option 3 of "keep-one vs ranch
     levels"; 8.2: one kept on a loss, all on a win). RL-9b: on a win the run's items and coins go into the hub's bag
-    (on a loss they were paid as Capital). Returns the payout */
+    (on a loss they were paid as Research). Returns the payout */
 /**
  * @param {SaveData} s
  * @param {{ won: boolean, keep: string[] }} how

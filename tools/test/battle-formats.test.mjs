@@ -110,7 +110,7 @@ test('phase 08: your buddy gets the full XP of a win even when it sat out; the r
   assert.equal(got[1], Math.floor(got[0] * RULES.progression.teamXpShare));
 });
 
-test("a battle's start takes a host and the run's extras (seed, weather, Loopholes), trainer and wild alike", () => {
+test("a battle's start takes a host and the run's extras (seed, weather, Perks), trainer and wild alike", () => {
   const SILENT = logic.SILENT_HOST;
   teamOfThree();
   const tid = Object.keys(TRAINERS).find(k => TRAINERS[k].market && TRAINERS[k].team.length) || doubleTrainer(),
@@ -135,7 +135,7 @@ test("a battle's start takes a host and the run's extras (seed, weather, Loophol
   assert.equal(B.fmt, 'single');
 });
 
-test('a caught foe is kept (an Alpha stays one, at its share of HP, never below 1); a miss may bring an offer', () => {
+test('a caught foe is kept (an Alpha stays one, at its share of HP, never below 1)', () => {
   teamOfThree();
   fn('newBattle')('wild', [fn('makeAlpha')(WILD(), 10)]);
   const a = fn('fighter')(1);
@@ -151,38 +151,6 @@ test('a caught foe is kept (an Alpha stays one, at its share of HP, never below 
   fn('newBattle')('wild', [b]);
   assert.deepEqual(fn('catchKeep')(b), { where: 'team', alpha: false });
   assert.equal(b.hp, 1);
-  // a miss: an offer as often as rules.catching.offerChance, in steps of $10 within its bounds
-  const C = data.RULES.catching;
-  let offers = 0;
-  for (let i = 0; i < 200; i++) {
-    fn('newBattle')('wild', [fn('makeBilly')(WILD(), 5)], { seed: 'OFFER' + i });
-    const n = fn('catchOffer')();
-    assert.equal(hooks.activeBattle.offer || 0, n);
-    if (!n) continue;
-    offers++;
-    assert.ok(n % 10 === 0 && n >= C.offerMin - 5 && n <= C.offerMax + 5, String(n));
-  }
-  assert.ok(offers > 0 && offers < 200, `${offers} offers in 200 misses`);
-});
-
-test('an offer answered: yes takes the money and ends the battle; no raises the Focus Bonus', () => {
-  const s = teamOfThree();
-  fn('newBattle')('wild', [fn('makeBilly')(WILD(), 5)]);
-  const B = hooks.activeBattle,
-    se = s.se;
-  B.offer = 40;
-  assert.equal(fn('catchOfferAnswer')(true), 40);
-  assert.equal(s.se, se + 40);
-  assert.equal(B.over, 'bribed');
-  assert.equal(B.offer, null);
-  fn('newBattle')('wild', [fn('makeBilly')(WILD(), 5)]);
-  const B2 = hooks.activeBattle,
-    was = B2.integrity;
-  B2.offer = 40;
-  assert.equal(fn('catchOfferAnswer')(false), 0);
-  assert.equal(s.se, se + 40);
-  assert.ok(!B2.over);
-  assert.equal(B2.integrity, Math.min(data.RULES.catching.integrityMax, was * data.RULES.catching.integrityStep));
 });
 
 test("a battle's end on the save (battleSettle): the Hype counter and the lead's streak on a win, the encounter gone", () => {
@@ -220,7 +188,7 @@ test("a battle's end on the save (battleSettle): the Hype counter and the lead's
   assert.equal(fn('findBilly')(B2.lead).streak, 0);
 });
 
-test("a run's mini-boss beaten (battleSettleWin): its reward, its flag and a pick of Loopholes made on the run", () => {
+test("a run's mini-boss beaten (battleSettleWin): its reward, its flag and a pick of Perks made on the run", () => {
   const s = teamOfThree(),
     tid = doubleTrainer();
   fn('startTrainer')(tid, { talked: true });
@@ -233,6 +201,6 @@ test("a run's mini-boss beaten (battleSettleWin): its reward, its flag and a pic
   fn('battleSettleWin')(B, s, pay, run);
   assert.equal(s.se, se + 77);
   assert.equal(s.flags[tid], 1);
-  assert.ok(Array.isArray(run.offer) && run.offer.length > 0, 'a pick of Loopholes');
+  assert.ok(Array.isArray(run.offer) && run.offer.length > 0, 'a pick of Perks');
   assert.equal(run.offerN, 1);
 });

@@ -63,6 +63,6 @@ test('unlock graph: a new save has nothing earned; runs and wins earn what unloc
   assert.equal(later.currencies.scrap, D.unlocks.first_run.grant.scrap);
   assert.equal(later.currencies.capital, D.unlocks.runs_5.grant.capital);
   assert.equal(later.currencies.seals, D.unlocks.first_win.grant.seals);
-  assert.equal(later.why.airship_2, null, 'the Seal of a win buys the airship’s level');
+  assert.equal(later.why.airship_2, null, 'the Crest of a win buys the airship’s level');
   assert.ok(G.unlockSaveAfter(D, { caught: 15 }).owned.includes('caught_15'));
 });

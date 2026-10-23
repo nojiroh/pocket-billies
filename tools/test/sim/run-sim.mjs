@@ -8,9 +8,9 @@
 // the forecast's weather (run-loop.js runBattleSeed, weather.js battleWeatherOf), both sides played by the computer
 // (chooseAI), the run's rewards (battle-rewards.js), paid healing and the day's shop in towns, and the payout.
 // What the player does is a fixed policy: walk forward along a lane drawn from the seed, fight up to `fights` of a
-// place's wild Billies while the party is above 70% of its HP (a Potion on a Billie below 60%; tax the first ones while
+// place's wild Billies while the party is above 70% of its HP (a Potion on a Billie below 60%; catch the first ones while
 // the party is small), heal in towns when hurt, keep a few Copper Coins, beat the mini-boss, then the boss. RL-9b: it
-// starts as the mast does: the highest-level Billies from home (rules.json run.home at Bracket I; `team` is how many
+// starts as the mast does: the highest-level Billies from home (rules.json run.home at Expedition I; `team` is how many
 // starters wait at home) and a bag packed with Potions from home (`pack` of them at home, as many as run.pack lets).
 // Two uses:
 //   - replay: the same seed played twice must come out the same, even with util.js random seeded differently (so

@@ -1,7 +1,7 @@
 // Studio plan T2.4: the Run Lab's preview of a run (logic/run-preview.js runPreview, which the Studio's logic worker
 // answers) equals what the game itself works out for the same seed: a save at the mast takes off through
 // runStartPlan/runStartOn, then the run's foes as run-world.js makes them, a town's stock and shelf as shop.js opens
-// them on a day, its places' wild tables (run-scenes.js runWorldTables) and the Loophole picks battle.js makes after
+// them on a day, its places' wild tables (run-scenes.js runWorldTables) and the Perk picks battle.js makes after
 // each mini-boss, with nothing held.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
@@ -29,6 +29,7 @@ const worldData = () => ({
   pools: POOLS,
   scenery: gameData.scenery,
   rules: RULES.run,
+  region: modules['run-region'].runRegionData(gameData, TRAINERS),
 });
 
 /** what the game shows for a seed: the run on a save, then each part as the page asks for it */
@@ -70,7 +71,7 @@ function theGame(/** @type {string} */ seed, /** @type {{ unlocks: string[], map
   return { map: run.map, deadline: run.deadline, unlocks: run.unlocks, nodes, offers };
 }
 
-test('runPreview: the foes, shops, wild tables and Loophole picks are the game’s for the same seed', () => {
+test('runPreview: the foes, shops, wild tables and Perk picks are the game’s for the same seed', () => {
   for (const seed of SEEDS)
     for (const [name, c] of Object.entries(CASES)) {
       const want = theGame(seed, c),
@@ -85,7 +86,7 @@ test('runPreview: the foes, shops, wild tables and Loophole picks are the game�
         assert.deepEqual(n.foe, want.nodes[i].foe, `${at}: node ${i}'s foe`);
         assert.deepEqual(n.shop, want.nodes[i].shop, `${at}: node ${i}'s shop`);
       });
-      assert.deepEqual(got.relicOffers, want.offers, `${at}: the Loophole picks`);
+      assert.deepEqual(got.relicOffers, want.offers, `${at}: the Perk picks`);
     }
 });
 

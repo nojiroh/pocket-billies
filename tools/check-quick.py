@@ -647,10 +647,10 @@ def debug_menu_step(b, base, R):
         se = pg.evaluate("saveData.se")
         pg.click('.dbg [data-x=se1]'); time.sleep(.3)
         said = pg.evaluate("JSON.stringify([uiState.toastOn,...(uiState.toastQ||[])].filter(Boolean).map(t=>t.text))")
-        if 'you have $' not in said or 'Done.' in said: raise Exception(f'+$1,000 said {said[:160]}')
-        if pg.evaluate("saveData.se") != se + 1000: raise Exception('+$1,000 didn’t add $1,000')
+        if 'Moneys.' not in said or 'Done.' in said: raise Exception(f'+1,000 Moneys said {said[:160]}')
+        if pg.evaluate("saveData.se") != se + 1000: raise Exception('+1,000 Moneys didn’t add 1,000')
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
-        return 'nine sections in order, no phase codes, each button once, search narrowed to +50 Scrap and put the sections back, Give me kept open across reopening, +$1,000 said what it changed'
+        return 'nine sections in order, no phase codes, each button once, search narrowed to +50 Scrap and put the sections back, Give me kept open across reopening, +1,000 Moneys said what it changed'
     finally:
         ctx.close()
 
@@ -794,13 +794,13 @@ def run_map_weather_step(b, base, R):
         ctx.close()
 
 
-@step("Sound effects and jingles: the beds under a song, four UI sounds, a cry as a Billie comes out (its low-HP cry in the red zone), the run's day, reveal, Loophole and payout jingles (SND-6)", 300)
+@step("Sound effects and jingles: the beds under a song, four UI sounds, a cry as a Billie comes out (its low-HP cry in the red zone), the run's day, reveal, Perk and payout jingles (SND-6)", 300)
 def sound_effects_step(b, base, R):
     """sound track SND-6: the run fixture on a phone, sound unlocked by a tap; soundEngine.log (in memory, never sent)
     says what played. A sheet's gold, quiet and disabled buttons and a tab make confirm, cancel, can't and select
     (tapped, as a player taps). A wild battle with the lead Billie under a quarter: it cries its low-HP cry as it comes
     out, the wild one its own. Walking into the next place: the day jingle, then the reveal jingle (the map shows the
-    next rows). A Loophole taken: its jingle. The payout, won: a coin per row a step higher each, then run_won after the
+    next rows). A Perk taken: its jingle. The payout, won: a coin per row a step higher each, then run_won after the
     last coin; lost: run_lost"""
     errs = []
     ctx = b.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=1, has_touch=False)
@@ -852,10 +852,10 @@ def sound_effects_step(b, base, R):
         L = log()
         if L.index('jingle day') > L.index('jingle reveal'): raise Exception(f'the reveal came before the day: {L}')
         out.append(f"day {day0} to {pg.evaluate('saveData.run.clock')}: day, reveal")
-        # a Loophole taken
+        # a Perk taken
         clear(); pg.evaluate("(()=>{const R=saveData.run;R.offer=Object.keys(RELICS).slice(0,3);relicPickOpen();relicPickDone(R.offer[0])})();0")
-        if 'jingle relic' not in log(): raise Exception(f'a Loophole taken: {log()}')
-        out.append('Loophole: relic')
+        if 'jingle relic' not in log(): raise Exception(f'a Perk taken: {log()}')
+        out.append('Perk: relic')
         # the payout: a coin per row, rising, then run_won after the last; then a loss plays run_lost
         clear(); pg.evaluate("closeModal();runOver(true);0")
         # TC-3: 40 s, not 15: the coins come a row at a time and run_won after the last; in the full check's run the
@@ -1534,18 +1534,18 @@ def desktop_steps(b, base, R):
         return '; '.join(out) + '; out again at the lab’s door'
     buildings_and_rooms()
 
-    @step('The game\'s name, Taxed in the Guide, rooms with their building\'s windows', 240)
+    @step('The game\'s name, Caught in the Guide, rooms with their building\'s windows', 240)
     def name_taxed_room_windows():
-        """Pocket Billies on the page and the title; the Guide counts the Billies you've taxed and the battle has a Tax!
+        """Pocket Billies on the page and the title; the Guide counts the Billies you've caught (RF-1: no Taxed left) and the battle has a Catch it
         button; every room of a town shows its building's windows (as many as the front has, double windows as one, in
         the same order) with no furniture in front of them; the picture setting. RL-5: the town is Copperleaf; the
         library's four windows went with Marigold Town"""
         out = []
         t = pg.evaluate("[document.title,renderTitle().includes('<span>POCKET</span><span>BILLIES</span>')?'POCKET BILLIES':'',gameData.meta.title]")
         if 'Pocket Billies' not in t[0] or 'POCKETBILLIES' not in t[1].replace(' ', '') or t[2] != 'Pocket Billies': raise Exception(f'the name: {t}')
-        g = pg.evaluate("(()=>{uiState.tab='ledger';uiState.dex=null;uiState.guideTab='dex';render();const h=document.body.innerText;uiState.tab='walk';render();return [h.includes('Taxed'),h.includes('Caught')]})()")
-        if not g[0] or g[1]: raise Exception(f'the Guide: Taxed shown {g[0]}, Caught still shown {g[1]}')
-        out.append('Pocket Billies on the page, the title screen and in the data; the Guide counts Taxed')
+        g = pg.evaluate("(()=>{uiState.tab='ledger';uiState.dex=null;uiState.guideTab='dex';render();const h=document.body.innerText;uiState.tab='walk';render();return [h.includes('Caught'),h.includes('Taxed')]})()")
+        if not g[0] or g[1]: raise Exception(f'the Guide: Caught shown {g[0]}, Taxed still shown {g[1]}')
+        out.append('Pocket Billies on the page, the title screen and in the data; the Guide counts Caught')
         pg.evaluate("uiState.inside=null;uiState.goingIn=null;uiState.bench=null;uiState.modal=null;uiState.mq=[];renderOverlay();0"); go_scene(pg, 0); time.sleep(1)
         rows = pg.evaluate("""(()=>{const C=walkData().sc,ppu=C.ppu||34,out=[];for(const p of walkView.sc.props){const M=C.props[p.k];if(!M||!M.box||!p.act)continue;let id=null;try{id=roomFor(p.act,p)}catch(e){}if(!id||!mapById(id)||mapById(id).winMatch===0)continue;
           const s=p.s||1,f=p.f?-1:1,dx=((M.door&&M.door.x)||0)/ppu*s*f,door=[+(p.x+dx).toFixed(1),+(+p.z).toFixed(1),+(+p.x).toFixed(1)];seamlessWorld.cache.delete(seamlessRoomId(walkView.id,id,door)+'|'+seamlessWorld.gen);
@@ -1594,15 +1594,15 @@ def desktop_steps(b, base, R):
 
     # RL-5: 'phase 08b: walking across seams — the next view ready ahead, no wait, no jump in the picture' retired: every seam it walked (and --seams=all) joined two parked places (RL-7 walks a run's roads, below)
 
-    @step('RL-8: a run from the mast — the flight, a battle, a seam, a paid heal, the shop, a mini-boss and its Loophole pick (RL-12), the boss, the payout, home', 420)
+    @step('RL-8: a run from the mast — the flight, a battle, a seam, a paid heal, the shop, a mini-boss and its Perk pick (RL-12), the boss, the payout, home', 420)
     def rl8_run_from_mast():
         """Copperleaf's mast sheet (tapped as walkPick does) offers "Start a run"; its sheet's "Take off" puts a run on the
         save with its world and flies to the landing (skipped to the end: day 1, beside the landing's mast); a wild
         battle won pays and lets saving go on; the north seam walked (cross()) is day 2; "Go there" walks to the first
-        town: the clinic charges $60 a hurt Billie (after a yes), the shop has the day's stock and (RL-12) a Loophole;
-        on to the first mini-boss, which blocks the way north and fights a double battle (won): "Pick a Loophole" opens
+        town: the clinic charges 60 Moneys a hurt Billie (after a yes), the shop has the day's stock and (RL-12) a Perk;
+        on to the first mini-boss, which blocks the way north and fights a double battle (won): "Pick a Perk" opens
         the pick, a card tapped and "Take it" holds it; on to the boss, an Alpha (won, its battle carrying the
-        Loophole): "On to the payout", the payout as won, "Fly home": Copperleaf with Capital, no run. The hub's save is
+        Perk): "On to the payout", the payout as won, "Fly home": Copperleaf with Research, no run. The hub's save is
         put back after"""
         if not pg.evaluate("typeof runTakeOff==='function'"): return 'not in this build'
         pg.evaluate("window.rl8Hub=JSON.parse(JSON.stringify(saveData));uiState.inside=null;uiState.bench=null;uiState.modal=null;uiState.mq=[];renderOverlay();uiState.tab='walk';saveData.team.forEach(m=>{m.hp=maxHp(m);m.status=null});render();0")
@@ -1639,7 +1639,7 @@ def desktop_steps(b, base, R):
             pg.click('#ov [data-a=mb][data-i="0"]')
             if pg.evaluate("saveData.se") != heal[1] - heal[0] or not pg.evaluate("saveData.team.every(m=>m.hp===maxHp(m))"): raise Exception(f'the clinic: ${heal[1]} - ${heal[0]} gave ${pg.evaluate("saveData.se")}')
             wares = pg.evaluate(f"openShop(LOCATIONS[{town}].shop);SHOPS[LOCATIONS[{town}].shop].stock.length")
-            if not pg.evaluate("!!document.querySelector('#ov .shop-sheet [data-a=shoprelic]')"): raise Exception('the town’s shop has no Loophole (RL-12)')
+            if not pg.evaluate("!!document.querySelector('#ov .shop-sheet [data-a=shoprelic]')"): raise Exception('the town’s shop has no Perk (RL-12)')
             pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();0")
             if wares != len(pg.evaluate('RULES.run.shop.always')) + pg.evaluate('RULES.run.shop.more'): raise Exception(f'the shop has {wares} wares')
             # the first mini-boss: it blocks, a double battle, won
@@ -1651,8 +1651,8 @@ def desktop_steps(b, base, R):
             if not until(pg, "!!activeBattle&&activeBattle.fmt==='double'", 20): raise Exception('the mini-boss’s battle isn’t a double battle')
             pg.evaluate("stopTimers();activeBattle.over='win';endBattle();0")
             if not until(pg, f"!activeBattle&&!blockerAt({mb})", 30): raise Exception('beaten, the mini-boss still blocks')
-            # RL-12: its pick of Loopholes, stored before the sheet; tapped through
-            if not until(pg, "uiState.modal&&uiState.modal.btns&&uiState.modal.btns[0].l==='Pick a Loophole'", 30): raise Exception('no “Pick a Loophole” after the mini-boss')
+            # RL-12: its pick of Perks, stored before the sheet; tapped through
+            if not until(pg, "uiState.modal&&uiState.modal.btns&&uiState.modal.btns[0].l==='Pick a Perk'", 30): raise Exception('no “Pick a Perk” after the mini-boss')
             if len(pg.evaluate("JSON.parse(localStorage.getItem(SAVE_KEY)).run.offer||[]")) != pg.evaluate('RULES.run.relics.pick'): raise Exception('the pick isn’t stored before it shows')
             pg.click('#ov [data-a=mb][data-i="0"]')
             if not until(pg, "uiState.modal&&uiState.modal.cls==='relic-pick'&&document.querySelectorAll('#ov pb-pick-card').length===RULES.run.relics.pick", 10): raise Exception('the pick didn’t open')
@@ -1669,7 +1669,7 @@ def desktop_steps(b, base, R):
             if not B: raise Exception('no boss stands on the boss’s place')
             pg.evaluate(f"saveData.team.forEach(m=>{{m.hp=maxHp(m)}});startTrainer('{B}',{{talked:true}});0")
             if not until(pg, "!!activeBattle&&activeBattle.fmt==='alpha'&&!!activeBattle.sides[1].team[0].boss", 20): raise Exception('the boss isn’t an Alpha battle')
-            if pg.evaluate("(activeBattle.fx||[]).map(f=>f.src).join()") != relic: raise Exception('the boss’s battle doesn’t carry the Loophole')
+            if pg.evaluate("(activeBattle.fx||[]).map(f=>f.src).join()") != relic: raise Exception('the boss’s battle doesn’t carry the Perk')
             pg.evaluate("stopTimers();activeBattle.over='win';endBattle();0")
             if not until(pg, "uiState.modal&&uiState.modal.btns&&uiState.modal.btns[0].l==='On to the payout'", 30): raise Exception('no “On to the payout” after the boss')
             pg.click('#ov [data-a=mb][data-i="0"]')
@@ -1680,7 +1680,7 @@ def desktop_steps(b, base, R):
             home = pg.evaluate("[saveData.meta.runs, saveData.meta.wins, saveData.meta.capital, saveData.meta.seals]")
             if home[0] < 1 or home[1] < 1 or home[2] <= 0: raise Exception(f'home: {home}')
             if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
-            return f'seed {land[0]}: {land[4]} scenes, landed day 1 by the mast; a battle won; day 2 over the seam; healed for ${heal[0]}; {wares} wares and a Loophole; {foe[1]} beaten (doubles), {relic} picked; the boss (an Alpha) beaten; payout; home: {home[2]} Capital, {home[3]} Seal'
+            return f'seed {land[0]}: {land[4]} scenes, landed day 1 by the mast; a battle won; day 2 over the seam; healed for {heal[0]} Moneys; {wares} wares and a Perk; {foe[1]} beaten (doubles), {relic} picked; the boss (an Alpha) beaten; payout; home: {home[2]} Research, {home[3]} Seal'
         finally:
             pg.evaluate("if(activeBattle){stopTimers();setActiveBattle(null);battleStageStop()}airshipFlight.on=false;uiState.modal=null;uiState.mq=[];renderOverlay();setSaveData(window.rl8Hub);render();0")
     rl8_run_from_mast()

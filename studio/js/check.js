@@ -26,6 +26,7 @@ import {
   dataCurrencies,
   dataNodeTypes,
   dataRanchRules,
+  dataRegions,
   dataRelics,
   dataRigs,
   dataRoadFindings,
@@ -241,7 +242,7 @@ export function runCheck() {
     if (!D.people[T.who]) warn(`${T.name} uses an unknown look.`, 'trainers', g);
     if (T.seat) {
       for (const c in T.seat.coins || {})
-        if (!coins[c]) warn(`${T.name}’s badge gives an unknown coin.`, 'trainers', g);
+        if (!coins[c]) warn(`${T.name}’s badge gives an unknown pyramid.`, 'trainers', g);
       for (const it in T.seat.items || {})
         if (!items[it]) warn(`${T.name}’s badge gives an unknown item.`, 'trainers', g);
     }
@@ -273,12 +274,12 @@ export function runCheck() {
   for (const [k, s] of Object.entries(D.shops || {}))
     (s.stock || []).forEach(w => {
       if (w.item && !items[w.item]) warn(`${s.name} sells an item that doesn’t exist.`, 'shops', { shop: k });
-      if (w.coin && !coins[w.coin]) warn(`${s.name} sells a coin that doesn’t exist.`, 'shops', { shop: k });
+      if (w.coin && !coins[w.coin]) warn(`${s.name} sells a pyramid that doesn’t exist.`, 'shops', { shop: k });
     });
   for (const [k, J] of Object.entries(D.jobs)) {
     const [kind, key] = J.out;
     if (kind === 'item' && !items[key]) warn(`Job ${J.n} pays an unknown item.`, 'jobs');
-    if (kind === 'coin' && !coins[key]) warn(`Job ${J.n} pays an unknown coin.`, 'jobs');
+    if (kind === 'coin' && !coins[key]) warn(`Job ${J.n} pays an unknown pyramid.`, 'jobs');
   }
   const R = D.rules;
   R.start.starters.forEach(l => {
@@ -315,7 +316,6 @@ export function runCheck() {
   }
   for (const it in R.start.items) if (!items[it]) warn(`Starting items include unknown ${it}.`, 'rules');
   if (R.battle.subpoenaMin > R.battle.subpoenaMax) warn('Sleep turns: least is above most.', 'rules');
-  if (R.catching.offerMin > R.catching.offerMax) warn('Bargain: least is above most.', 'rules');
   if (!types.has(R.battle.shockType)) warn('The sandstorm type doesn’t exist.', 'rules');
   if (!types.has(R.battle.spinType)) warn('The Soak type doesn’t exist.', 'rules');
   /* T1.3: the scene and road checks are logic/data-checks.js's, so check-data (CI) runs them too */
@@ -405,6 +405,7 @@ const STUDIO_DATA_FAMILIES = /** @type {[string, (D: any) => [string, string][]]
   ['run loop', dataRunLoop],
   ['robot', dataRobots],
   ['biome', dataBiomes],
+  ['region', dataRegions],
   ['node type', dataNodeTypes],
   ['relic', dataRelics],
   ['currency', dataCurrencies],

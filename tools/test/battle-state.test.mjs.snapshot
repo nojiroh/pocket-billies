@@ -6,10 +6,8 @@ exports[`battle object: alpha 1`] = `
   "ev": 0,
   "phase": "playing",
   "market": null,
-  "integrity": 1,
   "over": null,
   "needSwitch": [],
-  "offer": null,
   "foeName": "Test",
   "lead": "-",
   "turn": 0,
@@ -92,6 +90,7 @@ exports[`battle object: alpha 1`] = `
       ],
       "rent": false,
       "pivot": false,
+      "held": [],
       "mail": [],
       "inh": null
     },
@@ -125,6 +124,7 @@ exports[`battle object: alpha 1`] = `
       ],
       "rent": false,
       "pivot": false,
+      "held": [],
       "mail": [],
       "inh": null
     }
@@ -140,10 +140,8 @@ exports[`battle object: double 1`] = `
   "ev": 0,
   "phase": "playing",
   "market": null,
-  "integrity": 1,
   "over": null,
   "needSwitch": [],
-  "offer": null,
   "foeName": "Test",
   "lead": "-",
   "turn": 0,
@@ -204,6 +202,7 @@ exports[`battle object: double 1`] = `
       ],
       "rent": false,
       "pivot": false,
+      "held": [],
       "mail": [],
       "inh": null
     },
@@ -260,6 +259,7 @@ exports[`battle object: double 1`] = `
       ],
       "rent": false,
       "pivot": false,
+      "held": [],
       "mail": [],
       "inh": null
     }
@@ -275,10 +275,8 @@ exports[`battle object: single 1`] = `
   "ev": 0,
   "phase": "playing",
   "market": null,
-  "integrity": 1,
   "over": null,
   "needSwitch": [],
-  "offer": null,
   "foeName": "Test",
   "lead": "-",
   "turn": 0,
@@ -317,6 +315,7 @@ exports[`battle object: single 1`] = `
       ],
       "rent": false,
       "pivot": false,
+      "held": [],
       "mail": [],
       "inh": null
     },
@@ -350,6 +349,7 @@ exports[`battle object: single 1`] = `
       ],
       "rent": false,
       "pivot": false,
+      "held": [],
       "mail": [],
       "inh": null
     }

@@ -20,7 +20,7 @@
   },
   {
    "id": "coins",
-   "title": "Why a coin taxes them",
+   "title": "Why a pyramid catches them",
    "unlock": "start",
    "text": "A Billie cannot resist a coin. Toss one and it will chase it, catch it and keep it, and while it is busy counting, it is yours. A Penny will do for a young one. Silver, Gold and Platinum (“Too Big To Fail”) coins hold the bigger and the stubborn ones. Nobody has found a Billie that turns money down."
   },
@@ -78,7 +78,7 @@
    "id": "oil",
    "stage": 4,
    "title": "Mt. Cinderpeak",
-   "text": "Vinyl is made from oil, and the richest well in the world is a Billie: Oilympus, under the volcano. The Variants went up Mt. Cinderpeak to tax it. They wanted enough black gold to press one very large record."
+   "text": "Vinyl is made from oil, and the richest well in the world is a Billie: Oilympus, under the volcano. The Variants went up Mt. Cinderpeak to catch it. They wanted enough black gold to press one very large record."
   },
   {
    "id": "meadowlands",
@@ -356,7 +356,7 @@
  },
  "loading": [
   "Officially the Inner Sun never sets. Its maintenance contract only covers business hours.",
-  "A Billie cannot resist a coin. That is how you tax one.",
+  "A Billie cannot resist a coin. That is how you catch one.",
   "Every win counts. Your team grows stronger with every battle.",
   "Legacy Labs: your fortune, backed up. Tails not covered by warranty.",
   "Things that fall from the surface mostly land in Copperleaf. Granny Juniper keeps a list.",

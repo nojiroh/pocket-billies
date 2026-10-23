@@ -37,6 +37,7 @@ import {
   STAT_NAMES,
   TRAINERS,
   hasPassive,
+  passiveName,
   trainerTeam,
   typeEffectiveness,
 } from '../game-data.js';
@@ -108,6 +109,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   battleStageKey: [() => battleStageKey, v => (battleStageKey = v)],
   // @ts-expect-error -- replaced on purpose
+  bedrockHolds: [() => bedrockHolds, v => (bedrockHolds = v)],
+  // @ts-expect-error -- replaced on purpose
   benchCandidates: [() => benchCandidates, v => (benchCandidates = v)],
   // @ts-expect-error -- replaced on purpose
   calcDamage: [() => calcDamage, v => (calcDamage = v)],
@@ -116,10 +119,6 @@ expose({
   catchKeep: [() => catchKeep, v => (catchKeep = v)],
   // @ts-expect-error -- replaced on purpose
   catchOdds: [() => catchOdds, v => (catchOdds = v)],
-  // @ts-expect-error -- replaced on purpose
-  catchOffer: [() => catchOffer, v => (catchOffer = v)],
-  // @ts-expect-error -- replaced on purpose
-  catchOfferAnswer: [() => catchOfferAnswer, v => (catchOfferAnswer = v)],
   // @ts-expect-error -- replaced on purpose
   catchRoll: [() => catchRoll, v => (catchRoll = v)],
   // @ts-expect-error -- replaced on purpose
@@ -265,7 +264,7 @@ export const foeSide = k => 1 - ACTOR_SIDE[k];
 export const actorTypes = k => fieldState(k).ov || speciesOf(fighter(k)).types;
 export const shockName = () => BATTLE_RULES.shockName || `${BATTLE_RULES.shockType} storm`;
 export const isMulti = () => !!battleNow() && (battleNow().sides[0].f.length > 1 || battleNow().sides[1].f.length > 1);
-/** what a stat's stages multiply it by in battle: +1 is x1.5, -1 is x2/3 (Studio plan T4.1: the Loophole preview
+/** what a stat's stages multiply it by in battle: +1 is x1.5, -1 is x2/3 (Studio plan T4.1: the Perk preview
  * reads it too) @param {number} s */
 export const stageFactor = s => (s >= 0 ? (2 + s) / 2 : 2 / (2 - s));
 export function effectiveStat(k, s2) {
@@ -368,23 +367,40 @@ export function calcDamage(k, tk, mid, src) {
           sd.team.filter(m => m !== me && m.hp > 0 && speciesOf(m).types.some(t => syn.includes(t))).length;
     }
   }
+  /* RF-3 Undertow (Water): its moves of a type with Undertow hit harder at a third of its HP or less */
+  const low = !src && fighter(k).hp <= maxHp(fighter(k)) * BATTLE_RULES.undertowHp,
+    tow = low && PASSIVE[M.t] === 'undertow' && aty.includes(M.t) ? BATTLE_RULES.undertowMult : 1;
   const wx = battleHost().weather(M.t); /* v28: the weather where you stand */
   /* phase 17: a robot's move of its gem's type hits harder */
   const me = src ? null : fighter(k),
     gem = isRobot(me) ? robotGemDef(me.gem) : null,
     gx = gem && gem.type === M.t ? robotRules().gemAffinity : 1;
-  /* RL-12: a run's Loopholes (logic/effects.js): what yours deal and take; 1 without any */
+  /* RL-12: a run's Perks (logic/effects.js): what yours deal and take; 1 without any */
   const fm = battleNow().fx
     ? fxDamage(battleNow().fx, { cat: M.c, type: M.t, deal: !src && ACTOR_SIDE[k] === 0, take: ACTOR_SIDE[tk] === 0 })
     : 1;
   return {
     dmg: Math.max(
       1,
-      Math.floor(base * stab * te * roll * (crit ? BATTLE_RULES.critMult : 1) * mk * eco * wx * gx * fm)
+      Math.floor(base * stab * te * roll * (crit ? BATTLE_RULES.critMult : 1) * mk * eco * tow * wx * gx * fm)
     ),
     te,
     crit,
   };
+}
+/** RF-3 Bedrock (Ground): once a battle, a hit that would knock a fighter out from full HP leaves it at 1 HP (the
+ * side's `held` lists the team places that have used it). Lowers r.dmg; true when it held. @param {number} tk
+ * @param {{ dmg: number }} r */
+export function bedrockHolds(tk, r) {
+  const t = fighter(tk),
+    sd = battleNow().sides[ACTOR_SIDE[tk]],
+    at = fieldSlot(tk).act,
+    mx = maxHp(t);
+  if (r.dmg < t.hp || t.hp < mx || mx < 2 || !hasPassive(actorTypes(tk), 'landlord')) return false;
+  if ((sd.held || (sd.held = [])).includes(at)) return false;
+  sd.held.push(at);
+  r.dmg = t.hp - 1;
+  return true;
 }
 export function applyStatStages(k, obj) {
   const v = fieldState(k),
@@ -545,6 +561,7 @@ export function useMove(k, mid, tk0, part) {
         r.dmg = Math.max(1, Math.floor(r.dmg * (BATTLE_RULES.alphaShieldMult ?? 0.5)));
         r.shield = 1;
       }
+      const held = bedrockHolds(tk2, r);
       t2.hp = Math.max(0, t2.hp - r.dmg);
       alphaPhase(tk2);
       /* phase 17: a hit on a robot also lands on one of its parts (an aimed move on the one picked) */
@@ -559,6 +576,11 @@ export function useMove(k, mid, tk0, part) {
       if (r.crit) battleSay('A critical hit!', { k: 'crit', si: tk2 });
       if (r.te > 1) battleSay('It’s super effective!');
       else if (r.te < 1) battleSay('It’s not very effective.');
+      if (held)
+        battleSay(`${billyName(t2)} held on with ${passiveName(actorTypes(tk2), 'landlord')}!`, {
+          k: 'block',
+          si: tk2,
+        });
       if (fx.drain && u.hp < maxHp(u)) {
         const g = Math.max(1, Math.floor(r.dmg * fx.drain));
         u.hp = Math.min(maxHp(u), u.hp + g);
@@ -664,7 +686,7 @@ export function endTurn() {
     if (m.hp > 0 && hasPassive(ty, 'subsidy') && m.hp < mx) {
       const g = Math.min(mx - m.hp, Math.max(1, Math.floor(mx / fr)));
       m.hp += g;
-      battleSay(`${billyName(m)} regrew a little HP.`, { k: 'heal', si: k, amt: g });
+      battleSay(`${billyName(m)}’s ${passiveName(ty, 'subsidy')} restored a little HP.`, { k: 'heal', si: k, amt: g });
     }
     f.v.turnsIn++;
     f.v.protect = false;
@@ -681,7 +703,8 @@ export function endTurn() {
         tk = L[0];
       const t = tk != null ? fighter(tk) : null;
       if (t && t.hp > 0) {
-        const r = calcDamage(actorIndex(1 - si, 0), tk, h.mid || 'twoday', h);
+        const r = calcDamage(actorIndex(1 - si, 0), tk, h.mid || 'twoday', h),
+          held = bedrockHolds(tk, r);
         t.hp = Math.max(0, t.hp - r.dmg);
         battleSay(`${h.from}’s ${(MOVES[h.mid] || MOVES.twoday || { n: 'attack' }).n} struck ${billyName(t)}.`, {
           k: 'hurt',
@@ -692,6 +715,8 @@ export function endTurn() {
         });
         if (r.te > 1) battleSay('It’s super effective!');
         else if (r.te < 1) battleSay('It’s not very effective.');
+        if (held)
+          battleSay(`${billyName(t)} held on with ${passiveName(actorTypes(tk), 'landlord')}!`, { k: 'block', si: tk });
       }
       return false;
     });
@@ -729,17 +754,17 @@ export function award(e) {
     battleSay(`The rest of the team gained ${formatNumber(share)} XP.`);
   }
 }
+/** RF-3 Parting Roar (Dragon, id `inherit`): when it faints, the next teammate in gets +1 Attack and +1 Sp. Atk
+ * (before RF-3 it passed on its own boosts, if it had any) */
 export function inherit(k) {
-  const sd = battleNow().sides[ACTOR_SIDE[k]];
-  if (!hasPassive(speciesOf(fighter(k)).types, 'inherit')) return;
-  const st = {};
-  let any = false;
-  for (const s2 in fieldState(k).st)
-    if (fieldState(k).st[s2] > 0) {
-      st[s2] = fieldState(k).st[s2];
-      any = true;
-    }
-  if (any) sd.inh = st;
+  const ty = speciesOf(fighter(k)).types;
+  if (!hasPassive(ty, 'inherit')) return;
+  battleNow().sides[ACTOR_SIDE[k]].inh = {
+    lev: 1,
+    lob: 1,
+    from: billyName(fighter(k)),
+    name: passiveName(ty, 'inherit'),
+  };
 }
 /* who on a side could still come in: alive, not at work, not on the field and not already called in this turn */
 export function benchCandidates(si, also = [], b) {
@@ -781,8 +806,9 @@ export function doSwitch(k, idx, b) {
       battleSay(`${billyName(m)} was hurt by the sharp stones.`, { k: 'hurt', si: k, fx: 'rent', dmg: d });
     }
     if (inh) {
-      Object.assign(f.v.st, inh);
-      battleSay(`${billyName(m)} took up its teammate’s boosts.`, { k: 'stat', si: k, up: true });
+      f.v.st.lev += inh.lev;
+      f.v.st.lob += inh.lob;
+      battleSay(`${inh.from}’s ${inh.name} fired up ${billyName(m)}!`, { k: 'stat', si: k, up: true });
     }
   });
 }
@@ -978,7 +1004,7 @@ export function makeAlpha(sp, lvl, o = {}) {
   m.hp = maxHp(m);
   return m;
 }
-/** a wild Billie's battle. Studio plan T3.2: `o.host` and `o.extra` (a run battle's seed, weather and Loopholes:
+/** a wild Billie's battle. Studio plan T3.2: `o.host` and `o.extra` (a run battle's seed, weather and Perks:
  * logic/run-loop.js runBattleExtra) as for startTrainer, so the run's simulation starts it as the page does */
 export function startWild(q, o = {}) {
   const made = { build: encounterBuild(q), coat: q.coat },
@@ -1028,7 +1054,7 @@ export function startTrainer(id, o = {}) {
       area: BATTLE_STAGES[/** @type {string} */ (T.battleStage)] ? T.battleStage : battleStageKey(),
       fmt: T.alpha ? 'alpha' : dbl ? 'double' : 'single',
       ...(o.host && { host: o.host }),
-      /* Studio plan T3.2: a run battle's seed, weather and Loopholes given with a host (the run's simulation; the
+      /* Studio plan T3.2: a run battle's seed, weather and Perks given with a host (the run's simulation; the
          page's own run battles get them from run.js runBattleStart) */
       ...o.extra,
     })
@@ -1053,7 +1079,7 @@ export function startTrainer(id, o = {}) {
   sayBattleFx();
   battleHost().open();
 }
-/** RL-12: a run's Loopholes that raised stats as the battle started (makeBattle): one line each, after the sides
+/** RL-12: a run's Perks that raised stats as the battle started (makeBattle): one line each, after the sides
  * come out */
 export function sayBattleFx() {
   const b = battleNow();
@@ -1065,7 +1091,7 @@ export function sayBattleFx() {
       `${relicNamesFor(b.fx, s)}: ${K.length > 1 ? 'your team’s' : `${billyName(fighter(K[0]))}’s`} ${STAT_NAMES[s]} ${up[s] > 0 ? 'rose' : 'fell'}${Math.abs(up[s]) > 1 ? ' sharply' : ''}.`
     );
 }
-/** the names of the Loopholes whose stat rows change stat s ("A and B") */
+/** the names of the Perks whose stat rows change stat s ("A and B") */
 export const relicNamesFor = (fx, s) =>
   [
     ...new Set(fx.filter(f => f.kind === 'stat' && f.stat === s).map(f => (RELICS[f.src] || { name: f.src }).name)),
@@ -1093,10 +1119,15 @@ export function runTurn(plan, b) {
       if (!out) continue;
       const free = hasPassive(actorTypes(p.who), 'pivot') && !battleNow().sides[0].pivot;
       if (free) battleNow().sides[0].pivot = true;
-      battleSay(free ? `${billyName(out)} darted out without losing the turn.` : `${billyName(out)}, come back.`, {
-        k: 'recall',
-        si: p.who,
-      });
+      battleSay(
+        free
+          ? `${billyName(out)} rode its ${passiveName(actorTypes(p.who), 'pivot')} back without losing the turn.`
+          : `${billyName(out)}, come back.`,
+        {
+          k: 'recall',
+          si: p.who,
+        }
+      );
       doSwitch(p.who, p.i);
       p.free = free;
     }
@@ -1181,9 +1212,8 @@ export function catchOdds(id, T, spin, b) {
         Sx *
         T *
         (spin ? CATCH_RULES.spin : 1) *
-        battleNow().integrity *
         (e.boss ? (CATCH_RULES.alpha ?? 0.4) : 1) *
-        /* RL-12: a run's Loopholes (logic/effects.js) */
+        /* RL-12: a run's Perks (logic/effects.js) */
         (battleNow().fx ? fxCatch(battleNow().fx) : 1)
     );
   });
@@ -1216,28 +1246,6 @@ export function catchKeep(e) {
   const where = addBilly(e);
   battleNow().over = 'caught';
   return { where, alpha };
-}
-/** RL-4: after a missed throw the foe may offer money to be let go, as often as rules.catching.offerChance (the
- * battle's chance, battleRoll): the offer ($, in tens; on the battle as b.offer), or 0 */
-export function catchOffer() {
-  if (battleRoll() >= CATCH_RULES.offerChance) return 0;
-  const b = battleNow();
-  b.offer = Math.round((CATCH_RULES.offerMin + battleRoll() * (CATCH_RULES.offerMax - CATCH_RULES.offerMin)) / 10) * 10;
-  return b.offer;
-}
-/** the player's answer to an offer: yes takes the money and the battle is over ('bribed'); no raises the Focus Bonus
- * (b.integrity, within integrityMax) for the next throw. Returns the money taken (0 on a no) @param {boolean} yes */
-export function catchOfferAnswer(yes) {
-  const b = battleNow(),
-    amt = b.offer || 0;
-  b.offer = null;
-  if (yes) {
-    saveData.se += amt;
-    b.over = 'bribed';
-    return amt;
-  }
-  b.integrity = Math.min(CATCH_RULES.integrityMax, b.integrity * CATCH_RULES.integrityStep);
-  return 0;
 }
 /* the items: out of battle (b not given) on the save's team and bag; with a battle, on that battle's team and bag */
 export const teamNeedsHp = b => (b ? b.sides[0].team : saveData.team).some(m => m.hp > 0 && m.hp < maxHp(m));

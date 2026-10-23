@@ -1,6 +1,6 @@
-// RL-12: logic/effects.js, what a run's Loopholes change: each effect kind at its point, rows that don't apply left
-// out, the same answer whatever order the Loopholes were picked in, every Loophole held at once staying finite, and no
-// rows changing nothing (a battle or a run without Loopholes is as before).
+// RL-12: logic/effects.js, what a run's Perks change: each effect kind at its point, rows that don't apply left
+// out, the same answer whatever order the Perks were picked in, every Perk held at once staying finite, and no
+// rows changing nothing (a battle or a run without Perks is as before).
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { GAME_DATA, modules } from './setup-real.mjs';
@@ -8,7 +8,7 @@ import { GAME_DATA, modules } from './setup-real.mjs';
 const E = modules.effects,
   RELICS = GAME_DATA.relics,
   ALL = Object.keys(RELICS);
-/** the rows of these made-up Loopholes (one row each) */
+/** the rows of these made-up Perks (one row each) */
 const rows = (...fx) =>
   E.fxRows(
     fx.map((_, i) => 'x' + i),
@@ -30,7 +30,7 @@ test('effects: no rows change nothing (exactly the number given)', () => {
   }
 });
 
-test('effects: fxRows tags each row with its Loophole, in the order held; an unknown id gives none', () => {
+test('effects: fxRows tags each row with its Perk, in the order held; an unknown id gives none', () => {
   const fx = E.fxRows(['shelter', 'nope', 'offshore'], RELICS);
   assert.deepEqual(
     fx.map(f => [f.src, f.kind]),
@@ -79,7 +79,7 @@ test('effects: damage rows count for their side, category and type', () => {
   assert.equal(E.fxDamage(fx, hit({ take: true })), 1.15 * 0.9, 'one of yours hits another of yours');
 });
 
-test('effects: stacking is the same whatever order the Loopholes were picked in', () => {
+test('effects: stacking is the same whatever order the Perks were picked in', () => {
   const ids = ALL.slice(),
     one = E.fxRows(ids, RELICS),
     two = E.fxRows(ids.slice().reverse(), RELICS),
@@ -104,7 +104,7 @@ test('effects: stacking is the same whatever order the Loopholes were picked in'
   );
 });
 
-test('effects: many rows stay within the limits (every Loophole at once, and the worst made-up stack)', () => {
+test('effects: many rows stay within the limits (every Perk at once, and the worst made-up stack)', () => {
   const fx = E.fxRows([...ALL, ...ALL, ...ALL], RELICS);
   for (const v of [E.fxMoney(fx, 1e6), E.fxPrice(fx, 'shop', 1e6), E.fxCatch(fx), E.fxHealShare(fx)])
     assert.ok(Number.isFinite(v) && v >= 0, `${v} finite`);
@@ -118,14 +118,14 @@ test('effects: many rows stay within the limits (every Loophole at once, and the
   assert.equal(E.fxPayoutRates(fx, { itemShare: 0.9 }).itemShare, 1, 'items never above their price');
 });
 
-test('effects: every Loophole in relics.json uses a known kind', () => {
+test('effects: every Perk in relics.json uses a known kind', () => {
   for (const [id, R] of Object.entries(RELICS))
     for (const f of R.fx) assert.ok(E.FX_KINDS.includes(f.kind), `${id}: ${f.kind}`);
 });
 
-test("effects: fxRunPrice is a run's price with its Loopholes' price rows (none held, or no run: the price)", () => {
+test("effects: fxRunPrice is a run's price with its Perks' price rows (none held, or no run: the price)", () => {
   const heal = ALL.find(id => (RELICS[id].fx || []).some(f => f.kind === 'price' && f.what === 'heal'));
-  assert.ok(heal, 'a Loophole with a heal price row');
+  assert.ok(heal, 'a Perk with a heal price row');
   const run = { relics: [heal] };
   assert.equal(E.fxRunPrice(run, RELICS, 'heal', 60), E.fxPrice(E.fxRows([heal], RELICS), 'heal', 60));
   assert.notEqual(E.fxRunPrice(run, RELICS, 'heal', 60), 60);

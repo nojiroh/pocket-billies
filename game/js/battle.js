@@ -30,17 +30,7 @@ import {
 import { $, $$, clamp, random } from './util.js';
 import { COINS, ITEMS, MOVES, STAT_NAMES, TYPE_COLORS, typeEffectiveness } from './game-data.js';
 import { ROBOT_LIMBS, ROBOT_SLOT_NAMES, isRobot, robotPartDef, speciesOf } from './logic/fighters.js';
-import {
-  billyName,
-  formatNumber,
-  healAll,
-  maxHp,
-  moveUsable,
-  partBroken,
-  partHpLeft,
-  partMaxHp,
-  plural,
-} from './logic/rules.js';
+import { billyName, healAll, maxHp, moveUsable, partBroken, partHpLeft, partMaxHp, plural } from './logic/rules.js';
 import {
   ACTOR_SIDE,
   BATTLE_RULES,
@@ -51,7 +41,6 @@ import {
   canUse,
   catchKeep,
   catchOdds,
-  catchOffer,
   catchRoll,
   effectiveStat,
   enemyOnly,
@@ -64,7 +53,7 @@ import {
 } from './logic/battle-engine.js';
 import { battleSettle, battleSettleWin } from './logic/battle-rewards.js';
 import { activeBattle, escapeHtml, reducedMotion, save, saveData, setActiveBattle, uiState } from './game-state.js';
-import { artURL, coinHTML, iconURL, uiIconHTML } from './art.js';
+import { artURL, coinHTML, iconURL, moneyHTML, uiIconHTML } from './art.js';
 import { portraitHTML } from './person-art.js';
 import { RIG_BACK_VIEW, bustHTML, rigPreload } from './skeleton-rig.js';
 import {
@@ -547,7 +536,7 @@ function tickerUpdate(s, mk) {
   })();
   items.push(
     `<span class="tki"><b>INNER SUN</b> ${sunTxt}</span>`,
-    `<span class="tki"><b>MONEY</b> $${formatNumber(saveData.se)}</span>`
+    `<span class="tki"><b>MONEYS</b> ${moneyHTML(saveData.se, 12)}</span>`
   );
   const h = items.join('<i>•</i>');
   el.innerHTML = h + '<i>•</i>' + h + '<i>•</i>';
@@ -580,11 +569,6 @@ function afterEvents() {
   if (msg) msg.classList.remove('ready');
   if (activeBattle.over) {
     activeBattle.phase = 'end';
-    paintActions();
-    return;
-  }
-  if (activeBattle.offer) {
-    activeBattle.phase = 'offer';
     paintActions();
     return;
   }
@@ -765,7 +749,7 @@ export function paintActions() {
       crew = saveData.team,
       alive = crew.filter(x => x.hp > 0).length;
     h = `<div class="c-choose">${moveTilesHTML(m)}
-  <div class="bt-row"><button class="bt coin" data-a="bcoins" ${wild && first ? '' : 'disabled'}>${uiIconHTML('coin', 18)}<b>Tax it</b><small>${wild ? (first ? coins + ' left' : 'First pick only') : 'Wild only'}</small><kbd>X</kbd></button>
+  <div class="bt-row"><button class="bt coin" data-a="bcoins" ${wild && first ? '' : 'disabled'}>${uiIconHTML('pyramid', 18)}<b>Catch it</b><small>${wild ? (first ? coins + ' left' : 'First pick only') : 'Wild only'}</small><kbd>X</kbd></button>
   <button class="bt items" data-a="bitems">${uiIconHTML('bag', 18)}<b>Bag</b><small>${items}</small><kbd>I</kbd></button>
   <button class="bt team" data-a="bteam">${uiIconHTML('team', 18)}<b>Team</b><small>${alive}/${crew.length}</small><kbd>T</kbd></button>
   <button class="bt run" data-a="brun" ${wild ? '' : 'disabled'}>${uiIconHTML('run', 18)}<b>Run</b><small>${wild ? 'Walk away' : 'No exit'}</small><kbd>R</kbd></button></div>${first ? '' : `<button class="bt back wide" data-a="bback">${uiIconHTML('back', 16)}<b>Back to ${escapeHtml(billyName(fighter(activeBattle.plan[activeBattle.plan.length - 1].who)))}</b><kbd>Esc</kbd></button>`}</div>`;
@@ -799,7 +783,7 @@ export function paintActions() {
         const c = COINS[k],
           have = saveData.coins[k] || 0,
           odds = Math.round(catchOdds(k, 1 + CATCH_RULES.ring * 0.5, false) * 100);
-        return `<button class="ccard" data-a="bcoin" data-c="${k}" ${have ? '' : 'disabled'}>${coinHTML(k, 34)}<span class="cc-t"><b>${escapeHtml(c.n)}</b><small class="tnum">${c.m === 0 ? 'Guaranteed' : `~${odds}% tax`} · ${have} left</small></span><span class="cc-bar"><i style="width:${c.m === 0 ? 100 : clamp(odds, 2, 100)}%"></i></span></button>`;
+        return `<button class="ccard" data-a="bcoin" data-c="${k}" ${have ? '' : 'disabled'}>${coinHTML(k, 34)}<span class="cc-t"><b>${escapeHtml(c.n)}</b><small class="tnum">${c.m === 0 ? 'Guaranteed' : `~${odds}% catch`} · ${have} left</small></span><span class="cc-bar"><i style="width:${c.m === 0 ? 100 : clamp(odds, 2, 100)}%"></i></span></button>`;
       })
       .join('')}</div>${backButtonHTML()}`;
   } else if (ph === 'items') {
@@ -821,17 +805,14 @@ export function paintActions() {
   } else if (ph === 'team') h = teamPick(true);
   else if (ph === 'switch') h = teamPick(false);
   else if (ph === 'aim') {
-    h = `<div class="aim"><div class="aimcoin" id="aimCoin" role="button" tabindex="0" aria-label="Swipe up to throw">${coinHTML(activeBattle.coin, 96, 32)}<span class="aim-hint">${uiIconHTML('back', 14)}</span></div><p class="note">Swipe the coin up when the ring is small and green. A sideways swipe adds spin.</p><div class="two"><button class="bt coin" data-a="bthrow"><b>Flick it</b><kbd>Space</kbd></button><button class="bt back" data-a="baimback"><b>Put it away</b><kbd>Esc</kbd></button></div></div>`;
-  } else if (ph === 'throwing') h = `<div class="aim"><p class="note">The coin is in the air…</p></div>`;
-  else if (ph === 'offer') {
-    h = `<div class="offer"><p>${uiIconHTML('coin', 16)} ${escapeHtml(billyName(fighter(1)))} is offering you <b class="tnum">$${formatNumber(activeBattle.offer)}</b> to let it go. Refusing gives your next throw a Focus Bonus.</p><div class="two"><button class="bt coin" data-a="boffer" data-y="1"><b>Take it</b></button><button class="bt fightish" data-a="boffer" data-y="0"><b>Refuse</b></button></div></div>`;
-  } else if (ph === 'end') {
+    h = `<div class="aim"><div class="aimcoin" id="aimCoin" role="button" tabindex="0" aria-label="Swipe up to throw">${coinHTML(activeBattle.coin, 96, 32)}<span class="aim-hint">${uiIconHTML('back', 14)}</span></div><p class="note">Swipe the pyramid up when the ring is small and green. A sideways swipe adds spin.</p><div class="two"><button class="bt coin" data-a="bthrow"><b>Throw it</b><kbd>Space</kbd></button><button class="bt back" data-a="baimback"><b>Put it away</b><kbd>Esc</kbd></button></div></div>`;
+  } else if (ph === 'throwing') h = `<div class="aim"><p class="note">The pyramid is in the air…</p></div>`;
+  else if (ph === 'end') {
     const t = {
       win: 'You won.',
       lose: 'Your team fainted.',
-      caught: 'Taxed.',
+      caught: 'Caught!',
       ran: 'You walked away.',
-      bribed: 'You took the money.',
       draw: 'A draw.',
     }[activeBattle.over];
     h = `<button class="bt end wide" data-a="bend"><b>${t} Continue</b><kbd>Enter</kbd></button>`;
@@ -887,10 +868,7 @@ export function showAim() {
   battleStage.ring = { t0: battleStage.t };
   camAt(1, 0.45, 0.16, 0.015, 320);
   battleStageFocus('foe');
-  $('#msgT').textContent =
-    activeBattle.integrity > 1
-      ? `Focus Bonus ×${+activeBattle.integrity.toFixed(2)} is active.`
-      : 'Line up your throw.';
+  $('#msgT').textContent = 'Line up your throw.';
 }
 export function doThrow(spin) {
   if (uiState.throwing || !activeBattle || activeBattle.phase !== 'aim') return;
@@ -905,7 +883,7 @@ export function doThrow(spin) {
     lab = ph >= 0.83 ? 'Excellent throw!' : ph >= 0.5 ? 'Great throw!' : ph >= 0.17 ? 'Nice throw.' : '';
   activeBattle.phase = 'throwing';
   paintActions();
-  $('#msgT').textContent = [`You flicked a ${COINS[id].n}.`, lab, spin ? 'Spin bonus!' : ''].filter(Boolean).join(' ');
+  $('#msgT').textContent = [`You threw a ${COINS[id].n}.`, lab, spin ? 'Spin bonus!' : ''].filter(Boolean).join(' ');
   battleStageCatch(id, res, spin, caught => finishThrow(res, id, lab, spin));
 }
 function finishThrow(res, id, lab, spin) {
@@ -913,9 +891,9 @@ function finishThrow(res, id, lab, spin) {
   if (!activeBattle) return;
   const e = fighter(1);
   activeBattle.events = [];
-  if (res.edge) battleSay('It landed on its edge. Critical tax!');
+  if (res.edge) battleSay('It landed on its point. Critical catch!');
   if (res.caught) {
-    battleSay(`Gotcha! ${billyName(e)} was taxed.`, { k: 'caught' });
+    battleSay(`Gotcha! ${billyName(e)} was caught.`, { k: 'caught' });
     /* logic/battle-engine.js catchKeep: an Alpha stays one, at least 1 HP, addBilly; the battle is over */
     const { where, alpha } = catchKeep(e);
     if (alpha) battleSay(`${billyName(e)} is an Alpha: a little bigger and stronger than others of its kind.`);
@@ -929,12 +907,6 @@ function finishThrow(res, id, lab, spin) {
     return playTurnEvents();
   }
   battleSay(['It broke free right away.', 'It almost stayed in.', 'So close. It wobbled twice.'][res.w]);
-  /* RL-4: the bribe is the battle's chance (logic/battle-engine.js catchOffer, on battleRoll: its own stream when it
-     has a seed) */
-  if (catchOffer()) {
-    battleSay(`${billyName(e)} is offering you money to let it go.`, { k: 'cry', si: 1 });
-    return playTurnEvents();
-  }
   enemyOnly();
   playTurnEvents();
 }
@@ -977,14 +949,14 @@ export function endBattle() {
     healAll();
     after.push({
       title: 'Your team fainted',
-      html: `<p>You hurried back to the clinic.</p><p>You paid $${formatNumber(fee)} for treatment, and the team is back at full HP.</p>${T ? `<p class="note">${escapeHtml(T.name)}: ${escapeHtml(T.lose || '')}</p>` : ''}`,
+      html: `<p>You hurried back to the clinic.</p><p>You paid ${moneyHTML(fee)} for treatment, and the team is back at full HP.</p>${T ? `<p class="note">${escapeHtml(T.name)}: ${escapeHtml(T.lose || '')}</p>` : ''}`,
       btns: [{ l: 'Back to walking', c: 'dark', f: closeModal }],
     });
   }
   /* phase 08: beating a wild Billie pays prize money (steps paid before); a trainer its reward and its flag, and RL-12:
-     a run's mini-boss a pick of Loopholes, saved on the run before it shows (logic/battle-rewards.js battleSettleWin) */
+     a run's mini-boss a pick of Perks, saved on the run before it shows (logic/battle-rewards.js battleSettleWin) */
   battleSettleWin(activeBattle, saveData, pay, run);
-  if (kind === 'wild' && o === 'win' && pay.prize > 0) toast(`You earned $${formatNumber(pay.prize)}.`);
+  if (kind === 'wild' && o === 'win' && pay.prize > 0) toast(`You earned ${plural(pay.prize, 'Money')}.`);
   if (kind === 'trainer' && o === 'win') {
     const first = pay.first;
     let extra = '';
@@ -999,18 +971,18 @@ export function endBattle() {
       after.push({
         title: nu ? escapeHtml(st.title || 'Badge') : 'Rematch won',
         top: `<div class="sheet-art">${coinHTML(st.coin || 'penny', 96, 32)}</div>`,
-        html: `<p>${escapeHtml(T.win || '')}</p><p>You earned $${formatNumber(pay.reward)}${nu && st.rewardText ? `, ${escapeHtml(st.rewardText)}` : ''}${extra}.</p>${nu && st.unlockText ? `<p class="note">${escapeHtml(st.unlockText)}</p>` : ''}`,
+        html: `<p>${escapeHtml(T.win || '')}</p><p>You earned ${moneyHTML(pay.reward)}${nu && st.rewardText ? `, ${escapeHtml(st.rewardText)}` : ''}${extra}.</p>${nu && st.unlockText ? `<p class="note">${escapeHtml(st.unlockText)}</p>` : ''}`,
         btns: [{ l: 'Back to walking', c: 'dark', f: closeModal }],
       });
     } else
       after.push({
         title: `You beat ${escapeHtml(T.name)}`,
         top: `<div class="sheet-art">${portraitHTML(T.who, 96, 'sad')}</div>`,
-        html: `<p>${escapeHtml(T.win || '')}</p><p>You earned $${formatNumber(pay.reward)}${extra}.</p>`,
+        html: `<p>${escapeHtml(T.win || '')}</p><p>You earned ${moneyHTML(pay.reward)}${extra}.</p>`,
         btns: [
           {
             c: 'dark',
-            l: run && T.runFoe === 'boss' ? 'On to the payout' : run && run.offer ? 'Pick a Loophole' : 'Keep walking',
+            l: run && T.runFoe === 'boss' ? 'On to the payout' : run && run.offer ? 'Pick a Perk' : 'Keep walking',
             f:
               /* RL-8: the run's boss beaten: the run is won */
               run && T.runFoe === 'boss'

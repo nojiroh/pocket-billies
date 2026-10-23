@@ -56,7 +56,7 @@ Clear|Wissen|Leeren|Borrar|Effacer
 Claim|Ophalen|Abholen|Reclamar|Réclamer
 Details|Details|Details|Detalles|Détails
 Fight|Vechten|Kämpfen|Luchar|Combattre
-Tax!|Belasten!|Besteuern!|¡Gravar!|Taxer !
+Catch it|Vangen|Fangen|Atrapar|Attraper
 Bag|Tas|Tasche|Bolsa|Sac
 Run|Vluchten|Fliehen|Huir|Fuir
 Heal|Genezen|Heilen|Curar|Soigner
@@ -70,7 +70,7 @@ Encounters|Ontmoetingen|Begegnungen|Encuentros|Rencontres
 Eggs|Eieren|Eier|Huevos|Œufs
 Empty incubator|Lege broedmachine|Leerer Brutkasten|Incubadora vacía|Couveuse vide
 Buddy|Maatje|Kumpel|Compañero|Compagnon
-Money|Geld|Geld|Dinero|Argent
+Moneys|Geld|Geld|Dinero|Argent
 Your team|Jouw team|Dein Team|Tu equipo|Ton équipe
 Party|Groep|Gruppe|Grupo|Groupe
 Storage|Opslag|Lager|Almacén|Stockage
@@ -85,9 +85,9 @@ No items yet.|Nog geen spullen.|Noch keine Gegenstände.|Aún no hay objetos.|Pa
 Field Guide|Veldgids|Feldführer|Guía de campo|Guide de terrain
 All types|Alle typen|Alle Typen|Todos los tipos|Tous les types
 Seen|Gezien|Gesehen|Vistos|Vus
-Taxed|Belast|Besteuert|Gravados|Taxés
+Caught|Gevangen|Gefangen|Atrapados|Capturés
 Unknown|Onbekend|Unbekannt|Desconocido|Inconnu
-Tax one to see its stats.|Belast er een om zijn statistieken te zien.|Besteuere eins, um seine Werte zu sehen.|Grava uno para ver sus estadísticas.|Taxez-en un pour voir ses stats.
+Catch one to see its stats.|Vang er een om zijn statistieken te zien.|Fange eins, um seine Werte zu sehen.|Atrapa uno para ver sus estadísticas.|Capturez-en un pour voir ses stats.
 Your profile|Jouw profiel|Dein Profil|Tu perfil|Ton profil
 Trainer card|Trainerkaart|Trainerkarte|Tarjeta de entrenador|Carte de dresseur
 Records|Records|Rekorde|Récords|Records
@@ -119,7 +119,7 @@ Game|Spel|Spiel|Juego|Jeu
 Help|Hulp|Hilfe|Ayuda|Aide
 Report a problem|Een probleem melden|Problem melden|Informar de un problema|Signaler un problème
 Start over|Opnieuw beginnen|Neu anfangen|Empezar de nuevo|Recommencer
-Erases your team, Field Guide, money and the ranch. Settings stay.|Wist je team, veldgids, geld en de ranch. Instellingen blijven.|Löscht dein Team, den Feldführer, dein Geld und die Ranch. Einstellungen bleiben.|Borra tu equipo, la guía de campo, el dinero y el rancho. Los ajustes se quedan.|Efface ton équipe, ton guide de terrain, ton argent et le ranch. Les réglages restent.
+Erases your team, Field Guide, Moneys and the ranch. Settings stay.|Wist je team, veldgids, geld en de ranch. Instellingen blijven.|Löscht dein Team, den Feldführer, dein Geld und die Ranch. Einstellungen bleiben.|Borra tu equipo, la guía de campo, el dinero y el rancho. Los ajustes se quedan.|Efface ton équipe, ton guide de terrain, ton argent et le ranch. Les réglages restent.
 Mute music|Muziek dempen|Musik stumm|Silenciar la música|Couper la musique
 Mute sound effects|Geluidseffecten dempen|Soundeffekte stumm|Silenciar los efectos de sonido|Couper les effets sonores
 Mute world sounds|Geluiden van de wereld dempen|Weltgeräusche stumm|Silenciar los sonidos del mundo|Couper les sons du monde
