@@ -643,6 +643,62 @@ SAVE_SPY = r"""(()=>{window.__st={w:[],ls:[]};account.user={uid:'check',name:'Ch
   save();__st.team=saveData.team.map(m=>m.uid)})();0"""
 
 
+@step('Actions sheet: a wheel never opens it; its button and Tab do; Esc, Tab and its buttons close it; the hub marker; a run\'s status', 150)
+def actions_sheet_step(b, base, R):
+    """the Actions sheet (walk-tab.js walkSheetSync) is a <pb-sheet> over the world: it used to be page content under the
+    scene, so a mouse wheel scrolled it into view. In the hub: wheel, button, Esc, Tab, a "show me the way" that closes
+    it and marks the ranch. The full check also opens a run's sheet for its day, type and weather"""
+    errs = []
+    ctx = b.new_context(viewport={'width': 1280, 'height': 800}, device_scale_factor=1); ctx.add_init_script(CLOCK); ctx.add_init_script(NO_ACCOUNTS); ctx.add_init_script(TEST_GLOBALS)
+    ctx.set_default_timeout(90000); pg = ctx.new_page(); CUR['pg'] = pg
+    pg.on('pageerror', lambda e: errs.append(str(e)))
+    pg.on('console', lambda m: errs.append(console_text(m)) if m.type == 'error' else None)
+    is_open = "[uiState.walkSheet,!!document.querySelector('#walkSheet[open]')]"
+    def ready(fix):
+        pg.goto(base + f'/index.html?fixture={fix}'); pg.evaluate(LOW_RENDER)
+        pg.wait_for_function("typeof walkView!=='undefined'&&walkView.ready&&!!document.querySelector('.wh-down')", timeout=90000)
+        # a waiting window or a postcard would take the clicks: none
+        pg.evaluate("uiState.modal=null;uiState.mq=[];uiState.toastQ=[];uiState.toastOn=false;renderOverlay();document.querySelectorAll('.pcard-wrap').forEach(e=>e.remove());0")
+    try:
+        ready('town')
+        pg.mouse.move(640, 400)
+        for dy in (400, 400, -400, 400): pg.mouse.wheel(0, dy); time.sleep(.15)
+        if pg.evaluate(is_open) != [False, False] or pg.evaluate('scrollY') != 0:
+            raise Exception(f'a mouse wheel opened the sheet or scrolled the page: {pg.evaluate(is_open)}, scrollY {pg.evaluate("scrollY")}')
+        pg.evaluate("document.querySelector('.wh-down').click()")
+        if not until(pg, "!!document.querySelector('#walkSheet[open]')", 5): raise Exception('the Actions button did not open the sheet')
+        acts = pg.evaluate("[...document.querySelectorAll('#walkSheet [data-a]')].map(e=>e.dataset.a)")
+        for want in ('walkrun', 'walkmark'):
+            if want not in acts: raise Exception(f'the hub sheet has no {want} button: {acts}')
+        for gone in ('stoptrip', 'rest', 'customize'):
+            if gone in acts: raise Exception(f'the sheet still has {gone}: {acts}')
+        pg.keyboard.press('Escape')
+        if not until(pg, "!uiState.walkSheet&&!document.querySelector('#walkSheet[open]')", 5): raise Exception('Esc did not close the sheet')
+        pg.evaluate("document.activeElement&&document.activeElement.blur&&document.activeElement.blur();0")
+        pg.keyboard.press('Tab')
+        if not until(pg, "!!document.querySelector('#walkSheet[open]')", 5): raise Exception('Tab did not open the sheet')
+        if not until(pg, "!!document.activeElement&&!!document.activeElement.closest('#walkSheet')", 5): raise Exception('Tab opened the sheet without its first button taking the focus')
+        pg.keyboard.press('Tab')
+        if not until(pg, "!uiState.walkSheet", 5): raise Exception('Tab did not close the sheet')
+        pg.evaluate("document.querySelector('.wh-down').click()"); until(pg, "!!document.querySelector('#walkSheet [data-a=walkmark][data-k=ranch]')", 5)
+        pg.evaluate("document.querySelector('#walkSheet [data-a=walkmark][data-k=ranch]').click()")
+        m = pg.evaluate("[uiState.walkSheet, walkView.mark&&walkView.mark.act]")
+        if m != [False, 'ranch']: raise Exception(f'"show me the way" to the ranch: sheet open, marker {m}')
+        out = ['wheel ×4: closed, no scroll', 'button, Esc, Tab, Tab', 'the ranch marked, the sheet closed']
+        if not SMOKE:
+            ready('run')
+            pg.evaluate("document.querySelector('.wh-down').click()")
+            if not until(pg, "!!document.querySelector('#walkSheet .ws-status pb-day-chip')", 5): raise Exception("a run's sheet has no day chip")
+            t = pg.evaluate("document.querySelector('#walkSheet .ws-status').innerText")
+            if 'Today' not in t or not pg.evaluate("!!document.querySelector('#walkSheet [data-a=tab][data-t=map]')"):
+                raise Exception(f"a run's sheet lacks today's weather or the way on: {t!r}")
+            out.append("a run's day, type and weather: " + ' / '.join(x for x in t.splitlines() if x.strip())[:120])
+        if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
+        return '; '.join(out)
+    finally:
+        ctx.close()
+
+
 @step('Messages: toasts merge, notices wait behind the dot, choices wait for the world (phase 06)', 120)
 def messages_step(b, base, R):
     errs = []
@@ -742,7 +798,7 @@ def safety_step(b, base, R):
         for k in ['sum', 'build', 'moves', 'evo']:
             pg.evaluate(f"uiState.modal=null;uiState.mq=[];renderOverlay();billySheet(saveData.team[0]);document.querySelector('[data-a=ms-tab][data-k={k}]')?.click();0"); time.sleep(.3); check('details ' + k)
         shown.append('details')
-        for k in ['sound', 'graphics', 'game', 'save', 'help']:
+        for k in ['sound', 'graphics', 'controls', 'access', 'game', 'save', 'help']:
             pg.evaluate(f"uiState.modal=null;uiState.mq=[];renderOverlay();openSettings();document.querySelector('[data-a=set-tab][data-k={k}]')?.click();0"); time.sleep(.3); check('settings ' + k)
         shown.append('settings')
         pg.evaluate(CHECK_SHOP + "uiState.modal=null;uiState.mq=[];renderOverlay();openShop('check_shop');0"); time.sleep(.4); check('shop'); shown.append('shop')
@@ -792,12 +848,13 @@ def targets_step(b, base, R):
         ctx.close()
 
 
-@step('Sound settings: each slider sets its bus, each Test plays on its bus, the header mute keeps the levels (SND-1)', 120)
+@step('Sound settings: each slider sets its bus and sounds on it when let go, each row mutes its bus, the header mute keeps the levels (SND-1, UI-7a)', 120)
 def sound_step(b, base, R):
-    """sound track SND-1: Settings → Sound on a 390 px phone. Each Test button must reach its own bus (a wrapper on
-    AudioNode.connect lists what each press connects to; every button's tick also reaches the effects bus); each slider,
-    dragged, must set its bus to soundLevels() at once; the mute button beside the title silences the master and keeps
-    every level. Nothing is heard: only the connections and the targets the gains are given are read. A browser that won't start audio is
+    """sound track SND-1: Settings → Sound on a 390 px phone. UI-7a: each slider, let go, must play its sound on its own
+    bus (a wrapper on AudioNode.connect lists what each release connects to; the music is stopped first, as the music
+    slider plays nothing over a song); each slider, dragged, must set its bus to soundLevels() at once; each row's mute
+    button silences its own bus and keeps its level, and dragging the muted slider unmutes it; the mute button beside
+    the title silences the master and keeps every level. Nothing is heard: only the connections and the targets the gains are given are read. A browser that won't start audio is
     reported, not failed, like the world-sounds step"""
     errs = []
     ctx = b.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=1, is_mobile=True, has_touch=True)
@@ -817,13 +874,15 @@ def sound_step(b, base, R):
           window.__snd={B,hit:new Set(),to:new Map()};const c=AudioNode.prototype.connect;window.__sndConnect=c;
           const st=AudioParam.prototype.setTargetAtTime;window.__sndTarget=st;AudioParam.prototype.setTargetAtTime=function(v,...a){__snd.to.set(this,v);return st.call(this,v,...a)};
           AudioNode.prototype.connect=function(d,...a){for(const [k,L] of Object.entries(__snd.B))if(L.includes(d))__snd.hit.add(k);return c.call(this,d,...a)}})();0""")
+        if pg.query_selector('[data-a=aud-test]'): raise Exception('a Test button is still in the Sound tab')
         missed = []
         for k in ['master', 'music', 'sfx', 'world', 'amb']:
-            pg.evaluate("__snd.hit=new Set();0")
-            pg.click(f'[data-a=aud-test][data-k={k}]'); until(pg, f"__snd.hit.has('{k}')", 4)   # the test sound starts 60 ms after the press
+            pg.evaluate("musicStop();__snd.hit=new Set();0")
+            pg.evaluate(f"document.querySelector('input[data-preference={k}]').dispatchEvent(new Event('change',{{bubbles:true}}));0")
+            until(pg, f"__snd.hit.has('{k}')", 4)   # the sound starts 60 ms after the slider is let go
             hit = pg.evaluate("[...__snd.hit]")
-            if k not in hit: missed.append(f'{k} Test reached {", ".join(sorted(hit)) or "no bus"}')
-        if missed: raise Exception('a Test button played somewhere else: ' + '; '.join(missed))
+            if k not in hit: missed.append(f'{k} slider reached {", ".join(sorted(hit)) or "no bus"}')
+        if missed: raise Exception('a slider, let go, played somewhere else: ' + '; '.join(missed))
         # what the bus must be set to is worked out from where the slider stands, not from the saved preference: without
         # the live listener neither moves while the slider is held, so the two would agree. The target each gain is
         # given is read (the setTargetAtTime wrapper), not gain.value: Chrome stops working out a gain no sound goes
@@ -838,16 +897,28 @@ def sound_step(b, base, R):
                 have, w = pg.evaluate(f"[__snd.to.has({bus}.{k}.gain)?+__snd.to.get({bus}.{k}.gain).toFixed(3):'not set',+{want}.toFixed(3)]")
                 off.append(f'{k} at {v}: bus set to {have}, wanted {w}')
         if off: raise Exception('a slider didn’t set its bus while dragged: ' + '; '.join(off))
+        # UI-7a: each row's own mute (the Volume row's is the master mute)
+        rows = []
+        for k in ['music', 'sfx', 'world', 'amb', 'master']:
+            lv = pg.evaluate(f"saveData.preferences.{k}")
+            pg.click(f'.vol-mute[data-k={k}]')
+            if not until(pg, f"__snd.to.get({bus}.{k}.gain)===0", 4): rows.append(f'{k}: its mute didn’t silence its bus'); continue
+            r = pg.evaluate(f"({{pressed:document.querySelector('.vol-mute[data-k={k}]').getAttribute('aria-pressed'),lv:saveData.preferences.{k},others:['music','sfx','world','amb'].filter(o=>o!=='{k}'&&'{k}'!=='master'&&__snd.to.get({bus}[o].gain)===0)}})")
+            if r['pressed'] != 'true' or r['lv'] != lv or r['others']: rows.append(f'{k}: {r}')
+            pg.evaluate(f"(()=>{{const e=document.querySelector('input[data-preference={k}]');e.dispatchEvent(new Event('input',{{bubbles:true}}))}})();0")
+            if not until(pg, f"__snd.to.get({bus}.{k}.gain)>0&&document.querySelector('.vol-mute[data-k={k}]').getAttribute('aria-pressed')==='false'", 4):
+                rows.append(f'{k}: dragging the muted slider didn’t unmute it')
+        if rows: raise Exception('a row’s mute went wrong: ' + '; '.join(rows))
         levels = pg.evaluate("JSON.stringify(['master','music','sfx','world','amb'].map(k=>saveData.preferences[k]))")
         pg.click('.set-mute'); until(pg, "!!saveData.preferences.mute&&__snd.to.get(soundEngine.master.gain)===0", 5)
-        m = pg.evaluate("({mute:!!saveData.preferences.mute,pressed:document.querySelector('.set-mute').getAttribute('aria-pressed'),sw:document.querySelector('[data-pref-set=mute].sw').getAttribute('aria-checked'),master:__snd.to.get(soundEngine.master.gain),levels:JSON.stringify(['master','music','sfx','world','amb'].map(k=>saveData.preferences[k]))})")
-        if not m['mute'] or m['pressed'] != 'true' or m['sw'] != 'false' or m['master'] > 0.01: raise Exception(f'the header mute didn’t mute: {m}')
+        m = pg.evaluate("({mute:!!saveData.preferences.mute,pressed:document.querySelector('.set-mute').getAttribute('aria-pressed'),row:document.querySelector('.vol-mute[data-k=master]').getAttribute('aria-pressed'),master:__snd.to.get(soundEngine.master.gain),levels:JSON.stringify(['master','music','sfx','world','amb'].map(k=>saveData.preferences[k]))})")
+        if not m['mute'] or m['pressed'] != 'true' or m['row'] != 'true' or m['master'] > 0.01: raise Exception(f'the header mute didn’t mute: {m}')
         if m['levels'] != levels: raise Exception(f'muting changed the levels: {levels} became {m["levels"]}')
         pg.click('.set-mute'); until(pg, "!saveData.preferences.mute&&Math.abs(__snd.to.get(soundEngine.master.gain)-soundLevels(saveData.preferences).master)<0.02", 5)
         back = pg.evaluate("[!!saveData.preferences.mute,+__snd.to.get(soundEngine.master.gain).toFixed(3),+soundLevels(saveData.preferences).master.toFixed(3)]")
         if back[0] or abs(back[1] - back[2]) > 0.02: raise Exception(f'the header mute didn’t unmute: mute {back[0]}, master {back[1]}, wanted {back[2]}')
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
-        return 'five Test buttons on their own buses; five sliders set their bus while dragged; the header mute silenced the master, kept the levels and came back'
+        return 'five sliders sounded on their own buses when let go and set their bus while dragged; five row mutes silenced their own bus and came back on a drag; the header mute silenced the master, kept the levels and came back'
     finally:
         try: pg.evaluate("window.__sndConnect&&(AudioNode.prototype.connect=__sndConnect);window.__sndTarget&&(AudioParam.prototype.setTargetAtTime=__sndTarget);0")
         except Exception: pass
@@ -1394,14 +1465,15 @@ def desktop_steps(b, base, R):
         # settings in tabs, every tab fits the phone width; a switch flips
         # a message waiting on screen (an egg hatching, in steps mode) would queue Settings behind it
         pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();uiState.tab='walk';render();openSettings('game');0"); time.sleep(.6); tabs = []
-        # alpha 0.5: the tabs are whatever the game lists (sound, graphics, game, save, help); contrast is under Game
+        # alpha 0.5: the tabs are whatever the game lists (UI-7b: sound, graphics, controls, access, game, save, help);
+        # contrast is under Accessibility
         names = pg.evaluate("SETTINGS_TABS.map(t=>t[0])")
         for t in names:
             pg.evaluate(f"document.querySelector('[data-a=set-tab][data-k={t}]').click();0"); time.sleep(.3)
             tabs.append(pg.evaluate("[document.querySelectorAll('.set-body .set-row,.set-body .settings-profile,.set-body details').length,(()=>{const b=document.querySelector('.sheet .body');return b.scrollWidth-b.clientWidth})()]"))
             if t == 'graphics': shot(pg, 'settings-graphics')
-        if len(names) < 5 or any(n == 0 for n, _ in tabs) or any(o > 4 for _, o in tabs): raise Exception(f'settings tabs {names}: {tabs}')
-        pg.evaluate("document.querySelector('[data-a=set-tab][data-k=game]').click();0"); time.sleep(.2)
+        if len(names) < 7 or any(n == 0 for n, _ in tabs) or any(o > 4 for _, o in tabs): raise Exception(f'settings tabs {names}: {tabs}')
+        pg.evaluate("document.querySelector('[data-a=set-tab][data-k=access]').click();0"); time.sleep(.2)
         c0 = pg.evaluate("saveData.preferences.contrast||'normal'"); pg.evaluate("document.querySelector('[data-pref-set=contrast]').click();0"); time.sleep(.2); c1 = pg.evaluate("saveData.preferences.contrast")
         pg.evaluate("document.querySelector('[data-pref-set=contrast]').click();uiState.modal=null;uiState.mq=[];renderOverlay();0")
         if c0 == c1: raise Exception('the High contrast switch did nothing')
@@ -2551,6 +2623,7 @@ def main():
         else:
             phone_flow(b, base, R)
             in_game_test_step(b, base, R)
+            actions_sheet_step(b, base, R)
             if SMOKE:
                 studio_opens(b)
             else:

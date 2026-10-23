@@ -214,7 +214,7 @@ same phase:
   block (`frameBlockCheck`, engine/webgl.js) and checks the block's size and each member's offset, as this device's
   driver lays them out, against what engine/frame-block.js packs; smoke shows "N shaders; 14 with the Frame block".
 - **(13c)** The full test and the debug menu load on demand; the recording part of the debug log stays loaded.
-- The graphics test (Settings → Help → Run the graphics test, and the debug menu; `game/js/graphics-test.js`, loaded on
+- The graphics test (the debug menu's Performance section since UI-7b; Help had it before; `game/js/graphics-test.js`, loaded on
   demand) is run only by a person, by hand, on their own device: never from Claude Code, CI, a headless browser or
   a script, and no command-line runner, CI job or hook. It tries the shaders, each engine dial on its own (ENGINE_SPEC,
   moved away from its default), Balanced, Beautiful and each engine preset, in one scene, and saves a short .json
@@ -267,7 +267,15 @@ same phase:
   paying, hatching, a clock turned back, the save's checks), check-fast's "Breeding" on `?fixture=ranch` (the safe
   egg shown is the one bred, hatched through the hatch window after `breed.hours`; a risky pair; the clock turned
   back; a reload), the in-game test's "The ranch: breeding a pair", and the breeding sim (`tools/test/sim/
-  breeding-sim.mjs`, report only; `breeding-sim.test.mjs` runs it small).
+  breeding-sim.mjs`, report only; `breeding-sim.test.mjs` runs it small). RL-10b: `tools/test/ranch-clock.test.mjs`
+  (the high-water mark, a clock turned back standing still, the cloud save's server time and the session floor, the
+  skew), `tools/test/ranch-income.test.mjs` (the rate by level, the first opening, the carried part of a Scrap, the
+  cap, an upgrade at the old rate, a clock turned back, a run), the ranch test's clock turned back and forward
+  (training's gap); check-fast's ranch step turns the clock back and forward and "Income" on `?fixture=ranch` (Collect
+  after five hours, a day back showing nothing and saying so, an hour forward paying the hour, a reload); the in-game
+  test's "The ranch: income and a clock turned back"; the Firestore rules' `saves/{uid}` whitelist and `t ==
+  request.time` in `firebase/test/rules.test.mjs` (`cd firebase && npm ci && npm test`; Java 21). The account path
+  (`t` written, the floor on reading, the skew read back) needs a signed-in phone: no Firebase project here.
 - **RL-11 Unlocks**: `tools/test/unlocks.test.mjs` (doors and currencies, buying once, refusals, milestones never on a
   run, the tidy-up on load, a run's copy making the same map and stock), the new condition kinds in
   `conditions.test.mjs`, `run.unlocks` in `run-state.test.mjs`; check-data's blocks for `currencies`, `buildings` and
@@ -326,6 +334,13 @@ same phase:
   alone with `python3 tools/check-studio-github.py --only=ui` (about a minute; `--only=` takes any names from its
   `STEPS`, plus `sections` and `art` for the two blocks before them). A new uiTheme.json group needs its schema,
   its dials in logic/ui-dials.js and its writer in logic/ui-theme.js together, or the tests fail.
+  The Actions sheet (walk-tab.js walkSheetSync, a `<pb-sheet id="walkSheet">` over the world since 2026-10-23):
+  smoke and the full check run "Actions sheet: ..." (`actions_sheet_step`, about 22 s in smoke) on the `town`
+  fixture at 1280x800: four mouse-wheel turns leave it closed and the page unscrolled; the Actions button opens it;
+  Esc closes it; Tab opens it with the focus on its first button and closes it; "show me the way" to the ranch closes
+  it and sets `walkView.mark`. The full check also opens it on the `run` fixture for the day chip, today's weather
+  and "Open the map to move on". The words (logic/run-loop.js `runSheetStatus`, `weatherEffectText`) are unit-tested
+  in run-loop.test.mjs.
 - **Roguelite track** (docs/phases/roguelite-track.md): RL-5 parked every place but Copperleaf. The fast check
   (`tools/check-fast.py`, CI) and its fixtures start there (`town`, `room` = Hazel's lab, `battle` = Leader Rocco); the
   `route` and `cave` fixtures and checks, the full check's road walks, seams, close-ups and the flight to another town
@@ -351,9 +366,11 @@ same phase:
 - **Sound track** (docs/phases/sound-track.md): the volume maths is pure (`game/js/audio/levels.js`) and tested in
   Node (`sound-levels.test.mjs`). The full check's "Sound settings" step (SND-1; alone with `--steps="sound
   settings"`, about 1 min) opens Settings → Sound on a phone page in the town, starts the audio with a touch, and
-  reads only connections and the targets the gains are given: each Test button reaches its own bus (a wrapper on
-  `AudioNode.connect`), each slider sets its bus while dragged (a wrapper on `AudioParam.setTargetAtTime`; the wanted
-  level comes from where the slider stands), the header mute silences the master and keeps the levels. Don't read
+  reads only connections and the targets the gains are given: each slider, let go, plays its sound on its own bus
+  (a wrapper on `AudioNode.connect`; the music is stopped first, as the music slider plays nothing over a song; UI-7a
+  replaced the Test buttons), each slider sets its bus while dragged (a wrapper on `AudioParam.setTargetAtTime`; the
+  wanted level comes from where the slider stands), each row's mute silences only its bus and keeps its level and a
+  drag on the muted slider unmutes it (UI-7a), the header mute silences the master and keeps the levels. Don't read
   `gain.value` for this: Chrome stops working out a gain no sound goes through, so an idle bus's value stops part
   way. A browser that won't start audio is reported, not failed.
   SND-2: **song fingerprints**. `python3 tools/check-sound.py` (about 1 min; `--only=meadow,victory` for some) renders

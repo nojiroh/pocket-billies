@@ -148,7 +148,7 @@ expose({
   stagePlatesOn: [() => stagePlatesOn],
   stageTap: [() => stageTap, v => (stageTap = v)],
   statShortName: [() => statShortName],
-  stopTimers: [() => stopTimers, v => (stopTimers = v)],
+  stopTimers: [() => stopTimers, v => ((stopTimers = v), provide({ stopTimers }))],
   tapMessage: [() => tapMessage, v => (tapMessage = v)],
   teamPick: [() => teamPick, v => (teamPick = v)],
   tickerUpdate: [() => tickerUpdate, v => (tickerUpdate = v)],
@@ -156,7 +156,7 @@ expose({
   typeText: [() => typeText, v => (typeText = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ battleFreeArea, battleLayoutChanged, hudHit, hudPop, openBattle, platesTick, playTurnEvents });
+provide({ battleFreeArea, battleLayoutChanged, hudHit, hudPop, openBattle, platesTick, playTurnEvents, stopTimers });
 export function setPaintActions(v) {
   paintActions = v; // eslint-disable-line no-func-assign
   provide({ paintActions });

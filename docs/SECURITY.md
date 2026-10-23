@@ -101,7 +101,7 @@ trusted to a client: it is checked and applied by server code.
 
 | Path | Who reads | Who writes | Holds |
 |---|---|---|---|
-| `saves/<uid>` | owner | owner | the save (unchanged) |
+| `saves/<uid>` | owner | owner | the save: `{ json, savedAt, saveVersion, name, game, t }` only, `t` the server's time of the write (RL-10b) |
 | `users/<uid>` | owner, the owner's friends | owner | what friends see (unchanged) |
 | `codes/<CODE>` | anyone signed in, by exact code | the code's owner, once | `{ uid }` (unchanged) |
 | `requests/<from>_<to>` | the two players | sender: pending/removed; receiver: accepted/declined/removed | the friendship (unchanged) |

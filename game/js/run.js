@@ -23,6 +23,7 @@ import {
 } from './hooks.js';
 import { COINS, ITEMS, RELICS, RULES, START_NODE, TRAINERS, UNLOCK_DATA } from './game-data.js';
 import { billyName, formatNumber, healAll, plural } from './logic/rules.js';
+import { ranchNow } from './logic/ranch-clock.js';
 import { ranchStop } from './logic/ranch.js';
 import { runByTier, runEnd } from './logic/run-state.js';
 import { runArrive, runBack, runMapNode, runNext } from './logic/run-map.js';
@@ -268,7 +269,7 @@ function runPackStep(kind, k, d) {
 }
 /** the sheet before a run: who comes from home, what you pack from Copperleaf's bag, what the airship adds, how it
  * ends. Opened again in place on every tap (the same sheet: no new scrim, the scroll kept) */
-function runStartSheet() {
+export function runStartSheet() {
   if (!runStartable()) return;
   const S = RULES.run.start,
     P = runPickNow(),
@@ -365,7 +366,8 @@ export function runTakeOff(seed, map, mods, pick) {
     { ...data, unlockData: UNLOCK_DATA },
     { unlocks: runUnlocks(s, UNLOCK_DATA), map, mods }
   );
-  if (RULES.ranch && s.ranch) for (const uid of P.home) ranchStop(s, uid, Date.now(), RULES.ranch, toast);
+  if (RULES.ranch && s.ranch)
+    for (const uid of P.home) ranchStop(s, uid, ranchNow(s, Date.now(), RULES.ranch).now, RULES.ranch, toast);
   healAll();
   runStartOn(s, plan, { home: P.home, pack: P.pack });
   uiState.learnQ = [];

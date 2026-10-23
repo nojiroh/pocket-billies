@@ -20,6 +20,7 @@ The game vision is in docs/VISION.md. Read it before any design or art work.
 - One phase per session. Read docs/ROADMAP.md, docs/VISION.md, docs/HANDOFF.md, then only the phase file I name (docs/phases/).
 - Run the quick check (tools/check-quick.py) after every change. Verify the exact command and requirements on first use; it drives a headless browser (Python + Playwright) and compares screenshots to validation/quick-baseline. After the scope reset (phase 03) the baseline is regenerated and tests for removed systems are replaced.
 - Test speed: after each change run lint, type-check and unit tests (seconds), then the smoke subset once it exists (phase 01); run the full quick check at the end of a phase. Tiers and budgets are in docs/phases/13.
+- Branches follow docs/BRANCHES.md. A plan that takes several sessions lives on one `track/<plan>` branch, named in its plan file's `Branch:` line; every session of it starts on that branch, checks it before any edit and pushes only there. The branch stays after its PRs merge.
 - Commit often. Tag the end of each phase (phase-NN-done). Never start a phase from an untagged, unfinished state.
 - Anything marked "Ask me before" in a phase file is a decision I want to make myself. Offer options and a recommendation, then wait.
 - End each phase by updating docs/HANDOFF.md: what changed, what is risky, what was verified, what is next.

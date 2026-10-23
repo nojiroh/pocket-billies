@@ -44,26 +44,6 @@
   font-family: var(--font-voice);
   font-size: 19px;
 }
-.route-profile {
-  position: absolute;
-  bottom: 13px;
-  right: 12px;
-  max-width: 65%;
-  border: 2px solid #fff4d4;
-  border-radius: 3px;
-  background: #223d48;
-  color: #fff7dc;
-  padding: 9px 11px;
-  font-size: 12px;
-  font-weight: 600;
-  min-height: 40px;
-}
-@media (max-width: 370px) {
-  .route-profile {
-    max-width: 60%;
-    font-size: 11px;
-  }
-}
 @keyframes sway {
   0%,
   100% {
@@ -160,23 +140,6 @@
 /* ---------- (UI-5 and earlier) ---------- */
 
 /* ---------- UI-5: from style.css, as it was ---------- */
-.today::before {
-  content: '';
-  position: absolute;
-  right: -30px;
-  top: -40px;
-  width: 140px;
-  height: 140px;
-  background: radial-gradient(circle, var(--glow), transparent 65%);
-  pointer-events: none;
-}
-.today-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  gap: 12px;
-  position: relative;
-}
 /* encounters */
 .queue {
   display: flex;
@@ -235,7 +198,7 @@
   animation: sheen 2.6s ease-in-out infinite;
   pointer-events: none;
 }
-.enc.pop {
+.enc.enc-new {
   animation: pop 0.5s cubic-bezier(0.3, 1.7, 0.5, 1) backwards;
 }
 /* seed rounds */
@@ -289,33 +252,6 @@
   border-radius: 50% 50% 46% 46%/58% 58% 42% 42%;
   margin-bottom: 6px;
 }
-.today .big {
-  font-size: 54px;
-}
-.today .lbl {
-  letter-spacing: 1px;
-}
-.walkbtns {
-  margin-top: 16px;
-}
-.here.px {
-  overflow: hidden;
-  padding-top: 0 !important;
-}
-.route-art {
-  position: relative;
-  height: 145px;
-  margin: 0 -14px 17px;
-  background: #8bbdd2 linear-gradient(180deg, #7ea4c3, #99aec6 22%, #909f9c 42%, #889a76 52%, #869b55 75%, #6f7b4a);
-  image-rendering: pixelated;
-  border-bottom: 3px solid var(--line);
-}
-.route-art > span {
-  position: absolute;
-  bottom: 2px;
-  left: 22px;
-  filter: drop-shadow(0 3px 0 rgba(27, 47, 55, 0.2));
-}
 .enc .stage-glow {
   opacity: 0.45;
 }
@@ -368,7 +304,6 @@ body.on-walk #app {
   backdrop-filter: none !important;
 }
 body.on-walk #app .topbar,
-body.on-walk .walk-sheet,
 body.on-walk .wh-card,
 body.on-walk .wh-foot > * {
   pointer-events: auto;
@@ -457,23 +392,80 @@ body.on-walk .wh-foot > * {
 .wh-down .uico {
   transform: rotate(90deg);
 }
-.walk-sheet {
-  position: relative;
-  margin: 0 -10px;
-  padding: 18px 10px 8px;
-  border-radius: 24px 24px 0 0;
-  background: var(--bg);
-  box-shadow:
-    0 -2px 0 2px var(--line),
-    0 -24px 40px -24px rgba(0, 0, 0, 0.45);
+/* the Actions sheet (walk-tab.js walkSheetSync): the kit's <pb-sheet>, about half the screen tall; the world under
+   it doesn't scroll, so a mouse wheel or a trackpad never brings it up */
+#walkSheet {
+  --sheet-max: 58vh;
 }
-.ws-grip {
-  display: block;
-  width: 44px;
-  height: 5px;
-  border-radius: 9px;
-  margin: -8px auto 10px;
-  background: var(--line);
+/* on a run: the day and deadline, the place's type, today's and tomorrow's weather (walk-tab.js runStatusHTML) */
+.ws-status {
+  display: grid;
+  gap: var(--s2);
+  margin: 0 0 var(--s3);
+  padding: var(--s3);
+}
+.ws-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s2);
+}
+.ws-type {
+  font-size: var(--fs-caption);
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+  color: var(--text2);
+}
+.ws-wx {
+  display: grid;
+  gap: var(--s1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ws-wx li {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: center;
+  column-gap: var(--s2);
+}
+.ws-wx small {
+  grid-column: 2 / -1;
+  font-size: var(--fs-caption);
+  color: var(--text2);
+}
+.ws-here .note {
+  margin: 0 0 var(--s2);
+}
+.ws-move {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin: var(--s3) 0 0;
+}
+.ws-hub .ws-move {
+  margin: 0 0 var(--s2);
+}
+.ws-gos {
+  display: grid;
+  gap: var(--s2);
+  margin: var(--s2) 0 var(--s3);
+}
+.ws-go {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  text-align: left;
+}
+.ws-go span {
+  display: grid;
+}
+.ws-go small {
+  font-size: var(--fs-caption);
+  color: var(--text2);
+}
+html:has(> body.on-walk) {
+  overflow: hidden;
 }
 .enc.hidden-enc .enc-hide {
   position: relative;
@@ -505,11 +497,6 @@ body.on-walk .wh-foot > * {
 @media (min-width: 900px) {
   .walk-hero {
     height: calc(100vh - 90px);
-  }
-  .walk-sheet {
-    margin: 0;
-    padding: 22px 22px 10px;
-    border-radius: 24px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -559,9 +546,6 @@ body:not(.on-walk):not(.on-scene) #dioui {
 /* ---------- UI-5: from polish.css, as it was ---------- */
 .egg-e {
   border-color: color-mix(in srgb, var(--line) 30%, transparent);
-}
-.today .mid {
-  text-shadow: 2px 2px 0 color-mix(in srgb, var(--gold) 35%, transparent);
 }
 /* alpha 0.4.1: the floating joystick and the d-pad (js/joystick.js) */
 body.on-walk #dio {

@@ -6,9 +6,10 @@
    ranch.bankHours between visits, never past the ranch's level cap. What it banked is collected when you open the
    ranch, stop its training or bring it onto the team. The ranch's level is saveData.meta.buildings.ranch (1 until
    RL-11's upgrades); its slots and cap come from rules.json ranch.
-   The clock is passed in (no Date here): a clock turned back further than ranch.guardMs behind a trainee's start pays
-   nothing and starts that trainee again from the clock's time, so moving the phone's clock back and forth can't bank
-   more than the real time.
+   The clock is passed in (no Date here; the page passes the ranch clock's time, logic/ranch-clock.js): a clock turned
+   back further than ranch.guardMs behind a trainee's start pays nothing, and a trainee's start never moves back
+   (RL-10b: RL-9 moved it back to the turned-back clock, so turning it forward again paid the gap), so moving the
+   phone's clock back and forth can't bank more than the real time.
    Logic only: no DOM, runs in Node (tools/test/ranch.test.mjs). */
 /** @import { Billy, SaveData } from '../../types/save-data' */
 /** @import { RanchRules } from '../../types/game-data' */
@@ -59,8 +60,7 @@ export const ranchCap = (s, R) => Math.min(maxLevel(), R.capBase + R.capStep * (
 /** a trainee's Billie, if it is still in storage */
 /** @param {SaveData} s @param {string} uid */
 export const stored = (s, uid) => s.box.find(m => m.uid === uid);
-/** the trainee's time to count: 0 after a rollback (and its start moved to now), else the time since it started, at
-    most the bank's hours */
+/** the trainee's time to count: 0 after a rollback, else the time since it started, at most the bank's hours */
 /** @param {{ uid: string, at: number }} t @param {number} now @param {RanchRules} R */
 export function ranchElapsed(t, now, R) {
   if (now < t.at - R.guardMs) return 0;
@@ -122,15 +122,15 @@ export function ranchTrainStart(s, uid, now, R) {
   s.ranch.trainees.push({ uid, at: Math.max(0, Math.floor(now)) });
   return '';
 }
-/** collect one trainee's bank into its Billie (gainXp: levels, HP and moves as in battle) and count again from now;
-    the levels it went up */
+/** collect one trainee's bank into its Billie (gainXp: levels, HP and moves as in battle) and count again from now,
+    or from its start when the clock is behind it (a start never moves back); the levels it went up */
 /** @param {SaveData} s @param {{ uid: string, at: number }} t @param {number} now @param {RanchRules} R @param {Say} say */
 export function ranchTake(s, t, now, R, say) {
   const m = stored(s, t.uid) || s.team.find(b => b.uid === t.uid),
     xp = m ? ranchXp(m, ranchElapsed(t, now, R), ranchCap(s, R), R) : 0,
     from = m ? m.lvl : 0;
   if (m && xp > 0) gainXp(m, xp, say);
-  t.at = Math.max(0, Math.floor(now));
+  t.at = Math.max(t.at, Math.floor(now));
   return { uid: t.uid, xp, up: m ? m.lvl - from : 0 };
 }
 /** collect every trainee's bank (the ranch screen opening); what each gained */

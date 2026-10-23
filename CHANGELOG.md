@@ -15,6 +15,21 @@ kept aside in the browser).
   opening, corrects him, and has her own things to say at her desk in the lab. Name tags, the lab's sign, the Field
   Guide (recorded by Hazel, signed by the Chosen) and the lore follow. His look uses today's wardrobe; his wolf shirt
   and katana come later.
+- Ranch income (RL-10b): the ranch earns Scrap by itself, 1 an hour at Lv 1 (2 at Lv 2, 3 at Lv 3), banking up to
+  24 hours; the ranch's sheet shows the pile and how long until it is full, and Collect pays it. It counts from the
+  first time you open the ranch, and works offline. Every ranch timer (training, eggs, income) now shares one clock:
+  turning the device's clock back stops them until it catches up (the sheet says so), and turning it forward again
+  no longer pays the gap to training. Signed in, the account's save carries the server's time, so a clock set ahead
+  counts at the real pace. (Firebase rules: only publish the new saves rule once this version is live.)
+- Settings in seven tabs (UI-7b): Sound, Display, Controls, Accessibility, Game, Save, Help, opening on the last one
+  you used. Start over moved from beside Done to the foot of the Save tab, and now also ends a battle in progress.
+  The Save card shows runs won and Billies taxed. Help has a Report a problem box (the full test and the debug log);
+  the other tests, and the time, weather and season overrides, moved to the debug menu. Customize trainer left
+  Settings (Edit look on the trainer card does it).
+- Settings → Sound (UI-7a): the Test buttons are gone; letting go of a slider plays its sound once at the new level
+  (the Music slider plays nothing while a song is on, as you hear it change). Each sound has its own mute button
+  where Test was, which keeps its level; moving a muted slider unmutes it. The Volume row's mute is the same as the
+  button beside the title, so the separate Sound on/off switch went.
 - Battle and run music (sound track SND-5): a battle's song starts on the encounter's flash with a short intro
   run and holds its drums until your first Billie is sent out. A run's mini-bosses have a song of their own (the
   title's theme in a minor key) and its boss another. While your lead Billie is under a quarter of its HP, the battle

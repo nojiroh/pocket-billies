@@ -4,7 +4,7 @@
    come on under the stars. Each kind of place has its own weather, which changes every few hours (everyone in the same
    kind of place on the same day sees the same sky), and the month sets the season: fresh greens in spring, gold and red
    leaves in autumn, frost in winter.
-   Settings → Time of day / Weather / Season can pin any of them. Billionaires notice too: some come out at night,
+   the debug menu's Time, weather and season can pin any of them (in Settings until UI-7b). Billionaires notice too: some come out at night,
    others in the rain (rules.env in the game data, editable in the Studio).
    The renderer reads environment through environmentFrame() once a frame; nothing here touches WebGL. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
