@@ -654,9 +654,9 @@ export interface Shop {
 
 /* ---------- people and trainers ---------- */
 
-/** people/<id>.json (person.schema.json): how a person looks: colours and a hair style, or a full look */
+/** people/<id>.json (person.schema.json): how a person looks (the old colour keys beside it are ignored) */
 export interface Person {
-  look?: PersonLook;
+  look: PersonLook;
   style?: string;
   hair?: Color;
   hat?: Color;

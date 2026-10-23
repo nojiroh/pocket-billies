@@ -51,6 +51,30 @@ kept aside in the browser).
   trail and a lookout on the summit. Gulls wheel over both beaches and crabs scuttle on the wet sand. Six patches of
   tall grass by the woods and on the heath hide wild Billies. Two corners of the mountain by the summit that you
   couldn't climb onto can be walked to now (the rounded terrace edges no longer make a gentle slope too steep to step).
+- The Studio's undo is lighter and more exact (Studio plan Phase 1). A step keeps only what the edit changed instead
+  of a copy of the whole game data, so a long editing session no longer fills the memory, and undoing an edit puts
+  back only what it changed. Opening the People section no longer changes the data by itself: it used to convert
+  nine older people to the new look and fill in clothing colours every time, which then rode along with the next
+  edit and made its undo take more back than it should (seen as an undo in Rules failing). Those nine people are now
+  stored in the new look once (they look exactly the same), and a person without a look is a data error.
+- The Studio's Check and the game data check in CI are one set of checks (Studio plan Phase 1). The Check now also
+  checks the run rules, the ranch, robots, biomes, node types, Loopholes, currencies, buildings and unlocks, in the
+  same words as CI; CI now also checks what only the Studio used to (scenes and roads, as notes). Propose changes
+  refuses while the Check lists a problem, so a proposal can no longer fail CI on something the Studio didn't show;
+  everything else is a note that never gets in the way. A typo in a Billie's name is a problem now, not a "legacy"
+  note. CI runs the Studio's own checks on pull requests that change the Studio or the game's logic. The Studio's
+  local mode (never in this repository) is gone from the docs and the tests.
+- The Studio keeps what you haven't proposed yet in the browser (Studio plan Phase 1). Closing the tab, a crash or a
+  phone dropping the page no longer loses work: the next time the Studio opens it offers the changes back (Restore,
+  Later or Discard), at the commit they were made on, so nothing merged since is put back. Only the changed files and
+  pictures are kept, never the sign-in.
+- The Studio's Propose changes no longer loses work (Studio plan Phase 0). A failed proposal used to drop the
+  pictures and rigs you had changed from the next try while showing them as saved; now nothing is marked saved until
+  the pull request is open, a retry sends everything, and a proposal that can't be packed sends nothing. The Studio
+  reads the game at the commit it opened on and proposes on that commit, so it can't quietly undo what was merged in
+  the meantime: if main changed the same files, it names them and asks first. An expired sign-in opens the sign-in
+  card over the Studio and sends the same changes afterwards. Branch names carry the second, so two proposals in a
+  minute no longer clash, and a retry reuses the branch a failed try left.
 - The Studio's Hub island section has the island generator's dials (IS-6b): size, coast, mountain, cove, beaches,
   cliffs, forest, stream, paths, the town and the hamlet, a seed and a seed for each part. A draft shows in the
   orbit view and on the map as you change them, with its size, the walk round the coast and a walking check. "Use

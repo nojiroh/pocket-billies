@@ -159,9 +159,11 @@ export default [
       // phase 06: Lit, bundled by tools/vendor-lit.mjs
       'game/vendor/',
       'firebase/',
-      // phase 13: the unit tests are linted, the other tools are not
+      // phase 13: the unit tests are linted; Studio plan T1.6: and the Node tools beside them (tools/*.mjs), with the
+      // tests' rules. The Python tools and the art sources are not
       'tools/*',
       '!tools/test/',
+      '!tools/*.mjs',
       'docs/',
       '.claude/',
     ],
@@ -227,7 +229,7 @@ export default [
     rules: js.configs.recommended.rules,
   },
   {
-    files: ['tools/test/**/*.mjs'],
+    files: ['tools/test/**/*.mjs', 'tools/*.mjs'],
     languageOptions: { ecmaVersion: 'latest', sourceType: 'module', globals: globals.node },
     rules: bugRules,
   },

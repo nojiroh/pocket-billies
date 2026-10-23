@@ -1337,16 +1337,11 @@ SECTIONS.people = () => {
   const k = studioState.sel.person,
     P = D.people[k],
     W = D.wardrobe;
-  if (!P.look) {
-    personLook(k);
-    studioState.dirty = true;
-    updateTopBar();
-  }
-  const L = P.look,
+  /* every person has a look (person.schema.json); opening the section never writes to the data (Studio plan F14) */
+  const L = P.look || cleanLook(null),
     p = `people.${k}.look`;
-  L.colors = L.colors || {};
-  for (const id of Object.values(L.wear || {}))
-    if (id && W.items[id] && !L.colors[id]) L.colors[id] = wornColors(cleanLook(L), id);
+  /* an item's colours not set yet show the ones it is drawn with, without writing them (Studio plan F14) */
+  const shown = cleanLook(L);
   afterRender(() => {
     if (typeof loadWardrobe === 'function' && !wardrobeEditor.loaded)
       loadWardrobe().then(() => {
@@ -1371,8 +1366,9 @@ SECTIONS.people = () => {
     .join('');
   const wear = W.slots
     .map(s => {
-      const id = L.wear[s.id],
-        it = id && W.items[id];
+      const id = (L.wear || {})[s.id],
+        it = id && W.items[id],
+        worn = it ? wornColors(shown, id) : [];
       return `<div class="wd-prow">${selectField(
         s.name,
         `${p}.wear.${s.id}`,
@@ -1381,7 +1377,7 @@ SECTIONS.people = () => {
           .map(([i, x]) => [i, x.name]),
         { none: s.empty ? 'None' : undefined, opt: s.empty, rr: 1 }
       )}
-  ${it ? `<div class="grid colors">${it.colors.map((c, ci) => (it.slot === 'hair' || it.slot === 'eyes' || (it.link && it.link[String(ci + 1)]) ? '' : colorField(c[0], `${p}.colors.${id}.${ci}`))).join('')}</div>` : ''}</div>`;
+  ${it ? `<div class="grid colors">${it.colors.map((c, ci) => (it.slot === 'hair' || it.slot === 'eyes' || (it.link && it.link[String(ci + 1)]) ? '' : colorField(c[0], `${p}.colors.${id}.${ci}`, { def: worn[ci] }))).join('')}</div>` : ''}</div>`;
     })
     .join('');
   return `<div class="split"><aside class="list-col"><div class="list-head"><button class="btn primary" data-act="personNew">+ New look</button></div><div class="llist">${list}</div></aside>

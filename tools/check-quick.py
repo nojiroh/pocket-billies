@@ -4,7 +4,6 @@
 
     python3 tools/check-quick.py                 # data, code, shaders, every scene once, the main flows
     python3 tools/check-quick.py --smoke         # the fast subset: data and code, Start-Game on a phone + debug log, Studio opens
-    python3 tools/check-quick.py --studio        # also the Studio round trip on a temporary copy
     python3 tools/check-quick.py --selftest      # the game's own full test and diagnostics test, whole (about 25 minutes)
     python3 tools/check-quick.py --scenes=copperleaf   # only these walk scenes (by id), for a change to one place
     python3 tools/check-quick.py --steps=v34,battle   # only the steps whose names hold these words
@@ -2473,71 +2472,6 @@ def desktop_steps(b, base, R):
     R['desktopErrors'] = errs[:10]; ctx.close()
 
 
-def studio_round_trip(pw, R):
-    """the Studio on a temporary copy: open every section, change a move, add a Billie, save, see both in the game"""
-    @step('Studio: sections, an edit and a new Billie reach the game', 360)
-    def run():
-        tmp = Path(tempfile.mkdtemp(prefix='networth-quick-'))
-        for d in ('game', 'studio'): shutil.copytree(ROOT / d, tmp / d)
-        shutil.copy2(ROOT / 'start-studio.py', tmp / 'start-studio.py'); port = free_port()
-        proc = subprocess.Popen([sys.executable, str(tmp / 'start-studio.py'), '--no-browser'], env={**os.environ, 'NETWORTH_STUDIO_PORT': str(port)}, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        b = pw.chromium.launch(args=['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist']); errs = []
-        try:
-            time.sleep(1.5); ctx = b.new_context(viewport={'width': 1280, 'height': 860}); ctx.add_init_script(CLOCK); ctx.add_init_script(NO_ACCOUNTS); ctx.add_init_script(TEST_GLOBALS); ctx.set_default_timeout(90000); pg = ctx.new_page()
-            pg.on('pageerror', lambda e: errs.append(str(e))); pg.on('console', lambda m: errs.append(m.text) if m.type == 'error' else None)
-            pg.goto(f'http://localhost:{port}/studio/index.html'); pg.wait_for_selector('.split', timeout=30000); time.sleep(1)
-            for sec in ['billionaires', 'moves', 'preview', 'types', 'items', 'shops', 'world', 'scenes', 'engine', 'wardrobe', 'trainers', 'lore', 'people', 'jobs', 'rules', 'art', 'check']:
-                pg.evaluate(f"openSection('{sec}')"); time.sleep(1.6 if sec in ('preview', 'scenes', 'engine') else .4)
-                if sec in ('scenes', 'check'): shot(pg, f'studio-{sec}')
-                if sec == 'lore':   # v47: every tab of Lore & story opens
-                    for t in ['world', 'story', 'people', 'places', 'legends', 'clues', 'books', 'loading', 'chat']:
-                        pg.evaluate(f"ACTIONS.loreTab({{k:'{t}'}});0"); time.sleep(.2)
-                    shot(pg, 'studio-lore')
-            # v29 scene tools: scatter, copy and paste, a block stamp, a curved road, a smooth path; then a test run that sees the edits live
-            extra = ''
-            if pg.evaluate("typeof scatterProps==='function'"):
-                pg.evaluate("openSection('scenes');ACTIONS.scPick({k:'copperleaf'});0"); time.sleep(2.5)   # RL-5: the hub's scene (Willowmere is parked; the copy is thrown away)
-                r = pg.evaluate("""(()=>{const sc=currentMap(),n0=sc.props.length,t0=sc.tiles.join('');mapEditor.prop=Object.keys(sceneryCatalog().props).find(k=>/bush|flower/.test(k));mapEditor.scat.dens=1.5;mapEditor.brush=3;
-                  const D={n:0};for(let i=0;i<4;i++)scatterProps(sc,{x:6+i,z:6},D);const n1=sc.props.length;mapEditor.multi=new Set([0,1]);copySelectedProps();mapEditor.mouse=[sc.w/2,sc.h/2];pasteProps();const n2=sc.props.length;
-                  stampBlockAt(sc,{name:'t',props:[{k:sc.props[0].k,x:0,z:0},{k:sc.props[1].k,x:1,z:0}]},4,4,false);const n3=sc.props.length;
-                  mapEditor.ter='p';mapEditor.road=[[2,3],[sc.w/2,sc.h/2],[sc.w-3,4]];layCurvedRoad(sc);const roadOk=sc.tiles.join('')!==t0;const p0=(sc.path||[]).length;ACTIONS.scxSmoothPath();changed();
-                  return {scattered:n1-n0,pasted:n2-n1,stamped:n3-n2,road:roadOk,path:[p0,(sc.path||[]).length],n:sc.props.length}})()""")
-                if r['scattered'] < 3 or r['pasted'] != 2 or r['stamped'] != 2 or not r['road']: raise Exception(f'scene tools: {r}')
-                pg.evaluate("openSection('rules');0")          # the Studio's scene preview would otherwise share the software renderer with the test run
-                # RL-5: the test run opens Copperleaf's scene on its own (a bench, walkView.id 'copperleaf'; was Willowmere, parked)
-                g = ctx.new_page(); g.goto(f'http://localhost:{port}/game/index.html?test=1&scene=copperleaf'); g.wait_for_selector('#walkHero', timeout=240000)
-                ok = False
-                for _ in range(120):
-                    st = g.evaluate("[typeof walkView!=='undefined'&&walkView.id,gameData.maps.copperleaf.props.length,typeof TEST_RUN!=='undefined'&&!!TEST_RUN]")
-                    if st[0] == 'copperleaf' and st[1] == r['n']: ok = True; break
-                    time.sleep(.5)
-                saved = g.evaluate("(()=>{try{return localStorage.getItem(SAVE_KEY)}catch(e){return 'x'}})()")
-                g.close()
-                if not ok: raise Exception(f'the test run didn’t open Copperleaf with the Studio’s edits ({st}, Studio has {r["n"]} props)')
-                if saved: raise Exception('the test run wrote a save')
-                extra = f"; scene tools: {r['scattered']} scattered, 2 pasted, a block stamped, a road laid, path {r['path'][0]}→{r['path'][1]} points; a test run opened Copperleaf with the unsaved edits and saved nothing"
-            pg.evaluate("openSection('rules')"); time.sleep(.5)
-            pg.evaluate("openSection('moves',{move:'lawsuit'})"); pg.fill('input[data-p="moves.lawsuit.p"]', '77'); pg.dispatch_event('input[data-p="moves.lawsuit.p"]', 'change')
-            pg.evaluate("openSection('billionaires')"); pg.click('[data-act=newLine]'); time.sleep(.5); pg.fill('#nwName', 'Checko'); pg.click('.dlg-btns .btn.primary')
-            pg.wait_for_selector('.skel', timeout=10000); time.sleep(.6); pg.click('[data-sk=close]'); time.sleep(.3)
-            pg.click('#saveBtn'); time.sleep(4); pg.evaluate("openSection('rules')")
-            g = ctx.new_page(); g.on('pageerror', lambda e: errs.append('game: ' + str(e))); g.on('console', lambda m: errs.append('game: ' + m.text) if m.type == 'error' else None)
-            g.goto(f'http://localhost:{port}/game/index.html?boot=normal')
-            try: g.wait_for_selector('.ttl,.title', timeout=60000)
-            except Exception: raise Exception('after saving, the game didn’t reach its title: ' + (' | '.join(errs[:4]) or g.evaluate("document.querySelector('.ld-phase')&&document.querySelector('.ld-phase').textContent")))
-            seen = g.evaluate("[MOVES.lawsuit.p,!!SPECIES.checko0]")
-            if seen != [77, True]: raise Exception(f'after saving, the game sees move power {seen[0]} and new Billie {seen[1]}')
-            # v37: the save put the piece-sheet rigs back in rigs-next.js and the rest in rigs.js
-            rn = (tmp / 'game' / 'art' / 'next' / 'rigs-next.js').read_text(); ro = (tmp / 'game' / 'art' / 'rigs.js').read_text()
-            if '"musk0"' not in rn or '"musk0"' in ro or '"checko0"' not in ro: raise Exception('rigs were not split between rigs-next.js and rigs.js on save')
-            if g.evaluate("!(RIGS.musk0&&RIGS.checko0)"): raise Exception('the game lost a rig after the Studio saved')
-            if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
-            return 'edit and new Billie seen in the game; rigs saved to rigs-next.js and rigs.js' + extra
-        finally:
-            R['studioErrors'] = errs[:10]; b.close(); proc.terminate(); shutil.rmtree(tmp, ignore_errors=True)
-    run()
-
-
 BASE = ROOT / 'validation' / 'quick-baseline'
 
 
@@ -2571,7 +2505,7 @@ def compare_pictures(R):
 @step('Studio: every script loads and the sign-in shows (GitHub mode)', 60)
 def studio_opens(b):
     """phase 01: the Studio as GitHub Pages serves it (no Studio server): all its scripts run and it asks for a token.
-    The full round trip (--studio) needs start-studio.py"""
+    The Studio's own checks are tools/check-studio-github.py (Studio plan T1.4; local mode was dropped)"""
     srv, base = serve(ROOT); errs = []
     ctx = b.new_context(viewport={'width': 1280, 'height': 860}); ctx.add_init_script(CLOCK); ctx.add_init_script(NO_ACCOUNTS); ctx.add_init_script(TEST_GLOBALS); pg = ctx.new_page()
     pg.on('pageerror', lambda e: errs.append(str(e))); pg.on('console', lambda m: errs.append(console_text(m)) if m.type == 'error' else None)
@@ -2611,7 +2545,7 @@ def main():
         b = pw.chromium.launch(args=['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'])
         if '--selftest' in ARGS:
             in_game_test_whole(b, base, R)
-        elif '--studio-only' not in ARGS:
+        else:
             phone_flow(b, base, R)
             in_game_test_step(b, base, R)
             if SMOKE:
@@ -2631,7 +2565,6 @@ def main():
                 except Exception as e:
                     problems.append(f'desktop: {str(e).splitlines()[0][:200]}')
         b.close()
-        if '--studio' in ARGS or '--studio-only' in ARGS: studio_round_trip(pw, R)
     srv.shutdown()
     if '--props' in ARGS:
         log('Props: every prop on contact sheets (validation/props/)')

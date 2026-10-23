@@ -431,6 +431,334 @@ Branch `ccr-3d24989e-9cyftq`. A planning session only: no code changed.
 - Verified: nothing to run (docs only).
 - Next: CAM-1 (the follow), starting in Plan Mode.
 
+### Studio plan Phase 1, session B - Undo per entry (T1.2) and the F14 hunt (T1.5) - 2026-10-22
+Branch `ccr-81011a25-lf3exv` (PR #131), on top of session A. Plan written by the previous Phase 1 session and
+reviewed by the parent session; further decisions took the recommended option and are in the plan doc's
+"Decisions" (items 9-13).
+
+**T1.2 has landed: the parent can start Phase 6.**
+
+**Changed** (one cause per commit):
+- **Self-test guard (T1.5).** After each section opens and settles, with no commit pending, the data must be the last
+  undo state; otherwise the run fails with "opening <section> changed the data outside an edit: <paths>"
+  (`studioTestChangedPaths` in studio-test-report.js, 1 unit test). The difference is then committed so each cause
+  is named once. On the old code it named `D.people.boy`. `commit()` now clears `snapT` when it runs, so "a commit is
+  pending" can be read.
+- **F14's cause, two writes on opening People:**
+  - The convert-on-open of old-style people (`personLook`, with `dirty` and no `changed()`). Data-only commit: boy,
+    broker, clerk, concierge, crude, girl, intern, markdown and miner converted once with the Studio's own
+    `personLook` in the headless Studio, written with `PB_DATA.text`, old keys dropped. Their person frames (3 views,
+    idle and walk, 4 phases, mirrored: 48 each) are the same pixels before and after. Then the convert-on-open went;
+    `personLook` stays for + New look.
+  - Found by the guard after the plan was written: People filled `look.colors` for the selected person on every
+    open (every look-style person lacked some). The colour fields now show those colours as a default
+    (`colorField` `o.def`) and write only on a change.
+  - person.schema.json: `look` is required (types too). The old colour keys beside a look stay allowed: 25 people
+    still carry them and the game ignores them (decision 10).
+- **Undo per entry (T1.2).** `game/js/logic/history.js` holds the data as parts: one text per second-level entry
+  (`D/maps/<id>`, `D/lines/<i>`, `D/meta/<key>`, `D/<key>` for a value), one per rig (`R/<species>`) and `@order`.
+  `last` is the parts, held once; a data step is `{ parts: { name: [before, after] } }`, null for an added or removed
+  part. Bytes count 2 a character; data steps have their own 64 MB cap (`HISTORY_DATA_BYTES`). API names unchanged;
+  art steps unchanged; a group's `snapshot` is the same diff. 11 unit tests (diffs, round trip, bytes, trim by
+  bytes, mixed order, a group with a data diff, the counter).
+  - studio-app.js: `snapshotParts`, `restoreParts` (only those parts, then `render()`; an `@order` change rebuilds
+    the whole data from `last`). The undo button reads "a commit is pending" instead of stringifying the data on
+    every top-bar update.
+  - pixel-canvas `artSteps` and the workbench's Apply hand parts; drafts.js and boot keep `last` as parts; Find's
+    index key is `last` plus the history's counter (`ver`). billie-library.test.mjs's stub follows.
+  - The self-test keeps `snapshot()` / `restore(text)` for its own checks and copies `last` (undo changes it in
+    place).
+- **`fullMB` is a measurement**: the data held once plus each self-test edit's step, as if all were kept, texts
+  counted as the browser stores them (1 byte a character unless one is past U+00FF). Report format 2.
+- check-studio-github.py: the guard's problems; a map edit's step holds only that map and its undo leaves the other
+  51 maps the same objects (`===`); the undo's size with the three biggest edits.
+- Docs: STUDIO.md "Undo", studio-self-test.md, CHANGELOG, TESTING.md (635 tests, about 47 s), the plan's decisions.
+
+**Where the plan was wrong or short**
+- The People section had a second write on opening (the colours), not only the convert.
+- "Make `look` required, so old-style people can't come back": done, but old keys beside a look are still legal.
+- Per entry, one entry still dominates: the **Copperleaf map is one part of
+  about 1.25 M characters**, so a Scenes edit there costs about 5 MB per step (both sides, two-byte text). Every other
+  self-test edit is 13 kB or less. With the 64 MB data cap that is about 12 Copperleaf steps (before: 80 whole copies
+  of 5.4 MB, uncapped).
+
+**Verified**
+- Unit tests 635 pass; lint, typecheck, `check:modules`, `format:check`, `check:data` after each commit.
+- The guard fails before the People fix ("opening people changed the data outside an edit: D.people.boy") and passes
+  after; with it gone, the Rules edit comes back with undo (F14 closed).
+- Three self-test runs in a row pass (`--only=studio_test`), and so did two more later.
+- `check-studio-github.py --only=sections,studio_test,publish,drafts`: 27 sections open, every edit comes back,
+  publish 0 problems, drafts 0 problems, ok.
+- The undo measures 9.3 MB after the self-test's 14 edits (under 10 MB): the data once 4.2 MB, the steps 5.0 MB.
+- An undo of a Copperleaf map edit puts back only `D/maps/copperleaf`; the other 51 maps stay the same objects.
+- A planted old-style `boy.json`: check-data fails it ("must have required property 'look'").
+- `check:fast`: all pass.
+- **Not run:** the full quick check (planned at the end of Phase 1) and the full chain of `check-studio-github.py`.
+
+**Risky**
+- **Undo replaces entries in place.** Code that holds a reference to a part of the data across an undo (a map, a
+  move) now keeps a live object for every entry the undo didn't touch, and a stale one for the entry it did. Before,
+  every undo replaced everything, so all references went stale together. The 27-section self-test and its 14 edits
+  pass; watch the map editor and the workbench on undo.
+- **An `@order` change rebuilds all**, as before (adding or deleting an entry). Its cost is the old restore's.
+- **Copperleaf edits are 5 MB a step** (above). Follow-up if it matters: split `maps` one level deeper.
+- `game/data/gamedata.js` is built, not in git: in a fresh clone the Roster section asks for it and
+  check-studio-github.py reports a 404 until `npm run data` has run.
+- **Not tested on a real phone or a real GitHub** (stand-in only). Manual: a long editing session on the iPad, watch
+  memory (Safari Web Inspector); undo and redo across Scenes, Rules and the workbench.
+
+**Next**
+- Phase 1 is complete: T1.3 (the shared validator; it unblocks Phase 4) and T1.4 (CI) landed in parallel on this
+  branch (sessions C+D, entry below) and were merged here. Their CI job runs `check-studio-github.py` with
+  `studio_test`, which now also fails on a section that writes outside an edit. Tag `sr-1-done` is the owner's.
+- Optional follow-ups: drop the old colour keys of the 25 people and make the schema strict; split big maps deeper.
+### Studio plan Phase 1, sessions C+D - One validator for CI and the Studio (T1.3) and Studio checks in CI (T1.4) - 2026-10-22
+Branch `ccr-81011a25-lf3exv` (PR #131). Plan pre-approved by the owner's standing instruction (recommended options
+taken; recorded under the plan doc's "Decisions"). Phase 1b (T1.2 undo, T1.5, People) works on the same branch at the
+same time: this session stays out of history.js, studio-app.js's undo, studio-test.js, studio-test-report.js,
+data-editors.js and the person schema, and merges (never rebases) before every push.
+
+**Plan** (one cause per commit, checks after each):
+1. `tools/data-files.mjs` reads `PB_DATA_DIR` when set (so a test can run check-data on a planted copy).
+2. Snapshot test first: `tools/test/check-data-snapshot.test.mjs` plants bad data in every family T1.3 moves (in a
+   temp copy of game/data) and compares check-data's whole output with a committed snapshot, made on the old code.
+3. The move: check-data's battle.turnCap, run (payout, map, clock, reveal, scene, wild, seamIn, start, home, pack,
+   healCost, shop, foes, relics), ranch, robots, biomes, nodeTypes, relics, currencies, buildings and unlocks checks go
+   to `game/js/logic/data-checks.js` as pure functions of the data that return `[file, message]` pairs; schema checks
+   stay in check-data (passed in as a callback, so the order of lines is kept). Snapshot identical; unit tests per
+   family with planted bad data.
+4. The Studio's Check runs the same functions (a family that throws on malformed data reports that it stopped).
+5. One legacy-species rule (check-data's: a species is known when its line is loaded or is a line in
+   game/data/legacy), in the module; the Studio passes the legacy line ids its Legacy section reads.
+6. Enums to data: relic `fx.stat` against stats.json (schema enum removed); currency ids from currencies.json
+   (buildings' and unlock costs' enums removed); one exported `RUN_RULE_KEYS`.
+7. The Studio-only scene and road checks move into the module (same words); check-data runs them, so CI gains them.
+8. Severity: `error` = check:data fails = Propose is blocked; the Studio's other "errors" become warnings. check-data
+   prints the warnings and never fails on them.
+9. Propose refuses while the Check has an error ("Show me" opens the Check); a stand-in step `checks` in
+   check-studio-github.py (planted pool typo blocks, a warning does not).
+10. CI: the smoke job runs `check-studio-github.py --only=sections,publish,drafts,studio_test,checks` on pull requests
+    that touch `studio/` or `game/js/logic/`.
+11. Local mode dropped: `check-quick.py --studio` and the remaining start-studio.py text go.
+12. Docs: STUDIO.md, TESTING.md, CHANGELOG, the plan's Decisions, this entry.
+
+**Status for the parent session: `game/js/logic/data-checks.js` has the moved checks and is pushed** (step 3 above,
+commit "Move: check-data's run, ranch, ..."). Phase 4 (content editors) can start on it: each family is
+`dataX(D, valid?)` returning `[file, message]` pairs (dataRunPayout, dataRanchRules, dataRunMapRules, dataRunClock,
+dataRunScene, dataRunLoop, dataRobots, dataUiTheme, dataBiomes, dataNodeTypes, dataRelics, dataCurrencies,
+dataBuildings, dataUnlocks, dataBattleRules; dataRobotProblems for a trainer's robot). The later steps here add
+families (scenes, roads) and change some words (fx.stat, currencies), not the shape.
+
+**Changed** (one cause per commit; all 12 steps done):
+- **Shared checks (T1.3).** `game/js/logic/data-checks.js` holds check-data's battle, run, ranch, robot, UI look,
+  biome, node type, relic, currency, building and unlock families (moved verbatim; the snapshot test, made first on the
+  old code, stayed byte-identical), `dataRobotProblems`, `dataSpeciesKind`, `RUN_RULE_KEYS`, and the Studio's scene and
+  road checks (`dataSceneFindings`, `dataRoadFindings`, which return `{lvl, where, msg, go, sel}`).
+  - check-data calls them in its old order and hands in its schema check; it now also runs the scene and road
+    checks: errors fail, warnings are printed (`  warning: maps/…: …`; two today, bridges ending in water).
+  - The Studio's Check runs the same families (in check-data's words, file first; Show me via `CHECK_FILE_SECTIONS`,
+    which Phase 4 extends for its new sections) and a trainer's robot.
+  - The Studio page now loads run-marks, meta-state, run-state and run-map (data-checks.js needs run-map's
+    `runMapRowsFit` and run-marks' list); data-checks.js moved after mapgen.js.
+- **One legacy-species rule**: check-data's. The Studio passes the legacy line ids from `legacy-view.js`
+  (`legacyLineIds`, `legacyLineIdsRead`); any stage of a parked line counts there (it reads only legacy/index.json),
+  while check-data counts the exact stages. Until the ids are read, the old pattern rule holds and a note says so;
+  Propose waits for the read.
+- **Enums to data**: relic `fx.stat` against stats.json (not hp; the schema enum went), a building's and an unlock
+  grant's currency against currencies.json (kept between runs), `RUN_RULE_KEYS`; a scene's life against
+  scenery.json's `life` (the old list of five called Copperleaf's rabbit, squirrel and cat unknown).
+- **Severity** (owner's decision): an error is only what check-data already refused. Stay errors: a line's stages and
+  names, a move a line learns, wild pool and trainer species, a stop's map and named pool, a trainer's stop and team,
+  the world map look's ground, a scene's kind, ground, props and islands, the roads (seam-rules), the UI look's
+  contrast, the story, every data-checks.js family. Became warnings: types, moves, line ids, skeletons and art,
+  rarity, evolution items, fishing and egg species, backdrops, shops, gates, badges, jobs, starters, part sizes, the
+  weather types, a scene's kind against its stop's, a stop's kind, a room's keeper, the UI rules over their ceiling.
+- **Propose refuses on an error** (`checkBeforeSave` in studio-app.js; github.js asks it before the summary box):
+  a dialog names the first five, Show me opens the Check. "Save anyway" is gone. Also fixed: the Check called a
+  trainer's robot "a species that doesn't exist" (it blocked Propose on the real data once errors blocked).
+- **Tests**: `check-data-snapshot.test.mjs` (+ `PB_DATA_DIR` in tools/data-files.mjs), 9 new unit tests in
+  `data-checks.test.mjs`, `check-studio-github.py --only=checks` (6 problems on the old code, 0 now). The publish
+  checks' "cannot be built" case steps past the Check, which now refuses its planted map first.
+- **CI (T1.4)**: the smoke job compares a pull request's files with its base commit and, when `studio/` or
+  `game/js/logic/` changed, runs `npm run data` and `check-studio-github.py --only=sections,publish,drafts,
+  studio_test,checks`. The smoke job's limit is 30 minutes (was 20).
+- **Local mode dropped**: `check-quick.py --studio` (`studio_round_trip`) and the start-studio.py text in STUDIO.md,
+  github.js and the Studio's load error.
+- Docs: STUDIO.md "The Check", TESTING.md (Studio tier, data checks), CHANGELOG, the plan's Decisions 9-11.
+
+**Where the plan doc was wrong or short**
+- The Studio has no sections yet for relics, unlocks, buildings, currencies, node types or biomes: their problems show
+  in the Check without Show me until Phase 4 adds editors.
+- "Currency ids in three places": the third was an unlock's grant (not a cost); currencies.schema.json stays the list.
+- Every Studio-only scene and road check that became shared is a warning, so CI gained notes, not new failures; the
+  scene and road errors duplicate check-data rules, so a fault there prints two lines in CI.
+- The Check's Backups card is local mode's: on GitHub it is always empty. Left for the owner (drop it, or show the
+  repository's history).
+
+**Verified**
+- Unit tests 645 pass (about 42 s); lint, typecheck, `check:modules`, `format:check`, `check:data`, `build`.
+- `check-studio-github.py --only=sections,publish,drafts,studio_test,checks` (CI's command): 0 problems, 5 min 42 s.
+  `--only=publish,drafts`: 0 problems.
+- `check:fast`: 25 of 25 pass.
+- Not run: the full quick check, and CI itself (the new step runs on the PR's next push).
+
+**Risky**
+- **Propose can now be refused.** Any error the Check finds blocks it, including a family that stops on data in a
+  shape it doesn't expect. If a real proposal is refused for something that looks wrong, the message names it; the
+  rule to relax is in data-checks.js or check.js.
+- **Phase 1b and this session both touched studio-app.js** (undo there, `checkBeforeSave` here): merged without
+  conflict so far.
+- **The parallel Run Lab session** may add run-map.js to the Studio page too: its merge must keep one tag, before
+  data-checks.js.
+- **CI time**: Studio and logic pull requests take about 6 minutes more.
+
+**Next**
+- Phase 4 (content editors) on data-checks.js: add each new section to `CHECK_FILE_SECTIONS`.
+- Tag `sr-1-done` once Phase 1b's entry is in (the owner's).
+
+### Studio plan Phase 1, session A - Local drafts (T1.1) and hygiene (T1.6) - 2026-10-22
+Branch `ccr-81011a25-lf3exv`, on top of Phase 0 (PR #131, not merged yet). Approved in Plan Mode with Phase 1 split
+over four sessions: **A** T1.1 + T1.6 (this one); **B** T1.2 undo per file + T1.5 the F14 hunt; **C** T1.3 part 1 (move
+check-data's checks into `game/js/logic/data-checks.js`, output byte-identical); **D** T1.3 part 2 (the Studio's Check
+uses them, the severity review) + T1.4 CI, then tag `sr-1-done`. Owner's decision: a draft made on an older commit is
+restored **at that commit** (not laid over today's main).
+
+**Changed** (one cause per commit):
+- **Drafts (T1.1).** `studio/js/drafts.js` (new) and `game/js/logic/draft-record.js` (new, 4 unit tests).
+  - Written to IndexedDB (`pb-studio-drafts`, one record per `owner/repo@branch`) 2 s after the last change
+    (`updateTopBar` calls `draftSoon`) and when the tab is hidden. Holds only what is pending: the data files whose
+    text differs from the loaded commit (`changedDataFiles`, index.json included, so deletions come back), the rigs
+    when they differ from what loaded, each unsaved picture as a Blob (re-encoded only when its `_ver` changes), the
+    base commit, the login, the time. No token.
+  - `confirmStaged` writes at once: the draft goes when a proposal took everything, or keeps what changed meanwhile.
+    A failed proposal leaves it.
+  - Boot (github.js): sign-in → `draftOffer` (Restore / Later / Discard, before any data is read) → boot → `draftStart`.
+    Restore sets `githubMode.baseP` to the draft's commit, so every read and the proposal use it and T0.2's question
+    names files main changed since. The draft is applied all or nothing; undo starts empty. Later keeps the draft and
+    writes nothing over it this session; Discard asks again, then deletes.
+  - No IndexedDB (private window, blocked storage): the Studio works and the top bar shows "⚠ Not kept if the tab
+    closes".
+- **check-studio-github.py `drafts_checks`** (`--only=drafts`): restore of a data, a rig and a picture edit after
+  `page.close()`; the restored draft proposes all four files and the draft goes; a failed proposal keeps it; main
+  moved (the question says so, every read at the draft's commit, Propose names meta.json); Later; Discard; a browser
+  without IndexedDB. With the restore turned off it reports 6 problems; as committed, 0.
+- **T1.6.**
+  - check-data: a `_` key in a data file listed by index.json is an error (F7). The rule is the first function of
+    `game/js/logic/data-checks.js`, T1.3's module (2 unit tests; it is on the Studio page so the page lint test is
+    happy).
+  - TESTING.md: the unit tier is 628 tests in about 42 s here, over its 30 s budget.
+  - ESLint now lints `tools/*.mjs` with the unit tests' rules: 0 findings, so no code changed.
+- Docs: STUDIO.md "Unsent changes are kept in this browser", CHANGELOG.
+
+**Where the plan doc was wrong or short**
+- "Mirrors the ledger": there is no ledger since Phase 0; the draft is built from the same per-file diff Propose uses.
+- "Different base: restore with the overlap warning" would put back main's older text in the shared files; restoring at
+  the draft's commit avoids that (owner approved).
+- T1.2's acceptance uses `fullMB`, which studio-test.js computes as `snapMB x 80` (an estimate). Session B must make
+  it a measurement first. `updateTopBar` also stringifies the whole model on every call (`last === snapshot()`).
+- T1.4: `check-quick.py --studio` needs `start-studio.py`, which is not in the repository.
+- T1.6 `_` keys: only schema/ (`_help`) and legacy/README.json (`_world`) have them, neither listed in index.json.
+
+**Verified**
+- Unit tests 628 pass; lint, typecheck, `check:modules`, `format:check`, `check:data`.
+- `check-studio-github.py --only=publish`: 0 problems (Phase 0's regression check). `--only=drafts`: 0 problems.
+- A planted `_planted` key in meta.json: check-data names it.
+- `check:fast`: 25 of 25 pass.
+- `check-studio-github.py --only=sections,studio_test,publish,drafts`: 27 sections open, publish 0, drafts 0 (a write
+  took 63 ms in that run). One problem: "the edit in rules did not come back with undo", the plan's F14, which Phase 0
+  also saw on unchanged main; session B (T1.5) hunts it.
+- **Not run:** the full quick check (planned at the end of Phase 1, session D) and the full chain of
+  `check-studio-github.py` (it stalls at the story preview in this container, as noted in Phase 0).
+
+**Risky**
+- **Cost of a write.** A draft write takes 84-208 ms in headless Chromium here (stringify, split and format of the
+  data, then IndexedDB), once per pause in editing. On a phone it may be a visible hitch. Measure on the iPad.
+- **Two Studio tabs** on the same browser share one draft: the last to write wins. Each tab's own memory is unaffected.
+- **Proposals add up.** After a proposal the data still differs from the loaded commit; an undo marks it unsaved and
+  the draft then keeps those files too (as the next proposal would send them).
+- **Not tested on a real phone or a real GitHub** (stand-in only). Manual check: edit, close the tab, reopen.
+
+**Next**
+- Session B: T1.2 (undo per file; first make `fullMB` a measurement) and T1.5 (F14).
+- Owner decisions still open for C/D: T1.3 which Studio errors may block Propose (recommended: only what CI fails on);
+  T1.4 CI time (recommended: yes); local mode and `--studio` (recommended: drop).
+
+### Studio plan Phase 0 - Reliability and data safety on publish - 2026-10-22
+Branch `ccr-81011a25-lf3exv`, PR #131. The PR also carries the plan itself,
+`docs/plans/studio-roguelite-improvement-plan.md`: a review of the Studio at 5a30303d with Phases 0-6 and tickets.
+The plan was approved in Plan Mode as written: tickets T0.1-T0.4 with a smaller design than the plan doc's "ledger".
+
+**Changed** (one cause per commit; the test came first and failed on the old code):
+- **check-studio-github.py `publish_checks`.** It runs on its own page with an injectable stand-in, after the main
+  flow, or alone with `--only=publish`. The cases:
+  - a 502 at blobs, trees, commits, refs and pulls (retry);
+  - a proposal that can't be built;
+  - a held send (a second Ctrl+S, and an edit made meanwhile);
+  - every read at the loaded commit;
+  - main moved on, sharing a file or not;
+  - branch reuse and branch names;
+  - a 401, with cancel or with a new token.
+
+  On the old code it reported **14 problems**: art and rigs dropped after every failure, and a partial proposal sent.
+  Now it reports 0.
+- **`game/js/logic/publish-plan.js`** (4 unit tests): `publishConfirm`, `publishEmpty`, `publishOverlap`,
+  `publishBranchName`.
+- **`studio/js/studio-app.js`.** `saveAll` is now `checkBeforeSave` → `stageChanges` → `writeStaged` → `confirmStaged`:
+  - Nothing is marked saved before the server answers.
+  - Then only what is unchanged is marked saved: pictures are matched by `c._ver`, which `markArt` already bumps;
+    data and rigs by their text.
+  - `meta.artVersion` goes up in the sent text and is set in `D` on confirm.
+- **`studio/js/github.js`.**
+  - **One proposal at a time.** The batch is built whole before anything is sent; an error sends nothing.
+  - **Pinned reads.** Everything is read at the commit main was on when the Studio loaded (`githubBase`), including
+    rigs-next.js, which used to come from the deployed page and was then written back whole.
+  - **Pinned proposal.** The proposal's parent is that commit. If main changed files the proposal also writes, a
+    question names them (Propose anyway / Cancel).
+  - **Branches.** Names are `studio/<login>-<date>-<time>-<4 letters>`. A branch left by a failed pull request is
+    reused (PATCH), and a 422 on pulls finds the PR that is already open.
+  - **Expired sign-in.** A 401 opens the sign-in card (now with Cancel) over the Studio, then resends the same
+    changes. A new token replaces an expired one kept in the other browser store.
+- **Docs.**
+  - STUDIO.md: "Propose changes: what it does, and what happens when it fails".
+  - Local mode is marked "not in this repository", in STUDIO.md and in the Studio's load-error text.
+  - CHANGELOG.
+
+**Where the plan doc was wrong or short**
+- `artDirty` is read in about 12 places as "the unsaved picture", so it stays. The ledger became a stage plus a
+  confirm-by-version-or-text.
+- The local-mode path could not be tested: there is no server in the repository.
+
+**Verified**
+- Unit tests: 622 pass.
+- lint, typecheck, `check:modules`, `format:check`.
+- `check-studio-github.py --only=publish`: 0 problems.
+- `check:fast`: 25 of 25 pass.
+- The full `check-studio-github.py` stopped in `story_steps`:
+  - First at `#scStoryOn`, then at the "Play from here" click.
+  - The same step fails on unchanged origin/main in this container, at the wait for the game's tab. This is the known
+    stall noted beside `--only`, not this phase.
+  - Every other step was run with `--only`:
+    - The publish checks, the UI steps, the uiTheme proposal and the self-test's restore all pass.
+    - Two problems, both also on origin/main:
+      - free camera "the ground under the pointer moved"; origin/main fails the same step alone in this container;
+      - the self-test's Rules edit not coming back with undo. That is the plan's F14, seen on main during the review;
+        the plan's T1.5 tracks it.
+- **Not run:** the full quick check. It was stopped at the owner's word, so the next session starts without waiting
+  for it.
+
+**Risky**
+- **Undo and confirm.** Undoing a change after it was proposed marks it unsaved again, as before; that is fine. A
+  restore (undo) during a send can make data differ from the sent text, so it stays unsaved: the safe direction.
+- **New requests.** GitHub mode now makes one extra request at load (the ref) and one or two at proposal time (the
+  ref, and compare when main moved).
+- **Tested only against the stand-in.** The API paths used are GitHub's documented ones: `git/ref/heads`,
+  `compare/a...b`, `PATCH git/refs/heads/<branch>`, `pulls?head=owner:branch`. One real proposal from the Pages Studio
+  is the owner's check.
+
+**Next**
+- Phase 1 (T1.1 drafts in IndexedDB first; then T1.2 undo per file, T1.3 shared checks, T1.4 Studio checks in CI).
+- Tag `sr-0-done` is the owner's.
+
 ### Island track IS-6b - Hub editor dials - 2026-10-22
 Branch `claude/is-6b-hub-dials`, from the wave-2 base `claude/new-session-3qlesh` (main plus IS-2, IS-3, IS-4 and IS-6a,
 PRs #122, #124, #123, #126, not merged yet); the PR goes against main, so its diff shrinks as those merge (then merge

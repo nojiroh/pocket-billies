@@ -12,7 +12,8 @@ faster. About 90 seconds. Runs on a desktop browser (and maybe an iPad); phone w
 ## What was found by reading, before the test existed (the test measures each)
 - Every edit turns all the game data (about 8.5 MB on disk) into one JSON string for the undo
   (`studio/js/studio-app.js`, `snapshot`). The undo's 64 MB cap counts pictures only (`historyBytes` is 0 for a data
-  step), so 80 steps can hold 80 copies of the data.
+  step), so 80 steps can hold 80 copies of the data. (Fixed by Studio plan T1.2: a step holds only the entries an
+  edit changed, and data steps have their own cap.)
 - Every edit also posts the maps, scenery, engine, story, trainers and world map to an open game tab
   (`studioBroadcast`, BroadcastChannel) and runs the whole Check half a second later (`scheduleCheck`).
 - A redraw rebuilds the whole section's HTML (`renderPane`).
@@ -26,10 +27,14 @@ faster. About 90 seconds. Runs on a desktop browser (and maybe an iPad); phone w
 2. Every section, in the first pane: the time to open it, split into building the HTML, putting it on the page,
    the after-draw steps and the previews; elements on the page; then about a second of frames (p50, p95, worst,
    which animation loops and frame tasks ran, draw calls when a 3D view is up) and the time of the Connections
-   drawer's work for it. In the second pane too, for the sections that open there.
+   drawer's work for it. In the second pane too, for the sections that open there. Then, with no commit pending,
+   the data must be the last undo state (Studio plan T1.5): a section that changed it outside an edit fails the run
+   ("opening <section> changed the data outside an edit: <paths>"); the difference is then committed so each cause
+   is named once.
 3. An edit in each section that has a field: one number or text field changed through the Studio's own field code
    (the same path a person's edit takes), then the snapshot (time, size), Check, live update, redraw, undo, redo
-   and undo again. The data must come back exactly.
+   and undo again. The data must come back exactly. The undo's size is measured (Studio plan T1.2, report format
+   2): the data it holds once plus the step each edit added, as if all were kept (`fullMB`).
 4. Tools: Find's index and a search, the pixel editor and skeleton builder opening, a map generated from fixed dials,
    a sheet sliced, the Check, and Save and Propose built as a dry run (nothing is sent or written).
 5. Leaks: every section opened a second time; memory, elements, animation loops and timers compared.
