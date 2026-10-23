@@ -74,7 +74,7 @@ const RELIC_KINDS = {
   stat: 'Stat stages as a battle starts',
   damage: 'Damage your Billies deal or take',
   heal: 'Heal a share of HP on walking into a place',
-  payout: 'The payout’s Capital, or the share items count at',
+  payout: 'The payout’s Research, or the share items count at',
 };
 /** a new row of a kind: its fields with values that change little */
 const RELIC_ROW_NEW = {
@@ -176,7 +176,7 @@ function relicRowHTML(/** @type {string} */ k, /** @type {any} */ f, /** @type {
       ],
       payout: () => [
         selectField('Which', `${p}.what`, [
-          ['capital', 'The payout’s Capital'],
+          ['capital', 'The payout’s Research'],
           ['itemShare', 'The share of their price items count at (never above 1)'],
         ]),
         mult('×'),
@@ -381,7 +381,7 @@ function relicPreviewHTML(/** @type {any} */ v) {
       'Healed walking into a place',
       v.heal.share ? `${relicPct(v.heal.share)} (${v.heal.hp} of ${v.sample.hp} HP)` : 'nothing'
     ),
-    one('Payout: Capital', relicX(v.payout.capital)),
+    one('Payout: Research', relicX(v.payout.capital)),
     one(
       'Payout: items count at',
       `${relicPct(v.payout.itemShare[0])}${v.payout.itemShare[1] !== v.payout.itemShare[0] ? ` → <b>${relicPct(v.payout.itemShare[1])}</b>` : ''} of their price`

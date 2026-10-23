@@ -104,11 +104,11 @@ const runLab = {
   code: {},
 };
 const RUN_LAB_PAYOUT = {
-  money: 'Capital per $ brought home',
+  money: 'Research per Money brought home',
   itemShare: 'Share of an item’s price',
-  released: 'Capital per Billie released',
-  node: 'Capital per place cleared',
-  win: 'Capital for a win',
+  released: 'Research per Billie released',
+  node: 'Research per place cleared',
+  win: 'Research for a win',
   winSeals: 'Seals for a win',
   scrapNode: 'Scrap per place cleared',
   scrapWin: 'Scrap for a win',

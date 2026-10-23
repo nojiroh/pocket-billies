@@ -149,7 +149,7 @@ function roomHero() {
       {
         shop: 'Tap the counter to shop.',
         clinic: 'Tap the desk and your team is patched up, free.',
-        lab: 'Tap Professor Chosen or Hazel to talk, or the unlock board to spend Capital.',
+        lab: 'Tap Professor Chosen or Hazel to talk, or the unlock board to spend Research.',
         house: 'Tap whoever lives here to chat.',
         ranch: 'Tap the training board or the rancher to train your Billies.',
       }[I.kind] || '';

@@ -265,14 +265,14 @@ export function runBegin(s, give) {
   s.visited = { 0: 1 };
   return run;
 }
-/** what a run pays when it ends, as Capital and Audit Seals, with the lines the payout screen lists: the money at a
+/** what a run pays when it ends, as Research and Audit Seals, with the lines the payout screen lists: the money at a
     rate, the items at a share of their price (then at the money rate; RL-9b: on a loss only, a win takes the bag
     home), each released Billie, each node cleared, a win bonus; seals for a win; Scrap (RL-9, the ranch's material)
     for each node cleared and a win. Rates are rules.json run.payout (placeholders until the first play) */
 /**
  * @param {{ se: number, items: Record<string, number>, released: number, cleared: number, won: boolean }} end
  * @param {{ money: number, itemShare: number, released: number, node: number, win: number, winSeals: number,
- *   scrapNode?: number, scrapWin?: number, capital?: number }} rates capital (RL-12, a Loophole's): the Capital times
+ *   scrapNode?: number, scrapWin?: number, capital?: number }} rates capital (RL-12, a Loophole's): the Research times
  *   this, the difference as a line of its own
  * @param {(id: string) => number} itemPrice an item's shop price (Moneys), 0 for none
  * @returns {{ capital: number, seals: number, scrap: number, lines: { what: string, n: number, capital: number }[] }}
@@ -289,7 +289,7 @@ export function payoutOf(end, rates, itemPrice) {
     { what: 'nodes', n: end.cleared, capital: end.cleared * rates.node },
     { what: 'win', n: end.won ? 1 : 0, capital: end.won ? rates.win : 0 },
   ];
-  /* RL-12: a Loophole's payout row (logic/effects.js fxPayoutRates): the Capital above times rates.capital, as a row */
+  /* RL-12: a Loophole's payout row (logic/effects.js fxPayoutRates): the Research above times rates.capital, as a row */
   const k = rates.capital ?? 1;
   if (k !== 1) {
     const sum = lines.reduce((a, l) => a + l.capital, 0);
@@ -307,7 +307,7 @@ export function payoutOf(end, rates, itemPrice) {
     (the team or storage); one caught or bought in the run joins the team, or the box when the team is full. Every
     other Billie from home comes back as it left (roguelite-track.md section 3, option 3 of "keep-one vs ranch
     levels"; 8.2: one kept on a loss, all on a win). RL-9b: on a win the run's items and coins go into the hub's bag
-    (on a loss they were paid as Capital). Returns the payout */
+    (on a loss they were paid as Research). Returns the payout */
 /**
  * @param {SaveData} s
  * @param {{ won: boolean, keep: string[] }} how

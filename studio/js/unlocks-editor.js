@@ -64,7 +64,7 @@ const UNLOCK_GRANTS = {
   building: 'A building’s level',
   shop: 'An item in run shops',
   biome: 'A biome on run maps',
-  capital: 'Capital',
+  capital: 'Research',
   scrap: 'Scrap',
   seals: 'Audit Seals',
 };
@@ -331,7 +331,7 @@ SECTIONS.unlocks = () => {
   const currencies = Object.keys(D.currencies || {})
     .map(c => {
       const p = `currencies.${c}`;
-      return `<h4><span class="mono">${escapeHtml(c)}</span> <span class="run-tag">${D.currencies[c].kept === 'run' ? 'the run’s: turned into Capital at the payout' : 'kept between runs'}</span></h4>${grid(
+      return `<h4><span class="mono">${escapeHtml(c)}</span> <span class="run-tag">${D.currencies[c].kept === 'run' ? 'the run’s: turned into Research at the payout' : 'kept between runs'}</span></h4>${grid(
         textField('Name', `${p}.name`),
         textField('One of it', `${p}.one`),
         textField('Icon', `${p}.icon`)
@@ -341,7 +341,7 @@ SECTIONS.unlocks = () => {
   return `<div class="ed-col solo"><div class="ed-head"><div><h2>Unlocks & hub</h2><p class="sub">unlocks.json, buildings.json and currencies.json: what the hub sells and what runs earn.</p></div><button class="btn primary" data-act="unlockNew">+ New unlock</button></div>
  ${card(
    'The unlock graph',
-   `<div class="ug-scroll">${unlockGraphSvg(g, id, new Set(S.owned), bad)}</div><p class="help">A column per building, its rows in that building’s currency (the dot: gold Capital, grey Scrap, teal Seals, green earned); an arrow from each row a row needs. Shaded: what the save below owns. Click a row to edit it.</p>${unlockErrHTML(general)}`
+   `<div class="ug-scroll">${unlockGraphSvg(g, id, new Set(S.owned), bad)}</div><p class="help">A column per building, its rows in that building’s currency (the dot: gold Research, grey Scrap, teal Seals, green earned); an arrow from each row a row needs. Shaded: what the save below owns. Click a row to edit it.</p>${unlockErrHTML(general)}`
  )}
  ${U[id] ? unlockRowHTML(id, P) : ''}
  ${card(

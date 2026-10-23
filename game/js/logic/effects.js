@@ -7,7 +7,7 @@
      money   a won battle's money (battle-rewards.js)         price   a run shop's prices, a run clinic's charge
      catch   a coin's chance to catch (catchOdds)              stat    stat stages for your Billies as a battle starts
      damage  what your Billies deal or take (calcDamage)       heal    a share of HP on walking into a place
-     payout  the payout's Capital, or the share items count at
+     payout  the payout's Research, or the share items count at
    Stacking: rows of one kind combine whatever order they were picked in. Stages and shares add up; multipliers are
    multiplied smallest first (the same product for any order), and the product stays within FX_LIMIT, so a run holding
    every Loophole stays finite. With no rows every answer is the number it was given (a multiplier of exactly 1), so a
@@ -132,7 +132,7 @@ provide({ fxHealShare }); /* to-module */
 
 /**
  * The payout's rates with the payout rows: `itemShare` times its rows (at most 1: an item never counts above its
- * price) and `capital`, what the payout's Capital is multiplied by (1 when none). The other rates as they were.
+ * price) and `capital`, what the payout's Research is multiplied by (1 when none). The other rates as they were.
  * @template {{ itemShare: number }} R
  * @param {Fx[] | null | undefined} fx @param {R} rates @returns {R & { capital: number }}
  */

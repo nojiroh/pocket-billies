@@ -1100,7 +1100,7 @@ async function runFullTest(mode) {
             uiState.modal.btns[0].f();
             if (!(await wait(() => !saveData.run && LOCATIONS.length === gameData.locations.length, 10000)))
               throw new Error('the run didn’t end');
-            return `${made[0]} scenes made in ${made[1]} ms; flew in ${flew} ms; a battle, a heal for ${plural(cost, 'Money')}, a Loophole bought and one picked after the mini-boss, the boss; home with ${saveData.meta.capital} Capital`;
+            return `${made[0]} scenes made in ${made[1]} ms; flew in ${flew} ms; a battle, a heal for ${plural(cost, 'Money')}, a Loophole bought and one picked after the mini-boss, the boss; home with ${saveData.meta.capital} Research`;
           } finally {
             if (activeBattle) {
               stopTimers();
@@ -1294,7 +1294,7 @@ async function runFullTest(mode) {
         60
       );
     /* RL-11: the Lab's unlock board, on a copy of the save (nothing is written while the test runs): the Lab tab draws
-       every row of unlocks.json; a board row bought pays its Capital; the ranch's upgrade raises its level and slots;
+       every row of unlocks.json; a board row bought pays its Research; the ranch's upgrade raises its level and slots;
        a milestone met is granted once; a run's copy holds the shop unlock. Then the save as it was */
     if (typeof renderLabBoard === 'function' && !saveData.run && !selfTest.stop)
       await phase(
@@ -1329,14 +1329,14 @@ async function runFullTest(mode) {
             if (!buy) throw new Error('no Buy on Nerve Tonic');
             buy.click();
             if (!s.meta.unlocks.shop_settlement || s.meta.capital !== 1000 - D.unlocks.shop_settlement.cost)
-              throw new Error(`buying Nerve Tonic left ${s.meta.capital} Capital`);
+              throw new Error(`buying Nerve Tonic left ${s.meta.capital} Research`);
             if (!labBuy('ranch_2') || ranchLevel(s) !== 2 || ranchSlots(s, RULES.ranch) !== RULES.ranch.slots[1])
               throw new Error('the ranch’s upgrade didn’t raise its level and slots');
             const got = labMilestones();
             if (!got.includes('first_run') || labMilestones().length)
               throw new Error('the first milestone: ' + got.join());
             if (!runUnlocks(s, D).includes('shop_settlement')) throw new Error('a run wouldn’t carry the shop unlock');
-            return `${rows} rows; bought Nerve Tonic for ${D.unlocks.shop_settlement.cost} Capital and Ranch Lv 2; milestone ${got.join(', ')}`;
+            return `${rows} rows; bought Nerve Tonic for ${D.unlocks.shop_settlement.cost} Research and Ranch Lv 2; milestone ${got.join(', ')}`;
           } finally {
             uiState.modal = null;
             uiState.mq = [];

@@ -93,7 +93,7 @@ provide({
 const runCatch = { m: /** @type {any} */ (null) };
 provide({ runCatch }); /* to-module */
 /** the sheet after a catch with a full party: who leaves the party, the new one included. One caught on the run is
- * paid as Capital at the end (logic/run-loop.js runRelease); one from Copperleaf only leaves the party */
+ * paid as Research at the end (logic/run-loop.js runRelease); one from Copperleaf only leaves the party */
 function runReleaseSheet() {
   const m = runCatch.m;
   if (!m || !saveData.run) return null;
@@ -103,7 +103,7 @@ function runReleaseSheet() {
   return {
     title: 'Your party is full',
     lock: true,
-    html: `<p>Six can travel on a run. Pick who leaves the party. A Billie caught on the run is paid for in Capital at the end.</p><div class="list">${all.map(row).join('')}</div>`,
+    html: `<p>Six can travel on a run. Pick who leaves the party. A Billie caught on the run is paid for in Research at the end.</p><div class="list">${all.map(row).join('')}</div>`,
     acts: all.map(o => ({ f: () => runReleasePick(o) })),
     btns: [],
   };
@@ -143,7 +143,7 @@ export function runGiveUp() {
   if (!saveData.run || saveData.run.at.phase === 'payout' || activeBattle) return;
   modal({
     title: 'Give up the run?',
-    html: '<p>The run ends as a loss. You keep one Billie of your choice, and what you found turns into Capital.</p>',
+    html: '<p>The run ends as a loss. You keep one Billie of your choice, and what you found turns into Research.</p>',
     btns: [
       {
         l: 'Give up',
@@ -182,9 +182,9 @@ export function runEndHome(won, keep, itemPrice) {
   closeModal();
   render();
   if (typeof debugLog !== 'undefined')
-    debugLog.add('scene', `back in the hub: +${pay.capital} Capital, +${pay.seals} Seals, +${pay.scrap} Scrap`);
+    debugLog.add('scene', `back in the hub: +${pay.capital} Research, +${pay.seals} Seals, +${pay.scrap} Scrap`);
   toast(
-    `+${formatNumber(pay.capital)} Capital${pay.scrap ? `, ${formatNumber(pay.scrap)} Scrap` : ''}${pay.seals ? ` and ${plural(pay.seals, 'Audit Seal')}` : ''}. You have ${formatNumber(saveData.meta.capital)} Capital.`
+    `+${formatNumber(pay.capital)} Research${pay.scrap ? `, ${formatNumber(pay.scrap)} Scrap` : ''}${pay.seals ? ` and ${plural(pay.seals, 'Audit Seal')}` : ''}. You have ${formatNumber(saveData.meta.capital)} Research.`
   );
   /* RL-11: milestones the run has met (ended runs, wins), each with its own toast after this one */
   if (typeof labMilestones === 'function') labMilestones();
@@ -295,7 +295,7 @@ export function runStartSheet() {
       return `<div class="bag-row k-card run-pack-row"><span class="bag-ic">${icon}</span><span class="bag-t"><b>${escapeHtml(name)}</b><small>${formatNumber(have)} in the bag</small></span><button class="pb" data-pk="${kind}" data-k="${escapeHtml(k)}" data-d="-1" aria-label="One ${escapeHtml(name)} less"${n ? '' : ' disabled'}>−</button><b class="bag-n tnum">${n}</b><button class="pb" data-pk="${kind}" data-k="${escapeHtml(k)}" data-d="1" aria-label="One ${escapeHtml(name)} more"${n < have && P.n < P.most ? '' : ' disabled'}>+</button></div>`;
     },
     trained = P.home.filter(trains);
-  const html = `<p>The airship flies you out to the wild lands past the island: a road of places, a town before each mini-boss, and a boss at the end.</p><h3>Who comes from home</h3><p class="note">${plural(P.cap, 'Billie')} from home at Bracket I. The rest stay at the ranch; on the run you catch wild ones.${trained.length ? ' Training stops while it is away (what it banked comes along).' : ''}</p><div class="bx-grid">${runHomeList().map(card).join('')}</div><h3>Pack the bag <small class="tnum">${P.n} of ${P.most}</small></h3>${things.length ? `<div class="bag-list px">${things.map(row).join('')}</div>` : '<p class="note">Copperleaf’s bag is empty.</p>'}<p>The airship adds ${escapeHtml(gifts.join(', '))}.</p><p class="note">Every place you walk into takes a day. Beat the boss to win: everyone comes home with what they learned, and the bag goes into Copperleaf’s. If your whole party faints, the run is over: you keep one Billie, and the bag turns into Capital.</p>`;
+  const html = `<p>The airship flies you out to the wild lands past the island: a road of places, a town before each mini-boss, and a boss at the end.</p><h3>Who comes from home</h3><p class="note">${plural(P.cap, 'Billie')} from home at Bracket I. The rest stay at the ranch; on the run you catch wild ones.${trained.length ? ' Training stops while it is away (what it banked comes along).' : ''}</p><div class="bx-grid">${runHomeList().map(card).join('')}</div><h3>Pack the bag <small class="tnum">${P.n} of ${P.most}</small></h3>${things.length ? `<div class="bag-list px">${things.map(row).join('')}</div>` : '<p class="note">Copperleaf’s bag is empty.</p>'}<p>The airship adds ${escapeHtml(gifts.join(', '))}.</p><p class="note">Every place you walk into takes a day. Beat the boss to win: everyone comes home with what they learned, and the bag goes into Copperleaf’s. If your whole party faints, the run is over: you keep one Billie, and the bag turns into Research.</p>`;
   const was = uiState.modal && uiState.modal.cls === 'fly-sheet run-start' ? uiState.modal : null,
     sheet = document.querySelector('#ov .sheet'),
     body = document.querySelector('#ov .sheet .body'),

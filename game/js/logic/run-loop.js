@@ -254,7 +254,7 @@ export const runKept = (team, won, pick) =>
   won ? team.map(m => m.uid) : team.filter(m => m.uid === pick).map(m => m.uid);
 /** an item's shop price, for the payout's items line (0 for none) @param {string} id */
 export const runItemPrice = id => (ITEMS[id] && ITEMS[id].price) || 0;
-/** the payout screen's rows from payoutOf's lines: a label, a note and the Capital each brings (the win row only on a
+/** the payout screen's rows from payoutOf's lines: a label, a note and the Research each brings (the win row only on a
  * win; RL-9b: the items row only on a loss, a win takes the bag home) @param {{ lines: { what: string, n: number, capital: number }[] }} pay
  * @param {{ money: number, itemShare: number, released: number, node: number }} rates */
 export function runPayoutRows(pay, rates) {

@@ -5,11 +5,11 @@
   "one": "Money",
   "icon": "coin",
   "kept": "run",
-  "about": "A run's Moneys: wild prizes and trainers. Pays for healing and run shops; turns into Capital when the run ends."
+  "about": "A run's Moneys: wild prizes and trainers. Pays for healing and run shops; turns into Research when the run ends."
  },
  "capital": {
-  "name": "Capital",
-  "one": "Capital",
+  "name": "Research",
+  "one": "Research",
   "icon": "capital",
   "kept": "meta",
   "about": "What a run brings home. Spent on the Lab's unlock board."

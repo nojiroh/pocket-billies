@@ -200,7 +200,7 @@
   <div class="g-stack">
     <div class="g-row"><pb-day-chip day="3" deadline="7"></pb-day-chip><pb-day-chip day="7" deadline="7"></pb-day-chip><pb-day-chip day="9" deadline="7"></pb-day-chip></div>
     <pb-forecast items="clear:Clear,cloudy:Cloudy,rain:Rain,storm:Thunderstorm,fog:Fog,snow:Snow,ash:Ash" from="3" value="4"></pb-forecast>
-    <div class="g-row"><pb-coin kind="money" value="340" label="Moneys"></pb-coin><pb-coin kind="capital" value="12400" label="Capital"></pb-coin><pb-coin kind="scrap" value="86" label="Scrap"></pb-coin><pb-coin kind="seals" value="2" label="Audit Seals"></pb-coin></div>
+    <div class="g-row"><pb-coin kind="money" value="340" label="Moneys"></pb-coin><pb-coin kind="capital" value="12400" label="Research"></pb-coin><pb-coin kind="scrap" value="86" label="Scrap"></pb-coin><pb-coin kind="seals" value="2" label="Audit Seals"></pb-coin></div>
     <pb-nav-bar set="run" value="map" badges="relics:2"></pb-nav-bar>
     <pb-nav-bar set="hub" value="lab"></pb-nav-bar>
   </div>
@@ -221,10 +221,10 @@
   </div>
 </section>
 
-<section class="g-sec" data-shot="payout"><h2>Payout</h2><p>pb-payout: its rows slam in one by one and Capital counts up (Play again; a tap skips to the end).</p>
+<section class="g-sec" data-shot="payout"><h2>Payout</h2><p>pb-payout: its rows slam in one by one and Research counts up (Play again; a tap skips to the end).</p>
   <div class="g-stack">
-    <pb-panel><pb-payout id="gPayout" total="1180" total-label="Capital" rows='[{"label":"Money left","note":"$340 at half","value":170},{"label":"Items at half price","value":95},{"label":"Billies released","note":"2 Billies","value":60},{"label":"Nodes cleared","note":"7 × 75","value":525},{"label":"Win bonus","value":400},{"label":"Unpaid clinic bill","value":-70}]'></pb-payout></pb-panel>
-    <div class="g-row"><button class="pb small" id="gPayoutPlay">Play again</button><button class="pb small" id="gCoinUp">Add 1,000 Capital to the chip above</button></div>
+    <pb-panel><pb-payout id="gPayout" total="1180" total-label="Research" rows='[{"label":"Moneys left","note":"340 Moneys at half","value":170},{"label":"Items at half price","value":95},{"label":"Billies released","note":"2 Billies","value":60},{"label":"Nodes cleared","note":"7 × 75","value":525},{"label":"Win bonus","value":400},{"label":"Unpaid clinic bill","value":-70}]'></pb-payout></pb-panel>
+    <div class="g-row"><button class="pb small" id="gPayoutPlay">Play again</button><button class="pb small" id="gCoinUp">Add 1,000 Research to the chip above</button></div>
   </div>
 </section>
 

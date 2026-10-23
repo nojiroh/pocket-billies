@@ -53,7 +53,7 @@
        "properties": {"kind": {"const": "heal"}, "share": {"type": "number", "exclusiveMinimum": 0, "maximum": 1}}
       },
       {
-       "description": "payout: the payout's Capital (capital) or the share of their price items count at (itemShare), times mult",
+       "description": "payout: the payout's Research (capital) or the share of their price items count at (itemShare), times mult",
        "type": "object", "additionalProperties": false, "required": ["kind", "what", "mult"],
        "properties": {"kind": {"const": "payout"}, "what": {"enum": ["capital", "itemShare"]}, "mult": {"type": "number", "minimum": 0, "maximum": 4}}
       }

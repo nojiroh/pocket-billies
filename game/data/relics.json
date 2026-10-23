@@ -65,7 +65,7 @@
  },
  "options": {
   "name": "Stock Options",
-  "d": "The payout gives 15% more Capital.",
+  "d": "The payout gives 15% more Research.",
   "rarity": "uncommon",
   "fx": [
    {"kind":"payout","what":"capital","mult":1.15}

@@ -1,5 +1,5 @@
 // RL-12: a run's Loopholes outside battle: the run's rows (none held: none), healing on walking into a place
-// (run-loop.js runArriveHeal), the payout's Capital row (run-state.js payoutOf with fxPayoutRates) and its screen row.
+// (run-loop.js runArriveHeal), the payout's Research row (run-state.js payoutOf with fxPayoutRates) and its screen row.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { GAME_DATA, fn, modules, reseed, startedSave } from './setup-real.mjs';

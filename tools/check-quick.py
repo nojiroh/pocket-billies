@@ -1602,7 +1602,7 @@ def desktop_steps(b, base, R):
         town: the clinic charges 60 Moneys a hurt Billie (after a yes), the shop has the day's stock and (RL-12) a Loophole;
         on to the first mini-boss, which blocks the way north and fights a double battle (won): "Pick a Loophole" opens
         the pick, a card tapped and "Take it" holds it; on to the boss, an Alpha (won, its battle carrying the
-        Loophole): "On to the payout", the payout as won, "Fly home": Copperleaf with Capital, no run. The hub's save is
+        Loophole): "On to the payout", the payout as won, "Fly home": Copperleaf with Research, no run. The hub's save is
         put back after"""
         if not pg.evaluate("typeof runTakeOff==='function'"): return 'not in this build'
         pg.evaluate("window.rl8Hub=JSON.parse(JSON.stringify(saveData));uiState.inside=null;uiState.bench=null;uiState.modal=null;uiState.mq=[];renderOverlay();uiState.tab='walk';saveData.team.forEach(m=>{m.hp=maxHp(m);m.status=null});render();0")
@@ -1680,7 +1680,7 @@ def desktop_steps(b, base, R):
             home = pg.evaluate("[saveData.meta.runs, saveData.meta.wins, saveData.meta.capital, saveData.meta.seals]")
             if home[0] < 1 or home[1] < 1 or home[2] <= 0: raise Exception(f'home: {home}')
             if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
-            return f'seed {land[0]}: {land[4]} scenes, landed day 1 by the mast; a battle won; day 2 over the seam; healed for ${heal[0]}; {wares} wares and a Loophole; {foe[1]} beaten (doubles), {relic} picked; the boss (an Alpha) beaten; payout; home: {home[2]} Capital, {home[3]} Seal'
+            return f'seed {land[0]}: {land[4]} scenes, landed day 1 by the mast; a battle won; day 2 over the seam; healed for ${heal[0]}; {wares} wares and a Loophole; {foe[1]} beaten (doubles), {relic} picked; the boss (an Alpha) beaten; payout; home: {home[2]} Research, {home[3]} Seal'
         finally:
             pg.evaluate("if(activeBattle){stopTimers();setActiveBattle(null);battleStageStop()}airshipFlight.on=false;uiState.modal=null;uiState.mq=[];renderOverlay();setSaveData(window.rl8Hub);render();0")
     rl8_run_from_mast()

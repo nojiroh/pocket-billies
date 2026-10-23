@@ -65,7 +65,7 @@ const RUN_LAB_SIM_ROWS = [
   ['healed', 'Paid at clinics (Moneys)'],
   ['spent', 'Spent in shops (Moneys)'],
   ['moneyLeft', 'Moneys at the end'],
-  ['capital', 'Capital paid out'],
+  ['capital', 'Research paid out'],
   ['relics', 'Loopholes held at the end'],
   ['topLevel', 'Top level'],
 ];
