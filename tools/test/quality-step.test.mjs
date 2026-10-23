@@ -3,7 +3,7 @@
 // there), the iPad (frames slow, main thread light), a fast desktop. No graphics.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { qualityStep } from '../../game/js/logic/quality-step.js';
+import { propDrawFade, qualityStep } from '../../game/js/logic/quality-step.js';
 
 const T = 1000 / 60;
 /** run the step once a second for n seconds with the same numbers; returns the state */
@@ -56,4 +56,20 @@ test('a phone whose frames look busy on the main thread (the Android phone) goes
 test('on a phone the resolution is never raised just because the main thread looks busy', () => {
   const s = run({ int: 55, slow: 45, phone: true }, 3, { q: 1, R: 0.7 });
   assert.equal(s.R, 0.7);
+});
+
+test('a thing too small to see on screen is skipped everywhere', () => {
+  const o = { minPx: 3, phoneDistance: 0, phone: false };
+  assert.equal(propDrawFade({ r: 0.2, depth: 90, px: 2 }, o), 0);
+  assert.equal(propDrawFade({ r: 0.2, depth: 20, px: 12 }, o), 1);
+});
+
+test('on a phone small things fade out over the last 8 m before the distance; big things and computers are untouched', () => {
+  const o = { minPx: 3, phoneDistance: 48, phone: true };
+  assert.equal(propDrawFade({ r: 0.4, depth: 30, px: 20 }, o), 1);
+  assert.equal(propDrawFade({ r: 0.4, depth: 44, px: 10 }, o), 0.5);
+  assert.equal(propDrawFade({ r: 0.4, depth: 60, px: 8 }, o), 0);
+  assert.equal(propDrawFade({ r: 2.5, depth: 60, px: 40 }, o), 1);
+  assert.equal(propDrawFade({ r: 0.4, depth: 60, px: 8 }, { ...o, phone: false }), 1);
+  assert.equal(propDrawFade({ r: 0.4, depth: 60, px: 8 }, { ...o, phoneDistance: 0 }), 1);
 });

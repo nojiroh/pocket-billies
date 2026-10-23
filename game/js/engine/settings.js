@@ -239,6 +239,10 @@ export const ENGINE_DEFAULTS = {
     shadowCache: true,
     gpuTimer: true,
     battleLite: true,
+    /* 0.1.0 alpha: skip props under this many pixels tall; on a phone, small props fade out before this distance (m,
+       0: no limit) */
+    minPropPx: 0,
+    phonePropDistance: 0,
     sharpTex: true,
     edgeBleed: true,
     /* phase 20 C1: the same, as the code's fallbacks (walk scenes kept ready; the ground painted in a worker unless
@@ -992,6 +996,22 @@ export const ENGINE_SPEC = [
         'When frames come late, drop the costliest extras one at a time (depth of field detail, ambient occlusion, shadow and reflection refresh, bloom, far grass), and only then the resolution.',
       ],
       ['cull', 'Skip what’s off screen', 'bool', 'Props, grass and buildings outside the view aren’t drawn.'],
+      [
+        'minPropPx',
+        'Skip tiny props',
+        0,
+        12,
+        1,
+        'Props smaller than this many pixels on screen aren’t drawn (0: all are drawn).',
+      ],
+      [
+        'phonePropDistance',
+        'Small props’ distance on phones',
+        0,
+        120,
+        2,
+        'On a phone, small props (flowers, tufts, pebbles, crates) fade out before this many metres; buildings, trees and anything big stay. 0: no limit.',
+      ],
       [
         'battleLite',
         'Lighter battles',

@@ -5,7 +5,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { gameData, provide, saveData } from '../hooks.js';
-import { qualityStep } from '../logic/quality-step.js';
+import { propDrawFade, qualityStep } from '../logic/quality-step.js';
 import { frameScheduler } from '../frame-scheduler.js';
 import { mapMoodName, walkView } from '../walk-view.js';
 import { engineContext, engineSetting } from '../engine/settings.js';
@@ -66,6 +66,14 @@ export function cullItems(items, C) {
   let n = 0,
     k = 0;
   const on = engineSetting('quality', 'cull') ?? true;
+  /* 0.1.0 alpha: things too small to see, and on a phone small things past the draw distance (logic/quality-step.js) */
+  const m = C.vp,
+    H = (walkView.cv && walkView.cv.height) || 800,
+    fo = {
+      minPx: engineSetting('quality', 'minPropPx') ?? 0,
+      phoneDistance: engineSetting('quality', 'phonePropDistance') ?? 0,
+      phone: typeof navigator !== 'undefined' && /Android|iPhone/.test(navigator.userAgent),
+    };
   for (const it of items) {
     if (!on || it.person || it.k === 'enc' || it.k === 'enc2') {
       it.vis = true;
@@ -79,6 +87,15 @@ export function cullItems(items, C) {
     const r = Math.max(w, h, ext) * 0.6 + 0.4,
       cy = (it.y || 0) + h * 0.5 + worldCurveDrop(it.x, it.z);
     it.vis = inFrustum(F, it.x, cy, it.z, r);
+    if (it.vis && !it.fx && (fo.minPx > 0 || fo.phoneDistance > 0) && !(it.M && (it.M.build || it.M.door))) {
+      const W = m[3] * it.x + m[7] * cy + m[11] * it.z + m[15];
+      if (W > 0.1) {
+        const px = ((r * Math.hypot(m[1], m[5], m[9])) / W) * H,
+          f = propDrawFade({ r, depth: W, px }, fo);
+        if (f <= 0) it.vis = false;
+        else if (f < 1) it.fade = (it.fade ?? 1) * f;
+      }
+    }
     k++;
     if (!it.vis) n++;
   }

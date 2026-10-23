@@ -6,7 +6,10 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 /* eslint-disable no-func-assign */
-expose({ qualityStep: [() => qualityStep, v => (qualityStep = v)] });
+expose({
+  propDrawFade: [() => propDrawFade, v => (propDrawFade = v)],
+  qualityStep: [() => qualityStep, v => (qualityStep = v)],
+});
 /* eslint-enable no-func-assign */
 /* to-module: end */
 /**
@@ -65,4 +68,22 @@ export function qualityStep(s, i) {
     }
   }
   return s;
+}
+
+/* 0.1.0 alpha: how much of a small prop to draw (0 = skip it, 1 = all), from its size on screen and, on a phone, its
+   distance. A thing under minPx pixels tall can't be seen anyway; on a phone, small things (under smallR metres
+   across: flowers, tufts, pebbles, crates) fade out over the last 8 m before phoneDistance (0: no limit), where the
+   haze has mostly hidden them (a phone held upright sees far down the town: about 1,000 things in view against an
+   iPad's 230) */
+/**
+ * @param {{ r: number, depth: number, px: number }} it r: radius (m); depth: distance from the camera (m); px: height on
+ *   screen (pixels)
+ * @param {{ minPx: number, phoneDistance: number, phone: boolean, smallR?: number }} o
+ * @returns {number}
+ */
+export function propDrawFade(it, o) {
+  if (o.minPx > 0 && it.px < o.minPx) return 0;
+  if (!o.phone || !(o.phoneDistance > 0) || it.r >= (o.smallR ?? 1)) return 1;
+  const k = (o.phoneDistance - it.depth) / 8;
+  return k >= 1 ? 1 : k <= 0 ? 0 : k;
 }
