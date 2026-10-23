@@ -2,6 +2,30 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Studio plan Phase 3b - Loopholes, balance mode, compare, the Simulate card (T3.3, T3.4) - 2026-10-23
+Branch `claude/sr-3-sim-balance` (draft PR #138). Plan pre-approved with the recommended options (the owner's
+standing instruction, relayed by the parent session); decisions recorded in the plan doc, "Decisions (owner, Phase 3)".
+
+**Plan** (one cause per commit, failing test first where a rule moves; commit and push after every ticket)
+1. T3.3, the simulator's gaps:
+   - the arrival heal (`runArrivedFx`) moves into logic (`run-loop.js runArriveFx`), shared by the page and the sim;
+   - a run shop's wares through the run's unlocks: one logic function (`runShopOpen`) for shop.js and the sim (the sim
+     drew from the unfiltered table);
+   - the pick after a mini-boss answered by the policy: `relics: 'greedy'` (rarest, then id; past the cap only for a
+     rarer one, letting the plainest go) or `'never'` (the "never pick" baseline policy, `never-pick`);
+   - a run shop's Loophole bought under the same setting, keeping the policy's reserve;
+   - a test that the sim's run starts through `runStartPlan` with the save's unlocks (biomes);
+   - the stats the dashboard needs: lost row, money in and out, Loopholes held, foes by leader;
+   - balance mode (`scenes: 'skip'`): no `runScenesMake`; each place is a lite map (the game's own `_lite`) whose ground
+     includes tall grass. **Town grass decision (recommended):** stand in "every run place has tall grass"; measured
+     344 of 344 towns and 650 of 650 routes over 80 maps (none and all unlocks). The equality test runs the same
+     seeds in both modes and fails if a generator change ever breaks it. Acceptance: same outcomes, >= 20x faster.
+2. T3.4 pure parts: `logic/sim-compare.js` (Wilson 95%, paired differences, flips, a data hash); the CLI's `--out`,
+   `--compare=base.json`, `--balance`, `--policy`; unit tests.
+3. T3.4 dashboard: merge `origin/claude/sr-2-run-lab` (merge commit); a "Simulate" card in the Run Lab with two workers
+   (Base: the loaded data, Draft) on the same seeds, the policy banner on every table, policy-driven metrics marked,
+   at most 200 seeds; a stand-in step running 5 seeds in check-studio-github.py.
+
 ### Studio plan Phase 3 (first session) - The simulator on the game's own rules (T3.1, T3.2, T3.5) - 2026-10-23
 Branch `claude/sr-3-sim-balance`, draft PR #138 against Phase 2's `claude/sr-2-run-lab` (PR #135). The plan was approved
 with its recommended options (the owner, through the parent session; recorded in the plan doc, "Decisions (owner,
