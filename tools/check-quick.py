@@ -1088,20 +1088,25 @@ def desktop_steps(b, base, R):
     def atmosphere():
         if not pg.evaluate("typeof environment!=='undefined'"): return 'no time and weather in this build'
         go_scene(pg, 0); out = []
-        def lum():
-            from PIL import Image, ImageStat
-            im = Image.open(io.BytesIO(pg.screenshot())).convert('L'); w, h = im.size
-            return ImageStat.Stat(im.crop((0, int(h * .3), w, int(h * .75)))).mean[0]     # the scene, under the cards
-        bright = {}
-        for name, f in (('day', "{time:13,weather:'clear',season:'summer'}"), ('night', "{time:23.5,weather:'clear',season:'summer'}"), ('storm', "{time:15,weather:'storm',season:'summer'}"),
-                        ('snow', "{time:11,weather:'snow',season:'winter'}"), ('autumn', "{time:12,weather:'clear',season:'autumn'}")):
-            pg.evaluate(f"environment.force={f};0"); f0 = pg.evaluate("walkRenderer.frames"); time.sleep(2.5)
+        # TC-3: what each look is comes from the game's own environment state after a frame drawn with it (a forced look
+        # snaps, environmentFrame), not from the picture's brightness; the pictures stay for the baseline
+        env = "JSON.stringify({tod:environment.tod,season:environment.season,weather:environment.weather,night:environment.night,storm:environment.storm,rain:environment.rain,snow:environment.snow,sk:environment.sk,lamp:environment.lampK})"
+        looks = (('day', "{time:13,weather:'clear',season:'summer'}", lambda e: e['night'] < .1 and e['lamp'] < .2 and not e['rain'] and not e['snow']),
+                 ('night', "{time:23.5,weather:'clear',season:'summer'}", lambda e: e['night'] > .9 and e['lamp'] > .9),
+                 ('storm', "{time:15,weather:'storm',season:'summer'}", lambda e: e['night'] < .1 and e['storm'] > .5 and e['rain'] > .3),
+                 ('snow', "{time:11,weather:'snow',season:'winter'}", lambda e: e['snow'] > .3 and e['sk'][2] > 0 and e['sk'][3] > 0),
+                 ('autumn', "{time:12,weather:'clear',season:'autumn'}", lambda e: e['sk'][0] > 0 and e['season'] == 'autumn'))
+        seen = {}
+        for name, f, ok in looks:
+            pg.evaluate(f"environment.force={f};0"); f0 = pg.evaluate("walkRenderer.frames")
             if not until(pg, f"walkRenderer.frames>{f0 + 1}", 20): raise Exception(f'{name}: the scene stopped drawing')
-            bright[name] = round(lum()); shot(pg, 'env-' + name)
-        if bright['night'] > bright['day'] * .8: raise Exception(f'night isn’t darker than day (brightness {bright["night"]} vs {bright["day"]})')
-        pg.evaluate("environment.force={time:23.5,weather:'clear'};0"); time.sleep(1.5); lamps = pg.evaluate("environment.lampK")
-        odds = pg.evaluate("(()=>{const ps=Object.keys(SPECIES).find(k=>SPECIES[k].types.includes('Psychic'));if(!ps)return [10];return environmentOdds([[ps,10]]).map(x=>+x[1].toFixed(2))})()")
-        out.append('brightness ' + ', '.join(f'{k} {v}' for k, v in bright.items()))
+            e = json.loads(pg.evaluate(env)); seen[name] = e
+            if e['weather'] != f.split("weather:'")[1].split("'")[0] or not ok(e): raise Exception(f'{name}: the environment reads {e}')
+            time.sleep(1); shot(pg, 'env-' + name)
+        lamps = seen['night']['lamp']
+        pg.evaluate("environment.force={time:23.5,weather:'clear',season:'summer'};0"); f0 = pg.evaluate("walkRenderer.frames"); until(pg, f"walkRenderer.frames>{f0 + 1}", 20)
+        odds =pg.evaluate("(()=>{const ps=Object.keys(SPECIES).find(k=>SPECIES[k].types.includes('Psychic'));if(!ps)return [10];return environmentOdds([[ps,10]]).map(x=>+x[1].toFixed(2))})()")
+        out.append(f"night {seen['night']['night']:.2f} (day {seen['day']['night']:.2f}), storm {seen['storm']['storm']:.2f} with rain {seen['storm']['rain']:.2f}, snow {seen['snow']['snow']:.2f} lying {seen['snow']['sk'][3]:.2f}, autumn colour {seen['autumn']['sk'][0]:.2f}")
         # RL-5: the dark cave (Fizzwell, 'env-dark-cave') is retired with its place: no cave in the hub (a run's caves come with RL-7)
         # walk into the lab and out again (RL-5: was the shop, parked with its town; the hub's public building is Hazel's lab)
         pg.evaluate("environment.force={time:13,weather:'clear',season:'summer'};0"); go_scene(pg, 0); time.sleep(1)
