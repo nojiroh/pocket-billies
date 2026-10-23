@@ -43,8 +43,8 @@ forever"); the old campaign lore (Vinylla's arc) **loses its finance only**; the
   checks skipped at the owner's word.
 - Risky:
   - Not read on a phone: a few lines are longer (What Billies are, the pyramid entry, the brochure's first page).
-  - The legacy generators (tools/build-lore-v47.py, build-regions-v47.py) still hold the old text; rerunning them
-    would bring the finance lines back.
+  - The legacy generator tools/build-regions-v47.py still holds Baron Vault's old lines; rerunning it
+    would bring them back.
   - Translations exist only for the settings line; the new lore is English only, as before.
 - Out of scope, left for their sessions: regions.json name parts (RL-R1/RL-R2), events.json (RL-12b), the Bureau in
   people's lines (RL-S1's lines.json).
