@@ -10,6 +10,7 @@ import { expose } from '../../game/js/test-globals.js';
 import { provide } from '../../game/js/hooks.js';
 import { MUSIC_BATTLE_KINDS, MUSIC_WHERE_KEYS, musicWhereMatches, songFor } from '../../game/js/logic/music-where.js';
 import { cryLowHealth, cryRecipe, cryVoices } from '../../game/js/logic/cries.js';
+import { UI_SOUND_NAMES, uiSoundVoices } from '../../game/js/logic/ui-sounds.js';
 import { midiToFrequency, trackerCompose, trackerCreate } from '../../game/js/audio/tracker.js';
 import { escapeHtml } from './game-stand-ins.js';
 import {
@@ -44,12 +45,14 @@ import { scheduleCheck } from './check.js';
 import { legacyLoad, legacyView } from './legacy-view.js';
 /* eslint-disable no-func-assign */
 expose({
+  MUSIC_CRY_PREVIEW: [() => MUSIC_CRY_PREVIEW],
   MUSIC_JINGLE_BPM: [() => MUSIC_JINGLE_BPM],
   MUSIC_TABS: [() => MUSIC_TABS],
   ROLL_CELL_H: [() => ROLL_CELL_H],
   ROLL_CELL_W: [() => ROLL_CELL_W],
   ROLL_LEFT: [() => ROLL_LEFT],
   ROLL_TOP: [() => ROLL_TOP],
+  musicBaseCriesHTML: [() => musicBaseCriesHTML, v => (musicBaseCriesHTML = v)],
   musicCheckFindings: [() => musicCheckFindings, v => ((musicCheckFindings = v), provide({ musicCheckFindings }))],
   musicCryCardHTML: [() => musicCryCardHTML, v => ((musicCryCardHTML = v), provide({ musicCryCardHTML }))],
   musicCryPlay: [() => musicCryPlay, v => (musicCryPlay = v)],
@@ -65,6 +68,7 @@ expose({
   musicLineSet: [() => musicLineSet, v => (musicLineSet = v)],
   musicListColHTML: [() => musicListColHTML],
   musicLoopHTML: [() => musicLoopHTML],
+  musicMixHTML: [() => musicMixHTML, v => (musicMixHTML = v)],
   musicNoteHear: [() => musicNoteHear, v => (musicNoteHear = v)],
   musicNowShow: [() => musicNowShow, v => (musicNowShow = v)],
   musicPartHTML: [() => musicPartHTML],
@@ -83,7 +87,9 @@ expose({
   musicSummary: [() => musicSummary],
   musicTracker: [() => musicTracker, v => (musicTracker = v)],
   musicTryHTML: [() => musicTryHTML, v => (musicTryHTML = v)],
+  musicUiSoundsHTML: [() => musicUiSoundsHTML, v => (musicUiSoundsHTML = v)],
   musicUses: [() => musicUses, v => (musicUses = v)],
+  musicVoicesPlay: [() => musicVoicesPlay, v => (musicVoicesPlay = v)],
   musicWhereHTML: [() => musicWhereHTML, v => (musicWhereHTML = v)],
   musicWhereOptions: [() => musicWhereOptions, v => (musicWhereOptions = v)],
   musicWhereSet: [() => musicWhereSet, v => (musicWhereSet = v)],
@@ -501,7 +507,8 @@ ACTIONS.musHookFromTune = () => {
 
 /* ---------- the jingles: short tunes that play once (a win, a level up, a catch...) ----------
    A jingle is a list of [midi, sixteenths] one after another, 0 a rest; on the roll it is notes on a timeline. The
-   game plays them at 150 bpm on a 25 % pulse with a triangle an octave down (the level up at 180 in battle) */
+   game plays them at 150 bpm on a 25 % pulse with a triangle an octave down (the level up at 180 in battle). SND-6: a
+   jingle may set its own tempo and wave (the run's beats do; sound.js jinglePlay) */
 const MUSIC_JINGLE_BPM = 150;
 const musicJingleSelected = () => {
   const ids = Object.keys(musicData().jingles || {});
@@ -524,9 +531,10 @@ function musicJingleHTML() {
     `<div class="seg-row">${picks}</div>
 <div class="seg-row"><b>${escapeHtml(cur)}</b><small class="help">${len} sixteenths · ${J[cur].notes.filter(n => n[0]).length} notes</small><span class="grow"></span><button class="btn primary" data-act="musJinglePlay" data-j="${escapeHtml(cur)}">▶ Play</button></div>
 ${textField('Name', `music.jingles.${cur}.name`, { opt: 1, ph: 'unnamed', help: 'Claude’s drafts start with “placeholder”; the Check lists them until you rename them.' })}
+${grid(numberField('Tempo', `music.jingles.${cur}.bpm`, { opt: 1, min: 40, max: 400, step: 1, unit: 'bpm', ph: `${MUSIC_JINGLE_BPM}` }), selectField('Wave', `music.jingles.${cur}.wave`, MUSIC_CHOICES.wave, { opt: 1, none: 'Pulse 25 % (as most)' }))}
 <div class="mus-roll-wrap"><canvas id="musJRoll" class="mus-roll" aria-label="${escapeHtml(cur)} roll: ${J[cur].notes.map(n => (n[0] ? musicNoteName(n[0]) : 'rest') + ' ' + n[1]).join(', ')}"></canvas></div>`,
     {
-      sub: 'One note at a time, in sixteenths; a gap is a rest. The game plays them at 150 bpm on a 25 % pulse with a triangle an octave down (the battle’s level up at 180). They play on Sound effects.',
+      sub: 'One note at a time, in sixteenths; a gap is a rest. With a triangle an octave down, at 150 bpm on a 25 % pulse unless it sets its own tempo and wave (the battle’s level up plays at 180). They play on Sound effects.',
     }
   );
 }
@@ -556,7 +564,7 @@ function musicJinglePlay(id) {
     J = musicData().jingles[id];
   if (!J) return;
   if (musicStudio.ctx.state !== 'running') musicStudio.ctx.resume().catch(() => {});
-  T.jingle(J.notes, MUSIC_JINGLE_BPM, 'p25', T.bus);
+  T.jingle(J.notes, J.bpm || MUSIC_JINGLE_BPM, J.wave || 'p25', T.bus);
 }
 ACTIONS.musJinglePlay = d => musicJinglePlay(d.j);
 ACTIONS.musJinglePick = d => {
@@ -638,6 +646,117 @@ ACTIONS.musCryReset = d => {
   render();
 };
 
+/* ---------- SND-6: the Sounds tab: the base cries, the buttons' four sounds, the mix ---------- */
+const MUSIC_CRY_PREVIEW = 60;
+/** a few notes (a base cry's or a UI sound's) on the Studio's own context, from now @param {{at: number, midi: number, type: string, dur: number, vol: number, slide?: number, vib?: number}[]} V */
+function musicVoicesPlay(V) {
+  const T = musicTracker(),
+    t = musicStudio.ctx.currentTime + 0.03;
+  if (musicStudio.ctx.state !== 'running') musicStudio.ctx.resume().catch(() => {});
+  for (const v of V)
+    T.synthVoice(T.bus, {
+      type: v.type,
+      freq: midiToFrequency(v.midi),
+      t: t + v.at,
+      dur: v.dur,
+      vol: v.vol,
+      slide: v.slide || 0,
+      vib: v.vib || 0,
+    });
+}
+function musicBaseCriesHTML() {
+  const B = (musicData().cries || {}).bases || {};
+  const rows = Object.keys(B)
+    .map(k => {
+      const p = `music.cries.bases.${k}`,
+        voices = B[k].voices
+          .map(
+            (v, i) =>
+              `<div class="grid">${[
+                ['Starts', 'at', { min: 0, max: 2, step: 0.01, unit: 's' }],
+                ['Note', 'note', { min: -24, max: 24, step: 1, unit: '+st' }],
+                ['Length', 'len', { min: 0.01, max: 2, step: 0.01, unit: 's' }],
+                ['Volume', 'vol', { opt: 1, min: 0, max: 0.2, step: 0.005, ph: '0.06' }],
+                ['Slide', 'slide', { opt: 1, min: 0.1, max: 4, step: 0.05, ph: '1', unit: '×' }],
+                ['Wobble', 'vib', { opt: 1, min: 0, max: 10, step: 0.5, ph: '0' }],
+              ]
+                .map(([n, f, o]) => numberField(`${i + 1}: ${n}`, `${p}.voices.${i}.${f}`, o))
+                .join(
+                  ''
+                )}${selectField(`${i + 1}: Wave`, `${p}.voices.${i}.wave`, MUSIC_CHOICES.wave, { opt: 1, none: 'the base’s' })}</div>`
+          )
+          .join('');
+      return `<details class="mus-cry" id="musCry_${escapeHtml(k)}"><summary><button class="btn subtle mus-play" data-act="musBaseCry" data-k="${escapeHtml(k)}" aria-label="Play ${escapeHtml(k)}" title="Play ${escapeHtml(k)} at middle C">▶</button><b>${escapeHtml(k)}</b> <small class="help">${escapeHtml(B[k].name || '')}</small></summary>${grid(textField('Name', `${p}.name`, { opt: 1, ph: 'unnamed' }), selectField('Wave', `${p}.wave`, MUSIC_CHOICES.wave))}${voices}<div class="seg-row"><button class="btn" data-act="musBaseCry" data-k="${escapeHtml(k)}" data-low="1">▶ Low on health</button></div></details>`;
+    })
+    .join('');
+  return card('Base cries', rows, {
+    sub: 'Each Billie names one of these kinds in its Cry card and sets its own pitch and length. A note starts a few hundredths of a second in, a number of semitones over the Billie’s pitch; the Billie’s length stretches when and how long. ▶ plays it at middle C. Low on health: a quarter faster and a minor third down.',
+  });
+}
+function musicUiSoundsHTML() {
+  const U = musicData().ui;
+  if (!U) return '';
+  const rows = UI_SOUND_NAMES.map(
+    k =>
+      `<div class="seg-row"><button class="btn subtle mus-play" data-act="musUiSound" data-k="${k}" aria-label="Play ${k}" title="Play ${k}">▶</button><b>${k}</b><span class="grow">${textField('Name', `music.ui.sounds.${k}.name`, { opt: 1, ph: 'unnamed' })}</span></div>`
+  ).join('');
+  const which = ['confirm', 'cancel']
+    .map(
+      k =>
+        `<p class="help"><b>${k}</b>: buttons of class ${escapeHtml(((U[k] || {}).classes || []).join(', ') || 'none')}; actions ${escapeHtml(((U[k] || {}).actions || []).join(', ') || 'none')}</p>`
+    )
+    .join('');
+  return card('Button sounds', rows + which, {
+    sub: 'Every button makes one: can’t when it is disabled, else cancel or confirm by its class or action (listed below; music.json ui), else select. Their notes are in music.json ui.',
+  });
+}
+function musicMixHTML() {
+  const p = 'music.mix';
+  return card(
+    'Mix',
+    grid(
+      ...[
+        ['Master', 'master', 'Headroom for the compressor after it'],
+        ['Music', 'music', ''],
+        ['Sound effects', 'sfx', 'Jingles, cries and the buttons'],
+        ['World sounds', 'world', 'Water, fire, rain, animals'],
+        ['Ambience', 'amb', 'Birds, crickets, a town'],
+      ].map(([n, k, h]) =>
+        numberField(n, `${p}.${k}`, { opt: 1, min: 0, max: 1.5, step: 0.05, unit: '×', help: h || undefined })
+      ),
+      numberField('Beds under a song', `${p}.bedsUnderSong`, {
+        opt: 1,
+        min: -24,
+        max: 0,
+        step: 0.5,
+        unit: 'dB',
+        help: 'World sounds and ambience come down this much while a song plays (not the title or the fall)',
+      }),
+      numberField('Compressor threshold', `${p}.compressor.threshold`, {
+        opt: 1,
+        min: -60,
+        max: 0,
+        step: 1,
+        unit: 'dB',
+      }),
+      numberField('Compressor ratio', `${p}.compressor.ratio`, { opt: 1, min: 1, max: 20, step: 0.5, unit: ': 1' })
+    ),
+    {
+      sub: 'Each bus’s trim, times the square of its slider in the game’s Settings → Sound. The game uses these; the Studio’s own player does not, so try a change in the game.',
+    }
+  );
+}
+ACTIONS.musBaseCry = d => {
+  const B = ((musicData().cries || {}).bases || {})[d.k];
+  if (!B) return;
+  const C = cryRecipe('x', { base: d.k, pitch: MUSIC_CRY_PREVIEW, length: 1 }, musicData().cries.bases);
+  musicVoicesPlay(cryVoices(d.low ? cryLowHealth(C) : C));
+};
+ACTIONS.musUiSound = d => {
+  const S = ((musicData().ui || {}).sounds || {})[d.k];
+  if (S) musicVoicesPlay(uiSoundVoices(S));
+};
+
 /* ---------- the Check (studio/js/check.js) ----------
    the music's errors and warnings (logic/music-studio.js musicFindings, the errors check-data reports too) and one
    note on the cries. A song only parked places play is not called unused, so the warnings wait for the parked world */
@@ -667,7 +786,7 @@ function musicCheckFindings() {
       out.push({ lvl: f.lvl, msg: `Music: ${f.msg}`, go: 'billionaires', sel: {} });
       continue;
     }
-    if (f.cry) sel.musicTab = 'sounds';
+    if (f.cry) Object.assign(sel, { musicTab: 'sounds', musicCry: f.cry });
     out.push({ lvl: f.lvl, msg: `Music: ${f.msg}`, go: f.place ? 'world' : 'music', sel: f.place ? {} : sel });
   }
   const species = D.lines.flatMap(L => L.names.map((n, i) => (L.cry || [])[i])),
@@ -941,11 +1060,12 @@ SECTIONS.music = () => {
   musicStudio.shown = '';
   afterRender(musicNowShow);
   afterRender(() => musicHookMount(id));
-  const tab = ['where', 'jingles'].includes(studioState.sel.musicTab) ? studioState.sel.musicTab : 'songs',
+  const tab = ['where', 'jingles', 'sounds'].includes(studioState.sel.musicTab) ? studioState.sel.musicTab : 'songs',
     tabs = `<div class="seg-row tabs" role="tablist">${[
       ['songs', 'Songs'],
       ['where', 'Where they play'],
       ['jingles', 'Jingles'],
+      ['sounds', 'Sounds'],
     ]
       .map(
         ([k, n]) =>
@@ -955,6 +1075,21 @@ SECTIONS.music = () => {
   if (tab === 'jingles') {
     afterRender(musicJingleMount);
     return `<div class="split"><aside class="list-col">${musicListColHTML(uses)}</aside><div class="ed-col">${tabs}${musicJingleHTML()}</div></div>`;
+  }
+  /* SND-6: the base cries, the buttons' sounds, the mix */
+  if (tab === 'sounds') {
+    if (studioState.sel.musicCry) {
+      const k = studioState.sel.musicCry;
+      delete studioState.sel.musicCry;
+      afterRender(() => {
+        const el = /** @type {HTMLDetailsElement | null} */ (document.getElementById('musCry_' + k));
+        if (el) {
+          el.open = true;
+          el.scrollIntoView({ block: 'center' });
+        }
+      });
+    }
+    return `<div class="split"><aside class="list-col">${musicListColHTML(uses)}</aside><div class="ed-col">${tabs}${musicBaseCriesHTML()}${musicUiSoundsHTML()}${musicMixHTML()}</div></div>`;
   }
   if (tab === 'where')
     return `<div class="split"><aside class="list-col">${musicListColHTML(uses)}</aside><div class="ed-col">${tabs}${musicWhereHTML()}</div></div>`;
