@@ -107,7 +107,7 @@ function debugHTML() {
     p = saveData.preferences || {};
   return `<div class="dbg">
  <p class="note">Changes apply to this save right away. Export a backup first if you might want to undo.</p>
- <details open><summary>Performance</summary><div class="dbg-row">${debugButtonHTML('fps', debugMenu.fps ? 'Hide FPS meter' : 'Show FPS meter')}<span class="note">Screen ≈ ${frameScheduler.hz} Hz · cap ${userFps()} FPS · battle quality level ${battleStage.q.lvl} (0 is best)</span><button class="pb small" data-a="quicktest">Full test</button><button class="pb small" data-a="gfxtest">Graphics test</button><button class="pb small" data-a="gfxbench">Graphics cost test</button><button class="pb small" data-a="diagtest">Diagnostics test</button><button class="pb small" data-a="dbglog">Export debug log</button></div><p class="note">The full test (a few minutes) walks through every place and room, plays battles, the map and the opening, checks each for errors, then piles on more until the device can’t keep up. The diagnostics test (2 min) is a shorter run of the same. The graphics test tries each graphics setting on its own and saves a short report; the graphics cost test (10 min) measures what each one costs here. The bowl map test is under Trainers and world. None of them changes the save.</p>
+ <details open><summary>Performance</summary><div class="dbg-row">${debugButtonHTML('fps', debugMenu.fps ? 'Hide FPS meter' : 'Show FPS meter')}<span class="note">Screen ≈ ${frameScheduler.hz} Hz · cap ${userFps()} FPS · battle quality level ${battleStage.q.lvl} (0 is best)</span><button class="pb small" data-a="quicktest">Full test</button><button class="pb small" data-a="gfxtest">Graphics test</button><button class="pb small" data-a="gfxbench">Graphics cost test</button><button class="pb small" data-a="diagtest">Diagnostics test</button><button class="pb small" data-a="dbglog">Export debug log</button></div><p class="note">The full test (a few minutes) walks Copperleaf and every room its doors and a run town’s open, a run’s road, plays battles, the map and the opening’s fall, checks each for errors, then piles on more until the device can’t keep up. The diagnostics test (2 min) is a shorter run of the same. The graphics test tries each graphics setting on its own and saves a short report; the graphics cost test (10 min) measures what each one costs here. The bowl map test is under Trainers and world. None of them changes the save.</p>
   <div class="dbg-row">${debugButtonHTML('q0', 'Force best quality')}${debugButtonHTML('qauto', 'Automatic quality')}</div>
   ${
     DATA_WARN.length
@@ -116,7 +116,7 @@ function debugHTML() {
           .join('')}</ul>`
       : '<p class="note">Game data loaded with no warnings.</p>'
   }</details>
- <details><summary>Wallet and walking</summary><div class="dbg-row">${debugButtonHTML('se1', '+$1,000')}${debugButtonHTML('se10', '+$10,000')}${debugButtonHTML('walk1', 'Walk 1 km')}</div>
+ <details><summary>Wallet and walking</summary><div class="dbg-row">${debugButtonHTML('se1', '+$1,000')}${debugButtonHTML('se10', '+$10,000')}${debugButtonHTML('walk1', 'Walk 1 km')}<span class="note">Walk 1 km adds to the distance on your trainer card.</span></div>
   <div class="dbg-row">${debugButtonHTML('coins', '+10 of every coin')}${debugButtonHTML('items', '+5 of every item')}</div></details>
  <details><summary>Billies</summary><div class="dbg-row">${debugSelectHTML('dbgSp', debugSpeciesOptions(), uiState.dbgSp || DEX_ORDER[0])}<input id="dbgLv" type="number" min="1" max="${maxLevel()}" value="${uiState.dbgLv || 10}" aria-label="Level">${debugSelectHTML('dbgCoat', [['', 'No coat'], ...Object.entries(COATS).map(([k, c]) => [k, c.name])], uiState.dbgCoat || '')}</div>
   <div class="dbg-row">${debugButtonHTML('give', 'Give it to me', 'gold')}${debugButtonHTML('enc', 'Add as encounter')}${debugButtonHTML('wild', 'Battle it now', 'red')}${debugButtonHTML('alpha', 'As an Alpha', 'red')}</div>
@@ -133,7 +133,7 @@ function debugHTML() {
     node
   )}${debugButtonHTML('jump', 'Go there')}</div>
   <div class="dbg-row">${debugButtonHTML('bowltest', 'Bowl map test', 'gold')}</div><p class="note">Phase 10: opens the bowl world map and checks its shaders, that every place is on it and opens its card when tapped, that the camera keeps above the rim, Home, and the frame rate on this device.</p>
-  <div class="dbg-row">${debugButtonHTML('seats', 'Earn every badge')}${debugButtonHTML('flags', 'Reset trainer wins')}${debugButtonHTML('fillq', 'Fill encounters here')}${debugButtonHTML('clearq', 'Clear encounters here')}</div></details>
+  <div class="dbg-row">${debugButtonHTML('fillq', 'Fill encounters here')}${debugButtonHTML('clearq', 'Clear encounters here')}</div></details>
  <details><summary>Runs (roguelite track)</summary>${
    saveData.run
      ? `<p class="note">On a run: seed ${escapeHtml(saveData.run.seed)}, day ${saveData.run.clock}, ${saveData.run.at.phase}. “Go there” above walks it a place at a time.</p><div class="dbg-row">${debugButtonHTML('runwin', 'Win the run', 'gold')}${debugButtonHTML('runlose', 'Lose the run', 'red')}</div><div class="dbg-row">${debugSelectHTML(
@@ -244,7 +244,7 @@ function debugAction(x) {
       saveData.se += 10000;
       break;
     case 'walk1':
-      /* phase 08: as if you walked a kilometre outdoors (eggs, the distance on your trainer card) */
+      /* phase 08: as if you walked a kilometre outdoors: it adds trainer card distance (ranch eggs keep their own time) */
       addWalked(1000);
       break;
     case 'coins':
@@ -444,16 +444,6 @@ function debugAction(x) {
       uiState.modal = null;
       runOver(x === 'runwin');
       return;
-    case 'seats':
-      Object.values(TRAINERS).forEach(T => {
-        if (T.seat && !saveData.seats.includes(T.seat.id)) saveData.seats.push(T.seat.id);
-        saveData.flags[T.id] = 1;
-      });
-      break;
-    case 'flags':
-      saveData.flags = {};
-      saveData.seats = [];
-      break;
     case 'fillq': {
       /* a town without wild Billies gets a route's worth, so there is always something to test with */
       const q = encountersHere();
