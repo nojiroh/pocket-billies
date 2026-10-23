@@ -31,7 +31,7 @@ import {
 } from './walk-view.js';
 import { environment, environmentHour, environmentState } from './environment.js';
 import { walkRenderer } from './walk/walk-state.js';
-import { soundLevel, soundLevels } from './audio/levels.js';
+import { mixTrim, soundLevel, soundLevels } from './audio/levels.js';
 import { midiToFrequency, trackerCreate } from './audio/tracker.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -128,12 +128,15 @@ function initSound() {
   try {
     const c = new AC();
     soundEngine.ctx = c;
-    const comp = c.createDynamicsCompressor();
-    comp.threshold.value = -14;
-    comp.ratio.value = 3;
+    /* SND-6: the compressor's settings and the master's trim are music.json mix */
+    const comp = c.createDynamicsCompressor(),
+      CM = (MUSIC.mix && MUSIC.mix.compressor) || {};
+    comp.threshold.value = CM.threshold ?? -14;
+    comp.ratio.value = CM.ratio ?? 3;
     comp.connect(c.destination);
+    soundEngine.comp = comp;
     soundEngine.master = c.createGain();
-    soundEngine.master.gain.value = 0.9;
+    soundEngine.master.gain.value = mixTrim(MUSIC.mix, 'master');
     soundEngine.master.connect(comp);
     soundEngine.mus = c.createGain();
     soundEngine.fx = c.createGain();
@@ -161,7 +164,7 @@ function initSound() {
 /* alpha 0.5: a master volume and mute over everything (music, effects, world sounds, ambience all go through the master) */
 function applyVolumes() {
   if (!soundEngine.ctx) return;
-  const L = soundLevels(soundPreferences()),
+  const L = soundLevels(soundPreferences(), MUSIC.mix),
     t = soundEngine.ctx.currentTime;
   soundEngine.master.gain.setTargetAtTime(L.master, t, 0.05);
   soundEngine.mus.gain.setTargetAtTime(L.music, t, 0.05);
@@ -754,7 +757,7 @@ function ambienceFadeIn() {
 }
 function applyAmbienceVolume() {
   if (!ambience.bus || !soundEngine.ctx) return;
-  const L = soundLevels(soundPreferences()),
+  const L = soundLevels(soundPreferences(), MUSIC.mix),
     f = ambienceFadeIn(),
     t = soundEngine.ctx.currentTime;
   ambience.bus.gain.setTargetAtTime(L.world * f, t, 0.1);

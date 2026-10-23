@@ -4,7 +4,10 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 globalThis.window ??= globalThis;
-const { soundLevel, soundLevels } = await import('../../game/js/audio/levels.js');
+const { mixTrim, soundLevel, soundLevels } = await import('../../game/js/audio/levels.js');
+const MIX = JSON.parse(
+  (await import('node:fs')).readFileSync(new URL('../../game/data/music.json', import.meta.url), 'utf8')
+).mix;
 
 const near = (a, b) => assert.ok(Math.abs(a - b) < 1e-9, `${a} is not ${b}`);
 
@@ -44,4 +47,16 @@ test('mute silences the master bus and keeps every level', () => {
 test('a level stored as text, as a slider hands it over, reads as its number', () => {
   near(soundLevels({ music: '0.4' }).music, 0.16);
   assert.equal(soundLevel({ sfx: '0' }, 'sfx'), 0);
+});
+
+test("SND-6: the trims are music.json's mix; the data's mix is today's trims, so nothing sounds different", () => {
+  for (const prefs of [undefined, { master: 0.7, music: 0.3, amb: 0.9 }, { mute: 1 }]) {
+    const A = soundLevels(prefs),
+      B = soundLevels(prefs, MIX);
+    for (const k of ['master', 'music', 'sfx', 'world', 'amb']) near(A[k], B[k]);
+  }
+  near(soundLevels({}, { music: 0.5 }).music, 0.55 * 0.55 * 0.5);
+  near(soundLevels({}, { master: 1 }).master, 1);
+  assert.equal(mixTrim({}, 'amb'), 0.9);
+  assert.equal(mixTrim(null, 'master'), 0.9);
 });

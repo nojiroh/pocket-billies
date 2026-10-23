@@ -832,7 +832,7 @@ def sound_step(b, base, R):
         bus = "({master:soundEngine.master,music:soundEngine.mus,sfx:soundEngine.fx,world:ambience.bus,amb:ambience.amb})"
         off = []
         for k, v in [('master', 70), ('music', 40), ('sfx', 30), ('world', 60), ('amb', 20)]:
-            want = f"(soundLevels({{{k}:{v / 100}}}).{k}*({'ambienceFadeIn()' if k in ('world', 'amb') else '1'}))"
+            want = f"(soundLevels({{{k}:{v / 100}}},MUSIC.mix).{k}*({'ambienceFadeIn()' if k in ('world', 'amb') else '1'}))"
             pg.evaluate(f"(()=>{{const e=document.querySelector('input[data-preference={k}]');e.value='{v}';e.dispatchEvent(new Event('input',{{bubbles:true}}))}})();0")
             # no 'change' event: the level must follow while the slider is still held
             if not until(pg, f"Math.abs(__snd.to.get({bus}.{k}.gain)-{want})<0.02", 4):
@@ -844,8 +844,8 @@ def sound_step(b, base, R):
         m = pg.evaluate("({mute:!!saveData.preferences.mute,pressed:document.querySelector('.set-mute').getAttribute('aria-pressed'),sw:document.querySelector('[data-pref-set=mute].sw').getAttribute('aria-checked'),master:__snd.to.get(soundEngine.master.gain),levels:JSON.stringify(['master','music','sfx','world','amb'].map(k=>saveData.preferences[k]))})")
         if not m['mute'] or m['pressed'] != 'true' or m['sw'] != 'false' or m['master'] > 0.01: raise Exception(f'the header mute didn’t mute: {m}')
         if m['levels'] != levels: raise Exception(f'muting changed the levels: {levels} became {m["levels"]}')
-        pg.click('.set-mute'); until(pg, "!saveData.preferences.mute&&Math.abs(__snd.to.get(soundEngine.master.gain)-soundLevels(saveData.preferences).master)<0.02", 5)
-        back = pg.evaluate("[!!saveData.preferences.mute,+__snd.to.get(soundEngine.master.gain).toFixed(3),+soundLevels(saveData.preferences).master.toFixed(3)]")
+        pg.click('.set-mute'); until(pg, "!saveData.preferences.mute&&Math.abs(__snd.to.get(soundEngine.master.gain)-soundLevels(saveData.preferences,MUSIC.mix).master)<0.02", 5)
+        back = pg.evaluate("[!!saveData.preferences.mute,+__snd.to.get(soundEngine.master.gain).toFixed(3),+soundLevels(saveData.preferences,MUSIC.mix).master.toFixed(3)]")
         if back[0] or abs(back[1] - back[2]) > 0.02: raise Exception(f'the header mute didn’t unmute: mute {back[0]}, master {back[1]}, wanted {back[2]}')
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return 'five Test buttons on their own buses; five sliders set their bus while dragged; the header mute silenced the master, kept the levels and came back'
