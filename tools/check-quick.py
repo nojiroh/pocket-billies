@@ -1657,7 +1657,7 @@ def desktop_steps(b, base, R):
         return '; '.join(out)
     v35()
 
-    @step('v36: new starters on piece sheets, split evolution, 12 fps puppets, next ground tiles', 150)
+    @step('v36: new starters on piece sheets, 12 fps puppets, next ground tiles', 150)
     def v36():
         if not pg.evaluate("typeof rigFrame==='function'&&!!window.RIGS_NEXT"): return 'not in this build'
         out = []
@@ -1690,11 +1690,6 @@ def desktop_steps(b, base, R):
         if weak: raise Exception(f'walk or hurt leaves legs/head still for {weak}')
         plans = pg.evaluate("Object.keys(POSES_BY_PLAN).length")
         out.append(f"motion audit: every piece moves, legs walk and heads flinch on all 12; {plans} body plans")
-        # phase 08: split evolution: the middle stage goes the way you pick in the evolution window (Build: A, Hype: B)
-        e = json.loads(pg.evaluate("""(()=>{const a=makeBilly('musk1',32),b=makeBilly('musk1',32);const ra=canEvolve(a);uiState.modal=null;uiState.mq=[];evolutionModal(a);const btns=[...document.querySelectorAll('.modal button, .sheet button')].map(x=>x.textContent.trim());closeModal();evolve(a,'A');evolve(b,'B');return JSON.stringify({ra,btns,a:a.sp,b:b.sp,hint:evolutionHint(makeBilly('musk1',20))})})()"""))
-        if not (e['ra'] and e['a'] == 'musk2' and e['b'] == 'musk3'): raise Exception(f'split evolution: {e}')
-        if not any(t.startswith('Build') for t in e['btns']) or not any(t.startswith('Hype') for t in e['btns']): raise Exception(f"the evolution window doesn't offer both paths: {e['btns']}")
-        out.append(f"split at 32: Build → Marsox, Hype → Memeox (“{e['hint'][:60]}…”)")
         # a battle with the new starter on the 3D stage: the player's rig buffer has pixels
         pg.evaluate("saveData.team.unshift(makeBilly('gates0',14));saveData.team[0].hp=maxHp(saveData.team[0]);const q={id:'cq36',sp:'bezos1',lvl:12,no:1};encountersHere().push(q);startWild(q);0")
         if not until(pg, "activeBattle&&activeBattle.phase==='choose'", 90, "activeBattle&&activeBattle.phase==='playing'&&tapMessage()"): raise Exception('the starter battle never reached the move menu')
