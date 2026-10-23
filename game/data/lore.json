@@ -72,7 +72,7 @@
    "id": "variants",
    "stage": 2,
    "title": "The Variants",
-   "text": "Trainers in gold jackets have started turning up on the roads, buying rare Billies with cash and not taking no for an answer. They call themselves the Variants. They all have the same tour shirt. You have a feeling you’ve seen it before."
+   "text": "Trainers in gold jackets have started turning up on the roads, buying rare Billies with backstage passes and not taking no for an answer. They call themselves the Variants. They all have the same tour shirt. You have a feeling you’ve seen it before."
   },
   {
    "id": "oil",
@@ -90,7 +90,7 @@
    "id": "goldenhills",
    "stage": 5,
    "title": "Golden Hills",
-   "text": "Golden grass over old stone vaults. Baron Vault has rented his vaults to Vinylla to store her variants, and rented himself along with them."
+   "text": "Golden grass over old stone vaults. Baron Vault has lent his vaults to Vinylla to store her variants, and signed himself over along with them."
   },
   {
    "id": "sporeforest",
@@ -158,7 +158,7 @@
    "who": "chad",
    "role": "Your rival",
    "unlock": "start",
-   "text": "The son of Sterling Sterling III, founder of Sterling Capital, whose clone lives in the bins behind the food stalls of Pepperpot Town and answers to “Mr Sterling” if you say it with enough respect. Blake is smug, rich and furious about it, and he always picks the Billie that beats yours.",
+   "text": "The son of Sterling Sterling III, founder of a company that makes apps for other apps, whose clone lives in the bins behind the food stalls of Pepperpot Town and answers to “Mr Sterling” if you say it with enough respect. Blake is smug, rich and furious about it, and he always picks the Billie that beats yours.",
    "voice": "“I picked the one that beats yours. No offence. Well, a little offence.”"
   },
   "vinylla": {
@@ -188,7 +188,7 @@
    "who": "markdown",
    "role": "Steel arena, Lanternhall City",
    "unlock": "meet:markdown",
-   "text": "Runs the arena on the mall’s lowest floor, between the fountain and the escalator nobody has seen move. Polished floors, polished team, and a policy of no refunds.",
+   "text": "Runs the arena on the mall’s lowest floor, between the fountain and the escalator nobody has seen move. Polished floors, polished team, and terms of service nobody has ever read.",
    "voice": "“Every Steel Billie on my team makes the others hit harder.”"
   },
   "alta": {
@@ -204,7 +204,7 @@
    "who": "marina",
    "role": "Water arena, Palmhaven Town",
    "unlock": "meet:marina",
-   "text": "Runs the island arena where nobody asks questions. She knows exactly whose money is on every yacht in the harbour, and she has never told.",
+   "text": "Runs the island arena where nobody asks questions. She knows exactly who is in every yacht photo in the harbour, and who was cropped out, and she has never told.",
    "voice": "“Relax. Nobody here asks questions.”"
   },
   "poppy": {
@@ -218,8 +218,8 @@
    "name": "Baron Vault",
    "role": "Fire arena, Golden Hills",
    "unlock": "flag:region:goldenhills",
-   "text": "Old money, old vaults, new tenant. He rented his vaults to Vinylla to store her variants, and found out too late that the lease came with him in it.",
-   "voice": "“Everything has a price. I simply hadn’t asked mine.”"
+   "text": "Old name, old vaults, new tenant. He lent his vaults to Vinylla to store her variants, and found out too late that the contract came with him in it.",
+   "voice": "“Everything has my name on it. Even, apparently, the small print.”"
   },
   "morel": {
    "name": "Mother Morel",
@@ -248,8 +248,8 @@
    "who": "nacre",
    "role": "Curator of the Pearl Exchange, Pearlantis City",
    "unlock": "meet:nacre",
-   "text": "Keeps the Pearl Exchange’s books, and has been watching the city’s gold go up the pipes to Vinylla’s pressing plant on the platform above.",
-   "voice": "Dry, precise, very cross. “Somebody ought to send her the bill.”"
+   "text": "Keeps the Pearl Exchange’s inventory, and has been watching the city’s gold go up the pipes to Vinylla’s pressing plant on the platform above.",
+   "voice": "Dry, precise, very cross. “Somebody ought to send her a complaint form.”"
   }
  },
  "locations": {
