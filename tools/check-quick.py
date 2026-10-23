@@ -746,12 +746,17 @@ def run_map_weather_step(P):
     pg.evaluate("window.__cut=[];const f=soundEngine.musLP.frequency,o=f.setTargetAtTime.bind(f);f.setTargetAtTime=(v,t,c)=>{__cut.push(v);return o(v,t,c)};0")
     setw = "(w=>{const R=saveData.run,i=LOCATIONS[saveData.trip.node].runNode;R.forecast[runWorldNode(i)][R.clock-1]=w})"
     pg.evaluate("uiState.tab='map';render();0"); seen = []
-    for w in ('storm', 'rain', 'clear'):
-        want = pg.evaluate(f"{setw}('{w}');musicWeatherCut('{w}',MUSIC.run)")
-        if not until(pg, f"__cut.length&&__cut[__cut.length-1]==={want}", 4): raise Exception(f"{w} on the map tab: the low-pass was given {pg.evaluate('__cut.slice(-1)[0]')}, not {want}")
-        seen.append(f'{w} {want} Hz')
-    if pg.evaluate('soundEngine.want') != 'map': raise Exception(f"the map tab asked for {pg.evaluate('soundEngine.want')!r}, not map")
-    pg.evaluate(f"{setw}('storm');uiState.tab='walk';render();0")
+    try:
+        for w in ('storm', 'rain', 'clear'):
+            want = pg.evaluate(f"{setw}('{w}');musicWeatherCut('{w}',MUSIC.run)")
+            if not until(pg, f"__cut.length&&__cut[__cut.length-1]==={want}", 4): raise Exception(f"{w} on the map tab: the low-pass was given {pg.evaluate('__cut.slice(-1)[0]')}, not {want}")
+            seen.append(f'{w} {want} Hz')
+        # TC-4: a wait, not a look: Run music's last check leaves the sync's deadline song asked for until the game syncs
+        # again ('meadow@deadline' on a busy machine)
+        if not until(pg, "soundEngine.want==='map'", 10): raise Exception(f"the map tab asked for {pg.evaluate('soundEngine.want')!r}, not map")
+    finally:
+        # the walk tab back even when this fails: Battle music after it needs the walk view
+        pg.evaluate(f"{setw}('storm');uiState.tab='walk';render();0")
     if not until(pg, "__cut[__cut.length-1]!==1400", 4): raise Exception('back on the walk tab the forecast still muffled the music')
     return 'map tab: ' + ', '.join(seen) + f"; walk tab: {pg.evaluate('__cut.slice(-1)[0]')} Hz (the place's own weather)"
 
