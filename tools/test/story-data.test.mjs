@@ -34,7 +34,7 @@ test('setStoryFlag sets the flag in the save; one story.json lacks is a data war
 test('when / unless and chapters read the save', () => {
   const allows = fn('storyAllows'),
     chapterMap = fn('chapterMap'),
-    s = { story: { met_cass: 1 }, flags: { chad: 1 }, items: {}, coins: {}, caught: {}, seats: [] };
+    s = { story: { met_cass: 1 }, flags: { chad: 1 }, items: {}, pyramids: {}, caught: {}, seats: [] };
   assert.equal(allows({}, s), true);
   assert.equal(allows({ when: 'met_cass' }, s), true);
   assert.equal(allows({ when: 'met_cass', unless: 'beat:chad' }, s), false);

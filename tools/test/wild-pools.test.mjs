@@ -50,7 +50,7 @@ test('the uncommon lines are met far more often than the starters', () => {
 
 test('no run place needs a stand-in: its list is its biome pool, every id the game has', () => {
   const R = GAME_DATA.rules.run,
-    start = { team: [], se: 0, items: {}, coins: {}, trip: { node: 0, plan: [] }, wild: {}, eggs: [], flags: {} },
+    start = { team: [], se: 0, items: {}, pyramids: {}, trip: { node: 0, plan: [] }, wild: {}, eggs: [], flags: {} },
     world = {
       nodeTypes: GAME_DATA.nodeTypes,
       biomes: GAME_DATA.biomes,

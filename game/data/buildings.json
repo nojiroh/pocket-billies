@@ -1,14 +1,14 @@
 {
  "lab": {
   "name": "Lab",
-  "currency": "capital",
+  "currency": "research",
   "act": "lab",
   "levels": 1,
   "about": "Professor Chosen's lab (his assistant Hazel does the work). Its board sells unlocks for Research."
  },
  "airship": {
   "name": "Airship",
-  "currency": "seals",
+  "currency": "crests",
   "act": "fly",
   "levels": 2,
   "about": "The airship at the mast. Upgrades for Crests take runs to new lands."

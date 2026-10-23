@@ -4,10 +4,10 @@ the coins' until RF-4).
 
 Each icon is drawn at its own size (never scaled): a pyramid seen from a little above and to the left, the left face
 lit and the right face in shade, a dark outline. The tier colours stay the coins' so the four read apart at 16 px:
-  penny  Pyramid       copper sandstone, courses of stone blocks
-  silver Step Pyramid  silver-grey limestone, steps
-  gold   Gold Pyramid  gold, a shine down the lit face
-  tbtf   Capstone      a small platinum-blue tip with a gold point and a few glints round it
+  pyramid  Pyramid       copper sandstone, courses of stone blocks
+  step_pyramid Step Pyramid  silver-grey limestone, steps
+  gold_pyramid   Gold Pyramid  gold, a shine down the lit face
+  capstone   Capstone      a small platinum-blue tip with a gold point and a few glints round it
 
 The models are recipes for the 3D props' code (prop-models.js; low-poly, the buildings' 32 px textures), thrown in
 battle (battle-3d.js). They stand 2 cm up (PYRAMID_LIFT in battle-3d.js takes it back off): a shape on the ground
@@ -32,10 +32,10 @@ def hx(s):
 
 # hi, lit, mid, shade, dark, outline
 PALETTES = {
-    'penny': ['#ffd2a8', '#f0a066', '#d47a3e', '#a5532a', '#6b3218', '#2e1408'],
-    'silver': ['#ffffff', '#d4dce2', '#b4bec7', '#8c97a2', '#5f6b75', '#252c33'],
-    'gold': ['#fff6c8', '#ffd866', '#f0bb40', '#c98a1b', '#9c6a0c', '#3a2405'],
-    'tbtf': ['#eef1ff', '#b4c0ff', '#8fa0f0', '#5d6fd0', '#33449a', '#0e1230'],
+    'pyramid': ['#ffd2a8', '#f0a066', '#d47a3e', '#a5532a', '#6b3218', '#2e1408'],
+    'step_pyramid': ['#ffffff', '#d4dce2', '#b4bec7', '#8c97a2', '#5f6b75', '#252c33'],
+    'gold_pyramid': ['#fff6c8', '#ffd866', '#f0bb40', '#c98a1b', '#9c6a0c', '#3a2405'],
+    'capstone': ['#eef1ff', '#b4c0ff', '#8fa0f0', '#5d6fd0', '#33449a', '#0e1230'],
 }
 GOLD_TIP = ['#fff6c8', '#ffd866', '#f0bb40', '#c98a1b', '#9c6a0c', '#3a2405']
 
@@ -54,7 +54,7 @@ def inside(p, a, b, c):
 def shape(n, kind):
     """the four corners (apex, left, front, right) in pixels, for an n x n icon"""
     s = n / 32
-    if kind == 'tbtf':
+    if kind == 'capstone':
         # the capstone is the small tip: a squat pyramid low in the frame
         return [(16 * s, 7 * s), (4.5 * s, 25 * s), (17 * s, 29 * s), (28.5 * s, 24 * s)]
     return [(16 * s, 2.5 * s), (2.5 * s, 25 * s), (17 * s, 29.5 * s), (29.5 * s, 24 * s)]
@@ -73,7 +73,7 @@ def draw(kind, n):
         for x in range(n):
             p = (x + 0.5, y + 0.5)
             f = 'l' if inside(p, A, L, F) else 'r' if inside(p, A, F, R) else None
-            if kind == 'silver' and p[1] > A[1]:
+            if kind == 'step_pyramid' and p[1] > A[1]:
                 # steps: each tier a block with upright sides, as wide as the triangle near the tier's foot
                 t = int((p[1] - A[1]) // tier_h)
                 k = min(0.88, (t + 0.9) * tier_h / (L[1] - A[1]))
@@ -96,7 +96,7 @@ def draw(kind, n):
             below = face[y + 1][x] if y + 1 < n else None
             if not below:
                 c = mid if f == 'l' else dark
-            if kind == 'penny':
+            if kind == 'pyramid':
                 # courses of stone blocks: a darker line every few rows, joints offset course to course
                 ch = max(3, round(n / 32 * 4))
                 row = int(y - A[1])
@@ -104,18 +104,18 @@ def draw(kind, n):
                     c = mid if f == 'l' else dark
                 elif n >= 32 and row > ch and (x + (row // ch) * 3) % 7 == 0:
                     c = mid if f == 'l' else dark
-            if kind == 'silver':
+            if kind == 'step_pyramid':
                 row = y - A[1]
                 if row > 0 and int(row) % tier_h == 0:
                     c = hi if f == 'l' else mid  # the top of each step catches the light
-            if kind == 'gold' and f == 'l':
+            if kind == 'gold_pyramid' and f == 'l':
                 # a shine down the lit face, parallel to the left edge
                 k = (y + 0.5 - A[1]) / (L[1] - A[1])
                 ex = A[0] + (L[0] - A[0]) * k
                 d = x + 0.5 - ex
                 if n / 32 * 3 <= d <= n / 32 * 3 + max(1, n / 32 * 1.6) and 0.15 < k < 0.8:
                     c = hi
-            if kind == 'tbtf':
+            if kind == 'capstone':
                 # the gold point: the top of the capstone
                 if y + 0.5 < A[1] + (F[1] - A[1]) * 0.36:
                     c = G[1] if f == 'l' else G[3]
@@ -128,7 +128,7 @@ def draw(kind, n):
         if 0.05 < k < 0.97:
             x = int(A[0] + (F[0] - A[0]) * k)
             if 0 <= x < n and face[y][x]:
-                tip = kind == 'tbtf' and k < 0.36
+                tip = kind == 'capstone' and k < 0.36
                 px[x, y] = (G if tip else P)[0] if k < 0.5 else (G if tip else P)[1]
     # outline: every empty pixel that touches the pyramid
     for y in range(n):
@@ -140,7 +140,7 @@ def draw(kind, n):
                 for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1))
             ):
                 px[x, y] = line
-    if kind == 'tbtf':
+    if kind == 'capstone':
         # glints round the capstone: it never fails
         g = [(5, 9), (27, 10), (7, 4)] if n >= 32 else [(2, 4), (13, 5)]
         for gx, gy in g:
@@ -161,9 +161,9 @@ def recipe(kind):
     P = PALETTES[kind]
     r = SIDE / 2 ** 0.5  # a 4-sided cone's corner radius, turned 45 degrees so its faces are square to x and y
     cone = {'k': 'cone', 'x': 0, 'y': 0, 'sides': 4, 'rot': 0.7854, 'facet': 1}
-    if kind == 'penny':
+    if kind == 'pyramid':
         L = [{**cone, 'z': LIFT, 'r': r, 'h': HIGH, 'col': P[2], 'tex': 'brick', 'name': 'pyramid'}]
-    elif kind == 'silver':
+    elif kind == 'step_pyramid':
         n = 3
         L = [
             {
@@ -173,7 +173,7 @@ def recipe(kind):
             }
             for i in range(n)
         ]
-    elif kind == 'gold':
+    elif kind == 'gold_pyramid':
         L = [{**cone, 'z': LIFT, 'r': r, 'h': HIGH, 'col': P[2], 'tex': 'plain', 'name': 'pyramid'}]
     else:
         # the capstone: a smaller pyramid, platinum blue with its top in gold
@@ -194,7 +194,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--sheet')
     a = ap.parse_args()
-    kinds = ['penny', 'silver', 'gold', 'tbtf']
+    kinds = ['pyramid', 'step_pyramid', 'gold_pyramid', 'capstone']
     for k in kinds:
         for n in (16, 32):
             draw(k, n).save(os.path.join(OUT, f'{k}_{n}.png'), optimize=True)

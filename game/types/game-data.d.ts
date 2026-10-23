@@ -54,8 +54,8 @@ export interface GameData {
   nodeTypes?: Record<DataId, NodeType>;
   /** sound track SND-2: the songs, jingles, cries' bases and where each song plays (game/data/music.json) */
   music?: Music;
-  /** roguelite track RL-12: a run's Loopholes (relics), each a list of effect rows (game/data/relics.json; logic/effects.js) */
-  relics?: Record<DataId, Relic>;
+  /** roguelite track RL-12: a run's Perks, each a list of effect rows (game/data/perks.json; logic/effects.js) */
+  perks?: Record<DataId, Perk>;
   /** roguelite track RL-11: the four currencies (game/data/currencies.json) */
   currencies?: Partial<Record<CurrencyId, Currency>>;
   /** RL-11: Copperleaf's hub buildings (game/data/buildings.json) */
@@ -72,7 +72,7 @@ export interface GameData {
   pools: Record<DataId, Pool>;
   /** the egg tiers, keyed by the distance in km that hatches them ('2', '5', '10') */
   eggs: Record<string, EggTier>;
-  coins: Record<DataId, Coin>;
+  pyramids: Record<DataId, Coin>;
   items: Record<DataId, Item>;
   jobs: Record<DataId, Job>;
   people: Record<DataId, Person>;
@@ -228,7 +228,7 @@ export interface MoveEffect {
   spin?: number;
   hold?: number;
   missCost?: number;
-  rent?: number;
+  stones?: number;
   /** phase 17: the attacker picks which part of a robot it hits */
   aim?: number;
   /** phase 17: a robot part hit by it loses this many times the usual part damage */
@@ -649,7 +649,7 @@ export interface EggTier {
   list: WeightedSpecies[];
 }
 
-/** coins.json: a coin you tax Billies with */
+/** pyramids.json: a coin you tax Billies with */
 export interface Coin {
   n: string;
   /** the tax odds multiplier (0: never fails) */
@@ -798,7 +798,7 @@ export interface Seat {
   id: string;
   title: string;
   coin: DataId;
-  coins: Record<DataId, number>;
+  pyramids: Record<DataId, number>;
   items: Record<DataId, number>;
   rewardText: string;
   unlockText: string;
@@ -812,7 +812,7 @@ export interface Rules {
   start: {
     /** money */
     se: number;
-    coins: Record<DataId, number>;
+    pyramids: Record<DataId, number>;
     items: Record<DataId, number>;
     /** the starters' line ids */
     starters: DataId[];
@@ -860,19 +860,19 @@ export interface Rules {
     critChances: number[];
     critMult: number;
     rollMin: number;
-    cryptoRollMin: number;
-    cryptoRollMax: number;
-    mediaCrit: number;
-    financeRamp: number;
-    financeRampTurns: number;
-    retailSynergy: number;
+    wildMindRollMin: number;
+    wildMindRollMax: number;
+    liveWireCrit: number;
+    kindlingBoost: number;
+    kindlingTurns: number;
+    alloyBoost: number;
     /** RF-3 Undertow (Water): its Water moves hit this much harder at or below this share of its HP */
     undertowMult: number;
     undertowHp: number;
     oilShockMult: number;
     drainFraction: number;
-    rentFraction: number;
-    auditSkip: number;
+    stonesFraction: number;
+    paralysisSkip: number;
     hypeTurns: number;
     hypeSelfHit: number;
     subpoenaMin: number;
@@ -914,14 +914,14 @@ export interface Rules {
     /** evolved stages' catch rates */
     evolved: number[];
     hpFactor: number;
-    subpoena: number;
+    asleepCatch: number;
     status: number;
     spin: number;
     ring: number;
     edge: number;
-    /** the lines that shrug off a Copper Coin (its odds times luxuryPenny) */
+    /** the lines that shrug off a plain Pyramid (its odds times luxuryPyramid) */
     luxury: DataId[];
-    luxuryPenny: number;
+    luxuryPyramid: number;
     alpha: number;
   };
   ride: { minHeight: number; types: TypeId[] };
@@ -936,18 +936,18 @@ export interface Rules {
       placeholders until the owner has played the first cut (roguelite-track.md 8.18) */
   run: {
     payout: {
-      /** Capital per $ left */
+      /** Research per Money left */
       money: number;
       /** items count at this share of their price, then at the money rate */
       itemShare: number;
-      /** Capital per Billie released in the run */
+      /** Research per Billie released in the run */
       released: number;
-      /** Capital per node cleared (each node once, however often it was walked back to; RL-6) */
+      /** Research per node cleared (each node once, however often it was walked back to; RL-6) */
       node: number;
-      /** Capital for a win */
+      /** Research for a win */
       win: number;
-      /** Audit Seals for a win */
-      winSeals: number;
+      /** Crests for a win */
+      winCrests: number;
       /** RL-9: Scrap per node cleared, and for a win */
       scrapNode: number;
       scrapWin: number;
@@ -970,10 +970,10 @@ export interface Rules {
     /** RL-7: metres past a seam before a crossing counts in a run (the hub's is 1), so a step over and back costs
         no day */
     seamIn: number;
-    /** RL-8: what a run starts with, besides the Billies from home and the packed bag: its money, coins and items (placeholders) */
-    start: { se: number; coins: Record<string, number>; items: Record<string, number> };
-    /** RL-9b: by Bracket (index 0 = Bracket I; past the end, the last): how many Billies from home a run takes, and
-        how many items and coins (in all) are packed from Copperleaf's bag at the mast (placeholders) */
+    /** RL-8: what a run starts with, besides the Billies from home and the packed bag: its money, pyramids and items (placeholders) */
+    start: { se: number; pyramids: Record<string, number>; items: Record<string, number> };
+    /** RL-9b: by Expedition (index 0 = Expedition I; past the end, the last): how many Billies from home a run takes, and
+        how many items and pyramids (in all) are packed from Copperleaf's bag at the mast (placeholders) */
     home: number[];
     pack: number[];
     /** RL-8: a run town's clinic: $ per hurt Billie (free in the hub) */
@@ -983,13 +983,13 @@ export interface Rules {
     shop: { always: string[]; more: number; pick: Record<string, number> };
     /** RL-8: a mini-boss's and the boss's levels: `up` over the top wild level of their row; their reward in $ */
     foes: { miniboss: { up: number; reward: number }; boss: { up: number; reward: number } };
-    /** RL-12: Loopholes: at most `cap` held, a pick of `pick` after a mini-boss, offered by `rarity` weight, sold in a
+    /** RL-12: Perks: at most `cap` held, a pick of `pick` after a mini-boss, offered by `rarity` weight, sold in a
         run shop at `price` by rarity (placeholders) */
-    relics: {
+    perks: {
       cap: number;
       pick: number;
-      rarity: Record<RelicRarity, number>;
-      price: Record<RelicRarity, number>;
+      rarity: Record<PerkRarity, number>;
+      price: Record<PerkRarity, number>;
     };
   };
   /** roguelite track RL-9: the ranch (logic/ranch.js). Placeholders until the owner has played it */
@@ -1463,7 +1463,7 @@ export interface StoryPreset {
   flags?: Record<string, any>;
   /** trainer ids; a leader's badge comes with them */
   beaten?: DataId[];
-  coins?: Record<DataId, number>;
+  pyramids?: Record<DataId, number>;
   items?: Record<DataId, number>;
   team: { sp: string; lvl: number }[];
 }
@@ -1696,9 +1696,9 @@ export interface Music {
   where: MusicWhere[];
 }
 
-/** relics.json: how often a Loophole is offered and what a shop asks for it (rules.json run.relics) */
-export type RelicRarity = 'common' | 'uncommon' | 'rare';
-/** relics.json: one effect row (logic/effects.js FX_KINDS; the schema says what each kind takes) */
+/** perks.json: how often a Perk is offered and what a shop asks for it (rules.json run.perks) */
+export type PerkRarity = 'common' | 'uncommon' | 'rare';
+/** perks.json: one effect row (logic/effects.js FX_KINDS; the schema says what each kind takes) */
 export type FxRow =
   | { kind: 'money'; mult: number }
   | { kind: 'price'; what: 'shop' | 'heal'; mult: number }
@@ -1706,19 +1706,19 @@ export type FxRow =
   | { kind: 'stat'; stat: 'lev' | 'law' | 'lob' | 'pr' | 'hus'; stages: number }
   | { kind: 'damage'; side: 'deal' | 'take'; cat?: 'H' | 'S'; type?: string; mult: number }
   | { kind: 'heal'; share: number }
-  | { kind: 'payout'; what: 'capital' | 'itemShare'; mult: number };
-/** relics.json: a Loophole (roguelite track RL-12): held for one run, its effect rows apply while it is held */
-export interface Relic {
+  | { kind: 'payout'; what: 'research' | 'itemShare'; mult: number };
+/** perks.json: a Perk (roguelite track RL-12): held for one run, its effect rows apply while it is held */
+export interface Perk {
   /** what the player reads */
   name: string;
   /** what it does, in one sentence */
   d: string;
-  rarity: RelicRarity;
+  rarity: PerkRarity;
   fx: FxRow[];
 }
 
 /** currencies.json: one of the game's four currencies (roguelite track RL-11) */
-export type CurrencyId = 'money' | 'capital' | 'scrap' | 'seals';
+export type CurrencyId = 'money' | 'research' | 'scrap' | 'crests';
 export interface Currency {
   /** what the player reads; `long` where the short name is a sign ($); `one` for a count of one */
   name: string;
@@ -1749,9 +1749,9 @@ export type UnlockGrant =
   | { building: string; level: number }
   | { shop: string }
   | { biome: string }
-  | { capital: number }
+  | { research: number }
   | { scrap: number }
-  | { seals: number };
+  | { crests: number };
 /** unlocks.json: one row of the unlock table (roguelite track RL-11): sold at a building (at + cost, in its currency;
  * the Lab's rows are its board) or earned when a condition holds (when) */
 export interface Unlock {

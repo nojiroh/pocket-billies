@@ -7,9 +7,9 @@
    above. phase 06-3: the only stage (the painted one is gone); a battle waits until the walk scene is ready. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { COINS, activeBattle, fieldState, provide, reducedMotion } from './hooks.js';
+import { PYRAMIDS, activeBattle, fieldState, provide, reducedMotion } from './hooks.js';
 import { $, clamp } from './util.js';
-import { coinCanvas, hexToRgb } from './art.js';
+import { hexToRgb, pyramidCanvas } from './art.js';
 import {
   FOCAL_LENGTH,
   PYRAMID_HIGH,
@@ -102,7 +102,7 @@ export function battle3dAttach(o = {}) {
   battleStage.leafy = [];
   battleStage.glint = [];
   /* RF-2: the catch pyramids' models, so the first throw has them */
-  if (typeof COINS !== 'undefined') for (const k of Object.keys(COINS)) loadPropModelRecipe(pyramidModelPath(k));
+  if (typeof PYRAMIDS !== 'undefined') for (const k of Object.keys(PYRAMIDS)) loadPropModelRecipe(pyramidModelPath(k));
   walkView.battle = { frame: battle3dFrame };
   battle3d.on = true;
   if (typeof debugLog !== 'undefined') debugLog.add('battle', '3D stage in ' + walkView.id);
@@ -284,7 +284,7 @@ function battle3dFrame() {
   };
 }
 /* ================= RF-2: THE THROWN PYRAMID =================
-   battleStage.coin (battle-stage.js coinArc and the catch) says where it is and how it lies:
+   battleStage.coin (battle-stage.js pyramidArc and the catch) says where it is and how it lies:
    - in the air (C.fly): it tumbles about a tilted axis through its middle (C.tum radians, C.ax the axis);
    - on the ground: it stands point up, rocked on one edge of its base by C.rot (the wobbles: + one way, - the other);
    - C.tip: it landed balanced on its point (the critical catch).
@@ -316,7 +316,7 @@ function pyramidItem(C, O) {
   C.in3d = battleStage.t;
   /* the capstone glows a little; any pyramid glows as it seals */
   const glow = C.glow || 0;
-  if (C.kind === 'tbtf' || glow > 0.05)
+  if (C.kind === 'capstone' || glow > 0.05)
     it.light = { p: [x, y + 0.4, z - 0.3], r: 1.6 + glow * 1.6, c: [0.5 + glow, 0.55 + glow, 0.75 + glow * 0.6] };
   return it;
 }
@@ -324,7 +324,7 @@ function pyramidItem(C, O) {
    included), spin its turn (setItemSpin in prop-models.js); null while it can't be drawn (3D props off, the GPU
    lost, its recipe not loaded yet). The opening's throws use it too (cutscene/opening.js) */
 export function pyramidWorldItem(kind, x, y, z, spin, size = 1) {
-  if (typeof propModelsOn !== 'function' || !propModelsOn() || typeof COINS === 'undefined' || !COINS[kind])
+  if (typeof propModelsOn !== 'function' || !propModelsOn() || typeof PYRAMIDS === 'undefined' || !PYRAMIDS[kind])
     return null;
   const path = pyramidModelPath(kind),
     rec = loadPropModelRecipe(path);
@@ -332,7 +332,7 @@ export function pyramidWorldItem(kind, x, y, z, spin, size = 1) {
   return {
     k: 'pyramid',
     /* its icon: never drawn (a model item), but the renderer sorts and keys items by their picture */
-    im: coinCanvas(kind, 32),
+    im: pyramidCanvas(kind, 32),
     vox: rec,
     voxPath: path,
     p: { x, z, s: PYRAMID_SCALE * size, rot: PYRAMID_YAW },

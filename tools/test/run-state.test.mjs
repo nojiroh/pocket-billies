@@ -5,13 +5,22 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { fn, modules, startedSave } from './setup-fixture.mjs';
 
-const { newRun, validRun, runBegin, runEnd, runRestore, payoutOf, runNodeCount, RUN_FIELDS, runHome, runByTier } =
+const { newRun, validRun, runBegin, runEnd, runRestore, payoutOf, runNodeCount, RUN_FIELDS, runHome, runByExpedition } =
   modules['run-state'];
 const { runReleasePays } = modules['run-loop'];
 const { newMeta } = modules['meta-state'];
-const RATES = { money: 0.1, itemShare: 0.5, released: 15, node: 10, win: 100, winSeals: 1, scrapNode: 2, scrapWin: 10 };
+const RATES = {
+  money: 0.1,
+  itemShare: 0.5,
+  released: 15,
+  node: 10,
+  win: 100,
+  winCrests: 1,
+  scrapNode: 2,
+  scrapWin: 10,
+};
 const PRICE = id => ({ potion: 200 })[id] || 0;
-const GIVE = { seed: 'ABCDE12345', tier: 1, mapgenV: 1, se: 300, items: { potion: 1 } };
+const GIVE = { seed: 'ABCDE12345', expedition: 1, mapgenV: 1, se: 300, items: { potion: 1 } };
 const copy = v => JSON.parse(JSON.stringify(v));
 
 /** a hub save with meta, as newSave makes from RL-3 on */
@@ -41,11 +50,11 @@ const MAP = {
 test('run: a new run starts on day 1 at the airship with nothing held', () => {
   const r = newRun('ABCDE12345', 2, 1, { team: [] });
   assert.equal(r.seed, 'ABCDE12345');
-  assert.equal(r.tier, 2);
+  assert.equal(r.expedition, 2);
   assert.equal(r.clock, 1);
   assert.deepEqual(r.at, { phase: 'fly', battle: -1 });
   assert.equal(r.map, null);
-  assert.deepEqual([r.relics, r.mods, r.path, r.log, r.released], [[], [], [], [], []]);
+  assert.deepEqual([r.perks, r.mods, r.path, r.log, r.released], [[], [], [], [], []]);
   assert.equal(runNodeCount(r), 1, 'Copperleaf alone until the map is made');
   assert.equal(runNodeCount({ ...r, map: MAP }), 6);
   assert.equal(runNodeCount(null), 1);
@@ -86,7 +95,7 @@ test('run: the load check refuses broken or tampered runs', () => {
   assert.equal(validRun({ ...ok, map: { nodes: MAP.nodes.map(n => ({ ...n, seen: 2, biome: 'meadow' })) } }), true);
   assert.equal(validRun({ ...ok, at: { phase: 'payout', battle: -1, won: 1 } }), true);
   assert.equal(validRun({ ...ok, at: { phase: 'battle', battle: 3, foe: FOE } }), true);
-  assert.equal(validRun({ ...ok, unlocks: ['biome_ridge', 'shop_bailout'] }), true, 'RL-11: the run’s copy');
+  assert.equal(validRun({ ...ok, unlocks: ['biome_ridge', 'shop_revive'] }), true, 'RL-11: the run’s copy');
   assert.equal(validRun({ ...ok, unlocks: [] }), true);
   const bad = [
     null,
@@ -94,7 +103,7 @@ test('run: the load check refuses broken or tampered runs', () => {
     { ...ok, seed: '' },
     { ...ok, seed: 'has space' },
     { ...ok, seed: 'x'.repeat(41) },
-    { ...ok, tier: 0 },
+    { ...ok, expedition: 0 },
     { ...ok, mapgenV: 0 },
     { ...ok, map: { nodes: [] } },
     { ...ok, map: { nodes: [{ ...MAP.nodes[0], to: [9] }] } }, // a link off the map
@@ -110,13 +119,13 @@ test('run: the load check refuses broken or tampered runs', () => {
     { ...ok, at: { phase: 'battle', battle: 0, foe: { ...FOE, team: [{ sp: 'sparky0', lvl: 0 }] } } },
     { ...ok, at: { phase: 'battle', battle: 0, foe: { ...FOE, tid: 'Not An Id' } } },
     { ...ok, at: { phase: 'battle', battle: 0, foe: { ...FOE, hp: 9 } } },
-    { ...ok, unlocks: 'shop_bailout' }, // RL-11: a list
+    { ...ok, unlocks: 'shop_revive' }, // RL-11: a list
     { ...ok, unlocks: ['Not An Id'] },
     { ...ok, unlocks: Array(201).fill('a') },
     { ...ok, clock: 0 },
     { ...ok, forecast: [['sun'], 'rain'] },
     { ...ok, forecast: Array(7).fill([]) }, // more nodes than the map has
-    { ...ok, relics: ['ok', 7] },
+    { ...ok, perks: ['ok', 7] },
     { ...ok, offer: ['a', 'b', 'c', 'd', 'e', 'f'] },
     { ...ok, uidN: -1 },
     { ...ok, path: [5] }, // map nodes are 0..4
@@ -136,7 +145,7 @@ test('run: the load check refuses broken or tampered runs', () => {
 test('run: the payout converts money, items, releases, nodes and a win into Research, and a win into a Crest', () => {
   const p = payoutOf({ se: 455, items: { potion: 3, nothing: 2 }, released: 2, cleared: 4, won: true }, RATES, PRICE);
   assert.deepEqual(
-    p.lines.map(l => [l.what, l.n, l.capital]),
+    p.lines.map(l => [l.what, l.n, l.research]),
     [
       ['money', 455, 45],
       ['items', 0, 0],
@@ -151,12 +160,12 @@ test('run: the payout converts money, items, releases, nodes and a win into Rese
     RATES,
     PRICE
   );
-  assert.deepEqual(lostBag.lines[1], { what: 'items', n: 300, capital: 30 }, 'a loss pays the bag at half price');
-  assert.equal(p.capital, 215);
-  assert.equal(p.seals, 1);
+  assert.deepEqual(lostBag.lines[1], { what: 'items', n: 300, research: 30 }, 'a loss pays the bag at half price');
+  assert.equal(p.research, 215);
+  assert.equal(p.crests, 1);
   assert.equal(p.scrap, 4 * 2 + 10, 'RL-9: Scrap a node cleared, more for a win');
   const lost = payoutOf({ se: 0, items: {}, released: 0, cleared: 1, won: false }, RATES, PRICE);
-  assert.deepEqual([lost.capital, lost.seals, lost.scrap], [10, 0, 2]);
+  assert.deepEqual([lost.research, lost.crests, lost.scrap], [10, 0, 2]);
 });
 
 test('run: ending one pays into meta, puts the hub back and keeps the chosen Billies', () => {
@@ -174,8 +183,8 @@ test('run: ending one pays into meta, puts the hub back and keeps the chosen Bil
   s.flags.run_flag = 1;
   const pay = runEnd(s, { won: false, keep: [s.team[0].uid] }, RATES, PRICE);
   assert.equal(s.run, null);
-  assert.equal(pay.capital, 50 + 20 + 15 + 30);
-  assert.deepEqual(s.meta, { ...newMeta(), capital: pay.capital, scrap: 3 * 2, runs: 1 });
+  assert.equal(pay.research, 50 + 20 + 15 + 30);
+  assert.deepEqual(s.meta, { ...newMeta(), research: pay.research, scrap: 3 * 2, runs: 1 });
   for (const k of RUN_FIELDS.filter(k => k !== 'team')) assert.deepEqual(s[k], hub[k], `${k} is the hub's again`);
   assert.equal(s.team.length, 2, 'the Billie caught in the run is gone');
   assert.equal(s.team[0].lvl, 14, 'the kept traveller keeps its gains');
@@ -186,7 +195,7 @@ test('run: ending one pays into meta, puts the hub back and keeps the chosen Bil
   const fresh = fn('makeBilly')('sprout0', 6);
   t.team.push(fresh);
   runEnd(t, { won: true, keep: [fresh.uid] }, RATES, PRICE);
-  assert.deepEqual([t.meta.runs, t.meta.wins, t.meta.seals], [1, 1, 1]);
+  assert.deepEqual([t.meta.runs, t.meta.wins, t.meta.crests], [1, 1, 1]);
   assert.equal(t.team.length, 3);
   assert.equal(t.team[2].uid, fresh.uid);
   const u = hubSave();
@@ -269,27 +278,27 @@ test('run: a kept Billie from storage comes back to storage with its gains, once
 test('run: the packed bag leaves the hub, travels on top of the gift and comes home only on a win', () => {
   for (const won of [false, true]) {
     const s = hubSave(); // 4 potions at home
-    s.coins.penny = 2;
+    s.pyramids.pyramid = 2;
     const run = runBegin(s, {
       ...GIVE,
-      coins: { penny: 5 },
-      pack: { items: { potion: 3, ghost: 2 }, coins: { penny: 9 } },
+      pyramids: { pyramid: 5 },
+      pack: { items: { potion: 3, ghost: 2 }, pyramids: { pyramid: 9 } },
     });
-    assert.deepEqual(run.pack, { items: { potion: 3 }, coins: { penny: 2 } }, 'no more than the bag holds');
-    assert.deepEqual([run.start.items.potion, run.start.coins.penny], [1, 0], 'what stays home');
-    assert.deepEqual([s.items.potion, s.coins.penny], [1 + 3, 5 + 2], 'the gift and the pack');
+    assert.deepEqual(run.pack, { items: { potion: 3 }, pyramids: { pyramid: 2 } }, 'no more than the bag holds');
+    assert.deepEqual([run.start.items.potion, run.start.pyramids.pyramid], [1, 0], 'what stays home');
+    assert.deepEqual([s.items.potion, s.pyramids.pyramid], [1 + 3, 5 + 2], 'the gift and the pack');
     assert.equal(validRun(copy(run)), true);
     s.items.potion = 2; // one used on the way
-    s.coins.penny = 3;
+    s.pyramids.pyramid = 3;
     const pay = runEnd(s, { won, keep: [s.team[0].uid] }, RATES, PRICE);
-    assert.deepEqual([s.items.potion, s.coins.penny], won ? [1 + 2, 3] : [1, 0]);
-    assert.equal(pay.lines[1].capital, won ? 0 : Math.floor(2 * 200 * 0.5 * 0.1), 'a loss pays the bag');
+    assert.deepEqual([s.items.potion, s.pyramids.pyramid], won ? [1 + 2, 3] : [1, 0]);
+    assert.equal(pay.lines[1].research, won ? 0 : Math.floor(2 * 200 * 0.5 * 0.1), 'a loss pays the bag');
   }
 });
 
 test('run: the Expedition rules and the load check of what was picked and packed', () => {
   assert.deepEqual(
-    [1, 2, 3, 9].map(t => runByTier([1, 2], t)),
+    [1, 2, 3, 9].map(t => runByExpedition([1, 2], t)),
     [1, 2, 2, 2]
   );
   const s = hubSave(),
@@ -304,7 +313,7 @@ test('run: the Expedition rules and the load check of what was picked and packed
     { ...run, home: 'x' },
     { ...run, home: [1] },
     { ...run, home: Array(7).fill('u') },
-    { ...run, pack: { items: { potion: -1 }, coins: {} } },
+    { ...run, pack: { items: { potion: -1 }, pyramids: {} } },
     { ...run, pack: { items: {}, money: {} } },
     { ...run, start: { ...run.start, buddy: 7 } },
   ])

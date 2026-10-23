@@ -38,7 +38,17 @@ const plainMove = (t, c) =>
   );
 
 test('every type names its passive and says what it does; the ids are the nine the engine knows', () => {
-  const known = ['ramp', 'undertow', 'subsidy', 'sharp', 'landlord', 'pivot', 'volatile', 'synergy', 'inherit'];
+  const known = [
+    'kindling',
+    'undertow',
+    'regrowth',
+    'livewire',
+    'bedrock',
+    'slipstream',
+    'wildmind',
+    'alloy',
+    'partingroar',
+  ];
   assert.deepEqual(
     TYPES.map(t => data.PASSIVE[t]),
     known
@@ -51,8 +61,8 @@ test('every type names its passive and says what it does; the ids are the nine t
     TYPES.map(t => data.PASSIVE_INFO[t].name),
     ['Kindling', 'Undertow', 'Regrowth', 'Live Wire', 'Bedrock', 'Slipstream', 'Wild Mind', 'Alloy', 'Parting Roar']
   );
-  assert.equal(data.passiveName(['Psychic', 'Steel'], 'synergy'), 'Alloy');
-  assert.equal(data.passiveName(['Water'], 'synergy'), '', 'a passive none of the types carries has no name');
+  assert.equal(data.passiveName(['Psychic', 'Steel'], 'alloy'), 'Alloy');
+  assert.equal(data.passiveName(['Water'], 'alloy'), '', 'a passive none of the types carries has no name');
 });
 
 test('Kindling (Fire): Attack +10% a turn in, up to +100%', () => {
@@ -60,8 +70,8 @@ test('Kindling (Fire): Attack +10% a turn in, up to +100%', () => {
   const v = fn('fieldState')(0),
     at = n => ((v.turnsIn = n), fn('effectiveStat')(0, 'lev'));
   const a0 = at(0);
-  assert.ok(Math.abs(at(3) / a0 - (1 + 3 * R.financeRamp)) < 0.01);
-  assert.ok(Math.abs(at(50) / a0 - (1 + R.financeRampTurns * R.financeRamp)) < 0.01, 'it stops at the cap');
+  assert.ok(Math.abs(at(3) / a0 - (1 + 3 * R.kindlingBoost)) < 0.01);
+  assert.ok(Math.abs(at(50) / a0 - (1 + R.kindlingTurns * R.kindlingBoost)) < 0.01, 'it stops at the cap');
   battle(['gates0'], ['musk0']);
   const w = fn('fieldState')(0),
     g0 = fn('effectiveStat')(0, 'lev');
@@ -119,7 +129,7 @@ test('Wild Mind (Psychic): damage from 25% to 160% instead of 85% to 100%', () =
   };
   const wild = span('swift0'),
     plain = span('musk0');
-  assert.ok(Math.abs(wild / (R.cryptoRollMax / R.cryptoRollMin) - 1) < 0.1, `Psychic swings ${wild.toFixed(2)}x`);
+  assert.ok(Math.abs(wild / (R.wildMindRollMax / R.wildMindRollMin) - 1) < 0.1, `Psychic swings ${wild.toFixed(2)}x`);
   assert.ok(Math.abs(plain - 1 / R.rollMin) < 0.1, `others swing ${plain.toFixed(2)}x`);
 });
 
@@ -133,8 +143,8 @@ test('Alloy (Steel): +10% for each living teammate that shares its Steel type', 
   const alone = hit(['gates0'], true),
     one = hit(['bezos3', 'gates0'], true),
     two = hit(['bezos3', 'kardashian2'], true);
-  assert.ok(Math.abs(one / alone - (1 + R.retailSynergy)) < 0.02, `${one} / ${alone}`);
-  assert.ok(Math.abs(two / alone - (1 + 2 * R.retailSynergy)) < 0.02, `${two} / ${alone}`);
+  assert.ok(Math.abs(one / alone - (1 + R.alloyBoost)) < 0.02, `${one} / ${alone}`);
+  assert.ok(Math.abs(two / alone - (1 + 2 * R.alloyBoost)) < 0.02, `${two} / ${alone}`);
   assert.equal(hit(['bezos3', 'kardashian2'], false), alone, 'fainted teammates count for nothing');
 });
 
@@ -143,7 +153,7 @@ test('Slipstream (Flying): the first switch out costs no turn, the second does',
   const foe = b.sides[1].team[0],
     foeHp = foe.hp;
   fn('runTurn')([{ who: 0, k: 'switch', i: 1 }], b);
-  assert.equal(b.sides[0].pivot, true);
+  assert.equal(b.sides[0].slipstream, true);
   assert.ok(
     lines(b).some(t => /rode its Slipstream back without losing the turn/.test(t)),
     lines(b).join(' | ')
@@ -197,7 +207,7 @@ test('Bedrock (Ground): from full HP a knockout hit leaves 1 HP, once a battle; 
 
   /* sharp stones hurt others coming in, not Ground */
   const s = battle(['musk0', 'trump0', 'gates0'], ['musk0']);
-  s.sides[0].rent = true;
+  s.sides[0].stones = true;
   fn('doSwitch')(0, 1);
   assert.equal(fn('fighter')(0).hp, fn('maxHp')(fn('fighter')(0)), 'Gildlet takes no stone damage');
   fn('doSwitch')(0, 2);
@@ -212,7 +222,7 @@ test('Parting Roar (Dragon): when it faints, the next one in gets +1 Attack and 
     fn('checkFaints')();
     /* yours wait for your pick of who comes in; the foe's next comes in at once */
     if (!si) {
-      assert.ok(b.sides[si].inh, 'the roar waits for the next one in');
+      assert.ok(b.sides[si].roar, 'the roar waits for the next one in');
       fn('doSwitch')(k, 1);
     }
     assert.equal(fn('fighter')(k).sp, 'gates0');
@@ -224,12 +234,12 @@ test('Parting Roar (Dragon): when it faints, the next one in gets +1 Attack and 
       lines(b).some(t => /’s Parting Roar fired up /.test(t)),
       lines(b).join(' | ')
     );
-    assert.equal(b.sides[si].inh, null);
+    assert.equal(b.sides[si].roar, null);
   }
   /* another type leaves nothing behind */
   const b = battle(['musk0', 'gates0'], ['musk0']);
   fn('fieldState')(0).st.lev = 2;
   fn('fighter')(0).hp = 0;
   fn('checkFaints')();
-  assert.equal(b.sides[0].inh, null);
+  assert.equal(b.sides[0].roar, null);
 });

@@ -57,7 +57,7 @@ test('wild Billies by place: a route keeps 4, a town with tall grass 2, a town w
       team: [],
       se: 0,
       items: {},
-      coins: {},
+      pyramids: {},
       trip: { node: 0, plan: [] },
       wild: {},
       eggs: [],

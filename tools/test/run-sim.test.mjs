@@ -25,25 +25,25 @@ test('run sim: a seed played twice is the same run, whatever util.js random draw
 test('run sim: the report has its numbers', () => {
   const R = runStats(3, B);
   assert.equal(R.runs, 3);
-  for (const k of ['days', 'places', 'battles', 'turnsPerBattle', 'capital']) assert.ok(R[k] >= 0, k);
+  for (const k of ['days', 'places', 'battles', 'turnsPerBattle', 'research']) assert.ok(R[k] >= 0, k);
   assert.ok(R.won >= 0 && R.won <= 3);
   // Studio plan T3.2: every report names its bot policy, its settings and the numbers it drives
   assert.equal(R.policy.name, 'greedy-forward');
   assert.equal(R.policy.fights, 2);
   assert.equal(runStats(1, { ...B, fights: 4 }).policy.fights, 4);
   assert.ok(R.policyDriven.includes('caught') && /not a balance oracle/.test(R.note));
-  assert.ok(R.policyDriven.includes('spent') && R.policyDriven.includes('relics'), 'what the policy buys');
+  assert.ok(R.policyDriven.includes('spent') && R.policyDriven.includes('perks'), 'what the policy buys');
 });
 
 test('run sim: a run starts as the mast starts it, with no unlocks or every one', () => {
   const none = runSim('SIMUNLOCK0', B),
     all = runSim('SIMUNLOCK0', { ...B, unlocks: 'all' });
   assert.deepEqual(none.log.unlocks, []);
-  assert.ok(all.log.unlocks.includes('biome_ridge') && all.log.unlocks.includes('shop_settlement'));
+  assert.ok(all.log.unlocks.includes('biome_ridge') && all.log.unlocks.includes('shop_nerve_tonic'));
 });
 
 test("run sim: a run town's shop stocks only what the run has unlocked (Studio plan T3.3)", () => {
-  const locked = ['settlement', 'appeal', 'bailout'];
+  const locked = ['nerve_tonic', 'wake_tea', 'revive'];
   let towns = 0;
   for (let k = 0; k < 12; k++)
     for (const at of runSim(`SIMSHOP${k}`, B).log.places)
@@ -55,37 +55,37 @@ test("run sim: a run town's shop stocks only what the run has unlocked (Studio p
 });
 
 test('run sim: the policy answers a Perk on offer: greedy takes the rarest, never takes none (Studio plan T3.3)', () => {
-  const { simRelicChoice, SIM_POLICIES } = modules['run-sim'],
-    RELICS = GAME_DATA.relics,
-    rule = GAME_DATA.rules.run.relics,
+  const { simPerkChoice, SIM_POLICIES } = modules['run-sim'],
+    PERKS = GAME_DATA.perks,
+    rule = GAME_DATA.rules.run.perks,
     greedy = SIM_POLICIES['greedy-forward'],
     never = SIM_POLICIES['never-pick'];
-  assert.deepEqual(simRelicChoice(['offshore', 'hedge', 'insider'], [], RELICS, rule, greedy), { id: 'hedge' });
-  assert.deepEqual(simRelicChoice(['shelter', 'offshore'], [], RELICS, rule, greedy), { id: 'offshore' }, 'then by id');
-  assert.equal(simRelicChoice(['hedge'], [], RELICS, rule, never), null);
+  assert.deepEqual(simPerkChoice(['offshore', 'hedge', 'insider'], [], PERKS, rule, greedy), { id: 'hedge' });
+  assert.deepEqual(simPerkChoice(['shelter', 'offshore'], [], PERKS, rule, greedy), { id: 'offshore' }, 'then by id');
+  assert.equal(simPerkChoice(['hedge'], [], PERKS, rule, never), null);
   const full = ['offshore', 'shelter', 'lobbyist', 'fineprint', 'insider', 'severance'];
   assert.equal(full.length, rule.cap);
   assert.deepEqual(
-    simRelicChoice(['hedge'], full, RELICS, rule, greedy),
+    simPerkChoice(['hedge'], full, PERKS, rule, greedy),
     { id: 'hedge', drop: 'shelter' },
     'past the cap'
   );
   assert.equal(
-    simRelicChoice(
+    simPerkChoice(
       ['offshore'],
       ['insider', 'takeover', 'hedge', 'severance', 'options', 'writeoff'],
-      RELICS,
+      PERKS,
       rule,
       greedy
     ),
     null,
     'no rarer'
   );
-  /* and on a run: the pick answered through relics.js relicChoose, as relic-screen.js does */
-  const run = { seed: 'P', relics: [], offer: ['offshore', 'hedge', 'insider'] },
-    c = simRelicChoice(run.offer, run.relics, RELICS, rule, greedy);
-  assert.equal(modules.relics.relicChoose(run, c.id, RELICS, rule, c.drop), '');
-  assert.deepEqual(run.relics, ['hedge']);
+  /* and on a run: the pick answered through perks.js perkChoose, as perk-screen.js does */
+  const run = { seed: 'P', perks: [], offer: ['offshore', 'hedge', 'insider'] },
+    c = simPerkChoice(run.offer, run.perks, PERKS, rule, greedy);
+  assert.equal(modules.perks.perkChoose(run, c.id, PERKS, rule, c.drop), '');
+  assert.deepEqual(run.perks, ['hedge']);
   assert.equal(run.offer, null);
 });
 
@@ -129,13 +129,13 @@ test('run sim: money in and out add up to what is left; a loss names its row; fo
   for (let k = 0; k < 10; k++) {
     const { stats: x, log } = runSim(`SIMMONEY${k}`, B);
     assert.equal(start + sum(x.moneyIn) - sum(x.moneyOut), x.se, `SIMMONEY${k}`);
-    assert.equal(x.spent, x.moneyOut.shop + x.moneyOut.relics);
+    assert.equal(x.spent, x.moneyOut.shop + x.moneyOut.perks);
     assert.equal(x.healed, x.moneyOut.heal);
     if (!x.won && x.lostAt) {
       const at = log.places[log.places.length - 1];
       assert.ok(Number.isInteger(x.lostRow) && x.lostRow >= 0, `${x.lostRow} at node ${at.i}`);
     }
-    assert.ok(Array.isArray(x.relics) && Array.isArray(x.foes));
+    assert.ok(Array.isArray(x.perks) && Array.isArray(x.foes));
     towns += log.places.filter(p => p.shop).length;
   }
   assert.ok(towns >= 1);

@@ -5,10 +5,10 @@
 import { expose } from './test-globals.js';
 import { plateVars } from './hooks.js';
 import { clamp } from './util.js';
-import { COINS, DEX_ORDER, ITEMS, LOCATIONS, TRAINERS } from './game-data.js';
+import { DEX_ORDER, ITEMS, LOCATIONS, PYRAMIDS, TRAINERS } from './game-data.js';
 import { billyName, dexCaught, dexSeen, findBilly, formatNumber, metresToKm, plural } from './logic/rules.js';
 import { escapeHtml, saveData } from './game-state.js';
-import { coinHTML, eggHTML, moneyHTML, uiIconHTML } from './art.js';
+import { eggHTML, moneyHTML, pyramidHTML, uiIconHTML } from './art.js';
 import { cleanTrainer, personHTML } from './person-art.js';
 import { rigCanvasHTML } from './skeleton-rig.js';
 import { itemIcon } from './battle.js';
@@ -32,7 +32,7 @@ function badgeSlots() {
   const known = own.map(T => ({
     name: String(T.seat.title || 'Badge').split(' · ')[0],
     leader: T.name,
-    coin: COINS[T.seat.coin] ? T.seat.coin : 'penny',
+    coin: PYRAMIDS[T.seat.coin] ? T.seat.coin : 'pyramid',
     got: saveData.seats.includes(T.seat.id),
   }));
   return {
@@ -42,7 +42,7 @@ function badgeSlots() {
       known
         .map(b =>
           b.got
-            ? `<li class="bdg got"><span class="bdg-m" title="${escapeHtml(b.name)}, from ${escapeHtml(b.leader)}">${coinHTML(b.coin, 30, 32)}</span><small>${escapeHtml(b.name.replace(/ Badge$/, ''))}</small></li>`
+            ? `<li class="bdg got"><span class="bdg-m" title="${escapeHtml(b.name)}, from ${escapeHtml(b.leader)}">${pyramidHTML(b.coin, 30, 32)}</span><small>${escapeHtml(b.name.replace(/ Badge$/, ''))}</small></li>`
             : `<li class="bdg"><span class="bdg-m" title="Beat ${escapeHtml(b.leader)} to earn it">?</span><small>${escapeHtml(b.leader.replace(/^Leader /, ''))}</small></li>`
         )
         .join('') +
@@ -66,7 +66,7 @@ export function renderProfile() {
   const tile = (ic, k, v, sub, p) =>
     `<div class="pf-tile k-card"><span class="pf-k">${ic}${k}</span><b class="tnum">${v}</b>${sub ? `<small>${sub}</small>` : ''}${p != null ? progressBarHTML(p, 'gold') : ''}</div>`;
   const items = Object.keys(ITEMS).filter(k => saveData.items[k] > 0);
-  return `<header class="bar"><div><div class="sub">Your profile</div><h1 class="where">Trainer</h1></div><button class="pb small" data-a="tab" data-t="ledger">${uiIconHTML('ledger', 16)} Guide</button><button class="pb small quiet" data-a="settings">${uiIconHTML('gear', 16)} Settings</button></header>
+  return `<header class="bar"><div><div class="sub">Your profile</div><h1 class="where">Trainer</h1></div><button class="pb small" data-a="tab" data-t="guide">${uiIconHTML('ledger', 16)} Guide</button><button class="pb small quiet" data-a="settings">${uiIconHTML('gear', 16)} Settings</button></header>
  <div class="pf-top"><section class="tcard k-panel">
   <div class="tc-band"><span>Trainer card</span><span class="tnum">ID No. ${String(saveData.tid || 0).padStart(5, '0')}</span></div>
   <div class="tc-body"><div class="tc-photo k-card"><div class="tc-portrait">${personHTML('me', 92)}</div><button class="pb small" data-a="customize">Edit look</button></div>
@@ -75,15 +75,15 @@ export function renderProfile() {
  </section>
  <section class="tpanel pf-stats"><div class="sec-h"><h2>Records</h2></div><div class="pf-grid">
   ${tile(uiIconHTML('run', 14), 'Distance walked', `${metresToKm((saveData.stats && saveData.stats.walked) || 0)} km`)}${tile(uiIconHTML('map', 14), 'Places visited', `${places}/${LOCATIONS.length}`, null, places / LOCATIONS.length)}
-  ${tile(uiIconHTML('ledger', 14), 'Seen', `${seen}/${DEX_ORDER.length}`, null, seen / DEX_ORDER.length)}${tile(coinHTML('penny', 14), 'Caught', `${got}/${DEX_ORDER.length}`, null, got / DEX_ORDER.length)}
+  ${tile(uiIconHTML('ledger', 14), 'Seen', `${seen}/${DEX_ORDER.length}`, null, seen / DEX_ORDER.length)}${tile(pyramidHTML('pyramid', 14), 'Caught', `${got}/${DEX_ORDER.length}`, null, got / DEX_ORDER.length)}
   ${tile(uiIconHTML('fight', 14), 'Trainers beaten', formatNumber(beat))}${tile(eggHTML(2, 12), 'Eggs hatched', formatNumber(saveData.hatched || 0), saveData.ranch.nursery.length ? `${plural(saveData.ranch.nursery.length, 'egg')} at the ranch` : 'No eggs right now')}
  </div></section></div>
  <div class="pf-row">${bud ? `<section class="tpanel pf-buddy"><div class="sec-h"><h2>Buddy</h2></div><button class="pf-bud k-card" data-a="mon" data-u="${bud.uid}"><span class="tm-spr" style="${plateVars(bud)}">${rigCanvasHTML(bud.sp, 72, { build: bud.build, coat: bud.coat })}</span><span class="pf-bt"><b>${escapeHtml(billyName(bud))}</b><span class="tnum">Lv ${bud.lvl}</span><small>Gets the full XP of every battle you win.</small></span></button></section>` : ''}
  <section class="tpanel pf-bag"><div class="sec-h"><h2>Bag</h2></div>
-  <div class="pf-coins">${Object.keys(COINS)
+  <div class="pf-coins">${Object.keys(PYRAMIDS)
     .map(
       k =>
-        `<span class="pf-coin${saveData.coins[k] ? '' : ' none'}" title="${escapeHtml(COINS[k].n)}">${coinHTML(k, 22, 32)}<small>${escapeHtml(COINS[k].n.replace(/ Coins?$/, ''))}</small><b class="tnum">${formatNumber(saveData.coins[k] || 0)}</b></span>`
+        `<span class="pf-coin${saveData.pyramids[k] ? '' : ' none'}" title="${escapeHtml(PYRAMIDS[k].n)}">${pyramidHTML(k, 22, 32)}<small>${escapeHtml(PYRAMIDS[k].n.replace(/ Coins?$/, ''))}</small><b class="tnum">${formatNumber(saveData.pyramids[k] || 0)}</b></span>`
     )
     .join('')}</div>
   ${items.length ? `<ul class="pf-items">${items.map(k => `<li>${itemIcon(k, 24)}<span>${escapeHtml(ITEMS[k].n)}</span><b class="tnum">×${formatNumber(saveData.items[k])}</b></li>`).join('')}</ul>` : '<p class="note">No items yet.</p>'}

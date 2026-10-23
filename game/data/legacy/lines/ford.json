@@ -6,10 +6,10 @@
  "rar": "common",
  "learn": [
   [1,"handshake"],
-  [1,"eviction"],
+  [1,"quakestomp"],
   [5,"lobbygusher"],
-  [9,"renthike"],
-  [15,"foreclose"],
+  [9,"scatterstones"],
+  [15,"bouldertoss"],
   [21,"deepdrill"],
   [27,"markdown"],
   [39,"bulk"],

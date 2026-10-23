@@ -24,7 +24,7 @@ function stub(answers = []) {
 }
 const play = async (lines, o = {}) => {
   const stage = stub(o.answers);
-  const save = o.save || { story: {}, items: {}, coins: {} };
+  const save = o.save || { story: {}, items: {}, pyramids: {} };
   await runScript(parseScript(lines), stage, { save, id: 'test', ...o });
   return { said: stage.said, save };
 };
@@ -75,18 +75,18 @@ test('if / elif / else, set, clear, give, take, quest, end', async () => {
     '  set met_juniper',
     'set rival0 win',
     'give honey 2',
-    'give coin:gold',
+    'give coin:gold_pyramid',
     'take potion 5',
     'quest ledger asked',
     'clear gone',
     'end',
     'Never said.',
   ];
-  const { said, save } = await play(lines, { save: { story: { gone: 1 }, items: { potion: 1 }, coins: {} } });
+  const { said, save } = await play(lines, { save: { story: { gone: 1 }, items: { potion: 1 }, pyramids: {} } });
   assert.deepEqual(said, ['Juniper: Who are you?']);
   assert.deepEqual(save.story, { met_juniper: 1, rival0: 'win', quests: { ledger: 'asked' } });
   assert.deepEqual(save.items, { potion: 0, honey: 2 });
-  assert.deepEqual(save.coins, { gold: 1 });
+  assert.deepEqual(save.pyramids, { gold_pyramid: 1 });
   assert.deepEqual((await play(lines, { save })).said, ['Juniper: Back again.']);
 });
 
@@ -102,7 +102,7 @@ test('choice: options with [if], [once], and the lines under each', async () => 
     '    Nacre: The curator.',
     'Nacre: Go on, then.',
   ];
-  const save = { story: {}, items: {}, coins: {} };
+  const save = { story: {}, items: {}, pyramids: {} };
   let r = await play(lines, { save, answers: [1] });
   assert.deepEqual(r.said, [
     'Nacre: Well?',
@@ -132,7 +132,7 @@ test('once, cycle and seq remember, by key or by script and line', async () => {
     '  - A.',
     '  - B.',
   ];
-  const save = { story: {}, items: {}, coins: {} };
+  const save = { story: {}, items: {}, pyramids: {} };
   const runs = [];
   for (let i = 0; i < 4; i++) runs.push((await play(lines, { save })).said.join(' '));
   assert.deepEqual(runs, ['Hi, new face. One. A.', 'Two. And a half. B.', 'One. B.', 'Two. And a half. B.']);
@@ -140,7 +140,7 @@ test('once, cycle and seq remember, by key or by script and line', async () => {
 });
 
 test('slots: {name} from the stage, {caught} and {badges} from the save; music is played', async () => {
-  const save = { story: {}, items: {}, coins: {}, caught: { musk0: 1, swift0: 1 }, seats: ['a'] };
+  const save = { story: {}, items: {}, pyramids: {}, caught: { musk0: 1, swift0: 1 }, seats: ['a'] };
   const lines = ['music rival', '{name}! {caught} caught, {badges} badge.'];
   assert.deepEqual((await play(lines, { save, slots: { name: () => 'Rae' } })).said, [
     '<music rival>',
@@ -175,7 +175,7 @@ test('a checkpoint hands over where to carry on, and a resumed run asks nothing 
   assert.deepEqual(first.said, ['Blake: Hey!', '? Fine. | No.', '<battle chad>', 'Blake: Again!', 'Blake: Bye.']);
   assert.deepEqual(marks, [[1, 0, 0, 0, 1]], 'after the battle: line 1 (if), clause 0, choice, option 0, its 2nd line');
   /* the battle won (beat:chad now holds); a resume still goes on inside the branch it was in */
-  const save = { story: {}, items: {}, coins: {}, flags: { chad: 1 } };
+  const save = { story: {}, items: {}, pyramids: {}, flags: { chad: 1 } };
   const again = await play(lines, { save, resume: marks[0] });
   assert.deepEqual(again.said, ['Blake: Again!', 'Blake: Bye.']);
 });
@@ -220,7 +220,7 @@ test('line ids: kept apart from the text; once, cycle and [once] remember by the
     '  > Go. #l:aa05',
   ];
   const v2 = ['Something new above. #l:bb01', ...v1];
-  const save = { story: {}, items: {}, coins: {} };
+  const save = { story: {}, items: {}, pyramids: {} };
   assert.deepEqual((await play(v1, { save })).said, ['First time.', 'One.', '? Ask. | Go.']);
   assert.deepEqual((await play(v2, { save })).said, ['Something new above.', 'Two.', '? Go.']);
 });

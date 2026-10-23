@@ -24,12 +24,12 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { provide } from './hooks.js';
-import { LOCATIONS, RELICS, RULES, SPECIES, START_NODE, TRAINERS, UNLOCK_DATA } from './game-data.js';
+import { LOCATIONS, PERKS, RULES, SPECIES, START_NODE, TRAINERS, UNLOCK_DATA } from './game-data.js';
 import { makeBilly } from './logic/rules.js';
 import { applyUiTheme } from './theme-sheet.js';
 import { runArrive } from './logic/run-map.js';
 import { RUN_MOD_MOUNTAINS } from './logic/run-scenes.js';
-import { relicOfferMake } from './logic/relics.js';
+import { perkOfferMake } from './logic/perks.js';
 import { newSave } from './logic/saves.js';
 import { startTrainer } from './logic/battle-engine.js';
 import { runUnlocks } from './logic/unlocks.js';
@@ -46,8 +46,8 @@ import { render } from './ui.js';
 /* eslint-disable no-func-assign */
 expose({
   FIXTURE_NAMES: [() => FIXTURE_NAMES],
+  FIXTURE_PERKS: [() => FIXTURE_PERKS],
   FIXTURE_PLACES: [() => FIXTURE_PLACES],
-  FIXTURE_RELICS: [() => FIXTURE_RELICS],
   FIXTURE_RUN_SEED: [() => FIXTURE_RUN_SEED],
   fixtureLook: [() => fixtureLook, v => (fixtureLook = v)],
   fixtureSave: [() => fixtureSave, v => (fixtureSave = v)],
@@ -74,7 +74,7 @@ const FIXTURE_PLACES = {
 };
 /** RL-12: the Perks the relics fixture holds (a shop's and a clinic's price rows, a catch row, a battle's stage, a
  * heal on arrival) */
-const FIXTURE_RELICS = ['shelter', 'lobbyist', 'fineprint', 'insider', 'severance'];
+const FIXTURE_PERKS = ['shelter', 'lobbyist', 'fineprint', 'insider', 'severance'];
 /** RL-7: the run fixture's seed */
 const FIXTURE_RUN_SEED = 'RL7FIXTURE';
 function fixtureSave() {
@@ -112,7 +112,7 @@ function fixtureSave() {
     }
   }
   /* RL-11: the Lab's fixture has what a few runs bring home, and one run ended (the first milestone, granted on load) */
-  if (FIXTURE === 'lab') Object.assign(s.meta, { capital: 500, scrap: 60, seals: 2, runs: 1 });
+  if (FIXTURE === 'lab') Object.assign(s.meta, { research: 500, scrap: 60, crests: 2, runs: 1 });
   /* UI-3b: the Bag fixture has something in it */
   if (FIXTURE === 'bag') for (const k of Object.keys(s.items)) s.items[k] = 3;
   /* the people who would stop you to talk have met you already */
@@ -137,9 +137,9 @@ function fixtureSave() {
   /* RL-12: five Perks held (one under the cap), money for the shop, and a mini-boss's pick waiting (it opens once
      the world shows, as after a reload: run.js runResume) */
   if (FIXTURE === 'relics') {
-    s.run.relics = FIXTURE_RELICS.filter(id => RELICS[id]);
+    s.run.perks = FIXTURE_PERKS.filter(id => PERKS[id]);
     s.se = 2000;
-    relicOfferMake(s.run, RELICS, RULES.run.relics);
+    perkOfferMake(s.run, PERKS, RULES.run.perks);
   }
   return s;
 }

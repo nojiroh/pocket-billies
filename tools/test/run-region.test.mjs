@@ -79,11 +79,11 @@ test('the zones: as many as the Expedition says, rows in range, open biomes only
     [1, 2, 3, 4, 5, 6, 9].map(t => runRegionZoneCount(REGIONS, t)),
     [3, 3, 4, 4, 5, 5, 5]
   );
-  for (const tier of [1, 3, 5])
+  for (const expedition of [1, 3, 5])
     for (const s of seeds(100)) {
       const open = s.charCodeAt(2) % 2 ? ALL : ['meadow', 'lake', 'thicket'],
-        G = make(s, { tier, open });
-      assert.equal(G.zones.length, runRegionZoneCount(REGIONS, tier), s);
+        G = make(s, { expedition, open });
+      assert.equal(G.zones.length, runRegionZoneCount(REGIONS, expedition), s);
       for (const [k, z] of G.zones.entries()) {
         assert.ok(z.rows >= 2 && z.rows <= 3, `${s}: zone ${k} has ${z.rows} rows`);
         assert.ok(open.includes(z.biome), `${s}: ${z.biome} is open`);

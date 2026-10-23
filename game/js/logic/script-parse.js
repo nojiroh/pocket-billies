@@ -113,7 +113,7 @@ export const SCRIPT_COMMANDS = {
     checkpoint: true,
     about: 'you make yourself up (skipping stops here)',
   },
-  'throw-coins': { args: [], group: 'opening', about: 'the professor’s three coins pop open into the starters' },
+  'throw-coins': { args: [], group: 'opening', about: 'the professor’s three pyramids pop open into the starters' },
   'pick-starter': {
     args: [],
     group: 'opening',

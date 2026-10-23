@@ -6,9 +6,9 @@
  "propertyNames": {
   "enum": [
    "money",
-   "capital",
+   "research",
    "scrap",
-   "seals"
+   "crests"
   ]
  },
  "minProperties": 4,

@@ -19,7 +19,7 @@ import {
   setSaveData,
   uiState,
 } from './game-state.js';
-import { coinHTML, uiIconHTML } from './art.js';
+import { pyramidHTML, uiIconHTML } from './art.js';
 import { LOOK_PRESETS, cleanLook, portraitHTML } from './person-art.js';
 import { openSettings } from './settings-screen.js';
 import { rigCanvasHTML } from './skeleton-rig.js';
@@ -30,7 +30,7 @@ import { worldMapAction, worldMapFit, worldMapMount, worldMapOpenFromWalk } from
 import { cutscene } from './cutscene/director.js';
 import { cutsceneStart, cutsceneWanted } from './cutscene/opening.js';
 import { renderTitle, titleMount } from './title.js';
-import { renderRelics } from './relic-screen.js';
+import { renderPerks } from './perk-screen.js';
 import { labAction, renderLabBoard } from './lab-board.js';
 import { renderBag } from './bag.js';
 import { storyRivalBattle } from './story.js';
@@ -66,7 +66,7 @@ export function setRender(v) {
 /* ---------- screens ---------- */
 /* the screens, in the order that decides which side a screen slides in from (UI-5: the bottom bar holds Map, Team
    and Bag, updateNav below; the world, the Guide and the Trainer card are reached otherwise) */
-const TABS = ['walk', 'map', 'team', 'ledger', 'bag', 'relics', 'lab'],
+const TABS = ['walk', 'map', 'team', 'guide', 'bag', 'perks', 'lab'],
   SCREENS = [...TABS, 'profile'];
 function topbar() {
   const shut = !!(saveData.preferences && saveData.preferences.cardClosed),
@@ -110,14 +110,14 @@ export function render() {
     body =
       T === 'team'
         ? renderTeam()
-        : T === 'ledger'
+        : T === 'guide'
           ? renderGuide()
           : T === 'profile'
             ? renderProfile()
             : T === 'bag'
               ? renderBag()
-              : T === 'relics'
-                ? renderRelics()
+              : T === 'perks'
+                ? renderPerks()
                 : T === 'lab'
                   ? renderLabBoard()
                   : T === 'map'
@@ -167,7 +167,7 @@ function openTab(t) {
     if (t !== 'map') uiState.mapSel = null;
     render();
     scrollTo(0, 0);
-  } else if (t === 'ledger' && uiState.dex) {
+  } else if (t === 'guide' && uiState.dex) {
     uiState.dex = null;
     render();
     scrollTo(0, 0);
@@ -175,7 +175,7 @@ function openTab(t) {
 }
 /* UI-5: the bottom bar is the kit's <pb-nav-bar> (ui-run-kit.js): the hub's tabs, or a run's; the world itself is the
    base view (no Walk tab: the open tab tapped again, or Esc, goes back to it) and the Guide opens from the Trainer
-   card. Lab is the unlock board (RL-11, lab-board.js); a run's Perks tab is RL-12's (relic-screen.js). */
+   card. Lab is the unlock board (RL-11, lab-board.js); a run's Perks tab is RL-12's (perk-screen.js). */
 const NAV_HIDDEN = '';
 function updateNav(show) {
   let n = /** @type {any} */ ($('#nav'));
@@ -189,7 +189,7 @@ function updateNav(show) {
   }
   n.hidden = !show;
   n.set = saveData.run ? 'run' : 'hub';
-  n.value = ['map', 'team', 'bag', 'relics', 'lab'].includes(uiState.tab) ? uiState.tab : '';
+  n.value = ['map', 'team', 'bag', 'perks', 'lab'].includes(uiState.tab) ? uiState.tab : '';
   /* its labels follow the language (i18nText) */
   if (typeof n.requestUpdate === 'function') n.requestUpdate();
 }
@@ -199,7 +199,7 @@ function updateNav(show) {
 function renderIntro() {
   if (uiState.openingFailed)
     return `<div class="title opening-failed"><h1 class="logo">Pocket Billies</h1><p class="tag">The opening scene couldn’t start${uiState.openingFailed === 'stopped' ? ' (it stopped partway)' : ''}. Trying again usually works; if it keeps happening, send the debug log.</p><button class="pb gold wide big" data-a="intro">Try again</button><button class="pb quiet wide" data-a="dbglog">Export debug log</button></div>`;
-  return `<div class="title"><div class="title-landscape" aria-hidden="true"></div><div class="title-coin">${coinHTML('penny', 176, 32)}</div><h1 class="logo">Pocket Billies</h1><p class="tag">A classic RPG inside the Hollow Earth, where the Billies are the wildlife. Gotta tax 'em all!</p><button class="pb gold wide big" data-a="intro">Start</button></div>`;
+  return `<div class="title"><div class="title-landscape" aria-hidden="true"></div><div class="title-coin">${pyramidHTML('pyramid', 176, 32)}</div><h1 class="logo">Pocket Billies</h1><p class="tag">A classic RPG inside the Hollow Earth, where the Billies are the wildlife. Gotta tax 'em all!</p><button class="pb gold wide big" data-a="intro">Start</button></div>`;
 }
 /* o.rival (v47, from the opening): Blake's battle comes first; the welcome sheet waits until the talk after it */
 export function startGame(l, o = {}) {

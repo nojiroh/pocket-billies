@@ -4,15 +4,15 @@
    Each shop has a keeper (drawn by the trainer renderer from PEOPLE), a greeting and a stock list. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { closeModal, modal, provide, relicDropOpen, renderOverlay, soundEffect, toast } from './hooks.js';
+import { closeModal, modal, perkDropOpen, provide, renderOverlay, soundEffect, toast } from './hooks.js';
 import { clamp, random } from './util.js';
-import { COINS, ITEMS, RELICS, RULES, SHOPS, UNLOCK_DATA } from './game-data.js';
+import { ITEMS, PERKS, PYRAMIDS, RULES, SHOPS, UNLOCK_DATA } from './game-data.js';
 import { formatNumber, plural } from './logic/rules.js';
 import { runShopOpen } from './logic/run-loop.js';
 import { fxRunPrice } from './logic/effects.js';
-import { relicBuy, relicPrice, relicShelf } from './logic/relics.js';
+import { perkBuy, perkPrice, perkShelf } from './logic/perks.js';
 import { escapeHtml, save, saveData, saveNow, uiState } from './game-state.js';
-import { coinHTML, moneyHTML, uiIconHTML } from './art.js';
+import { moneyHTML, pyramidHTML, uiIconHTML } from './art.js';
 import { portraitHTML } from './person-art.js';
 import { openDressingRoom } from './dressing-room.js';
 import { buzz } from './battle-stage.js';
@@ -23,10 +23,10 @@ expose({
   openShop: [() => openShop, v => setOpenShop(v)],
   shopBuy: [() => shopBuy, v => (shopBuy = v)],
   shopHTML: [() => shopHTML, v => (shopHTML = v)],
+  shopPerk: [() => shopPerk, v => (shopPerk = v)],
+  shopPerkBuy: [() => shopPerkBuy, v => (shopPerkBuy = v)],
+  shopPerkHTML: [() => shopPerkHTML, v => (shopPerkHTML = v)],
   shopRefresh: [() => shopRefresh, v => (shopRefresh = v)],
-  shopRelic: [() => shopRelic, v => (shopRelic = v)],
-  shopRelicBuy: [() => shopRelicBuy, v => (shopRelicBuy = v)],
-  shopRelicHTML: [() => shopRelicHTML, v => (shopRelicHTML = v)],
   wareInfo: [() => wareInfo],
   warePrice: [() => warePrice],
 });
@@ -45,7 +45,7 @@ const SHOP_THANKS = [
 ];
 const wareInfo = w => {
   if (w.coin) {
-    const c = COINS[w.coin];
+    const c = PYRAMIDS[w.coin];
     return c
       ? {
           kind: 'coin',
@@ -54,7 +54,7 @@ const wareInfo = w => {
           d: c.d,
           base: c.price,
           need: c.need || 0,
-          have: saveData.coins[w.coin] || 0,
+          have: saveData.pyramids[w.coin] || 0,
         }
       : null;
   }
@@ -66,24 +66,24 @@ const wareInfo = w => {
 /** a ware's price: its own or its base; in a run shop, with the Perks' price rows (RL-12, logic/effects.js) */
 const warePrice = (sh, w, it) => {
   const p = w.price ?? it.base;
-  return sh.runNode != null && saveData.run ? fxRunPrice(saveData.run, RELICS, 'shop', p) : p;
+  return sh.runNode != null && saveData.run ? fxRunPrice(saveData.run, PERKS, 'shop', p) : p;
 };
-/** RL-12: a run shop's Perk today (logic/relics.js relicShelf, drawn when the shop opened): its id and price, or
+/** RL-12: a run shop's Perk today (logic/perks.js perkShelf, drawn when the shop opened): its id and price, or
  * null (not a run shop, bought, or none left) */
-function shopRelic(sh) {
+function shopPerk(sh) {
   const run = saveData.run;
   if (sh.runNode == null || !run) return null;
   const id = run.shelf[sh.runNode + ':' + run.clock];
-  if (!id || !RELICS[id]) return null;
-  return { id, price: fxRunPrice(run, RELICS, 'shop', relicPrice(RELICS[id], RULES.run.relics)) };
+  if (!id || !PERKS[id]) return null;
+  return { id, price: fxRunPrice(run, PERKS, 'shop', perkPrice(PERKS[id], RULES.run.perks)) };
 }
 /** RL-12: the Perk's row: what it does, its rarity and price, Buy */
-function shopRelicHTML(id, sh) {
-  const L = shopRelic(sh);
+function shopPerkHTML(id, sh) {
+  const L = shopPerk(sh);
   if (!L) return '';
-  const R = RELICS[L.id],
+  const R = PERKS[L.id],
     can = saveData.se >= L.price;
-  return `<div class="ware2 k-card"><span class="w-ic">${uiIconHTML('relic', 36)}</span><span class="w-t"><b>${escapeHtml(R.name)}</b><small>${escapeHtml(R.d)}</small><small class="note">A Perk, for the rest of the run · you hold ${saveData.run.relics.length} of ${RULES.run.relics.cap}</small></span><span class="w-buy"><button class="pb small ${can ? 'gold' : ''}" data-a="shoprelic" data-s="${id}" ${can ? '' : 'disabled'}>${moneyHTML(L.price)}</button></span></div>`;
+  return `<div class="ware2 k-card"><span class="w-ic">${uiIconHTML('relic', 36)}</span><span class="w-t"><b>${escapeHtml(R.name)}</b><small>${escapeHtml(R.d)}</small><small class="note">A Perk, for the rest of the run · you hold ${saveData.run.perks.length} of ${RULES.run.perks.cap}</small></span><span class="w-buy"><button class="pb small ${can ? 'gold' : ''}" data-a="shoprelic" data-s="${id}" ${can ? '' : 'disabled'}>${moneyHTML(L.price)}</button></span></div>`;
 }
 function shopHTML(id) {
   const sh = SHOPS[id],
@@ -99,7 +99,7 @@ function shopHTML(id) {
         locked = it.need && seats < it.need,
         cost = price * n,
         deal = price < it.base;
-      return `<div class="ware2 k-card${locked ? ' locked' : ''}"><span class="w-ic">${it.kind === 'coin' ? coinHTML(it.key, 36) : itemIcon(it.key, 36)}</span><span class="w-t"><b>${escapeHtml(it.n)}</b><small>${escapeHtml(it.d)}</small><small class="w-own tnum">You have ${it.have}${deal ? ` · <em>Shop price ${moneyHTML(it.base)}</em>` : ''}</small></span>
+      return `<div class="ware2 k-card${locked ? ' locked' : ''}"><span class="w-ic">${it.kind === 'coin' ? pyramidHTML(it.key, 36) : itemIcon(it.key, 36)}</span><span class="w-t"><b>${escapeHtml(it.n)}</b><small>${escapeHtml(it.d)}</small><small class="w-own tnum">You have ${it.have}${deal ? ` · <em>Shop price ${moneyHTML(it.base)}</em>` : ''}</small></span>
   <span class="w-buy">${
     locked
       ? `<span class="note">Needs ${plural(it.need, 'badge')}</span>`
@@ -110,14 +110,14 @@ function shopHTML(id) {
     .join('');
   return `<div class="shop-head"><div class="shop-keeper">${portraitHTML(sh.who || 'clerk', 78, 'happy')}</div><div class="shop-say"><b>${escapeHtml(sh.keeper || 'Shopkeeper')}</b><p id="shopLine">${escapeHtml(uiState.shopLine || sh.greeting || 'Welcome in.')}</p></div></div>
  <div class="shop-bal"><span>${uiIconHTML('coin', 14)} Moneys</span><b class="tnum" data-count="shopse" data-to="${saveData.se}">${formatNumber(saveData.se)}</b></div>
- <div class="shop-bag"><span>In your bag</span>${Object.keys(COINS)
+ <div class="shop-bag"><span>In your bag</span>${Object.keys(PYRAMIDS)
    .map(
      k =>
-       `<span class="sb-c${saveData.coins[k] ? '' : ' none'}" role="img" title="${escapeHtml(COINS[k].n)}" aria-label="${escapeHtml(COINS[k].n)}: ${formatNumber(saveData.coins[k] || 0)}">${coinHTML(k, 18, 32)}<b class="tnum">${formatNumber(saveData.coins[k] || 0)}</b></span>`
+       `<span class="sb-c${saveData.pyramids[k] ? '' : ' none'}" role="img" title="${escapeHtml(PYRAMIDS[k].n)}" aria-label="${escapeHtml(PYRAMIDS[k].n)}: ${formatNumber(saveData.pyramids[k] || 0)}">${pyramidHTML(k, 18, 32)}<b class="tnum">${formatNumber(saveData.pyramids[k] || 0)}</b></span>`
    )
    .join(
      ''
-   )}</div><div class="wares2">${shopRelicHTML(id, sh)}${rows || '<p class="note">The shelves are empty today.</p>'}</div>`;
+   )}</div><div class="wares2">${shopPerkHTML(id, sh)}${rows || '<p class="note">The shelves are empty today.</p>'}</div>`;
 }
 export function openShop(id) {
   const sh = SHOPS[id];
@@ -132,7 +132,7 @@ export function openShop(id) {
     /* RL-11: only the wares the run has unlocked (its copy, run.unlocks) */
     sh.stock = runShopOpen(saveData.run, sh.runNode, saveData.run.clock, RULES.run.shop, UNLOCK_DATA);
     /* RL-12: and a Perk, drawn the first time it opens today (kept on the run, saved with the next save) */
-    relicShelf(saveData.run, sh.runNode, saveData.run.clock, RELICS, RULES.run.relics);
+    perkShelf(saveData.run, sh.runNode, saveData.run.clock, PERKS, RULES.run.perks);
   }
   uiState.shopLine = null;
   uiState.shopQty = {};
@@ -168,7 +168,7 @@ function shopBuy(id, k) {
   }
   saveData.se -= cost;
   if (typeof soundEffect === 'function') soundEffect('buy');
-  if (kind === 'coin') saveData.coins[key] = (saveData.coins[key] || 0) + n;
+  if (kind === 'coin') saveData.pyramids[key] = (saveData.pyramids[key] || 0) + n;
   else saveData.items[key] = (saveData.items[key] || 0) + n;
   /* RL-8: a run's purchase is a checkpoint */
   if (saveData.run) saveNow();
@@ -181,33 +181,33 @@ function shopBuy(id, k) {
   toast(`Bought ${n} × ${it.n}.`);
 }
 /** RL-12: buy the shop's Perk (past the cap, which to let go first); a checkpoint, as every run purchase */
-function shopRelicBuy(id, drop) {
+function shopPerkBuy(id, drop) {
   const sh = SHOPS[id],
     run = saveData.run,
-    L = sh && shopRelic(sh);
+    L = sh && shopPerk(sh);
   if (!L || !run) return;
   if (saveData.se < L.price) {
     toast('Not enough Moneys for that one.');
     return;
   }
-  if (drop == null && run.relics.length >= RULES.run.relics.cap) {
-    relicDropOpen(
+  if (drop == null && run.perks.length >= RULES.run.perks.cap) {
+    perkDropOpen(
       L.id,
       d => {
         openShop(id);
-        shopRelicBuy(id, d);
+        shopPerkBuy(id, d);
       },
       () => openShop(id)
     );
     return;
   }
-  if (relicBuy(run, sh.runNode, run.clock, RELICS, RULES.run.relics, drop)) return;
+  if (perkBuy(run, sh.runNode, run.clock, PERKS, RULES.run.perks, drop)) return;
   saveData.se -= L.price;
   if (typeof soundEffect === 'function') soundEffect('buy');
   saveNow();
   if (typeof debugLog !== 'undefined') debugLog.add('scene', `Perk bought: ${L.id}${drop ? ` for ${drop}` : ''}`);
   shopRefresh();
-  toast(`${RELICS[L.id].name}: ${RELICS[L.id].d}`);
+  toast(`${PERKS[L.id].name}: ${PERKS[L.id].d}`);
 }
 document.addEventListener('click', ev => {
   const el = ev.target.closest('[data-a]');
@@ -219,5 +219,5 @@ document.addEventListener('click', ev => {
     q[d.k] = clamp((q[d.k] || 1) + +d.d, 1, 99);
     shopRefresh();
   } else if (d.a === 'shopbuy') shopBuy(d.s, d.k);
-  else if (d.a === 'shoprelic') shopRelicBuy(d.s);
+  else if (d.a === 'shoprelic') shopPerkBuy(d.s);
 });

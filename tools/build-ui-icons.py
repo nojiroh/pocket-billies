@@ -298,8 +298,8 @@ ICONS = {
         '..................................',
         '..................................',
     ],
-    # RF-1: Research's icon (the id stays `capital` until RF-4): a lab flask with bubbles in what it holds
-    'capital': [
+    # RF-1: Research's icon (its id `research` since RF-4): a lab flask with bubbles in what it holds
+    'research': [
         '..................................',
         '..........ppppppppppppp...........',
         '..........pppppppppppppp..........',
@@ -1488,7 +1488,7 @@ ICONS = {
         '.......sssssssssssssssssss........',
         '..................................',
     ],
-    'seal': [
+    'crest': [
         '........yyyyyyyyyyyyyyyyy.........',
         '.......yyyyyyyyyyyyyyyyyyy........',
         '......yyyyyyyyyyyyyyyyyyyyy.......',

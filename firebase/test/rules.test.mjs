@@ -21,7 +21,7 @@ beforeEach(() => env.clearFirestore());
 
 /* ---------- saves ---------- */
 /* the save the game writes (js/account.js): RL-10b adds t, the server's time, the ranch clock's anchor */
-const save = (extra = {}) => ({ json: '{}', savedAt: 1, name: 'Ann', game: 'Pocket Billies', saveVersion: 4, t: serverTimestamp(), ...extra });
+const save = (extra = {}) => ({ json: '{}', savedAt: 1, name: 'Ann', game: 'Pocket Billies', saveVersion: 5, t: serverTimestamp(), ...extra });
 test('a player reads and writes their own save', async () => {
   await assertSucceeds(setDoc(doc(db('ann'), 'saves/ann'), save()));
   await assertSucceeds(getDoc(doc(db('ann'), 'saves/ann')));

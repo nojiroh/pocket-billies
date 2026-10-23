@@ -39,7 +39,7 @@ CLOCK = """(()=>{const D=Date,off=new D(2026,5,15,12,30,0).getTime()-D.now();cla
  FD.UTC=D.UTC;FD.parse=D.parse;window.Date=FD})()"""
 # RL-5: the shops were parked with their towns (game/data/legacy): the checks open a shop of their own to see the shop
 # screen (the stock Marigold's General Store had)
-CHECK_SHOP = "SHOPS.check_shop=SHOPS.check_shop||{name:'Corner Store',keeper:'Mabel Underhill',who:'clerk',greeting:'Welcome in! Potions on the left, coins on the right.',stock:[{item:'taxbreak',price:150},{item:'apology',price:200},{item:'settlement',price:200},{item:'appeal',price:200},{item:'trailmix',price:260},{coin:'penny',price:300}]};"
+CHECK_SHOP = "SHOPS.check_shop=SHOPS.check_shop||{name:'Corner Store',keeper:'Mabel Underhill',who:'clerk',greeting:'Welcome in! Potions on the left, coins on the right.',stock:[{item:'potion',price:150},{item:'burn_salve',price:200},{item:'nerve_tonic',price:200},{item:'wake_tea',price:200},{item:'trailmix',price:260},{coin:'pyramid',price:300}]};"
 NO_ACCOUNTS = "Object.defineProperty(window,'PB_FIREBASE',{get(){return null},set(){},configurable:false})"   # alpha 0.4.1: no Google sign-in during the checks
 # phase 04d: the modules' names on window (game/js/test-globals.js), only for the checks' page.evaluate() calls
 TEST_GLOBALS = "window.PB_TEST_GLOBALS=true"
@@ -479,7 +479,7 @@ def safety_step(b, base, R):
               return n+(window.__pwn||0)})()""")
             if n: raise Exception(f'markup from a name got into the page at: {where}')
         shown = []
-        for tab in ['walk', 'team', 'ledger', 'profile', 'bag']:
+        for tab in ['walk', 'team', 'guide', 'profile', 'bag']:
             pg.evaluate(f"uiState.tab='{tab}';render();0"); time.sleep(.5); check(tab); shown.append(tab)
         for k in ['sum', 'build', 'moves', 'evo']:
             pg.evaluate(f"uiState.modal=null;uiState.mq=[];renderOverlay();billySheet(saveData.team[0]);document.querySelector('[data-a=ms-tab][data-k={k}]')?.click();0"); time.sleep(.3); check('details ' + k)
@@ -521,7 +521,7 @@ def targets_step(b, base, R):
         pg.add_style_tag(content='*,*::before,*::after{animation:none!important;transition:none!important}')
         pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();saveData.team.forEach(m=>{m.evoNo=m.lvl});0")
         bad = []
-        for tab in ['walk', 'team', 'ledger', 'profile', 'bag']:
+        for tab in ['walk', 'team', 'guide', 'profile', 'bag']:
             pg.evaluate(f"uiState.modal=null;uiState.mq=[];renderOverlay();uiState.tab='{tab}';render();scrollTo(0,0);0"); time.sleep(.6)
             bad += pg.evaluate(small, tab)
         for name, js in [('details', "billySheet(saveData.team[0])"), ('settings', "openSettings()"), ('shop', CHECK_SHOP + "openShop('check_shop')"), ('dressing room', "openDressingRoom({})")]:
@@ -853,7 +853,7 @@ def sound_effects_step(b, base, R):
         if L.index('jingle day') > L.index('jingle reveal'): raise Exception(f'the reveal came before the day: {L}')
         out.append(f"day {day0} to {pg.evaluate('saveData.run.clock')}: day, reveal")
         # a Perk taken
-        clear(); pg.evaluate("(()=>{const R=saveData.run;R.offer=Object.keys(RELICS).slice(0,3);relicPickOpen();relicPickDone(R.offer[0])})();0")
+        clear(); pg.evaluate("(()=>{const R=saveData.run;R.offer=Object.keys(PERKS).slice(0,3);perkPickOpen();perkPickDone(R.offer[0])})();0")
         if 'jingle relic' not in log(): raise Exception(f'a Perk taken: {log()}')
         out.append('Perk: relic')
         # the payout: a coin per row, rising, then run_won after the last; then a loss plays run_lost
@@ -975,7 +975,7 @@ def phone_flow(b, base, R):
         play(pg)
         # UI-1: how many surfaces blur what's behind them on each screen (the plan's budget is 3); a report, not a failure
         blur = {}
-        for tab in ['walk', 'map', 'team', 'ledger', 'profile']:
+        for tab in ['walk', 'map', 'team', 'guide', 'profile']:
             pg.evaluate(f"uiState.tab='{tab}';render();scrollTo(0,0);0"); time.sleep(2.5 if tab in ('walk', 'map') else .6); shot(pg, f'phone-{tab}')
             blur[tab] = pg.evaluate('uiBlurCount()')
         pg.evaluate(CHECK_SHOP + "uiState.tab='walk';saveData.trip.node=0;render();openShop('check_shop');0"); time.sleep(.6); shot(pg, 'phone-shop')
@@ -1316,7 +1316,7 @@ def desktop_steps(b, base, R):
             out.append(f"{kind}: {r['mine']} vs {r['theirs']}, {r['plates']} nameplates, {picks[0]} picks ({picks[1]} aimed), {hit_two} moves in the turn" + (f", Alpha {r['big']}x size, turn order bar {'shown' if r['bar'] else 'missing'}" if kind == 'alpha' else ''))
             if kind == 'alpha':
                 pg.evaluate("(async()=>{for(let i=0;i<20&&activeBattle&&activeBattle.phase==='switch';i++){const b=document.querySelector('#acts [data-a=bswitch]:not([disabled])');if(b)b.click();await new Promise(r=>setTimeout(r,200));for(let j=0;j<40&&activeBattle&&activeBattle.phase==='playing';j++){tapMessage();await new Promise(r=>setTimeout(r,150))}}})()")
-                c = pg.evaluate("""(async()=>{if(!activeBattle||activeBattle.phase!=='choose')return 'catching skipped: the battle '+(activeBattle?'is at '+activeBattle.phase:'ended');uiState.dbgCatch=true;activeBattle.coin=Object.keys(COINS).find(k=>saveData.coins[k]>0)||Object.keys(COINS)[0];saveData.coins[activeBattle.coin]=(saveData.coins[activeBattle.coin]||0)+1;activeBattle.phase='aim';paintActions();showAim();doThrow(false);
+                c = pg.evaluate("""(async()=>{if(!activeBattle||activeBattle.phase!=='choose')return 'catching skipped: the battle '+(activeBattle?'is at '+activeBattle.phase:'ended');uiState.dbgCatch=true;activeBattle.coin=Object.keys(PYRAMIDS).find(k=>saveData.pyramids[k]>0)||Object.keys(PYRAMIDS)[0];saveData.pyramids[activeBattle.coin]=(saveData.pyramids[activeBattle.coin]||0)+1;activeBattle.phase='aim';paintActions();showAim();doThrow(false);
                   for(let i=0;i<120&&activeBattle&&activeBattle.phase!=='end';i++){if(activeBattle.phase==='playing')tapMessage();await new Promise(r=>setTimeout(r,250))}uiState.dbgCatch=false;const m=saveData.team.concat(saveData.box).find(m=>m.alpha);return m?`caught: Alpha flag kept, boss boost dropped (${m.hp}/${maxHp(m)} HP)`:'not caught'})()""")
                 out.append(c)
             pg.evaluate("if(activeBattle){activeBattle.over=activeBattle.over||'ran';activeBattle.phase='end';endBattle()};0"); time.sleep(2.5); pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();0")
@@ -1536,7 +1536,7 @@ def desktop_steps(b, base, R):
     buildings_and_rooms()
 
     @step('The game\'s name, Caught in the Guide, rooms with their building\'s windows', 240)
-    def name_taxed_room_windows():
+    def name_caught_room_windows():
         """Pocket Billies on the page and the title; the Guide counts the Billies you've caught (RF-1: no Taxed left) and the battle has a Catch it
         button; every room of a town shows its building's windows (as many as the front has, double windows as one, in
         the same order) with no furniture in front of them; the picture setting. RL-5: the town is Copperleaf; the
@@ -1544,7 +1544,7 @@ def desktop_steps(b, base, R):
         out = []
         t = pg.evaluate("[document.title,renderTitle().includes('<span>POCKET</span><span>BILLIES</span>')?'POCKET BILLIES':'',gameData.meta.title]")
         if 'Pocket Billies' not in t[0] or 'POCKETBILLIES' not in t[1].replace(' ', '') or t[2] != 'Pocket Billies': raise Exception(f'the name: {t}')
-        g = pg.evaluate("(()=>{uiState.tab='ledger';uiState.dex=null;uiState.guideTab='dex';render();const h=document.body.innerText;uiState.tab='walk';render();return [h.includes('Caught'),h.includes('Taxed')]})()")
+        g = pg.evaluate("(()=>{uiState.tab='guide';uiState.dex=null;uiState.guideTab='dex';render();const h=document.body.innerText;uiState.tab='walk';render();return [h.includes('Caught'),h.includes('Taxed')]})()")
         if not g[0] or g[1]: raise Exception(f'the Guide: Caught shown {g[0]}, Taxed still shown {g[1]}')
         out.append('Pocket Billies on the page, the title screen and in the data; the Guide counts Caught')
         pg.evaluate("uiState.inside=null;uiState.goingIn=null;uiState.bench=null;uiState.modal=null;uiState.mq=[];renderOverlay();0"); go_scene(pg, 0); time.sleep(1)
@@ -1564,7 +1564,7 @@ def desktop_steps(b, base, R):
         # library stood in Marigold Town, parked; the hub has none (its room, int_library, stays in the data)
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return '; '.join(out)
-    name_taxed_room_windows()
+    name_caught_room_windows()
 
     @step('Terraces leave walking as it was, nothing floats', 600)
     def terraces_and_floating():
@@ -1654,15 +1654,15 @@ def desktop_steps(b, base, R):
             if not until(pg, f"!activeBattle&&!blockerAt({mb})", 30): raise Exception('beaten, the mini-boss still blocks')
             # RL-12: its pick of Perks, stored before the sheet; tapped through
             if not until(pg, "uiState.modal&&uiState.modal.btns&&uiState.modal.btns[0].l==='Pick a Perk'", 30): raise Exception('no “Pick a Perk” after the mini-boss')
-            if len(pg.evaluate("JSON.parse(localStorage.getItem(SAVE_KEY)).run.offer||[]")) != pg.evaluate('RULES.run.relics.pick'): raise Exception('the pick isn’t stored before it shows')
+            if len(pg.evaluate("JSON.parse(localStorage.getItem(SAVE_KEY)).run.offer||[]")) != pg.evaluate('RULES.run.perks.pick'): raise Exception('the pick isn’t stored before it shows')
             pg.click('#ov [data-a=mb][data-i="0"]')
-            if not until(pg, "uiState.modal&&uiState.modal.cls==='relic-pick'&&document.querySelectorAll('#ov pb-pick-card').length===RULES.run.relics.pick", 10): raise Exception('the pick didn’t open')
+            if not until(pg, "uiState.modal&&uiState.modal.cls==='relic-pick'&&document.querySelectorAll('#ov pb-pick-card').length===RULES.run.perks.pick", 10): raise Exception('the pick didn’t open')
             pg.evaluate("document.querySelector('#ov pb-pick-card').shadowRoot.querySelector('button').click();0")
             if not until(pg, "!document.querySelector('#ov [data-a=mb][data-i=\"0\"]').disabled", 10): raise Exception('a card didn’t enable “Take it”')
             shot(pg, 'rl12-pick')
             pg.click('#ov [data-a=mb][data-i="0"]')
-            relic = pg.evaluate("saveData.run.relics.length===1&&!saveData.run.offer&&saveData.run.relics[0]")
-            if not relic: raise Exception(f'the pick: held {pg.evaluate("JSON.stringify([saveData.run.relics,saveData.run.offer])")}')
+            relic = pg.evaluate("saveData.run.perks.length===1&&!saveData.run.offer&&saveData.run.perks[0]")
+            if not relic: raise Exception(f'the pick: held {pg.evaluate("JSON.stringify([saveData.run.perks,saveData.run.offer])")}')
             # the boss: an Alpha, won, the payout, home
             boss = pg.evaluate("saveData.run.map.nodes.length")
             pg.evaluate(f"uiState.modal=null;uiState.mq=[];renderOverlay();runJump({boss});render();0")
@@ -1678,7 +1678,7 @@ def desktop_steps(b, base, R):
             shot(pg, 'rl8-payout')
             pg.click('#ov [data-a=mb][data-i="0"]')
             if not until(pg, "!saveData.run&&LOCATIONS.length===gameData.locations.length&&walkView.ready&&walkView.id==='w:'+mapIdAt(saveData.trip.node)+'*'", 90): raise Exception('Fly home didn’t bring you back to Copperleaf')
-            home = pg.evaluate("[saveData.meta.runs, saveData.meta.wins, saveData.meta.capital, saveData.meta.seals]")
+            home = pg.evaluate("[saveData.meta.runs, saveData.meta.wins, saveData.meta.research, saveData.meta.crests]")
             if home[0] < 1 or home[1] < 1 or home[2] <= 0: raise Exception(f'home: {home}')
             if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
             return f'seed {land[0]}: {land[4]} scenes, landed day 1 by the mast; a battle won; day 2 over the seam; healed for {heal[0]} Moneys; {wares} wares and a Perk; {foe[1]} beaten (doubles), {relic} picked; the boss (an Alpha) beaten; payout; home: {home[2]} Research, {home[3]} Seal'
@@ -1770,7 +1770,7 @@ def desktop_steps(b, base, R):
         pg.evaluate("(()=>{const w=document.querySelector('.pcard-wrap');if(w)w.click()})();0"); time.sleep(.8)   # it may have slid away by itself (9 s)
         got = pg.evaluate("Object.keys(saveData.cards||{})")
         if got != ['copperleaf']: raise Exception(f'the Guide keeps {got}')   # RL-5: Copperleaf's card
-        pg.evaluate("uiState.tab='ledger';uiState.guideTab='cards';render();0"); time.sleep(.6)
+        pg.evaluate("uiState.tab='guide';uiState.guideTab='cards';render();0"); time.sleep(.6)
         n = pg.evaluate("document.querySelectorAll('.pc-thumb:not(.none)').length")
         if n != 1: raise Exception(f'the Postcards page shows {n} cards')
         shot(pg, 'postcards-page')

@@ -52,6 +52,7 @@ import '../../game/js/logic/music-where.js';
 import '../../game/js/logic/part-joints.js';
 import '../../game/js/logic/parts.js';
 import '../../game/js/logic/pasture.js';
+import '../../game/js/logic/perks.js';
 import '../../game/js/logic/pixel-density.js';
 import '../../game/js/logic/pixel-ops.js';
 import '../../game/js/logic/pixel-snap.js';
@@ -61,7 +62,6 @@ import '../../game/js/logic/ranch-clock.js';
 import '../../game/js/logic/ranch-income.js';
 import '../../game/js/logic/ranch-state.js';
 import '../../game/js/logic/ranch.js';
-import '../../game/js/logic/relics.js';
 import '../../game/js/logic/rig-joints.js';
 import '../../game/js/logic/rig-swap.js';
 import '../../game/js/logic/rng.js';
@@ -107,5 +107,5 @@ export { runMapSweep } from '../../game/js/logic/data-checks.js';
 /* Studio plan T3.4: the run simulation (the modules above, named for it) */
 export { runSimReport } from './logic-worker-sim.js';
 /* Studio plan Phase 4: the content editors' previews */
-export { relicPreview, leaderRunValues, speciesStandIns } from '../../game/js/logic/content-preview.js';
-export { relicOfferOrder } from '../../game/js/logic/relics.js';
+export { perkPreview, leaderRunValues, speciesStandIns } from '../../game/js/logic/content-preview.js';
+export { perkOfferOrder } from '../../game/js/logic/perks.js';

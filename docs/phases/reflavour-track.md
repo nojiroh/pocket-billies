@@ -55,7 +55,7 @@ Numbers below were read at 2361848; verify again before each session.
 | RF-1 | Words players see (**done 2026-10-23**, HANDOFF) | every player-facing finance word in 2 changed: catching ("catch"), currencies (Moneys, Research, Crests), Perks, Expeditions, the bribe line, settings and haptics text; data text only, ids untouched | none | 1 |
 | RF-2 | Pyramids | `coins.json`'s four coins become pyramids (names, text, icons, a low-poly pyramid for the throw, its tumble and landing, the sound); catch odds unchanged; the never-fail one stays a boss/badge reward | RF-1 | 1 |
 | RF-3 | Type passives (**done 2026-10-23**, section 6) | the nine passives get Pokémon-like names and, where the idea was finance (`landlord`, `subsidy`, `inherit`), a new effect; the golden battle record remade on purpose for the changed ones | RF-1 | 1 |
-| RF-4 | Internal renames | one rename per commit: `relics` → `perks` (data section, `run.relics`, `logic/relics.js`, `relic-screen.js`), `capital` → `research`, `seals` → `crests`, `brackets`/Bracket keys → `expeditions`, status ids, item ids, coin ids → pyramid ids, `ledger` tab id, the passive ids and their rule keys (6: `ramp`, `subsidy`, `sharp`, `landlord`, `pivot`, `volatile`, `synergy`, `inherit`; `financeRamp*`, `mediaCrit`, `cryptoRoll*`, `retailSynergy`, `rentFraction`, the stones' `fx.rent`/`sides.rent` and the move ids `renthike`/`eviction`); `npm run modules` and check:modules after each; SAVE_VERSION bumped once (old saves set aside, as CLAUDE.md allows) | RF-1..RF-3 | 2 |
+| RF-4 | Internal renames (**done 2026-10-23**, section 7) | one rename per commit: `relics` → `perks` (data section, `run.relics`, `logic/relics.js`, `relic-screen.js`), `capital` → `research`, `seals` → `crests`, `brackets`/Bracket keys → `expeditions`, status ids, item ids, coin ids → pyramid ids, `ledger` tab id, the passive ids and their rule keys (6: `ramp`, `subsidy`, `sharp`, `landlord`, `pivot`, `volatile`, `synergy`, `inherit`; `financeRamp*`, `mediaCrit`, `cryptoRoll*`, `retailSynergy`, `rentFraction`, the stones' `fx.rent`/`sides.rent` and the move ids `renthike`/`eviction`); `npm run modules` and check:modules after each; SAVE_VERSION bumped once (old saves set aside, as CLAUDE.md allows) | RF-1..RF-3 | 2 |
 | RF-5 | The new tone in text | story.json, Chosen's and Hazel's tables, signs, lore, the opening, the Index text, the leaders' lines: satire moved onto bureaucracy, tech and influencers, RPG clichés and clone ethics; the clones' origin (billionaires' vanity cloning projects) written into the Index and lore; Claude drafts, the owner approves | RF-1 | 1-2 |
 | RF-6 | The game's name | **Pocket B&B²** (the raised B) in the title screen's logo, page titles, manifest, README, the changelog; storage keys untouched (or moved with a set-aside) | RF-1 | 1 |
 
@@ -135,3 +135,38 @@ and in the battle lines of Regrowth, Slipstream, Bedrock and Parting Roar. Stren
 3v3 at levels 10 and 25): no type's win rate moved more than 3 points; Bedrock barely shows even 4 levels down (one
 more move rarely turns a loss).
 
+
+## 7. RF-4 as built (2026-10-23)
+
+42 commits on `track/reflavour` (with this entry), each a single rename, except the first: SAVE_VERSION 5 (old saves set aside, no
+migration). The owner's answers to the plan: the money id stays `money`; `tier` becomes `expedition` now; the art folder
+`art/coins/` keeps its name; `foreclose` goes with the stone moves.
+
+- Where the plan was wrong (checked in the code): there were no Bracket keys. The difficulty was `tier` (`run.tier`,
+  `meta.tier`, `runByTier`), and "Bracket" survived only in comments. Item ids `trailmix`, `pretzel`, `bell`, `repairkit`
+  were never finance. The shop unlocks `shop_settlement`, `shop_bailout`,
+  `shop_appeal` also embedded item ids (renamed with them). The rules held more finance keys than listed: `auditSkip`,
+  `subpoena`, `luxuryPenny`, `winSeals`, the Kindling, Live Wire, Wild Mind and Alloy numbers, `rentFraction`.
+- Renamed: `relics` → `perks` (files logic/perks.js, perk-screen.js, studio/js/perks-editor.js, the data section, the
+  code names `relic*`, `RELICS`, `renderRelics`..., rules `run.perks`, `run.perks` in the save, the tab id); `capital` →
+  `research` and `seals` → `crests` (currency ids, meta keys, payouts, grants, icons; rules `winCrests`); catch items
+  `penny`, `silver`, `gold`, `tbtf` → `pyramid`, `step_pyramid`, `gold_pyramid`, `capstone` (and their art files), the
+  section `coins` → `pyramids` (`PYRAMIDS`, `saveData.pyramids`, reward, start and pack counts), `coin*` code names →
+  `pyramid*`, `MONEY_COIN` → `MONEY_ICON`, rules `luxuryPyramid`; the eight finance item ids → their names
+  (`potion`, `hi_potion`, `burn_salve`, `nerve_tonic`, `wake_tea`, `revive`, `max_revive`, `full_remedy`); statuses
+  `aud`, `sub`, `scn` → `par`, `slp`, `brn` (rules `paralysisSkip`, `asleepCatch`); the passives (section 6's ids) with
+  their rule keys and battle-side fields (`slipstream`, `roar`, `stones`); the stone moves `scatterstones`,
+  `quakestomp`, `bouldertoss`; `tier` → `expedition`; the `ledger` tab → `guide`; run-sim's `catchWhileBelow`,
+  `pyramidsUpTo`, `perks` and its report's `perks`; the `taxed` local and check-quick's `name_caught_room_windows`.
+- Kept on purpose: the title's tagline, the storage keys (RF-6), the debug log's keys (`relics`, `capital`, `seals`:
+  they now read the renamed fields), URL parameters (`&relics=`) and fixture names, Studio section ids, CSS classes,
+  data-a keys and DOM ids (`bcoins`, `#aimCoin`, `shoprelic`), UI icon names `relic` and `ledger`, the art folder
+  `art/coins/`, the opening's `coins` and `throw-coins`, the singular `coin` key of a ware or seat and the `coin:`
+  condition, the offer stream's name `relic|`.
+- Not renamed, for the owner: the ten Perk ids (`offshore`, `shelter`, `lobbyist`, `fineprint`, `insider`, `takeover`,
+  `hedge`, `severance`, `options`, `writeoff`). perkPool sorts the pool by id before the seeded draw, so new ids would
+  change which Perks every seed offers: a behaviour change, not a rename. The way: first a behaviour commit that draws
+  in perks.json's order (offers change once, on purpose), then the ids. Also still finance: the stat ids `lev`, `lob`,
+  `hus` and most move ids (the moves stay, section 1).
+- One rename did change behaviour: runShopStock sorts a town's weighted wares by item id before its draw, so the item
+  rename changed which wares a seed's run shop stocks. No test pinned it; SAVE_VERSION 5 means no saved run carries over.

@@ -8,10 +8,10 @@ import {
   closeModal,
   giveRobotKit,
   modal,
+  perkPickOpen,
   pixelSky,
   playStoryScript,
   provide,
-  relicPickOpen,
   render,
   renderOverlay,
   runBowlMapTest,
@@ -26,7 +26,18 @@ import {
   toast,
 } from './hooks.js';
 import { $, $$, clamp } from './util.js';
-import { COATS, COINS, DATA_WARN, DEX_ORDER, ITEMS, LOCATIONS, RELICS, RULES, SPECIES, TRAINERS } from './game-data.js';
+import {
+  COATS,
+  DATA_WARN,
+  DEX_ORDER,
+  ITEMS,
+  LOCATIONS,
+  PERKS,
+  PYRAMIDS,
+  RULES,
+  SPECIES,
+  TRAINERS,
+} from './game-data.js';
 import { speciesOf } from './logic/fighters.js';
 import {
   addBilly,
@@ -43,7 +54,7 @@ import {
 } from './logic/rules.js';
 import { ranchNow } from './logic/ranch-clock.js';
 import { RUN_MOD_MOUNTAINS } from './logic/run-scenes.js';
-import { relicOfferMake, relicTake } from './logic/relics.js';
+import { perkOfferMake, perkTake } from './logic/perks.js';
 import { allSnapshots, battleSay, checkFaints, fighter, startTrainer, startWild } from './logic/battle-engine.js';
 import { activeBattle, escapeHtml, save, saveData, saveNow, uiState } from './game-state.js';
 import { frameCount, frameScheduler, frameTask, userFps } from './frame-scheduler.js';
@@ -156,8 +167,8 @@ function debugHTML() {
           .join('')}</ul>`
       : '<p class="note">Game data loaded with no warnings.</p>'
   }`;
-  const give = `<div class="dbg-row">${debugButtonHTML('se1', '+1,000 Moneys', 'gold')}${debugButtonHTML('se10', '+10,000 Moneys', 'gold')}${debugButtonHTML('coins', '+10 of every pyramid', 'gold')}${debugButtonHTML('items', '+5 of every item', 'gold')}</div>
-  <div class="dbg-row">${debugButtonHTML('scrap', '+50 Scrap', 'gold')}${debugButtonHTML('capital', '+500 Research, +2 Crests', 'gold')}</div>`;
+  const give = `<div class="dbg-row">${debugButtonHTML('se1', '+1,000 Moneys', 'gold')}${debugButtonHTML('se10', '+10,000 Moneys', 'gold')}${debugButtonHTML('pyramids', '+10 of every pyramid', 'gold')}${debugButtonHTML('items', '+5 of every item', 'gold')}</div>
+  <div class="dbg-row">${debugButtonHTML('scrap', '+50 Scrap', 'gold')}${debugButtonHTML('research', '+500 Research, +2 Crests', 'gold')}</div>`;
   const billies = `<div class="dbg-row">${debugSelectHTML('dbgSp', debugSpeciesOptions(), uiState.dbgSp || DEX_ORDER[0])}<input id="dbgLv" type="number" min="1" max="${maxLevel()}" value="${uiState.dbgLv || 10}" aria-label="Level">${debugSelectHTML('dbgCoat', [['', 'No coat'], ...Object.entries(COATS).map(([k, c]) => [k, c.name])], uiState.dbgCoat || '')}</div>
   <div class="dbg-row">${debugButtonHTML('give', 'Give it to me', 'gold')}${debugButtonHTML('enc', 'Add as encounter')}${debugButtonHTML('wild', 'Battle it now', 'red')}${debugButtonHTML('alpha', 'As an Alpha', 'red')}</div>
   <div class="dbg-row">${debugButtonHTML('heal', 'Heal everyone')}${debugButtonHTML('lv5', 'Team +5 levels', 'gold')}${debugButtonHTML('evo', 'Lead evolves now')}${debugButtonHTML('dex', 'Fill the Field Guide', 'gold')}</div>
@@ -167,9 +178,9 @@ function debugHTML() {
   const run = saveData.run
     ? `<p class="note">On a run: seed ${escapeHtml(saveData.run.seed)}, day ${saveData.run.clock}, ${saveData.run.at.phase}. “Go there” under Places and test scenes walks it a place at a time.</p><div class="dbg-row">${debugButtonHTML('runwin', 'Win the run', 'gold')}${debugButtonHTML('runlose', 'Lose the run', 'red')}</div><div class="dbg-row">${debugSelectHTML(
         'dbgRelic',
-        Object.keys(RELICS).map(k => [k, RELICS[k].name]),
-        uiState.dbgRelic || Object.keys(RELICS)[0] || ''
-      )}${debugButtonHTML('relicgive', 'Give a Perk', 'gold')}${debugButtonHTML('relicpick', 'A mini-boss’s pick')}</div><p class="note">Perks held: ${saveData.run.relics.length} of ${RULES.run.relics.cap}${saveData.run.relics.length ? ` (${escapeHtml(saveData.run.relics.map(k => (RELICS[k] || { name: k }).name).join(', '))})` : ''}. Past the cap, the one held longest makes room.</p>`
+        Object.keys(PERKS).map(k => [k, PERKS[k].name]),
+        uiState.dbgRelic || Object.keys(PERKS)[0] || ''
+      )}${debugButtonHTML('relicgive', 'Give a Perk', 'gold')}${debugButtonHTML('relicpick', 'A mini-boss’s pick')}</div><p class="note">Perks held: ${saveData.run.perks.length} of ${RULES.run.perks.cap}${saveData.run.perks.length ? ` (${escapeHtml(saveData.run.perks.map(k => (PERKS[k] || { name: k }).name).join(', '))})` : ''}. Past the cap, the one held longest makes room.</p>`
     : `<div class="dbg-row"><input id="dbgRunSeed" maxlength="20" placeholder="Seed (empty: a new one)" aria-label="Run seed" value="${escapeHtml(uiState.dbgRunSeed || '')}"><label><input id="dbgRunShort" type="checkbox"${uiState.dbgRunShort ? ' checked' : ''}> Short (5 rows)</label><label><input id="dbgRunMountains" type="checkbox"${uiState.dbgRunMountains ? ' checked' : ''}> Mountains and ledges</label>${debugButtonHTML('runstart', 'Start a run')}</div><p class="note">From Copperleaf, as the mast does (Expedition I). Short: one mini-boss, a town before it, the boss. Mountains and ledges: every place gets mountains of 15-20 m on its north and south sides with trails up, and terraces with ledges (for measuring on a phone; the debug log has the frame times).</p>`;
   const places = `<div class="dbg-row">${debugSelectHTML(
     'dbgNode',
@@ -332,9 +343,9 @@ function debugAction(x) {
       saveData.se += 10000;
       said = `+10,000 Moneys: you have ${money()}.`;
       break;
-    case 'coins':
-      Object.keys(COINS).forEach(k => (saveData.coins[k] = (saveData.coins[k] || 0) + 10));
-      said = `+10 of each of ${Object.keys(COINS).length} coins.`;
+    case 'pyramids':
+      Object.keys(PYRAMIDS).forEach(k => (saveData.pyramids[k] = (saveData.pyramids[k] || 0) + 10));
+      said = `+10 of each of ${Object.keys(PYRAMIDS).length} pyramids.`;
       break;
     case 'items':
       Object.keys(ITEMS).forEach(k => (saveData.items[k] = (saveData.items[k] || 0) + 5));
@@ -515,23 +526,23 @@ function debugAction(x) {
         id = v('dbgRelic');
       uiState.dbgRelic = id;
       if (!run) return refreshDebugMenu('No run.');
-      const why = relicTake(
+      const why = perkTake(
         run,
         id,
-        RELICS,
-        RULES.run.relics,
-        run.relics.length >= RULES.run.relics.cap ? run.relics[0] : undefined
+        PERKS,
+        RULES.run.perks,
+        run.perks.length >= RULES.run.perks.cap ? run.perks[0] : undefined
       );
       if (why) return refreshDebugMenu(why === 'held' ? 'Already held.' : 'That Perk can’t be given.');
       saveNow();
-      return refreshDebugMenu(`${RELICS[id].name}: held.`);
+      return refreshDebugMenu(`${PERKS[id].name}: held.`);
     }
     case 'relicpick':
       if (!saveData.run || activeBattle) return refreshDebugMenu('No run, or a battle is on.');
-      if (!relicOfferMake(saveData.run, RELICS, RULES.run.relics)) return refreshDebugMenu('Every Perk is held.');
+      if (!perkOfferMake(saveData.run, PERKS, RULES.run.perks)) return refreshDebugMenu('Every Perk is held.');
       saveNow();
       uiState.modal = null;
-      relicPickOpen();
+      perkPickOpen();
       return;
     case 'runwin':
     case 'runlose':
@@ -573,10 +584,10 @@ function debugAction(x) {
       said = `+50 Scrap: you have ${saveData.meta.scrap}.`;
       break;
     /* RL-11: Research and Crests to try the Lab's board and the airship's upgrades with */
-    case 'capital':
-      saveData.meta.capital += 500;
-      saveData.meta.seals += 2;
-      said = `+500 Research, +2 Crests: you have ${saveData.meta.capital} and ${saveData.meta.seals}.`;
+    case 'research':
+      saveData.meta.research += 500;
+      saveData.meta.crests += 2;
+      said = `+500 Research, +2 Crests: you have ${saveData.meta.research} and ${saveData.meta.crests}.`;
       break;
     case 'win':
       if (!activeBattle || activeBattle.phase === 'playing' || activeBattle.over)

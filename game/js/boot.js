@@ -10,7 +10,7 @@ import { TEST_BOOT } from './test-boot.js';
 import {
   DATA_WARN,
   LOCATIONS,
-  RELICS,
+  PERKS,
   RULES,
   SPECIES,
   START_NODE,
@@ -36,7 +36,7 @@ import {
   setSaveData,
   uiState,
 } from './game-state.js';
-import { ART_CACHE, COIN_ART, EGG_ART, ICON_ATLAS, artBoot, artImg, uiIconURL } from './art.js';
+import { ART_CACHE, EGG_ART, ICON_ATLAS, PYRAMID_ART, artBoot, artImg, uiIconURL } from './art.js';
 import { personArtPaths } from './person-art.js';
 import { rigAtlas } from './skeleton-rig.js';
 import { AREAS, battleStagePrepare } from './battle-stage.js';
@@ -191,7 +191,7 @@ function loadList() {
     add = (p, ph) => {
       if (p && !L.has(p)) L.set(p, ph);
     };
-  [ICON_ATLAS, ...COIN_ART, ...EGG_ART].forEach(p => add(p, 0));
+  [ICON_ATLAS, ...PYRAMID_ART, ...EGG_ART].forEach(p => add(p, 0));
   for (const sp of Object.keys(SPECIES)) {
     const R = RIGS[sp];
     if (!R) continue;
@@ -766,7 +766,7 @@ const TEST_RUN = (() => {
   try {
     const q = new URLSearchParams(location.search),
       at = (q.get('at') || '').split(',').map(Number),
-      run = runTestOf(q, { species: SPECIES, unlocks: UNLOCKS, relics: RELICS, cap: RULES.run.relics.cap });
+      run = runTestOf(q, { species: SPECIES, unlocks: UNLOCKS, perks: PERKS, cap: RULES.run.perks.cap });
     return q.get('test') || q.get('story') || run
       ? {
           run,
@@ -846,10 +846,10 @@ function runTestStart(R) {
   uiState.mq = [];
   runTakeOff(R.seed, R.short ? RUN_TEST_SHORT : undefined, [], {
     home: s.team.map(m => m.uid),
-    pack: { items: {}, coins: {} },
+    pack: { items: {}, pyramids: {} },
   });
   if (!saveData.run) return toast(`Test run: seed ${R.seed} couldn’t take off with this data.`);
-  if (R.relics.length) saveData.run.relics = R.relics.slice();
+  if (R.perks.length) saveData.run.perks = R.perks.slice();
   toast(
     `Test run on seed ${R.seed}${R.short ? ', short map' : ''}${TEST_RUN.draft ? (studioLive.told ? ', with your Studio edits' : ' (the Studio’s edits didn’t come: saved data)') : ''}${R.left.length ? `. Left out: ${R.left.join(', ')}` : ''}. Nothing here is saved.`
   );
@@ -895,10 +895,10 @@ function studioLive(D) {
   }
   /* Project Story S3: the story and the trainers, in place (STORY_DATA and TRAINERS are these objects). Studio plan
      T2.6: in a test run (never a player's game, which would save what draft rules gave) also what a run is made of,
-     before a Play this seed run takes off (&draft=1) and while it goes: RULES, NODE_TYPES, RELICS, UNLOCKS and ITEMS
+     before a Play this seed run takes off (&draft=1) and while it goes: RULES, NODE_TYPES, PERKS, UNLOCKS and ITEMS
      are these objects too, so a clinic's price or a shop's wares follow an unsaved edit */
   for (const k of TEST_RUN
-    ? ['story', 'trainers', 'rules', 'nodeTypes', 'relics', 'unlocks', 'items']
+    ? ['story', 'trainers', 'rules', 'nodeTypes', 'perks', 'unlocks', 'items']
     : ['story', 'trainers'])
     if (D[k] && gameData[k]) {
       for (const x of Object.keys(gameData[k])) delete gameData[k][x];
