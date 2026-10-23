@@ -197,6 +197,43 @@ export function buildSearchIndex() {
       k
     )
   );
+  /* Studio plan Phase 4: the run's Loopholes, unlocks, buildings and currencies */
+  Object.entries(D.relics || {}).forEach(([k, R]) =>
+    add(
+      R.name || k,
+      `Loophole · ${R.rarity || ''}`,
+      'relic',
+      () => openSection('relics', { relic: k }),
+      `${k} ${R.d || ''}`
+    )
+  );
+  Object.entries(D.unlocks || {}).forEach(([k, U]) =>
+    add(
+      U.name || k,
+      `Unlock · ${U.when ? 'earned' : U.at || ''}`,
+      'unlock',
+      () => openSection('unlocks', { unlock: k }),
+      `${k} ${U.about || ''}`
+    )
+  );
+  Object.entries(D.buildings || {}).forEach(([k, B]) =>
+    add(
+      B.name || k,
+      'Hub building',
+      'building',
+      () => findField('unlocks', `buildings.${k}.name`),
+      `${k} ${B.about || ''}`
+    )
+  );
+  Object.entries(D.currencies || {}).forEach(([k, C]) =>
+    add(
+      C.name || k,
+      'Currency',
+      'currency',
+      () => findField('unlocks', `currencies.${k}.name`),
+      `${k} ${C.long || ''} ${C.about || ''}`
+    )
+  );
   Object.entries(D.shops || {}).forEach(([k, S]) =>
     add(S.name || k, 'Shop' + (S.keeper ? ' · ' + S.keeper : ''), 'shop', () => openSection('shops', { shop: k }), k)
   );
@@ -256,6 +293,10 @@ const FIND_KIND_LABELS = {
   scene: 'Place',
   stop: 'Stop',
   prop: 'Prop',
+  relic: 'Loophole',
+  unlock: 'Unlock',
+  building: 'Building',
+  currency: 'Currency',
 };
 export function findRun(q) {
   const n = normalizeForFind(q).trim(),
