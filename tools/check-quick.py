@@ -1805,7 +1805,7 @@ def desktop_steps(b, base, R):
         return f'{r["b"]} buildings in 3D by night, {r["on"]} of {r["lamps"]} lamps on, {r["lit"]} of {r["fw"]} front windows lit; a rain front came in (its curtain at {c["e"]:.2f}, coming in: {c["into"]})'
     night_lights_and_front()
 
-    @step('phase 08: running — the joystick’s outer ring, the D-pad’s centre, Shift and "Always run"', 180)
+    @step('Running: the joystick’s outer ring, the D-pad’s centre, Shift and "Always run"', 180)
     def run_speeds():
         """the walk speed a full push gives, and 1.7 times that when running; the ring and the D-pad's centre set the run from
         real pointer events, a light push walks slowly, and the keys walk at the same speed as a full push"""
