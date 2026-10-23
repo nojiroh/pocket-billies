@@ -181,7 +181,7 @@ const LOAD_TIPS = [
   'Clinics heal your whole team for free. Just walk up to the door.',
   'A Billie hides in the grass with only its level showing. You find out who it is when the battle starts.',
   'Fire beats Grass, Grass beats Water, Water beats Fire. The classics never go out of style.',
-  'Flick a coin at a tired Billie to tax it.',
+  'Throw a pyramid at a tired Billie to catch it.',
   'The world map shows every road. Pick a place, and gold arrows lead you there.',
   'Road signs at the edge of town tell you where each road goes.',
 ];

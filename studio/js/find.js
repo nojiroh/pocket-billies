@@ -186,7 +186,7 @@ export function buildSearchIndex() {
     add(I.n, 'Item', 'item', () => findField('items', `items.${k}.n`), k + ' ' + (I.d || ''))
   );
   Object.entries(D.coins || {}).forEach(([k, I]) =>
-    add(I.n, 'Tax coin', 'item', () => findField('items', `coins.${k}.n`), k)
+    add(I.n, 'Pyramid', 'item', () => findField('items', `coins.${k}.n`), k)
   );
   Object.entries(D.trainers || {}).forEach(([k, T]) =>
     add(

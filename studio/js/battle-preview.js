@@ -215,7 +215,7 @@ SECTIONS.preview = () => {
     ]
       .map(([k, n]) => `<button class="btn sm" data-act="bp" data-x="${k}">${n}</button>`)
       .join('')}</div>
-   <div class="seg-row"><button class="btn sm" data-act="bp" data-x="catch">Throw: taxed</button><button class="btn sm" data-act="bp" data-x="escape">Throw: breaks free</button></div>
+   <div class="seg-row"><button class="btn sm" data-act="bp" data-x="catch">Throw: caught</button><button class="btn sm" data-act="bp" data-x="escape">Throw: breaks free</button></div>
    <div class="seg-row"><span class="help">Camera</span>${['wide', 'foe', 'me'].map(f => `<button class="seg sm" data-act="bp" data-x="cam-${f}">${f}</button>`).join('')}<span class="help">Speed</span>${[0.5, 1, 2].map(v => `<button class="seg sm ${battleStage.speed === v ? 'on' : ''}" data-act="bp" data-x="speed-${v}">${v}×</button>`).join('')}</div>`
   )}
   ${card(

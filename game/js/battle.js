@@ -759,7 +759,7 @@ export function paintActions() {
       crew = saveData.team,
       alive = crew.filter(x => x.hp > 0).length;
     h = `<div class="c-choose">${moveTilesHTML(m)}
-  <div class="bt-row"><button class="bt coin" data-a="bcoins" ${wild && first ? '' : 'disabled'}>${uiIconHTML('pyramid', 18)}<b>Tax it</b><small>${wild ? (first ? coins + ' left' : 'First pick only') : 'Wild only'}</small><kbd>X</kbd></button>
+  <div class="bt-row"><button class="bt coin" data-a="bcoins" ${wild && first ? '' : 'disabled'}>${uiIconHTML('pyramid', 18)}<b>Catch it</b><small>${wild ? (first ? coins + ' left' : 'First pick only') : 'Wild only'}</small><kbd>X</kbd></button>
   <button class="bt items" data-a="bitems">${uiIconHTML('bag', 18)}<b>Bag</b><small>${items}</small><kbd>I</kbd></button>
   <button class="bt team" data-a="bteam">${uiIconHTML('team', 18)}<b>Team</b><small>${alive}/${crew.length}</small><kbd>T</kbd></button>
   <button class="bt run" data-a="brun" ${wild ? '' : 'disabled'}>${uiIconHTML('run', 18)}<b>Run</b><small>${wild ? 'Walk away' : 'No exit'}</small><kbd>R</kbd></button></div>${first ? '' : `<button class="bt back wide" data-a="bback">${uiIconHTML('back', 16)}<b>Back to ${escapeHtml(billyName(fighter(activeBattle.plan[activeBattle.plan.length - 1].who)))}</b><kbd>Esc</kbd></button>`}</div>`;
@@ -821,7 +821,7 @@ export function paintActions() {
     const t = {
       win: 'You won.',
       lose: 'Your team fainted.',
-      caught: 'Taxed.',
+      caught: 'Caught!',
       ran: 'You walked away.',
       draw: 'A draw.',
     }[activeBattle.over];
@@ -903,7 +903,7 @@ function finishThrow(res, id, lab, spin) {
   activeBattle.events = [];
   if (res.edge) battleSay('It landed on its point. Critical catch!');
   if (res.caught) {
-    battleSay(`Gotcha! ${billyName(e)} was taxed.`, { k: 'caught' });
+    battleSay(`Gotcha! ${billyName(e)} was caught.`, { k: 'caught' });
     /* logic/battle-engine.js catchKeep: an Alpha stays one, at least 1 HP, addBilly; the battle is over */
     const { where, alpha } = catchKeep(e);
     if (alpha) battleSay(`${billyName(e)} is an Alpha: a little bigger and stronger than others of its kind.`);

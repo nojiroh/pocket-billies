@@ -27,7 +27,7 @@ import { tutorPicked } from './opening-fall.js';
 expose({ battleAction: [() => battleAction, v => (battleAction = v)] });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-/* keyboard play in battle: F fight, 1–4 moves, X tax (or C), I items, T team, R run, Esc back, Space/Enter advance */
+/* keyboard play in battle: F fight, 1–4 moves, X catch (or C), I items, T team, R run, Esc back, Space/Enter advance */
 document.addEventListener('keydown', ev => {
   if (
     !activeBattle ||

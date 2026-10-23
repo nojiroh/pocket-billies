@@ -1534,18 +1534,18 @@ def desktop_steps(b, base, R):
         return '; '.join(out) + '; out again at the lab’s door'
     buildings_and_rooms()
 
-    @step('The game\'s name, Taxed in the Guide, rooms with their building\'s windows', 240)
+    @step('The game\'s name, Caught in the Guide, rooms with their building\'s windows', 240)
     def name_taxed_room_windows():
-        """Pocket Billies on the page and the title; the Guide counts the Billies you've taxed and the battle has a Tax!
+        """Pocket Billies on the page and the title; the Guide counts the Billies you've caught (RF-1: no Taxed left) and the battle has a Catch it
         button; every room of a town shows its building's windows (as many as the front has, double windows as one, in
         the same order) with no furniture in front of them; the picture setting. RL-5: the town is Copperleaf; the
         library's four windows went with Marigold Town"""
         out = []
         t = pg.evaluate("[document.title,renderTitle().includes('<span>POCKET</span><span>BILLIES</span>')?'POCKET BILLIES':'',gameData.meta.title]")
         if 'Pocket Billies' not in t[0] or 'POCKETBILLIES' not in t[1].replace(' ', '') or t[2] != 'Pocket Billies': raise Exception(f'the name: {t}')
-        g = pg.evaluate("(()=>{uiState.tab='ledger';uiState.dex=null;uiState.guideTab='dex';render();const h=document.body.innerText;uiState.tab='walk';render();return [h.includes('Taxed'),h.includes('Caught')]})()")
-        if not g[0] or g[1]: raise Exception(f'the Guide: Taxed shown {g[0]}, Caught still shown {g[1]}')
-        out.append('Pocket Billies on the page, the title screen and in the data; the Guide counts Taxed')
+        g = pg.evaluate("(()=>{uiState.tab='ledger';uiState.dex=null;uiState.guideTab='dex';render();const h=document.body.innerText;uiState.tab='walk';render();return [h.includes('Caught'),h.includes('Taxed')]})()")
+        if not g[0] or g[1]: raise Exception(f'the Guide: Caught shown {g[0]}, Taxed still shown {g[1]}')
+        out.append('Pocket Billies on the page, the title screen and in the data; the Guide counts Caught')
         pg.evaluate("uiState.inside=null;uiState.goingIn=null;uiState.bench=null;uiState.modal=null;uiState.mq=[];renderOverlay();0"); go_scene(pg, 0); time.sleep(1)
         rows = pg.evaluate("""(()=>{const C=walkData().sc,ppu=C.ppu||34,out=[];for(const p of walkView.sc.props){const M=C.props[p.k];if(!M||!M.box||!p.act)continue;let id=null;try{id=roomFor(p.act,p)}catch(e){}if(!id||!mapById(id)||mapById(id).winMatch===0)continue;
           const s=p.s||1,f=p.f?-1:1,dx=((M.door&&M.door.x)||0)/ppu*s*f,door=[+(p.x+dx).toFixed(1),+(+p.z).toFixed(1),+(+p.x).toFixed(1)];seamlessWorld.cache.delete(seamlessRoomId(walkView.id,id,door)+'|'+seamlessWorld.gen);

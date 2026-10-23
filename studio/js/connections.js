@@ -196,7 +196,7 @@ function connectionNode(kind, id) {
         kind,
         id,
         label: (D.coins[id] || {}).n || id,
-        sub: 'Tax coin',
+        sub: 'Pyramid',
         go: () => findField('items', `coins.${id}.n`),
       };
     case 'trainer':

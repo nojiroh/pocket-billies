@@ -161,7 +161,7 @@ function debugHTML() {
   <div class="dbg-row">${debugButtonHTML('give', 'Give it to me', 'gold')}${debugButtonHTML('enc', 'Add as encounter')}${debugButtonHTML('wild', 'Battle it now', 'red')}${debugButtonHTML('alpha', 'As an Alpha', 'red')}</div>
   <div class="dbg-row">${debugButtonHTML('heal', 'Heal everyone')}${debugButtonHTML('lv5', 'Team +5 levels', 'gold')}${debugButtonHTML('evo', 'Lead evolves now')}${debugButtonHTML('dex', 'Fill the Field Guide', 'gold')}</div>
   <div class="dbg-row">${debugButtonHTML('bots', 'Give the robot kit', 'gold')}</div><p class="note">Two robots and one of every robot part and gem. Battle Tinker Rho (under Places and test scenes) for a mixed team.</p>`;
-  const battle = `<div class="dbg-row">${debugButtonHTML('win', 'Win now', 'gold')}${debugButtonHTML('lose', 'Lose now')}${debugButtonHTML('foe1', 'Foe to 1 HP')}${debugButtonHTML('catch', uiState.dbgCatch ? 'Taxing works as normal' : 'Every throw taxes')}</div>
+  const battle = `<div class="dbg-row">${debugButtonHTML('win', 'Win now', 'gold')}${debugButtonHTML('lose', 'Lose now')}${debugButtonHTML('foe1', 'Foe to 1 HP')}${debugButtonHTML('catch', uiState.dbgCatch ? 'Catching works as normal' : 'Every throw catches')}</div>
   <div class="dbg-row">${[1, 2, 4].map(x => debugButtonHTML('speed' + x, `${x}× speed`, battleStage.speed === x ? 'dark' : '')).join('')}</div>`;
   const run = saveData.run
     ? `<p class="note">On a run: seed ${escapeHtml(saveData.run.seed)}, day ${saveData.run.clock}, ${saveData.run.at.phase}. “Go there” under Places and test scenes walks it a place at a time.</p><div class="dbg-row">${debugButtonHTML('runwin', 'Win the run', 'gold')}${debugButtonHTML('runlose', 'Lose the run', 'red')}</div><div class="dbg-row">${debugSelectHTML(
@@ -425,7 +425,7 @@ function debugAction(x) {
         saveData.seen[id] = 1;
         saveData.caught[id] = 1;
       });
-      said = `Field Guide filled: ${DEX_ORDER.length} Billies seen and taxed.`;
+      said = `Field Guide filled: ${DEX_ORDER.length} Billies seen and caught.`;
       break;
     case 'trainer2': {
       const id = v('dbgTr');
@@ -607,7 +607,7 @@ function debugAction(x) {
     case 'catch':
       uiState.dbgCatch = !uiState.dbgCatch;
       return refreshDebugMenu(
-        uiState.dbgCatch ? 'Every throw taxes until you turn it off.' : 'Taxing is back to normal.'
+        uiState.dbgCatch ? 'Every throw catches until you turn it off.' : 'Catching is back to normal.'
       );
     case 'speed1':
     case 'speed2':

@@ -181,7 +181,7 @@ export function runSimOn(env) {
   /**
    * One run from its seed, played by the policy. Returns a log of everything that was drawn and how it went, and the
    * run's numbers. What the player does is a fixed policy: walk forward along a lane drawn from the seed, fight up to
-   * `fights` of a place's wild Billies while the party is above 70% of its HP (a Potion on a Billie below 60%; tax the
+   * `fights` of a place's wild Billies while the party is above 70% of its HP (a Potion on a Billie below 60%; catch the
    * first ones while the party is small), heal in towns when hurt, keep a few Copper Coins, beat the mini-boss, then
    * the boss. It starts as the mast does: the highest-level Billies from home (rules.json run.home at Bracket I;
    * `team` is how many starters wait at home) and a bag packed with Potions from home (`pack` of them at home, as many
@@ -327,7 +327,7 @@ export function runSimOn(env) {
           const foe = hooks.activeBattle.sides[1].team[0];
           const B = hooks.activeBattle;
           let res;
-          /* tax it while the party is small and there are coins: one throw, then fight on */
+          /* catch it while the party is small and there are coins: one throw, then fight on */
           if (s.team.length < P.taxWhileBelow && (s.coins.penny || 0) > 0 && !q.alpha) {
             s.coins.penny--;
             const c = fn('catchRoll')('penny', 1 + logic.CATCH_RULES.ring * P.ring, false); /* doThrow's T */

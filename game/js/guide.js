@@ -85,7 +85,7 @@ export function renderGuide() {
   const chips =
     [
       ['all', 'All'],
-      ['got', 'Taxed'],
+      ['got', 'Caught'],
       ['miss', 'Missing'],
     ]
       .map(([k, l]) => `<button class="fchip k-btn${f === k ? ' on' : ''}" data-a="dexf" data-f="${k}">${l}</button>`)
@@ -95,7 +95,7 @@ export function renderGuide() {
         `<button class="fchip k-btn tdot${f === t ? ' on' : ''}" data-a="dexf" data-f="${t}" style="--tc:${TYPE_COLORS[t][0]}" aria-label="${t}"><i></i>${t}</button>`
     ).join('');
   return `<header class="bar"><div><div class="sub">Professor Chosen’s records</div><h1 class="where">Field Guide</h1></div></header>${guideTabs()}
- <section class="ledsum paper px k-panel"><div class="ls-row"><div><span class="ls-k">Seen</span><b class="tnum">${seen}</b></div><div><span class="ls-k">Taxed</span><b class="tnum">${got}</b></div><div><span class="ls-k">Total</span><b class="tnum">${DEX_ORDER.length}</b></div></div>${progressBarHTML(got / DEX_ORDER.length, 'gold')}<p class="hand">Keep walking. They are out there.</p></section>
+ <section class="ledsum paper px k-panel"><div class="ls-row"><div><span class="ls-k">Seen</span><b class="tnum">${seen}</b></div><div><span class="ls-k">Caught</span><b class="tnum">${got}</b></div><div><span class="ls-k">Total</span><b class="tnum">${DEX_ORDER.length}</b></div></div>${progressBarHTML(got / DEX_ORDER.length, 'gold')}<p class="hand">Keep walking. They are out there.</p></section>
  <div class="fchips">${chips}</div>
  <ol class="ledger paper px k-panel">${
    list
@@ -103,7 +103,7 @@ export function renderGuide() {
        const s = SPECIES[id],
          st = dexStatus(id),
          sn = st !== 'none';
-       return `<li><button class="lrow ${st}" data-a="dex" data-s="${id}" aria-label="${sn ? s.name : 'Unknown'}, number ${s.no}"><span class="lno tnum">${String(s.no).padStart(3, '0')}</span><span class="lspr">${sn ? bustHTML(id, 46) : bustHTML(id, 46, { sil: 1, still: 1 })}</span><span class="ltx"><b>${sn ? escapeHtml(s.name) : 'Unknown'}</b><small>${sn ? escapeHtml(s.cat) : '—'}</small></span><span class="ltypes">${sn ? s.types.map(t => `<i style="--tc:${TYPE_COLORS[t][0]}" title="${t}"></i>`).join('') : ''}</span><span class="lst">${st === 'got' ? `<img class="pxi" src="${coinURL('penny')}" width="18" height="18" alt="Taxed">` : st === 'seen' ? '<em>seen</em>' : ''}</span></button></li>`;
+       return `<li><button class="lrow ${st}" data-a="dex" data-s="${id}" aria-label="${sn ? s.name : 'Unknown'}, number ${s.no}"><span class="lno tnum">${String(s.no).padStart(3, '0')}</span><span class="lspr">${sn ? bustHTML(id, 46) : bustHTML(id, 46, { sil: 1, still: 1 })}</span><span class="ltx"><b>${sn ? escapeHtml(s.name) : 'Unknown'}</b><small>${sn ? escapeHtml(s.cat) : '—'}</small></span><span class="ltypes">${sn ? s.types.map(t => `<i style="--tc:${TYPE_COLORS[t][0]}" title="${t}"></i>`).join('') : ''}</span><span class="lst">${st === 'got' ? `<img class="pxi" src="${coinURL('penny')}" width="18" height="18" alt="Caught">` : st === 'seen' ? '<em>seen</em>' : ''}</span></button></li>`;
      })
      .join('') || '<li class="lempty">No entries match.</li>'
  }</ol>`;
@@ -176,7 +176,7 @@ function renderDexEntry(id) {
     bg2 = TYPE_COLORS[s.types[s.types.length - 1]][0];
   return `<header class="bar dexbar"><button class="pb small quiet" data-a="dexback">‹ Guide</button><div class="dexnav"><button class="pb small quiet" data-a="dex" data-s="${prev || ''}" ${prev ? '' : 'disabled'} aria-label="Previous entry">‹</button><span class="tnum">No. ${String(s.no).padStart(3, '0')}</span><button class="pb small quiet" data-a="dex" data-s="${next || ''}" ${next ? '' : 'disabled'} aria-label="Next entry">›</button></div></header>
  <article class="dexpage">
-  <div class="plate px k-panel" style="--c1:${bg};--c2:${bg2}"><div class="plate-sky"></div><div class="plate-floor"></div><div class="plate-spr">${rigCanvasHTML(id, 150, { act: 'enter' })}</div><span class="cattag">${escapeHtml(s.cat)}</span><span class="stamp ${got ? 'got' : 'seen'}">${got ? 'Taxed' : 'Seen'}</span><span class="specno tnum">Specimen ${String(s.no).padStart(3, '0')}/${String(DEX_ORDER.length).padStart(3, '0')}</span></div>
+  <div class="plate px k-panel" style="--c1:${bg};--c2:${bg2}"><div class="plate-sky"></div><div class="plate-floor"></div><div class="plate-spr">${rigCanvasHTML(id, 150, { act: 'enter' })}</div><span class="cattag">${escapeHtml(s.cat)}</span><span class="stamp ${got ? 'got' : 'seen'}">${got ? 'Caught' : 'Seen'}</span><span class="specno tnum">Specimen ${String(s.no).padStart(3, '0')}/${String(DEX_ORDER.length).padStart(3, '0')}</span></div>
   <h2 class="dexname">${escapeHtml(s.name)}</h2><p class="row">${s.types.map(typeBadgeHTML).join('')}<span class="note rar">${RARITY_NAMES[s.rar] || ''}</span></p>
   <div class="vitals">${[
     ['Height', typeof s.ht === 'number' ? s.ht.toFixed(1) + ' m' : s.ht],
@@ -186,8 +186,8 @@ function renderDexEntry(id) {
   ]
     .map(([k, v]) => `<div class="vit px k-card"><span>${k}</span><b>${escapeHtml(String(v))}</b></div>`)
     .join('')}</div>
-  <section class="paper px k-panel notes"><h3>Field notes</h3>${got ? `<p>${escapeHtml(s.blurb)}</p><p class="hand red">${escapeHtml(s.note)}</p>` : `<p>${escapeHtml(s.blurb.split('. ')[0])}. <span class="redact">██████ ████ ███████ ██</span></p><p class="hand">Tax one to complete this entry.</p>`}</section>
-  <section class="paper px k-panel"><h3>Base stats</h3>${got ? `<table class="bsheet"><tbody>${STAT_IDS.map((k, i) => `<tr><td>${STAT_NAMES[k]}</td><td class="tnum">${s.base[i]}</td><td><span class="bbar" style="--w:${((s.base[i] / mx) * 100).toFixed(0)}%"></span></td></tr>`).join('')}<tr class="tot"><td>Total</td><td class="tnum">${tot}</td><td></td></tr></tbody></table>` : `<p class="note">Tax one to see its stats.</p>`}</section>
+  <section class="paper px k-panel notes"><h3>Field notes</h3>${got ? `<p>${escapeHtml(s.blurb)}</p><p class="hand red">${escapeHtml(s.note)}</p>` : `<p>${escapeHtml(s.blurb.split('. ')[0])}. <span class="redact">██████ ████ ███████ ██</span></p><p class="hand">Catch one to complete this entry.</p>`}</section>
+  <section class="paper px k-panel"><h3>Base stats</h3>${got ? `<table class="bsheet"><tbody>${STAT_IDS.map((k, i) => `<tr><td>${STAT_NAMES[k]}</td><td class="tnum">${s.base[i]}</td><td><span class="bbar" style="--w:${((s.base[i] / mx) * 100).toFixed(0)}%"></span></td></tr>`).join('')}<tr class="tot"><td>Total</td><td class="tnum">${tot}</td><td></td></tr></tbody></table>` : `<p class="note">Catch one to see its stats.</p>`}</section>
   <section class="paper px k-panel lin"><h3>Evolution</h3><div class="chain">${chain}</div><p class="note">${escapeHtml(evolutionHint({ sp: id, lvl: 0 }))}</p></section>
   ${forms ? `<section class="paper px k-panel lin"><h3>Regional forms</h3><div class="chain">${forms}</div></section>` : ''}
   <section class="paper px k-panel"><h3>Type matchups</h3><table class="expo"><tbody><tr><td>Strong against</td><td>${strong.map(typeBadgeHTML).join('') || '—'}</td></tr><tr><td>Weak to</td><td>${weak.map(typeBadgeHTML).join('') || '—'}</td></tr><tr><td>Resists</td><td>${res.map(typeBadgeHTML).join('') || '—'}</td></tr></tbody></table></section>

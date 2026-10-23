@@ -237,7 +237,7 @@ function encountersHTML() {
     cap = encounterStock(saveData.trip.node);
   if (!cap) return '';
   return `<section class="pending"><div class="sec-h"><h2>Wild Billies here</h2><span class="count tnum">${q.length}/${cap}</span></div>
-  <p class="note">${q.length >= cap ? 'This place is full. Battle or tax a few to make room.' : 'Another one wanders over about every minute.'} You only see their level until the battle starts.</p>
+  <p class="note">${q.length >= cap ? 'This place is full. Battle or catch a few to make room.' : 'Another one wanders over about every minute.'} You only see their level until the battle starts.</p>
   ${q.length ? `<div class="queue">${q.map(encounterCardHTML).join('')}</div>` : '<div class="empty px">No Billies nearby. Give it a minute and one will wander over.</div>'}</section>`;
 }
 /* the forecast's word to a UI icon (environment.js environmentIcon's, by day) */

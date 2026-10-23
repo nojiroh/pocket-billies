@@ -961,7 +961,7 @@ SECTIONS.rules = () => {
        numberField('Alpha moves per turn', `${bt}.alphaActs`, { min: 1, max: 4, step: 1, ph: '2' }),
        numberField('Your Billies against an Alpha', `${bt}.alphaTeam`, { min: 1, max: 3, step: 1, ph: '3' }),
        numberField('Alpha XP', `${bt}.alphaXp`, { unit: '×', min: 1, max: 10, step: 0.5, ph: '3' }),
-       numberField('A taxed Alpha keeps', `${bt}.alphaKeep`, {
+       numberField('A caught Alpha keeps', `${bt}.alphaKeep`, {
          unit: '×',
          min: 1,
          max: 1.5,
@@ -981,8 +981,8 @@ SECTIONS.rules = () => {
      )
  )}
  ${card(
-   'Taxing',
-   '<h4>Base tax rate</h4>' +
+   'Catching',
+   '<h4>Base catch rate</h4>' +
      rar +
      grid(
        numberField('HP factor', `${ca}.hpFactor`, {

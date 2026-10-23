@@ -42,7 +42,7 @@
    "about": "Professor Chosen in his lab (talk.js talkChosen): your Index, your badges, where Blake went",
    "who": "chosen",
    "script": [
-    "[happy] {name}! My sidekick returns. How’s the Index? {caught} taxed so far. #l:2c0a",
+    "[happy] {name}! My sidekick returns. How’s the Index? {caught} caught so far. #l:2c0a",
     "if caught >= 15",
     "  [happy] That’s a proper collection. Hazel says she might cite you in her paper. I said put me first. #l:5e16",
     "elif caught >= 5",

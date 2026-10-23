@@ -1,6 +1,6 @@
 'use strict';
 /* ================= BAG (alpha 0.5) =================
-   Your inventory, in pockets by what things are for: Healing (potions, salves, revives, snacks), Coins (for taxing
+   Your inventory, in pockets by what things are for: Healing (potions, salves, revives, snacks), Coins (for catching
    a Billie in battle), Special (stones that make some Billies evolve) and Eggs (with how far each still has to go).
    Tap a thing to choose it; healing is used straight from here on a Billie you pick. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */

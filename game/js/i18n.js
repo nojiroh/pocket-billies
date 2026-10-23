@@ -56,7 +56,7 @@ Clear|Wissen|Leeren|Borrar|Effacer
 Claim|Ophalen|Abholen|Reclamar|Réclamer
 Details|Details|Details|Detalles|Détails
 Fight|Vechten|Kämpfen|Luchar|Combattre
-Tax!|Belasten!|Besteuern!|¡Gravar!|Taxer !
+Catch it|Vangen|Fangen|Atrapar|Attraper
 Bag|Tas|Tasche|Bolsa|Sac
 Run|Vluchten|Fliehen|Huir|Fuir
 Heal|Genezen|Heilen|Curar|Soigner
@@ -85,9 +85,9 @@ No items yet.|Nog geen spullen.|Noch keine Gegenstände.|Aún no hay objetos.|Pa
 Field Guide|Veldgids|Feldführer|Guía de campo|Guide de terrain
 All types|Alle typen|Alle Typen|Todos los tipos|Tous les types
 Seen|Gezien|Gesehen|Vistos|Vus
-Taxed|Belast|Besteuert|Gravados|Taxés
+Caught|Gevangen|Gefangen|Atrapados|Capturés
 Unknown|Onbekend|Unbekannt|Desconocido|Inconnu
-Tax one to see its stats.|Belast er een om zijn statistieken te zien.|Besteuere eins, um seine Werte zu sehen.|Grava uno para ver sus estadísticas.|Taxez-en un pour voir ses stats.
+Catch one to see its stats.|Vang er een om zijn statistieken te zien.|Fange eins, um seine Werte zu sehen.|Atrapa uno para ver sus estadísticas.|Capturez-en un pour voir ses stats.
 Your profile|Jouw profiel|Dein Profil|Tu perfil|Ton profil
 Trainer card|Trainerkaart|Trainerkarte|Tarjeta de entrenador|Carte de dresseur
 Records|Records|Rekorde|Récords|Records

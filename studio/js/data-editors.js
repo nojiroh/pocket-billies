@@ -216,7 +216,7 @@ SECTIONS.billionaires = () => {
     textField('Handwritten note', `${p}.note.${st}`, {
       area: 1,
       rows: 2,
-      help: 'The red margin note in the Field Guide, visible after you tax one.',
+      help: 'The red margin note in the Field Guide, visible after you catch one.',
     });
   const stats = statsCard(L, li) + musicCryCardHTML(L, li, st);
   const learn = `<table class="tbl"><thead><tr><th>At Lv</th><th>Move</th><th></th><th></th></tr></thead><tbody>${L.learn
@@ -262,7 +262,7 @@ function statsCard(L, li) {
           'Rarity',
           `${p}.rar`,
           Object.keys(D.rarities).map(k => [k, RARITY_LABELS[k] || k]),
-          { rr: 1, help: 'Sets the total stat points per stage and the base tax rate.' }
+          { rr: 1, help: 'Sets the total stat points per stage and the base catch rate.' }
         )
       ) +
       `<div class="sliders">${stats.map((s, k) => rangeField(s.name, `${p}.prof.${k}`, { min: 0.3, max: 1.8, step: 0.05, showKey: 'mul', show: v => (+v).toFixed(2) })).join('')}</div>${table}<button class="btn subtle" data-act="baseOn">Type exact numbers instead</button>`;
@@ -812,7 +812,7 @@ SECTIONS.moves = () => {
       )
       .join('')}</div>`;
   const fxB = `<div class="fxgrid">
-  ${selectField('Causes a status', `${p}.fx.status`, statusOptions(), { none: 'Nothing', opt: 1, help: 'Paralyzed: may lose turns, slower. Asleep: can’t act for 2–4 turns, easier to tax. Burned: loses HP each turn, weaker Attack.' })}
+  ${selectField('Causes a status', `${p}.fx.status`, statusOptions(), { none: 'Nothing', opt: 1, help: 'Paralyzed: may lose turns, slower. Asleep: can’t act for 2–4 turns, easier to catch. Burned: loses HP each turn, weaker Attack.' })}
   ${numberField('Status chance', `${p}.fx.chance`, { unit: '%', opt: 1, min: 1, max: 100, step: 1, help: 'For damaging moves. Leave empty for always.' })}
   ${st(fx.tgtStage, `${p}.fx.tgtStage`, 'Changes the target’s stats')}${st(fx.selfStage, `${p}.fx.selfStage`, 'Changes its own stats')}
   ${numberField('Self change chance', `${p}.fx.selfChance`, { unit: '%', opt: 1, min: 1, max: 100, step: 1, help: 'Chance for the self effects above and below.' })}
