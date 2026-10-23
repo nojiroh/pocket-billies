@@ -33,6 +33,9 @@ Branch `track/test-cleanup` (pulled with --no-rebase before every push). TC-4 it
   failure had taken Battle music with it); check-fast's CAM-2 encounter swoop waits 30 s and the orbit check resets
   the camera first (CI failed that pair once); check-fast's screens check taps a Billie sheet's tab again until it
   opens (a lost tap; that commit also carries check-fast's docstring times).
+- **Fixed on main's behalf**: check-fast's "Play this seed" built its Node plan without the run's region (RL-R1), so it
+  failed on main since #167 and on this PR; it passes the region now. main's #170 fixed the in-game test's two false
+  failures the baseline run's selftest job hit (merged in).
 - Tried and reverted: steps that share a fixture sharing a page (13 pages to 10) saved 66 s of 1338 and broke Run
   music, which needs the run's landing untouched.
 - **Results** (a 4-core cloud container, one heavy check at a time):
