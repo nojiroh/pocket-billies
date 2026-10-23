@@ -27,7 +27,9 @@ import {
   worldExtraMaps,
 } from './game-data.js';
 import { encountersHere, makeBilly, maxHp, spawn } from './logic/rules.js';
+import { ranchNow } from './logic/ranch-clock.js';
 import { ranchLevel, ranchSlots, ranchTrainStart } from './logic/ranch.js';
+import { incomeRate } from './logic/ranch-income.js';
 import { runBegin, runRestore } from './logic/run-state.js';
 import { runArrive, runMapStart, runNext, runWorldNode } from './logic/run-map.js';
 import { MAPGEN_VERSION } from './logic/mapgen.js';
@@ -1221,6 +1223,56 @@ async function runFullTest(mode) {
             uiState.modal = null;
             uiState.mq = [];
             uiState.breedPick = null;
+            renderOverlay();
+            setSaveData(was);
+            render();
+          }
+        },
+        3,
+        60
+      );
+    /* RL-10b: the ranch's passive income, on a copy of the save (nothing is written while the test runs): counted for
+       three hours, the sheet's Income row shows three hours' Scrap and Collect pays it; then the ranch clock's mark two
+       hours ahead of the device (as after a clock set forward, collected, and turned back): the sheet says the clock
+       is behind, nothing waits and Collect is shut. Then the save as it was */
+    if (typeof ranchOpen === 'function' && RULES.ranch && RULES.ranch.income && !saveData.run && !selfTest.stop)
+      await phase(
+        'The ranch: income and a clock turned back',
+        'dio',
+        async () => {
+          const was = saveData,
+            R = RULES.ranch,
+            H = 3600000;
+          try {
+            const s = JSON.parse(JSON.stringify(saveData)),
+              now = ranchNow(s, Date.now(), R).now,
+              rate = incomeRate(s, R),
+              want = Math.floor(3 * rate);
+            s.meta.scrap = 0;
+            s.ranch.income = { bank: 0, lastAt: now - 3 * H };
+            setSaveData(s);
+            uiState.modal = null;
+            uiState.mq = [];
+            ranchOpen();
+            const count = () => (document.querySelector('#ov .ranch-income .count') || { textContent: '' }).textContent,
+              collect = () =>
+                /** @type {HTMLButtonElement | null} */ (document.querySelector('#ov .ranch-income [data-r=collect]'));
+            if (count() !== `${want} Scrap`) throw new Error(`three hours show “${count()}”, not ${want} Scrap`);
+            const c = collect();
+            if (!c || c.disabled) throw new Error('Collect is shut with Scrap waiting');
+            c.click();
+            if (s.meta.scrap !== want) throw new Error(`Collect paid ${s.meta.scrap}, not ${want}`);
+            s.ranch.seen = s.ranch.income.lastAt = Date.now() + 2 * H;
+            uiState.modal = null;
+            ranchOpen();
+            if (!document.querySelector('#ov .ranch-back')) throw new Error('the sheet didn’t say the clock is behind');
+            if (count() !== '0 Scrap' || !collect() || !(/** @type {HTMLButtonElement} */ (collect()).disabled))
+              throw new Error(`the clock behind: “${count()}” waiting`);
+            if (s.ranch.income.lastAt !== s.ranch.seen) throw new Error('the income’s time moved back');
+            return `three hours showed and paid ${want} Scrap (${rate} an hour); a clock two hours behind paid nothing and said so`;
+          } finally {
+            uiState.modal = null;
+            uiState.mq = [];
             renderOverlay();
             setSaveData(was);
             render();
