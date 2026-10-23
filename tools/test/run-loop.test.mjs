@@ -160,6 +160,39 @@ test("a run battle's start: its seed, the forecast's weather (clear is sunny), t
   assert.equal(L.runBattleExtra(run, 0, 0, GAME_DATA.rules.env, fx).fx, fx);
 });
 
+test("the Actions sheet's weather words: boosts first, then cuts, in whole percent; nothing when it changes nothing", () => {
+  assert.equal(L.weatherEffectText({ k: 'rain', m: { Fire: 0.8, Water: 1.2 } }), 'Water +20%, Fire −20%');
+  assert.equal(L.weatherEffectText({ k: 'x', m: { Steel: 1.1, Grass: 0.9, Ice: 1 } }), 'Steel +10%, Grass −10%');
+  assert.equal(L.weatherEffectText({ k: 'x', m: { B: 1.15, A: 1.15 } }), 'A +15%, B +15%', 'equal: by name');
+  assert.equal(L.weatherEffectText(null), '');
+});
+
+test("the Actions sheet's run status: the day, the deadline, the node's type, its weather today and tomorrow", () => {
+  const run = runOf('RLSHEET01'),
+    { runWeather } = modules['run-map'],
+    env = GAME_DATA.rules.env;
+  for (let i = 0; i < run.map.nodes.length; i++) {
+    const st = L.runSheetStatus(run, i, env);
+    assert.ok(st, `node ${i}`);
+    assert.equal(st.day, run.clock);
+    assert.equal(st.deadline, run.deadline);
+    assert.equal(st.type, run.map.nodes[i].type);
+    assert.deepEqual(
+      st.days.map(d => [d.day, d.w]),
+      [run.clock, run.clock + 1].map(d => [d, runWeather(run, i, d)]),
+      'the forecast a week ahead holds both days'
+    );
+    for (const d of st.days) assert.deepEqual(d.wx, L.runBattleWeather(run, i, d.day, env));
+  }
+  assert.deepEqual(
+    L.runBattleExtra(run, 1, 2, env, null).wx,
+    L.runSheetStatus(run, 1, env).days[0].wx,
+    "today's words are the battle's own weather"
+  );
+  assert.equal(L.runSheetStatus(run, 999, env), null, 'no such node');
+  assert.equal(L.runSheetStatus({ ...run, map: null }, 0, env), null, 'no map yet');
+});
+
 test("the run's end keeps the whole party on a win, only the one picked on a loss; items count at their shop price", () => {
   const team = [{ uid: 'a' }, { uid: 'b' }, { uid: 'c' }];
   assert.deepEqual(L.runKept(team, true, 'b'), ['a', 'b', 'c']);

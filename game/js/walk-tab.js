@@ -5,21 +5,22 @@
 import { expose } from './test-globals.js';
 import { provide, render, roomState } from './hooks.js';
 import { $, $$ } from './util.js';
-import { LOCATIONS, SHOPS, locationSubtitle, trainersAt } from './game-data.js';
+import { LOCATIONS, NODE_TYPES, RULES, SHOPS, locationSubtitle, trainersAt } from './game-data.js';
 import { encounterStock, encountersHere, formatNumber, healAll, plural } from './logic/rules.js';
-import { runClinic, runHealCost } from './logic/run-loop.js';
+import { runClinic, runHealCost, runSheetStatus, weatherEffectText } from './logic/run-loop.js';
 import { startWild } from './logic/battle-engine.js';
 import { activeBattle, escapeHtml, save, saveData, saveNow, uiState } from './game-state.js';
 import { artURL, uiIconHTML } from './art.js';
 import { cleanTrainer, personHTML } from './person-art.js';
 import { mapById } from './walk-view.js';
-import { environment, environmentHint, environmentIcon, environmentLabel } from './environment.js';
+import { WEATHER_NAMES, environment, environmentHint, environmentIcon, environmentLabel } from './environment.js';
 import { runClinicEach, runGiveUp } from './run.js';
 import { trainerTalk } from './story.js';
 import { challengeCardHTML } from './things-to-do.js';
 import { closeModal, modal, toast } from './overlay.js';
 /* eslint-disable no-func-assign */
 expose({
+  WEATHER_ICONS: [() => WEATHER_ICONS],
   boardNote: [() => boardNote, v => (boardNote = v)],
   clinicHeal: [() => clinicHeal, v => (clinicHeal = v)],
   encounterCardHTML: [() => encounterCardHTML, v => (encounterCardHTML = v)],
@@ -29,6 +30,7 @@ expose({
   nodeActions: [() => nodeActions, v => ((nodeActions = v), provide({ nodeActions }))],
   renderWalk: [() => renderWalk, v => (renderWalk = v)],
   roomHero: [() => roomHero, v => (roomHero = v)],
+  runStatusHTML: [() => runStatusHTML, v => (runStatusHTML = v)],
   tripButtons: [() => tripButtons, v => ((tripButtons = v), provide({ tripButtons }))],
   tripDest: [() => tripDest],
   tripStatus: [() => tripStatus, v => ((tripStatus = v), provide({ tripStatus }))],
@@ -197,12 +199,30 @@ export function renderWalk() {
 function walkSheetHTML() {
   const q = encountersHere(),
     cap = encounterStock(saveData.trip.node);
-  return `<div class="cols"><div class="col">
+  return `${runStatusHTML()}<div class="cols"><div class="col">
  ${typeof challengeCardHTML === 'function' ? challengeCardHTML() : ''}${hereCard()}</div><div class="col">
  <section class="pending"><div class="sec-h"><h2>Encounters here</h2><span class="count tnum">${q.length}/${cap}</span></div>
   <p class="note">${!cap ? 'No wild Billies live here. Try a route or a town with tall grass.' : q.length >= cap ? 'This place is full. Battle or tax a few to make room.' : 'Another one wanders over about every minute.'} You only see their level until the battle starts.</p>
   ${q.length ? `<div class="queue">${q.map(encounterCardHTML).join('')}</div>` : `<div class="empty px">No Billies nearby.${cap ? ' Give it a minute and one will wander over.' : ''}</div>`}</section>
  </div></div>`;
+}
+/* the forecast's word to a UI icon (environment.js environmentIcon's, by day) */
+const WEATHER_ICONS = { rain: 'rain', storm: 'rain', snow: 'snow', fog: 'fog', ash: 'ash', cloudy: 'cloud' };
+/** on a run: the day and deadline, the place's type, and its weather today and tomorrow with what it does to moves
+    (logic/run-loop.js runSheetStatus) */
+function runStatusHTML() {
+  const run = saveData.run,
+    L = LOCATIONS[saveData.trip.node],
+    st = run && run.map && L && L.runNode != null ? runSheetStatus(run, L.runNode, RULES.env) : null;
+  if (!st) return '';
+  const T = NODE_TYPES[st.type],
+    rows = st.days
+      .map(d => {
+        const fx = weatherEffectText(d.wx);
+        return `<li>${uiIconHTML(WEATHER_ICONS[d.w] || 'sun', 16)}<b>${d.day === st.day ? 'Today' : 'Tomorrow'}</b><span>${escapeHtml(WEATHER_NAMES[d.w] || d.w)}</span><small>${fx ? escapeHtml(fx) : 'No effect on moves'}</small></li>`;
+      })
+      .join('');
+  return `<section class="ws-status k-card"><div class="ws-top"><pb-day-chip day="${st.day}" deadline="${st.deadline}"></pb-day-chip><span class="ws-type">${escapeHtml(T ? T.name : st.type)}</span></div>${rows ? `<ul class="ws-wx">${rows}</ul>` : ''}</section>`;
 }
 const walkSheetWanted = () =>
   uiState.walkSheet && uiState.tab === 'walk' && !!saveData.started && !activeBattle && !uiState.title;

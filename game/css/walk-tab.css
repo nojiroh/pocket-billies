@@ -461,6 +461,43 @@ body.on-walk .wh-foot > * {
 #walkSheet {
   --sheet-max: 58vh;
 }
+/* on a run: the day and deadline, the place's type, today's and tomorrow's weather (walk-tab.js runStatusHTML) */
+.ws-status {
+  display: grid;
+  gap: var(--s2);
+  margin: 0 0 var(--s3);
+  padding: var(--s3);
+}
+.ws-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s2);
+}
+.ws-type {
+  font-size: var(--fs-caption);
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+  color: var(--text2);
+}
+.ws-wx {
+  display: grid;
+  gap: var(--s1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ws-wx li {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: center;
+  column-gap: var(--s2);
+}
+.ws-wx small {
+  grid-column: 2 / -1;
+  font-size: var(--fs-caption);
+  color: var(--text2);
+}
 html:has(> body.on-walk) {
   overflow: hidden;
 }

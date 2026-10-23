@@ -20,7 +20,7 @@ import { ITEMS } from '../game-data.js';
 import { rngFrom } from './rng.js';
 import { battleWeatherOf } from './weather.js';
 import { healAll, maxHp } from './rules.js';
-import { runHome } from './run-state.js';
+import { RUN_DAYS, runHome } from './run-state.js';
 import { runNodeSeed, runWeather, runWorldNode } from './run-map.js';
 import { runWildLevels } from './run-scenes.js';
 /* eslint-disable no-func-assign */
@@ -32,6 +32,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   runBattleExtra: [() => runBattleExtra, v => (runBattleExtra = v)],
   runBattleSeed: [() => runBattleSeed],
+  // @ts-expect-error -- replaced on purpose
+  runBattleWeather: [() => runBattleWeather, v => (runBattleWeather = v)],
   // @ts-expect-error -- replaced on purpose
   runClinic: [() => runClinic, v => (runClinic = v)],
   runFoeId: [() => runFoeId],
@@ -49,9 +51,13 @@ expose({
   runRelease: [() => runRelease, v => (runRelease = v)],
   runReleasePays: [() => runReleasePays],
   // @ts-expect-error -- replaced on purpose
+  runSheetStatus: [() => runSheetStatus, v => (runSheetStatus = v)],
+  // @ts-expect-error -- replaced on purpose
   runShopOpen: [() => runShopOpen, v => (runShopOpen = v)],
   // @ts-expect-error -- replaced on purpose
   runShopStock: [() => runShopStock, v => (runShopStock = v)],
+  // @ts-expect-error -- replaced on purpose
+  weatherEffectText: [() => weatherEffectText, v => (weatherEffectText = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -186,16 +192,45 @@ export function runFoes(run, data) {
 /** a run battle's seed: its node's seed and its number in the run (run.battleN when it began), the stream the
  * battle draws its chances from (battle-state.js makeBattle) @param {Run} run @param {number} i @param {number} k */
 export const runBattleSeed = (run, i, k) => `${runNodeSeed(run.seed, i)}|battle|${k}`;
+/** a run place's battle weather on a day: its forecast (clear when not rolled), clear being sunny (a run has no hour),
+ * as battle.wx holds it (null when it changes nothing) @param {Run} run @param {number} i the map node
+ * @param {number} day @param {any} env rules.json env */
+export function runBattleWeather(run, i, day, env) {
+  const w = runWeather(run, i, day) || 'clear';
+  return battleWeatherOf(w === 'clear' ? 'sunny' : w, env);
+}
+/** what a battle's weather does to moves, in words, the boosts first: "Water +20%, Fire −20%" ('' when nothing)
+ * @param {{ k: string, m: Record<string, number> } | null} wx */
+export function weatherEffectText(wx) {
+  if (!wx) return '';
+  return Object.entries(wx.m)
+    .filter(([, v]) => v !== 1)
+    .sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1))
+    .map(([t, v]) => `${t} ${v > 1 ? '+' : '−'}${Math.round(Math.abs(v - 1) * 100)}%`)
+    .join(', ');
+}
+/** the Actions sheet's run status at map node i: the day, the deadline, the node's type, and its weather today and
+ * tomorrow (the forecast's word and what a battle there would feel; tomorrow left out past the run's last day or when
+ * not rolled) @param {Run} run @param {number} i the map node @param {any} env rules.json env
+ * @returns {{ day: number, deadline: number, type: string, days: { day: number, w: string, wx: { k: string, m: Record<string, number> } | null }[] } | null} */
+export function runSheetStatus(run, i, env) {
+  const node = run.map && run.map.nodes[i];
+  if (!node) return null;
+  const days = [run.clock, run.clock + 1]
+    .filter(d => d <= RUN_DAYS)
+    .map(d => ({ day: d, w: runWeather(run, i, d), wx: runBattleWeather(run, i, d, env) }))
+    .filter(d => d.w);
+  return { day: run.clock, deadline: run.deadline, type: node.type, days };
+}
 /** Studio plan T3.2: what a run battle starts with, on the page (run.js runBattleStart) and in the simulation (logic/
  * run-sim.js): its seed, the place's forecast for today as the battle's weather (clear is sunny: a run has no hour),
  * and the Loopholes' effect rows when any are held (logic/effects.js fxOfRun: null when none)
  * @param {Run} run @param {number} i the map node @param {number} k the battle's number in the run
  * @param {any} env rules.json env @param {any[] | null} fx */
 export function runBattleExtra(run, i, k, env, fx) {
-  const w = runWeather(run, i, run.clock) || 'clear';
   return {
     seed: runBattleSeed(run, i, k),
-    wx: battleWeatherOf(w === 'clear' ? 'sunny' : w, env),
+    wx: runBattleWeather(run, i, run.clock, env),
     ...(fx ? { fx } : {}),
   };
 }
