@@ -31,6 +31,7 @@ import {
   dataRelics,
   dataRoadFindings,
   dataRobotProblems,
+  dataRigs,
   dataRobots,
   dataRunClock,
   dataRunLoop,
@@ -356,6 +357,64 @@ if (D.partKits && check('partKits.schema.json', D.partKits, 'partKits.json')) {
     if (P.mirrorOf && !K.parts[P.mirrorOf]) problem('partKits.json', `part ${id} mirrors ${P.mirrorOf}, no such part`);
   }
 }
+// Studio plan Phase 5 (T5.1): the kit Billies' recipes: the schema, then the parts, colours, anchors, rigs and lines
+// they name, one recipe per line stage, and each stage's native parts as the recipe gives them (else: bake again,
+// node tools/bake-kit-billies.mjs). Phase 1c moves these into logic/data-checks.js.
+if (D.kitBuilds && check('kitBuilds.schema.json', D.kitBuilds, 'kitBuilds.json')) {
+  const B = D.kitBuilds,
+    kit = (D.partKits && D.partKits.parts) || {},
+    slotNames = new Set(((D.rules && D.rules.parts) || {}).slots || []),
+    at = 'kitBuilds.json',
+    seen = { name: new Set(), rig: new Set(), stage: new Set() },
+    lines = {};
+  for (const id of Object.keys(B.bake.tailAim)) if (!kit[id]) problem(at, `bake.tailAim: ${id}, no such part`);
+  const colourOk = (where, c) =>
+    typeof c === 'string' && !B.colours[c] && problem(at, `${where}: colour ${c}, not in colours`);
+  for (const f of B.forms) {
+    const where = `form ${f.name}`;
+    for (const [k, v] of [
+      ['name', f.name],
+      ['rig', f.rig],
+      ['stage', `${f.line} ${f.stage}`],
+    ])
+      if (seen[k].has(v)) problem(at, `${where}: a second form for ${k} ${v}`);
+      else seen[k].add(v);
+    const line = (D.lines || []).find(l => l.id === f.line);
+    if (!line) problem(at, `${where}: line ${f.line}, no such line`);
+    else if (f.stage >= line.names.length) problem(at, `${where}: stage ${f.stage}, ${f.line} has ${line.names.length}`);
+    else (lines[f.line] ||= { line, forms: [] }).forms.push(f);
+    for (const [kind, [pid, , col]] of Object.entries(f.parts)) {
+      if (!kit[pid]) problem(at, `${where} ${kind}: part ${pid}, not in partKits.json`);
+      colourOk(`${where} ${kind}`, col);
+    }
+    (f.extras || []).forEach(([pid, anchor, , col, , slot], i) => {
+      if (!kit[pid]) problem(at, `${where} extra ${i + 1}: part ${pid}, not in partKits.json`);
+      if (!B.bake.anchors[anchor]) problem(at, `${where} extra ${i + 1}: anchor ${anchor}, not in bake.anchors`);
+      colourOk(`${where} extra ${i + 1}`, col);
+      if (slot && !slotNames.has(slot)) problem(at, `${where} extra ${i + 1}: slot ${slot}, not in rules.json parts.slots`);
+    });
+    for (const [kind, slot] of Object.entries(f.slots || {})) {
+      if (!f.parts[kind]) problem(at, `${where}: slots.${kind}, the form has no ${kind}`);
+      if (!slotNames.has(slot)) problem(at, `${where}: slots.${kind} is ${slot}, not in rules.json parts.slots`);
+    }
+  }
+  const { kitNativeParts } = await import('../game/js/logic/kit-assemble.js');
+  for (const [id, { line, forms }] of Object.entries(lines)) {
+    if (forms.length !== line.names.length)
+      problem(at, `line ${id}: recipes for stages ${forms.map(f => f.stage).sort()}, the line has ${line.names.length}`);
+    for (const f of forms) {
+      let want;
+      try {
+        want = kitNativeParts(f, D.partKits.slots || {}, [...slotNames]);
+      } catch (e) {
+        problem(at, e.message);
+        continue;
+      }
+      if (JSON.stringify((line.parts || [])[f.stage]) !== JSON.stringify(want))
+        problem(`lines/${id}.json`, `parts[${f.stage}] is not what kitBuilds.json's ${f.name} gives (bake again: node tools/bake-kit-billies.mjs)`);
+    }
+  }
+}
 // phase 07: portraits: the schema, then every picture named is there and every face uses parts that exist
 if (D.portraits) {
   const P = D.portraits,
@@ -419,6 +478,32 @@ for (const [id, sc] of Object.entries(S)) {
   for (const p of islandProblems(sc)) problem(where, p);
 }
 
+// Studio plan Phase 5 (T5.3): the rigs (game/art/next/rigs-next.js and art/rigs.js) hold together: boxes inside their
+// sheets, sizes, parents, front and back, geo (logic/data-checks.js dataRigs, the Studio's Check runs it too)
+{
+  const vm = await import('node:vm'),
+    { rigGeo, RIG_NEUTRAL_POSE } = await import('../game/js/logic/rig-joints.js'),
+    { animFor } = await import('../game/js/body-plan-animation.js'),
+    ART = join(DATA, '..', 'art'),
+    rigsOf = (/** @type {string} */ f, /** @type {string} */ name) => {
+      const box = { window: {} };
+      vm.runInNewContext(readFileSync(join(ART, f), 'utf8'), box);
+      return box.window[name] || {};
+    },
+    /* a PNG's width and height from its header */
+    sheetSize = (/** @type {string} */ sheet) => {
+      const f = join(ART, sheet);
+      if (!existsSync(f)) return null;
+      const b = readFileSync(f).subarray(16, 24);
+      return [b.readUInt32BE(0), b.readUInt32BE(4)];
+    },
+    geoOf = (M, view) => rigGeo(M, view, animFor(M.plan, M.q || {})(RIG_NEUTRAL_POSE, view === 'back') || {}, RIG_NEUTRAL_POSE);
+  for (const [f, name] of [
+    ['next/rigs-next.js', 'RIGS_NEXT'],
+    ['rigs.js', 'RIGS'],
+  ])
+    for (const [where, what] of dataRigs(rigsOf(f, name), sheetSize, geoOf)) problem(where, what);
+}
 // Studio plan T1.3: the Studio's scene and road checks (logic/data-checks.js), so CI runs what the Studio's Check
 // shows: an error fails here (each is one of the rules above too), a warning is printed and never fails
 for (const f of [...dataSceneFindings(D, PB_DATA.road), ...dataRoadFindings(D, PB_DATA.road)])

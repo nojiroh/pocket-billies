@@ -1431,6 +1431,83 @@ The owner took the recommendation on every open question:
    - Convert the 9 old-style people to `look` in one data-only commit.
    - Remove the convert-on-open.
    - Make `look` required.
+9. **Phase 5 plan** (session 1, 2026-10-22; the owner approved the Phase 5 sessions' plans with their recommended
+   options, relayed by the plan's parent session):
+   - **Split:** 5 sessions. 1: T5.6, then T5.1's JS assembly and parity test. 2: parity kept green while the builder's
+     constants move into data, then T5.5. 3: the Studio bakes on "Write Billie" (a browser bake equal to the Node
+     bake), then the Python builder retires. 4: T5.2. 5: T5.3 (into `data-checks.js`), T5.4, T5.7, `sr-5-done`.
+   - **The recipe lives in `game/data`** as `kitBuilds.json` (moved from `tools/art-source/part-kit/builds.json`, with
+     a schema and a check-data check), so it has the Studio's drafts, undo and Propose.
+   - **T5.5 slot words:** partKits `signature` → `sig`, `head-extra` → `headExtra`, `body-extra` → `bodyExtra`; the
+     kinds map as head → head; torso → body; arm, wing, frontfin → front; leg, foot, backfin → back; tail, tailfin,
+     spikes, mane, sail → sig; ear, crest, dorsal, horn, plume, crown, spike, lure → headExtra; shell, ruff, scales →
+     bodyExtra. `tools/rename-data.mjs` first gets a value mode (its own commit), then one rename per commit. The
+     builder's `KIND_SLOT` gives way to partKits' `slots`. The game's `boneSlot` rules (bone names of the hand-drawn
+     rigs: `mane` → head, `shell` → body) stay, noted in NAMING.md.
+   - **Parity:** exact (alpha exactly, colour where a pixel shows), as `sheet-slice-parity`. No tolerance without
+     asking first.
+   - **Code:** `logic/kit-pixels.js` (the picture steps, Pillow-exact) and `logic/kit-assemble.js` (the figure), with
+     `partFit` grown only for per-socket maths. (Not `pixel-ops.js`: that name is taken.)
+10. **Phase 5, session 2** (2026-10-22; recommended options taken under decision 9's standing instruction):
+   - **Tail aims stay in the recipe** (`kitBuilds.json` `bake.tailAim`, by part id), not in partKits as session 1's
+     HANDOFF suggested. A tail's aim is a pose the baker picks, and the Art workbench rebuilds partKits entries when a
+     kit is sliced again, so a field there could be lost.
+   - **The bake CLI writes only what changed:** a sheet only when a shown pixel differs (alpha, colour where alpha is
+     not 0), rigs-next.js the way the Studio's Propose writes it (`JSON.stringify`, so 83.0 reads 83). It draws no
+     preview sheet.
+   - **The Python builder keeps its own constants** until it retires (session 3), with a note to keep them equal; it
+     reads the recipe from its new place.
+   - **A stage's native parts are checked against its recipe** by check-data, so a recipe edited without a bake fails
+     CI.
+11. **Phase 5, session 3** (2026-10-23; recommended options taken under decision 9's standing instruction):
+   - **The kit Billies' piece layouts retire** (`game/art/next/billionaires/<kit form>.json`, 24 files). The game never
+     read them, Propose has no way to send a JSON beside a picture (so a Studio bake would leave them stale), and the
+     rig holds all they did. The Roster board's silhouette draws a kit Billie from its rig; the full quick check asks
+     for each starter sheet to be drawn by a rig. The 105 other layouts (hand-drawn sheets) stay.
+   - **A recipe change bakes at once** (recipe, sheet, rig and native parts as one undo step), rather than waiting
+     for a Write Billie click, so a recipe can't leave the Studio without its bake; Write Billie re-bakes as it is.
+     The recipe card is in Part mode (kit Billies only), not a new section (SECTION_LIST unchanged).
+   - **CI's Studio checks run `kit_write`** (about 15 s): all 24 baked in the browser as committed, an edit proposed
+     pixel-equal to the Node bake.
+   - **docs/samples/kit-billies.png goes** with the Python builder: nothing would keep it up to date.
+12. **T5.2** (Phase 5, session 3; recommended options):
+   - **geo moves by what the swap changed** (the skeleton builder's framing, now `rigGeo`, before and after), not
+     recomputed whole. No stored geo equals the framing (all 258 views differ, by up to 20 px): every builder measured
+     the drawn pixels and took `mid` from the ground line, the framing measures picture boxes. A whole recompute would
+     move every Billie's world size on any swap; the change keeps "an equal-size part leaves the world size as it was".
+   - **Children with no named socket keep their place in proportion** to the picture (a head's horns, ears, crest: no
+     library head has a `top` socket), as the kit baker's anchors are fractions of the head. Only the torso's sockets
+     (neck, shoulders, hips, tail) are named, so the compatibility filter is about torsos in practice.
+   - **Frames:** a head's blink is made again (kitBlinkFrame) by default, the old frames kept on request; a torso gets
+     squash and stretch again (kitSquashFrames with kitBuilds `bake.pad`, `bake.squash`).
+   - **Found, not fixed** (behaviour change for the owner): the skeleton builder rewrites geo with box corners on
+     every drag, so editing any Billie there changes its world height by up to 20 px. Recommended: the builder moves
+     geo by its change, as the swap does (one small commit) after the owner agrees.
+13. **T5.3** (Phase 5, session 3; recommended options):
+   - **geo is checked as far as the data agrees**, since nothing recomputes it whole: cx, base and k the view's;
+     `mid = cy = (top + base) / 2` (true on all 258 views); the top inside the pictures' boxes (the skeleton builder's
+     framing) and above the ground. Not hw: the builders copied the front's to the back (37 back views are wider than
+     their own pictures). Pixel-measured top matched on 239 of 258 views (the rest have a turned top piece), so it is
+     not a rule.
+   - **The skeleton builder writes `mid = cy = (top + base) / 2`** (it wrote halfway down the boxes), so an edit there
+     does not become a Check error that blocks Propose. Its top and hw stay box-measured (decision 12's finding).
+   - **The rig checks are errors** (check-data fails on them, so per decision 2 they block Propose). 0 on today's rigs.
+   - **Not moved:** check-data's kitBuilds block (decision 10) stays in check-data.mjs; the Studio can't send a recipe
+     without its bake (decision 11), so the Studio does not need it.
+14. **T5.4 and T5.7** (Phase 5, session 3; recommended options):
+   - **Repack is an action, not a migration:** nothing is repacked in this change (122 of 129 sheets would shrink).
+     It refuses kit Billies (Write Billie packs them; a repacked kit sheet would fail the parity test) and species with
+     a coat's own sheet. The parity check is a unit test on every species (every frame and portrait pixel-equal) plus
+     the Studio check drawing a repacked Billie the same.
+   - **The density report lives on the Roster board** (a dialog, not a new section: SECTION_LIST unchanged), for the
+     game's lines only (the 105 hand-drawn rigs belong to legacy lines and have no height). The world's metres-per-pixel
+     maths moved into logic/pixel-density.js so the report and the game use one function. Battle density is not in
+     it: it depends on where the camera stands (battle-stage.js actorMetersPerPixel), so it needs a run, not data.
+   - **X = 25%** for "a part's density differs from its body" (kit parts against the torso by size); every extra is
+     under it today, by design (ears and horns are drawn small), so the owner may want a per-kind rule.
+
+Taken in Phase 1, sessions C+D (the recommended option each time, under the owner's standing instruction; numbered
+as in that branch):
 9. **T1.3 severity, applied** (Phase 1 sessions C+D, recommended option taken): an `error` is exactly what
    check-data already refused; every other Studio "error" became a warning (the list is in HANDOFF). No Studio check
    was turned into a new block. The UI rules over their ceiling are a warning (a lint failure, not check-data's).

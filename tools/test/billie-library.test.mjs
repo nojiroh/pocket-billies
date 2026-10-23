@@ -1,125 +1,77 @@
-// Exercise the staged library transaction without a browser. Pixel rendering still needs browser QA.
+// Studio plan Phase 5, T5.2: the Parts Library's swap as one change (logic/rig-swap.js; it used to cut the Studio's
+// workbench-species.js apart as a string). A small rig whose two arms share one picture and whose views share one
+// sheet: the slots and pairs, both views packed below the shared sheet in one go, the sibling keeping its picture, the
+// inputs untouched. The real species are in rig-swap.test.mjs.
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
-import vm from 'node:vm';
+import { rigSwapApply, rigSwapPair, rigSwapSlot } from '../../game/js/logic/rig-swap.js';
 
-const source = readFileSync(new URL('../../studio/js/workbench-species.js', import.meta.url), 'utf8');
-const start = source.indexOf('const wbsLibrary = ');
-const end = source.indexOf('\nACTIONS.wbsLibraryOpen', start);
-assert.ok(start >= 0 && end > start);
-const code = source.slice(start, end) + '\nwbsLibrary;';
+const boneSlot = b => (b.n.startsWith('arm') ? 'front' : b.n === 'tail' ? 'sig' : null);
+const blank = (w, h, v = 0) => ({ width: w, height: h, data: new Uint8ClampedArray(w * h * 4).fill(v) });
+const meta = () => ({
+  k: 1,
+  sheet: 'test.png',
+  size: [64, 40],
+  geo: { top: 10, mid: 20, cy: 20, hw: 8 },
+  imgs: [{ ox: -4, oy: -1, f: { main: [1, 1, 8, 12] } }],
+  bones: [
+    { n: 'armL', par: 'torso', at: [-5, 0], i: 0, z: 8, a: 'armL' },
+    { n: 'armR', par: 'torso', at: [5, 0], i: 0, z: 8, a: 'armR' },
+  ],
+});
+const fixture = () => ({ rig: { front: meta(), back: meta() }, sheets: new Map([['art/test.png', blank(64, 40, 7)]]) });
+const geoOf = M => ({ top: 0, mid: 0, cy: 0, hw: M.imgs.length });
 
-function fixture() {
-  const canvas = (width, height) => ({ width, height, getContext: () => ({ drawImage() {} }) });
-  const sheet = canvas(64, 40);
-  const meta = () => ({
-    k: 1,
-    sheet: 'test.png',
-    size: [64, 40],
-    imgs: [{ ox: -4, oy: -1, f: { main: [1, 1, 8, 12] } }],
-    bones: [
-      { n: 'armL', par: 'torso', at: [-5, 0], i: 0, z: 8, a: 'armL' },
-      { n: 'armR', par: 'torso', at: [5, 0], i: 0, z: 8, a: 'armR' },
-    ],
-  });
-  const rigs = { test: { front: meta(), back: meta() } };
-  const state = { D: {}, rigs, rigVer: 0, artDirty: new Map() };
-  state.last = JSON.stringify({ D: state.D, R: rigs });
-  let group;
-  const context = {
-    studioState: state,
-    wbPart: { id: 'armL' },
-    window: {},
-    WB_VIEWS: ['front', 'back'],
-    wbsSp: () => 'test',
-    wbsRig: () => state.rigs.test,
-    boneSlot: b => (b.n.startsWith('arm') ? 'front' : b.n === 'tail' ? 'sig' : null),
-    makeCanvas: canvas,
-    atlasPath: () => 'art/test.png',
-    loadedAtlas: path => state.artDirty.get(path) || sheet,
-    pictureImage: c => ({ width: c.width, height: c.height, data: new Uint8ClampedArray(c.width * c.height * 4) }),
-    markArt: (path, c) => state.artDirty.set(path, c),
-    commit() {},
-    render() {},
-    toast() {},
-    changed() {
-      state.rigVer++;
-      state.rigsDirty = true;
-    },
-    /* the data as the undo holds it (Studio plan T1.2: parts); one text is enough here */
-    snapshotParts: () => JSON.stringify({ D: state.D, R: state.rigs }),
-    artSteps: (steps, parts) => {
-      group = { steps, snapshot: { before: state.last, after: parts } };
-      state.last = parts;
-    },
-  };
-  const lib = vm.runInNewContext(code, context);
-  lib.state = {
-    sp: 'test',
-    bone: 'armL',
-    version: 0,
-    rig: rigs.test,
-    busy: false,
-    prepared: [
-      { view: 'front', bone: 'armL', path: 'art/test.png', sheet, c: canvas(10, 14), ox: -5, oy: -2 },
-      { view: 'back', bone: 'armL', path: 'art/test.png', sheet, c: canvas(11, 15), ox: -6, oy: -3 },
-    ],
-  };
-  return { lib, state, sheet, context, group: () => group };
-}
-
-test('library matches size groups and detects only existing paired siblings', () => {
-  const { lib, state } = fixture();
-  assert.equal(lib.slot({ n: 'armL' }), 'front');
-  assert.equal(lib.slot({ n: 'tail' }), 'signature');
-  assert.equal(lib.slot({ n: 'earL' }), 'head-extra');
-  assert.equal(lib.pair(state.rigs.test.front, 'armL').n, 'armR');
-  state.rigs.test.front.bones[1].par = 'other';
-  assert.equal(lib.pair(state.rigs.test.front, 'armL'), null);
+test('the library files bones by slot and pairs only an existing sibling', () => {
+  const { rig } = fixture();
+  assert.equal(rigSwapSlot({ n: 'armL' }, boneSlot), 'front');
+  assert.equal(rigSwapSlot({ n: 'tail' }, boneSlot), 'sig');
+  assert.equal(rigSwapSlot({ n: 'earL' }, boneSlot), 'headExtra');
+  assert.equal(rigSwapSlot({ n: 'shell' }, boneSlot), 'bodyExtra');
+  assert.equal(rigSwapPair(rig.front, 'armL').n, 'armR');
+  rig.front.bones[1].par = 'other';
+  assert.equal(rigSwapPair(rig.front, 'armL'), null);
+  assert.equal(
+    rigSwapPair(
+      {
+        bones: [
+          { n: 'legBN', par: 't', i: 0 },
+          { n: 'legBF', par: 't', i: 0 },
+        ],
+      },
+      'legBN'
+    ).n,
+    'legBF'
+  );
 });
 
-test('preview changes only copied bones; cancel leaves data and pixels untouched', () => {
-  const { lib, state, sheet } = fixture();
-  const before = JSON.stringify(state.rigs);
-  const R = { bones: state.rigs.test.front.bones.map(b => ({ ...b, img: { c: sheet } })) };
-  const preview = lib.preview(R, 'front');
-  assert.notEqual(preview.bones[0], R.bones[0]);
-  assert.equal(preview.bones[1], R.bones[1]);
-  assert.equal(preview.bones[0].img.c.width, 10);
-  assert.equal(lib.preview(R, 'back').bones[0].img.c.width, 11);
-  lib.state = null;
-  assert.equal(lib.preview(R, 'front'), R);
-  assert.equal(JSON.stringify(state.rigs), before);
-  assert.equal(state.artDirty.size, 0);
-});
-
-test('Apply packs both views sharing a sheet and isolates shared images in one transaction', () => {
-  const { lib, state, group } = fixture();
-  const old = state.rigs.test;
-  lib.apply();
-  assert.equal(group().steps.length, 1, 'one shared sheet');
-  assert.equal(JSON.parse(group().snapshot.before).R.test.front.bones[0].i, 0);
-  const next = JSON.parse(group().snapshot.after).R.test;
+test('one swap packs both views below their shared sheet, isolates the shared picture and leaves the inputs', () => {
+  const { rig, sheets } = fixture(),
+    before = JSON.stringify(rig),
+    { rig: next, sheets: out } = rigSwapApply(
+      rig,
+      sheets,
+      () => 'art/test.png',
+      [
+        { view: 'front', bone: 'armL', frames: { main: blank(10, 14, 200) }, ox: -5, oy: -2, at: {}, needs: [] },
+        { view: 'back', bone: 'armL', frames: { main: blank(11, 15, 100) }, ox: -6, oy: -3, at: {}, needs: [] },
+      ],
+      geoOf
+    );
+  assert.equal(JSON.stringify(rig), before, 'the input rig is not changed');
+  assert.equal(sheets.get('art/test.png').height, 40, 'the input sheet is not changed');
   for (const view of ['front', 'back']) {
     assert.equal(next[view].bones[0].i, 1);
-    assert.equal(next[view].bones[1].i, 0, 'unselected sibling keeps its picture');
+    assert.equal(next[view].bones[1].i, 0, 'the sibling keeps its picture');
     assert.equal(next[view].bones[0].a, 'armL');
-    assert.deepEqual(next[view].bones[0].at, [-5, 0]);
     assert.deepEqual(next[view].size, [64, 73]);
+    assert.equal(next[view].geo.hw, 9, 'geo moves by what changed (one picture more)');
   }
-  assert.equal(old.front.imgs.length, 1, 'original snapshot not mutated');
   assert.deepEqual(next.front.imgs[1].f.main, [1, 41, 10, 14]);
   assert.deepEqual(next.back.imgs[1].f.main, [1, 57, 11, 15]);
-  assert.equal(lib.state, null);
-});
-
-test('Apply refuses stale pixels and a restored or different species rig', () => {
-  const { lib, state, sheet, group } = fixture();
-  sheet._ver = 1;
-  lib.apply();
-  assert.equal(group(), undefined);
-  assert.equal(state.artDirty.size, 0);
-  state.rigs = JSON.parse(JSON.stringify(state.rigs));
-  assert.equal(lib.active(), null);
+  const S = out.get('art/test.png');
+  assert.deepEqual([S.width, S.height], [64, 73]);
+  assert.equal(S.data[(41 * 64 + 1) * 4], 200);
+  assert.equal(S.data[(57 * 64 + 1) * 4], 100);
+  assert.equal(S.data[(5 * 64 + 5) * 4], 7, 'the old pixels stay');
 });

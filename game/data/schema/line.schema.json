@@ -15,6 +15,6 @@
   "split": {"type": "boolean"},
   "parody": {"type": "string"},
   "cry": {"description": "SND-3: each stage's cry: a base (an index into music.json cries.bases), a pitch (the first note, midi) and a length (1 as long as the cries made from the id); null, or a key left out, takes what the id makes", "type": "array", "items": {"oneOf": [{"type": "null"}, {"type": "object", "additionalProperties": false, "properties": {"base": {"type": "integer", "minimum": 0}, "pitch": {"type": "integer", "minimum": 24, "maximum": 96}, "length": {"type": "number", "minimum": 0.25, "maximum": 4}}}]}},
-  "parts": {"description": "phase 16: each stage's native parts (its fitting set), a kit part id (partKits.json parts) per slot of rules.json parts.slots; written by tools/build-kit-billies.py", "type": "array", "items": {"type": "object", "additionalProperties": {"type": "string", "pattern": "^[a-z0-9_]+$"}}}
+  "parts": {"description": "phase 16: each stage's native parts (its fitting set), a kit part id (partKits.json parts) per slot of rules.json parts.slots; written with its recipe (kitBuilds.json) by the kit baker (npm run bake:kits, or the Studio)", "type": "array", "items": {"type": "object", "additionalProperties": {"type": "string", "pattern": "^[a-z0-9_]+$"}}}
  }
 }

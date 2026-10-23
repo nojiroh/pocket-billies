@@ -82,6 +82,29 @@ kept aside in the browser).
   a town's wares day by day and the Loophole picks; checks the map rules over 1,000 seeds and names a seed for each
   problem; edits the run rules beside the map; and opens the game on that seed (Play this seed) in a test run that is
   never saved, with your unsaved rules. A debug log taken on a run now names the run's own unlocks.
+- The Studio can repack a Billie's sheet (Studio plan Phase 5): Repack sheet in Part mode drops the pixels no frame
+  shows, and the Billie looks exactly the same. The Roster board has a Pixel density report: how many of each Billie's
+  pixels go into a metre in the world against the props' and the ground's, and which kit parts were scaled more than
+  their body. It only measures. No change in the game.
+- Replacing a Billie's part from the Parts Library keeps the Billie whole (Studio plan Phase 5). The body parts
+  hanging on the old part move to the new part's neck, shoulders, hips and tail (horns, ears and crests keep their
+  place on a new head); a new head blinks (the blink is drawn again from it) unless you keep the old faces; a new
+  torso squashes and stretches; the Billie's size in the world moves only by what the part changed. Parts a body part
+  can't hang on are greyed out with the reason, and a strip shows the Billie before and after, front and back, with
+  each face. The Studio's Check and CI now also check every Billie's skeleton (pictures inside their sheet, bones,
+  front and back, size in the world). No change in the game.
+- The Studio bakes kit Billies (Studio plan Phase 5). In the Art workbench's Part mode a kit Billie shows its recipe
+  (which part on each bone, at what size and colour, and its extras); a change there bakes the Billie's sheet and
+  skeleton at once with the game's own baker, as one undo step, and Propose sends them with the recipe. Write Billie
+  bakes it again after a part's picture was repainted. The old Python builder is gone, and so are the kit Billies'
+  piece layout files, which nothing used. No change in the game.
+- The 24 kit Billies' recipes are game data now (Studio plan Phase 5): game/data/kitBuilds.json, which part sits on
+  which bone at what size and colour, and the baker's settings, checked by `npm run check:data`. `npm run bake:kits`
+  bakes them with the game's own code and writes only what changed; on today's data it changes nothing. The part
+  kits use the game's slot words (sig, headExtra, bodyExtra). No change in the game.
+- The Studio's Billie previews move the way the game moves them (Studio plan Phase 5): on the game's 12 frames a
+  second, tails and hair lagging a frame behind, in the animated previews and in Parts' "As drawn". They used to
+  play the plain 60 fps pose, so a Billie could look smoother in the Studio than in the game.
 - The Studio's undo is lighter and more exact (Studio plan Phase 1). A step keeps only what the edit changed instead
   of a copy of the whole game data, so a long editing session no longer fills the memory, and undoing an edit puts
   back only what it changed. Opening the People section no longer changes the data by itself: it used to convert

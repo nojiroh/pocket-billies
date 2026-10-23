@@ -15,9 +15,16 @@
 import { expose } from '../test-globals.js';
 /* eslint-disable no-func-assign */
 expose({
+  RIG_NEUTRAL_POSE: [() => RIG_NEUTRAL_POSE],
+  rigAffineMove: [() => rigAffineMove],
+  rigAffineMul: [() => rigAffineMul],
+  rigAffineScale: [() => rigAffineScale],
+  rigAffineTurn: [() => rigAffineTurn],
   // @ts-expect-error -- replaced on purpose
   rigBox: [() => rigBox, v => (rigBox = v)],
   rigFrameName: [() => rigFrameName],
+  // @ts-expect-error -- replaced on purpose
+  rigGeo: [() => rigGeo, v => (rigGeo = v)],
   // @ts-expect-error -- replaced on purpose
   rigKit: [() => rigKit, v => (rigKit = v)],
   rigRound2: [() => rigRound2],
@@ -202,4 +209,128 @@ export function rigSetZ(M, name, view, z) {
   if (view === 'back') b.zb = z;
   else b.z = z;
   return true;
+}
+
+/** the skeleton builder's neutral pose (studio/js/skeleton.js neutralPose: skeleton-rig.js rigPose at rest, nothing
+ * turned, open eyes), the pose geo is framed at */
+export const RIG_NEUTRAL_POSE = Object.freeze({
+  act: null,
+  tau: 0,
+  t: 0,
+  seed: 0,
+  x: 0,
+  y: 0,
+  r: 0,
+  sx: 1,
+  sy: 1,
+  body: 0,
+  bdy: 0,
+  head: 0,
+  hdx: 0,
+  hdy: 0,
+  aL: 0,
+  aR: 0,
+  lL: 0,
+  lR: 0,
+  tail: 0,
+  flap: 1,
+  open: 0,
+  face: 'idle',
+  hov: Object.freeze({ dx: 0, dy: 0, r: 0 }),
+  k: 0,
+});
+/* ---------- geo: how big the figure stands (Studio plan Phase 5, T5.2; was the skeleton builder's skeletonFraming) */
+/** @typedef {[number, number, number, number, number, number]} Affine x' = a x + c y + e, y' = b x + d y + f */
+/** @param {Affine} m @param {Affine} n @returns {Affine} */
+export const rigAffineMul = (m, n) => [
+  m[0] * n[0] + m[2] * n[1],
+  m[1] * n[0] + m[3] * n[1],
+  m[0] * n[2] + m[2] * n[3],
+  m[1] * n[2] + m[3] * n[3],
+  m[0] * n[4] + m[2] * n[5] + m[4],
+  m[1] * n[4] + m[3] * n[5] + m[5],
+];
+/** @returns {Affine} */
+export const rigAffineMove = (/** @type {number} */ x, /** @type {number} */ y) => [1, 0, 0, 1, x, y];
+/** @returns {Affine} */
+export const rigAffineTurn = (/** @type {number} */ a) => {
+  const c = Math.cos(a),
+    s = Math.sin(a);
+  return [c, s, -s, c, 0, 0];
+};
+/** @returns {Affine} */
+export const rigAffineScale = (/** @type {number} */ x, /** @type {number} */ y) => [x, 0, 0, y, 0, 0];
+/**
+ * A view's `geo` (what the world sprite's size, shadow and ring read): the box round every picture drawn at the
+ * pose `P` with its animation `A` (the body plan's for that pose, as skeleton-rig.js animFor gives it), each picture's
+ * shown frame, the same matrices as skeleton-rig.js rigMatrices (no build, no lag). The skeleton builder passes the
+ * neutral pose. null when nothing is drawn.
+ * @param {RigView} M @param {string} view
+ * @param {Record<string, { dx?: number, dy?: number, r?: number, sx?: number, sy?: number, hide?: boolean }>} A
+ * @param {{ x?: number, y?: number, r?: number, sx?: number, sy?: number }} P
+ */
+export function rigGeo(M, view, A, P) {
+  const back = view === 'back',
+    k = M.k,
+    root = A.root || {};
+  let m0 = rigAffineMove(M.cx, M.base);
+  if (back) m0 = rigAffineMul(m0, rigAffineScale(-1, 1));
+  m0 = rigAffineMul(m0, rigAffineMove(((P.x || 0) + (root.dx || 0)) * k, ((P.y || 0) + (root.dy || 0)) * k));
+  if (P.r || root.r) {
+    const pv = M.tipX || 0;
+    m0 = rigAffineMul(m0, rigAffineMove(pv * k, 0));
+    m0 = rigAffineMul(m0, rigAffineTurn((P.r || 0) + (root.r || 0)));
+    m0 = rigAffineMul(m0, rigAffineMove(-pv * k, 0));
+  }
+  m0 = rigAffineMul(m0, rigAffineScale((P.sx || 1) * (root.sx || 1), (P.sy || 1) * (root.sy || 1)));
+  /** @type {Record<string, Affine>} */
+  const W = { root: m0 };
+  let x0 = 1e9,
+    x1 = -1e9,
+    y0 = 1e9,
+    y1 = -1e9;
+  for (const b of M.bones) {
+    const pm = W[b.par || 'root'] || m0,
+      a = A[b.a || b.n] || {};
+    if (a.hide) {
+      W[b.n] = pm;
+      continue;
+    }
+    let m = rigAffineMul(pm, rigAffineMove(b.at[0] * k * 1, b.at[1] * k * 1));
+    if (a.dx || a.dy) m = rigAffineMul(m, rigAffineMove((a.dx || 0) * k, (a.dy || 0) * k));
+    const r = (b.rr || 0) + (a.r || 0);
+    if (r) m = rigAffineMul(m, rigAffineTurn(r));
+    if (a.sx || a.sy) m = rigAffineMul(m, rigAffineScale(a.sx || 1, a.sy || 1));
+    W[b.n] = m;
+    const P0 = b.i >= 0 ? M.imgs[b.i] : null;
+    if (!P0 || (back && b.hideB)) continue;
+    const [, , bw, bh] = rigBox(P0),
+      w = Math.max(1, bw),
+      h = Math.max(1, bh);
+    for (const [px, py] of [
+      [P0.ox, P0.oy],
+      [P0.ox + w, P0.oy],
+      [P0.ox, P0.oy + h],
+      [P0.ox + w, P0.oy + h],
+    ]) {
+      const X = m[0] * px + m[2] * py + m[4],
+        Y = m[1] * px + m[3] * py + m[5];
+      x0 = Math.min(x0, X);
+      x1 = Math.max(x1, X);
+      y0 = Math.min(y0, Y);
+      y1 = Math.max(y1, Y);
+    }
+  }
+  if (x0 > x1) return null;
+  const lift = ((M.q && M.q.lift) || 0) * M.k;
+  return {
+    cx: M.cx,
+    base: M.base,
+    k: M.k,
+    top: +y0.toFixed(2),
+    mid: +((y0 + y1) / 2).toFixed(2),
+    hw: +((x1 - x0) / 2).toFixed(2),
+    lift: +lift.toFixed(2),
+    cy: +((y0 + y1) / 2).toFixed(2),
+  };
 }

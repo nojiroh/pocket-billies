@@ -929,6 +929,234 @@ save's); the simulator defaults to none with `--unlocks=all`; the Run Lab gets a
 - T2.5 after T1.3; T2.6 in its own session (game boot code, a check-fast step; add `run.unlocks` to the debug log).
 - Manual (owner): play the run fixture once on the phone; compare one seed in the Lab with the debug menu's run.
 - No phase tag: Phase 2 continues.
+### Studio plan Phase 5, session 3 - The Studio bakes kit Billies ("Write Billie"), the Python builder retires, then T5.2 - 2026-10-23
+Branch `claude/sr-5-parts`, draft PR #139. Plan pre-approved with its recommended options (decision 9's standing
+instruction, relayed by the parent session); this session's choices are decision 11 in the plan doc. First merged
+`origin/ccr-81011a25-lf3exv` (Phase 1 sessions B-D: the moved checks, CI), conflicts in docs and the checks only.
+
+**Plan** (commit and push after every ticket)
+1. **T5.1 step 3, the Studio bakes.**
+   - `kitBakeWhole` in kit-assemble.js: one form's sheet, layout, rig and native parts from the data, shared by
+     `npm run bake:kits` and the Studio (the CLI moves onto it, no output change).
+   - The kit Billies' piece layouts (`game/art/next/billionaires/<kit form>.json`) retire: the game never reads them,
+     Propose has no way to send a JSON beside the art, and the one reader (the Roster board's silhouette) falls back to
+     the rig. The bake CLI and the parity test stop writing and comparing them (the rig is still compared whole).
+   - `studio/js/kit-recipe.js`: Part mode on a kit Billie shows its recipe (scale; per bone kind the part, size and
+     colour; the extras). A change bakes at once in the browser (part pictures through canvas ImageData, the game's
+     baker): the recipe, the sheet (a Studio picture), the rig and the line's native parts change together as one
+     undo step. "Write Billie" bakes the shown recipe again (after a part picture was repainted); nothing changes when
+     it bakes as it is. Propose then carries the PNG, rigs-next.js, kitBuilds.json and the line.
+   - check-studio-github.py `kit_write`: a recipe part edited in the Studio; Propose's batch has the sheet, the rigs,
+     kitBuilds.json and the line; the proposed sheet is pixel-equal to the Node bake of the same recipe and the rig
+     equal; Write Billie on an unedited recipe changes nothing; undo takes the recipe and its bake back together.
+2. **The Python builder retires** (tools/build-kit-billies.py and its preview sheet docs/samples/kit-billies.png),
+   once step 1 holds parity. The parity test compares with the committed art, so no Python fixture is needed.
+3. **T5.2** (part swap keeps the Billie whole): `skeletonFraming`'s `geo` maths into logic/rig-joints.js; refit the
+   children to the new part's sockets; keep or regenerate the blink frame; the compatibility filter with reasons; a
+   before/after preview through rigParts/rigFrame; unit tests on 3 real species.
+4. **T5.3** rig consistency checks into data-checks.js; then T5.4 and T5.7 if time allows.
+
+**Changed** (one cause per commit; the plan's choices are decisions 11-14 in the plan doc)
+- **T5.1 step 3, the Studio bakes.**
+  - `kitBakeWhole` (kit-assemble.js): one form's sheet, rig and native parts from the data; `npm run bake:kits`, the
+    parity test and the Studio all bake through it.
+  - The kit Billies' piece layouts (24 `game/art/next/billionaires/<kit form>.json`) retired: nothing in the game read
+    them and Propose can't send them. The Roster silhouette draws kit Billies from the rig; the full quick check asks
+    for each starter sheet to be drawn by a rig.
+  - `studio/js/kit-recipe.js`: Part mode on a kit Billie shows **Kit recipe** (scale, each bone kind's part, size,
+    colour, the extras). A change bakes at once in the browser: recipe, sheet, rig and native parts as one undo step,
+    so a recipe never leaves without its bake. **Write Billie** re-bakes it as it is (nothing changes when baked).
+  - check-studio-github.py `kit_write` (in CI): all 24 baked in the browser as committed; an edit proposed carries the
+    sheet (pixel-equal to the Node bake), rigs-next.js, kitBuilds.json and the line.
+- **The Python builder retired:** tools/build-kit-billies.py and docs/samples/kit-billies.png deleted. The parity test
+  needs no Python fixture (it compares with the committed art, which was the builder's output byte for byte).
+- **T5.2, part swap keeps the Billie whole.**
+  - `rigGeo` (rig-joints.js): skeletonFraming's maths moved, equal on every view.
+  - `logic/rig-swap.js`: which parts fit (the sockets the children need, with the reason), children refit (named
+    socket, else in proportion), frames (blink made again or old frames kept; torso squash again), the sheet grown
+    below, geo moved by what changed. The Studio's **Replace from Parts Library** uses it, greys misfits, and shows a
+    before/after strip (front and back × idle, blink, happy, hurt, through rigFromMeta/rigFrame).
+  - Tests: rig-swap.test.mjs on musk0, huang0, trump0; billie-library.test.mjs moved onto the logic;
+    check-studio-github.py `library_swap`.
+- **T5.3, rig checks:** `dataRigs` in data-checks.js, run by check-data and the Studio's Check (an error: blocks
+  Propose). 0 problems on today's rigs. The skeleton builder now writes `mid = cy = (top + base) / 2`.
+- **T5.4:** `rigRepack` and **Repack sheet** in Part mode (one undo step; refuses kit Billies and coat-own sheets).
+- **T5.7:** `logic/pixel-density.js` (the world's metres per pixel moved there from world-billies.js) and the Roster
+  board's **Pixel density** report. Measure only.
+- Merged `origin/ccr-81011a25-lf3exv` (Phase 1 sessions B-D) first.
+
+**Where the plan doc was wrong or short**
+- "Propose carries the PNG, rigs-next.js and the recipe": a bake also writes the line's native parts and (until now)
+  a piece layout; the layout had no way through Propose, so it retired (decision 11).
+- "geo equals what the skeleton builder computes": no stored geo does (all 258 views differ, up to 20 px): every
+  builder measured drawn pixels and took mid from the ground line. A swap moves geo by its change instead (decision
+  12), and T5.3 checks geo as far as the data agrees (decision 13).
+- "Its crest stays on the new head's crest socket": no library head has a socket for extras (heads have only `chin`;
+  only torsos have named child sockets). Horns, ears and crests keep their place in proportion, as the baker's anchors.
+- "Refit by socket through the shared slot table": partKits `socketRules` already maps sockets to slots; sides come
+  from the bone names (quad legs: near = L).
+- T5.3 "geo up to date (recompute and compare)" can't be literal (above); hw can't be checked per view (the builders
+  copied the front's to the back).
+- T5.7 battle density depends on the camera, so the report covers the world and the kit parts only.
+- **Found, not fixed (owner's call):** the skeleton builder rewrites geo's top and hw from picture boxes on every drag,
+  so an edit there changes a Billie's world height by up to 20 px. Recommended: move geo by the change, as the swap.
+
+**Verified**
+- Unit tests 665 pass; lint, typecheck, `check:modules`, `format:check`, `check:data` (0 rig problems).
+- Parity green at every commit; `bake-kit-billies.mjs --check`: every form as committed.
+- `check:fast`: every check ok (after the world-billies move).
+- `check-studio-github.py --only=publish,workbench,part_mode,robot_joints,species_parts,wardrobe,rig_preview`: 0
+  problems, with kit_write, library_swap, repack, density, and CI's list (sections, publish, drafts, studio_test,
+  checks). Planted faults failed each new check (a wrong native part, a one-pixel sheet, a refit, a geo, a one-pixel
+  repack move, nine rig faults).
+- **Full quick check** (end of Phase 5, about 40 min): 14 problems, none from this work. 10 fail the same way on the
+  session's starting commit f9c5080 (roster counts that expect the legacy 117 Billies, the bowl map camera, walk
+  cycles, the light lab's props, buildings without a plan, shaped terraces, bush recipes, phase 08's division by zero).
+  RL-7, RL-8 and the postcard step fail only inside the full run; on their own they pass on this branch's head (and
+  on f9c5080), so they depend on what earlier steps leave behind. Those 14 need their own session (scope reset tests).
+- CI's Studio list (sections, publish, drafts, studio_test, checks, kit_write, library_swap, repack, density): ok.
+
+**Risky**
+- Browser decoding: the Studio bake reads part pictures through canvas; exact today (no part or kit sheet has a
+  semi-transparent pixel, and kit_write proves the 24 equal). A part repainted with soft edges could break exactness.
+- A swap or a pixel edit on a kit Billie by hand is lost at its next bake (documented in STUDIO.md).
+- The new Check errors (rigs) block Propose; a rig made broken elsewhere would now stop proposals until fixed.
+- studio/index.html gained three script tags (kit-recipe, rig-swap, pixel-density) and check-studio-github.py five
+  groups: expect merges with the Phase 4 and 6 sessions there and in workbench-species.js / check.js.
+- **Not tested on a real phone or a real GitHub** (stand-in only).
+
+**Next**
+- Owner decisions: the skeleton builder's geo (above); whether to repack the 122 sheets; a target density (T5.7).
+- Phase 5 is done. **The tag `sr-5-done` could not be pushed from this session** (its git access takes only its own
+  branch): tag the merge of PR #139 `sr-5-done`. T1.4 note: CI's Studio list grew by kit_write, library_swap, repack and density.
+
+### Studio plan Phase 5, session 2 - The recipe in game/data, a Node bake CLI, the slot words (T5.1, T5.5) - 2026-10-22
+Branch `claude/sr-5-parts`, draft PR #139 (base `ccr-81011a25-lf3exv`). Plan pre-approved with its recommended options
+(decision 9's standing instruction); this session's choices are decision 10 in the plan doc.
+
+**Plan**
+1. Rename-only: `tools/art-source/part-kit/builds.json` -> `game/data/kitBuilds.json`, listed in index.json, written
+   in the data files' layout (PB_DATA.text); the parity test and the Python builder read the new path.
+2. `game/data/schema/kitBuilds.schema.json`, its type in game-data.d.ts, and check-data coverage (parts, colours,
+   anchors, rigs, lines and stages). In tools/check-data.mjs (Phase 1c has not moved the checks yet).
+3. `KIT_BAKE` moves into kitBuilds.json `bake` (box, margins, squash, tail aims, arm rest, foot gap, chin drop,
+   anchors). Parity green.
+4. `tools/bake-kit-billies.mjs`: bakes every recipe (or `--only`) and writes what changed (sheet PNG, layout, rig in
+   rigs-next.js, the line's `parts`); `--check` only reports. On today's tree it writes nothing.
+5. `tools/rename-data.mjs` value mode (its own commit), then `signature` -> `sig`, `head-extra` -> `headExtra`,
+   `body-extra` -> `bodyExtra`, one per commit (data, schema, types, Studio, tests together).
+6. The baker's slot table gives way to partKits `slots` and rules.json `parts.slots`. Parity green.
+7. Docs: NAMING.md, the plan's decisions, CHANGELOG, this entry.
+If time allows: session 3's first step (the Studio bakes on "Write Billie"). (Not done: there is no "Write Billie"
+yet, it is a new Studio flow, and decision 9 gives it to session 3.) Steps 2 and 3 ran in the order 3, 2, so the schema
+covers `bake` from the start.
+
+**Changed** (one cause per commit):
+- `game/data/kitBuilds.json` (was `tools/art-source/part-kit/builds.json`), in index.json, with `bake` (the builder's
+  constants), `colours`, `forms`. Schema `kitBuilds.schema.json`; types `KitBuilds`, `KitBake`, `KitBuildForm`.
+- check-data (tools/check-data.mjs, **for Phase 1c's successor to move into data-checks.js**): the parts, colours,
+  anchors, tail aims and slots a recipe names; its line and stage; one recipe per stage of a line; each stage's
+  `parts` equal to what its recipe gives. 11 planted faults, each named.
+- kit-assemble.js: every function takes `bake` (`D`) as an argument; `kitNativeParts(form, kindSlot, slotList)` gets
+  partKits `slots` and rules.json `parts.slots`. `KIT_BAKE` and the slot table are gone.
+- `tools/bake-kit-billies.mjs` (`npm run bake:kits`, `--only=`, `--check`): bakes and writes only what changed.
+  png.mjs gains `encodePng` (round-trip test). About 1 s for all 24.
+- rename-data: `value` mode; and a bug fix: its save deleted `game/data/legacy/` (any rename did; caught before
+  commit).
+- T5.5: `signature` -> `sig` (28 places), `head-extra` -> `headExtra` (33), `body-extra` -> `bodyExtra` (7), each its
+  own commit with the schema, `PartSlot`, the Studio's slot buttons and library mapping, tests.
+- rigs-next.js reformatted as the Studio writes it (no-op), then the kit rigs' and layouts' `kit` value
+  `builds.json` -> `kitBuilds.json` (parse-level proof that nothing else changed).
+- Docs: NAMING.md (slot words, kitBuilds, rename-data value), decision 10, CHANGELOG.
+
+**Where the plan or session 1 was wrong or short**
+- "Tail aims per part in partKits": kept in the recipe (decision 10): the Workbench rebuilds partKits entries.
+- rename-data's save deleted the legacy world: a latent bug since RL-5, now fixed.
+- partKits had no other readers of the slot words in game code: the renames touched only the Studio, types and tests.
+
+**Verified**
+- Unit tests 634 pass; lint, typecheck, `check:modules`, `format:check`, `check:data`.
+- Parity green at every commit; `bake-kit-billies.mjs --check`: every form as committed.
+- The Python builder, re-run in a scratch worktree after the move: byte for byte the committed art.
+- `check:fast`: rc 0, every check ok.
+- `check-studio-github.py --only=publish,workbench,part_mode,robot_joints,species_parts,wardrobe,rig_preview`: 0
+  problems.
+- **Not run:** the full quick check (end of the phase).
+
+**Risky**
+- The Python builder keeps its own constants (with a note) until it retires; editing `bake` and then running Python
+  would disagree. Parity would show it.
+- check-data now fails when a recipe is edited without a bake: intended, but the Studio cannot bake yet (session 3).
+- The bake CLI rewrites rigs-next.js whole when a rig changes (as the Studio's Propose does).
+- check-data.mjs gained a block that Phase 1c is moving; expect a merge there.
+
+**Next (session 3)**
+- The Studio bakes kit Billies (a browser bake equal to the Node one: pictures through canvas ImageData, the sheet as
+  a Studio picture, rig and lines through the model, one undo step), then retire `tools/build-kit-billies.py` once
+  parity has held through the Studio flow. The preview sheet docs/samples/kit-billies.png goes with it unless wanted.
+
+### Studio plan Phase 5, session 1 - Previews on the game's rig path (T5.6) and the JS kit baker with parity (T5.1, step 1) - 2026-10-22
+Branch `claude/sr-5-parts`, from `ccr-81011a25-lf3exv` (the plan's PR #131, not merged yet); its own draft PR. The plan
+was approved with its recommended options (the owner told the plan's parent session to approve the Phase sessions'
+plans that way; recorded as decision 9 in docs/plans/studio-roguelite-improvement-plan.md, with the split over 5
+sessions, the recipe moving to `game/data/kitBuilds.json`, and the T5.5 slot words).
+
+**Changed** (one cause per commit):
+- **T5.6 (F10).**
+  - `skeleton-rig.js` `rigFromMeta(meta, atlas)`: the rig put together from one view's metadata and its sheet (cut
+    pieces, bones with pictures, `clock`, `lag`). `rigParts` uses it (no change in the game: every rig has `q`, none
+    has an empty box).
+  - The Studio's `rigFor` builds through it, from the Studio's own rigs and pictures, so its rigs have `clock` and `lag`.
+  - The animated sprite previews and Parts' "As drawn" use `rigFrame` (12 fps, lagging tails). The skeleton builder
+    keeps `rigPose`: it has its own 12 fps grid, pause and frame steps.
+  - `check-studio-github.py --only=rig_preview`: a kit Billie, front and back, 7 fixed clocks: the Studio preview is
+    pixel-equal to the game's drawing. Before the fix it reported 7 of 7 frames differing in both views.
+- **T5.1, step 1 (F12).**
+  - `game/js/logic/kit-pixels.js`: the builder's picture steps, number for number with Pillow 12.3.0, numpy and
+    colorsys (part scaling with Pillow's double premultiply, recolour and face mask, blink, squash frames, mirrors,
+    Pillow's nearest affine in its scaling and 16.16 fixed-point paths). Reuses sheet-slice.js's box filter and
+    Python rounding. 4 unit tests; a scratch fuzz of 300 random cases against Pillow was all equal (not committed:
+    it needs Python and Pillow).
+  - `game/js/logic/kit-assemble.js`: `build_view`, `fit_form`, `build_form`, `native_parts` ported. Mirroring comes
+    from partKits `sides` (`partForSide`), the main bones' z from partKits `z` (`partZ`). The extras' anchors, the tail
+    aims and the rest are in `KIT_BAKE` for now.
+  - `tools/test/kit-bake-parity.test.mjs`: all 24 recipes baked and compared with the committed sheet (alpha exact,
+    colour where shown), rig (values and key order), layout and the line's `parts`. **Green on the first run** (under
+    1 s), so it never failed "first"; instead five planted faults (arm angle, chin drop, tail sweep, an ear's z, the
+    blink frame) each failed it with the form and pixel named.
+
+**Where the plan doc was wrong or short**
+- "z from partKits": true for head, torso, limbs and tail; the extras' z comes from where they sit (ear 8 vs partKits
+  10, crest 11 vs 10, beard 10/4, pack 4/6, collar 8.5), so the anchors carry their own z.
+- "Grow `partFit`": the builder lays out a whole figure (leg length sets the torso's height, the hip gap, the chin
+  drop, anchors that are not sockets, rest tilts from pixels). That is kit-assemble.js; `partFit` gets only per-socket
+  maths, later.
+- "Replace `rigFor` with `rigParts`": `rigParts` reads the game's globals and caches forever; the Studio must draw its
+  unsaved rigs. Both now share `rigFromMeta`.
+- `tools/rename-data.mjs` renames keys and sections, not values; T5.5 needs a value mode first.
+- `logic/pixel-ops.js` already exists, so the new module is `kit-pixels.js`.
+- The committed kit art is exactly what the Python builder writes today (re-run in a scratch worktree: every sheet,
+  layout, rig and line byte for byte), so the parity test compares against the repository, not a Python run.
+
+**Verified**
+- Unit tests 633 pass (the parity test about 1 s); lint, typecheck, `check:modules`, `format:check`.
+- `check:fast`: every check passes.
+- `check-studio-github.py --only=publish,workbench,part_mode,robot_joints,species_parts,wardrobe,rig_preview`:
+  0 problems (rig_preview pixel-equal on 7 clocks, front and back; publish 0).
+- **Not run:** the full quick check (at the end of the phase).
+
+**Risky**
+- The parity rests on Pillow 12.3.0's arithmetic. If the builder is re-run with another Pillow before it retires, the
+  committed art may move and the test with it; re-check then.
+- Previews now step at 12 fps: a designer may read that as the Studio being slower. It is what the game shows.
+- `studio/index.html` gained two script tags (`kit-pixels.js`, `kit-assemble.js`) beside Phase 1's; expect a merge there.
+
+**Next (session 2)**
+- Move `KIT_BAKE` and builds.json into data (`game/data/kitBuilds.json` with a schema and check-data; the tail aims
+  per part in partKits), parity still green; a Node CLI that bakes and writes (sheet PNG, layout, rigs-next.js, lines).
+- Then T5.5: the `rename-data` value mode, then `signature` → `sig`, `head-extra` → `headExtra`, `body-extra` →
+  `bodyExtra`, one per commit.
+
 ### Studio plan Phase 1, session B - Undo per entry (T1.2) and the F14 hunt (T1.5) - 2026-10-22
 Branch `ccr-81011a25-lf3exv` (PR #131), on top of session A. Plan written by the previous Phase 1 session and
 reviewed by the parent session; further decisions took the recommended option and are in the plan doc's

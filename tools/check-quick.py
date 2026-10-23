@@ -1594,9 +1594,12 @@ def desktop_steps(b, base, R):
         miss = [i for i in ids if not pg.evaluate(f"!!(SPECIES['{i}']&&RIGS['{i}']&&RIGS['{i}'].front&&RIGS['{i}'].back)")]
         if miss: raise Exception(f'missing species or rigs: {miss}')
         nx = ROOT / 'game' / 'art' / 'next' / 'billionaires'
-        sheets = [n for n in ('emberox', 'boostox', 'marsox', 'memeox', 'cartotter', 'primotter', 'orbitotter', 'everyotter', 'kidling', 'billgoat', 'windowgoat', 'harvestgoat') if (nx / f'{n}.png').exists() and (nx / f'{n}.json').exists()]
-        if len(sheets) < 12: raise Exception(f'only {len(sheets)} piece sheets with layout')
-        out.append('12 starter species, 12 sheets (png + json), rigs for front and back')
+        sheets = [n for n in ('emberox', 'boostox', 'marsox', 'memeox', 'cartotter', 'primotter', 'orbitotter', 'everyotter', 'kidling', 'billgoat', 'windowgoat', 'harvestgoat') if (nx / f'{n}.png').exists()]
+        if len(sheets) < 12: raise Exception(f'only {len(sheets)} starter sheets')
+        # Studio plan Phase 5: the kit Billies' piece layouts (<name>.json) retired; the rig names the sheet
+        unrigged = [n for n in sheets if not pg.evaluate(f"Object.values(RIGS).some(r => r.front && r.front.sheet === 'next/billionaires/{n}.png')")]
+        if unrigged: raise Exception(f'starter sheets no rig draws from: {unrigged}')
+        out.append('12 starter species, 12 sheets, each drawn by a rig; rigs for front and back')
         pg.evaluate("rigPreload(%s.flatMap(id=>[[id,1],[id,1.4]]))" % json.dumps(ids)); time.sleep(3)
         r = json.loads(pg.evaluate("""(ids=>{const out={};for(const id of ids){const o={};for(const [v,k] of [['front',1],['back',1.4]]){const R=rigParts(id,k);if(!R){o[v]=null;continue}
           const c=makeCanvas(R.BW,R.BH),x=c.getContext('2d');const n=(P)=>{x.clearRect(0,0,R.BW,R.BH);drawRig(x,R,P,v);const d=x.getImageData(0,0,R.BW,R.BH).data;let s=0;for(let i=3;i<d.length;i+=4)if(d[i]>0)s++;return s};

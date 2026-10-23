@@ -44,6 +44,8 @@ export interface GameData {
   coats?: Record<DataId, Coat>;
   /** studio track ST-3: the phase 16 part kits, sliced by the Studio's Art workbench (game/data/partKits.json) */
   partKits?: PartKits;
+  /** Studio plan Phase 5 (T5.1): the kit Billies' recipes, baked by logic/kit-assemble.js (game/data/kitBuilds.json) */
+  kitBuilds?: KitBuilds;
   /** phase 10: the world map's look: the sea, the relief, each region's ground and trees (game/data/worldmap.json) */
   worldmap?: WorldMapLook;
   /** map generator MG-1: the generator's recipe per biome (game/data/biomes.json) */
@@ -1046,6 +1048,57 @@ export interface RobotRules {
 export type RobotSlot = 'torso' | 'armL' | 'armR' | 'legs';
 
 /** robots.json (phase 17): robot parts and gems */
+/** kitBuilds.json (Studio plan Phase 5, T5.1): every kit Billie's recipe and the baker's settings */
+export interface KitBuilds {
+  note?: string;
+  bake: KitBake;
+  /** named colours: hue 0-1, saturation scale, value scale */
+  colours: Record<string, [number, number, number]>;
+  forms: KitBuildForm[];
+}
+/** the baker's settings (were the retired Python builder's constants) */
+export interface KitBake {
+  /** the stage box every Billie fits in, its middle and ground line */
+  box: { w: number; h: number; cx: number; base: number };
+  /** keep this many pixels clear of the box's edges */
+  margin: number;
+  /** room round a torso for its squash and stretch frames */
+  pad: number;
+  /** each torso frame's [x scale, y scale] */
+  squash: Record<string, [number, number]>;
+  sheetW: number;
+  /** where a tail part points from the front (degrees, 0 = out to the right, 90 = up) */
+  tailAim: Record<DataId, number>;
+  /** from behind a tail sweeps this much of its aim */
+  tailBackSweep: number;
+  /** how far out an arm's far end hangs (degrees) */
+  armOut: number;
+  /** how far apart the feet stand, as their width */
+  footGap: number;
+  /** the chin sits this much of the head's height below the neck */
+  chinDrop: number;
+  /** the extras' anchors: the top left from the head or torso (x[0], y[0], fractions of it) plus fractions of the
+   * extra (x[1], y[1]), the draw order front and back, the bone's name */
+  anchors: Record<
+    string,
+    { on: 'head' | 'torso'; x: [number, number]; y: [number, number]; z: number; zb: number; name: string }
+  >;
+}
+/** one kit Billie: [part id, size, colour (a name in colours, [h, s, v] or null)] per bone kind, and its extras
+ * [part id, anchor, size, colour, mirrored pair, slot?] */
+export interface KitBuildForm {
+  name: string;
+  rig: string;
+  line: DataId;
+  stage: number;
+  scale: number;
+  parts: Record<string, [DataId, number, string | number[] | null]>;
+  extras?: [DataId, string, number, string | number[] | null, boolean, string?][];
+  /** the slot a bone kind fills, in place of its usual one */
+  slots?: Record<string, string>;
+  /** how far out the arms hang (degrees), in place of bake.armOut */
+  armOut?: number;
+}
 /** partKits.json (studio track ST-3): parts cut from kit sheets; x and y are fractions of the picture, y down */
 export interface PartKits {
   note?: string;
@@ -1073,7 +1126,7 @@ export interface PartZ {
   front?: number;
   back?: number;
 }
-export type PartSlot = 'head' | 'head-extra' | 'body' | 'body-extra' | 'front' | 'back' | 'signature';
+export type PartSlot = 'head' | 'headExtra' | 'body' | 'bodyExtra' | 'front' | 'back' | 'sig';
 export interface KitPart {
   kit: string;
   /** the animal it comes from, or 'any' (a kit's extras) */

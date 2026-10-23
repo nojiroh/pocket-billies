@@ -67,6 +67,10 @@ saved straight into `game/data`) was dropped (Studio plan, owner's decision 2026
   the first few, and Show me opens the Check. Nothing is sent and your changes stay unsaved until you fix it.
 - A **Note** (a warning) is something the game works around (a missing picture, an unknown shop, a stop no road
   reaches). It is shown and never blocks. check-data prints the scene and road notes too, and never fails on them.
+- The rigs (Studio plan Phase 5, T5.3) are checked too, in both: every picture's box inside its sheet, the rig's size
+  the sheet's, every bone's parent and picture there, the same bones front and back, and `geo` (the size a Billie
+  stands in the world) as the builders made it: mid and cy halfway from its top to the ground line, the top inside the
+  pictures and above the ground. A rig fault is a problem.
 - A Billie named from a line parked in `game/data/legacy` is a note (the game stands a new line's Billie in for it).
   A name that is in neither, like a typo, is a problem.
 
@@ -200,8 +204,40 @@ that species.
   with the rigs.
 - **As drawn**: the species front and back as the game draws it, the part picked marked; **Move** plays its idle.
 
+### A kit Billie's recipe (Studio plan Phase 5)
+
+The 24 kit Billies (game/data/kitBuilds.json) are baked from a recipe: which kit part sits on each bone, at what size
+and colour, plus extras (horns, ears, a crest, a shell). On a kit Billie Part mode shows **Kit recipe** above the
+part's numbers (and when no part is picked): the stage scale, each bone kind's part, size and colour, and the extras
+(part, where it sits, size, colour, a mirrored pair; **Add an extra**, ✕ to take one off).
+
+- **A change bakes at once** with the game's own baker (the code `npm run bake:kits` runs): the recipe, the sheet,
+  the rig and the line's native parts change together, as **one undo step**. Propose then carries all of them, so a
+  recipe never leaves without its bake (CI fails a recipe sent without one).
+- **Write Billie** bakes the recipe as it is again: after a kit part's picture was repainted, for example. When the
+  Billie already is as baked it says so and changes nothing.
+- A recipe the baker can't make (a slot left empty, a missing picture) is not written; the card says why.
+- Edits by hand to a kit Billie's sheet or rig (pixels, pivots) are lost at its next bake: the recipe is the truth.
+
+### Repack sheet (Studio plan Phase 5, T5.4)
+
+**Repack sheet** (beside Skeleton builder and Paint pixels) packs the species' sheet again without the pixels no frame
+shows: every picture's frames and the portrait once, tallest first, as the kit baker packs. The Billie is drawn pixel for
+pixel the same; only the boxes and the sheet's size change, as one undo step. It refuses a kit Billie (its recipe packs
+its sheet when it is written) and a species a coat has its own sheet for (that sheet is laid out like this one). On
+today's sheets 122 of 129 would get smaller; nothing is repacked until someone presses it.
+
 The skeleton builder zooms by whole steps (+, −, 0 to fit, 1 to 6 for 1x to 32x, as on the pixel canvas; O for the
 onion), fits its window when opened, and **Paint pixels** opens the sheet with the part picked in focus.
+
+## Pixel density (Studio plan Phase 5, T5.7)
+
+The Roster board's **Pixel density** lists, per Billie of the game's lines, how many of its rig pixels go into a metre in
+the world, how many fall in one pixel of the art grid (68 a metre, the props') and of the ground (32 a metre), and the
+grid it sits on (whole, quarter, or off grid when its listed height won over the grid). A kit Billie also shows the stage
+scale it was baked at and the parts scaled more than 25% off its torso. Every Billie's S and L parts are drawn at 0.85
+and 1.2 (not whole). It only measures: nothing changes until a target density is set (an art direction call). The maths
+is game/js/logic/pixel-density.js, which the game sizes Billies in the world with.
 
 ## Wardrobe on the pixel canvas (studio track ST-6)
 
@@ -518,15 +554,21 @@ menu.
 
 In Art workbench → Part → Billies, select a species and one of its pieces, then choose **Replace from Parts Library**.
 The picker filters by body group, kit (beasts, birds, fish), and part type. Groups are inferred from the existing bone;
-choose a group explicitly for custom bones. Select a thumbnail to stage the change. Front/back thumbnails compare the
-current and replacement piece; the assembled front/back previews show the result. Use Move and the idle/walk/attack/hurt
+choose a group explicitly for custom bones. A part that lacks a socket one of the bone's children hangs on (a torso's
+neck, shoulders, hips or tail) is greyed out, with the reason. Select a thumbnail to stage the change. The strip shows
+the Billie before (top row) and after, front and back, idle, blink, happy and hurt, as the game draws it; the assembled
+front/back previews show the result. Use Move and the idle/walk/attack/hurt
 selector to inspect motion. Scale, rotation and offsets are baked into the replacement picture around its library pivot.
 Match current part’s palette maps the new pixels to colours sampled from the old piece.
 
 For recognised paired limbs, Replace both sides uses each side's library art or its mirrored counterpart. Missing back
-art keeps the existing back piece, with a warning. A static library image replaces the selected bone's expression or
-squash/stretch frames; the picker warns about that before Apply. Existing children keep their positions, and the separate
-portrait remains unchanged. Socket-based child repositioning and assembly recipes are later steps.
+art keeps the existing back piece, with a warning. Frames (Studio plan Phase 5): a head's blink is made again from the
+new picture (the kit baker's rule; happy and hurt then show the new picture), unless **Keep the old blink, happy and
+hurt frames** is ticked; a torso gets its squash and stretch again. Children: one on a named socket moves to the new
+part's socket (scaled, turned and offset with the picture); any other (horns, ears, a crest) keeps its place in
+proportion to the picture. The size the Billie stands in the world (geo) moves by what the part changed, so a part of
+the same size leaves it as it was. The separate portrait remains unchanged. On a kit Billie the recipe is the truth: a
+swap by hand is lost at its next bake, so change the recipe instead (Kit recipe, above).
 
 Nothing changes until Apply. Apply appends the pieces to the species sheet and creates separate crop metadata, preserving
 bones, parents, animation roles, and draw order. Save to game writes the modified sheet(s) and rig through the existing
