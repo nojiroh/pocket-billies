@@ -19,7 +19,7 @@ pushes while you stay inside its soft zone, and settles again when you let go; t
 its state) drift in standing still, frame a talk as a two-shot, play a boss, lean by a door and zoom the encounter's
 swoop without touching your own zoom; the diorama blur (CAM-3, read from the renderer's state) focuses on you, between
 you and who you talk to, on an encounter, stands upright when fully tilted, stops at the player's Off and takes the
-cheap blur on the slowest setting; the Lab's unlock board (RL-11) grants, sells and keeps; the test island (island track) opens with its contract fields, and its orbit camera (IS-1) looks at the middle from 8 places, holds on the summit and walks a circle when you hold right(the Studio's Hub island editor, IS-6a/IS-6b, is in check-studio-github.py). The page is small (400x300) with every costly graphics dial
+cheap blur on the slowest setting; the Lab's unlock board (RL-11) grants, sells and keeps; Copperleaf, the island (IS-5), has its contract fields, its sea skirt draws from 8 angles (IS-3), and its orbit camera (IS-1) looks at the middle from 8 places, holds on the summit and walks a circle when you hold right (the Studio's Hub island editor, IS-6a/IS-6b, is in check-studio-github.py). The page is small (400x300) with every costly graphics dial
 off before it loads; nothing waits a fixed time, only for frames or the game's state. No pictures are taken.
 
 Graphics are not judged here: software drawing can't. The game's own graphics test (Settings → Help) is for a person
@@ -276,43 +276,51 @@ def bowl_map(pg, base):
     return f'{n} places on the bowl, {fr} frames; opened from the walk scene; a tap opens the card, Home comes back; the fall films it; a flight lands'
 
 
-def island(pg, base):
-    """island track IS-0: the island fixture opens test_island (the island contract's fields: cam.orbit, island,
-    zones, islandGen, a sea edge) and draws; you stand on open ground; its walking checks hold (the top and the north
-    side reachable, the sea not). IS-3: the sea skirt reaches the horizon at the sea's level; it draws from 8 angles"""
-    if not until(pg, "typeof walkView!=='undefined'&&walkView.ready&&walkView.id==='test_island'", 90): raise Exception(f'not on the test island: {pg.evaluate("typeof walkView!==\'undefined\'&&walkView.id")}')
+def hub_orbit(pg, base):
+    """island track IS-3 and IS-1 on Copperleaf (the hub is the island since IS-5; the test island's own check went in
+    the test cleanup track, TC-4): the island contract's fields reach the scene (not islandGen, the Studio's); the sea skirt reaches the horizon at
+    the sea's level and the scene draws looking in from over the sea at 8 angles; the orbit camera looks at the
+    middle from 8 places, holds on the summit and walks a circle when you hold right. You are put back after"""
     drawing(pg)
-    if not pg.evaluate("!!(walkView.sc.cam&&walkView.sc.cam.orbit&&walkView.sc.island&&walkView.sc.zones&&walkView.sc.islandGen)"): raise Exception('the island contract fields didn’t reach the scene')
-    res = pg.evaluate("testMapChecks('test_island')")
-    bad = [r['what'] for r in res if not r['ok']]
-    if bad: raise Exception('walking checks failed: ' + '; '.join(bad))
+    # islandGen (the Studio's generator dials) stays in the map's data, not in the walk scene; the Studio check has it
+    if not pg.evaluate("!!(walkView.sc.cam&&walkView.sc.cam.orbit&&walkView.sc.island&&walkView.sc.zones)"): raise Exception('the island contract fields didn’t reach the scene')
+    c = pg.evaluate("walkView.sc.cam.orbit.c")
+    back = pg.evaluate("[walkView.pl.x,walkView.pl.z]")
     # IS-3: the sea all round: one skirt out to the horizon at the sea's level, and the scene draws looking in from
     # over the sea at 8 angles round the island (the Studio's free camera hook, so the walk camera is left alone)
     sk = pg.evaluate("walkRenderer.seaSkirt&&{out:walkRenderer.seaSkirt.out,rings:walkRenderer.seaSkirt.rings,level:walkRenderer.seaSkirt.level}")
     if not sk or sk['out'] < 380: raise Exception(f'no sea skirt out to the horizon: {sk}')
     if abs(sk['level'] - pg.evaluate("walkRenderer.wlevel")) > 0.05: raise Exception(f"the skirt lies at {sk['level']}, the sea at {pg.evaluate('walkRenderer.wlevel')}")
+    far = pg.evaluate("Math.max(walkView.sc.w,walkView.sc.h)*0.65")
     for k in range(8):
         f = pg.evaluate("walkRenderer.frames")
-        pg.evaluate(f"(()=>{{const a={k}*Math.PI/4;walkView.opt.look=()=>({{eye:[60-Math.sin(a)*75,30,60-Math.cos(a)*75],tgt:[60-Math.sin(a)*20,0,60-Math.cos(a)*20],fov:60}})}})()")
+        pg.evaluate(f"(()=>{{const a={k}*Math.PI/4,c={json.dumps(c)},d={far};walkView.opt.look=()=>({{eye:[c[0]-Math.sin(a)*d,40,c[1]-Math.cos(a)*d],tgt:[c[0]-Math.sin(a)*20,0,c[1]-Math.cos(a)*20],fov:60}})}})()")
         if not until(pg, f"walkRenderer.frames>{f}+2", 20): raise Exception(f'stopped drawing looking in from {k * 45} degrees')
     pg.evaluate("delete walkView.opt.look")
-    orbit = island_orbit(pg)
-    return f'test_island drew {pg.evaluate("walkRenderer.frames")} frames; {len(res)} walking checks hold; the sea skirt has {sk["rings"]} rings out to {sk["out"]:.0f} m and draws from 8 angles; {orbit}'
+    try:
+        orbit = hub_orbit_walk(pg, c)
+    finally:
+        pg.evaluate(f"walkView.stick=null;walkView.run=false;walkView.pl.x={back[0]};walkView.pl.z={back[1]};walkView.pl.route=null;walkRenderer.camT=null;0")
+    return f'the sea skirt has {sk["rings"]} rings out to {sk["out"]:.0f} m and draws from 8 angles; {orbit}'
 
 
 # IS-1: the camera's yaw (0 looking north) and the wrapped difference between two angles, in the page
 WRAP = "((a)=>a-2*Math.PI*Math.floor((a+Math.PI)/(2*Math.PI)))"
+# the circle round Copperleaf's summit the orbit check walks (measured on 23 Oct 2026): holding right from the south
+# keeps to 30 m for the 0.7 rad the check needs; nearer the summit (12-20 m) the slopes slide you 1-3 m in
+ORBIT_R = 30
 
 
-def island_orbit(pg):
-    """island track IS-1: the orbit camera on test_island (middle 60, 60; dead zone 3 m; turn 30 degrees). From 8 places
-    round the coast it looks at the middle and follows you past the scene's edge (no clamp); on the summit it holds
-    still; holding right walks round the middle on the same circle, the yaw turning smoothly"""
+def hub_orbit_walk(pg, c):
+    """island track IS-1: the orbit camera round the middle c (the summit; dead zone 3 m; turn 30 degrees). From 8
+    places round it, it looks at the middle and follows you (no clamp); on the summit it holds still; holding right
+    walks round the middle on the same circle, the yaw turning smoothly"""
     if not pg.evaluate("!!walkRenderer.orbit"): raise Exception('no orbit on the island')
     if abs(pg.evaluate("cameraTurnLimit()*180/Math.PI") - 30) > 1e-6: raise Exception("your turn limit isn't the map's 30 degrees")
+    cx, cz, R = c[0], c[1], ORBIT_R
     pg.evaluate("walkRenderer.yawT=walkRenderer.yaw=0;0")
     for i in range(8):
-        cut = f"(()=>{{const a={i}*Math.PI/4,P=walkView.pl;P.x=60-Math.sin(a)*44;P.z=60-Math.cos(a)*44;P.route=null;walkRenderer.camT=null;return 0}})()"
+        cut = f"(()=>{{const a={i}*Math.PI/4,P=walkView.pl;P.x={cx}-Math.sin(a)*{R};P.z={cz}-Math.cos(a)*{R};P.route=null;walkRenderer.camT=null;return 0}})()"
         pg.evaluate(cut)
         f0 = pg.evaluate('walkRenderer.frames')
         if not until(pg, f'walkRenderer.frames>={f0 + 2}', 30): raise Exception('the island stopped drawing')
@@ -321,17 +329,17 @@ def island_orbit(pg):
         lag = pg.evaluate("Math.hypot(walkView.C.tgt[0]-walkView.pl.x,walkView.C.tgt[2]-walkView.pl.z)")
         if lag > 4: raise Exception(f'at {i * 45} degrees round the camera aims {lag:.1f} m from you (held inside the scene?)')
     # the summit: the yaw holds what it had
-    pg.evaluate("walkView.pl.x=60;walkView.pl.z=16;walkRenderer.camT=null;0")
+    pg.evaluate(f"walkView.pl.x={cx};walkView.pl.z={cz - R};walkRenderer.camT=null;0")
     f0 = pg.evaluate('walkRenderer.frames'); until(pg, f'walkRenderer.frames>={f0 + 2}', 30)
-    pg.evaluate("walkView.pl.x=60.5;walkView.pl.z=61;0")
+    pg.evaluate(f"walkView.pl.x={cx + 0.5};walkView.pl.z={cz + 1};0")
     f0 = pg.evaluate('walkRenderer.frames')
     if not until(pg, f'walkRenderer.frames>={f0 + 6}', 30): raise Exception('the island stopped drawing')
     if not pg.evaluate("walkRenderer.orbit.hold&&Math.abs(walkView.C.yaw)<0.02"): raise Exception(f'on the summit the camera turned: {pg.evaluate("walkView.C.yaw")}')
     # holding right from the south: an eighth of the way round on the same circle, no jump in the yaw
-    pg.evaluate("walkView.pl.x=60;walkView.pl.z=16;walkRenderer.camT=null;window.__orb={y:[],a0:0};0")
+    pg.evaluate(f"walkView.pl.x={cx};walkView.pl.z={cz - R};walkRenderer.camT=null;0")
     f0 = pg.evaluate('walkRenderer.frames'); until(pg, f'walkRenderer.frames>={f0 + 2}', 30)
     pg.evaluate("walkView.stick={x:1,y:0};walkView.run=true;0")
-    gone = "Math.abs(Math.atan2(walkView.pl.x-60,walkView.pl.z-60))"
+    gone = f"Math.abs(Math.atan2(walkView.pl.x-{cx},walkView.pl.z-{cz}))"
     t0 = time.time(); ys = []
     while time.time() - t0 < 60:
         ys.append(pg.evaluate("walkView.C.yaw"))
@@ -340,8 +348,8 @@ def island_orbit(pg):
     pg.evaluate("walkView.stick=null;walkView.run=false;0")
     turned = pg.evaluate(f"Math.PI-{gone}")
     if turned < 0.7: raise Exception(f'holding right walked only {turned:.2f} rad round in 60 s')
-    r = pg.evaluate("Math.hypot(walkView.pl.x-60,walkView.pl.z-60)")
-    if abs(r - 44) > 1: raise Exception(f'holding right drifted from the 44 m circle to {r:.2f} m')
+    r = pg.evaluate(f"Math.hypot(walkView.pl.x-{cx},walkView.pl.z-{cz})")
+    if abs(r - R) > 1: raise Exception(f'holding right drifted from the {R} m circle to {r:.2f} m')
     jump = max((abs((ys[k] - ys[k - 1] + math.pi) % (2 * math.pi) - math.pi) for k in range(1, len(ys))), default=0)
     if jump > 0.35: raise Exception(f'the yaw jumped {jump:.2f} rad between two looks')
     return f'the orbit looks at the middle from 8 places, holds on the summit, holding right went {turned:.2f} rad round at {r:.2f} m'
@@ -1180,7 +1188,8 @@ PAGES = [   # (what the page opens, its checks in order); the longest first, so 
               ('The exported debug log holds no names, a camera line with the moment and a lens line (CAM-1, CAM-2, CAM-3)', debug_log),
               ('The world map opens as the bowl', bowl_map)]),
     ('town', [('Camera follow: settled standing, the look-ahead from the stick, the soft zone, settled again (CAM-1)', camera_follow),
-              ('Camera moments: a drift in standing, a two-shot talking, a boss, a door, the encounter shot (CAM-2)', camera_moments)]),
+              ('Camera moments: a drift in standing, a two-shot talking, a boss, a door, the encounter shot (CAM-2)', camera_moments),
+              ('Copperleaf is the island: the sea skirt from 8 angles; the orbit camera from 8 places, on the summit, holding right (IS-1, IS-3)', hub_orbit)]),
     ('room', [('A room opens and draws (the lab)', room), ('A save round-trips', save_round_trip)]),
     ('town', [('Blur focus: on you, between you in a talk, on the encounter; the slider at Off; the cheap blur (CAM-3)', blur_focus)]),
     ('ranch', [('The ranch trains: Train, a level with time, the cap, a clock turned back and forward, a reload (RL-9, RL-10b)', ranch)]),
@@ -1197,7 +1206,6 @@ PAGES = [   # (what the page opens, its checks in order); the longest first, so 
     ('mountains', [('Tall ground: behind a south mountain the camera rises, rock fades, your silhouette shows; none on flat ground', tall_ground)]),
     ('team', [('Every screen opens with its parts (UI-5)', screens)]),
     ('title', [('The game boots with no console or page errors', boots)]),
-    ('island', [('The test island opens and draws; its walking checks hold; the orbit camera (island track)', island)]),
     ('studio', [('The Studio loads', studio), ("The Studio's world map look", studio_worldmap)]),
     (RUN_TEST_URL, [('Play this seed: ?debug&run= takes off on that seed in a test run, nothing saved (Studio plan T2.6)', run_test)]),
 ]
