@@ -180,6 +180,9 @@ test('the city opening: its commands read, its names are its own, it runs throug
       return cutsceneStep({ k: 'cmd', line: 0, name, args });
     };
   assert.equal(C.map, 'city_opening');
+  /* test cleanup lane C: its map is parked in game/data/legacy (the Studio's Legacy section copies it back), not in the game */
+  const parked = JSON.parse(readFileSync(new URL('../../game/data/legacy/index.json', import.meta.url), 'utf8'));
+  assert.ok(parked.split.maps.ids.includes(C.map) && !GAME_DATA.maps[C.map], `${C.map} is parked, not in the game`);
   assert.deepEqual(step('actor you at walkFrom up silhouette'), {
     name: 'actor',
     who: 'you',
