@@ -2,6 +2,64 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Test cleanup track, round 3 - TC-4: shared helpers, check-quick on fixtures and waits, the tiers - 2026-10-23
+Branch `track/test-cleanup` (pulled with --no-rebase before every push). TC-4 items 1, 2, 5 and 6, over two sessions
+(the first ran out of room). The owner said to make the recommended choices without waiting for plan approval. main
+(RF-3, RO-1) merged in first. The track is done; the owner pushes the `tc-done` tag.
+- Where the track file was wrong: software drawing is multi-threaded (one page keeps about two cores busy, two pages
+  fill a 4-core container, a boot takes 25-65 s), so more browsers buy nothing; 13 check-quick steps already opened
+  their own fixture page, only the 22 desktop steps replayed the start with `play()`. "About 10 min" for the full check
+  and "1-3 min" for the fast check are not reachable on this hardware with every page drawn in software (below).
+- **Item 1**: `tools/browser_check.py`, the shared helpers (serve on a free port, CLOCK, NO_ACCOUNTS, TEST_GLOBALS,
+  LOW_GRAPHICS, `until` with an optional poke, `new_page` with extra init scripts, `open_game`, `console_text`, `log`,
+  `frames`, `drawing`, `stand`, `go_scene`). check-fast, check-quick, check-ui-gallery, check-sound and
+  check-studio-github use it; style-diff, look-blur, island-perf and island-shots import it; look-tall-ground still
+  loads check-fast (TALL_SPOT), which re-imports the same names.
+- **Item 2**: check-quick on check-fast's model. Each step is `def step(P)` on a Page opened by its first step at
+  `?fixture=<name>` ('title' = the phone flow's real opening, None = no page). 13 pages in `--workers` browsers
+  (default 2), longest first; `play()` is gone; QUICK_RENDER is an init script; a page error fails the step it came
+  in; each page's boot is recorded (`boot` in results.json) and left out of the step's time limit. 93 of 95 sleeps
+  became waits (`ui`, `drawn`, `look_at_me`, `bowl_drawn`, BOWL_OPEN, BATTLE_LEFT); two stay with comments. The
+  battle, run and speed pages (battles/starters/battle weather, RL-8/Juniper/airship, postcards/running/settings)
+  draw with check-fast's low graphics (their steps read state). The double/Alpha battles and battle music play at
+  four times the animation speed.
+- **Check fixes** (each its own commit; every one was the check, not the game): battle music's cue waits 20 s and the
+  lost payout's jingle 40 s; battle music at 4x, since on a busy machine the throw came after the drums' 8 s fallback,
+  which logs nothing; the Alpha foe level 12 (a level-6 Alpha fell to the first move and the catch was skipped);
+  `go_scene` waits at least 60 s for a scene's first frames (Juniper's "black screen" after the RL-8 run); the
+  postcard step loads the card's picture and stretches the card's 9 s timer while it checks it (the card had gone);
+  RL-8 taps Take off again while the run sheet is still there (a lost tap); run map music waits for the map song
+  (Run music's last check leaves the deadline song asked for) and puts the walk tab back even when it fails (its
+  failure had taken Battle music with it); check-fast's CAM-2 encounter swoop waits 30 s and the orbit check resets
+  the camera first (CI failed that pair once); check-fast's screens check taps a Billie sheet's tab again until it
+  opens (a lost tap; that commit also carries check-fast's docstring times).
+- Tried and reverted: steps that share a fixture sharing a page (13 pages to 10) saved 66 s of 1338 and broke Run
+  music, which needs the run's landing untouched.
+- **Results** (a 4-core cloud container, one heavy check at a time):
+  - Full check: 2455 s and 35 of 37 steps before (main, with other work beside it; round 2 measured 1872 s). Five
+    full runs after: 1338 s (1 problem), 1272 s (the reverted page sharing, 3), 1217 s (1), 1259 s (3), and
+    **1282 s with all 37 passed** on the last. Each problem was a check that lost a tap or waited too little on a busy
+    machine, fixed above. Boots are about 500 s of the pages' time. Slowest steps of the last run: double/Alpha
+    battles 258 s, RL-8's run 253, phone 169, walking left and right 168, running 161, culling 149.
+  - Smoke: **188 s**, 3 steps, no problems (budget 1-2 min).
+  - Fast check: **677 s** on CI on dfbe76c (27 checks on 19 pages, 2 browsers, all passed); 665 s here (26 of 27: the screens check lost a tap on the Billie sheet; fixed, it taps again until the tab opens).
+  - `npm test`: 20 s; lint, typecheck, check:modules clean after every change.
+  - Why the 10-minute budget is missed: a desktop frame takes about 1.5 s in software beside another page, at a third
+    of the resolution or with low graphics alike, and the game clock moves at most 60 ms a frame, so game-time waits
+    are frame waits. TESTING.md says so under the tiers, with the ways further (fewer drawn steps, more logic in Node,
+    a faster machine, the fast check's pages sharing boots).
+- **Item 5**: triggered on `track/test-cleanup` at a47fa45 (Actions -> Check -> Run workflow, "Make the picture
+  baseline" on: run 1252, https://github.com/nojiroh/pocket-billies/actions/runs/40030142882). When its full check
+  passes it saves the release `baseline-0.1.0-alpha` (quick-baseline.zip); the PR says how it ended. If it failed or a
+  rebuild is wanted after the merge: Actions -> Check -> Run workflow on main with "Make the picture baseline".
+- **Item 6**: TESTING.md's tiers table (a fast check row; smoke, full and unit times; why the budgets are missed), the
+  docstrings of check-quick and check-fast, check.yml's header.
+- Risky: the low-graphics pages' pictures look plainer than before (no grass, mist or extra shadows): they are notes,
+  and the baseline is made from this state. The postcard step stubs `setTimeout` for one 9 s delay while the card is
+  checked. "Save the picture baseline" in check.yml runs only when the full check passes.
+- Next: the owner tags `tc-done`; the nightly full run compares pictures with the baseline. The fast check's budget
+  needs its 19 pages to share boots (a check-fast restructure, not in this track).
+
 ### Reflavour track RF-3 - Type passives - 2026-10-23
 Branch `track/reflavour-rf-3` (reflavour-track.md has no `Branch:` line; roguelite-track 9.7 gives each round-2
 session its own branch and PR), PR #159. Plan approved in Plan Mode with the nine drafts. Tag `rf-3-done` is the
