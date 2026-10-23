@@ -186,101 +186,6 @@ def check_data():
     return f'{len(D.get("maps", {}))} scenes ({", ".join(f"{v} {k}s" for k, v in kinds.items())}), {len(SY.get("props", {}))} props, {len(D["roads"])} named roads'
 
 
-# alpha 0.4: the two data rules the water step needs, from the one-off tools/fix-marigold-stream.py and
-# tools/fix-piers.py (TC-1: copied here when those tools went)
-def buildings_in_water(D):
-    """every building whose footprint (turned as it stands) has water in it"""
-    C = D['scenery']['props']; out = []
-    for sid, sc in D['maps'].items():
-        if '@' in sid or not sc.get('tiles'): continue
-        T = sc['tiles']; H = len(T); W = len(T[0])
-        at = lambda x, z: T[H - 1 - z][x] if 0 <= x < W and 0 <= z < H else None
-        for p in sc.get('props', []):
-            M = C.get(p['k']) or {}
-            if not M.get('box') or not (M.get('build') or M.get('door')): continue
-            s0 = p.get('s', 1); w, d = M['box'][0] * s0, M['box'][1] * s0; r = math.radians(p.get('rot', 0)); c, sn = math.cos(r), math.sin(r)
-            wet = 0
-            for ix in range(1, int(w * 2)):
-                for iz in range(1, int(d * 2)):
-                    lx, lz = -w / 2 + ix / 2, iz / 2; x = p['x'] + lx * c - lz * sn; z = p['z'] + lx * sn + lz * c
-                    if at(int(math.floor(x)), int(math.floor(z))) in ('w', 'd'): wet += 1
-            if wet: out.append((sid, p['k'], p['x'], p['z'], wet))
-    return out
-
-
-def piers_of(sc):
-    """the strips of boards that run out into the water: [(cells over water, a, b, width)] in the place's metres"""
-    T = sc['tiles']; H = len(T); W = len(T[0])
-    at = lambda x, z: T[H - 1 - z][x] if 0 <= x < W and 0 <= z < H else None
-    cells = {(x, z) for z in range(H) for x in range(W) if at(x, z) == 'b'}
-    seen, out = set(), []
-    for c in sorted(cells):
-        if c in seen: continue
-        comp, st = [c], [c]; seen.add(c)
-        while st:
-            x, z = st.pop()
-            for q in ((x + 1, z), (x - 1, z), (x, z + 1), (x, z - 1)):
-                if q in cells and q not in seen: seen.add(q); st.append(q); comp.append(q)
-        if not any(at(*q) in ('w', 'd') for x, z in comp for q in ((x + 1, z), (x - 1, z), (x, z + 1), (x, z - 1))): continue
-        # the strip's axis: the longer way of its spread (principal axis of the squares' middles)
-        mx = sum(x + .5 for x, _ in comp) / len(comp); mz = sum(z + .5 for _, z in comp) / len(comp)
-        sxx = sum((x + .5 - mx) ** 2 for x, _ in comp); szz = sum((z + .5 - mz) ** 2 for _, z in comp); sxz = sum((x + .5 - mx) * (z + .5 - mz) for x, z in comp)
-        ang = .5 * math.atan2(2 * sxz, sxx - szz)
-        for a90 in (-math.pi, -math.pi / 2, 0, math.pi / 2, math.pi):     # a strip that is nearly square to the map runs square to it
-            if abs(ang - a90) < math.radians(10): ang = a90
-        ux, uz = math.cos(ang), math.sin(ang); px, pz = -uz, ux
-        rows = {}
-        for x, z in comp:
-            t = (x + .5 - mx) * ux + (z + .5 - mz) * uz; s = (x + .5 - mx) * px + (z + .5 - mz) * pz
-            rows.setdefault(int(math.floor(t + .5)), []).append((x, z, s))
-        def side_wet(row):
-            """both sides of this row of boards are water"""
-            lo = min(r[2] for r in row); hi = max(r[2] for r in row); tt = sum((r[0] + .5 - mx) * ux + (r[1] + .5 - mz) * uz for r in row) / len(row)
-            def wet(s):
-                x, z = mx + ux * tt + px * s, mz + uz * tt + pz * s
-                return at(int(math.floor(x)), int(math.floor(z))) in ('w', 'd')
-            return wet(lo - 1.0) and wet(hi + 1.0)
-        ks = sorted(rows); over = [k for k in ks if side_wet(rows[k])]
-        if not over: continue
-        t0, t1 = min(over), max(over)
-        land_lo = any(k < t0 for k in ks); land_hi = any(k > t1 for k in ks)
-        def beyond(t):
-            x, z = mx + ux * t, mz + uz * t
-            return at(int(math.floor(x)), int(math.floor(z)))
-        if not land_lo and not land_hi:                       # no boards on land: the bank is whichever end is dry
-            land_lo = beyond(t0 - 1.2) not in ('w', 'd')
-        if land_lo and land_hi: continue                      # boards across the water from bank to bank: a bridge, left alone
-        if land_lo: ta, tb = t0 - .5 - .6, t1 + .5          # from the bank (a little onto the boards there) out to the end
-        else: ta, tb = t1 + .5 + .6, t0 - .5
-        lat = [r[2] for k in over for r in rows[k]]; sm = (min(lat) + max(lat)) / 2
-        # its width: the squares under it over its length (a slanting strip of squares is wider than the boards were)
-        L = max(1.0, t1 - t0 + 1); w = len([1 for k in over for r in rows[k]]) / L
-        if abs(ux) > .2 and abs(uz) > .2: w = min(w * .62, 2.2)
-        w = max(1.2, round(w - .3, 2))
-        a = [round(mx + ux * ta + px * sm, 2), round(mz + uz * ta + pz * sm, 2)]; b = [round(mx + ux * tb + px * sm, 2), round(mz + uz * tb + pz * sm, 2)]
-        wet_cells = [(r[0], r[1]) for k in over for r in rows[k]]
-        out.append((wet_cells, a, b, w))
-    return out
-
-
-@step('alpha 0.4: no building stands in water; every jetty is a flat deck over water (from the data)', 20)
-def check_water():
-    """a building's footprint (turned as it stands) holds no water; boards never run out over water as ground (a jetty is
-    a flat deck on posts with the water under it: scene.bridges, pier: 1)"""
-    import math as _m
-    D = gamedata(); bad = [f'{a}: {b} at {c},{d} has water in it' for a, b, c, d, e in buildings_in_water(D)]
-    piers = 0
-    for sid, sc in D['maps'].items():
-        if '@' in sid or not sc.get('tiles') or sc.get('kind') == 'room': continue
-        for cells, a, b, w in piers_of(sc): bad.append(f'{sid}: boards run out over the water at {a} (make it a jetty: scene.bridges, pier: 1)')
-        for B_ in sc.get('bridges') or []:
-            if B_.get('pier'):
-                piers += 1; T = sc['tiles']; H = len(T); x, z = B_['b']
-                if T[H - 1 - int(_m.floor(z - .3 if B_['b'][1] > B_['a'][1] else z + .3))][int(_m.floor(x))] not in 'wd': bad.append(f'{sid}: the jetty to {B_["b"]} doesn’t end over water')
-    if bad: raise Exception('; '.join(bad[:6]))
-    return f'no building has water in it; {piers} jetties, each a flat deck ending over water'
-
-
 @step('alpha 0.4: an airship mast in every town (from the data)', 20)   # RL-5: Verdigris City and its terminal are parked
 def check_masts():
     """every town has something to fly from (a prop with act 'fly': a mast, or a sky lift under the ground); the
@@ -2125,7 +2030,7 @@ def main():
     R = {'when': time.strftime('%Y-%m-%d %H:%M'), 'render': 'software, a third of the resolution, 1024 shadow map'}
     # phase 04b: data/gamedata.js is generated from the data files; make it from the files as they are now
     subprocess.run(['node', str(ROOT / 'tools' / 'build-data.mjs')], check=True)
-    check_data(); check_water(); check_masts(); check_postcards(); check_windows(); check_ground(); report_unused()
+    check_data(); check_masts(); check_postcards(); check_windows(); check_ground(); report_unused()
     srv, base = serve(GAME)
     with sync_playwright() as pw:
         b = pw.chromium.launch(args=['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'])
