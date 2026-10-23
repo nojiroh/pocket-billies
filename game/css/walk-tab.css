@@ -44,26 +44,6 @@
   font-family: var(--font-voice);
   font-size: 19px;
 }
-.route-profile {
-  position: absolute;
-  bottom: 13px;
-  right: 12px;
-  max-width: 65%;
-  border: 2px solid #fff4d4;
-  border-radius: 3px;
-  background: #223d48;
-  color: #fff7dc;
-  padding: 9px 11px;
-  font-size: 12px;
-  font-weight: 600;
-  min-height: 40px;
-}
-@media (max-width: 370px) {
-  .route-profile {
-    max-width: 60%;
-    font-size: 11px;
-  }
-}
 @keyframes sway {
   0%,
   100% {
@@ -160,23 +140,6 @@
 /* ---------- (UI-5 and earlier) ---------- */
 
 /* ---------- UI-5: from style.css, as it was ---------- */
-.today::before {
-  content: '';
-  position: absolute;
-  right: -30px;
-  top: -40px;
-  width: 140px;
-  height: 140px;
-  background: radial-gradient(circle, var(--glow), transparent 65%);
-  pointer-events: none;
-}
-.today-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  gap: 12px;
-  position: relative;
-}
 /* encounters */
 .queue {
   display: flex;
@@ -288,33 +251,6 @@
   border: 3px dashed var(--lo);
   border-radius: 50% 50% 46% 46%/58% 58% 42% 42%;
   margin-bottom: 6px;
-}
-.today .big {
-  font-size: 54px;
-}
-.today .lbl {
-  letter-spacing: 1px;
-}
-.walkbtns {
-  margin-top: 16px;
-}
-.here.px {
-  overflow: hidden;
-  padding-top: 0 !important;
-}
-.route-art {
-  position: relative;
-  height: 145px;
-  margin: 0 -14px 17px;
-  background: #8bbdd2 linear-gradient(180deg, #7ea4c3, #99aec6 22%, #909f9c 42%, #889a76 52%, #869b55 75%, #6f7b4a);
-  image-rendering: pixelated;
-  border-bottom: 3px solid var(--line);
-}
-.route-art > span {
-  position: absolute;
-  bottom: 2px;
-  left: 22px;
-  filter: drop-shadow(0 3px 0 rgba(27, 47, 55, 0.2));
 }
 .enc .stage-glow {
   opacity: 0.45;
@@ -610,9 +546,6 @@ body:not(.on-walk):not(.on-scene) #dioui {
 /* ---------- UI-5: from polish.css, as it was ---------- */
 .egg-e {
   border-color: color-mix(in srgb, var(--line) 30%, transparent);
-}
-.today .mid {
-  text-shadow: 2px 2px 0 color-mix(in srgb, var(--gold) 35%, transparent);
 }
 /* alpha 0.4.1: the floating joystick and the d-pad (js/joystick.js) */
 body.on-walk #dio {
