@@ -1398,6 +1398,24 @@ The unit tier is already 80 s against a 30 s budget. New tests must stay fast; T
 | Type-checking all Studio JS at once | Add `// @ts-check` file by file as tickets touch them (T6). |
 | Content packs (`mergeInto`, RL-16) | Belongs to RL-16. This plan's editors should land first, so RL-16 only adds the pack filter. |
 
+## Decisions (owner, Phase 3, 2026-10-22)
+The owner approved the Phase 3 plan with its recommended options (relayed by the parent session, from the owner's
+own message):
+1. **T3.5:** delete `tools/balance-report.py` (a species-roster report on stand-ins, STAB hard-coded; nothing uses it).
+2. **T3.2:** the after-battle bookkeeping (Hype counter, the lead's streak) moves into logic (`battleSettle`), shared by
+   `endBattle` and the simulator, rather than staying a named gap.
+3. **Scope:** session 1 does T3.1, T3.2 and T3.5; session 2 (Phase 3b) does T3.3 and T3.4's pure parts; T3.4's
+   dashboard waits for Phase 2's worker (T2.4).
+4. **Phase 3b (T3.3 balance mode), the town-grass question** (recommended option, under the owner's standing
+   instruction to take the recommended decisions): balance mode stands in "every run place has tall grass" (a lite
+   map, `_lite.tiles: 't'`), because it did on every measured map: 344 of 344 towns and 650 of 650 routes over 80
+   maps, with no unlocks and every one. Rejected: making the town scenes only (a scene's edges need its parents', so
+   it is most of the cost), and changing the game's rule (a town without grass would get wild Billies). A test
+   checks the stand-in on real scenes, and the equality test plays the same seeds in both modes.
+5. **Phase 3b (T3.3), the policy's Loopholes** (recommended): `greedy` takes the rarest on offer (the lowest
+   `rules.run.relics.rarity` weight, then by id), buys a shop's when the money is there beyond `reserve`, and past
+   the cap only swaps for a rarer one; `never-pick` is the baseline that takes and buys none.
+
 ## Decisions (owner, 2026-10-22)
 The owner took the recommendation on every open question:
 1. **T5.1:** the recipe is the truth. Kit Billies are baked by a JS port of the builder, with a parity test against

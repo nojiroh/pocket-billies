@@ -431,6 +431,199 @@ Branch `ccr-3d24989e-9cyftq`. A planning session only: no code changed.
 - Verified: nothing to run (docs only).
 - Next: CAM-1 (the follow), starting in Plan Mode.
 
+### Studio plan Phase 3b - Loopholes, balance mode, compare, the Simulate card (T3.3, T3.4) - 2026-10-23
+Branch `claude/sr-3-sim-balance` (draft PR #138). Plan pre-approved with the recommended options (the owner's
+standing instruction, relayed by the parent session); decisions recorded in the plan doc, "Decisions (owner, Phase 3)".
+
+**Plan** (one cause per commit, failing test first where a rule moves; commit and push after every ticket)
+1. T3.3, the simulator's gaps:
+   - the arrival heal (`runArrivedFx`) moves into logic (`run-loop.js runArriveFx`), shared by the page and the sim;
+   - a run shop's wares through the run's unlocks: one logic function (`runShopOpen`) for shop.js and the sim (the sim
+     drew from the unfiltered table);
+   - the pick after a mini-boss answered by the policy: `relics: 'greedy'` (rarest, then id; past the cap only for a
+     rarer one, letting the plainest go) or `'never'` (the "never pick" baseline policy, `never-pick`);
+   - a run shop's Loophole bought under the same setting, keeping the policy's reserve;
+   - a test that the sim's run starts through `runStartPlan` with the save's unlocks (biomes);
+   - the stats the dashboard needs: lost row, money in and out, Loopholes held, foes by leader;
+   - balance mode (`scenes: 'skip'`): no `runScenesMake`; each place is a lite map (the game's own `_lite`) whose ground
+     includes tall grass. **Town grass decision (recommended):** stand in "every run place has tall grass"; measured
+     344 of 344 towns and 650 of 650 routes over 80 maps (none and all unlocks). The equality test runs the same
+     seeds in both modes and fails if a generator change ever breaks it. Acceptance: same outcomes, >= 20x faster.
+2. T3.4 pure parts: `logic/sim-compare.js` (Wilson 95%, paired differences, flips, a data hash); the CLI's `--out`,
+   `--compare=base.json`, `--balance`, `--policy`; unit tests.
+3. T3.4 dashboard: merge `origin/claude/sr-2-run-lab` (merge commit); a "Simulate" card in the Run Lab with two workers
+   (Base: the loaded data, Draft) on the same seeds, the policy banner on every table, policy-driven metrics marked,
+   at most 200 seeds; a stand-in step running 5 seeds in check-studio-github.py.
+
+**Changed** (one cause per commit; the scratch harness compared every run's log for SIM0-SIM49 at three setups,
+defaults / team 3 + all unlocks / team 3 + 5 Potions + 4 fights, after each simulator commit)
+- **T3.3, the game's side** (each a logic function the page and the simulator both call; check:fast after each):
+  - `run-loop.js runArriveFx`: the arrival heal's composition (run.js `runArrivedFx` was `fxHealShare` + `runArriveHeal`).
+  - `run-loop.js runShopOpen`: a run town's wares through the run's unlocks (shop.js did `unlockOpen` itself).
+- **T3.3, the simulator** (`game/js/logic/run-sim.js`):
+  - a town's wares through `runShopOpen` (it drew from the unfiltered table: 12 of 50 logs' shop lists change, no
+    outcome);
+  - walking in heals by the held Loopholes (`runArriveFx`): output-neutral (none held then);
+  - `SIM_POLICY.relics`: `greedy` (rarest by `rules.run.relics.rarity` weight, then id; past the cap only for a rarer
+    one, letting the plainest go) and `SIM_POLICIES['never-pick']`; `simRelicChoice` is the pure choice. The pick after
+    a mini-boss goes through `relicChoose`: output-neutral, because **none of 150 runs beats a mini-boss**;
+  - a town shop's Loophole (`relicShelf`, `relicBuy`, its price with the price rows), bought keeping `reserve`: 16 of
+    50 runs change at the defaults, 11 and 15 at the other setups; where runs are lost doesn't move; Capital 81.6 ->
+    81.2, 82.4 -> 81.8, 117.2 -> 116.2 (money spent before a loss pays less). 48 of 49 shelves are bought;
+  - the log names the map's nodes (type:biome), and a test checks they are `runStartPlan`'s for the save's unlocks;
+  - stats: `lostRow`, `moneyIn` {prize, reward}, `moneyOut` {heal, shop, relics}, `foes` [{leader, type, won}],
+    `relics` held at the end (a test: start money + in - out = money left);
+  - **balance mode** (`scenes: 'skip'`, CLI `--balance`): no `runScenesMake`; each place is `{ _lite: { tiles: 't' } }`
+    (`SIM_LITE_PLACE`, the game's own lite map). **150 of 150 runs equal to the full mode** (every log and stat but
+    the scenes' seeds); **266 times faster** (2.2 ms a run against 573 ms here). Tests: equality on 12 seeds at two
+    setups, the speed (>= 20x), and the tall-grass stand-in on real scenes.
+- **T3.4, pure:** `game/js/logic/sim-compare.js` (`simWilson`, `simPaired`, `simSummary`, `simCompare`,
+  `simCompareReports`, `simSeeds`, `simBanner`, `simDataHash` (FNV-1a of the data without `maps`), `SIM_BROWSER_CAP`
+  200) and its unit test; `runReport(seeds, o)` in the core (the report the CLI writes and the card shows: runStats's
+  numbers, seeds, options, mode, data hash, every run's stats as `results`, the summary); `spent` and `relics` are
+  policy-driven too; the CLI's `--balance`, `--policy`, `--out`, `--compare=base.json`. On the Studio page beside
+  run-sim.js (the pages must reach every file the lint reads).
+- **T3.4, dashboard:** merge of `origin/claude/sr-2-run-lab` (a merge commit; HANDOFF, the plan's decisions and
+  studio/index.html both kept; the worker's module list gains run-sim.js and sim-compare.js). Then:
+  - **the worker, extended (not rewritten):** `logic-client.js` has a second slot, `logicWorkerBase`, and
+    `logicAskBase(fn, ...args)`, on `studioState.loadedText` (the whole data as loaded, as JSON text the way
+    `logicDataText` makes it, kept at boot beside `studioState.loaded`, which holds only five tables).
+    `logicWorkerStart`/`logicWorkerStop` take the slot (the draft's by default). Message shapes unchanged.
+    `LOGIC_WORKER_FNS.runSimReport` (`studio/js/logic-worker-sim.js`: the simulator's env from the modules the worker
+    already loaded, named; at most 200 seeds); a unit test: the worker's answer equals the CLI's report.
+  - **the Simulate card** (`studio/js/run-lab-sim.js`; run-lab.js only adds the card): seeds (5-200), policy, party
+    (one / three / three + 5 Potions), unlocks; Base and Draft in parallel; tables per run, losses by place and by
+    row, money in and out, Loopholes held, leaders beaten; the banner on every table; policy-driven rows marked; both
+    hashes; Export JSON.
+  - **stand-in step** `run_lab_sim` in check-studio-github.py: 5 seeds; no changes -> the same runs, the same hashes,
+    Base equals the CLI's summary in Node; a banner on each table, the policy-driven rows as the report names them;
+    the clinic price doubled (unsaved) -> a paired difference and a new Draft hash, the Base worker not made again;
+    500 seeds asked -> 200.
+- Docs: STUDIO.md (Simulate), TESTING.md (the CLI flags and tests), CHANGELOG, the plan's decisions 4 and 5.
+
+**Acceptance (T3.4)**, CLI, 200 seeds, team 3, balance mode: the same data compares as "the same runs" (every
+difference 0, one hash); `healCost` 60 -> 120 gives healed +18.2 [13.2, 23.2], money left -10.3 [-16.1, -4.6],
+Capital -1.0 [-1.6, -0.4], 49 runs changed, won 0 -> 0. In the card (5 seeds): healed +12 [-11.5, 35.5]. A unit test
+does the same on 40 seeds.
+
+**Where the plan doc was wrong or short**
+- A6's "no unlock filtering": the map was already through `runStartPlan` (T2.1); the shop stock was not.
+- "keep-one": done in T3.2 (`runKept`). "fx in battles and payout": done in T3.2 too; the arrival heal was the gap.
+- The Loophole pick moves no number today: no simulated run beats a mini-boss (0 of 150; 0 wins in every setup).
+  Shop Loopholes are the only Loopholes the numbers see until the roster or the policy changes.
+- Balance mode's speedup is bigger than "20x": the scenes are ~99.6% of a run here.
+- "Base, the loaded commit's data": the Studio holds the data it loaded; Base is that (kept as text at boot), not a
+  fetch of the commit.
+
+**Verified**
+- Unit tests: 691 pass (`npm test`); lint, typecheck, `check:modules`, `format:check` after each change.
+- check:fast after the arrival heal (25 checks; one problem, UI-5's team screen, passed alone: a timing flake while
+  another check:fast was running), after the shop (the run, Loopholes, Lab and room checks), and at the end: one run
+  failed UI-5 again (the bag screen this time; it passed alone twice), the next full run passed 26 of 26. The commit
+  this session started from passed 25 of 25. UI-5 looks timing-sensitive in full runs on this machine (a full run
+  takes ~12 minutes here); worth watching in CI.
+- `check-studio-github.py --only=publish,run_lab,run_lab_sim`: publish 0 problems, run_lab and run_lab_sim pass.
+- On the build (`npm run build`, `check-studio-github.py dist --only=run_lab_sim`): the card works; the page logs 404s
+  for the Run Lab's "rules in code", which reads source files the build leaves out (Phase 2's, also with `run_lab`
+  alone; on dist `run_lab` also reports those lines and a 136 ms redraw).
+- **Not run:** the full quick check (no quick-check baseline in this container; 40 min), the phone and iPad checks.
+
+**Risky**
+- Game code: run.js `runArrivedFx` and shop.js `openShop` now call logic functions (the same steps as before).
+- The Base worker holds a second copy of the data (~2.5 MB text, plus the worker's own); on an iPad two workers run
+  at once while simulating.
+- Simulated numbers are a bot on legacy stand-in species: the banner says so on every table.
+
+**Next**
+- Close Phase 3: the full quick check, then the tag `sr-3-done`.
+- Owner's manual check: in the Run Lab, Simulate with 200 seeds; change `healCost` and Simulate again; say whether
+  the compare is understandable (T3.4's manual acceptance); on the iPad, how long 200 seeds take.
+- Policies the plan named but this session didn't add: `cautious` (undefined) and `never-catch` (easy:
+  `taxWhileBelow: 0`).
+- The Run Lab's "rules in code" on the built site (404s): read the lines at build time, or hide the list there.
+
+### Studio plan Phase 3 (first session) - The simulator on the game's own rules (T3.1, T3.2, T3.5) - 2026-10-23
+Branch `claude/sr-3-sim-balance`, draft PR #138 against Phase 2's `claude/sr-2-run-lab` (PR #135). The plan was approved
+with its recommended options (the owner, through the parent session; recorded in the plan doc, "Decisions (owner,
+Phase 3)"): this session T3.1, T3.2 and T3.5; Phase 3b (next session) T3.3 and T3.4's pure parts; T3.4's dashboard
+after Phase 2's worker (T2.4). The session stopped once on the usage limit and went on from the same branch.
+
+**Changed** (one cause per commit; tests first where a rule moved):
+- **T3.1.** `game/js/logic/run-sim.js` `runSimOn(env)`: the core, handed `{modules, fn, hooks, data, gameData, logic,
+  beforeRun}` instead of importing them (no imports, so no load-order effect; on the Studio page beside run-start.js
+  for the worker). `tools/test/sim/run-sim.mjs` is its Node host: it loads the logic, reseeds util.js random before
+  each run (`beforeRun`) and writes the report. Proof: the report (without `seconds`) and every run's log for
+  SIM0-SIM49, at the defaults and at `--team=3 --unlocks=all`, byte-identical before and after.
+- **T3.2, the game's rules, shared** (each a logic function the page and the simulator both call):
+  - `run-loop.js runBattleExtra`: a run battle's seed, weather (clear is sunny) and Loopholes; run.js's
+    `runBattleWeather` is gone.
+  - `run-loop.js runClinic` + `effects.js fxRunPrice`: the clinic (walk-tab.js) and run prices with Loophole rows
+    (run.js `runClinicEach`, shop.js `warePrice`/`shopRelic`). The simulator used `rules.run.healCost` and the coin's
+    base price without Loopholes.
+  - Potions: the game's `applyItem`.
+  - `battle-engine.js startWild/startTrainer(…, {host, extra})`: the simulator starts battles through them (the boss
+    team, format, doubles and the market opening came from its own copies; the market never applied).
+  - `battle-engine.js catchKeep/catchOffer/catchOfferAnswer`: battle.js `finishThrow` and battle-input.js's offer
+    buttons. The simulator now draws the foe's offer after a miss (and refuses it), as the page does.
+  - `battle-rewards.js battleSettle/battleSettleWin` (owner's decision): `endBattle`'s save side (rewards with the
+    battle's Loopholes, a run battle's checkpoint, Hype counter, lead streak, encounter, prize, reward, flag, a
+    mini-boss's pick of Loopholes). The sheets, seats and the tutorial stay in battle.js, in the same order.
+  - `run-loop.js runKept/runItemPrice`: run-payout.js; the simulator ends through `runEnd` with
+    `fxPayoutRates` (it summed `payoutOf` itself).
+  - `SIM_POLICY` (`greedy-forward`): every number in run-sim.js that isn't a game rule is a named setting (home, fights,
+    fightAbove, potionBelow, clinic, penniesUpTo, reserve, taxWhileBelow, ring, offer, lane, keep). The report
+    carries `policy`, `policyDriven` (caught, healed, moneyLeft) and a note: a regression detector, not a balance
+    oracle. `MAX_TURNS` (60) is labelled a loop guard: the game ends battles at `rules.battle.turnCap` (40).
+- **T3.5.** `tools/balance-report.py` deleted (owner's decision).
+- Docs: TESTING.md, CHANGELOG, the plan's decisions.
+
+**What moved in the numbers** (50 seeds each; 0 wins in every setup before and after):
+- Only one commit changed outcomes: the offer drawn after a missed throw. It shifts the rest of that battle's draws
+  onto the page's stream. Defaults: 46 of 50 runs changed; lost at landing 28->26, town 8->13, route 10->8, mini-boss
+  4->3; Capital 84.4->81.6. `--team=3 --unlocks=all`: 49 changed. Team 3, 5 Potions, 4 fights: 46 changed.
+- Every other rule was output-neutral on these seeds. The reasons are named, not assumed: no Loopholes are held
+  (T3.3 adds picks), and none of the 150 runs fought the one leader with a market (`crude`; few runs reach a
+  mini-boss). Unit tests cover those paths.
+
+**Where the plan doc was wrong or short**
+- `runs.json` holds `seconds`, so "byte-identical" means the report without it, plus every run's log (stronger).
+- 50 runs at defaults were landing 28 / route 10 / town 8 / mini-boss 4 after T2.1, not the review's 31/7/11/1.
+- A run is ~300 ms here, 98% of it `runScenesMake` (2,887 of 2,953 ms over 10 runs): the ratio the plan gave.
+- The simulator copied more rules than the four F13 named, and two of the named four were already wrong (the clinic
+  and coin prices ignored Loopholes). The boss team matched the game but was a copy.
+- `startTrainer` with a host could not get a run battle's seed (run.js `runBattleStart` returns null when a host is
+  given), hence `o.extra`.
+- `encounterStock` reads a run town's scene tiles (tall grass decides whether a town has wild Billies): T3.3's
+  balance mode must answer that before skipping scenes. `worldPut` takes `maps: {}` fine.
+- T3.5: balance-report.py was a species report, not a run tool; "replace it with a simulator mode" did not fit.
+
+**Verified**
+- Unit tests: 636 pass (`npm test`, 71 s here); lint, typecheck, `check:modules`, `format:check` after every commit.
+- `check:fast` after each game-side change (battle extras, clinic, catch, settle) and at the end: 25 of 25.
+- CI green on the pushed heads so far.
+- **Not run:** the full quick check (Phase 3 isn't finished: Phase 3b ends it), the phone checks.
+
+**Risky**
+- Game code changed in battle.js `endBattle`/`finishThrow`, battle-input.js's offer buttons, walk-tab.js's clinic,
+  run.js's battle start, shop.js prices and run-payout.js. Each one now calls the same function as before through
+  logic, and check:fast passed after each. The browser's catch and offer screens are only covered by the full quick
+  check (v33/v34) and by hand: **owner's manual check:** on a run, miss a throw until a foe offers money, refuse once
+  and take once; catch an Alpha; beat a mini-boss and see the Loophole pick.
+- `startWild/startTrainer` spread `o.extra` last into newBattle's options: a caller passing `extra` without a host on
+  a run gets runBattleStart's values instead (the page's own path), as intended.
+- The simulator's mini-boss wins now leave `run.offer` set (unanswered) until T3.3 answers it.
+
+**Next (Phase 3b)**
+- T3.3: answer the Loophole pick (greedy by rarity then id, and a never-pick baseline); shop Loopholes; the arrival
+  heal (`runArrivedFx`'s `runArriveHeal` + `fxHealShare`: still page-only composition, move it to logic first);
+  unlocks already go through `runStartPlan` (add a test); keep-one is done here. Balance mode: decide the town-grass
+  question first (`encounterStock`), then prove outcome equality and ≥ 20× speed.
+- T3.4 pure parts: `logic/sim-compare.js` (Wilson, paired differences, flips), `--out`, `--compare base.json`, a
+  data hash; the dashboard after T2.4.
+- My scratch harness (not committed): three setups × 50 seeds, every log compared against the previous commit. Phase
+  3b should keep that habit: commit it as a CLI flag (`--out` covers it).
+- No phase tag: Phase 3 continues in 3b.
+
 ### Studio plan Phase 2 (second session) - Logic worker, run rules card, Play this seed - 2026-10-22
 Branch `claude/sr-2-run-lab` (PR #135, against `ccr-81011a25-lf3exv`). Plans are pre-approved in these sessions: the
 recommended option is taken for every decision and recorded in the plan doc's "Decisions".

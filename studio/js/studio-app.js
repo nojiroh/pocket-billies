@@ -8,6 +8,7 @@ import {
   draftNow,
   draftSoon,
   legacyLineIdsRead,
+  logicDataText,
   mountPreviews,
   provide,
   runCheck,
@@ -125,6 +126,8 @@ export const studioState = {
   last: null,
   /** Studio plan T2.2: the run data as the Studio loaded it (boot) @type {any} */
   loaded: null,
+  /** Studio plan T3.4: the whole data as loaded, as JSON text (logic-client.js logicDataText) */
+  loadedText: '',
   hooks: {},
   after: [],
 };
@@ -837,6 +840,8 @@ export async function boot() {
       unlocks: D.unlocks,
       buildings: D.buildings,
     });
+    /* Studio plan T3.4: the whole data as loaded, as the logic worker is given it (the Simulate card's Base) */
+    studioState.loadedText = logicDataText(D);
     studioState.rigs = R;
     if (window.RIGS_NEXT) for (const k in window.RIGS_NEXT) if (!R[k]) R[k] = window.RIGS_NEXT[k];
     window.RIGS = R;

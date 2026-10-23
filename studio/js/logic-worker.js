@@ -15,11 +15,13 @@
    document or localStorage while loading or running; test-globals.js reads window inside a try (off in a worker),
    util.js's $ and $$ use document only when called. Nothing here reads or sends a save: the worker has none. */
 
-/** the functions the page may ask for: name -> (module namespace) -> function. Phase 3 adds runSim here */
+/** the functions the page may ask for: name -> (module namespace) -> function */
 export const LOGIC_WORKER_FNS = {
   runPreview: (/** @type {any} */ m) => m.runPreview,
   /* T2.3: the map checks over many seeds (data-checks.js) */
   runMapSweep: (/** @type {any} */ m) => m.runMapSweep,
+  /* T3.4: the run simulation's report over a seed list (logic-worker-sim.js), for the Simulate card's Base and Draft */
+  runSimReport: (/** @type {any} */ m) => m.runSimReport,
 };
 
 /** an ask's answer: the function called on the loaded modules (m), or why not

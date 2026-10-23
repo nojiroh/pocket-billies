@@ -122,3 +122,14 @@ test('effects: every Loophole in relics.json uses a known kind', () => {
   for (const [id, R] of Object.entries(RELICS))
     for (const f of R.fx) assert.ok(E.FX_KINDS.includes(f.kind), `${id}: ${f.kind}`);
 });
+
+test("effects: fxRunPrice is a run's price with its Loopholes' price rows (none held, or no run: the price)", () => {
+  const heal = ALL.find(id => (RELICS[id].fx || []).some(f => f.kind === 'price' && f.what === 'heal'));
+  assert.ok(heal, 'a Loophole with a heal price row');
+  const run = { relics: [heal] };
+  assert.equal(E.fxRunPrice(run, RELICS, 'heal', 60), E.fxPrice(E.fxRows([heal], RELICS), 'heal', 60));
+  assert.notEqual(E.fxRunPrice(run, RELICS, 'heal', 60), 60);
+  assert.equal(E.fxRunPrice(run, RELICS, 'shop', 60), 60, 'only its own kind of price');
+  assert.equal(E.fxRunPrice({ relics: [] }, RELICS, 'heal', 60), 60);
+  assert.equal(E.fxRunPrice(null, RELICS, 'heal', 60), 60);
+});

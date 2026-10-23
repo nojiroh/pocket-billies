@@ -8,10 +8,9 @@ import { closeModal, modal, provide, relicDropOpen, renderOverlay, soundEffect, 
 import { clamp, random } from './util.js';
 import { COINS, ITEMS, RELICS, RULES, SHOPS, UNLOCK_DATA } from './game-data.js';
 import { formatNumber, plural } from './logic/rules.js';
-import { runShopStock } from './logic/run-loop.js';
-import { fxOfRun, fxPrice } from './logic/effects.js';
+import { runShopOpen } from './logic/run-loop.js';
+import { fxRunPrice } from './logic/effects.js';
 import { relicBuy, relicPrice, relicShelf } from './logic/relics.js';
-import { unlockOpen } from './logic/unlocks.js';
 import { escapeHtml, save, saveData, saveNow, uiState } from './game-state.js';
 import { coinHTML, uiIconHTML } from './art.js';
 import { portraitHTML } from './person-art.js';
@@ -67,7 +66,7 @@ const wareInfo = w => {
 /** a ware's price: its own or its base; in a run shop, with the Loopholes' price rows (RL-12, logic/effects.js) */
 const warePrice = (sh, w, it) => {
   const p = w.price ?? it.base;
-  return sh.runNode != null && saveData.run ? fxPrice(fxOfRun(saveData.run, RELICS), 'shop', p) : p;
+  return sh.runNode != null && saveData.run ? fxRunPrice(saveData.run, RELICS, 'shop', p) : p;
 };
 /** RL-12: a run shop's Loophole today (logic/relics.js relicShelf, drawn when the shop opened): its id and price, or
  * null (not a run shop, bought, or none left) */
@@ -76,7 +75,7 @@ function shopRelic(sh) {
   if (sh.runNode == null || !run) return null;
   const id = run.shelf[sh.runNode + ':' + run.clock];
   if (!id || !RELICS[id]) return null;
-  return { id, price: fxPrice(fxOfRun(run, RELICS), 'shop', relicPrice(RELICS[id], RULES.run.relics)) };
+  return { id, price: fxRunPrice(run, RELICS, 'shop', relicPrice(RELICS[id], RULES.run.relics)) };
 }
 /** RL-12: the Loophole's row: what it does, its rarity and price, Buy */
 function shopRelicHTML(id, sh) {
@@ -131,11 +130,7 @@ export function openShop(id) {
   /* RL-8: a run town's shop has the day's stock (logic/run-loop.js runShopStock: its own stream for the day) */
   if (sh.runNode != null && saveData.run) {
     /* RL-11: only the wares the run has unlocked (its copy, run.unlocks) */
-    const rule = RULES.run.shop;
-    sh.stock = runShopStock(saveData.run, sh.runNode, saveData.run.clock, {
-      ...rule,
-      pick: unlockOpen(rule.pick, 'shop', saveData.run.unlocks, UNLOCK_DATA),
-    });
+    sh.stock = runShopOpen(saveData.run, sh.runNode, saveData.run.clock, RULES.run.shop, UNLOCK_DATA);
     /* RL-12: and a Loophole, drawn the first time it opens today (kept on the run, saved with the next save) */
     relicShelf(saveData.run, sh.runNode, saveData.run.clock, RELICS, RULES.run.relics);
   }

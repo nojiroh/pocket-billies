@@ -51,6 +51,20 @@ kept aside in the browser).
   trail and a lookout on the summit. Gulls wheel over both beaches and crabs scuttle on the wet sand. Six patches of
   tall grass by the woods and on the heath hide wild Billies. Two corners of the mountain by the summit that you
   couldn't climb onto can be walked to now (the rounded terrace edges no longer make a gentle slope too steep to step).
+- The run simulator plays by the game's own rules (Studio plan Phase 3, first part): the clinic, Potions, shop
+  prices, how battles start and end, catching (a miss can now bring the foe's money offer, which the simulator
+  refuses), and the payout all run the same code as the game. What the simulated player decides is one named bot
+  policy, printed with every report, with a note that the numbers catch changes rather than judge balance. The core
+  now lives with the game's logic so the Studio can run it later. The old species balance report
+  (tools/balance-report.py) is gone.
+- The run simulator now takes Loopholes (Studio plan Phase 3, second part): it picks one after a mini-boss and buys a
+  town shop's, heals on walking in when a Loophole says so, and stocks a town's shop with only what the run has
+  unlocked, as the game does. A second bot, never-pick, takes none, to compare against. A balance mode plays the
+  same runs about 250 times faster by not building the places' scenery. Two simulation reports of the same seeds can
+  be compared run by run, with 95% intervals.
+- The Studio's Run Lab has a Simulate card: it plays up to 200 runs on the data as loaded and on your unsaved
+  changes, side by side, and shows what changed (wins, where runs were lost, money in and out, Loopholes, leaders),
+  each table marked as a bot's results rather than a prediction. The results can be saved as JSON.
 - The Studio has a Run Lab (Studio plan Phase 2): type or roll a seed, or paste a debug log, and see that run's map
   as the game makes it, with your unsaved changes, and beside the data as loaded. Click a place for its type, biome,
   the day you reach it, its seed and its weather. Every run now starts the same way, from the mast, the test runs and

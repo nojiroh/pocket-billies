@@ -16,7 +16,7 @@ import {
   plural,
   xpFor,
 } from './logic/rules.js';
-import { runHealCost } from './logic/run-loop.js';
+import { runClinic, runHealCost } from './logic/run-loop.js';
 import { startWild } from './logic/battle-engine.js';
 import { escapeHtml, save, saveData, saveNow, uiState } from './game-state.js';
 import { artURL, uiIconHTML } from './art.js';
@@ -99,10 +99,9 @@ export function clinicHeal(say) {
         c: 'gold',
         f: () => {
           closeModal();
-          const now = runHealCost(saveData.team, runClinicEach());
-          if (!now.hurt || saveData.se < now.cost) return;
-          saveData.se -= now.cost;
-          healAll();
+          /* logic/run-loop.js runClinic: nothing when no one is hurt now, or the money isn't there */
+          const now = runClinic(saveData, runClinicEach());
+          if (!now.paid) return;
           saveNow();
           render();
           toast(say || `The clinic patched everyone up for $${formatNumber(now.cost)}.`);

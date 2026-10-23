@@ -23,7 +23,8 @@
    unlocks and short map, after the Studio's unsaved data (the live channel: game data, never a save).
    T2.3: the map checks over 1,000 seeds (data-checks.js runMapSweep, in the logic worker) under the map: problems with
    a seed that shows each, the figures (places, types, towns on a walk, biomes, towns made against routes) and outlying
-   seeds to open. */
+   seeds to open.
+   T3.4: the Simulate card (run-lab-sim.js): the run simulation on the same seeds, Base (as loaded) against Draft. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
 import { $ } from '../../game/js/util.js';
@@ -50,6 +51,7 @@ import {
 } from './studio-app.js';
 import { githubMode } from './github.js';
 import { logicAsk } from './logic-client.js';
+import { runLabSimHTML } from './run-lab-sim.js';
 /* eslint-disable no-func-assign */
 expose({
   RUN_LAB_PAYOUT: [() => RUN_LAB_PAYOUT],
@@ -532,7 +534,9 @@ SECTIONS.runlab = () => {
 <button class="btn primary" data-act="runLabPlay" title="Opens the game in a test run on this seed, with your unsaved changes; nothing there is saved">▶ Play this seed</button>
 </div>${runLab.logNote ? `<p class="help rl-log-note">${escapeHtml(runLab.logNote)}</p>` : ''}`
     ) +
-    `<div class="rl-side">${card('Map', `<div data-runlab-out>${runLabOutHTML()}</div>`, { cls: 'rl-map-card' })}${card('Run rules', runLabRulesHTML(), { cls: 'rl-rules' })}</div>`
+    `<div class="rl-side">${card('Map', `<div data-runlab-out>${runLabOutHTML()}</div>`, { cls: 'rl-map-card' })}${card('Run rules', runLabRulesHTML(), { cls: 'rl-rules' })}</div>` +
+    /* Studio plan T3.4: the run simulation, Base against Draft (run-lab-sim.js) */
+    card('Simulate', runLabSimHTML(), { cls: 'rl-sim' })
   );
 };
 

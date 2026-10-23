@@ -61,3 +61,21 @@ test('an unknown function or a throw is an error answer', () => {
   );
   assert.deepEqual(bad, { kind: 'answer', id: 2, ok: false, error: 'broken rules' });
 });
+
+test('Studio plan T3.4: an ask for runSimReport answers the CLI’s own report; at most 200 seeds', async () => {
+  const sim = await import('../../studio/js/logic-worker-sim.js'),
+    { runReport } = await import('./sim/run-sim.mjs'),
+    C = modules['sim-compare'],
+    seeds = C.simSeeds(5),
+    o = { team: 3, scenes: 'skip' },
+    a = worker.logicWorkerAnswer({ id: 3, fn: 'runSimReport', args: [seeds, o] }, { runSimReport: sim.runSimReport });
+  assert.equal(a.ok, true, a.error);
+  assert.deepEqual(a.value, runReport(seeds, o));
+  assert.deepEqual(structuredClone(a), a, 'it crosses back to the page as it is');
+  const big = worker.logicWorkerAnswer(
+    { id: 4, fn: 'runSimReport', args: [C.simSeeds(C.SIM_BROWSER_CAP + 1), o] },
+    { runSimReport: sim.runSimReport }
+  );
+  assert.equal(big.ok, false);
+  assert.match(big.error, /at most 200 seeds/);
+});
