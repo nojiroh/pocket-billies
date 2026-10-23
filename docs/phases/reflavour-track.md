@@ -1,5 +1,7 @@
 # Reflavour track (RF) - less finance, more Pokémon
 
+Branch: track/reflavour
+
 The owner's brief (2026-10-23): "overall a lot less finance focused and more like Pokémon". The Billies are the one
 finance thing that stays: they are the messed-up clones of billionaires, treated like Pokémon. Everything around them
 (catching, items, currencies, relics, tiers, battle words, the organization, the story's jokes) moves off finance.
