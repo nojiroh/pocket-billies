@@ -217,7 +217,7 @@ function hubHTML() {
           `<button class="pb ws-go" data-a="walkmark" data-k="${act}">${uiIconHTML('walk', 16)}<span><b>${escapeHtml(name)}</b><small>${escapeHtml(what)} · show me the way</small></span></button>`
       )
       .join('');
-  return `<section class="ws-hub"><button class="pb gold wide ws-move" data-a="runstart"${can ? '' : ' disabled'}>${uiIconHTML('map', 16)} Start a run</button>${can ? '' : '<p class="note">Someone has to come along: a Billie in your team or in storage.</p>'}${marks ? `<div class="ws-gos">${marks}</div>` : ''}</section>`;
+  return `<section class="ws-hub"><button class="pb gold wide ws-move" data-a="walkrun"${can ? '' : ' disabled'}>${uiIconHTML('map', 16)} Start a run</button>${can ? '' : '<p class="note">Someone has to come along: a Billie in your team or in storage.</p>'}${marks ? `<div class="ws-gos">${marks}</div>` : ''}</section>`;
 }
 /** mark a hub building in the world (walk-view.js drawWalkMark) and close the sheet so you can walk there */
 function walkMarkTo(act) {
@@ -344,7 +344,7 @@ export function walkTabAction(a, d) {
     case 'rungiveup':
       runGiveUp();
       break;
-    case 'runstart':
+    case 'walkrun':
       runStartSheet();
       break;
     case 'walkmark':

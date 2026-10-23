@@ -298,7 +298,7 @@ document.addEventListener('click', ev => {
     case 'clinic':
     case 'trainer':
     case 'rungiveup':
-    case 'runstart':
+    case 'walkrun':
     case 'walkmark':
       walkTabAction(a, d);
       break;
