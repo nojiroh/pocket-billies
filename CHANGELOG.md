@@ -51,6 +51,15 @@ kept aside in the browser).
   trail and a lookout on the summit. Gulls wheel over both beaches and crabs scuttle on the wet sand. Six patches of
   tall grass by the woods and on the heath hide wild Billies. Two corners of the mountain by the summit that you
   couldn't climb onto can be walked to now (the rounded terrace edges no longer make a gentle slope too steep to step).
+- The Studio has a Run Lab (Studio plan Phase 2): type or roll a seed, or paste a debug log, and see that run's map
+  as the game makes it, with your unsaved changes, and beside the data as loaded. Click a place for its type, biome,
+  the day you reach it, its seed and its weather. Every run now starts the same way, from the mast, the test runs and
+  the simulator alike, so the same seed and unlocks always make the same map. The test runs start as a new player's
+  would: no ridge or autumn until those are unlocked.
+  The Lab now also shows, from the game's own code on your unsaved data, a place's wild Billies, its mini-boss's team,
+  a town's wares day by day and the Loophole picks; checks the map rules over 1,000 seeds and names a seed for each
+  problem; edits the run rules beside the map; and opens the game on that seed (Play this seed) in a test run that is
+  never saved, with your unsaved rules. A debug log taken on a run now names the run's own unlocks.
 - The Studio's undo is lighter and more exact (Studio plan Phase 1). A step keeps only what the edit changed instead
   of a copy of the whole game data, so a long editing session no longer fills the memory, and undoing an edit puts
   back only what it changed. Opening the People section no longer changes the data by itself: it used to convert

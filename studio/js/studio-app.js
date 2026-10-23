@@ -123,6 +123,8 @@ export const studioState = {
   redo: [],
   snapT: null,
   last: null,
+  /** Studio plan T2.2: the run data as the Studio loaded it (boot) @type {any} */
+  loaded: null,
   hooks: {},
   after: [],
 };
@@ -245,7 +247,8 @@ export function changed(rigs) {
 }
 /* v29: live update. A game tab open from this Studio (a test run, or the game on the same address) gets your scenes,
    props and engine settings (Project Story S3: and the story and trainers) half a second after each change, before
-   you save; UI-3: and the UI's look */
+   you save; UI-3: and the UI's look; Studio plan T2.6: and the run's rules, place types, Loopholes, unlocks and items
+   (a test run only applies those) */
 const LIVE_UPDATE_CHANNEL = (() => {
   try {
     const c = new BroadcastChannel('networth-studio');
@@ -277,6 +280,12 @@ export function studioBroadcast() {
           landmarks: Object.fromEntries((studioState.D.locations || []).map(l => [l.id, l.landmark || ''])),
           /* UI-3: the UI's look (the game writes it as its theme sheet) */
           uiTheme: studioState.D.uiTheme,
+          /* Studio plan T2.6: what a run is made of, for a test run (Play this seed); game data only, never a save */
+          rules: studioState.D.rules,
+          nodeTypes: studioState.D.nodeTypes,
+          relics: studioState.D.relics,
+          unlocks: studioState.D.unlocks,
+          items: studioState.D.items,
         },
       });
     } catch (e) {}
@@ -619,6 +628,7 @@ export const SECTION_LIST = [
   ['music', 'Music & sound', 'Play and edit the songs, where each one plays, and the jingles'],
   ['check', 'Check & backups', 'Problems, backups and restore'],
   ['legacy', 'Legacy world', 'The places parked outside the hub, read-only: copy a map into the game'],
+  ['runlab', 'Run Lab', 'A run’s map from its seed, as the game makes it, on your unsaved data'],
 ];
 /* alpha 0.4.1: the sections in five groups that fold away; the one you're in always shows. The descriptions show as
    a tooltip and under the section you're in, so the list is short enough to see at once */
@@ -633,6 +643,8 @@ const SECTION_GROUPS = [
   ['Game', ['rules', 'ui', 'art', 'check']],
   /* SND-3: the songs, the where table and the jingles (music-editor.js); the cries are on the Billies page */
   ['Sound', ['music']],
+  /* Studio plan Phase 2: runs (T2.2's Run Lab; the run rules editor and Phase 4's roguelite editors join it) */
+  ['Runs', ['runlab']],
   /* RL-5: the old world outside the hub, parked in game/data/legacy (legacy-view.js) */
   ['Legacy', ['legacy']],
 ];
@@ -817,6 +829,14 @@ export async function boot() {
     const [D, R, F] = await Promise.all([api('gamedata'), api('rigs'), api('files?dir='), artLoad([ICON_ATLAS])]);
     performance.mark('studio-data-loaded');
     studioState.D = D;
+    /* Studio plan T2.2: the run data as loaded, for the Run Lab's "beside the loaded data" */
+    studioState.loaded = clone({
+      rules: D.rules,
+      nodeTypes: D.nodeTypes,
+      biomes: D.biomes,
+      unlocks: D.unlocks,
+      buildings: D.buildings,
+    });
     studioState.rigs = R;
     if (window.RIGS_NEXT) for (const k in window.RIGS_NEXT) if (!R[k]) R[k] = window.RIGS_NEXT[k];
     window.RIGS = R;

@@ -4786,3 +4786,85 @@ body.wb-dropping::after {
   align-self: center;
   min-width: 56px;
 }
+
+/* Studio plan T2.2: the Run Lab's map */
+.rl-inputs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: end;
+}
+.rl-scroll {
+  overflow-x: auto;
+}
+.rl-map .rl-link {
+  stroke: var(--line2);
+  stroke-width: 3;
+}
+.rl-map .rl-node {
+  cursor: pointer;
+}
+.rl-map .rl-node text {
+  font:
+    700 14px system-ui,
+    sans-serif;
+  fill: #222;
+  pointer-events: none;
+}
+.rl-map .rl-node.on circle {
+  stroke-width: 7;
+}
+.rl-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 6px 0 10px;
+  font-size: 12px;
+}
+.rl-legend i {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border: 3px solid;
+  border-radius: 50%;
+  margin-right: 4px;
+  vertical-align: -2px;
+}
+.rl-node-info th,
+.rl-logic-node th {
+  text-align: left;
+  white-space: nowrap;
+  padding-right: 10px;
+}
+.rl-logic-node th {
+  vertical-align: top;
+}
+.rl-offers {
+  margin: 4px 0 0;
+  padding-left: 22px;
+}
+.rl-side {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-start;
+}
+.rl-side > .card {
+  flex: 1 1 min(420px, 100%);
+  min-width: 0;
+}
+.rl-code th {
+  text-align: left;
+  vertical-align: top;
+  padding-right: 10px;
+}
+.rl-sweep-figures th {
+  text-align: left;
+  vertical-align: top;
+  white-space: nowrap;
+  padding-right: 10px;
+}
+.rl-sweep-problems {
+  margin: 4px 0;
+  padding-left: 20px;
+}

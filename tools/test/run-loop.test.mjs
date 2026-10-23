@@ -1,4 +1,4 @@
-// RL-8: the run loop's rules (game/js/logic/run-loop.js) on the game's own data: what a run starts with, a run town's
+// RL-8: the run loop's rules (game/js/logic/run-loop.js) on the game's own data: a run town's
 // heal price and shop, the mini-bosses and the boss, a battle's seed, releasing a Billie and the payout screen's rows.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
@@ -17,13 +17,6 @@ function runOf(seed) {
   runMapStart(run, MAPDATA);
   return run;
 }
-
-test('a run starts with run.start (copies), on its seed, tier and generator version', () => {
-  const g = L.runGive('S', 1, 7, R.start);
-  assert.deepEqual(g, { seed: 'S', tier: 1, mapgenV: 7, se: R.start.se, coins: R.start.coins, items: R.start.items });
-  g.coins.penny = 99;
-  assert.notEqual(R.start.coins.penny, 99);
-});
 
 test("a run town's clinic charges for each hurt Billie: below full HP, fainted, with a status", () => {
   reseed();

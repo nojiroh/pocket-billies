@@ -431,6 +431,204 @@ Branch `ccr-3d24989e-9cyftq`. A planning session only: no code changed.
 - Verified: nothing to run (docs only).
 - Next: CAM-1 (the follow), starting in Plan Mode.
 
+### Studio plan Phase 2 (second session) - Logic worker, run rules card, Play this seed - 2026-10-22
+Branch `claude/sr-2-run-lab` (PR #135, against `ccr-81011a25-lf3exv`). Plans are pre-approved in these sessions: the
+recommended option is taken for every decision and recorded in the plan doc's "Decisions".
+
+**Plan**
+0. Merge the Phase 1 base (drafts, the first `data-checks.js`, the owner's decisions) into this branch.
+1. **T2.4 spike:** what game-data.js, rules.js, run-loop.js, battle-engine.js (and what they import) touch outside a
+   Web Worker. Result below.
+2. **T2.4:** the game's logic in a module worker on the draft data.
+   - `game/js/logic/run-preview.js` (pure; reads the tables from game-data.js as the game does, so it is on no page):
+     `runPreview(seed, {unlocks, map, tier})` = the plan, foes per node (`runFoes` with the leaders run-world.js
+     passes), each town's stock per day from the day it can first be reached to the deadline (`runShopStock` with the
+     run's shop unlocks, as shop.js) and its shelf's Loophole, wild tables per node (`runWorldTables` pools), and the
+     relic offer order (`relicOffer` for picks 0..n with nothing held).
+   - `studio/js/logic-worker.js` (module worker, on no page): GAMEDATA = the draft, the page stand-ins
+     load-logic.mjs gives, then game-data.js and every logic module in load-logic.mjs's order (a unit test keeps its
+     list equal to game/js/logic/).
+   - `studio/js/logic-client.js` (Studio page): `logicAsk(fn, ...args)`; one worker per data version (the draft's JSON
+     text), made on the first ask, terminated when an ask comes with other data.
+   - The Run Lab's node panel shows the place's wild table, leader and team, shop stock by day; the run's Loophole
+     offers.
+   - Tests: a Node test that `runPreview` equals the game's own path (runStartOn on a save, then the calls run-world.js,
+     shop.js and battle.js make); a stand-in step in check-studio-github.py (`run_lab`) that opens the panel and
+     compares it with Node.
+3. **T2.5:** a "Run rules" card in the Run Lab: rules.run map, clock, reveal, wild, foes, shop, healCost, payout and
+   nodeTypes weights and names with the standard field helpers; each change redraws the map. Code-only constants
+   (lanes, the cross-link side, RUN_EXIT_T, RUN_BUILDINGS...) read-only with file:line, found by searching the source
+   so the line can't go stale (a unit test). Stand-in step: edit a rule, the map redraws, the field round-trips.
+4. **T2.6:** "Play this seed".
+   - Game, behind ?debug only: `?debug&run=<seed>&unlocks=none|all|<ids>&short=1&tier=&party=<sp@lv,...>&relics=<ids>`
+     starts a run on a fresh test save that is never saved (as TEST_RUN does), through runStartPlan/runStartOn.
+   - Studio live channel: also rules, nodeTypes, relics, unlocks, items, trainers (no save data); the game applies them
+     before the run starts (`&draft=1` waits for them as the test run does).
+   - The Run Lab's "Play this seed" button opens it.
+   - check-fast step: `?debug&run=TESTSEED&party=...` and the map equals runStartPlan's.
+   - The debug log gets `run.unlocks` (ids only), so the Lab reads the run's own unlocks.
+5. **T2.3** only if Phase 1's data-checks.js has landed: it has (one function so far; T1.3 itself has not moved
+   check-data's checks yet). Map invariants over 1,000 seeds as pure functions in data-checks.js, shown in the Lab.
+
+**The logic worker's messages (fixed; Phase 3's dashboard builds on them)**
+- Page side: `logicAsk(fn, ...args)` in `studio/js/logic-client.js` returns a Promise of the value. It sends the
+  Studio's data as it is now (`studioState.D` as JSON text, `_` keys left out); that text is the data version: the
+  same text reuses the worker, other text ends it (its waiting asks reject with `replaced`) and starts a new one.
+  `logicWorker` holds `state` ('off' | 'loading' | 'ready' | 'failed'), `loadMs`, `error`, `made`.
+- page -> worker: `{ kind: 'data', v, version, json }` once (GAMEDATA = JSON.parse(json), PB_VERSION = version), then
+  `{ kind: 'ask', id, fn, args }`.
+- worker -> page: `{ kind: 'ready', v, ms }` or `{ kind: 'failed', v, error }`; `{ kind: 'answer', id, ok: true, value,
+  ms }` or `{ kind: 'answer', id, ok: false, error }`. An ask sent before the data loaded waits for it.
+- What may be asked: `LOGIC_WORKER_FNS` in `studio/js/logic-worker.js`, name -> (modules) => function; the modules are
+  `studio/js/logic-worker-modules.js`'s exports. To add runSim: export it there, add `runSim: m => m.runSim`. The
+  worker loads game-data.js and every logic module in load-logic.mjs's order (a unit test keeps the list equal to
+  game/js/logic/: a new or moved logic module must be listed there too) and stands in for the page's hooks as
+  load-logic.mjs does (no Math.random seeding: the logic's streams are seeded).
+- `runPreview(seed, { unlocks, map, tier })` (game/js/logic/run-preview.js) returns `{ seed, tier, unlocks, map,
+  deadline, forecast, nodes: [{ wild: { lv, list }, foe, shop: null | [{ day, stock, relic }] }], relicOffers }`.
+
+**T2.4 spike: what the logic touches outside a worker**
+- game-data.js, rules.js, run-loop.js, battle-engine.js, run-scenes.js, run-start.js, run-map.js, relics.js and all
+  they import (hooks.js, test-globals.js, util.js, rng, effects, fighters, battle-state, conditions, mapgen, parts,
+  robot-math, meta-state, run-state, unlocks, weather): no `window`, `document`, `localStorage`, `navigator` or
+  `location` while loading or running, except:
+  - test-globals.js reads `window.PB_TEST_GLOBALS` and `location.search` inside a try: in a worker it is off;
+  - util.js's `$` and `$$` default to `document`, but only when called (the logic never calls them).
+- They need `globalThis.GAMEDATA` before game-data.js loads (it reads the tables once) and `PB_VERSION` (a new save's
+  gameVersion), both set by the worker.
+
+**Changed** (one cause per commit; two merges of the Phase 1 base)
+- **T2.4** run-preview.js + test (equals the game's own path for 5 seeds x none/all/short); the worker
+  (logic-worker.js, logic-worker-modules.js, unit test); logic-client.js and the Lab's "From the game's logic" panel.
+- **T2.5** logic/run-rules-code.js (11 rules in code, snippet + unit test) and the "Run rules" card beside the map.
+- **T2.6** logic/run-test.js (the address, unit test); boot.js: `?debug&run=` is a TEST_RUN that takes off through
+  runTakeOff (runTestStart); the live channel carries rules, nodeTypes, relics, unlocks, items (applied only in a test
+  run); the debug log's `state.run.unlocks`; the Lab's "▶ Play this seed"; check-fast step "Play this seed".
+- **T2.3** data-checks.js runMapProblems / runMapSweep (after Phase 1's moved checks) + unit test (1,000 seeds, about
+  150 ms); the Lab's "Over 1,000 seeds" block, run in the worker and cached while its rules stay the same.
+- check-studio-github.py `run_lab`: the panel against runPreview in Node, one worker per data version, the rules card
+  (redraw, Propose carries rules.json and nodeTypes.json, the game's error, put back leaves nothing), the code lines,
+  the sweep (clean; a planted "last row a mini-boss" named with a seed that opens), reading both log forms, Play this
+  seed in a popup (the Lab's map, an unsaved clinic price 77, a live edit to 88, no save keys on the channel).
+- Docs: STUDIO.md Run Lab, CHANGELOG, the plan's Decisions (item 9).
+
+**Where the plan doc was wrong or short**
+- The worker needs no data-version counter: the draft's JSON text is 2.4 MB now (legacy maps moved out) and
+  stringifies in about 20 ms, so it is the version.
+- `tier=` does nothing for a run's map or start today (first session's finding); left out of the address.
+- "run-map.js:102" in T2.5 is right for the lanes rule today; the card finds it by searching, not by number.
+- T2.3's "a guard row on the last row" can't be planted as written: runMapRowsFit refuses it and runMapMake throws,
+  which the sweep reports as "these rules can't make a map" with a seed. The check that matters on a map is "the last
+  row is not the boss" (rules.run.map.last), which the stand-in step plants.
+- runTakeOff calls saveNow, which calls flushAccountSave directly (setNoSaving doesn't stub it). A test run is safe
+  only because accountOn() is off for TEST_RUN; "Play this seed" relies on that, so it is a TEST_RUN.
+
+**Verified**
+- Unit tests 660 (after the second merge); lint, typecheck, check:modules, format:check, check:data.
+- `check-studio-github.py --only=run_lab,publish`: run_lab passes; publish 0 problems.
+- `check:fast`: 25 of 26 on the first full run; "Packing for a run" failed once ("no start sheet") while I was
+  editing files under the running check, then passed alone with Play this seed; after the merge, the Studio pages and
+  Play this seed pass (5 of 5).
+- Screenshots of the Lab at 1400 px: the map and rules card side by side; the logic panel.
+- **The built site** (`npm run build`, as GitHub Pages serves it): CI's build failed at first (run-preview.js, on no
+  page, was left in dist and the worker would have imported deleted sources); vite.config.js now bundles the worker's
+  module list into one file. By hand, the worker served from dist/ answered runPreview('LAB1') exactly as Node. That
+  check is not automated.
+- PR #135's CI green on afea581 (lint with the build, rules, smoke). After the third merge of the Phase 1 base: unit
+  tests 664, lint, typecheck, check:data, format, build; `check-studio-github.py --only=run_lab,checks,publish,drafts`
+  0 problems.
+- **Not run:** the full quick check (end of Phase 2), the full check-studio-github chain, a real phone or iPad.
+
+**Risky**
+- **Module workers on the owner's iPad** (Safari 15+ has them). Without one, the panel says the logic can't run; the
+  map, rules card and Play this seed still work.
+- A test run takes the Studio's rules, nodeTypes, relics, unlocks and items in place; a table the game derives from
+  them once at load (none found for the run's needs) would keep the old values.
+- The Studio page is about 900 px wide on a phone already (the top bar; every section), so the rules card sits beside
+  the map there too.
+- data-checks.js now holds Phase 1's checks and T2.3's; Phase 4 and later sessions add to the same file.
+
+**Next**
+- Phase 3: the worker's message shape above; add runSim to LOGIC_WORKER_FNS and logic-worker-modules.js's exports.
+- check-data.mjs could run runMapSweep over 1,000 seeds (CI) — one line, for its owner.
+- Manual (owner): Play this seed from the Studio on the phone; an unsaved clinic price in a run town; the Lab's
+  logic panel on the iPad.
+- **Done:** Phase 2's tickets T2.1-T2.6 are all in PR #135. Left to close the phase: the full quick check and the tag
+  `sr-2-done` (and an automated check of the built worker, if wanted: serve dist/ and ask it once).
+
+### Studio plan Phase 2 (first session) - One run start, Run Lab v1 - 2026-10-22
+Branch `claude/sr-2-run-lab`, from the Phase 0 branch `ccr-81011a25-lf3exv` (PR #131, where the plan doc lives); PR
+#135 goes against that branch. Phase 1 runs at the same time in another session from the same branch: this session
+left check.js, history.js, check-data.mjs and the save/undo code alone. Expect small merges in studio/index.html,
+studio-app.js (SECTION_LIST, groups, boot) and hooks.js (regenerate with `npm run modules`).
+The plan was approved in Plan Mode with the owner's answers: the fixture and self-test runs carry no unlocks (a fresh
+save's); the simulator defaults to none with `--unlocks=all`; the Run Lab gets a new "Runs" group; scope T2.1 + T2.2.
+
+**Changed** (one cause per commit):
+- **T2.1, one run start.** `game/js/logic/run-start.js`:
+  - `runStartPlan(seed, data, {unlocks, map, mods, tier})` decides the start without a save: `runGive`, the unlocks,
+    the map rules with only the unlocked biomes, the map, deadline, what the landing shows, the forecast.
+  - `runStartOn(s, plan, {home, pack})` puts it on a save (runBegin, mods, unlocks, a copy of the map).
+  - Commits: a frozen test of `runTakeOff`'s start first (`run-start.test.mjs`, 200 seeds x none/all/short map); the
+    move of `runGive` out of run-loop.js (it loads rules.js, which needs GAMEDATA); `runTakeOff`; the run fixtures;
+    the self-test's "A run's road"; the simulator. The frozen snapshot never changed.
+  - `runTakeOff` now makes the map before the save changes: rules that can't make a map stop the take-off with
+    nothing changed (it used to throw after runBegin, leaving a run without a map).
+  - **Fixtures** (run, mountains, relics): no unlocks, so no ridge or autumn, and `rules.run.start`'s money and items
+    (was `rules.start.se`, no items). Their pictures change.
+  - **Self-test** "A run's road": no unlocks, `rules.run.start`'s money (was 300).
+  - **Simulator**: `--unlocks=none|all`, default none; the report and each run's log name them. 50 runs, team 3: the
+    old numbers equal `--unlocks=all` exactly; the default moves a little (places 1.6 -> 1.7, battles 2.2 -> 2.4,
+    Capital 82.3 -> 84.4; 0 wins both).
+- **T2.2, Run Lab** (`studio/js/run-lab.js`, group Runs): seed (typed, 🎲, or a pasted debug log's run seed and save
+  unlocks), unlocks none/all/the log's, the debug menu's short map; an SVG map; a node's type, role, biome, links,
+  day, deadline, node seed and forecast; the same seed on the data as loaded (`studioState.loaded`, copied at boot);
+  "Copy seed + data version". An edit in the other pane redraws it (32 ms headless). The Studio page now also loads
+  meta-state, run-state, run-map, unlocks and run-start.
+- **check-studio-github.py `run_lab`**: the map node for node (type:biome) against the game's start in Node
+  (setup-real.mjs) with no unlocks and with all, the redraw after a nodeTypes edit (< 100 ms), node 3's seed, the
+  second map.
+- Docs: STUDIO.md (Run Lab), CHANGELOG.
+
+**Where the plan doc was wrong or short**
+- F13 is right, and there is no fifth start: the debug menu's run and the self-test's airship run already went
+  through `runTakeOff`.
+- The fixture changed more than biomes (money and items too). The quick-check baseline is gitignored, so "regenerate
+  the fixture's baseline in its own commit" can't be a commit: remake it locally with `--baseline`.
+- run-map.js also imports hooks.js and run-state.js (-> meta-state.js); the shared start needs unlocks.js (->
+  conditions.js) too.
+- "The cross-link 0.5" in T2.5: the cross-link chance is data (`rules.run.map.cross`, 0.25); 0.5 only picks which way
+  it crosses. In code: at most two lanes, and the exit points (`RUN_EXIT_T`).
+- Tier changes no map today (runMapMake doesn't read it), so the Lab has no tier input yet.
+- The debug log has the run's seed and the save's unlocks, not the run's own `run.unlocks` or a short map; a log taken
+  after buying an unlock mid-run would draw another map. Adding `run.unlocks` (ids only) to the log is a small game
+  change for T2.6.
+
+**Verified**
+- Unit tests 627; lint, typecheck, `check:modules`, `format:check`.
+- `check:fast` on the T2.1 code: 25 of 25.
+- In-game "A run's road" and "A run: airship, nodes, payout", headless: pass.
+- `check-studio-github.py --only=sections,studio_test,run_lab,publish`: 28 sections open; run_lab passes; publish 0
+  problems; one problem, the studio test's Rules edit not coming back with undo. It fails the same way on this
+  branch without the Run Lab: the plan's F14, T1.5's.
+- `check:smoke` (after T2.2): no problems in 158 s (Start-Game on a phone, the in-game test step, the Studio in GitHub mode).
+- **Not run:** the full quick check (Phase 2 isn't finished; it runs at the phase's end).
+
+**Risky**
+- The fixtures' and self-test's runs changed on purpose (above): any picture baseline or note that expected ridge or
+  autumn in RL7FIXTURE needs remaking.
+- `studioState.loaded` is copied right after the data loads. Phase 1's drafts (T1.1) restore into D at boot: they
+  must land after that copy, or "beside the loaded data" would compare drafts with drafts.
+- The Lab reads `D.rules.run`, `nodeTypes`, `biomes`, `unlocks` and `buildings` straight from the data; bad drafts
+  show the game's own error ("This data can't make a run") instead of a map.
+
+**Next**
+- T2.3 (map checks over 1,000 seeds) after Phase 1's T1.3, or as pure functions that move into data-checks.js later.
+- T2.4 (logic worker, spike first): only 7 lines touching window/document/localStorage in game-data.js, rules.js,
+  battle-engine.js, run-loop.js and run-scenes.js together.
+- T2.5 after T1.3; T2.6 in its own session (game boot code, a check-fast step; add `run.unlocks` to the debug log).
+- Manual (owner): play the run fixture once on the phone; compare one seed in the Lab with the debug menu's run.
+- No phase tag: Phase 2 continues.
 ### Studio plan Phase 1, session B - Undo per entry (T1.2) and the F14 hunt (T1.5) - 2026-10-22
 Branch `ccr-81011a25-lf3exv` (PR #131), on top of session A. Plan written by the previous Phase 1 session and
 reviewed by the parent session; further decisions took the recommended option and are in the plan doc's

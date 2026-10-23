@@ -976,6 +976,43 @@ def run_pack(pg, base):
     return f'a trainee from storage travelled alone with 2 Potions packed (training stopped, healed); given up and kept: back in storage once at Lv {lv}; a won run brought its bag home ({bag} Potions, no items row); a reload kept it'
 
 
+RUN_TEST_URL = '?debug&run=TESTSEED&unlocks=all&short=1&party=musk2@30,bezos1@20&relics=shelter,lobbyist'
+RUN_TEST_NODE = """import { GAME_DATA as D, modules } from './tools/test/setup-real.mjs';
+const U = { unlocks: D.unlocks, buildings: D.buildings },
+  un = modules.unlocks.runUnlocks({ meta: { unlocks: Object.fromEntries(Object.keys(D.unlocks).map(i => [i, 1])) } }, U),
+  p = modules['run-start'].runStartPlan('TESTSEED', { nodeTypes: D.nodeTypes, biomes: D.biomes, rules: D.rules.run, unlockData: U },
+    { unlocks: un, map: { rows: 5, minibosses: 1 } });
+console.log(JSON.stringify({ map: p.map, deadline: p.deadline, unlocks: p.unlocks }));"""
+
+
+def run_test(pg, base):
+    """Studio plan T2.6, "Play this seed": ?debug&run=TESTSEED (every unlock, the short map, a party of two, two
+    Loopholes) is a test run that takes off at once: its map is runStartPlan's in Node for the same seed and unlocks,
+    the party and Loopholes are the ones asked for, it lands and draws, and nothing is written to this browser's save"""
+    r = subprocess.run(['node', '--input-type=module', '-e', RUN_TEST_NODE], cwd=ROOT, capture_output=True, text=True)
+    want = json.loads(r.stdout.strip().splitlines()[-1])
+    if not until(pg, "typeof saveData!=='undefined'&&!!saveData.run&&runWorld.seed==='TESTSEED'", 90):
+        raise Exception('no run on TESTSEED took off')
+    got = pg.evaluate("({map: saveData.run.map, deadline: saveData.run.deadline, unlocks: saveData.run.unlocks, test: !!TEST_RUN, "
+                      "team: saveData.team.map(m => m.sp + '@' + m.lvl), relics: saveData.run.relics})")
+    if not got['test']: raise Exception('it is not a test run (TEST_RUN is off)')
+    for n in [n for n in got['map']['nodes']]: n.pop('seen', None)
+    for n in want['map']['nodes']: n.pop('seen', None)
+    if got['map'] != want['map'] or got['deadline'] != want['deadline']: raise Exception(f"its map isn't runStartPlan's: {len(got['map']['nodes'])} places, deadline {got['deadline']}; Node: {len(want['map']['nodes'])}, {want['deadline']}")
+    if got['unlocks'] != want['unlocks']: raise Exception(f"its unlocks {got['unlocks']} aren't runStartPlan's {want['unlocks']}")
+    if got['team'] != ['musk2@30', 'bezos1@20']: raise Exception(f"its party is {got['team']}, not musk2@30, bezos1@20")
+    if got['relics'] != ['shelter', 'lobbyist']: raise Exception(f"it holds {got['relics']}, not shelter, lobbyist")
+    drawing(pg)
+    saved = pg.evaluate("Object.keys(localStorage).filter(k => k.startsWith('networth-save'))")
+    if saved: raise Exception(f'it wrote a save in this browser: {saved}')
+    # the debug log names the run's own unlocks (ids), so the Studio's Run Lab draws this map from it
+    with pg.expect_download(timeout=30000) as dl:
+        pg.evaluate('exportDebugLog();0')
+    logged = (json.loads(Path(dl.value.path()).read_text(encoding='utf-8')).get('state') or {}).get('run') or {}
+    if logged.get('seed') != 'TESTSEED' or logged.get('unlocks') != want['unlocks']: raise Exception(f"the debug log's run is {logged.get('seed')!r} with unlocks {logged.get('unlocks')}, not the run's {want['unlocks']}")
+    return f"TESTSEED took off: {len(got['map']['nodes'])} places as runStartPlan makes them, {len(got['unlocks'])} unlocks (in the debug log too), the party and Loopholes asked for; nothing saved"
+
+
 def hub_island(pg, base):
     """island track IS-5: Copperleaf is the island. Its walking checks hold (the island's: from the square to the barn,
     the pasture, the hamlet, each plot's door, up the trail to the summit, the dock; the sea not), with its houses on
@@ -1074,6 +1111,7 @@ PAGES = [   # (what the page opens, its checks in order); the longest first, so 
     ('title', [('The game boots with no console or page errors', boots)]),
     ('island', [('The test island opens and draws; its walking checks hold; the orbit camera (island track)', island)]),
     ('studio', [('The Studio loads', studio), ("The Studio's world map look", studio_worldmap)]),
+    (RUN_TEST_URL, [('Play this seed: ?debug&run= takes off on that seed in a test run, nothing saved (Studio plan T2.6)', run_test)]),
     # IS-6a: a page of its own (it runs beside the others): the island's 3D view draws slowly in a headless browser
     ('studio', [("The Studio's Hub island: the orbit view, the map's tools, the ground lock (IS-6a)", studio_hub),
                 ("The Studio's Hub island dials: a draft, Use this island, locked read-only (IS-6b)", studio_hub_dials)]),
@@ -1096,7 +1134,7 @@ def record(name, fn, *a):
 def run_page(b, fixture, checks, bases):
     """one page at its fixture (the Studio's page at the Studio), its checks one after another"""
     errs = []; base = bases['root' if fixture == 'studio' else 'game']
-    url = base + ('/studio/index.html' if fixture == 'studio' else f'/index.html?fixture={fixture}')
+    url = base + ('/studio/index.html' if fixture == 'studio' else f'/index.html{fixture}' if fixture.startswith('?') else f'/index.html?fixture={fixture}')
     ctx, pg = open_game(b, None, errs, low=fixture != 'studio')
     try:
         for i, (name, fn) in enumerate(checks):

@@ -29,12 +29,12 @@ import {
 import { encountersHere, makeBilly, maxHp, spawn } from './logic/rules.js';
 import { ranchLevel, ranchSlots, ranchTrainStart } from './logic/ranch.js';
 import { pastureBillies, pastureIn, pastureZone } from './logic/pasture.js';
-import { runBegin, runRestore } from './logic/run-state.js';
-import { runArrive, runMapStart, runNext, runWorldNode } from './logic/run-map.js';
-import { MAPGEN_VERSION } from './logic/mapgen.js';
+import { runRestore } from './logic/run-state.js';
+import { runArrive, runNext, runWorldNode } from './logic/run-map.js';
 import { runHealCost } from './logic/run-loop.js';
 import { fighter, liveActors, startTrainer, startWild } from './logic/battle-engine.js';
 import { runUnlocks } from './logic/unlocks.js';
+import { runStartOn, runStartPlan } from './logic/run-start.js';
 import { loadAllMaps } from './map-files.js';
 import {
   activeBattle,
@@ -900,8 +900,8 @@ async function runFullTest(mode) {
             uiState.goingIn = null;
             uiState.tab = 'walk';
             if (s.run) runRestore(s);
-            runBegin(s, { seed: 'SELFTESTRUN', tier: 1, mapgenV: MAPGEN_VERSION, se: 300 });
-            runMapStart(s.run, data);
+            /* Studio plan T2.1: started as the mast starts a run (logic/run-start.js), a fresh save's unlocks */
+            runStartOn(s, runStartPlan('SELFTESTRUN', { ...data, unlockData: UNLOCK_DATA }, { unlocks: [] }));
             runArrive(s, 0, data);
             s.visited[s.trip.node] = 1;
             setSaveData(s);
