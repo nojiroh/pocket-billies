@@ -1396,6 +1396,24 @@ def leaders_steps(pg, errs):
     if len(errs) == n: print(f"leaders: {k}'s {len(got)} run places as runFoes makes them, overridden in runs; {sum(1 for t in tags if t)} pools a run reads; {len(marks)} legacy ids with the game's stand-in; the mini-boss box proposed and undone", flush=True)
 
 
+def economy_steps(pg, errs):
+    """Studio plan T4.4: the Economy page lists a line per source and sink with its value; a link opens the field;
+    the simulator's numbers are a placeholder that says so."""
+    n = len(errs)
+    pg.evaluate("void openSection('economy')")
+    pg.wait_for_selector('#main .eco', timeout=20000)
+    rows = pg.evaluate("document.querySelectorAll('#main [data-eco]').length")
+    want = pg.evaluate("economyLines(studioState.D).length")
+    if rows != want or rows < 20: errs.append(f'economy: {rows} lines shown, economyLines gives {want}')
+    if not pg.locator('#main [data-eco-sim="none"]').count(): errs.append('economy: no placeholder for the simulator numbers')
+    pg.click('#main [data-act="ecoGo"][data-path="unlocks.ranch_2.cost"]'); time.sleep(0.5)
+    if pg.evaluate("studioState.sec") != 'unlocks' or not pg.locator('#main [data-p="unlocks.ranch_2.cost"]').count(): errs.append('economy: the ranch_2 cost link did not open its field')
+    pg.evaluate("void openSection('economy')"); time.sleep(0.3)
+    pg.click('#main [data-act="ecoGo"][data-path="relics.offshore.fx.0.mult"]'); time.sleep(0.5)
+    if pg.evaluate("studioState.sec + ':' + studioState.sel.relic") != 'relics:offshore': errs.append('economy: the Offshore Account link did not open that Loophole')
+    if len(errs) == n: print(f'economy: {rows} lines, links open their fields, the simulator placeholder shown', flush=True)
+
+
 # the steps after sign-in, in order (--only picks some by name; 'sections' and 'art' are the two blocks in main)
 STEPS = [
     ('story', story_steps),
@@ -1416,6 +1434,7 @@ STEPS = [
     ('relics', relics_steps),
     ('unlocks', unlocks_steps),
     ('leaders', leaders_steps),
+    ('economy', economy_steps),
 ]
 
 
