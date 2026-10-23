@@ -87,7 +87,6 @@ export function newRun(seed, expedition, mapgenV, start) {
     map: null,
     at: { phase: 'fly', battle: -1 },
     clock: 1,
-    deadline: 0,
     forecast: [],
     perks: [],
     offer: null,
@@ -169,7 +168,7 @@ export function validRun(o) {
   if (Object.keys(o.at).some(k => !['phase', 'battle', 'won', 'foe'].includes(k))) return false;
   if (o.at.won !== undefined && !wholeIn(o.at.won, 0, 1)) return false;
   if (o.at.foe !== undefined && !validRunFoe(o.at.foe)) return false;
-  if (!wholeIn(o.clock, 1, RUN_DAYS) || !wholeIn(o.deadline, 0, RUN_DAYS)) return false;
+  if (!wholeIn(o.clock, 1, RUN_DAYS)) return false;
   if (!list(o.forecast, nodes) || o.forecast.some(days => !list(days, RUN_DAYS) || !days.every(id))) return false;
   if (!list(o.perks, 32) || !o.perks.every(id) || !list(o.mods, 32) || !o.mods.every(id)) return false;
   if (o.offer !== null && (!list(o.offer, 5) || !o.offer.every(id))) return false;

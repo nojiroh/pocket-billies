@@ -1074,7 +1074,7 @@ const U = { unlocks: D.unlocks, buildings: D.buildings },
   un = modules.unlocks.runUnlocks({ meta: { unlocks: Object.fromEntries(Object.keys(D.unlocks).map(i => [i, 1])) } }, U),
   p = modules['run-start'].runStartPlan('TESTSEED', { nodeTypes: D.nodeTypes, biomes: D.biomes, rules: D.rules.run, unlockData: U },
     { unlocks: un, map: { rows: 5, minibosses: 1 } });
-console.log(JSON.stringify({ map: p.map, deadline: p.deadline, unlocks: p.unlocks }));"""
+console.log(JSON.stringify({ map: p.map, unlocks: p.unlocks }));"""
 
 
 def run_test(pg, base):
@@ -1085,12 +1085,12 @@ def run_test(pg, base):
     want = json.loads(r.stdout.strip().splitlines()[-1])
     if not until(pg, "typeof saveData!=='undefined'&&!!saveData.run&&runWorld.seed==='TESTSEED'", 90):
         raise Exception('no run on TESTSEED took off')
-    got = pg.evaluate("({map: saveData.run.map, deadline: saveData.run.deadline, unlocks: saveData.run.unlocks, test: !!TEST_RUN, "
+    got = pg.evaluate("({map: saveData.run.map, unlocks: saveData.run.unlocks, test: !!TEST_RUN, "
                       "team: saveData.team.map(m => m.sp + '@' + m.lvl), relics: saveData.run.perks})")
     if not got['test']: raise Exception('it is not a test run (TEST_RUN is off)')
     for n in [n for n in got['map']['nodes']]: n.pop('seen', None)
     for n in want['map']['nodes']: n.pop('seen', None)
-    if got['map'] != want['map'] or got['deadline'] != want['deadline']: raise Exception(f"its map isn't runStartPlan's: {len(got['map']['nodes'])} places, deadline {got['deadline']}; Node: {len(want['map']['nodes'])}, {want['deadline']}")
+    if got['map'] != want['map']: raise Exception(f"its map isn't runStartPlan's: {len(got['map']['nodes'])} places; Node: {len(want['map']['nodes'])}")
     if got['unlocks'] != want['unlocks']: raise Exception(f"its unlocks {got['unlocks']} aren't runStartPlan's {want['unlocks']}")
     if got['team'] != ['musk2@30', 'bezos1@20']: raise Exception(f"its party is {got['team']}, not musk2@30, bezos1@20")
     if got['relics'] != ['shelter', 'lobbyist']: raise Exception(f"it holds {got['relics']}, not shelter, lobbyist")

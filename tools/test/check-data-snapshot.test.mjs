@@ -52,7 +52,7 @@ test('check-data: planted rules (battle, run, ranch)', t => {
         R.ranch.breed.odds.safe = 0.9;
         Object.assign(run.map, { rows: 4, first: 'nosuch', wide: 2, extra: 1 });
         run.map.biomes.nosuchbiome = 1;
-        run.clock.slack = 99;
+        run.clock.slack = 3; /* RL-R2: the deadline's slack is gone */
         run.reveal.extra = 1;
         run.bogusKey = 1;
         run.scene.land.hills = [0.8, 0.2];

@@ -954,9 +954,8 @@ export interface Rules {
     };
     /** RL-6: the run's node map (logic/run-map.js) */
     map: RunMapRules;
-    /** RL-6: the clock (owner, 8.10): the deadline is the shortest walk to the boss plus `slack` days; the forecast
-        keeps `ahead` days after today */
-    clock: { slack: number; ahead: number };
+    /** RL-6: the clock (owner, 8.10): the forecast keeps `ahead` days after today (RL-R2: no deadline) */
+    clock: { ahead: number };
     /** RL-6: what the map shows from where you stand: the rows up to `icons` ahead with their type, up to `unknown`
         ahead as '?' pins (the boss always) */
     reveal: { icons: number; unknown: number };

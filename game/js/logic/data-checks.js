@@ -281,7 +281,7 @@ export function dataRunMapRules(D) {
   }
   return out;
 }
-// RL-6: the run's clock and what its map shows: whole days of slack (0-30) and of forecast ahead (1-30), whole rows
+// RL-6: the run's clock and what its map shows: whole days of forecast ahead (1-30; RL-R2: no deadline, no slack), whole rows
 // shown ahead with their type (1-12) and as '?' (at least as far, up to 12); nothing else in rules.json run
 /** T1.3: the keys of rules.json run, each a rule a family here checks (any other is "no such rule"). The one list:
  * an editor of run rules reads it from here */
@@ -312,11 +312,9 @@ export function dataRunClock(D) {
       V = R.reveal,
       whole = (v, lo, hi) => Number.isInteger(v) && v >= lo && v <= hi;
     for (const k of Object.keys(R)) if (!RUN_RULE_KEYS.includes(k)) problem('rules.json', `run.${k}: no such rule`);
-    if (!C || typeof C !== 'object' || !whole(C.slack, 0, 30) || !whole(C.ahead, 1, 30))
-      problem('rules.json', 'run.clock: slack (0-30) and ahead (1-30) are not whole numbers of days');
-    else
-      for (const k of Object.keys(C))
-        if (!['slack', 'ahead'].includes(k)) problem('rules.json', `run.clock.${k}: no such rule`);
+    if (!C || typeof C !== 'object' || !whole(C.ahead, 1, 30))
+      problem('rules.json', 'run.clock: ahead (1-30) is not a whole number of days');
+    else for (const k of Object.keys(C)) if (k !== 'ahead') problem('rules.json', `run.clock.${k}: no such rule`);
     if (!V || typeof V !== 'object' || !whole(V.icons, 1, 12) || !whole(V.unknown, V.icons, 12))
       problem('rules.json', 'run.reveal: icons (1-12) and unknown (icons to 12) are not whole numbers of rows');
     else
@@ -1219,9 +1217,9 @@ export const RUN_MAP_ROLE_TYPES = { first: 'landing', rest: 'town', guard: 'mini
 export const RUN_MAP_ROLE_NAMES = { first: 'landing', rest: 'rest', guard: 'mini-boss', last: 'last' };
 
 /** what is wrong with one run map (run-map.js runMapMake's), as sentences: a place the landing can't reach, a place
- * that leads nowhere or skips a row, a role row without the type the game looks for, a deadline before the shortest
- * walk ends @param {any} map @param {any} M rules.json run.map @param {{ slack: number }} clock @returns {string[]} */
-export function runMapProblems(map, M, clock) {
+ * that leads nowhere or skips a row, a role row without the type the game looks for
+ * @param {any} map @param {any} M rules.json run.map @returns {string[]} */
+export function runMapProblems(map, M) {
   const out = [],
     nodes = map.nodes,
     last = Math.max(...nodes.map((/** @type {any} */ n) => n.row)),
@@ -1248,8 +1246,6 @@ export function runMapProblems(map, M, clock) {
           : `a ${RUN_MAP_ROLE_NAMES[role]} row (row ${n.row + 1}) is a ${n.type}, not a ${want === 'town' ? 'town' : want}`
       );
   });
-  if (!(clock.slack >= 0))
-    out.push(`the deadline (slack ${clock.slack}) comes before the shortest walk reaches the boss`);
   return [...new Set(out)];
 }
 
@@ -1276,9 +1272,9 @@ export function runMapTownsPerPath(map) {
  * the figures a designer weighs: places per map, places by type, towns on a walk, biomes, the towns made against the
  * routes (rest rows are always towns, so the ratio isn't the weights'), and outlying seeds to open
  * @param {Record<string, any>} nodeTypes @param {any} M rules.json run.map (its biomes as the run's unlocks leave them)
- * @param {{ slack: number }} clock @param {{ n?: number, prefix?: string }} [o]
+ * @param {{ n?: number, prefix?: string }} [o]
  */
-export function runMapSweep(nodeTypes, M, clock, o = {}) {
+export function runMapSweep(nodeTypes, M, o = {}) {
   const n = o.n || 1000,
     prefix = o.prefix || 'SWEEP',
     /** @type {Map<string, { text: string, seed: string, count: number }>} */
@@ -1306,7 +1302,7 @@ export function runMapSweep(nodeTypes, M, clock, o = {}) {
       continue;
     }
     maps++;
-    for (const p of runMapProblems(map, M, clock)) note(p, seed);
+    for (const p of runMapProblems(map, M)) note(p, seed);
     sizes.push([map.nodes.length, seed]);
     for (const x of map.nodes) {
       types[x.type] = (types[x.type] || 0) + 1;

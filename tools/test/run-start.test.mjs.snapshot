@@ -29,7 +29,6 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
       "unlocks": [],
       "mods": [],
       "clock": 1,
-      "deadline": 11,
       "map": {
         "nodes": [
           {
@@ -361,7 +360,6 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
       ],
       "mods": [],
       "clock": 1,
-      "deadline": 11,
       "map": {
         "nodes": [
           {
@@ -684,7 +682,6 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
       "unlocks": [],
       "mods": [],
       "clock": 1,
-      "deadline": 8,
       "map": {
         "nodes": [
           {
@@ -871,6 +868,6 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
       }
     }
   },
-  "all": "7f61cfeef9b2a73587d64314ca3d279cee1933eac9abd7904af63eaa8ae2209a"
+  "all": "d37a6a86294be531e0fa3bbd55e6f566e4eddc037a5ea91ec0605c4bb8df306c"
 }
 `;

@@ -203,9 +203,8 @@ export interface Run {
   /** RL-8: won, at the payout (1 won, 0 lost or given up) */
   /** RL-8: in a battle, its foe as it began (a reload starts the same battle again) */
   at: { phase: 'fly' | 'walk' | 'battle' | 'menu' | 'payout'; battle: number; won?: 0 | 1; foe?: RunFoe };
-  /** the day (one per node arrival, backtracking included) and the deadline day */
+  /** the day (one per node arrival, backtracking included) */
   clock: number;
-  deadline: number;
   /** each node's weather by day: forecast[world node][day - 1] (a weather id; world node i + 1 is the map's node i,
       and Copperleaf's, world node 0, is empty) */
   forecast: string[][];

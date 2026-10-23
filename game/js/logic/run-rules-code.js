@@ -50,12 +50,6 @@ export const RUN_RULES_IN_CODE = [
     code: 'export const RUN_EXIT_T = [',
   },
   {
-    what: 'The deadline',
-    value: 'a row a day from the landing’s day 1, plus rules.run.clock.slack',
-    file: 'game/js/logic/run-map.js',
-    code: 'export const runDeadline = (map, slack) => 1 + Math.max(...map.nodes.map(n => n.row)) + slack;',
-  },
-  {
     what: 'Where the run sits on the world map',
     value: 'x 0.72, step 0.18, lane 0.1, bend 0.06 (bowl radii)',
     file: 'game/js/logic/run-map.js',

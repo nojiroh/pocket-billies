@@ -12,8 +12,8 @@
    On the bowl every map's north faces the centre (logic/bowl.js), so west is clockwise round it: a run's rows go
    clockwise along an arc on the bowl's south side, lane 0 outermost (a map's south), and each node's exits run south
    to north in the order of its neighbours.
-   The clock (owner, 8.10): a day per arrival, backtracking included; the landing is day 1; the deadline is the
-   shortest walk to the boss plus a slack (rules.json run.clock), past which RL-13 hardens the world. The map shows the
+   The clock (owner, 8.10): a day per arrival, backtracking included; the landing is day 1 (RL-R2: the owner dropped
+   the deadline; the day still drives the forecast and the shops' stock). The map shows the
    next row from where you stand, the row after as '?', and the boss always (run.reveal). Each node has a forecast by
    day, rolled from its biome's climate on a stream of its own per day (logic/weather.js weatherPick).
    Numbering: the map's nodes are 0..n-1, row by row, lane by lane (run.path, a node's `to`, the seeds); the run's world
@@ -36,7 +36,6 @@ expose({
   // @ts-expect-error -- replaced on purpose
   runArrive: [() => runArrive, v => (runArrive = v)],
   runBack: [() => runBack],
-  runDeadline: [() => runDeadline],
   // @ts-expect-error -- replaced on purpose
   runExits: [() => runExits, v => (runExits = v)],
   // @ts-expect-error -- replaced on purpose
@@ -52,7 +51,6 @@ expose({
   runMapStart: [() => runMapStart, v => (runMapStart = v)],
   runNext: [() => runNext],
   runNodeSeed: [() => runNodeSeed],
-  runOverdue: [() => runOverdue],
   // @ts-expect-error -- replaced on purpose
   runReveal: [() => runReveal, v => (runReveal = v)],
   // @ts-expect-error -- replaced on purpose
@@ -190,11 +188,6 @@ export const runWorldNode = i => i + 1;
 export const runMapNode = node => node - 1;
 
 /* ---------- the clock (owner, 8.10): a day per arrival, backtracking included; the landing is day 1 ---------- */
-/** the deadline day: the shortest walk to the boss in days (one row a day from the landing's day 1) and the slack
- * @param {RunMap} map @param {number} slack @returns {number} */
-export const runDeadline = (map, slack) => 1 + Math.max(...map.nodes.map(n => n.row)) + slack;
-/** days past the deadline (0 on or before it, and while no deadline is set) @param {Run} run @returns {number} */
-export const runOverdue = run => (run.deadline ? Math.max(0, run.clock - run.deadline) : 0);
 /** show the map from a row: the rows up to `icons` ahead with their type, the rows up to `unknown` ahead as '?', the
  * boss always (the goal). What was shown stays shown @param {RunMap} map @param {number} row
  * @param {{ icons: number, unknown: number }} reveal */
@@ -230,13 +223,12 @@ export const runWeather = (run, i, day) => (run.forecast[runWorldNode(i)] || [])
 provide({ runWeather }); /* to-module */
 /**
  * @typedef {{ nodeTypes: Record<string, NodeType>, biomes: Record<string, { climate?: string }>,
- *   rules: { map: RunMapRules, clock: { slack: number, ahead: number }, reveal: { icons: number, unknown: number } } }} RunMapData
+ *   rules: { map: RunMapRules, clock: { ahead: number }, reveal: { icons: number, unknown: number } } }} RunMapData
  */
-/** give a new run its map (at the mast, before the flight): the map from the seed, the deadline, the landing's view
- * and the forecast a week ahead @param {Run} run @param {RunMapData} data @returns {RunMap} */
+/** give a new run its map (at the mast, before the flight): the map from the seed, the landing's view and the
+ * forecast a week ahead @param {Run} run @param {RunMapData} data @returns {RunMap} */
 export function runMapStart(run, data) {
   run.map = runMapMake(run.seed, data.nodeTypes, data.rules.map);
-  run.deadline = runDeadline(run.map, data.rules.clock.slack);
   run.forecast = [];
   runReveal(run.map, 0, data.rules.reveal);
   runForecastFill(run, data.biomes, run.clock + data.rules.clock.ahead);

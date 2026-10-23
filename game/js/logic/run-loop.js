@@ -215,10 +215,10 @@ export function weatherEffectText(wx) {
     .map(([t, v]) => `${t} ${v > 1 ? '+' : '−'}${Math.round(Math.abs(v - 1) * 100)}%`)
     .join(', ');
 }
-/** the Actions sheet's run status at map node i: the day, the deadline, the node's type, and its weather today and
+/** the Actions sheet's run status at map node i: the day, the node's type, and its weather today and
  * tomorrow (the forecast's word and what a battle there would feel; tomorrow left out past the run's last day or when
  * not rolled) @param {Run} run @param {number} i the map node @param {any} env rules.json env
- * @returns {{ day: number, deadline: number, type: string, days: { day: number, w: string, wx: { k: string, m: Record<string, number> } | null }[] } | null} */
+ * @returns {{ day: number, type: string, days: { day: number, w: string, wx: { k: string, m: Record<string, number> } | null }[] } | null} */
 export function runSheetStatus(run, i, env) {
   const node = run.map && run.map.nodes[i];
   if (!node) return null;
@@ -226,7 +226,7 @@ export function runSheetStatus(run, i, env) {
     .filter(d => d <= RUN_DAYS)
     .map(d => ({ day: d, w: runWeather(run, i, d), wx: runBattleWeather(run, i, d, env) }))
     .filter(d => d.w);
-  return { day: run.clock, deadline: run.deadline, type: node.type, days };
+  return { day: run.clock, type: node.type, days };
 }
 /** Studio plan T3.2: what a run battle starts with, on the page (run.js runBattleStart) and in the simulation (logic/
  * run-sim.js): its seed, the place's forecast for today as the battle's weather (clear is sunny: a run has no hour),

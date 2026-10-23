@@ -139,7 +139,7 @@
    "cross": 0.25,
    "biomes": {"meadow":3,"lake":2,"thicket":2,"ridge":1,"autumn":1}
   },
-  "clock": {"slack":3,"ahead":7},
+  "clock": {"ahead":7},
   "reveal": {"icons":1,"unknown":2},
   "scene": {
    "land": {

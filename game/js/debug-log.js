@@ -448,7 +448,7 @@ debugLog.state = () => {
     s.encounters = GAME.encountersHere ? GAME.encountersHere().length : 0;
     s.badges = (GAME.saveData.seats || []).length;
     s.visited = Object.keys(GAME.saveData.visited || {}).length;
-    /* RL-7: on a run, where it stands (no names): its seed (to make the same run again), the day and deadline, the
+    /* RL-7: on a run, where it stands (no names): its seed (to make the same run again), the day, the
        map node you are on, the arrivals so far, and its world's scenes and how long they took to make on this device */
     const run = GAME.saveData.run,
       /* TR-2: the place's land dials are on its map (the drawn scene has no gen) */
@@ -459,7 +459,6 @@ debugLog.state = () => {
         ? {
             seed: run.seed,
             day: run.clock,
-            deadline: run.deadline,
             node: GAME.saveData.trip.node - 1,
             arrivals: run.path.length,
             nodes: run.map.nodes.length,

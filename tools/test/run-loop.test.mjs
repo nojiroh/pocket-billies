@@ -167,7 +167,7 @@ test("the Actions sheet's weather words: boosts first, then cuts, in whole perce
   assert.equal(L.weatherEffectText(null), '');
 });
 
-test("the Actions sheet's run status: the day, the deadline, the node's type, its weather today and tomorrow", () => {
+test("the Actions sheet's run status: the day, the node's type, its weather today and tomorrow", () => {
   const run = runOf('RLSHEET01'),
     { runWeather } = modules['run-map'],
     env = GAME_DATA.rules.env;
@@ -175,7 +175,7 @@ test("the Actions sheet's run status: the day, the deadline, the node's type, it
     const st = L.runSheetStatus(run, i, env);
     assert.ok(st, `node ${i}`);
     assert.equal(st.day, run.clock);
-    assert.equal(st.deadline, run.deadline);
+    assert.equal('deadline' in st, false);
     assert.equal(st.type, run.map.nodes[i].type);
     assert.deepEqual(
       st.days.map(d => [d.day, d.w]),

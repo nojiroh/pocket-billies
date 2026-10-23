@@ -6,7 +6,7 @@
    Studio's Run Lab. runStartPlan decides it without a save: what the run is given (rules.json run.start), the unlocks
    it carries, its map rules with only the biomes those unlocks open (unlocks.js unlockOpen; the debug menu's short map
    overrides rows), the region (RL-R1, run-region.js: its zones give the map its rows and biomes), and the map they make
-   (run-map.js runMapStart: the deadline, what the landing shows, the forecast).
+   (run-map.js runMapStart: what the landing shows, the forecast).
    runStartOn puts a plan on a save (run-state.js runBegin). What the page does around it (heal, the ranch, the world,
    the flight) stays in run.js. Logic only: no DOM, no Date, no Math.random (tools/test/run-start.test.mjs). */
 /** @import { Run, RunMap, RunRegion, SaveData } from '../../types/save-data' */
@@ -19,7 +19,7 @@
  * logic/run-region.js runRegionData): without it a run has no region and its map rolls each place's biome
  * @typedef {{ give: ReturnType<typeof runGive>, unlocks: string[], mods: string[],
  *   data: { nodeTypes: Record<string, NodeType>, biomes: Record<string, { climate?: string }>, rules: any },
- *   map: RunMap, deadline: number, forecast: string[][], region: RunRegion | null }} RunStartPlan
+ *   map: RunMap, forecast: string[][], region: RunRegion | null }} RunStartPlan
  */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
@@ -86,14 +86,13 @@ export function runStartPlan(seed, data, o = {}) {
     mods: (o.mods || []).slice(),
     data: mapData,
     map: /** @type {RunMap} */ (scratch.map),
-    deadline: scratch.deadline,
     forecast: scratch.forecast,
     region,
   };
 }
 
 /** put a plan on a save: the run begins (runBegin: who travels from home, the packed bag) with the plan's money,
- * items, unlocks, mods, map, deadline and forecast. Returns the run
+ * items, unlocks, mods, map and forecast. Returns the run
  * @param {SaveData} s @param {RunStartPlan} plan
  * @param {{ home?: string[], pack?: { items: Record<string, number>, pyramids: Record<string, number> } }} [pick]
  * @returns {Run} */
@@ -102,7 +101,6 @@ export function runStartOn(s, plan, pick = {}) {
   if (plan.mods.length) run.mods = plan.mods.slice();
   run.unlocks = plan.unlocks.slice();
   run.map = copyOf(plan.map);
-  run.deadline = plan.deadline;
   run.forecast = copyOf(plan.forecast);
   if (plan.region) run.region = copyOf(plan.region);
   return run;
