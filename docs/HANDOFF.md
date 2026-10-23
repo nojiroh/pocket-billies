@@ -2,6 +2,113 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Fix - the hub's "black screen" in the full quick check - 2026-10-23
+Branch `fix/hub-frame-wait` (one session, docs/BRANCHES.md). The failure in RL-R1's long checks (PR #161's comment):
+"Ground tiles, building plans and colours, rooms": `w:copperleaf* isn't drawing (black screen)`, under CPU load.
+- Cause: the check, not the game. `go_scene` wanted 2 new frames within 30 s of a place opening. Once a minute the
+  debug log takes its picture of the scene (`screenSnapshot`, `readPixels`), which makes the page wait for the software
+  drawing to finish. That frame took 1.2-1.5 s on a fresh page (with or without 8-16 busy loops), but 16-23 s late in a
+  14-minute desktop run (4 busy cores, or the unit tests looping beside it). One more slow frame in the same 30 s and
+  the step failed. The screen was never black: the draw loop kept running (`frameScheduler.tasks.has('dio')`). On a
+  phone's graphics chip that wait is a few milliseconds.
+- Changed (tools/check-quick.py `go_scene` only; no game code, data or names): after 30 s without 2 frames, if the draw
+  loop is still running it waits up to 60 s more and adds a note naming the slowest frame meanwhile. It fails only when
+  the loop is gone ("stopped drawing: its draw loop is gone (black screen)") or fewer than 2 frames came in 90 s.
+- Verified: a scratch probe on the hub, the old and the new `go_scene`. No new frame for 35 s: old fails with the
+  PR #161 message, new passes with a note. The draw loop stopped (`frameStop('dio')`): both fail, the new one says so.
+  "Ground tiles" and "Place views" pass with the unit tests looping beside them; the 12 desktop steps up to the hub
+  step pass under load (the buddy lag in "Double and Alpha battles" is the known one, RF-2's entry). lint, typecheck,
+  `npm test` (827), smoke (6 of 6). I could not get the natural failure itself on this machine: the stall reached
+  20-23 s, short of 30.
+- Risky: a step that goes through `go_scene` while frames are this slow now takes up to 60 s longer instead of failing.
+- Found, not changed: tools/requirements-check.txt pins Playwright 1.56, which can't launch this machine's Chromium
+  (1.63 works). And the frame scheduler (frame-scheduler.js `runFrameTasks`) drops a task for good when it throws, so
+  one error in a walk frame would freeze the scene until it is mounted again. No sign of that here; worth its own look.
+- Before merging: merge main again once RF-4 has merged, and run the checks again.
+
+### Fix: the lost-run payout jingle's wait in the quick check - 2026-10-23
+Branch `fix/payout-lost-wait` (one session, not a plan; kept small because RF-4 runs on `track/reflavour`).
+- Cause: the check, not the game. A loss plays the same sequence as a win (a coin per row, then the jingle when the
+  total lands; run-payout.js), but TC-3 raised only the win's wait to 40 s and left the loss at 15 s. Under CPU
+  load the headless browser's timers slow down: measured 26.9 s (won) and 16.3 s (lost). On a phone it's ~2-3 s.
+- Changed: `tools/check-quick.py` Sound effects waits 40 s for `run_lost` too. Nothing else.
+- Verified: with 6 busy loops on 4 cores, `--steps="Sound effects"` failed on main at line 869 (4 coins, no
+  `run_lost`) and passes with the fix; idle, all 4 Sound steps pass. Lint, typecheck, unit tests (826) pass.
+- Next: merge main in again once RF-4 is merged, re-run the checks, then merge.
+
+### Reflavour track RF-4 - Internal renames - 2026-10-23
+Branch `track/reflavour` (main fast-forwarded in first; round 3, alone). Plan approved in Plan Mode, the owner's
+answers relayed by the coordinating session: keep the money id `money`; rename `tier` to `expedition` now; keep the
+art folder `art/coins/`; rename `foreclose` with the stone moves; long checks skipped for speed. Tag `rf-4-done` is
+the owner's to push. The full list of what was renamed, kept and left is in reflavour-track.md section 7.
+- Where the plan and the track file were wrong (checked in the code): there were no Bracket keys (the difficulty was
+  `tier`); the shop unlock ids embedded item ids (`shop_settlement`...); more rule keys were finance than listed
+  (`auditSkip`, `subpoena`, `luxuryPenny`, `winSeals`); the repo has no retired-names lint list any more (the test
+  cleanup track removed it), so none was added to.
+- Changed: SAVE_VERSION 5 first (the only behaviour commit: an older save gets the "older version" message and is set
+  aside). Then one rename per commit: perks (files, data, code names, rules, save, tab), research, crests, the
+  pyramid ids and the `pyramids` section and pocket, item ids, unlock ids, status ids, the nine passives with their
+  rule keys and battle-side fields, the stones, the stone moves, `expedition`, the `guide` tab, run-sim's options and
+  report keys, the `taxed` local. Three small commits fixed spots a rename had missed (the Studio's live channel and
+  undo list for `perks`; four `coins/penny_32.png` paths: the opening and the Studio's brand and login images). Where
+  a concept had several keys (a passive and its rule numbers, the two status rule keys), they share a commit.
+- Renaming tools: `tools/rename.mjs` (file, prefix, name, with `verify` on the prefix renames) and
+  `tools/rename-data.mjs` (sections, keys); the rest by scripted regex with the contexts listed, then each diff read.
+- Snapshots remade on purpose, each in its rename's commit: check-data (messages name perks.json, run.perks),
+  run-start (ids and keys), battle-state (the side flags `slipstream`, `roar`, `stones`), the battle golden record
+  (only the status ids in its events, 42 lines; no outcome moved).
+- Verified: after every commit `npm run modules`, check:modules, lint, typecheck, check:data, format:check and the
+  unit tests (all pass, about 70 s a round). Smoke at the end: passed, no problems (202 s; the phone flow with the Guide, shop and a battle, the debug log with no names, the in-game test's first step). It ran on Python Playwright 1.63.0, not the pinned 1.56.0: this container's Chromium is build 1243, which only 1.63 drives. The one unused picture it notes (`scene/build/detail-a04.png`) is not this session's.
+  **Skipped, at the owner's word (speed):** the full quick check, the in-game test (`--selftest`), test:slow,
+  check-fast and the Studio check (`tools/check-studio-github.py`, which this session edited for the new names
+  without running it).
+- The exported debug log: no key changed (none was forced). Its run and meta summary keeps `relics`, `capital` and
+  `seals` and reads the renamed fields (`run.perks`, `meta.research`, `meta.crests`); it never carries the save itself.
+  Values that are ids now read the new ids (a status `par` where it said `aud`, an item `potion`).
+- Risky:
+  - **One rename changed behaviour:** runShopStock sorts a town's weighted wares by item id before its seeded draw, so
+    the item rename changed which wares a seed's run shop stocks. No test pinned it; no saved run carries over.
+  - The Studio check and check-fast were edited (new ids, tab names, selectors) but not run.
+  - Phones: the first load after this sets the save aside (as decided). The renamed art files (`art/coins/pyramid_16.png`
+    and the rest, `art/ui/research.svg`, `art/ui/crest.svg`) load under new paths, so nothing stale shows.
+  - A `track/*` merge from a session that started before this one will conflict on these names: merge main and run
+    `npm run modules`; `git grep` for the old names in the table of section 7.
+- Left for the owner (section 7): the ten Perk ids, which can't be renamed without changing every seed's offers
+  (perkPool sorts by id), so this needs a behaviour commit first; stat ids `lev`, `lob`, `hus`; most move ids.
+- Next: RF-5 (the new tone in text), beside RL-S1. Tag `rf-4-done` on this entry's commit.
+
+### UI icons - 49 icons redrawn at 36x36, "block and split" - 2026-10-23
+Branch `ccr-6515f662-u0e47e` (the session's own: the owner named no branch; BRANCHES.md would call it
+`art/ui-icons`). Not a phase or track session: an art request. The look was picked from rounds of samples in chat
+(Pokemon-flavoured, then modern multi-tone in the theme colours): "P5", an extruded block with a diagonal split.
+- Changed (one cause per commit):
+  - **tools/build-ui-icons.py**: each icon is a 34x34 grid of colour letters (PALETTE); the tool adds a 2 px block
+    side, the 45-degree split, a lit edge and seams, and writes a 36x36 SVG with one path per colour. Stdlib only.
+    The two sound icons, drawn outside the tool before, are in it now. Merged with main's RF-1/RF-2: `capital` is
+    drawn as Research's lab flask and the new `pyramid` (the catch pyramid) is in the set: 49 grids.
+  - **Shown as images**: `.uico` (parts.css) and the run kit's `.ic` use the SVG as a background image instead of
+    a mask tinted by `currentColor`. Four rules that set `background: currentColor` on an icon are gone (map list,
+    dressing room x2, walk card); they would have painted a solid square over the picture. Rules that only set
+    `color` on an icon are harmless no-ops now and were left.
+  - **tools/test/ui-icons.test.mjs** runs `build-ui-icons.py --check` (python3 is on the CI runner), checks every
+    file is 36x36 and that the tool draws exactly the files in game/art/ui, and now also counts `runIcon('...')`.
+  - `check` is cream, not green: its only use is the visited node's mark on a green hex, where green vanished.
+- Where the old code was off: the old test counted 46 icons; there were 48 files (the two sound icons were
+  not in the tool).
+- Verified: lint, typecheck, check:modules, format, `npm test` (802). UI gallery (check-ui-gallery.py): the
+  untouched code and this branch, shot with the same browser here, differ only where icons are (run HUD, map nodes,
+  picks, payout); the committed baseline was NOT replaced (owner's call). starter/tip/picks at 320 px differ from
+  the baseline at 100% on the untouched code too: this container's browser, not this change.
+  Full quick check (tools/check-quick.py): running at push time; result in the next commit.
+- Risky / open:
+  - Icons no longer follow the text colour: a disabled or selected state that relied on the tint now shows the same
+    colours. None found in the gallery; say if a screen reads wrong.
+  - The nightly full quick check will show icon picture diffs until the baseline is remade (Actions, "Make the
+    picture baseline").
+  - The UI gallery baseline (validation/ui-gallery) needs `python3 tools/check-ui-gallery.py --update` once the
+    owner approves the look, ideally on the CI-like browser.
+- Next: the owner's phone check of the bottom bar, the run HUD, the shop and the walk card on both themes.
+
 ### Reflavour track RF-2 - Pyramids - 2026-10-23
 Branch `track/reflavour` (made this session from main and named in reflavour-track.md's `Branch:` line; RF-1 works
 here too and merged RF-2's pushed commits into its own, so the two sit on one line of history; PR #160). Plan approved with the owner's picks, all the recommended
