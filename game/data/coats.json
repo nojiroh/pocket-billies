@@ -6,7 +6,7 @@
  "waterfront": {
   "name": "Waterfront",
   "form": true,
-  "ramps": {"rust":"teal","ember":"cobalt","straw":"sky","gold":"mint"}
+  "ramps": {"rust":"teal","straw":"teal","skin":"mint","skin_deep":"teal","gold":"sky"}
  },
  "cloud": {
   "name": "Cloud",
