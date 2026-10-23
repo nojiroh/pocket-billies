@@ -1083,4 +1083,27 @@ Answered by the owner, 2026-10-23:
     "Beta Basin").
 32. **Where the lines live:** **a new `lines.json` data section** beside `story.json`.
 
+### 9.7 Running sessions in parallel (the owner, 2026-10-23)
+
+Split by the files a session owns, as docs/phases/test-cleanup-track.md does: each session is its own branch and PR
+with its own HANDOFF entry. Every PR conflicts on `docs/HANDOFF.md`, `docs/ROADMAP.md`, the changelog,
+`game/js/hooks.js` and often `rules.json`: merge one PR at a time and merge main into the next before merging it;
+regenerate hooks.js with `npm run modules`, never by hand. One SAVE_VERSION bump per round.
+
+- **Round 1: RO-1 + TC-1** (the owner: RL-16's pack merge and the art sessions wait). TC-1 is test-cleanup's deletions
+  only (its lanes A-D, deletions only); TC-2..TC-4 (the rewrites, speed, the picture baseline) move to after RF-4, so
+  they're done once with the new names. RO-1 owns `biomes.json` pools, `pools.json`, `lines/*.json`,
+  `game-data.js standInSpecies`, `logic/rules.js spawn` and its own new test file; it doesn't edit the checks TC-1
+  deletes.
+- **Round 2: RF-1, RF-2, RF-3, RL-R1** at once. RF-1 owns player-facing text and the checks that read it; RF-2 the
+  catch items' data, the throw's model and sound; RF-3 `types.json`, the passives' engine code and the golden record;
+  RL-R1 `run-map.js`, the new `regions.json`, `run-bowl.js`.
+- **Round 3: RF-4 alone** (renames touch nearly every file), then TC-2..TC-4 on the new names (test-cleanup's own
+  lanes and rounds).
+- **Round 4: RL-R2, RL-12b, RF-5** at once; RL-12b's waystation edits to the run map after RL-R2 merges; RL-12c (held
+  items) after RL-12b.
+- **Round 5: RL-S1 + RL-13** (both touch the run's start and end: merge one, then main into the other), RF-6 beside
+  them if no save change is open; then **RL-S2 + RL-14** (the Voltron's story scene last).
+- **Then:** RL-15, RL-E in order; RL-16 when the new sections exist. RO-2.. (art) beside any round but 3.
+
 The Smosh note in project-story.md still holds for Professor Chosen before any public release.

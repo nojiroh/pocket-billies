@@ -61,6 +61,9 @@ Numbers below were read at 2361848; verify again before each session.
 before RL-12b (encounters lean on passives), RF-4 before RL-S1 (the story director's data uses the new ids), RF-5
 beside RL-S1 (the same writing pass), RF-6 whenever the owner picks.
 
+**In parallel** (the owner, 2026-10-23): rounds in roguelite-track.md 9.7: RF-1..RF-3 together in round 2, RF-4 alone
+in round 3, RF-5 in round 4, RF-6 in round 5.
+
 **Could break:** every check that reads a player-facing string (check-fast, check-quick, the in-game test, story
 checks: retarget in the same commit as the text), the debug log's words (CLAUDE.md: don't break the exported log;
 keep its keys, change only the text), the Studio's labels for these sections, the golden record (RF-3 only).
