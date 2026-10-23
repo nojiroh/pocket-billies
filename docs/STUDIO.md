@@ -50,6 +50,26 @@ Double-click `Start-Studio.bat` / `Start-Studio.command`, or run
 `python3 start-studio.py`. It opens at **http://localhost:8001**. The server is not in this repository, so this mode
 can't be used from a clone of it today.
 
+## How a section draws (for contributors; Studio plan Phase 6)
+
+- A section is a function returning HTML; `renderPane` puts it in its pane, then runs `afterRender` steps. If the
+  section throws, the pane says so (and the console has the error); an error nothing caught elsewhere is a toast.
+- A redraw of the section a pane already shows keeps the focused control (found again by its `data-p`, or its tag and
+  `data-*`) and the pane's scroll.
+- **Keep an element across redraws** with `data-keep="<key>"`: before the redraw it is put aside, then it replaces
+  the new HTML's placeholder with the same key (taking the placeholder's id and classes). The 3D previews (Walk scenes,
+  Generate, Hub island, Props, Engine) share `walk-gl`: one canvas, so one WebGL context, for the whole session. A new
+  3D section needs only `<canvas id="..." data-keep="walk-gl">`.
+- **Section hooks** (`studioState.hooks[sec]`) run on every input event of a field in that section's pane (the second
+  pane's own section, too). Expensive drawing goes through `drawSoon(key, f)`: once in the next frame, however many
+  events came. Rebuilds that may wait (Walk scenes' walk-view paths and ground) wait for 300 ms of stillness.
+- **Paths that read and write their own way** (`@lines.` lore lists, `@script.` scripts, `@thanks.` a shop keeper's
+  lines): `pathPrefix(prefix, read, write)`. A prefix is claimed once; a claim that starts another throws at load,
+  and a unit test reads every claim in studio/js.
+- **Person pictures** (game/js/person-art.js) keep a sheet's pixels and each recoloured piece per picture
+  (`markArt` bumps the picture's `_ver`); after a data edit call `forgetPersonLooks()`, not `PERSON_ART_CACHE.clear()`.
+- An undo that changes only text data (moves, items, lore, story and the like) keeps the picture caches.
+
 ## Layout (studio track ST-1)
 
 The Studio is built for wide screens (up to 3440 x 1440) and still works on a tablet.
