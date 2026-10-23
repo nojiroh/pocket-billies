@@ -1574,8 +1574,8 @@ Taken in Phase 1, session B (the recommended option each time, under the owner's
    - T6.2: no per-section `SECTION_FILES` list. A section's code reads data through many helpers, so a list would be
      a guess, and a wrong guess shows stale data after undo; the slow undo (Wardrobe) changes a part its own section
      shows, so skipping redraws would not help it. Instead: a redraw keeps focus and scroll, and an undo of text-only
-     data keeps the picture caches. Wardrobe undo's real cost is person-art's cache key (the global `atlasVersion`,
-     bumped by every undo and by every picture change): see HANDOFF for the proposed fix.
+     data keeps the picture caches. Wardrobe undo's real cost was person-art's cache key (the global `atlasVersion`,
+     bumped by every undo and every picture change): T6.3 keys a sheet's pixels and a piece per picture instead.
 
 ## Ask me before (owner decisions this plan needs)
 1. **T5.1:** recipe as the truth with a JS baker (recommended), or Python stays and Studio writes recipes.

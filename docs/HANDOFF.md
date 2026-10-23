@@ -1502,7 +1502,7 @@ free_camera,tiles,polish` at the end of each ticket; timings from the self-test 
   6 s, and software frames take 4-5 s.
 
 **Verified**
-- Unit tests 648 (quick 606, slow 42); lint, typecheck, `check:modules`, `format:check` after each commit.
+- Unit tests 648 (quick 606, slow 42), 653 after merging the base (Phase 1 C+D); lint, typecheck, `check:modules`, `format:check` after each commit.
 - `check:fast` 25 of 25.
 - `check-studio-github.py --only=sections,publish,drafts,studio_test,free_camera,tiles,polish`, last full run:
   sections, the art tools, free camera (all of it; the HANDOFF's earlier "ground moved" failure passed too), tiles,
