@@ -38,7 +38,7 @@ const plainMove = (t, c) =>
   );
 
 test('every type names its passive and says what it does; the ids are the nine the engine knows', () => {
-  const known = ['kindling', 'undertow', 'subsidy', 'sharp', 'landlord', 'pivot', 'volatile', 'synergy', 'inherit'];
+  const known = ['kindling', 'undertow', 'regrowth', 'sharp', 'landlord', 'pivot', 'volatile', 'synergy', 'inherit'];
   assert.deepEqual(
     TYPES.map(t => data.PASSIVE[t]),
     known

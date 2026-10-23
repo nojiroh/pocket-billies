@@ -27,7 +27,7 @@
   "text": "#fff",
   "strong": ["Water","Ground"],
   "weak": ["Fire","Grass","Flying","Steel","Dragon"],
-  "passive": "subsidy",
+  "passive": "regrowth",
   "passiveName": "Regrowth",
   "passiveText": "It restores a little HP at the end of every turn.",
   "fx": ["leaf","leaf","spark"]

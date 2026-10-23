@@ -683,10 +683,10 @@ export function endTurn() {
         dmg: d,
       });
     }
-    if (m.hp > 0 && hasPassive(ty, 'subsidy') && m.hp < mx) {
+    if (m.hp > 0 && hasPassive(ty, 'regrowth') && m.hp < mx) {
       const g = Math.min(mx - m.hp, Math.max(1, Math.floor(mx / fr)));
       m.hp += g;
-      battleSay(`${billyName(m)}’s ${passiveName(ty, 'subsidy')} restored a little HP.`, { k: 'heal', si: k, amt: g });
+      battleSay(`${billyName(m)}’s ${passiveName(ty, 'regrowth')} restored a little HP.`, { k: 'heal', si: k, amt: g });
     }
     f.v.turnsIn++;
     f.v.protect = false;
