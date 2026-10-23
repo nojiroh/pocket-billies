@@ -393,7 +393,7 @@ export function runSimOn(env) {
           /* its reward and flag; a mini-boss also makes the run's next pick of Perks (not answered yet) */
           fn('battleSettleWin')(B, s, pay, run);
           stats.moneyIn.reward += pay.reward;
-          /* the pick it made, answered as the policy says (relic-screen.js relicPickDone: perks.js relicChoose) */
+          /* the pick it made, answered as the policy says (perk-screen.js relicPickDone: perks.js relicChoose) */
           if (run.offer) {
             const c = simRelicChoice(run.offer, run.relics, data.RELICS, R.relics, P);
             at.pick = { offer: run.offer.slice(), took: c ? c.id : null, ...(c && c.drop ? { drop: c.drop } : {}) };

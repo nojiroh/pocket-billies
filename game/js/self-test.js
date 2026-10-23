@@ -96,7 +96,7 @@ import { fallOverWorldMap, fallWorldMapCanvas } from './opening-fall.js';
 import { airshipFlight } from './airship.js';
 import { runWorld, runWorldData, runWorldSync } from './run-world.js';
 import { runClinicEach, runJump, runTakeOff } from './run.js';
-import { relicPickOpen } from './relic-screen.js';
+import { relicPickOpen } from './perk-screen.js';
 import { ranchOpen } from './ranch-screen.js';
 import { labBuy, labMilestones, renderLabBoard } from './lab-board.js';
 import { closeModal, modal, renderOverlay, toast } from './overlay.js';

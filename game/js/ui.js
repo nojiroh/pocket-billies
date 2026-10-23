@@ -30,7 +30,7 @@ import { worldMapAction, worldMapFit, worldMapMount, worldMapOpenFromWalk } from
 import { cutscene } from './cutscene/director.js';
 import { cutsceneStart, cutsceneWanted } from './cutscene/opening.js';
 import { renderTitle, titleMount } from './title.js';
-import { renderRelics } from './relic-screen.js';
+import { renderRelics } from './perk-screen.js';
 import { labAction, renderLabBoard } from './lab-board.js';
 import { renderBag } from './bag.js';
 import { storyRivalBattle } from './story.js';
@@ -175,7 +175,7 @@ function openTab(t) {
 }
 /* UI-5: the bottom bar is the kit's <pb-nav-bar> (ui-run-kit.js): the hub's tabs, or a run's; the world itself is the
    base view (no Walk tab: the open tab tapped again, or Esc, goes back to it) and the Guide opens from the Trainer
-   card. Lab is the unlock board (RL-11, lab-board.js); a run's Perks tab is RL-12's (relic-screen.js). */
+   card. Lab is the unlock board (RL-11, lab-board.js); a run's Perks tab is RL-12's (perk-screen.js). */
 const NAV_HIDDEN = '';
 function updateNav(show) {
   let n = /** @type {any} */ ($('#nav'));
