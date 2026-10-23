@@ -718,7 +718,15 @@ async function runFullTest(mode) {
             uiState.tab = 'walk';
             uiState.bench = { id: sid };
             render();
-            await selfTestSleep(900);
+            /* 0.1.0 alpha: a place's ground is built on the card before it draws (about 2 s for the hub on a phone), so
+               wait for the scene to open and draw before timing the looks */
+            for (let i = 0; i < 150 && !(walkView.ready && walkView.id === sid); i++) await selfTestSleep(100);
+            if (!walkView.ready || walkView.id !== sid)
+              throw new Error((gameData.maps[sid] ? gameData.maps[sid].name : sid) + ' didn’t open');
+            if (typeof walkRenderer !== 'undefined' && walkRenderer.on) {
+              const fa = walkRenderer.frames;
+              for (let i = 0; i < 50 && walkRenderer.frames < fa + 2; i++) await selfTestSleep(100);
+            }
             for (const [n, f] of [
               ['night', { time: 23.5, weather: 'clear' }],
               ['a storm', { time: 15, weather: 'storm' }],
