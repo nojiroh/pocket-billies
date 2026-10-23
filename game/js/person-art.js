@@ -292,7 +292,7 @@ export function lookOf(who) {
   if (who === 'boy' || who === 'girl' || who === 'me')
     return cleanLook(uiState.trainerDraft || saveData.avatar, LOOK_PRESETS[0]);
   if (typeof who === 'string' && who.startsWith('folk:')) return folkLook(+who.slice(5));
-  const p = (typeof PEOPLE !== 'undefined' && (PEOPLE[who] || PEOPLE.gini)) || {};
+  const p = (typeof PEOPLE !== 'undefined' && (PEOPLE[who] || PEOPLE.chosen)) || {};
   return p.look ? cleanLook(p.look) : lookFromOld(p);
 }
 function folkLook(seed) {

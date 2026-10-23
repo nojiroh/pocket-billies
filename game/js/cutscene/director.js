@@ -341,7 +341,7 @@ export function cutsceneSay(who, text, expr) {
     /* phase 06-2b: skipped several lines fast? The Chosen says something about it, once */
     const q = cutscene.quip;
     cutscene.quip = null;
-    if (q && !cutscene.skip && cutscene.on) return cutsceneSay('gini', q, 'surprised');
+    if (q && !cutscene.skip && cutscene.on) return cutsceneSay('chosen', q, 'surprised');
   });
 }
 export function cutsceneHideDialogue() {

@@ -1385,7 +1385,7 @@ SECTIONS.people = () => {
     })
     .join('');
   return `<div class="split"><aside class="list-col"><div class="list-head"><button class="btn primary" data-act="personNew">+ New look</button></div><div class="llist">${list}</div></aside>
- <div class="ed-col"><div class="ed-head"><div><h2>${escapeHtml(k)}</h2><small>${used.length ? 'Used by ' + escapeHtml(used.join(', ')) : k === 'boy' || k === 'girl' ? 'Old default player look (players create their own now)' : 'Not used yet'}</small></div>${['boy', 'girl', 'gini'].includes(k) ? '' : '<button class="btn danger" data-act="personDel">Delete</button>'}</div>
+ <div class="ed-col"><div class="ed-head"><div><h2>${escapeHtml(k)}</h2><small>${used.length ? 'Used by ' + escapeHtml(used.join(', ')) : k === 'boy' || k === 'girl' ? 'Old default player look (players create their own now)' : 'Not used yet'}</small></div>${['boy', 'girl', 'chosen'].includes(k) ? '' : '<button class="btn danger" data-act="personDel">Delete</button>'}</div>
  ${card(
    'Look',
    `<div class="keeper"><div class="person-prev" id="personPrev">${personPreviewHTML(k)}</div><div>${grid(colorField('Skin', `${p}.skin`), colorField('Hair', `${p}.hair`), colorField('Eyes', `${p}.eyes`))}
@@ -1418,7 +1418,7 @@ ACTIONS.pickPerson = d => {
 ACTIONS.personNew = () => {
   const D = studioState.D,
     k = uniqueKey('npc', x => !!D.people[x]);
-  D.people[k] = { look: clone(personLook('gini') || cleanLook(null)) };
+  D.people[k] = { look: clone(personLook('chosen') || cleanLook(null)) };
   studioState.sel.person = k;
   changed();
   render();
@@ -1700,7 +1700,7 @@ ACTIONS.trainerNew = () => {
     k = uniqueKey('trainer', x => !!D.trainers[x]);
   D.trainers[k] = {
     name: 'New Trainer',
-    who: Object.keys(D.people).find(p => !['boy', 'girl'].includes(p)) || 'gini',
+    who: Object.keys(D.people).find(p => !['boy', 'girl'].includes(p)) || 'chosen',
     battleStage: 'grass',
     node: 0,
     blocks: false,

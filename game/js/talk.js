@@ -46,7 +46,7 @@ export const talkBox = {
   /* Project Story: the choice on screen (talkChoose), if any */
   choice: /** @type {{ pick: (i: number) => void, n: number } | null} */ (null),
 };
-const SPEAKER_NAMES = { gini: 'Professor Chosen' };
+const SPEAKER_NAMES = { chosen: 'Professor Chosen' };
 const FOLK_NAMES = [
   'Ada',
   'Bram',

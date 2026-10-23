@@ -382,7 +382,7 @@ export const TRAINERS = /** @type {Record<string, TrainerEntry>} */ (gameData.tr
 for (const id in TRAINERS) {
   const T = TRAINERS[id];
   T.id = id;
-  if (!PEOPLE[T.who]) T.who = 'gini';
+  if (!PEOPLE[T.who]) T.who = 'chosen';
   T.team = (T.team || [])
     .map(e => (/^@rival\d?$/.test(e.sp) || e.sp === 'robot' ? e : { ...e, sp: standInSpecies(e.sp) }))
     .filter(
@@ -496,7 +496,7 @@ export function worldPut(w) {
   Object.assign(SHOPS, w.shops || {});
   worldExtra.shops.push(...Object.keys(w.shops || {}));
   for (const [id, T] of Object.entries(w.trainers || {})) {
-    TRAINERS[id] = /** @type {TrainerEntry} */ ({ ...T, id, who: PEOPLE[T.who] ? T.who : 'gini' });
+    TRAINERS[id] = /** @type {TrainerEntry} */ ({ ...T, id, who: PEOPLE[T.who] ? T.who : 'chosen' });
     worldExtra.trainers.push(id);
   }
   worldSetGraph(w.locations, w.roads);

@@ -1081,7 +1081,7 @@ function mountMapPreview() {
           who: 'boy',
           enc: enc(),
           npcs: mapEditor.npc
-            ? [{ who: 'gini', id: 'pv', done: false, t: Math.min(0.95, mapEditor.t + 0.12), dz: 1.6 }]
+            ? [{ who: 'chosen', id: 'pv', done: false, t: Math.min(0.95, mapEditor.t + 0.12), dz: 1.6 }]
             : [],
         };
       return {
@@ -1095,7 +1095,7 @@ function mountMapPreview() {
           })(),
         who: 'boy',
         enc: enc(),
-        npcs: [...(mapEditor.npc ? [{ who: 'gini', id: 'pv', done: false }] : []), ...previewPeople(sc)],
+        npcs: [...(mapEditor.npc ? [{ who: 'chosen', id: 'pv', done: false }] : []), ...previewPeople(sc)],
         exits: mapExitNames(id),
       };
     },

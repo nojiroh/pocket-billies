@@ -822,7 +822,7 @@ function battleTutor() {
   if (!text) return;
   activeBattle.tipN = i + 1;
   battleTip(
-    'gini',
+    'chosen',
     text,
     i === 0 && typeof openingDone === 'function' && openingDone() ? { l: 'Skip this battle', a: 'tutskip' } : null,
     true
@@ -832,7 +832,7 @@ function battleTutor() {
 export function tutorPicked() {
   if (!activeBattle || !activeBattle.T || !activeBattle.T.tutorial || !activeBattle.pickWatch) return;
   const c = activeBattle.pickWatch.record(performance.now() - (activeBattle.menuT || 0));
-  if (c) battleTip('gini', c, null, true);
+  if (c) battleTip('chosen', c, null, true);
 }
 /* seen it all before: Blake's battle ends at once, and the story carries on */
 function tutorSkip() {
@@ -857,7 +857,7 @@ function battleTip(who, text, btn, hot) {
     ex = m[1];
     text = text.slice(m[0].length);
   }
-  const name = who === 'gini' ? 'Professor Chosen' : escapeHtml(who),
+  const name = who === 'chosen' ? 'Professor Chosen' : escapeHtml(who),
     face = typeof portraitHTML === 'function' ? portraitHTML(who, hot ? 72 : 44, ex) : '',
     b = btn ? `<button class="pb small quiet btip-b" data-a="${btn.a}">${escapeHtml(btn.l)}</button>` : '';
   el.className = hot ? 'btip hot' : 'btip';

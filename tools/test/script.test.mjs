@@ -30,10 +30,10 @@ const play = async (lines, o = {}) => {
 };
 
 test('a line: [expression], Name: and the text, each optional', () => {
-  assert.deepEqual(parseScript(['[happy] Juniper: There you are, dear.', 'Hello.', 'gini: Hi.', '[sad] Oh.']), [
+  assert.deepEqual(parseScript(['[happy] Juniper: There you are, dear.', 'Hello.', 'chosen: Hi.', '[sad] Oh.']), [
     { k: 'say', line: 0, who: 'Juniper', expr: 'happy', text: 'There you are, dear.' },
     { k: 'say', line: 1, who: null, expr: null, text: 'Hello.' },
-    { k: 'say', line: 2, who: 'gini', expr: null, text: 'Hi.' },
+    { k: 'say', line: 2, who: 'chosen', expr: null, text: 'Hi.' },
     { k: 'say', line: 3, who: null, expr: 'sad', text: 'Oh.' },
   ]);
 });

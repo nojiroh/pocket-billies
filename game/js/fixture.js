@@ -171,7 +171,7 @@ export function fixtureStart() {
     render();
   }
   if (FIXTURE === 'talk')
-    talkLine('gini', 'This is the dialogue box. The Studio shows it with the look you are editing.');
+    talkLine('chosen', 'This is the dialogue box. The Studio shows it with the look you are editing.');
 }
 /* UI-3b: the Studio's UI look preview hands a fixture the look being edited: the theme sheet, and light or dark,
    reduced motion and the text size through the fixture save's own Settings (only a fixture listens) */

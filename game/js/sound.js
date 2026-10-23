@@ -348,7 +348,7 @@ export function soundEffect(name, o = {}) {
       let h = 0;
       for (const ch of String(o.who || '')) h = (h * 31 + ch.charCodeAt(0)) % 997;
       const base =
-        o.who === 'gini'
+        o.who === 'chosen'
           ? 64
           : o.who === 'hazel'
             ? 72

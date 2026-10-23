@@ -28,7 +28,7 @@
   "resume": "a script saved halfway: which one, and where it goes on from"
  },
  "speakers": {
-  "Chosen": "gini",
+  "Chosen": "chosen",
   "Hazel": "hazel",
   "Blake": "chad",
   "Juniper": "juniper",
@@ -40,7 +40,7 @@
  "scripts": {
   "hazel": {
    "about": "Professor Chosen in his lab (talk.js talkHazel): your Index, your badges, where Blake went",
-   "who": "gini",
+   "who": "chosen",
    "script": [
     "[happy] {name}! My sidekick returns. How’s the Index? {caught} taxed so far. #l:2c0a",
     "if caught >= 15",
@@ -55,7 +55,7 @@
   },
   "blake-first-battle": {
    "about": "after Blake’s first battle in the opening, won, lost or skipped (rival0): Blake has his say, the Chosen heals your team and points you down the road (story.js storyAfterRival)",
-   "who": "gini",
+   "who": "chosen",
    "script": [
     "if rival0 = win",
     "  [surprised] Blake: What? I lost to someone who fell out of the sky an hour ago? #l:0008",
@@ -73,7 +73,7 @@
   },
   "ending": {
    "about": "after you beat Vinylla at the Inner Sun: what everyone says before the last clue (story.js storyEnding)",
-   "who": "gini",
+   "who": "chosen",
    "script": [
     "[sad] Vinylla: Gold. Everywhere. On the floor, on the press, on the record... #l:82ed",
     "[happy] Aurumansa. The golden caravan. I foresaw this. I didn’t write it down, but I foresaw it. #l:8b79",
