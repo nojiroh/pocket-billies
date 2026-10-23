@@ -4762,3 +4762,111 @@ body.wb-dropping::after {
   margin: 4px 0;
   padding-left: 20px;
 }
+/* Studio plan Phase 4: the roguelite content editors (relics-editor.js, unlocks-editor.js, economy-view.js,
+   run-values.js) */
+.relic-row {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+  background: var(--panel2);
+}
+.relic-row-head {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.relic-row-head select {
+  flex: 1;
+}
+.relic-err,
+.run-err {
+  margin: 4px 0 0;
+  font-size: 12px;
+}
+.relic-prev {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.relic-prev .tbl {
+  flex: 1 1 260px;
+}
+.relic-offers li {
+  margin: 2px 0;
+}
+.relic-this {
+  font-weight: 700;
+  color: var(--acc);
+}
+.ug-scroll {
+  overflow-x: auto;
+}
+.ug-map .ug-edge {
+  stroke: var(--line2);
+  stroke-width: 2;
+  fill: none;
+}
+.ug-map .ug-node {
+  cursor: pointer;
+}
+.ug-map .ug-node rect {
+  fill: var(--panel);
+  stroke: var(--line2);
+  stroke-width: 2;
+}
+.ug-map .ug-node.on rect {
+  stroke: var(--acc);
+  stroke-width: 4;
+}
+.ug-map .ug-node.owned rect {
+  fill: var(--acc2);
+}
+.ug-map .ug-node.bad rect {
+  stroke: var(--red);
+}
+.ug-map text {
+  font:
+    600 12px system-ui,
+    sans-serif;
+  fill: var(--text);
+  pointer-events: none;
+}
+.ug-map .ug-col {
+  font-weight: 700;
+  fill: var(--text2);
+}
+.ug-cur-capital {
+  fill: var(--gold);
+}
+.ug-cur-scrap {
+  fill: var(--text2);
+}
+.ug-cur-seals {
+  fill: var(--acc);
+}
+.ug-cur-none {
+  fill: var(--ok);
+}
+.run-over {
+  border-left: 3px solid var(--warn);
+  padding-left: 10px;
+}
+.run-tag {
+  display: inline-block;
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 8px;
+  background: var(--acc2);
+  color: var(--acc);
+}
+.run-tag.legacy {
+  background: var(--panel2);
+  color: var(--warn);
+}
+.eco-side {
+  font-size: 11px;
+  color: var(--text2);
+  text-transform: uppercase;
+}

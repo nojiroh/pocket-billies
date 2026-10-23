@@ -624,6 +624,11 @@ export const SECTION_LIST = [
   ['check', 'Check & backups', 'Problems, backups and restore'],
   ['legacy', 'Legacy world', 'The places parked outside the hub, read-only: copy a map into the game'],
   ['runlab', 'Run Lab', 'A run’s map from its seed, as the game makes it, on your unsaved data'],
+  [
+    'relics',
+    'Loopholes',
+    'A run’s Loopholes: effects by kind, the code’s limits, a sample build, the offer order for a seed',
+  ],
 ];
 /* alpha 0.4.1: the sections in five groups that fold away; the one you're in always shows. The descriptions show as
    a tooltip and under the section you're in, so the list is short enough to see at once */
@@ -637,7 +642,7 @@ const SECTION_GROUPS = [
   ['Money', ['items']],
   ['Game', ['rules', 'ui', 'art', 'check']],
   /* Studio plan Phase 2: runs (T2.2's Run Lab; the run rules editor and Phase 4's roguelite editors join it) */
-  ['Runs', ['runlab']],
+  ['Runs', ['runlab', 'relics']],
   /* RL-5: the old world outside the hub, parked in game/data/legacy (legacy-view.js); Studio plan T4.5: Town shops and
      Jobs edit shops.json and jobs.json, both {} (run shops come from rules.json run.shop; the game has no jobs) */
   ['Legacy', ['legacy', 'shops', 'jobs']],

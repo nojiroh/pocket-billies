@@ -1239,6 +1239,99 @@ def run_lab_logic_steps(pg, errs, want):
     return f"the logic worker's panel equals runPreview (mini-boss {boss['foe'][0] if boss['foe'] else '?'}, a town's {len(town['shop'])} days, {len(P['offers'])} picks; {boss['ms']} ms), one worker per data version"
 
 
+CONTENT_NODE = """import { GAME_DATA as D, modules } from './tools/test/setup-real.mjs';
+const out = {};
+/* Studio plan Phase 4: what the content editors must show, from the game's logic in Node */
+out.offers = modules.relics.relicOfferOrder('LAB1', D.relics, D.rules.run.relics, D.rules.run.map.minibosses).map(p => p.offer.join(','));
+out.lab = modules['run-preview'].runPreview('LAB1', { unlocks: [] }).relicOffers.map(o => o.join(','));
+out.insider = modules['content-preview'].relicPreview(['insider'], { sp: D.lines[0].id + '1', lvl: 30 }).stats.find(s => s.id === 'hus');
+out.leaders = modules['content-preview'].leaderRunValues();
+out.standIns = modules['content-preview'].speciesStandIns(Object.values(D.pools).flatMap(P => P.list.map(e => e[0])));
+out.fresh = modules['unlock-graph'].unlockSaveAfter(D);
+console.log(JSON.stringify(out));"""
+
+
+def content_want(errs):
+    """the content editors' expectations, worked out by the game's logic in Node (once)"""
+    if not hasattr(content_want, 'v'):
+        tree = ROOT if (ROOT / 'tools/test/setup-real.mjs').is_file() else REPO
+        r = subprocess.run(['node', '--input-type=module', '-e', CONTENT_NODE], cwd=tree, capture_output=True, text=True)
+        try: content_want.v = json.loads(r.stdout.strip().splitlines()[-1])
+        except Exception: errs.append(f'content editors: the Node logic failed: {r.stderr[-400:]}'); content_want.v = None
+    return content_want.v
+
+
+def wait_js(pg, js, secs=30):
+    t0 = time.time()
+    while time.time() - t0 < secs and not pg.evaluate(js): time.sleep(0.05)
+    return pg.evaluate(js)
+
+
+def pending_files(pg, rx):
+    return pg.evaluate(f"changedDataFiles(studioState.D).map(f=>f.path).filter(p=>/{rx}/.test(p)).sort()")
+
+
+def edit_undo(pg, errs, where, sel, value, path, rx):
+    """type a value into a field: the data has it and Propose would send its file; undo puts it back and leaves
+    nothing to send in that file"""
+    was = pg.evaluate(f"JSON.stringify(readPath({json.dumps(path)}))")
+    pg.fill(sel, str(value))
+    pg.dispatch_event(sel, 'change')
+    time.sleep(0.6)
+    now = pg.evaluate(f"readPath({json.dumps(path)})")
+    if now != value: errs.append(f'{where}: typing {value} left {path} at {now!r}')
+    sent = pending_files(pg, rx)
+    if not sent: errs.append(f'{where}: after the edit Propose would not send {rx}')
+    pg.evaluate("undo()")
+    time.sleep(0.3)
+    back = pg.evaluate(f"JSON.stringify(readPath({json.dumps(path)}))")
+    if back != was: errs.append(f'{where}: undo left {path} at {back}, not {was}')
+    left = pending_files(pg, rx)
+    if left: errs.append(f'{where}: after the undo Propose would still send {left}')
+    return sent
+
+
+def relics_steps(pg, errs):
+    """Studio plan T4.1: the Loopholes editor. The sample build's Speed with Insider Tip is the game's (relicPreview in
+    Node); the offer order for LAB1 is the Run Lab's picks; a stages edit redraws the preview and is in relics.json; a
+    factor under FX_LIMIT shows data-checks' message on its row; a row's kind change and the edits all undo."""
+    W = content_want(errs)
+    if not W: return
+    n = len(errs)
+    pg.evaluate("void openSection('relics', { relic: 'insider' })")
+    pg.wait_for_selector('#main [data-relic-preview]', timeout=20000)
+    if not wait_js(pg, "!!document.querySelector('#main [data-relic-preview][data-ready=insider]')"):
+        errs.append('loopholes: the sample build never came from the logic worker'); return
+    hus = pg.evaluate("+(document.querySelector('#main [data-relic-preview] [data-stat=hus]')||{dataset:{}}).dataset.after")
+    if hus != W['insider']['after']: errs.append(f"loopholes: Insider Tip's Speed after is {hus}, the game's {W['insider']['after']}")
+    wait_js(pg, "!!document.querySelector('#main [data-relic-offers][data-ready]')")
+    offers = pg.evaluate("[...document.querySelectorAll('#main [data-relic-offers] [data-offer]')].map(e=>e.dataset.offer)")
+    if offers != W['offers'] or offers != W['lab'][:len(offers)]: errs.append(f"loopholes: LAB1's offer order {offers}, Node {W['offers']}, the Run Lab's {W['lab']}")
+    # a stages edit: the preview follows, Propose carries relics.json, undo puts it back
+    sel = '#main [data-p="relics.insider.fx.0.stages"]'
+    pg.fill(sel, '2'); pg.dispatch_event(sel, 'change')
+    two = wait_js(pg, f"+(document.querySelector('#main [data-relic-preview] [data-stat=hus]')||{{dataset:{{}}}}).dataset.after==={W['insider']['before'] * 2}", 10)
+    if not two: errs.append('loopholes: +2 stages did not double the preview’s Speed')
+    pg.evaluate("undo()"); time.sleep(0.3)
+    edit_undo(pg, errs, 'loopholes', sel, 3, 'relics.insider.fx.0.stages', 'relics\\.json$')
+    # a factor under the code's limit: data-checks' message on its row
+    pg.evaluate("void openSection('relics', { relic: 'offshore' })"); time.sleep(0.3)
+    sel = '#main [data-p="relics.offshore.fx.0.mult"]'
+    pg.fill(sel, '0.05'); pg.dispatch_event(sel, 'change'); time.sleep(0.6)
+    pg.evaluate("render()")
+    msg = pg.evaluate("(document.querySelector('#main [data-relic-row=\"0\"] .relic-err')||{}).textContent||''")
+    if "outside the code's limits" not in msg: errs.append(f'loopholes: a factor of 0.05 showed no limit message on its row ({msg!r})')
+    pg.evaluate("undo()"); time.sleep(0.3)
+    # a row's kind: the row becomes a stat row; undo makes it money again
+    pg.select_option('#main [data-relic-kind="offshore"][data-n="0"]', 'stat'); time.sleep(0.6)
+    kind = pg.evaluate("studioState.D.relics.offshore.fx[0].kind")
+    pg.evaluate("undo()"); time.sleep(0.3)
+    if kind != 'stat' or pg.evaluate("JSON.stringify(studioState.D.relics.offshore.fx)") != '[{"kind":"money","mult":1.2}]':
+        errs.append(f"loopholes: the kind change made {kind!r} and undo left {pg.evaluate('JSON.stringify(studioState.D.relics.offshore.fx)')}")
+    if pending_files(pg, 'relics\\.json$'): errs.append('loopholes: after every undo Propose would still send relics.json')
+    if len(errs) == n: print(f"loopholes: Insider Tip's Speed {W['insider']['before']} -> {hus} as the game, LAB1's offers as the Run Lab's, a stages edit proposed and undone, the limit on its row, a kind change undone", flush=True)
+
+
 # the steps after sign-in, in order (--only picks some by name; 'sections' and 'art' are the two blocks in main)
 STEPS = [
     ('story', story_steps),
@@ -1256,6 +1349,7 @@ STEPS = [
     ('ui_screens', ui_screens_steps),
     ('studio_test', studio_test_steps),
     ('run_lab', run_lab_steps),
+    ('relics', relics_steps),
 ]
 
 
