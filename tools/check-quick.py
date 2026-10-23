@@ -73,9 +73,10 @@ def step(name, limit):
     happened in our code, what was on screen, and a picture (fail-<step>.webp)"""
     def wrap(fn):
         def run(P):
-            log(name); t = time.time(); ok = True; note = ''; where = ''; n0 = len(P.errs); t0 = 0
+            log(name); t = time.time(); ok = True; note = ''; where = ''; n0 = len(P.errs); t0 = 0; boot = 0
             try:
-                if not P.pg: P.open()
+                if not P.pg:
+                    P.open(); boot = round(time.time() - t, 1)
                 CUR.pg = P.pg; t0 = page_now()
                 r = fn(P); note = r if isinstance(r, str) else ''
                 if P.errs[n0:]: raise Exception('errors: ' + ' | '.join(P.errs[n0:][:4]))
@@ -92,12 +93,13 @@ def step(name, limit):
             dt = round(time.time() - t, 1)
             D = page_diag(t0) or {}
             rec = {'step': name, 'ok': ok, 'seconds': dt, 'note': note}
+            if boot: rec['boot'] = boot   # the page's boot, held by its first step
             if D: rec['game'] = D
             if where: rec['where'] = where
             with LOCK:
                 if not ok: problems.append(f'{name}: {note}')
-                if ok and dt > limit: notes.append(f'{name} took {dt}s (expected under {limit}s)')
-                steps.append(rec); log(f'  {"ok" if ok else "PROBLEM"} ({dt}s) {name[:60]}: {note}')
+                if ok and dt - boot > limit: notes.append(f'{name} took {round(dt - boot, 1)}s after the boot (expected under {limit}s)')
+                steps.append(rec); log(f'  {"ok" if ok else "PROBLEM"} ({dt}s{f", boot {boot}s" if boot else ""}) {name[:60]}: {note}')
                 slow = (D.get('slow') or []) if isinstance(D, dict) else []
                 if slow: log(f'     slow frames: {"; ".join(slow[-3:])}')
                 if not ok:
