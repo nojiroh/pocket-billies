@@ -465,8 +465,8 @@ body.on-scene {
   background: #2a3a3a;
 }
 body.on-scene #dio {
-  filter: saturate(0.95) brightness(0.78) blur(1.5px);
-  transform: scale(1.03);
+  filter: saturate(0.95) brightness(0.8) blur(0.8px);
+  transform: scale(1.015);
 }
 body.on-scene::before {
   content: '';
@@ -505,7 +505,7 @@ body.on-scene #app {
   image-rendering: auto;
 }
 body.on-scene #dio.gl {
-  filter: brightness(0.8) blur(1.5px);
+  filter: brightness(0.82) blur(0.8px);
 }
 body.on-scene #dioui {
   display: none;
