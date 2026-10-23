@@ -744,7 +744,7 @@ export function paintActions() {
       first = !activeBattle.plan.length,
       pyramids = Object.keys(PYRAMIDS).reduce((a, k) => a + (saveData.pyramids[k] || 0), 0),
       items = Object.keys(ITEMS)
-        .filter(k => saveData.items[k] > 0 && !ITEMS[k].evoItem)
+        .filter(k => saveData.items[k] > 0 && !ITEMS[k].evoItem && !ITEMS[k].lvlUp)
         .reduce((a, k) => a + saveData.items[k], 0),
       crew = saveData.team,
       alive = crew.filter(x => x.hp > 0).length;
@@ -787,7 +787,7 @@ export function paintActions() {
       })
       .join('')}</div>${backButtonHTML()}`;
   } else if (ph === 'items') {
-    const its = Object.keys(ITEMS).filter(k => saveData.items[k] > 0 && !ITEMS[k].evoItem);
+    const its = Object.keys(ITEMS).filter(k => saveData.items[k] > 0 && !ITEMS[k].evoItem && !ITEMS[k].lvlUp);
     h = `<div class="plist">${
       its.length
         ? its

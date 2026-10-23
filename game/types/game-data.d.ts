@@ -671,6 +671,8 @@ export interface Item {
   cure?: string;
   revive?: number;
   evoItem?: number;
+  /** RL-12b: levels a Billie gains when it eats one (the Protein Bar), used from its sheet, never in battle */
+  lvlUp?: number;
   mint?: boolean;
   /** phase 17: fixes a robot's parts (1 = all of their HP) */
   repair?: number;

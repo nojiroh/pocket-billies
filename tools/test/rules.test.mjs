@@ -180,3 +180,24 @@ test('rules: the distance walked outdoors counts; RL-10 (on purpose): walking ha
   fn('addWalked')(5000);
   assert.equal(s.stats.walked, 120, 'a jump of kilometres is not a walk');
 });
+
+test('RL-12b: a level item gives whole levels, learning moves on the way, and stops at the top level', () => {
+  const m = startedSave('sparky0', 10).team[0],
+    said = [];
+  assert.equal(
+    fn('feedLevels')(m, 1, t => said.push(t)),
+    1
+  );
+  assert.equal(m.lvl, 11);
+  assert.ok(said.some(t => /grew to level 11/.test(t)));
+  assert.equal(
+    fn('feedLevels')(m, 2, () => {}),
+    2
+  );
+  assert.equal(m.lvl, 13);
+  m.lvl = fn('maxLevel')();
+  assert.equal(
+    fn('feedLevels')(m, 1, () => {}),
+    0
+  );
+});
