@@ -237,15 +237,23 @@ export async function runStudioTest(G, opts = {}) {
         intervals: [base.timers, timers.live()],
       };
     }
-    /* ---- the undo: how big one step is, and what a full undo holds ---- */
+    /* ---- the undo, measured (Studio plan T1.2): the data it holds once (`last`), and the step each of the test's
+       edits added (each is undone straight away, so they are added up here as if all were kept). Bytes as the
+       browser stores the texts: 1 a character unless one is past U+00FF ---- */
     const commits = probe.filter(p => p.kind === 'commit');
     const snapMB = commits.length ? r1(commits[commits.length - 1].chars / 1e6) : r1(keep.snap.length / 1e6);
+    const edited = report.sections.filter(s => s.edit && s.edit.stepBytes != null),
+      lastMB = G.historyPartsBytes(S.last, true) / 1e6,
+      stepsMB = edited.reduce((n, s) => n + s.edit.stepBytes, 0) / 1e6;
     report.undo = {
       max: G.HISTORY_STEPS,
       snapMB,
-      fullMB: r1(snapMB * G.HISTORY_STEPS),
+      lastMB: r1(lastMB),
+      edits: edited.length,
+      stepsMB: r1(stepsMB),
+      fullMB: r1(lastMB + stepsMB),
       stepsBefore: keep.undo.length,
-      beforeMB: r1(keep.undo.reduce((n, s) => n + (typeof s === 'string' ? s.length : 0), 0) / 1e6),
+      beforeMB: r1(keep.undo.reduce((n, s) => n + G.historyBytes(s), 0) / 1e6),
     };
   } catch (e) {
     fail(where, e);
@@ -348,6 +356,8 @@ async function editOnce(G, k, probeSince) {
   const ms = now() - a;
   const com = probeSince('commit', a).pop();
   await wait(AFTER_EDIT_MS);
+  /* the bytes of the undo step the edit added (its commit may be the debounced one, after the wait) */
+  const stepBytes = probeSince('commit', a).reduce((n, c) => n + (c.bytes || 0), 0);
   const chk = probeSince('check', a).pop(),
     send = probeSince('send', a).pop();
   const u0 = now();
@@ -362,6 +372,7 @@ async function editOnce(G, k, probeSince) {
     ms: r1(ms),
     snapMs: com ? r1(com.snapMs) : null,
     snapMB: com ? r1(com.chars / 1e6) : null,
+    stepBytes,
     checkMs: chk ? r1(chk.ms) : null,
     sendMs: send ? r1(send.ms) : null,
     undoMs: r1(u1 - u0),

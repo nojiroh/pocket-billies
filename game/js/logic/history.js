@@ -30,6 +30,7 @@ expose({
   HISTORY_DATA_BYTES: [() => HISTORY_DATA_BYTES],
   HISTORY_ORDER: [() => HISTORY_ORDER],
   HISTORY_STEPS: [() => HISTORY_STEPS],
+  HISTORY_WIDE_TEXT: [() => HISTORY_WIDE_TEXT],
   // @ts-expect-error -- replaced on purpose
   historyApply: [() => historyApply, v => (historyApply = v)],
   // @ts-expect-error -- replaced on purpose
@@ -52,6 +53,7 @@ expose({
   historyPartsData: [() => historyPartsData, v => (historyPartsData = v)],
   // @ts-expect-error -- replaced on purpose
   historyRedo: [() => historyRedo, v => (historyRedo = v)],
+  historyTextBytes: [() => historyTextBytes],
   // @ts-expect-error -- replaced on purpose
   historyTrim: [() => historyTrim, v => (historyTrim = v)],
   // @ts-expect-error -- replaced on purpose
@@ -186,29 +188,35 @@ export function historyApply(/** @type {Parts} */ parts, /** @type {PartsDiff} *
   return put;
 }
 
-export const historyDiffBytes = (/** @type {PartsDiff} */ d) => {
+/* a text's bytes: 2 a character for the caps; `real`: as the browser stores it, 1 a character when every one is up
+   to U+00FF (the self-test's measurement) */
+export const HISTORY_WIDE_TEXT = /[\u0100-\uffff]/;
+export const historyTextBytes = (/** @type {string | null} */ t, real = false) =>
+  !t ? 0 : t.length * (real && !HISTORY_WIDE_TEXT.test(t) ? 1 : 2);
+export const historyDiffBytes = (/** @type {PartsDiff} */ d, real = false) => {
   let n = 0;
-  for (const k of Object.keys(d)) n += (d[k][0] || '').length + (d[k][1] || '').length;
-  return 2 * n;
+  for (const k of Object.keys(d)) n += historyTextBytes(d[k][0], real) + historyTextBytes(d[k][1], real);
+  return n;
 };
-/** what a step holds in bytes: its pictures (`art`), its data (`data`), or both */
+/** what a step holds in bytes: its pictures (`art`), its data (`data`), or both; `real` as historyTextBytes */
 export const historyBytes = (
   /** @type {DataStep | ArtStep} */ s,
-  /** @type {'art' | 'data' | undefined} */ kind = undefined
+  /** @type {'art' | 'data' | undefined} */ kind = undefined,
+  real = false
 ) => {
-  if ('parts' in s) return kind === 'art' ? 0 : historyDiffBytes(s.parts);
-  const data = kind === 'art' || !s.snapshot ? 0 : historyDiffBytes(s.snapshot);
+  if ('parts' in s) return kind === 'art' ? 0 : historyDiffBytes(s.parts, real);
+  const data = kind === 'art' || !s.snapshot ? 0 : historyDiffBytes(s.snapshot, real);
   if (kind === 'data') return data;
   const art = s.group
     ? s.group.reduce((n, g) => n + historyBytes(g, 'art'), 0)
     : s.before.data.length + s.after.data.length;
   return art + data;
 };
-/** the bytes the parts hold (2 a character) */
-export function historyPartsBytes(/** @type {Parts | null} */ parts) {
+/** the bytes the parts hold, names and texts (`real` as historyTextBytes) */
+export function historyPartsBytes(/** @type {Parts | null} */ parts, real = false) {
   let n = 0;
-  if (parts) for (const [k, v] of parts) n += k.length + v.length;
-  return 2 * n;
+  if (parts) for (const [k, v] of parts) n += historyTextBytes(k, real) + historyTextBytes(v, real);
+  return n;
 }
 export const noPixels = () => ({ x: 0, y: 0, width: 0, height: 0, data: new Uint8ClampedArray(0) });
 /** several picture steps as one (undone and redone together), with the data as it is now when they changed data too */

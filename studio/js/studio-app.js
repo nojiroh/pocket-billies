@@ -227,8 +227,9 @@ export function commit(now) {
       let chars = 0;
       for (const v of parts.values()) chars += v.length;
       const step = studioState.undo[studioState.undo.length - 1];
-      /* bytes: what this edit's undo step holds */
-      P('commit', { snapMs: b - a, chars, bytes: step !== top ? historyBytes(step) : 0, ms: performance.now() - a });
+      /* bytes: what this edit's undo step holds, as the browser stores it */
+      const bytes = step !== top ? historyBytes(step, undefined, true) : 0;
+      P('commit', { snapMs: b - a, chars, bytes, ms: performance.now() - a });
     }
   };
   if (now) go();
