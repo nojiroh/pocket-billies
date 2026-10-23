@@ -48,9 +48,9 @@ town node needs it.
 
 ## Tracks alongside
 - **Reflavour track** (docs/phases/reflavour-track.md, the owner's brief 2026-10-23): less finance, more Pokémon. The
-  Billies stay billionaire clones; catching with capsules, Perks (was Loopholes), Expeditions (was Brackets), Coins,
-  Research, Scrap and Crests, new type passives, internal renames one per commit, the new tone in the text, a new game
-  name. RF-1 and RF-2 before RO-1, RF-3 before RL-12b, RF-4 before RL-S1. Tags `rf-N-done`.
+  Billies stay billionaire clones; catching with pyramids, Perks (was Loopholes), Expeditions (was Brackets), Coins,
+  Research, Scrap and Crests, new type passives, internal renames one per commit, the new tone in the text, the new name Pocket B&B² (a raised B), the Bureau of Lost, Found and
+  Beans. RF-1 and RF-2 before RO-1, RF-3 before RL-12b, RF-4 before RL-S1. Tags `rf-N-done`.
 - **Studio track** (docs/phases/studio-track.md): ST-0..ST-6 done; ST-7 (Model mode import) next. Independent of the
   rework; the editors for the new data sections come with their sessions (RL-11..RL-16). Side session ST-T, the
   Studio self-test (docs/phases/studio-self-test.md, approved 2026-10-21): measure the Studio; fixes come after.

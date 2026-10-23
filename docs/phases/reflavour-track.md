@@ -15,14 +15,16 @@ Numbers below were read at 2361848; verify again before each session.
 | The Billies | **Stay**: the messed-up clones of billionaires, made by the billionaires' own vanity cloning projects gone wrong and dumped in the Hollow Earth. Treated like Pokémon (caught, raised, evolved, battled). The only finance-flavoured thing left |
 | Their moves | **Stay** (Hot Take, Pipeline...): the clones' personality |
 | Type passives | **Change** to Pokémon-like names and ideas (`ramp`, `subsidy`, `landlord`, `pivot`, `volatile`, `synergy`, `inherit`, `sharp`) |
-| Catching | **Capsules**, thrown like Poké Balls; no "tax" wording anywhere |
+| Catching | **Pyramids**, thrown like Poké Balls; no "tax" wording anywhere |
 | Tone | **Satire, other targets**: bureaucracy and corporations, tech and influencer culture, RPG and Pokémon clichés, celebrity and clone ethics |
 | The run's relics | **Perks** (was Loopholes) |
 | Difficulty tiers | **Expeditions I-V** (was Brackets), each a story chapter (roguelite-track.md 9.2) |
 | Currencies | **Coins** (run money, its own symbol), **Research** (was Capital, spent at the Lab), **Scrap** (stays), **Crests** (was Audit Seals, from bosses, for the airship) |
 | The organization | **A secret bureaucratic agency** (names in 4) |
 | Status ids | **Renamed internally** (`aud`, `sub`, `scn`; the player already sees Paralyzed, Asleep, Burned) |
-| The game's name | **Rename**: three options in 4, the owner picks |
+| The game's name | **Pocket B&B²** with the ² drawn as a small raised **B** (the owner, 2026-10-23): "Pocket B&B" and a superscript B in the logo |
+| The organization's name | **The Bureau of Lost, Found and Beans** (the owner, 2026-10-23) |
+| The capsules | **Pyramids** (the owner, 2026-10-23): thrown to catch a Billie |
 
 ## 2. What carries finance today (verified at 2361848, game/js and game/data, gamedata.js excluded)
 
@@ -49,11 +51,11 @@ Numbers below were read at 2361848; verify again before each session.
 | # | Session | Goal | Depends on | Sessions |
 |---|---|---|---|---|
 | RF-1 | Words players see | every player-facing finance word in 2 changed: catching ("catch"), currencies (Coins, Research, Crests), Perks, Expeditions, the bribe line, settings and haptics text; data text only, ids untouched | none | 1 |
-| RF-2 | Capsules | `coins.json`'s four coins become capsules (names, text, icons, the throw's art and sound); catch odds unchanged; the never-fail one stays a boss/badge reward | RF-1 | 1 |
+| RF-2 | Pyramids | `coins.json`'s four coins become pyramids (names, text, icons, a low-poly pyramid for the throw, its tumble and landing, the sound); catch odds unchanged; the never-fail one stays a boss/badge reward | RF-1 | 1 |
 | RF-3 | Type passives | the nine passives get Pokémon-like names and, where the idea was finance (`landlord`, `subsidy`, `inherit`), a new effect; the golden battle record remade on purpose for the changed ones | RF-1 | 1 |
-| RF-4 | Internal renames | one rename per commit: `relics` → `perks` (data section, `run.relics`, `logic/relics.js`, `relic-screen.js`), `capital` → `research`, `seals` → `crests`, `brackets`/Bracket keys → `expeditions`, status ids, item ids, coin ids → capsule ids, `ledger` tab id; `npm run modules` and check:modules after each; SAVE_VERSION bumped once (old saves set aside, as CLAUDE.md allows) | RF-1..RF-3 | 2 |
+| RF-4 | Internal renames | one rename per commit: `relics` → `perks` (data section, `run.relics`, `logic/relics.js`, `relic-screen.js`), `capital` → `research`, `seals` → `crests`, `brackets`/Bracket keys → `expeditions`, status ids, item ids, coin ids → pyramid ids, `ledger` tab id; `npm run modules` and check:modules after each; SAVE_VERSION bumped once (old saves set aside, as CLAUDE.md allows) | RF-1..RF-3 | 2 |
 | RF-5 | The new tone in text | story.json, Chosen's and Hazel's tables, signs, lore, the opening, the Index text, the leaders' lines: satire moved onto bureaucracy, tech and influencers, RPG clichés and clone ethics; the clones' origin (billionaires' vanity cloning projects) written into the Index and lore; Claude drafts, the owner approves | RF-1 | 1-2 |
-| RF-6 | The game's name | the picked name in the title screen, page titles, manifest, README, the changelog; storage keys untouched (or moved with a set-aside) | the owner's pick | 1 |
+| RF-6 | The game's name | **Pocket B&B²** (the raised B) in the title screen's logo, page titles, manifest, README, the changelog; storage keys untouched (or moved with a set-aside) | RF-1 | 1 |
 
 **Order with the roguelite track:** RF-1 and RF-2 before RO-1 (so new content is written in the new words), RF-3
 before RL-12b (encounters lean on passives), RF-4 before RL-S1 (the story director's data uses the new ids), RF-5
@@ -63,31 +65,31 @@ beside RL-S1 (the same writing pass), RF-6 whenever the owner picks.
 checks: retarget in the same commit as the text), the debug log's words (CLAUDE.md: don't break the exported log;
 keep its keys, change only the text), the Studio's labels for these sections, the golden record (RF-3 only).
 
-## 4. Names for the owner (Claude's drafts; original)
+## 4. Names (decided by the owner, 2026-10-23)
 
-**The game** (three directions):
-1. **Hollow Pocket** (recommended): keeps "Pocket", names the setting.
-2. **Billie Clones**: says what the creatures are.
-3. **Expedition: Inner Sun**: the airship and the run.
+**The game: Pocket B&B².** The ² is a small raised capital **B**, not a 2: the logo reads "Pocket B&B" with a
+superscript B. Where text can't raise a letter (page titles, the manifest, file names, the debug log) it needs a plain
+form (5).
 
-**The agency** (secret, bureaucratic; nothing from Control or the SCP Foundation):
-1. **The Bureau of Misplaced Persons** (recommended): it files everything that falls through a portal, you included,
-   as misplaced, and "returns" you to the drop point, Copperleaf; Professor Chosen takes credit for it. Logo: a
-   luggage tag with an eye. Terms: case numbers, forms in triplicate, "pending".
-2. **The Department of Anomalous Returns.** Returns what doesn't belong; you keep coming back.
-3. **The Office of Lost and Found.** A friendly name on a very unfriendly building.
-
-The clones are the billionaires' doing; the agency contains and studies them, and the bots are its
+**The organization: the Bureau of Lost, Found and Beans.** Secret and bureaucratic (nothing from Control or the SCP
+Foundation). It files everything that falls through a portal, you included, as "lost", and "returns" it to the drop
+point, Copperleaf, which is why a lost run ends there; Professor Chosen takes the credit. Nobody inside will say what
+the Beans are. The clones are the billionaires' doing; the Bureau contains and studies them, and the bots are its
 "retrieval units" (roguelite-track.md 9.2).
 
-**The capsules:** Pod / Sturdy Pod / Prime Pod / Sure Pod (recommended) / Clone Jars (Jar, Big Jar, ...) / plain
-Capsules.
+**The capsules: pyramids.** Thrown at a tired Billie; it tumbles, lands point up and seals. Four tiers replace the four
+coins. Draft names (5): **Pyramid** (was Copper Coin), **Step Pyramid** (Silver, 1.5×), **Gold Pyramid** (Gold, 2×),
+**Capstone** (Platinum: never fails, from badges and bosses).
 
 ## 5. Ask me before
 
-1. **The game's name:** 4's option 1 / 2 / 3 / your own.
-2. **The agency's name:** 4's option 1 / 2 / 3 / your own.
-3. **The capsules' names:** Pods (recommended) / Clone Jars / Capsules.
+1. **The game's name in plain text** (where a raised B can't be drawn): "Pocket B&Bᴮ" with the Unicode modifier
+   letter ᴮ (recommended; it may draw small or missing in some fonts) / "Pocket B&B^B" / "Pocket B&BB" / "Pocket B&B²"
+   as written.
+2. **The Beans:** a running joke never explained (recommended) / a story clue (what the Bureau really collects) /
+   decide in RL-S1.
+3. **The pyramids' names:** 4's drafts (recommended) / your own. The owner may want the pyramid-scheme joke in their
+   text or not (the Billies are the one finance thing left).
 4. **The coins' symbol:** the ruble sign ₽ is a real currency sign (it's what "₽-style" would print), and Pokémon's
    own sign is a custom glyph. Recommended: a small coin icon of the game's own beside the number, no text symbol /
    "c" after the number / ₽ anyway.

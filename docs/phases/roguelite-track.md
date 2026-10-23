@@ -948,7 +948,8 @@ were read at 2361848; verify again before each session.
 
 **Words (2026-10-23, docs/phases/reflavour-track.md):** the owner moved the game off finance. Read Loopholes as
 **Perks**, Brackets as **Expeditions**, Capital as **Research**, Audit Seals as **Crests**, $ as **Coins**; catching is
-with capsules. The organization is a secret bureaucratic agency (9.5 is superseded by reflavour-track.md section 4).
+with pyramids. The organization is the Bureau of Lost, Found and Beans; the game is Pocket B&B² (9.5 is superseded by
+reflavour-track.md section 4).
 
 ### 9.1 Why runs feel the same today (verified at 2361848)
 
@@ -1058,7 +1059,7 @@ The bots fit any of them as "repossession units"; the Voltron as the first "Lot"
 
 ### 9.6 Ask me before (new; recommendation first)
 
-21. **The organization's name:** moved to reflavour-track.md section 5.
+21. **The organization's name:** answered 2026-10-23: the Bureau of Lost, Found and Beans.
 22. **Kept badges vs badge Loopholes:** a permanent badge on the first win per leader, the Loophole pick stays the run's
     prize (recommended) / badges run-only and field moves need only the type.
 23. **Starter points:** a budget of 10 at Bracket I, costs 1-5 by line rarity and stage, a ranch-trained Billie +1 per
