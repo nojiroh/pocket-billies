@@ -578,31 +578,30 @@ def robot_joint_steps(pg, errs):
 
 def generate_steps(pg, errs):
     """map generator MG-1: Walk scenes → Generate… draws a draft route in the game's renderer, the dials change it (a
-    biome, terraces, a new seed for the plants only) without touching the data or the undo history, and Add as a new
-    scene is one undo step (left in, so the proposal at the end carries a generated scene). MG-2: an exit joined to
-    Tallgrass Meadow's meets it, the pair is drawn side by side, the clinic dial puts a clinic at the hub. RL-5: Tallgrass
-    Meadow is parked (game/data/legacy), so it is brought back first with the Legacy section's Copy into game (one undo
-    step, before the counts below; the proposal carries it too)"""
+    biome, terraces, a new seed for the plants only, the clinic dial puts a clinic at the hub) without touching the data
+    or the undo history, and Add as a new scene is one undo step. MG-2: a second draft's exit joined to the first new
+    scene's meets it, the pair is drawn side by side, and it is added too (both left in, so the proposal at the end
+    carries generated scenes). The game's own scenes have no edge exit to join (Copperleaf is an island), so the
+    check joins to the scene it made; no legacy map is brought in."""
     n = len(errs)
-    pg.evaluate("void openSection('legacy')")
-    pg.wait_for_selector('[data-act=legacyCopy][data-id=tallgrass_meadow]', timeout=30000)
-    pg.click('[data-act=legacyCopy][data-id=tallgrass_meadow]')
-    pg.wait_for_selector('#lgName', timeout=15000)
-    pg.click('.dlg [data-dlg="1"]')
-    t0 = time.time()
-    while time.time() - t0 < 15 and not pg.evaluate("!!studioState.D.maps.tallgrass_meadow"):
-        time.sleep(0.3)
-    if not pg.evaluate("!!studioState.D.maps.tallgrass_meadow"):
-        errs.append('generate: Tallgrass Meadow could not be copied in from the Legacy section')
-        return
-    pg.evaluate("studioState.sel.scene='tallgrass_meadow';mapGen.on=false;void openSection('scenes')")
-    pg.wait_for_selector('[data-act=genOpen]', timeout=20000)
+
+    def draft():
+        pg.evaluate("mapGen.on=false;void openSection('scenes')")
+        pg.wait_for_selector('[data-act=genOpen]', timeout=20000)
+        pg.click('[data-act=genOpen]')
+        t0 = time.time()
+        while time.time() - t0 < 60 and not pg.evaluate("!!mapGen.draft&&walkView.id==='_gen'&&walkView.ready"):
+            time.sleep(0.3)
+        return pg.evaluate("!!mapGen.draft&&walkView.id==='_gen'")
+
+    def accept(name):
+        pg.click('[data-act=genAccept]')
+        pg.fill('#genName', name)
+        pg.click('#dlg [data-dlg="1"]'); time.sleep(0.5)
+
+    pg.evaluate("studioState.sel.scene='copperleaf'")
     maps0, undo0 = pg.evaluate("[Object.keys(studioState.D.maps).length, studioState.undo.length]")
-    pg.click('[data-act=genOpen]')
-    t0 = time.time()
-    while time.time() - t0 < 60 and not pg.evaluate("!!mapGen.draft&&walkView.id==='_gen'&&walkView.ready"):
-        time.sleep(0.3)
-    if not pg.evaluate("!!mapGen.draft&&walkView.id==='_gen'"):
+    if not draft():
         errs.append('generate: the draft never drew')
         return
     pg.select_option('select[data-gen=biome]', 'canyon')
@@ -612,36 +611,46 @@ def generate_steps(pg, errs):
     ground = pg.evaluate("JSON.stringify([mapGen.draft.tiles,mapGen.draft.edgeExits])")
     pg.click('[data-act=genReroll][data-st=plants]'); time.sleep(0.6)
     if pg.evaluate("JSON.stringify([mapGen.draft.tiles,mapGen.draft.edgeExits])") != ground: errs.append('generate: a new seed for the plants changed the ground or the road')
-    if pg.evaluate("[Object.keys(studioState.D.maps).length, studioState.undo.length]") != [maps0, undo0]: errs.append('generate: the draft reached the data or the undo history')
     if pg.evaluate("mapgenUnreachable(mapGen.draft, studioState.D.scenery).length"): errs.append('generate: the hub of the draft does not reach every exit')
-    # MG-2: the west exit joins Tallgrass Meadow's east exit (south2): it faces it a whole number of metres along, and
-    # the draft meets that edge (heights, step, a straight walk across); the pair side by side; the hub's buildings
-    pg.select_option('select[data-gen-join="0"]', 'tallgrass_meadow|south2')
+    if not pg.evaluate("!!document.querySelector('input[data-gen=\"props.clinic\"]')"): pg.click('[data-act=genOpenG][data-g=props]'); time.sleep(0.3)
+    pg.evaluate("(()=>{const c=document.querySelector('input[data-gen=\"props.clinic\"]');c.checked=true;c.dispatchEvent(new Event('change',{bubbles:true}))})()")
+    t0 = time.time()
+    while time.time() - t0 < 30 and not pg.evaluate("mapGen.draft.props.some(p=>p.k==='clinic'&&p.act==='clinic')"): time.sleep(0.3)
+    if not pg.evaluate("mapGen.draft.props.some(p=>p.k==='clinic'&&p.act==='clinic')"): errs.append('generate: the clinic dial put no clinic at the hub')
+    if pg.evaluate("[Object.keys(studioState.D.maps).length, studioState.undo.length]") != [maps0, undo0]: errs.append('generate: the draft reached the data or the undo history')
+    accept('Check Trail')
+    if not pg.evaluate("!!studioState.D.maps.checktrail&&studioState.D.maps.checktrail.gen.params.biome==='canyon'&&studioState.D.maps.checktrail.props.every(p=>p.g===1)&&studioState.D.maps.checktrail.edgeExits.length>0"):
+        errs.append('generate: Add as a new scene made no scene with its dials and exits')
+        return
+    if pg.evaluate("studioState.undo.length") != undo0 + 1: errs.append('generate: adding the scene is not one undo step')
+    # MG-2: a second draft's first exit joins Check Trail's first exit: it faces it a whole number of metres along, and
+    # the draft meets that edge (heights, step, a straight walk across); the pair side by side
+    ex = pg.evaluate("studioState.D.maps.checktrail.edgeExits[0].id")
+    pg.evaluate("studioState.sel.scene='checktrail'")
+    if not draft():
+        errs.append('generate: the second draft never drew')
+        return
+    pg.select_option('select[data-gen-join="0"]', f'checktrail|{ex}')
     t0 = time.time()
     while time.time() - t0 < 60 and not pg.evaluate("mapGen.agree.length>0&&!!mapGen.agree[0].a&&walkView.ready"): time.sleep(0.3)
     a = pg.evaluate("mapGen.agree.length?mapGen.agree[0].a:null")
-    if not a or a['dhBand'] > 0.05 or abs(a['raiseExit']) > 0.05 or a['walk']: errs.append(f'generate: the joined exit does not meet Tallgrass Meadow: {a}')
-    rules = pg.evaluate("(()=>{const T=studioState.D.maps.tallgrass_meadow,d=mapGen.draft,g=mapGen.agree[0];return seamRulesPair(T,T.edgeExits.find(e=>e.id==='south2'),d,d.edgeExits.find(e=>e.id===g.id))})()")
+    if not a or a['dhBand'] > 0.05 or abs(a['raiseExit']) > 0.05 or a['walk']: errs.append(f'generate: the joined exit does not meet Check Trail: {a}')
+    rules = pg.evaluate(f"(()=>{{const T=studioState.D.maps.checktrail,d=mapGen.draft,g=mapGen.agree[0];return seamRulesPair(T,T.edgeExits.find(e=>e.id==={json.dumps(ex)}),d,d.edgeExits.find(e=>e.id===g.id))}})()")
     if rules: errs.append(f'generate: the joined pair breaks the seam rules: {rules}')
     pg.click('[data-act=genPair]')
     t0 = time.time()
     while time.time() - t0 < 60 and not pg.evaluate("!!mapGen.shown&&walkView.sc===mapGen.shown&&walkView.ready"): time.sleep(0.3)
     if not pg.evaluate("!!mapGen.shown&&walkView.sc===mapGen.shown"): errs.append('generate: Preview the pair drew nothing')
     pg.click('[data-act=genPair]'); time.sleep(0.5)
-    if not pg.evaluate("!!document.querySelector('input[data-gen=\"props.clinic\"]')"): pg.click('[data-act=genOpenG][data-g=props]'); time.sleep(0.3)
-    pg.evaluate("(()=>{const c=document.querySelector('input[data-gen=\"props.clinic\"]');c.checked=true;c.dispatchEvent(new Event('change',{bubbles:true}))})()")
-    t0 = time.time()
-    while time.time() - t0 < 30 and not pg.evaluate("mapGen.draft.props.some(p=>p.k==='clinic'&&p.act==='clinic')"): time.sleep(0.3)
-    if not pg.evaluate("mapGen.draft.props.some(p=>p.k==='clinic'&&p.act==='clinic')"): errs.append('generate: the clinic dial put no clinic at the hub')
-    if pg.evaluate("[Object.keys(studioState.D.maps).length, studioState.undo.length]") != [maps0, undo0]: errs.append('generate: joining reached the data or the undo history')
-    pg.click('[data-act=genAccept]')
-    pg.fill('#genName', 'Check Trail')
-    pg.click('#dlg [data-dlg="1"]'); time.sleep(0.5)
-    if not pg.evaluate("!!studioState.D.maps.checktrail&&studioState.D.maps.checktrail.gen.params.biome==='canyon'&&studioState.D.maps.checktrail.props.every(p=>p.g===1)&&studioState.D.maps.checktrail.gen.params.edges[0].from.map==='tallgrass_meadow'"):
-        errs.append('generate: Add as a new scene made no scene with its dials')
-    elif pg.evaluate("studioState.undo.length") != undo0 + 1: errs.append('generate: adding the scene is not one undo step')
+    if pg.evaluate("[Object.keys(studioState.D.maps).length, studioState.undo.length]") != [maps0 + 1, undo0 + 1]: errs.append('generate: joining reached the data or the undo history')
+    accept('Check Spur')
+    if not pg.evaluate("!!studioState.D.maps.checkspur&&studioState.D.maps.checkspur.gen.params.edges[0].from.map==='checktrail'"):
+        errs.append('generate: the joined draft was not added with its join')
+    elif pg.evaluate("studioState.undo.length") != undo0 + 2: errs.append('generate: adding the joined scene is not one undo step')
     if len(errs) > n: errs[n:] = [f'generate: {e}' for e in errs[n:]]
-    else: print('generate: a canyon route drafted and drawn, dials and a plants reroll, joined to Tallgrass Meadow (meets it, the pair drawn), a clinic at the hub, added as a scene in one undo step', flush=True)
+    else: print('generate: a canyon route drafted and drawn, dials, a plants reroll and a clinic at the hub, added as a scene in one undo step; a second draft joined to it (meets it, the pair drawn), added too', flush=True)
+
+
 def species_part_steps(pg, errs):
     """Studio track ST-6: the skeleton builder zooms by whole steps with the pixel canvas's keys; the Billies section
     opens the species in Part mode; the head's pivot dragged and nudged keeps the figure drawn where it was (the rig
