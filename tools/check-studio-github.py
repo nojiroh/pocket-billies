@@ -228,18 +228,19 @@ def split_steps(pg, errs):
         for (const i of new Set([...document.querySelectorAll('#main [id]')].map(e => e.id))) (by[i] = by[i] || []).push(k); }
       openSection(keep); return Object.entries(by).filter(([i, ks]) => ks.length > 1).map(([i, ks]) => i + ' in ' + ks.join(', ')); })()""")
     if shared: errs.append('split: sections share ids: ' + '; '.join(shared[:5]))
-    # the Check: none of the music's warnings on the game's data (once the parked world is read, variants is played by a
-    # parked place); a rule naming no song is an error and a song nothing plays a warning, and Show me opens them;
-    # the cries are one note
+    # the Check: no music error or warning on the game's data (notes, like the placeholders, are fine); a rule of the
+    # check's own naming no song (put first, then taken out) is an error and a song nothing plays a warning, and Show
+    # me opens them. The wait stays: the Studio's music Check holds its warnings until the parked world is read (a song
+    # only a parked place plays, like variants, isn't unused)
     pg.wait_for_function("legacyView.data !== null", timeout=30000)
     got = pg.evaluate("runCheck().filter(c => c.msg.startsWith('Music:') || c.msg.startsWith('Cries:')).map(c => [c.lvl, c.msg.slice(0, 40)])")
-    if len(got) != 1 or got[0][0] != 'info': errs.append(f'music: the Check on the game data says {got}')
-    pg.evaluate("studioState.D.music.where[2].song = 'nosuch'; studioState.D.music.songs.lonely = {...studioState.D.music.songs.town}")
-    found = pg.evaluate("runCheck().filter(c => c.go === 'music').map(c => [c.lvl, c.sel])")
-    if found != [['error', {'musicTab': 'where', 'musicRule': 2}], ['warn', {'musicTab': 'songs', 'musicSong': 'lonely'}]]: errs.append(f'music: the Check found {found}')
-    pg.evaluate("void openSection('music', {musicTab: 'where', musicRule: 2})")
-    if not pg.evaluate("!!document.querySelector('#musRule2.mus-hit')"): errs.append('music: Show me did not mark the rule')
-    pg.evaluate("studioState.D.music.where[2].song = 'trainer'; delete studioState.D.music.songs.lonely; void render()")
+    if any(lvl != 'info' for lvl, _ in got): errs.append(f'music: the Check on the game data says {got}')
+    pg.evaluate("studioState.D.music.where.unshift({battle: 'wild', song: 'nosuch'}); studioState.D.music.songs.lonely = {...studioState.D.music.songs.town}")
+    found = pg.evaluate("runCheck().filter(c => c.go === 'music' && c.lvl !== 'info').map(c => [c.lvl, c.sel])")
+    if found != [['error', {'musicTab': 'where', 'musicRule': 0}], ['warn', {'musicTab': 'songs', 'musicSong': 'lonely'}]]: errs.append(f'music: the Check found {found}')
+    pg.evaluate("void openSection('music', {musicTab: 'where', musicRule: 0})")
+    if not pg.evaluate("!!document.querySelector('#musRule0.mus-hit')"): errs.append('music: Show me did not mark the rule')
+    pg.evaluate("studioState.D.music.where.shift(); delete studioState.D.music.songs.lonely; void render()")
     pg.evaluate("void openSection('billionaires')"); time.sleep(0.3)
     pg.locator('.nav[data-s=moves]').click(modifiers=['Shift']); time.sleep(0.8)
     if pg.evaluate("[studioState.sec, studioState.sec2, document.querySelector('#main2').hidden]") != ['billionaires', 'moves', False]:
