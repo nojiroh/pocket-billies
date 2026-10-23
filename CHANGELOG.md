@@ -15,6 +15,14 @@ kept aside in the browser).
   policy, printed with every report, with a note that the numbers catch changes rather than judge balance. The core
   now lives with the game's logic so the Studio can run it later. The old species balance report
   (tools/balance-report.py) is gone.
+- The run simulator now takes Loopholes (Studio plan Phase 3, second part): it picks one after a mini-boss and buys a
+  town shop's, heals on walking in when a Loophole says so, and stocks a town's shop with only what the run has
+  unlocked, as the game does. A second bot, never-pick, takes none, to compare against. A balance mode plays the
+  same runs about 250 times faster by not building the places' scenery. Two simulation reports of the same seeds can
+  be compared run by run, with 95% intervals.
+- The Studio's Run Lab has a Simulate card: it plays up to 200 runs on the data as loaded and on your unsaved
+  changes, side by side, and shows what changed (wins, where runs were lost, money in and out, Loopholes, leaders),
+  each table marked as a bot's results rather than a prediction. The results can be saved as JSON.
 - The Studio has a Run Lab (Studio plan Phase 2): type or roll a seed, or paste a debug log, and see that run's map
   as the game makes it, with your unsaved changes, and beside the data as loaded. Click a place for its type, biome,
   the day you reach it, its seed and its weather. Every run now starts the same way, from the mast, the test runs and

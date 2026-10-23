@@ -318,6 +318,25 @@ included. It changes nothing.
   `?debug&run=<seed>&unlocks=none|all|<ids>&short=1&party=<species@level,…>&relics=<ids>&draft=1` to the game's
   address.
 
+### Simulate (Studio plan Phase 3, T3.4)
+
+The Run Lab's **Simulate** card plays whole runs with the game's own rules and a bot in the player's place
+(`game/js/logic/run-sim.js`, balance mode: no scenes are made, the same outcomes), on a fixed seed list (SIM0, SIM1,
+...; at most 200 here, the CLI runs more). It plays the same seeds twice, in two logic workers: **Base**, the data as
+the Studio loaded it, and **Draft**, the data with your unsaved changes. Every difference is paired, seed by seed, so
+a small change shows without the noise of two separate samples.
+- Choices: seeds, the bot policy (`greedy-forward`, or `never-pick`, which takes and buys no Loophole), the party (who
+  waits at home, Potions packed) and the unlocks (none or all).
+- Tables: per run (won with its 95% Wilson interval; days, places, battles, catches, clinic and shop money, money left,
+  Capital, Loopholes held, top level, each with Draft − Base and a 95% interval and how many runs changed); where runs
+  were lost, by place and by row; money in and out; the Loopholes held at the end; the leaders beaten. Every table
+  carries the banner "Bot policy X: a lower bound on a careful player, not a prediction"; the rows the policy mostly
+  decides say **policy-driven**.
+- Each side shows its data's hash. The same data gives "Every run is the same on both sides"; a re-run gives the same
+  numbers.
+- **Export JSON** saves the compare; `node tools/test/sim/run-sim.mjs --compare=base.json` writes the same JSON.
+- The numbers measure the bot on legacy stand-in species. Use them to see what a change does, not to judge balance.
+
 ## UI look (UI track UI-3)
 
 Game → **UI look** edits game/data/uiTheme.json, the look of the game's menus (not the 3D scenes: that is Engine).
@@ -376,7 +395,7 @@ Game → **UI look** edits game/data/uiTheme.json, the look of the game's menus 
 | **Engine** | Every dial of the 3D renderer, with a live preview of any walk scene: lens (sharp band, blur in front and behind, round highlights, chromatic aberration, vignette, grain, sharpen), color (exposure, highlight roll-off, contrast, saturation, warmth, bloom), sun and sky (direction, height, color, real-clock sun, sky light, ground bounce, clouds and their shadows, light shafts), shadows (strength, softness, color, contact shadows, solid building shadows, ambient occlusion), lights, haze and mist, horizon curve, ground bumpiness and shine, world map mountains, grass and wind, water, camera (including distance and tilt) and quality, plus colour grades. Set them for the **whole game**, override them for **one scene** (battles there follow it) or for the **world map**; ↺ puts back a single dial. Ready-made presets (Sunny, Overcast, Golden hour, Cave, Mall), your own presets, a "Hold to compare" button that shows the built-in look, and a frame meter. |
 | **Map art** (under World) | Paint `world.png` with a brush, fill, color picker, clone and "fill with terrain". Remove the painted trail and repaint it along the stops in the exact path the game walks. Drag a stop and its painted patch moves with it, with the old spot filled from the terrain around it. A preview shows the stop from the game's map camera. |
 | **Trainers, People** | Trainer teams, their script (checked as you type), when they're there, rewards, badges, sandstorms; trainer and shopkeeper looks with a live preview. **Mini-boss** (RL-5): the trainer stands on no stop (the eight badge leaders, for the runs, RL-13); Stands at is hidden. |
-| **Run Lab** (group Runs) | Studio plan Phase 2: a run's map from a seed, on your unsaved data and beside the loaded data; a place's foes, shops and wild Billies from the game's logic; checks over 1,000 seeds; the run rules beside it; Play this seed (see Run Lab above). |
+| **Run Lab** (group Runs) | Studio plan Phase 2: a run's map from a seed, on your unsaved data and beside the loaded data; a place's foes, shops and wild Billies from the game's logic; checks over 1,000 seeds; the run rules beside it; Play this seed; Simulate, Base against Draft (see Run Lab above). |
 | **Legacy world** (group Legacy) | RL-5: the old world outside the hub, parked in `game/data/legacy`, read-only: the 48 places with their old stop numbers, the trainers who stood there and their roads, plus counts of the parked shops, jobs and lore. It is read beside the Studio, or from GitHub when signed in, and never enters the Studio's data, so Save, Undo and the Check never touch it. **Copy into game** brings a place's map back as a walk scene of its own (no place, no roads) in one undo step and opens it in Walk scenes; whatever its people name that the game no longer has shows in the Check. |
 | **Story scripts** | Project Story S3: story.json's own scripts (Hazel's lab, after Blake's first battle, the ending): add, rename, remove and edit them in the script field; the story's flags, start presets (with ▶ Play) and quests to read. |
 | **Scripts everywhere** | Every script field (a trainer's, a person's, story.json's) shows the parser's error at once and the story checks a moment later, each on its line (click to go there); **Add line ids**; **Commands**, a reference built from the parser's own tables that puts a command in the script. Condition fields (when, unless, a place's requires) are checked the same way, and the Check lists every story finding. docs/SCRIPTS.md. |

@@ -113,7 +113,15 @@ Two rules hold everywhere:
   `startWild`/`startTrainer`, `catchKeep`/`catchOffer`, `battleSettle`, `runEnd`); what the player does is
   `SIM_POLICY` (battle-formats and run-loop test those rules). The
   simulation's full report: `node tools/test/sim/run-sim.mjs --runs=50 --team=1` (validation/sim/runs.json; it reports,
-  bounds wait for the owner). `run-world-real.test.mjs` also checks a run's buildings (the landing's mast, a town's
+  bounds wait for the owner). Studio plan Phase 3b: the bot answers a Loophole pick and buys a shop's (`relics` in the
+  policy; `--policy=never-pick` is the baseline that takes none), walking in heals by the held Loopholes
+  (`runArriveFx`) and a town's wares come through the run's unlocks (`runShopOpen`). `--balance` makes no scenes
+  (each place a lite map with tall grass: ~250 times faster, the same outcomes; `run-sim.test.mjs` plays seeds in both
+  modes and checks the stand-in on real scenes). `--out=base.json` writes the report with every run's stats;
+  `--compare=base.json` plays its seeds with its options on the data as it is now and writes the paired compare
+  (validation/sim/compare.json; `logic/sim-compare.js`: Wilson intervals, paired differences, flips, a data hash,
+  tested in `sim-compare.test.mjs`). The habit for a change that may move the numbers:
+  `node tools/test/sim/run-sim.mjs --runs=200 --balance --out=base.json` before, `--compare=base.json` after. `run-world-real.test.mjs` also checks a run's buildings (the landing's mast, a town's
   clinic and shop), its trainers in their own world and its bridges (both ends dry, a stream crossed square within
   25 degrees).
 - The world (RL-5): the game's world is Copperleaf alone; the old one is parked in `game/data/legacy` (its own
