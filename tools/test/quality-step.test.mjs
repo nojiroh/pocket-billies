@@ -46,3 +46,14 @@ test('with room to spare it climbs back: resolution first, then the effects', ()
   assert.equal(s.R, 1);
   assert.equal(s.q, 0);
 });
+
+test('a phone whose frames look busy on the main thread (the Android phone) goes on to the graphics steps and the resolution', () => {
+  const s = run({ int: 55, slow: 45, phone: true }, 40);
+  assert.equal(s.q, 4);
+  assert.ok(Math.abs(s.R - 0.6) < 1e-9, `R ${s.R}`);
+});
+
+test('on a phone the resolution is never raised just because the main thread looks busy', () => {
+  const s = run({ int: 55, slow: 45, phone: true }, 3, { q: 1, R: 0.7 });
+  assert.equal(s.R, 0.7);
+});

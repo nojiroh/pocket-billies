@@ -11,9 +11,10 @@ expose({ qualityStep: [() => qualityStep, v => (qualityStep = v)] });
 /* to-module: end */
 /**
  * @typedef {{ q: number, R: number, adaptT?: number, swapT?: number, raiseT?: number, holdT?: number, roomN?: number }} QualityState
- * @typedef {{ int: number, slow: number, target: number, now: number }} QualityInput
+ * @typedef {{ int: number, slow: number, target: number, now: number, phone?: boolean }} QualityInput
  *   int: the smoothed time between frames (ms); slow: the frame's own work on the main thread (ms); target: the
- *   frame time wanted (ms); now: performance.now()
+ *   frame time wanted (ms); now: performance.now(); phone: an Android phone or iPhone, where a wait on the graphics
+ *   chip shows up as main-thread time
  */
 
 /**
@@ -33,14 +34,18 @@ export function qualityStep(s, i) {
   /* alpha 0.4.1: when the frame's own work on the main thread is what holds it back, taking away god rays, bloom steps,
      depth of field or resolution doesn't help: those cost the graphics chip. Then only the steps that save work here
      are taken (shadows and reflections every other frame, steps 1-2), and the ones above come back. */
-  const cpu = work > target * 0.7;
+  /* 0.1.0 alpha: on a phone the browser hands every graphics call to another process and waits for it when it falls
+     behind, so a frame the graphics chip holds up looks like main-thread work there (the Android phone: frames of
+     50-60 ms, the resolution pushed back to 1 every second all session). There, once steps 1-2 are taken, a slow
+     frame goes on to the graphics steps and the resolution (not below 0.6), and the resolution is never raised for it */
+  const cpu = work > target * 0.7 && !(i.phone && s.q >= 2);
   if (slow && cpu) {
     if (s.q > 2) {
       s.q = 2;
       s.raiseT = now;
     } else if (s.q < 2 && now - (s.swapT || 0) >= 3000) s.q++;
     s.roomN = 0;
-    if (s.R < 1) s.R = Math.min(1, s.R + 0.1);
+    if (s.R < 1 && !i.phone) s.R = Math.min(1, s.R + 0.1);
     return s;
   }
   if (slow) {
@@ -48,7 +53,7 @@ export function qualityStep(s, i) {
     if (now - (s.raiseT || -1e9) < 5000) s.holdT = now + 30000;
     s.roomN = 0;
     if (s.q < 4) s.q++;
-    else if (s.R > 0.55) s.R = Math.max(0.5, s.R - 0.1);
+    else if (s.R > (i.phone ? 0.65 : 0.55)) s.R = Math.max(i.phone ? 0.6 : 0.5, s.R - 0.1);
   } else if (room && now > (s.holdT || 0)) {
     if (s.R < 1) {
       s.R = Math.min(1, s.R + 0.1);

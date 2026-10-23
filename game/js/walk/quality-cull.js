@@ -176,7 +176,13 @@ export function adaptQuality(dtm, work) {
       holdT: walkRenderer.holdT,
       roomN: walkRenderer.roomN,
     },
-    { int: walkRenderer.int, slow: walkView.slow, target, now: performance.now() }
+    {
+      int: walkRenderer.int,
+      slow: walkView.slow,
+      target,
+      now: performance.now(),
+      phone: typeof navigator !== 'undefined' && /Android|iPhone/.test(navigator.userAgent),
+    }
   );
   walkRenderer.q = st.q;
   walkView.R = st.R;
