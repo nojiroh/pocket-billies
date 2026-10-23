@@ -2,6 +2,16 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Fix: the lost-run payout jingle's wait in the quick check - 2026-10-23
+Branch `fix/payout-lost-wait` (one session, not a plan; kept small because RF-4 runs on `track/reflavour`).
+- Cause: the check, not the game. A loss plays the same sequence as a win (a coin per row, then the jingle when the
+  total lands; run-payout.js), but TC-3 raised only the win's wait to 40 s and left the loss at 15 s. Under CPU
+  load the headless browser's timers slow down: measured 26.9 s (won) and 16.3 s (lost). On a phone it's ~2-3 s.
+- Changed: `tools/check-quick.py` Sound effects waits 40 s for `run_lost` too. Nothing else.
+- Verified: with 6 busy loops on 4 cores, `--steps="Sound effects"` failed on main at line 869 (4 coins, no
+  `run_lost`) and passes with the fix; idle, all 4 Sound steps pass. Lint, typecheck, unit tests (826) pass.
+- Next: merge main in again once RF-4 is merged, re-run the checks, then merge.
+
 ### Reflavour track RF-2 - Pyramids - 2026-10-23
 Branch `track/reflavour` (made this session from main and named in reflavour-track.md's `Branch:` line; RF-1 works
 here too and merged RF-2's pushed commits into its own, so the two sit on one line of history; PR #160). Plan approved with the owner's picks, all the recommended
