@@ -172,8 +172,8 @@ The sessions above are the work in order for one session at a time. To run sever
 session owns instead of by TC number. `check-quick.py` is touched by every TC session, so it has one owner (lane B)
 who works through it in order. Each lane is its own branch and PR, with its own HANDOFF entry.
 
-Before any lane starts: the camera fix (TC-1 item 0) is merged, and the owner has answered the "Ask me before" items;
-three of them would stall a lane halfway (Things to do: B; the set-aside box: A; the unreachable rooms: C).
+Before any lane starts: the camera fix (TC-1 item 0) is merged. The owner's answers are below ("The owner's
+answers").
 
 **Round 1, four sessions at once**
 - **A, unit tests and save code:** `tools/test/` (TC-1 item 1, TC-2 item 1), `logic/saves.js` (TC-1 item 6), then
@@ -207,14 +207,25 @@ three of them would stall a lane halfway (Things to do: B; the set-aside box: A;
   tracks do. Tags: `tc-lane-<A..E>-done` per lane, `tc-done` when round 3 ends.
 - About three rounds of waiting instead of 4-5 sessions one after another.
 
-## Ask me before
-- Delete Things to do (the open-world challenges, request, gold stamp, home room, photo) and its check step?
-- Remove the old-save set-aside box (and its two tests), or keep it?
-- Move the 16 unreachable rooms (and `city_opening`, if the story isn't bringing it back soon) into `game/data/legacy`?
-- The gym-era debug buttons ("Earn every badge", "Reset trainer wins") and "Walk 1 km": keep, relabel or drop?
-- Merge the Graphics test into the graphics bench test?
-- The `city` and `mall` songs are only used by legacy places: keep their sound fingerprints?
-- Keep `frame-allocations`, `fx-group` and `sheet-slice-parity` while renderer and art work goes on?
+## The owner's answers (2026-10-23)
+All seven "Ask me before" items are decided; lanes act on these without asking again.
+- **Things to do** (challenges, request, gold stamp, home room, photo): delete the system and its check-quick step
+  (lane B the step; the system's code with it, in its own commits).
+- **The old-save set-aside box:** remove it. Keep only the guard that refuses saves from a newer version. Delete
+  `set-aside.test.mjs` and `set-aside-latest.test.mjs` (lane A).
+- **The unreachable rooms and the city opening:** move all 16 rooms and `city_opening` into `game/data/legacy` (they
+  stay in the Studio's Legacy section; VISION's "the city scene is kept in the data for the story to bring back" holds
+  there). The title screen draws over Copperleaf instead of `city_opening`. Lane C does it; it touches the fast
+  check's boot check ("title over city_opening"), opening-script's city test and the doors check in check-data, so
+  lane C coordinates those lines with lanes A and D (or takes them in its own PR).
+- **Debug menu:** drop "Earn every badge" and "Reset trainer wins"; keep "Walk 1 km" with a note that it adds trainer
+  card distance (lane C).
+- **Graphics test:** point it at test_graphics now (not `marigold`); merging it into the bench test is a later UI
+  choice, not this track (lane C).
+- **The `city` and `mall` songs:** keep them and their sound fingerprints.
+- **Parity tests:** delete `frame-allocations` and `fx-group`; keep `sheet-slice-parity` renamed to
+  `sheet-slice-real` (the "source sheets match committed parts" half, without the Python wording) (lane A; the rename
+  in its own commit).
 
 ## Not in this track
 - Remapping the 131 pool and trainer entries that use legacy species ids, so `standInSpecies` and `legacyLines` can
