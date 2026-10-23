@@ -1564,49 +1564,6 @@ def desktop_steps(b, base, R):
         return f'rain in battle: Water ×{bw[1]}, Fire ×{bw[2]}'
     battle_weather()
 
-    @step('Things to do: challenges, a request, a gold stamp, your room, a photo, weather in battle', 240)   # RL-5: the ladder (Kitewind Ridge) is parked
-    def things():
-        if not pg.evaluate("typeof challengesToday==='function'"): return 'not in this build'
-        out = []
-        pg.evaluate("environment.force={time:13,weather:'clear',season:'summer'};0"); go_scene(pg, 0); time.sleep(2)   # RL-5: node 0 is Copperleaf now (was Marigold Town)
-        n = pg.evaluate("challengesToday().list.length")
-        if n != 3: raise Exception(f'{n} challenges today, not 3')
-        out.append('3 challenges: ' + pg.evaluate("challengesToday().list.map(challengeText).join('; ')"))
-        q = pg.evaluate("(()=>{const q=requestHere();return q?q.k+' '+q.t:null})()")
-        if not q: raise Exception('no request in Copperleaf today')   # RL-5: Copperleaf, not Marigold Town
-        out.append('request: ' + q + (' (someone is asking)' if pg.evaluate("!!requestAsker()") else ''))
-        # a gold stamp: stand on one
-        spots = pg.evaluate("stampSpots()")
-        if len(spots) < 1: raise Exception('no gold stamps in Copperleaf')   # RL-5: Copperleaf, not Marigold Town
-        c0 = pg.evaluate("stampCount()"); pg.evaluate(f"walkView.pl.route=null;walkView.pl.x={spots[0][0]};walkView.pl.z={spots[0][1]};0"); time.sleep(2)
-        if pg.evaluate("stampCount()") <= c0: raise Exception('standing on a gold stamp didn’t pick it up')
-        out.append(f'{len(spots)} stamps here, one picked up')
-        # your room (alpha 0.4: in Granny Juniper's cottage in Copperleaf): walk in, put a table in the middle
-        home = pg.evaluate("LOCATIONS.findIndex(r=>r.id==='copperleaf')")
-        if home < 0: home = 0
-        go_scene(pg, home); time.sleep(1.5)
-        pg.evaluate("uiState.toastQ=[];(()=>{const p=walkView.sc.props.find(p=>p.act==='home'),C=walkData().sc,g=actionSpot(p,C.props[p.k],C.ppu||34);walkView.pl.route=null;walkView.pl.x=g[0];walkView.pl.z=g[1];walkPick({k:'act',p,act:'home'})})();0")
-        if not until(pg, "walkView.ready&&(walkView.id==='int_home'||(walkView.sc&&walkView.sc.roomOf==='int_home'))", 60): raise Exception('your room didn’t open')
-        pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();thingsToDo().home.slots[5]='table_round';thingsToDo().home.slots[10]='rug_round';refreshHomeFurniture();0"); time.sleep(2.5); shot(pg, 'room-home')
-        if pg.evaluate("gameData.maps.int_home.props.length") < 2: raise Exception('furniture didn’t appear in your room')
-        pg.evaluate("leaveRoom();0"); until(pg, f"walkView.ready&&!walkView.sc.roomRect&&(walkView.id===LOCATIONS[{home}].mapId||(walkView.sc&&walkView.sc.baseId===LOCATIONS[{home}].mapId))", 30); time.sleep(1.5)
-        # a photo
-        pg.evaluate("window.__ph=null;photoStart();walkRenderer.photoReq=c=>{window.__ph=c?c.width:0};0"); until(pg, "window.__ph!==null", 15)
-        w = pg.evaluate("window.__ph"); pg.evaluate("photoEnd();0")
-        if not w: raise Exception('photo mode didn’t take a picture')
-        out.append(f'photo {w}px wide')
-        # RL-5: up a ladder at Kitewind Ridge is retired: no ladder stands anywhere in the game now (the hub, the rooms and
-        # the test scenes have none); a run's places with a ladder bring it back (RL-7)
-        # rain in battle
-        go_scene(pg, 0); pg.evaluate("environment.force={time:15,weather:'rain'};const q={id:'twx',sp:'swift1',lvl:8,no:1};encountersHere().splice(0,1e9,q);saveData.team.forEach(m=>{m.hp=maxHp(m)});startWild(q);0")
-        wait_phase(pg, sec=60); bw = pg.evaluate("(()=>{const w=battleWeather();return w?[w.k,battleWeatherMultiplier('Water'),battleWeatherMultiplier('Fire'),document.getElementById('camWorld')?document.getElementById('camWorld').dataset.wx:''] :null})()")
-        time.sleep(1); shot(pg, 'battle-rain'); pg.evaluate("stopTimers();activeBattle=null;battleStageStop();environment.force=null;render();0")
-        if not bw or bw[0] != 'rain' or bw[1] <= 1 or bw[2] >= 1: raise Exception(f'rain didn’t change the battle ({bw})')
-        out.append(f'rain in battle: Water ×{bw[1]}, Fire ×{bw[2]}')
-        if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
-        return '; '.join(out)
-    things()
-
     @step('v31: shorelines, autumn, facing, rooms, settings tabs, place card, map camera', 300)   # RL-5: the fountains (Marigold Town's) are parked
     def v31():
         if not pg.evaluate("typeof shoreField==='function'"): return 'not in this build'
