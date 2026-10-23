@@ -575,9 +575,8 @@ def walk_in(pg, act, k):
     pg.evaluate(f"(()=>{{const p=walkView.sc.props.find(p=>p.act==='{act}'&&p.k==='{k}'),g=actionSpot(p,walkData().sc.props[p.k]);walkView.pl.route=null;walkView.pl.x=g[0];walkView.pl.z=g[1];walkPick({{k:'act',p,act:'{act}'}})}})();0")
 
 
-# RL-5: cross() and cross_to() were unused while the hub was the only place (no road, no seam, no neighbour); RL-7
-# walks a run's roads with them (a run's crossing counts rules.json run.seamIn metres in, so the walk goes that much
-# further)
+# RL-5: cross() was unused while the hub was the only place (no road, no seam, no neighbour); RL-8 walks a run's seam
+# with it (a run's crossing counts rules.json run.seamIn metres in, so the walk goes that much further)
 # phase 08: travel is walking. cross() walks from where you stand over the edge into the neighbour n1 the way a player
 # does: a path to 6 m past the exit (no search limit: a route view is long), the player put along it at most 0.8 m at a time, walkCross() after each (the a041
 # way: game time is too slow here to walk it for real). Returns the metres walked, the views seen on the way and how
