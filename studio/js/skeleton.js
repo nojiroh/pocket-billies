@@ -330,7 +330,13 @@ function skeletonFraming(sp) {
     if (!R) continue;
     const P = neutralPose(),
       g = rigGeo(meta, view, R.anim(P, view === 'back') || {}, P);
-    if (g) meta.geo = Object.assign(meta.geo || {}, g);
+    /* Studio plan Phase 5 (T5.3): mid and cy halfway from the top to the ground line, as every builder made them
+       (logic/data-checks.js dataRigs checks it), not halfway down the pictures' boxes */
+    if (g)
+      meta.geo = Object.assign(meta.geo || {}, g, {
+        mid: +((g.top + meta.base) / 2).toFixed(2),
+        cy: +((g.top + meta.base) / 2).toFixed(2),
+      });
   }
 }
 /* ---------- open ---------- */
