@@ -101,7 +101,7 @@ export function simPerkChoice(offer, held, perks, rule, P) {
   return drop && w(id) < w(drop) ? { id, drop } : null;
 }
 /** the report's numbers that say more about the policy than about the game's balance */
-export const SIM_POLICY_DRIVEN = Object.freeze(['caught', 'healed', 'spent', 'moneyLeft', 'relics']);
+export const SIM_POLICY_DRIVEN = Object.freeze(['caught', 'healed', 'spent', 'moneyLeft', 'perks']);
 /** what every report says its numbers are good for */
 export const SIM_NOTE =
   'A bot policy, not a player: a regression detector, not a balance oracle (legacy stand-in species).';
@@ -256,7 +256,7 @@ export function runSimOn(env) {
         lostRow: null,
         /** money in by where it came from, and out by what it paid for (Studio plan T3.4) */
         moneyIn: { prize: 0, reward: 0 },
-        moneyOut: { heal: 0, shop: 0, relics: 0 },
+        moneyOut: { heal: 0, shop: 0, perks: 0 },
         /** each run foe fought: its leader, its node's type, won or not @type {any[]} */
         foes: [],
         /** @type {any} */ days: 0,
@@ -292,7 +292,7 @@ export function runSimOn(env) {
             if (c && !perkBuy(run, i, run.clock, data.PERKS, R.perks, c.drop)) {
               s.se -= cost;
               stats.spent += cost;
-              stats.moneyOut.relics += cost;
+              stats.moneyOut.perks += cost;
               at.relic.bought = c.drop ? { drop: c.drop } : 1;
             }
           }
@@ -437,7 +437,7 @@ export function runSimOn(env) {
         research: pay.research,
         party,
         top: top ? top.lvl : 0,
-        relics: run.perks.slice(),
+        perks: run.perks.slice(),
       });
       log.end = { ...stats, uids: run.uidN };
       return { log, stats: /** @type {any} */ (stats) };

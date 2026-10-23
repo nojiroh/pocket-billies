@@ -66,7 +66,7 @@ const RUN_LAB_SIM_ROWS = [
   ['spent', 'Spent in shops (Moneys)'],
   ['moneyLeft', 'Moneys at the end'],
   ['research', 'Research paid out'],
-  ['relics', 'Perks held at the end'],
+  ['perks', 'Perks held at the end'],
   ['topLevel', 'Top level'],
 ];
 
@@ -136,7 +136,7 @@ ${runLabSimTable(
   runLabSimCounts(C.base.lostRow, C.draft.lostRow, k => `Row ${k}`)
 )}
 ${runLabSimTable('Moneys per run (what goes out is policy-driven: what the bot buys)', '<th></th><th>Base</th><th>Draft</th>', money('moneyIn').concat(money('moneyOut')))}
-${runLabSimTable('Perks held at the end (policy-driven), runs', '<th></th><th>Base</th><th>Draft</th>', runLabSimCounts(C.base.relics, C.draft.relics))}
+${runLabSimTable('Perks held at the end (policy-driven), runs', '<th></th><th>Base</th><th>Draft</th>', runLabSimCounts(C.base.perks, C.draft.perks))}
 ${runLabSimTable('Leaders beaten', '<th></th><th>Base</th><th>Draft</th>', leaders)}
 ${flips ? `<p class="help">Won on Draft only: ${C.flips.won.join(', ') || 'none'}. Lost on Draft only: ${C.flips.lost.join(', ') || 'none'}.</p>` : ''}`;
 }

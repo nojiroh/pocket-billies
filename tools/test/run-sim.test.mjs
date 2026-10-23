@@ -32,7 +32,7 @@ test('run sim: the report has its numbers', () => {
   assert.equal(R.policy.fights, 2);
   assert.equal(runStats(1, { ...B, fights: 4 }).policy.fights, 4);
   assert.ok(R.policyDriven.includes('caught') && /not a balance oracle/.test(R.note));
-  assert.ok(R.policyDriven.includes('spent') && R.policyDriven.includes('relics'), 'what the policy buys');
+  assert.ok(R.policyDriven.includes('spent') && R.policyDriven.includes('perks'), 'what the policy buys');
 });
 
 test('run sim: a run starts as the mast starts it, with no unlocks or every one', () => {
@@ -129,13 +129,13 @@ test('run sim: money in and out add up to what is left; a loss names its row; fo
   for (let k = 0; k < 10; k++) {
     const { stats: x, log } = runSim(`SIMMONEY${k}`, B);
     assert.equal(start + sum(x.moneyIn) - sum(x.moneyOut), x.se, `SIMMONEY${k}`);
-    assert.equal(x.spent, x.moneyOut.shop + x.moneyOut.relics);
+    assert.equal(x.spent, x.moneyOut.shop + x.moneyOut.perks);
     assert.equal(x.healed, x.moneyOut.heal);
     if (!x.won && x.lostAt) {
       const at = log.places[log.places.length - 1];
       assert.ok(Number.isInteger(x.lostRow) && x.lostRow >= 0, `${x.lostRow} at node ${at.i}`);
     }
-    assert.ok(Array.isArray(x.relics) && Array.isArray(x.foes));
+    assert.ok(Array.isArray(x.perks) && Array.isArray(x.foes));
     towns += log.places.filter(p => p.shop).length;
   }
   assert.ok(towns >= 1);

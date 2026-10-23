@@ -53,7 +53,7 @@ export const SIM_METRICS = Object.freeze([
   'spent',
   'moneyLeft',
   'research',
-  'relics',
+  'perks',
   'topLevel',
 ]);
 /** a round to a tenth, or a thousandth for shares @param {number} x @param {number} [k] */
@@ -102,7 +102,7 @@ export function simPaired(d, z = SIM_Z95) {
 export function simValue(r, k) {
   if (k === 'won') return r.won ? 1 : 0;
   if (k === 'moneyLeft') return r.se || 0;
-  if (k === 'relics') return (r.relics || []).length;
+  if (k === 'perks') return (r.perks || []).length;
   if (k === 'topLevel') return r.top || 0;
   return r[k] || 0;
 }
@@ -117,7 +117,7 @@ export function simSummary(runs) {
     avg = (/** @type {string} */ k) => (n ? round(runs.reduce((a, r) => a + simValue(r, k), 0) / n) : 0),
     /** @type {Record<string, number>} */ lostAt = {},
     /** @type {Record<string, number>} */ lostRow = {},
-    /** @type {Record<string, number>} */ relics = {},
+    /** @type {Record<string, number>} */ perks = {},
     /** @type {Record<string, { fought: number, beaten: number }>} */ leaders = {},
     /** @type {Record<string, number>} */ moneyIn = {},
     /** @type {Record<string, number>} */ moneyOut = {};
@@ -127,7 +127,7 @@ export function simSummary(runs) {
       lostAt[at] = (lostAt[at] || 0) + 1;
       if (r.lostRow != null) lostRow[r.lostRow] = (lostRow[r.lostRow] || 0) + 1;
     }
-    for (const id of r.relics || []) relics[id] = (relics[id] || 0) + 1;
+    for (const id of r.perks || []) perks[id] = (perks[id] || 0) + 1;
     for (const f of r.foes || []) {
       const L = leaders[f.leader] || (leaders[f.leader] = { fought: 0, beaten: 0 });
       L.fought++;
@@ -146,7 +146,7 @@ export function simSummary(runs) {
     avg: Object.fromEntries(SIM_METRICS.filter(k => k !== 'won').map(k => [k, avg(k)])),
     moneyIn: per(moneyIn),
     moneyOut: per(moneyOut),
-    relics,
+    perks,
     leaders: Object.fromEntries(
       Object.entries(leaders)
         .sort()
