@@ -2,6 +2,37 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### UI icons - 48 icons redrawn at 36x36, "block and split" - 2026-10-23
+Branch `ccr-6515f662-u0e47e` (the session's own: the owner named no branch; BRANCHES.md would call it
+`art/ui-icons`). Not a phase or track session: an art request. The look was picked from rounds of samples in chat
+(Pokemon-flavoured, then modern multi-tone in the theme colours): "P5", an extruded block with a diagonal split.
+- Changed (one cause per commit):
+  - **tools/build-ui-icons.py**: each icon is a 34x34 grid of colour letters (PALETTE); the tool adds a 2 px block
+    side, the 45-degree split, a lit edge and seams, and writes a 36x36 SVG with one path per colour. Stdlib only.
+    The two sound icons, drawn outside the tool before, are in it now (48 grids).
+  - **Shown as images**: `.uico` (parts.css) and the run kit's `.ic` use the SVG as a background image instead of
+    a mask tinted by `currentColor`. Four rules that set `background: currentColor` on an icon are gone (map list,
+    dressing room x2, walk card); they would have painted a solid square over the picture. Rules that only set
+    `color` on an icon are harmless no-ops now and were left.
+  - **tools/test/ui-icons.test.mjs** runs `build-ui-icons.py --check` (python3 is on the CI runner), checks every
+    file is 36x36 and that the tool draws exactly the files in game/art/ui, and now also counts `runIcon('...')`.
+  - `check` is cream, not green: its only use is the visited node's mark on a green hex, where green vanished.
+- Where the old code was off: the old test counted 46 icons; there were 48 files (the two sound icons were
+  not in the tool).
+- Verified: lint, typecheck, check:modules, format, `npm test` (802). UI gallery (check-ui-gallery.py): the
+  untouched code and this branch, shot with the same browser here, differ only where icons are (run HUD, map nodes,
+  picks, payout); the committed baseline was NOT replaced (owner's call). starter/tip/picks at 320 px differ from
+  the baseline at 100% on the untouched code too: this container's browser, not this change.
+  Full quick check (tools/check-quick.py): running at push time; result in the next commit.
+- Risky / open:
+  - Icons no longer follow the text colour: a disabled or selected state that relied on the tint now shows the same
+    colours. None found in the gallery; say if a screen reads wrong.
+  - The nightly full quick check will show icon picture diffs until the baseline is remade (Actions, "Make the
+    picture baseline").
+  - The UI gallery baseline (validation/ui-gallery) needs `python3 tools/check-ui-gallery.py --update` once the
+    owner approves the look, ideally on the CI-like browser.
+- Next: the owner's phone check of the bottom bar, the run HUD, the shop and the walk card on both themes.
+
 ### Roster track RO-1 - Real wild pools and regional forms - 2026-10-23
 Branch `track/roster` (new; the owner's choice: every RO session works here, BRANCHES.md and roguelite-track 9.4 say
 so). Plan approved in Plan Mode with the owner's answers: 4 forms (one per uncommon line, the drafts' names), weights

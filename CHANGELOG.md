@@ -9,6 +9,9 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- New interface icons: all 48 UI icons (the bottom bar, currencies, weather, the run's day chip and map markers,
+  buttons) are redrawn as larger, full-colour pixel art: little blocks with a diagonal light split, in the game's
+  own greens, golds and reds. They look the same on the light and dark themes.
 - Wild Billies by biome (roster track RO-1): every biome has its own wild pool of the seven Billie lines, met by
   rarity (the uncommon lines often, the starters' lines rarely, a line whose types suit the biome most), so a run
   meets real Billies everywhere instead of stand-ins. Four regional forms: Waterfront Gildlet (Water, by the lake),
