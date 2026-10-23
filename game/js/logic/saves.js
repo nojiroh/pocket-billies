@@ -121,11 +121,6 @@ export function migrate(o) {
      working fields come back from it (nothing is paid) before the checks below clean them */
   s.meta = metaFill(o.meta);
   s.ranch = ranchFill(o.ranch);
-  /* RL-12: a run saved before Loopholes had an offer counter or shelves: it carries on with none */
-  if (s.run && typeof s.run === 'object') {
-    if (s.run.offerN === undefined) s.run.offerN = 0;
-    if (s.run.shelf === undefined) s.run.shelf = {};
-  }
   if (s.run != null && !validRun(s.run)) runRestore(s);
   if (s.run === undefined) s.run = null;
   const p = (s.preferences = Object.assign(
