@@ -52,7 +52,7 @@ import {
 } from './director.js';
 import { cutsceneLook, cutscenePlayScript } from './stage.js';
 import { chooseStarter, cutsceneStarterItem } from './starter-pick.js';
-import { hazelFight } from './staged-fight.js';
+import { chosenFight } from './staged-fight.js';
 /* eslint-disable no-func-assign */
 expose({
   chosenHotTake: [() => chosenHotTake, v => ((chosenHotTake = v), provide({ chosenHotTake }))],
@@ -287,7 +287,7 @@ async function openingScript(run) {
       'dressing-room': openingDressingRoom,
       'throw-coins': openingThrowCoins,
       'pick-starter': openingPickStarter,
-      'staged-fight': () => hazelFight(cutsceneLook('Blake')),
+      'staged-fight': () => chosenFight(cutsceneLook('Blake')),
       'rival-battle': () => {
         cutscene.rival = true;
       },

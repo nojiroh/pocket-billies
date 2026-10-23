@@ -18,9 +18,9 @@ import { cutsceneLook } from './stage.js';
 /* eslint-disable no-func-assign */
 expose({
   blakeFirstBillie: [() => blakeFirstBillie, v => (blakeFirstBillie = v)],
+  chosenFight: [() => chosenFight, v => (chosenFight = v)],
   fightLog: [() => fightLog, v => (fightLog = v)],
   fightPlate: [() => fightPlate, v => (fightPlate = v)],
-  hazelFight: [() => hazelFight, v => (hazelFight = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -63,7 +63,7 @@ function fightPlate(cls, name, lvl, hp, max) {
   return `<div class="csf-plate ${cls}"><div class="csf-top"><b>${escapeHtml(name)}</b><span class="tnum">${escapeHtml(lvl)}</span></div><span class="csf-hp"><i style="width:${max ? (hp / max) * 100 : 100}%"></i></span><small class="tnum">${formatNumber(hp)}/${formatNumber(max)}</small></div>`;
 }
 /* who: Blake's look (story.json speakers); his first Billie pops out on the middle starter's spot (star2) */
-export async function hazelFight(who) {
+export async function chosenFight(who) {
   const id = blakeFirstBillie(),
     box = $('#csFight');
   if (!id || !box) return;
