@@ -27,8 +27,25 @@
   "air": {"mist":0}
  },
  "room": "lab",
- "keeper": "gini",
- "npcSpots": [[4.5,6.52]],
+ "keeper": "chosen",
+ "npcSpots": [[4.5,6.52],[8.4,5.1]],
+ "people": [
+  {
+   "id": "hazel_lab",
+   "who": "hazel",
+   "name": "Hazel",
+   "dir": "down",
+   "script": [
+    "cycle",
+    "  - [happy] Oh, you’re back. In one piece, too. That never stops being surprising. #l:7640",
+    "  - People don’t fall through the crust and live. You did, and you can still talk. I’m writing a paper about it. #l:0b50",
+    "  - He isn’t a professor. He isn’t technically anything. But the Billies like him, so here we are. #l:7268",
+    "  - If he gives you a type tip, do the opposite. It works more often than you’d think. #l:0e95",
+    "  - The katana has been at the cleaners for two years. Don’t ask. #l:08e3",
+    "  - Granny Juniper sends honey. I hide it from him. You didn’t see that. #l:b689"
+   ]
+  }
+ ],
  "hub": [6,2.2],
  "exits": [[6,0.6]],
  "wallCol": [null,null,null,null,null,null,null,null,null,null,"#B9C8DA",null],

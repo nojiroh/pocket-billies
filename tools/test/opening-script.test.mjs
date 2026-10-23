@@ -11,6 +11,9 @@ const { runScript } = modules.script;
 const { cutsceneStep, cutsceneNames, cutsceneOffset, cutsceneShotAt, cutsceneCleared } = modules['cutscene-set'];
 const { storyFindings } = modules['story-checks'];
 const BEFORE = JSON.parse(readFileSync(new URL('./opening-before-scripts.json', import.meta.url), 'utf8')).said;
+/* 2026-10-23, the owner's new professor: the opening's words are the Chosen's and his assistant Hazel's, as approved
+   (opening-said.json); its commands stay where they were (BEFORE, after RL-8, below) */
+const SAID = JSON.parse(readFileSync(new URL('./opening-said.json', import.meta.url), 'utf8')).said;
 const OPENING = GAME_DATA.cutscenes.opening;
 /* RL-8 (the owner's "fall only", roguelite-track.md 8.20): Blake left the opening: his lines, Hazel's fight with him
    and her lines to him are gone, everything else said as before, in the same order */
@@ -57,7 +60,7 @@ async function play(lines, slots) {
   return said;
 }
 
-test('the opening says what it said before, in the same order, with the same commands between (Blake left it, RL-8)', async () => {
+test('the opening says the approved lines, in order, with the same commands between as before (Blake left it, RL-8)', async () => {
   const said = await play(OPENING.script, {
     name: 'Pat',
     starter: 'Starterbill',
@@ -65,7 +68,9 @@ test('the opening says what it said before, in the same order, with the same com
     foe: 'Gildlet',
     place: 'Copperleaf Town',
   });
-  assert.deepEqual(said, OPENING_NOW);
+  assert.deepEqual(said, SAID);
+  const cmds = (/** @type {any[]} */ L) => L.filter(l => l.cmd).map(l => l.cmd);
+  assert.deepEqual(cmds(said), cmds(OPENING_NOW));
 });
 
 test('the opening is filmed on Copperleaf and names only its own spots and shots', () => {

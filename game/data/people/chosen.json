@@ -1,0 +1,38 @@
+{
+ "hair": "#4A3226",
+ "style": "spiky",
+ "top": "#5B5FC7",
+ "top2": "#C8D0CC",
+ "bottom": "#B8A47E",
+ "shoe": "#1E1A22",
+ "skin": "#F0C3A0",
+ "glasses": 1,
+ "coat": 1,
+ "look": {
+  "name": "The Chosen",
+  "body": {"chest":0.03,"shoulders":0.96,"height":0.97,"body":0.94,"head":1.05},
+  "skin": "#F0C3A0",
+  "hair": "#4A3226",
+  "eyes": "#5A4A3A",
+  "wear": {
+   "hair": "hair_spiky",
+   "eyes": "eyes_sharp",
+   "brows": "brows_thick",
+   "mouth": "mouth_smirk",
+   "top": "tee",
+   "outer": "labcoat",
+   "bottom": "cargo",
+   "shoes": "hightops",
+   "glasses": "glasses_sun",
+   "neck": "chain"
+  },
+  "colors": {
+   "tee": ["#5B5FC7"],
+   "labcoat": ["#F2F4F3"],
+   "cargo": ["#B8A47E"],
+   "hightops": ["#1E1A22","#F2F0EA"],
+   "glasses_sun": ["#1E1A22","#141820"],
+   "chain": ["#EEE8D6"]
+  }
+ }
+}

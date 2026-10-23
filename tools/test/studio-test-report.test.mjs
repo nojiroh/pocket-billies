@@ -210,9 +210,9 @@ test('a high finding comes before a mid one even when the mid one is further pas
 });
 
 test('opening a section that changes the data outside an edit fails the run, naming the section and the paths', () => {
-  const before = { D: { people: { boy: { hair: '#000' }, gini: { look: {} } }, moves: { a: 1 } }, R: {} },
+  const before = { D: { people: { boy: { hair: '#000' }, chosen: { look: {} } }, moves: { a: 1 } }, R: {} },
     after = {
-      D: { people: { boy: { hair: '#000', look: {} }, gini: { look: {} } }, moves: { a: 1 }, extra: [] },
+      D: { people: { boy: { hair: '#000', look: {} }, chosen: { look: {} } }, moves: { a: 1 }, extra: [] },
       R: {},
     };
   assert.deepEqual(studioTestChangedPaths(before, after), ['D.extra', 'D.people.boy']);

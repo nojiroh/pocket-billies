@@ -25,6 +25,7 @@ import {
 } from './hooks.js';
 import { COATS, RULES, SPECIES } from './game-data.js';
 import { billyName, teamSize, toTeam } from './logic/rules.js';
+import { ranchNow } from './logic/ranch-clock.js';
 import {
   ranchCanTrain,
   ranchCap,
@@ -34,6 +35,7 @@ import {
   ranchStop,
   ranchTrainStart,
 } from './logic/ranch.js';
+import { incomeCollect, incomePile, incomeStart } from './logic/ranch-income.js';
 import {
   breedCan,
   breedCost,
@@ -58,6 +60,7 @@ expose({
   breedMark: [() => breedMark],
   breedPct: [() => breedPct],
   breedPickNow: [() => breedPickNow, v => (breedPickNow = v)],
+  incomeHTML: [() => incomeHTML, v => (incomeHTML = v)],
   ranchCardHTML: [() => ranchCardHTML, v => (ranchCardHTML = v)],
   ranchDo: [() => ranchDo, v => (ranchDo = v)],
   ranchOpen: [() => ranchOpen, v => ((ranchOpen = v), provide({ ranchOpen }))],
@@ -136,6 +139,12 @@ function breedHTML(s, now, BR) {
 function ranchCardHTML(m, sub, btns) {
   return `<div class="bx k-card ranch-card"><div class="bx-main"><span class="bx-spr">${rigCanvasHTML(m.sp, 56, { build: m.build, coat: m.coat })}</span><b>${escapeHtml(billyName(m))}</b><span class="bx-sub tnum">Lv ${m.lvl}${m.mut ? ` · ${breedMark(m)}` : ''}</span>${sub}</div>${btns}</div>`;
 }
+/** RL-10b: the ranch's passive income: the pile, how long until it is full, Collect */
+function incomeHTML(s, now, R) {
+  const P = incomePile(s, now, R),
+    rate = `${P.rate} Scrap an hour`;
+  return `<section class="tpanel ranch-income"><div class="sec-h"><h2>Income</h2><span class="count tnum">${P.scrap} Scrap</span></div><div class="bx k-card ranch-card"><div class="bx-main"><b>${P.full ? 'Full: collect to start again' : rate}</b><span class="bx-sub">${P.full ? `The ranch banks up to ${R.income.capHours} h at ${rate}.` : `Full in ${breedLeft(P.left)} (up to ${R.income.capHours} h)`}</span></div><button class="qk k-btn" data-r="collect"${P.scrap > 0 ? '' : ' disabled'}>Collect</button></div></section>`;
+}
 /** the ranch's sheet, opened (or drawn again in place after a button) */
 export function ranchOpen() {
   const s = saveData,
@@ -144,8 +153,10 @@ export function ranchOpen() {
     toast('The ranch is closed while you’re away on a run.');
     return;
   }
-  const now = Date.now();
+  /* RL-10b: the ranch clock (logic/ranch-clock.js): turned back, time stands still and the sheet says so */
+  const { now, back } = ranchNow(s, Date.now(), R);
   ranchCollect(s, now, R, t => toast(t));
+  if (R.income) incomeStart(s, now);
   save();
   const slots = ranchSlots(s, R),
     cap = ranchCap(s, R),
@@ -183,7 +194,7 @@ export function ranchOpen() {
   const M = {
     title: `The ranch · Lv ${ranchLevel(s)}`,
     cls: 'ranch-sheet',
-    html: `<p class="ranch-head"><pb-coin kind="scrap" value="${s.meta.scrap}" label="Scrap"></pb-coin> <span class="note">Ranch level ${ranchLevel(s)} · trains up to Lv ${cap} · ${R.levelsPerHour < 1 ? `a level every ${+(1 / R.levelsPerHour).toFixed(1)} h` : `${R.levelsPerHour} levels an hour`}, banking up to ${R.bankHours} h between visits</span></p><section class="tpanel"><div class="sec-h"><h2>Training</h2><span class="count tnum">${training.length} of ${slots}</span></div>${trainHTML}</section><section class="tpanel"><div class="sec-h"><h2>Storage</h2><span class="count tnum">${resting.length}</span></div>${restHTML}</section>${R.breed ? breedHTML(s, now, R.breed) : ''}${typeof buildingRowsHTML === 'function' && buildingRowsHTML('ranch', 'ranch') ? `<section class="tpanel"><div class="sec-h"><h2>Upgrades</h2></div>${buildingRowsHTML('ranch', 'ranch')}</section>` : ''}<p class="note">Runs bring Scrap home: a little for every place you reach.</p>`,
+    html: `<p class="ranch-head"><pb-coin kind="scrap" value="${s.meta.scrap}" label="Scrap"></pb-coin> <span class="note">Ranch level ${ranchLevel(s)} · trains up to Lv ${cap} · ${R.levelsPerHour < 1 ? `a level every ${+(1 / R.levelsPerHour).toFixed(1)} h` : `${R.levelsPerHour} levels an hour`}, banking up to ${R.bankHours} h between visits</span></p>${back ? `<p class="note ranch-back">Your device’s clock is behind the ranch’s, so its timers wait until it catches up.</p>` : ''}${R.income ? incomeHTML(s, now, R) : ''}<section class="tpanel"><div class="sec-h"><h2>Training</h2><span class="count tnum">${training.length} of ${slots}</span></div>${trainHTML}</section><section class="tpanel"><div class="sec-h"><h2>Storage</h2><span class="count tnum">${resting.length}</span></div>${restHTML}</section>${R.breed ? breedHTML(s, now, R.breed) : ''}${typeof buildingRowsHTML === 'function' && buildingRowsHTML('ranch', 'ranch') ? `<section class="tpanel"><div class="sec-h"><h2>Upgrades</h2></div>${buildingRowsHTML('ranch', 'ranch')}</section>` : ''}<p class="note">Runs bring Scrap home: a little for every place you reach.</p>`,
     btns: [{ l: 'Done', c: 'gold', f: closeModal }],
     after: () => {
       for (const b of document.querySelectorAll('#ov .ranch-sheet [data-r]'))
@@ -214,11 +225,20 @@ export function ranchOpen() {
 function ranchDo(what, uid, arg) {
   const s = saveData,
     R = RULES.ranch,
-    now = Date.now(),
     m = s.box.find(b => b.uid === uid);
   if (!R) return;
+  const { now } = ranchNow(s, Date.now(), R);
   if (R.breed && (what === 'pick' || what === 'mode' || what === 'breed' || what === 'hatch')) {
     breedDo(what, uid, arg, now, R.breed);
+    return;
+  }
+  if (what === 'collect' && R.income) {
+    const got = incomeCollect(s, now, R);
+    if (got) toast(`+${got} Scrap from the ranch.`);
+    if (typeof debugLog !== 'undefined') debugLog.add('ranch', `collect: ${got}, ${s.meta.scrap} Scrap`);
+    save();
+    render();
+    ranchOpen();
     return;
   }
   if (!m) return;
@@ -265,7 +285,7 @@ function breedDo(what, uid, arg, now, BR) {
       hatchModal(
         e.mode === 'risky' ? 10 : 2,
         () => {
-          const got = breedHatch(s, i, Date.now());
+          const got = breedHatch(s, i, ranchNow(s, Date.now(), RULES.ranch).now);
           if (got && typeof debugLog !== 'undefined')
             debugLog.add('ranch', `hatch: ${s.ranch.nursery.length} eggs, ${got.m.mut ? got.m.mut.k : 'plain'}`);
           save();

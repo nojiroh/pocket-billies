@@ -41,6 +41,7 @@ import {
   spawn,
   xpFor,
 } from './logic/rules.js';
+import { ranchNow } from './logic/ranch-clock.js';
 import { RUN_MOD_MOUNTAINS } from './logic/run-scenes.js';
 import { relicOfferMake, relicTake } from './logic/relics.js';
 import { allSnapshots, battleSay, checkFaints, fighter, startTrainer, startWild } from './logic/battle-engine.js';
@@ -468,17 +469,20 @@ function debugAction(x) {
       });
       break;
     /* RL-9: the ranch's trainees started an hour earlier (an hour's training, collected when the ranch opens), and
-       Scrap to train with */
+       Scrap to train with; RL-10b: an hour more of income */
     case 'ranchhour':
       saveData.ranch.trainees.forEach(t => {
         t.at = Math.max(0, t.at - 3600000);
       });
+      /* RL-10b: and its income counted an hour earlier */
+      if (saveData.ranch.income.lastAt)
+        saveData.ranch.income.lastAt = Math.max(1, saveData.ranch.income.lastAt - 3600000);
       toast(`${saveData.ranch.trainees.length} training: an hour older.`);
       break;
     /* RL-10: every egg in the ranch's nursery ready to hatch now */
     case 'eggsready':
       saveData.ranch.nursery.forEach(n => {
-        n.ready = Math.max(n.at, Math.min(n.ready, Date.now()));
+        n.ready = Math.max(n.at, Math.min(n.ready, ranchNow(saveData, Date.now(), RULES.ranch).now));
       });
       toast(`${saveData.ranch.nursery.length} egg(s) ready to hatch at the ranch.`);
       break;

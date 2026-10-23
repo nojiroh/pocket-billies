@@ -19,6 +19,18 @@ kept aside in the browser).
   wind and birds come down a little while a song plays. Every new cry, jingle and button sound is a draft, named
   "placeholder" in the Studio, whose Music & sound section has a Sounds tab for the base cries, the button sounds and
   the mix, and plays each jingle at its own tempo.
+- A new professor: Professor Chosen runs the lab in Copperleaf. He finds you after the fall, hands out the starters,
+  gives his (chosen) opinion of each and sends you to the airship; he is sure he is the main character and is wrong
+  about most things, his type tips especially. Hazel stays as his assistant: she follows him out of the lab in the
+  opening, corrects him, and has her own things to say at her desk in the lab. Name tags, the lab's sign, the Field
+  Guide (recorded by Hazel, signed by the Chosen) and the lore follow. His look uses today's wardrobe; his wolf shirt
+  and katana come later.
+- Ranch income (RL-10b): the ranch earns Scrap by itself, 1 an hour at Lv 1 (2 at Lv 2, 3 at Lv 3), banking up to
+  24 hours; the ranch's sheet shows the pile and how long until it is full, and Collect pays it. It counts from the
+  first time you open the ranch, and works offline. Every ranch timer (training, eggs, income) now shares one clock:
+  turning the device's clock back stops them until it catches up (the sheet says so), and turning it forward again
+  no longer pays the gap to training. Signed in, the account's save carries the server's time, so a clock set ahead
+  counts at the real pace. (Firebase rules: only publish the new saves rule once this version is live.)
 - Settings in seven tabs (UI-7b): Sound, Display, Controls, Accessibility, Game, Save, Help, opening on the last one
   you used. Start over moved from beside Done to the foot of the Save tab, and now also ends a battle in progress.
   The Save card shows runs won and Billies taxed. Help has a Report a problem box (the full test and the debug log);

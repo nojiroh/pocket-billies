@@ -88,19 +88,26 @@ test('ranch: collecting levels a Billie up through gainXp and never past the cap
   assert.equal(K.ranchBanked(s, s.ranch.trainees[0], 0, R).atCap, true);
 });
 
-test('ranch: a clock turned back gains nothing and starts the trainee again; a minute behind is let through', () => {
+test('ranch: a clock turned back gains nothing and never moves the start back; forward again pays only real time', () => {
   const { s, m } = ranchSave(5);
   K.ranchTrainStart(s, m.uid, 10 * H, R);
   const t = s.ranch.trainees[0];
-  assert.equal(K.ranchBanked(s, t, 10 * H - R.guardMs, R).xp, 0, 'within the slack: no gain, no reset');
+  assert.equal(K.ranchBanked(s, t, 10 * H - R.guardMs, R).xp, 0, 'within the slack: no gain');
   K.ranchCollect(s, 10 * H - R.guardMs, R, say);
-  assert.equal(t.at, 10 * H - R.guardMs);
-  const lvl = m.lvl;
+  assert.equal(t.at, 10 * H, 'within the slack: the start stays');
+  const lvl = m.lvl,
+    xp = m.xp;
   K.ranchCollect(s, 2 * H, R, say);
   assert.equal(m.lvl, lvl, 'turned back: nothing');
-  assert.equal(t.at, 2 * H, 'started again from the clock');
-  K.ranchCollect(s, 10 * H, R, say);
-  assert.ok(m.lvl <= lvl + R.bankHours * R.levelsPerHour, 'forward again: at most one bank');
+  assert.equal(
+    t.at,
+    10 * H,
+    'turned back: the start stays (RL-10b; RL-9 moved it back, so forward again paid the gap)'
+  );
+  // forward again, ten minutes past the real start: ten minutes' XP, not a bank's
+  K.ranchCollect(s, 10 * H + H / 6, R, say);
+  assert.equal(m.xp - xp, K.ranchXp({ ...m, xp, lvl }, H / 6, K.ranchCap(s, R), R));
+  assert.equal(t.at, 10 * H + H / 6);
 });
 
 test('ranch: Stop collects and ends; the team move collects and ends; gone Billies are tidied away', () => {

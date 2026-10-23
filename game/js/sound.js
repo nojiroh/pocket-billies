@@ -380,7 +380,15 @@ export function soundEffect(name, o = {}) {
       let h = 0;
       for (const ch of String(o.who || '')) h = (h * 31 + ch.charCodeAt(0)) % 997;
       const base =
-        o.who === 'gini' ? 72 : o.who === 'me' ? 67 : /^folk/.test(o.who || '') ? 62 + (h % 10) : 60 + (h % 14);
+        o.who === 'chosen'
+          ? 64
+          : o.who === 'hazel'
+            ? 72
+            : o.who === 'me'
+              ? 67
+              : /^folk/.test(o.who || '')
+                ? 62 + (h % 10)
+                : 60 + (h % 14);
       synthVoice(F, {
         type: 'p25',
         freq: midiToFrequency(base + [0, 2, 4, 7][Math.floor(Math.random() * 4)]),

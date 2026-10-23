@@ -189,6 +189,20 @@ CSS) is dormant, for a cleanup session. The sim's first numbers: 59/31/11 % (odd
 is about even against its unmarked twin, but mixed part sizes lose phase 16's Prime bonus (0.11-0.17 against a plain
 Billie; the duel's control is 0.43).
 
+**Corrected in RL-10b (2026-10-23).** Section 3's `ranch.income = {rate, cap: 24 h, lastAt, bank}`: the save already
+held `{rate, bank, lastAt}` (RL-3) and no cap; the rate and the cap are rules (`rules.ranch.income`: 1/2/3 Scrap an hour
+by ranch level, 24 h; placeholders), so the save drops `rate` (a stored rate would go stale on an upgrade) and `bank`
+holds what an old level earned (buying an unlock banks the income first). `lastAt` 0 on a new save would have paid a
+full pile at once: income starts at the ranch's first opening. "`lastAt = max(lastAt, t)` on load" only stops a clock
+turned back across devices, not a clock set forward; the owner chose the anchor plus a measured skew. Built: one ranch
+clock, `logic/ranch-clock.js` (`ranchNow`: the phone time less the session's skew; more than `guardMs` behind the
+save's high-water mark `ranch.seen`, time stands still at the mark; `ranchAnchor`, `clockSkew`, a session floor from the
+cloud save's `t`), read by training, eggs and income; training's start never moves back (the RL-9 bug RL-10a found);
+`logic/ranch-income.js` and the sheet's Income row with Collect (the owner's pick over collecting on opening); both
+cloud writes (`accountSaveDoc`) carry `t: serverTimestamp()`, read back once a session for the skew. 8.12: the
+`saves/{uid}` key whitelist with `t == request.time`, 14 emulator tests; publish it only after the build is live.
+"Working offline" needed nothing new: the service worker was there, and the sums run on the phone's clock with the mark.
+
 **Corrected in RL-11 (2026-10-22).** There is no `hub.js`: the board is `lab-board.js` in the hub's Lab tab (hidden
 since UI-5 for it), and Hazel's lab machine (now act `board`) opens it. `won:bracket_N` can't be built yet: meta keeps a
 win count and the highest tier, and nothing raises the tier (RL-13); RL-11 added the condition kinds `unlock:<id>`,
@@ -760,8 +774,9 @@ guard, offline, the cloud `t` anchor and its rule. Files: `logic/breeding.js`, `
 (eggs), `account.js:331-351`, `firebase/firestore.rules` + `firebase/test/rules.test.mjs`,
 `tools/test/sim/breeding-sim.mjs` (reports only until bounds are agreed). Could break: cloud saves (publish the rule
 after the emulator passes). 2 sessions. RL-10a done 2026-10-22 (HANDOFF; section 0 for what changed): breeding,
-hatching, `m.mut`, the old walking eggs retired, the sim. RL-10b next: passive income, the shared rollback guard
-(training's included), offline, the cloud `t` anchor and the key whitelist (8.12).
+hatching, `m.mut`, the old walking eggs retired, the sim. RL-10b done 2026-10-23 (section 0): passive income, one ranch
+clock with the rollback guard (training's fixed), offline, the cloud `t` anchor with a measured skew, the key whitelist
+(8.12).
 
 **RL-11 Hub upgrades, currencies, unlock board.** `currencies.json`, `buildings.json` (Lab, Ranch, Workshop, Airship),
 `unlocks.json` with the three doors, `logic/unlocks.js` (`unlockReady`, buy, auto at payout and on load),
@@ -898,7 +913,8 @@ Decided this session: the rework is a track RL-N (`rl-N-done`); parked phases ar
 11. **Hardening items that change behaviour:** SECURITY A and B, delete the 16 version-stamped tools (recommended) /
     move the tools to `tools/legacy/`.
 12. **SAVE_VERSION 4** sets aside every current save on your phone and account; and the `saves/{uid}` key whitelist
-    with `t` in RL-10 (recommended yes to both).
+    with `t` in RL-10 (recommended yes to both). **Answered in RL-10b: yes**, the rule published only after the build
+    that sends `t` is live.
 13. **`seen`/`caught`:** stay top level (recommended) / move to `meta.dex` now (14 reader files).
 14. **Relic cap:** 6 held (recommended) / 8. **Answered in RL-12: 6** (rules.json `run.relics.cap`).
 15. **Hub island look after parking:** only Copperleaf on the terrain (recommended) / parked places as bowl-only pins
