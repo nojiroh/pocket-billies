@@ -5,7 +5,7 @@
 import { expose } from './test-globals.js';
 import { nodeActions, provide, render, tripButtons, tripDest, tripStatus } from './hooks.js';
 import { $ } from './util.js';
-import { LOCATIONS, POOLS, REGIONS, ROADS_BY_NODE, locationSubtitle } from './game-data.js';
+import { LOCATIONS, POOLS, ROADS_BY_NODE, locationSubtitle } from './game-data.js';
 import { canEnter, canRide, distanceText, gateText, riderName, setTrip, stopTrip, tripTo } from './logic/rules.js';
 import { escapeHtml, saveData, uiState } from './game-state.js';
 import { uiIconHTML } from './art.js';
@@ -68,10 +68,6 @@ function worldMapCardHTML() {
   const rm = typeof sel === 'number' ? worldBowlRunMark(sel) : null;
   if (rm && rm.seen < 2)
     return `<div class="mc-top"><h2>Further on</h2><span class="sub">On the run</span></div><p class="note">Come closer to see what waits here.</p>`;
-  if (typeof sel === 'string') {
-    const f = REGIONS[+sel.slice(1)];
-    return `<div class="mc-top"><h2>${escapeHtml(f.name)}</h2><span class="sub">${f.t === 'sun' ? 'Center of the world' : 'Unexplored'}</span></div><p>${escapeHtml(f.blurb || '')}</p><p class="note">${f.t === 'sun' ? 'Visible from everywhere in the Hollow Earth.' : 'No trainer from Marigold Town has walked this far yet. The road opens in a later version.'}</p>`;
-  }
   const n = LOCATIONS[sel],
     node = saveData.trip.node,
     dest = tripDest(),
@@ -117,7 +113,7 @@ function paintWorldMapCard() {
 export function mapTabAction(a, d) {
   switch (a) {
     case 'msel':
-      worldMapSelect(d.n.startsWith('f') ? d.n : +d.n);
+      worldMapSelect(+d.n);
       break;
     case 'travel': {
       const j = +d.n;

@@ -1933,7 +1933,7 @@ export function worldMapReset() {
   worldBowl.goal = bowlCamHome(me.x, me.y, worldBowl.cam.yaw);
   worldBowl.dirty = true;
 }
-/* pick a place (or a region, by "f" and its number): its card, and the camera comes over it */
+/* pick a place: its card, and the camera comes over it */
 export function worldMapSelect(n) {
   uiState.mapSel = n;
   if (typeof paintWorldMapCard === 'function') paintWorldMapCard();

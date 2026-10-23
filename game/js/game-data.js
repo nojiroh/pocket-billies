@@ -41,7 +41,6 @@ expose({
   PEOPLE: [() => PEOPLE],
   POOLS: [() => POOLS],
   RARITY_STAT_TOTALS: [() => RARITY_STAT_TOTALS],
-  REGIONS: [() => REGIONS],
   RELICS: [() => RELICS],
   ROADS: [() => ROADS],
   ROADS_BY_NODE: [() => ROADS_BY_NODE],
@@ -288,7 +287,6 @@ if (RULES.eggs && RULES.eggs.mythSpecies) RULES.eggs.mythSpecies = standInSpecie
    fills these tables in place, so every module that imports them sees the new rows: here once from the game data,
    the hub; a run puts its own world in (RL-7) and the hub back after */
 export const LOCATIONS = /** @type {LocationEntry[]} */ ([]);
-export const REGIONS = gameData.regions;
 export const POOLS = /** @type {Record<string, Pool>} */ ({});
 for (const k in gameData.pools) {
   const P = gameData.pools[k];
