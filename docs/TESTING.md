@@ -172,11 +172,17 @@ Two rules hold everywhere:
 
 - `@step(name, limit)`: the name says what is checked, with no version stamp for new steps (docs/NAMING.md; the old
   `v31`..`alpha 0.4.1` names are retired or renamed in 13b).
-- Wait on the game's state with `until()` and check what it returns; a fixed `time.sleep` only for a deliberate wait,
-  with a comment saying why. Explicit ready events arrive in **(13b)**.
-- Clean up in `finally`, and don't rely on what an earlier step left (13b gives each group its own page; until then,
-  reset what your step needs at its start).
-- **(13b)** Each step gets `areas=(...)` tags and joins a run group with a fixture instead of replaying the opening.
+- A step takes a page (`def my_step(P)`, `pg = P.pg`): put it in a page of `pages()` whose fixture and size fit, or a
+  page of its own if it leaves the game in a state the next step can't use. A page boots once at its fixture
+  (`?fixture=<name>`, game/js/fixture.js) in its first step; the pages run side by side (`--workers`, default 2). Only
+  the phone flow plays the real opening (TC-4: `play()` is gone).
+- Wait on the game's state, never a fixed time: `until(pg, cond, sec, poke)`, `ui(pg)` after a screen or a sheet
+  opens (two frames painted, its CSS animations done), `drawn(pg, n)` and `look_at_me(pg)` before reading or picturing
+  the walk view, `bowl_drawn`, `BOWL_OPEN`, `BATTLE_LEFT`. A `time.sleep` only where the wait is the point, with a
+  comment saying why (two today).
+- Clean up in `finally`, and reset at the step's start what it needs: steps on one page share it.
+- The shared helpers of every browser check (server, clock, accounts, test globals, low graphics, `until`, page
+  opening, console text, log) are in `tools/browser_check.py`; a new check imports them from there.
 - The checks never reach accounts or the network (`NO_ACCOUNTS`), and nothing they do is saved for real.
 - The test cleanup track's TC-1 (docs/phases/test-cleanup-track.md, lane B) deleted the steps another check already
   covers (Code, Messages, Team, Studio opens, Shaders, Paths, Scenes, Crowd, RL-7's run roads, the joystick, Battles,

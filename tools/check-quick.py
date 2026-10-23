@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
-"""A quick check of Pocket Billies made for a headless test machine (a browser without a graphics chip, which draws the
-3D scenes in software and slowly). It is the check Claude runs while building a version; it takes a few minutes.
+"""The full check of Pocket Billies made for a headless test machine (a browser without a graphics chip, which draws
+the 3D scenes in software and slowly). It runs nightly in CI and at the end of a phase; every push runs the fast
+check (tools/check-fast.py) instead.
 
-    python3 tools/check-quick.py                 # data, code, shaders, every scene once, the main flows
-    python3 tools/check-quick.py --smoke         # the fast subset: the data, Start-Game on a phone + debug log, the in-game test's first step
+    python3 tools/check-quick.py                 # the data, the phone flow, the sound, UI and run steps, the desktop steps
+    python3 tools/check-quick.py --smoke         # the fast subset: Start-Game on a phone + debug log, the actions sheet, the in-game test's first step
     python3 tools/check-quick.py --selftest      # the game's own full test and diagnostics test, whole (about 25 minutes)
     python3 tools/check-quick.py --steps=running,lamps # only the steps whose names hold these words
+    python3 tools/check-quick.py --workers=3     # pages side by side in this many browsers (default 2)
     python3 tools/check-quick.py --tests         # also draw every test scene and take its pictures (the walking checks
                                                  # of the test scenes always run; they need no drawing)
 
@@ -13,12 +15,15 @@ The game's own **full test** (Settings → Help, or the debug menu) runs here on
 whole with --selftest (nightly), stretched for software drawing (phase 13); its frame rates and the stress test only
 mean something on a real phone or computer with a graphics chip, so those come from you as a debug log.
 
-How it stays quick in software: the frames are drawn at a third of the resolution with a small shadow map, scene
-logic (walkable paths, doors, bridges, stairs) is checked directly from the data without drawing, each scene is drawn
-just until its first frames appear, and every step has a time limit so a stuck step is reported, not waited on.
-Pictures go to validation/quick/ as WebP; the summary to validation/quick/results.json. With a baseline in
-validation/quick-baseline/ (make one with --baseline), each picture is compared with it. Nothing in game/ or studio/
-is changed."""
+How it stays quick (TC-4, on check-fast's model): each page opens straight where its steps need to be
+(?fixture=<name>, game/js/fixture.js; the phone flow alone plays the real opening from the title), runs its steps one
+after another, and the pages run side by side in --workers browsers, the longest first. The frames are drawn at a
+third of the resolution with a small shadow map, set before the boot; scene logic is checked from the data without
+drawing; steps wait on the game's state (until, ui, drawn), never a fixed time except where the wait is the point;
+every step has a time limit (the page's boot, held by its first step, left out), so a slow step is a note. A page
+error fails the step it came in. Pictures go to validation/quick/ as WebP; the summary to
+validation/quick/results.json. With a baseline in validation/quick-baseline/ (make one with --baseline; CI keeps it as
+the release baseline-<version>), each picture is compared with it. Nothing in game/ or studio/ is changed."""
 # RL-5: --closeups and --seams=all went with their steps (every close-up spot and every seam was in a parked place);
 # TC-1: --scenes went with the Scenes and Paths steps, the only ones that read it
 import io, json, math, queue, re, shutil, subprocess, sys, threading, time
