@@ -135,6 +135,24 @@ export interface RunNode {
   seen?: number;
   /** its biome (a biomes.json id): its scene's look and its weather's climate */
   biome?: string;
+  /** RL-R1: its zone in the run's region (run.region.zones); missing on a run from before regions */
+  zone?: number;
+}
+
+/** roguelite track RL-R1: a run's region (logic/run-region.js runRegionMake) */
+export interface RunRegion {
+  /** its regions.json theme and its name ("Pendingvale") */
+  theme: string;
+  name: string;
+  /** its zones in order: a biome over some rows of the map */
+  zones: { biome: string; rows: number }[];
+  /** the regional dex (species ids, each line in the region's variety), every other variety of those lines to the
+      region's, and the lines met as a regional form (line id to form id) */
+  dex: string[];
+  swap: Record<string, string>;
+  forms: Record<string, string>;
+  /** trainer ids: the mini-bosses in order, then the boss */
+  leaders: string[];
 }
 
 /** roguelite track RL-6: a run's node map (logic/run-map.js runMapMake): nodes row by row, west to east */
@@ -178,6 +196,8 @@ export interface Run {
   mapgenV: number;
   /** the node map; null until the run gets it at the mast (logic/run-map.js runMapStart) */
   map: RunMap | null;
+  /** RL-R1: its region (name, zones, dex, leaders); missing on a run from before regions */
+  region?: RunRegion;
   /** what is happening, and the battle being fought (its battle number, -1 for none: a resume restarts it from
       the seed). Where the player is stays saveData.trip.node: 0 Copperleaf, i + 1 the map's node i */
   /** RL-8: won, at the payout (1 won, 0 lost or given up) */

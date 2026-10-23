@@ -16,6 +16,7 @@ import { CLIMATE_WEATHER_ODDS } from './weather.js';
 import { uiThemeContrast } from './ui-theme.js';
 import { RUN_MARK_TYPES } from './run-marks.js';
 import { runMapMake, runMapRows, runMapRowsFit } from './run-map.js';
+import { runRegionData, runRegionMake } from './run-region.js';
 import { MAPGEN_DEFAULTS, MAPGEN_FEATURES, MAPGEN_SHAPES, MAPGEN_SURFACES, MAPGEN_WATER } from './mapgen.js';
 import { FX_LIMIT, FX_STAGES } from './effects.js';
 import { conditionNames, conditionProblem, conditionTree } from './conditions.js';
@@ -39,6 +40,8 @@ expose({
   dataNodeTypes: [() => dataNodeTypes, v => (dataNodeTypes = v)],
   // @ts-expect-error -- replaced on purpose
   dataRanchRules: [() => dataRanchRules, v => (dataRanchRules = v)],
+  // @ts-expect-error -- replaced on purpose
+  dataRegions: [() => dataRegions, v => (dataRegions = v)],
   // @ts-expect-error -- replaced on purpose
   dataRelics: [() => dataRelics, v => (dataRelics = v)],
   // @ts-expect-error -- replaced on purpose
@@ -553,6 +556,81 @@ export function dataBiomes(D, valid = () => true) {
       for (const L of B.life || []) if (!life[L.k]) problem('biomes.json', `${b}.life: no animal ${L.k}`);
     }
   }
+  return out;
+}
+// RL-R1: what a run's region is made from: the schema; biomes that exist and are run biomes (rules.json run.map.biomes:
+// the ones with finished plants, roguelite-track 9.3); real types; ranges low to high; every mini-boss leader with a
+// type; then a sweep: on a fresh save's biomes and on all of them, at every Expedition, each seed makes a region whose
+// rows fit the map's mini-bosses, whose dex is real species within its size, with a leader for each mini-boss and the boss
+/** RL-R1: regions.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
+export function dataRegions(D, valid = () => true) {
+  /** @type {DataProblem[]} */
+  const out = [],
+    problem = (/** @type {string} */ where, /** @type {string} */ what) => out.push([where, what]);
+  if (!D.regions || !valid('regions.schema.json', D.regions, 'regions.json')) return out;
+  const R = D.regions,
+    M = (D.rules && D.rules.run && D.rules.run.map) || {},
+    runBiomes = M.biomes || {},
+    types = new Set((D.types || []).map((/** @type {any} */ t) => t.id)),
+    biome = (/** @type {string} */ b, /** @type {string} */ at) => {
+      if (!(D.biomes || {})[b]) problem('regions.json', `${at}: no biome "${b}" (biomes.json)`);
+      else if (!Object.hasOwn(runBiomes, b))
+        problem('regions.json', `${at}: "${b}" is not a run biome (rules.json run.map.biomes, the finished ones)`);
+    };
+  for (const [b, G] of Object.entries(R.graph)) {
+    biome(b, 'graph');
+    for (const to of Object.keys(/** @type {any} */ (G))) biome(to, `graph.${b}`);
+  }
+  for (const [k, T] of Object.entries(R.themes)) {
+    for (const f of ['start', 'biomes'])
+      for (const b of Object.keys(T[f])) {
+        biome(b, `themes.${k}.${f}`);
+        if (!R.graph[b]) problem('regions.json', `themes.${k}.${f}: "${b}" is not in the graph`);
+      }
+    for (const t of Object.keys(T.types))
+      if (!types.has(t)) problem('regions.json', `themes.${k}.types: no type "${t}"`);
+  }
+  for (const f of ['rows', 'dex'])
+    if (R[f][0] > R[f][1]) problem('regions.json', `${f}: the fewest (${R[f][0]}) is more than the most (${R[f][1]})`);
+  for (const [id, T] of Object.entries(D.trainers || {}))
+    if (T && T.miniboss) {
+      if (!T.type)
+        problem(`trainers/${id}.json`, 'a mini-boss leader needs a type (RL-R1: a region picks its leaders by type)');
+      else if (!types.has(T.type)) problem(`trainers/${id}.json`, `type: no type "${T.type}"`);
+    }
+  if (out.length || !Array.isArray(D.lines)) return out;
+  /* the sweep: the biomes a fresh save has (none an unlock grants) and every run biome */
+  const granted = new Set(Object.values(D.unlocks || {}).map((/** @type {any} */ u) => u.grant && u.grant.biome)),
+    every = Object.keys(runBiomes).filter(b => runBiomes[b] > 0),
+    data = runRegionData(D, D.trainers || {}),
+    species = new Set(D.lines.flatMap((/** @type {any} */ L) => lineSpeciesIds(L))),
+    roster = D.lines.reduce((/** @type {number} */ n, /** @type {any} */ L) => n + L.names.length, 0),
+    seen = new Set();
+  for (const [what, open] of [
+    ['a fresh save', every.filter(b => !granted.has(b))],
+    ['every run biome', every],
+  ])
+    for (let tier = 1; tier <= R.zones.length; tier++)
+      for (let k = 0; k < 40; k++) {
+        const seed = `REGIONCHECK${k}`,
+          note = (/** @type {string} */ text) => {
+            if (seen.has(text)) return;
+            seen.add(text);
+            problem('regions.json', `${text} (${what}, Expedition ${tier}, seed ${seed})`);
+          },
+          G = runRegionMake(seed, data, { open: /** @type {string[]} */ (open), tier, guards: M.minibosses || 0 });
+        if (!G) {
+          note(`no theme can roll with only ${/** @type {string[]} */ (open).join(', ')} open`);
+          continue;
+        }
+        const rows = G.zones.reduce((n, z) => n + z.rows, 0);
+        if (!runMapRowsFit({ ...M, rows }))
+          note(`${rows} rows (${G.zones.length} zones) can't hold ${M.minibosses} mini-bosses`);
+        if (G.dex.some(sp => !species.has(sp))) note(`the dex names a species no line makes`);
+        if (G.dex.length > R.dex[1] || (G.dex.length < R.dex[0] && roster >= R.dex[0]))
+          note(`a dex of ${G.dex.length} species, not ${R.dex[0]}-${R.dex[1]}`);
+        if (G.leaders.length !== (M.minibosses || 0) + 1) note('a leader short for its mini-bosses and boss');
+      }
   return out;
 }
 // RL-6: the kinds of node on a run's map: the schema, a marker for each, and something to fill the free rows with

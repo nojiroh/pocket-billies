@@ -1,1 +1,80 @@
-[]
+{
+ "zones": [3,3,4,4,5],
+ "rows": [2,3],
+ "dex": [15,25],
+ "graph": {
+  "meadow": {"lake":2,"thicket":2,"ridge":1,"autumn":1},
+  "lake": {"meadow":2,"thicket":2,"ridge":1},
+  "thicket": {"meadow":2,"autumn":2,"lake":1},
+  "ridge": {"meadow":2,"autumn":2,"lake":1},
+  "autumn": {"thicket":2,"ridge":2,"meadow":1}
+ },
+ "themes": {
+  "lakeland": {
+   "name": "Lakeland",
+   "start": {"lake":2,"meadow":1},
+   "biomes": {"lake":3,"meadow":2,"thicket":1},
+   "types": {"Water":3,"Electric":2,"Flying":2,"Grass":1},
+   "ends": ["mere","ford"],
+   "nouns": ["Shores","Basin"]
+  },
+  "greenbelt": {
+   "name": "Greenbelt",
+   "start": {"meadow":2,"thicket":1},
+   "biomes": {"meadow":3,"thicket":2,"lake":1},
+   "types": {"Grass":3,"Ground":2,"Fire":2,"Electric":1},
+   "ends": ["stead","vale"],
+   "nouns": ["Fields","Downs"]
+  },
+  "wildwood": {
+   "name": "Wildwood",
+   "start": {"thicket":2},
+   "biomes": {"thicket":3,"autumn":2,"meadow":2},
+   "types": {"Grass":3,"Psychic":2,"Steel":2,"Flying":1},
+   "ends": ["wick","wood"],
+   "nouns": ["Hollow","Thicket"]
+  },
+  "highland": {
+   "name": "Highland",
+   "start": {"ridge":2,"meadow":1},
+   "biomes": {"ridge":3,"autumn":2,"meadow":2},
+   "types": {"Flying":3,"Ground":2,"Steel":2,"Fire":1},
+   "ends": ["crag","fell"],
+   "nouns": ["Heights","Reach"]
+  },
+  "harvest": {
+   "name": "Harvest Country",
+   "start": {"autumn":2},
+   "biomes": {"autumn":3,"meadow":2,"ridge":2},
+   "types": {"Fire":3,"Ground":2,"Psychic":2,"Steel":1},
+   "ends": ["stead","field"],
+   "nouns": ["Acres","Commons"]
+  }
+ },
+ "names": {
+  "parts": [
+   "Pending",
+   "Beta",
+   "Backlog",
+   "Hotfix",
+   "Deprecated",
+   "Redacted",
+   "Onboarding",
+   "Sponsored",
+   "Trending",
+   "Unboxing",
+   "Placeholder",
+   "Tutorial",
+   "Respawn",
+   "Sidequest",
+   "Fetchquest",
+   "Unskippable",
+   "Backup",
+   "Spare Parts",
+   "Copypaste"
+  ],
+  "ends": ["vale","wick","ford","ton"],
+  "nouns": ["Basin","Downs","Hollow","Commons","Flats","Reach"],
+  "joined": 0.5
+ }
+}

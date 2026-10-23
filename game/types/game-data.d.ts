@@ -67,7 +67,8 @@ export interface GameData {
   lines: Line[];
   /** the world map's places, in node order */
   locations: LocationData[];
-  regions: Region[];
+  /** RL-R1: the run's region themes (logic/run-region.js) */
+  regions: RegionsData;
   pools: Record<DataId, Pool>;
   /** the egg tiers, keyed by the distance in km that hatches them ('2', '5', '10') */
   eggs: Record<string, EggTier>;
@@ -447,10 +448,34 @@ export interface RoadEnds {
   name: string;
 }
 
-export interface Region {
+/** RL-R1: a region theme (regions.json themes): where its zones start, the biomes it walks through, the types it
+ * leans to (its dex's lines and its leaders) and its own name endings and nouns */
+export interface RegionTheme {
   name: string;
-  t: string;
-  blurb: string;
+  weight?: number;
+  /** the first zone's biome, by weight */
+  start: Record<DataId, number>;
+  /** its biomes' weights, times the graph's, for each next zone */
+  biomes: Record<DataId, number>;
+  /** a type's lean (types.json ids) */
+  types: Record<string, number>;
+  ends?: string[];
+  nouns?: string[];
+}
+
+/** RL-R1: regions.json, what a run's region is made from (logic/run-region.js runRegionMake) */
+export interface RegionsData {
+  /** the zones a region has at each Expedition (I first) */
+  zones: number[];
+  /** a zone's rows on the run's map, fewest and most */
+  rows: [number, number];
+  /** the regional dex's species, fewest and most */
+  dex: [number, number];
+  /** the biome graph: each biome's likely next ones, by weight */
+  graph: Record<DataId, Record<DataId, number>>;
+  themes: Record<DataId, RegionTheme>;
+  /** the shared name parts: parts, endings joined on (a part + 'vale'), nouns after a space, the odds of joining */
+  names: { parts: string[]; ends: string[]; nouns: string[]; joined: number };
 }
 
 /** a point on a map, metres: [x, z] */
@@ -1040,6 +1065,9 @@ export interface RunMapRules {
   cross: number;
   /** the biomes nodes pick from, by weight (biomes.json ids) */
   biomes: Record<DataId, number>;
+  /** RL-R1: the region's zones in order (logic/run-region.js): their rows add up to rows, each row takes its zone's
+   * biome (then biomes is not drawn) */
+  zones?: { biome: DataId; rows: number }[];
 }
 
 /** rules.json robots: the numbers behind robot stats, part HP and breaking (logic/fighters.js) */
