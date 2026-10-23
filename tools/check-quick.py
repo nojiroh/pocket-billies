@@ -1671,8 +1671,8 @@ def desktop_steps(b, base, R):
             pg.evaluate("if(activeBattle){stopTimers();setActiveBattle(null);battleStageStop()}airshipFlight.on=false;uiState.modal=null;uiState.mq=[];renderOverlay();setSaveData(window.rl8Hub);render();0")
     rl8_run_from_mast()
 
-    @step('alpha 0.4: Copperleaf — Granny Juniper in her garden, the lab', 240)   # RL-5: the lane down to Marigold Town is parked
-    def a04_copperleaf():
+    @step('Copperleaf: Granny Juniper in her garden, the lab', 240)   # RL-5: the lane down to Marigold Town is parked
+    def juniper_and_lab():
         """the new start drawn: Granny Juniper stands by her hives and talks (her first words, then a line), the lab's
         door opens the lab. RL-5: the trip from Copperleaf down Route 1 to Marigold Town went with those places"""
         if not pg.evaluate("typeof personTalk==='function'&&!!LOCATION_BY_ID.copperleaf"): return 'not in this build'
@@ -1697,7 +1697,7 @@ def desktop_steps(b, base, R):
         pg.evaluate("environment.force=null;uiState.modal=null;uiState.mq=[];renderOverlay();0")
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return '; '.join(out)
-    a04_copperleaf()
+    juniper_and_lab()
 
     @step('alpha 0.4: airships — the airship moored in Copperleaf, the propellers turning', 240)   # RL-5: the flight to Marigold Town is parked
     def a04_airships():
