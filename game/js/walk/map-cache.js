@@ -434,6 +434,8 @@ export const MAP_CACHE_FIELDS = [
   'flowAt',
   'wlevels',
   'wlevel',
+  /* 0.1.0 alpha: the sea's skirt out to the horizon (it stayed behind when a view prepared ahead was swapped in) */
+  'seaSkirt',
   'grass',
   'grassKey',
 ];
