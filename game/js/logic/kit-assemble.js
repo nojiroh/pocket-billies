@@ -2,11 +2,13 @@
 'use strict';
 /* ================= KIT ASSEMBLE (Studio plan Phase 5, T5.1) =================
    A kit Billie baked from its recipe (game/data/kitBuilds.json: which kit part on which bone, at what
-   size and colour, plus extras such as horns, ears, a crest or a shell), as tools/build-kit-billies.py builds it,
-   number for number: the pieces of each view (legs set the torso's height, arms and extras mirrored by the kinds'
+   size and colour, plus extras such as horns, ears, a crest or a shell), as the Python builder built it (number for
+   number; tools/build-kit-billies.py, retired once the Studio baked with this): the pieces of each view (legs set the torso's height, arms and extras mirrored by the kinds'
    sides in partKits.json, draw order from partKits' z, a tail turned to its aim, the head on the neck with its blink),
    the stage scale that fits both views in the stage box, the packed sheet, the rig of each view and the stage's native
-   parts (the piece layout <name>.json the Python builder also wrote retired: nothing read it the rig does not hold). tools/test/kit-bake-parity.test.mjs checks all 24 against what the Python builder wrote.
+   parts. (The piece layout <name>.json the Python builder also wrote retired: the rig holds all it did.)
+   tools/test/kit-bake-parity.test.mjs checks that all 24 bake as committed. `npm run bake:kits` and the Studio's
+   Write Billie (studio/js/kit-recipe.js) both bake with kitBakeWhole.
    Logic only: no DOM, runs in Node. A picture is ImageData-shaped. */
 /** @import { KitBake, PartKits } from '../../types/game-data' */
 /** @typedef {import('./kit-pixels.js').Pixels} Pixels */

@@ -1,5 +1,5 @@
 // Studio plan Phase 5 (T5.1): bakes the kit Billies from their recipes (game/data/kitBuilds.json) with the game's
-// own baker (game/js/logic/kit-assemble.js), as tools/build-kit-billies.py did. For each form it writes what changed:
+// own baker (game/js/logic/kit-assemble.js), as the retired tools/build-kit-billies.py did. For each form it writes what changed:
 // - game/art/next/billionaires/<name>.png, the sheet (written only when a shown pixel differs: alpha, and colour
 //   where alpha is not 0);
 // - its rig in game/art/next/rigs-next.js (the file is written as the Studio writes it, and only when a rig changed);
@@ -10,8 +10,7 @@
 //   node tools/bake-kit-billies.mjs --only=emberox,... only these forms
 //   node tools/bake-kit-billies.mjs --check            write nothing; list what would change (exit 1 if anything)
 //
-// Unlike the Python builder it draws no preview sheet (docs/samples/kit-billies.png) and no piece layout (<name>.json):
-// the rig holds all a layout did.
+// Unlike the Python builder it draws no preview sheet and no piece layout (<name>.json): the rig holds all a layout did.
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import vm from 'node:vm';

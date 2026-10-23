@@ -1040,7 +1040,7 @@ export interface KitBuilds {
   colours: Record<string, [number, number, number]>;
   forms: KitBuildForm[];
 }
-/** the baker's settings (were tools/build-kit-billies.py's constants) */
+/** the baker's settings (were the retired Python builder's constants) */
 export interface KitBake {
   /** the stage box every Billie fits in, its middle and ground line */
   box: { w: number; h: number; cx: number; base: number };

@@ -1,8 +1,10 @@
-// Studio plan Phase 5, T5.1: the kit Billies bake in JS exactly as tools/build-kit-billies.py baked them. Each of the
-// 24 recipes in game/data/kitBuilds.json are baked with game/js/logic/kit-assemble.js and compared with
-// what the Python builder wrote: the sheet (game/art/next/billionaires/<name>.png, alpha exactly and colour where a
-// pixel shows), the rig (game/art/next/rigs-next.js, both views, values and key order) and the stage's native parts (game/data/lines/<line>.json "parts"). The committed files are the Python builder's
-// output byte for byte (checked when this test was written: Pillow 12.3.0), so the builder need not run here.
+// Studio plan Phase 5, T5.1: every kit Billie bakes as committed. Each of the 24 recipes in game/data/kitBuilds.json is
+// baked with game/js/logic/kit-assemble.js (kitBakeWhole, as `npm run bake:kits` and the Studio bake) and compared with
+// the repository: the sheet (game/art/next/billionaires/<name>.png, alpha exactly and colour where a pixel shows), the
+// rig (game/art/next/rigs-next.js, both views, values and key order) and the stage's native parts
+// (game/data/lines/<line>.json "parts"). The committed art was the Python builder's output byte for byte (Pillow
+// 12.3.0) when this test was written, and stayed equal until the builder retired (Phase 5, session 3), so the JS baker
+// is that builder. A recipe or a kit part's picture changed without a bake fails here.
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -66,7 +68,7 @@ function pixelDiff(made, ref) {
   return n ? `${n} pixels, first at ${first}` : '';
 }
 
-test('every kit Billie bakes in JS as tools/build-kit-billies.py baked it', () => {
+test('every kit Billie bakes as committed (the retired Python builder, number for number)', () => {
   const problems = [];
   assert.equal(B.forms.length, 24);
   for (const form of B.forms) {

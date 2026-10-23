@@ -14,6 +14,6 @@
   "evo": {"type": "array"},
   "split": {"type": "boolean"},
   "parody": {"type": "string"},
-  "parts": {"description": "phase 16: each stage's native parts (its fitting set), a kit part id (partKits.json parts) per slot of rules.json parts.slots; written by tools/build-kit-billies.py", "type": "array", "items": {"type": "object", "additionalProperties": {"type": "string", "pattern": "^[a-z0-9_]+$"}}}
+  "parts": {"description": "phase 16: each stage's native parts (its fitting set), a kit part id (partKits.json parts) per slot of rules.json parts.slots; written with its recipe (kitBuilds.json) by the kit baker (npm run bake:kits, or the Studio)", "type": "array", "items": {"type": "object", "additionalProperties": {"type": "string", "pattern": "^[a-z0-9_]+$"}}}
  }
 }

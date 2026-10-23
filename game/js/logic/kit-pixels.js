@@ -1,7 +1,7 @@
 // @ts-check
 'use strict';
 /* ================= KIT PIXELS (Studio plan Phase 5, T5.1) =================
-   The picture steps of tools/build-kit-billies.py, number for number with Pillow, numpy and Python's colorsys, so a
+   The picture steps of the Python kit builder (tools/build-kit-billies.py, retired in Studio plan Phase 5), number for number with Pillow, numpy and Python's colorsys, so a
    kit Billie baked here is pixel-equal to the one the Python builder made (tools/test/kit-bake-parity.test.mjs): a
    part scaled by Pillow's box filter to hard alpha, recoloured (a head keeps its face), its blink, its squash and
    stretch frames, mirrored copies, and Pillow's nearest-neighbour affine drawing, used to measure a figure.
