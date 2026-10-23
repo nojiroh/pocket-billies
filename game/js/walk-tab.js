@@ -66,7 +66,7 @@ function tripButtons() {
     return `<button class="pb small" data-a="stoptrip">Stop guiding me</button><button class="pb small quiet" data-a="tab" data-t="map">Change plans</button>`;
   return `<button class="pb small gold" data-a="tab" data-t="map">${uiIconHTML('map', 16)} Choose where to go</button>`;
 }
-/** RL-8: a clinic heals the team: free in the hub (as before); on a run for rules.json run.healCost per hurt Billie (RL-12: with the Loopholes' price rows),
+/** RL-8: a clinic heals the team: free in the hub (as before); on a run for rules.json run.healCost per hurt Billie (RL-12: with the Perks' price rows),
     after a yes, a purchase saved at once (logic/run-loop.js runHealCost). `say`: the clinic prop's own line */
 export function clinicHeal(say) {
   if (!saveData.run) {

@@ -1251,7 +1251,7 @@ def run_lab_rules_steps(pg, errs):
 def run_lab_logic_steps(pg, errs, want):
     """Studio plan T2.4: the node panel's part from the game's logic, worked out in the Studio's logic worker on the
     data as it is now, equals runPreview in Node for the same seed: a mini-boss's leader and team, a town's stock and
-    Loophole on each day, the Loophole picks. One worker per data version: another click asks the same worker; an
+    Perk on each day, the Perk picks. One worker per data version: another click asks the same worker; an
     edit makes a new one."""
     P = want['preview']
     pg.select_option('#rlUnlocks', 'none')
@@ -1268,7 +1268,7 @@ def run_lab_logic_steps(pg, errs, want):
     if 'err' in boss: errs.append(f"the logic panel for mini-boss node {P['guard']['i']} never came: {boss['err'][:200]}"); return 'no logic panel'
     if boss['foe'] != P['guard']['foe']: errs.append(f"mini-boss node {P['guard']['i']}: the panel shows {boss['foe']}, runPreview in Node {P['guard']['foe']}")
     if boss['wild'] != P['guard']['wild']: errs.append(f"mini-boss node {P['guard']['i']}: wild {boss['wild']!r}, Node {P['guard']['wild']!r}")
-    if boss['offers'] != P['offers']: errs.append(f"the Loophole picks: the panel shows {boss['offers']}, Node {P['offers']}")
+    if boss['offers'] != P['offers']: errs.append(f"the Perk picks: the panel shows {boss['offers']}, Node {P['offers']}")
     made = pg.evaluate('logicWorker.made')
     town = panel(P['town']['i'])
     if 'err' in town: errs.append(f"the logic panel for town node {P['town']['i']} never came: {town['err'][:200]}"); return 'no logic panel'
@@ -1880,7 +1880,7 @@ def edit_undo(pg, errs, where, sel, value, path, rx):
 
 
 def relics_steps(pg, errs):
-    """Studio plan T4.1: the Loopholes editor. The sample build's Speed with Insider Tip is the game's (relicPreview in
+    """Studio plan T4.1: the Perks editor. The sample build's Speed with Running Shoes is the game's (relicPreview in
     Node); the offer order for LAB1 is the Run Lab's picks; a stages edit redraws the preview and is in relics.json; a
     factor under FX_LIMIT shows data-checks' message on its row; a row's kind change and the edits all undo."""
     W = content_want(errs)
@@ -1889,35 +1889,35 @@ def relics_steps(pg, errs):
     pg.evaluate("void openSection('relics', { relic: 'insider' })")
     pg.wait_for_selector('#main [data-relic-preview]', timeout=20000)
     if not wait_js(pg, "!!document.querySelector('#main [data-relic-preview][data-ready=insider]')"):
-        errs.append('loopholes: the sample build never came from the logic worker'); return
+        errs.append('perks: the sample build never came from the logic worker'); return
     hus = pg.evaluate("+(document.querySelector('#main [data-relic-preview] [data-stat=hus]')||{dataset:{}}).dataset.after")
-    if hus != W['insider']['after']: errs.append(f"loopholes: Insider Tip's Speed after is {hus}, the game's {W['insider']['after']}")
+    if hus != W['insider']['after']: errs.append(f"perks: Running Shoes's Speed after is {hus}, the game's {W['insider']['after']}")
     wait_js(pg, "!!document.querySelector('#main [data-relic-offers][data-ready]')")
     offers = pg.evaluate("[...document.querySelectorAll('#main [data-relic-offers] [data-offer]')].map(e=>e.dataset.offer)")
-    if offers != W['offers'] or offers != W['lab'][:len(offers)]: errs.append(f"loopholes: LAB1's offer order {offers}, Node {W['offers']}, the Run Lab's {W['lab']}")
+    if offers != W['offers'] or offers != W['lab'][:len(offers)]: errs.append(f"perks: LAB1's offer order {offers}, Node {W['offers']}, the Run Lab's {W['lab']}")
     # a stages edit: the preview follows, Propose carries relics.json, undo puts it back
     sel = '#main [data-p="relics.insider.fx.0.stages"]'
     pg.fill(sel, '2'); pg.dispatch_event(sel, 'change')
     two = wait_js(pg, f"+(document.querySelector('#main [data-relic-preview] [data-stat=hus]')||{{dataset:{{}}}}).dataset.after==={W['insider']['before'] * 2}", 10)
-    if not two: errs.append('loopholes: +2 stages did not double the preview’s Speed')
+    if not two: errs.append('perks: +2 stages did not double the preview’s Speed')
     pg.evaluate("undo()"); time.sleep(0.3)
-    edit_undo(pg, errs, 'loopholes', sel, 3, 'relics.insider.fx.0.stages', 'relics\\.json$')
+    edit_undo(pg, errs, 'perks', sel, 3, 'relics.insider.fx.0.stages', 'relics\\.json$')
     # a factor under the code's limit: data-checks' message on its row
     pg.evaluate("void openSection('relics', { relic: 'offshore' })"); time.sleep(0.3)
     sel = '#main [data-p="relics.offshore.fx.0.mult"]'
     pg.fill(sel, '0.05'); pg.dispatch_event(sel, 'change'); time.sleep(0.6)
     pg.evaluate("render()")
     msg = pg.evaluate("(document.querySelector('#main [data-relic-row=\"0\"] .relic-err')||{}).textContent||''")
-    if "outside the code's limits" not in msg: errs.append(f'loopholes: a factor of 0.05 showed no limit message on its row ({msg!r})')
+    if "outside the code's limits" not in msg: errs.append(f'perks: a factor of 0.05 showed no limit message on its row ({msg!r})')
     pg.evaluate("undo()"); time.sleep(0.3)
     # a row's kind: the row becomes a stat row; undo makes it money again
     pg.select_option('#main [data-relic-kind="offshore"][data-n="0"]', 'stat'); time.sleep(0.6)
     kind = pg.evaluate("studioState.D.relics.offshore.fx[0].kind")
     pg.evaluate("undo()"); time.sleep(0.3)
     if kind != 'stat' or pg.evaluate("JSON.stringify(studioState.D.relics.offshore.fx)") != '[{"kind":"money","mult":1.2}]':
-        errs.append(f"loopholes: the kind change made {kind!r} and undo left {pg.evaluate('JSON.stringify(studioState.D.relics.offshore.fx)')}")
-    if pending_files(pg, 'relics\\.json$'): errs.append('loopholes: after every undo Propose would still send relics.json')
-    if len(errs) == n: print(f"loopholes: Insider Tip's Speed {W['insider']['before']} -> {hus} as the game, LAB1's offers as the Run Lab's, a stages edit proposed and undone, the limit on its row, a kind change undone", flush=True)
+        errs.append(f"perks: the kind change made {kind!r} and undo left {pg.evaluate('JSON.stringify(studioState.D.relics.offshore.fx)')}")
+    if pending_files(pg, 'relics\\.json$'): errs.append('perks: after every undo Propose would still send relics.json')
+    if len(errs) == n: print(f"perks: Running Shoes's Speed {W['insider']['before']} -> {hus} as the game, LAB1's offers as the Run Lab's, a stages edit proposed and undone, the limit on its row, a kind change undone", flush=True)
 
 
 def unlocks_steps(pg, errs):
@@ -2000,7 +2000,7 @@ def economy_steps(pg, errs):
     if pg.evaluate("studioState.sec") != 'unlocks' or not pg.locator('#main [data-p="unlocks.ranch_2.cost"]').count(): errs.append('economy: the ranch_2 cost link did not open its field')
     pg.evaluate("void openSection('economy')"); time.sleep(0.3)
     pg.click('#main [data-act="ecoGo"][data-path="relics.offshore.fx.0.mult"]'); time.sleep(0.5)
-    if pg.evaluate("studioState.sec + ':' + studioState.sel.relic") != 'relics:offshore': errs.append('economy: the Offshore Account link did not open that Loophole')
+    if pg.evaluate("studioState.sec + ':' + studioState.sel.relic") != 'relics:offshore': errs.append('economy: the Lucky Charm link did not open that Perk')
     if len(errs) == n: print(f'economy: {rows} lines, links open their fields, the simulator placeholder shown', flush=True)
 
 

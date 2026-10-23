@@ -63,7 +63,7 @@ export const RUN_PHASES = ['fly', 'walk', 'battle', 'menu', 'payout'],
   RUN_LIST = 5000,
   RUN_TIERS = 9;
 export const copyOf = v => JSON.parse(JSON.stringify(v));
-/** RL-9b: a rule by Bracket (rules.json run.home, run.pack): the tier's entry, past the list's end its last */
+/** RL-9b: a rule by Expedition (rules.json run.home, run.pack): the tier's entry, past the list's end its last */
 /** @param {number[]} list @param {number} tier */
 export const runByTier = (list, tier) => list[Math.max(0, Math.min(list.length, Math.floor(tier) || 1) - 1)];
 /** RL-9b: the uids of the Billies that came from home (picked at the mast); a run saved before RL-9b took the hub's
@@ -142,7 +142,7 @@ export function validRun(o) {
   if (!list(o.forecast, nodes) || o.forecast.some(days => !list(days, RUN_DAYS) || !days.every(id))) return false;
   if (!list(o.relics, 32) || !o.relics.every(id) || !list(o.mods, 32) || !o.mods.every(id)) return false;
   if (o.offer !== null && (!list(o.offer, 5) || !o.offer.every(id))) return false;
-  /* RL-12: the offers made, and the run shops' Loopholes by '<map node>:<day>' ('' once bought) */
+  /* RL-12: the offers made, and the run shops' Perks by '<map node>:<day>' ('' once bought) */
   if (!wholeIn(o.offerN, 0, 1e6)) return false;
   if (
     !recordOf(o.shelf, RUN_LIST, v => v === '' || id(v)) ||
@@ -213,7 +213,7 @@ export function validRunFoe(f) {
   );
 }
 /** start a run on the save: the hub's working fields go into run.start and the run gets its own. The Billies from
-    home travel (`home`, by uid, from the team or storage; RL-9b: picked at the mast, the rules' count by Bracket is the
+    home travel (`home`, by uid, from the team or storage; RL-9b: picked at the mast, the rules' count by Expedition is the
     page's to keep; left out, the team as it is): copies, so what happens to them in the run never touches the hub's,
     and the first is the buddy. The packed bag (`pack`) leaves the hub's (no more than it holds, so run.start keeps what
     stays home) and joins the run's starting money, items and coins (`give`, from the rules in RL-8); the trip starts at
@@ -265,14 +265,14 @@ export function runBegin(s, give) {
   s.visited = { 0: 1 };
   return run;
 }
-/** what a run pays when it ends, as Research and Audit Seals, with the lines the payout screen lists: the money at a
+/** what a run pays when it ends, as Research and Crests, with the lines the payout screen lists: the money at a
     rate, the items at a share of their price (then at the money rate; RL-9b: on a loss only, a win takes the bag
     home), each released Billie, each node cleared, a win bonus; seals for a win; Scrap (RL-9, the ranch's material)
     for each node cleared and a win. Rates are rules.json run.payout (placeholders until the first play) */
 /**
  * @param {{ se: number, items: Record<string, number>, released: number, cleared: number, won: boolean }} end
  * @param {{ money: number, itemShare: number, released: number, node: number, win: number, winSeals: number,
- *   scrapNode?: number, scrapWin?: number, capital?: number }} rates capital (RL-12, a Loophole's): the Research times
+ *   scrapNode?: number, scrapWin?: number, capital?: number }} rates capital (RL-12, a Perk's): the Research times
  *   this, the difference as a line of its own
  * @param {(id: string) => number} itemPrice an item's shop price (Moneys), 0 for none
  * @returns {{ capital: number, seals: number, scrap: number, lines: { what: string, n: number, capital: number }[] }}
@@ -289,7 +289,7 @@ export function payoutOf(end, rates, itemPrice) {
     { what: 'nodes', n: end.cleared, capital: end.cleared * rates.node },
     { what: 'win', n: end.won ? 1 : 0, capital: end.won ? rates.win : 0 },
   ];
-  /* RL-12: a Loophole's payout row (logic/effects.js fxPayoutRates): the Research above times rates.capital, as a row */
+  /* RL-12: a Perk's payout row (logic/effects.js fxPayoutRates): the Research above times rates.capital, as a row */
   const k = rates.capital ?? 1;
   if (k !== 1) {
     const sum = lines.reduce((a, l) => a + l.capital, 0);

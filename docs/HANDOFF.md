@@ -75,6 +75,52 @@ RF-4 renames them.
 - For RF-4: the ids above; `MONEY_COIN` ('$coin') in battle-stage.js; `coinArc`'s name; the opening's `coins` list.
 - Next: RF-3 (type passives), then RF-4. Tag `rf-2-done` on this entry's commit (the owner pushes tags).
 
+### Reflavour track RF-1 - Words players see - 2026-10-23
+Branch `track/reflavour` (shared with RF-2 and RF-3; main merged in first, pulled with --no-rebase before every
+push). PR #160 (draft). Plan approved in Plan Mode with the owner's answers: words only (jokes wait for RF-5), the
+Perks' drafted names, the title's "Gotta tax 'em all!" stays, a flask for Research, the Studio's labels change too,
+"First Crest", "120 Moneys" in plain text, and (changed mid-session) run money is **Moneys** / "1 Money", not Coins.
+- Where reflavour-track.md section 2 was wrong (checked at 2361848's successor, track/reflavour after RF-2): "tax"
+  is ~40 player-facing lines in 22 files (89/34 counted ids and comments); Capital ~37 in 17 (not 56/23); Loophole
+  ~50 in 20 plus ~30 in the Studio (not 123/31); Bracket 7 in 6 (not 18/11); the bribe reached 5 game files, 5
+  rules keys, the Studio, run-sim and tests (not 3 files). The leaders' reward lines still said "Bailouts" and "a
+  Golden Parachute" (items now Revive and Max Revive): fixed.
+- Changed (one cause per commit):
+  - **The bribe is cut** (behaviour): a miss goes to the foe's turn. catchOffer/catchOfferAnswer, the offer phase,
+    the Focus Bonus (`integrity`), the `bribed` end, rules.catching offer*/integrity* (and their types), the Studio's
+    Bargain fields and check, run-sim's draw, the battle-formats tests. Battle-state snapshot remade.
+  - **Catching**: Catch it, Caught!, was caught, the Guide's/profile's Caught, hints, haptics, settings, debug menu,
+    lore/story/people's lines, i18n rows (nl/de/es/fr), the Studio. check-quick's Guide step now wants Caught and no
+    Taxed (its function keeps the name `name_taxed_room_windows`: a rename for later).
+  - **Moneys**: `art.js moneyHTML(n, size)` (the `coin` UI icon, gold, and the number; read aloud as "N Moneys"),
+    `plural(n, 'Money')` in plain text. currencies.json money: name/long Moneys, one Money. The top bar's chip and
+    the trainer card used `coinHTML('penny')` (now RF-2's pyramid art) for money: they use the coin icon.
+  - **Research** (was Capital); its icon is a flask (tools/build-ui-icons.py, id still `capital`).
+  - **Crests** (was Audit Seals); unlock "First audit" is "First Crest".
+  - **Perks** (was Loopholes), then the ten names (Lucky Charm, Clinic Loyalty Card, Coupon Book, Steady Hand,
+    Running Shoes, Power Gloves, Bubble Wrap, Trail Snacks, Field Notebook, Lost Property Form).
+  - **Expeditions** (was Brackets).
+  - Docs: reflavour-track.md (RF-1 done, Moneys, item 9 with the wording answers), ROADMAP, roguelite 9's word
+    list, CHANGELOG.
+- Verified: after every change lint, typecheck, unit tests (801 pass), check:modules, format:check, check:data,
+  build; smoke before every commit (all green, 6 steps, ~170 s each); check-fast's Perks, Lab, payout and room steps
+  (pass); screenshots of the top bar, trainer card, Lab board and the Perk pick. **Not finished when this entry was
+  written:** the full quick check was running (its first 8 of ~39 steps passed: the phone opening and screens, the
+  in-game test's first step, the Actions sheet, hostile names) and the in-game test (`--selftest`) had not started:
+  the coordinating session relayed the owner's word to wrap up without waiting on long checks. Run both before
+  merging if there is time.
+- Risky:
+  - **For RF-3:** the battle golden record was remade for one line only ("Running Shoes: Emberox's Speed rose.",
+    was Insider Tip); expect a conflict on that snapshot if RF-3 remade it too: regenerate after the merge.
+  - The run sim's numbers move a little: a miss no longer draws the offer's roll.
+  - game/data/gamedata.js (ignored) must be rebuilt (`npm run data`) to see data text changes when serving the
+    repository by hand; the checks rebuild it.
+  - Not tried on a phone: the coin icon next to numbers (top bar, shop buttons, clinic, airship fares), the flask.
+- Left for later: RF-4 the ids (`taxbreak`, `capital`, `seals`, `money`, `relics`, tiers, the `taxed` local, the
+  Hi-Potion's id `loophole`); RF-5 the finance jokes in lore and lines, "Money down here" lore, Sterling Capital,
+  the parked city's "Capital Tower/Hall" prop names; the title's tagline stays on purpose.
+- Next: RF-3 and RF-2 finish on this branch; then #160 to main; RF-4 alone.
+
 ### Roster track RO-1 - Real wild pools and regional forms - 2026-10-23
 Branch `track/roster` (new; the owner's choice: every RO session works here, BRANCHES.md and roguelite-track 9.4 say
 so). Plan approved in Plan Mode with the owner's answers: 4 forms (one per uncommon line, the drafts' names), weights

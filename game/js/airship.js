@@ -117,12 +117,12 @@ export function flyMenu(p) {
   /* RL-8: a run starts here (run.js) */
   const runRow =
     typeof runStartable === 'function' && runStartable()
-      ? `<button class="pickrow fly-row" data-a="runstart"><span class="fly-ico">${uiIconHTML('map', 18)}</span><span class="pr-t"><b>Start a run</b><small>Bracket I · the wild lands past the island</small></span><span class="fly-fare">Free</span></button>`
+      ? `<button class="pickrow fly-row" data-a="runstart"><span class="fly-ico">${uiIconHTML('map', 18)}</span><span class="pr-t"><b>Start a run</b><small>Expedition I · the wild lands past the island</small></span><span class="fly-fare">Free</span></button>`
       : '';
-  /* RL-11: the airship's upgrades, for Audit Seals */
+  /* RL-11: the airship's upgrades, for Crests */
   const ups = typeof buildingRowsHTML === 'function' ? buildingRowsHTML('airship', 'fly') : '',
     upHTML = ups
-      ? `<p class="note">Airship upgrades, paid in Audit Seals. You have ${formatNumber(saveData.meta.seals)}.</p>${ups}`
+      ? `<p class="note">Airship upgrades, paid in Crests. You have ${formatNumber(saveData.meta.seals)}.</p>${ups}`
       : '';
   modal({
     title: escapeHtml((p && p.label) || 'Airship mast'),

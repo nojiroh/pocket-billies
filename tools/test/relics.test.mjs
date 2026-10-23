@@ -1,5 +1,5 @@
-// RL-12: logic/relics.js, where a run's Loopholes come from: the pick after a mini-boss (the same offer for the same
-// run and counter, none held, the counter moving on, nothing left: no offer), a run shop's Loophole for a day (drawn
+// RL-12: logic/relics.js, where a run's Perks come from: the pick after a mini-boss (the same offer for the same
+// run and counter, none held, the counter moving on, nothing left: no offer), a run shop's Perk for a day (drawn
 // once, kept after a reload, gone once bought), holding at most the cap (a new one takes a let-go one's place), and
 // validRun's checks of run.offerN and run.shelf.
 import assert from 'node:assert/strict';
@@ -24,7 +24,7 @@ test('relics: a new run holds none, has made no offer and has nothing on a shelf
   assert.equal(validRun(r), true);
 });
 
-test('relics: an offer is the same for the same run and counter, of distinct Loopholes, none held', () => {
+test('relics: an offer is the same for the same run and counter, of distinct Perks, none held', () => {
   const a = run(),
     b = run();
   assert.deepEqual(R.relicOffer(a, RELICS, RULE), R.relicOffer(b, RELICS, RULE));
@@ -38,7 +38,7 @@ test('relics: an offer is the same for the same run and counter, of distinct Loo
     const c = run('S' + n);
     for (const id of R.relicOffer(c, RELICS, RULE)) seen.add(id);
   }
-  assert.ok(seen.size >= Object.keys(RELICS).length - 2, `most Loopholes turn up over 40 runs (${seen.size})`);
+  assert.ok(seen.size >= Object.keys(RELICS).length - 2, `most Perks turn up over 40 runs (${seen.size})`);
 });
 
 test('relics: making an offer saves it on the run and moves the counter; the next differs', () => {
@@ -59,7 +59,7 @@ test('relics: making an offer saves it on the run and moves the counter; the nex
   assert.equal(R.relicChoose(r, null, RELICS, RULE), 'offer', 'nothing to answer');
 });
 
-test('relics: when every Loophole is held there is nothing to offer', () => {
+test('relics: when every Perk is held there is nothing to offer', () => {
   const r = run();
   r.relics = Object.keys(RELICS);
   assert.deepEqual(R.relicOffer(r, RELICS, RULE), []);
@@ -83,7 +83,7 @@ test('relics: at most the cap; past it a new one takes the place of one let go',
   assert.ok(!r.relics.includes(ids[2]));
 });
 
-test('relics: a shop’s Loophole for a day is drawn once, kept, priced by rarity and gone once bought', () => {
+test('relics: a shop’s Perk for a day is drawn once, kept, priced by rarity and gone once bought', () => {
   const r = run(),
     id = R.relicShelf(r, 3, 4, RELICS, RULE);
   assert.ok(RELICS[id]);
@@ -131,11 +131,11 @@ test('relics: a seed’s offer order (Studio plan T4.1) is the run’s picks in 
   assert.deepEqual(first[0].offer, none[0].offer, 'the first pick is the same');
   assert.equal(first[0].took, first[0].offer[0]);
   const taken = first.map(p => p.took);
-  assert.equal(new Set(taken).size, picks, 'a taken Loophole is never offered again');
+  assert.equal(new Set(taken).size, picks, 'a taken Perk is never offered again');
   first.forEach((p, k) => assert.ok(!taken.slice(0, k).some(id => p.offer.includes(id)), `pick ${k}`));
   const one = none[0].offer[1],
     want = R.relicOfferOrder('ORDER1', RELICS, RULE, picks, one);
-  assert.equal(want[0].took, one, 'a chosen Loophole is taken when it is offered');
+  assert.equal(want[0].took, one, 'a chosen Perk is taken when it is offered');
   assert.ok(want.slice(1).every(p => p.took === null && !p.offer.includes(one)));
   const capped = R.relicOfferOrder('ORDER1', RELICS, { ...RULE, cap: 1 }, picks, 'first');
   assert.deepEqual(

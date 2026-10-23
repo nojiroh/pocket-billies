@@ -761,7 +761,7 @@ function loaderHide() {
    starts you in the real place (its people, trainers and exits; not the scene alone), &at=x,z on that spot,
    &flags=a,!b,beat:chad switches flags and trainers on top of the preset, and &draft=1 waits for the open Studio's
    unsaved data (2 s at most) before starting. Studio plan T2.6, "Play this seed": ?debug&run=<seed> (logic/run-test.js:
-   the unlocks, short map, party and Loopholes) is a test run that takes off at once on that seed (runTestStart). */
+   the unlocks, short map, party and Perks) is a test run that takes off at once on that seed (runTestStart). */
 const TEST_RUN = (() => {
   try {
     const q = new URLSearchParams(location.search),
@@ -829,7 +829,7 @@ function studioTestStart() {
 }
 /** Studio plan T2.6, "Play this seed": a new game (the party asked for, else the first starter) with the unlocks asked
  * for takes off from the mast at once on the seed, through runTakeOff as the mast does (logic/run-start.js), every
- * Billie in the party flying; then the Loopholes asked for are held. A test run: nothing is saved, no account
+ * Billie in the party flying; then the Perks asked for are held. A test run: nothing is saved, no account
  * @param {NonNullable<ReturnType<typeof runTestOf>>} R */
 function runTestStart(R) {
   uiState.pg = 'girl';

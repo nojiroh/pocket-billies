@@ -33,7 +33,7 @@ export const battleOutcome = (kind, over) => (over === 'draw' ? (kind === 'wild'
  * (a wild win's egg drop, the one roll it took, is gone: eggs come from the ranch); `roll`, the battle's chance, is
  * still taken so every caller's arguments keep their places.
  * @param {{ kind: string, over: string | null, T?: any, tid?: string, foe: { lvl: number }[], fx?: any[] }} b b.fx: a run's
- *   Loopholes (logic/effects.js), which change the money a win pays
+ *   Perks (logic/effects.js), which change the money a win pays
  * @param {{ se: number, flags: Record<string, number>, seats: string[], run?: any }} s
  * @param {(() => number) | null} roll unused since RL-10
  * @param {{ battle: { loseFee: number } }} [rules]
@@ -65,7 +65,7 @@ export function battleRewards(b, s, roll, rules = RULES) {
 /* Studio plan T3.2: what an ended battle does to the save, the same on the page (battle.js endBattle, which shows the
    sheets, seats and the tutorial) and in a run's simulation (logic/run-sim.js) */
 /**
- * The battle has ended: what it pays (battleRewards, with the battle's Loopholes), and on the save: a run battle's
+ * The battle has ended: what it pays (battleRewards, with the battle's Perks), and on the save: a run battle's
  * checkpoint back to walking, the Hype counter (wins) of everyone standing on a win, a wild encounter gone, the lead's
  * streak (one more on a win, 0 on a loss). Returns the pay and the run when it was a run battle (b.runK).
  * @param {any} b the battle @param {any} s the save it was fought on (saveData)
@@ -91,7 +91,7 @@ export function battleSettle(b, s) {
 }
 /**
  * A win's money and marks (after battleSettle; not for the opening's tutorial battle): a wild win's prize, a
- * trainer's reward and flag, and on a run (`run`) a mini-boss beaten makes the next pick of Loopholes
+ * trainer's reward and flag, and on a run (`run`) a mini-boss beaten makes the next pick of Perks
  * (logic/relics.js relicOfferMake, saved on the run before it shows).
  * @param {any} b @param {any} s @param {{ o: string | null, prize: number, reward: number }} pay @param {any} run
  */

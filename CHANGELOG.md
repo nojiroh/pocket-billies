@@ -9,6 +9,12 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- Fewer finance words (reflavour track RF-1): you **catch** Billies now ("Catch it", "Caught!", the Guide's Caught
+  count), and nothing says "tax" except the title's "Gotta tax 'em all!". Run money is **Moneys** (1 Money), shown
+  with a small gold coin instead of a $; Capital is **Research** (with a flask icon), Audit Seals are **Crests**,
+  Loopholes are **Perks** and Brackets are **Expeditions** (Expedition I). The ten Perks have new names: Lucky Charm,
+  Clinic Loyalty Card, Coupon Book, Steady Hand, Running Shoes, Power Gloves, Bubble Wrap, Trail Snacks, Field
+  Notebook and Lost Property Form. A Billie that breaks free no longer offers you money to let it go: a miss is a miss.
 - Wild Billies by biome (roster track RO-1): every biome has its own wild pool of the seven Billie lines, met by
   rarity (the uncommon lines often, the starters' lines rarely, a line whose types suit the biome most), so a run
   meets real Billies everywhere instead of stand-ins. Four regional forms: Waterfront Gildlet (Water, by the lake),

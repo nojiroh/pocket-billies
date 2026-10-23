@@ -1,7 +1,7 @@
 {
  "$schema": "https://json-schema.org/draft/2020-12/schema",
  "$id": "relics.schema.json",
- "title": "game/data/relics.json: a run's Loopholes (relics), each a list of effect rows (roguelite track RL-12; logic/effects.js)",
+ "title": "game/data/relics.json: a run's Perks (relics), each a list of effect rows (roguelite track RL-12; logic/effects.js)",
  "type": "object",
  "propertyNames": {
   "pattern": "^[a-z][a-z0-9_]*$"

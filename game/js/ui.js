@@ -175,7 +175,7 @@ function openTab(t) {
 }
 /* UI-5: the bottom bar is the kit's <pb-nav-bar> (ui-run-kit.js): the hub's tabs, or a run's; the world itself is the
    base view (no Walk tab: the open tab tapped again, or Esc, goes back to it) and the Guide opens from the Trainer
-   card. Lab is the unlock board (RL-11, lab-board.js); a run's Loopholes tab is RL-12's (relic-screen.js). */
+   card. Lab is the unlock board (RL-11, lab-board.js); a run's Perks tab is RL-12's (relic-screen.js). */
 const NAV_HIDDEN = '';
 function updateNav(show) {
   let n = /** @type {any} */ ($('#nav'));

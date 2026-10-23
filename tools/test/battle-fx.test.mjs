@@ -1,4 +1,4 @@
-// RL-12: a run's Loopholes in a battle (b.fx, logic/effects.js): stat stages for yours on the field as it starts, what
+// RL-12: a run's Perks in a battle (b.fx, logic/effects.js): stat stages for yours on the field as it starts, what
 // yours deal and take (calcDamage), a coin's chance (catchOdds), the money a win pays (battleRewards), and a battle
 // without them exactly as before.
 import assert from 'node:assert/strict';

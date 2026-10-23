@@ -6,7 +6,7 @@ import { modules } from './setup-fixture.mjs';
 
 const { newMeta, validMeta, metaFill } = modules['meta-state'];
 
-test('meta: a new one is empty, Bracket I open, and passes the check', () => {
+test('meta: a new one is empty, Expedition I open, and passes the check', () => {
   const m = newMeta();
   assert.deepEqual(m, { capital: 0, scrap: 0, seals: 0, unlocks: {}, buildings: {}, runs: 0, wins: 0, tier: 1 });
   assert.equal(validMeta(m), true);
