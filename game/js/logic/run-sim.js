@@ -239,6 +239,19 @@ export function runSimOn(env) {
           }
           /* the day's wares as the shop opens them: only what the run has unlocked (run-loop.js runShopOpen) */
           const stock = runShopOpen(run, i, run.clock, R.shop, UNLOCK_DATA);
+          /* the shop's Loophole, drawn as the shop opens (relics.js relicShelf), bought as the policy says, keeping the
+             reserve (shop.js shopRelicBuy: its price with the price rows) */
+          const shelf = relicShelf(run, i, run.clock, data.RELICS, R.relics);
+          if (shelf) {
+            const cost = fxRunPrice(run, data.RELICS, 'shop', relicPrice(data.RELICS[shelf], R.relics)),
+              c = s.se >= cost + P.reserve ? simRelicChoice([shelf], run.relics, data.RELICS, R.relics, P) : null;
+            at.relic = { id: shelf, price: cost };
+            if (c && !relicBuy(run, i, run.clock, data.RELICS, R.relics, c.drop)) {
+              s.se -= cost;
+              stats.spent += cost;
+              at.relic.bought = c.drop ? { drop: c.drop } : 1;
+            }
+          }
           at.shop = stock.map((/** @type {any} */ w) => w.coin || w.item);
           /* the shop's price, with the Loopholes' price rows (shop.js warePrice) */
           const price = fxRunPrice(run, data.RELICS, 'shop', data.COINS.penny.price);

@@ -83,3 +83,16 @@ test('run sim: the policy answers a Loophole on offer: greedy takes the rarest, 
   assert.deepEqual(run.relics, ['hedge']);
   assert.equal(run.offer, null);
 });
+
+test('run sim: a town shop’s Loophole is bought under greedy-forward and never under never-pick (Studio plan T3.3)', () => {
+  let bought = 0,
+    shelves = 0;
+  for (let k = 0; k < 12; k++) {
+    const g = runSim(`SIMSHOP${k}`, { team: 3 }),
+      n = runSim(`SIMSHOP${k}`, { team: 3, policy: 'never-pick' });
+    for (const at of g.log.places) if (at.relic) (shelves++, at.relic.bought && bought++);
+    assert.ok(!n.log.places.some(at => at.relic && at.relic.bought), 'never-pick buys none');
+  }
+  assert.ok(shelves >= 2 && bought >= 1, `${bought} bought of ${shelves} on a shelf`);
+  assert.throws(() => runSim('X', { policy: 'nobody' }), /no simulation policy nobody/);
+});
