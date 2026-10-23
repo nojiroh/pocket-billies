@@ -69,6 +69,8 @@ expose({
   GRAPHICS_DIALS: [() => GRAPHICS_DIALS],
   HOST_THEME: [() => HOST_THEME],
   SETTINGS_TABS: [() => SETTINGS_TABS],
+  VOLUME_KEYS: [() => VOLUME_KEYS],
+  VOLUME_MUTE_LABELS: [() => VOLUME_MUTE_LABELS],
   applyPreferences: [() => applyPreferences, v => (applyPreferences = v)],
   blurSliderHTML: [() => blurSliderHTML, v => (blurSliderHTML = v)],
   blurWord: [() => blurWord, v => (blurWord = v)],
@@ -80,12 +82,16 @@ expose({
   muteButtonHTML: [() => muteButtonHTML, v => (muteButtonHTML = v)],
   openSettings: [() => openSettings, v => (openSettings = v)],
   segmentedHTML: [() => segmentedHTML, v => (segmentedHTML = v)],
+  setVolumeMuted: [() => setVolumeMuted, v => (setVolumeMuted = v)],
   settingsHTML: [() => settingsHTML, v => (settingsHTML = v)],
   settingsRefresh: [() => settingsRefresh, v => (settingsRefresh = v)],
   settingsRowHTML: [() => settingsRowHTML, v => (settingsRowHTML = v)],
   startGraphicsTest: [() => startGraphicsTest, v => (startGraphicsTest = v)],
   switchHTML: [() => switchHTML, v => (switchHTML = v)],
   themeOwned: [() => themeOwned, v => (themeOwned = v)],
+  volumeMuteHTML: [() => volumeMuteHTML, v => (volumeMuteHTML = v)],
+  volumeMuteSync: [() => volumeMuteSync, v => (volumeMuteSync = v)],
+  volumeMuted: [() => volumeMuted, v => setVolumeMuted(v)],
   volumeSliderHTML: [() => volumeSliderHTML, v => (volumeSliderHTML = v)],
 });
 /* eslint-enable no-func-assign */
@@ -303,15 +309,51 @@ function blurSliderHTML() {
     `<div class="vol"><input type="range" min="0" max="150" step="5" data-preference="blur" value="${v}" aria-label="Blur"><span class="vol-n vol-word">${blurWord(v / 100)}</span></div>`
   );
 }
+/* UI-7a: each volume row has its own mute where its Test button was (the Volume row's is the master mute, the same
+   preference as the button beside the title); letting go of a slider plays its sound once at the new level */
+const VOLUME_MUTE_LABELS = {
+  master: 'Mute',
+  music: 'Mute music',
+  sfx: 'Mute sound effects',
+  world: 'Mute world sounds',
+  amb: 'Mute ambience',
+};
+function volumeMuted(k, p = saveData.preferences || {}) {
+  return k === 'master' ? !!p.mute : !!(p.mutes && p.mutes[k]);
+}
+function setVolumeMuted(k, on) {
+  const p = (saveData.preferences = saveData.preferences || {});
+  if (k === 'master') p.mute = on;
+  else {
+    p.mutes = p.mutes || {};
+    if (on) p.mutes[k] = true;
+    else delete p.mutes[k];
+    if (!Object.keys(p.mutes).length) delete p.mutes;
+  }
+}
+function volumeMuteHTML(k, muted) {
+  return `<button type="button" class="pb small quiet vol-mute" data-a="vol-mute" data-k="${k}" aria-pressed="${muted}" aria-label="${VOLUME_MUTE_LABELS[k]}" title="${muted ? 'Sound off' : 'Sound on'}">${uiIconHTML(muted ? 'sound-off' : 'sound', 18)}</button>`;
+}
 function volumeSliderHTML(k, label, hint, def) {
   const p = saveData.preferences || {},
     v = Math.round((p[k] ?? def) * 100);
   return settingsRowHTML(
     label,
     hint,
-    `<div class="vol"><input type="range" min="0" max="100" step="5" data-preference="${k}" value="${v}" aria-label="${escapeHtml(k === 'master' ? label : label + ' volume')}"><span class="vol-n">${v}</span><button type="button" class="pb small quiet" data-a="aud-test" data-k="${k}">Test</button></div>`
+    `<div class="vol"><input type="range" min="0" max="100" step="5" data-preference="${k}" value="${v}" aria-label="${escapeHtml(k === 'master' ? label : label + ' volume')}"><span class="vol-n">${v}</span>${volumeMuteHTML(k, volumeMuted(k, p))}</div>`
   );
 }
+/* the mute buttons drawn again in place (the sheet isn't redrawn while a slider is held) */
+function volumeMuteSync() {
+  document.querySelectorAll('.vol-mute').forEach(b => {
+    const muted = volumeMuted(b.dataset.k);
+    if (b.getAttribute('aria-pressed') !== String(muted)) b.outerHTML = volumeMuteHTML(b.dataset.k, muted);
+  });
+  const head = document.querySelector('.set-mute');
+  if (head && head.getAttribute('aria-pressed') !== String(volumeMuted('master')))
+    head.outerHTML = muteButtonHTML(saveData.preferences || {});
+}
+const VOLUME_KEYS = ['master', 'music', 'sfx', 'world', 'amb'];
 function settingsHTML() {
   const p = saveData.preferences || {},
     tab = SETTINGS_TABS.some(t => t[0] === uiState.setTab) ? uiState.setTab : 'game',
@@ -594,9 +636,16 @@ document.addEventListener('input', ev => {
     const n = ev.target.parentNode.querySelector('.vol-n');
     if (n) n.textContent = k === 'blur' ? blurWord(+ev.target.value / 100) : ev.target.value;
   }
+  /* UI-7a: moving a muted slider unmutes it, as a phone's volume does */
+  if (VOLUME_KEYS.includes(k) && volumeMuted(k)) {
+    setVolumeMuted(k, false);
+    if (typeof applyVolumes === 'function') applyVolumes();
+    if (typeof applyAmbienceVolume === 'function') applyAmbienceVolume();
+    volumeMuteSync();
+  }
 });
 document.addEventListener('click', ev => {
-  const el = ev.target.closest && ev.target.closest('[data-pref-set],[data-a="set-tab"],[data-a="aud-test"]');
+  const el = ev.target.closest && ev.target.closest('[data-pref-set],[data-a="set-tab"],[data-a="vol-mute"]');
   if (!el) return;
   const d = el.dataset;
   if (d.a === 'set-tab') {
@@ -608,8 +657,16 @@ document.addEventListener('click', ev => {
     });
     return;
   }
-  if (d.a === 'aud-test') {
-    if (typeof testVolume === 'function') testVolume(d.k);
+  if (d.a === 'vol-mute') {
+    setVolumeMuted(d.k, !volumeMuted(d.k));
+    save();
+    if (typeof applyVolumes === 'function') applyVolumes();
+    if (typeof applyAmbienceVolume === 'function') applyAmbienceVolume();
+    settingsRefresh();
+    requestAnimationFrame(() => {
+      const t = document.querySelector(`.vol-mute[data-k="${d.k}"]`);
+      if (t) t.focus({ preventScroll: true });
+    });
     return;
   }
   const head = el.classList.contains('set-mute');
@@ -625,6 +682,7 @@ document.addEventListener('click', ev => {
 document.addEventListener('change', ev => {
   const k = ev.target.dataset.preference;
   if (k) changePreference(k, ev.target.value);
+  if (VOLUME_KEYS.includes(k) && typeof testVolume === 'function') testVolume(k);
 });
 document.addEventListener('click', ev => {
   const el = ev.target.closest('[data-a]');

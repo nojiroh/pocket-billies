@@ -792,12 +792,13 @@ def targets_step(b, base, R):
         ctx.close()
 
 
-@step('Sound settings: each slider sets its bus, each Test plays on its bus, the header mute keeps the levels (SND-1)', 120)
+@step('Sound settings: each slider sets its bus and sounds on it when let go, each row mutes its bus, the header mute keeps the levels (SND-1, UI-7a)', 120)
 def sound_step(b, base, R):
-    """sound track SND-1: Settings → Sound on a 390 px phone. Each Test button must reach its own bus (a wrapper on
-    AudioNode.connect lists what each press connects to; every button's tick also reaches the effects bus); each slider,
-    dragged, must set its bus to soundLevels() at once; the mute button beside the title silences the master and keeps
-    every level. Nothing is heard: only the connections and the targets the gains are given are read. A browser that won't start audio is
+    """sound track SND-1: Settings → Sound on a 390 px phone. UI-7a: each slider, let go, must play its sound on its own
+    bus (a wrapper on AudioNode.connect lists what each release connects to; the music is stopped first, as the music
+    slider plays nothing over a song); each slider, dragged, must set its bus to soundLevels() at once; each row's mute
+    button silences its own bus and keeps its level, and dragging the muted slider unmutes it; the mute button beside
+    the title silences the master and keeps every level. Nothing is heard: only the connections and the targets the gains are given are read. A browser that won't start audio is
     reported, not failed, like the world-sounds step"""
     errs = []
     ctx = b.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=1, is_mobile=True, has_touch=True)
@@ -817,13 +818,15 @@ def sound_step(b, base, R):
           window.__snd={B,hit:new Set(),to:new Map()};const c=AudioNode.prototype.connect;window.__sndConnect=c;
           const st=AudioParam.prototype.setTargetAtTime;window.__sndTarget=st;AudioParam.prototype.setTargetAtTime=function(v,...a){__snd.to.set(this,v);return st.call(this,v,...a)};
           AudioNode.prototype.connect=function(d,...a){for(const [k,L] of Object.entries(__snd.B))if(L.includes(d))__snd.hit.add(k);return c.call(this,d,...a)}})();0""")
+        if pg.query_selector('[data-a=aud-test]'): raise Exception('a Test button is still in the Sound tab')
         missed = []
         for k in ['master', 'music', 'sfx', 'world', 'amb']:
-            pg.evaluate("__snd.hit=new Set();0")
-            pg.click(f'[data-a=aud-test][data-k={k}]'); until(pg, f"__snd.hit.has('{k}')", 4)   # the test sound starts 60 ms after the press
+            pg.evaluate("musicStop();__snd.hit=new Set();0")
+            pg.evaluate(f"document.querySelector('input[data-preference={k}]').dispatchEvent(new Event('change',{{bubbles:true}}));0")
+            until(pg, f"__snd.hit.has('{k}')", 4)   # the sound starts 60 ms after the slider is let go
             hit = pg.evaluate("[...__snd.hit]")
-            if k not in hit: missed.append(f'{k} Test reached {", ".join(sorted(hit)) or "no bus"}')
-        if missed: raise Exception('a Test button played somewhere else: ' + '; '.join(missed))
+            if k not in hit: missed.append(f'{k} slider reached {", ".join(sorted(hit)) or "no bus"}')
+        if missed: raise Exception('a slider, let go, played somewhere else: ' + '; '.join(missed))
         # what the bus must be set to is worked out from where the slider stands, not from the saved preference: without
         # the live listener neither moves while the slider is held, so the two would agree. The target each gain is
         # given is read (the setTargetAtTime wrapper), not gain.value: Chrome stops working out a gain no sound goes
@@ -838,6 +841,18 @@ def sound_step(b, base, R):
                 have, w = pg.evaluate(f"[__snd.to.has({bus}.{k}.gain)?+__snd.to.get({bus}.{k}.gain).toFixed(3):'not set',+{want}.toFixed(3)]")
                 off.append(f'{k} at {v}: bus set to {have}, wanted {w}')
         if off: raise Exception('a slider didn’t set its bus while dragged: ' + '; '.join(off))
+        # UI-7a: each row's own mute (the Volume row's is the master mute)
+        rows = []
+        for k in ['music', 'sfx', 'world', 'amb', 'master']:
+            lv = pg.evaluate(f"saveData.preferences.{k}")
+            pg.click(f'.vol-mute[data-k={k}]')
+            if not until(pg, f"__snd.to.get({bus}.{k}.gain)===0", 4): rows.append(f'{k}: its mute didn’t silence its bus'); continue
+            r = pg.evaluate(f"({{pressed:document.querySelector('.vol-mute[data-k={k}]').getAttribute('aria-pressed'),lv:saveData.preferences.{k},others:['music','sfx','world','amb'].filter(o=>o!=='{k}'&&'{k}'!=='master'&&__snd.to.get({bus}[o].gain)===0)}})")
+            if r['pressed'] != 'true' or r['lv'] != lv or r['others']: rows.append(f'{k}: {r}')
+            pg.evaluate(f"(()=>{{const e=document.querySelector('input[data-preference={k}]');e.dispatchEvent(new Event('input',{{bubbles:true}}))}})();0")
+            if not until(pg, f"__snd.to.get({bus}.{k}.gain)>0&&document.querySelector('.vol-mute[data-k={k}]').getAttribute('aria-pressed')==='false'", 4):
+                rows.append(f'{k}: dragging the muted slider didn’t unmute it')
+        if rows: raise Exception('a row’s mute went wrong: ' + '; '.join(rows))
         levels = pg.evaluate("JSON.stringify(['master','music','sfx','world','amb'].map(k=>saveData.preferences[k]))")
         pg.click('.set-mute'); until(pg, "!!saveData.preferences.mute&&__snd.to.get(soundEngine.master.gain)===0", 5)
         m = pg.evaluate("({mute:!!saveData.preferences.mute,pressed:document.querySelector('.set-mute').getAttribute('aria-pressed'),sw:document.querySelector('[data-pref-set=mute].sw').getAttribute('aria-checked'),master:__snd.to.get(soundEngine.master.gain),levels:JSON.stringify(['master','music','sfx','world','amb'].map(k=>saveData.preferences[k]))})")
@@ -847,7 +862,7 @@ def sound_step(b, base, R):
         back = pg.evaluate("[!!saveData.preferences.mute,+__snd.to.get(soundEngine.master.gain).toFixed(3),+soundLevels(saveData.preferences).master.toFixed(3)]")
         if back[0] or abs(back[1] - back[2]) > 0.02: raise Exception(f'the header mute didn’t unmute: mute {back[0]}, master {back[1]}, wanted {back[2]}')
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
-        return 'five Test buttons on their own buses; five sliders set their bus while dragged; the header mute silenced the master, kept the levels and came back'
+        return 'five sliders sounded on their own buses when let go and set their bus while dragged; five row mutes silenced their own bus and came back on a drag; the header mute silenced the master, kept the levels and came back'
     finally:
         try: pg.evaluate("window.__sndConnect&&(AudioNode.prototype.connect=__sndConnect);window.__sndTarget&&(AudioParam.prototype.setTargetAtTime=__sndTarget);0")
         except Exception: pass
