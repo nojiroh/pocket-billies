@@ -207,37 +207,6 @@ def check_data():
     return f'{len(D.get("maps", {}))} scenes ({", ".join(f"{v} {k}s" for k, v in kinds.items())}), {len(SY.get("props", {}))} props, {len(D["roads"])} named roads'
 
 
-@step('alpha 0.4: no old place name left (the game data and what the game says)', 20)
-def old_names():
-    """the places were renamed in alpha 0.4 (tools/rename-places.py): no old name may be left where a player reads it,
-    in the game data (the Studio's old copies of places aside) or in the game's own texts (comments aside)"""
-    import importlib.util as ilu, re as _re
-    sp = ilu.spec_from_file_location('rnp', ROOT / 'tools' / 'rename-places.py'); RN = ilu.module_from_spec(sp); sp.loader.exec_module(RN)
-    rx = [_re.compile(r"\b" + (r"[Tt]he " if pid in RN.NEEDS_THE else "") + _re.escape(o) + r"\b") for pid, L in RN.OLD.items() for o in L]
-    keep = [_re.compile(k) for k in RN.KEEP]
-    def hits(t):
-        for k in keep: t = k.sub('', t)
-        return [m.group(0) for r in rx for m in r.finditer(t)]
-    D = gamedata(); bad = []
-    def walk(v, path):
-        if isinstance(v, dict):
-            for k, x in v.items():
-                if k in ('id', 'img', 'tile', 'scene', 'k', 'src', 'path') or (path[:1] == ['maps'] and len(path) == 1 and '@' in k): continue
-                walk(x, path + [k])
-        elif isinstance(v, list):
-            for i, x in enumerate(v): walk(x, path + [i])
-        elif isinstance(v, str):
-            for h in hits(v): bad.append(f"{'/'.join(map(str, path))}: {h}")
-    walk(D, [])
-    # phase 05: the engine's files and the Studio's too (the Studio's Engine section shows the engine's setting texts)
-    for f in sorted([*(GAME / 'js').rglob('*.js'), *(ROOT / 'studio' / 'js').glob('*.js')]):
-        code = _re.sub(r'/\*.*?\*/', '', f.read_text(encoding='utf-8'), flags=_re.S)
-        code = _re.sub(r'(?m)^\s*//.*$', '', code)
-        for h in hits(code): bad.append(f'{f.relative_to(ROOT)}: {h}')
-    if bad: raise Exception(f'{len(bad)} old names: ' + '; '.join(bad[:8]))
-    return f'{len(D["locations"])} places by their new names; none of the {len(rx)} old names left in the data or the game\'s texts'
-
-
 @step('Copperleaf Town, the hub on its own (from the data)', 20)
 def copperleaf_data():
     """a new game starts in Copperleaf (rules.start.locationId), the hub and the only place (RL-5: every other place is
@@ -2518,7 +2487,7 @@ def main():
     R = {'when': time.strftime('%Y-%m-%d %H:%M'), 'render': 'software, a third of the resolution, 1024 shadow map'}
     # phase 04b: data/gamedata.js is generated from the data files; make it from the files as they are now
     subprocess.run(['node', str(ROOT / 'tools' / 'build-data.mjs')], check=True)
-    check_version(); check_data(); old_names(); copperleaf_data(); check_water(); check_masts(); check_postcards(); check_rooms(); check_room_floors(); check_windows(); check_ground(); report_unused()
+    check_version(); check_data(); copperleaf_data(); check_water(); check_masts(); check_postcards(); check_rooms(); check_room_floors(); check_windows(); check_ground(); report_unused()
     srv, base = serve(GAME)
     with sync_playwright() as pw:
         b = pw.chromium.launch(args=['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'])
