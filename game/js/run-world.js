@@ -37,6 +37,7 @@ import { runScenesMake, runWorldTables } from './logic/run-scenes.js';
 import { runBowlLook } from './logic/run-bowl.js';
 import { runFoes } from './logic/run-loop.js';
 import { encEventFoe } from './logic/encounters.js';
+import { runRouteTrainers } from './logic/route-trainers.js';
 import { bowlXY } from './logic/bowl.js';
 import { bowlTreeStyle } from './logic/bowl-things.js';
 import { saveData, uiState } from './game-state.js';
@@ -102,7 +103,11 @@ export function runWorldSync() {
         look,
         maps: Object.fromEntries(W.locations.slice(1).map((p, i) => [p.mapId, scenes[i]])),
         /* RL-8: its mini-bosses and boss, each a leader's copy (logic/run-loop.js runFoes) */
-        trainers: runFoes(run, { leaders: Object.values(TRAINERS).filter(T => T.miniboss), rules: RULES.run }),
+        trainers: {
+          ...runFoes(run, { leaders: Object.values(TRAINERS).filter(T => T.miniboss), rules: RULES.run }),
+          /* RL-12b: the route trainers who walk up on sight (logic/route-trainers.js) */
+          ...runRouteTrainers(run, { classes: EVENTS.classes, species: SPECIES, rules: RULES.run }),
+        },
       });
       /* RL-12b: an event's foe a reload stopped in the middle of (its battle starts again: run.js runBattleAgain) */
       const P = run.enc && run.enc.play;

@@ -9,6 +9,7 @@ import { LOCATIONS, PEOPLE, ROADS, ROADS_BY_NODE, RULES, SHOPS, gameData, traine
 import { blockerAt, canEnter, encounterBuild, encountersHere, gateText, healAll } from './logic/rules.js';
 import { roomTurnOf } from './logic/room-turn.js';
 import { runArrive, runMapNode } from './logic/run-map.js';
+import { routeTrainerSpot } from './logic/route-trainers.js';
 import { startWild } from './logic/battle-engine.js';
 import { storyAllows } from './logic/script.js';
 import { activeBattle, save, saveData, saveNow, uiState } from './game-state.js';
@@ -17,6 +18,7 @@ import { artLoad } from './art.js';
 import {
   ROOM_BY_USE,
   closedText,
+  directionOf,
   doorLinkOf,
   doorOf,
   isOpenNow,
@@ -58,6 +60,7 @@ import { ranchOpen } from './ranch-screen.js';
 import { labBoardOpen } from './lab-board.js';
 import { postcardCheck } from './postcards.js';
 import { legendCheck, personTalk, storyCheck, trainerTalk } from './story.js';
+import { routeSight } from './route-sight.js';
 import { storyResumeCheck } from './story-stage.js';
 import { toast } from './overlay.js';
 import { clinicHeal } from './walk-tab.js';
@@ -468,6 +471,27 @@ export function walkState() {
         const e = v.exits.find(e => !saveData.visited[e.to]);
         if (e && sc.exits) exit = sc.exits[e.i];
       }
+      /* RL-12b: a route trainer stands by the road, facing it (logic/route-trainers.js); it sees you from there */
+      if (T.route) {
+        const bid = sc.baseId || v.id,
+          base = mapById(bid) || sc,
+          o = sc.baseOff || [0, 0],
+          S = routeTrainerSpot(mapHub(base), base.exits || [], T.route.k, T.route.n);
+        if (S) {
+          const at = /** @type {[number, number]} */ ([S.at[0] + o[0], S.at[1] + o[1]]),
+            look = /** @type {[number, number]} */ ([S.road[0] + o[0], S.road[1] + o[1]]);
+          walkView.npcLook[T.id] = look;
+          return {
+            who: T.who,
+            id: T.id,
+            done: !!saveData.flags[T.id],
+            exit: null,
+            dir: directionOf(look[0] - at[0], look[1] - at[1]),
+            route: true,
+            at,
+          };
+        }
+      }
       return { who: T.who, id: T.id, done: !!saveData.flags[T.id], exit, dir: 'down', boss: T.runFoe === 'boss' };
     });
   /* alpha 0.4: people who only talk (Granny Juniper in her garden): the place's own (scene.people), in the view's metres */
@@ -826,7 +850,7 @@ export function walkMapSync() {
         };
       },
       keys: () => !uiState.modal && uiState.tab === 'walk' && !uiState.walkSheet,
-      active: () => uiState.tab === 'walk' && !uiState.modal,
+      active: () => uiState.tab === 'walk' && !uiState.modal && !routeSight.busy,
       safe: () => {
         const a = $('.wh-card'),
           b = $('.wh-foot'),
