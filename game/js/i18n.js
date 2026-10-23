@@ -118,7 +118,10 @@ World sounds|Geluiden van de wereld|Weltgeräusche|Sonidos del mundo|Sons du mon
 Sound|Geluid|Ton|Sonido|Son
 Volume|Volume|Lautstärke|Volumen|Volume
 Ambience|Sfeergeluiden|Atmosphäre|Ambiente|Ambiance
-Test|Test|Testen|Probar|Tester
+Mute music|Muziek dempen|Musik stumm|Silenciar la música|Couper la musique
+Mute sound effects|Geluidseffecten dempen|Soundeffekte stumm|Silenciar los efectos de sonido|Couper les effets sonores
+Mute world sounds|Geluiden van de wereld dempen|Weltgeräusche stumm|Silenciar los sonidos del mundo|Couper les sons du monde
+Mute ambience|Sfeergeluiden dempen|Atmosphäre stumm|Silenciar el ambiente|Couper l’ambiance
 Mute|Dempen|Stumm|Silenciar|Couper le son
 Sound on|Geluid aan|Ton an|Sonido activado|Son activé
 Sound off|Geluid uit|Ton aus|Sonido desactivado|Son coupé
