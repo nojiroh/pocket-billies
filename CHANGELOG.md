@@ -9,6 +9,12 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- Every run is a small region (roguelite track RL-R1): its seed picks a theme (Lakeland, Greenbelt, Wildwood,
+  Highland or Harvest Country; the last two need the Ridge or Autumn lands), names it ("Pendingvale", "Beta Basin",
+  "Hotfix Hollow") and walks it in three zones, each one biome over two or three rows of the map, one leading into
+  the next. A region has its own dex of four or five Billie lines (each as its normal look or its regional form, as
+  the region leans), and its mini-bosses and boss are leaders of the types it leans to. The world map shows the
+  region's name and each zone's own ground, and a place's card says which zone it is in.
 - Wild Billies by biome (roster track RO-1): every biome has its own wild pool of the seven Billie lines, met by
   rarity (the uncommon lines often, the starters' lines rarely, a line whose types suit the biome most), so a run
   meets real Billies everywhere instead of stand-ins. Four regional forms: Waterfront Gildlet (Water, by the lake),
