@@ -82,7 +82,12 @@ instruction, relayed by the parent session); this session's choices are decision
   problems, with kit_write, library_swap, repack, density, and CI's list (sections, publish, drafts, studio_test,
   checks). Planted faults failed each new check (a wrong native part, a one-pixel sheet, a refit, a geo, a one-pixel
   repack move, nine rig faults).
-- Full quick check: running at the time of writing; result added below when done.
+- **Full quick check** (end of Phase 5, about 40 min): 14 problems, none from this work. 10 fail the same way on the
+  session's starting commit f9c5080 (roster counts that expect the legacy 117 Billies, the bowl map camera, walk
+  cycles, the light lab's props, buildings without a plan, shaped terraces, bush recipes, phase 08's division by zero).
+  RL-7, RL-8 and the postcard step fail only inside the full run; on their own they pass on this branch's head (and
+  on f9c5080), so they depend on what earlier steps leave behind. Those 14 need their own session (scope reset tests).
+- CI's Studio list (sections, publish, drafts, studio_test, checks, kit_write, library_swap, repack, density): ok.
 
 **Risky**
 - Browser decoding: the Studio bake reads part pictures through canvas; exact today (no part or kit sheet has a
