@@ -2,7 +2,7 @@
 'use strict';
 /* ================= META STATE (roguelite track RL-3) =================
    What lasts between runs, kept in the save as saveData.meta: the three currencies other than money (Research, the
-   unlock currency; Scrap, the building material; Audit Seals, the rare boss currency), the unlocks, each hub
+   unlock currency; Scrap, the building material; Crests, the rare boss currency), the unlocks, each hub
    building's level, how many runs were played and won, and the highest difficulty tier (Bracket) open. Money ($,
    saveData.se) is not here: it is the run's working field. Logic only: no DOM, runs in Node
    (tools/test/meta-state.test.mjs). The sections that spend these (unlocks.json, buildings.json) come in RL-11. */

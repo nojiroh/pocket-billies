@@ -7,8 +7,8 @@
      mini-boss's and boss's rewards (run.foes), Loopholes' money rows; spent at the clinic (run.healCost a hurt Billie),
      on run shop wares (items.json and coins.json price; what run.shop can stock) and shop Loopholes (run.relics.price);
    - at the payout (logic/run-state.js payoutOf) money, items, released Billies, places and a win turn into Research,
-     Scrap and Seals (run.payout);
-   - Research, Scrap and Seals (kept between runs): the earned unlock rows' grants, and each building's unlock costs
+     Scrap and Crests (run.payout);
+   - Research, Scrap and Crests (kept between runs): the earned unlock rows' grants, and each building's unlock costs
      (unlocks.json, in its building's currency); the ranch's training and breeding (rules.json ranch, edited beside
      the buildings in Unlocks & hub).
    Each line: the currency, 'in' (a source), 'out' (a sink) or 'turn' (the payout's rate), what it is, its value, the
@@ -33,7 +33,7 @@ export const ECONOMY_PAYOUT = {
   released: ['capital', 'Research per Billie caught on the run and released'],
   node: ['capital', 'Research per place cleared'],
   win: ['capital', 'Research for a win'],
-  winSeals: ['seals', 'Seals for a win'],
+  winSeals: ['seals', 'Crests for a win'],
   scrapNode: ['scrap', 'Scrap per place cleared'],
   scrapWin: ['scrap', 'Scrap for a win'],
 };

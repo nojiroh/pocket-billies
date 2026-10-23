@@ -816,10 +816,10 @@ def breed(pg, base):
 
 
 def lab(pg, base):
-    """RL-11: the lab fixture stands in Copperleaf after a run (500 Research, 60 Scrap, 2 Seals, one run ended). The
+    """RL-11: the lab fixture stands in Copperleaf after a run (500 Research, 60 Scrap, 2 Crests, one run ended). The
     first milestone was granted on load; the bottom bar's Lab tab opens the board with every row; a board row bought
     pays its Research; the ranch's sheet sells Ranch Lv 2 for Scrap (its slots rise); the mast's sheet sells Airship Lv 2
-    for a Seal and then offers the ridge lands; a run would carry the shop unlock; a reload (?fixture=stored) keeps it all"""
+    for a Crest and then offers the ridge lands; a run would carry the shop unlock; a reload (?fixture=stored) keeps it all"""
     if not until(pg, "typeof saveData!=='undefined'&&!!saveData.meta.unlocks.first_run&&walkView.ready", 60): raise Exception(f'no first milestone on load: {pg.evaluate("JSON.stringify(saveData.meta)")}')
     if pg.evaluate("saveData.meta.scrap") != 70: raise Exception(f'the milestone paid {pg.evaluate("saveData.meta.scrap") - 60} Scrap, not 10')
     pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();0")

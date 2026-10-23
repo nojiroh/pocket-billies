@@ -37,7 +37,7 @@
     "maxLength": 24
    },
    "one": {
-    "description": "one of it, for counts (1 Audit Seal)",
+    "description": "one of it, for counts (1 Crest)",
     "type": "string",
     "minLength": 1,
     "maxLength": 24

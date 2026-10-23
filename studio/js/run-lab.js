@@ -109,7 +109,7 @@ const RUN_LAB_PAYOUT = {
   released: 'Research per Billie released',
   node: 'Research per place cleared',
   win: 'Research for a win',
-  winSeals: 'Seals for a win',
+  winSeals: 'Crests for a win',
   scrapNode: 'Scrap per place cleared',
   scrapWin: 'Scrap for a win',
 };

@@ -265,7 +265,7 @@ export function runBegin(s, give) {
   s.visited = { 0: 1 };
   return run;
 }
-/** what a run pays when it ends, as Research and Audit Seals, with the lines the payout screen lists: the money at a
+/** what a run pays when it ends, as Research and Crests, with the lines the payout screen lists: the money at a
     rate, the items at a share of their price (then at the money rate; RL-9b: on a loss only, a win takes the bag
     home), each released Billie, each node cleared, a win bonus; seals for a win; Scrap (RL-9, the ranch's material)
     for each node cleared and a win. Rates are rules.json run.payout (placeholders until the first play) */

@@ -13,7 +13,7 @@
      ranch   inside Copperleaf's ranch (RL-9): three Billies in storage (one two levels under the cap), 50 Scrap
      pasture the ranch's save, standing outside the pasture's gate by the barn (IS-8: the three wander inside)
      relics  the run, holding five Loopholes (RL-12: one under the cap), 2,000 Moneys, a mini-boss's pick waiting
-     lab     Copperleaf after a run (RL-11): 500 Research, 60 Scrap, 2 Audit Seals, one run ended (a milestone met)
+     lab     Copperleaf after a run (RL-11): 500 Research, 60 Scrap, 2 Crests, one run ended (a milestone met)
      island  the test island (island track IS-0: test_island, the map with the island contract's fields)
    UI-3b, for the Studio's UI look preview (the real screens with the look being edited):
      team    the Team screen          bag     the Bag, with a few of each item

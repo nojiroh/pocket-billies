@@ -133,7 +133,7 @@ test('run: the load check refuses broken or tampered runs', () => {
   assert.equal(validRun(JSON.parse(JSON.stringify(ok).replace('"hints":{}', '"hints":{"__proto__":1}'))), false);
 });
 
-test('run: the payout converts money, items, releases, nodes and a win into Research, and a win into a Seal', () => {
+test('run: the payout converts money, items, releases, nodes and a win into Research, and a win into a Crest', () => {
   const p = payoutOf({ se: 455, items: { potion: 3, nothing: 2 }, released: 2, cleared: 4, won: true }, RATES, PRICE);
   assert.deepEqual(
     p.lines.map(l => [l.what, l.n, l.capital]),
