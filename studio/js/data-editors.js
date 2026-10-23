@@ -1168,7 +1168,7 @@ SECTIONS.shops = () => {
       .join('');
   return `<div class="split"><aside class="list-col"><div class="list-head"><button class="btn primary" data-act="shopNew">+ New shop</button><button class="btn" data-act="boutiqueNew">+ New boutique</button></div><div class="llist">${list}</div></aside>
  <div class="ed-col"><div class="ed-head"><div><small class="mono">${escapeHtml(k)}</small><h2>${escapeHtml(sh.name)}</h2></div><button class="btn danger" data-act="shopDel">Delete</button></div>
- ${card('Shop', `<div class="keeper"><div class="person-prev">${personPreviewHTML(sh.who)}</div><div>${grid(textField('Shop name', `${p}.name`), textField('Keeper', `${p}.keeper`), selectField('Keeper’s look', `${p}.who`, peopleOptions(), { rr: 1, help: 'Edit looks under People.' }))}${textField('Greeting', `${p}.greeting`, { area: 1, rows: 2 })}${textField('Thank-you lines (one per line)', '@lines.' + k, { area: 1, rows: 3, ph: 'Leave empty for the default lines.' })}</div></div>`)}
+ ${card('Shop', `<div class="keeper"><div class="person-prev">${personPreviewHTML(sh.who)}</div><div>${grid(textField('Shop name', `${p}.name`), textField('Keeper', `${p}.keeper`), selectField('Keeper’s look', `${p}.who`, peopleOptions(), { rr: 1, help: 'Edit looks under People.' }))}${textField('Greeting', `${p}.greeting`, { area: 1, rows: 2 })}${textField('Thank-you lines (one per line)', '@thanks.' + k, { area: 1, rows: 3, ph: 'Leave empty for the default lines.' })}</div></div>`)}
  ${
    wardrobe
      ? card(
@@ -1202,19 +1202,20 @@ SECTIONS.shops = () => {
    )}. Choose a shop or boutique for a stop under World & encounters.</p>`
  )}</div></div>`;
 };
-/* thank-you lines are stored as an array; edit them as text */
+/* thank-you lines are stored as an array; edit them as text (Studio plan F20: their own prefix, @thanks.; lore's
+   lists of lines have @lines.) */
 const readPathBeforeShopThanks = readPath;
 setReadPath(function (path, o) {
-  if (path && path.startsWith('@lines.')) {
-    const s = studioState.D.shops[path.slice(7)];
+  if (path && path.startsWith('@thanks.')) {
+    const s = studioState.D.shops[path.slice(8)];
     return s && s.thanks ? s.thanks.join('\n') : '';
   }
   return readPathBeforeShopThanks(path, o);
 });
 const writePathBeforeShopThanks = writePath;
 setWritePath(function (path, v, o) {
-  if (path && path.startsWith('@lines.')) {
-    const s = studioState.D.shops[path.slice(7)];
+  if (path && path.startsWith('@thanks.')) {
+    const s = studioState.D.shops[path.slice(8)];
     const a = String(v || '')
       .split('\n')
       .map(x => x.trim())
