@@ -49,7 +49,7 @@
   "text": "#fff",
   "strong": ["Fire","Electric","Steel"],
   "weak": ["Grass","Flying"],
-  "passive": "landlord",
+  "passive": "bedrock",
   "passiveName": "Bedrock",
   "passiveText": "Once a battle, it holds on at 1 HP when a hit from full HP would knock it out. Sharp stones don’t hurt it.",
   "fx": ["pebble","pebble","pow"]

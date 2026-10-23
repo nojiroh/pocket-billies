@@ -921,7 +921,7 @@ const PASSIVES = [
   ['livewire', 'Live Wire: higher critical-hit chance'],
   ['kindling', 'Kindling: Attack rises every turn it stays in'],
   ['inherit', 'Parting Roar: when it faints, the next teammate in gets +1 Attack and Sp. Atk'],
-  ['landlord', 'Bedrock: holds on at 1 HP from full once a battle; not hurt by sharp stones'],
+  ['bedrock', 'Bedrock: holds on at 1 HP from full once a battle; not hurt by sharp stones'],
   ['undertow', 'Undertow: its moves of this type hit harder at a third of its HP or less'],
 ];
 /* Studio plan T6.3: an icon cut from the loaded icon atlas by CSS (scaled, pixelated), so a first open of Types does

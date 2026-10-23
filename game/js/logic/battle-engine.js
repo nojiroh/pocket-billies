@@ -396,7 +396,7 @@ export function bedrockHolds(tk, r) {
     sd = battleNow().sides[ACTOR_SIDE[tk]],
     at = fieldSlot(tk).act,
     mx = maxHp(t);
-  if (r.dmg < t.hp || t.hp < mx || mx < 2 || !hasPassive(actorTypes(tk), 'landlord')) return false;
+  if (r.dmg < t.hp || t.hp < mx || mx < 2 || !hasPassive(actorTypes(tk), 'bedrock')) return false;
   if ((sd.held || (sd.held = [])).includes(at)) return false;
   sd.held.push(at);
   r.dmg = t.hp - 1;
@@ -577,7 +577,7 @@ export function useMove(k, mid, tk0, part) {
       if (r.te > 1) battleSay('It’s super effective!');
       else if (r.te < 1) battleSay('It’s not very effective.');
       if (held)
-        battleSay(`${billyName(t2)} held on with ${passiveName(actorTypes(tk2), 'landlord')}!`, {
+        battleSay(`${billyName(t2)} held on with ${passiveName(actorTypes(tk2), 'bedrock')}!`, {
           k: 'block',
           si: tk2,
         });
@@ -716,7 +716,7 @@ export function endTurn() {
         if (r.te > 1) battleSay('It’s super effective!');
         else if (r.te < 1) battleSay('It’s not very effective.');
         if (held)
-          battleSay(`${billyName(t)} held on with ${passiveName(actorTypes(tk), 'landlord')}!`, { k: 'block', si: tk });
+          battleSay(`${billyName(t)} held on with ${passiveName(actorTypes(tk), 'bedrock')}!`, { k: 'block', si: tk });
       }
       return false;
     });
@@ -800,7 +800,7 @@ export function doSwitch(k, idx, b) {
       }
     );
     if (!isRobot(m)) battleSeen()[m.sp] = 1;
-    if (sd.rent && !hasPassive(speciesOf(m).types, 'landlord')) {
+    if (sd.rent && !hasPassive(speciesOf(m).types, 'bedrock')) {
       const d = Math.max(1, Math.floor(maxHp(m) / Math.max(2, BATTLE_RULES.rentFraction)));
       m.hp = Math.max(0, m.hp - d);
       battleSay(`${billyName(m)} was hurt by the sharp stones.`, { k: 'hurt', si: k, fx: 'rent', dmg: d });
