@@ -13,6 +13,29 @@
    Math.random (tools/test/sim-compare.test.mjs). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+/* eslint-disable no-func-assign */
+expose({
+  SIM_METRICS: [() => SIM_METRICS],
+  SIM_Z95: [() => SIM_Z95],
+  round: [() => round],
+  simBanner: [() => simBanner],
+  // @ts-expect-error -- replaced on purpose
+  simCompare: [() => simCompare, v => (simCompare = v)],
+  // @ts-expect-error -- replaced on purpose
+  simCompareReports: [() => simCompareReports, v => (simCompareReports = v)],
+  // @ts-expect-error -- replaced on purpose
+  simDataHash: [() => simDataHash, v => (simDataHash = v)],
+  // @ts-expect-error -- replaced on purpose
+  simPaired: [() => simPaired, v => (simPaired = v)],
+  simSeeds: [() => simSeeds],
+  // @ts-expect-error -- replaced on purpose
+  simSummary: [() => simSummary, v => (simSummary = v)],
+  // @ts-expect-error -- replaced on purpose
+  simValue: [() => simValue, v => (simValue = v)],
+  // @ts-expect-error -- replaced on purpose
+  simWilson: [() => simWilson, v => (simWilson = v)],
+});
+/* eslint-enable no-func-assign */
 /* to-module: end */
 /** z for a two-sided 95% interval */
 export const SIM_Z95 = 1.959964;
@@ -31,7 +54,7 @@ export const SIM_METRICS = Object.freeze([
   'topLevel',
 ]);
 /** a round to a tenth, or a thousandth for shares @param {number} x @param {number} [k] */
-const round = (x, k = 10) => Math.round(x * k) / k;
+export const round = (x, k = 10) => Math.round(x * k) / k;
 
 /**
  * k of n as a share with its Wilson interval (z: 1.96 for 95%): { k, n, p, lo, hi }; n = 0 gives 0 in [0, 1]
