@@ -2,6 +2,69 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Sound track SND-5 - Battle and run music - 2026-10-22
+Branch `sound` (PR #120). Plan approved by the owner's "Start", without picks on the two "Ask me before" items, so
+the recommendations were taken (and named as such in the commits): **the red zone plays a tense variant of the battle
+song, with the classic beep as a Settings switch, off by default**; **the deadline version plays on the deadline day
+alone (and every day past it)**; also **no ghost song before RL-15** and **the map song's weather filter in**.
+- Changed (one cause per commit; each checked against the commit before it):
+  - Tool: `check-sound.py` renders intros and the variants `musicParts` names (tense, mid, late, deadline).
+  - Tracker: `intro` (one or two bars on the lead, played once), drums held until the throw (`hold`, `drumsIn`, 8 s
+    fallback), `restart`, `trackerRecipe` for names with parts, `trackerTense` (+ `pedal` bass), `trackerArc`
+    (`arpOctave`, `counterAuto`), `trackerDeadline`.
+  - Where: `musicBattleKind` (a run's mini-boss `leader`, its boss `boss`), `musicRedZone`, `musicArcBand`,
+    `musicWeatherCut`; `songVariant`: in battle the tense version; out of it the deadline version, else the band then
+    night.
+  - sound.js: the battle's song starts on its flash with its intro and holds the drums until the first throw
+    (`battleMusicStart`, `battleDrumsIn`); the sync waits 2.5 s for a battle's flash; `soundEngine.log` (in memory,
+    never sent); `lowHpBeep`; `musicMapCut`; `daysLeft` and `redZone` in `musicState`.
+  - Data: hooks and intros for wild, trainer, rival; new `leader` (the motif in D minor) and `boss` songs; music.json
+    `run` (`arc`: rows 3-5 mid, 6-8 late; `deadlineDays` 1; `weather` cuts); schema for all.
+  - Settings → Sound: Low HP beep (off), translated.
+  - Studio: Intro roll, a Version pick (tense, deadline, a band), an In a run card.
+  - Checks: full-check steps Battle music and Run map music; Run music expects bands and the deadline;
+    check-studio-github `--only=music` reads the rules' places from the table (the new rules had moved them; it was
+    failing from 58306bf) and tries the new parts. Baseline 109 fingerprints (72 before), its own commit.
+  - Docs: sound-track.md (SND-5 as built, corrections), ROADMAP, CHANGELOG, TESTING.
+- Risky or unfinished:
+  - Nobody has heard any of it. Every battle hook and intro is a placeholder; the leader song's minor motif, the boss
+    song, the tense and deadline defaults and the arc's march are guesses. Please play wild, trainer, leader, boss
+    (Version: as written and tense) and meadow (mid, late, deadline) in Studio → Sound → Music & sound, and a run on
+    the phone.
+  - The drums wait for the first throw; tapping slowly through a long opening leaves them out up to 8 s.
+  - In a run a battle can begin again at once from its seed ("The battle starts again."): its song restarts with the
+    intro (`restart`), so a player hears the intro twice when that happens.
+  - CI: `smoke` failed once on 751e9d9 ("A battle plays to the end: stuck at playing") and the PR run was cancelled at
+    20 min, while many other branches' runs were cancelled too (runners overloaded). Locally the whole check-fast
+    passes and that battle check is not slower (41.5 s vs 50.1 s on 81490b3). Commented on the PR; the next push
+    reruns it.
+  - Tags can't be pushed (HTTP 403): `snd-5-done` exists only in this container.
+- Verified (what ran, what passed):
+  - Every code commit: lint, typecheck, check:modules, check:data, format:check; unit tests 670 (653 before).
+  - Song fingerprints commit by commit against the commit before (a worktree rendering the earlier commit with
+    --baseline): only what each commit should change changed; the new baseline rendered twice is byte-identical.
+  - Smoke on 33f2927, ab4c96f, bebec9a (one Studio GitHub screenshot timed out while fingerprints rendered beside it).
+  - check-fast.py whole on the final code: 25 of 25.
+  - Full quick check on the final code: 2265 s, 59 steps, 46 passed. Problems: the known v31 (bowl map camera), v34,
+    v35, v38, v39/40, v44, v46, alpha 0.2 (Copperleaf terraces), alpha 0.4 (recipes), phase 08, RL-8 (passes
+    alone); and RL-7 (roads) and alpha 0.4 postcards, which also pass alone (RL-7, postcards and RL-8 run together:
+    all pass). The sound steps all pass: Sound settings, Song fingerprints (109, 0 changed), Run music (3 mid, 3 late,
+    the deadline day), Battle music (wild and leader on their intros, drums in ~5.6-5.9 s later on the throw), Run
+    map music (storm 1400, rain 2200, clear open).
+  - check-studio-github.py --only=music passes; the Studio self-test: 28 sections, the one known Rules undo problem.
+  - `check-quick.py --selftest` (the in-game full test, which plays battles): every phase but two, Light lab (props:
+    0 of 0 buildings) and Opening (the fall drew 0 frames); main (5a30303) fails the same two the same way.
+  - Not tried on a phone.
+- Decisions I made (and why):
+  - The lead Billie for the red zone is the player's first still standing (in doubles, the first slot's).
+  - The arc applies on a run's walkable nodes, not town nodes or the map tab; the deadline version on town nodes too.
+  - A tense version takes the drum hold of the song it replaces, so the red zone during an intro still waits for the
+    throw.
+  - The deadline's default drums: soft or none become a march (urgency); others stay.
+- Questions waiting for the owner: how the placeholders and the defaults sound; whether the deadline should start a
+  day earlier (`run.deadlineDays` 2); whether the arc should touch town nodes.
+- Next session starts with: SND-6, sound effects and jingles (started in a new session at the owner's word).
+
 ### Sound track SND-4 - The Pokémon rework: themes - 2026-10-22
 Branch `sound` (PR #120). Started before the owner's word on the RL-8 play test, at the owner's request (main's ROADMAP
 already had RL-8 done and played). Plan approved in Plan Mode; the owner's answers: **placeholder hooks the owner
