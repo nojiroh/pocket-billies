@@ -3,8 +3,7 @@
    Settings → Help → Run the graphics test (and the debug menu). Made to be run by a person, by hand, on their own
    device: it is not part of any check, CI job or hook. It loads only when it starts (settings-screen.js,
    startGraphicsTest), and reaches the game only through what that hands it (G), so it has no imports.
-   1. every shader program compiles, with no two inputs on one location (the same check as tools/check-quick.py's
-      Shaders step),
+   1. every shader program compiles, with no two inputs on one location (as the full test's Shaders phase checks),
    2. each engine dial on its own (game/js/engine/settings.js, ENGINE_SPEC): one scene opened with that dial moved away
       from its default and nothing else changed, so a result names the dial,
    3. each graphics preset (Settings → Graphics: Balanced, Beautiful) and each engine preset (ENGINE_PRESETS),
@@ -130,7 +129,8 @@ export async function runGraphicsTest(G) {
     realSave = G.save,
     engKeep = G.gameData.engine ? JSON.stringify(G.gameData.engine) : null,
     forceKeep = G.environment ? G.environment.force : null,
-    scene = G.gameData.maps && G.gameData.maps.marigold ? 'marigold' : G.uiState.bench?.id || G.walkView.id,
+    /* test cleanup lane C: the graphics test scene (Marigold Town, its old scene, is parked in game/data/legacy) */
+    scene = G.gameData.maps && G.gameData.maps.test_graphics ? 'test_graphics' : G.uiState.bench?.id || G.walkView.id,
     steps = [],
     errs0 = G.debugLog.err.length,
     t0 = performance.now();
@@ -259,7 +259,7 @@ export async function runGraphicsTest(G) {
     }
   };
   try {
-    /* 1. shaders, as tools/check-quick.py checks them */
+    /* 1. shaders, as the full test checks them */
     await step('Shaders: every program compiles, no clashing inputs', {}, async () => {
       if (!G.gpuState.gl) {
         /* the context is made with the first scene */
