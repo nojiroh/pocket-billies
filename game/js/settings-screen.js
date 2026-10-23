@@ -19,6 +19,7 @@ import {
   applyAmbienceVolume,
   applyVolumes,
   attributeClashes,
+  battleStageStop,
   closeModal,
   compileProgram,
   engineSetting,
@@ -36,6 +37,7 @@ import {
   runGraphicsBench,
   runQuickTest,
   selfTest,
+  stopTimers,
   testVolume,
   toast,
   walkRenderer,
@@ -53,6 +55,7 @@ import {
   resumeSaving,
   save,
   saveData,
+  setActiveBattle,
   setReducedMotion,
   setSave,
   setSaveData,
@@ -85,6 +88,7 @@ expose({
   setVolumeMuted: [() => setVolumeMuted, v => (setVolumeMuted = v)],
   settingsHTML: [() => settingsHTML, v => (settingsHTML = v)],
   settingsRefresh: [() => settingsRefresh, v => (settingsRefresh = v)],
+  settingsReset: [() => settingsReset, v => (settingsReset = v)],
   settingsRowHTML: [() => settingsRowHTML, v => (settingsRowHTML = v)],
   startGraphicsTest: [() => startGraphicsTest, v => (startGraphicsTest = v)],
   switchHTML: [() => switchHTML, v => (switchHTML = v)],
@@ -787,38 +791,41 @@ export function openSettings(tab) {
     html: settingsHTML(),
     btns: [
       { l: 'Done', c: 'dark', f: closeModal },
+      { l: 'Start over', c: 'quiet', f: () => ((uiState.modal = null), settingsReset()) },
+    ],
+  });
+}
+/* the one Start over (Settings and the debug menu's Erase save): a battle in progress stops first (UI-7b: Settings'
+   own copy left it running under the new save) */
+export function settingsReset() {
+  modal({
+    title: 'Start over?',
+    html: '<p>This erases your team, Field Guide and money.</p>',
+    btns: [
       {
-        l: 'Start over',
-        c: 'quiet',
+        l: 'Erase and start over',
+        c: 'red',
         f: () => {
-          uiState.modal = null;
-          modal({
-            title: 'Start over?',
-            html: '<p>This erases your team, Field Guide and money.</p>',
-            btns: [
-              {
-                l: 'Erase and start over',
-                c: 'red',
-                f: () => {
-                  setSaveData(newSaveKeepingPreferences());
-                  saveData.savedAt = Date.now();
-                  writeStoredSave(saveData);
-                  flushSave();
-                  uiState.intro = 0;
-                  uiState.pg = null;
-                  uiState.avatarDraft = null;
-                  uiState.trainerDraft = null;
-                  uiState.tab = 'walk';
-                  applyPreferences();
-                  closeModal();
-                  render();
-                },
-              },
-              { l: 'Keep my progress', c: 'quiet', f: closeModal },
-            ],
-          });
+          if (activeBattle) {
+            stopTimers();
+            setActiveBattle(null);
+            battleStageStop();
+          }
+          setSaveData(newSaveKeepingPreferences());
+          saveData.savedAt = Date.now();
+          writeStoredSave(saveData);
+          flushSave();
+          uiState.intro = 0;
+          uiState.pg = null;
+          uiState.avatarDraft = null;
+          uiState.trainerDraft = null;
+          uiState.tab = 'walk';
+          applyPreferences();
+          closeModal();
+          render();
         },
       },
+      { l: 'Keep my progress', c: 'quiet', f: closeModal },
     ],
   });
 }

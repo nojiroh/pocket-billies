@@ -42,27 +42,15 @@ import {
 } from './logic/rules.js';
 import { RUN_MOD_MOUNTAINS } from './logic/run-scenes.js';
 import { relicOfferMake, relicTake } from './logic/relics.js';
-import { newSaveKeepingPreferences } from './logic/saves.js';
 import { allSnapshots, battleSay, checkFaints, fighter, startTrainer, startWild } from './logic/battle-engine.js';
-import {
-  activeBattle,
-  escapeHtml,
-  flushSave,
-  save,
-  saveData,
-  saveNow,
-  setActiveBattle,
-  setSaveData,
-  uiState,
-  writeStoredSave,
-} from './game-state.js';
+import { activeBattle, escapeHtml, save, saveData, saveNow, uiState } from './game-state.js';
 import { frameCount, frameScheduler, frameTask, userFps } from './frame-scheduler.js';
 import { uiIconHTML } from './art.js';
-import { applyPreferences, exportSave } from './settings-screen.js';
-import { battleStage, battleStageResize, battleStageStop } from './battle-stage.js';
+import { exportSave, settingsReset } from './settings-screen.js';
+import { battleStage, battleStageResize } from './battle-stage.js';
 import { mapById } from './walk-view.js';
 import { gpuState } from './engine/webgl.js';
-import { paintBoxes, playTurnEvents, stopTimers } from './battle.js';
+import { paintBoxes, playTurnEvents } from './battle.js';
 import { worldMap } from './world-bowl.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -75,7 +63,6 @@ expose({
   debugSpeciesOptions: [() => debugSpeciesOptions, v => (debugSpeciesOptions = v)],
   openDebug: [() => openDebug, v => (openDebug = v)],
   refreshDebugMenu: [() => refreshDebugMenu, v => (refreshDebugMenu = v)],
-  settingsReset: [() => settingsReset, v => (settingsReset = v)],
 });
 /* eslint-enable no-func-assign */
 provide({ debugFps });
@@ -515,38 +502,6 @@ function debugAction(x) {
   }
   save();
   refreshDebugMenu('Done.');
-}
-function settingsReset() {
-  modal({
-    title: 'Start over?',
-    html: '<p>This erases your team, Field Guide and money.</p>',
-    btns: [
-      {
-        l: 'Erase and start over',
-        c: 'red',
-        f: () => {
-          if (activeBattle) {
-            stopTimers();
-            setActiveBattle(null);
-            battleStageStop();
-          }
-          setSaveData(newSaveKeepingPreferences());
-          saveData.savedAt = Date.now();
-          writeStoredSave(saveData);
-          flushSave();
-          uiState.intro = 0;
-          uiState.pg = null;
-          uiState.avatarDraft = null;
-          uiState.trainerDraft = null;
-          uiState.tab = 'walk';
-          applyPreferences();
-          closeModal();
-          render();
-        },
-      },
-      { l: 'Keep my progress', c: 'quiet', f: closeModal },
-    ],
-  });
 }
 document.addEventListener('click', ev => {
   const el = ev.target.closest('[data-a]');
