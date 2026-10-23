@@ -26,8 +26,8 @@ import { billyName, formatNumber, healAll, plural } from './logic/rules.js';
 import { ranchStop } from './logic/ranch.js';
 import { runByTier, runEnd } from './logic/run-state.js';
 import { runArrive, runBack, runMapNode, runNext } from './logic/run-map.js';
-import { runArriveHeal, runBattleExtra, runRelease, runReleasePays } from './logic/run-loop.js';
-import { fxHealShare, fxOfRun, fxPayoutRates, fxRunPrice } from './logic/effects.js';
+import { runArriveFx, runBattleExtra, runRelease, runReleasePays } from './logic/run-loop.js';
+import { fxOfRun, fxPayoutRates, fxRunPrice } from './logic/effects.js';
 import {
   BATTLE_RULES,
   battleHost,
@@ -487,8 +487,7 @@ function runBattleAgain() {
 export const runClinicEach = () => fxRunPrice(saveData.run, RELICS, 'heal', RULES.run.healCost);
 /** walking into a place on a run: a Loophole's heal row heals the team (before the arrival's save) */
 export function runArrivedFx() {
-  const share = fxHealShare(fxOfRun(saveData.run, RELICS)),
-    gained = share ? runArriveHeal(saveData.team, share) : 0;
+  const gained = runArriveFx(saveData, RELICS);
   if (gained > 0) toast(`Your Loopholes paid out: your team healed ${formatNumber(gained)} HP.`);
 }
 

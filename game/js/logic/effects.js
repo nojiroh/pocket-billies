@@ -18,6 +18,7 @@
 /** @typedef {FxRow & { src: string }} Fx */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { provide } from '../hooks.js';
 /* eslint-disable no-func-assign */
 expose({
   FX_KINDS: [() => FX_KINDS],
@@ -55,6 +56,7 @@ export const fxRows = (ids, relics) =>
 /** the effect rows of a run's Loopholes (null in the hub, or with none held) @param {{ relics: string[] } | null | undefined} run
  * @param {Record<string, Relic>} relics @returns {Fx[] | null} */
 export const fxOfRun = (run, relics) => (run && run.relics.length ? fxRows(run.relics, relics) : null);
+provide({ fxOfRun }); /* to-module */
 
 /** the product of the multipliers of the rows that pass `test`, smallest first, within FX_LIMIT (1 when none)
  * @param {Fx[] | null | undefined} fx @param {(f: Fx) => boolean} test */
@@ -126,6 +128,7 @@ export const fxHealShare = fx =>
     1,
     (fx || []).reduce((a, f) => a + (f.kind === 'heal' ? f.share : 0), 0)
   );
+provide({ fxHealShare }); /* to-module */
 
 /**
  * The payout's rates with the payout rows: `itemShare` times its rows (at most 1: an item never counts above its

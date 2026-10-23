@@ -15,6 +15,7 @@
 /** @import { Run, RunMap, SaveData, Billy } from '../../types/save-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { fxHealShare, fxOfRun } from '../hooks.js';
 import { ITEMS } from '../game-data.js';
 import { rngFrom } from './rng.js';
 import { battleWeatherOf } from './weather.js';
@@ -24,6 +25,8 @@ import { runNodeSeed, runWeather, runWorldNode } from './run-map.js';
 import { runWildLevels } from './run-scenes.js';
 /* eslint-disable no-func-assign */
 expose({
+  // @ts-expect-error -- replaced on purpose
+  runArriveFx: [() => runArriveFx, v => (runArriveFx = v)],
   // @ts-expect-error -- replaced on purpose
   runArriveHeal: [() => runArriveHeal, v => (runArriveHeal = v)],
   // @ts-expect-error -- replaced on purpose
@@ -67,6 +70,13 @@ export function runArriveHeal(team, share) {
     m.hp = to;
   }
   return gained;
+}
+/** Studio plan T3.3: walking into a place on a run (walk-control.js through run.js runArrivedFx, and the run's
+ * simulation): the held Loopholes' heal rows heal the team (runArriveHeal); returns the HP gained (0: none)
+ * @param {SaveData} s @param {Record<string, any>} relics relics.json */
+export function runArriveFx(s, relics) {
+  const share = fxHealShare(fxOfRun(s.run, relics));
+  return share ? runArriveHeal(s.team, share) : 0;
 }
 /** what a run town's clinic charges to heal the party: `each` per hurt Billie @param {Billy[]} team
  * @param {number} each @returns {{ hurt: number, cost: number }} */
