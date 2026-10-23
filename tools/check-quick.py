@@ -2167,35 +2167,6 @@ def desktop_steps(b, base, R):
 
     # RL-5: 'phase 08b: walking across seams — the next view ready ahead, no wait, no jump in the picture' retired: every seam it walked (and --seams=all) joined two parked places (RL-7 walks a run's roads, below)
 
-    @step("RL-7: a run's roads — its world made from the seed, a seam walked each way a day apiece, the hub back", 300)
-    def rl7_run_roads():
-        """a run put on the save as the mast will (RL-8): its map from the seed, landed on day 1; the save swapped in
-        brings its world (game/js/run-world.js: every scene made, the tables swapped, the old views let go); the
-        landing's north seam walked over (cross()) arrives at the next node on day 2 with its view; walked back, day 3
-        on the landing; the hub's save swapped back brings Copperleaf and no run scene"""
-        if not pg.evaluate("typeof runWorldSync==='function'"): return 'not in this build'
-        pg.evaluate("""(()=>{uiState.inside=null;uiState.bench=null;uiState.modal=null;uiState.mq=[];renderOverlay();
-          window.rl7Hub=JSON.parse(JSON.stringify(saveData));const s=JSON.parse(JSON.stringify(saveData)),data=runWorldData();
-          runBegin(s,{seed:'RL7ROADS',tier:1,mapgenV:MAPGEN_VERSION,se:300});runMapStart(s.run,data);runArrive(s,0,data);
-          s.visited[s.trip.node]=1;uiState.tab='walk';setSaveData(s);render()})();0""")
-        if not until(pg, "walkView.ready&&walkView.id==='w:'+LOCATIONS[1].mapId+'*'", 90): raise Exception(f'the landing’s view never opened (still {pg.evaluate("walkView.id")})')
-        made = pg.evaluate("[runWorld.scenes, runWorld.ms, LOCATIONS.length]")
-        n1 = pg.evaluate("runWorldNode(runNext(saveData.run.map,0)[0])")
-        walked, views, unready = cross(pg, n1)
-        day = pg.evaluate('saveData.run.clock')
-        if day != 2: raise Exception(f'walked into {pg.evaluate(f"LOCATIONS[{n1}].name")} on day {day}, not 2')
-        cross(pg, 1)
-        back = pg.evaluate('[saveData.run.clock, saveData.run.path]')
-        if back[0] != 3: raise Exception(f'walked back to the landing on day {back[0]}, not 3 (path {back[1]})')
-        shot(pg, 'rl7-run-landing')
-        pg.evaluate("setSaveData(window.rl7Hub);render();0")
-        if not until(pg, "walkView.ready&&walkView.id==='w:'+mapIdAt(saveData.trip.node)+'*'&&!runWorld.seed", 90): raise Exception(f'the hub never came back (still {pg.evaluate("walkView.id")})')
-        left = pg.evaluate("Object.keys(worldExtraMaps()).length+'/'+LOCATIONS.length")
-        if left != '0/' + str(pg.evaluate('gameData.locations.length')): raise Exception(f'the run’s world stayed: {left}')
-        if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
-        return f'{made[0]} scenes made in {made[1]} ms ({made[2]} places); {walked:.0f} m over the seam (views {len(views)}, {unready} not ready), day 2, back on day 3; the hub back'
-    rl7_run_roads()
-
     @step('RL-8: a run from the mast — the flight, a battle, a seam, a paid heal, the shop, a mini-boss and its Loophole pick (RL-12), the boss, the payout, home', 420)
     def rl8_run_from_mast():
         """Copperleaf's mast sheet (tapped as walkPick does) offers "Start a run"; its sheet's "Take off" puts a run on the
