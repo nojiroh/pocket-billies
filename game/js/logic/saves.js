@@ -191,10 +191,11 @@ export function saveFill(o) {
 }
 /* phase 02: every save says which save format it is (saveVersion; raise it when old saves can't be read any more; 2 since
    phase 05, 3 since phase 08: steps are gone, encounters live on each map, no jobs; 4 since roguelite track RL-3: meta,
-   run and ranch).
+   run and ranch; 5 since reflavour RF-4: perks, research, crests, pyramids, expeditions and the item, status and
+   passive ids renamed; older saves are set aside, no migration).
    A save without one (alpha 0.5 and earlier) or from a newer format is not loaded: the game says so and starts fresh.
    saveAge: null (no save), 'ok', 'old' or 'new'. A newer save is never written over (saveHold) */
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 5;
 /** @param {any} o @returns {'ok' | 'old' | 'new' | null} */
 export function saveAge(o) {
   if (!o || typeof o !== 'object') return null;

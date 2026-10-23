@@ -91,15 +91,15 @@ function runSave() {
   return s;
 }
 
-test('saves: format 4 holds meta, the run (null in the hub) and the ranch; a format 3 save is old', () => {
+test('saves: format 5 holds meta, the run (null in the hub) and the ranch; a format 4 save is old', () => {
   const s = fn('newSave')();
-  assert.equal(logic.SAVE_VERSION, 4);
+  assert.equal(logic.SAVE_VERSION, 5);
   assert.deepEqual(s.meta, modules['meta-state'].newMeta());
   assert.equal(s.run, null);
   assert.deepEqual(s.ranch, modules['ranch-state'].newRanch());
   assert.equal('v' in s, false, 'the old v field is gone');
-  assert.equal(fn('saveAge')({ ...startedSave(), saveVersion: 3 }), 'old');
-  assert.equal(fn('loadSave')({ ...startedSave(), saveVersion: 3 }), null);
+  assert.equal(fn('saveAge')({ ...startedSave(), saveVersion: 4 }), 'old');
+  assert.equal(fn('loadSave')({ ...startedSave(), saveVersion: 4 }), null);
 });
 
 test('saves: a save from a run loads with its trip, plan, visited places and run as they were', () => {
