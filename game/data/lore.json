@@ -286,16 +286,16 @@
    "title": "A Field Guide to the Hollow Earth",
    "by": "Hazel (Prof. Chosen on the cover)",
    "pages": [
-    "Billies are not dangerous unless you are holding money, are standing between them and money, or are money.",
+    "Billies are not dangerous unless you are holding a phone, are standing between them and a camera, or are a camera.",
     "They live everywhere: tall grass, caves, canyons, malls and the bottom of the sea. Each kind keeps to what its original loved most.",
-    "Toss a coin and a Billie will chase it. While it counts, it is yours. Be kind: they did not ask to be made."
+    "Throw a pyramid and a tired Billie will climb in: it thinks it is going home. Be kind: they did not ask to be made."
    ]
   },
   "brochure": {
-   "title": "Legacy Labs: Your Fortune, Backed Up",
+   "title": "Legacy Labs: You, Again, but Forever",
    "by": "a glossy brochure",
    "pages": [
-    "Why risk it all? For a modest fee, Legacy Labs will keep a living backup of you, safely stored offshore.",
+    "Why be the only you? Legacy Labs will grow a living copy of you, ready for your next era, your next launch and your next apology video.",
     "Our proprietary gap-filling process ensures every backup is complete. Results may vary. Tails are not covered by warranty.",
     "Legacy Labs accepts no liability for backups that refuse to sign, eat bins, or multiply."
    ]
@@ -319,11 +319,11 @@
    ]
   },
   "coin_standard": {
-   "title": "The Coin Standard",
-   "by": "an economics textbook, much underlined",
+   "title": "The Moneys Question",
+   "by": "a Bureau pamphlet, form 7B attached",
    "pages": [
-    "In the Hollow Earth, value is measured in coins, because a Billie will chase nothing else.",
-    "Attempts to replace coins with paper have failed, because the Billies ate the paper."
+    "Q: Why is it “Moneys”? A: Your question has been received and assigned a number. Please do not ask it again while it is being processed.",
+    "Q: How long will processing take? A: See question 1. Q: What are the Beans? A: This question has not been received."
    ]
   },
   "amnesia": {
@@ -340,25 +340,25 @@
    "pages": [
     "Airships leave from every mast for every town you have been to. Your ticket is good for one flight; your feet are good for everything else.",
     "Fares go by distance across the world, not by height. The Inner Sun is not a destination. Please stop asking.",
-    "Lost property is returned at the next mast. The company is not responsible for Billies that board without a ticket."
+    "Lost property goes to the Bureau of Lost, Found and Beans, which returns it eventually, somewhere. The company is not responsible for Billies that board without a ticket."
    ]
   },
   "pearl_ledger": {
-   "title": "The Pearl Exchange ledger",
+   "title": "The Pearl Exchange inventory",
    "by": "Curator Nacre",
    "pages": [
-    "Vault 1: gold, 40,000 bars. Vault 2: pearls, uncounted. Vault 3: the deeds to half the Hollow Earth, unsigned.",
-    "A year ago the pipes from the platform above began to hum. Every month since, the vaults weigh less.",
-    "Vault 1: 6,212 bars. Paid out to: VINYLLA WORLD TOUR LTD. Purpose: “pressing costs, merchandise, a bigger stage”.",
-    "Note for whoever reads this: the pipes run up the trench wall to the pressing plant on Vinyl Works. If you are going that way, take the bill."
+    "Hall 1: gold, 40,000 bars. Hall 2: pearls, uncounted. Hall 3: every lost-property form the Hollow Earth ever filed, unread.",
+    "A year ago the pipes from the platform above began to hum. Every month since, the halls weigh less.",
+    "Hall 1: 6,212 bars. Sent up to: VINYLLA WORLD TOUR LTD. Reason given: “pressing, merchandise, a bigger stage”.",
+    "Note for whoever reads this: the pipes run up the trench wall to the pressing plant on Vinyl Works. If you are going that way, take a complaint form. Take several."
    ]
   }
  },
  "loading": [
   "Officially the Inner Sun never sets. Its maintenance contract only covers business hours.",
-  "A Billie cannot resist a coin. That is how you catch one.",
+  "Tip: throw a pyramid at a tired Billie. It thinks it is going home.",
   "Every win counts. Your team grows stronger with every battle.",
-  "Legacy Labs: your fortune, backed up. Tails not covered by warranty.",
+  "Legacy Labs: you, again, but forever. Tails not covered by warranty.",
   "Things that fall from the surface mostly land in Copperleaf. Granny Juniper keeps a list.",
   "The clinic in Marigold Town is free. It always was. Stop asking.",
   "Tip: Water beats Fire, Fire beats Grass, Grass beats Water. Most Billies beat your patience.",
@@ -367,17 +367,17 @@
   "Tip: a gold Billie is a limited variant. Collectors will try to buy it from you. Don’t.",
   "The ducks on Marigold’s pond have names. They won’t tell you yet.",
   "The escalator in Lanternhall City has never been seen moving.",
-  "Down here, value is measured in coins, because a Billie will chase nothing else.",
-  "Aurumansa gives its gold away. The banks call it a disaster.",
+  "Lost something on the surface? The Bureau of Lost, Found and Beans has it. Probably. Do not ask about the beans.",
+  "Aurumansa gives its gold away. The collectors call it a disaster.",
   "The soup of the day in Pepperpot Town has been the same soup since 1971.",
-  "Hazel has a map of the sinkholes. It looks a lot like a map of banks.",
-  "Billies are not dangerous unless you are holding money, or are money.",
+  "Hazel has a map of the sinkholes. Every one of them has a Bureau form number.",
+  "Billies are not dangerous unless you are holding a camera, or are a camera.",
   "Blake picked the one that beats yours. No offence. Well, a little offence.",
-  "The Hollow Earth has changed hands eleven times. Nobody who lives here was asked.",
+  "The Hollow Earth’s file has been reassigned eleven times. Nobody who lives here was asked.",
   "Tip: rest at a bench or your room to heal your team.",
   "Tip: the place card at the top shows the hour, the weather and where you can go.",
   "Loading the inner sky. Please keep your hands inside the planet.",
-  "Counting coins. Billies insist.",
+  "Counting the beans. The Bureau insists. Nobody will say why.",
   "Polishing the marble in Palmhaven Town. Nobody asked who for.",
   "Warming up the Inner Sun. Business hours only."
  ],
