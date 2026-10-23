@@ -1227,8 +1227,8 @@ def desktop_steps(b, base, R):
         return '; '.join(out)
     frames_rooms_settings_map()
 
-    @step('v32: 3D miniatures, skipping what is off screen, the scene cache, wear and variety', 240)
-    def v32():
+    @step('Off-screen culling, the scene cache, prop wear and variety', 240)
+    def culling_cache_wear():
         if not pg.evaluate("typeof cullItems==='function'"): return 'not in this build'
         out = []
         # what's off screen is skipped (RL-5: in Copperleaf, the one place left; Verdigris City, the biggest scene, is parked)
@@ -1272,7 +1272,7 @@ def desktop_steps(b, base, R):
         pg.evaluate("uiState.tab='walk';render();0"); time.sleep(.5)
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return '; '.join(out)
-    v32()
+    culling_cache_wear()
 
     @step('v33: double and Alpha battles, nameplates, Billies in the world', 300)
     def v33():
