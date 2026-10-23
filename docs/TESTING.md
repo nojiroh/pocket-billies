@@ -214,7 +214,7 @@ same phase:
   block (`frameBlockCheck`, engine/webgl.js) and checks the block's size and each member's offset, as this device's
   driver lays them out, against what engine/frame-block.js packs; smoke shows "N shaders; 14 with the Frame block".
 - **(13c)** The full test and the debug menu load on demand; the recording part of the debug log stays loaded.
-- The graphics test (the debug menu's Performance section since UI-7b; Help had it before; `game/js/graphics-test.js`, loaded on
+- The graphics test (the debug menu's Tests and performance section; Help had it before UI-7b; `game/js/graphics-test.js`, loaded on
   demand) is run only by a person, by hand, on their own device: never from Claude Code, CI, a headless browser or
   a script, and no command-line runner, CI job or hook. It tries the shaders, each engine dial on its own (ENGINE_SPEC,
   moved away from its default), Balanced, Beautiful and each engine preset, in one scene, and saves a short .json
@@ -358,6 +358,11 @@ same phase:
   drag on the muted slider unmutes it (UI-7a), the header mute silences the master and keeps the levels. Don't read
   `gain.value` for this: Chrome stops working out a gain no sound goes through, so an idle bus's value stops part
   way. A browser that won't start audio is reported, not failed.
+- **Debug menu** (UI-7c): the full check's "Debug menu" step (alone with `--steps="debug menu"`, under a minute)
+  opens the menu on a 390 px phone page in the town and checks: the nine sections in order (keys `tests`, `give`,
+  `billies`, `battle`, `run`, `places`, `story`, `ranch`, `save`), no phase or track code in anything it says, each
+  button once, the search box narrowing "scrap" to +50 Scrap and putting the sections back when cleared, an opened
+  section kept across closing and opening (localStorage `pb-debug-open`), and +$1,000 saying what it changed.
   SND-2: **song fingerprints**. `python3 tools/check-sound.py` (about 1 min; `--only=meadow,victory` for some) renders
   8 bars of every song (by day, and at night with the pad), every jingle and every species' cry through an
   `OfflineAudioContext`, through the game's own `initSound`, `music`, `jingle` and `soundEffect`, and compares the

@@ -9,6 +9,11 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- The debug menu, tidied (UI-7c): nine sections by task (Tests and performance, Give me, Billies, Battle, Run, Places
+  and test scenes, Story, Ranch and time, Save), a search box at the top that filters the buttons, the sections you
+  open remembered in this browser, and each button saying what it changed instead of "Done.". Gold buttons give you
+  things, red ones erase or start a battle. Labels lost their phase codes. Walk 1 km, Earn every badge, Reset
+  trainer wins, Lead +3 win streak and Age storage by a day are gone (nothing left to test with them).
 - Settings in seven tabs (UI-7b): Sound, Display, Controls, Accessibility, Game, Save, Help, opening on the last one
   you used. Start over moved from beside Done to the foot of the Save tab, and now also ends a battle in progress.
   The Save card shows runs won and Billies taxed. Help has a Report a problem box (the full test and the debug log);
