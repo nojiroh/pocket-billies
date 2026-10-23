@@ -40,7 +40,7 @@
       {
        "description": "stat: your Billies on the field when a battle starts get stages of a stat (stats.json; not HP)",
        "type": "object", "additionalProperties": false, "required": ["kind", "stat", "stages"],
-       "properties": {"kind": {"const": "stat"}, "stat": {"enum": ["lev", "law", "lob", "pr", "hus"]}, "stages": {"type": "integer", "minimum": -6, "maximum": 6}}
+       "properties": {"kind": {"const": "stat"}, "stat": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$", "description": "a stat of stats.json other than hp (check-data and the Studio check it against the data)"}, "stages": {"type": "integer", "minimum": -6, "maximum": 6}}
       },
       {
        "description": "damage: what your Billies deal (deal) or take (take), times mult; only moves of a category (H physical, S special) or a type when given",

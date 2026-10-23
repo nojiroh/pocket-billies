@@ -17,9 +17,12 @@ import { RUN_MARK_TYPES } from './run-marks.js';
 import { runMapRowsFit } from './run-map.js';
 import { MAPGEN_DEFAULTS, MAPGEN_FEATURES, MAPGEN_SHAPES, MAPGEN_SURFACES, MAPGEN_WATER } from './mapgen.js';
 import { conditionNames, conditionProblem, conditionTree } from './conditions.js';
+import { islandProblems } from './island.js';
 /* eslint-disable no-func-assign */
 expose({
   ROBOT_FITS: [() => ROBOT_FITS],
+  RUN_RULE_KEYS: [() => RUN_RULE_KEYS],
+  base64Bytes: [() => base64Bytes],
   // @ts-expect-error -- replaced on purpose
   dataBattleRules: [() => dataBattleRules, v => (dataBattleRules = v)],
   // @ts-expect-error -- replaced on purpose
@@ -35,6 +38,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   dataRelics: [() => dataRelics, v => (dataRelics = v)],
   // @ts-expect-error -- replaced on purpose
+  dataRoadFindings: [() => dataRoadFindings, v => (dataRoadFindings = v)],
+  // @ts-expect-error -- replaced on purpose
   dataRobotProblems: [() => dataRobotProblems, v => (dataRobotProblems = v)],
   // @ts-expect-error -- replaced on purpose
   dataRobots: [() => dataRobots, v => (dataRobots = v)],
@@ -48,6 +53,10 @@ expose({
   dataRunPayout: [() => dataRunPayout, v => (dataRunPayout = v)],
   // @ts-expect-error -- replaced on purpose
   dataRunScene: [() => dataRunScene, v => (dataRunScene = v)],
+  // @ts-expect-error -- replaced on purpose
+  dataSceneFindings: [() => dataSceneFindings, v => (dataSceneFindings = v)],
+  // @ts-expect-error -- replaced on purpose
+  dataSpeciesKind: [() => dataSpeciesKind, v => (dataSpeciesKind = v)],
   // @ts-expect-error -- replaced on purpose
   dataUiTheme: [() => dataUiTheme, v => (dataUiTheme = v)],
   // @ts-expect-error -- replaced on purpose
@@ -224,6 +233,24 @@ export function dataRunMapRules(D) {
 }
 // RL-6: the run's clock and what its map shows: whole days of slack (0-30) and of forecast ahead (1-30), whole rows
 // shown ahead with their type (1-12) and as '?' (at least as far, up to 12); nothing else in rules.json run
+/** T1.3: the keys of rules.json run, each a rule a family here checks (any other is "no such rule"). The one list:
+ * an editor of run rules reads it from here */
+export const RUN_RULE_KEYS = Object.freeze([
+  'payout',
+  'map',
+  'clock',
+  'reveal',
+  'scene',
+  'wild',
+  'seamIn',
+  'start',
+  'home',
+  'pack',
+  'healCost',
+  'shop',
+  'foes',
+  'relics',
+]);
 /** RL-6: rules.json run.clock, run.reveal and the run keys @param {any} D @returns {DataProblem[]} */
 export function dataRunClock(D) {
   /** @type {DataProblem[]} */
@@ -234,26 +261,7 @@ export function dataRunClock(D) {
       C = R.clock,
       V = R.reveal,
       whole = (v, lo, hi) => Number.isInteger(v) && v >= lo && v <= hi;
-    for (const k of Object.keys(R))
-      if (
-        ![
-          'payout',
-          'map',
-          'clock',
-          'reveal',
-          'scene',
-          'wild',
-          'seamIn',
-          'start',
-          'home',
-          'pack',
-          'healCost',
-          'shop',
-          'foes',
-          'relics',
-        ].includes(k)
-      )
-        problem('rules.json', `run.${k}: no such rule`);
+    for (const k of Object.keys(R)) if (!RUN_RULE_KEYS.includes(k)) problem('rules.json', `run.${k}: no such rule`);
     if (!C || typeof C !== 'object' || !whole(C.slack, 0, 30) || !whole(C.ahead, 1, 30))
       problem('rules.json', 'run.clock: slack (0-30) and ahead (1-30) are not whole numbers of days');
     else
@@ -534,12 +542,16 @@ export function dataRelics(D, valid = () => true) {
     const RR = D.rules && D.rules.run && D.rules.run.relics,
       RARITIES = ['common', 'uncommon', 'rare'],
       whole = (v, lo, hi) => Number.isInteger(v) && v >= lo && v <= hi,
-      types = new Set((D.types || []).map(t => t.id));
+      types = new Set((D.types || []).map(t => t.id)),
+      stats = new Set((D.stats || []).map(t => t.id));
     if (D.relics && valid('relics.schema.json', D.relics, 'relics.json'))
       for (const [k, R] of Object.entries(D.relics))
         R.fx.forEach((f, n) => {
           if (f.type && !types.has(f.type))
             problem('relics.json', `${k}.fx[${n}].type: no type "${f.type}" (types.json)`);
+          /* T1.3: the stats from stats.json (a stage of HP means nothing), not a list in the schema */
+          if (f.kind === 'stat' && (f.stat === 'hp' || !stats.has(f.stat)))
+            problem('relics.json', `${k}.fx[${n}].stat: no stat "${f.stat}" a stage can raise (stats.json, not hp)`);
         });
     if (!RR || typeof RR !== 'object' || Array.isArray(RR)) problem('rules.json', 'run.relics missing');
     else {
@@ -657,6 +669,11 @@ export function dataUnlocks(D, valid = () => true) {
         problem('unlocks.json', `${k}.grant.shop: "${G.shop}" is always stocked (run.shop.always)`);
       if (G.biome && !(G.biome in biomes))
         problem('unlocks.json', `${k}.grant.biome: "${G.biome}" is not in rules.json run.map.biomes`);
+      /* T1.3: a currency it grants is one of currencies.json kept between runs (not a list in the schema) */
+      for (const c of Object.keys(G))
+        if (!['building', 'level', 'shop', 'biome'].includes(c) && D.currencies)
+          if (!(D.currencies[c] && D.currencies[c].kept === 'meta'))
+            problem('unlocks.json', `${k}.grant.${c}: "${c}" is not a currency kept between runs (currencies.json)`);
     }
     for (const [b, Bd] of Object.entries(B))
       for (let n = 2; n <= Bd.levels; n++) {
@@ -691,6 +708,25 @@ export function dataUnlocks(D, valid = () => true) {
   }
   return out;
 }
+/** phase 16 (Studio plan T1.3: one rule for check-data and the Studio): what a species id names: 'line' for a stage
+ * of a loaded line, 'legacy' for one of a line parked in game/data/legacy (the game stands in a new line's Billie for
+ * it), '' for nothing. A legacy line given with its names has that many stages; given as an id alone (the Studio
+ * reads only legacy/index.json), any stage counts
+ * @param {{ id: string, names?: unknown[] }[]} lines @param {{ id: string, names?: unknown[] }[]} legacyLines
+ * @returns {(sp: unknown) => 'line' | 'legacy' | ''} */
+export function dataSpeciesKind(lines, legacyLines) {
+  const stages = (/** @type {{ id: string, names?: unknown[] }[]} */ L) =>
+      new Set(L.flatMap(l => (l.names || []).map((_, i) => l.id + i))),
+    here = stages(lines || []),
+    parked = stages(legacyLines || []),
+    anyStage = new Set((legacyLines || []).filter(l => !l.names).map(l => l.id));
+  return sp => {
+    if (typeof sp !== 'string') return '';
+    if (here.has(sp)) return 'line';
+    const m = sp.match(/^(.*?)(\d+)$/);
+    return parked.has(sp) || (m && anyStage.has(m[1])) ? 'legacy' : '';
+  };
+}
 // phase 17: a trainer's robot: a gem and a part that fits each of its four slots
 export const ROBOT_FITS = { torso: 'torso', armL: 'arm', armR: 'arm', legs: 'legs' };
 /** what is wrong with a team member's robot (trainers/<id>.json) @param {any} D @param {any} R @returns {string[]} */
@@ -703,6 +739,236 @@ export function dataRobotProblems(D, R) {
     const P = (robots.parts || {})[R[k]];
     if (!P) out.push(`has robot ${k} ${R[k]}, no such part`);
     else if (P.slot !== slot) out.push(`has ${R[k]} as ${k}, but it is a ${P.slot} part`);
+  }
+  return out;
+}
+
+/* ---------- T1.3 step 5: the Studio's scene and road checks, here so check-data (CI) runs them too ----------
+   In the Studio's words, with where Show me goes (go, sel) and a level: 'error' fails check-data and blocks Propose,
+   'warn' never does. The owner's rule (2026-10-22): an error is only what check-data already refused (a schema, its
+   ground, prop, island and stop checks, logic/seam-rules.js); the rest of what the Studio found is a warning. They take `roadOf`, game/js/data-files.js PB_DATA.road (a link with its ends as stop numbers). */
+/** @typedef {{ lvl: 'error' | 'warn', where: string, msg: string, go?: string, sel?: object }} DataFinding */
+/** @typedef {(D: any, link: any) => any} DataRoadOf */
+/** the bytes a base64 text decodes to (the cliffs check, without decoding) @param {string} s */
+export const base64Bytes = s => Math.floor((s.length * 3) / 4) - (s.endsWith('==') ? 2 : s.endsWith('=') ? 1 : 0);
+
+/** v46 to phase 08b: each scene (maps/<id>.json) against its stop, its ground, props, life, water, bridges, cliffs and
+ * exits, the rooms you walk into, and the 3D buildings of scenery.json
+ * @param {any} D @param {DataRoadOf} roadOf @returns {DataFinding[]} */
+export function dataSceneFindings(D, roadOf) {
+  /** @type {DataFinding[]} */
+  const out = [],
+    at =
+      (/** @type {DataFinding['lvl']} */ lvl, /** @type {string} */ where) =>
+      (/** @type {string} */ msg, /** @type {string} */ go, /** @type {object | undefined} */ sel = undefined) =>
+        out.push({ lvl, where, msg, go, sel }),
+    locations = D.locations || [],
+    SCN = D.maps || {},
+    SY = D.scenery || { terrains: {}, props: {} },
+    people = new Set(Array.isArray(D.people) ? D.people.map(x => x.id) : Object.keys(D.people || {})),
+    roads = (D.roads || []).map(l => roadOf(D, l));
+  for (const [k, sc] of Object.entries(SCN)) {
+    const err = at('error', `maps/${k}.json`),
+      warn = at('warn', `maps/${k}.json`);
+    const kd = sc.kind;
+    if (!['town', 'route', 'room', 'test'].includes(kd)) {
+      err(`${sc.name || k}: doesn’t say what it is (kind: town, route, room or test).`, 'scenes');
+      continue;
+    }
+    const pl = locations.find(r => r.mapId === k);
+    if ((kd === 'town' || kd === 'route') && !pl)
+      warn(`${sc.name || k} is a ${kd} scene but no stop uses it.`, 'scenes');
+    if (pl && pl.kind && pl.kind !== kd)
+      warn(`${sc.name || k} is a ${kd} scene but its stop ${pl.name} is a ${pl.kind}.`, 'scenes');
+    if (kd === 'room' && !sc.building)
+      warn(`${sc.name || k} is a room but doesn’t say which building it’s the inside of.`, 'scenes');
+  }
+  locations.forEach((r, i) => {
+    if (!['town', 'route'].includes(r.kind))
+      at('warn', 'locations.json')(`Stop ${i + 1}, ${r.name}: doesn’t say whether it’s a town or a route.`, 'world');
+  });
+  /* v26: the rooms you walk into */
+  for (const k of ['shop', 'clinic', 'lab', 'house'])
+    if (!SCN['int_' + k])
+      at('warn', `maps/int_${k}.json`)(
+        `There’s no room to walk into for a ${k} (scene int_${k}), so tapping one opens it straight away.`,
+        'scenes'
+      );
+  for (const [k, sc] of Object.entries(SCN))
+    if (sc.room && sc.keeper && !String(sc.keeper).startsWith('folk:') && !people.has(sc.keeper))
+      at('warn', `maps/${k}.json`)(
+        `${sc.name || k}: the person behind the counter (${sc.keeper}) isn’t in People.`,
+        'scenes'
+      );
+  locations.forEach((r, i) => {
+    if (r.mapId && !SCN[r.mapId])
+      at('error', 'locations.json')(`${r.name} uses a walk scene that doesn’t exist.`, 'world', {
+        wtab: 'route',
+        stop: i,
+      });
+  });
+  for (const [k, s] of Object.entries(SCN)) {
+    const g = { scene: k },
+      err = at('error', `maps/${k}.json`),
+      warn = at('warn', `maps/${k}.json`),
+      bad = new Set();
+    (s.tiles || []).forEach(row => {
+      for (const ch of row) if (!SY.terrains[ch]) bad.add(ch);
+    });
+    if (bad.size) err(`Scene ${s.name || k} uses unknown ground ${[...bad].join(', ')}.`, 'scenes', g);
+    /* IS-6a: the island fields and the ground lock (check-data refuses the same); they open in Hub island */
+    for (const msg of islandProblems(s)) err(`Island ${s.name || k}: ${msg}.`, 'hub', { hub: k });
+    if ((s.tiles || []).length !== s.h)
+      warn(`Scene ${s.name || k} has ${(s.tiles || []).length} rows of ground but is ${s.h} tall.`, 'scenes', g);
+    (s.props || []).forEach(p => {
+      if (!SY.props[p.k]) err(`Scene ${s.name || k} places an unknown prop (${p.k}).`, 'scenes', g);
+    });
+    if (!s.hub && (!s.path || s.path.length < 2))
+      warn(`Scene ${s.name || k} has no hub (where you stand) and no path.`, 'scenes', g);
+    (s.life || []).forEach(L => {
+      /* an animal of scenery.json life, or 'car' (ambient-life.js picks a coloured car on its road) */
+      if (L.k !== 'car' && !(SY.life || {})[L.k])
+        warn(`Scene ${s.name || k} lists unknown life (${L.k}).`, 'scenes', g);
+      else if (L.k === 'car' && !(L.path && L.path.length > 1))
+        warn(`Scene ${s.name || k} has cars without a road to drive along.`, 'scenes', g);
+    });
+    (s.props || []).forEach(p => {
+      if (p.act === 'shop' && p.shop && !(D.shops || {})[p.shop])
+        warn(`Scene ${s.name || k} has a shop door for a shop that doesn’t exist (${p.shop}).`, 'scenes', g);
+    });
+    /* v18: cliffs, stairs and bridges */
+    if (typeof s.steps === 'string' && s.steps && Math.floor(base64Bytes(s.steps) / 2) !== s.w * 2 * s.h * 2)
+      warn(
+        `Scene ${s.name || k}: its cliffs and stairs were made for a different map size. Repaint them with Cliffs & stairs.`,
+        'scenes',
+        g
+      );
+    const ter = (/** @type {number} */ x, /** @type {number} */ z) => {
+      const row = (s.tiles || [])[s.h - 1 - Math.floor(z)] || '';
+      return row[Math.floor(x)] || s.edge;
+    };
+    (s.bridges || []).forEach((b, n) => {
+      const L = Math.hypot(b.b[0] - b.a[0], b.b[1] - b.a[1]);
+      const off = (/** @type {number[]} */ p) => p[0] < 0 || p[1] < 0 || p[0] > s.w || p[1] > s.h;
+      if (L < 1) warn(`Scene ${s.name || k}: bridge ${n + 1} is shorter than a metre.`, 'scenes', g);
+      else if (off(b.a) || off(b.b)) warn(`Scene ${s.name || k}: bridge ${n + 1} runs off the map.`, 'scenes', g);
+      else if ('wd'.includes(ter(b.a[0], b.a[1])) || 'wd'.includes(ter(b.b[0], b.b[1])))
+        warn(
+          `Scene ${s.name || k}: bridge ${n + 1} ends in the water, so nobody can step onto it. Drag it from bank to bank.`,
+          'scenes',
+          g
+        );
+    });
+    (s.arches || []).forEach((a, n) => {
+      if (a.x < 0 || a.z < 0 || a.x > s.w || a.z > s.h)
+        warn(`Scene ${s.name || k}: arch ${n + 1} is off the map.`, 'scenes', g);
+    });
+    (s.waters || []).forEach((r, n) => {
+      let wet = false;
+      for (let z = Math.floor(r.z); z < r.z + r.h && !wet; z++)
+        for (let x = Math.floor(r.x); x < r.x + r.w; x++) {
+          const ch = ((s.tiles || [])[s.h - 1 - z] || '')[x];
+          if (ch === 'w' || ch === 'd') {
+            wet = true;
+            break;
+          }
+        }
+      if (!wet) warn(`Scene ${s.name || k}: water rectangle ${n + 1} (${r.k}) covers no water.`, 'scenes', g);
+      if (!['pond', 'stream', 'canal', 'spring', 'swamp', 'lake'].includes(r.k))
+        warn(`Scene ${s.name || k}: water rectangle ${n + 1} has an unknown kind “${r.k}”.`, 'scenes', g);
+    });
+    const users = locations.map((r, i) => [r, i]).filter(([r]) => r.mapId === k);
+    users.forEach(([r, i]) => {
+      const n = roads.filter(l => l.kind === 'seam' && (l.a === i || l.b === i)).length;
+      if (n > (s.exits || []).length)
+        warn(
+          `${r.name} has ${n} road${n === 1 ? '' : 's'} but its scene ${s.name || k} has ${(s.exits || []).length} exit${(s.exits || []).length === 1 ? '' : 's'}, so some roads share an exit.`,
+          'scenes',
+          g
+        );
+      /* v42: each link names an exit this scene has (phase 08b: and the two ends face each other) */
+      roads.forEach(l => {
+        const end = l.a === i ? 'a' : l.b === i ? 'b' : null,
+          id = end === 'a' ? l.exitA : end === 'b' ? l.exitB : null;
+        if (!id) return;
+        const e = (s.edgeExits || []).find(q => q.id === id),
+          o = end === 'a' ? l.b : l.a;
+        if (!e) {
+          warn(
+            `${r.name}: the road to ${(locations[o] || {}).name} leaves by “${id}”, but scene ${s.name || k} has no exit with that name.`,
+            'scenes',
+            g
+          );
+          return;
+        }
+        /* phase 08b: and the other end's exit faces it (east to west, north to south), or the places can't join */
+        const os = SCN[(locations[o] || {}).mapId],
+          oe = os && (os.edgeExits || []).find(q => q.id === (end === 'a' ? l.exitB : l.exitA)),
+          OPP = { E: 'W', W: 'E', N: 'S', S: 'N' };
+        if (end === 'a' && oe && OPP[e.side] !== oe.side)
+          err(
+            `${r.name}: the road to ${locations[o].name} leaves by ${id} (${e.side}), which doesn’t face ${oe.id} (${oe.side}) there, so the two can’t join.`,
+            'scenes',
+            g
+          );
+      });
+    });
+  }
+  for (const [k, M] of Object.entries(SY.props || {})) {
+    const B = M.build,
+      warn = at('warn', 'scenery.json');
+    if (!B) continue;
+    if (!M.box) warn(`${M.name || k} is a 3D building without a footprint, so it is shown as its picture.`, 'scenes');
+    if (B.wall && B.wall[0] >= B.wall[1])
+      warn(`${M.name || k}: its 3D walls are the wrong way round (left is right of right).`, 'scenes');
+  }
+  return out;
+}
+
+/** v42 to phase 08b: the roads (roads.json): a name, the exits a seam leaves by, two stops that exist and differ, and
+ * every stop reached from the first @param {any} D @param {DataRoadOf} roadOf @returns {DataFinding[]} */
+export function dataRoadFindings(D, roadOf) {
+  /** @type {DataFinding[]} */
+  const out = [],
+    err = (/** @type {string} */ msg, /** @type {string} */ go, /** @type {object | undefined} */ sel = undefined) =>
+      out.push({ lvl: 'error', where: 'roads.json', msg, go, sel }),
+    warn = (/** @type {string} */ msg, /** @type {string} */ go, /** @type {object | undefined} */ sel = undefined) =>
+      out.push({ lvl: 'warn', where: 'roads.json', msg, go, sel }),
+    locations = D.locations || [];
+  (D.roads || []).forEach((L, i) => {
+    const r = roadOf(D, L);
+    if (!r.id)
+      warn(`Road ${i + 1} (${(locations[r.a] || {}).name} – ${(locations[r.b] || {}).name}) has no name yet.`, 'world');
+    /* phase 08b: a road joins two places at an exit of each; without both it joins nothing */
+    if (r.kind === 'seam' && (!r.exitA || !r.exitB) && locations[r.a] && locations[r.b])
+      err(
+        `The road between ${locations[r.a].name} and ${locations[r.b].name} doesn’t say which exit it leaves by at ${!r.exitA ? locations[r.a].name : locations[r.b].name}.`,
+        'world',
+        { wtab: 'route', stop: !r.exitA ? r.a : r.b }
+      );
+  });
+  const LK = (D.roads || []).map(l => roadOf(D, l));
+  LK.forEach((l, k) => {
+    if (!locations[l.a] || !locations[l.b])
+      err(`Road ${k + 1} connects a stop that doesn’t exist.`, 'world', { wtab: 'route' });
+    else if (l.a === l.b) err(`${locations[l.a].name} has a road to itself.`, 'world', { wtab: 'route', stop: l.a });
+  });
+  if (LK.length) {
+    const seen = new Set([0]),
+      st = [0];
+    while (st.length) {
+      const a = st.pop();
+      LK.forEach(({ a: x, b: y }) => {
+        const b = x === a ? y : y === a ? x : null;
+        if (b != null && !seen.has(b) && locations[b]) {
+          seen.add(b);
+          st.push(b);
+        }
+      });
+    }
+    locations.forEach((r, i) => {
+      if (!seen.has(i)) warn(`No road leads to ${r.name}.`, 'world', { wtab: 'route', stop: i });
+    });
   }
   return out;
 }

@@ -12,7 +12,8 @@
 // - studio track ST-3: partKits.json against its schema, and every part's picture is there at its size,
 // - phase 08b: the links between places (roads.json) join them as the walk needs, and every door opens a room (below),
 // - UI-1: uiTheme.json against its schema, and its text reads on its ground and surface (4.5:1, light and dark; UI-3:
-//   danger and primary at 3:1, screens' overrides too).
+//   danger and primary at 3:1, screens' overrides too),
+// - Studio plan T1.3: the Studio's scene and road checks (game/js/logic/data-checks.js); their warnings are printed.
 import Ajv2020 from 'ajv/dist/2020.js';
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -27,6 +28,7 @@ import {
   dataNodeTypes,
   dataRanchRules,
   dataRelics,
+  dataRoadFindings,
   dataRobotProblems,
   dataRobots,
   dataRunClock,
@@ -34,6 +36,8 @@ import {
   dataRunMapRules,
   dataRunPayout,
   dataRunScene,
+  dataSceneFindings,
+  dataSpeciesKind,
   dataUiTheme,
   dataUnderscoreKeys,
   dataUnlocks,
@@ -168,13 +172,14 @@ for (const L of D.lines || []) {
   }
 }
 // phase 16: a species from a line kept in game/data/legacy is fine; the game stands in a new line's Billie for it
-const legacy = new Set();
-if (existsSync(join(DATA, 'legacy', 'lines')))
-  for (const f of readdirSync(join(DATA, 'legacy', 'lines')).filter(f => f.endsWith('.json'))) {
-    const L = JSON.parse(readFileSync(join(DATA, 'legacy', 'lines', f), 'utf8'));
-    (L.names || []).forEach((n, i) => legacy.add(L.id + i));
-  }
-const known = sp => species.has(sp) || legacy.has(sp);
+// (logic/data-checks.js dataSpeciesKind, the Studio's Check's rule too)
+const legacyLines = existsSync(join(DATA, 'legacy', 'lines'))
+  ? readdirSync(join(DATA, 'legacy', 'lines'))
+      .filter(f => f.endsWith('.json'))
+      .map(f => JSON.parse(readFileSync(join(DATA, 'legacy', 'lines', f), 'utf8')))
+  : [];
+const speciesKind = dataSpeciesKind(D.lines || [], legacyLines),
+  known = sp => !!speciesKind(sp);
 for (const [k, P] of Object.entries(pools))
   for (const [sp] of P.list || []) if (!known(sp)) problem('pools.json', `${k} has ${sp}, no such species`);
 route.forEach((r, i) => {
@@ -435,6 +440,11 @@ for (const [id, sc] of Object.entries(S)) {
   for (const p of islandProblems(sc)) problem(where, p);
 }
 
+// Studio plan T1.3: the Studio's scene and road checks (logic/data-checks.js), so CI runs what the Studio's Check
+// shows: an error fails here (each is one of the rules above too), a warning is printed and never fails
+for (const f of [...dataSceneFindings(D, PB_DATA.road), ...dataRoadFindings(D, PB_DATA.road)])
+  if (f.lvl === 'error') problem(f.where, f.msg);
+  else console.log(`  warning: ${f.where}: ${f.msg}`);
 const n = listed.size;
 if (fixed) console.log(`${fixed} file(s) laid out again`);
 // Project Story: story.json, the schema, then the people, places, trainers, Billies and coins it names

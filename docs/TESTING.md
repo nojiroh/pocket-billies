@@ -10,7 +10,7 @@ those sessions; until then, follow the rule next to them.
 | Tier | Command | Now | Budget | When |
 |---|---|---|---|---|
 | (a) lint, types | `npm run lint`, `npm run typecheck` | 4 s warm (9 s cold) + 0.6 s | under 10 s | after every edit (the Claude Code hook runs it) |
-| (b) unit tests | `npm test` | about 42 s in a cloud container (Studio plan Phase 1: 628 tests; the scene sweeps take most): over budget | under 30 s | after every edit to logic, data or tests (the hook) |
+| (b) unit tests | `npm test` | about 47 s in a cloud container (Studio plan Phase 1: 635 tests; the scene sweeps take most): over budget | under 30 s | after every edit to logic, data or tests (the hook) |
 | before a commit | `npm run check:modules`, `npm run format:check`, `npm run check:data`, `npm run build` | about 15 s | none | every commit |
 | UI pictures (UI-2) | `npm run check:ui` | about 1.5 min | none | after a change to the kit, its CSS, uiTheme.json or studio/gallery.html |
 | style diff (UI-5) | `python3 tools/style-diff.py` (`--only=<screens>`, `--ref=<rev>`) | about 8 min (16 screens, 2 browsers) | none | a commit that moves CSS or screen code and must change nothing on screen: 0 differences against HEAD |
@@ -266,9 +266,16 @@ same phase:
   a fifth golden battle holding three Loopholes; check-fast's "Loopholes" on `?fixture=relics`; the in-game run
   phase and quick check's RL-8 step buy a shop's Loophole or take a mini-boss's pick and see the boss's battle carry
   it.
-- **14 Studio**: `tools/check-studio-github.py` and smoke's "Studio opens" keep passing; `--studio` follows the
-  Studio local mode decision. A new Studio feature adds a step function to its `STEPS` (UI-3), so it can also run
-  alone with `--only=<name>`.
+- **14 Studio**: `tools/check-studio-github.py` and smoke's "Studio opens" keep passing (local mode and
+  `check-quick.py --studio` were dropped, Studio plan T1.4). A new Studio feature adds a step function to its `STEPS`
+  (UI-3), so it can also run alone with `--only=<name>`. Since T1.4 CI's smoke job runs
+  `--only=sections,publish,drafts,studio_test,checks` on every pull request that touches `studio/` or
+  `game/js/logic/` (about 6 minutes here).
+- **Data checks (Studio plan T1.3)**: check-data and the Studio's Check share `game/js/logic/data-checks.js`. A new
+  rule goes there as a pure function of the data, with a unit test in `data-checks.test.mjs`; an `error` fails
+  check-data and blocks the Studio's Propose, a `warn` is shown and never blocks. `check-data-snapshot.test.mjs` holds
+  check-data's whole output on the game data and on two planted copies (in a temp copy made with `PB_DATA_DIR`): a
+  change meant to alter its words remakes it with `--test-update-snapshots`, said in the commit.
 - **15 Design and story**: write down the balance bounds the simulations will assert (with the owner).
 - **16 Billies**: write the breeding simulation first, against the prototype, before the full build (the owner
   agreed in 13a's plan); agree its bounds. The roster steps (v35, v38, v39/v40) count today's 117 Billies: update

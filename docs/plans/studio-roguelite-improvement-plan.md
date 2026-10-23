@@ -1442,6 +1442,32 @@ The owner took the recommendation on every open question:
    - **A stage's native parts are checked against its recipe** by check-data, so a recipe edited without a bake fails
      CI.
 
+Taken in Phase 1, sessions C+D (the recommended option each time, under the owner's standing instruction; numbered
+as in that branch):
+9. **T1.3 severity, applied** (Phase 1 sessions C+D, recommended option taken): an `error` is exactly what
+   check-data already refused; every other Studio "error" became a warning (the list is in HANDOFF). No Studio check
+   was turned into a new block. The UI rules over their ceiling are a warning (a lint failure, not check-data's).
+10. **T1.3 enums, applied:** relic `fx.stat` and the currencies of buildings and unlock grants are checked against
+    stats.json and currencies.json; currencies.schema.json keeps the four ids as the one list (the game's code reads
+    them). Recommended option taken.
+11. **T1.4 path filter, applied:** a pull request's changed files are compared with its base commit in the smoke
+    job (no third-party action). Recommended option taken.
+
+Taken in Phase 1, session B (the recommended option each time, under the owner's standing instruction):
+9. **F14, a second write:** the new guard also caught People filling `look.colors` for the selected person on
+   opening (every look-style person lacked some). The colour fields now show those colours as a default and write
+   only on a change. No data change: the picture uses the same colours.
+10. **`look` required, old keys still allowed:** 25 people carry the old colour keys beside their look (the game
+    ignores them). `additionalProperties: false` would need a data cleanup of those 25; left for a later data-only
+    commit if wanted.
+11. **T1.2 parts are finer than files:** one text per second-level entry of every section (so `meta`, `rules`,
+    `scenery` split per key too), one per rig, and `@order`. A change to `@order` (an entry added or removed)
+    rebuilds the whole data; any other undo replaces only its entries.
+12. **`fullMB` measured:** the data the undo holds once (`last`) plus the step each self-test edit added, as if all
+    were kept, each text counted as the browser stores it (1 byte a character unless one is past U+00FF; the caps
+    keep the safer 2). The report format is 2, so runs before this don't compare.
+13. **T1.2 and its callers in one commit**, so no commit leaves the Studio's undo broken.
+
 ## Ask me before (owner decisions this plan needs)
 1. **T5.1:** recipe as the truth with a JS baker (recommended), or Python stays and Studio writes recipes.
 2. **T1.3:** which of today's Studio "errors" may block Propose. Recommended: only what CI already fails on.
