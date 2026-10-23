@@ -55,11 +55,14 @@ import { worldMap } from './world-bowl.js';
 /* eslint-disable no-func-assign */
 expose({
   DEBUG_LOOK: [() => DEBUG_LOOK],
+  DEBUG_OPEN_KEY: [() => DEBUG_OPEN_KEY],
   debugAction: [() => debugAction, v => (debugAction = v)],
   debugButtonHTML: [() => debugButtonHTML],
   debugFps: [() => debugFps, v => ((debugFps = v), provide({ debugFps }))],
   debugHTML: [() => debugHTML, v => (debugHTML = v)],
   debugMenu: [() => debugMenu],
+  debugOpenKeep: [() => debugOpenKeep, v => (debugOpenKeep = v)],
+  debugOpenRead: [() => debugOpenRead, v => (debugOpenRead = v)],
   debugSection: [() => debugSection],
   debugSelectHTML: [() => debugSelectHTML],
   debugSpeciesOptions: [() => debugSpeciesOptions, v => (debugSpeciesOptions = v)],
@@ -100,9 +103,33 @@ const DEBUG_LOOK = {
     ['winter', 'Winter'],
   ],
 };
-/* one section of the menu: a key (data-k), its title, what it holds, and whether it starts open */
-const debugSection = (k, title, body, open = false) =>
-  `<details data-k="${k}"${open ? ' open' : ''}><summary>${title}</summary>${body}</details>`;
+/* which sections are open, kept in this browser across openings and reloads (never in the save, so never in an
+   export or a cloud save); a section never toggled uses its default */
+const DEBUG_OPEN_KEY = 'pb-debug-open';
+function debugOpenRead() {
+  try {
+    const o = JSON.parse(localStorage.getItem(DEBUG_OPEN_KEY) || '{}');
+    return o && typeof o === 'object' ? o : {};
+  } catch {
+    return {};
+  }
+}
+function debugOpenKeep(k, open) {
+  const o = debugOpenRead();
+  o[k] = !!open;
+  try {
+    localStorage.setItem(DEBUG_OPEN_KEY, JSON.stringify(o));
+  } catch {
+    /* storage blocked: the menu still works, it just forgets */
+  }
+}
+/* one section of the menu: a key (data-k), its title, what it holds, and whether it is open when never toggled;
+   force opens it whatever was kept (the Battle section during a battle) */
+const debugSection = (k, title, body, open = false, force = false) => {
+  const kept = debugOpenRead()[k];
+  /* a forced section isn't remembered as open: the toggle its open attribute fires is skipped (data-force) */
+  return `<details data-k="${k}"${force ? ' data-force="1"' : ''}${force || (kept == null ? open : kept) ? ' open' : ''}><summary>${title}</summary>${body}</details>`;
+};
 function debugHTML() {
   const inB = !!activeBattle,
     node = saveData.trip.node,
@@ -169,9 +196,9 @@ function debugHTML() {
    debugSection('tests', 'Tests and performance', tests, true),
    debugSection('give', 'Give me', give),
    debugSection('billies', 'Billies', billies),
-   debugSection('battle', `Battle${inB ? '' : ' (start one first)'}`, battle, inB),
+   debugSection('battle', `Battle${inB ? '' : ' (start one first)'}`, battle, false, inB),
    debugSection('run', 'Run', run),
-   debugSection('places', 'Places and test scenes', places, inTest),
+   debugSection('places', 'Places and test scenes', places, false, inTest),
    debugSection('story', 'Story', story),
    debugSection('ranch', 'Ranch and time', ranch),
    debugSection('save', 'Save', saveRow),
@@ -194,11 +221,11 @@ function refreshDebugMenu(msg) {
   if (!activeBattle) render();
   const M = uiState.modal;
   if (M && M.dbg) {
-    const open = $$('.dbg details').map(d => d.open);
+    const open = Object.fromEntries($$('.dbg details[data-k]').map(d => [d.dataset.k, d.open]));
     M.html = debugHTML();
     renderOverlay();
-    $$('.dbg details').forEach((d, i) => {
-      if (open[i] != null) d.open = open[i];
+    $$('.dbg details[data-k]').forEach(d => {
+      if (open[d.dataset.k] != null) d.open = open[d.dataset.k];
     });
   }
 }
@@ -542,6 +569,16 @@ document.addEventListener('click', ev => {
   if (el.dataset.a === 'dbg') debugAction(el.dataset.x);
   else if (el.dataset.a === 'debug') openDebug();
 });
+/* a section opened or closed by hand is remembered (toggle doesn't bubble: caught on the way down) */
+document.addEventListener(
+  'toggle',
+  ev => {
+    const d = ev.target;
+    if (d instanceof HTMLDetailsElement && d.dataset.k && !d.dataset.force && d.closest('.dbg'))
+      debugOpenKeep(d.dataset.k, d.open);
+  },
+  true
+);
 document.addEventListener('keydown', ev => {
   if (ev.ctrlKey && ev.shiftKey && (ev.key === 'D' || ev.key === 'd')) {
     ev.preventDefault();
