@@ -7,14 +7,20 @@ import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 const ROOT = join(import.meta.dirname, '..');
-// the slowest files (several seconds each, in a cloud container): they generate and walk whole scenes
+// the slowest files (several seconds each, in a cloud container): they generate and walk whole scenes, play runs with
+// their scenes, or sweep every roll
 export const SLOW_TESTS = [
   'island-gen.test.mjs',
+  'mapgen-dials.test.mjs',
   'mapgen-grass.test.mjs',
   'mapgen-ledges.test.mjs',
+  'mapgen-lots.test.mjs',
   'mapgen-mountains.test.mjs',
+  'mapgen-roads.test.mjs',
   'mapgen-seams.test.mjs',
+  'run-sim-scenes.test.mjs',
   'run-world-real.test.mjs',
+  'weather-before.test.mjs',
 ];
 
 /* run only as a script: tools/after-edit.mjs imports SLOW_TESTS */
