@@ -38,7 +38,7 @@ Schema: `game/data/schema/cutscene.schema.json`. Types: `CutsceneData` in `game/
 
 ## The commands
 
-People are named as the script names them: `you`, or a speaker from story.json (`Hazel`, `Blake`, ...). A place may be
+People are named as the script names them: `you`, or a speaker from story.json (`Chosen`, `Hazel`, `Blake`, ...). A place may be
 a spot, someone in the scene (where they stand now), or a place the cutscene names itself (the opening's `starter`).
 
 | Command | Does | Waits? |
@@ -70,9 +70,9 @@ Slots work in commands too (`{place}`, `{name}`, `{starter}` ...: docs/SCRIPTS.m
 
 ### The opening's own
 
-`dressing-room` (you make yourself up), `throw-coins` (Hazel's coins pop open on the spots star1 to star3),
+`dressing-room` (you make yourself up), `throw-coins` (the professor's coins pop open on the spots star1 to star3),
 `pick-starter` (the pick card; afterwards `{starter}`, `{counter}` and the place `starter` are known), `staged-fight`
-(Hazel against Blake, staged; Project Story S6 makes it a real battle; `{foe}` after it), `rival-battle` (Blake's
+(the Chosen against Blake, staged; Project Story S6 makes it a real battle; `{foe}` after it), `rival-battle` (Blake's
 battle follows the opening), `fall`. Skipping stops at the dressing room and the pick.
 
 ## Skipping
@@ -96,7 +96,7 @@ are a problem: they play only in a cutscene. Tests: `tools/test/opening-script.t
 | `game/js/cutscene/stage.js` | plays a cutscene's script on the director: every command above; `cutscenePlayScript(id, { extra, slots })` |
 | `game/js/cutscene/opening.js` | the opening: mounts Copperleaf after the fall, clears the set, plays `opening` with its own commands, starts the game |
 | `game/js/cutscene/starter-pick.js` | the three starters drawn with their rigs and the pick card |
-| `game/js/cutscene/staged-fight.js` | Hazel's staged fight (until S6) |
+| `game/js/cutscene/staged-fight.js` | the professor's staged fight (until S6) |
 
 Scenes in the walk scene you stand in (someone runs up to you: `camera run-up`, `walk Blake beside me`) are the
 story stage's (story-stage.js), not cutscenes.

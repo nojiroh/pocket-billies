@@ -9,6 +9,12 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- A new professor: Professor Chosen runs the lab in Copperleaf. He finds you after the fall, hands out the starters,
+  gives his (chosen) opinion of each and sends you to the airship; he is sure he is the main character and is wrong
+  about most things, his type tips especially. Hazel stays as his assistant: she follows him out of the lab in the
+  opening, corrects him, and has her own things to say at her desk in the lab. Name tags, the lab's sign, the Field
+  Guide (recorded by Hazel, signed by the Chosen) and the lore follow. His look uses today's wardrobe; his wolf shirt
+  and katana come later.
 - Battle and run music (sound track SND-5): a battle's song starts on the encounter's flash with a short intro
   run and holds its drums until your first Billie is sent out. A run's mini-bosses have a song of their own (the
   title's theme in a minor key) and its boss another. While your lead Billie is under a quarter of its HP, the battle
