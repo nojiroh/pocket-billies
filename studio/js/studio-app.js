@@ -301,7 +301,7 @@ export function studioBroadcast() {
           /* Studio plan T2.6: what a run is made of, for a test run (Play this seed); game data only, never a save */
           rules: studioState.D.rules,
           nodeTypes: studioState.D.nodeTypes,
-          relics: studioState.D.perks,
+          perks: studioState.D.perks,
           unlocks: studioState.D.unlocks,
           items: studioState.D.items,
         },
@@ -356,7 +356,7 @@ export function restore(s) {
 /* Studio plan T6.2: data no picture is drawn from (top-level keys of D). An undo that changes only these keeps the
    art caches: a Wardrobe opened after undoing a move edit no longer bakes every clothes thumbnail again */
 const TEXT_ONLY_DATA = new Set(
-  'moves items coins lore story jobs stats statuses rarities relics currencies unlocks shops pools eggs meta uiTheme'.split(
+  'moves items coins lore story jobs stats statuses rarities perks currencies unlocks shops pools eggs meta uiTheme'.split(
     ' '
   )
 );
