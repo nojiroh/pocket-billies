@@ -173,7 +173,7 @@ export function storyFindings(G, L = { parseScript, conditionTree, conditionProb
     places = new Set(G.locations.map(l => l.id)),
     trainers = G.trainers || {},
     items = G.items || {},
-    coins = G.coins || {},
+    pyramids = G.pyramids || {},
     speakers = S.speakers || {},
     quests = S.quests || {},
     lines = new Set((G.lines || []).map(l => l.id)),
@@ -201,7 +201,7 @@ export function storyFindings(G, L = { parseScript, conditionTree, conditionProb
     for (const f of N.flag || []) note(read, f, at);
     for (const t of N.beat || []) if (!trainers[t]) problems.push(at, `beat:${t}, no such trainer`);
     for (const i of N.item || []) if (!items[i]) problems.push(at, `item:${i}, no such item`);
-    for (const i of N.coin || []) if (!coins[i]) problems.push(at, `coin:${i}, no such coin`);
+    for (const i of N.coin || []) if (!pyramids[i]) problems.push(at, `coin:${i}, no such coin`);
     for (const v of N.visited || []) if (!places.has(v)) problems.push(at, `visited:${v}, no such place`);
     for (const b of N.billie || [])
       if (!lines.has(b) && !species.has(b)) problems.push(at, `billie:${b}, no such Billie`);
@@ -310,7 +310,7 @@ export function storyFindings(G, L = { parseScript, conditionTree, conditionProb
           if (n.name === 'set') note(set, a, { at, place: sc.place });
           else if (n.name === 'give' || n.name === 'take') {
             const coin = a.startsWith('coin:');
-            if (coin ? !coins[a.slice(5)] : !items[a])
+            if (coin ? !pyramids[a.slice(5)] : !items[a])
               problems.push(at, `${n.name} ${a}, no such ${coin ? 'coin' : 'item'}`);
             if (n.name === 'give') given.add(a);
             else note(taken, a, at);
@@ -462,7 +462,7 @@ export function storyPreviewSave(G, o = {}) {
       flags: /** @type {Record<string, number>} */ ({}),
       seats: /** @type {string[]} */ ([]),
       items: { ...(P.items || {}) },
-      coins: { ...(P.coins || {}) },
+      pyramids: { ...(P.pyramids || {}) },
       visited: /** @type {Record<number, number>} */ ({}),
       caught: /** @type {Record<string, number>} */ ({}),
       team: [],

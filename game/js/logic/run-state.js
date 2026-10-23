@@ -2,7 +2,7 @@
 'use strict';
 /* ================= RUN STATE (roguelite track RL-3) =================
    The run in progress, kept in the save as saveData.run (null in the hub; roguelite-track.md 2a). While a run is
-   on, the save's working fields (team, se, items, coins, trip, wild, eggs, flags, seats, visited, buddy) are the
+   on, the save's working fields (team, se, items, pyramids, trip, wild, eggs, flags, seats, visited, buddy) are the
    run's: every engine and screen reads them as before. runBegin copies the hub's into run.start and gives the run its
    own: the Billies from home (RL-9b: picked at the mast, from the team or storage) and the bag packed from the hub's;
    runEnd pays out, puts the hub's back and keeps the Billies the player chose. Only the seed is stored for what can
@@ -16,11 +16,11 @@ import { META_IDS, META_MAX, recordOf, wholeIn } from './meta-state.js';
 /* eslint-disable no-func-assign */
 expose({
   RUN_DAYS: [() => RUN_DAYS],
+  RUN_EXPEDITIONS: [() => RUN_EXPEDITIONS],
   RUN_FIELDS: [() => RUN_FIELDS],
   RUN_LIST: [() => RUN_LIST],
   RUN_NODES: [() => RUN_NODES],
   RUN_PHASES: [() => RUN_PHASES],
-  RUN_TIERS: [() => RUN_TIERS],
   copyOf: [() => copyOf],
   // @ts-expect-error -- replaced on purpose
   newRun: [() => newRun, v => (newRun = v)],
@@ -28,7 +28,7 @@ expose({
   payoutOf: [() => payoutOf, v => (payoutOf = v)],
   // @ts-expect-error -- replaced on purpose
   runBegin: [() => runBegin, v => (runBegin = v)],
-  runByTier: [() => runByTier],
+  runByExpedition: [() => runByExpedition],
   // @ts-expect-error -- replaced on purpose
   runEnd: [() => runEnd, v => (runEnd = v)],
   runHome: [() => runHome],
@@ -40,6 +40,8 @@ expose({
   validRun: [() => validRun, v => (validRun = v)],
   // @ts-expect-error -- replaced on purpose
   validRunFoe: [() => validRunFoe, v => (validRunFoe = v)],
+  // @ts-expect-error -- replaced on purpose
+  validRunRegion: [() => validRunRegion, v => (validRunRegion = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -48,7 +50,7 @@ export const RUN_FIELDS = /** @type {const} */ ([
   'team',
   'se',
   'items',
-  'coins',
+  'pyramids',
   'trip',
   'wild',
   'eggs',
@@ -61,11 +63,12 @@ export const RUN_PHASES = ['fly', 'walk', 'battle', 'menu', 'payout'],
   RUN_NODES = 64,
   RUN_DAYS = 9999,
   RUN_LIST = 5000,
-  RUN_TIERS = 9;
+  RUN_EXPEDITIONS = 9;
 export const copyOf = v => JSON.parse(JSON.stringify(v));
-/** RL-9b: a rule by Bracket (rules.json run.home, run.pack): the tier's entry, past the list's end its last */
-/** @param {number[]} list @param {number} tier */
-export const runByTier = (list, tier) => list[Math.max(0, Math.min(list.length, Math.floor(tier) || 1) - 1)];
+/** RL-9b: a rule by Expedition (rules.json run.home, run.pack): the expedition's entry, past the list's end its last */
+/** @param {number[]} list @param {number} expedition */
+export const runByExpedition = (list, expedition) =>
+  list[Math.max(0, Math.min(list.length, Math.floor(expedition) || 1) - 1)];
 /** RL-9b: the uids of the Billies that came from home (picked at the mast); a run saved before RL-9b took the hub's
     whole team */
 /** @param {Run} run @returns {string[]} */
@@ -75,18 +78,18 @@ export const runHome = run => (Array.isArray(run.home) ? run.home : run.start.te
 export const runSnapshot = s =>
   /** @type {RunStart} */ (Object.fromEntries(RUN_FIELDS.map(k => [k, copyOf(s[k] === undefined ? null : s[k])])));
 /** a run as it starts; `start` is the hub's working fields at that moment */
-/** @param {string} seed @param {number} tier @param {number} mapgenV @param {RunStart} start @returns {Run} */
-export function newRun(seed, tier, mapgenV, start) {
+/** @param {string} seed @param {number} expedition @param {number} mapgenV @param {RunStart} start @returns {Run} */
+export function newRun(seed, expedition, mapgenV, start) {
   return {
     seed,
-    tier,
+    expedition,
     mapgenV,
     map: null,
     at: { phase: 'fly', battle: -1 },
     clock: 1,
     deadline: 0,
     forecast: [],
-    relics: [],
+    perks: [],
     offer: null,
     mods: [],
     offerN: 0,
@@ -99,12 +102,37 @@ export function newRun(seed, tier, mapgenV, start) {
     released: [],
     hints: {},
     home: ((start && start.team) || []).map(m => m.uid),
-    pack: { items: {}, coins: {} },
+    pack: { items: {}, pyramids: {} },
   };
 }
 /** how many nodes the run's world has: Copperleaf (node 0) and the map's nodes (node i + 1 is map node i) */
 /** @param {Run | null | undefined} run */
 export const runNodeCount = run => 1 + (run && run.map && Array.isArray(run.map.nodes) ? run.map.nodes.length : 0);
+/** RL-R1: a run's region (logic/run-region.js runRegionMake), its shape only @param {any} R @returns {boolean} */
+export function validRunRegion(R) {
+  const plain = (/** @type {any} */ v) =>
+      !!v && typeof v === 'object' && !Array.isArray(v) && !Object.hasOwn(v, '__proto__'),
+    id = (/** @type {any} */ v) => typeof v === 'string' && /^[a-z0-9_]{1,40}$/.test(v),
+    ids = (/** @type {any} */ v, /** @type {number} */ most) => Array.isArray(v) && v.length <= most && v.every(id);
+  return (
+    plain(R) &&
+    Object.keys(R).every(k => ['theme', 'name', 'zones', 'dex', 'swap', 'forms', 'leaders'].includes(k)) &&
+    id(R.theme) &&
+    typeof R.name === 'string' &&
+    R.name.length >= 1 &&
+    R.name.length <= 40 &&
+    Array.isArray(R.zones) &&
+    R.zones.length >= 1 &&
+    R.zones.length <= 8 &&
+    R.zones.every((/** @type {any} */ z) => plain(z) && id(z.biome) && wholeIn(z.rows, 1, RUN_NODES)) &&
+    ids(R.dex, 200) &&
+    recordOf(R.swap, 400, id) &&
+    Object.keys(R.swap).every(id) &&
+    recordOf(R.forms, 100, id) &&
+    Object.keys(R.forms).every(id) &&
+    ids(R.leaders, 16)
+  );
+}
 /** the load check for saveData.run: strict, like validSave (the Billies in run.start.team are checked there) */
 /** @param {any} o @returns {boolean} */
 export function validRun(o) {
@@ -114,7 +142,7 @@ export function validRun(o) {
     money = v => Number.isFinite(v) && v >= 0 && v <= META_MAX;
   if (!plain(o)) return false;
   if (typeof o.seed !== 'string' || !/^[A-Za-z0-9|_-]{1,40}$/.test(o.seed)) return false;
-  if (!wholeIn(o.tier, 1, RUN_TIERS) || !wholeIn(o.mapgenV, 1, 1e6)) return false;
+  if (!wholeIn(o.expedition, 1, RUN_EXPEDITIONS) || !wholeIn(o.mapgenV, 1, 1e6)) return false;
   if (o.map !== null) {
     if (!plain(o.map) || !list(o.map.nodes, RUN_NODES) || !o.map.nodes.length) return false;
     const n = o.map.nodes.length;
@@ -128,10 +156,13 @@ export function validRun(o) {
         node.to.some(j => !wholeIn(j, 0, n - 1) || j === i) ||
         new Set(node.to).size !== node.to.length ||
         (node.seen !== undefined && !wholeIn(node.seen, 0, 2)) ||
-        (node.biome !== undefined && !id(node.biome))
+        (node.biome !== undefined && !id(node.biome)) ||
+        (node.zone !== undefined && !wholeIn(node.zone, 0, 7))
       )
         return false;
   }
+  /* RL-R1: the region (missing on a run from before regions) */
+  if (o.region !== undefined && !validRunRegion(o.region)) return false;
   const nodes = runNodeCount(o);
   if (!plain(o.at) || !RUN_PHASES.includes(o.at.phase) || !wholeIn(o.at.battle, -1, 1e6)) return false;
   /* RL-8: at the payout, whether the run was won; in a battle, its foe as it began (run.js runFoeRef); nothing else */
@@ -140,9 +171,9 @@ export function validRun(o) {
   if (o.at.foe !== undefined && !validRunFoe(o.at.foe)) return false;
   if (!wholeIn(o.clock, 1, RUN_DAYS) || !wholeIn(o.deadline, 0, RUN_DAYS)) return false;
   if (!list(o.forecast, nodes) || o.forecast.some(days => !list(days, RUN_DAYS) || !days.every(id))) return false;
-  if (!list(o.relics, 32) || !o.relics.every(id) || !list(o.mods, 32) || !o.mods.every(id)) return false;
+  if (!list(o.perks, 32) || !o.perks.every(id) || !list(o.mods, 32) || !o.mods.every(id)) return false;
   if (o.offer !== null && (!list(o.offer, 5) || !o.offer.every(id))) return false;
-  /* RL-12: the offers made, and the run shops' Loopholes by '<map node>:<day>' ('' once bought) */
+  /* RL-12: the offers made, and the run shops' Perks by '<map node>:<day>' ('' once bought) */
   if (!wholeIn(o.offerN, 0, 1e6)) return false;
   if (
     !recordOf(o.shelf, RUN_LIST, v => v === '' || id(v)) ||
@@ -164,9 +195,9 @@ export function validRun(o) {
   if (o.home !== undefined && (!list(o.home, 6) || !o.home.every(u => typeof u === 'string' && u.length <= 60)))
     return false;
   const packed = v => recordOf(v, 500, n => wholeIn(n, 0, META_MAX));
-  if (o.pack !== undefined && !(plain(o.pack) && Object.keys(o.pack).every(k => k === 'items' || k === 'coins')))
+  if (o.pack !== undefined && !(plain(o.pack) && Object.keys(o.pack).every(k => k === 'items' || k === 'pyramids')))
     return false;
-  if (o.pack !== undefined && !(packed(o.pack.items || {}) && packed(o.pack.coins || {}))) return false;
+  if (o.pack !== undefined && !(packed(o.pack.items || {}) && packed(o.pack.pyramids || {}))) return false;
   /* the hub as the run started: shapes only (validSave checks its Billies like the team's) */
   const st = o.start,
     counts = v => recordOf(v, 500, n => wholeIn(n, 0, META_MAX));
@@ -175,7 +206,7 @@ export function validRun(o) {
     list(st.team, 6) &&
     money(st.se) &&
     counts(st.items) &&
-    counts(st.coins) &&
+    counts(st.pyramids) &&
     plain(st.trip) &&
     Number.isInteger(st.trip.node) &&
     st.trip.node >= 0 &&
@@ -213,17 +244,17 @@ export function validRunFoe(f) {
   );
 }
 /** start a run on the save: the hub's working fields go into run.start and the run gets its own. The Billies from
-    home travel (`home`, by uid, from the team or storage; RL-9b: picked at the mast, the rules' count by Bracket is the
+    home travel (`home`, by uid, from the team or storage; RL-9b: picked at the mast, the rules' count by Expedition is the
     page's to keep; left out, the team as it is): copies, so what happens to them in the run never touches the hub's,
     and the first is the buddy. The packed bag (`pack`) leaves the hub's (no more than it holds, so run.start keeps what
-    stays home) and joins the run's starting money, items and coins (`give`, from the rules in RL-8); the trip starts at
+    stays home) and joins the run's starting money, items and pyramids (`give`, from the rules in RL-8); the trip starts at
     Copperleaf (node 0) for the airship; story flags and badges carry over, so conditions read as in the hub. Returns
     the run */
 /**
  * @param {SaveData} s
- * @param {{ seed: string, tier: number, mapgenV: number, se: number, items?: Record<string, number>,
- *   coins?: Record<string, number>, home?: string[],
- *   pack?: { items?: Record<string, number>, coins?: Record<string, number> } }} give
+ * @param {{ seed: string, expedition: number, mapgenV: number, se: number, items?: Record<string, number>,
+ *   pyramids?: Record<string, number>, home?: string[],
+ *   pack?: { items?: Record<string, number>, pyramids?: Record<string, number> } }} give
  * @returns {Run}
  */
 export function runBegin(s, give) {
@@ -235,9 +266,9 @@ export function runBegin(s, give) {
       .map(uid => all.find(m => m.uid === uid))
       .filter(m => !!m);
   if (!travel.length) throw new Error('runBegin: nobody from home travels');
-  /** @type {{ items: Record<string, number>, coins: Record<string, number> }} */
-  const pack = { items: {}, coins: {} };
-  for (const kind of /** @type {const} */ (['items', 'coins']))
+  /** @type {{ items: Record<string, number>, pyramids: Record<string, number> }} */
+  const pack = { items: {}, pyramids: {} };
+  for (const kind of /** @type {const} */ (['items', 'pyramids']))
     for (const [k, n] of Object.entries((give.pack && give.pack[kind]) || {})) {
       const have = start[kind] || {},
         take = Math.max(0, Math.min(Math.floor(n) || 0, have[k] || 0));
@@ -245,7 +276,7 @@ export function runBegin(s, give) {
       have[k] -= take;
       pack[kind][k] = take;
     }
-  const run = (s.run = newRun(give.seed, give.tier, give.mapgenV, start)),
+  const run = (s.run = newRun(give.seed, give.expedition, give.mapgenV, start)),
     add = (/** @type {Record<string, number>} */ to, /** @type {Record<string, number>} */ more) => {
       for (const [k, n] of Object.entries(more)) to[k] = (to[k] || 0) + n;
       return to;
@@ -256,7 +287,7 @@ export function runBegin(s, give) {
   s.buddy = travel[0].uid;
   s.se = give.se;
   s.items = add(Object.assign(zero(start.items), give.items || {}), pack.items);
-  s.coins = add(Object.assign(zero(start.coins), give.coins || {}), pack.coins);
+  s.pyramids = add(Object.assign(zero(start.pyramids), give.pyramids || {}), pack.pyramids);
   s.trip = { node: 0, plan: [] };
   s.wild = {};
   s.eggs = [];
@@ -265,17 +296,17 @@ export function runBegin(s, give) {
   s.visited = { 0: 1 };
   return run;
 }
-/** what a run pays when it ends, as Capital and Audit Seals, with the lines the payout screen lists: the money at a
+/** what a run pays when it ends, as Research and Crests, with the lines the payout screen lists: the money at a
     rate, the items at a share of their price (then at the money rate; RL-9b: on a loss only, a win takes the bag
-    home), each released Billie, each node cleared, a win bonus; seals for a win; Scrap (RL-9, the ranch's material)
+    home), each released Billie, each node cleared, a win bonus; crests for a win; Scrap (RL-9, the ranch's material)
     for each node cleared and a win. Rates are rules.json run.payout (placeholders until the first play) */
 /**
  * @param {{ se: number, items: Record<string, number>, released: number, cleared: number, won: boolean }} end
- * @param {{ money: number, itemShare: number, released: number, node: number, win: number, winSeals: number,
- *   scrapNode?: number, scrapWin?: number, capital?: number }} rates capital (RL-12, a Loophole's): the Capital times
+ * @param {{ money: number, itemShare: number, released: number, node: number, win: number, winCrests: number,
+ *   scrapNode?: number, scrapWin?: number, research?: number }} rates research (RL-12, a Perk's): the Research times
  *   this, the difference as a line of its own
- * @param {(id: string) => number} itemPrice an item's shop price ($), 0 for none
- * @returns {{ capital: number, seals: number, scrap: number, lines: { what: string, n: number, capital: number }[] }}
+ * @param {(id: string) => number} itemPrice an item's shop price (Moneys), 0 for none
+ * @returns {{ research: number, crests: number, scrap: number, lines: { what: string, n: number, research: number }[] }}
  */
 export function payoutOf(end, rates, itemPrice) {
   const itemValue = Object.entries(end.won ? {} : end.items || {}).reduce(
@@ -283,21 +314,21 @@ export function payoutOf(end, rates, itemPrice) {
     0
   );
   const lines = [
-    { what: 'money', n: Math.max(0, end.se), capital: Math.floor(Math.max(0, end.se) * rates.money) },
-    { what: 'items', n: Math.floor(itemValue), capital: Math.floor(itemValue * rates.money) },
-    { what: 'released', n: end.released, capital: end.released * rates.released },
-    { what: 'nodes', n: end.cleared, capital: end.cleared * rates.node },
-    { what: 'win', n: end.won ? 1 : 0, capital: end.won ? rates.win : 0 },
+    { what: 'money', n: Math.max(0, end.se), research: Math.floor(Math.max(0, end.se) * rates.money) },
+    { what: 'items', n: Math.floor(itemValue), research: Math.floor(itemValue * rates.money) },
+    { what: 'released', n: end.released, research: end.released * rates.released },
+    { what: 'nodes', n: end.cleared, research: end.cleared * rates.node },
+    { what: 'win', n: end.won ? 1 : 0, research: end.won ? rates.win : 0 },
   ];
-  /* RL-12: a Loophole's payout row (logic/effects.js fxPayoutRates): the Capital above times rates.capital, as a row */
-  const k = rates.capital ?? 1;
+  /* RL-12: a Perk's payout row (logic/effects.js fxPayoutRates): the Research above times rates.research, as a row */
+  const k = rates.research ?? 1;
   if (k !== 1) {
-    const sum = lines.reduce((a, l) => a + l.capital, 0);
-    lines.push({ what: 'fx', n: Math.round((k - 1) * 100), capital: Math.floor(sum * k) - sum });
+    const sum = lines.reduce((a, l) => a + l.research, 0);
+    lines.push({ what: 'fx', n: Math.round((k - 1) * 100), research: Math.floor(sum * k) - sum });
   }
   return {
-    capital: lines.reduce((sum, l) => sum + l.capital, 0),
-    seals: end.won ? rates.winSeals : 0,
+    research: lines.reduce((sum, l) => sum + l.research, 0),
+    crests: end.won ? rates.winCrests : 0,
     scrap: Math.max(0, end.cleared) * (rates.scrapNode || 0) + (end.won ? rates.scrapWin || 0 : 0),
     lines,
   };
@@ -306,8 +337,8 @@ export function payoutOf(end, rates, itemPrice) {
     Billies (`keep`, by uid). A kept Billie that travelled from home keeps what it gained in the run, where it lives
     (the team or storage); one caught or bought in the run joins the team, or the box when the team is full. Every
     other Billie from home comes back as it left (roguelite-track.md section 3, option 3 of "keep-one vs ranch
-    levels"; 8.2: one kept on a loss, all on a win). RL-9b: on a win the run's items and coins go into the hub's bag
-    (on a loss they were paid as Capital). Returns the payout */
+    levels"; 8.2: one kept on a loss, all on a win). RL-9b: on a win the run's items and pyramids go into the hub's bag
+    (on a loss they were paid as Research). Returns the payout */
 /**
  * @param {SaveData} s
  * @param {{ won: boolean, keep: string[] }} how
@@ -324,7 +355,7 @@ export function runEnd(s, how, rates, itemPrice) {
     itemPrice
   );
   const kept = how.keep.map(uid => s.team.find(m => m.uid === uid)).filter(m => !!m),
-    bag = how.won ? { items: copyOf(s.items || {}), coins: copyOf(s.coins || {}) } : null;
+    bag = how.won ? { items: copyOf(s.items || {}), pyramids: copyOf(s.pyramids || {}) } : null;
   runRestore(s);
   for (const m of /** @type {Billy[]} */ (copyOf(kept))) {
     const inTeam = s.team.findIndex(t => t.uid === m.uid),
@@ -335,10 +366,10 @@ export function runEnd(s, how, rates, itemPrice) {
     else s.box.push(m);
   }
   if (bag)
-    for (const kind of /** @type {const} */ (['items', 'coins']))
+    for (const kind of /** @type {const} */ (['items', 'pyramids']))
       for (const [k, n] of Object.entries(bag[kind])) if (n > 0) s[kind][k] = (s[kind][k] || 0) + n;
-  s.meta.capital += pay.capital;
-  s.meta.seals += pay.seals;
+  s.meta.research += pay.research;
+  s.meta.crests += pay.crests;
   s.meta.scrap += pay.scrap;
   s.meta.runs += 1;
   if (how.won) s.meta.wins += 1;

@@ -1,5 +1,6 @@
 // Roster track RO-1: the wild pools and the regional forms on the game's own data. Every biome has its own pool of
-// the 7 real lines (a regional form in place of its base line), so a run never meets a stand-in; a form is a species
+// real lines (a regional form in place of its base line), so a run never meets a stand-in; the starters and the
+// uncommon lines are in every pool, the lines added in RO-2 where their types fit; a form is a species
 // per stage with its types swapped, its regional name, its coat and its own next stage; a region's dex cuts a place's
 // list (logic/wild-pool.js).
 import assert from 'node:assert/strict';
@@ -21,7 +22,10 @@ const RAW = readGameData(),
   REAL = new Set(LINES.flatMap(L => lineSpeciesIds(L))),
   lineOf = (/** @type {string} */ id) => SPECIES[id].line;
 
-test('every biome has its own pool, listing all 7 real lines and nothing else', () => {
+test('every biome has its own pool of real first stages; every line is met somewhere', () => {
+  const met = new Set(),
+    everywhere = LINES.filter(L => L.rar === 'starter' || L.rar === 'uncommon').map(L => L.id);
+  assert.ok(everywhere.length >= 7, 'the starters and the uncommon lines');
   for (const [b, B] of Object.entries(RAW.biomes)) {
     const P = RAW.pools[B.pool];
     assert.ok(P, `${b}: pool ${B.pool}`);
@@ -30,12 +34,22 @@ test('every biome has its own pool, listing all 7 real lines and nothing else', 
       assert.ok(w > 0, `${b}: ${id} has a weight`);
       assert.equal(SPECIES[id].stage, 0, `${b}: ${id} is a first stage`);
     }
-    assert.deepEqual(
-      [...new Set(P.list.map(([id]) => lineOf(id)))].sort(),
-      LINES.map(L => L.id).sort(),
-      `${b}: the 7 lines`
-    );
-    assert.equal(new Set(P.list.map(([id]) => lineOf(id))).size, P.list.length, `${b}: a line once (base or form)`);
+    const lines = new Set(P.list.map(([id]) => lineOf(id)));
+    for (const id of everywhere) assert.ok(lines.has(id), `${b}: has ${id}, a starter or uncommon line`);
+    assert.equal(lines.size, P.list.length, `${b}: a line once (base or form)`);
+    lines.forEach(id => met.add(id));
+  }
+  assert.deepEqual([...met].sort(), LINES.map(L => L.id).sort(), 'every line is in some biome pool');
+});
+
+test('RO-2: a rare line is met less often than every common line in the same pool', () => {
+  const rar = Object.fromEntries(LINES.map(L => [L.id, L.rar]));
+  assert.ok(Object.values(rar).includes('common') && Object.values(rar).includes('rare'), 'common and rare lines');
+  for (const B of Object.values(RAW.biomes)) {
+    const w = (/** @type {string} */ r) =>
+      RAW.pools[B.pool].list.filter(([id]) => rar[lineOf(id)] === r).map(([, n]) => n);
+    if (w('rare').length && w('common').length)
+      assert.ok(Math.max(...w('rare')) < Math.min(...w('common')), `${B.pool}: every rare below every common`);
   }
 });
 
@@ -50,7 +64,7 @@ test('the uncommon lines are met far more often than the starters', () => {
 
 test('no run place needs a stand-in: its list is its biome pool, every id the game has', () => {
   const R = GAME_DATA.rules.run,
-    start = { team: [], se: 0, items: {}, coins: {}, trip: { node: 0, plan: [] }, wild: {}, eggs: [], flags: {} },
+    start = { team: [], se: 0, items: {}, pyramids: {}, trip: { node: 0, plan: [] }, wild: {}, eggs: [], flags: {} },
     world = {
       nodeTypes: GAME_DATA.nodeTypes,
       biomes: GAME_DATA.biomes,
@@ -142,4 +156,23 @@ test('the dex counts a base stage as seen or caught when one of its forms is; a 
   s.caught.trump_waterfront0 = 1;
   assert.ok(dexCaught('trump0'));
   assert.ok(!dexSeen('trump1'), 'only its own stage');
+});
+
+test("RL-R1: a region's swap meets a line in the region's variety, a species once, its weights summed", () => {
+  const list = [
+    ['trump_waterfront0', 20],
+    ['zuck0', 10],
+    ['zuck_cloud0', 5],
+    ['musk0', 3],
+  ];
+  assert.deepEqual(wildPoolList(list, null, { trump_waterfront0: 'trump0', zuck_cloud0: 'zuck0' }), [
+    ['trump0', 20],
+    ['zuck0', 15],
+    ['musk0', 3],
+  ]);
+  assert.deepEqual(wildPoolList(list, ['trump0', 'zuck0'], { trump_waterfront0: 'trump0' }), [
+    ['trump0', 20],
+    ['zuck0', 10],
+  ]);
+  assert.deepEqual(list[0], ['trump_waterfront0', 20], 'the pool is not changed');
 });

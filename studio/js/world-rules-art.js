@@ -179,7 +179,7 @@ SECTIONS.world = () => {
     ['pools', 'Wild encounters'],
     ['fishing', 'Fishing'],
     ['eggs', 'Eggs (legacy)'],
-    ['regions', 'Regions ahead (legacy)'],
+    ['regions', 'Map and notes (legacy)'],
     ['backdrops', 'Battle backdrops'],
     ['look', 'World map look (legacy)'],
   ];
@@ -657,27 +657,11 @@ function worldEggs() {
     )
     .join('');
 }
+/* RL-R1: the old regions beyond the route are in game/data/legacy/regions.json (the Inner Sun); regions.json is the
+   run's region themes now */
 function worldRegions() {
-  const D = studioState.D;
   afterRender(bindWorldMap);
   return (
-    card(
-      'Regions beyond the route',
-      D.regions
-        .map(
-          (g, i) =>
-            `<div class="item-row"><div class="item-ic"><small class="mono">${escapeHtml(g.t)}</small></div><div>${grid(
-              textField('Name', `regions.${i}.name`),
-              selectField(
-                'Look',
-                `regions.${i}.t`,
-                LOCATION_KINDS.concat(['sun']).map(k => [k, k])
-              )
-            )}${textField('Description', `regions.${i}.blurb`, { area: 1, rows: 2 })}</div></div>`
-        )
-        .join(''),
-      { sub: 'Shown fogged on the world map. The Inner Sun sits at the center.' }
-    ) +
     card('Map', worldMapHTML()) +
     card(
       'What’s new',
@@ -761,8 +745,8 @@ SECTIONS.rules = () => {
     )
     .join('');
   const xpPrev = `<p class="help" id="xpPrev">${xpCurveText()}</p>`;
-  const coinsStart = `<div class="grid">${Object.keys(D.coins)
-    .map(c => numberField(D.coins[c].n, `${s}.coins.${c}`, { min: 0, step: 1 }))
+  const coinsStart = `<div class="grid">${Object.keys(D.pyramids)
+    .map(c => numberField(D.pyramids[c].n, `${s}.pyramids.${c}`, { min: 0, step: 1 }))
     .join('')}${Object.keys(D.items)
     .map(i => numberField(D.items[i].n, `${s}.items.${i}`, { opt: 1, min: 0, step: 1 }))
     .join('')}</div>`;
@@ -794,7 +778,7 @@ SECTIONS.rules = () => {
        (D.locations || []).filter(r => r.town || r.kind === 'town').map(r => [r.id, r.name]),
        { none: 'The first stop', opt: 1 }
      ),
-     numberField('Money ($)', `${s}.se`, { min: 0, step: 50 }),
+     numberField('Moneys', `${s}.se`, { min: 0, step: 50 }),
      numberField('Starter’s level', `${s}.starterLevel`, { min: 1, max: 100, step: 1 }),
      numberField('Encounters waiting', `${s}.starterEncounters`, { min: 0, max: 10, step: 1 }),
      selectField(
@@ -804,7 +788,7 @@ SECTIONS.rules = () => {
        { num: 1, none: 'None', opt: 1 }
      )
    ) +
-     '<h4>Coins and items</h4>' +
+     '<h4>Pyramids and items</h4>' +
      coinsStart +
      '<h4>Starter choices</h4>' +
      starters +
@@ -916,8 +900,8 @@ SECTIONS.rules = () => {
        step: 1,
        help: 'Burn, sandstorm and Regrowth move this fraction of max HP each turn.',
      }),
-     numberField('Sharp stones: 1 /', `${bt}.rentFraction`, { min: 2, max: 64, step: 1 }),
-     numberField('Paralysis lost-turn chance', `${bt}.auditSkip`, { min: 0, max: 1, step: 0.05 }),
+     numberField('Sharp stones: 1 /', `${bt}.stonesFraction`, { min: 2, max: 64, step: 1 }),
+     numberField('Paralysis lost-turn chance', `${bt}.paralysisSkip`, { min: 0, max: 1, step: 0.05 }),
      numberField('Confusion turns', `${bt}.hypeTurns`, { min: 1, max: 10, step: 1 }),
      numberField('Confusion self-hit chance', `${bt}.hypeSelfHit`, { min: 0, max: 1, step: 0.05 }),
      numberField('Sleep turns, least', `${bt}.subpoenaMin`, { min: 1, max: 10, step: 1 }),
@@ -929,24 +913,26 @@ SECTIONS.rules = () => {
        step: 0.05,
        help: 'Chance a trainer picks its best move.',
      }),
-     numberField('Rest stop price ($)', `${bt}.restCost`, { min: 0, step: 10 }),
+     numberField('Rest stop price (Moneys)', `${bt}.restCost`, { min: 0, step: 10 }),
      numberField('Losing fee', `${bt}.loseFee`, {
        min: 0,
        max: 1,
        step: 0.01,
-       help: 'Fraction of your money paid when your team is wiped out.',
+       help: 'Fraction of your Moneys paid when your team is wiped out.',
      }),
      numberField('Strongest move power cap (doubling moves)', `${bt}.holdCap`, { min: 40, step: 10 }),
      numberField('Delayed attack turns', `${bt}.mailTurns`, { min: 1, max: 6, step: 1 })
    ) +
      '<h4>Type abilities</h4>' +
      grid(
-       numberField('Erratic roll, low', `${bt}.cryptoRollMin`, { min: 0, max: 1, step: 0.05 }),
-       numberField('Erratic roll, high', `${bt}.cryptoRollMax`, { min: 1, max: 3, step: 0.05 }),
-       numberField('Keen: extra critical stages', `${bt}.mediaCrit`, { min: 0, max: 3, step: 1 }),
-       numberField('Kindling: Attack boost per turn', `${bt}.financeRamp`, { min: 0, max: 1, step: 0.01 }),
-       numberField('Kindling turns', `${bt}.financeRampTurns`, { min: 1, max: 30, step: 1 }),
-       numberField('Alloy bonus per teammate', `${bt}.retailSynergy`, { min: 0, max: 1, step: 0.01 }),
+       numberField('Wild Mind roll, low', `${bt}.wildMindRollMin`, { min: 0, max: 1, step: 0.05 }),
+       numberField('Wild Mind roll, high', `${bt}.wildMindRollMax`, { min: 1, max: 3, step: 0.05 }),
+       numberField('Live Wire: extra critical stages', `${bt}.liveWireCrit`, { min: 0, max: 3, step: 1 }),
+       numberField('Kindling: Attack boost per turn', `${bt}.kindlingBoost`, { min: 0, max: 1, step: 0.01 }),
+       numberField('Kindling turns', `${bt}.kindlingTurns`, { min: 1, max: 30, step: 1 }),
+       numberField('Alloy bonus per teammate', `${bt}.alloyBoost`, { min: 0, max: 1, step: 0.01 }),
+       numberField('Undertow boost', `${bt}.undertowMult`, { unit: '×', min: 1, max: 3, step: 0.05 }),
+       numberField('Undertow below this share of HP', `${bt}.undertowHp`, { min: 0, max: 1, step: 0.01 }),
        selectField('Sandstorm type', `${bt}.shockType`, typeOptions()),
        numberField('Sandstorm boost', `${bt}.oilShockMult`, { unit: '×', min: 1, max: 3, step: 0.05 }),
        numberField('Sandstorm turns', `${bt}.shockTurns`, { min: 1, max: 20, step: 1 }),
@@ -961,7 +947,7 @@ SECTIONS.rules = () => {
        numberField('Alpha moves per turn', `${bt}.alphaActs`, { min: 1, max: 4, step: 1, ph: '2' }),
        numberField('Your Billies against an Alpha', `${bt}.alphaTeam`, { min: 1, max: 3, step: 1, ph: '3' }),
        numberField('Alpha XP', `${bt}.alphaXp`, { unit: '×', min: 1, max: 10, step: 0.5, ph: '3' }),
-       numberField('A taxed Alpha keeps', `${bt}.alphaKeep`, {
+       numberField('A caught Alpha keeps', `${bt}.alphaKeep`, {
          unit: '×',
          min: 1,
          max: 1.5,
@@ -981,8 +967,8 @@ SECTIONS.rules = () => {
      )
  )}
  ${card(
-   'Taxing',
-   '<h4>Base tax rate</h4>' +
+   'Catching',
+   '<h4>Base catch rate</h4>' +
      rar +
      grid(
        numberField('HP factor', `${ca}.hpFactor`, {
@@ -991,7 +977,7 @@ SECTIONS.rules = () => {
          step: 0.01,
          help: 'At full HP the rate is multiplied by (1 − this).',
        }),
-       numberField('Asleep bonus', `${ca}.subpoena`, { unit: '×', min: 1, max: 5, step: 0.1 }),
+       numberField('Asleep bonus', `${ca}.asleepCatch`, { unit: '×', min: 1, max: 5, step: 0.1 }),
        numberField('Other status bonus', `${ca}.status`, { unit: '×', min: 1, max: 5, step: 0.1 }),
        numberField('Soak bonus', `${ca}.spin`, { unit: '×', min: 1, max: 3, step: 0.05 }),
        numberField('Perfect ring bonus', `${ca}.ring`, {
@@ -1000,21 +986,16 @@ SECTIONS.rules = () => {
          step: 0.05,
          help: 'A perfect throw multiplies the odds by 1 + this.',
        }),
-       numberField('Lands-on-edge chance', `${ca}.edge`, { min: 0, max: 0.2, step: 0.005 }),
-       numberField('Alpha tax rate', `${ca}.alpha`, { unit: '×', min: 0.05, max: 1, step: 0.05, ph: '0.4' }),
-       numberField('Copper Coin penalty for luxury lines', `${ca}.luxuryPenny`, {
+       numberField('Balances-on-its-tip chance (a sure catch)', `${ca}.edge`, { min: 0, max: 0.2, step: 0.005 }),
+       numberField('Alpha catch rate', `${ca}.alpha`, { unit: '×', min: 0.05, max: 1, step: 0.05, ph: '0.4' }),
+       numberField('Pyramid penalty for luxury lines', `${ca}.luxuryPyramid`, {
          unit: '×',
          min: 0,
          max: 1,
          step: 0.05,
-       }),
-       numberField('Bargain chance', `${ca}.offerChance`, { min: 0, max: 1, step: 0.05 }),
-       numberField('Bargain, least ($)', `${ca}.offerMin`, { min: 0, step: 10 }),
-       numberField('Bargain, most ($)', `${ca}.offerMax`, { min: 0, step: 10 }),
-       numberField('Focus Bonus per refusal', `${ca}.integrityStep`, { unit: '×', min: 1, max: 3, step: 0.05 }),
-       numberField('Focus Bonus cap', `${ca}.integrityMax`, { unit: '×', min: 1, max: 5, step: 0.05 })
+       })
      ) +
-     '<h4>Luxury lines (sneer at Copper Coins)</h4>' +
+     '<h4>Luxury lines (sneer at plain Pyramids)</h4>' +
      `<div class="chips">${D.lines.map(L => `<label class="chk-chip"><input type="checkbox" data-act-chk="luxury" value="${L.id}" ${R.catching.luxury.includes(L.id) ? 'checked' : ''}> ${escapeHtml(L.names[0])}</label>`).join('')}</div>`
  )}</div>`;
 };
@@ -1055,7 +1036,7 @@ const ART_GROUPS = [
   ['billionaires', 'Billies', 'Four sheets per stage. Edit them in Billies → Edit pixels.'],
   ['battle', 'Battle backdrops', 'Ground, far land, walls, props, clouds, foregrounds'],
   ['background', 'Menus and title', 'Title picture, sky, clouds, islands'],
-  ['coins', 'Coins', ''],
+  ['pyramids', 'Pyramids', 'The catch items’ icons (folder pyramids until RF-4)'],
   ['eggs', 'Eggs', ''],
   ['icons', 'Icon atlas', 'All item and effect icons on one sheet'],
   ['map', 'World map', 'The inside of the sphere (equirectangular)'],

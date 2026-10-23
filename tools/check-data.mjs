@@ -29,10 +29,12 @@ import {
   dataBattleRules,
   dataBiomes,
   dataBuildings,
+  dataCatchArt,
   dataCurrencies,
   dataNodeTypes,
   dataRanchRules,
-  dataRelics,
+  dataRegions,
+  dataPerks,
   dataRoadFindings,
   dataRobotProblems,
   dataRigs,
@@ -282,8 +284,9 @@ for (const family of [
   dataRobots,
   dataUiTheme,
   dataBiomes,
+  dataRegions,
   dataNodeTypes,
-  dataRelics,
+  dataPerks,
   dataCurrencies,
   dataBuildings,
   dataUnlocks,
@@ -343,6 +346,12 @@ if (D.coats && check('coats.schema.json', D.coats, 'coats.json')) {
     }
   }
 }
+// RF-2: the catch pyramids' icons and models
+for (const [where, what] of dataCatchArt(D.pyramids, p => {
+  const f = join(DATA, '..', 'art', p);
+  return existsSync(f) ? readFileSync(f, 'utf8') : null;
+}))
+  problem(where, what);
 // studio track ST-3: the part kits: the schema, then every picture they name is there with the size given
 // (ST-4: and the S/L pictures, turn limits that run least to most, slots the socket rules name, the part mirrored)
 if (D.partKits && check('partKits.schema.json', D.partKits, 'partKits.json')) {
@@ -401,7 +410,8 @@ if (D.kitBuilds && check('kitBuilds.schema.json', D.kitBuilds, 'kitBuilds.json')
       else seen[k].add(v);
     const line = (D.lines || []).find(l => l.id === f.line);
     if (!line) problem(at, `${where}: line ${f.line}, no such line`);
-    else if (f.stage >= line.names.length) problem(at, `${where}: stage ${f.stage}, ${f.line} has ${line.names.length}`);
+    else if (f.stage >= line.names.length)
+      problem(at, `${where}: stage ${f.stage}, ${f.line} has ${line.names.length}`);
     else (lines[f.line] ||= { line, forms: [] }).forms.push(f);
     for (const [kind, [pid, , col]] of Object.entries(f.parts)) {
       if (!kit[pid]) problem(at, `${where} ${kind}: part ${pid}, not in partKits.json`);
@@ -411,7 +421,8 @@ if (D.kitBuilds && check('kitBuilds.schema.json', D.kitBuilds, 'kitBuilds.json')
       if (!kit[pid]) problem(at, `${where} extra ${i + 1}: part ${pid}, not in partKits.json`);
       if (!B.bake.anchors[anchor]) problem(at, `${where} extra ${i + 1}: anchor ${anchor}, not in bake.anchors`);
       colourOk(`${where} extra ${i + 1}`, col);
-      if (slot && !slotNames.has(slot)) problem(at, `${where} extra ${i + 1}: slot ${slot}, not in rules.json parts.slots`);
+      if (slot && !slotNames.has(slot))
+        problem(at, `${where} extra ${i + 1}: slot ${slot}, not in rules.json parts.slots`);
     });
     for (const [kind, slot] of Object.entries(f.slots || {})) {
       if (!f.parts[kind]) problem(at, `${where}: slots.${kind}, the form has no ${kind}`);
@@ -421,7 +432,10 @@ if (D.kitBuilds && check('kitBuilds.schema.json', D.kitBuilds, 'kitBuilds.json')
   const { kitNativeParts } = await import('../game/js/logic/kit-assemble.js');
   for (const [id, { line, forms }] of Object.entries(lines)) {
     if (forms.length !== line.names.length)
-      problem(at, `line ${id}: recipes for stages ${forms.map(f => f.stage).sort()}, the line has ${line.names.length}`);
+      problem(
+        at,
+        `line ${id}: recipes for stages ${forms.map(f => f.stage).sort()}, the line has ${line.names.length}`
+      );
     for (const f of forms) {
       let want;
       try {
@@ -431,7 +445,10 @@ if (D.kitBuilds && check('kitBuilds.schema.json', D.kitBuilds, 'kitBuilds.json')
         continue;
       }
       if (JSON.stringify((line.parts || [])[f.stage]) !== JSON.stringify(want))
-        problem(`lines/${id}.json`, `parts[${f.stage}] is not what kitBuilds.json's ${f.name} gives (bake again: node tools/bake-kit-billies.mjs)`);
+        problem(
+          `lines/${id}.json`,
+          `parts[${f.stage}] is not what kitBuilds.json's ${f.name} gives (bake again: node tools/bake-kit-billies.mjs)`
+        );
     }
   }
 }
@@ -554,7 +571,8 @@ route.forEach((p, n) => {
       const b = readFileSync(f).subarray(16, 24);
       return [b.readUInt32BE(0), b.readUInt32BE(4)];
     },
-    geoOf = (M, view) => rigGeo(M, view, animFor(M.plan, M.q || {})(RIG_NEUTRAL_POSE, view === 'back') || {}, RIG_NEUTRAL_POSE);
+    geoOf = (M, view) =>
+      rigGeo(M, view, animFor(M.plan, M.q || {})(RIG_NEUTRAL_POSE, view === 'back') || {}, RIG_NEUTRAL_POSE);
   for (const [f, name] of [
     ['next/rigs-next.js', 'RIGS_NEXT'],
     ['rigs.js', 'RIGS'],
@@ -568,7 +586,7 @@ for (const f of [...dataSceneFindings(D, PB_DATA.road), ...dataRoadFindings(D, P
   else console.log(`  warning: ${f.where}: ${f.msg}`);
 const n = listed.size;
 if (fixed) console.log(`${fixed} file(s) laid out again`);
-// Project Story: story.json, the schema, then the people, places, trainers, Billies and coins it names
+// Project Story: story.json, the schema, then the people, places, trainers, Billies and pyramids it names
 if (D.story) {
   check('story.schema.json', D.story, 'story.json');
   const places = new Set(route.map(r => r.id)),
@@ -580,7 +598,7 @@ if (D.story) {
     if (!places.has(P.place)) problem(at, `starts in ${P.place}, no such place`);
     for (const t of P.beaten || []) if (!trainers[t]) problem(at, `has beaten ${t}, no such trainer`);
     for (const m of P.team || []) if (!species.has(m.sp)) problem(at, `has ${m.sp}, no such species`);
-    for (const c of Object.keys(P.coins || {})) if (!(D.coins || {})[c]) problem(at, `has coin ${c}, no such coin`);
+    for (const c of Object.keys(P.pyramids || {})) if (!(D.pyramids || {})[c]) problem(at, `has coin ${c}, no such coin`);
     for (const i of Object.keys(P.items || {})) if (!(D.items || {})[i]) problem(at, `has item ${i}, no such item`);
   }
 } else problem('story.json', 'missing');

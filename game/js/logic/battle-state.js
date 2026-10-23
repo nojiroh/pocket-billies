@@ -63,27 +63,26 @@ export function makeBattle(kind, team, foe, extra) {
       ev: 0,
       phase: 'playing',
       market: null,
-      integrity: 1,
       over: null,
       needSwitch: [],
-      offer: null,
       foeName: '',
       lead: team[able[0]].uid,
       turn: 0,
       plan: [],
       cur: 0,
       sides: [
-        { team, f: fighters(n0, able), rent: false, pivot: false, mail: [], inh: null },
+        { team, f: fighters(n0, able), stones: false, slipstream: false, held: [], mail: [], roar: null },
         {
           team: foe,
           f: fighters(
             n1,
             foe.map((m, i) => i)
           ),
-          rent: false,
-          pivot: false,
+          stones: false,
+          slipstream: false,
+          held: [],
           mail: [],
-          inh: null,
+          roar: null,
         },
       ],
     },
@@ -92,7 +91,7 @@ export function makeBattle(kind, team, foe, extra) {
   );
   addAct(b.sides[0]);
   addAct(b.sides[1]);
-  /* RL-12: a run's Loopholes (b.fx, logic/effects.js): stat stages for yours on the field as it starts */
+  /* RL-12: a run's Perks (b.fx, logic/effects.js): stat stages for yours on the field as it starts */
   if (b.fx) {
     const up = fxStages(b.fx),
       most = RULES.battle.stageMax;

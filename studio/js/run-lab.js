@@ -15,7 +15,7 @@
    An edit made in the other pane redraws the map (the game's map code takes well under a millisecond).
    T2.4: what the game's logic says about the run (logic/run-preview.js runPreview, in the Studio's logic worker on the
    data as it is now): the clicked place's wild table, its leader and team (a mini-boss or the boss), a town's stock and
-   Loophole on each day it can be open; and the run's Loophole picks after each mini-boss row, with nothing held.
+   Perk on each day it can be open; and the run's Perk picks after each mini-boss row, with nothing held.
    T2.5: the run rules card beside the map edits rules.run (map, clock, reveal, wild, foes, shop, healCost, payout) and
    nodeTypes with the standard fields; each change redraws the map and the logic panel. The rules that live in code
    (logic/run-rules-code.js) are listed read-only with their file and line, found by searching the file as served.
@@ -28,6 +28,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
 import { $ } from '../../game/js/util.js';
+import { runRegionData } from '../../game/js/logic/run-region.js';
 import { runBack, runMapRows, runNodeSeed, runWorldNode } from '../../game/js/logic/run-map.js';
 import { runUnlocks } from '../../game/js/logic/unlocks.js';
 import { runStartPlan } from '../../game/js/logic/run-start.js';
@@ -104,12 +105,12 @@ const runLab = {
   code: {},
 };
 const RUN_LAB_PAYOUT = {
-  money: 'Capital per $ brought home',
+  money: 'Research per Money brought home',
   itemShare: 'Share of an item’s price',
-  released: 'Capital per Billie released',
-  node: 'Capital per place cleared',
-  win: 'Capital for a win',
-  winSeals: 'Seals for a win',
+  released: 'Research per Billie released',
+  node: 'Research per place cleared',
+  win: 'Research for a win',
+  winCrests: 'Crests for a win',
   scrapNode: 'Scrap per place cleared',
   scrapWin: 'Scrap for a win',
 };
@@ -146,14 +147,14 @@ function runLabPlan(D) {
       biomes: D.biomes,
       rules: D.rules.run,
       unlockData: { unlocks: D.unlocks || {}, buildings: D.buildings || {} },
+      /* RL-R1: the run's region (its zones decide the map's rows) */
+      region: D.regions && D.regions.themes ? runRegionData(D, D.trainers || {}) : undefined,
     };
-    return {
-      plan: runStartPlan(runLab.seed, data, {
-        unlocks: runLabUnlocks(D),
-        map: runLab.short ? RUN_LAB_SHORT : undefined,
-      }),
-      roles: runMapRows({ ...D.rules.run.map, ...(runLab.short ? RUN_LAB_SHORT : {}) }),
-    };
+    const plan = runStartPlan(runLab.seed, data, {
+      unlocks: runLabUnlocks(D),
+      map: runLab.short ? RUN_LAB_SHORT : undefined,
+    });
+    return { plan, roles: runMapRows(plan.data.rules.map) };
   } catch (e) {
     return { error: e.message || String(e) };
   }
@@ -240,7 +241,7 @@ function runLabNodeHTML(D, plan, roles, i) {
 /** a name from the data, its id beside it @param {any} table @param {string} id @param {string} [k] */
 const runLabName = (table, id, k = 'n') =>
   `${escapeHtml(((table || {})[id] || {})[k] || id)} <small class="mono">${escapeHtml(id)}</small>`;
-/** what the game's logic says about the run (runPreview's answer): node i's part, then the run's Loophole picks
+/** what the game's logic says about the run (runPreview's answer): node i's part, then the run's Perk picks
  * @param {any} D @param {any} p @param {number} i */
 function runLabLogicHTML(D, p, i) {
   const n = p.nodes[i],
@@ -267,7 +268,7 @@ function runLabLogicHTML(D, p, i) {
           F.runFoe === 'boss' ? 'Boss' : 'Mini-boss',
           `${escapeHtml(F.name || F.from)} <small class="mono">${escapeHtml(F.from)}</small>: ${F.team
             .map(e => `${escapeHtml(speciesName(e.sp))} Lv ${e.lvl}`)
-            .join(', ')}; ${F.double ? 'a double battle' : 'alone, as an Alpha'}; reward $${F.reward}`,
+            .join(', ')}; ${F.double ? 'a double battle' : 'alone, as an Alpha'}; reward ${F.reward} Moneys`,
           ` data-foe="${escapeHtml(F.from)}" data-team="${escapeHtml(F.team.map(e => e.sp + '@' + e.lvl).join(','))}"`
         )
       );
@@ -276,7 +277,7 @@ function runLabLogicHTML(D, p, i) {
       rows.push(
         row(
           `Shop, day ${S.day}`,
-          `${S.stock.map(w => (w.coin ? runLabName(D.coins, w.coin) : runLabName(D.items, w.item))).join(', ')}${S.relic ? `; Loophole: ${runLabName(D.relics, S.relic, 'name')}` : ''}`,
+          `${S.stock.map(w => (w.coin ? runLabName(D.pyramids, w.coin) : runLabName(D.items, w.item))).join(', ')}${S.relic ? `; Perk: ${runLabName(D.perks, S.relic, 'name')}` : ''}`,
           ` data-day="${S.day}" data-stock="${escapeHtml(S.stock.map(w => w.item || 'coin:' + w.coin).join(','))}" data-relic="${escapeHtml(S.relic)}"`
         )
       );
@@ -284,10 +285,10 @@ function runLabLogicHTML(D, p, i) {
   const picks = p.relicOffers
     .map(
       (/** @type {string[]} */ ids, /** @type {number} */ k) =>
-        `<li data-offer="${escapeHtml(ids.join(','))}">after mini-boss ${k + 1}: ${ids.map(id => runLabName(D.relics, id, 'name')).join(', ') || 'nothing left'}</li>`
+        `<li data-offer="${escapeHtml(ids.join(','))}">after mini-boss ${k + 1}: ${ids.map(id => runLabName(D.perks, id, 'name')).join(', ') || 'nothing left'}</li>`
     )
     .join('');
-  return `<h4>From the game’s logic</h4>${rows.length ? `<table class="tbl rl-logic-node" data-node="${i}">${rows.join('')}</table>` : ''}<p class="help">Loophole picks, in order, with none held (a held one changes the later picks and the shelves):</p><ol class="rl-offers">${picks}</ol>`;
+  return `<h4>From the game’s logic</h4>${rows.length ? `<table class="tbl rl-logic-node" data-node="${i}">${rows.join('')}</table>` : ''}<p class="help">Perk picks, in order, with none held (a held one changes the later picks and the shelves):</p><ol class="rl-offers">${picks}</ol>`;
 }
 /** the seed sweep's answer (data-checks.js runMapSweep) @param {any} D @param {any} S */
 function runLabSweepHTML(D, S) {
@@ -405,10 +406,10 @@ function runLabRulesHTML() {
     part = (/** @type {string} */ h, /** @type {string[]} */ f, more = '') => `<h4>${h}</h4>${grid(...f)}${more}`,
     always = Object.keys(D.items)
       .map(k => ['', k])
-      .concat(Object.keys(D.coins).map(k => ['coin:', k]))
+      .concat(Object.keys(D.pyramids).map(k => ['coin:', k]))
       .map(([pre, k]) => {
         const id = pre + k,
-          name = pre ? (D.coins[k] || {}).n : (D.items[k] || {}).n;
+          name = pre ? (D.pyramids[k] || {}).n : (D.items[k] || {}).n;
         return `<label class="chk-chip"><input type="checkbox" data-rl-always="${escapeHtml(id)}"${R.shop.always.includes(id) ? ' checked' : ''}> ${escapeHtml(name || id)}</label>`;
       })
       .join('');
@@ -453,7 +454,7 @@ function runLabRulesHTML() {
         const name = escapeHtml((D.nodeTypes[k] || {}).name || k);
         return [
           n(`${name}: levels over the row’s top wild level`, `foes.${k}.up`, int),
-          n(`${name}: reward ($)`, `foes.${k}.reward`, int),
+          n(`${name}: reward (Moneys)`, `foes.${k}.reward`, int),
         ];
       })
     ),

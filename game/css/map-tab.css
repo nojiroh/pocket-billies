@@ -307,9 +307,6 @@ body.map-gl #dioui {
   border-radius: 50%;
   background: color-mix(in srgb, var(--text) 10%, transparent);
 }
-.mpl-row .mp-i .uico {
-  background: currentColor;
-}
 .mpl-row.here .mp-i {
   background: #f2c14e;
   color: #3a2408;

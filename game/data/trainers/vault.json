@@ -3,6 +3,7 @@
  "who": "vault",
  "battleStage": "esc",
  "miniboss": true,
+ "type": "Fire",
  "blocks": false,
  "team": [
   {"sp":"ma1","lvl":41},
@@ -13,16 +14,16 @@
  "reward": 4200,
  "egg": 10,
  "market": null,
- "win": "“Burned. Take the Fire Badge. I’ll invoice you for it later.”",
- "lose": "“Money talks. Mine just won the argument.”",
+ "win": "“Burned. Take the Fire Badge. I’ll file a complaint. In triplicate.”",
+ "lose": "“My publicist will spin this. My Fire team already did.”",
  "hint": "Baron Vault’s Fire team is level 41–43. Water and Ground moves put Fire Billies out.",
  "seat": {
   "id": "vault",
   "title": "Fire Badge · 6 of 8",
-  "coin": "gold",
-  "coins": {"gold":4,"tbtf":2},
-  "items": {"parachute":1},
-  "rewardText": "a Golden Parachute, 4 Gold Coins and 2 Platinum Coins",
+  "coin": "gold_pyramid",
+  "pyramids": {"gold_pyramid":4,"capstone":2},
+  "items": {"max_revive":1},
+  "rewardText": "a Max Revive, 4 Gold Pyramids and 2 Capstones",
   "unlockText": "The Grizzle Badlands, east of Goldvine Town, are open."
  },
  "v47region": 1,
@@ -30,8 +31,8 @@
   "if beat:vault",
   "  [happy] Back for more? All right! #l:ec6f",
   "else",
-  "  [happy] Welcome to Goldvine Town. Everything you can see is mine, and everything you can’t see is in a vault, and also mine. #l:c4ae",
-  "  I rented the vaults to a pop star. And myself, as it turns out. Read the small print, child. #l:a020",
+  "  [happy] Welcome to Goldvine Town. Everything you can see has my name on it. Everything you can’t see is under NDA. #l:c4ae",
+  "  I lent the vaults to a pop star. And myself, as it turns out. Read the small print, child. #l:a020",
   "battle vault"
  ]
 }

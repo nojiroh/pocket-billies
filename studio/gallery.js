@@ -40,7 +40,7 @@ document.addEventListener('click', ev => {
   } else if (b.id === 'gToastMore') {
     const t = /** @type {any} */ (document.getElementById('gToast'));
     t.n = (t.n || 1) + 1;
-  } else if (b.id === 'gFloat') pbFloat(b, '+$120');
+  } else if (b.id === 'gFloat') pbFloat(b, '+120 Moneys');
   else if (b.id === 'gSheetBtn') /** @type {any} */ (document.getElementById('gSheet')).open = true;
   // UI-4: the reward motions on demand (the pictures take each part at its end)
   else if (b.id === 'gPayoutPlay') /** @type {any} */ (document.getElementById('gPayout')).play();
@@ -49,7 +49,7 @@ document.addEventListener('click', ev => {
     if (c.facedown) c.reveal();
     else c.facedown = true;
   } else if (b.id === 'gCoinUp') {
-    const c = /** @type {any} */ (document.querySelector('pb-coin[kind="capital"]'));
+    const c = /** @type {any} */ (document.querySelector('pb-coin[kind="research"]'));
     c.value += 1000;
   }
 });

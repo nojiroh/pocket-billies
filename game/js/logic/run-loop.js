@@ -19,7 +19,7 @@ import { fxHealShare, fxOfRun, unlockOpen } from '../hooks.js';
 import { ITEMS } from '../game-data.js';
 import { rngFrom } from './rng.js';
 import { battleWeatherOf } from './weather.js';
-import { healAll, maxHp } from './rules.js';
+import { healAll, maxHp, plural } from './rules.js';
 import { RUN_DAYS, runHome } from './run-state.js';
 import { runNodeSeed, runWeather, runWorldNode } from './run-map.js';
 import { runWildLevels } from './run-scenes.js';
@@ -80,10 +80,10 @@ export function runArriveHeal(team, share) {
   return gained;
 }
 /** Studio plan T3.3: walking into a place on a run (walk-control.js through run.js runArrivedFx, and the run's
- * simulation): the held Loopholes' heal rows heal the team (runArriveHeal); returns the HP gained (0: none)
- * @param {SaveData} s @param {Record<string, any>} relics relics.json */
-export function runArriveFx(s, relics) {
-  const share = fxHealShare(fxOfRun(s.run, relics));
+ * simulation): the held Perks' heal rows heal the team (runArriveHeal); returns the HP gained (0: none)
+ * @param {SaveData} s @param {Record<string, any>} perks perks.json */
+export function runArriveFx(s, perks) {
+  const share = fxHealShare(fxOfRun(s.run, perks));
   return share ? runArriveHeal(s.team, share) : 0;
 }
 /** what a run town's clinic charges to heal the party: `each` per hurt Billie @param {Billy[]} team
@@ -140,7 +140,8 @@ export const runFoeWinText = text => {
 export const runFoeId = i => `run_${i}_foe`;
 /**
  * The run's foes, by id: on each mini-boss node and the boss's, a copy of a leader drawn from the node's stream
- * ('foe'), no leader twice in a run (nodes in order). Its levels: its row's top wild level + run.foes[type].up for its
+ * ('foe'), no leader twice in a run (nodes in order); RL-R1: a run with a region has its leaders (run.region.leaders,
+ * picked by its types), in node order, while there are any. Its levels: its row's top wild level + run.foes[type].up for its
  * top Billie, the others as far below as in the leader's team (1-100). A mini-boss blocks the way north and fights a
  * double battle; the boss is its leader's top Billie alone, fought as an Alpha (which adds the Alpha's own levels).
  * @param {Run} run
@@ -152,14 +153,19 @@ export function runFoes(run, data) {
   const map = /** @type {RunMap} */ (run.map),
     pool = data.leaders.filter(T => T && T.team && T.team.length).sort((a, b) => (a.id < b.id ? -1 : 1)),
     used = new Set(),
+    /* RL-R1: the region's leaders, the mini-bosses in order then the boss (logic/run-region.js) */
+    picks = (run.region && run.region.leaders) || [],
     /** @type {Record<string, any>} */
     out = {};
+  let k = 0;
   map.nodes.forEach((node, i) => {
     if (node.type !== 'miniboss' && node.type !== 'boss') return;
     const left = pool.filter(T => !used.has(T.id)),
-      from = left.length ? left : pool;
+      from = left.length ? left : pool,
+      pick = picks[k++],
+      want = pool.find(T => T.id === pick);
     if (!from.length) return;
-    const T = from[rngFrom(runNodeSeed(run.seed, i), 'foe').int(0, from.length - 1)];
+    const T = want || from[rngFrom(runNodeSeed(run.seed, i), 'foe').int(0, from.length - 1)];
     used.add(T.id);
     const F = data.rules.foes[node.type],
       top = runWildLevels(map, i, /** @type {any} */ (data))[1] + F.up,
@@ -224,7 +230,7 @@ export function runSheetStatus(run, i, env) {
 }
 /** Studio plan T3.2: what a run battle starts with, on the page (run.js runBattleStart) and in the simulation (logic/
  * run-sim.js): its seed, the place's forecast for today as the battle's weather (clear is sunny: a run has no hour),
- * and the Loopholes' effect rows when any are held (logic/effects.js fxOfRun: null when none)
+ * and the Perks' effect rows when any are held (logic/effects.js fxOfRun: null when none)
  * @param {Run} run @param {number} i the map node @param {number} k the battle's number in the run
  * @param {any} env rules.json env @param {any[] | null} fx */
 export function runBattleExtra(run, i, k, env, fx) {
@@ -254,24 +260,24 @@ export const runKept = (team, won, pick) =>
   won ? team.map(m => m.uid) : team.filter(m => m.uid === pick).map(m => m.uid);
 /** an item's shop price, for the payout's items line (0 for none) @param {string} id */
 export const runItemPrice = id => (ITEMS[id] && ITEMS[id].price) || 0;
-/** the payout screen's rows from payoutOf's lines: a label, a note and the Capital each brings (the win row only on a
- * win; RL-9b: the items row only on a loss, a win takes the bag home) @param {{ lines: { what: string, n: number, capital: number }[] }} pay
+/** the payout screen's rows from payoutOf's lines: a label, a note and the Research each brings (the win row only on a
+ * win; RL-9b: the items row only on a loss, a win takes the bag home) @param {{ lines: { what: string, n: number, research: number }[] }} pay
  * @param {{ money: number, itemShare: number, released: number, node: number }} rates */
 export function runPayoutRows(pay, rates) {
   const pct = Math.round(rates.money * 100),
     say = {
-      money: (/** @type {number} */ n) => ['Money left', `$${n.toLocaleString('en')} at ${pct}%`],
-      items: n => ['Items in the bag', `worth $${n.toLocaleString('en')} at ${pct}%`],
+      money: (/** @type {number} */ n) => ['Moneys left', `${plural(n, 'Money')} at ${pct}%`],
+      items: n => ['Items in the bag', `worth ${plural(n, 'Money')} at ${pct}%`],
       released: n => ['Billies released', `${n} × ${rates.released}`],
       nodes: n => ['Places reached', `${n} × ${rates.node}`],
       win: () => ['The boss beaten', ''],
-      fx: n => ['Loopholes', `${n > 0 ? '+' : ''}${n}%`],
+      fx: n => ['Perks', `${n > 0 ? '+' : ''}${n}%`],
     };
   const won = pay.lines.some(l => l.what === 'win' && l.n > 0);
   return pay.lines
     .filter(l => (l.what !== 'win' || won) && (l.what !== 'items' || !won))
     .map(l => {
       const [label, note] = (say[/** @type {keyof typeof say} */ (l.what)] || (() => [l.what, '']))(l.n);
-      return { label, note, value: l.capital };
+      return { label, note, value: l.research };
     });
 }

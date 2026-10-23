@@ -9,12 +9,54 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- Eight new Billies (roster track RO-2a): **Gosling**, **Sprucegoose** and **Aviatorgoose**, the goose you meet on
+  almost every route; **Flatpackrat** and **Kamprat**, a rat that assembles itself; **Pupfin**, a goldfish that won't
+  stop pitching, until it evolves at level 20 into **Sharktank**, a Water/Dragon shark; and **Altmowl**, a rare owl
+  with a cloud for a brain. They're the first common and rare Billies, so each run's region differs more, and fishing
+  and eggs that used to give a stand-in now give these.
+- New jokes in the lore, the loading tips and people's lines (reflavour track RF-5): the satire moves off money onto
+  bureaucracy, tech and influencers. The Guide's lore tells where the Billies came from (Legacy Labs, "You, again, but
+  forever": the billionaires' vanity clones, dropped down a sinkhole when they came out wrong) and why a pyramid
+  catches them (every cloning vat was one). The Bureau of Lost, Found and Beans turns up in hints; nobody says what the
+  Beans are. The cow is called Synergy now.
+- Saves from before this change don't load (reflavour track RF-4, save format 5): the game's internal names moved off
+  finance (Perks, Research, Crests, Pyramids, Expeditions, the item, status and ability names), so an older save is set
+  aside and a new game starts. Nothing you see changes, except that a seed's run may offer different Perks (they are
+  drawn in the data's order now) and its town shops may stock different wares.
+- New interface icons: all 49 UI icons (the bottom bar, currencies, weather, the run's day chip and map markers,
+  buttons) are redrawn as larger, full-colour pixel art: little blocks with a diagonal light split, in the game's
+  own greens, golds and reds. They look the same on the light and dark themes.
+- Fewer finance words (reflavour track RF-1): you **catch** Billies now ("Catch it", "Caught!", the Guide's Caught
+  count), and nothing says "tax" except the title's "Gotta tax 'em all!". Run money is **Moneys** (1 Money), shown
+  with a small gold coin instead of a $; Capital is **Research** (with a flask icon), Audit Seals are **Crests**,
+  Loopholes are **Perks** and Brackets are **Expeditions** (Expedition I). The ten Perks have new names: Lucky Charm,
+  Clinic Loyalty Card, Coupon Book, Steady Hand, Running Shoes, Power Gloves, Bubble Wrap, Trail Snacks, Field
+  Notebook and Lost Property Form. A Billie that breaks free no longer offers you money to let it go: a miss is a miss.
+- Every run is a small region (roguelite track RL-R1): its seed picks a theme (Lakeland, Greenbelt, Wildwood,
+  Highland or Harvest Country; the last two need the Ridge or Autumn lands), names it ("Pendingvale", "Beta Basin",
+  "Hotfix Hollow") and walks it in three zones, each one biome over two or three rows of the map, one leading into
+  the next. A region has its own dex of four or five Billie lines (each as its normal look or its regional form, as
+  the region leans), and its mini-bosses and boss are leaders of the types it leans to. The world map shows the
+  region's name and each zone's own ground, and a place's card says which zone it is in.
+- Type abilities (reflavour track RF-3): each type's ability has a name, shown in the Guide's species page under
+  Abilities and in battle lines: Kindling (Fire), Undertow (Water), Regrowth (Grass), Live Wire (Electric), Bedrock
+  (Ground), Slipstream (Flying), Wild Mind (Psychic), Alloy (Steel), Parting Roar (Dragon). Three are new: Water's
+  Undertow (its Water moves hit 1.3× at a third of its HP or less; Water had none), Ground's Bedrock (once a battle a
+  hit that would knock it out from full HP leaves it at 1 HP; sharp stones still don't hurt it) and Dragon's Parting
+  Roar (when it faints, the next one in gets +1 Attack and +1 Sp. Atk, instead of the boosts it had). The rest work as
+  before.
 - Wild Billies by biome (roster track RO-1): every biome has its own wild pool of the seven Billie lines, met by
   rarity (the uncommon lines often, the starters' lines rarely, a line whose types suit the biome most), so a run
   meets real Billies everywhere instead of stand-ins. Four regional forms: Waterfront Gildlet (Water, by the lake),
   Cloud Facelet (Electric/Flying, on the ridge), Folklore Swiftlet (Grass/Psychic, in the autumn wood) and Festival
   Kontourlet (Psychic/Ground, in the canyon), each line with its own colours and its own evolutions. The Guide shows
   a line's regional forms on its page; catching one counts for that entry.
+- Catching with pyramids (reflavour track RF-2): the four catch coins are now the Pyramid, the Step Pyramid, the
+  Gold Pyramid and the Capstone (never fails, from badges), with new icons; the catch odds are the same. The throw is
+  a small lit 3D pyramid that tumbles through the air, rights itself as it drops, lands point up, rocks on an edge
+  once a wobble and seals with light climbing to its point; a critical catch lands balanced on its point. The throw
+  has sounds now (the throw, a stone landing, the wobbles, the seal, the pop when a Billie breaks out). Billies are
+  sent out of pyramids, and the professor throws three in the opening. The bag's pocket is Pyramids.
 - Things to do is gone (test cleanup track): the daily challenges, the townsfolk's requests and letters, the gold
   stamps (and their tile on the Trainer card), photo mode and your room in Granny Juniper's cottage are removed;
   her cottage no longer opens. The weather still changes battles.

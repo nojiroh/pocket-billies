@@ -51,7 +51,7 @@ provide({ storyAllows, storyHolds });
 
 /* ---------- the runner ----------
    A stage is what plays the lines: say({ who, expr, text, line }), choose(options) -> index, and a function per
-   command it plays (battle, walk, camera, ...). The runner changes the save itself (flags, items, coins, quests, once,
+   command it plays (battle, walk, camera, ...). The runner changes the save itself (flags, items, pyramids, quests, once,
    cycles), through `save` (the game's saveData, or a test's object).
    Where it is: a path of numbers, [statement, branch, statement, branch, ..., statement]: the branch is the clause
    of an if, the option of a choice, the entry of a cycle, 0 for once and call. After a checkpoint command the
@@ -170,7 +170,7 @@ export async function runScript(tree, stage, o) {
       count = (/** @type {string | undefined} */ s) => (s == null ? 1 : +s);
     const bag = (/** @type {string} */ thing) =>
       thing.startsWith('coin:')
-        ? { o: save.coins || (save.coins = {}), k: thing.slice(5) }
+        ? { o: save.pyramids || (save.pyramids = {}), k: thing.slice(5) }
         : { o: save.items || (save.items = {}), k: thing };
     switch (n.name) {
       case 'set':
@@ -267,11 +267,11 @@ export function chapterMap(id, save = saveData) {
 }
 
 /* ---------- safe runs ----------
-   A script changes the save as it runs, but a save taken halfway through stores the story, items, coins and trainers
+   A script changes the save as it runs, but a save taken halfway through stores the story, items, pyramids and trainers
    beaten as they were when it started (or at its last checkpoint), with `resume` saying which script to play again
    on Continue and from where. */
 /** what JSON.stringify(save) writes while a script runs @param {any} save
- * @param {{ story: any, items: any, coins: any, flags: any }} base @param {{ script: string, path: number[] | null }} at */
+ * @param {{ story: any, items: any, pyramids: any, flags: any }} base @param {{ script: string, path: number[] | null }} at */
 export function saveDuringRun(save, base, at) {
   return { ...save, ...base, story: { ...base.story, resume: at } };
 }
@@ -281,7 +281,7 @@ export function runBase(save) {
     JSON.stringify({
       story: save.story || {},
       items: save.items || {},
-      coins: save.coins || {},
+      pyramids: save.pyramids || {},
       flags: save.flags || {},
     })
   );
@@ -289,7 +289,7 @@ export function runBase(save) {
 
 /* ---------- start presets (story.json presets, ?story=<preset> in a test run) ---------- */
 /** puts a started save at a point in the story: the place, story flags, trainers beaten (a leader's badge with them),
- * coins, items and the team; returns the preset, or null if there is none by that name
+ * pyramids, items and the team; returns the preset, or null if there is none by that name
  * @param {any} save @param {string} name */
 export function applyStoryPreset(save, name) {
   const P = ((STORY_DATA || {}).presets || {})[name];
@@ -307,7 +307,7 @@ export function applyStoryPreset(save, name) {
     save.flags[id] = 1;
     if (T.seat && !save.seats.includes(T.seat.id)) save.seats.push(T.seat.id);
   }
-  Object.assign(save.coins, P.coins || {});
+  Object.assign(save.pyramids, P.pyramids || {});
   Object.assign(save.items, P.items || {});
   save.team = P.team.map((/** @type {{ sp: string, lvl: number }} */ m) => makeBilly(m.sp, m.lvl));
   save.buddy = save.team[0].uid;

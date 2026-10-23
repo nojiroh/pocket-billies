@@ -10,7 +10,7 @@ import { encounterStock, encountersHere, formatNumber, healAll, plural } from '.
 import { runClinic, runHealCost, runSheetStatus, weatherEffectText } from './logic/run-loop.js';
 import { startWild } from './logic/battle-engine.js';
 import { activeBattle, escapeHtml, save, saveData, saveNow, uiState } from './game-state.js';
-import { artURL, uiIconHTML } from './art.js';
+import { artURL, moneyHTML, uiIconHTML } from './art.js';
 import { mapById, walkView } from './walk-view.js';
 import { WEATHER_NAMES, environment, environmentHint, environmentIcon, environmentLabel } from './environment.js';
 import { runClinicEach, runGiveUp, runStartSheet } from './run.js';
@@ -66,7 +66,7 @@ function tripButtons() {
     return `<button class="pb small" data-a="stoptrip">Stop guiding me</button><button class="pb small quiet" data-a="tab" data-t="map">Change plans</button>`;
   return `<button class="pb small gold" data-a="tab" data-t="map">${uiIconHTML('map', 16)} Choose where to go</button>`;
 }
-/** RL-8: a clinic heals the team: free in the hub (as before); on a run for rules.json run.healCost per hurt Billie (RL-12: with the Loopholes' price rows),
+/** RL-8: a clinic heals the team: free in the hub (as before); on a run for rules.json run.healCost per hurt Billie (RL-12: with the Perks' price rows),
     after a yes, a purchase saved at once (logic/run-loop.js runHealCost). `say`: the clinic prop's own line */
 export function clinicHeal(say) {
   if (!saveData.run) {
@@ -84,16 +84,16 @@ export function clinicHeal(say) {
   }
   if (saveData.se < cost) {
     toast(
-      `Healing ${plural(hurt, 'Billie')} costs $${formatNumber(cost)} ($${each} each). You have $${formatNumber(saveData.se)}.`
+      `Healing ${plural(hurt, 'Billie')} costs ${plural(cost, 'Money')} (${plural(each, 'Money')} each). You have ${plural(saveData.se, 'Money')}.`
     );
     return;
   }
   modal({
     title: 'The clinic',
-    html: `<p>Out here healing isn’t free: $${each} a Billie. Heal ${plural(hurt, 'hurt Billie')} for $${formatNumber(cost)}? You have $${formatNumber(saveData.se)}.</p>`,
+    html: `<p>Out here healing isn’t free: ${moneyHTML(each)} a Billie. Heal ${plural(hurt, 'hurt Billie')} for ${moneyHTML(cost)}? You have ${moneyHTML(saveData.se)}.</p>`,
     btns: [
       {
-        l: `Heal for $${formatNumber(cost)}`,
+        l: `Heal for ${plural(cost, 'Money')}`,
         c: 'gold',
         f: () => {
           closeModal();
@@ -102,7 +102,7 @@ export function clinicHeal(say) {
           if (!now.paid) return;
           saveNow();
           render();
-          toast(say || `The clinic patched everyone up for $${formatNumber(now.cost)}.`);
+          toast(say || `The clinic patched everyone up for ${plural(now.cost, 'Money')}.`);
         },
       },
       { l: 'Not now', c: 'quiet', f: closeModal },
@@ -123,7 +123,7 @@ function nodeActions(i) {
     if (n.town) {
       const { hurt, cost } = runHealCost(saveData.team, runClinicEach());
       x += hurt
-        ? `<button class="pb small" data-a="clinic">Clinic: heal ${plural(hurt, 'Billie')} for $${formatNumber(cost)}</button>`
+        ? `<button class="pb small" data-a="clinic">Clinic: heal ${plural(hurt, 'Billie')} for ${moneyHTML(cost)}</button>`
         : '<button class="pb small quiet" data-a="clinic">Clinic: everyone is fine</button>';
     }
   } else if (n.town) x += '<button class="pb small" data-a="clinic">Rest at the clinic, free</button>';
@@ -149,7 +149,7 @@ function roomHero() {
       {
         shop: 'Tap the counter to shop.',
         clinic: 'Tap the desk and your team is patched up, free.',
-        lab: 'Tap Professor Chosen or Hazel to talk, or the unlock board to spend Capital.',
+        lab: 'Tap Professor Chosen or Hazel to talk, or the unlock board to spend Research.',
         house: 'Tap whoever lives here to chat.',
         ranch: 'Tap the training board or the rancher to train your Billies.',
       }[I.kind] || '';
@@ -237,7 +237,7 @@ function encountersHTML() {
     cap = encounterStock(saveData.trip.node);
   if (!cap) return '';
   return `<section class="pending"><div class="sec-h"><h2>Wild Billies here</h2><span class="count tnum">${q.length}/${cap}</span></div>
-  <p class="note">${q.length >= cap ? 'This place is full. Battle or tax a few to make room.' : 'Another one wanders over about every minute.'} You only see their level until the battle starts.</p>
+  <p class="note">${q.length >= cap ? 'This place is full. Battle or catch a few to make room.' : 'Another one wanders over about every minute.'} You only see their level until the battle starts.</p>
   ${q.length ? `<div class="queue">${q.map(encounterCardHTML).join('')}</div>` : '<div class="empty px">No Billies nearby. Give it a minute and one will wander over.</div>'}</section>`;
 }
 /* the forecast's word to a UI icon (environment.js environmentIcon's, by day) */

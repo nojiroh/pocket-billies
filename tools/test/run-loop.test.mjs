@@ -26,7 +26,7 @@ test("a run town's clinic charges for each hurt Billie: below full HP, fainted, 
   assert.deepEqual(L.runHealCost(s.team, 60), { hurt: 0, cost: 0 });
   s.team[0].hp -= 1;
   s.team[1].hp = 0;
-  s.team[2].status = 'scn';
+  s.team[2].status = 'brn';
   assert.deepEqual(L.runHealCost(s.team, 60), { hurt: 3, cost: 180 });
   assert.deepEqual(L.runHealCost(s.team, 0), { hurt: 3, cost: 0 });
 });
@@ -39,7 +39,7 @@ test("a run town's clinic: paid and healed when hurt and the money is there, els
   s.se = 100;
   assert.deepEqual(L.runClinic(s, 60), { hurt: 0, cost: 0, paid: 0 }, 'nobody hurt: nothing to pay');
   s.team[0].hp = 1;
-  s.team[1].status = 'scn';
+  s.team[1].status = 'brn';
   assert.deepEqual(L.runClinic(s, 60), { hurt: 2, cost: 120, paid: 0 }, 'too little money');
   assert.equal(s.se, 100);
   assert.equal(s.team[0].hp, 1);
@@ -65,11 +65,11 @@ test("a run town's shop: always its wares, then more drawn by weight, the same o
   }
   assert.ok(stocks.size >= 3, `the stock changes with the day (${stocks.size} stocks in 12 days)`);
   /* a weight of 0 is never drawn; the record's layout doesn't change the draw */
-  const rule = { always: [], more: 2, pick: { pretzel: 1, loophole: 0, bailout: 1 } },
-    flipped = { always: [], more: 2, pick: { bailout: 1, loophole: 0, pretzel: 1 } };
+  const rule = { always: [], more: 2, pick: { pretzel: 1, hi_potion: 0, revive: 1 } },
+    flipped = { always: [], more: 2, pick: { revive: 1, hi_potion: 0, pretzel: 1 } };
   for (let day = 1; day <= 30; day++) {
     const a = L.runShopStock(run, 1, day, rule);
-    assert.ok(!a.some(w => w.item === 'loophole'));
+    assert.ok(!a.some(w => w.item === 'hi_potion'));
     assert.equal(new Set(a.map(w => w.item)).size, 2, 'both, none twice');
     assert.deepEqual(a, L.runShopStock(run, 1, day, flipped));
   }
@@ -78,7 +78,7 @@ test("a run town's shop: always its wares, then more drawn by weight, the same o
 test("Studio plan T3.3: a run town's wares through the run's own unlocks (runShopOpen: shop.js and the simulation)", () => {
   const run = runOf('SHOPOPEN'),
     UD = { unlocks: GAME_DATA.unlocks, buildings: GAME_DATA.buildings },
-    locked = ['settlement', 'appeal', 'bailout'],
+    locked = ['nerve_tonic', 'wake_tea', 'revive'],
     seen = new Set();
   run.unlocks = [];
   for (let day = 1; day <= 40; day++) {
@@ -87,7 +87,7 @@ test("Studio plan T3.3: a run town's wares through the run's own unlocks (runSho
     const open = modules.unlocks.unlockOpen(R.shop.pick, 'shop', [], UD);
     assert.deepEqual(a, L.runShopStock(run, 3, day, { ...R.shop, pick: open }), 'the stock of the open wares');
   }
-  run.unlocks = ['shop_appeal', 'shop_bailout', 'shop_settlement'];
+  run.unlocks = ['shop_wake_tea', 'shop_revive', 'shop_nerve_tonic'];
   for (let day = 1; day <= 40; day++) for (const w of L.runShopOpen(run, 3, day, R.shop, UD)) seen.add(w.item);
   assert.ok(
     locked.some(k => seen.has(k)),
@@ -145,7 +145,7 @@ test("a battle's seed is its node's and its number's", () => {
   assert.notEqual(L.runBattleSeed(run, 2, 5), L.runBattleSeed(run, 2, 6));
 });
 
-test("a run battle's start: its seed, the forecast's weather (clear is sunny), the Loopholes' rows when held", () => {
+test("a run battle's start: its seed, the forecast's weather (clear is sunny), the Perks' rows when held", () => {
   const run = runOf('RL8BATTLEX'),
     { runWeather } = modules['run-map'],
     { battleWeatherOf } = modules.weather;
@@ -154,7 +154,7 @@ test("a run battle's start: its seed, the forecast's weather (clear is sunny), t
       x = L.runBattleExtra(run, i, 4, GAME_DATA.rules.env, null);
     assert.equal(x.seed, L.runBattleSeed(run, i, 4));
     assert.deepEqual(x.wx, battleWeatherOf(w === 'clear' ? 'sunny' : w, GAME_DATA.rules.env), `node ${i}: ${w}`);
-    assert.ok(!('fx' in x), 'no Loopholes: no fx');
+    assert.ok(!('fx' in x), 'no Perks: no fx');
   }
   const fx = [{ kind: 'money', mult: 1.2, src: 'x' }];
   assert.equal(L.runBattleExtra(run, 0, 0, GAME_DATA.rules.env, fx).fx, fx);
@@ -218,19 +218,19 @@ test('releasing: a Billie caught on the run is paid at the end, one from home on
 });
 
 test("the payout screen's rows: payoutOf's lines with their words, the win row only on a win", () => {
-  const price = id => (id === 'taxbreak' ? 150 : 0),
-    end = { se: 750, items: { taxbreak: 2 }, released: 1, cleared: 6 },
+  const price = id => (id === 'potion' ? 150 : 0),
+    end = { se: 750, items: { potion: 2 }, released: 1, cleared: 6 },
     lost = L.runPayoutRows(payoutOf({ ...end, won: false }, R.payout, price), R.payout),
     won = L.runPayoutRows(payoutOf({ ...end, won: true }, R.payout, price), R.payout);
   assert.deepEqual(
     lost.map(r => r.label),
-    ['Money left', 'Items in the bag', 'Billies released', 'Places reached']
+    ['Moneys left', 'Items in the bag', 'Billies released', 'Places reached']
   );
   assert.equal(won.at(-1).label, 'The boss beaten');
   assert.ok(!won.some(r => r.label === 'Items in the bag'), 'RL-9b: a win takes the bag home, not paid');
   assert.equal(won.at(-1).value, R.payout.win);
   assert.equal(lost[0].value, Math.floor(750 * R.payout.money));
-  assert.match(lost[0].note, /\$750 at 10%/);
+  assert.match(lost[0].note, /750 Moneys at 10%/);
 });
 
 test('during a run storage stays in Copperleaf: only the party counts, nothing moves in or out, a 7th waits', () => {

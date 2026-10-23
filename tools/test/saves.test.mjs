@@ -8,7 +8,7 @@ test('saves: a new save, load checks, saveFill, backup check', () => {
   const s = fn('newSave')();
   assert.equal(s.saveVersion, logic.SAVE_VERSION);
   assert.equal(s.gameVersion, globalThis.PB_VERSION);
-  assert.equal(s.coins.penny, 5);
+  assert.equal(s.pyramids.pyramid, 5);
   assert.equal(s.items.potion, 2);
   assert.equal(fn('saveAge')(s), 'ok');
   assert.equal(fn('saveAge')({}), 'old');
@@ -67,7 +67,7 @@ test('saves: a started save comes back from its JSON (loading again changes noth
 
 // RL-3 (save format 4): meta, run and ranch in the save; a run's trip is on the run's world, not today's LOCATIONS
 const { runBegin } = modules['run-state'];
-const GIVE = { seed: 'ABCDE12345', tier: 1, mapgenV: 1, se: 300 };
+const GIVE = { seed: 'ABCDE12345', expedition: 1, mapgenV: 1, se: 300 };
 const RUN_MAP = {
   nodes: [
     { type: 'landing', row: 0, lane: 0, to: [1, 2] },
@@ -91,15 +91,15 @@ function runSave() {
   return s;
 }
 
-test('saves: format 4 holds meta, the run (null in the hub) and the ranch; a format 3 save is old', () => {
+test('saves: format 5 holds meta, the run (null in the hub) and the ranch; a format 4 save is old', () => {
   const s = fn('newSave')();
-  assert.equal(logic.SAVE_VERSION, 4);
+  assert.equal(logic.SAVE_VERSION, 5);
   assert.deepEqual(s.meta, modules['meta-state'].newMeta());
   assert.equal(s.run, null);
   assert.deepEqual(s.ranch, modules['ranch-state'].newRanch());
   assert.equal('v' in s, false, 'the old v field is gone');
-  assert.equal(fn('saveAge')({ ...startedSave(), saveVersion: 3 }), 'old');
-  assert.equal(fn('loadSave')({ ...startedSave(), saveVersion: 3 }), null);
+  assert.equal(fn('saveAge')({ ...startedSave(), saveVersion: 4 }), 'old');
+  assert.equal(fn('loadSave')({ ...startedSave(), saveVersion: 4 }), null);
 });
 
 test('saves: a save from a run loads with its trip, plan, visited places and run as they were', () => {
@@ -173,7 +173,7 @@ test('saves: the load check refuses a format 4 save with a broken meta, run, ran
     ['no run key', { ...s, run: undefined }],
     ['a broken run', { ...s, run: { ...s.run, clock: 0 } }],
     ['no meta', { ...s, meta: undefined }],
-    ['a broken meta', { ...s, meta: { ...s.meta, capital: -1 } }],
+    ['a broken meta', { ...s, meta: { ...s.meta, research: -1 } }],
     ['no ranch', { ...s, ranch: null }],
     ['the trip off the run world', { ...s, trip: { node: 6, plan: [] } }],
     ['a broken Billie in the hub team', { ...s, run: { ...s.run, start: { ...s.run.start, team: [badBilly] } } }],

@@ -1,14 +1,14 @@
-// RL-12: logic/effects.js, what a run's Loopholes change: each effect kind at its point, rows that don't apply left
-// out, the same answer whatever order the Loopholes were picked in, every Loophole held at once staying finite, and no
-// rows changing nothing (a battle or a run without Loopholes is as before).
+// RL-12: logic/effects.js, what a run's Perks change: each effect kind at its point, rows that don't apply left
+// out, the same answer whatever order the Perks were picked in, every Perk held at once staying finite, and no
+// rows changing nothing (a battle or a run without Perks is as before).
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { GAME_DATA, modules } from './setup-real.mjs';
 
 const E = modules.effects,
-  RELICS = GAME_DATA.relics,
-  ALL = Object.keys(RELICS);
-/** the rows of these made-up Loopholes (one row each) */
+  PERKS = GAME_DATA.perks,
+  ALL = Object.keys(PERKS);
+/** the rows of these made-up Perks (one row each) */
 const rows = (...fx) =>
   E.fxRows(
     fx.map((_, i) => 'x' + i),
@@ -26,20 +26,20 @@ test('effects: no rows change nothing (exactly the number given)', () => {
     assert.deepEqual(E.fxStages(fx), {});
     assert.equal(E.fxHealShare(fx), 0);
     const r = { money: 0.1, itemShare: 0.5 };
-    assert.deepEqual(E.fxPayoutRates(fx, r), { ...r, capital: 1 });
+    assert.deepEqual(E.fxPayoutRates(fx, r), { ...r, research: 1 });
   }
 });
 
-test('effects: fxRows tags each row with its Loophole, in the order held; an unknown id gives none', () => {
-  const fx = E.fxRows(['shelter', 'nope', 'offshore'], RELICS);
+test('effects: fxRows tags each row with its Perk, in the order held; an unknown id gives none', () => {
+  const fx = E.fxRows(['clinic_card', 'nope', 'lucky_charm'], PERKS);
   assert.deepEqual(
     fx.map(f => [f.src, f.kind]),
     [
-      ['shelter', 'price'],
-      ['offshore', 'money'],
+      ['clinic_card', 'price'],
+      ['lucky_charm', 'money'],
     ]
   );
-  assert.equal(RELICS.shelter.fx[0].src, undefined, 'the data is not changed');
+  assert.equal(PERKS.clinic_card.fx[0].src, undefined, 'the data is not changed');
 });
 
 test('effects: each kind at its point, and only there', () => {
@@ -50,7 +50,7 @@ test('effects: each kind at its point, and only there', () => {
     { kind: 'catch', mult: 1.25 },
     { kind: 'stat', stat: 'hus', stages: 1 },
     { kind: 'heal', share: 0.15 },
-    { kind: 'payout', what: 'capital', mult: 1.15 },
+    { kind: 'payout', what: 'research', mult: 1.15 },
     { kind: 'payout', what: 'itemShare', mult: 2 }
   );
   assert.equal(E.fxMoney(fx, 100), 120);
@@ -61,7 +61,7 @@ test('effects: each kind at its point, and only there', () => {
   assert.deepEqual(E.fxStages(fx), { hus: 1 });
   assert.equal(E.fxHealShare(fx), 0.15);
   const p = E.fxPayoutRates(fx, { money: 0.1, itemShare: 0.5, win: 100 });
-  assert.deepEqual(p, { money: 0.1, itemShare: 1, win: 100, capital: 1.15 });
+  assert.deepEqual(p, { money: 0.1, itemShare: 1, win: 100, research: 1.15 });
   assert.equal(E.fxDamage(fx, hit()), 1, 'no damage rows');
 });
 
@@ -79,10 +79,10 @@ test('effects: damage rows count for their side, category and type', () => {
   assert.equal(E.fxDamage(fx, hit({ take: true })), 1.15 * 0.9, 'one of yours hits another of yours');
 });
 
-test('effects: stacking is the same whatever order the Loopholes were picked in', () => {
+test('effects: stacking is the same whatever order the Perks were picked in', () => {
   const ids = ALL.slice(),
-    one = E.fxRows(ids, RELICS),
-    two = E.fxRows(ids.slice().reverse(), RELICS),
+    one = E.fxRows(ids, PERKS),
+    two = E.fxRows(ids.slice().reverse(), PERKS),
     sample = fx => [
       E.fxMoney(fx, 1234),
       E.fxPrice(fx, 'shop', 999),
@@ -104,8 +104,8 @@ test('effects: stacking is the same whatever order the Loopholes were picked in'
   );
 });
 
-test('effects: many rows stay within the limits (every Loophole at once, and the worst made-up stack)', () => {
-  const fx = E.fxRows([...ALL, ...ALL, ...ALL], RELICS);
+test('effects: many rows stay within the limits (every Perk at once, and the worst made-up stack)', () => {
+  const fx = E.fxRows([...ALL, ...ALL, ...ALL], PERKS);
   for (const v of [E.fxMoney(fx, 1e6), E.fxPrice(fx, 'shop', 1e6), E.fxCatch(fx), E.fxHealShare(fx)])
     assert.ok(Number.isFinite(v) && v >= 0, `${v} finite`);
   const big = rows(...Array.from({ length: 40 }, () => ({ kind: 'catch', mult: 4 })));
@@ -118,18 +118,18 @@ test('effects: many rows stay within the limits (every Loophole at once, and the
   assert.equal(E.fxPayoutRates(fx, { itemShare: 0.9 }).itemShare, 1, 'items never above their price');
 });
 
-test('effects: every Loophole in relics.json uses a known kind', () => {
-  for (const [id, R] of Object.entries(RELICS))
+test('effects: every Perk in perks.json uses a known kind', () => {
+  for (const [id, R] of Object.entries(PERKS))
     for (const f of R.fx) assert.ok(E.FX_KINDS.includes(f.kind), `${id}: ${f.kind}`);
 });
 
-test("effects: fxRunPrice is a run's price with its Loopholes' price rows (none held, or no run: the price)", () => {
-  const heal = ALL.find(id => (RELICS[id].fx || []).some(f => f.kind === 'price' && f.what === 'heal'));
-  assert.ok(heal, 'a Loophole with a heal price row');
-  const run = { relics: [heal] };
-  assert.equal(E.fxRunPrice(run, RELICS, 'heal', 60), E.fxPrice(E.fxRows([heal], RELICS), 'heal', 60));
-  assert.notEqual(E.fxRunPrice(run, RELICS, 'heal', 60), 60);
-  assert.equal(E.fxRunPrice(run, RELICS, 'shop', 60), 60, 'only its own kind of price');
-  assert.equal(E.fxRunPrice({ relics: [] }, RELICS, 'heal', 60), 60);
-  assert.equal(E.fxRunPrice(null, RELICS, 'heal', 60), 60);
+test("effects: fxRunPrice is a run's price with its Perks' price rows (none held, or no run: the price)", () => {
+  const heal = ALL.find(id => (PERKS[id].fx || []).some(f => f.kind === 'price' && f.what === 'heal'));
+  assert.ok(heal, 'a Perk with a heal price row');
+  const run = { perks: [heal] };
+  assert.equal(E.fxRunPrice(run, PERKS, 'heal', 60), E.fxPrice(E.fxRows([heal], PERKS), 'heal', 60));
+  assert.notEqual(E.fxRunPrice(run, PERKS, 'heal', 60), 60);
+  assert.equal(E.fxRunPrice(run, PERKS, 'shop', 60), 60, 'only its own kind of price');
+  assert.equal(E.fxRunPrice({ perks: [] }, PERKS, 'heal', 60), 60);
+  assert.equal(E.fxRunPrice(null, PERKS, 'heal', 60), 60);
 });

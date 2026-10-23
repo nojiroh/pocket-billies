@@ -6,9 +6,9 @@
  "rar": "uncommon",
  "learn": [
   [1,"handshake"],
-  [1,"eviction"],
-  [5,"renthike"],
-  [9,"foreclose"],
+  [1,"quakestomp"],
+  [5,"scatterstones"],
+  [9,"bouldertoss"],
   [13,"bulk"],
   [18,"towerdrop"],
   [24,"rollback"],

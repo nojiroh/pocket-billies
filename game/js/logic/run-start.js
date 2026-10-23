@@ -5,22 +5,26 @@
    runTakeOff), the run fixtures (fixture.js), the self-test, the run simulation (tools/test/sim/run-sim.mjs) and the
    Studio's Run Lab. runStartPlan decides it without a save: what the run is given (rules.json run.start), the unlocks
    it carries, its map rules with only the biomes those unlocks open (unlocks.js unlockOpen; the debug menu's short map
-   overrides rows), and the map they make (run-map.js runMapStart: the deadline, what the landing shows, the forecast).
+   overrides rows), the region (RL-R1, run-region.js: its zones give the map its rows and biomes), and the map they make
+   (run-map.js runMapStart: the deadline, what the landing shows, the forecast).
    runStartOn puts a plan on a save (run-state.js runBegin). What the page does around it (heal, the ranch, the world,
    the flight) stays in run.js. Logic only: no DOM, no Date, no Math.random (tools/test/run-start.test.mjs). */
-/** @import { Run, RunMap, SaveData } from '../../types/save-data' */
+/** @import { Run, RunMap, RunRegion, SaveData } from '../../types/save-data' */
 /** @import { NodeType, RunMapRules, Unlock, HubBuilding } from '../../types/game-data' */
 /**
  * @typedef {{ nodeTypes: Record<string, NodeType>, biomes: Record<string, { climate?: string }>,
- *   rules: any, unlockData: { unlocks: Record<string, Unlock>, buildings: Record<string, HubBuilding> } }} RunStartData
- * rules is rules.json run (start, map, clock, reveal, ...)
+ *   rules: any, unlockData: { unlocks: Record<string, Unlock>, buildings: Record<string, HubBuilding> },
+ *   region?: import('./run-region.js').RunRegionData }} RunStartData
+ * rules is rules.json run (start, map, clock, reveal, ...); region what a run's region is made from (RL-R1,
+ * logic/run-region.js runRegionData): without it a run has no region and its map rolls each place's biome
  * @typedef {{ give: ReturnType<typeof runGive>, unlocks: string[], mods: string[],
  *   data: { nodeTypes: Record<string, NodeType>, biomes: Record<string, { climate?: string }>, rules: any },
- *   map: RunMap, deadline: number, forecast: string[][] }} RunStartPlan
+ *   map: RunMap, deadline: number, forecast: string[][], region: RunRegion | null }} RunStartPlan
  */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { copyOf, newRun, runBegin } from './run-state.js';
+import { runRegionMake } from './run-region.js';
 import { runMapStart } from './run-map.js';
 import { MAPGEN_VERSION } from './mapgen.js';
 import { unlockOpen } from './unlocks.js';
@@ -34,15 +38,15 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-/** what runBegin is given: the run's seed, tier and generator version, and its money, coins and items (run.start)
- * @param {string} seed @param {number} tier @param {number} mapgenV
- * @param {{ se: number, coins: Record<string, number>, items: Record<string, number> }} start */
-export const runGive = (seed, tier, mapgenV, start) => ({
+/** what runBegin is given: the run's seed, expedition and generator version, and its money, pyramids and items (run.start)
+ * @param {string} seed @param {number} expedition @param {number} mapgenV
+ * @param {{ se: number, pyramids: Record<string, number>, items: Record<string, number> }} start */
+export const runGive = (seed, expedition, mapgenV, start) => ({
   seed,
-  tier,
+  expedition,
   mapgenV,
   se: start.se,
-  coins: { ...start.coins },
+  pyramids: { ...start.pyramids },
   items: { ...start.items },
 });
 
@@ -51,35 +55,47 @@ export const runGive = (seed, tier, mapgenV, start) => ({
  * runUnlocks of the save; [] a fresh save's), `map` overrides rules.json run.map (the debug menu's short map), `mods`
  * the run's mods (they don't change the map)
  * @param {string} seed @param {RunStartData} data
- * @param {{ unlocks?: string[], map?: Partial<RunMapRules>, mods?: string[], tier?: number }} [o]
+ * @param {{ unlocks?: string[], map?: Partial<RunMapRules>, mods?: string[], expedition?: number }} [o]
  * @returns {RunStartPlan}
  */
 export function runStartPlan(seed, data, o = {}) {
-  const tier = o.tier || 1,
+  const expedition = o.expedition || 1,
     unlocks = (o.unlocks || []).slice(),
     rules = { ...data.rules.map, ...(o.map || {}) },
+    biomes = unlockOpen(rules.biomes, 'biome', unlocks, data.unlockData),
+    /* RL-R1: the region, from the biomes open to the run; its zones decide the map's rows unless they are given */
+    region = data.region
+      ? runRegionMake(seed, data.region, {
+          open: Object.keys(biomes).filter(b => biomes[b] > 0),
+          expedition,
+          guards: rules.minibosses,
+          rows: o.map && o.map.rows,
+        })
+      : null,
+    zoned = region ? { rows: region.zones.reduce((n, z) => n + z.rows, 0), zones: region.zones } : {},
     mapData = {
       nodeTypes: data.nodeTypes,
       biomes: data.biomes,
-      rules: { ...data.rules, map: { ...rules, biomes: unlockOpen(rules.biomes, 'biome', unlocks, data.unlockData) } },
+      rules: { ...data.rules, map: { ...rules, biomes, ...zoned } },
     },
-    scratch = newRun(seed, tier, MAPGEN_VERSION, /** @type {any} */ ({}));
+    scratch = newRun(seed, expedition, MAPGEN_VERSION, /** @type {any} */ ({}));
   runMapStart(scratch, mapData);
   return {
-    give: runGive(seed, tier, MAPGEN_VERSION, data.rules.start),
+    give: runGive(seed, expedition, MAPGEN_VERSION, data.rules.start),
     unlocks,
     mods: (o.mods || []).slice(),
     data: mapData,
     map: /** @type {RunMap} */ (scratch.map),
     deadline: scratch.deadline,
     forecast: scratch.forecast,
+    region,
   };
 }
 
 /** put a plan on a save: the run begins (runBegin: who travels from home, the packed bag) with the plan's money,
  * items, unlocks, mods, map, deadline and forecast. Returns the run
  * @param {SaveData} s @param {RunStartPlan} plan
- * @param {{ home?: string[], pack?: { items: Record<string, number>, coins: Record<string, number> } }} [pick]
+ * @param {{ home?: string[], pack?: { items: Record<string, number>, pyramids: Record<string, number> } }} [pick]
  * @returns {Run} */
 export function runStartOn(s, plan, pick = {}) {
   const run = runBegin(s, { ...plan.give, home: pick.home, pack: pick.pack });
@@ -88,5 +104,6 @@ export function runStartOn(s, plan, pick = {}) {
   run.map = copyOf(plan.map);
   run.deadline = plan.deadline;
   run.forecast = copyOf(plan.forecast);
+  if (plan.region) run.region = copyOf(plan.region);
   return run;
 }

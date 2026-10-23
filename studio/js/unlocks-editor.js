@@ -64,11 +64,11 @@ const UNLOCK_GRANTS = {
   building: 'A building’s level',
   shop: 'An item in run shops',
   biome: 'A biome on run maps',
-  capital: 'Capital',
+  research: 'Research',
   scrap: 'Scrap',
-  seals: 'Audit Seals',
+  crests: 'Crests',
 };
-const unlockGrantKind = (/** @type {any} */ G) => Object.keys(UNLOCK_GRANTS).find(k => G && k in G) || 'capital';
+const unlockGrantKind = (/** @type {any} */ G) => Object.keys(UNLOCK_GRANTS).find(k => G && k in G) || 'research';
 function unlockGrantNew(/** @type {string} */ kind) {
   const D = studioState.D;
   if (kind === 'building') {
@@ -331,7 +331,7 @@ SECTIONS.unlocks = () => {
   const currencies = Object.keys(D.currencies || {})
     .map(c => {
       const p = `currencies.${c}`;
-      return `<h4><span class="mono">${escapeHtml(c)}</span> <span class="run-tag">${D.currencies[c].kept === 'run' ? 'the run’s: turned into Capital at the payout' : 'kept between runs'}</span></h4>${grid(
+      return `<h4><span class="mono">${escapeHtml(c)}</span> <span class="run-tag">${D.currencies[c].kept === 'run' ? 'the run’s: turned into Research at the payout' : 'kept between runs'}</span></h4>${grid(
         textField('Name', `${p}.name`),
         textField('One of it', `${p}.one`),
         textField('Icon', `${p}.icon`)
@@ -341,7 +341,7 @@ SECTIONS.unlocks = () => {
   return `<div class="ed-col solo"><div class="ed-head"><div><h2>Unlocks & hub</h2><p class="sub">unlocks.json, buildings.json and currencies.json: what the hub sells and what runs earn.</p></div><button class="btn primary" data-act="unlockNew">+ New unlock</button></div>
  ${card(
    'The unlock graph',
-   `<div class="ug-scroll">${unlockGraphSvg(g, id, new Set(S.owned), bad)}</div><p class="help">A column per building, its rows in that building’s currency (the dot: gold Capital, grey Scrap, teal Seals, green earned); an arrow from each row a row needs. Shaded: what the save below owns. Click a row to edit it.</p>${unlockErrHTML(general)}`
+   `<div class="ug-scroll">${unlockGraphSvg(g, id, new Set(S.owned), bad)}</div><p class="help">A column per building, its rows in that building’s currency (the dot: gold Research, grey Scrap, teal Crests, green earned); an arrow from each row a row needs. Shaded: what the save below owns. Click a row to edit it.</p>${unlockErrHTML(general)}`
  )}
  ${U[id] ? unlockRowHTML(id, P) : ''}
  ${card(
@@ -355,7 +355,7 @@ SECTIONS.unlocks = () => {
    sub: 'The hub’s buildings: each sells its unlock rows in its own currency; a level above 1 is a row of its own.',
  })}
  ${card('Currencies', currencies + unlockErrHTML(P.filter(x => x.f === 'currencies.json')), {
-   sub: 'Money is the run’s; the others are kept between runs (the game reads each by its id).',
+   sub: 'Moneys are the run’s; the others are kept between runs (the game reads each by its id).',
  })}</div>`;
 };
 
@@ -419,7 +419,7 @@ ACTIONS.unlockNew = () => {
   const D = studioState.D,
     k = uniqueKey('unlock', x => !!D.unlocks[x]),
     at = Object.keys(D.buildings).find(b => !D.buildings[b].soon) || 'lab';
-  D.unlocks[k] = { name: 'New unlock', about: 'What it opens.', at, cost: 10, grant: { capital: 10 } };
+  D.unlocks[k] = { name: 'New unlock', about: 'What it opens.', at, cost: 10, grant: { research: 10 } };
   studioState.sel.unlock = k;
   changed();
   render();

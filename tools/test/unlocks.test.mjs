@@ -23,38 +23,38 @@ test('unlocks: each row is sold at its building in that building’s currency, o
     if (R.when) assert.equal(door, 'earned', id);
     else assert.equal(K.unlockCurrency(R, D), D.buildings[R.at].currency, id);
   }
-  assert.equal(K.unlockDoor(D.unlocks.shop_bailout), 'board');
+  assert.equal(K.unlockDoor(D.unlocks.shop_revive), 'board');
   assert.equal(K.unlockDoor(D.unlocks.ranch_2), 'building');
   assert.equal(K.unlockCurrency(D.unlocks.ranch_2, D), 'scrap');
-  assert.equal(K.unlockCurrency(D.unlocks.airship_2, D), 'seals');
+  assert.equal(K.unlockCurrency(D.unlocks.airship_2, D), 'crests');
 });
 
 test('unlocks: buying pays once, in the right currency, and grants', () => {
-  const s = hubSave({ capital: 200, scrap: 50, seals: 0 });
-  assert.equal(K.unlockReady(s, 'shop_bailout', D), null);
-  assert.equal(K.unlockBuy(s, 'shop_bailout', D), true);
-  assert.equal(s.meta.capital, 200 - D.unlocks.shop_bailout.cost);
-  assert.equal(s.meta.unlocks.shop_bailout, 1);
-  assert.equal(K.unlockReady(s, 'shop_bailout', D), 'owned');
-  assert.equal(K.unlockBuy(s, 'shop_bailout', D), false, 'never twice');
-  assert.equal(s.meta.capital, 200 - D.unlocks.shop_bailout.cost);
+  const s = hubSave({ research: 200, scrap: 50, crests: 0 });
+  assert.equal(K.unlockReady(s, 'shop_revive', D), null);
+  assert.equal(K.unlockBuy(s, 'shop_revive', D), true);
+  assert.equal(s.meta.research, 200 - D.unlocks.shop_revive.cost);
+  assert.equal(s.meta.unlocks.shop_revive, 1);
+  assert.equal(K.unlockReady(s, 'shop_revive', D), 'owned');
+  assert.equal(K.unlockBuy(s, 'shop_revive', D), false, 'never twice');
+  assert.equal(s.meta.research, 200 - D.unlocks.shop_revive.cost);
   assert.equal(K.buildingLevel(s, 'ranch'), 1);
   assert.equal(K.unlockBuy(s, 'ranch_2', D), true);
   assert.equal(s.meta.scrap, 50 - D.unlocks.ranch_2.cost, 'the ranch is paid in Scrap');
   assert.equal(K.buildingLevel(s, 'ranch'), 2);
   assert.equal(modules.ranch.ranchLevel(s), 2, 'the ranch reads its new level');
-  assert.equal(K.unlockReady(s, 'airship_2', D), 'cost', 'no Seals');
+  assert.equal(K.unlockReady(s, 'airship_2', D), 'cost', 'no Crests');
   assert.equal(K.unlockReady(s, 'nope', D), 'unknown');
 });
 
 test('unlocks: what a row needs, earned rows, and the run refuse a purchase', () => {
-  const s = hubSave({ capital: 1e6, scrap: 1e6, seals: 9 });
+  const s = hubSave({ research: 1e6, scrap: 1e6, crests: 9 });
   assert.equal(K.unlockReady(s, 'ranch_3', D), 'requires');
   assert.equal(K.unlockReady(s, 'biome_ridge', D), 'requires');
   assert.equal(K.unlockReady(s, 'first_run', D), 'earned', 'an earned row is not sold');
   assert.equal(K.unlockBuy(s, 'first_run', D), false);
   s.run = /** @type {any} */ ({ seed: 'X' });
-  assert.equal(K.unlockReady(s, 'shop_appeal', D), 'run', 'bought in the hub');
+  assert.equal(K.unlockReady(s, 'shop_wake_tea', D), 'run', 'bought in the hub');
   s.run = null;
   assert.ok(K.unlockBuy(s, 'ranch_2', D) && K.unlockBuy(s, 'ranch_3', D));
   assert.equal(K.buildingLevel(s, 'ranch'), 3);
@@ -75,27 +75,27 @@ test('unlocks: earned rows are granted when their condition holds, once, in the 
   assert.equal(s.meta.scrap, scrap + D.unlocks.first_run.grant.scrap);
   assert.deepEqual(K.unlockAuto(s, D), [], 'once');
   s.meta.wins = 1;
-  const seals = s.meta.seals;
+  const crests = s.meta.crests;
   assert.deepEqual(K.unlockAuto(s, D), ['first_win']);
-  assert.equal(s.meta.seals, seals + 1);
+  assert.equal(s.meta.crests, crests + 1);
   const chain = {
     ...D,
     unlocks: {
-      a: { name: 'a', about: 'a', when: 'unlock:b', grant: { capital: 1 } },
-      b: { name: 'b', about: 'b', when: 'runs >= 1', grant: { capital: 2 } },
+      a: { name: 'a', about: 'a', when: 'unlock:b', grant: { research: 1 } },
+      b: { name: 'b', about: 'b', when: 'runs >= 1', grant: { research: 2 } },
     },
   };
-  const t = hubSave({ runs: 1, capital: 0 });
+  const t = hubSave({ runs: 1, research: 0 });
   assert.deepEqual(K.unlockAuto(t, chain), ['b', 'a'], 'a condition reading another unlock follows it');
-  assert.equal(t.meta.capital, 3);
+  assert.equal(t.meta.research, 3);
 });
 
 test('unlocks: tidy forgets rows the table lost and rebuilds the buildings’ levels from what is owned', () => {
   const s = hubSave();
-  s.meta.unlocks = { ranch_2: 1, gone_row: 1, shop_appeal: 1 };
+  s.meta.unlocks = { ranch_2: 1, gone_row: 1, shop_wake_tea: 1 };
   s.meta.buildings = { ranch: 7, lab: 4 };
   K.unlockTidy(s, D);
-  assert.deepEqual(s.meta.unlocks, { ranch_2: 1, shop_appeal: 1 });
+  assert.deepEqual(s.meta.unlocks, { ranch_2: 1, shop_wake_tea: 1 });
   assert.deepEqual(s.meta.buildings, { ranch: 2 });
   s.meta.unlocks = {};
   K.unlockTidy(s, D);
@@ -106,13 +106,13 @@ test('unlocks: tidy forgets rows the table lost and rebuilds the buildings’ le
 
 test('unlocks: a run’s copy opens its shops and map; the same seed and copy make the same run', () => {
   const s = hubSave();
-  s.meta.unlocks = { shop_bailout: 1, ranch_2: 1, biome_ridge: 1, airship_2: 1 };
-  assert.deepEqual(K.runUnlocks(s, D), ['biome_ridge', 'shop_bailout'], 'only shop and biome rows, sorted');
+  s.meta.unlocks = { shop_revive: 1, ranch_2: 1, biome_ridge: 1, airship_2: 1 };
+  assert.deepEqual(K.runUnlocks(s, D), ['biome_ridge', 'shop_revive'], 'only shop and biome rows, sorted');
   const none = K.unlockOpen(RUN.shop.pick, 'shop', [], D);
-  for (const k of ['settlement', 'appeal', 'bailout']) assert.ok(!(k in none), `${k} locked for a new player`);
-  assert.ok('pretzel' in none && 'loophole' in none, 'what no row grants stays open');
+  for (const k of ['nerve_tonic', 'wake_tea', 'revive']) assert.ok(!(k in none), `${k} locked for a new player`);
+  assert.ok('pretzel' in none && 'hi_potion' in none, 'what no row grants stays open');
   const some = K.unlockOpen(RUN.shop.pick, 'shop', K.runUnlocks(s, D), D);
-  assert.ok('bailout' in some && !('appeal' in some));
+  assert.ok('revive' in some && !('wake_tea' in some));
   assert.equal(K.unlockOpen(RUN.shop.pick, 'shop', undefined, D), RUN.shop.pick, 'a run from before RL-11: all open');
   const biomes = K.unlockOpen(RUN.map.biomes, 'biome', K.runUnlocks(s, D), D);
   assert.deepEqual(Object.keys(biomes).sort(), ['lake', 'meadow', 'ridge', 'thicket']);
@@ -133,7 +133,7 @@ test('unlocks: a run’s copy opens its shops and map; the same seed and copy ma
     const a = runShopStock(run, 3, day, rule);
     assert.deepEqual(runShopStock(run, 3, day, rule), a, `day ${day}: same stock`);
     assert.ok(
-      a.every(w => !w.item || w.item !== 'appeal'),
+      a.every(w => !w.item || w.item !== 'wake_tea'),
       'nothing it hasn’t unlocked'
     );
   }

@@ -8,7 +8,7 @@
    its own small data there before it imports this module. */
 /**
  * @import { EggTier, Evolution, GameData, LocationData, LocationEntry, Pool, Road, RoadFromNode, RoadLink } from '../types/game-data'
- * @import { CutsceneData, Relic, Seat, Species, TrainerEntry } from '../types/game-data'
+ * @import { CutsceneData, Perk, Seat, Species, TrainerEntry } from '../types/game-data'
  */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
@@ -19,7 +19,6 @@ expose({
   BATTLE_STAGES: [() => BATTLE_STAGES],
   BUILDINGS: [() => BUILDINGS],
   COATS: [() => COATS],
-  COINS: [() => COINS],
   CURRENCIES: [() => CURRENCIES],
   CUTSCENES: [() => CUTSCENES],
   DATA_WARN: [() => DATA_WARN],
@@ -38,11 +37,12 @@ expose({
   MUSIC: [() => MUSIC],
   NODE_TYPES: [() => NODE_TYPES],
   PASSIVE: [() => PASSIVE],
+  PASSIVE_INFO: [() => PASSIVE_INFO],
   PEOPLE: [() => PEOPLE],
+  PERKS: [() => PERKS],
   POOLS: [() => POOLS],
+  PYRAMIDS: [() => PYRAMIDS],
   RARITY_STAT_TOTALS: [() => RARITY_STAT_TOTALS],
-  REGIONS: [() => REGIONS],
-  RELICS: [() => RELICS],
   ROADS: [() => ROADS],
   ROADS_BY_NODE: [() => ROADS_BY_NODE],
   ROBOTS: [() => ROBOTS],
@@ -79,6 +79,7 @@ expose({
   locationKind: [() => locationKind, v => (locationKind = v)],
   // @ts-expect-error -- replaced on purpose
   locationSubtitle: [() => locationSubtitle, v => (locationSubtitle = v)],
+  passiveName: [() => passiveName],
   // @ts-expect-error -- replaced on purpose
   rivalSpecies: [() => rivalSpecies, v => (rivalSpecies = v)],
   roadCost: [() => roadCost],
@@ -143,6 +144,16 @@ provide({ HIT_EFFECTS_BY_TYPE }); /* to-module */
 HIT_EFFECTS_BY_TYPE.None = gameData.untyped.fx || ['pow', 'star'];
 export const typesWith = p => TYPES.filter(t => PASSIVE[t] === p);
 export const hasPassive = (types, p) => types.some(t => PASSIVE[t] === p);
+/** RF-3: a passive's name and text as the player reads them (types.json passiveName, passiveText), by type */
+export const PASSIVE_INFO = Object.fromEntries(
+  gameData.types.map(t => [t.id, { name: t.passiveName || '', text: t.passiveText || '' }])
+);
+/** RF-3: the name of passive p as one of these types carries it ('' if none does) @param {string[]} types
+ * @param {string} p */
+export const passiveName = (types, p) => {
+  const t = types.find(x => PASSIVE[x] === p);
+  return (t && PASSIVE_INFO[t].name) || '';
+};
 export function typeEffectiveness(at, defs) {
   if (at === 'None' || !TYPE_STRONG_AGAINST[at]) return 1;
   let m = 1;
@@ -288,7 +299,6 @@ if (RULES.eggs && RULES.eggs.mythSpecies) RULES.eggs.mythSpecies = standInSpecie
    fills these tables in place, so every module that imports them sees the new rows: here once from the game data,
    the hub; a run puts its own world in (RL-7) and the hub back after */
 export const LOCATIONS = /** @type {LocationEntry[]} */ ([]);
-export const REGIONS = gameData.regions;
 export const POOLS = /** @type {Record<string, Pool>} */ ({});
 for (const k in gameData.pools) {
   const P = gameData.pools[k];
@@ -369,8 +379,8 @@ for (const k in gameData.eggs) {
 export const EGG_TIERS = Object.keys(EGGS)
   .map(Number)
   .sort((a, b) => a - b);
-export const COINS = gameData.coins;
-provide({ COINS }); /* to-module */
+export const PYRAMIDS = gameData.pyramids;
+provide({ PYRAMIDS }); /* to-module */
 /* studio track ST-0: coats, a recolour of a Billie's art (game/js/logic/coats.js) */
 export const COATS = gameData.coats || {};
 provide({ COATS }); /* to-module */
@@ -382,8 +392,8 @@ export const SHOPS = gameData.shops || {};
 export const NODE_TYPES = gameData.nodeTypes || {};
 /* sound track SND-2: the songs, jingles, cries' bases and where each song plays (music.json; audio/tracker.js plays them) */
 export const MUSIC = gameData.music || { songs: {}, jingles: {}, cries: { bases: [] }, where: [] };
-/* roguelite track RL-12: a run's Loopholes (relics) and their effect rows (logic/effects.js) */
-export const RELICS = /** @type {Record<string, Relic>} */ (gameData.relics || {});
+/* roguelite track RL-12: a run's Perks (relics) and their effect rows (logic/effects.js) */
+export const PERKS = /** @type {Record<string, Perk>} */ (gameData.perks || {});
 /* roguelite track RL-11: the four currencies (currencies.json) */
 export const CURRENCIES = gameData.currencies || {};
 /* RL-11: the hub's buildings, each upgraded with one currency (buildings.json; levels are unlocks.json rows) */

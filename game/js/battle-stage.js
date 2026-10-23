@@ -28,10 +28,11 @@ import {
   provide,
   reducedMotion,
   saveData,
+  soundEffect,
 } from './hooks.js';
 import { $, clamp, random } from './util.js';
 import { frameCount, frameScheduler, frameStop, frameTask, userFps } from './frame-scheduler.js';
-import { coinCanvas, iconCanvas, makeCanvas, whiteCopy } from './art.js';
+import { iconCanvas, makeCanvas, pyramidCanvas, whiteCopy } from './art.js';
 import { ROBOT_PART_BONES } from './robot-art.js';
 import { personBattleFrames, personBattlePose, wardrobeData } from './person-art.js';
 import { drawRig, rigFrame, rigParts, rigTint } from './skeleton-rig.js';
@@ -58,7 +59,14 @@ expose({
   HIT_SPRITES_BY_TYPE: [() => HIT_SPRITES_BY_TYPE],
   HORIZON_IN_FRAME: [() => HORIZON_IN_FRAME],
   LEAF_COLORS: [() => LEAF_COLORS],
+  MONEY_ICON: [() => MONEY_ICON],
   PULL_BACK_CAMERA: [() => PULL_BACK_CAMERA],
+  PYRAMID_HIGH: [() => PYRAMID_HIGH],
+  PYRAMID_LIFT: [() => PYRAMID_LIFT],
+  PYRAMID_REST: [() => PYRAMID_REST],
+  PYRAMID_SCALE: [() => PYRAMID_SCALE],
+  PYRAMID_SIDE: [() => PYRAMID_SIDE],
+  PYRAMID_YAW: [() => PYRAMID_YAW],
   SOFT_BLUR_PAD: [() => SOFT_BLUR_PAD],
   SPRITE_BLUR_SCALE: [() => SPRITE_BLUR_SCALE],
   STAGE_FRAME_HEIGHT: [() => STAGE_FRAME_HEIGHT],
@@ -109,7 +117,7 @@ expose({
   camUpdate: [() => camUpdate, v => (camUpdate = v)],
   cameraGuardPose: [() => cameraGuardPose],
   cameraOverflow: [() => cameraOverflow, v => (cameraOverflow = v)],
-  coinArc: [() => coinArc, v => (coinArc = v)],
+  catchSound: [() => catchSound],
   drawForegrounds: [() => drawForegrounds, v => (drawForegrounds = v)],
   drawList: [() => drawList],
   drawListLength: [() => drawListLength, v => (drawListLength = v)],
@@ -128,6 +136,7 @@ expose({
   newActorState: [() => newActorState],
   particleSprite: [() => particleSprite, v => (particleSprite = v)],
   punch: [() => punch, v => (punch = v)],
+  pyramidArc: [() => pyramidArc, v => (pyramidArc = v)],
   ringFx: [() => ringFx, v => (ringFx = v)],
   scheduleAt: [() => scheduleAt, v => (scheduleAt = v)],
   setActorAction: [() => setActorAction, v => (setActorAction = v)],
@@ -735,13 +744,13 @@ function spawnAmbientParticles(dt) {
       const sd = battleStage.s[i];
       if (!sd.show || !sd.st || sd.a < 0.5) continue;
       const T = actorTop(i);
-      const sp = sd.st === 'aud' ? 'bolt' : sd.st === 'sub' ? 'zz' : sd.st === 'scn' ? 'flame' : 'spark';
+      const sp = sd.st === 'par' ? 'bolt' : sd.st === 'slp' ? 'zz' : sd.st === 'brn' ? 'flame' : 'spark';
       addParticle({
         x: T.x + (random() - 0.5) * 0.6,
         y: T.y + 0.2,
         z: T.z,
         vx: (random() - 0.5) * 0.3,
-        vy: sd.st === 'aud' ? -0.6 : 0.7,
+        vy: sd.st === 'par' ? -0.6 : 0.7,
         life: 900,
         spr: sp,
         k: 0.9,
@@ -1257,11 +1266,13 @@ function battleStageDrawEffects(c, skip0) {
             c.fillRect(Math.round(q.x - z + r), Math.round(q.y + r), Math.max(1, (z - r) * 2), 1);
         }
       }
-  if (battleStage.coin && battleStage.coin.show) {
+  /* RF-2: the thrown pyramid's flat icon, while battle-3d.js can't draw its model (3D props off, the GPU lost) */
+  if (battleStage.coin && battleStage.coin.show && !(battleStage.t - (battleStage.coin.in3d ?? -1e9) < 120)) {
     const C = battleStage.coin,
       q = battleStageProject(C.x, C.y, C.z);
     if (q) {
-      const cc = coinCanvas(C.kind, 16),
+      /* the mail move's coin: the money icon (not a catch item) */
+      const cc = C.kind === MONEY_ICON ? iconCanvas('coin', 3) : pyramidCanvas(C.kind, 16),
         k = clamp((q.s / 30) * (C.k || 1), 0.6, 4);
       c.save();
       c.translate(Math.round(q.x), Math.round(q.y));
@@ -1413,8 +1424,24 @@ export const camAt = (i, amt = 0.45, z = 0.14, rr = 0, d = 260, e = 'io') => {
   camTo(c, d, e);
   tween(battleStage.css, 'r', rr, d, e);
 };
-function coinArc(from, to, dur, kind, onLand, spin) {
-  const C = { kind, x: from.x, y: from.y, z: from.z, show: true, rot: 0, k: 1.6, glow: 0 };
+/* RF-2: a pyramid (a catch item's id: its model or its icon) or the mail move's coin (MONEY_ICON) flies an arc. A
+   pyramid tumbles about a tilted axis (C.ax, C.tum; faster with spin) while C.fly; battle-3d.js pyramidItem draws it */
+const MONEY_ICON = '$coin';
+function pyramidArc(from, to, dur, kind, onLand, spin) {
+  const C = {
+    kind,
+    x: from.x,
+    y: from.y,
+    z: from.z,
+    show: true,
+    rot: 0,
+    k: 1.6,
+    glow: 0,
+    fly: true,
+    tum: 0,
+    ax: spin ? [0.35, 0.3, 0.89] : [0.62, 0.45, 0.64],
+    tip: false,
+  };
   battleStage.coin = C;
   const t0 = battleStage.t;
   const step = () => {
@@ -1423,6 +1450,7 @@ function coinArc(from, to, dur, kind, onLand, spin) {
     C.z = from.z + (to.z - from.z) * k;
     C.y = from.y + (to.y - from.y) * k + Math.sin(k * Math.PI) * 1.6;
     C.rot = k * Math.PI * (spin ? 6 : 3);
+    C.tum = k * Math.PI * (spin ? 7 : 4);
     if (k < 1) scheduleAt(8, step);
     else {
       C.rot = 0;
@@ -1540,7 +1568,7 @@ export function battleStagePlay(an, ev) {
       const w = actorWorldPoint(i),
         from = si === 0 ? throwOrigin() : { x: w.x + 2.4, y: 2.2, z: w.z + 1.6 },
         to = { x: w.x, y: 0.4, z: w.z };
-      coinArc(from, to, 380, 'penny', C => {
+      pyramidArc(from, to, 380, 'pyramid', C => {
         C.show = false;
         s.show = true;
         const c = actorCenter(i);
@@ -1796,8 +1824,8 @@ export function battleStagePlay(an, ev) {
             spr: 'pebble',
             k: kk,
           });
-      if (an.fx === 'rent') burst(T, 'Ground', 7, 1.6, kk);
-      if (an.fx === 'scn')
+      if (an.fx === 'stones') burst(T, 'Ground', 7, 1.6, kk);
+      if (an.fx === 'brn')
         for (let i = 0; i < 4; i++)
           scheduleAt(i * 70, () =>
             addParticle({
@@ -1812,7 +1840,7 @@ export function battleStagePlay(an, ev) {
           );
       if (an.fx === 'mail') {
         battleStageFocus(actorTeam(an.si) === 0 ? 'me' : 'foe');
-        coinArc({ x: T.x + 3, y: 4, z: T.z + 2 }, T, 380, 'gold', C => {
+        pyramidArc({ x: T.x + 3, y: 4, z: T.z + 2 }, T, 380, MONEY_ICON, C => {
           C.show = false;
           hitFx(an.si, { te: an.te, t: 'Retail' });
         });
@@ -1869,7 +1897,7 @@ export function battleStagePlay(an, ev) {
     case 'status': {
       const T = actorCenter(an.si),
         kk = 1,
-        sp = an.st === 'aud' ? 'bolt' : an.st === 'sub' ? 'zz' : 'flame';
+        sp = an.st === 'par' ? 'bolt' : an.st === 'slp' ? 'zz' : 'flame';
       setActorAction(an.si, 'dizzy', 800);
       for (let i = 0; i < 8; i++)
         scheduleAt(i * 60, () =>
@@ -1878,7 +1906,7 @@ export function battleStagePlay(an, ev) {
             y: T.y + 0.9,
             z: T.z,
             vx: (random() - 0.5) * 0.8,
-            vy: an.st === 'aud' ? -1.6 : 1.4,
+            vy: an.st === 'par' ? -1.6 : 1.4,
             life: 620,
             spr: sp,
             k: kk,
@@ -2051,15 +2079,29 @@ export function battleStagePlay(an, ev) {
   }
   return { dur: 0, hit: 0 };
 }
+/* RF-2: the thrown pyramid's size and how it lies on the ground (its model: battle-3d.js pyramidItem; its recipe stands
+   PYRAMID_LIFT up, tools/build-pyramids.py). PYRAMID_REST: its middle's height when it stands on the ground */
+export const PYRAMID_LIFT = 0.02,
+  PYRAMID_HIGH = 0.3,
+  PYRAMID_SIDE = 0.34,
+  PYRAMID_SCALE = 1.6,
+  PYRAMID_REST = (PYRAMID_HIGH / 2) * PYRAMID_SCALE,
+  PYRAMID_YAW = 32;
+/* RF-2: the catch: the pyramid flies tumbling, the Billie goes into it, it rights itself as it drops and lands point up
+   (res.edge, the critical catch: on its point), rocks on a base edge once a wobble (res.w), then seals (light climbs
+   its edges to the tip, a glow, stars) or the Billie breaks out */
+/* RF-2: the catch's sounds (sound.js): the throw, the landing, a wobble each way, the seal or the pop out */
+const catchSound = k => typeof soundEffect === 'function' && soundEffect(k);
 export function battleStageCatch(kind, res, spin, done) {
   battleStageFlush();
   const s1 = battleStage.s[1],
     o = actorCenter(1),
     w = actorWorldPoint(1),
-    land = { x: w.x, y: 0.25, z: w.z };
+    land = { x: w.x, y: PYRAMID_REST, z: w.z };
   camAt(1, 0.5, 0.18, 0.02, 320);
   battleStageFocus('foe');
-  coinArc(
+  catchSound('throw');
+  pyramidArc(
     throwOrigin(),
     { x: o.x, y: o.y, z: o.z },
     480,
@@ -2070,22 +2112,31 @@ export function battleStageCatch(kind, res, spin, done) {
       tween(s1, 'white', 1, 120, 'lin');
       tween(s1, 'sc', 0, 220, 'in', 120);
       buzz(15);
+      /* under the flash it turns to a small lean on one axis, and rights itself (or turns over) as it drops */
+      C.ax = [1, 0, 0];
+      C.tum = res.edge ? 0.5 : 0.7;
       scheduleAt(360, () => {
         s1.show = false;
         tween(C, 'y', land.y, 300, 'in');
+        tween(C, 'tum', res.edge ? Math.PI : 0, 300, 'out');
         scheduleAt(300, () => {
+          C.fly = false;
+          C.tip = !!res.edge;
+          catchSound('pyramidLand');
           battleStage.shk = 1.5;
           groundRing(1, '#FFFFFF', 1, 300);
-          tween(C, 'y', land.y + 0.25, 110, 'out');
+          tween(C, 'y', land.y + 0.12, 110, 'out');
           tween(C, 'y', land.y, 120, 'in', 110);
         });
         let t = 760;
         for (let k = 0; k < res.w; k++) {
           scheduleAt(t, () => {
             tween(battleStage.css, 'z', 0.06 + k * 0.03, 200, 'out');
-            tween(C, 'rot', -0.42, 150, 'out');
-            tween(C, 'rot', 0.42, 240, 'io', 150);
+            tween(C, 'rot', -0.32, 150, 'out');
+            tween(C, 'rot', 0.32, 240, 'io', 150);
             tween(C, 'rot', 0, 140, 'in', 390);
+            catchSound('wobble');
+            scheduleAt(390, () => catchSound('wobble'));
             buzz(8);
           });
           t += 820;
@@ -2093,27 +2144,46 @@ export function battleStageCatch(kind, res, spin, done) {
         scheduleAt(t, () => {
           tween(battleStage.css, 'z', 0, 300, 'io');
           if (res.caught) {
-            C.glow = 0;
-            for (let i = 0; i < 12; i++)
+            /* the seal: sparks climb the four edges to the point, then it glows and the stars fly */
+            catchSound('seal');
+            const hk = PYRAMID_SIDE * PYRAMID_SCALE * 0.7,
+              top = { x: C.x, y: C.y + (PYRAMID_HIGH * PYRAMID_SCALE) / 2, z: C.z };
+            for (let i = 0; i < 4 && !C.tip; i++) {
+              const a = ((45 + 90 * i + PYRAMID_YAW) * Math.PI) / 180,
+                b = { x: C.x + Math.cos(a) * hk, y: 0.03, z: C.z + Math.sin(a) * hk };
               addParticle({
-                x: C.x,
-                y: C.y,
-                z: C.z,
-                vx: (random() - 0.5) * 3,
-                vy: 2 + random() * 2,
-                vz: (random() - 0.5) * 2,
-                ay: -5,
-                life: 720,
-                spr: 'star',
+                ...b,
+                vx: (top.x - b.x) / 0.32,
+                vy: (top.y - b.y) / 0.32,
+                vz: (top.z - b.z) / 0.32,
+                life: 320,
+                spr: 'spark',
                 glow: 1,
               });
-            tween(C, 'glow', 0.9, 100);
-            tween(C, 'glow', 0, 300, 'lin', 120);
-            battleStageFlash('#FFF2A8', 0.3, 400);
-            scheduleAt(900, () => done(true));
+            }
+            scheduleAt(C.tip ? 0 : 320, () => {
+              for (let i = 0; i < 12; i++)
+                addParticle({
+                  x: C.x,
+                  y: C.y,
+                  z: C.z,
+                  vx: (random() - 0.5) * 3,
+                  vy: 2 + random() * 2,
+                  vz: (random() - 0.5) * 2,
+                  ay: -5,
+                  life: 720,
+                  spr: 'star',
+                  glow: 1,
+                });
+              tween(C, 'glow', 0.9, 100);
+              tween(C, 'glow', 0, 300, 'lin', 120);
+              battleStageFlash('#FFF2A8', 0.3, 400);
+            });
+            scheduleAt(C.tip ? 900 : 1220, () => done(true));
           } else {
             battleStageFlash('#FFFFFF', 0.6, 300);
             ringFx(C, '#FFFFFF', 0.1, 1.1);
+            catchSound('pop');
             C.show = false;
             s1.show = true;
             s1.sc = 0;

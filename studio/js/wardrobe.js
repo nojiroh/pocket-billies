@@ -167,7 +167,7 @@ SECTIONS.wardrobe = () => {
   const rows = list
     .map(
       ([k, it]) =>
-        `<button class="lcard ${wardrobeEditor.sel === k ? 'on' : ''}" data-act="wdPick" data-k="${escapeHtml(k)}"><span class="wd-th" data-th="${escapeHtml(k)}"></span><span class="lt"><b>${escapeHtml(it.name)}</b><small>${escapeHtml((slots.find(s => s.id === it.slot) || {}).name || it.slot)}${it.starter ? ' · everyone has it' : it.price ? ` · $${formatThousands(it.price)}${it.shop && studioState.D.shops[it.shop] ? ' · ' + escapeHtml(studioState.D.shops[it.shop].name) : ''}` : ''}</small></span></button>`
+        `<button class="lcard ${wardrobeEditor.sel === k ? 'on' : ''}" data-act="wdPick" data-k="${escapeHtml(k)}"><span class="wd-th" data-th="${escapeHtml(k)}"></span><span class="lt"><b>${escapeHtml(it.name)}</b><small>${escapeHtml((slots.find(s => s.id === it.slot) || {}).name || it.slot)}${it.starter ? ' · everyone has it' : it.price ? ` · ${formatThousands(it.price)} Moneys${it.shop && studioState.D.shops[it.shop] ? ' · ' + escapeHtml(studioState.D.shops[it.shop].name) : ''}` : ''}</small></span></button>`
     )
     .join('');
   return `<div class="split"><aside class="list-col"><div class="list-head"><button class="btn primary" data-act="wdNew">+ New item</button>
@@ -216,7 +216,7 @@ function wardrobeItemHTML(k) {
        W.slots.map(s => [s.id, s.name]),
        { rr: 1 }
      ),
-     numberField('Price ($)', `${p}.price`, { min: 0, step: 10, opt: 1 }),
+     numberField('Price (Moneys)', `${p}.price`, { min: 0, step: 10, opt: 1 }),
      selectField('Sold at', `${p}.shop`, shops, { none: 'Not sold', opt: 1, rr: 1 }),
      checkboxField('Everyone has it from the start', `${p}.starter`, { rr: 1 })
    )

@@ -505,6 +505,26 @@ export function soundEffect(name, o = {}) {
       synthVoice(F, { type: 'triangle', freq: 300, t, dur: 0.06, vol: 0.1, slide: 0.8 });
       synthNoise(F, { t, dur: 0.04, vol: 0.06, bp: 1200 });
       break;
+    /* RF-2: a catch pyramid landing on its base: a stone clunk */
+    case 'pyramidLand':
+      synthKick(F, t, 0.35);
+      synthNoise(F, { t, dur: 0.09, vol: 0.16, lp: 900 });
+      synthNoise(F, { t: t + 0.005, dur: 0.03, vol: 0.06, bp: 2400, q: 2 });
+      break;
+    /* RF-2: a pyramid sealing round a caught Billie: a click, then a shimmer climbing to its point */
+    case 'seal':
+      synthNoise(F, { t, dur: 0.025, vol: 0.08, bp: 3200, q: 3 });
+      [0, 7, 12, 19].forEach((n, i) =>
+        synthVoice(F, {
+          type: 'sine',
+          freq: midiToFrequency(84 + n),
+          t: t + 0.05 + i * 0.05,
+          dur: 0.14,
+          vol: 0.045,
+          echo: 0.35,
+        })
+      );
+      break;
     case 'run':
       synthNoise(F, { t, dur: 0.3, vol: 0.08, bp: 700, q: 0.4 });
       break;

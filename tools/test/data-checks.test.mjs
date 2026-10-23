@@ -2,6 +2,8 @@
 // file is found wherever it is (the Studio's save would drop it).
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { PB_DATA } from '../data-files.mjs';
 import { GAME_DATA, modules } from './setup-real.mjs';
 
@@ -35,7 +37,7 @@ const FAMILIES = [
   'dataUiTheme',
   'dataBiomes',
   'dataNodeTypes',
-  'dataRelics',
+  'dataPerks',
   'dataCurrencies',
   'dataBuildings',
   'dataUnlocks',
@@ -87,24 +89,24 @@ test('a planted fault is found by its family, in the file check-data names', () 
   D.nodeTypes.landing.mark = 'bogus';
   found('dataNodeTypes', D, 'no marker "bogus"');
   D = copy();
-  D.rules.run.relics.cap = 0;
-  found('dataRelics', D, 'run.relics.cap');
+  D.rules.run.perks.cap = 0;
+  found('dataPerks', D, 'run.perks.cap');
   // Studio plan T4.1: the code's limits (effects.js FX_LIMIT, FX_STAGES) on a row
   D = copy();
-  D.relics.offshore.fx[0].mult = 0.05;
-  found('dataRelics', D, "offshore.fx[0].mult: 0.05 is outside the code's limits, 0.1 to 4");
+  D.perks.lucky_charm.fx[0].mult = 0.05;
+  found('dataPerks', D, "lucky_charm.fx[0].mult: 0.05 is outside the code's limits, 0.1 to 4");
   D = copy();
-  D.relics.insider.fx[0].stages = 7;
-  found('dataRelics', D, 'insider.fx[0].stages: 7 is not a whole number of stages from -6 to 6');
-  D.relics.insider.fx[0].stages = 1.5;
-  found('dataRelics', D, 'insider.fx[0].stages: 1.5');
+  D.perks.running_shoes.fx[0].stages = 7;
+  found('dataPerks', D, 'running_shoes.fx[0].stages: 7 is not a whole number of stages from -6 to 6');
+  D.perks.running_shoes.fx[0].stages = 1.5;
+  found('dataPerks', D, 'running_shoes.fx[0].stages: 1.5');
   D = copy();
-  D.relics.offshore.fx[0].mult = 4;
-  D.relics.shelter.fx[0].mult = 0.1;
-  assert.deepEqual(C.dataRelics(D), [], 'the limits themselves are allowed');
+  D.perks.lucky_charm.fx[0].mult = 4;
+  D.perks.clinic_card.fx[0].mult = 0.1;
+  assert.deepEqual(C.dataPerks(D), [], 'the limits themselves are allowed');
   D = copy();
-  D.currencies.capital.kept = 'run';
-  found('dataCurrencies', D, 'capital.kept');
+  D.currencies.research.kept = 'run';
+  found('dataCurrencies', D, 'research.kept');
   D = copy();
   D.buildings.ranch.act = 'nosuchact';
   found('dataBuildings', D, 'act "nosuchact"');
@@ -149,7 +151,7 @@ test("one species rule: a loaded line's stages, a legacy line's (by its names, o
 
 test("a relic's stat is one of stats.json's, not hp", () => {
   const D = copy(),
-    R = Object.values(D.relics).find(r => r.fx.some(f => f.kind === 'stat')),
+    R = Object.values(D.perks).find(r => r.fx.some(f => f.kind === 'stat')),
     f = R.fx.find(f => f.kind === 'stat');
   for (const [stat, ok] of [
     ['hus', true],
@@ -157,7 +159,7 @@ test("a relic's stat is one of stats.json's, not hp", () => {
     ['luck', false],
   ]) {
     f.stat = stat;
-    assert.equal(!C.dataRelics(D).some(([, w]) => w.includes('.stat: no stat')), ok, stat);
+    assert.equal(!C.dataPerks(D).some(([, w]) => w.includes('.stat: no stat')), ok, stat);
   }
 });
 
@@ -184,4 +186,21 @@ test('a planted unknown ground, a stop with no walk scene and a road to itself a
     map = R.locations[0].mapId;
   R.roads = [{ id: 'loop', a: { map, exit: 'e1' }, b: { map, exit: 'e2' } }];
   assert.ok(errorsOf(C.dataRoadFindings(R, roadOf)).some(m => m.includes('has a road to itself')));
+});
+
+// RF-2: the catch pyramids' icons and models (art/pyramids), read through a stand-in for the files
+test('every catch item has its icons and its model; a missing or empty one is named', () => {
+  const ART = join(import.meta.dirname, '../../game/art'),
+    disk = (/** @type {string} */ p) => (existsSync(join(ART, p)) ? readFileSync(join(ART, p), 'utf8') : null);
+  assert.deepEqual(C.dataCatchArt(GAME_DATA.pyramids, disk), []);
+  const gone = (/** @type {string} */ p) => (p === 'coins/gold_pyramid_16.png' ? null : disk(p));
+  assert.deepEqual(C.dataCatchArt(GAME_DATA.pyramids, gone), [
+    ['pyramids.json', 'gold_pyramid: no icon art/coins/gold_pyramid_16.png (tools/build-pyramids.py)'],
+  ]);
+  const odd = (/** @type {string} */ p) =>
+    p === 'coins/step_pyramid.json' ? '{"layers":[]}' : p === 'coins/capstone.json' ? 'not json' : disk(p);
+  assert.deepEqual(C.dataCatchArt(GAME_DATA.pyramids, odd), [
+    ['pyramids.json', 'step_pyramid: its model art/coins/step_pyramid.json has no shapes'],
+    ['pyramids.json', 'capstone: its model art/coins/capstone.json is not JSON'],
+  ]);
 });

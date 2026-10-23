@@ -21,7 +21,7 @@ import { artLoad } from '../art.js';
 import { LOOK_PRESETS, cleanLook } from '../person-art.js';
 import { dressingRoom, openDressingRoom, saveDressingLook } from '../dressing-room.js';
 import { rigPreload } from '../skeleton-rig.js';
-import { buzz } from '../battle-stage.js';
+import { PYRAMID_HIGH, PYRAMID_LIFT, PYRAMID_SCALE, buzz } from '../battle-stage.js';
 import {
   artImage,
   imageReady,
@@ -36,7 +36,9 @@ import { gpuState, webgl2Supported } from '../engine/webgl.js';
 import { walkRenderer } from '../walk/walk-state.js';
 import { standingHeightAt } from '../walk/heights.js';
 import { mountWalkView } from '../walk-view-gl.js';
+import { loadPropModelRecipe } from '../prop-models.js';
 import { seamlessRoamView } from '../seamless-world.js';
+import { pyramidWorldItem } from '../battle-3d.js';
 import { soundEffect } from '../sound.js';
 import {
   cutscene,
@@ -147,7 +149,9 @@ export async function cutsceneStart(opts) {
   updateNav(false);
   const pre = Promise.all([
     rigPreload(cutscene.pickList.map(l => [l + '0', 1])),
-    artLoad(['coins/penny_32.png']),
+    artLoad(['coins/pyramid_32.png']),
+    /* RF-2: the thrown pyramids' model, so the throws have it */
+    Promise.resolve(typeof loadPropModelRecipe === 'function' && loadPropModelRecipe('coins/pyramid.json')),
     prepareMap(id),
   ]).catch(() => {});
   /* the fall from the crust down to Copperleaf (opening-fall.js); it ends on a white screen. RL-8 (the owner's answer,
@@ -417,7 +421,9 @@ function openingLayer(items, parts, lights, now, t) {
     if (cutscene.choosing && s !== cutscene.foe && i === cutscene.sel)
       lights.push({ p: [s.x, 0.35 + standingHeightAt(s.x, s.z), s.z - 0.2], r: 1.7, c: [0.55, 0.48, 0.3] });
   });
-  const coin = artImage('coins/penny_32.png');
+  /* RF-2: the throws are pyramids: the model (battle-3d.js pyramidWorldItem), tumbling; the flat icon while it can't */
+  const coin = artImage('coins/pyramid_32.png'),
+    mid = PYRAMID_LIFT + PYRAMID_HIGH / 2;
   for (const c of cutscene.coins) {
     const k = cutscene.skip ? 1 : clamp((now - c.t0) / c.dur, 0, 1);
     if (k >= 1) {
@@ -430,8 +436,19 @@ function openingLayer(items, parts, lights, now, t) {
     const x = c.a[0] + (c.b[0] - c.a[0]) * k,
       z = c.a[2] + (c.b[2] - c.a[2]) * k,
       y = c.a[1] + (c.b[1] - c.a[1]) * k + Math.sin(k * Math.PI) * 1.25,
-      sp = Math.abs(Math.cos(k * 14));
-    if (imageReady(coin)) parts.push({ im: coin, x, y, z, w: 0.24 * Math.max(0.15, sp), h: 0.24, a: 1, glow: false });
+      it =
+        typeof pyramidWorldItem === 'function'
+          ? pyramidWorldItem(
+              'pyramid',
+              x,
+              y - mid * PYRAMID_SCALE * 0.8,
+              z,
+              { a: [0.6, 0.48, 0.64], an: k * 4 * Math.PI, c: [0, mid, 0] },
+              0.8
+            )
+          : null;
+    if (it) items.push(it);
+    else if (imageReady(coin)) parts.push({ im: coin, x, y, z, w: 0.24, h: 0.24, a: 1, glow: false });
     lights.push({ p: [x, y, z], r: 1.1, c: [0.5, 0.4, 0.12] });
   }
 }

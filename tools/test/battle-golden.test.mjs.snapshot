@@ -3466,7 +3466,7 @@ exports[`golden: a robot against a Billie (aimed moves, parts that break) 1`] = 
           "an": {
             "k": "status",
             "si": 1,
-            "st": "scn"
+            "st": "brn"
           },
           "s": [
             {
@@ -3509,7 +3509,7 @@ exports[`golden: a robot against a Billie (aimed moves, parts that break) 1`] = 
               "lvl": 26,
               "hp": 77,
               "max": 77,
-              "st": "scn",
+              "st": "brn",
               "build": {
                 "head": "M",
                 "body": "M",
@@ -3590,7 +3590,7 @@ exports[`golden: a robot against a Billie (aimed moves, parts that break) 1`] = 
               "lvl": 26,
               "hp": 32,
               "max": 77,
-              "st": "scn",
+              "st": "brn",
               "build": {
                 "head": "M",
                 "body": "M",
@@ -3663,7 +3663,7 @@ exports[`golden: a robot against a Billie (aimed moves, parts that break) 1`] = 
               "lvl": 26,
               "hp": 32,
               "max": 77,
-              "st": "scn",
+              "st": "brn",
               "build": {
                 "head": "M",
                 "body": "M",
@@ -3697,7 +3697,7 @@ exports[`golden: a robot against a Billie (aimed moves, parts that break) 1`] = 
           "an": {
             "k": "hurt",
             "si": 1,
-            "fx": "scn",
+            "fx": "brn",
             "dmg": 4
           },
           "s": [
@@ -3741,7 +3741,7 @@ exports[`golden: a robot against a Billie (aimed moves, parts that break) 1`] = 
               "lvl": 26,
               "hp": 28,
               "max": 77,
-              "st": "scn",
+              "st": "brn",
               "build": {
                 "head": "M",
                 "body": "M",
@@ -3825,7 +3825,7 @@ exports[`golden: a robot against a Billie (aimed moves, parts that break) 1`] = 
               "lvl": 26,
               "hp": 28,
               "max": 77,
-              "st": "scn",
+              "st": "brn",
               "build": {
                 "head": "M",
                 "body": "M",
@@ -3898,7 +3898,7 @@ exports[`golden: a robot against a Billie (aimed moves, parts that break) 1`] = 
               "lvl": 26,
               "hp": 28,
               "max": 77,
-              "st": "scn",
+              "st": "brn",
               "build": {
                 "head": "M",
                 "body": "M",
@@ -3979,7 +3979,7 @@ exports[`golden: a robot against a Billie (aimed moves, parts that break) 1`] = 
               "lvl": 26,
               "hp": 0,
               "max": 77,
-              "st": "scn",
+              "st": "brn",
               "build": {
                 "head": "M",
                 "body": "M",
@@ -4052,7 +4052,7 @@ exports[`golden: a robot against a Billie (aimed moves, parts that break) 1`] = 
               "lvl": 26,
               "hp": 0,
               "max": 77,
-              "st": "scn",
+              "st": "brn",
               "build": {
                 "head": "M",
                 "body": "M",
@@ -5318,7 +5318,7 @@ exports[`golden: a single wild battle holding Loopholes (RL-12: stages at the st
       "turn": 0,
       "events": [
         {
-          "t": "Insider Tip: Emberox’s Speed rose.",
+          "t": "Running Shoes: Emberox’s Speed rose.",
           "an": null,
           "s": [
             {
@@ -7641,7 +7641,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
           "an": {
             "k": "status",
             "si": 1,
-            "st": "aud"
+            "st": "par"
           },
           "s": [
             {
@@ -7681,7 +7681,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "lvl": 11,
               "hp": 55,
               "max": 87,
-              "st": "aud",
+              "st": "par",
               "build": {
                 "head": "M",
                 "body": "M",
@@ -7775,7 +7775,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
           "an": {
             "k": "status",
             "si": 1,
-            "st": "aud"
+            "st": "par"
           },
           "s": [
             {
@@ -7815,7 +7815,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "lvl": 11,
               "hp": 55,
               "max": 87,
-              "st": "aud",
+              "st": "par",
               "build": {
                 "head": "M",
                 "body": "M",
@@ -7905,7 +7905,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
           "mk": null
         },
         {
-          "t": "Kidling regrew a little HP.",
+          "t": "Kidling’s Regrowth restored a little HP.",
           "an": {
             "k": "heal",
             "si": 2,
@@ -7949,7 +7949,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "lvl": 11,
               "hp": 55,
               "max": 87,
-              "st": "aud",
+              "st": "par",
               "build": {
                 "head": "M",
                 "body": "M",
@@ -8092,7 +8092,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "lvl": 11,
               "hp": 55,
               "max": 87,
-              "st": "aud",
+              "st": "par",
               "build": {
                 "head": "M",
                 "body": "M",
@@ -8225,7 +8225,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "lvl": 11,
               "hp": 30,
               "max": 87,
-              "st": "aud",
+              "st": "par",
               "build": {
                 "head": "M",
                 "body": "M",
@@ -8359,7 +8359,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "lvl": 11,
               "hp": 30,
               "max": 87,
-              "st": "aud",
+              "st": "par",
               "build": {
                 "head": "M",
                 "body": "M",
@@ -8493,7 +8493,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "lvl": 11,
               "hp": 30,
               "max": 87,
-              "st": "aud",
+              "st": "par",
               "build": {
                 "head": "M",
                 "body": "M",
@@ -8631,7 +8631,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "lvl": 11,
               "hp": 24,
               "max": 87,
-              "st": "aud",
+              "st": "par",
               "build": {
                 "head": "M",
                 "body": "M",
@@ -8764,7 +8764,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "lvl": 11,
               "hp": 24,
               "max": 87,
-              "st": "aud",
+              "st": "par",
               "build": {
                 "head": "M",
                 "body": "M",
@@ -8900,7 +8900,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "lvl": 11,
               "hp": 24,
               "max": 87,
-              "st": "aud",
+              "st": "par",
               "build": {
                 "head": "M",
                 "body": "M",
@@ -9034,7 +9034,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "lvl": 11,
               "hp": 24,
               "max": 87,
-              "st": "aud",
+              "st": "par",
               "build": {
                 "head": "M",
                 "body": "M",
@@ -9172,7 +9172,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "lvl": 11,
               "hp": 24,
               "max": 87,
-              "st": "aud",
+              "st": "par",
               "build": {
                 "head": "M",
                 "body": "M",
@@ -9302,7 +9302,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "lvl": 11,
               "hp": 24,
               "max": 87,
-              "st": "aud",
+              "st": "par",
               "build": {
                 "head": "M",
                 "body": "M",
@@ -9396,7 +9396,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
           "an": {
             "k": "status",
             "si": 1,
-            "st": "aud"
+            "st": "par"
           },
           "s": [
             {
@@ -9436,7 +9436,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "lvl": 11,
               "hp": 24,
               "max": 87,
-              "st": "aud",
+              "st": "par",
               "build": {
                 "head": "M",
                 "body": "M",
@@ -9526,7 +9526,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
           "mk": null
         },
         {
-          "t": "Kidling regrew a little HP.",
+          "t": "Kidling’s Regrowth restored a little HP.",
           "an": {
             "k": "heal",
             "si": 2,
@@ -9570,7 +9570,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "lvl": 11,
               "hp": 24,
               "max": 87,
-              "st": "aud",
+              "st": "par",
               "build": {
                 "head": "M",
                 "body": "M",
@@ -9713,7 +9713,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "lvl": 11,
               "hp": 13,
               "max": 87,
-              "st": "aud",
+              "st": "par",
               "build": {
                 "head": "M",
                 "body": "M",
@@ -9846,7 +9846,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "lvl": 11,
               "hp": 13,
               "max": 87,
-              "st": "aud",
+              "st": "par",
               "build": {
                 "head": "M",
                 "body": "M",
@@ -9976,7 +9976,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "lvl": 11,
               "hp": 13,
               "max": 87,
-              "st": "aud",
+              "st": "par",
               "build": {
                 "head": "M",
                 "body": "M",
@@ -10114,7 +10114,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "lvl": 11,
               "hp": 10,
               "max": 87,
-              "st": "aud",
+              "st": "par",
               "build": {
                 "head": "M",
                 "body": "M",
@@ -10247,7 +10247,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "lvl": 11,
               "hp": 10,
               "max": 87,
-              "st": "aud",
+              "st": "par",
               "build": {
                 "head": "M",
                 "body": "M",
@@ -10383,7 +10383,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "lvl": 11,
               "hp": 10,
               "max": 87,
-              "st": "aud",
+              "st": "par",
               "build": {
                 "head": "M",
                 "body": "M",
@@ -10517,7 +10517,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "lvl": 11,
               "hp": 10,
               "max": 87,
-              "st": "aud",
+              "st": "par",
               "build": {
                 "head": "M",
                 "body": "M",
@@ -10611,7 +10611,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
           "an": {
             "k": "status",
             "si": 1,
-            "st": "aud"
+            "st": "par"
           },
           "s": [
             {
@@ -10651,7 +10651,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "lvl": 11,
               "hp": 10,
               "max": 87,
-              "st": "aud",
+              "st": "par",
               "build": {
                 "head": "M",
                 "body": "M",
@@ -10789,7 +10789,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "lvl": 11,
               "hp": 10,
               "max": 87,
-              "st": "aud",
+              "st": "par",
               "build": {
                 "head": "M",
                 "body": "M",
@@ -10919,7 +10919,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "lvl": 11,
               "hp": 10,
               "max": 87,
-              "st": "aud",
+              "st": "par",
               "build": {
                 "head": "M",
                 "body": "M",
@@ -11009,7 +11009,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
           "mk": null
         },
         {
-          "t": "Kidling regrew a little HP.",
+          "t": "Kidling’s Regrowth restored a little HP.",
           "an": {
             "k": "heal",
             "si": 2,
@@ -11053,7 +11053,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "lvl": 11,
               "hp": 10,
               "max": 87,
-              "st": "aud",
+              "st": "par",
               "build": {
                 "head": "M",
                 "body": "M",
@@ -11187,7 +11187,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "lvl": 11,
               "hp": 10,
               "max": 87,
-              "st": "aud",
+              "st": "par",
               "build": {
                 "head": "M",
                 "body": "M",
@@ -11330,7 +11330,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "lvl": 11,
               "hp": 0,
               "max": 87,
-              "st": "aud",
+              "st": "par",
               "build": {
                 "head": "M",
                 "body": "M",

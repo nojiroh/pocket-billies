@@ -81,9 +81,10 @@ export const RUN_RULES_IN_CODE = [
   },
   {
     what: 'Which leaders a run meets',
-    value: 'the trainers marked miniboss, none twice in a run while others are left',
+    value:
+      "the region's leaders, picked by its types (run-region.js), in order; else the trainers marked miniboss, none twice in a run while others are left",
     file: 'game/js/logic/run-loop.js',
-    code: 'from = left.length ? left : pool;',
+    code: 'want = pool.find(T => T.id === pick);',
   },
 ];
 

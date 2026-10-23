@@ -28,6 +28,7 @@ import {
 } from './game-data.js';
 import { rngFrom } from './logic/rng.js';
 import { runRestore } from './logic/run-state.js';
+import { runRegionData } from './logic/run-region.js';
 import { runSpot, runWeather } from './logic/run-map.js';
 import { runScenesMake, runWorldTables } from './logic/run-scenes.js';
 import { runBowlLook } from './logic/run-bowl.js';
@@ -55,7 +56,8 @@ provide({ runPlaceWeather, runWorldSync });
  * to make; live once boot has put the first world in (before that a swapped save waits for boot) */
 export const runWorld = { seed: '', scenes: 0, ms: 0, live: false };
 provide({ runWorld }); /* to-module */
-/** what the run's scenes and tables are made from: the game data as the page holds it (POOLS with stand-ins) */
+/** what the run's scenes and tables are made from: the game data as the page holds it (POOLS with stand-ins); RL-R1:
+ * and its region (logic/run-region.js: regions.json, the lines, the leaders) */
 export function runWorldData() {
   return {
     nodeTypes: NODE_TYPES,
@@ -63,6 +65,7 @@ export function runWorldData() {
     pools: POOLS,
     scenery: gameData.scenery,
     rules: RULES.run,
+    region: runRegionData(gameData, TRAINERS),
   };
 }
 /** put in the world the save needs, if it isn't in yet: the run's while one is on with its map, else the hub's.
