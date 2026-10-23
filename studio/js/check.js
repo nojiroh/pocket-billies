@@ -7,9 +7,11 @@ import { legacyLineIds, legacyLineIdsRead, provide, uiRulesCheckLine } from '../
 import { $ } from '../../game/js/util.js';
 import { uiThemeContrast } from '../../game/js/logic/ui-theme.js';
 import { storyFindings } from '../../game/js/logic/story-checks.js';
+import { animFor } from '../../game/js/body-plan-animation.js';
 import { boneSlot } from '../../game/js/skeleton-rig.js';
 import { escapeHtml } from './game-stand-ins.js';
 import { UI_ROLE_LABELS } from '../../game/js/logic/ui-dials.js';
+import { RIG_NEUTRAL_POSE, rigGeo } from '../../game/js/logic/rig-joints.js';
 import {
   dataBattleRules,
   dataBiomes,
@@ -18,6 +20,7 @@ import {
   dataNodeTypes,
   dataRanchRules,
   dataRelics,
+  dataRigs,
   dataRoadFindings,
   dataRobotProblems,
   dataRobots,
@@ -46,7 +49,7 @@ import {
   toast,
 } from './studio-app.js';
 import { storyFindingPlace } from './story-editor.js';
-import { atlasPath, pickFile } from './sprites.js';
+import { atlasPath, loadedAtlas, pickFile } from './sprites.js';
 import { wmlSeaShare } from './worldmap-look.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -353,6 +356,19 @@ export function runCheck() {
       found = [['', `the ${what} checks stopped: ${e.message}`]];
     }
     for (const [where, msg] of found) err(where ? `${where}: ${msg}` : msg, ...checkFilePlace(where));
+  }
+  /* Studio plan Phase 5 (T5.3): the rigs hold together, as check-data checks them; a sheet not loaded yet is checked
+     against the rig's own size */
+  try {
+    const P0 = RIG_NEUTRAL_POSE,
+      size = sheet => {
+        const c = loadedAtlas('art/' + sheet);
+        return c ? [c.width, c.height] : null;
+      },
+      geoOf = (M, view) => rigGeo(M, view, animFor(M.plan, M.q || {})(P0, view === 'back') || {}, P0);
+    for (const [where, msg] of dataRigs(studioState.rigs, size, geoOf)) err(`${where}: ${msg}`, 'workbench');
+  } catch (e) {
+    err(`The rig checks stopped: ${e.message}`);
   }
   for (const [k, T] of Object.entries(D.trainers || {}))
     for (const m of T.team || [])

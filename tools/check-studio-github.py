@@ -1090,6 +1090,12 @@ def checks_steps(pg, errs):
     for want, js in plants.items():
         pg.evaluate(js)
         if not any(want in m for m in pg.evaluate(errors)): errs.append(f'a planted problem is not a Check error: {want}')
+    # Studio plan Phase 5 (T5.3): a rig fault is a Check error too (data-checks.js dataRigs), and goes with its fix
+    sp = pg.evaluate("Object.keys(studioState.rigs).find(k => studioState.rigs[k].back && studioState.rigs[k].back.bones.some(b => b.n === 'head'))")
+    par = pg.evaluate(f"studioState.rigs[{json.dumps(sp)}].back.bones.find(b => b.n === 'head').par")
+    pg.evaluate(f"studioState.rigs[{json.dumps(sp)}].back.bones.find(b => b.n === 'head').par = 'nosuchbone'")
+    if not any(f'{sp} back: head hangs from nosuchbone, no such bone' in m for m in pg.evaluate(errors)): errs.append('a planted rig fault is not a Check error')
+    pg.evaluate(f"studioState.rigs[{json.dumps(sp)}].back.bones.find(b => b.n === 'head').par = {json.dumps(par)}")
     # Propose with errors: nothing is sent, the dialog says why and offers Show me
     pg.evaluate("studioState.dirty = true; window.__ckDone = false; void saveAll().then(() => window.__ckDone = true)")
     pg.wait_for_selector('#dlg .dlg', timeout=10000)
@@ -1111,7 +1117,7 @@ def checks_steps(pg, errs):
     if pg.evaluate("studioState.dirty"): errs.append('Propose did not go ahead with only a warning')
     pg.evaluate("studioState.D = JSON.parse(window.__ckD); delete window.__ckD; render()")
     if len(errs) > n: errs[n:] = [f'checks: {e}' for e in errs[n:]]
-    print(f'checks: {len(base)} error(s) on the game data, 5 planted problems listed, Propose blocked on an error, not on a warning ({len(errs) - n} problem(s))', flush=True)
+    print(f'checks: {len(base)} error(s) on the game data, 5 planted problems and a rig fault listed, Propose blocked on an error, not on a warning ({len(errs) - n} problem(s))', flush=True)
 
 
 def kit_write_steps(pg, errs):
