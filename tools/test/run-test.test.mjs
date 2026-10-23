@@ -9,8 +9,8 @@ const { runTestOf, RUN_TEST_SHORT } = modules['run-test'];
 const D = {
     species: Object.fromEntries(GAME_DATA.lines.flatMap(L => L.names.map((_, i) => [L.id + i, 1]))),
     unlocks: GAME_DATA.unlocks,
-    relics: GAME_DATA.relics,
-    cap: GAME_DATA.rules.run.relics.cap,
+    perks: GAME_DATA.perks,
+    cap: GAME_DATA.rules.run.perks.cap,
   },
   of = (/** @type {string} */ q) => runTestOf(new URLSearchParams(q), D);
 
@@ -24,7 +24,7 @@ test('runTestOf: only behind ?debug, and only with a seed', () => {
     unlocks: [],
     short: false,
     party: [],
-    relics: [],
+    perks: [],
     draft: false,
     left: [],
   });
@@ -49,8 +49,8 @@ test('runTestOf: unlocks none, all or a list; the party and the Perks; what the 
     { sp: 'bezos0', lv: 1 },
     { sp: 'gates1', lv: 100 },
   ]);
-  assert.deepEqual(R.relics, ['shelter']);
+  assert.deepEqual(R.perks, ['shelter']);
   assert.deepEqual(R.left, ['unlock nope', 'Billie ghost1', 'Perk zzz']);
-  const many = of(`?debug&run=A&relics=${Object.keys(GAME_DATA.relics).join(',')}`);
-  assert.equal(many.relics.length, Math.min(D.cap, Object.keys(GAME_DATA.relics).length));
+  const many = of(`?debug&run=A&relics=${Object.keys(GAME_DATA.perks).join(',')}`);
+  assert.equal(many.perks.length, Math.min(D.cap, Object.keys(GAME_DATA.perks).length));
 });

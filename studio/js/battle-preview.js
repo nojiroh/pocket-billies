@@ -6,7 +6,7 @@
 import { expose } from '../../game/js/test-globals.js';
 import { provide, sceneryArtPaths, sceneryCatalog } from '../../game/js/hooks.js';
 import { $, $$ } from '../../game/js/util.js';
-import { COIN_ART, artLoad } from '../../game/js/art.js';
+import { PYRAMID_ART, artLoad } from '../../game/js/art.js';
 import { robotArtFiles } from '../../game/js/robot-art.js';
 import { robotRigParts, setRigParts, setRobotRigData } from '../../game/js/skeleton-rig.js';
 import {
@@ -203,9 +203,9 @@ SECTIONS.preview = () => {
       ['heal', 'Heal'],
       ['statup', 'Stat up'],
       ['statdn', 'Stat down'],
-      ['aud', 'Paralyzed'],
-      ['sub', 'Asleep'],
-      ['scn', 'Burned'],
+      ['par', 'Paralyzed'],
+      ['slp', 'Asleep'],
+      ['brn', 'Burned'],
       ['hype', 'Confusion'],
       ['hurt', 'Status damage'],
       ['lvl', 'Level up'],
@@ -249,7 +249,7 @@ async function startBattlePreview() {
   try {
     await Promise.all([
       battleStagePrepare(battlePreview.area),
-      artLoad(COIN_ART),
+      artLoad(PYRAMID_ART),
       loadFighterArt(battlePreview.me, 'back'),
       loadFighterArt(battlePreview.foe, 'front'),
     ]);
@@ -439,16 +439,16 @@ ACTIONS.bp = d => {
     case 'statdn':
       battleStagePlay({ k: 'stat', si: 1, up: false }, ev);
       break;
-    case 'aud':
-    case 'sub':
-    case 'scn':
+    case 'par':
+    case 'slp':
+    case 'brn':
       battleStagePlay({ k: 'status', si: 1, st: x }, ev);
       break;
     case 'hype':
       battleStagePlay({ k: 'hype', si: 1 }, ev);
       break;
     case 'hurt':
-      battleStagePlay({ k: 'hurt', si: 1, fx: 'scn', dmg: 7 }, ev);
+      battleStagePlay({ k: 'hurt', si: 1, fx: 'brn', dmg: 7 }, ev);
       break;
     case 'lvl':
       battleStagePlay({ k: 'lvl' }, ev);
@@ -469,7 +469,7 @@ ACTIONS.bp = d => {
     case 'catch':
     case 'escape':
       reset();
-      battleStageCatch('penny', { caught: x === 'catch', w: x === 'catch' ? 3 : 1 }, false, ok => {
+      battleStageCatch('pyramid', { caught: x === 'catch', w: x === 'catch' ? 3 : 1 }, false, ok => {
         if (ok) later(600, reset);
       });
       break;

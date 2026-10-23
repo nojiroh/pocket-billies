@@ -342,7 +342,7 @@ export function shapeDecls(shape) {
   const out = [];
   for (const fam of Object.keys(UI_SHAPE_FAMILIES))
     for (const [k, v] of Object.entries(shapeVars(fam, sh))) out.push(`${k}: ${v};`);
-  // the slanted chip (coins, counts): the slant over a 24 px chip
+  // the slanted chip (pyramids, counts): the slant over a 24 px chip
   const s = roundTo2(Math.tan((sh.slant * Math.PI) / 180) * 24);
   out.push(`--clip-chip: polygon(${s}px 0, 100% 0, calc(100% - ${s}px) 100%, 0 100%);`);
   // how far the bubble's layers reach above the dialogue box (its tail)
@@ -377,7 +377,7 @@ export const UI_SCREENS = {
   walk: { name: 'Walk', sel: '.screen.s-walk' },
   map: { name: 'Map', sel: '.screen.s-map' },
   team: { name: 'Team', sel: '.screen.s-team' },
-  ledger: { name: 'Guide', sel: '.screen.s-ledger' },
+  guide: { name: 'Guide', sel: '.screen.s-guide' },
   bag: { name: 'Bag', sel: '.screen.s-bag' },
   profile: { name: 'Trainer card', sel: '.screen.s-profile' },
   battle: { name: 'Battle', sel: '#battle' },

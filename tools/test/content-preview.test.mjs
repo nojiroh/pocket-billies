@@ -18,23 +18,20 @@ test('stageFactor is the battle’s: +1 is x1.5, +2 x2, -1 x2/3, 0 x1', () => {
 });
 
 test('relic preview: nothing held changes nothing', () => {
-  const p = P.relicPreview([], { sp: SP, lvl: 20 });
+  const p = P.perkPreview([], { sp: SP, lvl: 20 });
   assert.equal(p.sample.sp, SP);
   for (const s of p.stats) assert.equal(s.after, s.before, s.id);
   assert.deepEqual(p.money.prize[0], p.money.prize[1]);
   assert.equal(p.catch, 1);
-  assert.deepEqual([p.damage.dealH, p.damage.take, p.heal.share, p.payout.capital], [1, 1, 0, 1]);
+  assert.deepEqual([p.damage.dealH, p.damage.take, p.heal.share, p.payout.research], [1, 1, 0, 1]);
   assert.deepEqual(p.limited, []);
 });
 
 test('relic preview: each kind reads its rows through the game’s fx functions', () => {
-  const p = P.relicPreview(
-      ['insider', 'offshore', 'shelter', 'takeover', 'hedge', 'severance', 'options', 'writeoff'],
-      {
-        sp: SP,
-        lvl: 30,
-      }
-    ),
+  const p = P.perkPreview(['insider', 'offshore', 'shelter', 'takeover', 'hedge', 'severance', 'options', 'writeoff'], {
+      sp: SP,
+      lvl: 30,
+    }),
     m = fn('makeBilly')(SP, 30),
     hus = p.stats.find(s => s.id === 'hus');
   assert.equal(hus.before, fn('stat')(m, 'hus'));
@@ -46,16 +43,16 @@ test('relic preview: each kind reads its rows through the game’s fx functions'
   assert.equal(p.damage.dealS, 1);
   assert.equal(p.damage.take, 0.9);
   assert.equal(p.heal.share, 0.15);
-  assert.equal(p.payout.capital, 1.15);
+  assert.equal(p.payout.research, 1.15);
   assert.equal(p.payout.itemShare[1], Math.min(1, RULES.run.payout.itemShare * 2));
 });
 
 test('relic preview: a product past FX_LIMIT is named with the product used', () => {
-  const R = data.RELICS;
+  const R = data.PERKS;
   R.__a = { name: 'A', d: 'a', rarity: 'common', fx: [{ kind: 'money', mult: 3 }] };
   R.__b = { name: 'B', d: 'b', rarity: 'common', fx: [{ kind: 'money', mult: 2 }] };
   try {
-    const p = P.relicPreview(['__a', '__b'], { sp: SP, lvl: 10 });
+    const p = P.perkPreview(['__a', '__b'], { sp: SP, lvl: 10 });
     assert.deepEqual(p.limited, [{ kind: 'money', what: '', raw: 6, used: E.FX_LIMIT.hi }]);
     assert.equal(p.money.reward[1], RULES.run.foes.miniboss.reward * E.FX_LIMIT.hi);
   } finally {

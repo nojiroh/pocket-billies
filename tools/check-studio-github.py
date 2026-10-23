@@ -1120,9 +1120,9 @@ def run_lab_steps(pg, errs):
     if pg.evaluate("document.querySelectorAll('#main .rl-map').length") != 2: errs.append('run lab: beside the loaded data did not draw a second map')
     pg.uncheck('#rlBeside')
     # T2.6: a debug log's run carries its own unlocks; an older log only the save's
-    read = pg.evaluate("""[runLabReadLog(JSON.stringify({state:{run:{seed:'LOGSEED',unlocks:['biome_ridge'],nodes:12},meta:{unlocks:['biome_ridge','shop_appeal']}}})),
-      runLabReadLog(JSON.stringify({state:{run:{seed:'OLDLOG',nodes:12},meta:{unlocks:['shop_appeal']}}}))]""")
-    if [read[0]['unlocks'], read[0]['own'], read[1]['unlocks'], read[1]['own']] != [['biome_ridge'], True, ['shop_appeal'], False]:
+    read = pg.evaluate("""[runLabReadLog(JSON.stringify({state:{run:{seed:'LOGSEED',unlocks:['biome_ridge'],nodes:12},meta:{unlocks:['biome_ridge','shop_wake_tea']}}})),
+      runLabReadLog(JSON.stringify({state:{run:{seed:'OLDLOG',nodes:12},meta:{unlocks:['shop_wake_tea']}}}))]""")
+    if [read[0]['unlocks'], read[0]['own'], read[1]['unlocks'], read[1]['own']] != [['biome_ridge'], True, ['shop_wake_tea'], False]:
         errs.append(f'a debug log read for the run’s own unlocks gave {read}')
     logic = run_lab_logic_steps(pg, errs, want)
     rules = run_lab_rules_steps(pg, errs)
@@ -1196,7 +1196,7 @@ def run_lab_play_steps(pg, errs):
         if gp.evaluate('runClinicEach()') != 88: errs.append('Play this seed: a clinic price edited while the run goes did not reach it')
         keys = set(','.join(pg.evaluate('window.__sent')).split(','))
         if keys & {'saveData', 'save', 'meta', 'team', 'run'}: errs.append(f'the live channel carried save fields: {sorted(keys)}')
-        if not {'rules', 'nodeTypes', 'relics', 'unlocks', 'items', 'trainers'} <= keys: errs.append(f'the live channel did not carry the run data: {sorted(keys)}')
+        if not {'rules', 'nodeTypes', 'perks', 'unlocks', 'items', 'trainers'} <= keys: errs.append(f'the live channel did not carry the run data: {sorted(keys)}')
         for e in gp_errs: errs.append(f'Play this seed: the game: {e}')
     finally:
         gp.close()
@@ -1223,12 +1223,12 @@ def run_lab_rules_steps(pg, errs):
     if pg.evaluate('studioState.D.rules.run.map.rows') != 7: errs.append('the rows field did not write rules.run.map.rows')
     name_was = pg.evaluate('studioState.D.nodeTypes.town.name')
     pg.fill('#main .rl-rules [data-p="nodeTypes.town.name"]', 'Market')
-    pg.evaluate("document.querySelector('#main .rl-rules [data-rl-always=\"taxbreak\"]').click()")
+    pg.evaluate("document.querySelector('#main .rl-rules [data-rl-always=\"potion\"]').click()")
     sent = pending()
     rules_text = pg.evaluate("(changedDataFiles(studioState.D).find(f=>/rules\\.json$/.test(f.path))||{}).text||''")
     if not any(p.endswith('rules.json') for p in sent) or not any(p.endswith('nodeTypes.json') for p in sent): errs.append(f'Propose would send {sent}, not rules.json and nodeTypes.json')
     elif '"rows": 7' not in rules_text.replace('"rows":7', '"rows": 7'): errs.append('the proposed rules.json does not hold rows 7')
-    if 'taxbreak' in pg.evaluate('studioState.D.rules.run.shop.always'): errs.append('unticking the Potion left it always on the shelves')
+    if 'potion' in pg.evaluate('studioState.D.rules.run.shop.always'): errs.append('unticking the Potion left it always on the shelves')
     # a value the map can't lay out (more mini-bosses than rows hold): the game's own error beside the map
     pg.fill('#main .rl-rules [data-p="rules.run.map.minibosses"]', '6')
     t0 = time.time()
@@ -1238,7 +1238,7 @@ def run_lab_rules_steps(pg, errs):
     pg.fill('#main .rl-rules [data-p="rules.run.map.minibosses"]', str(mb))
     pg.fill('#main .rl-rules [data-p="rules.run.map.rows"]', str(was))
     pg.fill('#main .rl-rules [data-p="nodeTypes.town.name"]', name_was)
-    pg.evaluate("document.querySelector('#main .rl-rules [data-rl-always=\"taxbreak\"]').click()")
+    pg.evaluate("document.querySelector('#main .rl-rules [data-rl-always=\"potion\"]').click()")
     left = pending()
     if left: errs.append(f'every rules card value put back, Propose would still send {left}')
     t0 = time.time()
@@ -1275,15 +1275,15 @@ def run_lab_logic_steps(pg, errs, want):
     if town['shop'] != P['town']['shop']: errs.append(f"town node {P['town']['i']}: the panel's shop {town['shop']}, Node {P['town']['shop']}")
     if pg.evaluate('logicWorker.made') != made: errs.append('a second click on the same data made a new logic worker')
     # an edit: a new worker on the new data, and the panel follows it (the town's first day sells no Potion)
-    pg.evaluate("studioState.D.rules.run.shop.always=studioState.D.rules.run.shop.always.filter(w=>w!=='taxbreak');"
+    pg.evaluate("studioState.D.rules.run.shop.always=studioState.D.rules.run.shop.always.filter(w=>w!=='potion');"
                 "document.querySelector('#main [data-runlab-logic]').removeAttribute('data-ready');runLabRedraw()")
     t0 = time.time()
     while time.time() - t0 < 30 and not pg.evaluate("!!document.querySelector('#main [data-runlab-logic][data-ready]')"): time.sleep(0.05)
     stock = pg.evaluate("[...document.querySelectorAll('#main [data-runlab-logic] [data-day]')].map(r=>r.dataset.stock)")
     more = pg.evaluate('logicWorker.made') - made
-    pg.evaluate("studioState.D.rules.run.shop.always.push('taxbreak');runLabRedraw()")
+    pg.evaluate("studioState.D.rules.run.shop.always.push('potion');runLabRedraw()")
     if more != 1: errs.append(f"an edit made {more} new logic workers (want 1)")
-    if not stock or any('taxbreak' in s.split(',') for s in stock): errs.append(f'after taking the Potion off the shop rules the panel still sells it: {stock}')
+    if not stock or any('potion' in s.split(',') for s in stock): errs.append(f'after taking the Potion off the shop rules the panel still sells it: {stock}')
     return f"the logic worker's panel equals runPreview (mini-boss {boss['foe'][0] if boss['foe'] else '?'}, a town's {len(town['shop'])} days, {len(P['offers'])} picks; {boss['ms']} ms), one worker per data version"
 RUN_LAB_SIM_NODE = """import { modules } from './tools/test/setup-real.mjs';
 import { runReport } from './tools/test/sim/run-sim.mjs';
@@ -1408,7 +1408,7 @@ def checks_steps(pg, errs):
     for m in base: errs.append(f'the game data has a Check error: {m}')
     pg.evaluate("window.__ckD = JSON.stringify(studioState.D)")
     plants = {
-        'run.relics.cap': "studioState.D.rules.run.relics.cap = 0",
+        'run.perks.cap': "studioState.D.rules.run.perks.cap = 0",
         'goes round in a circle': "(() => { const U = studioState.D.unlocks, [a, b] = Object.keys(U); U[a].requires = [b]; U[b].requires = [a]; })()",
         'run.typo: no such rule': "studioState.D.rules.run.typo = 1",
         'nosuchmove, no such move': "Object.values(studioState.D.robots.gems)[0].move = 'nosuchmove'",
@@ -1830,9 +1830,9 @@ def music_steps(pg, errs):
 CONTENT_NODE = """import { GAME_DATA as D, modules } from './tools/test/setup-real.mjs';
 const out = {};
 /* Studio plan Phase 4: what the content editors must show, from the game's logic in Node */
-out.offers = modules.relics.relicOfferOrder('LAB1', D.relics, D.rules.run.relics, D.rules.run.map.minibosses).map(p => p.offer.join(','));
+out.offers = modules.perks.perkOfferOrder('LAB1', D.perks, D.rules.run.perks, D.rules.run.map.minibosses).map(p => p.offer.join(','));
 out.lab = modules['run-preview'].runPreview('LAB1', { unlocks: [] }).relicOffers.map(o => o.join(','));
-out.insider = modules['content-preview'].relicPreview(['insider'], { sp: D.lines[0].id + '1', lvl: 30 }).stats.find(s => s.id === 'hus');
+out.insider = modules['content-preview'].perkPreview(['insider'], { sp: D.lines[0].id + '1', lvl: 30 }).stats.find(s => s.id === 'hus');
 out.leaders = modules['content-preview'].leaderRunValues();
 out.standIns = modules['content-preview'].speciesStandIns(Object.values(D.pools).flatMap(P => P.list.map(e => e[0])));
 out.fresh = modules['unlock-graph'].unlockSaveAfter(D);
@@ -1880,8 +1880,8 @@ def edit_undo(pg, errs, where, sel, value, path, rx):
 
 
 def relics_steps(pg, errs):
-    """Studio plan T4.1: the Perks editor. The sample build's Speed with Running Shoes is the game's (relicPreview in
-    Node); the offer order for LAB1 is the Run Lab's picks; a stages edit redraws the preview and is in relics.json; a
+    """Studio plan T4.1: the Perks editor. The sample build's Speed with Running Shoes is the game's (perkPreview in
+    Node); the offer order for LAB1 is the Run Lab's picks; a stages edit redraws the preview and is in perks.json; a
     factor under FX_LIMIT shows data-checks' message on its row; a row's kind change and the edits all undo."""
     W = content_want(errs)
     if not W: return
@@ -1895,16 +1895,16 @@ def relics_steps(pg, errs):
     wait_js(pg, "!!document.querySelector('#main [data-relic-offers][data-ready]')")
     offers = pg.evaluate("[...document.querySelectorAll('#main [data-relic-offers] [data-offer]')].map(e=>e.dataset.offer)")
     if offers != W['offers'] or offers != W['lab'][:len(offers)]: errs.append(f"perks: LAB1's offer order {offers}, Node {W['offers']}, the Run Lab's {W['lab']}")
-    # a stages edit: the preview follows, Propose carries relics.json, undo puts it back
-    sel = '#main [data-p="relics.insider.fx.0.stages"]'
+    # a stages edit: the preview follows, Propose carries perks.json, undo puts it back
+    sel = '#main [data-p="perks.insider.fx.0.stages"]'
     pg.fill(sel, '2'); pg.dispatch_event(sel, 'change')
     two = wait_js(pg, f"+(document.querySelector('#main [data-relic-preview] [data-stat=hus]')||{{dataset:{{}}}}).dataset.after==={W['insider']['before'] * 2}", 10)
     if not two: errs.append('perks: +2 stages did not double the preview’s Speed')
     pg.evaluate("undo()"); time.sleep(0.3)
-    edit_undo(pg, errs, 'perks', sel, 3, 'relics.insider.fx.0.stages', 'relics\\.json$')
+    edit_undo(pg, errs, 'perks', sel, 3, 'perks.insider.fx.0.stages', 'perks\\.json$')
     # a factor under the code's limit: data-checks' message on its row
     pg.evaluate("void openSection('relics', { relic: 'offshore' })"); time.sleep(0.3)
-    sel = '#main [data-p="relics.offshore.fx.0.mult"]'
+    sel = '#main [data-p="perks.offshore.fx.0.mult"]'
     pg.fill(sel, '0.05'); pg.dispatch_event(sel, 'change'); time.sleep(0.6)
     pg.evaluate("render()")
     msg = pg.evaluate("(document.querySelector('#main [data-relic-row=\"0\"] .relic-err')||{}).textContent||''")
@@ -1912,11 +1912,11 @@ def relics_steps(pg, errs):
     pg.evaluate("undo()"); time.sleep(0.3)
     # a row's kind: the row becomes a stat row; undo makes it money again
     pg.select_option('#main [data-relic-kind="offshore"][data-n="0"]', 'stat'); time.sleep(0.6)
-    kind = pg.evaluate("studioState.D.relics.offshore.fx[0].kind")
+    kind = pg.evaluate("studioState.D.perks.offshore.fx[0].kind")
     pg.evaluate("undo()"); time.sleep(0.3)
-    if kind != 'stat' or pg.evaluate("JSON.stringify(studioState.D.relics.offshore.fx)") != '[{"kind":"money","mult":1.2}]':
-        errs.append(f"perks: the kind change made {kind!r} and undo left {pg.evaluate('JSON.stringify(studioState.D.relics.offshore.fx)')}")
-    if pending_files(pg, 'relics\\.json$'): errs.append('perks: after every undo Propose would still send relics.json')
+    if kind != 'stat' or pg.evaluate("JSON.stringify(studioState.D.perks.offshore.fx)") != '[{"kind":"money","mult":1.2}]':
+        errs.append(f"perks: the kind change made {kind!r} and undo left {pg.evaluate('JSON.stringify(studioState.D.perks.offshore.fx)')}")
+    if pending_files(pg, 'perks\\.json$'): errs.append('perks: after every undo Propose would still send perks.json')
     if len(errs) == n: print(f"perks: Running Shoes's Speed {W['insider']['before']} -> {hus} as the game, LAB1's offers as the Run Lab's, a stages edit proposed and undone, the limit on its row, a kind change undone", flush=True)
 
 
@@ -1999,7 +1999,7 @@ def economy_steps(pg, errs):
     pg.click('#main [data-act="ecoGo"][data-path="unlocks.ranch_2.cost"]'); time.sleep(0.5)
     if pg.evaluate("studioState.sec") != 'unlocks' or not pg.locator('#main [data-p="unlocks.ranch_2.cost"]').count(): errs.append('economy: the ranch_2 cost link did not open its field')
     pg.evaluate("void openSection('economy')"); time.sleep(0.3)
-    pg.click('#main [data-act="ecoGo"][data-path="relics.offshore.fx.0.mult"]'); time.sleep(0.5)
+    pg.click('#main [data-act="ecoGo"][data-path="perks.offshore.fx.0.mult"]'); time.sleep(0.5)
     if pg.evaluate("studioState.sec + ':' + studioState.sel.relic") != 'relics:offshore': errs.append('economy: the Lucky Charm link did not open that Perk')
     if len(errs) == n: print(f'economy: {rows} lines, links open their fields, the simulator placeholder shown', flush=True)
 

@@ -47,6 +47,6 @@ SECTIONS.economy = () => {
 /* a field of one Perk or unlock shows when that one is picked */
 ACTIONS.ecoGo = d => {
   const [top, id] = String(d.path).split('.'),
-    sel = top === 'relics' ? { relic: id } : top === 'unlocks' ? { unlock: id } : undefined;
+    sel = top === 'perks' ? { relic: id } : top === 'unlocks' ? { unlock: id } : undefined;
   findField(d.sec, d.path, sel);
 };

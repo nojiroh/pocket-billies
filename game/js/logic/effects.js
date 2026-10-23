@@ -1,7 +1,7 @@
 // @ts-check
 'use strict';
 /* ================= EFFECTS (roguelite track RL-12) =================
-   What a run's Perks (relics.json) change, as effect rows read at named points of the game (roguelite-track.md 2d;
+   What a run's Perks (perks.json) change, as effect rows read at named points of the game (roguelite-track.md 2d;
    phase 19's handler-table idea). A Perk is data: a list of rows, each of one kind in FX_KINDS. fxRows turns the
    ids held into one list; each point asks only for its kind:
      money   a won battle's money (battle-rewards.js)         price   a run shop's prices, a run clinic's charge
@@ -14,7 +14,7 @@
    battle or a run without Perks is the same as before them. Later sessions add rows from other places into the same
    list (RL-11 building levels, RL-13 expeditions).
    Logic only: no DOM, no Date, no Math.random (tools/test/effects.test.mjs). */
-/** @import { FxRow, Relic } from '../../types/game-data' */
+/** @import { FxRow, Perk } from '../../types/game-data' */
 /** @typedef {FxRow & { src: string }} Fx */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
@@ -49,13 +49,13 @@ export const FX_LIMIT = { lo: 0.1, hi: 4 };
 export const FX_STAGES = 6;
 
 /** the effect rows of the Perks held, in the order held, each tagged with its Perk's id; an id with no entry
- * gives none @param {string[]} ids @param {Record<string, Relic>} relics @returns {Fx[]} */
-export const fxRows = (ids, relics) =>
-  ids.flatMap(id => (relics[id] ? relics[id].fx.map(f => /** @type {Fx} */ ({ ...f, src: id })) : []));
+ * gives none @param {string[]} ids @param {Record<string, Perk>} perks @returns {Fx[]} */
+export const fxRows = (ids, perks) =>
+  ids.flatMap(id => (perks[id] ? perks[id].fx.map(f => /** @type {Fx} */ ({ ...f, src: id })) : []));
 
-/** the effect rows of a run's Perks (null in the hub, or with none held) @param {{ relics: string[] } | null | undefined} run
- * @param {Record<string, Relic>} relics @returns {Fx[] | null} */
-export const fxOfRun = (run, relics) => (run && run.relics.length ? fxRows(run.relics, relics) : null);
+/** the effect rows of a run's Perks (null in the hub, or with none held) @param {{ perks: string[] } | null | undefined} run
+ * @param {Record<string, Perk>} perks @returns {Fx[] | null} */
+export const fxOfRun = (run, perks) => (run && run.perks.length ? fxRows(run.perks, perks) : null);
 provide({ fxOfRun }); /* to-module */
 
 /** the product of the multipliers of the rows that pass `test`, smallest first, within FX_LIMIT (1 when none)
@@ -84,9 +84,9 @@ export const fxPrice = (fx, what, n) => {
 };
 
 /** Studio plan T3.2: a price on a run with its Perks' price rows of `what` (the page's clinic and shops, and the
- * run's simulation): the price itself with no run or none held @param {{ relics: string[] } | null | undefined} run
- * @param {Record<string, Relic>} relics @param {'shop' | 'heal'} what @param {number} n */
-export const fxRunPrice = (run, relics, what, n) => fxPrice(fxOfRun(run, relics), what, n);
+ * run's simulation): the price itself with no run or none held @param {{ perks: string[] } | null | undefined} run
+ * @param {Record<string, Perk>} perks @param {'shop' | 'heal'} what @param {number} n */
+export const fxRunPrice = (run, perks, what, n) => fxPrice(fxOfRun(run, perks), what, n);
 
 /** what multiplies a coin's chance to catch (the chance itself stays at most 1) @param {Fx[] | null | undefined} fx */
 export const fxCatch = fx => fxMult(fx, f => f.kind === 'catch');
@@ -132,15 +132,15 @@ provide({ fxHealShare }); /* to-module */
 
 /**
  * The payout's rates with the payout rows: `itemShare` times its rows (at most 1: an item never counts above its
- * price) and `capital`, what the payout's Research is multiplied by (1 when none). The other rates as they were.
+ * price) and `research`, what the payout's Research is multiplied by (1 when none). The other rates as they were.
  * @template {{ itemShare: number }} R
- * @param {Fx[] | null | undefined} fx @param {R} rates @returns {R & { capital: number }}
+ * @param {Fx[] | null | undefined} fx @param {R} rates @returns {R & { research: number }}
  */
 export function fxPayoutRates(fx, rates) {
   const share = fxMult(fx, f => f.kind === 'payout' && f.what === 'itemShare');
   return {
     ...rates,
     itemShare: share === 1 ? rates.itemShare : Math.min(1, rates.itemShare * share),
-    capital: fxMult(fx, f => f.kind === 'payout' && f.what === 'capital'),
+    research: fxMult(fx, f => f.kind === 'payout' && f.what === 'research'),
   };
 }

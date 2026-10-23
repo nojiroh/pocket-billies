@@ -14,8 +14,8 @@ import {
   jingle,
   limbPipsHTML,
   modal,
+  perkPickOpen,
   provide,
-  relicPickOpen,
   render,
   runCatch,
   runOver,
@@ -28,7 +28,7 @@ import {
   typeBadgeHTML,
 } from './hooks.js';
 import { $, $$, clamp, random } from './util.js';
-import { COINS, ITEMS, MOVES, STAT_NAMES, TYPE_COLORS, typeEffectiveness } from './game-data.js';
+import { ITEMS, MOVES, PYRAMIDS, STAT_NAMES, TYPE_COLORS, typeEffectiveness } from './game-data.js';
 import { ROBOT_LIMBS, ROBOT_SLOT_NAMES, isRobot, robotPartDef, speciesOf } from './logic/fighters.js';
 import { billyName, healAll, maxHp, moveUsable, partBroken, partHpLeft, partMaxHp, plural } from './logic/rules.js';
 import {
@@ -53,7 +53,7 @@ import {
 } from './logic/battle-engine.js';
 import { battleSettle, battleSettleWin } from './logic/battle-rewards.js';
 import { activeBattle, escapeHtml, reducedMotion, save, saveData, setActiveBattle, uiState } from './game-state.js';
-import { artURL, coinHTML, iconURL, moneyHTML, uiIconHTML } from './art.js';
+import { artURL, iconURL, moneyHTML, pyramidHTML, uiIconHTML } from './art.js';
 import { portraitHTML } from './person-art.js';
 import { RIG_BACK_VIEW, bustHTML, rigPreload } from './skeleton-rig.js';
 import {
@@ -742,14 +742,14 @@ export function paintActions() {
   if (ph === 'choose') {
     const m = fighter(activeBattle.cur),
       first = !activeBattle.plan.length,
-      coins = Object.keys(COINS).reduce((a, k) => a + (saveData.coins[k] || 0), 0),
+      pyramids = Object.keys(PYRAMIDS).reduce((a, k) => a + (saveData.pyramids[k] || 0), 0),
       items = Object.keys(ITEMS)
         .filter(k => saveData.items[k] > 0 && !ITEMS[k].evoItem)
         .reduce((a, k) => a + saveData.items[k], 0),
       crew = saveData.team,
       alive = crew.filter(x => x.hp > 0).length;
     h = `<div class="c-choose">${moveTilesHTML(m)}
-  <div class="bt-row"><button class="bt coin" data-a="bcoins" ${wild && first ? '' : 'disabled'}>${uiIconHTML('pyramid', 18)}<b>Catch it</b><small>${wild ? (first ? coins + ' left' : 'First pick only') : 'Wild only'}</small><kbd>X</kbd></button>
+  <div class="bt-row"><button class="bt coin" data-a="bcoins" ${wild && first ? '' : 'disabled'}>${uiIconHTML('pyramid', 18)}<b>Catch it</b><small>${wild ? (first ? pyramids + ' left' : 'First pick only') : 'Wild only'}</small><kbd>X</kbd></button>
   <button class="bt items" data-a="bitems">${uiIconHTML('bag', 18)}<b>Bag</b><small>${items}</small><kbd>I</kbd></button>
   <button class="bt team" data-a="bteam">${uiIconHTML('team', 18)}<b>Team</b><small>${alive}/${crew.length}</small><kbd>T</kbd></button>
   <button class="bt run" data-a="brun" ${wild ? '' : 'disabled'}>${uiIconHTML('run', 18)}<b>Run</b><small>${wild ? 'Walk away' : 'No exit'}</small><kbd>R</kbd></button></div>${first ? '' : `<button class="bt back wide" data-a="bback">${uiIconHTML('back', 16)}<b>Back to ${escapeHtml(billyName(fighter(activeBattle.plan[activeBattle.plan.length - 1].who)))}</b><kbd>Esc</kbd></button>`}</div>`;
@@ -777,13 +777,13 @@ export function paintActions() {
         );
       })
       .join('')}</div>${backButtonHTML()}`;
-  } else if (ph === 'coins') {
-    h = `<div class="coins">${Object.keys(COINS)
+  } else if (ph === 'pyramids') {
+    h = `<div class="coins">${Object.keys(PYRAMIDS)
       .map((k, n) => {
-        const c = COINS[k],
-          have = saveData.coins[k] || 0,
+        const c = PYRAMIDS[k],
+          have = saveData.pyramids[k] || 0,
           odds = Math.round(catchOdds(k, 1 + CATCH_RULES.ring * 0.5, false) * 100);
-        return `<button class="ccard" data-a="bcoin" data-c="${k}" ${have ? '' : 'disabled'}>${coinHTML(k, 34)}<span class="cc-t"><b>${escapeHtml(c.n)}</b><small class="tnum">${c.m === 0 ? 'Guaranteed' : `~${odds}% catch`} · ${have} left</small></span><span class="cc-bar"><i style="width:${c.m === 0 ? 100 : clamp(odds, 2, 100)}%"></i></span></button>`;
+        return `<button class="ccard" data-a="bcoin" data-c="${k}" ${have ? '' : 'disabled'}>${pyramidHTML(k, 34)}<span class="cc-t"><b>${escapeHtml(c.n)}</b><small class="tnum">${c.m === 0 ? 'Guaranteed' : `~${odds}% catch`} · ${have} left</small></span><span class="cc-bar"><i style="width:${c.m === 0 ? 100 : clamp(odds, 2, 100)}%"></i></span></button>`;
       })
       .join('')}</div>${backButtonHTML()}`;
   } else if (ph === 'items') {
@@ -805,7 +805,7 @@ export function paintActions() {
   } else if (ph === 'team') h = teamPick(true);
   else if (ph === 'switch') h = teamPick(false);
   else if (ph === 'aim') {
-    h = `<div class="aim"><div class="aimcoin" id="aimCoin" role="button" tabindex="0" aria-label="Swipe up to throw">${coinHTML(activeBattle.coin, 96, 32)}<span class="aim-hint">${uiIconHTML('back', 14)}</span></div><p class="note">Swipe the pyramid up when the ring is small and green. A sideways swipe adds spin.</p><div class="two"><button class="bt coin" data-a="bthrow"><b>Throw it</b><kbd>Space</kbd></button><button class="bt back" data-a="baimback"><b>Put it away</b><kbd>Esc</kbd></button></div></div>`;
+    h = `<div class="aim"><div class="aimcoin" id="aimCoin" role="button" tabindex="0" aria-label="Swipe up to throw">${pyramidHTML(activeBattle.coin, 96, 32)}<span class="aim-hint">${uiIconHTML('back', 14)}</span></div><p class="note">Swipe the pyramid up when the ring is small and green. A sideways swipe adds spin.</p><div class="two"><button class="bt coin" data-a="bthrow"><b>Throw it</b><kbd>Space</kbd></button><button class="bt back" data-a="baimback"><b>Put it away</b><kbd>Esc</kbd></button></div></div>`;
   } else if (ph === 'throwing') h = `<div class="aim"><p class="note">The pyramid is in the air…</p></div>`;
   else if (ph === 'end') {
     const t = {
@@ -876,14 +876,14 @@ export function doThrow(spin) {
   const ph = battleStageRingPhase(),
     T = 1 + CATCH_RULES.ring * ph,
     id = activeBattle.coin;
-  saveData.coins[id]--;
+  saveData.pyramids[id]--;
   save();
   battleStage.ring = null;
   const res = catchRoll(id, T, spin),
     lab = ph >= 0.83 ? 'Excellent throw!' : ph >= 0.5 ? 'Great throw!' : ph >= 0.17 ? 'Nice throw.' : '';
   activeBattle.phase = 'throwing';
   paintActions();
-  $('#msgT').textContent = [`You threw a ${COINS[id].n}.`, lab, spin ? 'Spin bonus!' : ''].filter(Boolean).join(' ');
+  $('#msgT').textContent = [`You threw a ${PYRAMIDS[id].n}.`, lab, spin ? 'Spin bonus!' : ''].filter(Boolean).join(' ');
   battleStageCatch(id, res, spin, caught => finishThrow(res, id, lab, spin));
 }
 function finishThrow(res, id, lab, spin) {
@@ -965,12 +965,12 @@ export function endBattle() {
       const nu = pay.seat.nu;
       if (nu) {
         saveData.seats.push(pay.seat.id);
-        for (const k in pay.seat.coins) saveData.coins[k] = (saveData.coins[k] || 0) + pay.seat.coins[k];
+        for (const k in pay.seat.pyramids) saveData.pyramids[k] = (saveData.pyramids[k] || 0) + pay.seat.pyramids[k];
         for (const k in pay.seat.items) saveData.items[k] = (saveData.items[k] || 0) + pay.seat.items[k];
       }
       after.push({
         title: nu ? escapeHtml(st.title || 'Badge') : 'Rematch won',
-        top: `<div class="sheet-art">${coinHTML(st.coin || 'penny', 96, 32)}</div>`,
+        top: `<div class="sheet-art">${pyramidHTML(st.coin || 'pyramid', 96, 32)}</div>`,
         html: `<p>${escapeHtml(T.win || '')}</p><p>You earned ${moneyHTML(pay.reward)}${nu && st.rewardText ? `, ${escapeHtml(st.rewardText)}` : ''}${extra}.</p>${nu && st.unlockText ? `<p class="note">${escapeHtml(st.unlockText)}</p>` : ''}`,
         btns: [{ l: 'Back to walking', c: 'dark', f: closeModal }],
       });
@@ -993,7 +993,7 @@ export function endBattle() {
                 : run && run.offer
                   ? () => {
                       uiState.modal = null;
-                      relicPickOpen();
+                      perkPickOpen();
                     }
                   : first && (T.clue || T.ending) && typeof storyAfterWin === 'function'
                     ? () => {

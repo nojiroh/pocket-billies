@@ -475,7 +475,7 @@ debugLog.state = () => {
             /* RL-9b: how many Billies came from home and how many things were packed (counts only) */
             home: Array.isArray(run.home) ? run.home.length : null,
             packed: run.pack
-              ? [run.pack.items, run.pack.coins].reduce(
+              ? [run.pack.items, run.pack.pyramids].reduce(
                   (a, r) => a + Object.values(r || {}).reduce((b, n) => b + (+n || 0), 0),
                   0
                 )
@@ -490,8 +490,8 @@ debugLog.state = () => {
             groundTris: GAME.walkRenderer && GAME.walkRenderer.mesh ? Math.round(GAME.walkRenderer.mesh.n / 3) : null,
             /* TR-3: the camera's extra tilt on tall ground right now (degrees) */
             camRise: GAME.walkRenderer && GAME.walkRenderer.occT != null ? +GAME.walkRenderer.occT.toFixed(1) : null,
-            /* RL-12: the Perks held (relics.json ids, not names), the pick waiting (how many) and offers made */
-            relics: (run.relics || []).slice(),
+            /* RL-12: the Perks held (perks.json ids, not names), the pick waiting (how many) and offers made */
+            relics: (run.perks || []).slice(),
             offer: run.offer ? run.offer.length : 0,
             offers: run.offerN || 0,
           }
@@ -502,8 +502,8 @@ debugLog.state = () => {
       ? {
           runs: meta.runs,
           wins: meta.wins,
-          capital: meta.capital,
-          seals: meta.seals,
+          capital: meta.research,
+          seals: meta.crests,
           scrap: meta.scrap,
           /* RL-11: the unlock ids owned (game data ids, no names) and the buildings' levels */
           unlocks: Object.keys(meta.unlocks || {}).sort(),

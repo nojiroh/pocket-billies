@@ -7,10 +7,10 @@
   "kept": "run",
   "about": "A run's Moneys: wild prizes and trainers. Pays for healing and run shops; turns into Research when the run ends."
  },
- "capital": {
+ "research": {
   "name": "Research",
   "one": "Research",
-  "icon": "capital",
+  "icon": "research",
   "kept": "meta",
   "about": "What a run brings home. Spent on the Lab's unlock board."
  },
@@ -21,10 +21,10 @@
   "kept": "meta",
   "about": "The building material. A little for every place a run reaches; spent at the ranch."
  },
- "seals": {
+ "crests": {
   "name": "Crests",
   "one": "Crest",
-  "icon": "seal",
+  "icon": "crest",
   "kept": "meta",
   "about": "Rare: one for beating a run's boss. Spent at the airship."
  }

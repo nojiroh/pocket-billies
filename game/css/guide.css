@@ -119,10 +119,10 @@
   margin: 0 0 0 6px;
 }
 @media (min-width: 960px) {
-  .s-ledger .ledger,
-  .s-ledger .ledsum,
-  .s-ledger .fchips,
-  .s-ledger .dexpage {
+  .s-guide .ledger,
+  .s-guide .ledsum,
+  .s-guide .fchips,
+  .s-guide .dexpage {
     max-width: 780px;
   }
 }
@@ -706,8 +706,8 @@
 
 /* ---------- UI-5: from v05.css, as it was ---------- */
 @media (min-width: 960px) and (orientation: landscape) {
-  body.on-scene .s-ledger .ledger,
-  body.on-scene .s-ledger .ledsum {
+  body.on-scene .s-guide .ledger,
+  body.on-scene .s-guide .ledsum {
     max-width: none;
   }
 }

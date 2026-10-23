@@ -10,12 +10,12 @@ import { expose } from '../test-globals.js';
 import { saveData, unlockTidy } from '../hooks.js';
 import { random } from '../util.js';
 import {
-  COINS,
   EGGS,
   HUB_LOCATIONS,
   ITEMS,
   LINES,
   MOVES,
+  PYRAMIDS,
   RULES,
   SPECIES,
   START_NODE,
@@ -55,11 +55,11 @@ expose({
 /** @returns {SaveData} */
 export function newSave() {
   const R = RULES.start,
-    coins = /** @type {Record<string, number>} */ ({}),
+    pyramids = /** @type {Record<string, number>} */ ({}),
     items = /** @type {Record<string, number>} */ ({});
-  Object.keys(COINS).forEach(k => (coins[k] = 0));
+  Object.keys(PYRAMIDS).forEach(k => (pyramids[k] = 0));
   Object.keys(ITEMS).forEach(k => (items[k] = 0));
-  Object.assign(coins, R.coins);
+  Object.assign(pyramids, R.pyramids);
   Object.assign(items, R.items);
   return {
     saveVersion: SAVE_VERSION,
@@ -75,7 +75,7 @@ export function newSave() {
     seen: {},
     caught: {},
     se: R.se,
-    coins,
+    pyramids,
     items,
     trip: { node: START_NODE, plan: [] },
     mapSeen: null,
@@ -114,7 +114,7 @@ export function saveFill(o) {
   /** @type {SaveData} */
   const s = Object.assign(f, o);
   const zero = obj => Object.fromEntries(Object.keys(obj).map(k => [k, 0]));
-  s.coins = Object.assign(zero(COINS), o.coins || {});
+  s.pyramids = Object.assign(zero(PYRAMIDS), o.pyramids || {});
   s.items = Object.assign(zero(ITEMS), o.items || {});
   s.flags = o.flags || {};
   /* roguelite track RL-3: meta and ranch filled out; a run that fails its check can't be resumed, so the hub's
@@ -191,10 +191,11 @@ export function saveFill(o) {
 }
 /* phase 02: every save says which save format it is (saveVersion; raise it when old saves can't be read any more; 2 since
    phase 05, 3 since phase 08: steps are gone, encounters live on each map, no jobs; 4 since roguelite track RL-3: meta,
-   run and ranch).
+   run and ranch; 5 since reflavour RF-4: perks, research, crests, pyramids, expeditions and the item, status and
+   passive ids renamed; older saves are set aside, no migration).
    A save without one (alpha 0.5 and earlier) or from a newer format is not loaded: the game says so and starts fresh.
    saveAge: null (no save), 'ok', 'old' or 'new'. A newer save is never written over (saveHold) */
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 5;
 /** @param {any} o @returns {'ok' | 'old' | 'new' | null} */
 export function saveAge(o) {
   if (!o || typeof o !== 'object') return null;
@@ -235,7 +236,7 @@ export function validSave(o) {
   if (!o.trip || !Number.isInteger(o.trip.node) || !num(o.trip.node, 0, nodes - 1) || !num(o.se, 0, 1e12)) return false;
   if (o.run && !num(o.run.start.trip.node, 0, HUB_LOCATIONS.length - 1)) return false;
   if (!Array.isArray(o.eggs) || o.eggs.some(e => !e || !num(e.prog, 0, 1e12))) return false;
-  for (const k of ['coins', 'items'])
+  for (const k of ['pyramids', 'items'])
     if (!o[k] || typeof o[k] !== 'object' || Object.values(o[k]).some(n => !num(n, 0, 1e12))) return false;
   /* phase 17: robot parts you own (missing in a save from before robots) and robots' damaged parts */
   if (

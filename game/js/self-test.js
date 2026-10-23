@@ -96,7 +96,7 @@ import { fallOverWorldMap, fallWorldMapCanvas } from './opening-fall.js';
 import { airshipFlight } from './airship.js';
 import { runWorld, runWorldData, runWorldSync } from './run-world.js';
 import { runClinicEach, runJump, runTakeOff } from './run.js';
-import { relicPickOpen } from './relic-screen.js';
+import { perkPickOpen } from './perk-screen.js';
 import { ranchOpen } from './ranch-screen.js';
 import { labBuy, labMilestones, renderLabBoard } from './lab-board.js';
 import { closeModal, modal, renderOverlay, toast } from './overlay.js';
@@ -1062,7 +1062,7 @@ async function runFullTest(mode) {
             );
             if (!buy) throw new Error('the town’s shop has no Perk');
             buy.click();
-            if (saveData.run.relics.length !== 1) throw new Error('the shop’s Perk wasn’t bought');
+            if (saveData.run.perks.length !== 1) throw new Error('the shop’s Perk wasn’t bought');
             uiState.modal = null;
             uiState.mq = [];
             const mb = runWorldNode(map.nodes.findIndex(n => n.type === 'miniboss'));
@@ -1084,9 +1084,9 @@ async function runFullTest(mode) {
               throw new Error('the pick didn’t open');
             const took = saveData.run.offer[0];
             uiState.relicSel = took;
-            relicPickOpen();
+            perkPickOpen();
             uiState.modal.btns[0].f();
-            if (saveData.run.relics.length !== 2 || !saveData.run.relics.includes(took) || saveData.run.offer)
+            if (saveData.run.perks.length !== 2 || !saveData.run.perks.includes(took) || saveData.run.offer)
               throw new Error('the pick wasn’t taken');
             uiState.modal = null;
             uiState.mq = [];
@@ -1112,7 +1112,7 @@ async function runFullTest(mode) {
             uiState.modal.btns[0].f();
             if (!(await wait(() => !saveData.run && LOCATIONS.length === gameData.locations.length, 10000)))
               throw new Error('the run didn’t end');
-            return `${G.name} (${G.zones.map(z => z.biome).join(', ')}): ${made[0]} scenes made in ${made[1]} ms; flew in ${flew} ms; a battle, a heal for ${plural(cost, 'Money')}, a Perk bought and one picked after the mini-boss, the boss; home with ${saveData.meta.capital} Research`;
+            return `${G.name} (${G.zones.map(z => z.biome).join(', ')}): ${made[0]} scenes made in ${made[1]} ms; flew in ${flew} ms; a battle, a heal for ${plural(cost, 'Money')}, a Perk bought and one picked after the mini-boss, the boss; home with ${saveData.meta.research} Research`;
           } finally {
             if (activeBattle) {
               stopTimers();
@@ -1319,9 +1319,9 @@ async function runFullTest(mode) {
           try {
             const s = JSON.parse(JSON.stringify(saveData));
             Object.assign(s.meta, {
-              capital: 1000,
+              research: 1000,
               scrap: 200,
-              seals: 0,
+              crests: 0,
               unlocks: {},
               buildings: {},
               runs: 1,
@@ -1336,19 +1336,19 @@ async function runFullTest(mode) {
             if (rows !== Object.keys(D.unlocks).length)
               throw new Error(`the board shows ${rows} rows, unlocks.json has ${Object.keys(D.unlocks).length}`);
             const buy = /** @type {HTMLElement | null} */ (
-              document.querySelector('.s-lab [data-a=lab-buy][data-k=shop_settlement]')
+              document.querySelector('.s-lab [data-a=lab-buy][data-k=shop_nerve_tonic]')
             );
             if (!buy) throw new Error('no Buy on Nerve Tonic');
             buy.click();
-            if (!s.meta.unlocks.shop_settlement || s.meta.capital !== 1000 - D.unlocks.shop_settlement.cost)
-              throw new Error(`buying Nerve Tonic left ${s.meta.capital} Research`);
+            if (!s.meta.unlocks.shop_nerve_tonic || s.meta.research !== 1000 - D.unlocks.shop_nerve_tonic.cost)
+              throw new Error(`buying Nerve Tonic left ${s.meta.research} Research`);
             if (!labBuy('ranch_2') || ranchLevel(s) !== 2 || ranchSlots(s, RULES.ranch) !== RULES.ranch.slots[1])
               throw new Error('the ranch’s upgrade didn’t raise its level and slots');
             const got = labMilestones();
             if (!got.includes('first_run') || labMilestones().length)
               throw new Error('the first milestone: ' + got.join());
-            if (!runUnlocks(s, D).includes('shop_settlement')) throw new Error('a run wouldn’t carry the shop unlock');
-            return `${rows} rows; bought Nerve Tonic for ${D.unlocks.shop_settlement.cost} Research and Ranch Lv 2; milestone ${got.join(', ')}`;
+            if (!runUnlocks(s, D).includes('shop_nerve_tonic')) throw new Error('a run wouldn’t carry the shop unlock');
+            return `${rows} rows; bought Nerve Tonic for ${D.unlocks.shop_nerve_tonic.cost} Research and Ranch Lv 2; milestone ${got.join(', ')}`;
           } finally {
             uiState.modal = null;
             uiState.mq = [];

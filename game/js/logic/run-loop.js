@@ -81,9 +81,9 @@ export function runArriveHeal(team, share) {
 }
 /** Studio plan T3.3: walking into a place on a run (walk-control.js through run.js runArrivedFx, and the run's
  * simulation): the held Perks' heal rows heal the team (runArriveHeal); returns the HP gained (0: none)
- * @param {SaveData} s @param {Record<string, any>} relics relics.json */
-export function runArriveFx(s, relics) {
-  const share = fxHealShare(fxOfRun(s.run, relics));
+ * @param {SaveData} s @param {Record<string, any>} perks perks.json */
+export function runArriveFx(s, perks) {
+  const share = fxHealShare(fxOfRun(s.run, perks));
   return share ? runArriveHeal(s.team, share) : 0;
 }
 /** what a run town's clinic charges to heal the party: `each` per hurt Billie @param {Billy[]} team
@@ -261,7 +261,7 @@ export const runKept = (team, won, pick) =>
 /** an item's shop price, for the payout's items line (0 for none) @param {string} id */
 export const runItemPrice = id => (ITEMS[id] && ITEMS[id].price) || 0;
 /** the payout screen's rows from payoutOf's lines: a label, a note and the Research each brings (the win row only on a
- * win; RL-9b: the items row only on a loss, a win takes the bag home) @param {{ lines: { what: string, n: number, capital: number }[] }} pay
+ * win; RL-9b: the items row only on a loss, a win takes the bag home) @param {{ lines: { what: string, n: number, research: number }[] }} pay
  * @param {{ money: number, itemShare: number, released: number, node: number }} rates */
 export function runPayoutRows(pay, rates) {
   const pct = Math.round(rates.money * 100),
@@ -278,6 +278,6 @@ export function runPayoutRows(pay, rates) {
     .filter(l => (l.what !== 'win' || won) && (l.what !== 'items' || !won))
     .map(l => {
       const [label, note] = (say[/** @type {keyof typeof say} */ (l.what)] || (() => [l.what, '']))(l.n);
-      return { label, note, value: l.capital };
+      return { label, note, value: l.research };
     });
 }

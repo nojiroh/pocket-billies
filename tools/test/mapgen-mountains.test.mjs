@@ -173,7 +173,7 @@ test("the debug menu's mountains run: a valid run whose every place has mountain
       team: [],
       se: 0,
       items: {},
-      coins: {},
+      pyramids: {},
       trip: { node: 0, plan: [] },
       wild: {},
       eggs: [],

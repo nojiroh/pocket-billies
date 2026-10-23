@@ -1,7 +1,7 @@
 {
  "$schema": "https://json-schema.org/draft/2020-12/schema",
- "$id": "relics.schema.json",
- "title": "game/data/relics.json: a run's Perks (relics), each a list of effect rows (roguelite track RL-12; logic/effects.js)",
+ "$id": "perks.schema.json",
+ "title": "game/data/perks.json: a run's Perks (relics), each a list of effect rows (roguelite track RL-12; logic/effects.js)",
  "type": "object",
  "propertyNames": {
   "pattern": "^[a-z][a-z0-9_]*$"
@@ -14,7 +14,7 @@
   "properties": {
    "name": {"description": "what the player reads", "type": "string", "minLength": 1, "maxLength": 40},
    "d": {"description": "what it does, in one sentence", "type": "string", "minLength": 1, "maxLength": 160},
-   "rarity": {"description": "how often it is offered (rules.json run.relics.rarity) and what a shop asks (run.relics.price)", "enum": ["common", "uncommon", "rare"]},
+   "rarity": {"description": "how often it is offered (rules.json run.perks.rarity) and what a shop asks (run.perks.price)", "enum": ["common", "uncommon", "rare"]},
    "fx": {
     "description": "its effects (logic/effects.js FX_KINDS)",
     "type": "array",
@@ -53,9 +53,9 @@
        "properties": {"kind": {"const": "heal"}, "share": {"type": "number", "exclusiveMinimum": 0, "maximum": 1}}
       },
       {
-       "description": "payout: the payout's Research (capital) or the share of their price items count at (itemShare), times mult",
+       "description": "payout: the payout's Research (research) or the share of their price items count at (itemShare), times mult",
        "type": "object", "additionalProperties": false, "required": ["kind", "what", "mult"],
-       "properties": {"kind": {"const": "payout"}, "what": {"enum": ["capital", "itemShare"]}, "mult": {"type": "number", "minimum": 0, "maximum": 4}}
+       "properties": {"kind": {"const": "payout"}, "what": {"enum": ["research", "itemShare"]}, "mult": {"type": "number", "minimum": 0, "maximum": 4}}
       }
      ]
     }

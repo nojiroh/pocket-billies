@@ -745,8 +745,8 @@ SECTIONS.rules = () => {
     )
     .join('');
   const xpPrev = `<p class="help" id="xpPrev">${xpCurveText()}</p>`;
-  const coinsStart = `<div class="grid">${Object.keys(D.coins)
-    .map(c => numberField(D.coins[c].n, `${s}.coins.${c}`, { min: 0, step: 1 }))
+  const coinsStart = `<div class="grid">${Object.keys(D.pyramids)
+    .map(c => numberField(D.pyramids[c].n, `${s}.pyramids.${c}`, { min: 0, step: 1 }))
     .join('')}${Object.keys(D.items)
     .map(i => numberField(D.items[i].n, `${s}.items.${i}`, { opt: 1, min: 0, step: 1 }))
     .join('')}</div>`;
@@ -900,8 +900,8 @@ SECTIONS.rules = () => {
        step: 1,
        help: 'Burn, sandstorm and Regrowth move this fraction of max HP each turn.',
      }),
-     numberField('Sharp stones: 1 /', `${bt}.rentFraction`, { min: 2, max: 64, step: 1 }),
-     numberField('Paralysis lost-turn chance', `${bt}.auditSkip`, { min: 0, max: 1, step: 0.05 }),
+     numberField('Sharp stones: 1 /', `${bt}.stonesFraction`, { min: 2, max: 64, step: 1 }),
+     numberField('Paralysis lost-turn chance', `${bt}.paralysisSkip`, { min: 0, max: 1, step: 0.05 }),
      numberField('Confusion turns', `${bt}.hypeTurns`, { min: 1, max: 10, step: 1 }),
      numberField('Confusion self-hit chance', `${bt}.hypeSelfHit`, { min: 0, max: 1, step: 0.05 }),
      numberField('Sleep turns, least', `${bt}.subpoenaMin`, { min: 1, max: 10, step: 1 }),
@@ -925,12 +925,12 @@ SECTIONS.rules = () => {
    ) +
      '<h4>Type abilities</h4>' +
      grid(
-       numberField('Wild Mind roll, low', `${bt}.cryptoRollMin`, { min: 0, max: 1, step: 0.05 }),
-       numberField('Wild Mind roll, high', `${bt}.cryptoRollMax`, { min: 1, max: 3, step: 0.05 }),
-       numberField('Live Wire: extra critical stages', `${bt}.mediaCrit`, { min: 0, max: 3, step: 1 }),
-       numberField('Kindling: Attack boost per turn', `${bt}.financeRamp`, { min: 0, max: 1, step: 0.01 }),
-       numberField('Kindling turns', `${bt}.financeRampTurns`, { min: 1, max: 30, step: 1 }),
-       numberField('Alloy bonus per teammate', `${bt}.retailSynergy`, { min: 0, max: 1, step: 0.01 }),
+       numberField('Wild Mind roll, low', `${bt}.wildMindRollMin`, { min: 0, max: 1, step: 0.05 }),
+       numberField('Wild Mind roll, high', `${bt}.wildMindRollMax`, { min: 1, max: 3, step: 0.05 }),
+       numberField('Live Wire: extra critical stages', `${bt}.liveWireCrit`, { min: 0, max: 3, step: 1 }),
+       numberField('Kindling: Attack boost per turn', `${bt}.kindlingBoost`, { min: 0, max: 1, step: 0.01 }),
+       numberField('Kindling turns', `${bt}.kindlingTurns`, { min: 1, max: 30, step: 1 }),
+       numberField('Alloy bonus per teammate', `${bt}.alloyBoost`, { min: 0, max: 1, step: 0.01 }),
        numberField('Undertow boost', `${bt}.undertowMult`, { unit: '×', min: 1, max: 3, step: 0.05 }),
        numberField('Undertow below this share of HP', `${bt}.undertowHp`, { min: 0, max: 1, step: 0.01 }),
        selectField('Sandstorm type', `${bt}.shockType`, typeOptions()),
@@ -977,7 +977,7 @@ SECTIONS.rules = () => {
          step: 0.01,
          help: 'At full HP the rate is multiplied by (1 − this).',
        }),
-       numberField('Asleep bonus', `${ca}.subpoena`, { unit: '×', min: 1, max: 5, step: 0.1 }),
+       numberField('Asleep bonus', `${ca}.asleepCatch`, { unit: '×', min: 1, max: 5, step: 0.1 }),
        numberField('Other status bonus', `${ca}.status`, { unit: '×', min: 1, max: 5, step: 0.1 }),
        numberField('Soak bonus', `${ca}.spin`, { unit: '×', min: 1, max: 3, step: 0.05 }),
        numberField('Perfect ring bonus', `${ca}.ring`, {
@@ -988,7 +988,7 @@ SECTIONS.rules = () => {
        }),
        numberField('Balances-on-its-tip chance (a sure catch)', `${ca}.edge`, { min: 0, max: 0.2, step: 0.005 }),
        numberField('Alpha catch rate', `${ca}.alpha`, { unit: '×', min: 0.05, max: 1, step: 0.05, ph: '0.4' }),
-       numberField('Pyramid penalty for luxury lines', `${ca}.luxuryPenny`, {
+       numberField('Pyramid penalty for luxury lines', `${ca}.luxuryPyramid`, {
          unit: '×',
          min: 0,
          max: 1,
@@ -1036,7 +1036,7 @@ const ART_GROUPS = [
   ['billionaires', 'Billies', 'Four sheets per stage. Edit them in Billies → Edit pixels.'],
   ['battle', 'Battle backdrops', 'Ground, far land, walls, props, clouds, foregrounds'],
   ['background', 'Menus and title', 'Title picture, sky, clouds, islands'],
-  ['coins', 'Pyramids', 'The catch items’ icons (folder coins until RF-4)'],
+  ['pyramids', 'Pyramids', 'The catch items’ icons (folder pyramids until RF-4)'],
   ['eggs', 'Eggs', ''],
   ['icons', 'Icon atlas', 'All item and effect icons on one sheet'],
   ['map', 'World map', 'The inside of the sphere (equirectangular)'],

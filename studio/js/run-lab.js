@@ -110,7 +110,7 @@ const RUN_LAB_PAYOUT = {
   released: 'Research per Billie released',
   node: 'Research per place cleared',
   win: 'Research for a win',
-  winSeals: 'Crests for a win',
+  winCrests: 'Crests for a win',
   scrapNode: 'Scrap per place cleared',
   scrapWin: 'Scrap for a win',
 };
@@ -277,7 +277,7 @@ function runLabLogicHTML(D, p, i) {
       rows.push(
         row(
           `Shop, day ${S.day}`,
-          `${S.stock.map(w => (w.coin ? runLabName(D.coins, w.coin) : runLabName(D.items, w.item))).join(', ')}${S.relic ? `; Perk: ${runLabName(D.relics, S.relic, 'name')}` : ''}`,
+          `${S.stock.map(w => (w.coin ? runLabName(D.pyramids, w.coin) : runLabName(D.items, w.item))).join(', ')}${S.relic ? `; Perk: ${runLabName(D.perks, S.relic, 'name')}` : ''}`,
           ` data-day="${S.day}" data-stock="${escapeHtml(S.stock.map(w => w.item || 'coin:' + w.coin).join(','))}" data-relic="${escapeHtml(S.relic)}"`
         )
       );
@@ -285,7 +285,7 @@ function runLabLogicHTML(D, p, i) {
   const picks = p.relicOffers
     .map(
       (/** @type {string[]} */ ids, /** @type {number} */ k) =>
-        `<li data-offer="${escapeHtml(ids.join(','))}">after mini-boss ${k + 1}: ${ids.map(id => runLabName(D.relics, id, 'name')).join(', ') || 'nothing left'}</li>`
+        `<li data-offer="${escapeHtml(ids.join(','))}">after mini-boss ${k + 1}: ${ids.map(id => runLabName(D.perks, id, 'name')).join(', ') || 'nothing left'}</li>`
     )
     .join('');
   return `<h4>From the game’s logic</h4>${rows.length ? `<table class="tbl rl-logic-node" data-node="${i}">${rows.join('')}</table>` : ''}<p class="help">Perk picks, in order, with none held (a held one changes the later picks and the shelves):</p><ol class="rl-offers">${picks}</ol>`;
@@ -406,10 +406,10 @@ function runLabRulesHTML() {
     part = (/** @type {string} */ h, /** @type {string[]} */ f, more = '') => `<h4>${h}</h4>${grid(...f)}${more}`,
     always = Object.keys(D.items)
       .map(k => ['', k])
-      .concat(Object.keys(D.coins).map(k => ['coin:', k]))
+      .concat(Object.keys(D.pyramids).map(k => ['coin:', k]))
       .map(([pre, k]) => {
         const id = pre + k,
-          name = pre ? (D.coins[k] || {}).n : (D.items[k] || {}).n;
+          name = pre ? (D.pyramids[k] || {}).n : (D.items[k] || {}).n;
         return `<label class="chk-chip"><input type="checkbox" data-rl-always="${escapeHtml(id)}"${R.shop.always.includes(id) ? ' checked' : ''}> ${escapeHtml(name || id)}</label>`;
       })
       .join('');
