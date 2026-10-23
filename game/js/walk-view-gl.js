@@ -13,6 +13,7 @@ import { expose } from './test-globals.js';
 import {
   BUILDING_SHADERS,
   SOLID_PROP_SHADERS,
+  WORLD_BOWL_SHADERS,
   drawBuildings,
   drawPropModels,
   drawSolidProps,
@@ -86,7 +87,15 @@ import { WALK_SHADERS } from './walk/walk-shaders.js';
 import { worldCurveDrop } from './walk/draw-common.js';
 import { groundOcclusionWork } from './walk/ground-textures.js';
 import { buildFarProps, buildGrass, grassWork } from './walk/grass-build.js';
-import { MAP_CACHE_FIELDS, groundPrepWork, mapCacheKey, swapMapCache, updateNearRing } from './walk/map-cache.js';
+import {
+  MAP_CACHE_FIELDS,
+  groundPrepWork,
+  isGroundPrepared,
+  mapCacheKey,
+  prepareMapGround,
+  swapMapCache,
+  updateNearRing,
+} from './walk/map-cache.js';
 import { adaptQuality, cullItems, easedMood, heatHaze, heatSources } from './walk/quality-cull.js';
 import { drawSky } from './walk/sky.js';
 import { drawRoomFront } from './walk/rooms.js';
@@ -102,12 +111,14 @@ import { effectsPass } from './walk/effects.js';
 import { bindGestures, handleCanvasClick } from './walk/input.js';
 /* eslint-disable no-func-assign */
 expose({
+  GROUND_SLICE_MS: [() => GROUND_SLICE_MS],
   baseStopWalkView: [() => baseStopWalkView],
   canvasForContext: [() => canvasForContext, v => (canvasForContext = v)],
   drawWalkFrame: [() => drawWalkFrame, v => (drawWalkFrame = v)],
   drawWalkFrameInner: [() => drawWalkFrameInner, v => (drawWalkFrameInner = v)],
   ensureLitPrograms: [() => ensureLitPrograms, v => (ensureLitPrograms = v)],
   ensureWalkGl: [() => ensureWalkGl, v => (ensureWalkGl = v)],
+  groundBuiltBeforeShow: [() => groundBuiltBeforeShow, v => (groundBuiltBeforeShow = v)],
   labelLayer: [() => labelLayer, v => (labelLayer = v)],
   mountWalkView: [() => mountWalkView, v => setMountWalkView(v)],
   onGlContextRestored: [() => onGlContextRestored, v => ((onGlContextRestored = v), provide({ onGlContextRestored }))],
@@ -205,6 +216,10 @@ export function mountWalkView(cv, id, opt = {}) {
       if (walkView.id !== id) return;
       walkView.sc = sc;
       ensureGround();
+      return groundBuiltBeforeShow(id, sc);
+    })
+    .then(() => {
+      if (walkView.id !== id) return;
       walkView.ready = true;
       frameTask('dio', drawWalkFrame, () => (walkView.opt.cap ? walkView.opt.cap() : userFps()));
       cv.classList.add('in');
@@ -213,6 +228,40 @@ export function mountWalkView(cv, id, opt = {}) {
       walkView.err = e;
       console.error(e);
     });
+}
+/* 0.1.0 alpha: a place's ground is built on the card a slice at a time before its view is shown. It was built in one go
+   on the view's first frame: in the owner's logs entering Copperleaf (and the opening, which waits for that ground) froze
+   2 s on a phone, 3 s on a laptop and 12 s on an iPad. Now the page keeps answering while it is built, and the first
+   frame only swaps it in (swapMapCache). A room's floor is small and is built as before; so is a view whose job is
+   dropped (it failed), or one still not ready after 30 s. */
+const GROUND_SLICE_MS = 10; /* an urgent job gets twice this (groundPrepWork) */
+function groundBuiltBeforeShow(id, sc) {
+  if (!walkRenderer.on || !walkView.ground || sc.groundOf || sc.roomScene) return Promise.resolve();
+  const key = mapCacheKey(id, sc, walkView.gkey),
+    t0 = performance.now();
+  let ours = false;
+  return new Promise(done => {
+    const step = () => {
+      const J = walkRenderer.prep;
+      if (walkView.id !== id) {
+        /* another view was asked for meanwhile: this one goes on as a look-ahead, which an urgent one may stop */
+        if (J && J.hk === key) J.urgent = 0;
+        return done();
+      }
+      if (!walkRenderer.on || gpuState.lost || isGroundPrepared(id, sc, walkView.gkey)) return done();
+      if (J && J.hk === key) ours = true;
+      else if (ours) return done();
+      else prepareMapGround(id, sc, walkView.ground, true);
+      groundPrepWork(GROUND_SLICE_MS);
+      if (performance.now() - t0 > 30000) {
+        if (typeof debugLog !== 'undefined')
+          debugLog.add('scene', `${id}: its ground wasn't ready in 30 s; built on the spot`);
+        return done();
+      }
+      setTimeout(step, 0);
+    };
+    step();
+  });
 }
 /* phase 04d: the Studio swaps in its own (studio/js/engine-editor.js and viewport.js) */
 export function setMountWalkView(v) {
@@ -245,6 +294,8 @@ export function ensureWalkGl(cv) {
       typeof BUILDING_SHADERS !== 'undefined' && BUILDING_SHADERS,
       typeof SOLID_PROP_SHADERS !== 'undefined' && SOLID_PROP_SHADERS,
       typeof propModelShaders === 'function' && propModelShaders(),
+      /* 0.1.0 alpha: the world map's too: its first open compiled its eight programs on the spot */
+      typeof WORLD_BOWL_SHADERS !== 'undefined' && WORLD_BOWL_SHADERS,
     ])
       if (d)
         precompilePrograms(
