@@ -81,9 +81,6 @@ body.dressing #nav {
   background: #f2c14e;
   color: #3a2408;
 }
-.dr-tog .uico {
-  background: currentColor;
-}
 .dr-keeper {
   position: absolute;
   left: 12px;
@@ -200,9 +197,6 @@ body.dressing #nav {
   gap: 3px;
   align-items: center;
   text-align: center;
-}
-.dr-it small .uico {
-  background: currentColor;
 }
 .dr-it[aria-pressed='true'] {
   border-color: #275c60;
