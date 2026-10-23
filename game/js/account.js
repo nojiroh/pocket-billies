@@ -333,7 +333,11 @@ function accountSaveDoc() {
     saveVersion: SAVE_VERSION,
     name: (saveData.avatar && saveData.avatar.name) || '',
     game: 'Pocket Billies',
-    t: firebase.firestore.FieldValue.serverTimestamp(),
+    /* the Firebase SDK is loaded whenever there is an account to write to; a stand-in account (the quick check's)
+       has none, and its write still goes */
+    ...(typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue
+      ? { t: firebase.firestore.FieldValue.serverTimestamp() }
+      : {}),
   };
 }
 /* RL-10b: the server's time on the save (a Firestore Timestamp) in ms, or 0 */
@@ -341,13 +345,13 @@ const accountServerMs = d => (d && d.t && typeof d.t.toMillis === 'function' ? d
 /* RL-10b: after this session's first write, the save read back once: its server time against the phone's clock
    around the write is the clock's skew (ranchSkew, memory only), and the server time is the ranch clock's floor */
 function accountMeasureClock(before) {
-  if (account.clock) return;
+  if (account.clock || !account.user || !account.db) return;
+  const ref = account.db.collection('saves').doc(account.user.uid);
+  if (typeof ref.get !== 'function') return;
   account.clock = 'measuring';
   const after = Date.now(),
     R = RULES.ranch || { guardMs: 60000 };
-  account.db
-    .collection('saves')
-    .doc(account.user.uid)
+  ref
     .get({ source: 'server' })
     .then(snap => {
       const ms = accountServerMs(snap.exists ? snap.data() : null);
