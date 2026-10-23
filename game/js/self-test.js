@@ -1561,17 +1561,23 @@ async function runFullTest(mode) {
                   W = m[3] * x + m[7] * y + m[11] * z + m[15];
                 return W > 0 && Math.abs(X / W) < 0.92 && Math.abs(Y / W) < 0.92;
               };
+              /* a building is drawn from its plan (build) or, since the low-poly batches, as a low-poly model with a
+                 door (house_red, shop, clinic); the low-poly ones count among the voxel props too */
               const seen = (sc.props || []).filter(inView),
-                wantB = seen.filter(pp => C0[pp.k] && C0[pp.k].build).length,
+                lowB = pp => C0[pp.k] && !C0[pp.k].build && C0[pp.k].door && C0[pp.k].model && pp.model !== 'card',
+                planB = seen.filter(pp => C0[pp.k] && C0[pp.k].build).length,
+                polyB = seen.filter(lowB).length,
+                wantB = planB + polyB,
+                lp = typeof propModelState !== 'undefined' ? propModelState.lowPoly || 0 : 0,
                 wantV = seen.filter(pp => C0[pp.k] && C0[pp.k].model && pp.model !== 'card').length;
-              if (id === 'test_light_props' && (b < wantB || v < wantV || !wantB))
+              if (id === 'test_light_props' && (b < planB || lp < polyB || v < wantV || !wantB))
                 throw new Error(
-                  `props in view: ${b} of ${wantB} buildings and ${v} of ${wantV} voxel props drawn (${p} solid props)`
+                  `props in view: ${Math.min(b, planB) + Math.min(lp, polyB)} of ${wantB} buildings and ${v} of ${wantV} voxel props drawn (${p} solid props)`
                 );
               if (id === 'test_light_room' && t === 23 && !lm)
                 throw new Error('no lamp shadow map in the room at night');
               out.push(
-                `${(sc.name || id).replace(/^Test: /, '')} ${Math.floor(t)}:${t % 1 ? String(Math.round((t % 1) * 60)).padStart(2, '0') : '00'} — ${b} buildings, ${v} voxels, ${p} solids drawn (${seen.length} placed things in view), ${lm} lamp map(s)`
+                `${(sc.name || id).replace(/^Test: /, '')} ${Math.floor(t)}:${t % 1 ? String(Math.round((t % 1) * 60)).padStart(2, '0') : '00'} — ${Math.min(b, planB) + Math.min(lp, polyB)} of ${wantB} buildings, ${v} voxels, ${p} solids drawn (${seen.length} placed things in view), ${lm} lamp map(s)`
               );
             }
           } finally {
