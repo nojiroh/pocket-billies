@@ -9,6 +9,9 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- Things to do is gone (test cleanup track): the daily challenges, the townsfolk's requests and letters, the gold
+  stamps (and their tile on the Trainer card), photo mode and your room in Granny Juniper's cottage are removed;
+  her cottage no longer opens. The weather still changes battles.
 - The title screen shows Copperleaf for a new player too (the city at night is parked with the opening's city, kept
   for the story). The in-game full test walks Copperleaf and the rooms its doors and a run town's open, not rooms no
   door leads to any more; the diagnostics test walks the hub and its busiest room and one generated run road. The

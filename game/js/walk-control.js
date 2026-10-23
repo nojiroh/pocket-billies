@@ -59,7 +59,6 @@ import { labBoardOpen } from './lab-board.js';
 import { postcardCheck } from './postcards.js';
 import { legendCheck, personTalk, storyCheck, trainerTalk } from './story.js';
 import { storyResumeCheck } from './story-stage.js';
-import { arrivedAt, homeDecorate, refreshHomeFurniture } from './things-to-do.js';
 import { toast } from './overlay.js';
 import { clinicHeal } from './walk-tab.js';
 /* eslint-disable no-func-assign */
@@ -77,7 +76,7 @@ expose({
   roomFrontOf: [() => roomFrontOf, v => (roomFrontOf = v)],
   roomLayIn: [() => roomLayIn, v => (roomLayIn = v)],
   roomPeople: [() => roomPeople, v => (roomPeople = v)],
-  roomRefresh: [() => roomRefresh, v => ((roomRefresh = v), provide({ roomRefresh }))],
+  roomRefresh: [() => roomRefresh, v => (roomRefresh = v)],
   roomState: [() => roomState, v => ((roomState = v), provide({ roomState }))],
   roomStepIn: [() => roomStepIn, v => (roomStepIn = v)],
   runSeenSum: [() => runSeenSum, v => (runSeenSum = v)],
@@ -87,7 +86,7 @@ expose({
   walkState: [() => walkState, v => (walkState = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ mapIdAt, mapOffsetInView, roomRefresh, roomState });
+provide({ mapIdAt, mapOffsetInView, roomState });
 /* to-module: end */
 /* ---------- the walk scene behind the Walk tab ---------- */
 export function mapIdAt(i) {
@@ -160,7 +159,6 @@ export function enterRoom(a, p) {
       };
     })(),
   };
-  if (id === 'int_home' && typeof refreshHomeFurniture === 'function') refreshHomeFurniture();
   /* v46: the room laid into the place where the building stands: step in once it's ready (a moment at most) */
   const lay = roomLayIn(id, p, true);
   if (lay) {
@@ -352,7 +350,6 @@ function roomAct(h) {
     else toast(I.p.say || 'The shop is closed today.');
   } else if (I.kind === 'clinic') clinicHeal(I.p.say);
   else if (I.kind === 'lab' && typeof talkChosen === 'function') talkChosen(I.p);
-  else if (I.kind === 'home' && typeof homeDecorate === 'function') homeDecorate();
   else if (I.kind === 'ranch' && typeof ranchOpen === 'function') ranchOpen();
   else {
     const c = (mapById(I.id) || {}).chat || [];
@@ -571,9 +568,12 @@ export function walkPick(h) {
     else
       toast(
         p.say ||
-          { lab: 'The lab is busy with research.', house: 'Nobody answers the door.', sign: `You’re in ${here.name}.` }[
-            a
-          ] ||
+          {
+            lab: 'The lab is busy with research.',
+            house: 'Nobody answers the door.',
+            home: 'Nobody answers the door.',
+            sign: `You’re in ${here.name}.`,
+          }[a] ||
           'Nothing happens.'
       );
   } else if (h.k === 'exit') exitPrompt(h.e);
@@ -687,7 +687,6 @@ export function walkCross() {
       plan = r.plan && r.plan[0] === n ? r.plan.slice(1) : [];
     saveData.trip = { node: n, plan };
     saveData.visited[n] = 1;
-    if (typeof arrivedAt === 'function') arrivedAt(n);
     uiState.roam = { id: q.id, node: n, x, z };
     uiState.backAt = null;
     if (typeof debugLog !== 'undefined')

@@ -13,12 +13,11 @@ expose({
   PILL_COLORS: [() => PILL_COLORS],
   hpBar: [() => hpBar, v => (hpBar = v)],
   pillColor: [() => pillColor],
-  progressBarHTML: [() => progressBarHTML, v => ((progressBarHTML = v), provide({ progressBarHTML }))],
+  progressBarHTML: [() => progressBarHTML, v => (progressBarHTML = v)],
   statusBadgeHTML: [() => statusBadgeHTML],
   typeBadgeHTML: [() => typeBadgeHTML],
 });
 /* eslint-enable no-func-assign */
-provide({ progressBarHTML });
 /* to-module: end */
 /* phase 06-4: the pill's colour is the type's, deepened just enough for its label to read at 4.5:1 (logic/colors.js) */
 const PILL_COLORS = {};
