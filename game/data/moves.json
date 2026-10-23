@@ -15,7 +15,7 @@
   "t": "None",
   "c": "X",
   "a": 75,
-  "fx": {"status":"sub"},
+  "fx": {"status":"slp"},
   "d": "Sings the target to sleep for 2–4 turns. Sleeping targets are twice as easy to catch."
  },
  "movefast": {
@@ -37,7 +37,7 @@
   "t": "Electric",
   "c": "X",
   "a": 90,
-  "fx": {"status":"aud"},
+  "fx": {"status":"par"},
   "d": "Paralyzes the target."
  },
  "overload": {"n":"Overcharge","t":"Electric","c":"S","p":95,"a":90,"d":"A heavy hit."},
@@ -66,7 +66,7 @@
   "c": "S",
   "p": 120,
   "a": 85,
-  "fx": {"selfStatus":"scn","selfChance":30},
+  "fx": {"selfStatus":"brn","selfChance":30},
   "d": "Huge damage. 30% chance to burn itself."
  },
  "pump": {"n":"Mind Pulse","t":"Psychic","c":"S","p":50,"a":100,"d":"A wave of strange energy."},
@@ -104,7 +104,7 @@
   "c": "S",
   "p": 40,
   "a": 100,
-  "fx": {"status":"scn","chance":20},
+  "fx": {"status":"brn","chance":20},
   "d": "20% chance to burn the target."
  },
  "pipeline": {"n":"Flame Dash","t":"Fire","c":"H","p":60,"a":100,"d":"A blazing charge."},
@@ -181,7 +181,7 @@
   "t": "Fire",
   "c": "X",
   "a": 85,
-  "fx": {"status":"scn"},
+  "fx": {"status":"brn"},
   "d": "Burns the target."
  },
  "spin": {
@@ -305,7 +305,7 @@
   "c": "S",
   "p": 55,
   "a": 100,
-  "fx": {"status":"aud","chance":30},
+  "fx": {"status":"par","chance":30},
   "d": "30% chance to paralyze the target."
  },
  "foreclose": {"n":"Boulder Toss","t":"Ground","c":"H","p":75,"a":100,"d":"Hurls a heavy rock."},
@@ -364,7 +364,7 @@
   "a": 100,
   "d": "Charges rent for reading the numbers: the foe loses a little HP each turn.",
   "sig": "bloomberg",
-  "fx": {"status":"scn"}
+  "fx": {"status":"brn"}
  },
  "onemorething": {"n":"One More Thing","t":"Psychic","c":"S","a":100,"d":"Just when it seemed over.","sig":"jobs","p":95},
  "justdoit": {"n":"Just Do It","t":"Flying","c":"H","a":100,"d":"Does it before anyone asked.","sig":"knight","p":80},
@@ -408,7 +408,7 @@
   "a": 100,
   "d": "Charges by the minute: the foe loses HP every turn.",
   "sig": "slim",
-  "fx": {"status":"scn"}
+  "fx": {"status":"brn"}
  },
  "imout": {
   "n": "I'm Out",
@@ -596,7 +596,7 @@
   "c": "S",
   "p": 75,
   "a": 95,
-  "fx": {"status":"scn","chance":10},
+  "fx": {"status":"brn","chance":10},
   "d": "10% chance to burn the target."
  },
  "arcwhip": {
@@ -605,7 +605,7 @@
   "c": "S",
   "p": 60,
   "a": 100,
-  "fx": {"status":"aud","chance":20},
+  "fx": {"status":"par","chance":20},
   "d": "20% chance to paralyze the target."
  },
  "jetblast": {

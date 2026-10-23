@@ -274,11 +274,11 @@ export function effectiveStat(k, s2) {
   const s = v.st[s2] || 0;
   x *= stageFactor(s);
   if (s2 === 'lev') {
-    if (m.status === 'scn') x *= 0.5;
+    if (m.status === 'brn') x *= 0.5;
     if (hasPassive(actorTypes(k), 'ramp'))
       x *= 1 + BATTLE_RULES.financeRamp * Math.min(BATTLE_RULES.financeRampTurns, v.turnsIn);
   }
-  if (s2 === 'hus' && m.status === 'aud') x *= 0.5;
+  if (s2 === 'hus' && m.status === 'par') x *= 0.5;
   /* phase 17: a robot with broken legs is slow */
   if (s2 === 'hus' && partBroken(m, 'legs')) x *= robotRules().legBreakSpeed;
   return Math.max(1, x);
@@ -424,16 +424,16 @@ export function inflict(tk, st, loud) {
     if (loud) battleSay(`But ${billyName(t)} is already ${(STATUS_NAMES[t.status] || 'affected').toLowerCase()}.`);
     return;
   }
-  if (t.boss && st === 'sub' && battleRoll() < (BATTLE_RULES.alphaSleepResist ?? 0.5)) {
+  if (t.boss && st === 'slp' && battleRoll() < (BATTLE_RULES.alphaSleepResist ?? 0.5)) {
     battleSay(`${billyName(t)} shrugged it off. Alphas don’t nod off easily.`);
     return;
   }
   t.status = st;
-  if (st === 'sub')
+  if (st === 'slp')
     t.sTurns =
       BATTLE_RULES.subpoenaMin + Math.floor(battleRoll() * (BATTLE_RULES.subpoenaMax - BATTLE_RULES.subpoenaMin + 1));
   battleSay(
-    `${billyName(t)} ${st === 'aud' ? 'is paralyzed. It may be unable to move' : st === 'sub' ? 'fell asleep' : st === 'scn' ? 'was burned' : 'is ' + (STATUS_NAMES[st] || st)}.`,
+    `${billyName(t)} ${st === 'par' ? 'is paralyzed. It may be unable to move' : st === 'slp' ? 'fell asleep' : st === 'brn' ? 'was burned' : 'is ' + (STATUS_NAMES[st] || st)}.`,
     { k: 'status', si: tk, st }
   );
 }
@@ -460,17 +460,17 @@ export function useMove(k, mid, tk0, part) {
     });
     return;
   }
-  if (u.status === 'sub') {
+  if (u.status === 'slp') {
     u.sTurns--;
     if (u.sTurns > 0) {
-      battleSay(`${billyName(u)} is fast asleep.`, { k: 'status', si: k, st: 'sub' });
+      battleSay(`${billyName(u)} is fast asleep.`, { k: 'status', si: k, st: 'slp' });
       return;
     }
     u.status = null;
     battleSay(`${billyName(u)} woke up.`);
   }
-  if (u.status === 'aud' && battleRoll() < BATTLE_RULES.auditSkip) {
-    battleSay(`${billyName(u)} is paralyzed and can’t move.`, { k: 'status', si: k, st: 'aud' });
+  if (u.status === 'par' && battleRoll() < BATTLE_RULES.auditSkip) {
+    battleSay(`${billyName(u)} is paralyzed and can’t move.`, { k: 'status', si: k, st: 'par' });
     return;
   }
   if (v.hyped > 0) {
@@ -668,10 +668,10 @@ export function endTurn() {
       f.v.shield--;
       if (!f.v.shield) battleSay(`${billyName(m)}’s shield fades.`, { k: 'stat', si: k, up: false });
     }
-    if (m.status === 'scn') {
+    if (m.status === 'brn') {
       const d = Math.max(1, Math.floor(mx / fr));
       m.hp = Math.max(0, m.hp - d);
-      battleSay(`${billyName(m)} is hurt by its burn.`, { k: 'hurt', si: k, fx: 'scn', dmg: d });
+      battleSay(`${billyName(m)} is hurt by its burn.`, { k: 'hurt', si: k, fx: 'brn', dmg: d });
     }
     if (m.hp > 0 && battleNow().market && !ty.includes(BATTLE_RULES.shockType)) {
       const d = Math.max(1, Math.floor(mx / fr));
@@ -1203,7 +1203,7 @@ export function catchOdds(id, T, spin, b) {
     if (PYRAMIDS[id] && PYRAMIDS[id].m === 0) return 1;
     let C = PYRAMIDS[id].m;
     if (id === 'pyramid' && CATCH_RULES.luxury.includes(speciesOf(e).line)) C *= CATCH_RULES.luxuryPyramid;
-    const Sx = e.status === 'sub' ? CATCH_RULES.subpoena : e.status ? CATCH_RULES.status : 1;
+    const Sx = e.status === 'slp' ? CATCH_RULES.subpoena : e.status ? CATCH_RULES.status : 1;
     return Math.min(
       1,
       speciesOf(e).cr *

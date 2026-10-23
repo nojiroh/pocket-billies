@@ -203,9 +203,9 @@ SECTIONS.preview = () => {
       ['heal', 'Heal'],
       ['statup', 'Stat up'],
       ['statdn', 'Stat down'],
-      ['aud', 'Paralyzed'],
-      ['sub', 'Asleep'],
-      ['scn', 'Burned'],
+      ['par', 'Paralyzed'],
+      ['slp', 'Asleep'],
+      ['brn', 'Burned'],
       ['hype', 'Confusion'],
       ['hurt', 'Status damage'],
       ['lvl', 'Level up'],
@@ -439,16 +439,16 @@ ACTIONS.bp = d => {
     case 'statdn':
       battleStagePlay({ k: 'stat', si: 1, up: false }, ev);
       break;
-    case 'aud':
-    case 'sub':
-    case 'scn':
+    case 'par':
+    case 'slp':
+    case 'brn':
       battleStagePlay({ k: 'status', si: 1, st: x }, ev);
       break;
     case 'hype':
       battleStagePlay({ k: 'hype', si: 1 }, ev);
       break;
     case 'hurt':
-      battleStagePlay({ k: 'hurt', si: 1, fx: 'scn', dmg: 7 }, ev);
+      battleStagePlay({ k: 'hurt', si: 1, fx: 'brn', dmg: 7 }, ev);
       break;
     case 'lvl':
       battleStagePlay({ k: 'lvl' }, ev);

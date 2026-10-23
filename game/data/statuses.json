@@ -1,5 +1,5 @@
 [
- {"id":"aud","name":"Paralyzed"},
- {"id":"sub","name":"Asleep"},
- {"id":"scn","name":"Burned"}
+ {"id":"par","name":"Paralyzed"},
+ {"id":"slp","name":"Asleep"},
+ {"id":"brn","name":"Burned"}
 ]

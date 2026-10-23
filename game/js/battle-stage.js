@@ -744,13 +744,13 @@ function spawnAmbientParticles(dt) {
       const sd = battleStage.s[i];
       if (!sd.show || !sd.st || sd.a < 0.5) continue;
       const T = actorTop(i);
-      const sp = sd.st === 'aud' ? 'bolt' : sd.st === 'sub' ? 'zz' : sd.st === 'scn' ? 'flame' : 'spark';
+      const sp = sd.st === 'par' ? 'bolt' : sd.st === 'slp' ? 'zz' : sd.st === 'brn' ? 'flame' : 'spark';
       addParticle({
         x: T.x + (random() - 0.5) * 0.6,
         y: T.y + 0.2,
         z: T.z,
         vx: (random() - 0.5) * 0.3,
-        vy: sd.st === 'aud' ? -0.6 : 0.7,
+        vy: sd.st === 'par' ? -0.6 : 0.7,
         life: 900,
         spr: sp,
         k: 0.9,
@@ -1825,7 +1825,7 @@ export function battleStagePlay(an, ev) {
             k: kk,
           });
       if (an.fx === 'rent') burst(T, 'Ground', 7, 1.6, kk);
-      if (an.fx === 'scn')
+      if (an.fx === 'brn')
         for (let i = 0; i < 4; i++)
           scheduleAt(i * 70, () =>
             addParticle({
@@ -1897,7 +1897,7 @@ export function battleStagePlay(an, ev) {
     case 'status': {
       const T = actorCenter(an.si),
         kk = 1,
-        sp = an.st === 'aud' ? 'bolt' : an.st === 'sub' ? 'zz' : 'flame';
+        sp = an.st === 'par' ? 'bolt' : an.st === 'slp' ? 'zz' : 'flame';
       setActorAction(an.si, 'dizzy', 800);
       for (let i = 0; i < 8; i++)
         scheduleAt(i * 60, () =>
@@ -1906,7 +1906,7 @@ export function battleStagePlay(an, ev) {
             y: T.y + 0.9,
             z: T.z,
             vx: (random() - 0.5) * 0.8,
-            vy: an.st === 'aud' ? -1.6 : 1.4,
+            vy: an.st === 'par' ? -1.6 : 1.4,
             life: 620,
             spr: sp,
             k: kk,

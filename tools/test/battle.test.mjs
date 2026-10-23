@@ -20,8 +20,8 @@ test('battle: damage, type matchup, status, a turn', () => {
       hi = Math.floor(6.8 * 1.5 * 2 * (r.crit ? 1.5 : 1));
     assert.ok(r.dmg >= lo && r.dmg <= hi, `${r.dmg} not in ${lo}..${hi}`);
   }
-  fn('inflict')(1, 'scn');
-  assert.equal(foe.status, 'scn');
+  fn('inflict')(1, 'brn');
+  assert.equal(foe.status, 'brn');
   assert.ok(hooks.activeBattle.events.some(e => e.t === 'Sprout was burned.'));
   said.length = 0;
   fn('runTurn')([{ who: 0, k: 'move', mid: 'tackle', tk: 1 }]);
@@ -38,10 +38,10 @@ test('battle: catching: lower HP and a status raise the odds, an Alpha lowers th
   foe.hp = 1;
   const low = odds();
   assert.ok(low > full, `${low} at 1 HP, ${full} at full`);
-  foe.status = 'scn';
+  foe.status = 'brn';
   const burned = odds();
   assert.ok(burned > low || burned === 1, `${burned} burned`);
-  foe.status = 'sub';
+  foe.status = 'slp';
   assert.ok(odds() >= burned, 'a subpoena (asleep) helps most');
   // an Alpha of the same species and level, at full HP
   fn('newBattle')('wild', [fn('makeAlpha')('sprout0', 10)]);

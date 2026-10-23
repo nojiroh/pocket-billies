@@ -98,9 +98,9 @@ export const FIXTURE = {
     { id: 'hus', name: 'Speed' },
   ],
   statuses: [
-    { id: 'aud', name: 'Paralyzed' },
-    { id: 'sub', name: 'Asleep' },
-    { id: 'scn', name: 'Burned' },
+    { id: 'par', name: 'Paralyzed' },
+    { id: 'slp', name: 'Asleep' },
+    { id: 'brn', name: 'Burned' },
   ],
   moves: {
     tackle: { n: 'Tackle', t: 'None', c: 'H', p: 40, a: 100 },

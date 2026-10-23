@@ -1,9 +1,9 @@
 {
  "potion": {"n":"Potion","price":150,"hp":20,"d":"Restores 20 HP.","icon":"potion"},
  "hi_potion": {"n":"Hi-Potion","price":400,"hp":60,"d":"Restores 60 HP.","icon":"hipotion"},
- "burn_salve": {"n":"Burn Salve","price":200,"cure":"scn","d":"Heals a burn.","icon":"salve"},
- "nerve_tonic": {"n":"Nerve Tonic","price":200,"cure":"aud","d":"Cures paralysis.","icon":"tonic"},
- "wake_tea": {"n":"Wake-Up Tea","price":200,"cure":"sub","d":"Wakes up a sleeping Billie.","icon":"tea"},
+ "burn_salve": {"n":"Burn Salve","price":200,"cure":"brn","d":"Heals a burn.","icon":"salve"},
+ "nerve_tonic": {"n":"Nerve Tonic","price":200,"cure":"par","d":"Cures paralysis.","icon":"tonic"},
+ "wake_tea": {"n":"Wake-Up Tea","price":200,"cure":"slp","d":"Wakes up a sleeping Billie.","icon":"tea"},
  "revive": {"n":"Revive","price":600,"revive":0.5,"d":"Revives a fainted Billie with half its HP.","icon":"revive"},
  "bell": {
   "n": "Shining Stone",
