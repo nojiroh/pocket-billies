@@ -20,7 +20,7 @@ test('unlock graph: a column per building then the earned rows; edges from what 
   assert.equal(node.ranch_3.depth, 1);
   assert.equal(node.ranch_2.depth, 0);
   assert.equal(node.first_run.col, 'earned');
-  assert.equal(node.shop_bailout.currency, 'research');
+  assert.equal(node.shop_revive.currency, 'research');
   assert.equal(node.airship_2.currency, 'crests');
   const has = (from, to) => g.edges.some(e => e.from === from && e.to === to);
   assert.ok(has('ranch_2', 'ranch_3') && has('airship_2', 'biome_ridge') && has('airship_2', 'biome_autumn'));
@@ -53,7 +53,7 @@ test('unlock graph: a new save has nothing earned; runs and wins earn what unloc
   assert.deepEqual(fresh.owned, []);
   assert.deepEqual(fresh.currencies, { research: 0, scrap: 0, crests: 0 });
   assert.equal(fresh.buildings.ranch, 1);
-  assert.equal(fresh.why.shop_bailout, 'cost');
+  assert.equal(fresh.why.shop_revive, 'cost');
   assert.equal(fresh.why.ranch_3, 'requires');
   assert.equal(fresh.why.first_run, 'earned');
   assert.ok(!fresh.biomes.includes('ridge') && fresh.biomes.includes('meadow'), 'locked biomes stay off the map');

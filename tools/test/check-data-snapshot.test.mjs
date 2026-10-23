@@ -108,9 +108,9 @@ test('check-data: planted robots, biomes, node types, relics, currencies, buildi
         B.lab.currency = 'gold';
       },
       'unlocks.json': U => {
-        U.shop_settlement.at = 'nosuchbuilding';
-        U.shop_settlement.requires = ['caught_15'];
-        U.caught_15.requires = ['shop_settlement'];
+        U.shop_nerve_tonic.at = 'nosuchbuilding';
+        U.shop_nerve_tonic.requires = ['caught_15'];
+        U.caught_15.requires = ['shop_nerve_tonic'];
         U.caught_15.when = 'unlock:nosuchunlock';
         U.caught_15.grant = { money: 100 };
       },

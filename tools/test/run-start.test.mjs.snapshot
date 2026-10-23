@@ -355,9 +355,9 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
       "unlocks": [
         "biome_autumn",
         "biome_ridge",
-        "shop_appeal",
-        "shop_bailout",
-        "shop_settlement"
+        "shop_nerve_tonic",
+        "shop_revive",
+        "shop_wake_tea"
       ],
       "mods": [],
       "clock": 1,
@@ -871,6 +871,6 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
       }
     }
   },
-  "all": "dea91c5b7cb85d6ef4c032487dc40c9e314e94f014b71664cdb9b47d1c1b513b"
+  "all": "b1e686ed6405eae36ae6121b70c64c9ed558a2eed5ffb59c56ec6e8ff394ee1b"
 }
 `;

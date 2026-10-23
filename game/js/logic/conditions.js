@@ -11,7 +11,7 @@
      visited:copperleaf     a place you have been        billie:musk                    a Billie of that line caught
      robot                  you have a robot             badges >= 2                    badges won
      caught >= 15           kinds of Billie caught (the Index)
-     unlock:shop_bailout    an unlock is owned (RL-11)  runs >= 3, wins >= 1           runs ended, runs won (RL-11)
+     unlock:shop_revive    an unlock is owned (RL-11)  runs >= 3, wins >= 1           runs ended, runs won (RL-11)
    combined with `and`, `or`, `not` / `!` and parentheses (`and` binds tighter than `or`). A bare count term
    (`item:honey`, `visits:juniper`, `badges`) means more than 0. Logic only: no DOM, runs in Node. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */

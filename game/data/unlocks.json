@@ -1,19 +1,19 @@
 {
- "shop_settlement": {
+ "shop_nerve_tonic": {
   "name": "Nerve Tonic in run shops",
   "about": "Run towns can stock Nerve Tonic, which cures paralysis.",
   "at": "lab",
   "cost": 60,
   "grant": {"shop":"nerve_tonic"}
  },
- "shop_appeal": {
+ "shop_wake_tea": {
   "name": "Wake-Up Tea in run shops",
   "about": "Run towns can stock Wake-Up Tea, which wakes a sleeping Billie.",
   "at": "lab",
   "cost": 60,
   "grant": {"shop":"wake_tea"}
  },
- "shop_bailout": {
+ "shop_revive": {
   "name": "Revives in run shops",
   "about": "Run towns can stock Revives, which bring a fainted Billie back with half its HP.",
   "at": "lab",

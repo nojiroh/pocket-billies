@@ -39,7 +39,7 @@ test('run sim: a run starts as the mast starts it, with no unlocks or every one'
   const none = runSim('SIMUNLOCK0', B),
     all = runSim('SIMUNLOCK0', { ...B, unlocks: 'all' });
   assert.deepEqual(none.log.unlocks, []);
-  assert.ok(all.log.unlocks.includes('biome_ridge') && all.log.unlocks.includes('shop_settlement'));
+  assert.ok(all.log.unlocks.includes('biome_ridge') && all.log.unlocks.includes('shop_nerve_tonic'));
 });
 
 test("run sim: a run town's shop stocks only what the run has unlocked (Studio plan T3.3)", () => {

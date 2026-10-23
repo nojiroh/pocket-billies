@@ -1336,19 +1336,19 @@ async function runFullTest(mode) {
             if (rows !== Object.keys(D.unlocks).length)
               throw new Error(`the board shows ${rows} rows, unlocks.json has ${Object.keys(D.unlocks).length}`);
             const buy = /** @type {HTMLElement | null} */ (
-              document.querySelector('.s-lab [data-a=lab-buy][data-k=shop_settlement]')
+              document.querySelector('.s-lab [data-a=lab-buy][data-k=shop_nerve_tonic]')
             );
             if (!buy) throw new Error('no Buy on Nerve Tonic');
             buy.click();
-            if (!s.meta.unlocks.shop_settlement || s.meta.research !== 1000 - D.unlocks.shop_settlement.cost)
+            if (!s.meta.unlocks.shop_nerve_tonic || s.meta.research !== 1000 - D.unlocks.shop_nerve_tonic.cost)
               throw new Error(`buying Nerve Tonic left ${s.meta.research} Research`);
             if (!labBuy('ranch_2') || ranchLevel(s) !== 2 || ranchSlots(s, RULES.ranch) !== RULES.ranch.slots[1])
               throw new Error('the ranch’s upgrade didn’t raise its level and slots');
             const got = labMilestones();
             if (!got.includes('first_run') || labMilestones().length)
               throw new Error('the first milestone: ' + got.join());
-            if (!runUnlocks(s, D).includes('shop_settlement')) throw new Error('a run wouldn’t carry the shop unlock');
-            return `${rows} rows; bought Nerve Tonic for ${D.unlocks.shop_settlement.cost} Research and Ranch Lv 2; milestone ${got.join(', ')}`;
+            if (!runUnlocks(s, D).includes('shop_nerve_tonic')) throw new Error('a run wouldn’t carry the shop unlock');
+            return `${rows} rows; bought Nerve Tonic for ${D.unlocks.shop_nerve_tonic.cost} Research and Ranch Lv 2; milestone ${got.join(', ')}`;
           } finally {
             uiState.modal = null;
             uiState.mq = [];

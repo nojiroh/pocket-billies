@@ -87,7 +87,7 @@ test("Studio plan T3.3: a run town's wares through the run's own unlocks (runSho
     const open = modules.unlocks.unlockOpen(R.shop.pick, 'shop', [], UD);
     assert.deepEqual(a, L.runShopStock(run, 3, day, { ...R.shop, pick: open }), 'the stock of the open wares');
   }
-  run.unlocks = ['shop_appeal', 'shop_bailout', 'shop_settlement'];
+  run.unlocks = ['shop_wake_tea', 'shop_revive', 'shop_nerve_tonic'];
   for (let day = 1; day <= 40; day++) for (const w of L.runShopOpen(run, 3, day, R.shop, UD)) seen.add(w.item);
   assert.ok(
     locked.some(k => seen.has(k)),
