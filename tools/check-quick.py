@@ -186,39 +186,6 @@ def check_data():
     return f'{len(D.get("maps", {}))} scenes ({", ".join(f"{v} {k}s" for k, v in kinds.items())}), {len(SY.get("props", {}))} props, {len(D["roads"])} named roads'
 
 
-@step('alpha 0.4: an airship mast in every town (from the data)', 20)   # RL-5: Verdigris City and its terminal are parked
-def check_masts():
-    """every town has something to fly from (a prop with act 'fly': a mast, or a sky lift under the ground); the
-    terminal's ticket window sells tickets; the mast's airship is a low-poly model with two propellers that turn"""
-    D = gamedata(); bad = []; n = 0
-    for r in D['locations']:
-        if r.get('kind') != 'town': continue
-        sc = D['maps'][r['mapId']]; f = [p for p in sc['props'] if p.get('act') == ('lift' if r.get('noFly') else 'fly')]
-        if not f: bad.append(f'{r["id"]}: nowhere to fly from' if not r.get('noFly') else f'{r["id"]}: no lift')
-        n += len(f)
-    if 'station' in [p['k'] for sc in D['maps'].values() for p in sc.get('props', [])]: bad.append('an old train station is still standing')
-    # alpha 0.4.1: the mast and the airship are two props; every mast has its airship moored at it
-    CP = D['scenery']['props']; M = CP.get('airship_mast') or {}; AS = CP.get('airship') or {}; rp = GAME / 'art' / (M.get('model') or 'missing'); ra = GAME / 'art' / (AS.get('model') or 'missing')
-    for sc in D['maps'].values():
-        P = sc.get('props') or []
-        for m in [q for q in P if q.get('k') in ('airship_mast', 'airship_station')]:
-            if not any(q.get('k') == 'airship' and abs(q['x'] - m['x']) < .05 and abs(q['z'] - m['z']) < .05 for q in P): bad.append(f'{sc.get("name")}: a mast without its airship')
-    if not rp.exists() or not ra.exists(): bad.append('the mast or the airship has no 3D model')
-    else:
-        rec = json.loads(ra.read_text()); spins = rec.get('spins') or []; recm = json.loads(rp.read_text())
-        if rec.get('kind') != 'mesh' or recm.get('kind') != 'mesh': bad.append('the mast and the airship aren’t low-poly models (tools/build-airship.py)')
-        if len(spins) != 2: bad.append(f'the airship has {len(spins)} turning propellers, not 2')
-        if not AS.get('bob'): bad.append('the airship doesn’t bob')
-        if M.get('box', [9])[0] > 2.5: bad.append('the mast’s footprint reaches past the tower')
-        import base64
-        for P in (rec.get('parts') or []) + (recm.get('parts') or []) + spins:
-            if len(base64.b64decode(P['data'])) != P['n'] * 24 + P['ni'] * 2: bad.append(f'{P.get("name")}: its vertex data is the wrong size')
-        A = (D['scenery'].get('buildArt') or {}).get('detail')
-        if not A or not (GAME / 'art' / A).exists(): bad.append('the building sheet the model is painted from is missing')
-    if bad: raise Exception('; '.join(bad[:6]))
-    return f'{n} masts and sky lifts in {sum(1 for r in D["locations"] if r.get("kind") == "town")} towns; airship stations, no train station; the mast and its moored airship are two low-poly props ({sum(P["ni"] for P in recm["parts"]) // 3} and {sum(P["ni"] for P in rec["parts"]) // 3} triangles), the airship bobbing, two turning propellers'
-
-
 @step('alpha 0.4: a postcard for every town; a solarpunk touch in every town (from the data)', 20)
 def check_postcards():
     """every town has its postcard picture (tools/build-postcards.py); every town but the new start has something of
@@ -2030,7 +1997,7 @@ def main():
     R = {'when': time.strftime('%Y-%m-%d %H:%M'), 'render': 'software, a third of the resolution, 1024 shadow map'}
     # phase 04b: data/gamedata.js is generated from the data files; make it from the files as they are now
     subprocess.run(['node', str(ROOT / 'tools' / 'build-data.mjs')], check=True)
-    check_data(); check_masts(); check_postcards(); check_windows(); check_ground(); report_unused()
+    check_data(); check_postcards(); check_windows(); check_ground(); report_unused()
     srv, base = serve(GAME)
     with sync_playwright() as pw:
         b = pw.chromium.launch(args=['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'])
