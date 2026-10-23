@@ -1,0 +1,116 @@
+{
+ "about": "The opening as the owner approved it on 2026-10-23 (Professor Chosen, with Hazel as his assistant): every line, its speaker (a look id) and expression, and the opening’s own commands, in order, played on a stub with Pat and Starterbill. opening-script.test.mjs compares the opening with it; a change to the opening’s words changes this file on purpose.",
+ "said": [
+  {
+   "who": "chosen",
+   "expr": "surprised",
+   "text": "Whoa. WHOA. You fell out of the sky and you’re alive? That’s a main character move. That’s my move."
+  },
+  {
+   "who": "chosen",
+   "expr": null,
+   "text": "Stuff comes down through the crust sometimes. Mostly furniture. Furniture has never once been chosen."
+  },
+  {
+   "who": "hazel",
+   "expr": null,
+   "text": "He means: are you hurt? That was quite a landing."
+  },
+  {
+   "who": "chosen",
+   "expr": null,
+   "text": "Quick, what’s your name? Is it epic? It’s not “The Chosen”, right? That one’s taken."
+  },
+  {
+   "who": "chosen",
+   "expr": "surprised",
+   "text": "Nothing? Not even your name?"
+  },
+  {
+   "who": "chosen",
+   "expr": "happy",
+   "text": "Amnesia. Classic origin story. I’d be jealous, but I already have one."
+  },
+  {
+   "who": "hazel",
+   "expr": null,
+   "text": "Fall-related amnesia. Very common down here. It usually comes back, a bit at a time."
+  },
+  {
+   "who": "chosen",
+   "expr": null,
+   "text": "Okay. Sit up. Let’s see what the prophecy has to work with."
+  },
+  {
+   "cmd": "dressing-room"
+  },
+  {
+   "who": "chosen",
+   "expr": "happy",
+   "text": "Pat? Solid sidekick name. Not chosen-tier. But solid."
+  },
+  {
+   "who": "chosen",
+   "expr": null,
+   "text": "I’m Professor Chosen. Nobody gave me the title. It chose me. That’s how chosen works."
+  },
+  {
+   "who": "hazel",
+   "expr": null,
+   "text": "I’m Hazel. I do the research. He does the… presence."
+  },
+  {
+   "who": "chosen",
+   "expr": null,
+   "text": "These are Billies. Clones of the richest people up top. A lab backed them up and filled the gaps with animals."
+  },
+  {
+   "who": "hazel",
+   "expr": null,
+   "text": "Then shipped them down here. They went wild."
+  },
+  {
+   "who": "chosen",
+   "expr": null,
+   "text": "They live in the long grass, in caves and canyons, even in the malls. Walk, and they come to you. Tax them with a coin, train a team, earn badges from the arena leaders."
+  },
+  {
+   "who": "chosen",
+   "expr": "happy",
+   "text": "Every hero needs a companion. Not me, obviously. You. I’ve got three right here."
+  },
+  {
+   "who": "chosen",
+   "expr": null,
+   "text": "Three Billies, three types. Each one beats one of the others. Choose wisely. Like I would."
+  },
+  {
+   "cmd": "pick-starter"
+  },
+  {
+   "who": "chosen",
+   "expr": "happy",
+   "text": "Starterbill! Bold. I’d have picked that one too. I didn’t. But I would have."
+  },
+  {
+   "who": "chosen",
+   "expr": null,
+   "text": "One more thing. See the airship at the mast? It flies out past the island, to wild places nobody’s mapped yet."
+  },
+  {
+   "who": "chosen",
+   "expr": null,
+   "text": "Every trip is different. Take Starterbill, catch what you can, bring back whatever you find. Side quest. Very important side quest."
+  },
+  {
+   "who": "hazel",
+   "expr": null,
+   "text": "And come back in one piece. Falling once is plenty."
+  },
+  {
+   "who": "chosen",
+   "expr": "happy",
+   "text": "Go whenever you’re ready. The lab’s always open. So is destiny."
+  }
+ ]
+}

@@ -165,9 +165,9 @@ export const FIXTURE = {
   coins: { penny: { n: 'Copper Coin', m: 1 }, tbtf: { n: 'Platinum Coin', m: 0 } },
   items: { potion: { n: 'Potion', hp: 20 }, revive: { n: 'Revive', revive: 0.5 } },
   jobs: { barista: { n: 'Barista', out: ['item', 'potion', 1], quip: 'made forty lattes.' } },
-  people: { gini: {} },
+  people: { chosen: {} },
   shops: {},
-  trainers: { ray: { name: 'Rival Ray', who: 'gini', node: 1, blocks: true, team: [{ sp: '@rival', lvl: 5 }] } },
+  trainers: { ray: { name: 'Rival Ray', who: 'chosen', node: 1, blocks: true, team: [{ sp: '@rival', lvl: 5 }] } },
 };
 
 export const { hooks, said, files, data, modules, logic, fn, startedSave: started } = await loadLogic(FIXTURE);

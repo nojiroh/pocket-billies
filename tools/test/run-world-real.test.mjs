@@ -185,7 +185,7 @@ test("the run's world goes in (its scenes, pools, places and roads) and the hub'
   });
   startedSave('musk0');
   /* a hub trainer standing on the hub's node 1 (none does today) must not stand on the run's place 1 */
-  data.TRAINERS.hub_guard = { id: 'hub_guard', name: 'Guard', who: 'gini', team: [], node: 1 };
+  data.TRAINERS.hub_guard = { id: 'hub_guard', name: 'Guard', who: 'chosen', team: [], node: 1 };
   try {
     data.worldPut({ ...W, maps, trainers: foes });
     assert.ok(!data.LOCATIONS[1].trainers.includes('hub_guard'), 'a hub trainer on a run’s place');

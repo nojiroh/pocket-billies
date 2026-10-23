@@ -27,26 +27,35 @@
   "cycles": "where each cycle and seq is",
   "resume": "a script saved halfway: which one, and where it goes on from"
  },
- "speakers": {"Hazel":"gini","Blake":"chad","Juniper":"juniper","Nacre":"nacre","Cass":"cass","Vinylla":"vinylla","You":"me"},
+ "speakers": {
+  "Chosen": "chosen",
+  "Hazel": "hazel",
+  "Blake": "chad",
+  "Juniper": "juniper",
+  "Nacre": "nacre",
+  "Cass": "cass",
+  "Vinylla": "vinylla",
+  "You": "me"
+ },
  "scripts": {
-  "hazel": {
-   "about": "Hazel in her lab (talk.js talkHazel): your Index, your badges, where Blake went",
-   "who": "gini",
+  "chosen": {
+   "about": "Professor Chosen in his lab (talk.js talkChosen): your Index, your badges, where Blake went",
+   "who": "chosen",
    "script": [
-    "[happy] {name}! How's your Index coming along? {caught} taxed so far. #l:2c0a",
+    "[happy] {name}! My sidekick returns. How’s the Index? {caught} taxed so far. #l:2c0a",
     "if caught >= 15",
-    "  [happy] That’s a proper collection. I might have to cite you in my paper. #l:5e16",
+    "  [happy] That’s a proper collection. Hazel says she might cite you in her paper. I said put me first. #l:5e16",
     "elif caught >= 5",
-    "  [surprised] You’re getting good at this. Some of them only show up in caves or in the malls. #l:251a",
+    "  [surprised] You’re getting good at this. Not chosen good. But good. Some of them only show up in caves or in the malls. #l:251a",
     "if badges = 1",
-    "  1 badge already. The arena leaders talk about you, you know. #l:4eb4",
+    "  1 badge already. The arena leaders talk about you. Not as much as about me. But they talk. #l:4eb4",
     "elif badges",
-    "  {badges} badges already. The arena leaders talk about you, you know. #l:be0b"
+    "  {badges} badges already. The arena leaders talk about you. Not as much as about me. But they talk. #l:be0b"
    ]
   },
   "blake-first-battle": {
-   "about": "after Blake’s first battle in the opening, won, lost or skipped (rival0): Blake has his say, Hazel heals your team and points you down the road (story.js storyAfterRival)",
-   "who": "gini",
+   "about": "after Blake’s first battle in the opening, won, lost or skipped (rival0): Blake has his say, the Chosen heals your team and points you down the road (story.js storyAfterRival)",
+   "who": "chosen",
    "script": [
     "if rival0 = win",
     "  [surprised] Blake: What? I lost to someone who fell out of the sky an hour ago? #l:0008",
@@ -57,17 +66,17 @@
     "if rival0 = win or rival0 = lose",
     "  Blake: I’m off to train on the golf course. Next time I’ll have a whole team. Try to keep up! #l:2d35",
     "heal",
-    "[happy] There, good as new. #l:256f",
-    "Granny Juniper has made up a room for you in her cottage, by the hives. A rest there does wonders. #l:68e0",
-    "Now go and explore! The road teaches more than any book. Come back and see me any time. #l:36c7"
+    "[happy] There. Good as new. I have healing hands. Hazel has a first-aid kit. Same thing. #l:256f",
+    "Granny Juniper made up a room for you in her cottage, by the hives. Every hero needs a base. #l:68e0",
+    "Now go and explore! The road teaches more than any book. I’ve read zero books, and look at me. #l:36c7"
    ]
   },
   "ending": {
    "about": "after you beat Vinylla at the Inner Sun: what everyone says before the last clue (story.js storyEnding)",
-   "who": "gini",
+   "who": "chosen",
    "script": [
     "[sad] Vinylla: Gold. Everywhere. On the floor, on the press, on the record... #l:82ed",
-    "[happy] Aurumansa. The golden caravan. It always comes when something is about to get rare. #l:8b79",
+    "[happy] Aurumansa. The golden caravan. I foresaw this. I didn’t write it down, but I foresaw it. #l:8b79",
     "Look at it, Vinylla. Gold all over the pressing floor. Nothing here is limited any more. #l:3e56",
     "[angry] Vinylla: Do you know what a record is worth if everyone can have one? #l:960e",
     "[happy] Blake: About what it’s worth to listen to it. Turns out that was the point. #l:d97e",

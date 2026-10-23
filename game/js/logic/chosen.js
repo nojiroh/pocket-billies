@@ -1,7 +1,7 @@
 // @ts-check
 'use strict';
-/* ================= HAZEL (phase 06-2b) =================
-   What Professor Hazel says around the opening that isn't a line of its script (game/data/cutscenes/opening.json
+/* ================= CHOSEN (phase 06-2b) =================
+   What the professor (Professor Chosen, since 2026-10-23) says around the opening that isn't a line of its script (game/data/cutscenes/opening.json
    holds those): the staged fight's log, the pick card's note, her hot takes, her tips in Blake's battle and her
    comments on tapping too fast, in one table, and the small rules around them: which hot take comes next when you tap
    her during the pick, her (wrong on purpose) type tips, and when she comments on tapping too fast.
@@ -10,16 +10,16 @@
 import { expose } from '../test-globals.js';
 /* eslint-disable no-func-assign */
 expose({
+  CHOSEN: [() => CHOSEN],
   FAST_PICKS: [() => FAST_PICKS],
   FAST_PICK_MS: [() => FAST_PICK_MS],
   FAST_SKIPS: [() => FAST_SKIPS],
   FAST_SKIP_MS: [() => FAST_SKIP_MS],
-  HAZEL: [() => HAZEL],
   TIP_MAX: [() => TIP_MAX],
   // @ts-expect-error -- replaced on purpose
-  fillLine: [() => fillLine, v => (fillLine = v)],
+  chosenTip: [() => chosenTip, v => (chosenTip = v)],
   // @ts-expect-error -- replaced on purpose
-  hazelTip: [() => hazelTip, v => (hazelTip = v)],
+  fillLine: [() => fillLine, v => (fillLine = v)],
   // @ts-expect-error -- replaced on purpose
   hotTake: [() => hotTake, v => (hotTake = v)],
   // @ts-expect-error -- replaced on purpose
@@ -27,53 +27,59 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-export const HAZEL = {
-  /** Hazel's own fight: the log lines under the plates ({foe} is Blake's Billie) */
+export const CHOSEN = {
+  /** the Chosen's own fight: the log lines under the plates ({foe} is Blake's Billie) */
   fight: {
-    start: 'Professor Hazel wants to battle! She sent out… herself.',
+    start: 'Professor Chosen wants to battle! He sent out… himself.',
     blakeGo: 'Go, {foe}! Tackle!',
-    tackle: '{foe} used Tackle! It bounced off her lab coat.',
-    moves: ['Peer Review', 'Grant Rejection', 'Office Hours', 'Footnote'],
-    hit: 'Professor Hazel used Peer Review!',
-    effective: 'It’s super effective. Everything is, when she does it.',
+    tackle: '{foe} used Tackle! It bounced off his lab coat.',
+    moves: ['Plot Armor', 'Main Character Energy', 'Prophecy', 'Katana (Decorative)'],
+    hit: 'Professor Chosen used Plot Armor!',
+    effective: 'It’s super effective. He says it always is.',
     faint: '{foe} fainted! It’s fine. It’s having a little lie-down.',
   },
   /** the note on the pick card */
-  pickNote: 'Tap Professor Hazel for her (biased) opinion.',
-  /** her hot takes per starter line, then annoyed ones for any line */
+  pickNote: 'Tap Professor Chosen for his (chosen) opinion.',
+  /** his hot takes per starter line, then annoyed ones for any line */
   hotTakes: /** @type {Record<string, string[]>} */ ({
     musk: [
-      'It’s going to Mars. It has been going to Mars for six years.',
-      'Lovely calf. Don’t ask it about the launch date. Don’t.',
-      'Strong, loud, and it will tell everyone it invented fire.',
+      'It’s going to Mars. I’ve been to Mars. In a dream. It counts.',
+      'Strong, loud, thinks it’s the main character. I respect that. I don’t trust it.',
+      'Don’t ask it about the launch date. I did. We don’t talk now.',
     ],
     bezos: [
-      'It’ll deliver your groceries in two days. Your feelings, never.',
-      'Cute. Don’t sign anything it brings you.',
-      'That box has more storage than my lab.',
+      'It’ll deliver your groceries in two days. Destiny takes longer.',
+      'Cute. Don’t sign anything it hands you.',
+      'That box has more storage than my lab. Hazel says that’s not hard.',
     ],
     gates: [
-      'Very sensible. It will ask you to restart it twice a day.',
-      'It jumped a chair once. You’ll hear about it.',
-      'It’s eaten my thesis. Twice. It was on a floppy disk.',
+      'Very sensible. It’ll ask you to restart it twice a day.',
+      'It jumped over a chair once. You’ll hear about it. I jumped two.',
+      'It ate Hazel’s thesis. Twice. I told her it was the Billie. It was the Billie.',
     ],
   }),
   annoyed: [
-    'I’m a professor, not a vending machine.',
-    'Tap me again and it goes on your permanent record.',
-    'Pick one. I have a grant deadline.',
+    'I’m a professor, not a vending machine. I’m a legend.',
+    'Tap me again and I unsheathe. The katana’s at the cleaners. But I could.',
+    'Pick one. The prophecy has a deadline.',
   ],
-  /** Blake's battle: no tutorial; the meta line first, then her tips (at most TIP_MAX) */
-  meta: 'You’ve played one of these before. Everyone has. Tap the move that sounds the most painful.',
+  /** Blake's battle: no tutorial; the meta line first, then his tips (at most TIP_MAX) */
+  meta: 'You’ve played one of these before. Everyone has. Tap the move that sounds the most legendary.',
   /** a flipped type tip from the real matchup: {weak} is the type that loses, {strong} the one that wins */
-  flippedTip: '{weak} beats {strong}. Trust me, I’m a doctor.',
+  flippedTip: '{weak} beats {strong}. It was foretold. In a forum post.',
   badTips: [
-    'Fire is weak to Fire. Fight fire with fire, as they say. They’re wrong, but they say it.',
-    'Always use the move with the longest name. It costs more, so it’s better.',
-    'Type advantage is a myth spread by Big Element.',
+    'Fire is weak to Fire. Fight fire with fire. That’s from a prophecy. Or a poster.',
+    'Always use the move with the longest name. Longer name, more power. That’s just lore.',
+    'Type advantage is a myth. Real heroes win by believing harder.',
   ],
-  tooFastPicks: ['Instant picks. Bold. Reckless. Very Sterling of you.', 'Did you even read the moves? I wrote those.'],
-  tooFastSkips: ['You skipped that. I could tell. I can always tell.', 'I spent a whole sabbatical on that sentence.'],
+  tooFastPicks: [
+    'Instant picks. Reckless. I respect it. Hazel doesn’t.',
+    'Did you even read the moves? Hazel wrote those. I approved them.',
+  ],
+  tooFastSkips: [
+    'You skipped that. I could tell. Chosen ones can always tell.',
+    'That was my monologue. It had a wolf in it.',
+  ],
 };
 
 /** how many HOT TIPs Blake's battle gets, at most */
@@ -93,19 +99,19 @@ export function fillLine(text, vars) {
 /** the hot take for the n-th tap (0-based) on one starter line: its own takes in order, then the annoyed ones, which
  * stay on the last one @param {string} line @param {number} n */
 export function hotTake(line, n) {
-  const own = HAZEL.hotTakes[line] || [],
-    all = own.concat(HAZEL.annoyed);
+  const own = CHOSEN.hotTakes[line] || [],
+    all = own.concat(CHOSEN.annoyed);
   return all[Math.min(n, all.length - 1)] || '';
 }
 
 /** the i-th tip in Blake's battle (0-based): the meta line, then a type tip flipped from the real matchup when there is
  * one, then the canned bad tips; null when she is out of tips.
  * @param {number} i @param {{ weak: string, strong: string } | null} matchup the real one: strong beats weak */
-export function hazelTip(i, matchup) {
+export function chosenTip(i, matchup) {
   if (i >= TIP_MAX) return null;
-  const L = [HAZEL.meta];
-  if (matchup) L.push(fillLine(HAZEL.flippedTip, { weak: matchup.weak, strong: matchup.strong }));
-  L.push(...HAZEL.badTips);
+  const L = [CHOSEN.meta];
+  if (matchup) L.push(fillLine(CHOSEN.flippedTip, { weak: matchup.weak, strong: matchup.strong }));
+  L.push(...CHOSEN.badTips);
   return L[i] ?? null;
 }
 

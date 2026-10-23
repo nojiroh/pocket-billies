@@ -10,7 +10,7 @@
    - S2: the scene in the walk scene you stand in: `camera run-up` borrows the opening's director (cutscene.js) and
      puts you and the one who talks on it, `walk <who> beside me` brings them over, `face`, `music`, `fade`; a battle
      ends the scene first. A line waits for open windows (a battle's result) to close.
-   - story:<id> scripts belong to the story, not to someone (story.json scripts: Hazel in the lab, the ending).
+   - story:<id> scripts belong to the story, not to someone (story.json scripts: the Chosen in the lab, the ending).
    A cutscene's own commands (actor, caption, ...) and the opening's play on the cutscene stage (cutscene/stage.js): go
    and those stop a script here with an error. */
 /* the script lines of a person, a trainer or the story: person:<id> (in a map's people), trainer:<id>, story:<id> */

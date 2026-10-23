@@ -686,7 +686,7 @@ export interface PersonLook {
 /** trainers/<id>.json (trainer.schema.json): a trainer you can battle */
 export interface Trainer {
   name: string;
-  /** their look, a key of gameData.people ('gini' when unknown) */
+  /** their look, a key of gameData.people ('chosen' when unknown) */
   who: DataId;
   /** their battle stage, a key of gameData.battleStages */
   battleStage?: DataId;

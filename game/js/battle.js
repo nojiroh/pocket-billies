@@ -598,12 +598,12 @@ function afterEvents() {
   activeBattle.plan = [];
   activeBattle.cur = liveActors(0)[0];
   activeBattle.phase = 'choose';
-  activeBattle.menuT = performance.now(); /* phase 06-2b: for Hazel's "instant picks" comment (opening-fall.js) */
+  activeBattle.menuT = performance.now(); /* phase 06-2b: for the "instant picks" comment (opening-fall.js) */
   chooseMessage();
   paintBoxes(allSnapshots(), activeBattle.market);
   paintActions();
   if (activeBattle.T && activeBattle.T.tutorial && typeof battleTutor === 'function')
-    battleTutor(); /* v47: Hazel's tips in Blake's first battle */
+    battleTutor(); /* v47: the professor's tips in Blake's first battle */
 }
 /* v33: with two or three of yours out, each picks in turn; the one choosing stands in a ring */
 export function chooseMessage() {

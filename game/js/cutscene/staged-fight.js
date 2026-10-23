@@ -1,13 +1,13 @@
 'use strict';
-/* ================= CUTSCENES: HAZEL'S STAGED FIGHT =================
-   Phase 06-2b: before you have a Billie, Hazel fights Blake herself, staged to look like a battle (plates, a move
+/* ================= CUTSCENES: THE PROFESSOR'S STAGED FIGHT =================
+   Phase 06-2b: before you have a Billie, the professor (the Chosen) fights Blake himself, staged to look like a battle (plates, a move
    line, the log). Project Story S6 makes it a real battle in the battle engine; this goes then. Split from cutscene.js. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { $ } from '../util.js';
 import { RULES, SPECIES } from '../game-data.js';
 import { formatNumber, maxHp } from '../logic/rules.js';
-import { HAZEL, fillLine } from '../logic/hazel.js';
+import { CHOSEN, fillLine } from '../logic/chosen.js';
 import { cutscenePoint } from '../logic/cutscene-set.js';
 import { escapeHtml } from '../game-state.js';
 import { buzz } from '../battle-stage.js';
@@ -18,9 +18,9 @@ import { cutsceneLook } from './stage.js';
 /* eslint-disable no-func-assign */
 expose({
   blakeFirstBillie: [() => blakeFirstBillie, v => (blakeFirstBillie = v)],
+  chosenFight: [() => chosenFight, v => (chosenFight = v)],
   fightLog: [() => fightLog, v => (fightLog = v)],
   fightPlate: [() => fightPlate, v => (fightPlate = v)],
-  hazelFight: [() => hazelFight, v => (hazelFight = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -63,11 +63,11 @@ function fightPlate(cls, name, lvl, hp, max) {
   return `<div class="csf-plate ${cls}"><div class="csf-top"><b>${escapeHtml(name)}</b><span class="tnum">${escapeHtml(lvl)}</span></div><span class="csf-hp"><i style="width:${max ? (hp / max) * 100 : 100}%"></i></span><small class="tnum">${formatNumber(hp)}/${formatNumber(max)}</small></div>`;
 }
 /* who: Blake's look (story.json speakers); his first Billie pops out on the middle starter's spot (star2) */
-export async function hazelFight(who) {
+export async function chosenFight(who) {
   const id = blakeFirstBillie(),
     box = $('#csFight');
   if (!id || !box) return;
-  const F = HAZEL.fight,
+  const F = CHOSEN.fight,
     name = SPECIES[id].name,
     vars = { foe: name };
   cutscene.foeName = name;
@@ -104,8 +104,8 @@ export async function hazelFight(who) {
   });
   cutscene.coins = [];
   if (!cutscene.on) return;
-  /* the battle plates: Hazel (absurd) against Blake's Billie, a move line, the log */
-  box.innerHTML = `<div class="csf-plates">${fightPlate('me', 'Prof. Hazel', 'Lv ???', 9999, 9999)}${fightPlate('foe', name, 'Lv 4', max, max)}</div><div class="csf-moves" hidden>${F.moves.map((m, i) => `<span class="${i === 0 ? 'on' : ''}">${escapeHtml(m)}</span>`).join('')}</div><button class="csf-log" type="button"><span class="csf-t"></span><small>Tap to go on</small></button>`;
+  /* the battle plates: the Chosen (absurd) against Blake's Billie, a move line, the log */
+  box.innerHTML = `<div class="csf-plates">${fightPlate('me', 'Prof. Chosen', 'Lv ???', 9999, 9999)}${fightPlate('foe', name, 'Lv 4', max, max)}</div><div class="csf-moves" hidden>${F.moves.map((m, i) => `<span class="${i === 0 ? 'on' : ''}">${escapeHtml(m)}</span>`).join('')}</div><button class="csf-log" type="button"><span class="csf-t"></span><small>Tap to go on</small></button>`;
   box.hidden = false;
   document.body.classList.add('cs-fighting');
   await fightLog(F.start);
@@ -115,7 +115,7 @@ export async function hazelFight(who) {
   await fightLog(fillLine(F.tackle, vars));
   const mv = box.querySelector('.csf-moves');
   if (mv) mv.hidden = false;
-  cutsceneAct(cutsceneLook('Hazel'), 'throw', 700);
+  cutsceneAct(cutsceneLook('Chosen'), 'throw', 700);
   await fightLog(F.hit);
   if (mv) mv.hidden = true;
   /* one hit: the plate drains to zero, the Billie flashes white and goes */

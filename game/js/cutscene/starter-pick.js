@@ -1,14 +1,14 @@
 'use strict';
 /* ================= CUTSCENES: THE STARTER PICK =================
    The opening's three starters drawn with their rigs, and the pick card: arrows either side of the name, dots, the
-   blurb, what it beats and what beats it, one gold button; tap a starter in the scene to look at it, tap Hazel for a
+   blurb, what it beats and what beats it, one gold button; tap a starter in the scene to look at it, tap the Chosen for a
    hot take (opening.js). Split from cutscene.js. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { hazelHotTake, typeBadgeHTML } from '../hooks.js';
+import { chosenHotTake, typeBadgeHTML } from '../hooks.js';
 import { $, clamp } from '../util.js';
 import { SPECIES, TYPES, typeEffectiveness } from '../game-data.js';
-import { HAZEL } from '../logic/hazel.js';
+import { CHOSEN } from '../logic/chosen.js';
 import { cutscenePoint } from '../logic/cutscene-set.js';
 import { escapeHtml } from '../game-state.js';
 import { makeCanvas } from '../art.js';
@@ -84,7 +84,7 @@ function starterPickerHTML() {
  <div class="pk-dots" role="img" aria-label="${cutscene.sel + 1} of ${pk.length}">${pk.map((_, i) => `<i class="${i === cutscene.sel ? 'on' : ''}"></i>`).join('')}</div>
  <p class="pk-blurb">${escapeHtml(s.blurb)}</p>
  <div class="pk-match"><div><span class="pk-k">Strong against</span><span class="pk-ts">${pills(st)}</span></div><div><span class="pk-k">Weak to</span><span class="pk-ts">${pills(wk)}</span></div></div>
- <p class="pk-note">${escapeHtml(HAZEL.pickNote)}</p>
+ <p class="pk-note">${escapeHtml(CHOSEN.pickNote)}</p>
  ${cutscene.confirm ? `<div class="pk-acts"><button class="pb quiet" data-a="cs-no">Not yet</button><button class="pb gold" data-a="cs-yes">Yes, ${escapeHtml(s.name)}!</button></div>` : `<button class="pb gold wide pk-go" data-a="cs-choose">Choose ${escapeHtml(s.name)}</button>`}`;
 }
 function starterPickerFocus() {
@@ -185,8 +185,8 @@ document.addEventListener('pointerup', ev => {
     sy = ((ev.clientY - r.top) / r.height) * walkView.cv.height;
   let best = -1,
     bd = 1e9;
-  /* phase 06-2b: Hazel, nearer than any starter, gives a hot take */
-  const g = cutscene.actors[cutsceneLook('Hazel')],
+  /* phase 06-2b: the Chosen, nearer than any starter, gives a hot take */
+  const g = cutscene.actors[cutsceneLook('Chosen')],
     hq = g && worldToScreen(walkView.C, g.x, 1.0 + standingHeightAt(g.x, g.z), g.z),
     hd = hq ? Math.hypot(hq.x - sx, hq.y - sy) : 1e9;
   cutscene.stars.forEach((s, i) => {
@@ -199,7 +199,7 @@ document.addEventListener('pointerup', ev => {
     }
   });
   if (hd < bd && hd < walkView.cv.height * 0.16) {
-    hazelHotTake();
+    chosenHotTake();
     return;
   }
   if (best >= 0 && bd < walkView.cv.height * 0.18 && best !== cutscene.sel) {

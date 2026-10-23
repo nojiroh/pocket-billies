@@ -34,7 +34,7 @@ test('each planted fault is found', () => {
     ['a line without an id', G => G.trainers.crude.script.splice(1, 0, '  Hi.'), 'problems', 'has no line id'],
     [
       'an id used twice',
-      G => G.trainers.crude.script.push(G.story.scripts.hazel.script[0].trim()),
+      G => G.trainers.crude.script.push(G.story.scripts.chosen.script[0].trim()),
       'problems',
       'is also',
     ],

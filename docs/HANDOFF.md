@@ -2,6 +2,43 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Side session - Professor Chosen replaces Professor Hazel - 2026-10-23
+Branch `ccr-9023a485-qr0fhf` (PR #142). The owner's request: the Chosen (the Smosh sketch character) as a
+Pokémon-style professor. Owner answers: name tag "Professor Chosen"; Hazel stays as his tired assistant; the
+organization link is dropped for now (S4 decides); internal renames now; the wolf-print tee and katana art later;
+the drafted lines approved as written.
+- Changed (one cause per commit):
+  - `hazel`: a new person, Hazel's old look. `gini` (now `chosen`) gets his look from today's wardrobe.
+  - Lines: the opening (Hazel follows him out to a new spot `assist` and has five lines), logic/chosen.js's tables,
+    the lab talk, the talk after Blake's battle, his line in the ending. Rooms can now hold their map's own talking
+    people besides the keeper (walk-control.js `roomPeople`); int_lab has Hazel at the right-hand desk.
+  - Names: name tags, the lab's sign and label, the Field Guide, lore (people `chosen` and `hazel`), blurbs, the
+    lab tab's hint, his voice blip (64; Hazel 72), the Studio's gallery and look fallback.
+  - Renames, one per commit: person `gini` -> `chosen` (its unused sprites gini_*.png -> hazel_*.png, the look
+    they show), logic/hazel.js -> chosen.js (test too), HAZEL -> CHOSEN, hazelTip -> chosenTip, hazelHotTake ->
+    chosenHotTake, hazelFight -> chosenFight, talkHazel -> talkChosen, story script `hazel` -> `chosen`.
+  - Tests: the story snapshot redone on purpose for these scripts (talk-before-scripts.json, `person:hazel_lab` new);
+    the opening compared with opening-said.json, its commands still in the old order.
+  - Docs: project-story.md owner decisions (2026-10-23), SCRIPTS, CUTSCENES, ROADMAP, CHANGELOG.
+- Risky or unfinished:
+  - tools/build-copperleaf.mjs rewrites the opening's spots from its input: a new opening spot must also go in
+    tools/data/copperleaf-town.json (old town metres), or a rerun drops it. That happened once here (smoke caught it);
+    `assist` is in the input now and a rerun writes both files unchanged.
+  - Kept on purpose with the old names: opening-before-scripts.json (a record), the music song `hazel` (the
+    professor's theme), the opening's spot `hazel` and shot `hazelRuns`, docs/phases/04e, build-regions-v47.py.
+  - The Chosen is Smosh's character: fine privately; his name and costume are what to change before a public release.
+  - A room's talking people stand on its npcSpots after the keeper's; a room with people but no keeper starts at 0.
+  - Not tried on a phone. Please play the opening and the lab, and listen to his voice blip.
+- Verified:
+  - Every commit: lint, typecheck, check:modules, format:check, check:data, unit tests 670, smoke (code commits).
+  - The opening played through headless (test boot and the smoke's phone flow); screenshots of Hazel at the door,
+    the coins and the lab; tapping both of them in the lab plays their scripts.
+  - Full quick check at 854c5af: 2588 s, 59 steps, 45 passed. Problems: the known v31, v34, v35, v38, v39/40, v44,
+    v46, alpha 0.2, alpha 0.4 (recipes, postcards), phase 08, RL-7; plus v33 (3 nameplates of 4), which passes alone
+    on this branch, and RL-8 ("no path to the exit to Meadow Route"), which fails the same alone on this branch's base
+    303f074 and passes on main 1713a8c (main fixed it since).
+- Next: the wolf-print tee and the katana (wardrobe pieces, the katana on the back in the bag slot); then S4 decides
+  the organization and both characters' pasts.
 ### Roguelite track RL-10b - Ranch B, second half: passive income, one ranch clock, the cloud anchor - 2026-10-23
 Branch `RL-10b` (PR #144), from main 303f074; main (29e6601: CAM-1..3, the island look, IS-8's pasture, Studio plan
 Phases 5 and 6) merged in near the end. Plan approved in Plan Mode with the owner's answers: income in Scrap by ranch
