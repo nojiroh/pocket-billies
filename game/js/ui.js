@@ -41,7 +41,7 @@ import { guideAction, renderGuide } from './guide.js';
 import { renderTeam, teamAction } from './team.js';
 import { billieSheetAction } from './billie-sheet.js';
 import { mapTabAction, renderWorldMapTab } from './map-tab.js';
-import { renderWalk, walkSheetClose, walkSheetOpen, walkSheetSync, walkTabAction } from './walk-tab.js';
+import { renderWalk, walkSheetClose, walkSheetOpen, walkSheetSync, walkTabAction, walkTipOnce } from './walk-tab.js';
 import { leaveRoom, roomState, walkMapSync } from './walk-control.js';
 import { battleAction } from './battle-input.js';
 /* eslint-disable no-func-assign */
@@ -131,6 +131,7 @@ export function render() {
   walkMapSync();
   document.body.classList.toggle('on-map', T === 'map');
   if (T === 'map') worldMapMount();
+  if (T === 'walk') walkTipOnce();
   pbInboxPop(uiState.inbox.length);
   $$('[data-count]').forEach(el => {
     const k = el.dataset.count,

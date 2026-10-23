@@ -51,6 +51,7 @@ expose({
   walkSheetSync: [() => walkSheetSync, v => (walkSheetSync = v)],
   walkSheetWanted: [() => walkSheetWanted],
   walkTabAction: [() => walkTabAction, v => (walkTabAction = v)],
+  walkTipOnce: [() => walkTipOnce, v => (walkTipOnce = v)],
 });
 /* eslint-enable no-func-assign */
 provide({ nodeActions, tripButtons, tripStatus });
@@ -219,7 +220,6 @@ function walkSheetHTML() {
   const q = encountersHere(),
     cap = encounterStock(saveData.trip.node);
   return `<div class="cols"><div class="col">
- <section class="walkbtns"><p class="note">Walk with the joystick (drag anywhere on the scene) or tap where you want to go. The arrows at the edges lead on to the next place.</p></section>
  ${typeof challengeCardHTML === 'function' ? challengeCardHTML() : ''}${typeof requestListHTML === 'function' && requestListHTML() ? `<section class="chal px glass k-card"><div class="sec-h"><h2>Requests you’re helping with</h2></div>${requestListHTML()}</section>` : ''}${hereCard()}</div><div class="col">
  <section class="pending"><div class="sec-h"><h2>Encounters here</h2><span class="count tnum">${q.length}/${cap}</span></div>
   <p class="note">${!cap ? 'No wild Billies live here. Try a route or a town with tall grass.' : q.length >= cap ? 'This place is full. Battle or tax a few to make room.' : 'Another one wanders over about every minute.'} You only see their level until the battle starts.</p>
@@ -256,6 +256,15 @@ export function walkSheetSync() {
     const b = keys()[had];
     if (b) /** @type {HTMLElement} */ (b).focus({ preventScroll: true });
   }
+}
+/* how to walk, said once (it used to be a note in the sheet every time): the first time the world shows, kept in the
+   save's preferences like the closed place card */
+export function walkTipOnce() {
+  const P = (saveData.preferences = saveData.preferences || {});
+  if (P.walkTip || uiState.modal) return;
+  P.walkTip = 1;
+  save();
+  toast('Drag anywhere on the scene to walk, or tap where you want to go. The arrows at the edges lead on.');
 }
 export function walkSheetOpen() {
   uiState.walkSheet = true;
