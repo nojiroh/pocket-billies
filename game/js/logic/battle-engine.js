@@ -469,7 +469,7 @@ export function useMove(k, mid, tk0, part) {
     u.status = null;
     battleSay(`${billyName(u)} woke up.`);
   }
-  if (u.status === 'par' && battleRoll() < BATTLE_RULES.auditSkip) {
+  if (u.status === 'par' && battleRoll() < BATTLE_RULES.paralysisSkip) {
     battleSay(`${billyName(u)} is paralyzed and can’t move.`, { k: 'status', si: k, st: 'par' });
     return;
   }
@@ -1203,7 +1203,7 @@ export function catchOdds(id, T, spin, b) {
     if (PYRAMIDS[id] && PYRAMIDS[id].m === 0) return 1;
     let C = PYRAMIDS[id].m;
     if (id === 'pyramid' && CATCH_RULES.luxury.includes(speciesOf(e).line)) C *= CATCH_RULES.luxuryPyramid;
-    const Sx = e.status === 'slp' ? CATCH_RULES.subpoena : e.status ? CATCH_RULES.status : 1;
+    const Sx = e.status === 'slp' ? CATCH_RULES.asleepCatch : e.status ? CATCH_RULES.status : 1;
     return Math.min(
       1,
       speciesOf(e).cr *

@@ -901,7 +901,7 @@ SECTIONS.rules = () => {
        help: 'Burn, sandstorm and Regrowth move this fraction of max HP each turn.',
      }),
      numberField('Sharp stones: 1 /', `${bt}.rentFraction`, { min: 2, max: 64, step: 1 }),
-     numberField('Paralysis lost-turn chance', `${bt}.auditSkip`, { min: 0, max: 1, step: 0.05 }),
+     numberField('Paralysis lost-turn chance', `${bt}.paralysisSkip`, { min: 0, max: 1, step: 0.05 }),
      numberField('Confusion turns', `${bt}.hypeTurns`, { min: 1, max: 10, step: 1 }),
      numberField('Confusion self-hit chance', `${bt}.hypeSelfHit`, { min: 0, max: 1, step: 0.05 }),
      numberField('Sleep turns, least', `${bt}.subpoenaMin`, { min: 1, max: 10, step: 1 }),
@@ -977,7 +977,7 @@ SECTIONS.rules = () => {
          step: 0.01,
          help: 'At full HP the rate is multiplied by (1 − this).',
        }),
-       numberField('Asleep bonus', `${ca}.subpoena`, { unit: '×', min: 1, max: 5, step: 0.1 }),
+       numberField('Asleep bonus', `${ca}.asleepCatch`, { unit: '×', min: 1, max: 5, step: 0.1 }),
        numberField('Other status bonus', `${ca}.status`, { unit: '×', min: 1, max: 5, step: 0.1 }),
        numberField('Soak bonus', `${ca}.spin`, { unit: '×', min: 1, max: 3, step: 0.05 }),
        numberField('Perfect ring bonus', `${ca}.ring`, {

@@ -872,7 +872,7 @@ export interface Rules {
     oilShockMult: number;
     drainFraction: number;
     rentFraction: number;
-    auditSkip: number;
+    paralysisSkip: number;
     hypeTurns: number;
     hypeSelfHit: number;
     subpoenaMin: number;
@@ -914,7 +914,7 @@ export interface Rules {
     /** evolved stages' catch rates */
     evolved: number[];
     hpFactor: number;
-    subpoena: number;
+    asleepCatch: number;
     status: number;
     spin: number;
     ring: number;

@@ -42,7 +42,7 @@ test('battle: catching: lower HP and a status raise the odds, an Alpha lowers th
   const burned = odds();
   assert.ok(burned > low || burned === 1, `${burned} burned`);
   foe.status = 'slp';
-  assert.ok(odds() >= burned, 'a subpoena (asleep) helps most');
+  assert.ok(odds() >= burned, 'asleep helps most');
   // an Alpha of the same species and level, at full HP
   fn('newBattle')('wild', [fn('makeAlpha')('sprout0', 10)]);
   assert.ok(fn('fighter')(1).boss, 'makeAlpha made no Alpha');
