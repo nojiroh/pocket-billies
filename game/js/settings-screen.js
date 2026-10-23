@@ -373,7 +373,9 @@ function saveProgressLine() {
 }
 function settingsHTML() {
   const p = saveData.preferences || {},
-    tab = SETTINGS_TABS.some(t => t[0] === uiState.setTab) ? uiState.setTab : 'sound',
+    /* UI-7b: the last tab used (kept with the preferences, so it lasts past a reload), else Sound */
+    want = uiState.setTab || p.setTab,
+    tab = SETTINGS_TABS.some(t => t[0] === want) ? want : 'sound',
     hz = frameScheduler.hz || 60;
   let body = '';
   if (tab === 'game')
@@ -631,6 +633,9 @@ document.addEventListener('click', ev => {
   const d = el.dataset;
   if (d.a === 'set-tab') {
     uiState.setTab = d.k;
+    saveData.preferences = saveData.preferences || {};
+    saveData.preferences.setTab = d.k;
+    save();
     settingsRefresh();
     requestAnimationFrame(() => {
       const t = document.querySelector('.set-tabs .on');
