@@ -38,7 +38,7 @@ export const battleOutcome = (kind, over) => (over === 'draw' ? (kind === 'wild'
  * @param {(() => number) | null} roll unused since RL-10
  * @param {{ battle: { loseFee: number } }} [rules]
  * @returns {{ o: string | null, fee: number, prize: number, reward: number, first: boolean,
- *   seat: null | { id: string, nu: boolean, coins: Record<string, number>, items: Record<string, number> } }}
+ *   seat: null | { id: string, nu: boolean, pyramids: Record<string, number>, items: Record<string, number> } }}
  */
 export function battleRewards(b, s, roll, rules = RULES) {
   const o = battleOutcome(b.kind, b.over),
@@ -57,7 +57,7 @@ export function battleRewards(b, s, roll, rules = RULES) {
     out.first = !s.flags[b.tid || ''];
     const st = b.T.seat;
     if (st && !run)
-      out.seat = { id: st.id, nu: !s.seats.includes(st.id), coins: st.coins || {}, items: st.items || {} };
+      out.seat = { id: st.id, nu: !s.seats.includes(st.id), pyramids: st.pyramids || {}, items: st.items || {} };
   }
   return out;
 }

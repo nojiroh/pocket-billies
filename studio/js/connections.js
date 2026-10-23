@@ -150,7 +150,7 @@ function connectionsTarget() {
   }
   if (s === 'world' && studioState.sel.stop != null && D.locations[studioState.sel.stop])
     return { kind: 'stop', id: studioState.sel.stop };
-  const m = f.match(/^(items|coins)\.([^.]+)\./);
+  const m = f.match(/^(items|pyramids)\.([^.]+)\./);
   if (s === 'items' && m) return { kind: m[1] === 'items' ? 'item' : 'coin', id: m[2] };
   /* UI-3b: a UI look dial, on the whole game or one screen */
   if (s === 'ui' && f) {
@@ -195,9 +195,9 @@ function connectionNode(kind, id) {
       return {
         kind,
         id,
-        label: (D.coins[id] || {}).n || id,
+        label: (D.pyramids[id] || {}).n || id,
         sub: 'Pyramid',
-        go: () => findField('items', `coins.${id}.n`),
+        go: () => findField('items', `pyramids.${id}.n`),
       };
     case 'trainer':
       return {
@@ -275,7 +275,7 @@ function allDataIds() {
   D.lines.forEach(L => L.names.forEach((n, i) => put(L.id + i, 'billy')));
   Object.keys(D.moves || {}).forEach(k => put(k, 'move'));
   Object.keys(D.items || {}).forEach(k => put(k, 'item'));
-  Object.keys(D.coins || {}).forEach(k => put(k, 'coin'));
+  Object.keys(D.pyramids || {}).forEach(k => put(k, 'coin'));
   Object.keys(D.trainers || {}).forEach(k => put(k, 'trainer'));
   Object.keys(D.shops || {}).forEach(k => put(k, 'shop'));
   Object.keys(D.maps || {}).forEach(k => put(k, 'scene'));
@@ -296,7 +296,7 @@ function recordOwningPath(path) {
       return ['move', p[1]];
     case 'items':
       return ['item', p[1]];
-    case 'coins':
+    case 'pyramids':
       return ['coin', p[1]];
     case 'trainers':
       return ['trainer', p[1]];
@@ -344,7 +344,7 @@ function recordPath(kind, id) {
     case 'item':
       return ['items.' + id, D.items[id]];
     case 'coin':
-      return ['coins.' + id, D.coins[id]];
+      return ['pyramids.' + id, D.pyramids[id]];
     case 'trainer':
       return ['trainers.' + id, D.trainers[id]];
     case 'shop':
@@ -388,7 +388,18 @@ function connectionGraph(cur) {
     });
   }
   const self = R ? R[0] : '';
-  for (const root of ['lines', 'moves', 'items', 'coins', 'trainers', 'shops', 'maps', 'locations', 'pools', 'rules']) {
+  for (const root of [
+    'lines',
+    'moves',
+    'items',
+    'pyramids',
+    'trainers',
+    'shops',
+    'maps',
+    'locations',
+    'pools',
+    'rules',
+  ]) {
     walkDataStrings(D[root], root, (v, path) => {
       if (!ownIds.has(v) || (self && (path === self || path.startsWith(self + '.')))) return;
       const o = recordOwningPath(path);

@@ -5,7 +5,7 @@
    parsed once into a tree and read against a plain story state (storyStateOf); it is never run as code.
      met_juniper            a story flag is set          !met_juniper, not met_juniper   it isn't
      rival0 = win           a story flag holds a word    beat:chad                      a trainer is beaten
-     item:honey >= 3        items in the bag             coin:gold_pyramid > 0                  coins
+     item:honey >= 3        items in the bag             coin:gold_pyramid > 0                  pyramids
      quest:ledger = asked   a quest's stage (also >=, <: in the quest's order of stages; `none` before it starts)
      visits:juniper >= 2    times you have talked to someone
      visited:copperleaf     a place you have been        billie:musk                    a Billie of that line caught
@@ -53,7 +53,7 @@ expose({
 /** @typedef {{ t: 'term', kind: string, id: string, op: Op | null, val: string | number | null }} Term */
 /** @typedef {Term | { t: 'and', a: Cond, b: Cond } | { t: 'or', a: Cond, b: Cond } | { t: 'not', a: Cond }} Cond */
 /** @typedef {{ flags: Record<string, any>, beaten: Record<string, any>, items: Record<string, number>,
- *   coins: Record<string, number>, quests: Record<string, string>, visits: Record<string, number>,
+ *   pyramids: Record<string, number>, quests: Record<string, string>, visits: Record<string, number>,
  *   visited: Record<string, any>, lines: Record<string, any>, robots: number, badges: number, caught: number,
  *   unlocks: Record<string, any>, runs: number, wins: number, questStages?: Record<string, string[]> }} StoryState */
 
@@ -290,7 +290,7 @@ export function termValue(c, S) {
     case 'item':
       return S.items[c.id] || 0;
     case 'coin':
-      return S.coins[c.id] || 0;
+      return S.pyramids[c.id] || 0;
     case 'visits':
       return S.visits[c.id] || 0;
     case 'visited':
@@ -332,7 +332,7 @@ export function conditionHolds(c, S) {
 }
 
 /** the story state a save gives, for conditionHolds: the save's own objects where they fit (so a script's changes to
- * story flags, items and coins show at once), counts and lookups made fresh
+ * story flags, items and pyramids show at once), counts and lookups made fresh
  * @param {any} save @param {{ locations?: { id: string }[], questStages?: Record<string, string[]> }} [o] */
 export function storyStateOf(save, o = {}) {
   const story = save.story || (save.story = {}),
@@ -354,7 +354,7 @@ export function storyStateOf(save, o = {}) {
     flags: story,
     beaten: save.flags || {},
     items: save.items || {},
-    coins: save.coins || {},
+    pyramids: save.pyramids || {},
     quests: story.quests || {},
     visits: story.talks || {},
     visited,

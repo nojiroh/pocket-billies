@@ -745,8 +745,8 @@ SECTIONS.rules = () => {
     )
     .join('');
   const xpPrev = `<p class="help" id="xpPrev">${xpCurveText()}</p>`;
-  const coinsStart = `<div class="grid">${Object.keys(D.coins)
-    .map(c => numberField(D.coins[c].n, `${s}.coins.${c}`, { min: 0, step: 1 }))
+  const coinsStart = `<div class="grid">${Object.keys(D.pyramids)
+    .map(c => numberField(D.pyramids[c].n, `${s}.pyramids.${c}`, { min: 0, step: 1 }))
     .join('')}${Object.keys(D.items)
     .map(i => numberField(D.items[i].n, `${s}.items.${i}`, { opt: 1, min: 0, step: 1 }))
     .join('')}</div>`;
@@ -1036,7 +1036,7 @@ const ART_GROUPS = [
   ['billionaires', 'Billies', 'Four sheets per stage. Edit them in Billies → Edit pixels.'],
   ['battle', 'Battle backdrops', 'Ground, far land, walls, props, clouds, foregrounds'],
   ['background', 'Menus and title', 'Title picture, sky, clouds, islands'],
-  ['coins', 'Pyramids', 'The catch items’ icons (folder coins until RF-4)'],
+  ['pyramids', 'Pyramids', 'The catch items’ icons (folder pyramids until RF-4)'],
   ['eggs', 'Eggs', ''],
   ['icons', 'Icon atlas', 'All item and effect icons on one sheet'],
   ['map', 'World map', 'The inside of the sphere (equirectangular)'],

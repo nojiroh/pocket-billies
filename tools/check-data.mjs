@@ -347,7 +347,7 @@ if (D.coats && check('coats.schema.json', D.coats, 'coats.json')) {
   }
 }
 // RF-2: the catch pyramids' icons and models
-for (const [where, what] of dataCatchArt(D.coins, p => {
+for (const [where, what] of dataCatchArt(D.pyramids, p => {
   const f = join(DATA, '..', 'art', p);
   return existsSync(f) ? readFileSync(f, 'utf8') : null;
 }))
@@ -586,7 +586,7 @@ for (const f of [...dataSceneFindings(D, PB_DATA.road), ...dataRoadFindings(D, P
   else console.log(`  warning: ${f.where}: ${f.msg}`);
 const n = listed.size;
 if (fixed) console.log(`${fixed} file(s) laid out again`);
-// Project Story: story.json, the schema, then the people, places, trainers, Billies and coins it names
+// Project Story: story.json, the schema, then the people, places, trainers, Billies and pyramids it names
 if (D.story) {
   check('story.schema.json', D.story, 'story.json');
   const places = new Set(route.map(r => r.id)),
@@ -598,7 +598,7 @@ if (D.story) {
     if (!places.has(P.place)) problem(at, `starts in ${P.place}, no such place`);
     for (const t of P.beaten || []) if (!trainers[t]) problem(at, `has beaten ${t}, no such trainer`);
     for (const m of P.team || []) if (!species.has(m.sp)) problem(at, `has ${m.sp}, no such species`);
-    for (const c of Object.keys(P.coins || {})) if (!(D.coins || {})[c]) problem(at, `has coin ${c}, no such coin`);
+    for (const c of Object.keys(P.pyramids || {})) if (!(D.pyramids || {})[c]) problem(at, `has coin ${c}, no such coin`);
     for (const i of Object.keys(P.items || {})) if (!(D.items || {})[i]) problem(at, `has item ${i}, no such item`);
   }
 } else problem('story.json', 'missing');

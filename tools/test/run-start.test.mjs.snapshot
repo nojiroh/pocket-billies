@@ -17,7 +17,7 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
         "parachute": 0,
         "repairkit": 0
       },
-      "coins": {
+      "pyramids": {
         "pyramid": 5,
         "step_pyramid": 0,
         "gold_pyramid": 0,
@@ -343,7 +343,7 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
         "parachute": 0,
         "repairkit": 0
       },
-      "coins": {
+      "pyramids": {
         "pyramid": 5,
         "step_pyramid": 0,
         "gold_pyramid": 0,
@@ -672,7 +672,7 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
         "parachute": 0,
         "repairkit": 0
       },
-      "coins": {
+      "pyramids": {
         "pyramid": 5,
         "step_pyramid": 0,
         "gold_pyramid": 0,
@@ -871,6 +871,6 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
       }
     }
   },
-  "all": "5ba92a5b3f5ca3300b65596c2266d99050607d7940f6e3e9ad6febc9c8188475"
+  "all": "9d6fcb1a87c9cfb2cc1931ce976cc23e70368c941939403953b479375d4c139f"
 }
 `;

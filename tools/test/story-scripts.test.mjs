@@ -40,7 +40,7 @@ test('every script in the data reads', () => {
 
 test('Juniper in Copperleaf: the first meeting once, then her lines in turn, round again', async () => {
   const P = person('juniper'),
-    save = { story: {}, items: {}, coins: {} },
+    save = { story: {}, items: {}, pyramids: {} },
     first = await play(P.script, save, { id: 'person:juniper' });
   assert.equal(first.length, 3, 'the first meeting');
   assert.equal(save.story.met_juniper, 1);
@@ -51,7 +51,7 @@ test('Juniper in Copperleaf: the first meeting once, then her lines in turn, rou
   assert.deepEqual(heard, [...cycle, cycle[0]]);
 });
 
-test('start presets: place, flags, trainers beaten with their badges, coins and team; an unknown one is null', () => {
+test('start presets: place, flags, trainers beaten with their badges, pyramids and team; an unknown one is null', () => {
   for (const [name, P] of Object.entries(G.story.presets)) {
     const s = startedSave('musk0');
     assert.equal(applyStoryPreset(s, name), P);
@@ -77,7 +77,7 @@ test('start presets: place, flags, trainers beaten with their badges, coins and 
 });
 
 test('a save taken while a script runs writes the state from before it, and where to carry on', () => {
-  const s = { story: { met_chosen: 1 }, items: { honey: 1 }, coins: { gold_pyramid: 0 }, flags: {}, team: [1] };
+  const s = { story: { met_chosen: 1 }, items: { honey: 1 }, pyramids: { gold_pyramid: 0 }, flags: {}, team: [1] };
   const base = runBase(s);
   s.story.met_juniper = 1;
   s.items.honey = 5;

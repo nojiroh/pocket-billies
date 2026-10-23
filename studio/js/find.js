@@ -2,7 +2,7 @@
 /* ================= POCKET BILLIES STUDIO · find =================
    alpha 0.4.1: one search box for the whole Studio (Ctrl+K, or the Find button). It knows every engine dial, every
    numbered setting on the Rules, Types, Items and Jobs pages, every section, and the things you edit: Billies, moves,
-   items, coins, trainers, shops, people, places, route stops and props. Pick a result and the Studio opens it, scrolls
+   items, pyramids, trainers, shops, people, places, route stops and props. Pick a result and the Studio opens it, scrolls
    to the setting and makes it blink. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
@@ -185,8 +185,8 @@ export function buildSearchIndex() {
   Object.entries(D.items || {}).forEach(([k, I]) =>
     add(I.n, 'Item', 'item', () => findField('items', `items.${k}.n`), k + ' ' + (I.d || ''))
   );
-  Object.entries(D.coins || {}).forEach(([k, I]) =>
-    add(I.n, 'Pyramid', 'item', () => findField('items', `coins.${k}.n`), k)
+  Object.entries(D.pyramids || {}).forEach(([k, I]) =>
+    add(I.n, 'Pyramid', 'item', () => findField('items', `pyramids.${k}.n`), k)
   );
   Object.entries(D.trainers || {}).forEach(([k, T]) =>
     add(

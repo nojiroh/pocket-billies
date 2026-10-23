@@ -5,7 +5,7 @@
 import { expose } from './test-globals.js';
 import { plateVars } from './hooks.js';
 import { clamp } from './util.js';
-import { COINS, DEX_ORDER, ITEMS, LOCATIONS, TRAINERS } from './game-data.js';
+import { DEX_ORDER, ITEMS, LOCATIONS, PYRAMIDS, TRAINERS } from './game-data.js';
 import { billyName, dexCaught, dexSeen, findBilly, formatNumber, metresToKm, plural } from './logic/rules.js';
 import { escapeHtml, saveData } from './game-state.js';
 import { coinHTML, eggHTML, moneyHTML, uiIconHTML } from './art.js';
@@ -32,7 +32,7 @@ function badgeSlots() {
   const known = own.map(T => ({
     name: String(T.seat.title || 'Badge').split(' · ')[0],
     leader: T.name,
-    coin: COINS[T.seat.coin] ? T.seat.coin : 'pyramid',
+    coin: PYRAMIDS[T.seat.coin] ? T.seat.coin : 'pyramid',
     got: saveData.seats.includes(T.seat.id),
   }));
   return {
@@ -80,10 +80,10 @@ export function renderProfile() {
  </div></section></div>
  <div class="pf-row">${bud ? `<section class="tpanel pf-buddy"><div class="sec-h"><h2>Buddy</h2></div><button class="pf-bud k-card" data-a="mon" data-u="${bud.uid}"><span class="tm-spr" style="${plateVars(bud)}">${rigCanvasHTML(bud.sp, 72, { build: bud.build, coat: bud.coat })}</span><span class="pf-bt"><b>${escapeHtml(billyName(bud))}</b><span class="tnum">Lv ${bud.lvl}</span><small>Gets the full XP of every battle you win.</small></span></button></section>` : ''}
  <section class="tpanel pf-bag"><div class="sec-h"><h2>Bag</h2></div>
-  <div class="pf-coins">${Object.keys(COINS)
+  <div class="pf-coins">${Object.keys(PYRAMIDS)
     .map(
       k =>
-        `<span class="pf-coin${saveData.coins[k] ? '' : ' none'}" title="${escapeHtml(COINS[k].n)}">${coinHTML(k, 22, 32)}<small>${escapeHtml(COINS[k].n.replace(/ Coins?$/, ''))}</small><b class="tnum">${formatNumber(saveData.coins[k] || 0)}</b></span>`
+        `<span class="pf-coin${saveData.pyramids[k] ? '' : ' none'}" title="${escapeHtml(PYRAMIDS[k].n)}">${coinHTML(k, 22, 32)}<small>${escapeHtml(PYRAMIDS[k].n.replace(/ Coins?$/, ''))}</small><b class="tnum">${formatNumber(saveData.pyramids[k] || 0)}</b></span>`
     )
     .join('')}</div>
   ${items.length ? `<ul class="pf-items">${items.map(k => `<li>${itemIcon(k, 24)}<span>${escapeHtml(ITEMS[k].n)}</span><b class="tnum">×${formatNumber(saveData.items[k])}</b></li>`).join('')}</ul>` : '<p class="note">No items yet.</p>'}

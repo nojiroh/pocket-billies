@@ -846,7 +846,7 @@ function runTestStart(R) {
   uiState.mq = [];
   runTakeOff(R.seed, R.short ? RUN_TEST_SHORT : undefined, [], {
     home: s.team.map(m => m.uid),
-    pack: { items: {}, coins: {} },
+    pack: { items: {}, pyramids: {} },
   });
   if (!saveData.run) return toast(`Test run: seed ${R.seed} couldn’t take off with this data.`);
   if (R.perks.length) saveData.run.perks = R.perks.slice();

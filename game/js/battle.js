@@ -28,7 +28,7 @@ import {
   typeBadgeHTML,
 } from './hooks.js';
 import { $, $$, clamp, random } from './util.js';
-import { COINS, ITEMS, MOVES, STAT_NAMES, TYPE_COLORS, typeEffectiveness } from './game-data.js';
+import { ITEMS, MOVES, PYRAMIDS, STAT_NAMES, TYPE_COLORS, typeEffectiveness } from './game-data.js';
 import { ROBOT_LIMBS, ROBOT_SLOT_NAMES, isRobot, robotPartDef, speciesOf } from './logic/fighters.js';
 import { billyName, healAll, maxHp, moveUsable, partBroken, partHpLeft, partMaxHp, plural } from './logic/rules.js';
 import {
@@ -742,14 +742,14 @@ export function paintActions() {
   if (ph === 'choose') {
     const m = fighter(activeBattle.cur),
       first = !activeBattle.plan.length,
-      coins = Object.keys(COINS).reduce((a, k) => a + (saveData.coins[k] || 0), 0),
+      pyramids = Object.keys(PYRAMIDS).reduce((a, k) => a + (saveData.pyramids[k] || 0), 0),
       items = Object.keys(ITEMS)
         .filter(k => saveData.items[k] > 0 && !ITEMS[k].evoItem)
         .reduce((a, k) => a + saveData.items[k], 0),
       crew = saveData.team,
       alive = crew.filter(x => x.hp > 0).length;
     h = `<div class="c-choose">${moveTilesHTML(m)}
-  <div class="bt-row"><button class="bt coin" data-a="bcoins" ${wild && first ? '' : 'disabled'}>${uiIconHTML('pyramid', 18)}<b>Catch it</b><small>${wild ? (first ? coins + ' left' : 'First pick only') : 'Wild only'}</small><kbd>X</kbd></button>
+  <div class="bt-row"><button class="bt coin" data-a="bcoins" ${wild && first ? '' : 'disabled'}>${uiIconHTML('pyramid', 18)}<b>Catch it</b><small>${wild ? (first ? pyramids + ' left' : 'First pick only') : 'Wild only'}</small><kbd>X</kbd></button>
   <button class="bt items" data-a="bitems">${uiIconHTML('bag', 18)}<b>Bag</b><small>${items}</small><kbd>I</kbd></button>
   <button class="bt team" data-a="bteam">${uiIconHTML('team', 18)}<b>Team</b><small>${alive}/${crew.length}</small><kbd>T</kbd></button>
   <button class="bt run" data-a="brun" ${wild ? '' : 'disabled'}>${uiIconHTML('run', 18)}<b>Run</b><small>${wild ? 'Walk away' : 'No exit'}</small><kbd>R</kbd></button></div>${first ? '' : `<button class="bt back wide" data-a="bback">${uiIconHTML('back', 16)}<b>Back to ${escapeHtml(billyName(fighter(activeBattle.plan[activeBattle.plan.length - 1].who)))}</b><kbd>Esc</kbd></button>`}</div>`;
@@ -777,11 +777,11 @@ export function paintActions() {
         );
       })
       .join('')}</div>${backButtonHTML()}`;
-  } else if (ph === 'coins') {
-    h = `<div class="coins">${Object.keys(COINS)
+  } else if (ph === 'pyramids') {
+    h = `<div class="coins">${Object.keys(PYRAMIDS)
       .map((k, n) => {
-        const c = COINS[k],
-          have = saveData.coins[k] || 0,
+        const c = PYRAMIDS[k],
+          have = saveData.pyramids[k] || 0,
           odds = Math.round(catchOdds(k, 1 + CATCH_RULES.ring * 0.5, false) * 100);
         return `<button class="ccard" data-a="bcoin" data-c="${k}" ${have ? '' : 'disabled'}>${coinHTML(k, 34)}<span class="cc-t"><b>${escapeHtml(c.n)}</b><small class="tnum">${c.m === 0 ? 'Guaranteed' : `~${odds}% catch`} · ${have} left</small></span><span class="cc-bar"><i style="width:${c.m === 0 ? 100 : clamp(odds, 2, 100)}%"></i></span></button>`;
       })
@@ -876,14 +876,14 @@ export function doThrow(spin) {
   const ph = battleStageRingPhase(),
     T = 1 + CATCH_RULES.ring * ph,
     id = activeBattle.coin;
-  saveData.coins[id]--;
+  saveData.pyramids[id]--;
   save();
   battleStage.ring = null;
   const res = catchRoll(id, T, spin),
     lab = ph >= 0.83 ? 'Excellent throw!' : ph >= 0.5 ? 'Great throw!' : ph >= 0.17 ? 'Nice throw.' : '';
   activeBattle.phase = 'throwing';
   paintActions();
-  $('#msgT').textContent = [`You threw a ${COINS[id].n}.`, lab, spin ? 'Spin bonus!' : ''].filter(Boolean).join(' ');
+  $('#msgT').textContent = [`You threw a ${PYRAMIDS[id].n}.`, lab, spin ? 'Spin bonus!' : ''].filter(Boolean).join(' ');
   battleStageCatch(id, res, spin, caught => finishThrow(res, id, lab, spin));
 }
 function finishThrow(res, id, lab, spin) {
@@ -965,7 +965,7 @@ export function endBattle() {
       const nu = pay.seat.nu;
       if (nu) {
         saveData.seats.push(pay.seat.id);
-        for (const k in pay.seat.coins) saveData.coins[k] = (saveData.coins[k] || 0) + pay.seat.coins[k];
+        for (const k in pay.seat.pyramids) saveData.pyramids[k] = (saveData.pyramids[k] || 0) + pay.seat.pyramids[k];
         for (const k in pay.seat.items) saveData.items[k] = (saveData.items[k] || 0) + pay.seat.items[k];
       }
       after.push({

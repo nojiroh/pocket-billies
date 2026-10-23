@@ -26,11 +26,11 @@ import {
 import { clamp, random } from '../util.js';
 import {
   BATTLE_STAGES,
-  COINS,
   ITEMS,
   MOVES,
   PASSIVE,
   PERKS,
+  PYRAMIDS,
   RULES,
   SPECIES,
   STATUS_NAMES,
@@ -1029,7 +1029,7 @@ export function startWild(q, o = {}) {
     battleSay(`“${nm}!”`, { k: 'cry', si: 1 });
   }
   if (CATCH_RULES.luxury.includes(SPECIES[q.sp].line))
-    battleSay(`It looks too picky for ${COINS.pyramid ? 'a ' + COINS.pyramid.n : 'cheap coins'}.`);
+    battleSay(`It looks too picky for ${PYRAMIDS.pyramid ? 'a ' + PYRAMIDS.pyramid.n : 'cheap pyramids'}.`);
   const K = liveActors(0);
   K.forEach((k, n) => battleSay(n ? '' : `Go, ${joinNames(K)}!`, { k: 'enter', si: k, quiet: n > 0 }));
   sayBattleFx();
@@ -1200,8 +1200,8 @@ export function enemyOnly(b) {
 export function catchOdds(id, T, spin, b) {
   return withBattle(b, () => {
     const e = fighter(1);
-    if (COINS[id] && COINS[id].m === 0) return 1;
-    let C = COINS[id].m;
+    if (PYRAMIDS[id] && PYRAMIDS[id].m === 0) return 1;
+    let C = PYRAMIDS[id].m;
     if (id === 'pyramid' && CATCH_RULES.luxury.includes(speciesOf(e).line)) C *= CATCH_RULES.luxuryPyramid;
     const Sx = e.status === 'sub' ? CATCH_RULES.subpoena : e.status ? CATCH_RULES.status : 1;
     return Math.min(
@@ -1221,7 +1221,7 @@ export function catchOdds(id, T, spin, b) {
 export function catchRoll(id, T, spin, b) {
   return withBattle(b, () => {
     if (battleHost().sureCatch()) return { caught: true, w: 3, edge: false, P: 1 };
-    if (COINS[id].m === 0) return { caught: true, w: 3, edge: false, P: 1 };
+    if (PYRAMIDS[id].m === 0) return { caught: true, w: 3, edge: false, P: 1 };
     if (battleRoll() < CATCH_RULES.edge) return { caught: true, w: 1, edge: true, P: 1 };
     const P = catchOdds(id, T, spin);
     const q = Math.cbrt(P);

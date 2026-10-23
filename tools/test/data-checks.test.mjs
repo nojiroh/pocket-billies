@@ -188,19 +188,19 @@ test('a planted unknown ground, a stop with no walk scene and a road to itself a
   assert.ok(errorsOf(C.dataRoadFindings(R, roadOf)).some(m => m.includes('has a road to itself')));
 });
 
-// RF-2: the catch pyramids' icons and models (art/coins), read through a stand-in for the files
+// RF-2: the catch pyramids' icons and models (art/pyramids), read through a stand-in for the files
 test('every catch item has its icons and its model; a missing or empty one is named', () => {
   const ART = join(import.meta.dirname, '../../game/art'),
     disk = (/** @type {string} */ p) => (existsSync(join(ART, p)) ? readFileSync(join(ART, p), 'utf8') : null);
-  assert.deepEqual(C.dataCatchArt(GAME_DATA.coins, disk), []);
+  assert.deepEqual(C.dataCatchArt(GAME_DATA.pyramids, disk), []);
   const gone = (/** @type {string} */ p) => (p === 'coins/gold_pyramid_16.png' ? null : disk(p));
-  assert.deepEqual(C.dataCatchArt(GAME_DATA.coins, gone), [
-    ['coins.json', 'gold_pyramid: no icon art/coins/gold_pyramid_16.png (tools/build-pyramids.py)'],
+  assert.deepEqual(C.dataCatchArt(GAME_DATA.pyramids, gone), [
+    ['pyramids.json', 'gold_pyramid: no icon art/coins/gold_pyramid_16.png (tools/build-pyramids.py)'],
   ]);
   const odd = (/** @type {string} */ p) =>
     p === 'coins/step_pyramid.json' ? '{"layers":[]}' : p === 'coins/capstone.json' ? 'not json' : disk(p);
-  assert.deepEqual(C.dataCatchArt(GAME_DATA.coins, odd), [
-    ['coins.json', 'step_pyramid: its model art/coins/step_pyramid.json has no shapes'],
-    ['coins.json', 'capstone: its model art/coins/capstone.json is not JSON'],
+  assert.deepEqual(C.dataCatchArt(GAME_DATA.pyramids, odd), [
+    ['pyramids.json', 'step_pyramid: its model art/coins/step_pyramid.json has no shapes'],
+    ['pyramids.json', 'capstone: its model art/coins/capstone.json is not JSON'],
   ]);
 });

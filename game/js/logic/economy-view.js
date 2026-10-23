@@ -5,7 +5,7 @@
    Economy page can list them with a link to each field (the plan's "economy editor": no economy data model of its own).
    - money ($, a run's): wild prizes (rules.json encounters.prizePerLevel x the level, logic/rules.js wildPrize), the
      mini-boss's and boss's rewards (run.foes), Perks' money rows; spent at the clinic (run.healCost a hurt Billie),
-     on run shop wares (items.json and coins.json price; what run.shop can stock) and shop Perks (run.perks.price);
+     on run shop wares (items.json and pyramids.json price; what run.shop can stock) and shop Perks (run.perks.price);
    - at the payout (logic/run-state.js payoutOf) money, items, released Billies, places and a win turn into Research,
      Scrap and Crests (run.payout);
    - Research, Scrap and Crests (kept between runs): the earned unlock rows' grants, and each building's unlock costs
@@ -93,14 +93,14 @@ export function economyLines(D) {
   for (const id of [...stocked].sort()) {
     const coin = id.startsWith('coin:'),
       k = coin ? id.slice(5) : id,
-      T = coin ? D.coins && D.coins[k] : D.items && D.items[k];
+      T = coin ? D.pyramids && D.pyramids[k] : D.items && D.items[k];
     if (T)
       add({
         currency: 'money',
         side: 'out',
         what: `Run shop: ${T.n || k}${(shop.always || []).includes(id) ? ' (always stocked)' : ''}`,
         value: T.price,
-        path: `${coin ? 'coins' : 'items'}.${k}.price`,
+        path: `${coin ? 'pyramids' : 'items'}.${k}.price`,
         section: 'items',
       });
   }

@@ -4,7 +4,7 @@
    Images load once and are cached; pixel arrays (for the 3D ground and the world map) are read on demand. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { COINS, formatNumber, plural, provide } from './hooks.js';
+import { PYRAMIDS, formatNumber, plural, provide } from './hooks.js';
 import { clamp } from './util.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -198,9 +198,9 @@ function darkCopy(c) {
   return c._d || (c._d = tintedCopy(c, '#0E1418'));
 }
 /* ---- people are drawn in code by person-art.js ---- */
-/* ---- coins and Seed Rounds ---- */
+/* ---- pyramids and Seed Rounds ---- */
 const COIN_KINDS =
-  typeof COINS !== 'undefined' ? Object.keys(COINS) : ['pyramid', 'step_pyramid', 'gold_pyramid', 'capstone'];
+  typeof PYRAMIDS !== 'undefined' ? Object.keys(PYRAMIDS) : ['pyramid', 'step_pyramid', 'gold_pyramid', 'capstone'];
 export const COIN_ART = COIN_KINDS.flatMap(k => [`coins/${k}_16.png`, `coins/${k}_32.png`]);
 export function coinCanvas(kind = 'pyramid', size = 16) {
   return ART_CACHE.img[`coins/${kind}_${size >= 32 ? 32 : 16}.png`] || artImg(`coins/${kind}_16.png`);

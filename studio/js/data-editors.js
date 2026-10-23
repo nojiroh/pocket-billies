@@ -1053,7 +1053,7 @@ document.addEventListener('change', ev => {
     }
   }
 });
-/* ================= ITEMS & COINS ================= */
+/* ================= ITEMS & PYRAMIDS ================= */
 const ITEM_ICONS = Object.keys(ARTMAN.icons)
   .filter(k => k.startsWith('i_'))
   .map(k => k.slice(2));
@@ -1078,13 +1078,13 @@ SECTIONS.items = () => {
   ${textField('Description', `${p}.d`, { area: 1, rows: 2 })}<div class="seg-row"><button class="btn subtle" data-act="itemImg" data-k="${k}">Upload a custom icon</button>${I.img ? `<button class="btn subtle" data-act="itemImgOff" data-k="${k}">Use an atlas icon</button>` : ''}<span class="grow"></span><button class="btn danger subtle" data-act="itemDel" data-k="${k}">Delete</button></div></div></div>`;
     })
     .join('');
-  const coins = Object.entries(D.coins)
+  const pyramids = Object.entries(D.pyramids)
     .map(([k, C]) => {
-      const p = `coins.${k}`;
+      const p = `pyramids.${k}`;
       return `<div class="item-row"><div class="item-ic"><img src="../game/art/coins/${k}_32.png" width="40" height="40" class="pix" onerror="this.style.opacity=.2"><small class="mono">${escapeHtml(k)}</small></div><div>${grid(textField('Name', `${p}.n`), numberField('Catch multiplier', `${p}.m`, { min: 0, max: 10, step: 0.1, help: '0 means it always catches.' }), numberField('Shop price (Moneys)', `${p}.price`, { min: 0, step: 10, help: '0 means it can’t be bought.' }), numberField('Badges needed', `${p}.need`, { opt: 1, min: 0, max: 8, step: 1 }))}${textField('Description', `${p}.d`, { area: 1, rows: 2 })}</div></div>`;
     })
     .join('');
-  return `<div class="ed-col solo"><div class="ed-head"><h2>Items & pyramids</h2><button class="btn primary" data-act="itemNew">+ New item</button></div>${card('Items', items, { sub: 'An item can combine effects, like the Full Remedy (cure + heal).' })}${card('Pyramids', coins, { sub: 'Pyramid icons are art/coins/<id>_16.png and _32.png (tools/build-pyramids.py). Replace them under Art files.' })}</div>`;
+  return `<div class="ed-col solo"><div class="ed-head"><h2>Items & pyramids</h2><button class="btn primary" data-act="itemNew">+ New item</button></div>${card('Items', items, { sub: 'An item can combine effects, like the Full Remedy (cure + heal).' })}${card('Pyramids', pyramids, { sub: 'Pyramid icons are art/coins/<id>_16.png and _32.png (tools/build-pyramids.py). Replace them under Art files.' })}</div>`;
 };
 ACTIONS.itemNew = () => {
   const D = studioState.D,
@@ -1147,7 +1147,7 @@ SECTIONS.shops = () => {
       .map((w, i) => {
         const isC = !!w.coin,
           key = w.coin || w.item,
-          base = isC ? (D.coins[key] || {}).price : (D.items[key] || {}).price;
+          base = isC ? (D.pyramids[key] || {}).price : (D.items[key] || {}).price;
         return `<tr><td><select data-act-sel="stockKind" data-i="${i}">${[
           ['item', 'Item'],
           ['coin', 'Pyramid'],
@@ -1218,7 +1218,7 @@ document.addEventListener('change', ev => {
     const w = studioState.D.shops[studioState.sel.shop].stock[+el.dataset.i];
     if (el.value === 'coin') {
       delete w.item;
-      w.coin = Object.keys(studioState.D.coins)[0];
+      w.coin = Object.keys(studioState.D.pyramids)[0];
     } else {
       delete w.coin;
       w.item = Object.keys(studioState.D.items)[0];
@@ -1450,7 +1450,7 @@ document.addEventListener('change', ev => {
     const v = el.value;
     J.out = [
       v,
-      v === 'se' ? 'se' : v === 'item' ? Object.keys(studioState.D.items)[0] : Object.keys(studioState.D.coins)[0],
+      v === 'se' ? 'se' : v === 'item' ? Object.keys(studioState.D.items)[0] : Object.keys(studioState.D.pyramids)[0],
       J.out[2] || 1,
     ];
     changed();
@@ -1506,8 +1506,8 @@ SECTIONS.trainers = () => {
         textField('Title', `${p}.seat.title`),
         selectField('Pyramid shown', `${p}.seat.coin`, coinOptions())
       ) +
-      `<div class="grid">${Object.keys(D.coins)
-        .map(c => numberField(`${D.coins[c].n} reward`, `${p}.seat.coins.${c}`, { opt: 1, min: 0, step: 1 }))
+      `<div class="grid">${Object.keys(D.pyramids)
+        .map(c => numberField(`${D.pyramids[c].n} reward`, `${p}.seat.pyramids.${c}`, { opt: 1, min: 0, step: 1 }))
         .join('')}${Object.keys(D.items)
         .map(it => numberField(`${D.items[it].n} reward`, `${p}.seat.items.${it}`, { opt: 1, min: 0, step: 1 }))
         .join('')}</div>` +
@@ -1651,7 +1651,7 @@ ACTIONS.seatOn = () => {
     id: uniqueKey(T.name, k => Object.values(studioState.D.trainers).some(t => t.seat && t.seat.id === k)),
     title: `Badge ${n} of 8`,
     coin: 'gold_pyramid',
-    coins: { capstone: 1 },
+    pyramids: { capstone: 1 },
     items: {},
     rewardText: 'a Capstone',
     unlockText: '',

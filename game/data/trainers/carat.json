@@ -21,7 +21,7 @@
   "id": "carat",
   "title": "Electric Badge · 8 of 8",
   "coin": "gold_pyramid",
-  "coins": {"gold_pyramid":5,"capstone":3},
+  "pyramids": {"gold_pyramid":5,"capstone":3},
   "items": {"parachute":1},
   "rewardText": "a Max Revive, 5 Gold Pyramids and 3 Capstones",
   "unlockText": "The Rimefrost Caves, east of Glimmershaft Town, are open. Beyond them, the inner sea."

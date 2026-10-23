@@ -475,7 +475,7 @@ debugLog.state = () => {
             /* RL-9b: how many Billies came from home and how many things were packed (counts only) */
             home: Array.isArray(run.home) ? run.home.length : null,
             packed: run.pack
-              ? [run.pack.items, run.pack.coins].reduce(
+              ? [run.pack.items, run.pack.pyramids].reduce(
                   (a, r) => a + Object.values(r || {}).reduce((b, n) => b + (+n || 0), 0),
                   0
                 )

@@ -72,7 +72,7 @@ export interface GameData {
   pools: Record<DataId, Pool>;
   /** the egg tiers, keyed by the distance in km that hatches them ('2', '5', '10') */
   eggs: Record<string, EggTier>;
-  coins: Record<DataId, Coin>;
+  pyramids: Record<DataId, Coin>;
   items: Record<DataId, Item>;
   jobs: Record<DataId, Job>;
   people: Record<DataId, Person>;
@@ -649,7 +649,7 @@ export interface EggTier {
   list: WeightedSpecies[];
 }
 
-/** coins.json: a coin you tax Billies with */
+/** pyramids.json: a coin you tax Billies with */
 export interface Coin {
   n: string;
   /** the tax odds multiplier (0: never fails) */
@@ -798,7 +798,7 @@ export interface Seat {
   id: string;
   title: string;
   coin: DataId;
-  coins: Record<DataId, number>;
+  pyramids: Record<DataId, number>;
   items: Record<DataId, number>;
   rewardText: string;
   unlockText: string;
@@ -812,7 +812,7 @@ export interface Rules {
   start: {
     /** money */
     se: number;
-    coins: Record<DataId, number>;
+    pyramids: Record<DataId, number>;
     items: Record<DataId, number>;
     /** the starters' line ids */
     starters: DataId[];
@@ -970,10 +970,10 @@ export interface Rules {
     /** RL-7: metres past a seam before a crossing counts in a run (the hub's is 1), so a step over and back costs
         no day */
     seamIn: number;
-    /** RL-8: what a run starts with, besides the Billies from home and the packed bag: its money, coins and items (placeholders) */
-    start: { se: number; coins: Record<string, number>; items: Record<string, number> };
+    /** RL-8: what a run starts with, besides the Billies from home and the packed bag: its money, pyramids and items (placeholders) */
+    start: { se: number; pyramids: Record<string, number>; items: Record<string, number> };
     /** RL-9b: by Bracket (index 0 = Bracket I; past the end, the last): how many Billies from home a run takes, and
-        how many items and coins (in all) are packed from Copperleaf's bag at the mast (placeholders) */
+        how many items and pyramids (in all) are packed from Copperleaf's bag at the mast (placeholders) */
     home: number[];
     pack: number[];
     /** RL-8: a run town's clinic: $ per hurt Billie (free in the hub) */
@@ -1463,7 +1463,7 @@ export interface StoryPreset {
   flags?: Record<string, any>;
   /** trainer ids; a leader's badge comes with them */
   beaten?: DataId[];
-  coins?: Record<DataId, number>;
+  pyramids?: Record<DataId, number>;
   items?: Record<DataId, number>;
   team: { sp: string; lvl: number }[];
 }

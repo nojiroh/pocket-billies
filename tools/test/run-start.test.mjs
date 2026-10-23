@@ -54,7 +54,7 @@ function takeOff(/** @type {string} */ seed, /** @type {{ unlocks: string[], map
 const started = s => ({
   se: s.se,
   items: s.items,
-  coins: s.coins,
+  pyramids: s.pyramids,
   seed: s.run.seed,
   tier: s.run.tier,
   mapgenV: s.run.mapgenV,
@@ -92,11 +92,11 @@ test('a run starts with run.start (copies), on its seed, tier and generator vers
     tier: 1,
     mapgenV: 7,
     se: GAME_DATA.rules.run.start.se,
-    coins: GAME_DATA.rules.run.start.coins,
+    pyramids: GAME_DATA.rules.run.start.pyramids,
     items: GAME_DATA.rules.run.start.items,
   });
-  g.coins.pyramid = 99;
-  assert.notEqual(GAME_DATA.rules.run.start.coins.pyramid, 99);
+  g.pyramids.pyramid = 99;
+  assert.notEqual(GAME_DATA.rules.run.start.pyramids.pyramid, 99);
 });
 
 test('a plan touches nothing: the data stays as it was, the same seed plans the same run, a save it goes on is its own', () => {

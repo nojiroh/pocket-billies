@@ -21,7 +21,7 @@
   "id": "peak",
   "title": "Flying Badge · 4 of 8",
   "coin": "gold_pyramid",
-  "coins": {"gold_pyramid":3,"capstone":1},
+  "pyramids": {"gold_pyramid":3,"capstone":1},
   "items": {"bailout":2},
   "rewardText": "2 Revives, 3 Gold Pyramids and a Capstone",
   "unlockText": "Your team can now take on the island leader in Palmhaven Town, across the sea from Marigold Town."

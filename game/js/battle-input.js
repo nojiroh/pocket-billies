@@ -86,7 +86,10 @@ document.addEventListener('keydown', ev => {
     return;
   }
   if (ph === 'end' && (k === ' ' || k === 'enter')) click('[data-a=bend]');
-  if ((k === 'escape' || k === 'backspace') && ['fight', 'target', 'coins', 'items', 'itemTarget', 'team'].includes(ph))
+  if (
+    (k === 'escape' || k === 'backspace') &&
+    ['fight', 'target', 'pyramids', 'items', 'itemTarget', 'team'].includes(ph)
+  )
     click('#acts [data-a=bback]');
 });
 /* the battle's buttons (UI-5: the cases of ui.js's click switch, as they were) */
@@ -117,7 +120,7 @@ export function battleAction(a, d) {
       break;
     case 'bcoins':
       if (activeBattle && activeBattle.phase === 'choose') {
-        activeBattle.phase = 'coins';
+        activeBattle.phase = 'pyramids';
         paintActions();
       }
       break;
@@ -150,7 +153,7 @@ export function battleAction(a, d) {
       }
       break;
     case 'bcoin':
-      if (activeBattle && activeBattle.phase === 'coins' && saveData.coins[d.c] > 0) {
+      if (activeBattle && activeBattle.phase === 'pyramids' && saveData.pyramids[d.c] > 0) {
         activeBattle.coin = d.c;
         activeBattle.phase = 'aim';
         paintActions();

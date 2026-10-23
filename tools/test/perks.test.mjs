@@ -15,7 +15,7 @@ const R = modules.perks,
 function run(seed = 'RELIC12345') {
   const s = startedSave('musk0', 10);
   s.run = null;
-  return runBegin(s, { seed, tier: 1, mapgenV: 1, se: 300, coins: {}, items: {} });
+  return runBegin(s, { seed, tier: 1, mapgenV: 1, se: 300, pyramids: {}, items: {} });
 }
 
 test('relics: a new run holds none, has made no offer and has nothing on a shelf; validRun takes it', () => {

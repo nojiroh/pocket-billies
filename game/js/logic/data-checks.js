@@ -401,7 +401,7 @@ export function dataRunScene(D) {
   }
   return out;
 }
-// RL-8: the run loop's numbers (placeholders): what a run starts with (money, known coins and items, whole counts), a
+// RL-8: the run loop's numbers (placeholders): what a run starts with (money, known pyramids and items, whole counts), a
 // run town's heal price per hurt Billie, its shop (wares that exist: an item id or coin:<id>; `more` drawn by weight
 // from `pick`, with something to pick when more is above 0), a mini-boss's and the boss's levels over their row and
 // their reward; nothing else in each
@@ -418,23 +418,23 @@ export function dataRunLoop(D) {
         for (const k of Object.keys(o)) if (!keys.includes(k)) problem('rules.json', `${at}.${k}: no such rule`);
       },
       ware = w =>
-        typeof w === 'string' && (w.startsWith('coin:') ? !!(D.coins || {})[w.slice(5)] : !!(D.items || {})[w]),
+        typeof w === 'string' && (w.startsWith('coin:') ? !!(D.pyramids || {})[w.slice(5)] : !!(D.items || {})[w]),
       ST = R.start,
       SH = R.shop,
       F = R.foes;
-    if (!rec(ST) || !whole(ST.se, 0, 1e6) || !rec(ST.coins) || !rec(ST.items))
-      problem('rules.json', 'run.start: se (whole, 0-1,000,000), coins and items (records) are needed');
+    if (!rec(ST) || !whole(ST.se, 0, 1e6) || !rec(ST.pyramids) || !rec(ST.items))
+      problem('rules.json', 'run.start: se (whole, 0-1,000,000), pyramids and items (records) are needed');
     else {
-      only(ST, ['se', 'coins', 'items'], 'run.start');
-      for (const [k, n] of Object.entries(ST.coins))
-        if (!(D.coins || {})[k] || !whole(n, 0, 999))
-          problem('rules.json', `run.start.coins.${k}: no such coin, or not a whole count`);
+      only(ST, ['se', 'pyramids', 'items'], 'run.start');
+      for (const [k, n] of Object.entries(ST.pyramids))
+        if (!(D.pyramids || {})[k] || !whole(n, 0, 999))
+          problem('rules.json', `run.start.pyramids.${k}: no such coin, or not a whole count`);
       for (const [k, n] of Object.entries(ST.items))
         if (!(D.items || {})[k] || !whole(n, 0, 999))
           problem('rules.json', `run.start.items.${k}: no such item, or not a whole count`);
     }
     // RL-9b: by Expedition (index 0 = Expedition I; past the end, the last): Billies from home a run takes (1-6, never fewer
-    // than the Expedition before) and the things packed from Copperleaf's bag (0-99 items and coins in all)
+    // than the Expedition before) and the things packed from Copperleaf's bag (0-99 items and pyramids in all)
     for (const [k, lo, hi, what] of [
       ['home', 1, 6, 'Billies from home'],
       ['pack', 0, 99, 'things packed'],
@@ -714,15 +714,15 @@ export function dataPerks(D, valid = () => true) {
   }
   return out;
 }
-// RF-2: every catch item (coins.json; the ids stay the coins' until RF-4) has its icons and the model it is thrown as
+// RF-2: every catch item (pyramids.json; the ids stay the pyramids' until RF-4) has its icons and the model it is thrown as
 // (art/coins/<id>_16.png, _32.png and <id>.json, made by tools/build-pyramids.py): a recipe with at least one shape
-/** RF-2: coins.json against its art @param {any} coins @param {(path: string) => string | null} read the file under
+/** RF-2: pyramids.json against its art @param {any} pyramids @param {(path: string) => string | null} read the file under
  * game/art, or null when it isn't there @returns {DataProblem[]} */
-export function dataCatchArt(coins, read) {
+export function dataCatchArt(pyramids, read) {
   /** @type {DataProblem[]} */
   const out = [],
-    problem = (/** @type {string} */ what) => out.push(['coins.json', what]);
-  for (const k of Object.keys(coins || {})) {
+    problem = (/** @type {string} */ what) => out.push(['pyramids.json', what]);
+  for (const k of Object.keys(pyramids || {})) {
     for (const f of [`coins/${k}_16.png`, `coins/${k}_32.png`])
       if (read(f) == null) problem(`${k}: no icon art/${f} (tools/build-pyramids.py)`);
     const t = read(`coins/${k}.json`);

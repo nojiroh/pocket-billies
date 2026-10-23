@@ -34,8 +34,8 @@ export interface SaveData {
   caught: Record<SpeciesId, number>;
   /** money, dollars */
   se: number;
-  /** how many of each coin and item you have (every key of gameData.coins and gameData.items) */
-  coins: Record<DataId, number>;
+  /** how many of each coin and item you have (every key of gameData.pyramids and gameData.items) */
+  pyramids: Record<DataId, number>;
   items: Record<DataId, number>;
   /** where you are and where you're going */
   trip: Trip;
@@ -79,7 +79,7 @@ export interface SaveData {
   /** clothes owned and saved outfits (dressing-room.js) */
   wardrobe?: { owned: Record<string, any>; outfits: any[] };
   /** roguelite track RL-3 (save format 4): what lasts between runs, the run in progress (null in the hub; while it is
-      on, team, se, items, coins, trip, wild, eggs, flags, seats and visited are the run's), the ranch */
+      on, team, se, items, pyramids, trip, wild, eggs, flags, seats and visited are the run's), the ranch */
   meta: Meta;
   run: Run | null;
   ranch: Ranch;
@@ -175,7 +175,7 @@ export interface RunStart {
   team: Billy[];
   se: number;
   items: Record<DataId, number>;
-  coins: Record<DataId, number>;
+  pyramids: Record<DataId, number>;
   trip: Trip;
   wild: Record<string, WildStock>;
   eggs: Egg[];
@@ -237,7 +237,7 @@ export interface Run {
       runHome reads a run saved before as the hub's team) */
   home?: string[];
   /** RL-9b: what was packed from Copperleaf's bag at the mast */
-  pack?: { items: Record<DataId, number>; coins: Record<DataId, number> };
+  pack?: { items: Record<DataId, number>; pyramids: Record<DataId, number> };
 }
 
 /** the player's travel: where you are, and the locations still ahead (the gold arrows' guide) */

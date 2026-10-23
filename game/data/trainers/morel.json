@@ -21,7 +21,7 @@
   "id": "morel",
   "title": "Psychic Badge · 7 of 8",
   "coin": "gold_pyramid",
-  "coins": {"gold_pyramid":4,"capstone":2},
+  "pyramids": {"gold_pyramid":4,"capstone":2},
   "items": {"bailout":3},
   "rewardText": "3 Revives, 4 Gold Pyramids and 2 Capstones",
   "unlockText": "Tanglewild Jungle, east of Capshade Town, is open."

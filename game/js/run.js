@@ -21,7 +21,7 @@ import {
   runPayoutOpen,
   toast,
 } from './hooks.js';
-import { COINS, ITEMS, PERKS, RULES, START_NODE, TRAINERS, UNLOCK_DATA } from './game-data.js';
+import { ITEMS, PERKS, PYRAMIDS, RULES, START_NODE, TRAINERS, UNLOCK_DATA } from './game-data.js';
 import { billyName, formatNumber, healAll, plural } from './logic/rules.js';
 import { ranchNow } from './logic/ranch-clock.js';
 import { ranchStop } from './logic/ranch.js';
@@ -240,9 +240,9 @@ function runPickNow(tier = 1) {
     most = runByTier(RULES.run.pack, tier);
   let home = (uiState.runPick || []).filter(u => all.some(m => m.uid === u)).slice(0, cap);
   if (!home.length) home = [runPickDefault()].filter(u => !!u);
-  const pack = { items: {}, coins: {} };
+  const pack = { items: {}, pyramids: {} };
   let n = 0;
-  for (const kind of ['items', 'coins'])
+  for (const kind of ['items', 'pyramids'])
     for (const [k, v] of Object.entries((uiState.runPack || {})[kind] || {})) {
       const take = Math.max(0, Math.min(v, saveData[kind][k] || 0, most - n));
       if (!take) continue;
@@ -275,7 +275,7 @@ export function runStartSheet() {
     P = runPickNow(),
     gifts = [
       plural(S.se, 'Money'),
-      ...Object.entries(S.coins).map(([k, n]) => `${n} ${COINS[k] ? COINS[k].n : k}${n === 1 ? '' : 's'}`),
+      ...Object.entries(S.pyramids).map(([k, n]) => `${n} ${PYRAMIDS[k] ? PYRAMIDS[k].n : k}${n === 1 ? '' : 's'}`),
       ...Object.entries(S.items).map(([k, n]) => `${n} ${ITEMS[k] ? ITEMS[k].n : k}${n === 1 ? '' : 's'}`),
     ],
     trains = uid => !!(saveData.ranch && saveData.ranch.trainees.some(t => t.uid === uid)),
@@ -285,9 +285,9 @@ export function runStartSheet() {
       ...Object.keys(ITEMS)
         .filter(k => saveData.items[k] > 0)
         .map(k => ['items', k, ITEMS[k].n, itemIcon(k, 30)]),
-      ...Object.keys(COINS)
-        .filter(k => saveData.coins[k] > 0)
-        .map(k => ['coins', k, COINS[k].n, coinHTML(k, 30)]),
+      ...Object.keys(PYRAMIDS)
+        .filter(k => saveData.pyramids[k] > 0)
+        .map(k => ['pyramids', k, PYRAMIDS[k].n, coinHTML(k, 30)]),
     ],
     row = ([kind, k, name, icon]) => {
       const n = P.pack[kind][k] || 0,
@@ -348,11 +348,11 @@ export function runStartSheet() {
  * everyone at home is healed first (the hub's healing is free), so the travellers leave healed.
  * @param {string} [seed] @param {Partial<import('../types/game-data').RunMapRules>} [map] the map's rules changed (the
  * debug menu's short run) @param {string[]} [mods] the run's mods (the debug menu's mountains run: RUN_MOD_MOUNTAINS)
- * @param {{ home: string[], pack: { items: Record<string, number>, coins: Record<string, number> } }} [pick]
+ * @param {{ home: string[], pack: { items: Record<string, number>, pyramids: Record<string, number> } }} [pick]
  */
 export function runTakeOff(seed, map, mods, pick) {
   if (!runStartable()) return;
-  const P = pick || { home: [runPickDefault()].filter(u => !!u), pack: { items: {}, coins: {} } };
+  const P = pick || { home: [runPickDefault()].filter(u => !!u), pack: { items: {}, pyramids: {} } };
   if (!P.home.length) return;
   uiState.runPick = uiState.runPack = null;
   closeModal();

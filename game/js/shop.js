@@ -6,7 +6,7 @@
 import { expose } from './test-globals.js';
 import { closeModal, modal, perkDropOpen, provide, renderOverlay, soundEffect, toast } from './hooks.js';
 import { clamp, random } from './util.js';
-import { COINS, ITEMS, PERKS, RULES, SHOPS, UNLOCK_DATA } from './game-data.js';
+import { ITEMS, PERKS, PYRAMIDS, RULES, SHOPS, UNLOCK_DATA } from './game-data.js';
 import { formatNumber, plural } from './logic/rules.js';
 import { runShopOpen } from './logic/run-loop.js';
 import { fxRunPrice } from './logic/effects.js';
@@ -45,7 +45,7 @@ const SHOP_THANKS = [
 ];
 const wareInfo = w => {
   if (w.coin) {
-    const c = COINS[w.coin];
+    const c = PYRAMIDS[w.coin];
     return c
       ? {
           kind: 'coin',
@@ -54,7 +54,7 @@ const wareInfo = w => {
           d: c.d,
           base: c.price,
           need: c.need || 0,
-          have: saveData.coins[w.coin] || 0,
+          have: saveData.pyramids[w.coin] || 0,
         }
       : null;
   }
@@ -110,10 +110,10 @@ function shopHTML(id) {
     .join('');
   return `<div class="shop-head"><div class="shop-keeper">${portraitHTML(sh.who || 'clerk', 78, 'happy')}</div><div class="shop-say"><b>${escapeHtml(sh.keeper || 'Shopkeeper')}</b><p id="shopLine">${escapeHtml(uiState.shopLine || sh.greeting || 'Welcome in.')}</p></div></div>
  <div class="shop-bal"><span>${uiIconHTML('coin', 14)} Moneys</span><b class="tnum" data-count="shopse" data-to="${saveData.se}">${formatNumber(saveData.se)}</b></div>
- <div class="shop-bag"><span>In your bag</span>${Object.keys(COINS)
+ <div class="shop-bag"><span>In your bag</span>${Object.keys(PYRAMIDS)
    .map(
      k =>
-       `<span class="sb-c${saveData.coins[k] ? '' : ' none'}" role="img" title="${escapeHtml(COINS[k].n)}" aria-label="${escapeHtml(COINS[k].n)}: ${formatNumber(saveData.coins[k] || 0)}">${coinHTML(k, 18, 32)}<b class="tnum">${formatNumber(saveData.coins[k] || 0)}</b></span>`
+       `<span class="sb-c${saveData.pyramids[k] ? '' : ' none'}" role="img" title="${escapeHtml(PYRAMIDS[k].n)}" aria-label="${escapeHtml(PYRAMIDS[k].n)}: ${formatNumber(saveData.pyramids[k] || 0)}">${coinHTML(k, 18, 32)}<b class="tnum">${formatNumber(saveData.pyramids[k] || 0)}</b></span>`
    )
    .join(
      ''
@@ -168,7 +168,7 @@ function shopBuy(id, k) {
   }
   saveData.se -= cost;
   if (typeof soundEffect === 'function') soundEffect('buy');
-  if (kind === 'coin') saveData.coins[key] = (saveData.coins[key] || 0) + n;
+  if (kind === 'coin') saveData.pyramids[key] = (saveData.pyramids[key] || 0) + n;
   else saveData.items[key] = (saveData.items[key] || 0) + n;
   /* RL-8: a run's purchase is a checkpoint */
   if (saveData.run) saveNow();

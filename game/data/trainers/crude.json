@@ -21,7 +21,7 @@
   "id": "oil",
   "title": "Ground Badge · 1 of 8",
   "coin": "pyramid",
-  "coins": {"step_pyramid":3,"capstone":1},
+  "pyramids": {"step_pyramid":3,"capstone":1},
   "items": {},
   "rewardText": "3 Step Pyramids and a Capstone",
   "unlockText": "The steps down to Route 5 · Stepstone Canyon and Lanternhall City are open. Step Pyramids are now for sale."

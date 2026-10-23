@@ -21,7 +21,7 @@
   "id": "bloom",
   "title": "Grass Badge · 5 of 8",
   "coin": "gold_pyramid",
-  "coins": {"gold_pyramid":3,"capstone":2},
+  "pyramids": {"gold_pyramid":3,"capstone":2},
   "items": {"bailout":2},
   "rewardText": "2 Revives, 3 Gold Pyramids and 2 Capstones",
   "unlockText": "The boardwalks of Rootwater Marsh, south-east of Twinpetal Town, are open."

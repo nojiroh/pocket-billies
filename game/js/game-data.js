@@ -19,7 +19,6 @@ expose({
   BATTLE_STAGES: [() => BATTLE_STAGES],
   BUILDINGS: [() => BUILDINGS],
   COATS: [() => COATS],
-  COINS: [() => COINS],
   CURRENCIES: [() => CURRENCIES],
   CUTSCENES: [() => CUTSCENES],
   DATA_WARN: [() => DATA_WARN],
@@ -42,6 +41,7 @@ expose({
   PEOPLE: [() => PEOPLE],
   PERKS: [() => PERKS],
   POOLS: [() => POOLS],
+  PYRAMIDS: [() => PYRAMIDS],
   RARITY_STAT_TOTALS: [() => RARITY_STAT_TOTALS],
   ROADS: [() => ROADS],
   ROADS_BY_NODE: [() => ROADS_BY_NODE],
@@ -379,8 +379,8 @@ for (const k in gameData.eggs) {
 export const EGG_TIERS = Object.keys(EGGS)
   .map(Number)
   .sort((a, b) => a - b);
-export const COINS = gameData.coins;
-provide({ COINS }); /* to-module */
+export const PYRAMIDS = gameData.pyramids;
+provide({ PYRAMIDS }); /* to-module */
 /* studio track ST-0: coats, a recolour of a Billie's art (game/js/logic/coats.js) */
 export const COATS = gameData.coats || {};
 provide({ COATS }); /* to-module */

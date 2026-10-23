@@ -356,7 +356,7 @@ export function restore(s) {
 /* Studio plan T6.2: data no picture is drawn from (top-level keys of D). An undo that changes only these keeps the
    art caches: a Wardrobe opened after undoing a move edit no longer bakes every clothes thumbnail again */
 const TEXT_ONLY_DATA = new Set(
-  'moves items coins lore story jobs stats statuses rarities perks currencies unlocks shops pools eggs meta uiTheme'.split(
+  'moves items pyramids lore story jobs stats statuses rarities perks currencies unlocks shops pools eggs meta uiTheme'.split(
     ' '
   )
 );
@@ -916,7 +916,7 @@ export const moveOptions = () =>
     .sort((a, b) => studioState.D.moves[a].n.localeCompare(studioState.D.moves[b].n))
     .map(k => [k, `${studioState.D.moves[k].n} · ${studioState.D.moves[k].t}`]);
 export const itemOptions = () => Object.keys(studioState.D.items).map(k => [k, studioState.D.items[k].n]);
-export const coinOptions = () => Object.keys(studioState.D.coins).map(k => [k, studioState.D.coins[k].n]);
+export const coinOptions = () => Object.keys(studioState.D.pyramids).map(k => [k, studioState.D.pyramids[k].n]);
 export const peopleOptions = () => Object.keys(studioState.D.people).map(k => [k, k]);
 export const statusOptions = () => studioState.D.statuses.map(s => [s.id, s.name]);
 export const statOptions = () => studioState.D.stats.filter(s => s.id !== 'hp').map(s => [s.id, s.name]);

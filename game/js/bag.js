@@ -6,7 +6,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { closeModal, modal, render, toast } from './hooks.js';
-import { COINS, ITEMS, STATUS_NAMES } from './game-data.js';
+import { ITEMS, PYRAMIDS, STATUS_NAMES } from './game-data.js';
 import { billyName, formatNumber, maxHp } from './logic/rules.js';
 import { applyItem, canUse, teamNeedsHp } from './logic/battle-engine.js';
 import { escapeHtml, saveData, uiState } from './game-state.js';
@@ -24,7 +24,7 @@ expose({
 /* to-module: end */
 const BAG_POCKETS = [
   ['heal', 'Healing', 'heart'],
-  ['coins', 'Pyramids', 'pyramid'],
+  ['pyramids', 'Pyramids', 'pyramid'],
   ['special', 'Special', 'spark'],
 ];
 const bagHeal = k => {
@@ -34,7 +34,7 @@ const bagHeal = k => {
 function bagList(p) {
   if (p === 'heal') return Object.keys(ITEMS).filter(k => bagHeal(k) && saveData.items[k] > 0);
   if (p === 'special') return Object.keys(ITEMS).filter(k => !bagHeal(k) && saveData.items[k] > 0);
-  if (p === 'coins') return Object.keys(COINS).filter(k => saveData.coins[k] > 0);
+  if (p === 'pyramids') return Object.keys(PYRAMIDS).filter(k => saveData.pyramids[k] > 0);
   return [];
 }
 export function renderBag() {
@@ -50,12 +50,12 @@ export function renderBag() {
   const L = bagList(p),
     body = L.length
       ? `<div class="bag-list px">${L.map(k => {
-          const I = p === 'coins' ? COINS[k] : ITEMS[k],
-            n = p === 'coins' ? saveData.coins[k] : saveData.items[k],
+          const I = p === 'pyramids' ? PYRAMIDS[k] : ITEMS[k],
+            n = p === 'pyramids' ? saveData.pyramids[k] : saveData.items[k],
             on = sel === k;
-          return `<button class="bag-row k-card ${on ? 'on' : ''}" data-a="bag-sel" data-k="${escapeHtml(k)}" aria-pressed="${on}"><span class="bag-ic">${p === 'coins' ? coinHTML(k, 30) : itemIcon(k, 30)}</span><span class="bag-t"><b>${escapeHtml(I.n)}</b><small>${escapeHtml(I.d || '')}</small></span><b class="bag-n tnum">×${formatNumber(n)}</b></button>`;
+          return `<button class="bag-row k-card ${on ? 'on' : ''}" data-a="bag-sel" data-k="${escapeHtml(k)}" aria-pressed="${on}"><span class="bag-ic">${p === 'pyramids' ? coinHTML(k, 30) : itemIcon(k, 30)}</span><span class="bag-t"><b>${escapeHtml(I.n)}</b><small>${escapeHtml(I.d || '')}</small></span><b class="bag-n tnum">×${formatNumber(n)}</b></button>`;
         }).join('')}</div>`
-      : `<p class="note bag-empty">${p === 'coins' ? 'No pyramids. Shops sell them.' : p === 'special' ? 'Nothing special yet.' : 'No healing items. Shops sell them.'}</p>`;
+      : `<p class="note bag-empty">${p === 'pyramids' ? 'No pyramids. Shops sell them.' : p === 'special' ? 'Nothing special yet.' : 'No healing items. Shops sell them.'}</p>`;
   /* what the chosen thing can do */
   let act = '';
   if (sel && bagList(p).includes(sel)) {
@@ -63,15 +63,15 @@ export function renderBag() {
       const I = ITEMS[sel],
         ok = I.hpAll ? teamNeedsHp() : saveData.team.some(m => canUse(sel, m));
       act = `<div class="bag-act px"><span class="bag-t"><b>${escapeHtml(I.n)}</b><small>${ok ? (I.hpAll ? 'Shares out over your whole team' : 'Choose a Billie to use it on') : 'Nobody on your team needs it right now'}</small></span><button class="pb gold" data-a="bag-use" data-k="${escapeHtml(sel)}" ${ok ? '' : 'disabled'}>Use</button></div>`;
-    } else if (p === 'coins')
-      act = `<div class="bag-act px"><span class="bag-t"><b>${escapeHtml(COINS[sel].n)}</b><small>Throw it in a battle to catch a tired Billie</small></span></div>`;
+    } else if (p === 'pyramids')
+      act = `<div class="bag-act px"><span class="bag-t"><b>${escapeHtml(PYRAMIDS[sel].n)}</b><small>Throw it in a battle to catch a tired Billie</small></span></div>`;
     else
       act = `<div class="bag-act px"><span class="bag-t"><b>${escapeHtml(ITEMS[sel].n)}</b><small>Open a Billie’s details on the Team screen to use it</small></span><button class="pb" data-a="tab" data-t="team">Team</button></div>`;
   }
   /* phase 06-3: the same title as the other screens; the use panel floats above the bottom bar (css/units.css "Bag") */
   const total =
     Object.keys(ITEMS).reduce((a, k) => a + (saveData.items[k] || 0), 0) +
-    Object.keys(COINS).reduce((a, k) => a + (saveData.coins[k] || 0), 0);
+    Object.keys(PYRAMIDS).reduce((a, k) => a + (saveData.pyramids[k] || 0), 0);
   return `<header class="bar"><div><div class="sub">${formatNumber(total)} things carried</div><h1 class="where">Bag</h1></div></header>${tabs}${body}${act}`;
 }
 document.addEventListener('click', ev => {

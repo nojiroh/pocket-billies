@@ -1016,7 +1016,7 @@ def run_pack(pg, base):
     buddy the hub's, the packed Potions gone. A second run (the default pick, one Potion packed), won: no items row on
     the payout, the run's bag added to Copperleaf's. A reload (?fixture=stored) keeps it all"""
     if not until(pg, "typeof saveData!=='undefined'&&!!saveData.ranch&&!document.getElementById('loader')&&walkView.ready", 90): raise Exception('the ranch fixture never booted')
-    pg.evaluate("uiState.inside=null;uiState.modal=null;uiState.mq=[];renderOverlay();saveData.items.taxbreak=3;saveData.coins.pyramid=2;0")
+    pg.evaluate("uiState.inside=null;uiState.modal=null;uiState.mq=[];renderOverlay();saveData.items.taxbreak=3;saveData.pyramids.pyramid=2;0")
     who = pg.evaluate("saveData.box[1].uid")
     if pg.evaluate(f"ranchTrainStart(saveData,'{who}',Date.now(),RULES.ranch)") != '': raise Exception('the fixture’s Billie couldn’t start training')
     pg.evaluate(f"saveData.box[1].hp=1;0")
@@ -1048,7 +1048,7 @@ def run_pack(pg, base):
     H = json.loads(hub)
     if back != json.dumps([H[0], H[1], H[2], lv, 1], separators=(',', ':')): raise Exception(f'home after a loss {back}: team, storage, buddy as before, Lv {lv} kept, 1 Potion')
     lead = H[0][0]
-    pg.evaluate(f"runTakeOff(undefined,undefined,undefined,{{home:['{lead}'],pack:{{items:{{taxbreak:1}},coins:{{}}}}}});0")
+    pg.evaluate(f"runTakeOff(undefined,undefined,undefined,{{home:['{lead}'],pack:{{items:{{taxbreak:1}},pyramids:{{}}}}}});0")
     if not until(pg, "!!saveData.run&&(airshipFlight.on||saveData.run.at.phase==='walk')", 30): raise Exception('the second run didn’t start')
     pg.evaluate("flySkip();0")
     if not until(pg, "!airshipFlight.on&&saveData.run.at.phase==='walk'&&walkView.ready", 90): raise Exception('the second run never landed')

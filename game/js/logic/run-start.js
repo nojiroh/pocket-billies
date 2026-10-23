@@ -38,15 +38,15 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-/** what runBegin is given: the run's seed, tier and generator version, and its money, coins and items (run.start)
+/** what runBegin is given: the run's seed, tier and generator version, and its money, pyramids and items (run.start)
  * @param {string} seed @param {number} tier @param {number} mapgenV
- * @param {{ se: number, coins: Record<string, number>, items: Record<string, number> }} start */
+ * @param {{ se: number, pyramids: Record<string, number>, items: Record<string, number> }} start */
 export const runGive = (seed, tier, mapgenV, start) => ({
   seed,
   tier,
   mapgenV,
   se: start.se,
-  coins: { ...start.coins },
+  pyramids: { ...start.pyramids },
   items: { ...start.items },
 });
 
@@ -95,7 +95,7 @@ export function runStartPlan(seed, data, o = {}) {
 /** put a plan on a save: the run begins (runBegin: who travels from home, the packed bag) with the plan's money,
  * items, unlocks, mods, map, deadline and forecast. Returns the run
  * @param {SaveData} s @param {RunStartPlan} plan
- * @param {{ home?: string[], pack?: { items: Record<string, number>, coins: Record<string, number> } }} [pick]
+ * @param {{ home?: string[], pack?: { items: Record<string, number>, pyramids: Record<string, number> } }} [pick]
  * @returns {Run} */
 export function runStartOn(s, plan, pick = {}) {
   const run = runBegin(s, { ...plan.give, home: pick.home, pack: pick.pack });

@@ -209,7 +209,7 @@ export function runSimOn(env) {
         .sort((/** @type {any} */ a, /** @type {any} */ b) => b.lvl - a.lvl)
         .slice(0, runByTier(R.home, 1))
         .map((/** @type {any} */ m) => m.uid),
-      pack = { items: { taxbreak: Math.min(o.pack ?? 0, runByTier(R.pack, 1)) }, coins: {} };
+      pack = { items: { taxbreak: Math.min(o.pack ?? 0, runByTier(R.pack, 1)) }, pyramids: {} };
     /* Studio plan T2.1: started as the mast starts a run (logic/run-start.js), with what the save has unlocked: none (a
        fresh save, the default) or every unlock (unlocks: 'all') */
     if (o.unlocks === 'all') for (const id of Object.keys(UNLOCK_DATA.unlocks)) s.meta.unlocks[id] = 1;
@@ -298,14 +298,14 @@ export function runSimOn(env) {
           }
           at.shop = stock.map((/** @type {any} */ w) => w.coin || w.item);
           /* the shop's price, with the Perks' price rows (shop.js warePrice) */
-          const price = fxRunPrice(run, data.PERKS, 'shop', data.COINS.pyramid.price);
+          const price = fxRunPrice(run, data.PERKS, 'shop', data.PYRAMIDS.pyramid.price);
           while (
             stock.some((/** @type {any} */ w) => w.coin === 'pyramid') &&
-            (s.coins.pyramid || 0) < P.penniesUpTo &&
+            (s.pyramids.pyramid || 0) < P.penniesUpTo &&
             s.se >= price + P.reserve
           ) {
             s.se -= price;
-            s.coins.pyramid = (s.coins.pyramid || 0) + 1;
+            s.pyramids.pyramid = (s.pyramids.pyramid || 0) + 1;
             stats.spent += price;
             stats.moneyOut.shop += price;
           }
@@ -333,9 +333,9 @@ export function runSimOn(env) {
           const foe = hooks.activeBattle.sides[1].team[0];
           const B = hooks.activeBattle;
           let res;
-          /* catch it while the party is small and there are coins: one throw, then fight on */
-          if (s.team.length < P.taxWhileBelow && (s.coins.pyramid || 0) > 0 && !q.alpha) {
-            s.coins.pyramid--;
+          /* catch it while the party is small and there are pyramids: one throw, then fight on */
+          if (s.team.length < P.taxWhileBelow && (s.pyramids.pyramid || 0) > 0 && !q.alpha) {
+            s.pyramids.pyramid--;
             const c = fn('catchRoll')('pyramid', 1 + logic.CATCH_RULES.ring * P.ring, false); /* doThrow's T */
             if (c.caught) {
               fn('catchKeep')(foe);

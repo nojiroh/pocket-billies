@@ -7,7 +7,7 @@
    above. phase 06-3: the only stage (the painted one is gone); a battle waits until the walk scene is ready. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { COINS, activeBattle, fieldState, provide, reducedMotion } from './hooks.js';
+import { PYRAMIDS, activeBattle, fieldState, provide, reducedMotion } from './hooks.js';
 import { $, clamp } from './util.js';
 import { coinCanvas, hexToRgb } from './art.js';
 import {
@@ -102,7 +102,7 @@ export function battle3dAttach(o = {}) {
   battleStage.leafy = [];
   battleStage.glint = [];
   /* RF-2: the catch pyramids' models, so the first throw has them */
-  if (typeof COINS !== 'undefined') for (const k of Object.keys(COINS)) loadPropModelRecipe(pyramidModelPath(k));
+  if (typeof PYRAMIDS !== 'undefined') for (const k of Object.keys(PYRAMIDS)) loadPropModelRecipe(pyramidModelPath(k));
   walkView.battle = { frame: battle3dFrame };
   battle3d.on = true;
   if (typeof debugLog !== 'undefined') debugLog.add('battle', '3D stage in ' + walkView.id);
@@ -324,7 +324,7 @@ function pyramidItem(C, O) {
    included), spin its turn (setItemSpin in prop-models.js); null while it can't be drawn (3D props off, the GPU
    lost, its recipe not loaded yet). The opening's throws use it too (cutscene/opening.js) */
 export function pyramidWorldItem(kind, x, y, z, spin, size = 1) {
-  if (typeof propModelsOn !== 'function' || !propModelsOn() || typeof COINS === 'undefined' || !COINS[kind])
+  if (typeof propModelsOn !== 'function' || !propModelsOn() || typeof PYRAMIDS === 'undefined' || !PYRAMIDS[kind])
     return null;
   const path = pyramidModelPath(kind),
     rec = loadPropModelRecipe(path);

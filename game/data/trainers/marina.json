@@ -21,7 +21,7 @@
   "id": "haven",
   "title": "Water Badge · 3 of 8",
   "coin": "gold_pyramid",
-  "coins": {"gold_pyramid":3,"capstone":2},
+  "pyramids": {"gold_pyramid":3,"capstone":2},
   "items": {"parachute":1},
   "rewardText": "a Max Revive, 3 Gold Pyramids and 2 Capstones",
   "unlockText": "The path up Mt. Cinderpeak, on the north shore, is open. Bring water."

@@ -1,7 +1,7 @@
 {
  "start": {
   "se": 600,
-  "coins": {"pyramid":5,"step_pyramid":0,"gold_pyramid":0,"capstone":0},
+  "pyramids": {"pyramid":5,"step_pyramid":0,"gold_pyramid":0,"capstone":0},
   "items": {"taxbreak":2},
   "starters": ["musk","bezos","gates"],
   "starterLevel": 5,
@@ -159,7 +159,7 @@
   "seamIn": 6,
   "start": {
    "se": 600,
-   "coins": {"pyramid":5},
+   "pyramids": {"pyramid":5},
    "items": {"taxbreak":2}
   },
   "home": [1],

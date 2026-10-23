@@ -278,20 +278,20 @@ test('run: a kept Billie from storage comes back to storage with its gains, once
 test('run: the packed bag leaves the hub, travels on top of the gift and comes home only on a win', () => {
   for (const won of [false, true]) {
     const s = hubSave(); // 4 potions at home
-    s.coins.pyramid = 2;
+    s.pyramids.pyramid = 2;
     const run = runBegin(s, {
       ...GIVE,
-      coins: { pyramid: 5 },
-      pack: { items: { potion: 3, ghost: 2 }, coins: { pyramid: 9 } },
+      pyramids: { pyramid: 5 },
+      pack: { items: { potion: 3, ghost: 2 }, pyramids: { pyramid: 9 } },
     });
-    assert.deepEqual(run.pack, { items: { potion: 3 }, coins: { pyramid: 2 } }, 'no more than the bag holds');
-    assert.deepEqual([run.start.items.potion, run.start.coins.pyramid], [1, 0], 'what stays home');
-    assert.deepEqual([s.items.potion, s.coins.pyramid], [1 + 3, 5 + 2], 'the gift and the pack');
+    assert.deepEqual(run.pack, { items: { potion: 3 }, pyramids: { pyramid: 2 } }, 'no more than the bag holds');
+    assert.deepEqual([run.start.items.potion, run.start.pyramids.pyramid], [1, 0], 'what stays home');
+    assert.deepEqual([s.items.potion, s.pyramids.pyramid], [1 + 3, 5 + 2], 'the gift and the pack');
     assert.equal(validRun(copy(run)), true);
     s.items.potion = 2; // one used on the way
-    s.coins.pyramid = 3;
+    s.pyramids.pyramid = 3;
     const pay = runEnd(s, { won, keep: [s.team[0].uid] }, RATES, PRICE);
-    assert.deepEqual([s.items.potion, s.coins.pyramid], won ? [1 + 2, 3] : [1, 0]);
+    assert.deepEqual([s.items.potion, s.pyramids.pyramid], won ? [1 + 2, 3] : [1, 0]);
     assert.equal(pay.lines[1].research, won ? 0 : Math.floor(2 * 200 * 0.5 * 0.1), 'a loss pays the bag');
   }
 });
@@ -313,7 +313,7 @@ test('run: the Expedition rules and the load check of what was picked and packed
     { ...run, home: 'x' },
     { ...run, home: [1] },
     { ...run, home: Array(7).fill('u') },
-    { ...run, pack: { items: { potion: -1 }, coins: {} } },
+    { ...run, pack: { items: { potion: -1 }, pyramids: {} } },
     { ...run, pack: { items: {}, money: {} } },
     { ...run, start: { ...run.start, buddy: 7 } },
   ])
