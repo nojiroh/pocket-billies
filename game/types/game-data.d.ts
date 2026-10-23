@@ -865,7 +865,7 @@ export interface Rules {
     liveWireCrit: number;
     kindlingBoost: number;
     kindlingTurns: number;
-    retailSynergy: number;
+    alloyBoost: number;
     /** RF-3 Undertow (Water): its Water moves hit this much harder at or below this share of its HP */
     undertowMult: number;
     undertowHp: number;

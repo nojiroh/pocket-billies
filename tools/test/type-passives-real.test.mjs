@@ -38,7 +38,7 @@ const plainMove = (t, c) =>
   );
 
 test('every type names its passive and says what it does; the ids are the nine the engine knows', () => {
-  const known = ['kindling', 'undertow', 'regrowth', 'livewire', 'bedrock', 'pivot', 'wildmind', 'synergy', 'inherit'];
+  const known = ['kindling', 'undertow', 'regrowth', 'livewire', 'bedrock', 'pivot', 'wildmind', 'alloy', 'inherit'];
   assert.deepEqual(
     TYPES.map(t => data.PASSIVE[t]),
     known
@@ -51,8 +51,8 @@ test('every type names its passive and says what it does; the ids are the nine t
     TYPES.map(t => data.PASSIVE_INFO[t].name),
     ['Kindling', 'Undertow', 'Regrowth', 'Live Wire', 'Bedrock', 'Slipstream', 'Wild Mind', 'Alloy', 'Parting Roar']
   );
-  assert.equal(data.passiveName(['Psychic', 'Steel'], 'synergy'), 'Alloy');
-  assert.equal(data.passiveName(['Water'], 'synergy'), '', 'a passive none of the types carries has no name');
+  assert.equal(data.passiveName(['Psychic', 'Steel'], 'alloy'), 'Alloy');
+  assert.equal(data.passiveName(['Water'], 'alloy'), '', 'a passive none of the types carries has no name');
 });
 
 test('Kindling (Fire): Attack +10% a turn in, up to +100%', () => {
@@ -133,8 +133,8 @@ test('Alloy (Steel): +10% for each living teammate that shares its Steel type', 
   const alone = hit(['gates0'], true),
     one = hit(['bezos3', 'gates0'], true),
     two = hit(['bezos3', 'kardashian2'], true);
-  assert.ok(Math.abs(one / alone - (1 + R.retailSynergy)) < 0.02, `${one} / ${alone}`);
-  assert.ok(Math.abs(two / alone - (1 + 2 * R.retailSynergy)) < 0.02, `${two} / ${alone}`);
+  assert.ok(Math.abs(one / alone - (1 + R.alloyBoost)) < 0.02, `${one} / ${alone}`);
+  assert.ok(Math.abs(two / alone - (1 + 2 * R.alloyBoost)) < 0.02, `${two} / ${alone}`);
   assert.equal(hit(['bezos3', 'kardashian2'], false), alone, 'fainted teammates count for nothing');
 });
 

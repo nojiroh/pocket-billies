@@ -82,7 +82,7 @@
   "text": "#fff",
   "strong": ["Psychic","Flying"],
   "weak": ["Fire","Water","Electric","Steel"],
-  "passive": "synergy",
+  "passive": "alloy",
   "passiveName": "Alloy",
   "passiveText": "It hits harder for each teammate on its feet that shares its Steel type.",
   "fx": ["cog","spark"]

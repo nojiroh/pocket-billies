@@ -357,13 +357,13 @@ export function calcDamage(k, tk, mid, src) {
   const mk = battleNow().market && M.t === BATTLE_RULES.shockType ? BATTLE_RULES.oilShockMult : 1;
   let eco = 1;
   if (!src) {
-    const syn = aty.filter(t => PASSIVE[t] === 'synergy');
+    const syn = aty.filter(t => PASSIVE[t] === 'alloy');
     if (syn.length) {
       const sd = battleNow().sides[ACTOR_SIDE[k]],
         me = fighter(k);
       eco =
         1 +
-        BATTLE_RULES.retailSynergy *
+        BATTLE_RULES.alloyBoost *
           sd.team.filter(m => m !== me && m.hp > 0 && speciesOf(m).types.some(t => syn.includes(t))).length;
     }
   }

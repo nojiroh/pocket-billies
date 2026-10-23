@@ -917,7 +917,7 @@ const PASSIVES = [
   ['pivot', 'Slipstream: switches out once per battle without losing the turn'],
   ['wildmind', 'Wild Mind: damage swings wildly'],
   ['regrowth', 'Regrowth: restores a little HP each turn'],
-  ['synergy', 'Alloy: +10% damage for each teammate of the same type'],
+  ['alloy', 'Alloy: +10% damage for each teammate of the same type'],
   ['livewire', 'Live Wire: higher critical-hit chance'],
   ['kindling', 'Kindling: Attack rises every turn it stays in'],
   ['inherit', 'Parting Roar: when it faints, the next teammate in gets +1 Attack and Sp. Atk'],

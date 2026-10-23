@@ -48,7 +48,7 @@ export const FIXTURE = {
       liveWireCrit: 1,
       kindlingBoost: 0.1,
       kindlingTurns: 10,
-      retailSynergy: 0.1,
+      alloyBoost: 0.1,
       oilShockMult: 1.5,
       drainFraction: 16,
       rentFraction: 8,

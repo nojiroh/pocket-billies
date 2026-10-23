@@ -930,7 +930,7 @@ SECTIONS.rules = () => {
        numberField('Live Wire: extra critical stages', `${bt}.liveWireCrit`, { min: 0, max: 3, step: 1 }),
        numberField('Kindling: Attack boost per turn', `${bt}.kindlingBoost`, { min: 0, max: 1, step: 0.01 }),
        numberField('Kindling turns', `${bt}.kindlingTurns`, { min: 1, max: 30, step: 1 }),
-       numberField('Alloy bonus per teammate', `${bt}.retailSynergy`, { min: 0, max: 1, step: 0.01 }),
+       numberField('Alloy bonus per teammate', `${bt}.alloyBoost`, { min: 0, max: 1, step: 0.01 }),
        numberField('Undertow boost', `${bt}.undertowMult`, { unit: '×', min: 1, max: 3, step: 0.05 }),
        numberField('Undertow below this share of HP', `${bt}.undertowHp`, { min: 0, max: 1, step: 0.01 }),
        selectField('Sandstorm type', `${bt}.shockType`, typeOptions()),
