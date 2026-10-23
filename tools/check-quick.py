@@ -1721,8 +1721,8 @@ def desktop_steps(b, base, R):
         return '; '.join(out)
     airship_moored()
 
-    @step('alpha 0.4: props made of shapes are low-poly with the 32 px textures (voxels one to a pixel when switched)', 120)
-    def a04_props():
+    @step('Props made of shapes: low-poly with the 32 px textures (voxels one to a pixel when switched)', 120)
+    def lowpoly_props():
         """every voxel recipe of shapes builds as a low-poly model painted from the building sheet, and as voxels at the
         art's scale (32 to the metre) when "Props as low-poly" is off; both within a budget a phone can carry; in the
         every-prop scene they draw as models"""
@@ -1743,7 +1743,7 @@ def desktop_steps(b, base, R):
         pg.evaluate("uiState.bench=null;render();0")
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return f'{r["n"]} recipes: {r["lp"]} triangles low-poly, {r["q"]} quads as voxels at 32 to the metre; the every-prop scene draws {m["lp"]} as low-poly models'
-    a04_props()
+    lowpoly_props()
 
     @step('alpha 0.4: postcards — the first visit brings the card, the Guide keeps it', 90)
     def a04_postcards():
