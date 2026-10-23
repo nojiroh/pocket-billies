@@ -101,6 +101,13 @@ recommended option is taken for every decision and recorded in the plan doc's "D
   editing files under the running check, then passed alone with Play this seed; after the merge, the Studio pages and
   Play this seed pass (5 of 5).
 - Screenshots of the Lab at 1400 px: the map and rules card side by side; the logic panel.
+- **The built site** (`npm run build`, as GitHub Pages serves it): CI's build failed at first (run-preview.js, on no
+  page, was left in dist and the worker would have imported deleted sources); vite.config.js now bundles the worker's
+  module list into one file. By hand, the worker served from dist/ answered runPreview('LAB1') exactly as Node. That
+  check is not automated.
+- PR #135's CI green on afea581 (lint with the build, rules, smoke). After the third merge of the Phase 1 base: unit
+  tests 664, lint, typecheck, check:data, format, build; `check-studio-github.py --only=run_lab,checks,publish,drafts`
+  0 problems.
 - **Not run:** the full quick check (end of Phase 2), the full check-studio-github chain, a real phone or iPad.
 
 **Risky**
@@ -117,7 +124,8 @@ recommended option is taken for every decision and recorded in the plan doc's "D
 - check-data.mjs could run runMapSweep over 1,000 seeds (CI) — one line, for its owner.
 - Manual (owner): Play this seed from the Studio on the phone; an unsaved clinic price in a run town; the Lab's
   logic panel on the iPad.
-- Phase 2's tickets are all done: the full quick check and the tag `sr-2-done` close it, after #135's CI is green.
+- **Done:** Phase 2's tickets T2.1-T2.6 are all in PR #135. Left to close the phase: the full quick check and the tag
+  `sr-2-done` (and an automated check of the built worker, if wanted: serve dist/ and ask it once).
 
 ### Studio plan Phase 2 (first session) - One run start, Run Lab v1 - 2026-10-22
 Branch `claude/sr-2-run-lab`, from the Phase 0 branch `ccr-81011a25-lf3exv` (PR #131, where the plan doc lives); PR
