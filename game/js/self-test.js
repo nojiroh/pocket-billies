@@ -943,7 +943,8 @@ async function runFullTest(mode) {
             }
             if (!crossed) throw new Error(`walked out of the landing and never arrived at ${LOCATIONS[to].name}`);
             const next = 'w:' + LOCATIONS[to].mapId + '*';
-            for (let i = 0; i < 150 && !(walkView.ready && walkView.id === next); i++) await selfTestSleep(100);
+            /* up to 60 s, as the fast check waits (software drawing takes longer than 15 s to lay the next view) */
+            for (let i = 0; i < 600 && !(walkView.ready && walkView.id === next); i++) await selfTestSleep(100);
             if (walkView.id !== next) throw new Error(`arrived but the view is still ${walkView.id}`);
             if (saveData.run.clock !== 2) throw new Error(`arrived on day ${saveData.run.clock}, not 2`);
             await selfTestSleep(800);
