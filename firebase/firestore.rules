@@ -3,7 +3,7 @@ rules_version = '2';
 // press Publish. Tested by firebase/test/rules.test.mjs on the emulator (cd firebase && npm ci && npm test).
 //
 // What each collection holds (js/account.js, js/friends.js):
-//   saves/<uid>             one player's save, private
+//   saves/<uid>             one player's save, private: { json, savedAt, saveVersion, name, game, t }
 //   users/<uid>             what friends see of a player: name, look, partner, last place, friend list, code
 //   codes/<CODE>            { uid }: a friend code finds a player, and nothing else does
 //   requests/<from>_<to>    a friend request: { from, to, fromName, status, t }
@@ -14,9 +14,13 @@ service cloud.firestore {
     function me() { return request.auth.uid; }
     function shortText(v, n) { return v is string && v.size() <= n; }
 
+    // RL-10b: only the keys the game writes, and t is the server's time of this write (serverTimestamp()), the ranch
+    // clock's anchor (js/logic/ranch-clock.js): a phone clock behind the last save's t is a clock turned back.
     match /saves/{uid} {
       allow read, delete: if signedIn() && me() == uid;
       allow create, update: if signedIn() && me() == uid
+        && request.resource.data.keys().hasOnly(['json', 'savedAt', 'saveVersion', 'name', 'game', 't'])
+        && request.resource.data.t == request.time
         && request.resource.data.json is string && request.resource.data.json.size() < 1000000;
     }
 

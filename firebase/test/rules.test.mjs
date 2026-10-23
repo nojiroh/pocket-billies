@@ -3,7 +3,7 @@
 import { test, before, after, beforeEach } from 'node:test';
 import { readFileSync } from 'node:fs';
 import { initializeTestEnvironment, assertSucceeds, assertFails } from '@firebase/rules-unit-testing';
-import { doc, getDoc, setDoc, updateDoc, deleteDoc, collection, getDocs, query, where } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, deleteDoc, collection, getDocs, query, where, serverTimestamp, Timestamp } from 'firebase/firestore';
 
 let env;
 const db = uid => env.authenticatedContext(uid).firestore();
@@ -20,20 +20,32 @@ after(() => env.cleanup());
 beforeEach(() => env.clearFirestore());
 
 /* ---------- saves ---------- */
+/* the save the game writes (js/account.js): RL-10b adds t, the server's time, the ranch clock's anchor */
+const save = (extra = {}) => ({ json: '{}', savedAt: 1, name: 'Ann', game: 'Pocket Billies', saveVersion: 4, t: serverTimestamp(), ...extra });
 test('a player reads and writes their own save', async () => {
-  await assertSucceeds(setDoc(doc(db('ann'), 'saves/ann'), { json: '{}', savedAt: 1, name: 'Ann', game: 'Pocket Billies', saveVersion: 1 }));
+  await assertSucceeds(setDoc(doc(db('ann'), 'saves/ann'), save()));
   await assertSucceeds(getDoc(doc(db('ann'), 'saves/ann')));
+  await assertSucceeds(setDoc(doc(db('ann'), 'saves/ann'), save({ json: '{"a":1}' })));
+});
+test('RL-10b: a save carries the server time as t, and only the keys the game writes', async () => {
+  const { t, ...noT } = save();
+  await assertFails(setDoc(doc(db('ann'), 'saves/ann'), noT));
+  await assertFails(setDoc(doc(db('ann'), 'saves/ann'), save({ t: Timestamp.fromMillis(Date.now() + 864e5) })));
+  await assertFails(setDoc(doc(db('ann'), 'saves/ann'), save({ t: Date.now() })));
+  await assertFails(setDoc(doc(db('ann'), 'saves/ann'), save({ extra: 1 })));
+  await assertFails(setDoc(doc(db('ann'), 'saves/ann'), save({ friends: ['bob'] })));
+  await assertSucceeds(setDoc(doc(db('ann'), 'saves/ann'), { json: '{}', t: serverTimestamp() }));
 });
 test('nobody else reads or writes a save', async () => {
   await seed('saves/ann', { json: '{}' });
   await assertFails(getDoc(doc(db('bob'), 'saves/ann')));
-  await assertFails(setDoc(doc(db('bob'), 'saves/ann'), { json: '{}' }));
+  await assertFails(setDoc(doc(db('bob'), 'saves/ann'), save()));
   await assertFails(getDoc(doc(guest(), 'saves/ann')));
   await assertFails(getDocs(collection(db('bob'), 'saves')));
 });
 test('a save must be a JSON string under 1 MB', async () => {
-  await assertFails(setDoc(doc(db('ann'), 'saves/ann'), { json: 5 }));
-  await assertFails(setDoc(doc(db('ann'), 'saves/ann'), { json: 'x'.repeat(1000001) }));
+  await assertFails(setDoc(doc(db('ann'), 'saves/ann'), save({ json: 5 })));
+  await assertFails(setDoc(doc(db('ann'), 'saves/ann'), save({ json: 'x'.repeat(1000001) })));
 });
 
 /* ---------- friend codes ---------- */
