@@ -2,6 +2,44 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Roster track RO-2a - Four new lines from the part kits - 2026-10-23
+Branch `ccr-81439378-ypunjg` (a cloud session can only push to its own branch), made from main + `track/roster`;
+draft PR #168 into `track/roster`. Plan approved in Plan Mode: 24 → 40 species in three batches (roguelite-track.md,
+"RO-2.. plan"), kit parts and kit stand-ins only, a mix of legacy and new parodies. RO-2b runs in its own session
+(stacked on #168). Tag `ro-2a-done` for the owner.
+- Where the docs were wrong: phase 16's "Verify first" still says 7 lines; legacy sheets of these species had the
+  same file names as the kit sheets the baker writes, so baking over them would have lost the hand-drawn art (copied
+  to `billionaires/hand` first). A 2-stage final gets the middle stat total (game-data.js: `tot[stage]`), not a final's.
+- Changed:
+  - **Part library:** the hand-drawn sheets, layouts and rigs of gosling, sprucegoose, aviatorgoose, flatpackrat,
+    kamprat, pupfin, sharktank and altmowl copied into `game/art/next/billionaires/hand` (rigs-hand.json).
+  - **Four lines** (`lines/hughes|kamprad|cuban|altman.json`, `index.json`, roster.json rows 25-32): Gosling →
+    Sprucegoose → Aviatorgoose (common, Flying → Flying/Steel, 16/36), Flatpackrat → Kamprat (common, Steel →
+    Steel/Grass, 20), Pupfin → Sharktank (common, Water → Water/Dragon, 20), Altmowl (rare single, Psychic/Electric).
+    Learnsets of existing moves of their types; bios, notes, sizes and cries redrawn (drafts; cries named
+    "placeholder").
+  - **Art:** kitBuilds.json recipes and 14 colours; `npm run bake:kits` wrote sheets, rigs and native parts. The
+    rat is a stand-in (cat body, round bear ears, reptile tail). The old `<name>.json` layouts left the sheets folder.
+  - **Pools:** the commons in the biomes their types fit (the fish only near water, the owl rare in thicket, autumn,
+    ridge, tundra, jungle). Eggs and fishing that named these legacy ids now give the real Billies.
+  - **Tests:** wild-pools (starters and uncommon lines in every pool, every line in some pool, rare below common),
+    kit counts 32 (kit-bake-parity, pixel-density), check-data and run-start snapshots remade, the sound baseline
+    gains the 16 new cry fingerprints (no other cry changed). Gosling's diet is "Fresh grass" (a data text equal to
+    a type name fails the type-rename tests).
+- Verified: lint, typecheck, check:data, check:modules, format:check, bake check, unit tests 828 of 828;
+  check-sound 0 changed; smoke 6 of 6; the full quick check 37 of 37 (1,726 s). The sprites looked at in a browser
+  (front and back). Over 500 seeds the regional dex holds Hughes 51%, Kamprad 41%, Altmowl 23%, Cuban 21%.
+- CI on #168: check-fast's "Play this seed" is red on main too (since RL-R1 its Node side calls `runStartPlan`
+  without `region`); a one-line patch is proposed on the PR, tested locally. CAM-2's encounter shot and IS-1/IS-3's
+  camera aim flaked once in the second run on the same commit (green in the first).
+- Risky / open:
+  - Sharktank has 400 stat points (a 2-stage final), weak for a Gyarados-style payoff: RO-2c's balance pass.
+  - Runs reach about level 13 (RO-1), so Sprucegoose (16), Kamprat, Sharktank (20) are rarely seen evolved in a run
+    except from the ranch.
+  - Not tried on a phone: the new sprites in grass, battle and the Guide.
+  - Playwright (Python) needs version 1.63.0 here to match the preinstalled Chromium.
+- Next: RO-2b (Yiming ferret, Woods tiger, an Arnault peacock), then RO-2c (Huang dragon, forms, balance).
+
 ### Reflavour track RF-5 - The new tone in text - 2026-10-23
 Branch `track/reflavour-rf-5`, made from `track/reflavour` at e1e1479 while RF-4 was still finishing its docs (the
 coordinating session's word, confirmed by the owner); main merged in after RF-4's PR #165 landed. Plan approved with
